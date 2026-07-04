@@ -42,10 +42,13 @@ export interface MapPresenceOwnStatePatch {
   readonly ping?: LivePlayPresencePingPayload | null
 }
 
+export type MapPresenceVisibleTokenIds = readonly string[] | ReadonlySet<string>
+
 export interface UseMapPresenceOptions {
   readonly slug: string
   readonly profileId?: ReadonlyValueRef<string | null | undefined>
   readonly enabled?: ReadonlyValueRef<boolean>
+  readonly visibleTokenIds?: ReadonlyValueRef<MapPresenceVisibleTokenIds | null | undefined>
   readonly autoStart?: boolean
   readonly heartbeatIntervalMs?: number
   readonly hiddenHeartbeatIntervalMs?: number
@@ -145,6 +148,18 @@ const browserDocument = (): MapPresenceDocumentLike | null => (
   typeof document === 'undefined' ? null : document
 )
 
+const isReadonlySetLike = (value: MapPresenceVisibleTokenIds): value is ReadonlySet<string> => (
+  typeof (value as { readonly has?: unknown }).has === 'function'
+)
+
+const visibleTokenIdSetFromSource = (
+  source: MapPresenceVisibleTokenIds | null | undefined,
+): ReadonlySet<string> | null => {
+  if (source === undefined || source === null) return null
+  if (isReadonlySetLike(source)) return source
+  return new Set(source.filter((tokenId): tokenId is string => typeof tokenId === 'string'))
+}
+
 export const useMapPresence = (options: UseMapPresenceOptions): UseMapPresenceReturn => {
   const heartbeatIntervalMs = safeInterval(options.heartbeatIntervalMs, DEFAULT_HEARTBEAT_INTERVAL_MS)
   const hiddenHeartbeatIntervalMs = safeInterval(options.hiddenHeartbeatIntervalMs, DEFAULT_HIDDEN_HEARTBEAT_INTERVAL_MS)
@@ -177,6 +192,26 @@ export const useMapPresence = (options: UseMapPresenceOptions): UseMapPresenceRe
 
   const enabled = (): boolean => options.enabled?.value !== false
   const localServerNow = (): number => now() + serverTimeOffsetMs.value
+  const visibleTokenIds = (): ReadonlySet<string> | null => visibleTokenIdSetFromSource(options.visibleTokenIds?.value)
+  const sanitizeOwnPresenceTokenId = (tokenId: string | null | undefined): string | null => {
+    if (!tokenId) return null
+    const visibleIds = visibleTokenIds()
+    return visibleIds === null || visibleIds.has(tokenId) ? tokenId : null
+  }
+  const sanitizeOwnPresenceTokens = (
+    presence: LivePlayPresenceUpdate,
+    sanitizeOptions: { readonly incrementSequenceOnChange: boolean },
+  ): LivePlayPresenceUpdate => {
+    const selectedTokenId = sanitizeOwnPresenceTokenId(presence.selectedTokenId)
+    const hoveredTokenId = sanitizeOwnPresenceTokenId(presence.hoveredTokenId)
+    if (selectedTokenId === presence.selectedTokenId && hoveredTokenId === presence.hoveredTokenId) return presence
+    return {
+      ...presence,
+      selectedTokenId,
+      hoveredTokenId,
+      clientSequence: presence.clientSequence + (sanitizeOptions.incrementSequenceOnChange ? 1 : 0),
+    }
+  }
 
   const visibleEntries = computed<readonly LivePlayPresenceEntry[]>(() => clonePresenceEntries(storedEntries.value))
   const transportFreshness = computed<MapPresenceTransportFreshness>(() => ({
@@ -280,7 +315,9 @@ export const useMapPresence = (options: UseMapPresenceOptions): UseMapPresenceRe
   }
 
   const validatedOwnPresence = (): LivePlayPresenceUpdate | null => {
-    const parsed = parseLivePlayPresenceUpdate(ownPresenceState.value)
+    const sanitizedPresence = sanitizeOwnPresenceTokens(ownPresenceState.value, { incrementSequenceOnChange: true })
+    if (sanitizedPresence !== ownPresenceState.value) ownPresenceState.value = sanitizedPresence
+    const parsed = parseLivePlayPresenceUpdate(sanitizedPresence)
     if (!parsed.valid) {
       markTransportError(
         new Error(firstPresenceIssueMessage(parsed.issues, 'Own presence state is invalid')),
@@ -403,14 +440,14 @@ export const useMapPresence = (options: UseMapPresenceOptions): UseMapPresenceRe
     patch: MapPresenceOwnStatePatch,
     updateOptions: { readonly publish?: boolean } = {},
   ): Promise<boolean> => {
-    const candidate: LivePlayPresenceUpdate = {
+    const candidate: LivePlayPresenceUpdate = sanitizeOwnPresenceTokens({
       ...ownPresenceState.value,
       ...(Object.prototype.hasOwnProperty.call(patch, 'selectedTokenId') ? { selectedTokenId: patch.selectedTokenId ?? null } : {}),
       ...(Object.prototype.hasOwnProperty.call(patch, 'hoveredTokenId') ? { hoveredTokenId: patch.hoveredTokenId ?? null } : {}),
       ...(Object.prototype.hasOwnProperty.call(patch, 'intent') && patch.intent ? { intent: { ...patch.intent } } : {}),
       ...(Object.prototype.hasOwnProperty.call(patch, 'ping') ? { ping: patch.ping ?? null } : {}),
       clientSequence: ownPresenceState.value.clientSequence + 1,
-    }
+    }, { incrementSequenceOnChange: false })
     const parsed = parseLivePlayPresenceUpdate(candidate)
     if (!parsed.valid) {
       markTransportError(

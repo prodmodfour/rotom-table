@@ -195,6 +195,61 @@ describe('useMapPresence', () => {
     presence.dispose()
   })
 
+  it('sanitizes own token presence against the visible token set before publishing', async () => {
+    let now = 2_000
+    const visibleTokenIds = ref<readonly string[]>(['token-pikachu'])
+    mocks.postJson.mockResolvedValue(presenceSnapshot([], { serverTime: 2_000 }))
+
+    const presence = useMapPresence({
+      slug: 'arena',
+      autoStart: false,
+      visibleTokenIds,
+      now: () => now,
+    })
+
+    await expect(presence.updateOwnPresence({
+      selectedTokenId: 'token-pikachu',
+      hoveredTokenId: 'token-hidden',
+    })).resolves.toBe(true)
+
+    expect(presence.ownPresence.value).toMatchObject({
+      clientSequence: 1,
+      selectedTokenId: 'token-pikachu',
+      hoveredTokenId: null,
+    })
+    expect(mocks.postJson).toHaveBeenCalledWith('/api/maps/arena/presence', {
+      presence: expect.objectContaining({
+        clientSequence: 1,
+        selectedTokenId: 'token-pikachu',
+        hoveredTokenId: null,
+      }),
+      clientId: 'client_c-local-tab',
+    })
+
+    visibleTokenIds.value = []
+    now = 2_500
+    mocks.postJson.mockClear()
+    mocks.postJson.mockResolvedValue(presenceSnapshot([], { serverTime: 2_500 }))
+
+    await presence.sendHeartbeat()
+
+    expect(presence.ownPresence.value).toMatchObject({
+      clientSequence: 2,
+      selectedTokenId: null,
+      hoveredTokenId: null,
+    })
+    expect(mocks.postJson).toHaveBeenCalledWith('/api/maps/arena/presence', {
+      presence: expect.objectContaining({
+        clientSequence: 2,
+        selectedTokenId: null,
+        hoveredTokenId: null,
+      }),
+      clientId: 'client_c-local-tab',
+    })
+
+    presence.dispose()
+  })
+
   it('applies transient realtime snapshots for the current map', async () => {
     let now = 3_000
     mocks.getJson.mockResolvedValue(presenceSnapshot([], { serverTime: 3_000 }))

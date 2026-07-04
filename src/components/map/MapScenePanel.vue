@@ -118,6 +118,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   (event: 'select-pokemon', id: string | null): void
+  (event: 'hover-pokemon', id: string | null): void
   (event: 'focus-initiative-entry', id: string): void
   (event: 'previous-initiative'): void
   (event: 'next-initiative'): void
@@ -270,6 +271,7 @@ defineExpose({ focusPokemon })
         :move-animations-reduced-motion="moveAnimationsReducedMotion === true"
         :attack-of-opportunity-prompts="props.attackOfOpportunityPrompts ?? []"
         @select-pokemon="emit('select-pokemon', $event)"
+        @hover-pokemon="emit('hover-pokemon', $event)"
         @move-pokemon="emit('move-pokemon', $event)"
         @turn-pokemon="emit('turn-pokemon', $event)"
         @delete-pokemon="emit('delete-pokemon', $event)"

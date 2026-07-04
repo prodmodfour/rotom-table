@@ -73,6 +73,29 @@ describe('map page route authority', () => {
     expect(tokenRenderer).toContain('corrections temporarily reserve the red invalid ramp for rollback feedback')
   })
 
+  it('wires local token selection and hover into ephemeral presence without changing control authority', () => {
+    const mapPage = readSource('src/pages/maps/[slug].vue')
+    const scenePanel = readSource('src/components/map/MapScenePanel.vue')
+    const sceneRenderer = readSource('src/components/map/MapSceneRenderer.vue')
+    const isometricGrid = readSource('src/components/IsometricGrid.client.vue')
+
+    expect(mapPage).toContain('const hoveredPresenceTokenId = ref<string | null>(null)')
+    expect(mapPage).toContain('const visiblePresenceTokenIds = computed<readonly string[]>(() => spawnedPokemon.value.map((pokemon) => pokemon.id))')
+    expect(mapPage).toContain('visibleTokenIds: visiblePresenceTokenIds')
+    expect(mapPage).toContain('presenceTokenIdIfVisible(selectedId.value)')
+    expect(mapPage).toContain('presenceTokenIdIfVisible(hoveredPresenceTokenId.value)')
+    expect(mapPage).toContain('@hover-pokemon="setHoveredPresenceToken"')
+    expect(mapPage).toContain('if (isPlayer.value) clearSelection()')
+    expect(scenePanel).toContain("(event: 'hover-pokemon', id: string | null): void")
+    expect(scenePanel).toContain('@hover-pokemon="emit(\'hover-pokemon\', $event)"')
+    expect(sceneRenderer).toContain("(event: 'hover-pokemon', id: string | null): void")
+    expect(sceneRenderer).toContain('@hover-pokemon="emit(\'hover-pokemon\', $event)"')
+    expect(isometricGrid).toContain("(event: 'hover-pokemon', id: string | null): void")
+    expect(isometricGrid).toContain("emit('hover-pokemon', nextId)")
+    expect(mapPage).toContain('selectPlacement(id)')
+    expect(mapPage).not.toContain('remoteTokenLock')
+  })
+
   it('wires the live-play latency debug panel behind an explicit query flag', () => {
     const mapPage = readSource('src/pages/maps/[slug].vue')
     const panel = readSource('src/components/map/LivePlayLatencyDebugPanel.vue')

@@ -245,7 +245,7 @@ Status: DONE
 
 ## 008 — LP-S3-008 — Publish local token selection and hover presence
 
-Status: TODO
+Status: DONE
 
 **Goal:** Let other clients see which token someone is looking at or controlling without changing authority rules.
 

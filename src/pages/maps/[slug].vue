@@ -740,42 +740,6 @@ const mapActionEditingEnabled = computed(() => (
   canEditMap.value && (isSetupEditMode() || livePlayCommandsAllowed.value)
 ))
 
-const mapPresenceEnabled = computed(() => (
-  canViewMap.value
-  && (isGm.value || (isPlayer.value && Boolean(selectedProfileId.value)))
-))
-const mapPresence = useMapPresence({
-  slug,
-  profileId: computed(() => (isPlayer.value ? selectedProfileId.value : null)),
-  enabled: mapPresenceEnabled,
-  autoStart: false,
-})
-const mapPresenceEntries = mapPresence.entries
-const mapPresenceStatus = mapPresence.status
-const mapPresenceServerTimeOffsetMs = computed(() => mapPresence.transportFreshness.value.serverTimeOffsetMs)
-
-if (import.meta.client) {
-  let mapPresenceStarted = false
-  watch(
-    [mapPresenceEnabled, selectedProfileId],
-    ([enabled]) => {
-      if (!enabled) {
-        mapPresence.stop()
-        mapPresenceStarted = false
-        return
-      }
-      if (!mapPresenceStarted) {
-        mapPresence.start()
-        mapPresenceStarted = true
-        return
-      }
-      void mapPresence.loadSnapshot()
-      void mapPresence.sendHeartbeat()
-    },
-    { immediate: true },
-  )
-}
-
 const {
   mapVoxels,
   mapHazards,
@@ -820,6 +784,95 @@ const {
     controllablePlacementIds: computed(() => playerProfileTokenControlModel.value.controllablePlacementIds),
   },
 })
+
+const hoveredPresenceTokenId = ref<string | null>(null)
+const visiblePresenceTokenIds = computed<readonly string[]>(() => spawnedPokemon.value.map((pokemon) => pokemon.id))
+const visiblePresenceTokenIdSet = computed(() => new Set(visiblePresenceTokenIds.value))
+const presenceTokenIdIfVisible = (tokenId: string | null | undefined): string | null => (
+  tokenId && visiblePresenceTokenIdSet.value.has(tokenId) ? tokenId : null
+)
+const mapPresenceEnabled = computed(() => (
+  canViewMap.value
+  && (isGm.value || (isPlayer.value && Boolean(selectedProfileId.value)))
+))
+const mapPresence = useMapPresence({
+  slug,
+  profileId: computed(() => (isPlayer.value ? selectedProfileId.value : null)),
+  enabled: mapPresenceEnabled,
+  visibleTokenIds: visiblePresenceTokenIds,
+  autoStart: false,
+})
+const mapPresenceEntries = mapPresence.entries
+const mapPresenceStatus = mapPresence.status
+const mapPresenceServerTimeOffsetMs = computed(() => mapPresence.transportFreshness.value.serverTimeOffsetMs)
+
+const updateOwnTokenPresence = (selectedTokenId: string | null, hoveredTokenId: string | null, publish = true): void => {
+  if (
+    mapPresence.ownPresence.value.selectedTokenId === selectedTokenId
+    && mapPresence.ownPresence.value.hoveredTokenId === hoveredTokenId
+  ) return
+
+  void mapPresence.updateOwnPresence({ selectedTokenId, hoveredTokenId }, { publish })
+}
+
+const syncOwnTokenPresence = (publish = true): void => {
+  if (!mapPresenceEnabled.value) {
+    updateOwnTokenPresence(null, null, false)
+    return
+  }
+
+  updateOwnTokenPresence(
+    presenceTokenIdIfVisible(selectedId.value),
+    presenceTokenIdIfVisible(hoveredPresenceTokenId.value),
+    publish,
+  )
+}
+
+const setHoveredPresenceToken = (tokenId: string | null): void => {
+  hoveredPresenceTokenId.value = presenceTokenIdIfVisible(tokenId)
+}
+
+watch(
+  [selectedId, hoveredPresenceTokenId, visiblePresenceTokenIds, mapPresenceEnabled],
+  () => syncOwnTokenPresence(),
+  { immediate: true },
+)
+
+watch(
+  selectedProfileId,
+  (nextProfileId, previousProfileId) => {
+    if (nextProfileId === previousProfileId) return
+    hoveredPresenceTokenId.value = null
+    if (isPlayer.value) clearSelection()
+    updateOwnTokenPresence(null, null, false)
+  },
+  { flush: 'sync' },
+)
+
+if (import.meta.client) {
+  let mapPresenceStarted = false
+  watch(
+    [mapPresenceEnabled, selectedProfileId],
+    ([enabled]) => {
+      if (!enabled) {
+        mapPresence.stop()
+        mapPresenceStarted = false
+        syncOwnTokenPresence(false)
+        return
+      }
+      if (!mapPresenceStarted) {
+        syncOwnTokenPresence(false)
+        mapPresence.start()
+        mapPresenceStarted = true
+        return
+      }
+      syncOwnTokenPresence(false)
+      void mapPresence.loadSnapshot()
+      void mapPresence.sendHeartbeat()
+    },
+    { immediate: true },
+  )
+}
 
 const livePlayTokenLabel = (placementId: string): string => {
   const spawned = spawnedPokemon.value.find((pokemon) => pokemon.id === placementId)
@@ -2267,6 +2320,7 @@ useMapDimensionReconciliation({
         :token-send-out-options-by-id="tokenSendOutOptionsById"
         :token-pokeball-options-by-id="tokenPokeballOptionsById"
         @select-pokemon="selectPokemon"
+        @hover-pokemon="setHoveredPresenceToken"
         @focus-initiative-entry="focusInitiativeEntry"
         @previous-initiative="previousInitiativeFromControls"
         @next-initiative="nextInitiativeFromControls"

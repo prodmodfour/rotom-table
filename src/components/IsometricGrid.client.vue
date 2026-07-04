@@ -227,6 +227,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   (event: 'select-pokemon', id: string | null): void
+  (event: 'hover-pokemon', id: string | null): void
   (event: 'move-pokemon', payload: { id: string; position: GridAnchor }): void
   (event: 'turn-pokemon', id: string): void
   (event: 'delete-pokemon', id: string): void
@@ -840,7 +841,10 @@ const hoverController = createIsometricTokenHoverController({
     camera,
     show: visibleLayers().tokens,
   }),
-  onHoverChange: () => requestScheduledSceneFrame('token-style'),
+  onHoverChange: (nextId) => {
+    emit('hover-pokemon', nextId)
+    requestScheduledSceneFrame('token-style')
+  },
 })
 
 const buildRenderObject = (pokemon: SpawnedPokemon): PokemonRenderObject =>
