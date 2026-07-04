@@ -5,11 +5,13 @@ import {
   LIVE_PLAY_PATCH_TYPES,
   createClearFieldEffectsCommandScopes,
   createClearHazardsCommandScopes,
+  createEditHazardsCommandScopes,
   type ClearFieldEffectsLivePlayCommand,
   type ClearFieldEffectsPayload,
   type ClearHazardsLivePlayCommand,
   type ClearHazardsPayload,
   type EditHazardsLivePlayCommand,
+  type EditHazardsPayload,
   type LivePlayMapEffectCommand,
   type PlaceHazardLivePlayCommand,
   type RemoveFieldEffectLivePlayCommand,
@@ -81,6 +83,20 @@ const clearHazardsCommand = (
   baseRevision: 4,
   type: LIVE_PLAY_COMMAND_TYPES.CLEAR_HAZARDS,
   scopes: createClearHazardsCommandScopes(payload),
+  payload,
+  ...overrides,
+})
+
+const editHazardsCommand = (
+  payload: EditHazardsPayload = { operations: [{ action: 'upsert', hazard: { kind: 'spikes', x: 1, y: 0, z: 2 } }] },
+  overrides: Partial<EditHazardsLivePlayCommand> = {},
+): EditHazardsLivePlayCommand => ({
+  schemaVersion: LIVE_PLAY_COMMAND_SCHEMA_VERSION,
+  opId: 'op_edithaz01',
+  mapSlug: 'arena',
+  baseRevision: 4,
+  type: LIVE_PLAY_COMMAND_TYPES.EDIT_HAZARDS,
+  scopes: createEditHazardsCommandScopes(payload),
   payload,
   ...overrides,
 })
@@ -177,7 +193,7 @@ const createHarness = (initialMap: TabletopMap = baseMap()) => {
   }
 }
 
-type SupportedLivePlayMapEffectsCommand = Exclude<LivePlayMapEffectCommand, EditHazardsLivePlayCommand>
+type SupportedLivePlayMapEffectsCommand = LivePlayMapEffectCommand
 
 const execute = (harness: ReturnType<typeof createHarness>, command: SupportedLivePlayMapEffectsCommand, role: 'gm' | 'player' = 'gm') =>
   executeLivePlayMapEffectsCommandUseCase({
@@ -316,6 +332,96 @@ describe('live-play hazard and field-effect commands', () => {
         removed: [{ kind: 'fire', x: 1, y: 0, z: 2 }],
       },
     })
+  })
+
+  it('edits hazard cells through one authoritative batch result and reuses it on retry', async () => {
+    const initialHazards = [
+      { kind: 'fire' as const, x: 3, y: 0, z: 4 },
+      { kind: 'sticky-web' as const, x: 5, y: 0, z: 1 },
+    ]
+    const payload = {
+      operations: [
+        { action: 'upsert', hazard: { kind: 'toxic-spikes', x: 1, y: 0, z: 2, layer: 2, owner: 'north' } },
+        { action: 'remove', cell: { x: 3, y: 0, z: 4, kind: 'fire' } },
+        { action: 'upsert', hazard: { kind: 'stealth-rock', x: 1, y: 0, z: 2 } },
+      ],
+    } as const satisfies EditHazardsPayload
+    const harness = createHarness(baseMap({ hazards: initialHazards }))
+    const command = editHazardsCommand(payload)
+
+    const response = await execute(harness, command)
+
+    expect(response.result).toMatchObject({ ok: true, previousRevision: 4, revision: 5 })
+    expect(harness.writes).toHaveLength(1)
+    expect(harness.storedMap.hazards).toEqual([
+      { kind: 'sticky-web', x: 5, y: 0, z: 1 },
+      { kind: 'toxic-spikes', x: 1, y: 0, z: 2, layer: 2, owner: 'north' },
+      { kind: 'stealth-rock', x: 1, y: 0, z: 2 },
+    ])
+    expect(response.hazards).toEqual(harness.storedMap.hazards)
+    expect(acceptedPatches(response)).toEqual([
+      expect.objectContaining({
+        type: LIVE_PLAY_PATCH_TYPES.MAP_HAZARDS,
+        revision: 5,
+        scopes: [{ kind: 'map', lane: 'hazards' }],
+        payload: {
+          command: LIVE_PLAY_COMMAND_TYPES.EDIT_HAZARDS,
+          changes: [
+            {
+              cell: { x: 1, y: 0, z: 2 },
+              previous: [],
+              current: [
+                { kind: 'toxic-spikes', x: 1, y: 0, z: 2, layer: 2, owner: 'north' },
+                { kind: 'stealth-rock', x: 1, y: 0, z: 2 },
+              ],
+              placed: [
+                { kind: 'toxic-spikes', x: 1, y: 0, z: 2, layer: 2, owner: 'north' },
+                { kind: 'stealth-rock', x: 1, y: 0, z: 2 },
+              ],
+            },
+            {
+              cell: { x: 3, y: 0, z: 4 },
+              previous: [{ kind: 'fire', x: 3, y: 0, z: 4 }],
+              current: [],
+              removed: [{ kind: 'fire', x: 3, y: 0, z: 4 }],
+            },
+          ],
+          previous: initialHazards,
+          current: [
+            { kind: 'sticky-web', x: 5, y: 0, z: 1 },
+            { kind: 'toxic-spikes', x: 1, y: 0, z: 2, layer: 2, owner: 'north' },
+            { kind: 'stealth-rock', x: 1, y: 0, z: 2 },
+          ],
+        },
+      }),
+    ])
+    expect(harness.published).toHaveLength(1)
+
+    const retry = await execute(harness, command)
+
+    expect(retry.result).toEqual(response.result)
+    expect(harness.writes).toHaveLength(1)
+    expect(harness.published).toHaveLength(1)
+  })
+
+  it('rejects invalid editHazards cells without partially writing valid cells', async () => {
+    const initialHazards = [{ kind: 'sticky-web' as const, x: 5, y: 0, z: 1 }]
+    const harness = createHarness(baseMap({ hazards: initialHazards }))
+    const response = await execute(harness, editHazardsCommand({
+      operations: [
+        { action: 'upsert', hazard: { kind: 'spikes', x: 1, y: 0, z: 2 } },
+        { action: 'upsert', hazard: { kind: 'fire', x: 99, y: 0, z: 2 } },
+      ],
+    }, { opId: 'op_badedithz' }))
+
+    expect(response.result).toMatchObject({
+      ok: false,
+      reason: 'invalid',
+      currentRevision: 4,
+      message: 'Hazards cannot be edited at 99,0,2; the cell is outside map arena.',
+    })
+    expect(harness.writes).toEqual([])
+    expect(harness.storedMap.hazards).toEqual(initialHazards)
   })
 
   it('clears all field effects through one authoritative batch result and reuses it on retry', async () => {

@@ -18,8 +18,11 @@ import {
 import {
   parseClearFieldEffectsPayload,
   parseClearHazardsPayload,
+  parseEditHazardsPayload,
   type ClearFieldEffectsPayload,
   type ClearHazardsPayload,
+  type EditHazardOperation,
+  type EditHazardsPayload,
 } from '#shared/livePlayBatchCommands'
 import type { AuthRole } from '#shared/auth'
 import { nextRevision, normalizeRevision } from '#shared/sessionRevisions'
@@ -71,6 +74,7 @@ export type LivePlayMapEffectsCommandType =
   | typeof LIVE_PLAY_COMMAND_TYPES.PLACE_HAZARD
   | typeof LIVE_PLAY_COMMAND_TYPES.REMOVE_HAZARD
   | typeof LIVE_PLAY_COMMAND_TYPES.CLEAR_HAZARDS
+  | typeof LIVE_PLAY_COMMAND_TYPES.EDIT_HAZARDS
   | typeof LIVE_PLAY_COMMAND_TYPES.CLEAR_FIELD_EFFECTS
   | typeof LIVE_PLAY_COMMAND_TYPES.SET_FIELD_EFFECT
   | typeof LIVE_PLAY_COMMAND_TYPES.REMOVE_FIELD_EFFECT
@@ -101,7 +105,22 @@ export interface ClearHazardsPatchPayload {
   readonly removed: readonly MapHazardV2[]
 }
 
-export type HazardPatchPayload = HazardCellPatchPayload | ClearHazardsPatchPayload
+export interface HazardCellBatchPatchPayload {
+  readonly cell: HazardCellState
+  readonly previous: readonly MapHazardV2[]
+  readonly current: readonly MapHazardV2[]
+  readonly placed?: readonly MapHazardV2[]
+  readonly removed?: readonly MapHazardV2[]
+}
+
+export interface EditHazardsPatchPayload {
+  readonly command: typeof LIVE_PLAY_COMMAND_TYPES.EDIT_HAZARDS
+  readonly changes: readonly HazardCellBatchPatchPayload[]
+  readonly previous?: readonly MapHazardV2[]
+  readonly current: readonly MapHazardV2[]
+}
+
+export type HazardPatchPayload = HazardCellPatchPayload | ClearHazardsPatchPayload | EditHazardsPatchPayload
 
 export interface FieldEffectsPatchPayload {
   readonly command:
@@ -174,7 +193,16 @@ interface AppliedHazardsClearChange {
   readonly removed: readonly MapHazardV2[]
 }
 
-type AppliedHazardChange = AppliedHazardCellChange | AppliedHazardsClearChange
+interface AppliedHazardsEditChange {
+  readonly lane: 'hazards'
+  readonly changeKind: 'edit'
+  readonly nextMap: TabletopMap
+  readonly changes: readonly HazardCellBatchPatchPayload[]
+  readonly previous: readonly MapHazardV2[]
+  readonly current: readonly MapHazardV2[]
+}
+
+type AppliedHazardChange = AppliedHazardCellChange | AppliedHazardsClearChange | AppliedHazardsEditChange
 
 interface AppliedFieldEffectsChange {
   readonly lane: 'fieldEffects'
@@ -198,14 +226,11 @@ const mapEffectsCommandTypes = new Set<string>([
   LIVE_PLAY_COMMAND_TYPES.PLACE_HAZARD,
   LIVE_PLAY_COMMAND_TYPES.REMOVE_HAZARD,
   LIVE_PLAY_COMMAND_TYPES.CLEAR_HAZARDS,
+  LIVE_PLAY_COMMAND_TYPES.EDIT_HAZARDS,
   LIVE_PLAY_COMMAND_TYPES.CLEAR_FIELD_EFFECTS,
   LIVE_PLAY_COMMAND_TYPES.SET_FIELD_EFFECT,
   LIVE_PLAY_COMMAND_TYPES.REMOVE_FIELD_EFFECT,
   LIVE_PLAY_COMMAND_TYPES.TICK_FIELD_EFFECT_DURATIONS,
-])
-
-const reservedMapEffectsCommandTypes = new Set<string>([
-  LIVE_PLAY_COMMAND_TYPES.EDIT_HAZARDS,
 ])
 
 const hazardCellCommandTypes = new Set<string>([
@@ -217,6 +242,7 @@ const hazardCommandTypes = new Set<string>([
   LIVE_PLAY_COMMAND_TYPES.PLACE_HAZARD,
   LIVE_PLAY_COMMAND_TYPES.REMOVE_HAZARD,
   LIVE_PLAY_COMMAND_TYPES.CLEAR_HAZARDS,
+  LIVE_PLAY_COMMAND_TYPES.EDIT_HAZARDS,
 ])
 
 const fieldEffectCommandTypes = new Set<string>([
@@ -270,16 +296,10 @@ const assertMapEffectsCommandType = (
   if (expectedType && command.type !== expectedType) {
     rejectLivePlayCommand('invalid', `This route only accepts ${expectedType} commands`)
   }
-  if (reservedMapEffectsCommandTypes.has(command.type)) {
-    rejectLivePlayCommand(
-      'invalid',
-      'editHazards is a reserved live-play batch contract; hazard batch execution is not available until the hazard batch server route is implemented.',
-    )
-  }
   if (!mapEffectsCommandTypes.has(command.type)) {
     rejectLivePlayCommand(
       'invalid',
-      'Map effects live-play routes support placeHazard, removeHazard, clearHazards, clearFieldEffects, setFieldEffect, removeFieldEffect, and tickFieldEffectDurations commands only',
+      'Map effects live-play routes support placeHazard, removeHazard, clearHazards, editHazards, clearFieldEffects, setFieldEffect, removeFieldEffect, and tickFieldEffectDurations commands only',
     )
   }
 }
@@ -317,6 +337,15 @@ const sameHazardLane = (
   left: MapHazardV2,
   right: Pick<MapHazardV2, 'kind' | 'x' | 'y' | 'z'>,
 ): boolean => mapHazardKey(left) === mapHazardKey(right)
+
+const hazardEquals = (left: MapHazardV2, right: MapHazardV2): boolean => (
+  left.kind === right.kind &&
+  left.x === right.x &&
+  left.y === right.y &&
+  left.z === right.z &&
+  (left.layer ?? null) === (right.layer ?? null) &&
+  (left.owner ?? '') === (right.owner ?? '')
+)
 
 const expectRecord = (value: unknown, label: string): UnknownRecord => {
   if (isRecord(value)) return value
@@ -396,6 +425,12 @@ const expectClearFieldEffectsPayload = (payload: unknown): ClearFieldEffectsPayl
   return rejectLivePlayCommand('invalid', `clearFieldEffects payload is invalid: ${batchIssueSummary(result.issues)}`)
 }
 
+const expectEditHazardsPayload = (payload: unknown): EditHazardsPayload => {
+  const result = parseEditHazardsPayload(payload)
+  if (result.valid) return result.value
+  return rejectLivePlayCommand('invalid', `editHazards payload is invalid: ${batchIssueSummary(result.issues)}`)
+}
+
 const sameCell = (
   left: Pick<HazardCellState, 'x' | 'y' | 'z'>,
   right: Pick<HazardCellState, 'x' | 'y' | 'z'>,
@@ -435,6 +470,27 @@ const expectClearHazardsScopes = (
 
   if (hasBroadHazardsScope(command)) return
   rejectLivePlayCommand('invalid', `clearHazards ${payload.mode} mode scopes must include the broad map hazards scope`)
+}
+
+const editHazardOperationCell = (operation: EditHazardOperation): HazardCellState => (
+  operation.action === 'upsert' ? cloneCell(operation.hazard) : cloneCell(operation.cell)
+)
+
+const expectEditHazardsScopes = (
+  command: LivePlayMapEffectCommand,
+  payload: EditHazardsPayload,
+): void => {
+  if (hasBroadHazardsScope(command)) return
+
+  const missingCell = payload.operations
+    .map(editHazardOperationCell)
+    .find((cell) => !hasHazardCellScope(command, cell))
+  if (!missingCell) return
+
+  rejectLivePlayCommand(
+    'invalid',
+    `editHazards scopes must include every requested hazard cell or the broad map hazards scope; missing ${missingCell.x},${missingCell.y},${missingCell.z}`,
+  )
 }
 
 const cloneWeatherEffect = (effect: MapWeatherEffect): MapWeatherEffect => ({
@@ -585,6 +641,8 @@ const validateCommandPayloadAndScopes = (command: LivePlayMapEffectCommand): voi
     expectRemoveHazardPayload(command.payload)
   } else if (command.type === LIVE_PLAY_COMMAND_TYPES.CLEAR_HAZARDS) {
     expectClearHazardsScopes(command, expectClearHazardsPayload(command.payload))
+  } else if (command.type === LIVE_PLAY_COMMAND_TYPES.EDIT_HAZARDS) {
+    expectEditHazardsScopes(command, expectEditHazardsPayload(command.payload))
   } else if (command.type === LIVE_PLAY_COMMAND_TYPES.CLEAR_FIELD_EFFECTS) {
     expectClearFieldEffectsPayload(command.payload)
   } else if (command.type === LIVE_PLAY_COMMAND_TYPES.SET_FIELD_EFFECT) {
@@ -812,6 +870,139 @@ const applyClearHazards = (
     previous,
     current: current.map(cloneHazard),
     removed,
+  }
+}
+
+const upsertHazardInLane = (
+  hazards: readonly MapHazardV2[],
+  hazard: MapHazardV2,
+): MapHazardV2[] => {
+  const next = hazards.map(cloneHazard)
+  const index = next.findIndex((existing) => sameHazardLane(existing, hazard))
+  if (index >= 0) {
+    next[index] = cloneHazard(hazard)
+    return next
+  }
+  next.push(cloneHazard(hazard))
+  return next
+}
+
+const removeHazardFromLane = (
+  hazards: readonly MapHazardV2[],
+  cell: HazardCellState & { readonly kind?: MapHazardKind },
+): MapHazardV2[] => hazards
+  .filter((hazard) => {
+    if (!cellMatchesHazard(hazard, cell)) return true
+    return cell.kind !== undefined && hazard.kind !== cell.kind
+  })
+  .map(cloneHazard)
+
+const hazardListsEqual = (
+  left: readonly MapHazardV2[],
+  right: readonly MapHazardV2[],
+): boolean => left.length === right.length && left.every((hazard, index) => hazardEquals(hazard, right[index]!))
+
+const hazardsMissingFrom = (
+  source: readonly MapHazardV2[],
+  target: readonly MapHazardV2[],
+): MapHazardV2[] => source
+  .filter((hazard) => !target.some((candidate) => hazardEquals(candidate, hazard)))
+  .map(cloneHazard)
+
+const hazardCellBatchPatch = (
+  cell: HazardCellState,
+  previous: readonly MapHazardV2[],
+  current: readonly MapHazardV2[],
+): HazardCellBatchPatchPayload => {
+  const placed = hazardsMissingFrom(current, previous)
+  const removed = hazardsMissingFrom(previous, current)
+  return {
+    cell: cloneCell(cell),
+    previous: previous.map(cloneHazard),
+    current: current.map(cloneHazard),
+    ...(placed.length === 0 ? {} : { placed }),
+    ...(removed.length === 0 ? {} : { removed }),
+  }
+}
+
+const hazardsAtCellFromLane = (
+  hazards: readonly MapHazardV2[],
+  cell: HazardCellState,
+): readonly MapHazardV2[] => hazards.filter((hazard) => cellMatchesHazard(hazard, cell)).map(cloneHazard)
+
+const assertEditHazardsOperationsInBounds = (
+  command: LivePlayMapEffectCommand,
+  context: ResolvedMapEffectsContext,
+  operations: readonly EditHazardOperation[],
+): void => {
+  for (const operation of operations) {
+    const cell = editHazardOperationCell(operation)
+    if (hazardInBounds(cell, context.map.dimensions)) continue
+    rejectLivePlayCommand(
+      'invalid',
+      `Hazards cannot be edited at ${cell.x},${cell.y},${cell.z}; the cell is outside map ${command.mapSlug}.`,
+      { currentState: { cell, hazards: hazardsAtCell(context.map, cell) } },
+    )
+  }
+}
+
+const applyEditHazardOperation = (
+  hazards: readonly MapHazardV2[],
+  operation: EditHazardOperation,
+): MapHazardV2[] => (
+  operation.action === 'upsert'
+    ? upsertHazardInLane(hazards, operation.hazard)
+    : removeHazardFromLane(hazards, operation.cell)
+)
+
+const applyEditHazards = (
+  command: LivePlayMapEffectCommand,
+  context: ResolvedMapEffectsContext,
+  timestamp: number,
+): AppliedHazardChange => {
+  if (command.type !== LIVE_PLAY_COMMAND_TYPES.EDIT_HAZARDS) {
+    rejectLivePlayCommand('invalid', 'applyEditHazards only handles editHazards commands')
+  }
+
+  const payload = expectEditHazardsPayload(command.payload)
+  assertEditHazardsOperationsInBounds(command, context, payload.operations)
+
+  const previous = cloneHazards(context.map.hazards)
+  let current = previous.map(cloneHazard)
+  const cellsByKey = new Map<string, HazardCellState>()
+  for (const operation of payload.operations) {
+    const cell = editHazardOperationCell(operation)
+    const key = mapHazardCellKey(cell)
+    if (!cellsByKey.has(key)) cellsByKey.set(key, cloneCell(cell))
+    current = applyEditHazardOperation(current, operation)
+  }
+
+  const changes = [...cellsByKey.values()]
+    .map((cell) => hazardCellBatchPatch(
+      cell,
+      hazardsAtCellFromLane(previous, cell),
+      hazardsAtCellFromLane(current, cell),
+    ))
+    .filter((change) => !hazardListsEqual(change.previous, change.current))
+
+  if (changes.length === 0) {
+    rejectLivePlayCommand('no-op', `editHazards did not change any hazards on map ${command.mapSlug}.`, {
+      currentState: { hazards: previous },
+    })
+  }
+
+  const nextMap = timestampedMap({
+    ...context.map,
+    hazards: current.map(cloneHazard),
+  }, timestamp)
+
+  return {
+    lane: 'hazards',
+    changeKind: 'edit',
+    nextMap,
+    changes,
+    previous,
+    current: current.map(cloneHazard),
   }
 }
 
@@ -1068,6 +1259,7 @@ const applyMapEffectsChange = (
   if (command.type === LIVE_PLAY_COMMAND_TYPES.PLACE_HAZARD) return applyPlaceHazard(command, context, timestamp)
   if (command.type === LIVE_PLAY_COMMAND_TYPES.REMOVE_HAZARD) return applyRemoveHazard(command, context, timestamp)
   if (command.type === LIVE_PLAY_COMMAND_TYPES.CLEAR_HAZARDS) return applyClearHazards(command, context, timestamp)
+  if (command.type === LIVE_PLAY_COMMAND_TYPES.EDIT_HAZARDS) return applyEditHazards(command, context, timestamp)
   if (command.type === LIVE_PLAY_COMMAND_TYPES.CLEAR_FIELD_EFFECTS) return applyClearFieldEffects(command, context, timestamp)
   if (command.type === LIVE_PLAY_COMMAND_TYPES.SET_FIELD_EFFECT) return applySetFieldEffect(command, context, timestamp)
   if (command.type === LIVE_PLAY_COMMAND_TYPES.REMOVE_FIELD_EFFECT) return applyRemoveFieldEffect(command, context, timestamp)
@@ -1098,6 +1290,28 @@ const hazardPatch = (
         previous: change.previous.map(cloneHazard),
         current: change.current.map(cloneHazard),
         removed: change.removed.map(cloneHazard),
+      },
+    }
+  }
+
+  if (change.changeKind === 'edit') {
+    return {
+      schemaVersion: command.schemaVersion,
+      type: LIVE_PLAY_PATCH_TYPES.MAP_HAZARDS,
+      mapSlug: command.mapSlug,
+      revision,
+      scopes: [mapScope('hazards')],
+      payload: {
+        command: LIVE_PLAY_COMMAND_TYPES.EDIT_HAZARDS,
+        changes: change.changes.map((entry) => ({
+          cell: cloneCell(entry.cell),
+          previous: entry.previous.map(cloneHazard),
+          current: entry.current.map(cloneHazard),
+          ...(entry.placed === undefined ? {} : { placed: entry.placed.map(cloneHazard) }),
+          ...(entry.removed === undefined ? {} : { removed: entry.removed.map(cloneHazard) }),
+        })),
+        previous: change.previous.map(cloneHazard),
+        current: change.current.map(cloneHazard),
       },
     }
   }

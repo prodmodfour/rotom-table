@@ -65,6 +65,7 @@ export const MAP_API_PATHS = {
   placeHazard: '/api/maps/hazards/place',
   removeHazard: '/api/maps/hazards/remove',
   clearHazards: '/api/maps/hazards/clear',
+  editHazards: '/api/maps/hazards/edit',
   buildTerrainVoxel: '/api/maps/terrain/build',
   removeTerrainVoxel: '/api/maps/terrain/remove',
   editTerrainVoxels: '/api/maps/terrain/edit',

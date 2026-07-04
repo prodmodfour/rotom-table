@@ -161,6 +161,26 @@ const storedClearFieldEffectsCommandBody = (overrides: Partial<Record<string, un
   ...overrides,
 })
 
+const storedEditHazardsCommandBody = (overrides: Partial<Record<string, unknown>> = {}): Record<string, unknown> => ({
+  schemaVersion: LIVE_PLAY_COMMAND_SCHEMA_VERSION,
+  opId: nextStoredOpId('hazards'),
+  mapSlug: 'arena-map',
+  baseRevision: 4,
+  type: LIVE_PLAY_COMMAND_TYPES.EDIT_HAZARDS,
+  scopes: [
+    { kind: 'map', lane: 'hazards', cell: { x: 1, y: 0, z: 2 } },
+    { kind: 'map', lane: 'hazards', cell: { x: 3, y: 0, z: 4 } },
+  ],
+  payload: {
+    operations: [
+      { action: 'upsert', hazard: { kind: 'spikes', x: 1, y: 0, z: 2 } },
+      { action: 'remove', cell: { x: 3, y: 0, z: 4, kind: 'fire' } },
+    ],
+  },
+  clientId: 'stored-client',
+  ...overrides,
+})
+
 const storedEditTerrainCommandBody = (overrides: Partial<Record<string, unknown>> = {}): Record<string, unknown> => ({
   schemaVersion: LIVE_PLAY_COMMAND_SCHEMA_VERSION,
   opId: nextStoredOpId('terrain'),
@@ -547,6 +567,52 @@ const acceptedClearHazardsResponse = (
           && candidate.y === hazard.y
           && candidate.z === hazard.z
         ))),
+      },
+    }],
+  }
+}
+
+const acceptedEditHazardsResponse = (
+  command: Record<string, unknown>,
+  options: {
+    readonly previousRevision?: number
+    readonly revision?: number
+    readonly previous?: readonly Record<string, unknown>[]
+    readonly current?: readonly Record<string, unknown>[]
+  } = {},
+): Record<string, unknown> => {
+  const previous = options.previous ?? [{ kind: 'fire', x: 3, y: 0, z: 4 }]
+  const current = options.current ?? [{ kind: 'spikes', x: 1, y: 0, z: 2 }]
+  return {
+    ok: true,
+    opId: command.opId,
+    mapSlug: command.mapSlug,
+    previousRevision: options.previousRevision ?? 4,
+    revision: options.revision ?? 5,
+    patches: [{
+      schemaVersion: LIVE_PLAY_COMMAND_SCHEMA_VERSION,
+      type: LIVE_PLAY_PATCH_TYPES.MAP_HAZARDS,
+      mapSlug: command.mapSlug,
+      revision: options.revision ?? 5,
+      scopes: [{ kind: 'map', lane: 'hazards' }],
+      payload: {
+        command: LIVE_PLAY_COMMAND_TYPES.EDIT_HAZARDS,
+        changes: [
+          {
+            cell: { x: 1, y: 0, z: 2 },
+            previous: [],
+            current: current.filter((hazard) => hazard.x === 1 && hazard.y === 0 && hazard.z === 2),
+            placed: current.filter((hazard) => hazard.x === 1 && hazard.y === 0 && hazard.z === 2),
+          },
+          {
+            cell: { x: 3, y: 0, z: 4 },
+            previous: previous.filter((hazard) => hazard.x === 3 && hazard.y === 0 && hazard.z === 4),
+            current: current.filter((hazard) => hazard.x === 3 && hazard.y === 0 && hazard.z === 4),
+            removed: previous.filter((hazard) => hazard.x === 3 && hazard.y === 0 && hazard.z === 4),
+          },
+        ],
+        previous,
+        current,
       },
     }],
   }
@@ -4240,6 +4306,275 @@ describe('useLivePlayCommands', () => {
     const abandonQueued = await enqueueStoredCommand(abandonOutbox, {
       requestPath: MAP_API_PATHS.clearFieldEffects,
       body: storedClearFieldEffectsCommandBody(),
+    })
+    const abandonEntry = await makeStoredCommandUncertain(abandonOutbox, abandonQueued)
+    const abandonActions = createCommandHarness({ slug: 'arena-map', outbox: abandonOutbox }).actions
+    apiMocks.postJson.mockImplementationOnce(async (request: string, body: unknown) => {
+      expect(request).toBe(MAP_API_PATHS.operationAbandon)
+      expect(statusCommandRecord(body)).toEqual(abandonEntry.body)
+      return operationAbandonmentResponse(abandonEntry, 'abandoned', abandonedAbandonmentResult(abandonEntry))
+    })
+
+    await expect(abandonActions.abandonOutboxCommand(abandonEntry.opId)).resolves.toMatchObject({
+      status: 'abandoned',
+      opId: abandonEntry.opId,
+    })
+    await expect(abandonOutbox.get(abandonEntry.opId)).resolves.toBeNull()
+  })
+
+  it('posts editHazards batches with normalized payload scopes and patch-first adoption', async () => {
+    const map = ref(mapFixture())
+    map.value.hazards = [{ kind: 'fire', x: 3, y: 0, z: 4 }]
+    const applyPersistedMap = vi.fn()
+    apiMocks.postJson.mockImplementation(async (request: string, body: unknown) => {
+      const command = commandRecord(body)
+      expect(request).toBe(MAP_API_PATHS.editHazards)
+      return acceptedEditHazardsResponse(command, {
+        previous: [{ kind: 'fire', x: 3, y: 0, z: 4 }],
+        current: [{ kind: 'spikes', x: 1, y: 0, z: 2 }],
+      })
+    })
+
+    const actions = useTestLivePlayCommands({
+      slug: 'arena-map',
+      map,
+      mapRevision: ref(4),
+      applyPersistedMap,
+    })
+
+    const result = await actions.editHazards({
+      operations: [
+        { action: 'upsert', hazard: { kind: 'spikes', x: 1, y: 0, z: 2 } },
+        { action: 'remove', cell: { x: 3, y: 0, z: 4, kind: 'fire' } },
+      ],
+    })
+
+    expect(result).toMatchObject({ dispatched: true, opId: expect.stringMatching(LIVE_PLAY_OP_ID_RE) })
+    expect(apiMocks.postJson).toHaveBeenCalledTimes(1)
+    expect(apiMocks.postJson).toHaveBeenLastCalledWith(MAP_API_PATHS.editHazards, expect.objectContaining({
+      schemaVersion: LIVE_PLAY_COMMAND_SCHEMA_VERSION,
+      opId: result.opId,
+      mapSlug: 'arena-map',
+      baseRevision: 4,
+      type: LIVE_PLAY_COMMAND_TYPES.EDIT_HAZARDS,
+      scopes: [
+        { kind: 'map', lane: 'hazards', cell: { x: 1, y: 0, z: 2 } },
+        { kind: 'map', lane: 'hazards', cell: { x: 3, y: 0, z: 4 } },
+      ],
+      payload: {
+        operations: [
+          { action: 'upsert', hazard: { kind: 'spikes', x: 1, y: 0, z: 2 } },
+          { action: 'remove', cell: { x: 3, y: 0, z: 4, kind: 'fire' } },
+        ],
+      },
+      clientId: 'ssr',
+    }))
+    expect(map.value.revision).toBe(5)
+    expect(map.value.hazards).toEqual([{ kind: 'spikes', x: 1, y: 0, z: 2 }])
+    expect(applyPersistedMap).not.toHaveBeenCalled()
+    expect(actions.pendingPredictionCount.value).toBe(0)
+  })
+
+  it('rejects oversized editHazards batches before durable storage or HTTP send', async () => {
+    const delegate = createTestOutbox()
+    const enqueue = vi.fn(delegate.enqueue.bind(delegate))
+    const actions = useTestLivePlayCommands({
+      slug: 'arena-map',
+      mapRevision: ref(4),
+      outbox: wrapOutbox(delegate, { enqueue }),
+    })
+
+    const result = await actions.editHazards({
+      operations: Array.from({ length: LIVE_PLAY_BATCH_MAX_HAZARD_CELLS + 1 }, (_, index) => ({
+        action: 'upsert' as const,
+        hazard: { kind: 'spikes' as const, x: index, y: 0, z: 1 },
+      })),
+    })
+
+    expect(result).toMatchObject({
+      dispatched: false,
+      message: expect.stringContaining(`payload.operations must contain at most ${LIVE_PLAY_BATCH_MAX_HAZARD_CELLS} hazard cell operations`),
+    })
+    expect(enqueue).not.toHaveBeenCalled()
+    expect(apiMocks.postJson).not.toHaveBeenCalled()
+    await expect(delegate.list()).resolves.toEqual([])
+  })
+
+  it('blocks conflicting hazard commands while editHazards is pending but allows unrelated token actions', async () => {
+    const hazardGate = deferred<void>()
+    const moveGate = deferred<void>()
+    apiMocks.postJson.mockImplementation(async (request: string, body: unknown) => {
+      const command = commandRecord(body)
+      if (request === MAP_API_PATHS.editHazards) {
+        await hazardGate.promise
+        return acceptedEditHazardsResponse(command)
+      }
+      if (request === MAP_API_PATHS.moveToken) {
+        await moveGate.promise
+        return acceptedMoveTokenResponse(command, { previousRevision: 4, revision: 5 })
+      }
+      throw new Error(`Unexpected request ${request}`)
+    })
+
+    const actions = useTestLivePlayCommands({ slug: 'arena-map', mapRevision: ref(4) })
+    const edit = actions.editHazards({
+      operations: [{ action: 'upsert', hazard: { kind: 'spikes', x: 2, y: 0, z: 2 } }],
+    })
+
+    expect(actions.pendingCommandCount.value).toBe(1)
+    const blocked = await actions.removeHazard({ cell: { x: 2, y: 0, z: 2 } })
+    expect(blocked).toEqual({
+      dispatched: false,
+      message: 'Another pending command is already changing this map hazards lane.',
+    })
+
+    const move = actions.moveToken({ placementId: 'token-pikachu', position: { x: 2, y: 0, z: 1 } })
+    await vi.waitFor(() => expect(apiMocks.postJson).toHaveBeenCalledTimes(2))
+    expect(apiMocks.postJson).toHaveBeenNthCalledWith(1, MAP_API_PATHS.editHazards, expect.objectContaining({
+      type: LIVE_PLAY_COMMAND_TYPES.EDIT_HAZARDS,
+      scopes: [{ kind: 'map', lane: 'hazards', cell: { x: 2, y: 0, z: 2 } }],
+    }))
+    expect(apiMocks.postJson).toHaveBeenNthCalledWith(2, MAP_API_PATHS.moveToken, expect.objectContaining({
+      type: LIVE_PLAY_COMMAND_TYPES.MOVE_TOKEN,
+      scopes: [{ kind: 'token', placementId: 'token-pikachu', field: 'position' }],
+    }))
+
+    hazardGate.resolve()
+    moveGate.resolve()
+    await expect(Promise.all([edit, move])).resolves.toEqual([
+      expect.objectContaining({ dispatched: true }),
+      expect.objectContaining({ dispatched: true }),
+    ])
+    expect(actions.pendingCommandCount.value).toBe(0)
+  })
+
+  it('handles editHazards rejected, uncertain, and duplicate terminal responses through the outbox', async () => {
+    const payload = {
+      operations: [{ action: 'upsert' as const, hazard: { kind: 'spikes' as const, x: 2, y: 0, z: 2 } }],
+    }
+    const cases = [
+      {
+        name: 'rejected',
+        response: (body: Record<string, unknown>) => ({
+          ok: false,
+          opId: body.opId,
+          mapSlug: body.mapSlug,
+          reason: 'conflict',
+          message: 'Hazards changed first',
+          currentRevision: 5,
+        }),
+        expected: { dispatched: false, message: 'Hazards changed first' },
+      },
+      {
+        name: 'uncertain',
+        response: () => { throw new Error('Network down') },
+        expected: { dispatched: false, uncertain: true },
+      },
+      {
+        name: 'duplicate accepted',
+        response: (body: Record<string, unknown>) => ({
+          ok: true,
+          duplicate: true,
+          opId: body.opId,
+          original: acceptedEditHazardsResponse(body),
+        }),
+        expected: { dispatched: true },
+      },
+      {
+        name: 'duplicate rejected',
+        response: (body: Record<string, unknown>) => ({
+          ok: true,
+          duplicate: true,
+          opId: body.opId,
+          original: {
+            ok: false,
+            opId: body.opId,
+            mapSlug: body.mapSlug,
+            reason: 'stale-revision',
+            message: 'Stale hazards',
+            currentRevision: 5,
+          },
+        }),
+        expected: { dispatched: false, message: 'Stale hazards' },
+      },
+    ] as const
+
+    for (const terminalCase of cases) {
+      apiMocks.postJson.mockReset()
+      const outbox = createTestOutbox()
+      apiMocks.postJson.mockImplementation(async (_request: string, body: unknown) => terminalCase.response(commandRecord(body)))
+      const { actions } = createCommandHarness({ slug: 'arena-map', mapRevision: ref(4), outbox })
+
+      const result = await actions.editHazards(payload)
+
+      expect(result, terminalCase.name).toMatchObject({
+        ...terminalCase.expected,
+        opId: expect.stringMatching(LIVE_PLAY_OP_ID_RE),
+      })
+      if (terminalCase.name === 'uncertain') {
+        await expect(outbox.get(result.opId!), terminalCase.name).resolves.toMatchObject({
+          state: 'uncertain',
+          requestPath: MAP_API_PATHS.editHazards,
+          body: expect.objectContaining({
+            opId: result.opId,
+            type: LIVE_PLAY_COMMAND_TYPES.EDIT_HAZARDS,
+            payload,
+          }),
+        })
+      } else {
+        await expect(outbox.get(result.opId!), terminalCase.name).resolves.toBeNull()
+      }
+    }
+  })
+
+  it('retries, status-checks, and abandons editHazards outbox entries with the exact stored command body', async () => {
+    const retryOutbox = createTestOutbox()
+    apiMocks.postJson.mockRejectedValueOnce(new Error('Network down'))
+    const retryActions = createCommandHarness({ slug: 'arena-map', mapRevision: ref(4), outbox: retryOutbox }).actions
+    const uncertain = await retryActions.editHazards({
+      operations: [{ action: 'upsert', hazard: { kind: 'spikes', x: 2, y: 0, z: 2 } }],
+    })
+    const retryEntry = await retryOutbox.get(uncertain.opId!)
+    expect(retryEntry).toMatchObject({ state: 'uncertain', requestPath: MAP_API_PATHS.editHazards })
+
+    apiMocks.postJson.mockReset()
+    apiMocks.postJson.mockImplementationOnce(async (request: string, body: unknown) => {
+      expect(request).toBe(MAP_API_PATHS.editHazards)
+      expect(body).toEqual(retryEntry!.body)
+      return acceptedEditHazardsResponse(commandRecord(body), {
+        previous: [{ kind: 'fire', x: 3, y: 0, z: 4 }],
+        current: [{ kind: 'spikes', x: 2, y: 0, z: 2 }],
+      })
+    })
+    await expect(retryActions.retryOutboxCommand(retryEntry!.opId)).resolves.toMatchObject({
+      dispatched: true,
+      opId: retryEntry!.opId,
+    })
+    await expect(retryOutbox.get(retryEntry!.opId)).resolves.toBeNull()
+
+    const statusOutbox = createTestOutbox()
+    const statusQueued = await enqueueStoredCommand(statusOutbox, {
+      requestPath: MAP_API_PATHS.editHazards,
+      body: storedEditHazardsCommandBody(),
+    })
+    const statusEntry = await makeStoredCommandUncertain(statusOutbox, statusQueued)
+    const statusActions = createCommandHarness({ slug: 'arena-map', outbox: statusOutbox }).actions
+    apiMocks.postJson.mockImplementationOnce(async (request: string, body: unknown) => {
+      expect(request).toBe(MAP_API_PATHS.operationStatus)
+      expect(statusCommandRecord(body)).toEqual(statusEntry.body)
+      return operationStatusTerminalResponse(statusEntry, acceptedEditHazardsResponse(statusEntry.body))
+    })
+
+    await expect(statusActions.checkOutboxCommandStatus(statusEntry.opId)).resolves.toMatchObject({
+      status: 'accepted',
+      opId: statusEntry.opId,
+    })
+    await expect(statusOutbox.get(statusEntry.opId)).resolves.toBeNull()
+
+    const abandonOutbox = createTestOutbox()
+    const abandonQueued = await enqueueStoredCommand(abandonOutbox, {
+      requestPath: MAP_API_PATHS.editHazards,
+      body: storedEditHazardsCommandBody(),
     })
     const abandonEntry = await makeStoredCommandUncertain(abandonOutbox, abandonQueued)
     const abandonActions = createCommandHarness({ slug: 'arena-map', outbox: abandonOutbox }).actions

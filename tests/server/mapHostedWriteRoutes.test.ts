@@ -112,6 +112,7 @@ const previousInitiativeRoute = (await import('../../server/api/maps/initiative/
 const placeHazardRoute = (await import('../../server/api/maps/hazards/place.post')).default
 const removeHazardRoute = (await import('../../server/api/maps/hazards/remove.post')).default
 const clearHazardsRoute = (await import('../../server/api/maps/hazards/clear.post')).default
+const editHazardsRoute = (await import('../../server/api/maps/hazards/edit.post')).default
 const buildTerrainRoute = (await import('../../server/api/maps/terrain/build.post')).default
 const removeTerrainRoute = (await import('../../server/api/maps/terrain/remove.post')).default
 const editTerrainRoute = (await import('../../server/api/maps/terrain/edit.post')).default
@@ -279,6 +280,19 @@ describe('map hosted-write API routes', () => {
           type: 'clearHazards',
           scopes: [{ kind: 'map', lane: 'hazards' }],
           payload: { mode: 'all' },
+        },
+        mock: mocks.executeLivePlayMapEffectsCommandUseCase,
+      },
+      {
+        route: editHazardsRoute,
+        body: {
+          schemaVersion: 1,
+          opId: 'op_hostededhz',
+          mapSlug: 'arena',
+          baseRevision: 0,
+          type: 'editHazards',
+          scopes: [{ kind: 'map', lane: 'hazards', cell: { x: 1, y: 0, z: 1 } }],
+          payload: { operations: [{ action: 'upsert', hazard: { kind: 'spikes', x: 1, y: 0, z: 1 } }] },
         },
         mock: mocks.executeLivePlayMapEffectsCommandUseCase,
       },

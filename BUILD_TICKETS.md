@@ -465,7 +465,7 @@ Status: DONE
 
 ## 015 — LP-S4-015 — Implement server/API/client flow for hazard cell batches
 
-Status: TODO
+Status: DONE
 
 **Goal:** Let hazard brush-like live-play edits commit in one authoritative operation.
 
