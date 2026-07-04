@@ -9,7 +9,13 @@ import { MAP_INTERACTION_MODES, type MapInteractionMode } from '#shared/mapInter
 import {
   LIVE_PLAY_COMMAND_SCHEMA_VERSION,
   LIVE_PLAY_COMMAND_TYPES,
+  createClearHazardsCommandScopes,
+  createEditHazardsCommandScopes,
+  createEditTerrainVoxelsCommandScopes,
   createLivePlayOpId,
+  type ClearHazardsPayload,
+  type EditHazardsPayload,
+  type EditTerrainVoxelsPayload,
   type LivePlayCommandEnvelope,
 } from '#shared/livePlayCommands'
 import type { LivePlayAcceptedRealtimeEvent } from '#shared/livePlayRealtimeEvents'
@@ -42,6 +48,7 @@ import { executeLivePlaySheetCommandUseCase } from '../../server/useCases/applyL
 import { executeLivePlayInitiativeCommandUseCase } from '../../server/useCases/applyLivePlayInitiativeCommand'
 import { executeLivePlayMapEffectsCommandUseCase } from '../../server/useCases/applyLivePlayMapEffectsCommand'
 import { executeLivePlaySceneCommandUseCase } from '../../server/useCases/applyLivePlaySceneCommand'
+import { executeLivePlayTerrainCommandUseCase } from '../../server/useCases/applyLivePlayTerrainCommand'
 import { getLivePlayOperationStatusUseCase } from '../../server/useCases/getLivePlayOperationStatus'
 import { abandonLivePlayOperationUseCase } from '../../server/useCases/abandonLivePlayOperation'
 import { loadLiveTableSnapshotUseCase } from '../../server/useCases/loadLiveTableSnapshot'
@@ -56,7 +63,7 @@ import type { ApiGetOptions } from '../../src/utils/apiClient'
 import { MAP_API_PATHS, SHEET_API_PATHS } from '../../src/utils/apiRoutes'
 import { deepCloneJson } from '../../src/utils/serialization'
 import type { CharacterSheet } from '../../src/types/characterSheet'
-import type { TabletopMap } from '../../src/types/map'
+import type { MapHazardV2, TabletopMap } from '../../src/types/map'
 import type { TrainerSheet } from '../../src/types/trainerSheet'
 
 type UnknownRecord = Record<string, unknown>
@@ -625,6 +632,9 @@ export class FullSystemChaosHarness {
       ...(record.map === undefined ? {} : { map: record.map }),
       ...(record.placement === undefined ? {} : { placement: record.placement }),
       ...(record.sheetUpdates === undefined ? {} : { sheetUpdates: record.sheetUpdates }),
+      ...(record.hazards === undefined ? {} : { hazards: record.hazards }),
+      ...(record.fieldEffects === undefined ? {} : { fieldEffects: record.fieldEffects }),
+      ...(record.voxels === undefined ? {} : { voxels: record.voxels }),
       ...(record.capture === undefined ? {} : { capture: record.capture }),
       ...(record.move === undefined ? {} : { move: record.move }),
     }
@@ -679,12 +689,52 @@ export class FullSystemChaosHarness {
         expectedType: LIVE_PLAY_COMMAND_TYPES.NEXT_INITIATIVE,
       }, deps)
     }
+    if (path === MAP_API_PATHS.placeHazard) {
+      return executeLivePlayMapEffectsCommandUseCase({
+        role: actor.role,
+        clientId: actor.clientId,
+        command,
+        expectedType: LIVE_PLAY_COMMAND_TYPES.PLACE_HAZARD,
+      }, deps)
+    }
+    if (path === MAP_API_PATHS.removeHazard) {
+      return executeLivePlayMapEffectsCommandUseCase({
+        role: actor.role,
+        clientId: actor.clientId,
+        command,
+        expectedType: LIVE_PLAY_COMMAND_TYPES.REMOVE_HAZARD,
+      }, deps)
+    }
+    if (path === MAP_API_PATHS.clearHazards) {
+      return executeLivePlayMapEffectsCommandUseCase({
+        role: actor.role,
+        clientId: actor.clientId,
+        command,
+        expectedType: LIVE_PLAY_COMMAND_TYPES.CLEAR_HAZARDS,
+      }, deps)
+    }
+    if (path === MAP_API_PATHS.editHazards) {
+      return executeLivePlayMapEffectsCommandUseCase({
+        role: actor.role,
+        clientId: actor.clientId,
+        command,
+        expectedType: LIVE_PLAY_COMMAND_TYPES.EDIT_HAZARDS,
+      }, deps)
+    }
     if (path === MAP_API_PATHS.setFieldEffect) {
       return executeLivePlayMapEffectsCommandUseCase({
         role: actor.role,
         clientId: actor.clientId,
         command,
         expectedType: LIVE_PLAY_COMMAND_TYPES.SET_FIELD_EFFECT,
+      }, deps)
+    }
+    if (path === MAP_API_PATHS.editTerrainVoxels) {
+      return executeLivePlayTerrainCommandUseCase({
+        role: actor.role,
+        clientId: actor.clientId,
+        command,
+        expectedType: LIVE_PLAY_COMMAND_TYPES.EDIT_TERRAIN_VOXELS,
       }, deps)
     }
     if (path === MAP_API_PATHS.setScene) {
@@ -715,6 +765,96 @@ export class FullSystemChaosHarness {
       type: LIVE_PLAY_COMMAND_TYPES.MOVE_TOKEN,
       scopes: [{ kind: 'token', placementId, field: 'position' }],
       payload: { placementId, position: input.position },
+      ...(input.clientId ? { clientId: input.clientId } : {}),
+    } as LivePlayCommandEnvelope
+  }
+
+  placeHazardCommand(input: {
+    readonly opId?: string
+    readonly baseRevision: number
+    readonly hazard: MapHazardV2
+    readonly clientId?: string
+  }): LivePlayCommandEnvelope {
+    return {
+      schemaVersion: LIVE_PLAY_COMMAND_SCHEMA_VERSION,
+      opId: input.opId ?? createLivePlayOpId(),
+      mapSlug: 'chaos-arena',
+      baseRevision: input.baseRevision,
+      type: LIVE_PLAY_COMMAND_TYPES.PLACE_HAZARD,
+      scopes: [{ kind: 'map', lane: 'hazards' }],
+      payload: { hazard: input.hazard },
+      ...(input.clientId ? { clientId: input.clientId } : {}),
+    } as LivePlayCommandEnvelope
+  }
+
+  removeHazardCommand(input: {
+    readonly opId?: string
+    readonly baseRevision: number
+    readonly cell: { readonly x: number; readonly y: number; readonly z: number; readonly kind?: string }
+    readonly clientId?: string
+  }): LivePlayCommandEnvelope {
+    return {
+      schemaVersion: LIVE_PLAY_COMMAND_SCHEMA_VERSION,
+      opId: input.opId ?? createLivePlayOpId(),
+      mapSlug: 'chaos-arena',
+      baseRevision: input.baseRevision,
+      type: LIVE_PLAY_COMMAND_TYPES.REMOVE_HAZARD,
+      scopes: [{ kind: 'map', lane: 'hazards' }],
+      payload: { cell: input.cell },
+      ...(input.clientId ? { clientId: input.clientId } : {}),
+    } as LivePlayCommandEnvelope
+  }
+
+  clearHazardsCommand(input: {
+    readonly opId?: string
+    readonly baseRevision: number
+    readonly payload: ClearHazardsPayload
+    readonly clientId?: string
+  }): LivePlayCommandEnvelope {
+    return {
+      schemaVersion: LIVE_PLAY_COMMAND_SCHEMA_VERSION,
+      opId: input.opId ?? createLivePlayOpId(),
+      mapSlug: 'chaos-arena',
+      baseRevision: input.baseRevision,
+      type: LIVE_PLAY_COMMAND_TYPES.CLEAR_HAZARDS,
+      scopes: createClearHazardsCommandScopes(input.payload),
+      payload: input.payload,
+      ...(input.clientId ? { clientId: input.clientId } : {}),
+    } as LivePlayCommandEnvelope
+  }
+
+  editHazardsCommand(input: {
+    readonly opId?: string
+    readonly baseRevision: number
+    readonly payload: EditHazardsPayload
+    readonly clientId?: string
+  }): LivePlayCommandEnvelope {
+    return {
+      schemaVersion: LIVE_PLAY_COMMAND_SCHEMA_VERSION,
+      opId: input.opId ?? createLivePlayOpId(),
+      mapSlug: 'chaos-arena',
+      baseRevision: input.baseRevision,
+      type: LIVE_PLAY_COMMAND_TYPES.EDIT_HAZARDS,
+      scopes: createEditHazardsCommandScopes(input.payload),
+      payload: input.payload,
+      ...(input.clientId ? { clientId: input.clientId } : {}),
+    } as LivePlayCommandEnvelope
+  }
+
+  editTerrainVoxelsCommand(input: {
+    readonly opId?: string
+    readonly baseRevision: number
+    readonly payload: EditTerrainVoxelsPayload
+    readonly clientId?: string
+  }): LivePlayCommandEnvelope {
+    return {
+      schemaVersion: LIVE_PLAY_COMMAND_SCHEMA_VERSION,
+      opId: input.opId ?? createLivePlayOpId(),
+      mapSlug: 'chaos-arena',
+      baseRevision: input.baseRevision,
+      type: LIVE_PLAY_COMMAND_TYPES.EDIT_TERRAIN_VOXELS,
+      scopes: createEditTerrainVoxelsCommandScopes(input.payload),
+      payload: input.payload,
       ...(input.clientId ? { clientId: input.clientId } : {}),
     } as LivePlayCommandEnvelope
   }

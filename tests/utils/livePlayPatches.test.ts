@@ -300,6 +300,35 @@ describe('live-play patch application', () => {
     expect(map.voxels).toEqual([{ x: 2, y: 0, z: 2, materialId: 'shallow_water' }])
   })
 
+  it('applies single-cell hazard patches without replacing unrelated hazard cells', () => {
+    const map = baseMap({
+      hazards: [
+        { kind: 'spikes', x: 1, y: 0, z: 2 },
+        { kind: 'fire', x: 2, y: 0, z: 2 },
+      ],
+    })
+
+    const result = applyLivePlayPatchesToMap({
+      map,
+      mapSlug: 'arena',
+      previousRevision: 4,
+      revision: 5,
+      patches: [{
+        ...patchBase(LIVE_PLAY_PATCH_TYPES.MAP_HAZARDS, {
+          command: 'removeHazard',
+          cell: { x: 1, y: 0, z: 2 },
+          previous: [{ kind: 'spikes', x: 1, y: 0, z: 2 }],
+          current: [],
+          removed: [{ kind: 'spikes', x: 1, y: 0, z: 2 }],
+        }),
+        scopes: [{ kind: 'map', lane: 'hazards' }],
+      }],
+    })
+
+    expect(result).toMatchObject({ ok: true, applied: true, revision: 5 })
+    expect(map.hazards).toEqual([{ kind: 'fire', x: 2, y: 0, z: 2 }])
+  })
+
   it('applies sent-out Pokémon placement patches', () => {
     const map = baseMap()
 

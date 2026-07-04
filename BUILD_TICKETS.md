@@ -548,7 +548,7 @@ Status: DONE
 
 ## 018 — LP-S4-018 — Add batch command chaos tests
 
-Status: TODO
+Status: DONE
 
 **Goal:** Exercise batch workflows against concurrency, stale revisions, duplicate terminals, and recovery.
 

@@ -8,6 +8,7 @@ import type { ApiGetOptions } from '../../src/utils/apiClient'
 import {
   ClientTab,
   FullSystemChaosHarness,
+  chaosMap,
   deferred,
   flushAsync,
   moveTokenPosition,
@@ -64,30 +65,34 @@ const waitForReady = async (tab: ClientTab) => {
   await vi.waitFor(() => expect(tab.readiness.value).toBe(true))
 }
 
-type MoveInterceptionMode = 'hold-before-server' | 'hold-after-server' | 'fail-before-server'
+type CommandInterceptionMode = 'hold-before-server' | 'hold-after-server' | 'fail-before-server'
 
-interface MoveInterception {
-  readonly mode: MoveInterceptionMode
+interface CommandInterception {
+  readonly path: string
+  readonly mode: CommandInterceptionMode
   readonly gate: ReturnType<typeof deferred<void>>
   readonly bodies: Record<string, unknown>[]
 }
 
-const createMoveInterception = (mode: MoveInterceptionMode): MoveInterception => ({
+const createCommandInterception = (path: string, mode: CommandInterceptionMode): CommandInterception => ({
+  path,
   mode,
   gate: deferred<void>(),
   bodies: [],
 })
 
-const interceptedOpId = (interception: MoveInterception): string => {
+const createMoveInterception = (mode: CommandInterceptionMode): CommandInterception => createCommandInterception(MAP_API_PATHS.moveToken, mode)
+
+const interceptedOpId = (interception: CommandInterception): string => {
   const opId = interception.bodies[0]?.opId
   if (typeof opId !== 'string') throw new Error('Expected intercepted live-play command body to include an opId')
   return opId
 }
 
-const createInterceptableMoveApi = (
+const createInterceptableCommandApi = (
   harness: FullSystemChaosHarness,
   getTab: () => ClientTab,
-  nextInterception: { current: MoveInterception | null },
+  nextInterception: { current: CommandInterception | null },
 ): ClientTabApiHandler => ({
   getJson: (path, options) => {
     const tab = getTab()
@@ -95,7 +100,7 @@ const createInterceptableMoveApi = (
   },
   postJson: async (path, body) => {
     const tab = getTab()
-    const interception = path === MAP_API_PATHS.moveToken ? nextInterception.current : null
+    const interception = path === nextInterception.current?.path ? nextInterception.current : null
     if (interception) {
       nextInterception.current = null
       interception.bodies.push(body as Record<string, unknown>)
@@ -115,6 +120,12 @@ const createInterceptableMoveApi = (
     return harness.apiPost(path, body, tab.role.value, tab.selectedProfileId.value)
   },
 })
+
+const createInterceptableMoveApi = (
+  harness: FullSystemChaosHarness,
+  getTab: () => ClientTab,
+  nextInterception: { current: CommandInterception | null },
+): ClientTabApiHandler => createInterceptableCommandApi(harness, getTab, nextInterception)
 
 beforeEach(() => {
   vi.stubGlobal('window', {
@@ -342,9 +353,202 @@ describe('Final Wave C full-system live-play chaos hardening', () => {
     expect(tab.presentationEvents).toHaveLength(presentationCount)
   })
 
+  it('rejects a stale clearHazards batch racing a single hazard edit without partial clears', async () => {
+    const initialHazards = [
+      { kind: 'spikes' as const, x: 1, y: 0, z: 2 },
+      { kind: 'fire' as const, x: 2, y: 0, z: 2 },
+    ]
+    const remainingHazards = [{ kind: 'fire' as const, x: 2, y: 0, z: 2 }]
+    const harness = createHarness({ map: chaosMap({ hazards: initialHazards }) })
+    const nextInterception: { current: CommandInterception | null } = { current: null }
+    const tabA = await createTab(harness, {
+      label: 'hazard-clear-racer-a',
+      api: (getTab) => createInterceptableCommandApi(harness, getTab, nextInterception),
+    })
+    await waitForCaughtUp(tabA)
+    await tabA.hydrate()
+    await waitForReady(tabA)
+
+    const tabB = await createTab(harness, { label: 'hazard-clear-racer-b' })
+    await waitForCaughtUp(tabB)
+    await tabB.hydrate()
+    await waitForReady(tabB)
+
+    const heldClear = createCommandInterception(MAP_API_PATHS.clearHazards, 'hold-before-server')
+    nextInterception.current = heldClear
+    const clearAll = tabA.commands.clearHazards({ mode: 'all' })
+    await vi.waitFor(() => expect(heldClear.bodies).toHaveLength(1))
+    expect(harness.readMap().hazards).toEqual(initialHazards)
+
+    await expect(tabB.commands.removeHazard({ cell: { x: 1, y: 0, z: 2 } })).resolves.toMatchObject({ dispatched: true })
+    await vi.waitFor(() => expect(tabA.currentMap?.revision).toBe(1))
+    expect(harness.readMap().hazards).toEqual(remainingHazards)
+
+    heldClear.gate.resolve()
+    await expect(clearAll).resolves.toMatchObject({ dispatched: false, opId: interceptedOpId(heldClear) })
+    await flushAsync()
+
+    expect(harness.readMap()).toMatchObject({ revision: 1, hazards: remainingHazards })
+    expect(tabA.currentMap?.hazards).toEqual(remainingHazards)
+    expect(tabB.currentMap?.hazards).toEqual(remainingHazards)
+    expect(tabA.commands.outboxEntries.value).toEqual([])
+    expect(harness.realtime.cursorState().latestSequence).toBe(1)
+  })
+
+  it('lets a terrain batch race unrelated token movement and applies accepted HTTP/SSE terminals once', async () => {
+    const harness = createHarness()
+    const nextInterception: { current: CommandInterception | null } = { current: null }
+    const tabA = await createTab(harness, {
+      label: 'terrain-racer-a',
+      api: (getTab) => createInterceptableCommandApi(harness, getTab, nextInterception),
+    })
+    await waitForCaughtUp(tabA)
+    await tabA.hydrate()
+    await waitForReady(tabA)
+
+    const tabB = await createTab(harness, { label: 'terrain-racer-b' })
+    await waitForCaughtUp(tabB)
+    await tabB.hydrate()
+    await waitForReady(tabB)
+
+    const terrainVoxel = { x: 3, y: 0, z: 3, materialId: 'meadow_grass' }
+    const heldTerrain = createCommandInterception(MAP_API_PATHS.editTerrainVoxels, 'hold-before-server')
+    nextInterception.current = heldTerrain
+    const terrainBatch = tabA.commands.editTerrainVoxels({
+      operations: [{ action: 'upsert', voxel: terrainVoxel }],
+    })
+    await vi.waitFor(() => expect(heldTerrain.bodies).toHaveLength(1))
+    expect(harness.readMap().revision).toBe(0)
+
+    await expect(tabB.commands.moveToken({ placementId: 'token-beta', position: { x: 6, y: 0, z: 2 } }))
+      .resolves.toMatchObject({ dispatched: true })
+    await vi.waitFor(() => expect(tabA.currentMap?.revision).toBe(1))
+    expect(moveTokenPosition(tabA.currentMap, 'token-beta')).toEqual({ x: 6, y: 0, z: 2 })
+
+    heldTerrain.gate.resolve()
+    await expect(terrainBatch).resolves.toMatchObject({ dispatched: true, opId: interceptedOpId(heldTerrain) })
+    await vi.waitFor(() => expect(tabB.currentMap?.revision).toBe(2))
+    await waitForReady(tabA)
+    await waitForReady(tabB)
+
+    const terrainOpId = interceptedOpId(heldTerrain)
+    const terminalEvents = tabA.commands.commandTraces.value[terrainOpId]?.events
+      .filter((event) => event.type === 'sse-terminal' || event.type === 'http-terminal')
+      .map((event) => event.type)
+    expect(terminalEvents).toEqual(['http-terminal', 'sse-terminal'])
+    expect(harness.readMap()).toMatchObject({ revision: 2 })
+    expect(moveTokenPosition(harness.readMap(), 'token-beta')).toEqual({ x: 6, y: 0, z: 2 })
+    expect(harness.readMap().voxels).toEqual(expect.arrayContaining([expect.objectContaining(terrainVoxel)]))
+    expect(tabA.currentMap?.voxels).toEqual(expect.arrayContaining([expect.objectContaining(terrainVoxel)]))
+    expect(tabB.currentMap?.voxels).toEqual(expect.arrayContaining([expect.objectContaining(terrainVoxel)]))
+
+    const presentationCount = tabA.presentationEvents.length
+    const duplicateEvent = harness.realtime.getBySequence(harness.realtime.cursorState().latestSequence)?.event
+    if (duplicateEvent) harness.serverA.hub.publishSequencedRealtime(duplicateEvent)
+    await flushAsync()
+    expect(tabA.currentMap?.revision).toBe(2)
+    expect(tabA.currentMap?.voxels.filter((voxel) => voxel.x === 3 && voxel.y === 0 && voxel.z === 3)).toHaveLength(1)
+    expect(tabA.presentationEvents).toHaveLength(presentationCount)
+  })
+
+  it('recovers lost batch HTTP responses through status and exact-body retry without duplicate durable events', async () => {
+    const initialHazards = [
+      { kind: 'spikes' as const, x: 1, y: 0, z: 2 },
+      { kind: 'fire' as const, x: 2, y: 0, z: 2 },
+    ]
+    const remainingHazards = [{ kind: 'fire' as const, x: 2, y: 0, z: 2 }]
+    const terrainVoxel = { x: 4, y: 0, z: 4, materialId: 'shallow_water' }
+    const harness = createHarness({ map: chaosMap({ hazards: initialHazards }) })
+    harness.serverA.publishLocalWakeups = false
+    let loseNextClear = true
+    let loseNextTerrain = true
+    const lostBodies: Record<string, unknown>[] = []
+    const tab = await createTab(harness, {
+      label: 'batch-recovery-tab',
+      api: (getTab) => ({
+        getJson: (path, options) => {
+          const tab = getTab()
+          return harness.apiGet(path, options, tab.role.value, tab.selectedProfileId.value)
+        },
+        postJson: async (path, body) => {
+          const tab = getTab()
+          if (path === MAP_API_PATHS.clearHazards && loseNextClear) {
+            loseNextClear = false
+            lostBodies.push(body as Record<string, unknown>)
+            await harness.apiPost(path, body, tab.role.value, tab.selectedProfileId.value)
+            throw new Error('simulated lost clearHazards HTTP response')
+          }
+          if (path === MAP_API_PATHS.editTerrainVoxels && loseNextTerrain) {
+            loseNextTerrain = false
+            lostBodies.push(body as Record<string, unknown>)
+            await harness.apiPost(path, body, tab.role.value, tab.selectedProfileId.value)
+            throw new Error('simulated lost editTerrainVoxels HTTP response')
+          }
+          return harness.apiPost(path, body, tab.role.value, tab.selectedProfileId.value)
+        },
+      }),
+    })
+    await waitForCaughtUp(tab)
+    await tab.hydrate()
+    await waitForReady(tab)
+
+    const clearResult = await tab.commands.clearHazards({ mode: 'cells', cells: [{ x: 1, y: 0, z: 2 }] })
+    expect(clearResult).toMatchObject({ dispatched: false, uncertain: true })
+    const clearOpId = clearResult.opId
+    if (!clearOpId) throw new Error('clearHazards did not expose an opId')
+    expect(lostBodies[0]).toMatchObject({ opId: clearOpId, type: LIVE_PLAY_COMMAND_TYPES.CLEAR_HAZARDS })
+    expect(harness.readMap()).toMatchObject({ revision: 1, hazards: remainingHazards })
+    expect(tab.currentMap?.hazards).toEqual(initialHazards)
+    await tab.commands.refreshOutboxEntries()
+    expect(tab.pendingOutboxOpIds).toEqual([clearOpId])
+
+    await expect(tab.commands.checkOutboxCommandStatus(clearOpId)).resolves.toMatchObject({
+      status: 'accepted',
+      opId: clearOpId,
+    })
+    await waitForReady(tab)
+    expect(tab.currentMap?.hazards).toEqual(remainingHazards)
+    expect(tab.pendingOutboxOpIds).toEqual([])
+    const sequenceAfterStatusRecovery = harness.realtime.cursorState().latestSequence
+
+    const terrainResult = await tab.commands.editTerrainVoxels({
+      operations: [{ action: 'upsert', voxel: terrainVoxel }],
+    })
+    expect(terrainResult).toMatchObject({ dispatched: false, uncertain: true })
+    const terrainOpId = terrainResult.opId
+    if (!terrainOpId) throw new Error('editTerrainVoxels did not expose an opId')
+    expect(lostBodies[1]).toMatchObject({ opId: terrainOpId, type: LIVE_PLAY_COMMAND_TYPES.EDIT_TERRAIN_VOXELS })
+    expect(harness.realtime.cursorState().latestSequence).toBe(sequenceAfterStatusRecovery + 1)
+    expect(harness.readMap().voxels).toEqual(expect.arrayContaining([expect.objectContaining(terrainVoxel)]))
+    expect(tab.currentMap?.voxels).not.toEqual(expect.arrayContaining([expect.objectContaining(terrainVoxel)]))
+    await tab.commands.refreshOutboxEntries()
+    expect(tab.pendingOutboxOpIds).toEqual([terrainOpId])
+
+    tab.commands.clearError()
+    const sequenceBeforeRetry = harness.realtime.cursorState().latestSequence
+    await expect(tab.commands.retryOutboxCommand(terrainOpId)).resolves.toMatchObject({
+      dispatched: true,
+      opId: terrainOpId,
+    })
+    await waitForReady(tab)
+    expect(harness.realtime.cursorState().latestSequence).toBe(sequenceBeforeRetry)
+    expect(tab.pendingOutboxOpIds).toEqual([])
+    expect(tab.currentMap).toMatchObject({ revision: 2, hazards: remainingHazards })
+    expect(tab.currentMap?.voxels).toEqual(expect.arrayContaining([expect.objectContaining(terrainVoxel)]))
+
+    const presentationCount = tab.presentationEvents.length
+    harness.serverA.publishLocalWakeups = true
+    const recoveredDurableEvent = harness.realtime.getBySequence(sequenceBeforeRetry)?.event
+    if (recoveredDurableEvent) harness.serverA.hub.publishSequencedRealtime(recoveredDurableEvent)
+    await flushAsync()
+    expect(tab.currentMap?.revision).toBe(2)
+    expect(tab.currentMap?.voxels.filter((voxel) => voxel.x === 4 && voxel.y === 0 && voxel.z === 4)).toHaveLength(1)
+    expect(tab.presentationEvents).toHaveLength(presentationCount)
+  })
+
   it('keeps predicted multi-client moves convergent through scoped concurrency and same-token conflicts', async () => {
     const harness = createHarness()
-    const nextInterception: { current: MoveInterception | null } = { current: null }
+    const nextInterception: { current: CommandInterception | null } = { current: null }
     const tabA = await createTab(harness, {
       label: 'prediction-client-a',
       api: (getTab) => createInterceptableMoveApi(harness, getTab, nextInterception),
@@ -404,7 +608,7 @@ describe('Final Wave C full-system live-play chaos hardening', () => {
 
   it('keeps prediction state idempotent across SSE-first and HTTP-first terminal delivery', async () => {
     const harness = createHarness()
-    const nextInterception: { current: MoveInterception | null } = { current: null }
+    const nextInterception: { current: CommandInterception | null } = { current: null }
     const tab = await createTab(harness, {
       label: 'prediction-ordering-tab',
       api: (getTab) => createInterceptableMoveApi(harness, getTab, nextInterception),
@@ -446,7 +650,7 @@ describe('Final Wave C full-system live-play chaos hardening', () => {
 
   it('clears predictions on replay-gap snapshot recovery while preserving uncertain outbox recovery', async () => {
     const harness = createHarness()
-    const nextInterception: { current: MoveInterception | null } = { current: null }
+    const nextInterception: { current: CommandInterception | null } = { current: null }
     const tab = await createTab(harness, {
       label: 'prediction-gap-tab',
       api: (getTab) => createInterceptableMoveApi(harness, getTab, nextInterception),

@@ -233,11 +233,26 @@ const applyInitiativePatch = (map: TabletopMap, payload: unknown): LivePlayPatch
   return null
 }
 
+const isHazardCellPatchCommand = (value: unknown): boolean => (
+  value === LIVE_PLAY_COMMAND_TYPES.PLACE_HAZARD
+  || value === LIVE_PLAY_COMMAND_TYPES.REMOVE_HAZARD
+)
+
 const applyHazardsPatch = (map: TabletopMap, payload: unknown): LivePlayPatchesRejected | null => {
   if (!isRecord(payload) || !Array.isArray(payload.current)) {
     return failed('invalid-patch', 'map.hazards patches require a current hazard array')
   }
-  map.hazards = cloneHazards(payload.current as MapHazardV2[])
+
+  const current = cloneHazards(payload.current as MapHazardV2[])
+  if (isHazardCellPatchCommand(payload.command) && isGridAnchor(payload.cell)) {
+    map.hazards = [
+      ...cloneHazards(map.hazards ?? []).filter((hazard) => !cellMatches(hazard, payload.cell as GridAnchor)),
+      ...current,
+    ]
+    return null
+  }
+
+  map.hazards = current
   return null
 }
 
