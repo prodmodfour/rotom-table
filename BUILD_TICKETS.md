@@ -279,7 +279,7 @@ Status: DONE
 
 ## 010 — LP-S2-010 — Add prediction-safe same-token movement queue tests for revision changes
 
-Status: TODO
+Status: DONE
 
 **Goal:** Lock down same-token coalescing when remote operations advance the map revision between the first move and the queued superseding move.
 

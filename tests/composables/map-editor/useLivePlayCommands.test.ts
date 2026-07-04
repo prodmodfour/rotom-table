@@ -1740,6 +1740,130 @@ describe('useLivePlayCommands', () => {
     expect(tokenPosition(map.value)).toEqual({ x: 5, y: 0, z: 1 })
   })
 
+  it('rebuilds a queued same-token move from the revision advanced by a remote non-conflicting patch', async () => {
+    const map = ref(mapFixture())
+    const firstPostGate = deferred<void>()
+    const secondPostGate = deferred<void>()
+    const postedBodies: Record<string, unknown>[] = []
+    apiMocks.postJson.mockImplementation(async (_request: string, body: unknown) => {
+      const command = cloneJson(commandRecord(body))
+      postedBodies.push(command)
+      if (postedBodies.length === 1) {
+        await firstPostGate.promise
+        return acceptedMoveTokenResponse(command, { previousRevision: 5, revision: 6 })
+      }
+
+      await secondPostGate.promise
+      return acceptedMoveTokenResponse(command, { previousRevision: 6, revision: 7 })
+    })
+
+    const actions = useTestLivePlayCommands({
+      slug: 'arena-map',
+      map,
+      mapRevision: computed(() => map.value.revision),
+    })
+    const first = actions.moveToken({ placementId: 'token-pikachu', position: { x: 2, y: 0, z: 1 } })
+    await vi.waitFor(() => expect(apiMocks.postJson).toHaveBeenCalledTimes(1))
+
+    const latestQueued = actions.moveToken({ placementId: 'token-pikachu', position: { x: 5, y: 0, z: 1 } })
+    const queuedBeforeRemotePatch = Object.values(actions.pendingCommands.value).find((command) => command.opId !== postedBodies[0]!.opId)
+    expect(queuedBeforeRemotePatch).toMatchObject({
+      baseRevision: 4,
+      body: expect.objectContaining({
+        payload: expect.objectContaining({
+          placementId: 'token-pikachu',
+          position: { x: 5, y: 0, z: 1 },
+        }),
+      }),
+    })
+
+    const remotePatch = tokenPositionPatch('target-token', { x: 4, y: 0, z: 4 }, 5)
+    const context = patchAdoptionContext({
+      opId: 'op_remote_target_move',
+      previousRevision: 4,
+      revision: 5,
+      patches: [remotePatch],
+    })
+    actions.beforeLivePlayPatchesApply(context)
+    expect(applyLivePlayPatchesToMap({
+      map: map.value,
+      mapSlug: 'arena-map',
+      previousRevision: 4,
+      revision: 5,
+      patches: [remotePatch],
+    })).toMatchObject({ ok: true, applied: true, revision: 5 })
+    actions.afterLivePlayPatchesApply(context)
+    expect(map.value.revision).toBe(5)
+    expect(tokenPosition(map.value)).toEqual({ x: 5, y: 0, z: 1 })
+    expect(tokenPosition(map.value, 'target-token')).toEqual({ x: 4, y: 0, z: 4 })
+    expect(postedBodies).toHaveLength(1)
+
+    firstPostGate.resolve()
+    await expect(first).resolves.toMatchObject({ dispatched: true })
+    await vi.waitFor(() => expect(apiMocks.postJson).toHaveBeenCalledTimes(2))
+    expect(postedBodies[1]).toMatchObject({
+      baseRevision: 6,
+      payload: {
+        placementId: 'token-pikachu',
+        position: { x: 5, y: 0, z: 1 },
+      },
+    })
+
+    secondPostGate.resolve()
+    await expect(latestQueued).resolves.toMatchObject({ dispatched: true })
+    expect(apiMocks.postJson).toHaveBeenCalledTimes(2)
+    expect(map.value.revision).toBe(7)
+    expect(tokenPosition(map.value)).toEqual({ x: 5, y: 0, z: 1 })
+    expect(tokenPosition(map.value, 'target-token')).toEqual({ x: 4, y: 0, z: 4 })
+  })
+
+  it('cancels a queued same-token move when the first move rejects without leaking the queued prediction', async () => {
+    const map = ref(mapFixture())
+    const originalPlacement = cloneJson(placementById(map.value))
+    const firstPostGate = deferred<void>()
+    const postedBodies: Record<string, unknown>[] = []
+    apiMocks.postJson.mockImplementation(async (_request: string, body: unknown) => {
+      const command = cloneJson(commandRecord(body))
+      postedBodies.push(command)
+      await firstPostGate.promise
+      return rejectedMoveTokenResponse(command, {
+        message: 'First move rejected',
+        currentRevision: 4,
+      })
+    })
+
+    const actions = useTestLivePlayCommands({
+      slug: 'arena-map',
+      map,
+      mapRevision: computed(() => map.value.revision),
+    })
+    const first = actions.moveToken({ placementId: 'token-pikachu', position: { x: 2, y: 0, z: 1 } })
+    await vi.waitFor(() => expect(apiMocks.postJson).toHaveBeenCalledTimes(1))
+
+    const queued = actions.moveToken({ placementId: 'token-pikachu', position: { x: 5, y: 0, z: 1 } })
+    expect(actions.pendingCommandCount.value).toBe(2)
+    expect(actions.pendingPredictionCount.value).toBe(2)
+    expect(tokenPosition(map.value)).toEqual({ x: 5, y: 0, z: 1 })
+
+    firstPostGate.resolve()
+    await expect(first).resolves.toMatchObject({
+      dispatched: false,
+      message: 'First move rejected',
+    })
+    await expect(queued).resolves.toMatchObject({
+      dispatched: false,
+      message: 'The queued token move was not sent because the previous move did not receive an authoritative acceptance.',
+    })
+
+    expect(apiMocks.postJson).toHaveBeenCalledTimes(1)
+    expect(postedBodies).toHaveLength(1)
+    expect(placementById(map.value)).toMatchObject(originalPlacement)
+    expect(map.value.revision).toBe(4)
+    expect(actions.pendingCommandCount.value).toBe(0)
+    expect(actions.pendingPredictionCount.value).toBe(0)
+    expect(actions.pendingPredictions.value).toEqual({})
+  })
+
   it('allows same-token move and turn commands to overlap because their token fields differ', async () => {
     const movePostGate = deferred<void>()
     const turnPostGate = deferred<void>()
