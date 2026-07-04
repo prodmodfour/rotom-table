@@ -142,6 +142,10 @@ describe('useMapPresence', () => {
     expect(presence.status.value).toBe('ready')
     expect(presence.error.value).toBeNull()
     expect(presence.transportFreshness.value.lastSnapshotAt).toBe(1_000)
+    expect(presence.debugMetrics.value).toMatchObject({
+      lastSnapshotAt: 1_000,
+      activeParticipantCount: 1,
+    })
 
     now = 2_000
     presence.dispose()

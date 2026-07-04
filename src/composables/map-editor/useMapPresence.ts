@@ -47,6 +47,13 @@ export interface MapPresenceTransportFreshness {
   readonly hidden: boolean
 }
 
+export interface MapPresenceDebugMetrics {
+  readonly lastSnapshotAt: number | null
+  readonly lastHeartbeatAt: number | null
+  readonly lastTransientAt: number | null
+  readonly activeParticipantCount: number
+}
+
 export interface MapPresenceOwnStatePatch {
   readonly selectedTokenId?: string | null
   readonly hoveredTokenId?: string | null
@@ -102,6 +109,7 @@ export interface UseMapPresenceReturn {
   readonly status: Readonly<Ref<MapPresenceStatus>>
   readonly error: Readonly<Ref<string | null>>
   readonly transportFreshness: ComputedRef<MapPresenceTransportFreshness>
+  readonly debugMetrics: ComputedRef<MapPresenceDebugMetrics>
   readonly loadSnapshot: () => Promise<void>
   readonly sendHeartbeat: () => Promise<void>
   readonly updateOwnPresence: (patch: MapPresenceOwnStatePatch, options?: { readonly publish?: boolean }) => Promise<boolean>
@@ -376,6 +384,12 @@ export const useMapPresence = (options: UseMapPresenceOptions): UseMapPresenceRe
     serverTimeOffsetMs: serverTimeOffsetMs.value,
     heartbeatIntervalMs: hidden.value ? hiddenHeartbeatIntervalMs : heartbeatIntervalMs,
     hidden: hidden.value,
+  }))
+  const debugMetrics = computed<MapPresenceDebugMetrics>(() => ({
+    lastSnapshotAt: lastSnapshotAt.value,
+    lastHeartbeatAt: lastHeartbeatAt.value,
+    lastTransientAt: lastTransientAt.value,
+    activeParticipantCount: visibleEntries.value.length,
   }))
 
   const clearHeartbeatTimer = (): void => {
@@ -730,6 +744,7 @@ export const useMapPresence = (options: UseMapPresenceOptions): UseMapPresenceRe
     status: readonly(status),
     error: readonly(error),
     transportFreshness,
+    debugMetrics,
     loadSnapshot,
     sendHeartbeat,
     updateOwnPresence,

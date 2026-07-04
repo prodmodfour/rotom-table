@@ -825,6 +825,7 @@ const mapPresence = useMapPresence({
 const mapPresenceEntries = mapPresence.entries
 const mapPresencePings = mapPresence.pings
 const mapPresenceStatus = mapPresence.status
+const mapPresenceDebugMetrics = computed(() => mapPresence.debugMetrics.value)
 const mapPresenceServerTimeOffsetMs = computed(() => mapPresence.transportFreshness.value.serverTimeOffsetMs)
 const canRequestGmAttention = computed(() => mapPresenceEnabled.value && isGm.value)
 const ownPresenceClientIdSuffix = computed(() => (
@@ -2610,6 +2611,7 @@ useMapDimensionReconciliation({
       <LivePlayLatencyDebugPanel
         v-if="livePlayLatencyDebugEnabled"
         :traces="livePlayCommands.commandTraces.value"
+        :presence-metrics="mapPresenceDebugMetrics"
       />
     </template>
 

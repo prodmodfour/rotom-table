@@ -5,10 +5,12 @@ import {
   type LivePlayCommandTraceEventType,
   type LivePlayCommandTraceSnapshot,
 } from '~/utils/livePlayCommandTrace'
+import type { MapPresenceDebugMetrics } from '~/composables/map-editor/useMapPresence'
 
 const props = defineProps<{
   traces: Readonly<Record<string, LivePlayCommandTraceSnapshot>>
   maxRows?: number
+  presenceMetrics?: MapPresenceDebugMetrics | null
 }>()
 
 interface LivePlayLatencyDebugRow {
@@ -22,6 +24,11 @@ interface LivePlayLatencyDebugRow {
   readonly httpToAdopt: string
   readonly sseToAdopt: string
   readonly totalPending: string
+}
+
+interface LivePlayPresenceMetricRow {
+  readonly label: string
+  readonly value: string
 }
 
 const now = ref<number | null>(null)
@@ -51,12 +58,24 @@ const firstEventTimestamp = (
   trace.events.find((event) => event.type === eventType)?.timestamp ?? null
 )
 
-const durationLabel = (start: number | null, end: number | null): string => {
-  if (start === null || end === null || end < start) return '—'
-  const milliseconds = end - start
+const elapsedLabel = (milliseconds: number): string => {
   if (milliseconds < 1_000) return `${milliseconds} ms`
   return `${(milliseconds / 1_000).toFixed(milliseconds < 10_000 ? 1 : 0)} s`
 }
+
+const durationLabel = (start: number | null, end: number | null): string => {
+  if (start === null || end === null || end < start) return '—'
+  return elapsedLabel(end - start)
+}
+
+const ageLabel = (timestamp: number | null): string => {
+  if (timestamp === null || now.value === null) return '—'
+  return elapsedLabel(Math.max(0, now.value - timestamp))
+}
+
+const participantCountLabel = (count: number): string => (
+  Number.isSafeInteger(count) && count > 0 ? count.toString() : '0'
+)
 
 const opIdSuffix = (opId: string): string => {
   const suffix = opId.slice(-8)
@@ -95,6 +114,16 @@ const rowForTrace = (trace: LivePlayCommandTraceSnapshot): LivePlayLatencyDebugR
 }
 
 const rows = computed<readonly LivePlayLatencyDebugRow[]>(() => latestTraces.value.map(rowForTrace))
+const presenceMetricRows = computed<readonly LivePlayPresenceMetricRow[]>(() => {
+  const metrics = props.presenceMetrics
+  if (!metrics) return []
+  return [
+    { label: 'Heartbeat age', value: ageLabel(metrics.lastHeartbeatAt) },
+    { label: 'Last snapshot age', value: ageLabel(metrics.lastSnapshotAt) },
+    { label: 'Last transient age', value: ageLabel(metrics.lastTransientAt) },
+    { label: 'Active participants', value: participantCountLabel(metrics.activeParticipantCount) },
+  ]
+})
 </script>
 
 <template>
@@ -113,6 +142,26 @@ const rows = computed<readonly LivePlayLatencyDebugRow[]>(() => latestTraces.val
       </div>
       <span class="live-play-latency-debug-panel__count">{{ rows.length }}/{{ maxRows }}</span>
     </header>
+
+    <section
+      v-if="presenceMetricRows.length > 0"
+      class="live-play-latency-debug-panel__presence"
+      aria-labelledby="live-play-latency-debug-presence-title"
+    >
+      <div class="live-play-latency-debug-panel__presence-header">
+        <h3 id="live-play-latency-debug-presence-title">Presence freshness</h3>
+        <span>Transient table-feel transport</span>
+      </div>
+      <dl class="live-play-latency-debug-panel__presence-metrics">
+        <div
+          v-for="metric in presenceMetricRows"
+          :key="metric.label"
+        >
+          <dt>{{ metric.label }}</dt>
+          <dd>{{ metric.value }}</dd>
+        </div>
+      </dl>
+    </section>
 
     <p v-if="rows.length === 0" class="live-play-latency-debug-panel__empty">
       No live-play command traces recorded yet.
@@ -206,7 +255,10 @@ const rows = computed<readonly LivePlayLatencyDebugRow[]>(() => latestTraces.val
 .live-play-latency-debug-panel__command,
 .live-play-latency-debug-panel__resource,
 .live-play-latency-debug-panel__timings,
-.live-play-latency-debug-panel__timings dd {
+.live-play-latency-debug-panel__timings dd,
+.live-play-latency-debug-panel__presence h3,
+.live-play-latency-debug-panel__presence-metrics,
+.live-play-latency-debug-panel__presence-metrics dd {
   margin: 0;
 }
 
@@ -243,6 +295,66 @@ const rows = computed<readonly LivePlayLatencyDebugRow[]>(() => latestTraces.val
   color: color-mix(in srgb, var(--ink-bright) 72%, transparent);
   font-size: 0.76rem;
   font-weight: 750;
+}
+
+.live-play-latency-debug-panel__presence {
+  margin-top: 0.72rem;
+  padding: 0.66rem;
+  border: 1px solid color-mix(in srgb, var(--accent) 26%, rgba(255, 255, 255, 0.16));
+  border-radius: 0.86rem;
+  background: color-mix(in srgb, var(--accent) 10%, rgba(255, 255, 255, 0.055));
+}
+
+.live-play-latency-debug-panel__presence-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.72rem;
+}
+
+.live-play-latency-debug-panel__presence h3 {
+  font-size: 0.78rem;
+  font-weight: 950;
+  line-height: 1.18;
+}
+
+.live-play-latency-debug-panel__presence-header span {
+  color: color-mix(in srgb, var(--ink-bright) 58%, transparent);
+  font-size: 0.62rem;
+  font-weight: 900;
+  letter-spacing: 0.06em;
+  line-height: 1.2;
+  text-align: right;
+  text-transform: uppercase;
+}
+
+.live-play-latency-debug-panel__presence-metrics {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.38rem;
+  margin-top: 0.54rem;
+}
+
+.live-play-latency-debug-panel__presence-metrics div {
+  min-width: 0;
+  padding: 0.38rem;
+  border-radius: 0.62rem;
+  background: rgba(0, 0, 0, 0.2);
+}
+
+.live-play-latency-debug-panel__presence-metrics dt {
+  color: color-mix(in srgb, var(--ink-bright) 58%, transparent);
+  font-size: 0.56rem;
+  font-weight: 950;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+}
+
+.live-play-latency-debug-panel__presence-metrics dd {
+  margin-top: 0.12rem;
+  font-size: 0.72rem;
+  font-weight: 950;
+  white-space: nowrap;
 }
 
 .live-play-latency-debug-panel__list {
@@ -315,7 +427,8 @@ const rows = computed<readonly LivePlayLatencyDebugRow[]>(() => latestTraces.val
     width: auto;
   }
 
-  .live-play-latency-debug-panel__timings {
+  .live-play-latency-debug-panel__timings,
+  .live-play-latency-debug-panel__presence-metrics {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }

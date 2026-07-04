@@ -2,7 +2,8 @@
  * @vitest-environment happy-dom
  */
 import { mount } from '@vue/test-utils'
-import { describe, expect, it } from 'vitest'
+import { nextTick } from 'vue'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import LivePlayLatencyDebugPanel from '~/components/map/LivePlayLatencyDebugPanel.vue'
 import {
   LIVE_PLAY_COMMAND_TRACE_EVENT_TYPES,
@@ -35,6 +36,10 @@ const trace = (overrides: Partial<LivePlayCommandTraceSnapshot> & Pick<LivePlayC
     ...rest,
   }
 }
+
+afterEach(() => {
+  vi.useRealTimers()
+})
 
 describe('LivePlayLatencyDebugPanel', () => {
   it('renders useful latency timings from the latest command traces', () => {
@@ -118,11 +123,46 @@ describe('LivePlayLatencyDebugPanel', () => {
     expect(text).not.toContain('sheet: {')
   })
 
+  it('renders presence freshness metrics without exposing presence payload internals', async () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(10_000)
+
+    const wrapper = mount(LivePlayLatencyDebugPanel, {
+      props: {
+        traces: {},
+        presenceMetrics: {
+          lastHeartbeatAt: 8_750,
+          lastSnapshotAt: 7_500,
+          lastTransientAt: null,
+          activeParticipantCount: 3,
+        },
+      },
+    })
+    await nextTick()
+    const text = wrapper.text()
+
+    expect(text).toContain('Presence freshness')
+    expect(text).toContain('Heartbeat age')
+    expect(text).toContain('1.3 s')
+    expect(text).toContain('Last snapshot age')
+    expect(text).toContain('2.5 s')
+    expect(text).toContain('Last transient age')
+    expect(text).toContain('—')
+    expect(text).toContain('Active participants')
+    expect(text).toContain('3')
+    expect(text).not.toContain('profile_')
+    expect(text).not.toContain('clientIdSuffix')
+    expect(text).not.toContain('selectedTokenId')
+
+    wrapper.unmount()
+  })
+
   it('renders an empty state when no traces are available', () => {
     const wrapper = mount(LivePlayLatencyDebugPanel, {
       props: { traces: {} },
     })
 
     expect(wrapper.text()).toContain('No live-play command traces recorded yet.')
+    expect(wrapper.text()).not.toContain('Presence freshness')
   })
 })
