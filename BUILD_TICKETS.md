@@ -1,434 +1,460 @@
 # BUILD_TICKETS.md
 
-AUTOMATION_STATUS: DONE
+AUTOMATION_STATUS: TODO
 
 Ticket statuses:
 
 * TODO — not done
 * DONE — done
 
-The build loop must select the lowest-numbered TODO ticket. Each ticket below maps to one Live Play Sprint 1 ticket from `tickets.md`; build ticket numbers follow the suggested sprint order.
+The build loop must select the lowest-numbered TODO ticket. Each ticket below maps to one Live Play Sprint 2 ticket from `sprint-2.md`; build ticket numbers follow the suggested sprint order.
 
-Autonomous cycle rules for every ticket: implement only the selected ticket, run `scripts/quality-gate.sh`, update only the selected ticket status, commit with a conventional commit message, and leave the working tree clean. The final ticket (#014) may also set `AUTOMATION_STATUS: DONE` after all Live Play Sprint 1 tickets are complete.
+Autonomous cycle rules for every ticket: implement only the selected ticket, run `scripts/quality-gate.sh`, update only the selected ticket status, commit with a conventional commit message, and leave the working tree clean. The final ticket (#015) may also set `AUTOMATION_STATUS: DONE` after all Live Play Sprint 2 tickets are complete.
 
 ---
 
-# Live Play Sprint 1 Tickets
+# Live Play Sprint 2 Tickets
 
 ## Sprint goal
 
-Make common live-play table actions feel immediate while preserving the existing server-authoritative model. The first sprint focuses on token movement and facing because those are the highest-frequency LAN-feel interactions and the safest commands to predict locally.
+Harden the Sprint 1 local-prediction model so it remains correct under real table pressure: out-of-order HTTP/SSE results, reconnects, remote accepted patches while local predictions are pending, repeated same-token input, and user-visible correction/recovery paths. After that foundation is stable, add narrowly scoped prediction coverage for one more common low-risk action family.
 
-## Non-goals for sprint 1
+## Non-goals for sprint 2
 
 - Do not replace HTTP/SSE with WebSockets yet.
-- Do not weaken server authority, profile validation, revision checks, idempotency, or durable realtime replay.
-- Do not optimistically execute complex rule outcomes such as `resolveMove`, capture, shop checkout, inventory transfers, encounter spawn, or random/hidden-information effects.
-- Do not remove the durable IndexedDB outbox; reduce its impact on perceived input latency.
+- Do not weaken server authority, profile validation, revision checks, idempotency, durable outbox recovery, or authorised realtime replay.
+- Do not predict complex rule outcomes such as `resolveMove`, capture, shop checkout, encounter spawn, random/hidden-information effects, or move automation side effects.
+- Do not make local predictions durable authoritative state. Prediction state remains presentation-only and must be discarded or rebuilt from authoritative state.
+- Do not implement broad CRDT/document merging. Conflicts remain tabletop-domain scoped.
 
 ## Commit sizing rule
 
-Each ticket should fit in one reviewable commit. If a ticket needs both a refactor and a behavior change, split the refactor into its own follow-up ticket before implementation.
+Each ticket should fit in one reviewable commit. Prefer a small helper plus tests over a large cross-cutting behaviour change. If a ticket needs both an API shape change and UI wiring, implement the API shape first and UI wiring in the next ticket.
 
 ---
 
-## 001 — LP-S1-001 — Add client-side live-play scope conflict utilities
+## 001 — LP-S2-001 — Add command lifecycle tracing for live-play dispatch
 
-Status: DONE
+Status: TODO
 
-**Goal:** Give the client the same basic vocabulary as the server for deciding whether two pending commands can safely overlap.
-
-**Primary files:**
-
-- `src/utils/livePlayScopeConflicts.ts` (new)
-- `tests/utils/livePlayScopeConflicts.test.ts` (new)
-
-**Work:**
-
-- Add a small client utility that compares `LivePlayScope[]` values.
-- Support map lanes, token fields, sheet fields, and terrain cells when the cell can be derived from command payload.
-- Keep the implementation conservative: unknown or broad scopes should conflict rather than silently overlap.
-- Add unit tests for:
-  - different token position scopes do not conflict;
-  - same token position scopes conflict;
-  - token position and token facing do not conflict;
-  - same map lane conflicts;
-  - different sheet fields do not conflict;
-  - terrain broad scope conflicts with terrain cell scope.
-
-**Acceptance:**
-
-- Tests prove unrelated token commands can be classified as independent.
-- The helper has no side effects and does not mutate command bodies.
-
----
-
-## 002 — LP-S1-002 — Add a pending live-play command model
-
-Status: DONE
-
-**Goal:** Track multiple local live-play operations by `opId` instead of one global `saving` operation.
+**Goal:** Make live-play latency and ordering visible in tests and debug builds without changing user-facing behaviour.
 
 **Primary files:**
 
 - `src/composables/map-editor/useLivePlayCommands.ts`
+- `src/utils/livePlayCommandTrace.ts` (new)
 - `tests/composables/map-editor/useLivePlayCommands.test.ts`
 
 **Work:**
 
-- Add an internal `pendingCommands` ref keyed by `opId`.
-- Store `opId`, request path, command type, base revision, scopes, body, and lifecycle state.
-- Expose a readonly `pendingCommands` or `pendingCommandCount` from `useLivePlayCommands`.
-- Keep existing behavior unchanged for dispatch blocking in this ticket.
+- Add a small trace model keyed by `opId` with timestamps or sequence counters for: built, predicted, enqueued, claimed, sent, HTTP terminal, SSE terminal, patch adopted, confirmed, rejected, rolled back, uncertain.
+- Keep the trace in memory only.
+- Expose a readonly debug snapshot from `useLivePlayCommands` for tests and optional dev tooling.
+- Avoid logging command bodies or profile-sensitive payloads to the console by default.
 
 **Acceptance:**
 
-- Existing tests continue to pass.
-- A dispatched command appears in pending state before send and is removed or terminally marked after accepted/rejected/uncertain handling.
-- No UI behavior changes yet.
+- Tests can assert whether HTTP or SSE resolved a command first.
+- Tracing records prediction-to-confirm and prediction-to-rollback lifecycle events.
+- No production UI changes are required for this ticket.
 
 ---
 
-## 003 — LP-S1-003 — Split command transport status from command availability
+## 002 — LP-S2-002 — Add a focused live-play latency debug panel behind a query flag
 
-Status: DONE
+Status: TODO
 
-**Goal:** Stop using one `status === 'saving'` flag as both network state and table input lock.
+**Goal:** Let maintainers see whether live play feels slow because of client prediction, outbox, HTTP, SSE, patch adoption, or reconciliation.
 
 **Primary files:**
 
-- `src/composables/map-editor/useLivePlayCommands.ts`
+- `src/components/map/LivePlayLatencyDebugPanel.vue` (new)
 - `src/pages/maps/[slug].vue`
-- `tests/composables/map-editor/useLivePlayCommands.test.ts`
+- `src/composables/map-editor/useLivePlayCommands.ts`
+- `tests/pages/mapPageRouteAuthority.test.ts`
 
 **Work:**
 
-- Introduce a derived transport/pending status that can show activity without implying all commands are blocked.
-- Preserve recovery and reconciliation blockers.
-- Leave same-scope commands blocked for now.
-- Update map page computed values so `livePlayCommandsAllowed` no longer depends directly on a global `saving` state.
+- Show the latest small set of command traces only when a debug query flag is present, for example `?debugLivePlayLatency=1`.
+- Display durations such as predicted-to-SSE, predicted-to-HTTP, HTTP-to-adopt, SSE-to-adopt, and total pending time.
+- Redact command payloads; show only command type, opId suffix, status, and resource summary.
 
 **Acceptance:**
 
-- The page can remain in a command-ready state while at least one unrelated command is pending.
-- Recovery gate, reconnect/reconcile gate, and Prepare Map gate still block new commands.
-- Status messaging still shows when commands are being sent.
+- The panel is hidden by default.
+- The panel renders useful timing fields in debug mode.
+- No private profile IDs, sheet payloads, or full command bodies are displayed.
 
 ---
 
-## 004 — LP-S1-004 — Replace global in-flight blocking with scope-aware blocking
+## 003 — LP-S2-003 — Add prediction conflict detection for incoming authoritative patches
 
-Status: DONE
+Status: TODO
 
-**Goal:** Allow unrelated live-play commands to be sent while another command is in flight.
+**Goal:** Detect when a remote authoritative patch touches a resource currently covered by a local prediction.
 
 **Primary files:**
 
-- `src/composables/map-editor/useLivePlayCommands.ts`
+- `src/utils/livePlayPredictionConflicts.ts` (new)
 - `src/utils/livePlayScopeConflicts.ts`
+- `tests/utils/livePlayPredictionConflicts.test.ts` (new)
+
+**Work:**
+
+- Convert accepted live-play patches into conflict descriptors compatible with the existing client scope conflict helper.
+- Compare pending local predictions against incoming accepted patches.
+- Return a conflict summary that identifies the local predicted `opId`, placement ID, command type, and conflicting patch type.
+- Keep this helper pure and framework-free.
+
+**Acceptance:**
+
+- Remote token-B movement does not conflict with local token-A movement.
+- Remote token-A movement conflicts with local token-A movement.
+- Remote token-A facing conflicts with local token-A facing but not token-A position when fields differ.
+- Broad map-lane or unknown patch conflicts conservatively.
+
+---
+
+## 004 — LP-S2-004 — Add an authoritative patch adoption hook around local predictions
+
+Status: TODO
+
+**Goal:** Give the map page a safe place to roll back/reapply predictions when authoritative patches arrive.
+
+**Primary files:**
+
+- `src/composables/useEditableMap.ts`
+- `src/composables/map-editor/useLivePlayCommands.ts`
+- `tests/composables/useEditableMap.test.ts`
 - `tests/composables/map-editor/useLivePlayCommands.test.ts`
 
 **Work:**
 
-- In `runLivePlayCommand`, build the command body before checking same-page pending conflicts.
-- Use the new scope conflict helper to reject only commands that overlap with pending local commands.
-- Keep stricter blocking for recovery, abandonment, realtime reconciliation, and commands explicitly marked non-concurrent.
-- Return a targeted blocked message such as `Another pending command is already changing this token position.`
+- Add optional hooks around accepted patch application, for example `beforeLivePlayPatchesApply` and `afterLivePlayPatchesApply`, or an equivalent single adoption coordinator.
+- Pass enough information to inspect map slug, previous revision, next revision, patches, and local pending predictions.
+- Do not change default behaviour when hooks are absent.
+- Ensure hooks are not called for setup/edit whole-map events.
 
 **Acceptance:**
 
-- Two `moveToken` commands for different placement IDs can be in flight at once.
-- Two `moveToken` commands for the same placement ID still conflict.
-- `moveToken` and `turnToken` for the same placement may be allowed or blocked according to the helper’s token-field rules, but the behavior is covered by tests.
+- Existing realtime patch tests still pass without hooks.
+- Tests can observe the hook call order around patch application.
+- Hook failures request authoritative reconciliation rather than leaving mixed prediction/authoritative state.
 
 ---
 
-## 005 — LP-S1-005 — Add local prediction patch builders for `moveToken` and `turnToken`
+## 005 — LP-S2-005 — Rebase non-conflicting predictions after remote accepted patches
 
-Status: DONE
+Status: TODO
 
-**Goal:** Build local visual patches for the two fastest token interactions without waiting for the server.
-
-**Primary files:**
-
-- `src/utils/livePlayPredictions.ts` (new)
-- `tests/utils/livePlayPredictions.test.ts` (new)
-
-**Work:**
-
-- Add prediction builders for:
-  - `moveToken` → token position/facing visual update;
-  - `turnToken` → token facing visual update.
-- Predictions should be marked as local-only metadata and must not be persisted or sent as authoritative patches.
-- Use existing map patch shape where practical so application logic can be reused.
-- Keep movement-log, attack-of-opportunity, and other rule side effects out of the prediction.
-
-**Acceptance:**
-
-- Prediction output can be applied to a loaded map and rolled back.
-- The helper returns no prediction for unsupported command types.
-- Unit tests cover missing placement, stale map, and valid move/turn predictions.
-
----
-
-## 006 — LP-S1-006 — Add a local prediction overlay store
-
-Status: DONE
-
-**Goal:** Separate authoritative map state from local pending visual state.
+**Goal:** Preserve the immediate local feel while still applying other clients’ authoritative updates in order.
 
 **Primary files:**
 
 - `src/composables/map-editor/useLivePlayCommands.ts`
+- `src/composables/useEditableMap.ts`
+- `src/utils/livePlayPredictionConflicts.ts`
+- `tests/composables/map-editor/useLivePlayCommands.test.ts`
+
+**Work:**
+
+- Before applying a remote accepted patch, temporarily roll back local predictions that are currently applied.
+- Apply the authoritative patch to the clean authoritative map state.
+- Reapply non-conflicting pending predictions over the new map revision when safe.
+- For conflicting predictions, roll back and show the existing correction/rejection path or request reconciliation.
+
+**Acceptance:**
+
+- Local predicted token A remains visually predicted after remote accepted token B movement applies.
+- Remote accepted token A movement cancels or corrects the local token A prediction instead of merging two positions.
+- The final map revision remains the authoritative server revision, not a prediction revision.
+- Reapplying predictions is idempotent when duplicate SSE/HTTP terminal results arrive.
+
+---
+
+## 006 — LP-S2-006 — Harden stale HTTP terminal responses after SSE-first adoption
+
+Status: TODO
+
+**Goal:** Prevent a later HTTP response from overwriting or rolling back state already confirmed by realtime.
+
+**Primary files:**
+
+- `src/composables/map-editor/useLivePlayCommands.ts`
+- `tests/composables/map-editor/useLivePlayCommands.test.ts`
+
+**Work:**
+
+- When SSE has already acknowledged an `opId`, classify the later HTTP response as duplicate presentation data.
+- Ignore older accepted HTTP response maps/patches if the local map revision has already advanced beyond them.
+- Preserve outbox cleanup and user-facing accepted state.
+- Ensure a late HTTP rejection cannot roll back a command already accepted by SSE for the same `opId`.
+
+**Acceptance:**
+
+- SSE accepted then HTTP accepted does not apply patches twice.
+- SSE accepted then HTTP rejected keeps the accepted state and records the HTTP response as ignored/stale.
+- SSE accepted then lost HTTP response still resolves as recovered, not uncertain.
+
+---
+
+## 007 — LP-S2-007 — Harden HTTP-first then SSE replay ordering
+
+Status: TODO
+
+**Goal:** Ensure replayed or delayed SSE events do not disturb state already adopted from a trusted HTTP terminal response.
+
+**Primary files:**
+
+- `src/composables/useEditableMap.ts`
+- `src/composables/map-editor/useLivePlayCommands.ts`
+- `tests/composables/useEditableMap.test.ts`
+- `tests/composables/map-editor/useLivePlayCommands.test.ts`
+
+**Work:**
+
+- Confirm that already-current or older accepted SSE revisions still acknowledge local outbox entries when appropriate.
+- Do not reapply patches when map revision is already at or beyond the event revision.
+- Keep `opId` acknowledgement and recovery cleanup working even when patch application is skipped as stale.
+
+**Acceptance:**
+
+- HTTP accepted first, then matching SSE, leaves map state unchanged and outbox empty.
+- Replayed stale SSE for a non-local command is ignored without entering reconciliation.
+- A matching local stale SSE can still clear pending recovery state for the same `opId`.
+
+---
+
+## 008 — LP-S2-008 — Add pending prediction reconciliation on reconnect/gap recovery
+
+Status: TODO
+
+**Goal:** Avoid replaying presentation-only predictions after the client has to reload the authoritative live table snapshot.
+
+**Primary files:**
+
+- `src/composables/map-editor/useLivePlayCommands.ts`
+- `src/composables/useEditableMap.ts`
+- `src/pages/maps/[slug].vue`
+- `tests/composables/map-editor/useLivePlayCommands.test.ts`
+
+**Work:**
+
+- When realtime enters reconnecting/reconciling/gap recovery, clear or suspend local predictions.
+- After authoritative snapshot reload completes, keep only pending commands that are still durable outbox entries and require explicit retry/status resolution.
+- Ensure cleared predictions do not roll back the freshly loaded authoritative snapshot.
+
+**Acceptance:**
+
+- A predicted token move disappears or resolves cleanly when a gap forces snapshot reload.
+- Recovery panel still shows uncertain durable commands by `opId`.
+- Fresh authoritative snapshot state is not overwritten by old rollback patches.
+
+---
+
+## 009 — LP-S2-009 — Add command-status awareness for pending predictions
+
+Status: TODO
+
+**Goal:** Let status checks resolve pending predictions without resending commands.
+
+**Primary files:**
+
+- `src/composables/map-editor/useLivePlayCommands.ts`
+- `tests/composables/map-editor/useLivePlayCommands.test.ts`
+
+**Work:**
+
+- When a status check returns accepted, adopt the authoritative result and clear the matching prediction.
+- When a status check returns rejected, roll back the matching prediction and show the correction path.
+- When a status check returns unknown, leave the durable outbox entry intact but avoid duplicating local predictions.
+
+**Acceptance:**
+
+- Accepted status response confirms a pending predicted token move.
+- Rejected status response rolls back only that token’s predicted fields.
+- Unknown status response does not apply, duplicate, or roll back prediction state unexpectedly.
+
+---
+
+## 010 — LP-S2-010 — Add prediction-safe same-token movement queue tests for revision changes
+
+Status: TODO
+
+**Goal:** Lock down same-token coalescing when remote operations advance the map revision between the first move and the queued superseding move.
+
+**Primary files:**
+
+- `tests/composables/map-editor/useLivePlayCommands.test.ts`
+
+**Work:**
+
+- Add tests where the first same-token move is accepted at revision N+1, then the queued superseding move is rebuilt from the latest map revision before send.
+- Add tests where a remote non-conflicting patch advances the map revision while a superseding move is queued.
+- Add tests where the first move rejects and the queued superseding move is cancelled without mutating the authoritative map.
+
+**Acceptance:**
+
+- Queued superseding move uses the current map revision when it is actually sent.
+- Obsolete unsent move bodies are never sent.
+- A rejected first move does not leak the queued prediction.
+
+---
+
+## 011 — LP-S2-013 — Add prediction-aware correction notice lifetime and deduping
+
+Status: TODO
+
+**Goal:** Keep correction feedback helpful without creating noisy repeated banners.
+
+**Primary files:**
+
+- `src/pages/maps/[slug].vue`
+- `src/components/map/MapScenePanel.vue`
+- `tests/pages/mapPageRouteAuthority.test.ts`
+
+**Work:**
+
+- Auto-dismiss correction notices after a short duration or when the same token receives a new accepted command.
+- Deduplicate repeated correction notices for the same `opId`.
+- Keep stale-revision rejections on the existing stronger reconciliation/error path.
+
+**Acceptance:**
+
+- A predicted move rejection shows one non-modal correction notice.
+- Duplicate HTTP/SSE rejection handling does not show duplicate notices.
+- The notice clears after timeout or next accepted action for that token.
+
+---
+
+## 012 — LP-S2-011 — Predict simple HP edits for local token HUD only
+
+Status: TODO
+
+**Goal:** Extend prediction coverage to one common low-risk sheet-backed action without pretending sheet state is authoritative.
+
+**Primary files:**
+
 - `src/utils/livePlayPredictions.ts`
-- `tests/composables/map-editor/useLivePlayCommands.test.ts`
-
-**Work:**
-
-- Store predicted patches per pending `opId`.
-- Apply predictions immediately after the command is accepted into the local pending list.
-- On local terminal accept, remove the matching prediction after authoritative patches are applied.
-- On terminal reject or local failure, remove the prediction and restore the authoritative state for that scope.
-- Keep this ticket internal to the composable; UI wiring can follow separately.
-
-**Acceptance:**
-
-- Prediction lifecycle is covered by tests: add, confirm, reject, uncertain.
-- A rejected predicted move returns the token to the authoritative position.
-- Prediction cleanup is idempotent when SSE and HTTP both report the same operation.
-
----
-
-## 007 — LP-S1-009 — Treat accepted SSE as first-class local command acknowledgement
-
-Status: DONE
-
-**Goal:** Let realtime confirmation resolve local pending commands even if the matching HTTP response is still in flight.
-
-**Primary files:**
-
 - `src/composables/map-editor/useLivePlayCommands.ts`
-- `src/composables/useEditableMap.ts`
+- `tests/utils/livePlayPredictions.test.ts`
 - `tests/composables/map-editor/useLivePlayCommands.test.ts`
 
 **Work:**
 
-- When an accepted realtime event has a local `opId`, mark the pending command accepted.
-- Remove its prediction after the authoritative patch is applied.
-- Ensure later HTTP terminal responses for the same `opId` do not apply the result twice.
-- Keep current outbox acknowledgement behavior intact.
+- Add prediction support for `modifyHp` limited to token HUD-facing map state, such as temporary HP overlays if already represented on the map.
+- Do not mutate cached Pokémon/trainer sheet documents as prediction.
+- Roll back on rejection and confirm on authoritative sheet/map update.
+- Keep this behind a narrow helper path so unsupported sheet fields are ignored.
 
 **Acceptance:**
 
-- SSE-first acceptance resolves the visible pending state.
-- Duplicate HTTP/SSE terminal results are idempotent.
-- Remote accepted events still apply normally when `opId` is not local.
+- A local HP edit can show immediate pending token HUD feedback when the current UI supports it.
+- Authoritative sheet updates remain the source of truth.
+- Rejection clears the pending HUD prediction without changing sheet cache.
 
 ---
 
-## 008 — LP-S1-010 — Prefer accepted patches over full-map adoption for hot-path command responses
+## 013 — LP-S2-012 — Predict simple condition edits as token-level pending feedback
 
-Status: DONE
+Status: TODO
 
-**Goal:** Avoid making successful token commands feel like whole-document replacements.
+**Goal:** Make condition changes feel responsive without inventing authoritative sheet state locally.
 
 **Primary files:**
 
+- `src/utils/livePlayPredictions.ts`
 - `src/composables/map-editor/useLivePlayCommands.ts`
-- `src/composables/useEditableMap.ts`
-- `tests/composables/map-editor/useLivePlayCommands.test.ts`
+- relevant token HUD/presentation components
+- `tests/utils/livePlayPredictions.test.ts`
 
 **Work:**
 
-- In accepted terminal response handling, try authoritative patches before `response.map`.
-- Use `response.map` only as a fallback when patches are absent or cannot be applied safely.
-- Keep snapshot/reconciliation flows unchanged.
+- Add local pending-condition metadata for `modifyConditions` commands.
+- Display pending feedback on the affected token while the authoritative sheet update is in flight.
+- Do not write predicted conditions into the live sheet cache.
+- Roll back or clear pending metadata on terminal response.
 
 **Acceptance:**
 
-- Accepted `moveToken` and `turnToken` responses apply patches without replacing the whole map object.
-- Patch application failure still triggers reconciliation or full-map fallback.
-- Tests cover responses containing both `patches` and `map`.
+- Condition dialog actions provide immediate visible pending feedback on the token.
+- Accepted authoritative updates replace the pending state.
+- Rejected condition commands clear pending feedback and show a correction/rejection notice.
 
 ---
 
-## 009 — LP-S1-007 — Wire immediate visual prediction for token movement
+## 014 — LP-S2-014 — Add live-play prediction chaos tests
 
-Status: DONE
+Status: TODO
 
-**Goal:** A clicked token move should appear on the map immediately in Run Live Play.
+**Goal:** Exercise prediction, scoped concurrency, and recovery under realistic out-of-order conditions.
 
 **Primary files:**
 
-- `src/pages/maps/[slug].vue`
-- `src/composables/map-editor/useLivePlayCommands.ts`
-- `tests/pages/mapPageRouteAuthority.test.ts` or a new focused page/composable test
+- `tests/integration/livePlayChaosHarness.ts`
+- `tests/integration/livePlayChaosHardening.test.ts` or a new focused prediction chaos test
 
 **Work:**
 
-- Enable the `moveToken` prediction path from the map page.
-- Clear selection immediately after a valid local predicted move.
-- Keep attack-of-opportunity prompt clearing/provocation gated behind authoritative acceptance.
-- Show a non-blocking correction notice if the move is later rejected.
+- Extend the chaos harness with client prediction states where possible.
+- Simulate two clients moving different tokens, same-token stale conflicts, SSE-before-HTTP, HTTP-before-SSE, reconnect/gap reconciliation, and uncertain outbox recovery.
+- Assert final authoritative map state, not just individual command responses.
 
 **Acceptance:**
 
-- In live play, moving a controlled token updates its rendered position before HTTP completion.
-- If the server rejects the command, the token rolls back and the user sees a concise notice.
-- Attack-of-opportunity side effects do not run for rejected predicted movement.
+- The chaos test fails if local prediction rollback overwrites unrelated accepted remote state.
+- The chaos test fails if duplicate terminal delivery applies state twice.
+- The chaos test passes with deterministic final map revisions and token positions.
 
 ---
 
-## 010 — LP-S1-008 — Wire immediate visual prediction for token facing
+## 015 — LP-S2-015 — Add operator smoke notes for prediction hardening
 
-Status: DONE
+Status: TODO
 
-**Goal:** Turning a token should feel instant in Run Live Play.
-
-**Primary files:**
-
-- `src/pages/maps/[slug].vue`
-- `src/composables/map-editor/useLivePlayCommands.ts`
-- `tests/composables/map-editor/useLivePlayCommands.test.ts`
-
-**Work:**
-
-- Enable the `turnToken` prediction path from the map page.
-- Clear selection immediately after a valid local predicted turn.
-- Roll back facing if the command is rejected.
-
-**Acceptance:**
-
-- Turning a controlled token updates facing before HTTP completion.
-- Rejected turns restore the previous authoritative facing.
-- Existing setup-edit turn behavior is unchanged.
-
----
-
-## 011 — LP-S1-011 — Add same-token movement coalescing before send
-
-Status: DONE
-
-**Goal:** Prevent rapid repeated moves for the same token from creating a sluggish queue of obsolete destinations.
+**Goal:** Update the manual smoke checklist for the new Sprint 2 edge cases.
 
 **Primary files:**
 
-- `src/composables/map-editor/useLivePlayCommands.ts`
-- `tests/composables/map-editor/useLivePlayCommands.test.ts`
+- `docs/private-vps-live-play-smoke.md`
+- `docs/live-play-authority.md` if the authority notes need a short prediction-hardening paragraph
 
 **Work:**
 
-- If a same-token `moveToken` command has not been sent yet, replace it with the latest destination instead of sending both.
-- If a same-token move is already sending, keep at most one superseding queued move.
-- Ensure each sent command still has a stable `opId` and exact body after it leaves the local queue.
+- Add a Sprint 2 section covering remote patch rebase, out-of-order terminal responses, reconnect prediction clearing, status-check resolution, and correction-notice deduping.
+- Keep the checklist runnable by one GM and two player browsers.
+- Avoid implementation details that would become stale quickly.
 
 **Acceptance:**
 
-- Rapid clicks on the same token visually follow the latest destination.
-- The client does not send obsolete unsent destinations.
-- Already-sent commands are not mutated after durable outbox claim.
-
----
-
-## 012 — LP-S1-012 — Add token-level pending/correction UI affordances
-
-Status: DONE
-
-**Goal:** Make prediction honest without making the whole table feel blocked.
-
-**Primary files:**
-
-- `src/pages/maps/[slug].vue`
-- relevant map/token presentation component(s)
-- `tests/pages/mapPageRouteAuthority.test.ts` or component tests
-
-**Work:**
-
-- Surface a subtle pending state for tokens with local predictions.
-- Surface a small correction/rejection notice when a predicted token action rolls back.
-- Remove or soften global “Sending live-play command to the server” messaging for ordinary predicted token actions.
-
-**Acceptance:**
-
-- The table remains interactive while one token is pending.
-- Users can tell which token is waiting for server confirmation.
-- Rejection/correction messaging is visible but non-modal.
-
----
-
-## 013 — LP-S1-013 — Add regression tests for scoped concurrency
-
-Status: DONE
-
-**Goal:** Lock in the UX contract that unrelated token actions do not block each other.
-
-**Primary files:**
-
-- `tests/composables/map-editor/useLivePlayCommands.test.ts`
-- `tests/server/livePlayConcurrentIntegration.test.ts` if needed
-
-**Work:**
-
-- Add composable tests for:
-  - token A move and token B move can both dispatch;
-  - token A move and token A move conflict or coalesce;
-  - token A move can be accepted after token B move advances the map revision;
-  - rejection of token A prediction does not revert token B authoritative update.
-
-**Acceptance:**
-
-- Tests fail against the old global `saving` lock.
-- Tests pass with scope-aware pending behavior.
-
----
-
-## 014 — LP-S1-014 — Add a short live-play feel smoke note
-
-Status: DONE
-
-**Goal:** Give maintainers a manual checklist for validating the new feel.
-
-**Primary files:**
-
-- `docs/private-vps-live-play-smoke.md` or `docs/live-play-authority.md`
-
-**Work:**
-
-- Add a short manual test section for the sprint:
-  - two clients move different tokens rapidly;
-  - one client turns while another moves;
-  - rejected movement rolls back visibly;
-  - reconnect/reconciliation still pauses commands;
-  - recovery panel still handles uncertain commands.
-
-**Acceptance:**
-
-- The checklist is concise and runnable during manual smoke testing.
-- It distinguishes “instant local prediction” from “authoritative acceptance.”
+- The smoke checklist explicitly distinguishes local prediction, authoritative acceptance, reconciliation, and recovery.
+- Operators have concrete steps for SSE-before-HTTP and reconnect/gap scenarios.
 
 ---
 
 ## Suggested sprint order
 
-1. `LP-S1-001`
-2. `LP-S1-002`
-3. `LP-S1-003`
-4. `LP-S1-004`
-5. `LP-S1-005`
-6. `LP-S1-006`
-7. `LP-S1-009`
-8. `LP-S1-010`
-9. `LP-S1-007`
-10. `LP-S1-008`
-11. `LP-S1-011`
-12. `LP-S1-012`
-13. `LP-S1-013`
-14. `LP-S1-014`
+1. `LP-S2-001`
+2. `LP-S2-002`
+3. `LP-S2-003`
+4. `LP-S2-004`
+5. `LP-S2-005`
+6. `LP-S2-006`
+7. `LP-S2-007`
+8. `LP-S2-008`
+9. `LP-S2-009`
+10. `LP-S2-010`
+11. `LP-S2-013`
+12. `LP-S2-011`
+13. `LP-S2-012`
+14. `LP-S2-014`
+15. `LP-S2-015`
 
 ## Sprint exit criteria
 
-- Moving and turning controlled tokens in Run Live Play renders immediately on the originating client.
-- Independent token commands can overlap without a global page-level input lock.
-- Server accepted events remain authoritative and idempotent.
-- Rejected predicted token actions roll back only the affected predicted scope.
-- Reconnect, replay gap, and durable recovery states still block new commands until safe.
+- Remote accepted patches can arrive while local predictions are pending without corrupting either resource.
+- SSE-first and HTTP-first terminal delivery are both idempotent.
+- Reconnect/gap recovery clears presentation-only predictions and preserves durable outbox recovery.
+- Same-token coalesced moves rebuild from current authoritative revision before send.
+- At least one additional low-risk action family has safe local pending feedback beyond move/turn.
+- Maintainers can inspect command lifecycle timings in debug mode without exposing private command payloads.
