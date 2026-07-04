@@ -4,6 +4,7 @@ import { LIVE_PLAY_COMMAND_TYPES, type LivePlayMapCommandType } from '#shared/li
 import { MAP_INTERACTION_MODES, type MapInteractionMode } from '#shared/mapInteractionMode'
 import type { LivePlayCommandOutboxRecoveryStatus } from '~/composables/map-editor/useLivePlayCommands'
 import type { LivePlayCommandStatusInspection } from '~/composables/map-editor/useLivePlayCommandRecoveryGate'
+import { buildLivePlayBatchCommandSummary } from '~/utils/livePlayBatchCommandUi'
 import type { LivePlayCommandOutboxEntry, LivePlayCommandOutboxState } from '~/utils/livePlayCommandOutbox'
 
 const props = defineProps<{
@@ -72,6 +73,15 @@ const STATE_LABELS: Record<LivePlayCommandOutboxState, string> = {
   uncertain: 'Uncertain',
 }
 
+const batchSummary = (entry: LivePlayCommandOutboxEntry) => buildLivePlayBatchCommandSummary({
+  commandType: entry.commandType,
+  body: entry.body,
+})
+
+const batchRecoveryLabel = (entry: LivePlayCommandOutboxEntry): string | null => (
+  batchSummary(entry)?.recoveryLabel ?? null
+)
+
 const summaryMessage = computed(() => {
   if (props.retryingOpId) return 'Retrying the pending live-play command with its original operation ID.'
   if (props.checkingOpId || props.recoveryStatus === 'checking') return 'Checking the server for a terminal command result without resending the command.'
@@ -80,7 +90,12 @@ const summaryMessage = computed(() => {
   if (props.recoveryStatus === 'loading') return 'Checking for interrupted live-play commands before actions resume.'
   if (props.recoveryError) return props.recoveryError
   if (props.blockMessage) return props.blockMessage
-  if (props.entries.length === 1) return 'One pending live-play command must be resolved before new live actions resume.'
+  if (props.entries.length === 1) {
+    const summary = batchRecoveryLabel(props.entries[0]!)
+    return summary
+      ? `${summary} is waiting for live-play recovery.`
+      : 'One pending live-play command must be resolved before new live actions resume.'
+  }
   if (props.entries.length > 1) return `${props.entries.length} pending live-play commands must be resolved before new live actions resume.`
   return 'Durable live-play command recovery is up to date.'
 })
@@ -102,7 +117,9 @@ const refreshButtonLabel = computed(() => {
 })
 
 const commandLabel = (entry: LivePlayCommandOutboxEntry): string => (
-  COMMAND_LABELS[entry.commandType as LivePlayMapCommandType]
+  batchSummary(entry)?.title
+  ?? COMMAND_LABELS[entry.commandType as LivePlayMapCommandType]
+  ?? 'Live-play command'
 )
 
 const shortOpId = (opId: string): string => (
@@ -268,6 +285,12 @@ const onConfirmAbandon = (entry: LivePlayCommandOutboxEntry): void => {
         <div class="live-play-command-recovery-panel__entry-main">
           <div>
             <h3>{{ commandLabel(entry) }}</h3>
+            <p
+              v-if="batchRecoveryLabel(entry)"
+              class="live-play-command-recovery-panel__batch-summary"
+            >
+              {{ batchRecoveryLabel(entry) }}
+            </p>
             <p>
               <span
                 class="live-play-command-recovery-panel__state"
@@ -420,6 +443,7 @@ const onConfirmAbandon = (entry: LivePlayCommandOutboxEntry): void => {
 .live-play-command-recovery-panel__guidance,
 .live-play-command-recovery-panel__notice p,
 .live-play-command-recovery-panel__abandon-confirmation p,
+.live-play-command-recovery-panel__batch-summary,
 .live-play-command-recovery-panel__entry p {
   margin: 0;
 }
@@ -460,6 +484,7 @@ const onConfirmAbandon = (entry: LivePlayCommandOutboxEntry): void => {
 .live-play-command-recovery-panel__guidance,
 .live-play-command-recovery-panel__notice,
 .live-play-command-recovery-panel__abandon-confirmation,
+.live-play-command-recovery-panel__batch-summary,
 .live-play-command-recovery-panel__entry p,
 .live-play-command-recovery-panel__meta {
   color: var(--muted);
@@ -468,6 +493,11 @@ const onConfirmAbandon = (entry: LivePlayCommandOutboxEntry): void => {
 
 .live-play-command-recovery-panel__safety {
   margin-top: 0.45rem;
+}
+
+.live-play-command-recovery-panel__batch-summary {
+  margin-top: 0.2rem;
+  font-weight: 700;
 }
 
 .live-play-command-recovery-panel__entries {

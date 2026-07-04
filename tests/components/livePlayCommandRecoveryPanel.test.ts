@@ -146,6 +146,66 @@ describe('LivePlayCommandRecoveryPanel', () => {
     expect(wrapper.emitted('retry')).toEqual([[entry.opId]])
   })
 
+  it('renders batch recovery summaries without listing full payload details', () => {
+    const clearHazardsEntry = createEntry('uncertain', {
+      commandType: LIVE_PLAY_COMMAND_TYPES.CLEAR_HAZARDS,
+      opId: 'op_panelbatch01',
+      body: {
+        schemaVersion: LIVE_PLAY_COMMAND_SCHEMA_VERSION,
+        opId: 'op_panelbatch01',
+        mapSlug: 'arena-map',
+        baseRevision: 7,
+        type: LIVE_PLAY_COMMAND_TYPES.CLEAR_HAZARDS,
+        scopes: [{ kind: 'map', lane: 'hazards' }],
+        payload: {
+          mode: 'cells',
+          cells: [{ x: 101, y: 0, z: 202 }, { x: 303, y: 0, z: 404 }],
+          kind: 'spikes',
+        },
+        clientId: 'secret-client',
+      },
+    })
+    const terrainEntry = createEntry('queued', {
+      commandType: LIVE_PLAY_COMMAND_TYPES.EDIT_TERRAIN_VOXELS,
+      opId: 'op_panelbatch02',
+      body: {
+        schemaVersion: LIVE_PLAY_COMMAND_SCHEMA_VERSION,
+        opId: 'op_panelbatch02',
+        mapSlug: 'arena-map',
+        baseRevision: 7,
+        type: LIVE_PLAY_COMMAND_TYPES.EDIT_TERRAIN_VOXELS,
+        scopes: [{ kind: 'map', lane: 'terrain' }],
+        payload: {
+          operations: [
+            { action: 'upsert', voxel: { x: 12, y: 3, z: 14, materialId: 'secret-material', color: '#123456' } },
+            { action: 'remove', cell: { x: 15, y: 3, z: 16 } },
+          ],
+        },
+        clientId: 'secret-client',
+      },
+    })
+
+    const wrapper = mount(LivePlayCommandRecoveryPanel, {
+      props: {
+        entries: [clearHazardsEntry, terrainEntry],
+        recoveryStatus: 'idle',
+        interactionMode: MAP_INTERACTION_MODES.LIVE_PLAY,
+        retryingOpId: null,
+        retryDisabledMessage: null,
+      },
+    })
+
+    expect(wrapper.text()).toContain('Clear hazards')
+    expect(wrapper.text()).toContain('Clearing 2 hazard cells')
+    expect(wrapper.text()).toContain('Edit terrain voxels')
+    expect(wrapper.text()).toContain('Applying terrain brush (2 cells)')
+    expect(wrapper.text()).not.toContain('secret-client')
+    expect(wrapper.text()).not.toContain('secret-material')
+    expect(wrapper.text()).not.toContain('#123456')
+    expect(wrapper.text()).not.toContain('101')
+    expect(wrapper.text()).not.toContain('404')
+  })
+
   it('shows accepted-command synchronization without retry controls when no entries remain', () => {
     const wrapper = mount(LivePlayCommandRecoveryPanel, {
       props: {

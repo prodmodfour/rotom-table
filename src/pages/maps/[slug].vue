@@ -92,6 +92,7 @@ import {
   playerCharacterSheetKeysForProfiles,
 } from '~/utils/playerCharacterTokens'
 import { clearCombatLogMetadata, countCombatLogMessages } from '~/utils/combatLog'
+import { buildLivePlayBatchPendingLabel } from '~/utils/livePlayBatchCommandUi'
 import { textValueFromEvent } from '~/utils/domEvents'
 import {
   applyPokeballCaptureOutcomeToPokemonSheet,
@@ -507,6 +508,13 @@ const livePlayGlobalTransportPending = computed(() => (
   livePlayCommands.transportStatus.value === 'sending'
   && livePlayUnpredictedPendingCommandCount.value > 0
 ))
+const livePlayActiveBatchPendingLabel = computed(() => buildLivePlayBatchPendingLabel(
+  Object.values(livePlayCommands.pendingCommands.value),
+  {
+    hazardCount: hazardCount.value,
+    fieldEffectCount: fieldEffectCount.value,
+  },
+))
 const livePlayClearHazardsPending = computed(() => (
   !isSetupEditMode()
   && Object.values(livePlayCommands.pendingCommands.value).some(
@@ -539,11 +547,16 @@ const livePlayStatusMessage = computed(() => {
     return livePlayCommandRecoveryGate.blockMessage.value
   }
   if (livePlayStateMachine.state.value !== 'ready') {
-    return livePlayStateMachine.state.value === 'saving-command' && !livePlayGlobalTransportPending.value
-      ? livePlayCommandRecoveryGate.blockMessage.value
-      : livePlayStateMachine.notice.value
+    if (livePlayStateMachine.state.value === 'saving-command') {
+      return livePlayGlobalTransportPending.value
+        ? livePlayActiveBatchPendingLabel.value ?? livePlayStateMachine.notice.value
+        : livePlayCommandRecoveryGate.blockMessage.value
+    }
+    return livePlayStateMachine.notice.value
   }
-  if (livePlayGlobalTransportPending.value) return 'Sending live-play command to the server.'
+  if (livePlayGlobalTransportPending.value) {
+    return livePlayActiveBatchPendingLabel.value ?? 'Sending live-play command to the server.'
+  }
   return livePlayCommandRecoveryGate.blockMessage.value ?? livePlayStateMachine.notice.value
 })
 const livePlayRetryDisabledMessage = computed(() => {

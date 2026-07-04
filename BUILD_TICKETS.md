@@ -520,7 +520,7 @@ Status: DONE
 
 ## 017 — LP-S4-017 — Add batch operation pending/recovery UI affordances
 
-Status: TODO
+Status: DONE
 
 **Goal:** Make batch commands honest to users without reintroducing a global table lock.
 

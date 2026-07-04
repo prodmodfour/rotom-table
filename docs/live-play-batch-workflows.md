@@ -33,6 +33,8 @@ The shared `clearFieldEffects` contract supports category-only clears for `weath
 
 The shared `editTerrainVoxels` contract is the terrain-brush batch shape now available to the durable live-play command pipeline. Its payload is one bounded `operations` list with `upsert` voxel operations and `remove` cell operations; unknown fields, empty lists, oversized lists, duplicate cells, and upsert/remove contradictions in the same cell reject before any authoritative mutation path can run. Small batches construct explicit terrain-cell scopes, while larger batches fall back to the conservative map `terrain` lane scope so they still conflict safely with single-cell terrain edits. The batch is exposed through `POST /api/maps/terrain/edit`, validates bounds/materials/occupancy before mutation, commits all changed cells in one terrain transaction, and returns a `map.terrain` patch with changed cells for patch-first client adoption.
 
+Sprint 4 client pending and recovery UI summarizes batch operations by command kind and bounded counts only, for example “Clearing 12 hazards…” or “Applying terrain brush (8 cells)…”. It does not list payload coordinates, owner labels, client IDs, profile IDs, sheet data, or other private fields. Active batch commands still use scope conflict checks in `useLivePlayCommands`, so unrelated scoped token actions can remain interactive while the batch is in flight.
+
 ## Summary classification
 
 | Workflow | Current live-play behavior | Classification | Why |
