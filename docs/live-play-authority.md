@@ -78,7 +78,9 @@ The scheduler uses the same repository pruning path as the CLI and must not muta
 
 Realtime cursors are stored per delivery context: GM, unprofiled player, and each selected player profile. Reconnect/replay pauses live-play command dispatch until the client is caught up or reconciled. The map page state machine exposes loading, ready, saving-command, reconnecting, reconciling, stale, and error states.
 
-Local `moveToken` and `turnToken` predictions are presentation-only overlays on top of the last authoritative map. The originating map view highlights tokens that are waiting for server confirmation, keeps unrelated tokens interactive, and shows a small correction notice if the server rejects a predicted token action and the overlay rolls back.
+Local predictions are presentation-only overlays on top of the last authoritative map. The narrow predicted surface is token movement/facing plus token-level pending feedback for supported simple HP or condition edits; it does not mutate cached sheet documents or become durable state. When a remote authoritative patch arrives while local predictions are pending, clients adopt the authoritative patch against clean map state and then layer back only safe non-conflicting predictions. Conflicting predictions roll back through correction or reconciliation. HTTP, SSE, replay, and status-check terminal results for the same `opId` are idempotent: stale duplicates can acknowledge recovery state but must not apply patches twice or roll back already accepted state.
+
+The originating map view highlights tokens that are waiting for server confirmation, keeps unrelated tokens interactive, and shows a small correction notice if the server rejects a predicted token action and the overlay rolls back.
 
 The recovery panel means:
 

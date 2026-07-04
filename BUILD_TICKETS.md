@@ -1,6 +1,6 @@
 # BUILD_TICKETS.md
 
-AUTOMATION_STATUS: TODO
+AUTOMATION_STATUS: DONE
 
 Ticket statuses:
 
@@ -410,7 +410,7 @@ Status: DONE
 
 ## 015 — LP-S2-015 — Add operator smoke notes for prediction hardening
 
-Status: TODO
+Status: DONE
 
 **Goal:** Update the manual smoke checklist for the new Sprint 2 edge cases.
 
