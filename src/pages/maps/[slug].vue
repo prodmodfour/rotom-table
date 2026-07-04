@@ -1298,7 +1298,7 @@ const clearWeatherFromMenu = async () => {
     return
   }
   if (!canEditMap.value) return
-  const result = await livePlayCommands.removeFieldEffect({ category: 'weather' })
+  const result = await livePlayCommands.clearFieldEffects({ category: 'weather' })
   if (result.dispatched) weatherCoexistNext.value = false
 }
 
@@ -1400,7 +1400,7 @@ const clearAllFieldEffectsFromMenu = async () => {
   if (!canEditMap.value || fieldEffectCount.value === 0) return
   const ok = typeof window === 'undefined' || window.confirm('Clear all active Weather, Terrain, and Room effects?')
   if (!ok) return
-  const result = await livePlayCommands.removeFieldEffect({ category: 'all' })
+  const result = await livePlayCommands.clearFieldEffects({ category: 'all' })
   if (result.dispatched) weatherCoexistNext.value = false
 }
 

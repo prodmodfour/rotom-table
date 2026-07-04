@@ -262,6 +262,35 @@ describe('map page route authority', () => {
     expect(hazardControls).toContain("{{ hazardClearPending ? 'Clearing hazards…' : 'Clear hazards' }}")
   })
 
+  it('wires clear-all field effects through one live-play batch command while setup edit remains local', () => {
+    const mapPage = readSource('src/pages/maps/[slug].vue')
+    const clearWeatherStart = mapPage.indexOf('const clearWeatherFromMenu = async () => {')
+    const clearWeatherEnd = mapPage.indexOf('const toggleTerrainFromMenu = async', clearWeatherStart)
+    const clearAllStart = mapPage.indexOf('const clearAllFieldEffectsFromMenu = async () => {')
+    const clearAllEnd = mapPage.indexOf('const {\n  buildMode,', clearAllStart)
+
+    expect(clearWeatherStart).toBeGreaterThan(-1)
+    expect(clearWeatherEnd).toBeGreaterThan(clearWeatherStart)
+    expect(clearAllStart).toBeGreaterThan(-1)
+    expect(clearAllEnd).toBeGreaterThan(clearAllStart)
+
+    const clearWeatherHandler = mapPage.slice(clearWeatherStart, clearWeatherEnd)
+    const clearAllHandler = mapPage.slice(clearAllStart, clearAllEnd)
+
+    expect(clearWeatherHandler).toContain('if (isSetupEditMode()) {\n    clearWeatherLocally()\n    return\n  }')
+    expect(clearWeatherHandler).toContain("const result = await livePlayCommands.clearFieldEffects({ category: 'weather' })")
+    expect(clearWeatherHandler).not.toContain('livePlayCommands.removeFieldEffect')
+    expect(clearAllHandler).toContain('if (isSetupEditMode()) {\n    clearAllFieldEffectsLocally()\n    return\n  }')
+    expect(clearAllHandler).toContain('Clear all active Weather, Terrain, and Room effects?')
+    expect(clearAllHandler).toContain("const result = await livePlayCommands.clearFieldEffects({ category: 'all' })")
+    expect(clearAllHandler).not.toContain('livePlayCommands.removeFieldEffect')
+    expect(clearWeatherHandler).toContain('if (result.dispatched) weatherCoexistNext.value = false')
+    expect(clearAllHandler).toContain('if (result.dispatched) weatherCoexistNext.value = false')
+    expect(mapPage).toContain("const result = await livePlayCommands.removeFieldEffect({ category: 'weather', kind })")
+    expect(mapPage).toContain("if (terrainIsActive(kind)) await livePlayCommands.removeFieldEffect({ category: 'terrain', kind })")
+    expect(mapPage).toContain("if (roomIsActive(kind)) await livePlayCommands.removeFieldEffect({ category: 'room', kind })")
+  })
+
   it('uses the saved map route regardless of the session query parameter', () => {
     const mapPage = readSource('src/pages/maps/[slug].vue')
 

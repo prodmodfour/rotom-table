@@ -300,7 +300,7 @@ Status: DONE
 
 ## 010 — LP-S4-010 — Replace clear-all field effects UI with `clearFieldEffects`
 
-Status: TODO
+Status: DONE
 
 **Goal:** Make clear-all field effects feel like one authoritative action.
 
