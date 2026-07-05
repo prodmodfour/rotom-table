@@ -38,7 +38,7 @@ If you cannot use the script, create local maps with the same privacy and reprod
 2. Use synthetic names such as `Performance Benchmark - Typical Map`; do not use real campaign locations, NPC names, notes, secrets, screenshots, or private art.
 3. Use committed/public example sheets from `data/sheets/examples/` for token placements.
 4. Keep the three scenario shapes stable: empty/minimal, typical medium scene, and large stress scene.
-5. Preserve normal visual quality: antialiasing, device pixel ratio, weather particles, field effects, sprites, shadows, cages, HP bars, overlays, hazards, and tools stay enabled.
+5. Preserve normal visual quality: antialiasing, device pixel ratio, weather particles, field effects, sprites, contact shadows, tactical cage affordances, HP bars, overlays, hazards, and tools stay enabled.
 6. Record any intentional differences from the generated fixture counts in the PR benchmark notes so before/after runs stay comparable.
 7. Before committing code/docs, run `git status --short` and confirm no files under `data/maps/` or other private local data folders are staged.
 

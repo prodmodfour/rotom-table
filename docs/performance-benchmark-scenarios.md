@@ -25,7 +25,7 @@ Record at least the following fields for each scenario:
 | Idle render work | Render count delta over the idle window, active-animation state, average/max frame duration when available, and whether duplicate idle frames continue. |
 | Renderer counters | WebGL `renderer.info` values from the debug overlay, especially render calls, triangles, points/lines, geometries, textures, and programs when exposed. |
 | Interaction work | Pointermove/raycast/pathfinding counts, movement-preview recalculations, and cache hit/miss counters when those overlay metrics are available. |
-| Visual equivalence | Notes that antialiasing, device pixel ratio, weather particles, effects, shadows, cages, sprites, HP bars, overlays, and tool behaviour remain unchanged. |
+| Visual equivalence | Notes that antialiasing, device pixel ratio, weather particles, effects, contact shadows, tactical cage affordances, sprites, HP bars, overlays, and tool behaviour remain unchanged. |
 | User-visible issues | Jank, delayed hover/preview updates, missing texture loads, stale overlays, console errors, or memory/resource growth after repeated interactions. |
 
 ## Scenario 1: Empty map
@@ -54,7 +54,7 @@ Purpose: measure the common GM/player session where terrain, tokens, overlays, a
 Representative contents:
 
 - medium terrain with several elevations or voxel features;
-- several trainer/Pokémon tokens using normal sprites, shadows, cages, HP bars, status/condition indicators, and elevation badges where appropriate;
+- several trainer/Pokémon tokens using normal sprites, contact shadows, tactical cage affordances where interactions need them, HP bars, status/condition indicators, and elevation badges where appropriate;
 - at least one visible hazard or field effect, plus weather when a tested PR could affect weather or active animation;
 - normal layer visibility and at least one selected token for movement preview testing;
 - no real campaign names, notes, secrets, or private images.
@@ -66,7 +66,7 @@ Before/after measurements to record:
 - a short camera pan/orbit or zoom observation when the PR touches controls or render invalidation;
 - hover/selection responsiveness across multiple tokens;
 - movement preview work for the same selected token and repeated target anchors, including pathfinding and cache metrics when available;
-- visual-equivalence notes for sprites, shadows, cages, HP/status overlays, hazards, weather/effects, and map tools.
+- visual-equivalence notes for sprites, contact shadows, tactical cage affordances, HP/status overlays, hazards, weather/effects, and map tools.
 
 ## Scenario 3: Stress map
 

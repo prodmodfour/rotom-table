@@ -36,7 +36,7 @@ This is a code/docs/test check plus the integrated benchmark visual-equivalence 
 The integrated benchmark pass records the same public fixture maps with normal renderer quality and visible effects enabled:
 
 - Empty map: after initial settlement, the scene recorded `0` frames/renders over 30 seconds while terrain/grid remained visible with normal antialiasing and DPR settings.
-- Typical campaign map: tokens, shadows, cages, HP/status overlays, hazards, rain, terrain/room effects, hover, and movement preview remained visible; continued frames came from intentional visible weather/effects.
+- Typical campaign map: tokens, contact shadows, tactical cage affordances for interaction states, HP/status overlays, hazards, rain, terrain/room effects, hover, and movement preview remained visible; continued frames came from intentional visible weather/effects.
 - Stress map: dense terrain, 48 tokens, 40 hazards, weather particles/effects, overlays, and movement preview stayed enabled; no quality settings were lowered and no visuals/tools were hidden.
 
 The benchmark pass also noted no app console errors or warnings beyond normal Nuxt dev informational logs.

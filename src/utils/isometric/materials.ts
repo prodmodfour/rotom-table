@@ -6,12 +6,12 @@ import {
 } from '~/utils/trainerAccent'
 
 /**
- * Black / white / orange / red terrain palette for isometric face shading.
+ * Tactical cage face palette for isometric footprint/clearance affordances.
  *
  * The classic isometric trick is roughly 100 / 80 / 60 % brightness for
- * top / left / right faces. We keep neutral cages in a white-to-graphite
- * ramp, use warm orange for selected-token feedback, and reserve red for
- * invalid tactical feedback.
+ * top / left / right faces. We keep neutral tactical cages in a
+ * white-to-graphite ramp, use warm orange for selected-token feedback, and
+ * reserve red for invalid tactical feedback.
  *
  * Opposite faces share roles so 90° azimuth rotations preserve the
  * lighting pattern: ±X faces are always the "shadow" axis, ±Z faces
@@ -63,7 +63,7 @@ export const accentVolumeFacePalette = (accentColor: unknown): VolumeFacePalette
 
   return {
     // Keep the actual trainer/app colour on the strongest side while using
-    // isometric light/shadow ramps so the translucent cage still reads as a box.
+    // isometric light/shadow ramps so the tactical clearance volume stays readable.
     top: mixColor(baseColor, 0xffffff, 0.46),
     side: mixColor(baseColor, 0xffffff, 0.14),
     shadow: scaleColor(baseColor, 0.68),
@@ -73,8 +73,8 @@ export const accentVolumeFacePalette = (accentColor: unknown): VolumeFacePalette
 
 export const TERRAIN_PALETTE = {
   idle: {
-    // White/graphite band so the cage sits visually above the terrain's
-    // brightness range without taking on the active red accent.
+    // White/graphite band so a requested tactical cage sits visually above
+    // the terrain's brightness range without taking on the active red accent.
     top:    0xdfe3e8, // white-soft — lit top
     side:   0xaeb5bd, // white-muted — Z-perp visible side
     shadow: 0x66707a, // faint steel — X-perp shadowed side
@@ -115,7 +115,7 @@ const volumeMaterialColors = (palette: VolumeFacePalette): ReadonlyArray<number>
  * Build a 6-material array for a ``THREE.BoxGeometry`` with theme-aware
  * face shading. BoxGeometry face groups are ordered
  * ``+X, -X, +Y, -Y, +Z, -Z`` — we map opposing faces to the same role
- * so the box reads consistently regardless of camera azimuth.
+ * so tactical footprint/clearance cages read consistently regardless of camera azimuth.
  */
 export const buildVolumeMaterials = (
   variant: TerrainVariant,
@@ -127,7 +127,7 @@ export const buildVolumeMaterials = (
       color,
       transparent: opacity < 1,
       opacity,
-      // Cages should disappear behind terrain, but their translucent
+      // Tactical cages should disappear behind terrain, but their translucent
       // faces must not reserve depth and hide sprites/voxels drawn later.
       depthTest: true,
       depthWrite: false,
@@ -176,8 +176,8 @@ export const buildVoxelFaceMaterials = (
     color: 0xffffff,
     transparent: opacity < 1,
     opacity,
-    // Terrain voxels are the occluders for sprites/cages, so normal
-    // blocks write depth. Preview ghosts opt out via ``depthWrite``.
+    // Terrain voxels are the occluders for sprites and tactical cages, so
+    // normal blocks write depth. Preview ghosts opt out via ``depthWrite``.
     depthTest: true,
     depthWrite,
   }))

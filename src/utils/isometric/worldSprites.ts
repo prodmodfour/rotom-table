@@ -190,8 +190,8 @@ export const buildWorldSprite = (
     toneMapped: false,
   })
   if (isoLighting) {
-    // Persistent sprite-local fake lighting replaces the old always-visible cage
-    // as the idle dimensional cue while keeping alpha clipping in the material path.
+    // Persistent sprite-local fake lighting supplies the idle dimensional cue
+    // while keeping alpha clipping in the material path.
     material.onBeforeCompile = (shader) => applyWorldSpriteIsoLightingShader(shader, isoLighting)
     material.customProgramCacheKey = () => WORLD_SPRITE_ISO_LIGHTING_SHADER_CACHE_KEY
   }
@@ -267,16 +267,16 @@ export const disposeWorldSprite = (state: WorldSpriteState | null) => {
 }
 
 /**
- * Flat circular contact shadow under a pokemon sprite. Slightly larger
- * than the cage footprint so the soft alpha rim spills past the cage
- * edges, anchoring the billboarded sprite to the ground.
+ * Flat circular contact shadow under a Pokémon sprite. Slightly larger
+ * than the footprint so the soft alpha rim helps anchor the billboarded
+ * sprite to the ground while tactical cages stay optional.
  */
 export const contactShadowRadiusForPokemon = (
   pokemon: Pick<SpawnedPokemon, 'base' | 'clearance'>,
 ): number => {
   // Scale by clearance so a Wailord doesn't share Cutiefly's shadow.
   // Base term keeps small/wide mons grounded; clearance term grows the
-  // disc as the cage gets taller without making it absurdly wide.
+  // disc as occupied height increases without making it absurdly wide.
   return Math.max(pokemon.base, 0.5) * 0.55 + pokemon.clearance * 0.06
 }
 

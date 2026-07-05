@@ -12,8 +12,8 @@ import type { PokemonRenderObject } from '~/utils/isometric/types'
  * - `PokemonRenderObject.currentCenter` is the token footprint centre at its
  *   current elevation / foot position;
  * - `base` is footprint width/depth in grid cells;
- * - `height` is visual sprite height, while `clearance` is the occupied cage
- *   height used by collision/volume rendering.
+ * - `height` is visual sprite height, while `clearance` is the occupied
+ *   height used by collision and tactical volume rendering.
  */
 export const MOVE_VFX_TOKEN_ANCHOR = {
   foot: 'foot',

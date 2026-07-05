@@ -83,7 +83,7 @@ The overlay counters are cumulative for the current map mount. Prefer start/end 
 | Move VFX | Active VFX, instance groups, `Keeps scheduler active`, root visibility, layer visibility, and disposed state when testing move animations. | Shows whether transient move VFX are intentionally responsible for continued animation frames and whether they settle back to idle. |
 | Pointer work | Pointermove events, processed pointer frames, coalesced move events, last pointer frame events, total raycasts, and raycasts by kind. | Verifies pointer-heavy work is coalesced and cached. |
 | Pathfinding work | Pathfinding requests, path cache hits, and path cache misses for repeated movement-preview anchors. | Verifies duplicate movement previews reuse cached path results. |
-| Visual equivalence | Antialiasing, DPR, sprites, shadows, cages, HP/status overlays, elevation badges, terrain, hazards, weather/effects, targeting, and tools. | Ensures performance wins did not come from degraded output or removed behaviour. |
+| Visual equivalence | Antialiasing, DPR, sprites, contact shadows, tactical cage affordances, HP/status overlays, elevation badges, terrain, hazards, weather/effects, targeting, and tools. | Ensures performance wins did not come from degraded output or removed behaviour. |
 | Resource stability | Geometries/textures/programs after repeated interactions and after leaving/reopening the map if tested. | Catches leaks or stale renderer resources. |
 
 ## 5. Interpreting the debug overlay

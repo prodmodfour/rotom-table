@@ -37,6 +37,7 @@ This directory collects presentation and reviewer documentation for Rotom Table.
 
 - [Map v2](maps-v2.md) — current map document shape and render layers.
 - [Move animations implementation brief](move-animations.md) — user-facing release note, disable/reduced-motion controls, scope, UX, visual-only boundaries, and expected source areas for the basic move VFX layer.
+- [Token cosmetic improvements](cosmetic-improvements.md) — release note, renderer model, ticket plan, and manual QA checklist for idle sprite grounding, persistent sprite isometric shading, and tactical cage affordances.
 - [Move animation manual QA checklist](move-animation-manual-qa.md) — repeatable browser review scenarios for hits, misses, crits, self/healing/status/buff/area/pass effects, reduced motion, disabled animations, lifecycle, persistence, and blocker/polish classification.
 - [Realtime map action events manual QA](realtime-map-action-events-manual-qa.md) — same-map multi-tab/device checklist for transient splashes, move VFX, move feedback, Poké Ball UI, second-map isolation, duplicate prevention, per-client settings, visual-only persistence, and the latest code-assisted browser smoke result.
 - [Move VFX first-playtest follow-up issues](move-vfx-follow-up-issues.md) — first realistic map playtest notes, blocker/polish triage, and small follow-up issue list for readability, accessibility, performance validation, and future bespoke wishes.

@@ -1,6 +1,6 @@
 # BUILD_TICKETS.md
 
-AUTOMATION_STATUS: TODO
+AUTOMATION_STATUS: DONE
 
 Ticket statuses:
 
@@ -384,7 +384,7 @@ Status: DONE
 
 ## 012 — COS-012 — Clean up comments and release note wording
 
-Status: TODO
+Status: DONE
 
 **Goal:** Align code comments and user-facing language with the final renderer model.
 

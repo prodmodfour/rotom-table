@@ -135,7 +135,7 @@ Damaging hit target flashes can request `shake: true` for a short impact cue. Th
 
 ## Visual quality and style guardrails
 
-Move VFX should look like part of the existing dark tactical map: luminous, concise, semi-transparent, and world-anchored. Effects should support the token sprites, cages, HP bars, targeting reticles, area templates, roll feedback, weather, hazards, and field effects instead of competing with them.
+Move VFX should look like part of the existing dark tactical map: luminous, concise, semi-transparent, and world-anchored. Effects should support the token sprites, tactical cage affordances, HP bars, targeting reticles, area templates, roll feedback, weather, hazards, and field effects instead of competing with them.
 
 ### Default timing tiers
 

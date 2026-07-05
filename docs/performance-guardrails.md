@@ -9,7 +9,7 @@ Do not use any of these as the primary optimization path:
 - lowering renderer device pixel ratio, canvas resolution, or the existing high-DPI cap behaviour;
 - disabling WebGL antialiasing;
 - reducing weather or field-effect particle counts;
-- removing weather, terrain, shadows, cages, HP bars, overlays, sprites, hazards, field effects, or token visuals;
+- removing weather, terrain, contact shadows, tactical cage affordances, HP bars, overlays, sprites, hazards, field effects, or token visuals;
 - removing or simplifying token controls, move automation, targeting, build tools, hazard tools, or sheet interactions;
 - adding a user-facing low-quality/performance mode that changes visual output;
 - changing game rules to make rendering easier.

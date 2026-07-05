@@ -13,6 +13,10 @@ A rendered Pokémon token should be composed of four separate visual ideas:
 
 The cage must no longer carry the responsibility for making the Pokémon look 3D. It should become tactical scaffolding only.
 
+## Release note
+
+Map renderer polish: idle Pokémon tokens now rely on sprite art, halos, contact shadows, and persistent sprite-local isometric shading for their planted 3D read. Cage faces and edges are hidden by default and return only as tactical footprint/clearance affordances for hover, selection, live-play feedback, remote attention, and targeting states where they improve clarity.
+
 ## Non-goals
 
 - Do not change Pokémon placement, movement, targeting, combat automation, saved map data, or network payloads.
@@ -339,3 +343,4 @@ Use the same live-play scene, camera angle, zoom level, and token set for before
 - Comments match the final behaviour.
 - No stale wording says idle cages are required for the isometric illusion.
 - Existing tests pass.
+- The release note above summarizes cages as tactical affordances, with contact shadows and sprite isometric shading as the persistent visual grounding/dimensional cues.

@@ -7,8 +7,8 @@ import {
 
 /**
  * Lazily-built radial-gradient texture for sprite contact shadows. A
- * soft dark blob laid flat on the floor under each pokemon — the
- * "this thing is sitting on the world" cue the cage alone can't give.
+ * soft dark blob laid flat on the floor under each Pokémon — the
+ * persistent "this thing is sitting on the world" cue for idle tokens.
  * Tinted graphite-black (same as floor seam lines) so the shadow blends
  * into the map palette instead of reading as a hard black decal.
  */

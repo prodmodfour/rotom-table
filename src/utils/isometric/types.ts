@@ -66,13 +66,13 @@ export interface PokemonRenderObject {
   hpBar: CSS3DSprite
   combatStageGlass: TokenCombatStageGlass
   /**
-   * Volume box wrapping the pokemon's footprint × clearance. Uses a
-   * 6-material array so we can paint each face with the theme-aware
-   * top/left/right brightness ramp.
+   * Tactical volume wrapping the Pokémon footprint × clearance. Uses a
+   * 6-material array so footprint/clearance affordances keep a readable
+   * top/left/right brightness ramp when a cage state is requested.
    */
   volume: THREE.Mesh<THREE.BoxGeometry, THREE.MeshBasicMaterial[]>
   edges: THREE.LineSegments
-  /** Renderer-owned cage affordance state; layer visibility still gates whether it can render. */
+  /** Renderer-owned tactical cage affordance state; layer visibility still gates whether it can render. */
   cageVisible: boolean
   proxy: THREE.Mesh<THREE.BoxGeometry, THREE.MeshBasicMaterial>
   /** Soft radial-gradient disc on the floor; the "planted on the ground" cue. */

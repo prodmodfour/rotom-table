@@ -21,7 +21,7 @@ Performance work must preserve output-relevant scene state. Do not use any of th
 - lowering renderer device pixel ratio or canvas resolution;
 - disabling antialiasing;
 - reducing weather or field-effect particle counts;
-- removing weather, terrain, shadows, cages, HP bars, overlays, sprites, hazards, or field effects;
+- removing weather, terrain, contact shadows, tactical cage affordances, HP bars, overlays, sprites, hazards, or field effects;
 - simplifying token controls, move automation, build tools, targeting, or sheet interactions;
 - changing game rules to make rendering easier.
 

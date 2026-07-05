@@ -304,7 +304,7 @@ export const createPokemonRenderObject = (
     containers.geometryCache,
   )
   // Per-face white/graphite shading sits in the foreground brightness band
-  // so the cage reads above the terrain instead of merging with it.
+  // so requested tactical cages read above the terrain instead of merging with it.
   const volume = new THREE.Mesh(
     volumeGeometries.volumeBox.geometry,
     buildVolumeMaterials('idle', 0.28),
@@ -684,7 +684,7 @@ export const paintPokemonRenderObjectStyle = (
 
   // Re-tint the per-face material array with the appropriate tactical
   // theme ramp instead of a single solid color. Hover uses the token's
-  // trainer/app accent so the cage identifies ownership without changing
+  // trainer/app accent so the tactical cage identifies ownership without changing
   // the persistent selected-token lift state. Pending local predictions keep
   // that same token-scoped accent visible even when the pointer has moved on;
   // corrections temporarily reserve the red invalid ramp for rollback feedback.
@@ -809,9 +809,9 @@ export const animatePokemonRenderObject = (
   }
   updateWorldSpriteLighting(renderObject.spriteState, options.spriteBrightness, options.haloAlpha)
 
-  // Selection lift: sprite + HP bar pop up, cage stays anchored,
-  // shadow scales up and fades so it reads as a more diffuse blob
-  // — the visible detachment is the "off the ground" cue.
+  // Selection lift: sprite + HP bar pop up while the tactical footprint
+  // stays anchored. The contact shadow scales up and fades so it reads as
+  // a more diffuse blob — the visible detachment is the "off the ground" cue.
   renderObject.liftFactor = nextSelectionLiftFactor(
     renderObject.liftFactor,
     renderObject.liftTarget,
@@ -828,7 +828,7 @@ export const animatePokemonRenderObject = (
   }
 
   // Non-uniform: lift grows the disc, X-stretch elongates it along
-  // the cage's shadow axis so it reads as an ellipse falling away
+  // the isometric shadow axis so it reads as an ellipse falling away
   // from the implied light, not a perfect circle.
   renderObject.shadow.scale.set(liftStyle.shadowScaleX, liftStyle.shadowScaleY, 1)
   renderObject.shadow.material.opacity = liftStyle.shadowOpacity
