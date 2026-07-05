@@ -2,6 +2,7 @@ import type { SpawnedPokemon } from '~/types/pokemon'
 import { getPokemonCenter } from '~/utils/gridGeometry'
 import type { TokenMotionCenter, TokenMotionDurationOptions } from '~/utils/isometric/tokenMotionCurves'
 import {
+  replaceTokenMotionTrack,
   startTokenMotionTrack,
   type TokenMotionTrack,
   type TokenMotionTrackReason,
@@ -70,6 +71,7 @@ export interface PokemonPlacementMotionRenderObject {
   targetCenter: TokenMotionCenter
   motion: {
     track?: TokenMotionTrack
+    sampledCenter?: TokenMotionCenter
   }
 }
 
@@ -107,6 +109,26 @@ const cloneTokenMotionCenter = (center: TokenMotionCenter): TokenMotionCenter =>
   z: center.z,
 })
 
+const copyTokenMotionCenter = (
+  target: TokenMotionCenter | undefined,
+  source: TokenMotionCenter,
+) => {
+  if (!target) return
+
+  const mutableTarget = target as { x: number; y: number; z: number }
+  mutableTarget.x = source.x
+  mutableTarget.y = source.y
+  mutableTarget.z = source.z
+}
+
+const copyPlacementMotionSample = (
+  renderObject: PokemonPlacementMotionRenderObject,
+  center: TokenMotionCenter,
+) => {
+  copyTokenMotionCenter(renderObject.currentCenter, center)
+  copyTokenMotionCenter(renderObject.motion.sampledCenter, center)
+}
+
 /**
  * Starts a presentation-only movement track when an existing render object's
  * authoritative placement center changes. The caller must invoke this before
@@ -119,7 +141,7 @@ export const syncPokemonRenderObjectPlacementMotion = <
   renderObject,
   pokemon,
   startMs,
-  reason = 'setup-edit',
+  reason,
   durationOptions,
 }: PokemonPlacementMotionSyncOptions<TRenderObject>): boolean => {
   const destination = getPokemonCenter(pokemon)
@@ -128,19 +150,40 @@ export const syncPokemonRenderObjectPlacementMotion = <
     return false
   }
 
-  const origin = cloneTokenMotionCenter(renderObject.currentCenter)
+  const renderedOrigin = cloneTokenMotionCenter(renderObject.currentCenter)
 
-  if (tokenMotionCentersNearlyEqual(origin, destination)) {
+  if (tokenMotionCentersNearlyEqual(renderedOrigin, destination)) {
     delete renderObject.motion.track
+    copyPlacementMotionSample(renderObject, destination)
     return false
+  }
+
+  const activeTrack = renderObject.motion.track
+  if (activeTrack) {
+    const replacement = replaceTokenMotionTrack(activeTrack, {
+      destination,
+      replaceAtMs: startMs,
+      reason,
+      durationOptions,
+    })
+
+    if (tokenMotionCentersNearlyEqual(replacement.origin, destination)) {
+      delete renderObject.motion.track
+      copyPlacementMotionSample(renderObject, destination)
+      return false
+    }
+
+    renderObject.motion.track = replacement
+    copyPlacementMotionSample(renderObject, replacement.origin)
+    return true
   }
 
   renderObject.motion.track = startTokenMotionTrack({
     tokenId: pokemon.id,
-    origin,
+    origin: renderedOrigin,
     destination,
     startMs,
-    reason,
+    reason: reason ?? 'setup-edit',
     durationOptions,
   })
 

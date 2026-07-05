@@ -3,6 +3,8 @@ import {
   easeTokenMotionProgress,
   interpolateTokenMotionCenter,
   resolveTokenMotionDurationBetweenCentersMs,
+  resolveTokenMotionDurationMs,
+  tokenMotionDistanceBetweenCenters,
   type TokenMotionCenter,
   type TokenMotionDurationOptions,
 } from './tokenMotionCurves'
@@ -122,6 +124,32 @@ const resolveTrackDurationMs = (
 ): number => normalizeOptionalDurationMs(durationMs)
   ?? resolveTokenMotionDurationBetweenCentersMs(origin, destination, durationOptions)
 
+const resolveReplacementTrackDurationMs = (
+  track: TokenMotionTrack,
+  origin: TokenMotionCenter,
+  destination: TokenMotionCenter,
+  options: Pick<ReplaceTokenMotionTrackOptions, 'durationMs' | 'durationOptions'>,
+): number => {
+  const explicitDurationMs = normalizeOptionalDurationMs(options.durationMs)
+  if (explicitDurationMs !== undefined) return explicitDurationMs
+  if (options.durationOptions) {
+    return resolveTokenMotionDurationBetweenCentersMs(origin, destination, options.durationOptions)
+  }
+
+  const replacementDistance = tokenMotionDistanceBetweenCenters(origin, destination)
+  if (replacementDistance <= 0) return 0
+
+  const previousDistance = tokenMotionDistanceBetweenCenters(track.origin, track.destination)
+  const previousDurationMs = nonNegativeFiniteNumberOrZero(track.durationMs)
+  if (previousDistance <= 0 || previousDurationMs <= 0) {
+    return resolveTokenMotionDurationBetweenCentersMs(origin, destination)
+  }
+
+  return resolveTokenMotionDurationMs(replacementDistance, {
+    msPerGridUnit: previousDurationMs / previousDistance,
+  })
+}
+
 const brandRuntimeTrack = (
   track: Omit<TokenMotionTrack, typeof TOKEN_MOTION_TRACK_RUNTIME_BRAND>,
 ): TokenMotionTrack => {
@@ -213,16 +241,21 @@ export const sampleTokenMotionTrack = (
 export const replaceTokenMotionTrack = (
   track: TokenMotionTrack,
   options: ReplaceTokenMotionTrackOptions,
-): TokenMotionTrack => startTokenMotionTrack({
-  tokenId: track.tokenId,
-  origin: sampleTokenMotionTrack(track, options.replaceAtMs).center,
-  destination: options.destination,
-  startMs: options.replaceAtMs,
-  reason: options.reason ?? track.reason,
-  durationMs: options.durationMs,
-  durationOptions: options.durationOptions,
-  pathSegments: options.pathSegments,
-})
+): TokenMotionTrack => {
+  const origin = sampleTokenMotionTrack(track, options.replaceAtMs).center
+  const destination = normalizeTokenMotionCenter(options.destination)
+
+  return startTokenMotionTrack({
+    tokenId: track.tokenId,
+    origin,
+    destination,
+    startMs: options.replaceAtMs,
+    reason: options.reason ?? track.reason,
+    durationMs: resolveReplacementTrackDurationMs(track, origin, destination, options),
+    durationOptions: options.durationOptions,
+    pathSegments: options.pathSegments,
+  })
+}
 
 export const finishTokenMotionTrack = (
   track: TokenMotionTrack,

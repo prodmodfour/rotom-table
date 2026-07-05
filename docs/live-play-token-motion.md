@@ -48,8 +48,9 @@ For each visible Pokémon:
   - The object is positioned immediately, so new tokens do not slide from world origin.
 - Existing render objects are checked by `syncPokemonRenderObjectPlacementMotion()` before `updatePokemonRenderObjectFromSpawn()` writes the new spawn state.
   - If the next placement center differs from the previous `targetCenter`, a runtime-only motion track starts from the current rendered center to the next authoritative center.
+  - If the token already has an active motion track, the old track is sampled at the replacement timestamp and the new track starts from that sampled center instead of the previous authoritative center or a stale frame sample. The replacement duration is based on the remaining distance and active-track pace unless a caller supplies explicit duration options.
   - Pure sheet/HUD updates such as HP, conditions, combat stages, token items, and accent color leave `targetCenter` unchanged and do not start movement tracks.
-  - If a changed target is already at the rendered center, stale motion metadata is cleared instead of animating a no-op.
+  - If a changed target is already at the sampled/rendered center, stale motion metadata is cleared instead of animating a no-op.
 - Existing render objects are then updated by `updatePokemonRenderObjectFromSpawn()`.
   - `targetCenter` is set to the latest placement center.
   - `currentCenter` is not reset on ordinary updates.
@@ -121,7 +122,7 @@ Rejected terminal command responses call `markOperationFailed()`, which rolls ba
 
 ### Coalesced same-token movement
 
-`useLivePlayCommands()` keeps a per-placement move-token coalescing queue. A newer queued move for the same placement supersedes the older queued move, rolls back the old local prediction if it is still applied, and tracks the new prediction. Renderer state changes are still just placement changes. There is no sampled-position replacement policy, so repeated destinations rely on the generic `currentCenter`/`targetCenter` lerp behaviour and the timing of prediction rollback/reapply updates.
+`useLivePlayCommands()` keeps a per-placement move-token coalescing queue. A newer queued move for the same placement supersedes the older queued move, rolls back the old local prediction if it is still applied, and tracks the new prediction. Renderer state changes are still just placement changes, but an active token-motion track is now replaced from its sampled in-flight center when the same visible token receives a new placement target. That prevents rapid repeated destinations from snapping back to the old authoritative center during rollback/reapply ordering; the latest authoritative or predicted target remains the final destination.
 
 ### Reconnect and authoritative reconciliation
 
@@ -135,7 +136,7 @@ Realtime gaps, replay validation failures, profile changes, or explicit reconcil
 - **No path segments:** even when the movement preview had pathfinding data, committed movement only sends position/path length and the renderer interpolates directly from current center to target center.
 - **No correction semantics:** accepted confirmations, rejected rollbacks, authoritative conflicts, and reconciliation snapshots all look like ordinary target-center changes.
 - **No reduced-motion policy:** token center movement does not currently consult the browser/OS reduced-motion preference or a token-motion-specific setting.
-- **No replacement policy:** rapid same-token moves do not start a new track from a sampled center with defined continuity; they depend on the current lerp state and reactive update order.
+- **Limited replacement source context:** rapid same-token moves now replace active tracks from the sampled in-flight center, but the renderer still receives placement updates without knowing whether they came from local prediction, local confirmation, remote accepted movement, correction, or reconciliation.
 - **No source classification in the renderer:** local prediction, remote accepted movement, setup/edit movement, coalesced movement, and snapshot reconciliation all arrive as the same render-object update.
 - **HUD and overlays follow the sampled center but are not track-aware:** HP bars, elevation badges, shadows, cages, proxies, targeting affordances, presence overlays, and camera focus currently read `currentCenter` or `targetCenter` according to existing helpers, without a single explicit motion sample contract.
 
@@ -149,6 +150,8 @@ Realtime gaps, replay validation failures, profile changes, or explicit reconcil
 
 `LP-S5-006` starts those tracks during token-object sync for existing visible tokens whose placement center changes. New tokens still initialize at their first authoritative center without spawn animation, removed tokens are disposed without delete animation, and sheet/HUD-only updates do not create movement tracks. The initial source reason is the generic `setup-edit` reason because the grid still receives placement changes without live-play source classification; later tickets refine local prediction, remote accepted, correction, and reconciliation reasons.
 
+`LP-S5-007` makes active same-token movement replacement continuous. `replaceTokenMotionTrack()` samples the active track at the replacement timestamp, carries that sampled center into the new origin, and resolves the new duration from remaining distance at the prior track's average pace unless explicit duration options are supplied. `syncPokemonRenderObjectPlacementMotion()` uses that replacement path for visible tokens that receive a new placement target while already moving, so coalesced predictions and rapid repeated clicks do not visually snap back to stale centers.
+
 ## Future Sprint 5 change map
 
 The current code suggests this division for later tickets:
@@ -157,7 +160,7 @@ The current code suggests this division for later tickets:
 
 - `LP-S5-002`: easing, distance-based duration, reduced-motion duration, and center interpolation helpers. Implemented in `src/utils/isometric/tokenMotionCurves.ts` as pure center-point math so future tracks can sample motion without importing three.js.
 - `LP-S5-003`: runtime motion-track model and sampling/cancel/replace helpers. Implemented as pure presentation utilities in `src/utils/isometric/tokenMotionTracks.ts`; not yet wired into render objects.
-- `LP-S5-007`: sampled-position replacement rules for rapid same-token movement.
+- `LP-S5-007`: sampled-position replacement rules for rapid same-token movement. Implemented in `replaceTokenMotionTrack()` and token-object sync.
 - `LP-S5-008`: path segment construction and proportional segment sampling.
 - `LP-S5-009`: deterministic elevation/hop sampling that can be reduced or disabled.
 - `LP-S5-010`: movement-facing timing policy helpers.

@@ -167,6 +167,57 @@ describe('token motion tracks', () => {
     expect(replacement.reason).toBe('server-correction')
   })
 
+  it('resolves replacement duration from remaining distance at the active track pace', () => {
+    const activeTrack = startTokenMotionTrack({
+      tokenId: 'token-5b',
+      origin: { x: 0, y: 0, z: 0 },
+      destination: { x: 10, y: 0, z: 0 },
+      startMs: 1000,
+      durationMs: 400,
+      reason: 'local-prediction',
+    })
+
+    const replacement = replaceTokenMotionTrack(activeTrack, {
+      destination: { x: 0, y: 0, z: 0 },
+      replaceAtMs: 1200,
+    })
+
+    expect(replacement.origin).toEqual({ x: 5, y: 0, z: 0 })
+    expect(replacement.destination).toEqual({ x: 0, y: 0, z: 0 })
+    expect(replacement.durationMs).toBe(200)
+    expect(sampleTokenMotionTrack(replacement, 1400)).toEqual({
+      center: { x: 0, y: 0, z: 0 },
+      elapsedMs: 200,
+      progress: 1,
+      easedProgress: 1,
+      complete: true,
+    })
+  })
+
+  it('lets replacement duration options override active track pace', () => {
+    const activeTrack = startTokenMotionTrack({
+      tokenId: 'token-5c',
+      origin: { x: 0, y: 0, z: 0 },
+      destination: { x: 10, y: 0, z: 0 },
+      startMs: 1000,
+      durationMs: 400,
+      reason: 'local-prediction',
+    })
+
+    const replacement = replaceTokenMotionTrack(activeTrack, {
+      destination: { x: 8, y: 0, z: 0 },
+      replaceAtMs: 1200,
+      durationOptions: {
+        minDurationMs: 50,
+        maxDurationMs: 500,
+        msPerGridUnit: 100,
+      },
+    })
+
+    expect(replacement.origin).toEqual({ x: 5, y: 0, z: 0 })
+    expect(replacement.durationMs).toBe(300)
+  })
+
   it('replaces completed tracks from the destination sample', () => {
     const activeTrack = startTokenMotionTrack({
       tokenId: 'token-6',

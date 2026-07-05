@@ -213,7 +213,7 @@ Status: DONE
 
 ## LP-S5-007 — Preserve smoothness for rapid same-token movement replacement
 
-Status: TODO
+Status: DONE
 
 **Goal:** Make repeated clicks/coalesced move destinations feel continuous rather than stop-start.
 

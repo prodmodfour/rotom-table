@@ -200,6 +200,62 @@ describe('isometric token object sync', () => {
     expect(renderObject.motion.track).toBeUndefined()
   })
 
+  it('replaces active placement motion from the sampled center when the same token receives a new target', () => {
+    const renderObject = makePlacementMotionRenderObject()
+    renderObject.currentCenter = makeCenter(1.5, 0, 0.5)
+    renderObject.targetCenter = makeCenter(10.5, 0, 0.5)
+    renderObject.motion.track = startTokenMotionTrack({
+      tokenId: 'a',
+      origin: { x: 0.5, y: 0, z: 0.5 },
+      destination: { x: 10.5, y: 0, z: 0.5 },
+      startMs: 1000,
+      durationMs: 1000,
+      reason: 'local-prediction',
+    })
+
+    const started = syncPokemonRenderObjectPlacementMotion({
+      renderObject,
+      pokemon: makePokemon('a', { position: { x: 20, y: 0, z: 0 } }),
+      startMs: 1500,
+      reason: 'local-prediction',
+    })
+
+    expect(started).toBe(true)
+    expect(renderObject.motion.track).toMatchObject({
+      tokenId: 'a',
+      origin: { x: 5.5, y: 0, z: 0.5 },
+      destination: { x: 20.5, y: 0, z: 0.5 },
+      startMs: 1500,
+      reason: 'local-prediction',
+    })
+    expect(renderObject.currentCenter).toEqual({ x: 5.5, y: 0, z: 0.5 })
+    expect(renderObject.motion.track?.durationMs).toBe(520)
+  })
+
+  it('does not snap back to a stale current center when replacement target is already sampled', () => {
+    const renderObject = makePlacementMotionRenderObject()
+    renderObject.currentCenter = makeCenter(0.5, 0, 0.5)
+    renderObject.targetCenter = makeCenter(10.5, 0, 0.5)
+    renderObject.motion.track = startTokenMotionTrack({
+      tokenId: 'a',
+      origin: { x: 0.5, y: 0, z: 0.5 },
+      destination: { x: 10.5, y: 0, z: 0.5 },
+      startMs: 1000,
+      durationMs: 1000,
+      reason: 'local-prediction',
+    })
+
+    const started = syncPokemonRenderObjectPlacementMotion({
+      renderObject,
+      pokemon: makePokemon('a', { position: { x: 5, y: 0, z: 0 } }),
+      startMs: 1500,
+    })
+
+    expect(started).toBe(false)
+    expect(renderObject.motion.track).toBeUndefined()
+    expect(renderObject.currentCenter).toEqual({ x: 5.5, y: 0, z: 0.5 })
+  })
+
   it('syncs selection styling for existing render objects only', () => {
     const selected = { id: 'selected' }
     const other = { id: 'other' }
