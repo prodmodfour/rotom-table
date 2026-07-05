@@ -110,6 +110,10 @@ import {
   createMoveTargetingReticleRenderer,
 } from '~/utils/isometric/moveAutomationOverlays'
 import {
+  createMoveFeedbackTokenCageStateResolver,
+  createMoveTargetingTokenCageStateResolver,
+} from '~/utils/isometric/tokenTargetingCages'
+import {
   clampIsometricGroundLevelY,
   getFieldEffectsRevisionKey,
   getHazardsRevisionKey,
@@ -449,8 +453,11 @@ const {
 const selectedPokemon = computed(
   () => props.pokemons.find((pokemon) => pokemon.id === props.selectedId) ?? null,
 )
+const moveAutomationAccentColorForUser = (userId: string | null | undefined): string | undefined => (
+  userId ? props.pokemons.find((pokemon) => pokemon.id === userId)?.accentColor : undefined
+)
 const moveAutomationAccentStyleForUser = (userId: string | null | undefined): Record<string, string> | undefined => {
-  const accentColor = userId ? props.pokemons.find((pokemon) => pokemon.id === userId)?.accentColor : null
+  const accentColor = moveAutomationAccentColorForUser(userId)
   return accentColor ? trainerAccentCssVariables(accentColor) : undefined
 }
 const moveTargetingAccentStyle = computed(() =>
@@ -926,6 +933,15 @@ const applyRenderObjectPosition = (renderObject: PokemonRenderObject): boolean =
 })
 
 const refreshPokemonStyles = () => {
+  const targetingCageStateForToken = createMoveTargetingTokenCageStateResolver(
+    props.moveAutomationTargeting,
+    moveAutomationAccentColorForUser(props.moveAutomationTargeting?.userId),
+  )
+  const feedbackCageStateForToken = createMoveFeedbackTokenCageStateResolver(
+    props.moveAutomationFeedback,
+    moveAutomationAccentColorForUser(props.moveAutomationFeedback?.userId),
+  )
+
   syncPokemonRenderObjectSelectionStyles({
     renderObjects,
     pokemons: renderedPokemons.value,
@@ -934,6 +950,7 @@ const refreshPokemonStyles = () => {
       hovered: hoverController.id() === renderObject.id,
       pending: livePlayPendingTokenIdSet.value.has(pokemon.id),
       corrected: livePlayCorrectionTokenIdSet.value.has(pokemon.id),
+      targeting: feedbackCageStateForToken(pokemon.id) ?? targetingCageStateForToken(pokemon.id),
       remoteAttention: remoteTokenAttentionByTokenId.value.get(pokemon.id),
     }),
   })
@@ -1863,7 +1880,8 @@ watch(
   () => props.moveAutomationTargeting,
   () => {
     if (!renderer) return
-    requestScheduledSceneFrame('targeting')
+    refreshPokemonStyles()
+    requestScheduledSceneFrame({ reasons: ['token-style', 'targeting'] })
   },
   { deep: true },
 )
@@ -1872,7 +1890,8 @@ watch(
   () => props.moveAutomationFeedback,
   () => {
     if (!renderer) return
-    requestScheduledSceneFrame('targeting')
+    refreshPokemonStyles()
+    requestScheduledSceneFrame({ reasons: ['token-style', 'targeting'] })
   },
   { deep: true },
 )

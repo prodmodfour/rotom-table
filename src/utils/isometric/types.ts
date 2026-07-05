@@ -45,6 +45,19 @@ export type PokemonTokenCosmeticLayer =
   | 'cage'
   | 'sprite-isometric-shading'
 
+export type PokemonTacticalCageTargetingRole = 'candidate' | 'selected'
+
+/**
+ * Visual-only targeting request for tactical cage affordances. Targeting
+ * reticles and hit labels remain authoritative; this only restores a subtle
+ * token-footprint cue while the persistent idle cage stays hidden.
+ */
+export interface PokemonTacticalCageTargetingState {
+  role: PokemonTacticalCageTargetingRole
+  /** Acting user's accent when available, not the target token owner's accent. */
+  accentColor?: string
+}
+
 export interface PokemonRenderObject {
   id: string
   sprite: THREE.Sprite

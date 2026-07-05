@@ -22,7 +22,10 @@ import {
   selectionLiftTarget,
   tokenSelectionLiftStyle,
 } from '~/utils/isometric/tokenRenderState'
-import type { PokemonRenderObject } from '~/utils/isometric/types'
+import type {
+  PokemonRenderObject,
+  PokemonTacticalCageTargetingState,
+} from '~/utils/isometric/types'
 import type {
   TokenGeometryLease,
   TokenRenderGeometryCache,
@@ -524,6 +527,8 @@ const TACTICAL_CAGE_OPACITY = {
     pendingSelected: 0.28,
     corrected: 0.3,
     correctedSelected: 0.34,
+    targetingCandidate: 0.16,
+    targetingSelected: 0.22,
     idleReset: 0.28,
   },
   edge: {
@@ -534,6 +539,8 @@ const TACTICAL_CAGE_OPACITY = {
     pendingSelected: 0.9,
     corrected: 0.95,
     correctedSelected: 1,
+    targetingCandidate: 0.62,
+    targetingSelected: 0.84,
     idleReset: 0.35,
   },
   remoteAttention: {
@@ -577,6 +584,7 @@ type PokemonTacticalCageState = {
   hovered: boolean
   pending: boolean
   corrected: boolean
+  targeting: PokemonTacticalCageTargetingState | null
 }
 
 const localTacticalCageFaceOpacity = (state: PokemonTacticalCageState): number => {
@@ -592,7 +600,15 @@ const localTacticalCageFaceOpacity = (state: PokemonTacticalCageState): number =
     return state.selected ? TACTICAL_CAGE_OPACITY.face.hoveredSelected : TACTICAL_CAGE_OPACITY.face.hovered
   }
 
-  return state.selected ? TACTICAL_CAGE_OPACITY.face.selected : TACTICAL_CAGE_OPACITY.face.idleReset
+  if (state.selected) return TACTICAL_CAGE_OPACITY.face.selected
+
+  if (state.targeting) {
+    return state.targeting.role === 'selected'
+      ? TACTICAL_CAGE_OPACITY.face.targetingSelected
+      : TACTICAL_CAGE_OPACITY.face.targetingCandidate
+  }
+
+  return TACTICAL_CAGE_OPACITY.face.idleReset
 }
 
 const localTacticalCageEdgeOpacity = (state: PokemonTacticalCageState): number => {
@@ -608,7 +624,15 @@ const localTacticalCageEdgeOpacity = (state: PokemonTacticalCageState): number =
     return state.selected ? TACTICAL_CAGE_OPACITY.edge.hoveredSelected : TACTICAL_CAGE_OPACITY.edge.hovered
   }
 
-  return state.selected ? TACTICAL_CAGE_OPACITY.edge.selected : TACTICAL_CAGE_OPACITY.edge.idleReset
+  if (state.selected) return TACTICAL_CAGE_OPACITY.edge.selected
+
+  if (state.targeting) {
+    return state.targeting.role === 'selected'
+      ? TACTICAL_CAGE_OPACITY.edge.targetingSelected
+      : TACTICAL_CAGE_OPACITY.edge.targetingCandidate
+  }
+
+  return TACTICAL_CAGE_OPACITY.edge.idleReset
 }
 
 const shouldShowPokemonTacticalCage = (state: PokemonTacticalCageState & {
@@ -618,6 +642,7 @@ const shouldShowPokemonTacticalCage = (state: PokemonTacticalCageState & {
   state.hovered ||
   state.pending ||
   state.corrected ||
+  state.targeting !== null ||
   hasRemoteAttention(state.remoteAttention)
 )
 
@@ -628,12 +653,14 @@ export const paintPokemonRenderObjectStyle = (
     hovered?: boolean
     pending?: boolean
     corrected?: boolean
+    targeting?: PokemonTacticalCageTargetingState | null
     remoteAttention?: PokemonRenderObjectRemoteAttention
   } = {},
 ) => {
   const hovered = options.hovered === true
   const pending = options.pending === true
   const corrected = options.corrected === true
+  const targeting = options.targeting ?? null
   const remoteAttention = hasRemoteAttention(options.remoteAttention) ? options.remoteAttention : undefined
   const remoteAttentionColor = remoteAttention ? resolveVolumeAccentColor(remoteAttention.primaryColor) : null
   const tacticalCageState: PokemonTacticalCageState = {
@@ -641,6 +668,7 @@ export const paintPokemonRenderObjectStyle = (
     hovered,
     pending,
     corrected,
+    targeting,
   }
   renderObject.cageVisible = shouldShowPokemonTacticalCage({
     ...tacticalCageState,
@@ -674,6 +702,14 @@ export const paintPokemonRenderObjectStyle = (
       'selected',
       localTacticalCageFaceOpacity(tacticalCageState),
     )
+  } else if (targeting) {
+    // Targeting cages use the acting user's accent as supporting footprint
+    // scaffolding; CSS reticles, hit labels, and area overlays remain primary.
+    paintVolumeFacePalette(
+      renderObject.volume.material,
+      accentVolumeFacePalette(targeting.accentColor ?? renderObject.accentColor),
+      localTacticalCageFaceOpacity(tacticalCageState),
+    )
   } else if (remoteAttention) {
     paintVolumeFacePalette(
       renderObject.volume.material,
@@ -693,8 +729,12 @@ export const paintPokemonRenderObjectStyle = (
     ? 0xff4a55
     : (hovered || pending)
         ? resolveVolumeAccentColor(renderObject.accentColor)
-        : selected ? 0xf7f7f2 : remoteAttentionColor ?? 0xaeb5bd
-  const edgeOpacity = remoteAttention && !selected && !hovered && !pending && !corrected
+        : selected
+          ? 0xf7f7f2
+          : targeting
+            ? resolveVolumeAccentColor(targeting.accentColor ?? renderObject.accentColor)
+            : remoteAttentionColor ?? 0xaeb5bd
+  const edgeOpacity = remoteAttention && !selected && !hovered && !pending && !corrected && !targeting
     ? remoteAttentionEdgeOpacity(remoteAttention)
     : localTacticalCageEdgeOpacity(tacticalCageState)
 

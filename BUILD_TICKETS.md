@@ -295,7 +295,7 @@ Status: DONE
 
 ## 009 — COS-009 — Include move-targeting states in cage visibility if needed
 
-Status: TODO
+Status: DONE
 
 **Goal:** Make cages available for tactical targeting states, not only hover/selection.
 

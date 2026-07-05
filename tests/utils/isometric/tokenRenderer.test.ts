@@ -251,6 +251,30 @@ describe('token renderer', () => {
     expect(edgeMaterial.opacity).toBeGreaterThan(faceOpacity)
   })
 
+  it.each([
+    { role: 'candidate' as const, faceOpacity: 0.16, edgeOpacity: 0.62 },
+    { role: 'selected' as const, faceOpacity: 0.22, edgeOpacity: 0.84 },
+  ])('paints acting-user-accent cages for move-targeting $role tokens', ({ role, faceOpacity, edgeOpacity }) => {
+    const renderObject = makeRenderObject(spawnedPokemon({ accentColor: '#ef4444' }))
+
+    paintPokemonRenderObjectStyle(renderObject, false, {
+      targeting: { role, accentColor: '#10b981' },
+    })
+    setPokemonRenderObjectLayerVisibility(renderObject, visibleLayers())
+
+    expect(renderObject.cageVisible).toBe(true)
+    expect(renderObject.volume.visible).toBe(true)
+    expect(renderObject.edges.visible).toBe(true)
+    expect(volumeMaterialColorHexes(renderObject)).toEqual(
+      volumePaletteColorHexes(accentVolumeFacePalette('#10b981')),
+    )
+    expectVolumeOpacity(renderObject, faceOpacity)
+    const edgeMaterial = renderObject.edges.material as THREE.LineBasicMaterial
+    expect(edgeMaterial.color.getHex()).toBe(resolveVolumeAccentColor('#10b981'))
+    expect(edgeMaterial.opacity).toBeCloseTo(edgeOpacity)
+    expect(edgeMaterial.opacity).toBeGreaterThan(faceOpacity)
+  })
+
   it('highlights hovered token cages with their app accent color', () => {
     const pokemon = spawnedPokemon({ accentColor: '#2e77d0' })
     const renderObject = makeRenderObject(pokemon)
