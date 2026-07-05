@@ -2,14 +2,17 @@ import { describe, expect, it } from 'vitest'
 import {
   TOKEN_MOTION_DURATION_DEFAULTS_MS,
   TOKEN_MOTION_HOP_DEFAULTS,
+  TOKEN_MOTION_PERFORMANCE_DEFAULTS,
   applyTokenMotionHopOffset,
   clampTokenMotionProgress,
   easeTokenMotionProgress,
   interpolateTokenMotionCenter,
   normalizeTokenMotionDistance,
+  normalizeTokenMotionTrackCount,
   resolveTokenMotionDurationBetweenCentersMs,
   resolveTokenMotionDurationMs,
   resolveTokenMotionHopHeight,
+  resolveTokenMotionPerformanceMode,
   sampleTokenMotionHopOffset,
   tokenMotionDistanceBetweenCenters,
 } from '~/utils/isometric/tokenMotionCurves'
@@ -52,6 +55,33 @@ describe('token motion curve utilities', () => {
     expect(normalizeTokenMotionDistance(2.5)).toBe(2.5)
     expect(normalizeTokenMotionDistance(Number.NaN)).toBe(0)
     expect(normalizeTokenMotionDistance(Number.POSITIVE_INFINITY)).toBe(0)
+  })
+
+  it('resolves a capped simultaneous-motion performance mode', () => {
+    expect(TOKEN_MOTION_PERFORMANCE_DEFAULTS.maxSimultaneousTracks).toBe(24)
+    expect(normalizeTokenMotionTrackCount(-1)).toBe(0)
+    expect(normalizeTokenMotionTrackCount(2.8)).toBe(2)
+    expect(normalizeTokenMotionTrackCount(Number.NaN)).toBe(0)
+
+    expect(resolveTokenMotionPerformanceMode()).toBe('animate')
+    expect(resolveTokenMotionPerformanceMode({
+      activeTrackCount: TOKEN_MOTION_PERFORMANCE_DEFAULTS.maxSimultaneousTracks - 1,
+    })).toBe('animate')
+    expect(resolveTokenMotionPerformanceMode({
+      activeTrackCount: TOKEN_MOTION_PERFORMANCE_DEFAULTS.maxSimultaneousTracks,
+    })).toBe('snap')
+    expect(resolveTokenMotionPerformanceMode({
+      activeTrackCount: 3,
+      maxSimultaneousTracks: 3,
+    })).toBe('snap')
+    expect(resolveTokenMotionPerformanceMode({
+      activeTrackCount: 99,
+      maxSimultaneousTracks: Number.NaN,
+    })).toBe('snap')
+    expect(resolveTokenMotionPerformanceMode({
+      activeTrackCount: 0,
+      maxSimultaneousTracks: 0,
+    })).toBe('snap')
   })
 
   it('resolves distance-based durations with min and max caps', () => {

@@ -376,7 +376,7 @@ Status: DONE
 
 ## LP-S5-013 — Respect reduced-motion and performance settings
 
-Status: TODO
+Status: DONE
 
 **Goal:** Keep smoother movement accessible and performant.
 

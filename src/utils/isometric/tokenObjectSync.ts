@@ -1,6 +1,11 @@
 import type { GridAnchor, SpawnedPokemon } from '~/types/pokemon'
 import { getAnchorCenter, getPokemonCenter } from '~/utils/gridGeometry'
-import type { TokenMotionCenter, TokenMotionDurationOptions } from '~/utils/isometric/tokenMotionCurves'
+import {
+  resolveTokenMotionPerformanceMode,
+  type TokenMotionCenter,
+  type TokenMotionDurationOptions,
+  type TokenMotionPerformanceOptions,
+} from '~/utils/isometric/tokenMotionCurves'
 import {
   createTokenMotionFacingPlan,
   replaceTokenMotionTrack,
@@ -97,6 +102,7 @@ export interface PokemonPlacementMotionSyncOptions<
   durationOptions?: TokenMotionDurationOptions
   pathAnchors?: readonly GridAnchor[]
   motionMode?: PokemonPlacementMotionMode
+  performanceOptions?: TokenMotionPerformanceOptions
 }
 
 const tokenMotionCenterDistanceSquared = (
@@ -207,11 +213,17 @@ export const syncPokemonRenderObjectPlacementMotion = <
   durationOptions,
   pathAnchors,
   motionMode,
+  performanceOptions,
 }: PokemonPlacementMotionSyncOptions<TRenderObject>): boolean => {
   const destination = getPokemonCenter(pokemon)
   const pathCenters = tokenMotionPathCentersForAnchors(pathAnchors, pokemon.base)
+  const resolvedMotionMode: PokemonPlacementMotionMode = (
+    motionMode === 'snap' || resolveTokenMotionPerformanceMode(performanceOptions) === 'snap'
+      ? 'snap'
+      : 'animate'
+  )
 
-  if (motionMode === 'snap') {
+  if (resolvedMotionMode === 'snap') {
     const wasMoving = renderObject.motion.track !== undefined
     const targetChanged = !tokenMotionCentersNearlyEqual(renderObject.targetCenter, destination)
     snapPlacementMotionToDestination(renderObject, destination)

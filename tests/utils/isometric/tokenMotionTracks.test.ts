@@ -83,7 +83,10 @@ describe('token motion tracks', () => {
     })).toBe('server-correction')
   })
 
-  it('uses short server-correction durations and snap reconciliation policy by reason', () => {
+  it('uses reduced ordinary durations, short server-correction durations, and snap reconciliation policy by reason', () => {
+    const reducedRemoteOptions = resolveTokenMotionDurationOptionsForReason('remote-accepted', {
+      reducedMotion: true,
+    })
     const correctionOptions = resolveTokenMotionDurationOptionsForReason('server-correction')
     const reducedCorrectionOptions = resolveTokenMotionDurationOptionsForReason('server-correction', {
       reducedMotion: true,
@@ -95,6 +98,14 @@ describe('token motion tracks', () => {
     const reconciliationOptions = resolveTokenMotionDurationOptionsForReason('reconciliation')
 
     expect(resolveTokenMotionDurationOptionsForReason('setup-edit')).toBeUndefined()
+    expect(startTokenMotionTrack({
+      tokenId: 'token-2-remote-reduced',
+      origin: { x: 0, y: 0, z: 0 },
+      destination: { x: 10, y: 0, z: 0 },
+      startMs: 1000,
+      reason: 'remote-accepted',
+      durationOptions: reducedRemoteOptions,
+    }).durationMs).toBe(80)
     expect(startTokenMotionTrack({
       tokenId: 'token-2-correction-short',
       origin: { x: 0, y: 0, z: 0 },

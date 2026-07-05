@@ -8,6 +8,7 @@ export interface TokenMotionCenter {
 }
 
 export type TokenMotionReducedMotionPolicy = 'shorten' | 'snap'
+export type TokenMotionPerformanceMode = 'animate' | 'snap'
 
 export const TOKEN_MOTION_HOP_DEFAULTS = {
   /** Subtle same-level cell hop available to callers that opt in. */
@@ -31,6 +32,11 @@ export const TOKEN_MOTION_DURATION_DEFAULTS_MS = {
   perGridUnit: 96,
   /** Accessible reduced-motion fallback when the caller wants a visible but brief state change. */
   reduced: 80,
+} as const
+
+export const TOKEN_MOTION_PERFORMANCE_DEFAULTS = {
+  /** Upper bound for simultaneous token movement tracks before overflow changes snap. */
+  maxSimultaneousTracks: 24,
 } as const
 
 export interface TokenMotionDurationOptions {
@@ -57,12 +63,25 @@ export interface TokenMotionHopOptions {
   readonly reducedMotionHeightScale?: number
 }
 
+export interface TokenMotionPerformanceOptions {
+  /** Number of already-active token tracks before considering the current token. */
+  readonly activeTrackCount?: number
+  /** Maximum tracks allowed to animate at the same time; overflow snaps. */
+  readonly maxSimultaneousTracks?: number
+}
+
 const TOKEN_MOTION_HOP_EPSILON = 1e-6
 
 const finiteNumberOrZero = (value: number): number => (Number.isFinite(value) ? value : 0)
 
 const nonNegativeFiniteNumberOrDefault = (value: number | undefined, fallback: number): number => (
   typeof value === 'number' && Number.isFinite(value) ? Math.max(0, value) : fallback
+)
+
+const nonNegativeIntegerOrDefault = (value: number | undefined, fallback: number): number => (
+  typeof value === 'number' && Number.isFinite(value)
+    ? Math.max(0, Math.floor(value))
+    : fallback
 )
 
 const normalizeDurationBounds = (
@@ -92,6 +111,22 @@ export const easeTokenMotionProgress = (progress: number): number => easeInOutCu
 export const normalizeTokenMotionDistance = (distance: number): number => (
   Number.isFinite(distance) ? Math.max(0, distance) : 0
 )
+
+export const normalizeTokenMotionTrackCount = (count: number | undefined): number => (
+  nonNegativeIntegerOrDefault(count, 0)
+)
+
+export const resolveTokenMotionPerformanceMode = (
+  options: TokenMotionPerformanceOptions = {},
+): TokenMotionPerformanceMode => {
+  const activeTrackCount = normalizeTokenMotionTrackCount(options.activeTrackCount)
+  const maxSimultaneousTracks = nonNegativeIntegerOrDefault(
+    options.maxSimultaneousTracks,
+    TOKEN_MOTION_PERFORMANCE_DEFAULTS.maxSimultaneousTracks,
+  )
+
+  return activeTrackCount >= maxSimultaneousTracks ? 'snap' : 'animate'
+}
 
 export const tokenMotionDistanceBetweenCenters = (
   origin: TokenMotionCenter,

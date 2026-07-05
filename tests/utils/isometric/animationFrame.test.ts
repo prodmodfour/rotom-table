@@ -1,6 +1,7 @@
 import * as THREE from 'three'
 import { describe, expect, it, vi } from 'vitest'
 import { stepIsometricAnimationFrame } from '~/utils/isometric/animationFrame'
+import { resolveIsometricTokenMotionContinuationSources } from '~/utils/isometric/renderLoop'
 import type { PokemonRenderObject } from '~/utils/isometric/types'
 import { createPokemonRenderMotionState } from '~/utils/isometric/tokenRenderer'
 import { startTokenMotionTrack } from '~/utils/isometric/tokenMotionTracks'
@@ -168,6 +169,7 @@ describe('isometric animation frame', () => {
     expect(renderObject.currentCenter.toArray()).toEqual([10, 0, 0])
     expect(renderObject.motion.sampledCenter.toArray()).toEqual([10, 0, 0])
     expect(renderObject.motion.track).toBeUndefined()
+    expect(resolveIsometricTokenMotionContinuationSources([renderObject])).toEqual([])
     expect(applyRenderObjectPosition).toHaveBeenCalledWith(renderObject)
   })
 

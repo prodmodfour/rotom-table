@@ -137,7 +137,7 @@ Realtime gaps, replay validation failures, profile changes, or explicit reconcil
 - **No explicit duration:** movement speed is not derived from grid distance, command type, correction reason, or user preference.
 - **Limited path context:** local committed movement can now reuse the current preview path, but remote accepted movement, corrections, and reconciliation snapshots still arrive as placement-only updates and fall back to direct motion unless a later source supplies safe path context.
 - **Correction semantics are now narrow:** simple rejected move predictions use a `server-correction` duration policy, while stale/reconciliation updates snap. Accepted confirmations and remote accepted movement now have source classification, but later reduced-motion/performance work still needs to apply ordinary movement settings consistently.
-- **Reduced-motion policy is still partial:** server-correction durations can be shortened through the existing reduced-motion signal, but ordinary token movement does not yet have a fully central user setting or many-token performance policy.
+- **Reduced-motion and performance policy is now explicit:** token placement motion reuses the existing move-animation reduced-motion signal. Ordinary moves shorten to a brief state change, correction moves shorten further, reconciliation still snaps, and a simultaneous-track cap snaps overflow movement so a large batch cannot keep unbounded token animation work alive.
 - **Limited replacement source context:** rapid same-token moves now replace active tracks from the sampled in-flight center, and placement-motion reasons cover local prediction, remote accepted movement, server correction, reconciliation, and setup/edit. Path context is still local-preview only, so remote accepted movement usually falls back to direct interpolation.
 - **HUD and overlays follow the sampled center but are not track-aware:** HP bars, elevation badges, shadows, cages, proxies, targeting affordances, presence overlays, and camera focus currently read `currentCenter` or `targetCenter` according to existing helpers, without a single explicit motion sample contract.
 
@@ -163,6 +163,8 @@ Realtime gaps, replay validation failures, profile changes, or explicit reconcil
 
 `LP-S5-012` separates local prediction from remote accepted movement. `useEditableMap()` reports whether each accepted realtime event was applied, stale, a local authoritative confirmation, or a remote accepted update. The map page uses that metadata to mark only successfully applied remote `token.position` patches for `remote-accepted` motion, while `livePlayPendingTokenIds` classifies local predicted movement as `local-prediction`. Matching local authoritative confirmations and duplicate terminal deliveries do not create a new placement target, so they do not restart active motion.
 
+`LP-S5-013` connects token placement motion to accessibility and performance policy. The grid already receives `moveAnimationsReducedMotion` from `useMoveAnimationSettings()`, which follows the browser `prefers-reduced-motion` media query. That signal now flows into every placement-motion reason instead of only server corrections: normal predicted/remote/setup movement resolves to the short reduced duration, server corrections use the even shorter correction duration, and reconciliation/snap corrections remain snapped. The sync path also counts active renderer-owned token tracks and passes that count into the pure performance policy; once the simultaneous-track cap is full, additional placement changes snap directly to their authoritative centers without creating new runtime tracks. Completed tracks are still cleared by the frame sampler at their planned destination, so render continuation stops as soon as no track, fallback center lerp, selection lift, preview, field effect, sprite, or move VFX source remains active.
+
 ## Future Sprint 5 change map
 
 The current code suggests this division for later tickets:
@@ -176,7 +178,7 @@ The current code suggests this division for later tickets:
 - `LP-S5-009`: deterministic elevation/hop sampling that can be reduced or disabled. Implemented for direct tracks and path segments as visual-only y offsets.
 - `LP-S5-010`: movement-facing timing policy helpers. Implemented with travel-facing plans that are owned by active runtime tracks and cleared for explicit turn updates.
 - `LP-S5-011`: correction/rollback duration and snap policy helpers. Implemented for `server-correction` and reconciliation snap handling.
-- `LP-S5-013`: central reduced-motion and many-token performance policy helpers.
+- `LP-S5-013`: implemented with central reduced-motion and many-token performance policy helpers. The placement sync reuses the existing reduced-motion signal and snaps overflow movement after the simultaneous-track cap.
 
 ### Renderer and scene wiring
 

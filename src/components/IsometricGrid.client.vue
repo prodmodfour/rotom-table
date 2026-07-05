@@ -553,8 +553,10 @@ const placementMotionReasonForPokemon = (pokemon: SpawnedPokemon): TokenMotionTr
   remoteAccepted: livePlayRemoteAcceptedTokenIdSet.value.has(pokemon.id),
 })
 
+const placementMotionReducedMotionEnabled = () => props.moveAnimationsReducedMotion === true
+
 const placementMotionDurationOptionsForReason = (reason: TokenMotionTrackReason) => (
-  reason === 'server-correction' && props.moveAnimationsReducedMotion === true
+  placementMotionReducedMotionEnabled()
     ? resolveTokenMotionDurationOptionsForReason(reason, { reducedMotion: true })
     : resolveTokenMotionDurationOptionsForReason(reason)
 )
@@ -1056,23 +1058,40 @@ const disposeRenderObject = (renderObject: PokemonRenderObject) => {
   disposePokemonRenderObject(renderObject)
 }
 
+const countActivePlacementMotionTracks = (visibleIds?: ReadonlySet<string>): number => {
+  let activeTrackCount = 0
+  for (const [id, renderObject] of renderObjects.entries()) {
+    if (visibleIds && !visibleIds.has(id)) continue
+    if (renderObject.motion.track) activeTrackCount += 1
+  }
+  return activeTrackCount
+}
+
 const syncPokemonObjects = () => {
   const placementMotionStartMs = readRenderMetricsNowMs()
   const snapshotSnap = consumeMapDataRevisionPlacementSnap()
+  const pokemons = renderedPokemons.value
+  const nextPokemonIds = new Set(pokemons.map((pokemon) => pokemon.id))
+  let activePlacementMotionTrackCount = countActivePlacementMotionTracks(nextPokemonIds)
 
   syncPokemonRenderObjects({
     renderObjects,
-    pokemons: renderedPokemons.value,
+    pokemons,
     createRenderObject: buildRenderObject,
     onCreateRenderObject,
     onBeforeUpdateExistingRenderObject: (renderObject, pokemon) => {
+      const hadActivePlacementMotionTrack = renderObject.motion.track !== undefined
+      const activeTrackCountExcludingCurrent = Math.max(
+        0,
+        activePlacementMotionTrackCount - (hadActivePlacementMotionTrack ? 1 : 0),
+      )
       const snapCorrection = livePlaySnapCorrectionTokenIdSet.value.has(pokemon.id)
       const motionMode = snapshotSnap || snapCorrection ? 'snap' : 'animate'
       const reason: TokenMotionTrackReason = motionMode === 'snap'
         ? 'reconciliation'
         : placementMotionReasonForPokemon(pokemon)
 
-      return syncPokemonRenderObjectPlacementMotion({
+      const changed = syncPokemonRenderObjectPlacementMotion({
         renderObject,
         pokemon,
         startMs: placementMotionStartMs,
@@ -1080,7 +1099,18 @@ const syncPokemonObjects = () => {
         durationOptions: placementMotionDurationOptionsForReason(reason),
         pathAnchors: motionMode === 'snap' ? undefined : consumePendingTokenMovementPath(pokemon),
         motionMode,
+        performanceOptions: {
+          activeTrackCount: activeTrackCountExcludingCurrent,
+        },
       })
+      const hasActivePlacementMotionTrack = renderObject.motion.track !== undefined
+      if (hadActivePlacementMotionTrack && !hasActivePlacementMotionTrack) {
+        activePlacementMotionTrackCount = Math.max(0, activePlacementMotionTrackCount - 1)
+      } else if (!hadActivePlacementMotionTrack && hasActivePlacementMotionTrack) {
+        activePlacementMotionTrackCount += 1
+      }
+
+      return changed
     },
     updateRenderObject: (renderObject, pokemon) => updatePokemonRenderObjectFromSpawn(renderObject, pokemon, {
       geometryCache: tokenGeometryCache,

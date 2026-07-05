@@ -340,6 +340,47 @@ describe('isometric token object sync', () => {
     })
   })
 
+  it('heavily shortens ordinary placement motion when reduced motion is enabled', () => {
+    const renderObject = makePlacementMotionRenderObject()
+
+    const started = syncPokemonRenderObjectPlacementMotion({
+      renderObject,
+      pokemon: makePokemon('a', { position: { x: 9, y: 0, z: 0 } }),
+      startMs: 1500,
+      reason: 'remote-accepted',
+      durationOptions: resolveTokenMotionDurationOptionsForReason('remote-accepted', {
+        reducedMotion: true,
+      }),
+    })
+
+    expect(started).toBe(true)
+    expect(renderObject.motion.track).toMatchObject({
+      reason: 'remote-accepted',
+      durationMs: 80,
+    })
+  })
+
+  it('snaps placement motion overflow when the simultaneous-track performance cap is full', () => {
+    const renderObject = makePlacementMotionRenderObject()
+
+    const changed = syncPokemonRenderObjectPlacementMotion({
+      renderObject,
+      pokemon: makePokemon('a', { position: { x: 3, y: 0, z: 4 } }),
+      startMs: 1500,
+      reason: 'remote-accepted',
+      performanceOptions: {
+        activeTrackCount: 2,
+        maxSimultaneousTracks: 2,
+      },
+    })
+
+    expect(changed).toBe(true)
+    expect(renderObject.motion.track).toBeUndefined()
+    expect(renderObject.motion.facing).toBeUndefined()
+    expect(renderObject.currentCenter).toEqual({ x: 3.5, y: 0, z: 4.5 })
+    expect(renderObject.targetCenter).toEqual({ x: 3.5, y: 0, z: 4.5 })
+  })
+
   it('snaps reconciliation placement updates without leaving stale motion metadata', () => {
     const renderObject = makePlacementMotionRenderObject()
     renderObject.currentCenter = makeCenter(5.5, 0, 0.5)
