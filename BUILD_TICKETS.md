@@ -349,7 +349,7 @@ Status: DONE
 
 ## 011 — COS-011 — Add a manual visual QA checklist
 
-Status: TODO
+Status: DONE
 
 **Goal:** Make the final visual pass reviewable without relying on subjective memory.
 

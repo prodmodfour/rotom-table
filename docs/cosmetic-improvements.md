@@ -305,6 +305,22 @@ corrected edge opacity: 0.90 to 1.00
 - The reviewer explicitly checks that sprite isometric shading remains visible with cages hidden.
 - The reviewer explicitly checks that tactical states still show cages when needed.
 
+### Manual visual QA checklist
+
+Use the same live-play scene, camera angle, zoom level, and token set for before/after comparisons when practical. For idle checks, cages should stay hidden while the sprite, halo, contact shadow, and sprite isometric shading remain visible. For tactical checks, cages should appear only as footprint/clearance affordances and should not obscure the sprite or sit above reticles, hit-chance labels, or area overlays.
+
+- [ ] Small Pokémon on flat terrain: confirm the idle token has no visible cage faces or edges, the contact shadow still plants the sprite, and the subtle top/side/front shading remains visible.
+- [ ] Large Pokémon on flat terrain: confirm the larger footprint reads clearly with cages hidden, the shadow scales convincingly, and the sprite remains visually dominant.
+- [ ] Pokémon standing on voxel terrain: confirm elevation and terrain edges do not hide the contact shadow or make the shaded sprite look detached from the board.
+- [ ] Selected token: confirm the tactical cage appears with readable edges/faces while the Pokémon art remains dominant.
+- [ ] Hovered token: confirm the hover cage appears promptly, reads as temporary tactical scaffolding, and disappears when hover leaves.
+- [ ] Pending live-play token: confirm pending feedback still shows a tactical cage and remains readable alongside existing live-play overlays.
+- [ ] Corrected/invalid token: confirm corrected or invalid feedback is unmistakable and uses the cage as an affordance without replacing the sprite-grounding shadow.
+- [ ] Move targeting active: confirm candidate/selected target cages appear only where helpful, while reticles, hit-chance labels, and area overlays remain visually on top.
+- [ ] Animated sprite: confirm animation frame changes keep the isometric shading and do not reintroduce idle cage faces or edges.
+- [ ] Mirrored side-facing sprite: confirm side-lighting still feels consistent after mirroring and does not visibly flip into a distracting artefact.
+- [ ] Dark and light app themes, if both affect the scene: confirm contact shadows, sprite shading, and tactical cage opacity remain readable in each theme.
+
 ---
 
 ## COS-012 — Clean up comments and release note wording
