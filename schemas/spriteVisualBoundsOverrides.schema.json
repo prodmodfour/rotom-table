@@ -1,0 +1,88 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://rotom-table.local/schemas/spriteVisualBoundsOverrides.schema.json",
+  "title": "Sprite visual-bounds overrides",
+  "type": "object",
+  "description": "Optional manifest-generation overrides keyed by exact Pokémon species name.",
+  "properties": {
+    "$schema": {
+      "type": "string"
+    }
+  },
+  "additionalProperties": {
+    "$ref": "#/$defs/speciesOverride"
+  },
+  "$defs": {
+    "speciesOverride": {
+      "type": "object",
+      "description": "Common fields apply to both views; front/back fields override only that facing.",
+      "additionalProperties": false,
+      "minProperties": 1,
+      "properties": {
+        "canvas_width": {
+          "$ref": "#/$defs/positivePixel"
+        },
+        "canvas_height": {
+          "$ref": "#/$defs/positivePixel"
+        },
+        "left": {
+          "$ref": "#/$defs/nonNegativePixel"
+        },
+        "top": {
+          "$ref": "#/$defs/nonNegativePixel"
+        },
+        "width": {
+          "$ref": "#/$defs/positivePixel"
+        },
+        "height": {
+          "$ref": "#/$defs/positivePixel"
+        },
+        "floating": {
+          "type": "boolean"
+        },
+        "front": {
+          "$ref": "#/$defs/visualBoundsOverride"
+        },
+        "back": {
+          "$ref": "#/$defs/visualBoundsOverride"
+        }
+      }
+    },
+    "visualBoundsOverride": {
+      "type": "object",
+      "additionalProperties": false,
+      "minProperties": 1,
+      "properties": {
+        "canvas_width": {
+          "$ref": "#/$defs/positivePixel"
+        },
+        "canvas_height": {
+          "$ref": "#/$defs/positivePixel"
+        },
+        "left": {
+          "$ref": "#/$defs/nonNegativePixel"
+        },
+        "top": {
+          "$ref": "#/$defs/nonNegativePixel"
+        },
+        "width": {
+          "$ref": "#/$defs/positivePixel"
+        },
+        "height": {
+          "$ref": "#/$defs/positivePixel"
+        },
+        "floating": {
+          "type": "boolean"
+        }
+      }
+    },
+    "positivePixel": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "nonNegativePixel": {
+      "type": "integer",
+      "minimum": 0
+    }
+  }
+}

@@ -87,7 +87,7 @@ Status: DONE
 
 ## 005 — Add manual visual-bounds overrides for outliers
 
-Status: TODO
+Status: DONE
 
 **Commit size:** data contract plus override application, no renderer changes.
 

@@ -37,7 +37,11 @@ from typing import Any, Iterable
 import requests
 
 from gif_spritesheet import with_animation_metadata
-from sprite_visual_bounds import extract_sprite_visual_bounds_record
+from sprite_visual_bounds import (
+    apply_sprite_visual_bounds_override,
+    extract_sprite_visual_bounds_record,
+    load_sprite_visual_bounds_overrides,
+)
 
 SCRIPT_DIR = Path(__file__).resolve().parent
 REPO_ROOT = SCRIPT_DIR.parent
@@ -46,6 +50,7 @@ SPRITE_ROOT = PUBLIC_ROOT / "sprites"
 SPRITESHEET_ROOT = PUBLIC_ROOT / "spritesheets"
 MANIFEST_PATH = REPO_ROOT / "data" / "pokemonSpriteManifest.json"
 POKEDEX_PATH = REPO_ROOT / "data" / "reference" / "pokedex.json"
+VISUAL_BOUNDS_OVERRIDES_PATH = REPO_ROOT / "data" / "spriteVisualBoundsOverrides.json"
 MAX_WORKERS = 16
 USER_AGENT = "rotom-table sprite downloader"
 GEN_1_TO_5 = {"gen1", "gen2", "gen3", "gen4", "gen5"}
@@ -339,7 +344,11 @@ def resolve_showdown_asset(slug: str) -> tuple[str, str, str]:
     raise RuntimeError(f"Could not resolve Showdown asset for {slug}")
 
 
-def with_front_sprite_metadata(entry: dict[str, Any], public_root: Path) -> dict[str, Any]:
+def with_front_sprite_metadata(
+    entry: dict[str, Any],
+    public_root: Path,
+    visual_bounds_overrides: dict[str, Any] | None = None,
+) -> dict[str, Any]:
     """Return a front-sprite manifest entry with animation and visual bounds."""
     updated = with_animation_metadata(entry, public_root)
     local_path = str(updated.get("local_path", ""))
@@ -347,11 +356,22 @@ def with_front_sprite_metadata(entry: dict[str, Any], public_root: Path) -> dict
     if not sprite_path.exists():
         raise FileNotFoundError(f"Sprite listed in manifest does not exist: {sprite_path}")
 
-    updated["visual_bounds"] = extract_sprite_visual_bounds_record(sprite_path)
+    extracted_bounds = extract_sprite_visual_bounds_record(sprite_path)
+    updated["visual_bounds"] = apply_sprite_visual_bounds_override(
+        extracted_bounds,
+        species=str(updated.get("species", "")),
+        view="front",
+        overrides=visual_bounds_overrides,
+    )
     return updated
 
 
-def download_one(species: str, slug: str, source_gen: str) -> dict:
+def download_one(
+    species: str,
+    slug: str,
+    source_gen: str,
+    visual_bounds_overrides: dict[str, Any] | None = None,
+) -> dict:
     session = requests.Session()
     session.headers.update({"User-Agent": USER_AGENT})
 
@@ -373,7 +393,7 @@ def download_one(species: str, slug: str, source_gen: str) -> dict:
                     "remote_url": url,
                     "local_path": local_path.relative_to(PUBLIC_ROOT).as_posix(),
                     "bytes": len(response.content),
-                }, PUBLIC_ROOT)
+                }, PUBLIC_ROOT, visual_bounds_overrides)
             last_error = f"{response.status_code} for {url}"
 
         for cand in pokemon_db_sprite_slug_candidates(slug):
@@ -392,7 +412,7 @@ def download_one(species: str, slug: str, source_gen: str) -> dict:
                     "remote_url": url,
                     "local_path": local_path.relative_to(PUBLIC_ROOT).as_posix(),
                     "bytes": len(response.content),
-                }, PUBLIC_ROOT)
+                }, PUBLIC_ROOT, visual_bounds_overrides)
             last_error = f"{response.status_code} for {url}"
 
         raise RuntimeError(f"Could not download sprite for {species} ({slug}, {source_gen}): {last_error}")
@@ -411,12 +431,13 @@ def download_one(species: str, slug: str, source_gen: str) -> dict:
         "remote_url": url,
         "local_path": local_path.relative_to(PUBLIC_ROOT).as_posix(),
         "bytes": len(response.content),
-    }, PUBLIC_ROOT)
+    }, PUBLIC_ROOT, visual_bounds_overrides)
 
 
 def convert_existing_manifest() -> None:
     manifest = json.loads(MANIFEST_PATH.read_text(encoding="utf-8"))
-    updated = [with_front_sprite_metadata(entry, PUBLIC_ROOT) for entry in manifest]
+    visual_bounds_overrides = load_sprite_visual_bounds_overrides(VISUAL_BOUNDS_OVERRIDES_PATH)
+    updated = [with_front_sprite_metadata(entry, PUBLIC_ROOT, visual_bounds_overrides) for entry in manifest]
     updated.sort(key=lambda item: item["species"])
     MANIFEST_PATH.write_text(json.dumps(updated, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
     converted = sum(1 for item in updated if item.get("animation"))
@@ -464,6 +485,8 @@ def main() -> None:
         shutil.rmtree(SPRITESHEET_ROOT)
     SPRITE_ROOT.mkdir(parents=True, exist_ok=True)
 
+    visual_bounds_overrides = load_sprite_visual_bounds_overrides(VISUAL_BOUNDS_OVERRIDES_PATH)
+
     jobs = []
     for entry in current_entries:
         species = entry["species"]
@@ -473,7 +496,7 @@ def main() -> None:
     manifest: list[dict] = []
     with ThreadPoolExecutor(max_workers=MAX_WORKERS) as executor:
         futures = {
-            executor.submit(download_one, species, slug, source_gen): species
+            executor.submit(download_one, species, slug, source_gen, visual_bounds_overrides): species
             for species, slug, source_gen in jobs
         }
 

@@ -42,3 +42,4 @@ This directory collects presentation and reviewer documentation for Rotom Table.
 - [Realtime map action events manual QA](realtime-map-action-events-manual-qa.md) — same-map multi-tab/device checklist for transient splashes, move VFX, move feedback, Poké Ball UI, second-map isolation, duplicate prevention, per-client settings, visual-only persistence, and the latest code-assisted browser smoke result.
 - [Move VFX first-playtest follow-up issues](move-vfx-follow-up-issues.md) — first realistic map playtest notes, blocker/polish triage, and small follow-up issue list for readability, accessibility, performance validation, and future bespoke wishes.
 - [Pokémon size outliers](pokemon-size-outliers.md) — data notes for sprite/map scale edge cases.
+- [Sprite visual-bounds overrides](sprite-visual-bounds-overrides.md) — generation-time correction file for hover/floating sprite bbox and `floating` outliers.

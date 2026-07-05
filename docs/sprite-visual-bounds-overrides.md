@@ -1,0 +1,45 @@
+# Sprite visual-bounds overrides
+
+Pokémon sprite visual bounds are generated from source-canvas alpha pixels by the front and back sprite manifest scripts. Most species should use the generated bounds unchanged. Use `data/spriteVisualBoundsOverrides.json` only for outliers where the alpha box does not match the perceived body centre.
+
+The override file is optional. If it is missing, manifest generation treats it as an empty map. A present file is keyed by the exact Pokémon species name used in the sprite manifest and may set any subset of these manifest fields:
+
+- `floating` — force the generated hover/floating classification to `true` or `false`.
+- `left`, `top`, `width`, `height` — adjust the visual alpha bounding box in source-canvas pixels.
+- `canvas_width`, `canvas_height` — override canvas dimensions only if the generated metadata is wrong.
+- `front` and `back` — apply facing-specific overrides when front and back sprites need different corrections.
+
+Common fields on a species apply to both views. `front` or `back` fields override the common values for that view.
+
+```json
+{
+  "$schema": "../schemas/spriteVisualBoundsOverrides.schema.json",
+  "Koffing": {
+    "floating": true
+  },
+  "Haunter": {
+    "front": {
+      "floating": true,
+      "left": 6,
+      "width": 42
+    },
+    "back": {
+      "floating": true
+    }
+  },
+  "Gastly": {
+    "top": 12,
+    "height": 38,
+    "floating": false
+  }
+}
+```
+
+Good override candidates include wide wings, long tails, smoke clouds, disconnected particles, glow effects, or sprites whose alpha bbox includes decorative elements far away from the visible body. Keep overrides minimal: prefer forcing `floating` alone when the bbox is already good, and only edit bbox coordinates when the perceived body centre is visibly wrong.
+
+After changing overrides, run the front and/or back sprite manifest conversion scripts so the runtime receives final `visual_bounds` metadata and does not need to know that an override was used:
+
+```bash
+python3 scripts/download_pokemon_sprites.py --convert-existing
+python3 scripts/download_pokemon_back_sprites.py --convert-existing
+```

@@ -54,6 +54,44 @@ class DownloadPokemonSpritesVisualBoundsTest(unittest.TestCase):
                 },
             )
 
+    def test_front_sprite_metadata_applies_visual_bounds_override(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            public_root = Path(temp_dir) / "public"
+            sprite_path = public_root / "sprites" / "override.png"
+            sprite_path.parent.mkdir(parents=True)
+
+            image = Image.new("RGBA", (10, 12), (0, 0, 0, 0))
+            draw = ImageDraw.Draw(image)
+            draw.rectangle((2, 3, 6, 8), fill=(255, 0, 0, 255))
+            image.save(sprite_path)
+
+            entry = download_pokemon_sprites.with_front_sprite_metadata(
+                {
+                    "species": "Examplemon",
+                    "slug": "examplemon",
+                    "source_gen": "gen1",
+                    "asset_kind": "static-png-fallback",
+                    "remote_url": "https://example.invalid/override.png",
+                    "local_path": "sprites/override.png",
+                    "bytes": sprite_path.stat().st_size,
+                },
+                public_root,
+                {"Examplemon": {"front": {"floating": True, "top": 2, "height": 7}}},
+            )
+
+            self.assertEqual(
+                entry["visual_bounds"],
+                {
+                    "canvas_width": 10,
+                    "canvas_height": 12,
+                    "left": 2,
+                    "top": 2,
+                    "width": 5,
+                    "height": 7,
+                    "floating": True,
+                },
+            )
+
     def test_front_sprite_metadata_preserves_gif_animation_while_adding_visual_bounds(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             public_root = Path(temp_dir) / "public"

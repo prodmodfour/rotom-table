@@ -11,8 +11,10 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "scripts"))
 
 from sprite_visual_bounds import (  # noqa: E402
     FLOATING_BOTTOM_GAP_THRESHOLD_PX,
+    apply_sprite_visual_bounds_override,
     extract_sprite_visual_bounds,
     extract_sprite_visual_bounds_record,
+    load_sprite_visual_bounds_overrides,
 )
 
 
@@ -102,6 +104,86 @@ class SpriteVisualBoundsTest(unittest.TestCase):
             }
             self.assertEqual(extract_sprite_visual_bounds_record(path), expected)
             self.assertEqual(extract_sprite_visual_bounds_record(path), expected)
+
+    def test_missing_override_file_loads_empty_override_map(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            path = Path(temp_dir) / "missing-overrides.json"
+
+            self.assertEqual(load_sprite_visual_bounds_overrides(path), {})
+
+    def test_applies_species_override_to_floating_and_bbox_fields(self) -> None:
+        base = {
+            "canvas_width": 20,
+            "canvas_height": 20,
+            "left": 4,
+            "top": 5,
+            "width": 8,
+            "height": 10,
+            "floating": False,
+        }
+
+        updated = apply_sprite_visual_bounds_override(
+            base,
+            species="Examplemon",
+            view="front",
+            overrides={
+                "Examplemon": {
+                    "floating": True,
+                    "left": 3,
+                    "top": 2,
+                    "width": 9,
+                    "height": 11,
+                }
+            },
+        )
+
+        self.assertEqual(
+            updated,
+            {
+                "canvas_width": 20,
+                "canvas_height": 20,
+                "left": 3,
+                "top": 2,
+                "width": 9,
+                "height": 11,
+                "floating": True,
+            },
+        )
+
+    def test_view_specific_override_wins_over_common_species_override(self) -> None:
+        base = {
+            "canvas_width": 16,
+            "canvas_height": 16,
+            "left": 2,
+            "top": 3,
+            "width": 8,
+            "height": 8,
+            "floating": False,
+        }
+        overrides = {
+            "Examplemon": {
+                "floating": True,
+                "front": {"left": 1, "width": 7},
+                "back": {"floating": False, "top": 4},
+            }
+        }
+
+        front = apply_sprite_visual_bounds_override(base, "Examplemon", "front", overrides)
+        back = apply_sprite_visual_bounds_override(base, "Examplemon", "back", overrides)
+
+        self.assertEqual(front["left"], 1)
+        self.assertEqual(front["width"], 7)
+        self.assertTrue(front["floating"])
+        self.assertEqual(back["top"], 4)
+        self.assertFalse(back["floating"])
+
+    def test_override_file_rejects_unknown_fields(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            path = Path(temp_dir) / "overrides.json"
+            path.write_text('{"Examplemon": {"unknown": 1}}', encoding="utf-8")
+
+            with self.assertRaisesRegex(ValueError, "Unknown visual-bounds override"):
+                load_sprite_visual_bounds_overrides(path)
 
 
 if __name__ == "__main__":
