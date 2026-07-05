@@ -29,6 +29,19 @@ export interface WorldSpriteState {
   invalid: boolean
 }
 
+/**
+ * Cosmetic layer semantics for a rendered Pokémon token:
+ * - sprite: the Pokémon art plus sprite-owned halo, always the primary read;
+ * - contact shadow: the persistent floor/planted cue, independent from the cage;
+ * - cage volume/edges: tactical footprint and clearance affordances;
+ * - sprite isometric shading: sprite-local fake lighting that must remain separate from cage visibility.
+ */
+export type PokemonTokenCosmeticLayer =
+  | 'sprite'
+  | 'contact-shadow'
+  | 'cage'
+  | 'sprite-isometric-shading'
+
 export interface PokemonRenderObject {
   id: string
   sprite: THREE.Sprite

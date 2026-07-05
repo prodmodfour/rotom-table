@@ -45,7 +45,7 @@ Each ticket should fit in one focused commit. Keep documentation/type-only ticke
 
 ## 001 — COS-001 — Define token cosmetic layer semantics
 
-Status: TODO
+Status: DONE
 
 **Goal:** Make the four token visual ideas explicit before changing renderer behaviour.
 
