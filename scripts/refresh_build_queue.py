@@ -12,7 +12,7 @@ from pathlib import Path
 BUILD_TICKETS_PATH = Path("BUILD_TICKETS.md")
 PROJECT_BRIEF_PATH = Path("PROJECT_BRIEF.md")
 
-TICKET_HEADING_RE = re.compile(r"^##\s+(?:(\d{3})\b|([A-Z][A-Z0-9-]*-\d{3})\b)")
+TICKET_HEADING_RE = re.compile(r"^##\s+(?:(?:Ticket\s+)?(\d{1,3})\b|([A-Z][A-Z0-9-]*-\d{3})\b)", re.IGNORECASE)
 STATUS_LINE_RE = re.compile(r"^Status:\s+", re.IGNORECASE)
 H1_RE = re.compile(r"^#\s+(.+?)\s*$", re.MULTILINE)
 H2_RE = re.compile(r"^##\s+(.+?)\s*$")
@@ -106,7 +106,10 @@ def ticket_id_from_heading(line: str) -> str:
     match = TICKET_HEADING_RE.match(line)
     if not match:
         raise ValueError(f"Not a ticket heading: {line}")
-    return match.group(1) or match.group(2)
+    numeric_id = match.group(1)
+    if numeric_id is not None:
+        return numeric_id.zfill(3)
+    return match.group(2).upper()
 
 
 def add_todo_statuses(markdown: str) -> tuple[str, list[str]]:
@@ -356,7 +359,10 @@ def write_refresh_files(root: Path, source: Path, source_rel: Path) -> list[Path
     source_was_tracked = source_is_tracked(root, source_rel)
     ticket_body, ticket_ids = add_todo_statuses(markdown)
     if not ticket_ids:
-        raise SystemExit("No ticket headings found. Expected headings like '## ABC-001 — ...' or '## 001 — ...'.")
+        raise SystemExit(
+            "No ticket headings found. Expected headings like '## ABC-001 — ...', "
+            "'## 001 — ...', or '## Ticket 1 — ...'."
+        )
 
     build_tickets = build_tickets_markdown(ticket_body, ticket_ids)
     project_brief = project_brief_markdown(markdown, ticket_ids, source_rel)
