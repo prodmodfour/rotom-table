@@ -21,7 +21,7 @@ Implementation invariant: the cage stays semantically correct. The artwork may r
 
 ## 001 — Define the visual-bounds metadata contract
 
-Status: TODO
+Status: DONE
 
 **Commit size:** type-only/schema-only change.
 

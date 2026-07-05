@@ -117,6 +117,26 @@ export interface SpriteAnimation {
   totalDurationMs: number
 }
 
+export interface SpriteVisualBounds {
+  canvasWidth: number
+  canvasHeight: number
+  left: number
+  top: number
+  width: number
+  height: number
+  floating: boolean
+}
+
+export interface SpriteVisualBoundsRecord {
+  canvas_width: number
+  canvas_height: number
+  left: number
+  top: number
+  width: number
+  height: number
+  floating: boolean
+}
+
 export interface SpriteManifestRecord {
   species: string
   slug: string
@@ -126,6 +146,7 @@ export interface SpriteManifestRecord {
   local_path: string
   bytes: number
   animation?: SpriteAnimationRecord
+  visual_bounds?: SpriteVisualBoundsRecord
 }
 
 export interface BackSpriteManifestRecord {
@@ -136,6 +157,7 @@ export interface BackSpriteManifestRecord {
   local_path: string
   bytes: number
   animation?: SpriteAnimationRecord
+  visual_bounds?: SpriteVisualBoundsRecord
 }
 
 export interface SpriteCrop {
@@ -154,6 +176,8 @@ export interface PokemonCatalogEntry extends PokemonSizeRecord {
   backSpriteUrl?: string
   spriteAnimation?: SpriteAnimation
   backSpriteAnimation?: SpriteAnimation
+  spriteVisualBounds?: SpriteVisualBounds
+  backSpriteVisualBounds?: SpriteVisualBounds
   entityKind: 'pokemon' | 'trainer'
   spriteCrop?: SpriteCrop
 }
