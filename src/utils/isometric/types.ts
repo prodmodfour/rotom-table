@@ -56,6 +56,8 @@ export interface PokemonRenderObject {
    */
   volume: THREE.Mesh<THREE.BoxGeometry, THREE.MeshBasicMaterial[]>
   edges: THREE.LineSegments
+  /** Renderer-owned cage affordance state; layer visibility still gates whether it can render. */
+  cageVisible: boolean
   proxy: THREE.Mesh<THREE.BoxGeometry, THREE.MeshBasicMaterial>
   /** Soft radial-gradient disc on the floor; the "planted on the ground" cue. */
   shadow: THREE.Mesh<THREE.CircleGeometry, THREE.MeshBasicMaterial>

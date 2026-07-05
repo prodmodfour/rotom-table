@@ -1,10 +1,12 @@
 import * as THREE from 'three'
 import { describe, expect, it, vi } from 'vitest'
+import type { LayerVisibility } from '~/types/map'
 import type { SpawnedPokemon } from '~/types/pokemon'
 import type { PokemonRenderObject, WorldSpriteState } from '~/utils/isometric/types'
 import {
   disposePokemonRenderObject,
   paintPokemonRenderObjectStyle,
+  setPokemonRenderObjectLayerVisibility,
   updatePokemonRenderObjectFromSpawn,
 } from '~/utils/isometric/tokenRenderer'
 import { createTokenRenderGeometryCache } from '~/utils/isometric/tokenGeometryCache'
@@ -13,6 +15,23 @@ import {
   resolveVolumeAccentColor,
   TERRAIN_PALETTE,
 } from '~/utils/isometric/materials'
+
+const visibleLayers = (overrides: Partial<LayerVisibility> = {}): LayerVisibility => ({
+  terrain: true,
+  shadows: true,
+  tokens: true,
+  grid: true,
+  hazards: true,
+  fieldEffects: true,
+  ...overrides,
+})
+
+type TokenHudSprite = PokemonRenderObject['elevationBadge'] | PokemonRenderObject['hpBar']
+
+const cssSpriteStub = <T extends TokenHudSprite>(): T => Object.assign(
+  new THREE.Object3D(),
+  { element: { style: { display: '' } } },
+) as T
 
 const spawnedPokemon = (overrides: Partial<SpawnedPokemon> = {}): SpawnedPokemon => ({
   species: 'Trainer',
@@ -76,8 +95,8 @@ const makeRenderObject = (pokemon: SpawnedPokemon): PokemonRenderObject => {
     id: pokemon.id,
     sprite,
     spriteState,
-    elevationBadge: new THREE.Object3D() as PokemonRenderObject['elevationBadge'],
-    hpBar: new THREE.Object3D() as PokemonRenderObject['hpBar'],
+    elevationBadge: cssSpriteStub<PokemonRenderObject['elevationBadge']>(),
+    hpBar: cssSpriteStub<PokemonRenderObject['hpBar']>(),
     combatStageGlass: {
       mesh: new THREE.Mesh(new THREE.PlaneGeometry(1, 1), new THREE.MeshBasicMaterial()),
       texture: new THREE.Texture() as unknown as THREE.CanvasTexture,
@@ -94,6 +113,7 @@ const makeRenderObject = (pokemon: SpawnedPokemon): PokemonRenderObject => {
       new THREE.EdgesGeometry(new THREE.BoxGeometry(pokemon.base, pokemon.clearance, pokemon.base)),
       new THREE.LineBasicMaterial(),
     ),
+    cageVisible: true,
     proxy: new THREE.Mesh(
       new THREE.BoxGeometry(pokemon.base, pokemon.clearance, pokemon.base),
       new THREE.MeshBasicMaterial(),
@@ -139,6 +159,34 @@ const volumePaletteColorHexes = (palette: ReturnType<typeof accentVolumeFacePale
 ]
 
 describe('token renderer', () => {
+  it('keeps sprites, shadows, and picking proxies visible while the cage is hidden', () => {
+    const renderObject = makeRenderObject(spawnedPokemon())
+    renderObject.cageVisible = false
+
+    setPokemonRenderObjectLayerVisibility(renderObject, visibleLayers())
+
+    expect(renderObject.sprite.visible).toBe(true)
+    expect(renderObject.spriteState.halo.visible).toBe(true)
+    expect(renderObject.proxy.visible).toBe(true)
+    expect(renderObject.shadow.visible).toBe(true)
+    expect(renderObject.volume.visible).toBe(false)
+    expect(renderObject.edges.visible).toBe(false)
+  })
+
+  it('hides the token stack when token layer visibility is disabled', () => {
+    const renderObject = makeRenderObject(spawnedPokemon())
+    renderObject.cageVisible = true
+
+    setPokemonRenderObjectLayerVisibility(renderObject, visibleLayers({ tokens: false }))
+
+    expect(renderObject.sprite.visible).toBe(false)
+    expect(renderObject.spriteState.halo.visible).toBe(false)
+    expect(renderObject.proxy.visible).toBe(false)
+    expect(renderObject.shadow.visible).toBe(false)
+    expect(renderObject.volume.visible).toBe(false)
+    expect(renderObject.edges.visible).toBe(false)
+  })
+
   it('highlights hovered token cages with their app accent color', () => {
     const pokemon = spawnedPokemon({ accentColor: '#2e77d0' })
     const renderObject = makeRenderObject(pokemon)

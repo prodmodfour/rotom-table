@@ -75,7 +75,7 @@ Status: DONE
 
 ## 002 — COS-002 — Track cage visibility separately from token layer visibility
 
-Status: TODO
+Status: DONE
 
 **Goal:** Let a token be visible while its cage is hidden.
 

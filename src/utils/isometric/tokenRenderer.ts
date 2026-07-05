@@ -359,6 +359,7 @@ export const createPokemonRenderObject = (
     combatStageGlass,
     volume,
     edges,
+    cageVisible: true,
     proxy,
     shadow,
     ...(geometryLeases ? { geometryLeases } : {}),
@@ -616,8 +617,9 @@ export const setPokemonRenderObjectLayerVisibility = (
   const tokens = layers.tokens
   applyObjectVisibility(renderObject.sprite, tokens)
   applyObjectVisibility(renderObject.spriteState.halo, tokens)
-  applyObjectVisibility(renderObject.volume, tokens)
-  applyObjectVisibility(renderObject.edges, tokens)
+  const cageVisible = tokens && renderObject.cageVisible
+  applyObjectVisibility(renderObject.volume, cageVisible)
+  applyObjectVisibility(renderObject.edges, cageVisible)
   applyObjectVisibility(renderObject.proxy, tokens)
   applyObjectVisibility(renderObject.combatStageGlass.mesh, tokens && renderObject.combatStageGlass.active)
   applyObjectVisibility(renderObject.elevationBadge, tokens && renderObject.elevationBadge.visible)
