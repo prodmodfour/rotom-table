@@ -3,8 +3,10 @@ import type { SpawnedPokemon } from '~/types/pokemon'
 import type { PokemonRenderObject } from '~/utils/isometric/types'
 import type { MoveVfxRendererFrameContext } from '~/utils/isometric/moveVfxRenderer'
 import { getIsometricSpriteLighting } from '~/utils/isometric/spriteLighting'
+import { sampleTokenMotionTrack } from '~/utils/isometric/tokenMotionTracks'
+import type { TokenMotionCenter } from '~/utils/isometric/tokenMotionCurves'
 import { tokenCenterLerpNeedsAnimation } from '~/utils/isometric/tokenRenderState'
-import { animatePokemonRenderObject } from '~/utils/isometric/tokenRenderer'
+import { animatePokemonRenderObject, clearPokemonRenderObjectMotionTrack } from '~/utils/isometric/tokenRenderer'
 import { nowMs } from '~/utils/isometric/worldSprites'
 
 export interface IsometricAnimationFrameResult {
@@ -63,18 +65,46 @@ export interface IsometricAnimationFrameOptions {
   css3DRenderDirtyTracker?: IsometricCss3DRenderDirtyTrackerLike
 }
 
+const copyTokenMotionCenterToVector = (
+  target: THREE.Vector3,
+  center: TokenMotionCenter,
+) => {
+  target.set(center.x, center.y, center.z)
+}
+
+const sampleRenderObjectMotionCenter = (
+  renderObject: PokemonRenderObject,
+  frameNowMs: number,
+): boolean => {
+  const track = renderObject.motion?.track
+  if (!track) return false
+
+  const sample = sampleTokenMotionTrack(track, frameNowMs)
+  copyTokenMotionCenterToVector(renderObject.currentCenter, sample.center)
+  renderObject.motion?.sampledCenter.copy(renderObject.currentCenter)
+
+  if (sample.complete) {
+    clearPokemonRenderObjectMotionTrack(renderObject)
+  }
+
+  return true
+}
+
 export const stepIsometricAnimationFrame = (
   options: IsometricAnimationFrameOptions,
 ): IsometricAnimationFrameResult => {
   const delta = Math.min(options.clock.getDelta(), 0.1)
   const damping = 1 - Math.exp(-delta * 12)
   const renderObjects = Array.from(options.renderObjects)
+  const frameNowMs = options.frameNowMs ?? nowMs()
 
   for (const renderObject of renderObjects) {
-    if (tokenCenterLerpNeedsAnimation(renderObject)) {
-      renderObject.currentCenter.lerp(renderObject.targetCenter, damping)
-    } else {
-      renderObject.currentCenter.copy(renderObject.targetCenter)
+    if (!sampleRenderObjectMotionCenter(renderObject, frameNowMs)) {
+      if (tokenCenterLerpNeedsAnimation(renderObject)) {
+        renderObject.currentCenter.lerp(renderObject.targetCenter, damping)
+      } else {
+        renderObject.currentCenter.copy(renderObject.targetCenter)
+      }
     }
 
     if (options.applyRenderObjectPosition(renderObject) === true) {
@@ -94,7 +124,6 @@ export const stepIsometricAnimationFrame = (
     target: options.controls.target,
     facingDirection: options.facingDirection,
   })
-  const frameNowMs = options.frameNowMs ?? nowMs()
   const animateRenderObject = options.animateRenderObject ?? animatePokemonRenderObject
 
   for (const renderObject of renderObjects) {

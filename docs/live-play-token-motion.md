@@ -7,7 +7,8 @@ This document audits the current token-movement presentation path for Live Play 
 - A token's real board position is the placement in the reactive map document.
 - The isometric scene receives visible placements as `SpawnedPokemon[]` through `IsometricGrid.client.vue` props.
 - Renderer-owned `PokemonRenderObject` instances keep presentation state (`currentCenter`, `targetCenter`, selection lift, Three.js/CSS3D objects) that is not serialized to map data.
-- Existing movement smoothing is a generic center interpolation from `currentCenter` toward `targetCenter`; it is not tied to a command, duration, path, reduced-motion preference, or correction reason.
+- Existing movement smoothing was a generic center interpolation from `currentCenter` toward `targetCenter`; `LP-S5-005` keeps that as a compatibility fallback only when no explicit runtime track is active.
+- When a renderer-owned `motion.track` exists, the frame step samples that track by timestamp and copies the sampled center into the existing render-object placement fields. The track is still presentation-only and never changes the authoritative map placement.
 
 ## Current movement pipeline
 
@@ -58,13 +59,15 @@ There is no current comparison that distinguishes a placement move from a sheet/
 On every scheduled frame:
 
 - `delta` is capped to `0.1` seconds.
-- `damping` is calculated as `1 - Math.exp(-delta * 12)`.
+- `damping` is calculated as `1 - Math.exp(-delta * 12)` for compatibility fallback and selection lift.
+- `frameNowMs` is resolved once and used to sample explicit runtime token-motion tracks.
 - Each render object's `currentCenter` is updated:
-  - if `tokenCenterLerpNeedsAnimation(renderObject)` is true, `currentCenter.lerp(targetCenter, damping)` runs;
+  - if `motion.track` exists, `sampleTokenMotionTrack(track, frameNowMs)` writes the sampled center to `currentCenter` and `motion.sampledCenter`; a completed sample lands exactly on the track destination and clears the runtime track;
+  - otherwise, if `tokenCenterLerpNeedsAnimation(renderObject)` is true, `currentCenter.lerp(targetCenter, damping)` runs;
   - otherwise `currentCenter.copy(targetCenter)` snaps to the exact target.
-- The center snap threshold is `TOKEN_CENTER_LERP_SNAP_DISTANCE_SQUARED` from `src/utils/isometric/tokenRenderState.ts`.
+- The center snap threshold for the fallback path is `TOKEN_CENTER_LERP_SNAP_DISTANCE_SQUARED` from `src/utils/isometric/tokenRenderState.ts`.
 
-This creates a framerate-independent exponential ease toward the target. It has no explicit duration; movement asymptotically approaches the target until the epsilon check snaps the last tiny tail.
+Explicit tracks now have planned end times. The generic exponential ease remains available only for tokens that do not yet have a track or for compatibility states, so movement wiring can migrate one source at a time without changing authoritative placement data.
 
 ### WebGL and CSS3D placement
 
@@ -80,13 +83,13 @@ After center interpolation, `applyPokemonRenderObjectPosition()` applies `curren
 
 ### Render continuation
 
-`src/utils/isometric/renderLoop.ts` currently treats token motion as active when any render object still needs center interpolation or selection-lift interpolation:
+`src/utils/isometric/renderLoop.ts` treats token motion as active when any render object still has an explicit `motion.track`, needs fallback center interpolation, or needs selection-lift interpolation:
 
 - `resolveIsometricTokenMotionContinuationSources(renderObjects.values())`
 - `anyTokenRenderStateNeedsAnimation()`
 - `tokenRenderStateNeedsAnimation()`
 
-`IsometricGrid.client.vue` includes that source in `resolveSceneAnimationContinuation()`. The render scheduler continues requesting animation frames while the `token-motion` continuation source is active and stops when all centers and lift factors have settled. CSS3D dirty tracking also marks token-motion animation frames so HP bars/elevation badges can follow moving/lifting tokens.
+`IsometricGrid.client.vue` includes that source in `resolveSceneAnimationContinuation()`. The render scheduler continues requesting animation frames while the `token-motion` continuation source is active and stops after completed tracks are sampled and all centers/lift factors have settled. CSS3D dirty tracking also marks token-motion animation frames so HP bars/elevation badges can follow moving/lifting tokens.
 
 ## Live-play paths that currently become renderer movement
 
@@ -137,6 +140,8 @@ Realtime gaps, replay validation failures, profile changes, or explicit reconcil
 
 `LP-S5-004` gives each `PokemonRenderObject` a renderer-owned `motion` state bag. `motion.track` is optional runtime-only metadata for the active presentation track, while `motion.sampledCenter` is the explicit output center that later frame stepping can copy into the existing `currentCenter` compatibility field. New render objects initialize `currentCenter`, `targetCenter`, and `motion.sampledCenter` from the same first authoritative placement center so they do not slide in from origin or another token. Disposal clears any active motion-track metadata before releasing Three.js/CSS3D resources.
 
+`LP-S5-005` wires that state into frame stepping. `stepIsometricAnimationFrame()` samples active tracks with the current frame timestamp, clears them only after an end-time sample reaches the exact destination, and lets `applyPokemonRenderObjectPosition()` continue to move sprites, shadows, cages, proxies, elevation badges, combat-stage glass, and HP bars from the same sampled center. Render continuation now sees explicit tracks as token-motion work, so RAF stays alive while a track exists and stops after completion.
+
 ## Future Sprint 5 change map
 
 The current code suggests this division for later tickets:
@@ -155,7 +160,7 @@ The current code suggests this division for later tickets:
 ### Renderer and scene wiring
 
 - `LP-S5-004`: implemented in `PokemonRenderObject.motion` as runtime-only `track` metadata plus a `sampledCenter` output while keeping `currentCenter`/`targetCenter` compatibility.
-- `LP-S5-005`: sample explicit tracks in `stepIsometricAnimationFrame()`, update render continuation, and keep CSS HUD updates synchronized.
+- `LP-S5-005`: implemented in `stepIsometricAnimationFrame()` and token render-state continuation helpers. Active tracks are sampled by `frameNowMs`, completed tracks clear at their planned destination, the fallback lerp remains for objects without tracks, and CSS/WebGL token attachments continue to use the sampled center.
 - `LP-S5-006`: detect placement-position changes during token object sync and start tracks only for existing-token movement.
 - `LP-S5-012`: classify local prediction, local confirmation, remote accepted movement, and duplicate terminal delivery well enough to avoid stutter.
 - `LP-S5-014`: expose aggregate motion metrics in debug tooling without private token details.

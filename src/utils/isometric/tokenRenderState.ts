@@ -1,6 +1,7 @@
 import type { CombatStageMap } from '~/types/combatStages'
 import type { SpriteAnimation, SpriteCrop, SpawnedPokemon } from '~/types/pokemon'
 import type { TokenFacingDirection } from '~/types/tokenFacing'
+import type { TokenMotionTrack } from '~/utils/isometric/tokenMotionTracks'
 import { normalizeCombatStages } from '~/utils/combatStages'
 import { getPokemonCenter } from '~/utils/gridGeometry'
 import { normalizeConditionNames } from '~/utils/statusConditions'
@@ -58,11 +59,17 @@ export interface TokenRenderAnimationPoint {
   z: number
 }
 
+export interface TokenRenderMotionAnimationState {
+  /** Runtime-only explicit presentation track; presence keeps token-motion frames scheduled. */
+  track?: TokenMotionTrack | null
+}
+
 export interface TokenRenderAnimationState {
   currentCenter: TokenRenderAnimationPoint
   targetCenter: TokenRenderAnimationPoint
   liftFactor: number
   liftTarget: number
+  motion?: TokenRenderMotionAnimationState
 }
 
 export const pokemonRenderSpawnState = (pokemon: SpawnedPokemon): PokemonRenderSpawnState => {
@@ -126,9 +133,17 @@ export const tokenSelectionLiftNeedsAnimation = (
   token: Pick<TokenRenderAnimationState, 'liftFactor' | 'liftTarget'>,
 ): boolean => Math.abs(token.liftFactor - token.liftTarget) >= TOKEN_SELECTION_LIFT_SNAP_EPSILON
 
+export const tokenMotionTrackNeedsAnimation = (
+  token: TokenRenderAnimationState,
+): boolean => token.motion?.track != null
+
 export const tokenRenderStateNeedsAnimation = (
   token: TokenRenderAnimationState,
-): boolean => tokenCenterLerpNeedsAnimation(token) || tokenSelectionLiftNeedsAnimation(token)
+): boolean => (
+  tokenMotionTrackNeedsAnimation(token) ||
+  tokenCenterLerpNeedsAnimation(token) ||
+  tokenSelectionLiftNeedsAnimation(token)
+)
 
 export const anyTokenRenderStateNeedsAnimation = (
   tokens: Iterable<TokenRenderAnimationState>,

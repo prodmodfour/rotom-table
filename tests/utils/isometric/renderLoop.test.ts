@@ -11,6 +11,7 @@ import {
   resolveIsometricTokenMotionContinuationSources,
   toIsometricRenderSchedulerFrameResult,
 } from '~/utils/isometric/renderLoop'
+import { startTokenMotionTrack } from '~/utils/isometric/tokenMotionTracks'
 
 const spriteAnimation = () => ({
   url: '/sprites/pikachu-animated.png',
@@ -109,7 +110,7 @@ describe('isometric render loop helpers', () => {
     })
   })
 
-  it('exposes token motion as a continuation source while centers or lift factors are settling', () => {
+  it('exposes token motion as a continuation source while tracks, centers, or lift factors are settling', () => {
     const settledToken = {
       currentCenter: { x: 1, y: 2, z: 3 },
       targetCenter: { x: 1, y: 2, z: 3 },
@@ -124,8 +125,24 @@ describe('isometric render loop helpers', () => {
       ...settledToken,
       liftTarget: 1,
     }
+    const explicitTrackToken = {
+      ...settledToken,
+      motion: {
+        track: startTokenMotionTrack({
+          tokenId: 'token-a',
+          origin: { x: 1, y: 2, z: 3 },
+          destination: { x: 4, y: 2, z: 3 },
+          startMs: 1000,
+          durationMs: 250,
+          reason: 'remote-accepted',
+        }),
+      },
+    }
 
     expect(resolveIsometricTokenMotionContinuationSources([settledToken])).toEqual([])
+    expect(resolveIsometricTokenMotionContinuationSources([settledToken, explicitTrackToken])).toEqual([
+      ISOMETRIC_ANIMATION_CONTINUATION_SOURCE.tokenMotion,
+    ])
     expect(resolveIsometricTokenMotionContinuationSources([settledToken, movingToken])).toEqual([
       ISOMETRIC_ANIMATION_CONTINUATION_SOURCE.tokenMotion,
     ])

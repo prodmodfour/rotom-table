@@ -2,6 +2,8 @@ import * as THREE from 'three'
 import { describe, expect, it, vi } from 'vitest'
 import { stepIsometricAnimationFrame } from '~/utils/isometric/animationFrame'
 import type { PokemonRenderObject } from '~/utils/isometric/types'
+import { createPokemonRenderMotionState } from '~/utils/isometric/tokenRenderer'
+import { startTokenMotionTrack } from '~/utils/isometric/tokenMotionTracks'
 
 describe('isometric animation frame', () => {
   it('steps scene animation, preview animation, and renderers in one place', () => {
@@ -58,6 +60,115 @@ describe('isometric animation frame', () => {
     expect(renderer.render).toHaveBeenCalledWith(scene, camera)
     expect(cssRenderer.render).toHaveBeenCalledWith(scene, camera)
     expect(result.cssRendered).toBe(true)
+  })
+
+  it('samples active token motion tracks by frame timestamp before applying token positions', () => {
+    const camera = new THREE.OrthographicCamera()
+    const scene = new THREE.Scene()
+    const currentCenter = new THREE.Vector3(0, 0, 0)
+    const renderObject = {
+      id: 'token-a',
+      currentCenter,
+      targetCenter: new THREE.Vector3(10, 0, 0),
+      motion: createPokemonRenderMotionState(currentCenter),
+    } as PokemonRenderObject
+    renderObject.motion.track = startTokenMotionTrack({
+      tokenId: renderObject.id,
+      origin: { x: 0, y: 0, z: 0 },
+      destination: { x: 10, y: 0, z: 0 },
+      startMs: 1000,
+      durationMs: 1000,
+      reason: 'remote-accepted',
+    })
+    const applyRenderObjectPosition = vi.fn((object: PokemonRenderObject) => {
+      expect(object.currentCenter.toArray()).toEqual([5, 0, 0])
+      expect(object.motion.sampledCenter.toArray()).toEqual([5, 0, 0])
+      return true
+    })
+    const renderer = { render: vi.fn() }
+    const cssRenderer = { render: vi.fn() }
+    let dirty = false
+    const css3DRenderDirtyTracker = {
+      markDirty: vi.fn((reason?: string) => {
+        if (reason === 'token-style') dirty = true
+      }),
+      consumeDirty: vi.fn(() => dirty),
+    }
+
+    const result = stepIsometricAnimationFrame({
+      clock: { getDelta: () => 0.016, elapsedTime: 1 },
+      renderObjects: [renderObject],
+      applyRenderObjectPosition,
+      controls: { target: new THREE.Vector3(), update: vi.fn(() => false) },
+      fieldEffectRenderer: { update: vi.fn(), needsAnimationFrame: vi.fn(() => false) },
+      tokenMovePreviewRenderer: { animate: vi.fn() },
+      selectedPokemon: null,
+      previewPositionY: null,
+      camera,
+      renderer,
+      cssRenderer,
+      scene,
+      facingDirection: new THREE.Vector2(1, 0),
+      frameNowMs: 1500,
+      animateRenderObject: vi.fn(),
+      css3DRenderDirtyTracker,
+    })
+
+    expect(renderObject.currentCenter.toArray()).toEqual([5, 0, 0])
+    expect(renderObject.motion.track).toBeDefined()
+    expect(applyRenderObjectPosition).toHaveBeenCalledWith(renderObject)
+    expect(css3DRenderDirtyTracker.markDirty).toHaveBeenCalledWith('token-style')
+    expect(cssRenderer.render).toHaveBeenCalledWith(scene, camera)
+    expect(result.frameNowMs).toBe(1500)
+    expect(result.cssRendered).toBe(true)
+  })
+
+  it('finishes active token motion tracks at the planned destination and clears them', () => {
+    const camera = new THREE.OrthographicCamera()
+    const scene = new THREE.Scene()
+    const currentCenter = new THREE.Vector3(4, 0, 0)
+    const renderObject = {
+      id: 'token-a',
+      currentCenter,
+      targetCenter: new THREE.Vector3(10, 0, 0),
+      motion: createPokemonRenderMotionState(currentCenter),
+    } as PokemonRenderObject
+    renderObject.motion.track = startTokenMotionTrack({
+      tokenId: renderObject.id,
+      origin: { x: 0, y: 0, z: 0 },
+      destination: { x: 10, y: 0, z: 0 },
+      startMs: 1000,
+      durationMs: 1000,
+      reason: 'remote-accepted',
+    })
+    const applyRenderObjectPosition = vi.fn((object: PokemonRenderObject) => {
+      expect(object.currentCenter.toArray()).toEqual([10, 0, 0])
+      expect(object.motion.sampledCenter.toArray()).toEqual([10, 0, 0])
+      return false
+    })
+
+    stepIsometricAnimationFrame({
+      clock: { getDelta: () => 0.016, elapsedTime: 1 },
+      renderObjects: [renderObject],
+      applyRenderObjectPosition,
+      controls: { target: new THREE.Vector3(), update: vi.fn(() => false) },
+      fieldEffectRenderer: { update: vi.fn(), needsAnimationFrame: vi.fn(() => false) },
+      tokenMovePreviewRenderer: { animate: vi.fn() },
+      selectedPokemon: null,
+      previewPositionY: null,
+      camera,
+      renderer: { render: vi.fn() },
+      cssRenderer: { render: vi.fn() },
+      scene,
+      facingDirection: new THREE.Vector2(1, 0),
+      frameNowMs: 2000,
+      animateRenderObject: vi.fn(),
+    })
+
+    expect(renderObject.currentCenter.toArray()).toEqual([10, 0, 0])
+    expect(renderObject.motion.sampledCenter.toArray()).toEqual([10, 0, 0])
+    expect(renderObject.motion.track).toBeUndefined()
+    expect(applyRenderObjectPosition).toHaveBeenCalledWith(renderObject)
   })
 
   it('advances active move VFX with scheduler frame context before render without dirtying CSS3D', () => {

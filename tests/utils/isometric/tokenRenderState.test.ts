@@ -9,10 +9,12 @@ import {
   TOKEN_CENTER_LERP_SNAP_DISTANCE_SQUARED,
   TOKEN_SELECTION_LIFT_SNAP_EPSILON,
   tokenCenterLerpNeedsAnimation,
+  tokenMotionTrackNeedsAnimation,
   tokenRenderStateNeedsAnimation,
   tokenSelectionLiftNeedsAnimation,
   tokenSelectionLiftStyle,
 } from '~/utils/isometric/tokenRenderState'
+import { startTokenMotionTrack } from '~/utils/isometric/tokenMotionTracks'
 
 const spawnedPokemon = (overrides: Partial<SpawnedPokemon> = {}): SpawnedPokemon => ({
   species: 'Pikachu',
@@ -110,7 +112,7 @@ describe('token render state helpers', () => {
     })).toBe(false)
   })
 
-  it('detects active token render animation across center lerp and lift state', () => {
+  it('detects active token render animation across explicit motion, center lerp, and lift state', () => {
     const settled = {
       currentCenter: { x: 0, y: 0, z: 0 },
       targetCenter: { x: 0, y: 0, z: 0 },
@@ -125,11 +127,28 @@ describe('token render state helpers', () => {
       ...settled,
       liftTarget: 1,
     }
+    const tracking = {
+      ...settled,
+      motion: {
+        track: startTokenMotionTrack({
+          tokenId: 'token-a',
+          origin: { x: 0, y: 0, z: 0 },
+          destination: { x: 1, y: 0, z: 0 },
+          startMs: 100,
+          durationMs: 200,
+          reason: 'remote-accepted',
+        }),
+      },
+    }
 
+    expect(tokenMotionTrackNeedsAnimation(settled)).toBe(false)
+    expect(tokenMotionTrackNeedsAnimation(tracking)).toBe(true)
     expect(tokenRenderStateNeedsAnimation(settled)).toBe(false)
     expect(tokenRenderStateNeedsAnimation(moving)).toBe(true)
     expect(tokenRenderStateNeedsAnimation(lifting)).toBe(true)
+    expect(tokenRenderStateNeedsAnimation(tracking)).toBe(true)
     expect(anyTokenRenderStateNeedsAnimation([settled])).toBe(false)
+    expect(anyTokenRenderStateNeedsAnimation([settled, tracking])).toBe(true)
     expect(anyTokenRenderStateNeedsAnimation([settled, moving])).toBe(true)
   })
 

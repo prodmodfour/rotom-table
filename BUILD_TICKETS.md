@@ -158,7 +158,7 @@ Status: DONE
 
 ## LP-S5-005 — Replace generic center lerp with explicit motion sampling
 
-Status: TODO
+Status: DONE
 
 **Goal:** Use motion tracks for token relocation while preserving existing render continuation behavior.
 
