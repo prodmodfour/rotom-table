@@ -83,6 +83,7 @@ const makeRenderObject = (pokemon: SpawnedPokemon): PokemonRenderObject => {
     textureRepeat: new THREE.Vector2(1, 1),
     textureOffset: new THREE.Vector2(),
     mirroredX: false,
+    isoLighting: null,
     onTextureLoadComplete: null,
     ghost: false,
     invalid: false,

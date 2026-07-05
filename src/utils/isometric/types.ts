@@ -6,6 +6,7 @@ import type { MapHazardKind, MapVoxelV2 } from '~/types/map'
 import type { SpriteAnimation, SpriteCrop } from '~/types/pokemon'
 import type { TokenFacingDirection } from '~/types/tokenFacing'
 import type { TokenRenderGeometryLeases } from '~/utils/isometric/tokenGeometryCache'
+import type { WorldSpriteIsoLightingRuntime } from '~/utils/isometric/worldSpriteIsoLighting'
 
 export interface WorldSpriteState {
   sprite: THREE.Sprite
@@ -24,6 +25,8 @@ export interface WorldSpriteState {
   textureRepeat: THREE.Vector2
   textureOffset: THREE.Vector2
   mirroredX: boolean
+  /** Mutable shader uniform state for sprite-local fake lighting; absent on ghost/preview sprites. */
+  isoLighting: WorldSpriteIsoLightingRuntime | null
   onTextureLoadComplete: (() => void) | null
   ghost: boolean
   invalid: boolean

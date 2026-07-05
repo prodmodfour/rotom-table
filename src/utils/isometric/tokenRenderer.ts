@@ -672,6 +672,7 @@ export const animatePokemonRenderObject = (
     backSpriteUrl: renderObject.backSpriteUrl,
     backSpriteAnimation: renderObject.backSpriteAnimation,
     spriteCrop: renderObject.spriteCrop,
+    turned: renderObject.turned,
   })
   if (renderObject.spriteState.animationMeta) {
     applyAnimationFrame(renderObject.spriteState, options.frameNowMs)

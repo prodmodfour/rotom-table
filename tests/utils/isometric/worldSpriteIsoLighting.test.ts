@@ -2,6 +2,8 @@ import * as THREE from 'three'
 import { describe, expect, it } from 'vitest'
 import {
   applyWorldSpriteIsoLightingShader,
+  createWorldSpriteIsoLightingRuntime,
+  setWorldSpriteIsoLightingMirrorX,
   WORLD_SPRITE_ISO_LIGHTING_FOOT_BASE_DARKENING,
   WORLD_SPRITE_ISO_LIGHTING_LOWER_FRONT_DARKENING,
   WORLD_SPRITE_ISO_LIGHTING_MAX_BRIGHTNESS_MULTIPLIER,
@@ -65,6 +67,9 @@ describe('world sprite isometric lighting constants', () => {
 
     expect(shader.vertexShader).toContain('varying vec2 vWorldSpriteIsoUv;')
     expect(shader.vertexShader).toContain('vWorldSpriteIsoUv = uv;')
+    expect(shader.fragmentShader).toContain('uniform float worldSpriteIsoMirrorX;')
+    expect(shader.fragmentShader).toContain('vec2 worldSpriteIsoLightingUv(vec2 uv)')
+    expect(shader.fragmentShader).toContain('mix(uv.x, 1.0 - uv.x, worldSpriteIsoMirrorX)')
     expect(shader.fragmentShader).toContain('float worldSpriteIsoLightingMultiplier(vec2 uv)')
     expect(shader.fragmentShader).toContain(
       'diffuseColor.rgb *= worldSpriteIsoLightingMultiplier(vWorldSpriteIsoUv);',
@@ -82,10 +87,34 @@ describe('world sprite isometric lighting constants', () => {
       worldSpriteIsoFootBaseDarkening: { value: WORLD_SPRITE_ISO_LIGHTING_FOOT_BASE_DARKENING },
       worldSpriteIsoMinBrightnessMultiplier: { value: WORLD_SPRITE_ISO_LIGHTING_MIN_BRIGHTNESS_MULTIPLIER },
       worldSpriteIsoMaxBrightnessMultiplier: { value: WORLD_SPRITE_ISO_LIGHTING_MAX_BRIGHTNESS_MULTIPLIER },
+      worldSpriteIsoMirrorX: { value: 0 },
     })
   })
 
+  it('uses a mutable mirror uniform so side lighting follows mirrored sprite facings', () => {
+    const runtime = createWorldSpriteIsoLightingRuntime()
+    const uniforms: Record<string, { value: unknown }> = {}
+    const shader = {
+      vertexShader: THREE.ShaderLib.sprite.vertexShader,
+      fragmentShader: THREE.ShaderLib.sprite.fragmentShader,
+      uniforms,
+    }
+
+    applyWorldSpriteIsoLightingShader(shader, runtime)
+
+    expect(uniforms.worldSpriteIsoMirrorX).toBe(runtime.mirrorXUniform)
+    expect(runtime.mirrorXUniform.value).toBe(0)
+
+    setWorldSpriteIsoLightingMirrorX(runtime, true)
+
+    expect(uniforms.worldSpriteIsoMirrorX.value).toBe(1)
+
+    setWorldSpriteIsoLightingMirrorX(runtime, false)
+
+    expect(uniforms.worldSpriteIsoMirrorX.value).toBe(0)
+  })
+
   it('uses a stable shader cache key for the material hook', () => {
-    expect(WORLD_SPRITE_ISO_LIGHTING_SHADER_CACHE_KEY).toBe('world-sprite-iso-lighting-v1')
+    expect(WORLD_SPRITE_ISO_LIGHTING_SHADER_CACHE_KEY).toBe('world-sprite-iso-lighting-v2')
   })
 })

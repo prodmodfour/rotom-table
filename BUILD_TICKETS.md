@@ -227,7 +227,7 @@ Status: DONE
 
 ## 007 — COS-007 — Keep sprite shading correct across animation, crop, and facing
 
-Status: TODO
+Status: DONE
 
 **Goal:** Ensure the new sprite shading follows the same lifecycle as the sprite asset.
 

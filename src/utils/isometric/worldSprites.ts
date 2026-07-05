@@ -23,6 +23,8 @@ import {
 } from '~/utils/isometric/worldSpriteFacing'
 import {
   applyWorldSpriteIsoLightingShader,
+  createWorldSpriteIsoLightingRuntime,
+  setWorldSpriteIsoLightingMirrorX,
   WORLD_SPRITE_ISO_LIGHTING_SHADER_CACHE_KEY,
 } from '~/utils/isometric/worldSpriteIsoLighting'
 import {
@@ -174,6 +176,7 @@ export const buildWorldSprite = (
   options: boolean | BuildWorldSpriteOptions = false,
 ): WorldSpriteState => {
   const { ghost, onTextureLoadComplete } = normalizeBuildWorldSpriteOptions(options)
+  const isoLighting = ghost ? null : createWorldSpriteIsoLightingRuntime()
   const material = new THREE.SpriteMaterial({
     map: getTransparentSpriteTexture(),
     alphaTest: 0.5,
@@ -186,10 +189,10 @@ export const buildWorldSprite = (
     side: THREE.DoubleSide,
     toneMapped: false,
   })
-  if (!ghost) {
+  if (isoLighting) {
     // Persistent sprite-local fake lighting replaces the old always-visible cage
     // as the idle dimensional cue while keeping alpha clipping in the material path.
-    material.onBeforeCompile = (shader) => applyWorldSpriteIsoLightingShader(shader)
+    material.onBeforeCompile = (shader) => applyWorldSpriteIsoLightingShader(shader, isoLighting)
     material.customProgramCacheKey = () => WORLD_SPRITE_ISO_LIGHTING_SHADER_CACHE_KEY
   }
   const sprite = new THREE.Sprite(material)
@@ -232,6 +235,7 @@ export const buildWorldSprite = (
     textureRepeat: new THREE.Vector2(1, 1),
     textureOffset: new THREE.Vector2(0, 0),
     mirroredX: false,
+    isoLighting,
     onTextureLoadComplete,
     ghost,
     invalid: false,
@@ -293,6 +297,7 @@ export const buildContactShadow = (
 }
 
 const applyWorldSpriteMirrorX = (state: WorldSpriteState, mirrorX: boolean) => {
+  setWorldSpriteIsoLightingMirrorX(state.isoLighting, mirrorX)
   if (state.mirroredX === mirrorX) return
   state.mirroredX = mirrorX
   applyWorldSpriteTextureTransform(state)
