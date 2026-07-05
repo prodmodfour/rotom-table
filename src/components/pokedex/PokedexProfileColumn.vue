@@ -13,6 +13,7 @@ defineProps<{
   heightLabel: string | null
   spriteUrl: string | null
   spriteVisualBounds?: SpriteVisualBounds | null
+  showSpriteVisualBoundsOverlay?: boolean
   weightLabel: string | null
 }>()
 </script>
@@ -23,6 +24,7 @@ defineProps<{
       :species="entry.species"
       :sprite-url="spriteUrl"
       :visual-bounds="spriteVisualBounds ?? entry.spriteVisualBounds ?? null"
+      :show-visual-bounds-overlay="showSpriteVisualBoundsOverlay"
     />
 
     <PokedexBaseStatsPanel :base-stats="entry.base_stats" />

@@ -43,3 +43,9 @@ After changing overrides, run the front and/or back sprite manifest conversion s
 python3 scripts/download_pokemon_sprites.py --convert-existing
 python3 scripts/download_pokemon_back_sprites.py --convert-existing
 ```
+
+## Dev overlay for QA
+
+In a local/dev Nuxt build, append `?spriteBoundsDebug=1` to a Pokédex detail route, for example `/pokedex/haunter?spriteBoundsDebug=1`, to show the sprite visual-bounds QA overlay. The overlay is hidden in normal use and is disabled outside dev builds.
+
+The overlay draws the source canvas box, visual bounding box, canvas/body centre markers, the final cage centre target, and a small readout with the active translate percentages. Use it to spot species whose alpha bounds do not match the perceived body centre before adding minimal overrides.

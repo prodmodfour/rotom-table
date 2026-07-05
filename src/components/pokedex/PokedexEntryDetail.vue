@@ -20,6 +20,7 @@ defineProps<{
   skillPhrase: string
   spriteUrl: string | null
   spriteVisualBounds?: SpriteVisualBounds | null
+  showSpriteVisualBoundsOverlay?: boolean
   tmHmTokens: MoveToken[]
   tutorMoveTokens: MoveToken[]
   typeMatchupGroups: TypeMatchupGroup[]
@@ -48,6 +49,7 @@ defineProps<{
           :height-label="heightLabel"
           :sprite-url="spriteUrl"
           :sprite-visual-bounds="spriteVisualBounds ?? entry.spriteVisualBounds ?? null"
+          :show-sprite-visual-bounds-overlay="showSpriteVisualBoundsOverlay"
           :weight-label="weightLabel"
         />
 

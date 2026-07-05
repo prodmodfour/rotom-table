@@ -76,17 +76,54 @@ describe('PokedexProfileSpriteFrame', () => {
     expect(readCssPercent(wrapper, '--sprite-visual-translate-y')).toBe(0)
   })
 
-  it('keeps the missing-sprite fallback in place', () => {
+  it('keeps the visual-bounds debug overlay hidden by default', () => {
+    const wrapper = mount(PokedexProfileSpriteFrame, {
+      props: {
+        species: 'Haunter',
+        spriteUrl: '/sprites/haunter.png',
+        visualBounds: hoverBounds,
+      },
+    })
+
+    expect(wrapper.find('.sprite-visual-bounds-debug').exists()).toBe(false)
+  })
+
+  it('shows visual-bounds debug markers and readout when explicitly enabled', () => {
+    const wrapper = mount(PokedexProfileSpriteFrame, {
+      props: {
+        species: 'Haunter',
+        spriteUrl: '/sprites/haunter.png',
+        visualBounds: hoverBounds,
+        showVisualBoundsOverlay: true,
+      },
+    })
+
+    expect(wrapper.get('.sprite-visual-bounds-debug').attributes('aria-label'))
+      .toBe('Sprite visual-bounds debug overlay')
+    expect(wrapper.find('.sprite-visual-bounds-debug__bounds').exists()).toBe(true)
+    expect(wrapper.find('.sprite-visual-bounds-debug__body-centre').exists()).toBe(true)
+    expect(wrapper.text()).toContain('Body centre')
+    expect(wrapper.text()).toContain('50% / 33.3%')
+    expect(wrapper.text()).toContain('Cage centre')
+    expect(wrapper.text()).toContain('Translate')
+    expect(readCssPercent(wrapper, '--sprite-debug-bounds-left')).toBe(25)
+    expect(readCssPercent(wrapper, '--sprite-debug-bounds-top')).toBeCloseTo(100 / 12)
+    expect(readCssPercent(wrapper, '--sprite-debug-body-center-y')).toBeCloseTo(100 / 3)
+  })
+
+  it('shows a no-metadata debug readout without bbox markers', () => {
     const wrapper = mount(PokedexProfileSpriteFrame, {
       props: {
         species: 'Missingno',
         spriteUrl: null,
-        visualBounds: hoverBounds,
+        showVisualBoundsOverlay: true,
       },
     })
 
     expect(wrapper.find('img').exists()).toBe(false)
     expect(wrapper.text()).toContain('no sprite')
+    expect(wrapper.text()).toContain('No visual-bounds metadata')
+    expect(wrapper.find('.sprite-visual-bounds-debug__bounds').exists()).toBe(false)
   })
 })
 
@@ -109,6 +146,7 @@ describe('Pokédex visual-bounds plumbing', () => {
         skillPhrase: '',
         spriteUrl: '/sprites/haunter.png',
         spriteVisualBounds: hoverBounds,
+        showSpriteVisualBoundsOverlay: true,
         tmHmTokens: [],
         tutorMoveTokens: [],
         typeMatchupGroups: [],
@@ -118,8 +156,8 @@ describe('Pokédex visual-bounds plumbing', () => {
         stubs: {
           PokedexEntryHeader: true,
           PokedexProfileColumn: {
-            props: ['spriteVisualBounds'],
-            template: `<div class="profile-column-stub" :data-floating="spriteVisualBounds && spriteVisualBounds.floating ? 'true' : 'false'" />`,
+            props: ['spriteVisualBounds', 'showSpriteVisualBoundsOverlay'],
+            template: `<div class="profile-column-stub" :data-floating="spriteVisualBounds && spriteVisualBounds.floating ? 'true' : 'false'" :data-debug="showSpriteVisualBoundsOverlay ? 'true' : 'false'" />`,
           },
           PokedexCapabilitiesSkillsPanel: true,
           PokedexTypeMatchupsPanel: true,
@@ -130,6 +168,7 @@ describe('Pokédex visual-bounds plumbing', () => {
     })
 
     expect(wrapper.get('.profile-column-stub').attributes('data-floating')).toBe('true')
+    expect(wrapper.get('.profile-column-stub').attributes('data-debug')).toBe('true')
   })
 
   it('passes profile-column visual bounds through to the sprite frame', () => {
@@ -144,13 +183,14 @@ describe('Pokédex visual-bounds plumbing', () => {
         heightLabel: null,
         spriteUrl: '/sprites/haunter.png',
         spriteVisualBounds: hoverBounds,
+        showSpriteVisualBoundsOverlay: true,
         weightLabel: null,
       },
       global: {
         stubs: {
           PokedexProfileSpriteFrame: {
-            props: ['species', 'spriteUrl', 'visualBounds'],
-            template: `<div class="sprite-frame-stub" :data-species="species" :data-sprite-url="spriteUrl" :data-floating="visualBounds && visualBounds.floating ? 'true' : 'false'" />`,
+            props: ['species', 'spriteUrl', 'visualBounds', 'showVisualBoundsOverlay'],
+            template: `<div class="sprite-frame-stub" :data-species="species" :data-sprite-url="spriteUrl" :data-floating="visualBounds && visualBounds.floating ? 'true' : 'false'" :data-debug="showVisualBoundsOverlay ? 'true' : 'false'" />`,
           },
           PokedexBaseStatsPanel: true,
           PokedexBasicInfoPanel: true,
@@ -164,5 +204,6 @@ describe('Pokédex visual-bounds plumbing', () => {
     expect(frame.attributes('data-species')).toBe('Haunter')
     expect(frame.attributes('data-sprite-url')).toBe('/sprites/haunter.png')
     expect(frame.attributes('data-floating')).toBe('true')
+    expect(frame.attributes('data-debug')).toBe('true')
   })
 })

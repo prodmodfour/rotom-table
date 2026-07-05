@@ -121,6 +121,7 @@ code {
 }
 
 .sprite-frame__inner {
+  position: relative;
   width: 100%;
   height: 100%;
   display: grid;
@@ -141,6 +142,8 @@ code {
   /* Fill the padded frame content area. BW/Showdown sprites are tightly
      cropped, so the inset keeps edge-touching frames and shadows inside the
      visible sprite box while preserving crisp upscale. */
+  position: relative;
+  z-index: 1;
   width: 100%;
   height: 100%;
   min-width: 0;
@@ -149,6 +152,121 @@ code {
   image-rendering: pixelated;
   filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.55));
   transform: translate(var(--sprite-visual-translate-x), var(--sprite-visual-translate-y));
+}
+
+.sprite-visual-bounds-debug {
+  position: absolute;
+  inset: clamp(0.65rem, 7%, 1.25rem);
+  z-index: 3;
+  pointer-events: none;
+  color: #f8fafc;
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  line-height: 1.2;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.95);
+}
+
+.sprite-visual-bounds-debug__artwork {
+  position: absolute;
+  inset: 0;
+  transform: translate(var(--sprite-visual-translate-x), var(--sprite-visual-translate-y));
+}
+
+.sprite-visual-bounds-debug__canvas {
+  position: absolute;
+  left: var(--sprite-debug-canvas-left);
+  top: var(--sprite-debug-canvas-top);
+  width: var(--sprite-debug-canvas-width);
+  height: var(--sprite-debug-canvas-height);
+  border: 1px dashed rgba(56, 189, 248, 0.95);
+  box-shadow: inset 0 0 0 1px rgba(14, 165, 233, 0.26);
+}
+
+.sprite-visual-bounds-debug__bounds {
+  position: absolute;
+  left: var(--sprite-debug-bounds-left);
+  top: var(--sprite-debug-bounds-top);
+  width: var(--sprite-debug-bounds-width);
+  height: var(--sprite-debug-bounds-height);
+  border: 2px solid rgba(250, 204, 21, 0.98);
+  background: rgba(250, 204, 21, 0.12);
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.72);
+}
+
+.sprite-visual-bounds-debug__canvas-centre,
+.sprite-visual-bounds-debug__body-centre,
+.sprite-visual-bounds-debug__cage-centre {
+  position: absolute;
+  width: 0.62rem;
+  height: 0.62rem;
+  border-radius: 999px;
+  transform: translate(-50%, -50%);
+}
+
+.sprite-visual-bounds-debug__canvas-centre {
+  left: 50%;
+  top: 50%;
+  border: 1px solid rgba(56, 189, 248, 0.95);
+  background: rgba(14, 165, 233, 0.34);
+}
+
+.sprite-visual-bounds-debug__body-centre {
+  left: var(--sprite-debug-body-center-x);
+  top: var(--sprite-debug-body-center-y);
+  border: 1px solid rgba(5, 46, 22, 0.95);
+  background: rgba(34, 197, 94, 0.95);
+  box-shadow: 0 0 0 1px rgba(240, 253, 244, 0.95);
+}
+
+.sprite-visual-bounds-debug__cage-centre {
+  left: 50%;
+  top: 50%;
+  border: 1px solid rgba(12, 74, 110, 0.95);
+  background: rgba(125, 211, 252, 0.92);
+  box-shadow: 0 0 0 1px rgba(240, 249, 255, 0.95);
+}
+
+.sprite-visual-bounds-debug__cage-label {
+  position: absolute;
+  left: calc(50% + 0.42rem);
+  top: calc(50% + 0.34rem);
+  padding: 0.08rem 0.22rem;
+  border-radius: 0.25rem;
+  background: rgba(8, 47, 73, 0.84);
+  color: #e0f2fe;
+  white-space: nowrap;
+}
+
+.sprite-visual-bounds-debug__readout {
+  position: absolute;
+  left: 0.32rem;
+  right: 0.32rem;
+  bottom: 0.32rem;
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr);
+  gap: 0.08rem 0.35rem;
+  margin: 0;
+  padding: 0.36rem 0.42rem;
+  border: 1px solid rgba(148, 163, 184, 0.54);
+  border-radius: 0.4rem;
+  background: rgba(2, 6, 23, 0.84);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.38);
+}
+
+.sprite-visual-bounds-debug__readout > div {
+  display: contents;
+}
+
+.sprite-visual-bounds-debug__readout dt {
+  color: #bae6fd;
+  font-weight: 700;
+}
+
+.sprite-visual-bounds-debug__readout dd {
+  min-width: 0;
+  margin: 0;
+  color: #fef9c3;
+  overflow-wrap: anywhere;
 }
 
 .sprite-missing {

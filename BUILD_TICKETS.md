@@ -239,7 +239,7 @@ Status: DONE
 
 ## 014 — Add a visual QA/dev overlay for body bounds
 
-Status: TODO
+Status: DONE
 
 **Commit size:** optional debug UI guarded behind a dev flag.
 

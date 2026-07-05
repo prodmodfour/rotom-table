@@ -3,6 +3,7 @@ import type { SpriteVisualBounds } from '~/types/pokemon'
 import {
   SPRITE_VISUAL_BOUNDS_MAX_WORLD_OFFSET_FACTOR,
   getSpriteVisualBoundsBodyCenter,
+  getSpriteVisualBoundsFrameDebugMetrics,
   getSpriteVisualBoundsFrameTranslation,
   getSpriteVisualBoundsWorldYOffset,
 } from '~/utils/spriteVisualBounds'
@@ -85,6 +86,76 @@ describe('sprite visual bounds math', () => {
     expect(getSpriteVisualBoundsFrameTranslation(wideCanvasHoverSprite)).toEqual({
       xPercent: 0,
       yPercent: 20,
+    })
+  })
+
+  it('returns debug overlay metrics for canvas, bounds, body centre, and cage centre', () => {
+    const wideCanvasHoverSprite = visualBounds({
+      canvasWidth: 100,
+      canvasHeight: 50,
+      left: 25,
+      top: 0,
+      width: 50,
+      height: 10,
+      floating: true,
+    })
+
+    expect(getSpriteVisualBoundsFrameDebugMetrics(wideCanvasHoverSprite)).toEqual({
+      canvas: {
+        leftPercent: 0,
+        topPercent: 25,
+        widthPercent: 100,
+        heightPercent: 50,
+      },
+      bounds: {
+        leftPercent: 25,
+        topPercent: 0,
+        widthPercent: 50,
+        heightPercent: 20,
+      },
+      bodyCenter: {
+        xPercent: 50,
+        yPercent: 10,
+      },
+      canvasCenter: {
+        xPercent: 50,
+        yPercent: 50,
+      },
+      cageCenter: {
+        xPercent: 50,
+        yPercent: 50,
+      },
+      translation: {
+        xPercent: 0,
+        yPercent: 20,
+      },
+      floating: true,
+    })
+  })
+
+  it('returns safe neutral debug metrics when metadata is missing', () => {
+    expect(getSpriteVisualBoundsFrameDebugMetrics(undefined)).toEqual({
+      canvas: {
+        leftPercent: 0,
+        topPercent: 0,
+        widthPercent: 100,
+        heightPercent: 100,
+      },
+      bounds: null,
+      bodyCenter: null,
+      canvasCenter: {
+        xPercent: 50,
+        yPercent: 50,
+      },
+      cageCenter: {
+        xPercent: 50,
+        yPercent: 50,
+      },
+      translation: {
+        xPercent: 0,
+        yPercent: 0,
+      },
+      floating: false,
     })
   })
 

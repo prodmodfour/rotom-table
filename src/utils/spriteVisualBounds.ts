@@ -14,6 +14,31 @@ export interface SpriteVisualBoundsFrameTranslation {
   yPercent: number
 }
 
+export interface SpriteVisualBoundsFrameDebugPoint {
+  xPercent: number
+  yPercent: number
+}
+
+export interface SpriteVisualBoundsFrameDebugRect {
+  leftPercent: number
+  topPercent: number
+  widthPercent: number
+  heightPercent: number
+}
+
+export interface SpriteVisualBoundsFrameDebugMetrics {
+  /** The object-fit: contain canvas box inside the square sprite frame. */
+  canvas: SpriteVisualBoundsFrameDebugRect
+  /** The visual alpha/body bounds inside the source canvas, or null when metadata is missing/malformed. */
+  bounds: SpriteVisualBoundsFrameDebugRect | null
+  /** The visible body centre inside the source canvas, or null when metadata is missing/malformed. */
+  bodyCenter: SpriteVisualBoundsFrameDebugPoint | null
+  canvasCenter: SpriteVisualBoundsFrameDebugPoint
+  cageCenter: SpriteVisualBoundsFrameDebugPoint
+  translation: SpriteVisualBoundsFrameTranslation
+  floating: boolean
+}
+
 export interface SpriteVisualBoundsWorldOffsetDimensions {
   /** World-space rendered sprite height; this is the artwork height, not the tactical clearance. */
   height: number
@@ -39,6 +64,18 @@ export const SPRITE_VISUAL_BOUNDS_MAX_WORLD_OFFSET_FACTOR = 0.5
 export const ZERO_SPRITE_VISUAL_BOUNDS_FRAME_TRANSLATION: Readonly<SpriteVisualBoundsFrameTranslation> = Object.freeze({
   xPercent: 0,
   yPercent: 0,
+})
+
+const FULL_SPRITE_VISUAL_BOUNDS_DEBUG_RECT: Readonly<SpriteVisualBoundsFrameDebugRect> = Object.freeze({
+  leftPercent: 0,
+  topPercent: 0,
+  widthPercent: 100,
+  heightPercent: 100,
+})
+
+const SPRITE_VISUAL_BOUNDS_CENTER_DEBUG_POINT: Readonly<SpriteVisualBoundsFrameDebugPoint> = Object.freeze({
+  xPercent: 50,
+  yPercent: 50,
 })
 
 const clamp = (value: number, min: number, max: number): number => Math.min(max, Math.max(min, value))
@@ -112,6 +149,49 @@ const getBodyCenterInSquareFrame = (
   }
 }
 
+const getCanvasRectInSquareFrame = (
+  bounds: NormalizedSpriteVisualBounds,
+): SpriteVisualBoundsFrameDebugRect => {
+  if (bounds.canvasWidth === bounds.canvasHeight) return { ...FULL_SPRITE_VISUAL_BOUNDS_DEBUG_RECT }
+
+  if (bounds.canvasWidth > bounds.canvasHeight) {
+    const heightPercent = (bounds.canvasHeight / bounds.canvasWidth) * PERCENT_SCALE
+    return {
+      leftPercent: 0,
+      topPercent: (PERCENT_SCALE - heightPercent) / 2,
+      widthPercent: PERCENT_SCALE,
+      heightPercent,
+    }
+  }
+
+  const widthPercent = (bounds.canvasWidth / bounds.canvasHeight) * PERCENT_SCALE
+  return {
+    leftPercent: (PERCENT_SCALE - widthPercent) / 2,
+    topPercent: 0,
+    widthPercent,
+    heightPercent: PERCENT_SCALE,
+  }
+}
+
+const getBoundsRectInCanvas = (
+  bounds: NormalizedSpriteVisualBounds,
+): SpriteVisualBoundsFrameDebugRect => ({
+  leftPercent: (bounds.left / bounds.canvasWidth) * PERCENT_SCALE,
+  topPercent: (bounds.top / bounds.canvasHeight) * PERCENT_SCALE,
+  widthPercent: (bounds.width / bounds.canvasWidth) * PERCENT_SCALE,
+  heightPercent: (bounds.height / bounds.canvasHeight) * PERCENT_SCALE,
+})
+
+const getBodyCenterInCanvasPercent = (
+  bounds: NormalizedSpriteVisualBounds,
+): SpriteVisualBoundsFrameDebugPoint => {
+  const center = getBodyCenterFromNormalizedBounds(bounds)
+  return {
+    xPercent: center.x * PERCENT_SCALE,
+    yPercent: center.y * PERCENT_SCALE,
+  }
+}
+
 /**
  * Returns the visible body centre in normalized source-canvas coordinates.
  * Missing or malformed metadata falls back to the canvas centre so consumers
@@ -147,6 +227,40 @@ export const getSpriteVisualBoundsFrameTranslation = (
       (CANVAS_CENTER - center.y) * PERCENT_SCALE,
       SPRITE_VISUAL_BOUNDS_MAX_FRAME_TRANSLATE_PERCENT,
     ),
+  }
+}
+
+/**
+ * Returns percentages for a dev-only overlay that compares source-canvas
+ * visual bounds with the final square cage centre. All percentages are safe to
+ * expose as CSS custom properties.
+ */
+export const getSpriteVisualBoundsFrameDebugMetrics = (
+  bounds: SpriteVisualBounds | null | undefined,
+): SpriteVisualBoundsFrameDebugMetrics => {
+  const normalizedBounds = normalizeSpriteVisualBounds(bounds)
+  const translation = getSpriteVisualBoundsFrameTranslation(normalizedBounds)
+
+  if (!normalizedBounds) {
+    return {
+      canvas: { ...FULL_SPRITE_VISUAL_BOUNDS_DEBUG_RECT },
+      bounds: null,
+      bodyCenter: null,
+      canvasCenter: { ...SPRITE_VISUAL_BOUNDS_CENTER_DEBUG_POINT },
+      cageCenter: { ...SPRITE_VISUAL_BOUNDS_CENTER_DEBUG_POINT },
+      translation,
+      floating: false,
+    }
+  }
+
+  return {
+    canvas: getCanvasRectInSquareFrame(normalizedBounds),
+    bounds: getBoundsRectInCanvas(normalizedBounds),
+    bodyCenter: getBodyCenterInCanvasPercent(normalizedBounds),
+    canvasCenter: { ...SPRITE_VISUAL_BOUNDS_CENTER_DEBUG_POINT },
+    cageCenter: { ...SPRITE_VISUAL_BOUNDS_CENTER_DEBUG_POINT },
+    translation,
+    floating: normalizedBounds.floating,
   }
 }
 
