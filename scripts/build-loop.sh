@@ -537,46 +537,64 @@ get_next_ticket_summary() {
       return value
     }
 
+    function last_number_token(identifier, normalized, count, parts) {
+      normalized = identifier
+      gsub(/[^0-9]+/, " ", normalized)
+      normalized = trim(normalized)
+      if (normalized == "") return ""
+
+      count = split(normalized, parts, /[[:space:]]+/)
+      return parts[count]
+    }
+
     function record_if_current() {
-      if (ticket_number != "" && ticket_status == "TODO") {
-        ticket_value = ticket_number + 0
+      if (ticket_id != "" && ticket_status == "TODO") {
+        ticket_value = ticket_order + 0
         if (!found || ticket_value < best_value) {
           found = 1
           best_value = ticket_value
-          best_number = ticket_number
+          best_id = ticket_id
           best_title = ticket_title
           best_status = ticket_status
         }
       }
     }
 
-    /^##[[:space:]]+[0-9]+([[:space:]]|$)/ {
+    /^##[[:space:]]+/ {
       record_if_current()
 
       heading = $0
       sub(/^##[[:space:]]+/, "", heading)
 
-      ticket_number = heading
-      sub(/[[:space:]].*$/, "", ticket_number)
+      ticket_id = heading
+      sub(/[[:space:]].*$/, "", ticket_id)
+      ticket_order = last_number_token(ticket_id)
+      if (ticket_order == "") {
+        ticket_id = ""
+        ticket_title = ""
+        ticket_status = ""
+        next
+      }
 
       ticket_title = heading
-      sub(/^[0-9]+[[:space:]]+/, "", ticket_title)
+      sub(/^[^[:space:]]+[[:space:]]+/, "", ticket_title)
+      if (ticket_title == heading) ticket_title = ""
       sub(/^[-—][[:space:]]*/, "", ticket_title)
 
       ticket_status = ""
       next
     }
 
-    ticket_number != "" && /^Status:/ {
+    ticket_id != "" && /^[[:space:]]*Status:/ {
       ticket_status = $0
-      sub(/^Status:[[:space:]]*/, "", ticket_status)
+      sub(/^[[:space:]]*Status:[[:space:]]*/, "", ticket_status)
       ticket_status = trim(ticket_status)
     }
 
     END {
       record_if_current()
       if (found) {
-        printf "%s — %s (%s)\n", best_number, best_title, best_status
+        printf "%s — %s (%s)\n", best_id, best_title, best_status
       }
     }
   ' BUILD_TICKETS.md
