@@ -105,7 +105,7 @@ Status: DONE
 
 ## LP-S5-003 — Add token motion track model
 
-Status: TODO
+Status: DONE
 
 **Goal:** Represent one token movement as an explicit runtime track instead of only a target-center lerp.
 

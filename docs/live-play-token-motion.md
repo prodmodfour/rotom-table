@@ -131,6 +131,10 @@ Realtime gaps, replay validation failures, profile changes, or explicit reconcil
 - **No source classification in the renderer:** local prediction, remote accepted movement, setup/edit movement, coalesced movement, and snapshot reconciliation all arrive as the same render-object update.
 - **HUD and overlays follow the sampled center but are not track-aware:** HP bars, elevation badges, shadows, cages, proxies, targeting affordances, presence overlays, and camera focus currently read `currentCenter` or `targetCenter` according to existing helpers, without a single explicit motion sample contract.
 
+## Runtime motion-track utility foundation
+
+`LP-S5-003` adds `src/utils/isometric/tokenMotionTracks.ts` as the pure runtime model for future renderer-owned token movement. A track records token ID, origin/destination centers, start time, duration, source reason, and optional path-segment metadata. The helpers start tracks, sample eased centers at frame timestamps, replace active tracks from the sampled current center, finish at the destination, and cancel by either sampling or snapping. This state is presentation-only and is not written to map data; the renderer continues to use the legacy center lerp until the later wiring tickets attach tracks to render objects and frame stepping.
+
 ## Future Sprint 5 change map
 
 The current code suggests this division for later tickets:
@@ -138,7 +142,7 @@ The current code suggests this division for later tickets:
 ### Pure/testable motion utilities
 
 - `LP-S5-002`: easing, distance-based duration, reduced-motion duration, and center interpolation helpers. Implemented in `src/utils/isometric/tokenMotionCurves.ts` as pure center-point math so future tracks can sample motion without importing three.js.
-- `LP-S5-003`: runtime motion-track model and sampling/cancel/replace helpers.
+- `LP-S5-003`: runtime motion-track model and sampling/cancel/replace helpers. Implemented as pure presentation utilities in `src/utils/isometric/tokenMotionTracks.ts`; not yet wired into render objects.
 - `LP-S5-007`: sampled-position replacement rules for rapid same-token movement.
 - `LP-S5-008`: path segment construction and proportional segment sampling.
 - `LP-S5-009`: deterministic elevation/hop sampling that can be reduced or disabled.
