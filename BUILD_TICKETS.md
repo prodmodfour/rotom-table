@@ -186,7 +186,7 @@ Status: DONE
 
 ## LP-S5-006 — Start motion tracks when token placements change
 
-Status: TODO
+Status: DONE
 
 **Goal:** Detect token placement changes and start appropriate motion tracks in the isometric scene.
 

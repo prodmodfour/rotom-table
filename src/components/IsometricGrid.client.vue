@@ -158,6 +158,7 @@ import {
 } from '~/utils/isometric/tokenHover'
 import {
   syncPokemonRenderObjects,
+  syncPokemonRenderObjectPlacementMotion,
   syncPokemonRenderObjectSelectionStyles,
 } from '~/utils/isometric/tokenObjectSync'
 import { isIsometricRenderDebugEnabled } from '~/utils/isometric/renderDebugFlag'
@@ -977,11 +978,19 @@ const disposeRenderObject = (renderObject: PokemonRenderObject) => {
 }
 
 const syncPokemonObjects = () => {
+  const placementMotionStartMs = readRenderMetricsNowMs()
+
   syncPokemonRenderObjects({
     renderObjects,
     pokemons: renderedPokemons.value,
     createRenderObject: buildRenderObject,
     onCreateRenderObject,
+    onBeforeUpdateExistingRenderObject: (renderObject, pokemon) => syncPokemonRenderObjectPlacementMotion({
+      renderObject,
+      pokemon,
+      startMs: placementMotionStartMs,
+      reason: 'setup-edit',
+    }),
     updateRenderObject: (renderObject, pokemon) => updatePokemonRenderObjectFromSpawn(renderObject, pokemon, {
       geometryCache: tokenGeometryCache,
     }),

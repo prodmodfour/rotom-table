@@ -1,11 +1,29 @@
 import { describe, expect, it, vi } from 'vitest'
 import {
   syncPokemonRenderObjects,
+  syncPokemonRenderObjectPlacementMotion,
   syncPokemonRenderObjectSelectionStyles,
 } from '~/utils/isometric/tokenObjectSync'
 import type { SpawnedPokemon } from '~/types/pokemon'
+import { startTokenMotionTrack, type TokenMotionTrack } from '~/utils/isometric/tokenMotionTracks'
 
-const makePokemon = (id: string): SpawnedPokemon => ({
+const makeCenter = (x: number, y: number, z: number) => ({ x, y, z })
+
+type PlacementMotionRenderObject = {
+  id: string
+  currentCenter: ReturnType<typeof makeCenter>
+  targetCenter: ReturnType<typeof makeCenter>
+  motion: { track?: TokenMotionTrack }
+}
+
+const makePlacementMotionRenderObject = (): PlacementMotionRenderObject => ({
+  id: 'a',
+  currentCenter: makeCenter(0.5, 0, 0.5),
+  targetCenter: makeCenter(0.5, 0, 0.5),
+  motion: {},
+})
+
+const makePokemon = (id: string, overrides: Partial<SpawnedPokemon> = {}): SpawnedPokemon => ({
   species: id,
   slug: id,
   spriteUrl: `/${id}.png`,
@@ -30,6 +48,7 @@ const makePokemon = (id: string): SpawnedPokemon => ({
   combatStages: { atk: 0, def: 0, satk: 0, sdef: 0, spd: 0, acc: 0 },
   conditions: [],
   tokenItems: [],
+  ...overrides,
 })
 
 describe('isometric token object sync', () => {
@@ -60,19 +79,41 @@ describe('isometric token object sync', () => {
     const existing = { id: 'a' }
     const renderObjects = new Map<string, { id: string }>([['a', existing]])
     const createRenderObject = vi.fn((pokemon: SpawnedPokemon) => ({ id: pokemon.id }))
+    const onBeforeUpdateExistingRenderObject = vi.fn()
     const updateRenderObject = vi.fn()
 
     syncPokemonRenderObjects({
       renderObjects,
       pokemons: [makePokemon('a')],
       createRenderObject,
+      onBeforeUpdateExistingRenderObject,
       updateRenderObject,
       disposeRenderObject: vi.fn(),
     })
 
     expect(createRenderObject).not.toHaveBeenCalled()
     expect(renderObjects.get('a')).toBe(existing)
+    expect(onBeforeUpdateExistingRenderObject).toHaveBeenCalledWith(existing, expect.objectContaining({ id: 'a' }))
+    expect(onBeforeUpdateExistingRenderObject.mock.invocationCallOrder[0]).toBeLessThan(
+      updateRenderObject.mock.invocationCallOrder[0],
+    )
     expect(updateRenderObject).toHaveBeenCalledWith(existing, expect.objectContaining({ id: 'a' }))
+  })
+
+  it('does not invoke existing-object update hooks for newly-created render objects', () => {
+    const renderObjects = new Map<string, { id: string }>()
+    const onBeforeUpdateExistingRenderObject = vi.fn()
+
+    syncPokemonRenderObjects({
+      renderObjects,
+      pokemons: [makePokemon('a')],
+      createRenderObject: vi.fn((pokemon: SpawnedPokemon) => ({ id: pokemon.id })),
+      onBeforeUpdateExistingRenderObject,
+      updateRenderObject: vi.fn(),
+      disposeRenderObject: vi.fn(),
+    })
+
+    expect(onBeforeUpdateExistingRenderObject).not.toHaveBeenCalled()
   })
 
   it('disposes stale objects and clears hover before deletion', () => {
@@ -98,6 +139,65 @@ describe('isometric token object sync', () => {
     expect(disposeRenderObject).toHaveBeenCalledWith(stale, 'old')
     expect(renderObjects.has('old')).toBe(false)
     expect(renderObjects.get('kept')).toBe(kept)
+  })
+
+  it('starts placement motion for existing tokens that move to a new center', () => {
+    const renderObject = makePlacementMotionRenderObject()
+
+    const started = syncPokemonRenderObjectPlacementMotion({
+      renderObject,
+      pokemon: makePokemon('a', { position: { x: 3, y: 1, z: 4 } }),
+      startMs: 1234,
+      reason: 'remote-accepted',
+    })
+
+    expect(started).toBe(true)
+    expect(renderObject.motion.track).toMatchObject({
+      tokenId: 'a',
+      origin: { x: 0.5, y: 0, z: 0.5 },
+      destination: { x: 3.5, y: 1, z: 4.5 },
+      startMs: 1234,
+      reason: 'remote-accepted',
+    })
+    expect(renderObject.targetCenter).toEqual({ x: 0.5, y: 0, z: 0.5 })
+  })
+
+  it('does not start placement motion for sheet-only token updates', () => {
+    const renderObject = makePlacementMotionRenderObject()
+
+    const started = syncPokemonRenderObjectPlacementMotion({
+      renderObject,
+      pokemon: makePokemon('a', {
+        currentHp: 7,
+        combatStages: { atk: 1, def: 0, satk: 0, sdef: 0, spd: 0, acc: 0 },
+        conditions: ['Burned'],
+      }),
+      startMs: 1234,
+    })
+
+    expect(started).toBe(false)
+    expect(renderObject.motion.track).toBeUndefined()
+  })
+
+  it('clears stale placement motion when a changed target is already at the rendered center', () => {
+    const renderObject = makePlacementMotionRenderObject()
+    renderObject.targetCenter = makeCenter(9.5, 0, 9.5)
+    renderObject.motion.track = startTokenMotionTrack({
+      tokenId: 'a',
+      origin: { x: 0.5, y: 0, z: 0.5 },
+      destination: { x: 9.5, y: 0, z: 9.5 },
+      startMs: 1,
+      reason: 'setup-edit',
+    })
+
+    const started = syncPokemonRenderObjectPlacementMotion({
+      renderObject,
+      pokemon: makePokemon('a'),
+      startMs: 1234,
+    })
+
+    expect(started).toBe(false)
+    expect(renderObject.motion.track).toBeUndefined()
   })
 
   it('syncs selection styling for existing render objects only', () => {

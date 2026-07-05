@@ -16,9 +16,10 @@ This document audits the current token-movement presentation path for Live Play 
 live-play/setup edit changes map placements
   -> page recomputes visible SpawnedPokemon props
   -> IsometricGrid watcher syncs PokemonRenderObject entries
+  -> existing-token placement changes start a runtime motion track
   -> updatePokemonRenderObjectFromSpawn writes targetCenter and token metadata
   -> render scheduler requests a token frame
-  -> stepIsometricAnimationFrame damps currentCenter toward targetCenter
+  -> stepIsometricAnimationFrame samples the track or damps currentCenter toward targetCenter
   -> applyPokemonRenderObjectPosition moves WebGL objects and CSS3D HUD from currentCenter
   -> renderLoop keeps RAF active while currentCenter/lift have not settled
 ```
@@ -45,12 +46,16 @@ For each visible Pokémon:
   - `currentCenter` is initialized from `pokemonRenderSpawnState(pokemon).center`.
   - `targetCenter` is cloned from the same first center.
   - The object is positioned immediately, so new tokens do not slide from world origin.
-- Existing render objects are updated by `updatePokemonRenderObjectFromSpawn()`.
+- Existing render objects are checked by `syncPokemonRenderObjectPlacementMotion()` before `updatePokemonRenderObjectFromSpawn()` writes the new spawn state.
+  - If the next placement center differs from the previous `targetCenter`, a runtime-only motion track starts from the current rendered center to the next authoritative center.
+  - Pure sheet/HUD updates such as HP, conditions, combat stages, token items, and accent color leave `targetCenter` unchanged and do not start movement tracks.
+  - If a changed target is already at the rendered center, stale motion metadata is cleared instead of animating a no-op.
+- Existing render objects are then updated by `updatePokemonRenderObjectFromSpawn()`.
   - `targetCenter` is set to the latest placement center.
   - `currentCenter` is not reset on ordinary updates.
   - Dimensions, elevation, sprite URLs/animations, facing, HP/status HUD inputs, combat stages, token items, and accent color are refreshed in the same update path.
 
-There is no current comparison that distinguishes a placement move from a sheet/HUD-only update. Movement occurs only if the updated `targetCenter` differs from `currentCenter` after sync.
+Movement now has an explicit track when an existing visible token changes placement. The compatibility center lerp remains only for tokens without tracks or legacy states.
 
 ### Frame stepping and damping
 
@@ -142,6 +147,8 @@ Realtime gaps, replay validation failures, profile changes, or explicit reconcil
 
 `LP-S5-005` wires that state into frame stepping. `stepIsometricAnimationFrame()` samples active tracks with the current frame timestamp, clears them only after an end-time sample reaches the exact destination, and lets `applyPokemonRenderObjectPosition()` continue to move sprites, shadows, cages, proxies, elevation badges, combat-stage glass, and HP bars from the same sampled center. Render continuation now sees explicit tracks as token-motion work, so RAF stays alive while a track exists and stops after completion.
 
+`LP-S5-006` starts those tracks during token-object sync for existing visible tokens whose placement center changes. New tokens still initialize at their first authoritative center without spawn animation, removed tokens are disposed without delete animation, and sheet/HUD-only updates do not create movement tracks. The initial source reason is the generic `setup-edit` reason because the grid still receives placement changes without live-play source classification; later tickets refine local prediction, remote accepted, correction, and reconciliation reasons.
+
 ## Future Sprint 5 change map
 
 The current code suggests this division for later tickets:
@@ -161,7 +168,7 @@ The current code suggests this division for later tickets:
 
 - `LP-S5-004`: implemented in `PokemonRenderObject.motion` as runtime-only `track` metadata plus a `sampledCenter` output while keeping `currentCenter`/`targetCenter` compatibility.
 - `LP-S5-005`: implemented in `stepIsometricAnimationFrame()` and token render-state continuation helpers. Active tracks are sampled by `frameNowMs`, completed tracks clear at their planned destination, the fallback lerp remains for objects without tracks, and CSS/WebGL token attachments continue to use the sampled center.
-- `LP-S5-006`: detect placement-position changes during token object sync and start tracks only for existing-token movement.
+- `LP-S5-006`: implemented in token object sync. Existing-token placement changes start tracks from the current rendered center; spawns, deletes, and sheet/HUD-only updates do not animate.
 - `LP-S5-012`: classify local prediction, local confirmation, remote accepted movement, and duplicate terminal delivery well enough to avoid stutter.
 - `LP-S5-014`: expose aggregate motion metrics in debug tooling without private token details.
 - `LP-S5-015`: add restrained renderer-owned start/end polish that remains separate from authoritative placement.
