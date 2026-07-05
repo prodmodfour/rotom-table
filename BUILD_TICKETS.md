@@ -50,7 +50,7 @@ Each ticket should fit in one focused commit. Prefer pure motion-planning utilit
 
 ## LP-S5-001 — Audit current token movement presentation
 
-Status: TODO
+Status: DONE
 
 **Goal:** Document how token motion currently flows from command/prediction to rendered position.
 
