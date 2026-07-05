@@ -131,7 +131,7 @@ Status: DONE
 
 ## LP-S5-004 — Extend render object state for explicit motion tracks
 
-Status: TODO
+Status: DONE
 
 **Goal:** Give `PokemonRenderObject` enough runtime state to animate movement intentionally.
 

@@ -4,6 +4,7 @@ import type { LayerVisibility } from '~/types/map'
 import type { SpawnedPokemon } from '~/types/pokemon'
 import type { PokemonRenderObject, WorldSpriteState } from '~/utils/isometric/types'
 import {
+  createPokemonRenderMotionState,
   disposePokemonRenderObject,
   paintPokemonRenderObjectStyle,
   resolvePokemonTacticalCageVisibility,
@@ -16,6 +17,7 @@ import {
   resolveVolumeAccentColor,
   TERRAIN_PALETTE,
 } from '~/utils/isometric/materials'
+import { startTokenMotionTrack } from '~/utils/isometric/tokenMotionTracks'
 
 const visibleLayers = (overrides: Partial<LayerVisibility> = {}): LayerVisibility => ({
   terrain: true,
@@ -93,6 +95,9 @@ const makeRenderObject = (pokemon: SpawnedPokemon): PokemonRenderObject => {
   sprite.scale.set(pokemon.width, pokemon.height, 1)
   halo.scale.set(pokemon.width * 1.25, pokemon.height * 1.15, 1)
 
+  const currentCenter = new THREE.Vector3()
+  const targetCenter = currentCenter.clone()
+
   return {
     id: pokemon.id,
     sprite,
@@ -121,8 +126,9 @@ const makeRenderObject = (pokemon: SpawnedPokemon): PokemonRenderObject => {
       new THREE.MeshBasicMaterial(),
     ),
     shadow: new THREE.Mesh(new THREE.CircleGeometry(0.5, 32), new THREE.MeshBasicMaterial()),
-    currentCenter: new THREE.Vector3(),
-    targetCenter: new THREE.Vector3(),
+    currentCenter,
+    targetCenter,
+    motion: createPokemonRenderMotionState(currentCenter),
     width: pokemon.width,
     height: pokemon.height,
     base: pokemon.base,
@@ -203,6 +209,48 @@ const tacticalCageVisibilityState = (
 })
 
 describe('token renderer', () => {
+  it('initializes runtime motion state from a sampled center without reusing the input vector', () => {
+    const firstCenter = new THREE.Vector3(2.5, 1, 4.5)
+
+    const motion = createPokemonRenderMotionState(firstCenter)
+
+    expect(motion.track).toBeUndefined()
+    expect(motion.sampledCenter.toArray()).toEqual([2.5, 1, 4.5])
+    expect(motion.sampledCenter).not.toBe(firstCenter)
+    firstCenter.set(99, 99, 99)
+    expect(motion.sampledCenter.toArray()).toEqual([2.5, 1, 4.5])
+  })
+
+  it('keeps current and target center compatibility when spawn placement changes', () => {
+    const renderObject = makeRenderObject(spawnedPokemon())
+    renderObject.currentCenter.set(2, 1, 3)
+    renderObject.targetCenter.copy(renderObject.currentCenter)
+    renderObject.motion.sampledCenter.copy(renderObject.currentCenter)
+
+    updatePokemonRenderObjectFromSpawn(renderObject, spawnedPokemon({ position: { x: 6, y: 2, z: 7 } }))
+
+    expect(renderObject.currentCenter.toArray()).toEqual([2, 1, 3])
+    expect(renderObject.motion.sampledCenter.toArray()).toEqual([2, 1, 3])
+    expect(renderObject.targetCenter.toArray()).toEqual([6.5, 2, 7.5])
+    expect(renderObject.motion.track).toBeUndefined()
+  })
+
+  it('clears active runtime motion-track metadata when disposed', () => {
+    const renderObject = makeRenderObject(spawnedPokemon())
+    renderObject.motion.track = startTokenMotionTrack({
+      tokenId: renderObject.id,
+      origin: { x: 0, y: 0, z: 0 },
+      destination: { x: 1, y: 0, z: 0 },
+      startMs: 10,
+      durationMs: 100,
+      reason: 'remote-accepted',
+    })
+
+    disposePokemonRenderObject(renderObject)
+
+    expect(renderObject.motion.track).toBeUndefined()
+  })
+
   it.each([
     {
       label: 'idle local state',

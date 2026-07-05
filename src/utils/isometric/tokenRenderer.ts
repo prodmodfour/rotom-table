@@ -23,6 +23,7 @@ import {
   tokenSelectionLiftStyle,
 } from '~/utils/isometric/tokenRenderState'
 import type {
+  PokemonRenderMotionState,
   PokemonRenderObject,
   PokemonTacticalCageTargetingState,
 } from '~/utils/isometric/types'
@@ -75,6 +76,17 @@ type TokenRenderDimensions = Pick<
 >
 
 type TokenGeometryLeaseSlot = keyof TokenRenderGeometryLeases
+
+export const createPokemonRenderMotionState = (
+  center: Pick<THREE.Vector3, 'x' | 'y' | 'z'>,
+): PokemonRenderMotionState => ({
+  sampledCenter: new THREE.Vector3(center.x, center.y, center.z),
+})
+
+export const clearPokemonRenderObjectMotionTrack = (renderObject: PokemonRenderObject) => {
+  if (!renderObject.motion) return
+  delete renderObject.motion.track
+}
 
 type TokenRenderableWithGeometry = THREE.Object3D & {
   geometry?: THREE.BufferGeometry
@@ -344,6 +356,7 @@ export const createPokemonRenderObject = (
   const spawnState = pokemonRenderSpawnState(pokemon)
   const currentCenter = new THREE.Vector3(spawnState.center.x, spawnState.center.y, spawnState.center.z)
   const targetCenter = currentCenter.clone()
+  const motion = createPokemonRenderMotionState(currentCenter)
 
   containers.worldGroup.add(shadow)
   containers.worldGroup.add(volume)
@@ -370,6 +383,7 @@ export const createPokemonRenderObject = (
     ...(geometryLeases ? { geometryLeases } : {}),
     currentCenter,
     targetCenter,
+    motion,
     width: spawnState.width,
     height: spawnState.height,
     base: spawnState.base,
@@ -408,6 +422,9 @@ export const updatePokemonRenderObjectFromSpawn = (
     applyPokemonRenderObjectDimensions(renderObject, pokemon, spawnState, options)
   }
   renderObject.targetCenter.set(spawnState.center.x, spawnState.center.y, spawnState.center.z)
+  if (!renderObject.motion.track) {
+    renderObject.motion.sampledCenter.copy(renderObject.currentCenter)
+  }
   renderObject.elevation = spawnState.elevation
   renderObject.spriteUrl = spawnState.spriteUrl
   renderObject.backSpriteUrl = spawnState.backSpriteUrl
@@ -442,41 +459,42 @@ export const applyPokemonRenderObjectPosition = (
   },
 ): boolean => {
   let cssHudChanged = false
+  const center = renderObject.motion.sampledCenter.copy(renderObject.currentCenter)
   renderObject.sprite.position.set(
-    renderObject.currentCenter.x,
-    renderObject.currentCenter.y,
-    renderObject.currentCenter.z,
+    center.x,
+    center.y,
+    center.z,
   )
   renderObject.spriteState.halo.position.copy(renderObject.sprite.position)
   renderObject.volume.position.set(
-    renderObject.currentCenter.x,
-    renderObject.currentCenter.y + renderObject.clearance / 2,
-    renderObject.currentCenter.z,
+    center.x,
+    center.y + renderObject.clearance / 2,
+    center.z,
   )
   renderObject.edges.position.copy(renderObject.volume.position)
   renderObject.proxy.position.set(
-    renderObject.currentCenter.x,
-    renderObject.currentCenter.y + Math.max(renderObject.height, renderObject.clearance) / 2,
-    renderObject.currentCenter.z,
+    center.x,
+    center.y + Math.max(renderObject.height, renderObject.clearance) / 2,
+    center.z,
   )
   // Voxel-aware projection: shadow drops to whatever surface is
   // beneath the sprite (floor or highest voxel top in the footprint),
   // not glued to the sprite's foot. Tiny y-offset dodges z-fighting
   // with the floor plane / voxel top.
   const surfaceY = options.getShadowSurfaceY(
-    renderObject.currentCenter.x,
-    renderObject.currentCenter.z,
+    center.x,
+    center.z,
     renderObject.base,
-    renderObject.currentCenter.y,
+    center.y,
   )
   renderObject.shadow.position.set(
-    renderObject.currentCenter.x,
+    center.x,
     surfaceY + 0.005,
-    renderObject.currentCenter.z,
+    center.z,
   )
   cssHudChanged = updateElevationBadge({
     badge: renderObject.elevationBadge,
-    center: renderObject.currentCenter,
+    center,
     base: renderObject.base,
     elevation: renderObject.elevation,
     groundLevelY: options.groundLevelY,
@@ -486,7 +504,7 @@ export const applyPokemonRenderObjectPosition = (
   }) || cssHudChanged
   updateTokenCombatStageGlass({
     glass: renderObject.combatStageGlass,
-    center: renderObject.currentCenter,
+    center,
     base: renderObject.base,
     clearance: renderObject.clearance,
     stages: renderObject.combatStages,
@@ -495,7 +513,7 @@ export const applyPokemonRenderObjectPosition = (
   })
   cssHudChanged = updateHpBar({
     bar: renderObject.hpBar,
-    center: renderObject.currentCenter,
+    center,
     spriteHeight: renderObject.height,
     displayName: renderObject.displayName,
     level: renderObject.level,
@@ -835,6 +853,7 @@ export const animatePokemonRenderObject = (
 }
 
 export const disposePokemonRenderObject = (renderObject: PokemonRenderObject) => {
+  clearPokemonRenderObjectMotionTrack(renderObject)
   disposeWorldSprite(renderObject.spriteState)
   disposeObject3D(renderObject.elevationBadge)
   disposeObject3D(renderObject.hpBar)

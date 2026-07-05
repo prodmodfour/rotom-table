@@ -135,6 +135,8 @@ Realtime gaps, replay validation failures, profile changes, or explicit reconcil
 
 `LP-S5-003` adds `src/utils/isometric/tokenMotionTracks.ts` as the pure runtime model for future renderer-owned token movement. A track records token ID, origin/destination centers, start time, duration, source reason, and optional path-segment metadata. The helpers start tracks, sample eased centers at frame timestamps, replace active tracks from the sampled current center, finish at the destination, and cancel by either sampling or snapping. This state is presentation-only and is not written to map data; the renderer continues to use the legacy center lerp until the later wiring tickets attach tracks to render objects and frame stepping.
 
+`LP-S5-004` gives each `PokemonRenderObject` a renderer-owned `motion` state bag. `motion.track` is optional runtime-only metadata for the active presentation track, while `motion.sampledCenter` is the explicit output center that later frame stepping can copy into the existing `currentCenter` compatibility field. New render objects initialize `currentCenter`, `targetCenter`, and `motion.sampledCenter` from the same first authoritative placement center so they do not slide in from origin or another token. Disposal clears any active motion-track metadata before releasing Three.js/CSS3D resources.
+
 ## Future Sprint 5 change map
 
 The current code suggests this division for later tickets:
@@ -152,7 +154,7 @@ The current code suggests this division for later tickets:
 
 ### Renderer and scene wiring
 
-- `LP-S5-004`: add runtime-only motion-track state to `PokemonRenderObject` while keeping `currentCenter`/`targetCenter` compatibility.
+- `LP-S5-004`: implemented in `PokemonRenderObject.motion` as runtime-only `track` metadata plus a `sampledCenter` output while keeping `currentCenter`/`targetCenter` compatibility.
 - `LP-S5-005`: sample explicit tracks in `stepIsometricAnimationFrame()`, update render continuation, and keep CSS HUD updates synchronized.
 - `LP-S5-006`: detect placement-position changes during token object sync and start tracks only for existing-token movement.
 - `LP-S5-012`: classify local prediction, local confirmation, remote accepted movement, and duplicate terminal delivery well enough to avoid stutter.
