@@ -110,6 +110,8 @@ code {
 
 .sprite-frame {
   --sprite-frame-size: 13rem;
+  --sprite-visual-translate-x: 0%;
+  --sprite-visual-translate-y: 0%;
 
   position: relative;
   width: min(100%, var(--sprite-frame-size));
@@ -146,6 +148,7 @@ code {
   object-fit: contain;
   image-rendering: pixelated;
   filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.55));
+  transform: translate(var(--sprite-visual-translate-x), var(--sprite-visual-translate-y));
 }
 
 .sprite-missing {

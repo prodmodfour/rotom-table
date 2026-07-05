@@ -54,6 +54,7 @@ const {
   selectedId,
   selectedProfileSpriteUrl,
   selectedSpriteUrl,
+  selectedSpriteVisualBounds,
   skillPhrase,
   tmHmTokens,
   tutorMoveTokens,
@@ -247,6 +248,7 @@ await ready
       :requested-pokemon-name="requestedPokemonName"
       :skill-phrase="skillPhrase"
       :sprite-url="selectedSpriteUrl"
+      :sprite-visual-bounds="selectedSpriteVisualBounds"
       :tm-hm-tokens="tmHmTokens"
       :tutor-move-tokens="tutorMoveTokens"
       :type-matchup-groups="typeMatchupGroups"

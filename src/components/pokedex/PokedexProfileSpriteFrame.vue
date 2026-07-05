@@ -1,12 +1,26 @@
 <script setup lang="ts">
-defineProps<{
+import { computed } from 'vue'
+import type { SpriteVisualBounds } from '~/types/pokemon'
+import { getSpriteVisualBoundsFrameTranslation } from '~/utils/spriteVisualBounds'
+
+const props = defineProps<{
   species: string
   spriteUrl: string | null
+  visualBounds?: SpriteVisualBounds | null
 }>()
+
+const spriteVisualOffsetStyle = computed(() => {
+  const translation = getSpriteVisualBoundsFrameTranslation(props.visualBounds)
+
+  return {
+    '--sprite-visual-translate-x': `${translation.xPercent}%`,
+    '--sprite-visual-translate-y': `${translation.yPercent}%`,
+  }
+})
 </script>
 
 <template>
-  <div class="sprite-frame">
+  <div class="sprite-frame" :style="spriteVisualOffsetStyle">
     <div class="sprite-frame__inner">
       <img
         v-if="spriteUrl"

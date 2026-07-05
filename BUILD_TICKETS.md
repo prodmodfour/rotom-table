@@ -156,7 +156,7 @@ Status: DONE
 
 ## 009 — Centre floating sprites in the Pokédex sprite frame
 
-Status: TODO
+Status: DONE
 
 **Commit size:** Pokédex component/style change only.
 
