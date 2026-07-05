@@ -137,7 +137,7 @@ Status: DONE
 
 ## 004 — COS-004 — Preserve contact shadows as the always-on grounding cue
 
-Status: TODO
+Status: DONE
 
 **Goal:** Make it difficult to accidentally tie contact shadows to cage visibility in future refactors.
 

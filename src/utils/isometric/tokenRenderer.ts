@@ -649,7 +649,8 @@ export const setPokemonRenderObjectLayerVisibility = (
   applyObjectVisibility(renderObject.hpBar, tokens && renderObject.hpBar.visible)
   applyElementDisplay(renderObject.elevationBadge.element, tokens ? '' : 'none')
   applyElementDisplay(renderObject.hpBar.element, tokens ? '' : 'none')
-  applyObjectVisibility(renderObject.shadow, layers.shadows && tokens)
+  // Contact shadow is the persistent sprite-grounding cue, not part of the cage.
+  applyObjectVisibility(renderObject.shadow, tokens && layers.shadows)
 }
 
 export const animatePokemonRenderObject = (

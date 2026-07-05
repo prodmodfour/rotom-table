@@ -189,6 +189,20 @@ describe('token renderer', () => {
     expect(renderObject.edges.visible).toBe(false)
   })
 
+  it('hides contact shadows when the shadow layer is disabled without tying them to cage visibility', () => {
+    const renderObject = makeRenderObject(spawnedPokemon())
+    renderObject.cageVisible = false
+
+    setPokemonRenderObjectLayerVisibility(renderObject, visibleLayers({ shadows: false }))
+
+    expect(renderObject.sprite.visible).toBe(true)
+    expect(renderObject.spriteState.halo.visible).toBe(true)
+    expect(renderObject.proxy.visible).toBe(true)
+    expect(renderObject.shadow.visible).toBe(false)
+    expect(renderObject.volume.visible).toBe(false)
+    expect(renderObject.edges.visible).toBe(false)
+  })
+
   it('hides idle cages while preserving the visible sprite stack and picking proxy', () => {
     const renderObject = makeRenderObject(spawnedPokemon())
 
