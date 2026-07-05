@@ -104,7 +104,7 @@ Status: DONE
 
 ## 006 — Regenerate sprite manifests with visual bounds
 
-Status: TODO
+Status: DONE
 
 **Commit size:** generated data only, after the scripts are ready.
 
