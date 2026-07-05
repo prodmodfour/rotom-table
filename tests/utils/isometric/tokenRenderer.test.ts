@@ -4,6 +4,7 @@ import type { LayerVisibility } from '~/types/map'
 import type { SpawnedPokemon } from '~/types/pokemon'
 import type { PokemonRenderObject, WorldSpriteState } from '~/utils/isometric/types'
 import {
+  applyPokemonRenderObjectPosition,
   createPokemonRenderMotionState,
   disposePokemonRenderObject,
   paintPokemonRenderObjectStyle,
@@ -249,6 +250,26 @@ describe('token renderer', () => {
     disposePokemonRenderObject(renderObject)
 
     expect(renderObject.motion.track).toBeUndefined()
+  })
+
+  it('keeps contact shadow projected to terrain while a hopped sample lifts the sprite', () => {
+    const renderObject = makeRenderObject(spawnedPokemon({ position: { x: 2, y: 0, z: 3 } }))
+    renderObject.currentCenter.set(2.5, 1.16, 3.5)
+    renderObject.motion.sampledCenter.copy(renderObject.currentCenter)
+    const getShadowSurfaceY = vi.fn(() => 0)
+
+    applyPokemonRenderObjectPosition(renderObject, {
+      camera: null,
+      activeTurnId: null,
+      groundLevelY: 0,
+      hoveredPokemonId: null,
+      layers: visibleLayers({ tokens: false }),
+      getShadowSurfaceY,
+    })
+
+    expect(renderObject.sprite.position.toArray()).toEqual([2.5, 1.16, 3.5])
+    expect(renderObject.shadow.position.toArray()).toEqual([2.5, 0.005, 3.5])
+    expect(getShadowSurfaceY).toHaveBeenCalledWith(2.5, 3.5, 1, 1.16)
   })
 
   it.each([

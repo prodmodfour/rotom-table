@@ -1,12 +1,16 @@
 import { describe, expect, it } from 'vitest'
 import {
   TOKEN_MOTION_DURATION_DEFAULTS_MS,
+  TOKEN_MOTION_HOP_DEFAULTS,
+  applyTokenMotionHopOffset,
   clampTokenMotionProgress,
   easeTokenMotionProgress,
   interpolateTokenMotionCenter,
   normalizeTokenMotionDistance,
   resolveTokenMotionDurationBetweenCentersMs,
   resolveTokenMotionDurationMs,
+  resolveTokenMotionHopHeight,
+  sampleTokenMotionHopOffset,
   tokenMotionDistanceBetweenCenters,
 } from '~/utils/isometric/tokenMotionCurves'
 
@@ -119,5 +123,51 @@ describe('token motion curve utilities', () => {
 
     expect(origin).toEqual({ x: 1, y: 2, z: 3 })
     expect(destination).toEqual({ x: 5, y: 10, z: 11 })
+  })
+
+  it('samples a deterministic hop offset that starts and ends grounded', () => {
+    expect(sampleTokenMotionHopOffset(0, 0.12)).toBe(0)
+    expect(sampleTokenMotionHopOffset(0.25, 0.12)).toBeCloseTo(0.09)
+    expect(sampleTokenMotionHopOffset(0.5, 0.12)).toBeCloseTo(0.12)
+    expect(sampleTokenMotionHopOffset(0.75, 0.12)).toBeCloseTo(0.09)
+    expect(sampleTokenMotionHopOffset(1, 0.12)).toBe(0)
+
+    expect(sampleTokenMotionHopOffset(-1, 0.12)).toBe(0)
+    expect(sampleTokenMotionHopOffset(2, 0.12)).toBe(0)
+    expect(sampleTokenMotionHopOffset(0.5, Number.NaN)).toBe(0)
+  })
+
+  it('applies a visual-only hop to center y without mutating the source center', () => {
+    const center = { x: 2, y: 1, z: 4 }
+
+    expect(applyTokenMotionHopOffset(center, 0.5, 0.12)).toEqual({ x: 2, y: 1.12, z: 4 })
+    expect(applyTokenMotionHopOffset(center, 0.5, 0)).toBe(center)
+    expect(center).toEqual({ x: 2, y: 1, z: 4 })
+  })
+
+  it('resolves subtle elevation-hop heights with reduced-motion controls', () => {
+    const origin = { x: 0, y: 0, z: 0 }
+
+    expect(resolveTokenMotionHopHeight(origin, { x: 0, y: 0, z: 0 })).toBe(0)
+    expect(resolveTokenMotionHopHeight(origin, { x: 3, y: 0, z: 0 })).toBe(0)
+    expect(resolveTokenMotionHopHeight(origin, { x: 3, y: 0, z: 0 }, {
+      includeHorizontalHop: true,
+    })).toBe(TOKEN_MOTION_HOP_DEFAULTS.sameElevationHeight)
+    expect(resolveTokenMotionHopHeight(origin, { x: 0, y: 1, z: 0 })).toBe(
+      TOKEN_MOTION_HOP_DEFAULTS.minElevationChangeHeight,
+    )
+    expect(resolveTokenMotionHopHeight(origin, { x: 0, y: 10, z: 0 })).toBe(
+      TOKEN_MOTION_HOP_DEFAULTS.maxHeight,
+    )
+    expect(resolveTokenMotionHopHeight(origin, { x: 0, y: 1, z: 0 }, {
+      reducedMotion: true,
+    })).toBe(0)
+    expect(resolveTokenMotionHopHeight(origin, { x: 0, y: 2, z: 0 }, {
+      reducedMotion: true,
+      reducedMotionHeightScale: 0.25,
+    })).toBeCloseTo(0.04)
+    expect(resolveTokenMotionHopHeight(origin, { x: 0, y: 2, z: 0 }, {
+      enabled: false,
+    })).toBe(0)
   })
 })

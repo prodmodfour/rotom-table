@@ -9,6 +9,19 @@ export interface TokenMotionCenter {
 
 export type TokenMotionReducedMotionPolicy = 'shorten' | 'snap'
 
+export const TOKEN_MOTION_HOP_DEFAULTS = {
+  /** Subtle same-level cell hop available to callers that opt in. */
+  sameElevationHeight: 0.06,
+  /** Minimum readable affordance when a token changes elevation. */
+  minElevationChangeHeight: 0.12,
+  /** Adds a little more clearance for larger vertical deltas without becoming floaty. */
+  perElevationUnit: 0.08,
+  /** Keeps the hop tactical and below the scale of a full grid cell. */
+  maxHeight: 0.32,
+  /** Reduced-motion default removes the hop; callers may opt into a small scale. */
+  reducedMotionHeightScale: 0,
+} as const
+
 export const TOKEN_MOTION_DURATION_DEFAULTS_MS = {
   /** Short enough to feel responsive for one-cell nudges, long enough to read as intentional. */
   min: 160,
@@ -28,6 +41,23 @@ export interface TokenMotionDurationOptions {
   readonly reducedMotionPolicy?: TokenMotionReducedMotionPolicy
   readonly reducedMotionDurationMs?: number
 }
+
+export interface TokenMotionHopOptions {
+  /** Explicit opt-out for callers that need purely flat interpolation. */
+  readonly enabled?: boolean
+  /** Shared reduced-motion flag; usually forwarded from duration options. */
+  readonly reducedMotion?: boolean
+  readonly reducedMotionPolicy?: TokenMotionReducedMotionPolicy
+  /** Same-elevation horizontal moves only hop when this is explicitly enabled. */
+  readonly includeHorizontalHop?: boolean
+  readonly sameElevationHeight?: number
+  readonly minElevationChangeHeight?: number
+  readonly elevationHeightPerGridUnit?: number
+  readonly maxHeight?: number
+  readonly reducedMotionHeightScale?: number
+}
+
+const TOKEN_MOTION_HOP_EPSILON = 1e-6
 
 const finiteNumberOrZero = (value: number): number => (Number.isFinite(value) ? value : 0)
 
@@ -132,3 +162,95 @@ export const interpolateTokenMotionCenter = (
   y: lerpNumber(origin.y, destination.y, progress),
   z: lerpNumber(origin.z, destination.z, progress),
 })
+
+export const sampleTokenMotionHopOffset = (
+  progress: number,
+  hopHeight: number,
+): number => {
+  const height = normalizeTokenMotionDistance(hopHeight)
+  if (height <= 0) return 0
+
+  const clampedProgress = clampTokenMotionProgress(progress)
+  return 4 * clampedProgress * (1 - clampedProgress) * height
+}
+
+export const applyTokenMotionHopOffset = (
+  center: TokenMotionCenter,
+  progress: number,
+  hopHeight: number | undefined,
+): TokenMotionCenter => {
+  const offsetY = sampleTokenMotionHopOffset(progress, hopHeight ?? 0)
+  if (offsetY <= 0) return center
+
+  return {
+    x: center.x,
+    y: center.y + offsetY,
+    z: center.z,
+  }
+}
+
+/**
+ * Resolves the visual-only hop height used to make elevation steps readable.
+ *
+ * Elevation-changing moves receive a subtle default hop. Same-elevation
+ * horizontal moves can opt in through `includeHorizontalHop`. Reduced motion
+ * removes the hop by default unless a caller supplies a small scale.
+ */
+export const resolveTokenMotionHopHeight = (
+  origin: TokenMotionCenter,
+  destination: TokenMotionCenter,
+  options: TokenMotionHopOptions = {},
+): number => {
+  if (options.enabled === false) return 0
+  if (
+    options.reducedMotion === true
+    && (options.reducedMotionPolicy ?? 'shorten') === 'snap'
+  ) return 0
+
+  const horizontalDistance = Math.hypot(
+    finiteNumberOrZero(destination.x) - finiteNumberOrZero(origin.x),
+    finiteNumberOrZero(destination.z) - finiteNumberOrZero(origin.z),
+  )
+  const elevationDelta = Math.abs(
+    finiteNumberOrZero(destination.y) - finiteNumberOrZero(origin.y),
+  )
+
+  let height = 0
+  if (elevationDelta > TOKEN_MOTION_HOP_EPSILON) {
+    const minHeight = nonNegativeFiniteNumberOrDefault(
+      options.minElevationChangeHeight,
+      TOKEN_MOTION_HOP_DEFAULTS.minElevationChangeHeight,
+    )
+    const perElevationUnit = nonNegativeFiniteNumberOrDefault(
+      options.elevationHeightPerGridUnit,
+      TOKEN_MOTION_HOP_DEFAULTS.perElevationUnit,
+    )
+    height = Math.max(minHeight, elevationDelta * perElevationUnit)
+  } else if (
+    options.includeHorizontalHop === true
+    && horizontalDistance > TOKEN_MOTION_HOP_EPSILON
+  ) {
+    height = nonNegativeFiniteNumberOrDefault(
+      options.sameElevationHeight,
+      TOKEN_MOTION_HOP_DEFAULTS.sameElevationHeight,
+    )
+  }
+
+  if (height <= 0) return 0
+
+  const maxHeight = nonNegativeFiniteNumberOrDefault(
+    options.maxHeight,
+    TOKEN_MOTION_HOP_DEFAULTS.maxHeight,
+  )
+  const cappedHeight = Math.min(height, maxHeight)
+
+  if (options.reducedMotion === true) {
+    const reducedScale = nonNegativeFiniteNumberOrDefault(
+      options.reducedMotionHeightScale,
+      TOKEN_MOTION_HOP_DEFAULTS.reducedMotionHeightScale,
+    )
+    return cappedHeight * Math.min(1, reducedScale)
+  }
+
+  return cappedHeight
+}

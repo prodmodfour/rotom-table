@@ -268,7 +268,7 @@ Status: DONE
 
 ## LP-S5-009 — Add vertical step and hop affordance for elevation changes
 
-Status: TODO
+Status: DONE
 
 **Goal:** Make movement across elevation changes readable instead of flat sliding.
 

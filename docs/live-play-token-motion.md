@@ -70,6 +70,7 @@ On every scheduled frame:
 - `frameNowMs` is resolved once and used to sample explicit runtime token-motion tracks.
 - Each render object's `currentCenter` is updated:
   - if `motion.track` exists, `sampleTokenMotionTrack(track, frameNowMs)` writes the sampled center to `currentCenter` and `motion.sampledCenter`; a completed sample lands exactly on the track destination and clears the runtime track;
+  - elevation-changing tracks may add a deterministic, visual-only hop offset to the sampled center between the grounded origin and destination; reduced-motion planning can remove that hop;
   - otherwise, if `tokenCenterLerpNeedsAnimation(renderObject)` is true, `currentCenter.lerp(targetCenter, damping)` runs;
   - otherwise `currentCenter.copy(targetCenter)` snaps to the exact target.
 - The center snap threshold for the fallback path is `TOKEN_CENTER_LERP_SNAP_DISTANCE_SQUARED` from `src/utils/isometric/tokenRenderState.ts`.
@@ -82,8 +83,8 @@ After center interpolation, `applyPokemonRenderObjectPosition()` applies `curren
 
 - Pokémon sprite and sprite halo use `currentCenter`.
 - Tactical volume, edges, and invisible proxy pick mesh use `currentCenter` plus clearance/height offsets.
-- Contact shadow uses `currentCenter.x/z` and a voxel-aware surface lookup so it projects onto the floor or terrain beneath the token footprint.
-- Elevation badge, combat-stage glass, and HP/status bar receive `currentCenter` and token metadata.
+- Contact shadow uses `currentCenter.x/z` and a voxel-aware surface lookup so it projects onto the floor or terrain beneath the token footprint instead of sticking to a lifted/hopped sprite sample.
+- Elevation badge, combat-stage glass, and HP/status bar receive `currentCenter` and token metadata, so HUD elements follow the same visual movement sample while their text still comes from authoritative token data.
 - CSS HUD helpers report whether their DOM/CSS3D output changed; changed HUD output marks the CSS3D renderer dirty.
 
 `animatePokemonRenderObject()` then applies facing/sprite animation/lighting and selection lift. Selection lift is separate from movement: it eases `liftFactor` toward `liftTarget`, raises sprite/halo/HP bar, and scales/fades the contact shadow while leaving tactical footprint anchoring intact.
@@ -155,6 +156,8 @@ Realtime gaps, replay validation failures, profile changes, or explicit reconcil
 
 `LP-S5-008` adds path-aware local movement. The movement interaction controller keeps an immutable copy of the preview path when a move is confirmed; `IsometricGrid.client.vue` holds that pending path only long enough to match the next visible placement update for the same token and destination. `tokenMotionTracks.ts` can build path segments from center waypoints, assign segment durations proportional to path distance, and sample the active track along those segments. If the path is absent, stale, malformed, or too short to be useful, motion falls back to direct interpolation and still ends at the authoritative destination.
 
+`LP-S5-009` adds a subtle vertical affordance for elevation-changing movement. Direct tracks and path segments resolve a small deterministic hop height from their origin/destination elevation delta, sample that hop as a y-offset that is zero at the grounded endpoints, and omit it under the reduced-motion policy by default. The hop is presentation-only: authoritative placement remains `targetCenter`/map data, contact shadows still project to terrain surfaces, and HUD elements continue following the sampled visual center.
+
 ## Future Sprint 5 change map
 
 The current code suggests this division for later tickets:
@@ -165,7 +168,7 @@ The current code suggests this division for later tickets:
 - `LP-S5-003`: runtime motion-track model and sampling/cancel/replace helpers. Implemented as pure presentation utilities in `src/utils/isometric/tokenMotionTracks.ts`; not yet wired into render objects.
 - `LP-S5-007`: sampled-position replacement rules for rapid same-token movement. Implemented in `replaceTokenMotionTrack()` and token-object sync.
 - `LP-S5-008`: path segment construction and proportional segment sampling. Implemented for locally confirmed preview paths with direct-motion fallback.
-- `LP-S5-009`: deterministic elevation/hop sampling that can be reduced or disabled.
+- `LP-S5-009`: deterministic elevation/hop sampling that can be reduced or disabled. Implemented for direct tracks and path segments as visual-only y offsets.
 - `LP-S5-010`: movement-facing timing policy helpers.
 - `LP-S5-011`: correction/rollback duration and snap policy helpers.
 - `LP-S5-013`: central reduced-motion and many-token performance policy helpers.

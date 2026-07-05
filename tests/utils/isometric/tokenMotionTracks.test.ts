@@ -151,6 +151,94 @@ describe('token motion tracks', () => {
     expect(sampleTokenMotionTrack(track, 2000).center).toEqual({ x: 10, y: 0, z: 10 })
   })
 
+  it('adds a subtle visual hop for direct elevation-changing movement', () => {
+    const track = startTokenMotionTrack({
+      tokenId: 'token-2d-hop',
+      origin: { x: 0, y: 0, z: 0 },
+      destination: { x: 0, y: 2, z: 0 },
+      startMs: 1000,
+      durationMs: 1000,
+      reason: 'remote-accepted',
+    })
+
+    expect(track.hopHeight).toBeCloseTo(0.16)
+    expect(sampleTokenMotionTrack(track, 1000).center).toEqual({ x: 0, y: 0, z: 0 })
+    expect(sampleTokenMotionTrack(track, 1500)).toEqual({
+      center: { x: 0, y: 1.16, z: 0 },
+      elapsedMs: 500,
+      progress: 0.5,
+      easedProgress: 0.5,
+      complete: false,
+    })
+    expect(sampleTokenMotionTrack(track, 2000).center).toEqual({ x: 0, y: 2, z: 0 })
+  })
+
+  it('removes elevation hops when reduced motion is requested', () => {
+    const track = startTokenMotionTrack({
+      tokenId: 'token-2e-reduced-hop',
+      origin: { x: 0, y: 0, z: 0 },
+      destination: { x: 0, y: 2, z: 0 },
+      startMs: 1000,
+      durationMs: 1000,
+      durationOptions: { reducedMotion: true },
+      reason: 'remote-accepted',
+    })
+
+    expect(track.hopHeight).toBeUndefined()
+    expect(sampleTokenMotionTrack(track, 1500)).toEqual({
+      center: { x: 0, y: 1, z: 0 },
+      elapsedMs: 500,
+      progress: 0.5,
+      easedProgress: 0.5,
+      complete: false,
+    })
+  })
+
+  it('adds elevation hops to path segments without lifting flat segments', () => {
+    const pathSegments = createTokenMotionPathSegments({
+      origin: { x: 0, y: 0, z: 0 },
+      destination: { x: 1, y: 1, z: 0 },
+      pathCenters: [
+        { x: 0, y: 0, z: 0 },
+        { x: 1, y: 0, z: 0 },
+        { x: 1, y: 1, z: 0 },
+      ],
+      totalDurationMs: 1000,
+    })
+
+    expect(pathSegments).toEqual([
+      {
+        origin: { x: 0, y: 0, z: 0 },
+        destination: { x: 1, y: 0, z: 0 },
+        durationMs: 500,
+      },
+      {
+        origin: { x: 1, y: 0, z: 0 },
+        destination: { x: 1, y: 1, z: 0 },
+        durationMs: 500,
+        hopHeight: 0.12,
+      },
+    ])
+
+    const track = startTokenMotionTrack({
+      tokenId: 'token-2f-path-hop',
+      origin: { x: 0, y: 0, z: 0 },
+      destination: { x: 1, y: 1, z: 0 },
+      pathSegments,
+      startMs: 1000,
+      durationMs: 1000,
+      reason: 'local-prediction',
+    })
+    const sample = sampleTokenMotionTrack(track, 1750)
+
+    expect(sample.center.x).toBe(1)
+    expect(sample.center.y).toBeCloseTo(0.9275)
+    expect(sample.center.z).toBe(0)
+    expect(sample.progress).toBe(0.75)
+    expect(sample.easedProgress).toBe(0.9375)
+    expect(sample.complete).toBe(false)
+  })
+
   it('falls back to direct motion when path centers are missing or invalid', () => {
     const missingPathTrack = startTokenMotionTrack({
       tokenId: 'token-2d',

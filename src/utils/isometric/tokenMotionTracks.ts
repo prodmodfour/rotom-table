@@ -1,12 +1,15 @@
 import {
+  applyTokenMotionHopOffset,
   clampTokenMotionProgress,
   easeTokenMotionProgress,
   interpolateTokenMotionCenter,
   resolveTokenMotionDurationBetweenCentersMs,
   resolveTokenMotionDurationMs,
+  resolveTokenMotionHopHeight,
   tokenMotionDistanceBetweenCenters,
   type TokenMotionCenter,
   type TokenMotionDurationOptions,
+  type TokenMotionHopOptions,
 } from './tokenMotionCurves'
 
 export const TOKEN_MOTION_TRACK_RUNTIME_BRAND: unique symbol = Symbol('tokenMotionTrackRuntimeBrand')
@@ -24,6 +27,8 @@ export interface TokenMotionPathSegment {
   readonly origin: TokenMotionCenter
   readonly destination: TokenMotionCenter
   readonly durationMs: number
+  /** Visual-only vertical affordance sampled within this segment; runtime-only. */
+  readonly hopHeight?: number
 }
 
 export interface TokenMotionTrack {
@@ -34,6 +39,8 @@ export interface TokenMotionTrack {
   readonly startMs: number
   readonly durationMs: number
   readonly reason: TokenMotionTrackReason
+  /** Visual-only vertical affordance for direct tracks; runtime-only. */
+  readonly hopHeight?: number
   /** Runtime-only segment metadata for path-aware sampling; never persisted to map data. */
   readonly pathSegments?: readonly TokenMotionPathSegment[]
 }
@@ -43,6 +50,7 @@ export interface CreateTokenMotionPathSegmentsOptions {
   readonly destination: TokenMotionCenter
   readonly pathCenters?: readonly TokenMotionCenter[]
   readonly totalDurationMs: number
+  readonly hopOptions?: TokenMotionHopOptions
 }
 
 export interface StartTokenMotionTrackOptions {
@@ -53,6 +61,7 @@ export interface StartTokenMotionTrackOptions {
   readonly reason: TokenMotionTrackReason
   readonly durationMs?: number
   readonly durationOptions?: TokenMotionDurationOptions
+  readonly hopOptions?: TokenMotionHopOptions
   readonly pathSegments?: readonly TokenMotionPathSegment[]
   readonly pathCenters?: readonly TokenMotionCenter[]
 }
@@ -63,6 +72,7 @@ export interface ReplaceTokenMotionTrackOptions {
   readonly reason?: TokenMotionTrackReason
   readonly durationMs?: number
   readonly durationOptions?: TokenMotionDurationOptions
+  readonly hopOptions?: TokenMotionHopOptions
   readonly pathSegments?: readonly TokenMotionPathSegment[]
   readonly pathCenters?: readonly TokenMotionCenter[]
 }
@@ -126,16 +136,28 @@ const freezeTokenMotionCenter = (center: TokenMotionCenter): TokenMotionCenter =
   normalizeTokenMotionCenter(center),
 )
 
+const normalizeOptionalHopHeight = (hopHeight: number | undefined): number | undefined => {
+  if (typeof hopHeight !== 'number' || !Number.isFinite(hopHeight)) return undefined
+
+  const normalizedHopHeight = Math.max(0, hopHeight)
+  return normalizedHopHeight > 0 ? normalizedHopHeight : undefined
+}
+
 const clonePathSegments = (
   pathSegments: readonly TokenMotionPathSegment[] | undefined,
 ): readonly TokenMotionPathSegment[] | undefined => {
   if (!pathSegments || pathSegments.length === 0) return undefined
 
-  return Object.freeze(pathSegments.map((segment) => Object.freeze({
-    origin: freezeTokenMotionCenter(segment.origin),
-    destination: freezeTokenMotionCenter(segment.destination),
-    durationMs: nonNegativeFiniteNumberOrZero(segment.durationMs),
-  })))
+  return Object.freeze(pathSegments.map((segment) => {
+    const hopHeight = normalizeOptionalHopHeight(segment.hopHeight)
+
+    return Object.freeze({
+      origin: freezeTokenMotionCenter(segment.origin),
+      destination: freezeTokenMotionCenter(segment.destination),
+      durationMs: nonNegativeFiniteNumberOrZero(segment.durationMs),
+      ...(hopHeight !== undefined ? { hopHeight } : {}),
+    })
+  }))
 }
 
 const normalizeOptionalDurationMs = (durationMs: number | undefined): number | undefined => (
@@ -200,6 +222,7 @@ const planTokenMotionPathCenters = (
 const pathSegmentsFromPlan = (
   plan: TokenMotionPathPlan,
   totalDurationMs: number,
+  hopOptions: TokenMotionHopOptions = {},
 ): readonly TokenMotionPathSegment[] => {
   const durationMs = nonNegativeFiniteNumberOrZero(totalDurationMs)
   let assignedDurationMs = 0
@@ -214,10 +237,17 @@ const pathSegmentsFromPlan = (
       : nonNegativeFiniteNumberOrZero(proportionalDurationMs)
     assignedDurationMs += segmentDurationMs
 
+    const origin = freezeTokenMotionCenter(plan.centers[index]!)
+    const destination = freezeTokenMotionCenter(plan.centers[index + 1]!)
+    const hopHeight = normalizeOptionalHopHeight(
+      resolveTokenMotionHopHeight(origin, destination, hopOptions),
+    )
+
     return Object.freeze({
-      origin: freezeTokenMotionCenter(plan.centers[index]!),
-      destination: freezeTokenMotionCenter(plan.centers[index + 1]!),
+      origin,
+      destination,
       durationMs: segmentDurationMs,
+      ...(hopHeight !== undefined ? { hopHeight } : {}),
     })
   }))
 }
@@ -227,9 +257,10 @@ export const createTokenMotionPathSegments = ({
   destination,
   pathCenters,
   totalDurationMs,
+  hopOptions,
 }: CreateTokenMotionPathSegmentsOptions): readonly TokenMotionPathSegment[] | undefined => {
   const plan = planTokenMotionPathCenters(origin, destination, pathCenters)
-  return plan ? pathSegmentsFromPlan(plan, totalDurationMs) : undefined
+  return plan ? pathSegmentsFromPlan(plan, totalDurationMs, hopOptions) : undefined
 }
 
 const tokenMotionPathDistanceForSegments = (
@@ -258,6 +289,30 @@ const resolveTrackDurationMs = (
     ? resolveTokenMotionDurationBetweenCentersMs(origin, destination, durationOptions)
     : resolveTokenMotionDurationMs(pathDistance, durationOptions)
 }
+
+const tokenMotionHopOptionsFromTrackOptions = (
+  durationOptions: TokenMotionDurationOptions | undefined,
+  hopOptions: TokenMotionHopOptions | undefined,
+): TokenMotionHopOptions => ({
+  ...(durationOptions?.reducedMotion !== undefined
+    ? { reducedMotion: durationOptions.reducedMotion }
+    : {}),
+  ...(durationOptions?.reducedMotionPolicy !== undefined
+    ? { reducedMotionPolicy: durationOptions.reducedMotionPolicy }
+    : {}),
+  ...hopOptions,
+})
+
+const resolveDirectTrackHopHeight = (
+  origin: TokenMotionCenter,
+  destination: TokenMotionCenter,
+  durationOptions: TokenMotionDurationOptions | undefined,
+  hopOptions: TokenMotionHopOptions | undefined,
+): number | undefined => normalizeOptionalHopHeight(resolveTokenMotionHopHeight(
+  origin,
+  destination,
+  tokenMotionHopOptionsFromTrackOptions(durationOptions, hopOptions),
+))
 
 const resolveReplacementTrackDurationMs = (
   track: TokenMotionTrack,
@@ -323,7 +378,11 @@ const sampleTokenMotionPathSegments = (
       const segmentProgress = segmentDurationMs <= 0
         ? 1
         : clampTokenMotionProgress((pathOffsetMs - segmentStartMs) / segmentDurationMs)
-      return interpolateTokenMotionCenter(segment.origin, segment.destination, segmentProgress)
+      return applyTokenMotionHopOffset(
+        interpolateTokenMotionCenter(segment.origin, segment.destination, segmentProgress),
+        segmentProgress,
+        segment.hopHeight,
+      )
     }
 
     segmentStartMs = segmentEndMs
@@ -337,6 +396,10 @@ export const startTokenMotionTrack = (options: StartTokenMotionTrackOptions): To
   const destination = freezeTokenMotionCenter(options.destination)
   const explicitPathSegments = clonePathSegments(options.pathSegments)
   const pathCenterPlan = planTokenMotionPathCenters(origin, destination, options.pathCenters)
+  const hopOptions = tokenMotionHopOptionsFromTrackOptions(
+    options.durationOptions,
+    options.hopOptions,
+  )
   const durationMs = resolveTrackDurationMs(
     origin,
     destination,
@@ -345,7 +408,10 @@ export const startTokenMotionTrack = (options: StartTokenMotionTrackOptions): To
     pathCenterPlan?.distance,
   )
   const resolvedPathSegments = explicitPathSegments
-    ?? (pathCenterPlan ? pathSegmentsFromPlan(pathCenterPlan, durationMs) : undefined)
+    ?? (pathCenterPlan ? pathSegmentsFromPlan(pathCenterPlan, durationMs, hopOptions) : undefined)
+  const hopHeight = resolvedPathSegments
+    ? undefined
+    : resolveDirectTrackHopHeight(origin, destination, options.durationOptions, options.hopOptions)
 
   return brandRuntimeTrack({
     tokenId: options.tokenId,
@@ -354,6 +420,7 @@ export const startTokenMotionTrack = (options: StartTokenMotionTrackOptions): To
     startMs: finiteNumberOrZero(options.startMs),
     durationMs,
     reason: options.reason,
+    ...(hopHeight !== undefined ? { hopHeight } : {}),
     ...(resolvedPathSegments ? { pathSegments: resolvedPathSegments } : {}),
   })
 }
@@ -405,9 +472,15 @@ export const sampleTokenMotionTrack = (
     }
   }
 
+  const sampledCenter = sampleTokenMotionPathSegments(track.pathSegments, easedProgress)
+    ?? applyTokenMotionHopOffset(
+      interpolateTokenMotionCenter(origin, destination, easedProgress),
+      easedProgress,
+      track.hopHeight,
+    )
+
   return {
-    center: sampleTokenMotionPathSegments(track.pathSegments, easedProgress)
-      ?? interpolateTokenMotionCenter(origin, destination, easedProgress),
+    center: sampledCenter,
     elapsedMs,
     progress,
     easedProgress,
@@ -423,6 +496,10 @@ export const replaceTokenMotionTrack = (
   const destination = normalizeTokenMotionCenter(options.destination)
   const explicitPathSegments = clonePathSegments(options.pathSegments)
   const pathCenterPlan = planTokenMotionPathCenters(origin, destination, options.pathCenters)
+  const hopOptions = tokenMotionHopOptionsFromTrackOptions(
+    options.durationOptions,
+    options.hopOptions,
+  )
   const durationMs = resolveReplacementTrackDurationMs(
     track,
     origin,
@@ -431,7 +508,7 @@ export const replaceTokenMotionTrack = (
     pathCenterPlan?.distance,
   )
   const resolvedPathSegments = explicitPathSegments
-    ?? (pathCenterPlan ? pathSegmentsFromPlan(pathCenterPlan, durationMs) : undefined)
+    ?? (pathCenterPlan ? pathSegmentsFromPlan(pathCenterPlan, durationMs, hopOptions) : undefined)
 
   return startTokenMotionTrack({
     tokenId: track.tokenId,
@@ -441,6 +518,7 @@ export const replaceTokenMotionTrack = (
     reason: options.reason ?? track.reason,
     durationMs,
     durationOptions: options.durationOptions,
+    hopOptions: options.hopOptions,
     pathSegments: resolvedPathSegments,
   })
 }
