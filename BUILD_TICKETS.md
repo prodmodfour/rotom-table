@@ -457,7 +457,7 @@ Status: DONE
 
 ## LP-S5-016 — Add motion regression tests for live-play predictions and batches
 
-Status: TODO
+Status: DONE
 
 **Goal:** Prove motion polish does not break authoritative state, batch commands, or prediction recovery.
 

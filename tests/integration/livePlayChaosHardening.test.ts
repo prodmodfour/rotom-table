@@ -451,6 +451,61 @@ describe('Final Wave C full-system live-play chaos hardening', () => {
     expect(tabA.presentationEvents).toHaveLength(presentationCount)
   })
 
+  it('keeps accepted token movement convergent while terrain and hazard batches update other layers', async () => {
+    const initialHazards = [{ kind: 'spikes' as const, x: 1, y: 0, z: 2 }]
+    const terrainVoxel = { x: 4, y: 0, z: 4, materialId: 'meadow_grass' }
+    const fireHazard = { kind: 'fire' as const, x: 3, y: 0, z: 3 }
+    const harness = createHarness({ map: chaosMap({ hazards: initialHazards }) })
+    const tabA = await createTab(harness, { label: 'motion-batch-tab-a' })
+    await waitForCaughtUp(tabA)
+    await tabA.hydrate()
+    await waitForReady(tabA)
+
+    const tabB = await createTab(harness, { label: 'motion-batch-tab-b' })
+    await waitForCaughtUp(tabB)
+    await tabB.hydrate()
+    await waitForReady(tabB)
+
+    await expect(tabB.commands.moveToken({ placementId: 'token-alpha', position: { x: 3, y: 0, z: 3 } }))
+      .resolves.toMatchObject({ dispatched: true })
+    await vi.waitFor(() => expect(tabA.currentMap?.revision).toBe(1))
+    await waitForReady(tabA)
+    await waitForReady(tabB)
+    expect(moveTokenPosition(tabA.currentMap, 'token-alpha')).toEqual({ x: 3, y: 0, z: 3 })
+    expect(moveTokenPosition(harness.readMap(), 'token-alpha')).toEqual({ x: 3, y: 0, z: 3 })
+
+    await expect(tabB.commands.editTerrainVoxels({
+      operations: [{ action: 'upsert', voxel: terrainVoxel }],
+    })).resolves.toMatchObject({ dispatched: true })
+    await vi.waitFor(() => expect(tabA.currentMap?.revision).toBe(2))
+    await waitForReady(tabA)
+    await waitForReady(tabB)
+    expect(moveTokenPosition(tabA.currentMap, 'token-alpha')).toEqual({ x: 3, y: 0, z: 3 })
+    expect(tabA.currentMap?.voxels).toEqual(expect.arrayContaining([expect.objectContaining(terrainVoxel)]))
+
+    await expect(tabB.commands.editHazards({
+      operations: [
+        { action: 'remove', cell: { x: 1, y: 0, z: 2, kind: 'spikes' } },
+        { action: 'upsert', hazard: fireHazard },
+      ],
+    })).resolves.toMatchObject({ dispatched: true })
+    await vi.waitFor(() => expect(tabA.currentMap?.revision).toBe(3))
+    await waitForReady(tabA)
+    await waitForReady(tabB)
+
+    expect(tabA.pendingPredictionOpIds).toEqual([])
+    expect(tabB.pendingPredictionOpIds).toEqual([])
+    expect(tabA.commands.outboxEntries.value).toEqual([])
+    expect(tabB.commands.outboxEntries.value).toEqual([])
+    expect(harness.readMap()).toMatchObject({ revision: 3, hazards: [fireHazard] })
+    expect(harness.readMap().voxels).toEqual(expect.arrayContaining([expect.objectContaining(terrainVoxel)]))
+    expect(moveTokenPosition(harness.readMap(), 'token-alpha')).toEqual({ x: 3, y: 0, z: 3 })
+    expect(moveTokenPosition(tabA.currentMap, 'token-alpha')).toEqual({ x: 3, y: 0, z: 3 })
+    expect(moveTokenPosition(tabB.currentMap, 'token-alpha')).toEqual({ x: 3, y: 0, z: 3 })
+    expect(tabA.currentMap?.hazards).toEqual([fireHazard])
+    expect(tabB.currentMap?.hazards).toEqual([fireHazard])
+  })
+
   it('recovers lost batch HTTP responses through status and exact-body retry without duplicate durable events', async () => {
     const initialHazards = [
       { kind: 'spikes' as const, x: 1, y: 0, z: 2 },
@@ -604,6 +659,42 @@ describe('Final Wave C full-system live-play chaos hardening', () => {
     expect(harness.readMap().revision).toBe(3)
     expect(moveTokenPosition(harness.readMap(), 'token-alpha')).toEqual({ x: 1, y: 0, z: 6 })
     expect(moveTokenPosition(harness.readMap(), 'token-beta')).toEqual({ x: 5, y: 0, z: 1 })
+  })
+
+  it('coalesces rapid same-token moves without losing the latest authoritative destination', async () => {
+    const harness = createHarness()
+    const nextInterception: { current: CommandInterception | null } = { current: null }
+    const tab = await createTab(harness, {
+      label: 'coalesced-motion-tab',
+      api: (getTab) => createInterceptableMoveApi(harness, getTab, nextInterception),
+    })
+    await waitForCaughtUp(tab)
+    await tab.hydrate()
+    await waitForReady(tab)
+
+    const heldFirstMove = createMoveInterception('hold-before-server')
+    nextInterception.current = heldFirstMove
+    const firstMove = tab.commands.moveToken({ placementId: 'token-alpha', position: { x: 3, y: 0, z: 3 } })
+    await vi.waitFor(() => expect(heldFirstMove.bodies).toHaveLength(1))
+    const firstOpId = interceptedOpId(heldFirstMove)
+    expect(tab.pendingPredictionOpIds).toEqual([firstOpId])
+    expect(moveTokenPosition(tab.currentMap, 'token-alpha')).toEqual({ x: 3, y: 0, z: 3 })
+    expect(harness.readMap().revision).toBe(0)
+
+    const latestMove = tab.commands.moveToken({ placementId: 'token-alpha', position: { x: 5, y: 0, z: 4 } })
+    expect(moveTokenPosition(tab.currentMap, 'token-alpha')).toEqual({ x: 5, y: 0, z: 4 })
+    expect(harness.readMap().revision).toBe(0)
+
+    heldFirstMove.gate.resolve()
+    await expect(firstMove).resolves.toMatchObject({ dispatched: true, opId: firstOpId })
+    await expect(latestMove).resolves.toMatchObject({ dispatched: true })
+    await waitForReady(tab)
+
+    expect(tab.pendingPredictionOpIds).toEqual([])
+    expect(tab.commands.outboxEntries.value).toEqual([])
+    expect(harness.readMap().revision).toBe(2)
+    expect(moveTokenPosition(harness.readMap(), 'token-alpha')).toEqual({ x: 5, y: 0, z: 4 })
+    expect(moveTokenPosition(tab.currentMap, 'token-alpha')).toEqual({ x: 5, y: 0, z: 4 })
   })
 
   it('keeps prediction state idempotent across SSE-first and HTTP-first terminal delivery', async () => {

@@ -322,6 +322,75 @@ describe('isometric token object sync', () => {
     expect(renderObject.currentCenter).toEqual({ x: 5.5, y: 0, z: 0.5 })
   })
 
+  it('does not restart local confirmations or duplicate terminals once the target is authoritative', () => {
+    const renderObject = makePlacementMotionRenderObject()
+    const movedPokemon = makePokemon('a', { position: { x: 4, y: 0, z: 0 } })
+
+    const predicted = syncPokemonRenderObjectPlacementMotion({
+      renderObject,
+      pokemon: movedPokemon,
+      startMs: 1000,
+      reason: 'local-prediction',
+    })
+    expect(predicted).toBe(true)
+    const predictionTrack = renderObject.motion.track
+    expect(predictionTrack).toMatchObject({
+      reason: 'local-prediction',
+      destination: { x: 4.5, y: 0, z: 0.5 },
+    })
+
+    renderObject.targetCenter = makeCenter(4.5, 0, 0.5)
+    const confirmed = syncPokemonRenderObjectPlacementMotion({
+      renderObject,
+      pokemon: movedPokemon,
+      startMs: 1100,
+      reason: 'local-prediction',
+    })
+    expect(confirmed).toBe(false)
+    expect(renderObject.motion.track).toBe(predictionTrack)
+
+    renderObject.currentCenter = makeCenter(4.5, 0, 0.5)
+    renderObject.targetCenter = makeCenter(4.5, 0, 0.5)
+    delete renderObject.motion.track
+    delete renderObject.motion.facing
+
+    const duplicateTerminal = syncPokemonRenderObjectPlacementMotion({
+      renderObject,
+      pokemon: movedPokemon,
+      startMs: 2000,
+      reason: 'remote-accepted',
+    })
+    expect(duplicateTerminal).toBe(false)
+    expect(renderObject.motion.track).toBeUndefined()
+    expect(renderObject.currentCenter).toEqual({ x: 4.5, y: 0, z: 0.5 })
+    expect(renderObject.targetCenter).toEqual({ x: 4.5, y: 0, z: 0.5 })
+  })
+
+  it('keeps active token motion untouched when batch terrain or hazard patches leave placement unchanged', () => {
+    const renderObject = makePlacementMotionRenderObject()
+    const movingPokemon = makePokemon('a', { position: { x: 6, y: 0, z: 0 } })
+
+    expect(syncPokemonRenderObjectPlacementMotion({
+      renderObject,
+      pokemon: movingPokemon,
+      startMs: 1000,
+      reason: 'remote-accepted',
+    })).toBe(true)
+    renderObject.targetCenter = makeCenter(6.5, 0, 0.5)
+    const activeTrack = renderObject.motion.track
+
+    const unchangedAfterBatchLayerSync = syncPokemonRenderObjectPlacementMotion({
+      renderObject,
+      pokemon: movingPokemon,
+      startMs: 1200,
+      reason: 'remote-accepted',
+    })
+
+    expect(unchangedAfterBatchLayerSync).toBe(false)
+    expect(renderObject.motion.track).toBe(activeTrack)
+    expect(renderObject.motion.track?.destination).toEqual({ x: 6.5, y: 0, z: 0.5 })
+  })
+
   it('uses server-correction duration policy for rollback placement motion', () => {
     const renderObject = makePlacementMotionRenderObject()
 
