@@ -259,7 +259,7 @@ Status: DONE
 
 ## 008 — COS-008 — Re-tune tactical cage face and edge opacity
 
-Status: TODO
+Status: DONE
 
 **Goal:** Make cages feel like temporary tactical affordances rather than permanent display cases.
 

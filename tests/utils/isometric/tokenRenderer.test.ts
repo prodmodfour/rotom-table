@@ -159,6 +159,12 @@ const volumePaletteColorHexes = (palette: ReturnType<typeof accentVolumeFacePale
   palette.side,
 ]
 
+const expectVolumeOpacity = (renderObject: PokemonRenderObject, expectedOpacity: number) => {
+  for (const material of renderObject.volume.material) {
+    expect(material.opacity).toBeCloseTo(expectedOpacity)
+  }
+}
+
 type PaintPokemonRenderObjectStyleOptions = NonNullable<Parameters<typeof paintPokemonRenderObjectStyle>[2]>
 
 describe('token renderer', () => {
@@ -220,15 +226,17 @@ describe('token renderer', () => {
   })
 
   it.each([
-    { label: 'hovered', selected: false, options: { hovered: true } },
-    { label: 'selected', selected: true, options: {} },
-    { label: 'pending', selected: false, options: { pending: true } },
-    { label: 'corrected', selected: false, options: { corrected: true } },
+    { label: 'hovered', selected: false, options: { hovered: true }, faceOpacity: 0.18, edgeOpacity: 0.68 },
+    { label: 'selected', selected: true, options: {}, faceOpacity: 0.24, edgeOpacity: 0.9 },
+    { label: 'pending', selected: false, options: { pending: true }, faceOpacity: 0.24, edgeOpacity: 0.82 },
+    { label: 'corrected', selected: false, options: { corrected: true }, faceOpacity: 0.3, edgeOpacity: 0.95 },
   ] satisfies Array<{
     label: string
     selected: boolean
     options: PaintPokemonRenderObjectStyleOptions
-  }>)('shows tactical cages for $label tokens', ({ selected, options }) => {
+    faceOpacity: number
+    edgeOpacity: number
+  }>)('shows re-tuned tactical cages for $label tokens', ({ selected, options, faceOpacity, edgeOpacity }) => {
     const renderObject = makeRenderObject(spawnedPokemon())
 
     paintPokemonRenderObjectStyle(renderObject, selected, options)
@@ -237,6 +245,10 @@ describe('token renderer', () => {
     expect(renderObject.cageVisible).toBe(true)
     expect(renderObject.volume.visible).toBe(true)
     expect(renderObject.edges.visible).toBe(true)
+    expectVolumeOpacity(renderObject, faceOpacity)
+    const edgeMaterial = renderObject.edges.material as THREE.LineBasicMaterial
+    expect(edgeMaterial.opacity).toBeCloseTo(edgeOpacity)
+    expect(edgeMaterial.opacity).toBeGreaterThan(faceOpacity)
   })
 
   it('highlights hovered token cages with their app accent color', () => {
@@ -248,12 +260,10 @@ describe('token renderer', () => {
     expect(volumeMaterialColorHexes(renderObject)).toEqual(
       volumePaletteColorHexes(accentVolumeFacePalette('#2e77d0')),
     )
-    for (const material of renderObject.volume.material) {
-      expect(material.opacity).toBeCloseTo(0.34)
-    }
+    expectVolumeOpacity(renderObject, 0.18)
     const edgeMaterial = renderObject.edges.material as THREE.LineBasicMaterial
     expect(edgeMaterial.color.getHex()).toBe(resolveVolumeAccentColor('#2e77d0'))
-    expect(edgeMaterial.opacity).toBeCloseTo(0.9)
+    expect(edgeMaterial.opacity).toBeCloseTo(0.68)
     expect(edgeMaterial.transparent).toBe(true)
     expect(renderObject.cageVisible).toBe(true)
     expect(renderObject.liftTarget).toBe(0)
@@ -265,10 +275,11 @@ describe('token renderer', () => {
 
     paintPokemonRenderObjectStyle(renderObject, true, { hovered: true })
 
+    expectVolumeOpacity(renderObject, 0.26)
     const edgeMaterial = renderObject.edges.material as THREE.LineBasicMaterial
     expect(edgeMaterial.color.getHex()).toBe(resolveVolumeAccentColor('#7c3aed'))
-    expect(edgeMaterial.opacity).toBe(1)
-    expect(edgeMaterial.transparent).toBe(false)
+    expect(edgeMaterial.opacity).toBeCloseTo(0.92)
+    expect(edgeMaterial.transparent).toBe(true)
     expect(renderObject.liftTarget).toBe(1)
   })
 
@@ -287,12 +298,10 @@ describe('token renderer', () => {
     expect(volumeMaterialColorHexes(renderObject)).toEqual(
       volumePaletteColorHexes(accentVolumeFacePalette('#a78bfa')),
     )
-    for (const material of renderObject.volume.material) {
-      expect(material.opacity).toBeCloseTo(0.325)
-    }
+    expectVolumeOpacity(renderObject, 0.205)
     const edgeMaterial = renderObject.edges.material as THREE.LineBasicMaterial
     expect(edgeMaterial.color.getHex()).toBe(resolveVolumeAccentColor('#a78bfa'))
-    expect(edgeMaterial.opacity).toBeCloseTo(0.785)
+    expect(edgeMaterial.opacity).toBeCloseTo(0.75)
     expect(renderObject.cageVisible).toBe(true)
     expect(renderObject.liftTarget).toBe(0)
   })
