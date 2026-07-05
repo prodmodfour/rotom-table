@@ -29,7 +29,7 @@ live-play/setup edit changes map placements
 `src/pages/maps/[slug].vue` owns the map state and passes `spawnedPokemon` into the isometric grid. Manual movement in the grid starts in `createIsometricTokenMovementInteractionController()`:
 
 1. Pointer movement builds a preview and optional movement-path result for display.
-2. `performSelectedMove()` emits `move-pokemon` with `{ id, position }`.
+2. `performSelectedMove()` emits `move-pokemon` with `{ id, position }` and, when the preview has one, a cloned grid-anchor `path`.
 3. The page-level `movePokemon()` handler either:
    - updates setup/edit placement state directly, or
    - sends `livePlayCommands.moveToken()` in Run Live Play.
@@ -49,6 +49,7 @@ For each visible Pokémon:
 - Existing render objects are checked by `syncPokemonRenderObjectPlacementMotion()` before `updatePokemonRenderObjectFromSpawn()` writes the new spawn state.
   - If the next placement center differs from the previous `targetCenter`, a runtime-only motion track starts from the current rendered center to the next authoritative center.
   - If the token already has an active motion track, the old track is sampled at the replacement timestamp and the new track starts from that sampled center instead of the previous authoritative center or a stale frame sample. The replacement duration is based on the remaining distance and active-track pace unless a caller supplies explicit duration options.
+  - If the grid captured a movement-preview path for that token and destination, the track stores proportional path segments and samples along those centers instead of drawing a straight line through obstacles. Missing, stale, or invalid paths fall back to direct center-to-center motion.
   - Pure sheet/HUD updates such as HP, conditions, combat stages, token items, and accent color leave `targetCenter` unchanged and do not start movement tracks.
   - If a changed target is already at the sampled/rendered center, stale motion metadata is cleared instead of animating a no-op.
 - Existing render objects are then updated by `updatePokemonRenderObjectFromSpawn()`.
@@ -133,7 +134,7 @@ Realtime gaps, replay validation failures, profile changes, or explicit reconcil
 - **Create/reload teleporting:** newly created or recreated render objects set `currentCenter === targetCenter`, so they appear at the current authoritative center without any deliberate spawn/reload policy.
 - **Generic exponential slow tail:** movement uses damping toward a target and finishes only when the epsilon threshold is reached; it has no planned end time.
 - **No explicit duration:** movement speed is not derived from grid distance, command type, correction reason, or user preference.
-- **No path segments:** even when the movement preview had pathfinding data, committed movement only sends position/path length and the renderer interpolates directly from current center to target center.
+- **Limited path context:** local committed movement can now reuse the current preview path, but remote accepted movement, corrections, and reconciliation snapshots still arrive as placement-only updates and fall back to direct motion unless a later source supplies safe path context.
 - **No correction semantics:** accepted confirmations, rejected rollbacks, authoritative conflicts, and reconciliation snapshots all look like ordinary target-center changes.
 - **No reduced-motion policy:** token center movement does not currently consult the browser/OS reduced-motion preference or a token-motion-specific setting.
 - **Limited replacement source context:** rapid same-token moves now replace active tracks from the sampled in-flight center, but the renderer still receives placement updates without knowing whether they came from local prediction, local confirmation, remote accepted movement, correction, or reconciliation.
@@ -152,6 +153,8 @@ Realtime gaps, replay validation failures, profile changes, or explicit reconcil
 
 `LP-S5-007` makes active same-token movement replacement continuous. `replaceTokenMotionTrack()` samples the active track at the replacement timestamp, carries that sampled center into the new origin, and resolves the new duration from remaining distance at the prior track's average pace unless explicit duration options are supplied. `syncPokemonRenderObjectPlacementMotion()` uses that replacement path for visible tokens that receive a new placement target while already moving, so coalesced predictions and rapid repeated clicks do not visually snap back to stale centers.
 
+`LP-S5-008` adds path-aware local movement. The movement interaction controller keeps an immutable copy of the preview path when a move is confirmed; `IsometricGrid.client.vue` holds that pending path only long enough to match the next visible placement update for the same token and destination. `tokenMotionTracks.ts` can build path segments from center waypoints, assign segment durations proportional to path distance, and sample the active track along those segments. If the path is absent, stale, malformed, or too short to be useful, motion falls back to direct interpolation and still ends at the authoritative destination.
+
 ## Future Sprint 5 change map
 
 The current code suggests this division for later tickets:
@@ -161,7 +164,7 @@ The current code suggests this division for later tickets:
 - `LP-S5-002`: easing, distance-based duration, reduced-motion duration, and center interpolation helpers. Implemented in `src/utils/isometric/tokenMotionCurves.ts` as pure center-point math so future tracks can sample motion without importing three.js.
 - `LP-S5-003`: runtime motion-track model and sampling/cancel/replace helpers. Implemented as pure presentation utilities in `src/utils/isometric/tokenMotionTracks.ts`; not yet wired into render objects.
 - `LP-S5-007`: sampled-position replacement rules for rapid same-token movement. Implemented in `replaceTokenMotionTrack()` and token-object sync.
-- `LP-S5-008`: path segment construction and proportional segment sampling.
+- `LP-S5-008`: path segment construction and proportional segment sampling. Implemented for locally confirmed preview paths with direct-motion fallback.
 - `LP-S5-009`: deterministic elevation/hop sampling that can be reduced or disabled.
 - `LP-S5-010`: movement-facing timing policy helpers.
 - `LP-S5-011`: correction/rollback duration and snap policy helpers.

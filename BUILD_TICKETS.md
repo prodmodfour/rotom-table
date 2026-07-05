@@ -240,7 +240,7 @@ Status: DONE
 
 ## LP-S5-008 — Add path-aware movement tracks for known paths
 
-Status: TODO
+Status: DONE
 
 **Goal:** Animate along path segments when the client has movement-path information instead of moving in a straight line through obstacles.
 

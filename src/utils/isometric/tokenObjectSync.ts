@@ -1,5 +1,5 @@
-import type { SpawnedPokemon } from '~/types/pokemon'
-import { getPokemonCenter } from '~/utils/gridGeometry'
+import type { GridAnchor, SpawnedPokemon } from '~/types/pokemon'
+import { getAnchorCenter, getPokemonCenter } from '~/utils/gridGeometry'
 import type { TokenMotionCenter, TokenMotionDurationOptions } from '~/utils/isometric/tokenMotionCurves'
 import {
   replaceTokenMotionTrack,
@@ -83,6 +83,7 @@ export interface PokemonPlacementMotionSyncOptions<
   startMs: number
   reason?: TokenMotionTrackReason
   durationOptions?: TokenMotionDurationOptions
+  pathAnchors?: readonly GridAnchor[]
 }
 
 const tokenMotionCenterDistanceSquared = (
@@ -108,6 +109,15 @@ const cloneTokenMotionCenter = (center: TokenMotionCenter): TokenMotionCenter =>
   y: center.y,
   z: center.z,
 })
+
+const tokenMotionPathCentersForAnchors = (
+  pathAnchors: readonly GridAnchor[] | undefined,
+  base: number,
+): TokenMotionCenter[] | undefined => (
+  pathAnchors && pathAnchors.length >= 2
+    ? pathAnchors.map((anchor) => getAnchorCenter(anchor, base))
+    : undefined
+)
 
 const copyTokenMotionCenter = (
   target: TokenMotionCenter | undefined,
@@ -143,8 +153,10 @@ export const syncPokemonRenderObjectPlacementMotion = <
   startMs,
   reason,
   durationOptions,
+  pathAnchors,
 }: PokemonPlacementMotionSyncOptions<TRenderObject>): boolean => {
   const destination = getPokemonCenter(pokemon)
+  const pathCenters = tokenMotionPathCentersForAnchors(pathAnchors, pokemon.base)
 
   if (tokenMotionCentersNearlyEqual(renderObject.targetCenter, destination)) {
     return false
@@ -165,6 +177,7 @@ export const syncPokemonRenderObjectPlacementMotion = <
       replaceAtMs: startMs,
       reason,
       durationOptions,
+      pathCenters,
     })
 
     if (tokenMotionCentersNearlyEqual(replacement.origin, destination)) {
@@ -185,6 +198,7 @@ export const syncPokemonRenderObjectPlacementMotion = <
     startMs,
     reason: reason ?? 'setup-edit',
     durationOptions,
+    pathCenters,
   })
 
   return true

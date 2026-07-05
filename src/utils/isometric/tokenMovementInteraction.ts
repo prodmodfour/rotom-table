@@ -38,6 +38,12 @@ export interface TokenMovementPreviewRenderer {
   disposeOwner: () => void
 }
 
+export interface TokenMovementCommitPayload {
+  readonly id: string
+  readonly position: GridAnchor
+  readonly path?: readonly GridAnchor[]
+}
+
 export interface TokenMovementInteractionDependencies {
   getSelectedPokemon: () => SpawnedPokemon | null
   getPokemons: () => SpawnedPokemon[]
@@ -51,7 +57,7 @@ export interface TokenMovementInteractionDependencies {
   getMoveGridIntersection: (event: TokenMovementPointerEvent, yLevel: number) => Pick<GridAnchor, 'x' | 'z'> | null
   previewRenderer: TokenMovementPreviewRenderer
   emitPreviewChange: (preview: PreviewState) => void
-  movePokemon: (payload: { id: string; position: GridAnchor }) => void
+  movePokemon: (payload: TokenMovementCommitPayload) => void
   recordPathfindingRequest?: () => void
   recordPathfindingCacheHit?: () => void
   recordPathfindingCacheMiss?: () => void
@@ -59,12 +65,25 @@ export interface TokenMovementInteractionDependencies {
 
 const emptyPreview = (): PreviewState => ({ ...EMPTY_MOVE_PREVIEW })
 
+const cloneGridAnchor = (anchor: GridAnchor): GridAnchor => ({
+  x: anchor.x,
+  y: anchor.y,
+  z: anchor.z,
+})
+
+const cloneGridAnchorPath = (
+  path: readonly GridAnchor[] | null | undefined,
+): GridAnchor[] | undefined => (
+  path && path.length >= 2 ? path.map(cloneGridAnchor) : undefined
+)
+
 export const createIsometricTokenMovementInteractionController = (
   dependencies: TokenMovementInteractionDependencies,
 ) => {
   let activePreview: PreviewState = emptyPreview()
   let activePreviewCanPlace = false
   let activePreviewAnchor: GridAnchor | null = null
+  let activePreviewPath: GridAnchor[] | null = null
   let lastPreviewAnchorKey: string | null = null
   const movementPathCache = createMapMovementPathCache()
 
@@ -89,6 +108,7 @@ export const createIsometricTokenMovementInteractionController = (
     activePreview = emptyPreview()
     activePreviewCanPlace = false
     activePreviewAnchor = null
+    activePreviewPath = null
     resetPreviewAnchorCache()
     dependencies.previewRenderer.clear()
     emitPreview()
@@ -158,14 +178,14 @@ export const createIsometricTokenMovementInteractionController = (
       }
       movementPath = pathCacheResult.result
     }
-    const path = movementPath?.path ?? null
+    const movementPathAnchors = cloneGridAnchorPath(movementPath?.path) ?? null
     const reachable = Boolean(movementPath?.legal)
     const previewUpdated = dependencies.previewRenderer.update({
       pokemon: selected,
       anchor,
       canForcePlace,
       reachable,
-      path,
+      path: cloneGridAnchorPath(movementPathAnchors) ?? null,
       groundLevelY,
       camera: dependencies.getCamera(),
     })
@@ -176,6 +196,7 @@ export const createIsometricTokenMovementInteractionController = (
     }
 
     activePreviewAnchor = anchor
+    activePreviewPath = movementPathAnchors
     lastPreviewAnchorKey = nextAnchorKey
     // Movement legality is tactical information only; placement integrity is the
     // only gate for committing a manual token move.
@@ -241,9 +262,11 @@ export const createIsometricTokenMovementInteractionController = (
     const selected = dependencies.getSelectedPokemon()
     if (!selected || !activePreview.position || !activePreviewCanPlace) return false
 
+    const path = cloneGridAnchorPath(activePreviewPath)
     dependencies.movePokemon({
       id: selected.id,
       position: activePreview.position,
+      ...(path ? { path } : {}),
     })
     return true
   }
@@ -263,6 +286,7 @@ export const createIsometricTokenMovementInteractionController = (
     activePreviewAnchor = null
     activePreview = emptyPreview()
     activePreviewCanPlace = false
+    activePreviewPath = null
     resetPreviewAnchorCache()
     movementPathCache.clear()
     ensurePreviewObjects()

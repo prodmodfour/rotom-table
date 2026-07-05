@@ -162,6 +162,42 @@ describe('isometric token object sync', () => {
     expect(renderObject.targetCenter).toEqual({ x: 0.5, y: 0, z: 0.5 })
   })
 
+  it('uses supplied path anchors to create segmented placement motion', () => {
+    const renderObject = makePlacementMotionRenderObject()
+
+    const started = syncPokemonRenderObjectPlacementMotion({
+      renderObject,
+      pokemon: makePokemon('a', { position: { x: 1, y: 0, z: 2 } }),
+      startMs: 1234,
+      reason: 'local-prediction',
+      durationOptions: {
+        minDurationMs: 0,
+        maxDurationMs: 1000,
+        msPerGridUnit: 100,
+      },
+      pathAnchors: [
+        { x: 0, y: 0, z: 0 },
+        { x: 1, y: 0, z: 0 },
+        { x: 1, y: 0, z: 2 },
+      ],
+    })
+
+    expect(started).toBe(true)
+    expect(renderObject.motion.track?.durationMs).toBe(300)
+    expect(renderObject.motion.track?.pathSegments).toEqual([
+      {
+        origin: { x: 0.5, y: 0, z: 0.5 },
+        destination: { x: 1.5, y: 0, z: 0.5 },
+        durationMs: 100,
+      },
+      {
+        origin: { x: 1.5, y: 0, z: 0.5 },
+        destination: { x: 1.5, y: 0, z: 2.5 },
+        durationMs: 200,
+      },
+    ])
+  })
+
   it('does not start placement motion for sheet-only token updates', () => {
     const renderObject = makePlacementMotionRenderObject()
 

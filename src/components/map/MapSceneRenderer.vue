@@ -34,6 +34,7 @@ import type { MoveAutomationTargetBranchSelectionState } from '~/composables/map
 import type { MapTokenRemoteAttention } from '~/utils/mapPresenceTokenAttention'
 import type { MapPresenceIntentOverlay } from '~/utils/mapPresenceIntentOverlays'
 import type { IsometricPresencePing } from '~/utils/isometric/pingRenderer'
+import type { TokenMovementCommitPayload } from '~/utils/isometric/tokenMovementInteraction'
 
 interface IsometricGridHandle {
   focusPokemon: (id: string) => boolean
@@ -91,7 +92,7 @@ const emit = defineEmits<{
   (event: 'hover-pokemon', id: string | null): void
   (event: 'place-presence-ping', payload: { cell: LivePlayPresenceGridCell }): void
   (event: 'request-gm-attention', payload: { target: LivePlayPresenceAttentionTarget }): void
-  (event: 'move-pokemon', payload: { id: string; position: GridAnchor }): void
+  (event: 'move-pokemon', payload: TokenMovementCommitPayload): void
   (event: 'turn-pokemon', id: string): void
   (event: 'delete-pokemon', id: string): void
   (event: 'modify-hp', payload: MoveAutomationHpUpdate): void

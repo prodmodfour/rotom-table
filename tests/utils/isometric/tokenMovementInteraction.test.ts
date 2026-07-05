@@ -426,7 +426,35 @@ describe('isometric token movement interaction', () => {
     controller.updatePreviewAtAnchor({ x: 1, y: 0, z: 1 })
 
     expect(controller.performSelectedMove()).toBe(true)
-    expect(movePokemon).toHaveBeenCalledWith({ id: 'token-a', position: { x: 1, y: 0, z: 1 } })
+    expect(movePokemon).toHaveBeenCalledWith({
+      id: 'token-a',
+      position: { x: 1, y: 0, z: 1 },
+      path: [
+        { x: 0, y: 0, z: 0 },
+        { x: 1, y: 0, z: 1 },
+      ],
+    })
+  })
+
+  it('commits a cloned preview path that is isolated from renderer mutation', () => {
+    const { controller, renderer, movePokemon } = makeController()
+
+    controller.updatePreviewAtAnchor({ x: 2, y: 0, z: 2 })
+    const updateCalls = renderer.update.mock.calls as unknown as Array<
+      Parameters<TokenMovementPreviewRenderer['update']>
+    >
+    updateCalls[0]?.[0].path?.splice(1, 1, { x: 9, y: 9, z: 9 })
+
+    expect(controller.performSelectedMove()).toBe(true)
+    expect(movePokemon).toHaveBeenCalledWith({
+      id: 'token-a',
+      position: { x: 2, y: 0, z: 2 },
+      path: [
+        { x: 0, y: 0, z: 0 },
+        { x: 1, y: 0, z: 1 },
+        { x: 2, y: 0, z: 2 },
+      ],
+    })
   })
 
   it('keeps over-capability movement informational while still allowing placeable commits', () => {

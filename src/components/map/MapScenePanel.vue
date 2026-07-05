@@ -52,6 +52,7 @@ import type { PreviewState } from '~/utils/gridPreview'
 import type { MapTokenRemoteAttention } from '~/utils/mapPresenceTokenAttention'
 import type { MapPresenceIntentOverlay } from '~/utils/mapPresenceIntentOverlays'
 import type { IsometricPresencePing } from '~/utils/isometric/pingRenderer'
+import type { TokenMovementCommitPayload } from '~/utils/isometric/tokenMovementInteraction'
 
 interface MapSceneRendererHandle {
   focusPokemon: (id: string) => boolean
@@ -136,7 +137,7 @@ const emit = defineEmits<{
   (event: 'next-initiative'): void
   (event: 'start-scene'): void
   (event: 'end-scene'): void
-  (event: 'move-pokemon', payload: { id: string; position: GridAnchor }): void
+  (event: 'move-pokemon', payload: TokenMovementCommitPayload): void
   (event: 'turn-pokemon', id: string): void
   (event: 'delete-pokemon', id: string): void
   (event: 'modify-hp', payload: MoveAutomationHpUpdate): void

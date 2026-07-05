@@ -17,7 +17,7 @@ import type {
   VoxelMaterial,
 } from '~/types/map'
 import type { PreviewState } from '~/utils/gridPreview'
-import { getPokemonCenter } from '~/utils/gridGeometry'
+import { getPokemonCenter, isSameAnchor } from '~/utils/gridGeometry'
 import { buildAllVoxelOccupancy } from '~/utils/voxelOccupancy'
 import { buildMapOccupancy } from '~/utils/mapOccupancy'
 import { ptuGridDistanceBetweenFootprints } from '~/utils/ptuGridDistance'
@@ -120,7 +120,10 @@ import {
   getTerrainVoxelsRevisionKey,
   resolveIsometricLayerVisibility,
 } from '~/utils/isometric/sceneState'
-import { createIsometricTokenMovementInteractionController } from '~/utils/isometric/tokenMovementInteraction'
+import {
+  createIsometricTokenMovementInteractionController,
+  type TokenMovementCommitPayload,
+} from '~/utils/isometric/tokenMovementInteraction'
 import { createIsometricTokenSendOutInteractionController } from '~/utils/isometric/tokenSendOutInteraction'
 import { movementPathPlacementRevision } from '~/utils/mapMovementPathCache'
 import {
@@ -245,7 +248,7 @@ const emit = defineEmits<{
   (event: 'hover-pokemon', id: string | null): void
   (event: 'place-presence-ping', payload: { cell: LivePlayPresenceGridCell }): void
   (event: 'request-gm-attention', payload: { target: LivePlayPresenceAttentionTarget }): void
-  (event: 'move-pokemon', payload: { id: string; position: GridAnchor }): void
+  (event: 'move-pokemon', payload: TokenMovementCommitPayload): void
   (event: 'turn-pokemon', id: string): void
   (event: 'delete-pokemon', id: string): void
   (event: 'modify-hp', payload: MoveAutomationHpUpdate): void
@@ -478,6 +481,47 @@ const movementPreviewState = ref<PreviewState>(emptyMovementPreview())
 const emitMovementPreviewChange = (preview: PreviewState) => {
   movementPreviewState.value = preview
   emit('preview-change', preview)
+}
+
+const pendingTokenMovementPaths = new Map<
+  string,
+  { destination: GridAnchor; path: readonly GridAnchor[] }
+>()
+
+const cloneGridAnchor = (anchor: GridAnchor): GridAnchor => ({
+  x: anchor.x,
+  y: anchor.y,
+  z: anchor.z,
+})
+
+const cloneGridAnchorPath = (
+  path: readonly GridAnchor[] | undefined,
+): GridAnchor[] | undefined => (
+  path && path.length >= 2 ? path.map(cloneGridAnchor) : undefined
+)
+
+const rememberPendingTokenMovementPath = (payload: TokenMovementCommitPayload) => {
+  const path = cloneGridAnchorPath(payload.path)
+  const finalPathAnchor = path?.[path.length - 1]
+  if (!path || !finalPathAnchor || !isSameAnchor(finalPathAnchor, payload.position)) {
+    pendingTokenMovementPaths.delete(payload.id)
+    return
+  }
+
+  pendingTokenMovementPaths.set(payload.id, {
+    destination: cloneGridAnchor(payload.position),
+    path,
+  })
+}
+
+const consumePendingTokenMovementPath = (pokemon: SpawnedPokemon): GridAnchor[] | undefined => {
+  const pendingPath = pendingTokenMovementPaths.get(pokemon.id)
+  if (!pendingPath) return undefined
+
+  pendingTokenMovementPaths.delete(pokemon.id)
+  if (!isSameAnchor(pendingPath.destination, pokemon.position)) return undefined
+
+  return cloneGridAnchorPath(pendingPath.path)
 }
 const movementPreviewHud = computed(() => {
   const preview = movementPreviewState.value
@@ -990,6 +1034,7 @@ const syncPokemonObjects = () => {
       pokemon,
       startMs: placementMotionStartMs,
       reason: 'setup-edit',
+      pathAnchors: consumePendingTokenMovementPath(pokemon),
     }),
     updateRenderObject: (renderObject, pokemon) => updatePokemonRenderObjectFromSpawn(renderObject, pokemon, {
       geometryCache: tokenGeometryCache,
@@ -1529,7 +1574,10 @@ const movementInteraction = createIsometricTokenMovementInteractionController({
   getMoveGridIntersection,
   previewRenderer: tokenMovePreviewRenderer,
   emitPreviewChange: emitMovementPreviewChange,
-  movePokemon: (payload) => emit('move-pokemon', payload),
+  movePokemon: (payload) => {
+    rememberPendingTokenMovementPath(payload)
+    emit('move-pokemon', payload)
+  },
   recordPathfindingRequest: recordPathfindingRequestForMetricsOverlay,
   recordPathfindingCacheHit: recordPathfindingCacheHitForMetricsOverlay,
   recordPathfindingCacheMiss: recordPathfindingCacheMissForMetricsOverlay,

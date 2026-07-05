@@ -117,6 +117,7 @@ import {
 import type { LivePlayPatchAdoptionContext } from '~/utils/livePlayPatchAdoption'
 import { routeSlugParam } from '~/utils/routeParams'
 import type { CharacterSheet } from '~/types/characterSheet'
+import type { TokenMovementCommitPayload } from '~/utils/isometric/tokenMovementInteraction'
 import type { GridAnchor, MapRoomKind, MapTerrainKind, MapWeatherKind } from '~/types/map'
 import type { MoveAutomationTargetingOverlayState } from '~/types/moveAutomation'
 import type { MoveVfxKind } from '~/types/moveAnimation'
@@ -1155,7 +1156,7 @@ const newPendingConditionsPredictionForPlacement = (
   LIVE_PLAY_COMMAND_TYPES.MODIFY_CONDITIONS,
 )
 
-const movePokemon = (payload: { id: string; position: GridAnchor }) => {
+const movePokemon = (payload: TokenMovementCommitPayload) => {
   const from = spawnedPokemon.value.find((pokemon) => pokemon.id === payload.id)?.position
     ?? placementById(payload.id)?.position
   const previousPosition = from ? { ...from } : null

@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import {
   TOKEN_MOTION_TRACK_RUNTIME_BRAND,
   cancelTokenMotionTrack,
+  createTokenMotionPathSegments,
   finishTokenMotionTrack,
   replaceTokenMotionTrack,
   sampleTokenMotionTrack,
@@ -60,6 +61,124 @@ describe('token motion tracks', () => {
     })
 
     expect(track.durationMs).toBe(192)
+  })
+
+  it('builds path segments with duration proportional to waypoint distance', () => {
+    const pathSegments = createTokenMotionPathSegments({
+      origin: { x: 0, y: 0, z: 0 },
+      destination: { x: 20, y: 0, z: 0 },
+      pathCenters: [
+        { x: 0, y: 0, z: 0 },
+        { x: 5, y: 0, z: 0 },
+        { x: 20, y: 0, z: 0 },
+      ],
+      totalDurationMs: 800,
+    })
+
+    expect(pathSegments).toEqual([
+      {
+        origin: { x: 0, y: 0, z: 0 },
+        destination: { x: 5, y: 0, z: 0 },
+        durationMs: 200,
+      },
+      {
+        origin: { x: 5, y: 0, z: 0 },
+        destination: { x: 20, y: 0, z: 0 },
+        durationMs: 600,
+      },
+    ])
+  })
+
+  it('resolves path-track duration from total path distance instead of direct distance', () => {
+    const track = startTokenMotionTrack({
+      tokenId: 'token-2b',
+      origin: { x: 0, y: 0, z: 0 },
+      destination: { x: 3, y: 0, z: 4 },
+      pathCenters: [
+        { x: 0, y: 0, z: 0 },
+        { x: 3, y: 0, z: 0 },
+        { x: 3, y: 0, z: 4 },
+      ],
+      startMs: 1000,
+      reason: 'remote-accepted',
+      durationOptions: {
+        minDurationMs: 0,
+        maxDurationMs: 1000,
+        msPerGridUnit: 100,
+      },
+    })
+
+    expect(track.durationMs).toBe(700)
+    expect(track.pathSegments?.map((segment) => segment.durationMs)).toEqual([300, 400])
+  })
+
+  it('samples path-aware tracks through waypoints and still finishes at the final destination', () => {
+    const track = startTokenMotionTrack({
+      tokenId: 'token-2c',
+      origin: { x: 0, y: 0, z: 0 },
+      destination: { x: 10, y: 0, z: 10 },
+      pathCenters: [
+        { x: 0, y: 0, z: 0 },
+        { x: 10, y: 0, z: 0 },
+        { x: 10, y: 0, z: 10 },
+      ],
+      startMs: 1000,
+      durationMs: 1000,
+      reason: 'local-prediction',
+    })
+
+    expect(sampleTokenMotionTrack(track, 1250)).toEqual({
+      center: { x: 1.25, y: 0, z: 0 },
+      elapsedMs: 250,
+      progress: 0.25,
+      easedProgress: 0.0625,
+      complete: false,
+    })
+    expect(sampleTokenMotionTrack(track, 1500)).toEqual({
+      center: { x: 10, y: 0, z: 0 },
+      elapsedMs: 500,
+      progress: 0.5,
+      easedProgress: 0.5,
+      complete: false,
+    })
+    expect(sampleTokenMotionTrack(track, 1750)).toEqual({
+      center: { x: 10, y: 0, z: 8.75 },
+      elapsedMs: 750,
+      progress: 0.75,
+      easedProgress: 0.9375,
+      complete: false,
+    })
+    expect(sampleTokenMotionTrack(track, 2000).center).toEqual({ x: 10, y: 0, z: 10 })
+  })
+
+  it('falls back to direct motion when path centers are missing or invalid', () => {
+    const missingPathTrack = startTokenMotionTrack({
+      tokenId: 'token-2d',
+      origin: { x: 0, y: 0, z: 0 },
+      destination: { x: 10, y: 0, z: 0 },
+      pathCenters: [{ x: 0, y: 0, z: 0 }],
+      startMs: 1000,
+      durationMs: 1000,
+      reason: 'local-prediction',
+    })
+    const invalidPathTrack = startTokenMotionTrack({
+      tokenId: 'token-2e',
+      origin: { x: 0, y: 0, z: 0 },
+      destination: { x: 10, y: 0, z: 0 },
+      pathCenters: [
+        { x: 0, y: 0, z: 0 },
+        { x: Number.NaN, y: 0, z: 0 },
+        { x: 10, y: 0, z: 0 },
+      ],
+      startMs: 1000,
+      durationMs: 1000,
+      reason: 'local-prediction',
+    })
+
+    expect(missingPathTrack.pathSegments).toBeUndefined()
+    expect(invalidPathTrack.pathSegments).toBeUndefined()
+    expect(sampleTokenMotionTrack(missingPathTrack, 1500).center).toEqual({ x: 5, y: 0, z: 0 })
+    expect(sampleTokenMotionTrack(invalidPathTrack, 1500).center).toEqual({ x: 5, y: 0, z: 0 })
   })
 
   it('samples origin before start, eased centers during movement, and destination at completion', () => {
