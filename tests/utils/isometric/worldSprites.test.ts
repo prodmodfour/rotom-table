@@ -6,6 +6,7 @@ import {
   disposeWorldSprite,
   updateSpriteFacing,
 } from '~/utils/isometric/worldSprites'
+import { WORLD_SPRITE_ISO_LIGHTING_SHADER_CACHE_KEY } from '~/utils/isometric/worldSpriteIsoLighting'
 
 const spriteTextureMock = vi.hoisted(() => {
   interface MockTextureLoad {
@@ -78,6 +79,38 @@ const flushTextureLoad = async () => {
   await Promise.resolve()
   await Promise.resolve()
 }
+
+describe('world sprite material lighting', () => {
+  beforeEach(() => {
+    spriteTextureMock.staticLoads.length = 0
+    spriteTextureMock.animatedLoads.length = 0
+    spriteTextureMock.acquireStaticSpriteTexture.mockClear()
+    spriteTextureMock.acquireAnimatedSpriteTexture.mockClear()
+  })
+
+  it('installs persistent isometric lighting only on normal sprite materials', () => {
+    const normalState = buildWorldSprite(spawnedPokemon())
+    const ghostState = buildWorldSprite(spawnedPokemon(), { ghost: true })
+    const normalShader = {
+      vertexShader: THREE.ShaderLib.sprite.vertexShader,
+      fragmentShader: THREE.ShaderLib.sprite.fragmentShader,
+      uniforms: {},
+    }
+    const ghostShader = {
+      vertexShader: THREE.ShaderLib.sprite.vertexShader,
+      fragmentShader: THREE.ShaderLib.sprite.fragmentShader,
+      uniforms: {},
+    }
+
+    normalState.material.onBeforeCompile(normalShader as never, null as never)
+    ghostState.material.onBeforeCompile(ghostShader as never, null as never)
+
+    expect(normalState.material.customProgramCacheKey()).toBe(WORLD_SPRITE_ISO_LIGHTING_SHADER_CACHE_KEY)
+    expect(normalShader.fragmentShader).toContain('worldSpriteIsoLightingMultiplier')
+    expect(normalShader.fragmentShader).toContain('diffuseColor.rgb *= worldSpriteIsoLightingMultiplier')
+    expect(ghostShader.fragmentShader).not.toContain('worldSpriteIsoLightingMultiplier')
+  })
+})
 
 describe('world sprite texture loading', () => {
   beforeEach(() => {

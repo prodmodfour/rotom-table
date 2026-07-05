@@ -22,6 +22,10 @@ import {
   type WorldSpriteFacingVector2,
 } from '~/utils/isometric/worldSpriteFacing'
 import {
+  applyWorldSpriteIsoLightingShader,
+  WORLD_SPRITE_ISO_LIGHTING_SHADER_CACHE_KEY,
+} from '~/utils/isometric/worldSpriteIsoLighting'
+import {
   getWorldSpriteLightingStyle,
   WORLD_SPRITE_GHOST_HALO_COLOR,
   WORLD_SPRITE_HALO_COLOR,
@@ -182,6 +186,12 @@ export const buildWorldSprite = (
     side: THREE.DoubleSide,
     toneMapped: false,
   })
+  if (!ghost) {
+    // Persistent sprite-local fake lighting replaces the old always-visible cage
+    // as the idle dimensional cue while keeping alpha clipping in the material path.
+    material.onBeforeCompile = (shader) => applyWorldSpriteIsoLightingShader(shader)
+    material.customProgramCacheKey = () => WORLD_SPRITE_ISO_LIGHTING_SHADER_CACHE_KEY
+  }
   const sprite = new THREE.Sprite(material)
   // Bottom-center anchoring keeps the feet planted at the token's
   // ground/elevation Y while preserving the old visual footprint/height.

@@ -1,9 +1,12 @@
+import * as THREE from 'three'
 import { describe, expect, it } from 'vitest'
 import {
+  applyWorldSpriteIsoLightingShader,
   WORLD_SPRITE_ISO_LIGHTING_FOOT_BASE_DARKENING,
   WORLD_SPRITE_ISO_LIGHTING_LOWER_FRONT_DARKENING,
   WORLD_SPRITE_ISO_LIGHTING_MAX_BRIGHTNESS_MULTIPLIER,
   WORLD_SPRITE_ISO_LIGHTING_MIN_BRIGHTNESS_MULTIPLIER,
+  WORLD_SPRITE_ISO_LIGHTING_SHADER_CACHE_KEY,
   WORLD_SPRITE_ISO_LIGHTING_SHAPE,
   WORLD_SPRITE_ISO_LIGHTING_SIDE_TO_SIDE_BIAS,
   WORLD_SPRITE_ISO_LIGHTING_TOP_BRIGHTNESS_BOOST,
@@ -49,5 +52,40 @@ describe('world sprite isometric lighting constants', () => {
     expect(brightestPlannedMultiplier).toBeLessThanOrEqual(
       WORLD_SPRITE_ISO_LIGHTING_MAX_BRIGHTNESS_MULTIPLIER,
     )
+  })
+
+  it('patches sprite shaders with a UV-local lighting ramp that preserves alpha handling', () => {
+    const shader = {
+      vertexShader: THREE.ShaderLib.sprite.vertexShader,
+      fragmentShader: THREE.ShaderLib.sprite.fragmentShader,
+      uniforms: {},
+    }
+
+    applyWorldSpriteIsoLightingShader(shader)
+
+    expect(shader.vertexShader).toContain('varying vec2 vWorldSpriteIsoUv;')
+    expect(shader.vertexShader).toContain('vWorldSpriteIsoUv = uv;')
+    expect(shader.fragmentShader).toContain('float worldSpriteIsoLightingMultiplier(vec2 uv)')
+    expect(shader.fragmentShader).toContain(
+      'diffuseColor.rgb *= worldSpriteIsoLightingMultiplier(vWorldSpriteIsoUv);',
+    )
+    expect(shader.fragmentShader.indexOf('diffuseColor.rgb *= worldSpriteIsoLightingMultiplier')).toBeGreaterThan(
+      shader.fragmentShader.indexOf('#include <map_fragment>'),
+    )
+    expect(shader.fragmentShader.indexOf('diffuseColor.rgb *= worldSpriteIsoLightingMultiplier')).toBeLessThan(
+      shader.fragmentShader.indexOf('#include <alphatest_fragment>'),
+    )
+    expect(shader.uniforms).toMatchObject({
+      worldSpriteIsoTopBrightnessBoost: { value: WORLD_SPRITE_ISO_LIGHTING_TOP_BRIGHTNESS_BOOST },
+      worldSpriteIsoLowerFrontDarkening: { value: WORLD_SPRITE_ISO_LIGHTING_LOWER_FRONT_DARKENING },
+      worldSpriteIsoSideToSideBias: { value: WORLD_SPRITE_ISO_LIGHTING_SIDE_TO_SIDE_BIAS },
+      worldSpriteIsoFootBaseDarkening: { value: WORLD_SPRITE_ISO_LIGHTING_FOOT_BASE_DARKENING },
+      worldSpriteIsoMinBrightnessMultiplier: { value: WORLD_SPRITE_ISO_LIGHTING_MIN_BRIGHTNESS_MULTIPLIER },
+      worldSpriteIsoMaxBrightnessMultiplier: { value: WORLD_SPRITE_ISO_LIGHTING_MAX_BRIGHTNESS_MULTIPLIER },
+    })
+  })
+
+  it('uses a stable shader cache key for the material hook', () => {
+    expect(WORLD_SPRITE_ISO_LIGHTING_SHADER_CACHE_KEY).toBe('world-sprite-iso-lighting-v1')
   })
 })

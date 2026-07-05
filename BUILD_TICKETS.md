@@ -194,7 +194,7 @@ Status: DONE
 
 ## 006 — COS-006 — Apply persistent isometric shading to normal sprites
 
-Status: TODO
+Status: DONE
 
 **Goal:** Keep the top/side/front 3D read after cages disappear.
 
