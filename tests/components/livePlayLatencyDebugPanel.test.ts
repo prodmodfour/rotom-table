@@ -157,6 +157,41 @@ describe('LivePlayLatencyDebugPanel', () => {
     wrapper.unmount()
   })
 
+  it('renders token motion metrics without exposing token identities', () => {
+    const wrapper = mount(LivePlayLatencyDebugPanel, {
+      props: {
+        traces: {},
+        tokenMotionMetrics: {
+          activeMovingTokenCount: 2,
+          longestActiveMotionAgeMs: 450,
+          completedMotionCount: 7,
+          sourceReasonCounts: [
+            { reason: 'local-prediction', activeCount: 1, startedCount: 3, completedCount: 2 },
+            { reason: 'remote-accepted', activeCount: 1, startedCount: 4, completedCount: 3 },
+            { reason: 'server-correction', activeCount: 0, startedCount: 1, completedCount: 1 },
+          ],
+        },
+      },
+    })
+    const text = wrapper.text()
+
+    expect(text).toContain('Token motion')
+    expect(text).toContain('Presentation-only renderer state')
+    expect(text).toContain('Active tokens')
+    expect(text).toContain('2')
+    expect(text).toContain('Longest active age')
+    expect(text).toContain('450 ms')
+    expect(text).toContain('Completed motions')
+    expect(text).toContain('7')
+    expect(text).toContain('Local prediction')
+    expect(text).toContain('1 active · 3 started · 2 done')
+    expect(text).toContain('Remote accepted')
+    expect(text).toContain('1 active · 4 started · 3 done')
+    expect(text).not.toContain('token_secret')
+    expect(text).not.toContain('Pikachu')
+    expect(text).not.toContain('placementId')
+  })
+
   it('renders an empty state when no traces are available', () => {
     const wrapper = mount(LivePlayLatencyDebugPanel, {
       props: { traces: {} },

@@ -404,7 +404,7 @@ Status: DONE
 
 ## LP-S5-014 — Add token motion metrics to debug tooling
 
-Status: TODO
+Status: DONE
 
 **Goal:** Let maintainers diagnose motion smoothness and stutter.
 

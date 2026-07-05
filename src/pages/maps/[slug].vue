@@ -122,6 +122,10 @@ import type { LivePlayPatchAdoptionContext } from '~/utils/livePlayPatchAdoption
 import { routeSlugParam } from '~/utils/routeParams'
 import type { CharacterSheet } from '~/types/characterSheet'
 import type { TokenMovementCommitPayload } from '~/utils/isometric/tokenMovementInteraction'
+import {
+  createEmptyTokenMotionDebugMetrics,
+  type TokenMotionDebugMetrics,
+} from '~/utils/isometric/tokenMotionDebugMetrics'
 import type { GridAnchor, MapRoomKind, MapTerrainKind, MapWeatherKind } from '~/types/map'
 import type { MoveAutomationTargetingOverlayState } from '~/types/moveAutomation'
 import type { MoveVfxKind } from '~/types/moveAnimation'
@@ -621,6 +625,10 @@ const livePlayClearHazardsPending = computed(() => (
   )
 ))
 const livePlayLatencyDebugEnabled = computed(() => route.query.debugLivePlayLatency === '1')
+const livePlayTokenMotionDebugMetrics = shallowRef<TokenMotionDebugMetrics>(createEmptyTokenMotionDebugMetrics())
+const updateLivePlayTokenMotionDebugMetrics = (metrics: TokenMotionDebugMetrics): void => {
+  livePlayTokenMotionDebugMetrics.value = metrics
+}
 const livePlayConnectionState = computed<LivePlayConnectionState>(() => {
   const visibleState = livePlayStateMachine.state.value === 'saving-command' && !livePlayGlobalTransportPending.value
     ? 'ready'
@@ -2705,6 +2713,7 @@ useMapDimensionReconciliation({
         @preview-all-move-vfx="previewAllMoveVfxDebug"
         @clear-move-vfx="clearMoveAnimations"
         @move-vfx-settled="pruneSettledMoveAnimations"
+        @token-motion-debug-metrics="updateLivePlayTokenMotionDebugMetrics"
         @dismiss-spite-reaction="dismissSpiteReactionPrompt"
         @apply-spite-reaction="applySpiteReactionPromptFromScene"
         @dismiss-cute-charm-reaction="dismissCuteCharmReactionPrompt"
@@ -2757,6 +2766,7 @@ useMapDimensionReconciliation({
         v-if="livePlayLatencyDebugEnabled"
         :traces="livePlayCommands.commandTraces.value"
         :presence-metrics="mapPresenceDebugMetrics"
+        :token-motion-metrics="livePlayTokenMotionDebugMetrics"
       />
     </template>
 

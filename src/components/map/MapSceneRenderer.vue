@@ -35,6 +35,7 @@ import type { MapTokenRemoteAttention } from '~/utils/mapPresenceTokenAttention'
 import type { MapPresenceIntentOverlay } from '~/utils/mapPresenceIntentOverlays'
 import type { IsometricPresencePing } from '~/utils/isometric/pingRenderer'
 import type { TokenMovementCommitPayload } from '~/utils/isometric/tokenMovementInteraction'
+import type { TokenMotionDebugMetrics } from '~/utils/isometric/tokenMotionDebugMetrics'
 
 interface IsometricGridHandle {
   focusPokemon: (id: string) => boolean
@@ -126,6 +127,7 @@ const emit = defineEmits<{
   (event: 'use-attack-of-opportunity', payload: { promptId: string; moveName: string }): void
   (event: 'clear-attack-of-opportunity', promptId: string): void
   (event: 'move-vfx-settled', payload: { nowMs: number }): void
+  (event: 'token-motion-debug-metrics', metrics: TokenMotionDebugMetrics): void
 }>()
 
 const gridRef = ref<IsometricGridHandle | null>(null)
@@ -220,5 +222,6 @@ defineExpose({ focusPokemon, focusCell })
     @use-attack-of-opportunity="emit('use-attack-of-opportunity', $event)"
     @clear-attack-of-opportunity="emit('clear-attack-of-opportunity', $event)"
     @move-vfx-settled="emit('move-vfx-settled', $event)"
+    @token-motion-debug-metrics="emit('token-motion-debug-metrics', $event)"
   />
 </template>

@@ -165,6 +165,8 @@ Realtime gaps, replay validation failures, profile changes, or explicit reconcil
 
 `LP-S5-013` connects token placement motion to accessibility and performance policy. The grid already receives `moveAnimationsReducedMotion` from `useMoveAnimationSettings()`, which follows the browser `prefers-reduced-motion` media query. That signal now flows into every placement-motion reason instead of only server corrections: normal predicted/remote/setup movement resolves to the short reduced duration, server corrections use the even shorter correction duration, and reconciliation/snap corrections remain snapped. The sync path also counts active renderer-owned token tracks and passes that count into the pure performance policy; once the simultaneous-track cap is full, additional placement changes snap directly to their authoritative centers without creating new runtime tracks. Completed tracks are still cleared by the frame sampler at their planned destination, so render continuation stops as soon as no track, fallback center lerp, selection lift, preview, field effect, sprite, or move VFX source remains active.
 
+`LP-S5-014` adds optional debug-only token-motion metrics to the live-play latency panel behind `?debugLivePlayLatency=1`. The renderer emits aggregate counts only: active moving token count, longest active motion age, cumulative completed motion count, and source-reason counts for active/started/completed tracks. The panel deliberately omits token IDs, names, sheet data, path cells, and command payloads, so the metrics help compare command latency with presentation smoothness without exposing hidden token information.
+
 ## Future Sprint 5 change map
 
 The current code suggests this division for later tickets:
@@ -186,7 +188,7 @@ The current code suggests this division for later tickets:
 - `LP-S5-005`: implemented in `stepIsometricAnimationFrame()` and token render-state continuation helpers. Active tracks are sampled by `frameNowMs`, completed tracks clear at their planned destination, the fallback lerp remains for objects without tracks, and CSS/WebGL token attachments continue to use the sampled center.
 - `LP-S5-006`: implemented in token object sync. Existing-token placement changes start tracks from the current rendered center; spawns, deletes, and sheet/HUD-only updates do not animate.
 - `LP-S5-012`: implemented with accepted-event adoption metadata, transient remote movement IDs, and placement-motion reason priority.
-- `LP-S5-014`: expose aggregate motion metrics in debug tooling without private token details.
+- `LP-S5-014`: implemented with aggregate motion metrics in the `?debugLivePlayLatency=1` panel without private token details.
 - `LP-S5-015`: add restrained renderer-owned start/end polish that remains separate from authoritative placement.
 
 ### Documentation and regression coverage

@@ -6,11 +6,14 @@ import {
   type LivePlayCommandTraceSnapshot,
 } from '~/utils/livePlayCommandTrace'
 import type { MapPresenceDebugMetrics } from '~/composables/map-editor/useMapPresence'
+import type { TokenMotionDebugMetrics } from '~/utils/isometric/tokenMotionDebugMetrics'
+import type { TokenMotionTrackReason } from '~/utils/isometric/tokenMotionTracks'
 
 const props = defineProps<{
   traces: Readonly<Record<string, LivePlayCommandTraceSnapshot>>
   maxRows?: number
   presenceMetrics?: MapPresenceDebugMetrics | null
+  tokenMotionMetrics?: TokenMotionDebugMetrics | null
 }>()
 
 interface LivePlayLatencyDebugRow {
@@ -29,6 +32,10 @@ interface LivePlayLatencyDebugRow {
 interface LivePlayPresenceMetricRow {
   readonly label: string
   readonly value: string
+}
+
+interface LivePlayTokenMotionReasonRow extends LivePlayPresenceMetricRow {
+  readonly reason: TokenMotionTrackReason
 }
 
 const now = ref<number | null>(null)
@@ -73,9 +80,11 @@ const ageLabel = (timestamp: number | null): string => {
   return elapsedLabel(Math.max(0, now.value - timestamp))
 }
 
-const participantCountLabel = (count: number): string => (
+const nonNegativeIntegerLabel = (count: number): string => (
   Number.isSafeInteger(count) && count > 0 ? count.toString() : '0'
 )
+
+const participantCountLabel = (count: number): string => nonNegativeIntegerLabel(count)
 
 const opIdSuffix = (opId: string): string => {
   const suffix = opId.slice(-8)
@@ -114,6 +123,56 @@ const rowForTrace = (trace: LivePlayCommandTraceSnapshot): LivePlayLatencyDebugR
 }
 
 const rows = computed<readonly LivePlayLatencyDebugRow[]>(() => latestTraces.value.map(rowForTrace))
+
+const tokenMotionAgeLabel = (milliseconds: number | null): string => (
+  milliseconds === null ? '—' : elapsedLabel(Math.round(Math.max(0, milliseconds)))
+)
+
+const tokenMotionReasonLabel = (reason: TokenMotionTrackReason): string => {
+  switch (reason) {
+    case 'local-prediction':
+      return 'Local prediction'
+    case 'remote-accepted':
+      return 'Remote accepted'
+    case 'server-correction':
+      return 'Server correction'
+    case 'reconciliation':
+      return 'Reconciliation'
+    case 'setup-edit':
+      return 'Setup edit'
+    default:
+      return reason
+  }
+}
+
+const tokenMotionReasonCountLabel = ({
+  activeCount,
+  startedCount,
+  completedCount,
+}: TokenMotionDebugMetrics['sourceReasonCounts'][number]): string => (
+  `${nonNegativeIntegerLabel(activeCount)} active · ${nonNegativeIntegerLabel(startedCount)} started · ${nonNegativeIntegerLabel(completedCount)} done`
+)
+
+const tokenMotionMetricRows = computed<readonly LivePlayPresenceMetricRow[]>(() => {
+  const metrics = props.tokenMotionMetrics
+  if (!metrics) return []
+
+  return [
+    { label: 'Active tokens', value: nonNegativeIntegerLabel(metrics.activeMovingTokenCount) },
+    { label: 'Longest active age', value: tokenMotionAgeLabel(metrics.longestActiveMotionAgeMs) },
+    { label: 'Completed motions', value: nonNegativeIntegerLabel(metrics.completedMotionCount) },
+  ]
+})
+const tokenMotionReasonRows = computed<readonly LivePlayTokenMotionReasonRow[]>(() => {
+  const metrics = props.tokenMotionMetrics
+  if (!metrics) return []
+
+  return metrics.sourceReasonCounts.map((counts) => ({
+    reason: counts.reason,
+    label: tokenMotionReasonLabel(counts.reason),
+    value: tokenMotionReasonCountLabel(counts),
+  }))
+})
 const presenceMetricRows = computed<readonly LivePlayPresenceMetricRow[]>(() => {
   const metrics = props.presenceMetrics
   if (!metrics) return []
@@ -159,6 +218,39 @@ const presenceMetricRows = computed<readonly LivePlayPresenceMetricRow[]>(() => 
         >
           <dt>{{ metric.label }}</dt>
           <dd>{{ metric.value }}</dd>
+        </div>
+      </dl>
+    </section>
+
+    <section
+      v-if="tokenMotionMetricRows.length > 0"
+      class="live-play-latency-debug-panel__motion"
+      aria-labelledby="live-play-latency-debug-motion-title"
+    >
+      <div class="live-play-latency-debug-panel__motion-header">
+        <h3 id="live-play-latency-debug-motion-title">Token motion</h3>
+        <span>Presentation-only renderer state</span>
+      </div>
+      <dl class="live-play-latency-debug-panel__motion-metrics">
+        <div
+          v-for="metric in tokenMotionMetricRows"
+          :key="metric.label"
+        >
+          <dt>{{ metric.label }}</dt>
+          <dd>{{ metric.value }}</dd>
+        </div>
+      </dl>
+      <dl
+        v-if="tokenMotionReasonRows.length > 0"
+        class="live-play-latency-debug-panel__motion-reasons"
+        aria-label="Token motion source reason counts"
+      >
+        <div
+          v-for="reason in tokenMotionReasonRows"
+          :key="reason.reason"
+        >
+          <dt>{{ reason.label }}</dt>
+          <dd>{{ reason.value }}</dd>
         </div>
       </dl>
     </section>
@@ -257,8 +349,13 @@ const presenceMetricRows = computed<readonly LivePlayPresenceMetricRow[]>(() => 
 .live-play-latency-debug-panel__timings,
 .live-play-latency-debug-panel__timings dd,
 .live-play-latency-debug-panel__presence h3,
+.live-play-latency-debug-panel__motion h3,
 .live-play-latency-debug-panel__presence-metrics,
-.live-play-latency-debug-panel__presence-metrics dd {
+.live-play-latency-debug-panel__motion-metrics,
+.live-play-latency-debug-panel__motion-reasons,
+.live-play-latency-debug-panel__presence-metrics dd,
+.live-play-latency-debug-panel__motion-metrics dd,
+.live-play-latency-debug-panel__motion-reasons dd {
   margin: 0;
 }
 
@@ -297,7 +394,8 @@ const presenceMetricRows = computed<readonly LivePlayPresenceMetricRow[]>(() => 
   font-weight: 750;
 }
 
-.live-play-latency-debug-panel__presence {
+.live-play-latency-debug-panel__presence,
+.live-play-latency-debug-panel__motion {
   margin-top: 0.72rem;
   padding: 0.66rem;
   border: 1px solid color-mix(in srgb, var(--accent) 26%, rgba(255, 255, 255, 0.16));
@@ -305,20 +403,23 @@ const presenceMetricRows = computed<readonly LivePlayPresenceMetricRow[]>(() => 
   background: color-mix(in srgb, var(--accent) 10%, rgba(255, 255, 255, 0.055));
 }
 
-.live-play-latency-debug-panel__presence-header {
+.live-play-latency-debug-panel__presence-header,
+.live-play-latency-debug-panel__motion-header {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
   gap: 0.72rem;
 }
 
-.live-play-latency-debug-panel__presence h3 {
+.live-play-latency-debug-panel__presence h3,
+.live-play-latency-debug-panel__motion h3 {
   font-size: 0.78rem;
   font-weight: 950;
   line-height: 1.18;
 }
 
-.live-play-latency-debug-panel__presence-header span {
+.live-play-latency-debug-panel__presence-header span,
+.live-play-latency-debug-panel__motion-header span {
   color: color-mix(in srgb, var(--ink-bright) 58%, transparent);
   font-size: 0.62rem;
   font-weight: 900;
@@ -328,21 +429,35 @@ const presenceMetricRows = computed<readonly LivePlayPresenceMetricRow[]>(() => 
   text-transform: uppercase;
 }
 
-.live-play-latency-debug-panel__presence-metrics {
+.live-play-latency-debug-panel__presence-metrics,
+.live-play-latency-debug-panel__motion-metrics,
+.live-play-latency-debug-panel__motion-reasons {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 0.38rem;
   margin-top: 0.54rem;
 }
 
-.live-play-latency-debug-panel__presence-metrics div {
+.live-play-latency-debug-panel__presence-metrics,
+.live-play-latency-debug-panel__motion-metrics {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.live-play-latency-debug-panel__motion-reasons {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.live-play-latency-debug-panel__presence-metrics div,
+.live-play-latency-debug-panel__motion-metrics div,
+.live-play-latency-debug-panel__motion-reasons div {
   min-width: 0;
   padding: 0.38rem;
   border-radius: 0.62rem;
   background: rgba(0, 0, 0, 0.2);
 }
 
-.live-play-latency-debug-panel__presence-metrics dt {
+.live-play-latency-debug-panel__presence-metrics dt,
+.live-play-latency-debug-panel__motion-metrics dt,
+.live-play-latency-debug-panel__motion-reasons dt {
   color: color-mix(in srgb, var(--ink-bright) 58%, transparent);
   font-size: 0.56rem;
   font-weight: 950;
@@ -350,7 +465,9 @@ const presenceMetricRows = computed<readonly LivePlayPresenceMetricRow[]>(() => 
   text-transform: uppercase;
 }
 
-.live-play-latency-debug-panel__presence-metrics dd {
+.live-play-latency-debug-panel__presence-metrics dd,
+.live-play-latency-debug-panel__motion-metrics dd,
+.live-play-latency-debug-panel__motion-reasons dd {
   margin-top: 0.12rem;
   font-size: 0.72rem;
   font-weight: 950;
@@ -428,7 +545,9 @@ const presenceMetricRows = computed<readonly LivePlayPresenceMetricRow[]>(() => 
   }
 
   .live-play-latency-debug-panel__timings,
-  .live-play-latency-debug-panel__presence-metrics {
+  .live-play-latency-debug-panel__presence-metrics,
+  .live-play-latency-debug-panel__motion-metrics,
+  .live-play-latency-debug-panel__motion-reasons {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }

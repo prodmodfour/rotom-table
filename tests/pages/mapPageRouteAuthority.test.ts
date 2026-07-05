@@ -243,17 +243,21 @@ describe('map page route authority', () => {
 
     expect(mapPage).toContain("import LivePlayLatencyDebugPanel from '~/components/map/LivePlayLatencyDebugPanel.vue'")
     expect(mapPage).toContain("const livePlayLatencyDebugEnabled = computed(() => route.query.debugLivePlayLatency === '1')")
-    expect(mapPage).toContain('<LivePlayLatencyDebugPanel\n        v-if="livePlayLatencyDebugEnabled"\n        :traces="livePlayCommands.commandTraces.value"\n        :presence-metrics="mapPresenceDebugMetrics"\n      />')
+    expect(mapPage).toContain('<LivePlayLatencyDebugPanel\n        v-if="livePlayLatencyDebugEnabled"\n        :traces="livePlayCommands.commandTraces.value"\n        :presence-metrics="mapPresenceDebugMetrics"\n        :token-motion-metrics="livePlayTokenMotionDebugMetrics"\n      />')
     expect(panel).toContain('Pred → SSE')
     expect(panel).toContain('Pred → HTTP')
     expect(panel).toContain('HTTP → adopt')
     expect(panel).toContain('SSE → adopt')
     expect(panel).toContain('Presence freshness')
     expect(panel).toContain('Active participants')
+    expect(panel).toContain('Token motion')
+    expect(panel).toContain('Active tokens')
+    expect(panel).toContain('Completed motions')
     expect(panel).toContain("trace.resourceSummary ?? 'resource scope unavailable'")
     expect(panel).toContain("opId.slice(-8)")
     expect(panel).not.toContain('profileId')
     expect(panel).not.toContain('payload.')
+    expect(panel).not.toContain('displayName')
   })
 
   it('wires clear-all hazards through one live-play batch command while setup edit remains local', () => {

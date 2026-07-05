@@ -167,8 +167,13 @@ import {
 import {
   resolveTokenMotionDurationOptionsForReason,
   resolveTokenPlacementMotionReason,
+  type TokenMotionTrack,
   type TokenMotionTrackReason,
 } from '~/utils/isometric/tokenMotionTracks'
+import {
+  createTokenMotionDebugMetricsSampler,
+  type TokenMotionDebugMetrics,
+} from '~/utils/isometric/tokenMotionDebugMetrics'
 import { isIsometricRenderDebugEnabled } from '~/utils/isometric/renderDebugFlag'
 import { createRenderFrameTimingSampler } from '~/utils/isometric/frameTimingSampler'
 import {
@@ -287,6 +292,7 @@ const emit = defineEmits<{
   (event: 'use-attack-of-opportunity', payload: { promptId: string; moveName: string }): void
   (event: 'clear-attack-of-opportunity', promptId: string): void
   (event: 'move-vfx-settled', payload: { nowMs: number }): void
+  (event: 'token-motion-debug-metrics', metrics: TokenMotionDebugMetrics): void
 }>()
 
 const visibleLayers = () => resolveIsometricLayerVisibility(props.layerVisibility)
@@ -298,6 +304,7 @@ const route = useRoute()
 const { appThemeMode } = useAppTheme()
 const container = ref<HTMLDivElement | null>(null)
 const renderMetricsOverlayEnabled = computed(() => isIsometricRenderDebugEnabled({ query: route.query }))
+const tokenMotionDebugMetricsEnabled = computed(() => route.query.debugLivePlayLatency === '1')
 const renderMetricsOverlaySnapshot = ref(createEmptyIsometricRenderMetricsSnapshot())
 
 type TargetReticleButton = {
@@ -679,6 +686,7 @@ const tokenProxyPickTargets = createTokenProxyPickTargetCache()
 const buildHazardPickTargets = createBuildHazardPickTargetCache()
 const renderFrameTimingSampler = createRenderFrameTimingSampler()
 const pointerInteractionMetricsSampler = createPointerInteractionMetricsSampler()
+const tokenMotionDebugMetricsSampler = createTokenMotionDebugMetricsSampler()
 const css3DRenderDirtyTracker = createCss3DRenderDirtyTracker()
 const layerVisibilityApplicator = createIsometricLayerVisibilityApplicator()
 const smartGhostVoxelKeys = shallowRef<ReadonlySet<string>>(new Set())
@@ -693,6 +701,57 @@ const readRenderMetricsNowMs = (): number => {
 
   return Date.now()
 }
+
+const syncTokenMotionDebugMetrics = (nowMs = readRenderMetricsNowMs()) => {
+  if (!tokenMotionDebugMetricsEnabled.value) return
+
+  emit('token-motion-debug-metrics', tokenMotionDebugMetricsSampler.snapshot({
+    renderObjects: renderObjects.values(),
+    nowMs,
+  }))
+}
+
+const recordTokenMotionDebugTrackStarted = (track: TokenMotionTrack | undefined) => {
+  if (!tokenMotionDebugMetricsEnabled.value || !track) return
+
+  tokenMotionDebugMetricsSampler.recordMotionStarted(track)
+  syncTokenMotionDebugMetrics(track.startMs)
+}
+
+const collectActiveTokenMotionDebugTracks = (): Map<string, TokenMotionTrack> | null => {
+  if (!tokenMotionDebugMetricsEnabled.value) return null
+
+  const activeTracks = new Map<string, TokenMotionTrack>()
+  for (const [id, renderObject] of renderObjects.entries()) {
+    const track = renderObject.motion.track
+    if (track) activeTracks.set(id, track)
+  }
+  return activeTracks
+}
+
+const recordCompletedTokenMotionDebugTracks = (
+  activeTracksBeforeFrame: ReadonlyMap<string, TokenMotionTrack> | null,
+  frameNowMs: number,
+) => {
+  if (!activeTracksBeforeFrame || activeTracksBeforeFrame.size === 0) return
+
+  for (const [id, track] of activeTracksBeforeFrame.entries()) {
+    const renderObject = renderObjects.get(id)
+    if (!renderObject || renderObject.motion.track) continue
+    if (frameNowMs < track.startMs + track.durationMs) continue
+
+    tokenMotionDebugMetricsSampler.recordMotionCompleted(track)
+  }
+}
+
+watch(tokenMotionDebugMetricsEnabled, (enabled) => {
+  if (enabled) {
+    syncTokenMotionDebugMetrics()
+    return
+  }
+
+  tokenMotionDebugMetricsSampler.reset()
+})
 
 const recordScheduledFrameForMetricsOverlay = (frame: IsometricScheduledRenderFrame) => {
   if (!renderMetricsOverlayEnabled.value) {
@@ -1080,7 +1139,8 @@ const syncPokemonObjects = () => {
     createRenderObject: buildRenderObject,
     onCreateRenderObject,
     onBeforeUpdateExistingRenderObject: (renderObject, pokemon) => {
-      const hadActivePlacementMotionTrack = renderObject.motion.track !== undefined
+      const previousPlacementMotionTrack = renderObject.motion.track
+      const hadActivePlacementMotionTrack = previousPlacementMotionTrack !== undefined
       const activeTrackCountExcludingCurrent = Math.max(
         0,
         activePlacementMotionTrackCount - (hadActivePlacementMotionTrack ? 1 : 0),
@@ -1103,7 +1163,11 @@ const syncPokemonObjects = () => {
           activeTrackCount: activeTrackCountExcludingCurrent,
         },
       })
-      const hasActivePlacementMotionTrack = renderObject.motion.track !== undefined
+      const activePlacementMotionTrack = renderObject.motion.track
+      const hasActivePlacementMotionTrack = activePlacementMotionTrack !== undefined
+      if (activePlacementMotionTrack && activePlacementMotionTrack !== previousPlacementMotionTrack) {
+        recordTokenMotionDebugTrackStarted(activePlacementMotionTrack)
+      }
       if (hadActivePlacementMotionTrack && !hasActivePlacementMotionTrack) {
         activePlacementMotionTrackCount = Math.max(0, activePlacementMotionTrackCount - 1)
       } else if (!hadActivePlacementMotionTrack && hasActivePlacementMotionTrack) {
@@ -2313,7 +2377,8 @@ const renderOneShotScheduledFrame = (frame: IsometricScheduledRenderFrame): bool
   css3DRenderDirtyTracker.markDirtyForRenderLayers(frame.dirtyLayers, frame.reasons)
   css3DRenderDirtyTracker.markDirtyForAnimationContinuation(animationContinuation)
 
-  stepIsometricAnimationFrame({
+  const tokenMotionDebugTracksBeforeFrame = collectActiveTokenMotionDebugTracks()
+  const frameResult = stepIsometricAnimationFrame({
     clock,
     renderObjects: renderObjects.values(),
     applyRenderObjectPosition,
@@ -2334,6 +2399,8 @@ const renderOneShotScheduledFrame = (frame: IsometricScheduledRenderFrame): bool
     beforeRender: updateMoveAutomationOverlays,
     css3DRenderDirtyTracker,
   })
+  recordCompletedTokenMotionDebugTracks(tokenMotionDebugTracksBeforeFrame, frameResult.frameNowMs)
+  syncTokenMotionDebugMetrics(frameResult.frameNowMs)
   recordScheduledFrameForMetricsOverlay(frame)
   syncMoveVfxMetricsForMetricsOverlay()
   syncMoveVfxCompletionSignal()
