@@ -138,7 +138,7 @@ Status: DONE
 
 ## 008 — Add shared body-centre math helpers
 
-Status: TODO
+Status: DONE
 
 **Commit size:** pure utility plus unit tests.
 
