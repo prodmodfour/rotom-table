@@ -37,7 +37,7 @@ Status: DONE
 
 ## 002 — Add a reusable sprite visual-bounds extractor
 
-Status: TODO
+Status: DONE
 
 **Commit size:** new Python helper plus focused tests/fixtures if practical.
 
