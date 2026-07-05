@@ -61,6 +61,10 @@ default:
       '  just autobuild <cycles>' \
       '      Run multiple no-push autonomous ticket cycles.' \
       '' \
+      '  just refresh <ticket-file-name>' \
+      '      Refresh BUILD_TICKETS.md and PROJECT_BRIEF.md from a ticket planning file,' \
+      '      delete the planning file, commit the refresh, and push the current branch.' \
+      '' \
       '  just run' \
       '      Run the default 180-cycle autonomous build loop with push enabled.' 
 
@@ -78,6 +82,10 @@ autobuild cycles="1":
 # Compatibility recipe from the autonomous build template.
 run cycles="180":
     bash scripts/build-loop.sh --max-cycles {{cycles}}
+
+# Refresh the autonomous queue and project brief from a ticket planning file.
+refresh ticket_file:
+    python3 scripts/refresh_build_queue.py {{quote(ticket_file)}}
 
 # Start Nuxt dev mode against the local production-like Ranger workspace data.
 prod-dev:
