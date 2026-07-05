@@ -7,6 +7,7 @@ import type { SpriteAnimation, SpriteCrop, SpriteVisualBounds } from '~/types/po
 import type { TokenFacingDirection } from '~/types/tokenFacing'
 import type { TokenRenderGeometryLeases } from '~/utils/isometric/tokenGeometryCache'
 import type { TokenMotionFacingPlan, TokenMotionTrack } from '~/utils/isometric/tokenMotionTracks'
+import type { WorldSpriteFacingAsset } from '~/utils/isometric/worldSpriteFacing'
 import type { WorldSpriteIsoLightingRuntime } from '~/utils/isometric/worldSpriteIsoLighting'
 
 export interface WorldSpriteState {
@@ -111,6 +112,7 @@ export interface PokemonRenderObject {
   spriteVisualBounds?: SpriteVisualBounds
   backSpriteVisualBounds?: SpriteVisualBounds
   activeSpriteVisualBounds?: SpriteVisualBounds
+  activeSpriteAsset: WorldSpriteFacingAsset
   facing: TokenFacingDirection
   turned: boolean
   displayName: string

@@ -1,6 +1,7 @@
 import type { CombatStageMap } from '~/types/combatStages'
 import type { SpriteAnimation, SpriteCrop, SpriteVisualBounds, SpawnedPokemon } from '~/types/pokemon'
 import type { TokenFacingDirection } from '~/types/tokenFacing'
+import type { WorldSpriteFacingAsset } from '~/utils/isometric/worldSpriteFacing'
 import type { TokenMotionTrack } from '~/utils/isometric/tokenMotionTracks'
 import { normalizeCombatStages } from '~/utils/combatStages'
 import { getPokemonCenter } from '~/utils/gridGeometry'
@@ -29,6 +30,7 @@ export interface PokemonRenderSpawnState {
   spriteVisualBounds?: SpriteVisualBounds
   backSpriteVisualBounds?: SpriteVisualBounds
   activeSpriteVisualBounds?: SpriteVisualBounds
+  activeSpriteAsset: WorldSpriteFacingAsset
   facing: TokenFacingDirection
   turned: boolean
   displayName: string
@@ -93,6 +95,7 @@ export const pokemonRenderSpawnState = (pokemon: SpawnedPokemon): PokemonRenderS
     spriteVisualBounds: pokemon.spriteVisualBounds,
     backSpriteVisualBounds: pokemon.backSpriteVisualBounds,
     activeSpriteVisualBounds: pokemon.spriteVisualBounds,
+    activeSpriteAsset: 'front',
     facing,
     turned: tokenFacingStoresLegacyTurned(facing),
     displayName: pokemon.species,

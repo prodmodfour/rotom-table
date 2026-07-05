@@ -206,7 +206,7 @@ Status: DONE
 
 ## 012 — Choose front/back bounds when facing changes
 
-Status: TODO
+Status: DONE
 
 **Commit size:** facing-specific metadata selection only.
 

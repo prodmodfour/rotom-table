@@ -95,6 +95,7 @@ describe('token render state helpers', () => {
     expect(state.spriteVisualBounds).toEqual(frontVisualBounds)
     expect(state.backSpriteVisualBounds).toEqual(backVisualBounds)
     expect(state.activeSpriteVisualBounds).toEqual(frontVisualBounds)
+    expect(state.activeSpriteAsset).toBe('front')
   })
 
   it('copies token item arrays instead of sharing mutable metadata', () => {

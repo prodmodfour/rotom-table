@@ -18,6 +18,7 @@ import {
 import {
   resolveWorldSpriteFacing,
   worldSpriteMirrorXForAvailableAsset,
+  type WorldSpriteFacingAsset,
   type WorldSpriteFacingDirection,
   type WorldSpriteFacingVector2,
 } from '~/utils/isometric/worldSpriteFacing'
@@ -314,6 +315,13 @@ const getOrthographicSpriteToCameraDirection = (camera: THREE.Camera | null): Wo
   return spriteToCameraDirection
 }
 
+export interface WorldSpriteFacingUpdateResult {
+  /** Sprite asset actually selected after front-only fallback is applied. */
+  readonly asset: WorldSpriteFacingAsset
+  /** Effective horizontal mirroring after accounting for unavailable back art. */
+  readonly mirrorX: boolean
+}
+
 export const updateSpriteFacing = (
   state: WorldSpriteState,
   options: {
@@ -327,7 +335,7 @@ export const updateSpriteFacing = (
     spriteCrop?: SpriteCrop
     turned?: boolean
   },
-) => {
+): WorldSpriteFacingUpdateResult => {
   const facing = resolveWorldSpriteFacing({
     cameraPosition: options.camera?.position ?? null,
     toCameraDirection: getOrthographicSpriteToCameraDirection(options.camera),
@@ -337,8 +345,10 @@ export const updateSpriteFacing = (
   })
   const hasBackSprite = Boolean(options.backSpriteUrl)
   const useBack = hasBackSprite && facing.asset === 'back'
-  applyWorldSpriteMirrorX(state, worldSpriteMirrorXForAvailableAsset(facing, hasBackSprite))
-  setWorldSpriteAsset(state, useBack
+  const mirrorX = worldSpriteMirrorXForAvailableAsset(facing, hasBackSprite)
+  const asset: WorldSpriteFacingAsset = useBack ? 'back' : 'front'
+  applyWorldSpriteMirrorX(state, mirrorX)
+  setWorldSpriteAsset(state, asset === 'back'
     ? {
         url: options.backSpriteUrl!,
         animation: options.backSpriteAnimation,
@@ -348,4 +358,6 @@ export const updateSpriteFacing = (
         animation: options.frontSpriteAnimation,
         crop: options.spriteCrop,
       })
+
+  return { asset, mirrorX }
 }
