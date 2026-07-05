@@ -487,10 +487,13 @@ export const updateHpBar = ({
   activeTurn,
   accentColor,
   show = true,
+  spriteVisualYOffset: optionsSpriteVisualYOffset = 0,
 }: {
   bar: CSS3DSprite
   center: THREE.Vector3
   spriteHeight: number
+  /** Visual-only artwork Y offset. Tactical elevation badges intentionally ignore this. */
+  spriteVisualYOffset?: number
   displayName: string
   level: number
   currentHp: number
@@ -514,13 +517,15 @@ export const updateHpBar = ({
     return setTokenStatusHidden(bar)
   }
 
-  // Floats just above the sprite's head. WebGL world sprites are
-  // bottom-anchored at ``center.y``, so the top edge is
-  // ``center.y + spriteHeight``. The offset accounts for the scaled DOM
-  // height so smaller sprites keep the HUD tucked close instead of floating
-  // as a detached nameplate.
+  // Floats just above the visible sprite head. WebGL world sprites are
+  // bottom-anchored at ``center.y`` before any visual-only artwork offset, so
+  // floating sprites include that offset when deriving the rendered top edge.
+  // The scaled DOM height keeps smaller sprites tucked close instead of
+  // floating as a detached nameplate.
   const overlayHalfHeight = tokenStatusCssHeight(displayName, conditions, activeTurn) * bar.scale.y / 2
   const headGap = THREE.MathUtils.clamp(spriteHeight * 0.06, 0.025, 0.08) + TOKEN_STATUS_HEAD_GAP_EXTRA
+  const spriteVisualYOffset = Number.isFinite(optionsSpriteVisualYOffset) ? optionsSpriteVisualYOffset : 0
+  const visualSpriteTopY = center.y + spriteVisualYOffset + spriteHeight
   const fillWidth = hpBarPercentFromRatio(hpMetrics.currentRatio)
   const blockedWidth = hpBarPercentFromRatio(hpMetrics.blockedRatio)
   const blockedHidden = hpMetrics.blockedRatio <= 0
@@ -544,7 +549,7 @@ export const updateHpBar = ({
     activeTurn,
     accentColor: normalizedAccentColor,
     x: center.x,
-    y: center.y + spriteHeight + overlayHalfHeight + headGap,
+    y: visualSpriteTopY + overlayHalfHeight + headGap,
     z: center.z,
   }
 

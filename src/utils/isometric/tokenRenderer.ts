@@ -650,6 +650,7 @@ export const applyPokemonRenderObjectPosition = (
     bar: renderObject.hpBar,
     center,
     spriteHeight: renderObject.height,
+    spriteVisualYOffset: visualYOffset,
     displayName: renderObject.displayName,
     level: renderObject.level,
     currentHp: renderObject.currentHp,

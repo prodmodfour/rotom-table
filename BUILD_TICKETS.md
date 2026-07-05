@@ -223,7 +223,7 @@ Status: DONE
 
 ## 013 — Keep HUD/head placement visually attached
 
-Status: TODO
+Status: DONE
 
 **Commit size:** HUD positioning adjustment only.
 

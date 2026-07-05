@@ -101,8 +101,14 @@ const equivalentBackSpriteAnimation: SpriteAnimation = {
 
 const cssSpriteStub = <T extends TokenHudSprite>(): T => Object.assign(
   new THREE.Object3D(),
-  { element: { style: { display: '' } } },
-) as T
+  {
+    element: {
+      style: { display: '' },
+      classList: { toggle: vi.fn() },
+      querySelector: vi.fn(() => null),
+    },
+  },
+) as unknown as T
 
 const spawnedPokemon = (overrides: Partial<SpawnedPokemon> = {}): SpawnedPokemon => ({
   species: 'Trainer',
@@ -654,6 +660,79 @@ describe('token renderer', () => {
     expect(renderObject.volume.position.toArray()).toEqual([2.5, 2, 3.5])
     expect(renderObject.proxy.position.toArray()).toEqual([2.5, 2, 3.5])
     expect(renderObject.shadow.position.toArray()).toEqual([2.5, 0.005, 3.5])
+  })
+
+  it('keeps the HP bar attached to a lifted floating sprite without accumulating lift', () => {
+    const pokemon = spawnedPokemon({
+      height: 2,
+      clearance: 2,
+      spriteVisualBounds: hoverOffsetVisualBounds,
+    })
+    const renderObject = makeRenderObject(pokemon)
+    renderObject.currentCenter.set(2.5, 1, 3.5)
+    renderObject.motion.sampledCenter.copy(renderObject.currentCenter)
+    renderObject.spriteState.assetKey = spriteVisualAssetKey({ url: renderObject.spriteUrl })
+    renderObject.liftTarget = 1
+
+    applyPokemonRenderObjectPosition(renderObject, {
+      camera: null,
+      activeTurnId: null,
+      groundLevelY: 0,
+      hoveredPokemonId: null,
+      layers: visibleLayers(),
+      getShadowSurfaceY: () => 0,
+    })
+
+    const floatingHudAnchorY = renderObject.hpBar.position.y
+
+    const groundedRenderObject = makeRenderObject(spawnedPokemon({ height: 2, clearance: 2 }))
+    groundedRenderObject.currentCenter.copy(renderObject.currentCenter)
+    groundedRenderObject.motion.sampledCenter.copy(groundedRenderObject.currentCenter)
+
+    applyPokemonRenderObjectPosition(groundedRenderObject, {
+      camera: null,
+      activeTurnId: null,
+      groundLevelY: 0,
+      hoveredPokemonId: null,
+      layers: visibleLayers(),
+      getShadowSurfaceY: () => 0,
+    })
+
+    expect(floatingHudAnchorY).toBeCloseTo(groundedRenderObject.hpBar.position.y + HOVER_OFFSET_WORLD_Y)
+
+    const camera = new THREE.PerspectiveCamera()
+    animatePokemonRenderObject(renderObject, {
+      camera,
+      damping: 1,
+      frameNowMs: 1000,
+      spriteBrightness: 1,
+      haloAlpha: 0.5,
+    })
+
+    expect(renderObject.sprite.position.y).toBeCloseTo(1 + HOVER_OFFSET_WORLD_Y + 0.08)
+    expect(renderObject.hpBar.position.y).toBeCloseTo(floatingHudAnchorY + 0.08)
+
+    applyPokemonRenderObjectPosition(renderObject, {
+      camera: null,
+      activeTurnId: null,
+      groundLevelY: 0,
+      hoveredPokemonId: null,
+      layers: visibleLayers(),
+      getShadowSurfaceY: () => 0,
+    })
+
+    expect(renderObject.hpBar.position.y).toBeCloseTo(floatingHudAnchorY)
+
+    animatePokemonRenderObject(renderObject, {
+      camera,
+      damping: 1,
+      frameNowMs: 1016,
+      spriteBrightness: 1,
+      haloAlpha: 0.5,
+    })
+
+    expect(renderObject.sprite.position.y).toBeCloseTo(1 + HOVER_OFFSET_WORLD_Y + 0.08)
+    expect(renderObject.hpBar.position.y).toBeCloseTo(floatingHudAnchorY + 0.08)
   })
 
   it('applies subtle start/end motion polish without moving the tactical footprint', () => {
