@@ -1,634 +1,437 @@
 # BUILD_TICKETS.md
 
-AUTOMATION_STATUS: DONE
+AUTOMATION_STATUS: TODO
 
 Ticket statuses:
 
 * TODO — not done
 * DONE — done
 
-The build loop must select the lowest-numbered TODO ticket. Each ticket below maps to one Live Play Sprint 4 ticket from `sprint-4.md`; build ticket numbers follow the suggested sprint order.
+The build loop must select the lowest-numbered TODO ticket. Each ticket below maps to one Cosmetic Improvements ticket from `docs/cosmetic-improvements.md`; build ticket numbers follow the suggested implementation order from that document.
 
-Autonomous cycle rules for every ticket: implement only the selected ticket, run `scripts/quality-gate.sh`, update only the selected ticket status, commit with a conventional commit message, and leave the working tree clean. The final ticket (#019) may also set `AUTOMATION_STATUS: DONE` after all Live Play Sprint 4 tickets are complete.
+Autonomous cycle rules for every ticket: implement only the selected ticket, run `scripts/quality-gate.sh`, update only the selected ticket status, commit with a conventional commit message, and leave the working tree clean. The final ticket (#012) may also set `AUTOMATION_STATUS: DONE` after all Cosmetic Improvements tickets are complete.
 
 ---
 
-# Live Play Sprint 4 Tickets
+# Cosmetic Improvements Tickets
 
-## Sprint goal
+## Wave goal
 
-Turn common multi-click live-play workflows into single server-authoritative batch commands. Sprint 1 made hot actions immediate, Sprint 2 made prediction safe, and Sprint 3 made the table feel inhabited. Sprint 4 should reduce the remaining “do the same command 12 times” friction: clearing hazards, clearing field effects, placing/removing terrain or hazards in small groups, applying area-cleanup actions, and presenting batch progress honestly.
+Make Pokémon sprites look more natural and three-dimensional while removing the always-on cage clutter. The cage should become a tactical footprint/clearance affordance only; the sprite, contact shadow, and sprite isometric shading should carry the idle visual read.
 
-The rule for this sprint is: **one user intention should become one authoritative transaction whenever the UI presents it as one action.** Batch commands still use explicit server-authoritative validation, `opId` idempotency, revision checks, conflict scopes, authorised realtime replay, durable outbox recovery, and accepted patches.
+A rendered Pokémon token is composed of four separate visual ideas:
 
-## Non-goals for sprint 4
+1. **Sprite** — the Pokémon art itself. This remains the primary visual.
+2. **Contact shadow** — the ground/planted cue. This should stay visible whenever tokens and shadows are visible.
+3. **Cage** — the footprint/clearance/tactical box. This should be hidden by default and shown only when tactically useful.
+4. **Sprite isometric shading** — an always-on fake-lighting treatment that gives the sprite a top/side/front dimensional read even when the cage is hidden.
 
-- Do not replace HTTP/SSE command transport or presence transport.
-- Do not make clients authoritative for batched changes.
-- Do not use whole-map saves for live-play batch workflows.
-- Do not introduce broad CRDT/document merging.
-- Do not batch hidden-information or random-result workflows unless the server already resolves the authoritative result deterministically.
-- Do not make local prediction cover complex batch side effects in this sprint.
-- Do not remove existing single-item commands; keep them as primitives and compatibility paths.
-- Do not build a general-purpose scripting engine for arbitrary command lists.
+The cage must no longer carry the responsibility for making the Pokémon look 3D. It should become tactical scaffolding only.
 
-## Batch design constraints
+## Non-goals for this wave
 
-- Every batch command must have a bounded payload size.
-- Every accepted batch command must commit all effects in one SQLite transaction or reject without partial authoritative writes.
-- Every accepted batch command must append durable realtime rows before commit and publish only after commit.
-- Every batch result must be idempotent by `opId`; retrying the exact same body returns the stored terminal result without duplicating effects.
-- Batch patches should describe changed resources precisely enough for clients to reconcile without full-map replacement when practical.
-- If a batch would touch hidden, unauthorised, stale, invalid, or conflicting resources, prefer rejecting the batch with a clear reason over applying a partial subset.
+- Do not change Pokémon placement, movement, targeting, combat automation, saved map data, or network payloads.
+- Do not remove the invisible proxy mesh used for token picking.
+- Do not remove contact shadows.
+- Do not replace the existing sprite assets.
+- Do not add bespoke per-Pokémon art direction or per-species lighting rules in this pass.
+- Do not broaden this work into unrelated map renderer, live-play, encounter, sheet, or inventory changes.
 
 ## Commit sizing rule
 
-Each ticket should fit in one focused commit. Avoid mixing command-contract, server executor, client dispatch, UI wiring, and docs in one ticket unless the change is tiny. Prefer narrow batch commands over a generic arbitrary-command batch.
+Each ticket should fit in one focused commit. Keep documentation/type-only tickets behaviour-free, keep renderer state changes separate from visual tuning where practical, and prefer focused utility tests over broad visual rewrites.
 
 ---
 
-## 001 — LP-S4-001 — Audit current sequential live-play workflows
+## 001 — COS-001 — Define token cosmetic layer semantics
 
-Status: DONE
+Status: TODO
 
-**Goal:** Identify the live-play UI flows that still dispatch many individual commands for one user intention.
+**Goal:** Make the four token visual ideas explicit before changing renderer behaviour.
 
 **Primary files:**
 
-- `docs/live-play-batch-workflows.md` (new)
-- `src/pages/maps/[slug].vue`
-- relevant map-editor composables
+- `src/utils/isometric/types.ts`
+- `src/utils/isometric/tokenRenderer.ts`
+- nearby token renderer documentation/comments
 
 **Work:**
 
-- Document current sequential workflows, including clear hazards, clear field effects, repeated terrain edits, repeated hazard edits, initiative/scene cleanup, and any action automation loops.
-- For each workflow, record current command route(s), authority scope, likely conflict scopes, expected patch shape, and whether local prediction is safe.
-- Classify each candidate as Sprint 4, later, or not worth batching.
+- Add a short internal comment block or helper types describing the token cosmetic layers:
+  - sprite;
+  - contact shadow;
+  - cage volume/edges;
+  - sprite isometric shading.
+- Prefer colocating this near `PokemonRenderObject` in `src/utils/isometric/types.ts` or near construction in `src/utils/isometric/tokenRenderer.ts`.
+- Keep this as documentation/types only; no visual behaviour should change in this commit.
 
 **Acceptance:**
 
-- The doc lists the highest-value batch candidates and explains why the first batch commands were chosen.
-- No behavior changes are made in this ticket.
-- Future tickets can reference this document for scope and non-goal decisions.
+- A future reader can tell that cage visibility and sprite shading are intentionally separate concerns.
+- No runtime behaviour changes.
+- Existing tests pass.
 
 ---
 
-## 002 — LP-S4-002 — Add shared batch command guardrails
+## 002 — COS-002 — Track cage visibility separately from token layer visibility
 
-Status: DONE
+Status: TODO
 
-**Goal:** Add reusable shared constants and validation helpers for bounded live-play batch payloads.
+**Goal:** Let a token be visible while its cage is hidden.
 
 **Primary files:**
 
-- `shared/livePlayBatchCommands.ts` (new)
-- `shared/livePlayCommands.ts`
-- `tests/shared/livePlayBatchCommands.test.ts` (new)
+- `src/utils/isometric/types.ts`
+- `src/utils/isometric/tokenRenderer.ts`
+- focused renderer/layer visibility tests
 
 **Work:**
 
-- Add shared maximums for batch payload sizes, such as max hazard cells, max terrain voxels, max field-effect operations, and max affected token IDs.
-- Add helper validators for non-empty unique grid cells and bounded arrays.
-- Add parser helpers that produce clear validation issues without accepting unknown durable-state fields.
-- Keep helpers framework-free and side-effect free.
+- Add renderer-owned cage visibility state to `PokemonRenderObject`, for example `cageVisible: boolean` or `cageMode: 'hidden' | 'tactical' | 'invalid'`.
+- Update `setPokemonRenderObjectLayerVisibility()` so `volume` and `edges` use both token-layer visibility and the renderer-owned cage state.
+- Keep these behaviours independent:
+  - `sprite.visible = layers.tokens`;
+  - `spriteState.halo.visible = layers.tokens`;
+  - `proxy.visible = layers.tokens`;
+  - `shadow.visible = layers.tokens && layers.shadows`;
+  - `volume.visible = layers.tokens && cageVisible`;
+  - `edges.visible = layers.tokens && cageVisible`.
 
 **Acceptance:**
 
-- Invalid oversized batch payloads are rejected by shared validation tests.
-- Duplicate cells are normalized or rejected according to documented rules.
-- Validators do not mutate input payloads.
+- Hiding the cage does not hide the sprite.
+- Hiding the cage does not hide the contact shadow.
+- Hiding the cage does not break pointer picking through the invisible proxy.
+- The existing token layer toggle still hides the whole token stack.
 
 ---
 
-## 003 — LP-S4-003 — Add `clearHazards` live-play command contract
+## 003 — COS-003 — Hide idle cages by default
 
-Status: DONE
+Status: TODO
 
-**Goal:** Define a first real batch command for clearing hazards in one authoritative operation.
+**Goal:** Remove the acrylic-box look from normal Pokémon tokens.
 
 **Primary files:**
 
-- `shared/livePlayCommands.ts`
-- `shared/livePlayBatchCommands.ts`
-- `tests/shared/livePlayCommands.test.ts` or existing shared command tests
+- `src/utils/isometric/tokenRenderer.ts`
+- `src/utils/isometric/types.ts` if needed
+- focused style/cage visibility tests
 
 **Work:**
 
-- Add `CLEAR_HAZARDS` command type and payload.
-- Support modes such as:
-  - clear all hazards visible in the active map;
-  - clear hazards by explicit cells;
-  - optionally clear by hazard kind.
-- Add conflict scopes for the map hazard lane and, where useful, explicit hazard cells.
-- Add accepted patch type or reuse existing map-hazard patch shape if it can describe the final authoritative hazards list safely.
+- Update `paintPokemonRenderObjectStyle()` so idle, non-hovered, non-selected, non-pending, non-corrected tokens set cage visibility to hidden.
+- Keep cage materials and opacity calculations available for tactical states.
+- Do not delete the cage geometry; only hide the render objects when idle.
+- Use the first-pass rule `selected || hovered || pending || corrected` unless the existing architecture offers a clearer tactical-state resolver.
 
 **Acceptance:**
 
-- Command payload validation covers all/explicit/kind modes.
-- Empty explicit-cell batches reject with a clear validation issue.
-- Scope construction is conservative for all-hazard mode and precise for explicit-cell mode.
+- Normal idle tokens render as sprite + halo + contact shadow, with no visible cage faces or cage edges.
+- Hovered tokens show a cage.
+- Selected tokens show a cage.
+- Pending/corrected live-play feedback still shows a cage.
+- No token picking regression.
 
 ---
 
-## 004 — LP-S4-004 — Implement server executor for `clearHazards`
+## 004 — COS-004 — Preserve contact shadows as the always-on grounding cue
 
-Status: DONE
+Status: TODO
 
-**Goal:** Clear many hazards in one SQLite transaction with one idempotent live-play operation result.
+**Goal:** Make it difficult to accidentally tie contact shadows to cage visibility in future refactors.
 
 **Primary files:**
 
-- `server/livePlay/commandExecutor.ts`
-- `server/livePlay/sqliteCommandExecutor.ts`
-- `server/useCases/applyMapTokenAction.ts` or relevant map mutation use case
-- `tests/server/livePlayIntegrationHarness.ts`
-- `tests/server/livePlayConcurrentIntegration.test.ts`
+- `src/utils/isometric/tokenRenderer.ts`
+- focused layer visibility tests
 
 **Work:**
 
-- Validate GM/profile permissions using the same authority rules as existing hazard commands.
-- Apply the clear operation atomically.
-- Reject stale or conflicting base revisions using existing live-play conflict logic.
-- Return accepted patches that update hazards without whole-map replacement when possible.
-- Store/reuse terminal result by `opId`.
+- Add or update tests around `setPokemonRenderObjectLayerVisibility()` covering these cases:
+  - `layers.tokens = true`, `layers.shadows = true`, `cageVisible = false` keeps the shadow visible;
+  - `layers.tokens = true`, `layers.shadows = false` hides the shadow;
+  - `layers.tokens = false` hides the shadow even if `layers.shadows = true`.
+- Add a short comment near the shadow visibility assignment explaining that contact shadow is the persistent sprite-grounding cue, not part of the cage.
 
 **Acceptance:**
 
-- Clearing all hazards removes every matching hazard in one accepted command.
-- Retrying the same `opId` does not remove anything twice or append duplicate events.
-- Stale/conflicting commands reject without partial writes.
+- Tests prove cage visibility cannot hide contact shadows.
+- Manual check: an idle Pokémon still feels planted on the board with cages hidden.
 
 ---
 
-## 005 — LP-S4-005 — Add API route and client result validation for `clearHazards`
+## 005 — COS-005 — Introduce sprite isometric shading constants
 
-Status: DONE
+Status: TODO
 
-**Goal:** Expose the clear-hazards batch through the same durable command pipeline as other live-play map commands.
+**Goal:** Define the desired fake-lighting model before wiring it into rendering.
 
 **Primary files:**
 
-- `server/api/maps/[slug]/hazards/clear.post.ts` or equivalent route
-- `src/utils/apiRoutes.ts`
-- `shared/livePlayCommandResults.ts`
-- route tests
+- `src/utils/isometric/worldSpriteIsoLighting.ts` (new, suggested)
+- focused utility tests if useful
 
 **Work:**
 
-- Add a route constant and server endpoint.
-- Validate request body using the shared command contract.
-- Ensure terminal responses validate against the submitted command body.
-- Add operation-status support if needed by existing generic status route.
+- Add a small utility module for sprite-lighting constants.
+- Define named constants for the sprite-lighting shape, such as:
+  - top brightness boost;
+  - lower/front darkening;
+  - side-to-side bias;
+  - foot/base darkening;
+  - minimum and maximum clamp values.
+- Keep values subtle. This layer should make sprites feel dimensional, not visibly recoloured.
+- Use visual-intent names rather than magic numbers.
 
 **Acceptance:**
 
-- Route rejects invalid or oversized clear-hazard payloads.
-- Route accepts valid command bodies and returns terminal live-play command results.
-- Result validation catches mismatched `opId`, map slug, command type, or scopes.
+- Constants are named around visual intent rather than implementation accident.
+- No visual behaviour changes yet unless this ticket is intentionally combined with COS-006 because the implementation is trivial.
+- Existing tests pass.
 
 ---
 
-## 006 — LP-S4-006 — Wire `clearHazards` into `useLivePlayCommands`
+## 006 — COS-006 — Apply persistent isometric shading to normal sprites
 
-Status: DONE
+Status: TODO
 
-**Goal:** Let the map page dispatch clear-hazard batches through the durable outbox.
+**Goal:** Keep the top/side/front 3D read after cages disappear.
 
 **Primary files:**
 
-- `src/composables/map-editor/useLivePlayCommands.ts`
-- `src/utils/apiRoutes.ts`
-- `tests/composables/map-editor/useLivePlayCommands.test.ts`
+- existing world sprite material utilities
+- `src/utils/isometric/worldSpriteIsoLighting.ts`
+- renderer/material tests where practical
 
 **Work:**
 
-- Add a `clearHazards` dispatcher.
-- Build command bodies with stable `opId`, base revision, scopes, and bounded payload.
-- Reuse patch-first accepted-response handling and existing recovery/status behavior.
-- Do not add local prediction yet beyond existing pending/correction affordances.
+- Extend the normal world sprite material so it applies a subtle UV-based lighting ramp to the Pokémon sprite.
+- Make the effect always-on for normal tokens and stack it with existing global sprite brightness.
+- Approximate:
+  - upper pixels slightly brighter;
+  - lower/front pixels slightly darker;
+  - one lateral side subtly darker or warmer/cooler;
+  - feet/base area slightly grounded.
+- Prefer implementing this in the existing sprite material path rather than creating a visible cage surrogate.
+- Avoid a separate rectangular overlay unless it clips cleanly to sprite alpha.
 
 **Acceptance:**
 
-- `clearHazards` enqueues, claims, sends, accepts, rejects, retries, and status-checks like existing commands.
-- Scope-aware blocking prevents conflicting hazard commands while allowing unrelated token actions.
-- Tests cover accepted, rejected, uncertain, and duplicate terminal responses.
+- With cages hidden, sprites still have a visible but subtle top/side/front dimensional treatment.
+- Transparent pixels around the sprite remain transparent.
+- The effect respects existing sprite brightness updates.
+- Ghost/invalid preview sprites continue to use their existing ghost/invalid visual language unless deliberately tuned in a later ticket.
 
 ---
 
-## 007 — LP-S4-007 — Replace clear-all hazards UI loop with `clearHazards`
+## 007 — COS-007 — Keep sprite shading correct across animation, crop, and facing
 
-Status: DONE
+Status: TODO
 
-**Goal:** Make the existing “clear all hazards” user action send one command instead of many.
+**Goal:** Ensure the new sprite shading follows the same lifecycle as the sprite asset.
 
 **Primary files:**
 
-- `src/pages/maps/[slug].vue`
-- relevant hazard/menu components
-- `tests/pages/mapPageRouteAuthority.test.ts`
+- sprite texture/material lifecycle utilities
+- `src/utils/isometric/tokenRenderer.ts`
+- focused sprite animation/facing tests where practical
 
 **Work:**
 
-- Replace the live-play loop that dispatches one `removeHazard` per hazard with one `clearHazards` command.
-- Keep setup/edit behavior unchanged.
-- Preserve confirmation copy and cancellation behavior.
-- Show a single pending/sending state for the batch action.
+- Verify shading still works when:
+  - a static sprite texture loads;
+  - an animated sprite frame changes;
+  - a cropped sprite texture window is applied;
+  - side-facing sprites are mirrored;
+  - front/back sprite assets swap as the camera/facing changes.
+- Add focused tests around the sprite texture/animation state if practical.
+- If implementation uses uniforms, make sure mirror/facing changes update those uniforms when `updateSpriteFacing()` runs.
 
 **Acceptance:**
 
-- Clearing all hazards in live play makes exactly one command request.
-- Setup/edit still mutates local setup state as before.
-- Rejection leaves hazards unchanged or reconciled authoritatively.
+- Animated sprites do not lose the lighting ramp between frames.
+- Mirrored sprites do not produce an obviously backwards or inconsistent side-lighting artefact.
+- Cropped sprites do not shift the lighting ramp into the wrong part of the image.
+- Existing sprite loading and disposal behaviour remains unchanged.
 
 ---
 
-## 008 — LP-S4-008 — Add `clearFieldEffects` live-play command contract
+## 008 — COS-008 — Re-tune tactical cage face and edge opacity
 
-Status: DONE
+Status: TODO
 
-**Goal:** Define a batch command for clearing weather, terrain, room, or all field effects in one operation.
+**Goal:** Make cages feel like temporary tactical affordances rather than permanent display cases.
 
 **Primary files:**
 
-- `shared/livePlayCommands.ts`
-- `shared/livePlayBatchCommands.ts`
-- shared command tests
+- `src/utils/isometric/tokenRenderer.ts`
+- focused token style tests where practical
 
 **Work:**
 
-- Add `CLEAR_FIELD_EFFECTS` command type and payload.
-- Support category modes: weather, terrain, room, and all.
-- Support optional explicit effect kinds when safe.
-- Add conservative map field-effect scopes.
-- Define accepted patch expectations.
+- Once idle cages are hidden, re-tune the visible tactical cage states in `paintPokemonRenderObjectStyle()`.
+- Keep the existing face palette idea: top, side, shadow, and bottom should remain distinct.
+- Use lower face opacity than the old always-on cage, because the cage now appears only for interaction states.
+- Keep edges more prominent than faces for hover/selected targeting readability.
+- Start from these suggested ranges and adjust only as needed:
+  - hovered face opacity: `0.14` to `0.22`;
+  - hovered edge opacity: `0.55` to `0.80`;
+  - selected face opacity: `0.20` to `0.30`;
+  - selected edge opacity: `0.80` to `0.95`;
+  - pending face opacity: `0.18` to `0.28`;
+  - pending edge opacity: `0.70` to `0.90`;
+  - corrected face opacity: `0.24` to `0.34`;
+  - corrected edge opacity: `0.90` to `1.00`.
 
 **Acceptance:**
 
-- Category-only and explicit-kind payloads validate.
-- Empty explicit-kind lists reject.
-- Scope construction conflicts with other field-effect mutations but not unrelated token movement.
+- Hover/selection remains easy to read.
+- The Pokémon sprite remains visually dominant.
+- Cage face shading still uses separate top/side/shadow values.
+- Corrected/invalid feedback remains unmistakable.
 
 ---
 
-## 009 — LP-S4-009 — Implement server/API/client flow for `clearFieldEffects`
+## 009 — COS-009 — Include move-targeting states in cage visibility if needed
 
-Status: DONE
+Status: TODO
 
-**Goal:** Add end-to-end authoritative support for clearing field effects as a batch command.
-
-**Primary files:**
-
-- server command executor files
-- route file and `src/utils/apiRoutes.ts`
-- `src/composables/map-editor/useLivePlayCommands.ts`
-- tests across server and composable layers
-
-**Work:**
-
-- Implement server validation and atomic mutation.
-- Add route and result validation.
-- Add client dispatcher and outbox support.
-- Prefer accepted patches over full-map fallback.
-
-**Acceptance:**
-
-- Clearing all or one category of field effects is one accepted command.
-- Retry/status/abandonment works using the exact command body and `opId`.
-- Rejected stale/conflicting commands do not partially clear effects.
-
----
-
-## 010 — LP-S4-010 — Replace clear-all field effects UI with `clearFieldEffects`
-
-Status: DONE
-
-**Goal:** Make clear-all field effects feel like one authoritative action.
-
-**Primary files:**
-
-- `src/pages/maps/[slug].vue`
-- `tests/pages/mapPageRouteAuthority.test.ts`
-
-**Work:**
-
-- Wire existing clear-all weather/terrain/room menu action to the new batch command.
-- Keep existing single-effect set/remove commands unchanged.
-- Reset local coexist UI flags only after accepted dispatch where appropriate.
-
-**Acceptance:**
-
-- Live-play clear-all field effects sends one command request.
-- Setup/edit behavior remains local and unchanged.
-- Rejection preserves or reconciles the authoritative field-effect state.
-
----
-
-## 011 — LP-S4-011 — Add `editTerrainVoxels` batch command contract
-
-Status: DONE
-
-**Goal:** Define a bounded batch command for adding/removing many terrain voxels in one operation.
-
-**Primary files:**
-
-- `shared/livePlayCommands.ts`
-- `shared/livePlayBatchCommands.ts`
-- shared command tests
-
-**Work:**
-
-- Add a command type such as `EDIT_TERRAIN_VOXELS`.
-- Support operations for add/update voxels and remove cells.
-- Bound payload size and reject duplicate contradictory operations in the same payload.
-- Define terrain scopes: explicit cells when small, broad terrain lane when required.
-- Define patch payload for changed terrain or final terrain set.
-
-**Acceptance:**
-
-- Mixed add/remove payloads validate only when non-contradictory.
-- Oversized terrain batches reject.
-- Scope conflict behavior is conservative and tested.
-
----
-
-## 012A — LP-S4-012A — Implement server/API flow for terrain voxel batches
-
-Status: DONE
-
-**Goal:** Let terrain voxel batch command requests reach the authoritative server executor and route as one atomic live-play operation.
-
-**Primary files:**
-
-- server executor and route files
-- `src/utils/apiRoutes.ts`
-- shared result validation files if needed
-- server/route tests
-
-**Work:**
-
-- Validate every voxel/cell against map bounds and permission rules in the server executor.
-- Commit the batch atomically and append durable realtime rows before commit.
-- Add the terrain voxel batch route, route constant, and terminal result validation/status support needed for exact command bodies.
-- Return patches that describe terrain changes without full-map adoption when practical.
-- Add targeted server/route tests for accepted, invalid-cell, stale/conflict, and idempotent retry paths.
-
-**Acceptance:**
-
-- Valid terrain batch route requests apply atomically and return an accepted terminal result with terrain patches.
-- Invalid cell, stale revision, or conflicting requests reject the whole batch without partial terrain writes.
-- Retrying the same `opId` and command body returns the stored terminal result without duplicate effects or realtime events.
-
----
-
-## 012B — LP-S4-012B — Wire client terrain voxel batch dispatcher
-
-Status: DONE
-
-**Goal:** Let the map client enqueue, send, recover, and reconcile terrain voxel batches through the durable outbox.
-
-**Primary files:**
-
-- `src/composables/map-editor/useLivePlayCommands.ts`
-- `src/utils/apiRoutes.ts`
-- composable tests
-
-**Work:**
-
-- Add an `editTerrainVoxels` dispatcher that builds command bodies with stable `opId`, base revision, scopes, and bounded payloads.
-- Reuse patch-first accepted-response handling and existing recovery/status behavior.
-- Ensure rejected, uncertain, abandoned, duplicate-terminal, and retry/status paths use the exact command body and `opId`.
-- Keep complex terrain side effects unpredicted locally beyond existing pending/correction affordances.
-- Add focused composable tests for accepted, rejected, uncertain, duplicate terminal, retry/status, and scope-aware blocking behavior.
-
-**Acceptance:**
-
-- `editTerrainVoxels` enqueues, claims, sends, accepts, rejects, retries, and status-checks like existing live-play commands.
-- Accepted terrain patches reconcile client state without full-map adoption when practical.
-- Scope-aware blocking prevents conflicting terrain edits while allowing unrelated token actions.
-
----
-
-## 013 — LP-S4-013 — Add terrain brush batching on the client
-
-Status: DONE
-
-**Goal:** Coalesce rapid terrain brush edits into bounded batch commands without losing authority safety.
-
-**Primary files:**
-
-- terrain builder composables
-- `src/pages/maps/[slug].vue`
-- `src/composables/map-editor/useLivePlayCommands.ts`
-- focused tests
-
-**Work:**
-
-- Collect rapid live-play terrain edits for a short debounce window or until pointer release.
-- Send one `editTerrainVoxels` command per brush stroke.
-- Keep setup/edit terrain behavior unchanged.
-- Do not locally predict complex terrain changes unless existing UI already has a safe preview-only layer.
-
-**Acceptance:**
-
-- A brush stroke sends one bounded command rather than one command per voxel.
-- Very large strokes split into bounded chunks or reject with clear UI copy.
-- Rejection does not leave local authoritative terrain mutated.
-
----
-
-## 014 — LP-S4-014 — Add `editHazards` batch command contract
-
-Status: DONE
-
-**Goal:** Define a bounded batch command for placing/removing multiple hazard cells.
-
-**Primary files:**
-
-- `shared/livePlayCommands.ts`
-- `shared/livePlayBatchCommands.ts`
-- shared command tests
-
-**Work:**
-
-- Add a command type such as `EDIT_HAZARDS`.
-- Support add/update hazard cells and remove hazard cells.
-- Bound payload size and reject contradictory operations.
-- Define hazard scopes and accepted patch behavior.
-
-**Acceptance:**
-
-- Mixed hazard add/remove payloads validate only when non-contradictory.
-- Oversized hazard batches reject.
-- Scope conflicts with clear-hazards and single hazard commands are tested.
-
----
-
-## 015 — LP-S4-015 — Implement server/API/client flow for hazard cell batches
-
-Status: DONE
-
-**Goal:** Let hazard brush-like live-play edits commit in one authoritative operation.
-
-**Primary files:**
-
-- server executor and route files
-- `src/composables/map-editor/useLivePlayCommands.ts`
-- `src/utils/apiRoutes.ts`
-- server/composable tests
-
-**Work:**
-
-- Validate hazard kind, bounds, permissions, and stale revisions.
-- Commit the batch atomically.
-- Return patches that update hazards without full-map adoption when practical.
-- Reuse idempotency and conflict logic.
-
-**Acceptance:**
-
-- Valid hazard batches apply atomically.
-- Invalid hazard cell rejects the whole batch.
-- Retry/status/abandonment works with exact `opId` body.
-
----
-
-## 016 — LP-S4-016 — Add hazard brush batching on the client
-
-Status: DONE
-
-**Goal:** Coalesce rapid hazard drawing/removal into bounded batch commands.
-
-**Primary files:**
-
-- hazard builder composables
-- `src/pages/maps/[slug].vue`
-- focused tests
-
-**Work:**
-
-- Collect live-play hazard brush edits for a short debounce window or pointer stroke.
-- Send one `editHazards` command per stroke.
-- Keep setup/edit hazard behavior unchanged.
-- Preserve existing single-cell hazard commands for direct clicks when batching is not active.
-
-**Acceptance:**
-
-- A live-play hazard brush stroke sends one bounded command.
-- Large strokes split or reject safely.
-- Presence/intent overlays remain independent from authoritative hazard batching.
-
----
-
-## 017 — LP-S4-017 — Add batch operation pending/recovery UI affordances
-
-Status: DONE
-
-**Goal:** Make batch commands honest to users without reintroducing a global table lock.
+**Goal:** Make cages available for tactical targeting states, not only hover/selection.
 
 **Primary files:**
 
 - `src/pages/maps/[slug].vue`
-- map panel/menu components
-- `src/components/map/LivePlayCommandRecoveryPanel.vue` if needed
-- tests/pages or component tests
+- `src/utils/isometric/tokenRenderer.ts`
+- move-targeting overlay/style utilities
+- focused map renderer tests where practical
 
 **Work:**
 
-- Show a concise pending label for active batch commands, such as “Clearing 12 hazards…” or “Applying terrain brush…”.
-- Keep unrelated token actions interactive when scopes allow them.
-- Ensure uncertain batch commands appear in the recovery panel with clear summaries.
-- Avoid listing full payloads or private data.
+- Review move-targeting and move-feedback overlays to decide whether target candidates or selected targets should request cage visibility.
+- If useful, pass a compact token tactical state into `paintPokemonRenderObjectStyle()` or a new token-style resolver.
+- Keep reticles and existing targeting overlays authoritative; cages should support them, not replace them.
 
 **Acceptance:**
 
-- Users can tell a batch command is pending.
-- Recovery entries identify batch kind and resource summary safely.
-- Unrelated commands remain available when conflict scopes allow.
+- Targeting UX remains readable with idle cages hidden.
+- Candidate/selected target cages only appear when they improve clarity.
+- Existing move reticles, hit chance labels, and area overlays remain visually on top.
 
 ---
 
-## 018 — LP-S4-018 — Add batch command chaos tests
+## 010 — COS-010 — Add unit coverage for token cosmetic state resolution
 
-Status: DONE
+Status: TODO
 
-**Goal:** Exercise batch workflows against concurrency, stale revisions, duplicate terminals, and recovery.
+**Goal:** Protect the new split between sprite, shadow, cage, and sprite shading.
 
 **Primary files:**
 
-- `tests/integration/livePlayChaosHardening.test.ts`
-- `tests/integration/livePlayChaosHarness.ts`
+- focused token cosmetic state tests
+- `src/utils/isometric/tokenRenderer.ts`
+- helper modules introduced by earlier tickets
 
 **Work:**
 
-- Simulate clear hazards racing with single hazard edit.
-- Simulate terrain batch racing with token movement on unrelated scopes.
-- Simulate HTTP/SSE terminal ordering for an accepted batch.
-- Simulate lost HTTP response and status/retry recovery for a batch command.
-- Assert final authoritative map state and durable realtime convergence.
+- Add tests for the cage visibility resolver introduced in COS-002/COS-003.
+- Add tests for layer visibility combinations affecting sprite, shadow, volume, edges, and proxy.
+- Add tests for opacity/style outputs where practical.
 
 **Acceptance:**
 
-- Batch commands do not partially apply under conflicts.
-- Duplicate accepted terminals do not apply effects twice.
-- Recovered uncertain batch commands converge to the same final state as direct acceptance.
+- Idle state resolves to cage hidden.
+- Hovered, selected, pending, and corrected states resolve to cage visible.
+- Shadow visibility remains tied to `layers.tokens && layers.shadows`, not cage state.
+- Proxy remains available for picking while the cage is hidden.
 
 ---
 
-## 019 — LP-S4-019 — Add operator smoke notes for live-play batch workflows
+## 011 — COS-011 — Add a manual visual QA checklist
 
-Status: DONE
+Status: TODO
 
-**Goal:** Give maintainers a manual checklist for verifying batch workflow UX and authority.
+**Goal:** Make the final visual pass reviewable without relying on subjective memory.
 
 **Primary files:**
 
-- `docs/private-vps-live-play-smoke.md`
-- `docs/live-play-authority.md`
-- `docs/live-play-batch-workflows.md`
+- `docs/cosmetic-improvements.md`
+- optional renderer visual QA documentation if a better home exists
 
 **Work:**
 
-- Add smoke steps for clear hazards, clear field effects, terrain brush, hazard brush, rejection, retry/status, and reconnect.
-- Document that batch commands are authoritative transactions, not client-side macros.
-- Document payload bounds and expected fallback behavior for oversized brush strokes.
+- Add a checklist section covering:
+  - small Pokémon on flat terrain;
+  - large Pokémon on flat terrain;
+  - Pokémon standing on voxel terrain;
+  - selected token;
+  - hovered token;
+  - pending live-play token;
+  - corrected/invalid token;
+  - move targeting active;
+  - animated sprite;
+  - mirrored side-facing sprite;
+  - dark and light app themes if both affect the scene.
 
 **Acceptance:**
 
-- Operators can smoke test batch workflows with GM and two player browsers.
-- Docs explain why one UI action should map to one authoritative batch command.
+- The reviewer can compare before/after with cages hidden.
+- The reviewer explicitly checks that contact shadows remain visible.
+- The reviewer explicitly checks that sprite isometric shading remains visible with cages hidden.
+- The reviewer explicitly checks that tactical states still show cages when needed.
 
 ---
 
-## Suggested sprint order
+## 012 — COS-012 — Clean up comments and release note wording
 
-1. `LP-S4-001`
-2. `LP-S4-002`
-3. `LP-S4-003`
-4. `LP-S4-004`
-5. `LP-S4-005`
-6. `LP-S4-006`
-7. `LP-S4-007`
-8. `LP-S4-008`
-9. `LP-S4-009`
-10. `LP-S4-010`
-11. `LP-S4-011`
-12. `LP-S4-012A`
-13. `LP-S4-012B`
-14. `LP-S4-013`
-15. `LP-S4-014`
-16. `LP-S4-015`
-17. `LP-S4-016`
-18. `LP-S4-017`
-19. `LP-S4-018`
-20. `LP-S4-019`
+Status: TODO
 
-## Sprint exit criteria
+**Goal:** Align code comments and user-facing language with the final renderer model.
 
-- Clear-all hazards uses one authoritative live-play batch command.
-- Clear-all field effects uses one authoritative live-play batch command.
-- Terrain brush edits can be committed as bounded authoritative batches.
-- Hazard brush edits can be committed as bounded authoritative batches.
-- Batch commands are idempotent by `opId`, recoverable through the durable outbox, and safe under HTTP/SSE terminal reordering.
-- Batch payloads have documented and tested bounds.
-- Batch commands reject stale/conflicting/invalid payloads without partial authoritative writes.
-- UI shows batch pending/recovery state without blocking unrelated scoped commands.
-- Operator docs cover manual smoke testing and the authority boundary for batch workflows.
+**Primary files:**
+
+- renderer comments and documentation touched by this wave
+- release-note or README surface if one exists
+- `docs/cosmetic-improvements.md` if it remains the best summary
+
+**Work:**
+
+- Update comments that imply cages are the primary sprite-grounding or 3D illusion mechanism.
+- Describe cages as tactical footprint/clearance affordances.
+- Describe contact shadows and sprite isometric shading as the persistent visual grounding/dimensional cues.
+- Add a short release note if the project has a release-note surface for map renderer polish.
+
+**Acceptance:**
+
+- Comments match the final behaviour.
+- No stale wording says idle cages are required for the isometric illusion.
+- Existing tests pass.
+- If all Cosmetic Improvements tickets are complete and the final quality gate passes, set `AUTOMATION_STATUS: DONE`.
+
+---
+
+## Suggested implementation order
+
+1. `COS-001`
+2. `COS-002`
+3. `COS-003`
+4. `COS-004`
+5. `COS-005`
+6. `COS-006`
+7. `COS-007`
+8. `COS-008`
+9. `COS-009`
+10. `COS-010`
+11. `COS-011`
+12. `COS-012`
+
+## Wave exit criteria
+
+- Idle Pokémon tokens render without visible cage faces or cage edges.
+- Sprites, halos, invisible picking proxies, and contact shadows continue to work when cages are hidden.
+- Hovered, selected, pending, corrected, and useful targeting states can still show cages as tactical affordances.
+- Contact shadows remain independent from cage visibility.
+- Normal sprites have subtle persistent isometric shading that respects transparency, brightness, animation, crop, and facing lifecycle.
+- Tactical cage opacity is tuned so the sprite remains visually dominant.
+- Unit coverage protects layer visibility, cage visibility resolution, and relevant style/shading helpers.
+- Manual visual QA covers small/large Pokémon, terrain, interaction states, targeting, animation, mirroring, and theme-relevant scene checks.
