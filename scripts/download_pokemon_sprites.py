@@ -32,11 +32,12 @@ import unicodedata
 from collections import Counter
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
-from typing import Iterable
+from typing import Any, Iterable
 
 import requests
 
 from gif_spritesheet import with_animation_metadata
+from sprite_visual_bounds import extract_sprite_visual_bounds_record
 
 SCRIPT_DIR = Path(__file__).resolve().parent
 REPO_ROOT = SCRIPT_DIR.parent
@@ -338,6 +339,18 @@ def resolve_showdown_asset(slug: str) -> tuple[str, str, str]:
     raise RuntimeError(f"Could not resolve Showdown asset for {slug}")
 
 
+def with_front_sprite_metadata(entry: dict[str, Any], public_root: Path) -> dict[str, Any]:
+    """Return a front-sprite manifest entry with animation and visual bounds."""
+    updated = with_animation_metadata(entry, public_root)
+    local_path = str(updated.get("local_path", ""))
+    sprite_path = public_root / local_path
+    if not sprite_path.exists():
+        raise FileNotFoundError(f"Sprite listed in manifest does not exist: {sprite_path}")
+
+    updated["visual_bounds"] = extract_sprite_visual_bounds_record(sprite_path)
+    return updated
+
+
 def download_one(species: str, slug: str, source_gen: str) -> dict:
     session = requests.Session()
     session.headers.update({"User-Agent": USER_AGENT})
@@ -352,7 +365,7 @@ def download_one(species: str, slug: str, source_gen: str) -> dict:
                 local_path = SPRITE_ROOT / relative
                 local_path.parent.mkdir(parents=True, exist_ok=True)
                 local_path.write_bytes(response.content)
-                return with_animation_metadata({
+                return with_front_sprite_metadata({
                     "species": species,
                     "slug": slug,
                     "source_gen": source_gen,
@@ -371,7 +384,7 @@ def download_one(species: str, slug: str, source_gen: str) -> dict:
                 local_path = SPRITE_ROOT / relative
                 local_path.parent.mkdir(parents=True, exist_ok=True)
                 local_path.write_bytes(response.content)
-                return with_animation_metadata({
+                return with_front_sprite_metadata({
                     "species": species,
                     "slug": slug,
                     "source_gen": source_gen,
@@ -390,7 +403,7 @@ def download_one(species: str, slug: str, source_gen: str) -> dict:
     local_path = SPRITE_ROOT / local_relative
     local_path.parent.mkdir(parents=True, exist_ok=True)
     local_path.write_bytes(response.content)
-    return with_animation_metadata({
+    return with_front_sprite_metadata({
         "species": species,
         "slug": slug,
         "source_gen": source_gen,
@@ -403,11 +416,13 @@ def download_one(species: str, slug: str, source_gen: str) -> dict:
 
 def convert_existing_manifest() -> None:
     manifest = json.loads(MANIFEST_PATH.read_text(encoding="utf-8"))
-    updated = [with_animation_metadata(entry, PUBLIC_ROOT) for entry in manifest]
+    updated = [with_front_sprite_metadata(entry, PUBLIC_ROOT) for entry in manifest]
     updated.sort(key=lambda item: item["species"])
     MANIFEST_PATH.write_text(json.dumps(updated, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
     converted = sum(1 for item in updated if item.get("animation"))
+    bounded = sum(1 for item in updated if item.get("visual_bounds"))
     print(f"Converted {converted} existing front GIF spritesheets")
+    print(f"Backfilled {bounded} existing front visual bounds")
     print(f"Wrote manifest: {MANIFEST_PATH}")
 
 
@@ -418,7 +433,7 @@ def main() -> None:
     parser.add_argument(
         "--convert-existing",
         action="store_true",
-        help="only generate spritesheets/animation metadata for the current local manifest",
+        help="only generate spritesheets/animation metadata and visual bounds for the current local manifest",
     )
     args = parser.parse_args()
     if args.convert_existing:

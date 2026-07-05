@@ -55,7 +55,7 @@ Status: DONE
 
 ## 003 — Wire front-sprite downloads to write visual bounds
 
-Status: TODO
+Status: DONE
 
 **Commit size:** update the front sprite downloader/converter only.
 
