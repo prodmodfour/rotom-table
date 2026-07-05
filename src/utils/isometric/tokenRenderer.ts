@@ -587,6 +587,15 @@ type PokemonTacticalCageState = {
   targeting: PokemonTacticalCageTargetingState | null
 }
 
+export interface PokemonTacticalCageVisibilityState {
+  readonly selected: boolean
+  readonly hovered: boolean
+  readonly pending: boolean
+  readonly corrected: boolean
+  readonly targeting?: PokemonTacticalCageTargetingState | null
+  readonly remoteAttention?: PokemonRenderObjectRemoteAttention
+}
+
 const localTacticalCageFaceOpacity = (state: PokemonTacticalCageState): number => {
   if (state.corrected) {
     return state.selected ? TACTICAL_CAGE_OPACITY.face.correctedSelected : TACTICAL_CAGE_OPACITY.face.corrected
@@ -635,14 +644,12 @@ const localTacticalCageEdgeOpacity = (state: PokemonTacticalCageState): number =
   return TACTICAL_CAGE_OPACITY.edge.idleReset
 }
 
-const shouldShowPokemonTacticalCage = (state: PokemonTacticalCageState & {
-  remoteAttention: PokemonRenderObjectRemoteAttention | undefined
-}): boolean => (
+export const resolvePokemonTacticalCageVisibility = (state: PokemonTacticalCageVisibilityState): boolean => (
   state.selected ||
   state.hovered ||
   state.pending ||
   state.corrected ||
-  state.targeting !== null ||
+  state.targeting != null ||
   hasRemoteAttention(state.remoteAttention)
 )
 
@@ -670,7 +677,7 @@ export const paintPokemonRenderObjectStyle = (
     corrected,
     targeting,
   }
-  renderObject.cageVisible = shouldShowPokemonTacticalCage({
+  renderObject.cageVisible = resolvePokemonTacticalCageVisibility({
     ...tacticalCageState,
     remoteAttention,
   })

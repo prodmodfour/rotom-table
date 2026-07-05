@@ -6,6 +6,7 @@ import type { PokemonRenderObject, WorldSpriteState } from '~/utils/isometric/ty
 import {
   disposePokemonRenderObject,
   paintPokemonRenderObjectStyle,
+  resolvePokemonTacticalCageVisibility,
   setPokemonRenderObjectLayerVisibility,
   updatePokemonRenderObjectFromSpawn,
 } from '~/utils/isometric/tokenRenderer'
@@ -165,49 +166,171 @@ const expectVolumeOpacity = (renderObject: PokemonRenderObject, expectedOpacity:
   }
 }
 
+interface TokenLayerVisibilityExpectation {
+  sprite: boolean
+  halo: boolean
+  proxy: boolean
+  shadow: boolean
+  volume: boolean
+  edges: boolean
+}
+
+const expectTokenLayerVisibility = (
+  renderObject: PokemonRenderObject,
+  expected: TokenLayerVisibilityExpectation,
+) => {
+  expect(renderObject.sprite.visible).toBe(expected.sprite)
+  expect(renderObject.spriteState.halo.visible).toBe(expected.halo)
+  expect(renderObject.proxy.visible).toBe(expected.proxy)
+  expect(renderObject.shadow.visible).toBe(expected.shadow)
+  expect(renderObject.volume.visible).toBe(expected.volume)
+  expect(renderObject.edges.visible).toBe(expected.edges)
+}
+
 type PaintPokemonRenderObjectStyleOptions = NonNullable<Parameters<typeof paintPokemonRenderObjectStyle>[2]>
+type TacticalCageVisibilityState = Parameters<typeof resolvePokemonTacticalCageVisibility>[0]
+type TacticalCageVisibilityOverrides = Partial<TacticalCageVisibilityState>
+
+const tacticalCageVisibilityState = (
+  overrides: TacticalCageVisibilityOverrides = {},
+): TacticalCageVisibilityState => ({
+  selected: overrides.selected ?? false,
+  hovered: overrides.hovered ?? false,
+  pending: overrides.pending ?? false,
+  corrected: overrides.corrected ?? false,
+  targeting: overrides.targeting ?? null,
+  ...(overrides.remoteAttention ? { remoteAttention: overrides.remoteAttention } : {}),
+})
 
 describe('token renderer', () => {
-  it('keeps sprites, shadows, and picking proxies visible while the cage is hidden', () => {
-    const renderObject = makeRenderObject(spawnedPokemon())
-    renderObject.cageVisible = false
-
-    setPokemonRenderObjectLayerVisibility(renderObject, visibleLayers())
-
-    expect(renderObject.sprite.visible).toBe(true)
-    expect(renderObject.spriteState.halo.visible).toBe(true)
-    expect(renderObject.proxy.visible).toBe(true)
-    expect(renderObject.shadow.visible).toBe(true)
-    expect(renderObject.volume.visible).toBe(false)
-    expect(renderObject.edges.visible).toBe(false)
+  it.each([
+    {
+      label: 'idle local state',
+      state: {},
+      visible: false,
+    },
+    {
+      label: 'hovered state',
+      state: { hovered: true },
+      visible: true,
+    },
+    {
+      label: 'selected state',
+      state: { selected: true },
+      visible: true,
+    },
+    {
+      label: 'pending state',
+      state: { pending: true },
+      visible: true,
+    },
+    {
+      label: 'corrected state',
+      state: { corrected: true },
+      visible: true,
+    },
+    {
+      label: 'move-targeting state',
+      state: { targeting: { role: 'candidate' as const, accentColor: '#38bdf8' } },
+      visible: true,
+    },
+    {
+      label: 'remote-attention state',
+      state: {
+        remoteAttention: {
+          selectedCount: 0,
+          hoveredCount: 1,
+          totalCount: 1,
+          primaryColor: '#22d3ee',
+        },
+      },
+      visible: true,
+    },
+    {
+      label: 'cleared remote-attention state',
+      state: {
+        remoteAttention: {
+          selectedCount: 0,
+          hoveredCount: 0,
+          totalCount: 0,
+          primaryColor: '#22d3ee',
+        },
+      },
+      visible: false,
+    },
+  ] satisfies Array<{
+    label: string
+    state: TacticalCageVisibilityOverrides
+    visible: boolean
+  }>)('resolves tactical cage visibility for $label', ({ state, visible }) => {
+    expect(resolvePokemonTacticalCageVisibility(tacticalCageVisibilityState(state))).toBe(visible)
   })
 
-  it('hides the token stack when token layer visibility is disabled', () => {
+  it.each([
+    {
+      label: 'visible tokens, visible shadows, hidden cage',
+      cageVisible: false,
+      layerOverrides: {},
+      expected: {
+        sprite: true,
+        halo: true,
+        proxy: true,
+        shadow: true,
+        volume: false,
+        edges: false,
+      },
+    },
+    {
+      label: 'visible tokens, visible shadows, visible cage',
+      cageVisible: true,
+      layerOverrides: {},
+      expected: {
+        sprite: true,
+        halo: true,
+        proxy: true,
+        shadow: true,
+        volume: true,
+        edges: true,
+      },
+    },
+    {
+      label: 'visible tokens, hidden shadows, visible cage',
+      cageVisible: true,
+      layerOverrides: { shadows: false },
+      expected: {
+        sprite: true,
+        halo: true,
+        proxy: true,
+        shadow: false,
+        volume: true,
+        edges: true,
+      },
+    },
+    {
+      label: 'hidden tokens, visible shadows, visible cage',
+      cageVisible: true,
+      layerOverrides: { tokens: false },
+      expected: {
+        sprite: false,
+        halo: false,
+        proxy: false,
+        shadow: false,
+        volume: false,
+        edges: false,
+      },
+    },
+  ] satisfies Array<{
+    label: string
+    cageVisible: boolean
+    layerOverrides: Partial<LayerVisibility>
+    expected: TokenLayerVisibilityExpectation
+  }>)('applies independent cosmetic layer visibility for $label', ({ cageVisible, layerOverrides, expected }) => {
     const renderObject = makeRenderObject(spawnedPokemon())
-    renderObject.cageVisible = true
+    renderObject.cageVisible = cageVisible
 
-    setPokemonRenderObjectLayerVisibility(renderObject, visibleLayers({ tokens: false }))
+    setPokemonRenderObjectLayerVisibility(renderObject, visibleLayers(layerOverrides))
 
-    expect(renderObject.sprite.visible).toBe(false)
-    expect(renderObject.spriteState.halo.visible).toBe(false)
-    expect(renderObject.proxy.visible).toBe(false)
-    expect(renderObject.shadow.visible).toBe(false)
-    expect(renderObject.volume.visible).toBe(false)
-    expect(renderObject.edges.visible).toBe(false)
-  })
-
-  it('hides contact shadows when the shadow layer is disabled without tying them to cage visibility', () => {
-    const renderObject = makeRenderObject(spawnedPokemon())
-    renderObject.cageVisible = false
-
-    setPokemonRenderObjectLayerVisibility(renderObject, visibleLayers({ shadows: false }))
-
-    expect(renderObject.sprite.visible).toBe(true)
-    expect(renderObject.spriteState.halo.visible).toBe(true)
-    expect(renderObject.proxy.visible).toBe(true)
-    expect(renderObject.shadow.visible).toBe(false)
-    expect(renderObject.volume.visible).toBe(false)
-    expect(renderObject.edges.visible).toBe(false)
+    expectTokenLayerVisibility(renderObject, expected)
   })
 
   it('hides idle cages while preserving the visible sprite stack and picking proxy', () => {

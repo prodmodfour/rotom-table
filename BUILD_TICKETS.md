@@ -322,7 +322,7 @@ Status: DONE
 
 ## 010 — COS-010 — Add unit coverage for token cosmetic state resolution
 
-Status: TODO
+Status: DONE
 
 **Goal:** Protect the new split between sprite, shadow, cage, and sprite shading.
 
