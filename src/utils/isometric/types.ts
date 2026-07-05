@@ -3,7 +3,7 @@ import type { CSS3DSprite } from 'three/examples/jsm/renderers/CSS3DRenderer.js'
 import type { CombatStageMap } from '~/types/combatStages'
 import type { TokenCombatStageGlass } from '~/utils/isometric/tokenCombatStageGlass'
 import type { MapHazardKind, MapVoxelV2 } from '~/types/map'
-import type { SpriteAnimation, SpriteCrop } from '~/types/pokemon'
+import type { SpriteAnimation, SpriteCrop, SpriteVisualBounds } from '~/types/pokemon'
 import type { TokenFacingDirection } from '~/types/tokenFacing'
 import type { TokenRenderGeometryLeases } from '~/utils/isometric/tokenGeometryCache'
 import type { TokenMotionFacingPlan, TokenMotionTrack } from '~/utils/isometric/tokenMotionTracks'
@@ -108,6 +108,9 @@ export interface PokemonRenderObject {
   spriteAnimation?: SpriteAnimation
   backSpriteAnimation?: SpriteAnimation
   spriteCrop?: SpriteCrop
+  spriteVisualBounds?: SpriteVisualBounds
+  backSpriteVisualBounds?: SpriteVisualBounds
+  activeSpriteVisualBounds?: SpriteVisualBounds
   facing: TokenFacingDirection
   turned: boolean
   displayName: string

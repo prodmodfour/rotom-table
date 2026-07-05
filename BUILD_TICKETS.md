@@ -173,7 +173,7 @@ Status: DONE
 
 ## 010 — Carry visual bounds into spawned Pokémon render state
 
-Status: TODO
+Status: DONE
 
 **Commit size:** data plumbing for map tokens only.
 

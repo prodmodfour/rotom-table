@@ -1,5 +1,5 @@
 import type { CombatStageMap } from '~/types/combatStages'
-import type { SpriteAnimation, SpriteCrop, SpawnedPokemon } from '~/types/pokemon'
+import type { SpriteAnimation, SpriteCrop, SpriteVisualBounds, SpawnedPokemon } from '~/types/pokemon'
 import type { TokenFacingDirection } from '~/types/tokenFacing'
 import type { TokenMotionTrack } from '~/utils/isometric/tokenMotionTracks'
 import { normalizeCombatStages } from '~/utils/combatStages'
@@ -26,6 +26,9 @@ export interface PokemonRenderSpawnState {
   spriteAnimation?: SpriteAnimation
   backSpriteAnimation?: SpriteAnimation
   spriteCrop?: SpriteCrop
+  spriteVisualBounds?: SpriteVisualBounds
+  backSpriteVisualBounds?: SpriteVisualBounds
+  activeSpriteVisualBounds?: SpriteVisualBounds
   facing: TokenFacingDirection
   turned: boolean
   displayName: string
@@ -87,6 +90,9 @@ export const pokemonRenderSpawnState = (pokemon: SpawnedPokemon): PokemonRenderS
     spriteAnimation: pokemon.spriteAnimation,
     backSpriteAnimation: pokemon.backSpriteAnimation,
     spriteCrop: pokemon.spriteCrop,
+    spriteVisualBounds: pokemon.spriteVisualBounds,
+    backSpriteVisualBounds: pokemon.backSpriteVisualBounds,
+    activeSpriteVisualBounds: pokemon.spriteVisualBounds,
     facing,
     turned: tokenFacingStoresLegacyTurned(facing),
     displayName: pokemon.species,

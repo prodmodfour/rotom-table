@@ -1,7 +1,7 @@
 import * as THREE from 'three'
 import { describe, expect, it, vi } from 'vitest'
 import type { LayerVisibility } from '~/types/map'
-import type { SpawnedPokemon } from '~/types/pokemon'
+import type { SpawnedPokemon, SpriteVisualBounds } from '~/types/pokemon'
 import type { PokemonRenderObject, WorldSpriteState } from '~/utils/isometric/types'
 import {
   applyPokemonRenderObjectMotionPolish,
@@ -33,6 +33,46 @@ const visibleLayers = (overrides: Partial<LayerVisibility> = {}): LayerVisibilit
 })
 
 type TokenHudSprite = PokemonRenderObject['elevationBadge'] | PokemonRenderObject['hpBar']
+
+const frontVisualBounds: SpriteVisualBounds = {
+  canvasWidth: 96,
+  canvasHeight: 96,
+  left: 20,
+  top: 12,
+  width: 48,
+  height: 52,
+  floating: true,
+}
+
+const backVisualBounds: SpriteVisualBounds = {
+  canvasWidth: 80,
+  canvasHeight: 80,
+  left: 16,
+  top: 10,
+  width: 44,
+  height: 48,
+  floating: true,
+}
+
+const updatedFrontVisualBounds: SpriteVisualBounds = {
+  canvasWidth: 128,
+  canvasHeight: 128,
+  left: 30,
+  top: 18,
+  width: 58,
+  height: 60,
+  floating: true,
+}
+
+const updatedBackVisualBounds: SpriteVisualBounds = {
+  canvasWidth: 128,
+  canvasHeight: 128,
+  left: 34,
+  top: 22,
+  width: 56,
+  height: 62,
+  floating: false,
+}
 
 const cssSpriteStub = <T extends TokenHudSprite>(): T => Object.assign(
   new THREE.Object3D(),
@@ -142,6 +182,9 @@ const makeRenderObject = (pokemon: SpawnedPokemon): PokemonRenderObject => {
     spriteAnimation: pokemon.spriteAnimation,
     backSpriteAnimation: pokemon.backSpriteAnimation,
     spriteCrop: pokemon.spriteCrop,
+    spriteVisualBounds: pokemon.spriteVisualBounds,
+    backSpriteVisualBounds: pokemon.backSpriteVisualBounds,
+    activeSpriteVisualBounds: pokemon.spriteVisualBounds,
     facing: 'south-east',
     turned: false,
     displayName: pokemon.species,
@@ -222,6 +265,26 @@ describe('token renderer', () => {
     expect(motion.sampledCenter).not.toBe(firstCenter)
     firstCenter.set(99, 99, 99)
     expect(motion.sampledCenter.toArray()).toEqual([2.5, 1, 4.5])
+  })
+
+  it('updates sprite visual-bounds metadata from spawned tokens without recreating objects', () => {
+    const renderObject = makeRenderObject(spawnedPokemon({
+      spriteVisualBounds: frontVisualBounds,
+      backSpriteVisualBounds: backVisualBounds,
+    }))
+    const originalSprite = renderObject.sprite
+    const originalHalo = renderObject.spriteState.halo
+
+    updatePokemonRenderObjectFromSpawn(renderObject, spawnedPokemon({
+      spriteVisualBounds: updatedFrontVisualBounds,
+      backSpriteVisualBounds: updatedBackVisualBounds,
+    }))
+
+    expect(renderObject.sprite).toBe(originalSprite)
+    expect(renderObject.spriteState.halo).toBe(originalHalo)
+    expect(renderObject.spriteVisualBounds).toEqual(updatedFrontVisualBounds)
+    expect(renderObject.backSpriteVisualBounds).toEqual(updatedBackVisualBounds)
+    expect(renderObject.activeSpriteVisualBounds).toEqual(updatedFrontVisualBounds)
   })
 
   it('keeps current and target center compatibility when spawn placement changes', () => {

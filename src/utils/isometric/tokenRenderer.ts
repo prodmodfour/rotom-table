@@ -409,6 +409,9 @@ export const createPokemonRenderObject = (
     spriteAnimation: spawnState.spriteAnimation,
     backSpriteAnimation: spawnState.backSpriteAnimation,
     spriteCrop: spawnState.spriteCrop,
+    spriteVisualBounds: spawnState.spriteVisualBounds,
+    backSpriteVisualBounds: spawnState.backSpriteVisualBounds,
+    activeSpriteVisualBounds: spawnState.activeSpriteVisualBounds,
     facing: spawnState.facing,
     turned: spawnState.turned,
     displayName: spawnState.displayName,
@@ -453,6 +456,9 @@ export const updatePokemonRenderObjectFromSpawn = (
   renderObject.spriteAnimation = spawnState.spriteAnimation
   renderObject.backSpriteAnimation = spawnState.backSpriteAnimation
   renderObject.spriteCrop = spawnState.spriteCrop
+  renderObject.spriteVisualBounds = spawnState.spriteVisualBounds
+  renderObject.backSpriteVisualBounds = spawnState.backSpriteVisualBounds
+  renderObject.activeSpriteVisualBounds = spawnState.activeSpriteVisualBounds
   renderObject.facing = spawnState.facing
   renderObject.turned = spawnState.turned
   renderObject.displayName = spawnState.displayName

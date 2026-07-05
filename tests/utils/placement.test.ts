@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import { pokemonCatalogBySpecies } from '~~/data/pokemonCatalog'
 import { trainerCatalog } from '~~/data/trainerCatalog'
 import { placementToSpawned, placementsToSpawned, unresolvedPlacementReferences } from '~/utils/placement'
 import { moveAutomationUserAccuracy } from '~/utils/moveAutomationAccuracy'
@@ -44,6 +45,11 @@ describe('placement helpers', () => {
     expect(spawned?.accuracyRollBonus).toBe(1)
     expect(spawned?.tokenItems).toEqual(['Luck Incense'])
     expect(spawned ? moveAutomationUserAccuracy(spawned) : null).toBe(4)
+    const catalog = pokemonCatalogBySpecies.get('Pikachu')
+    expect(catalog?.spriteVisualBounds).toBeDefined()
+    expect(catalog?.backSpriteVisualBounds).toBeDefined()
+    expect(spawned?.spriteVisualBounds).toEqual(catalog?.spriteVisualBounds)
+    expect(spawned?.backSpriteVisualBounds).toEqual(catalog?.backSpriteVisualBounds)
     expect(spawned?.facing).toBe('north-east')
     expect(spawned?.turned).toBe(false)
   })
