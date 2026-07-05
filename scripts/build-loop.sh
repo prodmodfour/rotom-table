@@ -567,18 +567,25 @@ get_next_ticket_summary() {
       sub(/^##[[:space:]]+/, "", heading)
 
       ticket_id = heading
-      sub(/[[:space:]].*$/, "", ticket_id)
-      ticket_order = last_number_token(ticket_id)
-      if (ticket_order == "") {
-        ticket_id = ""
-        ticket_title = ""
-        ticket_status = ""
-        next
-      }
-
       ticket_title = heading
-      sub(/^[^[:space:]]+[[:space:]]+/, "", ticket_title)
-      if (ticket_title == heading) ticket_title = ""
+      if (ticket_id ~ /^Ticket[[:space:]]+[0-9]+([[:space:]]|$)/) {
+        sub(/^Ticket[[:space:]]+/, "", ticket_id)
+        sub(/[[:space:]].*$/, "", ticket_id)
+        ticket_order = ticket_id + 0
+        ticket_id = sprintf("%03d", ticket_order)
+        sub(/^Ticket[[:space:]]+[0-9]+[[:space:]]*/, "", ticket_title)
+      } else {
+        sub(/[[:space:]].*$/, "", ticket_id)
+        ticket_order = last_number_token(ticket_id)
+        if (ticket_order == "") {
+          ticket_id = ""
+          ticket_title = ""
+          ticket_status = ""
+          next
+        }
+        sub(/^[^[:space:]]+[[:space:]]+/, "", ticket_title)
+        if (ticket_title == heading) ticket_title = ""
+      }
       sub(/^[-—][[:space:]]*/, "", ticket_title)
 
       ticket_status = ""

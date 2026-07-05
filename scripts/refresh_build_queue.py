@@ -112,6 +112,17 @@ def ticket_id_from_heading(line: str) -> str:
     return match.group(2).upper()
 
 
+def normalized_ticket_heading(line: str) -> str:
+    match = TICKET_HEADING_RE.match(line)
+    if not match:
+        raise ValueError(f"Not a ticket heading: {line}")
+    ticket_id = ticket_id_from_heading(line)
+    suffix = line[match.end() :].strip()
+    if suffix:
+        return f"## {ticket_id} {suffix}"
+    return f"## {ticket_id}"
+
+
 def add_todo_statuses(markdown: str) -> tuple[str, list[str]]:
     lines = markdown.splitlines()
     output: list[str] = []
@@ -125,7 +136,7 @@ def add_todo_statuses(markdown: str) -> tuple[str, list[str]]:
             continue
 
         ticket_ids.append(ticket_id_from_heading(line))
-        output.append(line)
+        output.append(normalized_ticket_heading(line))
 
         j = i + 1
         while j < len(lines) and not lines[j].strip():

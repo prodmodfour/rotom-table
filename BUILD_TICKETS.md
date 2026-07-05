@@ -19,7 +19,7 @@ Goal: make Pokémon that visibly hover or float inside their source sprite appea
 
 Implementation invariant: the cage stays semantically correct. The artwork may receive a visual-only offset; base, clearance, shadow projection, selection cages, targeting, and movement rules should continue to use the existing placement dimensions.
 
-## Ticket 1 — Define the visual-bounds metadata contract
+## 001 — Define the visual-bounds metadata contract
 
 Status: TODO
 
@@ -35,7 +35,7 @@ Status: TODO
 - TypeScript accepts Pokémon and trainer catalog entries without visual-bounds metadata.
 - No runtime behaviour changes yet.
 
-## Ticket 2 — Add a reusable sprite visual-bounds extractor
+## 002 — Add a reusable sprite visual-bounds extractor
 
 Status: TODO
 
@@ -53,7 +53,7 @@ Status: TODO
 - Empty/fully transparent images fall back to the full canvas and `floating: false`.
 - The threshold is centralized and documented.
 
-## Ticket 3 — Wire front-sprite downloads to write visual bounds
+## 003 — Wire front-sprite downloads to write visual bounds
 
 Status: TODO
 
@@ -70,7 +70,7 @@ Status: TODO
 - Existing animation metadata remains unchanged except for the new field.
 - Generated JSON remains stable across repeated runs.
 
-## Ticket 4 — Wire back-sprite downloads to write visual bounds
+## 004 — Wire back-sprite downloads to write visual bounds
 
 Status: TODO
 
@@ -85,7 +85,7 @@ Status: TODO
 - Back-sprite manifest entries can carry their own visual-bounds metadata.
 - Map facing can eventually choose front/back-specific offsets instead of assuming both views share the same body centre.
 
-## Ticket 5 — Add manual visual-bounds overrides for outliers
+## 005 — Add manual visual-bounds overrides for outliers
 
 Status: TODO
 
@@ -102,7 +102,7 @@ Status: TODO
 - Overrides can adjust bbox values for known visual outliers.
 - Missing override file behaves as an empty override map.
 
-## Ticket 6 — Regenerate sprite manifests with visual bounds
+## 006 — Regenerate sprite manifests with visual bounds
 
 Status: TODO
 
@@ -119,7 +119,7 @@ Status: TODO
 - Every available back-sprite manifest entry has visual-bounds metadata.
 - No unrelated sprite assets are rewritten unless the script intentionally regenerates them.
 
-## Ticket 7 — Propagate visual bounds through catalogs and Pokédex APIs
+## 007 — Propagate visual bounds through catalogs and Pokédex APIs
 
 Status: TODO
 
@@ -136,7 +136,7 @@ Status: TODO
 - Existing consumers can ignore the fields safely.
 - Typecheck passes.
 
-## Ticket 8 — Add shared body-centre math helpers
+## 008 — Add shared body-centre math helpers
 
 Status: TODO
 
@@ -154,7 +154,7 @@ Status: TODO
 - Floating bounds above centre produce a downward visual offset when appropriate.
 - Tests cover centred sprites, bottom-grounded sprites, hover sprites, and malformed/zero-size bounds.
 
-## Ticket 9 — Centre floating sprites in the Pokédex sprite frame
+## 009 — Centre floating sprites in the Pokédex sprite frame
 
 Status: TODO
 
@@ -171,7 +171,7 @@ Status: TODO
 - Grounded Pokémon keep the current centered-canvas behaviour.
 - Missing sprites and missing metadata render as before.
 
-## Ticket 10 — Carry visual bounds into spawned Pokémon render state
+## 010 — Carry visual bounds into spawned Pokémon render state
 
 Status: TODO
 
@@ -187,7 +187,7 @@ Status: TODO
 - Render objects contain visual-bounds metadata after creation and after spawn updates.
 - Existing tests that build minimal spawned Pokémon continue to pass with optional fields.
 
-## Ticket 11 — Apply visual-only map offsets to sprite and halo
+## 011 — Apply visual-only map offsets to sprite and halo
 
 Status: TODO
 
@@ -204,7 +204,7 @@ Status: TODO
 - The cage, picking proxy, contact shadow, and targeting footprint do not move.
 - Unit tests assert sprite/halo move while cage/proxy/shadow remain anchored.
 
-## Ticket 12 — Choose front/back bounds when facing changes
+## 012 — Choose front/back bounds when facing changes
 
 Status: TODO
 
@@ -221,7 +221,7 @@ Status: TODO
 - Pokémon without back sprites or back metadata remain stable.
 - Existing facing/mirroring tests continue to pass.
 
-## Ticket 13 — Keep HUD/head placement visually attached
+## 013 — Keep HUD/head placement visually attached
 
 Status: TODO
 
@@ -237,7 +237,7 @@ Status: TODO
 - Selected-token lift still raises the sprite and HUD together.
 - Grounded Pokémon HUD placement remains unchanged.
 
-## Ticket 14 — Add a visual QA/dev overlay for body bounds
+## 014 — Add a visual QA/dev overlay for body bounds
 
 Status: TODO
 
@@ -253,7 +253,7 @@ Status: TODO
 - A developer can quickly compare body centre vs cage centre for a selected species.
 - The overlay can be removed or left guarded after QA.
 
-## Ticket 15 — Final QA, overrides, and cleanup
+## 015 — Final QA, overrides, and cleanup
 
 Status: TODO
 
