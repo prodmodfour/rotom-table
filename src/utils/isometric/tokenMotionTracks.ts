@@ -15,6 +15,7 @@ import {
   type TokenMotionCenter,
   type TokenMotionDurationOptions,
   type TokenMotionHopOptions,
+  type TokenMotionReducedMotionPolicy,
 } from './tokenMotionCurves'
 
 export const TOKEN_MOTION_TRACK_RUNTIME_BRAND: unique symbol = Symbol('tokenMotionTrackRuntimeBrand')
@@ -27,6 +28,56 @@ export type TokenMotionTrackReason =
   | 'setup-edit'
 
 export type TokenMotionCancelMode = 'sample-current' | 'snap-to-destination' | 'snap-to-origin'
+
+export const TOKEN_MOTION_SERVER_CORRECTION_DURATION_DEFAULTS_MS = {
+  /** Rollbacks should be readable but quicker than ordinary movement. */
+  min: 80,
+  /** Corrections must not linger over fresh authoritative state. */
+  max: 220,
+  /** Slightly faster than standard movement while still showing direction. */
+  perGridUnit: 72,
+  /** Reduced-motion corrections become a brief state change instead of a glide. */
+  reduced: 40,
+} as const
+
+export interface ResolveTokenMotionReasonDurationOptions {
+  readonly reducedMotion?: boolean
+  readonly reducedMotionPolicy?: TokenMotionReducedMotionPolicy
+}
+
+export const resolveTokenMotionDurationOptionsForReason = (
+  reason: TokenMotionTrackReason,
+  options: ResolveTokenMotionReasonDurationOptions = {},
+): TokenMotionDurationOptions | undefined => {
+  const reducedMotionOptions = {
+    ...(options.reducedMotion !== undefined ? { reducedMotion: options.reducedMotion } : {}),
+    ...(options.reducedMotionPolicy !== undefined
+      ? { reducedMotionPolicy: options.reducedMotionPolicy }
+      : {}),
+  }
+
+  if (reason === 'server-correction') {
+    return {
+      minDurationMs: TOKEN_MOTION_SERVER_CORRECTION_DURATION_DEFAULTS_MS.min,
+      maxDurationMs: TOKEN_MOTION_SERVER_CORRECTION_DURATION_DEFAULTS_MS.max,
+      msPerGridUnit: TOKEN_MOTION_SERVER_CORRECTION_DURATION_DEFAULTS_MS.perGridUnit,
+      reducedMotionDurationMs: TOKEN_MOTION_SERVER_CORRECTION_DURATION_DEFAULTS_MS.reduced,
+      ...reducedMotionOptions,
+    }
+  }
+
+  if (reason === 'reconciliation') {
+    return {
+      minDurationMs: 0,
+      maxDurationMs: 0,
+      msPerGridUnit: 0,
+      reducedMotionPolicy: 'snap',
+      ...reducedMotionOptions,
+    }
+  }
+
+  return Object.keys(reducedMotionOptions).length > 0 ? reducedMotionOptions : undefined
+}
 
 export interface TokenMotionPathSegment {
   readonly origin: TokenMotionCenter

@@ -6,6 +6,7 @@ import {
   createTokenMotionPathSegments,
   finishTokenMotionTrack,
   replaceTokenMotionTrack,
+  resolveTokenMotionDurationOptionsForReason,
   resolveTokenMotionFacingAtSample,
   resolveTokenMotionTravelFacing,
   sampleTokenMotionTrack,
@@ -64,6 +65,60 @@ describe('token motion tracks', () => {
     })
 
     expect(track.durationMs).toBe(192)
+  })
+
+  it('uses short server-correction durations and snap reconciliation policy by reason', () => {
+    const correctionOptions = resolveTokenMotionDurationOptionsForReason('server-correction')
+    const reducedCorrectionOptions = resolveTokenMotionDurationOptionsForReason('server-correction', {
+      reducedMotion: true,
+    })
+    const snapCorrectionOptions = resolveTokenMotionDurationOptionsForReason('server-correction', {
+      reducedMotion: true,
+      reducedMotionPolicy: 'snap',
+    })
+    const reconciliationOptions = resolveTokenMotionDurationOptionsForReason('reconciliation')
+
+    expect(resolveTokenMotionDurationOptionsForReason('setup-edit')).toBeUndefined()
+    expect(startTokenMotionTrack({
+      tokenId: 'token-2-correction-short',
+      origin: { x: 0, y: 0, z: 0 },
+      destination: { x: 1, y: 0, z: 0 },
+      startMs: 1000,
+      reason: 'server-correction',
+      durationOptions: correctionOptions,
+    }).durationMs).toBe(80)
+    expect(startTokenMotionTrack({
+      tokenId: 'token-2-correction-capped',
+      origin: { x: 0, y: 0, z: 0 },
+      destination: { x: 10, y: 0, z: 0 },
+      startMs: 1000,
+      reason: 'server-correction',
+      durationOptions: correctionOptions,
+    }).durationMs).toBe(220)
+    expect(startTokenMotionTrack({
+      tokenId: 'token-2-correction-reduced',
+      origin: { x: 0, y: 0, z: 0 },
+      destination: { x: 10, y: 0, z: 0 },
+      startMs: 1000,
+      reason: 'server-correction',
+      durationOptions: reducedCorrectionOptions,
+    }).durationMs).toBe(40)
+    expect(startTokenMotionTrack({
+      tokenId: 'token-2-correction-snap',
+      origin: { x: 0, y: 0, z: 0 },
+      destination: { x: 10, y: 0, z: 0 },
+      startMs: 1000,
+      reason: 'server-correction',
+      durationOptions: snapCorrectionOptions,
+    }).durationMs).toBe(0)
+    expect(startTokenMotionTrack({
+      tokenId: 'token-2-reconciliation',
+      origin: { x: 0, y: 0, z: 0 },
+      destination: { x: 10, y: 0, z: 0 },
+      startMs: 1000,
+      reason: 'reconciliation',
+      durationOptions: reconciliationOptions,
+    }).durationMs).toBe(0)
   })
 
   it('builds path segments with duration proportional to waypoint distance', () => {

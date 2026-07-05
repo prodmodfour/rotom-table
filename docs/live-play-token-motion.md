@@ -120,7 +120,7 @@ Accepted HTTP responses or accepted SSE acknowledgements call `adoptAcceptedLive
 
 ### Rejected predictions and correction notices
 
-Rejected terminal command responses call `markOperationFailed()`, which rolls back the local prediction through `rollbackLivePlayPredictionFromMap()`. The page also shows a correction notice and passes `livePlayCorrectionTokenIds` into the grid, which affects tactical cage styling. The renderer sees the rollback as another placement update toward the previous center; there is no correction-specific timing or snap/animate policy.
+Rejected terminal command responses call `markOperationFailed()`, which rolls back the local prediction through `rollbackLivePlayPredictionFromMap()`. The page shows the existing non-modal correction notice for simple predicted token corrections and passes both styling IDs and transient motion-policy IDs into the grid. Visible movement rollbacks that are safe to explain as a local correction use the `server-correction` motion reason, which resolves to a brief capped duration and a very short reduced-motion duration. Stale-revision rollbacks and reconciliation cleanup use a transient snap policy instead, because an authoritative snapshot is about to replace the local prediction context.
 
 ### Coalesced same-token movement
 
@@ -128,7 +128,7 @@ Rejected terminal command responses call `markOperationFailed()`, which rolls ba
 
 ### Reconnect and authoritative reconciliation
 
-Realtime gaps, replay validation failures, profile changes, or explicit reconciliation call `reconcileAuthoritativeMap()`. Before reconciliation, pending predictions are cleared through `clearPendingPredictionsForReconciliation()`. The aggregate live-table snapshot then updates the map via `applyPersistedMap()`. Existing render objects whose ids survive the snapshot receive new `targetCenter` values; new objects spawn at their first center; removed objects are disposed. There is no snapshot-specific snap/no-animation policy today.
+Realtime gaps, replay validation failures, profile changes, or explicit reconciliation call `reconcileAuthoritativeMap()`. Before reconciliation, pending predictions are cleared through `clearPendingPredictionsForReconciliation()`, and any tracked token predictions are marked with a transient snap-correction policy for the next renderer sync. The aggregate live-table snapshot then updates the map via `applyPersistedMap()` and increments the page's `mapDataRevision`, which is passed through the scene components to the grid. Existing render objects whose ids survive the snapshot snap to the fresh authoritative centers without replaying stale local intent; new objects spawn at their first center; removed objects are disposed.
 
 ## Current pain points
 
@@ -136,8 +136,8 @@ Realtime gaps, replay validation failures, profile changes, or explicit reconcil
 - **Generic exponential slow tail:** movement uses damping toward a target and finishes only when the epsilon threshold is reached; it has no planned end time.
 - **No explicit duration:** movement speed is not derived from grid distance, command type, correction reason, or user preference.
 - **Limited path context:** local committed movement can now reuse the current preview path, but remote accepted movement, corrections, and reconciliation snapshots still arrive as placement-only updates and fall back to direct motion unless a later source supplies safe path context.
-- **No correction semantics:** accepted confirmations, rejected rollbacks, authoritative conflicts, and reconciliation snapshots all look like ordinary target-center changes.
-- **No reduced-motion policy:** token center movement does not currently consult the browser/OS reduced-motion preference or a token-motion-specific setting.
+- **Correction semantics are now narrow:** simple rejected move predictions use a `server-correction` duration policy, while stale/reconciliation updates snap. Accepted confirmations and remote accepted movement still need separate classification in later tickets.
+- **Reduced-motion policy is still partial:** server-correction durations can be shortened through the existing reduced-motion signal, but ordinary token movement does not yet have a fully central user setting or many-token performance policy.
 - **Limited replacement source context:** rapid same-token moves now replace active tracks from the sampled in-flight center, but the renderer still receives placement updates without knowing whether they came from local prediction, local confirmation, remote accepted movement, correction, or reconciliation.
 - **No source classification in the renderer:** local prediction, remote accepted movement, setup/edit movement, coalesced movement, and snapshot reconciliation all arrive as the same render-object update.
 - **HUD and overlays follow the sampled center but are not track-aware:** HP bars, elevation badges, shadows, cages, proxies, targeting affordances, presence overlays, and camera focus currently read `currentCenter` or `targetCenter` according to existing helpers, without a single explicit motion sample contract.
@@ -160,6 +160,8 @@ Realtime gaps, replay validation failures, profile changes, or explicit reconcil
 
 `LP-S5-010` coordinates sprite facing with token movement. `tokenMotionTracks.ts` resolves a facing plan from the first non-zero direct/path segment plus the final authoritative facing. `syncPokemonRenderObjectPlacementMotion()` attaches that plan to the renderer-owned motion state when a placement track starts or is replaced. The renderer uses the travel-facing plan only while its owning track is active, avoids per-segment flipping, clears the plan on completion/disposal, and drops it immediately for facing-only updates so explicit turn commands stay responsive.
 
+`LP-S5-011` adds rollback-specific motion policy. `resolveTokenMotionDurationOptionsForReason('server-correction')` caps correction movement to a short, deterministic duration and can shorten or snap under reduced motion. The map page marks safe predicted-token rejections for correction motion without changing the authoritative rollback path, while stale-revision and authoritative-reconciliation cleanup mark transient snap corrections. Full snapshot adoption is keyed by `mapDataRevision`, so surviving render objects clear any stale motion track and snap to the fresh authoritative center instead of animating from an obsolete local prediction.
+
 ## Future Sprint 5 change map
 
 The current code suggests this division for later tickets:
@@ -172,7 +174,7 @@ The current code suggests this division for later tickets:
 - `LP-S5-008`: path segment construction and proportional segment sampling. Implemented for locally confirmed preview paths with direct-motion fallback.
 - `LP-S5-009`: deterministic elevation/hop sampling that can be reduced or disabled. Implemented for direct tracks and path segments as visual-only y offsets.
 - `LP-S5-010`: movement-facing timing policy helpers. Implemented with travel-facing plans that are owned by active runtime tracks and cleared for explicit turn updates.
-- `LP-S5-011`: correction/rollback duration and snap policy helpers.
+- `LP-S5-011`: correction/rollback duration and snap policy helpers. Implemented for `server-correction` and reconciliation snap handling.
 - `LP-S5-013`: central reduced-motion and many-token performance policy helpers.
 
 ### Renderer and scene wiring

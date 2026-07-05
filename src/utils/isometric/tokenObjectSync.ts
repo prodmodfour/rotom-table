@@ -85,6 +85,8 @@ export interface PokemonPlacementMotionRenderObject {
   }
 }
 
+export type PokemonPlacementMotionMode = 'animate' | 'snap'
+
 export interface PokemonPlacementMotionSyncOptions<
   TRenderObject extends PokemonPlacementMotionRenderObject = PokemonPlacementMotionRenderObject,
 > {
@@ -94,6 +96,7 @@ export interface PokemonPlacementMotionSyncOptions<
   reason?: TokenMotionTrackReason
   durationOptions?: TokenMotionDurationOptions
   pathAnchors?: readonly GridAnchor[]
+  motionMode?: PokemonPlacementMotionMode
 }
 
 const tokenMotionCenterDistanceSquared = (
@@ -155,6 +158,22 @@ const clearPlacementMotionFacing = (
   delete renderObject.motion.facing
 }
 
+const clearPlacementMotionTrack = (
+  renderObject: PokemonPlacementMotionRenderObject,
+) => {
+  delete renderObject.motion.track
+  clearPlacementMotionFacing(renderObject)
+}
+
+const snapPlacementMotionToDestination = (
+  renderObject: PokemonPlacementMotionRenderObject,
+  destination: TokenMotionCenter,
+) => {
+  clearPlacementMotionTrack(renderObject)
+  copyPlacementMotionSample(renderObject, destination)
+  copyTokenMotionCenter(renderObject.targetCenter, destination)
+}
+
 const setPlacementMotionFacing = (
   renderObject: PokemonPlacementMotionRenderObject,
   pokemon: Pick<SpawnedPokemon, 'facing' | 'turned'>,
@@ -187,9 +206,17 @@ export const syncPokemonRenderObjectPlacementMotion = <
   reason,
   durationOptions,
   pathAnchors,
+  motionMode,
 }: PokemonPlacementMotionSyncOptions<TRenderObject>): boolean => {
   const destination = getPokemonCenter(pokemon)
   const pathCenters = tokenMotionPathCentersForAnchors(pathAnchors, pokemon.base)
+
+  if (motionMode === 'snap') {
+    const wasMoving = renderObject.motion.track !== undefined
+    const targetChanged = !tokenMotionCentersNearlyEqual(renderObject.targetCenter, destination)
+    snapPlacementMotionToDestination(renderObject, destination)
+    return wasMoving || targetChanged
+  }
 
   if (tokenMotionCentersNearlyEqual(renderObject.targetCenter, destination)) {
     return false
@@ -198,8 +225,7 @@ export const syncPokemonRenderObjectPlacementMotion = <
   const renderedOrigin = cloneTokenMotionCenter(renderObject.currentCenter)
 
   if (tokenMotionCentersNearlyEqual(renderedOrigin, destination)) {
-    delete renderObject.motion.track
-    clearPlacementMotionFacing(renderObject)
+    clearPlacementMotionTrack(renderObject)
     copyPlacementMotionSample(renderObject, destination)
     return false
   }
@@ -215,8 +241,7 @@ export const syncPokemonRenderObjectPlacementMotion = <
     })
 
     if (tokenMotionCentersNearlyEqual(replacement.origin, destination)) {
-      delete renderObject.motion.track
-      clearPlacementMotionFacing(renderObject)
+      clearPlacementMotionTrack(renderObject)
       copyPlacementMotionSample(renderObject, destination)
       return false
     }

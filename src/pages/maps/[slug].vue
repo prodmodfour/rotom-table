@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, ref, shallowRef, watch, watchEffect } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, shallowRef, watch, watchEffect } from 'vue'
 import FieldEffectsMenuModal from '~/components/map/FieldEffectsMenuModal.vue'
 import InitiativeMenuModal from '~/components/map/InitiativeMenuModal.vue'
 import MapAdminPanel from '~/components/map/MapAdminPanel.vue'
@@ -206,12 +206,55 @@ interface TrackedLivePlayTokenPrediction {
 const livePlayTrackedTokenPredictions = ref<Readonly<Record<string, TrackedLivePlayTokenPrediction>>>({})
 const livePlayTokenCorrectionNoticeController = createLivePlayTokenCorrectionNoticeController()
 const livePlayTokenCorrectionNotice = livePlayTokenCorrectionNoticeController.notice
+const transientLivePlayCorrectionMotionTokenIds = ref<string[]>([])
+const transientLivePlaySnapCorrectionTokenIds = ref<string[]>([])
+let correctionMotionTokenClearQueued = false
+let snapCorrectionTokenClearQueued = false
 
 onBeforeUnmount(() => {
   livePlayTokenCorrectionNoticeController.dispose()
 })
 
+const appendUniqueTokenIds = (
+  currentIds: readonly string[],
+  placementIds: readonly string[],
+): string[] => Array.from(new Set([
+  ...currentIds,
+  ...placementIds.filter((placementId) => placementId.length > 0),
+]))
+
+const markLivePlayCorrectionMotionTokens = (placementIds: readonly string[]): void => {
+  transientLivePlayCorrectionMotionTokenIds.value = appendUniqueTokenIds(
+    transientLivePlayCorrectionMotionTokenIds.value,
+    placementIds,
+  )
+  if (correctionMotionTokenClearQueued) return
+
+  correctionMotionTokenClearQueued = true
+  void nextTick(() => {
+    correctionMotionTokenClearQueued = false
+    transientLivePlayCorrectionMotionTokenIds.value = []
+  })
+}
+
+const markLivePlaySnapCorrectionTokens = (placementIds: readonly string[]): void => {
+  transientLivePlaySnapCorrectionTokenIds.value = appendUniqueTokenIds(
+    transientLivePlaySnapCorrectionTokenIds.value,
+    placementIds,
+  )
+  if (snapCorrectionTokenClearQueued) return
+
+  snapCorrectionTokenClearQueued = true
+  void nextTick(() => {
+    snapCorrectionTokenClearQueued = false
+    transientLivePlaySnapCorrectionTokenIds.value = []
+  })
+}
+
 const clearLivePlayTrackedPredictionsForReconciliation = (): void => {
+  markLivePlaySnapCorrectionTokens(
+    Object.values(livePlayTrackedTokenPredictions.value).map((prediction) => prediction.placementId),
+  )
   livePlayTrackedTokenPredictions.value = {}
   livePlayTokenCorrectionNoticeController.clear()
 }
@@ -417,10 +460,12 @@ const handleLivePlayCommandRejected = (transition: LivePlayCommandRejectionNotif
 
   forgetLivePlayPredictedToken(predictedToken.opId)
   if (transition.reason === 'stale-revision') {
+    markLivePlaySnapCorrectionTokens([predictedToken.placementId])
     livePlayStateMachine.commandRejected(transition)
     return
   }
 
+  markLivePlayCorrectionMotionTokens([predictedToken.placementId])
   livePlayTokenCorrectionNoticeController.show({
     opId: predictedToken.opId,
     placementId: predictedToken.placementId,
@@ -502,6 +547,7 @@ const livePlayPendingPredictionTokenIds = computed(() => Array.from(new Set(
 const livePlayCorrectionTokenIds = computed(() => (
   livePlayTokenCorrectionNotice.value ? [livePlayTokenCorrectionNotice.value.placementId] : []
 ))
+const livePlayCorrectionMotionTokenIds = computed(() => transientLivePlayCorrectionMotionTokenIds.value)
 const livePlayUnpredictedPendingCommandCount = computed(() => Object.values(livePlayCommands.pendingCommands.value).filter(
   (command) => livePlayCommands.pendingPredictions.value[command.opId] === undefined,
 ).length)
@@ -2503,6 +2549,7 @@ useMapDimensionReconciliation({
         :status="sceneStatus"
         :error="sceneError"
         :slug="slug"
+        :map-data-revision="mapDataRevision"
         :spawned-pokemon="spawnedPokemon"
         :selected-id="selectedId"
         :controllable-placement-ids="livePlayActionablePlacementIds"
@@ -2536,6 +2583,8 @@ useMapDimensionReconciliation({
         :live-play-pending-token-ids="livePlayPendingPredictionTokenIds"
         :live-play-pending-conditions-by-token-id="livePlayPendingConditionsByTokenId"
         :live-play-correction-token-ids="livePlayCorrectionTokenIds"
+        :live-play-correction-motion-token-ids="livePlayCorrectionMotionTokenIds"
+        :live-play-snap-correction-token-ids="transientLivePlaySnapCorrectionTokenIds"
         :remote-token-attention="remoteTokenAttention"
         :presence-pings="mapPresencePings"
         :presence-intent-overlays="remotePresenceIntentOverlays"

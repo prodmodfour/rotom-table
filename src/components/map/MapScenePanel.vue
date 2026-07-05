@@ -119,6 +119,9 @@ const props = defineProps<{
   livePlayPendingTokenIds?: string[]
   livePlayPendingConditionsByTokenId?: Readonly<Record<string, readonly string[]>>
   livePlayCorrectionTokenIds?: string[]
+  livePlayCorrectionMotionTokenIds?: string[]
+  livePlaySnapCorrectionTokenIds?: string[]
+  mapDataRevision?: number
   remoteTokenAttention?: readonly MapTokenRemoteAttention[]
   presencePings?: readonly IsometricPresencePing[]
   presenceIntentOverlays?: readonly MapPresenceIntentOverlay[]
@@ -278,6 +281,9 @@ defineExpose({ focusPokemon, focusCell })
         :live-play-pending-token-ids="livePlayPendingTokenIds ?? []"
         :live-play-pending-conditions-by-token-id="livePlayPendingConditionsByTokenId ?? {}"
         :live-play-correction-token-ids="livePlayCorrectionTokenIds ?? []"
+        :live-play-correction-motion-token-ids="livePlayCorrectionMotionTokenIds ?? []"
+        :live-play-snap-correction-token-ids="livePlaySnapCorrectionTokenIds ?? []"
+        :map-data-revision="mapDataRevision ?? 0"
         :remote-token-attention="remoteTokenAttention ?? []"
         :presence-pings="presencePings ?? []"
         :presence-intent-overlays="presenceIntentOverlays ?? []"

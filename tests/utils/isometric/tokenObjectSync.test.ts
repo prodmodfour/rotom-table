@@ -7,6 +7,7 @@ import {
 import type { SpawnedPokemon } from '~/types/pokemon'
 import type { TokenFacingDirection } from '~/types/tokenFacing'
 import {
+  resolveTokenMotionDurationOptionsForReason,
   startTokenMotionTrack,
   type TokenMotionFacingPlan,
   type TokenMotionTrack,
@@ -319,6 +320,57 @@ describe('isometric token object sync', () => {
     expect(renderObject.motion.track).toBeUndefined()
     expect(renderObject.motion.facing).toBeUndefined()
     expect(renderObject.currentCenter).toEqual({ x: 5.5, y: 0, z: 0.5 })
+  })
+
+  it('uses server-correction duration policy for rollback placement motion', () => {
+    const renderObject = makePlacementMotionRenderObject()
+
+    const started = syncPokemonRenderObjectPlacementMotion({
+      renderObject,
+      pokemon: makePokemon('a', { position: { x: 9, y: 0, z: 0 } }),
+      startMs: 1500,
+      reason: 'server-correction',
+      durationOptions: resolveTokenMotionDurationOptionsForReason('server-correction'),
+    })
+
+    expect(started).toBe(true)
+    expect(renderObject.motion.track).toMatchObject({
+      reason: 'server-correction',
+      durationMs: 220,
+    })
+  })
+
+  it('snaps reconciliation placement updates without leaving stale motion metadata', () => {
+    const renderObject = makePlacementMotionRenderObject()
+    renderObject.currentCenter = makeCenter(5.5, 0, 0.5)
+    renderObject.targetCenter = makeCenter(10.5, 0, 0.5)
+    renderObject.motion.track = startTokenMotionTrack({
+      tokenId: 'a',
+      origin: { x: 0.5, y: 0, z: 0.5 },
+      destination: { x: 10.5, y: 0, z: 0.5 },
+      startMs: 1000,
+      durationMs: 1000,
+      reason: 'local-prediction',
+    })
+    renderObject.motion.facing = {
+      track: renderObject.motion.track,
+      travelFacing: 'north-east',
+      finalFacing: 'south-east',
+    }
+
+    const changed = syncPokemonRenderObjectPlacementMotion({
+      renderObject,
+      pokemon: makePokemon('a'),
+      startMs: 1500,
+      reason: 'reconciliation',
+      motionMode: 'snap',
+    })
+
+    expect(changed).toBe(true)
+    expect(renderObject.motion.track).toBeUndefined()
+    expect(renderObject.motion.facing).toBeUndefined()
+    expect(renderObject.currentCenter).toEqual({ x: 0.5, y: 0, z: 0.5 })
+    expect(renderObject.targetCenter).toEqual({ x: 0.5, y: 0, z: 0.5 })
   })
 
   it('syncs selection styling for existing render objects only', () => {

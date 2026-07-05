@@ -164,6 +164,10 @@ import {
   syncPokemonRenderObjectPlacementMotion,
   syncPokemonRenderObjectSelectionStyles,
 } from '~/utils/isometric/tokenObjectSync'
+import {
+  resolveTokenMotionDurationOptionsForReason,
+  type TokenMotionTrackReason,
+} from '~/utils/isometric/tokenMotionTracks'
 import { isIsometricRenderDebugEnabled } from '~/utils/isometric/renderDebugFlag'
 import { createRenderFrameTimingSampler } from '~/utils/isometric/frameTimingSampler'
 import {
@@ -230,6 +234,9 @@ const props = defineProps<{
   livePlayPendingTokenIds?: string[]
   livePlayPendingConditionsByTokenId?: Readonly<Record<string, readonly string[]>>
   livePlayCorrectionTokenIds?: string[]
+  livePlayCorrectionMotionTokenIds?: string[]
+  livePlaySnapCorrectionTokenIds?: string[]
+  mapDataRevision?: number
   remoteTokenAttention?: readonly MapTokenRemoteAttention[]
   presencePings?: readonly IsometricPresencePing[]
   presenceIntentOverlays?: readonly MapPresenceIntentOverlay[]
@@ -317,6 +324,8 @@ const emitPokemonSelection = (id: string | null) => {
 const controllableIdSet = computed(() => new Set(props.controllableIds ?? props.pokemons.map((pokemon) => pokemon.id)))
 const livePlayPendingTokenIdSet = computed(() => new Set(props.livePlayPendingTokenIds ?? []))
 const livePlayCorrectionTokenIdSet = computed(() => new Set(props.livePlayCorrectionTokenIds ?? []))
+const livePlayCorrectionMotionTokenIdSet = computed(() => new Set(props.livePlayCorrectionMotionTokenIds ?? []))
+const livePlaySnapCorrectionTokenIdSet = computed(() => new Set(props.livePlaySnapCorrectionTokenIds ?? []))
 const remoteTokenAttentionByTokenId = computed(() => new Map(
   (props.remoteTokenAttention ?? []).map((attention) => [attention.tokenId, attention]),
 ))
@@ -523,6 +532,27 @@ const consumePendingTokenMovementPath = (pokemon: SpawnedPokemon): GridAnchor[] 
 
   return cloneGridAnchorPath(pendingPath.path)
 }
+
+let lastPlacementMotionMapDataRevision = props.mapDataRevision ?? 0
+
+const consumeMapDataRevisionPlacementSnap = (): boolean => {
+  const nextRevision = props.mapDataRevision ?? 0
+  if (nextRevision === lastPlacementMotionMapDataRevision) return false
+
+  lastPlacementMotionMapDataRevision = nextRevision
+  pendingTokenMovementPaths.clear()
+  return true
+}
+
+const placementMotionReasonForPokemon = (pokemon: SpawnedPokemon): TokenMotionTrackReason => (
+  livePlayCorrectionMotionTokenIdSet.value.has(pokemon.id) ? 'server-correction' : 'setup-edit'
+)
+
+const placementMotionDurationOptionsForReason = (reason: TokenMotionTrackReason) => (
+  reason === 'server-correction' && props.moveAnimationsReducedMotion === true
+    ? resolveTokenMotionDurationOptionsForReason(reason, { reducedMotion: true })
+    : resolveTokenMotionDurationOptionsForReason(reason)
+)
 const movementPreviewHud = computed(() => {
   const preview = movementPreviewState.value
   if (
@@ -1023,19 +1053,30 @@ const disposeRenderObject = (renderObject: PokemonRenderObject) => {
 
 const syncPokemonObjects = () => {
   const placementMotionStartMs = readRenderMetricsNowMs()
+  const snapshotSnap = consumeMapDataRevisionPlacementSnap()
 
   syncPokemonRenderObjects({
     renderObjects,
     pokemons: renderedPokemons.value,
     createRenderObject: buildRenderObject,
     onCreateRenderObject,
-    onBeforeUpdateExistingRenderObject: (renderObject, pokemon) => syncPokemonRenderObjectPlacementMotion({
-      renderObject,
-      pokemon,
-      startMs: placementMotionStartMs,
-      reason: 'setup-edit',
-      pathAnchors: consumePendingTokenMovementPath(pokemon),
-    }),
+    onBeforeUpdateExistingRenderObject: (renderObject, pokemon) => {
+      const snapCorrection = livePlaySnapCorrectionTokenIdSet.value.has(pokemon.id)
+      const motionMode = snapshotSnap || snapCorrection ? 'snap' : 'animate'
+      const reason: TokenMotionTrackReason = motionMode === 'snap'
+        ? 'reconciliation'
+        : placementMotionReasonForPokemon(pokemon)
+
+      return syncPokemonRenderObjectPlacementMotion({
+        renderObject,
+        pokemon,
+        startMs: placementMotionStartMs,
+        reason,
+        durationOptions: placementMotionDurationOptionsForReason(reason),
+        pathAnchors: motionMode === 'snap' ? undefined : consumePendingTokenMovementPath(pokemon),
+        motionMode,
+      })
+    },
     updateRenderObject: (renderObject, pokemon) => updatePokemonRenderObjectFromSpawn(renderObject, pokemon, {
       geometryCache: tokenGeometryCache,
     }),
@@ -2459,6 +2500,18 @@ useIsometricSceneWatchers({
     requestRender: requestScheduledSceneFrame,
   },
 })
+
+watch(
+  () => props.mapDataRevision,
+  () => {
+    if (!renderer) return
+    syncPokemonObjects()
+    movementInteraction.refreshAfterStateChange()
+    syncDialogsFromPokemons()
+    replayBuildPreview()
+    requestScheduledSceneFrame(['tokens', 'token-style', 'movement-preview', 'build-preview'])
+  },
+)
 
 watch(
   [

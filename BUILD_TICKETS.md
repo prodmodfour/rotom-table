@@ -321,7 +321,7 @@ Status: DONE
 
 ## LP-S5-011 — Add correction and rollback motion policy
 
-Status: TODO
+Status: DONE
 
 **Goal:** Make rejected/corrected predictions feel understandable rather than jarring.
 
