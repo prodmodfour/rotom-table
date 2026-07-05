@@ -5,7 +5,12 @@ import {
   syncPokemonRenderObjectSelectionStyles,
 } from '~/utils/isometric/tokenObjectSync'
 import type { SpawnedPokemon } from '~/types/pokemon'
-import { startTokenMotionTrack, type TokenMotionTrack } from '~/utils/isometric/tokenMotionTracks'
+import type { TokenFacingDirection } from '~/types/tokenFacing'
+import {
+  startTokenMotionTrack,
+  type TokenMotionFacingPlan,
+  type TokenMotionTrack,
+} from '~/utils/isometric/tokenMotionTracks'
 
 const makeCenter = (x: number, y: number, z: number) => ({ x, y, z })
 
@@ -13,13 +18,15 @@ type PlacementMotionRenderObject = {
   id: string
   currentCenter: ReturnType<typeof makeCenter>
   targetCenter: ReturnType<typeof makeCenter>
-  motion: { track?: TokenMotionTrack }
+  facing: TokenFacingDirection
+  motion: { track?: TokenMotionTrack; facing?: TokenMotionFacingPlan & { track: TokenMotionTrack } }
 }
 
 const makePlacementMotionRenderObject = (): PlacementMotionRenderObject => ({
   id: 'a',
   currentCenter: makeCenter(0.5, 0, 0.5),
   targetCenter: makeCenter(0.5, 0, 0.5),
+  facing: 'south-east',
   motion: {},
 })
 
@@ -146,7 +153,7 @@ describe('isometric token object sync', () => {
 
     const started = syncPokemonRenderObjectPlacementMotion({
       renderObject,
-      pokemon: makePokemon('a', { position: { x: 3, y: 1, z: 4 } }),
+      pokemon: makePokemon('a', { position: { x: 3, y: 1, z: 4 }, facing: 'south-west' }),
       startMs: 1234,
       reason: 'remote-accepted',
     })
@@ -158,6 +165,11 @@ describe('isometric token object sync', () => {
       destination: { x: 3.5, y: 1, z: 4.5 },
       startMs: 1234,
       reason: 'remote-accepted',
+    })
+    expect(renderObject.motion.facing).toMatchObject({
+      track: renderObject.motion.track,
+      travelFacing: 'south-east',
+      finalFacing: 'south-west',
     })
     expect(renderObject.targetCenter).toEqual({ x: 0.5, y: 0, z: 0.5 })
   })
@@ -225,6 +237,11 @@ describe('isometric token object sync', () => {
       startMs: 1,
       reason: 'setup-edit',
     })
+    renderObject.motion.facing = {
+      track: renderObject.motion.track,
+      travelFacing: 'south-east',
+      finalFacing: 'south-east',
+    }
 
     const started = syncPokemonRenderObjectPlacementMotion({
       renderObject,
@@ -234,6 +251,7 @@ describe('isometric token object sync', () => {
 
     expect(started).toBe(false)
     expect(renderObject.motion.track).toBeUndefined()
+    expect(renderObject.motion.facing).toBeUndefined()
   })
 
   it('replaces active placement motion from the sampled center when the same token receives a new target', () => {
@@ -266,6 +284,11 @@ describe('isometric token object sync', () => {
     })
     expect(renderObject.currentCenter).toEqual({ x: 5.5, y: 0, z: 0.5 })
     expect(renderObject.motion.track?.durationMs).toBe(520)
+    expect(renderObject.motion.facing).toMatchObject({
+      track: renderObject.motion.track,
+      travelFacing: 'north-east',
+      finalFacing: 'south-east',
+    })
   })
 
   it('does not snap back to a stale current center when replacement target is already sampled', () => {
@@ -280,6 +303,11 @@ describe('isometric token object sync', () => {
       durationMs: 1000,
       reason: 'local-prediction',
     })
+    renderObject.motion.facing = {
+      track: renderObject.motion.track,
+      travelFacing: 'north-east',
+      finalFacing: 'south-east',
+    }
 
     const started = syncPokemonRenderObjectPlacementMotion({
       renderObject,
@@ -289,6 +317,7 @@ describe('isometric token object sync', () => {
 
     expect(started).toBe(false)
     expect(renderObject.motion.track).toBeUndefined()
+    expect(renderObject.motion.facing).toBeUndefined()
     expect(renderObject.currentCenter).toEqual({ x: 5.5, y: 0, z: 0.5 })
   })
 

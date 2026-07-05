@@ -2,9 +2,12 @@ import { describe, expect, it } from 'vitest'
 import {
   TOKEN_MOTION_TRACK_RUNTIME_BRAND,
   cancelTokenMotionTrack,
+  createTokenMotionFacingPlan,
   createTokenMotionPathSegments,
   finishTokenMotionTrack,
   replaceTokenMotionTrack,
+  resolveTokenMotionFacingAtSample,
+  resolveTokenMotionTravelFacing,
   sampleTokenMotionTrack,
   startTokenMotionTrack,
 } from '~/utils/isometric/tokenMotionTracks'
@@ -237,6 +240,76 @@ describe('token motion tracks', () => {
     expect(sample.progress).toBe(0.75)
     expect(sample.easedProgress).toBe(0.9375)
     expect(sample.complete).toBe(false)
+  })
+
+  it('faces direct movement toward the travel direction until the track completes', () => {
+    const track = startTokenMotionTrack({
+      tokenId: 'token-2g-facing',
+      origin: { x: 0, y: 0, z: 0 },
+      destination: { x: -4, y: 0, z: 0 },
+      startMs: 1000,
+      durationMs: 1000,
+      reason: 'remote-accepted',
+    })
+    const plan = createTokenMotionFacingPlan({
+      origin: track.origin,
+      destination: track.destination,
+      currentFacing: 'north-east',
+      finalFacing: 'south-east',
+    })
+
+    expect(plan).toEqual({
+      travelFacing: 'south-west',
+      finalFacing: 'south-east',
+    })
+    expect(resolveTokenMotionTravelFacing({
+      origin: track.origin,
+      destination: track.destination,
+      currentFacing: 'north-east',
+    })).toBe('south-west')
+    expect(resolveTokenMotionFacingAtSample(plan, sampleTokenMotionTrack(track, 1500))).toBe('south-west')
+    expect(resolveTokenMotionFacingAtSample(plan, sampleTokenMotionTrack(track, 2000))).toBe('south-east')
+  })
+
+  it('uses the first non-zero path segment for travel facing without flipping at later waypoints', () => {
+    const pathSegments = createTokenMotionPathSegments({
+      origin: { x: 0, y: 0, z: 0 },
+      destination: { x: -2, y: 0, z: -3 },
+      pathCenters: [
+        { x: 0, y: 0, z: 0 },
+        { x: 0, y: 1, z: 0 },
+        { x: 0, y: 1, z: -3 },
+        { x: -2, y: 0, z: -3 },
+      ],
+      totalDurationMs: 900,
+    })
+
+    expect(resolveTokenMotionTravelFacing({
+      origin: { x: 0, y: 0, z: 0 },
+      destination: { x: -2, y: 0, z: -3 },
+      pathSegments,
+      currentFacing: 'south-east',
+    })).toBe('north-west')
+  })
+
+  it('falls back to the final facing for vertical-only movement with no horizontal travel direction', () => {
+    const track = startTokenMotionTrack({
+      tokenId: 'token-2h-vertical-facing',
+      origin: { x: 1, y: 0, z: 1 },
+      destination: { x: 1, y: 2, z: 1 },
+      startMs: 1000,
+      durationMs: 1000,
+      reason: 'remote-accepted',
+    })
+    const plan = createTokenMotionFacingPlan({
+      origin: track.origin,
+      destination: track.destination,
+      currentFacing: 'north-east',
+      finalFacing: 'south-west',
+    })
+
+    expect(plan).toEqual({ finalFacing: 'south-west' })
+    expect(resolveTokenMotionFacingAtSample(plan, sampleTokenMotionTrack(track, 1500))).toBe('south-west')
   })
 
   it('falls back to direct motion when path centers are missing or invalid', () => {

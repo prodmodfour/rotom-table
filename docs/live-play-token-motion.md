@@ -87,7 +87,7 @@ After center interpolation, `applyPokemonRenderObjectPosition()` applies `curren
 - Elevation badge, combat-stage glass, and HP/status bar receive `currentCenter` and token metadata, so HUD elements follow the same visual movement sample while their text still comes from authoritative token data.
 - CSS HUD helpers report whether their DOM/CSS3D output changed; changed HUD output marks the CSS3D renderer dirty.
 
-`animatePokemonRenderObject()` then applies facing/sprite animation/lighting and selection lift. Selection lift is separate from movement: it eases `liftFactor` toward `liftTarget`, raises sprite/halo/HP bar, and scales/fades the contact shadow while leaving tactical footprint anchoring intact.
+`animatePokemonRenderObject()` then applies facing/sprite animation/lighting and selection lift. Active movement tracks use a runtime-only facing plan: the sprite faces the first non-zero travel segment while the track is in flight, then falls back to the latest authoritative facing after the track clears. Pure `turnToken`/facing-only updates do not start placement motion and clear the temporary travel-facing plan, so explicit turns remain responsive even if center motion is still in progress. Selection lift is separate from movement: it eases `liftFactor` toward `liftTarget`, raises sprite/halo/HP bar, and scales/fades the contact shadow while leaving tactical footprint anchoring intact.
 
 ### Render continuation
 
@@ -158,6 +158,8 @@ Realtime gaps, replay validation failures, profile changes, or explicit reconcil
 
 `LP-S5-009` adds a subtle vertical affordance for elevation-changing movement. Direct tracks and path segments resolve a small deterministic hop height from their origin/destination elevation delta, sample that hop as a y-offset that is zero at the grounded endpoints, and omit it under the reduced-motion policy by default. The hop is presentation-only: authoritative placement remains `targetCenter`/map data, contact shadows still project to terrain surfaces, and HUD elements continue following the sampled visual center.
 
+`LP-S5-010` coordinates sprite facing with token movement. `tokenMotionTracks.ts` resolves a facing plan from the first non-zero direct/path segment plus the final authoritative facing. `syncPokemonRenderObjectPlacementMotion()` attaches that plan to the renderer-owned motion state when a placement track starts or is replaced. The renderer uses the travel-facing plan only while its owning track is active, avoids per-segment flipping, clears the plan on completion/disposal, and drops it immediately for facing-only updates so explicit turn commands stay responsive.
+
 ## Future Sprint 5 change map
 
 The current code suggests this division for later tickets:
@@ -169,7 +171,7 @@ The current code suggests this division for later tickets:
 - `LP-S5-007`: sampled-position replacement rules for rapid same-token movement. Implemented in `replaceTokenMotionTrack()` and token-object sync.
 - `LP-S5-008`: path segment construction and proportional segment sampling. Implemented for locally confirmed preview paths with direct-motion fallback.
 - `LP-S5-009`: deterministic elevation/hop sampling that can be reduced or disabled. Implemented for direct tracks and path segments as visual-only y offsets.
-- `LP-S5-010`: movement-facing timing policy helpers.
+- `LP-S5-010`: movement-facing timing policy helpers. Implemented with travel-facing plans that are owned by active runtime tracks and cleared for explicit turn updates.
 - `LP-S5-011`: correction/rollback duration and snap policy helpers.
 - `LP-S5-013`: central reduced-motion and many-token performance policy helpers.
 

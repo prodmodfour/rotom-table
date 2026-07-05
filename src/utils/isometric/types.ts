@@ -6,7 +6,7 @@ import type { MapHazardKind, MapVoxelV2 } from '~/types/map'
 import type { SpriteAnimation, SpriteCrop } from '~/types/pokemon'
 import type { TokenFacingDirection } from '~/types/tokenFacing'
 import type { TokenRenderGeometryLeases } from '~/utils/isometric/tokenGeometryCache'
-import type { TokenMotionTrack } from '~/utils/isometric/tokenMotionTracks'
+import type { TokenMotionFacingPlan, TokenMotionTrack } from '~/utils/isometric/tokenMotionTracks'
 import type { WorldSpriteIsoLightingRuntime } from '~/utils/isometric/worldSpriteIsoLighting'
 
 export interface WorldSpriteState {
@@ -59,9 +59,16 @@ export interface PokemonTacticalCageTargetingState {
   accentColor?: string
 }
 
+export interface PokemonRenderMotionFacingState extends TokenMotionFacingPlan {
+  /** Track that owns this temporary facing policy; ignored after the track is replaced or cleared. */
+  readonly track: TokenMotionTrack
+}
+
 export interface PokemonRenderMotionState {
   /** Active presentation-only movement track. Runtime-only; never persisted to map data. */
   track?: TokenMotionTrack
+  /** Runtime-only facing policy used only while the owning movement track is active. */
+  facing?: PokemonRenderMotionFacingState
   /** Last sampled center from the explicit motion system, kept separate from authoritative targets. */
   sampledCenter: THREE.Vector3
 }

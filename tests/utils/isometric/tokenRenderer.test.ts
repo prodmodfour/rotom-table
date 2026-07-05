@@ -8,6 +8,7 @@ import {
   createPokemonRenderMotionState,
   disposePokemonRenderObject,
   paintPokemonRenderObjectStyle,
+  resolvePokemonRenderObjectVisualFacing,
   resolvePokemonTacticalCageVisibility,
   setPokemonRenderObjectLayerVisibility,
   updatePokemonRenderObjectFromSpawn,
@@ -246,10 +247,94 @@ describe('token renderer', () => {
       durationMs: 100,
       reason: 'remote-accepted',
     })
+    renderObject.motion.facing = {
+      track: renderObject.motion.track,
+      travelFacing: 'north-east',
+      finalFacing: 'south-east',
+    }
 
     disposePokemonRenderObject(renderObject)
 
     expect(renderObject.motion.track).toBeUndefined()
+    expect(renderObject.motion.facing).toBeUndefined()
+  })
+
+  it('uses movement travel facing while a motion track is active', () => {
+    const renderObject = makeRenderObject(spawnedPokemon({ facing: 'south-west', turned: false }))
+    renderObject.facing = 'south-west'
+    renderObject.turned = false
+    renderObject.motion.track = startTokenMotionTrack({
+      tokenId: renderObject.id,
+      origin: { x: 0.5, y: 0, z: 0.5 },
+      destination: { x: 3.5, y: 0, z: 0.5 },
+      startMs: 10,
+      durationMs: 100,
+      reason: 'remote-accepted',
+    })
+    renderObject.motion.facing = {
+      track: renderObject.motion.track,
+      travelFacing: 'north-east',
+      finalFacing: 'south-west',
+    }
+
+    expect(resolvePokemonRenderObjectVisualFacing(renderObject)).toEqual({
+      facing: 'north-east',
+      turned: false,
+    })
+  })
+
+  it('falls back to authoritative facing after movement motion clears', () => {
+    const renderObject = makeRenderObject(spawnedPokemon({ facing: 'north-west', turned: true }))
+    renderObject.facing = 'north-west'
+    renderObject.turned = true
+    renderObject.motion.facing = {
+      track: startTokenMotionTrack({
+        tokenId: renderObject.id,
+        origin: { x: 0.5, y: 0, z: 0.5 },
+        destination: { x: 3.5, y: 0, z: 0.5 },
+        startMs: 10,
+        durationMs: 100,
+        reason: 'remote-accepted',
+      }),
+      travelFacing: 'north-east',
+      finalFacing: 'north-west',
+    }
+
+    expect(resolvePokemonRenderObjectVisualFacing(renderObject)).toEqual({
+      facing: 'north-west',
+      turned: true,
+    })
+  })
+
+  it('keeps explicit turn updates responsive while movement continues', () => {
+    const renderObject = makeRenderObject(spawnedPokemon({ position: { x: 3, y: 0, z: 0 } }))
+    renderObject.targetCenter.set(3.5, 0, 0.5)
+    renderObject.motion.track = startTokenMotionTrack({
+      tokenId: renderObject.id,
+      origin: { x: 0.5, y: 0, z: 0.5 },
+      destination: { x: 3.5, y: 0, z: 0.5 },
+      startMs: 10,
+      durationMs: 100,
+      reason: 'remote-accepted',
+    })
+    renderObject.motion.facing = {
+      track: renderObject.motion.track,
+      travelFacing: 'north-east',
+      finalFacing: 'south-east',
+    }
+
+    updatePokemonRenderObjectFromSpawn(renderObject, spawnedPokemon({
+      position: { x: 3, y: 0, z: 0 },
+      facing: 'south-west',
+      turned: false,
+    }))
+
+    expect(renderObject.motion.track).toBeDefined()
+    expect(renderObject.motion.facing).toBeUndefined()
+    expect(resolvePokemonRenderObjectVisualFacing(renderObject)).toEqual({
+      facing: 'south-west',
+      turned: false,
+    })
   })
 
   it('keeps contact shadow projected to terrain while a hopped sample lifts the sprite', () => {

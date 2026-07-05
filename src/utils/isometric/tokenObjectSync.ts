@@ -2,12 +2,16 @@ import type { GridAnchor, SpawnedPokemon } from '~/types/pokemon'
 import { getAnchorCenter, getPokemonCenter } from '~/utils/gridGeometry'
 import type { TokenMotionCenter, TokenMotionDurationOptions } from '~/utils/isometric/tokenMotionCurves'
 import {
+  createTokenMotionFacingPlan,
   replaceTokenMotionTrack,
   startTokenMotionTrack,
+  type TokenMotionFacingPlan,
   type TokenMotionTrack,
   type TokenMotionTrackReason,
 } from '~/utils/isometric/tokenMotionTracks'
 import { TOKEN_CENTER_LERP_SNAP_DISTANCE_SQUARED } from '~/utils/isometric/tokenRenderState'
+import type { TokenFacingDirection } from '~/types/tokenFacing'
+import { tokenFacingForPlacement } from '~/utils/tokenFacing'
 
 export interface TokenObjectSyncOptions<TRenderObject> {
   renderObjects: Map<string, TRenderObject>
@@ -65,13 +69,19 @@ export const syncPokemonRenderObjects = <TRenderObject>({
   }
 }
 
+export interface PokemonPlacementMotionFacingState extends TokenMotionFacingPlan {
+  readonly track: TokenMotionTrack
+}
+
 export interface PokemonPlacementMotionRenderObject {
   id: string
   currentCenter: TokenMotionCenter
   targetCenter: TokenMotionCenter
+  facing?: TokenFacingDirection
   motion: {
     track?: TokenMotionTrack
     sampledCenter?: TokenMotionCenter
+    facing?: PokemonPlacementMotionFacingState
   }
 }
 
@@ -79,7 +89,7 @@ export interface PokemonPlacementMotionSyncOptions<
   TRenderObject extends PokemonPlacementMotionRenderObject = PokemonPlacementMotionRenderObject,
 > {
   renderObject: TRenderObject
-  pokemon: Pick<SpawnedPokemon, 'id' | 'base' | 'position'>
+  pokemon: Pick<SpawnedPokemon, 'id' | 'base' | 'position' | 'facing' | 'turned'>
   startMs: number
   reason?: TokenMotionTrackReason
   durationOptions?: TokenMotionDurationOptions
@@ -139,6 +149,29 @@ const copyPlacementMotionSample = (
   copyTokenMotionCenter(renderObject.motion.sampledCenter, center)
 }
 
+const clearPlacementMotionFacing = (
+  renderObject: PokemonPlacementMotionRenderObject,
+) => {
+  delete renderObject.motion.facing
+}
+
+const setPlacementMotionFacing = (
+  renderObject: PokemonPlacementMotionRenderObject,
+  pokemon: Pick<SpawnedPokemon, 'facing' | 'turned'>,
+  track: TokenMotionTrack,
+) => {
+  renderObject.motion.facing = {
+    track,
+    ...createTokenMotionFacingPlan({
+      origin: track.origin,
+      destination: track.destination,
+      pathSegments: track.pathSegments,
+      currentFacing: renderObject.facing ?? tokenFacingForPlacement(pokemon),
+      finalFacing: tokenFacingForPlacement(pokemon),
+    }),
+  }
+}
+
 /**
  * Starts a presentation-only movement track when an existing render object's
  * authoritative placement center changes. The caller must invoke this before
@@ -166,6 +199,7 @@ export const syncPokemonRenderObjectPlacementMotion = <
 
   if (tokenMotionCentersNearlyEqual(renderedOrigin, destination)) {
     delete renderObject.motion.track
+    clearPlacementMotionFacing(renderObject)
     copyPlacementMotionSample(renderObject, destination)
     return false
   }
@@ -182,16 +216,18 @@ export const syncPokemonRenderObjectPlacementMotion = <
 
     if (tokenMotionCentersNearlyEqual(replacement.origin, destination)) {
       delete renderObject.motion.track
+      clearPlacementMotionFacing(renderObject)
       copyPlacementMotionSample(renderObject, destination)
       return false
     }
 
     renderObject.motion.track = replacement
+    setPlacementMotionFacing(renderObject, pokemon, replacement)
     copyPlacementMotionSample(renderObject, replacement.origin)
     return true
   }
 
-  renderObject.motion.track = startTokenMotionTrack({
+  const track = startTokenMotionTrack({
     tokenId: pokemon.id,
     origin: renderedOrigin,
     destination,
@@ -200,6 +236,8 @@ export const syncPokemonRenderObjectPlacementMotion = <
     durationOptions,
     pathCenters,
   })
+  renderObject.motion.track = track
+  setPlacementMotionFacing(renderObject, pokemon, track)
 
   return true
 }

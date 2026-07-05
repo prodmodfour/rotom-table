@@ -295,7 +295,7 @@ Status: DONE
 
 ## LP-S5-010 — Coordinate facing updates with movement motion
 
-Status: TODO
+Status: DONE
 
 **Goal:** Prevent facing from popping awkwardly before or after a movement animation.
 

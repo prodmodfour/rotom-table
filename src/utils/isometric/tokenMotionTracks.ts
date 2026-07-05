@@ -1,3 +1,8 @@
+import type { TokenFacingDirection } from '~/types/tokenFacing'
+import {
+  DEFAULT_TOKEN_FACING_DIRECTION,
+  tokenFacingTowardPoint,
+} from '~/utils/tokenFacing'
 import {
   applyTokenMotionHopOffset,
   clampTokenMotionProgress,
@@ -88,6 +93,24 @@ export interface TokenMotionSample {
 export interface TokenMotionCompletion {
   readonly center: TokenMotionCenter
   readonly completedAtMs: number
+}
+
+export interface TokenMotionFacingPlan {
+  /** Facing used while the visual movement track is in flight. */
+  readonly travelFacing?: TokenFacingDirection
+  /** Authoritative facing restored once the track completes. */
+  readonly finalFacing: TokenFacingDirection
+}
+
+export interface ResolveTokenMotionTravelFacingOptions {
+  readonly origin: TokenMotionCenter
+  readonly destination: TokenMotionCenter
+  readonly pathSegments?: readonly TokenMotionPathSegment[]
+  readonly currentFacing?: TokenFacingDirection
+}
+
+export interface CreateTokenMotionFacingPlanOptions extends ResolveTokenMotionTravelFacingOptions {
+  readonly finalFacing: TokenFacingDirection
 }
 
 export interface CancelTokenMotionTrackOptions {
@@ -274,6 +297,55 @@ const tokenMotionPathDistanceForSegments = (
 
   return distance > TOKEN_MOTION_PATH_CENTER_EPSILON ? distance : undefined
 }
+
+const tokenMotionFacingTowardCenter = (
+  origin: TokenMotionCenter,
+  destination: TokenMotionCenter,
+  currentFacing: TokenFacingDirection,
+): TokenFacingDirection | undefined => tokenFacingTowardPoint(
+  { x: origin.x, z: origin.z },
+  { x: destination.x, z: destination.z },
+  currentFacing,
+) ?? undefined
+
+export const resolveTokenMotionTravelFacing = ({
+  origin,
+  destination,
+  pathSegments,
+  currentFacing = DEFAULT_TOKEN_FACING_DIRECTION,
+}: ResolveTokenMotionTravelFacingOptions): TokenFacingDirection | undefined => {
+  if (pathSegments) {
+    for (const segment of pathSegments) {
+      const segmentFacing = tokenMotionFacingTowardCenter(
+        segment.origin,
+        segment.destination,
+        currentFacing,
+      )
+      if (segmentFacing) return segmentFacing
+    }
+  }
+
+  return tokenMotionFacingTowardCenter(origin, destination, currentFacing)
+}
+
+export const createTokenMotionFacingPlan = ({
+  finalFacing,
+  ...options
+}: CreateTokenMotionFacingPlanOptions): TokenMotionFacingPlan => {
+  const travelFacing = resolveTokenMotionTravelFacing(options)
+
+  return Object.freeze({
+    finalFacing,
+    ...(travelFacing ? { travelFacing } : {}),
+  })
+}
+
+export const resolveTokenMotionFacingAtSample = (
+  plan: TokenMotionFacingPlan,
+  sample: Pick<TokenMotionSample, 'complete'>,
+): TokenFacingDirection => (
+  sample.complete ? plan.finalFacing : plan.travelFacing ?? plan.finalFacing
+)
 
 const resolveTrackDurationMs = (
   origin: TokenMotionCenter,

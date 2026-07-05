@@ -32,7 +32,7 @@ import type {
   TokenRenderGeometryCache,
   TokenRenderGeometryLeases,
 } from '~/utils/isometric/tokenGeometryCache'
-import { tokenFacingVector } from '~/utils/tokenFacing'
+import { tokenFacingStoresLegacyTurned, tokenFacingVector } from '~/utils/tokenFacing'
 import {
   applyAnimationFrame,
   buildContactShadow,
@@ -86,6 +86,7 @@ export const createPokemonRenderMotionState = (
 export const clearPokemonRenderObjectMotionTrack = (renderObject: PokemonRenderObject) => {
   if (!renderObject.motion) return
   delete renderObject.motion.track
+  delete renderObject.motion.facing
 }
 
 type TokenRenderableWithGeometry = THREE.Object3D & {
@@ -111,6 +112,15 @@ const tokenDimensionsChanged = (
   renderObject.height !== spawnState.height ||
   renderObject.base !== spawnState.base ||
   renderObject.clearance !== spawnState.clearance
+)
+
+const tokenTargetCenterChanged = (
+  renderObject: PokemonRenderObject,
+  center: Pick<THREE.Vector3, 'x' | 'y' | 'z'>,
+): boolean => (
+  renderObject.targetCenter.x !== center.x ||
+  renderObject.targetCenter.y !== center.y ||
+  renderObject.targetCenter.z !== center.z
 )
 
 const acquireTokenVolumeGeometries = (
@@ -418,6 +428,13 @@ export const updatePokemonRenderObjectFromSpawn = (
   options: PokemonRenderObjectUpdateOptions = {},
 ) => {
   const spawnState = pokemonRenderSpawnState(pokemon)
+  const placementChanged = tokenTargetCenterChanged(renderObject, spawnState.center)
+  const facingChanged = renderObject.facing !== spawnState.facing || renderObject.turned !== spawnState.turned
+
+  if (!renderObject.motion.track || (!placementChanged && facingChanged)) {
+    delete renderObject.motion.facing
+  }
+
   if (tokenDimensionsChanged(renderObject, spawnState)) {
     applyPokemonRenderObjectDimensions(renderObject, pokemon, spawnState, options)
   }
@@ -801,6 +818,21 @@ export const setPokemonRenderObjectLayerVisibility = (
   applyObjectVisibility(renderObject.shadow, tokens && layers.shadows)
 }
 
+export const resolvePokemonRenderObjectVisualFacing = (
+  renderObject: PokemonRenderObject,
+): Pick<PokemonRenderObject, 'facing' | 'turned'> => {
+  const activeTrack = renderObject.motion.track
+  const facingPlan = renderObject.motion.facing
+  const facing = activeTrack && facingPlan?.track === activeTrack
+    ? facingPlan.travelFacing ?? renderObject.facing
+    : renderObject.facing
+
+  return {
+    facing,
+    turned: tokenFacingStoresLegacyTurned(facing),
+  }
+}
+
 export const animatePokemonRenderObject = (
   renderObject: PokemonRenderObject,
   options: {
@@ -811,16 +843,18 @@ export const animatePokemonRenderObject = (
     haloAlpha: number
   },
 ) => {
+  const visualFacing = resolvePokemonRenderObjectVisualFacing(renderObject)
+
   updateSpriteFacing(renderObject.spriteState, {
     camera: options.camera,
     center: renderObject.currentCenter,
-    facingDirection: tokenFacingVector(renderObject.facing),
+    facingDirection: tokenFacingVector(visualFacing.facing),
     frontSpriteUrl: renderObject.spriteUrl,
     frontSpriteAnimation: renderObject.spriteAnimation,
     backSpriteUrl: renderObject.backSpriteUrl,
     backSpriteAnimation: renderObject.backSpriteAnimation,
     spriteCrop: renderObject.spriteCrop,
-    turned: renderObject.turned,
+    turned: visualFacing.turned,
   })
   if (renderObject.spriteState.animationMeta) {
     applyAnimationFrame(renderObject.spriteState, options.frameNowMs)
