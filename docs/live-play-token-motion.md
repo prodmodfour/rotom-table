@@ -169,14 +169,20 @@ Realtime gaps, replay validation failures, profile changes, or explicit reconcil
 
 `LP-S5-015` adds renderer-owned start/end polish on top of placement sampling. `tokenMotionTracks.ts` resolves a restrained polish config for ordinary non-reduced tracks and samples a double pulse near motion start and end. `tokenRenderer.ts` applies that pulse as small sprite/halo scale and halo alpha changes plus a mild shadow scale/opacity adjustment. The tactical cage, picking proxy, authoritative target center, and contact-shadow projection stay unchanged, so the pulse reads as life without becoming gameplay authority.
 
-## Future Sprint 5 change map
+## Operator smoke coverage
 
-The current code suggests this division for later tickets:
+The movement-feel checklist lives in [Private VPS live-play smoke checklist](private-vps-live-play-smoke.md#live-play-sprint-5-token-motion-smoothness-smoke). Run it with the GM browser plus two separate player browsers so local prediction, remote observation, same-token replacement, path-aware movement, elevation affordances, rejected rollback, reconnect/reconciliation snap, reduced motion, and batch edits while tokens move are all reviewed from the perspectives that matter at the table.
+
+When diagnosing feel, keep the authority boundary visible: animation bridges between the previous rendered center and the latest visible authoritative or predicted placement, but gameplay truth is still the server-accepted map revision or reconciliation snapshot. The optional `?debugLivePlayLatency=1` panel can compare aggregate token-motion metrics with HTTP/SSE command timing. High command latency with normal motion ages points to command transport/acceptance; quick command terminals with long active-motion ages or unexpectedly high active counts points to animation/performance polish. The panel and smoke notes must not record token names, hidden token details, command bodies, profile IDs, hostnames, screenshots, or logs in the repository.
+
+## Sprint 5 completion map
+
+The implemented token-motion system is divided as follows:
 
 ### Pure/testable motion utilities
 
-- `LP-S5-002`: easing, distance-based duration, reduced-motion duration, and center interpolation helpers. Implemented in `src/utils/isometric/tokenMotionCurves.ts` as pure center-point math so future tracks can sample motion without importing three.js.
-- `LP-S5-003`: runtime motion-track model and sampling/cancel/replace helpers. Implemented as pure presentation utilities in `src/utils/isometric/tokenMotionTracks.ts`; not yet wired into render objects.
+- `LP-S5-002`: easing, distance-based duration, reduced-motion duration, and center interpolation helpers. Implemented in `src/utils/isometric/tokenMotionCurves.ts` as pure center-point math so runtime tracks can sample motion without importing three.js.
+- `LP-S5-003`: runtime motion-track model and sampling/cancel/replace helpers. Implemented as pure presentation utilities in `src/utils/isometric/tokenMotionTracks.ts` and wired into renderer-owned runtime state by later Sprint 5 tickets.
 - `LP-S5-007`: sampled-position replacement rules for rapid same-token movement. Implemented in `replaceTokenMotionTrack()` and token-object sync.
 - `LP-S5-008`: path segment construction and proportional segment sampling. Implemented for locally confirmed preview paths with direct-motion fallback.
 - `LP-S5-009`: deterministic elevation/hop sampling that can be reduced or disabled. Implemented for direct tracks and path segments as visual-only y offsets.
@@ -195,5 +201,5 @@ The current code suggests this division for later tickets:
 
 ### Documentation and regression coverage
 
-- `LP-S5-016`: live-play prediction/batch regressions should assert final authoritative map state and revisions, not just animation state.
-- `LP-S5-017`: operator smoke checks should exercise normal movement, remote observers, replacement, path/elevation, rollback, reconnect, reduced motion, and batch edits while emphasizing that animation is not authority.
+- `LP-S5-016`: live-play prediction/batch regressions assert final authoritative map state and revisions, not just animation state.
+- `LP-S5-017`: operator smoke checks exercise normal movement, remote observers, replacement, path/elevation, rollback, reconnect, reduced motion, and batch edits while emphasizing that animation is not authority.
