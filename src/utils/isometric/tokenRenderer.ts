@@ -33,6 +33,7 @@ import type {
   TokenRenderGeometryLeases,
 } from '~/utils/isometric/tokenGeometryCache'
 import { tokenFacingStoresLegacyTurned, tokenFacingVector } from '~/utils/tokenFacing'
+import { getSpriteVisualBoundsWorldYOffset } from '~/utils/spriteVisualBounds'
 import {
   TOKEN_MOTION_POLISH_IDLE_SAMPLE,
   sampleTokenMotionPolish,
@@ -475,6 +476,13 @@ export const updatePokemonRenderObjectFromSpawn = (
   renderObject.spriteState.haloColor = worldSpriteHaloColorForAccent(spawnState.accentColor)
 }
 
+const pokemonRenderObjectVisualYOffset = (
+  renderObject: Pick<PokemonRenderObject, 'activeSpriteVisualBounds' | 'height' | 'clearance'>,
+): number => getSpriteVisualBoundsWorldYOffset(renderObject.activeSpriteVisualBounds, {
+  height: renderObject.height,
+  clearance: renderObject.clearance,
+})
+
 export const applyPokemonRenderObjectPosition = (
   renderObject: PokemonRenderObject,
   options: {
@@ -488,9 +496,12 @@ export const applyPokemonRenderObjectPosition = (
 ): boolean => {
   let cssHudChanged = false
   const center = renderObject.motion.sampledCenter.copy(renderObject.currentCenter)
+  const visualYOffset = pokemonRenderObjectVisualYOffset(renderObject)
+  // Floating visual-bounds offsets are cosmetic: only the artwork and its halo
+  // move so tactical cage, proxy, contact shadow, and occupied volume stay anchored.
   renderObject.sprite.position.set(
     center.x,
-    center.y,
+    center.y + visualYOffset,
     center.z,
   )
   renderObject.spriteState.halo.position.copy(renderObject.sprite.position)

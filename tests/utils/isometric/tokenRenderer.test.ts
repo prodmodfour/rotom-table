@@ -4,6 +4,7 @@ import type { LayerVisibility } from '~/types/map'
 import type { SpawnedPokemon, SpriteVisualBounds } from '~/types/pokemon'
 import type { PokemonRenderObject, WorldSpriteState } from '~/utils/isometric/types'
 import {
+  animatePokemonRenderObject,
   applyPokemonRenderObjectMotionPolish,
   applyPokemonRenderObjectPosition,
   createPokemonRenderMotionState,
@@ -21,6 +22,7 @@ import {
   TERRAIN_PALETTE,
 } from '~/utils/isometric/materials'
 import { startTokenMotionTrack } from '~/utils/isometric/tokenMotionTracks'
+import { spriteVisualAssetKey } from '~/utils/isometric/worldSpriteAssets'
 
 const visibleLayers = (overrides: Partial<LayerVisibility> = {}): LayerVisibility => ({
   terrain: true,
@@ -73,6 +75,18 @@ const updatedBackVisualBounds: SpriteVisualBounds = {
   height: 62,
   floating: false,
 }
+
+const hoverOffsetVisualBounds: SpriteVisualBounds = {
+  canvasWidth: 96,
+  canvasHeight: 96,
+  left: 24,
+  top: 8,
+  width: 48,
+  height: 48,
+  floating: true,
+}
+
+const HOVER_OFFSET_WORLD_Y = -1 / 3
 
 const cssSpriteStub = <T extends TokenHudSprite>(): T => Object.assign(
   new THREE.Object3D(),
@@ -419,6 +433,74 @@ describe('token renderer', () => {
     expect(renderObject.sprite.position.toArray()).toEqual([2.5, 1.16, 3.5])
     expect(renderObject.shadow.position.toArray()).toEqual([2.5, 0.005, 3.5])
     expect(getShadowSurfaceY).toHaveBeenCalledWith(2.5, 3.5, 1, 1.16)
+  })
+
+  it('applies floating visual offsets only to sprite and halo while tactical anchors stay fixed', () => {
+    const renderObject = makeRenderObject(spawnedPokemon({
+      width: 1.5,
+      height: 2,
+      base: 1,
+      clearance: 2,
+      spriteVisualBounds: hoverOffsetVisualBounds,
+    }))
+    renderObject.currentCenter.set(2.5, 1, 3.5)
+    renderObject.motion.sampledCenter.copy(renderObject.currentCenter)
+    const getShadowSurfaceY = vi.fn(() => 0)
+
+    applyPokemonRenderObjectPosition(renderObject, {
+      camera: null,
+      activeTurnId: null,
+      groundLevelY: 0,
+      hoveredPokemonId: null,
+      layers: visibleLayers({ tokens: false }),
+      getShadowSurfaceY,
+    })
+
+    expect(renderObject.sprite.position.x).toBe(2.5)
+    expect(renderObject.sprite.position.y).toBeCloseTo(1 + HOVER_OFFSET_WORLD_Y)
+    expect(renderObject.sprite.position.z).toBe(3.5)
+    expect(renderObject.spriteState.halo.position.x).toBe(2.5)
+    expect(renderObject.spriteState.halo.position.y).toBeCloseTo(1 + HOVER_OFFSET_WORLD_Y)
+    expect(renderObject.spriteState.halo.position.z).toBe(3.5)
+    expect(renderObject.volume.position.toArray()).toEqual([2.5, 2, 3.5])
+    expect(renderObject.edges.position.toArray()).toEqual([2.5, 2, 3.5])
+    expect(renderObject.proxy.position.toArray()).toEqual([2.5, 2, 3.5])
+    expect(renderObject.shadow.position.toArray()).toEqual([2.5, 0.005, 3.5])
+    expect(getShadowSurfaceY).toHaveBeenCalledWith(2.5, 3.5, 1, 1)
+  })
+
+  it('composes selection lift on top of floating visual offsets', () => {
+    const renderObject = makeRenderObject(spawnedPokemon({
+      height: 2,
+      clearance: 2,
+      spriteVisualBounds: hoverOffsetVisualBounds,
+    }))
+    renderObject.currentCenter.set(2.5, 1, 3.5)
+    renderObject.motion.sampledCenter.copy(renderObject.currentCenter)
+    renderObject.spriteState.assetKey = spriteVisualAssetKey({ url: renderObject.spriteUrl })
+    renderObject.liftTarget = 1
+
+    applyPokemonRenderObjectPosition(renderObject, {
+      camera: null,
+      activeTurnId: null,
+      groundLevelY: 0,
+      hoveredPokemonId: null,
+      layers: visibleLayers({ tokens: false }),
+      getShadowSurfaceY: () => 0,
+    })
+    animatePokemonRenderObject(renderObject, {
+      camera: new THREE.PerspectiveCamera(),
+      damping: 1,
+      frameNowMs: 1000,
+      spriteBrightness: 1,
+      haloAlpha: 0.5,
+    })
+
+    expect(renderObject.sprite.position.y).toBeCloseTo(1 + HOVER_OFFSET_WORLD_Y + 0.08)
+    expect(renderObject.spriteState.halo.position.y).toBeCloseTo(1 + HOVER_OFFSET_WORLD_Y + 0.08)
+    expect(renderObject.volume.position.toArray()).toEqual([2.5, 2, 3.5])
+    expect(renderObject.proxy.position.toArray()).toEqual([2.5, 2, 3.5])
+    expect(renderObject.shadow.position.toArray()).toEqual([2.5, 0.005, 3.5])
   })
 
   it('applies subtle start/end motion polish without moving the tactical footprint', () => {

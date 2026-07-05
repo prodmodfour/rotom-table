@@ -189,7 +189,7 @@ Status: DONE
 
 ## 011 — Apply visual-only map offsets to sprite and halo
 
-Status: TODO
+Status: DONE
 
 **Commit size:** map-renderer positioning change plus tests.
 
