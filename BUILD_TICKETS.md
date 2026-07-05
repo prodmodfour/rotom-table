@@ -163,7 +163,7 @@ Status: DONE
 
 ## 005 — COS-005 — Introduce sprite isometric shading constants
 
-Status: TODO
+Status: DONE
 
 **Goal:** Define the desired fake-lighting model before wiring it into rendering.
 
