@@ -121,7 +121,7 @@ Status: DONE
 
 ## 007 — Propagate visual bounds through catalogs and Pokédex APIs
 
-Status: TODO
+Status: DONE
 
 **Commit size:** TypeScript data plumbing only.
 

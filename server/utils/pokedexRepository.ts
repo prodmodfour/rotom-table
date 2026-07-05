@@ -1,6 +1,7 @@
 import { existsSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import spriteManifest from '~~/data/pokemonSpriteManifest.json'
+import backSpriteManifest from '~~/data/pokemonBackSpriteManifest.json'
 import {
   buildPokedexEntries,
   buildPokedexEntryBySlug,
@@ -12,8 +13,9 @@ import {
 } from '~/utils/pokedex/entryIndex'
 import { toPokedexSlug } from '~/utils/pokedex/searchText'
 import { toEditablePokedexRecord } from '~/utils/pokedex/persistence'
-import type { PokedexRecord, SpriteManifestRecord } from '~/types/pokemon'
+import type { BackSpriteManifestRecord, PokedexRecord, SpriteManifestRecord } from '~/types/pokemon'
 import { pokemonProfileSpriteUrl } from '~/utils/profileSprites'
+import { toSpriteVisualBounds } from '~/utils/pokemonSpriteVisualBounds'
 import { PROJECT_ROOT } from './fsPaths'
 import { CAMPAIGN_POKEDEX_OVERRIDES_PATH, campaignPathLabel } from './campaignPaths'
 import { tryReadJsonFile, writeJsonFile } from './jsonFiles'
@@ -49,6 +51,20 @@ const profileSpriteUrlBySpecies = new Map(
   (spriteManifest as SpriteManifestRecord[]).map((entry) => [
     entry.species,
     pokemonProfileSpriteUrl(entry.slug),
+  ]),
+)
+
+const spriteVisualBoundsBySpecies = new Map(
+  (spriteManifest as SpriteManifestRecord[]).map((entry) => [
+    entry.species,
+    toSpriteVisualBounds(entry.visual_bounds),
+  ]),
+)
+
+const backSpriteVisualBoundsBySpecies = new Map(
+  (backSpriteManifest as BackSpriteManifestRecord[]).map((entry) => [
+    entry.species,
+    toSpriteVisualBounds(entry.visual_bounds),
   ]),
 )
 
@@ -159,6 +175,8 @@ const toDetailResponse = (entry: DisplayPokedexEntry): PokedexEntryDetail => ({
   ...entry,
   spriteUrl: spriteUrlBySpecies.get(entry.species) ?? null,
   profileSpriteUrl: profileSpriteUrlBySpecies.get(entry.species) ?? null,
+  spriteVisualBounds: spriteVisualBoundsBySpecies.get(entry.species),
+  backSpriteVisualBounds: backSpriteVisualBoundsBySpecies.get(entry.species),
 })
 
 export const listPokedexEntrySummaries = (): PokedexEntrySummary[] => {
