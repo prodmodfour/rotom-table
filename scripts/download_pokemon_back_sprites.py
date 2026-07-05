@@ -19,6 +19,7 @@ from typing import Any
 import requests
 
 from gif_spritesheet import with_animation_metadata
+from sprite_visual_bounds import extract_sprite_visual_bounds_record
 
 SCRIPT_DIR = Path(__file__).resolve().parent
 REPO_ROOT = SCRIPT_DIR.parent
@@ -122,6 +123,18 @@ def derive_back_asset(entry: dict[str, Any]) -> BackAsset | None:
     raise RuntimeError(f'Unsupported front asset kind: {asset_kind}')
 
 
+def with_back_sprite_metadata(entry: dict[str, Any], public_root: Path) -> dict[str, Any]:
+    """Return a back-sprite manifest entry with animation and visual bounds."""
+    updated = with_animation_metadata(entry, public_root)
+    local_path = str(updated.get('local_path', ''))
+    sprite_path = public_root / local_path
+    if not sprite_path.exists():
+        raise FileNotFoundError(f'Sprite listed in manifest does not exist: {sprite_path}')
+
+    updated['visual_bounds'] = extract_sprite_visual_bounds_record(sprite_path)
+    return updated
+
+
 def download_one(entry: dict[str, Any]) -> dict[str, Any] | None:
     asset = derive_back_asset(entry)
     if asset is None:
@@ -135,7 +148,7 @@ def download_one(entry: dict[str, Any]) -> dict[str, Any] | None:
     target.parent.mkdir(parents=True, exist_ok=True)
     target.write_bytes(response.content)
 
-    return with_animation_metadata({
+    return with_back_sprite_metadata({
         'species': entry['species'],
         'slug': entry['slug'],
         'asset_kind': asset_kind,
@@ -147,11 +160,13 @@ def download_one(entry: dict[str, Any]) -> dict[str, Any] | None:
 
 def convert_existing_manifest() -> None:
     manifest = json.loads(BACK_MANIFEST_PATH.read_text())
-    updated = [with_animation_metadata(entry, PUBLIC_ROOT) for entry in manifest]
+    updated = [with_back_sprite_metadata(entry, PUBLIC_ROOT) for entry in manifest]
     updated.sort(key=lambda entry: entry['species'])
     BACK_MANIFEST_PATH.write_text(json.dumps(updated, indent=2) + '\n')
     converted = sum(1 for entry in updated if entry.get('animation'))
+    bounded = sum(1 for entry in updated if entry.get('visual_bounds'))
     print(f'Converted {converted} existing back GIF spritesheets')
+    print(f'Backfilled {bounded} existing back visual bounds')
     print(f'Wrote {BACK_MANIFEST_PATH}')
 
 
@@ -160,7 +175,7 @@ def main() -> None:
     parser.add_argument(
         '--convert-existing',
         action='store_true',
-        help='only generate spritesheets/animation metadata for the current local manifest',
+        help='only generate spritesheets/animation metadata and visual bounds for the current local manifest',
     )
     args = parser.parse_args()
     if args.convert_existing:

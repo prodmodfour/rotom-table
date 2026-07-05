@@ -72,7 +72,7 @@ Status: DONE
 
 ## 004 — Wire back-sprite downloads to write visual bounds
 
-Status: TODO
+Status: DONE
 
 **Commit size:** update the back sprite downloader/converter only.
 
