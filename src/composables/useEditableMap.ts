@@ -59,6 +59,14 @@ import type { TabletopMap } from '~/types/map'
 
 export type MapSaveStatus = 'idle' | 'loading' | 'saving' | 'saved' | 'error' | 'not-found'
 export type MapRealtimeReconciliationStatus = 'synced' | 'reconnecting' | 'reconciling' | 'reconciled' | 'error'
+export type LivePlayAcceptedEventAdoptionOrigin = 'local-authoritative-confirmation' | 'remote-accepted'
+
+export interface LivePlayAcceptedEventAdoptionInfo {
+  readonly origin: LivePlayAcceptedEventAdoptionOrigin
+  readonly applied: boolean
+  readonly stale: boolean
+  readonly matchedLocalPrediction: boolean
+}
 
 interface ReadonlyValueRef<T> {
   readonly value: T
@@ -106,6 +114,7 @@ export interface UseEditableMapOptions {
   readonly onBeforeAuthoritativeReconciliation?: (reason: string) => void
   readonly onLivePlayCommandAcceptedEvent?: (
     event: LivePlayAcceptedRealtimeEvent,
+    adoption: LivePlayAcceptedEventAdoptionInfo,
   ) => void | Promise<void>
 }
 
@@ -147,6 +156,7 @@ interface NormalizedUseEditableMapOptions extends Required<Pick<UseEditableMapOp
   readonly onBeforeAuthoritativeReconciliation?: (reason: string) => void
   readonly onLivePlayCommandAcceptedEvent?: (
     event: LivePlayAcceptedRealtimeEvent,
+    adoption: LivePlayAcceptedEventAdoptionInfo,
   ) => void | Promise<void>
 }
 
@@ -535,10 +545,36 @@ export const useEditableMap = (
 
   let removeUnloadFlushers: (() => void) | null = bindAutosaveUnloadFlushers(flushWithBeacon)
 
-  const notifyLivePlayCommandAcceptedEvent = (event: LivePlayAcceptedRealtimeEvent): void => {
+  const acceptedEventMatchesLocalPrediction = (event: LivePlayAcceptedRealtimeEvent): boolean => (
+    pendingLivePlayPredictionsRef?.value[event.opId] !== undefined
+  )
+
+  const acceptedEventAdoptionOrigin = (
+    event: LivePlayAcceptedRealtimeEvent,
+    matchedLocalPrediction: boolean,
+  ): LivePlayAcceptedEventAdoptionOrigin => (
+    event.clientId === clientId || matchedLocalPrediction
+      ? 'local-authoritative-confirmation'
+      : 'remote-accepted'
+  )
+
+  const acceptedEventAdoptionInfo = (
+    event: LivePlayAcceptedRealtimeEvent,
+    options: { readonly applied: boolean; readonly stale?: boolean; readonly matchedLocalPrediction: boolean },
+  ): LivePlayAcceptedEventAdoptionInfo => ({
+    origin: acceptedEventAdoptionOrigin(event, options.matchedLocalPrediction),
+    applied: options.applied,
+    stale: options.stale === true,
+    matchedLocalPrediction: options.matchedLocalPrediction,
+  })
+
+  const notifyLivePlayCommandAcceptedEvent = (
+    event: LivePlayAcceptedRealtimeEvent,
+    adoption: LivePlayAcceptedEventAdoptionInfo,
+  ): void => {
     if (!onLivePlayCommandAcceptedEvent) return
     try {
-      void Promise.resolve(onLivePlayCommandAcceptedEvent(event)).catch((err) => {
+      void Promise.resolve(onLivePlayCommandAcceptedEvent(event, adoption)).catch((err) => {
         console.error('[useEditableMap] accepted live-play command event callback failed', err)
       })
     } catch (err) {
@@ -586,16 +622,23 @@ export const useEditableMap = (
     }
 
     const acceptedEvent = parsed.event
+    const matchedLocalPrediction = acceptedEventMatchesLocalPrediction(acceptedEvent)
+    const buildAdoptionInfo = (
+      options: { readonly applied: boolean; readonly stale?: boolean },
+    ): LivePlayAcceptedEventAdoptionInfo => acceptedEventAdoptionInfo(acceptedEvent, {
+      ...options,
+      matchedLocalPrediction,
+    })
 
     const incomingRevision = acceptedEvent.revision
     const currentRevision = documentRevision(map.value)
     if (currentRevision !== null && incomingRevision <= currentRevision) {
-      notifyLivePlayCommandAcceptedEvent(acceptedEvent)
+      notifyLivePlayCommandAcceptedEvent(acceptedEvent, buildAdoptionInfo({ applied: false, stale: true }))
       return
     }
     if (revisionGapRequiresReconcile(acceptedEvent)) {
       requestRealtimeReconciliation('Live-play command revision gap detected. Reloading the live table snapshot.')
-      notifyLivePlayCommandAcceptedEvent(acceptedEvent)
+      notifyLivePlayCommandAcceptedEvent(acceptedEvent, buildAdoptionInfo({ applied: false }))
       return
     }
 
@@ -610,7 +653,7 @@ export const useEditableMap = (
       patchAdoptionContext
       && !runLivePlayPatchAdoptionHook(beforeLivePlayPatchesApply, patchAdoptionContext, 'before')
     ) {
-      notifyLivePlayCommandAcceptedEvent(acceptedEvent)
+      notifyLivePlayCommandAcceptedEvent(acceptedEvent, buildAdoptionInfo({ applied: false }))
       return
     }
 
@@ -624,7 +667,7 @@ export const useEditableMap = (
     if (!patchResult.ok) {
       console.warn('[useEditableMap] live-play patch reconcile required', patchResult.message)
       requestRealtimeReconciliation(patchResult.message)
-      notifyLivePlayCommandAcceptedEvent(acceptedEvent)
+      notifyLivePlayCommandAcceptedEvent(acceptedEvent, buildAdoptionInfo({ applied: false }))
       return
     }
     if (patchResult.applied && map.value) {
@@ -637,10 +680,10 @@ export const useEditableMap = (
       patchAdoptionContext
       && !runLivePlayPatchAdoptionHook(afterLivePlayPatchesApply, patchAdoptionContext, 'after')
     ) {
-      notifyLivePlayCommandAcceptedEvent(acceptedEvent)
+      notifyLivePlayCommandAcceptedEvent(acceptedEvent, buildAdoptionInfo({ applied: patchResult.applied }))
       return
     }
-    notifyLivePlayCommandAcceptedEvent(acceptedEvent)
+    notifyLivePlayCommandAcceptedEvent(acceptedEvent, buildAdoptionInfo({ applied: patchResult.applied }))
   }
 
   const handleRealtimeMapEvent = (event: RealtimeEvent) => {

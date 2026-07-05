@@ -660,6 +660,38 @@ describe('useEditableMap autosave boundary', () => {
     expect(editable.map.value?.placements[0]?.position).toEqual({ x: 4, y: 0, z: 2 })
   })
 
+  it('classifies matching pending prediction events as local authoritative confirmations without requiring an echo client id', async () => {
+    apiMocks.getJson.mockResolvedValueOnce({ map: mapFixture({ revision: 1 }) })
+    const prediction = pendingPredictionFixture()
+    const pendingLivePlayPredictions = ref<Readonly<Record<string, LivePlayLocalPrediction>>>({
+      [prediction.opId]: prediction,
+    })
+    const onAccepted = vi.fn()
+    const editable = useEditableMap('arena-map', {
+      debounceMs: 10,
+      pendingLivePlayPredictions,
+      onLivePlayCommandAcceptedEvent: onAccepted,
+    })
+    await flushPromises()
+
+    apiMocks.realtimeHandlers[0]?.(acceptedCommandEvent({
+      opId: prediction.opId,
+      clientId: undefined,
+    }))
+    await nextTick()
+    await vi.advanceTimersByTimeAsync(10)
+    await flushPromises()
+
+    expect(onAccepted).toHaveBeenCalledTimes(1)
+    expect(onAccepted.mock.calls[0]?.[1]).toEqual({
+      origin: 'local-authoritative-confirmation',
+      applied: true,
+      stale: false,
+      matchedLocalPrediction: true,
+    })
+    expect(editable.mapRevision.value).toBe(2)
+  })
+
   it('requests reconciliation and skips patch application when a live-play patch adoption hook fails', async () => {
     apiMocks.getJson.mockResolvedValueOnce({ map: mapFixture({ revision: 1 }) })
     const consoleWarn = vi.spyOn(console, 'warn').mockImplementation(() => undefined)
@@ -794,11 +826,19 @@ describe('useEditableMap autosave boundary', () => {
     await flushPromises()
 
     expect(onAccepted).toHaveBeenCalledTimes(1)
-    expect(onAccepted).toHaveBeenCalledWith(expect.objectContaining({
-      type: LIVE_PLAY_REALTIME_EVENT_TYPES.COMMAND_ACCEPTED,
-      opId: 'op_realtime001',
-      clientId: 'map-client',
-    }))
+    expect(onAccepted).toHaveBeenCalledWith(
+      expect.objectContaining({
+        type: LIVE_PLAY_REALTIME_EVENT_TYPES.COMMAND_ACCEPTED,
+        opId: 'op_realtime001',
+        clientId: 'map-client',
+      }),
+      expect.objectContaining({
+        origin: 'local-authoritative-confirmation',
+        applied: true,
+        stale: false,
+        matchedLocalPrediction: false,
+      }),
+    )
     expect(callbackRevision).toBe(2)
     expect(callbackPosition).toEqual({ x: 4, y: 0, z: 2 })
     expect(editable.map.value?.placements[0]).toMatchObject({
@@ -850,6 +890,20 @@ describe('useEditableMap autosave boundary', () => {
     await flushPromises()
 
     expect(onAccepted).toHaveBeenCalledTimes(2)
+    expect(onAccepted.mock.calls.map((call) => call[1])).toEqual([
+      {
+        origin: 'remote-accepted',
+        applied: true,
+        stale: false,
+        matchedLocalPrediction: false,
+      },
+      {
+        origin: 'remote-accepted',
+        applied: false,
+        stale: true,
+        matchedLocalPrediction: false,
+      },
+    ])
     expect(editable.mapRevision.value).toBe(2)
     expect(editable.map.value?.placements[0]?.position).toEqual({ x: 4, y: 0, z: 2 })
     expect(apiMocks.getJson).toHaveBeenCalledTimes(1)
@@ -891,6 +945,12 @@ describe('useEditableMap autosave boundary', () => {
     await flushPromises()
 
     expect(onAccepted).toHaveBeenCalledTimes(1)
+    expect(onAccepted.mock.calls[0]?.[1]).toEqual({
+      origin: 'remote-accepted',
+      applied: false,
+      stale: true,
+      matchedLocalPrediction: false,
+    })
     expect(beforeLivePlayPatchesApply).not.toHaveBeenCalled()
     expect(afterLivePlayPatchesApply).not.toHaveBeenCalled()
     expect(requestAuthoritativeReconciliation).not.toHaveBeenCalled()

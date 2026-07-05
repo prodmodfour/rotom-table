@@ -12,7 +12,11 @@ import MapScenePanel from '~/components/map/MapScenePanel.vue'
 import PokeballCaptureResultModal from '~/components/map/PokeballCaptureResultModal.vue'
 import SheetsMenuModal from '~/components/map/SheetsMenuModal.vue'
 import StartTurnModal from '~/components/map/StartTurnModal.vue'
-import { useEditableMap, type MapSaveStatus } from '~/composables/useEditableMap'
+import {
+  useEditableMap,
+  type LivePlayAcceptedEventAdoptionInfo,
+  type MapSaveStatus,
+} from '~/composables/useEditableMap'
 import { useLiveSheets } from '~/composables/useLiveSheets'
 import {
   pokeballCaptureFromAcceptedRealtimeEvent,
@@ -64,7 +68,7 @@ import {
 import { useManeuverActionPanel } from '~/composables/map-editor/useManeuverActionPanel'
 import { useOrderActionPanel } from '~/composables/map-editor/useOrderActionPanel'
 import { usePokeballCapturePanel } from '~/composables/map-editor/usePokeballCapturePanel'
-import { LIVE_PLAY_COMMAND_TYPES } from '#shared/livePlayCommands'
+import { LIVE_PLAY_COMMAND_TYPES, LIVE_PLAY_PATCH_TYPES } from '#shared/livePlayCommands'
 import { MAP_INTERACTION_MODES, type MapInteractionMode } from '#shared/mapInteractionMode'
 import {
   LIVE_PLAY_PRESENCE_MAX_INTENT_AREA_CELLS,
@@ -208,8 +212,10 @@ const livePlayTokenCorrectionNoticeController = createLivePlayTokenCorrectionNot
 const livePlayTokenCorrectionNotice = livePlayTokenCorrectionNoticeController.notice
 const transientLivePlayCorrectionMotionTokenIds = ref<string[]>([])
 const transientLivePlaySnapCorrectionTokenIds = ref<string[]>([])
+const transientLivePlayRemoteAcceptedMotionTokenIds = ref<string[]>([])
 let correctionMotionTokenClearQueued = false
 let snapCorrectionTokenClearQueued = false
+let remoteAcceptedMotionTokenClearQueued = false
 
 onBeforeUnmount(() => {
   livePlayTokenCorrectionNoticeController.dispose()
@@ -249,6 +255,48 @@ const markLivePlaySnapCorrectionTokens = (placementIds: readonly string[]): void
     snapCorrectionTokenClearQueued = false
     transientLivePlaySnapCorrectionTokenIds.value = []
   })
+}
+
+const markLivePlayRemoteAcceptedMotionTokens = (placementIds: readonly string[]): void => {
+  transientLivePlayRemoteAcceptedMotionTokenIds.value = appendUniqueTokenIds(
+    transientLivePlayRemoteAcceptedMotionTokenIds.value,
+    placementIds,
+  )
+  if (remoteAcceptedMotionTokenClearQueued) return
+
+  remoteAcceptedMotionTokenClearQueued = true
+  void nextTick(() => {
+    remoteAcceptedMotionTokenClearQueued = false
+    transientLivePlayRemoteAcceptedMotionTokenIds.value = []
+  })
+}
+
+const livePlayTokenPositionPatchPlacementId = (payload: unknown): string | null => {
+  if (!payload || typeof payload !== 'object' || !('placementId' in payload)) return null
+  const placementId = (payload as { readonly placementId?: unknown }).placementId
+  return typeof placementId === 'string' && placementId.length > 0 ? placementId : null
+}
+
+const livePlayRemoteAcceptedMovementTokenIds = (
+  event: LivePlayAcceptedRealtimeEvent,
+  adoption: LivePlayAcceptedEventAdoptionInfo,
+): string[] => {
+  if (!adoption.applied || adoption.origin !== 'remote-accepted') return []
+
+  const visiblePlacementIds = visiblePresenceTokenIdSet.value
+  return Array.from(new Set(event.patches.flatMap((patch) => {
+    if (patch.type !== LIVE_PLAY_PATCH_TYPES.TOKEN_POSITION) return []
+    const placementId = livePlayTokenPositionPatchPlacementId(patch.payload)
+    return placementId && visiblePlacementIds.has(placementId) ? [placementId] : []
+  })))
+}
+
+const handleAcceptedLivePlayCommandEventForPresentation = (
+  event: LivePlayAcceptedRealtimeEvent,
+  adoption: LivePlayAcceptedEventAdoptionInfo,
+): void => {
+  const placementIds = livePlayRemoteAcceptedMovementTokenIds(event, adoption)
+  if (placementIds.length > 0) markLivePlayRemoteAcceptedMotionTokens(placementIds)
 }
 
 const clearLivePlayTrackedPredictionsForReconciliation = (): void => {
@@ -299,7 +347,10 @@ const {
   beforeLivePlayPatchesApply,
   afterLivePlayPatchesApply,
   onBeforeAuthoritativeReconciliation: clearLivePlayPredictionsForReconciliation,
-  onLivePlayCommandAcceptedEvent: (event) => acknowledgeAcceptedRealtimeEvent(event),
+  onLivePlayCommandAcceptedEvent: (event, adoption) => {
+    handleAcceptedLivePlayCommandEventForPresentation(event, adoption)
+    return acknowledgeAcceptedRealtimeEvent(event)
+  },
 })
 
 const liveTableSnapshotSync = useLiveTableSnapshotSync({
@@ -548,6 +599,7 @@ const livePlayCorrectionTokenIds = computed(() => (
   livePlayTokenCorrectionNotice.value ? [livePlayTokenCorrectionNotice.value.placementId] : []
 ))
 const livePlayCorrectionMotionTokenIds = computed(() => transientLivePlayCorrectionMotionTokenIds.value)
+const livePlayRemoteAcceptedMotionTokenIds = computed(() => transientLivePlayRemoteAcceptedMotionTokenIds.value)
 const livePlayUnpredictedPendingCommandCount = computed(() => Object.values(livePlayCommands.pendingCommands.value).filter(
   (command) => livePlayCommands.pendingPredictions.value[command.opId] === undefined,
 ).length)
@@ -2585,6 +2637,7 @@ useMapDimensionReconciliation({
         :live-play-correction-token-ids="livePlayCorrectionTokenIds"
         :live-play-correction-motion-token-ids="livePlayCorrectionMotionTokenIds"
         :live-play-snap-correction-token-ids="transientLivePlaySnapCorrectionTokenIds"
+        :live-play-remote-accepted-token-ids="livePlayRemoteAcceptedMotionTokenIds"
         :remote-token-attention="remoteTokenAttention"
         :presence-pings="mapPresencePings"
         :presence-intent-overlays="remotePresenceIntentOverlays"

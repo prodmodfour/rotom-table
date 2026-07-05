@@ -166,6 +166,7 @@ import {
 } from '~/utils/isometric/tokenObjectSync'
 import {
   resolveTokenMotionDurationOptionsForReason,
+  resolveTokenPlacementMotionReason,
   type TokenMotionTrackReason,
 } from '~/utils/isometric/tokenMotionTracks'
 import { isIsometricRenderDebugEnabled } from '~/utils/isometric/renderDebugFlag'
@@ -236,6 +237,7 @@ const props = defineProps<{
   livePlayCorrectionTokenIds?: string[]
   livePlayCorrectionMotionTokenIds?: string[]
   livePlaySnapCorrectionTokenIds?: string[]
+  livePlayRemoteAcceptedTokenIds?: string[]
   mapDataRevision?: number
   remoteTokenAttention?: readonly MapTokenRemoteAttention[]
   presencePings?: readonly IsometricPresencePing[]
@@ -326,6 +328,7 @@ const livePlayPendingTokenIdSet = computed(() => new Set(props.livePlayPendingTo
 const livePlayCorrectionTokenIdSet = computed(() => new Set(props.livePlayCorrectionTokenIds ?? []))
 const livePlayCorrectionMotionTokenIdSet = computed(() => new Set(props.livePlayCorrectionMotionTokenIds ?? []))
 const livePlaySnapCorrectionTokenIdSet = computed(() => new Set(props.livePlaySnapCorrectionTokenIds ?? []))
+const livePlayRemoteAcceptedTokenIdSet = computed(() => new Set(props.livePlayRemoteAcceptedTokenIds ?? []))
 const remoteTokenAttentionByTokenId = computed(() => new Map(
   (props.remoteTokenAttention ?? []).map((attention) => [attention.tokenId, attention]),
 ))
@@ -544,9 +547,11 @@ const consumeMapDataRevisionPlacementSnap = (): boolean => {
   return true
 }
 
-const placementMotionReasonForPokemon = (pokemon: SpawnedPokemon): TokenMotionTrackReason => (
-  livePlayCorrectionMotionTokenIdSet.value.has(pokemon.id) ? 'server-correction' : 'setup-edit'
-)
+const placementMotionReasonForPokemon = (pokemon: SpawnedPokemon): TokenMotionTrackReason => resolveTokenPlacementMotionReason({
+  serverCorrection: livePlayCorrectionMotionTokenIdSet.value.has(pokemon.id),
+  localPrediction: livePlayPendingTokenIdSet.value.has(pokemon.id),
+  remoteAccepted: livePlayRemoteAcceptedTokenIdSet.value.has(pokemon.id),
+})
 
 const placementMotionDurationOptionsForReason = (reason: TokenMotionTrackReason) => (
   reason === 'server-correction' && props.moveAnimationsReducedMotion === true

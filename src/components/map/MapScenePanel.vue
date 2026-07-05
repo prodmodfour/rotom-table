@@ -121,6 +121,7 @@ const props = defineProps<{
   livePlayCorrectionTokenIds?: string[]
   livePlayCorrectionMotionTokenIds?: string[]
   livePlaySnapCorrectionTokenIds?: string[]
+  livePlayRemoteAcceptedTokenIds?: string[]
   mapDataRevision?: number
   remoteTokenAttention?: readonly MapTokenRemoteAttention[]
   presencePings?: readonly IsometricPresencePing[]
@@ -283,6 +284,7 @@ defineExpose({ focusPokemon, focusCell })
         :live-play-correction-token-ids="livePlayCorrectionTokenIds ?? []"
         :live-play-correction-motion-token-ids="livePlayCorrectionMotionTokenIds ?? []"
         :live-play-snap-correction-token-ids="livePlaySnapCorrectionTokenIds ?? []"
+        :live-play-remote-accepted-token-ids="livePlayRemoteAcceptedTokenIds ?? []"
         :map-data-revision="mapDataRevision ?? 0"
         :remote-token-attention="remoteTokenAttention ?? []"
         :presence-pings="presencePings ?? []"

@@ -9,6 +9,7 @@ import {
   resolveTokenMotionDurationOptionsForReason,
   resolveTokenMotionFacingAtSample,
   resolveTokenMotionTravelFacing,
+  resolveTokenPlacementMotionReason,
   sampleTokenMotionTrack,
   startTokenMotionTrack,
 } from '~/utils/isometric/tokenMotionTracks'
@@ -65,6 +66,21 @@ describe('token motion tracks', () => {
     })
 
     expect(track.durationMs).toBe(192)
+  })
+
+  it('resolves live-play placement motion reasons by priority', () => {
+    expect(resolveTokenPlacementMotionReason()).toBe('setup-edit')
+    expect(resolveTokenPlacementMotionReason({ remoteAccepted: true })).toBe('remote-accepted')
+    expect(resolveTokenPlacementMotionReason({ localPrediction: true })).toBe('local-prediction')
+    expect(resolveTokenPlacementMotionReason({
+      localPrediction: true,
+      remoteAccepted: true,
+    })).toBe('local-prediction')
+    expect(resolveTokenPlacementMotionReason({
+      serverCorrection: true,
+      localPrediction: true,
+      remoteAccepted: true,
+    })).toBe('server-correction')
   })
 
   it('uses short server-correction durations and snap reconciliation policy by reason', () => {

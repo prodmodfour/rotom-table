@@ -27,6 +27,23 @@ export type TokenMotionTrackReason =
   | 'reconciliation'
   | 'setup-edit'
 
+export interface ResolveTokenPlacementMotionReasonOptions {
+  readonly localPrediction?: boolean
+  readonly remoteAccepted?: boolean
+  readonly serverCorrection?: boolean
+}
+
+export const resolveTokenPlacementMotionReason = ({
+  localPrediction,
+  remoteAccepted,
+  serverCorrection,
+}: ResolveTokenPlacementMotionReasonOptions = {}): TokenMotionTrackReason => {
+  if (serverCorrection) return 'server-correction'
+  if (localPrediction) return 'local-prediction'
+  if (remoteAccepted) return 'remote-accepted'
+  return 'setup-edit'
+}
+
 export type TokenMotionCancelMode = 'sample-current' | 'snap-to-destination' | 'snap-to-origin'
 
 export const TOKEN_MOTION_SERVER_CORRECTION_DURATION_DEFAULTS_MS = {

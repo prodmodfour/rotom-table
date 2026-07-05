@@ -349,7 +349,7 @@ Status: DONE
 
 ## LP-S5-012 — Smooth remote accepted movement separately from local prediction
 
-Status: TODO
+Status: DONE
 
 **Goal:** Make other players’ accepted moves animate in observers’ browsers while local predictions remain immediate.
 

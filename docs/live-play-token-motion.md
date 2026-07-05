@@ -108,15 +108,15 @@ All of the following paths eventually enter the renderer as ordinary `pokemons` 
 - `movePokemon()` records the pending prediction-op set, dispatches `livePlayCommands.moveToken()`, and then checks whether a new move prediction appeared.
 - `useLivePlayCommands.trackLocalPrediction()` builds a move prediction and calls `applyLivePlayPredictionToMap()` immediately.
 - The predicted placement updates `spawnedPokemon` and then `targetCenter`.
-- The token is also marked pending through `livePlayPendingTokenIds`, which changes tactical cage styling but not movement math.
+- The token is also marked pending through `livePlayPendingTokenIds`, which changes tactical cage styling and now classifies the placement track as `local-prediction` when the predicted position reaches the grid.
 
 ### Local authoritative confirmation
 
-Accepted HTTP responses or accepted SSE acknowledgements call `adoptAcceptedLivePlayResponse()`, which applies authoritative patches or a map fallback. Patch adoption hooks temporarily roll back pending predictions before applying accepted patches, then remove or reapply predictions as needed. The renderer only observes the resulting placement state after Vue reactivity flushes; it has no explicit "local confirmation" reason and no way to preserve or merge an in-progress predicted animation.
+Accepted HTTP responses or accepted SSE acknowledgements call `adoptAcceptedLivePlayResponse()`, which applies authoritative patches or a map fallback. Patch adoption hooks temporarily roll back pending predictions before applying accepted patches, then remove or reapply predictions as needed. Accepted realtime callbacks now include adoption metadata that distinguishes local authoritative confirmations from remote accepted movement by client id and pending prediction `opId`. The grid does not start a new track when the matching authoritative confirmation lands at the same `targetCenter`, so the in-flight local prediction continues instead of stuttering.
 
 ### Remote accepted movement
 
-`useEditableMap.handleAcceptedLivePlayCommandEvent()` receives accepted live-play SSE events, validates revision continuity, runs prediction adoption hooks, and applies `applyLivePlayPatchesToMap()`. A remote `token.position` patch updates the map placement and therefore the grid's `pokemons` prop. The renderer treats it exactly like any other `targetCenter` change.
+`useEditableMap.handleAcceptedLivePlayCommandEvent()` receives accepted live-play SSE events, validates revision continuity, runs prediction adoption hooks, and applies `applyLivePlayPatchesToMap()`. A remote `token.position` patch updates the map placement and therefore the grid's `pokemons` prop. The map page marks successfully applied remote accepted movement IDs for one render tick, and the grid classifies those placement tracks as `remote-accepted`. Stale duplicate terminal events are still acknowledged for recovery bookkeeping but are reported as unapplied, so they do not restart token motion.
 
 ### Rejected predictions and correction notices
 
@@ -136,10 +136,9 @@ Realtime gaps, replay validation failures, profile changes, or explicit reconcil
 - **Generic exponential slow tail:** movement uses damping toward a target and finishes only when the epsilon threshold is reached; it has no planned end time.
 - **No explicit duration:** movement speed is not derived from grid distance, command type, correction reason, or user preference.
 - **Limited path context:** local committed movement can now reuse the current preview path, but remote accepted movement, corrections, and reconciliation snapshots still arrive as placement-only updates and fall back to direct motion unless a later source supplies safe path context.
-- **Correction semantics are now narrow:** simple rejected move predictions use a `server-correction` duration policy, while stale/reconciliation updates snap. Accepted confirmations and remote accepted movement still need separate classification in later tickets.
+- **Correction semantics are now narrow:** simple rejected move predictions use a `server-correction` duration policy, while stale/reconciliation updates snap. Accepted confirmations and remote accepted movement now have source classification, but later reduced-motion/performance work still needs to apply ordinary movement settings consistently.
 - **Reduced-motion policy is still partial:** server-correction durations can be shortened through the existing reduced-motion signal, but ordinary token movement does not yet have a fully central user setting or many-token performance policy.
-- **Limited replacement source context:** rapid same-token moves now replace active tracks from the sampled in-flight center, but the renderer still receives placement updates without knowing whether they came from local prediction, local confirmation, remote accepted movement, correction, or reconciliation.
-- **No source classification in the renderer:** local prediction, remote accepted movement, setup/edit movement, coalesced movement, and snapshot reconciliation all arrive as the same render-object update.
+- **Limited replacement source context:** rapid same-token moves now replace active tracks from the sampled in-flight center, and placement-motion reasons cover local prediction, remote accepted movement, server correction, reconciliation, and setup/edit. Path context is still local-preview only, so remote accepted movement usually falls back to direct interpolation.
 - **HUD and overlays follow the sampled center but are not track-aware:** HP bars, elevation badges, shadows, cages, proxies, targeting affordances, presence overlays, and camera focus currently read `currentCenter` or `targetCenter` according to existing helpers, without a single explicit motion sample contract.
 
 ## Runtime motion-track utility foundation
@@ -162,6 +161,8 @@ Realtime gaps, replay validation failures, profile changes, or explicit reconcil
 
 `LP-S5-011` adds rollback-specific motion policy. `resolveTokenMotionDurationOptionsForReason('server-correction')` caps correction movement to a short, deterministic duration and can shorten or snap under reduced motion. The map page marks safe predicted-token rejections for correction motion without changing the authoritative rollback path, while stale-revision and authoritative-reconciliation cleanup mark transient snap corrections. Full snapshot adoption is keyed by `mapDataRevision`, so surviving render objects clear any stale motion track and snap to the fresh authoritative center instead of animating from an obsolete local prediction.
 
+`LP-S5-012` separates local prediction from remote accepted movement. `useEditableMap()` reports whether each accepted realtime event was applied, stale, a local authoritative confirmation, or a remote accepted update. The map page uses that metadata to mark only successfully applied remote `token.position` patches for `remote-accepted` motion, while `livePlayPendingTokenIds` classifies local predicted movement as `local-prediction`. Matching local authoritative confirmations and duplicate terminal deliveries do not create a new placement target, so they do not restart active motion.
+
 ## Future Sprint 5 change map
 
 The current code suggests this division for later tickets:
@@ -182,7 +183,7 @@ The current code suggests this division for later tickets:
 - `LP-S5-004`: implemented in `PokemonRenderObject.motion` as runtime-only `track` metadata plus a `sampledCenter` output while keeping `currentCenter`/`targetCenter` compatibility.
 - `LP-S5-005`: implemented in `stepIsometricAnimationFrame()` and token render-state continuation helpers. Active tracks are sampled by `frameNowMs`, completed tracks clear at their planned destination, the fallback lerp remains for objects without tracks, and CSS/WebGL token attachments continue to use the sampled center.
 - `LP-S5-006`: implemented in token object sync. Existing-token placement changes start tracks from the current rendered center; spawns, deletes, and sheet/HUD-only updates do not animate.
-- `LP-S5-012`: classify local prediction, local confirmation, remote accepted movement, and duplicate terminal delivery well enough to avoid stutter.
+- `LP-S5-012`: implemented with accepted-event adoption metadata, transient remote movement IDs, and placement-motion reason priority.
 - `LP-S5-014`: expose aggregate motion metrics in debug tooling without private token details.
 - `LP-S5-015`: add restrained renderer-owned start/end polish that remains separate from authoritative placement.
 

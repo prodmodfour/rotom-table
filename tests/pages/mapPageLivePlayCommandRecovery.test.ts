@@ -48,7 +48,9 @@ describe('map page live-play command recovery integration', () => {
 
     expect(mapPage).toContain("import type { LivePlayAcceptedRealtimeEvent } from '#shared/livePlayRealtimeEvents'")
     expect(mapPage).toContain('queuedAcceptedRealtimeEvents')
-    expect(mapPage).toContain('onLivePlayCommandAcceptedEvent: (event) => acknowledgeAcceptedRealtimeEvent(event)')
+    expect(mapPage).toContain('onLivePlayCommandAcceptedEvent: (event, adoption) => {')
+    expect(mapPage).toContain('handleAcceptedLivePlayCommandEventForPresentation(event, adoption)')
+    expect(mapPage).toContain('return acknowledgeAcceptedRealtimeEvent(event)')
     expect(mapPage).toContain('acceptedRealtimeAcknowledgementHandler = livePlayCommands.acknowledgeAcceptedRealtimeEvent')
     expect(mapPage).toContain('void acknowledgeAcceptedRealtimeEvent(event).catch')
   })
