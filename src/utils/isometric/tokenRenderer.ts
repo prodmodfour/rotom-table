@@ -34,6 +34,11 @@ import type {
 } from '~/utils/isometric/tokenGeometryCache'
 import { tokenFacingStoresLegacyTurned, tokenFacingVector } from '~/utils/tokenFacing'
 import {
+  TOKEN_MOTION_POLISH_IDLE_SAMPLE,
+  sampleTokenMotionPolish,
+  type TokenMotionPolishSample,
+} from '~/utils/isometric/tokenMotionTracks'
+import {
   applyAnimationFrame,
   buildContactShadow,
   buildWorldSprite,
@@ -833,6 +838,47 @@ export const resolvePokemonRenderObjectVisualFacing = (
   }
 }
 
+type TokenSelectionLiftResolvedStyle = ReturnType<typeof tokenSelectionLiftStyle>
+
+const clampTokenVisualOpacity = (opacity: number): number => Math.max(0, Math.min(1, opacity))
+
+export const applyPokemonRenderObjectMotionPolish = (
+  renderObject: PokemonRenderObject,
+  options: {
+    frameNowMs: number
+    liftStyle: TokenSelectionLiftResolvedStyle
+  },
+): TokenMotionPolishSample => {
+  const polish = renderObject.motion.track
+    ? sampleTokenMotionPolish(renderObject.motion.track, options.frameNowMs)
+    : TOKEN_MOTION_POLISH_IDLE_SAMPLE
+
+  // Rebuild base sprite/halo dimensions every frame so the pulse never
+  // accumulates, then apply only a tiny cosmetic scale on top.
+  setWorldSpriteSize(renderObject.spriteState, renderObject)
+  renderObject.sprite.scale.x *= polish.spriteScale
+  renderObject.sprite.scale.y *= polish.spriteScale
+  renderObject.spriteState.halo.scale.x *= polish.haloScale
+  renderObject.spriteState.halo.scale.y *= polish.haloScale
+
+  if (polish.haloOpacityBonus > 0) {
+    renderObject.spriteState.haloMaterial.opacity = clampTokenVisualOpacity(
+      renderObject.spriteState.haloMaterial.opacity + polish.haloOpacityBonus,
+    )
+  }
+
+  renderObject.shadow.scale.set(
+    options.liftStyle.shadowScaleX * polish.shadowScale,
+    options.liftStyle.shadowScaleY * polish.shadowScale,
+    1,
+  )
+  renderObject.shadow.material.opacity = clampTokenVisualOpacity(
+    options.liftStyle.shadowOpacity * polish.shadowOpacityMultiplier,
+  )
+
+  return polish
+}
+
 export const animatePokemonRenderObject = (
   renderObject: PokemonRenderObject,
   options: {
@@ -881,9 +927,12 @@ export const animatePokemonRenderObject = (
 
   // Non-uniform: lift grows the disc, X-stretch elongates it along
   // the isometric shadow axis so it reads as an ellipse falling away
-  // from the implied light, not a perfect circle.
-  renderObject.shadow.scale.set(liftStyle.shadowScaleX, liftStyle.shadowScaleY, 1)
-  renderObject.shadow.material.opacity = liftStyle.shadowOpacity
+  // from the implied light, not a perfect circle. Motion polish composes
+  // a very small start/end pulse while leaving the contact shadow visible.
+  applyPokemonRenderObjectMotionPolish(renderObject, {
+    frameNowMs: options.frameNowMs,
+    liftStyle,
+  })
 }
 
 export const disposePokemonRenderObject = (renderObject: PokemonRenderObject) => {

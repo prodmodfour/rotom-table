@@ -87,7 +87,7 @@ After center interpolation, `applyPokemonRenderObjectPosition()` applies `curren
 - Elevation badge, combat-stage glass, and HP/status bar receive `currentCenter` and token metadata, so HUD elements follow the same visual movement sample while their text still comes from authoritative token data.
 - CSS HUD helpers report whether their DOM/CSS3D output changed; changed HUD output marks the CSS3D renderer dirty.
 
-`animatePokemonRenderObject()` then applies facing/sprite animation/lighting and selection lift. Active movement tracks use a runtime-only facing plan: the sprite faces the first non-zero travel segment while the track is in flight, then falls back to the latest authoritative facing after the track clears. Pure `turnToken`/facing-only updates do not start placement motion and clear the temporary travel-facing plan, so explicit turns remain responsive even if center motion is still in progress. Selection lift is separate from movement: it eases `liftFactor` toward `liftTarget`, raises sprite/halo/HP bar, and scales/fades the contact shadow while leaving tactical footprint anchoring intact.
+`animatePokemonRenderObject()` then applies facing/sprite animation/lighting, selection lift, and movement polish. Active movement tracks use a runtime-only facing plan: the sprite faces the first non-zero travel segment while the track is in flight, then falls back to the latest authoritative facing after the track clears. Pure `turnToken`/facing-only updates do not start placement motion and clear the temporary travel-facing plan, so explicit turns remain responsive even if center motion is still in progress. Selection lift is separate from movement: it eases `liftFactor` toward `liftTarget`, raises sprite/halo/HP bar, and scales/fades the contact shadow while leaving tactical footprint anchoring intact. Track-owned motion polish adds only a tiny start/end sprite/halo pulse and a slight contact-shadow breath; it resets from base dimensions every frame, leaves cages/proxies at the sampled tactical center, and is disabled for reduced-motion tracks.
 
 ### Render continuation
 
@@ -167,6 +167,8 @@ Realtime gaps, replay validation failures, profile changes, or explicit reconcil
 
 `LP-S5-014` adds optional debug-only token-motion metrics to the live-play latency panel behind `?debugLivePlayLatency=1`. The renderer emits aggregate counts only: active moving token count, longest active motion age, cumulative completed motion count, and source-reason counts for active/started/completed tracks. The panel deliberately omits token IDs, names, sheet data, path cells, and command payloads, so the metrics help compare command latency with presentation smoothness without exposing hidden token information.
 
+`LP-S5-015` adds renderer-owned start/end polish on top of placement sampling. `tokenMotionTracks.ts` resolves a restrained polish config for ordinary non-reduced tracks and samples a double pulse near motion start and end. `tokenRenderer.ts` applies that pulse as small sprite/halo scale and halo alpha changes plus a mild shadow scale/opacity adjustment. The tactical cage, picking proxy, authoritative target center, and contact-shadow projection stay unchanged, so the pulse reads as life without becoming gameplay authority.
+
 ## Future Sprint 5 change map
 
 The current code suggests this division for later tickets:
@@ -189,7 +191,7 @@ The current code suggests this division for later tickets:
 - `LP-S5-006`: implemented in token object sync. Existing-token placement changes start tracks from the current rendered center; spawns, deletes, and sheet/HUD-only updates do not animate.
 - `LP-S5-012`: implemented with accepted-event adoption metadata, transient remote movement IDs, and placement-motion reason priority.
 - `LP-S5-014`: implemented with aggregate motion metrics in the `?debugLivePlayLatency=1` panel without private token details.
-- `LP-S5-015`: add restrained renderer-owned start/end polish that remains separate from authoritative placement.
+- `LP-S5-015`: implemented with track-owned start/end polish samples that the renderer applies to sprite scale, halo opacity/scale, and contact-shadow scale/opacity while keeping tactical footprint objects anchored.
 
 ### Documentation and regression coverage
 

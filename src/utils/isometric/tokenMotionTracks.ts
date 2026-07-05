@@ -57,6 +57,52 @@ export const TOKEN_MOTION_SERVER_CORRECTION_DURATION_DEFAULTS_MS = {
   reduced: 40,
 } as const
 
+export const TOKEN_MOTION_POLISH_DEFAULTS = {
+  /** Start/end pulse window expressed as a fraction of total movement progress. */
+  windowProgress: 0.28,
+  /** Motions at or above this duration receive the full subtle pulse; shorter tracks scale down. */
+  fullIntensityDurationMs: 160,
+  /** Tiny sprite scale cue that keeps the tactical footprint readable. */
+  spriteScaleBoost: 0.035,
+  /** Slightly larger glow helps the start/end settle read without requiring assets. */
+  haloScaleBoost: 0.055,
+  /** Additive alpha boost applied after regular sprite lighting. */
+  haloOpacityBoost: 0.08,
+  /** Contact shadow stays visible and only breathes a little wider. */
+  shadowScaleBoost: 0.06,
+  /** Keeps the shadow present as the grounding cue while reducing harshness. */
+  shadowOpacityReduction: 0.10,
+} as const
+
+export interface TokenMotionPolishOptions {
+  readonly enabled?: boolean
+  readonly reducedMotion?: boolean
+  /** Multiplier for the built-in restrained pulse. Values are clamped to 0..1. */
+  readonly intensityScale?: number
+}
+
+export interface TokenMotionPolishConfig {
+  readonly intensityScale: number
+}
+
+export interface TokenMotionPolishSample {
+  readonly intensity: number
+  readonly spriteScale: number
+  readonly haloScale: number
+  readonly haloOpacityBonus: number
+  readonly shadowScale: number
+  readonly shadowOpacityMultiplier: number
+}
+
+export const TOKEN_MOTION_POLISH_IDLE_SAMPLE: TokenMotionPolishSample = Object.freeze({
+  intensity: 0,
+  spriteScale: 1,
+  haloScale: 1,
+  haloOpacityBonus: 0,
+  shadowScale: 1,
+  shadowOpacityMultiplier: 1,
+})
+
 export interface ResolveTokenMotionReasonDurationOptions {
   readonly reducedMotion?: boolean
   readonly reducedMotionPolicy?: TokenMotionReducedMotionPolicy
@@ -112,6 +158,8 @@ export interface TokenMotionTrack {
   readonly startMs: number
   readonly durationMs: number
   readonly reason: TokenMotionTrackReason
+  /** Runtime-only start/end visual polish; presentation-only and never persisted to map data. */
+  readonly polish?: TokenMotionPolishConfig
   /** Visual-only vertical affordance for direct tracks; runtime-only. */
   readonly hopHeight?: number
   /** Runtime-only segment metadata for path-aware sampling; never persisted to map data. */
@@ -135,6 +183,7 @@ export interface StartTokenMotionTrackOptions {
   readonly durationMs?: number
   readonly durationOptions?: TokenMotionDurationOptions
   readonly hopOptions?: TokenMotionHopOptions
+  readonly polishOptions?: TokenMotionPolishOptions
   readonly pathSegments?: readonly TokenMotionPathSegment[]
   readonly pathCenters?: readonly TokenMotionCenter[]
 }
@@ -146,6 +195,7 @@ export interface ReplaceTokenMotionTrackOptions {
   readonly durationMs?: number
   readonly durationOptions?: TokenMotionDurationOptions
   readonly hopOptions?: TokenMotionHopOptions
+  readonly polishOptions?: TokenMotionPolishOptions
   readonly pathSegments?: readonly TokenMotionPathSegment[]
   readonly pathCenters?: readonly TokenMotionCenter[]
 }
@@ -232,6 +282,39 @@ const normalizeOptionalHopHeight = (hopHeight: number | undefined): number | und
 
   const normalizedHopHeight = Math.max(0, hopHeight)
   return normalizedHopHeight > 0 ? normalizedHopHeight : undefined
+}
+
+const clampTokenMotionPolishScale = (scale: number | undefined, fallback: number): number => {
+  if (typeof scale !== 'number' || !Number.isFinite(scale)) return fallback
+  return Math.max(0, Math.min(1, scale))
+}
+
+const resolveTokenMotionPolishConfig = (
+  durationMs: number,
+  durationOptions: TokenMotionDurationOptions | undefined,
+  polishOptions: TokenMotionPolishOptions | undefined,
+): TokenMotionPolishConfig | undefined => {
+  if (polishOptions?.enabled === false) return undefined
+
+  const normalizedDurationMs = nonNegativeFiniteNumberOrZero(durationMs)
+  if (normalizedDurationMs <= 0) return undefined
+
+  const reducedMotion = polishOptions?.reducedMotion ?? (durationOptions?.reducedMotion === true)
+  if (reducedMotion) return undefined
+
+  const durationIntensityScale = Math.min(
+    1,
+    normalizedDurationMs / TOKEN_MOTION_POLISH_DEFAULTS.fullIntensityDurationMs,
+  )
+  const configuredIntensityScale = clampTokenMotionPolishScale(
+    polishOptions?.intensityScale,
+    1,
+  )
+  const intensityScale = durationIntensityScale * configuredIntensityScale
+
+  return intensityScale > 0
+    ? Object.freeze({ intensityScale })
+    : undefined
 }
 
 const clonePathSegments = (
@@ -552,6 +635,11 @@ export const startTokenMotionTrack = (options: StartTokenMotionTrackOptions): To
   const hopHeight = resolvedPathSegments
     ? undefined
     : resolveDirectTrackHopHeight(origin, destination, options.durationOptions, options.hopOptions)
+  const polish = resolveTokenMotionPolishConfig(
+    durationMs,
+    options.durationOptions,
+    options.polishOptions,
+  )
 
   return brandRuntimeTrack({
     tokenId: options.tokenId,
@@ -560,6 +648,7 @@ export const startTokenMotionTrack = (options: StartTokenMotionTrackOptions): To
     startMs: finiteNumberOrZero(options.startMs),
     durationMs,
     reason: options.reason,
+    ...(polish ? { polish } : {}),
     ...(hopHeight !== undefined ? { hopHeight } : {}),
     ...(resolvedPathSegments ? { pathSegments: resolvedPathSegments } : {}),
   })
@@ -628,6 +717,50 @@ export const sampleTokenMotionTrack = (
   }
 }
 
+const sampleTokenMotionPolishPulse = (progress: number): number => {
+  const clampedProgress = clampTokenMotionProgress(progress)
+  if (clampedProgress <= 0 || clampedProgress >= 1) return 0
+
+  const windowProgress = TOKEN_MOTION_POLISH_DEFAULTS.windowProgress
+  const startPulse = clampedProgress < windowProgress
+    ? Math.sin(Math.PI * (clampedProgress / windowProgress))
+    : 0
+  const endPulse = clampedProgress > 1 - windowProgress
+    ? Math.sin(Math.PI * ((1 - clampedProgress) / windowProgress))
+    : 0
+
+  return Math.max(0, Math.min(1, Math.max(startPulse, endPulse)))
+}
+
+export const sampleTokenMotionPolish = (
+  track: TokenMotionTrack | undefined,
+  frameNowMs: number,
+): TokenMotionPolishSample => {
+  const polish = track?.polish
+  if (!track || !polish || polish.intensityScale <= 0) return TOKEN_MOTION_POLISH_IDLE_SAMPLE
+
+  const durationMs = nonNegativeFiniteNumberOrZero(track.durationMs)
+  if (durationMs <= 0) return TOKEN_MOTION_POLISH_IDLE_SAMPLE
+
+  const progress = clampTokenMotionProgress(
+    (finiteNumberOrZero(frameNowMs) - finiteNumberOrZero(track.startMs)) / durationMs,
+  )
+  const intensity = sampleTokenMotionPolishPulse(progress) * clampTokenMotionPolishScale(
+    polish.intensityScale,
+    0,
+  )
+  if (intensity <= 0) return TOKEN_MOTION_POLISH_IDLE_SAMPLE
+
+  return {
+    intensity,
+    spriteScale: 1 + TOKEN_MOTION_POLISH_DEFAULTS.spriteScaleBoost * intensity,
+    haloScale: 1 + TOKEN_MOTION_POLISH_DEFAULTS.haloScaleBoost * intensity,
+    haloOpacityBonus: TOKEN_MOTION_POLISH_DEFAULTS.haloOpacityBoost * intensity,
+    shadowScale: 1 + TOKEN_MOTION_POLISH_DEFAULTS.shadowScaleBoost * intensity,
+    shadowOpacityMultiplier: 1 - TOKEN_MOTION_POLISH_DEFAULTS.shadowOpacityReduction * intensity,
+  }
+}
+
 export const replaceTokenMotionTrack = (
   track: TokenMotionTrack,
   options: ReplaceTokenMotionTrackOptions,
@@ -659,6 +792,7 @@ export const replaceTokenMotionTrack = (
     durationMs,
     durationOptions: options.durationOptions,
     hopOptions: options.hopOptions,
+    polishOptions: options.polishOptions ?? (track.polish ? undefined : { enabled: false }),
     pathSegments: resolvedPathSegments,
   })
 }

@@ -10,6 +10,7 @@ import {
   resolveTokenMotionFacingAtSample,
   resolveTokenMotionTravelFacing,
   resolveTokenPlacementMotionReason,
+  sampleTokenMotionPolish,
   sampleTokenMotionTrack,
   startTokenMotionTrack,
 } from '~/utils/isometric/tokenMotionTracks'
@@ -146,6 +147,54 @@ describe('token motion tracks', () => {
       reason: 'reconciliation',
       durationOptions: reconciliationOptions,
     }).durationMs).toBe(0)
+  })
+
+  it('samples a restrained start/end polish pulse for ordinary movement', () => {
+    const track = startTokenMotionTrack({
+      tokenId: 'token-2-polish',
+      origin: { x: 0, y: 0, z: 0 },
+      destination: { x: 4, y: 0, z: 0 },
+      startMs: 1000,
+      durationMs: 400,
+      reason: 'remote-accepted',
+    })
+
+    expect(track.polish).toEqual({ intensityScale: 1 })
+    expect(sampleTokenMotionPolish(track, 1000).intensity).toBe(0)
+
+    const startPulse = sampleTokenMotionPolish(track, 1056)
+    expect(startPulse.intensity).toBeCloseTo(1)
+    expect(startPulse.spriteScale).toBeCloseTo(1.035)
+    expect(startPulse.haloScale).toBeCloseTo(1.055)
+    expect(startPulse.haloOpacityBonus).toBeCloseTo(0.08)
+    expect(startPulse.shadowScale).toBeCloseTo(1.06)
+    expect(startPulse.shadowOpacityMultiplier).toBeCloseTo(0.9)
+
+    expect(sampleTokenMotionPolish(track, 1200).intensity).toBe(0)
+    expect(sampleTokenMotionPolish(track, 1344).intensity).toBeCloseTo(1)
+    expect(sampleTokenMotionPolish(track, 1400).intensity).toBe(0)
+  })
+
+  it('disables start/end polish when reduced motion is requested', () => {
+    const track = startTokenMotionTrack({
+      tokenId: 'token-2-polish-reduced',
+      origin: { x: 0, y: 0, z: 0 },
+      destination: { x: 4, y: 0, z: 0 },
+      startMs: 1000,
+      durationMs: 400,
+      durationOptions: { reducedMotion: true },
+      reason: 'remote-accepted',
+    })
+
+    expect(track.polish).toBeUndefined()
+    expect(sampleTokenMotionPolish(track, 1056)).toEqual({
+      intensity: 0,
+      spriteScale: 1,
+      haloScale: 1,
+      haloOpacityBonus: 0,
+      shadowScale: 1,
+      shadowOpacityMultiplier: 1,
+    })
   })
 
   it('builds path segments with duration proportional to waypoint distance', () => {

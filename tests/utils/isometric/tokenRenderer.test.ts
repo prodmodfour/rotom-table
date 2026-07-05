@@ -4,6 +4,7 @@ import type { LayerVisibility } from '~/types/map'
 import type { SpawnedPokemon } from '~/types/pokemon'
 import type { PokemonRenderObject, WorldSpriteState } from '~/utils/isometric/types'
 import {
+  applyPokemonRenderObjectMotionPolish,
   applyPokemonRenderObjectPosition,
   createPokemonRenderMotionState,
   disposePokemonRenderObject,
@@ -355,6 +356,77 @@ describe('token renderer', () => {
     expect(renderObject.sprite.position.toArray()).toEqual([2.5, 1.16, 3.5])
     expect(renderObject.shadow.position.toArray()).toEqual([2.5, 0.005, 3.5])
     expect(getShadowSurfaceY).toHaveBeenCalledWith(2.5, 3.5, 1, 1.16)
+  })
+
+  it('applies subtle start/end motion polish without moving the tactical footprint', () => {
+    const renderObject = makeRenderObject(spawnedPokemon())
+    renderObject.spriteState.haloMaterial.opacity = 0.2
+    renderObject.motion.track = startTokenMotionTrack({
+      tokenId: renderObject.id,
+      origin: { x: 0, y: 0, z: 0 },
+      destination: { x: 4, y: 0, z: 0 },
+      startMs: 1000,
+      durationMs: 400,
+      reason: 'remote-accepted',
+    })
+
+    const polish = applyPokemonRenderObjectMotionPolish(renderObject, {
+      frameNowMs: 1056,
+      liftStyle: {
+        spriteLift: 0,
+        shadowScaleX: 1.15,
+        shadowScaleY: 1,
+        shadowOpacity: 1,
+      },
+    })
+
+    expect(polish.intensity).toBeCloseTo(1)
+    expect(renderObject.sprite.scale.x).toBeCloseTo(1.035)
+    expect(renderObject.sprite.scale.y).toBeCloseTo(1.035)
+    expect(renderObject.spriteState.halo.scale.x).toBeCloseTo(1.25 * 1.055)
+    expect(renderObject.spriteState.halo.scale.y).toBeCloseTo(1.15 * 1.055)
+    expect(renderObject.spriteState.haloMaterial.opacity).toBeCloseTo(0.28)
+    expect(renderObject.shadow.scale.x).toBeCloseTo(1.15 * 1.06)
+    expect(renderObject.shadow.scale.y).toBeCloseTo(1.06)
+    expect(renderObject.shadow.material.opacity).toBeCloseTo(0.9)
+    expect(renderObject.volume.scale.toArray()).toEqual([1, 1, 1])
+    expect(renderObject.proxy.scale.toArray()).toEqual([1, 1, 1])
+  })
+
+  it('keeps motion polish restrained when reduced motion disables the pulse', () => {
+    const pokemon = spawnedPokemon({ width: 1.2, height: 1.6 })
+    const renderObject = makeRenderObject(pokemon)
+    renderObject.sprite.scale.set(9, 9, 9)
+    renderObject.spriteState.halo.scale.set(9, 9, 9)
+    renderObject.spriteState.haloMaterial.opacity = 0.2
+    renderObject.motion.track = startTokenMotionTrack({
+      tokenId: renderObject.id,
+      origin: { x: 0, y: 0, z: 0 },
+      destination: { x: 4, y: 0, z: 0 },
+      startMs: 1000,
+      durationMs: 400,
+      durationOptions: { reducedMotion: true },
+      reason: 'remote-accepted',
+    })
+
+    const polish = applyPokemonRenderObjectMotionPolish(renderObject, {
+      frameNowMs: 1056,
+      liftStyle: {
+        spriteLift: 0,
+        shadowScaleX: 1.15,
+        shadowScaleY: 1,
+        shadowOpacity: 1,
+      },
+    })
+
+    expect(polish.intensity).toBe(0)
+    expect(renderObject.sprite.scale.toArray()).toEqual([1.2, 1.6, 1])
+    expect(renderObject.spriteState.halo.scale.x).toBeCloseTo(1.2 * 1.25)
+    expect(renderObject.spriteState.halo.scale.y).toBeCloseTo(1.6 * 1.15)
+    expect(renderObject.spriteState.halo.scale.z).toBe(1)
+    expect(renderObject.spriteState.haloMaterial.opacity).toBeCloseTo(0.2)
+    expect(renderObject.shadow.scale.toArray()).toEqual([1.15, 1, 1])
+    expect(renderObject.shadow.material.opacity).toBeCloseTo(1)
   })
 
   it.each([

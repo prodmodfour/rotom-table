@@ -430,7 +430,7 @@ Status: DONE
 
 ## LP-S5-015 — Add visual polish for motion start/end
 
-Status: TODO
+Status: DONE
 
 **Goal:** Give token movement a subtle “alive” feeling without requiring new assets.
 
