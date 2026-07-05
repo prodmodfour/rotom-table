@@ -4,7 +4,7 @@ TEMPLATE_CUSTOMISED: true
 
 ## Project name
 
-Rotom Table — Token Cosmetic Improvements wave.
+Rotom Table — Live Play Token Motion Sprint 5.
 
 ## Project type
 
@@ -12,47 +12,51 @@ Nuxt 3 and Vue 3 live-play application with TypeScript shared models, three.js/i
 
 ## Project goal
 
-Implement the Cosmetic Improvements work described by `BUILD_TICKETS.md` (`001` through `012`), refreshed from `docs/cosmetic-improvements.md`. The finished wave should make Pokémon tokens look more natural and three-dimensional while removing always-on cage clutter.
+Implement the Live Play Sprint 5 work described by `BUILD_TICKETS.md` (`LP-S5-001` through `LP-S5-017`). The finished sprint should make token movement look and feel smooth without weakening the server-authoritative live-play model.
 
-The core rule for this wave is: **the cage is tactical scaffolding, not the persistent 3D illusion.** Idle tokens should read as sprite + halo + contact shadow + subtle sprite isometric shading. Cages should appear only when tactically useful, such as hover, selection, pending/corrected feedback, and any targeting states that need extra clarity.
+The core rule for this sprint is: **token motion is presentation only; authoritative map state remains the truth.** Movement animation should bridge previous and current rendered positions through explicit runtime motion tracks, predictable durations, path-aware interpolation, correction/replacement policies, and reduced-motion support. It must not change command authority, durable state, replay semantics, conflict handling, or hidden-information boundaries.
 
 ## Audience
 
 - Rotom Table maintainers and operators.
 - GMs and players using live-play maps with Pokémon tokens.
-- Future autonomous or human contributors maintaining token rendering, map interaction affordances, and visual QA docs.
+- Future autonomous or human contributors maintaining live-play command flow, token rendering, motion affordances, and operator smoke docs.
 
 ## Success criteria
 
 The work is successful when:
 
-- Every ticket in `BUILD_TICKETS.md` for `001` through `012` is marked `DONE`.
+- Every ticket in `BUILD_TICKETS.md` for `LP-S5-001` through `LP-S5-017` is marked `DONE`.
 - `scripts/quality-gate.sh` passes on the final branch.
-- Renderer comments or helper types make the token cosmetic layers explicit: sprite, contact shadow, cage volume/edges, and sprite isometric shading.
-- Cage visibility is tracked separately from token layer visibility.
-- Hiding the cage never hides the sprite, halo, contact shadow, or invisible picking proxy.
-- Idle Pokémon tokens render without visible cage faces or cage edges.
-- Hovered, selected, pending, corrected, and useful targeting states can still show cages as tactical affordances.
-- Contact shadows remain the always-on grounding cue whenever tokens and shadows are visible.
-- Normal sprites receive subtle persistent isometric shading that respects transparency, brightness, animation, crop, and facing lifecycle.
-- Tactical cage face/edge opacity is re-tuned so the Pokémon sprite remains visually dominant.
-- Unit coverage protects layer visibility, cage visibility resolution, and relevant style/shading helpers.
-- Manual visual QA covers small/large Pokémon, terrain, interaction states, targeting, animation, mirroring, and theme-relevant scene checks.
+- Current token movement presentation is documented well enough to guide the sprint.
+- Token movement uses explicit presentation motion tracks instead of only generic render-state center lerp.
+- Motion curve, duration, interpolation, replacement, cancellation, path, elevation, correction, and reduced-motion policies are covered by focused tests where practical.
+- New render objects spawn at their first authoritative center without animating from origin or another token.
+- Local predicted movement starts immediately and does not stutter when the matching authoritative confirmation arrives.
+- Remote accepted movement animates smoothly for observing clients when practical.
+- Rapid repeated same-token destinations replace active motion without visible snapback.
+- Known movement paths animate through waypoints when available and fall back safely when unavailable.
+- Elevation changes, facing updates, shadows, HUD elements, pings, presence overlays, targeting affordances, HP bars, cages, proxies, and camera focus remain visually coherent during motion.
+- Rejected predictions and reconciliation snapshots follow clear correction/snap policies.
+- Reduced-motion users get shortened or snapped movement with clear state changes.
+- Optional debug tooling helps distinguish command latency from animation smoothness without leaking private token information.
+- Operator docs include a movement-smoothness smoke checklist for GM and player-browser review.
+- Motion polish does not change authoritative map state, command dispatch, revision checks, idempotency, recovery, replay authorization, conflict scopes, or network transport.
 - The top-level `AUTOMATION_STATUS` in `BUILD_TICKETS.md` is set to `DONE` when the final ticket is complete.
 
 ## Non-goals
 
 The autonomous build must not spend time on:
 
-- Changing Pokémon placement, movement, targeting rules, combat automation, encounter behavior, trainer sheets, inventory behavior, saved map data, or network payloads.
-- Removing the invisible proxy mesh used for token picking.
-- Removing contact shadows.
-- Replacing existing sprite assets.
-- Adding bespoke per-Pokémon art direction or per-species lighting rules.
-- Building a new rendering engine or replacing three.js/isometric renderer architecture.
-- Adding broad post-processing, global scene relighting, particle effects, or unrelated visual redesigns.
-- Making local-hosting-only behavior; this is a live-play-only app.
-- Weakening live-play command authority, revision checks, idempotency, durable outbox recovery, authorised realtime replay, prediction reconciliation, or presence privacy boundaries.
+- Changing live-play command authority, `opId` idempotency, revision checks, conflict scopes, durable outbox recovery, or authorised realtime replay.
+- Making animation state authoritative or durable campaign state.
+- Delaying server command dispatch until animation finishes.
+- Making accepted authoritative state wait for animation before becoming the source of truth.
+- Reintroducing a global live-play input lock while tokens animate.
+- Replacing HTTP/SSE command transport or Sprint 3 presence transport.
+- Requiring new art assets, skeletal animation, or a broad VFX rewrite.
+- Animating hidden/private token information to unauthorized clients.
+- Changing unrelated Pokémon placement rules, targeting rules, combat automation, encounter behavior, trainer sheets, inventory behavior, saved map schemas, or unrelated map renderer behavior.
 - Public authentication or hardening Rotom Table into a public multi-tenant service.
 - Production runtime edits, direct server rebuilds, direct deployment, or production data mutation.
 - Closing, commenting on, or editing GitHub issues unless the user explicitly requests it.
@@ -64,8 +68,8 @@ Preferred stack:
 - language: TypeScript, with existing Python/Bash helpers only where already appropriate;
 - framework: Nuxt 3 and Vue 3;
 - rendering: existing three.js isometric map/token rendering utilities;
-- assets: existing Pokémon sprite assets and current texture/animation loading paths;
-- testing: Vitest, Vue Test Utils/happy-dom where applicable, targeted renderer utility tests, and existing test helpers;
+- live-play flow: existing HTTP/SSE command and replay architecture with IndexedDB outbox recovery;
+- testing: Vitest, Vue Test Utils/happy-dom where applicable, focused pure motion utility tests, renderer state tests, and existing integration helpers;
 - package manager: npm with Node.js 24 from `.nvmrc`;
 - CI: existing GitHub Actions CI plus local `scripts/quality-gate.sh`.
 
@@ -74,41 +78,44 @@ Hard constraints:
 - Follow the repository `AGENTS.md` production deployment boundaries and live-play-only instruction.
 - Keep campaign/private data, `.env` files, databases, generated runtime files, and secrets out of commits.
 - Keep ticket scope narrow: implement only the lowest-numbered `TODO` ticket in each autonomous cycle.
-- Preserve existing token picking through the invisible proxy mesh.
-- Preserve contact shadows as independent from cage visibility.
-- Preserve existing sprite assets, sprite loading/disposal lifecycle, brightness controls, animation frame handling, crop handling, and facing/mirroring behavior unless a selected ticket explicitly requires a narrow renderer update.
-- Preserve live-play gameplay authority and payload shapes; this wave is cosmetic/rendering-only.
-- Do not change saved map schemas or network contracts for cosmetic cage/shading state unless explicitly requested in a future ticket.
-- Do not introduce new dependencies for shader/material work unless there is no practical in-repo alternative.
+- Keep motion state presentation-only, runtime-only, and non-serializable.
+- Preserve server-authoritative map state as the source of truth.
+- Preserve existing command dispatch, revision checks, idempotency, outbox recovery, authorised realtime replay, prediction reconciliation, and presence privacy boundaries.
+- Do not introduce saved map schema or network contract changes unless a selected ticket explicitly requires a narrow, reviewed extension.
+- Do not animate token information that the current user is not authorised to see.
+- Preserve token picking, hover, HP bars, shadows, cages, pings, presence attention, targeting overlays, and camera focus throughout motion work.
+- Do not introduce new dependencies for motion work unless there is no practical in-repo alternative.
 
 Flexible choices:
 
 - Exact helper names, file locations, and resolver names may differ from ticket suggestions when they fit the existing renderer architecture better.
-- Cage visibility can be represented as a boolean or a small mode enum if the mode improves clarity without over-engineering.
-- Sprite isometric shading can be implemented with a material shader hook, custom material helper, or equivalent existing sprite-material extension, as long as transparent pixels remain transparent and brightness controls still apply.
-- Tests can focus on deterministic helper/layer/material state when pixel-perfect visual assertions are impractical.
-- Manual visual QA may live in `docs/cosmetic-improvements.md` or a more appropriate renderer QA doc if one exists.
-- Tactical targeting cage visibility should be added only where it improves clarity; reticles and existing overlays remain primary targeting UI.
+- Motion tracks may be modelled with plain objects or small helper factories as long as they remain runtime-only and testable.
+- Duration and easing values may be tuned as long as they remain deterministic, bounded, accessible, and covered by tests.
+- Reduced-motion policy may snap or heavily shorten motion, using existing settings where available.
+- Path-aware movement should fall back to direct movement when preview paths are unavailable or invalid.
+- Debug metrics should stay optional/debug-only and avoid private token names or hidden-state leaks.
 
 ## Architecture expectations
 
 Use existing Rotom Table boundaries:
 
 ```text
-token cosmetic layer semantics -> renderer-owned cage visibility state -> token layer visibility helper -> token style resolver/material opacity -> sprite isometric lighting constants/material hook -> map renderer integration -> targeted tests/manual visual QA docs
+live-play command/prediction/reconciliation flow -> visible placement changes -> token motion planning utilities -> renderer-owned runtime motion tracks -> animation frame sampling -> token render object/HUD synchronization -> optional debug metrics -> operator smoke docs
 ```
 
 Expected patterns:
 
-- Keep cosmetic state renderer-owned and presentation-only.
-- Keep sprite, halo, contact shadow, proxy, cage volume, cage edges, and sprite shading as separate concerns.
-- Prefer pure helper functions for cage visibility/style resolution so tests can protect the visual contract without requiring full browser rendering.
-- Keep `paintPokemonRenderObjectStyle()` or any extracted style resolver focused on visual state, not gameplay authority.
-- Keep cage geometry available for tactical states; hide render objects rather than deleting geometry for idle tokens.
-- Keep contact shadow visibility tied to `layers.tokens && layers.shadows`, never to cage visibility.
-- Apply sprite shading in the normal sprite material path so it clips to sprite alpha and avoids a rectangular overlay artifact.
-- Ensure animation, crop, brightness, disposal, and facing updates continue through existing sprite lifecycle code.
-- Update docs/comments when terminology changes from “cage as 3D cue” to “cage as tactical affordance.”
+- Keep authoritative placement state and presentation motion state separate.
+- Prefer pure utility modules for easing, duration, interpolation, track sampling, replacement, path segmentation, and correction policies so tests can validate motion without full browser rendering.
+- Start motion tracks only for placement movement, not for sheet/HUD-only updates such as HP, conditions, or combat stages.
+- New/spawned tokens should appear at their authoritative center unless a selected ticket explicitly adds spawn animation.
+- Replacing an active same-token movement should start from the sampled current position to avoid snapback.
+- Render continuation should run while motion tracks are active and stop once they complete.
+- HUD elements, shadows, cages, proxies, overlays, and camera focus should follow the sampled center consistently.
+- Explicit turn commands should remain responsive while move-token animations use a tested facing policy.
+- Reconciliation snapshot adoption should avoid replaying stale local intent over fresh authoritative state.
+- Reduced-motion and performance safeguards should be centralised in motion planning rather than scattered through renderer code.
+- Documentation should repeatedly distinguish presentation animation from authoritative position.
 
 ## Quality expectations
 
@@ -122,11 +129,11 @@ Expected quality gates:
 - `npm test --if-present`;
 - `npm run build --if-present`.
 
-Each ticket should also run targeted verification commands for the changed renderer utilities/components where practical before the full quality gate.
+Each ticket should also run targeted verification commands for the changed motion utilities, renderer utilities, page/composable watchers, or docs where practical before the full quality gate.
 
 ## Documentation expectations
 
-Update existing README/docs/copy when a ticket changes or exposes user-facing behavior, renderer architecture, visual QA steps, limitations, or terminology. This wave should keep `docs/cosmetic-improvements.md` aligned with the implemented renderer model, especially the distinction between tactical cages, persistent contact shadows, and persistent sprite isometric shading.
+Update existing README/docs/copy when a ticket changes or exposes user-facing behavior, renderer architecture, debug tooling, smoke steps, limitations, or terminology. Sprint 5 should introduce and maintain `docs/live-play-token-motion.md` as the movement-presentation reference, and should update `docs/private-vps-live-play-smoke.md` or related operator docs with token-motion smoke coverage by the end of the sprint.
 
 ## Safety and security constraints
 
@@ -137,13 +144,13 @@ Do not include:
 - internal/private hostnames or URLs;
 - destructive automation;
 - direct production app-runtime edits, rebuilds, restarts, or deployment steps;
-- arbitrary shell/code execution features unrelated to the project.
+- arbitrary shell/code execution features unrelated to the project;
+- private or hidden token details in debug metrics, logs, docs examples, or tests.
 
 ## Agent behaviour notes
 
-- `BUILD_TICKETS.md` is the authoritative local autonomous queue for this Token Cosmetic Improvements wave.
-- `docs/cosmetic-improvements.md` is the planning/reference document for this wave; keep the build queue authoritative for autonomous execution.
-- Work one ticket per autonomous cycle, in numeric order; build ticket numbers follow the suggested order from `docs/cosmetic-improvements.md`.
+- `BUILD_TICKETS.md` is the authoritative local autonomous queue for Live Play Sprint 5.
+- Work one ticket per autonomous cycle, in numeric order; build ticket numbers follow the suggested order from the Sprint 5 planning document.
 - Keep each commit focused on the selected ticket and use a conventional commit message.
-- Do not update ticket statuses beyond the selected ticket. The only exception is the final ticket #012, which may set `AUTOMATION_STATUS: DONE` after all Cosmetic Improvements tickets are complete and the final quality gate passes.
+- Do not update ticket statuses beyond the selected ticket. The only exception is the final ticket `LP-S5-017`, which may set `AUTOMATION_STATUS: DONE` after all Sprint 5 tickets are complete and the final quality gate passes.
 - Do not create, close, merge, or comment on pull requests/issues from inside an autonomous ticket run unless a future ticket explicitly asks for it.
