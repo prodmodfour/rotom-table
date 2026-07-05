@@ -317,6 +317,8 @@ export const createPokemonRenderObject = (
       depthWrite: false,
     }),
   )
+  volume.visible = false
+  edges.visible = false
 
   const proxyGeometry = acquireTokenProxyGeometry(pokemon, containers.geometryCache)
   const proxy = new THREE.Mesh(
@@ -359,7 +361,7 @@ export const createPokemonRenderObject = (
     combatStageGlass,
     volume,
     edges,
-    cageVisible: true,
+    cageVisible: false,
     proxy,
     shadow,
     ...(geometryLeases ? { geometryLeases } : {}),
@@ -523,6 +525,20 @@ const remoteAttentionEdgeOpacity = (attention: PokemonRenderObjectRemoteAttentio
   return (attention.selectedCount > 0 ? 0.74 : 0.54) + countBoost
 }
 
+const shouldShowPokemonTacticalCage = (state: {
+  selected: boolean
+  hovered: boolean
+  pending: boolean
+  corrected: boolean
+  remoteAttention: PokemonRenderObjectRemoteAttention | undefined
+}): boolean => (
+  state.selected ||
+  state.hovered ||
+  state.pending ||
+  state.corrected ||
+  hasRemoteAttention(state.remoteAttention)
+)
+
 export const paintPokemonRenderObjectStyle = (
   renderObject: PokemonRenderObject,
   selected: boolean,
@@ -538,6 +554,13 @@ export const paintPokemonRenderObjectStyle = (
   const corrected = options.corrected === true
   const remoteAttention = hasRemoteAttention(options.remoteAttention) ? options.remoteAttention : undefined
   const remoteAttentionColor = remoteAttention ? resolveVolumeAccentColor(remoteAttention.primaryColor) : null
+  renderObject.cageVisible = shouldShowPokemonTacticalCage({
+    selected,
+    hovered,
+    pending,
+    corrected,
+    remoteAttention,
+  })
 
   // Re-tint the per-face material array with the appropriate tactical
   // theme ramp instead of a single solid color. Hover uses the token's
@@ -593,8 +616,8 @@ export const paintPokemonRenderObjectStyle = (
         : selected ? 0.95 : remoteAttention ? remoteAttentionEdgeOpacity(remoteAttention) : 0.35
 
   edgeMaterial.color.set(edgeColor)
-  // Idle edges fade so the cage reads via faces; selection/hover sharpens
-  // them back up so the active pointer target has a clear hard outline.
+  // Idle edge styling remains available for material reset, but only
+  // tactical cage states render a hard outline on the board.
   edgeMaterial.opacity = edgeOpacity
   edgeMaterial.transparent = edgeOpacity < 1
   edgeMaterial.depthTest = true

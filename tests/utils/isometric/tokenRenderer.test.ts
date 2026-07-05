@@ -113,7 +113,7 @@ const makeRenderObject = (pokemon: SpawnedPokemon): PokemonRenderObject => {
       new THREE.EdgesGeometry(new THREE.BoxGeometry(pokemon.base, pokemon.clearance, pokemon.base)),
       new THREE.LineBasicMaterial(),
     ),
-    cageVisible: true,
+    cageVisible: false,
     proxy: new THREE.Mesh(
       new THREE.BoxGeometry(pokemon.base, pokemon.clearance, pokemon.base),
       new THREE.MeshBasicMaterial(),
@@ -158,6 +158,8 @@ const volumePaletteColorHexes = (palette: ReturnType<typeof accentVolumeFacePale
   palette.side,
 ]
 
+type PaintPokemonRenderObjectStyleOptions = NonNullable<Parameters<typeof paintPokemonRenderObjectStyle>[2]>
+
 describe('token renderer', () => {
   it('keeps sprites, shadows, and picking proxies visible while the cage is hidden', () => {
     const renderObject = makeRenderObject(spawnedPokemon())
@@ -187,6 +189,41 @@ describe('token renderer', () => {
     expect(renderObject.edges.visible).toBe(false)
   })
 
+  it('hides idle cages while preserving the visible sprite stack and picking proxy', () => {
+    const renderObject = makeRenderObject(spawnedPokemon())
+
+    paintPokemonRenderObjectStyle(renderObject, false)
+    setPokemonRenderObjectLayerVisibility(renderObject, visibleLayers())
+
+    expect(renderObject.cageVisible).toBe(false)
+    expect(renderObject.volume.visible).toBe(false)
+    expect(renderObject.edges.visible).toBe(false)
+    expect(renderObject.sprite.visible).toBe(true)
+    expect(renderObject.spriteState.halo.visible).toBe(true)
+    expect(renderObject.shadow.visible).toBe(true)
+    expect(renderObject.proxy.visible).toBe(true)
+  })
+
+  it.each([
+    { label: 'hovered', selected: false, options: { hovered: true } },
+    { label: 'selected', selected: true, options: {} },
+    { label: 'pending', selected: false, options: { pending: true } },
+    { label: 'corrected', selected: false, options: { corrected: true } },
+  ] satisfies Array<{
+    label: string
+    selected: boolean
+    options: PaintPokemonRenderObjectStyleOptions
+  }>)('shows tactical cages for $label tokens', ({ selected, options }) => {
+    const renderObject = makeRenderObject(spawnedPokemon())
+
+    paintPokemonRenderObjectStyle(renderObject, selected, options)
+    setPokemonRenderObjectLayerVisibility(renderObject, visibleLayers())
+
+    expect(renderObject.cageVisible).toBe(true)
+    expect(renderObject.volume.visible).toBe(true)
+    expect(renderObject.edges.visible).toBe(true)
+  })
+
   it('highlights hovered token cages with their app accent color', () => {
     const pokemon = spawnedPokemon({ accentColor: '#2e77d0' })
     const renderObject = makeRenderObject(pokemon)
@@ -203,6 +240,7 @@ describe('token renderer', () => {
     expect(edgeMaterial.color.getHex()).toBe(resolveVolumeAccentColor('#2e77d0'))
     expect(edgeMaterial.opacity).toBeCloseTo(0.9)
     expect(edgeMaterial.transparent).toBe(true)
+    expect(renderObject.cageVisible).toBe(true)
     expect(renderObject.liftTarget).toBe(0)
   })
 
@@ -240,6 +278,7 @@ describe('token renderer', () => {
     const edgeMaterial = renderObject.edges.material as THREE.LineBasicMaterial
     expect(edgeMaterial.color.getHex()).toBe(resolveVolumeAccentColor('#a78bfa'))
     expect(edgeMaterial.opacity).toBeCloseTo(0.785)
+    expect(renderObject.cageVisible).toBe(true)
     expect(renderObject.liftTarget).toBe(0)
   })
 
@@ -294,6 +333,7 @@ describe('token renderer', () => {
     const edgeMaterial = renderObject.edges.material as THREE.LineBasicMaterial
     expect(edgeMaterial.color.getHex()).toBe(0xaeb5bd)
     expect(edgeMaterial.opacity).toBeCloseTo(0.35)
+    expect(renderObject.cageVisible).toBe(false)
   })
 
   it('resizes live token render objects when spawned dimensions change', () => {

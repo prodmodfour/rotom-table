@@ -108,7 +108,7 @@ Status: DONE
 
 ## 003 — COS-003 — Hide idle cages by default
 
-Status: TODO
+Status: DONE
 
 **Goal:** Remove the acrylic-box look from normal Pokémon tokens.
 
