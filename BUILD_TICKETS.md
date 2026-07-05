@@ -78,7 +78,7 @@ Status: DONE
 
 ## LP-S5-002 — Add pure token motion curve utilities
 
-Status: TODO
+Status: DONE
 
 **Goal:** Create tested easing and duration helpers for token movement.
 

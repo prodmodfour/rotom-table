@@ -137,7 +137,7 @@ The current code suggests this division for later tickets:
 
 ### Pure/testable motion utilities
 
-- `LP-S5-002`: easing, distance-based duration, reduced-motion duration, and center interpolation helpers.
+- `LP-S5-002`: easing, distance-based duration, reduced-motion duration, and center interpolation helpers. Implemented in `src/utils/isometric/tokenMotionCurves.ts` as pure center-point math so future tracks can sample motion without importing three.js.
 - `LP-S5-003`: runtime motion-track model and sampling/cancel/replace helpers.
 - `LP-S5-007`: sampled-position replacement rules for rapid same-token movement.
 - `LP-S5-008`: path segment construction and proportional segment sampling.
