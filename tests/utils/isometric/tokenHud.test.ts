@@ -223,21 +223,6 @@ describe('token HUD HP bar rendering', () => {
     expect(bar.position.toArray()).toEqual(anchor.toArray())
   })
 
-  it('anchors the HP bar to the visual sprite top before resetting selected-token lift', () => {
-    const bar = buildHpBar(spawnedPokemon())
-
-    expect(updateTokenHpBar(bar, { spriteVisualYOffset: -0.25 })).toBe(true)
-    const visualAnchor = bar.position.clone()
-
-    bar.position.y += 0.08
-
-    expect(updateTokenHpBar(bar, { spriteVisualYOffset: -0.25 })).toBe(false)
-    expect(bar.position.toArray()).toEqual(visualAnchor.toArray())
-
-    expect(updateTokenHpBar(bar)).toBe(true)
-    expect(bar.position.y).toBeCloseTo(visualAnchor.y + 0.25)
-  })
-
   it('reports HP bar position, label, conditions, active-turn, and visibility changes', () => {
     const bar = buildHpBar(spawnedPokemon())
 

@@ -1,7 +1,7 @@
 import { compareByNationalDex, getNationalDexNumber } from '~/utils/nationalDex'
 import { pokedexEntryPathForSlug } from '~/utils/pokedex/routes'
 import { createLazyPokedexSearchTexts, toPokedexSlug, type PokedexSearchTexts } from '~/utils/pokedex/searchText'
-import type { PokedexRecord, SpriteVisualBounds } from '~/types/pokemon'
+import type { PokedexRecord } from '~/types/pokemon'
 
 export type IndexedPokedexEntry = PokedexRecord & {
   id: string
@@ -19,8 +19,6 @@ export type PokedexEntrySummary = Pick<IndexedPokedexEntry, 'id' | 'species' | '
 export type PokedexEntryDetail = IndexedPokedexEntry & {
   spriteUrl: string | null
   profileSpriteUrl: string | null
-  spriteVisualBounds?: SpriteVisualBounds
-  backSpriteVisualBounds?: SpriteVisualBounds
 }
 
 export const attachLazyPokedexSearchTexts = <TEntry extends IndexedPokedexEntry>(

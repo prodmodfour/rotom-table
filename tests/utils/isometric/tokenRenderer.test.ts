@@ -1,10 +1,9 @@
 import * as THREE from 'three'
 import { describe, expect, it, vi } from 'vitest'
 import type { LayerVisibility } from '~/types/map'
-import type { SpawnedPokemon, SpriteAnimation, SpriteVisualBounds } from '~/types/pokemon'
+import type { SpawnedPokemon } from '~/types/pokemon'
 import type { PokemonRenderObject, WorldSpriteState } from '~/utils/isometric/types'
 import {
-  animatePokemonRenderObject,
   applyPokemonRenderObjectMotionPolish,
   applyPokemonRenderObjectPosition,
   createPokemonRenderMotionState,
@@ -22,7 +21,6 @@ import {
   TERRAIN_PALETTE,
 } from '~/utils/isometric/materials'
 import { startTokenMotionTrack } from '~/utils/isometric/tokenMotionTracks'
-import { spriteVisualAssetKey } from '~/utils/isometric/worldSpriteAssets'
 
 const visibleLayers = (overrides: Partial<LayerVisibility> = {}): LayerVisibility => ({
   terrain: true,
@@ -36,79 +34,10 @@ const visibleLayers = (overrides: Partial<LayerVisibility> = {}): LayerVisibilit
 
 type TokenHudSprite = PokemonRenderObject['elevationBadge'] | PokemonRenderObject['hpBar']
 
-const frontVisualBounds: SpriteVisualBounds = {
-  canvasWidth: 96,
-  canvasHeight: 96,
-  left: 20,
-  top: 12,
-  width: 48,
-  height: 52,
-  floating: true,
-}
-
-const backVisualBounds: SpriteVisualBounds = {
-  canvasWidth: 80,
-  canvasHeight: 80,
-  left: 16,
-  top: 10,
-  width: 44,
-  height: 48,
-  floating: true,
-}
-
-const updatedFrontVisualBounds: SpriteVisualBounds = {
-  canvasWidth: 128,
-  canvasHeight: 128,
-  left: 30,
-  top: 18,
-  width: 58,
-  height: 60,
-  floating: true,
-}
-
-const updatedBackVisualBounds: SpriteVisualBounds = {
-  canvasWidth: 128,
-  canvasHeight: 128,
-  left: 34,
-  top: 22,
-  width: 56,
-  height: 62,
-  floating: false,
-}
-
-const hoverOffsetVisualBounds: SpriteVisualBounds = {
-  canvasWidth: 96,
-  canvasHeight: 96,
-  left: 24,
-  top: 8,
-  width: 48,
-  height: 48,
-  floating: true,
-}
-
-const HOVER_OFFSET_WORLD_Y = -1 / 3
-
-const equivalentBackSpriteAnimation: SpriteAnimation = {
-  url: '/trainer-back-sheet.png',
-  frameWidth: 96,
-  frameHeight: 96,
-  frames: 1,
-  columns: 1,
-  rows: 1,
-  durationsMs: [100],
-  totalDurationMs: 100,
-}
-
 const cssSpriteStub = <T extends TokenHudSprite>(): T => Object.assign(
   new THREE.Object3D(),
-  {
-    element: {
-      style: { display: '' },
-      classList: { toggle: vi.fn() },
-      querySelector: vi.fn(() => null),
-    },
-  },
-) as unknown as T
+  { element: { style: { display: '' } } },
+) as T
 
 const spawnedPokemon = (overrides: Partial<SpawnedPokemon> = {}): SpawnedPokemon => ({
   species: 'Trainer',
@@ -213,10 +142,6 @@ const makeRenderObject = (pokemon: SpawnedPokemon): PokemonRenderObject => {
     spriteAnimation: pokemon.spriteAnimation,
     backSpriteAnimation: pokemon.backSpriteAnimation,
     spriteCrop: pokemon.spriteCrop,
-    spriteVisualBounds: pokemon.spriteVisualBounds,
-    backSpriteVisualBounds: pokemon.backSpriteVisualBounds,
-    activeSpriteVisualBounds: pokemon.spriteVisualBounds,
-    activeSpriteAsset: 'front',
     facing: 'south-east',
     turned: false,
     displayName: pokemon.species,
@@ -297,27 +222,6 @@ describe('token renderer', () => {
     expect(motion.sampledCenter).not.toBe(firstCenter)
     firstCenter.set(99, 99, 99)
     expect(motion.sampledCenter.toArray()).toEqual([2.5, 1, 4.5])
-  })
-
-  it('updates sprite visual-bounds metadata from spawned tokens without recreating objects', () => {
-    const renderObject = makeRenderObject(spawnedPokemon({
-      spriteVisualBounds: frontVisualBounds,
-      backSpriteVisualBounds: backVisualBounds,
-    }))
-    const originalSprite = renderObject.sprite
-    const originalHalo = renderObject.spriteState.halo
-
-    updatePokemonRenderObjectFromSpawn(renderObject, spawnedPokemon({
-      spriteVisualBounds: updatedFrontVisualBounds,
-      backSpriteVisualBounds: updatedBackVisualBounds,
-    }))
-
-    expect(renderObject.sprite).toBe(originalSprite)
-    expect(renderObject.spriteState.halo).toBe(originalHalo)
-    expect(renderObject.spriteVisualBounds).toEqual(updatedFrontVisualBounds)
-    expect(renderObject.backSpriteVisualBounds).toEqual(updatedBackVisualBounds)
-    expect(renderObject.activeSpriteVisualBounds).toEqual(updatedFrontVisualBounds)
-    expect(renderObject.activeSpriteAsset).toBe('front')
   })
 
   it('keeps current and target center compatibility when spawn placement changes', () => {
@@ -434,146 +338,6 @@ describe('token renderer', () => {
     })
   })
 
-  it('uses back visual bounds when the back-facing sprite asset is active', () => {
-    const renderObject = makeRenderObject(spawnedPokemon({
-      height: 2,
-      clearance: 2,
-      spriteVisualBounds: hoverOffsetVisualBounds,
-      backSpriteUrl: '/trainer-back.png',
-      backSpriteVisualBounds: updatedBackVisualBounds,
-    }))
-    renderObject.currentCenter.set(2.5, 1, 3.5)
-    renderObject.motion.sampledCenter.copy(renderObject.currentCenter)
-
-    applyPokemonRenderObjectPosition(renderObject, {
-      camera: null,
-      activeTurnId: null,
-      groundLevelY: 0,
-      hoveredPokemonId: null,
-      layers: visibleLayers({ tokens: false }),
-      getShadowSurfaceY: () => 0,
-    })
-
-    expect(renderObject.sprite.position.y).toBeCloseTo(1 + HOVER_OFFSET_WORLD_Y)
-
-    const camera = new THREE.PerspectiveCamera()
-    camera.position.set(-10, 0, -10)
-
-    animatePokemonRenderObject(renderObject, {
-      camera,
-      damping: 1,
-      frameNowMs: 1000,
-      spriteBrightness: 1,
-      haloAlpha: 0.5,
-    })
-
-    expect(renderObject.activeSpriteAsset).toBe('back')
-    expect(renderObject.activeSpriteVisualBounds).toEqual(updatedBackVisualBounds)
-    expect(renderObject.spriteState.assetKey).toBe(spriteVisualAssetKey({ url: '/trainer-back.png' }))
-    expect(renderObject.sprite.position.y).toBeCloseTo(1)
-    expect(renderObject.spriteState.halo.position.y).toBeCloseTo(1)
-  })
-
-  it('uses no visual offset for back-facing sprites without equivalent back metadata', () => {
-    const renderObject = makeRenderObject(spawnedPokemon({
-      height: 2,
-      clearance: 2,
-      spriteVisualBounds: hoverOffsetVisualBounds,
-      backSpriteUrl: '/trainer-back.png',
-    }))
-    renderObject.currentCenter.set(2.5, 1, 3.5)
-    renderObject.motion.sampledCenter.copy(renderObject.currentCenter)
-
-    applyPokemonRenderObjectPosition(renderObject, {
-      camera: null,
-      activeTurnId: null,
-      groundLevelY: 0,
-      hoveredPokemonId: null,
-      layers: visibleLayers({ tokens: false }),
-      getShadowSurfaceY: () => 0,
-    })
-
-    const camera = new THREE.PerspectiveCamera()
-    camera.position.set(-10, 0, -10)
-
-    animatePokemonRenderObject(renderObject, {
-      camera,
-      damping: 1,
-      frameNowMs: 1000,
-      spriteBrightness: 1,
-      haloAlpha: 0.5,
-    })
-
-    expect(renderObject.activeSpriteAsset).toBe('back')
-    expect(renderObject.activeSpriteVisualBounds).toBeUndefined()
-    expect(renderObject.sprite.position.y).toBeCloseTo(1)
-    expect(renderObject.spriteState.halo.position.y).toBeCloseTo(1)
-  })
-
-  it('falls back to front bounds for front-only or equivalent-canvas back assets', () => {
-    const frontOnly = makeRenderObject(spawnedPokemon({
-      height: 2,
-      clearance: 2,
-      spriteVisualBounds: hoverOffsetVisualBounds,
-    }))
-    frontOnly.currentCenter.set(2.5, 1, 3.5)
-    frontOnly.motion.sampledCenter.copy(frontOnly.currentCenter)
-    applyPokemonRenderObjectPosition(frontOnly, {
-      camera: null,
-      activeTurnId: null,
-      groundLevelY: 0,
-      hoveredPokemonId: null,
-      layers: visibleLayers({ tokens: false }),
-      getShadowSurfaceY: () => 0,
-    })
-
-    const camera = new THREE.PerspectiveCamera()
-    camera.position.set(-10, 0, -10)
-    animatePokemonRenderObject(frontOnly, {
-      camera,
-      damping: 1,
-      frameNowMs: 1000,
-      spriteBrightness: 1,
-      haloAlpha: 0.5,
-    })
-
-    expect(frontOnly.activeSpriteAsset).toBe('front')
-    expect(frontOnly.activeSpriteVisualBounds).toEqual(hoverOffsetVisualBounds)
-    expect(frontOnly.spriteState.mirroredX).toBe(true)
-    expect(frontOnly.sprite.position.y).toBeCloseTo(1 + HOVER_OFFSET_WORLD_Y)
-
-    const equivalentBack = makeRenderObject(spawnedPokemon({
-      height: 2,
-      clearance: 2,
-      spriteVisualBounds: hoverOffsetVisualBounds,
-      backSpriteUrl: '/trainer-back.png',
-      backSpriteAnimation: equivalentBackSpriteAnimation,
-    }))
-    equivalentBack.currentCenter.set(2.5, 1, 3.5)
-    equivalentBack.motion.sampledCenter.copy(equivalentBack.currentCenter)
-    applyPokemonRenderObjectPosition(equivalentBack, {
-      camera: null,
-      activeTurnId: null,
-      groundLevelY: 0,
-      hoveredPokemonId: null,
-      layers: visibleLayers({ tokens: false }),
-      getShadowSurfaceY: () => 0,
-    })
-
-    animatePokemonRenderObject(equivalentBack, {
-      camera,
-      damping: 1,
-      frameNowMs: 1000,
-      spriteBrightness: 1,
-      haloAlpha: 0.5,
-    })
-
-    expect(equivalentBack.activeSpriteAsset).toBe('back')
-    expect(equivalentBack.activeSpriteVisualBounds).toEqual(hoverOffsetVisualBounds)
-    expect(equivalentBack.spriteState.mirroredX).toBe(false)
-    expect(equivalentBack.sprite.position.y).toBeCloseTo(1 + HOVER_OFFSET_WORLD_Y)
-  })
-
   it('keeps contact shadow projected to terrain while a hopped sample lifts the sprite', () => {
     const renderObject = makeRenderObject(spawnedPokemon({ position: { x: 2, y: 0, z: 3 } }))
     renderObject.currentCenter.set(2.5, 1.16, 3.5)
@@ -592,147 +356,6 @@ describe('token renderer', () => {
     expect(renderObject.sprite.position.toArray()).toEqual([2.5, 1.16, 3.5])
     expect(renderObject.shadow.position.toArray()).toEqual([2.5, 0.005, 3.5])
     expect(getShadowSurfaceY).toHaveBeenCalledWith(2.5, 3.5, 1, 1.16)
-  })
-
-  it('applies floating visual offsets only to sprite and halo while tactical anchors stay fixed', () => {
-    const renderObject = makeRenderObject(spawnedPokemon({
-      width: 1.5,
-      height: 2,
-      base: 1,
-      clearance: 2,
-      spriteVisualBounds: hoverOffsetVisualBounds,
-    }))
-    renderObject.currentCenter.set(2.5, 1, 3.5)
-    renderObject.motion.sampledCenter.copy(renderObject.currentCenter)
-    const getShadowSurfaceY = vi.fn(() => 0)
-
-    applyPokemonRenderObjectPosition(renderObject, {
-      camera: null,
-      activeTurnId: null,
-      groundLevelY: 0,
-      hoveredPokemonId: null,
-      layers: visibleLayers({ tokens: false }),
-      getShadowSurfaceY,
-    })
-
-    expect(renderObject.sprite.position.x).toBe(2.5)
-    expect(renderObject.sprite.position.y).toBeCloseTo(1 + HOVER_OFFSET_WORLD_Y)
-    expect(renderObject.sprite.position.z).toBe(3.5)
-    expect(renderObject.spriteState.halo.position.x).toBe(2.5)
-    expect(renderObject.spriteState.halo.position.y).toBeCloseTo(1 + HOVER_OFFSET_WORLD_Y)
-    expect(renderObject.spriteState.halo.position.z).toBe(3.5)
-    expect(renderObject.volume.position.toArray()).toEqual([2.5, 2, 3.5])
-    expect(renderObject.edges.position.toArray()).toEqual([2.5, 2, 3.5])
-    expect(renderObject.proxy.position.toArray()).toEqual([2.5, 2, 3.5])
-    expect(renderObject.shadow.position.toArray()).toEqual([2.5, 0.005, 3.5])
-    expect(getShadowSurfaceY).toHaveBeenCalledWith(2.5, 3.5, 1, 1)
-  })
-
-  it('composes selection lift on top of floating visual offsets', () => {
-    const renderObject = makeRenderObject(spawnedPokemon({
-      height: 2,
-      clearance: 2,
-      spriteVisualBounds: hoverOffsetVisualBounds,
-    }))
-    renderObject.currentCenter.set(2.5, 1, 3.5)
-    renderObject.motion.sampledCenter.copy(renderObject.currentCenter)
-    renderObject.spriteState.assetKey = spriteVisualAssetKey({ url: renderObject.spriteUrl })
-    renderObject.liftTarget = 1
-
-    applyPokemonRenderObjectPosition(renderObject, {
-      camera: null,
-      activeTurnId: null,
-      groundLevelY: 0,
-      hoveredPokemonId: null,
-      layers: visibleLayers({ tokens: false }),
-      getShadowSurfaceY: () => 0,
-    })
-    animatePokemonRenderObject(renderObject, {
-      camera: new THREE.PerspectiveCamera(),
-      damping: 1,
-      frameNowMs: 1000,
-      spriteBrightness: 1,
-      haloAlpha: 0.5,
-    })
-
-    expect(renderObject.sprite.position.y).toBeCloseTo(1 + HOVER_OFFSET_WORLD_Y + 0.08)
-    expect(renderObject.spriteState.halo.position.y).toBeCloseTo(1 + HOVER_OFFSET_WORLD_Y + 0.08)
-    expect(renderObject.volume.position.toArray()).toEqual([2.5, 2, 3.5])
-    expect(renderObject.proxy.position.toArray()).toEqual([2.5, 2, 3.5])
-    expect(renderObject.shadow.position.toArray()).toEqual([2.5, 0.005, 3.5])
-  })
-
-  it('keeps the HP bar attached to a lifted floating sprite without accumulating lift', () => {
-    const pokemon = spawnedPokemon({
-      height: 2,
-      clearance: 2,
-      spriteVisualBounds: hoverOffsetVisualBounds,
-    })
-    const renderObject = makeRenderObject(pokemon)
-    renderObject.currentCenter.set(2.5, 1, 3.5)
-    renderObject.motion.sampledCenter.copy(renderObject.currentCenter)
-    renderObject.spriteState.assetKey = spriteVisualAssetKey({ url: renderObject.spriteUrl })
-    renderObject.liftTarget = 1
-
-    applyPokemonRenderObjectPosition(renderObject, {
-      camera: null,
-      activeTurnId: null,
-      groundLevelY: 0,
-      hoveredPokemonId: null,
-      layers: visibleLayers(),
-      getShadowSurfaceY: () => 0,
-    })
-
-    const floatingHudAnchorY = renderObject.hpBar.position.y
-
-    const groundedRenderObject = makeRenderObject(spawnedPokemon({ height: 2, clearance: 2 }))
-    groundedRenderObject.currentCenter.copy(renderObject.currentCenter)
-    groundedRenderObject.motion.sampledCenter.copy(groundedRenderObject.currentCenter)
-
-    applyPokemonRenderObjectPosition(groundedRenderObject, {
-      camera: null,
-      activeTurnId: null,
-      groundLevelY: 0,
-      hoveredPokemonId: null,
-      layers: visibleLayers(),
-      getShadowSurfaceY: () => 0,
-    })
-
-    expect(floatingHudAnchorY).toBeCloseTo(groundedRenderObject.hpBar.position.y + HOVER_OFFSET_WORLD_Y)
-
-    const camera = new THREE.PerspectiveCamera()
-    animatePokemonRenderObject(renderObject, {
-      camera,
-      damping: 1,
-      frameNowMs: 1000,
-      spriteBrightness: 1,
-      haloAlpha: 0.5,
-    })
-
-    expect(renderObject.sprite.position.y).toBeCloseTo(1 + HOVER_OFFSET_WORLD_Y + 0.08)
-    expect(renderObject.hpBar.position.y).toBeCloseTo(floatingHudAnchorY + 0.08)
-
-    applyPokemonRenderObjectPosition(renderObject, {
-      camera: null,
-      activeTurnId: null,
-      groundLevelY: 0,
-      hoveredPokemonId: null,
-      layers: visibleLayers(),
-      getShadowSurfaceY: () => 0,
-    })
-
-    expect(renderObject.hpBar.position.y).toBeCloseTo(floatingHudAnchorY)
-
-    animatePokemonRenderObject(renderObject, {
-      camera,
-      damping: 1,
-      frameNowMs: 1016,
-      spriteBrightness: 1,
-      haloAlpha: 0.5,
-    })
-
-    expect(renderObject.sprite.position.y).toBeCloseTo(1 + HOVER_OFFSET_WORLD_Y + 0.08)
-    expect(renderObject.hpBar.position.y).toBeCloseTo(floatingHudAnchorY + 0.08)
   })
 
   it('applies subtle start/end motion polish without moving the tactical footprint', () => {

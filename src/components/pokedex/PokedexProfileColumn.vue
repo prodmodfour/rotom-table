@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import type { SpriteVisualBounds } from '~/types/pokemon'
 import type { DisplayedPokedexEvolution } from '~/utils/pokedex/entryDetails'
 import type { PokedexEntryDetail } from '~/utils/pokedex/entryIndex'
 
@@ -12,8 +11,6 @@ defineProps<{
   habitatSummary: string | null
   heightLabel: string | null
   spriteUrl: string | null
-  spriteVisualBounds?: SpriteVisualBounds | null
-  showSpriteVisualBoundsOverlay?: boolean
   weightLabel: string | null
 }>()
 </script>
@@ -23,8 +20,6 @@ defineProps<{
     <PokedexProfileSpriteFrame
       :species="entry.species"
       :sprite-url="spriteUrl"
-      :visual-bounds="spriteVisualBounds ?? entry.spriteVisualBounds ?? null"
-      :show-visual-bounds-overlay="showSpriteVisualBoundsOverlay"
     />
 
     <PokedexBaseStatsPanel :base-stats="entry.base_stats" />

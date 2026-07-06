@@ -1,6 +1,6 @@
 import * as THREE from 'three'
 import type { LayerVisibility } from '~/types/map'
-import type { SpawnedPokemon, SpriteAnimation, SpriteCrop, SpriteVisualBounds } from '~/types/pokemon'
+import type { SpawnedPokemon } from '~/types/pokemon'
 import {
   accentVolumeFacePalette,
   buildVolumeMaterials,
@@ -33,8 +33,6 @@ import type {
   TokenRenderGeometryLeases,
 } from '~/utils/isometric/tokenGeometryCache'
 import { tokenFacingStoresLegacyTurned, tokenFacingVector } from '~/utils/tokenFacing'
-import type { WorldSpriteFacingAsset } from '~/utils/isometric/worldSpriteFacing'
-import { getSpriteVisualBoundsWorldYOffset } from '~/utils/spriteVisualBounds'
 import {
   TOKEN_MOTION_POLISH_IDLE_SAMPLE,
   sampleTokenMotionPolish,
@@ -315,100 +313,6 @@ const applyPokemonRenderObjectDimensions = (
   replaceShadowGeometry(renderObject, pokemon)
 }
 
-interface SpriteAssetCanvasDimensions {
-  readonly width: number
-  readonly height: number
-}
-
-type SpriteVisualBoundsState = Pick<
-  PokemonRenderObject,
-  | 'spriteUrl'
-  | 'backSpriteUrl'
-  | 'spriteAnimation'
-  | 'backSpriteAnimation'
-  | 'spriteCrop'
-  | 'spriteVisualBounds'
-  | 'backSpriteVisualBounds'
->
-
-const spriteVisualBoundsCanvasDimensions = (
-  bounds: SpriteVisualBounds | null | undefined,
-): SpriteAssetCanvasDimensions | null => {
-  if (!bounds) return null
-  if (!Number.isFinite(bounds.canvasWidth) || bounds.canvasWidth <= 0) return null
-  if (!Number.isFinite(bounds.canvasHeight) || bounds.canvasHeight <= 0) return null
-  return { width: bounds.canvasWidth, height: bounds.canvasHeight }
-}
-
-const spriteAnimationCanvasDimensions = (
-  animation: SpriteAnimation | null | undefined,
-): SpriteAssetCanvasDimensions | null => {
-  if (!animation) return null
-  if (!Number.isFinite(animation.frameWidth) || animation.frameWidth <= 0) return null
-  if (!Number.isFinite(animation.frameHeight) || animation.frameHeight <= 0) return null
-  return { width: animation.frameWidth, height: animation.frameHeight }
-}
-
-const spriteCropCanvasDimensions = (
-  crop: SpriteCrop | null | undefined,
-): SpriteAssetCanvasDimensions | null => {
-  if (!crop) return null
-  if (!Number.isFinite(crop.canvasWidth) || crop.canvasWidth <= 0) return null
-  if (!Number.isFinite(crop.canvasHeight) || crop.canvasHeight <= 0) return null
-  return { width: crop.canvasWidth, height: crop.canvasHeight }
-}
-
-const spriteAssetCanvasDimensionsEqual = (
-  left: SpriteAssetCanvasDimensions | null,
-  right: SpriteAssetCanvasDimensions | null,
-): boolean => Boolean(left && right && left.width === right.width && left.height === right.height)
-
-const frontSpriteAssetCanvasDimensions = (
-  renderObject: SpriteVisualBoundsState,
-): SpriteAssetCanvasDimensions | null => (
-  spriteVisualBoundsCanvasDimensions(renderObject.spriteVisualBounds) ??
-  spriteAnimationCanvasDimensions(renderObject.spriteAnimation) ??
-  spriteCropCanvasDimensions(renderObject.spriteCrop)
-)
-
-const backSpriteAssetCanvasDimensions = (
-  renderObject: SpriteVisualBoundsState,
-): SpriteAssetCanvasDimensions | null => (
-  spriteVisualBoundsCanvasDimensions(renderObject.backSpriteVisualBounds) ??
-  spriteAnimationCanvasDimensions(renderObject.backSpriteAnimation) ??
-  (renderObject.backSpriteUrl === renderObject.spriteUrl ? frontSpriteAssetCanvasDimensions(renderObject) : null)
-)
-
-const canUseFrontVisualBoundsForBackSprite = (
-  renderObject: SpriteVisualBoundsState,
-): boolean => spriteAssetCanvasDimensionsEqual(
-  spriteVisualBoundsCanvasDimensions(renderObject.spriteVisualBounds),
-  backSpriteAssetCanvasDimensions(renderObject),
-)
-
-export const resolvePokemonRenderObjectActiveSpriteVisualBounds = (
-  renderObject: SpriteVisualBoundsState,
-  asset: WorldSpriteFacingAsset,
-): SpriteVisualBounds | undefined => {
-  if (asset === 'front') return renderObject.spriteVisualBounds
-  if (renderObject.backSpriteVisualBounds) return renderObject.backSpriteVisualBounds
-  return canUseFrontVisualBoundsForBackSprite(renderObject) ? renderObject.spriteVisualBounds : undefined
-}
-
-const normalizePokemonRenderObjectActiveSpriteAsset = (
-  renderObject: Pick<PokemonRenderObject, 'backSpriteUrl'>,
-  asset: WorldSpriteFacingAsset,
-): WorldSpriteFacingAsset => (asset === 'back' && renderObject.backSpriteUrl ? 'back' : 'front')
-
-const setPokemonRenderObjectActiveSpriteAsset = (
-  renderObject: PokemonRenderObject,
-  asset: WorldSpriteFacingAsset,
-) => {
-  const activeSpriteAsset = normalizePokemonRenderObjectActiveSpriteAsset(renderObject, asset)
-  renderObject.activeSpriteAsset = activeSpriteAsset
-  renderObject.activeSpriteVisualBounds = resolvePokemonRenderObjectActiveSpriteVisualBounds(renderObject, activeSpriteAsset)
-}
-
 export const createPokemonRenderObject = (
   pokemon: SpawnedPokemon,
   containers: PokemonRenderObjectContainers,
@@ -505,10 +409,6 @@ export const createPokemonRenderObject = (
     spriteAnimation: spawnState.spriteAnimation,
     backSpriteAnimation: spawnState.backSpriteAnimation,
     spriteCrop: spawnState.spriteCrop,
-    spriteVisualBounds: spawnState.spriteVisualBounds,
-    backSpriteVisualBounds: spawnState.backSpriteVisualBounds,
-    activeSpriteVisualBounds: spawnState.activeSpriteVisualBounds,
-    activeSpriteAsset: spawnState.activeSpriteAsset,
     facing: spawnState.facing,
     turned: spawnState.turned,
     displayName: spawnState.displayName,
@@ -553,9 +453,6 @@ export const updatePokemonRenderObjectFromSpawn = (
   renderObject.spriteAnimation = spawnState.spriteAnimation
   renderObject.backSpriteAnimation = spawnState.backSpriteAnimation
   renderObject.spriteCrop = spawnState.spriteCrop
-  renderObject.spriteVisualBounds = spawnState.spriteVisualBounds
-  renderObject.backSpriteVisualBounds = spawnState.backSpriteVisualBounds
-  setPokemonRenderObjectActiveSpriteAsset(renderObject, renderObject.activeSpriteAsset ?? spawnState.activeSpriteAsset)
   renderObject.facing = spawnState.facing
   renderObject.turned = spawnState.turned
   renderObject.displayName = spawnState.displayName
@@ -572,13 +469,6 @@ export const updatePokemonRenderObjectFromSpawn = (
   renderObject.spriteState.haloColor = worldSpriteHaloColorForAccent(spawnState.accentColor)
 }
 
-const pokemonRenderObjectVisualYOffset = (
-  renderObject: Pick<PokemonRenderObject, 'activeSpriteVisualBounds' | 'height' | 'clearance'>,
-): number => getSpriteVisualBoundsWorldYOffset(renderObject.activeSpriteVisualBounds, {
-  height: renderObject.height,
-  clearance: renderObject.clearance,
-})
-
 export const applyPokemonRenderObjectPosition = (
   renderObject: PokemonRenderObject,
   options: {
@@ -592,12 +482,9 @@ export const applyPokemonRenderObjectPosition = (
 ): boolean => {
   let cssHudChanged = false
   const center = renderObject.motion.sampledCenter.copy(renderObject.currentCenter)
-  const visualYOffset = pokemonRenderObjectVisualYOffset(renderObject)
-  // Floating visual-bounds offsets are cosmetic: only the artwork and its halo
-  // move so tactical cage, proxy, contact shadow, and occupied volume stay anchored.
   renderObject.sprite.position.set(
     center.x,
-    center.y + visualYOffset,
+    center.y,
     center.z,
   )
   renderObject.spriteState.halo.position.copy(renderObject.sprite.position)
@@ -650,7 +537,6 @@ export const applyPokemonRenderObjectPosition = (
     bar: renderObject.hpBar,
     center,
     spriteHeight: renderObject.height,
-    spriteVisualYOffset: visualYOffset,
     displayName: renderObject.displayName,
     level: renderObject.level,
     currentHp: renderObject.currentHp,
@@ -1005,8 +891,7 @@ export const animatePokemonRenderObject = (
 ) => {
   const visualFacing = resolvePokemonRenderObjectVisualFacing(renderObject)
 
-  const previousVisualYOffset = pokemonRenderObjectVisualYOffset(renderObject)
-  const facingUpdate = updateSpriteFacing(renderObject.spriteState, {
+  updateSpriteFacing(renderObject.spriteState, {
     camera: options.camera,
     center: renderObject.currentCenter,
     facingDirection: tokenFacingVector(visualFacing.facing),
@@ -1017,12 +902,6 @@ export const animatePokemonRenderObject = (
     spriteCrop: renderObject.spriteCrop,
     turned: visualFacing.turned,
   })
-  setPokemonRenderObjectActiveSpriteAsset(renderObject, facingUpdate.asset)
-  const visualYOffsetDelta = pokemonRenderObjectVisualYOffset(renderObject) - previousVisualYOffset
-  if (visualYOffsetDelta !== 0) {
-    renderObject.sprite.position.y += visualYOffsetDelta
-    renderObject.spriteState.halo.position.y += visualYOffsetDelta
-  }
   if (renderObject.spriteState.animationMeta) {
     applyAnimationFrame(renderObject.spriteState, options.frameNowMs)
   }

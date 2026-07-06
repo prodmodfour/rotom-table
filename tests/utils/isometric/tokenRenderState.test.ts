@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import type { SpawnedPokemon, SpriteVisualBounds } from '~/types/pokemon'
+import type { SpawnedPokemon } from '~/types/pokemon'
 import {
   anyTokenRenderStateNeedsAnimation,
   nextSelectionLiftFactor,
@@ -15,26 +15,6 @@ import {
   tokenSelectionLiftStyle,
 } from '~/utils/isometric/tokenRenderState'
 import { startTokenMotionTrack } from '~/utils/isometric/tokenMotionTracks'
-
-const frontVisualBounds: SpriteVisualBounds = {
-  canvasWidth: 96,
-  canvasHeight: 96,
-  left: 20,
-  top: 12,
-  width: 48,
-  height: 52,
-  floating: true,
-}
-
-const backVisualBounds: SpriteVisualBounds = {
-  canvasWidth: 80,
-  canvasHeight: 80,
-  left: 16,
-  top: 10,
-  width: 44,
-  height: 48,
-  floating: true,
-}
 
 const spawnedPokemon = (overrides: Partial<SpawnedPokemon> = {}): SpawnedPokemon => ({
   species: 'Pikachu',
@@ -84,18 +64,6 @@ describe('token render state helpers', () => {
     expect(state.combatStages).toMatchObject({ atk: 6, def: -6, satk: 1, spd: 2, acc: -1 })
     expect(state.conditions).toEqual(['Burned', 'Poisoned'])
     expect(state.tokenItems).toEqual(['Light Ball'])
-  })
-
-  it('carries sprite visual bounds through render spawn state', () => {
-    const state = pokemonRenderSpawnState(spawnedPokemon({
-      spriteVisualBounds: frontVisualBounds,
-      backSpriteVisualBounds: backVisualBounds,
-    }))
-
-    expect(state.spriteVisualBounds).toEqual(frontVisualBounds)
-    expect(state.backSpriteVisualBounds).toEqual(backVisualBounds)
-    expect(state.activeSpriteVisualBounds).toEqual(frontVisualBounds)
-    expect(state.activeSpriteAsset).toBe('front')
   })
 
   it('copies token item arrays instead of sharing mutable metadata', () => {

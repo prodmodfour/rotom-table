@@ -16,7 +16,6 @@ import {
 import type { PokedexEntryMutationResponse, PokedexProfileImageUpdateResponse } from '~/utils/pokedex/admin'
 import { pokedexEntryPath, type PokedexEntryDetail } from '~/utils/pokedex/entryIndex'
 import { isPokedexPath } from '~/utils/pokedex/routes'
-import { isPokedexSpriteVisualBoundsDebugEnabled } from '~/utils/pokedex/spriteVisualBoundsDebug'
 
 definePageMeta({
   hasPageSpecificGmAdminPanel: true,
@@ -55,7 +54,6 @@ const {
   selectedId,
   selectedProfileSpriteUrl,
   selectedSpriteUrl,
-  selectedSpriteVisualBounds,
   skillPhrase,
   tmHmTokens,
   tutorMoveTokens,
@@ -64,13 +62,8 @@ const {
 } = usePokedexBrowser()
 
 const apiClient = useApiClient()
-const route = useRoute()
 const router = useRouter()
 const { isGm } = useAuth()
-
-const showSpriteVisualBoundsOverlay = computed(() => (
-  isPokedexSpriteVisualBoundsDebugEnabled(route.query, import.meta.dev === true)
-))
 
 useHead(() => ({ title: pageTitle.value }))
 
@@ -254,8 +247,6 @@ await ready
       :requested-pokemon-name="requestedPokemonName"
       :skill-phrase="skillPhrase"
       :sprite-url="selectedSpriteUrl"
-      :sprite-visual-bounds="selectedSpriteVisualBounds"
-      :show-sprite-visual-bounds-overlay="showSpriteVisualBoundsOverlay"
       :tm-hm-tokens="tmHmTokens"
       :tutor-move-tokens="tutorMoveTokens"
       :type-matchup-groups="typeMatchupGroups"

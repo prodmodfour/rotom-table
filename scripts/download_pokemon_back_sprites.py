@@ -19,18 +19,12 @@ from typing import Any
 import requests
 
 from gif_spritesheet import with_animation_metadata
-from sprite_visual_bounds import (
-    apply_sprite_visual_bounds_override,
-    extract_sprite_visual_bounds_record,
-    load_sprite_visual_bounds_overrides,
-)
 
 SCRIPT_DIR = Path(__file__).resolve().parent
 REPO_ROOT = SCRIPT_DIR.parent
 PUBLIC_ROOT = REPO_ROOT / 'public'
 FRONT_MANIFEST_PATH = REPO_ROOT / 'data' / 'pokemonSpriteManifest.json'
 BACK_MANIFEST_PATH = REPO_ROOT / 'data' / 'pokemonBackSpriteManifest.json'
-VISUAL_BOUNDS_OVERRIDES_PATH = REPO_ROOT / 'data' / 'spriteVisualBoundsOverrides.json'
 MAX_WORKERS = 16
 USER_AGENT = 'rotom-table back sprite downloader'
 
@@ -128,32 +122,7 @@ def derive_back_asset(entry: dict[str, Any]) -> BackAsset | None:
     raise RuntimeError(f'Unsupported front asset kind: {asset_kind}')
 
 
-def with_back_sprite_metadata(
-    entry: dict[str, Any],
-    public_root: Path,
-    visual_bounds_overrides: dict[str, Any] | None = None,
-) -> dict[str, Any]:
-    """Return a back-sprite manifest entry with animation and visual bounds."""
-    updated = with_animation_metadata(entry, public_root)
-    local_path = str(updated.get('local_path', ''))
-    sprite_path = public_root / local_path
-    if not sprite_path.exists():
-        raise FileNotFoundError(f'Sprite listed in manifest does not exist: {sprite_path}')
-
-    extracted_bounds = extract_sprite_visual_bounds_record(sprite_path)
-    updated['visual_bounds'] = apply_sprite_visual_bounds_override(
-        extracted_bounds,
-        species=str(updated.get('species', '')),
-        view='back',
-        overrides=visual_bounds_overrides,
-    )
-    return updated
-
-
-def download_one(
-    entry: dict[str, Any],
-    visual_bounds_overrides: dict[str, Any] | None = None,
-) -> dict[str, Any] | None:
+def download_one(entry: dict[str, Any]) -> dict[str, Any] | None:
     asset = derive_back_asset(entry)
     if asset is None:
         return None
@@ -166,26 +135,23 @@ def download_one(
     target.parent.mkdir(parents=True, exist_ok=True)
     target.write_bytes(response.content)
 
-    return with_back_sprite_metadata({
+    return with_animation_metadata({
         'species': entry['species'],
         'slug': entry['slug'],
         'asset_kind': asset_kind,
         'remote_url': remote_url,
         'local_path': local_path,
         'bytes': len(response.content),
-    }, PUBLIC_ROOT, visual_bounds_overrides)
+    }, PUBLIC_ROOT)
 
 
 def convert_existing_manifest() -> None:
     manifest = json.loads(BACK_MANIFEST_PATH.read_text())
-    visual_bounds_overrides = load_sprite_visual_bounds_overrides(VISUAL_BOUNDS_OVERRIDES_PATH)
-    updated = [with_back_sprite_metadata(entry, PUBLIC_ROOT, visual_bounds_overrides) for entry in manifest]
+    updated = [with_animation_metadata(entry, PUBLIC_ROOT) for entry in manifest]
     updated.sort(key=lambda entry: entry['species'])
     BACK_MANIFEST_PATH.write_text(json.dumps(updated, indent=2) + '\n')
     converted = sum(1 for entry in updated if entry.get('animation'))
-    bounded = sum(1 for entry in updated if entry.get('visual_bounds'))
     print(f'Converted {converted} existing back GIF spritesheets')
-    print(f'Backfilled {bounded} existing back visual bounds')
     print(f'Wrote {BACK_MANIFEST_PATH}')
 
 
@@ -194,7 +160,7 @@ def main() -> None:
     parser.add_argument(
         '--convert-existing',
         action='store_true',
-        help='only generate spritesheets/animation metadata and visual bounds for the current local manifest',
+        help='only generate spritesheets/animation metadata for the current local manifest',
     )
     args = parser.parse_args()
     if args.convert_existing:
@@ -202,12 +168,11 @@ def main() -> None:
         return
 
     load_showdown_back_file_sets()
-    visual_bounds_overrides = load_sprite_visual_bounds_overrides(VISUAL_BOUNDS_OVERRIDES_PATH)
     front_manifest = json.loads(FRONT_MANIFEST_PATH.read_text())
     back_manifest: list[dict[str, Any]] = []
 
     with ThreadPoolExecutor(max_workers=MAX_WORKERS) as executor:
-        futures = [executor.submit(download_one, entry, visual_bounds_overrides) for entry in front_manifest]
+        futures = [executor.submit(download_one, entry) for entry in front_manifest]
         completed = 0
         skipped = 0
         for future in as_completed(futures):

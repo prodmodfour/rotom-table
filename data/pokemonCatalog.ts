@@ -10,7 +10,6 @@ import type {
   SpriteAnimationRecord,
 } from '~/types/pokemon'
 import { pokemonProfileSpriteUrl } from '~/utils/profileSprites'
-import { toSpriteVisualBounds } from '~/utils/pokemonSpriteVisualBounds'
 
 const manifestBySpecies = new Map(
   (spriteManifest as SpriteManifestRecord[]).map((entry) => [entry.species, entry]),
@@ -80,8 +79,6 @@ export const pokemonCatalog: PokemonCatalogEntry[] = (pokedexData as PokedexReco
         : undefined,
       spriteAnimation: toCatalogAnimation(sprite.animation),
       backSpriteAnimation: toCatalogAnimation(backSprite?.animation),
-      spriteVisualBounds: toSpriteVisualBounds(sprite.visual_bounds),
-      backSpriteVisualBounds: toSpriteVisualBounds(backSprite?.visual_bounds),
       entityKind: 'pokemon',
     }
   })

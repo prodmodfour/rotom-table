@@ -1,6 +1,6 @@
 # BUILD_TICKETS.md
 
-AUTOMATION_STATUS: DONE
+AUTOMATION_STATUS: TODO
 
 Ticket statuses:
 
@@ -21,7 +21,7 @@ Implementation invariant: the cage stays semantically correct. The artwork may r
 
 ## 001 — Define the visual-bounds metadata contract
 
-Status: DONE
+Status: TODO
 
 **Commit size:** type-only/schema-only change.
 
@@ -37,7 +37,7 @@ Status: DONE
 
 ## 002 — Add a reusable sprite visual-bounds extractor
 
-Status: DONE
+Status: TODO
 
 **Commit size:** new Python helper plus focused tests/fixtures if practical.
 
@@ -55,7 +55,7 @@ Status: DONE
 
 ## 003 — Wire front-sprite downloads to write visual bounds
 
-Status: DONE
+Status: TODO
 
 **Commit size:** update the front sprite downloader/converter only.
 
@@ -72,7 +72,7 @@ Status: DONE
 
 ## 004 — Wire back-sprite downloads to write visual bounds
 
-Status: DONE
+Status: TODO
 
 **Commit size:** update the back sprite downloader/converter only.
 
@@ -87,7 +87,7 @@ Status: DONE
 
 ## 005 — Add manual visual-bounds overrides for outliers
 
-Status: DONE
+Status: TODO
 
 **Commit size:** data contract plus override application, no renderer changes.
 
@@ -104,7 +104,7 @@ Status: DONE
 
 ## 006 — Regenerate sprite manifests with visual bounds
 
-Status: DONE
+Status: TODO
 
 **Commit size:** generated data only, after the scripts are ready.
 
@@ -121,7 +121,7 @@ Status: DONE
 
 ## 007 — Propagate visual bounds through catalogs and Pokédex APIs
 
-Status: DONE
+Status: TODO
 
 **Commit size:** TypeScript data plumbing only.
 
@@ -138,7 +138,7 @@ Status: DONE
 
 ## 008 — Add shared body-centre math helpers
 
-Status: DONE
+Status: TODO
 
 **Commit size:** pure utility plus unit tests.
 
@@ -156,7 +156,7 @@ Status: DONE
 
 ## 009 — Centre floating sprites in the Pokédex sprite frame
 
-Status: DONE
+Status: TODO
 
 **Commit size:** Pokédex component/style change only.
 
@@ -173,7 +173,7 @@ Status: DONE
 
 ## 010 — Carry visual bounds into spawned Pokémon render state
 
-Status: DONE
+Status: TODO
 
 **Commit size:** data plumbing for map tokens only.
 
@@ -189,7 +189,7 @@ Status: DONE
 
 ## 011 — Apply visual-only map offsets to sprite and halo
 
-Status: DONE
+Status: TODO
 
 **Commit size:** map-renderer positioning change plus tests.
 
@@ -206,7 +206,7 @@ Status: DONE
 
 ## 012 — Choose front/back bounds when facing changes
 
-Status: DONE
+Status: TODO
 
 **Commit size:** facing-specific metadata selection only.
 
@@ -223,7 +223,7 @@ Status: DONE
 
 ## 013 — Keep HUD/head placement visually attached
 
-Status: DONE
+Status: TODO
 
 **Commit size:** HUD positioning adjustment only.
 
@@ -239,7 +239,7 @@ Status: DONE
 
 ## 014 — Add a visual QA/dev overlay for body bounds
 
-Status: DONE
+Status: TODO
 
 **Commit size:** optional debug UI guarded behind a dev flag.
 
@@ -255,7 +255,7 @@ Status: DONE
 
 ## 015 — Final QA, overrides, and cleanup
 
-Status: DONE
+Status: TODO
 
 **Commit size:** polish/data cleanup only.
 

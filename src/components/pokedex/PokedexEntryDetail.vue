@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import type { SpriteVisualBounds } from '~/types/pokemon'
 import type { CapabilityToken, DisplayedPokedexEvolution, MoveToken } from '~/utils/pokedex/entryDetails'
 import type { PokedexEntryDetail } from '~/utils/pokedex/entryIndex'
 import type { TypeMatchupGroup } from '~/utils/pokedex/typeMatchups'
@@ -19,8 +18,6 @@ defineProps<{
   requestedPokemonName: string | null
   skillPhrase: string
   spriteUrl: string | null
-  spriteVisualBounds?: SpriteVisualBounds | null
-  showSpriteVisualBoundsOverlay?: boolean
   tmHmTokens: MoveToken[]
   tutorMoveTokens: MoveToken[]
   typeMatchupGroups: TypeMatchupGroup[]
@@ -48,8 +45,6 @@ defineProps<{
           :habitat-summary="habitatSummary"
           :height-label="heightLabel"
           :sprite-url="spriteUrl"
-          :sprite-visual-bounds="spriteVisualBounds ?? entry.spriteVisualBounds ?? null"
-          :show-sprite-visual-bounds-overlay="showSpriteVisualBoundsOverlay"
           :weight-label="weightLabel"
         />
 
