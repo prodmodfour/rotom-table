@@ -819,7 +819,7 @@ npm run test -- tests/server/livePlayInitiativeCommands.test.ts
 
 ## 013 - Apply manual order in legacy/session initiative commands
 
-Status: TODO
+Status: DONE
 
 **Commit message:** `Persist manual order in session initiative commands`
 

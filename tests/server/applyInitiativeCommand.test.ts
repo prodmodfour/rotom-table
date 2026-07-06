@@ -104,6 +104,16 @@ const createMap = (overrides: Partial<TabletopMapV2> = {}): TabletopMapV2 => ({
   ...overrides,
 })
 
+const createThreeCombatantMap = (overrides: Partial<TabletopMapV2> = {}): TabletopMapV2 => createMap({
+  placements: [
+    { id: 'token-a', sheetKind: 'pokemon', sheetSlug: 'a', position: { x: 1, y: 0, z: 1 }, initiative: 30 },
+    { id: 'token-b', sheetKind: 'pokemon', sheetSlug: 'b', position: { x: 2, y: 0, z: 1 }, initiative: 20 },
+    { id: 'token-c', sheetKind: 'pokemon', sheetSlug: 'c', position: { x: 3, y: 0, z: 1 }, initiative: 10 },
+  ],
+  initiative: { activeId: 'token-c', round: 1, manualOrderIds: ['token-c', 'token-a', 'token-b'] },
+  ...overrides,
+})
+
 const createState = (
   revision = 0,
   document: TabletopMapV2 = createMap(),
@@ -325,6 +335,49 @@ describe('applyInitiativeCommandUseCase', () => {
     expect(JSON.stringify(result.patchEvent.payload)).not.toContain('voxels')
   })
 
+  it('persists manual initiative order through setInitiative and includes it in patches', () => {
+    const initialState = createState()
+    const store = createStoreWithState(initialState)
+    const snapshotCalls: AuthoritativeSessionState<TabletopMapV2>[] = []
+    const manualOrderIds = ['token-bulbasaur', 'token-pikachu']
+
+    const result = applyInitiativeCommandUseCase({
+      command: createSetCommand({
+        opId: parseOpId('op_manualorduc1'),
+        payload: {
+          mapSlug: 'arena-map',
+          manualOrderIds,
+        },
+      }),
+    }, {
+      env: enabledEnv,
+      store,
+      operationTracker: false,
+      clock: () => processedAt,
+      writeSnapshot: createSnapshotWriter(snapshotCalls),
+    })
+
+    expect(result.status).toBe('accepted')
+    if (result.status !== 'accepted') throw new Error('expected manual order accepted')
+    expect(result.initiative.initiative).toEqual({
+      activeId: 'token-pikachu',
+      round: 1,
+      entries: [
+        { tokenId: 'token-pikachu', initiative: 20 },
+        { tokenId: 'token-bulbasaur', initiative: 12 },
+      ],
+      manualOrderIds,
+    })
+    expect(result.patchEvent.payload).toMatchObject({
+      command: SET_INITIATIVE_COMMAND_TYPE,
+      previous: expect.not.objectContaining({ manualOrderIds: expect.anything() }),
+      current: expect.objectContaining({ manualOrderIds }),
+      changedTokenIds: [],
+    })
+    expect(getSessionMapState(store.get(sessionId)!.state!, 'arena-map')?.document.initiative)
+      .toEqual({ activeId: 'token-pikachu', round: 1, manualOrderIds })
+  })
+
   it('advances and reverses initiative using the authoritative placement order and round rules', () => {
     const store = createStoreWithState(createState())
     const snapshotCalls: AuthoritativeSessionState<TabletopMapV2>[] = []
@@ -367,6 +420,188 @@ describe('applyInitiativeCommandUseCase', () => {
     if (previous.status !== 'accepted') throw new Error('expected previous accepted')
     expect(previous.initiative.initiative).toMatchObject({ activeId: 'token-pikachu', round: 1 })
     expect(snapshotCalls).toHaveLength(2)
+  })
+
+  it('advances next and previous initiative according to manual order', () => {
+    const manualOrderIds = ['token-c', 'token-a', 'token-b']
+    const store = createStoreWithState(createState(0, createThreeCombatantMap({
+      initiative: { activeId: 'token-c', round: 2, manualOrderIds },
+    })))
+    const snapshotCalls: AuthoritativeSessionState<TabletopMapV2>[] = []
+
+    const next = applyInitiativeCommandUseCase({
+      command: createNextCommand({
+        opId: parseOpId('op_nextmanualuc'),
+        payload: { mapSlug: 'arena-map', orderIds: manualOrderIds, activeId: 'token-c', round: 2 },
+      }),
+    }, {
+      env: enabledEnv,
+      store,
+      operationTracker: false,
+      clock: () => processedAt,
+      writeSnapshot: createSnapshotWriter(snapshotCalls),
+    })
+
+    expect(next.status).toBe('accepted')
+    if (next.status !== 'accepted') throw new Error('expected manual next accepted')
+    expect(next.initiative.initiative).toMatchObject({ activeId: 'token-a', round: 2, manualOrderIds })
+    expect(getSessionMapState(store.get(sessionId)!.state!, 'arena-map')?.document.initiative)
+      .toEqual({ activeId: 'token-a', round: 2, manualOrderIds })
+
+    const previous = applyInitiativeCommandUseCase({
+      command: {
+        ...createNextCommand(),
+        type: PREVIOUS_INITIATIVE_COMMAND_TYPE,
+        opId: parseOpId('op_prevmanualuc'),
+        baseRevision: parseSessionRevision(1),
+        payload: { mapSlug: 'arena-map', orderIds: manualOrderIds, activeId: 'token-a', round: 2 },
+      } as InitiativeCommand,
+    }, {
+      env: enabledEnv,
+      store,
+      operationTracker: false,
+      clock: () => '2026-05-26T18:00:06.000Z',
+      writeSnapshot: createSnapshotWriter(snapshotCalls),
+    })
+
+    expect(previous.status).toBe('accepted')
+    if (previous.status !== 'accepted') throw new Error('expected manual previous accepted')
+    expect(previous.initiative.initiative).toMatchObject({ activeId: 'token-c', round: 2, manualOrderIds })
+    expect(snapshotCalls).toHaveLength(2)
+  })
+
+  it('clears manual initiative order and returns advancement to calculated order', () => {
+    const manualOrderIds = ['token-c', 'token-a', 'token-b']
+    const store = createStoreWithState(createState(0, createThreeCombatantMap({
+      initiative: { activeId: 'token-c', round: 1, manualOrderIds },
+    })))
+    const snapshotCalls: AuthoritativeSessionState<TabletopMapV2>[] = []
+
+    const clear = applyInitiativeCommandUseCase({
+      command: createSetCommand({
+        opId: parseOpId('op_clearmanuc1'),
+        payload: { mapSlug: 'arena-map', manualOrderIds: null },
+      }),
+    }, {
+      env: enabledEnv,
+      store,
+      operationTracker: false,
+      clock: () => processedAt,
+      writeSnapshot: createSnapshotWriter(snapshotCalls),
+    })
+
+    expect(clear.status).toBe('accepted')
+    if (clear.status !== 'accepted') throw new Error('expected manual clear accepted')
+    expect(clear.patchEvent.payload).toMatchObject({
+      command: SET_INITIATIVE_COMMAND_TYPE,
+      previous: expect.objectContaining({ manualOrderIds }),
+      current: expect.not.objectContaining({ manualOrderIds: expect.anything() }),
+    })
+    expect(getSessionMapState(store.get(sessionId)!.state!, 'arena-map')?.document.initiative)
+      .toEqual({ activeId: 'token-c', round: 1 })
+
+    const next = applyInitiativeCommandUseCase({
+      command: createNextCommand({
+        opId: parseOpId('op_nextcalcuc2'),
+        baseRevision: parseSessionRevision(1),
+        payload: { mapSlug: 'arena-map', orderIds: ['token-a', 'token-b', 'token-c'], activeId: 'token-c', round: 1 },
+      }),
+    }, {
+      env: enabledEnv,
+      store,
+      operationTracker: false,
+      clock: () => '2026-05-26T18:00:06.000Z',
+      writeSnapshot: createSnapshotWriter(snapshotCalls),
+    })
+
+    expect(next.status).toBe('accepted')
+    if (next.status !== 'accepted') throw new Error('expected calculated next accepted')
+    expect(next.initiative.initiative).toMatchObject({ activeId: 'token-a', round: 2 })
+    expect(next.initiative.initiative.manualOrderIds).toBeUndefined()
+  })
+
+  it('rejects manual initiative orders that do not match map placements', () => {
+    const store = createStoreWithState(createState(0, createThreeCombatantMap({
+      initiative: { activeId: null, round: 1 },
+    })))
+    const snapshotCalls: AuthoritativeSessionState<TabletopMapV2>[] = []
+
+    const partial = applyInitiativeCommandUseCase({
+      command: createSetCommand({
+        opId: parseOpId('op_badmanualuc1'),
+        payload: { mapSlug: 'arena-map', manualOrderIds: ['token-c', 'token-a'] },
+      }),
+    }, {
+      env: enabledEnv,
+      store,
+      operationTracker: false,
+      clock: () => processedAt,
+      writeSnapshot: createSnapshotWriter(snapshotCalls),
+    })
+
+    expect(partial.status).toBe('rejected')
+    if (partial.status !== 'rejected') throw new Error('expected partial manual order rejection')
+    expect(partial.result).toMatchObject({ reason: 'conflict', currentRevision: parseSessionRevision(0) })
+
+    const unknown = applyInitiativeCommandUseCase({
+      command: createSetCommand({
+        opId: parseOpId('op_badmanualuc2'),
+        payload: { mapSlug: 'arena-map', manualOrderIds: ['token-c', 'token-a', 'missing-token'] },
+      }),
+    }, {
+      env: enabledEnv,
+      store,
+      operationTracker: false,
+      clock: () => '2026-05-26T18:00:06.000Z',
+      writeSnapshot: createSnapshotWriter(snapshotCalls),
+    })
+
+    expect(unknown.status).toBe('rejected')
+    if (unknown.status !== 'rejected') throw new Error('expected unknown manual order rejection')
+    expect(unknown.result).toMatchObject({ reason: 'conflict', currentRevision: parseSessionRevision(0) })
+    expect(getSessionMapState(store.get(sessionId)!.state!, 'arena-map')?.document.initiative)
+      .toEqual({ activeId: null, round: 1 })
+    expect(snapshotCalls).toEqual([])
+  })
+
+  it('rejects session-hosted advance commands when manual visible order precondition is stale', () => {
+    const manualOrderIds = ['token-c', 'token-a', 'token-b']
+    const store = createStoreWithState(createState(0, createThreeCombatantMap({
+      initiative: { activeId: 'token-c', round: 1, manualOrderIds },
+    })))
+    const snapshotCalls: AuthoritativeSessionState<TabletopMapV2>[] = []
+
+    const stale = applyInitiativeCommandUseCase({
+      command: createNextCommand({
+        opId: parseOpId('op_stalemanuc1'),
+        payload: {
+          mapSlug: 'arena-map',
+          orderIds: ['token-a', 'token-b', 'token-c'],
+          activeId: 'token-c',
+          round: 1,
+        },
+      }),
+    }, {
+      env: enabledEnv,
+      store,
+      operationTracker: false,
+      clock: () => processedAt,
+      writeSnapshot: createSnapshotWriter(snapshotCalls),
+    })
+
+    expect(stale.status).toBe('rejected')
+    if (stale.status !== 'rejected') throw new Error('expected stale manual order rejection')
+    expect(stale.result).toMatchObject({
+      reason: 'stale',
+      currentRevision: parseSessionRevision(0),
+      currentState: {
+        mapSlug: 'arena-map',
+        initiative: expect.objectContaining({ activeId: 'token-c', round: 1, manualOrderIds }),
+      },
+    })
+    expect(getSessionMapState(store.get(sessionId)!.state!, 'arena-map')?.document.initiative)
+      .toEqual({ activeId: 'token-c', round: 1, manualOrderIds })
+    expect(snapshotCalls).toEqual([])
   })
 
   it('rejects session-hosted advance commands when their visible order precondition is stale', () => {

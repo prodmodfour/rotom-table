@@ -79,6 +79,7 @@ export interface InitiativeLaneState {
   readonly activeId: string | null
   readonly round: number
   readonly entries: readonly InitiativeEntryState[]
+  readonly manualOrderIds?: readonly string[]
 }
 
 export interface InitiativeCurrentState {
@@ -287,6 +288,30 @@ const cloneLaneState = (state: InitiativeLaneState): InitiativeLaneState => ({
   activeId: state.activeId,
   round: state.round,
   entries: state.entries.map(cloneEntryState),
+  ...(state.manualOrderIds?.length ? { manualOrderIds: [...state.manualOrderIds] } : {}),
+})
+
+const validManualOrderIdsForMap = (map: TabletopMapV2): readonly string[] | undefined => {
+  const rawOrderIds: unknown = map.initiative?.manualOrderIds
+  if (!Array.isArray(rawOrderIds)) return undefined
+
+  const placementIds = new Set(map.placements.map((placement) => placement.id))
+  const orderedIds: string[] = []
+  const usedIds = new Set<string>()
+  for (const rawId of rawOrderIds) {
+    const id = nonEmptyString(rawId)
+    if (!id || !placementIds.has(id) || usedIds.has(id)) continue
+    orderedIds.push(id)
+    usedIds.add(id)
+  }
+
+  return orderedIds.length ? orderedIds : undefined
+}
+
+const initiativeStateFromLane = (state: InitiativeLaneState): InitiativeTrackerState => ({
+  activeId: state.activeId,
+  round: state.round,
+  ...(state.manualOrderIds?.length ? { manualOrderIds: [...state.manualOrderIds] } : {}),
 })
 
 const currentInitiativeState = (
@@ -297,6 +322,7 @@ const currentInitiativeState = (
   const placementIds = new Set(mapState.document.placements.map((placement) => placement.id))
   const rawActiveId = mapState.document.initiative?.activeId ?? null
   const activeId = rawActiveId && placementIds.has(rawActiveId) ? rawActiveId : null
+  const manualOrderIds = validManualOrderIdsForMap(mapState.document)
 
   return {
     mapSlug,
@@ -307,14 +333,24 @@ const currentInitiativeState = (
         tokenId: placement.id,
         initiative: normalizePlacementInitiative(placement.initiative),
       })),
+      ...(manualOrderIds?.length ? { manualOrderIds } : {}),
     },
     revision: sessionRevision,
     mapRevision: mapState.revision,
   }
 }
 
+const sameOptionalStringArray = (
+  left: readonly string[] | undefined,
+  right: readonly string[] | undefined,
+): boolean => {
+  if (left === undefined || right === undefined) return left === right
+  return left.length === right.length && left.every((value, index) => value === right[index])
+}
+
 const initiativeLaneStatesEqual = (left: InitiativeLaneState, right: InitiativeLaneState): boolean => {
   if (left.activeId !== right.activeId || left.round !== right.round) return false
+  if (!sameOptionalStringArray(left.manualOrderIds, right.manualOrderIds)) return false
   if (left.entries.length !== right.entries.length) return false
   return left.entries.every((entry, index) => {
     const other = right.entries[index]
@@ -652,7 +688,8 @@ const firstPlacementById = (
 const initiativeOrder = (
   placements: readonly SheetPlacement[],
   readSheet: InitiativeSheetReader,
-): readonly string[] => initiativeOrderIdsForPlacements(placements, readSheet)
+  manualOrderIds?: readonly string[] | null,
+): readonly string[] => initiativeOrderIdsForPlacements(placements, readSheet, manualOrderIds)
 
 const duplicateString = (values: readonly string[]): string | null => {
   const seen = new Set<string>()
@@ -666,6 +703,96 @@ const duplicateString = (values: readonly string[]): string | null => {
 const sameStringArray = (left: readonly string[], right: readonly string[]): boolean => (
   left.length === right.length && left.every((value, index) => value === right[index])
 )
+
+const validatedCompleteManualOrderIds = (
+  command: InitiativeCommand,
+  record: InitiativeSessionRecord,
+  target: ResolvedInitiativeMap,
+  placements: readonly SheetPlacement[],
+  manualOrderIds: readonly string[],
+  processedAt: string,
+):
+  | { readonly ok: true; readonly manualOrderIds: readonly string[] }
+  | { readonly ok: false; readonly result: InitiativeRejectedResult } => {
+  const placementIds = placements.map((placement) => placement.id)
+  const duplicatePlacementId = duplicateString(placementIds)
+  if (duplicatePlacementId) {
+    return {
+      ok: false,
+      result: createConflictRejection(
+        command,
+        record,
+        `Placement ${duplicatePlacementId} has duplicate entries on map ${target.mapSlug}.`,
+        processedAt,
+        {
+          retryable: true,
+          currentState: currentInitiativeState(target.mapSlug, target.mapState, record.revision),
+        },
+      ),
+    }
+  }
+
+  const placementIdSet = new Set(placementIds)
+  const submittedIds: string[] = []
+  const submittedIdSet = new Set<string>()
+  for (const rawId of manualOrderIds) {
+    const id = nonEmptyString(rawId)
+    if (!id) continue
+    if (!placementIdSet.has(id)) {
+      return {
+        ok: false,
+        result: createConflictRejection(
+          command,
+          record,
+          `Manual initiative order contains unknown placement ${id}.`,
+          processedAt,
+          {
+            retryable: true,
+            currentState: currentInitiativeState(target.mapSlug, target.mapState, record.revision),
+          },
+        ),
+      }
+    }
+    if (submittedIdSet.has(id)) {
+      return {
+        ok: false,
+        result: createConflictRejection(
+          command,
+          record,
+          `Manual initiative order contains duplicate placement ${id}.`,
+          processedAt,
+          {
+            retryable: false,
+            currentState: currentInitiativeState(target.mapSlug, target.mapState, record.revision),
+          },
+        ),
+      }
+    }
+    submittedIds.push(id)
+    submittedIdSet.add(id)
+  }
+
+  if (submittedIds.length !== placementIds.length) {
+    const missingId = placementIds.find((id) => !submittedIdSet.has(id))
+    return {
+      ok: false,
+      result: createConflictRejection(
+        command,
+        record,
+        missingId
+          ? `Manual initiative order must include every placement exactly once; missing placement ${missingId}.`
+          : 'Manual initiative order must include every placement exactly once.',
+        processedAt,
+        {
+          retryable: true,
+          currentState: currentInitiativeState(target.mapSlug, target.mapState, record.revision),
+        },
+      ),
+    }
+  }
+
+  return { ok: true, manualOrderIds: submittedIds }
+}
 
 const mapWithUpdatedAt = (map: TabletopMapV2, processedAt: string): TabletopMapV2 => {
   const updatedAtMs = Date.parse(processedAt)
@@ -736,10 +863,9 @@ const applySetInitiativePayload = (
   | { readonly ok: true; readonly document: TabletopMapV2 }
   | { readonly ok: false; readonly result: InitiativeRejectedResult } => {
   let placements = target.mapState.document.placements.map((placement) => ({ ...placement }))
-  let nextInitiativeState: InitiativeTrackerState = {
-    activeId: target.mapState.document.initiative?.activeId ?? null,
-    round: normalizeRound(target.mapState.document.initiative?.round),
-  }
+  let nextInitiativeState: InitiativeTrackerState = initiativeStateFromLane(
+    currentInitiativeState(target.mapSlug, target.mapState, record.revision).initiative,
+  )
 
   if (payload.initiative !== undefined) {
     const tokenId = payload.tokenId as string
@@ -802,6 +928,27 @@ const applySetInitiativePayload = (
     nextInitiativeState = { ...nextInitiativeState, round: payload.round }
   }
 
+  if (payload.manualOrderIds !== undefined) {
+    if (payload.manualOrderIds === null) {
+      nextInitiativeState = { ...nextInitiativeState }
+      delete nextInitiativeState.manualOrderIds
+    } else {
+      const manualOrder = validatedCompleteManualOrderIds(
+        command,
+        record,
+        target,
+        placements,
+        payload.manualOrderIds,
+        processedAt,
+      )
+      if (!manualOrder.ok) return manualOrder
+      nextInitiativeState = {
+        ...nextInitiativeState,
+        manualOrderIds: [...manualOrder.manualOrderIds],
+      }
+    }
+  }
+
   return {
     ok: true,
     document: mapWithUpdatedAt({
@@ -821,7 +968,8 @@ const applyAdvanceInitiativePayload = (
 ):
   | { readonly ok: true; readonly document: TabletopMapV2 }
   | { readonly ok: false; readonly result: InitiativeRejectedResult } => {
-  const order = initiativeOrder(target.mapState.document.placements, readSheet)
+  const previousState = currentInitiativeState(target.mapSlug, target.mapState, record.revision).initiative
+  const order = initiativeOrder(target.mapState.document.placements, readSheet, previousState.manualOrderIds)
   const duplicateOrderId = duplicateString(order)
   if (duplicateOrderId) {
     return {
@@ -839,7 +987,6 @@ const applyAdvanceInitiativePayload = (
     }
   }
 
-  const previousState = currentInitiativeState(target.mapSlug, target.mapState, record.revision).initiative
   const payload = command.payload as AdvanceInitiativeCommandPayload
   if (!sameStringArray(payload.orderIds, order)) {
     return {
@@ -914,6 +1061,7 @@ const applyAdvanceInitiativePayload = (
     document: mapWithUpdatedAt({
       ...target.mapState.document,
       initiative: {
+        ...initiativeStateFromLane(previousState),
         activeId: nextActiveId,
         round: nextRound,
       },
