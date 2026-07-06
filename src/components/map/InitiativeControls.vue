@@ -7,6 +7,7 @@ const props = defineProps<{
   round: number
   canManage: boolean
   hasInitiativeValues: boolean
+  manualOrderActive: boolean
 }>()
 
 const emit = defineEmits<{
@@ -16,10 +17,12 @@ const emit = defineEmits<{
   (event: 'fill-from-speed'): void
   (event: 'clear-active'): void
   (event: 'clear-values'): void
+  (event: 'clear-manual-order'): void
 }>()
 
 const turnControlsEnabled = computed(() => props.rowCount > 0 && props.canManage)
 const fillFromSpeedEnabled = computed(() => props.rowCount > 0 && props.canManage)
+const resetManualOrderEnabled = computed(() => props.manualOrderActive && props.canManage)
 const clearActiveEnabled = computed(() => Boolean(props.activeId) && props.canManage)
 const clearValuesEnabled = computed(() => (props.hasInitiativeValues || Boolean(props.activeId)) && props.canManage)
 
@@ -37,6 +40,10 @@ const emitFillFromSpeed = () => {
 
 const emitClearActive = () => {
   if (clearActiveEnabled.value) emit('clear-active')
+}
+
+const emitClearManualOrder = () => {
+  if (resetManualOrderEnabled.value) emit('clear-manual-order')
 }
 
 const emitClearValues = () => {
@@ -93,6 +100,16 @@ const emitClearValues = () => {
       @click="emitFillFromSpeed"
     >
       Auto-calc all
+    </button>
+    <button
+      v-if="manualOrderActive"
+      type="button"
+      class="initiative-tool"
+      :disabled="!resetManualOrderEnabled"
+      title="Return to calculated initiative order"
+      @click="emitClearManualOrder"
+    >
+      Reset order
     </button>
     <button
       type="button"

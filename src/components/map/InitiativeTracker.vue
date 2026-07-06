@@ -39,12 +39,14 @@ const emit = defineEmits<{
       :round="round"
       :can-manage="canManage"
       :has-initiative-values="hasInitiativeValues"
+      :manual-order-active="manualOrderActive"
       @set-round="emit('set-round', $event)"
       @previous="emit('previous')"
       @next="emit('next')"
       @fill-from-speed="emit('fill-from-speed')"
       @clear-active="emit('clear-active')"
       @clear-values="emit('clear-values')"
+      @clear-manual-order="emit('clear-manual-order')"
     />
 
     <InitiativeList

@@ -542,7 +542,7 @@ npm run test -- tests/composables/map-editor/useInitiativeTracker.test.ts
 
 ## 009 - Add a reset manual order control
 
-Status: TODO
+Status: DONE
 
 **Commit message:** `Add reset calculated initiative order control`
 

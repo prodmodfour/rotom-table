@@ -119,6 +119,7 @@ describe('initiative rapid click controls', () => {
           selected-id="token-a"
           :can-manage="ready"
           :has-initiative-values="true"
+          :manual-order-active="false"
           @next="nextDispatch"
         />
       `,
@@ -156,6 +157,7 @@ describe('initiative rapid click controls', () => {
           :round="1"
           :can-manage="ready"
           :has-initiative-values="true"
+          :manual-order-active="false"
           @next="nextDispatch"
         />
       `,
