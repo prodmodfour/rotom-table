@@ -13,6 +13,7 @@ const props = defineProps<{
   selectedId: string | null
   canManage: boolean
   hasInitiativeValues: boolean
+  manualOrderActive: boolean
 }>()
 
 const emit = defineEmits<{
@@ -27,6 +28,9 @@ const emit = defineEmits<{
   (event: 'focus', id: string): void
   (event: 'set-initiative-input', id: string, value: Event): void
   (event: 'set-initiative-from-speed', id: string, speed: number): void
+  (event: 'move-row', id: string, direction: -1 | 1): void
+  (event: 'reorder', ids: string[]): void
+  (event: 'clear-manual-order'): void
 }>()
 
 const initiativeBadge = computed(() => pluralizeCount(props.rows.length, 'combatant'))
@@ -50,6 +54,7 @@ const initiativeBadge = computed(() => pluralizeCount(props.rows.length, 'combat
       :selected-id="selectedId"
       :can-manage="canManage"
       :has-initiative-values="hasInitiativeValues"
+      :manual-order-active="manualOrderActive"
       @set-round="emit('set-round', $event)"
       @previous="emit('previous')"
       @next="emit('next')"
@@ -60,6 +65,9 @@ const initiativeBadge = computed(() => pluralizeCount(props.rows.length, 'combat
       @focus="emit('focus', $event)"
       @set-initiative-input="(id, value) => emit('set-initiative-input', id, value)"
       @set-initiative-from-speed="(id, speed) => emit('set-initiative-from-speed', id, speed)"
+      @move-row="(id, direction) => emit('move-row', id, direction)"
+      @reorder="emit('reorder', $event)"
+      @clear-manual-order="emit('clear-manual-order')"
     />
   </MapMenuModalShell>
 </template>

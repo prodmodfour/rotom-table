@@ -11,6 +11,7 @@ defineProps<{
   selectedId: string | null
   canManage: boolean
   hasInitiativeValues: boolean
+  manualOrderActive: boolean
 }>()
 
 const emit = defineEmits<{
@@ -24,6 +25,9 @@ const emit = defineEmits<{
   (event: 'focus', id: string): void
   (event: 'set-initiative-input', id: string, value: Event): void
   (event: 'set-initiative-from-speed', id: string, speed: number): void
+  (event: 'move-row', id: string, direction: -1 | 1): void
+  (event: 'reorder', ids: string[]): void
+  (event: 'clear-manual-order'): void
 }>()
 </script>
 
@@ -48,10 +52,13 @@ const emit = defineEmits<{
       :active-id="activeId"
       :selected-id="selectedId"
       :can-manage="canManage"
+      :manual-order-active="manualOrderActive"
       @set-active-and-focus="emit('set-active-and-focus', $event)"
       @focus="emit('focus', $event)"
       @set-initiative-input="(id, value) => emit('set-initiative-input', id, value)"
       @set-initiative-from-speed="(id, speed) => emit('set-initiative-from-speed', id, speed)"
+      @move-row="(id, direction) => emit('move-row', id, direction)"
+      @reorder="emit('reorder', $event)"
     />
   </section>
 </template>

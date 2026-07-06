@@ -7,6 +7,7 @@ defineProps<{
   activeId: string | null
   selectedId: string | null
   canManage: boolean
+  manualOrderActive: boolean
 }>()
 
 const emit = defineEmits<{
@@ -14,6 +15,8 @@ const emit = defineEmits<{
   (event: 'focus', id: string): void
   (event: 'set-initiative-input', id: string, value: Event): void
   (event: 'set-initiative-from-speed', id: string, speed: number): void
+  (event: 'move-row', id: string, direction: -1 | 1): void
+  (event: 'reorder', ids: string[]): void
 }>()
 </script>
 

@@ -394,7 +394,7 @@ npm run test -- tests/composables/map-editor/useInitiativeTracker.test.ts
 
 ## 007 - Expose manual reorder events through the modal component chain
 
-Status: TODO
+Status: DONE
 
 **Commit message:** `Wire initiative reorder events through modal`
 

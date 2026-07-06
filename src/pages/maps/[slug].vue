@@ -1567,6 +1567,7 @@ const {
 const {
   initiativeRows,
   sortedInitiativeRows,
+  manualInitiativeOrderActive,
   activeInitiativeId,
   initiativeRound,
   hasInitiativeValues,
@@ -1578,6 +1579,9 @@ const {
   fillInitiativeFromSpeed,
   clearInitiativeValues,
   clearActiveInitiative,
+  setManualInitiativeOrder,
+  moveInitiativeRow,
+  reorderInitiativeRows,
   nextInitiative,
   previousInitiative,
 } = useInitiativeTracker({
@@ -2856,6 +2860,7 @@ useMapDimensionReconciliation({
         :selected-id="selectedId"
         :can-manage="initiativeControlsEnabled"
         :has-initiative-values="hasInitiativeValues"
+        :manual-order-active="manualInitiativeOrderActive"
         @close="closeInitiativeMenu"
         @set-round="setInitiativeRound"
         @previous="previousInitiativeFromControls"
@@ -2867,6 +2872,9 @@ useMapDimensionReconciliation({
         @focus="focusInitiativeEntry"
         @set-initiative-input="setInitiativeInput"
         @set-initiative-from-speed="setInitiativeFromSpeed"
+        @move-row="moveInitiativeRow"
+        @reorder="reorderInitiativeRows"
+        @clear-manual-order="setManualInitiativeOrder(null)"
       />
 
       <MapAdminPanel
