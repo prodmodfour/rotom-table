@@ -513,7 +513,12 @@ describe('Final Wave C full-system live-play chaos hardening', () => {
     ]
     const remainingHazards = [{ kind: 'fire' as const, x: 2, y: 0, z: 2 }]
     const terrainVoxel = { x: 4, y: 0, z: 4, materialId: 'shallow_water' }
-    const harness = createHarness({ map: chaosMap({ hazards: initialHazards }) })
+    const harness = createHarness({
+      map: chaosMap({ hazards: initialHazards }),
+      // Keep periodic SSE replay from winning this race; the scenario below
+      // deliberately recovers one lost response by status and one by retry.
+      ssePollIntervalMs: 60_000,
+    })
     harness.serverA.publishLocalWakeups = false
     let loseNextClear = true
     let loseNextTerrain = true

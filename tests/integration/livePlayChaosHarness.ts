@@ -342,6 +342,7 @@ interface ServerInstance {
 export interface ChaosHarnessOptions {
   readonly map?: TabletopMap
   readonly mode?: MapInteractionMode
+  readonly ssePollIntervalMs?: number
 }
 
 export class FullSystemChaosHarness {
@@ -360,10 +361,12 @@ export class FullSystemChaosHarness {
   readonly sources: HarnessEventSource[] = []
 
   private readonly commandExecutor: ReturnType<typeof createAuthoritativeLivePlayCommandExecutor>
+  private readonly ssePollIntervalMs: number
   private nowValue = 1_700_000_100_000
   private disposed = false
 
   constructor(options: ChaosHarnessOptions = {}) {
+    this.ssePollIntervalMs = options.ssePollIntervalMs ?? 100
     this.tempRoot = mkdtempSync(join(tmpdir(), 'rotom-live-play-chaos-'))
     this.database = openRotomDatabase({ path: join(this.tempRoot, 'campaign.sqlite') })
     this.maps = createSqliteMapRepository<TabletopMap>(this.database)
@@ -494,7 +497,7 @@ export class FullSystemChaosHarness {
         sheetRepository: this.sheets,
       }),
       realtimeHub: server.hub,
-      pollIntervalMs: 100,
+      pollIntervalMs: this.ssePollIntervalMs,
       keepaliveMs: 60_000,
       logger: { info: () => undefined, warn: () => undefined, error: () => undefined },
       connectionId: `${server.name}-${this.sources.length}`,
