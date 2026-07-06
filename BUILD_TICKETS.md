@@ -1,6 +1,6 @@
 # BUILD_TICKETS.md
 
-AUTOMATION_STATUS: TODO
+AUTOMATION_STATUS: DONE
 
 Ticket statuses:
 
@@ -1092,7 +1092,7 @@ npm run test -- tests/composables/map-editor/useInitiativeTracker.test.ts tests/
 
 ## 018 - Final typecheck, full test run, and cleanup
 
-Status: TODO
+Status: DONE
 
 **Commit message:** `Validate initiative modal fix`
 
