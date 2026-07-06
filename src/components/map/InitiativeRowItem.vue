@@ -22,12 +22,31 @@ const emit = defineEmits<{
   (event: 'set-initiative-input', id: string, value: Event): void
   (event: 'set-initiative-from-speed', id: string, speed: number): void
   (event: 'move-row', id: string, direction: -1 | 1): void
+  (event: 'drag-start', id: string, value: DragEvent): void
+  (event: 'drag-end'): void
+  (event: 'drop-row', id: string, value: DragEvent): void
 }>()
 
 const isActive = computed(() => props.activeId === props.entry.id)
 const isSelected = computed(() => props.selectedId === props.entry.id)
 const rowAccentStyle = computed(() => props.entry.accentColor ? trainerAccentCssVariables(props.entry.accentColor) : undefined)
 const isFainted = computed(() => props.entry.currentHp <= 0)
+
+const handleDragStart = (event: DragEvent): void => {
+  if (!props.canManage) {
+    event.preventDefault()
+    return
+  }
+  emit('drag-start', props.entry.id, event)
+}
+
+const handleDragEnd = (): void => {
+  emit('drag-end')
+}
+
+const handleDrop = (event: DragEvent): void => {
+  emit('drop-row', props.entry.id, event)
+}
 </script>
 
 <template>
@@ -39,6 +58,7 @@ const isFainted = computed(() => props.entry.currentHp <= 0)
       'is-fainted': isFainted,
     }"
     :style="rowAccentStyle"
+    @drop="handleDrop"
   >
     <button
       type="button"
@@ -108,13 +128,25 @@ const isFainted = computed(() => props.entry.currentHp <= 0)
         ↓
       </button>
     </div>
+
+    <button
+      type="button"
+      class="initiative-row__drag-handle"
+      :draggable="canManage"
+      :disabled="!canManage"
+      :aria-label="`Drag ${entry.name} to reorder initiative`"
+      @dragstart="handleDragStart"
+      @dragend="handleDragEnd"
+    >
+      ⋮⋮
+    </button>
   </li>
 </template>
 
 <style scoped>
 .initiative-row {
   display: grid;
-  grid-template-columns: 42px minmax(0, 1fr) 78px auto;
+  grid-template-columns: 42px minmax(0, 1fr) 78px auto auto;
   align-items: stretch;
   gap: 0.5rem;
   border: 1px solid var(--rule-soft);
@@ -260,6 +292,45 @@ const isFainted = computed(() => props.entry.currentHp <= 0)
   color: var(--ink-soft);
 }
 
+.initiative-row__drag-handle {
+  align-self: stretch;
+  min-width: 1.8rem;
+  border: 1px solid var(--rule-soft);
+  border-radius: 8px;
+  background: var(--paper-soft);
+  color: var(--ink-muted);
+  cursor: grab;
+  font: inherit;
+  font-weight: 900;
+  line-height: 1;
+  padding: 0.35rem 0.4rem;
+  transition: border-color 0.15s ease, background 0.15s ease, color 0.15s ease, opacity 0.15s ease;
+}
+
+.initiative-row__drag-handle:hover,
+.initiative-row__drag-handle:focus-visible {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  color: var(--accent);
+  outline: none;
+}
+
+.initiative-row__drag-handle:active {
+  cursor: grabbing;
+}
+
+.initiative-row__drag-handle:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
+.initiative-row__drag-handle:disabled:hover,
+.initiative-row__drag-handle:disabled:focus-visible {
+  border-color: var(--rule-soft);
+  background: var(--paper-soft);
+  color: var(--ink-muted);
+}
+
 .sr-only {
   position: absolute;
   width: 1px;
@@ -273,7 +344,7 @@ const isFainted = computed(() => props.entry.currentHp <= 0)
 
 @media (max-width: 640px) {
   .initiative-row {
-    grid-template-columns: 38px minmax(0, 1fr) 70px auto;
+    grid-template-columns: 38px minmax(0, 1fr) 70px auto auto;
   }
 
   .initiative-row__move {

@@ -599,7 +599,7 @@ npm run typecheck
 
 ## 010 - Add pointer drag reorder inside the initiative list
 
-Status: TODO
+Status: DONE
 
 **Commit message:** `Add drag reorder to initiative list`
 
