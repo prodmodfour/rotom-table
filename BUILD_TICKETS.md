@@ -84,7 +84,7 @@ npm run test -- tests/composables/map-editor/useInitiativeTracker.test.ts
 
 ## 002 - Add persisted manual order to map initiative state
 
-Status: TODO
+Status: DONE
 
 **Commit message:** `Add manual initiative order state`
 

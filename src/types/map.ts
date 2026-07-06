@@ -31,6 +31,8 @@ export interface InitiativeTrackerState {
   activeId?: string | null
   /** 1-based combat round counter. */
   round?: number
+  /** Optional GM-authored turn order. Missing/null means derive order from initiative scores. */
+  manualOrderIds?: string[]
 }
 
 export interface MapTemporaryHitPointsState {
