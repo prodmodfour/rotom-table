@@ -208,6 +208,84 @@ describe('live-play patch application', () => {
     expect(map.initiative).not.toHaveProperty('manualOrderIds')
   })
 
+  it('regresses manual initiative patch adoption and later clear', () => {
+    const map = baseMap()
+
+    const manualResult = applyLivePlayPatchesToMap({
+      map,
+      mapSlug: 'arena',
+      previousRevision: 4,
+      revision: 5,
+      patches: [{
+        ...patchBase(LIVE_PLAY_PATCH_TYPES.MAP_INITIATIVE, {
+          command: 'setInitiative',
+          previous: {
+            activeId: null,
+            round: 1,
+            entries: [
+              { tokenId: 'token-a', initiative: 10 },
+              { tokenId: 'token-b', initiative: 5 },
+            ],
+          },
+          current: {
+            activeId: 'token-b',
+            round: 1,
+            manualOrderIds: ['token-b', 'token-a'],
+            entries: [
+              { tokenId: 'token-a', initiative: 10 },
+              { tokenId: 'token-b', initiative: 5 },
+            ],
+          },
+          changedTokenIds: [],
+        }),
+        scopes: [{ kind: 'map', lane: 'initiative' }],
+      }],
+    })
+
+    expect(manualResult).toMatchObject({ ok: true, applied: true, revision: 5 })
+    expect(map.initiative).toEqual({
+      activeId: 'token-b',
+      round: 1,
+      manualOrderIds: ['token-b', 'token-a'],
+    })
+
+    const clearResult = applyLivePlayPatchesToMap({
+      map,
+      mapSlug: 'arena',
+      previousRevision: 5,
+      revision: 6,
+      patches: [{
+        ...patchBase(LIVE_PLAY_PATCH_TYPES.MAP_INITIATIVE, {
+          command: 'setInitiative',
+          previous: {
+            activeId: 'token-b',
+            round: 1,
+            manualOrderIds: ['token-b', 'token-a'],
+            entries: [
+              { tokenId: 'token-a', initiative: 10 },
+              { tokenId: 'token-b', initiative: 5 },
+            ],
+          },
+          current: {
+            activeId: 'token-a',
+            round: 2,
+            entries: [
+              { tokenId: 'token-a', initiative: 10 },
+              { tokenId: 'token-b', initiative: 5 },
+            ],
+          },
+          changedTokenIds: [],
+        }),
+        revision: 6,
+        scopes: [{ kind: 'map', lane: 'initiative' }],
+      }],
+    })
+
+    expect(clearResult).toMatchObject({ ok: true, applied: true, revision: 6 })
+    expect(map.initiative).toEqual({ activeId: 'token-a', round: 2 })
+    expect(map.initiative).not.toHaveProperty('manualOrderIds')
+  })
+
   it('applies tracked move usage patches and appends move log metadata', () => {
     const map = baseMap()
 

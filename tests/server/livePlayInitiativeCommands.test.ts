@@ -291,9 +291,10 @@ describe('live-play initiative commands', () => {
 
   it('advances next initiative according to manual order instead of calculated score order', async () => {
     const manualOrderIds = ['token-c', 'token-a', 'token-b']
-    const harness = createHarness(threeCombatantMap({
+    const initialMap = threeCombatantMap({
       initiative: { activeId: 'token-c', round: 1, manualOrderIds },
-    }))
+    })
+    const harness = createHarness(cloneJson(initialMap))
 
     const response = await execute(harness, nextInitiativeCommand({
       opId: 'op_nextmanual',
@@ -302,6 +303,23 @@ describe('live-play initiative commands', () => {
 
     expect(response.result).toMatchObject({ ok: true, previousRevision: 4, revision: 5 })
     expect(harness.storedMap.initiative).toEqual({
+      activeId: 'token-a',
+      round: 1,
+      manualOrderIds,
+    })
+
+    const patches = response.result.ok && !('duplicate' in response.result) ? response.result.patches : []
+    const remote = cloneJson(initialMap)
+    const applied = applyLivePlayPatchesToMap({
+      map: remote,
+      mapSlug: 'arena',
+      previousRevision: 4,
+      revision: 5,
+      patches,
+    })
+
+    expect(applied).toMatchObject({ ok: true, applied: true, revision: 5 })
+    expect(remote.initiative).toEqual({
       activeId: 'token-a',
       round: 1,
       manualOrderIds,

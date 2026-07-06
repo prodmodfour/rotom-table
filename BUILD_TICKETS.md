@@ -1032,7 +1032,7 @@ npm run typecheck
 
 ## 017 - Add end-to-end-ish regression coverage for the full flow
 
-Status: TODO
+Status: DONE
 
 **Commit message:** `Test initiative modal manual order flow`
 

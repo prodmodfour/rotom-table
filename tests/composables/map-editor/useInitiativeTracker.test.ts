@@ -214,6 +214,26 @@ describe('useInitiativeTracker', () => {
     expect(tracker.sortedInitiativeRows.value.map((row) => row.id)).toEqual(['b', 'a', 'c'])
   })
 
+  it('regresses local modal manual order through visible rows and next turn', () => {
+    const { map, tracker } = initiativeOrderTrackerFixture([
+      { id: 'a', initiative: 30 },
+      { id: 'b', initiative: 20 },
+      { id: 'c', initiative: 10 },
+    ])
+    map.value!.initiative = { activeId: 'c', round: 1 }
+
+    expect(tracker.sortedInitiativeRows.value.map((row) => row.id)).toEqual(['a', 'b', 'c'])
+
+    tracker.reorderInitiativeRows(['c', 'a', 'b'])
+
+    expect(map.value?.initiative?.manualOrderIds).toEqual(['c', 'a', 'b'])
+    expect(tracker.sortedInitiativeRows.value.map((row) => row.id)).toEqual(['c', 'a', 'b'])
+
+    tracker.nextInitiative()
+
+    expect(map.value?.initiative).toEqual({ activeId: 'a', round: 1, manualOrderIds: ['c', 'a', 'b'] })
+  })
+
   it('clears manual initiative order when auto-calculating local initiatives', () => {
     const { map, tracker } = initiativeOrderTrackerFixture([
       { id: 'a', initiative: 30 },
@@ -223,6 +243,8 @@ describe('useInitiativeTracker', () => {
     map.value!.initiative = { activeId: 'b', round: 4, manualOrderIds: ['c', 'a', 'b'] }
     const expectedInitiatives = new Map(tracker.initiativeRows.value.map((row) => [row.id, row.baseInitiative]))
 
+    expect(tracker.sortedInitiativeRows.value.map((row) => row.id)).toEqual(['c', 'a', 'b'])
+
     tracker.fillInitiativeFromSpeed()
 
     expect(map.value?.placements.map((placement) => [placement.id, placement.initiative])).toEqual([
@@ -231,6 +253,7 @@ describe('useInitiativeTracker', () => {
       ['c', expectedInitiatives.get('c')],
     ])
     expect(map.value?.initiative).toEqual({ activeId: 'b', round: 4 })
+    expect(tracker.sortedInitiativeRows.value.map((row) => row.id)).toEqual(['a', 'b', 'c'])
   })
 
   it('adds deterministic fallback rows for placements that cannot hydrate into spawned tokens', () => {
