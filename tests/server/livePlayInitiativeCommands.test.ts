@@ -76,6 +76,16 @@ const baseMap = (overrides: Partial<TabletopMap> = {}): TabletopMap => ({
   ...overrides,
 })
 
+const threeCombatantMap = (overrides: Partial<TabletopMap> = {}): TabletopMap => baseMap({
+  placements: [
+    { id: 'token-a', sheetKind: 'pokemon', sheetSlug: 'a', position: { x: 1, y: 0, z: 1 }, initiative: 30 },
+    { id: 'token-b', sheetKind: 'pokemon', sheetSlug: 'b', position: { x: 2, y: 0, z: 1 }, initiative: 20 },
+    { id: 'token-c', sheetKind: 'pokemon', sheetSlug: 'c', position: { x: 3, y: 0, z: 1 }, initiative: 10 },
+  ],
+  initiative: { activeId: 'token-c', round: 1, manualOrderIds: ['token-c', 'token-a', 'token-b'] },
+  ...overrides,
+})
+
 const setInitiativeCommand = (
   overrides: Partial<SetInitiativeLivePlayCommand> = {},
 ): SetInitiativeLivePlayCommand => ({
@@ -246,6 +256,138 @@ describe('live-play initiative commands', () => {
     expect(harness.published).toEqual([
       expect.objectContaining({ channel: 'map:arena', type: 'live-play-command-accepted', opId: 'op_setinit001', revision: 5 }),
     ])
+  })
+
+  it('persists manual initiative order through setInitiative and publishes it in lane patches', async () => {
+    const harness = createHarness()
+
+    const response = await execute(harness, setInitiativeCommand({
+      opId: 'op_manualord1',
+      payload: { manualOrderIds: ['slow-token', 'fast-token'] },
+    }))
+
+    expect(response.result).toMatchObject({ ok: true, previousRevision: 4, revision: 5 })
+    expect(harness.storedMap.initiative).toEqual({
+      activeId: null,
+      round: 1,
+      manualOrderIds: ['slow-token', 'fast-token'],
+    })
+    expect(response.initiative).toEqual({
+      activeId: null,
+      round: 1,
+      entries: [
+        { tokenId: 'fast-token', initiative: 20 },
+        { tokenId: 'slow-token', initiative: 10 },
+      ],
+      manualOrderIds: ['slow-token', 'fast-token'],
+    })
+    expect(response.result.ok && !('duplicate' in response.result) ? response.result.patches[0]?.payload : {}).toMatchObject({
+      command: LIVE_PLAY_COMMAND_TYPES.SET_INITIATIVE,
+      previous: expect.not.objectContaining({ manualOrderIds: expect.anything() }),
+      current: expect.objectContaining({ manualOrderIds: ['slow-token', 'fast-token'] }),
+      changedTokenIds: [],
+    })
+  })
+
+  it('advances next initiative according to manual order instead of calculated score order', async () => {
+    const manualOrderIds = ['token-c', 'token-a', 'token-b']
+    const harness = createHarness(threeCombatantMap({
+      initiative: { activeId: 'token-c', round: 1, manualOrderIds },
+    }))
+
+    const response = await execute(harness, nextInitiativeCommand({
+      opId: 'op_nextmanual',
+      payload: { orderIds: manualOrderIds, activeId: 'token-c', round: 1 },
+    }))
+
+    expect(response.result).toMatchObject({ ok: true, previousRevision: 4, revision: 5 })
+    expect(harness.storedMap.initiative).toEqual({
+      activeId: 'token-a',
+      round: 1,
+      manualOrderIds,
+    })
+  })
+
+  it('advances previous initiative according to manual order instead of calculated score order', async () => {
+    const manualOrderIds = ['token-c', 'token-a', 'token-b']
+    const harness = createHarness(threeCombatantMap({
+      initiative: { activeId: 'token-c', round: 2, manualOrderIds },
+    }))
+
+    const response = await execute(harness, previousInitiativeCommand({
+      opId: 'op_prevmanual',
+      payload: { orderIds: manualOrderIds, activeId: 'token-c', round: 2 },
+    }))
+
+    expect(response.result).toMatchObject({ ok: true, previousRevision: 4, revision: 5 })
+    expect(harness.storedMap.initiative).toEqual({
+      activeId: 'token-b',
+      round: 1,
+      manualOrderIds,
+    })
+  })
+
+  it('rejects manual initiative orders with unknown placement ids', async () => {
+    const harness = createHarness()
+
+    const response = await execute(harness, setInitiativeCommand({
+      opId: 'op_badmanual1',
+      payload: { manualOrderIds: ['slow-token', 'missing-token'] },
+    }))
+
+    expect(response.result).toMatchObject({
+      ok: false,
+      reason: 'not-found',
+      currentRevision: 4,
+    })
+    expect(harness.writes).toEqual([])
+    expect(harness.storedMap.initiative).toEqual({ activeId: null, round: 1 })
+  })
+
+  it('rejects partial manual initiative orders so stale visible orders cannot persist', async () => {
+    const harness = createHarness(threeCombatantMap({ initiative: { activeId: null, round: 1 } }))
+
+    const response = await execute(harness, setInitiativeCommand({
+      opId: 'op_badmanual2',
+      payload: { manualOrderIds: ['token-c', 'token-a'] },
+    }))
+
+    expect(response.result).toMatchObject({
+      ok: false,
+      reason: 'invalid',
+      currentRevision: 4,
+    })
+    expect(harness.writes).toEqual([])
+    expect(harness.storedMap.initiative).toEqual({ activeId: null, round: 1 })
+  })
+
+  it('clears manual initiative order and returns advancement to calculated order', async () => {
+    const manualOrderIds = ['token-c', 'token-a', 'token-b']
+    const harness = createHarness(threeCombatantMap({
+      initiative: { activeId: 'token-c', round: 1, manualOrderIds },
+    }))
+
+    const clearResponse = await execute(harness, setInitiativeCommand({
+      opId: 'op_clearman1',
+      payload: { manualOrderIds: null },
+    }))
+
+    expect(clearResponse.result).toMatchObject({ ok: true, previousRevision: 4, revision: 5 })
+    expect(harness.storedMap.initiative).toEqual({ activeId: 'token-c', round: 1 })
+    expect(clearResponse.result.ok && !('duplicate' in clearResponse.result) ? clearResponse.result.patches[0]?.payload : {}).toMatchObject({
+      command: LIVE_PLAY_COMMAND_TYPES.SET_INITIATIVE,
+      previous: expect.objectContaining({ manualOrderIds }),
+      current: expect.not.objectContaining({ manualOrderIds: expect.anything() }),
+    })
+
+    const nextResponse = await execute(harness, nextInitiativeCommand({
+      opId: 'op_nextcalc2',
+      baseRevision: 5,
+      payload: { orderIds: ['token-a', 'token-b', 'token-c'], activeId: 'token-c', round: 1 },
+    }))
+
+    expect(nextResponse.result).toMatchObject({ ok: true, previousRevision: 5, revision: 6 })
+    expect(harness.storedMap.initiative).toEqual({ activeId: 'token-a', round: 2 })
   })
 
   it('advances initiative to the next token and records an initiative log entry', async () => {

@@ -748,7 +748,7 @@ npm run test -- tests/shared/livePlayCommands.test.ts tests/shared/sessionInitia
 
 ## 012 - Apply manual order in live-play initiative commands
 
-Status: TODO
+Status: DONE
 
 **Commit message:** `Persist manual order in live initiative commands`
 
