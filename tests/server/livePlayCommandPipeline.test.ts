@@ -36,18 +36,18 @@ const createCommand = (
   opId: string,
   baseRevision: number,
   label: string,
-): LivePlayCommandEnvelope<typeof LIVE_PLAY_COMMAND_TYPES.SET_INITIATIVE, TestPayload, LivePlayMapScope> => ({
+): LivePlayCommandEnvelope<typeof LIVE_PLAY_COMMAND_TYPES.SET_SCENE, TestPayload, LivePlayMapScope> => ({
   schemaVersion: LIVE_PLAY_COMMAND_SCHEMA_VERSION,
   opId,
   mapSlug,
   baseRevision,
-  type: LIVE_PLAY_COMMAND_TYPES.SET_INITIATIVE,
-  scopes: [mapScope('initiative')],
+  type: LIVE_PLAY_COMMAND_TYPES.SET_SCENE,
+  scopes: [mapScope('scene')],
   payload: { label },
 })
 
 const createPatch = (
-  command: LivePlayCommandEnvelope<typeof LIVE_PLAY_COMMAND_TYPES.SET_INITIATIVE, TestPayload, LivePlayMapScope>,
+  command: LivePlayCommandEnvelope<typeof LIVE_PLAY_COMMAND_TYPES.SET_SCENE, TestPayload, LivePlayMapScope>,
   revision: number,
 ): LivePlayPatch<typeof LIVE_PLAY_PATCH_TYPES.MAP_METADATA, TestPayload, LivePlayMapScope> => ({
   schemaVersion: LIVE_PLAY_COMMAND_SCHEMA_VERSION,

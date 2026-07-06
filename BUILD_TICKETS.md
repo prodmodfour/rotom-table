@@ -682,7 +682,7 @@ npm run typecheck
 
 ## 011 - Extend live-play and session payload types for manual order
 
-Status: TODO
+Status: DONE
 
 **Commit message:** `Add manual order to initiative command payloads`
 

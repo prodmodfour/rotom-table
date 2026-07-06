@@ -41,6 +41,8 @@ export interface SetInitiativeCommandPayload {
   readonly activeId?: string | null
   /** 1-based combat round counter. */
   readonly round?: number
+  /** Optional GM-authored turn order. `null` clears manual order. */
+  readonly manualOrderIds?: readonly string[] | null
 }
 
 export interface AdvanceInitiativeCommandPayload {
@@ -147,6 +149,7 @@ const EXPECTED_SAFE_INTEGER = 'safe integer'
 const EXPECTED_ROUND = 'safe integer >= 1'
 const EXPECTED_INITIATIVE_VALUE = `${INITIATIVE_MIN_VALUE}..${INITIATIVE_MAX_VALUE} integer or null`
 const EXPECTED_ORDER_IDS = 'array of non-empty token ID strings'
+const EXPECTED_MANUAL_ORDER_IDS = 'array of unique non-empty token ID strings or null'
 
 const hasOwn = (record: object, key: string): boolean =>
   Object.prototype.hasOwnProperty.call(record, key)
@@ -193,6 +196,9 @@ const cloneSetPayload = (payload: SetInitiativeCommandPayload): SetInitiativeCom
   ...(payload.initiative === undefined ? {} : { initiative: payload.initiative }),
   ...(payload.activeId === undefined ? {} : { activeId: payload.activeId }),
   ...(payload.round === undefined ? {} : { round: payload.round }),
+  ...(payload.manualOrderIds === undefined
+    ? {}
+    : { manualOrderIds: payload.manualOrderIds === null ? null : [...payload.manualOrderIds] }),
 })
 
 const cloneAdvancePayload = (payload: AdvanceInitiativeCommandPayload): AdvanceInitiativeCommandPayload => ({
@@ -236,6 +242,71 @@ const collectPayloadMapSlugIssue = (
   return payload.mapSlug
 }
 
+const collectManualOrderIdsIssues = (
+  value: unknown,
+  path: string,
+  commandLabel: string,
+  issues: MutableIssueList,
+): readonly string[] | null | undefined => {
+  if (value === null) return null
+
+  if (!Array.isArray(value)) {
+    addIssue(
+      issues,
+      path,
+      'invalid-order',
+      `${commandLabel} payload.manualOrderIds must be a non-empty array of unique token ID strings, or null to clear manual order.`,
+      EXPECTED_MANUAL_ORDER_IDS,
+      value,
+    )
+    return undefined
+  }
+
+  if (value.length === 0) {
+    addIssue(
+      issues,
+      path,
+      'invalid-order',
+      `${commandLabel} payload.manualOrderIds must not be empty. Use null to clear manual order.`,
+      EXPECTED_MANUAL_ORDER_IDS,
+      value,
+    )
+  }
+
+  const ids: string[] = []
+  const seenIds = new Set<string>()
+  value.forEach((id, index) => {
+    if (!isNonEmptyString(id)) {
+      addIssue(
+        issues,
+        `${path}[${index}]`,
+        'invalid-order',
+        `${commandLabel} payload.manualOrderIds[${index}] must be a non-empty token ID string.`,
+        EXPECTED_NON_EMPTY_STRING,
+        id,
+      )
+      return
+    }
+
+    if (seenIds.has(id)) {
+      addIssue(
+        issues,
+        `${path}[${index}]`,
+        'invalid-order',
+        `${commandLabel} payload.manualOrderIds must not contain duplicate token IDs.`,
+        'unique token ID',
+        id,
+      )
+      return
+    }
+
+    seenIds.add(id)
+    ids.push(id)
+  })
+
+  return ids
+}
+
 const collectSetInitiativePayloadIssues = (
   payload: unknown,
   issues: MutableIssueList,
@@ -257,16 +328,18 @@ const collectSetInitiativePayloadIssues = (
   const initiative = payload.initiative
   const activeId = payload.activeId
   const round = payload.round
+  const manualOrderIds = payload.manualOrderIds
   const setsInitiative = hasOwn(payload, 'initiative')
   const setsActive = hasOwn(payload, 'activeId')
   const setsRound = hasOwn(payload, 'round')
+  const setsManualOrder = hasOwn(payload, 'manualOrderIds')
 
-  if (!setsInitiative && !setsActive && !setsRound) {
+  if (!setsInitiative && !setsActive && !setsRound && !setsManualOrder) {
     addIssue(
       issues,
       'payload',
       'invalid-payload',
-      'setInitiative payload must set at least one of initiative, activeId, or round.',
+      'setInitiative payload must set at least one of initiative, activeId, round, or manualOrderIds.',
       'one or more initiative changes',
       payload,
     )
@@ -327,6 +400,10 @@ const collectSetInitiativePayloadIssues = (
     )
   }
 
+  const validatedManualOrderIds = setsManualOrder
+    ? collectManualOrderIdsIssues(manualOrderIds, 'payload.manualOrderIds', 'setInitiative', issues)
+    : undefined
+
   if (issues.some((issue) => issue.path.startsWith('payload'))) return undefined
 
   return cloneSetPayload({
@@ -334,6 +411,7 @@ const collectSetInitiativePayloadIssues = (
     ...(setsInitiative ? { tokenId: tokenId as string, initiative: initiative as number | null } : {}),
     ...(setsActive ? { activeId: activeId as string | null } : {}),
     ...(setsRound ? { round: round as number } : {}),
+    ...(setsManualOrder ? { manualOrderIds: validatedManualOrderIds as readonly string[] | null } : {}),
   })
 }
 

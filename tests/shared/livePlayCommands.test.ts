@@ -158,6 +158,18 @@ const buildMoveTokenCommand = (): LivePlayCommandEnvelope<
   },
 })
 
+const buildSetInitiativeCommand = (
+  payload: unknown = { tokenId: 'placement-001', initiative: 12, activeId: 'placement-001', round: 2 },
+): SetInitiativeLivePlayCommand => ({
+  schemaVersion: LIVE_PLAY_COMMAND_SCHEMA_VERSION,
+  opId,
+  mapSlug,
+  baseRevision,
+  type: LIVE_PLAY_COMMAND_TYPES.SET_INITIATIVE,
+  scopes: [{ kind: 'map', lane: 'initiative' }],
+  payload: payload as SetInitiativePayload,
+})
+
 const buildShopCheckoutCommand = (): ShopCheckoutLivePlayCommand => ({
   schemaVersion: LIVE_PLAY_COMMAND_SCHEMA_VERSION,
   opId: parseLivePlayOpId('op_shopbuy001'),
@@ -654,6 +666,38 @@ describe('live-play command contract', () => {
     expectTypeOf(spawnTokenCommand.payload).toMatchTypeOf<SpawnTokenPayload>()
     expectTypeOf(sendOutPokemonCommand.payload).toMatchTypeOf<SendOutPokemonPayload>()
     expectTypeOf(deleteTokenCommand.payload).toMatchTypeOf<DeleteTokenPayload>()
+  })
+
+  it('validates setInitiative payload manual order fields', () => {
+    const manualOrderCommand = buildSetInitiativeCommand({ manualOrderIds: ['placement-003', 'placement-001'] })
+    const clearManualOrderCommand = buildSetInitiativeCommand({ manualOrderIds: null })
+
+    expect(validateLivePlayCommandEnvelope(manualOrderCommand).valid).toBe(true)
+    expect(validateLivePlayCommandEnvelope(clearManualOrderCommand).valid).toBe(true)
+
+    const duplicateManualOrder = collectLivePlayCommandEnvelopeIssues(
+      buildSetInitiativeCommand({ manualOrderIds: ['placement-001', 'placement-001'] }),
+    )
+    expect(new Map(duplicateManualOrder.map((issue) => [issue.path, issue])).get('payload.manualOrderIds[1]'))
+      .toMatchObject({ code: 'invalid-payload' })
+
+    const emptyManualOrder = collectLivePlayCommandEnvelopeIssues(
+      buildSetInitiativeCommand({ manualOrderIds: [] }),
+    )
+    expect(new Map(emptyManualOrder.map((issue) => [issue.path, issue])).get('payload.manualOrderIds'))
+      .toMatchObject({ code: 'invalid-payload' })
+
+    const nonStringManualOrder = collectLivePlayCommandEnvelopeIssues(
+      buildSetInitiativeCommand({ manualOrderIds: ['placement-001', 42] }),
+    )
+    expect(new Map(nonStringManualOrder.map((issue) => [issue.path, issue])).get('payload.manualOrderIds[1]'))
+      .toMatchObject({ code: 'invalid-payload' })
+
+    const tokenIdWithoutInitiative = collectLivePlayCommandEnvelopeIssues(
+      buildSetInitiativeCommand({ tokenId: 'placement-001', manualOrderIds: ['placement-001'] }),
+    )
+    expect(new Map(tokenIdWithoutInitiative.map((issue) => [issue.path, issue])).get('payload.tokenId'))
+      .toMatchObject({ code: 'invalid-payload' })
   })
 
   it('validates clearHazards payload modes and strict batch fields', () => {

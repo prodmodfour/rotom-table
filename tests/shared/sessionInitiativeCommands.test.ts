@@ -124,6 +124,27 @@ describe('session initiative commands', () => {
       },
     }))
     expect(clearScore.valid).toBe(true)
+
+    const manualOrder = validateSetInitiativeCommand(createSetCommand({
+      payload: {
+        mapSlug: 'arena-map',
+        manualOrderIds: ['token-bulbasaur', 'token-pikachu'],
+      },
+    }))
+    expect(manualOrder.valid).toBe(true)
+    if (!manualOrder.valid) throw new Error('expected valid manual order setInitiative')
+    expect(manualOrder.payload).toEqual({
+      mapSlug: 'arena-map',
+      manualOrderIds: ['token-bulbasaur', 'token-pikachu'],
+    })
+
+    const clearManualOrder = validateSetInitiativeCommand(createSetCommand({
+      payload: {
+        mapSlug: 'arena-map',
+        manualOrderIds: null,
+      },
+    }))
+    expect(clearManualOrder.valid).toBe(true)
   })
 
   it('validates nextInitiative and previousInitiative GM commands', () => {
@@ -178,6 +199,51 @@ describe('session initiative commands', () => {
     if (mismatchedMap.valid) throw new Error('expected mismatched map rejection')
     expect(new Map(mismatchedMap.issues.map((issue) => [issue.path, issue])).get('payload.mapSlug')?.code)
       .toBe('invalid-map-slug')
+    const duplicateManualOrder = validateSetInitiativeCommand(createSetCommand({
+      payload: {
+        mapSlug: 'arena-map',
+        manualOrderIds: ['token-pikachu', 'token-pikachu'],
+      },
+    }))
+    expect(duplicateManualOrder.valid).toBe(false)
+    if (duplicateManualOrder.valid) throw new Error('expected duplicate manual order rejection')
+    expect(new Map(duplicateManualOrder.issues.map((issue) => [issue.path, issue])).get('payload.manualOrderIds[1]')?.code)
+      .toBe('invalid-order')
+
+    const emptyManualOrder = validateSetInitiativeCommand(createSetCommand({
+      payload: {
+        mapSlug: 'arena-map',
+        manualOrderIds: [],
+      },
+    }))
+    expect(emptyManualOrder.valid).toBe(false)
+    if (emptyManualOrder.valid) throw new Error('expected empty manual order rejection')
+    expect(new Map(emptyManualOrder.issues.map((issue) => [issue.path, issue])).get('payload.manualOrderIds')?.code)
+      .toBe('invalid-order')
+
+    const nonStringManualOrder = validateSetInitiativeCommand(createSetCommand({
+      payload: {
+        mapSlug: 'arena-map',
+        manualOrderIds: ['token-pikachu', 42],
+      } as unknown as SetInitiativeCommand['payload'],
+    }))
+    expect(nonStringManualOrder.valid).toBe(false)
+    if (nonStringManualOrder.valid) throw new Error('expected non-string manual order rejection')
+    expect(new Map(nonStringManualOrder.issues.map((issue) => [issue.path, issue])).get('payload.manualOrderIds[1]')?.code)
+      .toBe('invalid-order')
+
+    const tokenOnly = validateSetInitiativeCommand(createSetCommand({
+      payload: {
+        mapSlug: 'arena-map',
+        tokenId: 'token-pikachu',
+        manualOrderIds: ['token-pikachu'],
+      },
+    }))
+    expect(tokenOnly.valid).toBe(false)
+    if (tokenOnly.valid) throw new Error('expected token-only rejection')
+    expect(new Map(tokenOnly.issues.map((issue) => [issue.path, issue])).get('payload.tokenId')?.code)
+      .toBe('invalid-token-id')
+
     expect(isInitiativeCommandValidationCode('invalid-round')).toBe(true)
     expect(isInitiativeCommandValidationCode('not-real')).toBe(false)
   })

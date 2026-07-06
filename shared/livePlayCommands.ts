@@ -366,6 +366,7 @@ export interface SetInitiativePayload {
   readonly initiative?: number | null
   readonly activeId?: string | null
   readonly round?: number
+  readonly manualOrderIds?: readonly string[] | null
 }
 
 export interface AdvanceInitiativePayload {
@@ -1408,6 +1409,9 @@ type MutableIssueList = LivePlayCommandValidationIssue[]
 const EXPECTED_OBJECT = 'object'
 const EXPECTED_NON_EMPTY_STRING = 'non-empty string'
 const EXPECTED_GRID_COORDINATE = 'safe non-negative integer grid coordinate'
+const EXPECTED_ROUND = 'safe integer >= 1'
+const EXPECTED_INITIATIVE_VALUE = `${LIVE_PLAY_INITIATIVE_MIN_VALUE}..${LIVE_PLAY_INITIATIVE_MAX_VALUE} integer or null`
+const EXPECTED_MANUAL_ORDER_IDS = 'array of unique non-empty token ID strings or null'
 const MAP_SCOPE_CELL_FIELDS = ['x', 'y', 'z'] as const
 
 const hasOwn = (record: UnknownRecord, key: string): boolean =>
@@ -1421,6 +1425,16 @@ const isNonEmptyString = (value: unknown): value is string =>
 
 const isGridCoordinate = (value: unknown): value is number =>
   typeof value === 'number' && Number.isSafeInteger(value) && value >= 0
+
+const isSafeInteger = (value: unknown): value is number =>
+  typeof value === 'number' && Number.isSafeInteger(value)
+
+const isInitiativeValue = (value: unknown): value is number | null =>
+  value === null || (
+    isSafeInteger(value)
+    && value >= LIVE_PLAY_INITIATIVE_MIN_VALUE
+    && value <= LIVE_PLAY_INITIATIVE_MAX_VALUE
+  )
 
 const describeReceived = (value: unknown): string => {
   if (value === null) return 'null'
@@ -1442,6 +1456,187 @@ const addIssue = (
     message,
     ...(expected === undefined ? {} : { expected }),
     ...(received === undefined ? {} : { received: describeReceived(received) }),
+  })
+}
+
+const cloneSetInitiativePayload = (payload: SetInitiativePayload): SetInitiativePayload => ({
+  ...(payload.tokenId === undefined ? {} : { tokenId: payload.tokenId }),
+  ...(payload.initiative === undefined ? {} : { initiative: payload.initiative }),
+  ...(payload.activeId === undefined ? {} : { activeId: payload.activeId }),
+  ...(payload.round === undefined ? {} : { round: payload.round }),
+  ...(payload.manualOrderIds === undefined
+    ? {}
+    : { manualOrderIds: payload.manualOrderIds === null ? null : [...payload.manualOrderIds] }),
+})
+
+const collectManualOrderIdsIssues = (
+  value: unknown,
+  path: string,
+  commandLabel: string,
+  issues: MutableIssueList,
+): readonly string[] | null | undefined => {
+  if (value === null) return null
+
+  if (!Array.isArray(value)) {
+    addIssue(
+      issues,
+      path,
+      'invalid-payload',
+      `${commandLabel} payload.manualOrderIds must be a non-empty array of unique token ID strings, or null to clear manual order.`,
+      EXPECTED_MANUAL_ORDER_IDS,
+      value,
+    )
+    return undefined
+  }
+
+  if (value.length === 0) {
+    addIssue(
+      issues,
+      path,
+      'invalid-payload',
+      `${commandLabel} payload.manualOrderIds must not be empty. Use null to clear manual order.`,
+      EXPECTED_MANUAL_ORDER_IDS,
+      value,
+    )
+  }
+
+  const ids: string[] = []
+  const seenIds = new Set<string>()
+  value.forEach((id, index) => {
+    if (!isNonEmptyString(id)) {
+      addIssue(
+        issues,
+        `${path}[${index}]`,
+        'invalid-payload',
+        `${commandLabel} payload.manualOrderIds[${index}] must be a non-empty token ID string.`,
+        EXPECTED_NON_EMPTY_STRING,
+        id,
+      )
+      return
+    }
+
+    if (seenIds.has(id)) {
+      addIssue(
+        issues,
+        `${path}[${index}]`,
+        'invalid-payload',
+        `${commandLabel} payload.manualOrderIds must not contain duplicate token IDs.`,
+        'unique token ID',
+        id,
+      )
+      return
+    }
+
+    seenIds.add(id)
+    ids.push(id)
+  })
+
+  return ids
+}
+
+const collectSetInitiativePayloadIssues = (
+  payload: unknown,
+  issues: MutableIssueList,
+): SetInitiativePayload | undefined => {
+  if (!isRecord(payload)) {
+    addIssue(
+      issues,
+      'payload',
+      'invalid-payload',
+      'setInitiative payload must be an object.',
+      EXPECTED_OBJECT,
+      payload,
+    )
+    return undefined
+  }
+
+  const tokenId = payload.tokenId
+  const initiative = payload.initiative
+  const activeId = payload.activeId
+  const round = payload.round
+  const manualOrderIds = payload.manualOrderIds
+  const setsInitiative = hasOwn(payload, 'initiative')
+  const setsActive = hasOwn(payload, 'activeId')
+  const setsRound = hasOwn(payload, 'round')
+  const setsManualOrder = hasOwn(payload, 'manualOrderIds')
+
+  if (!setsInitiative && !setsActive && !setsRound && !setsManualOrder) {
+    addIssue(
+      issues,
+      'payload',
+      'invalid-payload',
+      'setInitiative payload must set at least one of initiative, activeId, round, or manualOrderIds.',
+      'one or more initiative changes',
+      payload,
+    )
+  }
+
+  if (setsInitiative) {
+    if (!isNonEmptyString(tokenId)) {
+      addIssue(
+        issues,
+        'payload.tokenId',
+        'invalid-payload',
+        'setInitiative payload.tokenId must be a non-empty token ID string when initiative is provided.',
+        EXPECTED_NON_EMPTY_STRING,
+        tokenId,
+      )
+    }
+
+    if (!isInitiativeValue(initiative)) {
+      addIssue(
+        issues,
+        'payload.initiative',
+        'invalid-payload',
+        `setInitiative payload.initiative must be an integer from ${LIVE_PLAY_INITIATIVE_MIN_VALUE} to ${LIVE_PLAY_INITIATIVE_MAX_VALUE}, or null to clear it.`,
+        EXPECTED_INITIATIVE_VALUE,
+        initiative,
+      )
+    }
+  } else if (hasOwn(payload, 'tokenId')) {
+    addIssue(
+      issues,
+      'payload.tokenId',
+      'invalid-payload',
+      'setInitiative payload.tokenId is only valid when payload.initiative is provided.',
+      'tokenId with initiative',
+      tokenId,
+    )
+  }
+
+  if (setsActive && activeId !== null && !isNonEmptyString(activeId)) {
+    addIssue(
+      issues,
+      'payload.activeId',
+      'invalid-payload',
+      'setInitiative payload.activeId must be a non-empty token ID string or null.',
+      'non-empty string or null',
+      activeId,
+    )
+  }
+
+  if (setsRound && !(isSafeInteger(round) && round >= 1)) {
+    addIssue(
+      issues,
+      'payload.round',
+      'invalid-payload',
+      'setInitiative payload.round must be a safe integer greater than or equal to 1.',
+      EXPECTED_ROUND,
+      round,
+    )
+  }
+
+  const validatedManualOrderIds = setsManualOrder
+    ? collectManualOrderIdsIssues(manualOrderIds, 'payload.manualOrderIds', 'setInitiative', issues)
+    : undefined
+
+  if (issues.some((issue) => issue.path.startsWith('payload'))) return undefined
+
+  return cloneSetInitiativePayload({
+    ...(setsInitiative ? { tokenId: tokenId as string, initiative: initiative as number | null } : {}),
+    ...(setsActive ? { activeId: activeId as string | null } : {}),
+    ...(setsRound ? { round: round as number } : {}),
+    ...(setsManualOrder ? { manualOrderIds: validatedManualOrderIds as readonly string[] | null } : {}),
   })
 }
 
@@ -1885,6 +2080,10 @@ export const collectLivePlayCommandEnvelopeIssues = (
 
   if (hasOwn(value, 'scopes')) {
     validateScopes(value.scopes, issues)
+  }
+
+  if (value.type === LIVE_PLAY_COMMAND_TYPES.SET_INITIATIVE && hasOwn(value, 'payload') && value.payload !== undefined) {
+    collectSetInitiativePayloadIssues(value.payload, issues)
   }
 
   return issues
