@@ -88,11 +88,11 @@ const emitClearValues = () => {
     <button
       type="button"
       class="initiative-tool"
-      title="Use each character's default initiative: Speed after Combat Stages plus item/training bonuses"
+      title="Recalculate every combatant from derived initiative: Speed after Combat Stages, item/training bonuses, then condition effects for final order"
       :disabled="!fillFromSpeedEnabled"
       @click="emitFillFromSpeed"
     >
-      Use All Init
+      Auto-calc all
     </button>
     <button
       type="button"

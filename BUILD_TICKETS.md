@@ -43,7 +43,7 @@ Use this mental model:
 
 ## 001 - Clarify the existing auto-calc all control
 
-Status: TODO
+Status: DONE
 
 **Commit message:** `Clarify initiative auto-calc control`
 
