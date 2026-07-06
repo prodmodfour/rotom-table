@@ -483,9 +483,11 @@ export const useInitiativeTracker = ({
       void (async () => {
         for (const placement of map.value?.placements ?? []) {
           const baseInitiative = baseInitiatives.get(placement.id)
-          if (baseInitiative !== undefined) await dispatchSetInitiative({ tokenId: placement.id, initiative: baseInitiative })
+          if (baseInitiative === undefined) continue
+          if (normalizeInitiativeOrderValue(placement.initiative) === baseInitiative) continue
+          await dispatchSetInitiative({ tokenId: placement.id, initiative: baseInitiative })
         }
-        await dispatchSetInitiative({ manualOrderIds: null })
+        if (map.value?.initiative?.manualOrderIds?.length) await dispatchSetInitiative({ manualOrderIds: null })
       })()
       return
     }
