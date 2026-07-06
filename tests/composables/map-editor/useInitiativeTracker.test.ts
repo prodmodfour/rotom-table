@@ -60,6 +60,30 @@ const mapWithPlacements = (placements: TabletopMap['placements']): TabletopMap =
 
 const inputEvent = (value: string): Event => ({ target: { value } } as unknown as Event)
 
+const initiativeOrderTrackerFixture = (
+  entries: ReadonlyArray<{ readonly id: string; readonly initiative: number; readonly species?: string }>,
+) => {
+  const map = ref<TabletopMap | null>(mapWithPlacements(entries.map((entry, index) => ({
+    id: entry.id,
+    sheetKind: 'pokemon',
+    sheetSlug: entry.id,
+    position: { x: index, y: 0, z: 0 },
+    initiative: entry.initiative,
+  }))))
+  const tracker = useInitiativeTracker({
+    map,
+    spawnedPokemon: computed(() => entries.map((entry) => token({
+      id: entry.id,
+      sheetSlug: entry.id,
+      species: entry.species ?? entry.id,
+    }))),
+    pokemonBySlug: ref(new Map(entries.map((entry) => [entry.id, sheet(entry.id)] as const))),
+    trainerBySlug: ref(new Map<string, TrainerSheet>()),
+    canManageInitiative: computed(() => true),
+  })
+  return { map, tracker }
+}
+
 describe('useInitiativeTracker', () => {
   it('applies Paralysis after manually entered initiative for final ordering', () => {
     const map = ref<TabletopMap | null>(mapWithPlacements([
@@ -102,6 +126,88 @@ describe('useInitiativeTracker', () => {
     })
 
     expect(tracker.sortedInitiativeRows.value.map((row) => row.id)).toEqual(['a-token', 'b-token'])
+  })
+
+  it('overlays manual initiative order on sorted rows', () => {
+    const { map, tracker } = initiativeOrderTrackerFixture([
+      { id: 'a', initiative: 30 },
+      { id: 'b', initiative: 20 },
+      { id: 'c', initiative: 10 },
+    ])
+
+    expect(tracker.manualInitiativeOrderActive.value).toBe(false)
+    expect(tracker.sortedInitiativeRows.value.map((row) => row.id)).toEqual(['a', 'b', 'c'])
+
+    tracker.setManualInitiativeOrder(['c', 'a', 'b'])
+
+    expect(map.value?.initiative?.manualOrderIds).toEqual(['c', 'a', 'b'])
+    expect(tracker.manualInitiativeOrderActive.value).toBe(true)
+    expect(tracker.sortedInitiativeRows.value.map((row) => row.id)).toEqual(['c', 'a', 'b'])
+  })
+
+  it('moves and reorders initiative rows through the local manual order API', () => {
+    const { map, tracker } = initiativeOrderTrackerFixture([
+      { id: 'a', initiative: 30 },
+      { id: 'b', initiative: 20 },
+      { id: 'c', initiative: 10 },
+    ])
+
+    tracker.moveInitiativeRow('c', -1)
+
+    expect(map.value?.initiative?.manualOrderIds).toEqual(['a', 'c', 'b'])
+    expect(tracker.sortedInitiativeRows.value.map((row) => row.id)).toEqual(['a', 'c', 'b'])
+
+    tracker.reorderInitiativeRows(['c', 'a', 'b'])
+
+    expect(map.value?.initiative?.manualOrderIds).toEqual(['c', 'a', 'b'])
+    expect(tracker.sortedInitiativeRows.value.map((row) => row.id)).toEqual(['c', 'a', 'b'])
+
+    tracker.setManualInitiativeOrder(null)
+
+    expect(map.value?.initiative?.manualOrderIds).toBeUndefined()
+    expect(tracker.manualInitiativeOrderActive.value).toBe(false)
+    expect(tracker.sortedInitiativeRows.value.map((row) => row.id)).toEqual(['a', 'b', 'c'])
+  })
+
+  it('advances to the next combatant by manual initiative order', () => {
+    const { map, tracker } = initiativeOrderTrackerFixture([
+      { id: 'a', initiative: 30 },
+      { id: 'b', initiative: 20 },
+      { id: 'c', initiative: 10 },
+    ])
+    map.value!.initiative = { activeId: 'c', round: 1 }
+    tracker.setManualInitiativeOrder(['c', 'a', 'b'])
+
+    tracker.nextInitiative()
+
+    expect(map.value?.initiative).toEqual({ activeId: 'a', round: 1, manualOrderIds: ['c', 'a', 'b'] })
+  })
+
+  it('moves to the previous combatant by manual initiative order and wraps rounds', () => {
+    const { map, tracker } = initiativeOrderTrackerFixture([
+      { id: 'a', initiative: 30 },
+      { id: 'b', initiative: 20 },
+      { id: 'c', initiative: 10 },
+    ])
+    map.value!.initiative = { activeId: 'c', round: 2 }
+    tracker.setManualInitiativeOrder(['c', 'a', 'b'])
+
+    tracker.previousInitiative()
+
+    expect(map.value?.initiative).toEqual({ activeId: 'b', round: 1, manualOrderIds: ['c', 'a', 'b'] })
+  })
+
+  it('ignores invalid ids when setting manual initiative order locally', () => {
+    const { map, tracker } = initiativeOrderTrackerFixture([
+      { id: 'a', initiative: 30 },
+      { id: 'b', initiative: 20 },
+      { id: 'c', initiative: 10 },
+    ])
+
+    tracker.setManualInitiativeOrder(['missing', 'b'])
+
+    expect(map.value?.initiative?.manualOrderIds).toEqual(['b'])
+    expect(tracker.sortedInitiativeRows.value.map((row) => row.id)).toEqual(['b', 'a', 'c'])
   })
 
   it('adds deterministic fallback rows for placements that cannot hydrate into spawned tokens', () => {
@@ -455,6 +561,9 @@ describe('useInitiativeTracker', () => {
     tracker.setInitiativeInput('player-token', inputEvent('99'))
     tracker.setInitiativeFromSpeed('player-token', 30)
     tracker.setInitiativeRound(inputEvent('5'))
+    tracker.setManualInitiativeOrder(['player-token'])
+    tracker.moveInitiativeRow('player-token', 1)
+    tracker.reorderInitiativeRows(['player-token'])
     tracker.fillInitiativeFromSpeed()
     tracker.clearInitiativeValues()
     tracker.clearActiveInitiative()

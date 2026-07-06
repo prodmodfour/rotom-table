@@ -256,7 +256,7 @@ npm run typecheck
 
 ## 005 - Make the client tracker read and mutate manual order locally
 
-Status: TODO
+Status: DONE
 
 **Commit message:** `Use manual initiative order in tracker`
 

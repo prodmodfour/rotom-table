@@ -2,7 +2,7 @@ import { computed, watch, type ComputedRef, type Ref } from 'vue'
 import { appendInitiativeLogEntry } from '~/utils/initiativeLog'
 import { trimmedTextValueFromEvent } from '~/utils/domEvents'
 import {
-  compareInitiativeOrderEntries,
+  orderInitiativeEntries,
   normalizeInitiativeValue as normalizeInitiativeOrderValue,
   type InitiativeOrderEntry,
 } from '#shared/initiativeOrder'
@@ -303,12 +303,12 @@ export const useInitiativeTracker = ({
     initiativeScore: row.initiativeScore,
   })
 
-  const sortedInitiativeRows = computed<InitiativeRow[]>(() =>
-    [...initiativeRows.value].sort((left, right) => compareInitiativeOrderEntries(
-      initiativeOrderEntryForRow(left),
-      initiativeOrderEntryForRow(right),
-    )),
-  )
+  const sortedInitiativeRows = computed<InitiativeRow[]>(() => orderInitiativeEntries(
+    initiativeRows.value.map((row) => ({ ...initiativeOrderEntryForRow(row), row })),
+    map.value?.initiative?.manualOrderIds,
+  ).map((entry) => entry.row))
+
+  const manualInitiativeOrderActive = computed(() => Boolean(map.value?.initiative?.manualOrderIds?.length))
 
   const validInitiativeIds = computed(() => new Set(initiativeRows.value.map((row) => row.id)))
   const activeInitiativeId = computed(() => {
@@ -426,6 +426,47 @@ export const useInitiativeTracker = ({
     state.round = round
   }
 
+  const sanitizedManualInitiativeOrderIds = (ids: readonly string[] | null): string[] => {
+    if (!ids?.length) return []
+    const validIds = validInitiativeIds.value
+    const used = new Set<string>()
+    const sanitizedIds: string[] = []
+    for (const id of ids) {
+      if (!validIds.has(id) || used.has(id)) continue
+      sanitizedIds.push(id)
+      used.add(id)
+    }
+    return sanitizedIds
+  }
+
+  const setManualInitiativeOrder = (ids: readonly string[] | null) => {
+    if (!map.value || !canManageInitiative.value) return
+    const state = ensureInitiativeState()
+    if (!state) return
+    const sanitizedIds = sanitizedManualInitiativeOrderIds(ids)
+    if (!sanitizedIds.length) {
+      delete state.manualOrderIds
+      return
+    }
+    state.manualOrderIds = [...sanitizedIds]
+  }
+
+  const moveInitiativeRow = (id: string, direction: -1 | 1) => {
+    const ids = sortedInitiativeRows.value.map((row) => row.id)
+    const index = ids.indexOf(id)
+    const targetIndex = index + direction
+    if (index < 0 || targetIndex < 0 || targetIndex >= ids.length) return
+    const nextIds = [...ids]
+    const targetId = nextIds[targetIndex]
+    nextIds[targetIndex] = nextIds[index]
+    nextIds[index] = targetId
+    setManualInitiativeOrder(nextIds)
+  }
+
+  const reorderInitiativeRows = (ids: readonly string[]) => {
+    setManualInitiativeOrder(ids)
+  }
+
   const fillInitiativeFromSpeed = () => {
     if (!map.value || !canManageInitiative.value) return
     const baseInitiatives = new Map(initiativeRows.value.map((entry) => [entry.id, entry.baseInitiative]))
@@ -517,6 +558,7 @@ export const useInitiativeTracker = ({
   return {
     initiativeRows,
     sortedInitiativeRows,
+    manualInitiativeOrderActive,
     activeInitiativeId,
     initiativeRound,
     hasInitiativeValues,
@@ -531,6 +573,9 @@ export const useInitiativeTracker = ({
     setInitiativeInput,
     setInitiativeFromSpeed,
     setInitiativeRound,
+    setManualInitiativeOrder,
+    moveInitiativeRow,
+    reorderInitiativeRows,
     fillInitiativeFromSpeed,
     clearInitiativeValues,
     clearActiveInitiative,
