@@ -483,6 +483,8 @@ export const useInitiativeTracker = ({
       const baseInitiative = baseInitiatives.get(placement.id)
       if (baseInitiative !== undefined) placement.initiative = baseInitiative
     }
+    const state = ensureInitiativeState()
+    if (state) delete state.manualOrderIds
   }
 
   const clearInitiativeValues = () => {

@@ -345,7 +345,7 @@ npm run test -- tests/composables/map-editor/useInitiativeTracker.test.ts
 
 ## 006 - Auto-calc all clears manual order
 
-Status: TODO
+Status: DONE
 
 **Commit message:** `Reset manual initiative order on auto-calc`
 

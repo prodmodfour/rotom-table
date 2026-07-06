@@ -210,6 +210,25 @@ describe('useInitiativeTracker', () => {
     expect(tracker.sortedInitiativeRows.value.map((row) => row.id)).toEqual(['b', 'a', 'c'])
   })
 
+  it('clears manual initiative order when auto-calculating local initiatives', () => {
+    const { map, tracker } = initiativeOrderTrackerFixture([
+      { id: 'a', initiative: 30 },
+      { id: 'b', initiative: 20 },
+      { id: 'c', initiative: 10 },
+    ])
+    map.value!.initiative = { activeId: 'b', round: 4, manualOrderIds: ['c', 'a', 'b'] }
+    const expectedInitiatives = new Map(tracker.initiativeRows.value.map((row) => [row.id, row.baseInitiative]))
+
+    tracker.fillInitiativeFromSpeed()
+
+    expect(map.value?.placements.map((placement) => [placement.id, placement.initiative])).toEqual([
+      ['a', expectedInitiatives.get('a')],
+      ['b', expectedInitiatives.get('b')],
+      ['c', expectedInitiatives.get('c')],
+    ])
+    expect(map.value?.initiative).toEqual({ activeId: 'b', round: 4 })
+  })
+
   it('adds deterministic fallback rows for placements that cannot hydrate into spawned tokens', () => {
     const map = ref<TabletopMap | null>(mapWithPlacements([
       { id: 'token-a', sheetKind: 'pokemon', sheetSlug: 'a', position: { x: 0, y: 0, z: 0 }, initiative: 30 },
