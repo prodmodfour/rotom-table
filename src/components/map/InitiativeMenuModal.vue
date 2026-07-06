@@ -43,7 +43,7 @@ const initiativeBadge = computed(() => pluralizeCount(props.rows.length, 'combat
     description-id="initiative-menu-description"
     :shortcut-keys="['Ctrl', 'I']"
     :badge="initiativeBadge"
-    size="compact"
+    size="standard"
     @close="emit('close')"
   >
     <MapInitiativeTracker

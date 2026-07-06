@@ -31,6 +31,10 @@ const isActive = computed(() => props.activeId === props.entry.id)
 const isSelected = computed(() => props.selectedId === props.entry.id)
 const rowAccentStyle = computed(() => props.entry.accentColor ? trainerAccentCssVariables(props.entry.accentColor) : undefined)
 const isFainted = computed(() => props.entry.currentHp <= 0)
+const hasManualInitiativeOverride = computed(() =>
+  props.entry.initiative !== null && props.entry.initiative !== props.entry.baseInitiative,
+)
+const showsFinalInitiative = computed(() => props.entry.initiative !== null || props.entry.initiativeScore !== props.entry.speed)
 
 const handleDragStart = (event: DragEvent): void => {
   if (!props.canManage) {
@@ -93,7 +97,10 @@ const handleDrop = (event: DragEvent): void => {
           <template v-if="entry.initiativeTrainingBonus">
             · Training Init +{{ entry.initiativeTrainingBonus }}
           </template>
-          <template v-if="entry.initiative !== null || entry.initiativeScore !== entry.speed">
+          <template v-if="hasManualInitiativeOverride">
+            · Manual base {{ entry.initiative }}
+          </template>
+          <template v-if="showsFinalInitiative">
             · Final Init {{ entry.initiativeScore }}
           </template>
         </span>
@@ -114,6 +121,7 @@ const handleDrop = (event: DragEvent): void => {
         class="initiative-row__move"
         :disabled="!canManage || index === 0"
         :aria-label="`Move ${entry.name} earlier in initiative`"
+        :title="`Move ${entry.name} earlier in initiative`"
         @click="emit('move-row', entry.id, -1)"
       >
         ↑
@@ -123,6 +131,7 @@ const handleDrop = (event: DragEvent): void => {
         class="initiative-row__move"
         :disabled="!canManage || index >= rowCount - 1"
         :aria-label="`Move ${entry.name} later in initiative`"
+        :title="`Move ${entry.name} later in initiative`"
         @click="emit('move-row', entry.id, 1)"
       >
         ↓
@@ -135,6 +144,7 @@ const handleDrop = (event: DragEvent): void => {
       :draggable="canManage"
       :disabled="!canManage"
       :aria-label="`Drag ${entry.name} to reorder initiative`"
+      :title="`Drag ${entry.name} to reorder initiative`"
       @dragstart="handleDragStart"
       @dragend="handleDragEnd"
     >
@@ -243,12 +253,16 @@ const handleDrop = (event: DragEvent): void => {
 }
 
 .initiative-row__meta {
+  display: -webkit-box;
   overflow: hidden;
   color: var(--ink-muted);
   font-size: 0.74rem;
   letter-spacing: 0.03em;
+  line-height: 1.35;
   text-overflow: ellipsis;
-  white-space: nowrap;
+  white-space: normal;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
 }
 
 .initiative-row__move-controls {
@@ -256,6 +270,8 @@ const handleDrop = (event: DragEvent): void => {
   flex-direction: column;
   justify-content: center;
   gap: 0.28rem;
+  border-left: 1px solid var(--rule-soft);
+  padding-left: 0.35rem;
 }
 
 .initiative-row__move {
@@ -272,12 +288,16 @@ const handleDrop = (event: DragEvent): void => {
   transition: border-color 0.15s ease, background 0.15s ease, color 0.15s ease, opacity 0.15s ease;
 }
 
-.initiative-row__move:hover,
-.initiative-row__move:focus-visible {
+.initiative-row__move:hover:not(:disabled),
+.initiative-row__move:focus-visible:not(:disabled) {
   border-color: var(--accent);
   background: var(--accent-soft);
   color: var(--accent);
-  outline: none;
+}
+
+.initiative-row__move:focus-visible:not(:disabled) {
+  outline: 2px solid rgba(var(--accent-rgb), 0.35);
+  outline-offset: 2px;
 }
 
 .initiative-row__move:disabled {
@@ -290,6 +310,7 @@ const handleDrop = (event: DragEvent): void => {
   border-color: var(--rule-soft);
   background: var(--paper-soft);
   color: var(--ink-soft);
+  outline: none;
 }
 
 .initiative-row__drag-handle {
@@ -307,12 +328,16 @@ const handleDrop = (event: DragEvent): void => {
   transition: border-color 0.15s ease, background 0.15s ease, color 0.15s ease, opacity 0.15s ease;
 }
 
-.initiative-row__drag-handle:hover,
-.initiative-row__drag-handle:focus-visible {
+.initiative-row__drag-handle:hover:not(:disabled),
+.initiative-row__drag-handle:focus-visible:not(:disabled) {
   border-color: var(--accent);
   background: var(--accent-soft);
   color: var(--accent);
-  outline: none;
+}
+
+.initiative-row__drag-handle:focus-visible:not(:disabled) {
+  outline: 2px solid rgba(var(--accent-rgb), 0.35);
+  outline-offset: 2px;
 }
 
 .initiative-row__drag-handle:active {
@@ -329,6 +354,7 @@ const handleDrop = (event: DragEvent): void => {
   border-color: var(--rule-soft);
   background: var(--paper-soft);
   color: var(--ink-muted);
+  outline: none;
 }
 
 .sr-only {

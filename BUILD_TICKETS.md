@@ -982,7 +982,7 @@ npm run test -- tests/composables/map-editor/useInitiativeTracker.test.ts tests/
 
 ## 016 - Polish modal layout for initiative as a primary control surface
 
-Status: TODO
+Status: DONE
 
 **Commit message:** `Polish initiative modal controls`
 

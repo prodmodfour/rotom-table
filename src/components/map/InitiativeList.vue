@@ -79,7 +79,12 @@ const dropRow = (targetId: string, event: DragEvent): void => {
 </script>
 
 <template>
-  <ol v-if="rows.length" class="initiative-list">
+  <ol
+    v-if="rows.length"
+    class="initiative-list"
+    :class="{ 'initiative-list--manual': manualOrderActive }"
+    :aria-label="manualOrderActive ? 'Manual initiative order' : 'Calculated initiative order'"
+  >
     <InitiativeRowItem
       v-for="(entry, index) in rows"
       :key="entry.id"
@@ -114,6 +119,10 @@ const dropRow = (targetId: string, event: DragEvent): void => {
   margin: 0;
   padding: 0;
   list-style: none;
+}
+
+.initiative-list--manual {
+  gap: 0.55rem;
 }
 
 .initiative-empty {
