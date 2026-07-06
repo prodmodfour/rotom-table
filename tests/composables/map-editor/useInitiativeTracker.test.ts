@@ -60,6 +60,10 @@ const mapWithPlacements = (placements: TabletopMap['placements']): TabletopMap =
 
 const inputEvent = (value: string): Event => ({ target: { value } } as unknown as Event)
 
+const flushPendingPromises = async (turns = 5) => {
+  for (let i = 0; i < turns; i += 1) await Promise.resolve()
+}
+
 const initiativeOrderTrackerFixture = (
   entries: ReadonlyArray<{ readonly id: string; readonly initiative: number; readonly species?: string }>,
 ) => {
@@ -481,6 +485,8 @@ describe('useInitiativeTracker', () => {
     tracker.setInitiativeFromSpeed('other-token', 20)
     tracker.setActiveInitiative('live-token')
     tracker.setInitiativeRound(inputEvent('3'))
+    tracker.reorderInitiativeRows(['other-token', 'live-token'])
+    tracker.setManualInitiativeOrder(null)
     tracker.clearActiveInitiative()
     tracker.nextInitiative()
     tracker.previousInitiative()
@@ -489,6 +495,8 @@ describe('useInitiativeTracker', () => {
     expect(dispatchSetInitiative).toHaveBeenCalledWith({ tokenId: 'other-token', initiative: 20 })
     expect(dispatchSetInitiative).toHaveBeenCalledWith({ activeId: 'live-token' })
     expect(dispatchSetInitiative).toHaveBeenCalledWith({ round: 3 })
+    expect(dispatchSetInitiative).toHaveBeenCalledWith({ manualOrderIds: ['other-token', 'live-token'] })
+    expect(dispatchSetInitiative).toHaveBeenCalledWith({ manualOrderIds: null })
     expect(dispatchSetInitiative).toHaveBeenCalledWith({ activeId: null })
     expect(dispatchNextInitiative).toHaveBeenCalledWith({
       orderIds: ['live-token', 'other-token'],
@@ -503,6 +511,72 @@ describe('useInitiativeTracker', () => {
     expect(map.value?.placements[0].initiative).toBe(12)
     expect(map.value?.placements[1].initiative).toBe(8)
     expect(map.value?.initiative).toEqual({ activeId: null, round: 1 })
+  })
+
+  it('dispatches a complete visible manual order in live play', () => {
+    const { map, tracker } = initiativeOrderTrackerFixture([
+      { id: 'a', initiative: 30 },
+      { id: 'b', initiative: 20 },
+      { id: 'c', initiative: 10 },
+    ])
+    const dispatchSetInitiative = vi.fn(async () => undefined)
+    const liveTracker = useInitiativeTracker({
+      map,
+      spawnedPokemon: computed(() => [
+        token({ id: 'a', sheetSlug: 'a', species: 'A' }),
+        token({ id: 'b', sheetSlug: 'b', species: 'B' }),
+        token({ id: 'c', sheetSlug: 'c', species: 'C' }),
+      ]),
+      pokemonBySlug: ref(new Map([['a', sheet('a')], ['b', sheet('b')], ['c', sheet('c')]])),
+      trainerBySlug: ref(new Map<string, TrainerSheet>()),
+      canManageInitiative: computed(() => true),
+      interactionMode: computed(() => MAP_INTERACTION_MODES.LIVE_PLAY),
+      dispatchSetInitiative,
+    })
+
+    liveTracker.setManualInitiativeOrder(['c', 'a', 'b'])
+    liveTracker.setManualInitiativeOrder(['missing', 'b'])
+    liveTracker.setManualInitiativeOrder(null)
+
+    expect(dispatchSetInitiative).toHaveBeenCalledWith({ manualOrderIds: ['c', 'a', 'b'] })
+    expect(dispatchSetInitiative).toHaveBeenCalledWith({ manualOrderIds: ['b', 'a', 'c'] })
+    expect(dispatchSetInitiative).toHaveBeenCalledWith({ manualOrderIds: null })
+    expect(map.value?.initiative?.manualOrderIds).toBeUndefined()
+    expect(tracker.sortedInitiativeRows.value.map((row) => row.id)).toEqual(['a', 'b', 'c'])
+  })
+
+  it('dispatches a live-play manual order clear after auto-calculating initiatives', async () => {
+    const { map, tracker } = initiativeOrderTrackerFixture([
+      { id: 'a', initiative: 30 },
+      { id: 'b', initiative: 20 },
+      { id: 'c', initiative: 10 },
+    ])
+    map.value!.initiative = { activeId: 'b', round: 4, manualOrderIds: ['c', 'a', 'b'] }
+    const dispatchSetInitiative = vi.fn(async () => undefined)
+    const liveTracker = useInitiativeTracker({
+      map,
+      spawnedPokemon: computed(() => [
+        token({ id: 'a', sheetSlug: 'a', species: 'A' }),
+        token({ id: 'b', sheetSlug: 'b', species: 'B' }),
+        token({ id: 'c', sheetSlug: 'c', species: 'C' }),
+      ]),
+      pokemonBySlug: ref(new Map([['a', sheet('a')], ['b', sheet('b')], ['c', sheet('c')]])),
+      trainerBySlug: ref(new Map<string, TrainerSheet>()),
+      canManageInitiative: computed(() => true),
+      interactionMode: computed(() => MAP_INTERACTION_MODES.LIVE_PLAY),
+      dispatchSetInitiative,
+    })
+    const expectedInitiatives = new Map(liveTracker.initiativeRows.value.map((row) => [row.id, row.baseInitiative]))
+
+    liveTracker.fillInitiativeFromSpeed()
+    await flushPendingPromises()
+
+    expect(dispatchSetInitiative).toHaveBeenCalledWith({ tokenId: 'a', initiative: expectedInitiatives.get('a') })
+    expect(dispatchSetInitiative).toHaveBeenCalledWith({ tokenId: 'b', initiative: expectedInitiatives.get('b') })
+    expect(dispatchSetInitiative).toHaveBeenCalledWith({ tokenId: 'c', initiative: expectedInitiatives.get('c') })
+    expect(dispatchSetInitiative).toHaveBeenLastCalledWith({ manualOrderIds: null })
+    expect(map.value?.initiative).toEqual({ activeId: 'b', round: 4, manualOrderIds: ['c', 'a', 'b'] })
+    expect(tracker.sortedInitiativeRows.value.map((row) => row.id)).toEqual(['c', 'a', 'b'])
   })
 
   it('uses reloaded sheet state for the next live-play initiative precondition after reconciliation', () => {

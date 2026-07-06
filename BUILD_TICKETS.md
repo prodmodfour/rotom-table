@@ -926,7 +926,7 @@ npm run test -- tests/utils/livePlayPatches.test.ts
 
 ## 015 - Wire manual order commands from the client tracker in live play
 
-Status: TODO
+Status: DONE
 
 **Commit message:** `Dispatch manual initiative order changes`
 

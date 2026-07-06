@@ -308,6 +308,11 @@ export const useInitiativeTracker = ({
     map.value?.initiative?.manualOrderIds,
   ).map((entry) => entry.row))
 
+  const completedManualInitiativeOrderIds = (manualOrderIds: readonly string[]): string[] => orderInitiativeEntries(
+    initiativeRows.value.map((row) => ({ ...initiativeOrderEntryForRow(row), row })),
+    manualOrderIds,
+  ).map((entry) => entry.id)
+
   const manualInitiativeOrderActive = computed(() => Boolean(map.value?.initiative?.manualOrderIds?.length))
 
   const validInitiativeIds = computed(() => new Set(initiativeRows.value.map((row) => row.id)))
@@ -441,9 +446,13 @@ export const useInitiativeTracker = ({
 
   const setManualInitiativeOrder = (ids: readonly string[] | null) => {
     if (!map.value || !canManageInitiative.value) return
+    const sanitizedIds = sanitizedManualInitiativeOrderIds(ids)
+    const livePlayManualOrderIds = sanitizedIds.length
+      ? completedManualInitiativeOrderIds(sanitizedIds)
+      : null
+    if (dispatchLiveSetInitiative({ manualOrderIds: livePlayManualOrderIds })) return
     const state = ensureInitiativeState()
     if (!state) return
-    const sanitizedIds = sanitizedManualInitiativeOrderIds(ids)
     if (!sanitizedIds.length) {
       delete state.manualOrderIds
       return
@@ -476,6 +485,7 @@ export const useInitiativeTracker = ({
           const baseInitiative = baseInitiatives.get(placement.id)
           if (baseInitiative !== undefined) await dispatchSetInitiative({ tokenId: placement.id, initiative: baseInitiative })
         }
+        await dispatchSetInitiative({ manualOrderIds: null })
       })()
       return
     }

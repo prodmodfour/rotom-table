@@ -3742,6 +3742,13 @@ describe('useLivePlayCommands', () => {
     }))
     expect(applyPersistedMap).toHaveBeenCalledWith(map)
 
+    await actions.setInitiative({ manualOrderIds: ['target-token', 'token-pikachu'] })
+    expect(apiMocks.postJson).toHaveBeenLastCalledWith(MAP_API_PATHS.setInitiative, expect.objectContaining({
+      type: LIVE_PLAY_COMMAND_TYPES.SET_INITIATIVE,
+      scopes: [{ kind: 'map', lane: 'initiative' }],
+      payload: { manualOrderIds: ['target-token', 'token-pikachu'] },
+    }))
+
     await actions.nextInitiative({ orderIds: ['token-pikachu', 'target-token'], activeId: null, round: 1 })
     expect(apiMocks.postJson).toHaveBeenLastCalledWith(MAP_API_PATHS.nextInitiative, expect.objectContaining({
       type: LIVE_PLAY_COMMAND_TYPES.NEXT_INITIATIVE,
