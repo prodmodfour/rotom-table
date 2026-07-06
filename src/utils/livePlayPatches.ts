@@ -215,7 +215,14 @@ const applyInitiativePatch = (map: TabletopMap, payload: unknown): LivePlayPatch
   const round = typeof current.round === 'number' && Number.isSafeInteger(current.round) && current.round > 0
     ? current.round
     : 1
-  map.initiative = { activeId, round }
+  const manualOrderIds = Array.isArray(current.manualOrderIds)
+    ? current.manualOrderIds.filter(nonEmptyString)
+    : undefined
+  map.initiative = {
+    activeId,
+    round,
+    ...(manualOrderIds?.length ? { manualOrderIds } : {}),
+  }
 
   if (Array.isArray(current.entries)) {
     const initiativeByToken = new Map<string, number | null>()

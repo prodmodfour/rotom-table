@@ -867,7 +867,7 @@ npm run test -- tests/server/applyInitiativeCommand.test.ts
 
 ## 014 - Update live-play patch adoption for manual order
 
-Status: TODO
+Status: DONE
 
 **Commit message:** `Adopt manual order in initiative patches`
 
