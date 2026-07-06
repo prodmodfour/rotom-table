@@ -11849,11 +11849,11 @@
     "visual_bounds": {
       "canvas_width": 95,
       "canvas_height": 74,
-      "left": 0,
-      "top": 0,
-      "width": 95,
-      "height": 74,
-      "floating": false
+      "left": 3,
+      "top": 6,
+      "width": 90,
+      "height": 58,
+      "floating": true
     }
   },
   {
@@ -12002,11 +12002,11 @@
     "visual_bounds": {
       "canvas_width": 48,
       "canvas_height": 60,
-      "left": 0,
-      "top": 0,
-      "width": 48,
-      "height": 60,
-      "floating": false
+      "left": 8,
+      "top": 13,
+      "width": 32,
+      "height": 38,
+      "floating": true
     }
   },
   {
@@ -13026,11 +13026,11 @@
     "visual_bounds": {
       "canvas_width": 64,
       "canvas_height": 57,
-      "left": 0,
+      "left": 3,
       "top": 0,
-      "width": 64,
-      "height": 57,
-      "floating": false
+      "width": 58,
+      "height": 51,
+      "floating": true
     }
   },
   {
@@ -14987,11 +14987,11 @@
     "visual_bounds": {
       "canvas_width": 37,
       "canvas_height": 65,
-      "left": 0,
-      "top": 0,
-      "width": 37,
-      "height": 65,
-      "floating": false
+      "left": 4,
+      "top": 18,
+      "width": 29,
+      "height": 42,
+      "floating": true
     }
   },
   {
@@ -15670,11 +15670,11 @@
     "visual_bounds": {
       "canvas_width": 94,
       "canvas_height": 90,
-      "left": 0,
-      "top": 0,
-      "width": 94,
-      "height": 90,
-      "floating": false
+      "left": 13,
+      "top": 15,
+      "width": 65,
+      "height": 64,
+      "floating": true
     }
   },
   {
@@ -22214,11 +22214,11 @@
     "visual_bounds": {
       "canvas_width": 107,
       "canvas_height": 63,
-      "left": 0,
-      "top": 0,
-      "width": 107,
-      "height": 63,
-      "floating": false
+      "left": 11,
+      "top": 3,
+      "width": 85,
+      "height": 49,
+      "floating": true
     }
   },
   {
@@ -30091,11 +30091,11 @@
     "visual_bounds": {
       "canvas_width": 71,
       "canvas_height": 72,
-      "left": 0,
-      "top": 0,
-      "width": 71,
-      "height": 72,
-      "floating": false
+      "left": 5,
+      "top": 12,
+      "width": 60,
+      "height": 60,
+      "floating": true
     }
   },
   {
@@ -30246,11 +30246,11 @@
     "visual_bounds": {
       "canvas_width": 55,
       "canvas_height": 70,
-      "left": 0,
-      "top": 0,
-      "width": 55,
-      "height": 70,
-      "floating": false
+      "left": 21,
+      "top": 12,
+      "width": 32,
+      "height": 56,
+      "floating": true
     }
   },
   {
@@ -32250,11 +32250,11 @@
     "visual_bounds": {
       "canvas_width": 59,
       "canvas_height": 47,
-      "left": 0,
-      "top": 0,
-      "width": 59,
-      "height": 47,
-      "floating": false
+      "left": 4,
+      "top": 3,
+      "width": 37,
+      "height": 42,
+      "floating": true
     }
   },
   {
@@ -32816,11 +32816,11 @@
     "visual_bounds": {
       "canvas_width": 88,
       "canvas_height": 89,
-      "left": 0,
-      "top": 0,
-      "width": 88,
-      "height": 89,
-      "floating": false
+      "left": 1,
+      "top": 20,
+      "width": 83,
+      "height": 62,
+      "floating": true
     }
   },
   {
@@ -41641,11 +41641,11 @@
     "visual_bounds": {
       "canvas_width": 63,
       "canvas_height": 78,
-      "left": 0,
+      "left": 3,
       "top": 0,
-      "width": 63,
-      "height": 78,
-      "floating": false
+      "width": 60,
+      "height": 56,
+      "floating": true
     }
   },
   {
@@ -42236,10 +42236,10 @@
       "canvas_width": 58,
       "canvas_height": 51,
       "left": 0,
-      "top": 0,
-      "width": 58,
-      "height": 51,
-      "floating": false
+      "top": 22,
+      "width": 57,
+      "height": 28,
+      "floating": true
     }
   },
   {
@@ -44369,11 +44369,11 @@
     "visual_bounds": {
       "canvas_width": 95,
       "canvas_height": 84,
-      "left": 0,
-      "top": 0,
-      "width": 95,
-      "height": 84,
-      "floating": false
+      "left": 9,
+      "top": 6,
+      "width": 80,
+      "height": 62,
+      "floating": true
     }
   },
   {
@@ -44513,9 +44513,9 @@
       "canvas_height": 58,
       "left": 0,
       "top": 0,
-      "width": 75,
-      "height": 58,
-      "floating": false
+      "width": 62,
+      "height": 37,
+      "floating": true
     }
   },
   {
@@ -49056,11 +49056,11 @@
     "visual_bounds": {
       "canvas_width": 108,
       "canvas_height": 82,
-      "left": 0,
-      "top": 0,
-      "width": 108,
-      "height": 82,
-      "floating": false
+      "left": 13,
+      "top": 2,
+      "width": 91,
+      "height": 77,
+      "floating": true
     }
   },
   {
@@ -49658,11 +49658,11 @@
     "visual_bounds": {
       "canvas_width": 90,
       "canvas_height": 71,
-      "left": 0,
-      "top": 0,
-      "width": 90,
-      "height": 71,
-      "floating": false
+      "left": 13,
+      "top": 1,
+      "width": 65,
+      "height": 46,
+      "floating": true
     }
   },
   {
@@ -54682,10 +54682,10 @@
       "canvas_width": 48,
       "canvas_height": 46,
       "left": 0,
-      "top": 0,
+      "top": 7,
       "width": 48,
-      "height": 46,
-      "floating": false
+      "height": 39,
+      "floating": true
     }
   },
   {
@@ -57497,11 +57497,11 @@
     "visual_bounds": {
       "canvas_width": 108,
       "canvas_height": 96,
-      "left": 0,
-      "top": 0,
-      "width": 108,
-      "height": 96,
-      "floating": false
+      "left": 28,
+      "top": 18,
+      "width": 43,
+      "height": 77,
+      "floating": true
     }
   },
   {
@@ -57946,11 +57946,11 @@
     "visual_bounds": {
       "canvas_width": 79,
       "canvas_height": 64,
-      "left": 0,
-      "top": 0,
-      "width": 79,
-      "height": 64,
-      "floating": false
+      "left": 20,
+      "top": 15,
+      "width": 35,
+      "height": 35,
+      "floating": true
     }
   },
   {
@@ -59802,11 +59802,11 @@
     "visual_bounds": {
       "canvas_width": 86,
       "canvas_height": 62,
-      "left": 0,
+      "left": 17,
       "top": 0,
-      "width": 86,
-      "height": 62,
-      "floating": false
+      "width": 50,
+      "height": 49,
+      "floating": true
     }
   },
   {
@@ -64379,10 +64379,10 @@
       "canvas_width": 44,
       "canvas_height": 59,
       "left": 0,
-      "top": 0,
-      "width": 44,
-      "height": 59,
-      "floating": false
+      "top": 5,
+      "width": 40,
+      "height": 46,
+      "floating": true
     }
   },
   {
@@ -66147,11 +66147,11 @@
     "visual_bounds": {
       "canvas_width": 66,
       "canvas_height": 58,
-      "left": 0,
-      "top": 0,
-      "width": 66,
-      "height": 58,
-      "floating": false
+      "left": 1,
+      "top": 6,
+      "width": 51,
+      "height": 50,
+      "floating": true
     }
   },
   {
@@ -66562,10 +66562,10 @@
       "canvas_width": 36,
       "canvas_height": 31,
       "left": 0,
-      "top": 0,
-      "width": 36,
-      "height": 31,
-      "floating": false
+      "top": 6,
+      "width": 35,
+      "height": 23,
+      "floating": true
     }
   },
   {
@@ -66732,11 +66732,11 @@
     "visual_bounds": {
       "canvas_width": 73,
       "canvas_height": 58,
-      "left": 0,
-      "top": 0,
-      "width": 73,
-      "height": 58,
-      "floating": false
+      "left": 7,
+      "top": 6,
+      "width": 57,
+      "height": 52,
+      "floating": true
     }
   },
   {
@@ -66855,11 +66855,11 @@
     "visual_bounds": {
       "canvas_width": 82,
       "canvas_height": 55,
-      "left": 0,
-      "top": 0,
-      "width": 82,
-      "height": 55,
-      "floating": false
+      "left": 3,
+      "top": 4,
+      "width": 75,
+      "height": 50,
+      "floating": true
     }
   },
   {
@@ -71812,11 +71812,11 @@
     "visual_bounds": {
       "canvas_width": 60,
       "canvas_height": 60,
-      "left": 0,
-      "top": 0,
-      "width": 60,
-      "height": 60,
-      "floating": false
+      "left": 3,
+      "top": 15,
+      "width": 48,
+      "height": 44,
+      "floating": true
     }
   },
   {
@@ -73793,11 +73793,11 @@
     "visual_bounds": {
       "canvas_width": 45,
       "canvas_height": 63,
-      "left": 0,
-      "top": 0,
-      "width": 45,
-      "height": 63,
-      "floating": false
+      "left": 3,
+      "top": 15,
+      "width": 41,
+      "height": 43,
+      "floating": true
     }
   },
   {
@@ -73850,11 +73850,11 @@
     "visual_bounds": {
       "canvas_width": 54,
       "canvas_height": 90,
-      "left": 0,
-      "top": 0,
-      "width": 54,
-      "height": 90,
-      "floating": false
+      "left": 2,
+      "top": 10,
+      "width": 49,
+      "height": 66,
+      "floating": true
     }
   },
   {
@@ -91574,11 +91574,11 @@
     "visual_bounds": {
       "canvas_width": 101,
       "canvas_height": 106,
-      "left": 0,
-      "top": 0,
-      "width": 101,
-      "height": 106,
-      "floating": false
+      "left": 5,
+      "top": 7,
+      "width": 77,
+      "height": 92,
+      "floating": true
     }
   },
   {
@@ -95437,11 +95437,11 @@
     "visual_bounds": {
       "canvas_width": 92,
       "canvas_height": 77,
-      "left": 0,
-      "top": 0,
-      "width": 92,
-      "height": 77,
-      "floating": false
+      "left": 10,
+      "top": 19,
+      "width": 72,
+      "height": 58,
+      "floating": true
     }
   },
   {
@@ -95636,11 +95636,11 @@
     "visual_bounds": {
       "canvas_width": 113,
       "canvas_height": 87,
-      "left": 0,
-      "top": 0,
-      "width": 113,
-      "height": 87,
-      "floating": false
+      "left": 15,
+      "top": 17,
+      "width": 79,
+      "height": 68,
+      "floating": true
     }
   },
   {
@@ -95825,10 +95825,10 @@
       "canvas_width": 60,
       "canvas_height": 79,
       "left": 0,
-      "top": 0,
+      "top": 24,
       "width": 60,
-      "height": 79,
-      "floating": false
+      "height": 53,
+      "floating": true
     }
   },
   {
@@ -96023,11 +96023,11 @@
     "visual_bounds": {
       "canvas_width": 75,
       "canvas_height": 66,
-      "left": 0,
-      "top": 0,
-      "width": 75,
-      "height": 66,
-      "floating": false
+      "left": 9,
+      "top": 13,
+      "width": 52,
+      "height": 52,
+      "floating": true
     }
   },
   {
@@ -96243,11 +96243,11 @@
     "visual_bounds": {
       "canvas_width": 87,
       "canvas_height": 58,
-      "left": 0,
-      "top": 0,
-      "width": 87,
-      "height": 58,
-      "floating": false
+      "left": 12,
+      "top": 8,
+      "width": 61,
+      "height": 49,
+      "floating": true
     }
   },
   {
@@ -96484,11 +96484,11 @@
     "visual_bounds": {
       "canvas_width": 90,
       "canvas_height": 81,
-      "left": 0,
-      "top": 0,
-      "width": 90,
-      "height": 81,
-      "floating": false
+      "left": 12,
+      "top": 16,
+      "width": 68,
+      "height": 60,
+      "floating": true
     }
   },
   {
@@ -100430,11 +100430,11 @@
     "visual_bounds": {
       "canvas_width": 96,
       "canvas_height": 72,
-      "left": 0,
+      "left": 10,
       "top": 0,
-      "width": 96,
-      "height": 72,
-      "floating": false
+      "width": 75,
+      "height": 56,
+      "floating": true
     }
   },
   {
@@ -122538,11 +122538,11 @@
     "visual_bounds": {
       "canvas_width": 23,
       "canvas_height": 42,
-      "left": 0,
-      "top": 0,
-      "width": 23,
-      "height": 42,
-      "floating": false
+      "left": 2,
+      "top": 7,
+      "width": 18,
+      "height": 34,
+      "floating": true
     }
   },
   {
@@ -127848,11 +127848,11 @@
     "visual_bounds": {
       "canvas_width": 87,
       "canvas_height": 68,
-      "left": 0,
-      "top": 0,
-      "width": 87,
-      "height": 68,
-      "floating": false
+      "left": 3,
+      "top": 3,
+      "width": 80,
+      "height": 63,
+      "floating": true
     }
   },
   {
@@ -133919,8 +133919,8 @@
       "left": 0,
       "top": 0,
       "width": 49,
-      "height": 59,
-      "floating": false
+      "height": 47,
+      "floating": true
     }
   },
   {

@@ -1,6 +1,6 @@
 # BUILD_TICKETS.md
 
-AUTOMATION_STATUS: TODO
+AUTOMATION_STATUS: DONE
 
 Ticket statuses:
 
@@ -255,7 +255,7 @@ Status: DONE
 
 ## 015 — Final QA, overrides, and cleanup
 
-Status: TODO
+Status: DONE
 
 **Commit size:** polish/data cleanup only.
 

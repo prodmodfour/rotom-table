@@ -35,7 +35,9 @@ Common fields on a species apply to both views. `front` or `back` fields overrid
 }
 ```
 
-Good override candidates include wide wings, long tails, smoke clouds, disconnected particles, glow effects, or sprites whose alpha bbox includes decorative elements far away from the visible body. Keep overrides minimal: prefer forcing `floating` alone when the bbox is already good, and only edit bbox coordinates when the perceived body centre is visibly wrong.
+Good override candidates include wide wings, long tails, smoke clouds, disconnected particles, glow effects, or sprites whose alpha bbox includes decorative elements far away from the visible body. Animated sprites can also need overrides when their full-frame union covers the entire canvas even though the representative resting pose clearly hovers or swims above the tactical centre. Keep overrides minimal: prefer forcing `floating` alone when the bbox is already good, and only edit bbox coordinates when the perceived body centre is visibly wrong.
+
+The checked-in overrides are a curated QA set for representative ghost/smoke, levitating, flying/winged, swimming/fish, and unusually wide silhouettes. They are still source-art metadata only: generated runtime offsets remain visual-only and must not move the tactical cage, footprint, contact shadow, picking proxy, or occupied map volume.
 
 After changing overrides, run the front and/or back sprite manifest conversion scripts so the runtime receives final `visual_bounds` metadata and does not need to know that an override was used:
 

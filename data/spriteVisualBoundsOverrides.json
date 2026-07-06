@@ -1,3 +1,597 @@
 {
-  "$schema": "../schemas/spriteVisualBoundsOverrides.schema.json"
+  "$schema": "../schemas/spriteVisualBoundsOverrides.schema.json",
+  "Bronzor": {
+    "floating": true,
+    "front": {
+      "left": 8,
+      "top": 13,
+      "width": 31,
+      "height": 37
+    },
+    "back": {
+      "left": 8,
+      "top": 13,
+      "width": 32,
+      "height": 38
+    }
+  },
+  "Bronzong": {
+    "floating": true,
+    "front": {
+      "left": 3,
+      "top": 6,
+      "width": 90,
+      "height": 58
+    },
+    "back": {
+      "left": 3,
+      "top": 6,
+      "width": 90,
+      "height": 58
+    }
+  },
+  "Butterfree": {
+    "floating": true,
+    "front": {
+      "left": 2,
+      "top": 0,
+      "width": 57,
+      "height": 51
+    },
+    "back": {
+      "left": 3,
+      "top": 0,
+      "width": 58,
+      "height": 51
+    }
+  },
+  "Celebi": {
+    "floating": true,
+    "front": {
+      "left": 4,
+      "top": 20,
+      "width": 32,
+      "height": 40
+    },
+    "back": {
+      "left": 4,
+      "top": 18,
+      "width": 29,
+      "height": 42
+    }
+  },
+  "Chandelure": {
+    "floating": true,
+    "front": {
+      "left": 13,
+      "top": 15,
+      "width": 65,
+      "height": 64
+    },
+    "back": {
+      "left": 13,
+      "top": 15,
+      "width": 65,
+      "height": 64
+    }
+  },
+  "Crobat": {
+    "floating": true,
+    "front": {
+      "left": 11,
+      "top": 5,
+      "width": 88,
+      "height": 48
+    },
+    "back": {
+      "left": 11,
+      "top": 3,
+      "width": 85,
+      "height": 49
+    }
+  },
+  "Drifblim": {
+    "floating": true,
+    "front": {
+      "left": 5,
+      "top": 12,
+      "width": 60,
+      "height": 59
+    },
+    "back": {
+      "left": 5,
+      "top": 12,
+      "width": 60,
+      "height": 60
+    }
+  },
+  "Drifloon": {
+    "floating": true,
+    "front": {
+      "left": 1,
+      "top": 12,
+      "width": 33,
+      "height": 56
+    },
+    "back": {
+      "left": 21,
+      "top": 12,
+      "width": 32,
+      "height": 56
+    }
+  },
+  "Duskull": {
+    "floating": true,
+    "front": {
+      "left": 5,
+      "top": 3,
+      "width": 38,
+      "height": 41
+    },
+    "back": {
+      "left": 4,
+      "top": 3,
+      "width": 37,
+      "height": 42
+    }
+  },
+  "Eelektross": {
+    "floating": true,
+    "front": {
+      "left": 5,
+      "top": 12,
+      "width": 77,
+      "height": 59
+    },
+    "back": {
+      "left": 1,
+      "top": 20,
+      "width": 83,
+      "height": 62
+    }
+  },
+  "Flabébé": {
+    "floating": true,
+    "front": {
+      "left": 0,
+      "top": 15,
+      "width": 43,
+      "height": 46
+    }
+  },
+  "Gastly": {
+    "floating": true,
+    "front": {
+      "left": 0,
+      "top": 0,
+      "width": 65,
+      "height": 55
+    },
+    "back": {
+      "left": 3,
+      "top": 0,
+      "width": 60,
+      "height": 56
+    }
+  },
+  "Geodude": {
+    "floating": true,
+    "front": {
+      "left": 0,
+      "top": 20,
+      "width": 56,
+      "height": 24
+    },
+    "back": {
+      "left": 0,
+      "top": 22,
+      "width": 57,
+      "height": 28
+    }
+  },
+  "Golbat": {
+    "floating": true,
+    "front": {
+      "left": 15,
+      "top": 7,
+      "width": 80,
+      "height": 62
+    },
+    "back": {
+      "left": 9,
+      "top": 6,
+      "width": 80,
+      "height": 62
+    }
+  },
+  "Goldeen": {
+    "floating": true,
+    "front": {
+      "left": 10,
+      "top": 0,
+      "width": 64,
+      "height": 39
+    },
+    "back": {
+      "left": 0,
+      "top": 0,
+      "width": 62,
+      "height": 37
+    }
+  },
+  "Gyarados": {
+    "floating": true,
+    "front": {
+      "left": 0,
+      "top": 0,
+      "width": 81,
+      "height": 77
+    },
+    "back": {
+      "left": 13,
+      "top": 2,
+      "width": 91,
+      "height": 77
+    }
+  },
+  "Haunter": {
+    "floating": true,
+    "front": {
+      "left": 8,
+      "top": 1,
+      "width": 61,
+      "height": 48
+    },
+    "back": {
+      "left": 13,
+      "top": 1,
+      "width": 65,
+      "height": 46
+    }
+  },
+  "Jirachi": {
+    "floating": true,
+    "front": {
+      "left": 0,
+      "top": 7,
+      "width": 54,
+      "height": 40
+    },
+    "back": {
+      "left": 0,
+      "top": 7,
+      "width": 48,
+      "height": 39
+    }
+  },
+  "Klefki": {
+    "floating": true,
+    "front": {
+      "left": 36,
+      "top": 18,
+      "width": 43,
+      "height": 77
+    },
+    "back": {
+      "left": 28,
+      "top": 18,
+      "width": 43,
+      "height": 77
+    }
+  },
+  "Koffing": {
+    "floating": true,
+    "front": {
+      "left": 25,
+      "top": 4,
+      "width": 34,
+      "height": 35
+    },
+    "back": {
+      "left": 20,
+      "top": 15,
+      "width": 35,
+      "height": 35
+    }
+  },
+  "Lampent": {
+    "floating": true,
+    "front": {
+      "left": 11,
+      "top": 0,
+      "width": 50,
+      "height": 49
+    },
+    "back": {
+      "left": 17,
+      "top": 0,
+      "width": 50,
+      "height": 49
+    }
+  },
+  "Lunatone": {
+    "floating": true,
+    "front": {
+      "left": 3,
+      "top": 5,
+      "width": 41,
+      "height": 46
+    },
+    "back": {
+      "left": 0,
+      "top": 5,
+      "width": 40,
+      "height": 46
+    }
+  },
+  "Magikarp": {
+    "floating": true,
+    "front": {
+      "left": 0,
+      "top": 6,
+      "width": 44,
+      "height": 57
+    },
+    "back": {
+      "left": 1,
+      "top": 6,
+      "width": 51,
+      "height": 50
+    }
+  },
+  "Magnemite": {
+    "floating": true,
+    "front": {
+      "left": 1,
+      "top": 6,
+      "width": 35,
+      "height": 24
+    },
+    "back": {
+      "left": 0,
+      "top": 6,
+      "width": 35,
+      "height": 23
+    }
+  },
+  "Magneton": {
+    "floating": true,
+    "front": {
+      "left": 6,
+      "top": 6,
+      "width": 55,
+      "height": 53
+    },
+    "back": {
+      "left": 7,
+      "top": 6,
+      "width": 57,
+      "height": 52
+    }
+  },
+  "Magnezone": {
+    "floating": true,
+    "front": {
+      "left": 4,
+      "top": 4,
+      "width": 76,
+      "height": 56
+    },
+    "back": {
+      "left": 3,
+      "top": 4,
+      "width": 75,
+      "height": 50
+    }
+  },
+  "Mew": {
+    "floating": true,
+    "front": {
+      "left": 8,
+      "top": 10,
+      "width": 50,
+      "height": 42
+    },
+    "back": {
+      "left": 3,
+      "top": 15,
+      "width": 48,
+      "height": 44
+    }
+  },
+  "Misdreavus": {
+    "floating": true,
+    "front": {
+      "left": 2,
+      "top": 0,
+      "width": 41,
+      "height": 42
+    },
+    "back": {
+      "left": 3,
+      "top": 15,
+      "width": 41,
+      "height": 43
+    }
+  },
+  "Mismagius": {
+    "floating": true,
+    "front": {
+      "left": 2,
+      "top": 9,
+      "width": 53,
+      "height": 65
+    },
+    "back": {
+      "left": 2,
+      "top": 10,
+      "width": 49,
+      "height": 66
+    }
+  },
+  "Rayquaza": {
+    "floating": true,
+    "front": {
+      "left": 20,
+      "top": 10,
+      "width": 89,
+      "height": 83
+    },
+    "back": {
+      "left": 5,
+      "top": 7,
+      "width": 77,
+      "height": 92
+    }
+  },
+  "Rotom Fan": {
+    "floating": true,
+    "front": {
+      "left": 11,
+      "top": 19,
+      "width": 74,
+      "height": 59
+    },
+    "back": {
+      "left": 10,
+      "top": 19,
+      "width": 72,
+      "height": 58
+    }
+  },
+  "Rotom Frost": {
+    "floating": true,
+    "front": {
+      "left": 15,
+      "top": 17,
+      "width": 79,
+      "height": 68
+    },
+    "back": {
+      "left": 15,
+      "top": 17,
+      "width": 79,
+      "height": 68
+    }
+  },
+  "Rotom Heat": {
+    "floating": true,
+    "front": {
+      "left": 0,
+      "top": 24,
+      "width": 60,
+      "height": 53
+    },
+    "back": {
+      "left": 0,
+      "top": 24,
+      "width": 60,
+      "height": 53
+    }
+  },
+  "Rotom Mow": {
+    "floating": true,
+    "front": {
+      "left": 17,
+      "top": 13,
+      "width": 51,
+      "height": 65
+    },
+    "back": {
+      "left": 9,
+      "top": 13,
+      "width": 52,
+      "height": 52
+    }
+  },
+  "Rotom Normal Form": {
+    "floating": true,
+    "front": {
+      "left": 13,
+      "top": 8,
+      "width": 61,
+      "height": 50
+    },
+    "back": {
+      "left": 12,
+      "top": 8,
+      "width": 61,
+      "height": 49
+    }
+  },
+  "Rotom Wash": {
+    "floating": true,
+    "front": {
+      "left": 9,
+      "top": 17,
+      "width": 76,
+      "height": 61
+    },
+    "back": {
+      "left": 12,
+      "top": 16,
+      "width": 68,
+      "height": 60
+    }
+  },
+  "Seaking": {
+    "floating": true,
+    "front": {
+      "left": 7,
+      "top": 0,
+      "width": 59,
+      "height": 50
+    },
+    "back": {
+      "left": 10,
+      "top": 0,
+      "width": 75,
+      "height": 56
+    }
+  },
+  "Unown": {
+    "floating": true,
+    "front": {
+      "left": 3,
+      "top": 10,
+      "width": 18,
+      "height": 34
+    },
+    "back": {
+      "left": 2,
+      "top": 7,
+      "width": 18,
+      "height": 34
+    }
+  },
+  "Weezing": {
+    "floating": true,
+    "front": {
+      "left": 4,
+      "top": 3,
+      "width": 78,
+      "height": 64
+    },
+    "back": {
+      "left": 3,
+      "top": 3,
+      "width": 80,
+      "height": 63
+    }
+  },
+  "Zubat": {
+    "floating": true,
+    "front": {
+      "left": 0,
+      "top": 0,
+      "width": 51,
+      "height": 37
+    },
+    "back": {
+      "left": 0,
+      "top": 0,
+      "width": 49,
+      "height": 47
+    }
+  }
 }
