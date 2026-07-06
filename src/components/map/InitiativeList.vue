@@ -27,6 +27,7 @@ const emit = defineEmits<{
       :key="entry.id"
       :entry="entry"
       :index="index"
+      :row-count="rows.length"
       :active-id="activeId"
       :selected-id="selectedId"
       :can-manage="canManage"
@@ -34,6 +35,7 @@ const emit = defineEmits<{
       @focus="emit('focus', $event)"
       @set-initiative-input="(id, value) => emit('set-initiative-input', id, value)"
       @set-initiative-from-speed="(id, speed) => emit('set-initiative-from-speed', id, speed)"
+      @move-row="(id, direction) => emit('move-row', id, direction)"
     />
   </ol>
 

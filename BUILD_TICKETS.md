@@ -461,7 +461,7 @@ npm run typecheck
 
 ## 008 - Add keyboard-accessible row move controls
 
-Status: TODO
+Status: DONE
 
 **Commit message:** `Add initiative row move controls`
 

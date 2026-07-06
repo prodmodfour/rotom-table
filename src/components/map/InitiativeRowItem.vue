@@ -10,6 +10,7 @@ import type { InitiativeRow } from '~/composables/map-editor/useInitiativeTracke
 const props = defineProps<{
   entry: InitiativeRow
   index: number
+  rowCount: number
   activeId: string | null
   selectedId: string | null
   canManage: boolean
@@ -20,6 +21,7 @@ const emit = defineEmits<{
   (event: 'focus', id: string): void
   (event: 'set-initiative-input', id: string, value: Event): void
   (event: 'set-initiative-from-speed', id: string, speed: number): void
+  (event: 'move-row', id: string, direction: -1 | 1): void
 }>()
 
 const isActive = computed(() => props.activeId === props.entry.id)
@@ -85,13 +87,34 @@ const isFainted = computed(() => props.entry.currentHp <= 0)
       @set-initiative-input="(id, value) => emit('set-initiative-input', id, value)"
       @set-initiative-from-speed="(id, speed) => emit('set-initiative-from-speed', id, speed)"
     />
+
+    <div class="initiative-row__move-controls" role="group" aria-label="Initiative row position controls">
+      <button
+        type="button"
+        class="initiative-row__move"
+        :disabled="!canManage || index === 0"
+        :aria-label="`Move ${entry.name} earlier in initiative`"
+        @click="emit('move-row', entry.id, -1)"
+      >
+        ↑
+      </button>
+      <button
+        type="button"
+        class="initiative-row__move"
+        :disabled="!canManage || index >= rowCount - 1"
+        :aria-label="`Move ${entry.name} later in initiative`"
+        @click="emit('move-row', entry.id, 1)"
+      >
+        ↓
+      </button>
+    </div>
   </li>
 </template>
 
 <style scoped>
 .initiative-row {
   display: grid;
-  grid-template-columns: 42px minmax(0, 1fr) 78px;
+  grid-template-columns: 42px minmax(0, 1fr) 78px auto;
   align-items: stretch;
   gap: 0.5rem;
   border: 1px solid var(--rule-soft);
@@ -196,6 +219,47 @@ const isFainted = computed(() => props.entry.currentHp <= 0)
   white-space: nowrap;
 }
 
+.initiative-row__move-controls {
+  display: inline-flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 0.28rem;
+}
+
+.initiative-row__move {
+  min-width: 2rem;
+  border: 1px solid var(--rule-soft);
+  border-radius: 8px;
+  background: var(--paper-soft);
+  color: var(--ink-soft);
+  cursor: pointer;
+  font: inherit;
+  font-weight: 800;
+  line-height: 1;
+  padding: 0.35rem 0.45rem;
+  transition: border-color 0.15s ease, background 0.15s ease, color 0.15s ease, opacity 0.15s ease;
+}
+
+.initiative-row__move:hover,
+.initiative-row__move:focus-visible {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  color: var(--accent);
+  outline: none;
+}
+
+.initiative-row__move:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
+.initiative-row__move:disabled:hover,
+.initiative-row__move:disabled:focus-visible {
+  border-color: var(--rule-soft);
+  background: var(--paper-soft);
+  color: var(--ink-soft);
+}
+
 .sr-only {
   position: absolute;
   width: 1px;
@@ -209,7 +273,12 @@ const isFainted = computed(() => props.entry.currentHp <= 0)
 
 @media (max-width: 640px) {
   .initiative-row {
-    grid-template-columns: 38px minmax(0, 1fr) 70px;
+    grid-template-columns: 38px minmax(0, 1fr) 70px auto;
+  }
+
+  .initiative-row__move {
+    min-width: 1.85rem;
+    padding: 0.32rem 0.38rem;
   }
 }
 </style>
