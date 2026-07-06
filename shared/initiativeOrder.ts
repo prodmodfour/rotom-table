@@ -48,6 +48,32 @@ export const sortInitiativeOrderEntries = <TEntry extends InitiativeOrderEntry>(
   entries: readonly TEntry[],
 ): TEntry[] => [...entries].sort(compareInitiativeOrderEntries)
 
+export const orderInitiativeEntries = <TEntry extends InitiativeOrderEntry>(
+  entries: readonly TEntry[],
+  manualOrderIds?: readonly string[] | null,
+): TEntry[] => {
+  const calculated = sortInitiativeOrderEntries(entries)
+  if (!manualOrderIds?.length) return calculated
+
+  const byId = new Map(calculated.map((entry) => [entry.id, entry]))
+  const used = new Set<string>()
+  const ordered: TEntry[] = []
+
+  for (const id of manualOrderIds) {
+    const entry = byId.get(id)
+    if (!entry || used.has(id)) continue
+    ordered.push(entry)
+    used.add(id)
+  }
+
+  for (const entry of calculated) {
+    if (!used.has(entry.id)) ordered.push(entry)
+  }
+
+  return ordered
+}
+
 export const initiativeOrderIds = (
   entries: readonly InitiativeOrderEntry[],
-): string[] => sortInitiativeOrderEntries(entries).map((entry) => entry.id)
+  manualOrderIds?: readonly string[] | null,
+): string[] => orderInitiativeEntries(entries, manualOrderIds).map((entry) => entry.id)

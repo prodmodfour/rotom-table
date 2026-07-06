@@ -131,7 +131,7 @@ npm run typecheck
 
 ## 003 - Add shared manual-order merge helpers
 
-Status: TODO
+Status: DONE
 
 **Commit message:** `Add initiative manual order helpers`
 
