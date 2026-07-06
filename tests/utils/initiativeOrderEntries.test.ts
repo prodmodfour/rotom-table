@@ -46,6 +46,28 @@ describe('initiativeOrderEntries', () => {
     }))).toEqual(['token-zulu', 'token-bravo', 'token-alpha'])
   })
 
+  it('overlays manual ids onto the calculated placement order', () => {
+    const placements = [
+      placement('token-alpha', 'alpha'),
+      placement('token-bravo', 'bravo'),
+      placement('token-zulu', 'zulu'),
+    ]
+    const sheets = new Map<string, Record<string, unknown>>([
+      ['alpha', pokemonSheet('alpha', 30)],
+      ['bravo', pokemonSheet('bravo', 20)],
+      ['zulu', pokemonSheet('zulu', 10)],
+    ])
+
+    expect(initiativeOrderIdsForPlacements(
+      placements,
+      (_kind, slug) => ({
+        path: `/tmp/${slug}.json`,
+        sheet: sheets.get(slug)!,
+      }),
+      ['token-zulu', 'token-alpha'],
+    )).toEqual(['token-zulu', 'token-alpha', 'token-bravo'])
+  })
+
   it('applies conditions after explicit initiative overrides', () => {
     const placements = [
       placement('token-paralyzed', 'paralyzed', 40),

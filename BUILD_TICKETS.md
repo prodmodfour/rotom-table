@@ -210,7 +210,7 @@ npm run test -- tests/shared/initiativeOrder.test.ts
 
 ## 004 - Thread manual order through server-side order entry utilities
 
-Status: TODO
+Status: DONE
 
 **Commit message:** `Support manual order in initiative order entries`
 

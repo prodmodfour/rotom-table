@@ -167,4 +167,8 @@ export const initiativeOrderEntriesForPlacements = (
 export const initiativeOrderIdsForPlacements = (
   placements: readonly SheetPlacement[],
   readSheet: InitiativeSheetReader,
-): string[] => initiativeOrderIds(initiativeOrderEntriesForPlacements(placements, readSheet))
+  manualOrderIds?: readonly string[] | null,
+): string[] => initiativeOrderIds(
+  initiativeOrderEntriesForPlacements(placements, readSheet),
+  manualOrderIds,
+)
