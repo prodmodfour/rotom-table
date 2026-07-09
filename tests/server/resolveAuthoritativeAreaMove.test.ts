@@ -385,7 +385,7 @@ describe('resolveAuthoritativeMove area selections', () => {
     expect(branchResolution.area?.candidateTargetIds).toEqual(['target-a', 'target-c'])
   })
 
-  it('resolves area transactions, field effects, Sweet Veil context, facing, and input immutability', async () => {
+  it('resolves area transactions, field effects, unknown-side Sweet Veil, facing, and input immutability', async () => {
     const damaging = areaScript('Swift', [burstTemplate], {
       damaging: true,
       requiresAccuracy: true,
@@ -447,7 +447,10 @@ describe('resolveAuthoritativeMove area selections', () => {
       })
 
       expect(resolution.script.conditionSuggestions).toHaveLength(1)
-      expect(resolution.transaction.conditionUpdates).toEqual([])
+      expect(resolution.transaction.conditionUpdates).toEqual([
+        { id: 'target-a', conditions: ['Sleep'] },
+        { id: 'target-b', conditions: ['Sleep'] },
+      ])
       expect(snapshotInput(map, pokemonSheets, trainerSheets)).toBe(before)
 
       const templateBefore = resolution.area!.template

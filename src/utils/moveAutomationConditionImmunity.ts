@@ -11,14 +11,25 @@ const PASTEL_VEIL_ABILITY_NAME = 'Pastel Veil'
 const WATER_VEIL_ABILITY_NAME = 'Water Veil'
 const SWEET_VEIL_RANGE_METERS = 3
 
-export interface MoveAutomationConditionImmunityContext {
-  /**
-   * Tokens considered allied Sweet Veil providers by the caller. Team ownership
-   * is not stored on map tokens yet, so callers should pass only legal allies
-   * when that distinction is known.
-   */
-  sweetVeilProviders?: readonly SpawnedPokemon[]
+export type MoveAutomationAllyQuery = (
+  provider: Pick<SpawnedPokemon, 'id'>,
+  target: Pick<SpawnedPokemon, 'id'>,
+) => boolean
+
+interface MoveAutomationConditionImmunityWithoutSweetVeilProviders {
+  readonly sweetVeilProviderCandidates?: undefined
+  readonly isAlly?: undefined
 }
+
+interface MoveAutomationConditionImmunityWithSweetVeilProviders {
+  /** Candidate tokens only; `isAlly` must authorize each cross-token provider. */
+  readonly sweetVeilProviderCandidates: readonly SpawnedPokemon[]
+  readonly isAlly: MoveAutomationAllyQuery
+}
+
+export type MoveAutomationConditionImmunityContext =
+  | MoveAutomationConditionImmunityWithoutSweetVeilProviders
+  | MoveAutomationConditionImmunityWithSweetVeilProviders
 
 const hasType = (target: SpawnedPokemon, type: string): boolean =>
   target.defenderTypes.some((entry) => entry.toLowerCase() === type.toLowerCase())
@@ -31,13 +42,17 @@ export const tokenHasSweetVeil = (token: Pick<SpawnedPokemon, 'abilityNames'>): 
 
 const sweetVeilProviderForTarget = (
   target: SpawnedPokemon,
-  providers: readonly SpawnedPokemon[] | null | undefined,
+  context: MoveAutomationConditionImmunityContext,
 ): SpawnedPokemon | null => {
   if (tokenHasSweetVeil(target)) return target
-  return (providers ?? []).find((provider) =>
+  const providers = context.sweetVeilProviderCandidates
+  const isAlly = context.isAlly
+  if (!providers || !isAlly) return null
+  return providers.find((provider) =>
     provider.id !== target.id
-    && tokenHasSweetVeil(provider)
-    && tokenGridDistance(provider, target) <= SWEET_VEIL_RANGE_METERS,
+    && tokenGridDistance(provider, target) <= SWEET_VEIL_RANGE_METERS
+    && isAlly(provider, target)
+    && tokenHasSweetVeil(provider),
   ) ?? null
 }
 
@@ -45,7 +60,7 @@ const sweetVeilSource = (
   target: SpawnedPokemon,
   context: MoveAutomationConditionImmunityContext,
 ): string | null => {
-  const provider = sweetVeilProviderForTarget(target, context.sweetVeilProviders)
+  const provider = sweetVeilProviderForTarget(target, context)
   if (!provider) return null
   return provider.id === target.id
     ? SWEET_VEIL_ABILITY_NAME

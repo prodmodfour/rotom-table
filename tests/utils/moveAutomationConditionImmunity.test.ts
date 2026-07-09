@@ -60,9 +60,17 @@ describe('move automation condition immunity', () => {
     })
 
     expect(moveAutomationConditionImmunitySource('Sleep', token({ abilityNames: ['Sweet Veil'] }))).toBe('Sweet Veil')
-    expect(moveAutomationConditionImmunitySource('Sleep', target, null, { sweetVeilProviders: [nearbyProvider] }))
-      .toBe('Sweet Veil (Aromatisse)')
-    expect(moveAutomationConditionImmunitySource('Sleep', target, null, { sweetVeilProviders: [distantProvider] }))
-      .toBeNull()
+    expect(moveAutomationConditionImmunitySource('Sleep', target, null, {
+      sweetVeilProviderCandidates: [nearbyProvider],
+      isAlly: () => true,
+    })).toBe('Sweet Veil (Aromatisse)')
+    expect(moveAutomationConditionImmunitySource('Sleep', target, null, {
+      sweetVeilProviderCandidates: [nearbyProvider],
+      isAlly: () => false,
+    })).toBeNull()
+    expect(moveAutomationConditionImmunitySource('Sleep', target, null, {
+      sweetVeilProviderCandidates: [distantProvider],
+      isAlly: () => true,
+    })).toBeNull()
   })
 })

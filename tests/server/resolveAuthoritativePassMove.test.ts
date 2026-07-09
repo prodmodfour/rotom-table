@@ -375,7 +375,7 @@ describe('resolveAuthoritativeMove Pass area selections', () => {
     })
   })
 
-  it('uses injected randomness, current field effects, and Sweet Veil providers for Pass transactions', async () => {
+  it('uses injected randomness and field effects while failing unknown-side Sweet Veil providers closed', async () => {
     await withRegisteredScratchScript(passScript({ type: 'Fire' }), () => {
       const common = {
         map: mapFixture(),
@@ -418,7 +418,7 @@ describe('resolveAuthoritativeMove Pass area selections', () => {
       })
 
       expect(resolution.selectedTargetIds).toEqual(['target-a'])
-      expect(resolution.transaction.conditionUpdates).toEqual([])
+      expect(resolution.transaction.conditionUpdates).toEqual([{ id: 'target-a', conditions: ['Sleep'] }])
     })
   })
 })

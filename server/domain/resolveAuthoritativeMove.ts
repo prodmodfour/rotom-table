@@ -53,6 +53,8 @@ import type { SpawnedPokemon } from '~/types/pokemon'
 import type { TokenFacingDirection } from '~/types/tokenFacing'
 import type { TrainerSheet } from '~/types/trainerSheet'
 import { normalizeConditionName } from '~/utils/statusConditions'
+import type { MoveAutomationConditionImmunityContext } from '~/utils/moveAutomationConditionImmunity'
+import { ally as placementsAreAllies } from './moveAutomation/relationships'
 
 export type AuthoritativeMoveResolutionFailureReason =
   | 'invalid'
@@ -268,9 +270,21 @@ const scriptConsultsSweetVeilProviders = (script: MoveAutomationScript): boolean
 const authoritativeConditionImmunityContext = (
   context: SpawnedTokenContext,
   script: MoveAutomationScript,
-): { readonly sweetVeilProviders: readonly SpawnedPokemon[] } => {
-  if (scriptConsultsSweetVeilProviders(script)) recordSheetReadsForTokens(context, context.tokens)
-  return { sweetVeilProviders: context.tokens }
+): MoveAutomationConditionImmunityContext => {
+  if (!scriptConsultsSweetVeilProviders(script)) return {}
+
+  return {
+    sweetVeilProviderCandidates: context.tokens,
+    isAlly: (provider, target) => {
+      const providerPlacement = context.placementById.get(provider.id)
+      const targetPlacement = context.placementById.get(target.id)
+      if (!providerPlacement || !targetPlacement || !placementsAreAllies(providerPlacement, targetPlacement)) {
+        return false
+      }
+      recordSheetReadForPlacement(context, providerPlacement)
+      return true
+    },
+  }
 }
 
 const finalizeResolution = (

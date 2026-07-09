@@ -2362,7 +2362,6 @@ export const useMoveAutomationPanel = ({
         target,
         damageFormula: request.damageFormula,
         fieldEffects: map.value?.fieldEffects,
-        conditionImmunityContext: { sweetVeilProviders: spawnedPokemon.value },
       })
       prependTransactionLogLine(transaction, options.logLine)
       planAndEnqueueConfirmedSingleTargetMoveAnimations({
@@ -2381,7 +2380,6 @@ export const useMoveAutomationPanel = ({
       target,
       damageFormula: request.damageFormula,
       fieldEffects: map.value?.fieldEffects,
-      conditionImmunityContext: { sweetVeilProviders: spawnedPokemon.value },
     })
     prependTransactionLogLine(result.transaction, options.logLine)
     planAndEnqueueSingleTargetMoveAnimations({
@@ -2715,7 +2713,6 @@ export const useMoveAutomationPanel = ({
       selectedTargets: targets,
       damageFormula: request.damageFormula,
       fieldEffects: map.value?.fieldEffects,
-      conditionImmunityContext: { sweetVeilProviders: spawnedPokemon.value },
     })
     planAndEnqueueMultiTargetMoveAnimations({
       script: request.script,
@@ -2772,7 +2769,6 @@ export const useMoveAutomationPanel = ({
       targets,
       damageFormula: request.damageFormula,
       fieldEffects: map.value?.fieldEffects,
-      conditionImmunityContext: { sweetVeilProviders: spawnedPokemon.value },
     })
     const destinationLogLine = request.passDestination ? passDestinationLogLine(user, request.passDestination) : null
     if (destinationLogLine) transaction.logLines.push(destinationLogLine)

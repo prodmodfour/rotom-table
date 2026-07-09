@@ -17,11 +17,17 @@ const moveIntent = (overrides: Omit<ResolveMoveIntent, 'schemaVersion'>): Resolv
   ...overrides,
 })
 
-const placement = (id: string, sheetSlug = id, position = { x: 0, y: 0, z: 0 }): SheetPlacement => ({
+const placement = (
+  id: string,
+  sheetSlug = id,
+  position = { x: 0, y: 0, z: 0 },
+  sideId?: string,
+): SheetPlacement => ({
   id,
   sheetKind: 'pokemon',
   sheetSlug,
   position,
+  ...(sideId ? { sideId } : {}),
 })
 
 const mapFixture = (placements: SheetPlacement[] = [
@@ -470,9 +476,9 @@ describe('resolveAuthoritativeMove', () => {
   it('records indirect aura providers consulted for target immunity', () => {
     const resolution = resolveAuthoritativeMove({
       map: mapFixture([
-        placement('actor-token', 'actor', { x: 0, y: 0, z: 0 }),
-        placement('target-token', 'target-a', { x: 1, y: 0, z: 0 }),
-        placement('aura-token', 'aura', { x: 2, y: 0, z: 0 }),
+        placement('actor-token', 'actor', { x: 0, y: 0, z: 0 }, 'red'),
+        placement('target-token', 'target-a', { x: 1, y: 0, z: 0 }, 'blue'),
+        placement('aura-token', 'aura', { x: 2, y: 0, z: 0 }, 'blue'),
       ]),
       pokemonSheets: sheetMap([{ name: 'Spore' }], {
         actor: pokemonSheet('actor', [{ name: 'Spore' }], { revision: 2 }),

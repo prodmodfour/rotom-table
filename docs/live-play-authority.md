@@ -42,6 +42,8 @@ This applies to:
 
 Authoritative `resolveMove` planning also records a deduplicated `sheetReads` snapshot for the acting sheet, every consulted selected or area-candidate target sheet, and indirect rule providers such as condition-immunity auras. Each entry carries sheet kind, slug, and observed revision; conflicting observations of the same sheet reference reject planning. This collection is server-internal and cannot be supplied by the client. Before any map or sheet write, the accepted-result transaction asserts every recorded sheet revision, including read-only misses, immune targets, and aura providers. A stale or missing consulted sheet rejects the move as a conflict without writing the map, sheets, operation result, or realtime rows; read-only sheets are never no-op written merely to obtain CAS protection.
 
+Relationship-dependent move rules use the centralized server query seam and only recognize ally/enemy relationships from explicit encounter side IDs. Unknown allegiance fails closed for ally/enemy mechanics: token ownership, player control, GM control, and mere map presence never imply that two placements are allies. Self identity remains available independently of side data. Until encounter sides become part of the persisted placement schema, cross-placement ally/enemy mechanics therefore remain unconfirmed rather than guessing allegiance.
+
 Map live-play idempotency records are keyed by map and `opId`; shop checkout idempotency records are keyed by shop and `opId`. A retry with the same command body returns the stored result without applying effects twice. Reusing an `opId` with different material is rejected.
 
 ### Live-play batch commands are not client-side macros

@@ -206,7 +206,10 @@ describe('instant move automation', () => {
       user: token({ id: 'u', species: 'Caster' }),
       target: token({ id: 't', species: 'Target', position: { x: 0, y: 0, z: 0 } }),
       damageFormula: null,
-      conditionImmunityContext: { sweetVeilProviders: [sweetVeilProvider] },
+      conditionImmunityContext: {
+        sweetVeilProviderCandidates: [sweetVeilProvider],
+        isAlly: () => true,
+      },
       random: sequenceRandom([0.85]),
     })
 

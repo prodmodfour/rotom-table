@@ -203,7 +203,7 @@ Status: DONE
 
 ## MA-006 — Add a server-owned relationship query seam
 
-Status: TODO
+Status: DONE
 
 **Depends on:** MA-004
 **Commit:** `refactor(move-automation): centralize target relationship queries`
