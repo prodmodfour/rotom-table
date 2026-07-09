@@ -274,7 +274,7 @@ Status: DONE
 
 ## MA-012 — Define the semantic manifest schema
 
-Status: TODO
+Status: DONE
 
 **Depends on:** MA-011
 **Commit:** `feat(move-automation): add semantic manifest contract`
