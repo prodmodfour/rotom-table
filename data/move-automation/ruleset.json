@@ -1,0 +1,69 @@
+{
+  "schemaVersion": 1,
+  "rulesetId": "rotom-table-reference-moves-v1",
+  "sourceData": {
+    "path": "data/reference/moves.json",
+    "role": "immediate-rules-data-authority",
+    "sha256": "f90491826349afd7d1f2809fd9d74b7acc555f5163b99264205ee369249e9815"
+  },
+  "canonicalization": {
+    "version": 1,
+    "identity": "source-key",
+    "ordering": "canonical-id-code-point",
+    "expectedMoveCount": 776,
+    "includedTypes": [
+      "Normal",
+      "Fighting",
+      "Flying",
+      "Poison",
+      "Ground",
+      "Rock",
+      "Bug",
+      "Ghost",
+      "Steel",
+      "Fire",
+      "Water",
+      "Grass",
+      "Electric",
+      "Psychic",
+      "Ice",
+      "Dragon",
+      "Dark",
+      "Fairy"
+    ],
+    "excludedParserJunk": {
+      "policy": "exclude-records-with-noncanonical-types",
+      "expectedSourceKeys": [
+        "The first line contains the Name of the Move. This"
+      ]
+    }
+  },
+  "struggleVariants": {
+    "policy": "distinct-canonical-records",
+    "canonicalSourceKeys": [
+      "Struggle",
+      "Struggle (Firestarter Physical)",
+      "Struggle (Firestarter Special)",
+      "Struggle (Fountain Physical)",
+      "Struggle (Fountain Special)",
+      "Struggle (Freezer Physical)",
+      "Struggle (Freezer Special)",
+      "Struggle (Guster Physical)",
+      "Struggle (Guster Special)",
+      "Struggle (Materializer Physical)",
+      "Struggle (Materializer Special)",
+      "Struggle (Telekinetic Physical)",
+      "Struggle (Telekinetic Special)",
+      "Struggle (Zapper Physical)",
+      "Struggle (Zapper Special)"
+    ]
+  },
+  "homebrewNamespaces": {
+    "policy": "separate-explicit-namespace",
+    "canonicalNamespace": "canonical",
+    "homebrewPrefix": "homebrew:",
+    "includeInCanonicalCatalog": false
+  },
+  "verifiedSupplementSources": [],
+  "verifiedErrataSources": []
+}

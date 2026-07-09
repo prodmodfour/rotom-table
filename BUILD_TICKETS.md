@@ -261,7 +261,7 @@ Status: DONE
 
 ## MA-011 — Freeze canonical move identity and rules provenance
 
-Status: TODO
+Status: DONE
 
 **Depends on:** MA-010
 **Commit:** `feat(move-automation): define canonical rules provenance`
