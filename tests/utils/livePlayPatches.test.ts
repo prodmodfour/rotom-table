@@ -596,7 +596,7 @@ describe('live-play patch application', () => {
         frequency: 'Scene',
         damageFormula: null,
         selectedTargetIds: ['token-b'],
-        script: { kind: 'explicit' },
+        script: { kind: 'explicit', type: 'Normal' },
         transaction: {
           userId: 'token-a',
           userName: 'Pika',
@@ -612,6 +612,15 @@ describe('live-play patch application', () => {
           fieldEffectsToApply: [],
           logLines: ['Pika used Tackle.'],
         },
+      },
+      presentation: {
+        schemaVersion: 1,
+        operationId: 'op_movepatch01',
+        actorPlacementId: 'token-a',
+        move: { name: 'Tackle', type: 'Normal' },
+        attackedTargetIds: ['token-b'],
+        hitTargetIds: ['token-b'],
+        outcomeKind: 'hit',
       },
       sheets: [],
       changes: {
@@ -665,7 +674,7 @@ describe('live-play patch application', () => {
       frequency: null,
       damageFormula: null,
       selectedTargetIds: [],
-      script: {},
+      script: { type: 'Normal' },
       transaction: {
         userId: 'token-a',
         userName: 'Pika',
@@ -692,6 +701,15 @@ describe('live-play patch application', () => {
         command: 'resolveMove',
         updatedAt: 1000,
         move,
+        presentation: {
+          schemaVersion: 1,
+          operationId: 'op_movepatch02',
+          actorPlacementId: 'token-a',
+          move: { name: 'Tackle', type: 'Normal' },
+          attackedTargetIds: [],
+          hitTargetIds: [],
+          outcomeKind: 'self',
+        },
         sheets: [],
         changes: {
           temporaryHitPoints: { previous: map.temporaryHitPoints, current: null },

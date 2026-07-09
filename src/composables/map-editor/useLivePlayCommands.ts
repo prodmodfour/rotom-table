@@ -59,6 +59,7 @@ import {
   type LivePlayOperationAbandonmentResponse,
 } from '#shared/livePlayOperationAbandonment'
 import type { LivePlayAcceptedRealtimeEvent } from '#shared/livePlayRealtimeEvents'
+import type { LivePlayMovePresentationSummary } from '#shared/livePlayMovePresentation'
 import {
   parseResolveMoveIntent,
   type LivePlayResolvedMoveResult,
@@ -99,6 +100,7 @@ import {
 } from '~/utils/livePlayCommandOutbox'
 import { getErrorMessage } from '~/utils/errorMessages'
 import { buildResolveMoveScopes } from '~/utils/livePlayMoveCommandScopes'
+import { extractAcceptedMovePresentation } from '~/utils/livePlayAcceptedMovePresentation'
 import { extractResolvedMoveResult } from '~/utils/livePlayResolvedMoveResponse'
 import { useApiClient } from '~/composables/useApiClient'
 import type { AttackOfOpportunityStateUpdatePayload } from '#shared/attackOfOpportunityState'
@@ -255,6 +257,18 @@ export type LivePlayOperationAbandonmentClientResult =
       readonly message: string
     }
 
+export type LivePlayAcceptedMovePresentationSource =
+  | 'http'
+  | 'recovery'
+  | 'realtime'
+  | 'status'
+  | 'abandonment'
+
+export interface LivePlayAcceptedMovePresentationEvent {
+  readonly presentation: LivePlayMovePresentationSummary
+  readonly source: LivePlayAcceptedMovePresentationSource
+}
+
 export interface UseLivePlayCommandsOptions {
   slug: string
   authRole: ReadonlyValueRef<AuthRole | null | undefined>
@@ -270,6 +284,9 @@ export interface UseLivePlayCommandsOptions {
   requestReconciliation?: (reason: LivePlayCommandReconciliationRequest) => void | Promise<void>
   onCommandStarted?: () => void
   onCommandAccepted?: (response: LivePlayCommandResponse) => void
+  onAcceptedMovePresentation?: (
+    event: LivePlayAcceptedMovePresentationEvent,
+  ) => void | Promise<void>
   onCommandRejected?: (transition: {
     reason?: LivePlayCommandRejectionReason | null
     message: string
@@ -567,6 +584,20 @@ const isRecord = (value: unknown): value is Record<string, unknown> => (
   typeof value === 'object' && value !== null && !Array.isArray(value)
 )
 
+export const movePresentationFromAcceptedRealtimeEvent = (
+  event: Pick<LivePlayAcceptedRealtimeEvent, 'opId' | 'mapSlug' | 'previousRevision' | 'revision' | 'patches'>,
+): LivePlayMovePresentationSummary | undefined => {
+  const extracted = extractAcceptedMovePresentation({
+    ok: true,
+    opId: event.opId,
+    mapSlug: event.mapSlug,
+    previousRevision: event.previousRevision,
+    revision: event.revision,
+    patches: [...event.patches],
+  })
+  return extracted.ok ? extracted.presentation : undefined
+}
+
 export const pokeballCaptureFromAcceptedRealtimeEvent = (
   event: Pick<LivePlayAcceptedRealtimeEvent, 'patches'>,
 ): PokeballCaptureOutcomeEvent | undefined => {
@@ -676,6 +707,26 @@ export const useLivePlayCommands = (
   const realtimeAcknowledgementAdoptions = new Map<string, Promise<string | undefined>>()
   const statusResolvedResponses = new Map<string, LivePlayCommandResponse>()
   let activePredictionPatchAdoptionSession: LivePlayPredictionPatchAdoptionSession | null = null
+
+  const notifyAcceptedMovePresentation = (
+    response: LivePlayCommandResponse,
+    source: LivePlayAcceptedMovePresentationSource,
+  ): void => {
+    if (!options.onAcceptedMovePresentation) return
+    const extracted = extractAcceptedMovePresentation(response)
+    if (!extracted.ok) return
+
+    try {
+      void Promise.resolve(options.onAcceptedMovePresentation({
+        presentation: extracted.presentation,
+        source,
+      })).catch((error) => {
+        console.warn('[useLivePlayCommands] accepted move presentation callback failed', error)
+      })
+    } catch (error) {
+      console.warn('[useLivePlayCommands] accepted move presentation callback failed', error)
+    }
+  }
 
   if (getCurrentScope()) {
     const removePendingCommandUnloadWarning = bindPendingLivePlayCommandUnloadWarning(() => transportStatus.value === 'sending')
@@ -1832,6 +1883,7 @@ export const useLivePlayCommands = (
         ? await requestRecoveryReconciliation(request, response)
         : undefined
       markOperationAccepted(opId)
+      notifyAcceptedMovePresentation(response, origin === 'immediate' ? 'http' : 'recovery')
       options.onCommandAccepted?.(response)
       return withOutboxWarning({
         dispatched: true,
@@ -3130,6 +3182,7 @@ export const useLivePlayCommands = (
     const reconciliationWarning = await requestRecoveryReconciliation(MAP_API_PATHS.operationStatus, response)
     message = combineOutboxWarnings(message, reconciliationWarning)
     markOperationAccepted(opId)
+    notifyAcceptedMovePresentation(response, 'status')
 
     if (message === undefined) {
       status.value = 'idle'
@@ -3440,6 +3493,7 @@ export const useLivePlayCommands = (
     const reconciliationWarning = await requestRecoveryReconciliation(MAP_API_PATHS.operationAbandon, commandResponse)
     const combinedWarning = combineOutboxWarnings(warning, processingWarning, reconciliationWarning)
     finishAbandonmentRecovery(combinedWarning)
+    notifyAcceptedMovePresentation(commandResponse, 'abandonment')
 
     return {
       status: 'accepted',
@@ -3738,6 +3792,7 @@ export const useLivePlayCommands = (
     }
 
     markOperationAccepted(event.opId)
+    notifyAcceptedMovePresentation(response, 'realtime')
     if (wasLocalPendingCommand) options.onCommandAccepted?.(response)
 
     if (refreshWarning) {

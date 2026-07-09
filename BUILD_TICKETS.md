@@ -188,7 +188,7 @@ Status: DONE
 
 ## MA-005 — Publish accepted move presentation from durable results
 
-Status: TODO
+Status: DONE
 
 **Depends on:** MA-002
 **Commit:** `fix(move-automation): drive move presentation from accepted results`

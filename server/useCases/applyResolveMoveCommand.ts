@@ -17,6 +17,7 @@ import {
   type LivePlayResolvedMoveResult,
   type ResolveMoveIntent,
 } from '#shared/livePlayMoveResolution'
+import { createLivePlayMovePresentationSummary } from '#shared/livePlayMovePresentation'
 import {
   parseLivePlayMoveStatePatchPayload,
   type LivePlayMoveSheetChangeRef,
@@ -374,12 +375,14 @@ const sheetRefsFromPlan = (plan: AuthoritativeMoveStatePlan): readonly LivePlayM
 }))
 
 const moveStatePayload = (
+  operationId: string,
   plan: AuthoritativeMoveStatePlan,
   move: LivePlayResolvedMoveResult,
 ): LivePlayMoveStatePatchPayload => ({
   command: 'resolveMove',
   updatedAt: plan.nextMap.updatedAt ?? 0,
   move: deepCloneJson(move),
+  presentation: createLivePlayMovePresentationSummary({ operationId, move }),
   sheets: sheetRefsFromPlan(plan),
   changes: patchChangesFromPlan(plan),
 })
@@ -390,7 +393,7 @@ const moveStatePatch = (
   move: LivePlayResolvedMoveResult,
   scopes: readonly LivePlayPatch['scopes'][number][],
 ): LivePlayPatch<typeof LIVE_PLAY_PATCH_TYPES.MOVE_STATE, LivePlayMoveStatePatchPayload> => {
-  const payload = moveStatePayload(plan, move)
+  const payload = moveStatePayload(command.opId, plan, move)
   const parsedPayload = parseLivePlayMoveStatePatchPayload(payload)
   if (!parsedPayload.valid) {
     throw new Error(`MOVE_STATE payload failed invariant validation: ${parsedPayload.issues.map((issue) => `${issue.path}: ${issue.message}`).join('; ')}`)
@@ -450,6 +453,12 @@ const moveStatePatchFromAccepted = (result: LivePlayCommandAccepted): LivePlayPa
     throw new LivePlayResolveMoveCommandUseCaseError(
       409,
       `Stored resolveMove MOVE_STATE payload is invalid: ${parsed.issues.map((issue) => `${issue.path}: ${issue.message}`).join('; ')}`,
+    )
+  }
+  if (parsed.payload.presentation.operationId !== result.opId) {
+    throw new LivePlayResolveMoveCommandUseCaseError(
+      409,
+      'Stored resolveMove presentation operation ID does not match the accepted operation result',
     )
   }
   return { ...patch, payload: parsed.payload } as LivePlayPatch<typeof LIVE_PLAY_PATCH_TYPES.MOVE_STATE, LivePlayMoveStatePatchPayload>

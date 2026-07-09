@@ -4,6 +4,11 @@ import {
   parseLivePlayResolvedMoveResult,
   type LivePlayResolvedMoveResult,
 } from './livePlayMoveResolution'
+import {
+  createLivePlayMovePresentationSummary,
+  parseLivePlayMovePresentationSummary,
+  type LivePlayMovePresentationSummary,
+} from './livePlayMovePresentation'
 import type {
   GridAnchor,
   MapFieldEffects,
@@ -62,6 +67,7 @@ export interface LivePlayMoveStatePatchPayload {
   readonly command: 'resolveMove'
   readonly updatedAt: number
   readonly move: LivePlayResolvedMoveResult
+  readonly presentation: LivePlayMovePresentationSummary
   readonly sheets: readonly LivePlayMoveSheetChangeRef[]
   readonly changes: LivePlayMoveStatePatchChanges
 }
@@ -728,6 +734,7 @@ export const parseLivePlayMoveStatePatchPayload = (
   requireField(value, 'command', 'command', issues)
   requireField(value, 'updatedAt', 'updatedAt', issues)
   requireField(value, 'move', 'move', issues)
+  requireField(value, 'presentation', 'presentation', issues)
   requireField(value, 'sheets', 'sheets', issues)
   requireField(value, 'changes', 'changes', issues)
 
@@ -744,10 +751,51 @@ export const parseLivePlayMoveStatePatchPayload = (
       addIssue(issues, issue.path ? `move.${issue.path}` : 'move', 'invalid-field', issue.message)
     }
   }
+  const presentationResult = parseLivePlayMovePresentationSummary(value.presentation)
+  if (!presentationResult.valid) {
+    for (const issue of presentationResult.issues) {
+      addIssue(
+        issues,
+        issue.path ? `presentation.${issue.path}` : 'presentation',
+        'invalid-field',
+        issue.message,
+      )
+    }
+  }
+  if (moveResult.valid && presentationResult.valid) {
+    try {
+      const expectedPresentation = createLivePlayMovePresentationSummary({
+        operationId: presentationResult.presentation.operationId,
+        move: moveResult.move,
+      })
+      if (JSON.stringify(expectedPresentation) !== JSON.stringify(presentationResult.presentation)) {
+        addIssue(
+          issues,
+          'presentation',
+          'invalid-field',
+          'presentation must exactly summarize the resolved move result.',
+        )
+      }
+    } catch (error) {
+      addIssue(
+        issues,
+        'presentation',
+        'invalid-field',
+        error instanceof Error ? error.message : 'presentation could not summarize the resolved move result.',
+      )
+    }
+  }
   const sheets = parseSheetRefs(value.sheets, 'sheets', issues)
   const changes = parseChanges(value.changes, 'changes', issues)
 
-  if (issues.length > 0 || !moveResult.valid || !sheets || !changes || !isSafeNonNegativeInteger(value.updatedAt)) {
+  if (
+    issues.length > 0
+    || !moveResult.valid
+    || !presentationResult.valid
+    || !sheets
+    || !changes
+    || !isSafeNonNegativeInteger(value.updatedAt)
+  ) {
     return { valid: false, issues }
   }
 
@@ -757,6 +805,7 @@ export const parseLivePlayMoveStatePatchPayload = (
       command: 'resolveMove',
       updatedAt: value.updatedAt,
       move: cloneJson(moveResult.move),
+      presentation: cloneJson(presentationResult.presentation),
       sheets: cloneJson(sheets),
       changes: cloneJson(changes),
     },

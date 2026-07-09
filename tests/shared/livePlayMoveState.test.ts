@@ -14,7 +14,7 @@ const move = () => ({
   frequency: null,
   damageFormula: null,
   selectedTargetIds: ['token-b'],
-  script: {},
+  script: { type: 'Normal' },
   transaction: {
     userId: 'token-a',
     userName: 'Pika',
@@ -36,6 +36,15 @@ const payload = () => ({
   command: 'resolveMove',
   updatedAt: 1000,
   move: move(),
+  presentation: {
+    schemaVersion: 1,
+    operationId: 'op_movestate01',
+    actorPlacementId: 'token-a',
+    move: { name: 'Tackle', type: 'Normal' },
+    attackedTargetIds: ['token-b'],
+    hitTargetIds: ['token-b'],
+    outcomeKind: 'hit',
+  },
   sheets: [{
     kind: 'pokemon',
     slug: 'pikachu',
@@ -76,6 +85,7 @@ describe('livePlayMoveState patch contract', () => {
     expect(result.payload).toEqual(raw)
     expect(result.payload).not.toBe(raw)
     expect(result.payload.move).not.toBe(raw.move)
+    expect(result.payload.presentation).not.toBe(raw.presentation)
     expect(result.payload.changes.placements?.current).not.toBe(raw.changes.placements.current)
     expect(isLivePlayMoveStatePatchPayload(raw)).toBe(true)
   })
@@ -84,6 +94,10 @@ describe('livePlayMoveState patch contract', () => {
     expect(parseLivePlayMoveStatePatchPayload({ ...payload(), command: 'useMove' }).valid).toBe(false)
     expect(parseLivePlayMoveStatePatchPayload({ ...payload(), updatedAt: -1 }).valid).toBe(false)
     expect(parseLivePlayMoveStatePatchPayload({ ...payload(), move: { actorPlacementId: 'token-a' } }).valid).toBe(false)
+    expect(parseLivePlayMoveStatePatchPayload({
+      ...payload(),
+      presentation: { ...payload().presentation, hitTargetIds: [], outcomeKind: 'miss' },
+    }).valid).toBe(false)
     expect(parseLivePlayMoveStatePatchPayload({
       ...payload(),
       sheets: [payload().sheets[0], payload().sheets[0]],

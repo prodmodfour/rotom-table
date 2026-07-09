@@ -10,6 +10,8 @@ import {
   LIVE_PLAY_RESOLVED_MOVE_RESULT_SCHEMA_VERSION,
   type LivePlayResolvedMoveResult,
 } from '#shared/livePlayMoveResolution'
+import { createLivePlayMovePresentationSummary } from '#shared/livePlayMovePresentation'
+import { extractAcceptedMovePresentation } from '~/utils/livePlayAcceptedMovePresentation'
 import { extractResolvedMoveResult } from '~/utils/livePlayResolvedMoveResponse'
 import type { MoveAutomationScript } from '~/types/moveAutomation'
 
@@ -99,7 +101,16 @@ const accepted = (move = resolvedMove(), patchesMove: unknown = move): LivePlayC
       scopes: [{ kind: 'token', placementId: 'actor', field: 'action' }],
       payload: {
         command: LIVE_PLAY_COMMAND_TYPES.RESOLVE_MOVE,
+        updatedAt: 1_000,
         move: patchesMove,
+        ...(patchesMove === move ? {
+          presentation: createLivePlayMovePresentationSummary({
+            operationId: 'op_resolve001',
+            move,
+          }),
+        } : {}),
+        sheets: [],
+        changes: {},
       },
     },
   ],
@@ -201,6 +212,27 @@ describe('extractResolvedMoveResult', () => {
       reason: 'invalid',
       message: 'Nope',
     })).toMatchObject({ ok: false, message: expect.stringContaining('not accepted') })
+  })
+
+  it('extracts the bounded accepted presentation from original and duplicate terminal results', () => {
+    const move = resolvedMove()
+    const original = accepted(move)
+    const presentation = createLivePlayMovePresentationSummary({
+      operationId: original.opId,
+      move,
+    })
+
+    expect(extractAcceptedMovePresentation(original)).toEqual({ ok: true, presentation })
+    expect(extractAcceptedMovePresentation({
+      ok: true,
+      duplicate: true,
+      opId: original.opId,
+      original,
+    })).toEqual({ ok: true, presentation })
+    expect(extractAcceptedMovePresentation({
+      ...original,
+      opId: 'op_resolve999',
+    })).toMatchObject({ ok: false, reason: 'invalid' })
   })
 
   it('returns detached data without mutating the response or patch objects', () => {

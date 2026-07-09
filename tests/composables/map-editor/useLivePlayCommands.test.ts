@@ -21,6 +21,7 @@ import {
 } from '#shared/livePlayCommands'
 import { parsePlayerProfileId, type PlayerProfileId } from '#shared/playerProfiles'
 import type { LivePlayAcceptedRealtimeEvent } from '#shared/livePlayRealtimeEvents'
+import { createLivePlayMovePresentationSummary } from '#shared/livePlayMovePresentation'
 import { LIVE_PLAY_OPERATION_STATUS_SCHEMA_VERSION } from '#shared/livePlayOperationStatus'
 import { LIVE_PLAY_OPERATION_ABANDONMENT_SCHEMA_VERSION } from '#shared/livePlayOperationAbandonment'
 import {
@@ -790,6 +791,7 @@ const tokenPositionPatch = (
 
 const moveStatePatchForMove = (
   move: LivePlayResolvedMoveResult,
+  operationId: string,
   overrides: Partial<TestLivePlayPatch> = {},
 ): TestLivePlayPatch => ({
   schemaVersion: LIVE_PLAY_COMMAND_SCHEMA_VERSION,
@@ -797,7 +799,14 @@ const moveStatePatchForMove = (
   mapSlug: 'arena-map',
   revision: 5,
   scopes: [{ kind: 'token', placementId: 'token-pikachu', field: 'action' }],
-  payload: { command: LIVE_PLAY_COMMAND_TYPES.RESOLVE_MOVE, move },
+  payload: {
+    command: LIVE_PLAY_COMMAND_TYPES.RESOLVE_MOVE,
+    updatedAt: 1_000,
+    move,
+    presentation: createLivePlayMovePresentationSummary({ operationId, move }),
+    sheets: [],
+    changes: {},
+  },
   ...overrides,
 })
 
@@ -5651,22 +5660,19 @@ describe('useLivePlayCommands', () => {
     const map = mapFixture()
     const profileId = ref(parsePlayerProfileId('profile_ash00000'))
     const move = resolvedMoveFixture()
-    mockTerminalResponse({
-      ok: true,
-      opId: 'op_resolvemove1',
-      mapSlug: 'arena-map',
-      previousRevision: 4,
-      revision: 5,
-      patches: [{
-        schemaVersion: LIVE_PLAY_COMMAND_SCHEMA_VERSION,
-        type: LIVE_PLAY_PATCH_TYPES.MOVE_STATE,
-        mapSlug: 'arena-map',
+    apiMocks.postJson.mockImplementation(async (_request: string, body: unknown) => {
+      const command = commandRecord(body)
+      return {
+        ok: true,
+        opId: command.opId,
+        mapSlug: command.mapSlug,
+        previousRevision: 4,
         revision: 5,
-        scopes: [{ kind: 'token', placementId: 'token-pikachu', field: 'action' }],
-        payload: { command: LIVE_PLAY_COMMAND_TYPES.RESOLVE_MOVE, move },
-      }],
-      move,
+        patches: [moveStatePatchForMove(move, command.opId as string)],
+        move,
+      }
     })
+    const onAcceptedMovePresentation = vi.fn()
 
     const actions = useTestLivePlayCommands({
       slug: 'arena-map',
@@ -5674,6 +5680,7 @@ describe('useLivePlayCommands', () => {
       playerProfileId: profileId,
       map: ref(map),
       mapRevision: ref(4),
+      onAcceptedMovePresentation,
     })
     const result = await actions.resolveMove({
       intent: {
@@ -5703,6 +5710,11 @@ describe('useLivePlayCommands', () => {
       profileId: 'profile_ash00000',
     }))
     const [, body] = apiMocks.postJson.mock.calls[0]
+    expect(onAcceptedMovePresentation).toHaveBeenCalledOnce()
+    expect(onAcceptedMovePresentation).toHaveBeenCalledWith({
+      presentation: createLivePlayMovePresentationSummary({ operationId: body.opId, move }),
+      source: 'http',
+    })
     expect(body.payload).not.toHaveProperty('candidateScopePlacementIds')
     expect(body.scopes).toEqual(expect.arrayContaining([
       { kind: 'token', placementId: 'token-pikachu', field: 'action' },
@@ -5735,11 +5747,13 @@ describe('useLivePlayCommands', () => {
         move,
       }
     })
+    const onAcceptedMovePresentation = vi.fn()
     const { actions } = createCommandHarness({
       slug: 'arena-map',
       map: ref(mapFixture()),
       mapRevision: ref(4),
       outbox,
+      onAcceptedMovePresentation,
     })
 
     const resultPromise = actions.resolveMove({
@@ -5756,8 +5770,13 @@ describe('useLivePlayCommands', () => {
     expect(entry).not.toBeNull()
 
     await expect(actions.acknowledgeAcceptedRealtimeEvent(acceptedRealtimeEventForEntry(entry!, {
-      patches: [moveStatePatchForMove(move)],
+      patches: [moveStatePatchForMove(move, entry!.opId)],
     }))).resolves.toEqual({ status: 'acknowledged', opId: entry!.opId })
+    expect(onAcceptedMovePresentation).toHaveBeenCalledTimes(1)
+    expect(onAcceptedMovePresentation).toHaveBeenCalledWith({
+      presentation: createLivePlayMovePresentationSummary({ operationId: entry!.opId, move }),
+      source: 'realtime',
+    })
     releaseHttp()
 
     await expect(resultPromise).resolves.toMatchObject({
@@ -5765,6 +5784,7 @@ describe('useLivePlayCommands', () => {
       recoveredByRealtime: true,
       move,
     })
+    expect(onAcceptedMovePresentation).toHaveBeenCalledTimes(1)
   })
 
   it('does not invent a profile id for GM resolveMove dispatch', async () => {
@@ -6224,6 +6244,50 @@ describe('useLivePlayCommands', () => {
     expect(onCommandStarted).not.toHaveBeenCalled()
     expect(onCommandRejected).not.toHaveBeenCalled()
     expect(onCommandFailed).not.toHaveBeenCalled()
+  })
+
+  it('presents a recovered resolveMove from its durable terminal status result', async () => {
+    const outbox = createTestOutbox()
+    const move = resolvedMoveFixture()
+    const opId = nextStoredOpId('resolve')
+    const entry = await enqueueStoredCommand(outbox, {
+      requestPath: MAP_API_PATHS.resolveMove,
+      body: storedMoveCommandBody({
+        opId,
+        type: LIVE_PLAY_COMMAND_TYPES.RESOLVE_MOVE,
+        scopes: [{ kind: 'token', placementId: 'token-pikachu', field: 'action' }],
+        payload: {
+          schemaVersion: LIVE_PLAY_MOVE_RESOLUTION_SCHEMA_VERSION,
+          placementId: 'token-pikachu',
+          moveName: 'Thunderbolt',
+          selection: { kind: 'single-target', targetPlacementId: 'target-token' },
+        },
+      }),
+    })
+    const onAcceptedMovePresentation = vi.fn()
+    apiMocks.postJson.mockResolvedValueOnce(operationStatusTerminalResponse(
+      entry,
+      acceptedStatusResult(entry, {
+        patches: [moveStatePatchForMove(move, opId)],
+      }),
+    ))
+    const { actions } = createCommandHarness({
+      slug: 'arena-map',
+      outbox,
+      map: ref(mapFixture()),
+      mapRevision: ref(4),
+      onAcceptedMovePresentation,
+    })
+
+    await expect(actions.checkOutboxCommandStatus(opId)).resolves.toMatchObject({
+      status: 'accepted',
+      opId,
+    })
+    expect(onAcceptedMovePresentation).toHaveBeenCalledOnce()
+    expect(onAcceptedMovePresentation).toHaveBeenCalledWith({
+      presentation: createLivePlayMovePresentationSummary({ operationId: opId, move }),
+      source: 'status',
+    })
   })
 
   it('removes rejected terminal status entries and preserves stale/conflict reconciliation behaviour', async () => {

@@ -350,6 +350,29 @@ describe('useMoveAutomationPanel authoritative dispatcher', () => {
     })
   })
 
+  it('does not enqueue a second VFX batch when durable accepted presentation already handled the operation', async () => {
+    const moveScript = reviewedScript('Ember')
+    await withRegisteredScripts([moveScript], async () => {
+      const enqueueMoveAnimations = vi.fn()
+      const dispatch = vi.fn<MoveAutomationAuthoritativeDispatchHandler>().mockResolvedValue({
+        accepted: true,
+        move: resolvedMove({ script: moveScript }),
+        presentationHandled: true,
+      })
+      const { panel } = panelFixture({
+        scripts: [moveScript],
+        dispatchAuthoritativeMove: dispatch,
+        enqueueMoveAnimations,
+      })
+
+      panel.openMoveAutomation({ id: 'user-token', moveName: moveScript.moveName })
+      await panel.selectMoveAutomationTarget('target-a')
+
+      expect(enqueueMoveAnimations).not.toHaveBeenCalled()
+      expect(panel.moveAutomationTargeting.value).toBeNull()
+    })
+  })
+
   it('preserves selected branch ids through single-target and area authoritative intents', async () => {
     const moveScript = branchScript()
     await withRegisteredScripts([moveScript], async () => {

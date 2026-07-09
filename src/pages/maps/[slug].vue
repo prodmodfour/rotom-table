@@ -19,12 +19,14 @@ import {
 } from '~/composables/useEditableMap'
 import { useLiveSheets } from '~/composables/useLiveSheets'
 import {
+  movePresentationFromAcceptedRealtimeEvent,
   pokeballCaptureFromAcceptedRealtimeEvent,
   useLivePlayCommands,
   type LivePlayCommandResponse,
   type UseLivePlayCommandsOptions,
   type UseLivePlayCommandsReturn,
 } from '~/composables/map-editor/useLivePlayCommands'
+import { useAcceptedMovePresentation } from '~/composables/map-editor/useAcceptedMovePresentation'
 import { useLivePlayCommandRecoveryGate } from '~/composables/map-editor/useLivePlayCommandRecoveryGate'
 import { useLivePlayStateMachine, type LivePlayConnectionState } from '~/composables/map-editor/useLivePlayStateMachine'
 import { useMapPageTableActionDispatchers } from '~/composables/map-editor/useMapPageTableActionDispatchers'
@@ -80,6 +82,7 @@ import {
 } from '#shared/livePlayPresence'
 import { isRealtimeEcho } from '#shared/realtime'
 import type { LivePlayAcceptedRealtimeEvent } from '#shared/livePlayRealtimeEvents'
+import type { LivePlayMovePresentationSummary } from '#shared/livePlayMovePresentation'
 import { useStartTurnModal } from '~/composables/map-editor/useStartTurnModal'
 import { useTerrainBuilder } from '~/composables/map-editor/useTerrainBuilder'
 import { useLivePlayHazardBrushBatcher } from '~/composables/map-editor/useLivePlayHazardBrushBatcher'
@@ -191,6 +194,17 @@ let requestLiveTableSnapshot: (reason?: string) => Promise<void> = async () => {
 let acceptedRealtimeAcknowledgementHandler: ((event: LivePlayAcceptedRealtimeEvent) => Promise<unknown> | unknown) | null = null
 const queuedAcceptedRealtimeEvents: LivePlayAcceptedRealtimeEvent[] = []
 const queuedAcceptedRealtimeCaptureEvents: LivePlayAcceptedRealtimeEvent[] = []
+const queuedAcceptedMovePresentations: Array<{
+  readonly presentation: LivePlayMovePresentationSummary
+  readonly publishHint: boolean
+}> = []
+let presentAcceptedMove = (
+  presentation: LivePlayMovePresentationSummary,
+  publishHint: boolean,
+): void => {
+  queuedAcceptedMovePresentations.push({ presentation, publishHint })
+}
+let acceptedMoveWasPresented = (_operationId: string | null | undefined): boolean => false
 let scheduleAcceptedRealtimePokeballCaptureResult = (event: LivePlayAcceptedRealtimeEvent): void => {
   queuedAcceptedRealtimeCaptureEvents.push(event)
 }
@@ -301,6 +315,9 @@ const handleAcceptedLivePlayCommandEventForPresentation = (
 ): void => {
   const placementIds = livePlayRemoteAcceptedMovementTokenIds(event, adoption)
   if (placementIds.length > 0) markLivePlayRemoteAcceptedMotionTokens(placementIds)
+
+  const presentation = movePresentationFromAcceptedRealtimeEvent(event)
+  if (presentation) presentAcceptedMove(presentation, false)
 }
 
 const clearLivePlayTrackedPredictionsForReconciliation = (): void => {
@@ -544,6 +561,9 @@ const livePlayCommands = useLivePlayCommands({
   requestReconciliation: () => livePlayStateMachine.reconcile(reconcileLivePlayState),
   onCommandStarted: livePlayStateMachine.commandStarted,
   onCommandAccepted: handleLivePlayCommandAccepted,
+  onAcceptedMovePresentation: ({ presentation, source }) => {
+    presentAcceptedMove(presentation, source === 'http')
+  },
   onCommandRejected: handleLivePlayCommandRejected,
   onCommandFailed: livePlayStateMachine.commandFailed,
   onCommandBlocked: livePlayStateMachine.commandBlocked,
@@ -1748,6 +1768,18 @@ publishSyncedMoveFeedback = (request) => mapActionEventSync.publishMoveFeedback(
 publishSyncedPokeballFeedback = (request) => mapActionEventSync.publishPokeballFeedback(request)
 publishSyncedPokeballResult = (request) => mapActionEventSync.publishPokeballResult(request)
 
+const acceptedMovePresentation = useAcceptedMovePresentation({
+  enqueueMoveAnimations: replayMoveAnimations,
+  enqueueAndPublishMoveAnimations: enqueueAndBroadcastMoveAnimations,
+})
+presentAcceptedMove = (presentation, publishHint): void => {
+  acceptedMovePresentation.present(presentation, { publishHint })
+}
+acceptedMoveWasPresented = acceptedMovePresentation.hasPresented
+for (const queued of queuedAcceptedMovePresentations.splice(0)) {
+  presentAcceptedMove(queued.presentation, queued.publishHint)
+}
+
 watch(mapDataRevision, () => {
   clearRemoteMoveFeedback()
   if (remotePokeballCaptureResult.value) clearRemotePokeballCaptureFeedback()
@@ -1880,6 +1912,7 @@ const dispatchMoveAutomationAuthoritatively: MoveAutomationAuthoritativeDispatch
   return {
     accepted: true,
     move: result.move,
+    presentationHandled: acceptedMoveWasPresented(result.opId),
     ...(result.presentationError ? { presentationError: result.presentationError } : {}),
   }
 }

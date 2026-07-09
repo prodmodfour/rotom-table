@@ -150,6 +150,8 @@ export type MoveAutomationAuthoritativeDispatchOutcome =
   | {
       readonly accepted: true
       readonly move: LivePlayResolvedMoveResult | null
+      /** Durable accepted-result VFX were already enqueued for this operation. */
+      readonly presentationHandled?: boolean
       readonly presentationError?: string
     }
 
@@ -2143,15 +2145,20 @@ export const useMoveAutomationPanel = ({
     snapshot,
     request,
     intent,
-  }: MoveAutomationAuthoritativePresentationInput): { readonly ok: true } | { readonly ok: false; readonly message: string } => {
+    skipMoveAnimations = false,
+  }: MoveAutomationAuthoritativePresentationInput & {
+    readonly skipMoveAnimations?: boolean
+  }): { readonly ok: true } | { readonly ok: false; readonly message: string } => {
     const validationError = validateAuthoritativeMoveResult(move, request, intent)
     if (validationError) return { ok: false, message: validationError }
 
-    const animationPlan = planAuthoritativeMoveAnimations(move, snapshot, intent, request)
-    if (!animationPlan.ok) return animationPlan
+    const animationPlan = skipMoveAnimations
+      ? null
+      : planAuthoritativeMoveAnimations(move, snapshot, intent, request)
+    if (animationPlan && !animationPlan.ok) return animationPlan
 
     const promptSets = authoritativeReactionPromptSets(move, snapshot)
-    enqueuePlannedMoveAnimations(animationPlan.userId, animationPlan.events)
+    if (animationPlan?.ok) enqueuePlannedMoveAnimations(animationPlan.userId, animationPlan.events)
     if (move.feedback) {
       showMoveAutomationResolution(move.feedback, move.transaction, {
         script: move.script,
@@ -2262,6 +2269,7 @@ export const useMoveAutomationPanel = ({
         snapshot,
         request: options.request,
         intent: options.dispatchRequest.intent,
+        skipMoveAnimations: outcome.presentationHandled === true,
       })
       if (!presentation.ok) presentationWarnings.unshift(presentation.message)
     }

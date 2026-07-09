@@ -338,6 +338,14 @@ describe('executeLivePlayResolveMoveCommandUseCase', () => {
     expect(selfResponse.result.ok).toBe(true)
     const selfPayload = moveStatePatchPayload(accepted(selfResponse.result))
     expect(selfPayload.move.canonicalMoveName).toBe('Swords Dance')
+    expect(selfPayload.presentation).toMatchObject({
+      operationId: 'op_resolveself01',
+      actorPlacementId: 'actor-token',
+      move: { name: 'Swords Dance' },
+      attackedTargetIds: [],
+      hitTargetIds: [],
+      outcomeKind: 'self',
+    })
     expect(selfResponse.map?.revision).toBe(5)
     expect(selfResponse.sheetUpdates?.[0]).toMatchObject({ kind: 'pokemon', slug: 'actor', sheet: { revision: 3 } })
 
@@ -387,6 +395,13 @@ describe('executeLivePlayResolveMoveCommandUseCase', () => {
       expect(response.result.ok).toBe(true)
       const payload = moveStatePatchPayload(accepted(response.result))
       expect(payload.move.area?.candidateTargetIds).toEqual(['target-a', 'target-b'])
+      expect(payload.presentation).toMatchObject({
+        operationId: 'op_resolvearea1',
+        actorPlacementId: 'actor-token',
+        move: { name: 'Tail Whip', type: 'Normal' },
+        area: { templateKind: 'burst' },
+      })
+      expect(payload.presentation.area?.cells).toEqual(payload.move.area?.cells)
       expect(accepted(response.result).patches[0]?.scopes.every((scope) => !(scope.kind === 'token' && scope.placementId === 'target-b' && scope.field === 'hp'))).toBe(true)
     })
 
@@ -402,6 +417,12 @@ describe('executeLivePlayResolveMoveCommandUseCase', () => {
       expect(response.result.ok).toBe(true)
       const payload = moveStatePatchPayload(accepted(response.result))
       expect(payload.move.movement?.kind).toBe('pass')
+      expect(payload.presentation).toMatchObject({
+        operationId: 'op_resolvepass1',
+        area: { templateKind: 'pass', direction: 'east' },
+        pass: { direction: 'east' },
+      })
+      expect(payload.presentation.pass?.pathCells).toEqual(payload.move.movement?.pathCells)
       expect(response.map?.placements.find((item) => item.id === 'actor-token')?.position).toEqual(payload.move.movement?.destination)
     })
   })
@@ -654,6 +675,15 @@ describe('executeLivePlayResolveMoveCommandUseCase', () => {
         attackedTargetIds: ['target-a', 'target-b'],
         hitTargetIds: ['target-a'],
       }
+      const expectedPresentation = {
+        operationId: command.opId,
+        actorPlacementId: 'actor-token',
+        move: { name: 'Swift', type: 'Normal' },
+        attackedTargetIds: ['target-a', 'target-b'],
+        hitTargetIds: ['target-a'],
+        outcomeKind: 'mixed',
+        area: expect.objectContaining({ templateKind: 'line', direction: 'east' }),
+      }
 
       expect([
         moveTargetIdentity(first.move),
@@ -665,6 +695,15 @@ describe('executeLivePlayResolveMoveCommandUseCase', () => {
         expectedTargetIdentity,
         expectedTargetIdentity,
         expectedTargetIdentity,
+      ])
+      expect([
+        firstPayload.presentation,
+        storedPayload.presentation,
+        realtimePayload.presentation,
+      ]).toEqual([
+        expect.objectContaining(expectedPresentation),
+        expect.objectContaining(expectedPresentation),
+        expect.objectContaining(expectedPresentation),
       ])
       expect(storedResult).toEqual(firstResult)
 
