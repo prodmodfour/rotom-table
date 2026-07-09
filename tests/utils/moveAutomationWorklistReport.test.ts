@@ -7,7 +7,7 @@ const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), '../..')
 
 describe('move automation worklist report', () => {
   it('prints planning buckets without failing incomplete coverage', () => {
-    const result = spawnSync('python3', ['scripts/check_move_automation_coverage.py', '--report'], {
+    const result = spawnSync('python3', ['scripts/check_move_automation_coverage.py', '--worklist'], {
       cwd: repoRoot,
       encoding: 'utf8',
       maxBuffer: 4 * 1024 * 1024,

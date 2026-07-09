@@ -315,7 +315,7 @@ Status: DONE
 
 ## MA-014 — Split manifest validity from final completeness
 
-Status: TODO
+Status: DONE
 
 **Depends on:** MA-013
 **Commit:** `feat(move-automation): split validation and completion checks`
