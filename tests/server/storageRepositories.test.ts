@@ -16,7 +16,7 @@ import { createLivePlayCommandHash } from '~~/server/livePlay/opResult'
 import { closeRotomDatabase, openRotomDatabase, resolveConfiguredDatabasePath, type RotomDatabase } from '~~/server/storage/database'
 import { getStorageSchemaVersion, LATEST_STORAGE_SCHEMA_VERSION } from '~~/server/storage/migrations'
 import { createSqliteMapRepository } from '~~/server/storage/mapRepository'
-import { createSqliteSheetRepository } from '~~/server/storage/sheetRepository'
+import { createSqliteSheetRepository, SheetRevisionConflictError } from '~~/server/storage/sheetRepository'
 import { createSqliteLivePlayOpRepository } from '~~/server/storage/opRepository'
 import { createSqliteMapInteractionModeRepository } from '~~/server/storage/mapInteractionModeRepository'
 import { importMapsFromJson } from '~~/server/storage/importMapsFromJson'
@@ -434,6 +434,51 @@ describe('SQLite storage foundation', () => {
       updatedAt: 1_700_000_000_500,
       sheet: { slug: 'pikachu', nickname: 'Pika', combat: { currentHp: 12 }, revision: 4 },
     })
+  })
+
+  it('asserts consulted sheet revisions without writing unchanged sheets', () => {
+    const database = openTempDatabase()
+    const sheets = createSqliteSheetRepository<Record<string, unknown>>(database)
+    sheets.saveSetupSheet('pokemon', 'pikachu', {
+      slug: 'pikachu',
+      nickname: 'Pika',
+      revision: 3,
+      updatedAt: 1_700_000_000_300,
+    })
+    sheets.saveSetupSheet('trainer', 'misty', {
+      slug: 'misty',
+      name: 'Misty',
+      revision: 5,
+      updatedAt: 1_700_000_000_500,
+    })
+    const before = sheets.list()
+
+    expect(() => sheets.assertRevisions([
+      { kind: 'pokemon', slug: 'pikachu', revision: 3 },
+      { kind: 'pokemon', slug: 'pikachu', revision: 3 },
+      { kind: 'trainer', slug: 'misty', revision: 5 },
+    ])).not.toThrow()
+    expect(sheets.list()).toEqual(before)
+
+    expect(() => sheets.assertRevisions([
+      { kind: 'pokemon', slug: 'pikachu', revision: 2 },
+      { kind: 'trainer', slug: 'missing', revision: 0 },
+    ])).toThrow(SheetRevisionConflictError)
+
+    try {
+      sheets.assertRevisions([
+        { kind: 'pokemon', slug: 'pikachu', revision: 2 },
+        { kind: 'trainer', slug: 'missing', revision: 0 },
+      ])
+      throw new Error('expected revision assertion to fail')
+    } catch (error) {
+      expect(error).toBeInstanceOf(SheetRevisionConflictError)
+      expect((error as SheetRevisionConflictError).mismatches).toEqual([
+        { kind: 'pokemon', slug: 'pikachu', expectedRevision: 2, currentRevision: 3 },
+        { kind: 'trainer', slug: 'missing', expectedRevision: 0, currentRevision: null },
+      ])
+    }
+    expect(sheets.list()).toEqual(before)
   })
 
   it('applies live-play map updates only when the expected revision matches', async () => {

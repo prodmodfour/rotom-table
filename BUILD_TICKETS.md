@@ -173,7 +173,7 @@ Status: DONE
 
 ## MA-004 — Validate the full sheet read set inside commit
 
-Status: TODO
+Status: DONE
 
 **Depends on:** MA-003
 **Commit:** `fix(move-automation): validate all consulted sheet revisions`

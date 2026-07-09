@@ -53,6 +53,7 @@ import {
 } from '../storage/mapRepository'
 import {
   createSqliteSheetRepository,
+  SheetRevisionConflictError,
   type PersistedSheet,
   type SheetRepository,
 } from '../storage/sheetRepository'
@@ -97,7 +98,7 @@ export interface LivePlayResolveMoveCommandDependencies {
   readonly commandExecutor?: Pick<AuthoritativeLivePlayCommandExecutor, 'execute'>
   readonly database?: Pick<RotomDatabase, 'withTransaction'> & Partial<RotomDatabase>
   readonly mapRepository?: Pick<MapRepository<TabletopMap>, 'getBySlug' | 'applyLivePlayUpdate'>
-  readonly sheetRepository?: Pick<SheetRepository<Record<string, unknown>>, 'getByRef' | 'applyLivePlayUpdate'>
+  readonly sheetRepository?: Pick<SheetRepository<Record<string, unknown>>, 'getByRef' | 'assertRevisions' | 'applyLivePlayUpdate'>
   readonly planner?: (input: PlanAuthoritativeMoveStateInput) => AuthoritativeMoveStatePlan
   readonly random?: () => number
   readonly now?: () => number
@@ -477,6 +478,25 @@ const sheetUpdateFromPersisted = (
   }
 }
 
+const assertConsultedSheetRevisions = (
+  plan: AuthoritativeMoveStatePlan,
+  dependencies: DependencySet,
+  currentRevision: number,
+): void => {
+  try {
+    dependencies.sheetRepository.assertRevisions(plan.sheetReads)
+  } catch (error) {
+    if (error instanceof SheetRevisionConflictError) {
+      rejectLivePlayCommand(
+        'conflict',
+        'A sheet consulted while resolving the move changed before commit. Refresh and retry.',
+        { currentRevision },
+      )
+    }
+    throw error
+  }
+}
+
 const assertCommittedMapMatchesPlan = (map: TabletopMap, plan: AuthoritativeMoveStatePlan): void => {
   if (normalizeRevision(map.revision) !== plan.revision) {
     throw new LivePlayResolveMoveCommandUseCaseError(409, `Committed map revision ${normalizeRevision(map.revision)} did not match planned revision ${plan.revision}`)
@@ -604,6 +624,8 @@ export const executeLivePlayResolveMoveCommandUseCase = async (
         if (plan.previousRevision !== currentRevision) {
           throw new LivePlayResolveMoveCommandUseCaseError(409, 'resolveMove plan revision did not match the command revision context')
         }
+
+        assertConsultedSheetRevisions(plan, deps, currentRevision)
 
         const persisted = toPersistedMap(
           plan.nextMap,

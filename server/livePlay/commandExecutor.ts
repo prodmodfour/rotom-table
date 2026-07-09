@@ -539,6 +539,9 @@ export class AuthoritativeLivePlayCommandExecutor {
           result,
         })
       } catch (error) {
+        if (error instanceof LivePlayCommandRejectionError) {
+          return rejectionFromError(command, error, currentRevision)
+        }
         return collisionResultForCommand(command, commandHash, error)
           ?? persistenceFailedResult(command, error, currentRevision)
       }

@@ -9,6 +9,7 @@ import {
 } from '#shared/livePlayCommands'
 import {
   createAuthoritativeLivePlayCommandExecutor,
+  rejectLivePlayCommand,
   type ExecuteAuthoritativeLivePlayCommandOptions,
 } from '~~/server/livePlay/commandExecutor'
 import { createInProcessMapWriteQueue } from '~~/server/livePlay/mapWriteQueue'
@@ -263,6 +264,27 @@ describe('authoritative live-play command pipeline', () => {
     expect(harness.maps.get('arena')).toEqual({ slug: 'arena', revision: 0, log: [] })
     expect(harness.opStore.getOpRecord(command.mapSlug, command.opId)).toBeNull()
     expect(publish).not.toHaveBeenCalled()
+  })
+
+  it('returns commit-time authority conflicts without storing an accepted result', async () => {
+    const harness = createHarness([{ slug: 'arena', revision: 0, log: [] }])
+    const command = createCommand('arena', 'op_commitconf1', 0, 'first')
+
+    const result = await harness.execute(command, {
+      commit: () => rejectLivePlayCommand('conflict', 'Consulted state changed before commit'),
+    })
+
+    expect(result).toEqual({
+      ok: false,
+      opId: command.opId,
+      mapSlug: command.mapSlug,
+      reason: 'conflict',
+      message: 'Consulted state changed before commit',
+      currentRevision: 0,
+    })
+    expect(harness.maps.get('arena')).toEqual({ slug: 'arena', revision: 0, log: [] })
+    expect(harness.opStore.getOpRecord(command.mapSlug, command.opId)).toBeNull()
+    expect(harness.published).toEqual([])
   })
 
   it('records an accepted realtime event once on the first saveOpResult call', async () => {

@@ -8,7 +8,7 @@ import { createAuthoritativeLivePlayCommandExecutor, type AuthoritativeLivePlayC
 import { createInProcessMapWriteQueue } from '~~/server/livePlay/mapWriteQueue'
 import { executeLivePlayResolveMoveCommandUseCase, type LivePlayResolveMoveCommandDependencies } from '~~/server/useCases/applyResolveMoveCommand'
 import { acceptedRealtimeTestHooks } from './livePlayAcceptedRealtimeTestUtils'
-import { planAuthoritativeMoveState } from '~~/server/domain/planAuthoritativeMoveState'
+import { planAuthoritativeMoveState, type AuthoritativeMoveStatePlan } from '~~/server/domain/planAuthoritativeMoveState'
 import { LIVE_PLAY_COMMAND_SCHEMA_VERSION, LIVE_PLAY_COMMAND_TYPES, LIVE_PLAY_PATCH_TYPES, type LivePlayCommandAccepted, type ResolveMoveLivePlayCommand } from '#shared/livePlayCommands'
 import {
   LIVE_PLAY_MOVE_RESOLUTION_SCHEMA_VERSION,
@@ -179,6 +179,44 @@ const execute = (
   now: options.now ?? (() => 1000),
   idFactory: options.idFactory ?? (() => 'feedback-id'),
 })
+
+const raceConsultedSheetAfterPlanning = (
+  harness: Harness,
+  slug: string,
+  assertPlan?: (plan: AuthoritativeMoveStatePlan) => void,
+): {
+  readonly planner: NonNullable<LivePlayResolveMoveCommandDependencies['planner']>
+  readonly sheetsAfterRace: () => unknown
+} => {
+  let afterRace: unknown = null
+  return {
+    planner: (input) => {
+      const plan = planAuthoritativeMoveState(input)
+      if (!plan.sheetReads.some((read) => read.kind === 'pokemon' && read.slug === slug)) {
+        throw new Error(`expected plan to consult pokemon/${slug}`)
+      }
+      assertPlan?.(plan)
+      const current = harness.sheets.getByRef('pokemon', slug)
+      if (!current) throw new Error(`expected pokemon/${slug} before race`)
+      const revision = current.revision + 1
+      const updatedAt = current.updatedAt + 1
+      harness.sheets.save({
+        kind: 'pokemon',
+        slug,
+        document: {
+          ...current.sheet,
+          revision,
+          updatedAt,
+        },
+        revision,
+        updatedAt,
+      })
+      afterRace = deepCloneJson(harness.sheets.list())
+      return plan
+    },
+    sheetsAfterRace: () => afterRace,
+  }
+}
 
 const accepted = (result: unknown): LivePlayCommandAccepted => {
   if (!result || typeof result !== 'object' || !('ok' in result) || result.ok !== true || 'duplicate' in result) {
@@ -454,6 +492,127 @@ describe('executeLivePlayResolveMoveCommandUseCase', () => {
     expect(failingHarness.maps.getBySlug('arena')?.revision).toBe(4)
     expect(failingHarness.sheets.getByRef('pokemon', 'target-a')?.revision).toBe(2)
     expect(failingHarness.ops.getOpResult('arena', 'op_atomicfail1')).toBeNull()
+  })
+
+  it('rejects stale consulted sheets for misses, immune targets, and aura providers without partial persistence', async () => {
+    const assertConflictRolledBack = (
+      harness: Harness,
+      response: Awaited<ReturnType<typeof execute>>,
+      opId: string,
+      expectedMap: TabletopMap,
+      sheetsAfterRace: unknown,
+    ): void => {
+      expect(response.result).toMatchObject({
+        ok: false,
+        reason: 'conflict',
+        message: expect.stringContaining('consulted while resolving the move changed'),
+      })
+      expect(harness.maps.getBySlug('arena')).toEqual(expectedMap)
+      expect(harness.sheets.list()).toEqual(sheetsAfterRace)
+      expect(harness.ops.getOpResult('arena', opId)).toBeNull()
+      expect(harness.events).toEqual([])
+    }
+
+    await withRegisteredScript(mixedOutcomeAreaScript(), async () => {
+      const harness = seedHarness({ actorMoves: [{ name: 'Swift' }] })
+      const map = harness.maps.getBySlug('arena')!
+      const moveIntent = intent({
+        placementId: 'actor-token',
+        moveName: 'Swift',
+        selection: {
+          kind: 'area',
+          areaTemplateId: moveAutomationAreaTemplateId(mixedAreaTemplate),
+          direction: 'east',
+        },
+      })
+      const opId = 'op_readmiss001'
+      const race = raceConsultedSheetAfterPlanning(harness, 'target-b', (plan) => {
+        expect(plan.resolution.transaction.attackedTargetIds).toContain('target-b')
+        expect(plan.resolution.transaction.hitTargetIds).not.toContain('target-b')
+      })
+      const response = await execute(
+        harness,
+        commandFor(map, moveIntent, opId, ['target-a', 'target-b']),
+        { planner: race.planner, random: randomSequence([0.5, 0]) },
+      )
+
+      assertConflictRolledBack(harness, response, opId, map, race.sheetsAfterRace())
+    })
+
+    const immuneMap = mapFixture({ placements: [
+      placement('actor-token', 'actor', { x: 0, y: 0, z: 0 }),
+      placement('immune-token', 'immune', { x: 1, y: 0, z: 0 }),
+    ] })
+    const immuneHarness = seedHarness({
+      map: immuneMap,
+      actorMoves: [{ name: 'Spore' }],
+      extraSheets: [pokemonSheet('immune', [], { abilities: [{ name: 'Sweet Veil' }] })],
+    })
+    const storedImmuneMap = immuneHarness.maps.getBySlug('arena')!
+    const immuneIntent = intent({
+      placementId: 'actor-token',
+      moveName: 'Spore',
+      selection: { kind: 'single-target', targetPlacementId: 'immune-token' },
+    })
+    const immuneOpId = 'op_readimmune1'
+    const immuneRace = raceConsultedSheetAfterPlanning(immuneHarness, 'immune', (plan) => {
+      expect(plan.resolution.feedback?.conditions).toContainEqual(expect.objectContaining({
+        condition: 'Sleep',
+        applied: false,
+        blockedBy: 'Sweet Veil',
+      }))
+      expect(plan.resolution.transaction.conditionUpdates).toEqual([])
+    })
+    const immuneResponse = await execute(
+      immuneHarness,
+      commandFor(storedImmuneMap, immuneIntent, immuneOpId),
+      { planner: immuneRace.planner, random: randomSequence([0.99]) },
+    )
+    assertConflictRolledBack(
+      immuneHarness,
+      immuneResponse,
+      immuneOpId,
+      storedImmuneMap,
+      immuneRace.sheetsAfterRace(),
+    )
+
+    const auraMap = mapFixture({ placements: [
+      placement('actor-token', 'actor', { x: 0, y: 0, z: 0 }),
+      placement('target-a', 'target-a', { x: 1, y: 0, z: 0 }),
+      placement('aura-token', 'aura', { x: 2, y: 0, z: 0 }),
+    ] })
+    const auraHarness = seedHarness({
+      map: auraMap,
+      actorMoves: [{ name: 'Spore' }],
+      extraSheets: [pokemonSheet('aura', [], { abilities: [{ name: 'Sweet Veil' }] })],
+    })
+    const storedAuraMap = auraHarness.maps.getBySlug('arena')!
+    const auraIntent = intent({
+      placementId: 'actor-token',
+      moveName: 'Spore',
+      selection: { kind: 'single-target', targetPlacementId: 'target-a' },
+    })
+    const auraOpId = 'op_readaura001'
+    const auraRace = raceConsultedSheetAfterPlanning(auraHarness, 'aura', (plan) => {
+      expect(plan.resolution.feedback?.conditions).toContainEqual(expect.objectContaining({
+        condition: 'Sleep',
+        applied: false,
+        blockedBy: expect.stringContaining('Sweet Veil'),
+      }))
+      expect(plan.resolution.transaction.conditionUpdates).toEqual([])
+    })
+    const auraResponse = await execute(
+      auraHarness,
+      commandFor(storedAuraMap, auraIntent, auraOpId),
+      { planner: auraRace.planner, random: randomSequence([0.99]) },
+    )
+    assertConflictRolledBack(
+      auraHarness,
+      auraResponse,
+      auraOpId,
+      storedAuraMap,
+      auraRace.sheetsAfterRace(),
+    )
   })
 
   it('preserves mixed area target identities in the response, stored result, realtime event, and duplicate replay', async () => {

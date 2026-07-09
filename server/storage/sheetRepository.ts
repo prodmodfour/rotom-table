@@ -145,6 +145,34 @@ export interface ApplyLivePlaySheetUpdateInput {
 
 export type LivePlaySheetUpdateResult = 'applied' | 'stale'
 
+export interface SheetRevisionExpectation {
+  readonly kind: SheetKind
+  readonly slug: string
+  readonly revision: number
+}
+
+export interface SheetRevisionMismatch {
+  readonly kind: SheetKind
+  readonly slug: string
+  readonly expectedRevision: number
+  readonly currentRevision: number | null
+}
+
+export class SheetRevisionConflictError extends Error {
+  readonly mismatches: readonly SheetRevisionMismatch[]
+
+  constructor(mismatches: readonly SheetRevisionMismatch[]) {
+    const details = mismatches.map((mismatch) => (
+      `${mismatch.kind}/${mismatch.slug} expected revision ${mismatch.expectedRevision}, ${
+        mismatch.currentRevision === null ? 'but it is missing' : `current revision is ${mismatch.currentRevision}`
+      }`
+    )).join('; ')
+    super(`Consulted sheet revisions changed: ${details}`)
+    this.name = 'SheetRevisionConflictError'
+    this.mismatches = mismatches.map((mismatch) => ({ ...mismatch }))
+  }
+}
+
 export interface SheetRepository<TDocument = unknown> {
   readonly database?: RotomDatabase
   get(kind: SheetKind, slug: string): StoredSheetDocument<TDocument> | null
@@ -163,6 +191,7 @@ export interface SheetRepository<TDocument = unknown> {
   deleteFolder(folder: string, kind?: SheetKind): DeleteSheetFolderResult | null
   getByRef(kind: SheetKind, slug: string): PersistedSheet | null
   saveSetupSheet(kind: SheetKind, slug: string, sheet: Record<string, unknown>): PersistedSheet
+  assertRevisions(expectations: readonly SheetRevisionExpectation[]): void
   applyLivePlayUpdate(input: ApplyLivePlaySheetUpdateInput): LivePlaySheetUpdateResult
 }
 
@@ -801,6 +830,36 @@ export const createSqliteSheetRepository = <TDocument = unknown>(
     return { count: removed.length, removed, deletedSheets, deletedSheetResults }
   })
 
+  const assertRevisions = (expectations: readonly SheetRevisionExpectation[]): void => {
+    database.withTransaction(() => {
+      const expectedByRef = new Map<string, SheetRevisionExpectation>()
+      for (const expectation of expectations) {
+        const kind = parseSheetKind(expectation.kind)
+        const slug = validateSlug(expectation.slug, 'sheet slug')
+        const revision = parseStoredRevision(expectation.revision, `expected ${kind} sheet ${slug} revision`)
+        const key = `${kind}:${slug}`
+        const existing = expectedByRef.get(key)
+        if (existing && existing.revision !== revision) {
+          throw new Error(`${kind} sheet ${slug} has conflicting expected revisions ${existing.revision} and ${revision}`)
+        }
+        expectedByRef.set(key, { kind, slug, revision })
+      }
+
+      const mismatches: SheetRevisionMismatch[] = []
+      for (const expectation of expectedByRef.values()) {
+        const current = getStoredForUpdate(expectation.kind, expectation.slug)
+        if (current?.revision === expectation.revision) continue
+        mismatches.push({
+          kind: expectation.kind,
+          slug: expectation.slug,
+          expectedRevision: expectation.revision,
+          currentRevision: current?.revision ?? null,
+        })
+      }
+      if (mismatches.length > 0) throw new SheetRevisionConflictError(mismatches)
+    })
+  }
+
   const applyLivePlayUpdate = (input: ApplyLivePlaySheetUpdateInput): LivePlaySheetUpdateResult =>
     database.withTransaction(() => {
       const kind = parseSheetKind(input.kind)
@@ -846,6 +905,7 @@ export const createSqliteSheetRepository = <TDocument = unknown>(
     deleteFolder,
     getByRef,
     saveSetupSheet,
+    assertRevisions,
     applyLivePlayUpdate,
   }
 }
@@ -870,5 +930,6 @@ export const sqliteSheetRepository: SheetRepository = {
   deleteFolder: (folder, kind) => defaultSheetRepository().deleteFolder(folder, kind),
   getByRef: (kind, slug) => defaultSheetRepository().getByRef(kind, slug),
   saveSetupSheet: (kind, slug, sheet) => defaultSheetRepository().saveSetupSheet(kind, slug, sheet),
+  assertRevisions: (expectations) => defaultSheetRepository().assertRevisions(expectations),
   applyLivePlayUpdate: (input) => defaultSheetRepository().applyLivePlayUpdate(input),
 }
