@@ -1,6 +1,7 @@
 import { MOVE_AUTOMATION_AREA_DIRECTIONS } from '~/types/moveAutomation'
 import type { ResolveMoveIntent, ResolveMoveSelection } from '#shared/livePlayMoveResolution'
 import { LIVE_PLAY_MOVE_RESOLUTION_MAX_TARGET_IDS } from '#shared/livePlayMoveResolution'
+import { normalizeRevision } from '#shared/sessionRevisions'
 import { resolveCanonicalMoveEntryForPlacement } from '~/utils/authoritativeMoveEntries'
 import { moveUsageKey } from '~/utils/moveUsage'
 import {
@@ -40,7 +41,7 @@ import { tokenFacingForPlacement, tokenFacingFromAreaDirection, tokenFacingTowar
 import { buildAllVoxelOccupancy } from '~/utils/voxelOccupancy'
 import type { CharacterSheet } from '~/types/characterSheet'
 import type { SheetMoveUsageState } from '~/types/moveUsage'
-import type { GridAnchor, SheetPlacement, TabletopMap } from '~/types/map'
+import type { GridAnchor, SheetKind, SheetPlacement, TabletopMap } from '~/types/map'
 import type {
   MoveAutomationAreaDirection,
   MoveAutomationAreaTemplate,
@@ -51,6 +52,7 @@ import type {
 import type { SpawnedPokemon } from '~/types/pokemon'
 import type { TokenFacingDirection } from '~/types/tokenFacing'
 import type { TrainerSheet } from '~/types/trainerSheet'
+import { normalizeConditionName } from '~/utils/statusConditions'
 
 export type AuthoritativeMoveResolutionFailureReason =
   | 'invalid'
@@ -93,6 +95,7 @@ export type AuthoritativeMoveResolutionFailureCode =
   | 'unsupported-range'
   | 'unsupported-damage-resolution'
   | 'unsupported-move-script'
+  | 'sheet-read-revision-conflict'
 
 export class AuthoritativeMoveResolutionError extends Error {
   readonly reason: AuthoritativeMoveResolutionFailureReason
@@ -138,6 +141,12 @@ export interface AuthoritativeMovePassMovement {
   readonly pathCells: readonly GridAnchor[]
 }
 
+export interface AuthoritativeMoveSheetRead {
+  readonly kind: SheetKind
+  readonly slug: string
+  readonly revision: number
+}
+
 export interface AuthoritativeMoveResolution {
   readonly actorPlacementId: string
   readonly moveName: string
@@ -147,6 +156,7 @@ export interface AuthoritativeMoveResolution {
   readonly damageFormula: string | null
   readonly targetBranchId?: string
   readonly selectedTargetIds: readonly string[]
+  readonly sheetReads: readonly AuthoritativeMoveSheetRead[]
   readonly script: MoveAutomationScript
   readonly transaction: MoveAutomationTransaction
   readonly feedback?: MoveAutomationFeedbackState
@@ -155,11 +165,14 @@ export interface AuthoritativeMoveResolution {
   readonly movement?: AuthoritativeMovePassMovement
 }
 
+type UnfinalizedAuthoritativeMoveResolution = Omit<AuthoritativeMoveResolution, 'sheetReads'>
+
 interface SpawnedTokenContext {
   readonly sheets: SheetLookup
   readonly placementById: ReadonlyMap<string, SheetPlacement>
   readonly tokens: readonly SpawnedPokemon[]
   readonly tokenById: ReadonlyMap<string, SpawnedPokemon>
+  readonly sheetReads: AuthoritativeMoveSheetRead[]
 }
 
 const fail = (
@@ -190,6 +203,84 @@ const sheetMoveUsageForPlacement = (
   placement: Pick<SheetPlacement, 'sheetKind' | 'sheetSlug'>,
 ): SheetMoveUsageState | undefined => sheetForPlacement(sheets, placement)?.moveUsage
 
+const sheetReadKey = (read: Pick<AuthoritativeMoveSheetRead, 'kind' | 'slug'>): string =>
+  `${read.kind}:${read.slug}`
+
+export const deduplicateAuthoritativeMoveSheetReads = (
+  reads: readonly AuthoritativeMoveSheetRead[],
+): AuthoritativeMoveSheetRead[] => {
+  const deduplicated: AuthoritativeMoveSheetRead[] = []
+  const byRef = new Map<string, AuthoritativeMoveSheetRead>()
+  for (const read of reads) {
+    const normalized = {
+      kind: read.kind,
+      slug: read.slug,
+      revision: normalizeRevision(read.revision),
+    }
+    const key = sheetReadKey(normalized)
+    const existing = byRef.get(key)
+    if (existing) {
+      if (existing.revision !== normalized.revision) {
+        fail(
+          'conflict',
+          'sheet-read-revision-conflict',
+          `Sheet ${normalized.kind}/${normalized.slug} was observed at conflicting revisions ${existing.revision} and ${normalized.revision}.`,
+        )
+      }
+      continue
+    }
+    byRef.set(key, normalized)
+    deduplicated.push(normalized)
+  }
+  return deduplicated
+}
+
+const recordSheetReadForPlacement = (
+  context: SpawnedTokenContext,
+  placement: Pick<SheetPlacement, 'sheetKind' | 'sheetSlug'>,
+): void => {
+  const sheet = sheetForPlacement(context.sheets, placement)
+  if (!sheet) return
+  context.sheetReads.push({
+    kind: placement.sheetKind,
+    slug: placement.sheetSlug,
+    revision: normalizeRevision(sheet.revision),
+  })
+}
+
+const recordSheetReadsForTokens = (
+  context: SpawnedTokenContext,
+  tokens: readonly SpawnedPokemon[],
+): void => {
+  for (const token of tokens) {
+    const placement = context.placementById.get(token.id)
+    if (placement) recordSheetReadForPlacement(context, placement)
+  }
+}
+
+const scriptConsultsSweetVeilProviders = (script: MoveAutomationScript): boolean =>
+  script.conditionSuggestions.some((suggestion) => (
+    suggestion.recipient === 'target'
+    && (suggestion.action ?? 'add') === 'add'
+    && normalizeConditionName(suggestion.condition) === 'Sleep'
+  ))
+
+const authoritativeConditionImmunityContext = (
+  context: SpawnedTokenContext,
+  script: MoveAutomationScript,
+): { readonly sweetVeilProviders: readonly SpawnedPokemon[] } => {
+  if (scriptConsultsSweetVeilProviders(script)) recordSheetReadsForTokens(context, context.tokens)
+  return { sweetVeilProviders: context.tokens }
+}
+
+const finalizeResolution = (
+  context: SpawnedTokenContext,
+  resolution: UnfinalizedAuthoritativeMoveResolution,
+): AuthoritativeMoveResolution => ({
+  ...resolution,
+  sheetReads: deduplicateAuthoritativeMoveSheetReads(context.sheetReads),
+})
+
 const buildSpawnedTokenContext = (input: ResolveAuthoritativeMoveInput): SpawnedTokenContext => {
   const sheets: SheetLookup = {
     pokemon: new Map(input.pokemonSheets),
@@ -212,7 +303,7 @@ const buildSpawnedTokenContext = (input: ResolveAuthoritativeMoveInput): Spawned
     tokenById.set(token.id, token)
   }
 
-  return { sheets, placementById, tokens, tokenById }
+  return { sheets, placementById, tokens, tokenById, sheetReads: [] }
 }
 
 const resolveActor = (
@@ -672,7 +763,7 @@ const resolveSelfMove = (options: {
   readonly moveKey: string
   readonly targetBranchId?: string
   readonly random: () => number
-}): AuthoritativeMoveResolution => {
+}): UnfinalizedAuthoritativeMoveResolution => {
   if (!isSeamlessSelfMoveScript(options.script)) {
     fail('invalid', 'selection-kind-mismatch', `${options.script.moveName} is not a seamless self move.`)
   }
@@ -710,7 +801,7 @@ const resolveSingleTargetMove = (options: {
   readonly targetBranchId?: string
   readonly random: () => number
   readonly idFactory: () => string
-}): AuthoritativeMoveResolution => {
+}): UnfinalizedAuthoritativeMoveResolution => {
   const moveName = options.script.moveName
   if (!isSeamlessSingleTargetMoveScript(options.script)) {
     fail('invalid', 'selection-kind-mismatch', `${moveName} is not a seamless single-target move.`)
@@ -721,7 +812,9 @@ const resolveSingleTargetMove = (options: {
     focusSkillRankValue: options.actor.focusSkillRankValue,
   }) ?? fail('unsupported', 'unsupported-range', `${options.script.moveName} has an unsupported target range.`)
 
-  const target = resolveSelectedTarget(options.context, options.selection.targetPlacementId).token
+  const resolvedTarget = resolveSelectedTarget(options.context, options.selection.targetPlacementId)
+  recordSheetReadForPlacement(options.context, resolvedTarget.placement)
+  const target = resolvedTarget.token
   const legalTargets = legalSingleTargetTokens({
     script: options.script,
     user: options.actor,
@@ -739,7 +832,7 @@ const resolveSingleTargetMove = (options: {
     target,
     damageFormula: options.damageFormula,
     fieldEffects: options.input.map.fieldEffects,
-    conditionImmunityContext: { sweetVeilProviders: options.context.tokens },
+    conditionImmunityContext: authoritativeConditionImmunityContext(options.context, options.script),
     random: options.random,
   }
 
@@ -793,7 +886,7 @@ const resolveTargetCountMove = (options: {
   readonly moveKey: string
   readonly targetBranchId?: string
   readonly random: () => number
-}): AuthoritativeMoveResolution => {
+}): UnfinalizedAuthoritativeMoveResolution => {
   const moveName = options.script.moveName
   if (!isSeamlessTargetCountMoveScript(options.script)) {
     fail('invalid', 'selection-kind-mismatch', `${moveName} is not a seamless target-count move.`)
@@ -817,7 +910,10 @@ const resolveTargetCountMove = (options: {
   const rangeMeters = parseExplicitMultiTargetMoveRangeMeters(options.script.range)
     ?? fail('unsupported', 'unsupported-range', `${options.script.moveName} has an unsupported target-count range.`)
 
-  for (const targetId of submittedTargetIds) resolveSelectedTarget(options.context, targetId)
+  for (const targetId of submittedTargetIds) {
+    const target = resolveSelectedTarget(options.context, targetId)
+    recordSheetReadForPlacement(options.context, target.placement)
+  }
 
   const legalTargets = moveAutomationTargetsInRange({
     user: options.actor,
@@ -840,7 +936,7 @@ const resolveTargetCountMove = (options: {
     selectedTargets,
     damageFormula: options.damageFormula,
     fieldEffects: options.input.map.fieldEffects,
-    conditionImmunityContext: { sweetVeilProviders: options.context.tokens },
+    conditionImmunityContext: authoritativeConditionImmunityContext(options.context, options.script),
     random: options.random,
   })
   const desiredFacing = desiredFacingTowardNearestTarget(options.actorPlacement, options.actor, selectedTargets)
@@ -873,7 +969,7 @@ const resolveAreaMove = (options: {
   readonly moveKey: string
   readonly targetBranchId?: string
   readonly random: () => number
-}): AuthoritativeMoveResolution => {
+}): UnfinalizedAuthoritativeMoveResolution => {
   const template = selectedAreaTemplate(options.script, options.selection.areaTemplateId)
   assertResolvableDamage(options.script, options.damageFormula)
 
@@ -885,6 +981,7 @@ const resolveAreaMove = (options: {
     selection: options.selection,
   })
   const candidateTargetIds = placement.candidateTargets.map((target) => target.id)
+  recordSheetReadsForTokens(options.context, placement.candidateTargets)
   const excludedTargetIds = excludedAreaTargetIds(options.script, options.selection, candidateTargetIds)
   const excludedTargetSet = new Set(excludedTargetIds)
   const selectedTargets = placement.candidateTargets.filter((target) => !excludedTargetSet.has(target.id))
@@ -896,7 +993,7 @@ const resolveAreaMove = (options: {
     targets: selectedTargets,
     damageFormula: options.damageFormula,
     fieldEffects: options.input.map.fieldEffects,
-    conditionImmunityContext: { sweetVeilProviders: options.context.tokens },
+    conditionImmunityContext: authoritativeConditionImmunityContext(options.context, confirmedScript),
     random: options.random,
   })
   const transaction = placement.movement?.kind === 'pass'
@@ -947,6 +1044,7 @@ const resolveAreaMove = (options: {
 export const resolveAuthoritativeMove = (input: ResolveAuthoritativeMoveInput): AuthoritativeMoveResolution => {
   const context = buildSpawnedTokenContext(input)
   const { placement: actorPlacement, token: actor } = resolveActor(context, input.intent.placementId)
+  recordSheetReadForPlacement(context, actorPlacement)
   const submittedTargetIds = selectedTargetIdsForSelection(input.intent.selection)
   assertNoDuplicateTargetIds(submittedTargetIds)
 
@@ -990,7 +1088,7 @@ export const resolveAuthoritativeMove = (input: ResolveAuthoritativeMoveInput): 
   const idFactory = createFeedbackIdFactory(input, random)
 
   if (input.intent.selection.kind === 'self') {
-    return resolveSelfMove({
+    return finalizeResolution(context, resolveSelfMove({
       input,
       actorPlacement,
       actor,
@@ -1001,11 +1099,11 @@ export const resolveAuthoritativeMove = (input: ResolveAuthoritativeMoveInput): 
       moveKey: resolvedMoveKey,
       targetBranchId,
       random,
-    })
+    }))
   }
 
   if (input.intent.selection.kind === 'single-target') {
-    return resolveSingleTargetMove({
+    return finalizeResolution(context, resolveSingleTargetMove({
       input,
       context,
       actorPlacement,
@@ -1019,11 +1117,11 @@ export const resolveAuthoritativeMove = (input: ResolveAuthoritativeMoveInput): 
       targetBranchId,
       random,
       idFactory,
-    })
+    }))
   }
 
   if (input.intent.selection.kind === 'target-count') {
-    return resolveTargetCountMove({
+    return finalizeResolution(context, resolveTargetCountMove({
       input,
       context,
       actorPlacement,
@@ -1036,11 +1134,11 @@ export const resolveAuthoritativeMove = (input: ResolveAuthoritativeMoveInput): 
       moveKey: resolvedMoveKey,
       targetBranchId,
       random,
-    })
+    }))
   }
 
   if (input.intent.selection.kind === 'area') {
-    return resolveAreaMove({
+    return finalizeResolution(context, resolveAreaMove({
       input,
       context,
       actorPlacement,
@@ -1053,7 +1151,7 @@ export const resolveAuthoritativeMove = (input: ResolveAuthoritativeMoveInput): 
       moveKey: resolvedMoveKey,
       targetBranchId,
       random,
-    })
+    }))
   }
 
   return fail('unsupported', 'unsupported-move-script', 'Unsupported move selection.')

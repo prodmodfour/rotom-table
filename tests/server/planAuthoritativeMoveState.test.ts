@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { LIVE_PLAY_MOVE_RESOLUTION_SCHEMA_VERSION, type ResolveMoveIntent } from '#shared/livePlayMoveResolution'
 import { planAuthoritativeMoveState } from '../../server/domain/planAuthoritativeMoveState'
+import { AuthoritativeMoveResolutionError } from '../../server/domain/resolveAuthoritativeMove'
 import { EXPLICIT_MOVE_AUTOMATION_SCRIPTS } from '~/utils/moveAutomation'
 import { moveAutomationAreaTemplateId } from '~/utils/moveAutomationAreaTemplates'
 import { passDestinationLogLine } from '~/utils/moveAutomationPass'
@@ -144,6 +145,8 @@ describe('planAuthoritativeMoveState', () => {
     expect(plan.nextMap.updatedAt).toBe(999)
     expect(plan.nextMap.createdAt).toBe(1)
     expect(plan.usage).toMatchObject({ moveKey: 'swords-dance', tracking: 'map', uses: 1 })
+    expect(plan.sheetReads).toEqual([{ kind: 'pokemon', slug: 'actor', revision: 4 }])
+    expect(plan.resolution.sheetReads).toEqual(plan.sheetReads)
     expect(plan.mapChanges.moveUsage).toBeDefined()
     expect(plan.mapChanges.metadata?.previous).toEqual({ note: 'keep me' })
     expect(moveLog(plan.nextMap)).toHaveLength(1)
@@ -184,6 +187,10 @@ describe('planAuthoritativeMoveState', () => {
       now: () => 1000,
     })
 
+    expect(plan.sheetReads).toEqual([
+      { kind: 'pokemon', slug: 'actor', revision: 3 },
+      { kind: 'pokemon', slug: 'target', revision: 3 },
+    ])
     expect(plan.sheetWrites).toHaveLength(1)
     expect(plan.sheetWrites[0]?.slug).toBe('target')
     expect(plan.sheetWrites[0]?.changedFields).toContain('hp')
@@ -205,8 +212,25 @@ describe('planAuthoritativeMoveState', () => {
         ],
       })
       const sheets = pokemonSheets([{ name: 'Swift' }], {
-        miss: pokemonSheet('miss', [], { combat: { currentHp: 80 } }),
+        actor: pokemonSheet('actor', [{ name: 'Swift' }], { revision: 11, nickname: 'Actor' }),
+        target: pokemonSheet('target', [], {
+          revision: 12,
+          nickname: 'Target',
+          species: 'Snorlax',
+          level: 30,
+          combat: { currentHp: 80 },
+          stats: {
+            atk: { stage: 0 },
+            def: { stage: -6 },
+            satk: { stage: 0 },
+            sdef: { stage: 0 },
+            spd: { stage: 0 },
+          },
+          combatStages: { acc: 0 },
+        }),
+        miss: pokemonSheet('miss', [], { revision: 13, combat: { currentHp: 80 } }),
         immune: pokemonSheet('immune', [], {
+          revision: 14,
           combat: { currentHp: 80 },
           abilities: [{ name: 'Soundproof' }],
         }),
@@ -235,10 +259,43 @@ describe('planAuthoritativeMoveState', () => {
       }
       expect(plan.resolution.transaction).toMatchObject(expectedTargetIds)
       expect(plan.resolution.transaction.combatStageUpdates.map((update) => update.id)).toEqual(['target-token'])
+      expect(plan.sheetWrites).toEqual([])
+      expect(plan.sheetReads).toEqual([
+        { kind: 'pokemon', slug: 'actor', revision: 11 },
+        { kind: 'pokemon', slug: 'target', revision: 12 },
+        { kind: 'pokemon', slug: 'miss', revision: 13 },
+        { kind: 'pokemon', slug: 'immune', revision: 14 },
+      ])
+      expect(plan.resolution.sheetReads).toEqual(plan.sheetReads)
       expect(structuredClone(plan.resolution.transaction)).toMatchObject(expectedTargetIds)
       expect(JSON.parse(JSON.stringify(plan.resolution.transaction))).toMatchObject(expectedTargetIds)
       expect(Object.keys(plan.resolution.transaction)).toEqual(expect.arrayContaining(['attackedTargetIds', 'hitTargetIds']))
     })
+  })
+
+  it('rejects conflicting sheet revisions observed while finalizing the plan', () => {
+    const sheets = pokemonSheets([{ name: 'Tackle' }])
+    let randomCalls = 0
+
+    try {
+      planAuthoritativeMoveState({
+        map: mapFixture(),
+        pokemonSheets: sheets,
+        trainerSheets: new Map<string, TrainerSheet>(),
+        intent: moveIntent({ placementId: 'actor-token', moveName: 'Tackle', selection: { kind: 'single-target', targetPlacementId: 'target-token' } }),
+        random: () => {
+          randomCalls += 1
+          if (randomCalls === 1) sheets.get('target')!.revision = 9
+          return 0.5
+        },
+        idFactory: () => 'feedback-id',
+        now: () => 1750,
+      })
+      throw new Error('Expected conflicting sheet read revisions to reject planning')
+    } catch (error) {
+      expect(error).toBeInstanceOf(AuthoritativeMoveResolutionError)
+      expect((error as AuthoritativeMoveResolutionError).code).toBe('sheet-read-revision-conflict')
+    }
   })
 
   it('combines Daily actor usage and actor HP automation into one sheet revision', () => {

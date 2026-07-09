@@ -68,9 +68,14 @@ const relatedPlacementIdsForPlan = (
   const related = new Set<string>([plan.resolution.actorPlacementId])
   if (intent.selection.kind === 'area' || plan.resolution.movement?.kind === 'pass') {
     for (const placementId of plan.resolution.area?.candidateTargetIds ?? []) related.add(placementId)
-    return related
+  } else {
+    for (const placementId of plan.resolution.selectedTargetIds) related.add(placementId)
   }
-  for (const placementId of plan.resolution.selectedTargetIds) related.add(placementId)
+
+  const readSheetRefs = new Set(plan.sheetReads.map((read) => `${read.kind}:${read.slug}`))
+  for (const placement of plan.previousMap.placements) {
+    if (readSheetRefs.has(`${placement.sheetKind}:${placement.sheetSlug}`)) related.add(placement.id)
+  }
   return related
 }
 

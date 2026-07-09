@@ -153,7 +153,7 @@ Status: DONE
 
 ## MA-003 — Record every sheet read by authoritative resolution
 
-Status: TODO
+Status: DONE
 
 **Depends on:** MA-001
 **Commit:** `feat(move-automation): track authoritative sheet read set`

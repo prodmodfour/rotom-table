@@ -35,8 +35,10 @@ import {
 } from '~/utils/tokenFacing'
 import {
   AuthoritativeMoveResolutionError,
+  deduplicateAuthoritativeMoveSheetReads,
   resolveAuthoritativeMove,
   type AuthoritativeMoveResolution,
+  type AuthoritativeMoveSheetRead,
 } from './resolveAuthoritativeMove'
 import {
   isMoveUsageTransitionError,
@@ -124,6 +126,7 @@ export interface AuthoritativeMoveStatePlan {
   readonly resolution: AuthoritativeMoveResolution
   readonly usage: UseMoveUsageSummary
   readonly previousUsage: UseMoveUsageSummary
+  readonly sheetReads: readonly AuthoritativeMoveSheetRead[]
   readonly sheetWrites: readonly AuthoritativeMoveSheetWritePlan[]
   readonly mapChanges: AuthoritativeMoveMapChanges
 }
@@ -171,6 +174,31 @@ const placementById = (map: TabletopMap): Map<string, SheetPlacement> => {
   const byId = new Map<string, SheetPlacement>()
   for (const placement of map.placements) byId.set(placement.id, placement)
   return byId
+}
+
+const reobserveAuthoritativeMoveSheetReads = (
+  reads: readonly AuthoritativeMoveSheetRead[],
+  pokemonSheets: ReadonlyMap<string, CharacterSheet>,
+  trainerSheets: ReadonlyMap<string, TrainerSheet>,
+): AuthoritativeMoveSheetRead[] => {
+  const currentReads = reads.map((read): AuthoritativeMoveSheetRead => {
+    const sheet = read.kind === 'pokemon'
+      ? pokemonSheets.get(read.slug)
+      : trainerSheets.get(read.slug)
+    if (!sheet) {
+      return fail(
+        'not-found',
+        'sheet-read-missing',
+        `Consulted sheet ${read.kind}/${read.slug} was not found while finalizing the move plan.`,
+      )
+    }
+    return {
+      kind: read.kind,
+      slug: read.slug,
+      revision: normalizeRevision(sheet.revision),
+    }
+  })
+  return deduplicateAuthoritativeMoveSheetReads([...reads, ...currentReads])
 }
 
 const isSafeGridAnchor = (value: unknown): value is GridAnchor => {
@@ -229,6 +257,7 @@ const cloneResolution = (resolution: AuthoritativeMoveResolution): Authoritative
   damageFormula: resolution.damageFormula,
   ...(resolution.targetBranchId === undefined ? {} : { targetBranchId: resolution.targetBranchId }),
   selectedTargetIds: [...resolution.selectedTargetIds],
+  sheetReads: cloneJson(resolution.sheetReads),
   script: cloneJson(resolution.script),
   transaction: cloneMoveAutomationTransaction(resolution.transaction),
   ...(resolution.feedback === undefined ? {} : { feedback: cloneJson(resolution.feedback) }),
@@ -628,6 +657,11 @@ export const planAuthoritativeMoveState = (input: PlanAuthoritativeMoveStateInpu
     idFactory: input.idFactory,
   })
   validateTransactionUser(resolution)
+  const sheetReads = reobserveAuthoritativeMoveSheetReads(
+    resolution.sheetReads,
+    input.pokemonSheets,
+    input.trainerSheets,
+  )
 
   const originalPlacementsById = placementById(input.map)
   const actorPlacement = originalPlacementsById.get(resolution.actorPlacementId)
@@ -695,6 +729,7 @@ export const planAuthoritativeMoveState = (input: PlanAuthoritativeMoveStateInpu
     resolution: cloneResolution(resolution),
     previousUsage: cloneUsageSummary(usageTransition.previousUsage),
     usage: cloneUsageSummary(usageTransition.usage),
+    sheetReads: cloneJson(sheetReads),
     sheetWrites,
     mapChanges: mapChanges(previousMap, nextMap),
   }

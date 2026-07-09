@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { LIVE_PLAY_MOVE_RESOLUTION_SCHEMA_VERSION, type ResolveMoveIntent } from '#shared/livePlayMoveResolution'
 import {
   AuthoritativeMoveResolutionError,
+  deduplicateAuthoritativeMoveSheetReads,
   resolveAuthoritativeMove,
 } from '../../server/domain/resolveAuthoritativeMove'
 import { EXPLICIT_MOVE_AUTOMATION_SCRIPTS } from '~/utils/moveAutomation'
@@ -195,6 +196,7 @@ describe('resolveAuthoritativeMove', () => {
     })
 
     expect(resolution.selectedTargetIds).toEqual([])
+    expect(resolution.sheetReads).toEqual([{ kind: 'pokemon', slug: 'actor', revision: 0 }])
     expect(resolution.transaction.attackedTargetIds).toEqual([])
     expect(resolution.transaction.hitTargetIds).toEqual([])
     expect(structuredClone(resolution.transaction)).toMatchObject({ attackedTargetIds: [], hitTargetIds: [] })
@@ -257,6 +259,10 @@ describe('resolveAuthoritativeMove', () => {
     expect(lowDamage.transaction.hitTargetIds).toEqual(['target-a'])
     expect(miss.transaction.attackedTargetIds).toEqual(['target-a'])
     expect(miss.transaction.hitTargetIds).toEqual([])
+    expect(miss.sheetReads).toEqual([
+      { kind: 'pokemon', slug: 'actor', revision: 0 },
+      { kind: 'pokemon', slug: 'target-a', revision: 0 },
+    ])
     expect(structuredClone(miss.transaction)).toMatchObject({ attackedTargetIds: ['target-a'], hitTargetIds: [] })
     expect(JSON.parse(JSON.stringify(miss.transaction))).toMatchObject({ attackedTargetIds: ['target-a'], hitTargetIds: [] })
     expect(lowDamage.feedback).toMatchObject({ id: 'feedback-id', naturalRoll: 11, targetId: 'target-a' })
@@ -433,6 +439,12 @@ describe('resolveAuthoritativeMove', () => {
       expect(mixed.transaction.attackedTargetIds).toEqual(['target-a', 'target-b', 'target-c'])
       expect(mixed.transaction.hitTargetIds).toEqual(['target-a', 'target-c'])
       expect(mixed.transaction.combatStageUpdates.map((update) => update.id)).toEqual(['target-a'])
+      expect(mixed.sheetReads).toEqual([
+        { kind: 'pokemon', slug: 'actor', revision: 0 },
+        { kind: 'pokemon', slug: 'target-a', revision: 0 },
+        { kind: 'pokemon', slug: 'target-b', revision: 0 },
+        { kind: 'pokemon', slug: 'target-c', revision: 0 },
+      ])
       const expectedTargetIds = {
         attackedTargetIds: ['target-a', 'target-b', 'target-c'],
         hitTargetIds: ['target-a', 'target-c'],
@@ -453,6 +465,57 @@ describe('resolveAuthoritativeMove', () => {
       expect(noTarget.transaction.attackedTargetIds).toEqual([])
       expect(noTarget.transaction.hitTargetIds).toEqual([])
     })
+  })
+
+  it('records indirect aura providers consulted for target immunity', () => {
+    const resolution = resolveAuthoritativeMove({
+      map: mapFixture([
+        placement('actor-token', 'actor', { x: 0, y: 0, z: 0 }),
+        placement('target-token', 'target-a', { x: 1, y: 0, z: 0 }),
+        placement('aura-token', 'aura', { x: 2, y: 0, z: 0 }),
+      ]),
+      pokemonSheets: sheetMap([{ name: 'Spore' }], {
+        actor: pokemonSheet('actor', [{ name: 'Spore' }], { revision: 2 }),
+        'target-a': targetSheet('target-a'),
+        aura: pokemonSheet('aura', [], { revision: 6, abilities: [{ name: 'Sweet Veil' }] }),
+      }),
+      trainerSheets: new Map(),
+      intent: moveIntent({
+        placementId: 'actor-token',
+        moveName: 'Spore',
+        selection: { kind: 'single-target', targetPlacementId: 'target-token' },
+      }),
+      random: randomSequence([0.99]),
+      idFactory: () => 'spore-feedback',
+    })
+
+    expect(resolution.feedback?.conditions).toContainEqual({
+      condition: 'Sleep',
+      applied: false,
+      blockedBy: 'Sweet Veil (aura)',
+    })
+    expect(resolution.transaction.conditionUpdates).toEqual([])
+    expect(resolution.sheetReads).toEqual([
+      { kind: 'pokemon', slug: 'actor', revision: 2 },
+      { kind: 'pokemon', slug: 'target-a', revision: 0 },
+      { kind: 'pokemon', slug: 'aura', revision: 6 },
+    ])
+  })
+
+  it('deduplicates shared sheet references and rejects conflicting observed revisions', () => {
+    expect(deduplicateAuthoritativeMoveSheetReads([
+      { kind: 'pokemon', slug: 'shared', revision: 7 },
+      { kind: 'pokemon', slug: 'shared', revision: 7 },
+      { kind: 'trainer', slug: 'shared', revision: 3 },
+    ])).toEqual([
+      { kind: 'pokemon', slug: 'shared', revision: 7 },
+      { kind: 'trainer', slug: 'shared', revision: 3 },
+    ])
+
+    expectFailure(() => deduplicateAuthoritativeMoveSheetReads([
+      { kind: 'pokemon', slug: 'shared', revision: 7 },
+      { kind: 'pokemon', slug: 'shared', revision: 8 },
+    ]), 'sheet-read-revision-conflict')
   })
 
   it('reproduces multi-target random rolls with injected randomness', async () => {

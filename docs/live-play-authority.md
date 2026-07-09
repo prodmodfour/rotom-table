@@ -40,6 +40,8 @@ This applies to:
 - group inventory GM saves and trainer transfers;
 - accepted shop checkout commands that update shop stock plus trainer sheet or group inventory money/inventory.
 
+Authoritative `resolveMove` planning also records a deduplicated `sheetReads` snapshot for the acting sheet, every consulted selected or area-candidate target sheet, and indirect rule providers such as condition-immunity auras. Each entry carries sheet kind, slug, and observed revision; conflicting observations of the same sheet reference reject planning. This collection is server-internal and cannot be supplied by the client. At this stage it documents the complete planning snapshot, while commit-time CAS remains limited to existing writes until full read-only revision assertions are added.
+
 Map live-play idempotency records are keyed by map and `opId`; shop checkout idempotency records are keyed by shop and `opId`. A retry with the same command body returns the stored result without applying effects twice. Reusing an `opId` with different material is rejected.
 
 ### Live-play batch commands are not client-side macros
