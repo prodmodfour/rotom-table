@@ -70,10 +70,7 @@ export interface MoveAutomationManifestRecord {
 
 export interface MoveAutomationManifest {
   readonly schemaVersion: typeof MOVE_AUTOMATION_MANIFEST_SCHEMA_VERSION
-  /**
-   * Sparse during schema bootstrap. MA-013 owns seeding exact canonical membership;
-   * every record present here is nevertheless identity- and provenance-checked.
-   */
+  /** Canonically sorted inventory materialized by the deterministic seed/update script. */
   readonly moves: readonly MoveAutomationManifestRecord[]
 }
 
@@ -509,8 +506,8 @@ const parseMoveRecord = (
 
 /**
  * Parse semantic manifest data against an already hash-verified canonical
- * catalog. Catalog completeness is intentionally seeded and asserted by
- * MA-013; this contract rejects every invalid row immediately.
+ * catalog. The seed/update workflow owns exact inventory membership while this
+ * contract rejects every invalid row immediately.
  */
 export const parseMoveAutomationManifest = (
   value: unknown,

@@ -89,11 +89,15 @@ const expectManifestError = (
 }
 
 describe('move automation semantic manifest contract', () => {
-  it('accepts the sparse bootstrap file until canonical rows are seeded by MA-013', () => {
-    expect(parseMoveAutomationManifest(manifestJson, catalog)).toEqual({
-      schemaVersion: 1,
-      moves: [],
-    })
+  it('loads the exact sorted canonical inventory', () => {
+    const manifest = parseMoveAutomationManifest(manifestJson, catalog)
+    const canonicalIds = catalog.moves.map(({ canonicalId }) => canonicalId)
+    const manifestIds = manifest.moves.map(({ canonicalId }) => canonicalId)
+
+    expect(manifest.schemaVersion).toBe(1)
+    expect(manifest.moves).toHaveLength(776)
+    expect(manifestIds).toEqual(canonicalIds)
+    expect(new Set(manifestIds).size).toBe(776)
   })
 
   it('keeps base completeness separate from explicitly partial ecosystem interactions', () => {

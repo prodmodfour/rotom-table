@@ -300,7 +300,7 @@ Use a strict parser that rejects unknown fields, duplicates, unknown moves, inva
 
 ## MA-013 — Seed all 776 manifest rows without inflating completion
 
-Status: TODO
+Status: DONE
 
 **Depends on:** MA-012
 **Commit:** `data(move-automation): seed canonical semantic manifest`
