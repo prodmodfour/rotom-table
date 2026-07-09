@@ -4,7 +4,7 @@ TEMPLATE_CUSTOMISED: true
 
 ## Project name
 
-Rotom Table — Initiative modal fix plan.
+Rotom Table — Move automation: full implementation ticket queue.
 
 ## Project type
 
@@ -12,15 +12,9 @@ Nuxt 3 and Vue 3 live-play application with TypeScript shared models, three.js/i
 
 ## Project goal
 
-Implement the refreshed work described by `BUILD_TICKETS.md` (`001` through `018`), generated from the supplied ticket planning file before that handoff file was removed.
+Implement the refreshed work described by `BUILD_TICKETS.md` (`MA-001` through `MA-299`), generated from the supplied ticket planning file before that handoff file was removed.
 
-Make the Ctrl+I initiative modal a complete GM control surface for initiative:
-
-- Auto-calculate every combatant from the existing derived initiative logic.
-- Let GMs manually reorder combatants from the modal.
-- Ensure the reordered list is the real order used by Start, Next, Previous, and live play.
-- Keep score-derived initiative as the default behavior when no manual order is present.
-- Preserve keyboard accessibility and GM permission checks.
+Implement the work described by `BUILD_TICKETS.md` (`MA-001` through `MA-299`).
 
 The core rule for refreshed queues is: **ticket work must remain scoped, tested, and compatible with Rotom Table's live-play production boundaries.**
 
@@ -34,7 +28,7 @@ The core rule for refreshed queues is: **ticket work must remain scoped, tested,
 
 The work is successful when:
 
-- Every ticket in `BUILD_TICKETS.md` for `001` through `018` is marked `DONE`.
+- Every ticket in `BUILD_TICKETS.md` for `MA-001` through `MA-299` is marked `DONE`.
 - `scripts/quality-gate.sh` passes on the final branch.
 - The refreshed ticket queue is complete.
 - Tests and quality gates pass.
@@ -121,8 +115,8 @@ Do not include:
 
 ## Agent behaviour notes
 
-- `BUILD_TICKETS.md` is the authoritative local autonomous queue for Initiative modal fix plan.
+- `BUILD_TICKETS.md` is the authoritative local autonomous queue for Move automation: full implementation ticket queue.
 - Work one ticket per autonomous cycle, in numeric order; build ticket numbers follow the refreshed planning file's suggested order when present.
 - Keep each commit focused on the selected ticket and use a conventional commit message.
-- Do not update ticket statuses beyond the selected ticket. The only exception is the final ticket `018`, which may set `AUTOMATION_STATUS: DONE` after all 18 refreshed tickets are complete and the final quality gate passes.
+- Do not update ticket statuses beyond the selected ticket. The only exception is the final ticket `MA-299`, which may set `AUTOMATION_STATUS: DONE` after all 279 refreshed tickets are complete and the final quality gate passes.
 - Do not create, close, merge, or comment on pull requests/issues from inside an autonomous ticket run unless a future ticket explicitly asks for it.
