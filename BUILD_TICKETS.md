@@ -248,7 +248,7 @@ Status: DONE
 
 ## MA-010 — Record the move-runtime decisions in an ADR
 
-Status: TODO
+Status: DONE
 
 **Depends on:** MA-008
 **Commit:** `docs(move-automation): record runtime architecture decision`
