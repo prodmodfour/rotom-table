@@ -696,10 +696,10 @@ const parseResolvedMoveTransaction = (
 
   const attackedTargetIds = hasOwn(value, 'attackedTargetIds')
     ? parseResolvedMoveStringArray(value.attackedTargetIds, `${path}.attackedTargetIds`, issues)
-    : null
+    : []
   const hitTargetIds = hasOwn(value, 'hitTargetIds')
     ? parseResolvedMoveStringArray(value.hitTargetIds, `${path}.hitTargetIds`, issues)
-    : null
+    : []
   const hpUpdates = parseResolvedMoveRecordArray(value.hpUpdates, `${path}.hpUpdates`, issues)
   const conditionUpdates = parseResolvedMoveRecordArray(value.conditionUpdates, `${path}.conditionUpdates`, issues)
   const combatStageUpdates = parseResolvedMoveRecordArray(value.combatStageUpdates, `${path}.combatStageUpdates`, issues)
@@ -715,6 +715,8 @@ const parseResolvedMoveTransaction = (
     || !scriptKind
     || typeof value.scriptVersion !== 'number'
     || !Number.isSafeInteger(value.scriptVersion)
+    || !attackedTargetIds
+    || !hitTargetIds
     || !hpUpdates
     || !conditionUpdates
     || !combatStageUpdates
@@ -731,8 +733,8 @@ const parseResolvedMoveTransaction = (
     moveName,
     scriptKind: scriptKind as MoveAutomationTransaction['scriptKind'],
     scriptVersion: value.scriptVersion,
-    ...(attackedTargetIds ? { attackedTargetIds } : {}),
-    ...(hitTargetIds ? { hitTargetIds } : {}),
+    attackedTargetIds,
+    hitTargetIds,
     hpUpdates: hpUpdates as unknown as MoveAutomationTransaction['hpUpdates'],
     conditionUpdates: conditionUpdates as unknown as MoveAutomationTransaction['conditionUpdates'],
     combatStageUpdates: combatStageUpdates as unknown as MoveAutomationTransaction['combatStageUpdates'],

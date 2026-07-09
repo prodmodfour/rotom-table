@@ -150,9 +150,9 @@ export interface MoveAutomationTransaction {
   scriptKind: MoveAutomationScript['kind']
   scriptVersion: number
   /** Targets that were selected/affected by the move, whether the accuracy roll hit or missed. */
-  attackedTargetIds?: string[]
-  /** Targets that were actually hit by the move, before damage/effect immunity. */
-  hitTargetIds?: string[]
+  attackedTargetIds: string[]
+  /** Targets that passed the move's accuracy check, before damage/effect immunity. */
+  hitTargetIds: string[]
   hpUpdates: MoveAutomationHpUpdate[]
   conditionUpdates: MoveAutomationConditionUpdate[]
   combatStageUpdates: MoveAutomationCombatStageUpdate[]

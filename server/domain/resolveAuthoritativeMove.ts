@@ -345,31 +345,15 @@ const cloneGridAnchors = (anchors: readonly GridAnchor[]): GridAnchor[] => ancho
 
 const cloneAreaTemplate = (template: MoveAutomationAreaTemplate): MoveAutomationAreaTemplate => ({ ...template })
 
-const copyTransactionTargetIdDescriptor = (
-  source: MoveAutomationTransaction,
-  target: MoveAutomationTransaction,
-  key: 'attackedTargetIds' | 'hitTargetIds',
-): void => {
-  const descriptor = Object.getOwnPropertyDescriptor(source, key)
-  if (!descriptor) return
-  Object.defineProperty(target, key, {
-    ...descriptor,
-    value: Array.isArray(descriptor.value) ? [...descriptor.value] : descriptor.value,
-  })
-}
-
 const moveAutomationTransactionWithAppendedLogLine = (
   transaction: MoveAutomationTransaction,
   line: string,
-): MoveAutomationTransaction => {
-  const next: MoveAutomationTransaction = {
-    ...transaction,
-    logLines: [...transaction.logLines, line],
-  }
-  copyTransactionTargetIdDescriptor(transaction, next, 'attackedTargetIds')
-  copyTransactionTargetIdDescriptor(transaction, next, 'hitTargetIds')
-  return next
-}
+): MoveAutomationTransaction => ({
+  ...transaction,
+  attackedTargetIds: [...transaction.attackedTargetIds],
+  hitTargetIds: [...transaction.hitTargetIds],
+  logLines: [...transaction.logLines, line],
+})
 
 const isSafeGridAnchor = (value: unknown): value is GridAnchor => {
   if (typeof value !== 'object' || value === null || Array.isArray(value)) return false

@@ -81,40 +81,21 @@ export interface BuildMoveAutomationTransactionInput {
   suggestionRecipientFilter?: MoveAutomationSuggestionRecipientFilter
 }
 
-const attachTargetIds = (
-  transaction: MoveAutomationTransaction,
-  targetIds: { attackedTargetIds: string[]; hitTargetIds: string[] },
-): MoveAutomationTransaction => {
-  Object.defineProperties(transaction, {
-    attackedTargetIds: {
-      value: targetIds.attackedTargetIds,
-      enumerable: false,
-      configurable: true,
-      writable: true,
-    },
-    hitTargetIds: {
-      value: targetIds.hitTargetIds,
-      enumerable: false,
-      configurable: true,
-      writable: true,
-    },
-  })
-  return transaction
-}
-
-const unknownMoveTransaction = (user: SpawnedPokemon): MoveAutomationTransaction => attachTargetIds({
+const unknownMoveTransaction = (user: SpawnedPokemon): MoveAutomationTransaction => ({
   userId: user.id,
   userName: user.species,
   moveName: 'Unknown Move',
   scriptKind: 'explicit',
   scriptVersion: 0,
+  attackedTargetIds: [],
+  hitTargetIds: [],
   hpUpdates: [],
   conditionUpdates: [],
   combatStageUpdates: [],
   hazardsToAdd: [],
   fieldEffectsToApply: [],
   logLines: [],
-}, { attackedTargetIds: [], hitTargetIds: [] })
+})
 
 export const buildMoveAutomationTransaction = ({
   script,
@@ -378,17 +359,19 @@ export const buildMoveAutomationTransaction = ({
   if (manualNoteLogLine) logLines.push(manualNoteLogLine)
   logLines.push(...formatMoveAutomationAutomationNoteLogLines(script.automationNotes))
 
-  return attachTargetIds({
+  return {
     userId: user.id,
     userName: user.species,
     moveName: script.moveName,
     scriptKind: script.kind,
     scriptVersion: script.version,
+    attackedTargetIds,
+    hitTargetIds,
     hpUpdates: hpAccumulator.toUpdates(),
     conditionUpdates: conditionAccumulator.toUpdates(),
     combatStageUpdates: stageAccumulator.toUpdates(),
     hazardsToAdd,
     fieldEffectsToApply,
     logLines,
-  }, { attackedTargetIds, hitTargetIds })
+  }
 }

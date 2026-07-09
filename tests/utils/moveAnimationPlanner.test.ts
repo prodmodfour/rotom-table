@@ -96,6 +96,8 @@ const transaction = (overrides: Partial<MoveAutomationTransaction> = {}): MoveAu
   moveName: 'Generic Test Move',
   scriptKind: 'explicit',
   scriptVersion: 1,
+  attackedTargetIds: [],
+  hitTargetIds: [],
   hpUpdates: [],
   conditionUpdates: [],
   combatStageUpdates: [],

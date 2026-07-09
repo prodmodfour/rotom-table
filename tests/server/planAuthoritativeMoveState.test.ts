@@ -72,6 +72,45 @@ const randomSequence = (values: readonly number[]): (() => number) => {
 
 const moveLog = (map: TabletopMap) => map.metadata?.moveLog as Array<{ lines: string[]; at: number }> | undefined
 
+const mixedAreaTemplate: MoveAutomationAreaTemplate = { kind: 'line', size: 3, label: 'Line 3' }
+
+const mixedOutcomeAreaScript = (): MoveAutomationScript => ({
+  kind: 'explicit',
+  moveName: 'Swift',
+  version: 1,
+  targetMode: 'multi-target',
+  targetCount: null,
+  damaging: false,
+  requiresAccuracy: true,
+  damageBase: null,
+  damageClass: 'Status',
+  type: 'Normal',
+  ac: 2,
+  range: mixedAreaTemplate.label,
+  effect: 'Authoritative planner target identity test script.',
+  keywords: [mixedAreaTemplate.label, 'Sonic'],
+  criticalRange: null,
+  areaTemplates: [mixedAreaTemplate],
+  conditionSuggestions: [],
+  stageSuggestions: [{ recipient: 'target', key: 'def', delta: -1, label: 'Defense down' }],
+  hpSuggestions: [],
+  fieldSuggestions: [],
+  hazardSuggestions: [],
+  automationNotes: [],
+})
+
+const withRegisteredMoveAutomationScript = async <T>(script: MoveAutomationScript, run: () => T | Promise<T>): Promise<T> => {
+  const scripts = EXPLICIT_MOVE_AUTOMATION_SCRIPTS as Map<string, MoveAutomationScript>
+  const previous = scripts.get(script.moveName)
+  scripts.set(script.moveName, script)
+  try {
+    return await run()
+  } finally {
+    if (previous) scripts.set(script.moveName, previous)
+    else scripts.delete(script.moveName)
+  }
+}
+
 describe('planAuthoritativeMoveState', () => {
   it('plans usage, self combat stages, one automation log, revisions, timestamp, and detached output', () => {
     const map = mapFixture()
@@ -97,6 +136,10 @@ describe('planAuthoritativeMoveState', () => {
     expect(nowCalls).toBe(1)
     expect(plan.previousRevision).toBe(7)
     expect(plan.revision).toBe(8)
+    expect(plan.resolution.transaction.attackedTargetIds).toEqual([])
+    expect(plan.resolution.transaction.hitTargetIds).toEqual([])
+    expect(structuredClone(plan.resolution.transaction)).toMatchObject({ attackedTargetIds: [], hitTargetIds: [] })
+    expect(JSON.parse(JSON.stringify(plan.resolution.transaction))).toMatchObject({ attackedTargetIds: [], hitTargetIds: [] })
     expect(plan.nextMap.revision).toBe(8)
     expect(plan.nextMap.updatedAt).toBe(999)
     expect(plan.nextMap.createdAt).toBe(1)
@@ -149,6 +192,53 @@ describe('planAuthoritativeMoveState', () => {
     expect((plan.sheetWrites[0]?.nextSheet as CharacterSheet & { temporaryHp?: number }).temporaryHp).toBeUndefined()
     expect(plan.mapChanges.temporaryHitPoints?.current?.byPlacementId.unaffected).toBe(7)
     expect(plan.mapChanges.placements?.current.find((item) => item.id === 'actor-token')?.facing).toBe('south-east')
+  })
+
+  it('clones mixed area hit, miss, and immunity target ids into the state plan', async () => {
+    await withRegisteredMoveAutomationScript(mixedOutcomeAreaScript(), () => {
+      const map = mapFixture({
+        placements: [
+          placement('actor-token', 'actor', { x: 0, y: 0, z: 0 }),
+          placement('target-token', 'target', { x: 1, y: 0, z: 0 }),
+          placement('miss-token', 'miss', { x: 2, y: 0, z: 0 }),
+          placement('immune-token', 'immune', { x: 3, y: 0, z: 0 }),
+        ],
+      })
+      const sheets = pokemonSheets([{ name: 'Swift' }], {
+        miss: pokemonSheet('miss', [], { combat: { currentHp: 80 } }),
+        immune: pokemonSheet('immune', [], {
+          combat: { currentHp: 80 },
+          abilities: [{ name: 'Soundproof' }],
+        }),
+      })
+
+      const plan = planAuthoritativeMoveState({
+        map,
+        pokemonSheets: sheets,
+        trainerSheets: new Map<string, TrainerSheet>(),
+        intent: moveIntent({
+          placementId: 'actor-token',
+          moveName: 'Swift',
+          selection: {
+            kind: 'area',
+            areaTemplateId: moveAutomationAreaTemplateId(mixedAreaTemplate),
+            direction: 'east',
+          },
+        }),
+        random: randomSequence([0.5, 0, 0.5]),
+        now: () => 1500,
+      })
+
+      const expectedTargetIds = {
+        attackedTargetIds: ['target-token', 'miss-token', 'immune-token'],
+        hitTargetIds: ['target-token', 'immune-token'],
+      }
+      expect(plan.resolution.transaction).toMatchObject(expectedTargetIds)
+      expect(plan.resolution.transaction.combatStageUpdates.map((update) => update.id)).toEqual(['target-token'])
+      expect(structuredClone(plan.resolution.transaction)).toMatchObject(expectedTargetIds)
+      expect(JSON.parse(JSON.stringify(plan.resolution.transaction))).toMatchObject(expectedTargetIds)
+      expect(Object.keys(plan.resolution.transaction)).toEqual(expect.arrayContaining(['attackedTargetIds', 'hitTargetIds']))
+    })
   })
 
   it('combines Daily actor usage and actor HP automation into one sheet revision', () => {
@@ -224,17 +314,8 @@ const passScript = (): MoveAutomationScript => ({
   automationNotes: [],
 })
 
-const withRegisteredScratchScript = async <T>(run: () => T | Promise<T>): Promise<T> => {
-  const scripts = EXPLICIT_MOVE_AUTOMATION_SCRIPTS as Map<string, MoveAutomationScript>
-  const previous = scripts.get('Scratch')
-  scripts.set('Scratch', passScript())
-  try {
-    return await run()
-  } finally {
-    if (previous) scripts.set('Scratch', previous)
-    else scripts.delete('Scratch')
-  }
-}
+const withRegisteredScratchScript = <T>(run: () => T | Promise<T>): Promise<T> =>
+  withRegisteredMoveAutomationScript(passScript(), run)
 
 describe('planAuthoritativeMoveState Pass movement', () => {
   it('updates Pass position and facing and logs the Pass destination exactly once', async () => {

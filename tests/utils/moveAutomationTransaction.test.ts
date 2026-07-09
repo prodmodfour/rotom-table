@@ -166,6 +166,66 @@ describe('move automation transaction helpers', () => {
     ]))
   })
 
+  it('emits enumerable attacked and hit target ids through structured and JSON clones', () => {
+    const user = token({ id: 'u', species: 'Caster' })
+    const hitTarget = token({ id: 'hit', species: 'Hit Target' })
+    const missedTarget = token({ id: 'miss', species: 'Missed Target' })
+    const immuneTarget = token({ id: 'immune', species: 'Immune Target', abilityNames: ['Soundproof'] })
+    const s = script({ keywords: ['Sonic'] })
+    const damageRoll = { formula: 'flat', count: 0, sides: 0, total: 10, rolls: [], mod: 10 }
+
+    const transaction = automationTransaction(s, {
+      user,
+      targets: [hitTarget, missedTarget, immuneTarget],
+      targetResolutions: {
+        hit: { ...defaultTargetResolutionState(s), hit: true, damageRoll },
+        miss: { ...defaultTargetResolutionState(s), hit: false },
+        immune: { ...defaultTargetResolutionState(s), hit: true, damageRoll },
+      },
+    })
+
+    expect(transaction.attackedTargetIds).toEqual(['hit', 'miss', 'immune'])
+    expect(transaction.hitTargetIds).toEqual(['hit', 'immune'])
+    expect(transaction.hpUpdates.map((update) => update.id)).toEqual(['hit'])
+    expect(Object.getOwnPropertyDescriptor(transaction, 'attackedTargetIds')?.enumerable).toBe(true)
+    expect(Object.getOwnPropertyDescriptor(transaction, 'hitTargetIds')?.enumerable).toBe(true)
+    expect(structuredClone(transaction)).toMatchObject({
+      attackedTargetIds: ['hit', 'miss', 'immune'],
+      hitTargetIds: ['hit', 'immune'],
+    })
+    expect(JSON.parse(JSON.stringify(transaction))).toMatchObject({
+      attackedTargetIds: ['hit', 'miss', 'immune'],
+      hitTargetIds: ['hit', 'immune'],
+    })
+  })
+
+  it('emits empty enumerable target id arrays for unknown and no-target transactions', () => {
+    const user = token({ id: 'u', species: 'Caster' })
+    const unknown = buildMoveAutomationTransaction({
+      script: null,
+      user,
+      selectedTargets: [],
+      targetResolutions: {},
+      enabledSuggestions: {},
+      hpSuggestionAmounts: {},
+      manualUserConditions: [],
+      manualTargetConditions: [],
+      manualUserStageDeltas: stages,
+      manualTargetStageDeltas: stages,
+      hazardCells: [],
+      manualNote: '',
+    })
+    const noTarget = automationTransaction(script({ targetMode: 'none', targetCount: 0 }), { targets: [] })
+
+    for (const transaction of [unknown, noTarget]) {
+      expect(transaction.attackedTargetIds).toEqual([])
+      expect(transaction.hitTargetIds).toEqual([])
+      expect(Object.keys(transaction)).toEqual(expect.arrayContaining(['attackedTargetIds', 'hitTargetIds']))
+      expect(structuredClone(transaction).attackedTargetIds).toEqual([])
+      expect(JSON.parse(JSON.stringify(transaction)).hitTargetIds).toEqual([])
+    }
+  })
+
   it('heals Absorb users for half of full overkill damage', () => {
     const s = explicitScriptForMove('Absorb')
     expect(s).not.toBeNull()

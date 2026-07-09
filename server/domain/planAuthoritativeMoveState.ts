@@ -204,37 +204,21 @@ const assertNonNegativeNumber = (value: unknown, code: string, label: string): n
   return numberValue
 }
 
-const cloneTransactionTargetIds = (
-  source: MoveAutomationTransaction,
-  target: MoveAutomationTransaction,
-  key: 'attackedTargetIds' | 'hitTargetIds',
-): void => {
-  const descriptor = Object.getOwnPropertyDescriptor(source, key)
-  if (!descriptor) return
-  Object.defineProperty(target, key, {
-    ...descriptor,
-    value: Array.isArray(descriptor.value) ? [...descriptor.value] : descriptor.value,
-  })
-}
-
-const cloneMoveAutomationTransaction = (transaction: MoveAutomationTransaction): MoveAutomationTransaction => {
-  const next: MoveAutomationTransaction = {
-    userId: transaction.userId,
-    userName: transaction.userName,
-    moveName: transaction.moveName,
-    scriptKind: transaction.scriptKind,
-    scriptVersion: transaction.scriptVersion,
-    hpUpdates: cloneJson(transaction.hpUpdates),
-    conditionUpdates: cloneJson(transaction.conditionUpdates),
-    combatStageUpdates: cloneJson(transaction.combatStageUpdates),
-    hazardsToAdd: cloneJson(transaction.hazardsToAdd),
-    fieldEffectsToApply: cloneJson(transaction.fieldEffectsToApply),
-    logLines: [...transaction.logLines],
-  }
-  cloneTransactionTargetIds(transaction, next, 'attackedTargetIds')
-  cloneTransactionTargetIds(transaction, next, 'hitTargetIds')
-  return next
-}
+const cloneMoveAutomationTransaction = (transaction: MoveAutomationTransaction): MoveAutomationTransaction => ({
+  userId: transaction.userId,
+  userName: transaction.userName,
+  moveName: transaction.moveName,
+  scriptKind: transaction.scriptKind,
+  scriptVersion: transaction.scriptVersion,
+  attackedTargetIds: [...transaction.attackedTargetIds],
+  hitTargetIds: [...transaction.hitTargetIds],
+  hpUpdates: cloneJson(transaction.hpUpdates),
+  conditionUpdates: cloneJson(transaction.conditionUpdates),
+  combatStageUpdates: cloneJson(transaction.combatStageUpdates),
+  hazardsToAdd: cloneJson(transaction.hazardsToAdd),
+  fieldEffectsToApply: cloneJson(transaction.fieldEffectsToApply),
+  logLines: [...transaction.logLines],
+})
 
 const cloneResolution = (resolution: AuthoritativeMoveResolution): AuthoritativeMoveResolution => ({
   actorPlacementId: resolution.actorPlacementId,

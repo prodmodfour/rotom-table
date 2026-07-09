@@ -21,6 +21,8 @@ const move = () => ({
     moveName: 'Tackle',
     scriptKind: 'explicit',
     scriptVersion: 1,
+    attackedTargetIds: ['token-b'],
+    hitTargetIds: ['token-b'],
     hpUpdates: [],
     conditionUpdates: [],
     combatStageUpdates: [],

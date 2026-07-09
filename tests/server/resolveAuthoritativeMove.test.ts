@@ -5,9 +5,10 @@ import {
   resolveAuthoritativeMove,
 } from '../../server/domain/resolveAuthoritativeMove'
 import { EXPLICIT_MOVE_AUTOMATION_SCRIPTS } from '~/utils/moveAutomation'
+import { moveAutomationAreaTemplateId } from '~/utils/moveAutomationAreaTemplates'
 import type { CharacterSheet, CharacterSheetMove } from '~/types/characterSheet'
 import type { SheetPlacement, TabletopMap } from '~/types/map'
-import type { MoveAutomationScript } from '~/types/moveAutomation'
+import type { MoveAutomationAreaTemplate, MoveAutomationScript } from '~/types/moveAutomation'
 import type { TrainerSheet } from '~/types/trainerSheet'
 
 const moveIntent = (overrides: Omit<ResolveMoveIntent, 'schemaVersion'>): ResolveMoveIntent => ({
@@ -122,6 +123,21 @@ const fakeTargetCountScript = (overrides: Partial<MoveAutomationScript> = {}): M
   ...overrides,
 })
 
+const lineTemplate: MoveAutomationAreaTemplate = { kind: 'line', size: 3, label: 'Line 3' }
+
+const mixedOutcomeAreaScript = (): MoveAutomationScript => ({
+  ...fakeTargetCountScript(),
+  moveName: 'Swift',
+  targetCount: null,
+  damaging: false,
+  damageBase: null,
+  damageClass: 'Status',
+  range: lineTemplate.label,
+  keywords: [lineTemplate.label, 'Sonic'],
+  areaTemplates: [lineTemplate],
+  stageSuggestions: [{ recipient: 'target', key: 'def', delta: -1, label: 'Defense down' }],
+})
+
 const branchSelectionScript = (): MoveAutomationScript => ({
   kind: 'explicit',
   moveName: 'Tackle',
@@ -179,6 +195,10 @@ describe('resolveAuthoritativeMove', () => {
     })
 
     expect(resolution.selectedTargetIds).toEqual([])
+    expect(resolution.transaction.attackedTargetIds).toEqual([])
+    expect(resolution.transaction.hitTargetIds).toEqual([])
+    expect(structuredClone(resolution.transaction)).toMatchObject({ attackedTargetIds: [], hitTargetIds: [] })
+    expect(JSON.parse(JSON.stringify(resolution.transaction))).toMatchObject({ attackedTargetIds: [], hitTargetIds: [] })
     expect(resolution.moveKey).toBe('swords-dance')
     expect(resolution.desiredFacing).toBeUndefined()
     expect(resolution.transaction.combatStageUpdates).toEqual([{ id: 'actor-token', stages: { atk: 2, def: 0, satk: 0, sdef: 0, spd: 0, acc: 0 } }])
@@ -223,8 +243,22 @@ describe('resolveAuthoritativeMove', () => {
       random: randomSequence([0.5, 0.99]),
       idFactory: () => 'feedback-id',
     })
+    const miss = resolveAuthoritativeMove({
+      map,
+      pokemonSheets,
+      trainerSheets: new Map(),
+      intent: baseIntent,
+      random: randomSequence([0]),
+      idFactory: () => 'feedback-id',
+    })
 
     expect(lowDamage.selectedTargetIds).toEqual(['target-a'])
+    expect(lowDamage.transaction.attackedTargetIds).toEqual(['target-a'])
+    expect(lowDamage.transaction.hitTargetIds).toEqual(['target-a'])
+    expect(miss.transaction.attackedTargetIds).toEqual(['target-a'])
+    expect(miss.transaction.hitTargetIds).toEqual([])
+    expect(structuredClone(miss.transaction)).toMatchObject({ attackedTargetIds: ['target-a'], hitTargetIds: [] })
+    expect(JSON.parse(JSON.stringify(miss.transaction))).toMatchObject({ attackedTargetIds: ['target-a'], hitTargetIds: [] })
     expect(lowDamage.feedback).toMatchObject({ id: 'feedback-id', naturalRoll: 11, targetId: 'target-a' })
     expect(lowDamage.desiredFacing).toBe('south-east')
     expect(highDamage.transaction.hpUpdates).not.toEqual(lowDamage.transaction.hpUpdates)
@@ -377,6 +411,47 @@ describe('resolveAuthoritativeMove', () => {
         trainerSheets,
         intent: moveIntent({ placementId: 'actor-token', moveName: 'Fake 6, 2 Targets', selection: { kind: 'target-count', targetPlacementIds: ['target-a', 'far-target'] } }),
       }), 'target-out-of-range')
+    })
+  })
+
+  it('preserves mixed area hit, miss, immunity, and no-target identities through wire clones', async () => {
+    await withRegisteredMoveAutomationScript(mixedOutcomeAreaScript(), () => {
+      const mixed = resolveAuthoritativeMove({
+        map: mapFixture(),
+        pokemonSheets: sheetMap([{ name: 'Swift' }], {
+          'target-c': { ...targetSheet('target-c'), abilities: [{ name: 'Soundproof' }] },
+        }),
+        trainerSheets: new Map(),
+        intent: moveIntent({
+          placementId: 'actor-token',
+          moveName: 'Swift',
+          selection: { kind: 'area', areaTemplateId: moveAutomationAreaTemplateId(lineTemplate), direction: 'east' },
+        }),
+        random: randomSequence([0.5, 0, 0.5]),
+      })
+
+      expect(mixed.transaction.attackedTargetIds).toEqual(['target-a', 'target-b', 'target-c'])
+      expect(mixed.transaction.hitTargetIds).toEqual(['target-a', 'target-c'])
+      expect(mixed.transaction.combatStageUpdates.map((update) => update.id)).toEqual(['target-a'])
+      const expectedTargetIds = {
+        attackedTargetIds: ['target-a', 'target-b', 'target-c'],
+        hitTargetIds: ['target-a', 'target-c'],
+      }
+      expect(structuredClone(mixed.transaction)).toMatchObject(expectedTargetIds)
+      expect(JSON.parse(JSON.stringify(mixed.transaction))).toMatchObject(expectedTargetIds)
+
+      const noTarget = resolveAuthoritativeMove({
+        map: mapFixture([placement('actor-token', 'actor', { x: 0, y: 0, z: 0 })]),
+        pokemonSheets: sheetMap([{ name: 'Swift' }]),
+        trainerSheets: new Map(),
+        intent: moveIntent({
+          placementId: 'actor-token',
+          moveName: 'Swift',
+          selection: { kind: 'area', areaTemplateId: moveAutomationAreaTemplateId(lineTemplate), direction: 'east' },
+        }),
+      })
+      expect(noTarget.transaction.attackedTargetIds).toEqual([])
+      expect(noTarget.transaction.hitTargetIds).toEqual([])
     })
   })
 

@@ -120,7 +120,7 @@ A move may be marked `complete` only when:
 
 ## MA-001 — Make target identity a real wire field
 
-Status: TODO
+Status: DONE
 
 **Depends on:** nothing
 **Commit:** `fix(move-automation): preserve attacked and hit target ids`
