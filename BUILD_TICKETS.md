@@ -218,7 +218,7 @@ Status: DONE
 
 ## MA-007 — Contain current client-local reaction claims
 
-Status: TODO
+Status: DONE
 
 **Depends on:** MA-002
 **Commit:** `fix(move-automation): mark local reaction flows assisted`

@@ -6,6 +6,10 @@ import type {
   MoveAutomationPoisonPointPrompt,
   MoveAutomationSpitePrompt,
 } from '~/types/moveAutomation'
+import {
+  LOCAL_MOVE_REACTION_ASSISTANCE_NOTICE,
+  localAssistedFollowUpLabel,
+} from '~/utils/moveAutomationAssistedFollowUps'
 
 const props = defineProps<{
   spitePrompts: MoveAutomationSpitePrompt[]
@@ -45,9 +49,10 @@ const celebrateTargetList = (prompt: MoveAutomationCelebratePrompt): string => n
       class="reaction-prompt"
     >
       <div class="reaction-prompt__copy">
-        <span class="reaction-prompt__eyebrow">Moxie?</span>
+        <span class="reaction-prompt__eyebrow">{{ localAssistedFollowUpLabel('Moxie') }}</span>
         <strong>{{ prompt.attackerName }}</strong>
         <span>{{ prompt.moveName }} fainted {{ moxieTargetList(prompt) }}. Raise Attack?</span>
+        <span class="reaction-prompt__limitation">{{ LOCAL_MOVE_REACTION_ASSISTANCE_NOTICE }}</span>
       </div>
       <div class="reaction-prompt__actions">
         <button type="button" class="reaction-prompt__apply" @click="emit('apply-moxie', prompt.id)">
@@ -65,9 +70,10 @@ const celebrateTargetList = (prompt: MoveAutomationCelebratePrompt): string => n
       class="reaction-prompt"
     >
       <div class="reaction-prompt__copy">
-        <span class="reaction-prompt__eyebrow">Celebrate?</span>
+        <span class="reaction-prompt__eyebrow">{{ localAssistedFollowUpLabel('Celebrate') }}</span>
         <strong>{{ prompt.attackerName }}</strong>
         <span>{{ prompt.moveName }} hit {{ celebrateTargetList(prompt) }}. Disengage 1 meter as a Free Action?</span>
+        <span class="reaction-prompt__limitation">{{ LOCAL_MOVE_REACTION_ASSISTANCE_NOTICE }}</span>
       </div>
       <div class="reaction-prompt__actions">
         <button type="button" class="reaction-prompt__apply" @click="emit('apply-celebrate', prompt.id)">
@@ -85,9 +91,10 @@ const celebrateTargetList = (prompt: MoveAutomationCelebratePrompt): string => n
       class="reaction-prompt"
     >
       <div class="reaction-prompt__copy">
-        <span class="reaction-prompt__eyebrow">Cute Charm?</span>
+        <span class="reaction-prompt__eyebrow">{{ localAssistedFollowUpLabel('Cute Charm') }}</span>
         <strong>{{ prompt.defenderName }}</strong>
         <span>was attacked by {{ prompt.attackerName }}'s {{ prompt.moveName }}. Infatuate {{ prompt.attackerName }}?</span>
+        <span class="reaction-prompt__limitation">{{ LOCAL_MOVE_REACTION_ASSISTANCE_NOTICE }}</span>
       </div>
       <div class="reaction-prompt__actions">
         <button type="button" class="reaction-prompt__apply" @click="emit('apply-cute-charm', prompt.id)">
@@ -105,9 +112,10 @@ const celebrateTargetList = (prompt: MoveAutomationCelebratePrompt): string => n
       class="reaction-prompt"
     >
       <div class="reaction-prompt__copy">
-        <span class="reaction-prompt__eyebrow">Poison Point?</span>
+        <span class="reaction-prompt__eyebrow">{{ localAssistedFollowUpLabel('Poison Point') }}</span>
         <strong>{{ prompt.defenderName }}</strong>
         <span>was hit by {{ prompt.attackerName }}'s {{ prompt.moveName }}. Poison {{ prompt.attackerName }}?</span>
+        <span class="reaction-prompt__limitation">{{ LOCAL_MOVE_REACTION_ASSISTANCE_NOTICE }}</span>
       </div>
       <div class="reaction-prompt__actions">
         <button type="button" class="reaction-prompt__apply" @click="emit('apply-poison-point', prompt.id)">
@@ -125,9 +133,10 @@ const celebrateTargetList = (prompt: MoveAutomationCelebratePrompt): string => n
       class="reaction-prompt"
     >
       <div class="reaction-prompt__copy">
-        <span class="reaction-prompt__eyebrow">Spite?</span>
+        <span class="reaction-prompt__eyebrow">{{ localAssistedFollowUpLabel('Spite') }}</span>
         <strong>{{ prompt.defenderName }}</strong>
         <span>was hit by {{ prompt.moveName }}. Disable it for {{ prompt.attackerName }}?</span>
+        <span class="reaction-prompt__limitation">{{ LOCAL_MOVE_REACTION_ASSISTANCE_NOTICE }}</span>
       </div>
       <div class="reaction-prompt__actions">
         <button type="button" class="reaction-prompt__apply" @click="emit('apply', prompt.id)">
@@ -177,6 +186,12 @@ const celebrateTargetList = (prompt: MoveAutomationCelebratePrompt): string => n
 .reaction-prompt__copy strong,
 .reaction-prompt__eyebrow {
   color: var(--accent);
+}
+
+.reaction-prompt__limitation {
+  margin-top: 0.2rem;
+  color: var(--muted);
+  font-size: 0.74rem;
 }
 
 .reaction-prompt__eyebrow {

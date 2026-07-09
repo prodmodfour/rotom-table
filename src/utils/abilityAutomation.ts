@@ -66,7 +66,7 @@ const MAP_ABILITY_AUTOMATIONS = new Map<string, MapAbilityAutomationDefinition>(
     {
       name: CELEBRATE_ABILITY_NAME,
       category: 'map',
-      label: 'Trigger',
+      label: 'Assisted',
       targetMode: 'self',
       rangeLabel: 'self',
       rangeMeters: 0,
@@ -110,7 +110,7 @@ const MAP_ABILITY_AUTOMATIONS = new Map<string, MapAbilityAutomationDefinition>(
     {
       name: MOXIE_ABILITY_NAME,
       category: 'map',
-      label: 'Self',
+      label: 'Assisted',
       targetMode: 'self',
       rangeLabel: 'self',
       rangeMeters: 0,
@@ -132,7 +132,7 @@ const PASSIVE_ABILITY_AUTOMATIONS = new Map<string, PassiveAbilityAutomationDefi
     {
       name: CUTE_CHARM_ABILITY_NAME,
       category: 'passive',
-      label: 'Auto',
+      label: 'Assisted',
     },
   ],
   [
@@ -164,7 +164,7 @@ const PASSIVE_ABILITY_AUTOMATIONS = new Map<string, PassiveAbilityAutomationDefi
     {
       name: POISON_POINT_ABILITY_NAME,
       category: 'passive',
-      label: 'Auto',
+      label: 'Assisted',
     },
   ],
   [

@@ -38,6 +38,11 @@ import type { MoveAnimationEvent } from '~/types/moveAnimation'
 import type { BuildTool } from '#shared/mapEditor'
 import type { LivePlayPresenceAttentionTarget, LivePlayPresenceGridCell } from '#shared/livePlayPresence'
 import type { AttackOfOpportunityPrompt } from '~/utils/attackOfOpportunity'
+import {
+  ATTACK_OF_OPPORTUNITY_ASSISTANCE_NOTICE,
+  attackOfOpportunityAssistedFollowUpTitle,
+  localAssistedFollowUpLabel,
+} from '~/utils/moveAutomationAssistedFollowUps'
 import type {
   MoveAutomationTargetBranchSelectionOption,
   MoveAutomationTargetBranchSelectionState,
@@ -2270,7 +2275,7 @@ const toggleAttackOfOpportunityButton = (button: AttackOfOpportunityButton) => {
 }
 
 const attackOfOpportunityTitle = (button: AttackOfOpportunityButton): string =>
-  `${button.attackerName} may make an Attack of Opportunity against ${button.provokerName}. Right-click to clear this indicator.`
+  attackOfOpportunityAssistedFollowUpTitle(button)
 
 const attackOfOpportunityReasonLabel = (button: AttackOfOpportunityButton): string =>
   button.reason === 'movement' ? 'Provoked by movement' : 'Provoked by a ranged attack'
@@ -2865,7 +2870,7 @@ watch(
           @click.stop="toggleAttackOfOpportunityButton(button)"
           @contextmenu.prevent.stop="clearAttackOfOpportunityButton(button)"
         >
-          AoO!
+          AoO follow-up
         </button>
         <div
           v-if="openAttackOfOpportunityMenuId === button.id && button.struggleOptions.length > 1"
@@ -2876,8 +2881,10 @@ watch(
           @click.stop
         >
           <div class="attack-of-opportunity-menu__heading">
+            <span class="attack-of-opportunity-menu__status">{{ localAssistedFollowUpLabel('Attack of Opportunity') }}</span>
             <strong>{{ button.provokerName }}</strong>
             <span>{{ attackOfOpportunityReasonLabel(button) }}</span>
+            <small>{{ ATTACK_OF_OPPORTUNITY_ASSISTANCE_NOTICE }}</small>
           </div>
           <button
             v-for="move in button.struggleOptions"
@@ -3463,9 +3470,26 @@ watch(
   font-size: 0.74rem;
 }
 
-.attack-of-opportunity-menu__heading strong {
+.attack-of-opportunity-menu__heading strong,
+.attack-of-opportunity-menu__status {
   color: var(--accent);
+}
+
+.attack-of-opportunity-menu__heading strong {
   font-size: 0.82rem;
+}
+
+.attack-of-opportunity-menu__status {
+  font-size: 0.67rem;
+  font-weight: 850;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.attack-of-opportunity-menu__heading small {
+  margin-top: 0.16rem;
+  color: var(--muted);
+  line-height: 1.25;
 }
 
 .attack-of-opportunity-menu__item {

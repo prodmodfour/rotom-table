@@ -8,6 +8,11 @@ import {
   tokensAreAdjacent,
   useAttackOfOpportunityPanel,
 } from '~/utils/attackOfOpportunity'
+import {
+  ATTACK_OF_OPPORTUNITY_ASSISTANCE_NOTICE,
+  LOCAL_ASSISTED_FOLLOW_UP_NAMES,
+  attackOfOpportunityAssistedFollowUpTitle,
+} from '~/utils/moveAutomationAssistedFollowUps'
 import type { TabletopMap } from '~/types/map'
 import type { SpawnedPokemon } from '~/types/pokemon'
 import type { TokenMoveMenuOption } from '~/utils/mapTokenMoves'
@@ -84,6 +89,26 @@ const moveOption = (name: string, overrides: Partial<TokenMoveMenuOption> = {}):
 })
 
 describe('attack of opportunity helpers', () => {
+  it('identifies every current local prompt and labels AoO as an assisted non-durable follow-up', () => {
+    expect(LOCAL_ASSISTED_FOLLOW_UP_NAMES).toEqual([
+      'Spite',
+      'Cute Charm',
+      'Poison Point',
+      'Moxie',
+      'Celebrate',
+      'Attack of Opportunity',
+    ])
+    expect(ATTACK_OF_OPPORTUNITY_ASSISTANCE_NOTICE).toContain('after the provoking action')
+    expect(ATTACK_OF_OPPORTUNITY_ASSISTANCE_NOTICE).toContain('not a durable interrupt')
+    expect(ATTACK_OF_OPPORTUNITY_ASSISTANCE_NOTICE).toContain('do not rely on reconnect recovery')
+    expect(attackOfOpportunityAssistedFollowUpTitle({
+      attackerName: 'Machop',
+      provokerName: 'Abra',
+    })).toBe(
+      `Machop has an assisted Attack of Opportunity follow-up against Abra. ${ATTACK_OF_OPPORTUNITY_ASSISTANCE_NOTICE} Right-click to clear this indicator.`,
+    )
+  })
+
   it('uses PTU footprint adjacency, including diagonals and larger bases', () => {
     expect(tokensAreAdjacent(token('left', 0, 0), token('right', 1, 1))).toBe(true)
     expect(tokensAreAdjacent(token('left', 0, 0), token('far', 2, 0))).toBe(false)

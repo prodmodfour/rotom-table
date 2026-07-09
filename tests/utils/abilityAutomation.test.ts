@@ -8,6 +8,7 @@ import {
   MOXIE_ABILITY_NAME,
   SHIELD_DUST_ABILITY_NAME,
   SWEET_VEIL_ABILITY_NAME,
+  getAbilityAutomation,
   getAbilityAutomationCategory,
   mapAbilityTargetCandidates,
   resolveMapAbilityAutomationTransaction,
@@ -77,6 +78,13 @@ describe('ability automation helpers', () => {
     expect(getAbilityAutomationCategory(SHIELD_DUST_ABILITY_NAME)).toBe('passive')
     expect(getAbilityAutomationCategory(SWEET_VEIL_ABILITY_NAME)).toBe('passive')
     expect(getAbilityAutomationCategory('Run Away')).toBeNull()
+  })
+
+  it('marks local post-move ability prompts as assisted instead of automatic', () => {
+    expect(getAbilityAutomation(CELEBRATE_ABILITY_NAME)?.label).toBe('Assisted')
+    expect(getAbilityAutomation(CUTE_CHARM_ABILITY_NAME)?.label).toBe('Assisted')
+    expect(getAbilityAutomation(MOXIE_ABILITY_NAME)?.label).toBe('Assisted')
+    expect(getAbilityAutomation('Poison Point')?.label).toBe('Assisted')
   })
 
   it('targets other tokens and resolves Intimidate stage updates', () => {

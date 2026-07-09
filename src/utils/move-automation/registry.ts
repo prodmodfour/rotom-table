@@ -102,10 +102,12 @@ export const isSeamlessTargetCountMoveScript = (
 )
 
 /**
- * Human-reviewed move automation scripts. A move only counts as automated when
- * an explicit entry is added here (or moved into per-move modules later). Small
- * factories may copy canonical move data, but the registry itself remains an
- * allow-list of reviewed automation coverage.
+ * Explicit v1 move automation scripts. Registry presence means a script is
+ * available; it does not claim that every canonical clause or cross-cutting
+ * interaction is complete. In particular, browser-local post-commit prompts
+ * remain assisted follow-ups until a durable server reaction flow replaces
+ * them. Small factories may copy canonical move data, but this registry stays
+ * an allow-list of reviewed v1 implementations.
  */
 export const EXPLICIT_MOVE_AUTOMATION_SCRIPTS: ReadonlyMap<string, MoveAutomationScript> = new Map<string, MoveAutomationScript>([
   ...STRUGGLE_ATTACK_SCRIPTS,

@@ -44,6 +44,10 @@ Authoritative `resolveMove` planning also records a deduplicated `sheetReads` sn
 
 Relationship-dependent move rules use the centralized server query seam and only recognize ally/enemy relationships from explicit encounter side IDs. Unknown allegiance fails closed for ally/enemy mechanics: token ownership, player control, GM control, and mere map presence never imply that two placements are allies. Self identity remains available independently of side data. Until encounter sides become part of the persisted placement schema, cross-placement ally/enemy mechanics therefore remain unconfirmed rather than guessing allegiance.
 
+### Assisted reaction follow-ups
+
+Spite, Cute Charm, Poison Point, Moxie, and Celebrate currently open browser-local assisted follow-ups only after the provoking move has been accepted. They do not pause, interrupt, or alter that accepted resolution, and their prompts are not restored after refresh or reconnect. Attack-of-opportunity indicators are also assisted follow-ups after the provoking movement or ranged attack; their update command does not make the response a durable, resumable interrupt, so operators must not rely on reconnect recovery for the reaction window. Registry presence or an `Auto`-style mechanics helper must not be treated as a semantic-completeness claim for any of these flows.
+
 Map live-play idempotency records are keyed by map and `opId`; shop checkout idempotency records are keyed by shop and `opId`. A retry with the same command body returns the stored result without applying effects twice. Reusing an `opId` with different material is rejected.
 
 ### Live-play batch commands are not client-side macros
