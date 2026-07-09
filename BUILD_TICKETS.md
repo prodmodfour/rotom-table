@@ -140,7 +140,7 @@ Status: DONE
 
 ## MA-002 — Assert target identity through the accepted command response
 
-Status: TODO
+Status: DONE
 
 **Depends on:** MA-001
 **Commit:** `test(move-automation): cover target ids across resolve move boundary`

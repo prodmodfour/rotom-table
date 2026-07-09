@@ -10,7 +10,11 @@ import { executeLivePlayResolveMoveCommandUseCase, type LivePlayResolveMoveComma
 import { acceptedRealtimeTestHooks } from './livePlayAcceptedRealtimeTestUtils'
 import { planAuthoritativeMoveState } from '~~/server/domain/planAuthoritativeMoveState'
 import { LIVE_PLAY_COMMAND_SCHEMA_VERSION, LIVE_PLAY_COMMAND_TYPES, LIVE_PLAY_PATCH_TYPES, type LivePlayCommandAccepted, type ResolveMoveLivePlayCommand } from '#shared/livePlayCommands'
-import { LIVE_PLAY_MOVE_RESOLUTION_SCHEMA_VERSION, type ResolveMoveIntent } from '#shared/livePlayMoveResolution'
+import {
+  LIVE_PLAY_MOVE_RESOLUTION_SCHEMA_VERSION,
+  type LivePlayResolvedMoveResult,
+  type ResolveMoveIntent,
+} from '#shared/livePlayMoveResolution'
 import { parseLivePlayMoveStatePatchPayload } from '#shared/livePlayMoveState'
 import { MAP_INTERACTION_MODES } from '#shared/mapInteractionMode'
 import type { PlayerProfile } from '#shared/playerProfiles'
@@ -183,13 +187,23 @@ const accepted = (result: unknown): LivePlayCommandAccepted => {
   return result as LivePlayCommandAccepted
 }
 
-const moveStatePatchPayload = (result: LivePlayCommandAccepted) => {
-  expect(result.patches).toHaveLength(1)
-  expect(result.patches[0]?.type).toBe(LIVE_PLAY_PATCH_TYPES.MOVE_STATE)
-  const parsed = parseLivePlayMoveStatePatchPayload(result.patches[0]?.payload)
+const moveStatePayloadFromPatches = (patches: LivePlayCommandAccepted['patches']) => {
+  expect(patches).toHaveLength(1)
+  expect(patches[0]?.type).toBe(LIVE_PLAY_PATCH_TYPES.MOVE_STATE)
+  const parsed = parseLivePlayMoveStatePatchPayload(patches[0]?.payload)
   expect(parsed.valid).toBe(true)
   if (!parsed.valid) throw new Error('invalid move-state payload')
   return parsed.payload
+}
+
+const moveStatePatchPayload = (result: LivePlayCommandAccepted) => moveStatePayloadFromPatches(result.patches)
+
+const moveTargetIdentity = (move: LivePlayResolvedMoveResult | undefined) => {
+  if (!move) throw new Error('expected resolved move')
+  return {
+    attackedTargetIds: [...move.transaction.attackedTargetIds],
+    hitTargetIds: [...move.transaction.hitTargetIds],
+  }
 }
 
 const playerProfile = (linkedSlug: string): PlayerProfile => ({
@@ -225,6 +239,19 @@ const areaScript = (name: string): MoveAutomationScript => ({
   fieldSuggestions: [],
   hazardSuggestions: [],
   automationNotes: [],
+})
+
+const mixedAreaTemplate = { kind: 'line' as const, size: 2, label: 'Line 2' }
+
+const mixedOutcomeAreaScript = (): MoveAutomationScript => ({
+  ...areaScript('Swift'),
+  requiresAccuracy: true,
+  ac: 2,
+  range: mixedAreaTemplate.label,
+  effect: 'Resolve move command mixed area outcome test script.',
+  keywords: [mixedAreaTemplate.label],
+  areaTemplates: [mixedAreaTemplate],
+  stageSuggestions: [{ recipient: 'target', key: 'def', delta: -1, label: 'Defense down' }],
 })
 
 const passScript = (): MoveAutomationScript => ({
@@ -429,42 +456,98 @@ describe('executeLivePlayResolveMoveCommandUseCase', () => {
     expect(failingHarness.ops.getOpResult('arena', 'op_atomicfail1')).toBeNull()
   })
 
-  it('replays duplicate opIds from stored MOVE_STATE without replanning, rerolling, publishing, or advancing revisions', async () => {
-    const harness = seedHarness({ actorMoves: [{ name: 'Tackle' }] })
-    const map = harness.maps.getBySlug('arena')!
-    const moveIntent = intent({ placementId: 'actor-token', moveName: 'Tackle', selection: { kind: 'single-target', targetPlacementId: 'target-a' } })
-    let plannerCalls = 0
-    let randomCalls = 0
-    const countingPlanner: typeof planAuthoritativeMoveState = (input) => {
-      plannerCalls += 1
-      return planAuthoritativeMoveState(input)
-    }
-    const random = () => {
-      randomCalls += 1
-      return randomCalls === 1 ? 0.5 : 0
-    }
+  it('preserves mixed area target identities in the response, stored result, realtime event, and duplicate replay', async () => {
+    await withRegisteredScript(mixedOutcomeAreaScript(), async () => {
+      const harness = seedHarness({ actorMoves: [{ name: 'Swift' }] })
+      const map = harness.maps.getBySlug('arena')!
+      const moveIntent = intent({
+        placementId: 'actor-token',
+        moveName: 'Swift',
+        selection: {
+          kind: 'area',
+          areaTemplateId: moveAutomationAreaTemplateId(mixedAreaTemplate),
+          direction: 'east',
+        },
+      })
+      let plannerCalls = 0
+      let randomCalls = 0
+      const countingPlanner: typeof planAuthoritativeMoveState = (input) => {
+        plannerCalls += 1
+        return planAuthoritativeMoveState(input)
+      }
+      const random = () => {
+        randomCalls += 1
+        return randomCalls === 1 ? 0.5 : 0
+      }
 
-    const command = commandFor(map, moveIntent, 'op_duplicate01')
-    const first = await execute(harness, command, { random, planner: countingPlanner })
-    const firstResult = accepted(first.result)
-    const firstMove = first.move
-    const firstEventCount = harness.events.length
-    const firstCommittedMap = deepCloneJson(harness.maps.getBySlug('arena'))
-    const firstMapRevision = firstCommittedMap?.revision
-    const firstSheetRevision = harness.sheets.getByRef('pokemon', 'target-a')?.revision
+      const command = commandFor(map, moveIntent, 'op_duplicate01', ['target-a', 'target-b'])
+      const first = await execute(harness, command, { random, planner: countingPlanner })
+      const firstResult = accepted(first.result)
+      const firstPayload = moveStatePatchPayload(firstResult)
+      const storedResult = accepted(harness.ops.getOpResult('arena', command.opId))
+      const storedPayload = moveStatePatchPayload(storedResult)
+      const acceptedEvent = harness.events.find((event) => (
+        (event as { readonly type?: string }).type === 'live-play-command-accepted'
+      )) as { readonly patches?: LivePlayCommandAccepted['patches'] } | undefined
+      if (!acceptedEvent?.patches) throw new Error('expected accepted realtime event patches')
+      const realtimePayload = moveStatePayloadFromPatches(acceptedEvent.patches)
+      const expectedTargetIdentity = {
+        attackedTargetIds: ['target-a', 'target-b'],
+        hitTargetIds: ['target-a'],
+      }
 
-    const second = await execute(harness, command, { random: () => { throw new Error('random should not run') }, planner: () => { throw new Error('planner should not run') } })
-    expect(second.result).toEqual(firstResult)
-    expect(second.move).toEqual(firstMove)
-    expect(plannerCalls).toBe(1)
-    expect(randomCalls).toBeGreaterThan(0)
-    expect(harness.events).toHaveLength(firstEventCount)
-    expect(harness.maps.getBySlug('arena')).toEqual(firstCommittedMap)
-    expect(harness.maps.getBySlug('arena')?.revision).toBe(firstMapRevision)
-    expect(harness.sheets.getByRef('pokemon', 'target-a')?.revision).toBe(firstSheetRevision)
+      expect([
+        moveTargetIdentity(first.move),
+        moveTargetIdentity(firstPayload.move),
+        moveTargetIdentity(storedPayload.move),
+        moveTargetIdentity(realtimePayload.move),
+      ]).toEqual([
+        expectedTargetIdentity,
+        expectedTargetIdentity,
+        expectedTargetIdentity,
+        expectedTargetIdentity,
+      ])
+      expect(storedResult).toEqual(firstResult)
 
-    const differentIntent = intent({ placementId: 'actor-token', moveName: 'Tackle', selection: { kind: 'single-target', targetPlacementId: 'target-b' } })
-    const violation = await execute(harness, { ...commandFor(harness.maps.getBySlug('arena')!, differentIntent, 'op_duplicate01'), baseRevision: command.baseRevision })
-    expect(violation.result).toMatchObject({ ok: false, reason: 'conflict', message: expect.stringContaining('already recorded') })
+      const firstEventCount = harness.events.length
+      const firstCommittedMap = deepCloneJson(harness.maps.getBySlug('arena'))
+      const firstMapRevision = firstCommittedMap?.revision
+      const firstHitSheetRevision = harness.sheets.getByRef('pokemon', 'target-a')?.revision
+      const firstMissSheetRevision = harness.sheets.getByRef('pokemon', 'target-b')?.revision
+
+      const duplicate = await execute(harness, command, {
+        random: () => { throw new Error('random should not run') },
+        planner: () => { throw new Error('planner should not run') },
+      })
+      const duplicateResult = accepted(duplicate.result)
+      const duplicatePayload = moveStatePatchPayload(duplicateResult)
+      expect(duplicate.result).toEqual(firstResult)
+      expect(duplicate.move).toEqual(first.move)
+      expect(moveTargetIdentity(duplicate.move)).toEqual(expectedTargetIdentity)
+      expect(moveTargetIdentity(duplicatePayload.move)).toEqual(expectedTargetIdentity)
+      expect(plannerCalls).toBe(1)
+      expect(randomCalls).toBe(2)
+      expect(harness.events).toHaveLength(firstEventCount)
+      expect(harness.maps.getBySlug('arena')).toEqual(firstCommittedMap)
+      expect(harness.maps.getBySlug('arena')?.revision).toBe(firstMapRevision)
+      expect(harness.sheets.getByRef('pokemon', 'target-a')?.revision).toBe(firstHitSheetRevision)
+      expect(harness.sheets.getByRef('pokemon', 'target-b')?.revision).toBe(firstMissSheetRevision)
+
+      const differentIntent = intent({
+        placementId: 'actor-token',
+        moveName: 'Swift',
+        selection: {
+          kind: 'area',
+          areaTemplateId: moveAutomationAreaTemplateId(mixedAreaTemplate),
+          direction: 'east',
+          excludedTargetPlacementIds: ['target-b'],
+        },
+      })
+      const violation = await execute(harness, {
+        ...commandFor(harness.maps.getBySlug('arena')!, differentIntent, command.opId, ['target-a', 'target-b']),
+        baseRevision: command.baseRevision,
+      })
+      expect(violation.result).toMatchObject({ ok: false, reason: 'conflict', message: expect.stringContaining('already recorded') })
+    })
   })
 })

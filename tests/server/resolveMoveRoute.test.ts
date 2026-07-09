@@ -69,7 +69,17 @@ describe('resolve-move API route', () => {
 
   it('flattens accepted resolveMove responses for GMs without resolving a profile', async () => {
     const body = { ...command(), clientId: 'gm-client' }
-    const move = { schemaVersion: 1, actorPlacementId: 'actor-token' }
+    const targetIdentity = {
+      attackedTargetIds: ['target-a', 'target-b'],
+      hitTargetIds: ['target-a'],
+    }
+    const move = {
+      schemaVersion: 1,
+      actorPlacementId: 'actor-token',
+      transaction: {
+        ...targetIdentity,
+      },
+    }
     const sheetUpdates = [{ kind: 'pokemon', slug: 'pikachu', sheet: { slug: 'pikachu', revision: 3 } }]
     mocks.executeLivePlayResolveMoveCommandUseCase.mockResolvedValue({
       result: {
@@ -86,7 +96,8 @@ describe('resolve-move API route', () => {
       move,
     })
 
-    await expect(invokeRoute(route, { role: 'gm', body })).resolves.toEqual({
+    const response = await invokeRoute(route, { role: 'gm', body })
+    expect(response).toEqual({
       ok: true,
       opId: body.opId,
       mapSlug: body.mapSlug,
@@ -97,6 +108,10 @@ describe('resolve-move API route', () => {
       map: { slug: 'arena', revision: 5 },
       sheetUpdates,
       move,
+    })
+    expect(response).toMatchObject({
+      move: { transaction: targetIdentity },
+      patches: [{ payload: { move: { transaction: targetIdentity } } }],
     })
 
     expect(mocks.resolvePlayerProfileForPolicy).not.toHaveBeenCalled()
