@@ -231,7 +231,7 @@ Status: DONE
 
 ## MA-008 — Add a pre-scale authoritative regression suite
 
-Status: TODO
+Status: DONE
 
 **Depends on:** MA-004, MA-005, MA-006
 **Commit:** `test(move-automation): lock authoritative resolution invariants`
