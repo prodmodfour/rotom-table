@@ -537,26 +537,12 @@ get_next_ticket_summary() {
       return value
     }
 
-    function last_number_token(identifier, normalized, count, parts) {
-      normalized = identifier
-      gsub(/[^0-9]+/, " ", normalized)
-      normalized = trim(normalized)
-      if (normalized == "") return ""
-
-      count = split(normalized, parts, /[[:space:]]+/)
-      return parts[count]
-    }
-
     function record_if_current() {
-      if (ticket_id != "" && ticket_status == "TODO") {
-        ticket_value = ticket_order + 0
-        if (!found || ticket_value < best_value) {
-          found = 1
-          best_value = ticket_value
-          best_id = ticket_id
-          best_title = ticket_title
-          best_status = ticket_status
-        }
+      if (!found && ticket_id != "" && ticket_status == "TODO") {
+        found = 1
+        next_id = ticket_id
+        next_title = ticket_title
+        next_status = ticket_status
       }
     }
 
@@ -571,13 +557,11 @@ get_next_ticket_summary() {
       if (ticket_id ~ /^Ticket[[:space:]]+[0-9]+([[:space:]]|$)/) {
         sub(/^Ticket[[:space:]]+/, "", ticket_id)
         sub(/[[:space:]].*$/, "", ticket_id)
-        ticket_order = ticket_id + 0
-        ticket_id = sprintf("%03d", ticket_order)
+        ticket_id = sprintf("%03d", ticket_id + 0)
         sub(/^Ticket[[:space:]]+[0-9]+[[:space:]]*/, "", ticket_title)
       } else {
         sub(/[[:space:]].*$/, "", ticket_id)
-        ticket_order = last_number_token(ticket_id)
-        if (ticket_order == "") {
+        if (ticket_id !~ /[0-9]/) {
           ticket_id = ""
           ticket_title = ""
           ticket_status = ""
@@ -601,7 +585,7 @@ get_next_ticket_summary() {
     END {
       record_if_current()
       if (found) {
-        printf "%s — %s (%s)\n", best_id, best_title, best_status
+        printf "%s — %s (%s)\n", next_id, next_title, next_status
       }
     }
   ' BUILD_TICKETS.md

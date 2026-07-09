@@ -158,6 +158,25 @@ Status: TODO
 Add extraction helpers.
 BUILD_TICKETS
 
+mixed_queue_fixture="$tmp_dir/mixed-queue-build-tickets.md"
+cat > "$mixed_queue_fixture" <<'BUILD_TICKETS'
+# BUILD_TICKETS.md
+
+AUTOMATION_STATUS: TODO
+
+## MA-003 — Completed foundation
+
+Status: DONE
+
+## MA-004 — Continue the current phase
+
+Status: TODO
+
+## REG-001 — Certify the later phase
+
+Status: TODO
+BUILD_TICKETS
+
 run_summary_fixture \
   "sprint-style TODO ticket headings" \
   "$sprint_fixture" \
@@ -169,5 +188,11 @@ run_summary_fixture \
   "$plain_fixture" \
   "Now working on: ticket 001 — Define the visual-bounds metadata contract (TODO)" \
   "plain"
+
+run_summary_fixture \
+  "the first TODO across mixed ticket families" \
+  "$mixed_queue_fixture" \
+  "Now working on: ticket MA-004 — Continue the current phase (TODO)" \
+  "mixed-queue"
 
 pp_success "Build-loop ticket summary regression passed."
