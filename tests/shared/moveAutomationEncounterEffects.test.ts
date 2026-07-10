@@ -1,0 +1,163 @@
+import { describe, expect, it } from 'vitest'
+import {
+  ENCOUNTER_EFFECT_LIMITS,
+  EncounterEffectValidationError,
+  parseEncounterEffect,
+  parseEncounterEffects,
+} from '#shared/moveAutomation/encounterEffects'
+import {
+  capabilityEncounterEffectFixture,
+  conditionEncounterEffectFixture,
+  numericEncounterEffectFixture,
+} from '../fixtures/moveAutomation/encounterEffects'
+
+describe('typed encounter effects', () => {
+  it('round-trips every supported payload kind as detached plain data', () => {
+    const input = [
+      conditionEncounterEffectFixture(),
+      numericEncounterEffectFixture(),
+      capabilityEncounterEffectFixture(),
+    ]
+    const parsed = parseEncounterEffects(structuredClone(input))
+
+    expect(parsed).toEqual(input)
+    expect(JSON.stringify(parsed)).toBe(JSON.stringify(input))
+    expect(parsed).not.toBe(input)
+    expect(parsed[0]).not.toBe(input[0])
+    expect(parsed[0]?.source).not.toBe(input[0]?.source)
+    expect(parsed[0]?.affected.cells).not.toBe(input[0]?.affected.cells)
+    expect(parsed[0]?.payload).not.toBe(input[0]?.payload)
+    expect(parsed[0]?.dispel).not.toBe(input[0]?.dispel)
+    expect(parsed[0]?.suppression).not.toBe(input[0]?.suppression)
+  })
+
+  it('selects an exact payload union from the effect kind', () => {
+    const condition = conditionEncounterEffectFixture()
+
+    expect(() => parseEncounterEffect({
+      ...condition,
+      payload: numericEncounterEffectFixture().payload,
+    })).toThrow('encounterEffect.payload: must contain exactly the supported fields')
+    expect(() => parseEncounterEffect({
+      ...condition,
+      kind: 'script',
+      payload: { source: 'apply anything' },
+    })).toThrowError(EncounterEffectValidationError)
+    expect(() => parseEncounterEffect({
+      ...condition,
+      payload: { ...condition.payload, metadata: { arbitrary: true } },
+    })).toThrow('unknown metadata')
+  })
+
+  it('validates source identity, recipients, creation coordinates, counts, and duration', () => {
+    const effect = conditionEncounterEffectFixture()
+
+    expect(() => parseEncounterEffect({
+      ...effect,
+      source: { ...effect.source, operationId: 'Not Stable' },
+    })).toThrow('encounterEffect.source.operationId: must be a lowercase stable identifier')
+    expect(() => parseEncounterEffect({
+      ...effect,
+      affected: { placementIds: [], sideIds: [], cells: [] },
+    })).toThrow('must identify at least one affected placement, side, or cell')
+    expect(() => parseEncounterEffect({
+      ...effect,
+      affected: { ...effect.affected, cells: [{ x: 1, y: -1, z: 2 }] },
+    })).toThrow('encounterEffect.affected.cells[0].y: must be from 0')
+    expect(() => parseEncounterEffect({ ...effect, createdRound: 0 }))
+      .toThrow('encounterEffect.createdRound: must be from 1')
+    expect(() => parseEncounterEffect({ ...effect, stacks: 0 }))
+      .toThrow('encounterEffect.stacks: must be from 1')
+    expect(() => parseEncounterEffect({ ...effect, charges: -1 }))
+      .toThrow('encounterEffect.charges: must be from 0')
+    expect(() => parseEncounterEffect({
+      ...effect,
+      duration: { kind: 'scene', remaining: 1 },
+    })).toThrow('must be null for scene, until-triggered, and permanent durations')
+    expect(() => parseEncounterEffect({
+      ...effect,
+      duration: { kind: 'rounds', remaining: null },
+    })).toThrow('encounterEffect.duration.remaining: must be a safe integer')
+  })
+
+  it('requires bounded unique tags, recipients, cells, and effect ids', () => {
+    const effect = conditionEncounterEffectFixture()
+
+    expect(() => parseEncounterEffect({ ...effect, tags: ['condition', 'condition'] }))
+      .toThrow('encounterEffect.tags: must not contain duplicate identifiers')
+    expect(() => parseEncounterEffect({
+      ...effect,
+      affected: { ...effect.affected, placementIds: ['target-token', 'target-token'] },
+    })).toThrow('encounterEffect.affected.placementIds: must not contain duplicate identifiers')
+    expect(() => parseEncounterEffect({
+      ...effect,
+      affected: {
+        ...effect.affected,
+        cells: [{ x: 1, y: 0, z: 1 }, { x: 1, y: 0, z: 1 }],
+      },
+    })).toThrow('encounterEffect.affected.cells: must not contain duplicate cells')
+    expect(() => parseEncounterEffects([effect, structuredClone(effect)]))
+      .toThrow('encounterEffects.id: must not contain duplicate identifiers')
+
+    const oversized = Array.from(
+      { length: ENCOUNTER_EFFECT_LIMITS.count + 1 },
+      (_, index) => ({ ...effect, id: `effect.test-${index}` }),
+    )
+    expect(() => parseEncounterEffects(oversized))
+      .toThrow(`encounterEffects: must contain at most ${ENCOUNTER_EFFECT_LIMITS.count} entries`)
+  })
+
+  it('enforces dispel policy and explicit suppression references', () => {
+    const suppressor = capabilityEncounterEffectFixture()
+    const suppressed = {
+      ...numericEncounterEffectFixture(),
+      suppression: {
+        sources: [{ effectId: suppressor.id, reasonCode: 'gravity.suppresses-levitate' }],
+      },
+    }
+
+    expect(parseEncounterEffects([suppressor, suppressed])[1]?.suppression).toEqual({
+      sources: [{ effectId: suppressor.id, reasonCode: 'gravity.suppresses-levitate' }],
+    })
+    expect(() => parseEncounterEffect({
+      ...suppressor,
+      dispel: { policy: 'none', tags: ['movement'] },
+    })).toThrow('must be empty when dispel policy is none')
+    expect(() => parseEncounterEffect({
+      ...suppressor,
+      dispel: { policy: 'matching-tags', tags: [] },
+    })).toThrow('must not be empty for matching-tags dispel policy')
+    expect(() => parseEncounterEffects([
+      {
+        ...suppressed,
+        suppression: {
+          sources: [{ effectId: 'effect.unknown', reasonCode: 'field.suppressed' }],
+        },
+      },
+    ])).toThrow('references unknown effect effect.unknown')
+    expect(() => parseEncounterEffects([
+      {
+        ...suppressed,
+        suppression: {
+          sources: [{ effectId: suppressed.id, reasonCode: 'self.suppressed' }],
+        },
+      },
+    ])).toThrow('cannot suppress its own effect')
+  })
+
+  it('rejects non-finite or unbounded numeric payloads', () => {
+    const modifier = numericEncounterEffectFixture()
+
+    expect(() => parseEncounterEffect({
+      ...modifier,
+      payload: { ...modifier.payload, value: Number.NaN },
+    })).toThrow('encounterEffect.payload.value: must be a finite number')
+    expect(() => parseEncounterEffect({
+      ...modifier,
+      payload: {
+        ...modifier.payload,
+        value: ENCOUNTER_EFFECT_LIMITS.numericMagnitude + 1,
+      },
+    })).toThrow(`magnitude must not exceed ${ENCOUNTER_EFFECT_LIMITS.numericMagnitude}`)
+  })
+})

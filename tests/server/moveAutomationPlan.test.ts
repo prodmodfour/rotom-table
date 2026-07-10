@@ -6,11 +6,12 @@ import {
   isMoveStateChangePlanNoOp,
   unavailableMoveStateCompensation,
   type MoveStateChangeInput,
-  type VersionedMoveEncounterState,
 } from '~~/server/domain/moveAutomation/plan'
+import { createEmptyEncounterState } from '#shared/moveAutomation/encounterState'
 import type { CharacterSheet } from '~/types/characterSheet'
 import { createDefaultGroupInventoryDocument } from '~/types/groupInventory'
 import type { SheetPlacement } from '~/types/map'
+import { conditionEncounterEffectFixture } from '../fixtures/moveAutomation/encounterEffects'
 
 const sheet = (slug: string, revision: number, currentHp: number): CharacterSheet => ({
   slug,
@@ -149,10 +150,6 @@ describe('typed move state change plans', () => {
   })
 
   it('groups encounter, placement, and external changes while sharing the owning map revision', () => {
-    interface TestEncounterState extends VersionedMoveEncounterState {
-      readonly effects: readonly string[]
-    }
-
     const previousPlacement: SheetPlacement = {
       id: 'actor-token',
       sheetKind: 'pokemon',
@@ -171,15 +168,20 @@ describe('typed move state change plans', () => {
       money: 50,
     }
 
-    const plan = createMoveStateChangePlan<TestEncounterState>([
+    const previousEncounterState = createEmptyEncounterState()
+    const currentEncounterState = {
+      ...createEmptyEncounterState(),
+      effects: [conditionEncounterEffectFixture()],
+    }
+    const plan = createMoveStateChangePlan([
       {
         kind: 'encounter-state',
         scope: { kind: 'encounter', mapSlug: 'arena' },
         expectedRevision: 4,
         sourceOperationId: 'operation.effect',
         reasonCode: 'effect-added',
-        previous: { schemaVersion: 1, effects: [] },
-        current: { schemaVersion: 1, effects: ['effect-1'] },
+        previous: previousEncounterState,
+        current: currentEncounterState,
         compensation: RESTORE_PREVIOUS_MOVE_STATE_VALUE,
       },
       {
@@ -209,6 +211,7 @@ describe('typed move state change plans', () => {
     ])
 
     expect(plan.groups.encounter).toHaveLength(1)
+    expect(plan.groups.encounter[0]?.changes[0]?.current).toEqual(currentEncounterState)
     expect(plan.groups.placements).toHaveLength(1)
     expect(plan.groups.externalResources).toHaveLength(1)
     expect(plan.expectedRevisions).toEqual([

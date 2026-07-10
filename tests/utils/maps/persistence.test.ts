@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { createEmptyEncounterState } from '#shared/moveAutomation/encounterState'
+import { capabilityEncounterEffectFixture } from '../../fixtures/moveAutomation/encounterEffects'
 import {
   clonePersistableMapPayload,
   stablePersistableMapJson,
@@ -77,6 +78,10 @@ describe('map persistence helpers', () => {
   it('round-trips encounter state without absorbing existing combat fields', () => {
     const map: TabletopMap = {
       ...createMap(),
+      encounterState: {
+        ...createEmptyEncounterState(),
+        effects: [capabilityEncounterEffectFixture()],
+      },
       hazards: [{ kind: 'spikes', x: 1, y: 0, z: 2 }],
       fieldEffects: { weather: [{ kind: 'rainy', rounds: 3 }], terrains: [], rooms: [] },
       temporaryHitPoints: {
@@ -91,7 +96,7 @@ describe('map persistence helpers', () => {
 
     const roundTrip = JSON.parse(stablePersistableMapJson(map)) as TabletopMap
 
-    expect(roundTrip.encounterState).toEqual(createEmptyEncounterState())
+    expect(roundTrip.encounterState).toEqual(map.encounterState)
     expect(roundTrip.hazards).toEqual(map.hazards)
     expect(roundTrip.fieldEffects).toEqual(map.fieldEffects)
     expect(roundTrip.temporaryHitPoints).toEqual(map.temporaryHitPoints)

@@ -754,7 +754,7 @@ Status: DONE
 
 ## MA-056 — Define typed encounter effect instances
 
-Status: TODO
+Status: DONE
 
 **Depends on:** MA-050, MA-031
 **Commit:** `feat(move-automation): model typed encounter effects`

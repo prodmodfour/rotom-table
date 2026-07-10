@@ -48,9 +48,20 @@ const VALID_PAYLOADS = {
   'temporary-effect': {
     action: 'add',
     effectId: 'effect.helping-hand',
-    effectKind: 'next-attack-bonus',
-    duration: { kind: 'turns', amount: 1 },
-    stacks: 1,
+    definition: {
+      kind: 'numeric-modifier',
+      duration: { kind: 'turns', remaining: 1 },
+      stacks: 1,
+      charges: 1,
+      tags: ['next-attack'],
+      payload: {
+        attribute: 'damage',
+        operation: 'multiply',
+        value: 1.5,
+        rounding: 'floor',
+      },
+      dispel: { policy: 'none', tags: [] },
+    },
   },
   field: {
     action: 'apply',
@@ -361,25 +372,45 @@ describe('MoveSpec typed effect operations', () => {
       'invalid-effect-operation',
       'operation.payload.value',
     )
+    const temporaryEffect = VALID_PAYLOADS['temporary-effect']
     expectEffectError(
       validOperation('temporary-effect', {
         payload: {
-          ...VALID_PAYLOADS['temporary-effect'],
-          duration: { kind: 'scene', amount: 1 },
+          ...temporaryEffect,
+          definition: {
+            ...temporaryEffect.definition,
+            duration: { kind: 'scene', remaining: 1 },
+          },
         },
       }),
       'invalid-effect-operation',
-      'operation.payload.duration.amount',
+      'operation.payload.definition.duration.remaining',
     )
     expectEffectError(
       validOperation('temporary-effect', {
         payload: {
-          ...VALID_PAYLOADS['temporary-effect'],
-          duration: { kind: 'rounds', amount: null },
+          ...temporaryEffect,
+          definition: {
+            ...temporaryEffect.definition,
+            duration: { kind: 'rounds', remaining: null },
+          },
         },
       }),
       'invalid-effect-operation',
-      'operation.payload.duration.amount',
+      'operation.payload.definition.duration.remaining',
+    )
+    expectEffectError(
+      validOperation('temporary-effect', {
+        payload: {
+          ...temporaryEffect,
+          definition: {
+            ...temporaryEffect.definition,
+            kind: 'condition',
+          },
+        },
+      }),
+      'invalid-effect-operation',
+      'operation.payload.definition.payload',
     )
     expectEffectError(
       validOperation('roll', {

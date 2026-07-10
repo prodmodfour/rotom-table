@@ -1,4 +1,11 @@
 import {
+  ENCOUNTER_EFFECT_DURATION_KINDS,
+  ENCOUNTER_EFFECT_LIMITS,
+  EncounterEffectValidationError,
+  parseEncounterEffectDefinition,
+  type EncounterEffectDefinition,
+} from './encounterEffects'
+import {
   MOVE_SPEC_PHASES,
   type MoveSpecPhase,
 } from './spec'
@@ -77,13 +84,9 @@ export const MOVE_EFFECT_COMBAT_STAGES = [
   'acc',
   'all',
 ] as const
-export const MOVE_EFFECT_DURATION_KINDS = [
-  'turns',
-  'rounds',
-  'scene',
-  'until-triggered',
-  'permanent',
-] as const
+/** @deprecated Temporary-effect definitions use ENCOUNTER_EFFECT_DURATION_KINDS directly. */
+export const MOVE_EFFECT_DURATION_KINDS = ENCOUNTER_EFFECT_DURATION_KINDS
+
 export const MOVE_EFFECT_FIELD_CATEGORIES = [
   'weather',
   'terrain',
@@ -118,7 +121,7 @@ export const MOVE_EFFECT_OPERATION_LIMITS = Object.freeze({
   diceSides: 10_000,
   numericMagnitude: 1_000_000,
   durationCount: 10_000,
-  effectStacks: 64,
+  effectStacks: ENCOUNTER_EFFECT_LIMITS.stacks,
   hazardLayers: 64,
   reactionPriorityMagnitude: 1_000,
 })
@@ -136,6 +139,7 @@ export type MoveEffectRoundingPolicy = (typeof MOVE_EFFECT_ROUNDING_POLICIES)[nu
 export type MoveEffectConditionAction = (typeof MOVE_EFFECT_CONDITION_ACTIONS)[number]
 export type MoveEffectCombatStageAction = (typeof MOVE_EFFECT_COMBAT_STAGE_ACTIONS)[number]
 export type MoveEffectCombatStage = (typeof MOVE_EFFECT_COMBAT_STAGES)[number]
+/** @deprecated Temporary-effect definitions use EncounterEffectDuration. */
 export type MoveEffectDurationKind = (typeof MOVE_EFFECT_DURATION_KINDS)[number]
 export type MoveEffectFieldCategory = (typeof MOVE_EFFECT_FIELD_CATEGORIES)[number]
 export type MoveEffectMovementMode = (typeof MOVE_EFFECT_MOVEMENT_MODES)[number]
@@ -216,18 +220,17 @@ export interface MoveCombatStageEffectPayload {
   readonly value: number | null
 }
 
+/** @deprecated Temporary-effect definitions use EncounterEffectDuration. */
 export interface MoveEffectDuration {
   readonly kind: MoveEffectDurationKind
-  /** Counted durations require an amount; event/permanent durations use null. */
   readonly amount: number | null
 }
 
 export interface MoveAddTemporaryEffectPayload {
   readonly action: 'add'
   readonly effectId: string
-  readonly effectKind: string
-  readonly duration: MoveEffectDuration
-  readonly stacks: number
+  /** Typed mechanics only; the reducer supplies source, recipients, timing, and suppression. */
+  readonly definition: EncounterEffectDefinition
 }
 
 export interface MoveRemoveTemporaryEffectPayload {
@@ -421,14 +424,7 @@ const DIRECT_HP_FIELDS = [
 const HEAL_FIELDS = ['mode', 'pool', 'amount', 'rounding'] as const
 const CONDITION_FIELDS = ['action', 'conditionId'] as const
 const COMBAT_STAGE_FIELDS = ['action', 'stage', 'value'] as const
-const DURATION_FIELDS = ['kind', 'amount'] as const
-const ADD_TEMPORARY_EFFECT_FIELDS = [
-  'action',
-  'effectId',
-  'effectKind',
-  'duration',
-  'stacks',
-] as const
+const ADD_TEMPORARY_EFFECT_FIELDS = ['action', 'effectId', 'definition'] as const
 const REMOVE_TEMPORARY_EFFECT_FIELDS = ['action', 'effectId'] as const
 const APPLY_FIELD_FIELDS = ['action', 'category', 'fieldId', 'rounds'] as const
 const REMOVE_FIELD_FIELDS = ['action', 'category', 'fieldId'] as const
@@ -477,7 +473,6 @@ const ROUNDING_POLICY_SET = new Set<string>(MOVE_EFFECT_ROUNDING_POLICIES)
 const CONDITION_ACTION_SET = new Set<string>(MOVE_EFFECT_CONDITION_ACTIONS)
 const COMBAT_STAGE_ACTION_SET = new Set<string>(MOVE_EFFECT_COMBAT_STAGE_ACTIONS)
 const COMBAT_STAGE_SET = new Set<string>(MOVE_EFFECT_COMBAT_STAGES)
-const DURATION_KIND_SET = new Set<string>(MOVE_EFFECT_DURATION_KINDS)
 const FIELD_CATEGORY_SET = new Set<string>(MOVE_EFFECT_FIELD_CATEGORIES)
 const MOVEMENT_MODE_SET = new Set<string>(MOVE_EFFECT_MOVEMENT_MODES)
 const USAGE_ACTION_SET = new Set<string>(MOVE_EFFECT_USAGE_ACTIONS)
@@ -929,31 +924,6 @@ const parseCombatStagePayload = (
   return { action, stage, value: stageValue }
 }
 
-const parseDuration = (value: unknown, path: string): MoveEffectDuration => {
-  const input = parseExactRecord(value, DURATION_FIELDS, path)
-  const kind = parseEnum<MoveEffectDurationKind>(
-    ownValue(input, 'kind', path),
-    DURATION_KIND_SET,
-    `${path}.kind`,
-    'a supported duration kind',
-  )
-  const amount = parseNullableInteger(
-    ownValue(input, 'amount', path),
-    `${path}.amount`,
-    1,
-    MOVE_EFFECT_OPERATION_LIMITS.durationCount,
-  )
-  const counted = kind === 'turns' || kind === 'rounds'
-  if (counted !== (amount !== null)) {
-    fail(
-      'invalid-effect-operation',
-      `${path}.amount`,
-      'must be a positive count for turns/rounds and null for other durations.',
-    )
-  }
-  return { kind, amount }
-}
-
 const parseTemporaryEffectPayload = (
   value: unknown,
   path: string,
@@ -962,17 +932,26 @@ const parseTemporaryEffectPayload = (
   const action = ownValue(input, 'action', path)
   if (action === 'add') {
     assertExactKeys(input, ADD_TEMPORARY_EFFECT_FIELDS, path)
+    let definition: EncounterEffectDefinition
+    try {
+      definition = parseEncounterEffectDefinition(
+        ownValue(input, 'definition', path),
+        `${path}.definition`,
+      )
+    } catch (error) {
+      if (error instanceof EncounterEffectValidationError) {
+        fail(
+          error.code === 'limit-exceeded' ? 'limit-exceeded' : 'invalid-effect-operation',
+          error.path,
+          error.detail,
+        )
+      }
+      throw error
+    }
     return {
       action,
       effectId: parseStableId(ownValue(input, 'effectId', path), `${path}.effectId`),
-      effectKind: parseStableId(ownValue(input, 'effectKind', path), `${path}.effectKind`),
-      duration: parseDuration(ownValue(input, 'duration', path), `${path}.duration`),
-      stacks: parseInteger(
-        ownValue(input, 'stacks', path),
-        `${path}.stacks`,
-        1,
-        MOVE_EFFECT_OPERATION_LIMITS.effectStacks,
-      ),
+      definition,
     }
   }
   if (action === 'remove') {

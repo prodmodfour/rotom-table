@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
+  ENCOUNTER_EFFECT_LIMITS,
   ENCOUNTER_SIDE_LIMITS,
   ENCOUNTER_STATE_LIMITS,
   ENCOUNTER_STATE_SCHEMA_VERSION,
@@ -8,6 +9,7 @@ import {
   encounterStateHasSide,
   parseEncounterState,
 } from '#shared/moveAutomation/encounterState'
+import { numericEncounterEffectFixture } from '../fixtures/moveAutomation/encounterEffects'
 
 const canonicalEncounterState = () => ({
   schemaVersion: ENCOUNTER_STATE_SCHEMA_VERSION,
@@ -27,7 +29,7 @@ describe('move automation encounter state', () => {
     expect(state).toEqual(canonicalEncounterState())
     expect(ENCOUNTER_STATE_LIMITS).toEqual({
       sides: 32,
-      effects: 0,
+      effects: ENCOUNTER_EFFECT_LIMITS.count,
       counters: 0,
       history: 0,
       turnResources: 0,
@@ -39,13 +41,22 @@ describe('move automation encounter state', () => {
     )
   })
 
-  it('round-trips typed sides through structured clone and JSON without sharing containers', () => {
+  it('round-trips typed sides and effects through JSON without sharing containers', () => {
+    const effect = {
+      ...numericEncounterEffectFixture(),
+      affected: {
+        placementIds: [],
+        sideIds: ['allies'],
+        cells: [],
+      },
+    }
     const state = {
       ...createEmptyEncounterState(),
       sides: {
         rivals: { id: 'rivals', label: 'Rivals', color: '#AA33CC', status: 'inactive' as const },
         allies: { id: 'allies', label: '  Allies  ', color: '#33AA44', status: 'active' as const },
       },
+      effects: [effect],
     }
     const structured = structuredClone(state)
     const json = JSON.parse(JSON.stringify(state)) as unknown
@@ -58,6 +69,7 @@ describe('move automation encounter state', () => {
         allies: { id: 'allies', label: 'Allies', color: '#33aa44', status: 'active' },
         rivals: { id: 'rivals', label: 'Rivals', color: '#aa33cc', status: 'inactive' },
       },
+      effects: [effect],
     })
     expect(Object.keys(parsed.sides)).toEqual(['allies', 'rivals'])
     expect(encounterStateHasSide(parsed, 'allies')).toBe(true)
@@ -66,6 +78,8 @@ describe('move automation encounter state', () => {
     expect(parsed).not.toBe(json)
     expect(parsed.sides).not.toBe((json as { sides: unknown }).sides)
     expect(parsed.sides.allies).not.toBe((json as { sides: { allies: unknown } }).sides.allies)
+    expect(parsed.effects).not.toBe((json as { effects: unknown }).effects)
+    expect(parsed.effects[0]?.payload).not.toBe((json as { effects: { payload: unknown }[] }).effects[0]?.payload)
     expect(parsed.counters).not.toBe((json as { counters: unknown }).counters)
 
     const another = createEmptyEncounterState()
@@ -106,7 +120,7 @@ describe('move automation encounter state', () => {
       .toThrow(`encounterState.sides: must contain at most ${ENCOUNTER_SIDE_LIMITS.count} entries`)
   })
 
-  it('rejects unsupported versions, malformed envelopes, and non-empty reserved containers', () => {
+  it('rejects unsupported versions, malformed envelopes, effects, and reserved containers', () => {
     const futureVersion = { ...canonicalEncounterState(), schemaVersion: 2 }
     expect(() => parseEncounterState(futureVersion)).toThrowError(EncounterStateValidationError)
     try {
@@ -127,7 +141,14 @@ describe('move automation encounter state', () => {
     expect(() => parseEncounterState({ ...canonicalEncounterState(), counters: [] }))
       .toThrow('encounterState.counters: must be a plain object directory')
     expect(() => parseEncounterState({ ...canonicalEncounterState(), effects: [{}] }))
-      .toThrow('encounterState.effects: must contain at most 0 entries')
+      .toThrow('encounterState.effects[0]: must contain exactly the supported fields')
+    expect(() => parseEncounterState({
+      ...canonicalEncounterState(),
+      effects: [{
+        ...numericEncounterEffectFixture(),
+        affected: { placementIds: [], sideIds: ['unknown-side'], cells: [] },
+      }],
+    })).toThrow('references unknown encounter side unknown-side')
     expect(() => parseEncounterState({ ...canonicalEncounterState(), turnResources: { actor: {} } }))
       .toThrow('encounterState.turnResources: must contain at most 0 entries')
   })

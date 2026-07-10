@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { createEmptyEncounterState } from '#shared/moveAutomation/encounterState'
+import { conditionEncounterEffectFixture } from '../fixtures/moveAutomation/encounterEffects'
 import {
   normalizeMapDocument,
   normalizeMapGroundLevelY,
@@ -159,13 +160,17 @@ describe('map document normalization', () => {
   })
 
   it('canonicalizes supported encounter state without retaining input containers', () => {
-    const encounterState = createEmptyEncounterState()
+    const encounterState = {
+      ...createEmptyEncounterState(),
+      effects: [conditionEncounterEffectFixture()],
+    }
 
     const normalized = normalizeMapDocument({ ...validMap(), encounterState }, { sourceLabel: 'fixture' })
 
     expect(normalized.encounterState).toEqual(encounterState)
     expect(normalized.encounterState).not.toBe(encounterState)
     expect(normalized.encounterState?.effects).not.toBe(encounterState.effects)
+    expect(normalized.encounterState?.effects[0]?.payload).not.toBe(encounterState.effects[0]?.payload)
     expect(normalized.encounterState?.counters).not.toBe(encounterState.counters)
   })
 
@@ -253,8 +258,8 @@ describe('map document normalization', () => {
     expect(() => normalizeMapDocument({
       ...validMap(),
       encounterState: { ...encounterState, effects: [{}] },
-    }, { sourceLabel: 'oversized-map.json' }))
-      .toThrow('Map oversized-map.json is invalid: encounterState.effects: must contain at most 0 entries')
+    }, { sourceLabel: 'malformed-effect-map.json' }))
+      .toThrow('Map malformed-effect-map.json is invalid: encounterState.effects[0]: must contain exactly the supported fields')
     expect(() => normalizeMapDocument({
       ...validMap(),
       encounterState: { ...encounterState, zones: {} },

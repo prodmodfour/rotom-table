@@ -1,10 +1,19 @@
+import {
+  ENCOUNTER_EFFECT_LIMITS,
+  EncounterEffectValidationError,
+  parseEncounterEffects,
+  type EncounterEffect,
+} from './encounterEffects'
+
+export * from './encounterEffects'
+
 /**
  * Versioned map-owned state for authoritative encounter mechanics.
  *
- * MA-050 introduced the envelope; MA-052 fills only its typed side directory.
- * Other containers remain intentionally empty until their owning mechanics
- * tickets. Existing map hazards, field effects, temporary HP, and move usage
- * remain in their current map fields during this compatibility period.
+ * MA-050 introduced the envelope, MA-052 added side identity, and MA-056 adds
+ * strict typed effect instances. Remaining containers stay empty until their
+ * owning tickets. Existing map hazards, field effects, temporary HP, and move
+ * usage remain in their current map fields during this compatibility period.
  */
 export const ENCOUNTER_STATE_SCHEMA_VERSION = 1 as const
 
@@ -36,7 +45,7 @@ export type EncounterSideDirectory = Readonly<Record<EncounterSideId, EncounterS
 /** Current envelope bounds. Later mechanics tickets raise only their own bound. */
 export const ENCOUNTER_STATE_LIMITS = Object.freeze({
   sides: ENCOUNTER_SIDE_LIMITS.count,
-  effects: 0,
+  effects: ENCOUNTER_EFFECT_LIMITS.count,
   counters: 0,
   history: 0,
   turnResources: 0,
@@ -50,7 +59,7 @@ export type EmptyEncounterStateDirectory = Readonly<Record<string, never>>
 export interface EncounterState {
   readonly schemaVersion: typeof ENCOUNTER_STATE_SCHEMA_VERSION
   readonly sides: EncounterSideDirectory
-  readonly effects: EmptyEncounterStateList
+  readonly effects: readonly EncounterEffect[]
   readonly counters: EmptyEncounterStateDirectory
   readonly history: EmptyEncounterStateDirectory
   readonly turnResources: EmptyEncounterStateDirectory
@@ -136,7 +145,7 @@ const assertExactFields = (record: UnknownRecord): void => {
   fail('invalid-encounter-state', 'encounterState', `must contain exactly the supported fields (${details}).`)
 }
 
-const assertEmptyList = (value: unknown, key: typeof LIST_CONTAINER_KEYS[number]): void => {
+const assertBoundedList = (value: unknown, key: typeof LIST_CONTAINER_KEYS[number]): void => {
   const path = `encounterState.${key}`
   if (!Array.isArray(value)) {
     return fail('invalid-encounter-state', path, 'must be an array.')
@@ -264,6 +273,43 @@ const parseEncounterSideDirectory = (value: unknown): EncounterSideDirectory => 
   return sides
 }
 
+const parseEncounterEffectList = (
+  value: unknown,
+  sides: EncounterSideDirectory,
+): readonly EncounterEffect[] => {
+  let effects: readonly EncounterEffect[]
+  try {
+    effects = parseEncounterEffects(value, 'encounterState.effects')
+  } catch (error) {
+    if (error instanceof EncounterEffectValidationError) {
+      fail(
+        error.code === 'limit-exceeded' ? 'limit-exceeded' : 'invalid-encounter-state',
+        error.path,
+        error.detail,
+      )
+    }
+    throw error
+  }
+
+  effects.forEach((effect, effectIndex) => {
+    effect.affected.sideIds.forEach((sideId, sideIndex) => {
+      const path = `encounterState.effects[${effectIndex}].affected.sideIds[${sideIndex}]`
+      if (!isEncounterSideId(sideId)) {
+        fail(
+          'invalid-encounter-state',
+          path,
+          'must be a lowercase alphanumeric/hyphen encounter side ID.',
+        )
+      }
+      if (!Object.prototype.hasOwnProperty.call(sides, sideId)) {
+        fail('invalid-encounter-state', path, `references unknown encounter side ${sideId}.`)
+      }
+    })
+  })
+
+  return effects
+}
+
 /** Return a fresh canonical envelope so maps never share mutable containers. */
 export const createEmptyEncounterState = (): EncounterState => ({
   schemaVersion: ENCOUNTER_STATE_SCHEMA_VERSION,
@@ -296,11 +342,13 @@ export const parseEncounterState = (value: unknown): EncounterState => {
     )
   }
 
-  for (const key of LIST_CONTAINER_KEYS) assertEmptyList(value[key], key)
+  for (const key of LIST_CONTAINER_KEYS) assertBoundedList(value[key], key)
   for (const key of DIRECTORY_CONTAINER_KEYS) assertEmptyDirectory(value[key], key)
 
+  const sides = parseEncounterSideDirectory(value.sides)
   return {
     ...createEmptyEncounterState(),
-    sides: parseEncounterSideDirectory(value.sides),
+    sides,
+    effects: parseEncounterEffectList(value.effects, sides),
   }
 }
