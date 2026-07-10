@@ -149,6 +149,25 @@ describe('planAuthoritativeMoveState', () => {
     expect(plan.resolution.sheetReads).toEqual(plan.sheetReads)
     expect(plan.mapChanges.moveUsage).toBeDefined()
     expect(plan.mapChanges.metadata?.previous).toEqual({ note: 'keep me' })
+    expect(plan.stateChanges.changes.map(change => change.kind)).toEqual([
+      'map-move-usage',
+      'map-metadata',
+      'sheet-state',
+    ])
+    expect(plan.stateChanges.groups.map).toHaveLength(1)
+    expect(plan.stateChanges.groups.sheets).toHaveLength(1)
+    expect(plan.stateChanges.expectedRevisions).toEqual([
+      { kind: 'map', mapSlug: 'planner-test', expectedRevision: 7 },
+      { kind: 'sheet', sheetKind: 'pokemon', sheetSlug: 'actor', expectedRevision: 4 },
+    ])
+    expect(plan.stateChanges.changes[0]?.compensation).toEqual({
+      kind: 'inverse',
+      strategy: 'restore-previous-value',
+    })
+    expect(plan.stateChanges.changes[1]?.compensation).toEqual({
+      kind: 'unavailable',
+      reasonCode: 'accepted-log-may-be-observed',
+    })
     expect(moveLog(plan.nextMap)).toHaveLength(1)
     expect(moveLog(plan.nextMap)?.[0]?.at).toBe(999)
     expect(moveLog(plan.nextMap)?.[0]?.lines.join('\n')).toContain('Actor used Swords Dance.')

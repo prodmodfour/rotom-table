@@ -576,7 +576,7 @@ Status: DONE
 
 ## MA-039 — Introduce typed state-change plans
 
-Status: TODO
+Status: DONE
 
 **Depends on:** MA-031, MA-038
 **Commit:** `feat(move-automation): model typed state change plans`
