@@ -8,6 +8,7 @@ Map v2 stores only the data the runtime renders or uses:
 - optional `lights[]` for the lighting system
 - optional `fieldEffects` for PTU Weather, Terrain field effects, and Rooms
 - optional `initiative` state
+- optional versioned `encounterState` for server-owned move-automation state
 - optional `shopInterfaces[]` access points that reference campaign shop tables
 
 Object layers such as decals, props, zones, doors, asset packs, and transparent-object toggles have been removed from the runtime and schema. Hazards are the exception: they are rules-state overlays, not decorative object layers.
@@ -48,6 +49,10 @@ The editor renders hazards as floor decals and persists them in `hazards[]`. The
 - `rooms[]`: `magic`, `trick`, `wonder` psychic Rooms.
 
 Each entry may track `rounds`; `null` means the duration is sustained or managed manually. These are visual/rules reminders only and do not currently automate damage rolls, initiative order, or end-of-turn ticks.
+
+## Encounter state
+
+`encounterState` is an optional, explicitly versioned envelope for authoritative move-automation state. Its initial schema contains canonical empty containers for sides, effects, counters, history, turn resources, zones, and bounded pending-resolution summaries. These reserved containers do not change current gameplay yet. Existing `hazards`, `fieldEffects`, `temporaryHitPoints`, and `moveUsage` fields remain separate and authoritative during the staged migration.
 
 ## Visibility layers
 

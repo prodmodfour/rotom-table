@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import { createEmptyEncounterState } from '#shared/moveAutomation/encounterState'
 import {
   clonePersistableMapPayload,
   stablePersistableMapJson,
@@ -22,6 +23,7 @@ const createMap = (folder = 'maps/a'): TabletopMap => ({
   placements: [],
   lights: [],
   initiative: { activeId: null, round: 1 },
+  encounterState: createEmptyEncounterState(),
   metadata: { note: 'hello' },
   createdAt: 1,
   updatedAt: 2,
@@ -44,6 +46,7 @@ describe('map persistence helpers', () => {
     expect(payload.slug).toBe('test-map')
     expect(payload.name).toBe('Test Map')
     expect(payload.revision).toBe(3)
+    expect(payload.encounterState).toEqual(createEmptyEncounterState())
     expect(payload).not.toHaveProperty('folder')
   })
 
@@ -65,5 +68,33 @@ describe('map persistence helpers', () => {
     expect(payload).not.toHaveProperty('folder')
     expect(payload.metadata).toEqual(map.metadata)
     expect(payload.metadata).not.toBe(map.metadata)
+    expect(payload.encounterState).toEqual(map.encounterState)
+    expect(payload.encounterState).not.toBe(map.encounterState)
+    expect(payload.encounterState?.effects).not.toBe(map.encounterState?.effects)
+    expect(payload.encounterState?.counters).not.toBe(map.encounterState?.counters)
+  })
+
+  it('round-trips encounter state without absorbing existing combat fields', () => {
+    const map: TabletopMap = {
+      ...createMap(),
+      hazards: [{ kind: 'spikes', x: 1, y: 0, z: 2 }],
+      fieldEffects: { weather: [{ kind: 'rainy', rounds: 3 }], terrains: [], rooms: [] },
+      temporaryHitPoints: {
+        scene: { name: 'Rainy arena', startedAt: 10 },
+        byPlacementId: { 'token-1': 5 },
+      },
+      moveUsage: {
+        scene: { name: 'Rainy arena', startedAt: 10 },
+        byPlacementId: {},
+      },
+    }
+
+    const roundTrip = JSON.parse(stablePersistableMapJson(map)) as TabletopMap
+
+    expect(roundTrip.encounterState).toEqual(createEmptyEncounterState())
+    expect(roundTrip.hazards).toEqual(map.hazards)
+    expect(roundTrip.fieldEffects).toEqual(map.fieldEffects)
+    expect(roundTrip.temporaryHitPoints).toEqual(map.temporaryHitPoints)
+    expect(roundTrip.moveUsage).toEqual(map.moveUsage)
   })
 })

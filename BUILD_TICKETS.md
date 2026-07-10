@@ -671,7 +671,7 @@ Status: DONE
 
 ## MA-050 — Add the versioned encounter-state envelope
 
-Status: TODO
+Status: DONE
 
 **Depends on:** MA-039
 **Commit:** `feat(move-automation): add map encounter state`

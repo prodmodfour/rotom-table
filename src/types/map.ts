@@ -3,6 +3,7 @@
  *
  * Maps store sparse terrain voxels, sheet placements, and lighting state.
  */
+import type { EncounterState } from '#shared/moveAutomation/encounterState'
 import type { GridAnchor, GridDimensions } from './pokemon'
 import type { MapMoveUsageState } from './moveUsage'
 import type { TokenFacingDirection } from './tokenFacing'
@@ -183,6 +184,8 @@ export interface TabletopMapV2 {
   temporaryHitPoints?: MapTemporaryHitPointsState
   /** Per-placement EOT/Scene/Daily move frequency usage for the current map Scene. */
   moveUsage?: MapMoveUsageState
+  /** Versioned server-owned encounter mechanics state. Legacy combat fields remain separate during migration. */
+  encounterState?: EncounterState
   metadata?: Record<string, unknown>
   createdAt?: number
   updatedAt?: number

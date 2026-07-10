@@ -20,6 +20,7 @@
     "lights": { "type": "array", "items": { "$ref": "#/$defs/light" } },
     "initiative": { "$ref": "#/$defs/initiative" },
     "activeScene": { "anyOf": [{ "$ref": "#/$defs/activeScene" }, { "type": "null" }] },
+    "encounterState": { "$ref": "#/$defs/encounterState" },
     "metadata": { "type": "object", "additionalProperties": true },
     "createdAt": { "type": "number" },
     "updatedAt": { "type": "number" }
@@ -157,6 +158,39 @@
         "name": { "type": "string", "minLength": 1, "maxLength": 120 },
         "startedAt": { "type": "number", "minimum": 0 }
       }
+    },
+    "encounterState": {
+      "type": "object",
+      "required": [
+        "schemaVersion",
+        "sides",
+        "effects",
+        "counters",
+        "history",
+        "turnResources",
+        "zones",
+        "pendingResolutionSummaries"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "schemaVersion": { "const": 1 },
+        "sides": { "$ref": "#/$defs/emptyEncounterDirectory" },
+        "effects": { "$ref": "#/$defs/emptyEncounterList" },
+        "counters": { "$ref": "#/$defs/emptyEncounterDirectory" },
+        "history": { "$ref": "#/$defs/emptyEncounterDirectory" },
+        "turnResources": { "$ref": "#/$defs/emptyEncounterDirectory" },
+        "zones": { "$ref": "#/$defs/emptyEncounterList" },
+        "pendingResolutionSummaries": { "$ref": "#/$defs/emptyEncounterList" }
+      }
+    },
+    "emptyEncounterList": {
+      "type": "array",
+      "maxItems": 0
+    },
+    "emptyEncounterDirectory": {
+      "type": "object",
+      "maxProperties": 0,
+      "additionalProperties": false
     }
   }
 }
