@@ -684,7 +684,7 @@ Status: DONE
 
 ## MA-051 — Normalize legacy maps at read boundaries
 
-Status: TODO
+Status: DONE
 
 **Depends on:** MA-050
 **Commit:** `feat(move-automation): normalize encounter state defaults`

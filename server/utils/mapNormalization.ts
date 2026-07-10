@@ -1,5 +1,11 @@
 import type { GridDimensions, MapHazardV2, MapVoxelV2, TabletopMapV2 } from '~/types/map'
 import { normalizeMapSceneState } from '~/utils/mapSceneState'
+import {
+  EncounterStateValidationError,
+  createEmptyEncounterState,
+  parseEncounterState,
+  type EncounterState,
+} from '#shared/moveAutomation/encounterState'
 import { SLUG_RE } from '#shared/paths'
 import { normalizeRevision } from '#shared/sessionRevisions'
 import { normalizeMapFieldEffects } from '~/utils/mapFieldEffects'
@@ -81,6 +87,18 @@ const normalizeHazardForEditor = (value: unknown, index: number, sourceLabel: st
   return hazard as MapHazardV2
 }
 
+const normalizeMapEncounterState = (value: unknown, sourceLabel: string): EncounterState => {
+  if (value === undefined) return createEmptyEncounterState()
+  try {
+    return parseEncounterState(value)
+  } catch (error) {
+    if (error instanceof EncounterStateValidationError) {
+      invalidMapDocument(sourceLabel, error.message)
+    }
+    throw error
+  }
+}
+
 export const normalizeMapDocument = (
   json: unknown,
   options: NormalizeMapDocumentOptions = {},
@@ -107,6 +125,7 @@ export const normalizeMapDocument = (
 
   const activeScene = normalizeMapSceneState(record.activeScene)
   const temporaryHitPoints = normalizeMapTemporaryHitPointsState(record.temporaryHitPoints, activeScene)
+  const encounterState = normalizeMapEncounterState(record.encounterState, sourceLabel)
 
   return {
     schemaVersion: 2,
@@ -129,6 +148,7 @@ export const normalizeMapDocument = (
     ...(activeScene ? { activeScene } : {}),
     ...(temporaryHitPoints ? { temporaryHitPoints } : {}),
     moveUsage: normalizeMapMoveUsage(record.moveUsage),
+    encounterState,
     metadata: record.metadata as TabletopMapV2['metadata'],
     createdAt: record.createdAt as TabletopMapV2['createdAt'],
     updatedAt: record.updatedAt as TabletopMapV2['updatedAt'],

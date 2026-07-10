@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import { createEmptyEncounterState } from '#shared/moveAutomation/encounterState'
 import {
   normalizeMapDocument,
   normalizeMapGroundLevelY,
@@ -121,6 +122,7 @@ describe('map document normalization', () => {
     expect(fieldEffects.rooms).toEqual([{ kind: 'trick', rounds: 1, startsNextRound: true }])
     expect(normalized.placements).toEqual([{ id: 'token-1' }])
     expect(normalized.lights).toEqual([{ id: 'light-1' }])
+    expect(normalized.encounterState).toEqual(createEmptyEncounterState())
   })
 
   it('defaults missing legacy revisions to zero', () => {
@@ -152,7 +154,39 @@ describe('map document normalization', () => {
     expect(normalized.initiative).toEqual({ activeId: null, round: 1 })
     expect(normalized.moveUsage).toBeUndefined()
     expect(normalized.fieldEffects).toEqual({ weather: [], terrains: [], rooms: [] })
+    expect(normalized.encounterState).toEqual(createEmptyEncounterState())
     expect(normalizeMapDocument({ ...validMap(), shopInterfaces: [] }, { sourceLabel: 'fixture' }).shopInterfaces).toEqual([])
+  })
+
+  it('canonicalizes supported encounter state without retaining input containers', () => {
+    const encounterState = createEmptyEncounterState()
+
+    const normalized = normalizeMapDocument({ ...validMap(), encounterState }, { sourceLabel: 'fixture' })
+
+    expect(normalized.encounterState).toEqual(encounterState)
+    expect(normalized.encounterState).not.toBe(encounterState)
+    expect(normalized.encounterState?.effects).not.toBe(encounterState.effects)
+    expect(normalized.encounterState?.counters).not.toBe(encounterState.counters)
+  })
+
+  it('rejects future encounter-state versions and malformed bounded containers', () => {
+    const encounterState = createEmptyEncounterState()
+
+    expect(() => normalizeMapDocument({
+      ...validMap(),
+      encounterState: { ...encounterState, schemaVersion: 2 },
+    }, { sourceLabel: 'future-map.json' }))
+      .toThrow('Map future-map.json is invalid: encounterState.schemaVersion: must be 1')
+    expect(() => normalizeMapDocument({
+      ...validMap(),
+      encounterState: { ...encounterState, effects: [{}] },
+    }, { sourceLabel: 'oversized-map.json' }))
+      .toThrow('Map oversized-map.json is invalid: encounterState.effects: must contain at most 0 entries')
+    expect(() => normalizeMapDocument({
+      ...validMap(),
+      encounterState: { ...encounterState, zones: {} },
+    }, { sourceLabel: 'malformed-map.json' }))
+      .toThrow('Map malformed-map.json is invalid: encounterState.zones: must be an array')
   })
 
   it('normalizes partial map shop interfaces with stable IDs', () => {

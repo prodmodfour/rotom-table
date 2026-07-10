@@ -54,6 +54,8 @@ Each entry may track `rounds`; `null` means the duration is sustained or managed
 
 `encounterState` is an optional, explicitly versioned envelope for authoritative move-automation state. Its initial schema contains canonical empty containers for sides, effects, counters, history, turn resources, zones, and bounded pending-resolution summaries. These reserved containers do not change current gameplay yet. Existing `hazards`, `fieldEffects`, `temporaryHitPoints`, and `moveUsage` fields remain separate and authoritative during the staged migration.
 
+Legacy documents that omit `encounterState` receive a fresh canonical empty envelope at server read boundaries. Loading is non-persisting and does not advance the map revision; the canonical envelope is stored with the next accepted map write. Present state is validated strictly, so malformed containers and unsupported future schema versions fail loading instead of being discarded or downgraded.
+
 ## Visibility layers
 
 The editor supports only the active render layers:

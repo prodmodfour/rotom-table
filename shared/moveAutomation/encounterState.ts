@@ -144,7 +144,8 @@ export const createEmptyEncounterState = (): EncounterState => ({
  * Strictly parse the currently supported encounter-state envelope.
  *
  * The parser returns canonical fresh containers instead of retaining input
- * references. Read-boundary defaulting for legacy maps belongs to MA-051.
+ * references. Server read boundaries decide when an omitted legacy value may
+ * default; a present value always passes through this strict parser.
  */
 export const parseEncounterState = (value: unknown): EncounterState => {
   if (!isPlainRecord(value)) {
