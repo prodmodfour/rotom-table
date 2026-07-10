@@ -100,6 +100,12 @@ const projectAuditEvent = (
   return { ...event }
 }
 
+const publicAuditEvents = (
+  events: readonly MoveResolutionAuditTraceEvent[],
+): readonly MoveResolutionAuditTraceEvent[] => events
+  .filter(event => event.kind !== 'target' || event.outcome === 'included')
+  .map((event, index) => ({ ...event, sequence: index + 1 }))
+
 const boundedWireEvents = (
   events: readonly MoveResolutionAuditTraceEvent[],
 ): readonly MoveResolutionAuditTraceEvent[] => {
@@ -113,21 +119,22 @@ const boundedWireEvents = (
 }
 
 /**
- * Strip private predicate/operation payloads and selected option IDs, while
- * retaining deterministic decisions and the beginning/end of oversized traces.
+ * Strip private predicate/operation payloads, selected option IDs, and excluded
+ * target identities, while retaining accepted targets and bounded audit shape.
  */
 export const summarizeMoveResolutionTrace = (
   value: MoveResolutionAuditTrace,
 ): MoveResolutionTraceSummary => {
   const trace = parseMoveResolutionAuditTrace(value)
-  const events = boundedWireEvents(trace.events).map(projectAuditEvent)
+  const publicEvents = publicAuditEvents(trace.events)
+  const events = boundedWireEvents(publicEvents).map(projectAuditEvent)
   return parseMoveResolutionTraceSummary({
     schemaVersion: MOVE_RESOLUTION_TRACE_SCHEMA_VERSION,
     program: trace.program,
     ruleset: trace.ruleset,
     ancestry: trace.ancestry,
-    totalEventCount: trace.events.length,
-    truncated: trace.events.length > events.length,
+    totalEventCount: publicEvents.length,
+    truncated: publicEvents.length > events.length,
     events,
   })
 }

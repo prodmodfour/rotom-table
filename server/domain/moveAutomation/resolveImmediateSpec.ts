@@ -25,6 +25,7 @@ import type {
 import { deduplicateAuthoritativeMoveSheetReads } from './context'
 import {
   executeMoveSpec,
+  type MoveSpecAuthoritativeTargetEvaluation,
   type MoveSpecEmittedOperation,
   type MoveSpecResolvedRoll,
 } from './executeSpec'
@@ -312,11 +313,13 @@ export const resolveImmediateMoveSpec = (options: {
   readonly runtime: MoveSpecV2Runtime
   readonly entry: ResolvedCanonicalMoveEntry
   readonly authoritativeTargetIds: readonly string[]
+  readonly authoritativeTargetEvaluations?: readonly MoveSpecAuthoritativeTargetEvaluation[]
 }): ImmediateMoveSpecResolution => {
   const execution = executeMoveSpec({
     definition: options.runtime.definition,
     context: options.context,
     authoritativeTargetIds: options.authoritativeTargetIds,
+    authoritativeTargetEvaluations: options.authoritativeTargetEvaluations,
     handlerRegistry: options.context.handlerRegistry,
   })
   if (execution.kind === 'rejected') {

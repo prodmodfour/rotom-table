@@ -159,14 +159,24 @@ const validPlacementId = (value: unknown): value is string => (
   typeof value === 'string' && value.length > 0 && value.trim() === value
 )
 
-const assertPredicate = (
-  predicate: MoveAutomationTargetPredicateDeclaration,
+/** Strictly parse, detach, and freeze one reviewed target declaration. */
+export const parseMoveAutomationTargetPredicateDeclaration = (
+  value: unknown,
 ): MoveAutomationTargetPredicateDeclaration => {
   if (
-    typeof predicate !== 'object'
-    || predicate === null
-    || !RELATIONSHIP_PREDICATE_SET.has(predicate.relationship)
-    || !WILLINGNESS_PREDICATE_SET.has(predicate.willingness)
+    typeof value !== 'object'
+    || value === null
+    || Array.isArray(value)
+  ) {
+    return fail(
+      'invalid-target-predicate',
+      'Target predicate must declare only a supported relationship, willingness, actor-exclusion policy, and optional state predicates.',
+    )
+  }
+  const predicate = value as Partial<MoveAutomationTargetPredicateDeclaration>
+  if (
+    !RELATIONSHIP_PREDICATE_SET.has(predicate.relationship ?? '')
+    || !WILLINGNESS_PREDICATE_SET.has(predicate.willingness ?? '')
     || typeof predicate.excludeActor !== 'boolean'
     || Object.keys(predicate).some(key => ![
       'relationship',
@@ -182,8 +192,8 @@ const assertPredicate = (
   }
   const hasStatePredicates = Object.prototype.hasOwnProperty.call(predicate, 'statePredicates')
   return Object.freeze({
-    relationship: predicate.relationship,
-    willingness: predicate.willingness,
+    relationship: predicate.relationship!,
+    willingness: predicate.willingness!,
     excludeActor: predicate.excludeActor,
     ...(hasStatePredicates
       ? {
@@ -427,7 +437,7 @@ export const evaluateMoveAutomationTargetPredicates = (
       `Move actor placement ${input.actorPlacementId} was not found.`,
     )
   }
-  const predicate = assertPredicate(input.predicate)
+  const predicate = parseMoveAutomationTargetPredicateDeclaration(input.predicate)
   if (predicate.statePredicates && !input.states) {
     return fail(
       'target-state-resolver-missing',

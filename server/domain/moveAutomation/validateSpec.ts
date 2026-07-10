@@ -38,6 +38,10 @@ import {
   type RegisteredMoveHandlerRegistry,
 } from './handlers/registry'
 import {
+  parseMoveAutomationTargetPredicateDeclaration,
+  type MoveAutomationTargetPredicateDeclaration,
+} from './predicates/target'
+import {
   stableJsonStringify,
   type StableJsonStringifyOptions,
 } from './stableJson'
@@ -61,6 +65,7 @@ export interface ValidatedMoveSpecTargetingDeclaration {
   readonly minTargets: number
   readonly maxTargets: number
   readonly selector: MoveSelector | null
+  readonly predicate?: MoveAutomationTargetPredicateDeclaration | null
 }
 
 export interface ValidatedMoveSpecPrecondition {
@@ -363,6 +368,22 @@ const parseRules = (spec: MoveSpec): Pick<
   const selector = spec.targeting.selector === null
     ? null
     : parseMoveSelector(spec.targeting.selector, 'spec.targeting.selector')
+  const hasTargetPredicate = Object.prototype.hasOwnProperty.call(
+    spec.targeting,
+    'predicate',
+  )
+  if (hasTargetPredicate && spec.targeting.kind !== 'area') {
+    fail(
+      'invalid-definition',
+      'spec.targeting.predicate',
+      'target predicates are supported only for geometric area targeting.',
+    )
+  }
+  const targetPredicate = spec.targeting.predicate === null
+    ? null
+    : spec.targeting.predicate === undefined
+      ? undefined
+      : parseMoveAutomationTargetPredicateDeclaration(spec.targeting.predicate)
   const preconditions = spec.preconditions.map((precondition, index) => ({
     ...precondition,
     predicate: parseMovePredicate(
@@ -385,8 +406,11 @@ const parseRules = (spec: MoveSpec): Pick<
 
   return {
     targeting: {
-      ...spec.targeting,
+      kind: spec.targeting.kind,
+      minTargets: spec.targeting.minTargets,
+      maxTargets: spec.targeting.maxTargets,
       selector,
+      ...(hasTargetPredicate ? { predicate: targetPredicate ?? null } : {}),
     },
     preconditions,
   }

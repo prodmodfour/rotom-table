@@ -8,6 +8,7 @@ import { createAuthoritativeLivePlayCommandExecutor, type AuthoritativeLivePlayC
 import { createInProcessMapWriteQueue } from '~~/server/livePlay/mapWriteQueue'
 import { executeLivePlayResolveMoveCommandUseCase, type LivePlayResolveMoveCommandDependencies } from '~~/server/useCases/applyResolveMoveCommand'
 import { acceptedRealtimeTestHooks } from './livePlayAcceptedRealtimeTestUtils'
+import { redBlueEncounterStateFixture } from '../fixtures/moveAutomation/encounterSides'
 import { planAuthoritativeMoveState, type AuthoritativeMoveStatePlan } from '~~/server/domain/planAuthoritativeMoveState'
 import { LIVE_PLAY_COMMAND_SCHEMA_VERSION, LIVE_PLAY_COMMAND_TYPES, LIVE_PLAY_PATCH_TYPES, type LivePlayCommandAccepted, type ResolveMoveLivePlayCommand } from '#shared/livePlayCommands'
 import {
@@ -486,6 +487,44 @@ describe('executeLivePlayResolveMoveCommandUseCase', () => {
       expect(duplicate.move).toEqual(response.move)
       expect(harness.maps.getBySlug('arena')).toEqual(committedMap)
     }
+  })
+
+  it('keeps predicate-excluded area identities in server audit evidence only', async () => {
+    await withRegisteredScript({
+      ...areaScript('Howl'),
+      areaTargetRelationship: 'ally',
+    }, async () => {
+      const map = mapFixture({
+        placements: [
+          { ...placement('actor-token', 'actor', { x: 0, y: 0, z: 0 }), sideId: 'red' },
+          { ...placement('target-a', 'target-a', { x: 1, y: 0, z: 0 }), sideId: 'red' },
+          { ...placement('target-b', 'target-b', { x: 0, y: 0, z: 1 }), sideId: 'blue' },
+        ],
+        encounterState: redBlueEncounterStateFixture(),
+      })
+      const harness = seedHarness({ map, actorMoves: [{ name: 'Howl' }] })
+      const moveIntent = intent({
+        placementId: 'actor-token',
+        moveName: 'Howl',
+        selection: { kind: 'area', areaTemplateId: moveAutomationAreaTemplateId(areaTemplate) },
+      })
+      const response = await execute(
+        harness,
+        commandFor(map, moveIntent, 'op_areaprivacy1', ['target-a', 'target-b']),
+      )
+      const payload = moveStatePatchPayload(accepted(response.result))
+      const serialized = JSON.stringify(payload.move)
+
+      expect(payload.move.selectedTargetIds).toEqual(['target-a'])
+      expect(payload.move.area?.candidateTargetIds).toEqual(['target-a'])
+      expect(payload.move.transaction.attackedTargetIds).toEqual(['target-a'])
+      expect(payload.move.trace).toMatchObject({ truncated: false })
+      expect(serialized).not.toContain('target-b')
+      expect(serialized).not.toContain('target-excluded-not-ally')
+      expect(payload.move.transaction.logLines).toContainEqual(
+        expect.stringContaining('An area target was excluded from ally-only effects'),
+      )
+    })
   })
 
   it('enforces command type, intent shape, map mode, visibility, token control, and exact base revisions', async () => {

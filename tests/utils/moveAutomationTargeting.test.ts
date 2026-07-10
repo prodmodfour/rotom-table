@@ -12,6 +12,7 @@ describe('move automation targeting helpers', () => {
     expect(determineMoveAutomationTargetMode({ name: 'Weather Ball', range: 'Field, Weather' })).toBe('field')
     expect(determineMoveAutomationTargetMode({ name: 'Rest', range: 'Self' })).toBe('self')
     expect(determineMoveAutomationTargetMode({ name: 'Explosion', range: 'Burst 2' })).toBe('multi-target')
+    expect(determineMoveAutomationTargetMode({ name: 'Discharge', range: 'All Cardinally Adjacent Targets' })).toBe('multi-target')
     expect(determineMoveAutomationTargetMode({ name: 'Twin Beam', range: '6, 2 Targets' })).toBe('multi-target')
     expect(determineMoveAutomationTargetMode({ name: 'Wide Guard', range: 'Melee, 4 Targets' })).toBe('multi-target')
     expect(determineMoveAutomationTargetMode({ name: 'Dragon Darts', range: '6, 1 Target, Double Strike; or 6, 2 Targets' })).toBe('multi-target')

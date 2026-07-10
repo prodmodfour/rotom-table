@@ -39,10 +39,9 @@ export interface BuildLegacyV1MoveResolutionTraceInput {
   readonly rollLedger: readonly MoveAutomationRollLedgerEntry[]
   readonly feedback?: MoveAutomationFeedbackState
   readonly area?: {
-    readonly candidateTargetIds: readonly string[]
-    readonly excludedTargetIds: readonly string[]
-    readonly relationshipExclusions?: readonly {
+    readonly targetEvaluations: readonly {
       readonly targetPlacementId: string
+      readonly outcome: 'included' | 'excluded'
       readonly reasonCode: string
     }[]
   }
@@ -96,28 +95,16 @@ export const buildLegacyV1MoveResolutionTrace = (
     },
   })
 
-  const areaCandidates = input.area?.candidateTargetIds ?? []
-  const areaExcluded = new Set(input.area?.excludedTargetIds ?? [])
-  const relationshipExclusionByTargetId = new Map(
-    (input.area?.relationshipExclusions ?? []).map(exclusion => [
-      exclusion.targetPlacementId,
-      exclusion.reasonCode,
-    ]),
-  )
+  const areaEvaluations = input.area?.targetEvaluations ?? []
   const recordedTargets = new Set<string>()
-  for (const targetId of areaCandidates) {
-    recordedTargets.add(targetId)
-    const requestedExclusion = areaExcluded.has(targetId)
-    const relationshipExclusion = relationshipExclusionByTargetId.get(targetId)
-    const excluded = requestedExclusion || relationshipExclusion !== undefined
+  for (const evaluation of areaEvaluations) {
+    recordedTargets.add(evaluation.targetPlacementId)
     queue('target', {
       kind: 'target',
       phase: 'target',
-      targetId,
-      outcome: excluded ? 'excluded' : 'included',
-      reasonCode: requestedExclusion
-        ? 'requested-friendly-exclusion'
-        : relationshipExclusion ?? 'authoritative-area-candidate',
+      targetId: evaluation.targetPlacementId,
+      outcome: evaluation.outcome,
+      reasonCode: evaluation.reasonCode,
     })
   }
   for (const targetId of input.selectedTargetIds) {

@@ -150,7 +150,6 @@ describe('authoritative move resolution trace reducer', () => {
     expect(summary.events).toEqual(expect.arrayContaining([
       expect.objectContaining({ kind: 'predicate', outcome: true }),
       expect.objectContaining({ kind: 'target', targetId: 'target-token', outcome: 'included' }),
-      expect.objectContaining({ kind: 'target', targetId: 'excluded-token', outcome: 'excluded' }),
       expect.objectContaining({
         kind: 'roll',
         rollId: 'roll.accuracy.1',
@@ -163,9 +162,15 @@ describe('authoritative move resolution trace reducer', () => {
       expect.objectContaining({ kind: 'child-move', childResolutionId: 'resolution-child' }),
     ]))
     const serialized = JSON.stringify(summary)
+    expect(summary).toMatchObject({
+      truncated: false,
+      totalEventCount: trace.events.length - 1,
+    })
     expect(serialized).not.toContain('hiddenSheetValue')
     expect(serialized).not.toContain('secret-audit-detail')
     expect(serialized).not.toContain('option.private-branch')
+    expect(serialized).not.toContain('excluded-token')
+    expect(serialized).not.toContain('relationship-ineligible')
 
     const lines = renderMoveResolutionTraceLogLines(summary)
     expect(lines).toEqual(expect.arrayContaining([

@@ -65,6 +65,7 @@ export interface LivePlayResolvedMoveArea {
   readonly areaTemplateId: string
   readonly template: MoveAutomationAreaTemplate
   readonly cells: readonly GridAnchor[]
+  /** Predicate-eligible targets plus explicit Friendly exclusions; private rule exclusions are omitted. */
   readonly candidateTargetIds: readonly string[]
   readonly excludedTargetIds: readonly string[]
   readonly direction?: MoveAutomationAreaDirection

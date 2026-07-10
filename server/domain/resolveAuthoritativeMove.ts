@@ -69,9 +69,10 @@ import {
 import { hashLegacyMoveAutomationDefinition } from './moveAutomation/legacyV1Definition'
 import { buildLegacyV1MoveResolutionTrace } from './moveAutomation/legacyV1Trace'
 import {
-  filterLegacyAreaTargetsByRelationship,
-  type LegacyAreaRelationshipExclusion,
-} from './moveAutomation/filterLegacyAreaTargets'
+  DEFAULT_MOVE_AUTOMATION_AREA_TARGET_PREDICATE,
+  resolveMoveAutomationAreaTargets,
+  type MoveAutomationAreaTargetEvaluation,
+} from './moveAutomation/areaTargets'
 import type { AuthoritativeMoveRandomSource } from './moveAutomation/random'
 
 export type { AuthoritativeMoveSheetRead } from './moveAutomation/context'
@@ -157,8 +158,8 @@ export interface AuthoritativeMoveArea {
   readonly candidateTargetIds: readonly string[]
   /** Client-requested Friendly exclusions retained for intent/result validation. */
   readonly excludedTargetIds: readonly string[]
-  /** Server-only relationship exclusions used by the audit trace and diagnostics. */
-  readonly relationshipExclusions: readonly LegacyAreaRelationshipExclusion[]
+  /** Complete server-only predicate evidence; accepted projections redact exclusions. */
+  readonly targetEvaluations: readonly MoveAutomationAreaTargetEvaluation[]
   readonly direction?: MoveAutomationAreaDirection
   readonly aimCell?: GridAnchor
 }
@@ -436,24 +437,24 @@ const moveAutomationTransactionWithAppendedLogLines = (
   logLines: [...transaction.logLines, ...lines],
 })
 
-const areaRelationshipExclusionLogLines = (options: {
+const areaTargetExclusionLogLines = (options: {
   readonly script: MoveAutomationScript
-  readonly candidateTargets: readonly SpawnedPokemon[]
-  readonly exclusions: readonly LegacyAreaRelationshipExclusion[]
-}): string[] => {
-  const targetById = new Map(options.candidateTargets.map(target => [target.id, target]))
-  return options.exclusions.map((exclusion) => {
-    const targetLabel = targetById.get(exclusion.targetPlacementId)?.species
-      ?? exclusion.targetPlacementId
-    if (exclusion.reasonCode === 'relationship-enemy') {
-      return `${options.script.moveName}: ${targetLabel} was excluded from ally-only effects because its encounter side is an enemy.`
-    }
-    if (exclusion.reasonCode === 'relationship-unknown-side') {
-      return `Assisted ally targeting: ${options.script.moveName} skipped ${targetLabel} because ally eligibility is unknown; assign both placements to encounter sides in Prepare Map.`
-    }
-    return `Assisted ally targeting: ${options.script.moveName} skipped ${targetLabel} because its authoritative placement relationship could not be resolved.`
-  })
-}
+  readonly evaluations: readonly MoveAutomationAreaTargetEvaluation[]
+}): string[] => options.evaluations.flatMap((evaluation) => {
+  if (evaluation.outcome !== 'excluded' || evaluation.reasonCode === 'requested-friendly-exclusion') {
+    return []
+  }
+  if (evaluation.relationshipReasonCode === 'relationship-unknown-side') {
+    return [`Assisted ally targeting: ${options.script.moveName} skipped an area target because ally eligibility is unknown; assign both placements to encounter sides in Prepare Map.`]
+  }
+  if (
+    options.script.areaTargetRelationship === 'ally'
+    && evaluation.relationshipReasonCode === 'relationship-enemy'
+  ) {
+    return [`${options.script.moveName}: An area target was excluded from ally-only effects because its encounter side is an enemy.`]
+  }
+  return [`${options.script.moveName}: An area target was excluded by the reviewed target rule (${evaluation.reasonCode}).`]
+})
 
 const isSafeGridAnchor = (value: unknown): value is GridAnchor => {
   if (typeof value !== 'object' || value === null || Array.isArray(value)) return false
@@ -968,16 +969,22 @@ const resolveAreaMove = (options: {
   const candidateTargetIds = placement.candidateTargets.map((target) => target.id)
   recordSheetReadsForTokens(options.context, placement.candidateTargets)
   const excludedTargetIds = excludedAreaTargetIds(options.script, options.selection, candidateTargetIds)
-  const excludedTargetSet = new Set(excludedTargetIds)
-  const clientEligibleTargets = placement.candidateTargets.filter(target => !excludedTargetSet.has(target.id))
-  const relationshipTargets = filterLegacyAreaTargetsByRelationship({
+  const areaTargets = resolveMoveAutomationAreaTargets({
     actorPlacementId: actorPlacement.id,
-    candidateTargetPlacementIds: clientEligibleTargets.map(target => target.id),
-    requiredRelationship: options.script.areaTargetRelationship,
+    geometricallyAffectedPlacementIds: candidateTargetIds,
+    predicate: options.script.areaTargetRelationship === 'ally'
+      ? {
+          relationship: 'ally',
+          willingness: 'any',
+          excludeActor: true,
+        }
+      : DEFAULT_MOVE_AUTOMATION_AREA_TARGET_PREDICATE,
     relationships: options.context.queries.relationships,
+    states: options.context.queries.targetStates,
+    requestedExcludedPlacementIds: excludedTargetIds,
   })
-  const relationshipEligibleTargetIds = new Set(relationshipTargets.eligibleTargetPlacementIds)
-  const selectedTargets = clientEligibleTargets.filter(target => relationshipEligibleTargetIds.has(target.id))
+  const eligibleTargetIds = new Set(areaTargets.eligibleTargetPlacementIds)
+  const selectedTargets = placement.candidateTargets.filter(target => eligibleTargetIds.has(target.id))
   const selectedTargetIds = selectedTargets.map(target => target.id)
   const confirmedScript = moveAutomationScriptForConfirmedAreaTemplate(options.script, template)
   const baseTransaction = resolveInstantAreaMoveAutomation({
@@ -989,20 +996,19 @@ const resolveAreaMove = (options: {
     conditionImmunityContext: authoritativeConditionImmunityContext(options.context, confirmedScript),
     randomRoller: options.context.random,
   })
-  const relationshipLogLines = areaRelationshipExclusionLogLines({
+  const targetExclusionLogLines = areaTargetExclusionLogLines({
     script: confirmedScript,
-    candidateTargets: placement.candidateTargets,
-    exclusions: relationshipTargets.exclusions,
+    evaluations: areaTargets.evaluations,
   })
-  const relationshipTransaction = relationshipLogLines.length
-    ? moveAutomationTransactionWithAppendedLogLines(baseTransaction, relationshipLogLines)
+  const targetFilteredTransaction = targetExclusionLogLines.length
+    ? moveAutomationTransactionWithAppendedLogLines(baseTransaction, targetExclusionLogLines)
     : baseTransaction
   const transaction = placement.movement?.kind === 'pass'
     ? moveAutomationTransactionWithAppendedLogLines(
-        relationshipTransaction,
+        targetFilteredTransaction,
         [passDestinationLogLine(actor, placement.movement.destination)],
       )
-    : relationshipTransaction
+    : targetFilteredTransaction
   const currentFacing = tokenFacingForPlacement(actorPlacement)
   const desiredFacing = placement.direction
     ? tokenFacingFromAreaDirection(placement.direction, currentFacing) ?? (placement.movement?.kind === 'pass' ? currentFacing : undefined)
@@ -1036,7 +1042,7 @@ const resolveAreaMove = (options: {
       cells: cloneGridAnchors(placement.cells),
       candidateTargetIds: [...candidateTargetIds],
       excludedTargetIds: [...excludedTargetIds],
-      relationshipExclusions: relationshipTargets.exclusions.map(exclusion => ({ ...exclusion })),
+      targetEvaluations: areaTargets.evaluations.map(evaluation => ({ ...evaluation })),
       ...(placement.direction ? { direction: placement.direction } : {}),
       ...(placement.aimCell ? { aimCell: cloneGridAnchor(placement.aimCell) } : {}),
     },
@@ -1067,14 +1073,28 @@ const resolveNativeAreaMove = (options: {
 
   const { placement: actorPlacement, token: actor } = options.context.actor
   const template = selectedAreaTemplate(options.entry.script, options.selection.areaTemplateId)
+  const selector = options.runtime.definition.spec.targeting.selector
+  if (
+    selector !== null
+    && selector.kind !== 'area-targets'
+    && selector.kind !== 'candidate-targets'
+  ) {
+    return fail(
+      'unsupported',
+      'unsupported-move-script',
+      `${options.runtime.canonicalId} has no reviewed geometric area-target selector.`,
+    )
+  }
   const movementOperation = options.runtime.definition.spec.phases
     .flatMap(block => block.operations)
     .find(operation => operation.kind === 'movement-request')
   if (
-    template.kind !== 'pass'
-    || !movementOperation
-    || movementOperation.payload.mode !== 'voluntary'
-    || movementOperation.payload.distance !== template.size
+    template.kind === 'pass'
+    && (
+      !movementOperation
+      || movementOperation.payload.mode !== 'voluntary'
+      || movementOperation.payload.distance !== template.size
+    )
   ) {
     return fail(
       'unsupported',
@@ -1096,14 +1116,24 @@ const resolveNativeAreaMove = (options: {
     options.selection,
     candidateTargetIds,
   )
-  const excludedTargetSet = new Set(excludedTargetIds)
-  const selectedTargets = placement.candidateTargets.filter(target => !excludedTargetSet.has(target.id))
+  const areaTargets = resolveMoveAutomationAreaTargets({
+    actorPlacementId: actorPlacement.id,
+    geometricallyAffectedPlacementIds: candidateTargetIds,
+    predicate: options.runtime.definition.spec.targeting.predicate
+      ?? DEFAULT_MOVE_AUTOMATION_AREA_TARGET_PREDICATE,
+    relationships: options.context.queries.relationships,
+    states: options.context.queries.targetStates,
+    requestedExcludedPlacementIds: excludedTargetIds,
+  })
+  const eligibleTargetIds = new Set(areaTargets.eligibleTargetPlacementIds)
+  const selectedTargets = placement.candidateTargets.filter(target => eligibleTargetIds.has(target.id))
   const selectedTargetIds = selectedTargets.map(target => target.id)
   const immediate = resolveImmediateMoveSpec({
     context: options.context,
     runtime: options.runtime,
     entry: options.entry,
     authoritativeTargetIds: selectedTargetIds,
+    authoritativeTargetEvaluations: areaTargets.evaluations,
   })
   const currentFacing = tokenFacingForPlacement(actorPlacement)
   const desiredFacing = placement.direction
@@ -1147,7 +1177,7 @@ const resolveNativeAreaMove = (options: {
       cells: cloneGridAnchors(placement.cells),
       candidateTargetIds: [...candidateTargetIds],
       excludedTargetIds: [...excludedTargetIds],
-      relationshipExclusions: [],
+      targetEvaluations: areaTargets.evaluations.map(evaluation => ({ ...evaluation })),
       ...(placement.direction ? { direction: placement.direction } : {}),
       ...(placement.aimCell ? { aimCell: cloneGridAnchor(placement.aimCell) } : {}),
     },

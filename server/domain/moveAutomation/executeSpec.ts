@@ -159,12 +159,20 @@ export type MoveSpecExecutionResult =
   | MoveSpecExecutionPendingResult
   | MoveSpecExecutionRejectedResult
 
+export interface MoveSpecAuthoritativeTargetEvaluation {
+  readonly targetPlacementId: string
+  readonly outcome: 'included' | 'excluded'
+  readonly reasonCode: string
+}
+
 export interface ExecuteMoveSpecInput {
   /** A server-registered definition. It is revalidated before any phase executes. */
   readonly definition: ValidatedMoveSpecDefinition
   readonly context: AuthoritativeMoveRulesContext
   /** Server-derived geometry recipients; this field never comes from move intent. */
   readonly authoritativeTargetIds?: readonly string[]
+  /** Complete server-only area-filter evidence in geometric candidate order. */
+  readonly authoritativeTargetEvaluations?: readonly MoveSpecAuthoritativeTargetEvaluation[]
   readonly ancestry?: readonly MoveResolutionTraceAncestryEntry[]
   /** Test/migration seam; production resolves only the audited global registry. */
   readonly handlerRegistry?: RegisteredMoveHandlerRegistry
@@ -505,6 +513,60 @@ const targetIdsForSpec = (
     context,
     context.selectedPlacements.map(({ id }) => id),
   )
+}
+
+const authoritativeTargetEvaluations = (
+  context: AuthoritativeMoveRulesContext,
+  targetIds: readonly string[],
+  value: readonly MoveSpecAuthoritativeTargetEvaluation[] | undefined,
+): readonly MoveSpecAuthoritativeTargetEvaluation[] | null => {
+  if (value === undefined) return null
+  if (!Array.isArray(value) || value.length > MOVE_SPEC_LIMITS.targetCount) {
+    return fail(
+      'authoritative-target-invalid',
+      `Server-derived target evaluations must contain at most ${MOVE_SPEC_LIMITS.targetCount} entries.`,
+    )
+  }
+
+  const seen = new Set<string>()
+  const evaluations = value.map((evaluation) => {
+    if (
+      typeof evaluation !== 'object'
+      || evaluation === null
+      || typeof evaluation.targetPlacementId !== 'string'
+      || evaluation.targetPlacementId.length === 0
+      || evaluation.targetPlacementId.trim() !== evaluation.targetPlacementId
+      || !context.queries.placements.get(evaluation.targetPlacementId)
+      || seen.has(evaluation.targetPlacementId)
+      || (evaluation.outcome !== 'included' && evaluation.outcome !== 'excluded')
+      || typeof evaluation.reasonCode !== 'string'
+      || !/^[a-z0-9]+(?:[._:/-][a-z0-9]+)*$/.test(evaluation.reasonCode)
+    ) {
+      return fail(
+        'authoritative-target-invalid',
+        'Server-derived target evaluations contain a missing, duplicated, or malformed decision.',
+      )
+    }
+    seen.add(evaluation.targetPlacementId)
+    return Object.freeze({
+      targetPlacementId: evaluation.targetPlacementId,
+      outcome: evaluation.outcome,
+      reasonCode: evaluation.reasonCode,
+    })
+  })
+  const includedIds = evaluations
+    .filter(evaluation => evaluation.outcome === 'included')
+    .map(evaluation => evaluation.targetPlacementId)
+  if (
+    includedIds.length !== targetIds.length
+    || includedIds.some((targetId, index) => targetId !== targetIds[index])
+  ) {
+    return fail(
+      'authoritative-target-invalid',
+      'Included target evaluations must exactly match authoritative targets in server order.',
+    )
+  }
+  return Object.freeze(evaluations)
 }
 
 const consideredTargetIds = (
@@ -896,6 +958,15 @@ export const executeMoveSpec = (
     }
 
     if (phase === 'target') {
+      if (
+        input.authoritativeTargetEvaluations !== undefined
+        && spec.targeting.kind !== 'area'
+      ) {
+        fail(
+          'authoritative-target-invalid',
+          'Server-derived target evaluations are supported only for geometric area targeting.',
+        )
+      }
       const resolvedTargetIds = targetIdsForSpec(
         input.context,
         spec,
@@ -906,15 +977,31 @@ export const executeMoveSpec = (
         : []
       hitTargetIds = []
       missedTargetIds = []
+      const suppliedEvaluations = authoritativeTargetEvaluations(
+        input.context,
+        targetIds,
+        input.authoritativeTargetEvaluations,
+      )
       const targetIdSet = new Set(targetIds)
-      for (const targetId of consideredTargetIds(input.context, spec, targetIds)) {
-        const included = targetIdSet.has(targetId)
+      const evaluations = suppliedEvaluations ?? consideredTargetIds(
+        input.context,
+        spec,
+        targetIds,
+      ).map((targetPlacementId): MoveSpecAuthoritativeTargetEvaluation => {
+        const included = targetIdSet.has(targetPlacementId)
+        return {
+          targetPlacementId,
+          outcome: included ? 'included' : 'excluded',
+          reasonCode: included ? 'target-selector-included' : 'target-selector-excluded',
+        }
+      })
+      for (const evaluation of evaluations) {
         trace = reduceMoveResolutionTrace(trace, {
           kind: 'target',
           phase,
-          targetId,
-          outcome: included ? 'included' : 'excluded',
-          reasonCode: included ? 'target-selector-included' : 'target-selector-excluded',
+          targetId: evaluation.targetPlacementId,
+          outcome: evaluation.outcome,
+          reasonCode: evaluation.reasonCode,
         })
       }
 

@@ -20,6 +20,12 @@ const validSpec = () => ({
       kind: 'relationship',
       relationship: 'enemy',
     },
+    predicate: {
+      relationship: 'enemy',
+      willingness: 'any',
+      excludeActor: true,
+      statePredicates: [{ kind: 'vitality', value: 'conscious' }],
+    },
   },
   preconditions: [{
     id: 'actor.conscious',
@@ -157,12 +163,20 @@ describe('MoveSpec v2 contract', () => {
     expectDeeplyFrozen(spec)
 
     input.targeting.selector.relationship = 'ally'
+    input.targeting.predicate.relationship = 'ally'
+    input.targeting.predicate.statePredicates[0].value = 'fainted'
     input.phases[2].operations[0].kind = 'client-patch'
     input.phases.push({ phase: 'cleanup', operations: [] })
 
     expect(spec.targeting.selector).toEqual({
       kind: 'relationship',
       relationship: 'enemy',
+    })
+    expect(spec.targeting.predicate).toEqual({
+      relationship: 'enemy',
+      willingness: 'any',
+      excludeActor: true,
+      statePredicates: [{ kind: 'vitality', value: 'conscious' }],
     })
     expect(spec.phases[2].operations[0].kind).toBe('damage')
     expect(JSON.parse(JSON.stringify(spec))).toEqual(spec)

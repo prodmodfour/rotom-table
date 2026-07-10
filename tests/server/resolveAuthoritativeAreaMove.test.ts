@@ -7,6 +7,19 @@ import {
 import { EXPLICIT_MOVE_AUTOMATION_SCRIPTS } from '~/utils/moveAutomation'
 import { moveAutomationAreaTemplateId } from '~/utils/moveAutomationAreaTemplates'
 import { redBlueEncounterStateFixture } from '../fixtures/moveAutomation/encounterSides'
+import {
+  REGISTERED_MOVE_HANDLER_REGISTRY,
+} from '~~/server/domain/moveAutomation/handlers/registry'
+import type {
+  MoveAutomationRuntimeRegistry,
+  MoveSpecV2Runtime,
+} from '~~/server/domain/moveAutomation/registry'
+import type {
+  MoveAutomationTargetPredicateDeclaration,
+} from '~~/server/domain/moveAutomation/predicates/target'
+import {
+  validateMoveSpec,
+} from '~~/server/domain/moveAutomation/validateSpec'
 import type { CharacterSheet, CharacterSheetMove } from '~/types/characterSheet'
 import type { SheetPlacement, TabletopMap } from '~/types/map'
 import type { MoveAutomationAreaTemplate, MoveAutomationScript } from '~/types/moveAutomation'
@@ -141,6 +154,80 @@ const withRegisteredMoveAutomationScript = async <T>(script: MoveAutomationScrip
   }
 }
 
+const nativeAreaRuntimeRegistry = (options: {
+  readonly canonicalId: string
+  readonly predicate: MoveAutomationTargetPredicateDeclaration
+  readonly passDistance?: number
+}): MoveAutomationRuntimeRegistry => {
+  const movementOperations = options.passDistance === undefined
+    ? []
+    : [{
+        id: 'area-test.pass-movement',
+        kind: 'movement-request',
+        source: { kind: 'move', id: 'move.area-test' },
+        recipients: { kind: 'actor' },
+        phase: 'movement',
+        reasonCode: 'area-test.pass-movement',
+        payload: {
+          requestId: 'area-test.pass-destination',
+          mode: 'voluntary',
+          distance: options.passDistance,
+          destinationSetId: 'area-test.pass-destinations',
+        },
+      }]
+  const definition = validateMoveSpec({
+    schemaVersion: 2,
+    canonicalId: options.canonicalId,
+    version: 1,
+    targeting: {
+      kind: 'area',
+      minTargets: 0,
+      maxTargets: 32,
+      selector: { kind: 'area-targets' },
+      predicate: options.predicate,
+    },
+    preconditions: [],
+    costs: [],
+    phases: [
+      ...(movementOperations.length
+        ? [{ phase: 'movement', operations: movementOperations }]
+        : []),
+      {
+        phase: 'cleanup',
+        operations: [{
+          id: 'area-test.completed',
+          kind: 'log',
+          source: { kind: 'move', id: 'move.area-test' },
+          recipients: { kind: 'none' },
+          phase: 'cleanup',
+          reasonCode: 'area-test.completed',
+          payload: { messageKey: 'move.area-test.completed', arguments: [] },
+        }],
+      },
+    ],
+    registeredHandlerId: null,
+    presentation: {
+      displayName: options.canonicalId,
+      vfxKey: null,
+      tags: ['area-test'],
+    },
+  })
+  const runtime: MoveSpecV2Runtime = Object.freeze({
+    canonicalId: options.canonicalId,
+    kind: 'movespec-v2',
+    version: definition.spec.version,
+    definitionHash: definition.definitionHash,
+    sourceModule: 'tests/server/resolveAuthoritativeAreaMove.test.ts',
+    definition,
+  })
+  return Object.freeze({
+    size: 1,
+    handlerRegistry: REGISTERED_MOVE_HANDLER_REGISTRY,
+    resolve: (canonicalId: string) => canonicalId === options.canonicalId ? runtime : null,
+    entries: () => Object.freeze([runtime]),
+  })
+}
+
 const templateId = (template: MoveAutomationAreaTemplate): string => moveAutomationAreaTemplateId(template)
 
 const burstTemplate: MoveAutomationAreaTemplate = { kind: 'burst', size: 1, label: 'Burst 1' }
@@ -149,6 +236,52 @@ const coneTemplate: MoveAutomationAreaTemplate = { kind: 'cone', size: 2, label:
 const lineTemplate: MoveAutomationAreaTemplate = { kind: 'line', size: 3, label: 'Line 3' }
 const closeBlastTemplate: MoveAutomationAreaTemplate = { kind: 'close-blast', size: 2, label: 'Close Blast 2' }
 const rangedBlastTemplate: MoveAutomationAreaTemplate = { kind: 'ranged-blast', range: 4, size: 1, label: 'Ranged 4 Blast 1' }
+
+const nativeAreaCases = [
+  {
+    label: 'Burst',
+    moveName: 'Disarming Voice',
+    template: burstTemplate,
+    placement: {},
+  },
+  {
+    label: 'Cardinally Adjacent',
+    moveName: 'Discharge',
+    template: cardinalTemplate,
+    placement: {},
+  },
+  {
+    label: 'Cone',
+    moveName: 'Snarl',
+    template: coneTemplate,
+    placement: { direction: 'north' as const },
+  },
+  {
+    label: 'Line',
+    moveName: 'Dragon Hammer',
+    template: lineTemplate,
+    placement: { direction: 'east' as const },
+  },
+  {
+    label: 'Close Blast',
+    moveName: 'Heat Wave',
+    template: { kind: 'close-blast' as const, size: 3, label: 'Close Blast 3' },
+    placement: { aimCell: { x: 6, y: 0, z: 5 } },
+  },
+  {
+    label: 'Ranged Blast',
+    moveName: 'Swift',
+    template: { kind: 'ranged-blast' as const, range: 8, size: 2, label: 'Ranged 8 Blast 2' },
+    placement: { aimCell: { x: 6, y: 0, z: 5 } },
+  },
+  {
+    label: 'Pass',
+    moveName: 'Scratch',
+    template: { kind: 'pass' as const, size: 4, label: 'Pass 4' },
+    placement: { direction: 'east' as const },
+    passDistance: 4,
+  },
+] as const
 
 describe('resolveAuthoritativeMove area selections', () => {
   it('resolves Burst and Cardinally Adjacent cells and deterministic authoritative targets', async () => {
@@ -227,6 +360,117 @@ describe('resolveAuthoritativeMove area selections', () => {
       expect(resolution.area?.candidateTargetIds).toEqual(['target-a', 'target-c'])
       expect(resolution.desiredFacing).toBe('north-east')
     })
+  })
+
+  it.each(nativeAreaCases)('applies native enemy predicates after $label geometry', ({
+    moveName,
+    template,
+    placement: areaPlacement,
+    ...areaCase
+  }) => {
+    const map = mapFixture({
+      placements: [
+        placement('actor-token', 'actor', { x: 5, y: 0, z: 5 }, 'red'),
+        placement('target-a', 'target-a', { x: 6, y: 0, z: 5 }, 'blue'),
+        placement('target-b', 'target-b', { x: 5, y: 0, z: 4 }, 'red'),
+        placement('target-c', 'target-c', { x: 7, y: 0, z: 5 }, 'blue'),
+        placement('far-target', 'far-target', { x: 11, y: 0, z: 11 }, 'blue'),
+      ],
+      encounterState: redBlueEncounterStateFixture(),
+    })
+    const runtimeRegistry = nativeAreaRuntimeRegistry({
+      canonicalId: moveName,
+      predicate: { relationship: 'enemy', willingness: 'any', excludeActor: true },
+      ...('passDistance' in areaCase ? { passDistance: areaCase.passDistance } : {}),
+    })
+    const resolution = resolveAuthoritativeMove({
+      map,
+      pokemonSheets: sheetMap([{ name: moveName }]),
+      trainerSheets: new Map(),
+      intent: moveIntent({
+        placementId: 'actor-token',
+        moveName,
+        selection: {
+          kind: 'area',
+          areaTemplateId: templateId(template),
+          ...areaPlacement,
+        },
+      }),
+      runtimeRegistry,
+    })
+
+    const geometricIds = resolution.area?.candidateTargetIds ?? []
+    const expectedEnemyIds = geometricIds.filter(targetId => targetId !== 'target-b')
+    expect(geometricIds.length).toBeGreaterThan(0)
+    expect(resolution.nativeV2).toBeDefined()
+    expect(resolution.selectedTargetIds).toEqual(expectedEnemyIds)
+    expect(resolution.transaction.attackedTargetIds).toEqual(expectedEnemyIds)
+    expect(resolution.area?.targetEvaluations).toHaveLength(geometricIds.length)
+    if (geometricIds.includes('target-b')) {
+      expect(resolution.area?.targetEvaluations).toContainEqual(expect.objectContaining({
+        targetPlacementId: 'target-b',
+        outcome: 'excluded',
+        reasonCode: 'target-excluded-not-enemy',
+      }))
+    }
+    for (const targetId of expectedEnemyIds) {
+      expect(resolution.area?.targetEvaluations).toContainEqual(expect.objectContaining({
+        targetPlacementId: targetId,
+        outcome: 'included',
+        reasonCode: 'target-included',
+      }))
+    }
+    expect(resolution.auditTrace.events.filter(event => event.kind === 'target'))
+      .toEqual(resolution.area?.targetEvaluations.map(evaluation => expect.objectContaining({
+        targetId: evaluation.targetPlacementId,
+        outcome: evaluation.outcome,
+        reasonCode: evaluation.reasonCode,
+      })))
+  })
+
+  it('applies native area state predicates before rolls and effects', () => {
+    const map = mapFixture({
+      placements: [
+        placement('actor-token', 'actor', { x: 5, y: 0, z: 5 }, 'red'),
+        placement('target-a', 'target-a', { x: 6, y: 0, z: 5 }, 'blue'),
+        placement('target-b', 'target-b', { x: 5, y: 0, z: 4 }, 'red'),
+      ],
+      encounterState: redBlueEncounterStateFixture(),
+    })
+    const runtimeRegistry = nativeAreaRuntimeRegistry({
+      canonicalId: 'Disarming Voice',
+      predicate: {
+        relationship: 'any',
+        willingness: 'any',
+        excludeActor: true,
+        statePredicates: [{ kind: 'vitality', value: 'conscious' }],
+      },
+    })
+    const resolution = resolveAuthoritativeMove({
+      map,
+      pokemonSheets: sheetMap([{ name: 'Disarming Voice' }], {
+        'target-a': pokemonSheet('target-a', [], { combat: { currentHp: 0 } }),
+      }),
+      trainerSheets: new Map(),
+      intent: moveIntent({
+        placementId: 'actor-token',
+        moveName: 'Disarming Voice',
+        selection: { kind: 'area', areaTemplateId: templateId(burstTemplate) },
+      }),
+      runtimeRegistry,
+      random: () => { throw new Error('area state filtering must happen before RNG') },
+    })
+
+    expect(resolution.selectedTargetIds).toEqual(['target-b'])
+    expect(resolution.area?.targetEvaluations).toContainEqual(expect.objectContaining({
+      targetPlacementId: 'target-a',
+      outcome: 'excluded',
+      reasonCode: 'target-excluded-not-conscious',
+    }))
+    expect(resolution.sheetReads).toEqual(expect.arrayContaining([
+      expect.objectContaining({ slug: 'target-a' }),
+      expect.objectContaining({ slug: 'target-b' }),
+    ]))
   })
 
   it('requires legal Close Blast and Ranged Blast aim cells and rejects blocked, out-of-range, and out-of-bounds aim', async () => {
@@ -444,9 +688,24 @@ describe('resolveAuthoritativeMove area selections', () => {
     })
     expect(resolution.area?.candidateTargetIds).toEqual(['target-a', 'target-b', 'target-c'])
     expect(resolution.area?.excludedTargetIds).toEqual([])
-    expect(resolution.area?.relationshipExclusions).toEqual([
-      { targetPlacementId: 'target-b', reasonCode: 'relationship-enemy' },
-      { targetPlacementId: 'target-c', reasonCode: 'relationship-unknown-side' },
+    expect(resolution.area?.targetEvaluations).toEqual([
+      expect.objectContaining({
+        targetPlacementId: 'target-a',
+        outcome: 'included',
+        reasonCode: 'target-included',
+      }),
+      expect.objectContaining({
+        targetPlacementId: 'target-b',
+        outcome: 'excluded',
+        reasonCode: 'target-excluded-not-ally',
+        relationshipReasonCode: 'relationship-enemy',
+      }),
+      expect.objectContaining({
+        targetPlacementId: 'target-c',
+        outcome: 'excluded',
+        reasonCode: 'target-excluded-unknown-side',
+        relationshipReasonCode: 'relationship-unknown-side',
+      }),
     ])
     expect(resolution.selectedTargetIds).toEqual(['target-a'])
     expect(resolution.transaction.attackedTargetIds).toEqual(['target-a'])
@@ -465,19 +724,19 @@ describe('resolveAuthoritativeMove area selections', () => {
         kind: 'target',
         targetId: 'target-a',
         outcome: 'included',
-        reasonCode: 'authoritative-area-candidate',
+        reasonCode: 'target-included',
       }),
       expect.objectContaining({
         kind: 'target',
         targetId: 'target-b',
         outcome: 'excluded',
-        reasonCode: 'relationship-enemy',
+        reasonCode: 'target-excluded-not-ally',
       }),
       expect.objectContaining({
         kind: 'target',
         targetId: 'target-c',
         outcome: 'excluded',
-        reasonCode: 'relationship-unknown-side',
+        reasonCode: 'target-excluded-unknown-side',
       }),
     ]))
   })

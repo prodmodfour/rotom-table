@@ -17,6 +17,9 @@ import {
   createRegisteredMoveHandlerRegistry,
 } from '~~/server/domain/moveAutomation/handlers/registry'
 import {
+  MoveAutomationTargetPredicateError,
+} from '~~/server/domain/moveAutomation/predicates/target'
+import {
   DEFAULT_MOVE_SPEC_RULESET_VERSION,
   MOVE_SPEC_DEFINITION_HASH_VERSION,
   MoveSpecDefinitionValidationError,
@@ -58,6 +61,7 @@ interface TestSpec {
     minTargets: number
     maxTargets: number
     selector: Record<string, unknown>
+    predicate?: Record<string, unknown> | null
   }
   preconditions: TestPrecondition[]
   costs: unknown[]
@@ -274,6 +278,45 @@ describe('authoritative MoveSpec validation and hashing', () => {
       spec: { canonicalId: 'Scratch' },
     })
     expectDeeplyFrozen(result)
+  })
+
+  it('validates optional authoritative area relation and state predicates into hash material', () => {
+    const spec = validSpec()
+    spec.targeting.kind = 'area'
+    spec.targeting.minTargets = 0
+    spec.targeting.maxTargets = 32
+    spec.targeting.selector = { kind: 'area-targets' }
+    spec.targeting.predicate = {
+      relationship: 'enemy',
+      willingness: 'any',
+      excludeActor: true,
+      statePredicates: [{ kind: 'vitality', value: 'conscious' }],
+    }
+
+    const result = validateMoveSpec(spec)
+    expect(result.spec.targeting.predicate).toEqual(spec.targeting.predicate)
+    expect(JSON.parse(result.canonicalJson)).toMatchObject({
+      spec: { targeting: { predicate: spec.targeting.predicate } },
+    })
+
+    const changed = structuredClone(spec)
+    changed.targeting.predicate!.relationship = 'ally'
+    expect(validateMoveSpec(changed).definitionHash).not.toBe(result.definitionHash)
+
+    const invalid = structuredClone(spec)
+    invalid.targeting.predicate = { relationship: 'browser-team', willingness: 'any', excludeActor: true }
+    expect(() => validateMoveSpec(invalid)).toThrowError(expect.objectContaining({
+      name: MoveAutomationTargetPredicateError.name,
+      code: 'invalid-target-predicate',
+    }))
+
+    const nonArea = structuredClone(spec)
+    nonArea.targeting.kind = 'single-target'
+    expectDefinitionError(
+      () => validateMoveSpec(nonArea),
+      'invalid-definition',
+      'spec.targeting.predicate',
+    )
   })
 
   it('normalizes omitted syntax defaults, phase order, tags, and object key order', () => {

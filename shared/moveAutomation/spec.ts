@@ -60,6 +60,8 @@ export interface MoveSpecTargetingDeclaration {
   readonly minTargets: number
   readonly maxTargets: number
   readonly selector: MoveSpecSelector | null
+  /** Optional server-evaluated relation/state declaration for geometric area candidates. */
+  readonly predicate?: MoveSpecPredicate | null
 }
 
 export interface MoveSpecPrecondition {
@@ -153,7 +155,8 @@ const ROOT_FIELDS = [
   'registeredHandlerId',
   'presentation',
 ] as const
-const TARGETING_FIELDS = ['kind', 'minTargets', 'maxTargets', 'selector'] as const
+const TARGETING_REQUIRED_FIELDS = ['kind', 'minTargets', 'maxTargets', 'selector'] as const
+const TARGETING_OPTIONAL_FIELDS = ['predicate'] as const
 const PRECONDITION_FIELDS = ['id', 'predicate', 'failureReasonCode'] as const
 const COST_FIELDS = ['id', 'phase', 'cost'] as const
 const PHASE_BLOCK_FIELDS = ['phase', 'operations'] as const
@@ -310,8 +313,9 @@ const assertExactKeys = (
   record: UnknownRecord,
   expectedKeys: readonly string[],
   path: string,
+  optionalKeys: readonly string[] = [],
 ): void => {
-  const expected = new Set(expectedKeys)
+  const expected = new Set([...expectedKeys, ...optionalKeys])
   const missing = expectedKeys.filter(key => !Object.prototype.hasOwnProperty.call(record, key))
   const unknown = Object.keys(record).filter(key => !expected.has(key))
   if (missing.length > 0 || unknown.length > 0) {
@@ -403,7 +407,7 @@ const assertUnique = (values: readonly string[], path: string): void => {
 const parseTargeting = (value: unknown): MoveSpecTargetingDeclaration => {
   const path = 'spec.targeting'
   const input = parseRecord(value, path)
-  assertExactKeys(input, TARGETING_FIELDS, path)
+  assertExactKeys(input, TARGETING_REQUIRED_FIELDS, path, TARGETING_OPTIONAL_FIELDS)
   if (typeof input.kind !== 'string' || !TARGETING_KIND_SET.has(input.kind)) {
     fail('invalid-spec', `${path}.kind`, 'must be a supported targeting kind.')
   }
@@ -412,6 +416,7 @@ const parseTargeting = (value: unknown): MoveSpecTargetingDeclaration => {
   if (minTargets > maxTargets) {
     fail('invalid-spec', path, 'minTargets cannot exceed maxTargets.')
   }
+  const hasPredicate = Object.prototype.hasOwnProperty.call(input, 'predicate')
   return {
     kind: input.kind as MoveSpecTargetingKind,
     minTargets,
@@ -419,6 +424,13 @@ const parseTargeting = (value: unknown): MoveSpecTargetingDeclaration => {
     selector: input.selector === null
       ? null
       : parseDataObject(input.selector, `${path}.selector`),
+    ...(hasPredicate
+      ? {
+          predicate: input.predicate === null
+            ? null
+            : parseDataObject(input.predicate, `${path}.predicate`),
+        }
+      : {}),
   }
 }
 

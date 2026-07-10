@@ -320,9 +320,33 @@ const planMoveState = (
 const moveResultFromPlan = (plan: AuthoritativeMoveStatePlan): LivePlayResolvedMoveResult => {
   const clonedResolution = deepCloneJson(plan.resolution)
   const { auditTrace, ...publicResolution } = clonedResolution
+  const publicArea = (() => {
+    const area = clonedResolution.area
+    if (!area) return undefined
+    const publicRequestedExclusions = new Set(
+      area.targetEvaluations
+        .filter(evaluation => evaluation.reasonCode === 'requested-friendly-exclusion')
+        .map(evaluation => evaluation.targetPlacementId),
+    )
+    return {
+      areaTemplateId: area.areaTemplateId,
+      template: area.template,
+      cells: area.cells,
+      candidateTargetIds: area.candidateTargetIds.filter((placementId) => (
+        clonedResolution.selectedTargetIds.includes(placementId)
+        || publicRequestedExclusions.has(placementId)
+      )),
+      excludedTargetIds: area.excludedTargetIds.filter(placementId => (
+        publicRequestedExclusions.has(placementId)
+      )),
+      ...(area.direction ? { direction: area.direction } : {}),
+      ...(area.aimCell ? { aimCell: area.aimCell } : {}),
+    }
+  })()
   const candidate = {
     schemaVersion: LIVE_PLAY_RESOLVED_MOVE_RESULT_SCHEMA_VERSION,
     ...publicResolution,
+    ...(publicArea ? { area: publicArea } : {}),
     trace: summarizeMoveResolutionTrace(auditTrace),
   }
   const parsed = parseLivePlayResolvedMoveResult(candidate)

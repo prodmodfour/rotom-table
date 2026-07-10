@@ -47,6 +47,7 @@ interface TestSpec {
     minTargets: number
     maxTargets: number
     selector: Record<string, unknown> | null
+    predicate?: Record<string, unknown> | null
   }
   preconditions: Array<{
     id: string
@@ -271,6 +272,62 @@ describe('phased MoveSpec interpreter', () => {
     expect(Object.isFrozen(result)).toBe(true)
     expect(Object.isFrozen(result.operations)).toBe(true)
     expect(Object.isFrozen(result.targetIds)).toBe(true)
+  })
+
+  it('records complete server-derived area predicate decisions without widening targets', () => {
+    const spec = baseSpec()
+    spec.targeting = {
+      kind: 'area',
+      minTargets: 0,
+      maxTargets: 2,
+      selector: { kind: 'area-targets' },
+      predicate: {
+        relationship: 'enemy',
+        willingness: 'any',
+        excludeActor: true,
+      },
+    }
+    const context = buildContext({
+      candidatePlacementIds: ['target-token', 'bystander-token'],
+      selectedPlacementIds: [],
+    })
+    const evaluations = [
+      { targetPlacementId: 'target-token', outcome: 'included' as const, reasonCode: 'target-included' },
+      { targetPlacementId: 'bystander-token', outcome: 'excluded' as const, reasonCode: 'target-excluded-not-enemy' },
+    ]
+
+    const result = executeMoveSpec({
+      definition: definitionFor(spec),
+      context,
+      authoritativeTargetIds: ['target-token'],
+      authoritativeTargetEvaluations: evaluations,
+    })
+
+    expect(result.targetIds).toEqual(['target-token'])
+    expect(traceEventsOfKind(result, 'target')).toEqual([
+      expect.objectContaining({
+        targetId: evaluations[0]!.targetPlacementId,
+        outcome: evaluations[0]!.outcome,
+        reasonCode: evaluations[0]!.reasonCode,
+      }),
+      expect.objectContaining({
+        targetId: evaluations[1]!.targetPlacementId,
+        outcome: evaluations[1]!.outcome,
+        reasonCode: evaluations[1]!.reasonCode,
+      }),
+    ])
+    expect(() => executeMoveSpec({
+      definition: definitionFor(spec),
+      context,
+      authoritativeTargetIds: ['target-token'],
+      authoritativeTargetEvaluations: [
+        { ...evaluations[0]!, outcome: 'excluded' },
+        evaluations[1]!,
+      ],
+    })).toThrowError(expect.objectContaining({
+      name: MoveSpecExecutionError.name,
+      code: 'authoritative-target-invalid',
+    }))
   })
 
   it('resolves injected rolls into the ledger and trace before finishing', () => {
