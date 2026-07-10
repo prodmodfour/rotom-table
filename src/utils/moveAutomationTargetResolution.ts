@@ -148,6 +148,18 @@ const damageTerm = (
   label,
 })
 
+export interface MoveAutomationResolvedDamageStat {
+  readonly value: number
+  readonly label: string
+  /** Applies actor-owned contextual offense modifiers such as Infatuation. */
+  readonly applyActorOffenseModifiers?: boolean
+}
+
+export interface MoveAutomationResolvedDamageStats {
+  readonly attackStat?: MoveAutomationResolvedDamageStat
+  readonly defenseStat?: MoveAutomationResolvedDamageStat
+}
+
 export const resolveMoveAutomationTargetDamageBreakdown = (
   script: MoveAutomationScript | null | undefined,
   user: SpawnedPokemon,
@@ -155,6 +167,7 @@ export const resolveMoveAutomationTargetDamageBreakdown = (
   resolution: MoveAutomationTargetResolutionState | undefined,
   fieldEffects?: MapFieldEffects,
   selectedTargets: readonly SpawnedPokemon[] = [target],
+  resolvedStats: MoveAutomationResolvedDamageStats = {},
 ): MoveAutomationDamageBreakdown => {
   if (!script?.damaging) return NO_DAMAGE_BREAKDOWN
   const state = resolution ?? defaultTargetResolutionState(script)
@@ -183,7 +196,7 @@ export const resolveMoveAutomationTargetDamageBreakdown = (
   const conditionRollModifier = conditionDamageRollModifier(user.conditions)
   const raw = unmodifiedRaw + infatuation.damageRollModifier + conditionRollModifier
   const physical = script.damageClass === 'Physical'
-  const stagedOffense = physical
+  const defaultOffense = physical
     ? applyCombatStageToStat(user.atk, conditionAdjustedCombatStage(
       user.combatStages.atk,
       user.conditions,
@@ -196,8 +209,11 @@ export const resolveMoveAutomationTargetDamageBreakdown = (
       'satk',
       { abilities: user.abilityNames },
     ))
-  const offense = applyInfatuationOffenseModifier(stagedOffense, infatuation)
-  const defense = physical
+  const selectedOffense = resolvedStats.attackStat?.value ?? defaultOffense
+  const offense = resolvedStats.attackStat?.applyActorOffenseModifiers === false
+    ? selectedOffense
+    : applyInfatuationOffenseModifier(selectedOffense, infatuation)
+  const defense = resolvedStats.defenseStat?.value ?? (physical
     ? applyCombatStageToStat(target.def, conditionAdjustedCombatStage(
       target.combatStages.def,
       target.conditions,
@@ -209,7 +225,7 @@ export const resolveMoveAutomationTargetDamageBreakdown = (
       target.conditions,
       'sdef',
       { abilities: target.abilityNames },
-    ))
+    )))
   const fieldBonus = fieldEffectDamageBonus(script.type, fieldEffects)
   const multiplier = moveAutomationTargetDamageMultiplier(script, target)
   if (multiplier === 0) return NO_DAMAGE_BREAKDOWN
@@ -222,9 +238,16 @@ export const resolveMoveAutomationTargetDamageBreakdown = (
   if (criticalDamageBonus !== 0) terms.push(damageTerm(criticalDamageBonus, 'critical'))
   if (conditionRollModifier !== 0) terms.push(damageTerm(conditionRollModifier, 'conditions'))
   if (infatuation.damageRollModifier !== 0) terms.push(damageTerm(infatuation.damageRollModifier, 'Infatuation'))
-  terms.push(damageTerm(offense, physical ? 'Atk' : 'Sp.Atk'))
+  terms.push(damageTerm(
+    offense,
+    resolvedStats.attackStat?.label ?? (physical ? 'Atk' : 'Sp.Atk'),
+  ))
   if (fieldBonus !== 0) terms.push(damageTerm(fieldBonus, 'field'))
-  terms.push({ operator: 'subtract', amount: defense, label: physical ? 'Def' : 'Sp.Def' })
+  terms.push({
+    operator: 'subtract',
+    amount: defense,
+    label: resolvedStats.defenseStat?.label ?? (physical ? 'Def' : 'Sp.Def'),
+  })
 
   return {
     kind: 'standard',

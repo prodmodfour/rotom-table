@@ -31,6 +31,7 @@ export const MOVE_EXPRESSION_KINDS = [
   'stat',
   'hp-ratio',
   'combat-stage',
+  'combat-stage-total',
   'weight',
   'type',
   'weather',
@@ -56,6 +57,32 @@ export const MOVE_EXPRESSION_STATS = [
   'current-hp',
   'maximum-hp',
 ] as const
+
+export const MOVE_STAGE_AFFECTED_EXPRESSION_STATS = [
+  'attack',
+  'special-attack',
+  'defense',
+  'special-defense',
+  'speed',
+] as const
+
+export const MOVE_DAMAGE_STAT_SELECTION_STATS = [
+  ...MOVE_STAGE_AFFECTED_EXPRESSION_STATS,
+  'level',
+] as const
+
+/** How a selected stat treats the subject's resolved Combat Stage. */
+export const MOVE_STAT_COMBAT_STAGE_POLICIES = [
+  'honor',
+  'ignore',
+  'ignore-positive',
+  'ignore-negative',
+] as const
+
+/** Whether condition/ability-derived modifiers contribute to a Combat Stage query. */
+export const MOVE_STAT_STAGE_MODIFIER_POLICIES = ['honor', 'ignore'] as const
+
+export const MOVE_COMBAT_STAGE_TOTAL_DIRECTIONS = ['positive', 'negative'] as const
 
 export const MOVE_HP_RATIO_KINDS = [
   'current-to-maximum',
@@ -91,6 +118,16 @@ export const MOVE_EXPRESSION_LIMITS = MOVE_RULE_AST_LIMITS
 export type MoveExpressionKind = (typeof MOVE_EXPRESSION_KINDS)[number]
 export type MoveArithmeticOperator = (typeof MOVE_ARITHMETIC_OPERATORS)[number]
 export type MoveExpressionStat = (typeof MOVE_EXPRESSION_STATS)[number]
+export type MoveStageAffectedExpressionStat =
+  (typeof MOVE_STAGE_AFFECTED_EXPRESSION_STATS)[number]
+export type MoveDamageStatSelectionStat =
+  (typeof MOVE_DAMAGE_STAT_SELECTION_STATS)[number]
+export type MoveStatCombatStagePolicy =
+  (typeof MOVE_STAT_COMBAT_STAGE_POLICIES)[number]
+export type MoveStatStageModifierPolicy =
+  (typeof MOVE_STAT_STAGE_MODIFIER_POLICIES)[number]
+export type MoveCombatStageTotalDirection =
+  (typeof MOVE_COMBAT_STAGE_TOTAL_DIRECTIONS)[number]
 export type MoveHpRatioKind = (typeof MOVE_HP_RATIO_KINDS)[number]
 export type MoveCombatStageStat = (typeof MOVE_COMBAT_STAGE_STATS)[number]
 export type MoveWeightMetric = (typeof MOVE_WEIGHT_METRICS)[number]
@@ -142,6 +179,12 @@ export interface MoveStatExpression {
   readonly kind: 'stat'
   readonly subject: MoveSelector
   readonly stat: MoveExpressionStat
+  /**
+   * Omitted only for legacy expression data, where both policies mean ignore.
+   * New mechanic-bearing stat selections must encode both policies explicitly.
+   */
+  readonly combatStagePolicy?: MoveStatCombatStagePolicy
+  readonly stageModifierPolicy?: MoveStatStageModifierPolicy
 }
 
 export interface MoveHpRatioExpression {
@@ -154,6 +197,16 @@ export interface MoveCombatStageExpression {
   readonly kind: 'combat-stage'
   readonly subject: MoveSelector
   readonly stage: MoveCombatStageStat
+  /** Omission preserves the legacy authored-stage-only query. */
+  readonly stageModifierPolicy?: MoveStatStageModifierPolicy
+}
+
+export interface MoveCombatStageTotalExpression {
+  readonly kind: 'combat-stage-total'
+  readonly subject: MoveSelector
+  /** Negative totals are returned as a non-negative magnitude. */
+  readonly direction: MoveCombatStageTotalDirection
+  readonly stageModifierPolicy: MoveStatStageModifierPolicy
 }
 
 export interface MoveWeightExpression {
@@ -193,11 +246,27 @@ export type MoveExpression =
   | MoveStatExpression
   | MoveHpRatioExpression
   | MoveCombatStageExpression
+  | MoveCombatStageTotalExpression
   | MoveWeightExpression
   | MoveTypeExpression
   | MoveWeatherExpression
   | MoveTerrainExpression
   | MoveHistoryExpression
+
+export type MoveStatSelectionExpression =
+  | (MoveStatExpression & {
+      readonly stat: MoveDamageStatSelectionStat
+      readonly combatStagePolicy: MoveStatCombatStagePolicy
+      readonly stageModifierPolicy: MoveStatStageModifierPolicy
+    })
+  | {
+      readonly kind: 'min'
+      readonly values: readonly MoveStatSelectionExpression[]
+    }
+  | {
+      readonly kind: 'max'
+      readonly values: readonly MoveStatSelectionExpression[]
+    }
 
 export type MoveExpressionValidationCode = MoveRuleAstValidationCode
 
@@ -220,8 +289,27 @@ const CLAMP_FIELDS = ['kind', 'value', 'minimum', 'maximum'] as const
 const LOOKUP_TABLE_FIELDS = ['kind', 'input', 'entries', 'fallback'] as const
 const LOOKUP_ENTRY_FIELDS = ['key', 'value'] as const
 const STAT_FIELDS = ['kind', 'subject', 'stat'] as const
+const STAT_POLICY_FIELDS = [
+  'kind',
+  'subject',
+  'stat',
+  'combatStagePolicy',
+  'stageModifierPolicy',
+] as const
 const HP_RATIO_FIELDS = ['kind', 'subject', 'ratio'] as const
 const COMBAT_STAGE_FIELDS = ['kind', 'subject', 'stage'] as const
+const COMBAT_STAGE_MODIFIER_FIELDS = [
+  'kind',
+  'subject',
+  'stage',
+  'stageModifierPolicy',
+] as const
+const COMBAT_STAGE_TOTAL_FIELDS = [
+  'kind',
+  'subject',
+  'direction',
+  'stageModifierPolicy',
+] as const
 const WEIGHT_FIELDS = ['kind', 'subject', 'metric'] as const
 const TYPE_FIELDS = ['kind', 'of', 'subject'] as const
 const FIELD_QUERY_FIELDS = ['kind'] as const
@@ -230,6 +318,11 @@ const HISTORY_FIELDS = ['kind', 'subject', 'query'] as const
 const EXPRESSION_KIND_SET = new Set<string>(MOVE_EXPRESSION_KINDS)
 const ARITHMETIC_OPERATOR_SET = new Set<string>(MOVE_ARITHMETIC_OPERATORS)
 const STAT_SET = new Set<string>(MOVE_EXPRESSION_STATS)
+const DAMAGE_STAT_SELECTION_SET = new Set<string>(MOVE_DAMAGE_STAT_SELECTION_STATS)
+const STAGE_AFFECTED_STAT_SET = new Set<string>(MOVE_STAGE_AFFECTED_EXPRESSION_STATS)
+const STAT_COMBAT_STAGE_POLICY_SET = new Set<string>(MOVE_STAT_COMBAT_STAGE_POLICIES)
+const STAT_STAGE_MODIFIER_POLICY_SET = new Set<string>(MOVE_STAT_STAGE_MODIFIER_POLICIES)
+const COMBAT_STAGE_TOTAL_DIRECTION_SET = new Set<string>(MOVE_COMBAT_STAGE_TOTAL_DIRECTIONS)
 const HP_RATIO_SET = new Set<string>(MOVE_HP_RATIO_KINDS)
 const COMBAT_STAGE_SET = new Set<string>(MOVE_COMBAT_STAGE_STATS)
 const WEIGHT_METRIC_SET = new Set<string>(MOVE_WEIGHT_METRICS)
@@ -444,19 +537,76 @@ export const parseMoveExpressionNode = (
       }
     case 'lookup-table':
       return parseLookupTableExpression(input, path, depth, context)
-    case 'stat':
-      assertMoveRuleAstExactKeys(input, STAT_FIELDS, path, context)
+    case 'stat': {
+      const hasCombatStagePolicy = Object.prototype.hasOwnProperty.call(
+        input,
+        'combatStagePolicy',
+      )
+      const hasStageModifierPolicy = Object.prototype.hasOwnProperty.call(
+        input,
+        'stageModifierPolicy',
+      )
+      if (hasCombatStagePolicy !== hasStageModifierPolicy) {
+        failMoveRuleAst(
+          context,
+          context.invalidCode,
+          path,
+          'combatStagePolicy and stageModifierPolicy must either both be present or both be omitted.',
+        )
+      }
+      assertMoveRuleAstExactKeys(
+        input,
+        hasCombatStagePolicy ? STAT_POLICY_FIELDS : STAT_FIELDS,
+        path,
+        context,
+      )
+      const stat = parseMoveRuleAstEnum<MoveExpressionStat>(
+        readMoveRuleAstOwnValue(input, 'stat', path, context),
+        STAT_SET,
+        `${path}.stat`,
+        'a supported selected stat',
+        context,
+      )
+      const policies = hasCombatStagePolicy
+        ? {
+            combatStagePolicy: parseMoveRuleAstEnum<MoveStatCombatStagePolicy>(
+              readMoveRuleAstOwnValue(input, 'combatStagePolicy', path, context),
+              STAT_COMBAT_STAGE_POLICY_SET,
+              `${path}.combatStagePolicy`,
+              'honor, ignore, ignore-positive, or ignore-negative',
+              context,
+            ),
+            stageModifierPolicy: parseMoveRuleAstEnum<MoveStatStageModifierPolicy>(
+              readMoveRuleAstOwnValue(input, 'stageModifierPolicy', path, context),
+              STAT_STAGE_MODIFIER_POLICY_SET,
+              `${path}.stageModifierPolicy`,
+              'honor or ignore',
+              context,
+            ),
+          }
+        : {}
+      if (
+        hasCombatStagePolicy
+        && !STAGE_AFFECTED_STAT_SET.has(stat)
+        && (
+          policies.combatStagePolicy !== 'ignore'
+          || policies.stageModifierPolicy !== 'ignore'
+        )
+      ) {
+        failMoveRuleAst(
+          context,
+          context.invalidCode,
+          path,
+          `${stat} has no Combat Stage or stage modifiers; both policies must be ignore.`,
+        )
+      }
       return {
         kind,
         subject: parseSubject(input, path, depth, context),
-        stat: parseMoveRuleAstEnum<MoveExpressionStat>(
-          readMoveRuleAstOwnValue(input, 'stat', path, context),
-          STAT_SET,
-          `${path}.stat`,
-          'a supported selected stat',
-          context,
-        ),
+        stat,
+        ...policies,
       }
+    }
     case 'hp-ratio':
       assertMoveRuleAstExactKeys(input, HP_RATIO_FIELDS, path, context)
       return {
@@ -470,8 +620,17 @@ export const parseMoveExpressionNode = (
           context,
         ),
       }
-    case 'combat-stage':
-      assertMoveRuleAstExactKeys(input, COMBAT_STAGE_FIELDS, path, context)
+    case 'combat-stage': {
+      const hasStageModifierPolicy = Object.prototype.hasOwnProperty.call(
+        input,
+        'stageModifierPolicy',
+      )
+      assertMoveRuleAstExactKeys(
+        input,
+        hasStageModifierPolicy ? COMBAT_STAGE_MODIFIER_FIELDS : COMBAT_STAGE_FIELDS,
+        path,
+        context,
+      )
       return {
         kind,
         subject: parseSubject(input, path, depth, context),
@@ -480,6 +639,36 @@ export const parseMoveExpressionNode = (
           COMBAT_STAGE_SET,
           `${path}.stage`,
           'a supported combat stage',
+          context,
+        ),
+        ...(hasStageModifierPolicy ? {
+          stageModifierPolicy: parseMoveRuleAstEnum<MoveStatStageModifierPolicy>(
+            readMoveRuleAstOwnValue(input, 'stageModifierPolicy', path, context),
+            STAT_STAGE_MODIFIER_POLICY_SET,
+            `${path}.stageModifierPolicy`,
+            'honor or ignore',
+            context,
+          ),
+        } : {}),
+      }
+    }
+    case 'combat-stage-total':
+      assertMoveRuleAstExactKeys(input, COMBAT_STAGE_TOTAL_FIELDS, path, context)
+      return {
+        kind,
+        subject: parseSubject(input, path, depth, context),
+        direction: parseMoveRuleAstEnum<MoveCombatStageTotalDirection>(
+          readMoveRuleAstOwnValue(input, 'direction', path, context),
+          COMBAT_STAGE_TOTAL_DIRECTION_SET,
+          `${path}.direction`,
+          'positive or negative',
+          context,
+        ),
+        stageModifierPolicy: parseMoveRuleAstEnum<MoveStatStageModifierPolicy>(
+          readMoveRuleAstOwnValue(input, 'stageModifierPolicy', path, context),
+          STAT_STAGE_MODIFIER_POLICY_SET,
+          `${path}.stageModifierPolicy`,
+          'honor or ignore',
           context,
         ),
       }
@@ -553,3 +742,53 @@ export const parseMoveExpression = (
   )
   return deepFreezeMoveRuleAst(parseMoveExpressionNode(value, path, 1, context))
 }
+
+const assertMoveStatSelectionNode = (
+  expression: MoveExpression,
+  path: string,
+): MoveStatSelectionExpression => {
+  if (expression.kind === 'stat') {
+    if (!DAMAGE_STAT_SELECTION_SET.has(expression.stat)) {
+      throw new MoveExpressionValidationError(
+        'invalid-expression',
+        `${path}.stat`,
+        'damage stat selections support Attack, Special Attack, Defense, Special Defense, Speed, or level.',
+      )
+    }
+    if (
+      expression.combatStagePolicy === undefined
+      || expression.stageModifierPolicy === undefined
+    ) {
+      throw new MoveExpressionValidationError(
+        'invalid-expression',
+        path,
+        'damage stat selections must explicitly encode combatStagePolicy and stageModifierPolicy.',
+      )
+    }
+    return expression as MoveStatSelectionExpression
+  }
+  if (expression.kind !== 'min' && expression.kind !== 'max') {
+    throw new MoveExpressionValidationError(
+      'invalid-expression',
+      path,
+      'damage stat selections must be a stat or a min/max comparison of stat selections.',
+    )
+  }
+  expression.values.forEach((child, index) => {
+    assertMoveStatSelectionNode(child, `${path}.values[${index}]`)
+  })
+  return expression as MoveStatSelectionExpression
+}
+
+/**
+ * Parse a damage-pipeline stat selection. Comparisons stay bounded to min/max
+ * over explicit authoritative stat leaves; arbitrary formulas are not accepted
+ * as attack or defense selectors.
+ */
+export const parseMoveStatSelectionExpression = (
+  value: unknown,
+  path = 'statSelection',
+): MoveStatSelectionExpression => assertMoveStatSelectionNode(
+  parseMoveExpression(value, path),
+  path,
+)

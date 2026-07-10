@@ -221,6 +221,46 @@ describe('MoveSpec typed effect operations', () => {
       rollId: 'roll.table',
       formula: { kind: 'table', tableId: 'table.five-strike' },
     })
+    const selectedDamage = parseMoveEffectOperation(validOperation('damage', {
+      payload: {
+        ...VALID_PAYLOADS.damage,
+        attackStat: {
+          kind: 'max',
+          values: [
+            {
+              kind: 'stat',
+              subject: { kind: 'actor' },
+              stat: 'attack',
+              combatStagePolicy: 'honor',
+              stageModifierPolicy: 'honor',
+            },
+            {
+              kind: 'stat',
+              subject: { kind: 'actor' },
+              stat: 'special-attack',
+              combatStagePolicy: 'honor',
+              stageModifierPolicy: 'honor',
+            },
+          ],
+        },
+        defenseStat: {
+          kind: 'stat',
+          subject: { kind: 'current-target' },
+          stat: 'defense',
+          combatStagePolicy: 'ignore-positive',
+          stageModifierPolicy: 'honor',
+        },
+      },
+    }))
+    expect(selectedDamage.kind === 'damage' && selectedDamage.payload).toMatchObject({
+      attackStat: { kind: 'max' },
+      defenseStat: {
+        kind: 'stat',
+        stat: 'defense',
+        combatStagePolicy: 'ignore-positive',
+        stageModifierPolicy: 'honor',
+      },
+    })
     expect(parseMoveEffectOperation(validOperation('condition', {
       payload: { action: 'clear', conditionId: null },
     })).payload).toEqual({ action: 'clear', conditionId: null })
@@ -373,6 +413,32 @@ describe('MoveSpec typed effect operations', () => {
       }),
       'invalid-effect-operation',
       'operation.payload.value',
+    )
+    expectEffectError(
+      validOperation('damage', {
+        payload: {
+          ...VALID_PAYLOADS.damage,
+          attackStat: {
+            kind: 'stat',
+            subject: { kind: 'actor' },
+            stat: 'attack',
+          },
+        },
+      }),
+      'invalid-effect-operation',
+      'operation.payload.attackStat',
+    )
+    expectEffectError(
+      validOperation('damage', {
+        payload: {
+          ...VALID_PAYLOADS.damage,
+          defenseStat: {
+            kind: 'weather',
+          },
+        },
+      }),
+      'invalid-effect-operation',
+      'operation.payload.defenseStat',
     )
     const temporaryEffect = VALID_PAYLOADS['temporary-effect']
     expectEffectError(

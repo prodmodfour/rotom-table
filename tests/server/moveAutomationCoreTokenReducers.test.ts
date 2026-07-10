@@ -234,6 +234,10 @@ describe('MoveSpec core token effect reducers', () => {
         hpLoss: loss,
         preventedBy: null,
         consultedPlacementIds: [],
+        details: {
+          attackStat: { nodeId: 'damage.attack-stat', value: 18 },
+          defenseStat: { nodeId: 'damage.defense-stat', value: 12 },
+        },
       }),
     }
 
@@ -266,6 +270,10 @@ describe('MoveSpec core token effect reducers', () => {
       absorbedByTemporaryHp: 5,
       massiveDamageInjuries: 1,
       markerInjuries: 1,
+      calculation: {
+        attackStat: { nodeId: 'damage.attack-stat', value: 18 },
+        defenseStat: { nodeId: 'damage.defense-stat', value: 12 },
+      },
     })
     const sheetChange = result.stateChanges.groups.sheets[0]?.changes[0]
     expect(sheetChange).toMatchObject({

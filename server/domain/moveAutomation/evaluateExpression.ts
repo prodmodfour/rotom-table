@@ -8,7 +8,6 @@ import type {
   MoveCombatStageStat,
   MoveExpression,
   MoveExpressionKind,
-  MoveExpressionStat,
   MoveHistoryQuery,
   MoveWeightMetric,
 } from '#shared/moveAutomation/expressions'
@@ -503,46 +502,89 @@ const subjectToken = (
   return token
 }
 
-const tokenStat = (
-  token: SpawnedPokemon,
-  stat: MoveExpressionStat,
+const statValue = (
+  expression: Extract<MoveExpression, { readonly kind: 'stat' }>,
+  state: EvaluationState,
   nodeId: string,
+  depth: number,
 ): number => {
-  let value: number | undefined
-  switch (stat) {
-    case 'attack':
-      value = token.atk
-      break
-    case 'special-attack':
-      value = token.satk
-      break
-    case 'defense':
-      value = token.def
-      break
-    case 'special-defense':
-      value = token.sdef
-      break
-    case 'speed':
-      value = token.spd
-      break
-    case 'level':
-      value = token.level
-      break
-    case 'current-hp':
-      value = token.currentHp
-      break
-    case 'maximum-hp':
-      value = token.maxHp
-      break
-  }
-  if (value === undefined) {
+  const placementId = selectedSubjectId(
+    expression.subject,
+    state,
+    nodeId,
+    depth + 1,
+  )
+  const resolution = state.context.queries.stats.resolve(placementId, {
+    stat: expression.stat,
+    ...(expression.combatStagePolicy === undefined
+      ? {}
+      : { combatStagePolicy: expression.combatStagePolicy }),
+    ...(expression.stageModifierPolicy === undefined
+      ? {}
+      : { stageModifierPolicy: expression.stageModifierPolicy }),
+  })
+  if (!resolution) {
     return fail(
       'query-value-unavailable',
       nodeId,
-      `${stat} is unavailable for placement ${token.id}.`,
+      `${expression.stat} is unavailable for placement ${placementId} under the selected stage policies.`,
     )
   }
-  return boundedNumber(value, nodeId)
+  return boundedNumber(resolution.value, nodeId)
+}
+
+const combatStageValue = (
+  expression: Extract<MoveExpression, { readonly kind: 'combat-stage' }>,
+  state: EvaluationState,
+  nodeId: string,
+  depth: number,
+): number => {
+  const placementId = selectedSubjectId(
+    expression.subject,
+    state,
+    nodeId,
+    depth + 1,
+  )
+  const resolution = state.context.queries.stats.combatStage(placementId, {
+    stage: expression.stage,
+    ...(expression.stageModifierPolicy === undefined
+      ? {}
+      : { stageModifierPolicy: expression.stageModifierPolicy }),
+  })
+  if (!resolution) {
+    return fail(
+      'query-value-unavailable',
+      nodeId,
+      `${expression.stage} Combat Stage is unavailable for placement ${placementId}.`,
+    )
+  }
+  return boundedNumber(resolution.value, nodeId)
+}
+
+const combatStageTotalValue = (
+  expression: Extract<MoveExpression, { readonly kind: 'combat-stage-total' }>,
+  state: EvaluationState,
+  nodeId: string,
+  depth: number,
+): number => {
+  const placementId = selectedSubjectId(
+    expression.subject,
+    state,
+    nodeId,
+    depth + 1,
+  )
+  const resolution = state.context.queries.stats.combatStageTotal(placementId, {
+    direction: expression.direction,
+    stageModifierPolicy: expression.stageModifierPolicy,
+  })
+  if (!resolution) {
+    return fail(
+      'query-value-unavailable',
+      nodeId,
+      `${expression.direction} Combat Stage total is unavailable for placement ${placementId}.`,
+    )
+  }
+  return boundedNumber(resolution.value, nodeId)
 }
 
 const activeFieldValue = (
@@ -821,11 +863,7 @@ const evaluateExpressionNode = (
       break
     }
     case 'stat':
-      value = tokenStat(
-        subjectToken(expression.subject, state, nodeId, depth + 1),
-        expression.stat,
-        nodeId,
-      )
+      value = statValue(expression, state, nodeId, depth)
       break
     case 'hp-ratio': {
       const token = subjectToken(expression.subject, state, nodeId, depth + 1)
@@ -842,11 +880,12 @@ const evaluateExpressionNode = (
       )
       break
     }
-    case 'combat-stage': {
-      const token = subjectToken(expression.subject, state, nodeId, depth + 1)
-      value = boundedNumber(token.combatStages[expression.stage], nodeId)
+    case 'combat-stage':
+      value = combatStageValue(expression, state, nodeId, depth)
       break
-    }
+    case 'combat-stage-total':
+      value = combatStageTotalValue(expression, state, nodeId, depth)
+      break
     case 'weight':
       value = weightValue(
         expression.subject,

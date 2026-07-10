@@ -369,6 +369,14 @@ describe('authoritative MoveSpec validation and hashing', () => {
     })
     const changedDamage = validSpec()
     changedDamage.phases[1].operations[0].payload.damageBase = 5
+    const selectedDefenseAttack = validSpec()
+    selectedDefenseAttack.phases[1].operations[0].payload.attackStat = {
+      kind: 'stat',
+      subject: { kind: 'actor' },
+      stat: 'defense',
+      combatStagePolicy: 'honor',
+      stageModifierPolicy: 'honor',
+    }
 
     const extraLogs = validSpec()
     extraLogs.phases[2] = {
@@ -398,6 +406,9 @@ describe('authoritative MoveSpec validation and hashing', () => {
     reversedLogs.phases[2].operations.reverse()
 
     expect(validateMoveSpec(changedDamage, {
+      capabilityIds: ['targeting.authoritative', 'hp.typed'],
+    }).definitionHash).not.toBe(baseline.definitionHash)
+    expect(validateMoveSpec(selectedDefenseAttack, {
       capabilityIds: ['targeting.authoritative', 'hp.typed'],
     }).definitionHash).not.toBe(baseline.definitionHash)
     expect(validateMoveSpec(reversedLogs).definitionHash)

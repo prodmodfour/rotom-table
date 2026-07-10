@@ -54,6 +54,10 @@ import {
   type MoveAutomationResourceResolver,
 } from './resources'
 import {
+  createMoveAutomationStatResolver,
+  type MoveAutomationStatResolver,
+} from './stats'
+import {
   createMoveAutomationTargetStateResolver,
   type MoveAutomationTargetStateResolver,
 } from './targetState'
@@ -99,6 +103,7 @@ export interface AuthoritativeMoveSheetQueries {
 export type AuthoritativeMoveRelationshipQueries = MoveAutomationRelationshipResolver
 export type AuthoritativeMoveHistoryQueries = MoveAutomationHistoryResolver
 export type AuthoritativeMoveResourceQueries = MoveAutomationResourceResolver
+export type AuthoritativeMoveStatQueries = MoveAutomationStatResolver
 export type AuthoritativeMoveTargetStateQueries = MoveAutomationTargetStateResolver
 export type AuthoritativeMoveLineOfSightQueries = MoveAutomationLineOfSightResolver
 
@@ -115,6 +120,7 @@ export interface AuthoritativeMoveContextQueries {
   readonly relationships: AuthoritativeMoveRelationshipQueries
   readonly history: AuthoritativeMoveHistoryQueries
   readonly resources: AuthoritativeMoveResourceQueries
+  readonly stats: AuthoritativeMoveStatQueries
   readonly targetStates: AuthoritativeMoveTargetStateQueries
   readonly lineOfSight: AuthoritativeMoveLineOfSightQueries
   readonly rules: AuthoritativeMoveRuleQueries
@@ -506,6 +512,11 @@ export const buildAuthoritativeMoveRulesContext = (
     ),
   })
 
+  const stats = createMoveAutomationStatResolver({
+    placements,
+    tokens,
+    recordSheetRead: readSet.recordPlacement,
+  })
   const targetStates = createMoveAutomationTargetStateResolver({
     placements,
     tokens,
@@ -570,6 +581,7 @@ export const buildAuthoritativeMoveRulesContext = (
     relationships,
     history,
     resources,
+    stats,
     targetStates,
     lineOfSight,
     rules: Object.freeze({

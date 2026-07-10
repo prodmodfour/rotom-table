@@ -6,6 +6,7 @@ import {
   MOVE_HISTORY_QUERIES,
   MoveExpressionValidationError,
   parseMoveExpression,
+  parseMoveStatSelectionExpression,
   type MoveExpressionValidationCode,
 } from '#shared/moveAutomation/expressions'
 
@@ -48,6 +49,7 @@ describe('MoveSpec rules expression AST', () => {
       'stat',
       'hp-ratio',
       'combat-stage',
+      'combat-stage-total',
       'weight',
       'type',
       'weather',
@@ -161,6 +163,19 @@ describe('MoveSpec rules expression AST', () => {
       stat: 'special-defense',
     })).toEqual({ kind: 'stat', subject: target(), stat: 'special-defense' })
     expect(parseMoveExpression({
+      kind: 'stat',
+      subject: { kind: 'actor' },
+      stat: 'defense',
+      combatStagePolicy: 'ignore-negative',
+      stageModifierPolicy: 'honor',
+    })).toEqual({
+      kind: 'stat',
+      subject: { kind: 'actor' },
+      stat: 'defense',
+      combatStagePolicy: 'ignore-negative',
+      stageModifierPolicy: 'honor',
+    })
+    expect(parseMoveExpression({
       kind: 'hp-ratio',
       subject: target(),
       ratio: 'missing-to-maximum',
@@ -173,10 +188,23 @@ describe('MoveSpec rules expression AST', () => {
       kind: 'combat-stage',
       subject: { kind: 'actor' },
       stage: 'satk',
+      stageModifierPolicy: 'honor',
     })).toEqual({
       kind: 'combat-stage',
       subject: { kind: 'actor' },
       stage: 'satk',
+      stageModifierPolicy: 'honor',
+    })
+    expect(parseMoveExpression({
+      kind: 'combat-stage-total',
+      subject: { kind: 'actor' },
+      direction: 'positive',
+      stageModifierPolicy: 'ignore',
+    })).toEqual({
+      kind: 'combat-stage-total',
+      subject: { kind: 'actor' },
+      direction: 'positive',
+      stageModifierPolicy: 'ignore',
     })
     expect(parseMoveExpression({
       kind: 'weight',
@@ -202,6 +230,27 @@ describe('MoveSpec rules expression AST', () => {
       'expression.stat',
     )
     expectExpressionError(
+      {
+        kind: 'stat',
+        subject: target(),
+        stat: 'attack',
+        combatStagePolicy: 'honor',
+      },
+      'invalid-expression',
+      'expression',
+    )
+    expectExpressionError(
+      {
+        kind: 'stat',
+        subject: target(),
+        stat: 'level',
+        combatStagePolicy: 'honor',
+        stageModifierPolicy: 'honor',
+      },
+      'invalid-expression',
+      'expression',
+    )
+    expectExpressionError(
       { kind: 'type', of: 'move', subject: target() },
       'invalid-expression',
       'expression.subject',
@@ -216,6 +265,53 @@ describe('MoveSpec rules expression AST', () => {
       'unknown-selector-kind',
       'expression.subject.kind',
     )
+  })
+
+  it('parses bounded explicit stat selections and alternate-stat comparisons', () => {
+    const actorAttack = {
+      kind: 'stat',
+      subject: { kind: 'actor' },
+      stat: 'attack',
+      combatStagePolicy: 'honor',
+      stageModifierPolicy: 'honor',
+    }
+    const actorSpecialAttack = {
+      ...actorAttack,
+      stat: 'special-attack',
+    }
+
+    expect(parseMoveStatSelectionExpression({
+      kind: 'max',
+      values: [actorAttack, actorSpecialAttack],
+    })).toEqual({
+      kind: 'max',
+      values: [actorAttack, actorSpecialAttack],
+    })
+    expect(() => parseMoveStatSelectionExpression({
+      kind: 'stat',
+      subject: { kind: 'actor' },
+      stat: 'attack',
+    })).toThrowError(expect.objectContaining({
+      code: 'invalid-expression',
+      path: 'statSelection',
+    }))
+    expect(() => parseMoveStatSelectionExpression({
+      kind: 'arithmetic',
+      operator: 'add',
+      operands: [actorAttack, constant(2)],
+    })).toThrowError(expect.objectContaining({
+      code: 'invalid-expression',
+      path: 'statSelection',
+    }))
+    expect(() => parseMoveStatSelectionExpression({
+      ...actorAttack,
+      stat: 'current-hp',
+      combatStagePolicy: 'ignore',
+      stageModifierPolicy: 'ignore',
+    })).toThrowError(expect.objectContaining({
+      code: 'invalid-expression',
+      path: 'statSelection.stat',
+    }))
   })
 
   it('parses only the closed move-history query set', () => {

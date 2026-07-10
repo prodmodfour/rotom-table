@@ -968,7 +968,7 @@ Status: DONE
 
 ## MA-075 — Add stat and defense selectors
 
-Status: TODO
+Status: DONE
 
 **Depends on:** MA-074
 **Commit:** `feat(move-automation): select alternate attack and defense stats`

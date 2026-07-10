@@ -1,4 +1,7 @@
-import type { MoveResolutionAuditTrace } from '#shared/moveAutomation/trace'
+import type {
+  MoveResolutionAuditTrace,
+  MoveResolutionTraceJsonValue,
+} from '#shared/moveAutomation/trace'
 import type {
   MoveAutomationHpUpdate,
   MoveAutomationScript,
@@ -11,9 +14,8 @@ import { resolveMoveAutomationTargetEvasion } from '~/utils/moveAutomationAccura
 import {
   resolveMoveAutomationAccuracyRoll,
 } from '~/utils/moveAutomationResolution'
-import {
-  resolveMoveAutomationTargetDamageBreakdown,
-  type MoveAutomationTargetResolutionState,
+import type {
+  MoveAutomationTargetResolutionState,
 } from '~/utils/moveAutomationTargetResolution'
 import type { ResolvedCanonicalMoveEntry } from '~/utils/authoritativeMoveEntries'
 import { deepCloneJson } from '~/utils/serialization'
@@ -23,6 +25,7 @@ import type {
   AuthoritativeMoveSheetRead,
 } from './context'
 import { deduplicateAuthoritativeMoveSheetReads } from './context'
+import { resolveMoveSpecDamageCalculation } from './damageStats'
 import {
   executeMoveSpec,
   type MoveSpecAuthoritativeTargetEvaluation,
@@ -186,18 +189,26 @@ const createDamageQuery = (options: {
       if (preventedBy) {
         return { hpLoss: 0, preventedBy, consultedPlacementIds: [] }
       }
-      const breakdown = resolveMoveAutomationTargetDamageBreakdown(
-        options.script,
-        options.context.actor.token,
-        recipient.token,
-        state,
-        options.context.map.fieldEffects,
+      const calculation = resolveMoveSpecDamageCalculation({
+        context: options.context,
+        operation,
+        script: options.script,
+        recipient: recipient.token,
+        resolution: state,
+        fieldEffects: options.context.map.fieldEffects,
         selectedTargets,
-      )
+      })
       return {
-        hpLoss: breakdown.hpLoss,
+        hpLoss: calculation.breakdown.hpLoss,
         preventedBy: null,
         consultedPlacementIds: [],
+        ...(calculation.stats.trace.length > 0 ? {
+          details: {
+            attackStat: calculation.stats.attackStat ?? null,
+            defenseStat: calculation.stats.defenseStat ?? null,
+            evaluationTrace: calculation.stats.trace,
+          } as unknown as MoveResolutionTraceJsonValue,
+        } : {}),
       }
     },
   }
@@ -413,7 +424,7 @@ export const resolveImmediateMoveSpec = (options: {
     }),
   }
   const sheetReads = deduplicateAuthoritativeMoveSheetReads([
-    ...execution.sheetReads,
+    ...options.context.reads.snapshot(),
     ...core.sheetReads,
   ])
 

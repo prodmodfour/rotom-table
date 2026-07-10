@@ -107,6 +107,8 @@ export interface MoveCoreTokenDamageResolution {
   readonly hpLoss: number
   readonly preventedBy: string | null
   readonly consultedPlacementIds: readonly string[]
+  /** Server-audit-only bounded calculation evidence projected into the operation trace. */
+  readonly details?: MoveResolutionTraceJsonValue
 }
 
 /** Damage math/RNG is injected; this reducer owns HP/temp-HP/Injury state application. */

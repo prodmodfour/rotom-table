@@ -62,11 +62,13 @@ const noOpHpResult = (
   snapshot: MoveCoreHpStateSnapshot,
   reasonCode: string,
   consultedPlacementIds: readonly string[] = [],
+  details?: MoveCoreTokenEffectRecipientResult['details'],
 ): MoveCoreTokenEffectRecipientResult => ({
   recipientId: recipient.placement.id,
   outcome: 'no-op',
   reasonCode,
   blockers: [],
+  ...(details === undefined ? {} : { details }),
   consultedPlacementIds,
   previous: snapshot,
   current: snapshot,
@@ -155,6 +157,7 @@ export const reduceDamageEffectForRecipient = (options: {
       previous,
       'damage-zero',
       resolution.consultedPlacementIds,
+      resolution.details,
     )
   }
   const applied = accumulator.applyLossWithInjuryAutomation(
@@ -169,6 +172,7 @@ export const reduceDamageEffectForRecipient = (options: {
       previous,
       'damage-zero',
       resolution.consultedPlacementIds,
+      resolution.details,
     )
   }
   return {
@@ -185,6 +189,7 @@ export const reduceDamageEffectForRecipient = (options: {
       massiveDamageInjuries: applied.injuryResult.massiveDamageInjuries,
       markerInjuries: applied.injuryResult.markerInjuries,
       crossedMarkers: applied.injuryResult.crossedMarkers,
+      ...(resolution.details === undefined ? {} : { calculation: resolution.details }),
     },
     consultedPlacementIds: resolution.consultedPlacementIds,
     previous,

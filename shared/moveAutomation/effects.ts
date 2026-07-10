@@ -6,6 +6,11 @@ import {
   type EncounterEffectDefinition,
 } from './encounterEffects'
 import {
+  MoveExpressionValidationError,
+  parseMoveStatSelectionExpression,
+  type MoveStatSelectionExpression,
+} from './expressions'
+import {
   MOVE_SPEC_PHASES,
   type MoveSpecPhase,
 } from './spec'
@@ -190,6 +195,10 @@ export interface MoveDamageEffectPayload {
   readonly moveType: string
   readonly accuracyRollId: string | null
   readonly criticalRollId: string | null
+  /** Omission uses the damage class's normal actor Attack/Special Attack selection. */
+  readonly attackStat?: MoveStatSelectionExpression
+  /** Omission uses the damage class's normal target Defense/Special Defense selection. */
+  readonly defenseStat?: MoveStatSelectionExpression
 }
 
 export interface MoveDirectHpEffectPayload {
@@ -407,13 +416,14 @@ const ROLL_FIELDS = ['rollId', 'formula'] as const
 const DICE_FORMULA_FIELDS = ['kind', 'count', 'sides', 'modifier'] as const
 const UNIFORM_FORMULA_FIELDS = ['kind', 'minimum', 'maximum'] as const
 const TABLE_FORMULA_FIELDS = ['kind', 'tableId'] as const
-const DAMAGE_FIELDS = [
+const DAMAGE_REQUIRED_FIELDS = [
   'damageClass',
   'damageBase',
   'moveType',
   'accuracyRollId',
   'criticalRollId',
 ] as const
+const DAMAGE_OPTIONAL_FIELDS = ['attackStat', 'defenseStat'] as const
 const DIRECT_HP_FIELDS = [
   'mode',
   'pool',
@@ -550,6 +560,27 @@ const parseExactRecord = (
 ): UnknownRecord => {
   const record = parseRecord(value, path)
   assertExactKeys(record, expectedKeys, path)
+  return record
+}
+
+const parseRecordWithOptionalFields = (
+  value: unknown,
+  requiredKeys: readonly string[],
+  optionalKeys: readonly string[],
+  path: string,
+): UnknownRecord => {
+  const record = parseRecord(value, path)
+  const allowed = new Set([...requiredKeys, ...optionalKeys])
+  const actual = Object.getOwnPropertyNames(record)
+  const missing = requiredKeys.filter(key => !Object.prototype.hasOwnProperty.call(record, key))
+  const unknown = actual.filter(key => !allowed.has(key))
+  if (missing.length > 0 || unknown.length > 0) {
+    fail(
+      'invalid-effect-operation',
+      path,
+      `has an invalid shape (missing: ${missing.join(', ') || 'none'}; unknown: ${unknown.join(', ') || 'none'}).`,
+    )
+  }
   return record
 }
 
@@ -788,8 +819,40 @@ const parseRollPayload = (value: unknown, path: string): MoveRollEffectPayload =
   }
 }
 
+const parseDamageStatSelection = (
+  value: unknown,
+  path: string,
+): MoveStatSelectionExpression => {
+  try {
+    return parseMoveStatSelectionExpression(value, path)
+  }
+  catch (error) {
+    if (!(error instanceof MoveExpressionValidationError)) throw error
+    const detailPrefix = `${error.path}: `
+    const detail = error.message.startsWith(detailPrefix)
+      ? error.message.slice(detailPrefix.length)
+      : error.message
+    return fail(
+      error.code === 'limit-exceeded'
+        ? 'limit-exceeded'
+        : error.code === 'not-json'
+          ? 'not-json'
+          : 'invalid-effect-operation',
+      error.path,
+      detail,
+    )
+  }
+}
+
 const parseDamagePayload = (value: unknown, path: string): MoveDamageEffectPayload => {
-  const input = parseExactRecord(value, DAMAGE_FIELDS, path)
+  const input = parseRecordWithOptionalFields(
+    value,
+    DAMAGE_REQUIRED_FIELDS,
+    DAMAGE_OPTIONAL_FIELDS,
+    path,
+  )
+  const hasAttackStat = Object.prototype.hasOwnProperty.call(input, 'attackStat')
+  const hasDefenseStat = Object.prototype.hasOwnProperty.call(input, 'defenseStat')
   return {
     damageClass: parseEnum<MoveEffectDamageClass>(
       ownValue(input, 'damageClass', path),
@@ -812,6 +875,18 @@ const parseDamagePayload = (value: unknown, path: string): MoveDamageEffectPaylo
       ownValue(input, 'criticalRollId', path),
       `${path}.criticalRollId`,
     ),
+    ...(hasAttackStat ? {
+      attackStat: parseDamageStatSelection(
+        ownValue(input, 'attackStat', path),
+        `${path}.attackStat`,
+      ),
+    } : {}),
+    ...(hasDefenseStat ? {
+      defenseStat: parseDamageStatSelection(
+        ownValue(input, 'defenseStat', path),
+        `${path}.defenseStat`,
+      ),
+    } : {}),
   }
 }
 

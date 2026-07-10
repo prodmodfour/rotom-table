@@ -294,6 +294,17 @@ describe('bounded authoritative move expression evaluator', () => {
       selectorState: state,
     }).value).toBe(actor.atk)
     expect(evaluateMoveExpression({
+      expression: expression({
+        kind: 'stat',
+        subject: { kind: 'actor' },
+        stat: 'attack',
+        combatStagePolicy: 'honor',
+        stageModifierPolicy: 'honor',
+      }),
+      context,
+      selectorState: state,
+    }).value).toBe(Math.floor(actor.atk * 1.4))
+    expect(evaluateMoveExpression({
       expression: expression({ kind: 'stat', subject: selectedCandidate, stat: 'current-hp' }),
       context,
       selectorState: state,
@@ -316,6 +327,52 @@ describe('bounded authoritative move expression evaluator', () => {
       context,
       selectorState: state,
     }).value).toBe(actor.combatStages.atk)
+    expect(evaluateMoveExpression({
+      expression: expression({
+        kind: 'combat-stage-total',
+        subject: { kind: 'actor' },
+        direction: 'positive',
+        stageModifierPolicy: 'honor',
+      }),
+      context,
+      selectorState: state,
+    }).value).toBe(3)
+    expect(evaluateMoveExpression({
+      expression: expression({
+        kind: 'combat-stage-total',
+        subject: { kind: 'current-target' },
+        direction: 'negative',
+        stageModifierPolicy: 'ignore',
+      }),
+      context,
+      selectorState: state,
+    }).value).toBe(1)
+    expect(evaluateMoveExpression({
+      expression: expression({
+        kind: 'max',
+        values: [
+          {
+            kind: 'stat',
+            subject: { kind: 'actor' },
+            stat: 'attack',
+            combatStagePolicy: 'honor',
+            stageModifierPolicy: 'honor',
+          },
+          {
+            kind: 'stat',
+            subject: { kind: 'actor' },
+            stat: 'special-attack',
+            combatStagePolicy: 'honor',
+            stageModifierPolicy: 'honor',
+          },
+        ],
+      }),
+      context,
+      selectorState: state,
+    }).value).toBe(Math.max(
+      Math.floor(actor.atk * 1.4),
+      actor.satk,
+    ))
     expect(evaluateMoveExpression({
       expression: expression({
         kind: 'weight',
