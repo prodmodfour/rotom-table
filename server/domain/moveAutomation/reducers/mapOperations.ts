@@ -276,7 +276,9 @@ export const reduceMoveMapOperations = (
       scriptKind: input.trace.program.runtimeKind,
       scriptVersion: input.trace.program.runtimeVersion,
       definitionHash: input.trace.program.definitionHash,
-      lines: buildMoveUseLogLines(actorName, input.presentation.move.name, input.frequency),
+      lines: input.logLines
+        ? [...input.logLines]
+        : buildMoveUseLogLines(actorName, input.presentation.move.name, input.frequency),
       structured: structuredLog,
     },
     {

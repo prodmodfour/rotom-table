@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import manifestJson from '../../data/move-automation/manifest.json'
+import legacyFingerprintsJson from '../../data/move-automation/legacy-v1-fingerprints.json'
 import {
   MoveAutomationManifestValidationError,
   type MoveAutomationManifest,
@@ -23,10 +24,19 @@ const scratchScript = EXPLICIT_MOVE_AUTOMATION_SCRIPTS.get('Scratch')!
 const scratchLegacySource = EXPLICIT_MOVE_AUTOMATION_REGISTRY_SOURCES
   .find(({ scripts }) => scripts.has('Scratch'))!
 
-const manifestForScratch = (): MoveAutomationManifest => ({
-  schemaVersion: 2,
-  moves: [structuredClone(scratchManifestRow)],
-}) as unknown as MoveAutomationManifest
+const scratchLegacyFingerprint = legacyFingerprintsJson.entries
+  .find(entry => entry.canonicalId === 'Scratch')!
+
+const manifestForScratch = (): MoveAutomationManifest => {
+  const row = structuredClone(scratchManifestRow)
+  ;(row as { runtime: unknown }).runtime = {
+    kind: 'legacy-v1',
+    version: scratchLegacyFingerprint.version,
+    definitionHash: scratchLegacyFingerprint.definitionHash,
+    sourceModule: scratchLegacyFingerprint.sourceModule,
+  }
+  return { schemaVersion: 2, moves: [row] } as unknown as MoveAutomationManifest
+}
 
 const legacySourcesForScratch = (): readonly ExplicitMoveAutomationRegistrySource[] => [{
   sourceModule: scratchLegacySource.sourceModule,
@@ -82,7 +92,7 @@ const manifestSelectingScratchV2 = (): {
 }
 
 describe('authoritative move automation dual-runtime registry', () => {
-  it('keeps all 258 reviewed v1 scripts selected with their exact existing definitions', () => {
+  it('selects every implemented manifest runtime while retaining exact v1 definitions', () => {
     expect(MOVE_AUTOMATION_RUNTIME_REGISTRY.size).toBe(EXPLICIT_MOVE_AUTOMATION_SCRIPTS.size)
     expect(MOVE_AUTOMATION_RUNTIME_REGISTRY.entries()).toHaveLength(
       EXPLICIT_MOVE_AUTOMATION_SCRIPTS.size,
@@ -100,6 +110,15 @@ describe('authoritative move automation dual-runtime registry', () => {
         })
         expect(selected?.kind === 'legacy-v1' ? selected.script : null)
           .toBe(EXPLICIT_MOVE_AUTOMATION_SCRIPTS.get(row.canonicalId))
+      }
+      else if (row.runtime.kind === 'movespec-v2') {
+        expect(selected).toMatchObject({
+          canonicalId: row.canonicalId,
+          kind: 'movespec-v2',
+          version: row.runtime.version,
+          definitionHash: row.runtime.definitionHash,
+          sourceModule: row.runtime.sourceModule,
+        })
       }
       else {
         expect(selected).toBeNull()

@@ -398,7 +398,7 @@ const passTemplateId = moveAutomationAreaTemplateId(passTemplate)
 
 const passScript = (): MoveAutomationScript => ({
   kind: 'explicit',
-  moveName: 'Scratch',
+  moveName: 'Aqua Tail',
   version: 1,
   targetMode: 'multi-target',
   targetCount: null,
@@ -436,7 +436,7 @@ describe('planAuthoritativeMoveState Pass movement', () => {
           placement('occupied-end', 'occupied-end', { x: 5, y: 0, z: 1 }),
         ],
       })
-      const sheets = pokemonSheets([{ name: 'Scratch' }], {
+      const sheets = pokemonSheets([{ name: 'Aqua Tail' }], {
         'target-b': pokemonSheet('target-b'),
         'occupied-end': pokemonSheet('occupied-end'),
       })
@@ -447,7 +447,7 @@ describe('planAuthoritativeMoveState Pass movement', () => {
         trainerSheets: new Map<string, TrainerSheet>(),
         intent: moveIntent({
           placementId: 'actor-token',
-          moveName: 'Scratch',
+          moveName: 'Aqua Tail',
           selection: { kind: 'area', areaTemplateId: passTemplateId, direction: 'east' },
         }),
         random: randomSequence([0.5, 0]),

@@ -4,6 +4,7 @@ import {
   MOVE_RULESET_PROVENANCE,
   type MoveRulesetProvenance,
 } from '#shared/moveAutomation/ruleset'
+import { findMove } from '~~/data/ptuReference'
 import type { CharacterSheet } from '~/types/characterSheet'
 import type { SheetKind, SheetPlacement, TabletopMap } from '~/types/map'
 import type { MoveAutomationScript } from '~/types/moveAutomation'
@@ -20,6 +21,7 @@ import {
   findMoveAutomationSemanticStatus,
   type MoveAutomationSemanticStatus,
 } from '~/utils/moveAutomationSemanticStatus'
+import { createMoveAutomationScriptFromMoveData } from '~/utils/moveAutomationDerived'
 import { placementToSpawned, type SheetLookup } from '~/utils/placement'
 import { deepCloneJson } from '~/utils/serialization'
 import {
@@ -498,6 +500,20 @@ export const buildAuthoritativeMoveRulesContext = (
     return selectedRuntime.kind === 'legacy-v1' ? selectedRuntime.script : null
   }
 
+  /**
+   * Move-entry projection is separate from runtime selection. Native specs still
+   * need structured canonical range, frequency, accuracy, and damage data, but
+   * must not execute the retained v1 implementation selected only for rollback.
+   */
+  const actorMoveScriptFor = (moveName: string): MoveAutomationScript | null => {
+    const canonicalMove = findMove(moveName)
+    const selectedRuntime = canonicalMove ? runtimes.get(canonicalMove.name) : null
+    if (canonicalMove && selectedRuntime?.kind === 'movespec-v2') {
+      return detachedFrozenJson(createMoveAutomationScriptFromMoveData(canonicalMove))
+    }
+    return legacyScriptFor(moveName)
+  }
+
   const queries: AuthoritativeMoveContextQueries = Object.freeze({
     placements: Object.freeze({
       get: (placementId: string) => placementById.get(placementId) ?? null,
@@ -525,7 +541,7 @@ export const buildAuthoritativeMoveRulesContext = (
         token: actorToken,
         sheets: sheetLookup,
         moveName,
-        scriptForMove: legacyScriptFor,
+        scriptForMove: actorMoveScriptFor,
         usageContext: {
           mapMoveUsage: map.moveUsage,
           sheetMoveUsage: actorSheet.sheet.moveUsage,

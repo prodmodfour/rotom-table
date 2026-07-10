@@ -4,6 +4,7 @@ import { MOVE_AUTOMATION_AREA_DIRECTIONS } from '~/types/moveAutomation'
 import type { ResolveMoveIntent, ResolveMoveSelection } from '#shared/livePlayMoveResolution'
 import { LIVE_PLAY_MOVE_RESOLUTION_MAX_TARGET_IDS } from '#shared/livePlayMoveResolution'
 import { moveUsageKey } from '~/utils/moveUsage'
+import type { ResolvedCanonicalMoveEntry } from '~/utils/authoritativeMoveEntries'
 import {
   isSeamlessAreaConfirmationScript,
   isSeamlessSelfMoveScript,
@@ -60,6 +61,11 @@ import {
   type AuthoritativeMoveRulesContext,
   type AuthoritativeMoveSheetRead,
 } from './moveAutomation/context'
+import type { MoveAutomationRuntimeRegistry, MoveSpecV2Runtime } from './moveAutomation/registry'
+import {
+  resolveImmediateMoveSpec,
+  type NativeMoveSpecResolutionProjection,
+} from './moveAutomation/resolveImmediateSpec'
 import { hashLegacyMoveAutomationDefinition } from './moveAutomation/legacyV1Definition'
 import { buildLegacyV1MoveResolutionTrace } from './moveAutomation/legacyV1Trace'
 import type { AuthoritativeMoveRandomSource } from './moveAutomation/random'
@@ -134,6 +140,10 @@ export interface ResolveAuthoritativeMoveInput {
   readonly random?: AuthoritativeMoveRandomSource
   readonly now?: () => number
   readonly idFactory?: () => string
+  /** Test/migration seam; production uses the manifest-selected global registry. */
+  readonly runtimeRegistry?: MoveAutomationRuntimeRegistry
+  /** Test/migration seam for retained v1 definitions. */
+  readonly legacyScripts?: ReadonlyMap<string, MoveAutomationScript>
 }
 
 export interface AuthoritativeMoveArea {
@@ -173,6 +183,8 @@ export interface AuthoritativeMoveResolution {
   readonly desiredFacing?: TokenFacingDirection
   readonly area?: AuthoritativeMoveArea
   readonly movement?: AuthoritativeMovePassMovement
+  /** Server-only native planning projection; omitted from accepted wire results. */
+  readonly nativeV2?: NativeMoveSpecResolutionProjection
 }
 
 type UnfinalizedAuthoritativeMoveResolution = Omit<
@@ -988,6 +1000,117 @@ const resolveAreaMove = (options: {
   }
 }
 
+const resolveNativeAreaMove = (options: {
+  readonly context: AuthoritativeMoveRulesContext
+  readonly runtime: MoveSpecV2Runtime
+  readonly entry: ResolvedCanonicalMoveEntry
+  readonly selection: Extract<ResolveMoveSelection, { kind: 'area' }>
+  readonly moveKey: string
+}): AuthoritativeMoveResolution => {
+  if (options.runtime.definition.spec.targeting.kind !== 'area') {
+    return fail(
+      'invalid',
+      'selection-kind-mismatch',
+      `${options.runtime.canonicalId} does not accept an area selection.`,
+    )
+  }
+  if (options.context.intent.targetBranchId) {
+    fail(
+      'invalid',
+      'target-branch-unexpected',
+      `${options.runtime.canonicalId} does not accept a target branch.`,
+    )
+  }
+
+  const { placement: actorPlacement, token: actor } = options.context.actor
+  const template = selectedAreaTemplate(options.entry.script, options.selection.areaTemplateId)
+  const movementOperation = options.runtime.definition.spec.phases
+    .flatMap(block => block.operations)
+    .find(operation => operation.kind === 'movement-request')
+  if (
+    template.kind !== 'pass'
+    || !movementOperation
+    || movementOperation.payload.mode !== 'voluntary'
+    || movementOperation.payload.distance !== template.size
+  ) {
+    return fail(
+      'unsupported',
+      'unsupported-move-script',
+      `${options.runtime.canonicalId} has no reviewed immediate Pass movement operation.`,
+    )
+  }
+
+  const placement = resolvedAreaPlacement({
+    context: options.context,
+    actor,
+    template,
+    selection: options.selection,
+  })
+  const candidateTargetIds = placement.candidateTargets.map(target => target.id)
+  recordSheetReadsForTokens(options.context, placement.candidateTargets)
+  const excludedTargetIds = excludedAreaTargetIds(
+    options.entry.script,
+    options.selection,
+    candidateTargetIds,
+  )
+  const excludedTargetSet = new Set(excludedTargetIds)
+  const selectedTargets = placement.candidateTargets.filter(target => !excludedTargetSet.has(target.id))
+  const selectedTargetIds = selectedTargets.map(target => target.id)
+  const immediate = resolveImmediateMoveSpec({
+    context: options.context,
+    runtime: options.runtime,
+    entry: options.entry,
+    authoritativeTargetIds: selectedTargetIds,
+  })
+  const currentFacing = tokenFacingForPlacement(actorPlacement)
+  const desiredFacing = placement.direction
+    ? tokenFacingFromAreaDirection(placement.direction, currentFacing)
+      ?? (placement.movement?.kind === 'pass' ? currentFacing : undefined)
+    : desiredFacingTowardNearestTarget(actorPlacement, actor, selectedTargets)
+  const movement = placement.movement
+    ? {
+        kind: 'pass' as const,
+        from: cloneGridAnchor(placement.movement.from),
+        destination: cloneGridAnchor(placement.movement.destination),
+        direction: placement.movement.direction,
+        pathCells: cloneGridAnchors(placement.movement.pathCells),
+      }
+    : undefined
+  const transaction = movement
+    ? moveAutomationTransactionWithAppendedLogLine(
+        immediate.transaction,
+        passDestinationLogLine(actor, movement.destination),
+      )
+    : immediate.transaction
+
+  return {
+    actorPlacementId: actorPlacement.id,
+    moveName: options.runtime.definition.spec.presentation.displayName,
+    canonicalMoveName: options.entry.canonicalMoveName,
+    moveKey: options.moveKey,
+    frequency: options.entry.frequency,
+    damageFormula: options.entry.damageFormula,
+    selectedTargetIds,
+    sheetReads: immediate.sheetReads,
+    rollLedger: immediate.rollLedger,
+    auditTrace: immediate.trace,
+    script: immediate.script,
+    transaction,
+    ...(desiredFacing ? { desiredFacing } : {}),
+    ...(movement ? { movement } : {}),
+    area: {
+      areaTemplateId: options.selection.areaTemplateId,
+      template: cloneAreaTemplate(template),
+      cells: cloneGridAnchors(placement.cells),
+      candidateTargetIds: [...candidateTargetIds],
+      excludedTargetIds: [...excludedTargetIds],
+      ...(placement.direction ? { direction: placement.direction } : {}),
+      ...(placement.aimCell ? { aimCell: cloneGridAnchor(placement.aimCell) } : {}),
+    },
+    nativeV2: immediate.native,
+  }
+}
+
 const failFromContextError = (error: AuthoritativeMoveRulesContextError): never => {
   if (error.code === 'duplicate-placement-id') {
     return fail('conflict', 'duplicate-placement-id', error.message)
@@ -1046,15 +1169,32 @@ export const resolveAuthoritativeMoveFromContext = (
       `${entry.canonicalMoveName} automation is blocked.${details ? ` ${details}` : ''}`,
     )
   }
-  const { script, targetBranchId } = resolveCanonicalScript({
-    baseScript: entry.script,
-    targetBranchId: intent.targetBranchId,
-  })
   const resolvedMoveKey = moveUsageKey(entry.canonicalMoveName)
   if (!resolvedMoveKey) {
     fail('invalid', 'move-usage-key-invalid', `${entry.canonicalMoveName} did not produce a valid move usage key.`)
   }
+  const selectedRuntime = context.queries.rules.runtimeFor(entry.canonicalMoveName)
+  if (selectedRuntime?.kind === 'movespec-v2') {
+    if (intent.selection.kind !== 'area') {
+      return fail(
+        'invalid',
+        'selection-kind-mismatch',
+        `${entry.canonicalMoveName} requires an area selection.`,
+      )
+    }
+    return resolveNativeAreaMove({
+      context,
+      runtime: selectedRuntime,
+      entry,
+      selection: intent.selection,
+      moveKey: resolvedMoveKey,
+    })
+  }
 
+  const { script, targetBranchId } = resolveCanonicalScript({
+    baseScript: entry.script,
+    targetBranchId: intent.targetBranchId,
+  })
   const common = {
     context,
     script,
@@ -1105,6 +1245,8 @@ export const resolveAuthoritativeMove = (input: ResolveAuthoritativeMoveInput): 
       random,
       time,
       idFactory: input.idFactory,
+      runtimeRegistry: input.runtimeRegistry,
+      legacyScripts: input.legacyScripts,
     })
     return resolveAuthoritativeMoveFromContext(context)
   }

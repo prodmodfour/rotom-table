@@ -88,6 +88,8 @@ export interface ReduceMoveMapOperationsInput {
   readonly presentation: MoveAcceptedPresentationProjection
   readonly actorName?: string
   readonly frequency?: string | null
+  /** Optional server-authored compatibility lines; structured operations remain authoritative evidence. */
+  readonly logLines?: readonly string[]
   readonly trace: MoveResolutionAuditTrace
   readonly maxLogEntries?: number
 }

@@ -14,6 +14,7 @@ import {
   validateMoveSpec,
   type ValidatedMoveSpecDefinition,
 } from './validateSpec'
+import { SCRATCH_MOVE_SPEC_REGISTRATION } from './specs/scratch'
 
 export interface LegacyV1MoveAutomationAdapter extends MoveAutomationRuntimeRegistrationReference {
   readonly kind: 'legacy-v1'
@@ -218,7 +219,9 @@ export const createMoveAutomationRuntimeRegistry = (
 }
 
 /** Native v2 definitions are added here only after their manifest metadata is reviewed. */
-export const REVIEWED_MOVE_SPEC_V2_REGISTRATIONS: readonly MoveSpecV2Registration[] = Object.freeze([])
+export const REVIEWED_MOVE_SPEC_V2_REGISTRATIONS: readonly MoveSpecV2Registration[] = Object.freeze([
+  SCRATCH_MOVE_SPEC_REGISTRATION,
+])
 
 export const MOVE_AUTOMATION_RUNTIME_REGISTRY = createMoveAutomationRuntimeRegistry({
   manifest: manifestJson as unknown as MoveAutomationManifest,

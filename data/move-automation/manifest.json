@@ -19747,10 +19747,10 @@
       "baseStatus": "assisted",
       "interactionStatus": "unassessed",
       "runtime": {
-        "kind": "legacy-v1",
-        "version": 1,
-        "definitionHash": "27d1e2a99da5b775b3a9a4cdafc9b04953726748087b6f690a4d6575625f6d18",
-        "sourceModule": "src/utils/move-automation/scripts/area.ts"
+        "kind": "movespec-v2",
+        "version": 2,
+        "definitionHash": "f5c5ec2eb2e430bf9ce325c5bd1ba7fc9c1e7fcbb2f5408729f3301385de0681",
+        "sourceModule": "server/domain/moveAutomation/specs/scratch.ts"
       },
       "rulesProvenance": {
         "rulesetId": "rotom-table-reference-moves-v1",
@@ -19763,11 +19763,13 @@
       "limitations": [
         {
           "code": "audit.required",
-          "summary": "Semantic conformance review is required before this legacy implementation can be marked complete."
+          "summary": "Semantic conformance review is required before this native implementation can be marked complete."
         }
       ],
       "manualSteps": [],
-      "scenarioIds": [],
+      "scenarioIds": [
+        "scratch.v2-pass-hit"
+      ],
       "conformanceEvidence": {
         "requirementTags": [],
         "scenarios": [],

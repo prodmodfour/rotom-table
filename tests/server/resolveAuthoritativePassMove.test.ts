@@ -58,7 +58,7 @@ const pokemonSheet = (slug: string, moves: CharacterSheetMove[] = [], overrides:
 })
 
 const sheetMap = (
-  actorMoves: CharacterSheetMove[] = [{ name: 'Scratch' }],
+  actorMoves: CharacterSheetMove[] = [{ name: 'Aqua Tail' }],
   slugs: readonly string[] = ['actor', 'target-a', 'target-b', 'occupied-end', 'far-target'],
   overrides: Record<string, CharacterSheet> = {},
 ): Map<string, CharacterSheet> => new Map<string, CharacterSheet>([
@@ -95,7 +95,7 @@ const expectFailure = (
 
 const passScript = (overrides: Partial<MoveAutomationScript> = {}): MoveAutomationScript => ({
   kind: 'explicit',
-  moveName: 'Scratch',
+  moveName: 'Aqua Tail',
   version: 1,
   targetMode: 'multi-target',
   targetCount: null,
@@ -137,7 +137,7 @@ const passIntent = (selection: ResolveMoveIntent['selection'] = {
   direction: 'east',
 }): ResolveMoveIntent => moveIntent({
   placementId: 'actor-token',
-  moveName: 'Scratch',
+  moveName: 'Aqua Tail',
   selection,
 })
 
@@ -234,7 +234,7 @@ describe('resolveAuthoritativeMove Pass area selections', () => {
           ...[2, 3, 4, 5].map((x) => placement(`blocker-${x}`, `blocker-${x}`, { x, y: 0, z: 1 })),
         ],
       })
-      const pokemonSheets = sheetMap([{ name: 'Scratch' }], ['actor', 'blocker-2', 'blocker-3', 'blocker-4', 'blocker-5'])
+      const pokemonSheets = sheetMap([{ name: 'Aqua Tail' }], ['actor', 'blocker-2', 'blocker-3', 'blocker-4', 'blocker-5'])
       const trainerSheets = new Map<string, TrainerSheet>()
       const before = snapshotInput(blockedMap, pokemonSheets, trainerSheets)
       expectFailure(() => resolveAuthoritativeMove({
@@ -257,7 +257,7 @@ describe('resolveAuthoritativeMove Pass area selections', () => {
             placement('target-a', 'target-a', { x: 2, y: 0, z: 1 }),
           ],
         }),
-        pokemonSheets: sheetMap([{ name: 'Scratch' }], ['actor', 'target-a']),
+        pokemonSheets: sheetMap([{ name: 'Aqua Tail' }], ['actor', 'target-a']),
         trainerSheets: new Map(),
         intent: passIntent({
           kind: 'area',
@@ -279,7 +279,7 @@ describe('resolveAuthoritativeMove Pass area selections', () => {
     await withRegisteredScratchScript(passScript({ damaging: false, requiresAccuracy: false, damageBase: null, damageClass: 'Status', ac: null }), () => {
       const resolution = resolveAuthoritativeMove({
         map: mapFixture({ placements: [placement('actor-token', 'actor', { x: 1, y: 0, z: 1 })] }),
-        pokemonSheets: sheetMap([{ name: 'Scratch' }], ['actor']),
+        pokemonSheets: sheetMap([{ name: 'Aqua Tail' }], ['actor']),
         trainerSheets: new Map(),
         intent: passIntent(),
       })
@@ -314,7 +314,7 @@ describe('resolveAuthoritativeMove Pass area selections', () => {
             placement('target-b', 'target-b', { x: 3, y: 0, z: 1 }),
           ],
         }),
-        pokemonSheets: sheetMap([{ name: 'Scratch' }], ['actor', 'target-a', 'target-b']),
+        pokemonSheets: sheetMap([{ name: 'Aqua Tail' }], ['actor', 'target-a', 'target-b']),
         trainerSheets: new Map(),
         intent: passIntent({ kind: 'area', areaTemplateId: passTemplateId, direction: 'east', excludedTargetPlacementIds: excluded }),
       })
@@ -335,7 +335,7 @@ describe('resolveAuthoritativeMove Pass area selections', () => {
             placement('target-b', 'target-b', { x: 3, y: 0, z: 1 }),
           ],
         }),
-        pokemonSheets: sheetMap([{ name: 'Scratch' }], ['actor', 'target-a', 'target-b']),
+        pokemonSheets: sheetMap([{ name: 'Aqua Tail' }], ['actor', 'target-a', 'target-b']),
         trainerSheets: new Map(),
         intent: passIntent({ kind: 'area', areaTemplateId: passTemplateId, direction: 'east', excludedTargetPlacementIds: ['target-a', 'target-b'] }),
       })
@@ -352,7 +352,7 @@ describe('resolveAuthoritativeMove Pass area selections', () => {
             placement('far-target', 'far-target', { x: 6, y: 0, z: 1 }),
           ],
         }),
-        pokemonSheets: sheetMap([{ name: 'Scratch' }], ['actor', 'target-a', 'far-target']),
+        pokemonSheets: sheetMap([{ name: 'Aqua Tail' }], ['actor', 'target-a', 'far-target']),
         trainerSheets: new Map(),
         intent: passIntent({ kind: 'area', areaTemplateId: passTemplateId, direction: 'east', excludedTargetPlacementIds: ['far-target'] }),
       }), 'area-friendly-exclusion-invalid')
@@ -410,8 +410,8 @@ describe('resolveAuthoritativeMove Pass area selections', () => {
             placement('target-a', 'target-a', { x: 2, y: 0, z: 1 }),
           ],
         }),
-        pokemonSheets: sheetMap([{ name: 'Scratch' }], ['actor', 'target-a'], {
-          actor: pokemonSheet('actor', [{ name: 'Scratch' }], { nickname: 'Scratcher', abilities: [{ name: 'Sweet Veil' }] }),
+        pokemonSheets: sheetMap([{ name: 'Aqua Tail' }], ['actor', 'target-a'], {
+          actor: pokemonSheet('actor', [{ name: 'Aqua Tail' }], { nickname: 'Scratcher', abilities: [{ name: 'Sweet Veil' }] }),
         }),
         trainerSheets: new Map(),
         intent: passIntent(),

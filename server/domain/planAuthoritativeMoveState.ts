@@ -3,7 +3,6 @@ import type { ResolveMoveIntent } from '#shared/livePlayMoveResolution'
 import type { CharacterSheet } from '~/types/characterSheet'
 import type { CombatStageMap } from '~/types/combatStages'
 import type {
-  GridAnchor,
   SheetKind,
   SheetPlacement,
   TabletopMap,
@@ -12,10 +11,11 @@ import type {
   MoveAutomationCombatStageUpdate,
   MoveAutomationConditionUpdate,
   MoveAutomationHpUpdate,
+  MoveAutomationScript,
   MoveAutomationTransaction,
 } from '~/types/moveAutomation'
 import type { TrainerSheet } from '~/types/trainerSheet'
-import { applyMoveFieldEffectToFieldEffects, cloneMapFieldEffects } from '~/utils/mapFieldEffects'
+import { applyMoveFieldEffectToFieldEffects } from '~/utils/mapFieldEffects'
 import { applyMapHazardPlacement } from '~/utils/mapHazards'
 import { mapWithTemporaryHpForPlacement } from '~/utils/mapTemporaryHitPoints'
 import { appendMoveAutomationLogEntry } from '~/utils/moveAutomationLog'
@@ -26,11 +26,6 @@ import {
   applyHpToSheet,
   type AnyLiveSheet,
 } from '~/utils/sheetMutations'
-import {
-  setTokenFacingOnPlacement,
-  tokenFacingForPlacement,
-  tokenFacingStoresLegacyTurned,
-} from '~/utils/tokenFacing'
 import {
   AuthoritativeMoveResolutionError,
   deduplicateAuthoritativeMoveSheetReads,
@@ -43,11 +38,15 @@ import {
   type AdaptV1MapChanges,
   type AdaptV1SheetWrite,
 } from './moveAutomation/adaptV1Transaction'
+import { buildAuthoritativeMoveMapChanges } from './moveAutomation/mapChanges'
+import { planNativeV2MoveState } from './moveAutomation/planNativeV2MoveState'
+import { applyAuthoritativeMovePlacementTransition } from './moveAutomation/placementTransition'
 import type {
   MoveSheetStateField,
   MoveStateChangePlan,
 } from './moveAutomation/plan'
 import type { AuthoritativeMoveRandomSource } from './moveAutomation/random'
+import type { MoveAutomationRuntimeRegistry } from './moveAutomation/registry'
 import {
   isMoveUsageTransitionError,
   planMoveUsageTransition,
@@ -83,7 +82,12 @@ export interface PlanAuthoritativeMoveStateInput {
   readonly random?: AuthoritativeMoveRandomSource
   readonly now?: () => number
   readonly idFactory?: () => string
+  readonly operationId?: string
   readonly maxMoveLogEntries?: number
+  /** Test/migration seam; production uses the manifest-selected global registry. */
+  readonly runtimeRegistry?: MoveAutomationRuntimeRegistry
+  /** Test/migration seam for retained v1 definitions. */
+  readonly legacyScripts?: ReadonlyMap<string, MoveAutomationScript>
 }
 
 export type AuthoritativeMoveSheetChangedField = MoveSheetStateField
@@ -179,25 +183,6 @@ const reobserveAuthoritativeMoveSheetReads = (
   })
   return deduplicateAuthoritativeMoveSheetReads([...reads, ...currentReads])
 }
-
-const isSafeGridAnchor = (value: unknown): value is GridAnchor => {
-  if (!value || typeof value !== 'object' || Array.isArray(value)) return false
-  const record = value as Partial<Record<keyof GridAnchor, unknown>>
-  return Number.isSafeInteger(record.x)
-    && Number.isSafeInteger(record.y)
-    && Number.isSafeInteger(record.z)
-}
-
-const gridAnchorsEqual = (left: GridAnchor, right: GridAnchor): boolean =>
-  left.x === right.x && left.y === right.y && left.z === right.z
-
-const gridAnchorInBounds = (anchor: GridAnchor, map: TabletopMap): boolean =>
-  anchor.x >= 0
-  && anchor.x < map.dimensions.x
-  && anchor.y >= 0
-  && anchor.y < map.dimensions.y
-  && anchor.z >= 0
-  && anchor.z < map.dimensions.z
 
 const assertFiniteNumber = (value: unknown, code: string, label: string): number => {
   const numberValue = Number(value)
@@ -479,54 +464,6 @@ const applyTemporaryHpUpdateToMap = (map: TabletopMap, update: MoveAutomationHpU
   return mapWithTemporaryHpForPlacement(map, update.id, update.temporaryHp)
 }
 
-const setActorPlacement = (
-  map: TabletopMap,
-  actorPlacementId: string,
-  update: (placement: SheetPlacement) => SheetPlacement,
-): TabletopMap => ({
-  ...map,
-  placements: map.placements.map((placement) => (
-    placement.id === actorPlacementId ? update(cloneJson(placement)) : cloneJson(placement)
-  )),
-})
-
-const applyFacingToActor = (map: TabletopMap, actorPlacementId: string, facing: AuthoritativeMoveResolution['desiredFacing']): TabletopMap => {
-  if (!facing) return map
-  return setActorPlacement(map, actorPlacementId, (placement) => {
-    const legacyTurned = tokenFacingStoresLegacyTurned(facing)
-    if (tokenFacingForPlacement(placement) === facing && placement.turned === legacyTurned) return placement
-    setTokenFacingOnPlacement(placement, facing)
-    return placement
-  })
-}
-
-const applyMovementAndFacing = (
-  map: TabletopMap,
-  originalActorPlacement: SheetPlacement,
-  resolution: AuthoritativeMoveResolution,
-): TabletopMap => {
-  const movement = resolution.movement
-  if (movement?.kind === 'pass') {
-    if (!gridAnchorsEqual(movement.from, originalActorPlacement.position)) {
-      fail(
-        'conflict',
-        'pass-source-position-mismatch',
-        `Pass source ${movement.from.x},${movement.from.y},${movement.from.z} does not match actor position ${originalActorPlacement.position.x},${originalActorPlacement.position.y},${originalActorPlacement.position.z}.`,
-      )
-    }
-    if (!isSafeGridAnchor(movement.destination) || !gridAnchorInBounds(movement.destination, map)) {
-      fail('invalid', 'invalid-pass-destination', 'Resolved Pass destination is not a valid map cell.')
-    }
-    const moved = setActorPlacement(map, resolution.actorPlacementId, (placement) => ({
-      ...placement,
-      position: cloneJson(movement.destination),
-    }))
-    return applyFacingToActor(moved, resolution.actorPlacementId, resolution.desiredFacing)
-  }
-
-  return applyFacingToActor(map, resolution.actorPlacementId, resolution.desiredFacing)
-}
-
 const applyHazardsToMap = (map: TabletopMap, transaction: MoveAutomationTransaction): TabletopMap => {
   let next = map
   for (const hazard of transaction.hazardsToAdd) {
@@ -549,51 +486,6 @@ const applyFieldEffectsToMap = (map: TabletopMap, transaction: MoveAutomationTra
     else next = { ...next, fieldEffects: cloneJson(result.fieldEffects) }
   }
   return next
-}
-
-type MutableAuthoritativeMoveMapChanges = {
-  -readonly [K in keyof AuthoritativeMoveMapChanges]?: AuthoritativeMoveMapChanges[K]
-}
-
-const mapChanges = (previousMap: TabletopMap, nextMap: TabletopMap): AuthoritativeMoveMapChanges => {
-  const changes: MutableAuthoritativeMoveMapChanges = {}
-  if (!sameJsonValue(previousMap.placements, nextMap.placements)) {
-    changes.placements = {
-      previous: cloneJson(previousMap.placements),
-      current: cloneJson(nextMap.placements),
-    }
-  }
-  if (!sameJsonValue(previousMap.temporaryHitPoints, nextMap.temporaryHitPoints)) {
-    changes.temporaryHitPoints = {
-      previous: cloneJson(previousMap.temporaryHitPoints),
-      current: cloneJson(nextMap.temporaryHitPoints),
-    }
-  }
-  if (!sameJsonValue(previousMap.moveUsage, nextMap.moveUsage)) {
-    changes.moveUsage = {
-      previous: cloneJson(previousMap.moveUsage),
-      current: cloneJson(nextMap.moveUsage),
-    }
-  }
-  if (!sameJsonValue(previousMap.hazards ?? [], nextMap.hazards ?? [])) {
-    changes.hazards = {
-      previous: cloneJson(previousMap.hazards ?? []),
-      current: cloneJson(nextMap.hazards ?? []),
-    }
-  }
-  if (!sameJsonValue(cloneMapFieldEffects(previousMap.fieldEffects), cloneMapFieldEffects(nextMap.fieldEffects))) {
-    changes.fieldEffects = {
-      previous: cloneMapFieldEffects(previousMap.fieldEffects),
-      current: cloneMapFieldEffects(nextMap.fieldEffects),
-    }
-  }
-  if (!sameJsonValue(previousMap.metadata, nextMap.metadata)) {
-    changes.metadata = {
-      previous: cloneJson(previousMap.metadata),
-      current: cloneJson(nextMap.metadata),
-    }
-  }
-  return changes
 }
 
 const planUsage = (
@@ -636,6 +528,8 @@ export const planAuthoritativeMoveState = (input: PlanAuthoritativeMoveStateInpu
     random: input.random,
     now: () => plannedAt,
     idFactory: input.idFactory,
+    runtimeRegistry: input.runtimeRegistry,
+    legacyScripts: input.legacyScripts,
   })
   validateTransactionUser(resolution)
   const sheetReads = reobserveAuthoritativeMoveSheetReads(
@@ -643,6 +537,43 @@ export const planAuthoritativeMoveState = (input: PlanAuthoritativeMoveStateInpu
     input.pokemonSheets,
     input.trainerSheets,
   )
+
+  if (resolution.nativeV2) {
+    const nativePlan = planNativeV2MoveState({
+      map: input.map,
+      pokemonSheets: input.pokemonSheets,
+      trainerSheets: input.trainerSheets,
+      resolution,
+      plannedAt,
+      operationId: input.operationId,
+      maxMoveLogEntries: input.maxMoveLogEntries,
+      runtimeRegistry: input.runtimeRegistry,
+      legacyScripts: input.legacyScripts,
+      existingSheetReads: sheetReads,
+    })
+    const finalSheetReads = reobserveAuthoritativeMoveSheetReads(
+      nativePlan.sheetReads,
+      input.pokemonSheets,
+      input.trainerSheets,
+    )
+    return {
+      previousMap,
+      nextMap: nativePlan.nextMap,
+      previousRevision,
+      revision: nativePlan.revision,
+      resolution: cloneResolution({
+        ...resolution,
+        sheetReads: finalSheetReads,
+        auditTrace: nativePlan.auditTrace,
+      }),
+      previousUsage: cloneUsageSummary(nativePlan.previousUsage),
+      usage: cloneUsageSummary(nativePlan.usage),
+      sheetReads: cloneJson(finalSheetReads),
+      sheetWrites: nativePlan.sheetWrites,
+      mapChanges: nativePlan.mapChanges,
+      stateChanges: nativePlan.stateChanges,
+    }
+  }
 
   const originalPlacementsById = placementById(input.map)
   const actorPlacement = originalPlacementsById.get(resolution.actorPlacementId)
@@ -684,7 +615,17 @@ export const planAuthoritativeMoveState = (input: PlanAuthoritativeMoveStateInpu
     applyConditionUpdate(update, placement, sheetAccumulators, input.pokemonSheets, input.trainerSheets)
   }
 
-  workingMap = applyMovementAndFacing(workingMap, actorPlacement, resolution)
+  workingMap = applyAuthoritativeMovePlacementTransition({
+    map: workingMap,
+    actorPlacement,
+    movement: resolution.movement,
+    desiredFacing: resolution.desiredFacing,
+    fail: (code, message) => fail(
+      code === 'pass-source-position-mismatch' ? 'conflict' : 'invalid',
+      code,
+      message,
+    ),
+  })
   workingMap = applyHazardsToMap(workingMap, resolution.transaction)
   workingMap = applyFieldEffectsToMap(workingMap, resolution.transaction)
   workingMap.metadata = appendMoveAutomationLogEntry(workingMap.metadata, resolution.transaction, {
@@ -701,7 +642,7 @@ export const planAuthoritativeMoveState = (input: PlanAuthoritativeMoveStateInpu
 
   const sheetWrites = sheetWritePlans(sheetAccumulators.values(), plannedAt)
   const nextMap = cloneJson(workingMap)
-  const plannedMapChanges = mapChanges(previousMap, nextMap)
+  const plannedMapChanges = buildAuthoritativeMoveMapChanges(previousMap, nextMap)
   const adaptedTransaction = adaptV1Transaction({
     transaction: resolution.transaction,
     trace: resolution.auditTrace,

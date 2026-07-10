@@ -162,7 +162,7 @@ const passTemplate: MoveAutomationAreaTemplate = {
 
 const passScript = (): MoveAutomationScript => ({
   kind: 'explicit',
-  moveName: 'Scratch',
+  moveName: 'Aqua Tail',
   version: 1,
   targetMode: 'multi-target',
   targetCount: null,
@@ -334,17 +334,17 @@ const PLANNING_SCENARIOS: readonly PlanningParityScenario[] = [
       ], {
         dimensions: { x: 8, y: 3, z: 4 },
       }),
-      pokemonSheets: sheetMap({ name: 'Scratch' }, ['target', 'blocker']),
+      pokemonSheets: sheetMap({ name: 'Aqua Tail' }, ['target', 'blocker']),
       intent: moveIntent({
         placementId: 'actor-token',
-        moveName: 'Scratch',
+        moveName: 'Aqua Tail',
         selection: {
           kind: 'area',
           areaTemplateId: moveAutomationAreaTemplateId(passTemplate),
           direction: 'east',
         },
       }),
-      randomValues: [0.5, 0],
+      randomValues: [0.5, 0, 0],
     })),
     verify: ({ adaptedPlan }) => {
       expect(adaptedPlan.resolution.movement).toMatchObject({

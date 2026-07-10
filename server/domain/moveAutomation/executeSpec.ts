@@ -1,8 +1,10 @@
 import {
   type MoveChoiceRequestEffectOperation,
+  type MoveDamageEffectOperation,
   type MoveEffectOperation,
   type MoveEffectRecipientSelectorKind,
   type MoveReactionRequestEffectOperation,
+  type MoveRollEffectOperation,
 } from '#shared/moveAutomation/effects'
 import type { MoveRuleScalar } from '#shared/moveAutomation/ast'
 import type { MoveExpression } from '#shared/moveAutomation/expressions'
@@ -23,6 +25,14 @@ import {
   type MoveResolutionTraceAncestryEntry,
   type MoveResolutionTraceJsonValue,
 } from '#shared/moveAutomation/trace'
+import { parseMoveDamageFormula } from '~/utils/moveDamageBase'
+import {
+  moveAutomationUserAccuracy,
+  resolveMoveAutomationTargetEvasion,
+} from '~/utils/moveAutomationAccuracy'
+import { resolveMoveAutomationAccuracyRoll } from '~/utils/moveAutomationResolution'
+import type { MoveAutomationScript } from '~/types/moveAutomation'
+import type { SpawnedPokemon } from '~/types/pokemon'
 import type {
   AuthoritativeMoveRulesContext,
   AuthoritativeMoveSheetRead,
@@ -46,6 +56,10 @@ export type MoveSpecExecutionErrorCode =
   | 'comparison-type-mismatch'
   | 'random-table-unsupported'
   | 'recipient-limit-exceeded'
+  | 'authoritative-target-invalid'
+  | 'move-mechanics-unavailable'
+  | 'damage-formula-unsupported'
+  | 'resolved-roll-id-too-long'
 
 export class MoveSpecExecutionError extends Error {
   readonly code: MoveSpecExecutionErrorCode
@@ -62,6 +76,15 @@ export interface MoveSpecEmittedOperation {
   readonly operation: MoveEffectOperation
   /** Authoritative placement IDs resolved from the operation's recipient selector. */
   readonly recipientIds: readonly string[]
+}
+
+export interface MoveSpecResolvedRoll {
+  readonly operationId: string
+  /** Stable ID authored by a roll operation, or the owning damage operation ID. */
+  readonly referenceId: string
+  readonly purpose: 'generic' | 'accuracy' | 'damage'
+  readonly recipientId: string | null
+  readonly rollId: string
 }
 
 interface MoveSpecPendingRequestBase {
@@ -105,6 +128,7 @@ interface MoveSpecExecutionResultBase {
   readonly targetIds: readonly string[]
   readonly sheetReads: readonly AuthoritativeMoveSheetRead[]
   readonly rollLedger: readonly MoveAutomationRollLedgerEntry[]
+  readonly resolvedRolls: readonly MoveSpecResolvedRoll[]
   readonly trace: MoveResolutionAuditTrace
 }
 
@@ -131,11 +155,17 @@ export interface ExecuteMoveSpecInput {
   /** A server-registered definition. It is revalidated before any phase executes. */
   readonly definition: ValidatedMoveSpecDefinition
   readonly context: AuthoritativeMoveRulesContext
+  /** Server-derived geometry recipients; this field never comes from move intent. */
+  readonly authoritativeTargetIds?: readonly string[]
   readonly ancestry?: readonly MoveResolutionTraceAncestryEntry[]
 }
 
 interface MoveSpecSelectorState {
   readonly targetIds: readonly string[]
+  readonly hitTargetIds: readonly string[]
+  readonly missedTargetIds: readonly string[]
+  readonly damagedTargetIds: readonly string[]
+  readonly faintedTargetIds: readonly string[]
 }
 
 interface MovePredicateEvaluation {
@@ -158,6 +188,10 @@ const freezeEmittedOperations = (
   operation: operation.operation,
   recipientIds: frozenIds(operation.recipientIds),
 })))
+
+const freezeResolvedRolls = (
+  rolls: readonly MoveSpecResolvedRoll[],
+): readonly MoveSpecResolvedRoll[] => Object.freeze(rolls.map(roll => Object.freeze({ ...roll })))
 
 const rulesetMatchesContext = (
   definition: ValidatedMoveSpecDefinition,
@@ -287,10 +321,13 @@ const selectorLeafIds = (
     case 'attacked-targets':
       return state.targetIds
     case 'hit-targets':
+      return state.hitTargetIds
     case 'missed-targets':
+      return state.missedTargetIds
     case 'damaged-targets':
+      return state.damagedTargetIds
     case 'fainted-targets':
-      return []
+      return state.faintedTargetIds
   }
 }
 
@@ -413,14 +450,49 @@ const evaluatePredicate = (predicate: MovePredicate): MovePredicateEvaluation =>
   }
 }
 
+const emptySelectorState = (): MoveSpecSelectorState => ({
+  targetIds: [],
+  hitTargetIds: [],
+  missedTargetIds: [],
+  damagedTargetIds: [],
+  faintedTargetIds: [],
+})
+
+const validatedAuthoritativeTargetIds = (
+  context: AuthoritativeMoveRulesContext,
+  ids: readonly string[],
+): readonly string[] => {
+  if (!Array.isArray(ids) || ids.length > MOVE_SPEC_LIMITS.targetCount) {
+    return fail(
+      'authoritative-target-invalid',
+      `Server-derived targets must contain at most ${MOVE_SPEC_LIMITS.targetCount} placement IDs.`,
+    )
+  }
+  const seen = new Set<string>()
+  for (const id of ids) {
+    if (typeof id !== 'string' || !id.trim() || seen.has(id) || !context.queries.placements.get(id)) {
+      return fail(
+        'authoritative-target-invalid',
+        `Server-derived target ${String(id)} is missing, duplicated, or invalid.`,
+      )
+    }
+    seen.add(id)
+  }
+  return canonicalPlacementIds(context, ids)
+}
+
 const targetIdsForSpec = (
   context: AuthoritativeMoveRulesContext,
   spec: ValidatedMoveSpec,
+  authoritativeTargetIds?: readonly string[],
 ): readonly string[] => {
   if (spec.targeting.kind === 'none') return []
   if (spec.targeting.kind === 'self') return [context.actor.placement.id]
+  if (authoritativeTargetIds !== undefined) {
+    return validatedAuthoritativeTargetIds(context, authoritativeTargetIds)
+  }
   if (spec.targeting.selector) {
-    return evaluateSelector(context, { targetIds: [] }, spec.targeting.selector)
+    return evaluateSelector(context, emptySelectorState(), spec.targeting.selector)
   }
   return canonicalPlacementIds(
     context,
@@ -465,10 +537,16 @@ const effectRecipientIds = (
       ids = context.candidatePlacements.map(({ id }) => id)
       break
     case 'hit-targets':
+      ids = state.hitTargetIds
+      break
     case 'missed-targets':
+      ids = state.missedTargetIds
+      break
     case 'damaged-targets':
+      ids = state.damagedTargetIds
+      break
     case 'fainted-targets':
-      ids = []
+      ids = state.faintedTargetIds
       break
   }
 
@@ -505,17 +583,102 @@ const pendingRequest = (
     : Object.freeze({ kind: 'reaction', ...common, priority: operation.payload.priority })
 }
 
+interface MoveSpecAuthoritativeMoveMechanics {
+  readonly script: MoveAutomationScript
+  readonly damageFormula: string | null
+}
+
+const authoritativeMoveMechanics = (
+  context: AuthoritativeMoveRulesContext,
+  canonicalId: string,
+): MoveSpecAuthoritativeMoveMechanics => {
+  const result = context.queries.resolveActorMoveEntry(canonicalId)
+  if (!result.ok || result.entry.canonicalMoveName !== canonicalId) {
+    return fail(
+      'move-mechanics-unavailable',
+      `Authoritative move mechanics for ${canonicalId} are not available to the actor.`,
+    )
+  }
+  return {
+    script: result.entry.script,
+    damageFormula: result.entry.damageFormula,
+  }
+}
+
+const targetTokenForRoll = (
+  context: AuthoritativeMoveRulesContext,
+  placementId: string,
+): SpawnedPokemon => {
+  const placement = context.queries.placements.get(placementId)
+  const token = context.queries.tokens.get(placementId)
+  if (!placement || !token) {
+    return fail(
+      'authoritative-target-invalid',
+      `Roll recipient ${placementId} could not resolve to an authoritative token.`,
+    )
+  }
+  context.reads.recordPlacement(placement)
+  return token
+}
+
+const resolvedRollId = (
+  baseId: string,
+  ordinal: number,
+  suffix = '',
+): string => {
+  const rollId = `${baseId}${suffix}.${ordinal}`
+  if (rollId.length > MOVE_SPEC_LIMITS.identifierLength) {
+    return fail(
+      'resolved-roll-id-too-long',
+      `Resolved roll ID ${rollId} exceeds ${MOVE_SPEC_LIMITS.identifierLength} characters.`,
+    )
+  }
+  return rollId
+}
+
+const latestLedgerEntry = (
+  context: AuthoritativeMoveRulesContext,
+  rollId: string,
+): MoveAutomationRollLedgerEntry => context.random.snapshot().at(-1)
+  ?? fail('definition-integrity-mismatch', `Roll ${rollId} did not produce a ledger entry.`)
+
+const accuracyReferenceIds = (spec: ValidatedMoveSpec): ReadonlySet<string> => new Set(
+  spec.phases.flatMap(block => block.operations.flatMap(operation => (
+    operation.kind === 'damage' && operation.payload.accuracyRollId !== null
+      ? [operation.payload.accuracyRollId]
+      : []
+  ))),
+)
+
+const damageRollFormula = (
+  mechanics: MoveSpecAuthoritativeMoveMechanics,
+  operation: MoveDamageEffectOperation,
+): { readonly count: number; readonly sides: number; readonly modifier: number } => {
+  const parsed = mechanics.damageFormula
+    ? parseMoveDamageFormula(mechanics.damageFormula)
+    : null
+  if (!parsed) {
+    return fail(
+      'damage-formula-unsupported',
+      `Damage operation ${operation.id} has no authoritative bounded dice formula.`,
+    )
+  }
+  return { count: parsed.count, sides: parsed.sides, modifier: parsed.mod }
+}
+
 const terminalBase = (
   context: AuthoritativeMoveRulesContext,
   operations: readonly MoveSpecEmittedOperation[],
   targetIds: readonly string[],
   trace: MoveResolutionAuditTrace,
   rollLedger: readonly MoveAutomationRollLedgerEntry[],
+  resolvedRolls: readonly MoveSpecResolvedRoll[],
 ): MoveSpecExecutionResultBase => ({
   operations: freezeEmittedOperations(operations),
   targetIds: frozenIds(targetIds),
   sheetReads: context.reads.snapshot(),
   rollLedger,
+  resolvedRolls: freezeResolvedRolls(resolvedRolls),
   trace,
 })
 
@@ -558,7 +721,17 @@ export const executeMoveSpec = (
   })
   let activePhase: MoveSpecPhase | null = null
   let targetIds: readonly string[] = []
+  let hitTargetIds: readonly string[] = []
+  let missedTargetIds: readonly string[] = []
+  const damagedTargetIds: readonly string[] = []
+  const faintedTargetIds: readonly string[] = []
   const operations: MoveSpecEmittedOperation[] = []
+  const resolvedRolls: MoveSpecResolvedRoll[] = []
+  const referencedAccuracyRollIds = accuracyReferenceIds(spec)
+  let mechanics: MoveSpecAuthoritativeMoveMechanics | null = null
+  const getMechanics = (): MoveSpecAuthoritativeMoveMechanics => (
+    mechanics ??= authoritativeMoveMechanics(input.context, spec.canonicalId)
+  )
 
   for (const phase of MOVE_SPEC_PHASES) {
     if (!activePhases.has(phase)) continue
@@ -592,6 +765,7 @@ export const executeMoveSpec = (
               targetIds,
               trace,
               input.context.random.complete(),
+              resolvedRolls,
             ),
             rejection: Object.freeze({
               code: 'precondition-failed',
@@ -607,10 +781,16 @@ export const executeMoveSpec = (
     }
 
     if (phase === 'target') {
-      const resolvedTargetIds = targetIdsForSpec(input.context, spec)
+      const resolvedTargetIds = targetIdsForSpec(
+        input.context,
+        spec,
+        input.authoritativeTargetIds,
+      )
       targetIds = resolvedTargetIds.length <= MOVE_SPEC_LIMITS.targetCount
         ? resolvedTargetIds
         : []
+      hitTargetIds = []
+      missedTargetIds = []
       const targetIdSet = new Set(targetIds)
       for (const targetId of consideredTargetIds(input.context, spec, targetIds)) {
         const included = targetIdSet.has(targetId)
@@ -635,6 +815,7 @@ export const executeMoveSpec = (
             targetIds,
             trace,
             input.context.random.complete(),
+            resolvedRolls,
           ),
           rejection: Object.freeze({
             code: 'target-count-out-of-range',
@@ -649,9 +830,16 @@ export const executeMoveSpec = (
     }
 
     for (const operation of phaseBlocks.get(phase)?.operations ?? []) {
+      const selectorState: MoveSpecSelectorState = {
+        targetIds,
+        hitTargetIds,
+        missedTargetIds,
+        damagedTargetIds,
+        faintedTargetIds,
+      }
       const recipientIds = effectRecipientIds(
         input.context,
-        { targetIds },
+        selectorState,
         operation.recipients.kind,
       )
       operations.push(Object.freeze({
@@ -666,14 +854,100 @@ export const executeMoveSpec = (
             `Roll ${operation.payload.rollId} cannot resolve without a reviewed server table.`,
           )
         }
-        const result = input.context.random.roll({
-          rollId: operation.payload.rollId,
-          parentEffectId: operation.id,
-          formula: operation.payload.formula,
-          reason: operation.reasonCode,
-        })
-        const ledgerEntry = input.context.random.snapshot().at(-1)
-          ?? fail('definition-integrity-mismatch', `Roll ${operation.payload.rollId} did not produce a ledger entry.`)
+        const purpose = referencedAccuracyRollIds.has(operation.payload.rollId)
+          ? 'accuracy' as const
+          : 'generic' as const
+        const subjects: readonly (string | null)[] = operation.recipients.kind === 'none'
+          ? [null]
+          : recipientIds
+        const rollSummaries: Array<{
+          readonly rollId: string
+          readonly recipientId: string | null
+          readonly naturalResult: number
+          readonly finalValue: number
+        }> = []
+        const hitSet = new Set(hitTargetIds)
+        const missedSet = new Set(missedTargetIds)
+
+        for (const [index, recipientId] of subjects.entries()) {
+          const rollId = recipientId === null
+            ? operation.payload.rollId
+            : resolvedRollId(operation.payload.rollId, index + 1)
+          let modifiers: readonly {
+            readonly sourceId: string
+            readonly reason: string
+            readonly value: number
+          }[] = []
+          let target: SpawnedPokemon | null = null
+          let targetEvasion = 0
+          if (purpose === 'accuracy') {
+            if (recipientId === null) {
+              return fail(
+                'move-mechanics-unavailable',
+                `Accuracy roll ${operation.id} must resolve once per attacked target.`,
+              )
+            }
+            const move = getMechanics()
+            target = targetTokenForRoll(input.context, recipientId)
+            const userAccuracy = moveAutomationUserAccuracy(input.context.actor.token)
+            targetEvasion = resolveMoveAutomationTargetEvasion(
+              move.script,
+              target,
+              { attacker: input.context.actor.token },
+            ).value
+            modifiers = [{
+              sourceId: 'actor-accuracy',
+              reason: 'Actor Accuracy',
+              value: userAccuracy,
+            }]
+          }
+
+          const result = input.context.random.roll({
+            rollId,
+            parentEffectId: operation.id,
+            formula: operation.payload.formula,
+            reason: recipientId === null
+              ? operation.reasonCode
+              : `${operation.reasonCode} for ${recipientId}`,
+            modifiers,
+          })
+          const ledgerEntry = latestLedgerEntry(input.context, rollId)
+          resolvedRolls.push({
+            operationId: operation.id,
+            referenceId: operation.payload.rollId,
+            purpose,
+            recipientId,
+            rollId,
+          })
+          rollSummaries.push({
+            rollId,
+            recipientId,
+            naturalResult: result.naturalResult,
+            finalValue: result.finalValue,
+          })
+
+          if (purpose === 'accuracy' && recipientId !== null && target) {
+            const accuracy = resolveMoveAutomationAccuracyRoll(
+              getMechanics().script,
+              result.naturalResult,
+              {
+                userAccuracy: modifiers[0]?.value ?? 0,
+                targetEvasion,
+              },
+            )
+            if (accuracy.hit) {
+              hitSet.add(recipientId)
+              missedSet.delete(recipientId)
+            }
+            else {
+              missedSet.add(recipientId)
+              hitSet.delete(recipientId)
+            }
+          }
+        }
+
+        hitTargetIds = canonicalPlacementIds(input.context, hitSet)
+        missedTargetIds = canonicalPlacementIds(input.context, missedSet)
         trace = reduceMoveResolutionTrace(trace, {
           kind: 'operation',
           phase,
@@ -683,18 +957,73 @@ export const executeMoveSpec = (
           outcome: 'applied',
           reasonCode: operation.reasonCode,
           input: traceJson(operation.payload),
-          result: {
-            rollId: operation.payload.rollId,
+          result: { rolls: rollSummaries },
+        })
+        for (const summary of rollSummaries) {
+          const roll = input.context.random.snapshot().find(entry => entry.rollId === summary.rollId)
+            ?? fail('definition-integrity-mismatch', `Roll ${summary.rollId} is missing from the ledger.`)
+          trace = reduceMoveResolutionTrace(trace, {
+            kind: 'roll',
+            phase,
+            reasonCode: operation.reasonCode,
+            roll,
+          })
+        }
+        continue
+      }
+
+      if (operation.kind === 'damage') {
+        const formula = damageRollFormula(getMechanics(), operation)
+        const rollSummaries: Array<{
+          readonly rollId: string
+          readonly recipientId: string
+          readonly naturalResult: number
+          readonly finalValue: number
+        }> = []
+        for (const [index, recipientId] of recipientIds.entries()) {
+          targetTokenForRoll(input.context, recipientId)
+          const rollId = resolvedRollId(operation.id, index + 1, '.roll')
+          const result = input.context.random.roll({
+            rollId,
+            parentEffectId: operation.id,
+            formula: { kind: 'dice', ...formula },
+            reason: `${operation.reasonCode} for ${recipientId}`,
+          })
+          resolvedRolls.push({
+            operationId: operation.id,
+            referenceId: operation.id,
+            purpose: 'damage',
+            recipientId,
+            rollId,
+          })
+          rollSummaries.push({
+            rollId,
+            recipientId,
             naturalResult: result.naturalResult,
             finalValue: result.finalValue,
-          },
-        })
+          })
+        }
         trace = reduceMoveResolutionTrace(trace, {
-          kind: 'roll',
+          kind: 'operation',
           phase,
+          operationId: operation.id,
+          operationKind: operation.kind,
+          recipientIds,
+          outcome: 'applied',
           reasonCode: operation.reasonCode,
-          roll: ledgerEntry,
+          input: traceJson(operation.payload),
+          result: { status: 'emitted', damageRolls: rollSummaries },
         })
+        for (const summary of rollSummaries) {
+          const roll = input.context.random.snapshot().find(entry => entry.rollId === summary.rollId)
+            ?? fail('definition-integrity-mismatch', `Roll ${summary.rollId} is missing from the ledger.`)
+          trace = reduceMoveResolutionTrace(trace, {
+            kind: 'roll',
+            phase,
+            reasonCode: operation.reasonCode,
+            roll,
+          })
+        }
         continue
       }
 
@@ -731,6 +1060,7 @@ export const executeMoveSpec = (
             targetIds,
             trace,
             input.context.random.snapshot(),
+            resolvedRolls,
           ),
           request,
         })
@@ -758,6 +1088,7 @@ export const executeMoveSpec = (
       targetIds,
       trace,
       input.context.random.complete(),
+      resolvedRolls,
     ),
   })
 }

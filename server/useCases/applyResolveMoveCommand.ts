@@ -291,6 +291,7 @@ const plannerRejectionReason = (reason: string) => {
 const planMoveState = (
   context: ResolvedResolveMoveCommandContext,
   dependencies: DependencySet,
+  operationId: string,
 ): AuthoritativeMoveStatePlan => {
   try {
     return dependencies.planner({
@@ -301,6 +302,7 @@ const planMoveState = (
       random: dependencies.random,
       now: dependencies.now,
       idFactory: dependencies.idFactory,
+      operationId,
       maxMoveLogEntries: dependencies.maxMoveLogEntries,
     })
   } catch (error) {
@@ -421,7 +423,7 @@ const applyResolveMoveCommand = (
   readonly context: ResolvedResolveMoveCommandContext
   readonly patches: readonly LivePlayPatch[]
 } => {
-  const plan = planMoveState(context, dependencies)
+  const plan = planMoveState(context, dependencies, command.opId)
   const move = moveResultFromPlan(plan)
   const scopes = validateResolveMoveScopes({ command, intent: context.intent, map: context.map, plan })
   const patch = moveStatePatch(command, plan, move, scopes)

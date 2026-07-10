@@ -435,7 +435,7 @@ describe('executeLivePlayResolveMoveCommandUseCase', () => {
       expect(accepted(response.result).patches[0]?.scopes.every((scope) => !(scope.kind === 'token' && scope.placementId === 'target-b' && scope.field === 'hp'))).toBe(true)
     })
 
-    await withRegisteredScript(passScript(), async () => {
+    {
       const map = mapFixture({ dimensions: { x: 8, y: 3, z: 4 }, placements: [
         placement('actor-token', 'actor', { x: 1, y: 0, z: 1 }),
         placement('target-a', 'target-a', { x: 2, y: 0, z: 1 }),
@@ -443,10 +443,22 @@ describe('executeLivePlayResolveMoveCommandUseCase', () => {
       ] })
       const harness = seedHarness({ map, actorMoves: [{ name: 'Scratch' }] })
       const moveIntent = intent({ placementId: 'actor-token', moveName: 'Scratch', selection: { kind: 'area', areaTemplateId: moveAutomationAreaTemplateId(passTemplate), direction: 'east' } })
-      const response = await execute(harness, commandFor(map, moveIntent, 'op_resolvepass1', ['target-a', 'target-b']), { random: randomSequence([0.5, 0]) })
+      const passCommand = commandFor(map, moveIntent, 'op_resolvepass1', ['target-a', 'target-b'])
+      const response = await execute(harness, passCommand, { random: randomSequence([0.5, 0]) })
       expect(response.result.ok).toBe(true)
-      const payload = moveStatePatchPayload(accepted(response.result))
+      const acceptedResult = accepted(response.result)
+      const payload = moveStatePatchPayload(acceptedResult)
       expect(payload.move.movement?.kind).toBe('pass')
+      expect(payload.move.trace?.program).toMatchObject({
+        canonicalId: 'Scratch',
+        runtimeKind: 'movespec-v2',
+        runtimeVersion: 2,
+      })
+      expect(payload.move.rollLedger.map(roll => roll.rollId)).toEqual([
+        'scratch.accuracy-roll.1',
+        'scratch.accuracy-roll.2',
+        'scratch.damage.roll.1',
+      ])
       expect(payload.presentation).toMatchObject({
         operationId: 'op_resolvepass1',
         area: { templateKind: 'pass', direction: 'east' },
@@ -454,7 +466,16 @@ describe('executeLivePlayResolveMoveCommandUseCase', () => {
       })
       expect(payload.presentation.pass?.pathCells).toEqual(payload.move.movement?.pathCells)
       expect(response.map?.placements.find((item) => item.id === 'actor-token')?.position).toEqual(payload.move.movement?.destination)
-    })
+
+      const committedMap = deepCloneJson(harness.maps.getBySlug('arena'))
+      const duplicate = await execute(harness, passCommand, {
+        random: () => { throw new Error('duplicate Scratch must not reroll') },
+        planner: () => { throw new Error('duplicate Scratch must not replan') },
+      })
+      expect(duplicate.result).toEqual(acceptedResult)
+      expect(duplicate.move).toEqual(response.move)
+      expect(harness.maps.getBySlug('arena')).toEqual(committedMap)
+    }
   })
 
   it('enforces command type, intent shape, map mode, visibility, token control, and exact base revisions', async () => {
