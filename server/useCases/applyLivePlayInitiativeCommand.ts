@@ -6,6 +6,7 @@ import {
   type AdvanceInitiativePayload,
   type LivePlayCommandAccepted,
   type LivePlayCommandResult,
+  type InitiativeLifecyclePatchPayload,
   type LivePlayInitiativeCommand,
   type LivePlayMapScope,
   type LivePlayPatch,
@@ -22,7 +23,10 @@ import {
   writeAttackOfOpportunityState,
 } from '#shared/attackOfOpportunityState'
 import { nextRevision, normalizeRevision } from '#shared/sessionRevisions'
+import { initiativeOrderIds } from '#shared/initiativeOrder'
+import type { CharacterSheet } from '~/types/characterSheet'
 import type { InitiativeTrackerState, SheetKind, SheetPlacement, TabletopMap } from '~/types/map'
+import type { TrainerSheet } from '~/types/trainerSheet'
 import {
   appendInitiativeLogRecord,
   createInitiativeLogEntry,
@@ -36,15 +40,37 @@ import { createSqliteAuthoritativeLivePlayCommandExecutor } from '../livePlay/sq
 import { getRotomDatabase, type RotomDatabase } from '../storage/database'
 import { sqliteMapRepository, type MapRepository } from '../storage/mapRepository'
 import {
+  SheetRevisionConflictError,
   sqliteSheetRepository,
+  type PersistedSheet,
   type SheetRepository,
 } from '../storage/sheetRepository'
-import { logicalMapResourcePath } from '../utils/runtimeResourcePaths'
+import {
+  logicalMapResourcePath,
+  logicalSheetResourcePath,
+} from '../utils/runtimeResourcePaths'
 import { UseCaseHttpError } from '../utils/useCaseErrors'
-import { initiativeOrderIdsForPlacements, type InitiativeSheetReader } from '~/utils/initiativeOrderEntries'
+import {
+  initiativeOrderEntriesForPlacements,
+  type InitiativeSheetReader,
+} from '~/utils/initiativeOrderEntries'
 import { expireActiveOrderEffectsForInitiativeAdvanceWithResult } from '~/utils/activeOrderEffects'
 import { deepCloneJson, sameJsonValue } from '~/utils/serialization'
-import { commitLivePlayMapUpdate } from './livePlayMapPersistence'
+import {
+  deduplicateAuthoritativeMoveSheetReads,
+  type AuthoritativeMoveSheetRead,
+} from '../domain/moveAutomation/context'
+import {
+  encounterModifiedInitiativeScore,
+} from '~/utils/encounterInitiative'
+import {
+  planInitiativeLifecycle,
+  type InitiativeLifecyclePlan,
+  type InitiativeLifecycleSheetWrite,
+} from '../domain/moveAutomation/planInitiativeLifecycle'
+import type { EncounterLifecycleTriggerHandler } from '../domain/moveAutomation/reduceLifecycle'
+import { livePlaySheetUpdateRealtimeAppendInputs } from '../livePlay/sheetUpdateRealtime'
+import { toPersistableSheetPayload } from '~/utils/sheets/persistence'
 import { toPersistedMap } from './saveMap'
 
 export class LivePlayInitiativeCommandUseCaseError extends UseCaseHttpError<400 | 403 | 404 | 409> {}
@@ -72,6 +98,7 @@ export interface InitiativePatchPayload {
   readonly current: InitiativeLaneState
   readonly changedTokenIds: readonly string[]
   readonly logEntry?: InitiativeLogEntry
+  readonly lifecycle?: InitiativeLifecyclePatchPayload
 }
 
 export interface InitiativeMetadataPatchPayload {
@@ -97,11 +124,19 @@ export interface ExecuteLivePlayInitiativeCommandInput {
   readonly expectedType?: LivePlayInitiativeCommandType
 }
 
+export interface LivePlayInitiativeCommandSheetUpdate {
+  readonly kind: SheetKind
+  readonly slug: string
+  readonly path: string
+  readonly sheet: Record<string, unknown>
+}
+
 export interface LivePlayInitiativeCommandResponse {
   readonly result: LivePlayCommandResult
   readonly path?: string
   readonly map?: TabletopMap
   readonly initiative?: InitiativeLaneState
+  readonly sheetUpdates?: readonly LivePlayInitiativeCommandSheetUpdate[]
 }
 
 export interface LivePlayInitiativeCommandDependencies {
@@ -113,12 +148,22 @@ export interface LivePlayInitiativeCommandDependencies {
   readonly now?: () => number
   readonly relativePath?: (path: string) => string
   readonly maxInitiativeLogEntries?: number
+  /** Server-owned trigger registry seam; production registrations are never client supplied. */
+  readonly lifecycleHandlers?: readonly EncounterLifecycleTriggerHandler[]
+}
+
+interface InitiativeCommitPlan {
+  readonly sheetReads: readonly AuthoritativeMoveSheetRead[]
+  readonly sheetWrites: readonly InitiativeLifecycleSheetWrite[]
+  readonly lifecycle?: InitiativeLifecyclePlan
 }
 
 interface ResolvedInitiativeContext {
   readonly mapPath: string
   readonly relativePath: string
   readonly map: TabletopMap
+  readonly commitPlan?: InitiativeCommitPlan
+  readonly sheetUpdates?: readonly LivePlayInitiativeCommandSheetUpdate[]
 }
 
 interface InitiativeMetadataSideEffectChange {
@@ -135,10 +180,14 @@ interface AppliedInitiativeChange {
   readonly current: InitiativeLaneState
   readonly logEntry?: InitiativeLogEntry
   readonly metadataChange?: InitiativeMetadataSideEffectChange
+  readonly commitPlan: InitiativeCommitPlan
 }
 
 type UnknownRecord = Record<string, unknown>
-type InitiativeSheetRepository = Pick<SheetRepository<Record<string, unknown>>, 'get'>
+type InitiativeSheetRepository = Pick<
+  SheetRepository<Record<string, unknown>>,
+  'get' | 'getByRef' | 'assertRevisions' | 'applyLivePlayUpdate'
+>
 type LivePlayInitiativeDependencySet = ReturnType<typeof actionDependencies>
 
 const livePlayInitiativeCommandExecutor = createSqliteAuthoritativeLivePlayCommandExecutor()
@@ -154,7 +203,10 @@ const initiativeSheetReaderFromRepository = (
 ): InitiativeSheetReader => (kind: SheetKind, slug: string) => {
   const result = repository.get(kind, slug)
   if (result === null) return null
-  return { sheet: result.document as Record<string, unknown> }
+  return {
+    sheet: result.document as Record<string, unknown>,
+    revision: result.revision,
+  }
 }
 
 const actionDependencies = (dependencies: LivePlayInitiativeCommandDependencies) => {
@@ -164,10 +216,11 @@ const actionDependencies = (dependencies: LivePlayInitiativeCommandDependencies)
     mapRepository: dependencies.mapRepository ?? sqliteMapRepository,
     database: dependencies.database ?? getRotomDatabase(),
     sheetRepository,
-      readSheet: dependencies.readSheet ?? initiativeSheetReaderFromRepository(sheetRepository),
+    readSheet: dependencies.readSheet ?? initiativeSheetReaderFromRepository(sheetRepository),
     now: dependencies.now ?? Date.now,
     relativePath: dependencies.relativePath ?? ((path: string) => path),
     maxInitiativeLogEntries: dependencies.maxInitiativeLogEntries,
+    lifecycleHandlers: dependencies.lifecycleHandlers ?? [],
   }
 }
 
@@ -547,11 +600,53 @@ const validatedCompleteManualOrderIds = (
   return [...manualOrderIds]
 }
 
+interface InitiativeOrderPlan {
+  readonly orderIds: readonly string[]
+  readonly sheetReads: readonly AuthoritativeMoveSheetRead[]
+}
+
 const initiativeOrder = (
-  placements: readonly SheetPlacement[],
+  map: TabletopMap,
   readSheet: InitiativeSheetReader,
   manualOrderIds?: readonly string[] | null,
-): readonly string[] => initiativeOrderIdsForPlacements(placements, readSheet, manualOrderIds)
+): InitiativeOrderPlan => {
+  // A complete GM-authored order is authoritative and bypasses every calculated
+  // sheet/effect modifier query. Legacy partial orders still overlay the
+  // calculated remainder through the existing deterministic order helper.
+  if (manualOrderIds?.length === map.placements.length) {
+    return { orderIds: [...manualOrderIds], sheetReads: [] }
+  }
+
+  const reads: AuthoritativeMoveSheetRead[] = []
+  const trackedReader: InitiativeSheetReader = (kind, slug) => {
+    const result = readSheet(kind, slug)
+    if (result?.revision !== undefined) {
+      reads.push({ kind, slug, revision: normalizeRevision(result.revision) })
+    }
+    return result
+  }
+  const placementById = new Map(map.placements.map(placement => [placement.id, placement]))
+  const calculatedEntries = initiativeOrderEntriesForPlacements(
+    map.placements,
+    trackedReader,
+  ).map((entry) => {
+    const placement = placementById.get(entry.id)
+    if (!placement) return entry
+    return {
+      ...entry,
+      initiativeScore: encounterModifiedInitiativeScore({
+        map,
+        placement,
+        calculatedScore: entry.initiativeScore,
+      }),
+    }
+  })
+
+  return {
+    orderIds: initiativeOrderIds(calculatedEntries, manualOrderIds),
+    sheetReads: deduplicateAuthoritativeMoveSheetReads(reads),
+  }
+}
 
 const rejectStaleAdvancePrecondition = (
   message: string,
@@ -569,9 +664,10 @@ const assertAdvancePrecondition = (
   payload: AdvanceInitiativePayload,
   context: ResolvedInitiativeContext,
   readSheet: InitiativeSheetReader,
-): readonly string[] => {
+): InitiativeOrderPlan => {
   const authoritativeState = initiativeLaneState(context.map)
-  const authoritativeOrder = initiativeOrder(context.map.placements, readSheet, authoritativeState.manualOrderIds)
+  const orderPlan = initiativeOrder(context.map, readSheet, authoritativeState.manualOrderIds)
+  const authoritativeOrder = orderPlan.orderIds
   const duplicateAuthoritativeId = duplicateString(authoritativeOrder)
   if (duplicateAuthoritativeId) {
     rejectLivePlayCommand('conflict', `Authoritative initiative order contains duplicate placement ID ${duplicateAuthoritativeId}`, {
@@ -606,7 +702,7 @@ const assertAdvancePrecondition = (
     )
   }
 
-  return authoritativeOrder
+  return orderPlan
 }
 
 const applySetInitiativePayload = (
@@ -659,14 +755,20 @@ const applySetInitiativePayload = (
   }
 }
 
+interface AppliedAdvanceInitiativePayload {
+  readonly map: TabletopMap
+  readonly order: InitiativeOrderPlan
+}
+
 const applyAdvanceInitiativePayload = (
   command: NextInitiativeLivePlayCommand | PreviousInitiativeLivePlayCommand,
   payload: AdvanceInitiativePayload,
   context: ResolvedInitiativeContext,
   timestamp: number,
   readSheet: InitiativeSheetReader,
-): TabletopMap => {
-  const order = assertAdvancePrecondition(command, payload, context, readSheet)
+): AppliedAdvanceInitiativePayload => {
+  const orderPlan = assertAdvancePrecondition(command, payload, context, readSheet)
+  const order = orderPlan.orderIds
   if (order.length === 0) {
     rejectLivePlayCommand('conflict', `Map ${command.mapSlug} has no placements in initiative order`, {
       currentState: initiativeLaneState(context.map),
@@ -689,13 +791,16 @@ const applyAdvanceInitiativePayload = (
   }
 
   return {
-    ...context.map,
-    initiative: {
-      ...initiativeStateFromLane(previousState),
-      activeId: nextActiveId,
-      round: nextRound,
+    order: orderPlan,
+    map: {
+      ...context.map,
+      initiative: {
+        ...initiativeStateFromLane(previousState),
+        activeId: nextActiveId,
+        round: nextRound,
+      },
+      updatedAt: timestamp,
     },
-    updatedAt: timestamp,
   }
 }
 
@@ -823,15 +928,45 @@ const applyAdvanceMetadataSideEffects = (
   }
 }
 
+const lifecycleSheetSnapshots = (
+  map: TabletopMap,
+  repository: InitiativeSheetRepository,
+): {
+  readonly pokemonSheets: ReadonlyMap<string, CharacterSheet>
+  readonly trainerSheets: ReadonlyMap<string, TrainerSheet>
+} => {
+  const pokemonSheets = new Map<string, CharacterSheet>()
+  const trainerSheets = new Map<string, TrainerSheet>()
+  const seen = new Set<string>()
+  for (const placement of map.placements) {
+    const key = `${placement.sheetKind}:${placement.sheetSlug}`
+    if (seen.has(key)) continue
+    seen.add(key)
+    const stored = repository.get(placement.sheetKind, placement.sheetSlug)
+    if (!stored) continue
+    const sheet = stored.document as unknown as CharacterSheet | TrainerSheet
+    if (placement.sheetKind === 'pokemon') pokemonSheets.set(placement.sheetSlug, sheet as CharacterSheet)
+    else trainerSheets.set(placement.sheetSlug, sheet as TrainerSheet)
+  }
+  return { pokemonSheets, trainerSheets }
+}
+
 const applyInitiativeChange = (
   command: LivePlayInitiativeCommand,
   context: ResolvedInitiativeContext,
-  dependencies: Pick<LivePlayInitiativeDependencySet, 'now' | 'maxInitiativeLogEntries' | 'readSheet'>,
+  dependencies: Pick<
+    LivePlayInitiativeDependencySet,
+    | 'now'
+    | 'maxInitiativeLogEntries'
+    | 'readSheet'
+    | 'sheetRepository'
+    | 'lifecycleHandlers'
+  >,
 ): AppliedInitiativeChange => {
   const previous = initiativeLaneState(context.map)
   const timestamp = dependencies.now()
-  const changedMap = command.type === LIVE_PLAY_COMMAND_TYPES.SET_INITIATIVE
-    ? applySetInitiativePayload(command, expectSetInitiativePayload(command.payload), context, timestamp)
+  const advance = command.type === LIVE_PLAY_COMMAND_TYPES.SET_INITIATIVE
+    ? null
     : applyAdvanceInitiativePayload(
         command,
         expectAdvanceInitiativePayload(command.payload),
@@ -839,6 +974,9 @@ const applyInitiativeChange = (
         timestamp,
         dependencies.readSheet,
       )
+  const changedMap = command.type === LIVE_PLAY_COMMAND_TYPES.SET_INITIATIVE
+    ? applySetInitiativePayload(command, expectSetInitiativePayload(command.payload), context, timestamp)
+    : advance!.map
   const current = initiativeLaneState(changedMap)
 
   if (initiativeLaneStatesEqual(previous, current)) {
@@ -857,8 +995,33 @@ const applyInitiativeChange = (
         metadata: metadataSideEffects.metadata,
       }
     : changedMap
-  const logEntry = createInitiativeGainLogEntry(command, previous, current, mapWithSideEffects, timestamp)
-  const nextMap = mapWithInitiativeLogEntry(mapWithSideEffects, logEntry, dependencies.maxInitiativeLogEntries)
+  const lifecycle = command.type === LIVE_PLAY_COMMAND_TYPES.NEXT_INITIATIVE
+    ? planInitiativeLifecycle({
+        map: mapWithSideEffects,
+        previous,
+        current,
+        orderIds: advance!.order.orderIds,
+        operationId: command.opId,
+        time: timestamp,
+        loadSheets: () => lifecycleSheetSnapshots(
+          mapWithSideEffects,
+          dependencies.sheetRepository,
+        ),
+        handlers: dependencies.lifecycleHandlers,
+      })
+    : undefined
+  const mapWithLifecycle = lifecycle?.nextMap ?? mapWithSideEffects
+  const logEntry = createInitiativeGainLogEntry(command, previous, current, mapWithLifecycle, timestamp)
+  const nextMap = mapWithInitiativeLogEntry(mapWithLifecycle, logEntry, dependencies.maxInitiativeLogEntries)
+  const sheetReads = deduplicateAuthoritativeMoveSheetReads([
+    ...(advance?.order.sheetReads ?? []),
+    ...(lifecycle?.sheetReads ?? []),
+  ])
+  const commitPlan: InitiativeCommitPlan = {
+    sheetReads,
+    sheetWrites: lifecycle?.sheetWrites ?? [],
+    ...(lifecycle === undefined ? {} : { lifecycle }),
+  }
 
   return {
     previous,
@@ -872,14 +1035,48 @@ const applyInitiativeChange = (
             current: cloneMetadata(nextMap.metadata),
           },
         }),
+    commitPlan,
     nextMap,
   }
 }
 
+const lifecyclePatchPayload = (
+  lifecycle: InitiativeLifecyclePlan,
+): InitiativeLifecyclePatchPayload => ({
+  events: lifecycle.events.map(event => ({
+    eventId: event.eventId,
+    kind: event.kind,
+    reasonCode: event.reasonCode,
+  })),
+  effectTransitions: lifecycle.reduction.transitions.map(({ eventId, transition }) => ({
+    eventId,
+    effectId: transition.effectId,
+    kind: transition.kind,
+    reasonCode: transition.reasonCode,
+  })),
+  operationIds: lifecycle.reduction.operations.map(operation => operation.id),
+  previousEncounterState: deepCloneJson(lifecycle.previousEncounterState),
+  currentEncounterState: deepCloneJson(lifecycle.currentEncounterState),
+  previousTemporaryHitPoints: lifecycle.previousTemporaryHitPoints === undefined
+    ? null
+    : deepCloneJson(lifecycle.previousTemporaryHitPoints),
+  currentTemporaryHitPoints: lifecycle.currentTemporaryHitPoints === undefined
+    ? null
+    : deepCloneJson(lifecycle.currentTemporaryHitPoints),
+  sheetChanges: lifecycle.sheetWrites.map(write => ({
+    kind: write.kind,
+    slug: write.slug,
+    expectedRevision: write.expectedRevision,
+    revision: write.revision,
+    placementIds: [...write.placementIds],
+    changedFields: [...write.changedFields],
+  })),
+})
+
 const commandPatch = (
   command: LivePlayInitiativeCommand,
   revision: number,
-  change: Pick<AppliedInitiativeChange, 'previous' | 'current' | 'logEntry'>,
+  change: Pick<AppliedInitiativeChange, 'previous' | 'current' | 'logEntry' | 'commitPlan'>,
 ): LivePlayPatch<typeof LIVE_PLAY_PATCH_TYPES.MAP_INITIATIVE, InitiativePatchPayload, LivePlayMapScope> => ({
   schemaVersion: command.schemaVersion,
   type: LIVE_PLAY_PATCH_TYPES.MAP_INITIATIVE,
@@ -892,6 +1089,9 @@ const commandPatch = (
     current: cloneLaneState(change.current),
     changedTokenIds: changedTokenIdsBetween(change.previous, change.current),
     ...(change.logEntry === undefined ? {} : { logEntry: change.logEntry }),
+    ...(change.commitPlan.lifecycle === undefined
+      ? {}
+      : { lifecycle: lifecyclePatchPayload(change.commitPlan.lifecycle) }),
   },
 })
 
@@ -941,6 +1141,26 @@ const resolveContext = async (
   }
 }
 
+const sheetUpdateFromPersisted = (
+  sheet: PersistedSheet,
+  dependencies: LivePlayInitiativeDependencySet,
+): LivePlayInitiativeCommandSheetUpdate => ({
+  kind: sheet.kind,
+  slug: sheet.slug,
+  path: dependencies.relativePath(logicalSheetResourcePath(sheet.kind, sheet.sheet)),
+  sheet: deepCloneJson(sheet.sheet),
+})
+
+const lifecycleSheetChangesFromAccepted = (
+  result: LivePlayCommandAccepted,
+): readonly InitiativeLifecyclePatchPayload['sheetChanges'][number][] => {
+  const patch = result.patches.find(candidate => candidate.type === LIVE_PLAY_PATCH_TYPES.MAP_INITIATIVE)
+  if (!patch || !isRecord(patch.payload) || !isRecord(patch.payload.lifecycle)) return []
+  return Array.isArray(patch.payload.lifecycle.sheetChanges)
+    ? patch.payload.lifecycle.sheetChanges as InitiativeLifecyclePatchPayload['sheetChanges']
+    : []
+}
+
 const responseFromContext = (
   result: LivePlayCommandResult,
   context: ResolvedInitiativeContext | null,
@@ -950,12 +1170,17 @@ const responseFromContext = (
     path: context.relativePath,
     map: context.map,
     initiative: initiativeLaneState(context.map),
+    ...(context.sheetUpdates?.length ? { sheetUpdates: [...context.sheetUpdates] } : {}),
   } : {}),
 })
 
-const isAcceptedResult = (result: LivePlayCommandResult): result is LivePlayCommandAccepted => (
-  result.ok === true && !('duplicate' in result)
-)
+const acceptedResult = (
+  result: LivePlayCommandResult,
+): LivePlayCommandAccepted | null => {
+  if (!result.ok) return null
+  if ('duplicate' in result) return result.original.ok ? result.original : null
+  return result
+}
 
 const currentContextForAcceptedResult = async (
   result: LivePlayCommandAccepted,
@@ -964,11 +1189,16 @@ const currentContextForAcceptedResult = async (
   try {
     const map = await dependencies.mapRepository.getBySlug(result.mapSlug)
     if (!map) return null
+    const sheetUpdates = lifecycleSheetChangesFromAccepted(result).flatMap((ref) => {
+      const sheet = dependencies.sheetRepository.getByRef(ref.kind, ref.slug)
+      return sheet ? [sheetUpdateFromPersisted(sheet, dependencies)] : []
+    })
     const mapPath = mapPathForDocument(map)
     return {
       mapPath,
       relativePath: dependencies.relativePath(mapPath),
       map,
+      ...(sheetUpdates.length ? { sheetUpdates } : {}),
     }
   } catch {
     return null
@@ -1006,6 +1236,7 @@ export const executeLivePlayInitiativeCommandUseCase = async (
           ...change.nextMap,
           revision,
         },
+        commitPlan: change.commitPlan,
       }
 
       return {
@@ -1019,28 +1250,114 @@ export const executeLivePlayInitiativeCommandUseCase = async (
     persist: () => {
       throw new Error('live-play initiative commands must persist through the accepted-result commit hook')
     },
-    commit: ({ actor, currentRevision, nextMap, result, saveOpResult }) => {
-      const persisted = toPersistedMap(nextMap.map, nextMap.map.folder ?? '', nextMap.map.updatedAt ?? deps.now(), { revision: result.revision })
-      const authoritativeMap = commitLivePlayMapUpdate({
-        database: deps.database,
-        mapRepository: deps.mapRepository,
-        mapSlug: result.mapSlug,
-        expectedRevision: currentRevision,
-        nextMap: persisted,
-        staleError: () => new LivePlayInitiativeCommandUseCaseError(409, `Map ${result.mapSlug} changed before the live-play initiative command could be persisted`),
-        missingMapError: () => new LivePlayInitiativeCommandUseCaseError(404, `Map ${result.mapSlug}.json not found after live-play initiative command`),
-        saveOpResult,
+    commit: ({
+      actor,
+      command,
+      currentRevision,
+      nextMap,
+      result,
+      recordRealtimeEvents,
+      saveOpResult,
+    }) => {
+      deps.database.withTransaction(() => {
+        const plan = nextMap.commitPlan ?? { sheetReads: [], sheetWrites: [] }
+        try {
+          if (plan.sheetReads.length > 0) {
+            deps.sheetRepository.assertRevisions(plan.sheetReads)
+          }
+        } catch (error) {
+          if (error instanceof SheetRevisionConflictError) {
+            rejectLivePlayCommand(
+              'conflict',
+              'A sheet consulted while advancing initiative changed before commit. Refresh and retry.',
+              { currentRevision },
+            )
+          }
+          throw error
+        }
+
+        const persisted = toPersistedMap(
+          nextMap.map,
+          nextMap.map.folder ?? '',
+          nextMap.map.updatedAt ?? deps.now(),
+          { revision: result.revision },
+        )
+        const mapResult = deps.mapRepository.applyLivePlayUpdate({
+          slug: result.mapSlug,
+          expectedRevision: currentRevision,
+          nextMap: persisted,
+        })
+        if (mapResult === 'stale') {
+          rejectLivePlayCommand(
+            'conflict',
+            `Map ${result.mapSlug} changed before the live-play initiative command could be persisted`,
+            { currentRevision },
+          )
+        }
+
+        for (const write of plan.sheetWrites) {
+          const nextSheet = {
+            ...toPersistableSheetPayload(write.nextSheet as unknown as Record<string, unknown>),
+            slug: write.slug,
+            updatedAt: nextMap.map.updatedAt ?? deps.now(),
+          }
+          const sheetResult = deps.sheetRepository.applyLivePlayUpdate({
+            kind: write.kind,
+            slug: write.slug,
+            expectedRevision: write.expectedRevision,
+            nextSheet,
+          })
+          if (sheetResult === 'stale') {
+            rejectLivePlayCommand(
+              'conflict',
+              `${write.kind} sheet ${write.slug} changed before initiative lifecycle effects could be persisted`,
+              { currentRevision },
+            )
+          }
+        }
+
+        const sheetUpdates = plan.sheetWrites.map((write) => {
+          const sheet = deps.sheetRepository.getByRef(write.kind, write.slug)
+          if (!sheet) {
+            throw new LivePlayInitiativeCommandUseCaseError(
+              404,
+              `${write.kind} sheet ${write.slug} not found after initiative lifecycle commit`,
+            )
+          }
+          if (normalizeRevision(sheet.revision) !== write.revision) {
+            throw new LivePlayInitiativeCommandUseCaseError(
+              409,
+              `${write.kind} sheet ${write.slug} committed revision ${sheet.revision} instead of ${write.revision}`,
+            )
+          }
+          return sheetUpdateFromPersisted(sheet, deps)
+        })
+        recordRealtimeEvents(livePlaySheetUpdateRealtimeAppendInputs({
+          command,
+          updates: sheetUpdates,
+          clientId: actor.clientId,
+        }))
+        saveOpResult()
+
+        const authoritativeMap = deps.mapRepository.getBySlug(result.mapSlug)
+        if (!authoritativeMap) {
+          throw new LivePlayInitiativeCommandUseCaseError(
+            404,
+            `Map ${result.mapSlug}.json not found after live-play initiative command`,
+          )
+        }
+        persistedContext = {
+          mapPath: nextMap.mapPath,
+          relativePath: nextMap.relativePath,
+          map: authoritativeMap,
+          ...(sheetUpdates.length ? { sheetUpdates } : {}),
+        }
       })
-      persistedContext = {
-        mapPath: nextMap.mapPath,
-        relativePath: nextMap.relativePath,
-        map: authoritativeMap,
-      }
-      void actor
     },
   })
 
+  const accepted = acceptedResult(result)
   const responseContext = persistedContext
-    ?? (isAcceptedResult(result) ? await currentContextForAcceptedResult(result, deps) : null)
+    ?? (accepted ? await currentContextForAcceptedResult(accepted, deps) : null)
   return responseFromContext(result, responseContext)
 }

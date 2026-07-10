@@ -23,6 +23,8 @@ import type { TrainerSheet } from '~/types/trainerSheet'
 export interface InitiativeSheetReadResult {
   readonly path?: string
   readonly sheet: Record<string, unknown>
+  /** Authoritative revision when the reader can provide one. */
+  readonly revision?: number
 }
 
 export type InitiativeSheetReader = (

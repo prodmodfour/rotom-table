@@ -819,7 +819,7 @@ Status: DONE
 
 ## MA-061 — Integrate lifecycle with initiative transitions
 
-Status: TODO
+Status: DONE
 
 **Depends on:** MA-060
 **Commit:** `feat(move-automation): process lifecycle on initiative advance`

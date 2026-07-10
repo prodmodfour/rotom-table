@@ -1,4 +1,8 @@
-import { isEncounterSideId } from '#shared/moveAutomation/encounterState'
+import {
+  isEncounterSideId,
+  parseEncounterState,
+  type EncounterState,
+} from '#shared/moveAutomation/encounterState'
 import {
   LIVE_PLAY_COMMAND_SCHEMA_VERSION,
   LIVE_PLAY_COMMAND_TYPES,
@@ -22,7 +26,11 @@ import type { MapMoveUsageEntry, MapTrackedMoveFrequency } from '~/types/moveUsa
 import type { TokenFacingDirection } from '~/types/tokenFacing'
 import { clearCombatLogMetadata } from './combatLog'
 import { mapMoveUsageSceneMatches } from './moveUsage'
-import { normalizeTemporaryHpAmount, setTemporaryHpForPlacement } from './mapTemporaryHitPoints'
+import {
+  normalizeMapTemporaryHitPointsState,
+  normalizeTemporaryHpAmount,
+  setTemporaryHpForPlacement,
+} from './mapTemporaryHitPoints'
 import { deepCloneJson, sameJsonValue } from './serialization'
 
 export type LivePlayPatchApplyFailureReason =
@@ -208,10 +216,57 @@ const applyPlacementPatch = (map: TabletopMap, payload: unknown): LivePlayPatche
   return failed('unknown-patch', 'map.placements patch command must be spawnToken, sendOutPokemon, deleteToken, or throwPokeball')
 }
 
+const initiativeLifecycleState = (
+  map: TabletopMap,
+  payload: UnknownRecord,
+): {
+  readonly encounterState: EncounterState
+  readonly temporaryHitPoints: TabletopMap['temporaryHitPoints']
+} | LivePlayPatchesRejected | null => {
+  if (payload.lifecycle === undefined) return null
+  if (!isRecord(payload.lifecycle)) {
+    return failed('invalid-patch', 'map.initiative lifecycle payload must be an object')
+  }
+  const lifecycle = payload.lifecycle
+  let encounterState: EncounterState
+  try {
+    encounterState = parseEncounterState(lifecycle.currentEncounterState)
+  } catch (error) {
+    return failed(
+      'invalid-patch',
+      `map.initiative lifecycle encounter state is invalid: ${error instanceof Error ? error.message : String(error)}`,
+    )
+  }
+  if (
+    lifecycle.currentTemporaryHitPoints !== null
+    && !isRecord(lifecycle.currentTemporaryHitPoints)
+  ) {
+    return failed(
+      'invalid-patch',
+      'map.initiative lifecycle temporary HP must be an object or null',
+    )
+  }
+  const temporaryHitPoints = lifecycle.currentTemporaryHitPoints === null
+    ? undefined
+    : normalizeMapTemporaryHitPointsState(
+        lifecycle.currentTemporaryHitPoints,
+        map.activeScene,
+      )
+  if (lifecycle.currentTemporaryHitPoints !== null && temporaryHitPoints === undefined) {
+    return failed(
+      'invalid-patch',
+      'map.initiative lifecycle temporary HP does not match the active scene',
+    )
+  }
+  return { encounterState, temporaryHitPoints }
+}
+
 const applyInitiativePatch = (map: TabletopMap, payload: unknown): LivePlayPatchesRejected | null => {
   if (!isRecord(payload) || !isRecord(payload.current)) {
     return failed('invalid-patch', 'map.initiative patches require a current lane payload')
   }
+  const lifecycle = initiativeLifecycleState(map, payload)
+  if (lifecycle && 'ok' in lifecycle) return lifecycle
   const current = payload.current
   const activeId = current.activeId === null || nonEmptyString(current.activeId) ? current.activeId : null
   const round = typeof current.round === 'number' && Number.isSafeInteger(current.round) && current.round > 0
@@ -236,6 +291,12 @@ const applyInitiativePatch = (map: TabletopMap, payload: unknown): LivePlayPatch
       ...placement,
       initiative: initiativeByToken.has(placement.id) ? initiativeByToken.get(placement.id) ?? null : placement.initiative,
     })))
+  }
+
+  if (lifecycle) {
+    map.encounterState = lifecycle.encounterState
+    if (lifecycle.temporaryHitPoints === undefined) delete map.temporaryHitPoints
+    else map.temporaryHitPoints = deepCloneJson(lifecycle.temporaryHitPoints)
   }
 
   appendMetadataEntry(map, 'initiativeLog', payload.logEntry)

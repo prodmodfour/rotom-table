@@ -2,6 +2,8 @@ import { computed, ref } from 'vue'
 import { describe, expect, it, vi } from 'vitest'
 import { useInitiativeTracker } from '~/composables/map-editor/useInitiativeTracker'
 import { MAP_INTERACTION_MODES } from '#shared/mapInteractionMode'
+import { parseEncounterEffect } from '#shared/moveAutomation/encounterEffects'
+import { createEmptyEncounterState } from '#shared/moveAutomation/encounterState'
 import { applyCombatStageToStat } from '~/utils/combatStageStats'
 import type { CharacterSheet } from '~/types/characterSheet'
 import type { CombatStageMap } from '~/types/combatStages'
@@ -111,6 +113,49 @@ describe('useInitiativeTracker', () => {
       initiativeScore: 20,
     })
     expect(tracker.sortedInitiativeRows.value.map((row) => row.id)).toEqual(['normal', 'paralyzed'])
+  })
+
+  it('orders calculated initiative by encounter modifiers while manual order remains authoritative', () => {
+    const { map, tracker } = initiativeOrderTrackerFixture([
+      { id: 'a', initiative: 30 },
+      { id: 'b', initiative: 20 },
+    ])
+    map.value!.encounterState = {
+      ...createEmptyEncounterState(),
+      effects: [parseEncounterEffect({
+        id: 'effect.initiative.b',
+        kind: 'numeric-modifier',
+        source: {
+          operationId: 'operation.initiative.b',
+          moveId: 'move.initiative.b',
+          placementId: 'b',
+        },
+        affected: { placementIds: ['b'], sideIds: [], cells: [] },
+        createdRound: 1,
+        createdTurn: 0,
+        duration: { kind: 'permanent', remaining: null },
+        stacks: 1,
+        charges: null,
+        stackPolicy: { kind: 'replace', maxStacks: null },
+        chargePolicy: { kind: 'none', amount: null },
+        tags: ['initiative'],
+        payload: {
+          attribute: 'initiative',
+          operation: 'add',
+          value: 20,
+          rounding: 'none',
+        },
+        dispel: { policy: 'none', tags: [] },
+        suppression: { sources: [] },
+      })],
+    }
+
+    expect(tracker.initiativeRows.value.find(row => row.id === 'b')?.initiativeScore).toBe(40)
+    expect(tracker.sortedInitiativeRows.value.map(row => row.id)).toEqual(['b', 'a'])
+
+    tracker.setManualInitiativeOrder(['a', 'b'])
+
+    expect(tracker.sortedInitiativeRows.value.map(row => row.id)).toEqual(['a', 'b'])
   })
 
   it('uses a deterministic token id tie-breaker when display names and scores match', () => {

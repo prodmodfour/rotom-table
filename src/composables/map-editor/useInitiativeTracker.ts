@@ -21,6 +21,7 @@ import {
 import { sheetItemsInitiativeBonus } from '~/utils/sheetHeldItemEffects'
 import { pokemonHeldItemNames, trainerEquippedItemNames } from '~/utils/sheetItemNames'
 import { pokemonTrainingFeatureInitiativeBonus } from '~/utils/sheets/pokemonTrainingFeatures'
+import { encounterModifiedInitiativeScore } from '~/utils/encounterInitiative'
 import {
   getHpBarDisplayMetrics,
   hpBarPercentFromRatio,
@@ -201,11 +202,23 @@ export const useInitiativeTracker = ({
     return sheet ? { sheet: sheet as unknown as Record<string, unknown> } : null
   }
 
+  const calculatedInitiativeScore = (
+    placement: TabletopMap['placements'][number],
+    score: number,
+  ): number => encounterModifiedInitiativeScore({
+    map: map.value ?? {},
+    placement,
+    calculatedScore: score,
+  })
+
   const initiativeOrderEntryByPlacementId = computed(() => new Map(
-    (map.value?.placements ?? []).map((placement) => [
-      placement.id,
-      initiativeOrderEntryForPlacement(placement, readInitiativeSheet),
-    ] as const),
+    (map.value?.placements ?? []).map((placement) => {
+      const entry = initiativeOrderEntryForPlacement(placement, readInitiativeSheet)
+      return [placement.id, {
+        ...entry,
+        initiativeScore: calculatedInitiativeScore(placement, entry.initiativeScore),
+      }] as const
+    }),
   ))
 
   const fallbackInitiativeRowForPlacement = (
@@ -258,6 +271,14 @@ export const useInitiativeTracker = ({
       const initiativeTrainingBonus = initiativeTrainingBonusForPlacement(pokemon.sheetKind, pokemon.sheetSlug)
       const baseInitiative = speed + initiativeItemBonus + initiativeTrainingBonus
       const initiative = normalizeInitiativeOrderValue(placement?.initiative)
+      const conditionAdjustedScore = conditionAdjustedInitiative(
+        initiative ?? baseInitiative,
+        pokemon.conditions,
+        { abilities: pokemon.abilityNames },
+      )
+      const initiativeScore = placement
+        ? calculatedInitiativeScore(placement, conditionAdjustedScore)
+        : conditionAdjustedScore
       return {
         id: pokemon.id,
         name: pokemon.species,
@@ -277,11 +298,7 @@ export const useInitiativeTracker = ({
         initiativeItemBonus,
         initiativeTrainingBonus,
         ...(pokemon.accentColor ? { accentColor: pokemon.accentColor } : {}),
-        initiativeScore: conditionAdjustedInitiative(
-          initiative ?? baseInitiative,
-          pokemon.conditions,
-          { abilities: pokemon.abilityNames },
-        ),
+        initiativeScore,
       }
     })
 

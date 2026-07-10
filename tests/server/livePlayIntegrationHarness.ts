@@ -36,6 +36,7 @@ import { createSqliteLivePlayOpRepository, type LivePlayOpRepository } from '~~/
 import { createSqliteMapRepository, type MapRepository } from '~~/server/storage/mapRepository'
 import { createSqliteRealtimeEventRepository } from '~~/server/storage/realtimeEventRepository'
 import { createSqliteSheetRepository, type PersistedSheet, type SheetRepository } from '~~/server/storage/sheetRepository'
+import type { EncounterLifecycleTriggerHandler } from '~~/server/domain/moveAutomation/reduceLifecycle'
 import { executeLivePlayInitiativeCommandUseCase } from '~~/server/useCases/applyLivePlayInitiativeCommand'
 import { executeLivePlayMapEffectsCommandUseCase } from '~~/server/useCases/applyLivePlayMapEffectsCommand'
 import { executeLivePlaySheetCommandUseCase } from '~~/server/useCases/applyLivePlaySheetCommand'
@@ -130,6 +131,7 @@ const defaultPokemonSheet = (
 export interface CreateLivePlayIntegrationHarnessOptions {
   readonly map?: TabletopMap
   readonly sheets?: readonly PersistedSheet[]
+  readonly lifecycleHandlers?: readonly EncounterLifecycleTriggerHandler[]
 }
 
 export interface LivePlayCommandDispatchOptions<TCommand> {
@@ -147,12 +149,14 @@ export class LivePlayIntegrationHarness {
   readonly publishedEvents: RealtimeEvent[] = []
 
   private readonly clients = new Map<string, LivePlayRealtimeClient>()
+  private readonly lifecycleHandlers: readonly EncounterLifecycleTriggerHandler[]
   private readonly commandExecutor: ReturnType<typeof createAuthoritativeLivePlayCommandExecutor>
   private nowValue = 1_700_000_100_000
   private disposed = false
 
   private constructor(options: CreateLivePlayIntegrationHarnessOptions = {}) {
     this.tempRoot = mkdtempSync(join(tmpdir(), 'rotom-live-play-integration-'))
+    this.lifecycleHandlers = options.lifecycleHandlers ?? []
     this.database = openRotomDatabase({ path: join(this.tempRoot, 'campaign.sqlite') })
     this.mapRepository = createSqliteMapRepository<TabletopMap>(this.database)
     this.sheetRepository = createSqliteSheetRepository<Record<string, unknown>>(this.database)
@@ -633,6 +637,7 @@ export class LivePlayIntegrationHarness {
       database: this.database,
       relativePath: (path: string) => path,
       now: () => this.nextTimestamp(),
+      lifecycleHandlers: this.lifecycleHandlers,
     }
   }
 }

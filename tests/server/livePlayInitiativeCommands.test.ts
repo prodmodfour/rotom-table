@@ -1,4 +1,18 @@
 import { describe, expect, it, vi } from 'vitest'
+import type { EncounterEventKind } from '#shared/moveAutomation/events'
+import {
+  createEmptyEncounterState,
+  type EncounterState,
+} from '#shared/moveAutomation/encounterState'
+import {
+  parseEncounterEffect,
+  type EncounterEffect,
+  type EncounterEffectDuration,
+} from '#shared/moveAutomation/encounterEffects'
+import type {
+  MoveDirectHpEffectOperation,
+  MoveHealEffectOperation,
+} from '#shared/moveAutomation/effects'
 import {
   LIVE_PLAY_COMMAND_SCHEMA_VERSION,
   LIVE_PLAY_COMMAND_TYPES,
@@ -16,6 +30,11 @@ import { acceptedRealtimeTestHooks } from './livePlayAcceptedRealtimeTestUtils'
 import { createAuthoritativeLivePlayCommandExecutor } from '~~/server/livePlay/commandExecutor'
 import { createInProcessMapWriteQueue } from '~~/server/livePlay/mapWriteQueue'
 import { createInMemoryLivePlayOpStore, type LivePlayOpStore } from '~~/server/livePlay/opStore'
+import type { EncounterLifecycleTriggerHandler } from '~~/server/domain/moveAutomation/reduceLifecycle'
+import {
+  SheetRevisionConflictError,
+  type PersistedSheet,
+} from '~~/server/storage/sheetRepository'
 import { executeLivePlayInitiativeCommandUseCase } from '~~/server/useCases/applyLivePlayInitiativeCommand'
 import { MAPS_ROOT } from '~~/server/utils/mapPaths'
 import { applyLivePlayPatchesToMap } from '~/utils/livePlayPatches'
@@ -142,11 +161,138 @@ const activeOrderEffect = (
   ...overrides,
 })
 
+const initiativeEncounterEffect = (input: {
+  readonly id: string
+  readonly sourcePlacementId: string
+  readonly affectedPlacementIds: readonly string[]
+  readonly duration: EncounterEffectDuration
+  readonly initiativeModifier?: number
+}): EncounterEffect => parseEncounterEffect({
+  id: input.id,
+  kind: 'numeric-modifier',
+  source: {
+    operationId: `operation.${input.id}`,
+    moveId: `move.${input.id}`,
+    placementId: input.sourcePlacementId,
+  },
+  affected: {
+    placementIds: [...input.affectedPlacementIds],
+    sideIds: [],
+    cells: [],
+  },
+  createdRound: 1,
+  createdTurn: 0,
+  duration: input.duration,
+  stacks: 1,
+  charges: null,
+  stackPolicy: { kind: 'replace', maxStacks: null },
+  chargePolicy: { kind: 'none', amount: null },
+  tags: ['initiative-test'],
+  payload: {
+    attribute: input.initiativeModifier === undefined ? 'damage' : 'initiative',
+    operation: 'add',
+    value: input.initiativeModifier ?? 1,
+    rounding: 'none',
+  },
+  dispel: { policy: 'none', tags: [] },
+  suppression: { sources: [] },
+})
+
+const encounterStateWithEffects = (
+  effects: readonly EncounterEffect[],
+): EncounterState => ({
+  ...createEmptyEncounterState(),
+  effects,
+})
+
+const lifecyclePokemonSheet = (
+  slug: string,
+  species: string,
+  currentHp: number,
+): PersistedSheet => ({
+  kind: 'pokemon',
+  slug,
+  revision: 3,
+  updatedAt: 1_000,
+  sheet: {
+    slug,
+    nickname: species,
+    species,
+    level: 20,
+    revision: 3,
+    updatedAt: 1_000,
+    movelist: [],
+    combat: { currentHp, injuries: 0, conditions: [] },
+  },
+})
+
+const lifecycleCoreHandler = (input: {
+  readonly damageEffectId: string
+  readonly healEffectId: string
+}): EncounterLifecycleTriggerHandler => ({
+  id: 'handler.initiative-core-test',
+  resolve: ({ event }) => {
+    if (event.kind !== 'turn-end' || event.placementId !== 'actor-token') return []
+    const damage: MoveDirectHpEffectOperation = {
+      id: 'operation.lifecycle.damage',
+      kind: 'direct-hp',
+      source: { kind: 'encounter-effect', id: input.damageEffectId },
+      recipients: { kind: 'selected-targets' },
+      phase: 'cleanup',
+      reasonCode: 'lifecycle.test-damage',
+      payload: {
+        mode: 'lose',
+        pool: 'hit-points',
+        amount: 10,
+        minimumRemaining: null,
+        applyTypeImmunity: false,
+      },
+    }
+    const heal: MoveHealEffectOperation = {
+      id: 'operation.lifecycle.heal',
+      kind: 'heal',
+      source: { kind: 'encounter-effect', id: input.healEffectId },
+      recipients: { kind: 'selected-targets' },
+      phase: 'cleanup',
+      reasonCode: 'lifecycle.test-heal',
+      payload: {
+        mode: 'fixed',
+        pool: 'hit-points',
+        amount: 5,
+        rounding: 'floor',
+      },
+    }
+    return [
+      {
+        effectId: input.damageEffectId,
+        reasonCode: 'lifecycle.test-damage-trigger',
+        operations: [damage],
+        emittedEvents: [],
+      },
+      {
+        effectId: input.healEffectId,
+        reasonCode: 'lifecycle.test-heal-trigger',
+        operations: [heal],
+        emittedEvents: [],
+      },
+    ]
+  },
+})
+
 const createHarness = (
   initialMap: TabletopMap = baseMap(),
-  options: { readonly opStore?: LivePlayOpStore; readonly transactional?: boolean } = {},
+  options: {
+    readonly opStore?: LivePlayOpStore
+    readonly transactional?: boolean
+    readonly sheets?: readonly PersistedSheet[]
+    readonly lifecycleHandlers?: readonly EncounterLifecycleTriggerHandler[]
+  } = {},
 ) => {
   let storedMap = initialMap
+  let storedSheets = new Map((options.sheets ?? []).map(sheet => [
+    `${sheet.kind}:${sheet.slug}`,
+    cloneJson(sheet),
+  ]))
   const writes: TabletopMap[] = []
   const published: unknown[] = []
   const opStore = options.opStore ?? createInMemoryLivePlayOpStore()
@@ -167,13 +313,72 @@ const createHarness = (
       return 'applied' as const
     }),
   }
+  const sheetRepository = {
+    get: vi.fn((kind: 'pokemon' | 'trainer', slug: string) => {
+      const stored = storedSheets.get(`${kind}:${slug}`)
+      return stored
+        ? {
+            kind: stored.kind,
+            slug: stored.slug,
+            document: cloneJson(stored.sheet),
+            revision: stored.revision,
+            updatedAt: stored.updatedAt,
+          }
+        : null
+    }),
+    getByRef: vi.fn((kind: 'pokemon' | 'trainer', slug: string) => {
+      const stored = storedSheets.get(`${kind}:${slug}`)
+      return stored ? cloneJson(stored) : null
+    }),
+    assertRevisions: vi.fn((reads: readonly { kind: 'pokemon' | 'trainer'; slug: string; revision: number }[]) => {
+      const mismatches = reads.flatMap((read) => {
+        const current = storedSheets.get(`${read.kind}:${read.slug}`)
+        return current?.revision === read.revision ? [] : [{
+          kind: read.kind,
+          slug: read.slug,
+          expectedRevision: read.revision,
+          currentRevision: current?.revision ?? null,
+        }]
+      })
+      if (mismatches.length > 0) throw new SheetRevisionConflictError(mismatches)
+    }),
+    applyLivePlayUpdate: vi.fn((input: {
+      kind: 'pokemon' | 'trainer'
+      slug: string
+      expectedRevision: number
+      nextSheet: Record<string, unknown>
+    }) => {
+      const key = `${input.kind}:${input.slug}`
+      const current = storedSheets.get(key)
+      if (!current || current.revision !== input.expectedRevision) return 'stale' as const
+      const revision = input.expectedRevision + 1
+      const updatedAt = Number(input.nextSheet.updatedAt)
+      storedSheets.set(key, {
+        kind: input.kind,
+        slug: input.slug,
+        revision,
+        updatedAt,
+        sheet: {
+          ...cloneJson(input.nextSheet),
+          slug: input.slug,
+          revision,
+          updatedAt,
+        },
+      })
+      return 'applied' as const
+    }),
+  }
   const database = {
     withTransaction: <T>(work: () => T) => {
       const before = storedMap
+      const sheetsBefore = new Map([...storedSheets].map(([key, sheet]) => [key, cloneJson(sheet)]))
       try {
         return work()
       } catch (error) {
-        if (options.transactional) storedMap = before
+        if (options.transactional) {
+          storedMap = before
+          storedSheets = sheetsBefore
+        }
         throw error
       }
     },
@@ -182,9 +387,11 @@ const createHarness = (
     commandExecutor: executor,
     mapRepository,
     database,
+    sheetRepository,
     readSheet: vi.fn((_kind: 'pokemon' | 'trainer', _slug: string): { path: string; sheet: Record<string, unknown> } | null => null),
     relativePath: vi.fn((filePath: string) => filePath.replace(`${MAPS_ROOT}/`, 'data/maps/')),
     now: vi.fn(() => 2_000),
+    lifecycleHandlers: options.lifecycleHandlers ?? [],
   }
 
   return {
@@ -194,6 +401,10 @@ const createHarness = (
     opStore,
     get storedMap() {
       return storedMap
+    },
+    sheet(kind: 'pokemon' | 'trainer', slug: string) {
+      const stored = storedSheets.get(`${kind}:${slug}`)
+      return stored ? cloneJson(stored) : null
     },
   }
 }
@@ -703,6 +914,249 @@ describe('live-play initiative commands', () => {
 
     expect(response.result).toMatchObject({ ok: true, previousRevision: 4, revision: 5 })
     expect(harness.storedMap.initiative).toEqual({ activeId: 'fast-token', round: 2 })
+  })
+
+  it('emits ordered turn and round lifecycle boundaries and expires every matching effect', async () => {
+    const effects = [
+      initiativeEncounterEffect({
+        id: 'effect.turn-end',
+        sourcePlacementId: 'slow-token',
+        affectedPlacementIds: ['slow-token'],
+        duration: { kind: 'turns', subject: 'source', boundary: 'end', remaining: 1 },
+      }),
+      initiativeEncounterEffect({
+        id: 'effect.round-end',
+        sourcePlacementId: 'fast-token',
+        affectedPlacementIds: ['fast-token'],
+        duration: { kind: 'rounds', boundary: 'end', remaining: 1 },
+      }),
+      initiativeEncounterEffect({
+        id: 'effect.round-start',
+        sourcePlacementId: 'fast-token',
+        affectedPlacementIds: ['fast-token'],
+        duration: { kind: 'rounds', boundary: 'start', remaining: 1 },
+      }),
+      initiativeEncounterEffect({
+        id: 'effect.turn-start',
+        sourcePlacementId: 'fast-token',
+        affectedPlacementIds: ['fast-token'],
+        duration: { kind: 'turns', subject: 'source', boundary: 'start', remaining: 1 },
+      }),
+    ]
+    const initialMap = baseMap({
+      initiative: { activeId: 'slow-token', round: 1 },
+      encounterState: encounterStateWithEffects(effects),
+    })
+    const harness = createHarness(cloneJson(initialMap))
+
+    const response = await execute(harness, nextInitiativeCommand({
+      opId: 'op_lifebounds1',
+      payload: { orderIds: ['fast-token', 'slow-token'], activeId: 'slow-token', round: 1 },
+    }))
+
+    expect(response.result).toMatchObject({ ok: true, previousRevision: 4, revision: 5 })
+    expect(harness.storedMap.initiative).toEqual({ activeId: 'fast-token', round: 2 })
+    expect(harness.storedMap.encounterState?.effects).toEqual([])
+    const patches = response.result.ok && !('duplicate' in response.result)
+      ? response.result.patches
+      : []
+    const initiativePatch = patches.find(patch => patch.type === LIVE_PLAY_PATCH_TYPES.MAP_INITIATIVE)
+    expect((initiativePatch?.payload as { lifecycle?: { events?: Array<{ kind: EncounterEventKind }> } }).lifecycle?.events?.map(event => event.kind)).toEqual([
+      'turn-end',
+      'round-end',
+      'round-start',
+      'turn-start',
+    ])
+    expect((initiativePatch?.payload as { lifecycle?: { effectTransitions?: unknown[] } }).lifecycle?.effectTransitions).toHaveLength(4)
+
+    const remote = cloneJson(initialMap)
+    expect(applyLivePlayPatchesToMap({
+      map: remote,
+      mapSlug: 'arena',
+      previousRevision: 4,
+      revision: 5,
+      patches,
+    })).toMatchObject({ ok: true, applied: true, revision: 5 })
+    expect(remote.encounterState).toEqual(harness.storedMap.encounterState)
+  })
+
+  it('applies due lifecycle damage, healing, expiry, sheets, and the op result atomically once', async () => {
+    const damageEffect = initiativeEncounterEffect({
+      id: 'effect.due-damage',
+      sourcePlacementId: 'actor-token',
+      affectedPlacementIds: ['target-token'],
+      duration: { kind: 'turns', subject: 'source', boundary: 'end', remaining: 1 },
+    })
+    const healEffect = initiativeEncounterEffect({
+      id: 'effect.due-heal',
+      sourcePlacementId: 'actor-token',
+      affectedPlacementIds: ['actor-token'],
+      duration: { kind: 'turns', subject: 'source', boundary: 'end', remaining: 1 },
+    })
+    const initialMap = baseMap({
+      placements: [
+        { id: 'actor-token', sheetKind: 'pokemon', sheetSlug: 'actor', position: { x: 1, y: 0, z: 1 }, initiative: 20 },
+        { id: 'target-token', sheetKind: 'pokemon', sheetSlug: 'target', position: { x: 2, y: 0, z: 1 }, initiative: 10 },
+      ],
+      initiative: { activeId: 'actor-token', round: 1 },
+      encounterState: encounterStateWithEffects([damageEffect, healEffect]),
+    })
+    const handler = lifecycleCoreHandler({
+      damageEffectId: damageEffect.id,
+      healEffectId: healEffect.id,
+    })
+    const harness = createHarness(cloneJson(initialMap), {
+      transactional: true,
+      lifecycleHandlers: [handler],
+      sheets: [
+        lifecyclePokemonSheet('actor', 'Pikachu', 20),
+        lifecyclePokemonSheet('target', 'Eevee', 40),
+      ],
+    })
+    const command = nextInitiativeCommand({
+      opId: 'op_lifecore01',
+      payload: {
+        orderIds: ['actor-token', 'target-token'],
+        activeId: 'actor-token',
+        round: 1,
+      },
+    })
+
+    const first = await execute(harness, command)
+    const duplicate = await execute(harness, command)
+
+    expect(first.result).toMatchObject({ ok: true, previousRevision: 4, revision: 5 })
+    expect(duplicate.result).toEqual(first.result)
+    expect(harness.writes).toHaveLength(1)
+    expect(harness.storedMap.initiative).toEqual({ activeId: 'target-token', round: 1 })
+    expect(harness.storedMap.encounterState?.effects).toEqual([])
+    expect((harness.sheet('pokemon', 'actor')?.sheet.combat as { currentHp: number }).currentHp).toBe(25)
+    expect((harness.sheet('pokemon', 'target')?.sheet.combat as { currentHp: number }).currentHp).toBe(30)
+    expect(harness.sheet('pokemon', 'actor')?.revision).toBe(4)
+    expect(harness.sheet('pokemon', 'target')?.revision).toBe(4)
+    expect(first.sheetUpdates?.map(update => `${update.kind}:${update.slug}`)).toEqual([
+      'pokemon:target',
+      'pokemon:actor',
+    ])
+
+    const patches = first.result.ok && !('duplicate' in first.result)
+      ? first.result.patches
+      : []
+    const initiativePatch = patches.find(patch => patch.type === LIVE_PLAY_PATCH_TYPES.MAP_INITIATIVE)
+    expect(initiativePatch?.payload).toMatchObject({
+      lifecycle: {
+        operationIds: ['operation.lifecycle.damage', 'operation.lifecycle.heal'],
+        sheetChanges: [
+          expect.objectContaining({ slug: 'target', expectedRevision: 3, revision: 4 }),
+          expect.objectContaining({ slug: 'actor', expectedRevision: 3, revision: 4 }),
+        ],
+      },
+    })
+  })
+
+  it('rolls back due lifecycle map and sheet work when the terminal op result cannot persist', async () => {
+    const damageEffect = initiativeEncounterEffect({
+      id: 'effect.rollback-damage',
+      sourcePlacementId: 'actor-token',
+      affectedPlacementIds: ['target-token'],
+      duration: { kind: 'turns', subject: 'source', boundary: 'end', remaining: 1 },
+    })
+    const healEffect = initiativeEncounterEffect({
+      id: 'effect.rollback-heal',
+      sourcePlacementId: 'actor-token',
+      affectedPlacementIds: ['actor-token'],
+      duration: { kind: 'turns', subject: 'source', boundary: 'end', remaining: 1 },
+    })
+    const initialMap = baseMap({
+      placements: [
+        { id: 'actor-token', sheetKind: 'pokemon', sheetSlug: 'actor', position: { x: 1, y: 0, z: 1 }, initiative: 20 },
+        { id: 'target-token', sheetKind: 'pokemon', sheetSlug: 'target', position: { x: 2, y: 0, z: 1 }, initiative: 10 },
+      ],
+      initiative: { activeId: 'actor-token', round: 1 },
+      encounterState: encounterStateWithEffects([damageEffect, healEffect]),
+    })
+    const failingOpStore: LivePlayOpStore = {
+      getOpRecord: vi.fn(() => null),
+      getOpResult: vi.fn(() => null),
+      saveOpResult: vi.fn(() => {
+        throw new Error('op history unavailable')
+      }),
+    }
+    const harness = createHarness(cloneJson(initialMap), {
+      opStore: failingOpStore,
+      transactional: true,
+      lifecycleHandlers: [lifecycleCoreHandler({
+        damageEffectId: damageEffect.id,
+        healEffectId: healEffect.id,
+      })],
+      sheets: [
+        lifecyclePokemonSheet('actor', 'Pikachu', 20),
+        lifecyclePokemonSheet('target', 'Eevee', 40),
+      ],
+    })
+
+    const response = await execute(harness, nextInitiativeCommand({
+      opId: 'op_liferoll01',
+      payload: {
+        orderIds: ['actor-token', 'target-token'],
+        activeId: 'actor-token',
+        round: 1,
+      },
+    }))
+
+    expect(response.result).toMatchObject({
+      ok: false,
+      reason: 'persistence-failed',
+      currentRevision: 4,
+    })
+    expect(harness.storedMap).toEqual(initialMap)
+    expect((harness.sheet('pokemon', 'actor')?.sheet.combat as { currentHp: number }).currentHp).toBe(20)
+    expect((harness.sheet('pokemon', 'target')?.sheet.combat as { currentHp: number }).currentHp).toBe(40)
+    expect(harness.published).toEqual([])
+  })
+
+  it('queries encounter initiative modifiers only for calculated order and preserves manual order', async () => {
+    const modifier = initiativeEncounterEffect({
+      id: 'effect.slow-first',
+      sourcePlacementId: 'slow-token',
+      affectedPlacementIds: ['slow-token'],
+      duration: { kind: 'permanent', remaining: null },
+      initiativeModifier: 20,
+    })
+    const calculatedHarness = createHarness(baseMap({
+      initiative: { activeId: 'fast-token', round: 1 },
+      encounterState: encounterStateWithEffects([modifier]),
+    }))
+
+    const calculated = await execute(calculatedHarness, nextInitiativeCommand({
+      opId: 'op_calcmodify1',
+      payload: {
+        orderIds: ['slow-token', 'fast-token'],
+        activeId: 'fast-token',
+        round: 1,
+      },
+    }))
+
+    expect(calculated.result).toMatchObject({ ok: true })
+    expect(calculatedHarness.storedMap.initiative).toEqual({ activeId: 'slow-token', round: 2 })
+
+    const manualOrderIds = ['fast-token', 'slow-token']
+    const manualHarness = createHarness(baseMap({
+      initiative: { activeId: 'fast-token', round: 1, manualOrderIds },
+      encounterState: encounterStateWithEffects([modifier]),
+    }))
+    const manual = await execute(manualHarness, nextInitiativeCommand({
+      opId: 'op_manualmod1',
+      payload: { orderIds: manualOrderIds, activeId: 'fast-token', round: 1 },
+    }))
+
+    expect(manual.result).toMatchObject({ ok: true })
+    expect(manualHarness.storedMap.initiative).toEqual({
+      activeId: 'slow-token',
+      round: 1,
+      manualOrderIds,
+    })
+    expect(manualHarness.deps.readSheet).not.toHaveBeenCalled()
   })
 
   it('uses condition-adjusted Speed-derived effective order for live-play NEXT_INITIATIVE', async () => {

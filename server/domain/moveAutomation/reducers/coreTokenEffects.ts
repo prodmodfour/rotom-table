@@ -58,7 +58,7 @@ export { MoveCoreTokenEffectReductionError }
 export type { MoveCoreTokenEffectReductionErrorCode } from './coreTokenEffectError'
 export { applyMoveCoreTokenEffectResultsToTrace } from './coreTokenTrace'
 
-export interface ReduceMoveCoreTokenEffectsInput {
+export interface ReduceMoveCoreTokenOperationStateInput {
   readonly context: AuthoritativeMoveRulesContext
   /** Exact server-emitted operations, retained in canonical phase/operation order. */
   readonly operations: readonly MoveResolvedCoreTokenEffectOperation[]
@@ -66,13 +66,28 @@ export interface ReduceMoveCoreTokenEffectsInput {
   /** Required only when a `damage` operation is present. */
   readonly damage?: MoveCoreTokenDamageQuery
   readonly immunities: MoveCoreTokenEffectImmunityQueries
+  /**
+   * Optional server-owned recipient query for non-MoveSpec orchestration such
+   * as lifecycle facts. Emitted IDs must still match this canonical result.
+   */
+  readonly recipientIdsForOperation?: (
+    operation: MoveResolvedCoreTokenEffectOperation['operation'],
+  ) => readonly string[]
+}
+
+export interface ReduceMoveCoreTokenEffectsInput
+  extends ReduceMoveCoreTokenOperationStateInput {
   readonly trace: MoveResolutionAuditTrace
 }
 
-export interface MoveCoreTokenEffectReduction {
+export interface MoveCoreTokenOperationStateReduction {
   readonly stateChanges: MoveStateChangePlan
   readonly operationResults: readonly MoveCoreTokenEffectOperationResult[]
   readonly sheetReads: readonly AuthoritativeMoveSheetRead[]
+}
+
+export interface MoveCoreTokenEffectReduction
+  extends MoveCoreTokenOperationStateReduction {
   readonly trace: MoveResolutionAuditTrace
 }
 
@@ -158,9 +173,9 @@ const reduceRecipient = (options: {
  * Purely reduce authoritative core-token operations. All mutation is confined
  * to local accumulators; map/sheets/context and emitted operations stay intact.
  */
-export const reduceMoveCoreTokenEffects = (
-  input: ReduceMoveCoreTokenEffectsInput,
-): MoveCoreTokenEffectReduction => {
+export const reduceMoveCoreTokenOperationState = (
+  input: ReduceMoveCoreTokenOperationStateInput,
+): MoveCoreTokenOperationStateReduction => {
   const dynamic = resolveMoveCoreTokenDynamicRecipients(
     input.context,
     input.dynamicRecipients,
@@ -192,7 +207,13 @@ export const reduceMoveCoreTokenEffects = (
     }
     operationIds.add(operation.id)
 
-    const expectedIds = expectedMoveCoreTokenRecipientIds(input.context, operation, dynamic)
+    const expectedIds = input.recipientIdsForOperation
+      ? canonicalMoveCoreTokenPlacementIds(
+          input.context,
+          input.recipientIdsForOperation(operation),
+          `operation ${operation.id} authoritative recipients`,
+        )
+      : expectedMoveCoreTokenRecipientIds(input.context, operation, dynamic)
     const emittedIds = canonicalMoveCoreTokenPlacementIds(
       input.context,
       emission.recipientIds,
@@ -259,12 +280,29 @@ export const reduceMoveCoreTokenEffects = (
     conditionUpdates: conditionAccumulator.toUpdates(),
     stageUpdates: stageAccumulator.toUpdates(),
   })
-  const trace = applyMoveCoreTokenEffectResultsToTrace(input.trace, frozenResults)
-
   return Object.freeze({
     stateChanges,
     operationResults: frozenResults,
     sheetReads: deepFreeze(deepCloneJson(sheetReads)),
-    trace,
+  })
+}
+
+/** Reduce MoveSpec core operations and project their outcomes into its audit trace. */
+export const reduceMoveCoreTokenEffects = (
+  input: ReduceMoveCoreTokenEffectsInput,
+): MoveCoreTokenEffectReduction => {
+  const reduction = reduceMoveCoreTokenOperationState({
+    context: input.context,
+    operations: input.operations,
+    dynamicRecipients: input.dynamicRecipients,
+    ...(input.damage === undefined ? {} : { damage: input.damage }),
+    immunities: input.immunities,
+    ...(input.recipientIdsForOperation === undefined
+      ? {}
+      : { recipientIdsForOperation: input.recipientIdsForOperation }),
+  })
+  return Object.freeze({
+    ...reduction,
+    trace: applyMoveCoreTokenEffectResultsToTrace(input.trace, reduction.operationResults),
   })
 }

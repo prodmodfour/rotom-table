@@ -14,6 +14,7 @@ import type {
   MapVoxelV2,
   MapWeatherKind,
   SheetPlacement,
+  TabletopMap,
 } from '~/types/map'
 import type { GroupInventoryDocument } from '~/types/groupInventory'
 import type { ShopEntrySectionKey, ShopStockValue, ShopTableDocument } from '~/types/shop'
@@ -23,6 +24,8 @@ import type { AttackOfOpportunityStateUpdatePayload } from './attackOfOpportunit
 import type { StartTurnModalStateUpdatePayload } from './startTurnModalState'
 import type { ResolveMoveIntent } from './livePlayMoveResolution'
 import type { LivePlayMoveStatePatchPayload } from './livePlayMoveState'
+import type { EncounterEventKind } from './moveAutomation/events'
+import type { EncounterState } from './moveAutomation/encounterState'
 
 type Brand<TValue, TName extends string> = TValue & { readonly __brand: TName }
 
@@ -899,6 +902,40 @@ export interface InitiativePatchLaneState {
   readonly activeId: string | null
   readonly round: number
   readonly entries: readonly InitiativePatchEntryState[]
+  readonly manualOrderIds?: readonly string[]
+}
+
+export interface InitiativeLifecycleEventSummary {
+  readonly eventId: string
+  readonly kind: EncounterEventKind
+  readonly reasonCode: string
+}
+
+export interface InitiativeLifecycleEffectTransitionSummary {
+  readonly eventId: string
+  readonly effectId: string
+  readonly kind: string
+  readonly reasonCode: string
+}
+
+export interface InitiativeLifecycleSheetChangeRef {
+  readonly kind: SheetKind
+  readonly slug: string
+  readonly expectedRevision: number
+  readonly revision: number
+  readonly placementIds: readonly string[]
+  readonly changedFields: readonly ('hp' | 'combatStages' | 'conditions')[]
+}
+
+export interface InitiativeLifecyclePatchPayload {
+  readonly events: readonly InitiativeLifecycleEventSummary[]
+  readonly effectTransitions: readonly InitiativeLifecycleEffectTransitionSummary[]
+  readonly operationIds: readonly string[]
+  readonly previousEncounterState: EncounterState
+  readonly currentEncounterState: EncounterState
+  readonly previousTemporaryHitPoints: TabletopMap['temporaryHitPoints'] | null
+  readonly currentTemporaryHitPoints: TabletopMap['temporaryHitPoints'] | null
+  readonly sheetChanges: readonly InitiativeLifecycleSheetChangeRef[]
 }
 
 export interface InitiativeUpdatedPatchPayload {
@@ -910,6 +947,7 @@ export interface InitiativeUpdatedPatchPayload {
   readonly current: InitiativePatchLaneState
   readonly changedTokenIds: readonly string[]
   readonly logEntry?: Record<string, unknown>
+  readonly lifecycle?: InitiativeLifecyclePatchPayload
 }
 
 export interface MapMetadataUpdatedPatchPayload {
