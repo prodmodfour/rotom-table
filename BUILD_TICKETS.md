@@ -472,7 +472,7 @@ Status: DONE
 
 ## MA-031 — Define the bounded effect-operation union
 
-Status: TODO
+Status: DONE
 
 **Depends on:** MA-030
 **Commit:** `feat(move-automation): define typed effect operations`
