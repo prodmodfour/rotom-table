@@ -602,7 +602,7 @@ Status: DONE
 
 ## MA-041 — Reduce map, usage, and log operations
 
-Status: TODO
+Status: DONE
 
 **Depends on:** MA-039
 **Commit:** `feat(move-automation): reduce map and usage operations`

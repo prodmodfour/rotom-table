@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import {
   LIVE_PLAY_MOVE_PRESENTATION_MAX_CELLS,
   LIVE_PLAY_MOVE_PRESENTATION_MAX_TARGET_IDS,
+  createLivePlayMovePresentationFromOutcome,
   parseLivePlayMovePresentationSummary,
   resolveLivePlayMovePresentationOutcomeKind,
 } from '#shared/livePlayMovePresentation'
@@ -31,6 +32,33 @@ describe('live-play accepted move presentation contract', () => {
     expect(parsed.presentation).toEqual(source)
     expect(parsed.presentation).not.toBe(source)
     expect(parsed.presentation.area?.cells).not.toBe(source.area.cells)
+  })
+
+  it('builds a runtime-neutral accepted summary for native MoveSpec outcomes', () => {
+    const result = createLivePlayMovePresentationFromOutcome({
+      operationId: 'op_presentv2001',
+      actorPlacementId: 'actor-token',
+      move: { name: 'Scratch', type: 'Normal' },
+      attackedTargetIds: ['target-token'],
+      hitTargetIds: ['target-token'],
+      selectedTargetIds: ['target-token'],
+      pass: {
+        from: { x: 0, y: 0, z: 0 },
+        destination: { x: 2, y: 0, z: 0 },
+        pathCells: [{ x: 1, y: 0, z: 0 }, { x: 2, y: 0, z: 0 }],
+        direction: 'east',
+      },
+    })
+
+    expect(result).toMatchObject({
+      operationId: 'op_presentv2001',
+      actorPlacementId: 'actor-token',
+      move: { name: 'Scratch', type: 'Normal' },
+      attackedTargetIds: ['target-token'],
+      hitTargetIds: ['target-token'],
+      outcomeKind: 'hit',
+      pass: { destination: { x: 2, y: 0, z: 0 }, direction: 'east' },
+    })
   })
 
   it('rejects unknown fields, inconsistent hits/outcomes, and invalid operation ids', () => {

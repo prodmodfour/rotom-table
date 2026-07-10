@@ -10,13 +10,23 @@ const planningPathFiles = [
   'server/domain/moveAutomation/reducers/coreTokenPlan.ts',
   'server/domain/moveAutomation/reducers/coreTokenRecipients.ts',
   'server/domain/moveAutomation/reducers/coreTokenTrace.ts',
+  'server/domain/moveAutomation/reducers/effectRecipients.ts',
   'server/domain/moveAutomation/reducers/hp.ts',
   'server/domain/moveAutomation/reducers/immunities.ts',
+  'server/domain/moveAutomation/reducers/mapFieldEffects.ts',
+  'server/domain/moveAutomation/reducers/mapHazardEffects.ts',
+  'server/domain/moveAutomation/reducers/mapOperationError.ts',
+  'server/domain/moveAutomation/reducers/mapOperationPlan.ts',
+  'server/domain/moveAutomation/reducers/mapOperations.ts',
+  'server/domain/moveAutomation/reducers/mapOperationTrace.ts',
+  'server/domain/moveAutomation/reducers/mapOperationTypes.ts',
+  'server/domain/moveAutomation/reducers/mapUsageEffects.ts',
   'server/domain/planMoveUsageTransition.ts',
   'server/domain/resolveAuthoritativeMove.ts',
   'src/utils/mapHazards.ts',
   'src/utils/mapFieldEffects.ts',
   'src/utils/moveAutomationLog.ts',
+  'src/utils/moveLog.ts',
 ]
 
 const forbiddenImportPattern = /from ['"](?:vue|h3|.*(?:sqlite|Repository|realtime|Realtime|api|composables|\.vue|browser).*)['"]/i

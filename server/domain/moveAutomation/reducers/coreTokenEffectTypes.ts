@@ -11,6 +11,7 @@ import type {
 } from '#shared/moveAutomation/trace'
 import type { AuthoritativeMoveResolvedSheet } from '../context'
 import type { MoveSpecEmittedOperation } from '../executeSpec'
+import type { MoveEffectDynamicRecipientSets } from './effectRecipients'
 import type { CombatStageKey, CombatStageMap } from '~/types/combatStages'
 import type { SheetPlacement } from '~/types/map'
 import type { SpawnedPokemon } from '~/types/pokemon'
@@ -28,13 +29,7 @@ export interface MoveResolvedCoreTokenEffectOperation
 }
 
 /** Dynamic recipient sets are authoritative interpreter/mechanics output, never client IDs. */
-export interface MoveCoreTokenDynamicRecipientSets {
-  readonly attackedTargetIds: readonly string[]
-  readonly hitTargetIds: readonly string[]
-  readonly missedTargetIds: readonly string[]
-  readonly damagedTargetIds: readonly string[]
-  readonly faintedTargetIds: readonly string[]
-}
+export type MoveCoreTokenDynamicRecipientSets = MoveEffectDynamicRecipientSets
 
 export interface MoveCoreTokenEffectRecipient {
   readonly placement: SheetPlacement

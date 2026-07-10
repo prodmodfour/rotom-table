@@ -1,4 +1,22 @@
+import type { MoveLogArgumentValue } from '#shared/moveAutomation/effects'
+import type { MoveSpecPhase } from '#shared/moveAutomation/spec'
+
 export const DEFAULT_MOVE_LOG_ENTRIES = 100
+
+export interface MoveStructuredLogArgument {
+  readonly key: string
+  readonly value: MoveLogArgumentValue
+}
+
+/** Durable locale-independent projection of one reviewed MoveSpec log operation. */
+export interface MoveStructuredLogProjection {
+  readonly operationId: string
+  readonly phase: MoveSpecPhase
+  readonly reasonCode: string
+  readonly messageKey: string
+  readonly recipientIds: readonly string[]
+  readonly arguments: readonly MoveStructuredLogArgument[]
+}
 
 export interface MoveLogTransaction {
   readonly userId: string
@@ -7,6 +25,8 @@ export interface MoveLogTransaction {
   readonly lines: readonly string[]
   readonly scriptKind?: string
   readonly scriptVersion?: number
+  readonly definitionHash?: string
+  readonly structured?: readonly MoveStructuredLogProjection[]
 }
 
 export interface MoveLogEntry {
@@ -17,6 +37,8 @@ export interface MoveLogEntry {
   readonly lines: string[]
   readonly scriptKind?: string
   readonly scriptVersion?: number
+  readonly definitionHash?: string
+  readonly structured?: MoveStructuredLogProjection[]
 }
 
 const nonEmptyText = (value: unknown): string | null => {
@@ -33,6 +55,17 @@ export const buildMoveUseLogLines = (
   ...(nonEmptyText(frequency) ? [`Frequency: ${nonEmptyText(frequency)}`] : []),
 ]
 
+export const createMoveStructuredLogProjection = (
+  input: MoveStructuredLogProjection,
+): MoveStructuredLogProjection => ({
+  operationId: input.operationId,
+  phase: input.phase,
+  reasonCode: input.reasonCode,
+  messageKey: input.messageKey,
+  recipientIds: [...input.recipientIds],
+  arguments: input.arguments.map(argument => ({ ...argument })),
+})
+
 export const appendMoveLogEntry = (
   metadata: Record<string, unknown> | undefined,
   transaction: MoveLogTransaction,
@@ -48,6 +81,10 @@ export const appendMoveLogEntry = (
     lines: [...transaction.lines],
     ...(transaction.scriptKind === undefined ? {} : { scriptKind: transaction.scriptKind }),
     ...(transaction.scriptVersion === undefined ? {} : { scriptVersion: transaction.scriptVersion }),
+    ...(transaction.definitionHash === undefined ? {} : { definitionHash: transaction.definitionHash }),
+    ...(transaction.structured === undefined
+      ? {}
+      : { structured: transaction.structured.map(createMoveStructuredLogProjection) }),
   }
   next.moveLog = [...previous, entry].slice(-(options.maxLogEntries ?? DEFAULT_MOVE_LOG_ENTRIES))
   return next

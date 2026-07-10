@@ -1,23 +1,21 @@
-import type { MoveAutomationLogEntry, MoveAutomationTransaction } from '~/types/moveAutomation'
+import type { MoveAutomationTransaction } from '~/types/moveAutomation'
+import { appendMoveLogEntry, DEFAULT_MOVE_LOG_ENTRIES } from '~/utils/moveLog'
 
-export const DEFAULT_MOVE_AUTOMATION_LOG_ENTRIES = 100
+export const DEFAULT_MOVE_AUTOMATION_LOG_ENTRIES = DEFAULT_MOVE_LOG_ENTRIES
 
 export const appendMoveAutomationLogEntry = (
   metadata: Record<string, unknown> | undefined,
   transaction: MoveAutomationTransaction,
   options: { now?: () => number; maxLogEntries?: number } = {},
-): Record<string, unknown> => {
-  const next = { ...(metadata ?? {}) }
-  const previous = Array.isArray(next.moveLog) ? next.moveLog : []
-  const entry: MoveAutomationLogEntry = {
-    at: options.now?.() ?? Date.now(),
+): Record<string, unknown> => appendMoveLogEntry(
+  metadata,
+  {
     userId: transaction.userId,
     userName: transaction.userName,
     moveName: transaction.moveName,
     scriptKind: transaction.scriptKind,
     scriptVersion: transaction.scriptVersion,
     lines: transaction.logLines,
-  }
-  next.moveLog = [...previous, entry].slice(-(options.maxLogEntries ?? DEFAULT_MOVE_AUTOMATION_LOG_ENTRIES))
-  return next
-}
+  },
+  options,
+)

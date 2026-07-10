@@ -468,30 +468,50 @@ const passPresentation = (
   direction: movement.direction,
 } : undefined
 
-export const createLivePlayMovePresentationSummary = (input: {
+export interface CreateLivePlayMovePresentationFromOutcomeInput {
   readonly operationId: string
-  readonly move: LivePlayResolvedMoveResult
-}): LivePlayMovePresentationSummary => {
-  const attackedTargetIds = [...input.move.transaction.attackedTargetIds]
-  const hitTargetIds = [...input.move.transaction.hitTargetIds]
+  readonly actorPlacementId: string
+  readonly move: LivePlayMovePresentationIdentity
+  readonly attackedTargetIds: readonly string[]
+  readonly hitTargetIds: readonly string[]
+  readonly selectedTargetIds?: readonly string[]
+  readonly area?: LivePlayMovePresentationAreaGeometry
+  readonly pass?: LivePlayMovePresentationPassGeometry
+}
+
+/** Build accepted presentation without depending on either the v1 or v2 runtime result shape. */
+export const createLivePlayMovePresentationFromOutcome = (
+  input: CreateLivePlayMovePresentationFromOutcomeInput,
+): LivePlayMovePresentationSummary => {
+  const attackedTargetIds = [...input.attackedTargetIds]
+  const hitTargetIds = [...input.hitTargetIds]
   const candidate: LivePlayMovePresentationSummary = {
     schemaVersion: LIVE_PLAY_MOVE_PRESENTATION_SCHEMA_VERSION,
     operationId: input.operationId,
-    actorPlacementId: input.move.actorPlacementId,
-    move: {
-      name: input.move.moveName,
-      type: input.move.script.type,
-    },
+    actorPlacementId: input.actorPlacementId,
+    move: { ...input.move },
     attackedTargetIds,
     hitTargetIds,
     outcomeKind: resolveLivePlayMovePresentationOutcomeKind({
       attackedTargetIds,
       hitTargetIds,
-      selectedTargetIds: input.move.selectedTargetIds,
-      area: input.move.area,
+      selectedTargetIds: input.selectedTargetIds,
+      area: input.area,
     }),
-    ...(input.move.area ? { area: areaPresentation(input.move.area) } : {}),
-    ...(input.move.movement ? { pass: passPresentation(input.move.movement) } : {}),
+    ...(input.area ? {
+      area: {
+        ...input.area,
+        cells: input.area.cells.map(cell => ({ ...cell })),
+      },
+    } : {}),
+    ...(input.pass ? {
+      pass: {
+        ...input.pass,
+        from: { ...input.pass.from },
+        destination: { ...input.pass.destination },
+        pathCells: input.pass.pathCells.map(cell => ({ ...cell })),
+      },
+    } : {}),
   }
   const parsed = parseLivePlayMovePresentationSummary(candidate)
   if (!parsed.valid) {
@@ -499,3 +519,20 @@ export const createLivePlayMovePresentationSummary = (input: {
   }
   return parsed.presentation
 }
+
+export const createLivePlayMovePresentationSummary = (input: {
+  readonly operationId: string
+  readonly move: LivePlayResolvedMoveResult
+}): LivePlayMovePresentationSummary => createLivePlayMovePresentationFromOutcome({
+  operationId: input.operationId,
+  actorPlacementId: input.move.actorPlacementId,
+  move: {
+    name: input.move.moveName,
+    type: input.move.script.type,
+  },
+  attackedTargetIds: input.move.transaction.attackedTargetIds,
+  hitTargetIds: input.move.transaction.hitTargetIds,
+  selectedTargetIds: input.move.selectedTargetIds,
+  ...(input.move.area ? { area: areaPresentation(input.move.area) } : {}),
+  ...(input.move.movement ? { pass: passPresentation(input.move.movement) } : {}),
+})

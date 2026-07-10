@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import {
   MoveUsageTransitionError,
   planMoveUsageTransition,
+  type MoveUsageTransitionChange,
 } from '../../server/domain/planMoveUsageTransition'
 import type { TabletopMap } from '~/types/map'
 import type { SheetMoveUsageState } from '~/types/moveUsage'
@@ -23,6 +24,7 @@ const transition = (overrides: {
   sheetMoveUsage?: SheetMoveUsageState
   frequency?: string
   usedAt?: number
+  change?: MoveUsageTransitionChange
 } = {}) => planMoveUsageTransition({
   map: mapFixture(overrides.map),
   sheetMoveUsage: overrides.sheetMoveUsage,
@@ -33,6 +35,7 @@ const transition = (overrides: {
     frequency: overrides.frequency ?? 'EOT',
   },
   usedAt: overrides.usedAt ?? 1234,
+  ...(overrides.change === undefined ? {} : { change: overrides.change }),
 })
 
 const expectUsageFailure = (
@@ -112,10 +115,72 @@ describe('planMoveUsageTransition', () => {
     }), 'daily-unavailable')
   })
 
+  it('applies bounded spend, restore, and set changes without losing clear intent', () => {
+    const spent = transition({
+      frequency: 'Scene x3',
+      sheetMoveUsage: { daily: { other: { moveName: 'Other', uses: 1 } } },
+      change: { action: 'spend', amount: 2 },
+    })
+    expect(spent).toMatchObject({
+      mapUsageChanged: true,
+      sheetUsageChanged: false,
+      previousUsage: { uses: 0 },
+      usage: { uses: 2, remainingUses: 1 },
+    })
+    expect(spent.nextSheetMoveUsage).toBeUndefined()
+
+    const restored = transition({
+      frequency: 'Scene x3',
+      map: { moveUsage: spent.nextMapMoveUsage },
+      change: { action: 'restore', amount: 2 },
+    })
+    expect(restored).toMatchObject({
+      mapUsageChanged: true,
+      previousUsage: { uses: 2 },
+      usage: { uses: 0, remainingUses: 3 },
+    })
+    expect(restored.nextMapMoveUsage).toBeUndefined()
+
+    const set = transition({
+      frequency: 'Scene x3',
+      change: { action: 'set', amount: 2 },
+    })
+    expect(set.usage).toMatchObject({ uses: 2, remainingUses: 1 })
+    expect(set.nextMapMoveUsage?.byPlacementId['actor-token']?.['test-move']?.uses).toBe(2)
+  })
+
+  it('restores Daily map and sheet usage as one explicit two-resource change', () => {
+    const spent = transition({ frequency: 'Daily x2' })
+    const restored = transition({
+      frequency: 'Daily x2',
+      map: { moveUsage: spent.nextMapMoveUsage },
+      sheetMoveUsage: spent.nextSheetMoveUsage,
+      change: { action: 'restore', amount: 1 },
+    })
+
+    expect(restored).toMatchObject({
+      mapUsageChanged: true,
+      sheetUsageChanged: true,
+      previousUsage: { uses: 1, sceneUses: 1 },
+      usage: { uses: 0, sceneUses: 0, available: true },
+    })
+    expect(restored.nextMapMoveUsage).toBeUndefined()
+    expect(restored.nextSheetMoveUsage).toBeUndefined()
+  })
+
+  it('rejects invalid typed usage changes before deriving state', () => {
+    expectUsageFailure(() => transition({
+      frequency: 'Scene',
+      change: { action: 'spend', amount: -1 },
+    }), 'invalid-usage-amount')
+  })
+
   it('leaves untracked moves without map or sheet usage state', () => {
     const result = transition({ frequency: 'At-Will' })
     expect(result.tracking).toBe('none')
     expect(result.previousUsage).toEqual(result.usage)
+    expect(result.mapUsageChanged).toBe(false)
+    expect(result.sheetUsageChanged).toBe(false)
     expect(result.nextMapMoveUsage).toBeUndefined()
     expect(result.nextSheetMoveUsage).toBeUndefined()
   })
