@@ -1124,7 +1124,7 @@ Status: DONE
 
 ## MA-087 — Add reusable semantic scenario fixtures
 
-Status: TODO
+Status: DONE
 
 **Depends on:** MA-037, MA-040–MA-086
 **Commit:** `test(move-automation): add semantic scenario harness`
