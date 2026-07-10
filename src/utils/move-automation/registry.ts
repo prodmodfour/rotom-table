@@ -109,17 +109,56 @@ export const isSeamlessTargetCountMoveScript = (
  * them. Small factories may copy canonical move data, but this registry stays
  * an allow-list of reviewed v1 implementations.
  */
-export const EXPLICIT_MOVE_AUTOMATION_SCRIPTS: ReadonlyMap<string, MoveAutomationScript> = new Map<string, MoveAutomationScript>([
-  ...STRUGGLE_ATTACK_SCRIPTS,
-  ...SEAMLESS_SINGLE_TARGET_ATTACK_SCRIPTS,
-  ...REVIEWED_SINGLE_TARGET_CONDITION_SCRIPTS,
-  ...REVIEWED_SINGLE_TARGET_STATUS_SCRIPTS,
-  ...REVIEWED_SINGLE_TARGET_STAGE_SCRIPTS,
-  ...REVIEWED_ADDITIONAL_SINGLE_TARGET_SCRIPTS,
-  ...REVIEWED_SELF_SCRIPTS,
-  ...SEAMLESS_AREA_CONFIRMATION_SCRIPTS,
-  ...REVIEWED_DIRECT_HP_LOSS_SCRIPTS,
+export interface ExplicitMoveAutomationRegistrySource {
+  readonly sourceModule: string
+  readonly scripts: ReadonlyMap<string, MoveAutomationScript>
+}
+
+/**
+ * Source ownership for the v1 allow-list. Report tooling reads these same
+ * groups so source attribution cannot drift from the runtime registry.
+ */
+export const EXPLICIT_MOVE_AUTOMATION_REGISTRY_SOURCES: readonly ExplicitMoveAutomationRegistrySource[] = Object.freeze([
+  {
+    sourceModule: 'src/utils/move-automation/scripts/singleTargetAttacks.ts',
+    scripts: new Map([
+      ...STRUGGLE_ATTACK_SCRIPTS,
+      ...SEAMLESS_SINGLE_TARGET_ATTACK_SCRIPTS,
+    ]),
+  },
+  {
+    sourceModule: 'src/utils/move-automation/scripts/singleTargetConditions.ts',
+    scripts: REVIEWED_SINGLE_TARGET_CONDITION_SCRIPTS,
+  },
+  {
+    sourceModule: 'src/utils/move-automation/scripts/singleTargetStatus.ts',
+    scripts: REVIEWED_SINGLE_TARGET_STATUS_SCRIPTS,
+  },
+  {
+    sourceModule: 'src/utils/move-automation/scripts/singleTargetStages.ts',
+    scripts: REVIEWED_SINGLE_TARGET_STAGE_SCRIPTS,
+  },
+  {
+    sourceModule: 'src/utils/move-automation/scripts/additionalSingleTarget.ts',
+    scripts: REVIEWED_ADDITIONAL_SINGLE_TARGET_SCRIPTS,
+  },
+  {
+    sourceModule: 'src/utils/move-automation/scripts/self.ts',
+    scripts: REVIEWED_SELF_SCRIPTS,
+  },
+  {
+    sourceModule: 'src/utils/move-automation/scripts/area.ts',
+    scripts: SEAMLESS_AREA_CONFIRMATION_SCRIPTS,
+  },
+  {
+    sourceModule: 'src/utils/move-automation/scripts/directHpLoss.ts',
+    scripts: REVIEWED_DIRECT_HP_LOSS_SCRIPTS,
+  },
 ])
+
+export const EXPLICIT_MOVE_AUTOMATION_SCRIPTS: ReadonlyMap<string, MoveAutomationScript> = new Map(
+  EXPLICIT_MOVE_AUTOMATION_REGISTRY_SOURCES.flatMap(({ scripts }) => [...scripts]),
+)
 
 export const moveAutomationCoverage = {
   canonicalMoveCount: moves.length,

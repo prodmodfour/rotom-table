@@ -42,6 +42,15 @@ npm run check:move-automation
 
 This command validates the canonical catalog, semantic manifest, runtime and scenario references, hashes, and metadata invariants. It intentionally permits honest `assisted` and `blocked` rows while implementation is in progress.
 
+Before reviewing a legacy v1 move, generate its deterministic implementation audit metadata:
+
+```bash
+npm run audit:move-automation-legacy -- --report
+npm run --silent audit:move-automation-legacy -- --json
+```
+
+The audit lists each registered move's source module, v1 version, script shape, targeting and suggestion fields, automation notes, and inferred capability hints. The hints are non-authoritative planning aids; this report never decides semantic completion or promotes manifest status.
+
 The strict completion check is available separately, but is not part of the quality gate until the canonical move catalog is complete:
 
 ```bash

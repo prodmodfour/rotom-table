@@ -23,6 +23,7 @@
     "refactor:loop": "bash scripts/refactor-loop.sh",
     "check:move-automation": "python3 scripts/check_move_automation_coverage.py",
     "check:move-automation-complete": "python3 scripts/check_move_automation_coverage.py --require-complete",
+    "audit:move-automation-legacy": "vite-node --config vitest.config.ts scripts/generate_move_automation_legacy_audit.ts",
     "sync:item-sprites": "node scripts/sync_item_sprites.mjs",
     "generate:profile-sprites": "python3 scripts/generate_profile_sprites.py"
   },

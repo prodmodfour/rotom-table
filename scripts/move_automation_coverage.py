@@ -58,6 +58,7 @@ class TypeScriptRegistryReader:
         self.canonical_names = set(canonical_names)
         self._array_cache: dict[str, list[str]] = {}
         self._map_cache: dict[str, list[str]] = {}
+        self._source_group_cache: dict[str, list[str]] = {}
 
     def map_values(self, name: str) -> list[str]:
         if name in self._map_cache:
@@ -75,9 +76,56 @@ class TypeScriptRegistryReader:
         else:
             for ref in re.findall(r"\b([A-Z0-9_]+)\.map\s*\(", call_body):
                 values.extend(self.array_values(ref))
+            for ref in re.findall(r"\b([A-Z0-9_]+)\.flatMap\s*\(", call_body):
+                values.extend(self.source_group_values(ref))
 
         self._map_cache[name] = unique_preserving_order(values)
         return self._map_cache[name]
+
+    def source_group_values(self, name: str) -> list[str]:
+        """Read map references from source-attributed registry descriptors."""
+
+        if name in self._source_group_cache:
+            return self._source_group_cache[name]
+
+        assignment_end = self._assignment_end(name)
+        if assignment_end is None:
+            self._source_group_cache[name] = []
+            return []
+        array_start = self.source.find("[", assignment_end)
+        if array_start < 0:
+            self._source_group_cache[name] = []
+            return []
+
+        array_body, _array_end = balanced_body(self.source, array_start, "[", "]")
+        values: list[str] = []
+        values.extend(
+            move_name
+            for ref in re.findall(r"\bscripts\s*:\s*([A-Z0-9_]+)", array_body)
+            for move_name in self.map_values(ref)
+        )
+
+        nested_map_pattern = re.compile(
+            r"\bscripts\s*:\s*new\s+Map(?:<[^>]+>)?\s*\("
+        )
+        for match in nested_map_pattern.finditer(array_body):
+            call_start = array_body.rfind("(", 0, match.end())
+            call_body, _call_end = balanced_body(array_body, call_start, "(", ")")
+            nested_array_start = call_body.find("[")
+            if nested_array_start < 0:
+                continue
+            nested_body, _nested_end = balanced_body(
+                call_body,
+                nested_array_start,
+                "[",
+                "]",
+            )
+            values.extend(self._direct_map_keys(nested_body))
+            for ref in re.findall(r"\.\.\.([A-Z0-9_]+)", nested_body):
+                values.extend(self.map_values(ref))
+
+        self._source_group_cache[name] = unique_preserving_order(values)
+        return self._source_group_cache[name]
 
     def array_values(self, name: str) -> list[str]:
         if name in self._array_cache:

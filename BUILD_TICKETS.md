@@ -371,7 +371,7 @@ Status: DONE
 
 ## MA-018 — Generate legacy-script audit metadata
 
-Status: TODO
+Status: DONE
 
 **Depends on:** MA-013, MA-017
 **Commit:** `feat(move-automation): generate legacy audit metadata`
