@@ -32,6 +32,10 @@ import {
   type MoveAutomationHistoryResolver,
 } from './history'
 import {
+  createMoveAutomationLineOfSightResolver,
+  type MoveAutomationLineOfSightResolver,
+} from './lineOfSight'
+import {
   MOVE_AUTOMATION_RUNTIME_REGISTRY,
   type MoveAutomationRuntimeRegistry,
   type RegisteredMoveAutomationRuntime,
@@ -96,6 +100,7 @@ export type AuthoritativeMoveRelationshipQueries = MoveAutomationRelationshipRes
 export type AuthoritativeMoveHistoryQueries = MoveAutomationHistoryResolver
 export type AuthoritativeMoveResourceQueries = MoveAutomationResourceResolver
 export type AuthoritativeMoveTargetStateQueries = MoveAutomationTargetStateResolver
+export type AuthoritativeMoveLineOfSightQueries = MoveAutomationLineOfSightResolver
 
 export interface AuthoritativeMoveRuleQueries {
   runtimeFor(canonicalId: string): RegisteredMoveAutomationRuntime | null
@@ -111,6 +116,7 @@ export interface AuthoritativeMoveContextQueries {
   readonly history: AuthoritativeMoveHistoryQueries
   readonly resources: AuthoritativeMoveResourceQueries
   readonly targetStates: AuthoritativeMoveTargetStateQueries
+  readonly lineOfSight: AuthoritativeMoveLineOfSightQueries
   readonly rules: AuthoritativeMoveRuleQueries
   resolveActorMoveEntry(moveName: string): CanonicalMoveEntryResult
 }
@@ -507,6 +513,19 @@ export const buildAuthoritativeMoveRulesContext = (
     history,
     recordSheetRead: readSet.recordPlacement,
   })
+  const lineOfSight = createMoveAutomationLineOfSightResolver({
+    voxels: map.voxels,
+    placements: tokens.map(token => ({
+      id: token.id,
+      position: token.position,
+      base: token.base,
+      clearance: token.clearance,
+    })),
+    recordPlacementRead: (placementId) => {
+      const placement = placementById.get(placementId)
+      if (placement) readSet.recordPlacement(placement)
+    },
+  })
 
   const legacyScriptFor = (moveName: string): MoveAutomationScript | null => {
     const script = legacyScripts.get(moveName)
@@ -552,6 +571,7 @@ export const buildAuthoritativeMoveRulesContext = (
     history,
     resources,
     targetStates,
+    lineOfSight,
     rules: Object.freeze({
       runtimeFor: (canonicalId: string) => runtimes.get(canonicalId) ?? null,
       legacyScriptFor,

@@ -901,7 +901,7 @@ Status: DONE
 
 ## MA-072 — Add server line-of-sight and cover queries
 
-Status: TODO
+Status: DONE
 
 **Depends on:** MA-035
 **Commit:** `feat(move-automation): resolve authoritative line of sight`

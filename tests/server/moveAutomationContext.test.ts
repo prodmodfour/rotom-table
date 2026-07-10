@@ -139,7 +139,7 @@ describe('immutable authoritative move rules context', () => {
     }).toThrow()
   })
 
-  it('serves snapshot-only placement, token, sheet, relationship, history, resource, target-state, runtime, and status queries', () => {
+  it('serves snapshot-only placement, token, sheet, relationship, history, resource, target-state, line-of-sight, runtime, and status queries', () => {
     const context = buildContext()
     const actor = context.queries.placements.get('actor-token')!
     const target = context.queries.placements.get('target-token')!
@@ -186,6 +186,16 @@ describe('immutable authoritative move rules context', () => {
       sheetKind: 'pokemon',
     })
     expect(Object.isFrozen(context.queries.targetStates)).toBe(true)
+    expect(context.queries.lineOfSight.resolve(actor.id, target.id)).toMatchObject({
+      sourcePlacementId: actor.id,
+      targetPlacementId: target.id,
+      targetable: true,
+      visibility: 'full',
+      cover: 'none',
+      accuracyModifier: 0,
+      reasonCode: 'line-of-sight-clear',
+    })
+    expect(Object.isFrozen(context.queries.lineOfSight)).toBe(true)
     expect(context.queries.rules.runtimeFor('Tackle')).toMatchObject({
       canonicalId: 'Tackle',
       kind: 'legacy-v1',
@@ -244,6 +254,28 @@ describe('immutable authoritative move rules context', () => {
     ])
     expect(Object.isFrozen(reads)).toBe(true)
     expect(Object.isFrozen(reads[0])).toBe(true)
+  })
+
+  it('records source, target, and intervening cover footprint sheets consulted by line of sight', () => {
+    const map = mapFixture()
+    map.placements[1]!.position.x = 2
+    map.placements[2]!.position.x = 5
+    const context = buildContext({ map })
+
+    const result = context.queries.lineOfSight.resolve('actor-token', 'ally-token')
+
+    expect(result).toMatchObject({
+      targetable: true,
+      cover: 'rough-terrain',
+      accuracyModifier: -2,
+      coverPlacementIds: ['target-token'],
+      consultedPlacementIds: ['actor-token', 'target-token', 'ally-token'],
+    })
+    expect(context.reads.snapshot()).toEqual([
+      { kind: 'pokemon', slug: 'actor', revision: 3 },
+      { kind: 'pokemon', slug: 'target', revision: 5 },
+      { kind: 'pokemon', slug: 'ally', revision: 3 },
+    ])
   })
 
   it('uses only injected time and randomness after construction and preserves its detached source snapshot', () => {
