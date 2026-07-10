@@ -13,6 +13,7 @@ import {
   type MoveResolutionTraceJsonValue,
 } from '#shared/moveAutomation/trace'
 import { createEmptyEncounterState } from '#shared/moveAutomation/encounterState'
+import { parseEncounterEffect } from '#shared/moveAutomation/encounterEffects'
 import {
   buildAuthoritativeMoveRulesContext,
 } from '~~/server/domain/moveAutomation/context'
@@ -101,6 +102,12 @@ interface CoreReducerStageFixture {
   readonly bystander?: Partial<CombatStageMap>
 }
 
+interface CoreReducerConditionFixture {
+  readonly actor?: readonly string[]
+  readonly target?: readonly string[]
+  readonly bystander?: readonly string[]
+}
+
 const sheetStageFields = (
   value: Partial<CombatStageMap> | undefined,
 ): Pick<CharacterSheet, 'stats' | 'combatStages'> => {
@@ -121,12 +128,16 @@ const buildContext = (
   map: TabletopMap = mapFixture(),
   hp: CoreReducerHpFixture = {},
   stages: CoreReducerStageFixture = {},
+  conditions: CoreReducerConditionFixture = {},
 ) => buildAuthoritativeMoveRulesContext({
   map,
   pokemonSheets: new Map([
     ['actor', pokemonSheet('actor', {
       ...sheetStageFields(stages.actor),
-      combat: { currentHp: hp.actor ?? 999 },
+      combat: {
+        currentHp: hp.actor ?? 999,
+        conditions: [...(conditions.actor ?? [])],
+      },
     })],
     ['target', pokemonSheet('target', {
       types: ['Fairy', 'Electric'],
@@ -135,12 +146,15 @@ const buildContext = (
       combat: {
         currentHp: hp.target ?? 999,
         injuries: hp.targetInjuries ?? 0,
-        conditions: ['Burned'],
+        conditions: [...(conditions.target ?? ['Burned'])],
       },
     })],
     ['bystander', pokemonSheet('bystander', {
       ...sheetStageFields(stages.bystander),
-      combat: { currentHp: hp.bystander ?? 999 },
+      combat: {
+        currentHp: hp.bystander ?? 999,
+        conditions: [...(conditions.bystander ?? [])],
+      },
     })],
   ]),
   trainerSheets: new Map<string, TrainerSheet>(),
@@ -304,7 +318,7 @@ const reduce = (
   context,
   operations,
   dynamicRecipients: dynamicRecipients(),
-  immunities: createStandardMoveCoreTokenEffectImmunityQueries({ moveType }),
+  immunities: createStandardMoveCoreTokenEffectImmunityQueries({ moveType, context }),
   trace: traceFor(operations),
 })
 
@@ -1736,6 +1750,317 @@ describe('MoveSpec core token effect reducers', () => {
     expect(result.stateChanges.groups.sheets).toHaveLength(2)
     expect(result.stateChanges.groups.sheets.map(group => group.changes[0]?.sourceOperationId))
       .toEqual(['operation.raise-self', 'operation.lower-target'])
+  })
+
+  it('cleanses major/minor groups with exclusions and replaces only matching conditions', () => {
+    const context = buildContext(mapFixture(), {}, {}, {
+      target: ['Burned', 'Sleep', 'Confused', 'Helping Hand'],
+    })
+    const operations = [
+      emission(operation('operation.clear-major', 'condition', {
+        action: 'clear',
+        conditionId: null,
+        filter: {
+          groups: ['major'],
+          conditionIds: [],
+          excludedConditionIds: ['sleep'],
+        },
+      })),
+      emission(operation('operation.clear-minor', 'condition', {
+        action: 'clear',
+        conditionId: null,
+        filter: {
+          groups: ['minor'],
+          conditionIds: [],
+          excludedConditionIds: [],
+        },
+      })),
+      emission(operation('operation.replace-sleep', 'condition', {
+        action: 'replace',
+        conditionId: 'poisoned',
+        filter: {
+          groups: [],
+          conditionIds: ['sleep'],
+          excludedConditionIds: [],
+        },
+      })),
+    ]
+
+    const result = reduce(operations, 'Normal', context)
+
+    expect(result.operationResults.map(item => item.outcome)).toEqual([
+      'applied',
+      'applied',
+      'applied',
+    ])
+    expect(result.operationResults.map(item => item.recipients[0]?.details)).toMatchObject([
+      { removedConditions: ['Burned'] },
+      { removedConditions: ['Confused'] },
+      { condition: 'Poisoned', removedConditions: ['Sleep'] },
+    ])
+    const sheetChange = result.stateChanges.groups.sheets[0]?.changes[0]
+    if (sheetChange?.kind !== 'sheet-state') throw new Error('Expected condition sheet change')
+    expect((sheetChange.current as CharacterSheet).combat?.conditions).toEqual([
+      'Poisoned',
+      'Helping Hand',
+    ])
+    expect(operationTraceOutcomes(result.trace)).toEqual(['applied', 'applied', 'applied'])
+  })
+
+  it('selects random conditions only from an earlier server-owned roll ledger entry', () => {
+    const context = buildContext(mapFixture(), {}, {}, { target: [] })
+    context.random.roll({
+      rollId: 'roll.random-condition',
+      parentEffectId: 'operation.random-condition-roll',
+      formula: { kind: 'uniform-integer', minimum: 2, maximum: 2 },
+      reason: 'reducer random condition fixture',
+    })
+    const randomCondition = emission(operation('operation.random-condition', 'condition', {
+      action: 'random-choice',
+      conditionId: null,
+      randomChoice: {
+        rollId: 'roll.random-condition',
+        conditionIds: ['burned', 'confused', 'poisoned'],
+      },
+    }))
+
+    const result = reduce([randomCondition], 'Normal', context)
+
+    expect(result.operationResults[0]).toMatchObject({
+      outcome: 'applied',
+      recipients: [{
+        details: {
+          condition: 'Confused',
+          randomRollId: 'roll.random-condition',
+        },
+        current: { kind: 'conditions', conditions: ['Confused'] },
+      }],
+    })
+    const sheetChange = result.stateChanges.groups.sheets[0]?.changes[0]
+    if (sheetChange?.kind !== 'sheet-state') throw new Error('Expected random condition write')
+    expect((sheetChange.current as CharacterSheet).combat?.conditions).toEqual(['Confused'])
+  })
+
+  it('stores source-linked duration, save, and capped stack policy in encounter state', () => {
+    const context = buildContext(mapFixture(), {}, {}, { target: [] })
+    const timedFlinch = (id: string) => emission(operation(id, 'condition', {
+      action: 'apply',
+      conditionId: 'flinch',
+      duration: {
+        effectId: 'effect.flinch-window',
+        duration: { kind: 'turns', subject: 'target', boundary: 'end', remaining: 1 },
+      },
+      saveTiming: 'none',
+      stackPolicy: { kind: 'add-stack', maxStacks: 2 },
+    }))
+    const operations = [
+      timedFlinch('operation.flinch-one'),
+      timedFlinch('operation.flinch-two'),
+      timedFlinch('operation.flinch-capped'),
+    ]
+
+    const result = reduce(operations, 'Normal', context)
+
+    expect(result.operationResults.map(item => item.outcome)).toEqual([
+      'applied',
+      'applied',
+      'no-op',
+    ])
+    expect(result.operationResults[2]?.recipients[0]).toMatchObject({
+      reasonCode: 'condition-stack-capped',
+      details: { lifecycleTransitions: ['stack-capped'] },
+    })
+    expect(result.stateChanges.groups.sheets).toEqual([])
+    expect(result.stateChanges.groups.encounter).toHaveLength(1)
+    const encounterChange = result.stateChanges.groups.encounter[0]?.changes[0]
+    expect(encounterChange).toMatchObject({
+      kind: 'encounter-state',
+      expectedRevision: 8,
+      sourceOperationId: null,
+      current: {
+        effects: [{
+          kind: 'condition',
+          source: {
+            moveId: 'move.reducer-test',
+            placementId: 'actor-token',
+          },
+          affected: { placementIds: ['target-token'], sideIds: [], cells: [] },
+          duration: { kind: 'turns', subject: 'target', boundary: 'end', remaining: 1 },
+          stacks: 2,
+          stackPolicy: { kind: 'add-stack', maxStacks: 2 },
+          payload: { conditionId: 'flinch', action: 'apply', saveTiming: null },
+        }],
+      },
+    })
+    expect(result.stateChanges.expectedRevisions).toEqual([
+      { kind: 'map', mapSlug: 'core-reducer-arena', expectedRevision: 8 },
+    ])
+  })
+
+  it('cleanses matching persistent and direct source-linked condition layers together', () => {
+    const sourceLinked = parseEncounterEffect({
+      ...conditionEncounterEffectFixture(),
+      id: 'effect.condition.confusion',
+      affected: { placementIds: ['target-token'], sideIds: [], cells: [] },
+      payload: { conditionId: 'confused', action: 'apply', saveTiming: 'end-turn' },
+    })
+    const map = mapFixture()
+    map.encounterState = {
+      ...createEmptyEncounterState(),
+      effects: [sourceLinked],
+    }
+    const context = buildContext(map, {}, {}, { target: ['Burned'] })
+    const cleanse = emission(operation('operation.cleanse-status', 'condition', {
+      action: 'clear',
+      conditionId: null,
+      filter: {
+        groups: ['status'],
+        conditionIds: [],
+        excludedConditionIds: [],
+      },
+    }))
+
+    const result = reduce([cleanse], 'Normal', context)
+
+    expect(result.operationResults[0]?.recipients[0]).toMatchObject({
+      outcome: 'applied',
+      changedFields: ['conditions', 'encounterEffects'],
+      details: {
+        removedConditions: ['Burned'],
+        removedEffectIds: ['effect.condition.confusion'],
+      },
+    })
+    expect(result.stateChanges.changes.map(change => change.kind)).toEqual([
+      'encounter-state',
+      'sheet-state',
+    ])
+    expect(result.stateChanges.groups.encounter[0]?.changes[0]?.current).toMatchObject({
+      effects: [],
+    })
+  })
+
+  it('transfers conditions atomically and retains the source when destination immunity blocks', () => {
+    const blockedContext = buildContext(mapFixture(), {}, {}, {
+      actor: ['Paralysis'],
+      target: [],
+    })
+    const transferParalysis = emission(operation(
+      'operation.transfer-paralysis',
+      'condition',
+      {
+        action: 'transfer',
+        conditionId: 'paralysis',
+        conditionSource: { kind: 'actor' },
+      },
+      'actor-and-attacked-targets',
+    ), ['actor-token', 'target-token'])
+
+    const blocked = reduce([transferParalysis], 'Normal', blockedContext)
+    expect(blocked.operationResults[0]).toMatchObject({
+      outcome: 'prevented',
+      recipients: [
+        {
+          recipientId: 'actor-token',
+          outcome: 'no-op',
+          reasonCode: 'condition-transfer-prevented',
+          current: { conditions: ['Paralysis'] },
+        },
+        {
+          recipientId: 'target-token',
+          outcome: 'prevented',
+          blockers: [{ subject: 'Paralysis', source: 'Electric type' }],
+        },
+      ],
+    })
+    expect(blocked.stateChanges.changes).toEqual([])
+
+    const successContext = buildContext(mapFixture(), {}, {}, {
+      actor: ['Poisoned'],
+      target: [],
+    })
+    const transferPoison = emission(operation(
+      'operation.transfer-poison',
+      'condition',
+      {
+        action: 'transfer',
+        conditionId: 'poisoned',
+        conditionSource: { kind: 'actor' },
+      },
+      'actor-and-attacked-targets',
+    ), ['actor-token', 'target-token'])
+    const success = reduce([transferPoison], 'Normal', successContext)
+
+    expect(success.operationResults[0]?.recipients).toMatchObject([
+      {
+        recipientId: 'actor-token',
+        outcome: 'applied',
+        current: { conditions: [] },
+      },
+      {
+        recipientId: 'target-token',
+        outcome: 'applied',
+        current: { conditions: ['Poisoned'] },
+      },
+    ])
+    expect(success.stateChanges.groups.sheets).toHaveLength(2)
+  })
+
+  it('honors typed side and cell condition prevention from authoritative encounter state', () => {
+    const prevention = (id: string, affected: Record<string, unknown>) => parseEncounterEffect({
+      ...conditionEncounterEffectFixture(),
+      id,
+      source: {
+        operationId: `operation.${id}`,
+        moveId: 'move.condition-ward',
+        placementId: 'bystander-token',
+      },
+      affected,
+      payload: { conditionId: 'confused', action: 'prevent', saveTiming: null },
+    })
+    const protectedMap = (effect: ReturnType<typeof prevention>): TabletopMap => {
+      const map = mapFixture()
+      map.placements = map.placements.map(placement => ({
+        ...placement,
+        sideId: placement.id === 'actor-token' ? 'enemies' : 'allies',
+      }))
+      map.encounterState = {
+        ...createEmptyEncounterState(),
+        sides: {
+          allies: { id: 'allies', label: 'Allies', status: 'active' },
+          enemies: { id: 'enemies', label: 'Enemies', status: 'active' },
+        },
+        effects: [effect],
+      }
+      return map
+    }
+    const confuse = emission(operation('operation.apply-confusion', 'condition', {
+      action: 'apply',
+      conditionId: 'confused',
+    }))
+    const scenarios = [
+      prevention('effect.side-condition-ward', {
+        placementIds: [], sideIds: ['allies'], cells: [],
+      }),
+      prevention('effect.cell-condition-ward', {
+        placementIds: [], sideIds: [], cells: [{ x: 1, y: 0, z: 0 }],
+      }),
+    ]
+
+    for (const effect of scenarios) {
+      const context = buildContext(protectedMap(effect), {}, {}, { target: [] })
+      const result = reduce([confuse], 'Normal', context)
+      expect(result.operationResults[0]?.recipients[0]).toMatchObject({
+        outcome: 'prevented',
+        reasonCode: 'condition-immunity',
+        blockers: [{ source: `Encounter effect ${effect.id}` }],
+        consultedPlacementIds: ['bystander-token'],
+      })
+      expect(result.sheetReads).toEqual([
+        { kind: 'pokemon', slug: 'target', revision: 4 },
+        { kind: 'pokemon', slug: 'bystander', revision: 4 },
+      ])
+      expect(result.stateChanges.changes).toEqual([])
+    }
   })
 
   it('preserves condition/stage immunity and cap no-ops in the audit trace', () => {

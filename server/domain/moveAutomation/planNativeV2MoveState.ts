@@ -1,4 +1,5 @@
 import { normalizeRevision } from '#shared/sessionRevisions'
+import { parseEncounterState } from '#shared/moveAutomation/encounterState'
 import {
   parseMoveResolutionAuditTrace,
   type MoveResolutionAuditTrace,
@@ -82,6 +83,10 @@ const applyCoreMapChanges = (
     if (change.kind === 'map-temporary-hit-points') {
       if (change.current === undefined) delete next.temporaryHitPoints
       else next.temporaryHitPoints = deepCloneJson(change.current)
+      continue
+    }
+    if (change.kind === 'encounter-state') {
+      next.encounterState = parseEncounterState(change.current)
       continue
     }
     if (change.scope.kind === 'map' || change.scope.kind === 'placement') {

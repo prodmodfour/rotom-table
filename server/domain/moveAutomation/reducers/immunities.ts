@@ -9,6 +9,9 @@ import {
   computeSheetAbilityAwareMultiplier,
   getPassiveTypeEffectivenessSource,
 } from '~/utils/sheetPassiveAbilityEffects'
+import { projectEffectiveConditions } from '~/utils/encounterConditions'
+import { conditionBaseName, normalizeConditionName } from '~/utils/statusConditions'
+import type { AuthoritativeMoveRulesContext } from '../context'
 import { computeMultiplier } from '~/utils/typeChart'
 import type {
   MoveCoreTokenEffectImmunityDecision,
@@ -19,6 +22,8 @@ export interface StandardMoveCoreTokenEffectImmunityOptions {
   /** Null is allowed for typeless effects; type-immunity-enabled HP loss then fails closed. */
   readonly moveType: string | null
   readonly conditionContext?: MoveAutomationConditionImmunityContext
+  /** Enables side-relationship and typed placement/side/cell prevention queries. */
+  readonly context?: AuthoritativeMoveRulesContext
 }
 
 const decision = (
@@ -39,6 +44,55 @@ const conditionProviderIds = (
       .filter(id => id !== recipientId)
   : []
 
+const authoritativeConditionContext = (
+  context: AuthoritativeMoveRulesContext | undefined,
+): MoveAutomationConditionImmunityContext | undefined => context
+  ? {
+      sweetVeilProviderCandidates: context.queries.tokens.all(),
+      isAlly: (provider, target) => context.queries.relationships.match(
+        provider.id,
+        target.id,
+        'ally',
+      ).matches,
+    }
+  : undefined
+
+const encounterConditionPrevention = (options: {
+  readonly condition: string
+  readonly recipientId: string
+  readonly context: AuthoritativeMoveRulesContext | undefined
+}): { readonly blockedBy: string | null; readonly consultedPlacementIds: readonly string[] } => {
+  const context = options.context
+  if (!context) return { blockedBy: null, consultedPlacementIds: [] }
+  const recipient = context.queries.tokens.get(options.recipientId)
+  const placement = context.queries.placements.get(options.recipientId)
+  if (!recipient || !placement) return { blockedBy: null, consultedPlacementIds: [] }
+  const canonical = normalizeConditionName(options.condition) ?? options.condition
+  const projection = projectEffectiveConditions({
+    sheetConditions: recipient.sheetConditions,
+    encounterEffects: context.map.encounterState?.effects,
+    target: {
+      placementId: placement.id,
+      ...(placement.sideId ? { sideId: placement.sideId } : {}),
+      position: recipient.position,
+      base: recipient.base,
+      clearance: recipient.clearance,
+    },
+  })
+  const prevention = projection.modifiers.find(({ condition, effect }) => (
+    effect.payload.action === 'prevent'
+    && (conditionBaseName(condition) ?? condition) === canonical
+  ))
+  if (!prevention) return { blockedBy: null, consultedPlacementIds: [] }
+  const sourceId = prevention.effect.source.placementId
+  return {
+    blockedBy: `Encounter effect ${prevention.effect.id}`,
+    consultedPlacementIds: sourceId !== placement.id && context.queries.placements.get(sourceId)
+      ? [sourceId]
+      : [],
+  }
+}
+
 /**
  * Bridge the current authoritative type/condition/stage query helpers into the
  * injected v2 reducer seam. Richer encounter overlays can replace this object
@@ -46,41 +100,59 @@ const conditionProviderIds = (
  */
 export const createStandardMoveCoreTokenEffectImmunityQueries = (
   options: StandardMoveCoreTokenEffectImmunityOptions,
-): MoveCoreTokenEffectImmunityQueries => ({
-  directHp: ({ recipient }) => {
-    if (!options.moveType) return decision('unresolved move type')
-    const target = recipient.token
-    const baseMultiplier = computeMultiplier(options.moveType, target.defenderTypes)
-    const multiplier = computeSheetAbilityAwareMultiplier(
-      options.moveType,
-      target.defenderTypes,
-      target.abilityNames,
-      target.defenderCapabilities,
-      { baseMultiplier },
-    )
-    if (multiplier !== 0) return decision(null)
-    if (baseMultiplier === 0) return decision(`${options.moveType} type`)
-    return decision(getPassiveTypeEffectivenessSource(
-      options.moveType,
-      target.abilityNames,
-      target.defenderCapabilities,
-      { baseMultiplier },
-    ) ?? `${options.moveType} immunity`)
-  },
-  condition: ({ condition, recipient }) => decision(
-    moveAutomationConditionImmunitySource(
-      condition,
-      recipient.token,
-      options.moveType,
-      options.conditionContext,
+): MoveCoreTokenEffectImmunityQueries => {
+  const conditionContext = options.conditionContext
+    ?? authoritativeConditionContext(options.context)
+  return {
+    directHp: ({ recipient }) => {
+      if (!options.moveType) return decision('unresolved move type')
+      const target = recipient.token
+      const baseMultiplier = computeMultiplier(options.moveType, target.defenderTypes)
+      const multiplier = computeSheetAbilityAwareMultiplier(
+        options.moveType,
+        target.defenderTypes,
+        target.abilityNames,
+        target.defenderCapabilities,
+        { baseMultiplier },
+      )
+      if (multiplier !== 0) return decision(null)
+      if (baseMultiplier === 0) return decision(`${options.moveType} type`)
+      return decision(getPassiveTypeEffectivenessSource(
+        options.moveType,
+        target.abilityNames,
+        target.defenderCapabilities,
+        { baseMultiplier },
+      ) ?? `${options.moveType} immunity`)
+    },
+    condition: ({ condition, recipient }) => {
+      const providerIds = conditionProviderIds(
+        condition,
+        recipient.placement.id,
+        conditionContext,
+      )
+      const passiveBlocker = moveAutomationConditionImmunitySource(
+        condition,
+        recipient.token,
+        options.moveType,
+        conditionContext,
+      )
+      if (passiveBlocker) return decision(passiveBlocker, providerIds)
+      const encounter = encounterConditionPrevention({
+        condition,
+        recipientId: recipient.placement.id,
+        context: options.context,
+      })
+      return decision(encounter.blockedBy, [
+        ...providerIds,
+        ...encounter.consultedPlacementIds.filter(id => !providerIds.includes(id)),
+      ])
+    },
+    combatStage: ({ stage, delta, recipient }) => decision(
+      moveAutomationCombatStageBlockSource({
+        target: recipient.token,
+        key: stage,
+        delta,
+      }),
     ),
-    conditionProviderIds(condition, recipient.placement.id, options.conditionContext),
-  ),
-  combatStage: ({ stage, delta, recipient }) => decision(
-    moveAutomationCombatStageBlockSource({
-      target: recipient.token,
-      key: stage,
-      delta,
-    }),
-  ),
-})
+  }
+}

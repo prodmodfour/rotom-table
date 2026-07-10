@@ -600,6 +600,7 @@ const triggerEffects = (options: {
     const operation = operationForEffect(options.parent, effect)
     const immunities = createStandardMoveCoreTokenEffectImmunityQueries({
       moveType: options.moveType,
+      context: options.context,
     })
     const result = operation.kind === 'condition'
       ? reduceConditionEffectForRecipient({
@@ -607,6 +608,7 @@ const triggerEffects = (options: {
           recipient,
           accumulator: options.conditions,
           immunities,
+          context: options.context,
         })
       : reduceCombatStageEffectForRecipient({
           operation,
@@ -1198,6 +1200,7 @@ export const executeMoveMultiHitOperation = (options: {
     hpUpdates: hp.toUpdates(),
     conditionUpdates: conditions.toUpdates(),
     stageUpdates: stages.toUpdates(),
+    encounterStateUpdate: null,
   })
   const hpUpdates = hp.toUpdates()
   const conditionUpdates = conditions.toUpdates()

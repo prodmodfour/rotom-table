@@ -42,6 +42,7 @@ export type MoveCoreTokenChangedField =
   | 'temporaryHitPoints'
   | 'conditions'
   | 'combatStages'
+  | 'encounterEffects'
 
 export interface MoveCoreHpStateSnapshot {
   readonly kind: 'hp'

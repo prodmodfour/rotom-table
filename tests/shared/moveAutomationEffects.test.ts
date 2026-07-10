@@ -81,6 +81,12 @@ const VALID_PAYLOADS = {
   condition: {
     action: 'apply',
     conditionId: 'burned',
+    conditionSource: null,
+    filter: null,
+    randomChoice: null,
+    duration: null,
+    saveTiming: 'canonical',
+    stackPolicy: { kind: 'refresh', maxStacks: null },
   },
   'combat-stage': {
     action: 'modify',
@@ -403,7 +409,16 @@ describe('MoveSpec typed effect operations', () => {
       })
     expect(parseMoveEffectOperation(validOperation('condition', {
       payload: { action: 'clear', conditionId: null },
-    })).payload).toEqual({ action: 'clear', conditionId: null })
+    })).payload).toEqual({
+      action: 'clear',
+      conditionId: null,
+      conditionSource: null,
+      filter: null,
+      randomChoice: null,
+      duration: null,
+      saveTiming: 'canonical',
+      stackPolicy: { kind: 'refresh', maxStacks: null },
+    })
     expect(parseMoveEffectOperation(validOperation('combat-stage', {
       payload: { action: 'reset', stage: 'all', value: null },
     })).payload).toEqual({
@@ -423,6 +438,139 @@ describe('MoveSpec typed effect operations', () => {
     expect(parseMoveEffectOperation(validOperation('hazard', {
       payload: { action: 'remove', hazardId: 'hazard.spikes' },
     })).payload).toEqual({ action: 'remove', hazardId: 'hazard.spikes' })
+  })
+
+  it('parses typed condition transforms, cleanse groups, randomness, timing, and stacking', () => {
+    const clear = parseMoveEffectOperation(validOperation('condition', {
+      payload: {
+        ...VALID_PAYLOADS.condition,
+        action: 'clear',
+        conditionId: null,
+        filter: {
+          groups: ['major', 'volatile'],
+          conditionIds: ['tripped'],
+          excludedConditionIds: ['sleep'],
+        },
+      },
+    }))
+    expect(clear.kind === 'condition' && clear.payload).toMatchObject({
+      action: 'clear',
+      filter: {
+        groups: ['major', 'volatile'],
+        conditionIds: ['tripped'],
+        excludedConditionIds: ['sleep'],
+      },
+    })
+
+    const transfer = parseMoveEffectOperation(validOperation('condition', {
+      payload: {
+        ...VALID_PAYLOADS.condition,
+        action: 'transfer',
+        conditionId: 'poisoned',
+        conditionSource: { kind: 'actor' },
+      },
+    }))
+    expect(transfer.kind === 'condition' && transfer.payload.conditionSource)
+      .toEqual({ kind: 'actor' })
+
+    const replace = parseMoveEffectOperation(validOperation('condition', {
+      payload: {
+        ...VALID_PAYLOADS.condition,
+        action: 'replace',
+        conditionId: 'sleep',
+        filter: {
+          groups: ['persistent'],
+          conditionIds: [],
+          excludedConditionIds: [],
+        },
+      },
+    }))
+    expect(replace.kind === 'condition' && replace.payload.action).toBe('replace')
+
+    const random = parseMoveEffectOperation(validOperation('condition', {
+      payload: {
+        ...VALID_PAYLOADS.condition,
+        action: 'random-choice',
+        conditionId: null,
+        randomChoice: {
+          rollId: 'roll.random-condition',
+          conditionIds: ['burned', 'frozen', 'paralysis'],
+        },
+        duration: {
+          effectId: 'effect.random-condition',
+          duration: { kind: 'turns', subject: 'target', boundary: 'end', remaining: 1 },
+        },
+        saveTiming: 'end-turn',
+        stackPolicy: { kind: 'add-stack', maxStacks: 3 },
+      },
+    }))
+    expect(random.kind === 'condition' && random.payload).toMatchObject({
+      action: 'random-choice',
+      randomChoice: {
+        rollId: 'roll.random-condition',
+        conditionIds: ['burned', 'frozen', 'paralysis'],
+      },
+      duration: {
+        effectId: 'effect.random-condition',
+        duration: { kind: 'turns', subject: 'target', boundary: 'end', remaining: 1 },
+      },
+      saveTiming: 'end-turn',
+      stackPolicy: { kind: 'add-stack', maxStacks: 3 },
+    })
+    if (random.kind !== 'condition') throw new Error('Expected condition operation')
+    expect(Object.isFrozen(random.payload.duration?.duration)).toBe(true)
+  })
+
+  it('rejects ambiguous or unbounded typed condition policies', () => {
+    expectEffectError(validOperation('condition', {
+      payload: {
+        ...VALID_PAYLOADS.condition,
+        action: 'transfer',
+        conditionId: 'burned',
+      },
+    }), 'invalid-effect-operation', 'operation.payload.conditionSource')
+    expectEffectError(validOperation('condition', {
+      payload: {
+        ...VALID_PAYLOADS.condition,
+        action: 'random-choice',
+        conditionId: null,
+        randomChoice: { rollId: 'roll.condition', conditionIds: ['burned'] },
+      },
+    }), 'invalid-effect-operation', 'operation.payload.randomChoice.conditionIds')
+    expectEffectError(validOperation('condition', {
+      payload: {
+        ...VALID_PAYLOADS.condition,
+        action: 'clear',
+        conditionId: null,
+        filter: {
+          groups: ['all', 'major'],
+          conditionIds: [],
+          excludedConditionIds: [],
+        },
+      },
+    }), 'invalid-effect-operation', 'operation.payload.filter.groups')
+    expectEffectError(validOperation('condition', {
+      payload: {
+        ...VALID_PAYLOADS.condition,
+        stackPolicy: { kind: 'independent-instance', maxStacks: null },
+      },
+    }), 'invalid-effect-operation', 'operation.payload.stackPolicy')
+    expectEffectError(validOperation('condition', {
+      payload: {
+        ...VALID_PAYLOADS.condition,
+        saveTiming: 'none',
+      },
+    }), 'invalid-effect-operation', 'operation.payload.saveTiming')
+    expectEffectError(validOperation('condition', {
+      payload: {
+        ...VALID_PAYLOADS.condition,
+        action: 'remove',
+        duration: {
+          effectId: 'effect.invalid',
+          duration: { kind: 'scene', remaining: null },
+        },
+      },
+    }), 'invalid-effect-operation', 'operation.payload.duration')
   })
 
   it('parses advanced combat-stage transforms and concrete selected-Stat choices', () => {

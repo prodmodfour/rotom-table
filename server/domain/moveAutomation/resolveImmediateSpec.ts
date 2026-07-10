@@ -3,6 +3,7 @@ import type {
   MoveResolutionTraceJsonValue,
 } from '#shared/moveAutomation/trace'
 import type {
+  MoveAutomationConditionUpdate,
   MoveAutomationHpUpdate,
   MoveAutomationScript,
   MoveAutomationTransaction,
@@ -13,7 +14,7 @@ import type {
   MoveAutomationTargetResolutionState,
 } from '~/utils/moveAutomationTargetResolution'
 import type { ResolvedCanonicalMoveEntry } from '~/utils/authoritativeMoveEntries'
-import { deepCloneJson } from '~/utils/serialization'
+import { deepCloneJson, sameJsonValue } from '~/utils/serialization'
 import type { MoveStateChangePlan } from './plan'
 import type {
   AuthoritativeMoveRulesContext,
@@ -301,6 +302,33 @@ const hpUpdatesFromResults = (
   return [...updates.values()]
 }
 
+const conditionUpdatesFromResults = (
+  results: readonly MoveCoreTokenEffectOperationResult[],
+): MoveAutomationConditionUpdate[] => {
+  const states = new Map<string, {
+    readonly previous: readonly string[]
+    current: readonly string[]
+  }>()
+  for (const operation of results) {
+    for (const recipient of operation.recipients) {
+      if (recipient.previous.kind !== 'conditions' || recipient.current.kind !== 'conditions') {
+        continue
+      }
+      const state = states.get(recipient.recipientId)
+      if (state) state.current = recipient.current.conditions
+      else {
+        states.set(recipient.recipientId, {
+          previous: recipient.previous.conditions,
+          current: recipient.current.conditions,
+        })
+      }
+    }
+  }
+  return [...states].flatMap(([id, state]) => sameJsonValue(state.previous, state.current)
+    ? []
+    : [{ id, conditions: [...state.current] }])
+}
+
 const compatibilityLogLines = (options: {
   readonly context: AuthoritativeMoveRulesContext
   readonly script: MoveAutomationScript
@@ -379,6 +407,7 @@ const assertSupportedImmediateOperations = (
     'multi-hit',
     'direct-hp',
     'heal',
+    'condition',
     'movement-request',
     'usage',
     'log',
@@ -454,7 +483,10 @@ export const resolveImmediateMoveSpec = (options: {
           selectedTargetIds: execution.targetIds,
         })
       : undefined,
-    immunities: createStandardMoveCoreTokenEffectImmunityQueries({ moveType: script.type }),
+    immunities: createStandardMoveCoreTokenEffectImmunityQueries({
+      moveType: script.type,
+      context: options.context,
+    }),
     trace: execution.trace,
   })
   const terminalRecipients = damagedAndFaintedRecipients(core.operationResults)
@@ -482,7 +514,9 @@ export const resolveImmediateMoveSpec = (options: {
     hpUpdates: multiHit
       ? [...multiHit.hpUpdates]
       : hpUpdatesFromResults(core.operationResults),
-    conditionUpdates: multiHit ? [...multiHit.conditionUpdates] : [],
+    conditionUpdates: multiHit
+      ? [...multiHit.conditionUpdates]
+      : conditionUpdatesFromResults(core.operationResults),
     combatStageUpdates: multiHit ? [...multiHit.combatStageUpdates] : [],
     hazardsToAdd: [],
     fieldEffectsToApply: [],

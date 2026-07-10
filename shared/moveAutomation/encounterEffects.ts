@@ -34,6 +34,12 @@ export const ENCOUNTER_EFFECT_CONDITION_ACTIONS = [
   'suppress',
 ] as const
 
+/** Resolved game-event boundary for a source-linked condition save. */
+export const ENCOUNTER_EFFECT_CONDITION_SAVE_TIMINGS = [
+  'start-turn',
+  'end-turn',
+] as const
+
 export const ENCOUNTER_EFFECT_NUMERIC_ATTRIBUTES = [
   'accuracy',
   'evasion',
@@ -73,6 +79,8 @@ export type EncounterEffectBoundary = (typeof ENCOUNTER_EFFECT_BOUNDARIES)[numbe
 export type EncounterEffectStackPolicyKind = (typeof ENCOUNTER_EFFECT_STACK_POLICY_KINDS)[number]
 export type EncounterEffectChargePolicyKind = (typeof ENCOUNTER_EFFECT_CHARGE_POLICY_KINDS)[number]
 export type EncounterEffectConditionAction = (typeof ENCOUNTER_EFFECT_CONDITION_ACTIONS)[number]
+export type EncounterEffectConditionSaveTiming =
+  (typeof ENCOUNTER_EFFECT_CONDITION_SAVE_TIMINGS)[number]
 export type EncounterEffectNumericAttribute = (typeof ENCOUNTER_EFFECT_NUMERIC_ATTRIBUTES)[number]
 export type EncounterEffectNumericOperation = (typeof ENCOUNTER_EFFECT_NUMERIC_OPERATIONS)[number]
 export type EncounterEffectRoundingPolicy = (typeof ENCOUNTER_EFFECT_ROUNDING_POLICIES)[number]
@@ -169,6 +177,8 @@ export interface EncounterEffectSuppressionMetadata {
 export interface EncounterConditionEffectPayload {
   readonly conditionId: string
   readonly action: EncounterEffectConditionAction
+  /** Null means this effect has no save window; canonical timing is resolved before storage. */
+  readonly saveTiming?: EncounterEffectConditionSaveTiming | null
 }
 
 export interface EncounterNumericModifierEffectPayload {
@@ -356,7 +366,8 @@ const CHARGE_POLICY_FIELDS = ['kind', 'amount'] as const
 const DISPEL_FIELDS = ['policy', 'tags'] as const
 const SUPPRESSION_FIELDS = ['sources'] as const
 const SUPPRESSION_SOURCE_FIELDS = ['effectId', 'reasonCode'] as const
-const CONDITION_PAYLOAD_FIELDS = ['conditionId', 'action'] as const
+const CONDITION_PAYLOAD_FIELDS = ['conditionId', 'action', 'saveTiming'] as const
+const LEGACY_CONDITION_PAYLOAD_FIELDS = ['conditionId', 'action'] as const
 const NUMERIC_MODIFIER_PAYLOAD_FIELDS = ['attribute', 'operation', 'value', 'rounding'] as const
 const CAPABILITY_PAYLOAD_FIELDS = ['capabilityId', 'action'] as const
 
@@ -369,6 +380,7 @@ const BOUNDARY_SET = new Set<string>(ENCOUNTER_EFFECT_BOUNDARIES)
 const STACK_POLICY_KIND_SET = new Set<string>(ENCOUNTER_EFFECT_STACK_POLICY_KINDS)
 const CHARGE_POLICY_KIND_SET = new Set<string>(ENCOUNTER_EFFECT_CHARGE_POLICY_KINDS)
 const CONDITION_ACTION_SET = new Set<string>(ENCOUNTER_EFFECT_CONDITION_ACTIONS)
+const CONDITION_SAVE_TIMING_SET = new Set<string>(ENCOUNTER_EFFECT_CONDITION_SAVE_TIMINGS)
 const NUMERIC_ATTRIBUTE_SET = new Set<string>(ENCOUNTER_EFFECT_NUMERIC_ATTRIBUTES)
 const NUMERIC_OPERATION_SET = new Set<string>(ENCOUNTER_EFFECT_NUMERIC_OPERATIONS)
 const ROUNDING_POLICY_SET = new Set<string>(ENCOUNTER_EFFECT_ROUNDING_POLICIES)
@@ -566,7 +578,10 @@ const parseAffected = (value: unknown, path: string): EncounterEffectAffected =>
   return { placementIds, sideIds, cells }
 }
 
-const parseDuration = (value: unknown, path: string): EncounterEffectDuration => {
+export const parseEncounterEffectDuration = (
+  value: unknown,
+  path = 'encounterEffect.duration',
+): EncounterEffectDuration => {
   const duration = parseExactRecord(value, DURATION_FIELDS, path, DURATION_REQUIRED_FIELDS)
   const kind = parseEnum<EncounterEffectDurationKind>(
     duration.kind,
@@ -641,10 +656,10 @@ const parseDuration = (value: unknown, path: string): EncounterEffectDuration =>
   return { kind, remaining: null }
 }
 
-const parseStackPolicy = (
+export const parseEncounterEffectStackPolicy = (
   value: unknown,
-  path: string,
-  stacks: number,
+  path = 'encounterEffect.stackPolicy',
+  stacks = 1,
 ): EncounterEffectStackPolicy => {
   if (value === undefined) return { kind: 'independent-instance', maxStacks: null }
 
@@ -752,15 +767,37 @@ const parseConditionPayload = (
   value: unknown,
   path: string,
 ): EncounterConditionEffectPayload => {
-  const payload = parseExactRecord(value, CONDITION_PAYLOAD_FIELDS, path)
+  const payload = parseExactRecord(
+    value,
+    CONDITION_PAYLOAD_FIELDS,
+    path,
+    LEGACY_CONDITION_PAYLOAD_FIELDS,
+  )
+  const action = parseEnum<EncounterEffectConditionAction>(
+    payload.action,
+    CONDITION_ACTION_SET,
+    `${path}.action`,
+    'apply, prevent, or suppress',
+  )
+  const saveTiming = payload.saveTiming === undefined || payload.saveTiming === null
+    ? null
+    : parseEnum<EncounterEffectConditionSaveTiming>(
+        payload.saveTiming,
+        CONDITION_SAVE_TIMING_SET,
+        `${path}.saveTiming`,
+        'start-turn, end-turn, or null',
+      )
+  if (action !== 'apply' && saveTiming !== null) {
+    fail(
+      'invalid-encounter-effect',
+      `${path}.saveTiming`,
+      'must be null for condition prevention and suppression effects.',
+    )
+  }
   return {
     conditionId: parseStableId(payload.conditionId, `${path}.conditionId`),
-    action: parseEnum<EncounterEffectConditionAction>(
-      payload.action,
-      CONDITION_ACTION_SET,
-      `${path}.action`,
-      'apply, prevent, or suppress',
-    ),
+    action,
+    ...(payload.saveTiming === undefined ? {} : { saveTiming }),
   }
 }
 
@@ -891,10 +928,10 @@ export const parseEncounterEffectDefinition = (
         ENCOUNTER_EFFECT_LIMITS.charges,
       )
   const common: ParsedEncounterEffectDefinitionCommon = {
-    duration: parseDuration(definition.duration, `${path}.duration`),
+    duration: parseEncounterEffectDuration(definition.duration, `${path}.duration`),
     stacks,
     charges,
-    stackPolicy: parseStackPolicy(definition.stackPolicy, `${path}.stackPolicy`, stacks),
+    stackPolicy: parseEncounterEffectStackPolicy(definition.stackPolicy, `${path}.stackPolicy`, stacks),
     chargePolicy: parseChargePolicy(definition.chargePolicy, `${path}.chargePolicy`, charges),
     tags: parseStableIdList(definition.tags, `${path}.tags`, ENCOUNTER_EFFECT_LIMITS.tags),
     dispel: parseDispel(definition.dispel, `${path}.dispel`),
@@ -958,10 +995,10 @@ export const parseEncounterEffect = (
       0,
       ENCOUNTER_EFFECT_LIMITS.turn,
     ),
-    duration: parseDuration(effect.duration, `${path}.duration`),
+    duration: parseEncounterEffectDuration(effect.duration, `${path}.duration`),
     stacks,
     charges,
-    stackPolicy: parseStackPolicy(effect.stackPolicy, `${path}.stackPolicy`, stacks),
+    stackPolicy: parseEncounterEffectStackPolicy(effect.stackPolicy, `${path}.stackPolicy`, stacks),
     chargePolicy: parseChargePolicy(effect.chargePolicy, `${path}.chargePolicy`, charges),
     tags: parseStableIdList(effect.tags, `${path}.tags`, ENCOUNTER_EFFECT_LIMITS.tags),
     dispel: parseDispel(effect.dispel, `${path}.dispel`),

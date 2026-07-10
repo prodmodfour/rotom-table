@@ -3,7 +3,11 @@ import {
   ENCOUNTER_EFFECT_LIMITS,
   EncounterEffectValidationError,
   parseEncounterEffectDefinition,
+  parseEncounterEffectDuration,
+  parseEncounterEffectStackPolicy,
   type EncounterEffectDefinition,
+  type EncounterEffectDuration,
+  type EncounterEffectStackPolicy,
 } from './encounterEffects'
 import {
   MoveExpressionValidationError,
@@ -141,7 +145,29 @@ export const MOVE_EFFECT_HP_MARKER_INJURY_POLICIES = [
 /** Direct HP operations never qualify as damage for PTU Massive Damage Injuries. */
 export const MOVE_EFFECT_HP_MASSIVE_DAMAGE_POLICIES = ['never'] as const
 export const MOVE_EFFECT_ROUNDING_POLICIES = ['floor', 'round', 'ceil'] as const
-export const MOVE_EFFECT_CONDITION_ACTIONS = ['apply', 'remove', 'clear'] as const
+export const MOVE_EFFECT_CONDITION_ACTIONS = [
+  'apply',
+  'remove',
+  'clear',
+  'transfer',
+  'replace',
+  'random-choice',
+] as const
+export const MOVE_EFFECT_CONDITION_GROUPS = [
+  'major',
+  'minor',
+  'persistent',
+  'volatile',
+  'other',
+  'status',
+  'all',
+] as const
+export const MOVE_EFFECT_CONDITION_SAVE_TIMINGS = [
+  'canonical',
+  'none',
+  'start-turn',
+  'end-turn',
+] as const
 export const MOVE_EFFECT_COMBAT_STAGE_ACTIONS = [
   'modify',
   'set',
@@ -215,6 +241,8 @@ export const MOVE_EFFECT_OPERATION_LIMITS = Object.freeze({
   multiHitStrikes: 10,
   multiHitTableEntries: 32,
   multiHitEffects: 16,
+  conditionFilterIds: 32,
+  conditionRandomChoices: 16,
   reactionPriorityMagnitude: 1_000,
 })
 
@@ -266,6 +294,9 @@ export type MoveEffectHpMassiveDamagePolicy =
   (typeof MOVE_EFFECT_HP_MASSIVE_DAMAGE_POLICIES)[number]
 export type MoveEffectRoundingPolicy = (typeof MOVE_EFFECT_ROUNDING_POLICIES)[number]
 export type MoveEffectConditionAction = (typeof MOVE_EFFECT_CONDITION_ACTIONS)[number]
+export type MoveEffectConditionGroup = (typeof MOVE_EFFECT_CONDITION_GROUPS)[number]
+export type MoveEffectConditionSaveTiming =
+  (typeof MOVE_EFFECT_CONDITION_SAVE_TIMINGS)[number]
 export type MoveEffectCombatStageAction = (typeof MOVE_EFFECT_COMBAT_STAGE_ACTIONS)[number]
 export type MoveEffectCombatStatStage = (typeof MOVE_EFFECT_COMBAT_STAT_STAGES)[number]
 export type MoveEffectCombatStage = (typeof MOVE_EFFECT_COMBAT_STAGES)[number]
@@ -613,10 +644,39 @@ export interface MoveHealEffectPayload {
   readonly injury: MoveHpInjuryPolicy
 }
 
+export interface MoveConditionCleanseFilter {
+  /** Groups and explicit IDs are inclusive alternatives; an empty inclusion set means all. */
+  readonly groups: readonly MoveEffectConditionGroup[]
+  readonly conditionIds: readonly string[]
+  readonly excludedConditionIds: readonly string[]
+}
+
+export interface MoveConditionRandomChoice {
+  /** Earlier server-owned roll whose final value is a one-based choice index. */
+  readonly rollId: string
+  readonly conditionIds: readonly string[]
+}
+
+export interface MoveConditionDurationPolicy {
+  /** Stable reviewed base identity; the reducer derives one instance per recipient. */
+  readonly effectId: string
+  readonly duration: EncounterEffectDuration
+}
+
 export interface MoveConditionEffectPayload {
   readonly action: MoveEffectConditionAction
-  /** Null is required only for `clear`; other actions name one condition. */
+  /** Applied/removed/transferred/replacement condition; null for clear/random-choice. */
   readonly conditionId: string | null
+  /** Exactly one authoritative source for transfer; null for every other action. */
+  readonly conditionSource: MoveSelector | null
+  /** Required for replace, optional for filtered clear, null for other actions. */
+  readonly filter: MoveConditionCleanseFilter | null
+  /** Required only for random-choice. */
+  readonly randomChoice: MoveConditionRandomChoice | null
+  /** Non-null stores an application as a source-linked encounter effect. */
+  readonly duration: MoveConditionDurationPolicy | null
+  readonly saveTiming: MoveEffectConditionSaveTiming
+  readonly stackPolicy: EncounterEffectStackPolicy
 }
 
 export interface MoveCombatStageEffectPayload {
@@ -931,7 +991,19 @@ const HP_LOST_CALCULATION_FIELDS = [
 const HP_BOUNDS_FIELDS = ['minimum', 'maximum'] as const
 const HP_INJURY_FIELDS = ['hitPointMarkers', 'massiveDamage'] as const
 const HP_COST_FIELDS = ['kind', 'timing', 'minimumRemaining', 'damageOperationId'] as const
-const CONDITION_FIELDS = ['action', 'conditionId'] as const
+const CONDITION_REQUIRED_FIELDS = ['action', 'conditionId'] as const
+const CONDITION_OPTIONAL_FIELDS = [
+  'conditionSource',
+  'filter',
+  'randomChoice',
+  'duration',
+  'saveTiming',
+  'stackPolicy',
+] as const
+const CONDITION_FILTER_FIELDS = ['groups', 'conditionIds', 'excludedConditionIds'] as const
+const CONDITION_RANDOM_CHOICE_FIELDS = ['rollId', 'conditionIds'] as const
+const CONDITION_DURATION_FIELDS = ['effectId', 'duration'] as const
+const CONDITION_STACK_POLICY_FIELDS = ['kind', 'maxStacks'] as const
 const COMBAT_STAGE_REQUIRED_FIELDS = ['action', 'stage', 'value'] as const
 const COMBAT_STAGE_OPTIONAL_FIELDS = ['selectedStage', 'stageSource', 'rounding'] as const
 const ADD_TEMPORARY_EFFECT_FIELDS = ['action', 'effectId', 'definition'] as const
@@ -1005,6 +1077,8 @@ const HP_MARKER_INJURY_POLICY_SET = new Set<string>(MOVE_EFFECT_HP_MARKER_INJURY
 const HP_MASSIVE_DAMAGE_POLICY_SET = new Set<string>(MOVE_EFFECT_HP_MASSIVE_DAMAGE_POLICIES)
 const ROUNDING_POLICY_SET = new Set<string>(MOVE_EFFECT_ROUNDING_POLICIES)
 const CONDITION_ACTION_SET = new Set<string>(MOVE_EFFECT_CONDITION_ACTIONS)
+const CONDITION_GROUP_SET = new Set<string>(MOVE_EFFECT_CONDITION_GROUPS)
+const CONDITION_SAVE_TIMING_SET = new Set<string>(MOVE_EFFECT_CONDITION_SAVE_TIMINGS)
 const COMBAT_STAGE_ACTION_SET = new Set<string>(MOVE_EFFECT_COMBAT_STAGE_ACTIONS)
 const COMBAT_STAT_STAGE_SET = new Set<string>(MOVE_EFFECT_COMBAT_STAT_STAGES)
 const COMBAT_STAGE_SET = new Set<string>(MOVE_EFFECT_COMBAT_STAGES)
@@ -2048,26 +2122,252 @@ const parseHealPayload = (value: unknown, path: string): MoveHealEffectPayload =
   }
 }
 
+const parseConditionIdList = (
+  value: unknown,
+  path: string,
+  maximum: number,
+  minimum = 0,
+): readonly string[] => {
+  const ids = parseBoundedArray(value, path, maximum)
+    .map((entry, index) => parseStableId(entry, `${path}[${index}]`))
+  if (ids.length < minimum) {
+    fail('invalid-effect-operation', path, `must contain at least ${minimum} entries.`)
+  }
+  assertUnique(ids, path)
+  return ids
+}
+
+const parseConditionFilter = (
+  value: unknown,
+  path: string,
+): MoveConditionCleanseFilter => {
+  const input = parseExactRecord(value, CONDITION_FILTER_FIELDS, path)
+  const groups = parseBoundedArray(
+    ownValue(input, 'groups', path),
+    `${path}.groups`,
+    MOVE_EFFECT_CONDITION_GROUPS.length,
+  ).map((entry, index) => parseEnum<MoveEffectConditionGroup>(
+    entry,
+    CONDITION_GROUP_SET,
+    `${path}.groups[${index}]`,
+    'major, minor, persistent, volatile, other, status, or all',
+  ))
+  assertUnique(groups, `${path}.groups`)
+  if (groups.includes('all') && groups.length > 1) {
+    fail('invalid-effect-operation', `${path}.groups`, 'all cannot be combined with another group.')
+  }
+  const conditionIds = parseConditionIdList(
+    ownValue(input, 'conditionIds', path),
+    `${path}.conditionIds`,
+    MOVE_EFFECT_OPERATION_LIMITS.conditionFilterIds,
+  )
+  const excludedConditionIds = parseConditionIdList(
+    ownValue(input, 'excludedConditionIds', path),
+    `${path}.excludedConditionIds`,
+    MOVE_EFFECT_OPERATION_LIMITS.conditionFilterIds,
+  )
+  const overlap = conditionIds.find(id => excludedConditionIds.includes(id))
+  if (overlap) {
+    fail(
+      'invalid-effect-operation',
+      `${path}.excludedConditionIds`,
+      `cannot exclude explicitly included condition ${overlap}.`,
+    )
+  }
+  return { groups, conditionIds, excludedConditionIds }
+}
+
+const parseConditionRandomChoice = (
+  value: unknown,
+  path: string,
+): MoveConditionRandomChoice => {
+  const input = parseExactRecord(value, CONDITION_RANDOM_CHOICE_FIELDS, path)
+  return {
+    rollId: parseStableId(ownValue(input, 'rollId', path), `${path}.rollId`),
+    conditionIds: parseConditionIdList(
+      ownValue(input, 'conditionIds', path),
+      `${path}.conditionIds`,
+      MOVE_EFFECT_OPERATION_LIMITS.conditionRandomChoices,
+      2,
+    ),
+  }
+}
+
+const rethrowEncounterPolicyError = (error: EncounterEffectValidationError): never => fail(
+  error.code === 'limit-exceeded' ? 'limit-exceeded' : 'invalid-effect-operation',
+  error.path,
+  error.detail,
+)
+
+const parseConditionDuration = (
+  value: unknown,
+  path: string,
+): MoveConditionDurationPolicy => {
+  const input = parseExactRecord(value, CONDITION_DURATION_FIELDS, path)
+  try {
+    return {
+      effectId: parseStableId(ownValue(input, 'effectId', path), `${path}.effectId`),
+      duration: parseEncounterEffectDuration(
+        ownValue(input, 'duration', path),
+        `${path}.duration`,
+      ),
+    }
+  } catch (error) {
+    if (error instanceof EncounterEffectValidationError) return rethrowEncounterPolicyError(error)
+    throw error
+  }
+}
+
+const parseConditionStackPolicy = (
+  value: unknown,
+  path: string,
+): EncounterEffectStackPolicy => {
+  const raw = value === undefined
+    ? { kind: 'refresh', maxStacks: null }
+    : parseExactRecord(value, CONDITION_STACK_POLICY_FIELDS, path)
+  try {
+    return parseEncounterEffectStackPolicy(raw, path, 1)
+  } catch (error) {
+    if (error instanceof EncounterEffectValidationError) return rethrowEncounterPolicyError(error)
+    throw error
+  }
+}
+
 const parseConditionPayload = (value: unknown, path: string): MoveConditionEffectPayload => {
-  const input = parseExactRecord(value, CONDITION_FIELDS, path)
+  const input = parseRecordWithOptionalFields(
+    value,
+    CONDITION_REQUIRED_FIELDS,
+    CONDITION_OPTIONAL_FIELDS,
+    path,
+  )
   const action = parseEnum<MoveEffectConditionAction>(
     ownValue(input, 'action', path),
     CONDITION_ACTION_SET,
     `${path}.action`,
-    'apply, remove, or clear',
+    'a supported condition action',
   )
   const conditionId = parseNullableStableId(
     ownValue(input, 'conditionId', path),
     `${path}.conditionId`,
   )
-  if ((action === 'clear') !== (conditionId === null)) {
+  const rawSource = Object.prototype.hasOwnProperty.call(input, 'conditionSource')
+    ? ownValue(input, 'conditionSource', path)
+    : null
+  const conditionSource = rawSource === null
+    ? null
+    : parseEffectSelector(rawSource, `${path}.conditionSource`)
+  const rawFilter = Object.prototype.hasOwnProperty.call(input, 'filter')
+    ? ownValue(input, 'filter', path)
+    : null
+  const filter = rawFilter === null
+    ? null
+    : parseConditionFilter(rawFilter, `${path}.filter`)
+  const rawRandomChoice = Object.prototype.hasOwnProperty.call(input, 'randomChoice')
+    ? ownValue(input, 'randomChoice', path)
+    : null
+  const randomChoice = rawRandomChoice === null
+    ? null
+    : parseConditionRandomChoice(rawRandomChoice, `${path}.randomChoice`)
+  const rawDuration = Object.prototype.hasOwnProperty.call(input, 'duration')
+    ? ownValue(input, 'duration', path)
+    : null
+  const duration = rawDuration === null
+    ? null
+    : parseConditionDuration(rawDuration, `${path}.duration`)
+  const saveTiming = Object.prototype.hasOwnProperty.call(input, 'saveTiming')
+    ? parseEnum<MoveEffectConditionSaveTiming>(
+        ownValue(input, 'saveTiming', path),
+        CONDITION_SAVE_TIMING_SET,
+        `${path}.saveTiming`,
+        'canonical, none, start-turn, or end-turn',
+      )
+    : 'canonical'
+  const stackPolicy = parseConditionStackPolicy(
+    Object.prototype.hasOwnProperty.call(input, 'stackPolicy')
+      ? ownValue(input, 'stackPolicy', path)
+      : undefined,
+    `${path}.stackPolicy`,
+  )
+
+  const conditionMustBeNull = action === 'clear' || action === 'random-choice'
+  if (conditionMustBeNull !== (conditionId === null)) {
     fail(
       'invalid-effect-operation',
       `${path}.conditionId`,
-      'must be null for clear and a stable identifier for apply/remove.',
+      'must be null for clear/random-choice and a stable identifier for every other action.',
     )
   }
-  return { action, conditionId }
+  if ((action === 'transfer') !== (conditionSource !== null)) {
+    fail(
+      'invalid-effect-operation',
+      `${path}.conditionSource`,
+      'must be an authoritative selector for transfer and null for every other action.',
+    )
+  }
+  const filterAllowed = action === 'replace' || action === 'clear'
+  if ((action === 'replace' && filter === null) || (!filterAllowed && filter !== null)) {
+    fail(
+      'invalid-effect-operation',
+      `${path}.filter`,
+      'is required for replace, optional for clear, and null for every other action.',
+    )
+  }
+  if ((action === 'random-choice') !== (randomChoice !== null)) {
+    fail(
+      'invalid-effect-operation',
+      `${path}.randomChoice`,
+      'must be present only for random-choice.',
+    )
+  }
+  if (duration !== null && !['apply', 'replace', 'random-choice'].includes(action)) {
+    fail(
+      'invalid-effect-operation',
+      `${path}.duration`,
+      'is supported only when applying a condition.',
+    )
+  }
+  if (stackPolicy.kind === 'independent-instance' && duration === null) {
+    fail(
+      'invalid-effect-operation',
+      `${path}.stackPolicy`,
+      'independent condition instances require a source-linked duration.',
+    )
+  }
+  if (saveTiming !== 'canonical' && duration === null) {
+    fail(
+      'invalid-effect-operation',
+      `${path}.saveTiming`,
+      'non-canonical save timing requires a source-linked duration.',
+    )
+  }
+  if (
+    ['remove', 'clear'].includes(action)
+    && (stackPolicy.kind !== 'refresh' || saveTiming !== 'canonical')
+  ) {
+    fail(
+      'invalid-effect-operation',
+      path,
+      'condition removal cannot declare application save or stack policies.',
+    )
+  }
+  if (action === 'transfer' && (duration !== null || saveTiming !== 'canonical')) {
+    fail(
+      'invalid-effect-operation',
+      path,
+      'condition transfer preserves the source condition timing.',
+    )
+  }
+
+  return {
+    action,
+    conditionId,
+    conditionSource,
+    filter,
+    randomChoice,
+    duration,
+    saveTiming,
+    stackPolicy,
+  }
 }
 
 const parseCombatStagePayload = (

@@ -173,7 +173,16 @@ describe('native MoveSpec multi-hit sequences', () => {
         recipient: 'target',
         kind: 'condition',
         reasonCode: 'move.tackle.burn-target',
-        payload: { action: 'apply', conditionId: 'burned' },
+        payload: {
+          action: 'apply',
+          conditionId: 'burned',
+          conditionSource: null,
+          filter: null,
+          randomChoice: null,
+          duration: null,
+          saveTiming: 'canonical',
+          stackPolicy: { kind: 'refresh', maxStacks: null },
+        },
       }, {
         id: 'effect.raise-actor-attack',
         timing: 'after-all',

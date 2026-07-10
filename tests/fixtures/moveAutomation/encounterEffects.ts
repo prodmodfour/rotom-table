@@ -28,6 +28,7 @@ export const conditionEncounterEffectFixture = (): EncounterConditionEffect => (
   payload: {
     conditionId: 'sleep',
     action: 'apply',
+    saveTiming: 'end-turn',
   },
   dispel: {
     policy: 'matching-tags',

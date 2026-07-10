@@ -483,7 +483,10 @@ export const planEncounterLifecycle = (
       context,
       operations: emissions,
       dynamicRecipients: EMPTY_DYNAMIC_RECIPIENTS,
-      immunities: createStandardMoveCoreTokenEffectImmunityQueries({ moveType: null }),
+      immunities: createStandardMoveCoreTokenEffectImmunityQueries({
+        moveType: null,
+        context,
+      }),
       recipientIdsForOperation: operation => recipientsByOperationId.get(operation.id) ?? [],
     })
     sheetReads = core.sheetReads

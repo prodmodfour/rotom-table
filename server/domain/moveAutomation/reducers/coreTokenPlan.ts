@@ -1,4 +1,5 @@
 import { nextRevision, normalizeRevision } from '#shared/sessionRevisions'
+import type { EncounterState } from '#shared/moveAutomation/encounterState'
 import type { CombatStageMap } from '~/types/combatStages'
 import type { SheetPlacement, TabletopMap } from '~/types/map'
 import type {
@@ -222,6 +223,10 @@ export interface BuildMoveCoreTokenStateChangesInput {
   readonly hpUpdates: readonly MoveAutomationHpUpdate[]
   readonly conditionUpdates: readonly MoveAutomationConditionUpdate[]
   readonly stageUpdates: readonly MoveAutomationCombatStageUpdate[]
+  readonly encounterStateUpdate: {
+    readonly previous: EncounterState
+    readonly current: EncounterState
+  } | null
 }
 
 /** Aggregate ordered reducer output into one typed replacement per physical resource. */
@@ -329,6 +334,28 @@ export const buildMoveCoreTokenStateChanges = (
         } as unknown as MoveSheetDocument,
         changedFields,
         compensation: unavailableMoveStateCompensation('field-level-inverse-not-yet-recorded'),
+      },
+    })
+  }
+
+  if (options.encounterStateUpdate) {
+    const encounterTouches = touchedPlacementIds.flatMap(placementId => (
+      touchesForField(touches, placementId, 'encounterEffects')
+    ))
+    const source = provenance(encounterTouches)
+    ordered.push({
+      firstOperationOrder: firstTouchOrder(encounterTouches),
+      scopeOrder: 0,
+      tieKey: context.map.slug,
+      input: {
+        kind: 'encounter-state',
+        scope: { kind: 'encounter', mapSlug: context.map.slug },
+        expectedRevision: normalizeRevision(context.map.revision),
+        sourceOperationId: source.sourceOperationId,
+        reasonCode: source.reasonCode,
+        previous: deepCloneJson(options.encounterStateUpdate.previous),
+        current: deepCloneJson(options.encounterStateUpdate.current),
+        compensation: RESTORE_PREVIOUS_MOVE_STATE_VALUE,
       },
     })
   }

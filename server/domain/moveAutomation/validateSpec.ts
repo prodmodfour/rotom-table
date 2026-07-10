@@ -657,6 +657,41 @@ export const validateMoveSpecOperationSequence = (
         assertPriorDamageReference(damageOperationId, index, referencePath)
       }
     }
+    if (operation.kind === 'condition' && operation.payload.randomChoice) {
+      const referencePath = `${path}.payload.randomChoice.rollId`
+      const rollId = operation.payload.randomChoice.rollId
+      assertPriorReference(rollId, index, referencePath, rollIndexById, 'roll ID')
+      const referencedIndex = rollIndexById.get(rollId)!
+      const referenced = indexed[referencedIndex]?.operation
+      if (!referenced || referenced.kind !== 'roll') {
+        return fail('invalid-definition', referencePath, `${rollId} must identify an earlier roll operation.`)
+      }
+      const choiceCount = operation.payload.randomChoice.conditionIds.length
+      const formula = referenced.payload.formula
+      const exactChoiceRange = formula.kind === 'uniform-integer'
+        ? formula.minimum === 1 && formula.maximum === choiceCount
+        : formula.kind === 'dice'
+          && formula.count === 1
+          && formula.sides === choiceCount
+          && formula.modifier === 0
+      if (!exactChoiceRange) {
+        fail(
+          'invalid-definition',
+          referencePath,
+          `roll ${rollId} must resolve exactly the one-based range 1 through ${choiceCount}.`,
+        )
+      }
+      if (
+        referenced.recipients.kind !== 'none'
+        && referenced.recipients.kind !== operation.recipients.kind
+      ) {
+        fail(
+          'invalid-definition',
+          referencePath,
+          'a per-recipient condition choice must use the same authoritative recipient selector as its roll.',
+        )
+      }
+    }
     const damage = operation.kind === 'damage'
       ? operation.payload
       : operation.kind === 'multi-hit'

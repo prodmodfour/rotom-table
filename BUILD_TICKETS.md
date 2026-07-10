@@ -1085,7 +1085,7 @@ Status: DONE
 
 ## MA-084 — Generalize condition operations
 
-Status: TODO
+Status: DONE
 
 **Depends on:** MA-058, MA-070
 **Commit:** `feat(move-automation): support typed condition operations`

@@ -658,6 +658,86 @@ describe('authoritative MoveSpec validation and hashing', () => {
     )
   })
 
+  it('binds random condition choices to an earlier exact server roll and recipient set', () => {
+    const randomConditionSpec = (): TestSpec => {
+      const spec = validSpec()
+      spec.phases.splice(1, 0, {
+        phase: 'hit',
+        operations: [
+          rollOperation({
+            id: 'operation.condition-roll',
+            recipients: { kind: 'hit-targets' },
+            phase: 'hit',
+            reasonCode: 'move.scratch.condition-roll',
+            payload: {
+              rollId: 'roll.condition',
+              formula: { kind: 'dice', count: 1, sides: 3, modifier: 0 },
+            },
+          }),
+          {
+            id: 'operation.random-condition',
+            kind: 'condition',
+            source: { kind: 'operation', id: 'operation.condition-roll' },
+            recipients: { kind: 'hit-targets' },
+            phase: 'hit',
+            reasonCode: 'move.scratch.random-condition',
+            payload: {
+              action: 'random-choice',
+              conditionId: null,
+              conditionSource: null,
+              filter: null,
+              randomChoice: {
+                rollId: 'roll.condition',
+                conditionIds: ['burned', 'frozen', 'paralysis'],
+              },
+              duration: null,
+              saveTiming: 'canonical',
+              stackPolicy: { kind: 'refresh', maxStacks: null },
+            },
+          },
+        ],
+      })
+      return spec
+    }
+
+    const valid = validateMoveSpec(randomConditionSpec())
+    expect(valid.spec.phases.flatMap(phase => phase.operations).find(operation => (
+      operation.id === 'operation.random-condition'
+    ))).toMatchObject({
+      kind: 'condition',
+      payload: { randomChoice: { rollId: 'roll.condition' } },
+    })
+
+    const missing = randomConditionSpec()
+    missing.phases[1].operations[1].payload.randomChoice = {
+      rollId: 'roll.missing',
+      conditionIds: ['burned', 'frozen', 'paralysis'],
+    }
+    expectDefinitionError(
+      () => validateMoveSpec(missing),
+      'unknown-reference',
+      'spec.phases[1].operations[1].payload.randomChoice.rollId',
+    )
+
+    const wrongRange = randomConditionSpec()
+    wrongRange.phases[1].operations[0].payload.formula = {
+      kind: 'dice', count: 1, sides: 4, modifier: 0,
+    }
+    expectDefinitionError(
+      () => validateMoveSpec(wrongRange),
+      'invalid-definition',
+      'spec.phases[1].operations[1].payload.randomChoice.rollId',
+    )
+
+    const mismatchedRecipients = randomConditionSpec()
+    mismatchedRecipients.phases[1].operations[0].recipients = { kind: 'attacked-targets' }
+    expectDefinitionError(
+      () => validateMoveSpec(mismatchedRecipients),
+      'invalid-definition',
+      'spec.phases[1].operations[1].payload.randomChoice.rollId',
+    )
+  })
+
   it('requires damage-linked HP and damage-timed costs to reference earlier damage', () => {
     const drainOperation = (damageOperationId: string): TestOperation => ({
       id: 'operation.drain',

@@ -49,6 +49,24 @@ describe('typed encounter effects', () => {
     })).toThrow('unknown metadata')
   })
 
+  it('stores resolved condition save timing and forbids save metadata on prevention', () => {
+    const effect = conditionEncounterEffectFixture()
+    expect(parseEncounterEffect(effect).payload).toEqual({
+      conditionId: 'sleep',
+      action: 'apply',
+      saveTiming: 'end-turn',
+    })
+    const legacy = parseEncounterEffect({
+      ...effect,
+      payload: { conditionId: 'sleep', action: 'apply' },
+    })
+    expect(legacy.payload).toEqual({ conditionId: 'sleep', action: 'apply' })
+    expect(() => parseEncounterEffect({
+      ...effect,
+      payload: { conditionId: 'sleep', action: 'prevent', saveTiming: 'end-turn' },
+    })).toThrow('encounterEffect.payload.saveTiming: must be null')
+  })
+
   it('validates source identity, recipients, creation coordinates, counts, and duration', () => {
     const effect = conditionEncounterEffectFixture()
 

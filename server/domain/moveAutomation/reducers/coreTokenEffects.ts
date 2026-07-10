@@ -16,7 +16,10 @@ import {
   reduceCombatStageEffect,
   reduceCombatStageEffectForRecipient,
 } from './combatStage'
-import { reduceConditionEffectForRecipient } from './condition'
+import {
+  createMoveConditionEncounterStateAccumulator,
+  reduceConditionEffect,
+} from './condition'
 import {
   MoveCoreTokenEffectReductionError,
   failMoveCoreTokenEffectReduction,
@@ -36,6 +39,7 @@ import {
 } from './coreTokenRecipients'
 import { applyMoveCoreTokenEffectResultsToTrace } from './coreTokenTrace'
 import { evaluateMoveSelector, type MoveRuleSelectorState } from '../evaluateExpression'
+import type { MoveSelector } from '#shared/moveAutomation/selectors'
 import {
   reduceDamageEffectForRecipient,
   reduceDirectHpEffectForRecipient,
@@ -118,8 +122,11 @@ const aggregateOutcome = (
   return 'no-op'
 }
 
-const combatStageSourceRecipient = (options: {
-  readonly operation: Extract<MoveCoreTokenEffectOperation, { readonly kind: 'combat-stage' }>
+const authoritativeSourceRecipient = (options: {
+  readonly selector: MoveSelector | null
+  readonly operationId: string
+  readonly label: 'Combat-stage' | 'Condition'
+  readonly errorCode: 'invalid-stage-source' | 'invalid-condition-source'
   readonly context: AuthoritativeMoveRulesContext
   readonly dynamic: Readonly<Record<
     | 'attacked-targets'
@@ -133,8 +140,7 @@ const combatStageSourceRecipient = (options: {
   readonly sheetReads: AuthoritativeMoveSheetRead[]
   readonly sheetReadsByKey: Map<string, AuthoritativeMoveSheetRead>
 }): MoveCoreTokenEffectRecipient | undefined => {
-  const selector = options.operation.payload.stageSource
-  if (!selector) return undefined
+  if (!options.selector) return undefined
   const selectorState: MoveRuleSelectorState = {
     targetIds: options.dynamic['attacked-targets'],
     hitTargetIds: options.dynamic['hit-targets'],
@@ -143,14 +149,14 @@ const combatStageSourceRecipient = (options: {
     faintedTargetIds: options.dynamic['fainted-targets'],
   }
   const sourceIds = evaluateMoveSelector({
-    selector,
+    selector: options.selector,
     context: options.context,
     selectorState,
   })
   if (sourceIds.length !== 1) {
     return failMoveCoreTokenEffectReduction(
-      'invalid-stage-source',
-      `Combat-stage operation ${options.operation.id} must resolve exactly one authoritative source.`,
+      options.errorCode,
+      `${options.label} operation ${options.operationId} must resolve exactly one authoritative source.`,
     )
   }
   const sourceId = sourceIds[0]!
@@ -216,12 +222,10 @@ const reduceRecipient = (options: {
     })
   }
   if (operation.kind === 'condition') {
-    return reduceConditionEffectForRecipient({
-      operation,
-      recipient: options.recipient,
-      accumulator: options.conditionAccumulator,
-      immunities: options.immunities,
-    })
+    return failMoveCoreTokenEffectReduction(
+      'invalid-condition-recipient-count',
+      `Condition operation ${operation.id} requires grouped condition reduction.`,
+    )
   }
   return reduceCombatStageEffectForRecipient({
     operation,
@@ -244,6 +248,7 @@ export const reduceMoveCoreTokenOperationState = (
   )
   const hpAccumulator = createMoveAutomationHpUpdateAccumulator()
   const conditionAccumulator = createMoveAutomationConditionUpdateAccumulator()
+  const conditionEncounterAccumulator = createMoveConditionEncounterStateAccumulator(input.context)
   const stageAccumulator = createMoveAutomationCombatStageUpdateAccumulator()
   const temporaryHpAvailable = Boolean(input.context.map.activeScene)
   const operationIds = new Set<string>()
@@ -299,12 +304,36 @@ export const reduceMoveCoreTokenOperationState = (
       return recipient
     })
     let recipientResults: readonly MoveCoreTokenEffectRecipientResult[]
-    if (operation.kind === 'combat-stage') {
+    if (operation.kind === 'condition') {
+      recipientResults = reduceConditionEffect({
+        operation,
+        recipients,
+        sourceRecipient: authoritativeSourceRecipient({
+          selector: operation.payload.conditionSource,
+          operationId: operation.id,
+          label: 'Condition',
+          errorCode: 'invalid-condition-source',
+          context: input.context,
+          dynamic,
+          recipientsById,
+          sheetReads,
+          sheetReadsByKey,
+        }),
+        accumulator: conditionAccumulator,
+        encounter: conditionEncounterAccumulator,
+        immunities: input.immunities,
+        context: input.context,
+      })
+    }
+    else if (operation.kind === 'combat-stage') {
       recipientResults = reduceCombatStageEffect({
         operation,
         recipients,
-        sourceRecipient: combatStageSourceRecipient({
-          operation,
+        sourceRecipient: authoritativeSourceRecipient({
+          selector: operation.payload.stageSource,
+          operationId: operation.id,
+          label: 'Combat-stage',
+          errorCode: 'invalid-stage-source',
           context: input.context,
           dynamic,
           recipientsById,
@@ -375,6 +404,7 @@ export const reduceMoveCoreTokenOperationState = (
     hpUpdates: hpAccumulator.toUpdates(),
     conditionUpdates: conditionAccumulator.toUpdates(),
     stageUpdates: stageAccumulator.toUpdates(),
+    encounterStateUpdate: conditionEncounterAccumulator.update(),
   })
   return Object.freeze({
     stateChanges,

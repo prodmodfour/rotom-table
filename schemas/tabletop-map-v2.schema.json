@@ -453,7 +453,8 @@
       "additionalProperties": false,
       "properties": {
         "conditionId": { "$ref": "#/$defs/encounterEffectStableId" },
-        "action": { "enum": ["apply", "prevent", "suppress"] }
+        "action": { "enum": ["apply", "prevent", "suppress"] },
+        "saveTiming": { "enum": ["start-turn", "end-turn", null] }
       }
     },
     "encounterNumericModifierEffectPayload": {
