@@ -52,15 +52,23 @@ const VALID_PAYLOADS = {
   'direct-hp':  {
     mode: 'lose',
     pool: 'hit-points',
-    amount: 10,
-    minimumRemaining: 1,
+    calculation: { kind: 'fixed', value: 10 },
+    copySource: null,
+    bounds: { minimum: 1, maximum: null },
+    rounding: 'floor',
     applyTypeImmunity: true,
+    injury: {
+      hitPointMarkers: 'apply-after-operation',
+      massiveDamage: 'never',
+    },
   },
   heal: {
-    mode: 'percent-max',
+    mode: 'gain',
     pool: 'hit-points',
-    amount: 50,
+    calculation: { kind: 'percent-max', percent: 50 },
+    bounds: { minimum: null, maximum: null },
     rounding: 'floor',
+    injury: { hitPointMarkers: 'ignore', massiveDamage: 'never' },
   },
   condition: {
     action: 'apply',
@@ -397,6 +405,173 @@ describe('MoveSpec typed effect operations', () => {
     expect(parseMoveEffectOperation(validOperation('hazard', {
       payload: { action: 'remove', hazardId: 'hazard.spikes' },
     })).payload).toEqual({ action: 'remove', hazardId: 'hazard.spikes' })
+  })
+
+  it('parses every HP calculation and explicit set, copy, split, and full mode', () => {
+    const calculations = [
+      { kind: 'fixed', value: 12.5 },
+      { kind: 'percent-max', percent: 50 },
+      { kind: 'percent-current', percent: 25 },
+      { kind: 'percent-missing', percent: 75 },
+      {
+        kind: 'formula',
+        expression: {
+          kind: 'arithmetic',
+          operator: 'divide',
+          operands: [
+            { kind: 'stat', subject: { kind: 'actor' }, stat: 'maximum-hp' },
+            { kind: 'constant', value: 3 },
+          ],
+        },
+      },
+    ]
+    const parsedCalculations = calculations.map(calculation => parseMoveEffectOperation(
+      validOperation('direct-hp', {
+        payload: { ...VALID_PAYLOADS['direct-hp'], calculation },
+      }),
+    ))
+    expect(parsedCalculations.map((parsed) => (
+      parsed.kind === 'direct-hp' ? parsed.payload.calculation?.kind : null
+    ))).toEqual([
+      'fixed',
+      'percent-max',
+      'percent-current',
+      'percent-missing',
+      'formula',
+    ])
+
+    const set = parseMoveEffectOperation(validOperation('direct-hp', {
+      payload: {
+        ...VALID_PAYLOADS['direct-hp'],
+        mode: 'set',
+        calculation: { kind: 'fixed', value: -5 },
+        bounds: { minimum: -10, maximum: 40 },
+      },
+    }))
+    const copy = parseMoveEffectOperation(validOperation('direct-hp', {
+      payload: {
+        ...VALID_PAYLOADS['direct-hp'],
+        mode: 'copy',
+        calculation: null,
+        copySource: { kind: 'actor' },
+      },
+    }))
+    const split = parseMoveEffectOperation(validOperation('direct-hp', {
+      payload: {
+        ...VALID_PAYLOADS['direct-hp'],
+        mode: 'split',
+        calculation: null,
+        copySource: null,
+      },
+    }))
+    const full = parseMoveEffectOperation(validOperation('heal', {
+      payload: {
+        ...VALID_PAYLOADS.heal,
+        mode: 'full',
+        calculation: null,
+      },
+    }))
+
+    expect(set.kind === 'direct-hp' && set.payload).toMatchObject({
+      mode: 'set',
+      calculation: { kind: 'fixed', value: -5 },
+      bounds: { minimum: -10, maximum: 40 },
+    })
+    expect(copy.kind === 'direct-hp' && copy.payload.copySource).toEqual({ kind: 'actor' })
+    expect(split.kind === 'direct-hp' && split.payload.mode).toBe('split')
+    expect(full.kind === 'heal' && full.payload).toMatchObject({
+      mode: 'full',
+      pool: 'hit-points',
+      calculation: null,
+      injury: { hitPointMarkers: 'ignore', massiveDamage: 'never' },
+    })
+    for (const parsed of [...parsedCalculations, set, copy, split, full]) {
+      expectDeeplyFrozen(parsed)
+    }
+  })
+
+  it('rejects ambiguous HP modes, invalid bounds, and injury policy inflation', () => {
+    expectEffectError(
+      validOperation('direct-hp', {
+        payload: {
+          ...VALID_PAYLOADS['direct-hp'],
+          mode: 'copy',
+          copySource: { kind: 'actor' },
+        },
+      }),
+      'invalid-effect-operation',
+      'operation.payload.calculation',
+    )
+    expectEffectError(
+      validOperation('direct-hp', {
+        payload: {
+          ...VALID_PAYLOADS['direct-hp'],
+          mode: 'split',
+          calculation: null,
+          copySource: { kind: 'actor' },
+        },
+      }),
+      'invalid-effect-operation',
+      'operation.payload.copySource',
+    )
+    expectEffectError(
+      validOperation('direct-hp', {
+        payload: {
+          ...VALID_PAYLOADS['direct-hp'],
+          bounds: { minimum: 10, maximum: 2 },
+        },
+      }),
+      'invalid-effect-operation',
+      'operation.payload.bounds',
+    )
+    expectEffectError(
+      validOperation('direct-hp', {
+        payload: {
+          ...VALID_PAYLOADS['direct-hp'],
+          pool: 'temporary-hit-points',
+        },
+      }),
+      'invalid-effect-operation',
+      'operation.payload.injury.hitPointMarkers',
+    )
+    expectEffectError(
+      validOperation('direct-hp', {
+        payload: {
+          ...VALID_PAYLOADS['direct-hp'],
+          injury: {
+            hitPointMarkers: 'apply-after-operation',
+            massiveDamage: 'apply',
+          },
+        },
+      }),
+      'invalid-effect-operation',
+      'operation.payload.injury.massiveDamage',
+    )
+    expectEffectError(
+      validOperation('heal', {
+        payload: {
+          ...VALID_PAYLOADS.heal,
+          mode: 'full',
+          calculation: null,
+          pool: 'temporary-hit-points',
+        },
+      }),
+      'invalid-effect-operation',
+      'operation.payload.pool',
+    )
+    expectEffectError(
+      validOperation('heal', {
+        payload: {
+          ...VALID_PAYLOADS.heal,
+          injury: {
+            hitPointMarkers: 'apply-after-operation',
+            massiveDamage: 'never',
+          },
+        },
+      }),
+      'invalid-effect-operation',
+      'operation.payload.injury.hitPointMarkers',
+    )
   })
 
   it('accepts only explicit source and interpreter-owned recipient references', () => {
@@ -805,11 +980,14 @@ describe('MoveSpec typed effect operations', () => {
       validOperation('direct-hp', {
         payload: {
           ...VALID_PAYLOADS['direct-hp'],
-          amount: MOVE_EFFECT_OPERATION_LIMITS.numericMagnitude + 1,
+          calculation: {
+            kind: 'fixed',
+            value: MOVE_EFFECT_OPERATION_LIMITS.numericMagnitude + 1,
+          },
         },
       }),
       'limit-exceeded',
-      'operation.payload.amount',
+      'operation.payload.calculation.value',
     )
     expectEffectError(
       validOperation('log', {

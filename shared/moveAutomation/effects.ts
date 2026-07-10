@@ -13,6 +13,11 @@ import {
   type MoveStatSelectionExpression,
 } from './expressions'
 import {
+  MoveSelectorValidationError,
+  parseMoveSelector,
+  type MoveSelector,
+} from './selectors'
+import {
   MOVE_SPEC_PHASES,
   type MoveSpecPhase,
 } from './spec'
@@ -106,13 +111,21 @@ export const MOVE_EFFECT_MULTI_HIT_EFFECT_TRIGGERS = [
 export const MOVE_EFFECT_MULTI_HIT_EFFECT_RECIPIENTS = ['actor', 'target'] as const
 export const MOVE_EFFECT_MULTI_HIT_EFFECT_KINDS = ['condition', 'combat-stage'] as const
 export const MOVE_EFFECT_HP_POOLS = ['hit-points', 'temporary-hit-points'] as const
-export const MOVE_EFFECT_DIRECT_HP_MODES = ['lose', 'set'] as const
-export const MOVE_EFFECT_HEAL_MODES = [
+export const MOVE_EFFECT_DIRECT_HP_MODES = ['lose', 'set', 'copy', 'split'] as const
+export const MOVE_EFFECT_HEAL_MODES = ['gain', 'full'] as const
+export const MOVE_EFFECT_HP_CALCULATION_KINDS = [
   'fixed',
   'percent-max',
   'percent-current',
   'percent-missing',
+  'formula',
 ] as const
+export const MOVE_EFFECT_HP_MARKER_INJURY_POLICIES = [
+  'apply-after-operation',
+  'ignore',
+] as const
+/** Direct HP operations never qualify as damage for PTU Massive Damage Injuries. */
+export const MOVE_EFFECT_HP_MASSIVE_DAMAGE_POLICIES = ['never'] as const
 export const MOVE_EFFECT_ROUNDING_POLICIES = ['floor', 'round', 'ceil'] as const
 export const MOVE_EFFECT_CONDITION_ACTIONS = ['apply', 'remove', 'clear'] as const
 export const MOVE_EFFECT_COMBAT_STAGE_ACTIONS = ['modify', 'set', 'reset'] as const
@@ -206,6 +219,12 @@ export type MoveEffectMultiHitEffectKind =
 export type MoveEffectHpPool = (typeof MOVE_EFFECT_HP_POOLS)[number]
 export type MoveEffectDirectHpMode = (typeof MOVE_EFFECT_DIRECT_HP_MODES)[number]
 export type MoveEffectHealMode = (typeof MOVE_EFFECT_HEAL_MODES)[number]
+export type MoveEffectHpCalculationKind =
+  (typeof MOVE_EFFECT_HP_CALCULATION_KINDS)[number]
+export type MoveEffectHpMarkerInjuryPolicy =
+  (typeof MOVE_EFFECT_HP_MARKER_INJURY_POLICIES)[number]
+export type MoveEffectHpMassiveDamagePolicy =
+  (typeof MOVE_EFFECT_HP_MASSIVE_DAMAGE_POLICIES)[number]
 export type MoveEffectRoundingPolicy = (typeof MOVE_EFFECT_ROUNDING_POLICIES)[number]
 export type MoveEffectConditionAction = (typeof MOVE_EFFECT_CONDITION_ACTIONS)[number]
 export type MoveEffectCombatStageAction = (typeof MOVE_EFFECT_COMBAT_STAGE_ACTIONS)[number]
@@ -452,19 +471,65 @@ export interface MoveMultiHitEffectPayload {
   readonly effects: readonly MoveMultiHitEffectTemplate[]
 }
 
+export interface MoveHpFixedCalculation {
+  readonly kind: 'fixed'
+  readonly value: number
+}
+
+export interface MoveHpPercentCalculation {
+  readonly kind: 'percent-max' | 'percent-current' | 'percent-missing'
+  readonly percent: number
+}
+
+export interface MoveHpFormulaCalculation {
+  readonly kind: 'formula'
+  readonly expression: MoveExpression
+}
+
+/** A bounded magnitude/value calculation evaluated once per authoritative recipient. */
+export type MoveHpCalculation =
+  | MoveHpFixedCalculation
+  | MoveHpPercentCalculation
+  | MoveHpFormulaCalculation
+
+/** Inclusive bounds on the final selected HP pool; null leaves that edge unbounded. */
+export interface MoveHpFinalBounds {
+  readonly minimum: number | null
+  readonly maximum: number | null
+}
+
+/**
+ * PTU Injury behavior is authored rather than inferred from an operation label.
+ * Direct HP reduction may cross HP markers after the operation is complete, but
+ * is never Damage and therefore never creates a Massive Damage Injury.
+ */
+export interface MoveHpInjuryPolicy {
+  readonly hitPointMarkers: MoveEffectHpMarkerInjuryPolicy
+  readonly massiveDamage: MoveEffectHpMassiveDamagePolicy
+}
+
 export interface MoveDirectHpEffectPayload {
   readonly mode: MoveEffectDirectHpMode
   readonly pool: MoveEffectHpPool
-  readonly amount: number
-  readonly minimumRemaining: number | null
+  /** Required for lose/set; null for copy/split. */
+  readonly calculation: MoveHpCalculation | null
+  /** One authoritative scalar selector for copy; null for all other modes. */
+  readonly copySource: MoveSelector | null
+  readonly bounds: MoveHpFinalBounds
+  readonly rounding: MoveEffectRoundingPolicy
   readonly applyTypeImmunity: boolean
+  readonly injury: MoveHpInjuryPolicy
 }
 
 export interface MoveHealEffectPayload {
   readonly mode: MoveEffectHealMode
   readonly pool: MoveEffectHpPool
-  readonly amount: number
+  /** Required for gain; null for full. */
+  readonly calculation: MoveHpCalculation | null
+  readonly bounds: MoveHpFinalBounds
   readonly rounding: MoveEffectRoundingPolicy
+  /** Healing and temporary HP always ignore HP markers and Massive Damage. */
+  readonly injury: MoveHpInjuryPolicy
 }
 
 export interface MoveConditionEffectPayload {
@@ -743,11 +808,26 @@ const CRITICAL_NATURAL_ROLLS_TRIGGER_FIELDS = ['kind', 'values'] as const
 const DIRECT_HP_FIELDS = [
   'mode',
   'pool',
-  'amount',
-  'minimumRemaining',
+  'calculation',
+  'copySource',
+  'bounds',
+  'rounding',
   'applyTypeImmunity',
+  'injury',
 ] as const
-const HEAL_FIELDS = ['mode', 'pool', 'amount', 'rounding'] as const
+const HEAL_FIELDS = [
+  'mode',
+  'pool',
+  'calculation',
+  'bounds',
+  'rounding',
+  'injury',
+] as const
+const HP_FIXED_CALCULATION_FIELDS = ['kind', 'value'] as const
+const HP_PERCENT_CALCULATION_FIELDS = ['kind', 'percent'] as const
+const HP_FORMULA_CALCULATION_FIELDS = ['kind', 'expression'] as const
+const HP_BOUNDS_FIELDS = ['minimum', 'maximum'] as const
+const HP_INJURY_FIELDS = ['hitPointMarkers', 'massiveDamage'] as const
 const CONDITION_FIELDS = ['action', 'conditionId'] as const
 const COMBAT_STAGE_FIELDS = ['action', 'stage', 'value'] as const
 const ADD_TEMPORARY_EFFECT_FIELDS = ['action', 'effectId', 'definition'] as const
@@ -810,6 +890,9 @@ const MULTI_HIT_EFFECT_KIND_SET = new Set<string>(MOVE_EFFECT_MULTI_HIT_EFFECT_K
 const HP_POOL_SET = new Set<string>(MOVE_EFFECT_HP_POOLS)
 const DIRECT_HP_MODE_SET = new Set<string>(MOVE_EFFECT_DIRECT_HP_MODES)
 const HEAL_MODE_SET = new Set<string>(MOVE_EFFECT_HEAL_MODES)
+const HP_CALCULATION_KIND_SET = new Set<string>(MOVE_EFFECT_HP_CALCULATION_KINDS)
+const HP_MARKER_INJURY_POLICY_SET = new Set<string>(MOVE_EFFECT_HP_MARKER_INJURY_POLICIES)
+const HP_MASSIVE_DAMAGE_POLICY_SET = new Set<string>(MOVE_EFFECT_HP_MASSIVE_DAMAGE_POLICIES)
 const ROUNDING_POLICY_SET = new Set<string>(MOVE_EFFECT_ROUNDING_POLICIES)
 const CONDITION_ACTION_SET = new Set<string>(MOVE_EFFECT_CONDITION_ACTIONS)
 const COMBAT_STAGE_ACTION_SET = new Set<string>(MOVE_EFFECT_COMBAT_STAGE_ACTIONS)
@@ -1424,61 +1507,240 @@ const parseDamagePayload = (value: unknown, path: string): MoveDamageEffectPaylo
   }
 }
 
-const parseDirectHpPayload = (value: unknown, path: string): MoveDirectHpEffectPayload => {
-  const input = parseExactRecord(value, DIRECT_HP_FIELDS, path)
+const parseHpCalculation = (
+  value: unknown,
+  path: string,
+): MoveHpCalculation => {
+  const input = parseRecord(value, path)
+  const kind = parseEnum<MoveEffectHpCalculationKind>(
+    ownValue(input, 'kind', path),
+    HP_CALCULATION_KIND_SET,
+    `${path}.kind`,
+    'fixed, percent-max, percent-current, percent-missing, or formula',
+  )
+  if (kind === 'fixed') {
+    assertExactKeys(input, HP_FIXED_CALCULATION_FIELDS, path)
+    return {
+      kind,
+      value: parseFiniteNumber(ownValue(input, 'value', path), `${path}.value`),
+    }
+  }
+  if (kind === 'formula') {
+    assertExactKeys(input, HP_FORMULA_CALCULATION_FIELDS, path)
+    return {
+      kind,
+      expression: parseEffectExpression(
+        () => parseMoveExpression(
+          ownValue(input, 'expression', path),
+          `${path}.expression`,
+        ),
+      ),
+    }
+  }
+  assertExactKeys(input, HP_PERCENT_CALCULATION_FIELDS, path)
   return {
-    mode: parseEnum<MoveEffectDirectHpMode>(
-      ownValue(input, 'mode', path),
-      DIRECT_HP_MODE_SET,
-      `${path}.mode`,
-      'lose or set',
-    ),
-    pool: parseEnum<MoveEffectHpPool>(
-      ownValue(input, 'pool', path),
-      HP_POOL_SET,
-      `${path}.pool`,
-      'a supported HP pool',
-    ),
-    amount: parseFiniteNumber(
-      ownValue(input, 'amount', path),
-      `${path}.amount`,
+    kind,
+    percent: parseFiniteNumber(
+      ownValue(input, 'percent', path),
+      `${path}.percent`,
       0,
-    ),
-    minimumRemaining: parseNullableInteger(
-      ownValue(input, 'minimumRemaining', path),
-      `${path}.minimumRemaining`,
-      0,
-      MOVE_EFFECT_OPERATION_LIMITS.numericMagnitude,
-    ),
-    applyTypeImmunity: parseBoolean(
-      ownValue(input, 'applyTypeImmunity', path),
-      `${path}.applyTypeImmunity`,
     ),
   }
 }
 
-const parseHealPayload = (value: unknown, path: string): MoveHealEffectPayload => {
-  const input = parseExactRecord(value, HEAL_FIELDS, path)
+const parseNullableHpCalculation = (
+  value: unknown,
+  path: string,
+): MoveHpCalculation | null => value === null ? null : parseHpCalculation(value, path)
+
+const parseHpBounds = (value: unknown, path: string): MoveHpFinalBounds => {
+  const input = parseExactRecord(value, HP_BOUNDS_FIELDS, path)
+  const minimum = parseNullableInteger(
+    ownValue(input, 'minimum', path),
+    `${path}.minimum`,
+    -MOVE_EFFECT_OPERATION_LIMITS.numericMagnitude,
+    MOVE_EFFECT_OPERATION_LIMITS.numericMagnitude,
+  )
+  const maximum = parseNullableInteger(
+    ownValue(input, 'maximum', path),
+    `${path}.maximum`,
+    -MOVE_EFFECT_OPERATION_LIMITS.numericMagnitude,
+    MOVE_EFFECT_OPERATION_LIMITS.numericMagnitude,
+  )
+  if (minimum !== null && maximum !== null && minimum > maximum) {
+    fail('invalid-effect-operation', path, 'minimum cannot exceed maximum.')
+  }
+  return { minimum, maximum }
+}
+
+const parseHpInjuryPolicy = (value: unknown, path: string): MoveHpInjuryPolicy => {
+  const input = parseExactRecord(value, HP_INJURY_FIELDS, path)
   return {
-    mode: parseEnum<MoveEffectHealMode>(
-      ownValue(input, 'mode', path),
-      HEAL_MODE_SET,
-      `${path}.mode`,
-      'a supported healing mode',
+    hitPointMarkers: parseEnum<MoveEffectHpMarkerInjuryPolicy>(
+      ownValue(input, 'hitPointMarkers', path),
+      HP_MARKER_INJURY_POLICY_SET,
+      `${path}.hitPointMarkers`,
+      'apply-after-operation or ignore',
     ),
-    pool: parseEnum<MoveEffectHpPool>(
-      ownValue(input, 'pool', path),
-      HP_POOL_SET,
-      `${path}.pool`,
-      'a supported HP pool',
+    massiveDamage: parseEnum<MoveEffectHpMassiveDamagePolicy>(
+      ownValue(input, 'massiveDamage', path),
+      HP_MASSIVE_DAMAGE_POLICY_SET,
+      `${path}.massiveDamage`,
+      'never',
     ),
-    amount: parseFiniteNumber(ownValue(input, 'amount', path), `${path}.amount`, 0),
+  }
+}
+
+const parseEffectSelector = (value: unknown, path: string): MoveSelector => {
+  try {
+    return parseMoveSelector(value, path)
+  }
+  catch (error) {
+    if (!(error instanceof MoveSelectorValidationError)) throw error
+    const detailPrefix = `${error.path}: `
+    const detail = error.message.startsWith(detailPrefix)
+      ? error.message.slice(detailPrefix.length)
+      : error.message
+    return fail(
+      error.code === 'limit-exceeded'
+        ? 'limit-exceeded'
+        : error.code === 'not-json'
+          ? 'not-json'
+          : 'invalid-effect-operation',
+      error.path,
+      detail,
+    )
+  }
+}
+
+const parseDirectHpPayload = (value: unknown, path: string): MoveDirectHpEffectPayload => {
+  const input = parseExactRecord(value, DIRECT_HP_FIELDS, path)
+  const mode = parseEnum<MoveEffectDirectHpMode>(
+    ownValue(input, 'mode', path),
+    DIRECT_HP_MODE_SET,
+    `${path}.mode`,
+    'lose, set, copy, or split',
+  )
+  const pool = parseEnum<MoveEffectHpPool>(
+    ownValue(input, 'pool', path),
+    HP_POOL_SET,
+    `${path}.pool`,
+    'a supported HP pool',
+  )
+  const calculation = parseNullableHpCalculation(
+    ownValue(input, 'calculation', path),
+    `${path}.calculation`,
+  )
+  const copySource = ownValue(input, 'copySource', path) === null
+    ? null
+    : parseEffectSelector(ownValue(input, 'copySource', path), `${path}.copySource`)
+  const injury = parseHpInjuryPolicy(ownValue(input, 'injury', path), `${path}.injury`)
+
+  if ((mode === 'lose' || mode === 'set') !== (calculation !== null)) {
+    fail(
+      'invalid-effect-operation',
+      `${path}.calculation`,
+      'must be present for lose/set and null for copy/split.',
+    )
+  }
+  if ((mode === 'copy') !== (copySource !== null)) {
+    fail(
+      'invalid-effect-operation',
+      `${path}.copySource`,
+      'must be a selector for copy and null for lose/set/split.',
+    )
+  }
+  if (
+    mode === 'lose'
+    && calculation?.kind === 'fixed'
+    && calculation.value < 0
+  ) {
+    fail('invalid-effect-operation', `${path}.calculation.value`, 'loss cannot be negative.')
+  }
+  if (pool === 'temporary-hit-points' && injury.hitPointMarkers !== 'ignore') {
+    fail(
+      'invalid-effect-operation',
+      `${path}.injury.hitPointMarkers`,
+      'temporary HP cannot create Hit Point Marker Injuries.',
+    )
+  }
+
+  return {
+    mode,
+    pool,
+    calculation,
+    copySource,
+    bounds: parseHpBounds(ownValue(input, 'bounds', path), `${path}.bounds`),
     rounding: parseEnum<MoveEffectRoundingPolicy>(
       ownValue(input, 'rounding', path),
       ROUNDING_POLICY_SET,
       `${path}.rounding`,
       'floor, round, or ceil',
     ),
+    applyTypeImmunity: parseBoolean(
+      ownValue(input, 'applyTypeImmunity', path),
+      `${path}.applyTypeImmunity`,
+    ),
+    injury,
+  }
+}
+
+const parseHealPayload = (value: unknown, path: string): MoveHealEffectPayload => {
+  const input = parseExactRecord(value, HEAL_FIELDS, path)
+  const mode = parseEnum<MoveEffectHealMode>(
+    ownValue(input, 'mode', path),
+    HEAL_MODE_SET,
+    `${path}.mode`,
+    'gain or full',
+  )
+  const pool = parseEnum<MoveEffectHpPool>(
+    ownValue(input, 'pool', path),
+    HP_POOL_SET,
+    `${path}.pool`,
+    'a supported HP pool',
+  )
+  const calculation = parseNullableHpCalculation(
+    ownValue(input, 'calculation', path),
+    `${path}.calculation`,
+  )
+  const bounds = parseHpBounds(ownValue(input, 'bounds', path), `${path}.bounds`)
+  const injury = parseHpInjuryPolicy(ownValue(input, 'injury', path), `${path}.injury`)
+  if ((mode === 'gain') !== (calculation !== null)) {
+    fail(
+      'invalid-effect-operation',
+      `${path}.calculation`,
+      'must be present for gain and null for full.',
+    )
+  }
+  if (calculation?.kind === 'fixed' && calculation.value < 0) {
+    fail('invalid-effect-operation', `${path}.calculation.value`, 'healing cannot be negative.')
+  }
+  if (mode === 'full' && pool !== 'hit-points') {
+    fail('invalid-effect-operation', `${path}.pool`, 'full healing requires hit-points.')
+  }
+  if (mode === 'full' && (bounds.minimum !== null || bounds.maximum !== null)) {
+    fail('invalid-effect-operation', `${path}.bounds`, 'full healing cannot override Max HP.')
+  }
+  if (injury.hitPointMarkers !== 'ignore') {
+    fail(
+      'invalid-effect-operation',
+      `${path}.injury.hitPointMarkers`,
+      'healing cannot create Hit Point Marker Injuries.',
+    )
+  }
+
+  return {
+    mode,
+    pool,
+    calculation,
+    bounds,
+    rounding: parseEnum<MoveEffectRoundingPolicy>(
+      ownValue(input, 'rounding', path),
+      ROUNDING_POLICY_SET,
+      `${path}.rounding`,
+      'floor, round, or ceil',
+    ),
+    injury,
   }
 }
 

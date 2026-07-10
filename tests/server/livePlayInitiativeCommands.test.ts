@@ -243,9 +243,15 @@ const lifecycleCoreHandler = (input: {
       payload: {
         mode: 'lose',
         pool: 'hit-points',
-        amount: 10,
-        minimumRemaining: null,
+        calculation: { kind: 'fixed', value: 10 },
+        copySource: null,
+        bounds: { minimum: null, maximum: null },
+        rounding: 'floor',
         applyTypeImmunity: false,
+        injury: {
+          hitPointMarkers: 'apply-after-operation',
+          massiveDamage: 'never',
+        },
       },
     }
     const heal: MoveHealEffectOperation = {
@@ -256,10 +262,12 @@ const lifecycleCoreHandler = (input: {
       phase: 'cleanup',
       reasonCode: 'lifecycle.test-heal',
       payload: {
-        mode: 'fixed',
+        mode: 'gain',
         pool: 'hit-points',
-        amount: 5,
+        calculation: { kind: 'fixed', value: 5 },
+        bounds: { minimum: null, maximum: null },
         rounding: 'floor',
+        injury: { hitPointMarkers: 'ignore', massiveDamage: 'never' },
       },
     }
     return [

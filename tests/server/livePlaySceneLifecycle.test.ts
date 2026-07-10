@@ -133,9 +133,15 @@ const sceneBoundaryHandler = (effectId: string): EncounterLifecycleTriggerHandle
         payload: {
           mode: 'lose',
           pool: 'hit-points',
-          amount: 5,
-          minimumRemaining: null,
+          calculation: { kind: 'fixed', value: 5 },
+          copySource: null,
+          bounds: { minimum: null, maximum: null },
+          rounding: 'floor',
           applyTypeImmunity: false,
+          injury: {
+            hitPointMarkers: 'apply-after-operation',
+            massiveDamage: 'never',
+          },
         },
       }
       return [{
@@ -154,10 +160,12 @@ const sceneBoundaryHandler = (effectId: string): EncounterLifecycleTriggerHandle
         phase: 'cleanup',
         reasonCode: 'lifecycle.scene-start-temporary-hp',
         payload: {
-          mode: 'fixed',
+          mode: 'gain',
           pool: 'temporary-hit-points',
-          amount: 3,
+          calculation: { kind: 'fixed', value: 3 },
+          bounds: { minimum: null, maximum: null },
           rounding: 'floor',
+          injury: { hitPointMarkers: 'ignore', massiveDamage: 'never' },
         },
       }
       return [{

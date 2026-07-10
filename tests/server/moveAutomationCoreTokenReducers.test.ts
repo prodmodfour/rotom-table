@@ -86,18 +86,36 @@ const intent = (): ResolveMoveIntent => ({
   selection: { kind: 'single-target', targetPlacementId: 'target-token' },
 })
 
-const buildContext = (map: TabletopMap = mapFixture()) => buildAuthoritativeMoveRulesContext({
+interface CoreReducerHpFixture {
+  readonly actor?: number
+  readonly target?: number
+  readonly bystander?: number
+  readonly targetInjuries?: number
+}
+
+const buildContext = (
+  map: TabletopMap = mapFixture(),
+  hp: CoreReducerHpFixture = {},
+) => buildAuthoritativeMoveRulesContext({
   map,
   pokemonSheets: new Map([
-    ['actor', pokemonSheet('actor')],
+    ['actor', pokemonSheet('actor', {
+      combat: { currentHp: hp.actor ?? 999 },
+    })],
     ['target', pokemonSheet('target', {
       types: ['Fairy', 'Electric'],
       abilities: [{ name: 'Keen Eye' }],
       stats: { atk: { stage: 5 } },
       combatStages: { acc: 0 },
-      combat: { currentHp: 999, conditions: ['Burned'] },
+      combat: {
+        currentHp: hp.target ?? 999,
+        injuries: hp.targetInjuries ?? 0,
+        conditions: ['Burned'],
+      },
     })],
-    ['bystander', pokemonSheet('bystander')],
+    ['bystander', pokemonSheet('bystander', {
+      combat: { currentHp: hp.bystander ?? 999 },
+    })],
   ]),
   trainerSheets: new Map<string, TrainerSheet>(),
   intent: intent(),
@@ -121,6 +139,28 @@ const operation = (
   reasonCode: `move.reducer-test.${id.split('.').at(-1)}`,
   payload,
 }) as MoveCoreTokenEffectOperation
+
+const directHpPayload = (overrides: Record<string, unknown> = {}) => ({
+  mode: 'lose',
+  pool: 'hit-points',
+  calculation: { kind: 'fixed', value: 1 },
+  copySource: null,
+  bounds: { minimum: null, maximum: null },
+  rounding: 'floor',
+  applyTypeImmunity: false,
+  injury: { hitPointMarkers: 'ignore', massiveDamage: 'never' },
+  ...overrides,
+})
+
+const healPayload = (overrides: Record<string, unknown> = {}) => ({
+  mode: 'gain',
+  pool: 'hit-points',
+  calculation: { kind: 'fixed', value: 1 },
+  bounds: { minimum: null, maximum: null },
+  rounding: 'floor',
+  injury: { hitPointMarkers: 'ignore', massiveDamage: 'never' },
+  ...overrides,
+})
 
 const emission = (
   value: MoveCoreTokenEffectOperation,
@@ -181,8 +221,9 @@ const dynamicRecipients = (
 const reduce = (
   operations: readonly MoveResolvedCoreTokenEffectOperation[],
   moveType: string | null = 'Normal',
+  context = buildContext(),
 ) => reduceMoveCoreTokenEffects({
-  context: buildContext(),
+  context,
   operations,
   dynamicRecipients: dynamicRecipients(),
   immunities: createStandardMoveCoreTokenEffectImmunityQueries({ moveType }),
@@ -209,22 +250,30 @@ describe('MoveSpec core token effect reducers', () => {
       emission(operation('operation.temp-set', 'direct-hp', {
         mode: 'set',
         pool: 'temporary-hit-points',
-        amount: 12,
-        minimumRemaining: null,
+        calculation: { kind: 'fixed', value: 12 },
+        copySource: null,
+        bounds: { minimum: null, maximum: null },
+        rounding: 'floor',
         applyTypeImmunity: false,
+        injury: { hitPointMarkers: 'ignore', massiveDamage: 'never' },
       })),
       emission(operation('operation.temp-loss', 'direct-hp', {
         mode: 'lose',
         pool: 'temporary-hit-points',
-        amount: 5,
-        minimumRemaining: null,
+        calculation: { kind: 'fixed', value: 5 },
+        copySource: null,
+        bounds: { minimum: null, maximum: null },
+        rounding: 'floor',
         applyTypeImmunity: false,
+        injury: { hitPointMarkers: 'ignore', massiveDamage: 'never' },
       })),
       emission(operation('operation.heal', 'heal', {
-        mode: 'fixed',
+        mode: 'gain',
         pool: 'hit-points',
-        amount: 1_000,
+        calculation: { kind: 'fixed', value: 1_000 },
+        bounds: { minimum: null, maximum: null },
         rounding: 'floor',
+        injury: { hitPointMarkers: 'ignore', massiveDamage: 'never' },
       })),
     ]
     const traceBefore = structuredClone(traceFor(operations))
@@ -317,6 +366,297 @@ describe('MoveSpec core token effect reducers', () => {
     ])
     expect(Object.isFrozen(result.operationResults)).toBe(true)
     expect(Object.isFrozen(result.trace)).toBe(true)
+  })
+
+  it('evaluates fixed, percentage, and bounded formula healing and loss per recipient', () => {
+    const calculations = [
+      { calculation: { kind: 'fixed', value: 7 }, amount: (_max: number, _actorMax: number) => 7 },
+      { calculation: { kind: 'percent-max', percent: 10 }, amount: (max: number) => Math.floor(max * 0.1) },
+      { calculation: { kind: 'percent-current', percent: 50 }, amount: () => 15 },
+      { calculation: { kind: 'percent-missing', percent: 50 }, amount: (max: number) => Math.floor((max - 30) * 0.5) },
+      {
+        calculation: {
+          kind: 'formula',
+          expression: {
+            kind: 'arithmetic',
+            operator: 'divide',
+            operands: [
+              { kind: 'stat', subject: { kind: 'actor' }, stat: 'maximum-hp' },
+              { kind: 'constant', value: 10 },
+            ],
+          },
+        },
+        amount: (_max: number, actorMax: number) => Math.floor(actorMax / 10),
+      },
+    ]
+
+    for (const entry of calculations) {
+      const healContext = buildContext(mapFixture(), { actor: 20, target: 30 })
+      const targetMax = healContext.queries.tokens.get('target-token')!.maxHp
+      const actorMax = healContext.actor.token.maxHp
+      const amount = entry.amount(targetMax, actorMax)
+      const heal = emission(operation(
+        `operation.heal-${entry.calculation.kind}`,
+        'heal',
+        healPayload({ calculation: entry.calculation }),
+      ))
+      const healed = reduce([heal], 'Normal', healContext)
+      const healedState = healed.operationResults[0]?.recipients[0]?.current
+      expect(healedState).toMatchObject({
+        kind: 'hp',
+        currentHp: Math.min(targetMax, 30 + amount),
+      })
+      expect(healed.operationResults[0]?.recipients[0]?.details).toMatchObject({
+        mode: 'gain',
+        calculation: {
+          kind: entry.calculation.kind,
+          roundedValue: amount,
+        },
+      })
+
+      const lossContext = buildContext(mapFixture(), { actor: 20, target: 30 })
+      const loss = emission(operation(
+        `operation.loss-${entry.calculation.kind}`,
+        'direct-hp',
+        directHpPayload({ calculation: entry.calculation }),
+      ))
+      const lost = reduce([loss], 'Normal', lossContext)
+      expect(lost.operationResults[0]?.recipients[0]?.current).toMatchObject({
+        kind: 'hp',
+        currentHp: 30 - amount,
+      })
+      expect(lost.operationResults[0]?.recipients[0]?.details).toMatchObject({
+        mode: 'lose',
+        calculation: {
+          kind: entry.calculation.kind,
+          roundedValue: amount,
+        },
+      })
+      expect(operationTraceOutcomes(lost.trace)).toEqual(['applied'])
+      if (entry.calculation.kind === 'formula') {
+        expect(lost.sheetReads).toEqual(expect.arrayContaining([
+          { kind: 'pokemon', slug: 'target', revision: 4 },
+          { kind: 'pokemon', slug: 'actor', revision: 4 },
+        ]))
+        expect(lost.operationResults[0]?.recipients[0]?.details).toMatchObject({
+          calculation: { evaluationTrace: expect.arrayContaining([
+            expect.objectContaining({ nodeType: 'expression', value: actorMax }),
+          ]) },
+        })
+      }
+    }
+
+    const injuredContext = buildContext(mapFixture(), {
+      target: 20,
+      targetInjuries: 2,
+    })
+    const injuredTarget = injuredContext.queries.tokens.get('target-token')!
+    expect(injuredTarget.fullMaxHp).toBeGreaterThan(injuredTarget.maxHp)
+    const fractionalLoss = emission(operation(
+      'operation.full-max-fraction',
+      'direct-hp',
+      directHpPayload({ calculation: { kind: 'percent-max', percent: 10 } }),
+    ))
+    const fractionalResult = reduce([fractionalLoss], 'Normal', injuredContext)
+    expect(fractionalResult.operationResults[0]?.recipients[0]?.details).toMatchObject({
+      calculation: {
+        kind: 'percent-max',
+        basisValue: injuredTarget.fullMaxHp,
+        roundedValue: Math.floor(injuredTarget.fullMaxHp! / 10),
+      },
+    })
+  })
+
+  it('applies final minimum/maximum bounds and set, copy, and simultaneous split modes', () => {
+    const boundedContext = buildContext(mapFixture(), { target: 30 })
+    const boundedOperations = [
+      emission(operation('operation.set-bounded', 'direct-hp', directHpPayload({
+        mode: 'set',
+        calculation: { kind: 'fixed', value: 100 },
+        bounds: { minimum: null, maximum: 40 },
+      }))),
+      emission(operation('operation.loss-bounded', 'direct-hp', directHpPayload({
+        calculation: { kind: 'fixed', value: 100 },
+        bounds: { minimum: 12, maximum: null },
+      }))),
+      emission(operation('operation.heal-bounded', 'heal', healPayload({
+        calculation: { kind: 'fixed', value: 100 },
+        bounds: { minimum: null, maximum: 18 },
+      }))),
+    ]
+    const bounded = reduce(boundedOperations, 'Normal', boundedContext)
+    expect(bounded.operationResults.map(result => (
+      result.recipients[0]?.current.kind === 'hp'
+        ? result.recipients[0].current.currentHp
+        : null
+    ))).toEqual([40, 12, 18])
+    expect(bounded.operationResults[1]?.recipients[0]?.details).toMatchObject({
+      previousPoolValue: 40,
+      requestedPoolValue: -60,
+      boundedPoolValue: 12,
+      appliedPoolValue: 12,
+    })
+
+    const copyContext = buildContext(mapFixture(), { actor: 17, target: 5 })
+    const copy = emission(operation('operation.copy-actor-hp', 'direct-hp', directHpPayload({
+      mode: 'copy',
+      calculation: null,
+      copySource: { kind: 'actor' },
+    })))
+    const copied = reduce([copy], 'Normal', copyContext)
+    expect(copied.operationResults[0]?.recipients[0]).toMatchObject({
+      consultedPlacementIds: ['actor-token'],
+      current: { kind: 'hp', currentHp: 17 },
+      details: {
+        calculation: {
+          kind: 'copy',
+          sourcePlacementId: 'actor-token',
+          roundedValue: 17,
+        },
+      },
+    })
+    expect(copied.sheetReads).toEqual([
+      { kind: 'pokemon', slug: 'target', revision: 4 },
+      { kind: 'pokemon', slug: 'actor', revision: 4 },
+    ])
+
+    const splitContext = buildContext(mapFixture(), { actor: 30, target: 10 })
+    const split = emission(operation(
+      'operation.split-hp',
+      'direct-hp',
+      directHpPayload({ mode: 'split', calculation: null }),
+    ), ['actor-token', 'target-token'])
+    const splitResult = reduceMoveCoreTokenEffects({
+      context: splitContext,
+      operations: [split],
+      dynamicRecipients: dynamicRecipients(['actor-token', 'target-token']),
+      immunities: createStandardMoveCoreTokenEffectImmunityQueries({ moveType: 'Normal' }),
+      trace: traceFor([split]),
+    })
+    expect(splitResult.operationResults[0]?.recipients.map((recipient) => (
+      recipient.current.kind === 'hp' ? recipient.current.currentHp : null
+    ))).toEqual([20, 20])
+    expect(splitResult.operationResults[0]?.recipients[0]?.details).toMatchObject({
+      calculation: {
+        kind: 'split',
+        basisValue: 40,
+        rawValue: 20,
+        roundedValue: 20,
+      },
+    })
+    expect(splitResult.stateChanges.groups.sheets).toHaveLength(2)
+  })
+
+  it('supports full healing and scene-local temporary HP for actor and area recipients', () => {
+    const context = buildContext(mapFixture(), { actor: 5, target: 20, bystander: 20 })
+    const full = emission(operation('operation.actor-full-heal', 'heal', healPayload({
+      mode: 'full',
+      calculation: null,
+    }), 'actor'), ['actor-token'])
+    const areaTemporaryHp = emission(operation(
+      'operation.area-temporary-hp',
+      'heal',
+      healPayload({
+        pool: 'temporary-hit-points',
+        calculation: { kind: 'fixed', value: 3 },
+      }),
+      'area-targets',
+    ), ['target-token', 'bystander-token'])
+
+    const result = reduceMoveCoreTokenEffects({
+      context,
+      operations: [full, areaTemporaryHp],
+      dynamicRecipients: dynamicRecipients(),
+      immunities: createStandardMoveCoreTokenEffectImmunityQueries({ moveType: 'Normal' }),
+      trace: traceFor([full, areaTemporaryHp]),
+    })
+
+    expect(result.operationResults[0]).toMatchObject({
+      recipientIds: ['actor-token'],
+      recipients: [{ current: { kind: 'hp', currentHp: context.actor.token.maxHp } }],
+    })
+    expect(result.operationResults[1]).toMatchObject({
+      recipientIds: ['target-token', 'bystander-token'],
+      recipients: [
+        { current: { kind: 'hp', temporaryHp: 8 } },
+        { current: { kind: 'hp', temporaryHp: 3 } },
+      ],
+    })
+    expect(result.stateChanges.groups.map[0]?.changes[0]).toMatchObject({
+      kind: 'map-temporary-hit-points',
+      current: {
+        byPlacementId: {
+          'target-token': 8,
+          'bystander-token': 3,
+        },
+      },
+    })
+    expect(operationTraceOutcomes(result.trace)).toEqual(['applied', 'applied'])
+
+    const noSceneMap = mapFixture()
+    delete noSceneMap.activeScene
+    delete noSceneMap.temporaryHitPoints
+    const noSceneContext = buildContext(noSceneMap, { target: 20, bystander: 20 })
+    const unavailable = reduceMoveCoreTokenEffects({
+      context: noSceneContext,
+      operations: [areaTemporaryHp],
+      dynamicRecipients: dynamicRecipients(),
+      immunities: createStandardMoveCoreTokenEffectImmunityQueries({ moveType: 'Normal' }),
+      trace: traceFor([areaTemporaryHp]),
+    })
+    expect(unavailable.operationResults[0]).toMatchObject({
+      outcome: 'no-op',
+      recipients: [
+        { reasonCode: 'temporary-hp-scene-unavailable' },
+        { reasonCode: 'temporary-hp-scene-unavailable' },
+      ],
+    })
+    expect(unavailable.stateChanges.changes).toEqual([])
+  })
+
+  it('applies HP-marker Injuries only after direct HP resolution and never Massive Damage', () => {
+    const context = buildContext()
+    const target = context.queries.tokens.get('target-token')!
+    const lossAmount = Math.floor((target.fullMaxHp ?? target.maxHp) * 0.7)
+    const withMarkers = emission(operation('operation.marker-loss', 'direct-hp', directHpPayload({
+      calculation: { kind: 'fixed', value: lossAmount },
+      injury: {
+        hitPointMarkers: 'apply-after-operation',
+        massiveDamage: 'never',
+      },
+    })))
+    const marked = reduce([withMarkers], 'Normal', context)
+    expect(marked.operationResults[0]?.recipients[0]?.details).toMatchObject({
+      injury: {
+        policy: {
+          hitPointMarkers: 'apply-after-operation',
+          massiveDamage: 'never',
+        },
+        injuryDelta: expect.any(Number),
+        markerInjuries: expect.any(Number),
+        massiveDamageInjuries: 0,
+      },
+    })
+    const markedCurrent = marked.operationResults[0]?.recipients[0]?.current
+    expect(markedCurrent?.kind === 'hp' ? markedCurrent.injuries : 0).toBeGreaterThan(0)
+
+    const ignoredContext = buildContext()
+    const ignored = emission(operation('operation.ignored-marker-loss', 'direct-hp', directHpPayload({
+      calculation: { kind: 'fixed', value: lossAmount },
+      injury: { hitPointMarkers: 'ignore', massiveDamage: 'never' },
+    })))
+    const ignoredResult = reduce([ignored], 'Normal', ignoredContext)
+    expect(ignoredResult.operationResults[0]?.recipients[0]).toMatchObject({
+      current: { kind: 'hp', injuries: 0 },
+      details: {
+        injury: {
+          policy: { hitPointMarkers: 'ignore', massiveDamage: 'never' },
+          injuryDelta: 0,
+          markerInjuries: 0,
+          massiveDamageInjuries: 0,
+        },
+      },
+    })
   })
 
   it('preserves condition/stage immunity and cap no-ops in the audit trace', () => {
@@ -460,15 +800,23 @@ describe('MoveSpec core token effect reducers', () => {
       emission(operation('operation.dragon-loss', 'direct-hp', {
         mode: 'lose',
         pool: 'hit-points',
-        amount: 20,
-        minimumRemaining: null,
+        calculation: { kind: 'fixed', value: 20 },
+        copySource: null,
+        bounds: { minimum: null, maximum: null },
+        rounding: 'floor',
         applyTypeImmunity: true,
+        injury: {
+          hitPointMarkers: 'apply-after-operation',
+          massiveDamage: 'never',
+        },
       })),
       emission(operation('operation.full-heal', 'heal', {
-        mode: 'percent-max',
+        mode: 'full',
         pool: 'hit-points',
-        amount: 50,
+        calculation: null,
+        bounds: { minimum: null, maximum: null },
         rounding: 'floor',
+        injury: { hitPointMarkers: 'ignore', massiveDamage: 'never' },
       })),
     ]
 
@@ -544,10 +892,12 @@ describe('MoveSpec core token effect reducers', () => {
 
   it('rejects emitted recipients outside the authoritative selector set', () => {
     const actorOperation = operation('operation.actor-heal', 'heal', {
-      mode: 'fixed',
+      mode: 'gain',
       pool: 'hit-points',
-      amount: 5,
+      calculation: { kind: 'fixed', value: 5 },
+      bounds: { minimum: null, maximum: null },
       rounding: 'floor',
+      injury: { hitPointMarkers: 'ignore', massiveDamage: 'never' },
     }, 'actor')
     const wrongActorEmission = emission(actorOperation, ['target-token'])
 
@@ -563,10 +913,12 @@ describe('MoveSpec core token effect reducers', () => {
     }))
 
     const targetOperation = emission(operation('operation.target-heal', 'heal', {
-      mode: 'fixed',
+      mode: 'gain',
       pool: 'hit-points',
-      amount: 5,
+      calculation: { kind: 'fixed', value: 5 },
+      bounds: { minimum: null, maximum: null },
       rounding: 'floor',
+      injury: { hitPointMarkers: 'ignore', massiveDamage: 'never' },
     }), ['bystander-token'])
     expect(() => reduceMoveCoreTokenEffects({
       context: buildContext(),

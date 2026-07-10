@@ -48,7 +48,10 @@ export interface MoveCoreHpStateSnapshot {
   readonly currentHp: number
   readonly temporaryHp: number
   readonly injuries: number
+  /** Injury-adjusted healing cap. */
   readonly maxHp: number
+  /** Real/formula Max HP used by fractional HP rules and Injury thresholds. */
+  readonly fullMaxHp: number
 }
 
 export interface MoveCoreConditionStateSnapshot {

@@ -5,9 +5,10 @@ import {
   createMoveAutomationCombatStageUpdateAccumulator,
   createMoveAutomationConditionUpdateAccumulator,
 } from '~/utils/moveAutomationStatusUpdates'
-import type {
-  AuthoritativeMoveRulesContext,
-  AuthoritativeMoveSheetRead,
+import {
+  deduplicateAuthoritativeMoveSheetReads,
+  type AuthoritativeMoveRulesContext,
+  type AuthoritativeMoveSheetRead,
 } from '../context'
 import type { MoveSpecEmittedOperation } from '../executeSpec'
 import type { MoveStateChangePlan } from '../plan'
@@ -35,6 +36,7 @@ import {
   reduceDamageEffectForRecipient,
   reduceDirectHpEffectForRecipient,
   reduceHealEffectForRecipient,
+  reduceSplitDirectHpEffectForRecipients,
 } from './hp'
 import type {
   MoveCoreTokenDamageQuery,
@@ -120,6 +122,7 @@ const reduceRecipient = (options: {
   readonly temporaryHpAvailable: boolean
   readonly damage: MoveCoreTokenDamageQuery | undefined
   readonly immunities: MoveCoreTokenEffectImmunityQueries
+  readonly context: AuthoritativeMoveRulesContext
 }): MoveCoreTokenEffectRecipientResult => {
   const { operation } = options.emission
   if (operation.kind === 'damage') {
@@ -143,6 +146,7 @@ const reduceRecipient = (options: {
       accumulator: options.hpAccumulator,
       temporaryHpAvailable: options.temporaryHpAvailable,
       immunities: options.immunities,
+      context: options.context,
     })
   }
   if (operation.kind === 'heal') {
@@ -151,6 +155,7 @@ const reduceRecipient = (options: {
       recipient: options.recipient,
       accumulator: options.hpAccumulator,
       temporaryHpAvailable: options.temporaryHpAvailable,
+      context: options.context,
     })
   }
   if (operation.kind === 'condition') {
@@ -236,16 +241,25 @@ export const reduceMoveCoreTokenOperationState = (
       recordMoveCoreTokenRecipientRead(sheetReads, sheetReadsByKey, recipient)
       return recipient
     })
-    const recipientResults = recipients.map(recipient => reduceRecipient({
-      emission,
-      recipient,
-      hpAccumulator,
-      conditionAccumulator,
-      stageAccumulator,
-      temporaryHpAvailable,
-      damage: input.damage,
-      immunities: input.immunities,
-    }))
+    const recipientResults = operation.kind === 'direct-hp' && operation.payload.mode === 'split'
+      ? reduceSplitDirectHpEffectForRecipients({
+          operation,
+          recipients,
+          accumulator: hpAccumulator,
+          temporaryHpAvailable,
+          immunities: input.immunities,
+        })
+      : recipients.map(recipient => reduceRecipient({
+          emission,
+          recipient,
+          hpAccumulator,
+          conditionAccumulator,
+          stageAccumulator,
+          temporaryHpAvailable,
+          damage: input.damage,
+          immunities: input.immunities,
+          context: input.context,
+        }))
     for (const result of recipientResults) {
       const consultedIds = canonicalMoveCoreTokenPlacementIds(
         input.context,
@@ -283,7 +297,10 @@ export const reduceMoveCoreTokenOperationState = (
   return Object.freeze({
     stateChanges,
     operationResults: frozenResults,
-    sheetReads: deepFreeze(deepCloneJson(sheetReads)),
+    sheetReads: deepFreeze(deepCloneJson(deduplicateAuthoritativeMoveSheetReads([
+      ...sheetReads,
+      ...input.context.reads.snapshot(),
+    ]))),
   })
 }
 

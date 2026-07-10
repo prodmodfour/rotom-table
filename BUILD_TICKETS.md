@@ -1033,7 +1033,7 @@ Status: DONE
 
 ## MA-080 — Generalize healing and direct HP operations
 
-Status: TODO
+Status: DONE
 
 **Depends on:** MA-040, MA-074
 **Commit:** `feat(move-automation): generalize hp effect operations`

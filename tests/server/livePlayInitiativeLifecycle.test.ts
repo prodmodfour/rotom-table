@@ -121,9 +121,15 @@ const residualHandler = (effectId: string): EncounterLifecycleTriggerHandler => 
       payload: {
         mode: 'lose',
         pool: 'hit-points',
-        amount: 7,
-        minimumRemaining: null,
+        calculation: { kind: 'fixed', value: 7 },
+        copySource: null,
+        bounds: { minimum: null, maximum: null },
+        rounding: 'floor',
         applyTypeImmunity: false,
+        injury: {
+          hitPointMarkers: 'apply-after-operation',
+          massiveDamage: 'never',
+        },
       },
     }
     return [{
