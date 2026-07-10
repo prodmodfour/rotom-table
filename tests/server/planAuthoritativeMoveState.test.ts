@@ -154,6 +154,14 @@ describe('planAuthoritativeMoveState', () => {
       'map-metadata',
       'sheet-state',
     ])
+    expect(plan.stateChanges.changes.map(change => ({
+      kind: change.kind,
+      sourceOperationId: change.sourceOperationId,
+    }))).toEqual([
+      { kind: 'map-move-usage', sourceOperationId: null },
+      { kind: 'map-metadata', sourceOperationId: 'legacy-v1.log.1' },
+      { kind: 'sheet-state', sourceOperationId: 'legacy-v1.combat-stage.1' },
+    ])
     expect(plan.stateChanges.groups.map).toHaveLength(1)
     expect(plan.stateChanges.groups.sheets).toHaveLength(1)
     expect(plan.stateChanges.expectedRevisions).toEqual([
@@ -233,6 +241,14 @@ describe('planAuthoritativeMoveState', () => {
     expect((plan.sheetWrites[0]?.nextSheet as CharacterSheet & { temporaryHp?: number }).temporaryHp).toBeUndefined()
     expect(plan.mapChanges.temporaryHitPoints?.current?.byPlacementId.unaffected).toBe(7)
     expect(plan.mapChanges.placements?.current.find((item) => item.id === 'actor-token')?.facing).toBe('south-east')
+    expect(plan.stateChanges.changes.find(change => change.kind === 'map-temporary-hit-points')).toMatchObject({
+      sourceOperationId: 'legacy-v1.hp.1',
+      reasonCode: 'legacy-hp-update',
+    })
+    expect(plan.stateChanges.groups.sheets[0]?.changes[0]).toMatchObject({
+      sourceOperationId: 'legacy-v1.hp.1',
+      reasonCode: 'legacy-hp-update',
+    })
   })
 
   it('clones mixed area hit, miss, and immunity target ids into the state plan', async () => {
@@ -442,6 +458,10 @@ describe('planAuthoritativeMoveState Pass movement', () => {
       expect(actor?.position).toEqual(plan.resolution.movement?.destination)
       expect(actor?.facing).toBe('north-east')
       expect(actor?.turned).toBe(false)
+      expect(plan.stateChanges.groups.placements[0]?.changes[0]).toMatchObject({
+        sourceOperationId: 'legacy-v1.movement.1',
+        reasonCode: 'legacy-pass-movement',
+      })
       const expectedLine = passDestinationLogLine({ species: 'Actor' } as never, plan.resolution.movement!.destination)
       const lines = moveLog(plan.nextMap)?.[0]?.lines ?? []
       expect(lines.filter((line) => line === expectedLine)).toHaveLength(1)

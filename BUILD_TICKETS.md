@@ -615,7 +615,7 @@ Status: DONE
 
 ## MA-042 — Adapt v1 transactions into typed plans
 
-Status: TODO
+Status: DONE
 
 **Depends on:** MA-039–MA-041
 **Commit:** `refactor(move-automation): adapt v1 scripts into v2 plans`

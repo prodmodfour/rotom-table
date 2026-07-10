@@ -4,8 +4,6 @@ import type { CharacterSheet } from '~/types/characterSheet'
 import type { CombatStageMap } from '~/types/combatStages'
 import type {
   GridAnchor,
-  MapFieldEffects,
-  MapHazardV2,
   SheetKind,
   SheetPlacement,
   TabletopMap,
@@ -41,12 +39,13 @@ import {
   type AuthoritativeMoveSheetRead,
 } from './resolveAuthoritativeMove'
 import {
-  RESTORE_PREVIOUS_MOVE_STATE_VALUE,
-  createMoveStateChangePlan,
-  unavailableMoveStateCompensation,
-  type MoveSheetStateField,
-  type MoveStateChangeInput,
-  type MoveStateChangePlan,
+  adaptV1Transaction,
+  type AdaptV1MapChanges,
+  type AdaptV1SheetWrite,
+} from './moveAutomation/adaptV1Transaction'
+import type {
+  MoveSheetStateField,
+  MoveStateChangePlan,
 } from './moveAutomation/plan'
 import type { AuthoritativeMoveRandomSource } from './moveAutomation/random'
 import {
@@ -89,43 +88,12 @@ export interface PlanAuthoritativeMoveStateInput {
 
 export type AuthoritativeMoveSheetChangedField = MoveSheetStateField
 
-export interface AuthoritativeMoveSheetWritePlan {
-  readonly kind: SheetKind
-  readonly slug: string
-  readonly expectedRevision: number
+export interface AuthoritativeMoveSheetWritePlan extends AdaptV1SheetWrite {
   readonly revision: number
-  readonly previousSheet: CharacterSheet | TrainerSheet
-  readonly nextSheet: CharacterSheet | TrainerSheet
-  readonly placementIds: readonly string[]
   readonly changedFields: readonly AuthoritativeMoveSheetChangedField[]
 }
 
-export interface AuthoritativeMoveMapChanges {
-  readonly placements?: {
-    readonly previous: readonly SheetPlacement[]
-    readonly current: readonly SheetPlacement[]
-  }
-  readonly temporaryHitPoints?: {
-    readonly previous: TabletopMap['temporaryHitPoints']
-    readonly current: TabletopMap['temporaryHitPoints']
-  }
-  readonly moveUsage?: {
-    readonly previous: TabletopMap['moveUsage']
-    readonly current: TabletopMap['moveUsage']
-  }
-  readonly hazards?: {
-    readonly previous: readonly MapHazardV2[]
-    readonly current: readonly MapHazardV2[]
-  }
-  readonly fieldEffects?: {
-    readonly previous: MapFieldEffects
-    readonly current: MapFieldEffects
-  }
-  readonly metadata?: {
-    readonly previous: Record<string, unknown> | undefined
-    readonly current: Record<string, unknown> | undefined
-  }
-}
+export type AuthoritativeMoveMapChanges = AdaptV1MapChanges
 
 export interface AuthoritativeMoveStatePlan {
   readonly previousMap: TabletopMap
@@ -628,137 +596,6 @@ const mapChanges = (previousMap: TabletopMap, nextMap: TabletopMap): Authoritati
   return changes
 }
 
-const changedPlacementPairs = (
-  previous: readonly SheetPlacement[],
-  current: readonly SheetPlacement[],
-): readonly {
-  readonly placementId: string
-  readonly previous: SheetPlacement | null
-  readonly current: SheetPlacement | null
-}[] => {
-  const previousById = new Map(previous.map(placement => [placement.id, placement]))
-  const currentById = new Map(current.map(placement => [placement.id, placement]))
-  const pairs: Array<{
-    readonly placementId: string
-    readonly previous: SheetPlacement | null
-    readonly current: SheetPlacement | null
-  }> = []
-
-  for (const placement of current) {
-    const prior = previousById.get(placement.id) ?? null
-    if (!sameJsonValue(prior, placement)) {
-      pairs.push({ placementId: placement.id, previous: prior, current: placement })
-    }
-  }
-  for (const placement of previous) {
-    if (!currentById.has(placement.id)) {
-      pairs.push({ placementId: placement.id, previous: placement, current: null })
-    }
-  }
-  return pairs
-}
-
-const typedStateChangePlan = (
-  previousMap: TabletopMap,
-  expectedMapRevision: number,
-  changes: AuthoritativeMoveMapChanges,
-  sheetWrites: readonly AuthoritativeMoveSheetWritePlan[],
-): MoveStateChangePlan => {
-  const inputs: MoveStateChangeInput[] = []
-  const mapScope = { kind: 'map' as const, mapSlug: previousMap.slug }
-  const commonMapChange = {
-    scope: mapScope,
-    expectedRevision: expectedMapRevision,
-    sourceOperationId: null,
-    compensation: RESTORE_PREVIOUS_MOVE_STATE_VALUE,
-  }
-
-  if (changes.moveUsage) {
-    inputs.push({
-      ...commonMapChange,
-      kind: 'map-move-usage',
-      reasonCode: 'move-usage-transition',
-      previous: changes.moveUsage.previous,
-      current: changes.moveUsage.current,
-    })
-  }
-  if (changes.temporaryHitPoints) {
-    inputs.push({
-      ...commonMapChange,
-      kind: 'map-temporary-hit-points',
-      reasonCode: 'temporary-hit-points-transition',
-      previous: changes.temporaryHitPoints.previous,
-      current: changes.temporaryHitPoints.current,
-    })
-  }
-  if (changes.placements) {
-    for (const pair of changedPlacementPairs(changes.placements.previous, changes.placements.current)) {
-      inputs.push({
-        kind: 'placement-state',
-        scope: {
-          kind: 'placement',
-          mapSlug: previousMap.slug,
-          placementId: pair.placementId,
-        },
-        expectedRevision: expectedMapRevision,
-        sourceOperationId: null,
-        reasonCode: 'placement-transition',
-        previous: pair.previous,
-        current: pair.current,
-        compensation: RESTORE_PREVIOUS_MOVE_STATE_VALUE,
-      })
-    }
-  }
-  if (changes.hazards) {
-    inputs.push({
-      ...commonMapChange,
-      kind: 'map-hazards',
-      reasonCode: 'hazards-transition',
-      previous: changes.hazards.previous,
-      current: changes.hazards.current,
-    })
-  }
-  if (changes.fieldEffects) {
-    inputs.push({
-      ...commonMapChange,
-      kind: 'map-field-effects',
-      reasonCode: 'field-effects-transition',
-      previous: changes.fieldEffects.previous,
-      current: changes.fieldEffects.current,
-    })
-  }
-  if (changes.metadata) {
-    inputs.push({
-      ...commonMapChange,
-      kind: 'map-metadata',
-      reasonCode: 'accepted-move-log-transition',
-      previous: changes.metadata.previous,
-      current: changes.metadata.current,
-      compensation: unavailableMoveStateCompensation('accepted-log-may-be-observed'),
-    })
-  }
-
-  for (const write of sheetWrites) {
-    inputs.push({
-      kind: 'sheet-state',
-      scope: {
-        kind: 'sheet',
-        sheetKind: write.kind,
-        sheetSlug: write.slug,
-      },
-      expectedRevision: write.expectedRevision,
-      sourceOperationId: null,
-      reasonCode: 'sheet-state-transition',
-      previous: write.previousSheet,
-      current: write.nextSheet,
-      changedFields: write.changedFields,
-      compensation: unavailableMoveStateCompensation('field-level-inverse-not-yet-recorded'),
-    })
-  }
-
-  return createMoveStateChangePlan(inputs)
-}
-
 const planUsage = (
   input: PlanAuthoritativeMoveStateInput,
   actorPlacement: SheetPlacement,
@@ -865,25 +702,30 @@ export const planAuthoritativeMoveState = (input: PlanAuthoritativeMoveStateInpu
   const sheetWrites = sheetWritePlans(sheetAccumulators.values(), plannedAt)
   const nextMap = cloneJson(workingMap)
   const plannedMapChanges = mapChanges(previousMap, nextMap)
-  const stateChanges = typedStateChangePlan(
+  const adaptedTransaction = adaptV1Transaction({
+    transaction: resolution.transaction,
+    trace: resolution.auditTrace,
     previousMap,
-    previousRevision,
-    plannedMapChanges,
+    expectedMapRevision: previousRevision,
+    mapChanges: plannedMapChanges,
     sheetWrites,
-  )
+  })
 
   return {
     previousMap,
     nextMap,
     previousRevision,
     revision,
-    resolution: cloneResolution(resolution),
+    resolution: cloneResolution({
+      ...resolution,
+      auditTrace: adaptedTransaction.trace,
+    }),
     previousUsage: cloneUsageSummary(usageTransition.previousUsage),
     usage: cloneUsageSummary(usageTransition.usage),
     sheetReads: cloneJson(sheetReads),
     sheetWrites,
     mapChanges: plannedMapChanges,
-    stateChanges,
+    stateChanges: adaptedTransaction.stateChanges,
   }
 }
 

@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest'
 
 const planningPathFiles = [
   'server/domain/planAuthoritativeMoveState.ts',
+  'server/domain/moveAutomation/adaptV1Transaction.ts',
   'server/domain/moveAutomation/plan.ts',
   'server/domain/moveAutomation/reducers/combatStage.ts',
   'server/domain/moveAutomation/reducers/condition.ts',
