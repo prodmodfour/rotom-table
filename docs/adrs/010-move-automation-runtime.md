@@ -56,6 +56,8 @@ Reviewed mechanic capabilities live in the strict `data/move-automation/capabili
 
 A `MoveSpec` is immutable, versioned, JSON-serializable data. It declares targeting, preconditions, costs, ordered phases, bounded predicates and expressions, typed effect operations, optional registered handler identity, and presentation metadata. It cannot contain callbacks, source strings, arbitrary patches, or client-authored executable data.
 
+Before registration, the server fills syntax-only defaults, puts phases and set-like metadata in canonical order, validates every selector, predicate, operation, capability, and local operation/roll reference, and applies aggregate complexity limits. Its reviewed definition hash is SHA-256 over strict canonical JSON that includes the hash-format version and frozen ruleset provenance. Mechanic-bearing array order, such as operations within a phase, remains significant.
+
 The interpreter:
 
 - receives one immutable authoritative rules context;

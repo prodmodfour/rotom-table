@@ -1,0 +1,596 @@
+import { createHash } from 'node:crypto'
+import capabilityCatalogJson from '../../../data/move-automation/capabilities.json'
+import {
+  MOVE_AUTOMATION_CAPABILITY_LIMITS,
+} from '#shared/moveAutomation/capabilities'
+import {
+  MOVE_EFFECT_OPERATION_LIMITS,
+  parseMoveEffectOperation,
+  type MoveEffectOperation,
+} from '#shared/moveAutomation/effects'
+import {
+  MOVE_RULE_AST_LIMITS,
+} from '#shared/moveAutomation/ast'
+import {
+  parseMovePredicate,
+  type MovePredicate,
+} from '#shared/moveAutomation/predicates'
+import {
+  MOVE_RULESET_PROVENANCE,
+} from '#shared/moveAutomation/ruleset'
+import {
+  parseMoveSelector,
+  type MoveSelector,
+} from '#shared/moveAutomation/selectors'
+import {
+  MOVE_SPEC_LIMITS,
+  MOVE_SPEC_PHASES,
+  parseMoveSpec,
+  type MoveSpec,
+  type MoveSpecCostDeclaration,
+  type MoveSpecPhase,
+  type MoveSpecPresentationMetadata,
+  type MoveSpecTargetingKind,
+} from '#shared/moveAutomation/spec'
+import {
+  stableJsonStringify,
+  type StableJsonStringifyOptions,
+} from './stableJson'
+
+export const MOVE_SPEC_DEFINITION_HASH_VERSION = 1 as const
+
+export const MOVE_SPEC_DEFINITION_LIMITS = Object.freeze({
+  capabilityIds: 64,
+  operations: MOVE_EFFECT_OPERATION_LIMITS.operations,
+  ruleAstNodes: MOVE_RULE_AST_LIMITS.nodes,
+})
+
+export interface MoveSpecRulesetVersion {
+  readonly rulesetId: string
+  readonly canonicalizationVersion: number
+  readonly sourceDataSha256: string
+}
+
+export interface ValidatedMoveSpecTargetingDeclaration {
+  readonly kind: MoveSpecTargetingKind
+  readonly minTargets: number
+  readonly maxTargets: number
+  readonly selector: MoveSelector | null
+}
+
+export interface ValidatedMoveSpecPrecondition {
+  readonly id: string
+  readonly predicate: MovePredicate
+  readonly failureReasonCode: string
+}
+
+export interface ValidatedMoveSpecPhaseBlock {
+  readonly phase: MoveSpecPhase
+  readonly operations: readonly MoveEffectOperation[]
+}
+
+export interface ValidatedMoveSpec {
+  readonly schemaVersion: MoveSpec['schemaVersion']
+  readonly canonicalId: string
+  readonly version: number
+  readonly targeting: ValidatedMoveSpecTargetingDeclaration
+  readonly preconditions: readonly ValidatedMoveSpecPrecondition[]
+  readonly costs: readonly MoveSpecCostDeclaration[]
+  readonly phases: readonly ValidatedMoveSpecPhaseBlock[]
+  readonly registeredHandlerId: string | null
+  readonly presentation: MoveSpecPresentationMetadata
+}
+
+export interface ValidateMoveSpecOptions {
+  /** Reviewed capability tags supplied by the manifest/registry boundary. */
+  readonly capabilityIds?: readonly string[]
+  /** Dependency injection seam for catalog validation tests and migrations. */
+  readonly knownCapabilityIds?: ReadonlySet<string>
+  readonly rulesetVersion?: MoveSpecRulesetVersion
+}
+
+export interface ValidatedMoveSpecDefinition {
+  readonly spec: ValidatedMoveSpec
+  readonly capabilityIds: readonly string[]
+  readonly rulesetVersion: MoveSpecRulesetVersion
+  /** Canonical hash material, including hash format and ruleset provenance. */
+  readonly canonicalJson: string
+  readonly definitionHash: string
+}
+
+export type MoveSpecDefinitionValidationCode =
+  | 'invalid-definition'
+  | 'invalid-ruleset-version'
+  | 'limit-exceeded'
+  | 'duplicate-id'
+  | 'phase-mismatch'
+  | 'unknown-reference'
+  | 'invalid-reference-order'
+  | 'unknown-capability'
+
+export class MoveSpecDefinitionValidationError extends Error {
+  readonly code: MoveSpecDefinitionValidationCode
+  readonly path: string
+
+  constructor(code: MoveSpecDefinitionValidationCode, path: string, message: string) {
+    super(`${path}: ${message}`)
+    this.name = 'MoveSpecDefinitionValidationError'
+    this.code = code
+    this.path = path
+  }
+}
+
+type UnknownRecord = Record<string, unknown>
+
+const SHA256_PATTERN = /^[a-f0-9]{64}$/
+const STABLE_ID_PATTERN = /^[a-z0-9]+(?:[._:/-][a-z0-9]+)*$/
+const CONTROL_CHARACTER_PATTERN = /[\u0000-\u001f\u007f]/
+const PHASE_INDEX = new Map<string, number>(
+  MOVE_SPEC_PHASES.map((phase, index) => [phase, index]),
+)
+const DEFAULT_CAPABILITY_IDS = new Set<string>(
+  capabilityCatalogJson.capabilities.map(capability => capability.code),
+)
+
+export const DEFAULT_MOVE_SPEC_RULESET_VERSION: MoveSpecRulesetVersion = Object.freeze({
+  rulesetId: MOVE_RULESET_PROVENANCE.rulesetId,
+  canonicalizationVersion: MOVE_RULESET_PROVENANCE.canonicalization.version,
+  sourceDataSha256: MOVE_RULESET_PROVENANCE.sourceData.sha256,
+})
+
+const fail = (
+  code: MoveSpecDefinitionValidationCode,
+  path: string,
+  message: string,
+): never => {
+  throw new MoveSpecDefinitionValidationError(code, path, message)
+}
+
+const isPlainRecord = (value: unknown): value is UnknownRecord => {
+  if (typeof value !== 'object' || value === null || Array.isArray(value)) return false
+  const prototype = Object.getPrototypeOf(value)
+  return prototype === Object.prototype || prototype === null
+}
+
+const hasOwn = (value: object, key: string): boolean =>
+  Object.prototype.hasOwnProperty.call(value, key)
+
+const sortedStrings = (values: readonly string[]): string[] =>
+  [...values].sort((left, right) => left === right ? 0 : left < right ? -1 : 1)
+
+const deepFreeze = <Value>(value: Value): Value => {
+  if (typeof value !== 'object' || value === null || Object.isFrozen(value)) return value
+  for (const key of Object.getOwnPropertyNames(value)) {
+    deepFreeze((value as Record<string, unknown>)[key])
+  }
+  return Object.freeze(value)
+}
+
+const strictJsonClone = (
+  value: unknown,
+  path: string,
+  limits: StableJsonStringifyOptions['limits'],
+): unknown => JSON.parse(stableJsonStringify(value, { path, limits })) as unknown
+
+/**
+ * Fill syntax-only defaults before the strict shared envelope parser runs.
+ * No mechanic-bearing value is inferred: operation order, predicates, costs,
+ * and targeting declarations remain exactly as authored.
+ */
+const applyMoveSpecDefaultsAndPhaseOrder = (value: unknown): unknown => {
+  if (!isPlainRecord(value)) return value
+  const root: UnknownRecord = { ...value }
+
+  if (!hasOwn(root, 'preconditions')) root.preconditions = []
+  if (!hasOwn(root, 'costs')) root.costs = []
+  if (!hasOwn(root, 'phases')) root.phases = []
+  if (!hasOwn(root, 'registeredHandlerId')) root.registeredHandlerId = null
+
+  if (isPlainRecord(root.targeting) && !hasOwn(root.targeting, 'selector')) {
+    root.targeting = { ...root.targeting, selector: null }
+  }
+
+  if (isPlainRecord(root.presentation)) {
+    root.presentation = {
+      ...root.presentation,
+      ...(!hasOwn(root.presentation, 'vfxKey') ? { vfxKey: null } : {}),
+      ...(!hasOwn(root.presentation, 'tags') ? { tags: [] } : {}),
+    }
+  }
+
+  if (Array.isArray(root.phases)) {
+    root.phases = root.phases
+      .map((block, sourceIndex) => {
+        if (!isPlainRecord(block)) return { block, sourceIndex, phaseIndex: Number.MAX_SAFE_INTEGER }
+        const normalizedBlock = hasOwn(block, 'operations')
+          ? block
+          : { ...block, operations: [] }
+        return {
+          block: normalizedBlock,
+          sourceIndex,
+          phaseIndex: typeof normalizedBlock.phase === 'string'
+            ? PHASE_INDEX.get(normalizedBlock.phase) ?? Number.MAX_SAFE_INTEGER
+            : Number.MAX_SAFE_INTEGER,
+        }
+      })
+      .sort((left, right) => left.phaseIndex - right.phaseIndex || left.sourceIndex - right.sourceIndex)
+      .map(({ block }) => block)
+  }
+
+  return root
+}
+
+const normalizeCapabilityIds = (
+  value: readonly string[] | undefined,
+  knownCapabilityIds: ReadonlySet<string>,
+): readonly string[] => {
+  const detached = strictJsonClone(value ?? [], 'capabilityIds', {
+    maxDepth: 1,
+    maxNodes: MOVE_SPEC_DEFINITION_LIMITS.capabilityIds + 1,
+    maxObjectFields: 0,
+    maxArrayEntries: MOVE_SPEC_DEFINITION_LIMITS.capabilityIds,
+    maxStringLength: MOVE_AUTOMATION_CAPABILITY_LIMITS.identifierLength,
+  })
+  if (!Array.isArray(detached)) {
+    return fail('invalid-definition', 'capabilityIds', 'must be an array.')
+  }
+  if (detached.length > MOVE_SPEC_DEFINITION_LIMITS.capabilityIds) {
+    fail(
+      'limit-exceeded',
+      'capabilityIds',
+      `must contain at most ${MOVE_SPEC_DEFINITION_LIMITS.capabilityIds} entries.`,
+    )
+  }
+
+  const capabilityIds = detached.map((capabilityId, index) => {
+    const path = `capabilityIds[${index}]`
+    if (
+      typeof capabilityId !== 'string'
+      || capabilityId.length === 0
+      || capabilityId.trim() !== capabilityId
+      || CONTROL_CHARACTER_PATTERN.test(capabilityId)
+      || !STABLE_ID_PATTERN.test(capabilityId)
+    ) {
+      return fail('invalid-definition', path, 'must be a lowercase stable identifier.')
+    }
+    if (!knownCapabilityIds.has(capabilityId)) {
+      fail('unknown-capability', path, `${capabilityId} is not in the capability catalog.`)
+    }
+    return capabilityId
+  })
+
+  if (new Set(capabilityIds).size !== capabilityIds.length) {
+    fail('duplicate-id', 'capabilityIds', 'must not contain duplicate capability IDs.')
+  }
+  return Object.freeze(sortedStrings(capabilityIds))
+}
+
+const normalizeRulesetVersion = (
+  value: MoveSpecRulesetVersion,
+): MoveSpecRulesetVersion => {
+  const path = 'rulesetVersion'
+  const detached = strictJsonClone(value, path, {
+    maxDepth: 1,
+    maxNodes: 4,
+    maxObjectFields: 3,
+    maxArrayEntries: 0,
+    maxStringLength: MOVE_SPEC_LIMITS.identifierLength,
+  })
+  if (!isPlainRecord(detached)) {
+    return fail('invalid-ruleset-version', path, 'must be an object.')
+  }
+  const expectedKeys = ['rulesetId', 'canonicalizationVersion', 'sourceDataSha256']
+  const actualKeys = Object.keys(detached)
+  const missing = expectedKeys.filter(key => !hasOwn(detached, key))
+  const unknown = actualKeys.filter(key => !expectedKeys.includes(key))
+  if (missing.length > 0 || unknown.length > 0) {
+    fail(
+      'invalid-ruleset-version',
+      path,
+      `has an invalid shape (missing: ${missing.join(', ') || 'none'}; unknown: ${unknown.join(', ') || 'none'}).`,
+    )
+  }
+  const rulesetId = detached.rulesetId
+  const canonicalizationVersion = detached.canonicalizationVersion
+  const sourceDataSha256 = detached.sourceDataSha256
+  if (typeof rulesetId !== 'string') {
+    return fail('invalid-ruleset-version', `${path}.rulesetId`, 'must be a bounded, trimmed identifier.')
+  }
+  if (
+    rulesetId.length === 0
+    || rulesetId.trim() !== rulesetId
+    || CONTROL_CHARACTER_PATTERN.test(rulesetId)
+  ) {
+    fail('invalid-ruleset-version', `${path}.rulesetId`, 'must be a bounded, trimmed identifier.')
+  }
+  if (
+    !Number.isSafeInteger(canonicalizationVersion)
+    || Number(canonicalizationVersion) < 1
+  ) {
+    fail(
+      'invalid-ruleset-version',
+      `${path}.canonicalizationVersion`,
+      'must be a positive safe integer.',
+    )
+  }
+  if (typeof sourceDataSha256 !== 'string') {
+    return fail(
+      'invalid-ruleset-version',
+      `${path}.sourceDataSha256`,
+      'must be a lowercase SHA-256 digest.',
+    )
+  }
+  if (!SHA256_PATTERN.test(sourceDataSha256)) {
+    fail(
+      'invalid-ruleset-version',
+      `${path}.sourceDataSha256`,
+      'must be a lowercase SHA-256 digest.',
+    )
+  }
+
+  return Object.freeze({
+    rulesetId,
+    canonicalizationVersion: Number(canonicalizationVersion),
+    sourceDataSha256,
+  })
+}
+
+const countTaggedAstNodes = (value: unknown): number => {
+  if (Array.isArray(value)) {
+    let total = 0
+    for (const entry of value) total += countTaggedAstNodes(entry)
+    return total
+  }
+  if (!isPlainRecord(value)) return 0
+  let total = typeof value.kind === 'string' ? 1 : 0
+  for (const child of Object.values(value)) total += countTaggedAstNodes(child)
+  return total
+}
+
+const parseRules = (spec: MoveSpec): Pick<
+  ValidatedMoveSpec,
+  'targeting' | 'preconditions'
+> => {
+  const selector = spec.targeting.selector === null
+    ? null
+    : parseMoveSelector(spec.targeting.selector, 'spec.targeting.selector')
+  const preconditions = spec.preconditions.map((precondition, index) => ({
+    ...precondition,
+    predicate: parseMovePredicate(
+      precondition.predicate,
+      `spec.preconditions[${index}].predicate`,
+    ),
+  }))
+  const ruleAstNodes = countTaggedAstNodes(selector)
+    + preconditions.reduce(
+      (total, precondition) => total + countTaggedAstNodes(precondition.predicate),
+      0,
+    )
+  if (ruleAstNodes > MOVE_SPEC_DEFINITION_LIMITS.ruleAstNodes) {
+    fail(
+      'limit-exceeded',
+      'spec.rules',
+      `selectors and predicates must contain at most ${MOVE_SPEC_DEFINITION_LIMITS.ruleAstNodes} AST nodes in total.`,
+    )
+  }
+
+  return {
+    targeting: {
+      ...spec.targeting,
+      selector,
+    },
+    preconditions,
+  }
+}
+
+const parseOperations = (
+  spec: MoveSpec,
+): readonly ValidatedMoveSpecPhaseBlock[] => {
+  const operationCount = spec.phases.reduce(
+    (total, phaseBlock) => total + phaseBlock.operations.length,
+    0,
+  )
+  if (operationCount > MOVE_SPEC_DEFINITION_LIMITS.operations) {
+    fail(
+      'limit-exceeded',
+      'spec.phases',
+      `must contain at most ${MOVE_SPEC_DEFINITION_LIMITS.operations} operations in total.`,
+    )
+  }
+
+  return spec.phases.map((phaseBlock, phaseIndex) => ({
+    phase: phaseBlock.phase,
+    operations: phaseBlock.operations.map((operation, operationIndex) => {
+      const path = `spec.phases[${phaseIndex}].operations[${operationIndex}]`
+      const parsed = parseMoveEffectOperation(operation, path)
+      if (parsed.phase !== phaseBlock.phase) {
+        fail(
+          'phase-mismatch',
+          `${path}.phase`,
+          `operation phase ${parsed.phase} does not match containing phase ${phaseBlock.phase}.`,
+        )
+      }
+      return parsed
+    }),
+  }))
+}
+
+interface IndexedOperation {
+  readonly operation: MoveEffectOperation
+  readonly index: number
+  readonly path: string
+}
+
+const assertUniqueLocalIdsAndReferences = (
+  phases: readonly ValidatedMoveSpecPhaseBlock[],
+): void => {
+  const indexed: IndexedOperation[] = []
+  phases.forEach((phaseBlock, phaseIndex) => {
+    phaseBlock.operations.forEach((operation, operationIndex) => {
+      indexed.push({
+        operation,
+        index: indexed.length,
+        path: `spec.phases[${phaseIndex}].operations[${operationIndex}]`,
+      })
+    })
+  })
+
+  const operationIndexById = new Map<string, number>()
+  const rollIndexById = new Map<string, number>()
+  const requestIndexById = new Map<string, number>()
+
+  indexed.forEach(({ operation, index, path }) => {
+    if (operationIndexById.has(operation.id)) {
+      fail('duplicate-id', `${path}.id`, `operation ID ${operation.id} is duplicated.`)
+    }
+    operationIndexById.set(operation.id, index)
+
+    if (operation.kind === 'roll') {
+      if (rollIndexById.has(operation.payload.rollId)) {
+        fail(
+          'duplicate-id',
+          `${path}.payload.rollId`,
+          `roll ID ${operation.payload.rollId} is duplicated.`,
+        )
+      }
+      rollIndexById.set(operation.payload.rollId, index)
+    }
+
+    if (
+      operation.kind === 'movement-request'
+      || operation.kind === 'choice-request'
+      || operation.kind === 'reaction-request'
+    ) {
+      if (requestIndexById.has(operation.payload.requestId)) {
+        fail(
+          'duplicate-id',
+          `${path}.payload.requestId`,
+          `request ID ${operation.payload.requestId} is duplicated.`,
+        )
+      }
+      requestIndexById.set(operation.payload.requestId, index)
+    }
+  })
+
+  const assertPriorReference = (
+    referenceId: string,
+    currentIndex: number,
+    path: string,
+    indexes: ReadonlyMap<string, number>,
+    label: string,
+  ): void => {
+    const referencedIndex = indexes.get(referenceId)
+    if (referencedIndex === undefined) {
+      return fail('unknown-reference', path, `${label} ${referenceId} does not resolve.`)
+    }
+    if (referencedIndex >= currentIndex) {
+      fail(
+        'invalid-reference-order',
+        path,
+        `${label} ${referenceId} must refer to an earlier operation.`,
+      )
+    }
+  }
+
+  indexed.forEach(({ operation, index, path }) => {
+    if (operation.source.kind === 'operation') {
+      assertPriorReference(
+        operation.source.id,
+        index,
+        `${path}.source.id`,
+        operationIndexById,
+        'operation ID',
+      )
+    }
+    if (operation.kind !== 'damage') return
+    if (operation.payload.accuracyRollId !== null) {
+      assertPriorReference(
+        operation.payload.accuracyRollId,
+        index,
+        `${path}.payload.accuracyRollId`,
+        rollIndexById,
+        'roll ID',
+      )
+    }
+    if (operation.payload.criticalRollId !== null) {
+      assertPriorReference(
+        operation.payload.criticalRollId,
+        index,
+        `${path}.payload.criticalRollId`,
+        rollIndexById,
+        'roll ID',
+      )
+    }
+  })
+}
+
+const normalizeSpec = (input: unknown): ValidatedMoveSpec => {
+  const detached = strictJsonClone(input, 'spec', {
+    maxDepth: MOVE_SPEC_LIMITS.jsonDepth,
+    maxNodes: MOVE_SPEC_LIMITS.jsonNodes,
+    maxObjectFields: MOVE_SPEC_LIMITS.jsonObjectFields,
+    maxArrayEntries: MOVE_SPEC_LIMITS.jsonArrayEntries,
+    maxStringLength: MOVE_SPEC_LIMITS.jsonStringLength,
+  })
+  const spec = parseMoveSpec(applyMoveSpecDefaultsAndPhaseOrder(detached))
+  const rules = parseRules(spec)
+  const phases = parseOperations(spec)
+  assertUniqueLocalIdsAndReferences(phases)
+
+  return deepFreeze({
+    schemaVersion: spec.schemaVersion,
+    canonicalId: spec.canonicalId,
+    version: spec.version,
+    targeting: rules.targeting,
+    preconditions: rules.preconditions,
+    costs: spec.costs,
+    phases,
+    registeredHandlerId: spec.registeredHandlerId,
+    presentation: {
+      ...spec.presentation,
+      tags: sortedStrings(spec.presentation.tags),
+    },
+  })
+}
+
+/**
+ * Validate every executable MoveSpec node, normalize syntax-only defaults and
+ * set ordering, then fingerprint canonical JSON bound to reviewed rules data.
+ */
+export const validateMoveSpec = (
+  input: unknown,
+  options: ValidateMoveSpecOptions = {},
+): ValidatedMoveSpecDefinition => {
+  const spec = normalizeSpec(input)
+  const capabilityIds = normalizeCapabilityIds(
+    options.capabilityIds,
+    options.knownCapabilityIds ?? DEFAULT_CAPABILITY_IDS,
+  )
+  const rulesetVersion = normalizeRulesetVersion(
+    options.rulesetVersion ?? DEFAULT_MOVE_SPEC_RULESET_VERSION,
+  )
+  const canonicalJson = stableJsonStringify({
+    definitionHashVersion: MOVE_SPEC_DEFINITION_HASH_VERSION,
+    rulesetVersion,
+    capabilityIds,
+    spec,
+  }, {
+    path: 'moveSpecDefinition',
+    limits: {
+      maxDepth: MOVE_SPEC_LIMITS.jsonDepth + 2,
+      maxNodes: MOVE_SPEC_LIMITS.jsonNodes + MOVE_SPEC_DEFINITION_LIMITS.capabilityIds + 16,
+      maxObjectFields: MOVE_SPEC_LIMITS.jsonObjectFields,
+      maxArrayEntries: MOVE_SPEC_LIMITS.jsonArrayEntries,
+      maxStringLength: MOVE_SPEC_LIMITS.jsonStringLength,
+    },
+  })
+  const definitionHash = createHash('sha256').update(canonicalJson, 'utf8').digest('hex')
+
+  return deepFreeze({
+    spec,
+    capabilityIds,
+    rulesetVersion,
+    canonicalJson,
+    definitionHash,
+  })
+}

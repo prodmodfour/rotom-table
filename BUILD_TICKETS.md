@@ -498,7 +498,7 @@ Status: DONE
 
 ## MA-033 — Validate, normalize, and hash specs
 
-Status: TODO
+Status: DONE
 
 **Depends on:** MA-030–MA-032
 **Commit:** `feat(move-automation): validate and hash movespecs`
