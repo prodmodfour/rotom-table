@@ -369,6 +369,11 @@ const patchChangesFromPlan = (plan: AuthoritativeMoveStatePlan): LivePlayMoveSta
       },
     })
   }
+  if (plan.mapChanges.encounterState) {
+    Object.assign(changes, {
+      encounterState: deepCloneJson(plan.mapChanges.encounterState),
+    })
+  }
   return changes
 }
 

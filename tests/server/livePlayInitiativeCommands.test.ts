@@ -957,6 +957,13 @@ describe('live-play initiative commands', () => {
     expect(response.result).toMatchObject({ ok: true, previousRevision: 4, revision: 5 })
     expect(harness.storedMap.initiative).toEqual({ activeId: 'fast-token', round: 2 })
     expect(harness.storedMap.encounterState?.effects).toEqual([])
+    expect(harness.storedMap.encounterState?.turnResources['fast-token']).toMatchObject({
+      round: 2,
+      turn: 2,
+      actions: { standard: { spent: 0 } },
+      reaction: { available: true },
+      movement: { spent: 0 },
+    })
     const patches = response.result.ok && !('duplicate' in response.result)
       ? response.result.patches
       : []

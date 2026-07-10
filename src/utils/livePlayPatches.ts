@@ -527,6 +527,10 @@ const applyMoveStatePatch = (map: TabletopMap, payload: unknown): LivePlayPatche
     else map.metadata = deepCloneJson(changes.metadata.current)
   }
 
+  if (changes.encounterState) {
+    map.encounterState = deepCloneJson(changes.encounterState.current)
+  }
+
   map.updatedAt = parsed.payload.updatedAt
   return null
 }

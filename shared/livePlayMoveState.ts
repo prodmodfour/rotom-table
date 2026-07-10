@@ -1,4 +1,8 @@
-import { isEncounterSideId } from './moveAutomation/encounterState'
+import {
+  isEncounterSideId,
+  parseEncounterState,
+  type EncounterState,
+} from './moveAutomation/encounterState'
 import { isSlug, SLUG_PATTERN_DESCRIPTION } from './paths'
 import { isSheetKind, type SheetKind } from './sheets'
 import {
@@ -61,6 +65,11 @@ export interface LivePlayMoveStatePatchChanges {
   readonly metadata?: {
     readonly previous: Record<string, unknown> | null
     readonly current: Record<string, unknown> | null
+  }
+
+  readonly encounterState?: {
+    readonly previous: EncounterState
+    readonly current: EncounterState
   }
 }
 
@@ -314,6 +323,25 @@ const parseJsonRecordOrNull = (
   }
   const parsed = parseJsonValue(value, path, issues)
   return isRecord(parsed) ? cloneJson(parsed) : null
+}
+
+const parseEncounterStateValue = (
+  value: unknown,
+  path: string,
+  issues: MutableIssueList,
+): EncounterState | null => {
+  try {
+    return parseEncounterState(value)
+  }
+  catch (error) {
+    addIssue(
+      issues,
+      path,
+      'invalid-field',
+      `${path} is invalid: ${error instanceof Error ? error.message : String(error)}`,
+    )
+    return null
+  }
 }
 
 const parseSceneState = (value: unknown, path: string, issues: MutableIssueList): MapSceneState | null => {
@@ -722,6 +750,14 @@ const parseChanges = (value: unknown, path: string, issues: MutableIssueList): L
   if (fieldEffects) Object.assign(changes, { fieldEffects })
   const metadata = parseLaneChange(value, 'metadata', path, parseJsonRecordOrNull, issues)
   if (metadata) Object.assign(changes, { metadata })
+  const encounterState = parseLaneChange(
+    value,
+    'encounterState',
+    path,
+    parseEncounterStateValue,
+    issues,
+  )
+  if (encounterState) Object.assign(changes, { encounterState })
   return changes
 }
 

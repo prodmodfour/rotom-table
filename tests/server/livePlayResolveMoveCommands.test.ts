@@ -352,6 +352,10 @@ describe('executeLivePlayResolveMoveCommandUseCase', () => {
       outcomeKind: 'self',
     })
     expect(selfResponse.map?.revision).toBe(5)
+    expect(selfPayload.changes.encounterState?.current.turnResources['actor-token']).toMatchObject({
+      actions: { standard: { spent: 1 } },
+      oncePerTurnFlags: [{ id: 'move.swords-dance', sourceOperationId: 'op_resolveself01' }],
+    })
     expect(selfResponse.sheetUpdates?.[0]).toMatchObject({ kind: 'pokemon', slug: 'actor', sheet: { revision: 3 } })
 
     const targetHarness = seedHarness({ actorMoves: [{ name: 'Tackle' }] })
@@ -408,6 +412,7 @@ describe('executeLivePlayResolveMoveCommandUseCase', () => {
     expect(patchedMap.hazards).toEqual(targetResponse.map?.hazards)
     expect(patchedMap.fieldEffects).toEqual(targetResponse.map?.fieldEffects)
     expect(patchedMap.metadata).toEqual(targetResponse.map?.metadata)
+    expect(patchedMap.encounterState).toEqual(targetResponse.map?.encounterState)
     expect(patchedMap.updatedAt).toBe(targetResponse.map?.updatedAt)
   })
 
@@ -466,6 +471,11 @@ describe('executeLivePlayResolveMoveCommandUseCase', () => {
       })
       expect(payload.presentation.pass?.pathCells).toEqual(payload.move.movement?.pathCells)
       expect(response.map?.placements.find((item) => item.id === 'actor-token')?.position).toEqual(payload.move.movement?.destination)
+      expect(payload.changes.encounterState?.current.turnResources['actor-token']).toMatchObject({
+        actions: { standard: { spent: 1 } },
+        movement: { spent: 4 },
+        oncePerTurnFlags: [{ id: 'move.scratch', sourceOperationId: 'op_resolvepass1' }],
+      })
 
       const committedMap = deepCloneJson(harness.maps.getBySlug('arena'))
       const duplicate = await execute(harness, passCommand, {

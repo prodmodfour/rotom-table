@@ -11,19 +11,27 @@ import {
   parseEncounterHistory,
   type EncounterHistory,
 } from './encounterHistory'
+import {
+  ENCOUNTER_RESOURCE_LIMITS,
+  EncounterResourceValidationError,
+  createEmptyEncounterTurnResources,
+  parseEncounterTurnResources,
+  type EncounterTurnResourceDirectory,
+} from './encounterResources'
 
 export * from './encounterEffects'
 export * from './encounterHistory'
+export * from './encounterResources'
 
 /**
  * Versioned map-owned state for authoritative encounter mechanics.
  *
  * MA-050 introduced the envelope, MA-052 added side identity, MA-056 added
- * strict typed effect instances, MA-057 added their lifecycle policies, and
- * MA-063 added structured bounded history indexes. Remaining containers stay
- * empty until their owning tickets. Existing map hazards, field effects,
- * temporary HP, and move usage remain in their current map fields during this
- * compatibility period.
+ * strict typed effect instances, MA-057 added their lifecycle policies,
+ * MA-063 added structured bounded history indexes, and MA-064 added action and
+ * movement resource ledgers. Remaining containers stay empty until their
+ * owning tickets. Existing map hazards, field effects, temporary HP, and move
+ * usage remain in their current map fields during this compatibility period.
  */
 export const ENCOUNTER_STATE_SCHEMA_VERSION = 1 as const
 
@@ -58,7 +66,7 @@ export const ENCOUNTER_STATE_LIMITS = Object.freeze({
   effects: ENCOUNTER_EFFECT_LIMITS.count,
   counters: 0,
   history: ENCOUNTER_HISTORY_LIMITS.moveAncestryPerScene,
-  turnResources: 0,
+  turnResources: ENCOUNTER_RESOURCE_LIMITS.placementLedgers,
   zones: 0,
   pendingResolutionSummaries: 0,
 })
@@ -72,7 +80,7 @@ export interface EncounterState {
   readonly effects: readonly EncounterEffect[]
   readonly counters: EmptyEncounterStateDirectory
   readonly history: EncounterHistory
-  readonly turnResources: EmptyEncounterStateDirectory
+  readonly turnResources: EncounterTurnResourceDirectory
   readonly zones: EmptyEncounterStateList
   readonly pendingResolutionSummaries: EmptyEncounterStateList
 }
@@ -117,7 +125,6 @@ const LIST_CONTAINER_KEYS = [
 
 const DIRECTORY_CONTAINER_KEYS = [
   'counters',
-  'turnResources',
 ] as const satisfies readonly EncounterStateContainerKey[]
 
 const ENCOUNTER_SIDE_FIELDS = ['id', 'label', 'color', 'status'] as const
@@ -298,6 +305,24 @@ const parseEncounterHistoryState = (value: unknown): EncounterHistory => {
   }
 }
 
+const parseEncounterTurnResourceState = (
+  value: unknown,
+): EncounterTurnResourceDirectory => {
+  try {
+    return parseEncounterTurnResources(value, 'encounterState.turnResources')
+  }
+  catch (error) {
+    if (error instanceof EncounterResourceValidationError) {
+      fail(
+        error.code === 'limit-exceeded' ? 'limit-exceeded' : 'invalid-encounter-state',
+        error.path,
+        error.detail,
+      )
+    }
+    throw error
+  }
+}
+
 const parseEncounterEffectList = (
   value: unknown,
   sides: EncounterSideDirectory,
@@ -342,7 +367,7 @@ export const createEmptyEncounterState = (): EncounterState => ({
   effects: [],
   counters: {},
   history: createEmptyEncounterHistory(),
-  turnResources: {},
+  turnResources: createEmptyEncounterTurnResources(),
   zones: [],
   pendingResolutionSummaries: [],
 })
@@ -376,5 +401,6 @@ export const parseEncounterState = (value: unknown): EncounterState => {
     sides,
     effects: parseEncounterEffectList(value.effects, sides),
     history: parseEncounterHistoryState(value.history),
+    turnResources: parseEncounterTurnResourceState(value.turnResources),
   }
 }

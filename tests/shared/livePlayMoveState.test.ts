@@ -4,6 +4,10 @@ import {
   parseLivePlayMoveStatePatchPayload,
   isLivePlayMoveStatePatchPayload,
 } from '#shared/livePlayMoveState'
+import {
+  createEmptyEncounterState,
+  createEncounterTurnResourceLedger,
+} from '#shared/moveAutomation/encounterState'
 
 const move = () => ({
   schemaVersion: 1,
@@ -70,6 +74,20 @@ const payload = () => ({
     hazards: { previous: [], current: [{ kind: 'fire', x: 1, y: 0, z: 1, layer: 1, owner: 'actor' }] },
     fieldEffects: { previous: { weather: [], terrains: [], rooms: [] }, current: { weather: [{ kind: 'sunny', rounds: 2, source: 'Tackle' }], terrains: [], rooms: [] } },
     metadata: { previous: null, current: { moveLog: [{ at: 1000 }] } },
+    encounterState: {
+      previous: createEmptyEncounterState(),
+      current: {
+        ...createEmptyEncounterState(),
+        turnResources: {
+          'token-a': createEncounterTurnResourceLedger({
+            placementId: 'token-a',
+            round: 1,
+            turn: 0,
+            movementBudget: 6,
+          }),
+        },
+      },
+    },
   },
 })
 
@@ -88,6 +106,8 @@ describe('livePlayMoveState patch contract', () => {
     expect(result.payload.move).not.toBe(raw.move)
     expect(result.payload.presentation).not.toBe(raw.presentation)
     expect(result.payload.changes.placements?.current).not.toBe(raw.changes.placements.current)
+    expect(result.payload.changes.encounterState?.current)
+      .not.toBe(raw.changes.encounterState.current)
     expect(isLivePlayMoveStatePatchPayload(raw)).toBe(true)
   })
 
@@ -119,6 +139,15 @@ describe('livePlayMoveState patch contract', () => {
     expect(parseLivePlayMoveStatePatchPayload({
       ...payload(),
       changes: { fieldEffects: { previous: {}, current: { weather: [{ kind: 'fog' }] } } },
+    }).valid).toBe(false)
+    expect(parseLivePlayMoveStatePatchPayload({
+      ...payload(),
+      changes: {
+        encounterState: {
+          previous: createEmptyEncounterState(),
+          current: { ...createEmptyEncounterState(), turnResources: { actor: {} } },
+        },
+      },
     }).valid).toBe(false)
   })
 

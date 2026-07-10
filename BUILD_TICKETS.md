@@ -858,7 +858,7 @@ Status: DONE
 
 ## MA-064 — Add turn/action/movement resource ledgers
 
-Status: TODO
+Status: DONE
 
 **Depends on:** MA-050, MA-060
 **Commit:** `feat(move-automation): track encounter action resources`

@@ -232,6 +232,7 @@ const PLANNING_SCENARIOS: readonly PlanningParityScenario[] = [
         'map-move-usage',
         'map-metadata',
         'sheet-state',
+        'encounter-state',
       ])
     },
   },

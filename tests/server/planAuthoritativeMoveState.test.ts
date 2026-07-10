@@ -149,10 +149,19 @@ describe('planAuthoritativeMoveState', () => {
     expect(plan.resolution.sheetReads).toEqual(plan.sheetReads)
     expect(plan.mapChanges.moveUsage).toBeDefined()
     expect(plan.mapChanges.metadata?.previous).toEqual({ note: 'keep me' })
+    expect(plan.mapChanges.encounterState?.current.turnResources['actor-token']).toMatchObject({
+      round: 1,
+      turn: null,
+      actions: { standard: { spent: 1 } },
+      reaction: { available: true },
+      movement: { spent: 0 },
+      oncePerTurnFlags: [{ id: 'move.swords-dance' }],
+    })
     expect(plan.stateChanges.changes.map(change => change.kind)).toEqual([
       'map-move-usage',
       'map-metadata',
       'sheet-state',
+      'encounter-state',
     ])
     expect(plan.stateChanges.changes.map(change => ({
       kind: change.kind,
@@ -161,8 +170,10 @@ describe('planAuthoritativeMoveState', () => {
       { kind: 'map-move-usage', sourceOperationId: null },
       { kind: 'map-metadata', sourceOperationId: 'legacy-v1.log.1' },
       { kind: 'sheet-state', sourceOperationId: 'legacy-v1.combat-stage.1' },
+      { kind: 'encounter-state', sourceOperationId: 'move.swords-dance.resource-observation' },
     ])
     expect(plan.stateChanges.groups.map).toHaveLength(1)
+    expect(plan.stateChanges.groups.encounter).toHaveLength(1)
     expect(plan.stateChanges.groups.sheets).toHaveLength(1)
     expect(plan.stateChanges.expectedRevisions).toEqual([
       { kind: 'map', mapSlug: 'planner-test', expectedRevision: 7 },
@@ -461,6 +472,11 @@ describe('planAuthoritativeMoveState Pass movement', () => {
       expect(plan.stateChanges.groups.placements[0]?.changes[0]).toMatchObject({
         sourceOperationId: 'legacy-v1.movement.1',
         reasonCode: 'legacy-pass-movement',
+      })
+      expect(plan.nextMap.encounterState?.turnResources['actor-token']).toMatchObject({
+        actions: { standard: { spent: 1 } },
+        movement: { spent: 3 },
+        oncePerTurnFlags: [{ id: 'move.aqua-tail' }],
       })
       const expectedLine = passDestinationLogLine({ species: 'Actor' } as never, plan.resolution.movement!.destination)
       const lines = moveLog(plan.nextMap)?.[0]?.lines ?? []

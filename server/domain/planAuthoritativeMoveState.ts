@@ -1,5 +1,10 @@
 import { nextRevision, normalizeRevision } from '#shared/sessionRevisions'
 import type { ResolveMoveIntent } from '#shared/livePlayMoveResolution'
+import {
+  createEmptyEncounterState,
+  parseEncounterState,
+  type EncounterState,
+} from '#shared/moveAutomation/encounterState'
 import type { CharacterSheet } from '~/types/characterSheet'
 import type { CombatStageMap } from '~/types/combatStages'
 import type {
@@ -19,6 +24,7 @@ import { applyMoveFieldEffectToFieldEffects } from '~/utils/mapFieldEffects'
 import { applyMapHazardPlacement } from '~/utils/mapHazards'
 import { mapWithTemporaryHpForPlacement } from '~/utils/mapTemporaryHitPoints'
 import { appendMoveAutomationLogEntry } from '~/utils/moveAutomationLog'
+import { placementToSpawned } from '~/utils/placement'
 import { deepCloneJson, sameJsonValue, stableJsonStringify } from '~/utils/serialization'
 import {
   applyCombatStagesToSheet,
@@ -41,10 +47,14 @@ import {
 import { buildAuthoritativeMoveMapChanges } from './moveAutomation/mapChanges'
 import { planNativeV2MoveState } from './moveAutomation/planNativeV2MoveState'
 import { applyAuthoritativeMovePlacementTransition } from './moveAutomation/placementTransition'
-import type {
-  MoveSheetStateField,
-  MoveStateChangePlan,
+import {
+  RESTORE_PREVIOUS_MOVE_STATE_VALUE,
+  createMoveStateChangePlan,
+  type MoveSheetStateField,
+  type MoveStateChangeInput,
+  type MoveStateChangePlan,
 } from './moveAutomation/plan'
+import { planMoveResourceObservation } from './moveAutomation/planMoveResources'
 import type { AuthoritativeMoveRandomSource } from './moveAutomation/random'
 import type { MoveAutomationRuntimeRegistry } from './moveAutomation/registry'
 import {
@@ -515,6 +525,82 @@ const planUsage = (
   }
 }
 
+const withoutPlanIdentity = (
+  change: MoveStateChangePlan['changes'][number],
+): MoveStateChangeInput => {
+  const { id: _id, order: _order, ...input } = change
+  return input as MoveStateChangeInput
+}
+
+const observeMovePlanResources = (input: {
+  readonly planningInput: PlanAuthoritativeMoveStateInput
+  readonly resolution: AuthoritativeMoveResolution
+  readonly nextMap: TabletopMap
+  readonly previousRevision: number
+  readonly stateChanges: MoveStateChangePlan
+}): {
+  readonly nextMap: TabletopMap
+  readonly mapChanges: AuthoritativeMoveMapChanges
+  readonly stateChanges: MoveStateChangePlan
+} => {
+  const actorPlacement = input.planningInput.map.placements.find(
+    placement => placement.id === input.resolution.actorPlacementId,
+  ) ?? fail(
+    'not-found',
+    'actor-placement-missing',
+    `Actor placement ${input.resolution.actorPlacementId} was not found while observing resources.`,
+  )
+  const actor = placementToSpawned(actorPlacement, {
+    pokemon: new Map(input.planningInput.pokemonSheets),
+    trainer: new Map(input.planningInput.trainerSheets),
+  }, input.planningInput.map) ?? fail(
+    'not-found',
+    'actor-token-missing',
+    `Actor placement ${input.resolution.actorPlacementId} could not resolve while observing resources.`,
+  )
+  const sourceOperationId = input.planningInput.operationId
+    ?? `move.${input.resolution.moveKey}.resource-observation`
+  const observation = planMoveResourceObservation({
+    map: input.nextMap,
+    actor,
+    resolution: input.resolution,
+    sourceOperationId,
+  })
+  const previousEncounterState = parseEncounterState(
+    input.planningInput.map.encounterState ?? createEmptyEncounterState(),
+  )
+  const existingInputs = input.stateChanges.changes
+    .filter(change => change.kind !== 'encounter-state')
+    .map(withoutPlanIdentity)
+  const existingEncounterChange = input.stateChanges.changes.find(
+    change => change.kind === 'encounter-state',
+  )
+  const encounterInput: MoveStateChangeInput<EncounterState> = {
+    kind: 'encounter-state',
+    scope: { kind: 'encounter', mapSlug: input.planningInput.map.slug },
+    expectedRevision: input.previousRevision,
+    sourceOperationId: existingEncounterChange ? null : sourceOperationId,
+    reasonCode: existingEncounterChange
+      ? 'move-and-resource-state'
+      : 'move-resource-observation',
+    previous: existingEncounterChange
+      ? cloneJson(existingEncounterChange.previous as EncounterState)
+      : cloneJson(previousEncounterState),
+    current: cloneJson(observation.currentEncounterState),
+    compensation: RESTORE_PREVIOUS_MOVE_STATE_VALUE,
+  }
+  const stateChanges = createMoveStateChangePlan([
+    ...existingInputs,
+    encounterInput,
+  ])
+  const nextMap = cloneJson(observation.nextMap)
+  return {
+    nextMap,
+    mapChanges: buildAuthoritativeMoveMapChanges(input.planningInput.map, nextMap),
+    stateChanges,
+  }
+}
+
 export const planAuthoritativeMoveState = (input: PlanAuthoritativeMoveStateInput): AuthoritativeMoveStatePlan => {
   const plannedAt = (input.now ?? Date.now)()
   const previousMap = cloneJson(input.map)
@@ -556,9 +642,16 @@ export const planAuthoritativeMoveState = (input: PlanAuthoritativeMoveStateInpu
       input.pokemonSheets,
       input.trainerSheets,
     )
+    const observedResources = observeMovePlanResources({
+      planningInput: input,
+      resolution,
+      nextMap: nativePlan.nextMap,
+      previousRevision,
+      stateChanges: nativePlan.stateChanges,
+    })
     return {
       previousMap,
-      nextMap: nativePlan.nextMap,
+      nextMap: observedResources.nextMap,
       previousRevision,
       revision: nativePlan.revision,
       resolution: cloneResolution({
@@ -570,8 +663,8 @@ export const planAuthoritativeMoveState = (input: PlanAuthoritativeMoveStateInpu
       usage: cloneUsageSummary(nativePlan.usage),
       sheetReads: cloneJson(finalSheetReads),
       sheetWrites: nativePlan.sheetWrites,
-      mapChanges: nativePlan.mapChanges,
-      stateChanges: nativePlan.stateChanges,
+      mapChanges: observedResources.mapChanges,
+      stateChanges: observedResources.stateChanges,
     }
   }
 
@@ -651,10 +744,17 @@ export const planAuthoritativeMoveState = (input: PlanAuthoritativeMoveStateInpu
     mapChanges: plannedMapChanges,
     sheetWrites,
   })
+  const observedResources = observeMovePlanResources({
+    planningInput: input,
+    resolution,
+    nextMap,
+    previousRevision,
+    stateChanges: adaptedTransaction.stateChanges,
+  })
 
   return {
     previousMap,
-    nextMap,
+    nextMap: observedResources.nextMap,
     previousRevision,
     revision,
     resolution: cloneResolution({
@@ -665,8 +765,8 @@ export const planAuthoritativeMoveState = (input: PlanAuthoritativeMoveStateInpu
     usage: cloneUsageSummary(usageTransition.usage),
     sheetReads: cloneJson(sheetReads),
     sheetWrites,
-    mapChanges: plannedMapChanges,
-    stateChanges: adaptedTransaction.stateChanges,
+    mapChanges: observedResources.mapChanges,
+    stateChanges: observedResources.stateChanges,
   }
 }
 

@@ -1,4 +1,9 @@
 import type { ResolveMoveIntent } from '#shared/livePlayMoveResolution'
+import {
+  createEmptyEncounterState,
+  parseEncounterState,
+  type EncounterState,
+} from '#shared/moveAutomation/encounterState'
 import type { CharacterSheet } from '~/types/characterSheet'
 import type { MapFieldEffects, MapHazardV2, SheetPlacement, TabletopMap } from '~/types/map'
 import type { TrainerSheet } from '~/types/trainerSheet'
@@ -184,6 +189,14 @@ const applyAdaptedChanges = (
         break
       }
       case 'encounter-state':
+        assertMapScope(map, change.scope.mapSlug)
+        assertSameValue(
+          change.kind,
+          parseEncounterState(map.encounterState ?? createEmptyEncounterState()),
+          change.previous,
+        )
+        map.encounterState = clone(change.current) as EncounterState
+        break
       case 'group-inventory-state':
         failParity(`legacy v1 projection unexpectedly contains ${change.kind}.`)
     }

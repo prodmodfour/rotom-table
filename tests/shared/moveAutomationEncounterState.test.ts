@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import {
   ENCOUNTER_EFFECT_LIMITS,
   ENCOUNTER_HISTORY_LIMITS,
+  ENCOUNTER_RESOURCE_LIMITS,
   ENCOUNTER_SIDE_LIMITS,
   ENCOUNTER_STATE_LIMITS,
   ENCOUNTER_STATE_SCHEMA_VERSION,
@@ -34,7 +35,7 @@ describe('move automation encounter state', () => {
       effects: ENCOUNTER_EFFECT_LIMITS.count,
       counters: 0,
       history: ENCOUNTER_HISTORY_LIMITS.moveAncestryPerScene,
-      turnResources: 0,
+      turnResources: ENCOUNTER_RESOURCE_LIMITS.placementLedgers,
       zones: 0,
       pendingResolutionSummaries: 0,
     })
@@ -160,6 +161,6 @@ describe('move automation encounter state', () => {
     expect(() => parseEncounterState({ ...canonicalEncounterState(), history: { currentRound: 1 } }))
       .toThrow('encounterState.history: must contain exactly the supported fields')
     expect(() => parseEncounterState({ ...canonicalEncounterState(), turnResources: { actor: {} } }))
-      .toThrow('encounterState.turnResources: must contain at most 0 entries')
+      .toThrow('encounterState.turnResources.actor: must contain exactly the supported fields')
   })
 })

@@ -1,3 +1,7 @@
+import {
+  createEmptyEncounterState,
+  parseEncounterState,
+} from '#shared/moveAutomation/encounterState'
 import type { TabletopMap } from '~/types/map'
 import { cloneMapFieldEffects } from '~/utils/mapFieldEffects'
 import { deepCloneJson, sameJsonValue } from '~/utils/serialization'
@@ -50,6 +54,18 @@ export const buildAuthoritativeMoveMapChanges = (
     changes.metadata = {
       previous: deepCloneJson(previousMap.metadata),
       current: deepCloneJson(nextMap.metadata),
+    }
+  }
+  const previousEncounterState = parseEncounterState(
+    previousMap.encounterState ?? createEmptyEncounterState(),
+  )
+  const currentEncounterState = parseEncounterState(
+    nextMap.encounterState ?? createEmptyEncounterState(),
+  )
+  if (!sameJsonValue(previousEncounterState, currentEncounterState)) {
+    changes.encounterState = {
+      previous: deepCloneJson(previousEncounterState),
+      current: deepCloneJson(currentEncounterState),
     }
   }
   return changes

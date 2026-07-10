@@ -12,6 +12,7 @@ import type {
   TabletopMap,
 } from '~/types/map'
 import type { MoveAutomationTransaction } from '~/types/moveAutomation'
+import type { EncounterState } from '#shared/moveAutomation/encounterState'
 import type { TrainerSheet } from '~/types/trainerSheet'
 import { sameJsonValue } from '~/utils/serialization'
 import {
@@ -34,6 +35,7 @@ export interface AdaptV1MapChanges {
   readonly hazards?: AdaptV1ValueChange<readonly MapHazardV2[]>
   readonly fieldEffects?: AdaptV1ValueChange<MapFieldEffects>
   readonly metadata?: AdaptV1ValueChange<TabletopMap['metadata']>
+  readonly encounterState?: AdaptV1ValueChange<EncounterState>
 }
 
 export interface AdaptV1SheetWrite {

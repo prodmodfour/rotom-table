@@ -1,6 +1,7 @@
 import { normalizeRevision } from '#shared/sessionRevisions'
 import type { ResolveMoveIntent } from '#shared/livePlayMoveResolution'
 import { createEmptyEncounterHistory } from '#shared/moveAutomation/encounterHistory'
+import { createEmptyEncounterTurnResources } from '#shared/moveAutomation/encounterResources'
 import {
   MOVE_RULESET_PROVENANCE,
   type MoveRulesetProvenance,
@@ -44,6 +45,10 @@ import {
   createMoveAutomationRelationshipResolver,
   type MoveAutomationRelationshipResolver,
 } from './relationships'
+import {
+  createMoveAutomationResourceResolver,
+  type MoveAutomationResourceResolver,
+} from './resources'
 
 export interface AuthoritativeMoveSheetRead {
   readonly kind: SheetKind
@@ -85,6 +90,7 @@ export interface AuthoritativeMoveSheetQueries {
 
 export type AuthoritativeMoveRelationshipQueries = MoveAutomationRelationshipResolver
 export type AuthoritativeMoveHistoryQueries = MoveAutomationHistoryResolver
+export type AuthoritativeMoveResourceQueries = MoveAutomationResourceResolver
 
 export interface AuthoritativeMoveRuleQueries {
   runtimeFor(canonicalId: string): RegisteredMoveAutomationRuntime | null
@@ -98,6 +104,7 @@ export interface AuthoritativeMoveContextQueries {
   readonly sheets: AuthoritativeMoveSheetQueries
   readonly relationships: AuthoritativeMoveRelationshipQueries
   readonly history: AuthoritativeMoveHistoryQueries
+  readonly resources: AuthoritativeMoveResourceQueries
   readonly rules: AuthoritativeMoveRuleQueries
   resolveActorMoveEntry(moveName: string): CanonicalMoveEntryResult
 }
@@ -412,6 +419,9 @@ export const buildAuthoritativeMoveRulesContext = (
   const history = createMoveAutomationHistoryResolver(
     map.encounterState?.history ?? createEmptyEncounterHistory(),
   )
+  const resources = createMoveAutomationResourceResolver(
+    map.encounterState?.turnResources ?? createEmptyEncounterTurnResources(),
+  )
   const { tokens, byId: tokenById } = tokenSnapshots(map, placements, sheetLookup)
 
   const actorPlacement = placementById.get(intent.placementId)
@@ -526,6 +536,7 @@ export const buildAuthoritativeMoveRulesContext = (
     }),
     relationships,
     history,
+    resources,
     rules: Object.freeze({
       runtimeFor: (canonicalId: string) => runtimes.get(canonicalId) ?? null,
       legacyScriptFor,
