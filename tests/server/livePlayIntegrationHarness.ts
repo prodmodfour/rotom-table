@@ -18,6 +18,7 @@ import {
   type MoveTokenLivePlayCommand,
   type NextInitiativeLivePlayCommand,
   type PreviousInitiativeLivePlayCommand,
+  type SetSceneLivePlayCommand,
   type UseMoveLivePlayCommand,
 } from '#shared/livePlayCommands'
 import type { AuthRole } from '#shared/auth'
@@ -39,6 +40,7 @@ import { createSqliteSheetRepository, type PersistedSheet, type SheetRepository 
 import type { EncounterLifecycleTriggerHandler } from '~~/server/domain/moveAutomation/reduceLifecycle'
 import { executeLivePlayInitiativeCommandUseCase } from '~~/server/useCases/applyLivePlayInitiativeCommand'
 import { executeLivePlayMapEffectsCommandUseCase } from '~~/server/useCases/applyLivePlayMapEffectsCommand'
+import { executeLivePlaySceneCommandUseCase } from '~~/server/useCases/applyLivePlaySceneCommand'
 import { executeLivePlaySheetCommandUseCase } from '~~/server/useCases/applyLivePlaySheetCommand'
 import { executeLivePlayTerrainCommandUseCase } from '~~/server/useCases/applyLivePlayTerrainCommand'
 import { executeLivePlayUseMoveCommandUseCase } from '~~/server/useCases/applyLivePlayUseMoveCommand'
@@ -321,6 +323,15 @@ export class LivePlayIntegrationHarness {
     }, this.commandDependencies())
   }
 
+  async setScene({ actor, command }: LivePlayCommandDispatchOptions<SetSceneLivePlayCommand>) {
+    return await executeLivePlaySceneCommandUseCase({
+      role: actor.role,
+      clientId: actor.clientId,
+      command,
+      expectedType: LIVE_PLAY_COMMAND_TYPES.SET_SCENE,
+    }, this.commandDependencies())
+  }
+
   async clearHazards({ actor, command }: LivePlayCommandDispatchOptions<ClearHazardsLivePlayCommand>) {
     return await executeLivePlayMapEffectsCommandUseCase({
       role: actor.role,
@@ -440,6 +451,22 @@ export class LivePlayIntegrationHarness {
         activeId: input.activeId === undefined ? 'token-a' : input.activeId,
         round: input.round ?? 1,
       },
+    }
+  }
+
+  setSceneCommand(input: {
+    readonly opId: string
+    readonly baseRevision: number
+    readonly name: string | null
+  }): SetSceneLivePlayCommand {
+    return {
+      schemaVersion: LIVE_PLAY_COMMAND_SCHEMA_VERSION,
+      opId: input.opId,
+      mapSlug: 'integration-arena',
+      baseRevision: input.baseRevision,
+      type: LIVE_PLAY_COMMAND_TYPES.SET_SCENE,
+      scopes: [{ kind: 'map', lane: 'scene' }],
+      payload: { name: input.name },
     }
   }
 

@@ -832,7 +832,7 @@ Status: DONE
 
 ## MA-062 — Integrate scene start/end cleanup
 
-Status: TODO
+Status: DONE
 
 **Depends on:** MA-060
 **Commit:** `feat(move-automation): process encounter state at scene boundaries`

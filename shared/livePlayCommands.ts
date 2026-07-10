@@ -905,20 +905,20 @@ export interface InitiativePatchLaneState {
   readonly manualOrderIds?: readonly string[]
 }
 
-export interface InitiativeLifecycleEventSummary {
+export interface EncounterLifecycleEventSummary {
   readonly eventId: string
   readonly kind: EncounterEventKind
   readonly reasonCode: string
 }
 
-export interface InitiativeLifecycleEffectTransitionSummary {
+export interface EncounterLifecycleEffectTransitionSummary {
   readonly eventId: string
   readonly effectId: string
   readonly kind: string
   readonly reasonCode: string
 }
 
-export interface InitiativeLifecycleSheetChangeRef {
+export interface EncounterLifecycleSheetChangeRef {
   readonly kind: SheetKind
   readonly slug: string
   readonly expectedRevision: number
@@ -927,15 +927,26 @@ export interface InitiativeLifecycleSheetChangeRef {
   readonly changedFields: readonly ('hp' | 'combatStages' | 'conditions')[]
 }
 
-export interface InitiativeLifecyclePatchPayload {
-  readonly events: readonly InitiativeLifecycleEventSummary[]
-  readonly effectTransitions: readonly InitiativeLifecycleEffectTransitionSummary[]
+export interface EncounterLifecyclePatchPayload {
+  readonly events: readonly EncounterLifecycleEventSummary[]
+  readonly effectTransitions: readonly EncounterLifecycleEffectTransitionSummary[]
   readonly operationIds: readonly string[]
   readonly previousEncounterState: EncounterState
   readonly currentEncounterState: EncounterState
   readonly previousTemporaryHitPoints: TabletopMap['temporaryHitPoints'] | null
   readonly currentTemporaryHitPoints: TabletopMap['temporaryHitPoints'] | null
-  readonly sheetChanges: readonly InitiativeLifecycleSheetChangeRef[]
+  readonly sheetChanges: readonly EncounterLifecycleSheetChangeRef[]
+}
+
+/** Backward-compatible initiative aliases for the shared lifecycle patch contract. */
+export type InitiativeLifecycleEventSummary = EncounterLifecycleEventSummary
+export type InitiativeLifecycleEffectTransitionSummary = EncounterLifecycleEffectTransitionSummary
+export type InitiativeLifecycleSheetChangeRef = EncounterLifecycleSheetChangeRef
+export type InitiativeLifecyclePatchPayload = EncounterLifecyclePatchPayload
+
+export interface SceneLifecyclePatchPayload extends EncounterLifecyclePatchPayload {
+  readonly previousMoveUsage: TabletopMap['moveUsage'] | null
+  readonly currentMoveUsage: TabletopMap['moveUsage'] | null
 }
 
 export interface InitiativeUpdatedPatchPayload {
@@ -1070,6 +1081,7 @@ export interface SceneUpdatedPatchPayload {
   readonly command: typeof LIVE_PLAY_COMMAND_TYPES.SET_SCENE
   readonly previous: MapSceneState | null
   readonly current: MapSceneState | null
+  readonly lifecycle?: SceneLifecyclePatchPayload
 }
 
 export interface TokenDeletedPatchPayload {

@@ -68,6 +68,7 @@ import {
   type InitiativeLifecyclePlan,
   type InitiativeLifecycleSheetWrite,
 } from '../domain/moveAutomation/planInitiativeLifecycle'
+import { encounterLifecyclePatchPayload } from '../domain/moveAutomation/lifecyclePatch'
 import type { EncounterLifecycleTriggerHandler } from '../domain/moveAutomation/reduceLifecycle'
 import { livePlaySheetUpdateRealtimeAppendInputs } from '../livePlay/sheetUpdateRealtime'
 import { toPersistableSheetPayload } from '~/utils/sheets/persistence'
@@ -1042,35 +1043,9 @@ const applyInitiativeChange = (
 
 const lifecyclePatchPayload = (
   lifecycle: InitiativeLifecyclePlan,
-): InitiativeLifecyclePatchPayload => ({
-  events: lifecycle.events.map(event => ({
-    eventId: event.eventId,
-    kind: event.kind,
-    reasonCode: event.reasonCode,
-  })),
-  effectTransitions: lifecycle.reduction.transitions.map(({ eventId, transition }) => ({
-    eventId,
-    effectId: transition.effectId,
-    kind: transition.kind,
-    reasonCode: transition.reasonCode,
-  })),
-  operationIds: lifecycle.reduction.operations.map(operation => operation.id),
-  previousEncounterState: deepCloneJson(lifecycle.previousEncounterState),
-  currentEncounterState: deepCloneJson(lifecycle.currentEncounterState),
-  previousTemporaryHitPoints: lifecycle.previousTemporaryHitPoints === undefined
-    ? null
-    : deepCloneJson(lifecycle.previousTemporaryHitPoints),
-  currentTemporaryHitPoints: lifecycle.currentTemporaryHitPoints === undefined
-    ? null
-    : deepCloneJson(lifecycle.currentTemporaryHitPoints),
-  sheetChanges: lifecycle.sheetWrites.map(write => ({
-    kind: write.kind,
-    slug: write.slug,
-    expectedRevision: write.expectedRevision,
-    revision: write.revision,
-    placementIds: [...write.placementIds],
-    changedFields: [...write.changedFields],
-  })),
+): InitiativeLifecyclePatchPayload => encounterLifecyclePatchPayload({
+  ...lifecycle,
+  reductions: [lifecycle.reduction],
 })
 
 const commandPatch = (

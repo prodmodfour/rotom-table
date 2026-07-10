@@ -1,4 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
+import { createEmptyEncounterState } from '#shared/moveAutomation/encounterState'
+import { parseEncounterEffect } from '#shared/moveAutomation/encounterEffects'
 import {
   LIVE_PLAY_COMMAND_SCHEMA_VERSION,
   LIVE_PLAY_COMMAND_TYPES,
@@ -10,7 +12,9 @@ import { createInProcessMapWriteQueue } from '~~/server/livePlay/mapWriteQueue'
 import { createInMemoryLivePlayOpStore } from '~~/server/livePlay/opStore'
 import { acceptedRealtimeTestHooks } from './livePlayAcceptedRealtimeTestUtils'
 import { executeLivePlaySceneCommandUseCase } from '~~/server/useCases/applyLivePlaySceneCommand'
+import { createSceneLifecycleEvents } from '~~/server/domain/moveAutomation/planSceneLifecycle'
 import { MAPS_ROOT } from '~~/server/utils/mapPaths'
+import { applyLivePlayPatchesToMap } from '~/utils/livePlayPatches'
 import type { TabletopMap } from '~/types/map'
 
 const baseMap = (overrides: Partial<TabletopMap> = {}): TabletopMap => ({
@@ -147,6 +151,154 @@ describe('live-play scene commands', () => {
         current: null,
       },
     })
+  })
+
+  it('expires scene effects and clears every scene-local resource and compatibility prompt', async () => {
+    const oldScene = { name: 'Old Scene', startedAt: 1_000 }
+    const expiring = parseEncounterEffect({
+      id: 'effect.scene-expiring',
+      kind: 'numeric-modifier',
+      source: {
+        operationId: 'operation.scene-expiring',
+        moveId: 'move.scene-expiring',
+        placementId: 'token-a',
+      },
+      affected: { placementIds: ['token-a'], sideIds: [], cells: [] },
+      createdRound: 1,
+      createdTurn: 0,
+      duration: { kind: 'scene', remaining: null },
+      stacks: 1,
+      charges: null,
+      stackPolicy: { kind: 'replace', maxStacks: null },
+      chargePolicy: { kind: 'none', amount: null },
+      tags: ['scene-test'],
+      payload: { attribute: 'damage', operation: 'add', value: 1, rounding: 'none' },
+      dispel: { policy: 'none', tags: [] },
+      suppression: { sources: [] },
+    })
+    const persistent = parseEncounterEffect({
+      ...expiring,
+      id: 'effect.persistent',
+      source: {
+        operationId: 'operation.persistent',
+        moveId: 'move.persistent',
+        placementId: 'token-a',
+      },
+      duration: { kind: 'permanent', remaining: null },
+      suppression: {
+        sources: [{ effectId: expiring.id, reasonCode: 'effect.scene-suppression' }],
+      },
+    })
+    const initialMap = baseMap({
+      activeScene: oldScene,
+      temporaryHitPoints: { scene: oldScene, byPlacementId: { 'token-a': 8 } },
+      moveUsage: {
+        scene: oldScene,
+        byPlacementId: {
+          'token-a': {
+            tackle: { moveName: 'Tackle', frequency: 'scene', uses: 1 },
+          },
+        },
+      },
+      encounterState: {
+        ...createEmptyEncounterState(),
+        effects: [expiring, persistent],
+      },
+      metadata: {
+        encounterName: 'Keep me',
+        moveLog: [{ at: 1, lines: ['old'] }],
+        initiativeLog: [{ at: 1, lines: ['old'] }],
+        attackOfOpportunity: {
+          schemaVersion: 1,
+          prompts: [{
+            id: 'prompt-old',
+            attackerId: 'token-a',
+            attackerName: 'A',
+            provokerId: 'token-b',
+            provokerName: 'B',
+            reason: 'movement',
+            round: 1,
+          }],
+          usedRoundByAttackerId: { 'token-a': 1 },
+        },
+        startTurnModal: {
+          schemaVersion: 2,
+          dismissedTurn: { activeId: 'token-a', round: 1 },
+          conditionResolutions: [],
+        },
+        activeOrderEffects: [{ id: 'old-order' }],
+      },
+    })
+    const harness = createHarness(initialMap)
+
+    const response = await execute(harness, setSceneCommand({
+      opId: 'op_scene_cleanup',
+      payload: { name: null },
+    }))
+
+    expect(response.result).toMatchObject({ ok: true, previousRevision: 4, revision: 5 })
+    expect(harness.storedMap.activeScene).toBeUndefined()
+    expect(harness.storedMap.temporaryHitPoints).toBeUndefined()
+    expect(harness.storedMap.moveUsage).toBeUndefined()
+    expect(harness.storedMap.metadata).toEqual({ encounterName: 'Keep me' })
+    expect(harness.storedMap.encounterState?.effects).toEqual([
+      expect.objectContaining({ id: 'effect.persistent', suppression: { sources: [] } }),
+    ])
+    expect(harness.storedMap.encounterState).toMatchObject({
+      counters: {},
+      turnResources: {},
+      pendingResolutionSummaries: [],
+    })
+
+    const patches = acceptedPatches(response)
+    expect(patches[0]?.payload).toMatchObject({
+      lifecycle: {
+        events: [expect.objectContaining({ kind: 'scene-end' })],
+        effectTransitions: [
+          expect.objectContaining({ effectId: 'effect.scene-expiring', kind: 'expired' }),
+          expect.objectContaining({ effectId: 'effect.persistent', kind: 'suppression-cleared' }),
+        ],
+        previousTemporaryHitPoints: initialMap.temporaryHitPoints,
+        currentTemporaryHitPoints: null,
+        previousMoveUsage: initialMap.moveUsage,
+        currentMoveUsage: null,
+      },
+    })
+
+    const remote = JSON.parse(JSON.stringify(initialMap)) as TabletopMap
+    expect(applyLivePlayPatchesToMap({
+      map: remote,
+      mapSlug: 'arena',
+      previousRevision: 4,
+      revision: 5,
+      patches,
+    })).toMatchObject({ ok: true, applied: true })
+    expect(remote.encounterState).toEqual(harness.storedMap.encounterState)
+    expect(remote.metadata).toEqual(harness.storedMap.metadata)
+    expect(remote.temporaryHitPoints).toBeUndefined()
+    expect(remote.moveUsage).toBeUndefined()
+  })
+
+  it('uses stable name-independent scene identities and orders replacement boundaries', () => {
+    const previous = { name: 'Old label', startedAt: 100 }
+    const current = { name: 'New label', startedAt: 200 }
+    const replacement = createSceneLifecycleEvents({
+      mapSlug: 'arena',
+      previous,
+      current,
+      operationId: 'op_replace_scene',
+    })
+    const laterEnd = createSceneLifecycleEvents({
+      mapSlug: 'arena',
+      previous: { ...previous, name: 'Renamed display label' },
+      current: null,
+      operationId: 'op_end_scene',
+    })
+
+    expect(replacement.map(event => event.kind)).toEqual(['scene-end', 'scene-start'])
+    expect(replacement[0]?.sceneId).toBe(laterEnd[0]?.sceneId)
+    expect(replacement[0]?.sceneId).not.toBe(replacement[1]?.sceneId)
+    expect(new Set(replacement.map(event => event.eventId)).size).toBe(2)
   })
 
   it('rejects player scene changes', async () => {

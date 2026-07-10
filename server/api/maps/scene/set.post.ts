@@ -20,6 +20,7 @@ const routeResponse = (response: LivePlaySceneCommandResponse) => {
     ...(response.path === undefined ? {} : { path: response.path }),
     ...(response.map === undefined ? {} : { map: response.map }),
     ...(response.activeScene === undefined ? {} : { activeScene: response.activeScene }),
+    ...(response.sheetUpdates === undefined ? {} : { sheetUpdates: response.sheetUpdates }),
   }
 }
 

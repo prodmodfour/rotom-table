@@ -69,7 +69,7 @@ export interface InitiativeLifecycleBoundaryState {
   readonly round: number
 }
 
-export interface InitiativeLifecycleSheetWrite {
+export interface EncounterLifecycleSheetWrite {
   readonly kind: SheetKind
   readonly slug: string
   readonly expectedRevision: number
@@ -80,7 +80,10 @@ export interface InitiativeLifecycleSheetWrite {
   readonly changedFields: readonly ('hp' | 'combatStages' | 'conditions')[]
 }
 
-export interface InitiativeLifecyclePlan {
+/** Backward-compatible initiative name for the shared lifecycle write shape. */
+export type InitiativeLifecycleSheetWrite = EncounterLifecycleSheetWrite
+
+export interface EncounterLifecyclePlan {
   readonly events: readonly EncounterEvent[]
   readonly reduction: EncounterLifecycleReductionResult
   readonly previousEncounterState: EncounterState
@@ -89,22 +92,32 @@ export interface InitiativeLifecyclePlan {
   readonly currentTemporaryHitPoints: TabletopMap['temporaryHitPoints']
   readonly nextMap: TabletopMap
   readonly sheetReads: readonly AuthoritativeMoveSheetRead[]
-  readonly sheetWrites: readonly InitiativeLifecycleSheetWrite[]
+  readonly sheetWrites: readonly EncounterLifecycleSheetWrite[]
 }
 
-export interface PlanInitiativeLifecycleInput {
+/** Backward-compatible initiative name for the shared lifecycle plan shape. */
+export type InitiativeLifecyclePlan = EncounterLifecyclePlan
+
+export interface EncounterLifecycleSheetSnapshots {
+  readonly pokemonSheets: ReadonlyMap<string, CharacterSheet>
+  readonly trainerSheets: ReadonlyMap<string, TrainerSheet>
+}
+
+export interface PlanEncounterLifecycleInput {
   readonly map: TabletopMap
+  readonly events: readonly EncounterEvent[]
+  readonly time: number
+  /** Loaded only when a trigger actually emits a sheet-backed operation. */
+  readonly loadSheets: () => EncounterLifecycleSheetSnapshots
+  readonly handlers?: readonly EncounterLifecycleTriggerHandler[]
+}
+
+export interface PlanInitiativeLifecycleInput
+  extends Omit<PlanEncounterLifecycleInput, 'events'> {
   readonly previous: InitiativeLifecycleBoundaryState
   readonly current: InitiativeLifecycleBoundaryState
   readonly orderIds: readonly string[]
   readonly operationId: string
-  readonly time: number
-  /** Loaded only when a trigger actually emits a sheet-backed operation. */
-  readonly loadSheets: () => {
-    readonly pokemonSheets: ReadonlyMap<string, CharacterSheet>
-    readonly trainerSheets: ReadonlyMap<string, TrainerSheet>
-  }
-  readonly handlers?: readonly EncounterLifecycleTriggerHandler[]
 }
 
 type LifecycleCoreOperation =
@@ -342,7 +355,12 @@ const recipientsForOperation = (input: {
       return [event.placementId]
     }
     if (
-      (event.kind === 'round-start' || event.kind === 'round-end')
+      (
+        event.kind === 'scene-start'
+        || event.kind === 'scene-end'
+        || event.kind === 'round-start'
+        || event.kind === 'round-end'
+      )
       && operation.recipients.kind === 'area-targets'
     ) {
       return input.map.placements.map(placement => placement.id)
@@ -386,14 +404,14 @@ const sheetWriteFromChange = (input: {
   ),
 })
 
-/** Plan effect expiry and currently reducible due token operations for one advance. */
-export const planInitiativeLifecycle = (
-  input: PlanInitiativeLifecycleInput,
-): InitiativeLifecyclePlan => {
+/** Plan effect expiry and currently reducible due token operations for one event batch. */
+export const planEncounterLifecycle = (
+  input: PlanEncounterLifecycleInput,
+): EncounterLifecyclePlan => {
   const previousEncounterState = parseEncounterState(
     input.map.encounterState ?? createEmptyEncounterState(),
   )
-  const events = createInitiativeLifecycleEvents(input)
+  const events = parseEncounterEvents(input.events)
   const reduction = reduceEncounterLifecycle(
     previousEncounterState,
     events,
@@ -504,3 +522,14 @@ export const planInitiativeLifecycle = (
     sheetWrites: deepCloneJson(sheetWrites),
   })
 }
+
+/** Plan one exact forward initiative boundary through the shared lifecycle planner. */
+export const planInitiativeLifecycle = (
+  input: PlanInitiativeLifecycleInput,
+): InitiativeLifecyclePlan => planEncounterLifecycle({
+  map: input.map,
+  events: createInitiativeLifecycleEvents(input),
+  time: input.time,
+  loadSheets: input.loadSheets,
+  handlers: input.handlers,
+})

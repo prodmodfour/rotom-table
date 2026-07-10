@@ -25,6 +25,7 @@ import type {
 import type { MapMoveUsageEntry, MapTrackedMoveFrequency } from '~/types/moveUsage'
 import type { TokenFacingDirection } from '~/types/tokenFacing'
 import { clearCombatLogMetadata } from './combatLog'
+import { clearMapSceneResources } from './mapSceneCleanup'
 import { mapMoveUsageSceneMatches } from './moveUsage'
 import {
   normalizeMapTemporaryHitPointsState,
@@ -216,16 +217,17 @@ const applyPlacementPatch = (map: TabletopMap, payload: unknown): LivePlayPatche
   return failed('unknown-patch', 'map.placements patch command must be spawnToken, sendOutPokemon, deleteToken, or throwPokeball')
 }
 
-const initiativeLifecycleState = (
+const encounterLifecycleState = (
   map: TabletopMap,
   payload: UnknownRecord,
+  patchLabel: 'map.initiative' | 'map.scene',
 ): {
   readonly encounterState: EncounterState
   readonly temporaryHitPoints: TabletopMap['temporaryHitPoints']
 } | LivePlayPatchesRejected | null => {
   if (payload.lifecycle === undefined) return null
   if (!isRecord(payload.lifecycle)) {
-    return failed('invalid-patch', 'map.initiative lifecycle payload must be an object')
+    return failed('invalid-patch', `${patchLabel} lifecycle payload must be an object`)
   }
   const lifecycle = payload.lifecycle
   let encounterState: EncounterState
@@ -234,7 +236,7 @@ const initiativeLifecycleState = (
   } catch (error) {
     return failed(
       'invalid-patch',
-      `map.initiative lifecycle encounter state is invalid: ${error instanceof Error ? error.message : String(error)}`,
+      `${patchLabel} lifecycle encounter state is invalid: ${error instanceof Error ? error.message : String(error)}`,
     )
   }
   if (
@@ -243,7 +245,7 @@ const initiativeLifecycleState = (
   ) {
     return failed(
       'invalid-patch',
-      'map.initiative lifecycle temporary HP must be an object or null',
+      `${patchLabel} lifecycle temporary HP must be an object or null`,
     )
   }
   const temporaryHitPoints = lifecycle.currentTemporaryHitPoints === null
@@ -255,7 +257,7 @@ const initiativeLifecycleState = (
   if (lifecycle.currentTemporaryHitPoints !== null && temporaryHitPoints === undefined) {
     return failed(
       'invalid-patch',
-      'map.initiative lifecycle temporary HP does not match the active scene',
+      `${patchLabel} lifecycle temporary HP does not match the active scene`,
     )
   }
   return { encounterState, temporaryHitPoints }
@@ -265,7 +267,7 @@ const applyInitiativePatch = (map: TabletopMap, payload: unknown): LivePlayPatch
   if (!isRecord(payload) || !isRecord(payload.current)) {
     return failed('invalid-patch', 'map.initiative patches require a current lane payload')
   }
-  const lifecycle = initiativeLifecycleState(map, payload)
+  const lifecycle = encounterLifecycleState(map, payload, 'map.initiative')
   if (lifecycle && 'ok' in lifecycle) return lifecycle
   const current = payload.current
   const activeId = current.activeId === null || nonEmptyString(current.activeId) ? current.activeId : null
@@ -456,11 +458,21 @@ const applyScenePatch = (map: TabletopMap, payload: unknown): LivePlayPatchesRej
     return failed('invalid-patch', 'map.scene patches require current to be a scene state or null')
   }
   map.activeScene = payload.current === null ? null : cloneScene(payload.current)
+  const cleaned = payload.lifecycle === undefined
+    ? { ...map, metadata: clearCombatLogMetadata(map.metadata) }
+    : clearMapSceneResources(map)
   delete map.temporaryHitPoints
   delete map.moveUsage
-  const nextMetadata = clearCombatLogMetadata(map.metadata)
-  if (nextMetadata) map.metadata = nextMetadata
+  if (cleaned.metadata) map.metadata = cleaned.metadata
   else delete map.metadata
+
+  const lifecycle = encounterLifecycleState(map, payload, 'map.scene')
+  if (lifecycle && 'ok' in lifecycle) return lifecycle
+  if (lifecycle) {
+    map.encounterState = lifecycle.encounterState
+    if (lifecycle.temporaryHitPoints === undefined) delete map.temporaryHitPoints
+    else map.temporaryHitPoints = deepCloneJson(lifecycle.temporaryHitPoints)
+  }
   return null
 }
 
