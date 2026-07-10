@@ -42,6 +42,15 @@ npm run check:move-automation
 
 This command validates the canonical catalog, semantic manifest, runtime and scenario references, hashes, and metadata invariants. It intentionally permits honest `assisted` and `blocked` rows while implementation is in progress. The quality gate also verifies that committed legacy v1 fingerprints still match the evaluated registry definitions.
 
+Generate deterministic planning output from reviewed manifest metadata in Markdown or JSON:
+
+```bash
+npm run check:move-automation -- --report
+npm run check:move-automation -- --json
+```
+
+Both formats group canonical move IDs by semantic status, capability blocker, rollout cohort, and missing scenario-evidence class. The legacy `--worklist` prose classifier remains available only as an informational heuristic; its regex buckets and candidate sample are not an implementation queue or completion evidence.
+
 After changing a manifest row's base status, interaction status, runtime kind, blockers, limitations, or manual steps, refresh the bounded browser-facing move-menu projection and review both data diffs:
 
 ```bash

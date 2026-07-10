@@ -1,4 +1,4 @@
-"""Classifier and report helpers for missing PTU move automation worklists."""
+"""Informational prose heuristics for missing PTU move automation scripts."""
 from __future__ import annotations
 
 import re
@@ -363,8 +363,15 @@ def print_worklist_report(coverage: MoveCoverage) -> int:
     grouped = grouped_missing_moves(coverage)
     batch = recommended_next_batch(coverage)
 
-    print("Move automation worklist report")
-    print("Buckets are heuristic planning aids only; every automated move still needs an explicit reviewed script entry.")
+    print("Move automation heuristic prose classification (informational only)")
+    print(
+        "This legacy report is not a progress tracker or implementation queue; "
+        "use --report or --json for reviewed semantic planning data."
+    )
+    print(
+        "Buckets and candidates are regex-derived hints only; every move still "
+        "needs reviewed manifest metadata and scenario evidence."
+    )
     print(f"Canonical valid move count: {len(coverage.canonical_moves)}")
     print(f"Explicit script count: {len(coverage.explicit_names)}")
     print(f"Missing script count: {len(coverage.missing_names)}")
@@ -381,7 +388,10 @@ def print_worklist_report(coverage: MoveCoverage) -> int:
         for name in names:
             print(f"  - {name}")
 
-    print(f"\nRecommended next safest batch ({len(batch)} moves):")
+    print(
+        f"\nInformational candidate sample ({len(batch)} moves; "
+        "not an implementation queue):"
+    )
     for name in batch:
         print(f"  - {name}")
 

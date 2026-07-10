@@ -442,7 +442,7 @@ The server independently validates runtime eligibility; the client cannot promot
 
 ## MA-023 — Generate stable progress and blocker reports
 
-Status: TODO
+Status: DONE
 
 **Depends on:** MA-014, MA-017
 **Commit:** `feat(move-automation): generate semantic progress reports`

@@ -411,6 +411,88 @@ class MoveAutomationValidationError(ValueError):
         self.detail = message
 
 
+MISSING_EVIDENCE_REQUIREMENTS_UNASSIGNED = "requirements-unassigned"
+
+
+@dataclass(frozen=True)
+class SemanticStatusProgressGroup:
+    status: str
+    moves: tuple[str, ...]
+
+
+@dataclass(frozen=True)
+class CapabilityBlockerProgressGroup:
+    blocker_code: str
+    owning_phase: str
+    implementation_status: str
+    moves: tuple[str, ...]
+
+
+@dataclass(frozen=True)
+class CohortProgressGroup:
+    cohort_id: str | None
+    moves: tuple[str, ...]
+
+
+@dataclass(frozen=True)
+class MissingTestEvidenceProgressGroup:
+    evidence_code: str
+    summary: str
+    moves: tuple[str, ...]
+
+
+@dataclass(frozen=True)
+class SemanticProgressReport:
+    semantic_status: tuple[SemanticStatusProgressGroup, ...]
+    capability_blockers: tuple[CapabilityBlockerProgressGroup, ...]
+    cohorts: tuple[CohortProgressGroup, ...]
+    missing_test_evidence: tuple[MissingTestEvidenceProgressGroup, ...]
+
+    def as_json(self) -> dict[str, Any]:
+        return {
+            "basis": "reviewed-semantic-manifest",
+            "groups": {
+                "capabilityBlocker": [
+                    {
+                        "blockerCode": group.blocker_code,
+                        "count": len(group.moves),
+                        "implementationStatus": group.implementation_status,
+                        "moves": list(group.moves),
+                        "owningPhase": group.owning_phase,
+                    }
+                    for group in self.capability_blockers
+                ],
+                "cohort": [
+                    {
+                        "cohortId": group.cohort_id,
+                        "count": len(group.moves),
+                        "moves": list(group.moves),
+                    }
+                    for group in self.cohorts
+                ],
+                "missingTestEvidence": [
+                    {
+                        "count": len(group.moves),
+                        "evidenceCode": group.evidence_code,
+                        "moves": list(group.moves),
+                        "summary": group.summary,
+                    }
+                    for group in self.missing_test_evidence
+                ],
+                "semanticStatus": [
+                    {
+                        "count": len(group.moves),
+                        "moves": list(group.moves),
+                        "status": group.status,
+                    }
+                    for group in self.semantic_status
+                ],
+            },
+            "heuristicProseClassification": "informational-only",
+            "schemaVersion": 1,
+        }
+
+
 @dataclass(frozen=True)
 class SemanticCoverageReport:
     ruleset_id: str
@@ -425,6 +507,7 @@ class SemanticCoverageReport:
     runtime_definition_hash_count: int
     scenario_reference_count: int
     discovered_scenario_count: int
+    progress: SemanticProgressReport
     require_complete: bool
     issues: tuple[MoveAutomationValidationError, ...] = ()
 
@@ -467,6 +550,7 @@ class SemanticCoverageReport:
             ],
             "manifestMoves": self.manifest_count,
             "metadataValid": self.metadata_valid,
+            "planning": self.progress.as_json(),
             "references": {
                 "discoveredScenarios": self.discovered_scenario_count,
                 "linkedRuntimes": self.linked_runtime_count,
@@ -1686,6 +1770,125 @@ def _parse_manifest(
     return rows, linked_runtime_count, scenario_reference_count
 
 
+def _build_semantic_progress(
+    rows: list[dict[str, Any]],
+    capability_by_code: dict[str, dict[str, Any]],
+    evidence_by_code: dict[str, dict[str, Any]],
+    requirement_by_tag: dict[str, dict[str, Any]],
+) -> SemanticProgressReport:
+    """Group reviewed manifest facts without consulting canonical rules prose."""
+
+    semantic_status = tuple(
+        SemanticStatusProgressGroup(
+            status=status,
+            moves=tuple(
+                row["canonicalId"]
+                for row in rows
+                if row["baseStatus"] == status
+            ),
+        )
+        for status in BASE_STATUSES
+    )
+
+    blocker_codes = sorted({
+        blocker_code
+        for row in rows
+        for blocker_code in row["blockerCodes"]
+    })
+    capability_blockers = tuple(
+        CapabilityBlockerProgressGroup(
+            blocker_code=blocker_code,
+            owning_phase=capability_by_code[blocker_code]["owningPhase"],
+            implementation_status=capability_by_code[blocker_code]["implementationStatus"],
+            moves=tuple(
+                row["canonicalId"]
+                for row in rows
+                if blocker_code in row["blockerCodes"]
+            ),
+        )
+        for blocker_code in blocker_codes
+    )
+
+    assigned_cohorts = sorted({
+        row["rolloutCohortId"]
+        for row in rows
+        if row["rolloutCohortId"] is not None
+    })
+    cohort_ids: list[str | None] = list(assigned_cohorts)
+    if any(row["rolloutCohortId"] is None for row in rows):
+        cohort_ids.append(None)
+    cohorts = tuple(
+        CohortProgressGroup(
+            cohort_id=cohort_id,
+            moves=tuple(
+                row["canonicalId"]
+                for row in rows
+                if row["rolloutCohortId"] == cohort_id
+            ),
+        )
+        for cohort_id in cohort_ids
+    )
+
+    missing_evidence_by_code: dict[str, list[str]] = {}
+    for row in rows:
+        conformance_evidence = row["conformanceEvidence"]
+        requirement_tags = conformance_evidence["requirementTags"]
+        if not requirement_tags:
+            missing_evidence_by_code.setdefault(
+                MISSING_EVIDENCE_REQUIREMENTS_UNASSIGNED,
+                [],
+            ).append(row["canonicalId"])
+            continue
+
+        required_classes = {
+            evidence_class
+            for requirement_tag in requirement_tags
+            for evidence_class in requirement_by_tag[requirement_tag]["requiredEvidenceClasses"]
+        }
+        covered_classes = {
+            evidence_class
+            for scenario in conformance_evidence["scenarios"]
+            for evidence_class in scenario["evidenceClasses"]
+        }
+        not_applicable_classes = {
+            entry["evidenceClass"]
+            for entry in conformance_evidence["notApplicable"]
+        }
+        for evidence_class in sorted(
+            required_classes - covered_classes - not_applicable_classes
+        ):
+            missing_evidence_by_code.setdefault(evidence_class, []).append(
+                row["canonicalId"]
+            )
+
+    evidence_codes = sorted(
+        missing_evidence_by_code,
+        key=lambda code: (
+            code != MISSING_EVIDENCE_REQUIREMENTS_UNASSIGNED,
+            code,
+        ),
+    )
+    missing_test_evidence = tuple(
+        MissingTestEvidenceProgressGroup(
+            evidence_code=evidence_code,
+            summary=(
+                "Reviewed scenario requirement tags have not been assigned."
+                if evidence_code == MISSING_EVIDENCE_REQUIREMENTS_UNASSIGNED
+                else evidence_by_code[evidence_code]["summary"]
+            ),
+            moves=tuple(missing_evidence_by_code[evidence_code]),
+        )
+        for evidence_code in evidence_codes
+    )
+
+    return SemanticProgressReport(
+        semantic_status=semantic_status,
+        capability_blockers=capability_blockers,
+        cohorts=cohorts,
+        missing_test_evidence=missing_test_evidence,
+    )
+
+
 def validate_semantic_coverage(
     *,
     require_complete: bool = False,
@@ -1772,6 +1975,12 @@ def validate_semantic_coverage(
         ),
         scenario_reference_count=scenario_reference_count,
         discovered_scenario_count=len(scenario_ids),
+        progress=_build_semantic_progress(
+            rows,
+            capability_by_code,
+            evidence_by_code,
+            requirement_by_tag,
+        ),
         require_complete=require_complete,
         issues=issues,
     )

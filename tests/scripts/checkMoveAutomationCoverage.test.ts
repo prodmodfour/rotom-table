@@ -29,6 +29,15 @@ type MutableScenarioRequirements = {
   requirements: Array<Record<string, any>>
 }
 
+type ReportManifestRow = {
+  canonicalId: string
+  baseStatus: string
+  blockerCodes: string[]
+  rolloutCohortId: string | null
+}
+
+const reportManifestRows = manifestJson.moves as unknown as ReportManifestRow[]
+
 const baseStatusCounts = (moves: ManifestRows) => ({
   complete: moves.filter(({ baseStatus }) => baseStatus === 'complete').length,
   assisted: moves.filter(({ baseStatus }) => baseStatus === 'assisted').length,
@@ -51,6 +60,53 @@ const currentLinkedRuntimeCount = manifestJson.moves.filter(({ runtime }) =>
 const currentDefinitionHashCount = manifestJson.moves.filter(({ runtime }) =>
   runtime.definitionHash !== null,
 ).length
+
+const expectedSemanticStatusGroups = ['complete', 'assisted', 'blocked'].map(status => ({
+  count: reportManifestRows.filter(move => move.baseStatus === status).length,
+  moves: reportManifestRows
+    .filter(move => move.baseStatus === status)
+    .map(move => move.canonicalId),
+  status,
+}))
+
+const expectedCapabilityBlockerGroups = [
+  ...new Set(reportManifestRows.flatMap(move => move.blockerCodes)),
+].sort().map((blockerCode) => {
+  const capability = capabilitiesJson.capabilities.find(({ code }) => code === blockerCode)
+  if (!capability)
+    throw new Error(`Missing test capability ${blockerCode}`)
+  const moves = reportManifestRows
+    .filter(move => move.blockerCodes.includes(blockerCode))
+    .map(move => move.canonicalId)
+  return {
+    blockerCode,
+    count: moves.length,
+    implementationStatus: capability.implementationStatus,
+    moves,
+    owningPhase: capability.owningPhase,
+  }
+})
+
+const expectedCohortGroups: Array<{
+  cohortId: string | null
+  count: number
+  moves: string[]
+}> = [
+  ...new Set(reportManifestRows
+    .map(move => move.rolloutCohortId)
+    .filter((cohortId): cohortId is string => cohortId !== null)),
+].sort().map((cohortId) => {
+  const moves = reportManifestRows
+    .filter(move => move.rolloutCohortId === cohortId)
+    .map(move => move.canonicalId)
+  return { cohortId, count: moves.length, moves }
+})
+if (reportManifestRows.some(move => move.rolloutCohortId === null)) {
+  const moves = reportManifestRows
+    .filter(move => move.rolloutCohortId === null)
+    .map(move => move.canonicalId)
+  expectedCohortGroups.push({ cohortId: null, count: moves.length, moves })
+}
 
 const runChecker = (...args: string[]) => spawnSync(
   'python3',
@@ -102,21 +158,31 @@ const mutableScenarioRequirements = (): MutableScenarioRequirements =>
   structuredClone(scenarioRequirementsJson) as MutableScenarioRequirements
 
 describe('move automation semantic coverage checker', () => {
-  it('passes valid metadata and prints a semantic report', () => {
-    const result = runChecker('--report')
+  it('prints a byte-stable Markdown progress report from reviewed metadata', () => {
+    const first = runChecker('--report')
+    const second = runChecker('--markdown')
 
-    expect(result.status, `${result.stdout}\n${result.stderr}`).toBe(0)
-    expect(result.stderr).toBe('')
-    expect(result.stdout).toContain('Move automation semantic validation report')
-    expect(result.stdout).toContain(`Canonical catalog: ${manifestMoveCount}`)
-    expect(result.stdout).toContain(`Manifest rows: ${manifestMoveCount}`)
-    expect(result.stdout).toContain(
-      `Base status: ${currentBaseStatusCounts.complete} complete, `
-      + `${currentBaseStatusCounts.assisted} assisted, `
-      + `${currentBaseStatusCounts.blocked} blocked`,
+    expect(first.status, `${first.stdout}\n${first.stderr}`).toBe(0)
+    expect(second.status, `${second.stdout}\n${second.stderr}`).toBe(0)
+    expect(first.stderr).toBe('')
+    expect(second.stderr).toBe('')
+    expect(second.stdout).toBe(first.stdout)
+    expect(first.stdout).toContain('# Move automation semantic validation report')
+    expect(first.stdout).toContain(`- Canonical catalog: **${manifestMoveCount}**`)
+    expect(first.stdout).toContain(`- Manifest rows: **${manifestMoveCount}**`)
+    expect(first.stdout).toContain(
+      `- Base status: **${currentBaseStatusCounts.complete}** complete, `
+      + `**${currentBaseStatusCounts.assisted}** assisted, `
+      + `**${currentBaseStatusCounts.blocked}** blocked`,
     )
-    expect(result.stdout).toContain('Metadata validation: PASS')
-    expect(result.stdout).toContain('Completion requirement: not enforced')
+    expect(first.stdout).toContain('## Semantic status')
+    expect(first.stdout).toContain('## Capability blockers')
+    expect(first.stdout).toContain('## Rollout cohorts')
+    expect(first.stdout).toContain('## Missing test evidence')
+    expect(first.stdout).toContain('- Metadata validation: **PASS**')
+    expect(first.stdout).toContain('- Completion requirement: **not enforced**')
+    expect(first.stdout).toContain('Heuristic move-prose classification is informational only')
+    expect(first.stdout).not.toContain('plain-single-target-damage')
   })
 
   it('emits byte-stable machine-readable output', () => {
@@ -137,6 +203,102 @@ describe('move automation semantic coverage checker', () => {
       registry: { explicitLegacyScripts: EXPLICIT_MOVE_AUTOMATION_SCRIPTS.size },
       runtime: currentRuntimeCounts,
       issues: [],
+      planning: {
+        basis: 'reviewed-semantic-manifest',
+        heuristicProseClassification: 'informational-only',
+        schemaVersion: 1,
+        groups: {
+          semanticStatus: expectedSemanticStatusGroups,
+          capabilityBlocker: expectedCapabilityBlockerGroups,
+          cohort: expectedCohortGroups,
+          missingTestEvidence: [{
+            count: manifestMoveCount,
+            evidenceCode: 'requirements-unassigned',
+            moves: manifestJson.moves.map(move => move.canonicalId),
+            summary: 'Reviewed scenario requirement tags have not been assigned.',
+          }],
+        },
+      },
+    })
+  })
+
+  it('groups assigned cohorts, blockers, and outstanding evidence classes', () => {
+    withTemporaryDirectory((directory) => {
+      const manifest = mutableManifest()
+      const scratch = manifest.moves.find(({ canonicalId }) => canonicalId === 'Scratch')
+      expect(scratch).toBeDefined()
+      Object.assign(scratch!, {
+        blockerCodes: ['targeting.authoritative'],
+        rolloutCohortId: 'reg-024',
+        scenarioIds: ['scratch.progress.hit'],
+        conformanceEvidence: {
+          requirementTags: ['mechanic.damage'],
+          scenarios: [{
+            scenarioId: 'scratch.progress.hit',
+            evidenceClasses: ['hit'],
+          }],
+          notApplicable: [{
+            evidenceClass: 'crit',
+            reason: 'This fixture reviews the critical-hit branch as not applicable.',
+          }],
+        },
+        reviewedAt: '2026-07-10',
+      })
+      const manifestPath = writeManifest(directory, manifest)
+      writeFileSync(
+        join(directory, 'scratch-progress.ts'),
+        "export const hit = { scenarioId: 'scratch.progress.hit' }\n",
+      )
+
+      const first = runChecker(
+        '--manifest', manifestPath,
+        '--scenario-root', directory,
+        '--json',
+      )
+      const second = runChecker(
+        '--manifest', manifestPath,
+        '--scenario-root', directory,
+        '--json',
+      )
+
+      expect(first.status, `${first.stdout}\n${first.stderr}`).toBe(0)
+      expect(second.stdout).toBe(first.stdout)
+      const groups = JSON.parse(first.stdout).planning.groups
+      expect(groups.cohort).toEqual([
+        { cohortId: 'reg-024', count: 1, moves: ['Scratch'] },
+        {
+          cohortId: null,
+          count: manifestMoveCount - 1,
+          moves: manifest.moves
+            .filter(move => move.canonicalId !== 'Scratch')
+            .map(move => move.canonicalId),
+        },
+      ])
+      expect(groups.capabilityBlocker.find(
+        ({ blockerCode }: { blockerCode: string }) => blockerCode === 'targeting.authoritative',
+      )).toMatchObject({ moves: expect.arrayContaining(['Scratch']) })
+      expect(groups.missingTestEvidence).toEqual([
+        {
+          count: manifestMoveCount - 1,
+          evidenceCode: 'requirements-unassigned',
+          moves: manifest.moves
+            .filter(move => move.canonicalId !== 'Scratch')
+            .map(move => move.canonicalId),
+          summary: 'Reviewed scenario requirement tags have not been assigned.',
+        },
+        {
+          count: 1,
+          evidenceCode: 'immunity',
+          moves: ['Scratch'],
+          summary: scenarioRequirementsJson.evidenceClasses.find(({ code }) => code === 'immunity')?.summary,
+        },
+        {
+          count: 1,
+          evidenceCode: 'miss',
+          moves: ['Scratch'],
+          summary: scenarioRequirementsJson.evidenceClasses.find(({ code }) => code === 'miss')?.summary,
+        },
+      ])
     })
   })
 
@@ -144,8 +306,8 @@ describe('move automation semantic coverage checker', () => {
     const result = runChecker('--require-complete', '--report')
     expect(result.status).toBe(manifestIsComplete ? 0 : 1)
     expect(result.stderr).toBe('')
-    expect(result.stdout).toContain('Metadata validation: PASS')
-    expect(result.stdout).toContain(`Completion requirement: ${manifestIsComplete ? 'PASS' : 'FAIL'}`)
+    expect(result.stdout).toContain('Metadata validation: **PASS**')
+    expect(result.stdout).toContain(`Completion requirement: **${manifestIsComplete ? 'PASS' : 'FAIL'}**`)
     if (!manifestIsComplete) {
       expect(result.stdout).toContain('ERROR [completion-required]')
       expect(result.stdout).toContain(

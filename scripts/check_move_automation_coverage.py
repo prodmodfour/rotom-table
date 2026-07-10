@@ -31,8 +31,10 @@ def parse_args() -> argparse.Namespace:
     )
     output.add_argument(
         "--report",
+        "--markdown",
+        dest="report",
         action="store_true",
-        help="print the deterministic human-readable semantic status report",
+        help="print the deterministic Markdown semantic progress report",
     )
     output.add_argument(
         "--worklist",
@@ -94,44 +96,112 @@ def print_error_json(error: MoveAutomationValidationError, require_complete: boo
     }, ensure_ascii=False, indent=2, sort_keys=True))
 
 
-def print_human_report(report: SemanticCoverageReport) -> None:
-    print("Move automation semantic validation report")
-    print(f"Ruleset: {report.ruleset_id}")
-    print(f"Canonical catalog: {report.canonical_count}")
-    print(f"Manifest rows: {report.manifest_count}")
-    print(
-        "Base status: "
-        f"{report.base_status_counts['complete']} complete, "
-        f"{report.base_status_counts['assisted']} assisted, "
-        f"{report.base_status_counts['blocked']} blocked"
-    )
-    print(
-        "Interaction status: "
-        f"{report.interaction_status_counts['complete']} complete, "
-        f"{report.interaction_status_counts['partial']} partial, "
-        f"{report.interaction_status_counts['unassessed']} unassessed"
-    )
-    print(
-        "Runtime: "
-        f"{report.runtime_counts['legacy-v1']} legacy-v1, "
-        f"{report.runtime_counts['movespec-v2']} movespec-v2, "
-        f"{report.runtime_counts['unimplemented']} unimplemented"
-    )
-    print(f"Explicit v1 registry entries: {report.explicit_registry_count}")
-    print(
-        "References: "
-        f"{report.linked_runtime_count} linked runtimes, "
-        f"{report.runtime_definition_hash_count} definition hashes, "
-        f"{report.scenario_reference_count} scenario references "
-        f"({report.discovered_scenario_count} discovered fixtures)"
-    )
-    print(f"Metadata validation: {'PASS' if report.metadata_valid else 'FAIL'}")
-    if report.require_complete:
-        print(f"Completion requirement: {'PASS' if report.complete else 'FAIL'}")
-    else:
-        print("Completion requirement: not enforced")
+def _markdown_code(value: str) -> str:
+    return f"`{value.replace('`', '&#96;')}`"
+
+
+def _append_move_list(lines: list[str], moves: tuple[str, ...]) -> None:
+    if not moves:
+        lines.append("_None._")
+        return
+    for start in range(0, len(moves), 8):
+        lines.append(
+            "- " + ", ".join(
+                _markdown_code(move)
+                for move in moves[start:start + 8]
+            )
+        )
+
+
+def render_markdown_report(report: SemanticCoverageReport) -> str:
+    completion_requirement = (
+        "PASS" if report.complete else "FAIL"
+    ) if report.require_complete else "not enforced"
+    lines = [
+        "# Move automation semantic validation report",
+        "",
+        "> Planning groups are derived only from the validated semantic manifest and reviewed evidence metadata.",
+        "> Heuristic move-prose classification is informational only and is not used by this report.",
+        "",
+        "## Summary",
+        "",
+        f"- Ruleset: {_markdown_code(report.ruleset_id)}",
+        f"- Canonical catalog: **{report.canonical_count}**",
+        f"- Manifest rows: **{report.manifest_count}**",
+        "- Base status: "
+        f"**{report.base_status_counts['complete']}** complete, "
+        f"**{report.base_status_counts['assisted']}** assisted, "
+        f"**{report.base_status_counts['blocked']}** blocked",
+        "- Interaction status: "
+        f"**{report.interaction_status_counts['complete']}** complete, "
+        f"**{report.interaction_status_counts['partial']}** partial, "
+        f"**{report.interaction_status_counts['unassessed']}** unassessed",
+        "- Runtime: "
+        f"**{report.runtime_counts['legacy-v1']}** legacy-v1, "
+        f"**{report.runtime_counts['movespec-v2']}** movespec-v2, "
+        f"**{report.runtime_counts['unimplemented']}** unimplemented",
+        f"- Explicit v1 registry entries: **{report.explicit_registry_count}**",
+        "- References: "
+        f"**{report.linked_runtime_count}** linked runtimes, "
+        f"**{report.runtime_definition_hash_count}** definition hashes, "
+        f"**{report.scenario_reference_count}** scenario references "
+        f"(**{report.discovered_scenario_count}** discovered fixtures)",
+        f"- Metadata validation: **{'PASS' if report.metadata_valid else 'FAIL'}**",
+        f"- Completion requirement: **{completion_requirement}**",
+        "",
+        "## Semantic status",
+    ]
+
+    for group in report.progress.semantic_status:
+        lines.extend(["", f"### {group.status} ({len(group.moves)})", ""])
+        _append_move_list(lines, group.moves)
+
+    lines.extend(["", "## Capability blockers"])
+    if not report.progress.capability_blockers:
+        lines.extend(["", "_None._"])
+    for group in report.progress.capability_blockers:
+        lines.extend([
+            "",
+            f"### {group.blocker_code} ({len(group.moves)})",
+            "",
+            f"- Owning phase: {_markdown_code(group.owning_phase)}",
+            f"- Implementation status: {_markdown_code(group.implementation_status)}",
+        ])
+        _append_move_list(lines, group.moves)
+
+    lines.extend(["", "## Rollout cohorts"])
+    if not report.progress.cohorts:
+        lines.extend(["", "_None._"])
+    for group in report.progress.cohorts:
+        cohort_label = group.cohort_id or "unassigned"
+        lines.extend(["", f"### {cohort_label} ({len(group.moves)})", ""])
+        _append_move_list(lines, group.moves)
+
+    lines.extend(["", "## Missing test evidence"])
+    if not report.progress.missing_test_evidence:
+        lines.extend(["", "_None._"])
+    for group in report.progress.missing_test_evidence:
+        lines.extend([
+            "",
+            f"### {group.evidence_code} ({len(group.moves)})",
+            "",
+            group.summary,
+            "",
+        ])
+        _append_move_list(lines, group.moves)
+
+    lines.extend(["", "## Validation issues", ""])
+    if not report.issues:
+        lines.append("_None._")
     for issue in report.issues:
-        print(f"ERROR [{issue.code}] {issue.path}: {issue.detail}")
+        lines.append(
+            f"- **ERROR [{issue.code}]** {_markdown_code(issue.path)}: {issue.detail}"
+        )
+    return "\n".join(lines)
+
+
+def print_markdown_report(report: SemanticCoverageReport) -> None:
+    print(render_markdown_report(report))
 
 
 def print_concise(report: SemanticCoverageReport) -> None:
@@ -191,7 +261,7 @@ def main() -> int:
     if args.json:
         print_json_report(report)
     elif args.report:
-        print_human_report(report)
+        print_markdown_report(report)
     else:
         print_concise(report)
     return 0 if report.valid else 1

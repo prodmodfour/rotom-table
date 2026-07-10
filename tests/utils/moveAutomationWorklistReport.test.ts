@@ -37,15 +37,18 @@ describe('move automation worklist report', () => {
 
     expect(result.status).toBe(0)
     expect(result.stderr).toBe('')
-    expect(result.stdout).toContain('Move automation worklist report')
+    expect(result.stdout).toContain('Move automation heuristic prose classification (informational only)')
+    expect(result.stdout).toContain('not a progress tracker or implementation queue')
     expect(result.stdout).toContain(`Canonical valid move count: ${semantic.catalog.canonicalMoves}`)
     expect(result.stdout).toContain(`Explicit script count: ${semantic.registry.explicitLegacyScripts}`)
     expect(result.stdout).toContain(`Missing script count: ${missingScriptCount}`)
     expect(result.stdout).toContain('plain-single-target-damage (')
     expect(result.stdout).toContain('complex-review-needed (')
-    expect(result.stdout).toContain('Recommended next safest batch (')
+    expect(result.stdout).toContain('Informational candidate sample (')
 
-    const recommendedMatch = result.stdout.match(/\nRecommended next safest batch \((\d+) moves\):\n([\s\S]*)$/)
+    const recommendedMatch = result.stdout.match(
+      /\nInformational candidate sample \((\d+) moves; not an implementation queue\):\n([\s\S]*)$/,
+    )
     expect(recommendedMatch).not.toBeNull()
     expect(Number(recommendedMatch?.[1] ?? '0')).toBeGreaterThanOrEqual(0)
     const recommendedSection = recommendedMatch?.[2] ?? ''
