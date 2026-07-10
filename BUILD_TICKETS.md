@@ -793,7 +793,7 @@ Status: DONE
 
 ## MA-059 — Define authoritative encounter events
 
-Status: TODO
+Status: DONE
 
 **Depends on:** MA-057
 **Commit:** `feat(move-automation): define encounter lifecycle events`
