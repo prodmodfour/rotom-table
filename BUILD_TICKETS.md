@@ -875,7 +875,7 @@ Status: DONE
 
 ## MA-070 — Evaluate relationship and identity target predicates
 
-Status: TODO
+Status: DONE
 
 **Depends on:** MA-032, MA-054
 **Commit:** `feat(move-automation): evaluate relationship target predicates`
