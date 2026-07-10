@@ -23,6 +23,8 @@
     "refactor:loop": "bash scripts/refactor-loop.sh",
     "check:move-automation": "python3 scripts/check_move_automation_coverage.py",
     "check:move-automation-complete": "python3 scripts/check_move_automation_coverage.py --require-complete",
+    "generate:move-automation-menu-status": "python3 scripts/generate_move_automation_menu_status.py",
+    "check:move-automation-menu-status": "python3 scripts/generate_move_automation_menu_status.py --check",
     "audit:move-automation-legacy": "vite-node --config vitest.config.ts scripts/generate_move_automation_legacy_audit.ts",
     "link:move-automation-legacy": "vite-node --config vitest.config.ts scripts/link_move_automation_legacy_manifest.ts",
     "check:move-automation-legacy-links": "vite-node --config vitest.config.ts scripts/link_move_automation_legacy_manifest.ts --check",

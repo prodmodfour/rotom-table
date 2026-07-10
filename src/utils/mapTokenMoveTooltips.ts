@@ -66,9 +66,16 @@ const buildSheetSpecificLines = (
   if (move.hasStab) lines.push('STAB: +2 DB included')
   if (move.automatic) lines.push('Source: Automatic Struggle Attack')
   if (move.conditionUseBlock) lines.push(`Condition: ${move.conditionUseBlock.reason}`)
-  if (!move.hasAutomationScript) lines.push('Automation: No script yet')
   return lines
 }
+
+const buildAutomationLines = (move: TokenMoveMenuOption): string[] => [
+  `Base automation: ${move.automation.baseStatusLabel}`,
+  `Interaction coverage: ${move.automation.interactionStatusLabel}`,
+  ...move.automation.details.map(
+    (detail) => `${detail.label} [${detail.code}]: ${detail.summary}`,
+  ),
+]
 
 const buildTooltipSections = (
   move: TokenMoveMenuOption,
@@ -77,6 +84,7 @@ const buildTooltipSections = (
   const sheetLines = buildSheetSpecificLines(move, options)
   return [
     ...(sheetLines.length ? [{ heading: 'Sheet', body: sheetLines.join('\n') }] : []),
+    { heading: 'Automation', body: buildAutomationLines(move).join('\n') },
     ...(move.effect ? [{ heading: 'Effect', body: move.effect }] : []),
     ...(move.special ? [{ heading: 'Special', body: move.special }] : []),
   ]

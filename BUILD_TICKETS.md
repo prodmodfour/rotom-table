@@ -423,7 +423,7 @@ Status: DONE
 
 ## MA-022 — Expose semantic status in move selection
 
-Status: TODO
+Status: DONE
 
 **Depends on:** MA-014
 **Commit:** `feat(move-automation): show complete assisted and blocked states`

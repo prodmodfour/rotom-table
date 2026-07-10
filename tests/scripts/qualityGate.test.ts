@@ -43,6 +43,7 @@ describe('quality gate move automation validation', () => {
       expect(invocations).toEqual([
         'ci',
         'run check:move-automation',
+        'run check:move-automation-menu-status',
         'run check:move-automation-legacy-links',
         'run lint --if-present',
         'run typecheck --if-present',
@@ -63,6 +64,7 @@ describe('quality gate move automation validation', () => {
     expect(packageJson.scripts['check:move-automation-complete']).toBe(
       'python3 scripts/check_move_automation_coverage.py --require-complete',
     )
+    expect(packageJson.scripts['check:move-automation-menu-status']).toContain('--check')
     expect(packageJson.scripts['check:move-automation-legacy-links']).toContain('--check')
   })
 })

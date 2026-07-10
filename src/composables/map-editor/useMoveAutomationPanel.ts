@@ -21,6 +21,7 @@ import {
   moveAutomationTargetBranches,
 } from '~/utils/moveAutomation'
 import { moveAutomationCanResolveDamageAtRuntime } from '~/utils/moveAutomationDynamicDamage'
+import { findMoveAutomationSemanticStatus } from '~/utils/moveAutomationSemanticStatus'
 import { moveAutomationScriptForConfirmedAreaTemplate } from '~/utils/moveAutomationConfirmedAreaTemplate'
 import { passDestinationLogLine } from '~/utils/moveAutomationPass'
 import {
@@ -542,7 +543,10 @@ export const useMoveAutomationPanel = ({
       moveName,
       usageContext: tokenMoveUsageContext(id),
     })
-    return result.ok ? result.entry : null
+    if (!result.ok) return null
+
+    const semanticStatus = findMoveAutomationSemanticStatus(result.entry.canonicalMoveName)
+    return semanticStatus?.baseStatus === 'blocked' ? null : result.entry
   }
 
   const moveTargetHitChances = (

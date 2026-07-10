@@ -135,7 +135,7 @@ export const attackOfOpportunityStruggleOptions = (
   moves: readonly TokenMoveMenuOption[] | undefined,
 ): AttackOfOpportunityStruggleOption[] => (moves ?? [])
   .filter((move) => isStruggleAttackMoveName(move.name))
-  .filter((move) => move.hasAutomationScript)
+  .filter((move) => move.hasAutomationScript && !move.disabledByAutomation)
   .filter((move) => !move.disabledByCondition && !move.disabledByUsage)
   .map((move) => ({
     name: move.name,

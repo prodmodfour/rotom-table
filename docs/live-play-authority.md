@@ -44,6 +44,12 @@ Authoritative `resolveMove` planning also records a deduplicated `sheetReads` sn
 
 Relationship-dependent move rules use the centralized server query seam and only recognize ally/enemy relationships from explicit encounter side IDs. Unknown allegiance fails closed for ally/enemy mechanics: token ownership, player control, GM control, and mere map presence never imply that two placements are allies. Self identity remains available independently of side data. Until encounter sides become part of the persisted placement schema, cross-placement ally/enemy mechanics therefore remain unconfirmed rather than guessing allegiance.
 
+### Move automation status in selection
+
+The move menu derives automation status from the reviewed semantic manifest, not from browser-supplied sheet data or mere legacy-registry presence. `complete` moves use the normal affordance; `assisted` moves remain usable but show their structured capability blockers, limitations, and manual steps before selection; `blocked` moves stay visible but disabled with a capability summary. Interaction coverage is displayed separately because base-move completeness does not imply every ability, item, or feature interaction is covered.
+
+This display is not an authority grant. The authoritative resolver loads its own repository status and runtime, rejects a canonical `blocked` row even if a legacy script is present, and still validates move ownership, conditions, usage, targets, and revisions. Changing client memory or markup therefore cannot promote or execute a blocked canonical move.
+
 ### Assisted reaction follow-ups
 
 Spite, Cute Charm, Poison Point, Moxie, and Celebrate currently open browser-local assisted follow-ups only after the provoking move has been accepted. They do not pause, interrupt, or alter that accepted resolution, and their prompts are not restored after refresh or reconnect. Attack-of-opportunity indicators are also assisted follow-ups after the provoking movement or ranged attack; their update command does not make the response a durable, resumable interrupt, so operators must not rely on reconnect recovery for the reaction window. Registry presence or an `Auto`-style mechanics helper must not be treated as a semantic-completeness claim for any of these flows.

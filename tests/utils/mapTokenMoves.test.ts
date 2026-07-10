@@ -59,6 +59,25 @@ describe('map token move menu options', () => {
     expect(move.attackStat).toBe(14)
     expect(move.damageAverage).toBe(29)
     expect(move.damageFormula).toBe('2d6+8+14')
+    expect(move.automation).toMatchObject({
+      canonicalId: 'Tackle',
+      baseStatus: 'assisted',
+      baseStatusLabel: 'Assisted',
+      interactionStatus: 'unassessed',
+      interactionStatusLabel: 'Unassessed',
+      runtimeKind: 'legacy-v1',
+      blockerCodes: ['movement.authoritative'],
+    })
+    expect(move.automation.details).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        kind: 'blocker',
+        code: 'movement.authoritative',
+        summary: 'Movement · Authoritative is planned for Phase 6.',
+      }),
+      expect.objectContaining({ kind: 'limitation', code: 'tackle.push' }),
+      expect.objectContaining({ kind: 'manual-step', code: 'tackle.push' }),
+    ]))
+    expect(move.disabledByAutomation).toBe(false)
   })
 
   it('uses token Loyalty for Return and Frustration menu Damage Bases', () => {
@@ -94,15 +113,41 @@ describe('map token move menu options', () => {
     expect(move.special).toBe('Grants Firestarter')
   })
 
-  it('shows unscripted moves while marking them unavailable for automation', () => {
+  it('shows blocked canonical and custom moves without treating registry presence as status', () => {
     const moves = buildTokenMoveMenuOptions(token(), [
       { move: { name: 'Tackle' }, automatic: false },
+      { move: { name: 'Teleport' }, automatic: false },
       { move: { name: 'Custom Beam', category: 'Special', db: 6 }, automatic: false },
     ])
 
-    expect(moves.map((move) => move.name)).toEqual(['Tackle', 'Custom Beam'])
-    expect(moves.find((move) => move.name === 'Tackle')?.hasAutomationScript).toBe(true)
-    expect(moves.find((move) => move.name === 'Custom Beam')?.hasAutomationScript).toBe(false)
+    expect(moves.map((move) => move.name)).toEqual(['Tackle', 'Teleport', 'Custom Beam'])
+    expect(moves.find((move) => move.name === 'Tackle')).toMatchObject({
+      hasAutomationScript: true,
+      disabledByAutomation: false,
+      automation: { baseStatus: 'assisted' },
+    })
+    expect(moves.find((move) => move.name === 'Teleport')).toMatchObject({
+      hasAutomationScript: false,
+      disabledByAutomation: true,
+      automation: {
+        canonicalId: 'Teleport',
+        baseStatus: 'blocked',
+        blockerCodes: ['runtime.unimplemented'],
+      },
+    })
+    expect(moves.find((move) => move.name === 'Teleport')?.automation.details[0]).toMatchObject({
+      code: 'runtime.unimplemented',
+      summary: 'Runtime · Unimplemented is planned for Phase 2.',
+    })
+    expect(moves.find((move) => move.name === 'Custom Beam')).toMatchObject({
+      hasAutomationScript: false,
+      disabledByAutomation: true,
+      automation: {
+        canonicalId: null,
+        baseStatus: 'blocked',
+        blockerCodes: ['catalog.unreviewed'],
+      },
+    })
   })
 
   it('reports map and sheet move frequency usage states', () => {

@@ -226,6 +226,33 @@ describe('resolveAuthoritativeMove', () => {
     expect(resolution.moveKey).toBe('swords-dance')
   })
 
+  it('independently rejects a manifest-blocked move even if a legacy script is registered', async () => {
+    const teleportScript = fakeTargetCountScript({
+      moveName: 'Teleport',
+      targetMode: 'one-target',
+      targetCount: 1,
+      range: 'Melee, 1 Target',
+      keywords: ['Melee', '1 Target'],
+    })
+
+    await withRegisteredMoveAutomationScript(teleportScript, () => {
+      const error = expectFailure(() => resolveAuthoritativeMove({
+        map: mapFixture(),
+        pokemonSheets: sheetMap([{ name: 'Teleport' }]),
+        trainerSheets: new Map(),
+        intent: moveIntent({
+          placementId: 'actor-token',
+          moveName: 'Teleport',
+          selection: { kind: 'single-target', targetPlacementId: 'target-a' },
+        }),
+        random: randomSequence([0.5]),
+      }), 'move-automation-blocked')
+
+      expect(error.reason).toBe('unsupported')
+      expect(error.message).toContain('Runtime · Unimplemented is planned for Phase 2')
+    })
+  })
+
   it('resolves in-range single-target moves with authoritative random accuracy, damage and feedback IDs', () => {
     const map = mapFixture()
     const pokemonSheets = sheetMap([{ name: 'Tackle' }])

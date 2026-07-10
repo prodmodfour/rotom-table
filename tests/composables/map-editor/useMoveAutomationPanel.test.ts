@@ -323,7 +323,38 @@ describe('useMoveAutomationPanel', () => {
     panel.openMoveAutomation({ id: 'user-token', moveName: 'Teleport' })
     expect(panel.moveAutomationTargeting.value).toBeNull()
     expect(panel.tokenMoveOptionsById.value['user-token'].map((move) => move.name)).toEqual(['Struggle', 'Teleport'])
-    expect(panel.tokenMoveOptionsById.value['user-token'].find((move) => move.name === 'Teleport')?.hasAutomationScript).toBe(false)
+    expect(panel.tokenMoveOptionsById.value['user-token'].find((move) => move.name === 'Teleport')).toMatchObject({
+      hasAutomationScript: false,
+      disabledByAutomation: true,
+      automation: { baseStatus: 'blocked', blockerCodes: ['runtime.unimplemented'] },
+    })
+  })
+
+  it('does not let registry presence promote a manifest-blocked move', async () => {
+    const teleportScript: MoveAutomationScript = {
+      ...branchSelectionScript(),
+      moveName: 'Teleport',
+      range: 'Melee, 1 Target',
+      keywords: ['Melee', '1 Target'],
+      targetBranches: undefined,
+    }
+
+    await withRegisteredMoveAutomationScript(teleportScript, () => {
+      const { panel } = branchSelectionPanel({ moveName: 'Teleport' })
+      const teleport = panel.tokenMoveOptionsById.value['user-token']
+        .find((move) => move.name === 'Teleport')
+
+      expect(teleport).toMatchObject({
+        hasAutomationScript: true,
+        disabledByAutomation: true,
+        automation: { baseStatus: 'blocked' },
+      })
+
+      panel.openMoveAutomation({ id: 'user-token', moveName: 'Teleport' })
+
+      expect(panel.moveAutomationTargetBranchSelection.value).toBeNull()
+      expect(panel.moveAutomationTargeting.value).toBeNull()
+    })
   })
 
   it('opens scripts with multiple target branches into branch-selection state', async () => {

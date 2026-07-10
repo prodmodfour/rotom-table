@@ -42,6 +42,13 @@ npm run check:move-automation
 
 This command validates the canonical catalog, semantic manifest, runtime and scenario references, hashes, and metadata invariants. It intentionally permits honest `assisted` and `blocked` rows while implementation is in progress. The quality gate also verifies that committed legacy v1 fingerprints still match the evaluated registry definitions.
 
+After changing a manifest row's base status, interaction status, runtime kind, blockers, limitations, or manual steps, refresh the bounded browser-facing move-menu projection and review both data diffs:
+
+```bash
+npm run generate:move-automation-menu-status
+npm run check:move-automation-menu-status
+```
+
 A move can become `complete` only after its reviewed mechanic and branch tags resolve through `data/move-automation/scenario-requirements.json`. Every resulting evidence class must be linked to a declared scenario, or carry a bounded not-applicable reason and review date. A scenario ID alone is not completion evidence.
 
 After an intentional legacy script, version, or source-attribution change, refresh both the fingerprint index and manifest links, then review the resulting data diff:

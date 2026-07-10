@@ -15,6 +15,7 @@ import {
 } from '~/utils/moveAutomationAssistedFollowUps'
 import type { TabletopMap } from '~/types/map'
 import type { SpawnedPokemon } from '~/types/pokemon'
+import { moveAutomationSemanticStatusForMenu } from '~/utils/moveAutomationSemanticStatus'
 import type { TokenMoveMenuOption } from '~/utils/mapTokenMoves'
 
 const token = (id: string, x: number, z: number, overrides: Partial<SpawnedPokemon> = {}): SpawnedPokemon => ({
@@ -81,6 +82,8 @@ const moveOption = (name: string, overrides: Partial<TokenMoveMenuOption> = {}):
   additionalAttackStatLabel: null,
   automatic: true,
   hasAutomationScript: true,
+  automation: moveAutomationSemanticStatusForMenu(name),
+  disabledByAutomation: false,
   conditionUseBlock: null,
   disabledByCondition: false,
   usage: null,
@@ -170,6 +173,7 @@ describe('attack of opportunity helpers', () => {
       moveOption('Struggle (Zapper Special)'),
       moveOption('Tackle'),
       moveOption('Struggle (Fountain Physical)', { disabledByCondition: true }),
+      moveOption('Struggle (Materializer Physical)', { disabledByAutomation: true }),
     ]).map((move) => move.name)).toEqual(['Struggle', 'Struggle (Zapper Special)'])
   })
 })

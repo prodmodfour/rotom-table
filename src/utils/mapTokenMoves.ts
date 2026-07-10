@@ -8,6 +8,10 @@ import { makeMoveLookupRows, type MoveLookupRow } from '~/utils/sheetMoveLookup'
 import { isPokemonLoyaltyDamageBaseMove } from '~/utils/sheets/pokemonLoyalty'
 import { moveConditionUseBlock, type MoveConditionUseBlock } from '~/utils/moveConditionRestrictions'
 import {
+  moveAutomationSemanticStatusForMenu,
+  type MoveAutomationSemanticStatus,
+} from '~/utils/moveAutomationSemanticStatus'
+import {
   eotMoveUsageState,
   getMapMoveUsageEntry,
   getSheetDailyMoveUsageEntry,
@@ -83,7 +87,10 @@ export interface TokenMoveMenuOption {
   additionalAttackStatKey: 'atk' | 'satk' | null
   additionalAttackStatLabel: string | null
   automatic: boolean
+  /** Legacy runtime presence; semantic status is the user-facing automation contract. */
   hasAutomationScript: boolean
+  automation: MoveAutomationSemanticStatus
+  disabledByAutomation: boolean
   conditionUseBlock: MoveConditionUseBlock | null
   disabledByCondition: boolean
   usage: TokenMoveUsageMenuState | null
@@ -256,6 +263,7 @@ const optionForMoveRow = (
   const damageClass = fallback(row.reference?.damage_class, row.move.category)
   const frequency = fallback(row.reference?.frequency, row.move.frequency)
   const usage = buildTokenMoveUsageState(token.id, name, frequency, usageContext)
+  const automation = moveAutomationSemanticStatusForMenu(name)
   const conditionUseBlock = moveConditionUseBlock({
     name,
     aliases: [row.move.name],
@@ -288,6 +296,8 @@ const optionForMoveRow = (
     additionalAttackStatLabel: row.additionalAttackStatLabel,
     automatic,
     hasAutomationScript,
+    automation,
+    disabledByAutomation: automation.baseStatus === 'blocked',
     conditionUseBlock,
     disabledByCondition: conditionUseBlock != null,
     usage,

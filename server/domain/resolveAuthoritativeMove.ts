@@ -14,6 +14,10 @@ import {
   moveAutomationTargetBranches,
 } from '~/utils/moveAutomation'
 import { moveAutomationCanResolveDamageAtRuntime } from '~/utils/moveAutomationDynamicDamage'
+import {
+  findMoveAutomationSemanticStatus,
+  moveAutomationStatusDetailsText,
+} from '~/utils/moveAutomationSemanticStatus'
 import { moveAutomationScriptForConfirmedAreaTemplate } from '~/utils/moveAutomationConfirmedAreaTemplate'
 import {
   buildMoveAutomationAreaTemplateCells,
@@ -69,6 +73,7 @@ export type AuthoritativeMoveResolutionFailureCode =
   | 'actor-token-unresolved'
   | 'duplicate-placement-id'
   | 'move-absent'
+  | 'move-automation-blocked'
   | 'move-condition-blocked'
   | 'move-usage-unavailable'
   | 'move-usage-key-invalid'
@@ -1090,6 +1095,15 @@ export const resolveAuthoritativeMove = (input: ResolveAuthoritativeMoveInput): 
   const entry = moveEntryResult.ok
     ? moveEntryResult.entry
     : fail('not-found', 'move-absent', 'Move entry resolution failed.')
+  const semanticStatus = findMoveAutomationSemanticStatus(entry.canonicalMoveName)
+  if (semanticStatus?.baseStatus === 'blocked') {
+    const details = moveAutomationStatusDetailsText(semanticStatus)
+    fail(
+      'unsupported',
+      'move-automation-blocked',
+      `${entry.canonicalMoveName} automation is blocked.${details ? ` ${details}` : ''}`,
+    )
+  }
   const { script, targetBranchId } = resolveCanonicalScript({
     baseScript: entry.script,
     targetBranchId: input.intent.targetBranchId,

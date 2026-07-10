@@ -6,6 +6,7 @@ import type { TokenContextMenuState } from '~/utils/isometric/contextMenu'
 import type { TokenAbilityMenuOption } from '~/utils/mapTokenAbilities'
 import { buildTokenAbilityTooltipDetail } from '~/utils/mapTokenAbilityTooltips'
 import type { TokenMoveMenuOption } from '~/utils/mapTokenMoves'
+import { moveAutomationStatusDetailsText } from '~/utils/moveAutomationSemanticStatus'
 import { useDamageDisplayMode } from '~/composables/useDamageDisplayMode'
 import { buildTokenMoveTooltipDetail } from '~/utils/mapTokenMoveTooltips'
 import { formatMoveDamageDisplay } from '~/utils/moveDamageDisplay'
@@ -85,12 +86,27 @@ const abilityCanBeUsed = (ability: TokenAbilityMenuOption): boolean =>
   ability.automation != null && ability.automation.category !== 'passive'
 
 const moveCanBeUsed = (move: TokenMoveMenuOption): boolean =>
-  move.hasAutomationScript && !move.conditionUseBlock && !move.disabledByUsage
+  !move.disabledByAutomation
+  && move.hasAutomationScript
+  && !move.conditionUseBlock
+  && !move.disabledByUsage
 
-const moveDisabledTitle = (move: TokenMoveMenuOption): string | undefined => {
+const moveAutomationBadgeLabel = (move: TokenMoveMenuOption): string =>
+  move.automation.baseStatus === 'assisted'
+    ? 'Assisted · partial automation'
+    : `${move.automation.baseStatusLabel} automation`
+
+const moveAvailabilityTitle = (move: TokenMoveMenuOption): string | undefined => {
+  const semanticDetails = moveAutomationStatusDetailsText(move.automation)
+  if (move.disabledByAutomation) {
+    return `Blocked automation.${semanticDetails ? ` ${semanticDetails}` : ''}`
+  }
   if (move.conditionUseBlock) return move.conditionUseBlock.reason
   if (move.disabledByUsage && move.usage) return move.usage.title
-  if (!move.hasAutomationScript) return `${move.name} does not have an automation script yet.`
+  if (!move.hasAutomationScript) return `${move.name} has no available reviewed automation runtime.`
+  if (move.automation.baseStatus === 'assisted') {
+    return `Assisted partial automation.${semanticDetails ? ` ${semanticDetails}` : ''}`
+  }
   return undefined
 }
 
@@ -475,10 +491,15 @@ watch(orders, (nextOrders) => {
               :key="move.name"
               type="button"
               class="action-submenu__item"
-              :class="{ 'is-active': hoveredMoveName === move.name, 'is-disabled': !moveCanBeUsed(move) }"
+              :class="{
+                'is-active': hoveredMoveName === move.name,
+                'is-disabled': !moveCanBeUsed(move),
+                [`action-submenu__item--automation-${move.automation.baseStatus}`]: true,
+              }"
               role="menuitem"
+              :data-automation-status="move.automation.baseStatus"
               :aria-disabled="!moveCanBeUsed(move) ? 'true' : undefined"
-              :title="moveDisabledTitle(move)"
+              :title="moveAvailabilityTitle(move)"
               :aria-describedby="hoveredMoveName === move.name && hoveredMoveTooltipDetail && isMoveTooltipVisible ? moveTooltipId : undefined"
               :disabled="!moveCanBeUsed(move)"
               @pointerenter="showMoveTooltip(move.name, $event)"
@@ -489,6 +510,15 @@ watch(orders, (nextOrders) => {
             >
               <span class="action-submenu__name">{{ move.name }}</span>
               <span class="action-submenu__badges">
+                <span
+                  class="action-submenu__badge action-submenu__badge--automation"
+                  :class="`action-submenu__badge--automation-${move.automation.baseStatus}`"
+                >
+                  {{ moveAutomationBadgeLabel(move) }}
+                </span>
+                <span class="action-submenu__badge action-submenu__badge--interaction">
+                  Interactions: {{ move.automation.interactionStatusLabel }}
+                </span>
                 <TypeBadge v-if="move.type" :type="move.type" size="xs" />
                 <DamageClassBadge v-if="move.damageClass" :category="move.damageClass" size="xs" />
                 <span v-if="move.damageBase != null" class="action-submenu__badge">DB {{ move.damageBase }}</span>
@@ -502,9 +532,22 @@ watch(orders, (nextOrders) => {
                 >
                   {{ move.usage.label }}
                 </span>
-                <span v-if="move.automatic" class="action-submenu__badge">Auto</span>
-                <span v-if="!move.hasAutomationScript" class="action-submenu__badge action-submenu__badge--disabled">Unscripted</span>
+                <span v-if="move.automatic" class="action-submenu__badge" title="Added automatically from the token's capabilities">Auto-added</span>
                 <span v-if="move.conditionUseBlock" class="action-submenu__badge action-submenu__badge--disabled">{{ move.conditionUseBlock.label }}</span>
+              </span>
+              <span
+                v-if="move.automation.baseStatus !== 'complete' && move.automation.details.length"
+                class="action-submenu__automation-details"
+                :class="`action-submenu__automation-details--${move.automation.baseStatus}`"
+              >
+                <span
+                  v-for="detail in move.automation.details"
+                  :key="`${move.name}-${detail.kind}-${detail.code}`"
+                  class="action-submenu__automation-detail"
+                >
+                  <strong>{{ detail.label }} · {{ detail.code }}</strong>
+                  <span>{{ detail.summary }}</span>
+                </span>
               </span>
             </button>
 
@@ -982,6 +1025,14 @@ watch(orders, (nextOrders) => {
   opacity: 0.72;
 }
 
+.action-submenu__item--automation-assisted {
+  border-color: color-mix(in srgb, var(--warn) 28%, transparent);
+}
+
+.action-submenu__item--automation-blocked {
+  border-color: color-mix(in srgb, var(--bad) 28%, transparent);
+}
+
 .sendout-submenu__item,
 .pokeball-submenu__item {
   display: grid;
@@ -1070,6 +1121,25 @@ watch(orders, (nextOrders) => {
   color: var(--accent);
 }
 
+.action-submenu__badge--automation-complete {
+  border-color: color-mix(in srgb, var(--good) 55%, var(--rule-soft));
+  color: var(--good);
+}
+
+.action-submenu__badge--automation-assisted {
+  border-color: color-mix(in srgb, var(--warn) 55%, var(--rule-soft));
+  color: var(--warn);
+}
+
+.action-submenu__badge--automation-blocked {
+  border-color: color-mix(in srgb, var(--bad) 55%, var(--rule-soft));
+  color: var(--bad);
+}
+
+.action-submenu__badge--interaction {
+  color: var(--ink-muted);
+}
+
 .action-submenu__badge--usage-blocked {
   border-color: color-mix(in srgb, var(--bad) 55%, var(--rule-soft));
   color: var(--bad);
@@ -1078,6 +1148,35 @@ watch(orders, (nextOrders) => {
 .action-submenu__badge--disabled {
   border-color: color-mix(in srgb, var(--bad) 55%, var(--rule-soft));
   color: var(--bad);
+}
+
+.action-submenu__automation-details {
+  display: grid;
+  gap: 0.28rem;
+  padding: 0.42rem 0.48rem;
+  border-left: 2px solid var(--warn);
+  border-radius: 4px;
+  background: color-mix(in srgb, var(--warn) 8%, transparent);
+  color: var(--ink-muted);
+  font-size: 0.68rem;
+  line-height: 1.3;
+}
+
+.action-submenu__automation-details--blocked {
+  border-left-color: var(--bad);
+  background: color-mix(in srgb, var(--bad) 8%, transparent);
+}
+
+.action-submenu__automation-detail {
+  display: grid;
+  gap: 0.08rem;
+}
+
+.action-submenu__automation-detail strong {
+  color: var(--ink);
+  font-size: 0.64rem;
+  letter-spacing: 0.035em;
+  text-transform: uppercase;
 }
 
 .context-menu__empty {
