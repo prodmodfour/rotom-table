@@ -1,7 +1,10 @@
-export type ParsedSkillDiceValue = {
-  dice: number
-  modifier: number
-}
+import {
+  parseSkillDiceValue,
+  type ParsedSkillDiceValue,
+} from '~/utils/skillRanks'
+
+export { parseSkillDiceValue }
+export type { ParsedSkillDiceValue }
 
 export const stripParenthetical = (value: string) => value.replace(/\s*\([^)]*\)/g, '').trim()
 
@@ -24,20 +27,6 @@ export const maximumNumericComponent = (value: string | number | null | undefine
     .filter((number) => Number.isFinite(number)) ?? []
 
   return numbers.length > 0 ? Math.max(...numbers) : null
-}
-
-export const parseSkillDiceValue = (value: string): ParsedSkillDiceValue | null => {
-  const match = value.trim().toLowerCase().match(/^(\d+)\s*d\s*6\s*([+-]\s*(\d+)?)?$/)
-  if (!match) return null
-
-  const dice = Number(match[1])
-  if (!Number.isFinite(dice) || dice < 1) return null
-
-  const sign = match[2]?.trim().charAt(0) ?? ''
-  const modifierValue = match[3] ? Number(match[3]) : 0
-  const modifier = sign === '-' ? -modifierValue : modifierValue
-
-  return { dice: Math.floor(dice), modifier }
 }
 
 export const formatSkillDiceSearchValue = (dice: number, modifier = 0): string => {

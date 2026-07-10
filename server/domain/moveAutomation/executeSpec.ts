@@ -1,5 +1,6 @@
 import {
   MOVE_EFFECT_OPERATION_LIMITS,
+  type MoveCheckEffectOperation,
   type MoveChoiceRequestEffectOperation,
   type MoveDamageEffectOperation,
   type MoveEffectOperation,
@@ -30,6 +31,12 @@ import type {
   AuthoritativeMoveRulesContext,
   AuthoritativeMoveSheetRead,
 } from './context'
+import {
+  executeMoveCheckOperation,
+  type MoveCheckExecution,
+  type MoveCheckPendingRequest,
+  type MoveCheckResolution,
+} from './checks'
 import type { MoveContextualDamageBaseResolution } from './damageBase'
 import { resolveMoveSpecDamageRollFormula } from './damageRollFormula'
 import { resolveMoveEffectCompoundRecipientIds } from './effectRecipientQueries'
@@ -101,9 +108,12 @@ export interface MoveSpecResolvedRoll {
     | 'accuracy'
     | 'critical'
     | 'damage'
+    | 'check'
   readonly recipientId: string | null
   /** One-based strike position for sequence-owned rolls. */
   readonly hitIndex?: number | null
+  readonly checkRole?: 'actor' | 'target' | null
+  readonly attemptIndex?: number | null
   readonly rollId: string
 }
 
@@ -130,9 +140,26 @@ export interface MoveSpecPendingReactionRequest extends MoveSpecPendingRequestBa
   readonly priority: number
 }
 
+export interface MoveSpecPendingCheckSelectionRequest extends MoveSpecPendingRequestBase {
+  readonly kind: 'check-selection'
+  readonly checkId: string
+  readonly role: 'actor' | 'target'
+}
+
+export interface MoveSpecPendingResourceSpendRequest extends MoveSpecPendingRequestBase {
+  readonly kind: 'resource-spend'
+  readonly checkId: string
+  readonly role: 'actor' | 'target'
+  readonly resourceId: string
+  readonly amount: number
+  readonly checkRecipientId: string
+}
+
 export type MoveSpecPendingRequest =
   | MoveSpecPendingChoiceRequest
   | MoveSpecPendingReactionRequest
+  | MoveSpecPendingCheckSelectionRequest
+  | MoveSpecPendingResourceSpendRequest
 
 export interface MoveSpecExecutionRejection {
   readonly code: 'precondition-failed' | 'target-count-out-of-range'
@@ -155,6 +182,8 @@ interface MoveSpecExecutionResultBase {
   readonly resolvedDamageBases: readonly MoveContextualDamageBaseResolution[]
   /** Pre-reduced bounded strike sequences, retained for immediate typed planning. */
   readonly multiHitExecutions: readonly MoveMultiHitExecution[]
+  /** Authoritative opposed-check/save outcomes, including selected branch IDs. */
+  readonly resolvedChecks: readonly MoveCheckResolution[]
   readonly hitTargetIds: readonly string[]
   readonly missedTargetIds: readonly string[]
   readonly damagedTargetIds: readonly string[]
@@ -239,6 +268,10 @@ const freezeResolvedDamageBases = (
 const freezeMultiHitExecutions = (
   executions: readonly MoveMultiHitExecution[],
 ): readonly MoveMultiHitExecution[] => Object.freeze([...executions])
+
+const freezeResolvedChecks = (
+  resolutions: readonly MoveCheckResolution[],
+): readonly MoveCheckResolution[] => Object.freeze([...resolutions])
 
 const rulesetMatchesContext = (
   definition: ValidatedMoveSpecDefinition,
@@ -512,7 +545,7 @@ const traceJson = (value: unknown): MoveResolutionTraceJsonValue => (
 const pendingRequest = (
   operation: MoveChoiceRequestEffectOperation | MoveReactionRequestEffectOperation,
   recipientIds: readonly string[],
-): MoveSpecPendingRequest => {
+): MoveSpecPendingChoiceRequest | MoveSpecPendingReactionRequest => {
   const common = {
     operationId: operation.id,
     phase: operation.phase,
@@ -526,6 +559,33 @@ const pendingRequest = (
   return operation.kind === 'choice-request'
     ? Object.freeze({ kind: 'choice', ...common })
     : Object.freeze({ kind: 'reaction', ...common, priority: operation.payload.priority })
+}
+
+const pendingCheckRequest = (
+  operation: MoveCheckEffectOperation,
+  request: MoveCheckPendingRequest,
+): MoveSpecPendingRequest => {
+  const common = {
+    operationId: operation.id,
+    phase: operation.phase,
+    reasonCode: operation.reasonCode,
+    recipientIds: frozenIds(request.ownerPlacementIds),
+    requestId: request.requestId,
+    promptKey: request.promptKey,
+    options: Object.freeze(request.options.map(option => Object.freeze({ ...option }))),
+    allowPass: false,
+    checkId: request.checkId,
+    role: request.role,
+  }
+  return request.kind === 'selection'
+    ? Object.freeze({ kind: 'check-selection', ...common })
+    : Object.freeze({
+        kind: 'resource-spend',
+        ...common,
+        resourceId: request.resourceId,
+        amount: request.amount,
+        checkRecipientId: request.checkRecipientId,
+      })
 }
 
 interface MoveSpecAuthoritativeMoveMechanics {
@@ -584,6 +644,19 @@ const latestLedgerEntry = (
 ): MoveAutomationRollLedgerEntry => context.random.snapshot().at(-1)
   ?? fail('definition-integrity-mismatch', `Roll ${rollId} did not produce a ledger entry.`)
 
+const resolvedCheckRolls = (
+  operation: MoveCheckEffectOperation,
+  execution: MoveCheckExecution,
+): readonly MoveSpecResolvedRoll[] => execution.rollReferences.map(reference => ({
+  operationId: operation.id,
+  referenceId: reference.referenceId,
+  purpose: 'check',
+  recipientId: reference.recipientId,
+  checkRole: reference.role,
+  attemptIndex: reference.attemptIndex,
+  rollId: reference.rollId,
+}))
+
 const accuracyReferenceIds = (
   operations: readonly MoveEffectOperation[],
 ): ReadonlySet<string> => new Set(
@@ -604,6 +677,7 @@ const terminalBase = (
   resolvedDamageTypes: readonly MoveDamageTypeResolution[],
   resolvedDamageBases: readonly MoveContextualDamageBaseResolution[],
   multiHitExecutions: readonly MoveMultiHitExecution[],
+  resolvedChecks: readonly MoveCheckResolution[],
   selectorState: MoveSpecSelectorState,
 ): MoveSpecExecutionResultBase => ({
   operations: freezeEmittedOperations(operations),
@@ -614,6 +688,7 @@ const terminalBase = (
   resolvedDamageTypes: freezeResolvedDamageTypes(resolvedDamageTypes),
   resolvedDamageBases: freezeResolvedDamageBases(resolvedDamageBases),
   multiHitExecutions: freezeMultiHitExecutions(multiHitExecutions),
+  resolvedChecks: freezeResolvedChecks(resolvedChecks),
   hitTargetIds: frozenIds(selectorState.hitTargetIds),
   missedTargetIds: frozenIds(selectorState.missedTargetIds),
   damagedTargetIds: frozenIds(selectorState.damagedTargetIds),
@@ -775,6 +850,7 @@ export const executeMoveSpec = (
   const resolvedDamageTypes: MoveDamageTypeResolution[] = []
   const resolvedDamageBases: MoveContextualDamageBaseResolution[] = []
   const multiHitExecutions: MoveMultiHitExecution[] = []
+  const resolvedChecks: MoveCheckResolution[] = []
   const currentSelectorState = (): MoveSpecSelectorState => ({
     targetIds,
     hitTargetIds,
@@ -839,6 +915,7 @@ export const executeMoveSpec = (
               resolvedDamageTypes,
               resolvedDamageBases,
               multiHitExecutions,
+              resolvedChecks,
               currentSelectorState(),
             ),
             rejection: Object.freeze({
@@ -927,6 +1004,7 @@ export const executeMoveSpec = (
             resolvedDamageTypes,
             resolvedDamageBases,
             multiHitExecutions,
+            resolvedChecks,
             currentSelectorState(),
           ),
           rejection: Object.freeze({
@@ -962,6 +1040,75 @@ export const executeMoveSpec = (
         operation,
         recipientIds: frozenIds(recipientIds),
       }))
+
+      if (operation.kind === 'check') {
+        const execution = executeMoveCheckOperation({
+          context: input.context,
+          operation,
+          recipientIds,
+          selectorState,
+          canonicalMoveId: spec.canonicalId,
+        })
+        resolvedChecks.push(...execution.resolutions)
+        resolvedRolls.push(...resolvedCheckRolls(operation, execution))
+        const request = execution.kind === 'pending'
+          ? pendingCheckRequest(operation, execution.request)
+          : null
+        trace = reduceMoveResolutionTrace(trace, {
+          kind: 'operation',
+          phase,
+          operationId: operation.id,
+          operationKind: operation.kind,
+          recipientIds,
+          outcome: request ? 'pending' : 'applied',
+          reasonCode: operation.reasonCode,
+          input: traceJson(operation.payload),
+          result: traceJson({
+            checks: execution.resolutions,
+            request: request
+              ? {
+                  requestId: request.requestId,
+                  requestKind: request.kind,
+                }
+              : null,
+          }),
+        })
+        for (const roll of execution.rollLedgerEntries) {
+          trace = reduceMoveResolutionTrace(trace, {
+            kind: 'roll',
+            phase,
+            reasonCode: operation.reasonCode,
+            roll,
+          })
+        }
+        if (!request) continue
+        trace = reduceMoveResolutionTrace(trace, {
+          kind: 'choice',
+          phase,
+          requestId: request.requestId,
+          requestKind: 'choice',
+          outcome: 'requested',
+          optionId: null,
+          reasonCode: operation.reasonCode,
+        })
+        return Object.freeze({
+          kind: 'pending-request',
+          ...terminalBase(
+            input.context,
+            operations,
+            targetIds,
+            trace,
+            input.context.random.snapshot(),
+            resolvedRolls,
+            resolvedDamageTypes,
+            resolvedDamageBases,
+            multiHitExecutions,
+            resolvedChecks,
+            currentSelectorState(),
+          ),
+          request,
+        })
+      }
 
       if (operation.kind === 'roll') {
         if (operation.payload.formula.kind === 'table') {
@@ -1260,6 +1407,7 @@ export const executeMoveSpec = (
             resolvedDamageTypes,
             resolvedDamageBases,
             multiHitExecutions,
+            resolvedChecks,
             currentSelectorState(),
           ),
           request,
@@ -1292,6 +1440,7 @@ export const executeMoveSpec = (
       resolvedDamageTypes,
       resolvedDamageBases,
       multiHitExecutions,
+      resolvedChecks,
       currentSelectorState(),
     ),
   })

@@ -20,6 +20,30 @@ export const SKILL_RANK_TO_DICE: Record<SkillRank, string> = {
 
 export const EXPERT_SKILL_RANK_VALUE = SKILL_RANK_TO_VALUE.Expert
 
+export interface ParsedSkillDiceValue {
+  readonly dice: number
+  readonly modifier: number
+}
+
+/** Parse the complete bounded PTU skill notation used by sheets and species data. */
+export const parseSkillDiceValue = (
+  value: string | null | undefined,
+): ParsedSkillDiceValue | null => {
+  const match = value?.trim().toLowerCase().match(/^(\d+)\s*d\s*6\s*([+-]\s*(\d+)?)?$/)
+  if (!match) return null
+
+  const dice = Number(match[1])
+  if (!Number.isFinite(dice) || dice < 1) return null
+
+  const sign = match[2]?.trim().charAt(0) ?? ''
+  const modifierValue = match[3] ? Number(match[3]) : 0
+  if (!Number.isFinite(modifierValue)) return null
+  return {
+    dice: Math.floor(dice),
+    modifier: sign === '-' ? -modifierValue : modifierValue,
+  }
+}
+
 export const parseSkillDiceRankValue = (value: string | null | undefined): number | null => {
   const match = value?.trim().match(/^(\d+)\s*d\s*6\b/i)
   if (!match) return null

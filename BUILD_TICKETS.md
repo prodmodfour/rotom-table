@@ -1098,7 +1098,7 @@ Status: DONE
 
 ## MA-085 — Add opposed checks and saving throws
 
-Status: TODO
+Status: DONE
 
 **Depends on:** MA-036, MA-074
 **Commit:** `feat(move-automation): resolve opposed checks and saves`

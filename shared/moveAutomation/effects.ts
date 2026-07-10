@@ -10,12 +10,23 @@ import {
   type EncounterEffectStackPolicy,
 } from './encounterEffects'
 import {
+  MOVE_EXPRESSION_STATS,
+  MOVE_STAGE_AFFECTED_EXPRESSION_STATS,
+  MOVE_STAT_COMBAT_STAGE_POLICIES,
+  MOVE_STAT_STAGE_MODIFIER_POLICIES,
   MoveExpressionValidationError,
   parseMoveExpression,
   parseMoveStatSelectionExpression,
   type MoveExpression,
+  type MoveExpressionStat,
+  type MoveStatCombatStagePolicy,
   type MoveStatSelectionExpression,
+  type MoveStatStageModifierPolicy,
 } from './expressions'
+import {
+  TRAINER_SKILLS,
+  type TrainerSkillKey,
+} from '~/types/trainerSheet'
 import {
   MoveSelectorValidationError,
   parseMoveSelector,
@@ -32,6 +43,7 @@ import {
  */
 export const MOVE_EFFECT_OPERATION_KINDS = [
   'roll',
+  'check',
   'damage',
   'multi-hit',
   'direct-hp',
@@ -81,6 +93,22 @@ export const MOVE_EFFECT_ROLL_FORMULA_KINDS = [
   'uniform-integer',
   'table',
 ] as const
+export const MOVE_EFFECT_CHECK_KINDS = ['opposed', 'save'] as const
+export const MOVE_EFFECT_CHECK_ROLL_SOURCE_KINDS = [
+  'fixed',
+  'skill',
+  'stat',
+  'choice',
+] as const
+export const MOVE_EFFECT_CHECK_SKILLS = TRAINER_SKILLS
+export const MOVE_EFFECT_CHECK_REROLL_KEEP_POLICIES = [
+  'latest',
+  'highest',
+  'lowest',
+] as const
+export const MOVE_EFFECT_CHECK_TIE_KINDS = ['success', 'failure', 'reroll'] as const
+export const MOVE_EFFECT_CHECK_OUTCOMES = ['success', 'failure'] as const
+export const MOVE_EFFECT_CHECK_RESOURCE_TRIGGERS = ['always', 'on-failure'] as const
 
 export const MOVE_EFFECT_DAMAGE_CLASSES = ['physical', 'special'] as const
 export const MOVE_EFFECT_DAMAGE_BASE_STAB_TIMINGS = [
@@ -243,6 +271,9 @@ export const MOVE_EFFECT_OPERATION_LIMITS = Object.freeze({
   multiHitEffects: 16,
   conditionFilterIds: 32,
   conditionRandomChoices: 16,
+  checkModifiers: 16,
+  checkSourceOptions: 16,
+  checkRerolls: 3,
   reactionPriorityMagnitude: 1_000,
 })
 
@@ -251,6 +282,16 @@ export type MoveEffectSourceKind = (typeof MOVE_EFFECT_SOURCE_KINDS)[number]
 export type MoveEffectRecipientSelectorKind =
   (typeof MOVE_EFFECT_RECIPIENT_SELECTOR_KINDS)[number]
 export type MoveEffectRollFormulaKind = (typeof MOVE_EFFECT_ROLL_FORMULA_KINDS)[number]
+export type MoveEffectCheckKind = (typeof MOVE_EFFECT_CHECK_KINDS)[number]
+export type MoveEffectCheckRollSourceKind =
+  (typeof MOVE_EFFECT_CHECK_ROLL_SOURCE_KINDS)[number]
+export type MoveEffectCheckSkill = TrainerSkillKey
+export type MoveEffectCheckRerollKeepPolicy =
+  (typeof MOVE_EFFECT_CHECK_REROLL_KEEP_POLICIES)[number]
+export type MoveEffectCheckTieKind = (typeof MOVE_EFFECT_CHECK_TIE_KINDS)[number]
+export type MoveEffectCheckOutcome = (typeof MOVE_EFFECT_CHECK_OUTCOMES)[number]
+export type MoveEffectCheckResourceTrigger =
+  (typeof MOVE_EFFECT_CHECK_RESOURCE_TRIGGERS)[number]
 export type MoveEffectDamageClass = (typeof MOVE_EFFECT_DAMAGE_CLASSES)[number]
 export type MoveEffectDamageBaseStabTiming =
   (typeof MOVE_EFFECT_DAMAGE_BASE_STAB_TIMINGS)[number]
@@ -344,6 +385,122 @@ export interface MoveRollEffectPayload {
   readonly rollId: string
   readonly formula: MoveEffectRollFormula
 }
+
+export type MoveCheckRollFormula = Exclude<
+  MoveEffectRollFormula,
+  MoveEffectTableRollFormula
+>
+
+export interface MoveCheckFixedRollSource {
+  readonly kind: 'fixed'
+  readonly formula: MoveCheckRollFormula
+}
+
+/** Resolve the participant's complete authoritative skill dice pool. */
+export interface MoveCheckSkillRollSource {
+  readonly kind: 'skill'
+  readonly skill: MoveEffectCheckSkill
+}
+
+/** Roll the reviewed formula and add one authoritative participant stat. */
+export interface MoveCheckStatRollSource {
+  readonly kind: 'stat'
+  readonly stat: MoveExpressionStat
+  readonly combatStagePolicy: MoveStatCombatStagePolicy
+  readonly stageModifierPolicy: MoveStatStageModifierPolicy
+  readonly formula: MoveCheckRollFormula
+}
+
+export type MoveCheckResolvedRollSource =
+  | MoveCheckFixedRollSource
+  | MoveCheckSkillRollSource
+  | MoveCheckStatRollSource
+
+export interface MoveCheckRollSourceOption {
+  readonly id: string
+  readonly labelKey: string
+  /** Mechanics remain server-owned; pending results expose only ID and labelKey. */
+  readonly source: MoveCheckResolvedRollSource
+}
+
+export interface MoveCheckChoiceRollSource {
+  readonly kind: 'choice'
+  readonly requestId: string
+  readonly promptKey: string
+  readonly options: readonly MoveCheckRollSourceOption[]
+}
+
+export type MoveCheckRollSource =
+  | MoveCheckResolvedRollSource
+  | MoveCheckChoiceRollSource
+
+export interface MoveCheckRollModifier {
+  readonly sourceId: string
+  readonly reasonCode: string
+  readonly value: MoveExpression
+}
+
+export interface MoveCheckRerollPolicy {
+  /** Number of automatic additional attempts after the first roll. */
+  readonly count: number
+  readonly keep: MoveEffectCheckRerollKeepPolicy
+}
+
+export interface MoveCheckResourceRerollRequest {
+  readonly requestId: string
+  readonly promptKey: string
+  readonly resourceId: string
+  readonly amount: number
+  readonly trigger: MoveEffectCheckResourceTrigger
+  readonly spendOption: MoveEffectRequestOption
+  readonly declineOption: MoveEffectRequestOption
+}
+
+export interface MoveCheckRollDefinition {
+  readonly rollId: string
+  readonly source: MoveCheckRollSource
+  readonly modifiers: readonly MoveCheckRollModifier[]
+  readonly reroll: MoveCheckRerollPolicy
+  /** A human decision suspends after the initial result; no resource is spent here. */
+  readonly resourceReroll: MoveCheckResourceRerollRequest | null
+}
+
+export type MoveCheckTiePolicy =
+  | {
+      readonly kind: 'success' | 'failure'
+    }
+  | {
+      readonly kind: 'reroll'
+      readonly maximumRerolls: number
+      readonly exhaustedOutcome: MoveEffectCheckOutcome
+    }
+
+export interface MoveCheckBranches {
+  readonly success: string
+  readonly failure: string
+}
+
+export interface MoveOpposedCheckEffectPayload {
+  readonly kind: 'opposed'
+  readonly checkId: string
+  readonly actorRoll: MoveCheckRollDefinition
+  readonly targetRoll: MoveCheckRollDefinition
+  readonly tie: MoveCheckTiePolicy
+  readonly branches: MoveCheckBranches
+}
+
+export interface MoveSavingThrowEffectPayload {
+  readonly kind: 'save'
+  readonly checkId: string
+  readonly roll: MoveCheckRollDefinition
+  readonly dc: MoveExpression
+  readonly tie: MoveCheckTiePolicy
+  readonly branches: MoveCheckBranches
+}
+
+export type MoveCheckEffectPayload =
+  | MoveOpposedCheckEffectPayload
+  | MoveSavingThrowEffectPayload
 
 export interface MoveContextualDamageBase {
   readonly kind: 'expression'
@@ -811,6 +968,7 @@ export interface MoveEffectOperationEnvelope<
 }
 
 export type MoveRollEffectOperation = MoveEffectOperationEnvelope<'roll', MoveRollEffectPayload>
+export type MoveCheckEffectOperation = MoveEffectOperationEnvelope<'check', MoveCheckEffectPayload>
 export type MoveDamageEffectOperation = MoveEffectOperationEnvelope<'damage', MoveDamageEffectPayload>
 export type MoveMultiHitEffectOperation = MoveEffectOperationEnvelope<'multi-hit', MoveMultiHitEffectPayload>
 export type MoveDirectHpEffectOperation = MoveEffectOperationEnvelope<'direct-hp', MoveDirectHpEffectPayload>
@@ -829,6 +987,7 @@ export type MoveReactionRequestEffectOperation = MoveEffectOperationEnvelope<'re
 
 export type MoveEffectOperation =
   | MoveRollEffectOperation
+  | MoveCheckEffectOperation
   | MoveDamageEffectOperation
   | MoveMultiHitEffectOperation
   | MoveDirectHpEffectOperation
@@ -881,6 +1040,45 @@ const ROLL_FIELDS = ['rollId', 'formula'] as const
 const DICE_FORMULA_FIELDS = ['kind', 'count', 'sides', 'modifier'] as const
 const UNIFORM_FORMULA_FIELDS = ['kind', 'minimum', 'maximum'] as const
 const TABLE_FORMULA_FIELDS = ['kind', 'tableId'] as const
+const OPPOSED_CHECK_FIELDS = [
+  'kind',
+  'checkId',
+  'actorRoll',
+  'targetRoll',
+  'tie',
+  'branches',
+] as const
+const SAVE_CHECK_FIELDS = ['kind', 'checkId', 'roll', 'dc', 'tie', 'branches'] as const
+const CHECK_ROLL_FIELDS = ['rollId', 'source', 'modifiers', 'reroll', 'resourceReroll'] as const
+const CHECK_FIXED_SOURCE_FIELDS = ['kind', 'formula'] as const
+const CHECK_SKILL_SOURCE_FIELDS = ['kind', 'skill'] as const
+const CHECK_STAT_SOURCE_FIELDS = [
+  'kind',
+  'stat',
+  'combatStagePolicy',
+  'stageModifierPolicy',
+  'formula',
+] as const
+const CHECK_CHOICE_SOURCE_FIELDS = ['kind', 'requestId', 'promptKey', 'options'] as const
+const CHECK_SOURCE_OPTION_FIELDS = ['id', 'labelKey', 'source'] as const
+const CHECK_MODIFIER_FIELDS = ['sourceId', 'reasonCode', 'value'] as const
+const CHECK_REROLL_FIELDS = ['count', 'keep'] as const
+const CHECK_RESOURCE_REROLL_FIELDS = [
+  'requestId',
+  'promptKey',
+  'resourceId',
+  'amount',
+  'trigger',
+  'spendOption',
+  'declineOption',
+] as const
+const CHECK_RESOLVED_TIE_FIELDS = ['kind'] as const
+const CHECK_REROLL_TIE_FIELDS = [
+  'kind',
+  'maximumRerolls',
+  'exhaustedOutcome',
+] as const
+const CHECK_BRANCH_FIELDS = ['success', 'failure'] as const
 const DAMAGE_REQUIRED_FIELDS = [
   'damageClass',
   'damageBase',
@@ -1047,6 +1245,19 @@ const SOURCE_KIND_SET = new Set<string>(MOVE_EFFECT_SOURCE_KINDS)
 const RECIPIENT_KIND_SET = new Set<string>(MOVE_EFFECT_RECIPIENT_SELECTOR_KINDS)
 const PHASE_SET = new Set<string>(MOVE_SPEC_PHASES)
 const ROLL_FORMULA_KIND_SET = new Set<string>(MOVE_EFFECT_ROLL_FORMULA_KINDS)
+const CHECK_KIND_SET = new Set<string>(MOVE_EFFECT_CHECK_KINDS)
+const CHECK_ROLL_SOURCE_KIND_SET = new Set<string>(MOVE_EFFECT_CHECK_ROLL_SOURCE_KINDS)
+const CHECK_SKILL_SET = new Set<string>(MOVE_EFFECT_CHECK_SKILLS)
+const CHECK_REROLL_KEEP_POLICY_SET = new Set<string>(MOVE_EFFECT_CHECK_REROLL_KEEP_POLICIES)
+const CHECK_TIE_KIND_SET = new Set<string>(MOVE_EFFECT_CHECK_TIE_KINDS)
+const CHECK_OUTCOME_SET = new Set<string>(MOVE_EFFECT_CHECK_OUTCOMES)
+const CHECK_RESOURCE_TRIGGER_SET = new Set<string>(MOVE_EFFECT_CHECK_RESOURCE_TRIGGERS)
+const EXPRESSION_STAT_SET = new Set<string>(MOVE_EXPRESSION_STATS)
+const STAGE_AFFECTED_EXPRESSION_STAT_SET = new Set<string>(
+  MOVE_STAGE_AFFECTED_EXPRESSION_STATS,
+)
+const STAT_COMBAT_STAGE_POLICY_SET = new Set<string>(MOVE_STAT_COMBAT_STAGE_POLICIES)
+const STAT_STAGE_MODIFIER_POLICY_SET = new Set<string>(MOVE_STAT_STAGE_MODIFIER_POLICIES)
 const DAMAGE_CLASS_SET = new Set<string>(MOVE_EFFECT_DAMAGE_CLASSES)
 const DAMAGE_BASE_STAB_TIMING_SET = new Set<string>(MOVE_EFFECT_DAMAGE_BASE_STAB_TIMINGS)
 const TYPE_MATCHUP_POLICY_SET = new Set<string>(MOVE_EFFECT_TYPE_MATCHUP_POLICIES)
@@ -3019,6 +3230,382 @@ const parseReactionRequestPayload = (
   }
 }
 
+const parseCheckRollFormula = (
+  value: unknown,
+  path: string,
+): MoveCheckRollFormula => {
+  const formula = parseRollFormula(value, path)
+  if (formula.kind === 'table') {
+    return fail(
+      'invalid-effect-operation',
+      `${path}.kind`,
+      'check rolls require a bounded dice or uniform-integer formula.',
+    )
+  }
+  return formula
+}
+
+const parseCheckRequestOption = (
+  value: unknown,
+  path: string,
+): MoveEffectRequestOption => {
+  const input = parseExactRecord(value, REQUEST_OPTION_FIELDS, path)
+  return {
+    id: parseStableId(ownValue(input, 'id', path), `${path}.id`),
+    labelKey: parseStableId(ownValue(input, 'labelKey', path), `${path}.labelKey`),
+  }
+}
+
+const parseResolvedCheckRollSource = (
+  value: unknown,
+  path: string,
+): MoveCheckResolvedRollSource => {
+  const input = parseRecord(value, path)
+  const kind = parseEnum<Exclude<MoveEffectCheckRollSourceKind, 'choice'>>(
+    ownValue(input, 'kind', path),
+    new Set(['fixed', 'skill', 'stat']),
+    `${path}.kind`,
+    'fixed, skill, or stat',
+  )
+
+  if (kind === 'fixed') {
+    assertExactKeys(input, CHECK_FIXED_SOURCE_FIELDS, path)
+    return {
+      kind,
+      formula: parseCheckRollFormula(ownValue(input, 'formula', path), `${path}.formula`),
+    }
+  }
+  if (kind === 'skill') {
+    assertExactKeys(input, CHECK_SKILL_SOURCE_FIELDS, path)
+    return {
+      kind,
+      skill: parseEnum<MoveEffectCheckSkill>(
+        ownValue(input, 'skill', path),
+        CHECK_SKILL_SET,
+        `${path}.skill`,
+        'a canonical skill ID',
+      ),
+    }
+  }
+
+  assertExactKeys(input, CHECK_STAT_SOURCE_FIELDS, path)
+  const stat = parseEnum<MoveExpressionStat>(
+    ownValue(input, 'stat', path),
+    EXPRESSION_STAT_SET,
+    `${path}.stat`,
+    'a supported authoritative stat',
+  )
+  const combatStagePolicy = parseEnum<MoveStatCombatStagePolicy>(
+    ownValue(input, 'combatStagePolicy', path),
+    STAT_COMBAT_STAGE_POLICY_SET,
+    `${path}.combatStagePolicy`,
+    'a supported Combat Stage policy',
+  )
+  const stageModifierPolicy = parseEnum<MoveStatStageModifierPolicy>(
+    ownValue(input, 'stageModifierPolicy', path),
+    STAT_STAGE_MODIFIER_POLICY_SET,
+    `${path}.stageModifierPolicy`,
+    'honor or ignore',
+  )
+  if (
+    !STAGE_AFFECTED_EXPRESSION_STAT_SET.has(stat)
+    && (combatStagePolicy !== 'ignore' || stageModifierPolicy !== 'ignore')
+  ) {
+    fail(
+      'invalid-effect-operation',
+      path,
+      `${stat} cannot apply Combat Stage policies.`,
+    )
+  }
+  return {
+    kind,
+    stat,
+    combatStagePolicy,
+    stageModifierPolicy,
+    formula: parseCheckRollFormula(ownValue(input, 'formula', path), `${path}.formula`),
+  }
+}
+
+const parseCheckRollSource = (
+  value: unknown,
+  path: string,
+): MoveCheckRollSource => {
+  const input = parseRecord(value, path)
+  const kind = parseEnum<MoveEffectCheckRollSourceKind>(
+    ownValue(input, 'kind', path),
+    CHECK_ROLL_SOURCE_KIND_SET,
+    `${path}.kind`,
+    'fixed, skill, stat, or choice',
+  )
+  if (kind !== 'choice') return parseResolvedCheckRollSource(value, path)
+
+  assertExactKeys(input, CHECK_CHOICE_SOURCE_FIELDS, path)
+  const optionsPath = `${path}.options`
+  const options = parseBoundedArray(
+    ownValue(input, 'options', path),
+    optionsPath,
+    MOVE_EFFECT_OPERATION_LIMITS.checkSourceOptions,
+  ).map((option, index): MoveCheckRollSourceOption => {
+    const optionPath = `${optionsPath}[${index}]`
+    const entry = parseExactRecord(option, CHECK_SOURCE_OPTION_FIELDS, optionPath)
+    return {
+      id: parseStableId(ownValue(entry, 'id', optionPath), `${optionPath}.id`),
+      labelKey: parseStableId(
+        ownValue(entry, 'labelKey', optionPath),
+        `${optionPath}.labelKey`,
+      ),
+      source: parseResolvedCheckRollSource(
+        ownValue(entry, 'source', optionPath),
+        `${optionPath}.source`,
+      ),
+    }
+  })
+  if (options.length < 2) {
+    fail('invalid-effect-operation', optionsPath, 'must contain at least two choices.')
+  }
+  assertUnique(options.map(option => option.id), `${optionsPath}.id`)
+  return {
+    kind,
+    requestId: parseStableId(ownValue(input, 'requestId', path), `${path}.requestId`),
+    promptKey: parseStableId(ownValue(input, 'promptKey', path), `${path}.promptKey`),
+    options,
+  }
+}
+
+const parseCheckModifiers = (
+  value: unknown,
+  path: string,
+): readonly MoveCheckRollModifier[] => {
+  const modifiers = parseBoundedArray(
+    value,
+    path,
+    MOVE_EFFECT_OPERATION_LIMITS.checkModifiers,
+  ).map((modifier, index): MoveCheckRollModifier => {
+    const modifierPath = `${path}[${index}]`
+    const input = parseExactRecord(modifier, CHECK_MODIFIER_FIELDS, modifierPath)
+    const sourceId = parseStableId(
+      ownValue(input, 'sourceId', modifierPath),
+      `${modifierPath}.sourceId`,
+    )
+    if (sourceId === 'check-basis') {
+      fail(
+        'invalid-effect-operation',
+        `${modifierPath}.sourceId`,
+        'check-basis is reserved for the selected authoritative skill or stat.',
+      )
+    }
+    return {
+      sourceId,
+      reasonCode: parseStableId(
+        ownValue(input, 'reasonCode', modifierPath),
+        `${modifierPath}.reasonCode`,
+      ),
+      value: parseEffectExpression(
+        () => parseMoveExpression(
+          ownValue(input, 'value', modifierPath),
+          `${modifierPath}.value`,
+        ),
+      ),
+    }
+  })
+  assertUnique(modifiers.map(modifier => modifier.sourceId), `${path}.sourceId`)
+  return modifiers
+}
+
+const parseCheckRerollPolicy = (
+  value: unknown,
+  path: string,
+): MoveCheckRerollPolicy => {
+  const input = parseExactRecord(value, CHECK_REROLL_FIELDS, path)
+  return {
+    count: parseInteger(
+      ownValue(input, 'count', path),
+      `${path}.count`,
+      0,
+      MOVE_EFFECT_OPERATION_LIMITS.checkRerolls,
+    ),
+    keep: parseEnum<MoveEffectCheckRerollKeepPolicy>(
+      ownValue(input, 'keep', path),
+      CHECK_REROLL_KEEP_POLICY_SET,
+      `${path}.keep`,
+      'latest, highest, or lowest',
+    ),
+  }
+}
+
+const parseCheckResourceReroll = (
+  value: unknown,
+  path: string,
+): MoveCheckResourceRerollRequest | null => {
+  if (value === null) return null
+  const input = parseExactRecord(value, CHECK_RESOURCE_REROLL_FIELDS, path)
+  const spendOption = parseCheckRequestOption(
+    ownValue(input, 'spendOption', path),
+    `${path}.spendOption`,
+  )
+  const declineOption = parseCheckRequestOption(
+    ownValue(input, 'declineOption', path),
+    `${path}.declineOption`,
+  )
+  if (spendOption.id === declineOption.id) {
+    fail(
+      'duplicate-id',
+      `${path}.declineOption.id`,
+      'spend and decline options must have distinct IDs.',
+    )
+  }
+  return {
+    requestId: parseStableId(ownValue(input, 'requestId', path), `${path}.requestId`),
+    promptKey: parseStableId(ownValue(input, 'promptKey', path), `${path}.promptKey`),
+    resourceId: parseStableId(ownValue(input, 'resourceId', path), `${path}.resourceId`),
+    amount: parseInteger(
+      ownValue(input, 'amount', path),
+      `${path}.amount`,
+      1,
+      MOVE_EFFECT_OPERATION_LIMITS.numericMagnitude,
+    ),
+    trigger: parseEnum<MoveEffectCheckResourceTrigger>(
+      ownValue(input, 'trigger', path),
+      CHECK_RESOURCE_TRIGGER_SET,
+      `${path}.trigger`,
+      'always or on-failure',
+    ),
+    spendOption,
+    declineOption,
+  }
+}
+
+const parseCheckRollDefinition = (
+  value: unknown,
+  path: string,
+): MoveCheckRollDefinition => {
+  const input = parseExactRecord(value, CHECK_ROLL_FIELDS, path)
+  return {
+    rollId: parseStableId(ownValue(input, 'rollId', path), `${path}.rollId`),
+    source: parseCheckRollSource(ownValue(input, 'source', path), `${path}.source`),
+    modifiers: parseCheckModifiers(ownValue(input, 'modifiers', path), `${path}.modifiers`),
+    reroll: parseCheckRerollPolicy(ownValue(input, 'reroll', path), `${path}.reroll`),
+    resourceReroll: parseCheckResourceReroll(
+      ownValue(input, 'resourceReroll', path),
+      `${path}.resourceReroll`,
+    ),
+  }
+}
+
+const parseCheckTiePolicy = (
+  value: unknown,
+  path: string,
+): MoveCheckTiePolicy => {
+  const input = parseRecord(value, path)
+  const kind = parseEnum<MoveEffectCheckTieKind>(
+    ownValue(input, 'kind', path),
+    CHECK_TIE_KIND_SET,
+    `${path}.kind`,
+    'success, failure, or reroll',
+  )
+  if (kind !== 'reroll') {
+    assertExactKeys(input, CHECK_RESOLVED_TIE_FIELDS, path)
+    return { kind }
+  }
+  assertExactKeys(input, CHECK_REROLL_TIE_FIELDS, path)
+  return {
+    kind,
+    maximumRerolls: parseInteger(
+      ownValue(input, 'maximumRerolls', path),
+      `${path}.maximumRerolls`,
+      1,
+      MOVE_EFFECT_OPERATION_LIMITS.checkRerolls,
+    ),
+    exhaustedOutcome: parseEnum<MoveEffectCheckOutcome>(
+      ownValue(input, 'exhaustedOutcome', path),
+      CHECK_OUTCOME_SET,
+      `${path}.exhaustedOutcome`,
+      'success or failure',
+    ),
+  }
+}
+
+const parseCheckBranches = (
+  value: unknown,
+  path: string,
+): MoveCheckBranches => {
+  const input = parseExactRecord(value, CHECK_BRANCH_FIELDS, path)
+  const branches = {
+    success: parseStableId(ownValue(input, 'success', path), `${path}.success`),
+    failure: parseStableId(ownValue(input, 'failure', path), `${path}.failure`),
+  }
+  if (branches.success === branches.failure) {
+    fail('duplicate-id', `${path}.failure`, 'success and failure branches must be distinct.')
+  }
+  return branches
+}
+
+const checkRequestIds = (
+  rolls: readonly MoveCheckRollDefinition[],
+): readonly string[] => rolls.flatMap((roll) => [
+  ...(roll.source.kind === 'choice' ? [roll.source.requestId] : []),
+  ...(roll.resourceReroll ? [roll.resourceReroll.requestId] : []),
+])
+
+const validateCheckRollIdentity = (
+  rolls: readonly MoveCheckRollDefinition[],
+  path: string,
+): void => {
+  assertUnique(rolls.map(roll => roll.rollId), `${path}.rollId`)
+  assertUnique(checkRequestIds(rolls), `${path}.requestId`)
+  if (rolls.filter(roll => roll.resourceReroll !== null).length > 1) {
+    fail(
+      'invalid-effect-operation',
+      path,
+      'one check may open at most one resource-reroll request.',
+    )
+  }
+}
+
+const parseCheckPayload = (value: unknown, path: string): MoveCheckEffectPayload => {
+  const input = parseRecord(value, path)
+  const kind = parseEnum<MoveEffectCheckKind>(
+    ownValue(input, 'kind', path),
+    CHECK_KIND_SET,
+    `${path}.kind`,
+    'opposed or save',
+  )
+  if (kind === 'opposed') {
+    assertExactKeys(input, OPPOSED_CHECK_FIELDS, path)
+    const actorRoll = parseCheckRollDefinition(
+      ownValue(input, 'actorRoll', path),
+      `${path}.actorRoll`,
+    )
+    const targetRoll = parseCheckRollDefinition(
+      ownValue(input, 'targetRoll', path),
+      `${path}.targetRoll`,
+    )
+    validateCheckRollIdentity([actorRoll, targetRoll], path)
+    return {
+      kind,
+      checkId: parseStableId(ownValue(input, 'checkId', path), `${path}.checkId`),
+      actorRoll,
+      targetRoll,
+      tie: parseCheckTiePolicy(ownValue(input, 'tie', path), `${path}.tie`),
+      branches: parseCheckBranches(ownValue(input, 'branches', path), `${path}.branches`),
+    }
+  }
+
+  assertExactKeys(input, SAVE_CHECK_FIELDS, path)
+  const roll = parseCheckRollDefinition(ownValue(input, 'roll', path), `${path}.roll`)
+  validateCheckRollIdentity([roll], path)
+  return {
+    kind,
+    checkId: parseStableId(ownValue(input, 'checkId', path), `${path}.checkId`),
+    roll,
+    dc: parseEffectExpression(
+      () => parseMoveExpression(ownValue(input, 'dc', path), `${path}.dc`),
+    ),
+    tie: parseCheckTiePolicy(ownValue(input, 'tie', path), `${path}.tie`),
+    branches: parseCheckBranches(ownValue(input, 'branches', path), `${path}.branches`),
+  }
+}
+
 type ParsedOperationCommon = Pick<
   MoveEffectOperation,
   'id' | 'source' | 'recipients' | 'phase' | 'reasonCode'
@@ -3095,6 +3682,8 @@ const parseDetachedOperation = (value: unknown, path: string): MoveEffectOperati
   switch (kind) {
     case 'roll':
       return { ...common, kind, payload: parseRollPayload(payload, payloadPath) }
+    case 'check':
+      return { ...common, kind, payload: parseCheckPayload(payload, payloadPath) }
     case 'damage':
       return { ...common, kind, payload: parseDamagePayload(payload, payloadPath) }
     case 'multi-hit':

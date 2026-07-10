@@ -403,6 +403,7 @@ const assertSupportedImmediateOperations = (
 ): void => {
   const supported = new Set([
     'roll',
+    'check',
     'damage',
     'multi-hit',
     'direct-hp',

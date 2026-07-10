@@ -16,6 +16,32 @@ const VALID_PAYLOADS = {
     rollId: 'roll.accuracy',
     formula: { kind: 'dice', count: 1, sides: 20, modifier: 2 },
   },
+  check: {
+    kind: 'opposed',
+    checkId: 'check.push',
+    actorRoll: {
+      rollId: 'roll.push.actor',
+      source: {
+        kind: 'stat',
+        stat: 'attack',
+        combatStagePolicy: 'honor',
+        stageModifierPolicy: 'honor',
+        formula: { kind: 'dice', count: 1, sides: 20, modifier: 0 },
+      },
+      modifiers: [],
+      reroll: { count: 0, keep: 'latest' },
+      resourceReroll: null,
+    },
+    targetRoll: {
+      rollId: 'roll.push.target',
+      source: { kind: 'skill', skill: 'athletics' },
+      modifiers: [],
+      reroll: { count: 0, keep: 'latest' },
+      resourceReroll: null,
+    },
+    tie: { kind: 'failure' },
+    branches: { success: 'branch.push', failure: 'branch.no-push' },
+  },
   damage: {
     damageClass: 'physical',
     damageBase: 4,
@@ -212,6 +238,7 @@ describe('MoveSpec typed effect operations', () => {
   it('defines and parses the complete seed operation union', () => {
     expect(MOVE_EFFECT_OPERATION_KINDS).toEqual([
       'roll',
+      'check',
       'damage',
       'multi-hit',
       'direct-hp',
@@ -272,6 +299,70 @@ describe('MoveSpec typed effect operations', () => {
     })).payload).toEqual({
       rollId: 'roll.table',
       formula: { kind: 'table', tableId: 'table.five-strike' },
+    })
+    const save = parseMoveEffectOperation(validOperation('check', {
+      payload: {
+        kind: 'save',
+        checkId: 'check.escape',
+        roll: {
+          rollId: 'roll.escape',
+          source: {
+            kind: 'choice',
+            requestId: 'request.escape-stat',
+            promptKey: 'move.escape.choose-stat',
+            options: [{
+              id: 'speed',
+              labelKey: 'stat.speed',
+              source: {
+                kind: 'stat',
+                stat: 'speed',
+                combatStagePolicy: 'honor',
+                stageModifierPolicy: 'honor',
+                formula: { kind: 'dice', count: 1, sides: 20, modifier: 0 },
+              },
+            }, {
+              id: 'athletics',
+              labelKey: 'skill.athletics',
+              source: { kind: 'skill', skill: 'athletics' },
+            }],
+          },
+          modifiers: [{
+            sourceId: 'effect.escape-bonus',
+            reasonCode: 'effect.escape-bonus',
+            value: { kind: 'constant', value: 2 },
+          }],
+          reroll: { count: 1, keep: 'highest' },
+          resourceReroll: {
+            requestId: 'request.escape-reroll',
+            promptKey: 'move.escape.spend-resource',
+            resourceId: 'resource.action-point',
+            amount: 1,
+            trigger: 'on-failure',
+            spendOption: { id: 'spend', labelKey: 'choice.spend' },
+            declineOption: { id: 'decline', labelKey: 'choice.decline' },
+          },
+        },
+        dc: {
+          kind: 'arithmetic',
+          operator: 'add',
+          operands: [
+            { kind: 'constant', value: 10 },
+            { kind: 'stat', subject: { kind: 'actor' }, stat: 'level' },
+          ],
+        },
+        tie: { kind: 'reroll', maximumRerolls: 2, exhaustedOutcome: 'failure' },
+        branches: { success: 'branch.escaped', failure: 'branch.trapped' },
+      },
+    }))
+    expect(save.kind === 'check' && save.payload).toMatchObject({
+      kind: 'save',
+      checkId: 'check.escape',
+      roll: {
+        source: { kind: 'choice' },
+        reroll: { count: 1, keep: 'highest' },
+        resourceReroll: { resourceId: 'resource.action-point', amount: 1 },
+      },
+      tie: { kind: 'reroll', maximumRerolls: 2 },
     })
     const tableMultiHit = parseMoveEffectOperation(validOperation('multi-hit', {
       payload: {
@@ -1107,6 +1198,57 @@ describe('MoveSpec typed effect operations', () => {
     expect(parsed.kind === 'choice-request' && parsed.payload.options[0].id).toBe('damage')
     expect(JSON.parse(JSON.stringify(parsed))).toEqual(parsed)
     expect(structuredClone(parsed)).toEqual(parsed)
+  })
+
+  it('rejects ambiguous, executable, or unbounded check definitions', () => {
+    const duplicateRoll = structuredClone(VALID_PAYLOADS.check)
+    duplicateRoll.targetRoll.rollId = duplicateRoll.actorRoll.rollId
+    expectEffectError(
+      validOperation('check', { payload: duplicateRoll }),
+      'duplicate-id',
+      'operation.payload.rollId',
+    )
+
+    const duplicateBranch = structuredClone(VALID_PAYLOADS.check)
+    duplicateBranch.branches.failure = duplicateBranch.branches.success
+    expectEffectError(
+      validOperation('check', { payload: duplicateBranch }),
+      'duplicate-id',
+      'operation.payload.branches.failure',
+    )
+
+    const tableFormula = structuredClone(VALID_PAYLOADS.check)
+    tableFormula.actorRoll.source = {
+      kind: 'fixed',
+      formula: { kind: 'table', tableId: 'table.forged' },
+    } as unknown as typeof tableFormula.actorRoll.source
+    expectEffectError(
+      validOperation('check', { payload: tableFormula }),
+      'invalid-effect-operation',
+      'operation.payload.actorRoll.source.formula.kind',
+    )
+
+    const invalidStatPolicy = structuredClone(VALID_PAYLOADS.check)
+    invalidStatPolicy.actorRoll.source = {
+      kind: 'stat',
+      stat: 'level',
+      combatStagePolicy: 'honor',
+      stageModifierPolicy: 'ignore',
+      formula: { kind: 'dice', count: 1, sides: 20, modifier: 0 },
+    } as unknown as typeof invalidStatPolicy.actorRoll.source
+    expectEffectError(
+      validOperation('check', { payload: invalidStatPolicy }),
+      'invalid-effect-operation',
+      'operation.payload.actorRoll.source',
+    )
+
+    const tooManyRerolls = structuredClone(VALID_PAYLOADS.check)
+    tooManyRerolls.targetRoll.reroll.count = MOVE_EFFECT_OPERATION_LIMITS.checkRerolls + 1
+    expectEffectError(
+      validOperation('check', { payload: tooManyRerolls }),
+      'limit-exceeded',
+      'operation.payload.targetRoll.reroll.count',
+    )
   })
 
   it('rejects unknown operation kinds and fields at every operation level', () => {

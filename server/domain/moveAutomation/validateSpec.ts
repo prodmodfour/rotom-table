@@ -475,12 +475,20 @@ export const validateMoveSpecOperationSequence = (
   const rollIndexById = new Map<string, number>()
   const reservedRollIds = new Set<string>()
   const requestIndexById = new Map<string, number>()
+  const checkIndexById = new Map<string, number>()
 
   const reserveRollId = (rollId: string, path: string): void => {
     if (reservedRollIds.has(rollId)) {
       fail('duplicate-id', path, `roll ID ${rollId} is duplicated.`)
     }
     reservedRollIds.add(rollId)
+  }
+
+  const reserveRequestId = (requestId: string, index: number, path: string): void => {
+    if (requestIndexById.has(requestId)) {
+      fail('duplicate-id', path, `request ID ${requestId} is duplicated.`)
+    }
+    requestIndexById.set(requestId, index)
   }
 
   indexed.forEach(({ operation, index, path }) => {
@@ -504,20 +512,46 @@ export const validateMoveSpecOperationSequence = (
         reserveRollId(operation.payload.critical.rollId, `${path}.payload.critical.rollId`)
       }
     }
+    if (operation.kind === 'check') {
+      if (checkIndexById.has(operation.payload.checkId)) {
+        fail(
+          'duplicate-id',
+          `${path}.payload.checkId`,
+          `check ID ${operation.payload.checkId} is duplicated.`,
+        )
+      }
+      checkIndexById.set(operation.payload.checkId, index)
+      const rolls = operation.payload.kind === 'opposed'
+        ? [
+            { roll: operation.payload.actorRoll, path: `${path}.payload.actorRoll` },
+            { roll: operation.payload.targetRoll, path: `${path}.payload.targetRoll` },
+          ]
+        : [{ roll: operation.payload.roll, path: `${path}.payload.roll` }]
+      for (const entry of rolls) {
+        reserveRollId(entry.roll.rollId, `${entry.path}.rollId`)
+        if (entry.roll.source.kind === 'choice') {
+          reserveRequestId(
+            entry.roll.source.requestId,
+            index,
+            `${entry.path}.source.requestId`,
+          )
+        }
+        if (entry.roll.resourceReroll) {
+          reserveRequestId(
+            entry.roll.resourceReroll.requestId,
+            index,
+            `${entry.path}.resourceReroll.requestId`,
+          )
+        }
+      }
+    }
 
     if (
       operation.kind === 'movement-request'
       || operation.kind === 'choice-request'
       || operation.kind === 'reaction-request'
     ) {
-      if (requestIndexById.has(operation.payload.requestId)) {
-        fail(
-          'duplicate-id',
-          `${path}.payload.requestId`,
-          `request ID ${operation.payload.requestId} is duplicated.`,
-        )
-      }
-      requestIndexById.set(operation.payload.requestId, index)
+      reserveRequestId(operation.payload.requestId, index, `${path}.payload.requestId`)
     }
   })
 

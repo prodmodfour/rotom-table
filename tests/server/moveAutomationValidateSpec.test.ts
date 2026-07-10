@@ -139,6 +139,44 @@ const multiHitOperation = (
   ...overrides,
 })
 
+const checkOperation = (
+  overrides: Partial<TestOperation> = {},
+): TestOperation => ({
+  id: 'operation.check',
+  kind: 'check',
+  source: { kind: 'move', id: 'move.scratch' },
+  recipients: { kind: 'attacked-targets' },
+  phase: 'hit',
+  reasonCode: 'move.scratch.check',
+  payload: {
+    kind: 'opposed',
+    checkId: 'check.push',
+    actorRoll: {
+      rollId: 'roll.push.actor',
+      source: {
+        kind: 'fixed',
+        formula: { kind: 'dice', count: 1, sides: 20, modifier: 0 },
+      },
+      modifiers: [],
+      reroll: { count: 0, keep: 'latest' },
+      resourceReroll: null,
+    },
+    targetRoll: {
+      rollId: 'roll.push.target',
+      source: {
+        kind: 'fixed',
+        formula: { kind: 'dice', count: 1, sides: 20, modifier: 0 },
+      },
+      modifiers: [],
+      reroll: { count: 0, keep: 'latest' },
+      resourceReroll: null,
+    },
+    tie: { kind: 'failure' },
+    branches: { success: 'branch.push', failure: 'branch.steady' },
+  },
+  ...overrides,
+})
+
 const validSpec = (): TestSpec => ({
   schemaVersion: 2,
   canonicalId: 'Scratch',
@@ -569,6 +607,32 @@ describe('authoritative MoveSpec validation and hashing', () => {
       () => validateMoveSpec(duplicateRoll),
       'duplicate-id',
       'spec.phases[0].operations[1].payload.rollId',
+    )
+
+    const duplicateCheckRoll = validSpec()
+    const conflictingCheck = checkOperation()
+    const conflictingActorRoll = conflictingCheck.payload.actorRoll as Record<string, unknown>
+    conflictingActorRoll.rollId = 'roll.accuracy'
+    duplicateCheckRoll.phases.push({ phase: 'hit', operations: [conflictingCheck] })
+    expectDefinitionError(
+      () => validateMoveSpec(duplicateCheckRoll),
+      'duplicate-id',
+      'spec.phases[1].operations[0].payload.actorRoll.rollId',
+    )
+
+    const firstCheck = checkOperation()
+    const secondCheck = structuredClone(firstCheck)
+    secondCheck.id = 'operation.check-second'
+    const secondActorRoll = secondCheck.payload.actorRoll as Record<string, unknown>
+    const secondTargetRoll = secondCheck.payload.targetRoll as Record<string, unknown>
+    secondActorRoll.rollId = 'roll.push-second.actor'
+    secondTargetRoll.rollId = 'roll.push-second.target'
+    const duplicateCheckId = validSpec()
+    duplicateCheckId.phases = [{ phase: 'hit', operations: [firstCheck, secondCheck] }]
+    expectDefinitionError(
+      () => validateMoveSpec(duplicateCheckId),
+      'duplicate-id',
+      'spec.phases[0].operations[1].payload.checkId',
     )
 
     const duplicateRequest = validSpec()
