@@ -511,7 +511,7 @@ Status: DONE
 
 ## MA-034 — Add a dual-runtime registry
 
-Status: TODO
+Status: DONE
 
 **Depends on:** MA-033
 **Commit:** `feat(move-automation): register v1 scripts and v2 specs`

@@ -58,6 +58,8 @@ A `MoveSpec` is immutable, versioned, JSON-serializable data. It declares target
 
 Before registration, the server fills syntax-only defaults, puts phases and set-like metadata in canonical order, validates every selector, predicate, operation, capability, and local operation/roll reference, and applies aggregate complexity limits. Its reviewed definition hash is SHA-256 over strict canonical JSON that includes the hash-format version and frozen ruleset provenance. Mechanic-bearing array order, such as operations within a phase, remains significant.
 
+The server keeps legacy-v1 adapters and MoveSpec-v2 definitions in separate duplicate-checked registration sets. Both generations may coexist for migration and shadow comparison, but the semantic manifest selects exactly one reviewed version, definition hash, and source module for live resolution. Runtime lookup accepts only canonical move identity; client-submitted runtime kinds, specs, versions, or hashes are forbidden authority fields.
+
 The interpreter:
 
 - receives one immutable authoritative rules context;

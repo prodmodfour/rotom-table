@@ -6,6 +6,7 @@ import {
   MOVE_AUTOMATION_MANIFEST_LIMITS,
   MoveAutomationManifestValidationError,
   parseMoveAutomationManifest,
+  validateMoveAutomationRuntimeRegistrations,
   type MoveAutomationManifestValidationCode,
 } from '#shared/moveAutomation/manifest'
 import {
@@ -113,6 +114,64 @@ describe('move automation semantic manifest contract', () => {
     expect(manifest.moves).toHaveLength(776)
     expect(manifestIds).toEqual(canonicalIds)
     expect(new Set(manifestIds).size).toBe(776)
+  })
+
+  it('validates exact server runtime registrations while allowing v1/v2 migration overlap', () => {
+    const manifest = parseMoveAutomationManifest(manifestWith(completeScratchRecord()), catalog)
+    const selectedLegacy = {
+      canonicalId: 'Scratch',
+      kind: 'legacy-v1',
+      version: 1,
+      definitionHash: DEFINITION_HASH,
+      sourceModule: 'src/utils/move-automation/scripts/singleTargetAttacks.ts',
+    }
+    const unselectedV2 = {
+      canonicalId: 'Scratch',
+      kind: 'movespec-v2',
+      version: 2,
+      definitionHash: 'b'.repeat(64),
+      sourceModule: 'server/domain/moveAutomation/specs/scratch.ts',
+    }
+
+    expect(validateMoveAutomationRuntimeRegistrations(
+      manifest,
+      [selectedLegacy, unselectedV2],
+    )).toEqual([selectedLegacy, unselectedV2])
+
+    const invalidCases: Array<{
+      registrations: unknown[]
+      code: MoveAutomationManifestValidationCode
+    }> = [
+      { registrations: [], code: 'missing-runtime-registration' },
+      {
+        registrations: [selectedLegacy, selectedLegacy],
+        code: 'duplicate-runtime-registration',
+      },
+      {
+        registrations: [{ ...selectedLegacy, version: 2 }],
+        code: 'runtime-registration-mismatch',
+      },
+      {
+        registrations: [{ ...selectedLegacy, definitionHash: 'c'.repeat(64) }],
+        code: 'runtime-registration-mismatch',
+      },
+      {
+        registrations: [{ ...selectedLegacy, sourceModule: 'other.ts' }],
+        code: 'runtime-registration-mismatch',
+      },
+      {
+        registrations: [{ ...selectedLegacy, canonicalId: 'Tackle' }],
+        code: 'unknown-runtime-registration',
+      },
+    ]
+
+    for (const { registrations, code } of invalidCases) {
+      expect(() => validateMoveAutomationRuntimeRegistrations(manifest, registrations))
+        .toThrowError(expect.objectContaining({
+          name: MoveAutomationManifestValidationError.name,
+          code,
+        }))
+    }
   })
 
   it('keeps base completeness separate from explicitly partial ecosystem interactions', () => {

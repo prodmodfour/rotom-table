@@ -1,0 +1,233 @@
+import manifestJson from '../../../data/move-automation/manifest.json'
+import {
+  validateMoveAutomationRuntimeRegistrations,
+  type MoveAutomationManifest,
+  type MoveAutomationRuntimeRegistrationReference,
+} from '#shared/moveAutomation/manifest'
+import type { MoveAutomationScript } from '~/types/moveAutomation'
+import {
+  EXPLICIT_MOVE_AUTOMATION_REGISTRY_SOURCES,
+  type ExplicitMoveAutomationRegistrySource,
+} from '~/utils/move-automation/registry'
+import { hashLegacyMoveAutomationDefinition } from './legacyV1Definition'
+import {
+  validateMoveSpec,
+  type ValidatedMoveSpecDefinition,
+} from './validateSpec'
+
+export interface LegacyV1MoveAutomationAdapter extends MoveAutomationRuntimeRegistrationReference {
+  readonly kind: 'legacy-v1'
+  /** Exact reviewed v1 object; contextual legacy modifiers are applied downstream as before. */
+  readonly script: MoveAutomationScript
+}
+
+export interface MoveSpecV2Runtime extends MoveAutomationRuntimeRegistrationReference {
+  readonly kind: 'movespec-v2'
+  readonly definition: ValidatedMoveSpecDefinition
+}
+
+export type RegisteredMoveAutomationRuntime =
+  | LegacyV1MoveAutomationAdapter
+  | MoveSpecV2Runtime
+
+/** Repository registration for a v2 spec. The manifest supplies capabilities and rules provenance. */
+export interface MoveSpecV2Registration {
+  readonly canonicalId: string
+  readonly sourceModule: string
+  readonly spec: unknown
+}
+
+export interface MoveAutomationRuntimeRegistry {
+  readonly size: number
+  /** Resolve only the runtime selected by server-owned semantic manifest metadata. */
+  resolve(canonicalId: string): RegisteredMoveAutomationRuntime | null
+  entries(): readonly RegisteredMoveAutomationRuntime[]
+}
+
+export type MoveAutomationRuntimeRegistryValidationCode =
+  | 'duplicate-id'
+  | 'canonical-id-mismatch'
+  | 'unknown-canonical-id'
+
+export class MoveAutomationRuntimeRegistryValidationError extends Error {
+  readonly code: MoveAutomationRuntimeRegistryValidationCode
+  readonly canonicalId: string
+
+  constructor(
+    code: MoveAutomationRuntimeRegistryValidationCode,
+    canonicalId: string,
+    message: string,
+  ) {
+    super(message)
+    this.name = 'MoveAutomationRuntimeRegistryValidationError'
+    this.code = code
+    this.canonicalId = canonicalId
+  }
+}
+
+export interface CreateMoveAutomationRuntimeRegistryOptions {
+  readonly manifest: MoveAutomationManifest
+  readonly legacySources?: readonly ExplicitMoveAutomationRegistrySource[]
+  readonly moveSpecs?: readonly MoveSpecV2Registration[]
+}
+
+const fail = (
+  code: MoveAutomationRuntimeRegistryValidationCode,
+  canonicalId: string,
+  message: string,
+): never => {
+  throw new MoveAutomationRuntimeRegistryValidationError(code, canonicalId, message)
+}
+
+const runtimeRegistrationReference = (
+  runtime: RegisteredMoveAutomationRuntime,
+): MoveAutomationRuntimeRegistrationReference => ({
+  canonicalId: runtime.canonicalId,
+  kind: runtime.kind,
+  version: runtime.version,
+  definitionHash: runtime.definitionHash,
+  sourceModule: runtime.sourceModule,
+})
+
+const buildLegacyAdapters = (
+  sources: readonly ExplicitMoveAutomationRegistrySource[],
+): readonly LegacyV1MoveAutomationAdapter[] => {
+  const adapters: LegacyV1MoveAutomationAdapter[] = []
+  const canonicalIds = new Set<string>()
+  for (const { sourceModule, scripts } of sources) {
+    for (const [canonicalId, script] of scripts) {
+      if (canonicalId !== script.moveName) {
+        fail(
+          'canonical-id-mismatch',
+          canonicalId,
+          `Legacy registry key ${JSON.stringify(canonicalId)} in ${sourceModule} does not match script moveName ${JSON.stringify(script.moveName)}.`,
+        )
+      }
+      if (canonicalIds.has(canonicalId)) {
+        fail(
+          'duplicate-id',
+          canonicalId,
+          `Legacy v1 runtime is registered more than once for ${JSON.stringify(canonicalId)}.`,
+        )
+      }
+      canonicalIds.add(canonicalId)
+      adapters.push(Object.freeze({
+        canonicalId,
+        kind: 'legacy-v1',
+        version: script.version,
+        definitionHash: hashLegacyMoveAutomationDefinition(script),
+        sourceModule,
+        script,
+      }))
+    }
+  }
+  return adapters
+}
+
+const buildMoveSpecRuntimes = (
+  manifest: MoveAutomationManifest,
+  registrations: readonly MoveSpecV2Registration[],
+): readonly MoveSpecV2Runtime[] => {
+  const manifestByCanonicalId = new Map(
+    manifest.moves.map(record => [record.canonicalId, record]),
+  )
+  const canonicalIds = new Set<string>()
+  return registrations.map((registration) => {
+    if (canonicalIds.has(registration.canonicalId)) {
+      return fail(
+        'duplicate-id',
+        registration.canonicalId,
+        `MoveSpec v2 runtime is registered more than once for ${JSON.stringify(registration.canonicalId)}.`,
+      )
+    }
+    canonicalIds.add(registration.canonicalId)
+
+    const manifestRecord = manifestByCanonicalId.get(registration.canonicalId)
+    if (!manifestRecord) {
+      return fail(
+        'unknown-canonical-id',
+        registration.canonicalId,
+        `MoveSpec registration ${JSON.stringify(registration.canonicalId)} has no semantic manifest row.`,
+      )
+    }
+    const definition = validateMoveSpec(registration.spec, {
+      capabilityIds: manifestRecord.capabilityTags,
+      rulesetVersion: manifestRecord.rulesProvenance,
+    })
+    if (definition.spec.canonicalId !== registration.canonicalId) {
+      return fail(
+        'canonical-id-mismatch',
+        registration.canonicalId,
+        `MoveSpec registration key ${JSON.stringify(registration.canonicalId)} does not match spec canonicalId ${JSON.stringify(definition.spec.canonicalId)}.`,
+      )
+    }
+
+    return Object.freeze({
+      canonicalId: registration.canonicalId,
+      kind: 'movespec-v2' as const,
+      version: definition.spec.version,
+      definitionHash: definition.definitionHash,
+      sourceModule: registration.sourceModule,
+      definition,
+    })
+  })
+}
+
+/**
+ * Build the authoritative dual registry. Both generations may coexist for a
+ * canonical move during migration, but resolution exposes only the exact
+ * version/hash/source selected by the server-owned manifest.
+ */
+export const createMoveAutomationRuntimeRegistry = (
+  options: CreateMoveAutomationRuntimeRegistryOptions,
+): MoveAutomationRuntimeRegistry => {
+  const legacyAdapters = buildLegacyAdapters(options.legacySources ?? [])
+  const moveSpecRuntimes = buildMoveSpecRuntimes(options.manifest, options.moveSpecs ?? [])
+  const allRuntimes: readonly RegisteredMoveAutomationRuntime[] = [
+    ...legacyAdapters,
+    ...moveSpecRuntimes,
+  ]
+
+  validateMoveAutomationRuntimeRegistrations(
+    options.manifest,
+    allRuntimes.map(runtimeRegistrationReference),
+  )
+
+  const legacyByCanonicalId = new Map(
+    legacyAdapters.map(runtime => [runtime.canonicalId, runtime]),
+  )
+  const moveSpecByCanonicalId = new Map(
+    moveSpecRuntimes.map(runtime => [runtime.canonicalId, runtime]),
+  )
+  const selected = new Map<string, RegisteredMoveAutomationRuntime>()
+
+  for (const record of options.manifest.moves) {
+    const runtime = record.runtime.kind === 'legacy-v1'
+      ? legacyByCanonicalId.get(record.canonicalId)
+      : record.runtime.kind === 'movespec-v2'
+        ? moveSpecByCanonicalId.get(record.canonicalId)
+        : undefined
+    if (runtime) selected.set(record.canonicalId, runtime)
+  }
+
+  return Object.freeze({
+    size: selected.size,
+    resolve: (canonicalId: string) => selected.get(canonicalId) ?? null,
+    entries: () => Object.freeze([...selected.values()]),
+  })
+}
+
+/** Native v2 definitions are added here only after their manifest metadata is reviewed. */
+export const REVIEWED_MOVE_SPEC_V2_REGISTRATIONS: readonly MoveSpecV2Registration[] = Object.freeze([])
+
+export const MOVE_AUTOMATION_RUNTIME_REGISTRY = createMoveAutomationRuntimeRegistry({
+  manifest: manifestJson as unknown as MoveAutomationManifest,
+  legacySources: EXPLICIT_MOVE_AUTOMATION_REGISTRY_SOURCES,
+  moveSpecs: REVIEWED_MOVE_SPEC_V2_REGISTRATIONS,
+})
+
+/** No runtime kind is accepted here: clients can identify only the canonical move. */
+export const registeredMoveAutomationRuntimeFor = (
+  canonicalId: string,
+): RegisteredMoveAutomationRuntime | null =>
+  MOVE_AUTOMATION_RUNTIME_REGISTRY.resolve(canonicalId)

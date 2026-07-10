@@ -114,6 +114,26 @@ export interface ExplicitMoveAutomationRegistrySource {
   readonly scripts: ReadonlyMap<string, MoveAutomationScript>
 }
 
+export type ExplicitMoveAutomationRegistryValidationCode =
+  | 'duplicate-id'
+  | 'canonical-id-mismatch'
+
+export class ExplicitMoveAutomationRegistryValidationError extends Error {
+  readonly code: ExplicitMoveAutomationRegistryValidationCode
+  readonly canonicalId: string
+
+  constructor(
+    code: ExplicitMoveAutomationRegistryValidationCode,
+    canonicalId: string,
+    message: string,
+  ) {
+    super(message)
+    this.name = 'ExplicitMoveAutomationRegistryValidationError'
+    this.code = code
+    this.canonicalId = canonicalId
+  }
+}
+
 /**
  * Source ownership for the v1 allow-list. Report tooling reads these same
  * groups so source attribution cannot drift from the runtime registry.
@@ -156,9 +176,34 @@ export const EXPLICIT_MOVE_AUTOMATION_REGISTRY_SOURCES: readonly ExplicitMoveAut
   },
 ])
 
-export const EXPLICIT_MOVE_AUTOMATION_SCRIPTS: ReadonlyMap<string, MoveAutomationScript> = new Map(
-  EXPLICIT_MOVE_AUTOMATION_REGISTRY_SOURCES.flatMap(({ scripts }) => [...scripts]),
-)
+export const createExplicitMoveAutomationScriptRegistry = (
+  sources: readonly ExplicitMoveAutomationRegistrySource[],
+): ReadonlyMap<string, MoveAutomationScript> => {
+  const registry = new Map<string, MoveAutomationScript>()
+  for (const { sourceModule, scripts } of sources) {
+    for (const [canonicalId, script] of scripts) {
+      if (canonicalId !== script.moveName) {
+        throw new ExplicitMoveAutomationRegistryValidationError(
+          'canonical-id-mismatch',
+          canonicalId,
+          `Move automation registry key ${JSON.stringify(canonicalId)} in ${sourceModule} does not match script moveName ${JSON.stringify(script.moveName)}.`,
+        )
+      }
+      if (registry.has(canonicalId)) {
+        throw new ExplicitMoveAutomationRegistryValidationError(
+          'duplicate-id',
+          canonicalId,
+          `Move automation registry contains duplicate canonical ID ${JSON.stringify(canonicalId)}.`,
+        )
+      }
+      registry.set(canonicalId, script)
+    }
+  }
+  return registry
+}
+
+export const EXPLICIT_MOVE_AUTOMATION_SCRIPTS: ReadonlyMap<string, MoveAutomationScript> =
+  createExplicitMoveAutomationScriptRegistry(EXPLICIT_MOVE_AUTOMATION_REGISTRY_SOURCES)
 
 export const moveAutomationCoverage = {
   canonicalMoveCount: moves.length,

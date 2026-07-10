@@ -107,12 +107,17 @@ describe('live play move-resolution intent parsing', () => {
     }))).toContain('too-many-targets')
   })
 
-  it('rejects roll, script, transaction, resolved area and target-count shaped client authority fields', () => {
+  it('rejects roll, script, runtime, transaction, resolved area and target-count shaped client authority fields', () => {
     expect(expectInvalidCodes({
       ...baseIntent({ kind: 'single-target', targetPlacementId: 'target' }),
       accuracyRoll: 20,
       damageRoll: { total: 99 },
       script: { moveName: 'Fake' },
+      runtime: { kind: 'movespec-v2' },
+      runtimeKind: 'movespec-v2',
+      runtimeVersion: 99,
+      spec: { canonicalId: 'Tackle' },
+      specHash: 'client-selected',
       transaction: { hpUpdates: [] },
     })).toEqual(expect.arrayContaining(['forbidden-field']))
 

@@ -66,6 +66,17 @@ class TypeScriptRegistryReader:
         if name in self._map_cache:
             return self._map_cache[name]
 
+        assignment_end = self._assignment_end(name)
+        if assignment_end is not None:
+            builder_match = re.match(
+                r"\s*createExplicitMoveAutomationScriptRegistry\s*\(\s*([A-Z0-9_]+)",
+                self.source[assignment_end:],
+            )
+            if builder_match:
+                values = self.source_group_values(builder_match.group(1))
+                self._map_cache[name] = unique_preserving_order(values)
+                return self._map_cache[name]
+
         array_body, call_body = self._new_map_body(name)
         if call_body is None:
             raise SystemExit(f"Could not find {name} registry")

@@ -3,6 +3,8 @@ import manifestJson from '../../data/move-automation/manifest.json'
 import { moves } from '../../data/ptuReference'
 import {
   EXPLICIT_MOVE_AUTOMATION_SCRIPTS,
+  ExplicitMoveAutomationRegistryValidationError,
+  createExplicitMoveAutomationScriptRegistry,
   explicitScriptForMove,
   moveAutomationCoverage,
   isSeamlessAreaConfirmationScript,
@@ -66,6 +68,32 @@ describe('explicit move automation scripts', () => {
         expect(row.blockerCodes.length).toBeGreaterThan(0)
       }
     }
+  })
+
+  it('rejects duplicate or mismatched canonical IDs instead of silently overwriting scripts', () => {
+    const scratch = EXPLICIT_MOVE_AUTOMATION_SCRIPTS.get('Scratch')!
+    const source = (sourceModule: string, script = scratch) => ({
+      sourceModule,
+      scripts: new Map([[script.moveName, script]]),
+    })
+
+    expect(() => createExplicitMoveAutomationScriptRegistry([
+      source('first.ts'),
+      source('second.ts'),
+    ])).toThrowError(expect.objectContaining({
+      name: ExplicitMoveAutomationRegistryValidationError.name,
+      code: 'duplicate-id',
+      canonicalId: 'Scratch',
+    }))
+
+    expect(() => createExplicitMoveAutomationScriptRegistry([{
+      sourceModule: 'mismatch.ts',
+      scripts: new Map([['Tackle', scratch]]),
+    }])).toThrowError(expect.objectContaining({
+      name: ExplicitMoveAutomationRegistryValidationError.name,
+      code: 'canonical-id-mismatch',
+      canonicalId: 'Tackle',
+    }))
   })
 
   it('keeps representative pre-refactor scripts resolvable', () => {

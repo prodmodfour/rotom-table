@@ -16,6 +16,7 @@ export const MOVE_AUTOMATION_RUNTIME_KINDS = ['unimplemented', 'legacy-v1', 'mov
 export type MoveAutomationBaseStatus = (typeof MOVE_AUTOMATION_BASE_STATUSES)[number]
 export type MoveAutomationInteractionStatus = (typeof MOVE_AUTOMATION_INTERACTION_STATUSES)[number]
 export type MoveAutomationRuntimeKind = (typeof MOVE_AUTOMATION_RUNTIME_KINDS)[number]
+export type MoveAutomationImplementedRuntimeKind = Exclude<MoveAutomationRuntimeKind, 'unimplemented'>
 
 export const MOVE_AUTOMATION_MANIFEST_LIMITS = Object.freeze({
   records: 1024,
@@ -33,6 +34,7 @@ export const MOVE_AUTOMATION_MANIFEST_LIMITS = Object.freeze({
   evidenceClassesPerScenario: 32,
   notApplicableEvidence: 32,
   unsupportedInteractionIds: 64,
+  runtimeRegistrations: 2048,
 })
 
 export interface MoveAutomationRuntimeReference {
@@ -43,6 +45,15 @@ export interface MoveAutomationRuntimeReference {
   readonly definitionHash: string | null
   /** Repository-relative implementation module. Null only for an unimplemented runtime. */
   readonly sourceModule: string | null
+}
+
+/** Evaluated server registration metadata checked against a manifest selection. */
+export interface MoveAutomationRuntimeRegistrationReference {
+  readonly canonicalId: string
+  readonly kind: MoveAutomationImplementedRuntimeKind
+  readonly version: number
+  readonly definitionHash: string
+  readonly sourceModule: string
 }
 
 export interface MoveAutomationRulesProvenanceReference {
@@ -116,6 +127,10 @@ export type MoveAutomationManifestValidationCode =
   | 'missing-conformance-evidence'
   | 'provenance-mismatch'
   | 'invalid-status-combination'
+  | 'duplicate-runtime-registration'
+  | 'unknown-runtime-registration'
+  | 'missing-runtime-registration'
+  | 'runtime-registration-mismatch'
 
 export class MoveAutomationManifestValidationError extends Error {
   readonly code: MoveAutomationManifestValidationCode
@@ -151,6 +166,13 @@ const MOVE_FIELDS = [
   'rolloutCohortId',
 ] as const
 const RUNTIME_FIELDS = ['kind', 'version', 'definitionHash', 'sourceModule'] as const
+const RUNTIME_REGISTRATION_FIELDS = [
+  'canonicalId',
+  'kind',
+  'version',
+  'definitionHash',
+  'sourceModule',
+] as const
 const PROVENANCE_FIELDS = ['rulesetId', 'canonicalizationVersion', 'sourceDataSha256'] as const
 const DEBT_FIELDS = ['code', 'summary'] as const
 const CONFORMANCE_EVIDENCE_FIELDS = ['requirementTags', 'scenarios', 'notApplicable'] as const
@@ -828,4 +850,116 @@ export const parseMoveAutomationManifest = (
     schemaVersion: MOVE_AUTOMATION_MANIFEST_SCHEMA_VERSION,
     moves,
   }
+}
+
+const runtimeRegistrationKey = (
+  canonicalId: string,
+  kind: MoveAutomationImplementedRuntimeKind,
+): string => `${kind}:${canonicalId}`
+
+const parseRuntimeRegistration = (
+  value: unknown,
+  index: number,
+): MoveAutomationRuntimeRegistrationReference => {
+  const path = `runtimeRegistrations[${index}]`
+  const record = parseRecord(value, path)
+  assertExactKeys(record, RUNTIME_REGISTRATION_FIELDS, path)
+  const kind = record.kind === 'legacy-v1' || record.kind === 'movespec-v2'
+    ? record.kind
+    : fail(
+        'invalid-manifest',
+        `${path}.kind`,
+        'must identify an implemented move runtime.',
+      )
+  return {
+    canonicalId: parseBoundedText(
+      record.canonicalId,
+      `${path}.canonicalId`,
+      MOVE_AUTOMATION_MANIFEST_LIMITS.identifierLength,
+    ),
+    kind,
+    version: parsePositiveVersion(record.version, `${path}.version`),
+    definitionHash: parseSha256(record.definitionHash, `${path}.definitionHash`),
+    sourceModule: parseBoundedText(
+      record.sourceModule,
+      `${path}.sourceModule`,
+      MOVE_AUTOMATION_MANIFEST_LIMITS.sourceModuleLength,
+    ),
+  }
+}
+
+/**
+ * Validate evaluated server registrations against the manifest-owned runtime
+ * selection. A canonical move may retain one v1 and one v2 implementation
+ * during migration, but duplicate registrations of the same runtime kind are
+ * rejected and only the exact manifest-selected definition is authoritative.
+ */
+export const validateMoveAutomationRuntimeRegistrations = (
+  manifest: MoveAutomationManifest,
+  value: unknown,
+): readonly MoveAutomationRuntimeRegistrationReference[] => {
+  const registrations = parseBoundedArray(
+    value,
+    'runtimeRegistrations',
+    MOVE_AUTOMATION_MANIFEST_LIMITS.runtimeRegistrations,
+  ).map(parseRuntimeRegistration)
+
+  const manifestByCanonicalId = new Map<string, MoveAutomationManifestRecord>()
+  manifest.moves.forEach((record) => {
+    if (manifestByCanonicalId.has(record.canonicalId)) {
+      fail(
+        'duplicate-move',
+        'manifest.moves',
+        `contains duplicate canonical move ${record.canonicalId}.`,
+      )
+    }
+    manifestByCanonicalId.set(record.canonicalId, record)
+  })
+
+  const registrationByKey = new Map<string, MoveAutomationRuntimeRegistrationReference>()
+  registrations.forEach((registration, index) => {
+    const path = `runtimeRegistrations[${index}]`
+    if (!manifestByCanonicalId.has(registration.canonicalId)) {
+      fail(
+        'unknown-runtime-registration',
+        `${path}.canonicalId`,
+        `${registration.canonicalId} has no semantic manifest row.`,
+      )
+    }
+    const key = runtimeRegistrationKey(registration.canonicalId, registration.kind)
+    if (registrationByKey.has(key)) {
+      fail(
+        'duplicate-runtime-registration',
+        `${path}.canonicalId`,
+        `${registration.kind} is registered more than once for ${registration.canonicalId}.`,
+      )
+    }
+    registrationByKey.set(key, registration)
+  })
+
+  manifest.moves.forEach((record, index) => {
+    if (record.runtime.kind === 'unimplemented') return
+    const path = `moves[${index}].runtime`
+    const registration = registrationByKey.get(runtimeRegistrationKey(
+      record.canonicalId,
+      record.runtime.kind,
+    )) ?? fail(
+      'missing-runtime-registration',
+      path,
+      `${record.canonicalId} has no reviewed ${record.runtime.kind} server registration.`,
+    )
+    if (
+      registration.version !== record.runtime.version
+      || registration.definitionHash !== record.runtime.definitionHash
+      || registration.sourceModule !== record.runtime.sourceModule
+    ) {
+      fail(
+        'runtime-registration-mismatch',
+        path,
+        `${record.canonicalId} must match the registered version, definition hash, and source module exactly.`,
+      )
+    }
+  })
+
+  return registrations
 }
