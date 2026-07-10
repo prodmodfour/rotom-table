@@ -628,7 +628,7 @@ Status: DONE
 
 ## MA-043 — Differential-test v1 planning
 
-Status: TODO
+Status: DONE
 
 **Depends on:** MA-042
 **Commit:** `test(move-automation): compare legacy and typed plans`
