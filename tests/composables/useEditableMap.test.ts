@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { MAP_API_PATHS } from '~/utils/apiRoutes'
 import { useEditableMap } from '~/composables/useEditableMap'
 import { MAP_INTERACTION_MODES, type MapInteractionMode } from '#shared/mapInteractionMode'
+import { createEmptyEncounterState } from '#shared/moveAutomation/encounterState'
 import { LIVE_PLAY_COMMAND_SCHEMA_VERSION, LIVE_PLAY_COMMAND_TYPES, LIVE_PLAY_PATCH_TYPES } from '#shared/livePlayCommands'
 import { LIVE_PLAY_REALTIME_EVENT_TYPES, type RealtimeEvent } from '#shared/realtime'
 import type { LivePlayLocalPrediction } from '~/utils/livePlayPredictions'
@@ -271,6 +272,68 @@ describe('useEditableMap autosave boundary', () => {
       clientId: 'map-client',
       interactionMode: 'setup-edit',
     })
+  })
+
+  it('autosaves encounter side and placement assignments with the loaded revision', async () => {
+    apiMocks.getJson.mockResolvedValueOnce({
+      map: mapFixture({ revision: 7, encounterState: createEmptyEncounterState() }),
+    })
+    const editable = useEditableMap('arena-map', { debounceMs: 10, interactionMode: setupEditMode() })
+    await flushPromises()
+
+    editable.map.value!.encounterState = {
+      ...createEmptyEncounterState(),
+      sides: { heroes: { id: 'heroes', label: 'Heroes', status: 'active' } },
+    }
+    editable.map.value!.placements[0]!.sideId = 'heroes'
+    await nextTick()
+    await vi.advanceTimersByTimeAsync(10)
+    await flushPromises()
+
+    expect(apiMocks.postJson).toHaveBeenCalledWith(MAP_API_PATHS.save, {
+      slug: 'arena-map',
+      map: expect.objectContaining({
+        revision: 7,
+        encounterState: expect.objectContaining({
+          sides: { heroes: { id: 'heroes', label: 'Heroes', status: 'active' } },
+        }),
+        placements: [expect.objectContaining({ id: 'token-pikachu', sideId: 'heroes' })],
+      }),
+      expectedRevision: 7,
+      clientId: 'map-client',
+      interactionMode: 'setup-edit',
+    })
+  })
+
+  it('adopts authoritative setup/edit encounter sides without echo-saving stale local state', async () => {
+    const editable = useEditableMap('arena-map', { debounceMs: 10, interactionMode: setupEditMode() })
+    await flushPromises()
+
+    editable.applyPersistedMap(mapFixture({
+      revision: 2,
+      encounterState: {
+        ...createEmptyEncounterState(),
+        sides: {
+          heroes: { id: 'heroes', label: 'Heroes', status: 'active' },
+          rivals: { id: 'rivals', label: 'Rivals', status: 'active' },
+        },
+      },
+      placements: [{
+        ...mapFixture().placements[0]!,
+        sideId: 'heroes',
+      }],
+    }))
+    await nextTick()
+    await vi.advanceTimersByTimeAsync(10)
+    await flushPromises()
+
+    expect(editable.map.value?.encounterState?.sides).toEqual({
+      heroes: { id: 'heroes', label: 'Heroes', status: 'active' },
+      rivals: { id: 'rivals', label: 'Rivals', status: 'active' },
+    })
+    expect(editable.map.value?.placements[0]?.sideId).toBe('heroes')
+    expect(editable.mapRevision.value).toBe(2)
+    expect(apiMocks.postJson).not.toHaveBeenCalled()
   })
 
   it('adopts authoritative setup/edit shop interface replacements', async () => {

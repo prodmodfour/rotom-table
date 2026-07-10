@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import MapAdminCombatLogControl from '~/components/map/MapAdminCombatLogControl.vue'
+import MapAdminEncounterSidesControl from '~/components/map/MapAdminEncounterSidesControl.vue'
 import MapAdminGroundLevelControl from '~/components/map/MapAdminGroundLevelControl.vue'
 import MapAdminHeader from '~/components/map/MapAdminHeader.vue'
 import MapAdminModeControl from '~/components/map/MapAdminModeControl.vue'
@@ -8,12 +9,18 @@ import MapAdminShopInterfacesControl from '~/components/map/MapAdminShopInterfac
 import MapAdminYSummary from '~/components/map/MapAdminYSummary.vue'
 import MapVisibilityToggle from '~/components/map/MapVisibilityToggle.vue'
 import type { MapInteractionMode } from '#shared/mapInteractionMode'
-import type { MapShopInterface } from '~/types/map'
+import type { EncounterSide, EncounterSideStatus } from '#shared/moveAutomation/encounterState'
+import type { MapShopInterface, SheetPlacement } from '~/types/map'
 import type { ShopTableDocument } from '~/types/shop'
 import type {
   MapShopInterfacePatch,
   MapShopInterfaceShopListStatus,
 } from '~/composables/map-editor/useMapShopInterfaces'
+import type {
+  MapEncounterSideAssignmentInput,
+  MapEncounterSideCreateInput,
+  MapEncounterSidePatch,
+} from '~/composables/map-editor/useMapEncounterSides'
 
 defineProps<{
   groundLevelYMax: number
@@ -26,6 +33,10 @@ defineProps<{
   interactionModeBusy?: boolean
   interactionModeError?: string | null
   setupEditActive?: boolean
+  encounterSides: readonly EncounterSide[]
+  placements: readonly SheetPlacement[]
+  selectedPlacementId?: string | null
+  encounterSideError?: string | null
   shopInterfaces: readonly MapShopInterface[]
   shops: readonly ShopTableDocument[]
   shopListStatus?: MapShopInterfaceShopListStatus
@@ -38,6 +49,11 @@ const emit = defineEmits<{
   (event: 'update-player-visible', value: boolean): void
   (event: 'clear-combat-log'): void
   (event: 'set-interaction-mode', value: MapInteractionMode): void
+  (event: 'create-encounter-side', input: MapEncounterSideCreateInput): void
+  (event: 'update-encounter-side', id: string, patch: MapEncounterSidePatch): void
+  (event: 'set-encounter-side-status', id: string, status: EncounterSideStatus): void
+  (event: 'assign-encounter-side', input: MapEncounterSideAssignmentInput): void
+  (event: 'clear-encounter-side-error'): void
   (event: 'reload-shops'): void
   (event: 'add-shop-interface', shopSlug: string): void
   (event: 'remove-shop-interface', id: string): void
@@ -55,6 +71,19 @@ const emit = defineEmits<{
       :busy="interactionModeBusy"
       :error="interactionModeError"
       @set-interaction-mode="emit('set-interaction-mode', $event)"
+    />
+
+    <MapAdminEncounterSidesControl
+      :sides="encounterSides"
+      :placements="placements"
+      :selected-placement-id="selectedPlacementId"
+      :error="encounterSideError"
+      :disabled="!setupEditActive"
+      @create-side="emit('create-encounter-side', $event)"
+      @update-side="(id, patch) => emit('update-encounter-side', id, patch)"
+      @set-side-status="(id, status) => emit('set-encounter-side-status', id, status)"
+      @assign-placements="emit('assign-encounter-side', $event)"
+      @clear-error="emit('clear-encounter-side-error')"
     />
 
     <MapVisibilityToggle

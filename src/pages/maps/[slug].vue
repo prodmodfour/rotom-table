@@ -52,6 +52,7 @@ import {
   useMapDimensionReconciliation,
 } from '~/composables/map-editor/useMapDimensions'
 import { useMapEditorUiState } from '~/composables/map-editor/useMapEditorUiState'
+import { useMapEncounterSides } from '~/composables/map-editor/useMapEncounterSides'
 import { useMapShopInterfaces } from '~/composables/map-editor/useMapShopInterfaces'
 import { useMapTokenNavigation } from '~/composables/map-editor/useMapTokenNavigation'
 import { useAbilityAutomationPanel } from '~/composables/map-editor/useAbilityAutomationPanel'
@@ -2564,6 +2565,19 @@ const sharedMapInteractionModeBusy = computed(() => (
 ))
 const setupEditActiveForGm = computed(() => isSetupEditMode())
 const {
+  encounterSides,
+  encounterSideError,
+  addEncounterSide,
+  updateEncounterSide,
+  setEncounterSideStatus,
+  assignPlacementsToEncounterSide,
+  clearEncounterSideError,
+} = useMapEncounterSides({
+  map,
+  isGm,
+  setupEditActive: setupEditActiveForGm,
+})
+const {
   shopOptions: mapShopInterfaceShopOptions,
   shopListStatus: mapShopInterfaceShopListStatus,
   shopListErrorMessage: mapShopInterfaceShopListErrorMessage,
@@ -2922,6 +2936,10 @@ useMapDimensionReconciliation({
         :interaction-mode-busy="sharedMapInteractionModeBusy"
         :interaction-mode-error="sharedMapInteractionModeError"
         :setup-edit-active="setupEditActiveForGm"
+        :encounter-sides="encounterSides"
+        :placements="map.placements"
+        :selected-placement-id="selectedId"
+        :encounter-side-error="encounterSideError"
         :shop-interfaces="mapShopInterfaces"
         :shops="mapShopInterfaceShopOptions"
         :shop-list-status="mapShopInterfaceShopListStatus"
@@ -2931,6 +2949,11 @@ useMapDimensionReconciliation({
         @update-player-visible="setMapPlayerVisibleFromAdmin"
         @clear-combat-log="clearCombatLogFromAdmin"
         @set-interaction-mode="setMapInteractionModeFromAdmin"
+        @create-encounter-side="addEncounterSide"
+        @update-encounter-side="updateEncounterSide"
+        @set-encounter-side-status="setEncounterSideStatus"
+        @assign-encounter-side="assignPlacementsToEncounterSide"
+        @clear-encounter-side-error="clearEncounterSideError"
         @reload-shops="loadMapShopInterfaceShopOptions"
         @add-shop-interface="addMapShopInterface"
         @update-shop-interface="updateMapShopInterface"

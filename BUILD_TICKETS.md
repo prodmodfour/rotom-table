@@ -715,7 +715,7 @@ Status: DONE
 
 ## MA-053 — Add setup controls for sides
 
-Status: TODO
+Status: DONE
 
 **Depends on:** MA-052
 **Commit:** `feat(move-automation): edit encounter sides in map setup`

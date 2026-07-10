@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { MAP_INTERACTION_MODES } from '../../shared/mapInteractionMode'
+import { createEmptyEncounterState } from '../../shared/moveAutomation/encounterState'
 import type { TabletopMap } from '~/types/map'
 import { openRotomDatabase, type RotomDatabase } from '../../server/storage/database'
 import { createSqliteMapRepository } from '../../server/storage/mapRepository'
@@ -227,6 +228,69 @@ describe('save map use case', () => {
     expect(maps.getBySlug('arena')).toMatchObject({ name: 'Arena', revision: 2 })
     expect(realtime.cursorState().latestSequence).toBe(0)
     expect(publish).not.toHaveBeenCalled()
+  })
+
+  it('persists encounter side assignments with CAS and rejects a stale setup overwrite', () => {
+    const database = db()
+    const maps = createSqliteMapRepository<TabletopMap>(database)
+    const realtime = createSqliteRealtimeEventRepository({ database })
+    maps.saveSetupMap(mapDoc({
+      revision: 4,
+      placements: [{
+        id: 'token-pikachu',
+        sheetKind: 'pokemon',
+        sheetSlug: 'pikachu',
+        position: { x: 1, y: 0, z: 1 },
+      }],
+    }))
+
+    const assignedMap = mapDoc({
+      encounterState: {
+        ...createEmptyEncounterState(),
+        sides: {
+          heroes: { id: 'heroes', label: 'Heroes', status: 'active' },
+          rivals: { id: 'rivals', label: 'Rivals', status: 'active' },
+        },
+      },
+      placements: [{
+        id: 'token-pikachu',
+        sheetKind: 'pokemon',
+        sheetSlug: 'pikachu',
+        position: { x: 1, y: 0, z: 1 },
+        sideId: 'heroes',
+      }],
+    })
+    const result = saveMapUseCase({
+      role: 'gm',
+      slug: 'arena',
+      map: assignedMap,
+      expectedRevision: 4,
+      interactionMode: MAP_INTERACTION_MODES.SETUP_EDIT,
+    }, { database, mapRepository: maps, realtimeEventRepository: realtime, now: () => 500 })
+
+    expect(result.map.revision).toBe(5)
+    expect(result.map.encounterState?.sides).toEqual(assignedMap.encounterState?.sides)
+    expect(result.map.placements[0]?.sideId).toBe('heroes')
+
+    expect(() => saveMapUseCase({
+      role: 'gm',
+      slug: 'arena',
+      map: {
+        ...assignedMap,
+        encounterState: {
+          ...assignedMap.encounterState!,
+          sides: {
+            ...assignedMap.encounterState!.sides,
+            heroes: { id: 'heroes', label: 'Stale Rename', status: 'active' },
+          },
+        },
+      },
+      expectedRevision: 4,
+      interactionMode: MAP_INTERACTION_MODES.SETUP_EDIT,
+    }, { database, mapRepository: maps, realtimeEventRepository: realtime })).toThrow(SaveMapUseCaseError)
+
+    expect(maps.getBySlug('arena')?.encounterState?.sides.heroes?.label).toBe('Heroes')
+    expect(maps.getBySlug('arena')?.placements[0]?.sideId).toBe('heroes')
   })
 
   it('clears old live operation history after setup edits', () => {

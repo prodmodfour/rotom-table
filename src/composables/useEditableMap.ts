@@ -313,6 +313,7 @@ export const useEditableMap = (
     assignIfChanged(target, 'activeScene', next.activeScene)
     assignIfChanged(target, 'temporaryHitPoints', next.temporaryHitPoints)
     assignIfChanged(target, 'moveUsage', next.moveUsage)
+    assignIfChanged(target, 'encounterState', next.encounterState)
     assignIfChanged(target, 'metadata', next.metadata)
     assignIfChanged(target, 'createdAt', next.createdAt)
     assignIfChanged(target, 'updatedAt', next.updatedAt)
