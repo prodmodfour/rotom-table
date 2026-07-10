@@ -780,7 +780,7 @@ Status: DONE
 
 ## MA-058 — Add typed condition effect compatibility
 
-Status: TODO
+Status: DONE
 
 **Depends on:** MA-056, MA-040
 **Commit:** `refactor(move-automation): bridge sheet conditions to typed effects`

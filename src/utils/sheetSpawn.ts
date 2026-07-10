@@ -17,7 +17,11 @@ import { pokemonCatalog, pokemonCatalogBySpecies } from '~~/data/pokemonCatalog'
 import { trainerCatalog } from '~~/data/trainerCatalog'
 import { COMBAT_STAT_STAGE_KEYS, normalizeCombatStages } from '~/utils/combatStages'
 import { scaleTrainerSpriteToSheetHeight } from '~/utils/trainerSpriteScaling'
-import { mergeLegacyConditions } from '~/utils/statusConditions'
+import { normalizeConditionNames } from '~/utils/statusConditions'
+import {
+  pokemonSheetConditionNames,
+  trainerSheetConditionNames,
+} from '~/utils/sheetConditions'
 import { clampHpValue, normalizeInjuryCount } from '~/utils/ptuHp'
 import { parseSkillDiceRankValue } from '~/utils/skillRanks'
 import {
@@ -147,8 +151,14 @@ export const catalogEntryForTrainerSheet = (
 }
 
 /** Pokémon HP + offence/defence + type/airborne-capability snapshot. Max HP is derived and injury-adjusted. */
+export interface SheetSnapshotConditionOptions {
+  /** Effective-condition override; omission reads only the persistent sheet layer. */
+  readonly conditions?: readonly unknown[]
+}
+
 export const pokemonHpSnapshot = (
   sheet: CharacterSheet,
+  options: SheetSnapshotConditionOptions = {},
 ): {
   currentHp: number
   maxHp: number
@@ -195,7 +205,9 @@ export const pokemonHpSnapshot = (
     spd: sheet.stats?.spd?.stage,
     acc: sheet.combatStages?.acc,
   })
-  const conditions = mergeLegacyConditions(sheet.combat?.conditions, sheet.combat?.statusAfflictions)
+  const conditions = options.conditions === undefined
+    ? pokemonSheetConditionNames(sheet)
+    : normalizeConditionNames(options.conditions)
   const skillRows = resolveSkills(sheet)
   const activeTrainingFeature = normalizePokemonTrainingFeatureName(sheet.activeTrainingFeature) ?? undefined
   const accuracyRollBonus = pokemonTrainingFeatureAccuracyRollBonus(activeTrainingFeature)
@@ -233,6 +245,7 @@ export const pokemonHpSnapshot = (
 /** Trainer HP + offence/defence + airborne-capability snapshot. Max HP is derived and injury-adjusted; trainers have no defending types. */
 export const trainerHpSnapshot = (
   sheet: TrainerSheet,
+  options: SheetSnapshotConditionOptions = {},
 ): {
   currentHp: number
   maxHp: number
@@ -269,7 +282,9 @@ export const trainerHpSnapshot = (
     COMBAT_STAT_STAGE_KEYS.map((key) => [key, sheet.stats?.[key]?.stage ?? sheet.combatStages?.[key]]),
   )
   const combatStages = normalizeCombatStages({ ...stageSource, acc: sheet.combatStages?.acc })
-  const conditions = mergeLegacyConditions(sheet.conditions, sheet.statusAfflictions)
+  const conditions = options.conditions === undefined
+    ? trainerSheetConditionNames(sheet)
+    : normalizeConditionNames(options.conditions)
   const skillRows = resolveTrainerSkills(sheet)
   const movementCapabilities = movementCapabilitiesFromRows(
     capabilityRows,

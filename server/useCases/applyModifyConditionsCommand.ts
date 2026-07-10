@@ -31,16 +31,14 @@ import {
   type ModifyConditionsCommand,
   type ModifyConditionsCommandPayload,
 } from '#shared/sessionTableActionCommands'
-import type { CharacterSheet } from '~/types/characterSheet'
 import type { SheetKind, SheetPlacement, TabletopMapV2 } from '~/types/map'
-import type { TrainerSheet } from '~/types/trainerSheet'
 import {
   applyConditionsToSheet,
   toPersistableSheetPayload,
   type AnyLiveSheet,
 } from '~/utils/sheetMutations'
 import { toNextRevisionSheetPayload } from '~/utils/sheets/persistence'
-import { pokemonHpSnapshot, trainerHpSnapshot } from '~/utils/sheetSpawn'
+import { sheetConditionNames } from '~/utils/sheetConditions'
 import { normalizeConditionNames } from '~/utils/statusConditions'
 import { assertSessionHostEnabled, type SessionHostRuntimeEnv } from '../utils/sessionHosting'
 import {
@@ -244,12 +242,9 @@ const cloneConditionsValueState = (
 const conditionsSnapshotForSheet = (
   kind: SheetKind,
   sheet: AnyLiveSheet,
-): ModifyConditionsValueState => {
-  const snapshot = kind === 'pokemon'
-    ? pokemonHpSnapshot(sheet as CharacterSheet)
-    : trainerHpSnapshot(sheet as TrainerSheet)
-  return cloneConditionsValueState(snapshot.conditions)
-}
+): ModifyConditionsValueState => cloneConditionsValueState(
+  sheetConditionNames(kind, sheet),
+)
 
 const conditionIdentityKey = (condition: string): string => condition.trim().toLocaleLowerCase()
 

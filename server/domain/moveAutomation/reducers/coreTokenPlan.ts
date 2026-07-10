@@ -13,6 +13,7 @@ import {
 import { normalizeCombatStages } from '~/utils/combatStages'
 import { normalizeConditionNames } from '~/utils/statusConditions'
 import { deepCloneJson, sameJsonValue } from '~/utils/serialization'
+import { sheetConditionNames } from '~/utils/sheetConditions'
 import {
   applyCombatStagesToSheet,
   applyConditionsToSheet,
@@ -155,7 +156,7 @@ const projectRecipientSheet = (options: {
   ))
   const conditionsChanged = Boolean(options.conditionUpdate && !sameJsonValue(
     normalizeConditionNames(options.conditionUpdate.conditions),
-    normalizeConditionNames(token.conditions),
+    sheetConditionNames(recipient.sheet.kind, recipient.sheet.sheet),
   ))
   const stagesChanged = Boolean(options.stageUpdate && !sameJsonValue(
     normalizeCombatStages(options.stageUpdate.stages),

@@ -40,6 +40,7 @@ import {
 } from '~/utils/moveAutomationTargetResolution'
 import { accuracyRollMeetsMoveThreshold } from '~/utils/moveAutomationThresholds'
 import { conditionBaseName, normalizeConditionNames } from '~/utils/statusConditions'
+import { tokenSheetConditionNames } from '~/utils/sheetConditions'
 import { ELECTRIC_RESISTANT_COAT_CONDITION } from '~/utils/moveAutomationSpecialConditions'
 import { moveAutomationMoveImmunitySource } from '~/utils/moveAutomationMoveImmunity'
 import { moveAutomationRecoilImmunitySource } from '~/utils/moveAutomationRecoil'
@@ -257,7 +258,7 @@ export const buildMoveAutomationTransaction = ({
     const action = suggestion.action ?? 'add'
     if (action === 'add') return true
 
-    const current = normalizeConditionNames(token.conditions)
+    const current = tokenSheetConditionNames(token)
     if (action === 'clear') return current.length > 0
 
     const removals = normalizeConditionNames([suggestion.condition])

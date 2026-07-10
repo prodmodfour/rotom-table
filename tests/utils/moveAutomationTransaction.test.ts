@@ -166,6 +166,36 @@ describe('move automation transaction helpers', () => {
     ]))
   })
 
+  it('does not flatten encounter-projected conditions into persistent updates', () => {
+    const target = token({
+      id: 't',
+      species: 'Target',
+      sheetConditions: ['Burned'],
+      conditions: ['Burned', 'Sleep'],
+    })
+    const s = script({
+      damaging: false,
+      requiresAccuracy: false,
+      conditionSuggestions: [{
+        recipient: 'target',
+        condition: 'Poisoned',
+        label: 'Poison target',
+      }],
+    })
+
+    const transaction = automationTransaction(s, {
+      targets: [target],
+      enabledSuggestions: enabledSuggestionFlags(s, 'condition', [0]),
+    })
+
+    expect(transaction.conditionUpdates).toEqual([{
+      id: 't',
+      conditions: ['Burned', 'Poisoned'],
+    }])
+    expect(target.conditions).toEqual(['Burned', 'Sleep'])
+    expect(target.sheetConditions).toEqual(['Burned'])
+  })
+
   it('emits enumerable attacked and hit target ids through structured and JSON clones', () => {
     const user = token({ id: 'u', species: 'Caster' })
     const hitTarget = token({ id: 'hit', species: 'Hit Target' })

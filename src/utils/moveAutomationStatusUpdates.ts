@@ -6,6 +6,7 @@ import {
 } from '~/utils/conditionApplication'
 import { addCombatStageDeltas } from '~/utils/moveAutomationDialog'
 import { normalizeConditionNames } from '~/utils/statusConditions'
+import { tokenSheetConditionNames } from '~/utils/sheetConditions'
 import type { CombatStageKey, CombatStageMap } from '~/types/combatStages'
 import type {
   MoveAutomationCombatStageUpdate,
@@ -36,7 +37,7 @@ const conditionListForToken = (
   const existing = updates.get(token.id)
   if (existing) return existing
 
-  const conditions = normalizeConditionNames(token.conditions)
+  const conditions = tokenSheetConditionNames(token)
   updates.set(token.id, conditions)
   return conditions
 }
@@ -53,7 +54,7 @@ export const createMoveAutomationConditionUpdateAccumulator = (): MoveAutomation
   const conditionById = new Map<string, string[]>()
 
   return {
-    get: token => [...(conditionById.get(token.id) ?? normalizeConditionNames(token.conditions))],
+    get: token => [...(conditionById.get(token.id) ?? tokenSheetConditionNames(token))],
     set: (token, conditions) => {
       setConditionListForToken(conditionById, token, [...conditions])
     },

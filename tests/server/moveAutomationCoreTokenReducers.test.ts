@@ -12,6 +12,7 @@ import {
   type MoveResolutionAuditTrace,
   type MoveResolutionTraceJsonValue,
 } from '#shared/moveAutomation/trace'
+import { createEmptyEncounterState } from '#shared/moveAutomation/encounterState'
 import {
   buildAuthoritativeMoveRulesContext,
 } from '~~/server/domain/moveAutomation/context'
@@ -30,6 +31,7 @@ import {
 import type { CharacterSheet } from '~/types/characterSheet'
 import type { SheetPlacement, TabletopMap } from '~/types/map'
 import type { TrainerSheet } from '~/types/trainerSheet'
+import { conditionEncounterEffectFixture } from '../fixtures/moveAutomation/encounterEffects'
 
 const placement = (id: string, sheetSlug: string, x: number): SheetPlacement => ({
   id,
@@ -84,8 +86,8 @@ const intent = (): ResolveMoveIntent => ({
   selection: { kind: 'single-target', targetPlacementId: 'target-token' },
 })
 
-const buildContext = () => buildAuthoritativeMoveRulesContext({
-  map: mapFixture(),
+const buildContext = (map: TabletopMap = mapFixture()) => buildAuthoritativeMoveRulesContext({
+  map,
   pokemonSheets: new Map([
     ['actor', pokemonSheet('actor')],
     ['target', pokemonSheet('target', {
@@ -400,6 +402,49 @@ describe('MoveSpec core token effect reducers', () => {
     expect(current.combat?.conditions).toEqual([])
     expect(current.stats?.atk?.stage).toBe(0)
     expect(current.combatStages?.acc).toBe(0)
+  })
+
+  it('keeps effective encounter conditions out of persistent sheet reductions', () => {
+    const sleepEffect = conditionEncounterEffectFixture()
+    const map = mapFixture()
+    map.encounterState = {
+      ...createEmptyEncounterState(),
+      effects: [sleepEffect],
+    }
+    const context = buildContext(map)
+    const applyPersistentSleep = emission(operation('operation.persist-sleep', 'condition', {
+      action: 'apply',
+      conditionId: 'sleep',
+    }))
+
+    expect(context.queries.tokens.get('target-token')).toMatchObject({
+      sheetConditions: ['Burned'],
+      conditions: ['Burned', 'Sleep'],
+    })
+
+    const result = reduceMoveCoreTokenEffects({
+      context,
+      operations: [applyPersistentSleep],
+      dynamicRecipients: dynamicRecipients(),
+      immunities: createStandardMoveCoreTokenEffectImmunityQueries({ moveType: 'Normal' }),
+      trace: traceFor([applyPersistentSleep]),
+    })
+
+    expect(result.operationResults[0]).toMatchObject({
+      outcome: 'applied',
+      recipients: [{
+        previous: { kind: 'conditions', conditions: ['Burned'] },
+        current: { kind: 'conditions', conditions: ['Burned', 'Sleep'] },
+      }],
+    })
+    expect(result.stateChanges.changes.map(change => change.kind)).toEqual(['sheet-state'])
+    const sheetChange = result.stateChanges.groups.sheets[0]?.changes[0]
+    if (sheetChange?.kind !== 'sheet-state') throw new Error('Expected sheet state change')
+    expect((sheetChange.current as CharacterSheet).combat?.conditions).toEqual([
+      'Burned',
+      'Sleep',
+    ])
+    expect(context.map.encounterState?.effects).toEqual([sleepEffect])
   })
 
   it('records type immunity and full-HP healing as a no-op plan', () => {

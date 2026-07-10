@@ -2,6 +2,7 @@ import type { CombatStageMap } from '~/types/combatStages'
 import type { SpawnedPokemon } from '~/types/pokemon'
 import { COMBAT_STAGE_KEYS, clampCombatStage, normalizeCombatStages } from '~/utils/combatStages'
 import { normalizeConditionNames } from '~/utils/statusConditions'
+import { tokenSheetConditionNames } from '~/utils/sheetConditions'
 
 export interface CombatStagesDialogState {
   id: string
@@ -20,7 +21,10 @@ export interface ConditionsDialogState {
 }
 
 type CombatDialogPokemon = Pick<SpawnedPokemon, 'id' | 'species' | 'combatStages' | 'accentColor'>
-type ConditionsDialogPokemon = Pick<SpawnedPokemon, 'id' | 'species' | 'conditions' | 'accentColor'>
+type ConditionsDialogPokemon = Pick<
+  SpawnedPokemon,
+  'id' | 'species' | 'conditions' | 'sheetConditions' | 'accentColor'
+>
 
 export const createCombatStagesDialogState = (
   pokemon: CombatDialogPokemon,
@@ -58,7 +62,7 @@ export const formatCombatStage = (value: unknown): string => {
 export const createConditionsDialogState = (
   pokemon: ConditionsDialogPokemon,
 ): ConditionsDialogState => {
-  const conditions = normalizeConditionNames(pokemon.conditions)
+  const conditions = tokenSheetConditionNames(pokemon)
   return {
     id: pokemon.id,
     species: pokemon.species,
@@ -85,5 +89,5 @@ export const updateConditionsDialogFromPokemon = (
   ...dialog,
   species: pokemon.species,
   accentColor: pokemon.accentColor,
-  originalConditions: normalizeConditionNames(pokemon.conditions),
+  originalConditions: tokenSheetConditionNames(pokemon),
 })

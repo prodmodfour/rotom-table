@@ -87,6 +87,25 @@ describe('isometric condition dialog helpers', () => {
     expect(isConditionsDialogChanged(dialog)).toBe(true)
   })
 
+  it('edits only persistent sheet conditions when encounter effects are projected', () => {
+    const dialog = createConditionsDialogState(pokemon({
+      sheetConditions: ['Burned'],
+      conditions: ['Burned', 'Sleep'],
+    }))
+
+    expect(dialog.originalConditions).toEqual(['Burned'])
+    expect(dialog.conditions).toEqual(['Burned'])
+
+    dialog.conditions = ['Poisoned']
+    expect(updateConditionsDialogFromPokemon(dialog, pokemon({
+      sheetConditions: ['Burned', 'Paralysis'],
+      conditions: ['Burned', 'Paralysis', 'Sleep'],
+    }))).toMatchObject({
+      originalConditions: ['Burned', 'Paralysis'],
+      conditions: ['Poisoned'],
+    })
+  })
+
   it('syncs live condition metadata without overwriting the in-progress edit', () => {
     const dialog = createConditionsDialogState(pokemon())
     dialog.conditions = ['Burned']

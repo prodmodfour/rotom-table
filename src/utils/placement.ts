@@ -23,6 +23,11 @@ import {
   tokenFacingStoresLegacyTurned,
 } from '~/utils/tokenFacing'
 import { temporaryHpForPlacement } from '~/utils/mapTemporaryHitPoints'
+import { projectEffectiveConditions } from '~/utils/encounterConditions'
+import {
+  pokemonSheetConditionNames,
+  trainerSheetConditionNames,
+} from '~/utils/sheetConditions'
 import type { CharacterSheet } from '~/types/characterSheet'
 import type { SheetPlacement, TabletopMap } from '~/types/map'
 import type { SpawnedPokemon } from '~/types/pokemon'
@@ -32,6 +37,28 @@ export interface SheetLookup {
   pokemon: Map<string, CharacterSheet>
   trainer: Map<string, TrainerSheet>
 }
+
+type PlacementConditionMap = Pick<
+  TabletopMap,
+  'activeScene' | 'temporaryHitPoints' | 'encounterState'
+>
+
+const effectiveConditionsForPlacement = (
+  placement: SheetPlacement,
+  footprint: { readonly base: number; readonly clearance: number },
+  sheetConditions: readonly string[],
+  map: PlacementConditionMap | null | undefined,
+): readonly string[] => projectEffectiveConditions({
+  sheetConditions,
+  encounterEffects: map?.encounterState?.effects,
+  target: {
+    placementId: placement.id,
+    ...(placement.sideId === undefined ? {} : { sideId: placement.sideId }),
+    position: placement.position,
+    base: footprint.base,
+    clearance: footprint.clearance,
+  },
+}).conditions
 
 export type UnresolvedPlacementReason = 'missing-sheet' | 'missing-catalog'
 
@@ -112,7 +139,7 @@ export const unresolvedPlacementReferences = (
 export const placementToSpawned = (
   placement: SheetPlacement,
   sheets: SheetLookup,
-  map?: Pick<TabletopMap, 'activeScene' | 'temporaryHitPoints'> | null,
+  map?: PlacementConditionMap | null,
 ): SpawnedPokemon | null => {
   const temporaryHp = temporaryHpForPlacement(map, placement.id)
   const facing = tokenFacingForPlacement(placement)
@@ -123,7 +150,14 @@ export const placementToSpawned = (
     if (!sheet) return null
     const catalog = catalogEntryForPokemonSheet(sheet)
     if (!catalog) return null
-    const hp = pokemonHpSnapshot(sheet)
+    const sheetConditions = pokemonSheetConditionNames(sheet)
+    const conditions = effectiveConditionsForPlacement(
+      placement,
+      catalog,
+      sheetConditions,
+      map,
+    )
+    const hp = pokemonHpSnapshot(sheet, { conditions })
     const abilityNames = pokemonTokenAbilityNames(sheet)
     const accentColor = trainerAccentColorForPokemonSlug(sheets.trainer.values(), sheet.slug)
     return {
@@ -160,6 +194,7 @@ export const placementToSpawned = (
       combatSkillRankValue: hp.combatSkillRankValue,
       focusSkillRankValue: hp.focusSkillRankValue,
       combatStages: hp.combatStages,
+      sheetConditions,
       conditions: hp.conditions,
       tokenItems: pokemonHeldItemNames(sheet),
     }
@@ -168,7 +203,14 @@ export const placementToSpawned = (
   if (!sheet) return null
   const catalog = catalogEntryForTrainerSheet(sheet)
   if (!catalog) return null
-  const hp = trainerHpSnapshot(sheet)
+  const sheetConditions = trainerSheetConditionNames(sheet)
+  const conditions = effectiveConditionsForPlacement(
+    placement,
+    catalog,
+    sheetConditions,
+    map,
+  )
+  const hp = trainerHpSnapshot(sheet, { conditions })
   const abilityNames = trainerTokenAbilityNames(sheet)
   const accentColor = normalizeTrainerAccentColor(sheet.accentColor)
   return {
@@ -201,6 +243,7 @@ export const placementToSpawned = (
     combatSkillRankValue: hp.combatSkillRankValue,
     focusSkillRankValue: hp.focusSkillRankValue,
     combatStages: hp.combatStages,
+    sheetConditions,
     conditions: hp.conditions,
     tokenItems: trainerEquippedItemNames(sheet),
   }

@@ -9,6 +9,7 @@ import {
   normalizeConditionNames,
 } from '~/utils/statusConditions'
 import { sameJsonValue } from '~/utils/serialization'
+import { sheetConditionNames } from '~/utils/sheetConditions'
 import type {
   MoveCoreConditionStateSnapshot,
   MoveCoreTokenEffectImmunityQueries,
@@ -28,10 +29,21 @@ export class MoveCoreConditionReductionError extends Error {
 const conditionSnapshot = (
   accumulator: MoveAutomationConditionUpdateAccumulator,
   recipient: MoveCoreTokenEffectRecipient,
-): MoveCoreConditionStateSnapshot => ({
-  kind: 'conditions',
-  conditions: normalizeConditionNames(accumulator.get(recipient.token)),
-})
+): MoveCoreConditionStateSnapshot => {
+  // Spawned tokens expose the effective sheet + encounter projection. Persistent
+  // condition operations must seed their accumulator from the sheet layer only,
+  // otherwise a timed encounter effect could be flattened into a sheet write.
+  const persistentConditions = sheetConditionNames(recipient.sheet.kind, recipient.sheet.sheet)
+  const sheetOwnedToken = {
+    ...recipient.token,
+    sheetConditions: persistentConditions,
+    conditions: persistentConditions,
+  }
+  return {
+    kind: 'conditions',
+    conditions: normalizeConditionNames(accumulator.get(sheetOwnedToken)),
+  }
+}
 
 export const reduceConditionEffectForRecipient = (options: {
   readonly operation: MoveConditionEffectOperation
