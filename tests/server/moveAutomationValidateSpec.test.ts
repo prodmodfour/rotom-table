@@ -14,6 +14,9 @@ import {
   MoveSpecValidationError,
 } from '#shared/moveAutomation/spec'
 import {
+  createRegisteredMoveHandlerRegistry,
+} from '~~/server/domain/moveAutomation/handlers/registry'
+import {
   DEFAULT_MOVE_SPEC_RULESET_VERSION,
   MOVE_SPEC_DEFINITION_HASH_VERSION,
   MoveSpecDefinitionValidationError,
@@ -366,6 +369,36 @@ describe('authoritative MoveSpec validation and hashing', () => {
         canonicalizationVersion: DEFAULT_MOVE_SPEC_RULESET_VERSION.canonicalizationVersion + 1,
       },
     }).definitionHash).not.toBe(baseline.definitionHash)
+  })
+
+  it('rejects unknown handlers and binds registered handler versions into the hash', () => {
+    const spec = validSpec()
+    spec.registeredHandlerId = 'move.contextual-damage'
+
+    expectDefinitionError(
+      () => validateMoveSpec(spec),
+      'unknown-handler',
+      'spec.registeredHandlerId',
+    )
+
+    const registryAt = (version: number) => createRegisteredMoveHandlerRegistry([{
+      id: 'move.contextual-damage',
+      version,
+      run: () => ({ operations: [], traceEntries: [] }),
+    }])
+    const versionOne = validateMoveSpec(spec, { handlerRegistry: registryAt(1) })
+    const versionTwo = validateMoveSpec(spec, { handlerRegistry: registryAt(2) })
+
+    expect(versionOne.registeredHandler).toEqual({
+      id: 'move.contextual-damage',
+      version: 1,
+    })
+    expect(JSON.parse(versionOne.canonicalJson)).toMatchObject({
+      registeredHandler: { id: 'move.contextual-damage', version: 1 },
+      spec: { registeredHandlerId: 'move.contextual-damage' },
+    })
+    expect(versionTwo.registeredHandler?.version).toBe(2)
+    expect(versionTwo.definitionHash).not.toBe(versionOne.definitionHash)
   })
 
   it('rejects unknown selector, predicate, operation, and phase IDs', () => {

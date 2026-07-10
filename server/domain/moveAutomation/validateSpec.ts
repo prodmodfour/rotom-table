@@ -33,6 +33,11 @@ import {
   type MoveSpecTargetingKind,
 } from '#shared/moveAutomation/spec'
 import {
+  REGISTERED_MOVE_HANDLER_REGISTRY,
+  type RegisteredMoveHandlerReference,
+  type RegisteredMoveHandlerRegistry,
+} from './handlers/registry'
+import {
   stableJsonStringify,
   type StableJsonStringifyOptions,
 } from './stableJson'
@@ -87,12 +92,15 @@ export interface ValidateMoveSpecOptions {
   /** Dependency injection seam for catalog validation tests and migrations. */
   readonly knownCapabilityIds?: ReadonlySet<string>
   readonly rulesetVersion?: MoveSpecRulesetVersion
+  /** Server-owned handler metadata; callbacks never enter the spec or hash material. */
+  readonly handlerRegistry?: RegisteredMoveHandlerRegistry
 }
 
 export interface ValidatedMoveSpecDefinition {
   readonly spec: ValidatedMoveSpec
   readonly capabilityIds: readonly string[]
   readonly rulesetVersion: MoveSpecRulesetVersion
+  readonly registeredHandler: RegisteredMoveHandlerReference | null
   /** Canonical hash material, including hash format and ruleset provenance. */
   readonly canonicalJson: string
   readonly definitionHash: string
@@ -107,6 +115,7 @@ export type MoveSpecDefinitionValidationCode =
   | 'unknown-reference'
   | 'invalid-reference-order'
   | 'unknown-capability'
+  | 'unknown-handler'
 
 export class MoveSpecDefinitionValidationError extends Error {
   readonly code: MoveSpecDefinitionValidationCode
@@ -386,19 +395,7 @@ const parseRules = (spec: MoveSpec): Pick<
 const parseOperations = (
   spec: MoveSpec,
 ): readonly ValidatedMoveSpecPhaseBlock[] => {
-  const operationCount = spec.phases.reduce(
-    (total, phaseBlock) => total + phaseBlock.operations.length,
-    0,
-  )
-  if (operationCount > MOVE_SPEC_DEFINITION_LIMITS.operations) {
-    fail(
-      'limit-exceeded',
-      'spec.phases',
-      `must contain at most ${MOVE_SPEC_DEFINITION_LIMITS.operations} operations in total.`,
-    )
-  }
-
-  return spec.phases.map((phaseBlock, phaseIndex) => ({
+  const phases = spec.phases.map((phaseBlock, phaseIndex) => ({
     phase: phaseBlock.phase,
     operations: phaseBlock.operations.map((operation, operationIndex) => {
       const path = `spec.phases[${phaseIndex}].operations[${operationIndex}]`
@@ -413,28 +410,41 @@ const parseOperations = (
       return parsed
     }),
   }))
+  validateMoveSpecOperationSequence(phases.flatMap((phaseBlock, phaseIndex) => (
+    phaseBlock.operations.map((operation, operationIndex) => ({
+      operation,
+      path: `spec.phases[${phaseIndex}].operations[${operationIndex}]`,
+    }))
+  )))
+  return phases
 }
 
-interface IndexedOperation {
+export interface MoveSpecOperationSequenceEntry {
   readonly operation: MoveEffectOperation
-  readonly index: number
   readonly path: string
 }
 
-const assertUniqueLocalIdsAndReferences = (
-  phases: readonly ValidatedMoveSpecPhaseBlock[],
-): void => {
-  const indexed: IndexedOperation[] = []
-  phases.forEach((phaseBlock, phaseIndex) => {
-    phaseBlock.operations.forEach((operation, operationIndex) => {
-      indexed.push({
-        operation,
-        index: indexed.length,
-        path: `spec.phases[${phaseIndex}].operations[${operationIndex}]`,
-      })
-    })
-  })
+interface IndexedOperation extends MoveSpecOperationSequenceEntry {
+  readonly index: number
+}
 
+/**
+ * Validate aggregate bounds, identities, and backward references for the exact
+ * operation order an interpreter will execute. Handler output is checked with
+ * this same boundary after it is merged with static spec operations.
+ */
+export const validateMoveSpecOperationSequence = (
+  entries: readonly MoveSpecOperationSequenceEntry[],
+  aggregatePath = 'spec.phases',
+): void => {
+  if (entries.length > MOVE_SPEC_DEFINITION_LIMITS.operations) {
+    fail(
+      'limit-exceeded',
+      aggregatePath,
+      `must contain at most ${MOVE_SPEC_DEFINITION_LIMITS.operations} operations in total.`,
+    )
+  }
+  const indexed: IndexedOperation[] = entries.map((entry, index) => ({ ...entry, index }))
   const operationIndexById = new Map<string, number>()
   const rollIndexById = new Map<string, number>()
   const requestIndexById = new Map<string, number>()
@@ -535,7 +545,6 @@ const normalizeSpec = (input: unknown): ValidatedMoveSpec => {
   const spec = parseMoveSpec(applyMoveSpecDefaultsAndPhaseOrder(detached))
   const rules = parseRules(spec)
   const phases = parseOperations(spec)
-  assertUniqueLocalIdsAndReferences(phases)
 
   return deepFreeze({
     schemaVersion: spec.schemaVersion,
@@ -569,16 +578,31 @@ export const validateMoveSpec = (
   const rulesetVersion = normalizeRulesetVersion(
     options.rulesetVersion ?? DEFAULT_MOVE_SPEC_RULESET_VERSION,
   )
+  const handlerRegistry = options.handlerRegistry ?? REGISTERED_MOVE_HANDLER_REGISTRY
+  const registeredHandler = spec.registeredHandlerId === null
+    ? null
+    : handlerRegistry.resolve(spec.registeredHandlerId)
+  if (spec.registeredHandlerId !== null && registeredHandler === null) {
+    fail(
+      'unknown-handler',
+      'spec.registeredHandlerId',
+      `registered handler ${spec.registeredHandlerId} does not exist.`,
+    )
+  }
+  const registeredHandlerReference: RegisteredMoveHandlerReference | null = registeredHandler
+    ? Object.freeze({ id: registeredHandler.id, version: registeredHandler.version })
+    : null
   const canonicalJson = stableJsonStringify({
     definitionHashVersion: MOVE_SPEC_DEFINITION_HASH_VERSION,
     rulesetVersion,
     capabilityIds,
+    ...(registeredHandlerReference ? { registeredHandler: registeredHandlerReference } : {}),
     spec,
   }, {
     path: 'moveSpecDefinition',
     limits: {
       maxDepth: MOVE_SPEC_LIMITS.jsonDepth + 2,
-      maxNodes: MOVE_SPEC_LIMITS.jsonNodes + MOVE_SPEC_DEFINITION_LIMITS.capabilityIds + 16,
+      maxNodes: MOVE_SPEC_LIMITS.jsonNodes + MOVE_SPEC_DEFINITION_LIMITS.capabilityIds + 18,
       maxObjectFields: MOVE_SPEC_LIMITS.jsonObjectFields,
       maxArrayEntries: MOVE_SPEC_LIMITS.jsonArrayEntries,
       maxStringLength: MOVE_SPEC_LIMITS.jsonStringLength,
@@ -590,6 +614,7 @@ export const validateMoveSpec = (
     spec,
     capabilityIds,
     rulesetVersion,
+    registeredHandler: registeredHandlerReference,
     canonicalJson,
     definitionHash,
   })

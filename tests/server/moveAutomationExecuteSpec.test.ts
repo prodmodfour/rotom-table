@@ -12,6 +12,11 @@ import {
   executeMoveSpec,
 } from '~~/server/domain/moveAutomation/executeSpec'
 import {
+  RegisteredMoveHandlerOutputValidationError,
+  createRegisteredMoveHandlerRegistry,
+  type RegisteredMoveHandlerRegistry,
+} from '~~/server/domain/moveAutomation/handlers/registry'
+import {
   createFiniteAuthoritativeMoveRandomStream,
   type AuthoritativeMoveRandomDrawStream,
 } from '~~/server/domain/moveAutomation/random'
@@ -172,7 +177,10 @@ const baseSpec = (): TestSpec => ({
   },
 })
 
-const definitionFor = (spec: TestSpec): ValidatedMoveSpecDefinition => validateMoveSpec(spec)
+const definitionFor = (
+  spec: TestSpec,
+  handlerRegistry?: RegisteredMoveHandlerRegistry,
+): ValidatedMoveSpecDefinition => validateMoveSpec(spec, { handlerRegistry })
 
 const traceEventsOfKind = <Kind extends string>(
   result: ReturnType<typeof executeMoveSpec>,
@@ -443,7 +451,113 @@ describe('phased MoveSpec interpreter', () => {
     expect(context.map).toEqual(mapBefore)
   })
 
-  it('fails closed before phases for costs, registered handlers, and unsupported expressions', () => {
+  it('runs a version-pinned pure handler through the same operation and trace interpreter', () => {
+    let receivedContextKeys: readonly string[] = []
+    const handlerRegistry = createRegisteredMoveHandlerRegistry([{
+      id: 'move.contextual-log',
+      version: 4,
+      run: (context) => {
+        receivedContextKeys = Object.keys(context).sort()
+        expect(Object.isFrozen(context)).toBe(true)
+        expect(Object.isFrozen(context.map)).toBe(true)
+        expect('random' in context).toBe(false)
+        expect('time' in context).toBe(false)
+        expect('idFactory' in context).toBe(false)
+        context.reads.recordPlacement(context.actor.placement)
+        return {
+          operations: [logOperation('handler.contextual-log', 'hit', 'actor')],
+          traceEntries: [{
+            kind: 'predicate',
+            phase: 'hit',
+            predicateId: 'handler.contextual-calculation',
+            outcome: true,
+            reasonCode: 'handler.contextual-calculation-passed',
+            input: { actorLevel: context.actor.token.level },
+          }],
+        }
+      },
+    }])
+    const spec = baseSpec()
+    spec.registeredHandlerId = 'move.contextual-log'
+    const definition = definitionFor(spec, handlerRegistry)
+    const context = buildContext()
+    const originalNow = Date.now
+    const originalRandom = Math.random
+    Date.now = () => { throw new Error('handler execution used an ambient clock') }
+    Math.random = () => { throw new Error('handler execution used ambient randomness') }
+    let result: ReturnType<typeof executeMoveSpec>
+    try {
+      result = executeMoveSpec({ definition, context, handlerRegistry })
+    }
+    finally {
+      Date.now = originalNow
+      Math.random = originalRandom
+    }
+
+    expect(result.kind).toBe('complete')
+    expect(definition.registeredHandler).toEqual({ id: 'move.contextual-log', version: 4 })
+    expect(receivedContextKeys).toEqual([
+      'actor',
+      'candidatePlacements',
+      'intent',
+      'map',
+      'queries',
+      'reads',
+      'resolvedSheets',
+      'ruleset',
+      'selectedPlacements',
+    ])
+    expect(result.operations).toEqual([{
+      operation: logOperation('handler.contextual-log', 'hit', 'actor'),
+      recipientIds: ['actor-token'],
+    }])
+    expect(result.sheetReads).toEqual([
+      { kind: 'pokemon', slug: 'actor', revision: 3 },
+    ])
+    expect(traceEventsOfKind(result, 'phase-transition')).toEqual([
+      expect.objectContaining({ kind: 'phase-transition', to: 'hit' }),
+    ])
+    expect(traceEventsOfKind(result, 'predicate')).toEqual([
+      expect.objectContaining({
+        predicateId: 'handler.contextual-calculation',
+        outcome: true,
+        reasonCode: 'handler.contextual-calculation-passed',
+      }),
+    ])
+    expect(traceEventsOfKind(result, 'operation')).toEqual([
+      expect.objectContaining({ operationId: 'handler.contextual-log', outcome: 'applied' }),
+    ])
+  })
+
+  it('enforces one combined operation budget before handler operations can run', () => {
+    const handlerRegistry = createRegisteredMoveHandlerRegistry([{
+      id: 'move.oversized-handler',
+      version: 1,
+      run: () => ({
+        operations: Array.from({ length: 128 }, (_, index) =>
+          logOperation(`handler.log-${index}`, 'hit')),
+        traceEntries: [],
+      }),
+    }])
+    const spec = baseSpec()
+    spec.registeredHandlerId = 'move.oversized-handler'
+    spec.phases = [{
+      phase: 'declare',
+      operations: [logOperation('spec.declared', 'declare')],
+    }]
+
+    expect(() => executeMoveSpec({
+      definition: definitionFor(spec, handlerRegistry),
+      context: buildContext(),
+      handlerRegistry,
+    })).toThrowError(expect.objectContaining({
+      name: RegisteredMoveHandlerOutputValidationError.name,
+      code: 'limit-exceeded',
+      path: 'handlerOutput.operations',
+    }))
+  })
+
+  it('fails closed before phases for costs and unsupported expressions', () => {
     const context = buildContext()
 
     const withCost = baseSpec()
@@ -452,14 +566,6 @@ describe('phased MoveSpec interpreter', () => {
       .toThrowError(expect.objectContaining({
         name: MoveSpecExecutionError.name,
         code: 'cost-unsupported',
-      }))
-
-    const withHandler = baseSpec()
-    withHandler.registeredHandlerId = 'handler.test'
-    expect(() => executeMoveSpec({ definition: definitionFor(withHandler), context: buildContext() }))
-      .toThrowError(expect.objectContaining({
-        name: MoveSpecExecutionError.name,
-        code: 'registered-handler-unsupported',
       }))
 
     const withExpression = baseSpec()

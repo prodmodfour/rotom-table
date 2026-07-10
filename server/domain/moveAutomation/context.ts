@@ -24,6 +24,7 @@ import {
 import { createMoveAutomationScriptFromMoveData } from '~/utils/moveAutomationDerived'
 import { placementToSpawned, type SheetLookup } from '~/utils/placement'
 import { deepCloneJson } from '~/utils/serialization'
+import type { RegisteredMoveHandlerRegistry } from './handlers/registry'
 import {
   MOVE_AUTOMATION_RUNTIME_REGISTRY,
   type MoveAutomationRuntimeRegistry,
@@ -136,6 +137,8 @@ export interface AuthoritativeMoveRulesContext {
   readonly selectedPlacements: readonly SheetPlacement[]
   readonly resolvedSheets: readonly AuthoritativeMoveResolvedSheet[]
   readonly ruleset: MoveRulesetProvenance
+  /** Audited lookup used by the interpreter; never exposed to a handler callback. */
+  readonly handlerRegistry: RegisteredMoveHandlerRegistry
   /** Server-owned bounded random requests and their immutable resolution ledger. */
   readonly random: AuthoritativeMoveRandom
   /** One captured server time for the whole pure resolution. */
@@ -446,10 +449,8 @@ export const buildAuthoritativeMoveRulesContext = (
   const selectedPlacements = placementList(selectedIds, placementById)
 
   const legacyScripts = legacyScriptSnapshots(input.legacyScripts ?? EXPLICIT_MOVE_AUTOMATION_SCRIPTS)
-  const runtimes = runtimeSnapshots(
-    input.runtimeRegistry ?? MOVE_AUTOMATION_RUNTIME_REGISTRY,
-    legacyScripts,
-  )
+  const runtimeRegistry = input.runtimeRegistry ?? MOVE_AUTOMATION_RUNTIME_REGISTRY
+  const runtimes = runtimeSnapshots(runtimeRegistry, legacyScripts)
   const semanticStatuses = semanticStatusSnapshots([
     intent.moveName,
     ...legacyScripts.keys(),
@@ -560,6 +561,7 @@ export const buildAuthoritativeMoveRulesContext = (
     selectedPlacements,
     resolvedSheets,
     ruleset,
+    handlerRegistry: runtimeRegistry.handlerRegistry,
     random,
     time: input.time,
     idFactory: input.idFactory ?? createDefaultIdFactory(

@@ -9,6 +9,10 @@ import {
   EXPLICIT_MOVE_AUTOMATION_REGISTRY_SOURCES,
   type ExplicitMoveAutomationRegistrySource,
 } from '~/utils/move-automation/registry'
+import {
+  REGISTERED_MOVE_HANDLER_REGISTRY,
+  type RegisteredMoveHandlerRegistry,
+} from './handlers/registry'
 import { hashLegacyMoveAutomationDefinition } from './legacyV1Definition'
 import {
   validateMoveSpec,
@@ -40,6 +44,8 @@ export interface MoveSpecV2Registration {
 
 export interface MoveAutomationRuntimeRegistry {
   readonly size: number
+  /** Exact audited handlers used while validating these runtime definitions. */
+  readonly handlerRegistry: RegisteredMoveHandlerRegistry
   /** Resolve only the runtime selected by server-owned semantic manifest metadata. */
   resolve(canonicalId: string): RegisteredMoveAutomationRuntime | null
   entries(): readonly RegisteredMoveAutomationRuntime[]
@@ -70,6 +76,7 @@ export interface CreateMoveAutomationRuntimeRegistryOptions {
   readonly manifest: MoveAutomationManifest
   readonly legacySources?: readonly ExplicitMoveAutomationRegistrySource[]
   readonly moveSpecs?: readonly MoveSpecV2Registration[]
+  readonly handlerRegistry?: RegisteredMoveHandlerRegistry
 }
 
 const fail = (
@@ -128,6 +135,7 @@ const buildLegacyAdapters = (
 const buildMoveSpecRuntimes = (
   manifest: MoveAutomationManifest,
   registrations: readonly MoveSpecV2Registration[],
+  handlerRegistry: RegisteredMoveHandlerRegistry,
 ): readonly MoveSpecV2Runtime[] => {
   const manifestByCanonicalId = new Map(
     manifest.moves.map(record => [record.canonicalId, record]),
@@ -154,6 +162,7 @@ const buildMoveSpecRuntimes = (
     const definition = validateMoveSpec(registration.spec, {
       capabilityIds: manifestRecord.capabilityTags,
       rulesetVersion: manifestRecord.rulesProvenance,
+      handlerRegistry,
     })
     if (definition.spec.canonicalId !== registration.canonicalId) {
       return fail(
@@ -182,8 +191,13 @@ const buildMoveSpecRuntimes = (
 export const createMoveAutomationRuntimeRegistry = (
   options: CreateMoveAutomationRuntimeRegistryOptions,
 ): MoveAutomationRuntimeRegistry => {
+  const handlerRegistry = options.handlerRegistry ?? REGISTERED_MOVE_HANDLER_REGISTRY
   const legacyAdapters = buildLegacyAdapters(options.legacySources ?? [])
-  const moveSpecRuntimes = buildMoveSpecRuntimes(options.manifest, options.moveSpecs ?? [])
+  const moveSpecRuntimes = buildMoveSpecRuntimes(
+    options.manifest,
+    options.moveSpecs ?? [],
+    handlerRegistry,
+  )
   const allRuntimes: readonly RegisteredMoveAutomationRuntime[] = [
     ...legacyAdapters,
     ...moveSpecRuntimes,
@@ -213,6 +227,7 @@ export const createMoveAutomationRuntimeRegistry = (
 
   return Object.freeze({
     size: selected.size,
+    handlerRegistry,
     resolve: (canonicalId: string) => selected.get(canonicalId) ?? null,
     entries: () => Object.freeze([...selected.values()]),
   })

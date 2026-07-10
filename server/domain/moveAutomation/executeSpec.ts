@@ -1,4 +1,5 @@
 import {
+  MOVE_EFFECT_OPERATION_LIMITS,
   type MoveChoiceRequestEffectOperation,
   type MoveDamageEffectOperation,
   type MoveEffectOperation,
@@ -38,11 +39,19 @@ import type {
   AuthoritativeMoveSheetRead,
 } from './context'
 import {
+  REGISTERED_MOVE_HANDLER_REGISTRY,
+  executeRegisteredMoveHandler,
+  type RegisteredMoveHandlerOutput,
+  type RegisteredMoveHandlerRegistry,
+  type RegisteredMoveHandlerTraceEntry,
+} from './handlers/registry'
+import {
   createMoveResolutionTrace,
   reduceMoveResolutionTrace,
 } from './trace'
 import {
   validateMoveSpec,
+  validateMoveSpecOperationSequence,
   type ValidatedMoveSpec,
   type ValidatedMoveSpecDefinition,
 } from './validateSpec'
@@ -50,7 +59,6 @@ import {
 export type MoveSpecExecutionErrorCode =
   | 'definition-integrity-mismatch'
   | 'ruleset-mismatch'
-  | 'registered-handler-unsupported'
   | 'cost-unsupported'
   | 'expression-unsupported'
   | 'comparison-type-mismatch'
@@ -158,6 +166,8 @@ export interface ExecuteMoveSpecInput {
   /** Server-derived geometry recipients; this field never comes from move intent. */
   readonly authoritativeTargetIds?: readonly string[]
   readonly ancestry?: readonly MoveResolutionTraceAncestryEntry[]
+  /** Test/migration seam; production resolves only the audited global registry. */
+  readonly handlerRegistry?: RegisteredMoveHandlerRegistry
 }
 
 interface MoveSpecSelectorState {
@@ -208,10 +218,12 @@ const rulesetMatchesContext = (
  */
 const executableDefinition = (
   input: ExecuteMoveSpecInput,
+  handlerRegistry: RegisteredMoveHandlerRegistry,
 ): ValidatedMoveSpecDefinition => {
   const validated = validateMoveSpec(input.definition.spec, {
     capabilityIds: input.definition.capabilityIds,
     rulesetVersion: input.definition.rulesetVersion,
+    handlerRegistry,
   })
   if (
     validated.definitionHash !== input.definition.definitionHash
@@ -254,13 +266,10 @@ const assertPredicateSupported = (predicate: MovePredicate): void => {
 }
 
 /** Fail closed for capability families whose semantics arrive in later tickets. */
-const assertSkeletonExecutable = (spec: ValidatedMoveSpec): void => {
-  if (spec.registeredHandlerId !== null) {
-    fail(
-      'registered-handler-unsupported',
-      `Registered handler ${spec.registeredHandlerId} cannot execute before the bounded handler registry is available.`,
-    )
-  }
+const assertSkeletonExecutable = (
+  spec: ValidatedMoveSpec,
+  operations: readonly MoveEffectOperation[],
+): void => {
   if (spec.costs.length > 0) {
     fail(
       'cost-unsupported',
@@ -270,14 +279,12 @@ const assertSkeletonExecutable = (spec: ValidatedMoveSpec): void => {
   for (const precondition of spec.preconditions) {
     assertPredicateSupported(precondition.predicate)
   }
-  for (const block of spec.phases) {
-    for (const operation of block.operations) {
-      if (operation.kind === 'roll' && operation.payload.formula.kind === 'table') {
-        fail(
-          'random-table-unsupported',
-          `Roll ${operation.payload.rollId} refers to a reviewed table that is not available to the skeleton interpreter.`,
-        )
-      }
+  for (const operation of operations) {
+    if (operation.kind === 'roll' && operation.payload.formula.kind === 'table') {
+      fail(
+        'random-table-unsupported',
+        `Roll ${operation.payload.rollId} refers to a reviewed table that is not available to the skeleton interpreter.`,
+      )
     }
   }
 }
@@ -642,12 +649,14 @@ const latestLedgerEntry = (
 ): MoveAutomationRollLedgerEntry => context.random.snapshot().at(-1)
   ?? fail('definition-integrity-mismatch', `Roll ${rollId} did not produce a ledger entry.`)
 
-const accuracyReferenceIds = (spec: ValidatedMoveSpec): ReadonlySet<string> => new Set(
-  spec.phases.flatMap(block => block.operations.flatMap(operation => (
+const accuracyReferenceIds = (
+  operations: readonly MoveEffectOperation[],
+): ReadonlySet<string> => new Set(
+  operations.flatMap(operation => (
     operation.kind === 'damage' && operation.payload.accuracyRollId !== null
       ? [operation.payload.accuracyRollId]
       : []
-  ))),
+  )),
 )
 
 const damageRollFormula = (
@@ -682,6 +691,111 @@ const terminalBase = (
   trace,
 })
 
+interface ExecutableMoveSpecOperationEntry {
+  readonly operation: MoveEffectOperation
+  readonly path: string
+}
+
+interface ExecutableMoveSpecProgram {
+  readonly operations: readonly MoveEffectOperation[]
+  readonly operationsByPhase: ReadonlyMap<MoveSpecPhase, readonly MoveEffectOperation[]>
+  readonly handlerTraceEntriesByPhase: ReadonlyMap<
+    MoveSpecPhase,
+    readonly RegisteredMoveHandlerTraceEntry[]
+  >
+}
+
+const staticOperationEntries = (
+  spec: ValidatedMoveSpec,
+): readonly ExecutableMoveSpecOperationEntry[] => spec.phases.flatMap((block, phaseIndex) => (
+  block.operations.map((operation, operationIndex) => ({
+    operation,
+    path: `spec.phases[${phaseIndex}].operations[${operationIndex}]`,
+  }))
+))
+
+const handlerOutputFor = (
+  definition: ValidatedMoveSpecDefinition,
+  context: AuthoritativeMoveRulesContext,
+  handlerRegistry: RegisteredMoveHandlerRegistry,
+  staticOperationCount: number,
+): RegisteredMoveHandlerOutput => {
+  const reference = definition.registeredHandler
+  if (reference === null) {
+    return Object.freeze({
+      operations: Object.freeze([]),
+      traceEntries: Object.freeze([]),
+    })
+  }
+  const registration = handlerRegistry.resolve(reference.id)
+  if (!registration) {
+    return fail(
+      'definition-integrity-mismatch',
+      `Registered handler ${reference.id} disappeared after MoveSpec validation.`,
+    )
+  }
+  return executeRegisteredMoveHandler({
+    registration,
+    expectedVersion: reference.version,
+    context,
+    maximumOperations: MOVE_EFFECT_OPERATION_LIMITS.operations - staticOperationCount,
+  })
+}
+
+const executableProgram = (
+  definition: ValidatedMoveSpecDefinition,
+  context: AuthoritativeMoveRulesContext,
+  handlerRegistry: RegisteredMoveHandlerRegistry,
+): ExecutableMoveSpecProgram => {
+  const staticEntries = staticOperationEntries(definition.spec)
+  assertSkeletonExecutable(
+    definition.spec,
+    staticEntries.map(({ operation }) => operation),
+  )
+  const handlerOutput = handlerOutputFor(
+    definition,
+    context,
+    handlerRegistry,
+    staticEntries.length,
+  )
+  const handlerEntries = handlerOutput.operations.map((operation, index) => ({
+    operation,
+    path: `handlerOutput.operations[${index}]`,
+  }))
+  const entriesByPhase = new Map<MoveSpecPhase, ExecutableMoveSpecOperationEntry[]>()
+  for (const phase of MOVE_SPEC_PHASES) {
+    const entries = [
+      ...staticEntries.filter(entry => entry.operation.phase === phase),
+      ...handlerEntries.filter(entry => entry.operation.phase === phase),
+    ]
+    if (entries.length > 0) entriesByPhase.set(phase, entries)
+  }
+  const orderedEntries = MOVE_SPEC_PHASES.flatMap(phase => entriesByPhase.get(phase) ?? [])
+  validateMoveSpecOperationSequence(orderedEntries, 'moveSpecExecution.operations')
+  const operations = Object.freeze(orderedEntries.map(({ operation }) => operation))
+  assertSkeletonExecutable(definition.spec, operations)
+
+  const handlerTraceEntriesByPhase = new Map<
+    MoveSpecPhase,
+    readonly RegisteredMoveHandlerTraceEntry[]
+  >()
+  for (const phase of MOVE_SPEC_PHASES) {
+    const entries = handlerOutput.traceEntries.filter(entry => entry.phase === phase)
+    if (entries.length > 0) handlerTraceEntriesByPhase.set(phase, Object.freeze(entries))
+  }
+
+  return Object.freeze({
+    operations,
+    operationsByPhase: new Map(
+      [...entriesByPhase].map(([phase, entries]) => [
+        phase,
+        Object.freeze(entries.map(({ operation }) => operation)),
+      ]),
+    ),
+    handlerTraceEntriesByPhase,
+  })
+}
+
 /**
  * Execute one reviewed MoveSpec against an immutable authoritative snapshot.
  * This layer emits typed operations only; repositories and state reducers are
@@ -690,12 +804,13 @@ const terminalBase = (
 export const executeMoveSpec = (
   input: ExecuteMoveSpecInput,
 ): MoveSpecExecutionResult => {
-  const definition = executableDefinition(input)
+  const handlerRegistry = input.handlerRegistry ?? REGISTERED_MOVE_HANDLER_REGISTRY
+  const definition = executableDefinition(input, handlerRegistry)
   const { spec } = definition
-  assertSkeletonExecutable(spec)
+  const program = executableProgram(definition, input.context, handlerRegistry)
 
-  const phaseBlocks = new Map(spec.phases.map(block => [block.phase, block]))
-  const activePhases = new Set<MoveSpecPhase>(phaseBlocks.keys())
+  const activePhases = new Set<MoveSpecPhase>(program.operationsByPhase.keys())
+  for (const phase of program.handlerTraceEntriesByPhase.keys()) activePhases.add(phase)
   if (spec.preconditions.length > 0) activePhases.add('precondition')
   if (
     spec.targeting.kind !== 'none'
@@ -727,7 +842,7 @@ export const executeMoveSpec = (
   const faintedTargetIds: readonly string[] = []
   const operations: MoveSpecEmittedOperation[] = []
   const resolvedRolls: MoveSpecResolvedRoll[] = []
-  const referencedAccuracyRollIds = accuracyReferenceIds(spec)
+  const referencedAccuracyRollIds = accuracyReferenceIds(program.operations)
   let mechanics: MoveSpecAuthoritativeMoveMechanics | null = null
   const getMechanics = (): MoveSpecAuthoritativeMoveMechanics => (
     mechanics ??= authoritativeMoveMechanics(input.context, spec.canonicalId)
@@ -829,7 +944,11 @@ export const executeMoveSpec = (
       }
     }
 
-    for (const operation of phaseBlocks.get(phase)?.operations ?? []) {
+    for (const handlerTraceEntry of program.handlerTraceEntriesByPhase.get(phase) ?? []) {
+      trace = reduceMoveResolutionTrace(trace, handlerTraceEntry)
+    }
+
+    for (const operation of program.operationsByPhase.get(phase) ?? []) {
       const selectorState: MoveSpecSelectorState = {
         targetIds,
         hitTargetIds,

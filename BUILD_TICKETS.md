@@ -654,7 +654,7 @@ Status: DONE
 
 ## MA-045 — Add a registered-handler escape hatch
 
-Status: TODO
+Status: DONE
 
 **Depends on:** MA-038
 **Commit:** `feat(move-automation): add bounded registered move handlers`

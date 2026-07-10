@@ -317,6 +317,7 @@ export const resolveImmediateMoveSpec = (options: {
     definition: options.runtime.definition,
     context: options.context,
     authoritativeTargetIds: options.authoritativeTargetIds,
+    handlerRegistry: options.context.handlerRegistry,
   })
   if (execution.kind === 'rejected') {
     return fail(
