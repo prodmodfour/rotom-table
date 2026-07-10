@@ -5,6 +5,7 @@ import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { describe, expect, it } from 'vitest'
 import manifestJson from '../../data/move-automation/manifest.json'
+import { EXPLICIT_MOVE_AUTOMATION_SCRIPTS } from '../../src/utils/move-automation/registry'
 
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), '../..')
 
@@ -12,6 +13,25 @@ type MutableManifest = {
   schemaVersion: number
   moves: Array<Record<string, any>>
 }
+
+type ManifestRows = MutableManifest['moves']
+
+const baseStatusCounts = (moves: ManifestRows) => ({
+  complete: moves.filter(({ baseStatus }) => baseStatus === 'complete').length,
+  assisted: moves.filter(({ baseStatus }) => baseStatus === 'assisted').length,
+  blocked: moves.filter(({ baseStatus }) => baseStatus === 'blocked').length,
+})
+
+const runtimeCounts = (moves: ManifestRows) => ({
+  'legacy-v1': moves.filter(({ runtime }) => runtime.kind === 'legacy-v1').length,
+  'movespec-v2': moves.filter(({ runtime }) => runtime.kind === 'movespec-v2').length,
+  unimplemented: moves.filter(({ runtime }) => runtime.kind === 'unimplemented').length,
+})
+
+const manifestMoveCount = manifestJson.moves.length
+const currentBaseStatusCounts = baseStatusCounts(manifestJson.moves)
+const currentRuntimeCounts = runtimeCounts(manifestJson.moves)
+const manifestIsComplete = currentBaseStatusCounts.complete === manifestMoveCount
 
 const runChecker = (...args: string[]) => spawnSync(
   'python3',
@@ -42,15 +62,19 @@ const writeManifest = (directory: string, manifest: MutableManifest): string => 
 const mutableManifest = (): MutableManifest => structuredClone(manifestJson) as MutableManifest
 
 describe('move automation semantic coverage checker', () => {
-  it('passes honest incomplete metadata and prints a semantic report', () => {
+  it('passes valid metadata and prints a semantic report', () => {
     const result = runChecker('--report')
 
     expect(result.status, `${result.stdout}\n${result.stderr}`).toBe(0)
     expect(result.stderr).toBe('')
     expect(result.stdout).toContain('Move automation semantic validation report')
-    expect(result.stdout).toContain('Canonical catalog: 776')
-    expect(result.stdout).toContain('Manifest rows: 776')
-    expect(result.stdout).toContain('Base status: 0 complete, 258 assisted, 518 blocked')
+    expect(result.stdout).toContain(`Canonical catalog: ${manifestMoveCount}`)
+    expect(result.stdout).toContain(`Manifest rows: ${manifestMoveCount}`)
+    expect(result.stdout).toContain(
+      `Base status: ${currentBaseStatusCounts.complete} complete, `
+      + `${currentBaseStatusCounts.assisted} assisted, `
+      + `${currentBaseStatusCounts.blocked} blocked`,
+    )
     expect(result.stdout).toContain('Metadata validation: PASS')
     expect(result.stdout).toContain('Completion requirement: not enforced')
   })
@@ -66,25 +90,30 @@ describe('move automation semantic coverage checker', () => {
     expect(JSON.parse(first.stdout)).toMatchObject({
       valid: true,
       metadataValid: true,
-      complete: false,
+      complete: manifestIsComplete,
       requireComplete: false,
-      manifestMoves: 776,
-      baseStatus: { complete: 0, assisted: 258, blocked: 518 },
-      registry: { explicitLegacyScripts: 258 },
-      runtime: { 'legacy-v1': 258, 'movespec-v2': 0, unimplemented: 518 },
+      manifestMoves: manifestMoveCount,
+      baseStatus: currentBaseStatusCounts,
+      registry: { explicitLegacyScripts: EXPLICIT_MOVE_AUTOMATION_SCRIPTS.size },
+      runtime: currentRuntimeCounts,
       issues: [],
     })
   })
 
-  it('keeps final completeness as a separate failing policy', () => {
+  it('keeps final completeness as a separate policy', () => {
     const result = runChecker('--require-complete', '--report')
-
-    expect(result.status).toBe(1)
+    expect(result.status).toBe(manifestIsComplete ? 0 : 1)
     expect(result.stderr).toBe('')
     expect(result.stdout).toContain('Metadata validation: PASS')
-    expect(result.stdout).toContain('Completion requirement: FAIL')
-    expect(result.stdout).toContain('ERROR [completion-required]')
-    expect(result.stdout).toContain('0 complete, 258 assisted, and 518 blocked')
+    expect(result.stdout).toContain(`Completion requirement: ${manifestIsComplete ? 'PASS' : 'FAIL'}`)
+    if (!manifestIsComplete) {
+      expect(result.stdout).toContain('ERROR [completion-required]')
+      expect(result.stdout).toContain(
+        `${currentBaseStatusCounts.complete} complete, `
+        + `${currentBaseStatusCounts.assisted} assisted, and `
+        + `${currentBaseStatusCounts.blocked} blocked`,
+      )
+    }
   })
 
   it('rejects incomplete catalog membership and provenance drift', () => {
@@ -160,7 +189,7 @@ describe('move automation semantic coverage checker', () => {
       expect(linkedResult.status, `${linkedResult.stdout}\n${linkedResult.stderr}`).toBe(0)
       expect(JSON.parse(linkedResult.stdout)).toMatchObject({
         valid: true,
-        baseStatus: { complete: 1, assisted: 257, blocked: 518 },
+        baseStatus: baseStatusCounts(reviewed.moves),
         references: {
           discoveredScenarios: 1,
           linkedRuntimes: 1,

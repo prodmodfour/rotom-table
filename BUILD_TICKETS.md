@@ -332,7 +332,7 @@ Status: DONE
 
 ## MA-015 — Replace count-pinning with semantic assertions
 
-Status: TODO
+Status: DONE
 
 **Depends on:** MA-014
 **Commit:** `test(move-automation): assert semantic coverage instead of fixed counts`

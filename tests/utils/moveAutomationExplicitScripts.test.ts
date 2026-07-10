@@ -1,4 +1,6 @@
 import { describe, expect, it } from 'vitest'
+import manifestJson from '../../data/move-automation/manifest.json'
+import { moves } from '../../data/ptuReference'
 import {
   EXPLICIT_MOVE_AUTOMATION_SCRIPTS,
   explicitScriptForMove,
@@ -9,10 +11,55 @@ import {
 } from '~/utils/moveAutomation'
 
 describe('explicit move automation scripts', () => {
-  it('preserves the reviewed explicit coverage counts', () => {
-    expect(moveAutomationCoverage.canonicalMoveCount).toBe(776)
-    expect(moveAutomationCoverage.explicitScriptCount).toBe(258)
-    expect(moveAutomationCoverage.missing).toHaveLength(518)
+  it('keeps the canonical catalog, registry, and semantic manifest aligned', () => {
+    const canonicalNames = new Set(moves.map(({ name }) => name))
+    const manifestNames = manifestJson.moves.map(({ canonicalId }) => canonicalId)
+    const manifestByName = new Map(manifestJson.moves.map(row => [row.canonicalId, row]))
+    const registryNames = [...EXPLICIT_MOVE_AUTOMATION_SCRIPTS.keys()]
+
+    expect(manifestNames).toHaveLength(canonicalNames.size)
+    expect(new Set(manifestNames)).toEqual(canonicalNames)
+    expect(registryNames.every(moveName => canonicalNames.has(moveName))).toBe(true)
+    expect(moveAutomationCoverage).toEqual({
+      canonicalMoveCount: canonicalNames.size,
+      explicitScriptCount: registryNames.length,
+      missing: moves
+        .filter(({ name }) => !EXPLICIT_MOVE_AUTOMATION_SCRIPTS.has(name))
+        .map(({ name }) => name),
+    })
+
+    for (const moveName of registryNames) {
+      expect(manifestByName.get(moveName)?.runtime.kind).not.toBe('unimplemented')
+    }
+
+    for (const row of manifestJson.moves) {
+      const hasSemanticDebt = Boolean(
+        row.blockerCodes.length || row.limitations.length || row.manualSteps.length,
+      )
+
+      if (row.runtime.kind === 'legacy-v1') {
+        expect(EXPLICIT_MOVE_AUTOMATION_SCRIPTS.has(row.canonicalId)).toBe(true)
+      }
+      else if (row.runtime.kind === 'unimplemented') {
+        expect(EXPLICIT_MOVE_AUTOMATION_SCRIPTS.has(row.canonicalId)).toBe(false)
+      }
+
+      if (row.baseStatus === 'complete') {
+        expect(hasSemanticDebt).toBe(false)
+        expect(row.scenarioIds.length).toBeGreaterThan(0)
+        expect(row.runtime.kind).not.toBe('unimplemented')
+        expect(row.runtime.version).not.toBeNull()
+        expect(row.runtime.definitionHash).not.toBeNull()
+        expect(row.runtime.sourceModule).not.toBeNull()
+      }
+      else if (row.baseStatus === 'assisted') {
+        expect(row.runtime.kind).not.toBe('unimplemented')
+        expect(hasSemanticDebt).toBe(true)
+      }
+      else {
+        expect(row.blockerCodes.length).toBeGreaterThan(0)
+      }
+    }
   })
 
   it('keeps representative pre-refactor scripts resolvable', () => {
