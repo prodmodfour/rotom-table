@@ -888,7 +888,7 @@ Status: DONE
 
 ## MA-071 — Evaluate target state, type, size, and weight predicates
 
-Status: TODO
+Status: DONE
 
 **Depends on:** MA-070, MA-035
 **Commit:** `feat(move-automation): evaluate target state predicates`

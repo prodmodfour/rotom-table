@@ -49,6 +49,10 @@ import {
   createMoveAutomationResourceResolver,
   type MoveAutomationResourceResolver,
 } from './resources'
+import {
+  createMoveAutomationTargetStateResolver,
+  type MoveAutomationTargetStateResolver,
+} from './targetState'
 
 export interface AuthoritativeMoveSheetRead {
   readonly kind: SheetKind
@@ -91,6 +95,7 @@ export interface AuthoritativeMoveSheetQueries {
 export type AuthoritativeMoveRelationshipQueries = MoveAutomationRelationshipResolver
 export type AuthoritativeMoveHistoryQueries = MoveAutomationHistoryResolver
 export type AuthoritativeMoveResourceQueries = MoveAutomationResourceResolver
+export type AuthoritativeMoveTargetStateQueries = MoveAutomationTargetStateResolver
 
 export interface AuthoritativeMoveRuleQueries {
   runtimeFor(canonicalId: string): RegisteredMoveAutomationRuntime | null
@@ -105,6 +110,7 @@ export interface AuthoritativeMoveContextQueries {
   readonly relationships: AuthoritativeMoveRelationshipQueries
   readonly history: AuthoritativeMoveHistoryQueries
   readonly resources: AuthoritativeMoveResourceQueries
+  readonly targetStates: AuthoritativeMoveTargetStateQueries
   readonly rules: AuthoritativeMoveRuleQueries
   resolveActorMoveEntry(moveName: string): CanonicalMoveEntryResult
 }
@@ -494,6 +500,14 @@ export const buildAuthoritativeMoveRulesContext = (
     ),
   })
 
+  const targetStates = createMoveAutomationTargetStateResolver({
+    placements,
+    tokens,
+    sheets: resolvedSheets,
+    history,
+    recordSheetRead: readSet.recordPlacement,
+  })
+
   const legacyScriptFor = (moveName: string): MoveAutomationScript | null => {
     const script = legacyScripts.get(moveName)
       ?? legacyScripts.get(normalizedMoveName(moveName))
@@ -537,6 +551,7 @@ export const buildAuthoritativeMoveRulesContext = (
     relationships,
     history,
     resources,
+    targetStates,
     rules: Object.freeze({
       runtimeFor: (canonicalId: string) => runtimes.get(canonicalId) ?? null,
       legacyScriptFor,

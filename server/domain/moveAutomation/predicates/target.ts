@@ -5,6 +5,13 @@ import type {
   MoveAutomationRelationshipResolver,
   MoveAutomationRelationshipResult,
 } from '../relationships'
+import type { MoveAutomationTargetStateResolver } from '../targetState'
+import {
+  evaluateMoveAutomationTargetStatePredicates,
+  parseMoveAutomationTargetStatePredicates,
+  type MoveAutomationTargetStatePredicate,
+  type MoveAutomationTargetStatePredicateReasonCode,
+} from './targetState'
 
 export const MOVE_AUTOMATION_TARGET_RELATIONSHIP_PREDICATES = [
   'self',
@@ -45,6 +52,8 @@ export interface MoveAutomationTargetPredicateDeclaration {
   readonly willingness: MoveAutomationTargetWillingnessPredicate
   /** Excludes the actor even when `same-side` or `any` would otherwise include it. */
   readonly excludeActor: boolean
+  /** Optional all-of authoritative target-state constraints, evaluated before mechanics. */
+  readonly statePredicates?: readonly MoveAutomationTargetStatePredicate[]
 }
 
 /**
@@ -75,6 +84,7 @@ export type MoveAutomationTargetPredicateReasonCode =
   | 'target-excluded-willingness-undeclared'
   | 'target-excluded-not-willing'
   | 'target-excluded-not-unwilling'
+  | Exclude<MoveAutomationTargetStatePredicateReasonCode, 'target-state-included'>
 
 export interface MoveAutomationTargetPredicateEvaluation {
   readonly targetPlacementId: string
@@ -105,6 +115,7 @@ export interface EvaluateMoveAutomationTargetPredicatesInput {
   readonly requestedCandidatePlacementIds: readonly string[]
   readonly predicate: MoveAutomationTargetPredicateDeclaration
   readonly relationships: MoveAutomationRelationshipResolver
+  readonly states?: MoveAutomationTargetStateResolver
   readonly willingnessDeclarations?: readonly MoveAutomationTargetWillingnessDeclaration[]
 }
 
@@ -114,6 +125,7 @@ export type MoveAutomationTargetPredicateErrorCode =
   | 'duplicate-authoritative-candidate'
   | 'invalid-willingness-declaration'
   | 'duplicate-willingness-declaration'
+  | 'target-state-resolver-missing'
   | 'too-many-requested-targets'
 
 export class MoveAutomationTargetPredicateError extends Error {
@@ -156,16 +168,30 @@ const assertPredicate = (
     || !RELATIONSHIP_PREDICATE_SET.has(predicate.relationship)
     || !WILLINGNESS_PREDICATE_SET.has(predicate.willingness)
     || typeof predicate.excludeActor !== 'boolean'
+    || Object.keys(predicate).some(key => ![
+      'relationship',
+      'willingness',
+      'excludeActor',
+      'statePredicates',
+    ].includes(key))
   ) {
     return fail(
       'invalid-target-predicate',
-      'Target predicate must declare a supported relationship, willingness, and actor-exclusion policy.',
+      'Target predicate must declare only a supported relationship, willingness, actor-exclusion policy, and optional state predicates.',
     )
   }
+  const hasStatePredicates = Object.prototype.hasOwnProperty.call(predicate, 'statePredicates')
   return Object.freeze({
     relationship: predicate.relationship,
     willingness: predicate.willingness,
     excludeActor: predicate.excludeActor,
+    ...(hasStatePredicates
+      ? {
+          statePredicates: parseMoveAutomationTargetStatePredicates(
+            predicate.statePredicates,
+          ),
+        }
+      : {}),
   })
 }
 
@@ -277,6 +303,7 @@ const evaluateAuthoritativeCandidate = (options: {
   readonly targetPlacementId: string
   readonly predicate: MoveAutomationTargetPredicateDeclaration
   readonly relationships: MoveAutomationRelationshipResolver
+  readonly states?: MoveAutomationTargetStateResolver
   readonly willingnessByTarget: ReadonlyMap<string, MoveAutomationTargetWillingnessDeclarationValue>
 }): MoveAutomationTargetPredicateEvaluation => {
   const relationshipEvaluation = evaluateRelationship(
@@ -337,6 +364,21 @@ const evaluateAuthoritativeCandidate = (options: {
       )
     }
   }
+  if (options.predicate.statePredicates) {
+    const stateEvaluation = evaluateMoveAutomationTargetStatePredicates(
+      options.predicate.statePredicates,
+      options.states?.resolve(options.targetPlacementId) ?? null,
+    )
+    if (stateEvaluation.reasonCode !== 'target-state-included') {
+      return freezeEvaluation(
+        options.targetPlacementId,
+        'excluded',
+        stateEvaluation.reasonCode,
+        relationship,
+        willingness,
+      )
+    }
+  }
 
   return freezeEvaluation(
     options.targetPlacementId,
@@ -386,6 +428,12 @@ export const evaluateMoveAutomationTargetPredicates = (
     )
   }
   const predicate = assertPredicate(input.predicate)
+  if (predicate.statePredicates && !input.states) {
+    return fail(
+      'target-state-resolver-missing',
+      'Target state predicates require the server-owned target-state resolver.',
+    )
+  }
   const candidates = authoritativeCandidateSet(input.authoritativeCandidatePlacementIds)
   const willingness = willingnessByTarget(input.willingnessDeclarations ?? [])
 
@@ -405,6 +453,7 @@ export const evaluateMoveAutomationTargetPredicates = (
       targetPlacementId,
       predicate,
       relationships: input.relationships,
+      states: input.states,
       willingnessByTarget: willingness,
     })
   ))

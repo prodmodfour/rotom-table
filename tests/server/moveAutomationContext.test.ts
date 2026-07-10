@@ -139,7 +139,7 @@ describe('immutable authoritative move rules context', () => {
     }).toThrow()
   })
 
-  it('serves snapshot-only placement, token, sheet, relationship, history, resource, runtime, and status queries', () => {
+  it('serves snapshot-only placement, token, sheet, relationship, history, resource, target-state, runtime, and status queries', () => {
     const context = buildContext()
     const actor = context.queries.placements.get('actor-token')!
     const target = context.queries.placements.get('target-token')!
@@ -176,6 +176,16 @@ describe('immutable authoritative move rules context', () => {
     expect(context.queries.resources.actionAvailable(actor.id, 'standard')).toBe(false)
     expect(context.queries.resources.reactionAvailable(actor.id)).toBe(false)
     expect(Object.isFrozen(context.queries.resources)).toBe(true)
+    expect(context.queries.targetStates.resolve(target.id)).toMatchObject({
+      targetPlacementId: target.id,
+      vitality: 'conscious',
+      grounding: 'grounded',
+      typeIds: ['normal'],
+      size: 'large',
+      weightClass: 6,
+      sheetKind: 'pokemon',
+    })
+    expect(Object.isFrozen(context.queries.targetStates)).toBe(true)
     expect(context.queries.rules.runtimeFor('Tackle')).toMatchObject({
       canonicalId: 'Tackle',
       kind: 'legacy-v1',
@@ -224,8 +234,8 @@ describe('immutable authoritative move rules context', () => {
     expect(context.reads.snapshot()).toEqual([])
 
     context.reads.recordPlacement(context.actor.placement)
-    context.reads.recordToken({ id: 'target-token' })
-    context.reads.recordToken({ id: 'target-token' })
+    context.queries.targetStates.resolve('target-token')
+    context.queries.targetStates.resolve('target-token')
 
     const reads = context.reads.snapshot()
     expect(reads).toEqual([
