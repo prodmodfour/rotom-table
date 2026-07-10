@@ -216,6 +216,9 @@ export type MoveAutomationTargetMode =
 
 export type MoveAutomationRecipient = 'user' | 'target'
 
+/** Reviewed v1 relationship filters currently supported for geometric area targets. */
+export type MoveAutomationAreaTargetRelationship = 'ally'
+
 export interface MoveAutomationStageSuggestion {
   recipient: MoveAutomationRecipient
   key: CombatStageKey
@@ -381,6 +384,8 @@ export interface MoveAutomationScript {
   stabDamageBaseBonus?: number
   randomStageSuggestion?: MoveAutomationRandomStageSuggestionRule
   areaTemplates?: MoveAutomationAreaTemplate[]
+  /** Server-applied relationship predicate for geometric area candidates; unknown allegiance fails closed. */
+  areaTargetRelationship?: MoveAutomationAreaTargetRelationship
   targetBranches?: MoveAutomationTargetBranch[]
   conditionSuggestions: MoveAutomationConditionSuggestion[]
   stageSuggestions: MoveAutomationStageSuggestion[]

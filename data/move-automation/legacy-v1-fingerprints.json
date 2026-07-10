@@ -71,8 +71,8 @@
     {
       "canonicalId": "Aromatic Mist",
       "sourceModule": "src/utils/move-automation/scripts/area.ts",
-      "version": 1,
-      "definitionHash": "28fd91700db71a227ce3912b06931e357aab2558c795b04e96c0e55fad5afc18"
+      "version": 2,
+      "definitionHash": "e6ce888776934a842e3ced6bb02972894949d66ec178438a7e6d31858ef53638"
     },
     {
       "canonicalId": "Astonish",
@@ -203,8 +203,8 @@
     {
       "canonicalId": "Coaching",
       "sourceModule": "src/utils/move-automation/scripts/area.ts",
-      "version": 1,
-      "definitionHash": "38734a705a2592b04371e2acb5810abc9561fe5a0817ceb1e456b94b714acd83"
+      "version": 2,
+      "definitionHash": "ada2a128a6cf3635c4b4105bb501e3f4b961ed092e5689b171f520340d8eaec8"
     },
     {
       "canonicalId": "Confide",
@@ -599,8 +599,8 @@
     {
       "canonicalId": "Howl",
       "sourceModule": "src/utils/move-automation/scripts/area.ts",
-      "version": 1,
-      "definitionHash": "a560ddc0b901184bc2a7201baba35e38b769a7d28379db8a33a6359b9f408348"
+      "version": 2,
+      "definitionHash": "b627d6d073cba78148dc2e84472d295773becdf370534f0c3eac7118085448a3"
     },
     {
       "canonicalId": "Hyper Fang",

@@ -120,9 +120,9 @@ describe('legacy move automation audit metadata', () => {
     }>([
       ['Aromatic Mist', {
         blockerCodes: ['targeting.authoritative'],
-        limitationCodes: ['ally-area.allegiance'],
-        manualStepCodes: ['ally-area.filter'],
-        summaryTerms: ['allied', 'enemy'],
+        limitationCodes: ['ally-area.side-required'],
+        manualStepCodes: ['ally-area.side-setup'],
+        summaryTerms: ['explicit encounter sides', 'Prepare Map'],
       }],
       ['Astonish', {
         blockerCodes: ['history.structured'],
@@ -132,9 +132,9 @@ describe('legacy move automation audit metadata', () => {
       }],
       ['Coaching', {
         blockerCodes: ['targeting.authoritative'],
-        limitationCodes: ['ally-area.allegiance'],
-        manualStepCodes: ['ally-area.filter'],
-        summaryTerms: ['allied', 'enemy'],
+        limitationCodes: ['ally-area.side-required'],
+        manualStepCodes: ['ally-area.side-setup'],
+        summaryTerms: ['explicit encounter sides', 'Prepare Map'],
       }],
       ['Fake Out', {
         blockerCodes: ['history.structured', 'reactions.durable'],
@@ -168,9 +168,9 @@ describe('legacy move automation audit metadata', () => {
       }],
       ['Howl', {
         blockerCodes: ['targeting.authoritative'],
-        limitationCodes: ['ally-area.allegiance'],
-        manualStepCodes: ['ally-area.filter'],
-        summaryTerms: ['allied', 'enemy'],
+        limitationCodes: ['ally-area.side-required'],
+        manualStepCodes: ['ally-area.side-setup'],
+        summaryTerms: ['explicit encounter sides', 'Prepare Map'],
       }],
       ['Knock Off', {
         blockerCodes: ['items.authoritative'],

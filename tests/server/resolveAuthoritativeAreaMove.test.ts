@@ -6,6 +6,7 @@ import {
 } from '../../server/domain/resolveAuthoritativeMove'
 import { EXPLICIT_MOVE_AUTOMATION_SCRIPTS } from '~/utils/moveAutomation'
 import { moveAutomationAreaTemplateId } from '~/utils/moveAutomationAreaTemplates'
+import { redBlueEncounterStateFixture } from '../fixtures/moveAutomation/encounterSides'
 import type { CharacterSheet, CharacterSheetMove } from '~/types/characterSheet'
 import type { SheetPlacement, TabletopMap } from '~/types/map'
 import type { MoveAutomationAreaTemplate, MoveAutomationScript } from '~/types/moveAutomation'
@@ -16,11 +17,17 @@ const moveIntent = (overrides: Omit<ResolveMoveIntent, 'schemaVersion'>): Resolv
   ...overrides,
 })
 
-const placement = (id: string, sheetSlug = id, position = { x: 0, y: 0, z: 0 }): SheetPlacement => ({
+const placement = (
+  id: string,
+  sheetSlug = id,
+  position = { x: 0, y: 0, z: 0 },
+  sideId?: string,
+): SheetPlacement => ({
   id,
   sheetKind: 'pokemon',
   sheetSlug,
   position,
+  ...(sideId ? { sideId } : {}),
 })
 
 const mapFixture = (overrides: Partial<TabletopMap> = {}): TabletopMap => ({
@@ -383,6 +390,96 @@ describe('resolveAuthoritativeMove area selections', () => {
     })
     expect(branchResolution.targetBranchId).toBe('line-3')
     expect(branchResolution.area?.candidateTargetIds).toEqual(['target-a', 'target-c'])
+  })
+
+  it.each([
+    {
+      moveName: 'Howl',
+      expectedUpdates: [
+        { id: 'actor-token', stages: { atk: 1, def: 0, satk: 0, sdef: 0, spd: 0, acc: 0 } },
+        { id: 'target-a', stages: { atk: 1, def: 0, satk: 0, sdef: 0, spd: 0, acc: 0 } },
+      ],
+    },
+    {
+      moveName: 'Aromatic Mist',
+      expectedUpdates: [
+        { id: 'target-a', stages: { atk: 0, def: 0, satk: 0, sdef: 1, spd: 0, acc: 0 } },
+      ],
+    },
+    {
+      moveName: 'Coaching',
+      expectedUpdates: [
+        { id: 'actor-token', stages: { atk: 1, def: 1, satk: 0, sdef: 0, spd: 0, acc: 0 } },
+        { id: 'target-a', stages: { atk: 1, def: 1, satk: 0, sdef: 0, spd: 0, acc: 0 } },
+      ],
+    },
+  ])('filters $moveName Burst recipients by authoritative allegiance', ({ moveName, expectedUpdates }) => {
+    const map = mapFixture({
+      placements: [
+        placement('actor-token', 'actor', { x: 5, y: 0, z: 5 }, 'red'),
+        placement('target-a', 'target-a', { x: 6, y: 0, z: 5 }, 'red'),
+        placement('target-b', 'target-b', { x: 5, y: 0, z: 4 }, 'blue'),
+        placement('target-c', 'target-c', { x: 4, y: 0, z: 5 }),
+      ],
+      encounterState: redBlueEncounterStateFixture(),
+    })
+    const resolution = resolveAuthoritativeMove({
+      map,
+      pokemonSheets: sheetMap([{ name: moveName }], {
+        'target-a': pokemonSheet('target-a', [], { species: 'Bulbasaur' }),
+        'target-b': pokemonSheet('target-b', [], { species: 'Charmander' }),
+        'target-c': pokemonSheet('target-c', [], { species: 'Squirtle' }),
+      }),
+      trainerSheets: new Map(),
+      intent: moveIntent({
+        placementId: 'actor-token',
+        moveName,
+        selection: { kind: 'area', areaTemplateId: templateId(burstTemplate) },
+      }),
+    })
+
+    expect(resolution.script).toMatchObject({
+      version: 2,
+      areaTargetRelationship: 'ally',
+    })
+    expect(resolution.area?.candidateTargetIds).toEqual(['target-a', 'target-b', 'target-c'])
+    expect(resolution.area?.excludedTargetIds).toEqual([])
+    expect(resolution.area?.relationshipExclusions).toEqual([
+      { targetPlacementId: 'target-b', reasonCode: 'relationship-enemy' },
+      { targetPlacementId: 'target-c', reasonCode: 'relationship-unknown-side' },
+    ])
+    expect(resolution.selectedTargetIds).toEqual(['target-a'])
+    expect(resolution.transaction.attackedTargetIds).toEqual(['target-a'])
+    expect(resolution.transaction.hitTargetIds).toEqual(['target-a'])
+    expect(resolution.transaction.combatStageUpdates).toEqual(expectedUpdates)
+    expect(resolution.transaction.combatStageUpdates.map(update => update.id)).not.toContain('target-b')
+    expect(resolution.transaction.combatStageUpdates.map(update => update.id)).not.toContain('target-c')
+    expect(resolution.transaction.logLines).toEqual(expect.arrayContaining([
+      expect.stringContaining(`${moveName}: `),
+      expect.stringContaining('was excluded from ally-only effects because its encounter side is an enemy.'),
+      expect.stringContaining(`Assisted ally targeting: ${moveName} skipped `),
+      expect.stringContaining('because ally eligibility is unknown; assign both placements to encounter sides in Prepare Map.'),
+    ]))
+    expect(resolution.auditTrace.events).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        kind: 'target',
+        targetId: 'target-a',
+        outcome: 'included',
+        reasonCode: 'authoritative-area-candidate',
+      }),
+      expect.objectContaining({
+        kind: 'target',
+        targetId: 'target-b',
+        outcome: 'excluded',
+        reasonCode: 'relationship-enemy',
+      }),
+      expect.objectContaining({
+        kind: 'target',
+        targetId: 'target-c',
+        outcome: 'excluded',
+        reasonCode: 'relationship-unknown-side',
+      }),
+    ]))
   })
 
   it('resolves area transactions, field effects, unknown-side Sweet Veil, facing, and input immutability', async () => {

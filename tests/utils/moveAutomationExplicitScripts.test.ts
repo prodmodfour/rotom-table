@@ -679,6 +679,7 @@ describe('explicit move automation scripts', () => {
     expect(aromaticMist).toMatchObject({
       kind: 'explicit',
       moveName: 'Aromatic Mist',
+      version: 2,
       targetMode: 'multi-target',
       targetCount: null,
       damaging: false,
@@ -688,6 +689,7 @@ describe('explicit move automation scripts', () => {
       damageClass: 'Status',
       type: 'Fairy',
       range: 'Burst 1',
+      areaTargetRelationship: 'ally',
     })
     expect(aromaticMist?.areaTemplates).toHaveLength(1)
     expect(aromaticMist?.areaTemplates).toMatchObject([{ kind: 'burst', size: 1 }])
@@ -699,7 +701,8 @@ describe('explicit move automation scripts', () => {
     expect(aromaticMist?.fieldSuggestions).toEqual([])
     expect(aromaticMist?.hazardSuggestions).toEqual([])
     expect(aromaticMist?.automationNotes).toEqual([
-      'Aromatic Mist affects allies only. Team allegiance is not tracked, so verify affected tokens are allies or correct Combat Stages manually afterward.',
+      'Ally-only Burst recipients are filtered from explicit encounter sides; enemies and unaffiliated tokens never receive the target effect.',
+      'Assign the user and intended allies to the same side in Prepare Map before resolving; unknown allegiance is skipped and logged as an assisted omission.',
     ])
     expect(isSeamlessAreaConfirmationScript(aromaticMist)).toBe(true)
 
@@ -707,6 +710,7 @@ describe('explicit move automation scripts', () => {
     expect(coaching).toMatchObject({
       kind: 'explicit',
       moveName: 'Coaching',
+      version: 2,
       targetMode: 'multi-target',
       targetCount: null,
       damaging: false,
@@ -716,6 +720,7 @@ describe('explicit move automation scripts', () => {
       damageClass: 'Status',
       type: 'Fighting',
       range: 'Burst 1',
+      areaTargetRelationship: 'ally',
     })
     expect(coaching?.areaTemplates).toHaveLength(1)
     expect(coaching?.areaTemplates).toMatchObject([{ kind: 'burst', size: 1 }])
@@ -731,7 +736,8 @@ describe('explicit move automation scripts', () => {
     expect(coaching?.hazardSuggestions).toEqual([])
     expect(coaching?.automationNotes).toEqual([
       'Burst 1 is shown as an area overlay; the user also receives the Attack and Defense boosts even though the user token is not a selectable target.',
-      'Coaching affects allies only. Team allegiance is not tracked, so verify affected tokens are allies or correct Combat Stages manually afterward.',
+      'Ally-only Burst recipients are filtered from explicit encounter sides; enemies and unaffiliated tokens never receive the target effect.',
+      'Assign the user and intended allies to the same side in Prepare Map before resolving; unknown allegiance is skipped and logged as an assisted omission.',
     ])
     expect(isSeamlessAreaConfirmationScript(coaching)).toBe(true)
 
@@ -919,7 +925,14 @@ describe('explicit move automation scripts', () => {
     expect(isSeamlessSingleTargetMoveScript(yawn)).toBe(true)
 
     const howl = explicitScriptForMove('Howl')
-    expect(howl).toMatchObject({ moveName: 'Howl', targetMode: 'multi-target', requiresAccuracy: false, damaging: false })
+    expect(howl).toMatchObject({
+      moveName: 'Howl',
+      version: 2,
+      targetMode: 'multi-target',
+      requiresAccuracy: false,
+      damaging: false,
+      areaTargetRelationship: 'ally',
+    })
     expect(howl?.areaTemplates).toMatchObject([{ kind: 'burst', size: 1 }])
     expect(howl?.stageSuggestions).toEqual([
       { recipient: 'user', key: 'atk', delta: 1, label: "Howl raises user's Attack: +1 Attack CS" },

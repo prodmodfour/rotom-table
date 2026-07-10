@@ -824,8 +824,8 @@
       "interactionStatus": "unassessed",
       "runtime": {
         "kind": "legacy-v1",
-        "version": 1,
-        "definitionHash": "28fd91700db71a227ce3912b06931e357aab2558c795b04e96c0e55fad5afc18",
+        "version": 2,
+        "definitionHash": "e6ce888776934a842e3ced6bb02972894949d66ec178438a7e6d31858ef53638",
         "sourceModule": "src/utils/move-automation/scripts/area.ts"
       },
       "rulesProvenance": {
@@ -840,14 +840,14 @@
       ],
       "limitations": [
         {
-          "code": "ally-area.allegiance",
-          "summary": "The legacy area resolver does not derive ally eligibility from authoritative side state and can apply allied stage changes to selected enemy or unaffiliated tokens."
+          "code": "ally-area.side-required",
+          "summary": "Ally-only target effects are filtered by explicit encounter sides. Unaffiliated users or recipients cannot be classified and are skipped with an assisted diagnostic."
         }
       ],
       "manualSteps": [
         {
-          "code": "ally-area.filter",
-          "summary": "Select only allied recipients in the Burst and manually reverse any stage change applied to an enemy or unaffiliated token."
+          "code": "ally-area.side-setup",
+          "summary": "Assign the user and intended allied recipients to the same encounter side in Prepare Map before resolving when their allegiance is unknown."
         }
       ],
       "scenarioIds": [],
@@ -3555,8 +3555,8 @@
       "interactionStatus": "unassessed",
       "runtime": {
         "kind": "legacy-v1",
-        "version": 1,
-        "definitionHash": "38734a705a2592b04371e2acb5810abc9561fe5a0817ceb1e456b94b714acd83",
+        "version": 2,
+        "definitionHash": "ada2a128a6cf3635c4b4105bb501e3f4b961ed092e5689b171f520340d8eaec8",
         "sourceModule": "src/utils/move-automation/scripts/area.ts"
       },
       "rulesProvenance": {
@@ -3571,14 +3571,14 @@
       ],
       "limitations": [
         {
-          "code": "ally-area.allegiance",
-          "summary": "The legacy area resolver does not derive ally eligibility from authoritative side state and can apply allied stage changes to selected enemy or unaffiliated tokens."
+          "code": "ally-area.side-required",
+          "summary": "Ally-only target effects are filtered by explicit encounter sides. Unaffiliated users or recipients cannot be classified and are skipped with an assisted diagnostic."
         }
       ],
       "manualSteps": [
         {
-          "code": "ally-area.filter",
-          "summary": "Select only allied recipients in the Burst and manually reverse any stage change applied to an enemy or unaffiliated token."
+          "code": "ally-area.side-setup",
+          "summary": "Assign the user and intended allied recipients to the same encounter side in Prepare Map before resolving when their allegiance is unknown."
         }
       ],
       "scenarioIds": [],
@@ -11016,8 +11016,8 @@
       "interactionStatus": "unassessed",
       "runtime": {
         "kind": "legacy-v1",
-        "version": 1,
-        "definitionHash": "a560ddc0b901184bc2a7201baba35e38b769a7d28379db8a33a6359b9f408348",
+        "version": 2,
+        "definitionHash": "b627d6d073cba78148dc2e84472d295773becdf370534f0c3eac7118085448a3",
         "sourceModule": "src/utils/move-automation/scripts/area.ts"
       },
       "rulesProvenance": {
@@ -11032,14 +11032,14 @@
       ],
       "limitations": [
         {
-          "code": "ally-area.allegiance",
-          "summary": "The legacy area resolver does not derive ally eligibility from authoritative side state and can apply allied stage changes to selected enemy or unaffiliated tokens."
+          "code": "ally-area.side-required",
+          "summary": "Ally-only target effects are filtered by explicit encounter sides. Unaffiliated users or recipients cannot be classified and are skipped with an assisted diagnostic."
         }
       ],
       "manualSteps": [
         {
-          "code": "ally-area.filter",
-          "summary": "Select only allied recipients in the Burst and manually reverse any stage change applied to an enemy or unaffiliated token."
+          "code": "ally-area.side-setup",
+          "summary": "Assign the user and intended allied recipients to the same encounter side in Prepare Map before resolving when their allegiance is unknown."
         }
       ],
       "scenarioIds": [],

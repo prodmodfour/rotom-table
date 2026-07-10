@@ -741,7 +741,7 @@ Status: DONE
 
 ## MA-055 — Fix side-sensitive immunity and ally-area behavior
 
-Status: TODO
+Status: DONE
 
 **Depends on:** MA-054
 **Commit:** `fix(move-automation): enforce allegiance for ally mechanics`

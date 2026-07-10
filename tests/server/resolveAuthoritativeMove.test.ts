@@ -616,6 +616,44 @@ describe('resolveAuthoritativeMove', () => {
     ])
   })
 
+  it('does not grant Sweet Veil immunity from an in-range enemy provider', () => {
+    const resolution = resolveAuthoritativeMove({
+      map: mapFixture([
+        placement('actor-token', 'actor', { x: 0, y: 0, z: 0 }, 'red'),
+        placement('target-token', 'target-a', { x: 1, y: 0, z: 0 }, 'blue'),
+        placement('enemy-aura-token', 'enemy-aura', { x: 2, y: 0, z: 0 }, 'red'),
+      ]),
+      pokemonSheets: sheetMap([{ name: 'Spore' }], {
+        actor: pokemonSheet('actor', [{ name: 'Spore' }], { revision: 2 }),
+        'target-a': targetSheet('target-a'),
+        'enemy-aura': pokemonSheet('enemy-aura', [], {
+          revision: 7,
+          abilities: [{ name: 'Sweet Veil' }],
+        }),
+      }),
+      trainerSheets: new Map(),
+      intent: moveIntent({
+        placementId: 'actor-token',
+        moveName: 'Spore',
+        selection: { kind: 'single-target', targetPlacementId: 'target-token' },
+      }),
+      random: randomSequence([0.99]),
+      idFactory: () => 'spore-feedback',
+    })
+
+    expect(resolution.feedback?.conditions).toContainEqual({
+      condition: 'Sleep',
+      applied: true,
+    })
+    expect(resolution.transaction.conditionUpdates).toEqual([
+      { id: 'target-token', conditions: ['Sleep'] },
+    ])
+    expect(resolution.sheetReads).toEqual([
+      { kind: 'pokemon', slug: 'actor', revision: 2 },
+      { kind: 'pokemon', slug: 'target-a', revision: 0 },
+    ])
+  })
+
   it('deduplicates shared sheet references and rejects conflicting observed revisions', () => {
     expect(deduplicateAuthoritativeMoveSheetReads([
       { kind: 'pokemon', slug: 'shared', revision: 7 },

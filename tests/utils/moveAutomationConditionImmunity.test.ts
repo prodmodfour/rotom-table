@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest'
-import { moveAutomationConditionImmunitySource } from '~/utils/moveAutomationConditionImmunity'
+import {
+  isEligibleSweetVeilProvider,
+  moveAutomationConditionImmunitySource,
+} from '~/utils/moveAutomationConditionImmunity'
 import type { SpawnedPokemon } from '~/types/pokemon'
 
 const token = (overrides: Partial<SpawnedPokemon> = {}): SpawnedPokemon => ({
@@ -44,7 +47,38 @@ describe('move automation condition immunity', () => {
     expect(moveAutomationConditionImmunitySource('Total Blindness', token({ abilityNames: ['Keen Eye'] }))).toBeNull()
   })
 
-  it('blocks Sleep with Sweet Veil on the target or nearby providers', () => {
+  it('accepts only distinct, in-range allied Sweet Veil providers', () => {
+    const target = token({ position: { x: 0, y: 0, z: 0 } })
+    const nearbyProvider = token({
+      id: 'provider',
+      species: 'Aromatisse',
+      abilityNames: ['Sweet Veil'],
+      position: { x: 3, y: 0, z: 0 },
+    })
+    const nearbyWithoutAbility = token({
+      id: 'no-ability',
+      position: { x: 2, y: 0, z: 0 },
+    })
+    const distantProvider = token({
+      id: 'distant',
+      abilityNames: ['Sweet Veil'],
+      position: { x: 4, y: 0, z: 0 },
+    })
+    let relationshipQueries = 0
+    const allied = () => {
+      relationshipQueries += 1
+      return true
+    }
+
+    expect(isEligibleSweetVeilProvider(target, target, allied)).toBe(false)
+    expect(isEligibleSweetVeilProvider(distantProvider, target, allied)).toBe(false)
+    expect(relationshipQueries).toBe(0)
+    expect(isEligibleSweetVeilProvider(nearbyProvider, target, () => false)).toBe(false)
+    expect(isEligibleSweetVeilProvider(nearbyWithoutAbility, target, allied)).toBe(false)
+    expect(isEligibleSweetVeilProvider(nearbyProvider, target, allied)).toBe(true)
+  })
+
+  it('blocks Sleep with Sweet Veil on the target or eligible nearby providers', () => {
     const target = token({ position: { x: 0, y: 0, z: 0 } })
     const nearbyProvider = token({
       id: 'provider',
