@@ -181,7 +181,14 @@ describe('native MoveSpec multi-hit sequences', () => {
         recipient: 'actor',
         kind: 'combat-stage',
         reasonCode: 'move.tackle.raise-actor-attack',
-        payload: { action: 'modify', stage: 'atk', value: 1 },
+        payload: {
+          action: 'modify',
+          stage: 'atk',
+          selectedStage: null,
+          value: 1,
+          stageSource: null,
+          rounding: null,
+        },
       }],
     })
     const rules = context({

@@ -29,8 +29,10 @@ import {
   createStandardMoveCoreTokenEffectImmunityQueries,
 } from '~~/server/domain/moveAutomation/reducers/immunities'
 import type { CharacterSheet } from '~/types/characterSheet'
+import type { CombatStageMap } from '~/types/combatStages'
 import type { SheetPlacement, TabletopMap } from '~/types/map'
 import type { TrainerSheet } from '~/types/trainerSheet'
+import { normalizeCombatStages } from '~/utils/combatStages'
 import { conditionEncounterEffectFixture } from '../fixtures/moveAutomation/encounterEffects'
 
 const placement = (id: string, sheetSlug: string, x: number): SheetPlacement => ({
@@ -93,20 +95,43 @@ interface CoreReducerHpFixture {
   readonly targetInjuries?: number
 }
 
+interface CoreReducerStageFixture {
+  readonly actor?: Partial<CombatStageMap>
+  readonly target?: Partial<CombatStageMap>
+  readonly bystander?: Partial<CombatStageMap>
+}
+
+const sheetStageFields = (
+  value: Partial<CombatStageMap> | undefined,
+): Pick<CharacterSheet, 'stats' | 'combatStages'> => {
+  const stages = normalizeCombatStages(value)
+  return {
+    stats: {
+      atk: { stage: stages.atk },
+      def: { stage: stages.def },
+      satk: { stage: stages.satk },
+      sdef: { stage: stages.sdef },
+      spd: { stage: stages.spd },
+    },
+    combatStages: { acc: stages.acc },
+  }
+}
+
 const buildContext = (
   map: TabletopMap = mapFixture(),
   hp: CoreReducerHpFixture = {},
+  stages: CoreReducerStageFixture = {},
 ) => buildAuthoritativeMoveRulesContext({
   map,
   pokemonSheets: new Map([
     ['actor', pokemonSheet('actor', {
+      ...sheetStageFields(stages.actor),
       combat: { currentHp: hp.actor ?? 999 },
     })],
     ['target', pokemonSheet('target', {
       types: ['Fairy', 'Electric'],
       abilities: [{ name: 'Keen Eye' }],
-      stats: { atk: { stage: 5 } },
-      combatStages: { acc: 0 },
+      ...sheetStageFields(stages.target ?? { atk: 5 }),
       combat: {
         currentHp: hp.target ?? 999,
         injuries: hp.targetInjuries ?? 0,
@@ -114,6 +139,7 @@ const buildContext = (
       },
     })],
     ['bystander', pokemonSheet('bystander', {
+      ...sheetStageFields(stages.bystander),
       combat: { currentHp: hp.bystander ?? 999 },
     })],
   ]),
@@ -192,6 +218,16 @@ const healPayload = (overrides: Record<string, unknown> = {}) => ({
   bounds: { minimum: null, maximum: null },
   rounding: 'floor',
   injury: { hitPointMarkers: 'ignore', massiveDamage: 'never' },
+  ...overrides,
+})
+
+const combatStagePayload = (overrides: Record<string, unknown> = {}) => ({
+  action: 'modify',
+  stage: 'atk',
+  selectedStage: null,
+  value: 1,
+  stageSource: null,
+  rounding: null,
   ...overrides,
 })
 
@@ -1368,6 +1404,338 @@ describe('MoveSpec core token effect reducers', () => {
         },
       },
     })
+  })
+
+  it('applies cap-aware delta, set, invert, clear, all-Stats, and selected-Stat transforms', () => {
+    const operations = [
+      emission(operation('operation.cap-aware-delta', 'combat-stage', combatStagePayload({
+        value: 3,
+      }), 'actor'), ['actor-token']),
+      emission(operation('operation.at-cap', 'combat-stage', combatStagePayload({
+        value: 1,
+      }), 'actor'), ['actor-token']),
+      emission(operation('operation.selected-stat', 'combat-stage', combatStagePayload({
+        action: 'set',
+        stage: 'selected-stat',
+        selectedStage: 'def',
+        value: -4,
+      }), 'actor'), ['actor-token']),
+      emission(operation('operation.invert-stats', 'combat-stage', combatStagePayload({
+        action: 'invert',
+        stage: 'all-stats',
+        value: null,
+      }), 'actor'), ['actor-token']),
+      emission(operation('operation.clear-positive', 'combat-stage', combatStagePayload({
+        action: 'clear-positive',
+        stage: 'all-stats',
+        value: null,
+      }), 'actor'), ['actor-token']),
+      emission(operation('operation.clear-negative', 'combat-stage', combatStagePayload({
+        action: 'clear-negative',
+        stage: 'all',
+        value: null,
+      }), 'actor'), ['actor-token']),
+      emission(operation('operation.reset-cleared', 'combat-stage', combatStagePayload({
+        action: 'reset',
+        stage: 'all',
+        value: null,
+      }), 'actor'), ['actor-token']),
+    ]
+    const context = buildContext(mapFixture(), {}, {
+      actor: { atk: 5, def: 1, satk: 2, sdef: -3, spd: 1, acc: -5 },
+    })
+    const result = reduceMoveCoreTokenEffects({
+      context,
+      operations,
+      dynamicRecipients: dynamicRecipients(),
+      immunities: createStandardMoveCoreTokenEffectImmunityQueries({ moveType: 'Normal' }),
+      trace: traceFor(operations),
+    })
+
+    expect(result.operationResults.map(item => item.outcome)).toEqual([
+      'applied',
+      'no-op',
+      'applied',
+      'applied',
+      'applied',
+      'applied',
+      'no-op',
+    ])
+    expect(result.operationResults[0]?.recipients[0]?.details).toMatchObject({
+      action: 'modify',
+      changes: [{
+        stage: 'atk',
+        previous: 5,
+        unboundedRequested: 8,
+        requested: 6,
+        current: 6,
+        requestedDelta: 1,
+        appliedDelta: 1,
+        capped: true,
+        outcome: 'applied',
+      }],
+    })
+    expect(result.operationResults[1]?.recipients[0]).toMatchObject({
+      reasonCode: 'combat-stage-unchanged',
+      details: {
+        changes: [{
+          previous: 6,
+          unboundedRequested: 7,
+          requested: 6,
+          appliedDelta: 0,
+          capped: true,
+          outcome: 'no-op',
+        }],
+      },
+    })
+    const inverted = result.operationResults[3]?.recipients[0]?.current
+    expect(inverted).toEqual({
+      kind: 'combat-stages',
+      stages: { atk: -6, def: 4, satk: -2, sdef: 3, spd: -1, acc: -5 },
+    })
+    expect(result.operationResults[4]?.recipients[0]?.current).toEqual({
+      kind: 'combat-stages',
+      stages: { atk: -6, def: 0, satk: -2, sdef: 0, spd: -1, acc: -5 },
+    })
+    expect(result.operationResults[5]?.recipients[0]?.current).toEqual({
+      kind: 'combat-stages',
+      stages: { atk: 0, def: 0, satk: 0, sdef: 0, spd: 0, acc: 0 },
+    })
+    expect(operationTraceOutcomes(result.trace)).toEqual([
+      'applied',
+      'no-op',
+      'applied',
+      'applied',
+      'applied',
+      'applied',
+      'no-op',
+    ])
+  })
+
+  it('copies combat stages from one authoritative source without mutating it', () => {
+    const context = buildContext(mapFixture(), {}, {
+      actor: { atk: -2, def: 1, satk: 0, sdef: 4, spd: -1, acc: 0 },
+      target: { atk: 3, def: -4, satk: 2, sdef: 0, spd: 5, acc: -2 },
+    })
+    const copy = emission(operation(
+      'operation.copy-stages',
+      'combat-stage',
+      combatStagePayload({
+        action: 'copy',
+        stage: 'all',
+        value: null,
+        stageSource: { kind: 'selected-targets' },
+      }),
+      'actor',
+    ), ['actor-token'])
+    const result = reduceMoveCoreTokenEffects({
+      context,
+      operations: [copy],
+      dynamicRecipients: dynamicRecipients(),
+      immunities: createStandardMoveCoreTokenEffectImmunityQueries({ moveType: 'Normal' }),
+      trace: traceFor([copy]),
+    })
+
+    const sourceStages = { atk: 3, def: -4, satk: 2, sdef: 0, spd: 5, acc: -2 }
+    expect(result.operationResults[0]).toMatchObject({
+      outcome: 'applied',
+      recipientIds: ['actor-token'],
+      recipients: [{
+        recipientId: 'actor-token',
+        consultedPlacementIds: ['target-token'],
+        details: { action: 'copy', sourcePlacementId: 'target-token' },
+        current: { kind: 'combat-stages', stages: sourceStages },
+      }],
+    })
+    expect(context.queries.tokens.get('target-token')?.combatStages).toEqual(sourceStages)
+    expect(result.sheetReads).toEqual([
+      { kind: 'pokemon', slug: 'actor', revision: 4 },
+      { kind: 'pokemon', slug: 'target', revision: 4 },
+    ])
+    expect(result.stateChanges.groups.sheets).toHaveLength(1)
+    expect(result.stateChanges.groups.sheets[0]?.changes[0]).toMatchObject({
+      sourceOperationId: 'operation.copy-stages',
+      reasonCode: 'move.reducer-test.copy-stages',
+    })
+  })
+
+  it('swaps selected stage groups atomically while leaving Accuracy outside all-stats', () => {
+    const context = buildContext(mapFixture(), {}, {
+      actor: { atk: 1, def: 2, satk: 3, sdef: 4, spd: 5, acc: -6 },
+      target: { atk: -1, def: -2, satk: -3, sdef: -4, spd: -5, acc: 6 },
+    })
+    const swap = emission(operation(
+      'operation.swap-stats',
+      'combat-stage',
+      combatStagePayload({
+        action: 'swap',
+        stage: 'all-stats',
+        value: null,
+      }),
+      'actor-and-attacked-targets',
+    ), ['actor-token', 'target-token'])
+    const result = reduceMoveCoreTokenEffects({
+      context,
+      operations: [swap],
+      dynamicRecipients: dynamicRecipients(),
+      immunities: createStandardMoveCoreTokenEffectImmunityQueries({ moveType: 'Normal' }),
+      trace: traceFor([swap]),
+    })
+
+    expect(result.operationResults[0]?.recipients.map(recipient => recipient.current)).toEqual([
+      {
+        kind: 'combat-stages',
+        stages: { atk: -1, def: -2, satk: -3, sdef: -4, spd: -5, acc: -6 },
+      },
+      {
+        kind: 'combat-stages',
+        stages: { atk: 1, def: 2, satk: 3, sdef: 4, spd: 5, acc: 6 },
+      },
+    ])
+    expect(result.stateChanges.groups.sheets).toHaveLength(2)
+    expect(result.stateChanges.groups.sheets.map(group => group.changes[0]?.sourceOperationId))
+      .toEqual(['operation.swap-stats', 'operation.swap-stats'])
+  })
+
+  it('splits and transfers stage values from operation-entry snapshots', () => {
+    const splitContext = buildContext(mapFixture(), {}, {
+      actor: { atk: -4 },
+      target: { atk: 5 },
+      bystander: { atk: 2 },
+    })
+    const split = emission(operation(
+      'operation.split-attack',
+      'combat-stage',
+      combatStagePayload({
+        action: 'split',
+        stage: 'atk',
+        value: null,
+        rounding: 'round',
+      }),
+      'actor-and-attacked-targets',
+    ), ['actor-token', 'target-token', 'bystander-token'])
+    const splitResult = reduceMoveCoreTokenEffects({
+      context: splitContext,
+      operations: [split],
+      dynamicRecipients: dynamicRecipients(['target-token', 'bystander-token']),
+      immunities: createStandardMoveCoreTokenEffectImmunityQueries({ moveType: 'Normal' }),
+      trace: traceFor([split]),
+    })
+    expect(splitResult.operationResults[0]?.recipients.map((recipient) => (
+      recipient.current.kind === 'combat-stages' ? recipient.current.stages.atk : null
+    ))).toEqual([1, 1, 1])
+
+    const transferContext = buildContext(mapFixture(), {}, {
+      actor: { atk: 5, acc: 0 },
+      target: { atk: 3, acc: -2 },
+    })
+    const transfer = emission(operation(
+      'operation.transfer-stages',
+      'combat-stage',
+      combatStagePayload({
+        action: 'transfer',
+        stage: 'all',
+        value: null,
+        stageSource: { kind: 'selected-targets' },
+      }),
+      'actor-and-attacked-targets',
+    ), ['actor-token', 'target-token'])
+    const transferResult = reduceMoveCoreTokenEffects({
+      context: transferContext,
+      operations: [transfer],
+      dynamicRecipients: dynamicRecipients(),
+      immunities: createStandardMoveCoreTokenEffectImmunityQueries({ moveType: 'Normal' }),
+      trace: traceFor([transfer]),
+    })
+    expect(transferResult.operationResults[0]?.recipients).toMatchObject([
+      {
+        recipientId: 'actor-token',
+        outcome: 'applied',
+        current: { kind: 'combat-stages', stages: { atk: 6, acc: -2 } },
+        details: {
+          sourcePlacementId: 'target-token',
+          changes: expect.arrayContaining([
+            expect.objectContaining({ stage: 'atk', capped: true, appliedDelta: 1 }),
+          ]),
+        },
+      },
+      {
+        recipientId: 'target-token',
+        outcome: 'applied',
+        current: { kind: 'combat-stages', stages: { atk: 0, acc: 0 } },
+      },
+    ])
+  })
+
+  it('preserves both swap sources when one coupled stage change is prevented', () => {
+    const context = buildContext(mapFixture(), {}, {
+      actor: { acc: -1 },
+      target: { acc: 2 },
+    })
+    const swap = emission(operation(
+      'operation.swap-accuracy',
+      'combat-stage',
+      combatStagePayload({
+        action: 'swap',
+        stage: 'acc',
+        value: null,
+      }),
+      'actor-and-attacked-targets',
+    ), ['actor-token', 'target-token'])
+    const result = reduceMoveCoreTokenEffects({
+      context,
+      operations: [swap],
+      dynamicRecipients: dynamicRecipients(),
+      immunities: createStandardMoveCoreTokenEffectImmunityQueries({ moveType: 'Normal' }),
+      trace: traceFor([swap]),
+    })
+
+    expect(result.operationResults[0]).toMatchObject({
+      outcome: 'prevented',
+      recipients: [
+        {
+          recipientId: 'actor-token',
+          outcome: 'no-op',
+          reasonCode: 'combat-stage-redistribution-prevented',
+          current: { kind: 'combat-stages', stages: { acc: -1 } },
+        },
+        {
+          recipientId: 'target-token',
+          outcome: 'prevented',
+          reasonCode: 'combat-stage-immunity',
+          blockers: [{ subject: 'acc', source: 'Keen Eye' }],
+          current: { kind: 'combat-stages', stages: { acc: 2 } },
+        },
+      ],
+    })
+    expect(result.stateChanges.changes).toEqual([])
+    expect(operationTraceOutcomes(result.trace)).toEqual(['prevented'])
+  })
+
+  it('plans mixed self and target stage changes with per-operation provenance', () => {
+    const operations = [
+      emission(operation(
+        'operation.raise-self',
+        'combat-stage',
+        combatStagePayload({ stage: 'atk', value: 2 }),
+        'actor',
+      ), ['actor-token']),
+      emission(operation(
+        'operation.lower-target',
+        'combat-stage',
+        combatStagePayload({ stage: 'def', value: -2 }),
+        'attacked-targets',
+      )),
+    ]
+    const result = reduce(operations, 'Normal', buildContext(mapFixture(), {}, {
+      actor: { atk: 0 },
+      target: { def: 0 },
+    }))
+
+    expect(result.operationResults.map(item => item.outcome)).toEqual(['applied', 'applied'])
+    expect(result.stateChanges.groups.sheets).toHaveLength(2)
+    expect(result.stateChanges.groups.sheets.map(group => group.changes[0]?.sourceOperationId))
+      .toEqual(['operation.raise-self', 'operation.lower-target'])
   })
 
   it('preserves condition/stage immunity and cap no-ops in the audit trace', () => {

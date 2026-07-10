@@ -1072,7 +1072,7 @@ Status: DONE
 
 ## MA-083 — Generalize combat-stage operations
 
-Status: TODO
+Status: DONE
 
 **Depends on:** MA-040, MA-074
 **Commit:** `feat(move-automation): support advanced combat stage changes`

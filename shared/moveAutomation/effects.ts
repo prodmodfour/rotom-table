@@ -142,15 +142,34 @@ export const MOVE_EFFECT_HP_MARKER_INJURY_POLICIES = [
 export const MOVE_EFFECT_HP_MASSIVE_DAMAGE_POLICIES = ['never'] as const
 export const MOVE_EFFECT_ROUNDING_POLICIES = ['floor', 'round', 'ceil'] as const
 export const MOVE_EFFECT_CONDITION_ACTIONS = ['apply', 'remove', 'clear'] as const
-export const MOVE_EFFECT_COMBAT_STAGE_ACTIONS = ['modify', 'set', 'reset'] as const
-export const MOVE_EFFECT_COMBAT_STAGES = [
+export const MOVE_EFFECT_COMBAT_STAGE_ACTIONS = [
+  'modify',
+  'set',
+  'reset',
+  'invert',
+  'clear-positive',
+  'clear-negative',
+  'copy',
+  'swap',
+  'split',
+  'transfer',
+] as const
+export const MOVE_EFFECT_COMBAT_STAT_STAGES = [
   'atk',
   'def',
   'satk',
   'sdef',
   'spd',
+] as const
+export const MOVE_EFFECT_COMBAT_STAGES = [
+  ...MOVE_EFFECT_COMBAT_STAT_STAGES,
   'acc',
+  /** The five PTU Stats with Combat Stages; Accuracy is deliberately excluded. */
+  'all-stats',
+  /** Every Combat Stage, including Accuracy. */
   'all',
+  /** One concrete server-selected Stat recorded in `selectedStage`. */
+  'selected-stat',
 ] as const
 /** @deprecated Temporary-effect definitions use ENCOUNTER_EFFECT_DURATION_KINDS directly. */
 export const MOVE_EFFECT_DURATION_KINDS = ENCOUNTER_EFFECT_DURATION_KINDS
@@ -248,6 +267,7 @@ export type MoveEffectHpMassiveDamagePolicy =
 export type MoveEffectRoundingPolicy = (typeof MOVE_EFFECT_ROUNDING_POLICIES)[number]
 export type MoveEffectConditionAction = (typeof MOVE_EFFECT_CONDITION_ACTIONS)[number]
 export type MoveEffectCombatStageAction = (typeof MOVE_EFFECT_COMBAT_STAGE_ACTIONS)[number]
+export type MoveEffectCombatStatStage = (typeof MOVE_EFFECT_COMBAT_STAT_STAGES)[number]
 export type MoveEffectCombatStage = (typeof MOVE_EFFECT_COMBAT_STAGES)[number]
 /** @deprecated Temporary-effect definitions use EncounterEffectDuration. */
 export type MoveEffectDurationKind = (typeof MOVE_EFFECT_DURATION_KINDS)[number]
@@ -602,8 +622,14 @@ export interface MoveConditionEffectPayload {
 export interface MoveCombatStageEffectPayload {
   readonly action: MoveEffectCombatStageAction
   readonly stage: MoveEffectCombatStage
-  /** Null is required only for `reset`; modify/set use an integer value. */
+  /** Concrete server-owned result when `stage` is `selected-stat`; otherwise null. */
+  readonly selectedStage: MoveEffectCombatStatStage | null
+  /** Modify is a cap-aware delta; set uses an absolute stage. Other actions require null. */
   readonly value: number | null
+  /** One authoritative source for copy/transfer; other actions require null. */
+  readonly stageSource: MoveSelector | null
+  /** Required only when averaging stages with split. */
+  readonly rounding: MoveEffectRoundingPolicy | null
 }
 
 /** @deprecated Temporary-effect definitions use EncounterEffectDuration. */
@@ -906,7 +932,8 @@ const HP_BOUNDS_FIELDS = ['minimum', 'maximum'] as const
 const HP_INJURY_FIELDS = ['hitPointMarkers', 'massiveDamage'] as const
 const HP_COST_FIELDS = ['kind', 'timing', 'minimumRemaining', 'damageOperationId'] as const
 const CONDITION_FIELDS = ['action', 'conditionId'] as const
-const COMBAT_STAGE_FIELDS = ['action', 'stage', 'value'] as const
+const COMBAT_STAGE_REQUIRED_FIELDS = ['action', 'stage', 'value'] as const
+const COMBAT_STAGE_OPTIONAL_FIELDS = ['selectedStage', 'stageSource', 'rounding'] as const
 const ADD_TEMPORARY_EFFECT_FIELDS = ['action', 'effectId', 'definition'] as const
 const REMOVE_TEMPORARY_EFFECT_FIELDS = ['action', 'effectId'] as const
 const APPLY_FIELD_FIELDS = ['action', 'category', 'fieldId', 'rounds'] as const
@@ -979,6 +1006,7 @@ const HP_MASSIVE_DAMAGE_POLICY_SET = new Set<string>(MOVE_EFFECT_HP_MASSIVE_DAMA
 const ROUNDING_POLICY_SET = new Set<string>(MOVE_EFFECT_ROUNDING_POLICIES)
 const CONDITION_ACTION_SET = new Set<string>(MOVE_EFFECT_CONDITION_ACTIONS)
 const COMBAT_STAGE_ACTION_SET = new Set<string>(MOVE_EFFECT_COMBAT_STAGE_ACTIONS)
+const COMBAT_STAT_STAGE_SET = new Set<string>(MOVE_EFFECT_COMBAT_STAT_STAGES)
 const COMBAT_STAGE_SET = new Set<string>(MOVE_EFFECT_COMBAT_STAGES)
 const FIELD_CATEGORY_SET = new Set<string>(MOVE_EFFECT_FIELD_CATEGORIES)
 const MOVEMENT_MODE_SET = new Set<string>(MOVE_EFFECT_MOVEMENT_MODES)
@@ -2046,29 +2074,85 @@ const parseCombatStagePayload = (
   value: unknown,
   path: string,
 ): MoveCombatStageEffectPayload => {
-  const input = parseExactRecord(value, COMBAT_STAGE_FIELDS, path)
+  const input = parseRecordWithOptionalFields(
+    value,
+    COMBAT_STAGE_REQUIRED_FIELDS,
+    COMBAT_STAGE_OPTIONAL_FIELDS,
+    path,
+  )
   const action = parseEnum<MoveEffectCombatStageAction>(
     ownValue(input, 'action', path),
     COMBAT_STAGE_ACTION_SET,
     `${path}.action`,
-    'modify, set, or reset',
+    'a supported combat-stage action',
   )
   const stage = parseEnum<MoveEffectCombatStage>(
     ownValue(input, 'stage', path),
     COMBAT_STAGE_SET,
     `${path}.stage`,
-    'a supported combat stage',
+    'a supported combat-stage selection',
   )
   const rawValue = ownValue(input, 'value', path)
   const stageValue = rawValue === null ? null : parseInteger(rawValue, `${path}.value`, -6, 6)
-  if ((action === 'reset') !== (stageValue === null)) {
+  const rawSelectedStage = Object.prototype.hasOwnProperty.call(input, 'selectedStage')
+    ? ownValue(input, 'selectedStage', path)
+    : null
+  const selectedStage = rawSelectedStage === null
+    ? null
+    : parseEnum<MoveEffectCombatStatStage>(
+        rawSelectedStage,
+        COMBAT_STAT_STAGE_SET,
+        `${path}.selectedStage`,
+        'Attack, Defense, Special Attack, Special Defense, or Speed',
+      )
+  const rawStageSource = Object.prototype.hasOwnProperty.call(input, 'stageSource')
+    ? ownValue(input, 'stageSource', path)
+    : null
+  const stageSource = rawStageSource === null
+    ? null
+    : parseEffectSelector(rawStageSource, `${path}.stageSource`)
+  const rawRounding = Object.prototype.hasOwnProperty.call(input, 'rounding')
+    ? ownValue(input, 'rounding', path)
+    : null
+  const rounding = rawRounding === null
+    ? null
+    : parseEnum<MoveEffectRoundingPolicy>(
+        rawRounding,
+        ROUNDING_POLICY_SET,
+        `${path}.rounding`,
+        'floor, round, or ceil',
+      )
+
+  if ((action === 'modify' || action === 'set') !== (stageValue !== null)) {
     fail(
       'invalid-effect-operation',
       `${path}.value`,
-      'must be null for reset and an integer from -6 through 6 for modify/set.',
+      'must be an integer from -6 through 6 for modify/set and null for every transform action.',
     )
   }
-  return { action, stage, value: stageValue }
+  if ((stage === 'selected-stat') !== (selectedStage !== null)) {
+    fail(
+      'invalid-effect-operation',
+      `${path}.selectedStage`,
+      'must name one concrete Stat only when stage is selected-stat.',
+    )
+  }
+  if ((action === 'copy' || action === 'transfer') !== (stageSource !== null)) {
+    fail(
+      'invalid-effect-operation',
+      `${path}.stageSource`,
+      'must be an authoritative selector for copy/transfer and null for every other action.',
+    )
+  }
+  if ((action === 'split') !== (rounding !== null)) {
+    fail(
+      'invalid-effect-operation',
+      `${path}.rounding`,
+      'must be present for split and null for every other action.',
+    )
+  }
+
+  return { action, stage, selectedStage, value: stageValue, stageSource, rounding }
 }
 
 const parseMultiHitDrawFormula = (

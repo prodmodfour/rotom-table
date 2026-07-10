@@ -46,7 +46,14 @@ const VALID_PAYLOADS = {
       recipient: 'target',
       kind: 'combat-stage',
       reasonCode: 'move.scratch.defense-drop',
-      payload: { action: 'modify', stage: 'def', value: -1 },
+      payload: {
+        action: 'modify',
+        stage: 'def',
+        selectedStage: null,
+        value: -1,
+        stageSource: null,
+        rounding: null,
+      },
     }],
   },
   'direct-hp':  {
@@ -78,7 +85,10 @@ const VALID_PAYLOADS = {
   'combat-stage': {
     action: 'modify',
     stage: 'atk',
+    selectedStage: null,
     value: 1,
+    stageSource: null,
+    rounding: null,
   },
   'temporary-effect': {
     action: 'add',
@@ -396,7 +406,14 @@ describe('MoveSpec typed effect operations', () => {
     })).payload).toEqual({ action: 'clear', conditionId: null })
     expect(parseMoveEffectOperation(validOperation('combat-stage', {
       payload: { action: 'reset', stage: 'all', value: null },
-    })).payload).toEqual({ action: 'reset', stage: 'all', value: null })
+    })).payload).toEqual({
+      action: 'reset',
+      stage: 'all',
+      selectedStage: null,
+      value: null,
+      stageSource: null,
+      rounding: null,
+    })
     expect(parseMoveEffectOperation(validOperation('temporary-effect', {
       payload: { action: 'remove', effectId: 'effect.helping-hand' },
     })).payload).toEqual({ action: 'remove', effectId: 'effect.helping-hand' })
@@ -406,6 +423,97 @@ describe('MoveSpec typed effect operations', () => {
     expect(parseMoveEffectOperation(validOperation('hazard', {
       payload: { action: 'remove', hazardId: 'hazard.spikes' },
     })).payload).toEqual({ action: 'remove', hazardId: 'hazard.spikes' })
+  })
+
+  it('parses advanced combat-stage transforms and concrete selected-Stat choices', () => {
+    const payloads = [
+      {
+        action: 'set',
+        stage: 'all-stats',
+        selectedStage: null,
+        value: 2,
+        stageSource: null,
+        rounding: null,
+      },
+      {
+        action: 'invert',
+        stage: 'all',
+        selectedStage: null,
+        value: null,
+        stageSource: null,
+        rounding: null,
+      },
+      {
+        action: 'clear-positive',
+        stage: 'selected-stat',
+        selectedStage: 'def',
+        value: null,
+        stageSource: null,
+        rounding: null,
+      },
+      {
+        action: 'clear-negative',
+        stage: 'spd',
+        selectedStage: null,
+        value: null,
+        stageSource: null,
+        rounding: null,
+      },
+      {
+        action: 'copy',
+        stage: 'all',
+        selectedStage: null,
+        value: null,
+        stageSource: { kind: 'selected-targets' },
+        rounding: null,
+      },
+      {
+        action: 'swap',
+        stage: 'all-stats',
+        selectedStage: null,
+        value: null,
+        stageSource: null,
+        rounding: null,
+      },
+      {
+        action: 'split',
+        stage: 'atk',
+        selectedStage: null,
+        value: null,
+        stageSource: null,
+        rounding: 'round',
+      },
+      {
+        action: 'transfer',
+        stage: 'all',
+        selectedStage: null,
+        value: null,
+        stageSource: { kind: 'current-target' },
+        rounding: null,
+      },
+    ]
+
+    const parsed = payloads.map((payload, index) => parseMoveEffectOperation(
+      validOperation('combat-stage', {
+        id: `operation.combat-stage-${index}`,
+        payload,
+      }),
+    ))
+
+    expect(parsed.map(operation => operation.payload)).toEqual(payloads)
+    parsed.forEach(operation => expectDeeplyFrozen(operation))
+
+    // Existing reviewed delta definitions normalize the new fields explicitly.
+    expect(parseMoveEffectOperation(validOperation('combat-stage', {
+      payload: { action: 'modify', stage: 'atk', value: 2 },
+    })).payload).toEqual({
+      action: 'modify',
+      stage: 'atk',
+      selectedStage: null,
+      value: 2,
+      stageSource: null,
+      rounding: null,
+    })
   })
 
   it('parses every standalone HP calculation and explicit set, copy, split, swap, and full mode', () => {
@@ -959,6 +1067,41 @@ describe('MoveSpec typed effect operations', () => {
       }),
       'invalid-effect-operation',
       'operation.payload.value',
+    )
+    expectEffectError(
+      validOperation('combat-stage', {
+        payload: {
+          ...VALID_PAYLOADS['combat-stage'],
+          stage: 'selected-stat',
+          selectedStage: null,
+        },
+      }),
+      'invalid-effect-operation',
+      'operation.payload.selectedStage',
+    )
+    expectEffectError(
+      validOperation('combat-stage', {
+        payload: {
+          ...VALID_PAYLOADS['combat-stage'],
+          action: 'copy',
+          value: null,
+          stageSource: null,
+        },
+      }),
+      'invalid-effect-operation',
+      'operation.payload.stageSource',
+    )
+    expectEffectError(
+      validOperation('combat-stage', {
+        payload: {
+          ...VALID_PAYLOADS['combat-stage'],
+          action: 'split',
+          value: null,
+          rounding: null,
+        },
+      }),
+      'invalid-effect-operation',
+      'operation.payload.rounding',
     )
     expectEffectError(
       validOperation('damage', {

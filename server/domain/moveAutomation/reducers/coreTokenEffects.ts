@@ -12,7 +12,10 @@ import {
 } from '../context'
 import type { MoveSpecEmittedOperation } from '../executeSpec'
 import type { MoveStateChangePlan } from '../plan'
-import { reduceCombatStageEffectForRecipient } from './combatStage'
+import {
+  reduceCombatStageEffect,
+  reduceCombatStageEffectForRecipient,
+} from './combatStage'
 import { reduceConditionEffectForRecipient } from './condition'
 import {
   MoveCoreTokenEffectReductionError,
@@ -32,6 +35,7 @@ import {
   resolveMoveCoreTokenRecipient,
 } from './coreTokenRecipients'
 import { applyMoveCoreTokenEffectResultsToTrace } from './coreTokenTrace'
+import { evaluateMoveSelector, type MoveRuleSelectorState } from '../evaluateExpression'
 import {
   reduceDamageEffectForRecipient,
   reduceDirectHpEffectForRecipient,
@@ -42,6 +46,7 @@ import type {
   MoveCoreTokenDamageQuery,
   MoveCoreTokenDynamicRecipientSets,
   MoveCoreTokenEffectImmunityQueries,
+  MoveCoreTokenEffectOperation,
   MoveCoreTokenEffectOperationResult,
   MoveCoreTokenEffectRecipient,
   MoveCoreTokenEffectRecipientResult,
@@ -111,6 +116,53 @@ const aggregateOutcome = (
   if (recipients.some(result => result.outcome === 'applied')) return 'applied'
   if (recipients.some(result => result.outcome === 'prevented')) return 'prevented'
   return 'no-op'
+}
+
+const combatStageSourceRecipient = (options: {
+  readonly operation: Extract<MoveCoreTokenEffectOperation, { readonly kind: 'combat-stage' }>
+  readonly context: AuthoritativeMoveRulesContext
+  readonly dynamic: Readonly<Record<
+    | 'attacked-targets'
+    | 'hit-targets'
+    | 'missed-targets'
+    | 'damaged-targets'
+    | 'fainted-targets',
+    readonly string[]
+  >>
+  readonly recipientsById: Map<string, MoveCoreTokenEffectRecipient>
+  readonly sheetReads: AuthoritativeMoveSheetRead[]
+  readonly sheetReadsByKey: Map<string, AuthoritativeMoveSheetRead>
+}): MoveCoreTokenEffectRecipient | undefined => {
+  const selector = options.operation.payload.stageSource
+  if (!selector) return undefined
+  const selectorState: MoveRuleSelectorState = {
+    targetIds: options.dynamic['attacked-targets'],
+    hitTargetIds: options.dynamic['hit-targets'],
+    missedTargetIds: options.dynamic['missed-targets'],
+    damagedTargetIds: options.dynamic['damaged-targets'],
+    faintedTargetIds: options.dynamic['fainted-targets'],
+  }
+  const sourceIds = evaluateMoveSelector({
+    selector,
+    context: options.context,
+    selectorState,
+  })
+  if (sourceIds.length !== 1) {
+    return failMoveCoreTokenEffectReduction(
+      'invalid-stage-source',
+      `Combat-stage operation ${options.operation.id} must resolve exactly one authoritative source.`,
+    )
+  }
+  const sourceId = sourceIds[0]!
+  const source = options.recipientsById.get(sourceId)
+    ?? resolveMoveCoreTokenRecipient(options.context, sourceId)
+  options.recipientsById.set(sourceId, source)
+  recordMoveCoreTokenRecipientRead(
+    options.sheetReads,
+    options.sheetReadsByKey,
+    source,
+  )
+  return source
 }
 
 const reduceRecipient = (options: {
@@ -246,28 +298,50 @@ export const reduceMoveCoreTokenOperationState = (
       recordMoveCoreTokenRecipientRead(sheetReads, sheetReadsByKey, recipient)
       return recipient
     })
-    const recipientResults = operation.kind === 'direct-hp'
-      && (operation.payload.mode === 'split' || operation.payload.mode === 'swap')
-      ? reduceRedistributionDirectHpEffectForRecipients({
+    let recipientResults: readonly MoveCoreTokenEffectRecipientResult[]
+    if (operation.kind === 'combat-stage') {
+      recipientResults = reduceCombatStageEffect({
+        operation,
+        recipients,
+        sourceRecipient: combatStageSourceRecipient({
           operation,
-          recipients,
-          accumulator: hpAccumulator,
-          temporaryHpAvailable,
-          immunities: input.immunities,
-        })
-      : recipients.map(recipient => reduceRecipient({
-          emission,
-          recipient,
-          hpAccumulator,
-          conditionAccumulator,
-          stageAccumulator,
-          temporaryHpAvailable,
-          damage: input.damage,
-          immunities: input.immunities,
           context: input.context,
-          hitTargetIds: dynamic['hit-targets'],
-          priorOperationResults: operationResults,
-        }))
+          dynamic,
+          recipientsById,
+          sheetReads,
+          sheetReadsByKey,
+        }),
+        accumulator: stageAccumulator,
+        immunities: input.immunities,
+      })
+    }
+    else if (
+      operation.kind === 'direct-hp'
+      && (operation.payload.mode === 'split' || operation.payload.mode === 'swap')
+    ) {
+      recipientResults = reduceRedistributionDirectHpEffectForRecipients({
+        operation,
+        recipients,
+        accumulator: hpAccumulator,
+        temporaryHpAvailable,
+        immunities: input.immunities,
+      })
+    }
+    else {
+      recipientResults = recipients.map(recipient => reduceRecipient({
+        emission,
+        recipient,
+        hpAccumulator,
+        conditionAccumulator,
+        stageAccumulator,
+        temporaryHpAvailable,
+        damage: input.damage,
+        immunities: input.immunities,
+        context: input.context,
+        hitTargetIds: dynamic['hit-targets'],
+        priorOperationResults: operationResults,
+      }))
+    }
     for (const result of recipientResults) {
       const consultedIds = canonicalMoveCoreTokenPlacementIds(
         input.context,
