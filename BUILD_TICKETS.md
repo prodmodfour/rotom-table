@@ -524,7 +524,7 @@ Status: DONE
 
 ## MA-035 — Build the immutable authoritative rules context
 
-Status: TODO
+Status: DONE
 
 **Depends on:** MA-034, MA-004
 **Commit:** `refactor(move-automation): centralize authoritative rules context`

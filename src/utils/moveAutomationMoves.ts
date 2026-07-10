@@ -37,6 +37,11 @@ export interface MoveAutomationMoveEntryOptions {
   combatSkillRankValue?: number | null
   /** Pokémon Loyalty rank (0–6), used by Return and Frustration. */
   loyalty?: number | null
+  /**
+   * Authoritative rules contexts inject a snapshotted server registry here.
+   * Browser callers may omit it and retain the v1 presentation registry.
+   */
+  scriptForMove?: (moveName: string) => MoveAutomationScript | null
 }
 
 const moveWithStruggleCombatSkill = (
@@ -129,7 +134,9 @@ export const buildMoveAutomationMoveEntries = (
     if (isPokemonLoyaltyDamageBaseMove(baseMove.name) && baseMove.damage_base == null) return []
 
     const { move, hasStab } = moveLikeWithSameTypeAttackBonus(baseMove, options.stabTypes)
-    const explicitScript = explicitScriptForMove(move.name)
+    const explicitScript = options.scriptForMove
+      ? options.scriptForMove(move.name)
+      : explicitScriptForMove(move.name)
     if (!explicitScript) return []
 
     const damageScript = scriptWithBaseMoveDamage(explicitScript, baseMove)

@@ -53,6 +53,8 @@ export interface ResolveCanonicalMoveEntryInput {
   readonly sheets: MapTokenSheetLookup
   readonly moveName: string
   readonly usageContext?: TokenMoveUsageContext
+  /** Server resolution injects the immutable runtime selected for this snapshot. */
+  readonly scriptForMove?: (moveName: string) => MoveAutomationScript | null
 }
 
 const cloneJson = <T>(value: T): T => {
@@ -78,10 +80,12 @@ const moveEntryMatchesName = (entry: MoveAutomationMoveEntry, normalizedMoveName
 const buildResolvedMoveEntries = (
   sourceEntries: readonly TokenSheetMoveEntry[],
   token: SpawnedPokemon,
+  scriptForMove?: (moveName: string) => MoveAutomationScript | null,
 ): ResolvedCanonicalMoveEntry[] => sourceEntries.flatMap((sourceEntry) => buildMoveAutomationMoveEntries([sourceEntry.move], {
   stabTypes: token.sheetKind === 'pokemon' ? token.defenderTypes : [],
   combatSkillRankValue: token.combatSkillRankValue,
   loyalty: token.sheetKind === 'pokemon' ? token.loyalty : undefined,
+  ...(scriptForMove ? { scriptForMove } : {}),
 }).map((entry) => {
   const clonedEntry: MoveAutomationMoveEntry = {
     label: entry.label,
@@ -112,6 +116,7 @@ export const resolveCanonicalMoveEntryForPlacement = ({
   sheets,
   moveName,
   usageContext = {},
+  scriptForMove,
 }: ResolveCanonicalMoveEntryInput): CanonicalMoveEntryResult => {
   if (!placement) {
     return { ok: false, reason: 'missing-placement', message: 'Actor placement is missing.' }
@@ -122,7 +127,7 @@ export const resolveCanonicalMoveEntryForPlacement = ({
 
   const normalizedMoveName = normalizeMoveName(moveName)
   const sourceEntries = moveEntriesForPlacement(placement, sheets)
-  const entry = buildResolvedMoveEntries(sourceEntries, token)
+  const entry = buildResolvedMoveEntries(sourceEntries, token, scriptForMove)
     .find((candidate) => moveEntryMatchesName(candidate, normalizedMoveName)) ?? null
 
   if (!entry) {

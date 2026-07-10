@@ -1,8 +1,6 @@
 import { MOVE_AUTOMATION_AREA_DIRECTIONS } from '~/types/moveAutomation'
 import type { ResolveMoveIntent, ResolveMoveSelection } from '#shared/livePlayMoveResolution'
 import { LIVE_PLAY_MOVE_RESOLUTION_MAX_TARGET_IDS } from '#shared/livePlayMoveResolution'
-import { normalizeRevision } from '#shared/sessionRevisions'
-import { resolveCanonicalMoveEntryForPlacement } from '~/utils/authoritativeMoveEntries'
 import { moveUsageKey } from '~/utils/moveUsage'
 import {
   isSeamlessAreaConfirmationScript,
@@ -14,10 +12,7 @@ import {
   moveAutomationTargetBranches,
 } from '~/utils/moveAutomation'
 import { moveAutomationCanResolveDamageAtRuntime } from '~/utils/moveAutomationDynamicDamage'
-import {
-  findMoveAutomationSemanticStatus,
-  moveAutomationStatusDetailsText,
-} from '~/utils/moveAutomationSemanticStatus'
+import { moveAutomationStatusDetailsText } from '~/utils/moveAutomationSemanticStatus'
 import { moveAutomationScriptForConfirmedAreaTemplate } from '~/utils/moveAutomationConfirmedAreaTemplate'
 import {
   buildMoveAutomationAreaTemplateCells,
@@ -39,13 +34,11 @@ import {
   parseExplicitMultiTargetMoveRangeMeters,
   parseSingleTargetMoveRangeMeters,
 } from '~/utils/moveAutomationRange'
-import { placementToSpawned, type SheetLookup } from '~/utils/placement'
 import { passDestinationLogLine } from '~/utils/moveAutomationPass'
 import { tokenFacingForPlacement, tokenFacingFromAreaDirection, tokenFacingTowardPoint } from '~/utils/tokenFacing'
 import { buildAllVoxelOccupancy } from '~/utils/voxelOccupancy'
 import type { CharacterSheet } from '~/types/characterSheet'
-import type { SheetMoveUsageState } from '~/types/moveUsage'
-import type { GridAnchor, SheetKind, SheetPlacement, TabletopMap } from '~/types/map'
+import type { GridAnchor, SheetPlacement, TabletopMap } from '~/types/map'
 import type {
   MoveAutomationAreaDirection,
   MoveAutomationAreaTemplate,
@@ -58,7 +51,15 @@ import type { TokenFacingDirection } from '~/types/tokenFacing'
 import type { TrainerSheet } from '~/types/trainerSheet'
 import { normalizeConditionName } from '~/utils/statusConditions'
 import type { MoveAutomationConditionImmunityContext } from '~/utils/moveAutomationConditionImmunity'
-import { ally as placementsAreAllies } from './moveAutomation/relationships'
+import {
+  AuthoritativeMoveRulesContextError,
+  buildAuthoritativeMoveRulesContext,
+  deduplicateAuthoritativeMoveSheetReads as deduplicateContextSheetReads,
+  type AuthoritativeMoveRulesContext,
+  type AuthoritativeMoveSheetRead,
+} from './moveAutomation/context'
+
+export type { AuthoritativeMoveSheetRead } from './moveAutomation/context'
 
 export type AuthoritativeMoveResolutionFailureReason =
   | 'invalid'
@@ -148,12 +149,6 @@ export interface AuthoritativeMovePassMovement {
   readonly pathCells: readonly GridAnchor[]
 }
 
-export interface AuthoritativeMoveSheetRead {
-  readonly kind: SheetKind
-  readonly slug: string
-  readonly revision: number
-}
-
 export interface AuthoritativeMoveResolution {
   readonly actorPlacementId: string
   readonly moveName: string
@@ -174,14 +169,6 @@ export interface AuthoritativeMoveResolution {
 
 type UnfinalizedAuthoritativeMoveResolution = Omit<AuthoritativeMoveResolution, 'sheetReads'>
 
-interface SpawnedTokenContext {
-  readonly sheets: SheetLookup
-  readonly placementById: ReadonlyMap<string, SheetPlacement>
-  readonly tokens: readonly SpawnedPokemon[]
-  readonly tokenById: ReadonlyMap<string, SpawnedPokemon>
-  readonly sheetReads: AuthoritativeMoveSheetRead[]
-}
-
 const fail = (
   reason: AuthoritativeMoveResolutionFailureReason,
   code: AuthoritativeMoveResolutionFailureCode,
@@ -198,71 +185,31 @@ const selectedTargetIdsForSelection = (selection: ResolveMoveSelection): readonl
   return selection.targetPlacementIds
 }
 
-const sheetForPlacement = (
-  sheets: SheetLookup,
-  placement: Pick<SheetPlacement, 'sheetKind' | 'sheetSlug'>,
-): CharacterSheet | TrainerSheet | undefined => placement.sheetKind === 'pokemon'
-  ? sheets.pokemon.get(placement.sheetSlug)
-  : sheets.trainer.get(placement.sheetSlug)
-
-const sheetMoveUsageForPlacement = (
-  sheets: SheetLookup,
-  placement: Pick<SheetPlacement, 'sheetKind' | 'sheetSlug'>,
-): SheetMoveUsageState | undefined => sheetForPlacement(sheets, placement)?.moveUsage
-
-const sheetReadKey = (read: Pick<AuthoritativeMoveSheetRead, 'kind' | 'slug'>): string =>
-  `${read.kind}:${read.slug}`
-
 export const deduplicateAuthoritativeMoveSheetReads = (
   reads: readonly AuthoritativeMoveSheetRead[],
 ): AuthoritativeMoveSheetRead[] => {
-  const deduplicated: AuthoritativeMoveSheetRead[] = []
-  const byRef = new Map<string, AuthoritativeMoveSheetRead>()
-  for (const read of reads) {
-    const normalized = {
-      kind: read.kind,
-      slug: read.slug,
-      revision: normalizeRevision(read.revision),
-    }
-    const key = sheetReadKey(normalized)
-    const existing = byRef.get(key)
-    if (existing) {
-      if (existing.revision !== normalized.revision) {
-        fail(
-          'conflict',
-          'sheet-read-revision-conflict',
-          `Sheet ${normalized.kind}/${normalized.slug} was observed at conflicting revisions ${existing.revision} and ${normalized.revision}.`,
-        )
-      }
-      continue
-    }
-    byRef.set(key, normalized)
-    deduplicated.push(normalized)
+  try {
+    return deduplicateContextSheetReads(reads)
   }
-  return deduplicated
+  catch (error) {
+    return fail(
+      'conflict',
+      'sheet-read-revision-conflict',
+      error instanceof Error ? error.message : 'A sheet was observed at conflicting revisions.',
+    )
+  }
 }
 
 const recordSheetReadForPlacement = (
-  context: SpawnedTokenContext,
+  context: AuthoritativeMoveRulesContext,
   placement: Pick<SheetPlacement, 'sheetKind' | 'sheetSlug'>,
-): void => {
-  const sheet = sheetForPlacement(context.sheets, placement)
-  if (!sheet) return
-  context.sheetReads.push({
-    kind: placement.sheetKind,
-    slug: placement.sheetSlug,
-    revision: normalizeRevision(sheet.revision),
-  })
-}
+): void => context.reads.recordPlacement(placement)
 
 const recordSheetReadsForTokens = (
-  context: SpawnedTokenContext,
+  context: AuthoritativeMoveRulesContext,
   tokens: readonly SpawnedPokemon[],
 ): void => {
-  for (const token of tokens) {
-    const placement = context.placementById.get(token.id)
-    if (placement) recordSheetReadForPlacement(context, placement)
-  }
+  for (const token of tokens) context.reads.recordToken(token)
 }
 
 const scriptConsultsSweetVeilProviders = (script: MoveAutomationScript): boolean =>
@@ -273,17 +220,21 @@ const scriptConsultsSweetVeilProviders = (script: MoveAutomationScript): boolean
   ))
 
 const authoritativeConditionImmunityContext = (
-  context: SpawnedTokenContext,
+  context: AuthoritativeMoveRulesContext,
   script: MoveAutomationScript,
 ): MoveAutomationConditionImmunityContext => {
   if (!scriptConsultsSweetVeilProviders(script)) return {}
 
   return {
-    sweetVeilProviderCandidates: context.tokens,
+    sweetVeilProviderCandidates: context.queries.tokens.all(),
     isAlly: (provider, target) => {
-      const providerPlacement = context.placementById.get(provider.id)
-      const targetPlacement = context.placementById.get(target.id)
-      if (!providerPlacement || !targetPlacement || !placementsAreAllies(providerPlacement, targetPlacement)) {
+      const providerPlacement = context.queries.placements.get(provider.id)
+      const targetPlacement = context.queries.placements.get(target.id)
+      if (
+        !providerPlacement
+        || !targetPlacement
+        || !context.queries.relationships.ally(providerPlacement, targetPlacement)
+      ) {
         return false
       }
       recordSheetReadForPlacement(context, providerPlacement)
@@ -293,69 +244,24 @@ const authoritativeConditionImmunityContext = (
 }
 
 const finalizeResolution = (
-  context: SpawnedTokenContext,
+  context: AuthoritativeMoveRulesContext,
   resolution: UnfinalizedAuthoritativeMoveResolution,
 ): AuthoritativeMoveResolution => ({
   ...resolution,
-  sheetReads: deduplicateAuthoritativeMoveSheetReads(context.sheetReads),
+  sheetReads: context.reads.snapshot(),
 })
 
-const buildSpawnedTokenContext = (input: ResolveAuthoritativeMoveInput): SpawnedTokenContext => {
-  const sheets: SheetLookup = {
-    pokemon: new Map(input.pokemonSheets),
-    trainer: new Map(input.trainerSheets),
-  }
-  const placementById = new Map<string, SheetPlacement>()
-  for (const placement of input.map.placements) {
-    if (placementById.has(placement.id)) {
-      fail('conflict', 'duplicate-placement-id', `Duplicate placement id ${placement.id} exists on the authoritative map.`)
-    }
-    placementById.set(placement.id, placement)
-  }
-
-  const tokens: SpawnedPokemon[] = []
-  const tokenById = new Map<string, SpawnedPokemon>()
-  for (const placement of input.map.placements) {
-    const token = placementToSpawned(placement, sheets, input.map)
-    if (!token) continue
-    tokens.push(token)
-    tokenById.set(token.id, token)
-  }
-
-  return { sheets, placementById, tokens, tokenById, sheetReads: [] }
-}
-
-const resolveActor = (
-  context: SpawnedTokenContext,
-  placementId: string,
-): { placement: SheetPlacement; token: SpawnedPokemon } => {
-  const placement = context.placementById.get(placementId)
-    ?? fail('not-found', 'actor-placement-missing', `Actor placement ${placementId} was not found.`)
-
-  const token = context.tokenById.get(placementId)
-  if (token) return { placement, token }
-
-  if (!sheetForPlacement(context.sheets, placement)) {
-    fail(
-      'not-found',
-      'actor-sheet-missing',
-      `Actor sheet ${placement.sheetKind}/${placement.sheetSlug} for placement ${placement.id} was not found.`,
-    )
-  }
-  return fail('not-found', 'actor-token-unresolved', `Actor placement ${placement.id} could not resolve to a spawned token.`)
-}
-
 const resolveSelectedTarget = (
-  context: SpawnedTokenContext,
+  context: AuthoritativeMoveRulesContext,
   targetId: string,
 ): { placement: SheetPlacement; token: SpawnedPokemon } => {
-  const placement = context.placementById.get(targetId)
+  const placement = context.queries.placements.get(targetId)
     ?? fail('not-found', 'target-placement-missing', `Target placement ${targetId} was not found.`)
 
-  const token = context.tokenById.get(targetId)
+  const token = context.queries.tokens.get(targetId)
   if (token) return { placement, token }
 
-  if (!sheetForPlacement(context.sheets, placement)) {
+  if (!context.queries.sheets.forPlacement(placement)) {
     fail(
       'not-found',
       'target-sheet-missing',
@@ -594,16 +500,16 @@ interface ResolvedAuthoritativeAreaPlacement {
 }
 
 const resolvedAreaPlacement = (options: {
-  readonly input: ResolveAuthoritativeMoveInput
-  readonly context: SpawnedTokenContext
+  readonly context: AuthoritativeMoveRulesContext
   readonly actor: SpawnedPokemon
   readonly template: MoveAutomationAreaTemplate
   readonly selection: Extract<ResolveMoveSelection, { kind: 'area' }>
 }): ResolvedAuthoritativeAreaPlacement => {
-  const constraints = areaCellConstraints(options.input.map)
+  const tokens = options.context.queries.tokens.all()
+  const constraints = areaCellConstraints(options.context.map)
   const common = {
     user: options.actor,
-    tokens: options.context.tokens,
+    tokens,
     includeEmpty: true,
     ...constraints,
   }
@@ -619,7 +525,7 @@ const resolvedAreaPlacement = (options: {
     assertAreaCellsPresent(options.template, cells)
     return {
       cells,
-      candidateTargets: authoritativeAreaCandidates({ actor: options.actor, tokens: options.context.tokens, cells }),
+      candidateTargets: authoritativeAreaCandidates({ actor: options.actor, tokens, cells }),
     }
   }
 
@@ -635,7 +541,7 @@ const resolvedAreaPlacement = (options: {
     assertAreaCellsPresent(options.template, cells)
     return {
       cells,
-      candidateTargets: authoritativeAreaCandidates({ actor: options.actor, tokens: options.context.tokens, cells }),
+      candidateTargets: authoritativeAreaCandidates({ actor: options.actor, tokens, cells }),
       direction,
     }
   }
@@ -655,7 +561,7 @@ const resolvedAreaPlacement = (options: {
     assertAreaCellsPresent(options.template, placement.cells)
     return {
       cells: placement.cells,
-      candidateTargets: authoritativeAreaCandidates({ actor: options.actor, tokens: options.context.tokens, cells: placement.cells }),
+      candidateTargets: authoritativeAreaCandidates({ actor: options.actor, tokens, cells: placement.cells }),
       aimCell,
     }
   }
@@ -675,7 +581,7 @@ const resolvedAreaPlacement = (options: {
     assertAreaCellsPresent(options.template, placement.cells)
     return {
       cells: placement.cells,
-      candidateTargets: authoritativeAreaCandidates({ actor: options.actor, tokens: options.context.tokens, cells: placement.cells }),
+      candidateTargets: authoritativeAreaCandidates({ actor: options.actor, tokens, cells: placement.cells }),
       aimCell,
     }
   }
@@ -687,7 +593,7 @@ const resolvedAreaPlacement = (options: {
     const placement = buildMoveAutomationPassPlacement({
       template: options.template,
       user: options.actor,
-      tokens: options.context.tokens,
+      tokens,
       direction,
       ...constraints,
     }) ?? fail(
@@ -701,7 +607,7 @@ const resolvedAreaPlacement = (options: {
     const cells = cloneGridAnchors(placement.cells)
     return {
       cells,
-      candidateTargets: authoritativeAreaCandidates({ actor: options.actor, tokens: options.context.tokens, cells }),
+      candidateTargets: authoritativeAreaCandidates({ actor: options.actor, tokens, cells }),
       direction,
       movement: {
         kind: 'pass',
@@ -746,17 +652,6 @@ const excludedAreaTargetIds = (
   return excludedIds
 }
 
-const createFeedbackIdFactory = (input: ResolveAuthoritativeMoveInput, random: () => number): (() => string) => {
-  if (input.idFactory) return input.idFactory
-  const now = input.now ?? Date.now
-  let sequence = 0
-  return () => {
-    sequence += 1
-    const randomPart = Math.floor(random() * 1_000_000_000).toString(36)
-    return `move-resolution-${Math.floor(now())}-${sequence}-${randomPart}`
-  }
-}
-
 const legalSingleTargetTokens = (options: {
   readonly script: MoveAutomationScript
   readonly user: SpawnedPokemon
@@ -772,28 +667,26 @@ const legalSingleTargetTokens = (options: {
 }
 
 const resolveSelfMove = (options: {
-  readonly input: ResolveAuthoritativeMoveInput
-  readonly actorPlacement: SheetPlacement
-  readonly actor: SpawnedPokemon
+  readonly context: AuthoritativeMoveRulesContext
   readonly script: MoveAutomationScript
   readonly frequency: string | null
   readonly damageFormula: string | null
   readonly canonicalMoveName: string
   readonly moveKey: string
   readonly targetBranchId?: string
-  readonly random: () => number
 }): UnfinalizedAuthoritativeMoveResolution => {
+  const { placement: actorPlacement, token: actor } = options.context.actor
   if (!isSeamlessSelfMoveScript(options.script)) {
     fail('invalid', 'selection-kind-mismatch', `${options.script.moveName} is not a seamless self move.`)
   }
   const transaction = resolveInstantSelfMoveAutomation({
     script: options.script,
-    user: options.actor,
-    fieldEffects: options.input.map.fieldEffects,
-    random: options.random,
+    user: actor,
+    fieldEffects: options.context.map.fieldEffects,
+    random: options.context.random,
   })
   return {
-    actorPlacementId: options.actorPlacement.id,
+    actorPlacementId: actorPlacement.id,
     moveName: options.script.moveName,
     canonicalMoveName: options.canonicalMoveName,
     moveKey: options.moveKey,
@@ -807,10 +700,7 @@ const resolveSelfMove = (options: {
 }
 
 const resolveSingleTargetMove = (options: {
-  readonly input: ResolveAuthoritativeMoveInput
-  readonly context: SpawnedTokenContext
-  readonly actorPlacement: SheetPlacement
-  readonly actor: SpawnedPokemon
+  readonly context: AuthoritativeMoveRulesContext
   readonly script: MoveAutomationScript
   readonly selection: Extract<ResolveMoveSelection, { kind: 'single-target' }>
   readonly frequency: string | null
@@ -818,9 +708,8 @@ const resolveSingleTargetMove = (options: {
   readonly canonicalMoveName: string
   readonly moveKey: string
   readonly targetBranchId?: string
-  readonly random: () => number
-  readonly idFactory: () => string
 }): UnfinalizedAuthoritativeMoveResolution => {
+  const { placement: actorPlacement, token: actor } = options.context.actor
   const moveName = options.script.moveName
   if (!isSeamlessSingleTargetMoveScript(options.script)) {
     fail('invalid', 'selection-kind-mismatch', `${moveName} is not a seamless single-target move.`)
@@ -828,7 +717,7 @@ const resolveSingleTargetMove = (options: {
   assertResolvableDamage(options.script, options.damageFormula)
 
   const rangeMeters = parseSingleTargetMoveRangeMeters(options.script.range, {
-    focusSkillRankValue: options.actor.focusSkillRankValue,
+    focusSkillRankValue: actor.focusSkillRankValue,
   }) ?? fail('unsupported', 'unsupported-range', `${options.script.moveName} has an unsupported target range.`)
 
   const resolvedTarget = resolveSelectedTarget(options.context, options.selection.targetPlacementId)
@@ -836,29 +725,29 @@ const resolveSingleTargetMove = (options: {
   const target = resolvedTarget.token
   const legalTargets = legalSingleTargetTokens({
     script: options.script,
-    user: options.actor,
-    tokens: options.context.tokens,
+    user: actor,
+    tokens: options.context.queries.tokens.all(),
     rangeMeters,
   })
   if (!legalTargets.some((candidate) => candidate.id === target.id)) {
     fail('invalid', 'target-out-of-range', `Target ${target.id} is outside ${options.script.moveName}'s authoritative range.`)
   }
 
-  const desiredFacing = desiredFacingTowardToken(options.actorPlacement, options.actor, target)
+  const desiredFacing = desiredFacingTowardToken(actorPlacement, actor, target)
   const common = {
     script: options.script,
-    user: options.actor,
+    user: actor,
     target,
     damageFormula: options.damageFormula,
-    fieldEffects: options.input.map.fieldEffects,
+    fieldEffects: options.context.map.fieldEffects,
     conditionImmunityContext: authoritativeConditionImmunityContext(options.context, options.script),
-    random: options.random,
+    random: options.context.random,
   }
 
   if (!options.script.requiresAccuracy) {
     const transaction = resolveInstantTargetMoveAutomation(common)
     return {
-      actorPlacementId: options.actorPlacement.id,
+      actorPlacementId: actorPlacement.id,
       moveName: options.script.moveName,
       canonicalMoveName: options.canonicalMoveName,
       moveKey: options.moveKey,
@@ -874,10 +763,10 @@ const resolveSingleTargetMove = (options: {
 
   const result = resolveInstantMoveAutomation({
     ...common,
-    idFactory: options.idFactory,
+    idFactory: options.context.idFactory,
   })
   return {
-    actorPlacementId: options.actorPlacement.id,
+    actorPlacementId: actorPlacement.id,
     moveName: options.script.moveName,
     canonicalMoveName: options.canonicalMoveName,
     moveKey: options.moveKey,
@@ -893,10 +782,7 @@ const resolveSingleTargetMove = (options: {
 }
 
 const resolveTargetCountMove = (options: {
-  readonly input: ResolveAuthoritativeMoveInput
-  readonly context: SpawnedTokenContext
-  readonly actorPlacement: SheetPlacement
-  readonly actor: SpawnedPokemon
+  readonly context: AuthoritativeMoveRulesContext
   readonly script: MoveAutomationScript
   readonly selection: Extract<ResolveMoveSelection, { kind: 'target-count' }>
   readonly frequency: string | null
@@ -904,8 +790,8 @@ const resolveTargetCountMove = (options: {
   readonly canonicalMoveName: string
   readonly moveKey: string
   readonly targetBranchId?: string
-  readonly random: () => number
 }): UnfinalizedAuthoritativeMoveResolution => {
+  const { placement: actorPlacement, token: actor } = options.context.actor
   const moveName = options.script.moveName
   if (!isSeamlessTargetCountMoveScript(options.script)) {
     fail('invalid', 'selection-kind-mismatch', `${moveName} is not a seamless target-count move.`)
@@ -935,8 +821,8 @@ const resolveTargetCountMove = (options: {
   }
 
   const legalTargets = moveAutomationTargetsInRange({
-    user: options.actor,
-    tokens: options.context.tokens,
+    user: actor,
+    tokens: options.context.queries.tokens.all(),
     rangeMeters,
   })
   const legalTargetIds = new Set(legalTargets.map((target) => target.id))
@@ -951,17 +837,17 @@ const resolveTargetCountMove = (options: {
   const selectedTargetIds = selectedTargets.map((target) => target.id)
   const transaction = resolveInstantMultiTargetMoveAutomation({
     script: options.script,
-    user: options.actor,
+    user: actor,
     selectedTargets,
     damageFormula: options.damageFormula,
-    fieldEffects: options.input.map.fieldEffects,
+    fieldEffects: options.context.map.fieldEffects,
     conditionImmunityContext: authoritativeConditionImmunityContext(options.context, options.script),
-    random: options.random,
+    random: options.context.random,
   })
-  const desiredFacing = desiredFacingTowardNearestTarget(options.actorPlacement, options.actor, selectedTargets)
+  const desiredFacing = desiredFacingTowardNearestTarget(actorPlacement, actor, selectedTargets)
 
   return {
-    actorPlacementId: options.actorPlacement.id,
+    actorPlacementId: actorPlacement.id,
     moveName: options.script.moveName,
     canonicalMoveName: options.canonicalMoveName,
     moveKey: options.moveKey,
@@ -976,10 +862,7 @@ const resolveTargetCountMove = (options: {
 }
 
 const resolveAreaMove = (options: {
-  readonly input: ResolveAuthoritativeMoveInput
-  readonly context: SpawnedTokenContext
-  readonly actorPlacement: SheetPlacement
-  readonly actor: SpawnedPokemon
+  readonly context: AuthoritativeMoveRulesContext
   readonly script: MoveAutomationScript
   readonly selection: Extract<ResolveMoveSelection, { kind: 'area' }>
   readonly frequency: string | null
@@ -987,15 +870,14 @@ const resolveAreaMove = (options: {
   readonly canonicalMoveName: string
   readonly moveKey: string
   readonly targetBranchId?: string
-  readonly random: () => number
 }): UnfinalizedAuthoritativeMoveResolution => {
+  const { placement: actorPlacement, token: actor } = options.context.actor
   const template = selectedAreaTemplate(options.script, options.selection.areaTemplateId)
   assertResolvableDamage(options.script, options.damageFormula)
 
   const placement = resolvedAreaPlacement({
-    input: options.input,
     context: options.context,
-    actor: options.actor,
+    actor,
     template,
     selection: options.selection,
   })
@@ -1008,23 +890,23 @@ const resolveAreaMove = (options: {
   const confirmedScript = moveAutomationScriptForConfirmedAreaTemplate(options.script, template)
   const baseTransaction = resolveInstantAreaMoveAutomation({
     script: confirmedScript,
-    user: options.actor,
+    user: actor,
     targets: selectedTargets,
     damageFormula: options.damageFormula,
-    fieldEffects: options.input.map.fieldEffects,
+    fieldEffects: options.context.map.fieldEffects,
     conditionImmunityContext: authoritativeConditionImmunityContext(options.context, confirmedScript),
-    random: options.random,
+    random: options.context.random,
   })
   const transaction = placement.movement?.kind === 'pass'
     ? moveAutomationTransactionWithAppendedLogLine(
         baseTransaction,
-        passDestinationLogLine(options.actor, placement.movement.destination),
+        passDestinationLogLine(actor, placement.movement.destination),
       )
     : baseTransaction
-  const currentFacing = tokenFacingForPlacement(options.actorPlacement)
+  const currentFacing = tokenFacingForPlacement(actorPlacement)
   const desiredFacing = placement.direction
     ? tokenFacingFromAreaDirection(placement.direction, currentFacing) ?? (placement.movement?.kind === 'pass' ? currentFacing : undefined)
-    : desiredFacingTowardNearestTarget(options.actorPlacement, options.actor, selectedTargets)
+    : desiredFacingTowardNearestTarget(actorPlacement, actor, selectedTargets)
   const movement = placement.movement
     ? {
         kind: 'pass' as const,
@@ -1036,7 +918,7 @@ const resolveAreaMove = (options: {
     : undefined
 
   return {
-    actorPlacementId: options.actorPlacement.id,
+    actorPlacementId: actorPlacement.id,
     moveName: confirmedScript.moveName,
     canonicalMoveName: options.canonicalMoveName,
     moveKey: options.moveKey,
@@ -1060,25 +942,39 @@ const resolveAreaMove = (options: {
   }
 }
 
-export const resolveAuthoritativeMove = (input: ResolveAuthoritativeMoveInput): AuthoritativeMoveResolution => {
-  const context = buildSpawnedTokenContext(input)
-  const { placement: actorPlacement, token: actor } = resolveActor(context, input.intent.placementId)
+const failFromContextError = (error: AuthoritativeMoveRulesContextError): never => {
+  if (error.code === 'duplicate-placement-id') {
+    return fail('conflict', 'duplicate-placement-id', error.message)
+  }
+  if (error.code === 'actor-placement-missing') {
+    return fail('not-found', 'actor-placement-missing', error.message)
+  }
+  if (error.code === 'actor-sheet-missing') {
+    return fail('not-found', 'actor-sheet-missing', error.message)
+  }
+  if (error.code === 'actor-token-unresolved') {
+    return fail('not-found', 'actor-token-unresolved', error.message)
+  }
+  if (error.code === 'duplicate-selected-id') {
+    return fail('conflict', 'duplicate-target-id', error.message)
+  }
+  if (error.code === 'sheet-read-revision-conflict') {
+    return fail('conflict', 'sheet-read-revision-conflict', error.message)
+  }
+  return fail('conflict', 'duplicate-placement-id', error.message)
+}
+
+/** Resolve mechanics exclusively from one detached authoritative snapshot. */
+export const resolveAuthoritativeMoveFromContext = (
+  context: AuthoritativeMoveRulesContext,
+): AuthoritativeMoveResolution => {
+  const { placement: actorPlacement } = context.actor
+  const { intent } = context
   recordSheetReadForPlacement(context, actorPlacement)
-  const submittedTargetIds = selectedTargetIdsForSelection(input.intent.selection)
+  const submittedTargetIds = selectedTargetIdsForSelection(intent.selection)
   assertNoDuplicateTargetIds(submittedTargetIds)
 
-  const moveEntryResult = resolveCanonicalMoveEntryForPlacement({
-    placement: actorPlacement,
-    token: actor,
-    sheets: context.sheets,
-    moveName: input.intent.moveName,
-    usageContext: {
-      mapMoveUsage: input.map.moveUsage,
-      sheetMoveUsage: sheetMoveUsageForPlacement(context.sheets, actorPlacement),
-      activeScene: input.map.activeScene ?? null,
-      currentRound: input.map.initiative?.round ?? null,
-    },
-  })
+  const moveEntryResult = context.queries.resolveActorMoveEntry(intent.moveName)
   if (!moveEntryResult.ok) {
     if (moveEntryResult.reason === 'condition-blocked') {
       fail('unauthorized-state', 'move-condition-blocked', moveEntryResult.message)
@@ -1095,7 +991,7 @@ export const resolveAuthoritativeMove = (input: ResolveAuthoritativeMoveInput): 
   const entry = moveEntryResult.ok
     ? moveEntryResult.entry
     : fail('not-found', 'move-absent', 'Move entry resolution failed.')
-  const semanticStatus = findMoveAutomationSemanticStatus(entry.canonicalMoveName)
+  const semanticStatus = context.queries.rules.semanticStatusFor(entry.canonicalMoveName)
   if (semanticStatus?.baseStatus === 'blocked') {
     const details = moveAutomationStatusDetailsText(semanticStatus)
     fail(
@@ -1106,83 +1002,70 @@ export const resolveAuthoritativeMove = (input: ResolveAuthoritativeMoveInput): 
   }
   const { script, targetBranchId } = resolveCanonicalScript({
     baseScript: entry.script,
-    targetBranchId: input.intent.targetBranchId,
+    targetBranchId: intent.targetBranchId,
   })
   const resolvedMoveKey = moveUsageKey(entry.canonicalMoveName)
   if (!resolvedMoveKey) {
     fail('invalid', 'move-usage-key-invalid', `${entry.canonicalMoveName} did not produce a valid move usage key.`)
   }
-  const random = input.random ?? Math.random
-  const idFactory = createFeedbackIdFactory(input, random)
 
-  if (input.intent.selection.kind === 'self') {
-    return finalizeResolution(context, resolveSelfMove({
-      input,
-      actorPlacement,
-      actor,
-      script,
-      frequency: entry.frequency,
-      damageFormula: entry.damageFormula,
-      canonicalMoveName: entry.canonicalMoveName,
-      moveKey: resolvedMoveKey,
-      targetBranchId,
-      random,
-    }))
+  const common = {
+    context,
+    script,
+    frequency: entry.frequency,
+    damageFormula: entry.damageFormula,
+    canonicalMoveName: entry.canonicalMoveName,
+    moveKey: resolvedMoveKey,
+    targetBranchId,
   }
 
-  if (input.intent.selection.kind === 'single-target') {
+  if (intent.selection.kind === 'self') {
+    return finalizeResolution(context, resolveSelfMove(common))
+  }
+  if (intent.selection.kind === 'single-target') {
     return finalizeResolution(context, resolveSingleTargetMove({
-      input,
-      context,
-      actorPlacement,
-      actor,
-      script,
-      selection: input.intent.selection,
-      frequency: entry.frequency,
-      damageFormula: entry.damageFormula,
-      canonicalMoveName: entry.canonicalMoveName,
-      moveKey: resolvedMoveKey,
-      targetBranchId,
-      random,
-      idFactory,
+      ...common,
+      selection: intent.selection,
     }))
   }
-
-  if (input.intent.selection.kind === 'target-count') {
+  if (intent.selection.kind === 'target-count') {
     return finalizeResolution(context, resolveTargetCountMove({
-      input,
-      context,
-      actorPlacement,
-      actor,
-      script,
-      selection: input.intent.selection,
-      frequency: entry.frequency,
-      damageFormula: entry.damageFormula,
-      canonicalMoveName: entry.canonicalMoveName,
-      moveKey: resolvedMoveKey,
-      targetBranchId,
-      random,
+      ...common,
+      selection: intent.selection,
     }))
   }
-
-  if (input.intent.selection.kind === 'area') {
+  if (intent.selection.kind === 'area') {
     return finalizeResolution(context, resolveAreaMove({
-      input,
-      context,
-      actorPlacement,
-      actor,
-      script,
-      selection: input.intent.selection,
-      frequency: entry.frequency,
-      damageFormula: entry.damageFormula,
-      canonicalMoveName: entry.canonicalMoveName,
-      moveKey: resolvedMoveKey,
-      targetBranchId,
-      random,
+      ...common,
+      selection: intent.selection,
     }))
   }
-
   return fail('unsupported', 'unsupported-move-script', 'Unsupported move selection.')
+}
+
+export const resolveAuthoritativeMove = (input: ResolveAuthoritativeMoveInput): AuthoritativeMoveResolution => {
+  const selectedPlacementIds = selectedTargetIdsForSelection(input.intent.selection)
+  assertNoDuplicateTargetIds(selectedPlacementIds)
+  const random = input.random ?? Math.random
+  const time = (input.now ?? Date.now)()
+
+  try {
+    const context = buildAuthoritativeMoveRulesContext({
+      map: input.map,
+      pokemonSheets: input.pokemonSheets,
+      trainerSheets: input.trainerSheets,
+      intent: input.intent,
+      selectedPlacementIds,
+      random,
+      time,
+      idFactory: input.idFactory,
+    })
+    return resolveAuthoritativeMoveFromContext(context)
+  }
+  catch (error) {
+    if (error instanceof AuthoritativeMoveRulesContextError) return failFromContextError(error)
+    throw error
+  }
 }
 
 export const isAuthoritativeMoveResolutionError = (value: unknown): value is AuthoritativeMoveResolutionError =>
