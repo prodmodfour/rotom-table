@@ -641,7 +641,7 @@ Status: DONE
 
 ## MA-044 — Execute the first simple move as native v2
 
-Status: TODO
+Status: DONE
 
 **Depends on:** MA-038–MA-043
 **Commit:** `feat(move-automation): run scratch through movespec v2`

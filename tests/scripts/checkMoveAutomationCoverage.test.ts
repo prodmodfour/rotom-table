@@ -476,9 +476,11 @@ describe('move automation semantic coverage checker', () => {
       })
 
       const staleFingerprint = mutableManifest()
-      const staleScratch = staleFingerprint.moves.find(({ canonicalId }) => canonicalId === 'Scratch')
-      expect(staleScratch).toBeDefined()
-      staleScratch!.runtime.definitionHash = 'a'.repeat(64)
+      const staleLegacyRuntime = staleFingerprint.moves.find(({ runtime }) => (
+        runtime.kind === 'legacy-v1'
+      ))
+      expect(staleLegacyRuntime).toBeDefined()
+      staleLegacyRuntime!.runtime.definitionHash = 'a'.repeat(64)
       const driftResult = runChecker(
         '--manifest', writeManifest(directory, staleFingerprint), '--json',
       )

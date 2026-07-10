@@ -5,6 +5,7 @@ import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { describe, expect, it } from 'vitest'
 import manifestJson from '../../data/move-automation/manifest.json'
+import legacyFingerprintsJson from '../../data/move-automation/legacy-v1-fingerprints.json'
 import { EXPLICIT_MOVE_AUTOMATION_SCRIPTS } from '../../src/utils/move-automation/registry'
 
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), '../..')
@@ -77,7 +78,15 @@ describe('move automation semantic manifest seed script', () => {
       expect(result.status, `${result.stdout}\n${result.stderr}`).toBe(0)
       const seeded = JSON.parse(readFileSync(manifestPath, 'utf8')) as typeof manifestJson
       const registeredIds = new Set(EXPLICIT_MOVE_AUTOMATION_SCRIPTS.keys())
-      const committedById = new Map(manifestJson.moves.map(row => [row.canonicalId, row]))
+      const legacyRuntimeById = new Map(legacyFingerprintsJson.entries.map(entry => [
+        entry.canonicalId,
+        {
+          kind: 'legacy-v1',
+          version: entry.version,
+          definitionHash: entry.definitionHash,
+          sourceModule: entry.sourceModule,
+        },
+      ]))
       const manifestIds = seeded.moves.map(({ canonicalId }) => canonicalId)
       const assisted = seeded.moves.filter(({ baseStatus }) => baseStatus === 'assisted')
       const blocked = seeded.moves.filter(({ baseStatus }) => baseStatus === 'blocked')
@@ -107,7 +116,7 @@ describe('move automation semantic manifest seed script', () => {
             blockerCodes: [],
             limitations: [{ code: 'audit.required' }],
           })
-          expect(row.runtime).toEqual(committedById.get(row.canonicalId)?.runtime)
+          expect(row.runtime).toEqual(legacyRuntimeById.get(row.canonicalId))
         }
         else {
           expect(row).toMatchObject({

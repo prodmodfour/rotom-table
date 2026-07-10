@@ -30,7 +30,13 @@ describe('legacy move automation implementation fingerprints', () => {
     expect(new Set(generatedIndex.entries.map(entry => entry.definitionHash)).size)
       .toBe(generatedIndex.entries.length)
 
-    for (const entry of generatedIndex.entries) {
+    const selectedLegacyEntries = generatedIndex.entries.filter(entry => (
+      manifestById.get(entry.canonicalId)?.runtime.kind === 'legacy-v1'
+    ))
+    expect(selectedLegacyEntries).toHaveLength(
+      manifestJson.moves.filter(row => row.runtime.kind === 'legacy-v1').length,
+    )
+    for (const entry of selectedLegacyEntries) {
       expect(manifestById.get(entry.canonicalId)).toMatchObject({
         runtime: {
           kind: 'legacy-v1',
@@ -85,9 +91,9 @@ describe('legacy move automation implementation fingerprints', () => {
       .toEqual(manifestJson)
 
     const staleManifest = structuredClone(manifestJson)
-    const scratch = staleManifest.moves.find(row => row.canonicalId === 'Scratch')
-    expect(scratch).toBeDefined()
-    scratch!.runtime.definitionHash = '0'.repeat(64)
+    const selectedLegacyRow = staleManifest.moves.find(row => row.runtime.kind === 'legacy-v1')
+    expect(selectedLegacyRow).toBeDefined()
+    selectedLegacyRow!.runtime.definitionHash = '0'.repeat(64)
     expect(() => assertLegacyMoveAutomationManifestLinksCurrent(
       staleManifest,
       committedFingerprints,

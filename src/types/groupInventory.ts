@@ -235,7 +235,7 @@ export const normalizeGroupInventoryDocument = (
 ): GroupInventoryDocument => {
   const source = isRecord(value) ? value : {}
   const now = coerceSafeNonNegativeInteger(options.now, Date.now())
-  const document: GroupInventoryDocument = {
+  const normalizedDocument: GroupInventoryDocument = {
     slug: normalizeGroupInventorySlug(source.slug, normalizeGroupInventorySlug(options.slug)),
     revision: normalizeRevision(source.revision),
     updatedAt: normalizeUpdatedAt(source.updatedAt, now),
@@ -244,7 +244,7 @@ export const normalizeGroupInventoryDocument = (
   }
 
   const notes = normalizeOptionalString(source.notes)
-  if (notes !== undefined) document.notes = notes
+  if (notes !== undefined) normalizedDocument.notes = notes
 
-  return document
+  return normalizedDocument
 }

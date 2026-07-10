@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import manifestJson from '../../data/move-automation/manifest.json'
 import legacyFingerprintsJson from '../../data/move-automation/legacy-v1-fingerprints.json'
+import type { MoveAutomationManifest } from '#shared/moveAutomation/manifest'
 import { scratchV2PassHitFixture } from '../fixtures/moveAutomation/scratchV2'
 import { planAuthoritativeMoveState } from '~~/server/domain/planAuthoritativeMoveState'
 import {
@@ -21,7 +22,7 @@ const scratchLegacy = legacyFingerprintsJson.entries
   .find(entry => entry.canonicalId === 'Scratch')!
 
 const runtimeRegistry = (kind: 'legacy-v1' | 'movespec-v2') => {
-  const manifest = structuredClone(manifestJson)
+  const manifest = structuredClone(manifestJson) as unknown as MoveAutomationManifest
   const row = manifest.moves.find(item => item.canonicalId === 'Scratch')!
   if (kind === 'legacy-v1') {
     ;(row as { runtime: unknown }).runtime = {
