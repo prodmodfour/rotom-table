@@ -45,6 +45,9 @@ export interface ResolveMoveAutomationAreaTargetsInput {
 }
 
 export type MoveAutomationAreaTargetErrorCode =
+  | 'invalid-geometric-candidates'
+  | 'duplicate-geometric-candidate'
+  | 'too-many-geometric-candidates'
   | 'invalid-requested-exclusions'
   | 'duplicate-requested-exclusion'
   | 'requested-exclusion-outside-geometry'
@@ -67,6 +70,44 @@ const fail = (
   throw new MoveAutomationAreaTargetError(code, message)
 }
 
+const validPlacementId = (value: unknown): value is string => (
+  typeof value === 'string'
+  && value.length > 0
+  && value.length <= MOVE_SPEC_LIMITS.identifierLength
+  && value.trim() === value
+)
+
+const geometricCandidates = (
+  values: readonly string[],
+): readonly string[] => {
+  if (!Array.isArray(values)) {
+    return fail('invalid-geometric-candidates', 'Geometric area candidates must be an array.')
+  }
+  if (values.length > MOVE_SPEC_LIMITS.targetCount) {
+    return fail(
+      'too-many-geometric-candidates',
+      `Geometric area candidates must contain at most ${MOVE_SPEC_LIMITS.targetCount} placement IDs.`,
+    )
+  }
+
+  const seen = new Set<string>()
+  const candidates: string[] = []
+  for (const placementId of values) {
+    if (!validPlacementId(placementId)) {
+      return fail('invalid-geometric-candidates', 'Geometric area candidates contain an invalid placement ID.')
+    }
+    if (seen.has(placementId)) {
+      return fail(
+        'duplicate-geometric-candidate',
+        `Geometric area candidate ${placementId} was listed more than once.`,
+      )
+    }
+    seen.add(placementId)
+    candidates.push(placementId)
+  }
+  return Object.freeze(candidates)
+}
+
 const requestedExclusionSet = (
   values: readonly string[],
   geometricallyAffectedPlacementIds: readonly string[],
@@ -84,7 +125,7 @@ const requestedExclusionSet = (
   const geometry = new Set(geometricallyAffectedPlacementIds)
   const exclusions = new Set<string>()
   for (const placementId of values) {
-    if (typeof placementId !== 'string' || placementId.length === 0 || placementId.trim() !== placementId) {
+    if (!validPlacementId(placementId)) {
       return fail('invalid-requested-exclusions', 'Requested area exclusions contain an invalid placement ID.')
     }
     if (exclusions.has(placementId)) {
@@ -129,14 +170,15 @@ const freezeEvaluation = (
 export const resolveMoveAutomationAreaTargets = (
   input: ResolveMoveAutomationAreaTargetsInput,
 ): MoveAutomationAreaTargetResult => {
+  const geometry = geometricCandidates(input.geometricallyAffectedPlacementIds)
   const requestedExclusions = requestedExclusionSet(
     input.requestedExcludedPlacementIds ?? [],
-    input.geometricallyAffectedPlacementIds,
+    geometry,
   )
   const predicateResult = evaluateMoveAutomationTargetPredicates({
     actorPlacementId: input.actorPlacementId,
-    authoritativeCandidatePlacementIds: input.geometricallyAffectedPlacementIds,
-    requestedCandidatePlacementIds: input.geometricallyAffectedPlacementIds,
+    authoritativeCandidatePlacementIds: geometry,
+    requestedCandidatePlacementIds: geometry,
     predicate: input.predicate,
     relationships: input.relationships,
     states: input.states,
@@ -150,9 +192,7 @@ export const resolveMoveAutomationAreaTargets = (
 
   return Object.freeze({
     predicate: predicateResult.predicate,
-    geometricallyAffectedPlacementIds: Object.freeze([
-      ...input.geometricallyAffectedPlacementIds,
-    ]),
+    geometricallyAffectedPlacementIds: geometry,
     eligibleTargetPlacementIds: Object.freeze(eligibleTargetPlacementIds),
     evaluations: Object.freeze(evaluations),
   })

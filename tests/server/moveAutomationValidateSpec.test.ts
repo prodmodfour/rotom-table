@@ -312,11 +312,11 @@ describe('authoritative MoveSpec validation and hashing', () => {
 
     const nonArea = structuredClone(spec)
     nonArea.targeting.kind = 'single-target'
-    expectDefinitionError(
-      () => validateMoveSpec(nonArea),
-      'invalid-definition',
-      'spec.targeting.predicate',
-    )
+    expect(() => validateMoveSpec(nonArea)).toThrowError(expect.objectContaining({
+      name: MoveSpecValidationError.name,
+      code: 'invalid-spec',
+      path: 'spec.targeting.predicate',
+    }))
   })
 
   it('normalizes omitted syntax defaults, phase order, tags, and object key order', () => {

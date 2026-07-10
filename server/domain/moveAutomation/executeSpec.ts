@@ -503,6 +503,12 @@ const targetIdsForSpec = (
 ): readonly string[] => {
   if (spec.targeting.kind === 'none') return []
   if (spec.targeting.kind === 'self') return [context.actor.placement.id]
+  if (spec.targeting.kind === 'area' && authoritativeTargetIds === undefined) {
+    return fail(
+      'authoritative-target-invalid',
+      'Geometric area targeting requires server-derived eligible target IDs.',
+    )
+  }
   if (authoritativeTargetIds !== undefined) {
     return validatedAuthoritativeTargetIds(context, authoritativeTargetIds)
   }
@@ -603,7 +609,10 @@ const effectRecipientIds = (
       ids = state.targetIds
       break
     case 'area-targets':
-      ids = context.candidatePlacements.map(({ id }) => id)
+      // Geometric candidates have already passed the reviewed area predicate.
+      // Re-reading the broader context candidate set here would re-include
+      // rule-excluded or explicitly excluded placements.
+      ids = state.targetIds
       break
     case 'hit-targets':
       ids = state.hitTargetIds
@@ -965,6 +974,15 @@ export const executeMoveSpec = (
         fail(
           'authoritative-target-invalid',
           'Server-derived target evaluations are supported only for geometric area targeting.',
+        )
+      }
+      if (
+        spec.targeting.kind === 'area'
+        && input.authoritativeTargetEvaluations === undefined
+      ) {
+        fail(
+          'authoritative-target-invalid',
+          'Geometric area targeting requires complete server-derived target evaluations.',
         )
       }
       const resolvedTargetIds = targetIdsForSpec(

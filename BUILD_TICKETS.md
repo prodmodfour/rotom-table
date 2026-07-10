@@ -914,7 +914,7 @@ Status: DONE
 
 ## MA-073A — Build the authoritative area-target filtering seam
 
-Status: TODO
+Status: DONE
 
 **Depends on:** MA-070–MA-072, existing area geometry
 **Commit:** `feat(move-automation): filter geometric area candidates`

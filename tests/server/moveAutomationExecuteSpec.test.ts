@@ -274,7 +274,7 @@ describe('phased MoveSpec interpreter', () => {
     expect(Object.isFrozen(result.targetIds)).toBe(true)
   })
 
-  it('records complete server-derived area predicate decisions without widening targets', () => {
+  it('consumes immutable server-derived area decisions without widening operation recipients', () => {
     const spec = baseSpec()
     spec.targeting = {
       kind: 'area',
@@ -287,42 +287,69 @@ describe('phased MoveSpec interpreter', () => {
         excludeActor: true,
       },
     }
-    const context = buildContext({
-      candidatePlacementIds: ['target-token', 'bystander-token'],
-      selectedPlacementIds: [],
-    })
+    spec.phases = [{
+      phase: 'target',
+      operations: [logOperation('operation.area-targeted', 'target', 'area-targets')],
+    }]
+    const definition = definitionFor(spec)
+    const authoritativeTargetIds = ['target-token']
     const evaluations = [
       { targetPlacementId: 'target-token', outcome: 'included' as const, reasonCode: 'target-included' },
       { targetPlacementId: 'bystander-token', outcome: 'excluded' as const, reasonCode: 'target-excluded-not-enemy' },
     ]
 
+    expect(() => executeMoveSpec({
+      definition,
+      context: buildContext({
+        candidatePlacementIds: ['target-token', 'bystander-token'],
+        selectedPlacementIds: [],
+      }),
+    })).toThrowError(expect.objectContaining({
+      name: MoveSpecExecutionError.name,
+      code: 'authoritative-target-invalid',
+    }))
+
     const result = executeMoveSpec({
-      definition: definitionFor(spec),
-      context,
-      authoritativeTargetIds: ['target-token'],
+      definition,
+      context: buildContext({
+        candidatePlacementIds: ['target-token', 'bystander-token'],
+        selectedPlacementIds: [],
+      }),
+      authoritativeTargetIds,
       authoritativeTargetEvaluations: evaluations,
     })
+    authoritativeTargetIds.push('bystander-token')
+    evaluations[0]!.reasonCode = 'tampered-after-execution'
 
     expect(result.targetIds).toEqual(['target-token'])
+    expect(result.operations).toEqual([expect.objectContaining({
+      recipientIds: ['target-token'],
+    })])
     expect(traceEventsOfKind(result, 'target')).toEqual([
       expect.objectContaining({
-        targetId: evaluations[0]!.targetPlacementId,
-        outcome: evaluations[0]!.outcome,
-        reasonCode: evaluations[0]!.reasonCode,
+        targetId: 'target-token',
+        outcome: 'included',
+        reasonCode: 'target-included',
       }),
       expect.objectContaining({
-        targetId: evaluations[1]!.targetPlacementId,
-        outcome: evaluations[1]!.outcome,
-        reasonCode: evaluations[1]!.reasonCode,
+        targetId: 'bystander-token',
+        outcome: 'excluded',
+        reasonCode: 'target-excluded-not-enemy',
       }),
     ])
+    expect(Object.isFrozen(result)).toBe(true)
+    expect(Object.isFrozen(result.targetIds)).toBe(true)
+    expect(Object.isFrozen(result.operations[0]!.recipientIds)).toBe(true)
     expect(() => executeMoveSpec({
-      definition: definitionFor(spec),
-      context,
+      definition,
+      context: buildContext({
+        candidatePlacementIds: ['target-token', 'bystander-token'],
+        selectedPlacementIds: [],
+      }),
       authoritativeTargetIds: ['target-token'],
       authoritativeTargetEvaluations: [
-        { ...evaluations[0]!, outcome: 'excluded' },
-        evaluations[1]!,
+        { targetPlacementId: 'target-token', outcome: 'excluded', reasonCode: 'target-excluded-not-enemy' },
+        { targetPlacementId: 'bystander-token', outcome: 'excluded', reasonCode: 'target-excluded-not-enemy' },
       ],
     })).toThrowError(expect.objectContaining({
       name: MoveSpecExecutionError.name,

@@ -13,7 +13,7 @@ const validSpec = () => ({
   canonicalId: 'Scratch',
   version: 1,
   targeting: {
-    kind: 'single-target',
+    kind: 'area',
     minTargets: 1,
     maxTargets: 1,
     selector: {
@@ -138,7 +138,7 @@ describe('MoveSpec v2 contract', () => {
       schemaVersion: 2,
       canonicalId: 'Scratch',
       version: 1,
-      targeting: { kind: 'single-target', minTargets: 1, maxTargets: 1 },
+      targeting: { kind: 'area', minTargets: 1, maxTargets: 1 },
       registeredHandlerId: null,
       presentation: { displayName: 'Scratch', vfxKey: 'move.scratch' },
     })
@@ -261,6 +261,14 @@ describe('MoveSpec v2 contract', () => {
       },
       'invalid-spec',
       'spec.targeting.kind',
+    )
+    expectSpecError(
+      {
+        ...validSpec(),
+        targeting: { ...validSpec().targeting, kind: 'single-target' },
+      },
+      'invalid-spec',
+      'spec.targeting.predicate',
     )
     expectSpecError(
       {

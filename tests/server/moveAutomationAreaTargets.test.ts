@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import { MOVE_SPEC_LIMITS } from '#shared/moveAutomation/spec'
 import {
   MoveAutomationAreaTargetError,
   resolveMoveAutomationAreaTargets,
@@ -141,24 +142,39 @@ describe('authoritative area target filtering', () => {
       .toBe(false)
   })
 
-  it('applies reviewed Friendly exclusions after predicates without changing server order', () => {
+  it('preserves authoritative geometry order and applies Friendly exclusions after predicates', () => {
     const result = resolve({
       relationship: 'any',
+      geometry: ['unknown', 'enemy', 'ally'],
       exclusions: ['enemy'],
     })
 
-    expect(result.eligibleTargetPlacementIds).toEqual(['ally', 'unknown'])
+    expect(result.geometricallyAffectedPlacementIds).toEqual(['unknown', 'enemy', 'ally'])
+    expect(result.eligibleTargetPlacementIds).toEqual(['unknown', 'ally'])
+    expect(result.evaluations.map(({ targetPlacementId }) => targetPlacementId)).toEqual([
+      'unknown',
+      'enemy',
+      'ally',
+    ])
     expect(result.evaluations[1]).toMatchObject({
       targetPlacementId: 'enemy',
       outcome: 'excluded',
       reasonCode: 'requested-friendly-exclusion',
     })
-    expect(Object.isFrozen(result)).toBe(true)
-    expect(Object.isFrozen(result.evaluations)).toBe(true)
-    expect(Object.isFrozen(result.evaluations[0])).toBe(true)
+
+    const alreadyIllegal = resolve({
+      relationship: 'enemy',
+      exclusions: ['ally'],
+    })
+    expect(alreadyIllegal.eligibleTargetPlacementIds).toEqual(['enemy'])
+    expect(alreadyIllegal.evaluations[0]).toMatchObject({
+      targetPlacementId: 'ally',
+      outcome: 'excluded',
+      reasonCode: 'target-excluded-not-enemy',
+    })
   })
 
-  it('rejects exclusions that attempt to widen or duplicate geometry', () => {
+  it('rejects duplicate, out-of-area, and oversized geometric input or Friendly exclusions', () => {
     expect(() => resolve({ exclusions: ['outside'] })).toThrowError(expect.objectContaining({
       name: MoveAutomationAreaTargetError.name,
       code: 'requested-exclusion-outside-geometry',
@@ -166,5 +182,51 @@ describe('authoritative area target filtering', () => {
     expect(() => resolve({ exclusions: ['ally', 'ally'] })).toThrowError(expect.objectContaining({
       code: 'duplicate-requested-exclusion',
     }))
+    expect(() => resolve({ geometry: ['ally', 'ally'] })).toThrowError(expect.objectContaining({
+      code: 'duplicate-geometric-candidate',
+    }))
+    expect(() => resolve({
+      geometry: Array.from(
+        { length: MOVE_SPEC_LIMITS.targetCount + 1 },
+        (_, index) => `target-${index}`,
+      ),
+    })).toThrowError(expect.objectContaining({
+      code: 'too-many-geometric-candidates',
+    }))
+  })
+
+  it('detaches and deeply freezes geometry, predicates, exclusions, and decision results', () => {
+    const geometry = ['ally', 'enemy', 'unknown']
+    const exclusions = ['enemy']
+    const declaration = {
+      relationship: 'any' as MoveAutomationTargetPredicateDeclaration['relationship'],
+      willingness: 'any' as const,
+      excludeActor: true,
+    }
+    const result = resolveMoveAutomationAreaTargets({
+      actorPlacementId: 'actor',
+      geometricallyAffectedPlacementIds: geometry,
+      predicate: declaration,
+      relationships: relationships(),
+      requestedExcludedPlacementIds: exclusions,
+    })
+
+    geometry.reverse()
+    exclusions[0] = 'ally'
+    declaration.relationship = 'ally'
+
+    expect(result.predicate.relationship).toBe('any')
+    expect(result.geometricallyAffectedPlacementIds).toEqual(['ally', 'enemy', 'unknown'])
+    expect(result.eligibleTargetPlacementIds).toEqual(['ally', 'unknown'])
+    expect(result.evaluations[1]).toMatchObject({
+      targetPlacementId: 'enemy',
+      reasonCode: 'requested-friendly-exclusion',
+    })
+    expect(Object.isFrozen(result)).toBe(true)
+    expect(Object.isFrozen(result.predicate)).toBe(true)
+    expect(Object.isFrozen(result.geometricallyAffectedPlacementIds)).toBe(true)
+    expect(Object.isFrozen(result.eligibleTargetPlacementIds)).toBe(true)
+    expect(Object.isFrozen(result.evaluations)).toBe(true)
+    expect(Object.isFrozen(result.evaluations[0])).toBe(true)
   })
 })

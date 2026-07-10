@@ -411,14 +411,22 @@ const parseTargeting = (value: unknown): MoveSpecTargetingDeclaration => {
   if (typeof input.kind !== 'string' || !TARGETING_KIND_SET.has(input.kind)) {
     fail('invalid-spec', `${path}.kind`, 'must be a supported targeting kind.')
   }
+  const kind = input.kind as MoveSpecTargetingKind
   const minTargets = parseTargetCount(input.minTargets, `${path}.minTargets`)
   const maxTargets = parseTargetCount(input.maxTargets, `${path}.maxTargets`)
   if (minTargets > maxTargets) {
     fail('invalid-spec', path, 'minTargets cannot exceed maxTargets.')
   }
   const hasPredicate = Object.prototype.hasOwnProperty.call(input, 'predicate')
+  if (hasPredicate && kind !== 'area') {
+    fail(
+      'invalid-spec',
+      `${path}.predicate`,
+      'is supported only for geometric area targeting.',
+    )
+  }
   return {
-    kind: input.kind as MoveSpecTargetingKind,
+    kind,
     minTargets,
     maxTargets,
     selector: input.selector === null
