@@ -74,6 +74,9 @@ if have npm; then
     run_cmd npm install
   fi
 
+  pp_section "Move automation metadata"
+  run_cmd npm run check:move-automation
+
   run_cmd npm run lint --if-present
   run_cmd npm run typecheck --if-present
   run_cmd npm test --if-present

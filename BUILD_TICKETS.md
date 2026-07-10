@@ -345,7 +345,7 @@ Status: DONE
 
 ## MA-016 — Put non-strict validation in the quality gate
 
-Status: TODO
+Status: DONE
 
 **Depends on:** MA-014
 **Commit:** `ci(move-automation): validate manifest in quality gate`

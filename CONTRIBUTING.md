@@ -28,10 +28,24 @@ npm test
 npm run build
 ```
 
-For move automation work, also run:
+The canonical quality gate runs non-strict move-automation metadata and scenario validation before typechecking, tests, and the build:
+
+```bash
+bash scripts/quality-gate.sh
+```
+
+Run the same non-strict validation directly while developing move automation:
 
 ```bash
 npm run check:move-automation
+```
+
+This command validates the canonical catalog, semantic manifest, runtime and scenario references, hashes, and metadata invariants. It intentionally permits honest `assisted` and `blocked` rows while implementation is in progress.
+
+The strict completion check is available separately, but is not part of the quality gate until the canonical move catalog is complete:
+
+```bash
+npm run check:move-automation-complete
 ```
 
 For move VFX work, copy the PR checklist from `docs/move-animations.md#copyable-pr-checklist-for-move-vfx-changes` into the PR description and run the focused tests/manual QA listed there when they apply.
