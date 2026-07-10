@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
+import { createEmptyEncounterHistory } from '#shared/moveAutomation/encounterHistory'
 import { MAP_INTERACTION_MODES } from '#shared/mapInteractionMode'
 import type { PersistedRealtimeEvent } from '#shared/realtimeEventLog'
 import {
@@ -47,7 +48,7 @@ const mapFixture = (overrides: Partial<TabletopMap> = {}): TabletopMap => ({
     sides: { wild: { id: 'wild', label: 'Wild', status: 'active' } },
     effects: [],
     counters: {},
-    history: {},
+    history: createEmptyEncounterHistory(),
     turnResources: {},
     zones: [],
     pendingResolutionSummaries: [],

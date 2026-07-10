@@ -845,7 +845,7 @@ Status: DONE
 
 ## MA-063 — Add bounded encounter history indexes
 
-Status: TODO
+Status: DONE
 
 **Depends on:** MA-050, MA-059
 **Commit:** `feat(move-automation): record move and damage history`

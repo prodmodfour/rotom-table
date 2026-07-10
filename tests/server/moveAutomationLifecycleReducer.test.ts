@@ -344,7 +344,12 @@ describe('pure encounter lifecycle reducer', () => {
       'removed',
     ])
     expect(result.state.effects).toEqual([])
-    expect(result.changed).toBe(false)
+    expect(result.state.history.lastCompletedMoves).toMatchObject([{
+      resolutionId: 'resolution.lifecycle.test',
+      canonicalId: 'Lifecycle Test',
+      actorPlacementId: 'actor-token',
+    }])
+    expect(result.changed).toBe(true)
     expect(result.counters).toMatchObject({
       initialEventCount: 2,
       processedEventCount: 4,

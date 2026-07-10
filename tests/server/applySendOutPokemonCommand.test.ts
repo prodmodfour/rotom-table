@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import { createEmptyEncounterHistory } from '#shared/moveAutomation/encounterHistory'
 import {
   SESSION_COMMAND_ENVELOPE_VERSION,
   parseOpId,
@@ -121,7 +122,7 @@ const createMap = (overrides: Partial<TabletopMapV2> = {}): TabletopMapV2 => ({
     sides: { heroes: { id: 'heroes', label: 'Heroes', status: 'active' } },
     effects: [],
     counters: {},
-    history: {},
+    history: createEmptyEncounterHistory(),
     turnResources: {},
     zones: [],
     pendingResolutionSummaries: [],

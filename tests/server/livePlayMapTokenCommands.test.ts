@@ -2,6 +2,7 @@ import { mkdtempSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { describe, expect, it, vi } from 'vitest'
+import { createEmptyEncounterHistory } from '#shared/moveAutomation/encounterHistory'
 import {
   LIVE_PLAY_COMMAND_SCHEMA_VERSION,
   LIVE_PLAY_COMMAND_TYPES,
@@ -76,7 +77,7 @@ const baseMap = (overrides: Partial<TabletopMap> = {}): TabletopMap => ({
     },
     effects: [],
     counters: {},
-    history: {},
+    history: createEmptyEncounterHistory(),
     turnResources: {},
     zones: [],
     pendingResolutionSummaries: [],

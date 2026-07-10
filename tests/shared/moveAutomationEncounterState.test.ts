@@ -1,10 +1,12 @@
 import { describe, expect, it } from 'vitest'
 import {
   ENCOUNTER_EFFECT_LIMITS,
+  ENCOUNTER_HISTORY_LIMITS,
   ENCOUNTER_SIDE_LIMITS,
   ENCOUNTER_STATE_LIMITS,
   ENCOUNTER_STATE_SCHEMA_VERSION,
   EncounterStateValidationError,
+  createEmptyEncounterHistory,
   createEmptyEncounterState,
   encounterStateHasSide,
   parseEncounterState,
@@ -16,7 +18,7 @@ const canonicalEncounterState = () => ({
   sides: {},
   effects: [],
   counters: {},
-  history: {},
+  history: createEmptyEncounterHistory(),
   turnResources: {},
   zones: [],
   pendingResolutionSummaries: [],
@@ -31,14 +33,16 @@ describe('move automation encounter state', () => {
       sides: 32,
       effects: ENCOUNTER_EFFECT_LIMITS.count,
       counters: 0,
-      history: 0,
+      history: ENCOUNTER_HISTORY_LIMITS.moveAncestryPerScene,
       turnResources: 0,
       zones: 0,
       pendingResolutionSummaries: 0,
     })
     expect(JSON.stringify(state)).toBe(
-      '{"schemaVersion":1,"sides":{},"effects":[],"counters":{},"history":{},"turnResources":{},"zones":[],"pendingResolutionSummaries":[]}',
+      '{"schemaVersion":1,"sides":{},"effects":[],"counters":{},"history":{"sceneId":null,"currentRound":null,"currentTurn":null,"lastDeclaredMoves":[],"lastCompletedMoves":[],"lastDamagingMovesReceived":[],"damageBySourceThisTurn":[],"damageBySourceThisRound":[],"actedThisTurnPlacementIds":[],"actedThisRoundPlacementIds":[],"consecutiveMoves":[],"switchedPlacementIds":[],"faintedPlacementIds":[],"switches":[],"knockouts":[],"moveAncestry":[],"eventMoveLinks":[]},"turnResources":{},"zones":[],"pendingResolutionSummaries":[]}',
     )
+    expect(parseEncounterState({ ...canonicalEncounterState(), history: {} }).history)
+      .toEqual(createEmptyEncounterHistory())
   })
 
   it('round-trips typed sides and effects through JSON without sharing containers', () => {
@@ -81,10 +85,14 @@ describe('move automation encounter state', () => {
     expect(parsed.effects).not.toBe((json as { effects: unknown }).effects)
     expect(parsed.effects[0]?.payload).not.toBe((json as { effects: { payload: unknown }[] }).effects[0]?.payload)
     expect(parsed.counters).not.toBe((json as { counters: unknown }).counters)
+    expect(parsed.history).not.toBe((json as { history: unknown }).history)
+    expect(parsed.history.lastDeclaredMoves)
+      .not.toBe((json as { history: { lastDeclaredMoves: unknown } }).history.lastDeclaredMoves)
 
     const another = createEmptyEncounterState()
     expect(another.effects).not.toBe(state.effects)
     expect(another.turnResources).not.toBe(state.turnResources)
+    expect(another.history).not.toBe(state.history)
   })
 
   it('rejects malformed side identities, records, presentation hints, and directory overflow', () => {
@@ -149,6 +157,8 @@ describe('move automation encounter state', () => {
         affected: { placementIds: [], sideIds: ['unknown-side'], cells: [] },
       }],
     })).toThrow('references unknown encounter side unknown-side')
+    expect(() => parseEncounterState({ ...canonicalEncounterState(), history: { currentRound: 1 } }))
+      .toThrow('encounterState.history: must contain exactly the supported fields')
     expect(() => parseEncounterState({ ...canonicalEncounterState(), turnResources: { actor: {} } }))
       .toThrow('encounterState.turnResources: must contain at most 0 entries')
   })

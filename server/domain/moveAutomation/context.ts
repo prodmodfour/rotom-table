@@ -1,5 +1,6 @@
 import { normalizeRevision } from '#shared/sessionRevisions'
 import type { ResolveMoveIntent } from '#shared/livePlayMoveResolution'
+import { createEmptyEncounterHistory } from '#shared/moveAutomation/encounterHistory'
 import {
   MOVE_RULESET_PROVENANCE,
   type MoveRulesetProvenance,
@@ -25,6 +26,10 @@ import { createMoveAutomationScriptFromMoveData } from '~/utils/moveAutomationDe
 import { placementToSpawned, type SheetLookup } from '~/utils/placement'
 import { deepCloneJson } from '~/utils/serialization'
 import type { RegisteredMoveHandlerRegistry } from './handlers/registry'
+import {
+  createMoveAutomationHistoryResolver,
+  type MoveAutomationHistoryResolver,
+} from './history'
 import {
   MOVE_AUTOMATION_RUNTIME_REGISTRY,
   type MoveAutomationRuntimeRegistry,
@@ -79,6 +84,7 @@ export interface AuthoritativeMoveSheetQueries {
 }
 
 export type AuthoritativeMoveRelationshipQueries = MoveAutomationRelationshipResolver
+export type AuthoritativeMoveHistoryQueries = MoveAutomationHistoryResolver
 
 export interface AuthoritativeMoveRuleQueries {
   runtimeFor(canonicalId: string): RegisteredMoveAutomationRuntime | null
@@ -91,6 +97,7 @@ export interface AuthoritativeMoveContextQueries {
   readonly tokens: AuthoritativeMoveTokenQueries
   readonly sheets: AuthoritativeMoveSheetQueries
   readonly relationships: AuthoritativeMoveRelationshipQueries
+  readonly history: AuthoritativeMoveHistoryQueries
   readonly rules: AuthoritativeMoveRuleQueries
   resolveActorMoveEntry(moveName: string): CanonicalMoveEntryResult
 }
@@ -402,6 +409,9 @@ export const buildAuthoritativeMoveRulesContext = (
     placements,
     sides: map.encounterState?.sides ?? {},
   })
+  const history = createMoveAutomationHistoryResolver(
+    map.encounterState?.history ?? createEmptyEncounterHistory(),
+  )
   const { tokens, byId: tokenById } = tokenSnapshots(map, placements, sheetLookup)
 
   const actorPlacement = placementById.get(intent.placementId)
@@ -515,6 +525,7 @@ export const buildAuthoritativeMoveRulesContext = (
       forPlacement: sheetForPlacement,
     }),
     relationships,
+    history,
     rules: Object.freeze({
       runtimeFor: (canonicalId: string) => runtimes.get(canonicalId) ?? null,
       legacyScriptFor,

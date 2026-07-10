@@ -25,6 +25,7 @@ import {
   type EncounterEffectLifecycleTransition,
   type EncounterEffectLifecycleTransitionKind,
 } from './effectLifecycle'
+import { reduceEncounterHistoryEvent } from './reduceEncounterHistory'
 
 /**
  * Hard ceilings for one pure lifecycle reduction.
@@ -418,6 +419,11 @@ export const reduceEncounterLifecycle = (
     state = deepFreeze(parseEncounterState({ ...state, effects }))
   }
 
+  const applyHistoryEvent = (event: EncounterEvent): void => {
+    const history = reduceEncounterHistoryEvent(state.history, event)
+    state = deepFreeze(parseEncounterState({ ...state, history }))
+  }
+
   const applyEffectEvent = (
     event: EncounterEvent,
     depth: number,
@@ -478,6 +484,9 @@ export const reduceEncounterLifecycle = (
     if (beforeTriggerEvent) {
       applyEffectEvent(event, depth, beforeTriggerEvent, eventTransitions)
     }
+    // Scene-end handlers query the outgoing scene and clear history afterward.
+    // Every other fact updates its structured indexes before handlers observe it.
+    if (event.kind !== 'scene-end') applyHistoryEvent(event)
 
     for (const handler of handlers) {
       const context = deepFreeze({
@@ -624,6 +633,7 @@ export const reduceEncounterLifecycle = (
     if (afterTriggerEvent) {
       applyEffectEvent(event, depth, afterTriggerEvent, eventTransitions)
     }
+    if (event.kind === 'scene-end') applyHistoryEvent(event)
 
     for (const childEvent of childEvents) processEvent(childEvent, depth + 1)
   }

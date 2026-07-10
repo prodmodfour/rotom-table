@@ -139,7 +139,7 @@ describe('immutable authoritative move rules context', () => {
     }).toThrow()
   })
 
-  it('serves snapshot-only placement, token, sheet, relationship, runtime, and status queries', () => {
+  it('serves snapshot-only placement, token, sheet, relationship, history, runtime, and status queries', () => {
     const context = buildContext()
     const actor = context.queries.placements.get('actor-token')!
     const target = context.queries.placements.get('target-token')!
@@ -169,6 +169,9 @@ describe('immutable authoritative move rules context', () => {
       reasonCode: 'relationship-enemy',
       matches: true,
     })
+    expect(context.queries.history.query(actor.id, 'last-completed-move-id')).toBeNull()
+    expect(context.queries.history.query(actor.id, 'damage-dealt-this-turn')).toBe(0)
+    expect(Object.isFrozen(context.queries.history)).toBe(true)
     expect(context.queries.rules.runtimeFor('Tackle')).toMatchObject({
       canonicalId: 'Tackle',
       kind: 'legacy-v1',

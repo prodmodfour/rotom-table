@@ -1,5 +1,6 @@
 import { computed, ref } from 'vue'
 import { describe, expect, it } from 'vitest'
+import { createEmptyEncounterHistory } from '#shared/moveAutomation/encounterHistory'
 import {
   pokedexPathForSpecies,
   sheetPathForPlacement,
@@ -166,7 +167,7 @@ describe('useTokenControls', () => {
       sides: { heroes: { id: 'heroes', label: 'Heroes', status: 'active' } },
       effects: [],
       counters: {},
-      history: {},
+      history: createEmptyEncounterHistory(),
       turnResources: {},
       zones: [],
       pendingResolutionSummaries: [],
