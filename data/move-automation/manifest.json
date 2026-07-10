@@ -835,21 +835,28 @@
       },
       "capabilityTags": [],
       "suggestedCapabilityTags": [],
-      "blockerCodes": [],
+      "blockerCodes": [
+        "targeting.authoritative"
+      ],
       "limitations": [
         {
-          "code": "audit.required",
-          "summary": "Semantic conformance review is required before this legacy implementation can be marked complete."
+          "code": "ally-area.allegiance",
+          "summary": "The legacy area resolver does not derive ally eligibility from authoritative side state and can apply allied stage changes to selected enemy or unaffiliated tokens."
         }
       ],
-      "manualSteps": [],
+      "manualSteps": [
+        {
+          "code": "ally-area.filter",
+          "summary": "Select only allied recipients in the Burst and manually reverse any stage change applied to an enemy or unaffiliated token."
+        }
+      ],
       "scenarioIds": [],
       "conformanceEvidence": {
         "requirementTags": [],
         "scenarios": [],
         "notApplicable": []
       },
-      "reviewedAt": null,
+      "reviewedAt": "2026-07-10",
       "unsupportedInteractionIds": [],
       "rolloutCohortId": null
     },
@@ -941,21 +948,28 @@
       },
       "capabilityTags": [],
       "suggestedCapabilityTags": [],
-      "blockerCodes": [],
+      "blockerCodes": [
+        "history.structured"
+      ],
       "limitations": [
         {
-          "code": "audit.required",
-          "summary": "Semantic conformance review is required before this legacy implementation can be marked complete."
+          "code": "astonish.timing",
+          "summary": "The legacy script handles the 15+ Flinch threshold but does not track the once-per-scene automatic Flinch branch or whether the target was unaware."
         }
       ],
-      "manualSteps": [],
+      "manualSteps": [
+        {
+          "code": "astonish.unaware-flinch",
+          "summary": "Track the once-per-scene unaware-target branch and apply Flinch after a hit when that branch is eligible even if the natural roll was below 15."
+        }
+      ],
       "scenarioIds": [],
       "conformanceEvidence": {
         "requirementTags": [],
         "scenarios": [],
         "notApplicable": []
       },
-      "reviewedAt": null,
+      "reviewedAt": "2026-07-10",
       "unsupportedInteractionIds": [],
       "rolloutCohortId": null
     },
@@ -3552,21 +3566,28 @@
       },
       "capabilityTags": [],
       "suggestedCapabilityTags": [],
-      "blockerCodes": [],
+      "blockerCodes": [
+        "targeting.authoritative"
+      ],
       "limitations": [
         {
-          "code": "audit.required",
-          "summary": "Semantic conformance review is required before this legacy implementation can be marked complete."
+          "code": "ally-area.allegiance",
+          "summary": "The legacy area resolver does not derive ally eligibility from authoritative side state and can apply allied stage changes to selected enemy or unaffiliated tokens."
         }
       ],
-      "manualSteps": [],
+      "manualSteps": [
+        {
+          "code": "ally-area.filter",
+          "summary": "Select only allied recipients in the Burst and manually reverse any stage change applied to an enemy or unaffiliated token."
+        }
+      ],
       "scenarioIds": [],
       "conformanceEvidence": {
         "requirementTags": [],
         "scenarios": [],
         "notApplicable": []
       },
-      "reviewedAt": null,
+      "reviewedAt": "2026-07-10",
       "unsupportedInteractionIds": [],
       "rolloutCohortId": null
     },
@@ -7087,21 +7108,29 @@
       },
       "capabilityTags": [],
       "suggestedCapabilityTags": [],
-      "blockerCodes": [],
+      "blockerCodes": [
+        "history.structured",
+        "reactions.durable"
+      ],
       "limitations": [
         {
-          "code": "audit.required",
-          "summary": "Semantic conformance review is required before this legacy implementation can be marked complete."
+          "code": "fake-out.timing",
+          "summary": "The legacy script applies Flinch on every hit without validating that the user just joined the encounter or that the Priority branch is legal."
         }
       ],
-      "manualSteps": [],
+      "manualSteps": [
+        {
+          "code": "fake-out.joining-flinch",
+          "summary": "Track join and switch history; use Priority and retain the applied Flinch only when Fake Out is used through its eligible joining-the-encounter branch."
+        }
+      ],
       "scenarioIds": [],
       "conformanceEvidence": {
         "requirementTags": [],
         "scenarios": [],
         "notApplicable": []
       },
-      "reviewedAt": null,
+      "reviewedAt": "2026-07-10",
       "unsupportedInteractionIds": [],
       "rolloutCohortId": null
     },
@@ -8888,21 +8917,28 @@
       },
       "capabilityTags": [],
       "suggestedCapabilityTags": [],
-      "blockerCodes": [],
+      "blockerCodes": [
+        "expressions.bounded"
+      ],
       "limitations": [
         {
-          "code": "audit.required",
-          "summary": "Semantic conformance review is required before this legacy implementation can be marked complete."
+          "code": "five-strike.aggregate",
+          "summary": "The legacy runtime turns one 1d8 strike-count roll into multiplied Damage Base and one aggregate damage result instead of preserving an ordered per-hit resolution."
         }
       ],
-      "manualSteps": [],
+      "manualSteps": [
+        {
+          "code": "five-strike.per-hit",
+          "summary": "Resolve the rolled number of strikes in order, including each strike’s critical and effect outcome and early knockout, then correct the aggregate legacy result as needed."
+        }
+      ],
       "scenarioIds": [],
       "conformanceEvidence": {
         "requirementTags": [],
         "scenarios": [],
         "notApplicable": []
       },
-      "reviewedAt": null,
+      "reviewedAt": "2026-07-10",
       "unsupportedInteractionIds": [],
       "rolloutCohortId": null
     },
@@ -8924,21 +8960,29 @@
       },
       "capabilityTags": [],
       "suggestedCapabilityTags": [],
-      "blockerCodes": [],
+      "blockerCodes": [
+        "expressions.bounded",
+        "history.structured"
+      ],
       "limitations": [
         {
-          "code": "audit.required",
-          "summary": "Semantic conformance review is required before this legacy implementation can be marked complete."
+          "code": "fury-cutter.chain",
+          "summary": "The legacy runtime always uses the base Damage Base and does not retain or reset the consecutive successful-use chain for the same target."
         }
       ],
-      "manualSteps": [],
+      "manualSteps": [
+        {
+          "code": "fury-cutter.chain",
+          "summary": "Track consecutive successful damaging uses against the same target, set Damage Base to 4, 8, 12, then 16, and reset the chain after a miss, no damage, target or move change, switch, or scene end."
+        }
+      ],
       "scenarioIds": [],
       "conformanceEvidence": {
         "requirementTags": [],
         "scenarios": [],
         "notApplicable": []
       },
-      "reviewedAt": null,
+      "reviewedAt": "2026-07-10",
       "unsupportedInteractionIds": [],
       "rolloutCohortId": null
     },
@@ -8960,21 +9004,28 @@
       },
       "capabilityTags": [],
       "suggestedCapabilityTags": [],
-      "blockerCodes": [],
+      "blockerCodes": [
+        "expressions.bounded"
+      ],
       "limitations": [
         {
-          "code": "audit.required",
-          "summary": "Semantic conformance review is required before this legacy implementation can be marked complete."
+          "code": "five-strike.aggregate",
+          "summary": "The legacy runtime turns one 1d8 strike-count roll into multiplied Damage Base and one aggregate damage result instead of preserving an ordered per-hit resolution."
         }
       ],
-      "manualSteps": [],
+      "manualSteps": [
+        {
+          "code": "five-strike.per-hit",
+          "summary": "Resolve the rolled number of strikes in order, including each strike’s critical and effect outcome and early knockout, then correct the aggregate legacy result as needed."
+        }
+      ],
       "scenarioIds": [],
       "conformanceEvidence": {
         "requirementTags": [],
         "scenarios": [],
         "notApplicable": []
       },
-      "reviewedAt": null,
+      "reviewedAt": "2026-07-10",
       "unsupportedInteractionIds": [],
       "rolloutCohortId": null
     },
@@ -10615,21 +10666,29 @@
       },
       "capabilityTags": [],
       "suggestedCapabilityTags": [],
-      "blockerCodes": [],
+      "blockerCodes": [
+        "expressions.bounded",
+        "lifecycle.effects"
+      ],
       "limitations": [
         {
-          "code": "audit.required",
-          "summary": "Semantic conformance review is required before this legacy implementation can be marked complete."
+          "code": "helping-hand.marker-only",
+          "summary": "The legacy script adds a marker but does not apply, consume, or expire the target’s next-roll bonuses at authoritative move and round boundaries."
         }
       ],
-      "manualSteps": [],
+      "manualSteps": [
+        {
+          "code": "helping-hand.consume",
+          "summary": "Apply +2 to the target’s next Accuracy Roll this round and +10 to its next Damage Roll this round, then remove the marker after consumption or at round end."
+        }
+      ],
       "scenarioIds": [],
       "conformanceEvidence": {
         "requirementTags": [],
         "scenarios": [],
         "notApplicable": []
       },
-      "reviewedAt": null,
+      "reviewedAt": "2026-07-10",
       "unsupportedInteractionIds": [],
       "rolloutCohortId": null
     },
@@ -10968,21 +11027,28 @@
       },
       "capabilityTags": [],
       "suggestedCapabilityTags": [],
-      "blockerCodes": [],
+      "blockerCodes": [
+        "targeting.authoritative"
+      ],
       "limitations": [
         {
-          "code": "audit.required",
-          "summary": "Semantic conformance review is required before this legacy implementation can be marked complete."
+          "code": "ally-area.allegiance",
+          "summary": "The legacy area resolver does not derive ally eligibility from authoritative side state and can apply allied stage changes to selected enemy or unaffiliated tokens."
         }
       ],
-      "manualSteps": [],
+      "manualSteps": [
+        {
+          "code": "ally-area.filter",
+          "summary": "Select only allied recipients in the Burst and manually reverse any stage change applied to an enemy or unaffiliated token."
+        }
+      ],
       "scenarioIds": [],
       "conformanceEvidence": {
         "requirementTags": [],
         "scenarios": [],
         "notApplicable": []
       },
-      "reviewedAt": null,
+      "reviewedAt": "2026-07-10",
       "unsupportedInteractionIds": [],
       "rolloutCohortId": null
     },
@@ -12309,21 +12375,28 @@
       },
       "capabilityTags": [],
       "suggestedCapabilityTags": [],
-      "blockerCodes": [],
+      "blockerCodes": [
+        "items.authoritative"
+      ],
       "limitations": [
         {
-          "code": "audit.required",
-          "summary": "Semantic conformance review is required before this legacy implementation can be marked complete."
+          "code": "knock-off.inventory",
+          "summary": "The legacy transaction resolves damage but neither authoritatively selects nor moves a held or accessory-slot item into ground-item state."
         }
       ],
-      "manualSteps": [],
+      "manualSteps": [
+        {
+          "code": "knock-off.item-transfer",
+          "summary": "After a hit, choose one legal Held Item or Accessory Slot Item, remove that exact item from the target, and place it on the map ground without duplicating it."
+        }
+      ],
       "scenarioIds": [],
       "conformanceEvidence": {
         "requirementTags": [],
         "scenarios": [],
         "notApplicable": []
       },
-      "reviewedAt": null,
+      "reviewedAt": "2026-07-10",
       "unsupportedInteractionIds": [],
       "rolloutCohortId": null
     },
@@ -16264,21 +16337,28 @@
       },
       "capabilityTags": [],
       "suggestedCapabilityTags": [],
-      "blockerCodes": [],
+      "blockerCodes": [
+        "expressions.bounded"
+      ],
       "limitations": [
         {
-          "code": "audit.required",
-          "summary": "Semantic conformance review is required before this legacy implementation can be marked complete."
+          "code": "five-strike.aggregate",
+          "summary": "The legacy runtime turns one 1d8 strike-count roll into multiplied Damage Base and one aggregate damage result instead of preserving an ordered per-hit resolution."
         }
       ],
-      "manualSteps": [],
+      "manualSteps": [
+        {
+          "code": "five-strike.per-hit",
+          "summary": "Resolve the rolled number of strikes in order, including each strike’s critical and effect outcome and early knockout, then correct the aggregate legacy result as needed."
+        }
+      ],
       "scenarioIds": [],
       "conformanceEvidence": {
         "requirementTags": [],
         "scenarios": [],
         "notApplicable": []
       },
-      "reviewedAt": null,
+      "reviewedAt": "2026-07-10",
       "unsupportedInteractionIds": [],
       "rolloutCohortId": null
     },
@@ -18317,21 +18397,30 @@
       },
       "capabilityTags": [],
       "suggestedCapabilityTags": [],
-      "blockerCodes": [],
+      "blockerCodes": [
+        "lifecycle.effects",
+        "reactions.durable",
+        "targeting.authoritative"
+      ],
       "limitations": [
         {
-          "code": "audit.required",
-          "summary": "Semantic conformance review is required before this legacy implementation can be marked complete."
+          "code": "reflect.token-marker",
+          "summary": "The legacy script stores Reflect as a marker on the user rather than an allied side effect and does not apply or consume its two Physical Damage activations."
         }
       ],
-      "manualSteps": [],
+      "manualSteps": [
+        {
+          "code": "reflect.side-activations",
+          "summary": "Track two shared side activations, apply one step of resistance when an affected ally activates Reflect against Physical Damage, and remove it after the second use."
+        }
+      ],
       "scenarioIds": [],
       "conformanceEvidence": {
         "requirementTags": [],
         "scenarios": [],
         "notApplicable": []
       },
-      "reviewedAt": null,
+      "reviewedAt": "2026-07-10",
       "unsupportedInteractionIds": [],
       "rolloutCohortId": null
     },
@@ -19413,21 +19502,28 @@
       },
       "capabilityTags": [],
       "suggestedCapabilityTags": [],
-      "blockerCodes": [],
+      "blockerCodes": [
+        "lifecycle.effects"
+      ],
       "limitations": [
         {
-          "code": "audit.required",
-          "summary": "Semantic conformance review is required before this legacy implementation can be marked complete."
+          "code": "sand-tomb.marker-only",
+          "summary": "The legacy script adds Trapped and Slowed markers but does not process Vortex damage, escalating end-turn escape checks, replacement, or cleanup."
         }
       ],
-      "manualSteps": [],
+      "manualSteps": [
+        {
+          "code": "sand-tomb.vortex",
+          "summary": "Apply canonical Vortex damage at each target turn end, resolve escape checks at 20, 14, 8, then 2, and remove the Vortex and its markers when it ends."
+        }
+      ],
       "scenarioIds": [],
       "conformanceEvidence": {
         "requirementTags": [],
         "scenarios": [],
         "notApplicable": []
       },
-      "reviewedAt": null,
+      "reviewedAt": "2026-07-10",
       "unsupportedInteractionIds": [],
       "rolloutCohortId": null
     },
@@ -24262,21 +24358,28 @@
       },
       "capabilityTags": [],
       "suggestedCapabilityTags": [],
-      "blockerCodes": [],
+      "blockerCodes": [
+        "movement.authoritative"
+      ],
       "limitations": [
         {
-          "code": "audit.required",
-          "summary": "Semantic conformance review is required before this legacy implementation can be marked complete."
+          "code": "tackle.push",
+          "summary": "The legacy transaction resolves damage without deriving or committing the required 2-meter push, collision, obstruction, or shortening result."
         }
       ],
-      "manualSteps": [],
+      "manualSteps": [
+        {
+          "code": "tackle.push",
+          "summary": "After a hit, move the target 2 meters directly away through legal cells, shortening or stopping the push for bounds, obstruction, or occupied footprints."
+        }
+      ],
       "scenarioIds": [],
       "conformanceEvidence": {
         "requirementTags": [],
         "scenarios": [],
         "notApplicable": []
       },
-      "reviewedAt": null,
+      "reviewedAt": "2026-07-10",
       "unsupportedInteractionIds": [],
       "rolloutCohortId": null
     },
@@ -24439,21 +24542,38 @@
       },
       "capabilityTags": [],
       "suggestedCapabilityTags": [],
-      "blockerCodes": [],
+      "blockerCodes": [
+        "conditions.typed",
+        "expressions.bounded",
+        "reactions.durable"
+      ],
       "limitations": [
         {
-          "code": "audit.required",
-          "summary": "Semantic conformance review is required before this legacy implementation can be marked complete."
+          "code": "take-down.trip",
+          "summary": "The legacy result cannot offer and resolve the optional Free Action opposed Trip Maneuver; it can only apply Tripped after an operator supplies the outcome."
+        },
+        {
+          "code": "take-down.reckless",
+          "summary": "Recoil and its Rock Head or Magic Guard immunity are automated, but the Reckless Damage Base interaction is not included in authoritative damage calculation."
         }
       ],
-      "manualSteps": [],
+      "manualSteps": [
+        {
+          "code": "take-down.trip",
+          "summary": "After a hit, offer the optional Trip Maneuver, resolve its opposed check, and apply Tripped only when that check succeeds."
+        },
+        {
+          "code": "take-down.reckless",
+          "summary": "If the user has Reckless, apply its canonical Damage Base adjustment before resolving Take Down damage."
+        }
+      ],
       "scenarioIds": [],
       "conformanceEvidence": {
         "requirementTags": [],
         "scenarios": [],
         "notApplicable": []
       },
-      "reviewedAt": null,
+      "reviewedAt": "2026-07-10",
       "unsupportedInteractionIds": [],
       "rolloutCohortId": null
     },
@@ -25918,21 +26038,29 @@
       },
       "capabilityTags": [],
       "suggestedCapabilityTags": [],
-      "blockerCodes": [],
+      "blockerCodes": [
+        "movement.authoritative",
+        "reactions.durable"
+      ],
       "limitations": [
         {
-          "code": "audit.required",
-          "summary": "Semantic conformance review is required before this legacy implementation can be marked complete."
+          "code": "u-turn.damage-only",
+          "summary": "The legacy transaction resolves the hit and damage but does not atomically recall the user, preserve the Trapped exception, or offer a legal replacement."
         }
       ],
-      "manualSteps": [],
+      "manualSteps": [
+        {
+          "code": "u-turn.switch",
+          "summary": "After a successful hit, recall the user even if Trapped and, when chosen and available, send out a legal replacement while reconciling map and roster state."
+        }
+      ],
       "scenarioIds": [],
       "conformanceEvidence": {
         "requirementTags": [],
         "scenarios": [],
         "notApplicable": []
       },
-      "reviewedAt": null,
+      "reviewedAt": "2026-07-10",
       "unsupportedInteractionIds": [],
       "rolloutCohortId": null
     },
@@ -27294,21 +27422,29 @@
       },
       "capabilityTags": [],
       "suggestedCapabilityTags": [],
-      "blockerCodes": [],
+      "blockerCodes": [
+        "conditions.typed",
+        "lifecycle.effects"
+      ],
       "limitations": [
         {
-          "code": "audit.required",
-          "summary": "Semantic conformance review is required before this legacy implementation can be marked complete."
+          "code": "yawn.marker-only",
+          "summary": "The legacy script adds a Yawn marker but does not schedule the end-of-next-turn Sleep attempt, recheck immunity, or clean up the delayed effect."
         }
       ],
-      "manualSteps": [],
+      "manualSteps": [
+        {
+          "code": "yawn.delayed-sleep",
+          "summary": "At the end of the target’s next turn, recheck Sleep immunity, replace Yawn with Sleep when legal, and remove the Yawn marker in every outcome."
+        }
+      ],
       "scenarioIds": [],
       "conformanceEvidence": {
         "requirementTags": [],
         "scenarios": [],
         "notApplicable": []
       },
-      "reviewedAt": null,
+      "reviewedAt": "2026-07-10",
       "unsupportedInteractionIds": [],
       "rolloutCohortId": null
     },

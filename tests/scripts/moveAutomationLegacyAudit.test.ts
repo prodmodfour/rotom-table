@@ -4,6 +4,7 @@ import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { describe, expect, it } from 'vitest'
 import capabilitiesJson from '../../data/move-automation/capabilities.json'
+import manifestJson from '../../data/move-automation/manifest.json'
 import {
   buildLegacyMoveAutomationAudit,
   formatLegacyMoveAutomationAuditReport,
@@ -108,6 +109,158 @@ describe('legacy move automation audit metadata', () => {
       ]),
       inferredCapabilityHints: expect.arrayContaining(['lifecycle.effects']),
     })
+  })
+
+  it('records precise debt for known partials while retaining the generic audit remainder', () => {
+    const expectedKnownDebt = new Map<string, {
+      blockerCodes: readonly string[]
+      limitationCodes: readonly string[]
+      manualStepCodes: readonly string[]
+      summaryTerms: readonly string[]
+    }>([
+      ['Aromatic Mist', {
+        blockerCodes: ['targeting.authoritative'],
+        limitationCodes: ['ally-area.allegiance'],
+        manualStepCodes: ['ally-area.filter'],
+        summaryTerms: ['allied', 'enemy'],
+      }],
+      ['Astonish', {
+        blockerCodes: ['history.structured'],
+        limitationCodes: ['astonish.timing'],
+        manualStepCodes: ['astonish.unaware-flinch'],
+        summaryTerms: ['once-per-scene', 'unaware'],
+      }],
+      ['Coaching', {
+        blockerCodes: ['targeting.authoritative'],
+        limitationCodes: ['ally-area.allegiance'],
+        manualStepCodes: ['ally-area.filter'],
+        summaryTerms: ['allied', 'enemy'],
+      }],
+      ['Fake Out', {
+        blockerCodes: ['history.structured', 'reactions.durable'],
+        limitationCodes: ['fake-out.timing'],
+        manualStepCodes: ['fake-out.joining-flinch'],
+        summaryTerms: ['joined', 'Priority'],
+      }],
+      ['Fury Attack', {
+        blockerCodes: ['expressions.bounded'],
+        limitationCodes: ['five-strike.aggregate'],
+        manualStepCodes: ['five-strike.per-hit'],
+        summaryTerms: ['per-hit', 'early knockout'],
+      }],
+      ['Fury Cutter', {
+        blockerCodes: ['expressions.bounded', 'history.structured'],
+        limitationCodes: ['fury-cutter.chain'],
+        manualStepCodes: ['fury-cutter.chain'],
+        summaryTerms: ['same target', '4, 8, 12'],
+      }],
+      ['Fury Swipes', {
+        blockerCodes: ['expressions.bounded'],
+        limitationCodes: ['five-strike.aggregate'],
+        manualStepCodes: ['five-strike.per-hit'],
+        summaryTerms: ['per-hit', 'early knockout'],
+      }],
+      ['Helping Hand', {
+        blockerCodes: ['expressions.bounded', 'lifecycle.effects'],
+        limitationCodes: ['helping-hand.marker-only'],
+        manualStepCodes: ['helping-hand.consume'],
+        summaryTerms: ['+2', '+10'],
+      }],
+      ['Howl', {
+        blockerCodes: ['targeting.authoritative'],
+        limitationCodes: ['ally-area.allegiance'],
+        manualStepCodes: ['ally-area.filter'],
+        summaryTerms: ['allied', 'enemy'],
+      }],
+      ['Knock Off', {
+        blockerCodes: ['items.authoritative'],
+        limitationCodes: ['knock-off.inventory'],
+        manualStepCodes: ['knock-off.item-transfer'],
+        summaryTerms: ['Held Item', 'ground'],
+      }],
+      ['Pin Missile', {
+        blockerCodes: ['expressions.bounded'],
+        limitationCodes: ['five-strike.aggregate'],
+        manualStepCodes: ['five-strike.per-hit'],
+        summaryTerms: ['per-hit', 'early knockout'],
+      }],
+      ['Reflect', {
+        blockerCodes: ['lifecycle.effects', 'reactions.durable', 'targeting.authoritative'],
+        limitationCodes: ['reflect.token-marker'],
+        manualStepCodes: ['reflect.side-activations'],
+        summaryTerms: ['shared side', 'Physical Damage'],
+      }],
+      ['Sand Tomb', {
+        blockerCodes: ['lifecycle.effects'],
+        limitationCodes: ['sand-tomb.marker-only'],
+        manualStepCodes: ['sand-tomb.vortex'],
+        summaryTerms: ['Vortex', '20, 14, 8'],
+      }],
+      ['Tackle', {
+        blockerCodes: ['movement.authoritative'],
+        limitationCodes: ['tackle.push'],
+        manualStepCodes: ['tackle.push'],
+        summaryTerms: ['2 meters', 'obstruction'],
+      }],
+      ['Take Down', {
+        blockerCodes: ['conditions.typed', 'expressions.bounded', 'reactions.durable'],
+        limitationCodes: ['take-down.trip', 'take-down.reckless'],
+        manualStepCodes: ['take-down.trip', 'take-down.reckless'],
+        summaryTerms: ['opposed Trip Maneuver', 'Reckless'],
+      }],
+      ['U-Turn', {
+        blockerCodes: ['movement.authoritative', 'reactions.durable'],
+        limitationCodes: ['u-turn.damage-only'],
+        manualStepCodes: ['u-turn.switch'],
+        summaryTerms: ['recall', 'Trapped'],
+      }],
+      ['Yawn', {
+        blockerCodes: ['conditions.typed', 'lifecycle.effects'],
+        limitationCodes: ['yawn.marker-only'],
+        manualStepCodes: ['yawn.delayed-sleep'],
+        summaryTerms: ['next turn', 'Sleep immunity'],
+      }],
+    ])
+    const manifestById = new Map(manifestJson.moves.map(row => [row.canonicalId, row]))
+    const auditById = new Map(
+      buildLegacyMoveAutomationAudit().entries.map(entry => [entry.canonicalId, entry]),
+    )
+
+    for (const [canonicalId, expected] of expectedKnownDebt) {
+      const row = manifestById.get(canonicalId)
+      expect(row, canonicalId).toBeDefined()
+      expect(auditById.get(canonicalId)?.automationNotes.length, canonicalId).toBeGreaterThan(0)
+      expect(row).toMatchObject({
+        baseStatus: 'assisted',
+        runtime: { kind: 'legacy-v1' },
+        blockerCodes: expected.blockerCodes,
+        reviewedAt: expect.stringMatching(/^\d{4}-\d{2}-\d{2}$/),
+      })
+      expect(row?.limitations.map(({ code }) => code)).toEqual(expected.limitationCodes)
+      expect(row?.manualSteps.map(({ code }) => code)).toEqual(expected.manualStepCodes)
+
+      const debtSummary = [...(row?.limitations ?? []), ...(row?.manualSteps ?? [])]
+        .map(({ summary }) => summary)
+        .join(' ')
+      expect(debtSummary).not.toContain('Semantic conformance review is required')
+      for (const term of expected.summaryTerms) expect(debtSummary, canonicalId).toContain(term)
+    }
+
+    for (const row of manifestJson.moves) {
+      if (
+        row.runtime.kind !== 'legacy-v1'
+        || row.baseStatus !== 'assisted'
+        || expectedKnownDebt.has(row.canonicalId)
+      ) continue
+
+      expect(row.blockerCodes, row.canonicalId).toEqual([])
+      expect(row.limitations, row.canonicalId).toEqual([{
+        code: 'audit.required',
+        summary: 'Semantic conformance review is required before this legacy implementation can be marked complete.',
+      }])
+      expect(row.manualSteps, row.canonicalId).toEqual([])
+      expect(row.reviewedAt, row.canonicalId).toBeNull()
+    }
   })
 
   it('emits deterministic JSON and a complete human-readable report', () => {

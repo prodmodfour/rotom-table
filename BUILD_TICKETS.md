@@ -410,7 +410,7 @@ Status: DONE
 
 ## MA-021 — Record the known registered manual-debt set
 
-Status: TODO
+Status: DONE
 
 **Depends on:** MA-018–MA-020
 **Commit:** `data(move-automation): record known registered blockers`
