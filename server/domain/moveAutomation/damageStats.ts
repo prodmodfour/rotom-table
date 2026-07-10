@@ -183,6 +183,9 @@ export interface ResolveMoveSpecDamageCalculationInput {
   readonly context: AuthoritativeMoveRulesContext
   readonly operation: MoveDamageEffectOperation
   readonly script: MoveAutomationScript
+  /** Current sequence projection when an earlier strike changed the actor. */
+  readonly actor?: SpawnedPokemon
+  /** Current sequence projection when an earlier strike changed the target. */
   readonly recipient: SpawnedPokemon
   readonly resolution: MoveAutomationTargetResolutionState
   readonly fieldEffects?: MapFieldEffects
@@ -227,7 +230,7 @@ export const resolveMoveSpecDamageCalculation = (
       : options.script.damageBase)
   const breakdown = resolveMoveAutomationTargetDamageBreakdown(
     options.script,
-    options.context.actor.token,
+    options.actor ?? options.context.actor.token,
     options.recipient,
     { ...options.resolution, crit: criticalHit.critical },
     options.fieldEffects,

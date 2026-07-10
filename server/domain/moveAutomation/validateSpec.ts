@@ -473,7 +473,15 @@ export const validateMoveSpecOperationSequence = (
   const indexed: IndexedOperation[] = entries.map((entry, index) => ({ ...entry, index }))
   const operationIndexById = new Map<string, number>()
   const rollIndexById = new Map<string, number>()
+  const reservedRollIds = new Set<string>()
   const requestIndexById = new Map<string, number>()
+
+  const reserveRollId = (rollId: string, path: string): void => {
+    if (reservedRollIds.has(rollId)) {
+      fail('duplicate-id', path, `roll ID ${rollId} is duplicated.`)
+    }
+    reservedRollIds.add(rollId)
+  }
 
   indexed.forEach(({ operation, index, path }) => {
     if (operationIndexById.has(operation.id)) {
@@ -482,14 +490,19 @@ export const validateMoveSpecOperationSequence = (
     operationIndexById.set(operation.id, index)
 
     if (operation.kind === 'roll') {
-      if (rollIndexById.has(operation.payload.rollId)) {
-        fail(
-          'duplicate-id',
-          `${path}.payload.rollId`,
-          `roll ID ${operation.payload.rollId} is duplicated.`,
-        )
-      }
+      reserveRollId(operation.payload.rollId, `${path}.payload.rollId`)
       rollIndexById.set(operation.payload.rollId, index)
+    }
+    if (operation.kind === 'multi-hit') {
+      if (operation.payload.count.kind !== 'fixed') {
+        reserveRollId(operation.payload.count.rollId, `${path}.payload.count.rollId`)
+      }
+      if (operation.payload.accuracy.kind !== 'automatic') {
+        reserveRollId(operation.payload.accuracy.rollId, `${path}.payload.accuracy.rollId`)
+      }
+      if (operation.payload.critical.kind === 'per-hit') {
+        reserveRollId(operation.payload.critical.rollId, `${path}.payload.critical.rollId`)
+      }
     }
 
     if (
@@ -507,6 +520,31 @@ export const validateMoveSpecOperationSequence = (
       requestIndexById.set(operation.payload.requestId, index)
     }
   })
+
+  const multiHitEntries = indexed.filter(({ operation }) => operation.kind === 'multi-hit')
+  if (multiHitEntries.length > 1) {
+    fail(
+      'invalid-definition',
+      multiHitEntries[1]!.path,
+      'an immediate MoveSpec may contain at most one multi-hit operation.',
+    )
+  }
+  if (multiHitEntries.length === 1) {
+    const overlapping = indexed.find(({ operation }) => (
+      operation.kind === 'damage'
+      || operation.kind === 'direct-hp'
+      || operation.kind === 'heal'
+      || operation.kind === 'condition'
+      || operation.kind === 'combat-stage'
+    ))
+    if (overlapping) {
+      fail(
+        'invalid-definition',
+        overlapping.path,
+        'top-level core effects cannot overlap a pre-reduced multi-hit operation; use its bounded after-each/after-all effects.',
+      )
+    }
+  }
 
   const assertPriorReference = (
     referenceId: string,
@@ -538,51 +576,72 @@ export const validateMoveSpecOperationSequence = (
         'operation ID',
       )
     }
-    if (operation.kind !== 'damage') return
+    const damage = operation.kind === 'damage'
+      ? operation.payload
+      : operation.kind === 'multi-hit'
+        ? operation.payload.damage
+        : null
+    if (!damage) return
+    const damagePath = operation.kind === 'multi-hit'
+      ? `${path}.payload.damage`
+      : `${path}.payload`
     if (
-      typeof operation.payload.moveType === 'string'
-      && !CANONICAL_TYPE_IDS.has(operation.payload.moveType)
+      typeof damage.moveType === 'string'
+      && !CANONICAL_TYPE_IDS.has(damage.moveType)
     ) {
       fail(
         'invalid-definition',
-        `${path}.payload.moveType`,
-        `move type ${operation.payload.moveType} is not canonical.`,
+        `${damagePath}.moveType`,
+        `move type ${damage.moveType} is not canonical.`,
       )
     }
-    operation.payload.typeEffectiveness?.defenderTypeOverrides.forEach((override, overrideIndex) => {
+    damage.typeEffectiveness?.defenderTypeOverrides.forEach((override, overrideIndex) => {
       if (CANONICAL_TYPE_IDS.has(override.defenderType)) return
       fail(
         'invalid-definition',
-        `${path}.payload.typeEffectiveness.defenderTypeOverrides[${overrideIndex}].defenderType`,
+        `${damagePath}.typeEffectiveness.defenderTypeOverrides[${overrideIndex}].defenderType`,
         `defender type ${override.defenderType} is not canonical.`,
       )
     })
-    const criticalTrigger = operation.payload.criticalHit?.trigger
+    const criticalTrigger = damage.criticalHit?.trigger
+    if (operation.kind === 'multi-hit') {
+      if (
+        (criticalTrigger?.kind === 'range' || criticalTrigger?.kind === 'natural-rolls')
+        && operation.payload.critical.kind === 'none'
+      ) {
+        fail(
+          'invalid-definition',
+          `${damagePath}.criticalHit.trigger`,
+          `${criticalTrigger.kind} critical triggers require an accuracy or per-hit critical roll.`,
+        )
+      }
+      return
+    }
     if (
       (criticalTrigger?.kind === 'range' || criticalTrigger?.kind === 'natural-rolls')
-      && operation.payload.criticalRollId === null
-      && operation.payload.accuracyRollId === null
+      && damage.criticalRollId === null
+      && damage.accuracyRollId === null
     ) {
       fail(
         'invalid-definition',
-        `${path}.payload.criticalHit.trigger`,
+        `${damagePath}.criticalHit.trigger`,
         `${criticalTrigger.kind} critical triggers require an accuracyRollId or criticalRollId.`,
       )
     }
-    if (operation.payload.accuracyRollId !== null) {
+    if (damage.accuracyRollId !== null) {
       assertPriorReference(
-        operation.payload.accuracyRollId,
+        damage.accuracyRollId,
         index,
-        `${path}.payload.accuracyRollId`,
+        `${damagePath}.accuracyRollId`,
         rollIndexById,
         'roll ID',
       )
     }
-    if (operation.payload.criticalRollId !== null) {
+    if (damage.criticalRollId !== null) {
       assertPriorReference(
-        operation.payload.criticalRollId,
+        damage.criticalRollId,
         index,
-        `${path}.payload.criticalRollId`,
+        `${damagePath}.criticalRollId`,
         rollIndexById,
         'roll ID',
       )

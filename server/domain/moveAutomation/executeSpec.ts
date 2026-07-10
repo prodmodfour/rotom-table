@@ -19,7 +19,6 @@ import {
   type MoveResolutionTraceAncestryEntry,
   type MoveResolutionTraceJsonValue,
 } from '#shared/moveAutomation/trace'
-import { findMoveDamageBase } from '~/utils/moveDamageBase'
 import {
   moveAutomationUserAccuracy,
   resolveMoveAutomationTargetEvasion,
@@ -31,11 +30,8 @@ import type {
   AuthoritativeMoveRulesContext,
   AuthoritativeMoveSheetRead,
 } from './context'
-import {
-  MOVE_CONTEXTUAL_DAMAGE_BASE_STAB_BONUS,
-  resolveContextualMoveDamageBase,
-  type MoveContextualDamageBaseResolution,
-} from './damageBase'
+import type { MoveContextualDamageBaseResolution } from './damageBase'
+import { resolveMoveSpecDamageRollFormula } from './damageRollFormula'
 import {
   resolveMoveDamageType,
   type MoveDamageTypeResolution,
@@ -44,6 +40,10 @@ import {
   evaluateMovePredicate,
   evaluateMoveSelector,
 } from './evaluateExpression'
+import {
+  executeMoveMultiHitOperation,
+  type MoveMultiHitExecution,
+} from './multiHit'
 import {
   REGISTERED_MOVE_HANDLER_REGISTRY,
   executeRegisteredMoveHandler,
@@ -94,8 +94,15 @@ export interface MoveSpecResolvedRoll {
   readonly operationId: string
   /** Stable ID authored by a roll operation, or the owning damage operation ID. */
   readonly referenceId: string
-  readonly purpose: 'generic' | 'accuracy' | 'damage'
+  readonly purpose:
+    | 'generic'
+    | 'hit-count'
+    | 'accuracy'
+    | 'critical'
+    | 'damage'
   readonly recipientId: string | null
+  /** One-based strike position for sequence-owned rolls. */
+  readonly hitIndex?: number | null
   readonly rollId: string
 }
 
@@ -145,6 +152,12 @@ interface MoveSpecExecutionResultBase {
   readonly resolvedDamageTypes: readonly MoveDamageTypeResolution[]
   /** Per-recipient native-v2 contextual DB calculations in operation order. */
   readonly resolvedDamageBases: readonly MoveContextualDamageBaseResolution[]
+  /** Pre-reduced bounded strike sequences, retained for immediate typed planning. */
+  readonly multiHitExecutions: readonly MoveMultiHitExecution[]
+  readonly hitTargetIds: readonly string[]
+  readonly missedTargetIds: readonly string[]
+  readonly damagedTargetIds: readonly string[]
+  readonly faintedTargetIds: readonly string[]
   readonly trace: MoveResolutionAuditTrace
 }
 
@@ -221,6 +234,10 @@ const freezeResolvedDamageTypes = (
 const freezeResolvedDamageBases = (
   resolutions: readonly MoveContextualDamageBaseResolution[],
 ): readonly MoveContextualDamageBaseResolution[] => Object.freeze([...resolutions])
+
+const freezeMultiHitExecutions = (
+  executions: readonly MoveMultiHitExecution[],
+): readonly MoveMultiHitExecution[] => Object.freeze([...executions])
 
 const rulesetMatchesContext = (
   definition: ValidatedMoveSpecDefinition,
@@ -565,60 +582,6 @@ const accuracyReferenceIds = (
   )),
 )
 
-interface MoveSpecDamageRollFormula {
-  readonly count: number
-  readonly sides: number
-  readonly modifier: number
-  readonly contextualDamageBase: MoveContextualDamageBaseResolution | null
-}
-
-const damageRollFormula = (options: {
-  readonly context: AuthoritativeMoveRulesContext
-  readonly operation: MoveDamageEffectOperation
-  readonly recipientId: string
-  readonly canonicalMoveId: string
-  readonly resolvedType: MoveDamageTypeResolution
-}): MoveSpecDamageRollFormula => {
-  if (typeof options.operation.payload.damageBase !== 'number') {
-    const contextualDamageBase = resolveContextualMoveDamageBase({
-      context: options.context,
-      operation: options.operation,
-      recipientId: options.recipientId,
-      hasStab: options.resolvedType.hasStab,
-      canonicalMoveId: options.canonicalMoveId,
-    })
-    const definition = findMoveDamageBase(contextualDamageBase.finalDamageBase)
-    if (!definition) {
-      return fail(
-        'damage-formula-unsupported',
-        `Damage operation ${options.operation.id} resolved unsupported DB ${contextualDamageBase.finalDamageBase} for ${options.recipientId}.`,
-      )
-    }
-    return {
-      count: definition.count,
-      sides: definition.sides,
-      modifier: definition.mod,
-      contextualDamageBase,
-    }
-  }
-
-  const finalDamageBase = options.operation.payload.damageBase
-    + (options.resolvedType.hasStab ? MOVE_CONTEXTUAL_DAMAGE_BASE_STAB_BONUS : 0)
-  const definition = findMoveDamageBase(finalDamageBase)
-  if (!definition) {
-    return fail(
-      'damage-formula-unsupported',
-      `Damage operation ${options.operation.id} resolved unsupported DB ${finalDamageBase} for ${options.recipientId}.`,
-    )
-  }
-  return {
-    count: definition.count,
-    sides: definition.sides,
-    modifier: definition.mod,
-    contextualDamageBase: null,
-  }
-}
-
 const terminalBase = (
   context: AuthoritativeMoveRulesContext,
   operations: readonly MoveSpecEmittedOperation[],
@@ -628,6 +591,8 @@ const terminalBase = (
   resolvedRolls: readonly MoveSpecResolvedRoll[],
   resolvedDamageTypes: readonly MoveDamageTypeResolution[],
   resolvedDamageBases: readonly MoveContextualDamageBaseResolution[],
+  multiHitExecutions: readonly MoveMultiHitExecution[],
+  selectorState: MoveSpecSelectorState,
 ): MoveSpecExecutionResultBase => ({
   operations: freezeEmittedOperations(operations),
   targetIds: frozenIds(targetIds),
@@ -636,6 +601,11 @@ const terminalBase = (
   resolvedRolls: freezeResolvedRolls(resolvedRolls),
   resolvedDamageTypes: freezeResolvedDamageTypes(resolvedDamageTypes),
   resolvedDamageBases: freezeResolvedDamageBases(resolvedDamageBases),
+  multiHitExecutions: freezeMultiHitExecutions(multiHitExecutions),
+  hitTargetIds: frozenIds(selectorState.hitTargetIds),
+  missedTargetIds: frozenIds(selectorState.missedTargetIds),
+  damagedTargetIds: frozenIds(selectorState.damagedTargetIds),
+  faintedTargetIds: frozenIds(selectorState.faintedTargetIds),
   trace,
 })
 
@@ -786,12 +756,20 @@ export const executeMoveSpec = (
   let targetIds: readonly string[] = []
   let hitTargetIds: readonly string[] = []
   let missedTargetIds: readonly string[] = []
-  const damagedTargetIds: readonly string[] = []
-  const faintedTargetIds: readonly string[] = []
+  let damagedTargetIds: readonly string[] = []
+  let faintedTargetIds: readonly string[] = []
   const operations: MoveSpecEmittedOperation[] = []
   const resolvedRolls: MoveSpecResolvedRoll[] = []
   const resolvedDamageTypes: MoveDamageTypeResolution[] = []
   const resolvedDamageBases: MoveContextualDamageBaseResolution[] = []
+  const multiHitExecutions: MoveMultiHitExecution[] = []
+  const currentSelectorState = (): MoveSpecSelectorState => ({
+    targetIds,
+    hitTargetIds,
+    missedTargetIds,
+    damagedTargetIds,
+    faintedTargetIds,
+  })
   const referencedAccuracyRollIds = accuracyReferenceIds(program.operations)
   let mechanics: MoveSpecAuthoritativeMoveMechanics | null = null
   const getMechanics = (): MoveSpecAuthoritativeMoveMechanics => (
@@ -848,6 +826,8 @@ export const executeMoveSpec = (
               resolvedRolls,
               resolvedDamageTypes,
               resolvedDamageBases,
+              multiHitExecutions,
+              currentSelectorState(),
             ),
             rejection: Object.freeze({
               code: 'precondition-failed',
@@ -934,6 +914,8 @@ export const executeMoveSpec = (
             resolvedRolls,
             resolvedDamageTypes,
             resolvedDamageBases,
+            multiHitExecutions,
+            currentSelectorState(),
           ),
           rejection: Object.freeze({
             code: 'target-count-out-of-range',
@@ -1114,12 +1096,13 @@ export const executeMoveSpec = (
           })
           operationDamageTypes.push(resolvedType)
           resolvedDamageTypes.push(resolvedType)
-          const formula = damageRollFormula({
+          const formula = resolveMoveSpecDamageRollFormula({
             context: input.context,
             operation,
             recipientId,
             canonicalMoveId: spec.canonicalId,
             resolvedType,
+            failUnsupported: message => fail('damage-formula-unsupported', message),
           })
           if (formula.contextualDamageBase) {
             operationDamageBases.push(formula.contextualDamageBase)
@@ -1180,6 +1163,54 @@ export const executeMoveSpec = (
         continue
       }
 
+      if (operation.kind === 'multi-hit') {
+        const execution = executeMoveMultiHitOperation({
+          context: input.context,
+          operation,
+          script: getMechanics().script,
+          canonicalMoveId: spec.canonicalId,
+          recipientIds,
+        })
+        multiHitExecutions.push(execution)
+        resolvedRolls.push(...execution.resolvedRolls.map(roll => ({ ...roll })))
+        hitTargetIds = canonicalPlacementIds(input.context, [
+          ...hitTargetIds,
+          ...execution.hitTargetIds,
+        ])
+        missedTargetIds = canonicalPlacementIds(input.context, [
+          ...missedTargetIds.filter(id => !execution.hitTargetIds.includes(id)),
+          ...execution.missedTargetIds,
+        ])
+        damagedTargetIds = canonicalPlacementIds(input.context, [
+          ...damagedTargetIds,
+          ...execution.damagedTargetIds,
+        ])
+        faintedTargetIds = canonicalPlacementIds(input.context, [
+          ...faintedTargetIds,
+          ...execution.faintedTargetIds,
+        ])
+        trace = reduceMoveResolutionTrace(trace, {
+          kind: 'operation',
+          phase,
+          operationId: operation.id,
+          operationKind: operation.kind,
+          recipientIds,
+          outcome: execution.outcome,
+          reasonCode: operation.reasonCode,
+          input: traceJson(operation.payload),
+          result: execution.traceResult,
+        })
+        for (const roll of execution.rollLedgerEntries) {
+          trace = reduceMoveResolutionTrace(trace, {
+            kind: 'roll',
+            phase,
+            reasonCode: operation.reasonCode,
+            roll,
+          })
+        }
+        continue
+      }
+
       if (operation.kind === 'choice-request' || operation.kind === 'reaction-request') {
         const request = pendingRequest(operation, recipientIds)
         trace = reduceMoveResolutionTrace(trace, {
@@ -1216,6 +1247,8 @@ export const executeMoveSpec = (
             resolvedRolls,
             resolvedDamageTypes,
             resolvedDamageBases,
+            multiHitExecutions,
+            currentSelectorState(),
           ),
           request,
         })
@@ -1246,6 +1279,8 @@ export const executeMoveSpec = (
       resolvedRolls,
       resolvedDamageTypes,
       resolvedDamageBases,
+      multiHitExecutions,
+      currentSelectorState(),
     ),
   })
 }

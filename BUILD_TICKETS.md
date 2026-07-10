@@ -1020,7 +1020,7 @@ Status: DONE
 
 ## MA-079 — Execute per-hit multi-strike sequences
 
-Status: TODO
+Status: DONE
 
 **Depends on:** MA-036, MA-077
 **Commit:** `feat(move-automation): resolve multi strike per hit`

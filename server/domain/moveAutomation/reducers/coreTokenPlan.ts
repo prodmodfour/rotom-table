@@ -52,7 +52,7 @@ export type MoveCoreTokenEffectTouches = Map<
 export const recordMoveCoreTokenEffectTouches = (
   touches: MoveCoreTokenEffectTouches,
   result: MoveCoreTokenEffectRecipientResult,
-  operation: MoveCoreTokenEffectOperation,
+  operation: Pick<MoveCoreTokenEffectOperation, 'id' | 'reasonCode'>,
   operationOrder: number,
 ): void => {
   if (result.outcome !== 'applied') return

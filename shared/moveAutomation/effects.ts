@@ -24,6 +24,7 @@ import {
 export const MOVE_EFFECT_OPERATION_KINDS = [
   'roll',
   'damage',
+  'multi-hit',
   'direct-hp',
   'heal',
   'condition',
@@ -91,6 +92,19 @@ export const MOVE_EFFECT_CRITICAL_TRIGGER_KINDS = [
   'never',
 ] as const
 export const MOVE_EFFECT_CRITICAL_PREVENTION_POLICIES = ['honor', 'ignore'] as const
+export const MOVE_EFFECT_MULTI_HIT_COUNT_KINDS = ['fixed', 'roll', 'table'] as const
+export const MOVE_EFFECT_MULTI_HIT_COUNT_SCOPES = ['sequence', 'recipient'] as const
+export const MOVE_EFFECT_MULTI_HIT_ACCURACY_KINDS = ['automatic', 'once', 'per-hit'] as const
+export const MOVE_EFFECT_MULTI_HIT_CRITICAL_KINDS = ['none', 'accuracy', 'per-hit'] as const
+export const MOVE_EFFECT_MULTI_HIT_EFFECT_TIMINGS = ['after-each', 'after-all'] as const
+export const MOVE_EFFECT_MULTI_HIT_EFFECT_TRIGGERS = [
+  'always',
+  'hit',
+  'damage',
+  'knockout',
+] as const
+export const MOVE_EFFECT_MULTI_HIT_EFFECT_RECIPIENTS = ['actor', 'target'] as const
+export const MOVE_EFFECT_MULTI_HIT_EFFECT_KINDS = ['condition', 'combat-stage'] as const
 export const MOVE_EFFECT_HP_POOLS = ['hit-points', 'temporary-hit-points'] as const
 export const MOVE_EFFECT_DIRECT_HP_MODES = ['lose', 'set'] as const
 export const MOVE_EFFECT_HEAL_MODES = [
@@ -152,6 +166,9 @@ export const MOVE_EFFECT_OPERATION_LIMITS = Object.freeze({
   hazardLayers: 64,
   typeOverrides: 18,
   criticalNaturalRolls: 20,
+  multiHitStrikes: 10,
+  multiHitTableEntries: 32,
+  multiHitEffects: 16,
   reactionPriorityMagnitude: 1_000,
 })
 
@@ -170,6 +187,22 @@ export type MoveEffectCriticalTriggerKind =
   (typeof MOVE_EFFECT_CRITICAL_TRIGGER_KINDS)[number]
 export type MoveEffectCriticalPreventionPolicy =
   (typeof MOVE_EFFECT_CRITICAL_PREVENTION_POLICIES)[number]
+export type MoveEffectMultiHitCountKind =
+  (typeof MOVE_EFFECT_MULTI_HIT_COUNT_KINDS)[number]
+export type MoveEffectMultiHitCountScope =
+  (typeof MOVE_EFFECT_MULTI_HIT_COUNT_SCOPES)[number]
+export type MoveEffectMultiHitAccuracyKind =
+  (typeof MOVE_EFFECT_MULTI_HIT_ACCURACY_KINDS)[number]
+export type MoveEffectMultiHitCriticalKind =
+  (typeof MOVE_EFFECT_MULTI_HIT_CRITICAL_KINDS)[number]
+export type MoveEffectMultiHitEffectTiming =
+  (typeof MOVE_EFFECT_MULTI_HIT_EFFECT_TIMINGS)[number]
+export type MoveEffectMultiHitEffectTrigger =
+  (typeof MOVE_EFFECT_MULTI_HIT_EFFECT_TRIGGERS)[number]
+export type MoveEffectMultiHitEffectRecipient =
+  (typeof MOVE_EFFECT_MULTI_HIT_EFFECT_RECIPIENTS)[number]
+export type MoveEffectMultiHitEffectKind =
+  (typeof MOVE_EFFECT_MULTI_HIT_EFFECT_KINDS)[number]
 export type MoveEffectHpPool = (typeof MOVE_EFFECT_HP_POOLS)[number]
 export type MoveEffectDirectHpMode = (typeof MOVE_EFFECT_DIRECT_HP_MODES)[number]
 export type MoveEffectHealMode = (typeof MOVE_EFFECT_HEAL_MODES)[number]
@@ -304,6 +337,119 @@ export interface MoveDamageEffectPayload {
   readonly attackStat?: MoveStatSelectionExpression
   /** Omission uses the damage class's normal target Defense/Special Defense selection. */
   readonly defenseStat?: MoveStatSelectionExpression
+}
+
+export interface MoveMultiHitFixedCount {
+  readonly kind: 'fixed'
+  readonly hits: number
+}
+
+export interface MoveMultiHitRolledCount {
+  readonly kind: 'roll'
+  readonly scope: MoveEffectMultiHitCountScope
+  readonly rollId: string
+  readonly formula: Exclude<MoveEffectRollFormula, MoveEffectTableRollFormula>
+  readonly minimum: number
+  readonly maximum: number
+}
+
+export interface MoveMultiHitCountTableEntry {
+  readonly minimum: number
+  readonly maximum: number
+  readonly hits: number
+}
+
+export interface MoveMultiHitTableCount {
+  readonly kind: 'table'
+  readonly scope: MoveEffectMultiHitCountScope
+  readonly rollId: string
+  readonly tableId: string
+  readonly drawFormula: Exclude<MoveEffectRollFormula, MoveEffectTableRollFormula>
+  readonly entries: readonly MoveMultiHitCountTableEntry[]
+}
+
+export type MoveMultiHitCount =
+  | MoveMultiHitFixedCount
+  | MoveMultiHitRolledCount
+  | MoveMultiHitTableCount
+
+export interface MoveMultiHitAutomaticAccuracy {
+  readonly kind: 'automatic'
+}
+
+export interface MoveMultiHitOnceAccuracy {
+  readonly kind: 'once'
+  readonly rollId: string
+  readonly formula: MoveEffectDiceRollFormula
+}
+
+export interface MoveMultiHitPerHitAccuracy {
+  readonly kind: 'per-hit'
+  readonly rollId: string
+  readonly formula: MoveEffectDiceRollFormula
+  /** A reviewed sequence such as Triple Kick may end on its first miss. */
+  readonly stopOnMiss: boolean
+}
+
+export type MoveMultiHitAccuracy =
+  | MoveMultiHitAutomaticAccuracy
+  | MoveMultiHitOnceAccuracy
+  | MoveMultiHitPerHitAccuracy
+
+export interface MoveMultiHitNoCriticalRoll {
+  readonly kind: 'none'
+}
+
+export interface MoveMultiHitAccuracyCriticalRoll {
+  readonly kind: 'accuracy'
+}
+
+export interface MoveMultiHitPerHitCriticalRoll {
+  readonly kind: 'per-hit'
+  readonly rollId: string
+  readonly formula: MoveEffectDiceRollFormula
+}
+
+export type MoveMultiHitCriticalRoll =
+  | MoveMultiHitNoCriticalRoll
+  | MoveMultiHitAccuracyCriticalRoll
+  | MoveMultiHitPerHitCriticalRoll
+
+export interface MoveMultiHitConditionEffectTemplate {
+  readonly id: string
+  readonly timing: MoveEffectMultiHitEffectTiming
+  readonly trigger: MoveEffectMultiHitEffectTrigger
+  readonly recipient: MoveEffectMultiHitEffectRecipient
+  readonly kind: 'condition'
+  readonly reasonCode: string
+  readonly payload: MoveConditionEffectPayload
+}
+
+export interface MoveMultiHitCombatStageEffectTemplate {
+  readonly id: string
+  readonly timing: MoveEffectMultiHitEffectTiming
+  readonly trigger: MoveEffectMultiHitEffectTrigger
+  readonly recipient: MoveEffectMultiHitEffectRecipient
+  readonly kind: 'combat-stage'
+  readonly reasonCode: string
+  readonly payload: MoveCombatStageEffectPayload
+}
+
+/**
+ * Bounded follow-ups that may affect later strikes. Richer HP/lifecycle effects
+ * are added by their owning capability tickets rather than opaque callbacks.
+ */
+export type MoveMultiHitEffectTemplate =
+  | MoveMultiHitConditionEffectTemplate
+  | MoveMultiHitCombatStageEffectTemplate
+
+export interface MoveMultiHitEffectPayload {
+  readonly count: MoveMultiHitCount
+  readonly accuracy: MoveMultiHitAccuracy
+  readonly critical: MoveMultiHitCriticalRoll
+  /** Accuracy/critical references are null because the sequence owns those rolls. */
+  readonly damage: MoveDamageEffectPayload
+  readonly effects: readonly MoveMultiHitEffectTemplate[]
 }
 
 export interface MoveDirectHpEffectPayload {
@@ -454,6 +600,7 @@ export interface MoveEffectOperationEnvelope<
 
 export type MoveRollEffectOperation = MoveEffectOperationEnvelope<'roll', MoveRollEffectPayload>
 export type MoveDamageEffectOperation = MoveEffectOperationEnvelope<'damage', MoveDamageEffectPayload>
+export type MoveMultiHitEffectOperation = MoveEffectOperationEnvelope<'multi-hit', MoveMultiHitEffectPayload>
 export type MoveDirectHpEffectOperation = MoveEffectOperationEnvelope<'direct-hp', MoveDirectHpEffectPayload>
 export type MoveHealEffectOperation = MoveEffectOperationEnvelope<'heal', MoveHealEffectPayload>
 export type MoveConditionEffectOperation = MoveEffectOperationEnvelope<'condition', MoveConditionEffectPayload>
@@ -471,6 +618,7 @@ export type MoveReactionRequestEffectOperation = MoveEffectOperationEnvelope<'re
 export type MoveEffectOperation =
   | MoveRollEffectOperation
   | MoveDamageEffectOperation
+  | MoveMultiHitEffectOperation
   | MoveDirectHpEffectOperation
   | MoveHealEffectOperation
   | MoveConditionEffectOperation
@@ -533,6 +681,44 @@ const DAMAGE_OPTIONAL_FIELDS = [
   'criticalHit',
   'attackStat',
   'defenseStat',
+] as const
+const MULTI_HIT_FIELDS = ['count', 'accuracy', 'critical', 'damage', 'effects'] as const
+const MULTI_HIT_FIXED_COUNT_FIELDS = ['kind', 'hits'] as const
+const MULTI_HIT_ROLLED_COUNT_FIELDS = [
+  'kind',
+  'scope',
+  'rollId',
+  'formula',
+  'minimum',
+  'maximum',
+] as const
+const MULTI_HIT_TABLE_COUNT_FIELDS = [
+  'kind',
+  'scope',
+  'rollId',
+  'tableId',
+  'drawFormula',
+  'entries',
+] as const
+const MULTI_HIT_TABLE_ENTRY_FIELDS = ['minimum', 'maximum', 'hits'] as const
+const MULTI_HIT_AUTOMATIC_ACCURACY_FIELDS = ['kind'] as const
+const MULTI_HIT_ONCE_ACCURACY_FIELDS = ['kind', 'rollId', 'formula'] as const
+const MULTI_HIT_PER_HIT_ACCURACY_FIELDS = [
+  'kind',
+  'rollId',
+  'formula',
+  'stopOnMiss',
+] as const
+const MULTI_HIT_CRITICAL_KIND_FIELDS = ['kind'] as const
+const MULTI_HIT_PER_HIT_CRITICAL_FIELDS = ['kind', 'rollId', 'formula'] as const
+const MULTI_HIT_EFFECT_FIELDS = [
+  'id',
+  'timing',
+  'trigger',
+  'recipient',
+  'kind',
+  'reasonCode',
+  'payload',
 ] as const
 const CONTEXTUAL_DAMAGE_BASE_FIELDS = [
   'kind',
@@ -613,6 +799,14 @@ const CRITICAL_TRIGGER_KIND_SET = new Set<string>(MOVE_EFFECT_CRITICAL_TRIGGER_K
 const CRITICAL_PREVENTION_POLICY_SET = new Set<string>(
   MOVE_EFFECT_CRITICAL_PREVENTION_POLICIES,
 )
+const MULTI_HIT_COUNT_KIND_SET = new Set<string>(MOVE_EFFECT_MULTI_HIT_COUNT_KINDS)
+const MULTI_HIT_COUNT_SCOPE_SET = new Set<string>(MOVE_EFFECT_MULTI_HIT_COUNT_SCOPES)
+const MULTI_HIT_ACCURACY_KIND_SET = new Set<string>(MOVE_EFFECT_MULTI_HIT_ACCURACY_KINDS)
+const MULTI_HIT_CRITICAL_KIND_SET = new Set<string>(MOVE_EFFECT_MULTI_HIT_CRITICAL_KINDS)
+const MULTI_HIT_EFFECT_TIMING_SET = new Set<string>(MOVE_EFFECT_MULTI_HIT_EFFECT_TIMINGS)
+const MULTI_HIT_EFFECT_TRIGGER_SET = new Set<string>(MOVE_EFFECT_MULTI_HIT_EFFECT_TRIGGERS)
+const MULTI_HIT_EFFECT_RECIPIENT_SET = new Set<string>(MOVE_EFFECT_MULTI_HIT_EFFECT_RECIPIENTS)
+const MULTI_HIT_EFFECT_KIND_SET = new Set<string>(MOVE_EFFECT_MULTI_HIT_EFFECT_KINDS)
 const HP_POOL_SET = new Set<string>(MOVE_EFFECT_HP_POOLS)
 const DIRECT_HP_MODE_SET = new Set<string>(MOVE_EFFECT_DIRECT_HP_MODES)
 const HEAL_MODE_SET = new Set<string>(MOVE_EFFECT_HEAL_MODES)
@@ -1339,6 +1533,311 @@ const parseCombatStagePayload = (
   return { action, stage, value: stageValue }
 }
 
+const parseMultiHitDrawFormula = (
+  value: unknown,
+  path: string,
+): Exclude<MoveEffectRollFormula, MoveEffectTableRollFormula> => {
+  const formula = parseRollFormula(value, path)
+  if (formula.kind === 'table') {
+    return fail(
+      'invalid-effect-operation',
+      `${path}.kind`,
+      'nested random tables are not supported.',
+    )
+  }
+  return formula
+}
+
+const parseMultiHitD20Formula = (
+  value: unknown,
+  path: string,
+): MoveEffectDiceRollFormula => {
+  const formula = parseRollFormula(value, path)
+  if (formula.kind !== 'dice') {
+    return fail(
+      'invalid-effect-operation',
+      path,
+      'must be an unmodified 1d20 formula; contextual modifiers are applied separately.',
+    )
+  }
+  if (formula.count !== 1 || formula.sides !== 20 || formula.modifier !== 0) {
+    return fail(
+      'invalid-effect-operation',
+      path,
+      'must be an unmodified 1d20 formula; contextual modifiers are applied separately.',
+    )
+  }
+  return formula
+}
+
+const parseMultiHitCount = (
+  value: unknown,
+  path: string,
+): MoveMultiHitCount => {
+  const input = parseRecord(value, path)
+  const kind = parseEnum<MoveEffectMultiHitCountKind>(
+    ownValue(input, 'kind', path),
+    MULTI_HIT_COUNT_KIND_SET,
+    `${path}.kind`,
+    'fixed, roll, or table',
+  )
+  if (kind === 'fixed') {
+    assertExactKeys(input, MULTI_HIT_FIXED_COUNT_FIELDS, path)
+    return {
+      kind,
+      hits: parseInteger(
+        ownValue(input, 'hits', path),
+        `${path}.hits`,
+        1,
+        MOVE_EFFECT_OPERATION_LIMITS.multiHitStrikes,
+      ),
+    }
+  }
+
+  const scope = parseEnum<MoveEffectMultiHitCountScope>(
+    ownValue(input, 'scope', path),
+    MULTI_HIT_COUNT_SCOPE_SET,
+    `${path}.scope`,
+    'sequence or recipient',
+  )
+  const rollId = parseStableId(ownValue(input, 'rollId', path), `${path}.rollId`)
+  if (kind === 'roll') {
+    assertExactKeys(input, MULTI_HIT_ROLLED_COUNT_FIELDS, path)
+    const minimum = parseInteger(
+      ownValue(input, 'minimum', path),
+      `${path}.minimum`,
+      1,
+      MOVE_EFFECT_OPERATION_LIMITS.multiHitStrikes,
+    )
+    const maximum = parseInteger(
+      ownValue(input, 'maximum', path),
+      `${path}.maximum`,
+      1,
+      MOVE_EFFECT_OPERATION_LIMITS.multiHitStrikes,
+    )
+    if (minimum > maximum) {
+      fail('invalid-effect-operation', path, 'minimum cannot exceed maximum.')
+    }
+    return {
+      kind,
+      scope,
+      rollId,
+      formula: parseMultiHitDrawFormula(
+        ownValue(input, 'formula', path),
+        `${path}.formula`,
+      ),
+      minimum,
+      maximum,
+    }
+  }
+
+  assertExactKeys(input, MULTI_HIT_TABLE_COUNT_FIELDS, path)
+  const entriesPath = `${path}.entries`
+  const entries = parseBoundedArray(
+    ownValue(input, 'entries', path),
+    entriesPath,
+    MOVE_EFFECT_OPERATION_LIMITS.multiHitTableEntries,
+  ).map((entry, index): MoveMultiHitCountTableEntry => {
+    const entryPath = `${entriesPath}[${index}]`
+    const record = parseExactRecord(entry, MULTI_HIT_TABLE_ENTRY_FIELDS, entryPath)
+    const minimum = parseInteger(
+      ownValue(record, 'minimum', entryPath),
+      `${entryPath}.minimum`,
+      -MOVE_EFFECT_OPERATION_LIMITS.numericMagnitude,
+      MOVE_EFFECT_OPERATION_LIMITS.numericMagnitude,
+    )
+    const maximum = parseInteger(
+      ownValue(record, 'maximum', entryPath),
+      `${entryPath}.maximum`,
+      -MOVE_EFFECT_OPERATION_LIMITS.numericMagnitude,
+      MOVE_EFFECT_OPERATION_LIMITS.numericMagnitude,
+    )
+    if (minimum > maximum) {
+      fail('invalid-effect-operation', entryPath, 'minimum cannot exceed maximum.')
+    }
+    return {
+      minimum,
+      maximum,
+      hits: parseInteger(
+        ownValue(record, 'hits', entryPath),
+        `${entryPath}.hits`,
+        1,
+        MOVE_EFFECT_OPERATION_LIMITS.multiHitStrikes,
+      ),
+    }
+  }).sort((left, right) => left.minimum - right.minimum || left.maximum - right.maximum)
+  if (entries.length === 0) {
+    fail('invalid-effect-operation', entriesPath, 'must contain at least one table entry.')
+  }
+  for (let index = 1; index < entries.length; index += 1) {
+    if (entries[index]!.minimum <= entries[index - 1]!.maximum) {
+      fail('invalid-effect-operation', entriesPath, 'table ranges may not overlap.')
+    }
+  }
+  return {
+    kind,
+    scope,
+    rollId,
+    tableId: parseStableId(ownValue(input, 'tableId', path), `${path}.tableId`),
+    drawFormula: parseMultiHitDrawFormula(
+      ownValue(input, 'drawFormula', path),
+      `${path}.drawFormula`,
+    ),
+    entries,
+  }
+}
+
+const parseMultiHitAccuracy = (
+  value: unknown,
+  path: string,
+): MoveMultiHitAccuracy => {
+  const input = parseRecord(value, path)
+  const kind = parseEnum<MoveEffectMultiHitAccuracyKind>(
+    ownValue(input, 'kind', path),
+    MULTI_HIT_ACCURACY_KIND_SET,
+    `${path}.kind`,
+    'automatic, once, or per-hit',
+  )
+  if (kind === 'automatic') {
+    assertExactKeys(input, MULTI_HIT_AUTOMATIC_ACCURACY_FIELDS, path)
+    return { kind }
+  }
+  if (kind === 'once') {
+    assertExactKeys(input, MULTI_HIT_ONCE_ACCURACY_FIELDS, path)
+    return {
+      kind,
+      rollId: parseStableId(ownValue(input, 'rollId', path), `${path}.rollId`),
+      formula: parseMultiHitD20Formula(ownValue(input, 'formula', path), `${path}.formula`),
+    }
+  }
+  assertExactKeys(input, MULTI_HIT_PER_HIT_ACCURACY_FIELDS, path)
+  return {
+    kind,
+    rollId: parseStableId(ownValue(input, 'rollId', path), `${path}.rollId`),
+    formula: parseMultiHitD20Formula(ownValue(input, 'formula', path), `${path}.formula`),
+    stopOnMiss: parseBoolean(ownValue(input, 'stopOnMiss', path), `${path}.stopOnMiss`),
+  }
+}
+
+const parseMultiHitCritical = (
+  value: unknown,
+  path: string,
+): MoveMultiHitCriticalRoll => {
+  const input = parseRecord(value, path)
+  const kind = parseEnum<MoveEffectMultiHitCriticalKind>(
+    ownValue(input, 'kind', path),
+    MULTI_HIT_CRITICAL_KIND_SET,
+    `${path}.kind`,
+    'none, accuracy, or per-hit',
+  )
+  if (kind !== 'per-hit') {
+    assertExactKeys(input, MULTI_HIT_CRITICAL_KIND_FIELDS, path)
+    return { kind }
+  }
+  assertExactKeys(input, MULTI_HIT_PER_HIT_CRITICAL_FIELDS, path)
+  return {
+    kind,
+    rollId: parseStableId(ownValue(input, 'rollId', path), `${path}.rollId`),
+    formula: parseMultiHitD20Formula(ownValue(input, 'formula', path), `${path}.formula`),
+  }
+}
+
+const parseMultiHitEffects = (
+  value: unknown,
+  path: string,
+): readonly MoveMultiHitEffectTemplate[] => {
+  const effects = parseBoundedArray(
+    value,
+    path,
+    MOVE_EFFECT_OPERATION_LIMITS.multiHitEffects,
+  ).map((effect, index): MoveMultiHitEffectTemplate => {
+    const effectPath = `${path}[${index}]`
+    const input = parseExactRecord(effect, MULTI_HIT_EFFECT_FIELDS, effectPath)
+    const common = {
+      id: parseStableId(ownValue(input, 'id', effectPath), `${effectPath}.id`),
+      timing: parseEnum<MoveEffectMultiHitEffectTiming>(
+        ownValue(input, 'timing', effectPath),
+        MULTI_HIT_EFFECT_TIMING_SET,
+        `${effectPath}.timing`,
+        'after-each or after-all',
+      ),
+      trigger: parseEnum<MoveEffectMultiHitEffectTrigger>(
+        ownValue(input, 'trigger', effectPath),
+        MULTI_HIT_EFFECT_TRIGGER_SET,
+        `${effectPath}.trigger`,
+        'always, hit, damage, or knockout',
+      ),
+      recipient: parseEnum<MoveEffectMultiHitEffectRecipient>(
+        ownValue(input, 'recipient', effectPath),
+        MULTI_HIT_EFFECT_RECIPIENT_SET,
+        `${effectPath}.recipient`,
+        'actor or target',
+      ),
+      reasonCode: parseStableId(
+        ownValue(input, 'reasonCode', effectPath),
+        `${effectPath}.reasonCode`,
+      ),
+    }
+    const kind = parseEnum<MoveEffectMultiHitEffectKind>(
+      ownValue(input, 'kind', effectPath),
+      MULTI_HIT_EFFECT_KIND_SET,
+      `${effectPath}.kind`,
+      'condition or combat-stage',
+    )
+    const payload = ownValue(input, 'payload', effectPath)
+    return kind === 'condition'
+      ? {
+          ...common,
+          kind,
+          payload: parseConditionPayload(payload, `${effectPath}.payload`),
+        }
+      : {
+          ...common,
+          kind,
+          payload: parseCombatStagePayload(payload, `${effectPath}.payload`),
+        }
+  })
+  assertUnique(effects.map(effect => effect.id), `${path}.id`)
+  return effects
+}
+
+const parseMultiHitPayload = (
+  value: unknown,
+  path: string,
+): MoveMultiHitEffectPayload => {
+  const input = parseExactRecord(value, MULTI_HIT_FIELDS, path)
+  const damage = parseDamagePayload(ownValue(input, 'damage', path), `${path}.damage`)
+  if (damage.accuracyRollId !== null || damage.criticalRollId !== null) {
+    fail(
+      'invalid-effect-operation',
+      `${path}.damage`,
+      'accuracyRollId and criticalRollId must be null because the sequence owns per-hit rolls.',
+    )
+  }
+  const accuracy = parseMultiHitAccuracy(
+    ownValue(input, 'accuracy', path),
+    `${path}.accuracy`,
+  )
+  const critical = parseMultiHitCritical(
+    ownValue(input, 'critical', path),
+    `${path}.critical`,
+  )
+  if (critical.kind === 'accuracy' && accuracy.kind === 'automatic') {
+    fail(
+      'invalid-effect-operation',
+      `${path}.critical.kind`,
+      'accuracy criticals require an accuracy roll.',
+    )
+  }
+  return {
+    count: parseMultiHitCount(ownValue(input, 'count', path), `${path}.count`),
+    accuracy,
+    critical,
+    damage,
+    effects: parseMultiHitEffects(ownValue(input, 'effects', path), `${path}.effects`),
+  }
+}
+
 const parseTemporaryEffectPayload = (
   value: unknown,
   path: string,
@@ -1636,6 +2135,8 @@ const parseDetachedOperation = (value: unknown, path: string): MoveEffectOperati
       return { ...common, kind, payload: parseRollPayload(payload, payloadPath) }
     case 'damage':
       return { ...common, kind, payload: parseDamagePayload(payload, payloadPath) }
+    case 'multi-hit':
+      return { ...common, kind, payload: parseMultiHitPayload(payload, payloadPath) }
     case 'direct-hp':
       return { ...common, kind, payload: parseDirectHpPayload(payload, payloadPath) }
     case 'heal':

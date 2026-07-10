@@ -23,7 +23,33 @@ const VALID_PAYLOADS = {
     accuracyRollId: 'roll.accuracy',
     criticalRollId: 'roll.critical',
   },
-  'direct-hp': {
+  'multi-hit': {
+    count: { kind: 'fixed', hits: 2 },
+    accuracy: {
+      kind: 'per-hit',
+      rollId: 'roll.strike-accuracy',
+      formula: { kind: 'dice', count: 1, sides: 20, modifier: 0 },
+      stopOnMiss: false,
+    },
+    critical: { kind: 'accuracy' },
+    damage: {
+      damageClass: 'physical',
+      damageBase: 4,
+      moveType: 'normal',
+      accuracyRollId: null,
+      criticalRollId: null,
+    },
+    effects: [{
+      id: 'effect.defense-drop',
+      timing: 'after-each',
+      trigger: 'damage',
+      recipient: 'target',
+      kind: 'combat-stage',
+      reasonCode: 'move.scratch.defense-drop',
+      payload: { action: 'modify', stage: 'def', value: -1 },
+    }],
+  },
+  'direct-hp':  {
     mode: 'lose',
     pool: 'hit-points',
     amount: 10,
@@ -162,6 +188,7 @@ describe('MoveSpec typed effect operations', () => {
     expect(MOVE_EFFECT_OPERATION_KINDS).toEqual([
       'roll',
       'damage',
+      'multi-hit',
       'direct-hp',
       'heal',
       'condition',
@@ -220,6 +247,41 @@ describe('MoveSpec typed effect operations', () => {
     })).payload).toEqual({
       rollId: 'roll.table',
       formula: { kind: 'table', tableId: 'table.five-strike' },
+    })
+    const tableMultiHit = parseMoveEffectOperation(validOperation('multi-hit', {
+      payload: {
+        ...VALID_PAYLOADS['multi-hit'],
+        count: {
+          kind: 'table',
+          scope: 'sequence',
+          rollId: 'roll.hit-count',
+          tableId: 'table.five-strike',
+          drawFormula: { kind: 'dice', count: 1, sides: 8, modifier: 0 },
+          entries: [
+            { minimum: 8, maximum: 8, hits: 5 },
+            { minimum: 1, maximum: 3, hits: 2 },
+            { minimum: 4, maximum: 7, hits: 3 },
+          ],
+        },
+        accuracy: { kind: 'automatic' },
+        critical: {
+          kind: 'per-hit',
+          rollId: 'roll.critical',
+          formula: { kind: 'dice', count: 1, sides: 20, modifier: 0 },
+        },
+      },
+    }))
+    expect(tableMultiHit.kind === 'multi-hit' && tableMultiHit.payload).toMatchObject({
+      count: {
+        kind: 'table',
+        entries: [
+          { minimum: 1, maximum: 3, hits: 2 },
+          { minimum: 4, maximum: 7, hits: 3 },
+          { minimum: 8, maximum: 8, hits: 5 },
+        ],
+      },
+      accuracy: { kind: 'automatic' },
+      critical: { kind: 'per-hit' },
     })
     const selectedDamage = parseMoveEffectOperation(validOperation('damage', {
       payload: {
@@ -660,6 +722,54 @@ describe('MoveSpec typed effect operations', () => {
       }),
       'invalid-effect-operation',
       'operation.payload.formula',
+    )
+    expectEffectError(
+      validOperation('multi-hit', {
+        payload: {
+          ...VALID_PAYLOADS['multi-hit'],
+          accuracy: {
+            kind: 'per-hit',
+            rollId: 'roll.strike',
+            formula: { kind: 'dice', count: 2, sides: 20, modifier: 0 },
+            stopOnMiss: false,
+          },
+        },
+      }),
+      'invalid-effect-operation',
+      'operation.payload.accuracy.formula',
+    )
+    expectEffectError(
+      validOperation('multi-hit', {
+        payload: {
+          ...VALID_PAYLOADS['multi-hit'],
+          count: {
+            kind: 'table',
+            scope: 'sequence',
+            rollId: 'roll.hit-count',
+            tableId: 'table.five-strike',
+            drawFormula: { kind: 'dice', count: 1, sides: 8, modifier: 0 },
+            entries: [
+              { minimum: 1, maximum: 4, hits: 2 },
+              { minimum: 4, maximum: 8, hits: 3 },
+            ],
+          },
+        },
+      }),
+      'invalid-effect-operation',
+      'operation.payload.count.entries',
+    )
+    expectEffectError(
+      validOperation('multi-hit', {
+        payload: {
+          ...VALID_PAYLOADS['multi-hit'],
+          damage: {
+            ...VALID_PAYLOADS['multi-hit'].damage,
+            accuracyRollId: 'roll.client-supplied',
+          },
+        },
+      }),
+      'invalid-effect-operation',
+      'operation.payload.damage',
     )
     expectEffectError(
       validOperation('hazard', { payload: { action: 'patch', state: {} } }),

@@ -9,10 +9,6 @@ import type {
 } from '~/types/moveAutomation'
 import type { MoveDamageRollResult } from '~/utils/moveDamageBase'
 import { formatMoveAutomationDamageLogLine } from '~/utils/moveAutomationLogLines'
-import { resolveMoveAutomationTargetEvasion } from '~/utils/moveAutomationAccuracy'
-import {
-  resolveMoveAutomationAccuracyRoll,
-} from '~/utils/moveAutomationResolution'
 import type {
   MoveAutomationTargetResolutionState,
 } from '~/utils/moveAutomationTargetResolution'
@@ -55,6 +51,7 @@ export type ImmediateMoveSpecResolutionErrorCode =
   | 'damage-roll-invalid'
   | 'damage-type-resolution-missing'
   | 'damage-base-resolution-missing'
+  | 'multi-hit-operation-conflict'
 
 export class ImmediateMoveSpecResolutionError extends Error {
   readonly code: ImmediateMoveSpecResolutionErrorCode
@@ -312,13 +309,18 @@ const compatibilityLogLines = (options: {
   readonly executionRolls: readonly MoveSpecResolvedRoll[]
   readonly rollLedger: ImmediateMoveSpecResolution['rollLedger']
   readonly coreResults: readonly MoveCoreTokenEffectOperationResult[]
+  readonly multiHitExecutions: ReturnType<typeof executeMoveSpec>['multiHitExecutions']
 }): string[] => {
   const lines = [
     `${options.context.actor.token.species} used ${options.script.moveName}.`,
     `MoveSpec v${options.script.version} used.`,
   ]
   const hits = new Set(options.hitTargetIds)
+  const multiHitTargetIds = new Set(
+    options.multiHitExecutions.flatMap(execution => execution.recipientIds),
+  )
   for (const targetId of options.targetIds) {
+    if (multiHitTargetIds.has(targetId)) continue
     const target = options.context.queries.tokens.get(targetId)
     const resolved = options.executionRolls.find(roll => (
       roll.purpose === 'accuracy' && roll.recipientId === targetId
@@ -327,6 +329,17 @@ const compatibilityLogLines = (options: {
       ? options.rollLedger.find(entry => entry.rollId === resolved.rollId)
       : null
     lines.push(`${target?.species ?? targetId}: accuracy ${roll?.naturalResult ?? '?'} (${hits.has(targetId) ? 'hit' : 'miss'}).`)
+  }
+  for (const execution of options.multiHitExecutions) {
+    for (const targetResult of execution.resolution.targets) {
+      const target = options.context.queries.tokens.get(targetResult.targetId)
+      const planned = targetResult.plannedHitCount === null
+        ? 'no scheduled'
+        : `${targetResult.plannedHitCount} scheduled`
+      lines.push(
+        `${target?.species ?? targetResult.targetId}: ${targetResult.successfulHitCount} hit, ${targetResult.missedHitCount} missed (${planned}); ${targetResult.totalEffectiveHpLost} total HP lost; ${targetResult.stopReason}.`,
+      )
+    }
   }
   for (const operation of options.coreResults) {
     for (const recipient of operation.recipients) {
@@ -363,6 +376,7 @@ const assertSupportedImmediateOperations = (
   const supported = new Set([
     'roll',
     'damage',
+    'multi-hit',
     'movement-request',
     'usage',
     'log',
@@ -407,35 +421,22 @@ export const resolveImmediateMoveSpec = (options: {
 
   const script = compatibilityScript(options.entry, options.runtime)
   const attackedTargetIds = [...execution.targetIds]
-  const hitTargetIds = execution.resolvedRolls
-    .filter(roll => roll.purpose === 'accuracy' && roll.recipientId !== null)
-    .filter((roll) => {
-      const entry = execution.rollLedger.find(item => item.rollId === roll.rollId)
-      const target = roll.recipientId
-        ? options.context.queries.tokens.get(roll.recipientId)
-        : null
-      if (!entry || !target) return false
-      const evasion = resolveMoveAutomationTargetEvasion(
-        script,
-        target,
-        { attacker: options.context.actor.token },
-      )
-      return resolveMoveAutomationAccuracyRoll(script, entry.naturalResult, {
-        userAccuracy: entry.modifiers.reduce((total, modifier) => total + modifier.value, 0),
-        targetEvasion: evasion.value,
-      }).hit
-    })
-    .map(roll => roll.recipientId!)
-  const hitSet = new Set(hitTargetIds)
   const initialDynamic: MoveCoreTokenDynamicRecipientSets = {
     attackedTargetIds,
-    hitTargetIds,
-    missedTargetIds: attackedTargetIds.filter(id => !hitSet.has(id)),
-    damagedTargetIds: [],
-    faintedTargetIds: [],
+    hitTargetIds: [...execution.hitTargetIds],
+    missedTargetIds: [...execution.missedTargetIds],
+    damagedTargetIds: [...execution.damagedTargetIds],
+    faintedTargetIds: [...execution.faintedTargetIds],
   }
 
   const coreOperations = execution.operations.filter(isMoveCoreTokenEffectEmission)
+  const multiHit = execution.multiHitExecutions[0] ?? null
+  if (execution.multiHitExecutions.length > 1 || (multiHit && coreOperations.length > 0)) {
+    return fail(
+      'multi-hit-operation-conflict',
+      'An immediate MoveSpec may contain one pre-reduced multi-hit operation or ordinary core effects, not overlapping state reducers.',
+    )
+  }
   const core: MoveCoreTokenEffectReduction = reduceMoveCoreTokenEffects({
     context: options.context,
     operations: coreOperations,
@@ -455,9 +456,18 @@ export const resolveImmediateMoveSpec = (options: {
     trace: execution.trace,
   })
   const terminalRecipients = damagedAndFaintedRecipients(core.operationResults)
+  const damagedSet = new Set([
+    ...initialDynamic.damagedTargetIds,
+    ...terminalRecipients.damagedTargetIds,
+  ])
+  const faintedSet = new Set([
+    ...initialDynamic.faintedTargetIds,
+    ...terminalRecipients.faintedTargetIds,
+  ])
   const dynamicRecipients: MoveCoreTokenDynamicRecipientSets = {
     ...initialDynamic,
-    ...terminalRecipients,
+    damagedTargetIds: attackedTargetIds.filter(id => damagedSet.has(id)),
+    faintedTargetIds: attackedTargetIds.filter(id => faintedSet.has(id)),
   }
   const transaction: MoveAutomationTransaction = {
     userId: options.context.actor.placement.id,
@@ -467,9 +477,11 @@ export const resolveImmediateMoveSpec = (options: {
     scriptVersion: options.runtime.version,
     attackedTargetIds: [...dynamicRecipients.attackedTargetIds],
     hitTargetIds: [...dynamicRecipients.hitTargetIds],
-    hpUpdates: hpUpdatesFromResults(core.operationResults),
-    conditionUpdates: [],
-    combatStageUpdates: [],
+    hpUpdates: multiHit
+      ? [...multiHit.hpUpdates]
+      : hpUpdatesFromResults(core.operationResults),
+    conditionUpdates: multiHit ? [...multiHit.conditionUpdates] : [],
+    combatStageUpdates: multiHit ? [...multiHit.combatStageUpdates] : [],
     hazardsToAdd: [],
     fieldEffectsToApply: [],
     logLines: compatibilityLogLines({
@@ -480,6 +492,7 @@ export const resolveImmediateMoveSpec = (options: {
       executionRolls: execution.resolvedRolls,
       rollLedger: execution.rollLedger,
       coreResults: core.operationResults,
+      multiHitExecutions: execution.multiHitExecutions,
     }),
   }
   const sheetReads = deduplicateAuthoritativeMoveSheetReads([
@@ -496,7 +509,7 @@ export const resolveImmediateMoveSpec = (options: {
     native: Object.freeze({
       operations: execution.operations,
       dynamicRecipients: Object.freeze(dynamicRecipients),
-      coreStateChanges: core.stateChanges,
+      coreStateChanges: multiHit?.stateChanges ?? core.stateChanges,
       trace: core.trace,
     }),
   })

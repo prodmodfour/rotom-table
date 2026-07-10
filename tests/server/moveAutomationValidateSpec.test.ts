@@ -109,6 +109,36 @@ const damageOperation = (
   ...overrides,
 })
 
+const multiHitOperation = (
+  overrides: Partial<TestOperation> = {},
+): TestOperation => ({
+  id: 'operation.multi-hit',
+  kind: 'multi-hit',
+  source: { kind: 'move', id: 'move.scratch' },
+  recipients: { kind: 'attacked-targets' },
+  phase: 'damage',
+  reasonCode: 'move.scratch.multi-hit',
+  payload: {
+    count: { kind: 'fixed', hits: 2 },
+    accuracy: {
+      kind: 'per-hit',
+      rollId: 'roll.strike',
+      formula: { kind: 'dice', count: 1, sides: 20, modifier: 0 },
+      stopOnMiss: false,
+    },
+    critical: { kind: 'accuracy' },
+    damage: {
+      damageClass: 'physical',
+      damageBase: 4,
+      moveType: 'normal',
+      accuracyRollId: null,
+      criticalRollId: null,
+    },
+    effects: [],
+  },
+  ...overrides,
+})
+
 const validSpec = (): TestSpec => ({
   schemaVersion: 2,
   canonicalId: 'Scratch',
@@ -661,6 +691,59 @@ describe('authoritative MoveSpec validation and hashing', () => {
       () => validateMoveSpec(unbackedCriticalRange),
       'invalid-definition',
       'spec.phases[1].operations[0].payload.criticalHit.trigger',
+    )
+  })
+
+  it('validates multi-hit internal roll identity and critical/type policy', () => {
+    const overlappingCoreEffect = validSpec()
+    overlappingCoreEffect.phases[1]!.operations = [
+      multiHitOperation(),
+      damageOperation(),
+    ]
+    expectDefinitionError(
+      () => validateMoveSpec(overlappingCoreEffect),
+      'invalid-definition',
+      'spec.phases[1].operations[1]',
+    )
+
+    const duplicateInternalRoll = validSpec()
+    const multiHit = multiHitOperation()
+    multiHit.payload.critical = {
+      kind: 'per-hit',
+      rollId: 'roll.strike',
+      formula: { kind: 'dice', count: 1, sides: 20, modifier: 0 },
+    }
+    duplicateInternalRoll.phases = [{ phase: 'damage', operations: [multiHit] }]
+    expectDefinitionError(
+      () => validateMoveSpec(duplicateInternalRoll),
+      'duplicate-id',
+      'spec.phases[0].operations[0].payload.critical.rollId',
+    )
+
+    const unbackedCritical = validSpec()
+    const withoutCriticalRoll = multiHitOperation()
+    withoutCriticalRoll.payload.critical = { kind: 'none' }
+    const nestedDamage = withoutCriticalRoll.payload.damage as Record<string, unknown>
+    nestedDamage.criticalHit = {
+      trigger: { kind: 'range', minimum: 18 },
+      prevention: 'honor',
+    }
+    unbackedCritical.phases = [{ phase: 'damage', operations: [withoutCriticalRoll] }]
+    expectDefinitionError(
+      () => validateMoveSpec(unbackedCritical),
+      'invalid-definition',
+      'spec.phases[0].operations[0].payload.damage.criticalHit.trigger',
+    )
+
+    const unknownType = validSpec()
+    const invalidType = multiHitOperation()
+    const invalidNestedDamage = invalidType.payload.damage as Record<string, unknown>
+    invalidNestedDamage.moveType = 'mystery'
+    unknownType.phases = [{ phase: 'damage', operations: [invalidType] }]
+    expectDefinitionError(
+      () => validateMoveSpec(unknownType),
+      'invalid-definition',
+      'spec.phases[0].operations[0].payload.damage.moveType',
     )
   })
 
