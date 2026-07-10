@@ -589,7 +589,7 @@ Status: DONE
 
 ## MA-040 — Reduce HP, condition, and stage operations
 
-Status: TODO
+Status: DONE
 
 **Depends on:** MA-039
 **Commit:** `feat(move-automation): reduce core token effect operations`

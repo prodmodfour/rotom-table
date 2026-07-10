@@ -75,6 +75,17 @@ describe('move automation status update accumulators', () => {
     ])
   })
 
+  it('gets detached state and sets absolute condition state', () => {
+    const target = token({ id: 'target', species: 'Target', conditions: ['Burned'] })
+    const accumulator = createMoveAutomationConditionUpdateAccumulator()
+    const current = accumulator.get(target) as string[]
+    current.push('Poisoned')
+
+    expect(accumulator.get(target)).toEqual(['Burned'])
+    accumulator.set(target, ['PSN'])
+    expect(accumulator.toUpdates()).toEqual([{ id: 'target', conditions: ['Poisoned'] }])
+  })
+
   it('accumulates combat-stage deltas from normalized token stages', () => {
     const target = token({
       id: 'target',
@@ -89,5 +100,19 @@ describe('move automation status update accumulators', () => {
     expect(accumulator.toUpdates()).toEqual([
       { id: 'target', stages: { ...stages, atk: 6, def: -6, spd: 3, acc: -1 } },
     ])
+  })
+
+  it('gets detached stages and normalizes absolute stage state', () => {
+    const target = token({ id: 'target', species: 'Target' })
+    const accumulator = createMoveAutomationCombatStageUpdateAccumulator()
+    const current = accumulator.get(target)
+    current.atk = 4
+
+    expect(accumulator.get(target).atk).toBe(0)
+    accumulator.set(target, { ...stages, atk: 99, def: -99 })
+    expect(accumulator.toUpdates()).toEqual([{
+      id: 'target',
+      stages: { ...stages, atk: 6, def: -6 },
+    }])
   })
 })

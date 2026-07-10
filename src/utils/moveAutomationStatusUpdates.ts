@@ -15,12 +15,16 @@ import type {
 import type { SpawnedPokemon } from '~/types/pokemon'
 
 export interface MoveAutomationConditionUpdateAccumulator {
+  get(token: SpawnedPokemon): readonly string[]
+  set(token: SpawnedPokemon, conditions: readonly string[]): void
   merge(token: SpawnedPokemon, conditions: readonly string[]): void
   applySuggestion(token: SpawnedPokemon, suggestion: MoveAutomationConditionSuggestion): void
   toUpdates(): MoveAutomationConditionUpdate[]
 }
 
 export interface MoveAutomationCombatStageUpdateAccumulator {
+  get(token: SpawnedPokemon): CombatStageMap
+  set(token: SpawnedPokemon, stages: CombatStageMap): void
   addDeltas(token: SpawnedPokemon, deltas: Partial<Record<CombatStageKey, number>>): void
   toUpdates(): MoveAutomationCombatStageUpdate[]
 }
@@ -49,6 +53,10 @@ export const createMoveAutomationConditionUpdateAccumulator = (): MoveAutomation
   const conditionById = new Map<string, string[]>()
 
   return {
+    get: token => [...(conditionById.get(token.id) ?? normalizeConditionNames(token.conditions))],
+    set: (token, conditions) => {
+      setConditionListForToken(conditionById, token, [...conditions])
+    },
     merge: (token, conditions) => {
       const normalized = normalizeConditionNames(conditions)
       if (!normalized.length) return
@@ -82,6 +90,10 @@ export const createMoveAutomationCombatStageUpdateAccumulator = (): MoveAutomati
   const stagesById = new Map<string, CombatStageMap>()
 
   return {
+    get: token => ({ ...(stagesById.get(token.id) ?? normalizeCombatStages(token.combatStages)) }),
+    set: (token, stages) => {
+      stagesById.set(token.id, normalizeCombatStages(stages))
+    },
     addDeltas: (token, deltas) => {
       stagesById.set(
         token.id,

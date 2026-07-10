@@ -65,6 +65,21 @@ describe('move automation HP update helpers', () => {
     expect(accumulator.toUpdates()).toEqual([{ id: 'eevee', currentHp: 12 }])
   })
 
+  it('sets normalized temporary HP without changing persistent HP', () => {
+    const eevee = token('eevee', 7, 12)
+    eevee.temporaryHp = 3
+    const accumulator = createMoveAutomationHpUpdateAccumulator()
+
+    accumulator.setTemporaryHp(eevee, 8.9)
+
+    expect(accumulator.getTemporaryHp(eevee)).toBe(8)
+    expect(accumulator.toUpdates()).toEqual([{
+      id: 'eevee',
+      currentHp: 7,
+      temporaryHp: 8,
+    }])
+  })
+
   it('adds injury updates when damage crosses PTU injury thresholds', () => {
     const oddish = token('oddish', 53, 53)
     oddish.fullMaxHp = 53
