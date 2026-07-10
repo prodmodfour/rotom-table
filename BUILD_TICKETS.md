@@ -767,7 +767,7 @@ Status: DONE
 
 ## MA-057 — Define duration, expiry, stack, and charge policies
 
-Status: TODO
+Status: DONE
 
 **Depends on:** MA-056
 **Commit:** `feat(move-automation): define effect lifecycle policies`

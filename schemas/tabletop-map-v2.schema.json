@@ -243,6 +243,8 @@
         "duration": { "$ref": "#/$defs/encounterEffectDuration" },
         "stacks": { "type": "integer", "minimum": 1, "maximum": 64 },
         "charges": { "type": ["integer", "null"], "minimum": 0, "maximum": 10000 },
+        "stackPolicy": { "$ref": "#/$defs/encounterEffectStackPolicy" },
+        "chargePolicy": { "$ref": "#/$defs/encounterEffectChargePolicy" },
         "tags": {
           "type": "array",
           "maxItems": 32,
@@ -325,7 +327,19 @@
           "required": ["kind", "remaining"],
           "additionalProperties": false,
           "properties": {
-            "kind": { "enum": ["turns", "rounds"] },
+            "kind": { "const": "turns" },
+            "subject": { "enum": ["source", "target"] },
+            "boundary": { "enum": ["start", "end"] },
+            "remaining": { "type": "integer", "minimum": 1, "maximum": 1000000 }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["kind", "remaining"],
+          "additionalProperties": false,
+          "properties": {
+            "kind": { "const": "rounds" },
+            "boundary": { "enum": ["start", "end"] },
             "remaining": { "type": "integer", "minimum": 1, "maximum": 1000000 }
           }
         },
@@ -336,6 +350,50 @@
           "properties": {
             "kind": { "enum": ["scene", "until-triggered", "permanent"] },
             "remaining": { "type": "null" }
+          }
+        }
+      ]
+    },
+    "encounterEffectStackPolicy": {
+      "oneOf": [
+        {
+          "type": "object",
+          "required": ["kind", "maxStacks"],
+          "additionalProperties": false,
+          "properties": {
+            "kind": { "enum": ["replace", "refresh", "independent-instance"] },
+            "maxStacks": { "type": "null" }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["kind", "maxStacks"],
+          "additionalProperties": false,
+          "properties": {
+            "kind": { "const": "add-stack" },
+            "maxStacks": { "type": "integer", "minimum": 1, "maximum": 64 }
+          }
+        }
+      ]
+    },
+    "encounterEffectChargePolicy": {
+      "oneOf": [
+        {
+          "type": "object",
+          "required": ["kind", "amount"],
+          "additionalProperties": false,
+          "properties": {
+            "kind": { "const": "none" },
+            "amount": { "type": "null" }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["kind", "amount"],
+          "additionalProperties": false,
+          "properties": {
+            "kind": { "const": "consume-on-trigger" },
+            "amount": { "type": "integer", "minimum": 1, "maximum": 10000 }
           }
         }
       ]

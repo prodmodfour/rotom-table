@@ -80,6 +80,47 @@ describe('typed encounter effects', () => {
     })).toThrow('encounterEffect.duration.remaining: must be a safe integer')
   })
 
+  it('parses explicit lifecycle policies and canonicalizes pre-policy effect data', () => {
+    const effect = conditionEncounterEffectFixture()
+    const { stackPolicy: _stackPolicy, chargePolicy: _chargePolicy, ...legacyEffect } = effect
+    const legacy = {
+      ...legacyEffect,
+      duration: { kind: 'turns', remaining: 2 },
+    }
+
+    expect(parseEncounterEffect(legacy)).toMatchObject({
+      duration: { kind: 'turns', subject: 'target', boundary: 'end', remaining: 2 },
+      stackPolicy: { kind: 'independent-instance', maxStacks: null },
+      chargePolicy: { kind: 'consume-on-trigger', amount: 1 },
+    })
+    expect(() => parseEncounterEffect({
+      ...effect,
+      duration: { kind: 'rounds', subject: 'source', boundary: 'end', remaining: 1 },
+    })).toThrow('encounterEffect.duration.subject: is supported only for turn durations')
+    expect(() => parseEncounterEffect({
+      ...effect,
+      stackPolicy: { kind: 'add-stack', maxStacks: 0 },
+    })).toThrow('encounterEffect.stackPolicy.maxStacks: must be from 1')
+    expect(() => parseEncounterEffect({
+      ...effect,
+      stacks: 3,
+      stackPolicy: { kind: 'add-stack', maxStacks: 2 },
+    })).toThrow('current stacks 3 exceed maxStacks 2')
+    expect(() => parseEncounterEffect({
+      ...effect,
+      stackPolicy: { kind: 'refresh', maxStacks: 2 },
+    })).toThrow('must be null unless policy is add-stack')
+    expect(() => parseEncounterEffect({
+      ...effect,
+      chargePolicy: { kind: 'none', amount: null },
+    })).toThrow('requires charges to be null when charge policy is none')
+    expect(() => parseEncounterEffect({
+      ...effect,
+      charges: null,
+      chargePolicy: { kind: 'consume-on-trigger', amount: 1 },
+    })).toThrow('requires a finite charge count for consume-on-trigger')
+  })
+
   it('requires bounded unique tags, recipients, cells, and effect ids', () => {
     const effect = conditionEncounterEffectFixture()
 

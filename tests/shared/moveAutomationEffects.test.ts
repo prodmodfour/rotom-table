@@ -50,9 +50,11 @@ const VALID_PAYLOADS = {
     effectId: 'effect.helping-hand',
     definition: {
       kind: 'numeric-modifier',
-      duration: { kind: 'turns', remaining: 1 },
+      duration: { kind: 'turns', subject: 'target', boundary: 'end', remaining: 1 },
       stacks: 1,
       charges: 1,
+      stackPolicy: { kind: 'refresh', maxStacks: null },
+      chargePolicy: { kind: 'consume-on-trigger', amount: 1 },
       tags: ['next-attack'],
       payload: {
         attribute: 'damage',

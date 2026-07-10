@@ -10,10 +10,11 @@ export * from './encounterEffects'
 /**
  * Versioned map-owned state for authoritative encounter mechanics.
  *
- * MA-050 introduced the envelope, MA-052 added side identity, and MA-056 adds
- * strict typed effect instances. Remaining containers stay empty until their
- * owning tickets. Existing map hazards, field effects, temporary HP, and move
- * usage remain in their current map fields during this compatibility period.
+ * MA-050 introduced the envelope, MA-052 added side identity, MA-056 added
+ * strict typed effect instances, and MA-057 added their lifecycle policies.
+ * Remaining containers stay empty until their owning tickets. Existing map
+ * hazards, field effects, temporary HP, and move usage remain in their current
+ * map fields during this compatibility period.
  */
 export const ENCOUNTER_STATE_SCHEMA_VERSION = 1 as const
 

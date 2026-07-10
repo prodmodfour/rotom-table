@@ -15,6 +15,19 @@ export const ENCOUNTER_EFFECT_DURATION_KINDS = [
   'permanent',
 ] as const
 
+export const ENCOUNTER_EFFECT_TURN_SUBJECTS = ['source', 'target'] as const
+export const ENCOUNTER_EFFECT_BOUNDARIES = ['start', 'end'] as const
+export const ENCOUNTER_EFFECT_STACK_POLICY_KINDS = [
+  'replace',
+  'refresh',
+  'add-stack',
+  'independent-instance',
+] as const
+export const ENCOUNTER_EFFECT_CHARGE_POLICY_KINDS = [
+  'none',
+  'consume-on-trigger',
+] as const
+
 export const ENCOUNTER_EFFECT_CONDITION_ACTIONS = [
   'apply',
   'prevent',
@@ -55,6 +68,10 @@ export const ENCOUNTER_EFFECT_LIMITS = Object.freeze({
 export type EncounterEffectId = string
 export type EncounterEffectKind = (typeof ENCOUNTER_EFFECT_KINDS)[number]
 export type EncounterEffectDurationKind = (typeof ENCOUNTER_EFFECT_DURATION_KINDS)[number]
+export type EncounterEffectTurnSubject = (typeof ENCOUNTER_EFFECT_TURN_SUBJECTS)[number]
+export type EncounterEffectBoundary = (typeof ENCOUNTER_EFFECT_BOUNDARIES)[number]
+export type EncounterEffectStackPolicyKind = (typeof ENCOUNTER_EFFECT_STACK_POLICY_KINDS)[number]
+export type EncounterEffectChargePolicyKind = (typeof ENCOUNTER_EFFECT_CHARGE_POLICY_KINDS)[number]
 export type EncounterEffectConditionAction = (typeof ENCOUNTER_EFFECT_CONDITION_ACTIONS)[number]
 export type EncounterEffectNumericAttribute = (typeof ENCOUNTER_EFFECT_NUMERIC_ATTRIBUTES)[number]
 export type EncounterEffectNumericOperation = (typeof ENCOUNTER_EFFECT_NUMERIC_OPERATIONS)[number]
@@ -84,12 +101,52 @@ export interface EncounterEffectAffected {
 
 export type EncounterEffectDuration =
   | {
-      readonly kind: 'turns' | 'rounds'
+      readonly kind: 'turns'
+      /** Whose authoritative turn advances this duration. */
+      readonly subject: EncounterEffectTurnSubject
+      readonly boundary: EncounterEffectBoundary
       readonly remaining: number
     }
   | {
-      readonly kind: 'scene' | 'until-triggered' | 'permanent'
+      readonly kind: 'rounds'
+      readonly boundary: EncounterEffectBoundary
+      readonly remaining: number
+    }
+  | {
+      /** Scene effects expire only on the authoritative scene-end event. */
+      readonly kind: 'scene'
       readonly remaining: null
+    }
+  | {
+      /** Trigger selection is server-owned and identifies the exact effect instance. */
+      readonly kind: 'until-triggered'
+      readonly remaining: null
+    }
+  | {
+      /** No timing event expires this effect; an explicit removal still may. */
+      readonly kind: 'permanent'
+      readonly remaining: null
+    }
+
+export type EncounterEffectStackPolicy =
+  | {
+      readonly kind: Exclude<EncounterEffectStackPolicyKind, 'add-stack'>
+      readonly maxStacks: null
+    }
+  | {
+      readonly kind: 'add-stack'
+      readonly maxStacks: number
+    }
+
+export type EncounterEffectChargePolicy =
+  | {
+      readonly kind: 'none'
+      readonly amount: null
+    }
+  | {
+      readonly kind: 'consume-on-trigger'
+      /** Charges consumed by one authoritative trigger event. */
+      readonly amount: number
     }
 
 export interface EncounterEffectDispelMetadata {
@@ -139,6 +196,8 @@ interface EncounterEffectDefinitionEnvelope<
   readonly duration: EncounterEffectDuration
   readonly stacks: number
   readonly charges: number | null
+  readonly stackPolicy: EncounterEffectStackPolicy
+  readonly chargePolicy: EncounterEffectChargePolicy
   readonly tags: readonly string[]
   readonly payload: Payload
   readonly dispel: EncounterEffectDispelMetadata
@@ -181,6 +240,8 @@ interface EncounterEffectEnvelope<
   readonly stacks: number
   /** Null means the effect is not charge-based; zero is retained until lifecycle cleanup. */
   readonly charges: number | null
+  readonly stackPolicy: EncounterEffectStackPolicy
+  readonly chargePolicy: EncounterEffectChargePolicy
   readonly tags: readonly string[]
   readonly payload: Payload
   readonly dispel: EncounterEffectDispelMetadata
@@ -238,11 +299,39 @@ const EFFECT_DEFINITION_FIELDS = [
   'duration',
   'stacks',
   'charges',
+  'stackPolicy',
+  'chargePolicy',
+  'tags',
+  'payload',
+  'dispel',
+] as const
+const LEGACY_EFFECT_DEFINITION_FIELDS = [
+  'kind',
+  'duration',
+  'stacks',
+  'charges',
   'tags',
   'payload',
   'dispel',
 ] as const
 const EFFECT_FIELDS = [
+  'id',
+  'kind',
+  'source',
+  'affected',
+  'createdRound',
+  'createdTurn',
+  'duration',
+  'stacks',
+  'charges',
+  'stackPolicy',
+  'chargePolicy',
+  'tags',
+  'payload',
+  'dispel',
+  'suppression',
+] as const
+const LEGACY_EFFECT_FIELDS = [
   'id',
   'kind',
   'source',
@@ -260,7 +349,10 @@ const EFFECT_FIELDS = [
 const SOURCE_FIELDS = ['operationId', 'moveId', 'placementId'] as const
 const AFFECTED_FIELDS = ['placementIds', 'sideIds', 'cells'] as const
 const CELL_FIELDS = ['x', 'y', 'z'] as const
-const DURATION_FIELDS = ['kind', 'remaining'] as const
+const DURATION_FIELDS = ['kind', 'subject', 'boundary', 'remaining'] as const
+const DURATION_REQUIRED_FIELDS = ['kind', 'remaining'] as const
+const STACK_POLICY_FIELDS = ['kind', 'maxStacks'] as const
+const CHARGE_POLICY_FIELDS = ['kind', 'amount'] as const
 const DISPEL_FIELDS = ['policy', 'tags'] as const
 const SUPPRESSION_FIELDS = ['sources'] as const
 const SUPPRESSION_SOURCE_FIELDS = ['effectId', 'reasonCode'] as const
@@ -272,6 +364,10 @@ const STABLE_ID_PATTERN = /^[a-z0-9]+(?:[._:/-][a-z0-9]+)*$/
 const CONTROL_CHARACTER_PATTERN = /[\u0000-\u001f\u007f]/
 const EFFECT_KIND_SET = new Set<string>(ENCOUNTER_EFFECT_KINDS)
 const DURATION_KIND_SET = new Set<string>(ENCOUNTER_EFFECT_DURATION_KINDS)
+const TURN_SUBJECT_SET = new Set<string>(ENCOUNTER_EFFECT_TURN_SUBJECTS)
+const BOUNDARY_SET = new Set<string>(ENCOUNTER_EFFECT_BOUNDARIES)
+const STACK_POLICY_KIND_SET = new Set<string>(ENCOUNTER_EFFECT_STACK_POLICY_KINDS)
+const CHARGE_POLICY_KIND_SET = new Set<string>(ENCOUNTER_EFFECT_CHARGE_POLICY_KINDS)
 const CONDITION_ACTION_SET = new Set<string>(ENCOUNTER_EFFECT_CONDITION_ACTIONS)
 const NUMERIC_ATTRIBUTE_SET = new Set<string>(ENCOUNTER_EFFECT_NUMERIC_ATTRIBUTES)
 const NUMERIC_OPERATION_SET = new Set<string>(ENCOUNTER_EFFECT_NUMERIC_OPERATIONS)
@@ -304,9 +400,10 @@ const assertExactFields = (
   record: UnknownRecord,
   fields: readonly string[],
   path: string,
+  requiredFields: readonly string[] = fields,
 ): void => {
   const expected = new Set(fields)
-  const missing = fields.filter(field => !Object.prototype.hasOwnProperty.call(record, field))
+  const missing = requiredFields.filter(field => !Object.prototype.hasOwnProperty.call(record, field))
   const unknown = Object.keys(record).filter(field => !expected.has(field))
   if (missing.length === 0 && unknown.length === 0) return
 
@@ -321,9 +418,10 @@ const parseExactRecord = (
   value: unknown,
   fields: readonly string[],
   path: string,
+  requiredFields: readonly string[] = fields,
 ): UnknownRecord => {
   const record = parseRecord(value, path)
-  assertExactFields(record, fields, path)
+  assertExactFields(record, fields, path, requiredFields)
   return record
 }
 
@@ -469,23 +567,69 @@ const parseAffected = (value: unknown, path: string): EncounterEffectAffected =>
 }
 
 const parseDuration = (value: unknown, path: string): EncounterEffectDuration => {
-  const duration = parseExactRecord(value, DURATION_FIELDS, path)
+  const duration = parseExactRecord(value, DURATION_FIELDS, path, DURATION_REQUIRED_FIELDS)
   const kind = parseEnum<EncounterEffectDurationKind>(
     duration.kind,
     DURATION_KIND_SET,
     `${path}.kind`,
     'turns, rounds, scene, until-triggered, or permanent',
   )
-  if (kind === 'turns' || kind === 'rounds') {
-    return {
-      kind,
-      remaining: parseInteger(
+  const remaining = kind === 'turns' || kind === 'rounds'
+    ? parseInteger(
         duration.remaining,
         `${path}.remaining`,
         1,
         ENCOUNTER_EFFECT_LIMITS.turn,
-      ),
+      )
+    : null
+
+  if (kind === 'turns') {
+    return {
+      kind,
+      subject: duration.subject === undefined
+        ? 'target'
+        : parseEnum<EncounterEffectTurnSubject>(
+            duration.subject,
+            TURN_SUBJECT_SET,
+            `${path}.subject`,
+            'source or target',
+          ),
+      boundary: duration.boundary === undefined
+        ? 'end'
+        : parseEnum<EncounterEffectBoundary>(
+            duration.boundary,
+            BOUNDARY_SET,
+            `${path}.boundary`,
+            'start or end',
+          ),
+      remaining: remaining!,
     }
+  }
+
+  if (kind === 'rounds') {
+    if (duration.subject !== undefined) {
+      fail('invalid-encounter-effect', `${path}.subject`, 'is supported only for turn durations.')
+    }
+    return {
+      kind,
+      boundary: duration.boundary === undefined
+        ? 'end'
+        : parseEnum<EncounterEffectBoundary>(
+            duration.boundary,
+            BOUNDARY_SET,
+            `${path}.boundary`,
+            'start or end',
+          ),
+      remaining: remaining!,
+    }
+  }
+
+  if (duration.subject !== undefined || duration.boundary !== undefined) {
+    fail(
+      'invalid-encounter-effect',
+      path,
+      'scene, until-triggered, and permanent durations cannot declare turn or round boundaries.',
+    )
   }
   if (duration.remaining !== null) {
     fail(
@@ -495,6 +639,74 @@ const parseDuration = (value: unknown, path: string): EncounterEffectDuration =>
     )
   }
   return { kind, remaining: null }
+}
+
+const parseStackPolicy = (
+  value: unknown,
+  path: string,
+  stacks: number,
+): EncounterEffectStackPolicy => {
+  if (value === undefined) return { kind: 'independent-instance', maxStacks: null }
+
+  const policy = parseExactRecord(value, STACK_POLICY_FIELDS, path)
+  const kind = parseEnum<EncounterEffectStackPolicyKind>(
+    policy.kind,
+    STACK_POLICY_KIND_SET,
+    `${path}.kind`,
+    'replace, refresh, add-stack, or independent-instance',
+  )
+  if (kind === 'add-stack') {
+    const maxStacks = parseInteger(
+      policy.maxStacks,
+      `${path}.maxStacks`,
+      1,
+      ENCOUNTER_EFFECT_LIMITS.stacks,
+    )
+    if (stacks > maxStacks) {
+      fail('invalid-encounter-effect', path, `current stacks ${stacks} exceed maxStacks ${maxStacks}.`)
+    }
+    return { kind, maxStacks }
+  }
+  if (policy.maxStacks !== null) {
+    fail('invalid-encounter-effect', `${path}.maxStacks`, 'must be null unless policy is add-stack.')
+  }
+  return { kind, maxStacks: null }
+}
+
+const parseChargePolicy = (
+  value: unknown,
+  path: string,
+  charges: number | null,
+): EncounterEffectChargePolicy => {
+  if (value === undefined) {
+    return charges === null
+      ? { kind: 'none', amount: null }
+      : { kind: 'consume-on-trigger', amount: 1 }
+  }
+
+  const policy = parseExactRecord(value, CHARGE_POLICY_FIELDS, path)
+  const kind = parseEnum<EncounterEffectChargePolicyKind>(
+    policy.kind,
+    CHARGE_POLICY_KIND_SET,
+    `${path}.kind`,
+    'none or consume-on-trigger',
+  )
+  if (kind === 'none') {
+    if (policy.amount !== null) {
+      fail('invalid-encounter-effect', `${path}.amount`, 'must be null when charge policy is none.')
+    }
+    if (charges !== null) {
+      fail('invalid-encounter-effect', path, 'requires charges to be null when charge policy is none.')
+    }
+    return { kind, amount: null }
+  }
+  if (charges === null) {
+    fail('invalid-encounter-effect', path, 'requires a finite charge count for consume-on-trigger.')
+  }
+  return {
+    kind,
+    amount: parseInteger(policy.amount, `${path}.amount`, 1, ENCOUNTER_EFFECT_LIMITS.charges),
+  }
 }
 
 const parseDispel = (value: unknown, path: string): EncounterEffectDispelMetadata => {
@@ -615,6 +827,8 @@ const definitionWithPayload = <Kind extends EncounterEffectKind, Payload>(
   duration: common.duration,
   stacks: common.stacks,
   charges: common.charges,
+  stackPolicy: common.stackPolicy,
+  chargePolicy: common.chargePolicy,
   tags: common.tags,
   payload,
   dispel: common.dispel,
@@ -634,6 +848,8 @@ const effectWithPayload = <Kind extends EncounterEffectKind, Payload>(
   duration: common.duration,
   stacks: common.stacks,
   charges: common.charges,
+  stackPolicy: common.stackPolicy,
+  chargePolicy: common.chargePolicy,
   tags: common.tags,
   payload,
   dispel: common.dispel,
@@ -649,28 +865,37 @@ export const parseEncounterEffectDefinition = (
   value: unknown,
   path = 'encounterEffectDefinition',
 ): EncounterEffectDefinition => {
-  const definition = parseExactRecord(value, EFFECT_DEFINITION_FIELDS, path)
+  const definition = parseExactRecord(
+    value,
+    EFFECT_DEFINITION_FIELDS,
+    path,
+    LEGACY_EFFECT_DEFINITION_FIELDS,
+  )
   const rawKind = definition.kind
   if (typeof rawKind !== 'string' || !EFFECT_KIND_SET.has(rawKind)) {
     fail('unknown-effect-kind', `${path}.kind`, 'must be a supported encounter effect kind.')
   }
   const kind = rawKind as EncounterEffectKind
+  const stacks = parseInteger(
+    definition.stacks,
+    `${path}.stacks`,
+    1,
+    ENCOUNTER_EFFECT_LIMITS.stacks,
+  )
+  const charges = definition.charges === null
+    ? null
+    : parseInteger(
+        definition.charges,
+        `${path}.charges`,
+        0,
+        ENCOUNTER_EFFECT_LIMITS.charges,
+      )
   const common: ParsedEncounterEffectDefinitionCommon = {
     duration: parseDuration(definition.duration, `${path}.duration`),
-    stacks: parseInteger(
-      definition.stacks,
-      `${path}.stacks`,
-      1,
-      ENCOUNTER_EFFECT_LIMITS.stacks,
-    ),
-    charges: definition.charges === null
-      ? null
-      : parseInteger(
-          definition.charges,
-          `${path}.charges`,
-          0,
-          ENCOUNTER_EFFECT_LIMITS.charges,
-        ),
+    stacks,
+    charges,
+    stackPolicy: parseStackPolicy(definition.stackPolicy, `${path}.stackPolicy`, stacks),
+    chargePolicy: parseChargePolicy(definition.chargePolicy, `${path}.chargePolicy`, charges),
     tags: parseStableIdList(definition.tags, `${path}.tags`, ENCOUNTER_EFFECT_LIMITS.tags),
     dispel: parseDispel(definition.dispel, `${path}.dispel`),
   }
@@ -702,12 +927,21 @@ export const parseEncounterEffect = (
   value: unknown,
   path = 'encounterEffect',
 ): EncounterEffect => {
-  const effect = parseExactRecord(value, EFFECT_FIELDS, path)
+  const effect = parseExactRecord(value, EFFECT_FIELDS, path, LEGACY_EFFECT_FIELDS)
   const rawKind = effect.kind
   if (typeof rawKind !== 'string' || !EFFECT_KIND_SET.has(rawKind)) {
     fail('unknown-effect-kind', `${path}.kind`, 'must be a supported encounter effect kind.')
   }
   const kind = rawKind as EncounterEffectKind
+  const stacks = parseInteger(
+    effect.stacks,
+    `${path}.stacks`,
+    1,
+    ENCOUNTER_EFFECT_LIMITS.stacks,
+  )
+  const charges = effect.charges === null
+    ? null
+    : parseInteger(effect.charges, `${path}.charges`, 0, ENCOUNTER_EFFECT_LIMITS.charges)
   const common: ParsedEncounterEffectCommon = {
     id: parseStableId(effect.id, `${path}.id`),
     source: parseSource(effect.source, `${path}.source`),
@@ -725,10 +959,10 @@ export const parseEncounterEffect = (
       ENCOUNTER_EFFECT_LIMITS.turn,
     ),
     duration: parseDuration(effect.duration, `${path}.duration`),
-    stacks: parseInteger(effect.stacks, `${path}.stacks`, 1, ENCOUNTER_EFFECT_LIMITS.stacks),
-    charges: effect.charges === null
-      ? null
-      : parseInteger(effect.charges, `${path}.charges`, 0, ENCOUNTER_EFFECT_LIMITS.charges),
+    stacks,
+    charges,
+    stackPolicy: parseStackPolicy(effect.stackPolicy, `${path}.stackPolicy`, stacks),
+    chargePolicy: parseChargePolicy(effect.chargePolicy, `${path}.chargePolicy`, charges),
     tags: parseStableIdList(effect.tags, `${path}.tags`, ENCOUNTER_EFFECT_LIMITS.tags),
     dispel: parseDispel(effect.dispel, `${path}.dispel`),
     suppression: parseSuppression(effect.suppression, `${path}.suppression`),
