@@ -154,10 +154,21 @@ describe('immutable authoritative move rules context', () => {
       slug: 'target',
       revision: 5,
     })
-    expect(context.queries.relationships.self(actor, actor)).toBe(true)
-    expect(context.queries.relationships.sameSide(actor, allyPlacement)).toBe(true)
-    expect(context.queries.relationships.ally(actor, allyPlacement)).toBe(true)
-    expect(context.queries.relationships.enemy(actor, target)).toBe(true)
+    expect(context.queries.relationships.resolve(actor.id, actor.id)).toMatchObject({
+      relationship: 'self',
+      reasonCode: 'relationship-self',
+    })
+    expect(context.queries.relationships.match(actor.id, allyPlacement.id, 'same-side')).toMatchObject({
+      relationship: 'ally',
+      reasonCode: 'relationship-ally',
+      matches: true,
+    })
+    expect(context.queries.relationships.match(actor.id, allyPlacement.id, 'ally').matches).toBe(true)
+    expect(context.queries.relationships.match(actor.id, target.id, 'enemy')).toMatchObject({
+      relationship: 'enemy',
+      reasonCode: 'relationship-enemy',
+      matches: true,
+    })
     expect(context.queries.rules.runtimeFor('Tackle')).toMatchObject({
       canonicalId: 'Tackle',
       kind: 'legacy-v1',
@@ -167,6 +178,37 @@ describe('immutable authoritative move rules context', () => {
     expect(context.queries.rules.semanticStatusFor('Tackle')).toMatchObject({
       canonicalId: 'Tackle',
       baseStatus: 'assisted',
+    })
+  })
+
+  it('derives relationship results from the snapshotted side directory and requires unknown-target opt-in', () => {
+    const map = mapFixture()
+    delete map.placements[1]!.sideId
+    const context = buildContext({ map })
+
+    map.placements[1]!.sideId = 'blue'
+
+    expect(context.queries.relationships.resolve('actor-token', 'target-token')).toEqual({
+      sourcePlacementId: 'actor-token',
+      targetPlacementId: 'target-token',
+      sourceSideId: 'red',
+      targetSideId: null,
+      relationship: 'unknown',
+      reasonCode: 'relationship-unknown-side',
+    })
+    expect(context.queries.relationships.match('actor-token', 'target-token', 'ally', {
+      allowUnknown: true,
+    }).matches).toBe(false)
+    expect(context.queries.relationships.match('actor-token', 'target-token', 'enemy', {
+      allowUnknown: true,
+    }).matches).toBe(false)
+    expect(context.queries.relationships.match('actor-token', 'target-token', 'other').matches).toBe(false)
+    expect(context.queries.relationships.match('actor-token', 'target-token', 'other', {
+      allowUnknown: true,
+    })).toMatchObject({
+      relationship: 'unknown',
+      reasonCode: 'relationship-unknown-side',
+      matches: true,
     })
   })
 

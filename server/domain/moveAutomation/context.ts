@@ -36,11 +36,8 @@ import {
   type AuthoritativeMoveRandomSource,
 } from './random'
 import {
-  ally,
-  enemy,
-  sameSide,
-  self,
-  type MoveAutomationRelationshipParticipant,
+  createMoveAutomationRelationshipResolver,
+  type MoveAutomationRelationshipResolver,
 } from './relationships'
 
 export interface AuthoritativeMoveSheetRead {
@@ -81,24 +78,7 @@ export interface AuthoritativeMoveSheetQueries {
   ): AuthoritativeMoveResolvedSheet | null
 }
 
-export interface AuthoritativeMoveRelationshipQueries {
-  self(
-    participant: MoveAutomationRelationshipParticipant,
-    other: MoveAutomationRelationshipParticipant,
-  ): boolean
-  sameSide(
-    participant: MoveAutomationRelationshipParticipant,
-    other: MoveAutomationRelationshipParticipant,
-  ): boolean
-  ally(
-    participant: MoveAutomationRelationshipParticipant,
-    other: MoveAutomationRelationshipParticipant,
-  ): boolean
-  enemy(
-    participant: MoveAutomationRelationshipParticipant,
-    other: MoveAutomationRelationshipParticipant,
-  ): boolean
-}
+export type AuthoritativeMoveRelationshipQueries = MoveAutomationRelationshipResolver
 
 export interface AuthoritativeMoveRuleQueries {
   runtimeFor(canonicalId: string): RegisteredMoveAutomationRuntime | null
@@ -418,6 +398,10 @@ export const buildAuthoritativeMoveRulesContext = (
     input.trainerSheets,
   )
   const { placements, byId: placementById } = placementSnapshots(map)
+  const relationships = createMoveAutomationRelationshipResolver({
+    placements,
+    sides: map.encounterState?.sides ?? {},
+  })
   const { tokens, byId: tokenById } = tokenSnapshots(map, placements, sheetLookup)
 
   const actorPlacement = placementById.get(intent.placementId)
@@ -530,7 +514,7 @@ export const buildAuthoritativeMoveRulesContext = (
       get: (kind: SheetKind, slug: string) => sheetByRef.get(sheetReadKey({ kind, slug })) ?? null,
       forPlacement: sheetForPlacement,
     }),
-    relationships: Object.freeze({ self, sameSide, ally, enemy }),
+    relationships,
     rules: Object.freeze({
       runtimeFor: (canonicalId: string) => runtimes.get(canonicalId) ?? null,
       legacyScriptFor,

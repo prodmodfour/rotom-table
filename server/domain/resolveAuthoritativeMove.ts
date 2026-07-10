@@ -253,13 +253,13 @@ const authoritativeConditionImmunityContext = (
     isAlly: (provider, target) => {
       const providerPlacement = context.queries.placements.get(provider.id)
       const targetPlacement = context.queries.placements.get(target.id)
-      if (
-        !providerPlacement
-        || !targetPlacement
-        || !context.queries.relationships.ally(providerPlacement, targetPlacement)
-      ) {
-        return false
-      }
+      if (!providerPlacement || !targetPlacement) return false
+      const relationship = context.queries.relationships.match(
+        providerPlacement.id,
+        targetPlacement.id,
+        'ally',
+      )
+      if (!relationship.matches) return false
       recordSheetReadForPlacement(context, providerPlacement)
       return true
     },

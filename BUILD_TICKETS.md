@@ -728,7 +728,7 @@ Status: DONE
 
 ## MA-054 — Make relationship queries authoritative
 
-Status: TODO
+Status: DONE
 
 **Depends on:** MA-052, MA-006
 **Commit:** `feat(move-automation): resolve ally and enemy from sides`
