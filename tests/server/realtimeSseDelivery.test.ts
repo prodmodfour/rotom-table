@@ -4,6 +4,14 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import {
+  LIVE_PLAY_COMMAND_SCHEMA_VERSION,
+  LIVE_PLAY_PATCH_TYPES,
+} from '#shared/livePlayCommands'
+import {
+  LIVE_PLAY_REALTIME_EVENT_TYPES,
+  type LivePlayRealtimeEvent,
+} from '#shared/realtime'
+import {
   PLAYER_PROFILE_SCHEMA_VERSION,
   type PlayerProfile,
   type PlayerProfileDisplayName,
@@ -374,6 +382,70 @@ describe('repository-backed realtime SSE replay', () => {
     ])
     expect(reconnect.writes.join('')).not.toContain('visible-map')
     await closeStream(reconnect)
+  })
+
+  it('redacts requester-only Friendly area exclusions from player realtime observers', async () => {
+    const harness = createHarness()
+    harness.maps.saveSetupMap(mapDoc({ slug: 'visible', playerVisible: true }))
+    harness.realtime.append({
+      event: {
+        channel: 'map:visible',
+        type: LIVE_PLAY_REALTIME_EVENT_TYPES.COMMAND_ACCEPTED,
+        mapSlug: 'visible',
+        previousRevision: 1,
+        revision: 2,
+        opId: 'op_areaobserver01',
+        patches: [{
+          schemaVersion: LIVE_PLAY_COMMAND_SCHEMA_VERSION,
+          type: LIVE_PLAY_PATCH_TYPES.MOVE_STATE,
+          mapSlug: 'visible',
+          revision: 2,
+          scopes: [],
+          payload: {
+            command: 'resolveMove',
+            move: {
+              selectedTargetIds: ['eligible-target'],
+              area: {
+                candidateTargetIds: ['eligible-target', 'requester-excluded-target'],
+                excludedTargetIds: ['requester-excluded-target'],
+              },
+            },
+          },
+        }],
+      } as Omit<LivePlayRealtimeEvent, 'timestamp'>,
+      access: { kind: 'map-access', mapSlug: 'visible' },
+      timestamp: 1_000,
+    })
+
+    const playerConnection = startStream({
+      harness,
+      afterSequence: 0,
+      principal: { role: 'player', playerProfile: null, sessionAccess: null },
+    })
+    const playerFrames = await waitForFrameCount(playerConnection.writes, 2)
+    const playerEvent = playerFrames[0]?.data as {
+      readonly patches?: readonly {
+        readonly payload?: {
+          readonly move?: {
+            readonly area?: {
+              readonly candidateTargetIds?: readonly string[]
+              readonly excludedTargetIds?: readonly string[]
+            }
+          }
+        }
+      }[]
+    }
+    expect(playerEvent.patches?.[0]?.payload?.move?.area).toEqual({
+      candidateTargetIds: ['eligible-target'],
+      excludedTargetIds: [],
+    })
+    expect(playerConnection.writes.join('')).not.toContain('requester-excluded-target')
+    await closeStream(playerConnection)
+
+    const gmConnection = startStream({ harness, afterSequence: 0, principal: { role: 'gm' } })
+    const gmFrames = await waitForFrameCount(gmConnection.writes, 2)
+    expect(JSON.stringify(gmFrames[0]?.data)).toContain('requester-excluded-target')
+    await closeStream(gmConnection)
   })
 
   it('redacts Pokémon GM fields while delivering allowed sheet events to players', async () => {

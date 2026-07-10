@@ -522,8 +522,51 @@ describe('executeLivePlayResolveMoveCommandUseCase', () => {
       expect(serialized).not.toContain('target-b')
       expect(serialized).not.toContain('target-excluded-not-ally')
       expect(payload.move.transaction.logLines).toContainEqual(
-        expect.stringContaining('An area target was excluded from ally-only effects'),
+        'Assisted ally targeting: Howl checks explicit encounter sides; unknown allegiance is not eligible. Review side assignments in Prepare Map.',
       )
+      expect(JSON.stringify(response)).not.toContain('target-excluded-not-ally')
+    })
+  })
+
+  it('retains legal Friendly exclusions for the authorized command requester', async () => {
+    await withRegisteredScript({
+      ...areaScript('Swift'),
+      keywords: ['Burst 1', 'Friendly'],
+    }, async () => {
+      const map = mapFixture({
+        placements: [
+          placement('actor-token', 'actor', { x: 0, y: 0, z: 0 }),
+          placement('target-a', 'target-a', { x: 1, y: 0, z: 0 }),
+          placement('target-b', 'target-b', { x: 0, y: 0, z: 1 }),
+        ],
+      })
+      const harness = seedHarness({ map, actorMoves: [{ name: 'Swift' }] })
+      const moveIntent = intent({
+        placementId: 'actor-token',
+        moveName: 'Swift',
+        selection: {
+          kind: 'area',
+          areaTemplateId: moveAutomationAreaTemplateId(areaTemplate),
+          excludedTargetPlacementIds: ['target-b'],
+        },
+      })
+      const response = await execute(
+        harness,
+        commandFor(map, moveIntent, 'op_arearequester1', ['target-a', 'target-b']),
+        { role: 'player', profile: playerProfile('actor') },
+      )
+      const payload = moveStatePatchPayload(accepted(response.result))
+
+      expect(response.move?.area).toMatchObject({
+        candidateTargetIds: ['target-a', 'target-b'],
+        excludedTargetIds: ['target-b'],
+      })
+      expect(payload.move.area).toMatchObject({
+        candidateTargetIds: ['target-a', 'target-b'],
+        excludedTargetIds: ['target-b'],
+      })
+      expect(payload.move.selectedTargetIds).toEqual(['target-a'])
+      expect(payload.move.transaction.attackedTargetIds).toEqual(['target-a'])
     })
   })
 

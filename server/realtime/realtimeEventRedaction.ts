@@ -1,5 +1,10 @@
-import { LIVE_PLAY_COMMAND_TYPES } from '#shared/livePlayCommands'
+import {
+  LIVE_PLAY_COMMAND_TYPES,
+  type LivePlayPatch,
+} from '#shared/livePlayCommands'
+import { LIVE_PLAY_REALTIME_EVENT_TYPES } from '#shared/realtime'
 import { isSheetKind } from '#shared/sheets'
+import { redactResolveMovePatchesForObserver } from '../utils/moveResultPrivacy'
 import { redactSheetRecordForPlayer } from '../utils/sheetPrivacy'
 import { redactShopRecordForPlayer, redactUnknownShopRecordForPlayer } from '../utils/shopPrivacy'
 import type { RealtimeDeliveryPrincipal } from './realtimeEventAccessPolicy'
@@ -64,17 +69,34 @@ const redactedShopCheckoutResultRealtimeEvent = (
   }
 }
 
+const redactedResolveMoveRealtimeEvent = (
+  event: Record<string, unknown>,
+): Record<string, unknown> => {
+  if (
+    event.type !== LIVE_PLAY_REALTIME_EVENT_TYPES.COMMAND_ACCEPTED
+    || !Array.isArray(event.patches)
+  ) {
+    return event
+  }
+
+  return {
+    ...event,
+    patches: redactResolveMovePatchesForObserver(event.patches as LivePlayPatch[]),
+  }
+}
+
 export const redactRealtimeEventForPrincipal = (
   event: unknown,
   principal: RealtimeDeliveryPrincipal,
 ): unknown => {
   if (principal.role !== 'player' || !isRecord(event)) return event
 
-  const data = event.data
-  if (!isRecord(data)) return event
+  const observerSafeEvent = redactedResolveMoveRealtimeEvent(event)
+  const data = observerSafeEvent.data
+  if (!isRecord(data)) return observerSafeEvent
 
-  return redactedSheetRealtimeEvent(event, data)
-    ?? redactedShopRealtimeEvent(event, data)
-    ?? redactedShopCheckoutResultRealtimeEvent(event, data)
-    ?? event
+  return redactedSheetRealtimeEvent(observerSafeEvent, data)
+    ?? redactedShopRealtimeEvent(observerSafeEvent, data)
+    ?? redactedShopCheckoutResultRealtimeEvent(observerSafeEvent, data)
+    ?? observerSafeEvent
 }

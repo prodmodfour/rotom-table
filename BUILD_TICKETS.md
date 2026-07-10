@@ -935,7 +935,7 @@ Status: DONE
 
 ## MA-073B — Integrate filtered area targets with privacy-safe results
 
-Status: TODO
+Status: DONE
 
 **Depends on:** MA-073A
 **Commit:** `feat(move-automation): integrate authoritative area filters`

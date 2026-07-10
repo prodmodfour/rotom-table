@@ -70,8 +70,11 @@ import { hashLegacyMoveAutomationDefinition } from './moveAutomation/legacyV1Def
 import { buildLegacyV1MoveResolutionTrace } from './moveAutomation/legacyV1Trace'
 import {
   DEFAULT_MOVE_AUTOMATION_AREA_TARGET_PREDICATE,
+  MoveAutomationAreaTargetError,
   resolveMoveAutomationAreaTargets,
   type MoveAutomationAreaTargetEvaluation,
+  type MoveAutomationAreaTargetResult,
+  type ResolveMoveAutomationAreaTargetsInput,
 } from './moveAutomation/areaTargets'
 import type { AuthoritativeMoveRandomSource } from './moveAutomation/random'
 
@@ -437,24 +440,13 @@ const moveAutomationTransactionWithAppendedLogLines = (
   logLines: [...transaction.logLines, ...lines],
 })
 
-const areaTargetExclusionLogLines = (options: {
-  readonly script: MoveAutomationScript
-  readonly evaluations: readonly MoveAutomationAreaTargetEvaluation[]
-}): string[] => options.evaluations.flatMap((evaluation) => {
-  if (evaluation.outcome !== 'excluded' || evaluation.reasonCode === 'requested-friendly-exclusion') {
-    return []
-  }
-  if (evaluation.relationshipReasonCode === 'relationship-unknown-side') {
-    return [`Assisted ally targeting: ${options.script.moveName} skipped an area target because ally eligibility is unknown; assign both placements to encounter sides in Prepare Map.`]
-  }
-  if (
-    options.script.areaTargetRelationship === 'ally'
-    && evaluation.relationshipReasonCode === 'relationship-enemy'
-  ) {
-    return [`${options.script.moveName}: An area target was excluded from ally-only effects because its encounter side is an enemy.`]
-  }
-  return [`${options.script.moveName}: An area target was excluded by the reviewed target rule (${evaluation.reasonCode}).`]
-})
+const areaTargetPolicyLogLines = (
+  script: MoveAutomationScript,
+): string[] => script.areaTargetRelationship === 'ally'
+  ? [
+      `Assisted ally targeting: ${script.moveName} checks explicit encounter sides; unknown allegiance is not eligible. Review side assignments in Prepare Map.`,
+    ]
+  : []
 
 const isSafeGridAnchor = (value: unknown): value is GridAnchor => {
   if (typeof value !== 'object' || value === null || Array.isArray(value)) return false
@@ -707,34 +699,35 @@ const resolvedAreaPlacement = (options: {
   return fail('unsupported', 'unsupported-move-script', `${options.template.label} resolution is not implemented.`)
 }
 
-const excludedAreaTargetIds = (
+const requestedAreaTargetExclusionIds = (
   script: MoveAutomationScript,
   selection: Extract<ResolveMoveSelection, { kind: 'area' }>,
-  candidateTargetIds: readonly string[],
 ): string[] => {
   const excludedIds = [...(selection.excludedTargetPlacementIds ?? [])]
-  if (!excludedIds.length) return []
-
-  if (!moveAutomationScriptHasFriendlyKeyword(script)) {
+  if (excludedIds.length > 0 && !moveAutomationScriptHasFriendlyKeyword(script)) {
     fail('invalid', 'area-friendly-exclusion-invalid', `${script.moveName} does not allow Friendly target exclusions.`)
   }
-  if (excludedIds.length > LIVE_PLAY_MOVE_RESOLUTION_MAX_TARGET_IDS) {
-    fail('invalid', 'area-friendly-exclusion-invalid', `At most ${LIVE_PLAY_MOVE_RESOLUTION_MAX_TARGET_IDS} area targets may be excluded.`)
-  }
-
-  const seen = new Set<string>()
-  const candidateIds = new Set(candidateTargetIds)
-  for (const excludedId of excludedIds) {
-    if (seen.has(excludedId)) {
-      fail('invalid', 'area-friendly-exclusion-invalid', `Area target ${excludedId} was excluded more than once.`)
-    }
-    seen.add(excludedId)
-    if (!candidateIds.has(excludedId)) {
-      fail('invalid', 'area-friendly-exclusion-invalid', `Area target ${excludedId} is not an authoritative candidate for this area.`)
-    }
-  }
-
   return excludedIds
+}
+
+const resolveAuthoritativeAreaTargets = (
+  input: ResolveMoveAutomationAreaTargetsInput,
+): MoveAutomationAreaTargetResult => {
+  try {
+    return resolveMoveAutomationAreaTargets(input)
+  }
+  catch (error) {
+    if (!(error instanceof MoveAutomationAreaTargetError)) throw error
+    if (
+      error.code === 'invalid-requested-exclusions'
+      || error.code === 'duplicate-requested-exclusion'
+      || error.code === 'requested-exclusion-outside-geometry'
+      || error.code === 'too-many-requested-exclusions'
+    ) {
+      return fail('invalid', 'area-friendly-exclusion-invalid', error.message)
+    }
+    return fail('unsupported', 'too-many-targets', error.message)
+  }
 }
 
 const legalSingleTargetTokens = (options: {
@@ -968,8 +961,8 @@ const resolveAreaMove = (options: {
   })
   const candidateTargetIds = placement.candidateTargets.map((target) => target.id)
   recordSheetReadsForTokens(options.context, placement.candidateTargets)
-  const excludedTargetIds = excludedAreaTargetIds(options.script, options.selection, candidateTargetIds)
-  const areaTargets = resolveMoveAutomationAreaTargets({
+  const excludedTargetIds = requestedAreaTargetExclusionIds(options.script, options.selection)
+  const areaTargets = resolveAuthoritativeAreaTargets({
     actorPlacementId: actorPlacement.id,
     geometricallyAffectedPlacementIds: candidateTargetIds,
     predicate: options.script.areaTargetRelationship === 'ally'
@@ -996,10 +989,7 @@ const resolveAreaMove = (options: {
     conditionImmunityContext: authoritativeConditionImmunityContext(options.context, confirmedScript),
     randomRoller: options.context.random,
   })
-  const targetExclusionLogLines = areaTargetExclusionLogLines({
-    script: confirmedScript,
-    evaluations: areaTargets.evaluations,
-  })
+  const targetExclusionLogLines = areaTargetPolicyLogLines(confirmedScript)
   const targetFilteredTransaction = targetExclusionLogLines.length
     ? moveAutomationTransactionWithAppendedLogLines(baseTransaction, targetExclusionLogLines)
     : baseTransaction
@@ -1111,12 +1101,11 @@ const resolveNativeAreaMove = (options: {
   })
   const candidateTargetIds = placement.candidateTargets.map(target => target.id)
   recordSheetReadsForTokens(options.context, placement.candidateTargets)
-  const excludedTargetIds = excludedAreaTargetIds(
+  const excludedTargetIds = requestedAreaTargetExclusionIds(
     options.entry.script,
     options.selection,
-    candidateTargetIds,
   )
-  const areaTargets = resolveMoveAutomationAreaTargets({
+  const areaTargets = resolveAuthoritativeAreaTargets({
     actorPlacementId: actorPlacement.id,
     geometricallyAffectedPlacementIds: candidateTargetIds,
     predicate: options.runtime.definition.spec.targeting.predicate

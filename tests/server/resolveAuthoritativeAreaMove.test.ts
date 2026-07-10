@@ -228,6 +228,13 @@ const nativeAreaRuntimeRegistry = (options: {
   })
 }
 
+const LEGACY_ONLY_RUNTIME_REGISTRY: MoveAutomationRuntimeRegistry = Object.freeze({
+  size: 0,
+  handlerRegistry: REGISTERED_MOVE_HANDLER_REGISTRY,
+  resolve: () => null,
+  entries: () => Object.freeze([]),
+})
+
 const templateId = (template: MoveAutomationAreaTemplate): string => moveAutomationAreaTemplateId(template)
 
 const burstTemplate: MoveAutomationAreaTemplate = { kind: 'burst', size: 1, label: 'Burst 1' }
@@ -426,6 +433,99 @@ describe('resolveAuthoritativeMove area selections', () => {
         outcome: evaluation.outcome,
         reasonCode: evaluation.reasonCode,
       })))
+  })
+
+  it.each(nativeAreaCases)('keeps legacy and native ally filtering in parity after $label geometry', ({
+    moveName,
+    template,
+    placement: areaPlacement,
+    ...areaCase
+  }) => {
+    const map = mapFixture({
+      placements: [
+        placement('actor-token', 'actor', { x: 5, y: 0, z: 5 }, 'red'),
+        placement('target-a', 'target-a', { x: 6, y: 0, z: 5 }, 'red'),
+        placement('target-b', 'target-b', { x: 5, y: 0, z: 4 }, 'blue'),
+        placement('target-c', 'target-c', { x: 7, y: 0, z: 5 }),
+        placement('far-target', 'far-target', { x: 11, y: 0, z: 11 }, 'blue'),
+      ],
+      encounterState: redBlueEncounterStateFixture(),
+    })
+    const script = areaScript(moveName, [template], {
+      areaTargetRelationship: 'ally',
+    })
+    const legacyScripts = new Map([[moveName, script]])
+    const selection = {
+      kind: 'area' as const,
+      areaTemplateId: templateId(template),
+      ...areaPlacement,
+    }
+    const common = {
+      map,
+      pokemonSheets: sheetMap([{ name: moveName }]),
+      trainerSheets: new Map<string, TrainerSheet>(),
+      intent: moveIntent({
+        placementId: 'actor-token',
+        moveName,
+        selection,
+      }),
+      legacyScripts,
+    }
+    const legacy = resolveAuthoritativeMove({
+      ...common,
+      runtimeRegistry: LEGACY_ONLY_RUNTIME_REGISTRY,
+    })
+    const native = resolveAuthoritativeMove({
+      ...common,
+      runtimeRegistry: nativeAreaRuntimeRegistry({
+        canonicalId: moveName,
+        predicate: { relationship: 'ally', willingness: 'any', excludeActor: true },
+        ...('passDistance' in areaCase ? { passDistance: areaCase.passDistance } : {}),
+      }),
+    })
+
+    expect(legacy.area?.candidateTargetIds.length).toBeGreaterThan(0)
+    expect(native.area?.candidateTargetIds).toEqual(legacy.area?.candidateTargetIds)
+    expect(native.selectedTargetIds).toEqual(legacy.selectedTargetIds)
+    expect(native.area?.targetEvaluations).toEqual(legacy.area?.targetEvaluations)
+    expect(native.transaction.attackedTargetIds).toEqual(legacy.transaction.attackedTargetIds)
+    expect(legacy.selectedTargetIds.every(targetId => targetId === 'target-a')).toBe(true)
+  })
+
+  it('includes every mixed-side geometric candidate for a reviewed all-target area', () => {
+    const map = mapFixture({
+      placements: [
+        placement('actor-token', 'actor', { x: 5, y: 0, z: 5 }, 'red'),
+        placement('target-a', 'target-a', { x: 6, y: 0, z: 5 }, 'red'),
+        placement('target-b', 'target-b', { x: 5, y: 0, z: 4 }, 'blue'),
+        placement('target-c', 'target-c', { x: 4, y: 0, z: 5 }),
+      ],
+      encounterState: redBlueEncounterStateFixture(),
+    })
+    const script = areaScript('Disarming Voice', [burstTemplate])
+    const resolution = resolveAuthoritativeMove({
+      map,
+      pokemonSheets: sheetMap([{ name: 'Disarming Voice' }]),
+      trainerSheets: new Map(),
+      intent: moveIntent({
+        placementId: 'actor-token',
+        moveName: 'Disarming Voice',
+        selection: { kind: 'area', areaTemplateId: templateId(burstTemplate) },
+      }),
+      legacyScripts: new Map([['Disarming Voice', script]]),
+      runtimeRegistry: nativeAreaRuntimeRegistry({
+        canonicalId: 'Disarming Voice',
+        predicate: { relationship: 'any', willingness: 'any', excludeActor: true },
+      }),
+    })
+
+    expect(resolution.area?.candidateTargetIds).toEqual(['target-a', 'target-b', 'target-c'])
+    expect(resolution.selectedTargetIds).toEqual(['target-a', 'target-b', 'target-c'])
+    expect(resolution.area?.targetEvaluations).toEqual([
+      expect.objectContaining({ targetPlacementId: 'target-a', outcome: 'included' }),
+      expect.objectContaining({ targetPlacementId: 'target-b', outcome: 'included' }),
+      expect.objectContaining({ targetPlacementId: 'target-c', outcome: 'included' }),
+    ])
   })
 
   it('applies native area state predicates before rolls and effects', () => {
@@ -713,12 +813,12 @@ describe('resolveAuthoritativeMove area selections', () => {
     expect(resolution.transaction.combatStageUpdates).toEqual(expectedUpdates)
     expect(resolution.transaction.combatStageUpdates.map(update => update.id)).not.toContain('target-b')
     expect(resolution.transaction.combatStageUpdates.map(update => update.id)).not.toContain('target-c')
-    expect(resolution.transaction.logLines).toEqual(expect.arrayContaining([
-      expect.stringContaining(`${moveName}: `),
-      expect.stringContaining('was excluded from ally-only effects because its encounter side is an enemy.'),
-      expect.stringContaining(`Assisted ally targeting: ${moveName} skipped `),
-      expect.stringContaining('because ally eligibility is unknown; assign both placements to encounter sides in Prepare Map.'),
-    ]))
+    expect(resolution.transaction.logLines).toContainEqual(
+      `Assisted ally targeting: ${moveName} checks explicit encounter sides; unknown allegiance is not eligible. Review side assignments in Prepare Map.`,
+    )
+    expect(resolution.transaction.logLines.join('\n')).not.toContain('target-b')
+    expect(resolution.transaction.logLines.join('\n')).not.toContain('target-c')
+    expect(resolution.transaction.logLines.join('\n')).not.toContain('relationship-enemy')
     expect(resolution.auditTrace.events).toEqual(expect.arrayContaining([
       expect.objectContaining({
         kind: 'target',
