@@ -1,5 +1,7 @@
 import {
   MOVE_EFFECT_OPERATION_LIMITS,
+  moveEffectBranchPaths,
+  type MoveBranchEffectOperation,
   type MoveCheckEffectOperation,
   type MoveChoiceRequestEffectOperation,
   type MoveDamageEffectOperation,
@@ -31,6 +33,11 @@ import type {
   AuthoritativeMoveRulesContext,
   AuthoritativeMoveSheetRead,
 } from './context'
+import {
+  executeServerMoveBranch,
+  type ExecutedMoveBranch,
+  type MoveBranchSelection,
+} from './branches'
 import {
   executeMoveCheckOperation,
   type MoveCheckExecution,
@@ -135,6 +142,12 @@ export interface MoveSpecPendingChoiceRequest extends MoveSpecPendingRequestBase
   readonly kind: 'choice'
 }
 
+export interface MoveSpecPendingBranchChoiceRequest extends MoveSpecPendingRequestBase {
+  readonly kind: 'branch-choice'
+  readonly selectionId: string
+  readonly scope: 'resolution' | 'recipient'
+}
+
 export interface MoveSpecPendingReactionRequest extends MoveSpecPendingRequestBase {
   readonly kind: 'reaction'
   readonly priority: number
@@ -157,6 +170,7 @@ export interface MoveSpecPendingResourceSpendRequest extends MoveSpecPendingRequ
 
 export type MoveSpecPendingRequest =
   | MoveSpecPendingChoiceRequest
+  | MoveSpecPendingBranchChoiceRequest
   | MoveSpecPendingReactionRequest
   | MoveSpecPendingCheckSelectionRequest
   | MoveSpecPendingResourceSpendRequest
@@ -184,6 +198,8 @@ interface MoveSpecExecutionResultBase {
   readonly multiHitExecutions: readonly MoveMultiHitExecution[]
   /** Authoritative opposed-check/save outcomes, including selected branch IDs. */
   readonly resolvedChecks: readonly MoveCheckResolution[]
+  /** Server-determined branch paths in reviewed execution order. */
+  readonly branchSelections: readonly MoveBranchSelection[]
   readonly hitTargetIds: readonly string[]
   readonly missedTargetIds: readonly string[]
   readonly damagedTargetIds: readonly string[]
@@ -272,6 +288,10 @@ const freezeMultiHitExecutions = (
 const freezeResolvedChecks = (
   resolutions: readonly MoveCheckResolution[],
 ): readonly MoveCheckResolution[] => Object.freeze([...resolutions])
+
+const freezeBranchSelections = (
+  selections: readonly MoveBranchSelection[],
+): readonly MoveBranchSelection[] => Object.freeze([...selections])
 
 const rulesetMatchesContext = (
   definition: ValidatedMoveSpecDefinition,
@@ -561,6 +581,34 @@ const pendingRequest = (
     : Object.freeze({ kind: 'reaction', ...common, priority: operation.payload.priority })
 }
 
+const pendingBranchRequest = (
+  operation: MoveBranchEffectOperation,
+  recipientIds: readonly string[],
+): MoveSpecPendingBranchChoiceRequest => {
+  if (operation.payload.kind !== 'choice') {
+    return fail(
+      'definition-integrity-mismatch',
+      `Branch ${operation.payload.selectionId} is not a human choice.`,
+    )
+  }
+  return Object.freeze({
+    kind: 'branch-choice',
+    operationId: operation.id,
+    phase: operation.phase,
+    reasonCode: operation.reasonCode,
+    recipientIds: frozenIds(recipientIds),
+    requestId: operation.payload.requestId,
+    promptKey: operation.payload.promptKey,
+    options: Object.freeze(operation.payload.options.map(option => Object.freeze({
+      id: option.id,
+      labelKey: option.labelKey,
+    }))),
+    allowPass: operation.payload.pass !== null,
+    selectionId: operation.payload.selectionId,
+    scope: operation.payload.scope,
+  })
+}
+
 const pendingCheckRequest = (
   operation: MoveCheckEffectOperation,
   request: MoveCheckPendingRequest,
@@ -678,6 +726,7 @@ const terminalBase = (
   resolvedDamageBases: readonly MoveContextualDamageBaseResolution[],
   multiHitExecutions: readonly MoveMultiHitExecution[],
   resolvedChecks: readonly MoveCheckResolution[],
+  branchSelections: readonly MoveBranchSelection[],
   selectorState: MoveSpecSelectorState,
 ): MoveSpecExecutionResultBase => ({
   operations: freezeEmittedOperations(operations),
@@ -689,6 +738,7 @@ const terminalBase = (
   resolvedDamageBases: freezeResolvedDamageBases(resolvedDamageBases),
   multiHitExecutions: freezeMultiHitExecutions(multiHitExecutions),
   resolvedChecks: freezeResolvedChecks(resolvedChecks),
+  branchSelections: freezeBranchSelections(branchSelections),
   hitTargetIds: frozenIds(selectorState.hitTargetIds),
   missedTargetIds: frozenIds(selectorState.missedTargetIds),
   damagedTargetIds: frozenIds(selectorState.damagedTargetIds),
@@ -801,6 +851,77 @@ const executableProgram = (
   })
 }
 
+const branchControllerIndex = (
+  operations: readonly MoveEffectOperation[],
+): ReadonlyMap<string, MoveBranchEffectOperation> => {
+  const controllers = new Map<string, MoveBranchEffectOperation>()
+  for (const operation of operations) {
+    if (operation.kind !== 'branch') continue
+    for (const branch of moveEffectBranchPaths(operation.payload)) {
+      for (const operationId of branch.operationIds) {
+        const existing = controllers.get(operationId)
+        if (existing && existing.payload.selectionId !== operation.payload.selectionId) {
+          fail(
+            'definition-integrity-mismatch',
+            `Operation ${operationId} has multiple branch controllers.`,
+          )
+        }
+        controllers.set(operationId, operation)
+      }
+    }
+  }
+  return controllers
+}
+
+interface MoveBranchOperationGate {
+  readonly execute: boolean
+  readonly recipientIds: readonly string[]
+  readonly selectionId: string | null
+}
+
+const gateBranchControlledOperation = (options: {
+  readonly operationId: string
+  readonly resolveRecipientIds: () => readonly string[]
+  readonly controller: MoveBranchEffectOperation | undefined
+  readonly executions: ReadonlyMap<string, ExecutedMoveBranch>
+}): MoveBranchOperationGate => {
+  if (!options.controller) {
+    return {
+      execute: true,
+      recipientIds: options.resolveRecipientIds(),
+      selectionId: null,
+    }
+  }
+  const selectionId = options.controller.payload.selectionId
+  const execution = options.executions.get(selectionId)
+    ?? fail(
+      'definition-integrity-mismatch',
+      `Branch ${selectionId} did not resolve before controlled operation ${options.operationId}.`,
+    )
+  const selectedDecisions = execution.decisions.filter(decision => (
+    decision.operationIds.includes(options.operationId)
+  ))
+  if (selectedDecisions.length === 0) {
+    return { execute: false, recipientIds: [], selectionId }
+  }
+  const recipientIds = options.resolveRecipientIds()
+  if (execution.selection.scope === 'resolution') {
+    return {
+      execute: true,
+      recipientIds,
+      selectionId,
+    }
+  }
+  const selectedRecipientIds = new Set(
+    selectedDecisions.flatMap(decision => decision.recipientId ? [decision.recipientId] : []),
+  )
+  return {
+    execute: true,
+    recipientIds: recipientIds.filter(recipientId => selectedRecipientIds.has(recipientId)),
+    selectionId,
+  }
+}
+
 /**
  * Execute one reviewed MoveSpec against an immutable authoritative snapshot.
  * This layer emits typed operations only; repositories and state reducers are
@@ -813,6 +934,7 @@ export const executeMoveSpec = (
   const definition = executableDefinition(input, handlerRegistry)
   const { spec } = definition
   const program = executableProgram(definition, input.context, handlerRegistry)
+  const branchControllers = branchControllerIndex(program.operations)
 
   const activePhases = new Set<MoveSpecPhase>(program.operationsByPhase.keys())
   for (const phase of program.handlerTraceEntriesByPhase.keys()) activePhases.add(phase)
@@ -851,6 +973,8 @@ export const executeMoveSpec = (
   const resolvedDamageBases: MoveContextualDamageBaseResolution[] = []
   const multiHitExecutions: MoveMultiHitExecution[] = []
   const resolvedChecks: MoveCheckResolution[] = []
+  const branchSelections: MoveBranchSelection[] = []
+  const branchExecutions = new Map<string, ExecutedMoveBranch>()
   const currentSelectorState = (): MoveSpecSelectorState => ({
     targetIds,
     hitTargetIds,
@@ -916,6 +1040,7 @@ export const executeMoveSpec = (
               resolvedDamageBases,
               multiHitExecutions,
               resolvedChecks,
+              branchSelections,
               currentSelectorState(),
             ),
             rejection: Object.freeze({
@@ -1005,6 +1130,7 @@ export const executeMoveSpec = (
             resolvedDamageBases,
             multiHitExecutions,
             resolvedChecks,
+            branchSelections,
             currentSelectorState(),
           ),
           rejection: Object.freeze({
@@ -1031,15 +1157,151 @@ export const executeMoveSpec = (
         damagedTargetIds,
         faintedTargetIds,
       }
-      const recipientIds = effectRecipientIds(
-        input.context,
-        selectorState,
-        operation.recipients.kind,
-      )
+      const branchGate = gateBranchControlledOperation({
+        operationId: operation.id,
+        resolveRecipientIds: () => effectRecipientIds(
+          input.context,
+          selectorState,
+          operation.recipients.kind,
+        ),
+        controller: branchControllers.get(operation.id),
+        executions: branchExecutions,
+      })
+      if (!branchGate.execute) {
+        trace = reduceMoveResolutionTrace(trace, {
+          kind: 'operation',
+          phase,
+          operationId: operation.id,
+          operationKind: operation.kind,
+          recipientIds: [],
+          outcome: 'prevented',
+          reasonCode: operation.reasonCode,
+          input: traceJson(operation.payload),
+          result: traceJson({
+            status: 'branch-not-selected',
+            selectionId: branchGate.selectionId,
+          }),
+        })
+        continue
+      }
+      const recipientIds = branchGate.recipientIds
       operations.push(Object.freeze({
         operation,
         recipientIds: frozenIds(recipientIds),
       }))
+
+      if (operation.kind === 'branch') {
+        if (operation.payload.kind === 'choice') {
+          if (recipientIds.length === 0) {
+            const selection = Object.freeze<MoveBranchSelection>({
+              operationId: operation.id,
+              selectionId: operation.payload.selectionId,
+              scope: operation.payload.scope,
+              decisions: Object.freeze([]),
+            })
+            const execution = Object.freeze<ExecutedMoveBranch>({
+              selection,
+              decisions: Object.freeze([]),
+            })
+            branchSelections.push(selection)
+            branchExecutions.set(operation.payload.selectionId, execution)
+            trace = reduceMoveResolutionTrace(trace, {
+              kind: 'operation',
+              phase,
+              operationId: operation.id,
+              operationKind: operation.kind,
+              recipientIds,
+              outcome: 'no-op',
+              reasonCode: operation.reasonCode,
+              input: traceJson(operation.payload),
+              result: traceJson({ selection }),
+            })
+            continue
+          }
+          const request = pendingBranchRequest(operation, recipientIds)
+          trace = reduceMoveResolutionTrace(trace, {
+            kind: 'operation',
+            phase,
+            operationId: operation.id,
+            operationKind: operation.kind,
+            recipientIds,
+            outcome: 'pending',
+            reasonCode: operation.reasonCode,
+            input: traceJson(operation.payload),
+            result: traceJson({
+              requestId: request.requestId,
+              requestKind: request.kind,
+              selectionId: request.selectionId,
+              scope: request.scope,
+            }),
+          })
+          trace = reduceMoveResolutionTrace(trace, {
+            kind: 'choice',
+            phase,
+            requestId: request.requestId,
+            requestKind: 'choice',
+            outcome: 'requested',
+            optionId: null,
+            reasonCode: operation.reasonCode,
+          })
+          return Object.freeze({
+            kind: 'pending-request',
+            ...terminalBase(
+              input.context,
+              operations,
+              targetIds,
+              trace,
+              input.context.random.snapshot(),
+              resolvedRolls,
+              resolvedDamageTypes,
+              resolvedDamageBases,
+              multiHitExecutions,
+              resolvedChecks,
+              branchSelections,
+              currentSelectorState(),
+            ),
+            request,
+          })
+        }
+
+        const execution = executeServerMoveBranch({
+          operation,
+          context: input.context,
+          recipientIds,
+          selectorState,
+          canonicalMoveId: spec.canonicalId,
+          resolvedChecks,
+        })
+        branchSelections.push(execution.selection)
+        branchExecutions.set(operation.payload.selectionId, execution)
+        for (const decision of execution.decisions) {
+          if (!decision.predicateEvaluation) continue
+          trace = reduceMoveResolutionTrace(trace, {
+            kind: 'predicate',
+            phase,
+            predicateId: operation.payload.selectionId,
+            outcome: decision.predicateEvaluation.value,
+            reasonCode: decision.reasonCode,
+            input: traceJson({
+              recipientId: decision.recipientId,
+              branchId: decision.branchId,
+              evaluationTrace: decision.predicateEvaluation.trace,
+            }),
+          })
+        }
+        trace = reduceMoveResolutionTrace(trace, {
+          kind: 'operation',
+          phase,
+          operationId: operation.id,
+          operationKind: operation.kind,
+          recipientIds,
+          outcome: execution.selection.decisions.length > 0 ? 'applied' : 'no-op',
+          reasonCode: operation.reasonCode,
+          input: traceJson(operation.payload),
+          result: traceJson({ selection: execution.selection }),
+        })
+        continue
+      }
 
       if (operation.kind === 'check') {
         const execution = executeMoveCheckOperation({
@@ -1104,6 +1366,7 @@ export const executeMoveSpec = (
             resolvedDamageBases,
             multiHitExecutions,
             resolvedChecks,
+            branchSelections,
             currentSelectorState(),
           ),
           request,
@@ -1408,6 +1671,7 @@ export const executeMoveSpec = (
             resolvedDamageBases,
             multiHitExecutions,
             resolvedChecks,
+            branchSelections,
             currentSelectorState(),
           ),
           request,
@@ -1441,6 +1705,7 @@ export const executeMoveSpec = (
       resolvedDamageBases,
       multiHitExecutions,
       resolvedChecks,
+      branchSelections,
       currentSelectorState(),
     ),
   })

@@ -28,6 +28,11 @@ import {
   type TrainerSkillKey,
 } from '~/types/trainerSheet'
 import {
+  MovePredicateValidationError,
+  parseMovePredicate,
+  type MovePredicate,
+} from './predicates'
+import {
   MoveSelectorValidationError,
   parseMoveSelector,
   type MoveSelector,
@@ -44,6 +49,7 @@ import {
 export const MOVE_EFFECT_OPERATION_KINDS = [
   'roll',
   'check',
+  'branch',
   'damage',
   'multi-hit',
   'direct-hp',
@@ -88,6 +94,17 @@ export const MOVE_EFFECT_RECIPIENT_SELECTOR_KINDS = [
   'cardinally-adjacent-to-hit-targets',
 ] as const
 
+/** Recipient sets that can be narrowed independently for each branch subject. */
+export const MOVE_EFFECT_RECIPIENT_SCOPED_BRANCH_SELECTOR_KINDS = [
+  'selected-targets',
+  'attacked-targets',
+  'hit-targets',
+  'missed-targets',
+  'damaged-targets',
+  'fainted-targets',
+  'area-targets',
+] as const satisfies readonly MoveEffectRecipientSelectorKind[]
+
 export const MOVE_EFFECT_ROLL_FORMULA_KINDS = [
   'dice',
   'uniform-integer',
@@ -109,6 +126,13 @@ export const MOVE_EFFECT_CHECK_REROLL_KEEP_POLICIES = [
 export const MOVE_EFFECT_CHECK_TIE_KINDS = ['success', 'failure', 'reroll'] as const
 export const MOVE_EFFECT_CHECK_OUTCOMES = ['success', 'failure'] as const
 export const MOVE_EFFECT_CHECK_RESOURCE_TRIGGERS = ['always', 'on-failure'] as const
+export const MOVE_EFFECT_BRANCH_KINDS = [
+  'predicate',
+  'relationship',
+  'check',
+  'choice',
+] as const
+export const MOVE_EFFECT_BRANCH_SCOPES = ['resolution', 'recipient'] as const
 
 export const MOVE_EFFECT_DAMAGE_CLASSES = ['physical', 'special'] as const
 export const MOVE_EFFECT_DAMAGE_BASE_STAB_TIMINGS = [
@@ -274,6 +298,7 @@ export const MOVE_EFFECT_OPERATION_LIMITS = Object.freeze({
   checkModifiers: 16,
   checkSourceOptions: 16,
   checkRerolls: 3,
+  branchOperationReferences: 128,
   reactionPriorityMagnitude: 1_000,
 })
 
@@ -292,6 +317,8 @@ export type MoveEffectCheckTieKind = (typeof MOVE_EFFECT_CHECK_TIE_KINDS)[number
 export type MoveEffectCheckOutcome = (typeof MOVE_EFFECT_CHECK_OUTCOMES)[number]
 export type MoveEffectCheckResourceTrigger =
   (typeof MOVE_EFFECT_CHECK_RESOURCE_TRIGGERS)[number]
+export type MoveEffectBranchKind = (typeof MOVE_EFFECT_BRANCH_KINDS)[number]
+export type MoveEffectBranchScope = (typeof MOVE_EFFECT_BRANCH_SCOPES)[number]
 export type MoveEffectDamageClass = (typeof MOVE_EFFECT_DAMAGE_CLASSES)[number]
 export type MoveEffectDamageBaseStabTiming =
   (typeof MOVE_EFFECT_DAMAGE_BASE_STAB_TIMINGS)[number]
@@ -501,6 +528,91 @@ export interface MoveSavingThrowEffectPayload {
 export type MoveCheckEffectPayload =
   | MoveOpposedCheckEffectPayload
   | MoveSavingThrowEffectPayload
+
+export interface MoveEffectBranchPath {
+  /** Stable audit identity for the selected reviewed path. */
+  readonly id: string
+  /** Later top-level operation IDs enabled by this path. */
+  readonly operationIds: readonly string[]
+}
+
+export interface MovePredicateBranchEffectPayload {
+  readonly kind: 'predicate'
+  readonly selectionId: string
+  readonly scope: MoveEffectBranchScope
+  readonly predicate: MovePredicate
+  readonly whenTrue: MoveEffectBranchPath
+  readonly whenFalse: MoveEffectBranchPath
+}
+
+export interface MoveRelationshipBranchPaths {
+  readonly self: MoveEffectBranchPath
+  readonly ally: MoveEffectBranchPath
+  readonly enemy: MoveEffectBranchPath
+  /** Explicit fail-closed path for unknown or unaffiliated targets. */
+  readonly unknown: MoveEffectBranchPath
+}
+
+export interface MoveRelationshipBranchEffectPayload {
+  readonly kind: 'relationship'
+  readonly selectionId: string
+  readonly scope: 'recipient'
+  readonly branches: MoveRelationshipBranchPaths
+}
+
+export interface MoveCheckResultBranchPaths {
+  readonly success: MoveEffectBranchPath
+  readonly failure: MoveEffectBranchPath
+}
+
+export interface MoveCheckResultBranchEffectPayload {
+  readonly kind: 'check'
+  readonly selectionId: string
+  readonly scope: 'recipient'
+  /** Earlier authoritative check operation payload identity. */
+  readonly checkId: string
+  readonly branches: MoveCheckResultBranchPaths
+}
+
+export interface MoveChoiceBranchOption extends MoveEffectBranchPath {
+  readonly labelKey: string
+}
+
+export interface MoveChoiceBranchEffectPayload {
+  readonly kind: 'choice'
+  readonly selectionId: string
+  readonly scope: MoveEffectBranchScope
+  readonly requestId: string
+  readonly promptKey: string
+  readonly options: readonly MoveChoiceBranchOption[]
+  /** A non-null empty path makes this an optional effect with an explicit pass. */
+  readonly pass: MoveEffectBranchPath | null
+}
+
+export type MoveBranchEffectPayload =
+  | MovePredicateBranchEffectPayload
+  | MoveRelationshipBranchEffectPayload
+  | MoveCheckResultBranchEffectPayload
+  | MoveChoiceBranchEffectPayload
+
+/** Return every reviewed path in deterministic payload order. */
+export const moveEffectBranchPaths = (
+  payload: MoveBranchEffectPayload,
+): readonly MoveEffectBranchPath[] => {
+  if (payload.kind === 'predicate') return [payload.whenTrue, payload.whenFalse]
+  if (payload.kind === 'relationship') {
+    return [
+      payload.branches.self,
+      payload.branches.ally,
+      payload.branches.enemy,
+      payload.branches.unknown,
+    ]
+  }
+  if (payload.kind === 'check') {
+    return [payload.branches.success, payload.branches.failure]
+  }
+  return payload.pass ? [...payload.options, payload.pass] : payload.options
+}
 
 export interface MoveContextualDamageBase {
   readonly kind: 'expression'
@@ -969,6 +1081,7 @@ export interface MoveEffectOperationEnvelope<
 
 export type MoveRollEffectOperation = MoveEffectOperationEnvelope<'roll', MoveRollEffectPayload>
 export type MoveCheckEffectOperation = MoveEffectOperationEnvelope<'check', MoveCheckEffectPayload>
+export type MoveBranchEffectOperation = MoveEffectOperationEnvelope<'branch', MoveBranchEffectPayload>
 export type MoveDamageEffectOperation = MoveEffectOperationEnvelope<'damage', MoveDamageEffectPayload>
 export type MoveMultiHitEffectOperation = MoveEffectOperationEnvelope<'multi-hit', MoveMultiHitEffectPayload>
 export type MoveDirectHpEffectOperation = MoveEffectOperationEnvelope<'direct-hp', MoveDirectHpEffectPayload>
@@ -988,6 +1101,7 @@ export type MoveReactionRequestEffectOperation = MoveEffectOperationEnvelope<'re
 export type MoveEffectOperation =
   | MoveRollEffectOperation
   | MoveCheckEffectOperation
+  | MoveBranchEffectOperation
   | MoveDamageEffectOperation
   | MoveMultiHitEffectOperation
   | MoveDirectHpEffectOperation
@@ -1079,6 +1193,34 @@ const CHECK_REROLL_TIE_FIELDS = [
   'exhaustedOutcome',
 ] as const
 const CHECK_BRANCH_FIELDS = ['success', 'failure'] as const
+const PREDICATE_BRANCH_FIELDS = [
+  'kind',
+  'selectionId',
+  'scope',
+  'predicate',
+  'whenTrue',
+  'whenFalse',
+] as const
+const RELATIONSHIP_BRANCH_FIELDS = ['kind', 'selectionId', 'scope', 'branches'] as const
+const CHECK_RESULT_BRANCH_FIELDS = [
+  'kind',
+  'selectionId',
+  'scope',
+  'checkId',
+  'branches',
+] as const
+const CHOICE_BRANCH_FIELDS = [
+  'kind',
+  'selectionId',
+  'scope',
+  'requestId',
+  'promptKey',
+  'options',
+  'pass',
+] as const
+const BRANCH_PATH_FIELDS = ['id', 'operationIds'] as const
+const RELATIONSHIP_BRANCH_PATH_FIELDS = ['self', 'ally', 'enemy', 'unknown'] as const
+const CHOICE_BRANCH_OPTION_FIELDS = ['id', 'labelKey', 'operationIds'] as const
 const DAMAGE_REQUIRED_FIELDS = [
   'damageClass',
   'damageBase',
@@ -1252,6 +1394,8 @@ const CHECK_REROLL_KEEP_POLICY_SET = new Set<string>(MOVE_EFFECT_CHECK_REROLL_KE
 const CHECK_TIE_KIND_SET = new Set<string>(MOVE_EFFECT_CHECK_TIE_KINDS)
 const CHECK_OUTCOME_SET = new Set<string>(MOVE_EFFECT_CHECK_OUTCOMES)
 const CHECK_RESOURCE_TRIGGER_SET = new Set<string>(MOVE_EFFECT_CHECK_RESOURCE_TRIGGERS)
+const BRANCH_KIND_SET = new Set<string>(MOVE_EFFECT_BRANCH_KINDS)
+const BRANCH_SCOPE_SET = new Set<string>(MOVE_EFFECT_BRANCH_SCOPES)
 const EXPRESSION_STAT_SET = new Set<string>(MOVE_EXPRESSION_STATS)
 const STAGE_AFFECTED_EXPRESSION_STAT_SET = new Set<string>(
   MOVE_STAGE_AFFECTED_EXPRESSION_STATS,
@@ -1297,6 +1441,9 @@ const FIELD_CATEGORY_SET = new Set<string>(MOVE_EFFECT_FIELD_CATEGORIES)
 const MOVEMENT_MODE_SET = new Set<string>(MOVE_EFFECT_MOVEMENT_MODES)
 const USAGE_ACTION_SET = new Set<string>(MOVE_EFFECT_USAGE_ACTIONS)
 const HISTORY_EVENT_SET = new Set<string>(MOVE_EFFECT_HISTORY_EVENTS)
+const RECIPIENT_SCOPED_BRANCH_SELECTOR_SET = new Set<MoveEffectRecipientSelectorKind>(
+  MOVE_EFFECT_RECIPIENT_SCOPED_BRANCH_SELECTOR_KINDS,
+)
 
 const fail = (
   code: MoveEffectOperationValidationCode,
@@ -1629,14 +1776,19 @@ const parseRollPayload = (value: unknown, path: string): MoveRollEffectPayload =
   }
 }
 
-const parseEffectExpression = <Value>(
+const parseEffectRuleNode = <Value>(
   parse: () => Value,
 ): Value => {
   try {
     return parse()
   }
   catch (error) {
-    if (!(error instanceof MoveExpressionValidationError)) throw error
+    if (
+      !(error instanceof MoveExpressionValidationError)
+      && !(error instanceof MovePredicateValidationError)
+    ) {
+      throw error
+    }
     const detailPrefix = `${error.path}: `
     const detail = error.message.startsWith(detailPrefix)
       ? error.message.slice(detailPrefix.length)
@@ -1652,6 +1804,11 @@ const parseEffectExpression = <Value>(
     )
   }
 }
+
+const parseEffectExpression = <Value>(parse: () => Value): Value => parseEffectRuleNode(parse)
+
+const parseEffectPredicate = (value: unknown, path: string): MovePredicate =>
+  parseEffectRuleNode(() => parseMovePredicate(value, path))
 
 const parseDamageStatSelection = (
   value: unknown,
@@ -3198,6 +3355,239 @@ const parseRequestOptions = (
   return options
 }
 
+const parseBranchOperationIds = (
+  value: unknown,
+  path: string,
+  minimum: number,
+): readonly string[] => {
+  const operationIds = parseBoundedArray(
+    value,
+    path,
+    MOVE_EFFECT_OPERATION_LIMITS.branchOperationReferences,
+  ).map((operationId, index) => parseStableId(operationId, `${path}[${index}]`))
+  if (operationIds.length < minimum) {
+    fail(
+      'invalid-effect-operation',
+      path,
+      `must contain at least ${minimum} operation ${minimum === 1 ? 'ID' : 'IDs'}.`,
+    )
+  }
+  assertUnique(operationIds, path)
+  return operationIds
+}
+
+const parseBranchPath = (
+  value: unknown,
+  path: string,
+  minimumOperations = 0,
+): MoveEffectBranchPath => {
+  const input = parseExactRecord(value, BRANCH_PATH_FIELDS, path)
+  return {
+    id: parseStableId(ownValue(input, 'id', path), `${path}.id`),
+    operationIds: parseBranchOperationIds(
+      ownValue(input, 'operationIds', path),
+      `${path}.operationIds`,
+      minimumOperations,
+    ),
+  }
+}
+
+const assertDistinctBranchPaths = (
+  paths: readonly MoveEffectBranchPath[],
+  path: string,
+): void => {
+  assertUnique(paths.map(branch => branch.id), `${path}.id`)
+  const operationReferenceCount = paths.reduce(
+    (total, branch) => total + branch.operationIds.length,
+    0,
+  )
+  if (operationReferenceCount > MOVE_EFFECT_OPERATION_LIMITS.branchOperationReferences) {
+    fail(
+      'limit-exceeded',
+      `${path}.operationIds`,
+      `must contain at most ${MOVE_EFFECT_OPERATION_LIMITS.branchOperationReferences} operation references across all paths.`,
+    )
+  }
+  if (!paths.some(branch => branch.operationIds.length > 0)) {
+    fail(
+      'invalid-effect-operation',
+      path,
+      'must enable at least one later operation across its paths.',
+    )
+  }
+}
+
+const parsePredicateBranchPayload = (
+  input: UnknownRecord,
+  path: string,
+): MovePredicateBranchEffectPayload => {
+  assertExactKeys(input, PREDICATE_BRANCH_FIELDS, path)
+  const whenTrue = parseBranchPath(ownValue(input, 'whenTrue', path), `${path}.whenTrue`)
+  const whenFalse = parseBranchPath(ownValue(input, 'whenFalse', path), `${path}.whenFalse`)
+  assertDistinctBranchPaths([whenTrue, whenFalse], path)
+  return {
+    kind: 'predicate',
+    selectionId: parseStableId(ownValue(input, 'selectionId', path), `${path}.selectionId`),
+    scope: parseEnum<MoveEffectBranchScope>(
+      ownValue(input, 'scope', path),
+      BRANCH_SCOPE_SET,
+      `${path}.scope`,
+      'resolution or recipient',
+    ),
+    predicate: parseEffectPredicate(ownValue(input, 'predicate', path), `${path}.predicate`),
+    whenTrue,
+    whenFalse,
+  }
+}
+
+const parseRelationshipBranchPayload = (
+  input: UnknownRecord,
+  path: string,
+): MoveRelationshipBranchEffectPayload => {
+  assertExactKeys(input, RELATIONSHIP_BRANCH_FIELDS, path)
+  if (ownValue(input, 'scope', path) !== 'recipient') {
+    fail(
+      'invalid-effect-operation',
+      `${path}.scope`,
+      'relationship branches must be recipient-scoped.',
+    )
+  }
+  const branchesPath = `${path}.branches`
+  const branchInput = parseExactRecord(
+    ownValue(input, 'branches', path),
+    RELATIONSHIP_BRANCH_PATH_FIELDS,
+    branchesPath,
+  )
+  const branches: MoveRelationshipBranchPaths = {
+    self: parseBranchPath(ownValue(branchInput, 'self', branchesPath), `${branchesPath}.self`),
+    ally: parseBranchPath(ownValue(branchInput, 'ally', branchesPath), `${branchesPath}.ally`),
+    enemy: parseBranchPath(ownValue(branchInput, 'enemy', branchesPath), `${branchesPath}.enemy`),
+    unknown: parseBranchPath(ownValue(branchInput, 'unknown', branchesPath), `${branchesPath}.unknown`),
+  }
+  assertDistinctBranchPaths(Object.values(branches), branchesPath)
+  return {
+    kind: 'relationship',
+    selectionId: parseStableId(ownValue(input, 'selectionId', path), `${path}.selectionId`),
+    scope: 'recipient',
+    branches,
+  }
+}
+
+const parseCheckResultBranchPayload = (
+  input: UnknownRecord,
+  path: string,
+): MoveCheckResultBranchEffectPayload => {
+  assertExactKeys(input, CHECK_RESULT_BRANCH_FIELDS, path)
+  if (ownValue(input, 'scope', path) !== 'recipient') {
+    fail(
+      'invalid-effect-operation',
+      `${path}.scope`,
+      'check-result branches must be recipient-scoped.',
+    )
+  }
+  const branchesPath = `${path}.branches`
+  const branchInput = parseExactRecord(
+    ownValue(input, 'branches', path),
+    CHECK_BRANCH_FIELDS,
+    branchesPath,
+  )
+  const branches: MoveCheckResultBranchPaths = {
+    success: parseBranchPath(
+      ownValue(branchInput, 'success', branchesPath),
+      `${branchesPath}.success`,
+    ),
+    failure: parseBranchPath(
+      ownValue(branchInput, 'failure', branchesPath),
+      `${branchesPath}.failure`,
+    ),
+  }
+  assertDistinctBranchPaths(Object.values(branches), branchesPath)
+  return {
+    kind: 'check',
+    selectionId: parseStableId(ownValue(input, 'selectionId', path), `${path}.selectionId`),
+    scope: 'recipient',
+    checkId: parseStableId(ownValue(input, 'checkId', path), `${path}.checkId`),
+    branches,
+  }
+}
+
+const parseChoiceBranchPayload = (
+  input: UnknownRecord,
+  path: string,
+): MoveChoiceBranchEffectPayload => {
+  assertExactKeys(input, CHOICE_BRANCH_FIELDS, path)
+  const optionsPath = `${path}.options`
+  const options = parseBoundedArray(
+    ownValue(input, 'options', path),
+    optionsPath,
+    MOVE_EFFECT_OPERATION_LIMITS.requestOptions,
+  ).map((option, index): MoveChoiceBranchOption => {
+    const optionPath = `${optionsPath}[${index}]`
+    const entry = parseExactRecord(option, CHOICE_BRANCH_OPTION_FIELDS, optionPath)
+    return {
+      id: parseStableId(ownValue(entry, 'id', optionPath), `${optionPath}.id`),
+      labelKey: parseStableId(
+        ownValue(entry, 'labelKey', optionPath),
+        `${optionPath}.labelKey`,
+      ),
+      operationIds: parseBranchOperationIds(
+        ownValue(entry, 'operationIds', optionPath),
+        `${optionPath}.operationIds`,
+        1,
+      ),
+    }
+  })
+  const pass = ownValue(input, 'pass', path) === null
+    ? null
+    : parseBranchPath(ownValue(input, 'pass', path), `${path}.pass`)
+  if (pass && pass.operationIds.length > 0) {
+    fail(
+      'invalid-effect-operation',
+      `${path}.pass.operationIds`,
+      'a pass path cannot enable effect operations.',
+    )
+  }
+  if (options.length + (pass ? 1 : 0) < 2) {
+    fail(
+      'invalid-effect-operation',
+      optionsPath,
+      'must define at least two exclusive outcomes, counting an explicit pass.',
+    )
+  }
+  assertDistinctBranchPaths(pass ? [...options, pass] : options, path)
+  return {
+    kind: 'choice',
+    selectionId: parseStableId(ownValue(input, 'selectionId', path), `${path}.selectionId`),
+    scope: parseEnum<MoveEffectBranchScope>(
+      ownValue(input, 'scope', path),
+      BRANCH_SCOPE_SET,
+      `${path}.scope`,
+      'resolution or recipient',
+    ),
+    requestId: parseStableId(ownValue(input, 'requestId', path), `${path}.requestId`),
+    promptKey: parseStableId(ownValue(input, 'promptKey', path), `${path}.promptKey`),
+    options,
+    pass,
+  }
+}
+
+const parseBranchPayload = (
+  value: unknown,
+  path: string,
+): MoveBranchEffectPayload => {
+  const input = parseRecord(value, path)
+  const kind = parseEnum<MoveEffectBranchKind>(
+    ownValue(input, 'kind', path),
+    BRANCH_KIND_SET,
+    `${path}.kind`,
+    'predicate, relationship, check, or choice',
+  )
+  if (kind === 'predicate') return parsePredicateBranchPayload(input, path)
+  if (kind === 'relationship') return parseRelationshipBranchPayload(input, path)
+  if (kind === 'check') return parseCheckResultBranchPayload(input, path)
+  return parseChoiceBranchPayload(input, path)
+}
+
 const parseChoiceRequestPayload = (
   value: unknown,
   path: string,
@@ -3634,6 +4024,30 @@ const hpCostTimingMatchesPhase = (
   return phase === 'cleanup'
 }
 
+const validateBranchOperationEnvelope = (options: {
+  readonly common: ParsedOperationCommon
+  readonly payload: MoveBranchEffectPayload
+  readonly path: string
+}): void => {
+  if (options.payload.kind === 'choice' && options.common.recipients.kind === 'none') {
+    fail(
+      'invalid-effect-operation',
+      `${options.path}.recipients.kind`,
+      'human branch choices require an authoritative owner/subject recipient selector.',
+    )
+  }
+  if (
+    options.payload.scope === 'recipient'
+    && !RECIPIENT_SCOPED_BRANCH_SELECTOR_SET.has(options.common.recipients.kind)
+  ) {
+    fail(
+      'invalid-effect-operation',
+      `${options.path}.recipients.kind`,
+      'recipient-scoped branches require an authoritative target recipient selector.',
+    )
+  }
+}
+
 const validateHpOperationEnvelope = (options: {
   readonly common: ParsedOperationCommon
   readonly payload: MoveDirectHpEffectPayload | MoveHealEffectPayload
@@ -3684,6 +4098,11 @@ const parseDetachedOperation = (value: unknown, path: string): MoveEffectOperati
       return { ...common, kind, payload: parseRollPayload(payload, payloadPath) }
     case 'check':
       return { ...common, kind, payload: parseCheckPayload(payload, payloadPath) }
+    case 'branch': {
+      const parsedPayload = parseBranchPayload(payload, payloadPath)
+      validateBranchOperationEnvelope({ common, payload: parsedPayload, path })
+      return { ...common, kind, payload: parsedPayload }
+    }
     case 'damage':
       return { ...common, kind, payload: parseDamagePayload(payload, payloadPath) }
     case 'multi-hit':

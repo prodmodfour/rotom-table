@@ -42,6 +42,23 @@ const VALID_PAYLOADS = {
     tie: { kind: 'failure' },
     branches: { success: 'branch.push', failure: 'branch.no-push' },
   },
+  branch: {
+    kind: 'predicate',
+    selectionId: 'branch.low-health',
+    scope: 'recipient',
+    predicate: {
+      kind: 'comparison',
+      operator: 'less-than',
+      left: {
+        kind: 'hp-ratio',
+        subject: { kind: 'current-target' },
+        ratio: 'current-to-maximum',
+      },
+      right: { kind: 'constant', value: 0.5 },
+    },
+    whenTrue: { id: 'branch.heal', operationIds: ['operation.heal'] },
+    whenFalse: { id: 'branch.damage', operationIds: ['operation.damage'] },
+  },
   damage: {
     damageClass: 'physical',
     damageBase: 4,
@@ -239,6 +256,7 @@ describe('MoveSpec typed effect operations', () => {
     expect(MOVE_EFFECT_OPERATION_KINDS).toEqual([
       'roll',
       'check',
+      'branch',
       'damage',
       'multi-hit',
       'direct-hp',
@@ -1168,6 +1186,194 @@ describe('MoveSpec typed effect operations', () => {
       }),
       'invalid-effect-operation',
       'operation.payload.injury.hitPointMarkers',
+    )
+  })
+
+  it('parses exhaustive server branches, exclusive choices, optional pass, and recipient scope', () => {
+    const relationship = parseMoveEffectOperation(validOperation('branch', {
+      phase: 'target',
+      recipients: { kind: 'attacked-targets' },
+      payload: {
+        kind: 'relationship',
+        selectionId: 'branch.pollen-puff-target',
+        scope: 'recipient',
+        branches: {
+          self: { id: 'branch.heal-self', operationIds: ['operation.heal'] },
+          ally: { id: 'branch.heal-ally', operationIds: ['operation.heal'] },
+          enemy: { id: 'branch.damage-enemy', operationIds: ['operation.accuracy', 'operation.damage'] },
+          unknown: { id: 'branch.unknown-side', operationIds: [] },
+        },
+      },
+    }))
+    expect(relationship.kind === 'branch' && relationship.payload).toMatchObject({
+      kind: 'relationship',
+      scope: 'recipient',
+      branches: {
+        ally: { id: 'branch.heal-ally', operationIds: ['operation.heal'] },
+        enemy: { id: 'branch.damage-enemy', operationIds: ['operation.accuracy', 'operation.damage'] },
+        unknown: { operationIds: [] },
+      },
+    })
+
+    const checkResult = parseMoveEffectOperation(validOperation('branch', {
+      phase: 'hit',
+      recipients: { kind: 'hit-targets' },
+      payload: {
+        kind: 'check',
+        selectionId: 'branch.escape-result',
+        scope: 'recipient',
+        checkId: 'check.escape',
+        branches: {
+          success: { id: 'branch.escaped', operationIds: ['operation.escape'] },
+          failure: { id: 'branch.trapped', operationIds: ['operation.trap'] },
+        },
+      },
+    }))
+    expect(checkResult.kind === 'branch' && checkResult.payload).toEqual({
+      kind: 'check',
+      selectionId: 'branch.escape-result',
+      scope: 'recipient',
+      checkId: 'check.escape',
+      branches: {
+        success: { id: 'branch.escaped', operationIds: ['operation.escape'] },
+        failure: { id: 'branch.trapped', operationIds: ['operation.trap'] },
+      },
+    })
+
+    const optionalChoice = parseMoveEffectOperation(validOperation('branch', {
+      phase: 'hit',
+      recipients: { kind: 'hit-targets' },
+      payload: {
+        kind: 'choice',
+        selectionId: 'branch.choose-stat',
+        scope: 'recipient',
+        requestId: 'request.choose-stat',
+        promptKey: 'move.choose-stat',
+        options: [
+          {
+            id: 'option.attack',
+            labelKey: 'stat.attack',
+            operationIds: ['operation.raise-attack'],
+          },
+          {
+            id: 'option.defense',
+            labelKey: 'stat.defense',
+            operationIds: ['operation.raise-defense'],
+          },
+        ],
+        pass: { id: 'option.pass', operationIds: [] },
+      },
+    }))
+    expect(optionalChoice.kind === 'branch' && optionalChoice.payload).toEqual({
+      kind: 'choice',
+      selectionId: 'branch.choose-stat',
+      scope: 'recipient',
+      requestId: 'request.choose-stat',
+      promptKey: 'move.choose-stat',
+      options: [
+        {
+          id: 'option.attack',
+          labelKey: 'stat.attack',
+          operationIds: ['operation.raise-attack'],
+        },
+        {
+          id: 'option.defense',
+          labelKey: 'stat.defense',
+          operationIds: ['operation.raise-defense'],
+        },
+      ],
+      pass: { id: 'option.pass', operationIds: [] },
+    })
+  })
+
+  it('rejects ambiguous, effectful, or non-target recipient branch choices', () => {
+    expectEffectError(
+      validOperation('branch', {
+        recipients: { kind: 'none' },
+        payload: {
+          kind: 'choice',
+          selectionId: 'branch.ownerless',
+          scope: 'resolution',
+          requestId: 'request.ownerless',
+          promptKey: 'move.ownerless',
+          options: [
+            { id: 'one', labelKey: 'choice.one', operationIds: ['operation.one'] },
+            { id: 'two', labelKey: 'choice.two', operationIds: ['operation.two'] },
+          ],
+          pass: null,
+        },
+      }),
+      'invalid-effect-operation',
+      'operation.recipients.kind',
+    )
+    expectEffectError(
+      validOperation('branch', {
+        recipients: { kind: 'actor' },
+        payload: {
+          kind: 'choice',
+          selectionId: 'branch.choose-stat',
+          scope: 'recipient',
+          requestId: 'request.choose-stat',
+          promptKey: 'move.choose-stat',
+          options: [
+            { id: 'attack', labelKey: 'stat.attack', operationIds: ['operation.attack'] },
+            { id: 'defense', labelKey: 'stat.defense', operationIds: ['operation.defense'] },
+          ],
+          pass: null,
+        },
+      }),
+      'invalid-effect-operation',
+      'operation.recipients.kind',
+    )
+    expectEffectError(
+      validOperation('branch', {
+        payload: {
+          kind: 'choice',
+          selectionId: 'branch.optional',
+          scope: 'recipient',
+          requestId: 'request.optional',
+          promptKey: 'move.optional',
+          options: [{ id: 'apply', labelKey: 'choice.apply', operationIds: ['operation.apply'] }],
+          pass: { id: 'pass', operationIds: ['operation.hidden-effect'] },
+        },
+      }),
+      'invalid-effect-operation',
+      'operation.payload.pass.operationIds',
+    )
+    expectEffectError(
+      validOperation('branch', {
+        payload: {
+          kind: 'choice',
+          selectionId: 'branch.not-exclusive',
+          scope: 'recipient',
+          requestId: 'request.not-exclusive',
+          promptKey: 'move.not-exclusive',
+          options: [{ id: 'only', labelKey: 'choice.only', operationIds: ['operation.only'] }],
+          pass: null,
+        },
+      }),
+      'invalid-effect-operation',
+      'operation.payload.options',
+    )
+    expectEffectError(
+      validOperation('branch', {
+        payload: {
+          kind: 'predicate',
+          selectionId: 'branch.too-many-references',
+          scope: 'resolution',
+          predicate: { kind: 'constant', value: true },
+          whenTrue: {
+            id: 'branch.true',
+            operationIds: Array.from({ length: 65 }, (_, index) => `operation.true-${index}`),
+          },
+          whenFalse: {
+            id: 'branch.false',
+            operationIds: Array.from({ length: 64 }, (_, index) => `operation.false-${index}`),
+          },
+        },
+      }),
+      'limit-exceeded',
+      'operation.payload.operationIds',
     )
   })
 

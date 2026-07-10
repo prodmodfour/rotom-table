@@ -5,7 +5,11 @@ import {
 } from '#shared/moveAutomation/capabilities'
 import {
   MOVE_EFFECT_OPERATION_LIMITS,
+  MOVE_EFFECT_RECIPIENT_SCOPED_BRANCH_SELECTOR_KINDS,
+  moveEffectBranchPaths,
   parseMoveEffectOperation,
+  type MoveBranchEffectOperation,
+  type MoveEffectBranchPath,
   type MoveEffectOperation,
 } from '#shared/moveAutomation/effects'
 import {
@@ -454,6 +458,49 @@ interface IndexedOperation extends MoveSpecOperationSequenceEntry {
   readonly index: number
 }
 
+interface IndexedBranchPath {
+  readonly branch: MoveEffectBranchPath
+  readonly path: string
+}
+
+const indexedBranchPaths = (
+  operation: MoveBranchEffectOperation,
+  operationPath: string,
+): readonly IndexedBranchPath[] => {
+  const branches = moveEffectBranchPaths(operation.payload)
+  let paths: readonly string[]
+  switch (operation.payload.kind) {
+    case 'predicate':
+      paths = [`${operationPath}.payload.whenTrue`, `${operationPath}.payload.whenFalse`]
+      break
+    case 'relationship':
+      paths = [
+        `${operationPath}.payload.branches.self`,
+        `${operationPath}.payload.branches.ally`,
+        `${operationPath}.payload.branches.enemy`,
+        `${operationPath}.payload.branches.unknown`,
+      ]
+      break
+    case 'check':
+      paths = [
+        `${operationPath}.payload.branches.success`,
+        `${operationPath}.payload.branches.failure`,
+      ]
+      break
+    case 'choice':
+      paths = [
+        ...operation.payload.options.map((_, index) => `${operationPath}.payload.options[${index}]`),
+        ...(operation.payload.pass ? [`${operationPath}.payload.pass`] : []),
+      ]
+      break
+  }
+  return branches.map((branch, index) => ({ branch, path: paths[index]! }))
+}
+
+const RECIPIENT_SCOPED_BRANCH_SELECTORS = new Set<string>(
+  MOVE_EFFECT_RECIPIENT_SCOPED_BRANCH_SELECTOR_KINDS,
+)
+
 /**
  * Validate aggregate bounds, identities, and backward references for the exact
  * operation order an interpreter will execute. Handler output is checked with
@@ -476,6 +523,8 @@ export const validateMoveSpecOperationSequence = (
   const reservedRollIds = new Set<string>()
   const requestIndexById = new Map<string, number>()
   const checkIndexById = new Map<string, number>()
+  const branchIndexBySelectionId = new Map<string, number>()
+  const branchControllerByOperationId = new Map<string, string>()
 
   const reserveRollId = (rollId: string, path: string): void => {
     if (reservedRollIds.has(rollId)) {
@@ -543,6 +592,23 @@ export const validateMoveSpecOperationSequence = (
             `${entry.path}.resourceReroll.requestId`,
           )
         }
+      }
+    }
+    if (operation.kind === 'branch') {
+      if (branchIndexBySelectionId.has(operation.payload.selectionId)) {
+        fail(
+          'duplicate-id',
+          `${path}.payload.selectionId`,
+          `branch selection ID ${operation.payload.selectionId} is duplicated.`,
+        )
+      }
+      branchIndexBySelectionId.set(operation.payload.selectionId, index)
+      if (operation.payload.kind === 'choice') {
+        reserveRequestId(
+          operation.payload.requestId,
+          index,
+          `${path}.payload.requestId`,
+        )
       }
     }
 
@@ -662,6 +728,86 @@ export const validateMoveSpecOperationSequence = (
         operationIndexById,
         'operation ID',
       )
+    }
+    if (operation.kind === 'branch') {
+      if (operation.payload.kind === 'check') {
+        assertPriorReference(
+          operation.payload.checkId,
+          index,
+          `${path}.payload.checkId`,
+          checkIndexById,
+          'check ID',
+        )
+        const checkIndex = checkIndexById.get(operation.payload.checkId)!
+        const candidateCheckOperation = indexed[checkIndex]?.operation
+        const checkOperation = candidateCheckOperation?.kind === 'check'
+          ? candidateCheckOperation
+          : fail(
+              'invalid-definition',
+              `${path}.payload.checkId`,
+              `${operation.payload.checkId} must identify an earlier check operation.`,
+            )
+        if (checkOperation.recipients.kind !== operation.recipients.kind) {
+          fail(
+            'invalid-definition',
+            `${path}.recipients.kind`,
+            'a check-result branch must use the same authoritative recipient selector as its check.',
+          )
+        }
+        for (const outcome of ['success', 'failure'] as const) {
+          if (operation.payload.branches[outcome].id !== checkOperation.payload.branches[outcome]) {
+            fail(
+              'invalid-definition',
+              `${path}.payload.branches.${outcome}.id`,
+              `must match check ${operation.payload.checkId} ${outcome} branch ID ${checkOperation.payload.branches[outcome]}.`,
+            )
+          }
+        }
+      }
+      for (const branchEntry of indexedBranchPaths(operation, path)) {
+        for (const [referenceIndex, operationId] of branchEntry.branch.operationIds.entries()) {
+          const referencePath = `${branchEntry.path}.operationIds[${referenceIndex}]`
+          const controlledIndex = operationIndexById.get(operationId) ?? fail(
+            'unknown-reference',
+            referencePath,
+            `branch operation ID ${operationId} does not resolve.`,
+          )
+          if (controlledIndex <= index) {
+            fail(
+              'invalid-reference-order',
+              referencePath,
+              `branch operation ID ${operationId} must refer to a later operation.`,
+            )
+          }
+          const controlled = indexed[controlledIndex]?.operation
+          if (!controlled || controlled.kind === 'branch') {
+            fail(
+              'invalid-definition',
+              referencePath,
+              'a branch cannot control another branch operation.',
+            )
+          }
+          if (
+            operation.payload.scope === 'recipient'
+            && !RECIPIENT_SCOPED_BRANCH_SELECTORS.has(controlled.recipients.kind)
+          ) {
+            fail(
+              'invalid-definition',
+              referencePath,
+              `recipient-scoped branch ${operation.payload.selectionId} can control only target-derived recipient operations.`,
+            )
+          }
+          const existingController = branchControllerByOperationId.get(operationId)
+          if (existingController && existingController !== operation.payload.selectionId) {
+            fail(
+              'invalid-definition',
+              referencePath,
+              `operation ${operationId} is already controlled by branch ${existingController}.`,
+            )
+          }
+          branchControllerByOperationId.set(operationId, operation.payload.selectionId)
+        }
+      }
     }
     if (operation.kind === 'direct-hp' || operation.kind === 'heal') {
       const calculation = operation.payload.calculation
@@ -810,6 +956,26 @@ const normalizeSpec = (input: unknown): ValidatedMoveSpec => {
   const spec = parseMoveSpec(applyMoveSpecDefaultsAndPhaseOrder(detached))
   const rules = parseRules(spec)
   const phases = parseOperations(spec)
+  const branchRuleAstNodes = phases.reduce((total, phase) => total + phase.operations.reduce(
+    (phaseTotal, operation) => phaseTotal + (
+      operation.kind === 'branch' && operation.payload.kind === 'predicate'
+        ? countTaggedAstNodes(operation.payload.predicate)
+        : 0
+    ),
+    0,
+  ), 0)
+  const envelopeRuleAstNodes = countTaggedAstNodes(rules.targeting.selector)
+    + rules.preconditions.reduce(
+      (total, precondition) => total + countTaggedAstNodes(precondition.predicate),
+      0,
+    )
+  if (envelopeRuleAstNodes + branchRuleAstNodes > MOVE_SPEC_DEFINITION_LIMITS.ruleAstNodes) {
+    fail(
+      'limit-exceeded',
+      'spec.rules',
+      `selectors and predicates must contain at most ${MOVE_SPEC_DEFINITION_LIMITS.ruleAstNodes} AST nodes in total.`,
+    )
+  }
 
   return deepFreeze({
     schemaVersion: spec.schemaVersion,

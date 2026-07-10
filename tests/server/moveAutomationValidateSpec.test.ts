@@ -177,6 +177,27 @@ const checkOperation = (
   ...overrides,
 })
 
+const branchOperation = (
+  operationIds: readonly string[],
+  overrides: Partial<TestOperation> = {},
+): TestOperation => ({
+  id: 'operation.branch',
+  kind: 'branch',
+  source: { kind: 'move', id: 'move.scratch' },
+  recipients: { kind: 'none' },
+  phase: 'hit',
+  reasonCode: 'move.scratch.branch',
+  payload: {
+    kind: 'predicate',
+    selectionId: 'branch.hit-effect',
+    scope: 'resolution',
+    predicate: { kind: 'constant', value: true },
+    whenTrue: { id: 'branch.apply', operationIds: [...operationIds] },
+    whenFalse: { id: 'branch.skip', operationIds: [] },
+  },
+  ...overrides,
+})
+
 const validSpec = (): TestSpec => ({
   schemaVersion: 2,
   canonicalId: 'Scratch',
@@ -676,6 +697,159 @@ describe('authoritative MoveSpec validation and hashing', () => {
     )
   })
 
+  it('validates branch identities and later-operation control without executable payloads', () => {
+    const branched = validSpec()
+    branched.phases.splice(1, 0, {
+      phase: 'hit',
+      operations: [branchOperation(['operation.damage'])],
+    })
+    const validated = validateMoveSpec(branched)
+    expect(validated.spec.phases[1]?.operations[0]).toMatchObject({
+      kind: 'branch',
+      payload: {
+        selectionId: 'branch.hit-effect',
+        whenTrue: { operationIds: ['operation.damage'] },
+      },
+    })
+
+    const changed = structuredClone(branched)
+    changed.phases[1]!.operations[0]!.payload.predicate = { kind: 'constant', value: false }
+    expect(validateMoveSpec(changed).definitionHash).not.toBe(validated.definitionHash)
+
+    const checkBranched = validSpec()
+    checkBranched.phases = [
+      {
+        phase: 'hit',
+        operations: [
+          checkOperation(),
+          branchOperation(['operation.success-log'], {
+            id: 'operation.check-branch',
+            recipients: { kind: 'attacked-targets' },
+            payload: {
+              kind: 'check',
+              selectionId: 'branch.check-result',
+              scope: 'recipient',
+              checkId: 'check.push',
+              branches: {
+                success: { id: 'branch.push', operationIds: ['operation.success-log'] },
+                failure: { id: 'branch.steady', operationIds: ['operation.failure-log'] },
+              },
+            },
+          }),
+        ],
+      },
+      {
+        phase: 'cleanup',
+        operations: [
+          {
+            id: 'operation.success-log',
+            kind: 'log',
+            source: { kind: 'move', id: 'move.scratch' },
+            recipients: { kind: 'attacked-targets' },
+            phase: 'cleanup',
+            reasonCode: 'move.scratch.success',
+            payload: { messageKey: 'move.scratch.success', arguments: [] },
+          },
+          {
+            id: 'operation.failure-log',
+            kind: 'log',
+            source: { kind: 'move', id: 'move.scratch' },
+            recipients: { kind: 'attacked-targets' },
+            phase: 'cleanup',
+            reasonCode: 'move.scratch.failure',
+            payload: { messageKey: 'move.scratch.failure', arguments: [] },
+          },
+        ],
+      },
+    ]
+    expect(validateMoveSpec(checkBranched).spec.phases[0]?.operations[1]).toMatchObject({
+      kind: 'branch',
+      payload: { kind: 'check', checkId: 'check.push' },
+    })
+    const mismatchedCheckBranch = structuredClone(checkBranched)
+    mismatchedCheckBranch.phases[0]!.operations[1]!.payload.branches = {
+      success: { id: 'branch.wrong', operationIds: ['operation.success-log'] },
+      failure: { id: 'branch.steady', operationIds: ['operation.failure-log'] },
+    }
+    expectDefinitionError(
+      () => validateMoveSpec(mismatchedCheckBranch),
+      'invalid-definition',
+      'spec.phases[0].operations[1].payload.branches.success.id',
+    )
+
+    const unknown = structuredClone(branched)
+    unknown.phases[1]!.operations[0]!.payload.whenTrue = {
+      id: 'branch.apply',
+      operationIds: ['operation.missing'],
+    }
+    expectDefinitionError(
+      () => validateMoveSpec(unknown),
+      'unknown-reference',
+      'spec.phases[1].operations[0].payload.whenTrue.operationIds[0]',
+    )
+
+    const backward = validSpec()
+    backward.phases[2] = {
+      phase: 'cleanup',
+      operations: [branchOperation(['operation.damage'], {
+        phase: 'cleanup',
+      })],
+    }
+    expectDefinitionError(
+      () => validateMoveSpec(backward),
+      'invalid-reference-order',
+      'spec.phases[2].operations[0].payload.whenTrue.operationIds[0]',
+    )
+
+    const duplicateController = validSpec()
+    duplicateController.phases.splice(1, 0, {
+      phase: 'hit',
+      operations: [
+        branchOperation(['operation.damage']),
+        branchOperation(['operation.damage'], {
+          id: 'operation.branch-second',
+          payload: {
+            kind: 'predicate',
+            selectionId: 'branch.second',
+            scope: 'resolution',
+            predicate: { kind: 'constant', value: true },
+            whenTrue: { id: 'branch.second-apply', operationIds: ['operation.damage'] },
+            whenFalse: { id: 'branch.second-skip', operationIds: [] },
+          },
+        }),
+      ],
+    })
+    expectDefinitionError(
+      () => validateMoveSpec(duplicateController),
+      'invalid-definition',
+      'spec.phases[1].operations[1].payload.whenTrue.operationIds[0]',
+    )
+
+    const nested = validSpec()
+    nested.phases.splice(1, 0, {
+      phase: 'hit',
+      operations: [
+        branchOperation(['operation.branch-second']),
+        branchOperation(['operation.damage'], {
+          id: 'operation.branch-second',
+          payload: {
+            kind: 'predicate',
+            selectionId: 'branch.second',
+            scope: 'resolution',
+            predicate: { kind: 'constant', value: true },
+            whenTrue: { id: 'branch.second-apply', operationIds: ['operation.damage'] },
+            whenFalse: { id: 'branch.second-skip', operationIds: [] },
+          },
+        }),
+      ],
+    })
+    expectDefinitionError(
+      () => validateMoveSpec(nested),
+      'invalid-definition',
+      'spec.phases[1].operations[0].payload.whenTrue.operationIds[0]',
+    )
+  })
+
   it('requires local operation and roll references to resolve backward', () => {
     const unknownSource = validSpec()
     unknownSource.phases[1].operations[0].source.id = 'operation.missing'
@@ -1128,6 +1302,55 @@ describe('authoritative MoveSpec validation and hashing', () => {
     expect(MOVE_RULE_AST_LIMITS.nodes).toBe(256)
     expectDefinitionError(
       () => validateMoveSpec(tooManyRuleNodes),
+      'limit-exceeded',
+      'spec.rules',
+    )
+
+    const aggregateBranchPredicates = validSpec()
+    const crowdedPredicate = {
+      kind: 'all',
+      predicates: Array.from({ length: 32 }, () => ({
+        kind: 'all',
+        predicates: Array.from({ length: 3 }, () => ({ kind: 'constant', value: true })),
+      })),
+    }
+    aggregateBranchPredicates.phases = [
+      {
+        phase: 'hit',
+        operations: [
+          branchOperation(['operation.first-log'], {
+            payload: {
+              kind: 'predicate',
+              selectionId: 'branch.first',
+              scope: 'resolution',
+              predicate: crowdedPredicate,
+              whenTrue: { id: 'branch.first-true', operationIds: ['operation.first-log'] },
+              whenFalse: { id: 'branch.first-false', operationIds: [] },
+            },
+          }),
+          branchOperation(['operation.second-log'], {
+            id: 'operation.branch-second',
+            payload: {
+              kind: 'predicate',
+              selectionId: 'branch.second',
+              scope: 'resolution',
+              predicate: crowdedPredicate,
+              whenTrue: { id: 'branch.second-true', operationIds: ['operation.second-log'] },
+              whenFalse: { id: 'branch.second-false', operationIds: [] },
+            },
+          }),
+        ],
+      },
+      {
+        phase: 'cleanup',
+        operations: [
+          historyOperation('operation.first-log', 'cleanup'),
+          historyOperation('operation.second-log', 'cleanup'),
+        ],
+      },
+    ]
+    expectDefinitionError(
+      () => validateMoveSpec(aggregateBranchPredicates),
       'limit-exceeded',
       'spec.rules',
     )

@@ -1111,7 +1111,7 @@ Status: DONE
 
 ## MA-086 — Add optional-effect and branch selection operations
 
-Status: TODO
+Status: DONE
 
 **Depends on:** MA-038, MA-085
 **Commit:** `feat(move-automation): model optional and exclusive branches`
