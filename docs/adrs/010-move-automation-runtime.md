@@ -71,6 +71,8 @@ The interpreter:
 
 Typed effect operations are the only normal way for specs and handlers to request mechanics. Every operation identifies its source, recipients, timing phase, and reason code. Unknown operation kinds and arbitrary state patches are rejected.
 
+Expression evaluation bounds every intermediate number and derives stable audit node IDs from the reviewed root ID plus its AST path. Fractions are preserved by default; an integer consumer must select an explicit root-only floor, round, ceiling, or truncation policy so nested calculations are not repeatedly rounded. Scalar subject queries require exactly one authoritative placement, and boolean composition evaluates every reviewed branch in order for complete deterministic evidence.
+
 Before pure resolution runs, `buildAuthoritativeMoveRulesContext` detaches and recursively freezes the map, intent, sheets, actor, placement views, ruleset, and selected runtime definitions. Lookup maps and the accumulating resource read set remain private behind frozen query interfaces; randomness, one resolution time, and ID generation enter only through explicit server-injected seams.
 
 Every random request has a stable roll ID and parent effect ID. Its bounded dice, uniform-integer, or reviewed-table formula, reason, natural results, modifiers, and final value are stored in the accepted resolution ledger. Tests may inject an exact finite draw stream; a missing or unused draw fails resolution, making changed draw counts explicit instead of silently shifting later outcomes.

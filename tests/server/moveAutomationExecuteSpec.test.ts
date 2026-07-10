@@ -641,7 +641,7 @@ describe('phased MoveSpec interpreter', () => {
     }))
   })
 
-  it('fails closed before phases for costs and unsupported expressions', () => {
+  it('fails closed before phases for unsupported costs and evaluates bounded preconditions', () => {
     const context = buildContext()
 
     const withCost = baseSpec()
@@ -663,10 +663,39 @@ describe('phased MoveSpec interpreter', () => {
       },
       failureReasonCode: 'actor.level-too-low',
     }]
-    expect(() => executeMoveSpec({ definition: definitionFor(withExpression), context: buildContext() }))
-      .toThrowError(expect.objectContaining({
-        name: MoveSpecExecutionError.name,
-        code: 'expression-unsupported',
-      }))
+    const result = executeMoveSpec({
+      definition: definitionFor(withExpression),
+      context: buildContext(),
+    })
+
+    expect(result.kind).toBe('complete')
+    expect(result.sheetReads).toEqual([
+      { kind: 'pokemon', slug: 'actor', revision: 3 },
+    ])
+    expect(traceEventsOfKind(result, 'predicate')).toEqual([
+      expect.objectContaining({
+        predicateId: 'actor.level-check',
+        outcome: true,
+        input: expect.objectContaining({
+          evaluationTrace: [
+            expect.objectContaining({
+              nodeId: 'actor.level-check.left',
+              expressionKind: 'stat',
+              value: 20,
+            }),
+            expect.objectContaining({
+              nodeId: 'actor.level-check.right',
+              expressionKind: 'constant',
+              value: 1,
+            }),
+            expect.objectContaining({
+              nodeId: 'actor.level-check',
+              predicateKind: 'comparison',
+              value: true,
+            }),
+          ],
+        }),
+      }),
+    ])
   })
 })

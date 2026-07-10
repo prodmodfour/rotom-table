@@ -7,14 +7,7 @@ import {
   type MoveReactionRequestEffectOperation,
   type MoveRollEffectOperation,
 } from '#shared/moveAutomation/effects'
-import type { MoveRuleScalar } from '#shared/moveAutomation/ast'
-import type { MoveExpression } from '#shared/moveAutomation/expressions'
-import type { MovePredicate } from '#shared/moveAutomation/predicates'
 import type { MoveAutomationRollLedgerEntry } from '#shared/moveAutomation/random'
-import type {
-  MoveSelector,
-  MoveSelectorLeafKind,
-} from '#shared/moveAutomation/selectors'
 import {
   MOVE_SPEC_LIMITS,
   MOVE_SPEC_PHASES,
@@ -39,6 +32,10 @@ import type {
   AuthoritativeMoveSheetRead,
 } from './context'
 import {
+  evaluateMovePredicate,
+  evaluateMoveSelector,
+} from './evaluateExpression'
+import {
   REGISTERED_MOVE_HANDLER_REGISTRY,
   executeRegisteredMoveHandler,
   type RegisteredMoveHandlerOutput,
@@ -60,8 +57,6 @@ export type MoveSpecExecutionErrorCode =
   | 'definition-integrity-mismatch'
   | 'ruleset-mismatch'
   | 'cost-unsupported'
-  | 'expression-unsupported'
-  | 'comparison-type-mismatch'
   | 'random-table-unsupported'
   | 'recipient-limit-exceeded'
   | 'authoritative-target-invalid'
@@ -186,11 +181,6 @@ interface MoveSpecSelectorState {
   readonly faintedTargetIds: readonly string[]
 }
 
-interface MovePredicateEvaluation {
-  readonly outcome: boolean
-  readonly input: MoveResolutionTraceJsonValue
-}
-
 const fail = (
   code: MoveSpecExecutionErrorCode,
   message: string,
@@ -251,28 +241,6 @@ const executableDefinition = (
   return validated
 }
 
-const assertExpressionSupported = (expression: MoveExpression): void => {
-  if (expression.kind === 'constant') return
-  fail(
-    'expression-unsupported',
-    `Expression kind ${expression.kind} is not executable by the phased interpreter skeleton.`,
-  )
-}
-
-const assertPredicateSupported = (predicate: MovePredicate): void => {
-  if (predicate.kind === 'constant') return
-  if (predicate.kind === 'comparison') {
-    assertExpressionSupported(predicate.left)
-    assertExpressionSupported(predicate.right)
-    return
-  }
-  if (predicate.kind === 'not') {
-    assertPredicateSupported(predicate.predicate)
-    return
-  }
-  for (const child of predicate.predicates) assertPredicateSupported(child)
-}
-
 /** Fail closed for capability families whose semantics arrive in later tickets. */
 const assertSkeletonExecutable = (
   spec: ValidatedMoveSpec,
@@ -283,9 +251,6 @@ const assertSkeletonExecutable = (
       'cost-unsupported',
       `MoveSpec ${spec.canonicalId} declares costs that do not yet have typed reducer semantics.`,
     )
-  }
-  for (const precondition of spec.preconditions) {
-    assertPredicateSupported(precondition.predicate)
   }
   for (const operation of operations) {
     if (operation.kind === 'roll' && operation.payload.formula.kind === 'table') {
@@ -311,158 +276,6 @@ const canonicalPlacementIds = (
     left === right ? 0 : left < right ? -1 : 1
   )))
   return ordered
-}
-
-const selectorLeafIds = (
-  context: AuthoritativeMoveRulesContext,
-  state: MoveSpecSelectorState,
-  kind: MoveSelectorLeafKind,
-): readonly string[] => {
-  switch (kind) {
-    case 'actor':
-    case 'source-placement':
-      return [context.actor.placement.id]
-    case 'current-target': {
-      const currentTargets = state.targetIds.length > 0
-        ? state.targetIds
-        : context.selectedPlacements.map(({ id }) => id)
-      return currentTargets.length === 1 ? currentTargets : []
-    }
-    case 'selected-targets':
-      return context.selectedPlacements.map(({ id }) => id)
-    case 'candidate-targets':
-    case 'area-targets':
-      return context.candidatePlacements.map(({ id }) => id)
-    case 'attacked-targets':
-      return state.targetIds
-    case 'hit-targets':
-      return state.hitTargetIds
-    case 'missed-targets':
-      return state.missedTargetIds
-    case 'damaged-targets':
-      return state.damagedTargetIds
-    case 'fainted-targets':
-      return state.faintedTargetIds
-  }
-}
-
-const evaluateSelector = (
-  context: AuthoritativeMoveRulesContext,
-  state: MoveSpecSelectorState,
-  selector: MoveSelector,
-): readonly string[] => {
-  if (selector.kind !== 'union' && selector.kind !== 'intersection' && selector.kind !== 'difference') {
-    return canonicalPlacementIds(context, selectorLeafIds(context, state, selector.kind))
-  }
-
-  if (selector.kind === 'union') {
-    return canonicalPlacementIds(
-      context,
-      selector.selectors.flatMap(child => [...evaluateSelector(context, state, child)]),
-    )
-  }
-
-  if (selector.kind === 'intersection') {
-    const [first, ...rest] = selector.selectors.map(child => (
-      new Set(evaluateSelector(context, state, child))
-    ))
-    return canonicalPlacementIds(
-      context,
-      [...(first ?? new Set<string>())].filter(id => rest.every(ids => ids.has(id))),
-    )
-  }
-
-  const excluded = new Set(evaluateSelector(context, state, selector.exclude))
-  return canonicalPlacementIds(
-    context,
-    evaluateSelector(context, state, selector.source).filter(id => !excluded.has(id)),
-  )
-}
-
-const evaluateExpression = (expression: MoveExpression): MoveRuleScalar => {
-  if (expression.kind === 'constant') return expression.value
-  return fail(
-    'expression-unsupported',
-    `Expression kind ${expression.kind} is not executable by the phased interpreter skeleton.`,
-  )
-}
-
-const compareOrderedScalars = (
-  left: MoveRuleScalar,
-  right: MoveRuleScalar,
-  compare: (difference: number) => boolean,
-): boolean => {
-  if (typeof left === 'number' && typeof right === 'number') return compare(left - right)
-  if (typeof left === 'string' && typeof right === 'string') {
-    return compare(left === right ? 0 : left < right ? -1 : 1)
-  }
-  return fail(
-    'comparison-type-mismatch',
-    'Ordered MoveSpec comparisons require two numbers or two strings.',
-  )
-}
-
-const evaluatePredicate = (predicate: MovePredicate): MovePredicateEvaluation => {
-  if (predicate.kind === 'constant') {
-    return {
-      outcome: predicate.value,
-      input: { predicateKind: predicate.kind, value: predicate.value },
-    }
-  }
-
-  if (predicate.kind === 'comparison') {
-    const left = evaluateExpression(predicate.left)
-    const right = evaluateExpression(predicate.right)
-    let outcome: boolean
-    switch (predicate.operator) {
-      case 'equal':
-        outcome = left === right
-        break
-      case 'not-equal':
-        outcome = left !== right
-        break
-      case 'less-than':
-        outcome = compareOrderedScalars(left, right, difference => difference < 0)
-        break
-      case 'less-than-or-equal':
-        outcome = compareOrderedScalars(left, right, difference => difference <= 0)
-        break
-      case 'greater-than':
-        outcome = compareOrderedScalars(left, right, difference => difference > 0)
-        break
-      case 'greater-than-or-equal':
-        outcome = compareOrderedScalars(left, right, difference => difference >= 0)
-        break
-    }
-    return {
-      outcome,
-      input: {
-        predicateKind: predicate.kind,
-        operator: predicate.operator,
-        left,
-        right,
-      },
-    }
-  }
-
-  if (predicate.kind === 'not') {
-    const child = evaluatePredicate(predicate.predicate)
-    return {
-      outcome: !child.outcome,
-      input: { predicateKind: predicate.kind, childOutcome: child.outcome },
-    }
-  }
-
-  const children = predicate.predicates.map(evaluatePredicate)
-  return {
-    outcome: predicate.kind === 'all'
-      ? children.every(child => child.outcome)
-      : children.some(child => child.outcome),
-    input: {
-      predicateKind: predicate.kind,
-      childOutcomes: children.map(child => child.outcome),
-    },
-  }
 }
 
 const emptySelectorState = (): MoveSpecSelectorState => ({
@@ -513,7 +326,11 @@ const targetIdsForSpec = (
     return validatedAuthoritativeTargetIds(context, authoritativeTargetIds)
   }
   if (spec.targeting.selector) {
-    return evaluateSelector(context, emptySelectorState(), spec.targeting.selector)
+    return evaluateMoveSelector({
+      context,
+      selectorState: emptySelectorState(),
+      selector: spec.targeting.selector,
+    })
   }
   return canonicalPlacementIds(
     context,
@@ -931,18 +748,33 @@ export const executeMoveSpec = (
 
     if (phase === 'precondition') {
       for (const precondition of spec.preconditions) {
-        const evaluation = evaluatePredicate(precondition.predicate)
+        const evaluation = evaluateMovePredicate({
+          predicate: precondition.predicate,
+          context: input.context,
+          canonicalMoveId: spec.canonicalId,
+          rootNodeId: precondition.id,
+          selectorState: {
+            targetIds,
+            hitTargetIds,
+            missedTargetIds,
+            damagedTargetIds,
+            faintedTargetIds,
+          },
+        })
         trace = reduceMoveResolutionTrace(trace, {
           kind: 'predicate',
           phase,
           predicateId: precondition.id,
-          outcome: evaluation.outcome,
-          reasonCode: evaluation.outcome
+          outcome: evaluation.value,
+          reasonCode: evaluation.value
             ? 'precondition-passed'
             : precondition.failureReasonCode,
-          input: evaluation.input,
+          input: traceJson({
+            predicateKind: precondition.predicate.kind,
+            evaluationTrace: evaluation.trace,
+          }),
         })
-        if (!evaluation.outcome) {
+        if (!evaluation.value) {
           return Object.freeze({
             kind: 'rejected',
             ...terminalBase(

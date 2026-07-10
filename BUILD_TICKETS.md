@@ -955,7 +955,7 @@ Status: DONE
 
 ## MA-074 — Implement the bounded numeric expression evaluator
 
-Status: TODO
+Status: DONE
 
 **Depends on:** MA-032, MA-035
 **Commit:** `feat(move-automation): evaluate bounded rules expressions`
