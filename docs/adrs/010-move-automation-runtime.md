@@ -73,6 +73,8 @@ Typed effect operations are the only normal way for specs and handlers to reques
 
 Before pure resolution runs, `buildAuthoritativeMoveRulesContext` detaches and recursively freezes the map, intent, sheets, actor, placement views, ruleset, and selected runtime definitions. Lookup maps and the accumulating resource read set remain private behind frozen query interfaces; randomness, one resolution time, and ID generation enter only through explicit server-injected seams.
 
+Every random request has a stable roll ID and parent effect ID. Its bounded dice, uniform-integer, or reviewed-table formula, reason, natural results, modifiers, and final value are stored in the accepted resolution ledger. Tests may inject an exact finite draw stream; a missing or unused draw fails resolution, making changed draw counts explicit instead of silently shifting later outcomes.
+
 A registered server handler is an audited escape hatch for calculations that cannot reasonably fit the bounded expression language. A handler must be explicitly named and versioned, receives only the immutable context, and may emit only the same bounded typed operations and trace entries as a spec. It cannot access repositories, network services, ambient clocks, ambient randomness, mutable globals, or browser state. Handler identity and version contribute to the reviewed runtime hash.
 
 Legacy scripts may pass through a compatibility adapter during migration, but the semantic manifest—not a client request—selects the reviewed runtime. Compatibility does not waive the completion definition.

@@ -191,6 +191,16 @@ describe('planAuthoritativeMoveState', () => {
       { kind: 'pokemon', slug: 'actor', revision: 3 },
       { kind: 'pokemon', slug: 'target', revision: 3 },
     ])
+    expect(plan.resolution.rollLedger.map((roll) => ({
+      rollId: roll.rollId,
+      parentEffectId: roll.parentEffectId,
+      naturalResult: roll.naturalResult,
+      finalValue: roll.finalValue,
+    }))).toEqual([
+      { rollId: 'legacy-v1.accuracy.1', parentEffectId: 'legacy-v1.accuracy', naturalResult: 11, finalValue: 11 },
+      { rollId: 'legacy-v1.damage.1', parentEffectId: 'legacy-v1.damage', naturalResult: 1, finalValue: 7 },
+    ])
+    expect(structuredClone(plan.resolution).rollLedger).toEqual(plan.resolution.rollLedger)
     expect(plan.sheetWrites).toHaveLength(1)
     expect(plan.sheetWrites[0]?.slug).toBe('target')
     expect(plan.sheetWrites[0]?.changedFields).toContain('hp')

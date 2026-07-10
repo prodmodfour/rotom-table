@@ -1,3 +1,4 @@
+import type { MoveAutomationRollLedgerEntry } from '#shared/moveAutomation/random'
 import { MOVE_AUTOMATION_AREA_DIRECTIONS } from '~/types/moveAutomation'
 import type { ResolveMoveIntent, ResolveMoveSelection } from '#shared/livePlayMoveResolution'
 import { LIVE_PLAY_MOVE_RESOLUTION_MAX_TARGET_IDS } from '#shared/livePlayMoveResolution'
@@ -58,6 +59,7 @@ import {
   type AuthoritativeMoveRulesContext,
   type AuthoritativeMoveSheetRead,
 } from './moveAutomation/context'
+import type { AuthoritativeMoveRandomSource } from './moveAutomation/random'
 
 export type { AuthoritativeMoveSheetRead } from './moveAutomation/context'
 
@@ -126,7 +128,7 @@ export interface ResolveAuthoritativeMoveInput {
   readonly pokemonSheets: ReadonlyMap<string, CharacterSheet>
   readonly trainerSheets: ReadonlyMap<string, TrainerSheet>
   readonly intent: ResolveMoveIntent
-  readonly random?: () => number
+  readonly random?: AuthoritativeMoveRandomSource
   readonly now?: () => number
   readonly idFactory?: () => string
 }
@@ -159,6 +161,7 @@ export interface AuthoritativeMoveResolution {
   readonly targetBranchId?: string
   readonly selectedTargetIds: readonly string[]
   readonly sheetReads: readonly AuthoritativeMoveSheetRead[]
+  readonly rollLedger: readonly MoveAutomationRollLedgerEntry[]
   readonly script: MoveAutomationScript
   readonly transaction: MoveAutomationTransaction
   readonly feedback?: MoveAutomationFeedbackState
@@ -167,7 +170,10 @@ export interface AuthoritativeMoveResolution {
   readonly movement?: AuthoritativeMovePassMovement
 }
 
-type UnfinalizedAuthoritativeMoveResolution = Omit<AuthoritativeMoveResolution, 'sheetReads'>
+type UnfinalizedAuthoritativeMoveResolution = Omit<
+  AuthoritativeMoveResolution,
+  'sheetReads' | 'rollLedger'
+>
 
 const fail = (
   reason: AuthoritativeMoveResolutionFailureReason,
@@ -249,6 +255,7 @@ const finalizeResolution = (
 ): AuthoritativeMoveResolution => ({
   ...resolution,
   sheetReads: context.reads.snapshot(),
+  rollLedger: context.random.complete(),
 })
 
 const resolveSelectedTarget = (
@@ -683,7 +690,7 @@ const resolveSelfMove = (options: {
     script: options.script,
     user: actor,
     fieldEffects: options.context.map.fieldEffects,
-    random: options.context.random,
+    randomRoller: options.context.random,
   })
   return {
     actorPlacementId: actorPlacement.id,
@@ -741,7 +748,7 @@ const resolveSingleTargetMove = (options: {
     damageFormula: options.damageFormula,
     fieldEffects: options.context.map.fieldEffects,
     conditionImmunityContext: authoritativeConditionImmunityContext(options.context, options.script),
-    random: options.context.random,
+    randomRoller: options.context.random,
   }
 
   if (!options.script.requiresAccuracy) {
@@ -842,7 +849,7 @@ const resolveTargetCountMove = (options: {
     damageFormula: options.damageFormula,
     fieldEffects: options.context.map.fieldEffects,
     conditionImmunityContext: authoritativeConditionImmunityContext(options.context, options.script),
-    random: options.context.random,
+    randomRoller: options.context.random,
   })
   const desiredFacing = desiredFacingTowardNearestTarget(actorPlacement, actor, selectedTargets)
 
@@ -895,7 +902,7 @@ const resolveAreaMove = (options: {
     damageFormula: options.damageFormula,
     fieldEffects: options.context.map.fieldEffects,
     conditionImmunityContext: authoritativeConditionImmunityContext(options.context, confirmedScript),
-    random: options.context.random,
+    randomRoller: options.context.random,
   })
   const transaction = placement.movement?.kind === 'pass'
     ? moveAutomationTransactionWithAppendedLogLine(

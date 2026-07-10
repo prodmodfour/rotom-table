@@ -35,6 +35,7 @@ import {
   type AuthoritativeMoveStatePlan,
   type PlanAuthoritativeMoveStateInput,
 } from '../domain/planAuthoritativeMoveState'
+import type { AuthoritativeMoveRandomSource } from '../domain/moveAutomation/random'
 import {
   actorCanControlMapPlacement,
   playerProfileLinkedTrainerSheetsForTokenControl,
@@ -101,7 +102,7 @@ export interface LivePlayResolveMoveCommandDependencies {
   readonly mapRepository?: Pick<MapRepository<TabletopMap>, 'getBySlug' | 'applyLivePlayUpdate'>
   readonly sheetRepository?: Pick<SheetRepository<Record<string, unknown>>, 'getByRef' | 'assertRevisions' | 'applyLivePlayUpdate'>
   readonly planner?: (input: PlanAuthoritativeMoveStateInput) => AuthoritativeMoveStatePlan
-  readonly random?: () => number
+  readonly random?: AuthoritativeMoveRandomSource
   readonly now?: () => number
   readonly idFactory?: () => string
   readonly maxMoveLogEntries?: number

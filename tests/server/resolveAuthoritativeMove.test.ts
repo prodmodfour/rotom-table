@@ -5,6 +5,10 @@ import {
   deduplicateAuthoritativeMoveSheetReads,
   resolveAuthoritativeMove,
 } from '../../server/domain/resolveAuthoritativeMove'
+import {
+  AuthoritativeMoveRandomError,
+  createFiniteAuthoritativeMoveRandomStream,
+} from '../../server/domain/moveAutomation/random'
 import { EXPLICIT_MOVE_AUTOMATION_SCRIPTS } from '~/utils/moveAutomation'
 import { moveAutomationAreaTemplateId } from '~/utils/moveAutomationAreaTemplates'
 import type { CharacterSheet, CharacterSheetMove } from '~/types/characterSheet'
@@ -203,6 +207,7 @@ describe('resolveAuthoritativeMove', () => {
 
     expect(resolution.selectedTargetIds).toEqual([])
     expect(resolution.sheetReads).toEqual([{ kind: 'pokemon', slug: 'actor', revision: 0 }])
+    expect(resolution.rollLedger).toEqual([])
     expect(resolution.transaction.attackedTargetIds).toEqual([])
     expect(resolution.transaction.hitTargetIds).toEqual([])
     expect(structuredClone(resolution.transaction)).toMatchObject({ attackedTargetIds: [], hitTargetIds: [] })
@@ -299,6 +304,36 @@ describe('resolveAuthoritativeMove', () => {
     expect(structuredClone(miss.transaction)).toMatchObject({ attackedTargetIds: ['target-a'], hitTargetIds: [] })
     expect(JSON.parse(JSON.stringify(miss.transaction))).toMatchObject({ attackedTargetIds: ['target-a'], hitTargetIds: [] })
     expect(lowDamage.feedback).toMatchObject({ id: 'feedback-id', naturalRoll: 11, targetId: 'target-a' })
+    expect(lowDamage.rollLedger).toEqual([
+      {
+        rollId: 'legacy-v1.accuracy.1',
+        parentEffectId: 'legacy-v1.accuracy',
+        formula: { kind: 'dice', count: 1, sides: 20, modifier: 0 },
+        reason: 'Tackle accuracy against target-a',
+        naturalResults: [11],
+        naturalResult: 11,
+        modifiers: [{ sourceId: 'user-accuracy', reason: 'User Accuracy', value: 0 }],
+        finalValue: 11,
+      },
+      {
+        rollId: 'legacy-v1.damage.1',
+        parentEffectId: 'legacy-v1.damage',
+        formula: { kind: 'dice', count: 1, sides: 8, modifier: 6 },
+        reason: 'Tackle damage against target-a',
+        naturalResults: [1],
+        naturalResult: 1,
+        modifiers: [],
+        finalValue: 7,
+      },
+    ])
+    expect(miss.rollLedger).toEqual([
+      expect.objectContaining({
+        rollId: 'legacy-v1.accuracy.1',
+        parentEffectId: 'legacy-v1.accuracy',
+        naturalResult: 1,
+        finalValue: 1,
+      }),
+    ])
     expect(lowDamage.desiredFacing).toBe('south-east')
     expect(highDamage.transaction.hpUpdates).not.toEqual(lowDamage.transaction.hpUpdates)
   })
@@ -350,6 +385,10 @@ describe('resolveAuthoritativeMove', () => {
       idFactory: () => 'acu-feedback',
     })
     expect(selfTarget.selectedTargetIds).toEqual(['actor-token'])
+    expect(selfTarget.rollLedger.map((roll) => roll.formula)).toEqual([
+      { kind: 'dice', count: 1, sides: 20, modifier: 0 },
+      { kind: 'table', tableId: 'legacy-v1.random-stage-suggestion' },
+    ])
 
     expectFailure(() => resolveAuthoritativeMove({
       map: mapFixture(),
@@ -551,6 +590,39 @@ describe('resolveAuthoritativeMove', () => {
     ]), 'sheet-read-revision-conflict')
   })
 
+  it('accepts only the exact finite draw stream required by a successful resolution', () => {
+    const common = {
+      map: mapFixture(),
+      pokemonSheets: sheetMap([{ name: 'Tackle' }]),
+      trainerSheets: new Map<string, TrainerSheet>(),
+      intent: moveIntent({
+        placementId: 'actor-token',
+        moveName: 'Tackle',
+        selection: { kind: 'single-target', targetPlacementId: 'target-a' } as const,
+      }),
+      idFactory: () => 'finite-feedback',
+    }
+    const exact = createFiniteAuthoritativeMoveRandomStream([0.5, 0])
+    const resolution = resolveAuthoritativeMove({ ...common, random: exact })
+    expect(resolution.rollLedger).toHaveLength(2)
+    expect(exact).toMatchObject({ consumed: 2, remaining: 0 })
+
+    expect(() => resolveAuthoritativeMove({
+      ...common,
+      random: createFiniteAuthoritativeMoveRandomStream([0.5]),
+    })).toThrowError(expect.objectContaining({
+      name: AuthoritativeMoveRandomError.name,
+      code: 'missing-random-draw',
+    }))
+    expect(() => resolveAuthoritativeMove({
+      ...common,
+      random: createFiniteAuthoritativeMoveRandomStream([0.5, 0, 0.25]),
+    })).toThrowError(expect.objectContaining({
+      name: AuthoritativeMoveRandomError.name,
+      code: 'excess-random-draws',
+    }))
+  })
+
   it('reproduces multi-target random rolls with injected randomness', async () => {
     await withRegisteredMoveAutomationScript(fakeTargetCountScript(), () => {
       const common = {
@@ -564,6 +636,8 @@ describe('resolveAuthoritativeMove', () => {
       const different = resolveAuthoritativeMove({ ...common, random: randomSequence([0.5, 0.99, 0.5, 0.99]) })
 
       expect(second.transaction).toEqual(first.transaction)
+      expect(second.rollLedger).toEqual(first.rollLedger)
+      expect(different.rollLedger).not.toEqual(first.rollLedger)
       expect(different.transaction.hpUpdates).not.toEqual(first.transaction.hpUpdates)
     })
   })

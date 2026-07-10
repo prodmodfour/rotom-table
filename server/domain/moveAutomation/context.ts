@@ -28,6 +28,11 @@ import {
   type RegisteredMoveAutomationRuntime,
 } from './registry'
 import {
+  createAuthoritativeMoveRandom,
+  type AuthoritativeMoveRandom,
+  type AuthoritativeMoveRandomSource,
+} from './random'
+import {
   ally,
   enemy,
   sameSide,
@@ -129,11 +134,11 @@ export interface AuthoritativeMoveRulesContext {
   readonly selectedPlacements: readonly SheetPlacement[]
   readonly resolvedSheets: readonly AuthoritativeMoveResolvedSheet[]
   readonly ruleset: MoveRulesetProvenance
-  /** Server-injected random source. MA-036 layers stable roll IDs and a ledger over this seam. */
-  readonly random: () => number
+  /** Server-owned bounded random requests and their immutable resolution ledger. */
+  readonly random: AuthoritativeMoveRandom
   /** One captured server time for the whole pure resolution. */
   readonly time: number
-  /** Server-injected ID source; the default derives IDs only from `time` and `random`. */
+  /** Server-injected ID source; the default derives IDs from snapshot identity, captured time, and sequence. */
   readonly idFactory: () => string
   readonly queries: AuthoritativeMoveContextQueries
   readonly reads: AuthoritativeMoveReadSet
@@ -167,7 +172,7 @@ export interface BuildAuthoritativeMoveRulesContextInput {
   readonly candidatePlacementIds?: readonly string[]
   /** Requested placement identities; final legal recipients remain server-derived. */
   readonly selectedPlacementIds?: readonly string[]
-  readonly random: () => number
+  readonly random: AuthoritativeMoveRandomSource
   readonly time: number
   readonly idFactory?: () => string
   readonly ruleset?: MoveRulesetProvenance
@@ -379,12 +384,21 @@ const semanticStatusSnapshots = (
   return snapshots
 }
 
-const createDefaultIdFactory = (time: number, random: () => number): (() => string) => {
+const stableIdNamespaceHash = (value: string): string => {
+  let hash = 0x811c9dc5
+  for (let index = 0; index < value.length; index += 1) {
+    hash ^= value.charCodeAt(index)
+    hash = Math.imul(hash, 0x01000193)
+  }
+  return (hash >>> 0).toString(16).padStart(8, '0')
+}
+
+const createDefaultIdFactory = (time: number, namespace: string): (() => string) => {
   let sequence = 0
+  const namespaceHash = stableIdNamespaceHash(namespace)
   return () => {
     sequence += 1
-    const randomPart = Math.floor(random() * 1_000_000_000).toString(36)
-    return `move-resolution-${Math.floor(time)}-${sequence}-${randomPart}`
+    return `move-resolution-${Math.floor(time)}-${namespaceHash}-${sequence}`
   }
 }
 
@@ -440,6 +454,7 @@ export const buildAuthoritativeMoveRulesContext = (
     ...runtimes.keys(),
   ])
   const ruleset = detachedFrozenJson(input.ruleset ?? MOVE_RULESET_PROVENANCE)
+  const random = createAuthoritativeMoveRandom(input.random)
   const reads: AuthoritativeMoveSheetRead[] = []
 
   const sheetForPlacement = (
@@ -529,9 +544,12 @@ export const buildAuthoritativeMoveRulesContext = (
     selectedPlacements,
     resolvedSheets,
     ruleset,
-    random: input.random,
+    random,
     time: input.time,
-    idFactory: input.idFactory ?? createDefaultIdFactory(input.time, input.random),
+    idFactory: input.idFactory ?? createDefaultIdFactory(
+      input.time,
+      `${map.slug}:${map.revision ?? 0}:${intent.placementId}:${intent.moveName}`,
+    ),
     queries,
     reads: readSet,
   }

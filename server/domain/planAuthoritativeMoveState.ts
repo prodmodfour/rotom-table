@@ -40,6 +40,7 @@ import {
   type AuthoritativeMoveResolution,
   type AuthoritativeMoveSheetRead,
 } from './resolveAuthoritativeMove'
+import type { AuthoritativeMoveRandomSource } from './moveAutomation/random'
 import {
   isMoveUsageTransitionError,
   planMoveUsageTransition,
@@ -72,7 +73,7 @@ export interface PlanAuthoritativeMoveStateInput {
   readonly pokemonSheets: ReadonlyMap<string, CharacterSheet>
   readonly trainerSheets: ReadonlyMap<string, TrainerSheet>
   readonly intent: ResolveMoveIntent
-  readonly random?: () => number
+  readonly random?: AuthoritativeMoveRandomSource
   readonly now?: () => number
   readonly idFactory?: () => string
   readonly maxMoveLogEntries?: number
@@ -258,6 +259,7 @@ const cloneResolution = (resolution: AuthoritativeMoveResolution): Authoritative
   ...(resolution.targetBranchId === undefined ? {} : { targetBranchId: resolution.targetBranchId }),
   selectedTargetIds: [...resolution.selectedTargetIds],
   sheetReads: cloneJson(resolution.sheetReads),
+  rollLedger: cloneJson(resolution.rollLedger),
   script: cloneJson(resolution.script),
   transaction: cloneMoveAutomationTransaction(resolution.transaction),
   ...(resolution.feedback === undefined ? {} : { feedback: cloneJson(resolution.feedback) }),

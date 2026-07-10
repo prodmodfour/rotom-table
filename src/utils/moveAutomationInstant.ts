@@ -1,3 +1,7 @@
+import type {
+  MoveAutomationRandomRoller,
+  MoveAutomationRollRequestMetadata,
+} from '#shared/moveAutomation/random'
 import { buildMoveAutomationTransaction } from '~/utils/moveAutomationTransaction'
 import {
   defaultTargetResolutionState,
@@ -11,6 +15,11 @@ import {
   type MoveAutomationAccuracyRollResult,
 } from '~/utils/moveAutomationResolution'
 import { formatDamageBase, rollDamageFormula } from '~/utils/moveAutomation'
+import {
+  parseMoveDamageFormula,
+  rollMoveDamageFormulaWithRoller,
+  type MoveDamageRollResult,
+} from '~/utils/moveDamageBase'
 import {
   resolveMoveAutomationRandomStageSuggestion,
   resolveMoveAutomationRuntimeDamageFormula,
@@ -55,6 +64,7 @@ export interface ResolveInstantAreaMoveAutomationInput {
   fieldEffects?: MapFieldEffects
   conditionImmunityContext?: MoveAutomationConditionImmunityContext
   random?: () => number
+  randomRoller?: MoveAutomationRandomRoller
 }
 
 export interface ResolveInstantMultiTargetMoveAutomationInput {
@@ -67,6 +77,7 @@ export interface ResolveInstantMultiTargetMoveAutomationInput {
   fieldEffects?: MapFieldEffects
   conditionImmunityContext?: MoveAutomationConditionImmunityContext
   random?: () => number
+  randomRoller?: MoveAutomationRandomRoller
 }
 
 export interface ResolveInstantMoveAutomationInput {
@@ -77,6 +88,7 @@ export interface ResolveInstantMoveAutomationInput {
   fieldEffects?: MapFieldEffects
   conditionImmunityContext?: MoveAutomationConditionImmunityContext
   random?: () => number
+  randomRoller?: MoveAutomationRandomRoller
   idFactory?: () => string
 }
 
@@ -88,6 +100,7 @@ export interface ResolveInstantTargetMoveAutomationInput {
   fieldEffects?: MapFieldEffects
   conditionImmunityContext?: MoveAutomationConditionImmunityContext
   random?: () => number
+  randomRoller?: MoveAutomationRandomRoller
 }
 
 export interface ResolveInstantSelfMoveAutomationInput {
@@ -95,6 +108,7 @@ export interface ResolveInstantSelfMoveAutomationInput {
   user: SpawnedPokemon
   fieldEffects?: MapFieldEffects
   random?: () => number
+  randomRoller?: MoveAutomationRandomRoller
 }
 
 const emptyStageDeltas = (): Record<CombatStageKey, number> => ({
@@ -108,6 +122,110 @@ const emptyStageDeltas = (): Record<CombatStageKey, number> => ({
 
 const feedbackId = (factory: (() => string) | undefined): string =>
   factory?.() ?? `move-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`
+
+type LegacyRollPurpose =
+  | 'accuracy'
+  | 'damage'
+  | 'critical-damage'
+  | 'hit-count'
+  | 'random-stage'
+
+const legacyRollMetadata = (options: {
+  readonly script: MoveAutomationScript
+  readonly purpose: LegacyRollPurpose
+  readonly target?: SpawnedPokemon
+  readonly ordinal?: number
+}): MoveAutomationRollRequestMetadata => {
+  const ordinal = options.ordinal ?? 1
+  const ordinalLabel = options.ordinal == null ? '' : ` ${ordinal}`
+  const target = options.target ? ` against ${options.target.id}` : ''
+  return {
+    rollId: `legacy-v1.${options.purpose}.${ordinal}`,
+    parentEffectId: `legacy-v1.${options.purpose}`,
+    reason: `${options.script.moveName} ${options.purpose}${ordinalLabel}${target}`,
+  }
+}
+
+const recordedAccuracyD20 = (options: {
+  readonly script: MoveAutomationScript
+  readonly target: SpawnedPokemon
+  readonly userAccuracy: number
+  readonly ordinal?: number
+  readonly random?: () => number
+  readonly randomRoller?: MoveAutomationRandomRoller
+}): number => options.randomRoller?.roll({
+  ...legacyRollMetadata({
+    script: options.script,
+    purpose: 'accuracy',
+    target: options.target,
+    ordinal: options.ordinal,
+  }),
+  formula: { kind: 'dice', count: 1, sides: 20, modifier: 0 },
+  modifiers: [{ sourceId: 'user-accuracy', reason: 'User Accuracy', value: options.userAccuracy }],
+}).naturalResult ?? randomD20(options.random)
+
+const damageRollResultFromTable = (
+  formula: string,
+  roller: MoveAutomationRandomRoller,
+  metadata: MoveAutomationRollRequestMetadata,
+  entries: readonly { readonly roll: number; readonly multiplier: number }[],
+): MoveDamageRollResult | null => {
+  const parsed = parseMoveDamageFormula(formula)
+  if (!parsed) return null
+  const result = roller.rollTable({
+    ...metadata,
+    formula: { kind: 'table', tableId: 'legacy-v1.direct-hp-loss' },
+    drawFormula: {
+      kind: 'dice',
+      count: parsed.count,
+      sides: parsed.sides,
+      modifier: parsed.mod,
+    },
+    entries: entries.map((entry) => ({
+      minimum: entry.roll,
+      maximum: entry.roll,
+      value: entry.multiplier,
+    })),
+  })
+  return {
+    formula: `${parsed.count}d${parsed.sides}${parsed.mod >= 0 ? '+' : ''}${parsed.mod}`,
+    count: parsed.count,
+    sides: parsed.sides,
+    mod: parsed.mod,
+    rolls: [...result.naturalResults],
+    total: result.modifiedResult,
+  }
+}
+
+const recordedDamageFormula = (options: {
+  readonly script: MoveAutomationScript
+  readonly target: SpawnedPokemon
+  readonly formula: string
+  readonly purpose?: Extract<LegacyRollPurpose, 'damage' | 'critical-damage'>
+  readonly ordinal?: number
+  readonly random?: () => number
+  readonly randomRoller?: MoveAutomationRandomRoller
+}): MoveDamageRollResult | null => {
+  if (!options.randomRoller) return rollDamageFormula(options.formula, options.random)
+  const metadata = legacyRollMetadata({
+    script: options.script,
+    purpose: options.purpose ?? 'damage',
+    target: options.target,
+    ordinal: options.ordinal,
+  })
+  const directHpRule = options.purpose !== 'critical-damage'
+    && options.script.directHpLoss?.kind === 'user-level-roll-table'
+    ? options.script.directHpLoss
+    : null
+  return directHpRule
+    ? damageRollResultFromTable(
+        options.formula,
+        options.randomRoller,
+        metadata,
+        directHpRule.rollTable,
+      )
+    : rollMoveDamageFormulaWithRoller(options.formula, options.randomRoller, metadata)
+}
 
 const enableDefaultSuggestions = (
   script: MoveAutomationScript,
@@ -338,12 +456,20 @@ const resolveInstantDoubleStrikeMoveAutomation = ({
   fieldEffects,
   conditionImmunityContext,
   random,
+  randomRoller,
   idFactory,
 }: ResolveInstantMoveAutomationInput): InstantMoveAutomationResult => {
   const targetEvasion = resolveMoveAutomationTargetEvasion(script, target, { attacker: user })
   const userAccuracy = moveAutomationUserAccuracy(user)
-  const accuracyRolls = [randomD20(random), randomD20(random)].map((naturalRoll) =>
-    resolveMoveAutomationAccuracyRoll(script, naturalRoll, {
+  const accuracyRolls = [1, 2].map((ordinal) =>
+    resolveMoveAutomationAccuracyRoll(script, recordedAccuracyD20({
+      script,
+      target,
+      userAccuracy,
+      ordinal,
+      random,
+      randomRoller,
+    }), {
       userAccuracy,
       targetEvasion: targetEvasion.value,
     }),
@@ -360,13 +486,21 @@ const resolveInstantDoubleStrikeMoveAutomation = ({
     ? damageFormulaForDamageBase(finalDamageBase) ?? damageFormula ?? null
     : damageFormula ?? null
   const damageRoll = hitCount > 0 && script.damaging && resolvedDamageFormula
-    ? rollDamageFormula(resolvedDamageFormula, random)
+    ? recordedDamageFormula({ script, target, formula: resolvedDamageFormula, random, randomRoller })
     : null
   const criticalFormula = baseDamageBase > 0 ? damageFormulaForDamageBase(baseDamageBase) : null
   let criticalBonusDamage = 0
   for (let index = 0; index < critCount; index += 1) {
     if (!criticalFormula) continue
-    criticalBonusDamage += rollDamageFormula(criticalFormula, random)?.total ?? 0
+    criticalBonusDamage += recordedDamageFormula({
+      script,
+      target,
+      formula: criticalFormula,
+      purpose: 'critical-damage',
+      ordinal: index + 1,
+      random,
+      randomRoller,
+    })?.total ?? 0
   }
   const targetResolutions = {
     [target.id]: {
@@ -445,6 +579,7 @@ export const resolveInstantMoveAutomation = ({
   fieldEffects,
   conditionImmunityContext,
   random,
+  randomRoller,
   idFactory,
 }: ResolveInstantMoveAutomationInput): InstantMoveAutomationResult => {
   script = moveAutomationScriptWithPoisonTouch(script, user)
@@ -458,22 +593,36 @@ export const resolveInstantMoveAutomation = ({
       fieldEffects,
       conditionImmunityContext,
       random,
+      randomRoller,
       idFactory,
     })
   }
 
-  const naturalRoll = randomD20(random)
   const targetEvasion = resolveMoveAutomationTargetEvasion(script, target, { attacker: user })
   const userAccuracy = moveAutomationUserAccuracy(user)
+  const naturalRoll = recordedAccuracyD20({
+    script,
+    target,
+    userAccuracy,
+    random,
+    randomRoller,
+  })
   const accuracy = resolveMoveAutomationAccuracyRoll(script, naturalRoll, {
     userAccuracy,
     targetEvasion: targetEvasion.value,
   })
   const runtimeDamage = accuracy.hit && script.damaging
-    ? resolveMoveAutomationRuntimeDamageFormula({ script, user, fallbackFormula: damageFormula, random })
+    ? resolveMoveAutomationRuntimeDamageFormula({
+        script,
+        user,
+        fallbackFormula: damageFormula,
+        random,
+        randomRoller,
+        rollMetadata: legacyRollMetadata({ script, purpose: 'hit-count', target }),
+      })
     : { formula: damageFormula ?? null, note: null }
   const damageRoll = accuracy.hit && script.damaging && runtimeDamage.formula
-    ? rollDamageFormula(runtimeDamage.formula, random)
+    ? recordedDamageFormula({ script, target, formula: runtimeDamage.formula, random, randomRoller })
     : null
   const targetResolutions = {
     [target.id]: {
@@ -502,7 +651,13 @@ export const resolveInstantMoveAutomation = ({
     enabledSuggestions,
   })
   const randomStageNote = accuracy.hit
-    ? resolveMoveAutomationRandomStageSuggestion({ script, enabledSuggestions, random })
+    ? resolveMoveAutomationRandomStageSuggestion({
+        script,
+        enabledSuggestions,
+        random,
+        randomRoller,
+        rollMetadata: legacyRollMetadata({ script, purpose: 'random-stage', target }),
+      })
     : null
   const blockedConditionNote = accuracy.hit
     ? conditions
@@ -561,18 +716,40 @@ const buildNoRollTargetTransaction = ({
   fieldEffects,
   conditionImmunityContext,
   random,
+  randomRoller,
 }: ResolveInstantTargetMoveAutomationInput): MoveAutomationTransaction => {
   script = moveAutomationScriptWithPoisonTouch(script, user)
 
   const state = defaultTargetResolutionState(script)
   const runtimeDamage = script.damaging && state.hit
-    ? resolveMoveAutomationRuntimeDamageFormula({ script, user, fallbackFormula: damageFormula, random })
+    ? resolveMoveAutomationRuntimeDamageFormula({
+        script,
+        user,
+        fallbackFormula: damageFormula,
+        random,
+        randomRoller,
+        rollMetadata: legacyRollMetadata({ script, purpose: 'hit-count', target }),
+      })
     : { formula: damageFormula ?? null, note: null }
-  if (script.damaging && state.hit && runtimeDamage.formula) state.damageRoll = rollDamageFormula(runtimeDamage.formula, random)
+  if (script.damaging && state.hit && runtimeDamage.formula) {
+    state.damageRoll = recordedDamageFormula({
+      script,
+      target,
+      formula: runtimeDamage.formula,
+      random,
+      randomRoller,
+    })
+  }
   const targetResolutions = { [target.id]: state }
   const enabledSuggestions: Record<string, boolean> = {}
   enableDefaultSuggestions(script, enabledSuggestions)
-  const randomStageNote = resolveMoveAutomationRandomStageSuggestion({ script, enabledSuggestions, random })
+  const randomStageNote = resolveMoveAutomationRandomStageSuggestion({
+    script,
+    enabledSuggestions,
+    random,
+    randomRoller,
+    rollMetadata: legacyRollMetadata({ script, purpose: 'random-stage', target }),
+  })
   const conditionApplications = resolveTargetGroupConditionApplications(script, [target], targetResolutions, conditionImmunityContext)
   conditionApplications.targetIdsBySuggestion.forEach((targetIds, index) => {
     if (targetIds.size) enabledSuggestions[moveAutomationSuggestionKey(script, 'condition', index)] = true
@@ -611,12 +788,19 @@ export const resolveInstantSelfMoveAutomation = ({
   user,
   fieldEffects,
   random,
+  randomRoller,
 }: ResolveInstantSelfMoveAutomationInput): MoveAutomationTransaction => {
   script = moveAutomationScriptWithPoisonTouch(script, user)
 
   const enabledSuggestions: Record<string, boolean> = {}
   enableDefaultSuggestions(script, enabledSuggestions)
-  const randomStageNote = resolveMoveAutomationRandomStageSuggestion({ script, enabledSuggestions, random })
+  const randomStageNote = resolveMoveAutomationRandomStageSuggestion({
+    script,
+    enabledSuggestions,
+    random,
+    randomRoller,
+    rollMetadata: legacyRollMetadata({ script, purpose: 'random-stage' }),
+  })
   return buildMoveAutomationTransaction({
     script,
     user,
@@ -665,6 +849,7 @@ interface ResolveInstantTargetGroupMoveAutomationInput {
   fieldEffects?: MapFieldEffects
   conditionImmunityContext?: MoveAutomationConditionImmunityContext
   random?: () => number
+  randomRoller?: MoveAutomationRandomRoller
 }
 
 interface InstantTargetGroupMoveAutomationResolution {
@@ -680,16 +865,24 @@ const resolveInstantTargetGroupMoveAutomation = ({
   fieldEffects,
   conditionImmunityContext,
   random,
+  randomRoller,
 }: ResolveInstantTargetGroupMoveAutomationInput): InstantTargetGroupMoveAutomationResolution => {
   script = moveAutomationScriptWithPoisonTouch(script, user)
 
   const targetResolutions: Record<string, MoveAutomationTargetResolutionState> = {}
   const userAccuracy = moveAutomationUserAccuracy(user)
-  for (const target of targets) {
+  for (const [targetIndex, target] of targets.entries()) {
     const state = defaultTargetResolutionState(script)
     if (script.requiresAccuracy) {
       const targetEvasion = resolveMoveAutomationTargetEvasion(script, target, { attacker: user })
-      const accuracy = resolveMoveAutomationAccuracyRoll(script, randomD20(random), {
+      const accuracy = resolveMoveAutomationAccuracyRoll(script, recordedAccuracyD20({
+        script,
+        target,
+        userAccuracy,
+        ordinal: targetIndex + 1,
+        random,
+        randomRoller,
+      }), {
         userAccuracy,
         targetEvasion: targetEvasion.value,
       })
@@ -697,7 +890,16 @@ const resolveInstantTargetGroupMoveAutomation = ({
       state.hit = accuracy.hit
       state.crit = accuracy.crit
     }
-    if (script.damaging && state.hit && damageFormula) state.damageRoll = rollDamageFormula(damageFormula, random)
+    if (script.damaging && state.hit && damageFormula) {
+      state.damageRoll = recordedDamageFormula({
+        script,
+        target,
+        formula: damageFormula,
+        ordinal: targetIndex + 1,
+        random,
+        randomRoller,
+      })
+    }
     targetResolutions[target.id] = state
   }
 
@@ -750,6 +952,7 @@ export const resolveInstantMultiTargetMoveAutomation = ({
   fieldEffects,
   conditionImmunityContext,
   random,
+  randomRoller,
 }: ResolveInstantMultiTargetMoveAutomationInput): MoveAutomationTransaction => {
   const resolvedTargets = selectedTargets ?? targets ?? []
   const { transaction, targetResolutions } = resolveInstantTargetGroupMoveAutomation({
@@ -760,6 +963,7 @@ export const resolveInstantMultiTargetMoveAutomation = ({
     fieldEffects,
     conditionImmunityContext,
     random,
+    randomRoller,
   })
 
   transaction.logLines.push(...formatMultiTargetAccuracyLogLines(resolvedTargets, targetResolutions))
@@ -774,6 +978,7 @@ export const resolveInstantAreaMoveAutomation = ({
   fieldEffects,
   conditionImmunityContext,
   random,
+  randomRoller,
 }: ResolveInstantAreaMoveAutomationInput): MoveAutomationTransaction => {
   const { transaction, targetResolutions } = resolveInstantTargetGroupMoveAutomation({
     script,
@@ -783,6 +988,7 @@ export const resolveInstantAreaMoveAutomation = ({
     fieldEffects,
     conditionImmunityContext,
     random,
+    randomRoller,
   })
 
   transaction.logLines.push(...formatAreaAccuracyLogLines(targets, targetResolutions))

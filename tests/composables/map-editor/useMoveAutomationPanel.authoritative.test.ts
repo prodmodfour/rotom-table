@@ -181,6 +181,7 @@ const resolvedMove = (overrides: Partial<LivePlayResolvedMoveResult> = {}): Live
     script: moveScript,
     transaction: transaction({ moveName: moveScript.moveName }),
     ...overrides,
+    rollLedger: overrides.rollLedger ?? [],
   }
 }
 

@@ -1,3 +1,8 @@
+import type {
+  MoveAutomationRandomRoller,
+  MoveAutomationRollRequestMetadata,
+} from '#shared/moveAutomation/random'
+
 export interface MoveDamageBaseDef {
   db: number
   count: number
@@ -12,6 +17,12 @@ export interface MoveDamageRollResult {
   mod: number
   rolls: number[]
   total: number
+}
+
+export interface MoveDamageFormula {
+  readonly count: number
+  readonly sides: number
+  readonly mod: number
 }
 
 // PTU 1.05 damage-base table used by move automation and sheet move lookup.
@@ -59,24 +70,56 @@ export const formatMoveDamageBase = (db: number): string => {
 export const formatMoveDamageBaseFormula = (def: MoveDamageBaseDef): string =>
   `${def.count}d${def.sides}+${def.mod}`
 
-export const rollMoveDamageFormula = (
-  formula: string,
-  random: () => number = Math.random,
-): MoveDamageRollResult | null => {
+export const parseMoveDamageFormula = (formula: string): MoveDamageFormula | null => {
   const match = formula.trim().match(/^(\d+)\s*d\s*(\d+)\s*([+-]\s*\d+)?/i)
   if (!match) return null
   const count = Number(match[1])
   const sides = Number(match[2])
   const mod = match[3] ? Number(match[3].replace(/\s+/g, '')) : 0
   if (!Number.isInteger(count) || !Number.isInteger(sides) || count <= 0 || sides <= 0) return null
+  return { count, sides, mod }
+}
+
+const damageRollResult = (
+  formula: MoveDamageFormula,
+  rolls: readonly number[],
+  total: number,
+): MoveDamageRollResult => ({
+  formula: `${formula.count}d${formula.sides}${formula.mod >= 0 ? '+' : ''}${formula.mod}`,
+  count: formula.count,
+  sides: formula.sides,
+  mod: formula.mod,
+  rolls: [...rolls],
+  total,
+})
+
+export const rollMoveDamageFormula = (
+  formula: string,
+  random: () => number = Math.random,
+): MoveDamageRollResult | null => {
+  const parsed = parseMoveDamageFormula(formula)
+  if (!parsed) return null
   const rolls: number[] = []
-  for (let i = 0; i < count; i += 1) rolls.push(1 + Math.floor(random() * sides))
-  return {
-    formula: `${count}d${sides}${mod >= 0 ? '+' : ''}${mod}`,
-    count,
-    sides,
-    mod,
-    rolls,
-    total: rolls.reduce((sum, roll) => sum + roll, 0) + mod,
-  }
+  for (let i = 0; i < parsed.count; i += 1) rolls.push(1 + Math.floor(random() * parsed.sides))
+  return damageRollResult(parsed, rolls, rolls.reduce((sum, roll) => sum + roll, 0) + parsed.mod)
+}
+
+/** Roll an existing damage formula through the authoritative ledger seam. */
+export const rollMoveDamageFormulaWithRoller = (
+  formula: string,
+  roller: MoveAutomationRandomRoller,
+  metadata: MoveAutomationRollRequestMetadata,
+): MoveDamageRollResult | null => {
+  const parsed = parseMoveDamageFormula(formula)
+  if (!parsed) return null
+  const result = roller.roll({
+    ...metadata,
+    formula: {
+      kind: 'dice',
+      count: parsed.count,
+      sides: parsed.sides,
+      modifier: parsed.mod,
+    },
+  })
+  return damageRollResult(parsed, result.naturalResults, result.finalValue)
 }

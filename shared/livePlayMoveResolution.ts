@@ -1,4 +1,9 @@
 import {
+  MoveAutomationRollLedgerValidationError,
+  parseMoveAutomationRollLedger,
+  type MoveAutomationRollLedgerEntry,
+} from './moveAutomation/random'
+import {
   MOVE_AUTOMATION_AREA_DIRECTIONS,
   type MoveAutomationAreaDirection,
   type MoveAutomationAreaTemplate,
@@ -79,6 +84,7 @@ export interface LivePlayResolvedMoveResult {
   readonly damageFormula: string | null
   readonly targetBranchId?: string
   readonly selectedTargetIds: readonly string[]
+  readonly rollLedger: readonly MoveAutomationRollLedgerEntry[]
   readonly script: MoveAutomationScript
   readonly transaction: MoveAutomationTransaction
   readonly feedback?: MoveAutomationFeedbackState
@@ -154,6 +160,7 @@ const AREA_SELECTION_FIELDS = new Set(['kind', 'areaTemplateId', 'direction', 'a
 const FORBIDDEN_CLIENT_AUTHORITY_FIELDS = new Set([
   'roll',
   'rolls',
+  'rollLedger',
   'accuracyRoll',
   'accuracyRolls',
   'damage',
@@ -589,6 +596,23 @@ const parseResolvedMoveStringArray = (
   return parsed
 }
 
+const parseResolvedMoveRollLedger = (
+  value: unknown,
+  path: string,
+  issues: LivePlayResolvedMoveResultValidationIssue[],
+): MoveAutomationRollLedgerEntry[] | null => {
+  try {
+    return parseMoveAutomationRollLedger(value, path)
+  }
+  catch (error) {
+    if (error instanceof MoveAutomationRollLedgerValidationError) {
+      addResolvedMoveIssue(issues, error.path, 'invalid-field', error.message)
+      return null
+    }
+    throw error
+  }
+}
+
 const parseResolvedMoveRecordArray = (
   value: unknown,
   path: string,
@@ -857,6 +881,10 @@ export const parseLivePlayResolvedMoveResult = (value: unknown): ParseLivePlayRe
     ? parseResolvedMoveText(value.targetBranchId, 'targetBranchId', issues)
     : null
   const selectedTargetIds = parseResolvedMoveStringArray(value.selectedTargetIds, 'selectedTargetIds', issues)
+  // Results stored before the ledger shipped remain readable as an empty legacy ledger.
+  const rollLedger = hasOwn(value, 'rollLedger')
+    ? parseResolvedMoveRollLedger(value.rollLedger, 'rollLedger', issues)
+    : []
   if (!isRecord(value.script)) {
     addResolvedMoveIssue(issues, 'script', 'invalid-field', 'script must be an object.')
   }
@@ -879,6 +907,7 @@ export const parseLivePlayResolvedMoveResult = (value: unknown): ParseLivePlayRe
     || !canonicalMoveName
     || !moveKey
     || !selectedTargetIds
+    || !rollLedger
     || !isRecord(value.script)
     || !transaction
   ) {
@@ -897,6 +926,7 @@ export const parseLivePlayResolvedMoveResult = (value: unknown): ParseLivePlayRe
       damageFormula,
       ...(targetBranchId ? { targetBranchId } : {}),
       selectedTargetIds,
+      rollLedger,
       script: cloneJson(value.script) as unknown as MoveAutomationScript,
       transaction,
       ...(feedback ? { feedback } : {}),

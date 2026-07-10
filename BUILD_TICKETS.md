@@ -537,7 +537,7 @@ Status: DONE
 
 ## MA-036 — Add deterministic RNG and a roll ledger
 
-Status: TODO
+Status: DONE
 
 **Depends on:** MA-035
 **Commit:** `feat(move-automation): record deterministic roll ledger`

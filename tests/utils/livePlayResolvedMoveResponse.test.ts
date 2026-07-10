@@ -84,6 +84,7 @@ const resolvedMove = (overrides: Partial<LivePlayResolvedMoveResult> = {}): Live
     conditions: [],
   },
   ...overrides,
+  rollLedger: overrides.rollLedger ?? [],
 })
 
 const accepted = (move = resolvedMove(), patchesMove: unknown = move): LivePlayCommandAccepted => ({

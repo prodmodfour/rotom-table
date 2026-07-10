@@ -751,6 +751,7 @@ const resolvedMoveFixture = (overrides: Partial<LivePlayResolvedMoveResult> = {}
     logLines: ['Pikachu used Thunderbolt!'],
   },
   ...overrides,
+  rollLedger: overrides.rollLedger ?? [],
 })
 
 type TestLivePlayPatch = LivePlayAcceptedRealtimeEvent['patches'][number]

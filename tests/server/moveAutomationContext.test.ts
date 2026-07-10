@@ -213,7 +213,11 @@ describe('immutable authoritative move rules context', () => {
       const resolution = resolveAuthoritativeMoveFromContext(context)
       expect(resolution.transaction.attackedTargetIds).toEqual(['target-token'])
       expect(resolution.transaction.hitTargetIds).toEqual(['target-token'])
-      expect(resolution.feedback?.id).toBe('move-resolution-1234-1-44ud8g')
+      expect(resolution.feedback?.id).toMatch(/^move-resolution-1234-[0-9a-f]{8}-1$/)
+      expect(resolution.rollLedger.map((roll) => roll.rollId)).toEqual([
+        'legacy-v1.accuracy.1',
+        'legacy-v1.damage.1',
+      ])
       expect(resolution.sheetReads).toEqual([
         { kind: 'pokemon', slug: 'actor', revision: 3 },
         { kind: 'pokemon', slug: 'target', revision: 5 },

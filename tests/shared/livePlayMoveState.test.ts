@@ -14,6 +14,7 @@ const move = () => ({
   frequency: null,
   damageFormula: null,
   selectedTargetIds: ['token-b'],
+  rollLedger: [],
   script: { type: 'Normal' },
   transaction: {
     userId: 'token-a',
