@@ -141,6 +141,7 @@ const stat = (
 
 const damageOperation = (options: {
   readonly damageClass: 'physical' | 'special'
+  readonly moveType?: string
   readonly attackStat?: unknown
   readonly defenseStat?: unknown
 }): MoveDamageEffectOperation => {
@@ -154,7 +155,7 @@ const damageOperation = (options: {
     payload: {
       damageClass: options.damageClass,
       damageBase: 4,
-      moveType: 'normal',
+      moveType: options.moveType ?? 'normal',
       accuracyRollId: null,
       criticalRollId: null,
       ...(options.attackStat === undefined ? {} : { attackStat: options.attackStat }),
@@ -260,7 +261,7 @@ describe('MoveSpec alternate attack and defense stat selection', () => {
   it('records default and contextual contributors through the ordered pipeline', () => {
     const rules = context()
     const move = { ...script('Physical'), type: 'Fire' }
-    const operation = damageOperation({ damageClass: 'physical' })
+    const operation = damageOperation({ damageClass: 'physical', moveType: 'fire' })
     const resolution = {
       ...rolledDamage(move),
       crit: true,

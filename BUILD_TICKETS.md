@@ -1007,7 +1007,7 @@ Status: DONE
 
 ## MA-078 — Add type, immunity, and critical-hit overrides
 
-Status: TODO
+Status: DONE
 
 **Depends on:** MA-077
 **Commit:** `feat(move-automation): support type and critical overrides`

@@ -76,6 +76,21 @@ export const MOVE_EFFECT_DAMAGE_BASE_STAB_TIMINGS = [
   'before-bounds',
   'after-bounds',
 ] as const
+export const MOVE_EFFECT_TYPE_MATCHUP_POLICIES = ['honor', 'ignore'] as const
+export const MOVE_EFFECT_TYPE_RELATIONS = [
+  'immune',
+  'resistant',
+  'neutral',
+  'weak',
+] as const
+export const MOVE_EFFECT_CRITICAL_TRIGGER_KINDS = [
+  'standard',
+  'range',
+  'natural-rolls',
+  'always',
+  'never',
+] as const
+export const MOVE_EFFECT_CRITICAL_PREVENTION_POLICIES = ['honor', 'ignore'] as const
 export const MOVE_EFFECT_HP_POOLS = ['hit-points', 'temporary-hit-points'] as const
 export const MOVE_EFFECT_DIRECT_HP_MODES = ['lose', 'set'] as const
 export const MOVE_EFFECT_HEAL_MODES = [
@@ -135,6 +150,8 @@ export const MOVE_EFFECT_OPERATION_LIMITS = Object.freeze({
   durationCount: 10_000,
   effectStacks: ENCOUNTER_EFFECT_LIMITS.stacks,
   hazardLayers: 64,
+  typeOverrides: 18,
+  criticalNaturalRolls: 20,
   reactionPriorityMagnitude: 1_000,
 })
 
@@ -146,6 +163,13 @@ export type MoveEffectRollFormulaKind = (typeof MOVE_EFFECT_ROLL_FORMULA_KINDS)[
 export type MoveEffectDamageClass = (typeof MOVE_EFFECT_DAMAGE_CLASSES)[number]
 export type MoveEffectDamageBaseStabTiming =
   (typeof MOVE_EFFECT_DAMAGE_BASE_STAB_TIMINGS)[number]
+export type MoveEffectTypeMatchupPolicy =
+  (typeof MOVE_EFFECT_TYPE_MATCHUP_POLICIES)[number]
+export type MoveEffectTypeRelation = (typeof MOVE_EFFECT_TYPE_RELATIONS)[number]
+export type MoveEffectCriticalTriggerKind =
+  (typeof MOVE_EFFECT_CRITICAL_TRIGGER_KINDS)[number]
+export type MoveEffectCriticalPreventionPolicy =
+  (typeof MOVE_EFFECT_CRITICAL_PREVENTION_POLICIES)[number]
 export type MoveEffectHpPool = (typeof MOVE_EFFECT_HP_POOLS)[number]
 export type MoveEffectDirectHpMode = (typeof MOVE_EFFECT_DIRECT_HP_MODES)[number]
 export type MoveEffectHealMode = (typeof MOVE_EFFECT_HEAL_MODES)[number]
@@ -210,13 +234,72 @@ export interface MoveContextualDamageBase {
 
 export type MoveDamageBase = number | MoveContextualDamageBase
 
+/** Static canonical type ID or a bounded scalar expression resolved once per recipient. */
+export type MoveDamageType = string | MoveExpression
+
+export interface MoveDamageDefenderTypeOverride {
+  readonly defenderType: string
+  readonly relation: MoveEffectTypeRelation
+}
+
+export interface MoveDamageTypeEffectivenessPolicy {
+  /** Ignore removes an immunity contribution; it does not force the final result to neutral. */
+  readonly immunity: MoveEffectTypeMatchupPolicy
+  readonly resistance: MoveEffectTypeMatchupPolicy
+  readonly weakness: MoveEffectTypeMatchupPolicy
+  /** Exact final multiplier after immunity policy; null uses the reviewed matchup calculation. */
+  readonly effectivenessOverride: number | null
+  /** Per-defender-type relation replacements, such as Freeze-Dry treating Water as weak. */
+  readonly defenderTypeOverrides: readonly MoveDamageDefenderTypeOverride[]
+}
+
+export interface MoveCriticalHitStandardTrigger {
+  readonly kind: 'standard'
+}
+
+export interface MoveCriticalHitRangeTrigger {
+  readonly kind: 'range'
+  /** Inclusive minimum natural d20 result. */
+  readonly minimum: number
+}
+
+export interface MoveCriticalHitNaturalRollsTrigger {
+  readonly kind: 'natural-rolls'
+  /** Explicit natural d20 results, supporting reviewed patterns such as even rolls. */
+  readonly values: readonly number[]
+}
+
+export interface MoveCriticalHitAlwaysTrigger {
+  readonly kind: 'always'
+}
+
+export interface MoveCriticalHitNeverTrigger {
+  readonly kind: 'never'
+}
+
+export type MoveCriticalHitTrigger =
+  | MoveCriticalHitStandardTrigger
+  | MoveCriticalHitRangeTrigger
+  | MoveCriticalHitNaturalRollsTrigger
+  | MoveCriticalHitAlwaysTrigger
+  | MoveCriticalHitNeverTrigger
+
+export interface MoveCriticalHitPolicy {
+  readonly trigger: MoveCriticalHitTrigger
+  readonly prevention: MoveEffectCriticalPreventionPolicy
+}
+
 export interface MoveDamageEffectPayload {
   readonly damageClass: MoveEffectDamageClass
   /** A number preserves fixed v2 definitions; contextual rules use the bounded expression form. */
   readonly damageBase: MoveDamageBase
-  readonly moveType: string
+  readonly moveType: MoveDamageType
   readonly accuracyRollId: string | null
   readonly criticalRollId: string | null
+  /** Omission uses canonical type matchups, including immunity, resistance, and weakness. */
+  readonly typeEffectiveness?: MoveDamageTypeEffectivenessPolicy
+  /** Omission uses the move's canonical critical range and honors target prevention. */
+  readonly criticalHit?: MoveCriticalHitPolicy
   /** Omission uses the damage class's normal actor Attack/Special Attack selection. */
   readonly attackStat?: MoveStatSelectionExpression
   /** Omission uses the damage class's normal target Defense/Special Defense selection. */
@@ -445,7 +528,12 @@ const DAMAGE_REQUIRED_FIELDS = [
   'accuracyRollId',
   'criticalRollId',
 ] as const
-const DAMAGE_OPTIONAL_FIELDS = ['attackStat', 'defenseStat'] as const
+const DAMAGE_OPTIONAL_FIELDS = [
+  'typeEffectiveness',
+  'criticalHit',
+  'attackStat',
+  'defenseStat',
+] as const
 const CONTEXTUAL_DAMAGE_BASE_FIELDS = [
   'kind',
   'expression',
@@ -454,6 +542,18 @@ const CONTEXTUAL_DAMAGE_BASE_FIELDS = [
   'rounding',
   'stabTiming',
 ] as const
+const TYPE_EFFECTIVENESS_FIELDS = [
+  'immunity',
+  'resistance',
+  'weakness',
+  'effectivenessOverride',
+  'defenderTypeOverrides',
+] as const
+const DEFENDER_TYPE_OVERRIDE_FIELDS = ['defenderType', 'relation'] as const
+const CRITICAL_HIT_FIELDS = ['trigger', 'prevention'] as const
+const CRITICAL_TRIGGER_KIND_FIELDS = ['kind'] as const
+const CRITICAL_RANGE_TRIGGER_FIELDS = ['kind', 'minimum'] as const
+const CRITICAL_NATURAL_ROLLS_TRIGGER_FIELDS = ['kind', 'values'] as const
 const DIRECT_HP_FIELDS = [
   'mode',
   'pool',
@@ -507,6 +607,12 @@ const PHASE_SET = new Set<string>(MOVE_SPEC_PHASES)
 const ROLL_FORMULA_KIND_SET = new Set<string>(MOVE_EFFECT_ROLL_FORMULA_KINDS)
 const DAMAGE_CLASS_SET = new Set<string>(MOVE_EFFECT_DAMAGE_CLASSES)
 const DAMAGE_BASE_STAB_TIMING_SET = new Set<string>(MOVE_EFFECT_DAMAGE_BASE_STAB_TIMINGS)
+const TYPE_MATCHUP_POLICY_SET = new Set<string>(MOVE_EFFECT_TYPE_MATCHUP_POLICIES)
+const TYPE_RELATION_SET = new Set<string>(MOVE_EFFECT_TYPE_RELATIONS)
+const CRITICAL_TRIGGER_KIND_SET = new Set<string>(MOVE_EFFECT_CRITICAL_TRIGGER_KINDS)
+const CRITICAL_PREVENTION_POLICY_SET = new Set<string>(
+  MOVE_EFFECT_CRITICAL_PREVENTION_POLICIES,
+)
 const HP_POOL_SET = new Set<string>(MOVE_EFFECT_HP_POOLS)
 const DIRECT_HP_MODE_SET = new Set<string>(MOVE_EFFECT_DIRECT_HP_MODES)
 const HEAL_MODE_SET = new Set<string>(MOVE_EFFECT_HEAL_MODES)
@@ -938,6 +1044,134 @@ const parseDamageBase = (
   }
 }
 
+const parseDamageType = (
+  value: unknown,
+  path: string,
+): MoveDamageType => typeof value === 'string'
+  ? parseStableId(value, path)
+  : parseEffectExpression(() => parseMoveExpression(value, path))
+
+const parseTypeEffectivenessPolicy = (
+  value: unknown,
+  path: string,
+): MoveDamageTypeEffectivenessPolicy => {
+  const input = parseExactRecord(value, TYPE_EFFECTIVENESS_FIELDS, path)
+  const overridesPath = `${path}.defenderTypeOverrides`
+  const defenderTypeOverrides = parseBoundedArray(
+    ownValue(input, 'defenderTypeOverrides', path),
+    overridesPath,
+    MOVE_EFFECT_OPERATION_LIMITS.typeOverrides,
+  ).map((entry, index): MoveDamageDefenderTypeOverride => {
+    const entryPath = `${overridesPath}[${index}]`
+    const override = parseExactRecord(entry, DEFENDER_TYPE_OVERRIDE_FIELDS, entryPath)
+    return {
+      defenderType: parseStableId(
+        ownValue(override, 'defenderType', entryPath),
+        `${entryPath}.defenderType`,
+      ),
+      relation: parseEnum<MoveEffectTypeRelation>(
+        ownValue(override, 'relation', entryPath),
+        TYPE_RELATION_SET,
+        `${entryPath}.relation`,
+        'immune, resistant, neutral, or weak',
+      ),
+    }
+  })
+  assertUnique(
+    defenderTypeOverrides.map(override => override.defenderType),
+    `${overridesPath}.defenderType`,
+  )
+  defenderTypeOverrides.sort((left, right) => (
+    left.defenderType < right.defenderType
+      ? -1
+      : left.defenderType > right.defenderType
+        ? 1
+        : 0
+  ))
+  return {
+    immunity: parseEnum<MoveEffectTypeMatchupPolicy>(
+      ownValue(input, 'immunity', path),
+      TYPE_MATCHUP_POLICY_SET,
+      `${path}.immunity`,
+      'honor or ignore',
+    ),
+    resistance: parseEnum<MoveEffectTypeMatchupPolicy>(
+      ownValue(input, 'resistance', path),
+      TYPE_MATCHUP_POLICY_SET,
+      `${path}.resistance`,
+      'honor or ignore',
+    ),
+    weakness: parseEnum<MoveEffectTypeMatchupPolicy>(
+      ownValue(input, 'weakness', path),
+      TYPE_MATCHUP_POLICY_SET,
+      `${path}.weakness`,
+      'honor or ignore',
+    ),
+    effectivenessOverride: ownValue(input, 'effectivenessOverride', path) === null
+      ? null
+      : parseFiniteNumber(
+          ownValue(input, 'effectivenessOverride', path),
+          `${path}.effectivenessOverride`,
+          0,
+        ),
+    defenderTypeOverrides,
+  }
+}
+
+const parseCriticalHitTrigger = (
+  value: unknown,
+  path: string,
+): MoveCriticalHitTrigger => {
+  const input = parseRecord(value, path)
+  const kind = parseEnum<MoveEffectCriticalTriggerKind>(
+    ownValue(input, 'kind', path),
+    CRITICAL_TRIGGER_KIND_SET,
+    `${path}.kind`,
+    'standard, range, natural-rolls, always, or never',
+  )
+  if (kind === 'range') {
+    assertExactKeys(input, CRITICAL_RANGE_TRIGGER_FIELDS, path)
+    return {
+      kind,
+      minimum: parseInteger(ownValue(input, 'minimum', path), `${path}.minimum`, 1, 20),
+    }
+  }
+  if (kind === 'natural-rolls') {
+    assertExactKeys(input, CRITICAL_NATURAL_ROLLS_TRIGGER_FIELDS, path)
+    const valuesPath = `${path}.values`
+    const values = parseBoundedArray(
+      ownValue(input, 'values', path),
+      valuesPath,
+      MOVE_EFFECT_OPERATION_LIMITS.criticalNaturalRolls,
+    ).map((entry, index) => parseInteger(entry, `${valuesPath}[${index}]`, 1, 20))
+    if (values.length === 0) {
+      fail('invalid-effect-operation', valuesPath, 'must contain at least one natural roll.')
+    }
+    if (new Set(values).size !== values.length) {
+      fail('duplicate-id', valuesPath, 'must not contain duplicate natural rolls.')
+    }
+    return { kind, values: [...values].sort((left, right) => left - right) }
+  }
+  assertExactKeys(input, CRITICAL_TRIGGER_KIND_FIELDS, path)
+  return { kind }
+}
+
+const parseCriticalHitPolicy = (
+  value: unknown,
+  path: string,
+): MoveCriticalHitPolicy => {
+  const input = parseExactRecord(value, CRITICAL_HIT_FIELDS, path)
+  return {
+    trigger: parseCriticalHitTrigger(ownValue(input, 'trigger', path), `${path}.trigger`),
+    prevention: parseEnum<MoveEffectCriticalPreventionPolicy>(
+      ownValue(input, 'prevention', path),
+      CRITICAL_PREVENTION_POLICY_SET,
+      `${path}.prevention`,
+      'honor or ignore',
+    ),
+  }
+}
+
 const parseDamagePayload = (value: unknown, path: string): MoveDamageEffectPayload => {
   const input = parseRecordWithOptionalFields(
     value,
@@ -945,6 +1179,8 @@ const parseDamagePayload = (value: unknown, path: string): MoveDamageEffectPaylo
     DAMAGE_OPTIONAL_FIELDS,
     path,
   )
+  const hasTypeEffectiveness = Object.prototype.hasOwnProperty.call(input, 'typeEffectiveness')
+  const hasCriticalHit = Object.prototype.hasOwnProperty.call(input, 'criticalHit')
   const hasAttackStat = Object.prototype.hasOwnProperty.call(input, 'attackStat')
   const hasDefenseStat = Object.prototype.hasOwnProperty.call(input, 'defenseStat')
   return {
@@ -958,7 +1194,7 @@ const parseDamagePayload = (value: unknown, path: string): MoveDamageEffectPaylo
       ownValue(input, 'damageBase', path),
       `${path}.damageBase`,
     ),
-    moveType: parseStableId(ownValue(input, 'moveType', path), `${path}.moveType`),
+    moveType: parseDamageType(ownValue(input, 'moveType', path), `${path}.moveType`),
     accuracyRollId: parseNullableStableId(
       ownValue(input, 'accuracyRollId', path),
       `${path}.accuracyRollId`,
@@ -967,6 +1203,18 @@ const parseDamagePayload = (value: unknown, path: string): MoveDamageEffectPaylo
       ownValue(input, 'criticalRollId', path),
       `${path}.criticalRollId`,
     ),
+    ...(hasTypeEffectiveness ? {
+      typeEffectiveness: parseTypeEffectivenessPolicy(
+        ownValue(input, 'typeEffectiveness', path),
+        `${path}.typeEffectiveness`,
+      ),
+    } : {}),
+    ...(hasCriticalHit ? {
+      criticalHit: parseCriticalHitPolicy(
+        ownValue(input, 'criticalHit', path),
+        `${path}.criticalHit`,
+      ),
+    } : {}),
     ...(hasAttackStat ? {
       attackStat: parseDamageStatSelection(
         ownValue(input, 'attackStat', path),

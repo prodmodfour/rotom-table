@@ -106,6 +106,8 @@ export interface MoveCoreTokenDamageResolution {
   /** Incoming loss before this reducer applies scene-local temporary HP. */
   readonly hpLoss: number
   readonly preventedBy: string | null
+  /** Resolved operation type when damage used a contextual type expression. */
+  readonly moveType?: string
   readonly consultedPlacementIds: readonly string[]
   /** Server-audit-only bounded calculation evidence projected into the operation trace. */
   readonly details?: MoveResolutionTraceJsonValue

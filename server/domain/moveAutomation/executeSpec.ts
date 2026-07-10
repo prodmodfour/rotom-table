@@ -19,7 +19,7 @@ import {
   type MoveResolutionTraceAncestryEntry,
   type MoveResolutionTraceJsonValue,
 } from '#shared/moveAutomation/trace'
-import { findMoveDamageBase, parseMoveDamageFormula } from '~/utils/moveDamageBase'
+import { findMoveDamageBase } from '~/utils/moveDamageBase'
 import {
   moveAutomationUserAccuracy,
   resolveMoveAutomationTargetEvasion,
@@ -32,9 +32,14 @@ import type {
   AuthoritativeMoveSheetRead,
 } from './context'
 import {
+  MOVE_CONTEXTUAL_DAMAGE_BASE_STAB_BONUS,
   resolveContextualMoveDamageBase,
   type MoveContextualDamageBaseResolution,
 } from './damageBase'
+import {
+  resolveMoveDamageType,
+  type MoveDamageTypeResolution,
+} from './damageTypes'
 import {
   evaluateMovePredicate,
   evaluateMoveSelector,
@@ -136,6 +141,8 @@ interface MoveSpecExecutionResultBase {
   readonly sheetReads: readonly AuthoritativeMoveSheetRead[]
   readonly rollLedger: readonly MoveAutomationRollLedgerEntry[]
   readonly resolvedRolls: readonly MoveSpecResolvedRoll[]
+  /** Per-recipient authoritative move-type/effectiveness calculations in operation order. */
+  readonly resolvedDamageTypes: readonly MoveDamageTypeResolution[]
   /** Per-recipient native-v2 contextual DB calculations in operation order. */
   readonly resolvedDamageBases: readonly MoveContextualDamageBaseResolution[]
   readonly trace: MoveResolutionAuditTrace
@@ -206,6 +213,10 @@ const freezeEmittedOperations = (
 const freezeResolvedRolls = (
   rolls: readonly MoveSpecResolvedRoll[],
 ): readonly MoveSpecResolvedRoll[] => Object.freeze(rolls.map(roll => Object.freeze({ ...roll })))
+
+const freezeResolvedDamageTypes = (
+  resolutions: readonly MoveDamageTypeResolution[],
+): readonly MoveDamageTypeResolution[] => Object.freeze([...resolutions])
 
 const freezeResolvedDamageBases = (
   resolutions: readonly MoveContextualDamageBaseResolution[],
@@ -490,8 +501,6 @@ const pendingRequest = (
 
 interface MoveSpecAuthoritativeMoveMechanics {
   readonly script: MoveAutomationScript
-  readonly damageFormula: string | null
-  readonly hasStab: boolean
 }
 
 const authoritativeMoveMechanics = (
@@ -506,11 +515,7 @@ const authoritativeMoveMechanics = (
     )
   }
   context.reads.recordPlacement(context.actor.placement)
-  return {
-    script: result.entry.script,
-    damageFormula: result.entry.damageFormula,
-    hasStab: result.entry.hasStab,
-  }
+  return { script: result.entry.script }
 }
 
 const targetTokenForRoll = (
@@ -569,17 +574,17 @@ interface MoveSpecDamageRollFormula {
 
 const damageRollFormula = (options: {
   readonly context: AuthoritativeMoveRulesContext
-  readonly mechanics: MoveSpecAuthoritativeMoveMechanics
   readonly operation: MoveDamageEffectOperation
   readonly recipientId: string
   readonly canonicalMoveId: string
+  readonly resolvedType: MoveDamageTypeResolution
 }): MoveSpecDamageRollFormula => {
   if (typeof options.operation.payload.damageBase !== 'number') {
     const contextualDamageBase = resolveContextualMoveDamageBase({
       context: options.context,
       operation: options.operation,
       recipientId: options.recipientId,
-      hasStab: options.mechanics.hasStab,
+      hasStab: options.resolvedType.hasStab,
       canonicalMoveId: options.canonicalMoveId,
     })
     const definition = findMoveDamageBase(contextualDamageBase.finalDamageBase)
@@ -597,19 +602,19 @@ const damageRollFormula = (options: {
     }
   }
 
-  const parsed = options.mechanics.damageFormula
-    ? parseMoveDamageFormula(options.mechanics.damageFormula)
-    : null
-  if (!parsed) {
+  const finalDamageBase = options.operation.payload.damageBase
+    + (options.resolvedType.hasStab ? MOVE_CONTEXTUAL_DAMAGE_BASE_STAB_BONUS : 0)
+  const definition = findMoveDamageBase(finalDamageBase)
+  if (!definition) {
     return fail(
       'damage-formula-unsupported',
-      `Damage operation ${options.operation.id} has no authoritative bounded dice formula.`,
+      `Damage operation ${options.operation.id} resolved unsupported DB ${finalDamageBase} for ${options.recipientId}.`,
     )
   }
   return {
-    count: parsed.count,
-    sides: parsed.sides,
-    modifier: parsed.mod,
+    count: definition.count,
+    sides: definition.sides,
+    modifier: definition.mod,
     contextualDamageBase: null,
   }
 }
@@ -621,6 +626,7 @@ const terminalBase = (
   trace: MoveResolutionAuditTrace,
   rollLedger: readonly MoveAutomationRollLedgerEntry[],
   resolvedRolls: readonly MoveSpecResolvedRoll[],
+  resolvedDamageTypes: readonly MoveDamageTypeResolution[],
   resolvedDamageBases: readonly MoveContextualDamageBaseResolution[],
 ): MoveSpecExecutionResultBase => ({
   operations: freezeEmittedOperations(operations),
@@ -628,6 +634,7 @@ const terminalBase = (
   sheetReads: context.reads.snapshot(),
   rollLedger,
   resolvedRolls: freezeResolvedRolls(resolvedRolls),
+  resolvedDamageTypes: freezeResolvedDamageTypes(resolvedDamageTypes),
   resolvedDamageBases: freezeResolvedDamageBases(resolvedDamageBases),
   trace,
 })
@@ -783,6 +790,7 @@ export const executeMoveSpec = (
   const faintedTargetIds: readonly string[] = []
   const operations: MoveSpecEmittedOperation[] = []
   const resolvedRolls: MoveSpecResolvedRoll[] = []
+  const resolvedDamageTypes: MoveDamageTypeResolution[] = []
   const resolvedDamageBases: MoveContextualDamageBaseResolution[] = []
   const referencedAccuracyRollIds = accuracyReferenceIds(program.operations)
   let mechanics: MoveSpecAuthoritativeMoveMechanics | null = null
@@ -838,6 +846,7 @@ export const executeMoveSpec = (
               trace,
               input.context.random.complete(),
               resolvedRolls,
+              resolvedDamageTypes,
               resolvedDamageBases,
             ),
             rejection: Object.freeze({
@@ -923,6 +932,7 @@ export const executeMoveSpec = (
             trace,
             input.context.random.complete(),
             resolvedRolls,
+            resolvedDamageTypes,
             resolvedDamageBases,
           ),
           rejection: Object.freeze({
@@ -1085,6 +1095,7 @@ export const executeMoveSpec = (
       }
 
       if (operation.kind === 'damage') {
+        const operationDamageTypes: MoveDamageTypeResolution[] = []
         const operationDamageBases: MoveContextualDamageBaseResolution[] = []
         const rollSummaries: Array<{
           readonly rollId: string
@@ -1094,12 +1105,21 @@ export const executeMoveSpec = (
         }> = []
         for (const [index, recipientId] of recipientIds.entries()) {
           targetTokenForRoll(input.context, recipientId)
+          const resolvedType = resolveMoveDamageType({
+            context: input.context,
+            operation,
+            script: getMechanics().script,
+            recipientId,
+            canonicalMoveId: spec.canonicalId,
+          })
+          operationDamageTypes.push(resolvedType)
+          resolvedDamageTypes.push(resolvedType)
           const formula = damageRollFormula({
             context: input.context,
-            mechanics: getMechanics(),
             operation,
             recipientId,
             canonicalMoveId: spec.canonicalId,
+            resolvedType,
           })
           if (formula.contextualDamageBase) {
             operationDamageBases.push(formula.contextualDamageBase)
@@ -1142,6 +1162,7 @@ export const executeMoveSpec = (
           input: traceJson(operation.payload),
           result: traceJson({
             status: 'emitted',
+            damageTypes: operationDamageTypes,
             contextualDamageBases: operationDamageBases,
             damageRolls: rollSummaries,
           }),
@@ -1193,6 +1214,7 @@ export const executeMoveSpec = (
             trace,
             input.context.random.snapshot(),
             resolvedRolls,
+            resolvedDamageTypes,
             resolvedDamageBases,
           ),
           request,
@@ -1222,6 +1244,7 @@ export const executeMoveSpec = (
       trace,
       input.context.random.complete(),
       resolvedRolls,
+      resolvedDamageTypes,
       resolvedDamageBases,
     ),
   })

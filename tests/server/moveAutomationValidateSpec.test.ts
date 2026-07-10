@@ -377,6 +377,19 @@ describe('authoritative MoveSpec validation and hashing', () => {
       combatStagePolicy: 'honor',
       stageModifierPolicy: 'honor',
     }
+    const changedTypeRules = validSpec()
+    changedTypeRules.phases[1].operations[0].payload.typeEffectiveness = {
+      immunity: 'ignore',
+      resistance: 'honor',
+      weakness: 'honor',
+      effectivenessOverride: null,
+      defenderTypeOverrides: [],
+    }
+    const changedCriticalRules = validSpec()
+    changedCriticalRules.phases[1].operations[0].payload.criticalHit = {
+      trigger: { kind: 'always' },
+      prevention: 'honor',
+    }
 
     const extraLogs = validSpec()
     extraLogs.phases[2] = {
@@ -409,6 +422,12 @@ describe('authoritative MoveSpec validation and hashing', () => {
       capabilityIds: ['targeting.authoritative', 'hp.typed'],
     }).definitionHash).not.toBe(baseline.definitionHash)
     expect(validateMoveSpec(selectedDefenseAttack, {
+      capabilityIds: ['targeting.authoritative', 'hp.typed'],
+    }).definitionHash).not.toBe(baseline.definitionHash)
+    expect(validateMoveSpec(changedTypeRules, {
+      capabilityIds: ['targeting.authoritative', 'hp.typed'],
+    }).definitionHash).not.toBe(baseline.definitionHash)
+    expect(validateMoveSpec(changedCriticalRules, {
       capabilityIds: ['targeting.authoritative', 'hp.typed'],
     }).definitionHash).not.toBe(baseline.definitionHash)
     expect(validateMoveSpec(reversedLogs).definitionHash)
@@ -606,6 +625,42 @@ describe('authoritative MoveSpec validation and hashing', () => {
       () => validateMoveSpec(forwardRoll),
       'invalid-reference-order',
       'spec.phases[0].operations[0].payload.accuracyRollId',
+    )
+  })
+
+  it('validates canonical damage types and roll-backed critical triggers', () => {
+    const unknownMoveType = validSpec()
+    unknownMoveType.phases[1].operations[0].payload.moveType = 'mystery'
+    expectDefinitionError(
+      () => validateMoveSpec(unknownMoveType),
+      'invalid-definition',
+      'spec.phases[1].operations[0].payload.moveType',
+    )
+
+    const unknownDefenderType = validSpec()
+    unknownDefenderType.phases[1].operations[0].payload.typeEffectiveness = {
+      immunity: 'honor',
+      resistance: 'honor',
+      weakness: 'honor',
+      effectivenessOverride: null,
+      defenderTypeOverrides: [{ defenderType: 'mystery', relation: 'weak' }],
+    }
+    expectDefinitionError(
+      () => validateMoveSpec(unknownDefenderType),
+      'invalid-definition',
+      'spec.phases[1].operations[0].payload.typeEffectiveness.defenderTypeOverrides[0].defenderType',
+    )
+
+    const unbackedCriticalRange = validSpec()
+    unbackedCriticalRange.phases[1].operations[0].payload.accuracyRollId = null
+    unbackedCriticalRange.phases[1].operations[0].payload.criticalHit = {
+      trigger: { kind: 'range', minimum: 18 },
+      prevention: 'honor',
+    }
+    expectDefinitionError(
+      () => validateMoveSpec(unbackedCriticalRange),
+      'invalid-definition',
+      'spec.phases[1].operations[0].payload.criticalHit.trigger',
     )
   })
 

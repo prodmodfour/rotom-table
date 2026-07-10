@@ -45,6 +45,7 @@ import {
   stableJsonStringify,
   type StableJsonStringifyOptions,
 } from './stableJson'
+import { POKEMON_TYPES } from '~/utils/typeChart'
 
 export const MOVE_SPEC_DEFINITION_HASH_VERSION = 1 as const
 
@@ -145,6 +146,7 @@ const PHASE_INDEX = new Map<string, number>(
 const DEFAULT_CAPABILITY_IDS = new Set<string>(
   capabilityCatalogJson.capabilities.map(capability => capability.code),
 )
+const CANONICAL_TYPE_IDS = new Set<string>(POKEMON_TYPES.map(type => type.toLowerCase()))
 
 export const DEFAULT_MOVE_SPEC_RULESET_VERSION: MoveSpecRulesetVersion = Object.freeze({
   rulesetId: MOVE_RULESET_PROVENANCE.rulesetId,
@@ -537,6 +539,36 @@ export const validateMoveSpecOperationSequence = (
       )
     }
     if (operation.kind !== 'damage') return
+    if (
+      typeof operation.payload.moveType === 'string'
+      && !CANONICAL_TYPE_IDS.has(operation.payload.moveType)
+    ) {
+      fail(
+        'invalid-definition',
+        `${path}.payload.moveType`,
+        `move type ${operation.payload.moveType} is not canonical.`,
+      )
+    }
+    operation.payload.typeEffectiveness?.defenderTypeOverrides.forEach((override, overrideIndex) => {
+      if (CANONICAL_TYPE_IDS.has(override.defenderType)) return
+      fail(
+        'invalid-definition',
+        `${path}.payload.typeEffectiveness.defenderTypeOverrides[${overrideIndex}].defenderType`,
+        `defender type ${override.defenderType} is not canonical.`,
+      )
+    })
+    const criticalTrigger = operation.payload.criticalHit?.trigger
+    if (
+      (criticalTrigger?.kind === 'range' || criticalTrigger?.kind === 'natural-rolls')
+      && operation.payload.criticalRollId === null
+      && operation.payload.accuracyRollId === null
+    ) {
+      fail(
+        'invalid-definition',
+        `${path}.payload.criticalHit.trigger`,
+        `${criticalTrigger.kind} critical triggers require an accuracyRollId or criticalRollId.`,
+      )
+    }
     if (operation.payload.accuracyRollId !== null) {
       assertPriorReference(
         operation.payload.accuracyRollId,

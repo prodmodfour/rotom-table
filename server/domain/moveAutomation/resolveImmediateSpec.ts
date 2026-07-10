@@ -9,7 +9,6 @@ import type {
 } from '~/types/moveAutomation'
 import type { MoveDamageRollResult } from '~/utils/moveDamageBase'
 import { formatMoveAutomationDamageLogLine } from '~/utils/moveAutomationLogLines'
-import { moveAutomationMoveImmunitySource } from '~/utils/moveAutomationMoveImmunity'
 import { resolveMoveAutomationTargetEvasion } from '~/utils/moveAutomationAccuracy'
 import {
   resolveMoveAutomationAccuracyRoll,
@@ -26,6 +25,7 @@ import type {
 } from './context'
 import { deduplicateAuthoritativeMoveSheetReads } from './context'
 import type { MoveContextualDamageBaseResolution } from './damageBase'
+import type { MoveDamageTypeResolution } from './damageTypes'
 import { resolveMoveSpecDamageCalculation } from './damageStats'
 import {
   executeMoveSpec,
@@ -53,6 +53,7 @@ export type ImmediateMoveSpecResolutionErrorCode =
   | 'unsupported-operation'
   | 'damage-roll-missing'
   | 'damage-roll-invalid'
+  | 'damage-type-resolution-missing'
   | 'damage-base-resolution-missing'
 
 export class ImmediateMoveSpecResolutionError extends Error {
@@ -118,14 +119,22 @@ const rollLedgerEntry = (
     ?? fail('damage-roll-missing', `Roll ledger entry ${resolved.rollId} is missing.`)
 }
 
-const accuracyOperationId = (
-  operations: readonly MoveSpecEmittedOperation[],
-  accuracyRollId: string | null,
-): string | null => {
-  if (accuracyRollId === null) return null
-  return operations.find(({ operation }) => (
-    operation.kind === 'roll' && operation.payload.rollId === accuracyRollId
-  ))?.operation.id ?? null
+const referencedRollLedgerEntry = (
+  ledger: ImmediateMoveSpecResolution['rollLedger'],
+  rolls: readonly MoveSpecResolvedRoll[],
+  referenceId: string,
+  recipientId: string,
+) => {
+  const resolved = rolls.find(roll => (
+    roll.referenceId === referenceId && roll.recipientId === recipientId
+  )) ?? rolls.find(roll => (
+    roll.referenceId === referenceId && roll.recipientId === null
+  )) ?? fail(
+    'damage-roll-missing',
+    `Referenced roll ${referenceId} for recipient ${recipientId} is missing.`,
+  )
+  return ledger.find(entry => entry.rollId === resolved.rollId)
+    ?? fail('damage-roll-missing', `Roll ledger entry ${resolved.rollId} is missing.`)
 }
 
 const damageRollResult = (
@@ -147,9 +156,9 @@ const damageRollResult = (
 const createDamageQuery = (options: {
   readonly context: AuthoritativeMoveRulesContext
   readonly script: MoveAutomationScript
-  readonly operations: readonly MoveSpecEmittedOperation[]
   readonly resolvedRolls: readonly MoveSpecResolvedRoll[]
   readonly rollLedger: ImmediateMoveSpecResolution['rollLedger']
+  readonly resolvedDamageTypes: readonly MoveDamageTypeResolution[]
   readonly resolvedDamageBases: readonly MoveContextualDamageBaseResolution[]
   readonly selectedTargetIds: readonly string[]
 }): MoveCoreTokenDamageQuery => {
@@ -167,31 +176,39 @@ const createDamageQuery = (options: {
         operation.id,
         recipient.placement.id,
       )
-      const accuracyId = accuracyOperationId(options.operations, operation.payload.accuracyRollId)
-      const accuracyEntry = accuracyId
-        ? rollLedgerEntry(
+      const accuracyEntry = operation.payload.accuracyRollId
+        ? referencedRollLedgerEntry(
             options.rollLedger,
             options.resolvedRolls,
-            'accuracy',
-            accuracyId,
+            operation.payload.accuracyRollId,
             recipient.placement.id,
           )
         : null
-      const accuracy = accuracyEntry
-        ? resolveMoveAutomationAccuracyRoll(options.script, accuracyEntry.naturalResult)
+      const criticalReferenceId = operation.payload.criticalRollId
+        ?? operation.payload.accuracyRollId
+      const criticalEntry = criticalReferenceId
+        ? referencedRollLedgerEntry(
+            options.rollLedger,
+            options.resolvedRolls,
+            criticalReferenceId,
+            recipient.placement.id,
+          )
         : null
       const state: MoveAutomationTargetResolutionState = {
         accuracyRoll: accuracyEntry ? String(accuracyEntry.naturalResult) : '',
         hit: true,
-        crit: accuracy?.crit ?? false,
+        crit: false,
         damageRoll: damageRollResult(damageEntry),
         manualHpLoss: '',
         applyDamage: true,
       }
-      const preventedBy = moveAutomationMoveImmunitySource(options.script, recipient.token)
-      if (preventedBy) {
-        return { hpLoss: 0, preventedBy, consultedPlacementIds: [] }
-      }
+      const resolvedMoveType = options.resolvedDamageTypes.find(resolution => (
+        resolution.operationId === operation.id
+        && resolution.recipientId === recipient.placement.id
+      )) ?? fail(
+        'damage-type-resolution-missing',
+        `Damage type for operation ${operation.id} and recipient ${recipient.placement.id} is missing.`,
+      )
       const contextualDamageBase = typeof operation.payload.damageBase === 'number'
         ? null
         : options.resolvedDamageBases.find(resolution => (
@@ -209,13 +226,18 @@ const createDamageQuery = (options: {
         resolution: state,
         fieldEffects: options.context.map.fieldEffects,
         selectedTargets,
+        resolvedMoveType,
+        naturalCriticalRoll: criticalEntry?.naturalResult ?? null,
         ...(contextualDamageBase ? { contextualDamageBase } : {}),
       })
       return {
         hpLoss: calculation.breakdown.hpLoss,
-        preventedBy: null,
+        preventedBy: calculation.moveType.immunitySource,
+        moveType: calculation.moveType.moveType,
         consultedPlacementIds: [],
         details: {
+          moveType: calculation.moveType,
+          criticalHit: calculation.criticalHit,
           contextualDamageBase: calculation.contextualDamageBase
             ? {
                 expressionValue: calculation.contextualDamageBase.expressionValue,
@@ -314,11 +336,21 @@ const compatibilityLogLines = (options: {
         : null
       const requested = Number(details?.requestedHpLoss ?? 0)
       if (requested <= 0) continue
+      const calculation = details?.calculation
+        && typeof details.calculation === 'object'
+        && !Array.isArray(details.calculation)
+        ? details.calculation as Readonly<Record<string, unknown>>
+        : null
+      const criticalHit = calculation?.criticalHit
+        && typeof calculation.criticalHit === 'object'
+        && !Array.isArray(calculation.criticalHit)
+        ? calculation.criticalHit as Readonly<Record<string, unknown>>
+        : null
       const target = options.context.queries.tokens.get(recipient.recipientId)
       lines.push(formatMoveAutomationDamageLogLine(
         target?.species ?? recipient.recipientId,
         requested,
-        false,
+        criticalHit?.critical === true,
       ))
     }
   }
@@ -412,9 +444,9 @@ export const resolveImmediateMoveSpec = (options: {
       ? createDamageQuery({
           context: options.context,
           script,
-          operations: execution.operations,
           resolvedRolls: execution.resolvedRolls,
           rollLedger: execution.rollLedger,
+          resolvedDamageTypes: execution.resolvedDamageTypes,
           resolvedDamageBases: execution.resolvedDamageBases,
           selectedTargetIds: execution.targetIds,
         })

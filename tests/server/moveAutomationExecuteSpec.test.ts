@@ -464,6 +464,10 @@ describe('phased MoveSpec interpreter', () => {
     })
 
     expect(result.kind).toBe('complete')
+    expect(result.resolvedDamageTypes).toMatchObject([
+      { recipientId: 'target-token', moveType: 'Normal', hasStab: true },
+      { recipientId: 'bystander-token', moveType: 'Normal', hasStab: true },
+    ])
     expect(result.resolvedDamageBases).toMatchObject([
       {
         recipientId: 'target-token',
@@ -503,6 +507,7 @@ describe('phased MoveSpec interpreter', () => {
         ],
       },
     })
+    expect(Object.isFrozen(result.resolvedDamageTypes)).toBe(true)
     expect(Object.isFrozen(result.resolvedDamageBases)).toBe(true)
   })
 

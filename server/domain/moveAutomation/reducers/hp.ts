@@ -142,7 +142,12 @@ export const reduceDamageEffectForRecipient = (options: {
       recipientId: recipient.placement.id,
       outcome: 'prevented',
       reasonCode: 'damage-immunity',
-      blockers: [{ subject: operation.payload.moveType, source: resolution.preventedBy }],
+      blockers: [{
+        subject: resolution.moveType
+          ?? (typeof operation.payload.moveType === 'string' ? operation.payload.moveType : null),
+        source: resolution.preventedBy,
+      }],
+      ...(resolution.details === undefined ? {} : { details: resolution.details }),
       consultedPlacementIds: resolution.consultedPlacementIds,
       previous,
       current: previous,

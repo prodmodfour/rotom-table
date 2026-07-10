@@ -261,6 +261,34 @@ describe('MoveSpec typed effect operations', () => {
         stageModifierPolicy: 'honor',
       },
     })
+    const overrideDamage = parseMoveEffectOperation(validOperation('damage', {
+      payload: {
+        ...VALID_PAYLOADS.damage,
+        moveType: { kind: 'type', of: 'primary', subject: { kind: 'actor' } },
+        typeEffectiveness: {
+          immunity: 'ignore',
+          resistance: 'honor',
+          weakness: 'honor',
+          effectivenessOverride: null,
+          defenderTypeOverrides: [{ defenderType: 'water', relation: 'weak' }],
+        },
+        criticalHit: {
+          trigger: { kind: 'natural-rolls', values: [20, 18, 16, 14, 12, 10, 8, 6, 4, 2] },
+          prevention: 'honor',
+        },
+      },
+    }))
+    expect(overrideDamage.kind === 'damage' && overrideDamage.payload).toMatchObject({
+      moveType: { kind: 'type', of: 'primary' },
+      typeEffectiveness: {
+        immunity: 'ignore',
+        defenderTypeOverrides: [{ defenderType: 'water', relation: 'weak' }],
+      },
+      criticalHit: {
+        trigger: { kind: 'natural-rolls', values: [2, 4, 6, 8, 10, 12, 14, 16, 18, 20] },
+        prevention: 'honor',
+      },
+    })
     const contextualDamage = parseMoveEffectOperation(validOperation('damage', {
       payload: {
         ...VALID_PAYLOADS.damage,
@@ -504,6 +532,84 @@ describe('MoveSpec typed effect operations', () => {
       }),
       'invalid-effect-operation',
       'operation.payload.damageBase.stabTiming',
+    )
+    expectEffectError(
+      validOperation('damage', {
+        payload: {
+          ...VALID_PAYLOADS.damage,
+          moveType: { kind: 'client-type', value: 'fire' },
+          typeEffectiveness: {
+            immunity: 'honor',
+            resistance: 'honor',
+            weakness: 'honor',
+            effectivenessOverride: null,
+            defenderTypeOverrides: [],
+          },
+        },
+      }),
+      'invalid-effect-operation',
+      'operation.payload.moveType.kind',
+    )
+    expectEffectError(
+      validOperation('damage', {
+        payload: {
+          ...VALID_PAYLOADS.damage,
+          typeEffectiveness: {
+            immunity: 'bypass-client',
+            resistance: 'honor',
+            weakness: 'honor',
+            effectivenessOverride: null,
+            defenderTypeOverrides: [],
+          },
+        },
+      }),
+      'invalid-effect-operation',
+      'operation.payload.typeEffectiveness.immunity',
+    )
+    expectEffectError(
+      validOperation('damage', {
+        payload: {
+          ...VALID_PAYLOADS.damage,
+          typeEffectiveness: {
+            immunity: 'honor',
+            resistance: 'honor',
+            weakness: 'honor',
+            effectivenessOverride: null,
+            defenderTypeOverrides: [
+              { defenderType: 'water', relation: 'weak' },
+              { defenderType: 'water', relation: 'neutral' },
+            ],
+          },
+        },
+      }),
+      'duplicate-id',
+      'operation.payload.typeEffectiveness.defenderTypeOverrides.defenderType',
+    )
+    expectEffectError(
+      validOperation('damage', {
+        payload: {
+          ...VALID_PAYLOADS.damage,
+          criticalHit: {
+            trigger: { kind: 'natural-rolls', values: [2, 2] },
+            prevention: 'honor',
+          },
+        },
+      }),
+      'duplicate-id',
+      'operation.payload.criticalHit.trigger.values',
+    )
+    expectEffectError(
+      validOperation('damage', {
+        payload: {
+          ...VALID_PAYLOADS.damage,
+          criticalHit: {
+            trigger: { kind: 'range', minimum: 0 },
+            prevention: 'honor',
+          },
+        },
+      }),
+      'limit-exceeded',
+      'operation.payload.criticalHit.trigger.minimum',
     )
     const temporaryEffect = VALID_PAYLOADS['temporary-effect']
     expectEffectError(

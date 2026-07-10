@@ -174,6 +174,11 @@ export interface MoveAutomationResolvedDamageInputs {
   readonly stats?: MoveAutomationResolvedDamageStats
   /** Final per-recipient DB that produced the authoritative damage roll. */
   readonly damageBase?: number | null
+  /** Server-resolved operation type and exact final effectiveness for this recipient. */
+  readonly typeEffectiveness?: {
+    readonly moveType: string
+    readonly multiplier: number
+  }
   /** Future server-owned queries may contribute only fully attributed modifiers. */
   readonly additionalModifiers?: readonly MoveDamageModifier[]
 }
@@ -244,8 +249,10 @@ export const resolveMoveAutomationTargetDamageBreakdown = (
       'sdef',
       { abilities: target.abilityNames },
     )))
-  const fieldBonus = fieldEffectDamageBonus(script.type, fieldEffects)
-  const multiplier = moveAutomationTargetDamageMultiplier(script, target)
+  const resolvedMoveType = resolvedDamage.typeEffectiveness?.moveType ?? script.type
+  const fieldBonus = fieldEffectDamageBonus(resolvedMoveType, fieldEffects)
+  const multiplier = resolvedDamage.typeEffectiveness?.multiplier
+    ?? moveAutomationTargetDamageMultiplier(script, target)
   if (multiplier === 0) return NO_DAMAGE_BREAKDOWN
 
   const moveSource = { kind: 'move', id: script.moveName } as const
@@ -321,7 +328,7 @@ export const resolveMoveAutomationTargetDamageBreakdown = (
     id: 'damage.type-effectiveness',
     stage: 'type-effectiveness',
     priority: 0,
-    source: { kind: 'type', id: target.id },
+    source: { kind: 'type', id: `${resolvedMoveType}:${target.id}` },
     stackingGroup: 'type-effectiveness',
     reasonCode: 'damage.type-effectiveness',
     operation: 'multiply-floor',

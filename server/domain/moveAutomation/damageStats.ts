@@ -17,7 +17,18 @@ import {
 import type { MapFieldEffects } from '~/types/map'
 import type { MoveAutomationScript } from '~/types/moveAutomation'
 import type { AuthoritativeMoveRulesContext } from './context'
-import type { MoveContextualDamageBaseResolution } from './damageBase'
+import {
+  MOVE_CONTEXTUAL_DAMAGE_BASE_STAB_BONUS,
+  type MoveContextualDamageBaseResolution,
+} from './damageBase'
+import {
+  resolveMoveDamageType,
+  type MoveDamageTypeResolution,
+} from './damageTypes'
+import {
+  resolveMoveCriticalHit,
+  type MoveCriticalHitResolution,
+} from './criticalHits'
 import type { MoveDamagePipelineResult } from '~/utils/moveAutomationDamagePipeline'
 import {
   evaluateMoveExpression,
@@ -54,9 +65,11 @@ export interface MoveDamageStatSelectionResolution
 export interface MoveSpecDamageCalculation {
   readonly breakdown: MoveAutomationDamageBreakdown
   readonly stats: MoveDamageStatSelectionResolution
+  readonly moveType: MoveDamageTypeResolution
+  readonly criticalHit: MoveCriticalHitResolution
   readonly contextualDamageBase: MoveContextualDamageBaseResolution | null
   readonly damagePipeline: MoveDamagePipelineResult | null
-  /** Contextual DB nodes precede attack/defense selection nodes in audit order. */
+  /** Type, contextual DB, then attack/defense nodes appear in deterministic audit order. */
   readonly evaluationTrace: readonly MoveRuleEvaluationTraceEntry[]
 }
 
@@ -174,6 +187,10 @@ export interface ResolveMoveSpecDamageCalculationInput {
   readonly resolution: MoveAutomationTargetResolutionState
   readonly fieldEffects?: MapFieldEffects
   readonly selectedTargets?: readonly SpawnedPokemon[]
+  /** Interpreter-owned type result reused by roll and reduction rather than re-evaluated. */
+  readonly resolvedMoveType?: MoveDamageTypeResolution
+  /** Natural server-owned roll used by reviewed critical triggers. */
+  readonly naturalCriticalRoll?: number | null
   /** Interpreter-owned per-recipient result; fixed DB operations omit it. */
   readonly contextualDamageBase?: MoveContextualDamageBaseResolution
 }
@@ -182,6 +199,21 @@ export interface ResolveMoveSpecDamageCalculationInput {
 export const resolveMoveSpecDamageCalculation = (
   options: ResolveMoveSpecDamageCalculationInput,
 ): MoveSpecDamageCalculation => {
+  const moveType = options.resolvedMoveType ?? resolveMoveDamageType({
+    context: options.context,
+    operation: options.operation,
+    script: options.script,
+    recipientId: options.recipient.id,
+    canonicalMoveId: options.script.moveName,
+  })
+  const criticalHit = resolveMoveCriticalHit({
+    context: options.context,
+    operation: options.operation,
+    script: options.script,
+    recipientId: options.recipient.id,
+    naturalRoll: options.naturalCriticalRoll ?? null,
+    legacyCritical: options.resolution.crit,
+  })
   const stats = resolveMoveDamageStatSelections({
     context: options.context,
     operation: options.operation,
@@ -189,25 +221,35 @@ export const resolveMoveSpecDamageCalculation = (
   })
   const contextualDamageBase = options.contextualDamageBase ?? null
   const damageBase = contextualDamageBase?.finalDamageBase
-    ?? options.script.damageBase
     ?? (typeof options.operation.payload.damageBase === 'number'
       ? options.operation.payload.damageBase
-      : null)
+        + (moveType.hasStab ? MOVE_CONTEXTUAL_DAMAGE_BASE_STAB_BONUS : 0)
+      : options.script.damageBase)
   const breakdown = resolveMoveAutomationTargetDamageBreakdown(
     options.script,
     options.context.actor.token,
     options.recipient,
-    options.resolution,
+    { ...options.resolution, crit: criticalHit.critical },
     options.fieldEffects,
     options.selectedTargets,
-    { stats, damageBase },
+    {
+      stats,
+      damageBase,
+      typeEffectiveness: {
+        moveType: moveType.moveType,
+        multiplier: moveType.finalMultiplier,
+      },
+    },
   )
   return deepFreeze({
     breakdown,
     stats,
+    moveType,
+    criticalHit,
     contextualDamageBase,
     damagePipeline: breakdown.kind === 'standard' ? breakdown.pipeline ?? null : null,
     evaluationTrace: [
+      ...moveType.evaluationTrace,
       ...(contextualDamageBase?.evaluationTrace ?? []),
       ...stats.trace,
     ],

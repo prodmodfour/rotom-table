@@ -26,6 +26,10 @@ export type GroundResistanceCapabilities = AirborneMovementCapabilities
 export interface SheetPassiveTypeEffectivenessContext {
   moveKeywords?: readonly string[] | null
   baseMultiplier?: number | null
+  /** Reviewed move rules may remove immunity while retaining other passive adjustments. */
+  ignoreImmunity?: boolean
+  /** Reviewed move rules may ignore resistance without suppressing independent immunities. */
+  ignoreResistance?: boolean
 }
 
 export interface SheetPassiveTypeEffectivenessResult {
@@ -150,26 +154,34 @@ export const resolveSheetPassiveTypeEffectiveness = (
   capabilities?: AirborneMovementCapabilities | null,
   context: SheetPassiveTypeEffectivenessContext = {},
 ): SheetPassiveTypeEffectivenessResult => {
-  const moveImmunitySource = getPassiveMoveImmunitySource(abilities, capabilities, context.moveKeywords)
-  if (moveImmunitySource) return { multiplier: 0, sources: [moveImmunitySource] }
-  if (attackingType === 'Fire' && hasFlashFireAbility(abilities)) {
-    return { multiplier: 0, sources: [FLASH_FIRE_ABILITY_NAME] }
+  if (!context.ignoreImmunity) {
+    const moveImmunitySource = getPassiveMoveImmunitySource(
+      abilities,
+      capabilities,
+      context.moveKeywords,
+    )
+    if (moveImmunitySource) return { multiplier: 0, sources: [moveImmunitySource] }
+    if (attackingType === 'Fire' && hasFlashFireAbility(abilities)) {
+      return { multiplier: 0, sources: [FLASH_FIRE_ABILITY_NAME] }
+    }
   }
 
   let multiplier = baseMultiplier
   const sources: string[] = []
 
-  for (const source of passiveTypeResistanceSources(attackingType, abilities)) {
-    if (multiplier === 0) break
-    const nextMultiplier = resistMultiplierOneStepFurther(multiplier)
-    if (!Object.is(nextMultiplier, multiplier)) sources.push(source)
-    multiplier = nextMultiplier
-  }
+  if (!context.ignoreResistance) {
+    for (const source of passiveTypeResistanceSources(attackingType, abilities)) {
+      if (multiplier === 0) break
+      const nextMultiplier = resistMultiplierOneStepFurther(multiplier)
+      if (!Object.is(nextMultiplier, multiplier)) sources.push(source)
+      multiplier = nextMultiplier
+    }
 
-  if (hasToleranceAbility(abilities) && isResistanceMultiplier(multiplier)) {
-    const nextMultiplier = resistMultiplierOneStepFurther(multiplier)
-    if (!Object.is(nextMultiplier, multiplier)) sources.push(TOLERANCE_ABILITY_NAME)
-    multiplier = nextMultiplier
+    if (hasToleranceAbility(abilities) && isResistanceMultiplier(multiplier)) {
+      const nextMultiplier = resistMultiplierOneStepFurther(multiplier)
+      if (!Object.is(nextMultiplier, multiplier)) sources.push(TOLERANCE_ABILITY_NAME)
+      multiplier = nextMultiplier
+    }
   }
 
   return { multiplier, sources }
