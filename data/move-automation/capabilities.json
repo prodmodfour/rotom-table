@@ -1,0 +1,142 @@
+{
+  "schemaVersion": 1,
+  "capabilities": [
+    {
+      "code": "conditions.typed",
+      "owningPhase": "phase-4",
+      "dependencies": [
+        "lifecycle.effects",
+        "targeting.authoritative"
+      ],
+      "implementationStatus": "planned",
+      "representativeMove": "Ember"
+    },
+    {
+      "code": "expressions.bounded",
+      "owningPhase": "phase-4",
+      "dependencies": [
+        "runtime.unimplemented"
+      ],
+      "implementationStatus": "planned",
+      "representativeMove": "Power Trip"
+    },
+    {
+      "code": "fields.typed",
+      "owningPhase": "phase-6",
+      "dependencies": [
+        "lifecycle.effects"
+      ],
+      "implementationStatus": "planned",
+      "representativeMove": "Sunny Day"
+    },
+    {
+      "code": "hazards.typed",
+      "owningPhase": "phase-6",
+      "dependencies": [
+        "fields.typed",
+        "movement.authoritative"
+      ],
+      "implementationStatus": "planned",
+      "representativeMove": "Spikes"
+    },
+    {
+      "code": "history.structured",
+      "owningPhase": "phase-3",
+      "dependencies": [
+        "lifecycle.effects"
+      ],
+      "implementationStatus": "planned",
+      "representativeMove": "Fury Cutter"
+    },
+    {
+      "code": "hp.typed",
+      "owningPhase": "phase-4",
+      "dependencies": [
+        "expressions.bounded"
+      ],
+      "implementationStatus": "planned",
+      "representativeMove": "Dragon Rage"
+    },
+    {
+      "code": "items.authoritative",
+      "owningPhase": "phase-7",
+      "dependencies": [
+        "runtime.unimplemented"
+      ],
+      "implementationStatus": "planned",
+      "representativeMove": "Knock Off"
+    },
+    {
+      "code": "lifecycle.effects",
+      "owningPhase": "phase-3",
+      "dependencies": [
+        "runtime.unimplemented"
+      ],
+      "implementationStatus": "planned",
+      "representativeMove": "Yawn"
+    },
+    {
+      "code": "movement.authoritative",
+      "owningPhase": "phase-6",
+      "dependencies": [
+        "targeting.authoritative"
+      ],
+      "implementationStatus": "planned",
+      "representativeMove": "Tackle"
+    },
+    {
+      "code": "nested-moves.reviewed",
+      "owningPhase": "phase-7",
+      "dependencies": [
+        "history.structured",
+        "reactions.durable"
+      ],
+      "implementationStatus": "planned",
+      "representativeMove": "Metronome"
+    },
+    {
+      "code": "reactions.durable",
+      "owningPhase": "phase-5",
+      "dependencies": [
+        "history.structured",
+        "targeting.authoritative"
+      ],
+      "implementationStatus": "planned",
+      "representativeMove": "Protect"
+    },
+    {
+      "code": "runtime.unimplemented",
+      "owningPhase": "phase-2",
+      "dependencies": [],
+      "implementationStatus": "planned",
+      "representativeMove": "Scratch"
+    },
+    {
+      "code": "stages.typed",
+      "owningPhase": "phase-4",
+      "dependencies": [
+        "expressions.bounded"
+      ],
+      "implementationStatus": "planned",
+      "representativeMove": "Swords Dance"
+    },
+    {
+      "code": "targeting.authoritative",
+      "owningPhase": "phase-4",
+      "dependencies": [
+        "runtime.unimplemented"
+      ],
+      "implementationStatus": "planned",
+      "representativeMove": "Tackle"
+    },
+    {
+      "code": "transformations.reversible",
+      "owningPhase": "phase-7",
+      "dependencies": [
+        "lifecycle.effects"
+      ],
+      "implementationStatus": "planned",
+      "representativeMove": "Transform"
+    }
+  ]
+}

@@ -1,3 +1,5 @@
+import capabilityCatalogJson from '../../data/move-automation/capabilities.json'
+import { parseMoveAutomationCapabilityCatalog } from './capabilities'
 import type { CanonicalMoveCatalog, CanonicalMoveRecord } from './ruleset'
 
 export const MOVE_AUTOMATION_MANIFEST_SCHEMA_VERSION = 1 as const
@@ -79,6 +81,7 @@ export type MoveAutomationManifestValidationCode =
   | 'limit-exceeded'
   | 'duplicate-move'
   | 'unknown-move'
+  | 'unknown-capability'
   | 'provenance-mismatch'
   | 'invalid-status-combination'
 
@@ -244,6 +247,25 @@ const parseStableIdArray = (
     .map((entry, index) => parseStableId(entry, `${path}[${index}]`))
   assertUnique(identifiers, path)
   return identifiers
+}
+
+const parseCapabilityReferenceArray = (
+  value: unknown,
+  path: string,
+  maximumLength: number,
+  knownCapabilityCodes: ReadonlySet<string>,
+): readonly string[] => {
+  const capabilityCodes = parseStableIdArray(value, path, maximumLength)
+  capabilityCodes.forEach((code, index) => {
+    if (!knownCapabilityCodes.has(code)) {
+      fail(
+        'unknown-capability',
+        `${path}[${index}]`,
+        `${code} does not resolve to the capability catalog.`,
+      )
+    }
+  })
+  return capabilityCodes
 }
 
 const parseDebt = (
@@ -434,6 +456,7 @@ const parseMoveRecord = (
   index: number,
   catalog: CanonicalMoveCatalog,
   knownMoves: ReadonlyMap<string, CanonicalMoveRecord>,
+  knownCapabilityCodes: ReadonlySet<string>,
 ): MoveAutomationManifestRecord => {
   const path = `moves[${index}]`
   const input = parseRecord(value, path)
@@ -462,20 +485,22 @@ const parseMoveRecord = (
     interactionStatus: parseInteractionStatus(input.interactionStatus, `${path}.interactionStatus`),
     runtime: parseRuntime(input.runtime, `${path}.runtime`),
     rulesProvenance: parseProvenance(input.rulesProvenance, `${path}.rulesProvenance`, catalog),
-    capabilityTags: parseStableIdArray(
+    capabilityTags: parseCapabilityReferenceArray(
       input.capabilityTags,
       `${path}.capabilityTags`,
       MOVE_AUTOMATION_MANIFEST_LIMITS.capabilityTags,
+      knownCapabilityCodes,
     ),
     suggestedCapabilityTags: parseStableIdArray(
       input.suggestedCapabilityTags,
       `${path}.suggestedCapabilityTags`,
       MOVE_AUTOMATION_MANIFEST_LIMITS.suggestedCapabilityTags,
     ),
-    blockerCodes: parseStableIdArray(
+    blockerCodes: parseCapabilityReferenceArray(
       input.blockerCodes,
       `${path}.blockerCodes`,
       MOVE_AUTOMATION_MANIFEST_LIMITS.blockerCodes,
+      knownCapabilityCodes,
     ),
     limitations: parseDebt(
       input.limitations,
@@ -512,6 +537,7 @@ const parseMoveRecord = (
 export const parseMoveAutomationManifest = (
   value: unknown,
   catalog: CanonicalMoveCatalog,
+  capabilityCatalogInput: unknown = capabilityCatalogJson,
 ): MoveAutomationManifest => {
   const root = parseRecord(value, 'manifest')
   assertExactKeys(root, ROOT_FIELDS, 'manifest')
@@ -524,11 +550,21 @@ export const parseMoveAutomationManifest = (
   }
 
   const knownMoves = canonicalMoveById(catalog)
+  const capabilityCatalog = parseMoveAutomationCapabilityCatalog(capabilityCatalogInput, catalog)
+  const knownCapabilityCodes = new Set(
+    capabilityCatalog.capabilities.map(capability => capability.code),
+  )
   const moves = parseBoundedArray(
     root.moves,
     'manifest.moves',
     Math.min(MOVE_AUTOMATION_MANIFEST_LIMITS.records, catalog.moves.length),
-  ).map((move, index) => parseMoveRecord(move, index, catalog, knownMoves))
+  ).map((move, index) => parseMoveRecord(
+    move,
+    index,
+    catalog,
+    knownMoves,
+    knownCapabilityCodes,
+  ))
 
   const canonicalIds = moves.map(({ canonicalId }) => canonicalId)
   if (new Set(canonicalIds).size !== canonicalIds.length) {

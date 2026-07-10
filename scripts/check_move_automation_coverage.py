@@ -8,6 +8,7 @@ import sys
 from pathlib import Path
 
 from move_automation_coverage import (
+    CAPABILITY_CATALOG_PATH,
     MANIFEST_PATH,
     SCENARIO_ROOT,
     MoveAutomationValidationError,
@@ -46,6 +47,12 @@ def parse_args() -> argparse.Namespace:
         type=Path,
         default=MANIFEST_PATH,
         help="manifest to validate (defaults to data/move-automation/manifest.json)",
+    )
+    parser.add_argument(
+        "--capabilities",
+        type=Path,
+        default=CAPABILITY_CATALOG_PATH,
+        help="typed capability catalog used to resolve manifest capability references",
     )
     parser.add_argument(
         "--scenario-root",
@@ -140,6 +147,7 @@ def main() -> int:
         report = validate_semantic_coverage(
             require_complete=args.require_complete,
             manifest_path=args.manifest.resolve(),
+            capabilities_path=args.capabilities.resolve(),
             scenario_root=args.scenario_root.resolve(),
         )
     except MoveAutomationValidationError as error:

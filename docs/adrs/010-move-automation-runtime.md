@@ -50,6 +50,8 @@ The completion target concerns the canonical base-move catalog for that frozen r
 
 Canonical prose is review input, not executable runtime input. Tooling may use prose to scaffold a draft or report likely capabilities, but a human-reviewed spec or handler and executable evidence are required before runtime selection or status promotion.
 
+Reviewed mechanic capabilities live in the strict `data/move-automation/capabilities.json` catalog. Each stable capability code records its owning delivery phase, dependency codes, implementation status, and a canonical representative move. Authoritative manifest capability tags and blocker codes must resolve through that catalog; bootstrap `suggestedCapabilityTags` remain non-authoritative planning hints and are not treated as implemented mechanics.
+
 ### Runtime model
 
 A `MoveSpec` is immutable, versioned, JSON-serializable data. It declares targeting, preconditions, costs, ordered phases, bounded predicates and expressions, typed effect operations, optional registered handler identity, and presentation metadata. It cannot contain callbacks, source strings, arbitrary patches, or client-authored executable data.

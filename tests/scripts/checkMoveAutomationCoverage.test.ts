@@ -4,6 +4,7 @@ import { tmpdir } from 'node:os'
 import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { describe, expect, it } from 'vitest'
+import capabilitiesJson from '../../data/move-automation/capabilities.json'
 import manifestJson from '../../data/move-automation/manifest.json'
 import { EXPLICIT_MOVE_AUTOMATION_SCRIPTS } from '../../src/utils/move-automation/registry'
 
@@ -15,6 +16,11 @@ type MutableManifest = {
 }
 
 type ManifestRows = MutableManifest['moves']
+
+type MutableCapabilityCatalog = {
+  schemaVersion: number
+  capabilities: Array<Record<string, any>>
+}
 
 const baseStatusCounts = (moves: ManifestRows) => ({
   complete: moves.filter(({ baseStatus }) => baseStatus === 'complete').length,
@@ -60,6 +66,15 @@ const writeManifest = (directory: string, manifest: MutableManifest): string => 
 }
 
 const mutableManifest = (): MutableManifest => structuredClone(manifestJson) as MutableManifest
+
+const writeCapabilities = (directory: string, catalog: MutableCapabilityCatalog): string => {
+  const path = join(directory, 'capabilities.json')
+  writeFileSync(path, `${JSON.stringify(catalog, null, 2)}\n`)
+  return path
+}
+
+const mutableCapabilities = (): MutableCapabilityCatalog =>
+  structuredClone(capabilitiesJson) as MutableCapabilityCatalog
 
 describe('move automation semantic coverage checker', () => {
   it('passes valid metadata and prints a semantic report', () => {
@@ -136,6 +151,35 @@ describe('move automation semantic coverage checker', () => {
       expect(staleResult.status).toBe(1)
       expect(JSON.parse(staleResult.stdout)).toMatchObject({
         issues: [{ code: 'provenance-mismatch' }],
+      })
+    })
+  })
+
+  it('resolves manifest blockers and capability dependencies through the typed catalog', () => {
+    withTemporaryDirectory((directory) => {
+      const manifest = mutableManifest()
+      const blockedMove = manifest.moves.find(({ baseStatus }) => baseStatus === 'blocked')
+      expect(blockedMove).toBeDefined()
+      blockedMove!.blockerCodes = ['runtime.unknown']
+
+      const blockerResult = runChecker(
+        '--manifest', writeManifest(directory, manifest),
+        '--json',
+      )
+      expect(blockerResult.status).toBe(1)
+      expect(JSON.parse(blockerResult.stdout)).toMatchObject({
+        issues: [{ code: 'unknown-capability', path: expect.stringContaining('blockerCodes[0]') }],
+      })
+
+      const capabilities = mutableCapabilities()
+      capabilities.capabilities[0].dependencies = ['capability.unknown']
+      const dependencyResult = runChecker(
+        '--capabilities', writeCapabilities(directory, capabilities),
+        '--json',
+      )
+      expect(dependencyResult.status).toBe(1)
+      expect(JSON.parse(dependencyResult.stdout)).toMatchObject({
+        issues: [{ code: 'unknown-capability-dependency' }],
       })
     })
   })

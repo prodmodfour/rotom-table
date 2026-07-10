@@ -40,7 +40,7 @@ const completeScratchRecord = () => ({
     sourceModule: 'src/utils/move-automation/scripts/singleTargetAttacks.ts',
   },
   rulesProvenance: provenanceReference(),
-  capabilityTags: ['targeting.single', 'damage.standard'],
+  capabilityTags: ['targeting.authoritative', 'hp.typed'],
   suggestedCapabilityTags: [],
   blockerCodes: [],
   limitations: [],
@@ -184,7 +184,7 @@ describe('move automation semantic manifest contract', () => {
 
   it('requires complete rows to be debt-free, linked, and backed by scenarios', () => {
     const invalidCompleteRows = [
-      { ...completeScratchRecord(), blockerCodes: ['targeting.manual'] },
+      { ...completeScratchRecord(), blockerCodes: ['runtime.unimplemented'] },
       {
         ...completeScratchRecord(),
         limitations: [{ code: 'timing.partial', summary: 'Timing remains partial.' }],
@@ -260,6 +260,25 @@ describe('move automation semantic manifest contract', () => {
       }),
       'invalid-status-combination',
       'moves[0].interactionStatus',
+    )
+  })
+
+  it('requires reviewed capability tags and blockers to resolve to the typed catalog', () => {
+    expectManifestError(
+      manifestWith({
+        ...completeScratchRecord(),
+        capabilityTags: ['targeting.unknown'],
+      }),
+      'unknown-capability',
+      'moves[0].capabilityTags[0]',
+    )
+    expectManifestError(
+      manifestWith({
+        ...blockedTackleRecord(),
+        blockerCodes: ['runtime.unknown'],
+      }),
+      'unknown-capability',
+      'moves[0].blockerCodes[0]',
     )
   })
 

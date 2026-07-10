@@ -16,6 +16,7 @@ MOVES_PATH = ROOT / "data" / "reference" / "moves.json"
 MOVE_AUTOMATION_SOURCE_DIR = ROOT / "src" / "utils" / "move-automation"
 MANIFEST_PATH = ROOT / "data" / "move-automation" / "manifest.json"
 RULESET_PATH = ROOT / "data" / "move-automation" / "ruleset.json"
+CAPABILITY_CATALOG_PATH = ROOT / "data" / "move-automation" / "capabilities.json"
 SCENARIO_ROOT = ROOT / "tests" / "fixtures" / "moveAutomation"
 
 
@@ -283,7 +284,19 @@ def print_default_coverage(coverage: MoveCoverage) -> int:
 
 
 MANIFEST_SCHEMA_VERSION = 1
+CAPABILITY_CATALOG_SCHEMA_VERSION = 1
 MANIFEST_ROOT_FIELDS = {"schemaVersion", "moves"}
+CAPABILITY_ROOT_FIELDS = {"schemaVersion", "capabilities"}
+CAPABILITY_FIELDS = {
+    "code", "owningPhase", "dependencies", "implementationStatus",
+    "representativeMove",
+}
+CAPABILITY_PHASES = {
+    "phase-0", "phase-1", "phase-2", "phase-3", "phase-4", "phase-5",
+    "phase-6", "phase-7", "phase-8", "phase-8b", "phase-9", "phase-10",
+}
+CAPABILITY_IMPLEMENTATION_STATUSES = {"planned", "implemented"}
+CAPABILITY_LIMITS = {"capabilities": 256, "dependencies": 32}
 MANIFEST_MOVE_FIELDS = {
     "canonicalId", "displayName", "baseStatus", "interactionStatus", "runtime",
     "rulesProvenance", "capabilityTags", "suggestedCapabilityTags", "blockerCodes",
@@ -424,18 +437,27 @@ def _load_json(path: Path, label: str) -> Any:
         _fail("invalid-json", label, f"could not load {path}: {error}")
 
 
-def _record(value: Any, path: str) -> dict[str, Any]:
+def _record(
+    value: Any,
+    path: str,
+    code: str = "invalid-manifest",
+) -> dict[str, Any]:
     if not isinstance(value, dict):
-        _fail("invalid-manifest", path, "must be an object.")
+        _fail(code, path, "must be an object.")
     return value
 
 
-def _exact_fields(value: dict[str, Any], fields: set[str], path: str) -> None:
+def _exact_fields(
+    value: dict[str, Any],
+    fields: set[str],
+    path: str,
+    code: str = "invalid-manifest",
+) -> None:
     missing = sorted(fields - set(value))
     unknown = sorted(set(value) - fields)
     if missing or unknown:
         _fail(
-            "invalid-manifest",
+            code,
             path,
             "has an invalid shape "
             f"(missing: {', '.join(missing) or 'none'}; "
@@ -443,23 +465,37 @@ def _exact_fields(value: dict[str, Any], fields: set[str], path: str) -> None:
         )
 
 
-def _bounded_text(value: Any, path: str, maximum: int) -> str:
+def _bounded_text(
+    value: Any,
+    path: str,
+    maximum: int,
+    code: str = "invalid-manifest",
+) -> str:
     if (
         not isinstance(value, str)
         or not value
         or value.strip() != value
         or CONTROL_CHARACTER_PATTERN.search(value)
     ):
-        _fail("invalid-manifest", path, "must be a non-empty, trimmed, single-line string.")
+        _fail(code, path, "must be a non-empty, trimmed, single-line string.")
     if len(value) > maximum:
         _fail("limit-exceeded", path, f"must contain at most {maximum} characters.")
     return value
 
 
-def _stable_id(value: Any, path: str) -> str:
-    identifier = _bounded_text(value, path, MANIFEST_LIMITS["identifierLength"])
+def _stable_id(
+    value: Any,
+    path: str,
+    code: str = "invalid-manifest",
+) -> str:
+    identifier = _bounded_text(
+        value,
+        path,
+        MANIFEST_LIMITS["identifierLength"],
+        code,
+    )
     if not STABLE_ID_PATTERN.fullmatch(identifier):
-        _fail("invalid-manifest", path, "must be a lowercase stable identifier.")
+        _fail(code, path, "must be a lowercase stable identifier.")
     return identifier
 
 
@@ -475,9 +511,14 @@ def _sha256(value: Any, path: str) -> str:
     return value
 
 
-def _bounded_array(value: Any, path: str, maximum: int) -> list[Any]:
+def _bounded_array(
+    value: Any,
+    path: str,
+    maximum: int,
+    code: str = "invalid-manifest",
+) -> list[Any]:
     if not isinstance(value, list):
-        _fail("invalid-manifest", path, "must be an array.")
+        _fail(code, path, "must be an array.")
     if len(value) > maximum:
         _fail("limit-exceeded", path, f"must contain at most {maximum} entries.")
     return value
@@ -722,6 +763,125 @@ def _parse_ruleset_and_catalog(
     return ruleset, canonical_moves, actual_hash
 
 
+def _parse_capability_catalog(
+    capability_path: Path,
+    canonical_moves: list[dict[str, Any]],
+) -> dict[str, dict[str, Any]]:
+    validation_code = "invalid-capability-catalog"
+    root = _record(
+        _load_json(capability_path, "capabilityCatalog"),
+        "capabilityCatalog",
+        validation_code,
+    )
+    _exact_fields(
+        root,
+        CAPABILITY_ROOT_FIELDS,
+        "capabilityCatalog",
+        validation_code,
+    )
+    if root["schemaVersion"] != CAPABILITY_CATALOG_SCHEMA_VERSION:
+        _fail(
+            validation_code,
+            "capabilityCatalog.schemaVersion",
+            f"must be {CAPABILITY_CATALOG_SCHEMA_VERSION}.",
+        )
+
+    canonical_ids = {move["name"] for move in canonical_moves}
+    capabilities: list[dict[str, Any]] = []
+    for index, capability_value in enumerate(_bounded_array(
+        root["capabilities"],
+        "capabilityCatalog.capabilities",
+        CAPABILITY_LIMITS["capabilities"],
+        validation_code,
+    )):
+        path = f"capabilities[{index}]"
+        capability = _record(capability_value, path, validation_code)
+        _exact_fields(capability, CAPABILITY_FIELDS, path, validation_code)
+        code = _stable_id(capability["code"], f"{path}.code", validation_code)
+        owning_phase = capability["owningPhase"]
+        if owning_phase not in CAPABILITY_PHASES:
+            _fail(validation_code, f"{path}.owningPhase", "must be a supported owning phase.")
+        dependencies = [
+            _stable_id(dependency, f"{path}.dependencies[{dependency_index}]", validation_code)
+            for dependency_index, dependency in enumerate(_bounded_array(
+                capability["dependencies"],
+                f"{path}.dependencies",
+                CAPABILITY_LIMITS["dependencies"],
+                validation_code,
+            ))
+        ]
+        if len(set(dependencies)) != len(dependencies):
+            _fail(validation_code, f"{path}.dependencies", "must not contain duplicates.")
+        implementation_status = capability["implementationStatus"]
+        if implementation_status not in CAPABILITY_IMPLEMENTATION_STATUSES:
+            _fail(
+                validation_code,
+                f"{path}.implementationStatus",
+                "must be planned or implemented.",
+            )
+        representative_move = _bounded_text(
+            capability["representativeMove"],
+            f"{path}.representativeMove",
+            MANIFEST_LIMITS["identifierLength"],
+            validation_code,
+        )
+        if representative_move not in canonical_ids:
+            _fail(
+                "unknown-representative-move",
+                f"{path}.representativeMove",
+                f"{representative_move} is not canonical.",
+            )
+        capabilities.append({
+            "code": code,
+            "owningPhase": owning_phase,
+            "dependencies": dependencies,
+            "implementationStatus": implementation_status,
+            "representativeMove": representative_move,
+        })
+
+    codes = [capability["code"] for capability in capabilities]
+    if len(set(codes)) != len(codes):
+        _fail(
+            "duplicate-capability",
+            "capabilityCatalog.capabilities",
+            "must contain at most one definition per capability code.",
+        )
+    capability_by_code = {capability["code"]: capability for capability in capabilities}
+    capability_index_by_code = {code: index for index, code in enumerate(codes)}
+    for capability_index, capability in enumerate(capabilities):
+        for dependency_index, dependency in enumerate(capability["dependencies"]):
+            if dependency not in capability_by_code:
+                _fail(
+                    "unknown-capability-dependency",
+                    f"capabilities[{capability_index}].dependencies[{dependency_index}]",
+                    f"{dependency} does not resolve to a capability.",
+                )
+
+    visiting: set[str] = set()
+    visited: set[str] = set()
+
+    def visit(code: str) -> None:
+        if code in visited:
+            return
+        visiting.add(code)
+        capability = capability_by_code[code]
+        capability_index = capability_index_by_code[code]
+        for dependency_index, dependency in enumerate(capability["dependencies"]):
+            if dependency in visiting:
+                _fail(
+                    "capability-dependency-cycle",
+                    f"capabilities[{capability_index}].dependencies[{dependency_index}]",
+                    f"{code} introduces a dependency cycle through {dependency}.",
+                )
+            visit(dependency)
+        visiting.remove(code)
+        visited.add(code)
+
+    for code in codes:
+        visit(code)
+    return capability_by_code
+
+
 def _discover_scenario_ids(scenario_root: Path) -> set[str]:
     if not scenario_root.exists():
         return set()
@@ -761,6 +921,7 @@ def _parse_manifest(
     source_hash: str,
     explicit_names: set[str],
     scenario_ids: set[str],
+    capability_by_code: dict[str, dict[str, Any]],
 ) -> tuple[list[dict[str, Any]], int, int]:
     manifest = _record(_load_json(manifest_path, "manifest"), "manifest")
     _exact_fields(manifest, MANIFEST_ROOT_FIELDS, "manifest")
@@ -883,6 +1044,13 @@ def _parse_manifest(
             f"{path}.capabilityTags",
             MANIFEST_LIMITS["capabilityTags"],
         )
+        for capability_index, capability_code in enumerate(capability_tags):
+            if capability_code not in capability_by_code:
+                _fail(
+                    "unknown-capability",
+                    f"{path}.capabilityTags[{capability_index}]",
+                    f"{capability_code} does not resolve to the capability catalog.",
+                )
         suggested_tags = _stable_id_array(
             row["suggestedCapabilityTags"],
             f"{path}.suggestedCapabilityTags",
@@ -893,6 +1061,13 @@ def _parse_manifest(
             f"{path}.blockerCodes",
             MANIFEST_LIMITS["blockerCodes"],
         )
+        for blocker_index, blocker_code in enumerate(blocker_codes):
+            if blocker_code not in capability_by_code:
+                _fail(
+                    "unknown-capability",
+                    f"{path}.blockerCodes[{blocker_index}]",
+                    f"{blocker_code} does not resolve to the capability catalog.",
+                )
         limitations = _debt_array(
             row["limitations"],
             f"{path}.limitations",
@@ -1026,6 +1201,7 @@ def validate_semantic_coverage(
     require_complete: bool = False,
     manifest_path: Path = MANIFEST_PATH,
     ruleset_path: Path = RULESET_PATH,
+    capabilities_path: Path = CAPABILITY_CATALOG_PATH,
     moves_path: Path = MOVES_PATH,
     source_dir: Path = MOVE_AUTOMATION_SOURCE_DIR,
     scenario_root: Path = SCENARIO_ROOT,
@@ -1036,6 +1212,7 @@ def validate_semantic_coverage(
         ruleset_path,
         moves_path,
     )
+    capability_by_code = _parse_capability_catalog(capabilities_path, canonical_moves)
     canonical_names = {move["name"] for move in canonical_moves}
     registry_reader = TypeScriptRegistryReader(load_registry_source(source_dir), canonical_names)
     try:
@@ -1057,6 +1234,7 @@ def validate_semantic_coverage(
         source_hash,
         explicit_names,
         scenario_ids,
+        capability_by_code,
     )
     base_counts = {status: 0 for status in BASE_STATUSES}
     interaction_counts = {status: 0 for status in INTERACTION_STATUSES}

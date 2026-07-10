@@ -358,7 +358,7 @@ Status: DONE
 
 ## MA-017 — Add structured capability definitions
 
-Status: TODO
+Status: DONE
 
 **Depends on:** MA-012
 **Commit:** `feat(move-automation): define capability catalog`
