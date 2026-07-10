@@ -17,6 +17,7 @@ import {
 import type { MapFieldEffects } from '~/types/map'
 import type { MoveAutomationScript } from '~/types/moveAutomation'
 import type { AuthoritativeMoveRulesContext } from './context'
+import type { MoveContextualDamageBaseResolution } from './damageBase'
 import {
   evaluateMoveExpression,
   type MoveRuleEvaluationTraceEntry,
@@ -52,6 +53,9 @@ export interface MoveDamageStatSelectionResolution
 export interface MoveSpecDamageCalculation {
   readonly breakdown: MoveAutomationDamageBreakdown
   readonly stats: MoveDamageStatSelectionResolution
+  readonly contextualDamageBase: MoveContextualDamageBaseResolution | null
+  /** Contextual DB nodes precede attack/defense selection nodes in audit order. */
+  readonly evaluationTrace: readonly MoveRuleEvaluationTraceEntry[]
 }
 
 const deepFreeze = <Value>(value: Value): Value => {
@@ -167,6 +171,8 @@ export interface ResolveMoveSpecDamageCalculationInput {
   readonly resolution: MoveAutomationTargetResolutionState
   readonly fieldEffects?: MapFieldEffects
   readonly selectedTargets?: readonly SpawnedPokemon[]
+  /** Interpreter-owned per-recipient result; fixed DB operations omit it. */
+  readonly contextualDamageBase?: MoveContextualDamageBaseResolution
 }
 
 /**
@@ -190,7 +196,16 @@ export const resolveMoveSpecDamageCalculation = (
     options.selectedTargets,
     stats,
   )
-  return deepFreeze({ breakdown, stats })
+  const contextualDamageBase = options.contextualDamageBase ?? null
+  return deepFreeze({
+    breakdown,
+    stats,
+    contextualDamageBase,
+    evaluationTrace: [
+      ...(contextualDamageBase?.evaluationTrace ?? []),
+      ...stats.trace,
+    ],
+  })
 }
 
 export const resolveMoveSpecDamageBreakdown = (

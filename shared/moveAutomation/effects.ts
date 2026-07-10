@@ -7,7 +7,9 @@ import {
 } from './encounterEffects'
 import {
   MoveExpressionValidationError,
+  parseMoveExpression,
   parseMoveStatSelectionExpression,
+  type MoveExpression,
   type MoveStatSelectionExpression,
 } from './expressions'
 import {
@@ -69,6 +71,11 @@ export const MOVE_EFFECT_ROLL_FORMULA_KINDS = [
 ] as const
 
 export const MOVE_EFFECT_DAMAGE_CLASSES = ['physical', 'special'] as const
+export const MOVE_EFFECT_DAMAGE_BASE_STAB_TIMINGS = [
+  'none',
+  'before-bounds',
+  'after-bounds',
+] as const
 export const MOVE_EFFECT_HP_POOLS = ['hit-points', 'temporary-hit-points'] as const
 export const MOVE_EFFECT_DIRECT_HP_MODES = ['lose', 'set'] as const
 export const MOVE_EFFECT_HEAL_MODES = [
@@ -137,6 +144,8 @@ export type MoveEffectRecipientSelectorKind =
   (typeof MOVE_EFFECT_RECIPIENT_SELECTOR_KINDS)[number]
 export type MoveEffectRollFormulaKind = (typeof MOVE_EFFECT_ROLL_FORMULA_KINDS)[number]
 export type MoveEffectDamageClass = (typeof MOVE_EFFECT_DAMAGE_CLASSES)[number]
+export type MoveEffectDamageBaseStabTiming =
+  (typeof MOVE_EFFECT_DAMAGE_BASE_STAB_TIMINGS)[number]
 export type MoveEffectHpPool = (typeof MOVE_EFFECT_HP_POOLS)[number]
 export type MoveEffectDirectHpMode = (typeof MOVE_EFFECT_DIRECT_HP_MODES)[number]
 export type MoveEffectHealMode = (typeof MOVE_EFFECT_HEAL_MODES)[number]
@@ -189,9 +198,22 @@ export interface MoveRollEffectPayload {
   readonly formula: MoveEffectRollFormula
 }
 
+export interface MoveContextualDamageBase {
+  readonly kind: 'expression'
+  readonly expression: MoveExpression
+  /** Inclusive bounds applied at the configured point relative to STAB. */
+  readonly minimum: number
+  readonly maximum: number
+  readonly rounding: MoveEffectRoundingPolicy
+  readonly stabTiming: MoveEffectDamageBaseStabTiming
+}
+
+export type MoveDamageBase = number | MoveContextualDamageBase
+
 export interface MoveDamageEffectPayload {
   readonly damageClass: MoveEffectDamageClass
-  readonly damageBase: number
+  /** A number preserves fixed v2 definitions; contextual rules use the bounded expression form. */
+  readonly damageBase: MoveDamageBase
   readonly moveType: string
   readonly accuracyRollId: string | null
   readonly criticalRollId: string | null
@@ -424,6 +446,14 @@ const DAMAGE_REQUIRED_FIELDS = [
   'criticalRollId',
 ] as const
 const DAMAGE_OPTIONAL_FIELDS = ['attackStat', 'defenseStat'] as const
+const CONTEXTUAL_DAMAGE_BASE_FIELDS = [
+  'kind',
+  'expression',
+  'minimum',
+  'maximum',
+  'rounding',
+  'stabTiming',
+] as const
 const DIRECT_HP_FIELDS = [
   'mode',
   'pool',
@@ -476,6 +506,7 @@ const RECIPIENT_KIND_SET = new Set<string>(MOVE_EFFECT_RECIPIENT_SELECTOR_KINDS)
 const PHASE_SET = new Set<string>(MOVE_SPEC_PHASES)
 const ROLL_FORMULA_KIND_SET = new Set<string>(MOVE_EFFECT_ROLL_FORMULA_KINDS)
 const DAMAGE_CLASS_SET = new Set<string>(MOVE_EFFECT_DAMAGE_CLASSES)
+const DAMAGE_BASE_STAB_TIMING_SET = new Set<string>(MOVE_EFFECT_DAMAGE_BASE_STAB_TIMINGS)
 const HP_POOL_SET = new Set<string>(MOVE_EFFECT_HP_POOLS)
 const DIRECT_HP_MODE_SET = new Set<string>(MOVE_EFFECT_DIRECT_HP_MODES)
 const HEAL_MODE_SET = new Set<string>(MOVE_EFFECT_HEAL_MODES)
@@ -819,12 +850,11 @@ const parseRollPayload = (value: unknown, path: string): MoveRollEffectPayload =
   }
 }
 
-const parseDamageStatSelection = (
-  value: unknown,
-  path: string,
-): MoveStatSelectionExpression => {
+const parseEffectExpression = <Value>(
+  parse: () => Value,
+): Value => {
   try {
-    return parseMoveStatSelectionExpression(value, path)
+    return parse()
   }
   catch (error) {
     if (!(error instanceof MoveExpressionValidationError)) throw error
@@ -844,6 +874,70 @@ const parseDamageStatSelection = (
   }
 }
 
+const parseDamageStatSelection = (
+  value: unknown,
+  path: string,
+): MoveStatSelectionExpression => parseEffectExpression(
+  () => parseMoveStatSelectionExpression(value, path),
+)
+
+const parseDamageBase = (
+  value: unknown,
+  path: string,
+): MoveDamageBase => {
+  if (typeof value === 'number') {
+    return parseInteger(
+      value,
+      path,
+      0,
+      MOVE_EFFECT_OPERATION_LIMITS.numericMagnitude,
+    )
+  }
+
+  const input = parseExactRecord(value, CONTEXTUAL_DAMAGE_BASE_FIELDS, path)
+  if (ownValue(input, 'kind', path) !== 'expression') {
+    fail('invalid-effect-operation', `${path}.kind`, 'must be expression.')
+  }
+  const minimum = parseInteger(
+    ownValue(input, 'minimum', path),
+    `${path}.minimum`,
+    0,
+    MOVE_EFFECT_OPERATION_LIMITS.numericMagnitude,
+  )
+  const maximum = parseInteger(
+    ownValue(input, 'maximum', path),
+    `${path}.maximum`,
+    0,
+    MOVE_EFFECT_OPERATION_LIMITS.numericMagnitude,
+  )
+  if (minimum > maximum) {
+    fail('invalid-effect-operation', path, 'minimum cannot exceed maximum.')
+  }
+  return {
+    kind: 'expression',
+    expression: parseEffectExpression(
+      () => parseMoveExpression(
+        ownValue(input, 'expression', path),
+        `${path}.expression`,
+      ),
+    ),
+    minimum,
+    maximum,
+    rounding: parseEnum<MoveEffectRoundingPolicy>(
+      ownValue(input, 'rounding', path),
+      ROUNDING_POLICY_SET,
+      `${path}.rounding`,
+      'floor, round, or ceil',
+    ),
+    stabTiming: parseEnum<MoveEffectDamageBaseStabTiming>(
+      ownValue(input, 'stabTiming', path),
+      DAMAGE_BASE_STAB_TIMING_SET,
+      `${path}.stabTiming`,
+      'none, before-bounds, or after-bounds',
+    ),
+  }
+}
+
 const parseDamagePayload = (value: unknown, path: string): MoveDamageEffectPayload => {
   const input = parseRecordWithOptionalFields(
     value,
@@ -860,11 +954,9 @@ const parseDamagePayload = (value: unknown, path: string): MoveDamageEffectPaylo
       `${path}.damageClass`,
       'physical or special',
     ),
-    damageBase: parseInteger(
+    damageBase: parseDamageBase(
       ownValue(input, 'damageBase', path),
       `${path}.damageBase`,
-      0,
-      MOVE_EFFECT_OPERATION_LIMITS.numericMagnitude,
     ),
     moveType: parseStableId(ownValue(input, 'moveType', path), `${path}.moveType`),
     accuracyRollId: parseNullableStableId(

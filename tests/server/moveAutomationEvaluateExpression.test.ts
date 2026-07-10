@@ -4,6 +4,8 @@ import {
   type ResolveMoveIntent,
 } from '#shared/livePlayMoveResolution'
 import { MOVE_RULE_AST_LIMITS } from '#shared/moveAutomation/ast'
+import { createEmptyEncounterHistory } from '#shared/moveAutomation/encounterHistory'
+import { createEmptyEncounterState } from '#shared/moveAutomation/encounterState'
 import {
   parseMoveExpression,
   type MoveExpression,
@@ -51,7 +53,10 @@ const pokemonSheet = (
   movelist: slug === 'actor' ? [{ name: 'Tackle' }] : [],
   stats: { atk: { added: slug === 'actor' ? 4 : 0, stage: options.stage ?? 0 } },
   combatStages: { acc: slug === 'actor' ? 1 : 0 },
-  combat: { currentHp: options.currentHp },
+  combat: {
+    currentHp: options.currentHp,
+    ...(slug === 'target' ? { conditions: ['Burned'] } : {}),
+  },
 })
 
 const mapFixture = (): TabletopMap => ({
@@ -76,6 +81,18 @@ const mapFixture = (): TabletopMap => ({
   ],
   lights: [],
   initiative: { activeId: 'actor-token', round: 1 },
+  encounterState: {
+    ...createEmptyEncounterState(),
+    history: {
+      ...createEmptyEncounterHistory(),
+      consecutiveMoves: [{
+        placementId: 'actor-token',
+        canonicalId: 'Tackle',
+        count: 4,
+        lastResolutionId: 'resolution.previous-tackle',
+      }],
+    },
+  },
 })
 
 const intent = (): ResolveMoveIntent => ({
@@ -320,6 +337,24 @@ describe('bounded authoritative move expression evaluator', () => {
     }).value).toBe(target.currentHp / target.maxHp)
     expect(evaluateMoveExpression({
       expression: expression({
+        kind: 'condition',
+        subject: { kind: 'current-target' },
+        conditionId: 'burned',
+      }),
+      context,
+      selectorState: state,
+    }).value).toBe(true)
+    expect(evaluateMoveExpression({
+      expression: expression({
+        kind: 'condition',
+        subject: { kind: 'current-target' },
+        conditionId: 'frozen',
+      }),
+      context,
+      selectorState: state,
+    }).value).toBe(false)
+    expect(evaluateMoveExpression({
+      expression: expression({
         kind: 'combat-stage',
         subject: { kind: 'actor' },
         stage: 'atk',
@@ -406,6 +441,21 @@ describe('bounded authoritative move expression evaluator', () => {
       }),
       context,
     }).value).toBe(false)
+    const consecutiveUse = expression({
+      kind: 'move-history',
+      subject: { kind: 'actor' },
+      query: 'consecutive-use-count',
+    })
+    expect(evaluateMoveExpression({
+      expression: consecutiveUse,
+      context,
+      canonicalMoveId: 'Tackle',
+    }).value).toBe(4)
+    expect(evaluateMoveExpression({
+      expression: consecutiveUse,
+      context,
+      canonicalMoveId: 'Scratch',
+    }).value).toBe(0)
 
     expect(context.reads.snapshot()).toEqual([
       { kind: 'pokemon', slug: 'actor', revision: 3 },

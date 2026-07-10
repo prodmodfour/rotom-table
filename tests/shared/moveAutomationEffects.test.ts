@@ -261,6 +261,37 @@ describe('MoveSpec typed effect operations', () => {
         stageModifierPolicy: 'honor',
       },
     })
+    const contextualDamage = parseMoveEffectOperation(validOperation('damage', {
+      payload: {
+        ...VALID_PAYLOADS.damage,
+        damageBase: {
+          kind: 'expression',
+          expression: {
+            kind: 'lookup-table',
+            input: {
+              kind: 'condition',
+              subject: { kind: 'current-target' },
+              conditionId: 'burned',
+            },
+            entries: [{ key: true, value: { kind: 'constant', value: 12 } }],
+            fallback: { kind: 'constant', value: 6 },
+          },
+          minimum: 1,
+          maximum: 20,
+          rounding: 'floor',
+          stabTiming: 'after-bounds',
+        },
+      },
+    }))
+    expect(contextualDamage.kind === 'damage' && contextualDamage.payload.damageBase)
+      .toMatchObject({
+        kind: 'expression',
+        minimum: 1,
+        maximum: 20,
+        rounding: 'floor',
+        stabTiming: 'after-bounds',
+        expression: { kind: 'lookup-table' },
+      })
     expect(parseMoveEffectOperation(validOperation('condition', {
       payload: { action: 'clear', conditionId: null },
     })).payload).toEqual({ action: 'clear', conditionId: null })
@@ -439,6 +470,40 @@ describe('MoveSpec typed effect operations', () => {
       }),
       'invalid-effect-operation',
       'operation.payload.defenseStat',
+    )
+    expectEffectError(
+      validOperation('damage', {
+        payload: {
+          ...VALID_PAYLOADS.damage,
+          damageBase: {
+            kind: 'expression',
+            expression: { kind: 'constant', value: 4 },
+            minimum: 10,
+            maximum: 2,
+            rounding: 'floor',
+            stabTiming: 'after-bounds',
+          },
+        },
+      }),
+      'invalid-effect-operation',
+      'operation.payload.damageBase',
+    )
+    expectEffectError(
+      validOperation('damage', {
+        payload: {
+          ...VALID_PAYLOADS.damage,
+          damageBase: {
+            kind: 'expression',
+            expression: { kind: 'constant', value: 4 },
+            minimum: 1,
+            maximum: 20,
+            rounding: 'floor',
+            stabTiming: 'client-selected',
+          },
+        },
+      }),
+      'invalid-effect-operation',
+      'operation.payload.damageBase.stabTiming',
     )
     const temporaryEffect = VALID_PAYLOADS['temporary-effect']
     expectEffectError(

@@ -981,7 +981,7 @@ Status: DONE
 
 ## MA-076 — Generalize dynamic damage-base expressions
 
-Status: TODO
+Status: DONE
 
 **Depends on:** MA-074–MA-075
 **Commit:** `feat(move-automation): calculate contextual damage bases`

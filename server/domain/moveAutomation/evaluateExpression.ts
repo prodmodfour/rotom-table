@@ -533,6 +533,29 @@ const statValue = (
   return boundedNumber(resolution.value, nodeId)
 }
 
+const conditionValue = (
+  expression: Extract<MoveExpression, { readonly kind: 'condition' }>,
+  state: EvaluationState,
+  nodeId: string,
+  depth: number,
+): boolean => {
+  const placementId = selectedSubjectId(
+    expression.subject,
+    state,
+    nodeId,
+    depth + 1,
+  )
+  const targetState = state.context.queries.targetStates.resolve(placementId)
+  if (!targetState) {
+    return fail(
+      'subject-unavailable',
+      `${nodeId}.subject`,
+      `placement ${placementId} has no authoritative target-state projection.`,
+    )
+  }
+  return targetState.conditionIds.includes(expression.conditionId)
+}
+
 const combatStageValue = (
   expression: Extract<MoveExpression, { readonly kind: 'combat-stage' }>,
   state: EvaluationState,
@@ -687,7 +710,13 @@ const historyValue = (
       `placement ${placementId} is unavailable.`,
     )
   }
-  return boundedScalar(state.context.queries.history.query(placementId, query), nodeId)
+  const value = query === 'consecutive-use-count'
+    ? state.context.queries.history.consecutiveUseCount(
+        placementId,
+        state.canonicalMoveId,
+      )
+    : state.context.queries.history.query(placementId, query)
+  return boundedScalar(value, nodeId)
 }
 
 const arithmeticResult = (
@@ -880,6 +909,9 @@ const evaluateExpressionNode = (
       )
       break
     }
+    case 'condition':
+      value = conditionValue(expression, state, nodeId, depth)
+      break
     case 'combat-stage':
       value = combatStageValue(expression, state, nodeId, depth)
       break

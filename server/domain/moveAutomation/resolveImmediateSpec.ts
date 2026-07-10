@@ -25,6 +25,7 @@ import type {
   AuthoritativeMoveSheetRead,
 } from './context'
 import { deduplicateAuthoritativeMoveSheetReads } from './context'
+import type { MoveContextualDamageBaseResolution } from './damageBase'
 import { resolveMoveSpecDamageCalculation } from './damageStats'
 import {
   executeMoveSpec,
@@ -52,6 +53,7 @@ export type ImmediateMoveSpecResolutionErrorCode =
   | 'unsupported-operation'
   | 'damage-roll-missing'
   | 'damage-roll-invalid'
+  | 'damage-base-resolution-missing'
 
 export class ImmediateMoveSpecResolutionError extends Error {
   readonly code: ImmediateMoveSpecResolutionErrorCode
@@ -148,6 +150,7 @@ const createDamageQuery = (options: {
   readonly operations: readonly MoveSpecEmittedOperation[]
   readonly resolvedRolls: readonly MoveSpecResolvedRoll[]
   readonly rollLedger: ImmediateMoveSpecResolution['rollLedger']
+  readonly resolvedDamageBases: readonly MoveContextualDamageBaseResolution[]
   readonly selectedTargetIds: readonly string[]
 }): MoveCoreTokenDamageQuery => {
   const selectedTargets = options.selectedTargetIds.flatMap((placementId) => {
@@ -189,6 +192,15 @@ const createDamageQuery = (options: {
       if (preventedBy) {
         return { hpLoss: 0, preventedBy, consultedPlacementIds: [] }
       }
+      const contextualDamageBase = typeof operation.payload.damageBase === 'number'
+        ? null
+        : options.resolvedDamageBases.find(resolution => (
+            resolution.operationId === operation.id
+            && resolution.recipientId === recipient.placement.id
+          )) ?? fail(
+            'damage-base-resolution-missing',
+            `Contextual Damage Base for operation ${operation.id} and recipient ${recipient.placement.id} is missing.`,
+          )
       const calculation = resolveMoveSpecDamageCalculation({
         context: options.context,
         operation,
@@ -197,16 +209,31 @@ const createDamageQuery = (options: {
         resolution: state,
         fieldEffects: options.context.map.fieldEffects,
         selectedTargets,
+        ...(contextualDamageBase ? { contextualDamageBase } : {}),
       })
       return {
         hpLoss: calculation.breakdown.hpLoss,
         preventedBy: null,
         consultedPlacementIds: [],
-        ...(calculation.stats.trace.length > 0 ? {
+        ...(calculation.evaluationTrace.length > 0 ? {
           details: {
+            contextualDamageBase: calculation.contextualDamageBase
+              ? {
+                  expressionValue: calculation.contextualDamageBase.expressionValue,
+                  rounding: calculation.contextualDamageBase.rounding,
+                  roundedExpressionValue: calculation.contextualDamageBase.roundedExpressionValue,
+                  stabTiming: calculation.contextualDamageBase.stabTiming,
+                  stabBonus: calculation.contextualDamageBase.stabBonus,
+                  valueBeforeBounds: calculation.contextualDamageBase.valueBeforeBounds,
+                  minimum: calculation.contextualDamageBase.minimum,
+                  maximum: calculation.contextualDamageBase.maximum,
+                  boundedValue: calculation.contextualDamageBase.boundedValue,
+                  finalDamageBase: calculation.contextualDamageBase.finalDamageBase,
+                }
+              : null,
             attackStat: calculation.stats.attackStat ?? null,
             defenseStat: calculation.stats.defenseStat ?? null,
-            evaluationTrace: calculation.stats.trace,
+            evaluationTrace: calculation.evaluationTrace,
           } as unknown as MoveResolutionTraceJsonValue,
         } : {}),
       }
@@ -389,6 +416,7 @@ export const resolveImmediateMoveSpec = (options: {
           operations: execution.operations,
           resolvedRolls: execution.resolvedRolls,
           rollLedger: execution.rollLedger,
+          resolvedDamageBases: execution.resolvedDamageBases,
           selectedTargetIds: execution.targetIds,
         })
       : undefined,

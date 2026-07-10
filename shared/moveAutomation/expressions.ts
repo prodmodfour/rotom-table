@@ -10,6 +10,7 @@ import {
   parseMoveRuleAstEnum,
   parseMoveRuleAstExactRecord,
   parseMoveRuleAstRecord,
+  parseMoveRuleAstString,
   parseMoveRuleScalar,
   readMoveRuleAstOwnValue,
   type MoveRuleAstParseContext,
@@ -30,6 +31,7 @@ export const MOVE_EXPRESSION_KINDS = [
   'lookup-table',
   'stat',
   'hp-ratio',
+  'condition',
   'combat-stage',
   'combat-stage-total',
   'weight',
@@ -193,6 +195,13 @@ export interface MoveHpRatioExpression {
   readonly ratio: MoveHpRatioKind
 }
 
+/** Boolean condition membership for status-dependent formulas and predicates. */
+export interface MoveConditionExpression {
+  readonly kind: 'condition'
+  readonly subject: MoveSelector
+  readonly conditionId: string
+}
+
 export interface MoveCombatStageExpression {
   readonly kind: 'combat-stage'
   readonly subject: MoveSelector
@@ -245,6 +254,7 @@ export type MoveExpression =
   | MoveLookupTableExpression
   | MoveStatExpression
   | MoveHpRatioExpression
+  | MoveConditionExpression
   | MoveCombatStageExpression
   | MoveCombatStageTotalExpression
   | MoveWeightExpression
@@ -297,6 +307,7 @@ const STAT_POLICY_FIELDS = [
   'stageModifierPolicy',
 ] as const
 const HP_RATIO_FIELDS = ['kind', 'subject', 'ratio'] as const
+const CONDITION_FIELDS = ['kind', 'subject', 'conditionId'] as const
 const COMBAT_STAGE_FIELDS = ['kind', 'subject', 'stage'] as const
 const COMBAT_STAGE_MODIFIER_FIELDS = [
   'kind',
@@ -328,6 +339,7 @@ const COMBAT_STAGE_SET = new Set<string>(MOVE_COMBAT_STAGE_STATS)
 const WEIGHT_METRIC_SET = new Set<string>(MOVE_WEIGHT_METRICS)
 const TYPE_SOURCE_SET = new Set<string>(MOVE_TYPE_SOURCES)
 const HISTORY_QUERY_SET = new Set<string>(MOVE_HISTORY_QUERIES)
+const STABLE_ID_PATTERN = /^[a-z0-9]+(?:[._:/-][a-z0-9]+)*$/
 
 const parseChildExpression = (
   value: unknown,
@@ -620,6 +632,27 @@ export const parseMoveExpressionNode = (
           context,
         ),
       }
+    case 'condition': {
+      assertMoveRuleAstExactKeys(input, CONDITION_FIELDS, path, context)
+      const conditionId = parseMoveRuleAstString(
+        readMoveRuleAstOwnValue(input, 'conditionId', path, context),
+        `${path}.conditionId`,
+        context,
+      )
+      if (!STABLE_ID_PATTERN.test(conditionId)) {
+        failMoveRuleAst(
+          context,
+          context.invalidCode,
+          `${path}.conditionId`,
+          'must be a lowercase stable condition identifier.',
+        )
+      }
+      return {
+        kind,
+        subject: parseSubject(input, path, depth, context),
+        conditionId,
+      }
+    }
     case 'combat-stage': {
       const hasStageModifierPolicy = Object.prototype.hasOwnProperty.call(
         input,

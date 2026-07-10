@@ -48,6 +48,7 @@ describe('MoveSpec rules expression AST', () => {
       'lookup-table',
       'stat',
       'hp-ratio',
+      'condition',
       'combat-stage',
       'combat-stage-total',
       'weight',
@@ -185,6 +186,15 @@ describe('MoveSpec rules expression AST', () => {
       ratio: 'missing-to-maximum',
     })
     expect(parseMoveExpression({
+      kind: 'condition',
+      subject: target(),
+      conditionId: 'badly-poisoned',
+    })).toEqual({
+      kind: 'condition',
+      subject: target(),
+      conditionId: 'badly-poisoned',
+    })
+    expect(parseMoveExpression({
       kind: 'combat-stage',
       subject: { kind: 'actor' },
       stage: 'satk',
@@ -249,6 +259,11 @@ describe('MoveSpec rules expression AST', () => {
       },
       'invalid-expression',
       'expression',
+    )
+    expectExpressionError(
+      { kind: 'condition', subject: target(), conditionId: 'Client Status' },
+      'invalid-expression',
+      'expression.conditionId',
     )
     expectExpressionError(
       { kind: 'type', of: 'move', subject: target() },

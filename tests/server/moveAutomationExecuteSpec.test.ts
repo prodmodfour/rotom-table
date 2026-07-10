@@ -91,7 +91,10 @@ const mapFixture = (): TabletopMap => ({
   initiative: { activeId: 'actor-token', round: 1 },
 })
 
-const pokemonSheet = (slug: string): CharacterSheet => ({
+const pokemonSheet = (
+  slug: string,
+  overrides: Partial<CharacterSheet> = {},
+): CharacterSheet => ({
   slug,
   nickname: slug,
   species: slug === 'target' ? 'Snorlax' : 'Pikachu',
@@ -99,6 +102,7 @@ const pokemonSheet = (slug: string): CharacterSheet => ({
   revision: 3,
   movelist: slug === 'actor' ? [{ name: 'Tackle' }] : [],
   combat: { currentHp: 50 },
+  ...overrides,
 })
 
 const intent = (): ResolveMoveIntent => ({
@@ -112,12 +116,21 @@ const buildContext = (options: {
   readonly random?: AuthoritativeMoveRandomDrawStream
   readonly candidatePlacementIds?: readonly string[]
   readonly selectedPlacementIds?: readonly string[]
+  readonly actorTypes?: readonly string[]
+  readonly targetCurrentHp?: number
+  readonly bystanderCurrentHp?: number
 } = {}) => buildAuthoritativeMoveRulesContext({
   map: mapFixture(),
   pokemonSheets: new Map([
-    ['actor', pokemonSheet('actor')],
-    ['target', pokemonSheet('target')],
-    ['bystander', pokemonSheet('bystander')],
+    ['actor', pokemonSheet('actor', options.actorTypes
+      ? { types: [...options.actorTypes] }
+      : {})],
+    ['target', pokemonSheet('target', options.targetCurrentHp === undefined
+      ? {}
+      : { combat: { currentHp: options.targetCurrentHp } })],
+    ['bystander', pokemonSheet('bystander', options.bystanderCurrentHp === undefined
+      ? {}
+      : { combat: { currentHp: options.bystanderCurrentHp } })],
   ]),
   trainerSheets: new Map<string, TrainerSheet>(),
   intent: intent(),
@@ -389,6 +402,108 @@ describe('phased MoveSpec interpreter', () => {
         roll: expect.objectContaining({ rollId: 'roll.accuracy', finalValue: 11 }),
       }),
     ])
+  })
+
+  it('calculates and traces contextual Damage Base once per authoritative target', () => {
+    const spec = baseSpec()
+    spec.canonicalId = 'Tackle'
+    spec.targeting = {
+      kind: 'multi-target',
+      minTargets: 2,
+      maxTargets: 2,
+      selector: { kind: 'selected-targets' },
+    }
+    spec.phases = [{
+      phase: 'damage',
+      operations: [{
+        id: 'operation.contextual-damage',
+        kind: 'damage',
+        source: { kind: 'move', id: 'move.tackle' },
+        recipients: { kind: 'attacked-targets' },
+        phase: 'damage',
+        reasonCode: 'move.tackle.contextual-damage',
+        payload: {
+          damageClass: 'physical',
+          damageBase: {
+            kind: 'expression',
+            expression: {
+              kind: 'arithmetic',
+              operator: 'divide',
+              operands: [
+                {
+                  kind: 'stat',
+                  subject: { kind: 'current-target' },
+                  stat: 'current-hp',
+                },
+                { kind: 'constant', value: 10 },
+              ],
+            },
+            minimum: 1,
+            maximum: 10,
+            rounding: 'floor',
+            stabTiming: 'after-bounds',
+          },
+          moveType: 'normal',
+          accuracyRollId: null,
+          criticalRollId: null,
+        },
+      }],
+    }]
+    const stream = createFiniteAuthoritativeMoveRandomStream([0, 0, 0])
+
+    const result = executeMoveSpec({
+      definition: definitionFor(spec),
+      context: buildContext({
+        random: stream,
+        candidatePlacementIds: ['target-token', 'bystander-token'],
+        selectedPlacementIds: ['target-token', 'bystander-token'],
+        actorTypes: ['Normal'],
+        targetCurrentHp: 50,
+        bystanderCurrentHp: 20,
+      }),
+    })
+
+    expect(result.kind).toBe('complete')
+    expect(result.resolvedDamageBases).toMatchObject([
+      {
+        recipientId: 'target-token',
+        expressionValue: 5,
+        boundedValue: 5,
+        stabTiming: 'after-bounds',
+        stabBonus: 2,
+        finalDamageBase: 7,
+      },
+      {
+        recipientId: 'bystander-token',
+        expressionValue: 2,
+        boundedValue: 2,
+        stabTiming: 'after-bounds',
+        stabBonus: 2,
+        finalDamageBase: 4,
+      },
+    ])
+    expect(result.resolvedDamageBases.map(resolution => (
+      resolution.evaluationTrace.at(-1)?.nodeId
+    ))).toEqual([
+      'operation.contextual-damage.damageBase.target-token',
+      'operation.contextual-damage.damageBase.bystander-token',
+    ])
+    expect(result.rollLedger.map(entry => entry.formula)).toEqual([
+      { kind: 'dice', count: 2, sides: 6, modifier: 10 },
+      { kind: 'dice', count: 1, sides: 8, modifier: 6 },
+    ])
+    expect(stream.consumed).toBe(3)
+    const damageTrace = traceEventsOfKind(result, 'operation')
+      .find(event => event.kind === 'operation' && event.operationId === 'operation.contextual-damage')
+    expect(damageTrace).toMatchObject({
+      result: {
+        contextualDamageBases: [
+          expect.objectContaining({ recipientId: 'target-token', finalDamageBase: 7 }),
+          expect.objectContaining({ recipientId: 'bystander-token', finalDamageBase: 4 }),
+        ],
+      },
+    })
+    expect(Object.isFrozen(result.resolvedDamageBases)).toBe(true)
   })
 
   it('stops at an unresolved typed choice without running later operations or sealing randomness', () => {
