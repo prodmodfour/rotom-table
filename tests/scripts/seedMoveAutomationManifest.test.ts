@@ -89,6 +89,11 @@ describe('move automation semantic manifest seed script', () => {
 
       for (const row of seeded.moves) {
         expect(row.capabilityTags).toEqual([])
+        expect(row.conformanceEvidence).toEqual({
+          requirementTags: [],
+          scenarios: [],
+          notApplicable: [],
+        })
         if (registeredIds.has(row.canonicalId)) {
           expect(row).toMatchObject({
             baseStatus: 'assisted',
@@ -141,6 +146,11 @@ describe('move automation semantic manifest seed script', () => {
         limitations: [],
         manualSteps: [],
         scenarioIds: ['scratch.hit'],
+        conformanceEvidence: {
+          requirementTags: ['target.enemy'],
+          scenarios: [{ scenarioId: 'scratch.hit', evidenceClasses: ['enemy'] }],
+          notApplicable: [],
+        },
         reviewedAt: '2026-07-10',
       })
       writeFileSync(manifestPath, `${JSON.stringify(existing, null, 2)}\n`)

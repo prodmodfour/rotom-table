@@ -45,7 +45,17 @@ const completeScratchRecord = () => ({
   blockerCodes: [],
   limitations: [],
   manualSteps: [],
-  scenarioIds: ['scratch.hit'],
+  scenarioIds: ['scratch.hit', 'scratch.miss', 'scratch.crit', 'scratch.immunity'],
+  conformanceEvidence: {
+    requirementTags: ['mechanic.damage'],
+    scenarios: [
+      { scenarioId: 'scratch.hit', evidenceClasses: ['hit'] },
+      { scenarioId: 'scratch.miss', evidenceClasses: ['miss'] },
+      { scenarioId: 'scratch.crit', evidenceClasses: ['crit'] },
+      { scenarioId: 'scratch.immunity', evidenceClasses: ['immunity'] },
+    ],
+    notApplicable: [],
+  },
   reviewedAt: '2026-07-10',
   unsupportedInteractionIds: [],
   rolloutCohortId: 'reg-024',
@@ -66,11 +76,16 @@ const blockedTackleRecord = () => ({
   capabilityTags: [],
   blockerCodes: ['runtime.unimplemented'],
   scenarioIds: [],
+  conformanceEvidence: {
+    requirementTags: [],
+    scenarios: [],
+    notApplicable: [],
+  },
   reviewedAt: null,
   rolloutCohortId: null,
 })
 
-const manifestWith = (...moves: unknown[]) => ({ schemaVersion: 1, moves })
+const manifestWith = (...moves: unknown[]) => ({ schemaVersion: 2, moves })
 
 const expectManifestError = (
   value: unknown,
@@ -94,7 +109,7 @@ describe('move automation semantic manifest contract', () => {
     const canonicalIds = catalog.moves.map(({ canonicalId }) => canonicalId)
     const manifestIds = manifest.moves.map(({ canonicalId }) => canonicalId)
 
-    expect(manifest.schemaVersion).toBe(1)
+    expect(manifest.schemaVersion).toBe(2)
     expect(manifest.moves).toHaveLength(776)
     expect(manifestIds).toEqual(canonicalIds)
     expect(new Set(manifestIds).size).toBe(776)
@@ -143,6 +158,17 @@ describe('move automation semantic manifest contract', () => {
       }),
       'invalid-manifest',
       'moves[0].limitations[0]',
+    )
+    expectManifestError(
+      manifestWith({
+        ...completeScratchRecord(),
+        conformanceEvidence: {
+          ...completeScratchRecord().conformanceEvidence,
+          executable: true,
+        },
+      }),
+      'invalid-manifest',
+      'moves[0].conformanceEvidence',
     )
   })
 
@@ -207,6 +233,122 @@ describe('move automation semantic manifest contract', () => {
     for (const record of invalidCompleteRows) {
       expectManifestError(manifestWith(record), 'invalid-status-combination')
     }
+  })
+
+  it('requires complete rows to cover every evidence class selected by reviewed tags', () => {
+    expectManifestError(
+      manifestWith({
+        ...completeScratchRecord(),
+        conformanceEvidence: {
+          requirementTags: [],
+          scenarios: [],
+          notApplicable: [],
+        },
+      }),
+      'missing-conformance-evidence',
+      'moves[0].conformanceEvidence.requirementTags',
+    )
+
+    const missingImmunity = completeScratchRecord()
+    missingImmunity.scenarioIds = ['scratch.hit', 'scratch.miss', 'scratch.crit']
+    missingImmunity.conformanceEvidence.scenarios = missingImmunity.conformanceEvidence.scenarios
+      .filter(({ evidenceClasses }) => !evidenceClasses.includes('immunity'))
+    expectManifestError(
+      manifestWith(missingImmunity),
+      'missing-conformance-evidence',
+      'moves[0].conformanceEvidence',
+    )
+
+    expectManifestError(
+      manifestWith({
+        ...completeScratchRecord(),
+        conformanceEvidence: {
+          ...completeScratchRecord().conformanceEvidence,
+          requirementTags: ['branch.unknown'],
+        },
+      }),
+      'unknown-evidence-requirement',
+      'moves[0].conformanceEvidence.requirementTags[0]',
+    )
+    expectManifestError(
+      manifestWith({
+        ...completeScratchRecord(),
+        conformanceEvidence: {
+          ...completeScratchRecord().conformanceEvidence,
+          scenarios: [{ scenarioId: 'scratch.hit', evidenceClasses: ['unknown'] }],
+        },
+      }),
+      'unknown-evidence-class',
+      'moves[0].conformanceEvidence.scenarios[0].evidenceClasses[0]',
+    )
+  })
+
+  it('accepts explicit reviewed not-applicable reasons without treating them as scenarios', () => {
+    const baseRecord = completeScratchRecord()
+    const reviewed = {
+      ...baseRecord,
+      scenarioIds: ['scratch.hit', 'scratch.miss', 'scratch.crit'],
+      conformanceEvidence: {
+        ...baseRecord.conformanceEvidence,
+        scenarios: baseRecord.conformanceEvidence.scenarios
+          .filter(({ evidenceClasses }) => !evidenceClasses.includes('immunity')),
+        notApplicable: [{
+          evidenceClass: 'immunity',
+          reason: 'The reviewed canonical branch has no applicable immunity query.',
+        }],
+      },
+    }
+
+    expect(parseMoveAutomationManifest(manifestWith(reviewed), catalog).moves[0])
+      .toMatchObject({
+        conformanceEvidence: {
+          notApplicable: [{ evidenceClass: 'immunity' }],
+        },
+      })
+
+    expectManifestError(
+      manifestWith({ ...reviewed, reviewedAt: null }),
+      'invalid-conformance-evidence',
+      'moves[0].conformanceEvidence.notApplicable',
+    )
+    expectManifestError(
+      manifestWith({
+        ...reviewed,
+        conformanceEvidence: {
+          ...reviewed.conformanceEvidence,
+          scenarios: [
+            ...reviewed.conformanceEvidence.scenarios,
+            { scenarioId: 'scratch.immunity', evidenceClasses: ['immunity'] },
+          ],
+        },
+      }),
+      'invalid-conformance-evidence',
+    )
+  })
+
+  it('requires evidence mappings to reference and classify declared scenarios', () => {
+    expectManifestError(
+      manifestWith({
+        ...completeScratchRecord(),
+        conformanceEvidence: {
+          ...completeScratchRecord().conformanceEvidence,
+          scenarios: [
+            ...completeScratchRecord().conformanceEvidence.scenarios,
+            { scenarioId: 'scratch.unlisted', evidenceClasses: ['hit'] },
+          ],
+        },
+      }),
+      'invalid-conformance-evidence',
+      'moves[0].conformanceEvidence.scenarios[4].scenarioId',
+    )
+    expectManifestError(
+      manifestWith({
+        ...completeScratchRecord(),
+        scenarioIds: [...completeScratchRecord().scenarioIds, 'scratch.unclassified'],
+      }),
+      'missing-conformance-evidence',
+      'moves[0].conformanceEvidence.scenarios',
+    )
   })
 
   it('requires assisted and blocked statuses to state their semantic debt truthfully', () => {

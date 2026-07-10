@@ -397,7 +397,7 @@ Status: DONE
 
 ## MA-020 — Define scenario evidence requirements
 
-Status: TODO
+Status: DONE
 
 **Depends on:** MA-012, MA-017
 **Commit:** `feat(move-automation): define conformance evidence rules`

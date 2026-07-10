@@ -6,6 +6,7 @@ import { fileURLToPath } from 'node:url'
 import { describe, expect, it } from 'vitest'
 import capabilitiesJson from '../../data/move-automation/capabilities.json'
 import manifestJson from '../../data/move-automation/manifest.json'
+import scenarioRequirementsJson from '../../data/move-automation/scenario-requirements.json'
 import { EXPLICIT_MOVE_AUTOMATION_SCRIPTS } from '../../src/utils/move-automation/registry'
 
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), '../..')
@@ -20,6 +21,12 @@ type ManifestRows = MutableManifest['moves']
 type MutableCapabilityCatalog = {
   schemaVersion: number
   capabilities: Array<Record<string, any>>
+}
+
+type MutableScenarioRequirements = {
+  schemaVersion: number
+  evidenceClasses: Array<Record<string, any>>
+  requirements: Array<Record<string, any>>
 }
 
 const baseStatusCounts = (moves: ManifestRows) => ({
@@ -81,6 +88,18 @@ const writeCapabilities = (directory: string, catalog: MutableCapabilityCatalog)
 
 const mutableCapabilities = (): MutableCapabilityCatalog =>
   structuredClone(capabilitiesJson) as MutableCapabilityCatalog
+
+const writeScenarioRequirements = (
+  directory: string,
+  catalog: MutableScenarioRequirements,
+): string => {
+  const path = join(directory, 'scenario-requirements.json')
+  writeFileSync(path, `${JSON.stringify(catalog, null, 2)}\n`)
+  return path
+}
+
+const mutableScenarioRequirements = (): MutableScenarioRequirements =>
+  structuredClone(scenarioRequirementsJson) as MutableScenarioRequirements
 
 describe('move automation semantic coverage checker', () => {
   it('passes valid metadata and prints a semantic report', () => {
@@ -190,6 +209,89 @@ describe('move automation semantic coverage checker', () => {
     })
   })
 
+  it('validates the reviewed scenario-requirement catalog', () => {
+    withTemporaryDirectory((directory) => {
+      const requirements = mutableScenarioRequirements()
+      requirements.requirements[0].requiredEvidenceClasses = ['evidence.unknown']
+      const result = runChecker(
+        '--scenario-requirements', writeScenarioRequirements(directory, requirements),
+        '--json',
+      )
+
+      expect(result.status).toBe(1)
+      expect(JSON.parse(result.stdout)).toMatchObject({
+        issues: [{
+          code: 'unknown-evidence-class',
+          path: 'scenarioRequirements.requirements[0].requiredEvidenceClasses[0]',
+        }],
+      })
+    })
+  })
+
+  it('requires every selected evidence class or a reviewed not-applicable reason', () => {
+    withTemporaryDirectory((directory) => {
+      const reviewed = mutableManifest()
+      const scratch = reviewed.moves.find(({ canonicalId }) => canonicalId === 'Scratch')
+      expect(scratch).toBeDefined()
+      Object.assign(scratch!, {
+        baseStatus: 'complete',
+        blockerCodes: [],
+        limitations: [],
+        manualSteps: [],
+        scenarioIds: ['scratch.hit'],
+        conformanceEvidence: {
+          requirementTags: ['branch.accuracy'],
+          scenarios: [{ scenarioId: 'scratch.hit', evidenceClasses: ['hit'] }],
+          notApplicable: [{
+            evidenceClass: 'miss',
+            reason: 'The reviewed canonical branch cannot miss.',
+          }],
+        },
+        reviewedAt: '2026-07-10',
+      })
+      const manifestPath = writeManifest(directory, reviewed)
+      writeFileSync(
+        join(directory, 'scratch.ts'),
+        "export const hit = { scenarioId: 'scratch.hit' }\n",
+      )
+
+      const accepted = runChecker(
+        '--manifest', manifestPath,
+        '--scenario-root', directory,
+        '--json',
+      )
+      expect(accepted.status, `${accepted.stdout}\n${accepted.stderr}`).toBe(0)
+
+      scratch!.conformanceEvidence.notApplicable = []
+      writeManifest(directory, reviewed)
+      const missing = runChecker(
+        '--manifest', manifestPath,
+        '--scenario-root', directory,
+        '--json',
+      )
+      expect(missing.status).toBe(1)
+      expect(JSON.parse(missing.stdout)).toMatchObject({
+        issues: [{ code: 'missing-conformance-evidence' }],
+      })
+
+      scratch!.conformanceEvidence.notApplicable = [{
+        evidenceClass: 'miss',
+        reason: 'The reviewed canonical branch cannot miss.',
+      }]
+      scratch!.reviewedAt = null
+      writeManifest(directory, reviewed)
+      const unreviewed = runChecker(
+        '--manifest', manifestPath,
+        '--scenario-root', directory,
+        '--json',
+      )
+      expect(unreviewed.status).toBe(1)
+      expect(JSON.parse(unreviewed.stdout)).toMatchObject({
+        issues: [{ code: 'invalid-conformance-evidence' }],
+      })
+    })
+  })
+
   it('resolves registry, runtime, hash, and scenario references', () => {
     withTemporaryDirectory((directory) => {
       const invalidRegistry = mutableManifest()
@@ -231,7 +333,17 @@ describe('move automation semantic coverage checker', () => {
         blockerCodes: [],
         limitations: [],
         manualSteps: [],
-        scenarioIds: ['scratch.hit'],
+        scenarioIds: ['scratch.hit', 'scratch.miss', 'scratch.crit', 'scratch.immunity'],
+        conformanceEvidence: {
+          requirementTags: ['mechanic.damage'],
+          scenarios: [
+            { scenarioId: 'scratch.hit', evidenceClasses: ['hit'] },
+            { scenarioId: 'scratch.miss', evidenceClasses: ['miss'] },
+            { scenarioId: 'scratch.crit', evidenceClasses: ['crit'] },
+            { scenarioId: 'scratch.immunity', evidenceClasses: ['immunity'] },
+          ],
+          notApplicable: [],
+        },
         reviewedAt: '2026-07-10',
       })
       const manifestPath = writeManifest(directory, reviewed)
@@ -241,7 +353,13 @@ describe('move automation semantic coverage checker', () => {
         issues: [{ code: 'missing-scenario-reference' }],
       })
 
-      writeFileSync(join(directory, 'scratch.ts'), "export const scratch = { scenarioId: 'scratch.hit' }\n")
+      writeFileSync(join(directory, 'scratch.ts'), [
+        "export const hit = { scenarioId: 'scratch.hit' }",
+        "export const miss = { scenarioId: 'scratch.miss' }",
+        "export const crit = { scenarioId: 'scratch.crit' }",
+        "export const immunity = { scenarioId: 'scratch.immunity' }",
+        '',
+      ].join('\n'))
       const linkedResult = runChecker(
         '--manifest', manifestPath,
         '--scenario-root', directory,
@@ -252,10 +370,10 @@ describe('move automation semantic coverage checker', () => {
         valid: true,
         baseStatus: baseStatusCounts(reviewed.moves),
         references: {
-          discoveredScenarios: 1,
+          discoveredScenarios: 4,
           linkedRuntimes: currentLinkedRuntimeCount,
           runtimeDefinitionHashes: currentDefinitionHashCount,
-          scenarioReferences: 1,
+          scenarioReferences: 4,
         },
       })
     })

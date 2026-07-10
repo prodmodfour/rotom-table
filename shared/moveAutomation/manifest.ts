@@ -1,8 +1,13 @@
 import capabilityCatalogJson from '../../data/move-automation/capabilities.json'
+import scenarioRequirementsJson from '../../data/move-automation/scenario-requirements.json'
 import { parseMoveAutomationCapabilityCatalog } from './capabilities'
 import type { CanonicalMoveCatalog, CanonicalMoveRecord } from './ruleset'
+import {
+  parseMoveAutomationScenarioRequirementCatalog,
+  type MoveAutomationScenarioRequirementCatalog,
+} from './scenarioRequirements'
 
-export const MOVE_AUTOMATION_MANIFEST_SCHEMA_VERSION = 1 as const
+export const MOVE_AUTOMATION_MANIFEST_SCHEMA_VERSION = 2 as const
 
 export const MOVE_AUTOMATION_BASE_STATUSES = ['complete', 'assisted', 'blocked'] as const
 export const MOVE_AUTOMATION_INTERACTION_STATUSES = ['unassessed', 'partial', 'complete'] as const
@@ -23,6 +28,10 @@ export const MOVE_AUTOMATION_MANIFEST_LIMITS = Object.freeze({
   limitations: 32,
   manualSteps: 32,
   scenarioIds: 64,
+  evidenceRequirementTags: 32,
+  evidenceScenarios: 64,
+  evidenceClassesPerScenario: 32,
+  notApplicableEvidence: 32,
   unsupportedInteractionIds: 64,
 })
 
@@ -49,6 +58,24 @@ export interface MoveAutomationManifestDebt {
   readonly summary: string
 }
 
+export interface MoveAutomationScenarioEvidenceReference {
+  readonly scenarioId: string
+  readonly evidenceClasses: readonly string[]
+}
+
+export interface MoveAutomationNotApplicableEvidence {
+  readonly evidenceClass: string
+  /** Reviewed rules reason why this evidence class cannot apply to the move. */
+  readonly reason: string
+}
+
+export interface MoveAutomationConformanceEvidence {
+  /** Reviewed mechanic/branch tags resolved through scenario-requirements.json. */
+  readonly requirementTags: readonly string[]
+  readonly scenarios: readonly MoveAutomationScenarioEvidenceReference[]
+  readonly notApplicable: readonly MoveAutomationNotApplicableEvidence[]
+}
+
 export interface MoveAutomationManifestRecord {
   readonly canonicalId: string
   readonly displayName: string
@@ -63,6 +90,7 @@ export interface MoveAutomationManifestRecord {
   readonly limitations: readonly MoveAutomationManifestDebt[]
   readonly manualSteps: readonly MoveAutomationManifestDebt[]
   readonly scenarioIds: readonly string[]
+  readonly conformanceEvidence: MoveAutomationConformanceEvidence
   /** ISO calendar date of the latest semantic review, or null when unreviewed. */
   readonly reviewedAt: string | null
   /** Stable IDs for ability, item, or feature interactions outside base-move completeness. */
@@ -82,6 +110,10 @@ export type MoveAutomationManifestValidationCode =
   | 'duplicate-move'
   | 'unknown-move'
   | 'unknown-capability'
+  | 'unknown-evidence-requirement'
+  | 'unknown-evidence-class'
+  | 'invalid-conformance-evidence'
+  | 'missing-conformance-evidence'
   | 'provenance-mismatch'
   | 'invalid-status-combination'
 
@@ -113,6 +145,7 @@ const MOVE_FIELDS = [
   'limitations',
   'manualSteps',
   'scenarioIds',
+  'conformanceEvidence',
   'reviewedAt',
   'unsupportedInteractionIds',
   'rolloutCohortId',
@@ -120,6 +153,9 @@ const MOVE_FIELDS = [
 const RUNTIME_FIELDS = ['kind', 'version', 'definitionHash', 'sourceModule'] as const
 const PROVENANCE_FIELDS = ['rulesetId', 'canonicalizationVersion', 'sourceDataSha256'] as const
 const DEBT_FIELDS = ['code', 'summary'] as const
+const CONFORMANCE_EVIDENCE_FIELDS = ['requirementTags', 'scenarios', 'notApplicable'] as const
+const SCENARIO_EVIDENCE_FIELDS = ['scenarioId', 'evidenceClasses'] as const
+const NOT_APPLICABLE_EVIDENCE_FIELDS = ['evidenceClass', 'reason'] as const
 
 const BASE_STATUS_SET = new Set<string>(MOVE_AUTOMATION_BASE_STATUSES)
 const INTERACTION_STATUS_SET = new Set<string>(MOVE_AUTOMATION_INTERACTION_STATUSES)
@@ -290,6 +326,107 @@ const parseDebt = (
   return entries
 }
 
+const parseConformanceEvidence = (
+  value: unknown,
+  path: string,
+  requirementCatalog: MoveAutomationScenarioRequirementCatalog,
+): MoveAutomationConformanceEvidence => {
+  const input = parseRecord(value, path)
+  assertExactKeys(input, CONFORMANCE_EVIDENCE_FIELDS, path)
+  const requirementByTag = new Map(
+    requirementCatalog.requirements.map(requirement => [requirement.tag, requirement]),
+  )
+  const knownEvidenceClasses = new Set(
+    requirementCatalog.evidenceClasses.map(evidenceClass => evidenceClass.code),
+  )
+
+  const requirementTags = parseStableIdArray(
+    input.requirementTags,
+    `${path}.requirementTags`,
+    MOVE_AUTOMATION_MANIFEST_LIMITS.evidenceRequirementTags,
+  )
+  requirementTags.forEach((tag, index) => {
+    if (!requirementByTag.has(tag)) {
+      fail(
+        'unknown-evidence-requirement',
+        `${path}.requirementTags[${index}]`,
+        `${tag} does not resolve to a scenario requirement.`,
+      )
+    }
+  })
+
+  const scenarios = parseBoundedArray(
+    input.scenarios,
+    `${path}.scenarios`,
+    MOVE_AUTOMATION_MANIFEST_LIMITS.evidenceScenarios,
+  ).map((value, index): MoveAutomationScenarioEvidenceReference => {
+    const scenarioPath = `${path}.scenarios[${index}]`
+    const scenario = parseRecord(value, scenarioPath)
+    assertExactKeys(scenario, SCENARIO_EVIDENCE_FIELDS, scenarioPath)
+    const evidenceClasses = parseStableIdArray(
+      scenario.evidenceClasses,
+      `${scenarioPath}.evidenceClasses`,
+      MOVE_AUTOMATION_MANIFEST_LIMITS.evidenceClassesPerScenario,
+    )
+    if (evidenceClasses.length === 0) {
+      fail(
+        'invalid-conformance-evidence',
+        `${scenarioPath}.evidenceClasses`,
+        'must identify at least one evidence class.',
+      )
+    }
+    evidenceClasses.forEach((evidenceClass, evidenceIndex) => {
+      if (!knownEvidenceClasses.has(evidenceClass)) {
+        fail(
+          'unknown-evidence-class',
+          `${scenarioPath}.evidenceClasses[${evidenceIndex}]`,
+          `${evidenceClass} does not resolve to an evidence class.`,
+        )
+      }
+    })
+    return {
+      scenarioId: parseStableId(scenario.scenarioId, `${scenarioPath}.scenarioId`),
+      evidenceClasses,
+    }
+  })
+  assertUnique(scenarios.map(scenario => scenario.scenarioId), `${path}.scenarios.scenarioId`)
+
+  const notApplicable = parseBoundedArray(
+    input.notApplicable,
+    `${path}.notApplicable`,
+    MOVE_AUTOMATION_MANIFEST_LIMITS.notApplicableEvidence,
+  ).map((value, index): MoveAutomationNotApplicableEvidence => {
+    const exceptionPath = `${path}.notApplicable[${index}]`
+    const exception = parseRecord(value, exceptionPath)
+    assertExactKeys(exception, NOT_APPLICABLE_EVIDENCE_FIELDS, exceptionPath)
+    const evidenceClass = parseStableId(
+      exception.evidenceClass,
+      `${exceptionPath}.evidenceClass`,
+    )
+    if (!knownEvidenceClasses.has(evidenceClass)) {
+      fail(
+        'unknown-evidence-class',
+        `${exceptionPath}.evidenceClass`,
+        `${evidenceClass} does not resolve to an evidence class.`,
+      )
+    }
+    return {
+      evidenceClass,
+      reason: parseBoundedText(
+        exception.reason,
+        `${exceptionPath}.reason`,
+        MOVE_AUTOMATION_MANIFEST_LIMITS.summaryLength,
+      ),
+    }
+  })
+  assertUnique(
+    notApplicable.map(exception => exception.evidenceClass),
+    `${path}.notApplicable.evidenceClass`,
+  )
+
+  return { requirementTags, scenarios, notApplicable }
+}
+
 const parseReviewedAt = (value: unknown, path: string): string | null => {
   if (value === null) return null
   if (typeof value !== 'string' || !ISO_DATE_PATTERN.test(value)) {
@@ -383,9 +520,107 @@ const hasBaseDebt = (record: MoveAutomationManifestRecord): boolean =>
   || record.limitations.length > 0
   || record.manualSteps.length > 0
 
+const assertValidConformanceEvidence = (
+  record: MoveAutomationManifestRecord,
+  path: string,
+  requirementCatalog: MoveAutomationScenarioRequirementCatalog,
+): void => {
+  const evidencePath = `${path}.conformanceEvidence`
+  const requirementByTag = new Map(
+    requirementCatalog.requirements.map(requirement => [requirement.tag, requirement]),
+  )
+  const requiredClasses = new Set(
+    record.conformanceEvidence.requirementTags.flatMap(tag =>
+      requirementByTag.get(tag)?.requiredEvidenceClasses ?? [],
+    ),
+  )
+  const listedScenarioIds = new Set(record.scenarioIds)
+  const mappedScenarioIds = new Set(
+    record.conformanceEvidence.scenarios.map(scenario => scenario.scenarioId),
+  )
+  const coveredClasses = new Set(
+    record.conformanceEvidence.scenarios.flatMap(scenario => scenario.evidenceClasses),
+  )
+  const notApplicableClasses = new Set(
+    record.conformanceEvidence.notApplicable.map(exception => exception.evidenceClass),
+  )
+
+  record.conformanceEvidence.scenarios.forEach((scenario, index) => {
+    if (!listedScenarioIds.has(scenario.scenarioId)) {
+      fail(
+        'invalid-conformance-evidence',
+        `${evidencePath}.scenarios[${index}].scenarioId`,
+        `${scenario.scenarioId} is not listed by ${path}.scenarioIds.`,
+      )
+    }
+  })
+
+  for (const evidenceClass of coveredClasses) {
+    if (!requiredClasses.has(evidenceClass)) {
+      fail(
+        'invalid-conformance-evidence',
+        `${evidencePath}.scenarios`,
+        `${evidenceClass} is not required by the row's requirement tags.`,
+      )
+    }
+    if (notApplicableClasses.has(evidenceClass)) {
+      fail(
+        'invalid-conformance-evidence',
+        evidencePath,
+        `${evidenceClass} cannot be both scenario-covered and not applicable.`,
+      )
+    }
+  }
+
+  for (const evidenceClass of notApplicableClasses) {
+    if (!requiredClasses.has(evidenceClass)) {
+      fail(
+        'invalid-conformance-evidence',
+        `${evidencePath}.notApplicable`,
+        `${evidenceClass} is not required by the row's requirement tags.`,
+      )
+    }
+  }
+  if (record.conformanceEvidence.notApplicable.length > 0 && record.reviewedAt === null) {
+    fail(
+      'invalid-conformance-evidence',
+      `${evidencePath}.notApplicable`,
+      'not-applicable reasons require reviewedAt metadata.',
+    )
+  }
+
+  if (record.baseStatus !== 'complete') return
+  if (record.conformanceEvidence.requirementTags.length === 0) {
+    fail(
+      'missing-conformance-evidence',
+      `${evidencePath}.requirementTags`,
+      'complete base automation requires at least one reviewed mechanic or branch tag.',
+    )
+  }
+  const unmappedScenarioIds = record.scenarioIds.filter(id => !mappedScenarioIds.has(id))
+  if (unmappedScenarioIds.length > 0) {
+    fail(
+      'missing-conformance-evidence',
+      `${evidencePath}.scenarios`,
+      `complete base automation must classify scenario evidence: ${unmappedScenarioIds.join(', ')}.`,
+    )
+  }
+  const missingClasses = [...requiredClasses].filter(evidenceClass =>
+    !coveredClasses.has(evidenceClass) && !notApplicableClasses.has(evidenceClass),
+  )
+  if (missingClasses.length > 0) {
+    fail(
+      'missing-conformance-evidence',
+      evidencePath,
+      `complete base automation is missing required evidence: ${missingClasses.join(', ')}.`,
+    )
+  }
+}
+
 const assertValidStatusCombination = (
   record: MoveAutomationManifestRecord,
   path: string,
+  requirementCatalog: MoveAutomationScenarioRequirementCatalog,
 ): void => {
   if (record.baseStatus === 'complete') {
     if (hasBaseDebt(record)) {
@@ -451,6 +686,8 @@ const assertValidStatusCombination = (
       'interaction coverage cannot be complete while base automation is incomplete.',
     )
   }
+
+  assertValidConformanceEvidence(record, path, requirementCatalog)
 }
 
 const canonicalMoveById = (catalog: CanonicalMoveCatalog): ReadonlyMap<string, CanonicalMoveRecord> =>
@@ -462,6 +699,7 @@ const parseMoveRecord = (
   catalog: CanonicalMoveCatalog,
   knownMoves: ReadonlyMap<string, CanonicalMoveRecord>,
   knownCapabilityCodes: ReadonlySet<string>,
+  requirementCatalog: MoveAutomationScenarioRequirementCatalog,
 ): MoveAutomationManifestRecord => {
   const path = `moves[${index}]`
   const input = parseRecord(value, path)
@@ -522,6 +760,11 @@ const parseMoveRecord = (
       `${path}.scenarioIds`,
       MOVE_AUTOMATION_MANIFEST_LIMITS.scenarioIds,
     ),
+    conformanceEvidence: parseConformanceEvidence(
+      input.conformanceEvidence,
+      `${path}.conformanceEvidence`,
+      requirementCatalog,
+    ),
     reviewedAt: parseReviewedAt(input.reviewedAt, `${path}.reviewedAt`),
     unsupportedInteractionIds: parseStableIdArray(
       input.unsupportedInteractionIds,
@@ -530,7 +773,7 @@ const parseMoveRecord = (
     ),
     rolloutCohortId: parseNullableStableId(input.rolloutCohortId, `${path}.rolloutCohortId`),
   }
-  assertValidStatusCombination(record, path)
+  assertValidStatusCombination(record, path, requirementCatalog)
   return record
 }
 
@@ -543,6 +786,7 @@ export const parseMoveAutomationManifest = (
   value: unknown,
   catalog: CanonicalMoveCatalog,
   capabilityCatalogInput: unknown = capabilityCatalogJson,
+  scenarioRequirementsInput: unknown = scenarioRequirementsJson,
 ): MoveAutomationManifest => {
   const root = parseRecord(value, 'manifest')
   assertExactKeys(root, ROOT_FIELDS, 'manifest')
@@ -556,6 +800,9 @@ export const parseMoveAutomationManifest = (
 
   const knownMoves = canonicalMoveById(catalog)
   const capabilityCatalog = parseMoveAutomationCapabilityCatalog(capabilityCatalogInput, catalog)
+  const requirementCatalog = parseMoveAutomationScenarioRequirementCatalog(
+    scenarioRequirementsInput,
+  )
   const knownCapabilityCodes = new Set(
     capabilityCatalog.capabilities.map(capability => capability.code),
   )
@@ -569,6 +816,7 @@ export const parseMoveAutomationManifest = (
     catalog,
     knownMoves,
     knownCapabilityCodes,
+    requirementCatalog,
   ))
 
   const canonicalIds = moves.map(({ canonicalId }) => canonicalId)

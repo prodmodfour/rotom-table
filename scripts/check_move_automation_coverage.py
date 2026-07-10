@@ -11,6 +11,7 @@ from move_automation_coverage import (
     CAPABILITY_CATALOG_PATH,
     LEGACY_FINGERPRINT_PATH,
     MANIFEST_PATH,
+    SCENARIO_REQUIREMENTS_PATH,
     SCENARIO_ROOT,
     MoveAutomationValidationError,
     SemanticCoverageReport,
@@ -54,6 +55,12 @@ def parse_args() -> argparse.Namespace:
         type=Path,
         default=CAPABILITY_CATALOG_PATH,
         help="typed capability catalog used to resolve manifest capability references",
+    )
+    parser.add_argument(
+        "--scenario-requirements",
+        type=Path,
+        default=SCENARIO_REQUIREMENTS_PATH,
+        help="reviewed mapping from mechanic/branch tags to required scenario evidence",
     )
     parser.add_argument(
         "--legacy-fingerprints",
@@ -155,6 +162,7 @@ def main() -> int:
             require_complete=args.require_complete,
             manifest_path=args.manifest.resolve(),
             capabilities_path=args.capabilities.resolve(),
+            scenario_requirements_path=args.scenario_requirements.resolve(),
             legacy_fingerprint_path=args.legacy_fingerprints.resolve(),
             scenario_root=args.scenario_root.resolve(),
         )

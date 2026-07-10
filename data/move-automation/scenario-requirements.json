@@ -1,0 +1,191 @@
+{
+  "schemaVersion": 1,
+  "evidenceClasses": [
+    {
+      "code": "ally",
+      "summary": "An eligible allied recipient is accepted and receives only the canonical allied effects."
+    },
+    {
+      "code": "alternate-branch",
+      "summary": "A reviewed alternate rules-text branch selects and resolves its distinct outcome."
+    },
+    {
+      "code": "area-mixed-outcomes",
+      "summary": "One area resolution contains both affected and unaffected or hit and missed recipients with per-target results."
+    },
+    {
+      "code": "choice",
+      "summary": "An authorized participant selects a legal durable option and the selected branch resolves once."
+    },
+    {
+      "code": "crit",
+      "summary": "A critical hit follows the move's reviewed critical-hit policy and modifier ordering."
+    },
+    {
+      "code": "enemy",
+      "summary": "An eligible enemy recipient is accepted while non-enemy recipients are excluded."
+    },
+    {
+      "code": "hit",
+      "summary": "A successful accuracy or automatic-hit branch applies the canonical effects."
+    },
+    {
+      "code": "immunity",
+      "summary": "A relevant immunity prevents only the effects it canonically blocks and records the reason."
+    },
+    {
+      "code": "lifecycle-cleanup",
+      "summary": "Expiry, switch, knockout, cancellation, or scene cleanup removes the effect exactly once at the canonical boundary."
+    },
+    {
+      "code": "lifecycle-trigger",
+      "summary": "The effect triggers exactly once at its canonical authoritative lifecycle boundary."
+    },
+    {
+      "code": "miss",
+      "summary": "A failed accuracy branch applies no hit-only effect or mutation while retaining canonical declaration costs."
+    },
+    {
+      "code": "multi-resource-conflict",
+      "summary": "A stale consulted or written resource rejects the whole resolution without a partial mutation."
+    },
+    {
+      "code": "pass",
+      "summary": "An authorized participant passes or declines and the canonical no-selection branch resolves once."
+    },
+    {
+      "code": "reconnect",
+      "summary": "Refresh or reconnect restores the same authoritative pending state and permits one continuation."
+    },
+    {
+      "code": "retry",
+      "summary": "Duplicate or uncertain delivery returns the original result without rerolling, spending, or applying effects again."
+    },
+    {
+      "code": "self",
+      "summary": "The actor is resolved as the canonical self recipient without accepting an unrelated target."
+    },
+    {
+      "code": "threshold-fail",
+      "summary": "A threshold or conditional predicate fails and omits the guarded effect."
+    },
+    {
+      "code": "threshold-pass",
+      "summary": "A threshold or conditional predicate passes and applies the guarded effect."
+    }
+  ],
+  "requirements": [
+    {
+      "tag": "branch.accuracy",
+      "summary": "Apply when the move has a hit and miss branch, including server-owned accuracy checks.",
+      "requiredEvidenceClasses": [
+        "hit",
+        "miss"
+      ]
+    },
+    {
+      "tag": "branch.alternate",
+      "summary": "Apply once for each reviewed family of mutually distinct canonical rules-text branches.",
+      "requiredEvidenceClasses": [
+        "alternate-branch"
+      ]
+    },
+    {
+      "tag": "branch.critical-hit",
+      "summary": "Apply when the move can critically hit or overrides normal critical-hit behavior.",
+      "requiredEvidenceClasses": [
+        "crit"
+      ]
+    },
+    {
+      "tag": "branch.immunity",
+      "summary": "Apply when type, condition, effect, field, item, or other canonical immunity is consulted.",
+      "requiredEvidenceClasses": [
+        "immunity"
+      ]
+    },
+    {
+      "tag": "branch.threshold",
+      "summary": "Apply when a roll threshold, state predicate, or conditional clause gates an effect.",
+      "requiredEvidenceClasses": [
+        "threshold-pass",
+        "threshold-fail"
+      ]
+    },
+    {
+      "tag": "interaction.choice",
+      "summary": "Apply when a participant chooses among durable options or may decline the offered effect.",
+      "requiredEvidenceClasses": [
+        "choice",
+        "pass"
+      ]
+    },
+    {
+      "tag": "mechanic.damage",
+      "summary": "Apply to ordinary damaging resolution; mark canonically impossible branches not applicable with a reviewed reason.",
+      "requiredEvidenceClasses": [
+        "hit",
+        "miss",
+        "crit",
+        "immunity"
+      ]
+    },
+    {
+      "tag": "mechanic.lifecycle",
+      "summary": "Apply to delayed, duration-based, charged, triggered, or source-linked encounter effects.",
+      "requiredEvidenceClasses": [
+        "lifecycle-trigger",
+        "lifecycle-cleanup"
+      ]
+    },
+    {
+      "tag": "recovery.reconnect",
+      "summary": "Apply when resolution opens a durable choice, reaction, interruption, or other resumable state.",
+      "requiredEvidenceClasses": [
+        "reconnect"
+      ]
+    },
+    {
+      "tag": "recovery.retry",
+      "summary": "Apply when the move mutates state, spends a resource, rolls, or opens a pending resolution.",
+      "requiredEvidenceClasses": [
+        "retry"
+      ]
+    },
+    {
+      "tag": "resource.multi",
+      "summary": "Apply when one resolution consults or writes more than one authoritative map, sheet, inventory, or pending resource.",
+      "requiredEvidenceClasses": [
+        "multi-resource-conflict"
+      ]
+    },
+    {
+      "tag": "target.ally",
+      "summary": "Apply when at least one branch requires or affects allies.",
+      "requiredEvidenceClasses": [
+        "ally"
+      ]
+    },
+    {
+      "tag": "target.area",
+      "summary": "Apply when geometry can include multiple recipients with independent eligibility or accuracy outcomes.",
+      "requiredEvidenceClasses": [
+        "area-mixed-outcomes"
+      ]
+    },
+    {
+      "tag": "target.enemy",
+      "summary": "Apply when at least one branch requires or affects enemies.",
+      "requiredEvidenceClasses": [
+        "enemy"
+      ]
+    },
+    {
+      "tag": "target.self",
+      "summary": "Apply when at least one branch targets or directly affects the actor.",
+      "requiredEvidenceClasses": [
+        "self"
+      ]
+    }
+  ]
+}

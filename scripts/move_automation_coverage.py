@@ -17,6 +17,7 @@ MOVE_AUTOMATION_SOURCE_DIR = ROOT / "src" / "utils" / "move-automation"
 MANIFEST_PATH = ROOT / "data" / "move-automation" / "manifest.json"
 RULESET_PATH = ROOT / "data" / "move-automation" / "ruleset.json"
 CAPABILITY_CATALOG_PATH = ROOT / "data" / "move-automation" / "capabilities.json"
+SCENARIO_REQUIREMENTS_PATH = ROOT / "data" / "move-automation" / "scenario-requirements.json"
 LEGACY_FINGERPRINT_PATH = ROOT / "data" / "move-automation" / "legacy-v1-fingerprints.json"
 SCENARIO_ROOT = ROOT / "tests" / "fixtures" / "moveAutomation"
 
@@ -332,13 +333,22 @@ def print_default_coverage(coverage: MoveCoverage) -> int:
     return 0
 
 
-MANIFEST_SCHEMA_VERSION = 1
+MANIFEST_SCHEMA_VERSION = 2
 CAPABILITY_CATALOG_SCHEMA_VERSION = 1
+SCENARIO_REQUIREMENTS_SCHEMA_VERSION = 1
 LEGACY_FINGERPRINT_SCHEMA_VERSION = 1
 MANIFEST_ROOT_FIELDS = {"schemaVersion", "moves"}
 LEGACY_FINGERPRINT_ROOT_FIELDS = {"schemaVersion", "runtimeKind", "entries"}
 LEGACY_FINGERPRINT_FIELDS = {"canonicalId", "sourceModule", "version", "definitionHash"}
 CAPABILITY_ROOT_FIELDS = {"schemaVersion", "capabilities"}
+SCENARIO_REQUIREMENTS_ROOT_FIELDS = {
+    "schemaVersion", "evidenceClasses", "requirements",
+}
+EVIDENCE_CLASS_FIELDS = {"code", "summary"}
+SCENARIO_REQUIREMENT_FIELDS = {"tag", "summary", "requiredEvidenceClasses"}
+CONFORMANCE_EVIDENCE_FIELDS = {"requirementTags", "scenarios", "notApplicable"}
+SCENARIO_EVIDENCE_FIELDS = {"scenarioId", "evidenceClasses"}
+NOT_APPLICABLE_EVIDENCE_FIELDS = {"evidenceClass", "reason"}
 CAPABILITY_FIELDS = {
     "code", "owningPhase", "dependencies", "implementationStatus",
     "representativeMove",
@@ -349,10 +359,15 @@ CAPABILITY_PHASES = {
 }
 CAPABILITY_IMPLEMENTATION_STATUSES = {"planned", "implemented"}
 CAPABILITY_LIMITS = {"capabilities": 256, "dependencies": 32}
+SCENARIO_REQUIREMENT_LIMITS = {
+    "evidenceClasses": 64,
+    "requirements": 64,
+    "requiredEvidenceClasses": 32,
+}
 MANIFEST_MOVE_FIELDS = {
     "canonicalId", "displayName", "baseStatus", "interactionStatus", "runtime",
     "rulesProvenance", "capabilityTags", "suggestedCapabilityTags", "blockerCodes",
-    "limitations", "manualSteps", "scenarioIds", "reviewedAt",
+    "limitations", "manualSteps", "scenarioIds", "conformanceEvidence", "reviewedAt",
     "unsupportedInteractionIds", "rolloutCohortId",
 }
 RUNTIME_FIELDS = {"kind", "version", "definitionHash", "sourceModule"}
@@ -378,6 +393,10 @@ MANIFEST_LIMITS = {
     "limitations": 32,
     "manualSteps": 32,
     "scenarioIds": 64,
+    "evidenceRequirementTags": 32,
+    "evidenceScenarios": 64,
+    "evidenceClassesPerScenario": 32,
+    "notApplicableEvidence": 32,
     "unsupportedInteractionIds": 64,
 }
 
@@ -934,6 +953,132 @@ def _parse_capability_catalog(
     return capability_by_code
 
 
+def _parse_scenario_requirements(
+    requirements_path: Path,
+) -> tuple[dict[str, dict[str, Any]], dict[str, dict[str, Any]]]:
+    validation_code = "invalid-scenario-requirements"
+    root = _record(
+        _load_json(requirements_path, "scenarioRequirements"),
+        "scenarioRequirements",
+        validation_code,
+    )
+    _exact_fields(
+        root,
+        SCENARIO_REQUIREMENTS_ROOT_FIELDS,
+        "scenarioRequirements",
+        validation_code,
+    )
+    if root["schemaVersion"] != SCENARIO_REQUIREMENTS_SCHEMA_VERSION:
+        _fail(
+            validation_code,
+            "scenarioRequirements.schemaVersion",
+            f"must be {SCENARIO_REQUIREMENTS_SCHEMA_VERSION}.",
+        )
+
+    evidence_classes: list[dict[str, str]] = []
+    for index, value in enumerate(_bounded_array(
+        root["evidenceClasses"],
+        "scenarioRequirements.evidenceClasses",
+        SCENARIO_REQUIREMENT_LIMITS["evidenceClasses"],
+        validation_code,
+    )):
+        path = f"scenarioRequirements.evidenceClasses[{index}]"
+        entry = _record(value, path, validation_code)
+        _exact_fields(entry, EVIDENCE_CLASS_FIELDS, path, validation_code)
+        evidence_classes.append({
+            "code": _stable_id(entry["code"], f"{path}.code", validation_code),
+            "summary": _bounded_text(
+                entry["summary"],
+                f"{path}.summary",
+                MANIFEST_LIMITS["summaryLength"],
+                validation_code,
+            ),
+        })
+    evidence_codes = [entry["code"] for entry in evidence_classes]
+    if len(set(evidence_codes)) != len(evidence_codes):
+        _fail(
+            "duplicate-evidence-class",
+            "scenarioRequirements.evidenceClasses",
+            "must contain at most one definition per evidence class.",
+        )
+    evidence_by_code = {entry["code"]: entry for entry in evidence_classes}
+
+    requirements: list[dict[str, Any]] = []
+    for index, value in enumerate(_bounded_array(
+        root["requirements"],
+        "scenarioRequirements.requirements",
+        SCENARIO_REQUIREMENT_LIMITS["requirements"],
+        validation_code,
+    )):
+        path = f"scenarioRequirements.requirements[{index}]"
+        entry = _record(value, path, validation_code)
+        _exact_fields(entry, SCENARIO_REQUIREMENT_FIELDS, path, validation_code)
+        required_classes = [
+            _stable_id(
+                evidence_class,
+                f"{path}.requiredEvidenceClasses[{evidence_index}]",
+                validation_code,
+            )
+            for evidence_index, evidence_class in enumerate(_bounded_array(
+                entry["requiredEvidenceClasses"],
+                f"{path}.requiredEvidenceClasses",
+                SCENARIO_REQUIREMENT_LIMITS["requiredEvidenceClasses"],
+                validation_code,
+            ))
+        ]
+        if not required_classes:
+            _fail(
+                validation_code,
+                f"{path}.requiredEvidenceClasses",
+                "must identify at least one evidence class.",
+            )
+        if len(set(required_classes)) != len(required_classes):
+            _fail(
+                validation_code,
+                f"{path}.requiredEvidenceClasses",
+                "must not contain duplicates.",
+            )
+        for evidence_index, evidence_class in enumerate(required_classes):
+            if evidence_class not in evidence_by_code:
+                _fail(
+                    "unknown-evidence-class",
+                    f"{path}.requiredEvidenceClasses[{evidence_index}]",
+                    f"{evidence_class} does not resolve to an evidence class.",
+                )
+        requirements.append({
+            "tag": _stable_id(entry["tag"], f"{path}.tag", validation_code),
+            "summary": _bounded_text(
+                entry["summary"],
+                f"{path}.summary",
+                MANIFEST_LIMITS["summaryLength"],
+                validation_code,
+            ),
+            "requiredEvidenceClasses": required_classes,
+        })
+
+    requirement_tags = [entry["tag"] for entry in requirements]
+    if len(set(requirement_tags)) != len(requirement_tags):
+        _fail(
+            "duplicate-requirement-tag",
+            "scenarioRequirements.requirements",
+            "must contain at most one mapping per requirement tag.",
+        )
+    requirement_by_tag = {entry["tag"]: entry for entry in requirements}
+    used_evidence_classes = {
+        evidence_class
+        for requirement in requirements
+        for evidence_class in requirement["requiredEvidenceClasses"]
+    }
+    for index, evidence_class in enumerate(evidence_classes):
+        if evidence_class["code"] not in used_evidence_classes:
+            _fail(
+                "unused-evidence-class",
+                f"scenarioRequirements.evidenceClasses[{index}].code",
+                f"{evidence_class['code']} is not required by any mechanic or branch tag.",
+            )
+    return evidence_by_code, requirement_by_tag
+
+
 def _discover_scenario_ids(scenario_root: Path) -> set[str]:
     if not scenario_root.exists():
         return set()
@@ -1041,6 +1186,193 @@ def _parse_legacy_fingerprints(
     return {entry["canonicalId"]: entry for entry in entries}
 
 
+def _parse_conformance_evidence(
+    value: Any,
+    path: str,
+    listed_scenario_ids: list[str],
+    base_status: str,
+    reviewed_at: str | None,
+    evidence_by_code: dict[str, dict[str, Any]],
+    requirement_by_tag: dict[str, dict[str, Any]],
+) -> dict[str, Any]:
+    evidence = _record(value, path)
+    _exact_fields(evidence, CONFORMANCE_EVIDENCE_FIELDS, path)
+
+    requirement_tags = _stable_id_array(
+        evidence["requirementTags"],
+        f"{path}.requirementTags",
+        MANIFEST_LIMITS["evidenceRequirementTags"],
+    )
+    for index, requirement_tag in enumerate(requirement_tags):
+        if requirement_tag not in requirement_by_tag:
+            _fail(
+                "unknown-evidence-requirement",
+                f"{path}.requirementTags[{index}]",
+                f"{requirement_tag} does not resolve to a scenario requirement.",
+            )
+
+    scenarios: list[dict[str, Any]] = []
+    for index, value in enumerate(_bounded_array(
+        evidence["scenarios"],
+        f"{path}.scenarios",
+        MANIFEST_LIMITS["evidenceScenarios"],
+    )):
+        scenario_path = f"{path}.scenarios[{index}]"
+        scenario = _record(value, scenario_path)
+        _exact_fields(scenario, SCENARIO_EVIDENCE_FIELDS, scenario_path)
+        evidence_classes = _stable_id_array(
+            scenario["evidenceClasses"],
+            f"{scenario_path}.evidenceClasses",
+            MANIFEST_LIMITS["evidenceClassesPerScenario"],
+        )
+        if not evidence_classes:
+            _fail(
+                "invalid-conformance-evidence",
+                f"{scenario_path}.evidenceClasses",
+                "must identify at least one evidence class.",
+            )
+        for evidence_index, evidence_class in enumerate(evidence_classes):
+            if evidence_class not in evidence_by_code:
+                _fail(
+                    "unknown-evidence-class",
+                    f"{scenario_path}.evidenceClasses[{evidence_index}]",
+                    f"{evidence_class} does not resolve to an evidence class.",
+                )
+        scenarios.append({
+            "scenarioId": _stable_id(
+                scenario["scenarioId"],
+                f"{scenario_path}.scenarioId",
+            ),
+            "evidenceClasses": evidence_classes,
+        })
+    mapped_scenario_ids = [scenario["scenarioId"] for scenario in scenarios]
+    if len(set(mapped_scenario_ids)) != len(mapped_scenario_ids):
+        _fail(
+            "invalid-conformance-evidence",
+            f"{path}.scenarios",
+            "must contain at most one evidence mapping per scenario ID.",
+        )
+
+    not_applicable: list[dict[str, str]] = []
+    for index, value in enumerate(_bounded_array(
+        evidence["notApplicable"],
+        f"{path}.notApplicable",
+        MANIFEST_LIMITS["notApplicableEvidence"],
+    )):
+        exception_path = f"{path}.notApplicable[{index}]"
+        exception = _record(value, exception_path)
+        _exact_fields(exception, NOT_APPLICABLE_EVIDENCE_FIELDS, exception_path)
+        evidence_class = _stable_id(
+            exception["evidenceClass"],
+            f"{exception_path}.evidenceClass",
+        )
+        if evidence_class not in evidence_by_code:
+            _fail(
+                "unknown-evidence-class",
+                f"{exception_path}.evidenceClass",
+                f"{evidence_class} does not resolve to an evidence class.",
+            )
+        not_applicable.append({
+            "evidenceClass": evidence_class,
+            "reason": _bounded_text(
+                exception["reason"],
+                f"{exception_path}.reason",
+                MANIFEST_LIMITS["summaryLength"],
+            ),
+        })
+    not_applicable_classes = [entry["evidenceClass"] for entry in not_applicable]
+    if len(set(not_applicable_classes)) != len(not_applicable_classes):
+        _fail(
+            "invalid-conformance-evidence",
+            f"{path}.notApplicable",
+            "must contain at most one reason per evidence class.",
+        )
+
+    required_classes = {
+        evidence_class
+        for requirement_tag in requirement_tags
+        for evidence_class in requirement_by_tag[requirement_tag]["requiredEvidenceClasses"]
+    }
+    covered_classes = {
+        evidence_class
+        for scenario in scenarios
+        for evidence_class in scenario["evidenceClasses"]
+    }
+    not_applicable_class_set = set(not_applicable_classes)
+    listed_scenario_id_set = set(listed_scenario_ids)
+    for index, scenario in enumerate(scenarios):
+        if scenario["scenarioId"] not in listed_scenario_id_set:
+            _fail(
+                "invalid-conformance-evidence",
+                f"{path}.scenarios[{index}].scenarioId",
+                f"{scenario['scenarioId']} is not listed by the row's scenarioIds.",
+            )
+    for evidence_class in sorted(covered_classes):
+        if evidence_class not in required_classes:
+            _fail(
+                "invalid-conformance-evidence",
+                f"{path}.scenarios",
+                f"{evidence_class} is not required by the row's requirement tags.",
+            )
+        if evidence_class in not_applicable_class_set:
+            _fail(
+                "invalid-conformance-evidence",
+                path,
+                f"{evidence_class} cannot be both scenario-covered and not applicable.",
+            )
+    for evidence_class in sorted(not_applicable_class_set):
+        if evidence_class not in required_classes:
+            _fail(
+                "invalid-conformance-evidence",
+                f"{path}.notApplicable",
+                f"{evidence_class} is not required by the row's requirement tags.",
+            )
+    if not_applicable and reviewed_at is None:
+        _fail(
+            "invalid-conformance-evidence",
+            f"{path}.notApplicable",
+            "not-applicable reasons require reviewedAt metadata.",
+        )
+
+    if base_status == "complete":
+        if not requirement_tags:
+            _fail(
+                "missing-conformance-evidence",
+                f"{path}.requirementTags",
+                "complete automation requires at least one reviewed mechanic or branch tag.",
+            )
+        unmapped_scenarios = [
+            scenario_id
+            for scenario_id in listed_scenario_ids
+            if scenario_id not in set(mapped_scenario_ids)
+        ]
+        if unmapped_scenarios:
+            _fail(
+                "missing-conformance-evidence",
+                f"{path}.scenarios",
+                "complete automation must classify scenario evidence: "
+                + ", ".join(unmapped_scenarios)
+                + ".",
+            )
+        missing_classes = sorted(
+            required_classes - covered_classes - not_applicable_class_set
+        )
+        if missing_classes:
+            _fail(
+                "missing-conformance-evidence",
+                path,
+                "complete automation is missing required evidence: "
+                + ", ".join(missing_classes)
+                + ".",
+            )
+
+    return {
+        "requirementTags": requirement_tags,
+        "scenarios": scenarios,
+        "notApplicable": not_applicable,
+    }
+
+
 def _parse_manifest(
     manifest_path: Path,
     ruleset: dict[str, Any],
@@ -1050,11 +1382,17 @@ def _parse_manifest(
     legacy_fingerprints: dict[str, dict[str, Any]],
     scenario_ids: set[str],
     capability_by_code: dict[str, dict[str, Any]],
+    evidence_by_code: dict[str, dict[str, Any]],
+    requirement_by_tag: dict[str, dict[str, Any]],
 ) -> tuple[list[dict[str, Any]], int, int]:
     manifest = _record(_load_json(manifest_path, "manifest"), "manifest")
     _exact_fields(manifest, MANIFEST_ROOT_FIELDS, "manifest")
     if manifest["schemaVersion"] != MANIFEST_SCHEMA_VERSION:
-        _fail("invalid-manifest", "manifest.schemaVersion", "must be 1.")
+        _fail(
+            "invalid-manifest",
+            "manifest.schemaVersion",
+            f"must be {MANIFEST_SCHEMA_VERSION}.",
+        )
     rows_input = _bounded_array(
         manifest["moves"],
         "manifest.moves",
@@ -1243,6 +1581,15 @@ def _parse_manifest(
                     raise ValueError
             except ValueError:
                 _fail("invalid-manifest", f"{path}.reviewedAt", "must be a real ISO date.")
+        conformance_evidence = _parse_conformance_evidence(
+            row["conformanceEvidence"],
+            f"{path}.conformanceEvidence",
+            referenced_scenarios,
+            base_status,
+            reviewed_at,
+            evidence_by_code,
+            requirement_by_tag,
+        )
         unsupported_interactions = _stable_id_array(
             row["unsupportedInteractionIds"],
             f"{path}.unsupportedInteractionIds",
@@ -1320,6 +1667,7 @@ def _parse_manifest(
             "runtime": {**runtime, "kind": runtime_kind},
             "capabilityTags": capability_tags,
             "suggestedCapabilityTags": suggested_tags,
+            "conformanceEvidence": conformance_evidence,
         })
 
     manifest_ids = [row["canonicalId"] for row in rows]
@@ -1344,6 +1692,7 @@ def validate_semantic_coverage(
     manifest_path: Path = MANIFEST_PATH,
     ruleset_path: Path = RULESET_PATH,
     capabilities_path: Path = CAPABILITY_CATALOG_PATH,
+    scenario_requirements_path: Path = SCENARIO_REQUIREMENTS_PATH,
     legacy_fingerprint_path: Path = LEGACY_FINGERPRINT_PATH,
     moves_path: Path = MOVES_PATH,
     source_dir: Path = MOVE_AUTOMATION_SOURCE_DIR,
@@ -1356,6 +1705,9 @@ def validate_semantic_coverage(
         moves_path,
     )
     capability_by_code = _parse_capability_catalog(capabilities_path, canonical_moves)
+    evidence_by_code, requirement_by_tag = _parse_scenario_requirements(
+        scenario_requirements_path,
+    )
     canonical_names = {move["name"] for move in canonical_moves}
     registry_reader = TypeScriptRegistryReader(load_registry_source(source_dir), canonical_names)
     try:
@@ -1384,6 +1736,8 @@ def validate_semantic_coverage(
         legacy_fingerprints,
         scenario_ids,
         capability_by_code,
+        evidence_by_code,
+        requirement_by_tag,
     )
     base_counts = {status: 0 for status in BASE_STATUSES}
     interaction_counts = {status: 0 for status in INTERACTION_STATUSES}

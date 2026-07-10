@@ -23,7 +23,7 @@ RULESET_PATH = ROOT / "data" / "move-automation" / "ruleset.json"
 LEGACY_FINGERPRINT_PATH = (
     ROOT / "data" / "move-automation" / "legacy-v1-fingerprints.json"
 )
-MANIFEST_SCHEMA_VERSION = 1
+MANIFEST_SCHEMA_VERSION = 2
 LEGACY_FINGERPRINT_SCHEMA_VERSION = 1
 MANIFEST_ROOT_FIELDS = {"schemaVersion", "moves"}
 MANIFEST_MOVE_FIELDS = {
@@ -39,6 +39,7 @@ MANIFEST_MOVE_FIELDS = {
     "limitations",
     "manualSteps",
     "scenarioIds",
+    "conformanceEvidence",
     "reviewedAt",
     "unsupportedInteractionIds",
     "rolloutCohortId",
@@ -194,6 +195,11 @@ def bootstrap_row(
         "limitations": limitations,
         "manualSteps": [],
         "scenarioIds": [],
+        "conformanceEvidence": {
+            "requirementTags": [],
+            "scenarios": [],
+            "notApplicable": [],
+        },
         "reviewedAt": None,
         "unsupportedInteractionIds": [],
         "rolloutCohortId": None,

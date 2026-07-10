@@ -50,6 +50,9 @@ describe('explicit move automation scripts', () => {
       if (row.baseStatus === 'complete') {
         expect(hasSemanticDebt).toBe(false)
         expect(row.scenarioIds.length).toBeGreaterThan(0)
+        expect(row.conformanceEvidence.requirementTags.length).toBeGreaterThan(0)
+        expect(row.conformanceEvidence.scenarios.map(({ scenarioId }) => scenarioId).sort())
+          .toEqual([...row.scenarioIds].sort())
         expect(row.runtime.kind).not.toBe('unimplemented')
         expect(row.runtime.version).not.toBeNull()
         expect(row.runtime.definitionHash).not.toBeNull()
