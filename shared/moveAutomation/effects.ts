@@ -119,6 +119,17 @@ export const MOVE_EFFECT_HP_CALCULATION_KINDS = [
   'percent-current',
   'percent-missing',
   'formula',
+  'damage-dealt',
+] as const
+export const MOVE_EFFECT_HP_DAMAGE_AGGREGATIONS = ['per-target', 'aggregate'] as const
+/** Prevented or zero effective damage contributes zero to drain/recoil calculations. */
+export const MOVE_EFFECT_HP_PREVENTED_DAMAGE_POLICIES = ['zero'] as const
+export const MOVE_EFFECT_HP_COST_KINDS = ['cost', 'sacrifice'] as const
+export const MOVE_EFFECT_HP_COST_TIMINGS = [
+  'declaration',
+  'hit',
+  'damage',
+  'completion',
 ] as const
 export const MOVE_EFFECT_HP_MARKER_INJURY_POLICIES = [
   'apply-after-operation',
@@ -221,6 +232,12 @@ export type MoveEffectDirectHpMode = (typeof MOVE_EFFECT_DIRECT_HP_MODES)[number
 export type MoveEffectHealMode = (typeof MOVE_EFFECT_HEAL_MODES)[number]
 export type MoveEffectHpCalculationKind =
   (typeof MOVE_EFFECT_HP_CALCULATION_KINDS)[number]
+export type MoveEffectHpDamageAggregation =
+  (typeof MOVE_EFFECT_HP_DAMAGE_AGGREGATIONS)[number]
+export type MoveEffectHpPreventedDamagePolicy =
+  (typeof MOVE_EFFECT_HP_PREVENTED_DAMAGE_POLICIES)[number]
+export type MoveEffectHpCostKind = (typeof MOVE_EFFECT_HP_COST_KINDS)[number]
+export type MoveEffectHpCostTiming = (typeof MOVE_EFFECT_HP_COST_TIMINGS)[number]
 export type MoveEffectHpMarkerInjuryPolicy =
   (typeof MOVE_EFFECT_HP_MARKER_INJURY_POLICIES)[number]
 export type MoveEffectHpMassiveDamagePolicy =
@@ -486,11 +503,24 @@ export interface MoveHpFormulaCalculation {
   readonly expression: MoveExpression
 }
 
+/**
+ * A drain/recoil magnitude derived from effective HP plus temporary HP actually
+ * removed by one earlier authoritative damage operation.
+ */
+export interface MoveHpDamageDealtCalculation {
+  readonly kind: 'damage-dealt'
+  readonly damageOperationId: string
+  readonly percent: number
+  readonly aggregation: MoveEffectHpDamageAggregation
+  readonly preventedDamage: MoveEffectHpPreventedDamagePolicy
+}
+
 /** A bounded magnitude/value calculation evaluated once per authoritative recipient. */
 export type MoveHpCalculation =
   | MoveHpFixedCalculation
   | MoveHpPercentCalculation
   | MoveHpFormulaCalculation
+  | MoveHpDamageDealtCalculation
 
 /** Inclusive bounds on the final selected HP pool; null leaves that edge unbounded. */
 export interface MoveHpFinalBounds {
@@ -508,6 +538,18 @@ export interface MoveHpInjuryPolicy {
   readonly massiveDamage: MoveEffectHpMassiveDamagePolicy
 }
 
+/**
+ * Explicit payment timing and affordability for direct HP costs. `damageOperationId`
+ * is required only for damage-triggered payments; hit timing uses the authoritative
+ * hit set. A null minimum permits the payment to knock out the actor.
+ */
+export interface MoveHpCostPolicy {
+  readonly kind: MoveEffectHpCostKind
+  readonly timing: MoveEffectHpCostTiming
+  readonly minimumRemaining: number | null
+  readonly damageOperationId: string | null
+}
+
 export interface MoveDirectHpEffectPayload {
   readonly mode: MoveEffectDirectHpMode
   readonly pool: MoveEffectHpPool
@@ -518,6 +560,8 @@ export interface MoveDirectHpEffectPayload {
   readonly bounds: MoveHpFinalBounds
   readonly rounding: MoveEffectRoundingPolicy
   readonly applyTypeImmunity: boolean
+  /** Null for ordinary loss/recoil; non-null marks an authoritative HP payment. */
+  readonly cost: MoveHpCostPolicy | null
   readonly injury: MoveHpInjuryPolicy
 }
 
@@ -813,6 +857,7 @@ const DIRECT_HP_FIELDS = [
   'bounds',
   'rounding',
   'applyTypeImmunity',
+  'cost',
   'injury',
 ] as const
 const HEAL_FIELDS = [
@@ -826,8 +871,16 @@ const HEAL_FIELDS = [
 const HP_FIXED_CALCULATION_FIELDS = ['kind', 'value'] as const
 const HP_PERCENT_CALCULATION_FIELDS = ['kind', 'percent'] as const
 const HP_FORMULA_CALCULATION_FIELDS = ['kind', 'expression'] as const
+const HP_DAMAGE_DEALT_CALCULATION_FIELDS = [
+  'kind',
+  'damageOperationId',
+  'percent',
+  'aggregation',
+  'preventedDamage',
+] as const
 const HP_BOUNDS_FIELDS = ['minimum', 'maximum'] as const
 const HP_INJURY_FIELDS = ['hitPointMarkers', 'massiveDamage'] as const
+const HP_COST_FIELDS = ['kind', 'timing', 'minimumRemaining', 'damageOperationId'] as const
 const CONDITION_FIELDS = ['action', 'conditionId'] as const
 const COMBAT_STAGE_FIELDS = ['action', 'stage', 'value'] as const
 const ADD_TEMPORARY_EFFECT_FIELDS = ['action', 'effectId', 'definition'] as const
@@ -891,6 +944,12 @@ const HP_POOL_SET = new Set<string>(MOVE_EFFECT_HP_POOLS)
 const DIRECT_HP_MODE_SET = new Set<string>(MOVE_EFFECT_DIRECT_HP_MODES)
 const HEAL_MODE_SET = new Set<string>(MOVE_EFFECT_HEAL_MODES)
 const HP_CALCULATION_KIND_SET = new Set<string>(MOVE_EFFECT_HP_CALCULATION_KINDS)
+const HP_DAMAGE_AGGREGATION_SET = new Set<string>(MOVE_EFFECT_HP_DAMAGE_AGGREGATIONS)
+const HP_PREVENTED_DAMAGE_POLICY_SET = new Set<string>(
+  MOVE_EFFECT_HP_PREVENTED_DAMAGE_POLICIES,
+)
+const HP_COST_KIND_SET = new Set<string>(MOVE_EFFECT_HP_COST_KINDS)
+const HP_COST_TIMING_SET = new Set<string>(MOVE_EFFECT_HP_COST_TIMINGS)
 const HP_MARKER_INJURY_POLICY_SET = new Set<string>(MOVE_EFFECT_HP_MARKER_INJURY_POLICIES)
 const HP_MASSIVE_DAMAGE_POLICY_SET = new Set<string>(MOVE_EFFECT_HP_MASSIVE_DAMAGE_POLICIES)
 const ROUNDING_POLICY_SET = new Set<string>(MOVE_EFFECT_ROUNDING_POLICIES)
@@ -1516,7 +1575,7 @@ const parseHpCalculation = (
     ownValue(input, 'kind', path),
     HP_CALCULATION_KIND_SET,
     `${path}.kind`,
-    'fixed, percent-max, percent-current, percent-missing, or formula',
+    'fixed, percent-max, percent-current, percent-missing, formula, or damage-dealt',
   )
   if (kind === 'fixed') {
     assertExactKeys(input, HP_FIXED_CALCULATION_FIELDS, path)
@@ -1534,6 +1593,33 @@ const parseHpCalculation = (
           ownValue(input, 'expression', path),
           `${path}.expression`,
         ),
+      ),
+    }
+  }
+  if (kind === 'damage-dealt') {
+    assertExactKeys(input, HP_DAMAGE_DEALT_CALCULATION_FIELDS, path)
+    return {
+      kind,
+      damageOperationId: parseStableId(
+        ownValue(input, 'damageOperationId', path),
+        `${path}.damageOperationId`,
+      ),
+      percent: parseFiniteNumber(
+        ownValue(input, 'percent', path),
+        `${path}.percent`,
+        0,
+      ),
+      aggregation: parseEnum<MoveEffectHpDamageAggregation>(
+        ownValue(input, 'aggregation', path),
+        HP_DAMAGE_AGGREGATION_SET,
+        `${path}.aggregation`,
+        'per-target or aggregate',
+      ),
+      preventedDamage: parseEnum<MoveEffectHpPreventedDamagePolicy>(
+        ownValue(input, 'preventedDamage', path),
+        HP_PREVENTED_DAMAGE_POLICY_SET,
+        `${path}.preventedDamage`,
+        'zero',
       ),
     }
   }
@@ -1591,6 +1677,52 @@ const parseHpInjuryPolicy = (value: unknown, path: string): MoveHpInjuryPolicy =
   }
 }
 
+const parseHpCostPolicy = (value: unknown, path: string): MoveHpCostPolicy => {
+  const input = parseExactRecord(value, HP_COST_FIELDS, path)
+  const kind = parseEnum<MoveEffectHpCostKind>(
+    ownValue(input, 'kind', path),
+    HP_COST_KIND_SET,
+    `${path}.kind`,
+    'cost or sacrifice',
+  )
+  const timing = parseEnum<MoveEffectHpCostTiming>(
+    ownValue(input, 'timing', path),
+    HP_COST_TIMING_SET,
+    `${path}.timing`,
+    'declaration, hit, damage, or completion',
+  )
+  const minimumRemaining = parseNullableInteger(
+    ownValue(input, 'minimumRemaining', path),
+    `${path}.minimumRemaining`,
+    0,
+    MOVE_EFFECT_OPERATION_LIMITS.numericMagnitude,
+  )
+  const damageOperationId = parseNullableStableId(
+    ownValue(input, 'damageOperationId', path),
+    `${path}.damageOperationId`,
+  )
+  if ((timing === 'damage') !== (damageOperationId !== null)) {
+    fail(
+      'invalid-effect-operation',
+      `${path}.damageOperationId`,
+      'must identify an earlier damage operation only for damage timing.',
+    )
+  }
+  if (kind === 'sacrifice' && minimumRemaining !== null) {
+    fail(
+      'invalid-effect-operation',
+      `${path}.minimumRemaining`,
+      'a sacrifice cannot require remaining HP.',
+    )
+  }
+  return { kind, timing, minimumRemaining, damageOperationId }
+}
+
+const parseNullableHpCostPolicy = (
+  value: unknown,
+  path: string,
+): MoveHpCostPolicy | null => value === null ? null : parseHpCostPolicy(value, path)
+
 const parseEffectSelector = (value: unknown, path: string): MoveSelector => {
   try {
     return parseMoveSelector(value, path)
@@ -1634,6 +1766,12 @@ const parseDirectHpPayload = (value: unknown, path: string): MoveDirectHpEffectP
   const copySource = ownValue(input, 'copySource', path) === null
     ? null
     : parseEffectSelector(ownValue(input, 'copySource', path), `${path}.copySource`)
+  const bounds = parseHpBounds(ownValue(input, 'bounds', path), `${path}.bounds`)
+  const applyTypeImmunity = parseBoolean(
+    ownValue(input, 'applyTypeImmunity', path),
+    `${path}.applyTypeImmunity`,
+  )
+  const cost = parseNullableHpCostPolicy(ownValue(input, 'cost', path), `${path}.cost`)
   const injury = parseHpInjuryPolicy(ownValue(input, 'injury', path), `${path}.injury`)
 
   if ((mode === 'lose' || mode === 'set') !== (calculation !== null)) {
@@ -1664,23 +1802,73 @@ const parseDirectHpPayload = (value: unknown, path: string): MoveDirectHpEffectP
       'temporary HP cannot create Hit Point Marker Injuries.',
     )
   }
+  if (calculation?.kind === 'damage-dealt' && (
+    mode !== 'lose'
+    || pool !== 'hit-points'
+    || cost !== null
+    || applyTypeImmunity
+    || bounds.minimum !== null
+    || bounds.maximum !== null
+  )) {
+    fail(
+      'invalid-effect-operation',
+      path,
+      'damage-dealt direct HP must be non-immune actor recoil, not a cost.',
+    )
+  }
+  if (cost !== null) {
+    if (
+      pool !== 'hit-points'
+      || applyTypeImmunity
+      || copySource !== null
+      || bounds.minimum !== null
+      || bounds.maximum !== null
+    ) {
+      fail(
+        'invalid-effect-operation',
+        path,
+        'HP costs must affect real HP exactly, without immunity, copying, or final bounds.',
+      )
+    }
+    if (cost.kind === 'cost' && (
+      mode !== 'lose'
+      || calculation === null
+      || (calculation.kind !== 'fixed' && calculation.kind !== 'percent-max')
+      || (calculation.kind === 'fixed' && calculation.value < 0)
+    )) {
+      fail(
+        'invalid-effect-operation',
+        `${path}.calculation`,
+        'a cost requires a non-negative fixed or percent-max loss.',
+      )
+    }
+    if (cost.kind === 'sacrifice' && !(
+      mode === 'set'
+      && calculation?.kind === 'fixed'
+      && calculation.value === 0
+    )) {
+      fail(
+        'invalid-effect-operation',
+        `${path}.calculation`,
+        'a sacrifice must set real HP to exactly zero.',
+      )
+    }
+  }
 
   return {
     mode,
     pool,
     calculation,
     copySource,
-    bounds: parseHpBounds(ownValue(input, 'bounds', path), `${path}.bounds`),
+    bounds,
     rounding: parseEnum<MoveEffectRoundingPolicy>(
       ownValue(input, 'rounding', path),
       ROUNDING_POLICY_SET,
       `${path}.rounding`,
       'floor, round, or ceil',
     ),
-    applyTypeImmunity: parseBoolean(
-      ownValue(input, 'applyTypeImmunity', path),
-      `${path}.applyTypeImmunity`,
-    ),
+    applyTypeImmunity,
+    cost,
     injury,
   }
 }
@@ -1720,6 +1908,18 @@ const parseHealPayload = (value: unknown, path: string): MoveHealEffectPayload =
   }
   if (mode === 'full' && (bounds.minimum !== null || bounds.maximum !== null)) {
     fail('invalid-effect-operation', `${path}.bounds`, 'full healing cannot override Max HP.')
+  }
+  if (calculation?.kind === 'damage-dealt' && (
+    mode !== 'gain'
+    || pool !== 'hit-points'
+    || bounds.minimum !== null
+    || bounds.maximum !== null
+  )) {
+    fail(
+      'invalid-effect-operation',
+      path,
+      'damage-dealt healing must be an unbounded real-HP gain.',
+    )
   }
   if (injury.hitPointMarkers !== 'ignore') {
     fail(
@@ -2377,6 +2577,46 @@ const parseCommon = (input: UnknownRecord, path: string): ParsedOperationCommon 
   reasonCode: parseStableId(ownValue(input, 'reasonCode', path), `${path}.reasonCode`),
 })
 
+const hpCostTimingMatchesPhase = (
+  timing: MoveEffectHpCostTiming,
+  phase: MoveSpecPhase,
+): boolean => {
+  if (timing === 'declaration') return phase === 'declare' || phase === 'pay'
+  if (timing === 'hit') return phase === 'hit'
+  if (timing === 'damage') return phase === 'damage' || phase === 'after-damage'
+  return phase === 'cleanup'
+}
+
+const validateHpOperationEnvelope = (options: {
+  readonly common: ParsedOperationCommon
+  readonly payload: MoveDirectHpEffectPayload | MoveHealEffectPayload
+  readonly path: string
+}): void => {
+  const damageLinked = options.payload.calculation?.kind === 'damage-dealt'
+  const cost = 'cost' in options.payload ? options.payload.cost : null
+  if ((damageLinked || cost !== null) && options.common.recipients.kind !== 'actor') {
+    fail(
+      'invalid-effect-operation',
+      `${options.path}.recipients.kind`,
+      'damage-linked HP and HP costs must use the authoritative actor recipient.',
+    )
+  }
+  if (damageLinked && options.common.phase !== 'damage' && options.common.phase !== 'after-damage') {
+    fail(
+      'invalid-effect-operation',
+      `${options.path}.phase`,
+      'damage-linked HP must resolve in damage or after-damage.',
+    )
+  }
+  if (cost !== null && !hpCostTimingMatchesPhase(cost.timing, options.common.phase)) {
+    fail(
+      'invalid-effect-operation',
+      `${options.path}.phase`,
+      `does not match ${cost.timing} HP cost timing.`,
+    )
+  }
+}
+
 const parseDetachedOperation = (value: unknown, path: string): MoveEffectOperation => {
   const input = parseExactRecord(value, OPERATION_FIELDS, path)
   const rawKind = ownValue(input, 'kind', path)
@@ -2399,10 +2639,16 @@ const parseDetachedOperation = (value: unknown, path: string): MoveEffectOperati
       return { ...common, kind, payload: parseDamagePayload(payload, payloadPath) }
     case 'multi-hit':
       return { ...common, kind, payload: parseMultiHitPayload(payload, payloadPath) }
-    case 'direct-hp':
-      return { ...common, kind, payload: parseDirectHpPayload(payload, payloadPath) }
-    case 'heal':
-      return { ...common, kind, payload: parseHealPayload(payload, payloadPath) }
+    case 'direct-hp': {
+      const parsedPayload = parseDirectHpPayload(payload, payloadPath)
+      validateHpOperationEnvelope({ common, payload: parsedPayload, path })
+      return { ...common, kind, payload: parsedPayload }
+    }
+    case 'heal': {
+      const parsedPayload = parseHealPayload(payload, payloadPath)
+      validateHpOperationEnvelope({ common, payload: parsedPayload, path })
+      return { ...common, kind, payload: parsedPayload }
+    }
     case 'condition':
       return { ...common, kind, payload: parseConditionPayload(payload, payloadPath) }
     case 'combat-stage':

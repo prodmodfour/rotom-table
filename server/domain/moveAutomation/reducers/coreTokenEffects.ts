@@ -123,6 +123,8 @@ const reduceRecipient = (options: {
   readonly damage: MoveCoreTokenDamageQuery | undefined
   readonly immunities: MoveCoreTokenEffectImmunityQueries
   readonly context: AuthoritativeMoveRulesContext
+  readonly hitTargetIds: readonly string[]
+  readonly priorOperationResults: readonly MoveCoreTokenEffectOperationResult[]
 }): MoveCoreTokenEffectRecipientResult => {
   const { operation } = options.emission
   if (operation.kind === 'damage') {
@@ -147,6 +149,8 @@ const reduceRecipient = (options: {
       temporaryHpAvailable: options.temporaryHpAvailable,
       immunities: options.immunities,
       context: options.context,
+      hitTargetIds: options.hitTargetIds,
+      priorOperationResults: options.priorOperationResults,
     })
   }
   if (operation.kind === 'heal') {
@@ -156,6 +160,7 @@ const reduceRecipient = (options: {
       accumulator: options.hpAccumulator,
       temporaryHpAvailable: options.temporaryHpAvailable,
       context: options.context,
+      priorOperationResults: options.priorOperationResults,
     })
   }
   if (operation.kind === 'condition') {
@@ -259,6 +264,8 @@ export const reduceMoveCoreTokenOperationState = (
           damage: input.damage,
           immunities: input.immunities,
           context: input.context,
+          hitTargetIds: dynamic['hit-targets'],
+          priorOperationResults: operationResults,
         }))
     for (const result of recipientResults) {
       const consultedIds = canonicalMoveCoreTokenPlacementIds(

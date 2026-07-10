@@ -130,12 +130,32 @@ const operation = (
   kind: MoveCoreTokenEffectOperation['kind'],
   payload: Record<string, unknown>,
   recipients: MoveEffectRecipientSelectorKind = 'attacked-targets',
+  phase: MoveCoreTokenEffectOperation['phase'] = 'hit',
 ): MoveCoreTokenEffectOperation => parseMoveEffectOperation({
   id,
   kind,
   source: { kind: 'move', id: 'move.reducer-test' },
   recipients: { kind: recipients },
-  phase: 'hit',
+  phase,
+  reasonCode: `move.reducer-test.${id.split('.').at(-1)}`,
+  payload,
+}) as MoveCoreTokenEffectOperation
+
+const actorHpOperation = (
+  id: string,
+  kind: 'direct-hp' | 'heal',
+  phase: 'declare' | 'pay' | 'hit' | 'damage' | 'after-damage' | 'cleanup',
+  payload: Record<string, unknown>,
+  source: { kind: 'move' | 'operation'; id: string } = {
+    kind: 'move',
+    id: 'move.reducer-test',
+  },
+): MoveCoreTokenEffectOperation => parseMoveEffectOperation({
+  id,
+  kind,
+  source,
+  recipients: { kind: 'actor' },
+  phase,
   reasonCode: `move.reducer-test.${id.split('.').at(-1)}`,
   payload,
 }) as MoveCoreTokenEffectOperation
@@ -148,8 +168,21 @@ const directHpPayload = (overrides: Record<string, unknown> = {}) => ({
   bounds: { minimum: null, maximum: null },
   rounding: 'floor',
   applyTypeImmunity: false,
+  cost: null,
   injury: { hitPointMarkers: 'ignore', massiveDamage: 'never' },
   ...overrides,
+})
+
+const damageDealtCalculation = (
+  damageOperationId: string,
+  aggregation: 'per-target' | 'aggregate',
+  percent = 50,
+) => ({
+  kind: 'damage-dealt',
+  damageOperationId,
+  percent,
+  aggregation,
+  preventedDamage: 'zero',
 })
 
 const healPayload = (overrides: Record<string, unknown> = {}) => ({
@@ -172,41 +205,50 @@ const emission = (
 
 const traceFor = (
   operations: readonly MoveResolvedCoreTokenEffectOperation[],
-): MoveResolutionAuditTrace => parseMoveResolutionAuditTrace({
-  schemaVersion: 1,
-  program: {
-    canonicalId: 'Reducer Test',
-    runtimeKind: 'movespec-v2',
-    runtimeVersion: 1,
-    definitionHash: 'a'.repeat(64),
-  },
-  ruleset: {
-    rulesetId: 'ptu-1.05-repository-reference-2026-07-09',
-    sourceDataSha256: 'b'.repeat(64),
-  },
-  ancestry: [],
-  events: [
-    {
-      sequence: 1,
-      kind: 'phase-transition',
-      reasonCode: 'hit-phase',
-      from: null,
-      to: 'hit',
-    },
-    ...operations.map(({ operation: value, recipientIds }, index) => ({
-      sequence: index + 2,
-      kind: 'operation' as const,
+): MoveResolutionAuditTrace => {
+  const events: Array<Record<string, unknown>> = []
+  let sequence = 1
+  let activePhase: MoveCoreTokenEffectOperation['phase'] | null = null
+  for (const { operation: value, recipientIds } of operations) {
+    if (activePhase !== value.phase) {
+      events.push({
+        sequence: sequence++,
+        kind: 'phase-transition',
+        reasonCode: `${value.phase}-phase`,
+        from: activePhase,
+        to: value.phase,
+      })
+      activePhase = value.phase
+    }
+    events.push({
+      sequence: sequence++,
+      kind: 'operation',
       phase: value.phase,
       operationId: value.id,
       operationKind: value.kind,
       recipientIds: [...recipientIds],
-      outcome: 'applied' as const,
+      outcome: 'applied',
       reasonCode: value.reasonCode,
       input: value.payload as unknown as MoveResolutionTraceJsonValue,
       result: { status: 'emitted' },
-    })),
-  ],
-})
+    })
+  }
+  return parseMoveResolutionAuditTrace({
+    schemaVersion: 1,
+    program: {
+      canonicalId: 'Reducer Test',
+      runtimeKind: 'movespec-v2',
+      runtimeVersion: 1,
+      definitionHash: 'a'.repeat(64),
+    },
+    ruleset: {
+      rulesetId: 'ptu-1.05-repository-reference-2026-07-09',
+      sourceDataSha256: 'b'.repeat(64),
+    },
+    ancestry: [],
+    events,
+  })
+}
 
 const dynamicRecipients = (
   attackedTargetIds: readonly string[] = ['target-token'],
@@ -255,6 +297,7 @@ describe('MoveSpec core token effect reducers', () => {
         bounds: { minimum: null, maximum: null },
         rounding: 'floor',
         applyTypeImmunity: false,
+        cost: null,
         injury: { hitPointMarkers: 'ignore', massiveDamage: 'never' },
       })),
       emission(operation('operation.temp-loss', 'direct-hp', {
@@ -265,6 +308,7 @@ describe('MoveSpec core token effect reducers', () => {
         bounds: { minimum: null, maximum: null },
         rounding: 'floor',
         applyTypeImmunity: false,
+        cost: null,
         injury: { hitPointMarkers: 'ignore', massiveDamage: 'never' },
       })),
       emission(operation('operation.heal', 'heal', {
@@ -464,6 +508,369 @@ describe('MoveSpec core token effect reducers', () => {
         basisValue: injuredTarget.fullMaxHp,
         roundedValue: Math.floor(injuredTarget.fullMaxHp! / 10),
       },
+    })
+  })
+
+  it('derives multi-target drain and recoil from actual damage with explicit rounding scope', () => {
+    const run = (aggregation: 'per-target' | 'aggregate') => {
+      const context = buildContext(mapFixture(), { actor: 10, target: 30, bystander: 30 })
+      const damage = emission(operation(
+        'operation.linked-source',
+        'damage',
+        {
+          damageClass: 'physical',
+          damageBase: 4,
+          moveType: 'normal',
+          accuracyRollId: null,
+          criticalRollId: null,
+        },
+        'attacked-targets',
+        'damage',
+      ), ['target-token', 'bystander-token'])
+      const drain = emission(actorHpOperation(
+        'operation.drain',
+        'heal',
+        'after-damage',
+        healPayload({
+          calculation: damageDealtCalculation(damage.operation.id, aggregation),
+        }),
+        { kind: 'operation', id: damage.operation.id },
+      ), ['actor-token'])
+      const recoil = emission(actorHpOperation(
+        'operation.recoil',
+        'direct-hp',
+        'after-damage',
+        directHpPayload({
+          calculation: damageDealtCalculation(damage.operation.id, aggregation, 25),
+        }),
+        { kind: 'operation', id: damage.operation.id },
+      ), ['actor-token'])
+      const operations = [damage, drain, recoil]
+      return reduceMoveCoreTokenEffects({
+        context,
+        operations,
+        dynamicRecipients: dynamicRecipients(['target-token', 'bystander-token']),
+        damage: {
+          resolve: ({ recipient }) => ({
+            hpLoss: recipient.placement.id === 'target-token' ? 7 : 5,
+            preventedBy: null,
+            consultedPlacementIds: [],
+          }),
+        },
+        immunities: createStandardMoveCoreTokenEffectImmunityQueries({ moveType: 'Normal' }),
+        trace: traceFor(operations),
+      })
+    }
+
+    const aggregate = run('aggregate')
+    const perTarget = run('per-target')
+
+    expect(aggregate.operationResults[0]?.recipients.map(recipient => (
+      recipient.details && typeof recipient.details === 'object'
+        ? (recipient.details as Record<string, unknown>).effectiveHpLost
+        : null
+    ))).toEqual([7, 5])
+    expect(aggregate.operationResults[1]?.recipients[0]).toMatchObject({
+      previous: { kind: 'hp', currentHp: 10 },
+      current: { kind: 'hp', currentHp: 16 },
+      details: {
+        calculation: {
+          kind: 'damage-dealt',
+          rawValue: 6,
+          roundedValue: 6,
+          damageSource: {
+            operationId: 'operation.linked-source',
+            aggregation: 'aggregate',
+            totalEffectiveHpLost: 12,
+            recipients: [
+              { recipientId: 'target-token', effectiveHpLost: 7, prevented: false },
+              { recipientId: 'bystander-token', effectiveHpLost: 5, prevented: false },
+            ],
+          },
+        },
+      },
+    })
+    expect(aggregate.operationResults[2]?.recipients[0]).toMatchObject({
+      previous: { kind: 'hp', currentHp: 16 },
+      current: { kind: 'hp', currentHp: 13 },
+      details: {
+        calculation: {
+          kind: 'damage-dealt',
+          rawValue: 3,
+          roundedValue: 3,
+        },
+      },
+    })
+    expect(perTarget.operationResults[1]?.recipients[0]?.details).toMatchObject({
+      calculation: {
+        rawValue: 6,
+        roundedValue: 5,
+        damageSource: { aggregation: 'per-target' },
+      },
+    })
+    expect(perTarget.operationResults[2]?.recipients[0]?.details).toMatchObject({
+      calculation: { rawValue: 3, roundedValue: 2 },
+    })
+    expect(operationTraceOutcomes(aggregate.trace)).toEqual(['applied', 'applied', 'applied'])
+    expect(aggregate.stateChanges.groups.sheets).toHaveLength(3)
+    expect(aggregate.sheetReads).toEqual([
+      { kind: 'pokemon', slug: 'target', revision: 4 },
+      { kind: 'pokemon', slug: 'bystander', revision: 4 },
+      { kind: 'pokemon', slug: 'actor', revision: 4 },
+    ])
+  })
+
+  it('treats prevented/no damage as zero while honoring independent completion costs', () => {
+    const context = buildContext(mapFixture(), { actor: 20, target: 30, bystander: 30 })
+    const damage = emission(operation(
+      'operation.prevented-source',
+      'damage',
+      {
+        damageClass: 'special',
+        damageBase: 4,
+        moveType: 'dragon',
+        accuracyRollId: null,
+        criticalRollId: null,
+      },
+      'attacked-targets',
+      'damage',
+    ), ['target-token', 'bystander-token'])
+    const drain = emission(actorHpOperation(
+      'operation.prevented-drain',
+      'heal',
+      'after-damage',
+      healPayload({
+        calculation: damageDealtCalculation(damage.operation.id, 'aggregate'),
+      }),
+      { kind: 'operation', id: damage.operation.id },
+    ), ['actor-token'])
+    const recoil = emission(actorHpOperation(
+      'operation.prevented-recoil',
+      'direct-hp',
+      'after-damage',
+      directHpPayload({
+        calculation: damageDealtCalculation(damage.operation.id, 'aggregate', 25),
+      }),
+      { kind: 'operation', id: damage.operation.id },
+    ), ['actor-token'])
+    const damageCost = emission(actorHpOperation(
+      'operation.damage-cost',
+      'direct-hp',
+      'after-damage',
+      directHpPayload({
+        calculation: { kind: 'fixed', value: 4 },
+        cost: {
+          kind: 'cost',
+          timing: 'damage',
+          minimumRemaining: null,
+          damageOperationId: damage.operation.id,
+        },
+      }),
+    ), ['actor-token'])
+    const completionCost = emission(actorHpOperation(
+      'operation.completion-cost',
+      'direct-hp',
+      'cleanup',
+      directHpPayload({
+        calculation: { kind: 'fixed', value: 4 },
+        cost: {
+          kind: 'cost',
+          timing: 'completion',
+          minimumRemaining: null,
+          damageOperationId: null,
+        },
+      }),
+    ), ['actor-token'])
+    const operations = [damage, drain, recoil, damageCost, completionCost]
+    const result = reduceMoveCoreTokenEffects({
+      context,
+      operations,
+      dynamicRecipients: dynamicRecipients(['target-token', 'bystander-token']),
+      damage: {
+        resolve: ({ recipient }) => recipient.placement.id === 'target-token'
+          ? {
+              hpLoss: 99,
+              preventedBy: 'Dragon type',
+              moveType: 'Dragon',
+              consultedPlacementIds: [],
+            }
+          : {
+              hpLoss: 0,
+              preventedBy: null,
+              moveType: 'Dragon',
+              consultedPlacementIds: [],
+            },
+      },
+      immunities: createStandardMoveCoreTokenEffectImmunityQueries({ moveType: 'Dragon' }),
+      trace: traceFor(operations),
+    })
+
+    expect(result.operationResults.map(item => item.outcome)).toEqual([
+      'prevented',
+      'no-op',
+      'no-op',
+      'no-op',
+      'applied',
+    ])
+    expect(result.operationResults.slice(1, 3).map(item => item.recipients[0]?.reasonCode))
+      .toEqual(['linked-damage-zero', 'linked-damage-zero'])
+    expect(result.operationResults[1]?.recipients[0]?.details).toMatchObject({
+      calculation: {
+        damageSource: {
+          totalEffectiveHpLost: 0,
+          preventedDamage: 'zero',
+          recipients: [
+            { recipientId: 'target-token', prevented: true, effectiveHpLost: 0 },
+            { recipientId: 'bystander-token', prevented: false, effectiveHpLost: 0 },
+          ],
+        },
+      },
+    })
+    expect(result.operationResults[3]?.recipients[0]).toMatchObject({
+      reasonCode: 'hp-cost-trigger-not-met',
+      current: { kind: 'hp', currentHp: 20 },
+    })
+    expect(result.operationResults[4]?.recipients[0]?.current).toMatchObject({
+      kind: 'hp',
+      currentHp: 16,
+    })
+    expect(operationTraceOutcomes(result.trace)).toEqual([
+      'prevented',
+      'no-op',
+      'no-op',
+      'no-op',
+      'applied',
+    ])
+  })
+
+  it('enforces fixed/max-HP cost timing and affordability and resolves self-KO', () => {
+    const declarationContext = buildContext(mapFixture(), { actor: 40 })
+    const actorMaxHp = declarationContext.actor.token.fullMaxHp
+      ?? declarationContext.actor.token.maxHp
+    const declarationCost = emission(actorHpOperation(
+      'operation.max-hp-cost',
+      'direct-hp',
+      'pay',
+      directHpPayload({
+        calculation: { kind: 'percent-max', percent: 25 },
+        cost: {
+          kind: 'cost',
+          timing: 'declaration',
+          minimumRemaining: null,
+          damageOperationId: null,
+        },
+      }),
+    ), ['actor-token'])
+    const paid = reduceMoveCoreTokenEffects({
+      context: declarationContext,
+      operations: [declarationCost],
+      dynamicRecipients: dynamicRecipients(),
+      immunities: createStandardMoveCoreTokenEffectImmunityQueries({ moveType: 'Normal' }),
+      trace: traceFor([declarationCost]),
+    })
+    expect(paid.operationResults[0]?.recipients[0]).toMatchObject({
+      previous: { kind: 'hp', currentHp: 40 },
+      current: { kind: 'hp', currentHp: 40 - Math.floor(actorMaxHp * 0.25) },
+      details: {
+        cost: { kind: 'cost', timing: 'declaration' },
+        calculation: {
+          kind: 'percent-max',
+          basisValue: actorMaxHp,
+          roundedValue: Math.floor(actorMaxHp * 0.25),
+        },
+      },
+    })
+
+    const hitCost = emission(actorHpOperation(
+      'operation.hit-cost',
+      'direct-hp',
+      'hit',
+      directHpPayload({
+        calculation: { kind: 'fixed', value: 5 },
+        cost: {
+          kind: 'cost',
+          timing: 'hit',
+          minimumRemaining: 1,
+          damageOperationId: null,
+        },
+      }),
+    ), ['actor-token'])
+    const missed = reduceMoveCoreTokenEffects({
+      context: buildContext(mapFixture(), { actor: 20 }),
+      operations: [hitCost],
+      dynamicRecipients: {
+        ...dynamicRecipients(),
+        hitTargetIds: [],
+        damagedTargetIds: [],
+      },
+      immunities: createStandardMoveCoreTokenEffectImmunityQueries({ moveType: 'Normal' }),
+      trace: traceFor([hitCost]),
+    })
+    expect(missed.operationResults[0]?.recipients[0]).toMatchObject({
+      outcome: 'no-op',
+      reasonCode: 'hp-cost-trigger-not-met',
+      current: { kind: 'hp', currentHp: 20 },
+    })
+
+    const unaffordable = emission(actorHpOperation(
+      'operation.unaffordable-cost',
+      'direct-hp',
+      'pay',
+      directHpPayload({
+        calculation: { kind: 'fixed', value: 5 },
+        cost: {
+          kind: 'cost',
+          timing: 'declaration',
+          minimumRemaining: 0,
+          damageOperationId: null,
+        },
+      }),
+    ), ['actor-token'])
+    expect(() => reduceMoveCoreTokenEffects({
+      context: buildContext(mapFixture(), { actor: 4 }),
+      operations: [unaffordable],
+      dynamicRecipients: dynamicRecipients(),
+      immunities: createStandardMoveCoreTokenEffectImmunityQueries({ moveType: 'Normal' }),
+      trace: traceFor([unaffordable]),
+    })).toThrowError(expect.objectContaining({ code: 'hp-precondition-failed' }))
+
+    const sacrificeMap = mapFixture()
+    sacrificeMap.temporaryHitPoints = {
+      scene: { ...sacrificeMap.activeScene! },
+      byPlacementId: { 'actor-token': 6, 'target-token': 5 },
+    }
+    const sacrifice = emission(actorHpOperation(
+      'operation.sacrifice',
+      'direct-hp',
+      'cleanup',
+      directHpPayload({
+        mode: 'set',
+        calculation: { kind: 'fixed', value: 0 },
+        cost: {
+          kind: 'sacrifice',
+          timing: 'completion',
+          minimumRemaining: null,
+          damageOperationId: null,
+        },
+      }),
+    ), ['actor-token'])
+    const sacrificed = reduceMoveCoreTokenEffects({
+      context: buildContext(sacrificeMap, { actor: 20 }),
+      operations: [sacrifice],
+      dynamicRecipients: dynamicRecipients(),
+      immunities: createStandardMoveCoreTokenEffectImmunityQueries({ moveType: 'Normal' }),
+      trace: traceFor([sacrifice]),
+    })
+    expect(sacrificed.operationResults[0]?.recipients[0]).toMatchObject({
+      outcome: 'applied',
+      previous: { kind: 'hp', currentHp: 20, temporaryHp: 6 },
+      current: { kind: 'hp', currentHp: 0, temporaryHp: 0 },
+      changedFields: ['hp', 'temporaryHitPoints'],
+      details: { cost: { kind: 'sacrifice', timing: 'completion' } },
+    })
+    expect(sacrificed.stateChanges.groups.map[0]?.changes[0]).toMatchObject({
+      kind: 'map-temporary-hit-points',
+      current: { byPlacementId: { 'target-token': 5 } },
     })
   })
 
@@ -805,6 +1212,7 @@ describe('MoveSpec core token effect reducers', () => {
         bounds: { minimum: null, maximum: null },
         rounding: 'floor',
         applyTypeImmunity: true,
+        cost: null,
         injury: {
           hitPointMarkers: 'apply-after-operation',
           massiveDamage: 'never',

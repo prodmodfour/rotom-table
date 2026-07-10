@@ -126,6 +126,7 @@ const residualHandler = (effectId: string): EncounterLifecycleTriggerHandler => 
         bounds: { minimum: null, maximum: null },
         rounding: 'floor',
         applyTypeImmunity: false,
+        cost: null,
         injury: {
           hitPointMarkers: 'apply-after-operation',
           massiveDamage: 'never',

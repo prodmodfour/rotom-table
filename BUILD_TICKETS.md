@@ -1046,7 +1046,7 @@ Status: DONE
 
 ## MA-081 — Add drain, recoil, sacrifice, and HP costs
 
-Status: TODO
+Status: DONE
 
 **Depends on:** MA-080, MA-077
 **Commit:** `feat(move-automation): resolve linked hp costs and returns`

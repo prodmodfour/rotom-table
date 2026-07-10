@@ -6,6 +6,7 @@ export type MoveCoreTokenEffectReductionErrorCode =
   | 'invalid-hp-calculation'
   | 'invalid-hp-source'
   | 'invalid-hp-recipient-count'
+  | 'hp-precondition-failed'
   | 'invalid-recipient-set'
   | 'recipient-set-mismatch'
   | 'recipient-not-found'

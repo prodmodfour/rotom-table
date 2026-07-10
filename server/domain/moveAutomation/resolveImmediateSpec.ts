@@ -377,6 +377,8 @@ const assertSupportedImmediateOperations = (
     'roll',
     'damage',
     'multi-hit',
+    'direct-hp',
+    'heal',
     'movement-request',
     'usage',
     'log',

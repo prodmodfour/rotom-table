@@ -566,6 +566,28 @@ export const validateMoveSpecOperationSequence = (
     }
   }
 
+  const assertPriorDamageReference = (
+    referenceId: string,
+    currentIndex: number,
+    path: string,
+  ): void => {
+    assertPriorReference(
+      referenceId,
+      currentIndex,
+      path,
+      operationIndexById,
+      'damage operation ID',
+    )
+    const referencedIndex = operationIndexById.get(referenceId)!
+    if (indexed[referencedIndex]?.operation.kind !== 'damage') {
+      fail(
+        'invalid-definition',
+        path,
+        `${referenceId} must identify an earlier damage operation.`,
+      )
+    }
+  }
+
   indexed.forEach(({ operation, index, path }) => {
     if (operation.source.kind === 'operation') {
       assertPriorReference(
@@ -575,6 +597,26 @@ export const validateMoveSpecOperationSequence = (
         operationIndexById,
         'operation ID',
       )
+    }
+    if (operation.kind === 'direct-hp' || operation.kind === 'heal') {
+      const calculation = operation.payload.calculation
+      if (calculation?.kind === 'damage-dealt') {
+        assertPriorDamageReference(
+          calculation.damageOperationId,
+          index,
+          `${path}.payload.calculation.damageOperationId`,
+        )
+      }
+      if (operation.kind === 'direct-hp' && operation.payload.cost?.timing === 'damage') {
+        const referencePath = `${path}.payload.cost.damageOperationId`
+        const damageOperationId = operation.payload.cost.damageOperationId
+          ?? fail(
+            'invalid-definition',
+            referencePath,
+            'damage timing requires a damage operation ID.',
+          )
+        assertPriorDamageReference(damageOperationId, index, referencePath)
+      }
     }
     const damage = operation.kind === 'damage'
       ? operation.payload

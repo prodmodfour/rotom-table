@@ -25,9 +25,26 @@ import type {
   MoveCoreTokenDamageQuery,
   MoveCoreTokenEffectImmunityDecision,
   MoveCoreTokenEffectImmunityQueries,
+  MoveCoreTokenEffectOperationResult,
   MoveCoreTokenEffectRecipient,
   MoveCoreTokenEffectRecipientResult,
 } from './coreTokenEffectTypes'
+
+interface MoveHpDamageSourceRecipientResolution {
+  readonly recipientId: string
+  readonly outcome: MoveCoreTokenEffectRecipientResult['outcome']
+  readonly effectiveHpLost: number
+  readonly prevented: boolean
+}
+
+interface MoveHpDamageSourceResolution {
+  readonly operationId: string
+  readonly aggregation: 'per-target' | 'aggregate'
+  readonly percent: number
+  readonly preventedDamage: 'zero'
+  readonly totalEffectiveHpLost: number
+  readonly recipients: readonly MoveHpDamageSourceRecipientResolution[]
+}
 
 interface MoveHpCalculationResolution {
   readonly kind: MoveHpCalculation['kind'] | 'copy' | 'split' | 'full'
@@ -35,6 +52,7 @@ interface MoveHpCalculationResolution {
   readonly roundedValue: number
   readonly basisValue: number | null
   readonly sourcePlacementId: string | null
+  readonly damageSource: MoveHpDamageSourceResolution | null
   readonly evaluationTrace: readonly MoveRuleEvaluationTraceEntry[]
 }
 
@@ -135,7 +153,9 @@ const assertBoundedHpValue = (
 }
 
 const calculationBasis = (
-  calculation: Exclude<MoveHpCalculation, { readonly kind: 'fixed' | 'formula' }>,
+  calculation: Extract<MoveHpCalculation, {
+    readonly kind: 'percent-max' | 'percent-current' | 'percent-missing'
+  }>,
   snapshot: MoveCoreHpStateSnapshot,
   pool: 'hit-points' | 'temporary-hit-points',
 ): number => {
@@ -143,6 +163,64 @@ const calculationBasis = (
   const current = poolValue(snapshot, pool)
   if (calculation.kind === 'percent-current') return Math.max(0, current)
   return Math.max(0, snapshot.fullMaxHp - current)
+}
+
+interface ActualDamageSourceSummary {
+  readonly operationId: string
+  readonly totalEffectiveHpLost: number
+  readonly recipients: readonly MoveHpDamageSourceRecipientResolution[]
+}
+
+const actualDamageSource = (options: {
+  readonly damageOperationId: string
+  readonly operationId: string
+  readonly priorOperationResults: readonly MoveCoreTokenEffectOperationResult[]
+}): ActualDamageSourceSummary => {
+  const source = options.priorOperationResults.find(result => (
+    result.operationId === options.damageOperationId
+  ))
+  if (!source || source.operationKind !== 'damage') {
+    return failMoveCoreTokenEffectReduction(
+      'invalid-hp-source',
+      `HP operation ${options.operationId} requires earlier damage operation ${options.damageOperationId}.`,
+    )
+  }
+  let totalEffectiveHpLost = 0
+  const recipients = source.recipients.map((recipient): MoveHpDamageSourceRecipientResolution => {
+    if (recipient.previous.kind !== 'hp' || recipient.current.kind !== 'hp') {
+      return failMoveCoreTokenEffectReduction(
+        'invalid-hp-source',
+        `Damage operation ${source.operationId} has no HP result for ${recipient.recipientId}.`,
+      )
+    }
+    const previousEffectiveHp = recipient.previous.currentHp + recipient.previous.temporaryHp
+    const currentEffectiveHp = recipient.current.currentHp + recipient.current.temporaryHp
+    const effectiveHpLost = Math.max(0, previousEffectiveHp - currentEffectiveHp)
+    if (!Number.isSafeInteger(effectiveHpLost)) {
+      return failMoveCoreTokenEffectReduction(
+        'invalid-hp-source',
+        `Damage operation ${source.operationId} produced unsafe effective HP loss.`,
+      )
+    }
+    totalEffectiveHpLost += effectiveHpLost
+    if (!Number.isSafeInteger(totalEffectiveHpLost)) {
+      return failMoveCoreTokenEffectReduction(
+        'invalid-hp-source',
+        `Damage operation ${source.operationId} produced an unsafe aggregate HP loss.`,
+      )
+    }
+    return {
+      recipientId: recipient.recipientId,
+      outcome: recipient.outcome,
+      effectiveHpLost,
+      prevented: recipient.outcome === 'prevented',
+    }
+  })
+  return {
+    operationId: source.operationId,
+    totalEffectiveHpLost,
+    recipients,
+  }
 }
 
 const resolveHpCalculation = (options: {
@@ -154,10 +232,13 @@ const resolveHpCalculation = (options: {
   readonly snapshot: MoveCoreHpStateSnapshot
   readonly context: AuthoritativeMoveRulesContext
   readonly requireNonNegative: boolean
+  readonly priorOperationResults: readonly MoveCoreTokenEffectOperationResult[]
 }): MoveHpCalculationResolution => {
   const { calculation } = options
   let rawValue: number
+  let roundedOverride: number | null = null
   let basisValue: number | null = null
+  let damageSource: MoveHpDamageSourceResolution | null = null
   let evaluationTrace: readonly MoveRuleEvaluationTraceEntry[] = []
 
   if (calculation.kind === 'fixed') rawValue = calculation.value
@@ -178,6 +259,32 @@ const resolveHpCalculation = (options: {
     rawValue = evaluation.value
     evaluationTrace = evaluation.trace
   }
+  else if (calculation.kind === 'damage-dealt') {
+    const source = actualDamageSource({
+      damageOperationId: calculation.damageOperationId,
+      operationId: options.operationId,
+      priorOperationResults: options.priorOperationResults,
+    })
+    basisValue = source.totalEffectiveHpLost
+    rawValue = basisValue * calculation.percent / 100
+    if (calculation.aggregation === 'per-target') {
+      roundedOverride = source.recipients.reduce(
+        (sum, recipient) => sum + rounded(
+          recipient.effectiveHpLost * calculation.percent / 100,
+          options.rounding,
+        ),
+        0,
+      )
+    }
+    damageSource = {
+      operationId: source.operationId,
+      aggregation: calculation.aggregation,
+      percent: calculation.percent,
+      preventedDamage: calculation.preventedDamage,
+      totalEffectiveHpLost: source.totalEffectiveHpLost,
+      recipients: source.recipients,
+    }
+  }
   else {
     basisValue = calculationBasis(calculation, options.snapshot, options.pool)
     rawValue = basisValue * calculation.percent / 100
@@ -191,7 +298,7 @@ const resolveHpCalculation = (options: {
     )
   }
   const roundedValue = assertBoundedHpValue(
-    rounded(rawValue, options.rounding),
+    roundedOverride ?? rounded(rawValue, options.rounding),
     options.operationId,
     'rounded calculation',
   )
@@ -201,6 +308,7 @@ const resolveHpCalculation = (options: {
     roundedValue,
     basisValue,
     sourcePlacementId: null,
+    damageSource,
     evaluationTrace,
   }
 }
@@ -259,6 +367,62 @@ const directHpImmunity = (options: {
     })
   : { blockedBy: null, consultedPlacementIds: [] }
 
+interface MoveHpCostTriggerDecision {
+  readonly applies: boolean
+  readonly details: MoveResolutionTraceJsonValue
+}
+
+const resolveHpCostTrigger = (options: {
+  readonly operation: MoveDirectHpEffectOperation
+  readonly hitTargetIds: readonly string[]
+  readonly priorOperationResults: readonly MoveCoreTokenEffectOperationResult[]
+}): MoveHpCostTriggerDecision => {
+  const cost = options.operation.payload.cost
+  if (cost === null) return { applies: true, details: null }
+  if (cost.timing === 'hit') {
+    return {
+      applies: options.hitTargetIds.length > 0,
+      details: hpTraceDetails({
+        kind: cost.kind,
+        timing: cost.timing,
+        minimumRemaining: cost.minimumRemaining,
+        hitTargetIds: [...options.hitTargetIds],
+      }),
+    }
+  }
+  if (cost.timing === 'damage') {
+    const damageOperationId = cost.damageOperationId
+      ?? failMoveCoreTokenEffectReduction(
+        'invalid-hp-source',
+        `Damage-timed HP cost ${options.operation.id} has no damage operation ID.`,
+      )
+    const damage = actualDamageSource({
+      damageOperationId,
+      operationId: options.operation.id,
+      priorOperationResults: options.priorOperationResults,
+    })
+    return {
+      applies: damage.totalEffectiveHpLost > 0,
+      details: hpTraceDetails({
+        kind: cost.kind,
+        timing: cost.timing,
+        minimumRemaining: cost.minimumRemaining,
+        damageOperationId: damage.operationId,
+        totalEffectiveHpLost: damage.totalEffectiveHpLost,
+        preventedDamage: 'zero',
+      }),
+    }
+  }
+  return {
+    applies: true,
+    details: hpTraceDetails({
+      kind: cost.kind,
+      timing: cost.timing,
+      minimumRemaining: cost.minimumRemaining,
+    }),
+  }
+}
+
 const applyDirectPoolValue = (options: {
   readonly operation: MoveDirectHpEffectOperation
   readonly recipient: MoveCoreTokenEffectRecipient
@@ -267,6 +431,7 @@ const applyDirectPoolValue = (options: {
   readonly requestedPoolValue: number
   readonly calculation: MoveHpCalculationResolution
   readonly consultedPlacementIds: readonly string[]
+  readonly costTriggerDetails: MoveResolutionTraceJsonValue
 }): MoveCoreTokenEffectRecipientResult => {
   const { operation, recipient, accumulator, previous } = options
   const previousPoolValue = poolValue(previous, operation.payload.pool)
@@ -275,7 +440,10 @@ const applyDirectPoolValue = (options: {
     operation.id,
     'bounded final HP',
   )
-  const directionSafePoolValue = operation.payload.mode === 'lose'
+  const directionSafePoolValue = (
+    operation.payload.mode === 'lose'
+    || operation.payload.cost?.kind === 'sacrifice'
+  )
     ? Math.min(previousPoolValue, boundedPoolValue)
     : boundedPoolValue
   let injuryResult: ReturnType<MoveAutomationHpUpdateAccumulator['setWithInjuryAutomation']> | null = null
@@ -299,6 +467,9 @@ const applyDirectPoolValue = (options: {
   else {
     accumulator.set(recipient.token, directionSafePoolValue)
   }
+  if (operation.payload.cost?.kind === 'sacrifice') {
+    accumulator.setTemporaryHp(recipient.token, 0)
+  }
 
   const current = hpSnapshot(accumulator, recipient)
   const details = hpTraceDetails({
@@ -310,13 +481,18 @@ const applyDirectPoolValue = (options: {
     requestedPoolValue: options.requestedPoolValue,
     boundedPoolValue,
     appliedPoolValue: poolValue(current, operation.payload.pool),
+    cost: operation.payload.cost === null
+      ? null
+      : { ...operation.payload.cost, trigger: options.costTriggerDetails },
     injury: injuryDetails(operation.payload.injury, injuryResult),
   })
   if (snapshotsEqual(previous, current)) {
     return noOpHpResult(
       recipient,
       previous,
-      'hp-unchanged',
+      options.calculation.kind === 'damage-dealt' && options.calculation.roundedValue === 0
+        ? 'linked-damage-zero'
+        : 'hp-unchanged',
       options.consultedPlacementIds,
       details,
     )
@@ -476,6 +652,7 @@ const copyCalculation = (options: {
       roundedValue,
       basisValue: rawValue,
       sourcePlacementId: sourceId,
+      damageSource: null,
       evaluationTrace: [],
     },
     consultedPlacementIds: sourceId === options.recipient.placement.id ? [] : [sourceId],
@@ -489,6 +666,8 @@ export const reduceDirectHpEffectForRecipient = (options: {
   readonly temporaryHpAvailable: boolean
   readonly immunities: MoveCoreTokenEffectImmunityQueries
   readonly context: AuthoritativeMoveRulesContext
+  readonly hitTargetIds: readonly string[]
+  readonly priorOperationResults: readonly MoveCoreTokenEffectOperationResult[]
 }): MoveCoreTokenEffectRecipientResult => {
   const { operation, recipient, accumulator } = options
   if (operation.payload.mode === 'split') {
@@ -498,6 +677,16 @@ export const reduceDirectHpEffectForRecipient = (options: {
     )
   }
   const previous = hpSnapshot(accumulator, recipient)
+  const costTrigger = resolveHpCostTrigger(options)
+  if (!costTrigger.applies) {
+    return noOpHpResult(
+      recipient,
+      previous,
+      'hp-cost-trigger-not-met',
+      [],
+      hpTraceDetails({ cost: costTrigger.details }),
+    )
+  }
   const immunity = directHpImmunity(options)
   if (immunity.blockedBy) return preventedDirectHpResult({ recipient, previous, immunity })
   if (operation.payload.pool === 'temporary-hit-points' && !options.temporaryHpAvailable) {
@@ -534,7 +723,20 @@ export const reduceDirectHpEffectForRecipient = (options: {
       snapshot: previous,
       context: options.context,
       requireNonNegative: operation.payload.mode === 'lose',
+      priorOperationResults: options.priorOperationResults,
     })
+  }
+
+  const cost = operation.payload.cost
+  if (
+    cost?.kind === 'cost'
+    && cost.minimumRemaining !== null
+    && previous.currentHp - calculation.roundedValue < cost.minimumRemaining
+  ) {
+    return failMoveCoreTokenEffectReduction(
+      'hp-precondition-failed',
+      `HP cost ${operation.id} requires at least ${cost.minimumRemaining} HP after payment.`,
+    )
   }
 
   const previousPoolValue = poolValue(previous, operation.payload.pool)
@@ -549,6 +751,7 @@ export const reduceDirectHpEffectForRecipient = (options: {
     requestedPoolValue,
     calculation,
     consultedPlacementIds,
+    costTriggerDetails: costTrigger.details,
   })
 }
 
@@ -601,6 +804,7 @@ export const reduceSplitDirectHpEffectForRecipients = (options: {
     roundedValue,
     basisValue: total,
     sourcePlacementId: null,
+    damageSource: null,
     evaluationTrace: [],
   }
   const immunities = recipients.map(recipient => directHpImmunity({
@@ -631,6 +835,7 @@ export const reduceSplitDirectHpEffectForRecipients = (options: {
       requestedPoolValue: roundedValue,
       calculation,
       consultedPlacementIds: immunity.consultedPlacementIds,
+      costTriggerDetails: null,
     })
   })
 }
@@ -641,6 +846,7 @@ export const reduceHealEffectForRecipient = (options: {
   readonly accumulator: MoveAutomationHpUpdateAccumulator
   readonly temporaryHpAvailable: boolean
   readonly context: AuthoritativeMoveRulesContext
+  readonly priorOperationResults: readonly MoveCoreTokenEffectOperationResult[]
 }): MoveCoreTokenEffectRecipientResult => {
   const { operation, recipient, accumulator } = options
   const previous = hpSnapshot(accumulator, recipient)
@@ -658,6 +864,7 @@ export const reduceHealEffectForRecipient = (options: {
       roundedValue: previous.maxHp,
       basisValue: previous.maxHp,
       sourcePlacementId: null,
+      damageSource: null,
       evaluationTrace: [],
     }
     requestedPoolValue = previous.maxHp
@@ -677,6 +884,7 @@ export const reduceHealEffectForRecipient = (options: {
       snapshot: previous,
       context: options.context,
       requireNonNegative: true,
+      priorOperationResults: options.priorOperationResults,
     })
     requestedPoolValue = previousPoolValue + calculation.roundedValue
   }
@@ -717,7 +925,15 @@ export const reduceHealEffectForRecipient = (options: {
     },
   })
   if (snapshotsEqual(previous, current)) {
-    return noOpHpResult(recipient, previous, 'hp-at-cap', [], details)
+    return noOpHpResult(
+      recipient,
+      previous,
+      calculation.kind === 'damage-dealt' && calculation.roundedValue === 0
+        ? 'linked-damage-zero'
+        : 'hp-at-cap',
+      [],
+      details,
+    )
   }
   return {
     recipientId: recipient.placement.id,

@@ -138,6 +138,7 @@ const sceneBoundaryHandler = (effectId: string): EncounterLifecycleTriggerHandle
           bounds: { minimum: null, maximum: null },
           rounding: 'floor',
           applyTypeImmunity: false,
+          cost: null,
           injury: {
             hitPointMarkers: 'apply-after-operation',
             massiveDamage: 'never',

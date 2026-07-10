@@ -57,6 +57,7 @@ const VALID_PAYLOADS = {
     bounds: { minimum: 1, maximum: null },
     rounding: 'floor',
     applyTypeImmunity: true,
+    cost: null,
     injury: {
       hitPointMarkers: 'apply-after-operation',
       massiveDamage: 'never',
@@ -488,6 +489,209 @@ describe('MoveSpec typed effect operations', () => {
     for (const parsed of [...parsedCalculations, set, copy, split, full]) {
       expectDeeplyFrozen(parsed)
     }
+  })
+
+  it('parses linked drain/recoil, timed HP costs, and self-KO sacrifice policies', () => {
+    const damageCalculation = {
+      kind: 'damage-dealt',
+      damageOperationId: 'operation.damage',
+      percent: 50,
+      aggregation: 'per-target',
+      preventedDamage: 'zero',
+    }
+    const drain = parseMoveEffectOperation(validOperation('heal', {
+      source: { kind: 'operation', id: 'operation.damage' },
+      recipients: { kind: 'actor' },
+      phase: 'after-damage',
+      payload: {
+        ...VALID_PAYLOADS.heal,
+        calculation: damageCalculation,
+      },
+    }))
+    const recoil = parseMoveEffectOperation(validOperation('direct-hp', {
+      source: { kind: 'operation', id: 'operation.damage' },
+      recipients: { kind: 'actor' },
+      phase: 'damage',
+      payload: {
+        ...VALID_PAYLOADS['direct-hp'],
+        calculation: { ...damageCalculation, aggregation: 'aggregate', percent: 25 },
+        bounds: { minimum: null, maximum: null },
+        applyTypeImmunity: false,
+      },
+    }))
+    const fixedHitCost = parseMoveEffectOperation(validOperation('direct-hp', {
+      recipients: { kind: 'actor' },
+      phase: 'hit',
+      payload: {
+        ...VALID_PAYLOADS['direct-hp'],
+        calculation: { kind: 'fixed', value: 5 },
+        bounds: { minimum: null, maximum: null },
+        applyTypeImmunity: false,
+        cost: {
+          kind: 'cost',
+          timing: 'hit',
+          minimumRemaining: 1,
+          damageOperationId: null,
+        },
+      },
+    }))
+    const maxHpCost = parseMoveEffectOperation(validOperation('direct-hp', {
+      recipients: { kind: 'actor' },
+      phase: 'pay',
+      payload: {
+        ...VALID_PAYLOADS['direct-hp'],
+        calculation: { kind: 'percent-max', percent: 50 },
+        bounds: { minimum: null, maximum: null },
+        applyTypeImmunity: false,
+        cost: {
+          kind: 'cost',
+          timing: 'declaration',
+          minimumRemaining: null,
+          damageOperationId: null,
+        },
+      },
+    }))
+    const sacrifice = parseMoveEffectOperation(validOperation('direct-hp', {
+      recipients: { kind: 'actor' },
+      phase: 'cleanup',
+      payload: {
+        ...VALID_PAYLOADS['direct-hp'],
+        mode: 'set',
+        calculation: { kind: 'fixed', value: 0 },
+        bounds: { minimum: null, maximum: null },
+        applyTypeImmunity: false,
+        cost: {
+          kind: 'sacrifice',
+          timing: 'completion',
+          minimumRemaining: null,
+          damageOperationId: null,
+        },
+      },
+    }))
+
+    expect(drain.kind === 'heal' && drain.payload.calculation).toEqual(damageCalculation)
+    expect(recoil.kind === 'direct-hp' && recoil.payload.calculation).toMatchObject({
+      kind: 'damage-dealt',
+      aggregation: 'aggregate',
+      percent: 25,
+    })
+    expect(fixedHitCost.kind === 'direct-hp' && fixedHitCost.payload.cost).toEqual({
+      kind: 'cost',
+      timing: 'hit',
+      minimumRemaining: 1,
+      damageOperationId: null,
+    })
+    expect(maxHpCost.kind === 'direct-hp' && maxHpCost.payload.calculation).toEqual({
+      kind: 'percent-max',
+      percent: 50,
+    })
+    expect(sacrifice.kind === 'direct-hp' && sacrifice.payload).toMatchObject({
+      mode: 'set',
+      calculation: { kind: 'fixed', value: 0 },
+      cost: { kind: 'sacrifice', timing: 'completion' },
+    })
+    for (const parsed of [drain, recoil, fixedHitCost, maxHpCost, sacrifice]) {
+      expectDeeplyFrozen(parsed)
+    }
+  })
+
+  it('rejects malformed damage links, cost timing, and sacrifice policies', () => {
+    expectEffectError(
+      validOperation('heal', {
+        phase: 'after-damage',
+        payload: {
+          ...VALID_PAYLOADS.heal,
+          calculation: {
+            kind: 'damage-dealt',
+            damageOperationId: 'operation.damage',
+            percent: 50,
+            aggregation: 'aggregate',
+            preventedDamage: 'zero',
+          },
+        },
+      }),
+      'invalid-effect-operation',
+      'operation.recipients.kind',
+    )
+    expectEffectError(
+      validOperation('direct-hp', {
+        recipients: { kind: 'actor' },
+        phase: 'pay',
+        payload: {
+          ...VALID_PAYLOADS['direct-hp'],
+          bounds: { minimum: null, maximum: null },
+          applyTypeImmunity: false,
+          cost: {
+            kind: 'cost',
+            timing: 'hit',
+            minimumRemaining: 1,
+            damageOperationId: null,
+          },
+        },
+      }),
+      'invalid-effect-operation',
+      'operation.phase',
+    )
+    expectEffectError(
+      validOperation('direct-hp', {
+        recipients: { kind: 'actor' },
+        phase: 'pay',
+        payload: {
+          ...VALID_PAYLOADS['direct-hp'],
+          calculation: { kind: 'percent-current', percent: 50 },
+          bounds: { minimum: null, maximum: null },
+          applyTypeImmunity: false,
+          cost: {
+            kind: 'cost',
+            timing: 'declaration',
+            minimumRemaining: 0,
+            damageOperationId: null,
+          },
+        },
+      }),
+      'invalid-effect-operation',
+      'operation.payload.calculation',
+    )
+    expectEffectError(
+      validOperation('direct-hp', {
+        recipients: { kind: 'actor' },
+        phase: 'cleanup',
+        payload: {
+          ...VALID_PAYLOADS['direct-hp'],
+          mode: 'set',
+          calculation: { kind: 'fixed', value: 1 },
+          bounds: { minimum: null, maximum: null },
+          applyTypeImmunity: false,
+          cost: {
+            kind: 'sacrifice',
+            timing: 'completion',
+            minimumRemaining: null,
+            damageOperationId: null,
+          },
+        },
+      }),
+      'invalid-effect-operation',
+      'operation.payload.calculation',
+    )
+    expectEffectError(
+      validOperation('direct-hp', {
+        recipients: { kind: 'actor' },
+        phase: 'after-damage',
+        payload: {
+          ...VALID_PAYLOADS['direct-hp'],
+          bounds: { minimum: null, maximum: null },
+          applyTypeImmunity: false,
+          cost: {
+            kind: 'cost',
+            timing: 'damage',
+            minimumRemaining: 0,
+            damageOperationId: null,
+          },
+        },
+      }),
+      'invalid-effect-operation',
+      'operation.payload.cost.damageOperationId',
+    )
   })
 
   it('rejects ambiguous HP modes, invalid bounds, and injury policy inflation', () => {

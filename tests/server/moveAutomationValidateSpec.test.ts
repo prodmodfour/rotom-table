@@ -658,6 +658,94 @@ describe('authoritative MoveSpec validation and hashing', () => {
     )
   })
 
+  it('requires damage-linked HP and damage-timed costs to reference earlier damage', () => {
+    const drainOperation = (damageOperationId: string): TestOperation => ({
+      id: 'operation.drain',
+      kind: 'heal',
+      source: { kind: 'operation', id: 'operation.damage' },
+      recipients: { kind: 'actor' },
+      phase: 'after-damage',
+      reasonCode: 'move.scratch.drain',
+      payload: {
+        mode: 'gain',
+        pool: 'hit-points',
+        calculation: {
+          kind: 'damage-dealt',
+          damageOperationId,
+          percent: 50,
+          aggregation: 'aggregate',
+          preventedDamage: 'zero',
+        },
+        bounds: { minimum: null, maximum: null },
+        rounding: 'floor',
+        injury: { hitPointMarkers: 'ignore', massiveDamage: 'never' },
+      },
+    })
+    const valid = validSpec()
+    valid.phases.splice(2, 0, {
+      phase: 'after-damage',
+      operations: [drainOperation('operation.damage')],
+    })
+    expect(validateMoveSpec(valid).spec.phases[2].operations[0]).toMatchObject({
+      kind: 'heal',
+      payload: { calculation: { damageOperationId: 'operation.damage' } },
+    })
+
+    const unknown = structuredClone(valid)
+    unknown.phases[2].operations[0].payload.calculation = {
+      ...(unknown.phases[2].operations[0].payload.calculation as Record<string, unknown>),
+      damageOperationId: 'operation.missing',
+    }
+    expectDefinitionError(
+      () => validateMoveSpec(unknown),
+      'unknown-reference',
+      'spec.phases[2].operations[0].payload.calculation.damageOperationId',
+    )
+
+    const wrongKind = structuredClone(valid)
+    wrongKind.phases[2].operations[0].payload.calculation = {
+      ...(wrongKind.phases[2].operations[0].payload.calculation as Record<string, unknown>),
+      damageOperationId: 'operation.accuracy',
+    }
+    expectDefinitionError(
+      () => validateMoveSpec(wrongKind),
+      'invalid-definition',
+      'spec.phases[2].operations[0].payload.calculation.damageOperationId',
+    )
+
+    const damageTimedCost = validSpec()
+    damageTimedCost.phases.splice(2, 0, {
+      phase: 'after-damage',
+      operations: [{
+        id: 'operation.cost',
+        kind: 'direct-hp',
+        source: { kind: 'move', id: 'move.scratch' },
+        recipients: { kind: 'actor' },
+        phase: 'after-damage',
+        reasonCode: 'move.scratch.cost',
+        payload: {
+          mode: 'lose',
+          pool: 'hit-points',
+          calculation: { kind: 'fixed', value: 5 },
+          copySource: null,
+          bounds: { minimum: null, maximum: null },
+          rounding: 'floor',
+          applyTypeImmunity: false,
+          cost: {
+            kind: 'cost',
+            timing: 'damage',
+            minimumRemaining: 0,
+            damageOperationId: 'operation.damage',
+          },
+          injury: { hitPointMarkers: 'ignore', massiveDamage: 'never' },
+        },
+      }],
+    })
+    expect(validateMoveSpec(damageTimedCost).spec.phases[2].operations[0]).toMatchObject({
+      payload: { cost: { timing: 'damage', damageOperationId: 'operation.damage' } },
+    })
+  })
+
   it('validates canonical damage types and roll-backed critical triggers', () => {
     const unknownMoveType = validSpec()
     unknownMoveType.phases[1].operations[0].payload.moveType = 'mystery'
