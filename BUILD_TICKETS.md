@@ -459,7 +459,7 @@ Status: DONE
 
 ## MA-030 — Define MoveSpec v2 and phase names
 
-Status: TODO
+Status: DONE
 
 **Depends on:** MA-010, MA-017
 **Commit:** `feat(move-automation): define movespec v2 contract`
