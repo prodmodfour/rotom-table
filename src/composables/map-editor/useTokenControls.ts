@@ -261,7 +261,7 @@ export const useTokenControls = ({
       range: POKEBALL_THROW_RANGE_SQUARES,
     })) return null
 
-    return { trainer, option }
+    return { trainer, trainerPlacement, option }
   }
 
   const canSendOutPokemon = (payload: { trainerId: string; pokemonSlug: string; position: GridAnchor }): boolean =>
@@ -270,13 +270,16 @@ export const useTokenControls = ({
   const createSendOutPokemonPlacement = (
     payload: { trainerId: string; pokemonSlug: string; position: GridAnchor },
   ): SheetPlacement | null => {
-    if (!map.value || !sendOutPokemonContext(payload)) return null
+    if (!map.value) return null
+    const context = sendOutPokemonContext(payload)
+    if (!context) return null
 
     return {
       id: createPlacementId(),
       sheetKind: 'pokemon',
       sheetSlug: payload.pokemonSlug,
       position: payload.position,
+      ...(context.trainerPlacement.sideId === undefined ? {} : { sideId: context.trainerPlacement.sideId }),
       facing: DEFAULT_TOKEN_FACING_DIRECTION,
       turned: false,
     }

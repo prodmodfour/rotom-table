@@ -502,6 +502,7 @@ describe('live-play patch application', () => {
           sheetKind: 'pokemon',
           sheetSlug: 'eevee',
           position: { x: 3, y: 0, z: 2 },
+          sideId: 'rivals',
           facing: 'south-east',
           turned: false,
         },
@@ -514,6 +515,7 @@ describe('live-play patch application', () => {
       sheetKind: 'pokemon',
       sheetSlug: 'eevee',
       position: { x: 3, y: 0, z: 2 },
+      sideId: 'rivals',
     })
   })
 

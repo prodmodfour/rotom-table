@@ -56,8 +56,8 @@ const payload = () => ({
   }],
   changes: {
     placements: {
-      previous: [{ id: 'token-a', sheetKind: 'pokemon', sheetSlug: 'pikachu', position: { x: 0, y: 0, z: 0 } }],
-      current: [{ id: 'token-a', sheetKind: 'pokemon', sheetSlug: 'pikachu', position: { x: 1, y: 0, z: 0 }, facing: 'north-east', turned: false }],
+      previous: [{ id: 'token-a', sheetKind: 'pokemon', sheetSlug: 'pikachu', position: { x: 0, y: 0, z: 0 }, sideId: 'heroes' }],
+      current: [{ id: 'token-a', sheetKind: 'pokemon', sheetSlug: 'pikachu', position: { x: 1, y: 0, z: 0 }, sideId: 'heroes', facing: 'north-east', turned: false }],
     },
     temporaryHitPoints: {
       previous: null,
@@ -106,6 +106,15 @@ describe('livePlayMoveState patch contract', () => {
     expect(parseLivePlayMoveStatePatchPayload({
       ...payload(),
       changes: { placements: { previous: [], current: [{ id: '', sheetKind: 'pokemon', sheetSlug: 'pikachu', position: { x: 0, y: 0, z: 0 } }] } },
+    }).valid).toBe(false)
+    expect(parseLivePlayMoveStatePatchPayload({
+      ...payload(),
+      changes: {
+        placements: {
+          previous: [],
+          current: [{ id: 'token-a', sheetKind: 'pokemon', sheetSlug: 'pikachu', position: { x: 0, y: 0, z: 0 }, sideId: 'Team Heroes' }],
+        },
+      },
     }).valid).toBe(false)
     expect(parseLivePlayMoveStatePatchPayload({
       ...payload(),

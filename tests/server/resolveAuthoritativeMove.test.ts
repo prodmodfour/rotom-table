@@ -11,6 +11,7 @@ import {
 } from '../../server/domain/moveAutomation/random'
 import { EXPLICIT_MOVE_AUTOMATION_SCRIPTS } from '~/utils/moveAutomation'
 import { moveAutomationAreaTemplateId } from '~/utils/moveAutomationAreaTemplates'
+import { redBlueEncounterStateFixture } from '../fixtures/moveAutomation/encounterSides'
 import type { CharacterSheet, CharacterSheetMove } from '~/types/characterSheet'
 import type { SheetPlacement, TabletopMap } from '~/types/map'
 import type { MoveAutomationAreaTemplate, MoveAutomationScript } from '~/types/moveAutomation'
@@ -53,6 +54,7 @@ const mapFixture = (placements: SheetPlacement[] = [
   placements,
   lights: [],
   initiative: { activeId: null, round: 1 },
+  encounterState: redBlueEncounterStateFixture(),
 })
 
 const pokemonSheet = (slug: string, moves: CharacterSheetMove[] = [], overrides: Partial<CharacterSheet> = {}): CharacterSheet => ({

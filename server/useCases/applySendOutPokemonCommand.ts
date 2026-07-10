@@ -492,6 +492,7 @@ const findTokenPlacement = (
 
 const normalizedSentOutPlacement = (
   payload: SendOutPokemonCommandPayload,
+  trainerPlacement: SheetPlacement,
 ): SheetPlacement => {
   const facing = payload.facing ?? DEFAULT_TOKEN_FACING_DIRECTION
   return {
@@ -499,6 +500,7 @@ const normalizedSentOutPlacement = (
     sheetKind: 'pokemon',
     sheetSlug: payload.pokemonSlug,
     position: clonePosition(payload.position),
+    ...(trainerPlacement.sideId === undefined ? {} : { sideId: trainerPlacement.sideId }),
     facing,
     turned: tokenFacingStoresLegacyTurned(facing),
   }
@@ -637,7 +639,7 @@ const resolveSendOutPokemonTarget = (
       mapSlug,
       mapState,
       trainerPlacement,
-      placement: normalizedSentOutPlacement(command.payload),
+      placement: normalizedSentOutPlacement(command.payload, trainerPlacement),
     },
   }
 }

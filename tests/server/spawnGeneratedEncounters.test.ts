@@ -42,6 +42,16 @@ const mapFixture = (overrides: Partial<TabletopMap> = {}): TabletopMap => ({
   placements: [],
   lights: [],
   initiative: { activeId: null, round: 1 },
+  encounterState: {
+    schemaVersion: 1,
+    sides: { wild: { id: 'wild', label: 'Wild', status: 'active' } },
+    effects: [],
+    counters: {},
+    history: {},
+    turnResources: {},
+    zones: [],
+    pendingResolutionSummaries: [],
+  },
   createdAt: 10,
   updatedAt: 10,
   ...overrides,
@@ -156,6 +166,8 @@ describe('spawnGeneratedEncountersUseCase', () => {
     const map = maps.getBySlug('pond-map')!
     expect(map.revision).toBe(1)
     expect(map.placements).toEqual([{ id: 'spawn-1', sheetKind: 'pokemon', sheetSlug: 'wild-pond-1-bulbasaur-lv5-1', position: { x: 2, y: 0, z: 2 }, facing: 'south-east', turned: false }])
+    expect(map.encounterState?.sides).toEqual({ wild: { id: 'wild', label: 'Wild', status: 'active' } })
+    expect(map.placements[0]).not.toHaveProperty('sideId')
     expect(result.realtimeEvents.map((event) => event.sequence)).toEqual([1, 2, 3, 4])
     expect(result.realtimeEvents.map((event) => event.event.channel)).toEqual([
       'sheet:pokemon:wild-pond-1-bulbasaur-lv5-1',

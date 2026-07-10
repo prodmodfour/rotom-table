@@ -109,12 +109,23 @@ const createMap = (overrides: Partial<TabletopMapV2> = {}): TabletopMapV2 => ({
       sheetKind: 'trainer',
       sheetSlug: 'ash',
       position: { x: 1, y: 0, z: 1 },
+      sideId: 'heroes',
       facing: 'south-east',
     },
   ],
   lights: [],
   initiative: { activeId: null, round: 1 },
   moveUsage: { byPlacementId: {} },
+  encounterState: {
+    schemaVersion: 1,
+    sides: { heroes: { id: 'heroes', label: 'Heroes', status: 'active' } },
+    effects: [],
+    counters: {},
+    history: {},
+    turnResources: {},
+    zones: [],
+    pendingResolutionSummaries: [],
+  },
   metadata: {},
   createdAt: 1_000,
   updatedAt: 1_000,
@@ -261,6 +272,7 @@ describe('applySendOutPokemonCommandUseCase', () => {
           id: 'token-pikachu-1',
           sheetKind: 'pokemon',
           sheetSlug: 'pikachu',
+          sideId: 'heroes',
           facing: 'north-east',
           turned: false,
         },
@@ -283,11 +295,20 @@ describe('applySendOutPokemonCommandUseCase', () => {
       'token-ash',
       'token-pikachu-1',
     ])
+    expect(storedMap?.document.placements[1]?.sideId).toBe('heroes')
     expect(storedMap?.document.updatedAt).toBe(Date.parse(processedAt))
   })
 
-  it('allows GM send-out, rejects unauthorized players, and rejects non-owned team Pokémon without snapshots', () => {
-    const gmStore = createStoreWithState(createState())
+  it('allows GM send-out without inferring an unknown side, rejects unauthorized players, and rejects non-owned team Pokémon', () => {
+    const gmStore = createStoreWithState(createState(createMap({
+      placements: [{
+        id: 'token-ash',
+        sheetKind: 'trainer',
+        sheetSlug: 'ash',
+        position: { x: 1, y: 0, z: 1 },
+        facing: 'south-east',
+      }],
+    })))
     const gmResult = applySendOutPokemonCommandUseCase({
       command: createCommand({ actor: gmActor, opId: parseOpId('op_sendoutgm001') }),
     }, {
@@ -300,6 +321,8 @@ describe('applySendOutPokemonCommandUseCase', () => {
       resolveFootprint,
     })
     expect(gmResult.status).toBe('accepted')
+    if (gmResult.status !== 'accepted') throw new Error('expected accepted GM send-out')
+    expect(gmResult.token.placement).not.toHaveProperty('sideId')
 
     const unauthorizedState = createState(createMap())
     const unauthorizedStore = createStoreWithState({

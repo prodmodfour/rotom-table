@@ -1,3 +1,4 @@
+import { encounterStateHasSide } from '#shared/moveAutomation/encounterState'
 import {
   SESSION_COMMAND_RESULT_SCHEMA_VERSION,
   type SessionCommandConflictRejection,
@@ -469,6 +470,20 @@ const resolveSpawnTokenTarget = (
     }
   }
 
+  const requestedSideId = command.payload.placement.sideId
+  if (requestedSideId !== undefined && !encounterStateHasSide(mapState.document.encounterState, requestedSideId)) {
+    return {
+      ok: false,
+      result: createConflictRejection(
+        command,
+        record,
+        `spawnToken placement side ${requestedSideId} is not defined on map ${mapSlug}.`,
+        processedAt,
+        { retryable: false, currentState: null },
+      ),
+    }
+  }
+
   return {
     ok: true,
     target: {
@@ -488,6 +503,7 @@ const normalizedSpawnPlacement = (
     sheetKind: placement.sheetKind,
     sheetSlug: placement.sheetSlug,
     position: clonePosition(placement.position),
+    ...(placement.sideId === undefined ? {} : { sideId: placement.sideId }),
     facing,
     turned: tokenFacingStoresLegacyTurned(facing),
     ...(placement.initiative === undefined ? {} : { initiative: placement.initiative }),

@@ -24,6 +24,7 @@ import {
   type LivePlayResolveMoveCommandDependencies,
 } from '~~/server/useCases/applyResolveMoveCommand'
 import { buildResolveMoveScopes } from '~/utils/livePlayMoveCommandScopes'
+import { redBlueEncounterStateFixture } from '../fixtures/moveAutomation/encounterSides'
 import type { CharacterSheet, CharacterSheetMove } from '~/types/characterSheet'
 import type { SheetPlacement, TabletopMap } from '~/types/map'
 import { acceptedRealtimeTestHooks } from './livePlayAcceptedRealtimeTestUtils'
@@ -75,6 +76,7 @@ const mapFixture = (overrides: Partial<TabletopMap> = {}): TabletopMap => ({
   lights: [],
   initiative: { activeId: null, round: 1 },
   activeScene: { name: 'Scene A', startedAt: 100 },
+  encounterState: redBlueEncounterStateFixture(),
   metadata: { note: 'before move' },
   createdAt: 1,
   updatedAt: 100,

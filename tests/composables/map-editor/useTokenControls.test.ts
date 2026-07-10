@@ -161,8 +161,18 @@ describe('useTokenControls', () => {
     const linkedTrainer = trainer({ slug: 'ash', currentTeam: ['bolt'] })
     const unlinkedTrainer = trainer({ slug: 'gary', currentTeam: ['bolt'] })
     const map = mapFixture()
+    map.encounterState = {
+      schemaVersion: 1,
+      sides: { heroes: { id: 'heroes', label: 'Heroes', status: 'active' } },
+      effects: [],
+      counters: {},
+      history: {},
+      turnResources: {},
+      zones: [],
+      pendingResolutionSummaries: [],
+    }
     map.placements = [
-      { id: 'linked-trainer', sheetKind: 'trainer', sheetSlug: 'ash', position: { x: 1, y: 0, z: 1 } },
+      { id: 'linked-trainer', sheetKind: 'trainer', sheetSlug: 'ash', position: { x: 1, y: 0, z: 1 }, sideId: 'heroes' },
       { id: 'unlinked-trainer', sheetKind: 'trainer', sheetSlug: 'gary', position: { x: 4, y: 0, z: 4 } },
     ]
     const { controls } = makeControls({
@@ -199,6 +209,7 @@ describe('useTokenControls', () => {
       sheetKind: 'pokemon',
       sheetSlug: 'bolt',
       position: { x: 3, y: 0, z: 1 },
+      sideId: 'heroes',
     })
 
     expect(controls.sendOutPokemon({
@@ -207,6 +218,7 @@ describe('useTokenControls', () => {
       position: { x: 3, y: 0, z: 1 },
     })).toBe(true)
     expect(map.placements.map((entry) => entry.id)).toEqual(['linked-trainer', 'unlinked-trainer', 'sent-out-bolt'])
+    expect(map.placements[2]?.sideId).toBe('heroes')
   })
 
   it('does not use public player sheet flags as token control without a profile override', () => {

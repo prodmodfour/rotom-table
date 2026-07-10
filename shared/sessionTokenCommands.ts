@@ -16,6 +16,7 @@ import {
   type SessionActor,
   type SessionTokenResourceRef,
 } from './sessionPermissions'
+import { isEncounterSideId, type EncounterSideId } from './moveAutomation/encounterState'
 import type { SessionRevision } from './sessionRevisions'
 import { isSheetKind, type SheetKind } from './sheets'
 
@@ -67,6 +68,7 @@ export interface SpawnTokenPlacementPayload {
   readonly sheetKind: SheetKind
   readonly sheetSlug: string
   readonly position: MoveTokenPosition
+  readonly sideId?: EncounterSideId
   readonly facing?: SessionTokenFacingDirection
   readonly initiative?: number | null
 }
@@ -163,6 +165,7 @@ export const SPAWN_TOKEN_COMMAND_VALIDATION_CODES = [
   'invalid-sheet-kind',
   'invalid-sheet-slug',
   'invalid-position',
+  'invalid-side-id',
   'invalid-facing',
   'invalid-initiative',
   'invalid-token-scope',
@@ -393,6 +396,7 @@ const cloneSpawnTokenPlacement = (
   sheetKind: placement.sheetKind,
   sheetSlug: placement.sheetSlug,
   position: clonePosition(placement.position),
+  ...(placement.sideId === undefined ? {} : { sideId: placement.sideId }),
   ...(placement.facing === undefined ? {} : { facing: placement.facing }),
   ...(placement.initiative === undefined ? {} : { initiative: placement.initiative }),
 })
@@ -451,6 +455,7 @@ export const isSpawnTokenPlacementPayload = (
   isSheetKind(value.sheetKind) &&
   isNonEmptyString(value.sheetSlug) &&
   isMoveTokenPosition(value.position) &&
+  (value.sideId === undefined || isEncounterSideId(value.sideId)) &&
   (value.facing === undefined || isSessionTokenFacingDirection(value.facing)) &&
   (
     value.initiative === undefined ||
@@ -1083,6 +1088,17 @@ const collectSpawnTokenPayloadIssues = (
         )
       }
     }
+  }
+
+  if (placement.sideId !== undefined && !isEncounterSideId(placement.sideId)) {
+    addSpawnIssue(
+      issues,
+      'payload.placement.sideId',
+      'invalid-side-id',
+      'spawnToken payload.placement.sideId must be a valid encounter side ID when provided.',
+      'lowercase alphanumeric/hyphen encounter side ID',
+      placement.sideId,
+    )
   }
 
   if (placement.facing !== undefined && !isSessionTokenFacingDirection(placement.facing)) {

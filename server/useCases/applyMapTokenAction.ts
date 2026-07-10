@@ -17,6 +17,7 @@ import {
   type TurnTokenLivePlayCommand,
   type TurnTokenPayload,
 } from '#shared/livePlayCommands'
+import { encounterStateHasSide, isEncounterSideId } from '#shared/moveAutomation/encounterState'
 import { nextRevision, normalizeRevision } from '#shared/sessionRevisions'
 import type { AuthRole } from '#shared/auth'
 import type { PlayerProfile } from '#shared/playerProfiles'
@@ -351,6 +352,7 @@ const normalizeLivePlaySpawnPlacement = (placement: SheetPlacement): SheetPlacem
     sheetKind: placement.sheetKind,
     sheetSlug: placement.sheetSlug,
     position: clonePosition(placement.position),
+    ...(placement.sideId === undefined ? {} : { sideId: placement.sideId }),
     facing,
     turned: tokenFacingStoresLegacyTurned(facing),
     ...(placement.initiative === undefined ? {} : { initiative: placement.initiative }),
@@ -443,13 +445,17 @@ const trainerOwnsCurrentTeamPokemon = (trainerSheet: Record<string, unknown>, po
   && trainerSheet.currentTeam.some((value) => typeof value === 'string' && value.trim() === pokemonSlug)
 )
 
-const normalizeLivePlaySendOutPlacement = (payload: SendOutPokemonPayload): SheetPlacement => {
+const normalizeLivePlaySendOutPlacement = (
+  payload: SendOutPokemonPayload,
+  trainerPlacement: SheetPlacement,
+): SheetPlacement => {
   const facing = payload.facing ?? DEFAULT_TOKEN_FACING_DIRECTION
   return {
     id: payload.tokenId,
     sheetKind: 'pokemon',
     sheetSlug: payload.pokemonSlug,
     position: clonePosition(payload.position),
+    ...(trainerPlacement.sideId === undefined ? {} : { sideId: trainerPlacement.sideId }),
     facing,
     turned: tokenFacingStoresLegacyTurned(facing),
   }
@@ -481,7 +487,7 @@ const resolveSendOutPokemonMapContext = (
     rejectLivePlayCommand('conflict', `Trainer ${trainerPlacement.sheetSlug} does not have Pokémon ${payload.pokemonSlug} on their current team`)
   }
 
-  const placement = normalizeLivePlaySendOutPlacement(payload)
+  const placement = normalizeLivePlaySendOutPlacement(payload, trainerPlacement)
   const lookup = sendOutSheetLookup(trainerPlacement, trainerRecord.sheet, payload.pokemonSlug, pokemonRecord.sheet)
   const trainerToken = placementToSpawned(trainerPlacement, lookup)
     ?? rejectLivePlayCommand('conflict', `Trainer ${trainerPlacement.sheetSlug} or Pokémon ${payload.pokemonSlug} could not resolve a map footprint`)
@@ -649,6 +655,7 @@ const expectSpawnTokenPayload = (payload: unknown): SpawnTokenPayload => {
   const sheetKind = placementRecord.sheetKind
   const sheetSlug = placementRecord.sheetSlug
   const position = placementRecord.position
+  const sideId = placementRecord.sideId
   const facing = placementRecord.facing
   const turned = placementRecord.turned
   const initiative = placementRecord.initiative
@@ -678,6 +685,9 @@ const expectSpawnTokenPayload = (payload: unknown): SpawnTokenPayload => {
   if (!isFiniteCoordinate(x) || !isFiniteCoordinate(y) || !isFiniteCoordinate(z)) {
     rejectLivePlayCommand('invalid', 'spawnToken payload.placement.position coordinates must be finite numbers')
   }
+  if (sideId !== undefined && !isEncounterSideId(sideId)) {
+    rejectLivePlayCommand('invalid', 'spawnToken payload.placement.sideId must be a valid encounter side ID when provided')
+  }
   if (facing !== undefined && !isTokenFacingDirection(facing)) {
     rejectLivePlayCommand('invalid', 'spawnToken payload.placement.facing must be a token facing direction')
   }
@@ -694,6 +704,7 @@ const expectSpawnTokenPayload = (payload: unknown): SpawnTokenPayload => {
       sheetKind: sheetKind as SheetKind,
       sheetSlug: (sheetSlug as string).trim(),
       position: { x: x as number, y: y as number, z: z as number },
+      ...(isEncounterSideId(sideId) ? { sideId } : {}),
       ...(isTokenFacingDirection(facing) ? { facing } : {}),
       ...(typeof turned === 'boolean' ? { turned } : {}),
       ...(initiative === undefined ? {} : { initiative: initiative as number | null }),
@@ -933,6 +944,7 @@ const isSheetPlacementLike = (value: unknown): value is SheetPlacement => {
     && isSheetKind(record.sheetKind)
     && nonEmptyCommandString(record.sheetSlug)
     && isRecord(record.position)
+    && (record.sideId === undefined || isEncounterSideId(record.sideId))
 }
 
 const placementFromPlacementPatch = (result: LivePlayCommandAccepted): SheetPlacement | undefined => {
@@ -1023,6 +1035,12 @@ export const executeMapTokenLivePlayCommandUseCase = async (
         const payload = expectSpawnTokenPayload(command.payload)
         if (!tokenScopeMatches(command.scopes, payload.placement.id, 'spawn')) {
           rejectLivePlayCommand('invalid', 'spawnToken scopes must include the token spawn scope for payload.placement.id')
+        }
+        if (
+          payload.placement.sideId !== undefined
+          && !encounterStateHasSide(map.map.encounterState, payload.placement.sideId)
+        ) {
+          rejectLivePlayCommand('invalid', `spawnToken placement side ${payload.placement.sideId} is not defined on map ${map.map.slug}`)
         }
         if (!isPositionWithinMapBounds(payload.placement.position, map.map)) {
           rejectLivePlayCommand('invalid', `spawnToken placement ${payload.placement.id} position is outside map bounds`)

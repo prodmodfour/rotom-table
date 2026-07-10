@@ -169,6 +169,79 @@ describe('map document normalization', () => {
     expect(normalized.encounterState?.counters).not.toBe(encounterState.counters)
   })
 
+  it('preserves explicit placement sides while leaving legacy allegiance unknown', () => {
+    const encounterState = {
+      ...createEmptyEncounterState(),
+      sides: {
+        heroes: { id: 'heroes', label: 'Heroes', color: '#33AA44', status: 'active' as const },
+        villains: { id: 'villains', label: 'Villains', status: 'inactive' as const },
+      },
+    }
+    const normalized = normalizeMapDocument({
+      ...validMap(),
+      encounterState,
+      placements: [
+        {
+          id: 'gm-ally',
+          sheetKind: 'trainer',
+          sheetSlug: 'gm-ally',
+          position: { x: 0, y: 0, z: 0 },
+          sideId: 'heroes',
+        },
+        {
+          id: 'player-opponent',
+          sheetKind: 'pokemon',
+          sheetSlug: 'player-opponent',
+          position: { x: 1, y: 0, z: 0 },
+          sideId: 'villains',
+        },
+        {
+          id: 'legacy-unknown',
+          sheetKind: 'pokemon',
+          sheetSlug: 'legacy-unknown',
+          position: { x: 2, y: 0, z: 0 },
+        },
+      ],
+    }, { sourceLabel: 'sided-map.json' })
+
+    expect(normalized.encounterState?.sides).toEqual({
+      heroes: { id: 'heroes', label: 'Heroes', color: '#33aa44', status: 'active' },
+      villains: { id: 'villains', label: 'Villains', status: 'inactive' },
+    })
+    expect(normalized.placements.map(({ id, sideId }) => [id, sideId])).toEqual([
+      ['gm-ally', 'heroes'],
+      ['player-opponent', 'villains'],
+      ['legacy-unknown', undefined],
+    ])
+    expect(Object.prototype.hasOwnProperty.call(normalized.placements[2], 'sideId')).toBe(false)
+  })
+
+  it('rejects malformed and dangling placement side identities', () => {
+    const encounterState = {
+      ...createEmptyEncounterState(),
+      sides: { heroes: { id: 'heroes', label: 'Heroes', status: 'active' as const } },
+    }
+    const placement = {
+      id: 'token-1',
+      sheetKind: 'pokemon',
+      sheetSlug: 'pikachu',
+      position: { x: 0, y: 0, z: 0 },
+    }
+
+    expect(() => normalizeMapDocument({
+      ...validMap(),
+      encounterState,
+      placements: [{ ...placement, sideId: 'Team Heroes' }],
+    }, { sourceLabel: 'malformed-side.json' }))
+      .toThrow('Map malformed-side.json is invalid: placements[0].sideId must be a lowercase alphanumeric/hyphen encounter side ID')
+    expect(() => normalizeMapDocument({
+      ...validMap(),
+      encounterState,
+      placements: [{ ...placement, sideId: 'villains' }],
+    }, { sourceLabel: 'dangling-side.json' }))
+      .toThrow('Map dangling-side.json is invalid: placements[0].sideId references unknown encounter side villains')
+  })
+
   it('rejects future encounter-state versions and malformed bounded containers', () => {
     const encounterState = createEmptyEncounterState()
 

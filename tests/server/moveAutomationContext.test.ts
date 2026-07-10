@@ -8,6 +8,7 @@ import {
   buildAuthoritativeMoveRulesContext,
 } from '~~/server/domain/moveAutomation/context'
 import { resolveAuthoritativeMoveFromContext } from '~~/server/domain/resolveAuthoritativeMove'
+import { redBlueEncounterStateFixture } from '../fixtures/moveAutomation/encounterSides'
 import type { CharacterSheet } from '~/types/characterSheet'
 import type { SheetPlacement, TabletopMap } from '~/types/map'
 import type { MoveAutomationScript } from '~/types/moveAutomation'
@@ -45,6 +46,7 @@ const mapFixture = (): TabletopMap => ({
   ],
   lights: [],
   initiative: { activeId: 'actor-token', round: 2 },
+  encounterState: redBlueEncounterStateFixture(),
 })
 
 const pokemonSheet = (

@@ -39,13 +39,14 @@ const pokemonOptionLabel = (sheet: CharacterSheet): string => {
 }
 
 const previewPlacementForTeamPokemon = (
-  trainerPlacement: Pick<SheetPlacement, 'id' | 'position'>,
+  trainerPlacement: Pick<SheetPlacement, 'id' | 'position' | 'sideId'>,
   pokemonSlug: string,
 ): SheetPlacement => ({
   id: `sendout-preview:${trainerPlacement.id}:${pokemonSlug}`,
   sheetKind: 'pokemon',
   sheetSlug: pokemonSlug,
   position: trainerPlacement.position,
+  ...(trainerPlacement.sideId === undefined ? {} : { sideId: trainerPlacement.sideId }),
   facing: DEFAULT_TOKEN_FACING_DIRECTION,
   turned: false,
 })

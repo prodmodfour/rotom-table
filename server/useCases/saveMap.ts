@@ -1,5 +1,6 @@
 import { UseCaseHttpError } from '../utils/useCaseErrors'
 import { MAP_INTERACTION_MODES, type MapInteractionMode } from '#shared/mapInteractionMode'
+import { createEmptyEncounterState, parseEncounterState } from '#shared/moveAutomation/encounterState'
 import type { PersistedRealtimeEvent } from '#shared/realtimeEventLog'
 import { isRevision, normalizeRevision, nextRevision } from '#shared/sessionRevisions'
 import { normalizeMapFieldEffects } from '~/utils/mapFieldEffects'
@@ -77,6 +78,9 @@ export const toPersistedMap = (
     : { activeId: null, round: 1 }
   const activeScene = normalizeMapSceneState(source.activeScene)
   const temporaryHitPoints = normalizeMapTemporaryHitPointsState(source.temporaryHitPoints, activeScene)
+  const encounterState = source.encounterState === undefined
+    ? createEmptyEncounterState()
+    : parseEncounterState(source.encounterState)
   const folder = options.folder ?? folderOrPath
 
   return {
@@ -99,6 +103,7 @@ export const toPersistedMap = (
     ...(activeScene ? { activeScene } : {}),
     ...(temporaryHitPoints ? { temporaryHitPoints } : {}),
     moveUsage: normalizeMapMoveUsage(source.moveUsage),
+    encounterState,
     metadata: source.metadata,
     createdAt: source.createdAt,
     updatedAt,

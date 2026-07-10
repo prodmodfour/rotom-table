@@ -1,16 +1,41 @@
 /**
  * Versioned map-owned state for authoritative encounter mechanics.
  *
- * MA-050 introduces only the envelope. Each container is intentionally empty
- * until the ticket that defines its typed entries and lifecycle semantics.
- * Existing map hazards, field effects, temporary HP, and move usage remain in
- * their current map fields during this compatibility period.
+ * MA-050 introduced the envelope; MA-052 fills only its typed side directory.
+ * Other containers remain intentionally empty until their owning mechanics
+ * tickets. Existing map hazards, field effects, temporary HP, and move usage
+ * remain in their current map fields during this compatibility period.
  */
 export const ENCOUNTER_STATE_SCHEMA_VERSION = 1 as const
 
+export const ENCOUNTER_SIDE_STATUSES = ['active', 'inactive'] as const
+export type EncounterSideStatus = typeof ENCOUNTER_SIDE_STATUSES[number]
+
+/** Sides are map-local identities with bounded, presentation-only labels and colours. */
+export const ENCOUNTER_SIDE_LIMITS = Object.freeze({
+  count: 32,
+  idChars: 64,
+  labelChars: 80,
+})
+
+export type EncounterSideId = string
+
+export interface EncounterSide {
+  /** Stable map-local identity; also used as the side-directory key. */
+  readonly id: EncounterSideId
+  /** Human-readable setup and encounter label. */
+  readonly label: string
+  /** Optional presentation hint. Mechanics must never infer allegiance from it. */
+  readonly color?: string
+  /** Inactive sides remain addressable so existing placement identity is preserved. */
+  readonly status: EncounterSideStatus
+}
+
+export type EncounterSideDirectory = Readonly<Record<EncounterSideId, EncounterSide>>
+
 /** Current envelope bounds. Later mechanics tickets raise only their own bound. */
 export const ENCOUNTER_STATE_LIMITS = Object.freeze({
-  sides: 0,
+  sides: ENCOUNTER_SIDE_LIMITS.count,
   effects: 0,
   counters: 0,
   history: 0,
@@ -24,7 +49,7 @@ export type EmptyEncounterStateDirectory = Readonly<Record<string, never>>
 
 export interface EncounterState {
   readonly schemaVersion: typeof ENCOUNTER_STATE_SCHEMA_VERSION
-  readonly sides: EmptyEncounterStateDirectory
+  readonly sides: EncounterSideDirectory
   readonly effects: EmptyEncounterStateList
   readonly counters: EmptyEncounterStateDirectory
   readonly history: EmptyEncounterStateDirectory
@@ -72,11 +97,17 @@ const LIST_CONTAINER_KEYS = [
 ] as const satisfies readonly EncounterStateContainerKey[]
 
 const DIRECTORY_CONTAINER_KEYS = [
-  'sides',
   'counters',
   'history',
   'turnResources',
 ] as const satisfies readonly EncounterStateContainerKey[]
+
+const ENCOUNTER_SIDE_FIELDS = ['id', 'label', 'color', 'status'] as const
+const REQUIRED_ENCOUNTER_SIDE_FIELDS = ['id', 'label', 'status'] as const
+const ENCOUNTER_SIDE_STATUS_SET = new Set<unknown>(ENCOUNTER_SIDE_STATUSES)
+const ENCOUNTER_SIDE_ID_PATTERN = /^[a-z0-9-]+$/
+const ENCOUNTER_SIDE_COLOR_PATTERN = /^#[0-9a-fA-F]{6}$/
+const CONTROL_CHARACTER_PATTERN = /[\u0000-\u001f\u007f]/
 
 const fail = (
   code: EncounterStateValidationCode,
@@ -128,6 +159,111 @@ const assertEmptyDirectory = (
   }
 }
 
+export const isEncounterSideId = (value: unknown): value is EncounterSideId => (
+  typeof value === 'string'
+  && value.length > 0
+  && value.length <= ENCOUNTER_SIDE_LIMITS.idChars
+  && ENCOUNTER_SIDE_ID_PATTERN.test(value)
+)
+
+export const encounterStateHasSide = (
+  state: Pick<EncounterState, 'sides'> | null | undefined,
+  sideId: unknown,
+): sideId is EncounterSideId => (
+  isEncounterSideId(sideId)
+  && state !== null
+  && state !== undefined
+  && Object.prototype.hasOwnProperty.call(state.sides, sideId)
+)
+
+const assertExactEncounterSideFields = (value: UnknownRecord, path: string): void => {
+  const expected = new Set<string>(ENCOUNTER_SIDE_FIELDS)
+  const missing = REQUIRED_ENCOUNTER_SIDE_FIELDS.filter(key => !Object.prototype.hasOwnProperty.call(value, key))
+  const unknown = Object.keys(value).filter(key => !expected.has(key))
+  if (missing.length === 0 && unknown.length === 0) return
+
+  const details = [
+    missing.length > 0 ? `missing ${missing.join(', ')}` : '',
+    unknown.length > 0 ? `unknown ${unknown.join(', ')}` : '',
+  ].filter(Boolean).join('; ')
+  fail('invalid-encounter-state', path, `must contain exactly the supported side fields (${details}).`)
+}
+
+const parseEncounterSide = (
+  value: unknown,
+  directoryId: EncounterSideId,
+): EncounterSide => {
+  const path = `encounterState.sides.${directoryId}`
+  if (!isPlainRecord(value)) {
+    return fail('invalid-encounter-state', path, 'must be a plain object side record.')
+  }
+  assertExactEncounterSideFields(value, path)
+
+  if (!isEncounterSideId(value.id)) {
+    fail(
+      'invalid-encounter-state',
+      `${path}.id`,
+      `must match /^[a-z0-9-]+$/ and contain at most ${ENCOUNTER_SIDE_LIMITS.idChars} characters.`,
+    )
+  }
+  if (value.id !== directoryId) {
+    fail('invalid-encounter-state', `${path}.id`, `must match directory key ${directoryId}.`)
+  }
+
+  const label = typeof value.label === 'string' ? value.label.trim() : ''
+  if (
+    !label
+    || label.length > ENCOUNTER_SIDE_LIMITS.labelChars
+    || CONTROL_CHARACTER_PATTERN.test(label)
+  ) {
+    fail(
+      'invalid-encounter-state',
+      `${path}.label`,
+      `must be non-empty display text of at most ${ENCOUNTER_SIDE_LIMITS.labelChars} characters without control characters.`,
+    )
+  }
+  if (!ENCOUNTER_SIDE_STATUS_SET.has(value.status)) {
+    fail('invalid-encounter-state', `${path}.status`, 'must be active or inactive.')
+  }
+  if (value.color !== undefined && (
+    typeof value.color !== 'string'
+    || !ENCOUNTER_SIDE_COLOR_PATTERN.test(value.color)
+  )) {
+    fail('invalid-encounter-state', `${path}.color`, 'must be a six-digit #rrggbb color when present.')
+  }
+
+  return {
+    id: directoryId,
+    label,
+    ...(typeof value.color === 'string' ? { color: value.color.toLowerCase() } : {}),
+    status: value.status as EncounterSideStatus,
+  }
+}
+
+const parseEncounterSideDirectory = (value: unknown): EncounterSideDirectory => {
+  const path = 'encounterState.sides'
+  if (!isPlainRecord(value)) {
+    return fail('invalid-encounter-state', path, 'must be a plain object directory.')
+  }
+  const ids = Object.keys(value)
+  if (ids.length > ENCOUNTER_STATE_LIMITS.sides) {
+    fail('limit-exceeded', path, `must contain at most ${ENCOUNTER_STATE_LIMITS.sides} entries.`)
+  }
+
+  const sides: Record<EncounterSideId, EncounterSide> = {}
+  for (const id of ids.sort((left, right) => left.localeCompare(right))) {
+    if (!isEncounterSideId(id)) {
+      fail(
+        'invalid-encounter-state',
+        `${path}.${id}`,
+        `directory keys must match /^[a-z0-9-]+$/ and contain at most ${ENCOUNTER_SIDE_LIMITS.idChars} characters.`,
+      )
+    }
+    sides[id] = parseEncounterSide(value[id], id)
+  }
+  return sides
+}
+
 /** Return a fresh canonical envelope so maps never share mutable containers. */
 export const createEmptyEncounterState = (): EncounterState => ({
   schemaVersion: ENCOUNTER_STATE_SCHEMA_VERSION,
@@ -163,5 +299,8 @@ export const parseEncounterState = (value: unknown): EncounterState => {
   for (const key of LIST_CONTAINER_KEYS) assertEmptyList(value[key], key)
   for (const key of DIRECTORY_CONTAINER_KEYS) assertEmptyDirectory(value[key], key)
 
-  return createEmptyEncounterState()
+  return {
+    ...createEmptyEncounterState(),
+    sides: parseEncounterSideDirectory(value.sides),
+  }
 }

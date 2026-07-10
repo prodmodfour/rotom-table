@@ -1,3 +1,4 @@
+import { isEncounterSideId } from '#shared/moveAutomation/encounterState'
 import {
   LIVE_PLAY_COMMAND_SCHEMA_VERSION,
   LIVE_PLAY_COMMAND_TYPES,
@@ -111,6 +112,7 @@ const isSheetPlacement = (value: unknown): value is SheetPlacement => (
   && (value.sheetKind === 'pokemon' || value.sheetKind === 'trainer')
   && nonEmptyString(value.sheetSlug)
   && isGridAnchor(value.position)
+  && (value.sideId === undefined || isEncounterSideId(value.sideId))
 )
 
 const clonePlacement = (placement: SheetPlacement): SheetPlacement => deepCloneJson(placement)

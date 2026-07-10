@@ -697,7 +697,7 @@ Status: DONE
 
 ## MA-052 — Add explicit side identity to placements
 
-Status: TODO
+Status: DONE
 
 **Depends on:** MA-051
 **Commit:** `feat(move-automation): model explicit encounter sides`

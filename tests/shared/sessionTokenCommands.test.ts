@@ -179,6 +179,7 @@ const buildSpawnTokenCommand = (
       sheetKind: 'pokemon',
       sheetSlug: 'pikachu',
       position: { x: 4, y: 1, z: 6 },
+      sideId: 'heroes',
       facing: 'south-east',
       ...overrides,
     },
@@ -503,6 +504,7 @@ describe('spawnToken command contract and validator', () => {
         sheetKind: 'pokemon',
         sheetSlug: 'pikachu',
         position: { x: 4, y: 1, z: 6 },
+        sideId: 'heroes',
         facing: 'south-east',
       },
     } as const satisfies SpawnTokenCommandPayload
@@ -555,6 +557,7 @@ describe('spawnToken command contract and validator', () => {
           sheetKind: 'item',
           sheetSlug: '',
           position: { x: -1, y: 1.5, z: Number.NaN },
+          sideId: 'Team Heroes',
           facing: 'north',
           initiative: 1.25,
         },
@@ -576,6 +579,7 @@ describe('spawnToken command contract and validator', () => {
     expect(payloadIssueByPath.get('payload.placement.position.x')?.code).toBe('invalid-position')
     expect(payloadIssueByPath.get('payload.placement.position.y')?.code).toBe('invalid-position')
     expect(payloadIssueByPath.get('payload.placement.position.z')?.code).toBe('invalid-position')
+    expect(payloadIssueByPath.get('payload.placement.sideId')?.code).toBe('invalid-side-id')
     expect(payloadIssueByPath.get('payload.placement.facing')?.code).toBe('invalid-facing')
     expect(payloadIssueByPath.get('payload.placement.initiative')?.code).toBe('invalid-initiative')
     expect(scopeResult.valid).toBe(false)

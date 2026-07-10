@@ -1,3 +1,4 @@
+import { isEncounterSideId } from './moveAutomation/encounterState'
 import { isSlug, SLUG_PATTERN_DESCRIPTION } from './paths'
 import { isSheetKind, type SheetKind } from './sheets'
 import {
@@ -112,7 +113,7 @@ const TERRAIN_KINDS = new Set<unknown>(['electric', 'grassy', 'misty', 'psychic'
 const ROOM_KINDS = new Set<unknown>(['magic', 'trick', 'wonder'])
 const MAP_TRACKED_FREQUENCIES = new Set<unknown>(['eot', 'scene', 'daily'])
 
-const PLACEMENT_FIELDS = new Set(['id', 'sheetKind', 'sheetSlug', 'position', 'initiative', 'facing', 'turned'])
+const PLACEMENT_FIELDS = new Set(['id', 'sheetKind', 'sheetSlug', 'position', 'sideId', 'initiative', 'facing', 'turned'])
 const FIELD_EFFECT_FIELDS = new Set(['weather', 'terrains', 'rooms'])
 const WEATHER_EFFECT_FIELDS = new Set(['kind', 'rounds', 'source'])
 const TERRAIN_EFFECT_FIELDS = new Set(['kind', 'scope', 'rounds', 'source'])
@@ -222,6 +223,9 @@ const parseSheetPlacement = (value: unknown, path: string, issues: MutableIssueL
   const sheetSlug = parseSlug(value.sheetSlug, `${path}.sheetSlug`, issues)
   const position = parseGridAnchor(value.position, `${path}.position`, issues)
 
+  if (hasOwn(value, 'sideId') && !isEncounterSideId(value.sideId)) {
+    addIssue(issues, `${path}.sideId`, 'invalid-field', `${path}.sideId must be a valid encounter side ID.`)
+  }
   if (hasOwn(value, 'initiative') && value.initiative !== null && !Number.isFinite(value.initiative)) {
     addIssue(issues, `${path}.initiative`, 'invalid-field', `${path}.initiative must be a finite number or null.`)
   }
@@ -238,6 +242,7 @@ const parseSheetPlacement = (value: unknown, path: string, issues: MutableIssueL
     sheetKind,
     sheetSlug,
     position,
+    ...(isEncounterSideId(value.sideId) ? { sideId: value.sideId } : {}),
     ...(hasOwn(value, 'initiative') && (typeof value.initiative === 'number' || value.initiative === null) ? { initiative: value.initiative } : {}),
     ...(TOKEN_FACING_DIRECTIONS.has(value.facing) ? { facing: value.facing as SheetPlacement['facing'] } : {}),
     ...(typeof value.turned === 'boolean' ? { turned: value.turned } : {}),

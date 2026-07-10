@@ -51,6 +51,7 @@ const baseMap = (overrides: Partial<TabletopMap> = {}): TabletopMap => ({
       sheetKind: 'pokemon',
       sheetSlug: 'pikachu',
       position: { x: 1, y: 0, z: 1 },
+      sideId: 'heroes',
       facing: 'south-east',
       turned: false,
     },
@@ -59,12 +60,27 @@ const baseMap = (overrides: Partial<TabletopMap> = {}): TabletopMap => ({
       sheetKind: 'trainer',
       sheetSlug: 'giovanni',
       position: { x: 2, y: 0, z: 2 },
+      sideId: 'rivals',
       facing: 'north-west',
       turned: true,
     },
   ],
   lights: [],
   initiative: { activeId: null, round: 1 },
+  encounterState: {
+    schemaVersion: 1,
+    sides: {
+      heroes: { id: 'heroes', label: 'Heroes', color: '#33aa44', status: 'active' },
+      rivals: { id: 'rivals', label: 'Rivals', color: '#aa3344', status: 'active' },
+      wild: { id: 'wild', label: 'Wild', status: 'active' },
+    },
+    effects: [],
+    counters: {},
+    history: {},
+    turnResources: {},
+    zones: [],
+    pendingResolutionSummaries: [],
+  },
   metadata: { owner: 'gm' },
   createdAt: 10,
   updatedAt: 20,
@@ -103,6 +119,7 @@ const spawnCommand = (
       sheetKind: 'pokemon',
       sheetSlug: 'eevee',
       position: { x: 3, y: 0, z: 3 },
+      sideId: 'wild',
       facing: 'south-east',
       turned: false,
     },
@@ -211,6 +228,7 @@ describe('live-play map token commands', () => {
     expect(harness.storedMap.placements[1]).toMatchObject({
       id: 'unlinked-token',
       position: { x: 5, y: 0, z: 5 },
+      sideId: 'rivals',
       facing: 'south-east',
     })
     expect(response.map).toBe(harness.storedMap)
@@ -441,6 +459,7 @@ describe('live-play map token commands', () => {
       sheetKind: 'pokemon',
       sheetSlug: 'eevee',
       position: { x: 3, y: 0, z: 3 },
+      sideId: 'wild',
       facing: 'south-east',
       turned: false,
     })
@@ -479,6 +498,7 @@ describe('live-play map token commands', () => {
       sheetKind: 'pokemon',
       sheetSlug: 'eevee',
       position: { x: 3, y: 0, z: 2 },
+      sideId: 'rivals',
       facing: 'south-east',
       turned: false,
     })
@@ -570,7 +590,7 @@ describe('live-play map token commands', () => {
     }, harness.deps)
 
     expect(response.result).toMatchObject({ ok: true, previousRevision: 4, revision: 5 })
-    expect(response.placement).toMatchObject({ id: 'linked-token', sheetSlug: 'pikachu' })
+    expect(response.placement).toMatchObject({ id: 'linked-token', sheetSlug: 'pikachu', sideId: 'heroes' })
     expect(harness.storedMap.placements.map((placement) => placement.id)).not.toContain('linked-token')
     expect(harness.storedMap.initiative?.activeId).toBeNull()
     if (!response.result.ok || 'duplicate' in response.result) throw new Error('expected accepted deleteToken result')
@@ -580,7 +600,7 @@ describe('live-play map token commands', () => {
       payload: {
         command: 'deleteToken',
         placementId: 'linked-token',
-        previous: expect.objectContaining({ id: 'linked-token' }),
+        previous: expect.objectContaining({ id: 'linked-token', sideId: 'heroes' }),
         current: null,
       },
     })
@@ -638,11 +658,34 @@ describe('live-play map token commands', () => {
       playerProfile: null,
       expectedType: LIVE_PLAY_COMMAND_TYPES.SPAWN_TOKEN,
     }, harness.deps)
+    const unknownSide = await executeMapTokenLivePlayCommandUseCase({
+      role: 'gm',
+      command: spawnCommand({
+        opId: 'op_spawnunknownside',
+        payload: {
+          placement: {
+            id: 'spawned-unknown-side',
+            sheetKind: 'pokemon',
+            sheetSlug: 'eevee',
+            position: { x: 3, y: 0, z: 3 },
+            sideId: 'missing-side',
+          },
+        },
+        scopes: [{ kind: 'token', placementId: 'spawned-unknown-side', field: 'spawn' }],
+      }),
+      playerProfile: null,
+      expectedType: LIVE_PLAY_COMMAND_TYPES.SPAWN_TOKEN,
+    }, harness.deps)
 
     expect(playerSpawn.result).toMatchObject({ ok: false, reason: 'unauthorized', message: 'Only GMs can spawn map tokens' })
     expect(playerDelete.result).toMatchObject({ ok: false, reason: 'unauthorized', message: 'Only GMs can delete map tokens' })
     expect(invalidSheet.result).toMatchObject({ ok: false, reason: 'not-found', message: 'pokemon sheet missingno not found' })
     expect(outOfBounds.result).toMatchObject({ ok: false, reason: 'invalid' })
+    expect(unknownSide.result).toMatchObject({
+      ok: false,
+      reason: 'invalid',
+      message: 'spawnToken placement side missing-side is not defined on map arena',
+    })
     expect(harness.writes).toEqual([])
     expect(harness.storedMap.revision).toBe(4)
   })
@@ -682,8 +725,10 @@ describe('live-play map token commands', () => {
       expect(stored?.placements.find((placement) => placement.id === 'linked-token')).toMatchObject({
         id: 'linked-token',
         position: { x: 4, y: 0, z: 1 },
+        sideId: 'heroes',
         facing: 'north-east',
       })
+      expect(stored?.encounterState?.sides).toEqual(baseMap().encounterState?.sides)
     } finally {
       database.close()
       rmSync(root, { recursive: true, force: true })

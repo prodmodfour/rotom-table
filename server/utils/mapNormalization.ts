@@ -1,8 +1,10 @@
-import type { GridDimensions, MapHazardV2, MapVoxelV2, TabletopMapV2 } from '~/types/map'
+import type { GridDimensions, MapHazardV2, MapVoxelV2, SheetPlacement, TabletopMapV2 } from '~/types/map'
 import { normalizeMapSceneState } from '~/utils/mapSceneState'
 import {
   EncounterStateValidationError,
   createEmptyEncounterState,
+  encounterStateHasSide,
+  isEncounterSideId,
   parseEncounterState,
   type EncounterState,
 } from '#shared/moveAutomation/encounterState'
@@ -99,6 +101,32 @@ const normalizeMapEncounterState = (value: unknown, sourceLabel: string): Encoun
   }
 }
 
+const normalizePlacementForEditor = (
+  value: unknown,
+  index: number,
+  sourceLabel: string,
+  encounterState: EncounterState,
+): SheetPlacement => {
+  const record = expectRecord(value, sourceLabel, `placements[${index}] must be an object`)
+  const sideId = record.sideId
+  if (sideId !== undefined && !isEncounterSideId(sideId)) {
+    invalidMapDocument(
+      sourceLabel,
+      `placements[${index}].sideId must be a lowercase alphanumeric/hyphen encounter side ID`,
+    )
+  }
+  if (isEncounterSideId(sideId) && !encounterStateHasSide(encounterState, sideId)) {
+    invalidMapDocument(
+      sourceLabel,
+      `placements[${index}].sideId references unknown encounter side ${sideId}`,
+    )
+  }
+
+  const placement = { ...record } as unknown as SheetPlacement
+  if (sideId === undefined) delete (placement as unknown as Record<string, unknown>).sideId
+  return placement
+}
+
 export const normalizeMapDocument = (
   json: unknown,
   options: NormalizeMapDocumentOptions = {},
@@ -126,6 +154,11 @@ export const normalizeMapDocument = (
   const activeScene = normalizeMapSceneState(record.activeScene)
   const temporaryHitPoints = normalizeMapTemporaryHitPointsState(record.temporaryHitPoints, activeScene)
   const encounterState = normalizeMapEncounterState(record.encounterState, sourceLabel)
+  const placements = Array.isArray(record.placements)
+    ? (record.placements as unknown[]).map((placement, index) => (
+        normalizePlacementForEditor(placement, index, sourceLabel, encounterState)
+      ))
+    : []
 
   return {
     schemaVersion: 2,
@@ -142,7 +175,7 @@ export const normalizeMapDocument = (
     voxels,
     hazards,
     fieldEffects: normalizeMapFieldEffects(record.fieldEffects),
-    placements: Array.isArray(record.placements) ? record.placements as TabletopMapV2['placements'] : [],
+    placements,
     lights: Array.isArray(record.lights) ? record.lights as TabletopMapV2['lights'] : [],
     initiative,
     ...(activeScene ? { activeScene } : {}),

@@ -3,7 +3,7 @@
  *
  * Maps store sparse terrain voxels, sheet placements, and lighting state.
  */
-import type { EncounterState } from '#shared/moveAutomation/encounterState'
+import type { EncounterSideId, EncounterState } from '#shared/moveAutomation/encounterState'
 import type { GridAnchor, GridDimensions } from './pokemon'
 import type { MapMoveUsageState } from './moveUsage'
 import type { TokenFacingDirection } from './tokenFacing'
@@ -19,6 +19,8 @@ export interface SheetPlacement {
   sheetKind: SheetKind
   sheetSlug: string
   position: GridAnchor
+  /** Explicit map-local encounter side. Omitted means unknown/unaffiliated. */
+  sideId?: EncounterSideId
   /** Map-local initiative value used by the encounter tracker. */
   initiative?: number | null
   /** Direction the sprite faces on the isometric map. */

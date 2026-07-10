@@ -124,6 +124,7 @@
         "sheetKind": { "enum": ["pokemon", "trainer"] },
         "sheetSlug": { "type": "string" },
         "position": { "$ref": "#/$defs/anchor" },
+        "sideId": { "$ref": "#/$defs/encounterSideId" },
         "initiative": { "type": ["integer", "null"] },
         "turned": { "type": "boolean" }
       }
@@ -174,13 +175,35 @@
       "additionalProperties": false,
       "properties": {
         "schemaVersion": { "const": 1 },
-        "sides": { "$ref": "#/$defs/emptyEncounterDirectory" },
+        "sides": { "$ref": "#/$defs/encounterSideDirectory" },
         "effects": { "$ref": "#/$defs/emptyEncounterList" },
         "counters": { "$ref": "#/$defs/emptyEncounterDirectory" },
         "history": { "$ref": "#/$defs/emptyEncounterDirectory" },
         "turnResources": { "$ref": "#/$defs/emptyEncounterDirectory" },
         "zones": { "$ref": "#/$defs/emptyEncounterList" },
         "pendingResolutionSummaries": { "$ref": "#/$defs/emptyEncounterList" }
+      }
+    },
+    "encounterSideId": {
+      "type": "string",
+      "pattern": "^[a-z0-9-]+$",
+      "maxLength": 64
+    },
+    "encounterSideDirectory": {
+      "type": "object",
+      "maxProperties": 32,
+      "propertyNames": { "$ref": "#/$defs/encounterSideId" },
+      "additionalProperties": { "$ref": "#/$defs/encounterSide" }
+    },
+    "encounterSide": {
+      "type": "object",
+      "required": ["id", "label", "status"],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "$ref": "#/$defs/encounterSideId" },
+        "label": { "type": "string", "minLength": 1, "maxLength": 80 },
+        "color": { "type": "string", "pattern": "^#[0-9a-fA-F]{6}$" },
+        "status": { "enum": ["active", "inactive"] }
       }
     },
     "emptyEncounterList": {

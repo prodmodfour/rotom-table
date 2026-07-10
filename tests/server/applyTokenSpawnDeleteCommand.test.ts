@@ -98,12 +98,26 @@ const createMap = (overrides: Partial<TabletopMapV2> = {}): TabletopMapV2 => ({
       sheetKind: 'pokemon',
       sheetSlug: 'pikachu',
       position: { x: 1, y: 0, z: 1 },
+      sideId: 'heroes',
       facing: 'south-east',
     },
   ],
   lights: [],
   initiative: { activeId: 'token-pikachu', round: 1 },
   moveUsage: { byPlacementId: {} },
+  encounterState: {
+    schemaVersion: 1,
+    sides: {
+      heroes: { id: 'heroes', label: 'Heroes', status: 'active' },
+      wild: { id: 'wild', label: 'Wild', status: 'active' },
+    },
+    effects: [],
+    counters: {},
+    history: {},
+    turnResources: {},
+    zones: [],
+    pendingResolutionSummaries: [],
+  },
   metadata: {},
   createdAt: 1_000,
   updatedAt: 1_000,
@@ -165,6 +179,7 @@ const createSpawnCommand = (
       sheetKind: 'pokemon',
       sheetSlug: 'bulbasaur',
       position: { x: 3, y: 0, z: 3 },
+      sideId: 'wild',
       facing: 'north-east',
     },
   },
@@ -247,6 +262,7 @@ describe('applySpawnTokenCommandUseCase', () => {
         position: { x: 3, y: 0, z: 3 },
         placement: {
           id: 'token-bulbasaur',
+          sideId: 'wild',
           facing: 'north-east',
           turned: false,
         },
@@ -269,6 +285,7 @@ describe('applySpawnTokenCommandUseCase', () => {
       'token-pikachu',
       'token-bulbasaur',
     ])
+    expect(storedMap?.document.placements[1]?.sideId).toBe('wild')
     expect(storedMap?.document.updatedAt).toBe(Date.parse(processedAt))
   })
 
@@ -305,6 +322,26 @@ describe('applySpawnTokenCommandUseCase', () => {
       clock: () => processedAt,
       writeSnapshot: createSnapshotWriter(snapshotCalls),
     })
+    const unknownSideResult = applySpawnTokenCommandUseCase({
+      command: createSpawnCommand({
+        opId: parseOpId('op_spawnbadside'),
+        payload: {
+          placement: {
+            id: 'token-bulbasaur',
+            sheetKind: 'pokemon',
+            sheetSlug: 'bulbasaur',
+            position: { x: 3, y: 0, z: 3 },
+            sideId: 'missing-side',
+          },
+        },
+      }),
+    }, {
+      env: enabledEnv,
+      store,
+      operationTracker: createInMemorySessionOperationTracker(),
+      clock: () => processedAt,
+      writeSnapshot: createSnapshotWriter(snapshotCalls),
+    })
 
     expect(playerResult.status).toBe('rejected')
     if (playerResult.status !== 'rejected') throw new Error('expected unauthorized rejection')
@@ -312,6 +349,9 @@ describe('applySpawnTokenCommandUseCase', () => {
     expect(occupiedResult.status).toBe('rejected')
     if (occupiedResult.status !== 'rejected') throw new Error('expected conflict rejection')
     expect(occupiedResult.result).toMatchObject({ reason: 'conflict', retryable: true })
+    expect(unknownSideResult.status).toBe('rejected')
+    if (unknownSideResult.status !== 'rejected') throw new Error('expected unknown-side rejection')
+    expect(unknownSideResult.result).toMatchObject({ reason: 'conflict', retryable: false })
     expect(snapshotCalls).toHaveLength(0)
     expect(store.get(sessionId)?.revision).toBe(parseSessionRevision(0))
   })
@@ -352,10 +392,11 @@ describe('applyDeleteTokenCommandUseCase', () => {
         mapSlug: 'arena-map',
         clearedActiveInitiative: true,
         position: { x: 1, y: 0, z: 1 },
+        placement: expect.objectContaining({ sideId: 'heroes' }),
       },
     })
     expect(snapshotCalls).toHaveLength(1)
-    expect(result.token.tokenId).toBe('token-pikachu')
+    expect(result.token).toMatchObject({ tokenId: 'token-pikachu', placement: { sideId: 'heroes' } })
     expect(result.snapshot).toEqual({ writtenAt: processedAt, revision: parseSessionRevision(1) })
 
     const storedMap = getSessionMapState(store.get(sessionId)?.state ?? initialState, 'arena-map')

@@ -4,7 +4,7 @@ Map v2 stores only the data the runtime renders or uses:
 
 - sparse `voxels[]` for terrain blocks
 - optional `hazards[]` for PTU battlefield hazards on map squares
-- `placements[]` for Pokémon/trainer sheets on the map
+- `placements[]` for Pokémon/trainer sheets on the map, with optional explicit encounter `sideId`
 - optional `lights[]` for the lighting system
 - optional `fieldEffects` for PTU Weather, Terrain field effects, and Rooms
 - optional `initiative` state
@@ -52,9 +52,11 @@ Each entry may track `rounds`; `null` means the duration is sustained or managed
 
 ## Encounter state
 
-`encounterState` is an optional, explicitly versioned envelope for authoritative move-automation state. Its initial schema contains canonical empty containers for sides, effects, counters, history, turn resources, zones, and bounded pending-resolution summaries. These reserved containers do not change current gameplay yet. Existing `hazards`, `fieldEffects`, `temporaryHitPoints`, and `moveUsage` fields remain separate and authoritative during the staged migration.
+`encounterState` is an optional, explicitly versioned envelope for authoritative move-automation state. Its `sides` directory now stores bounded map-local side records keyed by stable lowercase IDs. Each record has the same `id`, a display `label`, optional `#rrggbb` presentation `color`, and `active` or `inactive` status. Inactive records remain addressable so existing placements do not lose allegiance when a side is archived. The other containers—effects, counters, history, turn resources, zones, and pending-resolution summaries—remain reserved and empty at this phase. Existing `hazards`, `fieldEffects`, `temporaryHitPoints`, and `moveUsage` fields remain separate and authoritative during the staged migration.
 
-Legacy documents that omit `encounterState` receive a fresh canonical empty envelope at server read boundaries. Loading is non-persisting and does not advance the map revision; the canonical envelope is stored with the next accepted map write. Present state is validated strictly, so malformed containers and unsupported future schema versions fail loading instead of being discarded or downgraded.
+A placement may carry a `sideId` referencing that directory. Omission means the placement's side is unknown/unaffiliated; legacy maps are not assigned sides from sheet kind, player/GM control, or token ownership. Send-out inherits the trainer placement's explicit side, while an unknown-side trainer produces an unknown-side Pokémon. Explicit GM spawn commands may carry only an existing side ID. Recall/deletion results retain the removed placement's side in their authoritative result and patch evidence.
+
+Legacy documents that omit `encounterState` receive a fresh canonical empty envelope at server read boundaries. Loading is non-persisting and does not advance the map revision; the canonical envelope is stored with the next accepted map write. Present state is validated strictly, so malformed containers, dangling placement side references, and unsupported future schema versions fail loading instead of being discarded or downgraded.
 
 ## Visibility layers
 
