@@ -806,7 +806,7 @@ Status: DONE
 
 ## MA-060 — Implement the pure lifecycle reducer
 
-Status: TODO
+Status: DONE
 
 **Depends on:** MA-057–MA-059
 **Commit:** `feat(move-automation): reduce encounter lifecycle events`
