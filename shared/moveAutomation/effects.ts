@@ -68,6 +68,8 @@ export const MOVE_EFFECT_RECIPIENT_SELECTOR_KINDS = [
   'fainted-targets',
   'area-targets',
   'source-placement',
+  'actor-and-attacked-targets',
+  'cardinally-adjacent-to-hit-targets',
 ] as const
 
 export const MOVE_EFFECT_ROLL_FORMULA_KINDS = [
@@ -111,7 +113,7 @@ export const MOVE_EFFECT_MULTI_HIT_EFFECT_TRIGGERS = [
 export const MOVE_EFFECT_MULTI_HIT_EFFECT_RECIPIENTS = ['actor', 'target'] as const
 export const MOVE_EFFECT_MULTI_HIT_EFFECT_KINDS = ['condition', 'combat-stage'] as const
 export const MOVE_EFFECT_HP_POOLS = ['hit-points', 'temporary-hit-points'] as const
-export const MOVE_EFFECT_DIRECT_HP_MODES = ['lose', 'set', 'copy', 'split'] as const
+export const MOVE_EFFECT_DIRECT_HP_MODES = ['lose', 'set', 'copy', 'split', 'swap'] as const
 export const MOVE_EFFECT_HEAL_MODES = ['gain', 'full'] as const
 export const MOVE_EFFECT_HP_CALCULATION_KINDS = [
   'fixed',
@@ -120,6 +122,7 @@ export const MOVE_EFFECT_HP_CALCULATION_KINDS = [
   'percent-missing',
   'formula',
   'damage-dealt',
+  'hp-lost',
 ] as const
 export const MOVE_EFFECT_HP_DAMAGE_AGGREGATIONS = ['per-target', 'aggregate'] as const
 /** Prevented or zero effective damage contributes zero to drain/recoil calculations. */
@@ -515,12 +518,26 @@ export interface MoveHpDamageDealtCalculation {
   readonly preventedDamage: MoveEffectHpPreventedDamagePolicy
 }
 
+/**
+ * A magnitude derived from the selected pool actually removed by one earlier
+ * authoritative direct-HP operation. Prevented, unchanged, or upward changes
+ * contribute zero; client-reported loss is never accepted.
+ */
+export interface MoveHpLostCalculation {
+  readonly kind: 'hp-lost'
+  readonly hpOperationId: string
+  readonly pool: MoveEffectHpPool
+  readonly percent: number
+  readonly aggregation: MoveEffectHpDamageAggregation
+}
+
 /** A bounded magnitude/value calculation evaluated once per authoritative recipient. */
 export type MoveHpCalculation =
   | MoveHpFixedCalculation
   | MoveHpPercentCalculation
   | MoveHpFormulaCalculation
   | MoveHpDamageDealtCalculation
+  | MoveHpLostCalculation
 
 /** Inclusive bounds on the final selected HP pool; null leaves that edge unbounded. */
 export interface MoveHpFinalBounds {
@@ -553,7 +570,7 @@ export interface MoveHpCostPolicy {
 export interface MoveDirectHpEffectPayload {
   readonly mode: MoveEffectDirectHpMode
   readonly pool: MoveEffectHpPool
-  /** Required for lose/set; null for copy/split. */
+  /** Required for lose/set; null for copy/split/swap. */
   readonly calculation: MoveHpCalculation | null
   /** One authoritative scalar selector for copy; null for all other modes. */
   readonly copySource: MoveSelector | null
@@ -877,6 +894,13 @@ const HP_DAMAGE_DEALT_CALCULATION_FIELDS = [
   'percent',
   'aggregation',
   'preventedDamage',
+] as const
+const HP_LOST_CALCULATION_FIELDS = [
+  'kind',
+  'hpOperationId',
+  'pool',
+  'percent',
+  'aggregation',
 ] as const
 const HP_BOUNDS_FIELDS = ['minimum', 'maximum'] as const
 const HP_INJURY_FIELDS = ['hitPointMarkers', 'massiveDamage'] as const
@@ -1575,7 +1599,7 @@ const parseHpCalculation = (
     ownValue(input, 'kind', path),
     HP_CALCULATION_KIND_SET,
     `${path}.kind`,
-    'fixed, percent-max, percent-current, percent-missing, formula, or damage-dealt',
+    'fixed, percent-max, percent-current, percent-missing, formula, damage-dealt, or hp-lost',
   )
   if (kind === 'fixed') {
     assertExactKeys(input, HP_FIXED_CALCULATION_FIELDS, path)
@@ -1620,6 +1644,33 @@ const parseHpCalculation = (
         HP_PREVENTED_DAMAGE_POLICY_SET,
         `${path}.preventedDamage`,
         'zero',
+      ),
+    }
+  }
+  if (kind === 'hp-lost') {
+    assertExactKeys(input, HP_LOST_CALCULATION_FIELDS, path)
+    return {
+      kind,
+      hpOperationId: parseStableId(
+        ownValue(input, 'hpOperationId', path),
+        `${path}.hpOperationId`,
+      ),
+      pool: parseEnum<MoveEffectHpPool>(
+        ownValue(input, 'pool', path),
+        HP_POOL_SET,
+        `${path}.pool`,
+        'a supported HP pool',
+      ),
+      percent: parseFiniteNumber(
+        ownValue(input, 'percent', path),
+        `${path}.percent`,
+        0,
+      ),
+      aggregation: parseEnum<MoveEffectHpDamageAggregation>(
+        ownValue(input, 'aggregation', path),
+        HP_DAMAGE_AGGREGATION_SET,
+        `${path}.aggregation`,
+        'per-target or aggregate',
       ),
     }
   }
@@ -1751,7 +1802,7 @@ const parseDirectHpPayload = (value: unknown, path: string): MoveDirectHpEffectP
     ownValue(input, 'mode', path),
     DIRECT_HP_MODE_SET,
     `${path}.mode`,
-    'lose, set, copy, or split',
+    'lose, set, copy, split, or swap',
   )
   const pool = parseEnum<MoveEffectHpPool>(
     ownValue(input, 'pool', path),
@@ -1778,14 +1829,14 @@ const parseDirectHpPayload = (value: unknown, path: string): MoveDirectHpEffectP
     fail(
       'invalid-effect-operation',
       `${path}.calculation`,
-      'must be present for lose/set and null for copy/split.',
+      'must be present for lose/set and null for copy/split/swap.',
     )
   }
   if ((mode === 'copy') !== (copySource !== null)) {
     fail(
       'invalid-effect-operation',
       `${path}.copySource`,
-      'must be a selector for copy and null for lose/set/split.',
+      'must be a selector for copy and null for lose/set/split/swap.',
     )
   }
   if (
@@ -1814,6 +1865,19 @@ const parseDirectHpPayload = (value: unknown, path: string): MoveDirectHpEffectP
       'invalid-effect-operation',
       path,
       'damage-dealt direct HP must be non-immune actor recoil, not a cost.',
+    )
+  }
+  if (calculation?.kind === 'hp-lost' && (
+    mode !== 'lose'
+    || pool !== 'hit-points'
+    || cost !== null
+    || bounds.minimum !== null
+    || bounds.maximum !== null
+  )) {
+    fail(
+      'invalid-effect-operation',
+      path,
+      'linked HP loss must be an unbounded real-HP loss, not a cost.',
     )
   }
   if (cost !== null) {
@@ -1919,6 +1983,18 @@ const parseHealPayload = (value: unknown, path: string): MoveHealEffectPayload =
       'invalid-effect-operation',
       path,
       'damage-dealt healing must be an unbounded real-HP gain.',
+    )
+  }
+  if (calculation?.kind === 'hp-lost' && (
+    mode !== 'gain'
+    || pool !== 'hit-points'
+    || bounds.minimum !== null
+    || bounds.maximum !== null
+  )) {
+    fail(
+      'invalid-effect-operation',
+      path,
+      'linked HP-loss healing must be an unbounded real-HP gain.',
     )
   }
   if (injury.hitPointMarkers !== 'ignore') {

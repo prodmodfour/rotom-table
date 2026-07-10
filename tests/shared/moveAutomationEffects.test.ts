@@ -408,7 +408,7 @@ describe('MoveSpec typed effect operations', () => {
     })).payload).toEqual({ action: 'remove', hazardId: 'hazard.spikes' })
   })
 
-  it('parses every HP calculation and explicit set, copy, split, and full mode', () => {
+  it('parses every standalone HP calculation and explicit set, copy, split, swap, and full mode', () => {
     const calculations = [
       { kind: 'fixed', value: 12.5 },
       { kind: 'percent-max', percent: 50 },
@@ -465,6 +465,15 @@ describe('MoveSpec typed effect operations', () => {
         copySource: null,
       },
     }))
+    const swap = parseMoveEffectOperation(validOperation('direct-hp', {
+      payload: {
+        ...VALID_PAYLOADS['direct-hp'],
+        mode: 'swap',
+        calculation: null,
+        copySource: null,
+        applyTypeImmunity: false,
+      },
+    }))
     const full = parseMoveEffectOperation(validOperation('heal', {
       payload: {
         ...VALID_PAYLOADS.heal,
@@ -480,18 +489,19 @@ describe('MoveSpec typed effect operations', () => {
     })
     expect(copy.kind === 'direct-hp' && copy.payload.copySource).toEqual({ kind: 'actor' })
     expect(split.kind === 'direct-hp' && split.payload.mode).toBe('split')
+    expect(swap.kind === 'direct-hp' && swap.payload.mode).toBe('swap')
     expect(full.kind === 'heal' && full.payload).toMatchObject({
       mode: 'full',
       pool: 'hit-points',
       calculation: null,
       injury: { hitPointMarkers: 'ignore', massiveDamage: 'never' },
     })
-    for (const parsed of [...parsedCalculations, set, copy, split, full]) {
+    for (const parsed of [...parsedCalculations, set, copy, split, swap, full]) {
       expectDeeplyFrozen(parsed)
     }
   })
 
-  it('parses linked drain/recoil, timed HP costs, and self-KO sacrifice policies', () => {
+  it('parses linked drain/recoil, authoritative HP-loss links, timed costs, and self-KO policies', () => {
     const damageCalculation = {
       kind: 'damage-dealt',
       damageOperationId: 'operation.damage',
@@ -517,6 +527,23 @@ describe('MoveSpec typed effect operations', () => {
         calculation: { ...damageCalculation, aggregation: 'aggregate', percent: 25 },
         bounds: { minimum: null, maximum: null },
         applyTypeImmunity: false,
+      },
+    }))
+    const linkedHpLoss = parseMoveEffectOperation(validOperation('direct-hp', {
+      source: { kind: 'operation', id: 'operation.sacrifice' },
+      recipients: { kind: 'hit-targets' },
+      phase: 'cleanup',
+      payload: {
+        ...VALID_PAYLOADS['direct-hp'],
+        calculation: {
+          kind: 'hp-lost',
+          hpOperationId: 'operation.sacrifice',
+          pool: 'hit-points',
+          percent: 100,
+          aggregation: 'aggregate',
+        },
+        bounds: { minimum: null, maximum: null },
+        applyTypeImmunity: true,
       },
     }))
     const fixedHitCost = parseMoveEffectOperation(validOperation('direct-hp', {
@@ -575,6 +602,13 @@ describe('MoveSpec typed effect operations', () => {
       aggregation: 'aggregate',
       percent: 25,
     })
+    expect(linkedHpLoss.kind === 'direct-hp' && linkedHpLoss.payload.calculation).toEqual({
+      kind: 'hp-lost',
+      hpOperationId: 'operation.sacrifice',
+      pool: 'hit-points',
+      percent: 100,
+      aggregation: 'aggregate',
+    })
     expect(fixedHitCost.kind === 'direct-hp' && fixedHitCost.payload.cost).toEqual({
       kind: 'cost',
       timing: 'hit',
@@ -590,7 +624,7 @@ describe('MoveSpec typed effect operations', () => {
       calculation: { kind: 'fixed', value: 0 },
       cost: { kind: 'sacrifice', timing: 'completion' },
     })
-    for (const parsed of [drain, recoil, fixedHitCost, maxHpCost, sacrifice]) {
+    for (const parsed of [drain, recoil, linkedHpLoss, fixedHitCost, maxHpCost, sacrifice]) {
       expectDeeplyFrozen(parsed)
     }
   })
@@ -695,6 +729,18 @@ describe('MoveSpec typed effect operations', () => {
   })
 
   it('rejects ambiguous HP modes, invalid bounds, and injury policy inflation', () => {
+    expectEffectError(
+      validOperation('direct-hp', {
+        payload: {
+          ...VALID_PAYLOADS['direct-hp'],
+          mode: 'swap',
+          calculation: null,
+          copySource: { kind: 'actor' },
+        },
+      }),
+      'invalid-effect-operation',
+      'operation.payload.copySource',
+    )
     expectEffectError(
       validOperation('direct-hp', {
         payload: {

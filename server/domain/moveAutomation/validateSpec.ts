@@ -588,6 +588,37 @@ export const validateMoveSpecOperationSequence = (
     }
   }
 
+  const assertPriorHpLossReference = (
+    referenceId: string,
+    pool: 'hit-points' | 'temporary-hit-points',
+    currentIndex: number,
+    path: string,
+  ): void => {
+    assertPriorReference(
+      referenceId,
+      currentIndex,
+      path,
+      operationIndexById,
+      'direct HP operation ID',
+    )
+    const referencedIndex = operationIndexById.get(referenceId)!
+    const referenced = indexed[referencedIndex]?.operation
+    if (!referenced || referenced.kind !== 'direct-hp') {
+      return fail(
+        'invalid-definition',
+        path,
+        `${referenceId} must identify an earlier direct HP operation.`,
+      )
+    }
+    if (referenced.payload.pool !== pool) {
+      fail(
+        'invalid-definition',
+        `${path.replace(/\.hpOperationId$/, '')}.pool`,
+        `must match source operation ${referenceId} pool ${referenced.payload.pool}.`,
+      )
+    }
+  }
+
   indexed.forEach(({ operation, index, path }) => {
     if (operation.source.kind === 'operation') {
       assertPriorReference(
@@ -605,6 +636,14 @@ export const validateMoveSpecOperationSequence = (
           calculation.damageOperationId,
           index,
           `${path}.payload.calculation.damageOperationId`,
+        )
+      }
+      if (calculation?.kind === 'hp-lost') {
+        assertPriorHpLossReference(
+          calculation.hpOperationId,
+          calculation.pool,
+          index,
+          `${path}.payload.calculation.hpOperationId`,
         )
       }
       if (operation.kind === 'direct-hp' && operation.payload.cost?.timing === 'damage') {

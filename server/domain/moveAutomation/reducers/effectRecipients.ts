@@ -3,6 +3,7 @@ import type {
   MoveEffectRecipientSelectorKind,
 } from '#shared/moveAutomation/effects'
 import type { AuthoritativeMoveRulesContext } from '../context'
+import { resolveMoveEffectCompoundRecipientIds } from '../effectRecipientQueries'
 
 export interface MoveEffectDynamicRecipientSets {
   readonly attackedTargetIds: readonly string[]
@@ -124,6 +125,11 @@ export const expectedMoveEffectRecipientIds = (
   fail: FailMoveEffectRecipientResolution,
 ): readonly string[] => {
   const kind = operation.recipients.kind
+  const compoundIds = resolveMoveEffectCompoundRecipientIds(context, {
+    attackedTargetIds: dynamic['attacked-targets'],
+    hitTargetIds: dynamic['hit-targets'],
+  }, kind)
+  if (compoundIds !== null) return compoundIds
   if (DYNAMIC_RECIPIENT_KINDS.has(kind)) return dynamic[kind as DynamicRecipientKind]
   if (kind === 'none') return []
   if (kind === 'actor' || kind === 'source-placement') return [context.actor.placement.id]

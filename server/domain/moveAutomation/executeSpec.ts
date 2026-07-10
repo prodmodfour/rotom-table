@@ -32,6 +32,7 @@ import type {
 } from './context'
 import type { MoveContextualDamageBaseResolution } from './damageBase'
 import { resolveMoveSpecDamageRollFormula } from './damageRollFormula'
+import { resolveMoveEffectCompoundRecipientIds } from './effectRecipientQueries'
 import {
   resolveMoveDamageType,
   type MoveDamageTypeResolution,
@@ -448,8 +449,13 @@ const effectRecipientIds = (
   state: MoveSpecSelectorState,
   kind: MoveEffectRecipientSelectorKind,
 ): readonly string[] => {
+  const compoundIds = resolveMoveEffectCompoundRecipientIds(context, {
+    attackedTargetIds: state.targetIds,
+    hitTargetIds: state.hitTargetIds,
+  }, kind)
   let ids: readonly string[]
-  switch (kind) {
+  if (compoundIds !== null) ids = compoundIds
+  else switch (kind) {
     case 'none':
       ids = []
       break
@@ -481,6 +487,12 @@ const effectRecipientIds = (
     case 'fainted-targets':
       ids = state.faintedTargetIds
       break
+    case 'actor-and-attacked-targets':
+    case 'cardinally-adjacent-to-hit-targets':
+      return fail(
+        'move-mechanics-unavailable',
+        `Compound recipient selector ${kind} did not resolve.`,
+      )
   }
 
   const resolved = canonicalPlacementIds(context, ids)

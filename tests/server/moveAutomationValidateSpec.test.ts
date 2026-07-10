@@ -746,6 +746,97 @@ describe('authoritative MoveSpec validation and hashing', () => {
     })
   })
 
+  it('requires linked HP loss to reference an earlier direct-HP operation with the same pool', () => {
+    const source: TestOperation = {
+      id: 'operation.sacrifice',
+      kind: 'direct-hp',
+      source: { kind: 'move', id: 'move.final-gambit' },
+      recipients: { kind: 'actor' },
+      phase: 'cleanup',
+      reasonCode: 'move.final-gambit.sacrifice',
+      payload: {
+        mode: 'set',
+        pool: 'hit-points',
+        calculation: { kind: 'fixed', value: 0 },
+        copySource: null,
+        bounds: { minimum: null, maximum: null },
+        rounding: 'floor',
+        applyTypeImmunity: false,
+        cost: {
+          kind: 'sacrifice',
+          timing: 'completion',
+          minimumRemaining: null,
+          damageOperationId: null,
+        },
+        injury: { hitPointMarkers: 'ignore', massiveDamage: 'never' },
+      },
+    }
+    const linked: TestOperation = {
+      id: 'operation.final-loss',
+      kind: 'direct-hp',
+      source: { kind: 'operation', id: source.id },
+      recipients: { kind: 'hit-targets' },
+      phase: 'cleanup',
+      reasonCode: 'move.final-gambit.final-loss',
+      payload: {
+        mode: 'lose',
+        pool: 'hit-points',
+        calculation: {
+          kind: 'hp-lost',
+          hpOperationId: source.id,
+          pool: 'hit-points',
+          percent: 100,
+          aggregation: 'aggregate',
+        },
+        copySource: null,
+        bounds: { minimum: null, maximum: null },
+        rounding: 'floor',
+        applyTypeImmunity: true,
+        cost: null,
+        injury: { hitPointMarkers: 'apply-after-operation', massiveDamage: 'never' },
+      },
+    }
+    const valid = validSpec()
+    valid.phases[2]!.operations = [source, linked]
+    expect(validateMoveSpec(valid).spec.phases.at(-1)?.operations).toMatchObject([
+      { id: source.id },
+      { payload: { calculation: { hpOperationId: source.id } } },
+    ])
+
+    const unknown = structuredClone(valid)
+    unknown.phases.at(-1)!.operations[1]!.payload.calculation = {
+      ...(unknown.phases.at(-1)!.operations[1]!.payload.calculation as Record<string, unknown>),
+      hpOperationId: 'operation.missing',
+    }
+    expectDefinitionError(
+      () => validateMoveSpec(unknown),
+      'unknown-reference',
+      'spec.phases[2].operations[1].payload.calculation.hpOperationId',
+    )
+
+    const wrongKind = structuredClone(valid)
+    wrongKind.phases.at(-1)!.operations[1]!.payload.calculation = {
+      ...(wrongKind.phases.at(-1)!.operations[1]!.payload.calculation as Record<string, unknown>),
+      hpOperationId: 'operation.damage',
+    }
+    expectDefinitionError(
+      () => validateMoveSpec(wrongKind),
+      'invalid-definition',
+      'spec.phases[2].operations[1].payload.calculation.hpOperationId',
+    )
+
+    const wrongPool = structuredClone(valid)
+    wrongPool.phases.at(-1)!.operations[1]!.payload.calculation = {
+      ...(wrongPool.phases.at(-1)!.operations[1]!.payload.calculation as Record<string, unknown>),
+      pool: 'temporary-hit-points',
+    }
+    expectDefinitionError(
+      () => validateMoveSpec(wrongPool),
+      'invalid-definition',
+      'spec.phases[2].operations[1].payload.calculation.pool',
+    )
+  })
+
   it('validates canonical damage types and roll-backed critical triggers', () => {
     const unknownMoveType = validSpec()
     unknownMoveType.phases[1].operations[0].payload.moveType = 'mystery'

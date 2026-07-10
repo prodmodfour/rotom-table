@@ -1059,7 +1059,7 @@ Status: DONE
 
 ## MA-082 — Implement direct-HP and redistribution semantics
 
-Status: TODO
+Status: DONE
 
 **Depends on:** MA-080
 **Commit:** `feat(move-automation): resolve direct hp loss and redistribution`

@@ -113,6 +113,7 @@ const intent = (): ResolveMoveIntent => ({
 })
 
 const buildContext = (options: {
+  readonly map?: TabletopMap
   readonly random?: AuthoritativeMoveRandomDrawStream
   readonly candidatePlacementIds?: readonly string[]
   readonly selectedPlacementIds?: readonly string[]
@@ -120,7 +121,7 @@ const buildContext = (options: {
   readonly targetCurrentHp?: number
   readonly bystanderCurrentHp?: number
 } = {}) => buildAuthoritativeMoveRulesContext({
-  map: mapFixture(),
+  map: options.map ?? mapFixture(),
   pokemonSheets: new Map([
     ['actor', pokemonSheet('actor', options.actorTypes
       ? { types: [...options.actorTypes] }
@@ -285,6 +286,82 @@ describe('phased MoveSpec interpreter', () => {
     expect(Object.isFrozen(result)).toBe(true)
     expect(Object.isFrozen(result.operations)).toBe(true)
     expect(Object.isFrozen(result.targetIds)).toBe(true)
+  })
+
+  it('derives compound and cardinal splash recipients from authoritative target state', () => {
+    const spec = baseSpec()
+    spec.canonicalId = 'Tackle'
+    spec.targeting = {
+      kind: 'single-target',
+      minTargets: 1,
+      maxTargets: 1,
+      selector: { kind: 'selected-targets' },
+    }
+    const accuracy = rollOperation()
+    accuracy.recipients = { kind: 'attacked-targets' }
+    spec.phases = [
+      { phase: 'accuracy', operations: [accuracy] },
+      {
+        phase: 'damage',
+        operations: [{
+          id: 'operation.damage',
+          kind: 'damage',
+          source: { kind: 'move', id: 'move.tackle' },
+          recipients: { kind: 'hit-targets' },
+          phase: 'damage',
+          reasonCode: 'move.tackle.damage',
+          payload: {
+            damageClass: 'physical',
+            damageBase: 1,
+            moveType: 'normal',
+            accuracyRollId: 'roll.accuracy',
+            criticalRollId: null,
+          },
+        }],
+      },
+      {
+        phase: 'after-damage',
+        operations: [logOperation(
+          'operation.splash',
+          'after-damage',
+          'cardinally-adjacent-to-hit-targets',
+        )],
+      },
+      {
+        phase: 'cleanup',
+        operations: [logOperation(
+          'operation.redistribution',
+          'cleanup',
+          'actor-and-attacked-targets',
+        )],
+      },
+    ]
+    const map = mapFixture()
+    map.placements.find(item => item.id === 'bystander-token')!.position.x = 3
+    const context = buildContext({
+      map,
+      random: createFiniteAuthoritativeMoveRandomStream([0.5, 0.5]),
+    })
+    const result = executeMoveSpec({ definition: definitionFor(spec), context })
+
+    expect(result.kind).toBe('complete')
+    expect(result.hitTargetIds).toEqual(['target-token'])
+    expect(result.operations.map(({ operation, recipientIds }) => ({
+      id: operation.id,
+      recipientIds,
+    }))).toEqual([
+      { id: 'operation.accuracy', recipientIds: ['target-token'] },
+      { id: 'operation.damage', recipientIds: ['target-token'] },
+      { id: 'operation.splash', recipientIds: ['actor-token', 'bystander-token'] },
+      { id: 'operation.redistribution', recipientIds: ['actor-token', 'target-token'] },
+    ])
+    expect(result.sheetReads).toHaveLength(3)
+    expect(result.sheetReads).toEqual(expect.arrayContaining([
+      { kind: 'pokemon', slug: 'target', revision: 3 },
+      { kind: 'pokemon', slug: 'actor', revision: 3 },
+      { kind: 'pokemon', slug: 'bystander', revision: 3 },
+    ]))
+    expect(Object.isFrozen(result.operations[2]?.recipientIds)).toBe(true)
   })
 
   it('consumes immutable server-derived area decisions without widening operation recipients', () => {

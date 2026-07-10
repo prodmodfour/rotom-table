@@ -46,13 +46,30 @@ interface MoveHpDamageSourceResolution {
   readonly recipients: readonly MoveHpDamageSourceRecipientResolution[]
 }
 
+interface MoveHpLossSourceRecipientResolution {
+  readonly recipientId: string
+  readonly outcome: MoveCoreTokenEffectRecipientResult['outcome']
+  readonly hpLost: number
+  readonly prevented: boolean
+}
+
+interface MoveHpLossSourceResolution {
+  readonly operationId: string
+  readonly pool: 'hit-points' | 'temporary-hit-points'
+  readonly aggregation: 'per-target' | 'aggregate'
+  readonly percent: number
+  readonly totalHpLost: number
+  readonly recipients: readonly MoveHpLossSourceRecipientResolution[]
+}
+
 interface MoveHpCalculationResolution {
-  readonly kind: MoveHpCalculation['kind'] | 'copy' | 'split' | 'full'
+  readonly kind: MoveHpCalculation['kind'] | 'copy' | 'split' | 'swap' | 'full'
   readonly rawValue: number
   readonly roundedValue: number
   readonly basisValue: number | null
   readonly sourcePlacementId: string | null
   readonly damageSource: MoveHpDamageSourceResolution | null
+  readonly hpLossSource: MoveHpLossSourceResolution | null
   readonly evaluationTrace: readonly MoveRuleEvaluationTraceEntry[]
 }
 
@@ -223,6 +240,68 @@ const actualDamageSource = (options: {
   }
 }
 
+interface ActualHpLossSourceSummary {
+  readonly operationId: string
+  readonly pool: 'hit-points' | 'temporary-hit-points'
+  readonly totalHpLost: number
+  readonly recipients: readonly MoveHpLossSourceRecipientResolution[]
+}
+
+const actualHpLossSource = (options: {
+  readonly hpOperationId: string
+  readonly pool: 'hit-points' | 'temporary-hit-points'
+  readonly operationId: string
+  readonly priorOperationResults: readonly MoveCoreTokenEffectOperationResult[]
+}): ActualHpLossSourceSummary => {
+  const source = options.priorOperationResults.find(result => (
+    result.operationId === options.hpOperationId
+  ))
+  if (!source || source.operationKind !== 'direct-hp') {
+    return failMoveCoreTokenEffectReduction(
+      'invalid-hp-source',
+      `HP operation ${options.operationId} requires earlier direct HP operation ${options.hpOperationId}.`,
+    )
+  }
+  let totalHpLost = 0
+  const recipients = source.recipients.map((recipient): MoveHpLossSourceRecipientResolution => {
+    if (recipient.previous.kind !== 'hp' || recipient.current.kind !== 'hp') {
+      return failMoveCoreTokenEffectReduction(
+        'invalid-hp-source',
+        `Direct HP operation ${source.operationId} has no HP result for ${recipient.recipientId}.`,
+      )
+    }
+    const hpLost = Math.max(
+      0,
+      poolValue(recipient.previous, options.pool) - poolValue(recipient.current, options.pool),
+    )
+    if (!Number.isSafeInteger(hpLost)) {
+      return failMoveCoreTokenEffectReduction(
+        'invalid-hp-source',
+        `Direct HP operation ${source.operationId} produced unsafe ${options.pool} loss.`,
+      )
+    }
+    totalHpLost += hpLost
+    if (!Number.isSafeInteger(totalHpLost)) {
+      return failMoveCoreTokenEffectReduction(
+        'invalid-hp-source',
+        `Direct HP operation ${source.operationId} produced unsafe aggregate HP loss.`,
+      )
+    }
+    return {
+      recipientId: recipient.recipientId,
+      outcome: recipient.outcome,
+      hpLost,
+      prevented: recipient.outcome === 'prevented',
+    }
+  })
+  return {
+    operationId: source.operationId,
+    pool: options.pool,
+    totalHpLost,
+    recipients,
+  }
+}
+
 const resolveHpCalculation = (options: {
   readonly calculation: MoveHpCalculation
   readonly rounding: MoveEffectRoundingPolicy
@@ -239,6 +318,7 @@ const resolveHpCalculation = (options: {
   let roundedOverride: number | null = null
   let basisValue: number | null = null
   let damageSource: MoveHpDamageSourceResolution | null = null
+  let hpLossSource: MoveHpLossSourceResolution | null = null
   let evaluationTrace: readonly MoveRuleEvaluationTraceEntry[] = []
 
   if (calculation.kind === 'fixed') rawValue = calculation.value
@@ -285,6 +365,33 @@ const resolveHpCalculation = (options: {
       recipients: source.recipients,
     }
   }
+  else if (calculation.kind === 'hp-lost') {
+    const source = actualHpLossSource({
+      hpOperationId: calculation.hpOperationId,
+      pool: calculation.pool,
+      operationId: options.operationId,
+      priorOperationResults: options.priorOperationResults,
+    })
+    basisValue = source.totalHpLost
+    rawValue = basisValue * calculation.percent / 100
+    if (calculation.aggregation === 'per-target') {
+      roundedOverride = source.recipients.reduce(
+        (sum, recipient) => sum + rounded(
+          recipient.hpLost * calculation.percent / 100,
+          options.rounding,
+        ),
+        0,
+      )
+    }
+    hpLossSource = {
+      operationId: source.operationId,
+      pool: source.pool,
+      aggregation: calculation.aggregation,
+      percent: calculation.percent,
+      totalHpLost: source.totalHpLost,
+      recipients: source.recipients,
+    }
+  }
   else {
     basisValue = calculationBasis(calculation, options.snapshot, options.pool)
     rawValue = basisValue * calculation.percent / 100
@@ -309,6 +416,7 @@ const resolveHpCalculation = (options: {
     basisValue,
     sourcePlacementId: null,
     damageSource,
+    hpLossSource,
     evaluationTrace,
   }
 }
@@ -492,7 +600,9 @@ const applyDirectPoolValue = (options: {
       previous,
       options.calculation.kind === 'damage-dealt' && options.calculation.roundedValue === 0
         ? 'linked-damage-zero'
-        : 'hp-unchanged',
+        : options.calculation.kind === 'hp-lost' && options.calculation.roundedValue === 0
+          ? 'linked-hp-zero'
+          : 'hp-unchanged',
       options.consultedPlacementIds,
       details,
     )
@@ -653,6 +763,7 @@ const copyCalculation = (options: {
       basisValue: rawValue,
       sourcePlacementId: sourceId,
       damageSource: null,
+      hpLossSource: null,
       evaluationTrace: [],
     },
     consultedPlacementIds: sourceId === options.recipient.placement.id ? [] : [sourceId],
@@ -670,10 +781,10 @@ export const reduceDirectHpEffectForRecipient = (options: {
   readonly priorOperationResults: readonly MoveCoreTokenEffectOperationResult[]
 }): MoveCoreTokenEffectRecipientResult => {
   const { operation, recipient, accumulator } = options
-  if (operation.payload.mode === 'split') {
+  if (operation.payload.mode === 'split' || operation.payload.mode === 'swap') {
     return failMoveCoreTokenEffectReduction(
       'invalid-hp-recipient-count',
-      `Split HP operation ${operation.id} must reduce its recipient set together.`,
+      `Redistribution HP operation ${operation.id} must reduce its recipient set together.`,
     )
   }
   const previous = hpSnapshot(accumulator, recipient)
@@ -756,11 +867,12 @@ export const reduceDirectHpEffectForRecipient = (options: {
 }
 
 /**
- * Split the selected pool's operation-entry total equally across every
- * authoritative recipient. All requested final values are calculated before
- * any recipient is changed, so HP-marker Injuries observe the completed split.
+ * Average or swap the selected pool from one operation-entry snapshot. Every
+ * requested final value and every immunity decision is resolved before any
+ * recipient changes, so redistribution cannot duplicate HP through a partial
+ * swap and HP-marker Injuries observe only the completed result.
  */
-export const reduceSplitDirectHpEffectForRecipients = (options: {
+export const reduceRedistributionDirectHpEffectForRecipients = (options: {
   readonly operation: MoveDirectHpEffectOperation
   readonly recipients: readonly MoveCoreTokenEffectRecipient[]
   readonly accumulator: MoveAutomationHpUpdateAccumulator
@@ -768,76 +880,134 @@ export const reduceSplitDirectHpEffectForRecipients = (options: {
   readonly immunities: MoveCoreTokenEffectImmunityQueries
 }): readonly MoveCoreTokenEffectRecipientResult[] => {
   const { operation, recipients, accumulator } = options
-  if (operation.payload.mode !== 'split') {
+  const mode = operation.payload.mode
+  if (mode !== 'split' && mode !== 'swap') {
     return failMoveCoreTokenEffectReduction(
       'invalid-hp-calculation',
-      `HP operation ${operation.id} is not a split.`,
+      `HP operation ${operation.id} is not a redistribution.`,
     )
   }
-  if (recipients.length < 2) {
+  if (mode === 'split' && recipients.length < 2) {
     return failMoveCoreTokenEffectReduction(
       'invalid-hp-recipient-count',
       `Split HP operation ${operation.id} requires at least two recipients.`,
     )
   }
-
-  const previous = recipients.map(recipient => hpSnapshot(accumulator, recipient))
-  const total = previous.reduce(
-    (sum, snapshot) => sum + poolValue(snapshot, operation.payload.pool),
-    0,
-  )
-  if (!Number.isSafeInteger(total)) {
+  if (mode === 'swap' && recipients.length !== 2) {
     return failMoveCoreTokenEffectReduction(
-      'invalid-hp-calculation',
-      `Split HP operation ${operation.id} produced an unsafe recipient total.`,
+      'invalid-hp-recipient-count',
+      `Swap HP operation ${operation.id} requires exactly two recipients.`,
     )
   }
-  const rawValue = total / recipients.length
-  const roundedValue = assertBoundedHpValue(
-    rounded(rawValue, operation.payload.rounding),
-    operation.id,
-    'split HP',
-  )
-  const calculation: MoveHpCalculationResolution = {
-    kind: 'split',
-    rawValue,
-    roundedValue,
-    basisValue: total,
-    sourcePlacementId: null,
-    damageSource: null,
-    evaluationTrace: [],
+
+  const previous = recipients.map(recipient => hpSnapshot(accumulator, recipient))
+  const calculations: MoveHpCalculationResolution[] = []
+  const requestedPoolValues: number[] = []
+  if (mode === 'split') {
+    const total = previous.reduce(
+      (sum, snapshot) => sum + poolValue(snapshot, operation.payload.pool),
+      0,
+    )
+    if (!Number.isSafeInteger(total)) {
+      return failMoveCoreTokenEffectReduction(
+        'invalid-hp-calculation',
+        `Split HP operation ${operation.id} produced an unsafe recipient total.`,
+      )
+    }
+    const rawValue = total / recipients.length
+    const roundedValue = assertBoundedHpValue(
+      rounded(rawValue, operation.payload.rounding),
+      operation.id,
+      'split HP',
+    )
+    const calculation: MoveHpCalculationResolution = {
+      kind: 'split',
+      rawValue,
+      roundedValue,
+      basisValue: total,
+      sourcePlacementId: null,
+      damageSource: null,
+      hpLossSource: null,
+      evaluationTrace: [],
+    }
+    for (const _recipient of recipients) {
+      calculations.push(calculation)
+      requestedPoolValues.push(roundedValue)
+    }
   }
+  else {
+    for (const [index, recipient] of recipients.entries()) {
+      const sourceIndex = index === 0 ? 1 : 0
+      const sourceValue = poolValue(previous[sourceIndex]!, operation.payload.pool)
+      const roundedValue = assertBoundedHpValue(
+        rounded(sourceValue, operation.payload.rounding),
+        operation.id,
+        'swapped HP',
+      )
+      calculations.push({
+        kind: 'swap',
+        rawValue: sourceValue,
+        roundedValue,
+        basisValue: sourceValue,
+        sourcePlacementId: recipients[sourceIndex]!.placement.id,
+        damageSource: null,
+        hpLossSource: null,
+        evaluationTrace: [],
+      })
+      requestedPoolValues.push(roundedValue)
+      if (recipient.placement.id === recipients[sourceIndex]!.placement.id) {
+        return failMoveCoreTokenEffectReduction(
+          'invalid-hp-recipient-count',
+          `Swap HP operation ${operation.id} requires distinct recipients.`,
+        )
+      }
+    }
+  }
+
   const immunities = recipients.map(recipient => directHpImmunity({
     operation,
     recipient,
     immunities: options.immunities,
   }))
-
-  return recipients.map((recipient, index) => {
-    const snapshot = previous[index]!
-    const immunity = immunities[index]!
-    if (immunity.blockedBy) {
-      return preventedDirectHpResult({ recipient, previous: snapshot, immunity })
-    }
-    if (operation.payload.pool === 'temporary-hit-points' && !options.temporaryHpAvailable) {
-      return noOpHpResult(
-        recipient,
-        snapshot,
-        'temporary-hp-scene-unavailable',
-        immunity.consultedPlacementIds,
-      )
-    }
-    return applyDirectPoolValue({
-      operation,
-      recipient,
-      accumulator,
-      previous: snapshot,
-      requestedPoolValue: roundedValue,
-      calculation,
-      consultedPlacementIds: immunity.consultedPlacementIds,
-      costTriggerDetails: null,
+  const blockedRecipientIds = recipients
+    .filter((_recipient, index) => immunities[index]!.blockedBy !== null)
+    .map(recipient => recipient.placement.id)
+  if (blockedRecipientIds.length > 0) {
+    const consultedPlacementIds = [...new Set(
+      immunities.flatMap(immunity => immunity.consultedPlacementIds),
+    )]
+    return recipients.map((recipient, index) => {
+      const immunity = immunities[index]!
+      return immunity.blockedBy
+        ? preventedDirectHpResult({ recipient, previous: previous[index]!, immunity })
+        : noOpHpResult(
+            recipient,
+            previous[index]!,
+            'hp-redistribution-prevented',
+            consultedPlacementIds,
+            hpTraceDetails({ mode, blockedRecipientIds }),
+          )
     })
-  })
+  }
+  if (operation.payload.pool === 'temporary-hit-points' && !options.temporaryHpAvailable) {
+    return recipients.map((recipient, index) => noOpHpResult(
+      recipient,
+      previous[index]!,
+      'temporary-hp-scene-unavailable',
+      immunities[index]!.consultedPlacementIds,
+    ))
+  }
+
+  return recipients.map((recipient, index) => applyDirectPoolValue({
+    operation,
+    recipient,
+    accumulator,
+    previous: previous[index]!,
+    requestedPoolValue: requestedPoolValues[index]!,
+    calculation: calculations[index]!,
+    consultedPlacementIds: immunities[index]!.consultedPlacementIds,
+    costTriggerDetails: null,
+  }))
 }
 
 export const reduceHealEffectForRecipient = (options: {
@@ -865,6 +1035,7 @@ export const reduceHealEffectForRecipient = (options: {
       basisValue: previous.maxHp,
       sourcePlacementId: null,
       damageSource: null,
+      hpLossSource: null,
       evaluationTrace: [],
     }
     requestedPoolValue = previous.maxHp
@@ -930,7 +1101,9 @@ export const reduceHealEffectForRecipient = (options: {
       previous,
       calculation.kind === 'damage-dealt' && calculation.roundedValue === 0
         ? 'linked-damage-zero'
-        : 'hp-at-cap',
+        : calculation.kind === 'hp-lost' && calculation.roundedValue === 0
+          ? 'linked-hp-zero'
+          : 'hp-at-cap',
       [],
       details,
     )

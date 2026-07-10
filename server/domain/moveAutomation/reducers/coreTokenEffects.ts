@@ -36,7 +36,7 @@ import {
   reduceDamageEffectForRecipient,
   reduceDirectHpEffectForRecipient,
   reduceHealEffectForRecipient,
-  reduceSplitDirectHpEffectForRecipients,
+  reduceRedistributionDirectHpEffectForRecipients,
 } from './hp'
 import type {
   MoveCoreTokenDamageQuery,
@@ -246,8 +246,9 @@ export const reduceMoveCoreTokenOperationState = (
       recordMoveCoreTokenRecipientRead(sheetReads, sheetReadsByKey, recipient)
       return recipient
     })
-    const recipientResults = operation.kind === 'direct-hp' && operation.payload.mode === 'split'
-      ? reduceSplitDirectHpEffectForRecipients({
+    const recipientResults = operation.kind === 'direct-hp'
+      && (operation.payload.mode === 'split' || operation.payload.mode === 'swap')
+      ? reduceRedistributionDirectHpEffectForRecipients({
           operation,
           recipients,
           accumulator: hpAccumulator,

@@ -952,6 +952,310 @@ describe('MoveSpec core token effect reducers', () => {
       },
     })
     expect(splitResult.stateChanges.groups.sheets).toHaveLength(2)
+
+    const swapContext = buildContext(mapFixture(), { actor: 30, target: 10 })
+    const swap = emission(operation(
+      'operation.swap-hp',
+      'direct-hp',
+      directHpPayload({
+        mode: 'swap',
+        calculation: null,
+        applyTypeImmunity: false,
+      }),
+      'actor-and-attacked-targets',
+    ), ['actor-token', 'target-token'])
+    const swapResult = reduceMoveCoreTokenEffects({
+      context: swapContext,
+      operations: [swap],
+      dynamicRecipients: dynamicRecipients(),
+      immunities: createStandardMoveCoreTokenEffectImmunityQueries({ moveType: 'Normal' }),
+      trace: traceFor([swap]),
+    })
+    expect(swapResult.operationResults[0]?.recipients).toMatchObject([
+      {
+        recipientId: 'actor-token',
+        current: { kind: 'hp', currentHp: 10 },
+        details: { calculation: { kind: 'swap', sourcePlacementId: 'target-token' } },
+      },
+      {
+        recipientId: 'target-token',
+        current: { kind: 'hp', currentHp: 30 },
+        details: { calculation: { kind: 'swap', sourcePlacementId: 'actor-token' } },
+      },
+    ])
+    expect(swapResult.stateChanges.groups.sheets).toHaveLength(2)
+
+    const immuneSwap = emission(operation(
+      'operation.swap-hp-immune',
+      'direct-hp',
+      directHpPayload({
+        mode: 'swap',
+        calculation: null,
+        applyTypeImmunity: true,
+      }),
+      'actor-and-attacked-targets',
+    ), ['actor-token', 'target-token'])
+    const preventedSwap = reduceMoveCoreTokenEffects({
+      context: buildContext(mapFixture(), { actor: 30, target: 10 }),
+      operations: [immuneSwap],
+      dynamicRecipients: dynamicRecipients(),
+      immunities: createStandardMoveCoreTokenEffectImmunityQueries({ moveType: 'Dragon' }),
+      trace: traceFor([immuneSwap]),
+    })
+    expect(preventedSwap.operationResults[0]?.recipients).toMatchObject([
+      {
+        recipientId: 'actor-token',
+        outcome: 'no-op',
+        reasonCode: 'hp-redistribution-prevented',
+        current: { kind: 'hp', currentHp: 30 },
+      },
+      {
+        recipientId: 'target-token',
+        outcome: 'prevented',
+        reasonCode: 'type-immunity',
+        current: { kind: 'hp', currentHp: 10 },
+      },
+    ])
+    expect(preventedSwap.stateChanges.changes).toEqual([])
+
+    const invalidSwap = emission(operation(
+      'operation.invalid-swap',
+      'direct-hp',
+      directHpPayload({ mode: 'swap', calculation: null }),
+    ))
+    expect(() => reduceMoveCoreTokenEffects({
+      context: buildContext(mapFixture(), { actor: 30, target: 10 }),
+      operations: [invalidSwap],
+      dynamicRecipients: dynamicRecipients(),
+      immunities: createStandardMoveCoreTokenEffectImmunityQueries({ moveType: 'Normal' }),
+      trace: traceFor([invalidSwap]),
+    })).toThrowError(expect.objectContaining({ code: 'invalid-hp-recipient-count' }))
+  })
+
+  it('resolves level-based and fractional direct loss without stats or effectiveness scaling', () => {
+    const context = buildContext(mapFixture(), { actor: 20, target: 30 })
+    const levelLoss = emission(operation(
+      'operation.level-loss',
+      'direct-hp',
+      directHpPayload({
+        calculation: {
+          kind: 'formula',
+          expression: {
+            kind: 'stat',
+            subject: { kind: 'actor' },
+            stat: 'level',
+          },
+        },
+        applyTypeImmunity: true,
+      }),
+    ))
+    const fractionalLoss = emission(operation(
+      'operation.fractional-loss',
+      'direct-hp',
+      directHpPayload({
+        calculation: { kind: 'percent-current', percent: 50 },
+        applyTypeImmunity: true,
+      }),
+    ))
+    // Ground is weak against the target's Electric type. Direct HP still uses
+    // the authored scalar exactly instead of entering the damage pipeline.
+    const result = reduce([levelLoss, fractionalLoss], 'Ground', context)
+
+    expect(result.operationResults[0]?.recipients[0]).toMatchObject({
+      previous: { kind: 'hp', currentHp: 30 },
+      current: { kind: 'hp', currentHp: 10 },
+      details: {
+        calculation: {
+          kind: 'formula',
+          roundedValue: 20,
+          evaluationTrace: expect.arrayContaining([
+            expect.objectContaining({ expressionKind: 'stat', value: 20 }),
+          ]),
+        },
+      },
+    })
+    expect(result.operationResults[1]?.recipients[0]).toMatchObject({
+      previous: { kind: 'hp', currentHp: 10 },
+      current: { kind: 'hp', currentHp: 5 },
+      details: { calculation: { kind: 'percent-current', basisValue: 10, roundedValue: 5 } },
+    })
+    expect(result.sheetReads).toEqual([
+      { kind: 'pokemon', slug: 'target', revision: 4 },
+      { kind: 'pokemon', slug: 'actor', revision: 4 },
+    ])
+
+    const immune = reduce([levelLoss], 'Dragon', buildContext(mapFixture(), { target: 30 }))
+    expect(immune.operationResults[0]?.recipients[0]).toMatchObject({
+      outcome: 'prevented',
+      reasonCode: 'type-immunity',
+      current: { kind: 'hp', currentHp: 30 },
+    })
+    const immunityIgnored = emission(operation(
+      'operation.level-loss-no-immunity',
+      'direct-hp',
+      directHpPayload({
+        calculation: {
+          kind: 'formula',
+          expression: { kind: 'stat', subject: { kind: 'actor' }, stat: 'level' },
+        },
+        applyTypeImmunity: false,
+      }),
+    ))
+    expect(reduce(
+      [immunityIgnored],
+      'Dragon',
+      buildContext(mapFixture(), { target: 30 }),
+    ).operationResults[0]?.recipients[0]?.current).toMatchObject({
+      kind: 'hp',
+      currentHp: 10,
+    })
+  })
+
+  it('links Final Gambit-style loss to actual real HP removed by an earlier sacrifice', () => {
+    const map = mapFixture()
+    map.temporaryHitPoints = {
+      scene: { ...map.activeScene! },
+      byPlacementId: { 'actor-token': 6 },
+    }
+    const sacrifice = emission(actorHpOperation(
+      'operation.final-gambit-sacrifice',
+      'direct-hp',
+      'cleanup',
+      directHpPayload({
+        mode: 'set',
+        calculation: { kind: 'fixed', value: 0 },
+        cost: {
+          kind: 'sacrifice',
+          timing: 'completion',
+          minimumRemaining: null,
+          damageOperationId: null,
+        },
+      }),
+    ), ['actor-token'])
+    const targetLoss = emission(operation(
+      'operation.final-gambit-loss',
+      'direct-hp',
+      directHpPayload({
+        calculation: {
+          kind: 'hp-lost',
+          hpOperationId: sacrifice.operation.id,
+          pool: 'hit-points',
+          percent: 100,
+          aggregation: 'aggregate',
+        },
+        applyTypeImmunity: true,
+      }),
+      'hit-targets',
+      'cleanup',
+    ))
+    const operations = [sacrifice, targetLoss]
+    const result = reduceMoveCoreTokenEffects({
+      context: buildContext(map, { actor: 23, target: 50 }),
+      operations,
+      dynamicRecipients: dynamicRecipients(),
+      immunities: createStandardMoveCoreTokenEffectImmunityQueries({ moveType: 'Fighting' }),
+      trace: traceFor(operations),
+    })
+
+    expect(result.operationResults[0]?.recipients[0]).toMatchObject({
+      previous: { kind: 'hp', currentHp: 23, temporaryHp: 6 },
+      current: { kind: 'hp', currentHp: 0, temporaryHp: 0 },
+    })
+    expect(result.operationResults[1]?.recipients[0]).toMatchObject({
+      previous: { kind: 'hp', currentHp: 50 },
+      current: { kind: 'hp', currentHp: 27 },
+      details: {
+        calculation: {
+          kind: 'hp-lost',
+          basisValue: 23,
+          roundedValue: 23,
+          hpLossSource: {
+            operationId: 'operation.final-gambit-sacrifice',
+            pool: 'hit-points',
+            totalHpLost: 23,
+            recipients: [{ recipientId: 'actor-token', hpLost: 23, prevented: false }],
+          },
+        },
+      },
+    })
+    expect(result.stateChanges.groups.sheets).toHaveLength(2)
+    expect(result.stateChanges.groups.map[0]?.changes[0]).toMatchObject({
+      kind: 'map-temporary-hit-points',
+    })
+    expect(result.stateChanges.groups.map[0]?.changes[0]).toHaveProperty('current', undefined)
+
+    const immuneResult = reduceMoveCoreTokenEffects({
+      context: buildContext(map, { actor: 23, target: 50 }),
+      operations,
+      dynamicRecipients: dynamicRecipients(),
+      immunities: createStandardMoveCoreTokenEffectImmunityQueries({ moveType: 'Dragon' }),
+      trace: traceFor(operations),
+    })
+    expect(immuneResult.operationResults.map(operationResult => operationResult.outcome))
+      .toEqual(['applied', 'prevented'])
+    expect(immuneResult.operationResults[1]?.recipients[0]?.current).toMatchObject({
+      kind: 'hp',
+      currentHp: 50,
+    })
+  })
+
+  it('derives fixed splash recipients cardinally adjacent to authoritative hit targets', () => {
+    const splash = emission(operation(
+      'operation.flame-burst-splash',
+      'direct-hp',
+      directHpPayload({ calculation: { kind: 'fixed', value: 5 } }),
+      'cardinally-adjacent-to-hit-targets',
+      'after-damage',
+    ), ['actor-token', 'bystander-token'])
+    const context = buildContext(mapFixture(), { actor: 30, target: 30, bystander: 30 })
+    const result = reduceMoveCoreTokenEffects({
+      context,
+      operations: [splash],
+      dynamicRecipients: dynamicRecipients(),
+      immunities: createStandardMoveCoreTokenEffectImmunityQueries({ moveType: 'Fire' }),
+      trace: traceFor([splash]),
+    })
+
+    expect(result.operationResults[0]).toMatchObject({
+      recipientIds: ['actor-token', 'bystander-token'],
+      recipients: [
+        { recipientId: 'actor-token', current: { kind: 'hp', currentHp: 25 } },
+        { recipientId: 'bystander-token', current: { kind: 'hp', currentHp: 25 } },
+      ],
+    })
+    expect(result.sheetReads).toEqual([
+      { kind: 'pokemon', slug: 'actor', revision: 4 },
+      { kind: 'pokemon', slug: 'bystander', revision: 4 },
+      { kind: 'pokemon', slug: 'target', revision: 4 },
+    ])
+    expect(context.map.placements.map(placement => placement.position.x)).toEqual([0, 1, 2])
+
+    const missed = emission(splash.operation, [])
+    const missedResult = reduceMoveCoreTokenEffects({
+      context: buildContext(mapFixture(), { actor: 30, target: 30, bystander: 30 }),
+      operations: [missed],
+      dynamicRecipients: {
+        ...dynamicRecipients(),
+        hitTargetIds: [],
+        damagedTargetIds: [],
+      },
+      immunities: createStandardMoveCoreTokenEffectImmunityQueries({ moveType: 'Fire' }),
+      trace: traceFor([missed]),
+    })
+    expect(missedResult.operationResults[0]).toMatchObject({
+      recipientIds: [],
+      outcome: 'no-op',
+      recipients: [],
+    })
+    expect(missedResult.stateChanges.changes).toEqual([])
+
+    expect(() => reduceMoveCoreTokenEffects({
+      context: buildContext(mapFixture(), { actor: 30, target: 30, bystander: 30 }),
+      operations: [emission(splash.operation, ['target-token'])],
+      dynamicRecipients: dynamicRecipients(),
+      immunities: createStandardMoveCoreTokenEffectImmunityQueries({ moveType: 'Fire' }),
+      trace: traceFor([splash]),
+    })).toThrowError(expect.objectContaining({ code: 'recipient-set-mismatch' }))
   })
 
   it('supports full healing and scene-local temporary HP for actor and area recipients', () => {
