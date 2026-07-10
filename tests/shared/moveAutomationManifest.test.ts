@@ -233,6 +233,16 @@ describe('move automation semantic manifest contract', () => {
       'invalid-status-combination',
       'moves[0].runtime',
     )
+    expectManifestError(
+      manifestWith({
+        ...completeScratchRecord(),
+        baseStatus: 'assisted',
+        limitations: [{ code: 'audit.required', summary: 'Semantic review is still required.' }],
+        runtime: { kind: 'legacy-v1', version: null, definitionHash: null, sourceModule: null },
+      }),
+      'invalid-status-combination',
+      'moves[0].runtime',
+    )
   })
 
   it('keeps interaction status and unsupported interaction IDs consistent', () => {

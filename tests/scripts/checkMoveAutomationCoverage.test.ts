@@ -38,6 +38,12 @@ const manifestMoveCount = manifestJson.moves.length
 const currentBaseStatusCounts = baseStatusCounts(manifestJson.moves)
 const currentRuntimeCounts = runtimeCounts(manifestJson.moves)
 const manifestIsComplete = currentBaseStatusCounts.complete === manifestMoveCount
+const currentLinkedRuntimeCount = manifestJson.moves.filter(({ runtime }) =>
+  runtime.version !== null && runtime.definitionHash !== null && runtime.sourceModule !== null,
+).length
+const currentDefinitionHashCount = manifestJson.moves.filter(({ runtime }) =>
+  runtime.definitionHash !== null,
+).length
 
 const runChecker = (...args: string[]) => spawnSync(
   'python3',
@@ -189,7 +195,12 @@ describe('move automation semantic coverage checker', () => {
       const invalidRegistry = mutableManifest()
       const hyperBeam = invalidRegistry.moves.find(({ canonicalId }) => canonicalId === 'Hyper Beam')
       expect(hyperBeam).toBeDefined()
-      hyperBeam!.runtime.kind = 'legacy-v1'
+      hyperBeam!.runtime = {
+        kind: 'legacy-v1',
+        version: 1,
+        definitionHash: 'a'.repeat(64),
+        sourceModule: 'src/utils/move-automation/scripts/singleTargetAttacks.ts',
+      }
       const registryResult = runChecker(
         '--manifest',
         writeManifest(directory, invalidRegistry),
@@ -200,17 +211,23 @@ describe('move automation semantic coverage checker', () => {
         issues: [{ code: 'missing-registry-reference' }],
       })
 
+      const staleFingerprint = mutableManifest()
+      const staleScratch = staleFingerprint.moves.find(({ canonicalId }) => canonicalId === 'Scratch')
+      expect(staleScratch).toBeDefined()
+      staleScratch!.runtime.definitionHash = 'a'.repeat(64)
+      const driftResult = runChecker(
+        '--manifest', writeManifest(directory, staleFingerprint), '--json',
+      )
+      expect(driftResult.status).toBe(1)
+      expect(JSON.parse(driftResult.stdout)).toMatchObject({
+        issues: [{ code: 'legacy-runtime-fingerprint-drift' }],
+      })
+
       const reviewed = mutableManifest()
       const scratch = reviewed.moves.find(({ canonicalId }) => canonicalId === 'Scratch')
       expect(scratch).toBeDefined()
       Object.assign(scratch!, {
         baseStatus: 'complete',
-        runtime: {
-          kind: 'legacy-v1',
-          version: 1,
-          definitionHash: 'a'.repeat(64),
-          sourceModule: 'src/utils/move-automation/scripts/singleTargetAttacks.ts',
-        },
         blockerCodes: [],
         limitations: [],
         manualSteps: [],
@@ -236,8 +253,8 @@ describe('move automation semantic coverage checker', () => {
         baseStatus: baseStatusCounts(reviewed.moves),
         references: {
           discoveredScenarios: 1,
-          linkedRuntimes: 1,
-          runtimeDefinitionHashes: 1,
+          linkedRuntimes: currentLinkedRuntimeCount,
+          runtimeDefinitionHashes: currentDefinitionHashCount,
           scenarioReferences: 1,
         },
       })

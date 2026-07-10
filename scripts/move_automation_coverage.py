@@ -17,6 +17,7 @@ MOVE_AUTOMATION_SOURCE_DIR = ROOT / "src" / "utils" / "move-automation"
 MANIFEST_PATH = ROOT / "data" / "move-automation" / "manifest.json"
 RULESET_PATH = ROOT / "data" / "move-automation" / "ruleset.json"
 CAPABILITY_CATALOG_PATH = ROOT / "data" / "move-automation" / "capabilities.json"
+LEGACY_FINGERPRINT_PATH = ROOT / "data" / "move-automation" / "legacy-v1-fingerprints.json"
 SCENARIO_ROOT = ROOT / "tests" / "fixtures" / "moveAutomation"
 
 
@@ -333,7 +334,10 @@ def print_default_coverage(coverage: MoveCoverage) -> int:
 
 MANIFEST_SCHEMA_VERSION = 1
 CAPABILITY_CATALOG_SCHEMA_VERSION = 1
+LEGACY_FINGERPRINT_SCHEMA_VERSION = 1
 MANIFEST_ROOT_FIELDS = {"schemaVersion", "moves"}
+LEGACY_FINGERPRINT_ROOT_FIELDS = {"schemaVersion", "runtimeKind", "entries"}
+LEGACY_FINGERPRINT_FIELDS = {"canonicalId", "sourceModule", "version", "definitionHash"}
 CAPABILITY_ROOT_FIELDS = {"schemaVersion", "capabilities"}
 CAPABILITY_FIELDS = {
     "code", "owningPhase", "dependencies", "implementationStatus",
@@ -962,12 +966,88 @@ def _validate_source_module(source_module: str, path: str) -> None:
         _fail("missing-runtime-reference", path, f"does not resolve to a file: {source_module}.")
 
 
+def _parse_legacy_fingerprints(
+    fingerprint_path: Path,
+    canonical_moves: list[dict[str, Any]],
+    explicit_names: set[str],
+) -> dict[str, dict[str, Any]]:
+    validation_code = "invalid-legacy-fingerprint-index"
+    root = _record(
+        _load_json(fingerprint_path, "legacyFingerprints"),
+        "legacyFingerprints",
+        validation_code,
+    )
+    _exact_fields(
+        root,
+        LEGACY_FINGERPRINT_ROOT_FIELDS,
+        "legacyFingerprints",
+        validation_code,
+    )
+    if root["schemaVersion"] != LEGACY_FINGERPRINT_SCHEMA_VERSION:
+        _fail(
+            validation_code,
+            "legacyFingerprints.schemaVersion",
+            f"must be {LEGACY_FINGERPRINT_SCHEMA_VERSION}.",
+        )
+    if root["runtimeKind"] != "legacy-v1":
+        _fail(validation_code, "legacyFingerprints.runtimeKind", "must be legacy-v1.")
+
+    canonical_ids = {move["name"] for move in canonical_moves}
+    entries: list[dict[str, Any]] = []
+    for index, entry_value in enumerate(_bounded_array(
+        root["entries"],
+        "legacyFingerprints.entries",
+        len(canonical_moves),
+        validation_code,
+    )):
+        path = f"legacyFingerprints.entries[{index}]"
+        entry = _record(entry_value, path, validation_code)
+        _exact_fields(entry, LEGACY_FINGERPRINT_FIELDS, path, validation_code)
+        canonical_id = _bounded_text(
+            entry["canonicalId"],
+            f"{path}.canonicalId",
+            MANIFEST_LIMITS["identifierLength"],
+            validation_code,
+        )
+        if canonical_id not in canonical_ids:
+            _fail("unknown-move", f"{path}.canonicalId", f"{canonical_id} is not canonical.")
+        source_module = _bounded_text(
+            entry["sourceModule"],
+            f"{path}.sourceModule",
+            MANIFEST_LIMITS["sourceModuleLength"],
+            validation_code,
+        )
+        _validate_source_module(source_module, f"{path}.sourceModule")
+        entries.append({
+            "canonicalId": canonical_id,
+            "sourceModule": source_module,
+            "version": _positive_integer(entry["version"], f"{path}.version"),
+            "definitionHash": _sha256(entry["definitionHash"], f"{path}.definitionHash"),
+        })
+
+    entry_ids = [entry["canonicalId"] for entry in entries]
+    if len(set(entry_ids)) != len(entry_ids):
+        _fail("duplicate-legacy-fingerprint", "legacyFingerprints.entries", "contains a duplicate canonical move.")
+    expected_ids = sorted(explicit_names)
+    if entry_ids != expected_ids:
+        missing = sorted(explicit_names - set(entry_ids))
+        extra = sorted(set(entry_ids) - explicit_names)
+        _fail(
+            "legacy-fingerprint-membership-mismatch",
+            "legacyFingerprints.entries",
+            "must contain every explicit v1 registry entry exactly once in canonical order "
+            f"(missing: {', '.join(missing) or 'none'}; extra: {', '.join(extra) or 'none'}).",
+        )
+    return {entry["canonicalId"]: entry for entry in entries}
+
+
 def _parse_manifest(
     manifest_path: Path,
     ruleset: dict[str, Any],
     canonical_moves: list[dict[str, Any]],
     source_hash: str,
     explicit_names: set[str],
+    legacy_fingerprints: dict[str, dict[str, Any]],
     scenario_ids: set[str],
     capability_by_code: dict[str, dict[str, Any]],
 ) -> tuple[list[dict[str, Any]], int, int]:
@@ -1037,13 +1117,13 @@ def _parse_manifest(
                 f"{path}.runtime",
                 "unimplemented runtimes cannot contain linked implementation metadata.",
             )
-        if any(value is not None for value in linked_fields) and not all(
+        if runtime_kind != "unimplemented" and not all(
             value is not None for value in linked_fields
         ):
             _fail(
-                "invalid-runtime-reference",
+                "missing-runtime-reference",
                 f"{path}.runtime",
-                "version, definitionHash, and sourceModule must be linked together.",
+                "implemented runtimes require a version, definitionHash, and sourceModule.",
             )
         if source_module is not None:
             _validate_source_module(source_module, f"{path}.runtime.sourceModule")
@@ -1054,6 +1134,20 @@ def _parse_manifest(
                 f"{path}.runtime.kind",
                 "legacy-v1 does not resolve in EXPLICIT_MOVE_AUTOMATION_SCRIPTS.",
             )
+        if runtime_kind == "legacy-v1" and canonical_id in explicit_names:
+            expected_runtime = legacy_fingerprints.get(canonical_id)
+            actual_runtime = {
+                "canonicalId": canonical_id,
+                "sourceModule": source_module,
+                "version": version,
+                "definitionHash": definition_hash,
+            }
+            if expected_runtime != actual_runtime:
+                _fail(
+                    "legacy-runtime-fingerprint-drift",
+                    f"{path}.runtime",
+                    "must match the linked explicit v1 source, version, and definition hash.",
+                )
         if runtime_kind == "movespec-v2" and not all(
             value is not None for value in linked_fields
         ):
@@ -1250,6 +1344,7 @@ def validate_semantic_coverage(
     manifest_path: Path = MANIFEST_PATH,
     ruleset_path: Path = RULESET_PATH,
     capabilities_path: Path = CAPABILITY_CATALOG_PATH,
+    legacy_fingerprint_path: Path = LEGACY_FINGERPRINT_PATH,
     moves_path: Path = MOVES_PATH,
     source_dir: Path = MOVE_AUTOMATION_SOURCE_DIR,
     scenario_root: Path = SCENARIO_ROOT,
@@ -1274,6 +1369,11 @@ def validate_semantic_coverage(
             "EXPLICIT_MOVE_AUTOMATION_SCRIPTS",
             f"contains unknown canonical moves: {', '.join(extra_names)}.",
         )
+    legacy_fingerprints = _parse_legacy_fingerprints(
+        legacy_fingerprint_path,
+        canonical_moves,
+        explicit_names,
+    )
     scenario_ids = _discover_scenario_ids(scenario_root)
     rows, linked_runtime_count, scenario_reference_count = _parse_manifest(
         manifest_path,
@@ -1281,6 +1381,7 @@ def validate_semantic_coverage(
         canonical_moves,
         source_hash,
         explicit_names,
+        legacy_fingerprints,
         scenario_ids,
         capability_by_code,
     )

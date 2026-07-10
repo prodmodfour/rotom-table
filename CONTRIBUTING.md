@@ -40,7 +40,16 @@ Run the same non-strict validation directly while developing move automation:
 npm run check:move-automation
 ```
 
-This command validates the canonical catalog, semantic manifest, runtime and scenario references, hashes, and metadata invariants. It intentionally permits honest `assisted` and `blocked` rows while implementation is in progress.
+This command validates the canonical catalog, semantic manifest, runtime and scenario references, hashes, and metadata invariants. It intentionally permits honest `assisted` and `blocked` rows while implementation is in progress. The quality gate also verifies that committed legacy v1 fingerprints still match the evaluated registry definitions.
+
+After an intentional legacy script, version, or source-attribution change, refresh both the fingerprint index and manifest links, then review the resulting data diff:
+
+```bash
+npm run link:move-automation-legacy
+npm run check:move-automation-legacy-links
+```
+
+The linker updates runtime metadata only; it does not promote an `assisted` move or remove semantic debt.
 
 Before reviewing a legacy v1 move, generate its deterministic implementation audit metadata:
 
@@ -49,7 +58,7 @@ npm run audit:move-automation-legacy -- --report
 npm run --silent audit:move-automation-legacy -- --json
 ```
 
-The audit lists each registered move's source module, v1 version, script shape, targeting and suggestion fields, automation notes, and inferred capability hints. The hints are non-authoritative planning aids; this report never decides semantic completion or promotes manifest status.
+The audit lists each registered move's source module, v1 version, deterministic definition hash, script shape, targeting and suggestion fields, automation notes, and inferred capability hints. The hints are non-authoritative planning aids; this report never decides semantic completion or promotes manifest status.
 
 The strict completion check is available separately, but is not part of the quality gate until the canonical move catalog is complete:
 

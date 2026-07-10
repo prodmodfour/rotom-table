@@ -384,7 +384,7 @@ Status: DONE
 
 ## MA-019 — Fingerprint and link every legacy implementation
 
-Status: TODO
+Status: DONE
 
 **Depends on:** MA-018
 **Commit:** `data(move-automation): link legacy implementation fingerprints`

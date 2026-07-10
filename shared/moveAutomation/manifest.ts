@@ -28,11 +28,11 @@ export const MOVE_AUTOMATION_MANIFEST_LIMITS = Object.freeze({
 
 export interface MoveAutomationRuntimeReference {
   readonly kind: MoveAutomationRuntimeKind
-  /** Reviewed runtime contract version. Null while implementation metadata is not yet available. */
+  /** Reviewed runtime contract version. Null only for an unimplemented runtime. */
   readonly version: number | null
-  /** SHA-256 of the reviewed runtime definition. Null until the definition is fingerprinted. */
+  /** SHA-256 of the reviewed runtime definition. Null only for an unimplemented runtime. */
   readonly definitionHash: string | null
-  /** Repository-relative implementation module. Null when there is no linked implementation. */
+  /** Repository-relative implementation module. Null only for an unimplemented runtime. */
   readonly sourceModule: string | null
 }
 
@@ -316,14 +316,19 @@ const parseRuntime = (value: unknown, path: string): MoveAutomationRuntimeRefere
     sourceModule: parseNullableSourceModule(record.sourceModule, `${path}.sourceModule`),
   }
 
-  if (
-    runtime.kind === 'unimplemented'
-    && (runtime.version !== null || runtime.definitionHash !== null || runtime.sourceModule !== null)
-  ) {
+  const linkedFields = [runtime.version, runtime.definitionHash, runtime.sourceModule]
+  if (runtime.kind === 'unimplemented' && linkedFields.some(field => field !== null)) {
     fail(
       'invalid-status-combination',
       path,
       'unimplemented runtimes cannot reference a version, definition hash, or source module.',
+    )
+  }
+  if (runtime.kind !== 'unimplemented' && linkedFields.some(field => field === null)) {
+    fail(
+      'invalid-status-combination',
+      path,
+      'implemented runtimes require a version, definition hash, and source module.',
     )
   }
   return runtime

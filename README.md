@@ -71,6 +71,7 @@ scripts/build-loop.sh --max-cycles 1 --no-push
 | `npm run test:watch` | Run Vitest in watch mode. |
 | `npm run check:move-automation` | Check move automation coverage. |
 | `npm run audit:move-automation-legacy -- --report` | Report deterministic, non-authoritative audit metadata for registered v1 moves. |
+| `npm run check:move-automation-legacy-links` | Verify registered v1 source/version/definition fingerprints against the semantic manifest. |
 | `npm run sync:item-sprites` | Sync item sprite assets. |
 | `npm run generate:profile-sprites` | Generate rectangular Pokémon/trainer profile portraits under `public/profile-sprites/` from front-facing sprite assets. |
 

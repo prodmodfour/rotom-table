@@ -9,6 +9,7 @@ from pathlib import Path
 
 from move_automation_coverage import (
     CAPABILITY_CATALOG_PATH,
+    LEGACY_FINGERPRINT_PATH,
     MANIFEST_PATH,
     SCENARIO_ROOT,
     MoveAutomationValidationError,
@@ -53,6 +54,12 @@ def parse_args() -> argparse.Namespace:
         type=Path,
         default=CAPABILITY_CATALOG_PATH,
         help="typed capability catalog used to resolve manifest capability references",
+    )
+    parser.add_argument(
+        "--legacy-fingerprints",
+        type=Path,
+        default=LEGACY_FINGERPRINT_PATH,
+        help="legacy v1 fingerprint index used to validate manifest runtime links",
     )
     parser.add_argument(
         "--scenario-root",
@@ -148,6 +155,7 @@ def main() -> int:
             require_complete=args.require_complete,
             manifest_path=args.manifest.resolve(),
             capabilities_path=args.capabilities.resolve(),
+            legacy_fingerprint_path=args.legacy_fingerprints.resolve(),
             scenario_root=args.scenario_root.resolve(),
         )
     except MoveAutomationValidationError as error:

@@ -20,7 +20,11 @@ from move_automation_worklist import classify_move_worklist_bucket
 ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_MANIFEST_PATH = ROOT / "data" / "move-automation" / "manifest.json"
 RULESET_PATH = ROOT / "data" / "move-automation" / "ruleset.json"
+LEGACY_FINGERPRINT_PATH = (
+    ROOT / "data" / "move-automation" / "legacy-v1-fingerprints.json"
+)
 MANIFEST_SCHEMA_VERSION = 1
+LEGACY_FINGERPRINT_SCHEMA_VERSION = 1
 MANIFEST_ROOT_FIELDS = {"schemaVersion", "moves"}
 MANIFEST_MOVE_FIELDS = {
     "canonicalId",
@@ -96,20 +100,64 @@ def rules_provenance_reference(ruleset: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+def load_legacy_runtime_references(
+    registered_ids: set[str],
+) -> dict[str, dict[str, Any]]:
+    index = json.loads(LEGACY_FINGERPRINT_PATH.read_text(encoding="utf-8"))
+    if (
+        not isinstance(index, dict)
+        or set(index) != {"schemaVersion", "runtimeKind", "entries"}
+        or index.get("schemaVersion") != LEGACY_FINGERPRINT_SCHEMA_VERSION
+        or index.get("runtimeKind") != "legacy-v1"
+        or not isinstance(index.get("entries"), list)
+    ):
+        raise ManifestSeedError("Legacy v1 fingerprint index has an invalid shape.")
+
+    references: dict[str, dict[str, Any]] = {}
+    for entry in index["entries"]:
+        if not isinstance(entry, dict) or set(entry) != {
+            "canonicalId", "sourceModule", "version", "definitionHash"
+        }:
+            raise ManifestSeedError("Legacy v1 fingerprint entry has an invalid shape.")
+        canonical_id = entry["canonicalId"]
+        if not isinstance(canonical_id, str) or canonical_id in references:
+            raise ManifestSeedError("Legacy v1 fingerprint IDs must be unique strings.")
+        if (
+            not isinstance(entry["sourceModule"], str)
+            or not isinstance(entry["version"], int)
+            or isinstance(entry["version"], bool)
+            or entry["version"] < 1
+            or not isinstance(entry["definitionHash"], str)
+            or len(entry["definitionHash"]) != 64
+            or any(character not in "0123456789abcdef" for character in entry["definitionHash"])
+        ):
+            raise ManifestSeedError(
+                f"Legacy v1 fingerprint for {canonical_id!r} is invalid."
+            )
+        references[canonical_id] = {
+            "kind": "legacy-v1",
+            "version": entry["version"],
+            "definitionHash": entry["definitionHash"],
+            "sourceModule": entry["sourceModule"],
+        }
+
+    if set(references) != registered_ids:
+        raise ManifestSeedError(
+            "Legacy v1 fingerprint membership must match the explicit registry exactly."
+        )
+    return references
+
+
 def bootstrap_row(
     move: dict[str, Any],
     is_registered: bool,
     ruleset: dict[str, Any],
+    legacy_runtime_references: dict[str, dict[str, Any]],
 ) -> dict[str, Any]:
     canonical_id = move["name"]
     if is_registered:
         base_status = "assisted"
-        runtime = {
-            "kind": "legacy-v1",
-            "version": None,
-            "definitionHash": None,
-            "sourceModule": None,
-        }
+        runtime = legacy_runtime_references[canonical_id]
         suggested_capability_tags: list[str] = []
         blocker_codes: list[str] = []
         limitations = [{
@@ -156,6 +204,7 @@ def build_seeded_manifest(
     coverage: MoveCoverage,
     ruleset: dict[str, Any],
     existing_rows: dict[str, dict[str, Any]],
+    legacy_runtime_references: dict[str, dict[str, Any]],
 ) -> dict[str, Any]:
     expected_count = ruleset.get("canonicalization", {}).get("expectedMoveCount")
     if len(coverage.canonical_moves) != expected_count:
@@ -170,7 +219,12 @@ def build_seeded_manifest(
 
     moves = [
         existing_rows.get(move["name"])
-        or bootstrap_row(move, move["name"] in coverage.explicit_names, ruleset)
+        or bootstrap_row(
+            move,
+            move["name"] in coverage.explicit_names,
+            ruleset,
+            legacy_runtime_references,
+        )
         for move in coverage.canonical_moves
     ]
     canonical_ids = [row["canonicalId"] for row in moves]
@@ -188,7 +242,13 @@ def seed_manifest(manifest_path: Path = DEFAULT_MANIFEST_PATH) -> dict[str, Any]
     coverage = build_coverage()
     canonical_ids = {move["name"] for move in coverage.canonical_moves}
     existing_rows = load_existing_rows(manifest_path, canonical_ids)
-    manifest = build_seeded_manifest(coverage, ruleset, existing_rows)
+    legacy_runtime_references = load_legacy_runtime_references(coverage.explicit_names)
+    manifest = build_seeded_manifest(
+        coverage,
+        ruleset,
+        existing_rows,
+        legacy_runtime_references,
+    )
 
     manifest_path.parent.mkdir(parents=True, exist_ok=True)
     manifest_path.write_text(

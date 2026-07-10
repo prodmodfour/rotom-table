@@ -2,14 +2,16 @@ import capabilitiesJson from '../data/move-automation/capabilities.json'
 import {
   EXPLICIT_MOVE_AUTOMATION_REGISTRY_SOURCES,
   EXPLICIT_MOVE_AUTOMATION_SCRIPTS,
+  type ExplicitMoveAutomationRegistrySource,
 } from '../src/utils/move-automation/registry'
+import { hashLegacyMoveAutomationDefinition } from './move_automation_definition_hash'
 import type {
   MoveAutomationAreaTemplateKind,
   MoveAutomationScript,
   MoveAutomationTargetMode,
 } from '../src/types/moveAutomation'
 
-export const LEGACY_MOVE_AUTOMATION_AUDIT_SCHEMA_VERSION = 1 as const
+export const LEGACY_MOVE_AUTOMATION_AUDIT_SCHEMA_VERSION = 2 as const
 
 export const LEGACY_MOVE_AUTOMATION_SUGGESTION_KINDS = [
   'condition',
@@ -35,6 +37,7 @@ export interface LegacyMoveAutomationAuditEntry {
   readonly canonicalId: string
   readonly sourceModule: string
   readonly v1Version: number
+  readonly definitionHash: string
   readonly scriptShape: LegacyMoveAutomationScriptShape
   readonly targetMode: MoveAutomationTargetMode
   readonly suggestionKinds: readonly LegacyMoveAutomationSuggestionKind[]
@@ -57,19 +60,30 @@ const capabilityCodes = new Set(
   capabilitiesJson.capabilities.map(capability => capability.code),
 )
 
-const sourceModuleByCanonicalId = (): ReadonlyMap<string, string> => {
+export const legacySourceModulesByCanonicalId = (
+  registrySources: readonly ExplicitMoveAutomationRegistrySource[] = EXPLICIT_MOVE_AUTOMATION_REGISTRY_SOURCES,
+): ReadonlyMap<string, string> => {
   const modules = new Map<string, string>()
-  for (const { sourceModule, scripts } of EXPLICIT_MOVE_AUTOMATION_REGISTRY_SOURCES) {
+  const implementationOwners = new Map<MoveAutomationScript, string>()
+  for (const { sourceModule, scripts } of registrySources) {
     for (const [canonicalId, script] of scripts) {
+      const implementationOwner = implementationOwners.get(script)
+      if (implementationOwner && implementationOwner !== canonicalId) {
+        throw new Error(
+          `Legacy registry entries ${JSON.stringify(implementationOwner)} and ${JSON.stringify(canonicalId)} resolve to the same script implementation.`,
+        )
+      }
+      implementationOwners.set(script, canonicalId)
+
       if (canonicalId !== script.moveName) {
         throw new Error(
           `Legacy registry key ${JSON.stringify(canonicalId)} does not match script moveName ${JSON.stringify(script.moveName)}.`,
         )
       }
       const existing = modules.get(canonicalId)
-      if (existing && existing !== sourceModule) {
+      if (existing) {
         throw new Error(
-          `Legacy registry entry ${JSON.stringify(canonicalId)} is attributed to both ${existing} and ${sourceModule}.`,
+          `Legacy registry entry ${JSON.stringify(canonicalId)} is attributed more than once (${existing} and ${sourceModule}).`,
         )
       }
       modules.set(canonicalId, sourceModule)
@@ -187,9 +201,19 @@ export const inferLegacyCapabilityHints = (
   return inferred
 }
 
-export const buildLegacyMoveAutomationAudit = (): LegacyMoveAutomationAudit => {
-  const sourceModules = sourceModuleByCanonicalId()
-  const entries = [...EXPLICIT_MOVE_AUTOMATION_SCRIPTS]
+export interface LegacyMoveAutomationAuditOptions {
+  readonly registrySources?: readonly ExplicitMoveAutomationRegistrySource[]
+  readonly registry?: ReadonlyMap<string, MoveAutomationScript>
+}
+
+export const buildLegacyMoveAutomationAudit = (
+  options: LegacyMoveAutomationAuditOptions = {},
+): LegacyMoveAutomationAudit => {
+  const registry = options.registry ?? EXPLICIT_MOVE_AUTOMATION_SCRIPTS
+  const sourceModules = legacySourceModulesByCanonicalId(
+    options.registrySources ?? EXPLICIT_MOVE_AUTOMATION_REGISTRY_SOURCES,
+  )
+  const entries = [...registry]
     .map(([canonicalId, script]): LegacyMoveAutomationAuditEntry => {
       const sourceModule = sourceModules.get(canonicalId)
       if (!sourceModule) {
@@ -202,6 +226,7 @@ export const buildLegacyMoveAutomationAudit = (): LegacyMoveAutomationAudit => {
         canonicalId,
         sourceModule,
         v1Version: script.version,
+        definitionHash: hashLegacyMoveAutomationDefinition(script),
         scriptShape: extractLegacyScriptShape(script),
         targetMode: script.targetMode,
         suggestionKinds: extractLegacySuggestionKinds(script),
@@ -251,6 +276,7 @@ export const formatLegacyMoveAutomationAuditReport = (
       entry.canonicalId,
       `  Source module: ${entry.sourceModule}`,
       `  V1 version: ${entry.v1Version}`,
+      `  Definition hash: ${entry.definitionHash}`,
       `  Target mode: ${entry.targetMode}`,
       `  Script shape: ${shapeSummary(entry.scriptShape)}`,
       `  Suggestion kinds: ${entry.suggestionKinds.join(', ') || 'none'}`,

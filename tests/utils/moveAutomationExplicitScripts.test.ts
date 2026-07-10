@@ -39,6 +39,9 @@ describe('explicit move automation scripts', () => {
 
       if (row.runtime.kind === 'legacy-v1') {
         expect(EXPLICIT_MOVE_AUTOMATION_SCRIPTS.has(row.canonicalId)).toBe(true)
+        expect(row.runtime.version).not.toBeNull()
+        expect(row.runtime.definitionHash).toMatch(/^[a-f0-9]{64}$/)
+        expect(row.runtime.sourceModule).toMatch(/^src\/utils\/move-automation\/scripts\/.+\.ts$/)
       }
       else if (row.runtime.kind === 'unimplemented') {
         expect(EXPLICIT_MOVE_AUTOMATION_SCRIPTS.has(row.canonicalId)).toBe(false)

@@ -1,0 +1,1554 @@
+{
+  "schemaVersion": 1,
+  "runtimeKind": "legacy-v1",
+  "entries": [
+    {
+      "canonicalId": "Absorb",
+      "sourceModule": "src/utils/move-automation/scripts/additionalSingleTarget.ts",
+      "version": 1,
+      "definitionHash": "2d04f6718d7106421c82b1c12f6e3f448f72239706f9626d42ee99698f16fee1"
+    },
+    {
+      "canonicalId": "Accelerock",
+      "sourceModule": "src/utils/move-automation/scripts/singleTargetAttacks.ts",
+      "version": 1,
+      "definitionHash": "cd47e6777ac3f5b298cb8d4bdd314e224480da5d8f937609fb63f91206f44a50"
+    },
+    {
+      "canonicalId": "Acid",
+      "sourceModule": "src/utils/move-automation/scripts/area.ts",
+      "version": 1,
+      "definitionHash": "faa74a1b7652c6f0825d24855410d22ee4f2004f2f28cfc92c7c4d2ecd632834"
+    },
+    {
+      "canonicalId": "Acid Spray",
+      "sourceModule": "src/utils/move-automation/scripts/singleTargetStages.ts",
+      "version": 1,
+      "definitionHash": "52e366e7e6a42f2db8bba8b8e64e150c4d164ffa4016c3cd1eef82a63b320fef"
+    },
+    {
+      "canonicalId": "Acupressure",
+      "sourceModule": "src/utils/move-automation/scripts/additionalSingleTarget.ts",
+      "version": 1,
+      "definitionHash": "d469992ead9bc2f3bac2186a4e820ffab72d906af634c2346a7fdced6da2b458"
+    },
+    {
+      "canonicalId": "Aerial Ace",
+      "sourceModule": "src/utils/move-automation/scripts/singleTargetAttacks.ts",
+      "version": 1,
+      "definitionHash": "3ec285b1c69664a72ae5984758d62c93d43fcbc2333bc71da97627c38c5db92b"
+    },
+    {
+      "canonicalId": "Air Cutter",
+      "sourceModule": "src/utils/move-automation/scripts/area.ts",
+      "version": 1,
+      "definitionHash": "9146e1cd1a148c2d340af6b21a9e9c645f038d97738b1c38f7924c265959a88b"
+    },
+    {
+      "canonicalId": "Air Slash",
+      "sourceModule": "src/utils/move-automation/scripts/singleTargetAttacks.ts",
+      "version": 1,
+      "definitionHash": "cd6655c22e94fa3ff9af33661c1cdab9a5af5a8772afc82a194abcb1606c9ed5"
+    },
+    {
+      "canonicalId": "Apple Acid",
+      "sourceModule": "src/utils/move-automation/scripts/area.ts",
+      "version": 1,
+      "definitionHash": "144b30b265c025f70ea99c89df3d0e7f884dad794449d48639244015e41cd7f4"
+    },
+    {
+      "canonicalId": "Aqua Jet",
+      "sourceModule": "src/utils/move-automation/scripts/singleTargetAttacks.ts",
+      "version": 1,
+      "definitionHash": "8fb3520adf41b49ddaf8206b350f36bcf994b2be0d246663c953ecd3d3b77947"
+    },
+    {
+      "canonicalId": "Aqua Tail",
+      "sourceModule": "src/utils/move-automation/scripts/area.ts",
+      "version": 1,
+      "definitionHash": "33a6c3dac6231ca127cef8f2c846626bc8140d93eea4067c25ea26be0e93473a"
+    },
+    {
+      "canonicalId": "Aromatic Mist",
+      "sourceModule": "src/utils/move-automation/scripts/area.ts",
+      "version": 1,
+      "definitionHash": "28fd91700db71a227ce3912b06931e357aab2558c795b04e96c0e55fad5afc18"
+    },
+    {
+      "canonicalId": "Astonish",
+      "sourceModule": "src/utils/move-automation/scripts/singleTargetConditions.ts",
+      "version": 1,
+      "definitionHash": "1ba178fb44d5799f34b89bfd280cd017ae356a86e2ecb53fbe3d034d2ae5bfcd"
+    },
+    {
+      "canonicalId": "Attack Order",
+      "sourceModule": "src/utils/move-automation/scripts/singleTargetAttacks.ts",
+      "version": 1,
+      "definitionHash": "ca11f3f55b00ed244a622d065960949dcf44741fd967880abc4577471313a785"
+    },
+    {
+      "canonicalId": "Aura Sphere",
+      "sourceModule": "src/utils/move-automation/scripts/singleTargetAttacks.ts",
+      "version": 1,
+      "definitionHash": "3e6cade5055b684787862646dc7ebfabdb35b8878bb142e4daeb6cf9212d16b3"
+    },
+    {
+      "canonicalId": "Aurora Beam",
+      "sourceModule": "src/utils/move-automation/scripts/singleTargetStages.ts",
+      "version": 1,
+      "definitionHash": "34329918e7912c32a9ded0686b63db347985fbda0d1017643fea55f7876aae93"
+    },
+    {
+      "canonicalId": "Baby-Doll Eyes",
+      "sourceModule": "src/utils/move-automation/scripts/singleTargetStages.ts",
+      "version": 1,
+      "definitionHash": "de1e0428d112d3ed68ca77c1d4c3b79b96c565f2bb85d67a54a16edd4a808aef"
+    },
+    {
+      "canonicalId": "Bite",
+      "sourceModule": "src/utils/move-automation/scripts/singleTargetAttacks.ts",
+      "version": 1,
+      "definitionHash": "8d57c356601c7114b83d71d4585435c39edc16ad10bbbe5c0593b83b820ea6a3"
+    },
+    {
+      "canonicalId": "Blaze Kick",
+      "sourceModule": "src/utils/move-automation/scripts/singleTargetAttacks.ts",
+      "version": 1,
+      "definitionHash": "402380a97dac61945369f7f39c00156388d70d0791606989dcd62ff9d5e8212d"
+    },
+    {
+      "canonicalId": "Bleakwind Storm",
+      "sourceModule": "src/utils/move-automation/scripts/area.ts",
+      "version": 1,
+      "definitionHash": "5676fa8fd2e842d40f333741178d1de5f005f07f4b2e4916aab860af2a8ee458"
+    },
+    {
+      "canonicalId": "Blue Flare",
+      "sourceModule": "src/utils/move-automation/scripts/singleTargetAttacks.ts",
+      "version": 1,
+      "definitionHash": "45dfcbf741c1183cea392812939caadd60bbf1a931567857a98e59c211c2a402"
+    },
+    {
+      "canonicalId": "Body Slam",
+      "sourceModule": "src/utils/move-automation/scripts/singleTargetAttacks.ts",
+      "version": 1,
+      "definitionHash": "1bd5503764431cd785a6df912589528eea2612834508d0804d7aab8cdfa82252"
+    },
+    {
+      "canonicalId": "Bolt Strike",
+      "sourceModule": "src/utils/move-automation/scripts/singleTargetAttacks.ts",
+      "version": 1,
+      "definitionHash": "08efd59d4d2024167e08e59dbc87696b315e68325a7a682ed5f610b5a1758e28"
+    },
+    {
+      "canonicalId": "Bone Club",
+      "sourceModule": "src/utils/move-automation/scripts/singleTargetAttacks.ts",
+      "version": 1,
+      "definitionHash": "664c6d3e32a67a4089edee7e01e32c25073c1952b41f7f7cf8d3aa596a58cc33"
+    },
+    {
+      "canonicalId": "Boomburst",
+      "sourceModule": "src/utils/move-automation/scripts/area.ts",
+      "version": 1,
+      "definitionHash": "5ca26e468e16f4a2e773bff1666a7b8bc0de3b91820c5ba6806095e647e8c455"
+    },
+    {
+      "canonicalId": "Branch Poke",
+      "sourceModule": "src/utils/move-automation/scripts/singleTargetAttacks.ts",
+      "version": 1,
+      "definitionHash": "47748be3b249ed2c83d5540fbdd996fca8dbd7e518937178069f36bb2b3c3189"
+    },
+    {
+      "canonicalId": "Breaking Swipe",
+      "sourceModule": "src/utils/move-automation/scripts/area.ts",
+      "version": 1,
+      "definitionHash": "0f92e398bd226af967a62b0cc1d5cf584ba0ac1773b300fb3ef73c724efd82cf"
+    },
+    {
+      "canonicalId": "Brutal Swing",
+      "sourceModule": "src/utils/move-automation/scripts/area.ts",
+      "version": 1,
+      "definitionHash": "0ef476d3ef9f5695ec31c4db61b59e213fe7d32d9b1717b2f8e807ea0a73671c"
+    },
+    {
+      "canonicalId": "Bubble",
+      "sourceModule": "src/utils/move-automation/scripts/area.ts",
+      "version": 1,
+      "definitionHash": "b42246954e14f4f0546a86f1df169d29fa3e9dff77c362395b9e3478e8409ad9"
+    },
+    {
+      "canonicalId": "Bubble Beam",
+      "sourceModule": "src/utils/move-automation/scripts/singleTargetStages.ts",
+      "version": 1,
+      "definitionHash": "7ab6ffe85b1d8f28696d1dc3298e5a1097e593119a86bb9dcdb6de4b6d025295"
+    },
+    {
+      "canonicalId": "Bulldoze",
+      "sourceModule": "src/utils/move-automation/scripts/area.ts",
+      "version": 1,
+      "definitionHash": "cbd025a7e0095819c3c6647ebd4ae7b17ab1b7ef24bc1d8e82b773500846779f"
+    },
+    {
+      "canonicalId": "Bullet Punch",
+      "sourceModule": "src/utils/move-automation/scripts/singleTargetAttacks.ts",
+      "version": 1,
+      "definitionHash": "475a1594e7c954435ec1088ff8901a7a4d32aab48bd972044a30fcb2949c09b3"
+    },
+    {
+      "canonicalId": "Charm",
+      "sourceModule": "src/utils/move-automation/scripts/singleTargetStages.ts",
+      "version": 1,
+      "definitionHash": "70b399412d2a4d14fde760d39af020a1ca14304b3e59da7ee84846b02db62404"
+    },
+    {
+      "canonicalId": "Coaching",
+      "sourceModule": "src/utils/move-automation/scripts/area.ts",
+      "version": 1,
+      "definitionHash": "38734a705a2592b04371e2acb5810abc9561fe5a0817ceb1e456b94b714acd83"
+    },
+    {
+      "canonicalId": "Confide",
+      "sourceModule": "src/utils/move-automation/scripts/singleTargetStages.ts",
+      "version": 1,
+      "definitionHash": "0be2f638573e6b527173a8124920151ab4f6cfe3525043eb1f2a641a147ba401"
+    },
+    {
+      "canonicalId": "Confuse Ray",
+      "sourceModule": "src/utils/move-automation/scripts/singleTargetStatus.ts",
+      "version": 1,
+      "definitionHash": "1dbed2441790235482029dabb2a1ebbc5d563d5dec39365419e6e39b67ea10c4"
+    },
+    {
+      "canonicalId": "Confusion",
+      "sourceModule": "src/utils/move-automation/scripts/singleTargetConditions.ts",
+      "version": 1,
+      "definitionHash": "bc62a54485b3fd4e5e6ed2c2474b5e8ada4a7cb2cc6da5042ba4c64d50c5ac3b"
+    },
+    {
+      "canonicalId": "Cotton Spore",
+      "sourceModule": "src/utils/move-automation/scripts/area.ts",
+      "version": 1,
+      "definitionHash": "9e7d6fa4253e65308227f9fdca16b91ced8cb3fb11ae78089ff1dc058572600b"
+    },
+    {
+      "canonicalId": "Crabhammer",
+      "sourceModule": "src/utils/move-automation/scripts/singleTargetAttacks.ts",
+      "version": 1,
+      "definitionHash": "9ce51a2c91fccb1b2472a4fd19efb4628c6a2dc640bbcc1ea6976203cbc1cd7b"
+    },
+    {
+      "canonicalId": "Cross Chop",
+      "sourceModule": "src/utils/move-automation/scripts/singleTargetAttacks.ts",
+      "version": 1,
+      "definitionHash": "d9c6103832f2fb552c4fd56fda16febcb59d15f4f712a362de808526b39dc373"
+    },
+    {
+      "canonicalId": "Cross Poison",
+      "sourceModule": "src/utils/move-automation/scripts/area.ts",
+      "version": 1,
+      "definitionHash": "0496d1ddc2d4f5d34a6561dbad809d0256646602185edd62de87f830cc528b00"
+    },
+    {
+      "canonicalId": "Crunch",
+      "sourceModule": "src/utils/move-automation/scripts/singleTargetStages.ts",
+      "version": 1,
+      "definitionHash": "313ea9d0ecb24fa4cde0c0acffd6223e91c75c893b2fbedbcb313d449e6376a5"
+    },
+    {
+      "canonicalId": "Crush Claw",
+      "sourceModule": "src/utils/move-automation/scripts/singleTargetStages.ts",
+      "version": 1,
+      "definitionHash": "598209dfb82021ab8368df723b5c971efcec7a1fd8da1e1581d11e812f0b2aa2"
+    },
+    {
+      "canonicalId": "Dark Pulse",
+      "sourceModule": "src/utils/move-automation/scripts/singleTargetAttacks.ts",
+      "version": 1,
+      "definitionHash": "e8cdd4546adb28fe410cd24cf47f7fbd14a949a2cbefc78e927efd7f8a17fa07"
+    },
+    {
+      "canonicalId": "Dazzling Gleam",
+      "sourceModule": "src/utils/move-automation/scripts/area.ts",
+      "version": 1,
+      "definitionHash": "5f60e6a281cce5c46d77a71c33a9cfac387bdd463305ab261a031bdeb8c7c6d8"
+    },
+    {
+      "canonicalId": "Decorate",
+      "sourceModule": "src/utils/move-automation/scripts/singleTargetStages.ts",
+      "version": 1,
+      "definitionHash": "ca3487d91bf9b67e56e225950983b5a47e725298f8715d45096b877692d4d43b"
+    },
+    {
+      "canonicalId": "Disarming Voice",
+      "sourceModule": "src/utils/move-automation/scripts/area.ts",
+      "version": 1,
+      "definitionHash": "f02d4b9a8f57a83e7d41a0cd4eca8b968cd76920f9a654222be3977f03b29e59"
+    },
+    {
+      "canonicalId": "Discharge",
+      "sourceModule": "src/utils/move-automation/scripts/area.ts",
+      "version": 1,
+      "definitionHash": "eef66bfce9240774647e1cc7c64cadacc07ae6ee70b1f50e5b210c3f80686c9f"
+    },
+    {
+      "canonicalId": "Dizzy Punch",
+      "sourceModule": "src/utils/move-automation/scripts/singleTargetConditions.ts",
+      "version": 1,
+      "definitionHash": "68c93b96444678b55fbbfe95626a8c491f5eb3aadbd841378a4af38533abcaae"
+    },
+    {
+      "canonicalId": "Double Kick",
+      "sourceModule": "src/utils/move-automation/scripts/additionalSingleTarget.ts",
+      "version": 1,
+      "definitionHash": "15d9b8b434810c6c6afb1f1092ae8d5894bf803c26620cf338f912a1c69a487f"
+    },
+    {
+      "canonicalId": "Dragon Breath",
+      "sourceModule": "src/utils/move-automation/scripts/singleTargetAttacks.ts",
+      "version": 1,
+      "definitionHash": "29b5184441eb804b18bd43b9173d8d1a7f7b47a4cc4e88b62d87ebc1624453ca"
+    },
+    {
+      "canonicalId": "Dragon Claw",
+      "sourceModule": "src/utils/move-automation/scripts/singleTargetAttacks.ts",
+      "version": 1,
+      "definitionHash": "e80653f0caaee840ca53bf60d12b0d68db6d8a722b8d8b90648722d7a1772411"
+    },
+    {
+      "canonicalId": "Dragon Hammer",
+      "sourceModule": "src/utils/move-automation/scripts/area.ts",
+      "version": 1,
+      "definitionHash": "b6e2b5191ea9ee887a979207df2481633b34b0bcde8c742933e4f55d04aa3a5a"
+    },
+    {
+      "canonicalId": "Dragon Pulse",
+      "sourceModule": "src/utils/move-automation/scripts/singleTargetAttacks.ts",
+      "version": 1,
+      "definitionHash": "6084f83d9e21fb4e529507b5ca1dcba2c97142f03df40abd144f29e57ab1b56d"
+    },
+    {
+      "canonicalId": "Dragon Rage",
+      "sourceModule": "src/utils/move-automation/scripts/directHpLoss.ts",
+      "version": 1,
+      "definitionHash": "2d212045568880abd5bcec131a0c575e35b1364f7fd627c874183bb042b5ade7"
+    },
+    {
+      "canonicalId": "Drill Peck",
+      "sourceModule": "src/utils/move-automation/scripts/singleTargetAttacks.ts",
+      "version": 1,
+      "definitionHash": "bd2723a6ebb2b7363e2b27c525435b174bbca5fcfcacde56714924964cbf547e"
+    },
+    {
+      "canonicalId": "Drill Run",
+      "sourceModule": "src/utils/move-automation/scripts/singleTargetAttacks.ts",
+      "version": 1,
+      "definitionHash": "0e41caa5a966cee5cc3d40460377aeb9d6d2dcd0880f474f2fd1d44e4b6bf0f0"
+    },
+    {
+      "canonicalId": "Drum Beating",
+      "sourceModule": "src/utils/move-automation/scripts/singleTargetStages.ts",
+      "version": 1,
+      "definitionHash": "b997a341c7e3f6f7e4854c73a2bd510980127ee11a1148446951b76e2a36407f"
+    },
+    {
+      "canonicalId": "Earth Power",
+      "sourceModule": "src/utils/move-automation/scripts/singleTargetStages.ts",
+      "version": 1,
+      "definitionHash": "30307a6d70ba8a71629d1dba9abd2a960afdfcc75b7ccd97383d380ec1f74f54"
+    },
+    {
+      "canonicalId": "Eerie Impulse",
+      "sourceModule": "src/utils/move-automation/scripts/singleTargetStages.ts",
+      "version": 1,
+      "definitionHash": "692a76f448b26b34fc716b9a44d861f4601a9ee49f44b86ea5eb3089a25c5dfb"
+    },
+    {
+      "canonicalId": "Egg Bomb",
+      "sourceModule": "src/utils/move-automation/scripts/area.ts",
+      "version": 1,
+      "definitionHash": "e6d43876ecf8ca21d7b20d60e3d57214b16c305e4de7e769a09cc29edfa0f02e"
+    },
+    {
+      "canonicalId": "Electroweb",
+      "sourceModule": "src/utils/move-automation/scripts/area.ts",
+      "version": 1,
+      "definitionHash": "4e4df293c523e218052735345a250fa46e2f8ad8d1c5ddf1c00ab835307591f8"
+    },
+    {
+      "canonicalId": "Ember",
+      "sourceModule": "src/utils/move-automation/scripts/singleTargetAttacks.ts",
+      "version": 1,
+      "definitionHash": "282484956132b2cfc5b8d122df627f47a8917334c2bf5bf9ab9549763fa150ab"
+    },
+    {
+      "canonicalId": "Energy Ball",
+      "sourceModule": "src/utils/move-automation/scripts/singleTargetStages.ts",
+      "version": 1,
+      "definitionHash": "baa526ad463face048af62fdb964e86a1850fd0264d3e59ca3a85bd6d5cad299"
+    },
+    {
+      "canonicalId": "Esper Wing",
+      "sourceModule": "src/utils/move-automation/scripts/area.ts",
+      "version": 1,
+      "definitionHash": "9746d41ef0728d1145f1777db8ea48aba56ae47a69a68f58830b5cf2c591dfc4"
+    },
+    {
+      "canonicalId": "Extrasensory",
+      "sourceModule": "src/utils/move-automation/scripts/singleTargetAttacks.ts",
+      "version": 1,
+      "definitionHash": "e2e4092cfc9599677b25bf022abc1d5d28a1a273debb0edb93344a185211eb74"
+    },
+    {
+      "canonicalId": "Extreme Speed",
+      "sourceModule": "src/utils/move-automation/scripts/singleTargetAttacks.ts",
+      "version": 1,
+      "definitionHash": "4d021a927d0afd442a173f556cd0cd78dcc54f3b98f0ac4d7c4b5602a796cd4d"
+    },
+    {
+      "canonicalId": "Fairy Wind",
+      "sourceModule": "src/utils/move-automation/scripts/singleTargetAttacks.ts",
+      "version": 1,
+      "definitionHash": "174ce2e9295a41ed63385d819888719f05a86cae4c001c805e079f0ba2ffb0e6"
+    },
+    {
+      "canonicalId": "Fake Out",
+      "sourceModule": "src/utils/move-automation/scripts/additionalSingleTarget.ts",
+      "version": 1,
+      "definitionHash": "3ecbef29d94a8cbcbb0ad2d42544585cbc8f94e9d33ed2e8fd6b1b69f34b59eb"
+    },
+    {
+      "canonicalId": "Fake Tears",
+      "sourceModule": "src/utils/move-automation/scripts/singleTargetStages.ts",
+      "version": 1,
+      "definitionHash": "5b70eed7ded110b964896d514dd5fbf5b86dc0512286bdc309ec21a25082bb87"
+    },
+    {
+      "canonicalId": "False Surrender",
+      "sourceModule": "src/utils/move-automation/scripts/singleTargetAttacks.ts",
+      "version": 1,
+      "definitionHash": "b98b16bd32c44400788986745cfacd4b24bc0a175ce278942861372ef28cfe27"
+    },
+    {
+      "canonicalId": "Feather Dance",
+      "sourceModule": "src/utils/move-automation/scripts/area.ts",
+      "version": 1,
+      "definitionHash": "38c9c314f36ffa0520eda167f73dc5e66bb2968587e86c7c179530039614d9e7"
+    },
+    {
+      "canonicalId": "Feint Attack",
+      "sourceModule": "src/utils/move-automation/scripts/singleTargetAttacks.ts",
+      "version": 1,
+      "definitionHash": "85136dbea53b644d71c7a39981b7eccb31ad1d39799e1255dd0e5ab068841cae"
+    },
+    {
+      "canonicalId": "Fire Blast",
+      "sourceModule": "src/utils/move-automation/scripts/singleTargetAttacks.ts",
+      "version": 1,
+      "definitionHash": "8aa10c8b766838bb7d941169f717542053b66217946905741aae9684e2839ce0"
+    },
+    {
+      "canonicalId": "Fire Lash",
+      "sourceModule": "src/utils/move-automation/scripts/singleTargetStages.ts",
+      "version": 1,
+      "definitionHash": "b3359e1b142ee4e772ff69b2dfc079de5b626a823681629a306b6f5d7ac71645"
+    },
+    {
+      "canonicalId": "Fire Punch",
+      "sourceModule": "src/utils/move-automation/scripts/singleTargetAttacks.ts",
+      "version": 1,
+      "definitionHash": "30ef76363cb66b458c39d2e644d9624e9766693668822d86278ae85282ac9c7a"
+    },
+    {
+      "canonicalId": "Flame Wheel",
+      "sourceModule": "src/utils/move-automation/scripts/singleTargetConditions.ts",
+      "version": 1,
+      "definitionHash": "c13429ea531cacb9ec3e0202e56bbad0d56534249ee99f71e73af1c2320950b5"
+    },
+    {
+      "canonicalId": "Flamethrower",
+      "sourceModule": "src/utils/move-automation/scripts/singleTargetAttacks.ts",
+      "version": 1,
+      "definitionHash": "8d696c83d0e925f58288ea6bd61c172d96f1e43671017b90233c676f66a5c595"
+    },
+    {
+      "canonicalId": "Flash",
+      "sourceModule": "src/utils/move-automation/scripts/area.ts",
+      "version": 1,
+      "definitionHash": "84ce65ce2c7588d7be5b3581bcbdb5107b3949cb897554adaafe918effcdcc72"
+    },
+    {
+      "canonicalId": "Flash Cannon",
+      "sourceModule": "src/utils/move-automation/scripts/singleTargetStages.ts",
+      "version": 1,
+      "definitionHash": "53c63c3c2a7c8f9b3fc839c0440cf5c392c334266b8783720060ba150ed49cd3"
+    },
+    {
+      "canonicalId": "Flatter",
+      "sourceModule": "src/utils/move-automation/scripts/singleTargetConditions.ts",
+      "version": 1,
+      "definitionHash": "3f928e0674169e38460dbd8c0d85e1e5037536eba8e7986a369fb8332d131257"
+    },
+    {
+      "canonicalId": "Focus Blast",
+      "sourceModule": "src/utils/move-automation/scripts/singleTargetStages.ts",
+      "version": 1,
+      "definitionHash": "b5458702178ea22b32953f9c5dd2cf2c949de0ee628e8bf67d9142f03560482a"
+    },
+    {
+      "canonicalId": "Force Palm",
+      "sourceModule": "src/utils/move-automation/scripts/singleTargetAttacks.ts",
+      "version": 1,
+      "definitionHash": "77ffa308884a8aa5c877a2556e3995041170cc166863123b8850574ded7f6fbc"
+    },
+    {
+      "canonicalId": "Frustration",
+      "sourceModule": "src/utils/move-automation/scripts/singleTargetAttacks.ts",
+      "version": 1,
+      "definitionHash": "233149fb898ad2bd54a4a1ed0b709b0087934b4b7e652a0ef2bfb1ca70a21051"
+    },
+    {
+      "canonicalId": "Fury Attack",
+      "sourceModule": "src/utils/move-automation/scripts/additionalSingleTarget.ts",
+      "version": 1,
+      "definitionHash": "e5da8f991632b1c37004c682272e524d3d163c78e5cfe90adde7bd005d5722c2"
+    },
+    {
+      "canonicalId": "Fury Cutter",
+      "sourceModule": "src/utils/move-automation/scripts/additionalSingleTarget.ts",
+      "version": 1,
+      "definitionHash": "dcf4f4db858da63fce457ff99ec46c394bb314bbccd1e02c3a8946308f5f47cc"
+    },
+    {
+      "canonicalId": "Fury Swipes",
+      "sourceModule": "src/utils/move-automation/scripts/additionalSingleTarget.ts",
+      "version": 1,
+      "definitionHash": "932521f11e020244be4863046fc867cad4de10b2e48c330583b60eee7e1897ab"
+    },
+    {
+      "canonicalId": "Glare",
+      "sourceModule": "src/utils/move-automation/scripts/singleTargetStatus.ts",
+      "version": 1,
+      "definitionHash": "ae03191ddd2f4f83baa1f77d50914312d07ab9773a73c20780b77db6030e029a"
+    },
+    {
+      "canonicalId": "Grass Whistle",
+      "sourceModule": "src/utils/move-automation/scripts/singleTargetStatus.ts",
+      "version": 1,
+      "definitionHash": "b6a288d9f0170605cd5cdfa71e9f8f36bdefddabd617d987c017378eb2c9e417"
+    },
+    {
+      "canonicalId": "Grav Apple",
+      "sourceModule": "src/utils/move-automation/scripts/singleTargetStages.ts",
+      "version": 1,
+      "definitionHash": "384f19ec49b80e1b413fdda975b375335564146e98816db796a5d917c14ae310"
+    },
+    {
+      "canonicalId": "Growl",
+      "sourceModule": "src/utils/move-automation/scripts/area.ts",
+      "version": 1,
+      "definitionHash": "2a4a0a59be678ee9428c5f0d2e2a908ab3754e70720500e84b835560798001ca"
+    },
+    {
+      "canonicalId": "Gunk Shot",
+      "sourceModule": "src/utils/move-automation/scripts/singleTargetAttacks.ts",
+      "version": 1,
+      "definitionHash": "692da166aeefe4921f42300644b373d005f777c7ccfedc0a029b0deb1af89adb"
+    },
+    {
+      "canonicalId": "Headbutt",
+      "sourceModule": "src/utils/move-automation/scripts/singleTargetAttacks.ts",
+      "version": 1,
+      "definitionHash": "9c482c8a05ad7a64bf0668afd023a424df224ea461ad55903c787fe8204a3859"
+    },
+    {
+      "canonicalId": "Heal Bell",
+      "sourceModule": "src/utils/move-automation/scripts/area.ts",
+      "version": 1,
+      "definitionHash": "ec9da0f36301771747f4a930bcb1771cd81bc6e14b17767af38d51eb3eabe166"
+    },
+    {
+      "canonicalId": "Heart Stamp",
+      "sourceModule": "src/utils/move-automation/scripts/singleTargetAttacks.ts",
+      "version": 1,
+      "definitionHash": "467c8e2ac92c608d0594f316d80617aef77b3f43b5ca929476a32c2d92d15c05"
+    },
+    {
+      "canonicalId": "Heat Wave",
+      "sourceModule": "src/utils/move-automation/scripts/area.ts",
+      "version": 1,
+      "definitionHash": "cd14949ce475c7dc4da3aacd2fc33e69be5ee6306f77e5eb693cb6f42b80af07"
+    },
+    {
+      "canonicalId": "Helping Hand",
+      "sourceModule": "src/utils/move-automation/scripts/additionalSingleTarget.ts",
+      "version": 1,
+      "definitionHash": "535f12f2f3048bc2e067a6aa0dddd812f8e0a294e075f694d33644896fb8c518"
+    },
+    {
+      "canonicalId": "Hone Claws",
+      "sourceModule": "src/utils/move-automation/scripts/self.ts",
+      "version": 1,
+      "definitionHash": "3fb4d8f122d1f5dd553c4ca937388f4d0c4649a2458eafe797c6bd2535191ed1"
+    },
+    {
+      "canonicalId": "Horn Attack",
+      "sourceModule": "src/utils/move-automation/scripts/singleTargetAttacks.ts",
+      "version": 1,
+      "definitionHash": "e07f7f06a3dabb77f4b23e4e09380c491bee11de6486f8010fb0c1e384b4b780"
+    },
+    {
+      "canonicalId": "Howl",
+      "sourceModule": "src/utils/move-automation/scripts/area.ts",
+      "version": 1,
+      "definitionHash": "a560ddc0b901184bc2a7201baba35e38b769a7d28379db8a33a6359b9f408348"
+    },
+    {
+      "canonicalId": "Hyper Fang",
+      "sourceModule": "src/utils/move-automation/scripts/singleTargetAttacks.ts",
+      "version": 1,
+      "definitionHash": "dfa8d571e1eb3f16258a90198951aa31a0cfcb022a96a16310478fe356b0a9c3"
+    },
+    {
+      "canonicalId": "Hypnosis",
+      "sourceModule": "src/utils/move-automation/scripts/singleTargetStatus.ts",
+      "version": 1,
+      "definitionHash": "09c6e958c866bf5503a3df59e2b2930f3cf4747df41d9728f81babf4b3b193fe"
+    },
+    {
+      "canonicalId": "Ice Beam",
+      "sourceModule": "src/utils/move-automation/scripts/singleTargetAttacks.ts",
+      "version": 1,
+      "definitionHash": "e51683a1676be9bf3f6c136a584f749b53308f17d60336ccc1770c0bfef08322"
+    },
+    {
+      "canonicalId": "Ice Punch",
+      "sourceModule": "src/utils/move-automation/scripts/singleTargetAttacks.ts",
+      "version": 1,
+      "definitionHash": "6e2e20e0fa042901589a5827d66e53291ef3bef3998494acca35f55109a9d9e6"
+    },
+    {
+      "canonicalId": "Ice Shard",
+      "sourceModule": "src/utils/move-automation/scripts/singleTargetAttacks.ts",
+      "version": 1,
+      "definitionHash": "7cdb3f83a5fd9516eaa3b456a27a98dba4800e93be4e4a50a4ceaa546948719a"
+    },
+    {
+      "canonicalId": "Icicle Crash",
+      "sourceModule": "src/utils/move-automation/scripts/singleTargetAttacks.ts",
+      "version": 1,
+      "definitionHash": "c7abfd5575944bc83e083579011c47a6c0043a997277d6db3a51ab107f854c28"
+    },
+    {
+      "canonicalId": "Icy Wind",
+      "sourceModule": "src/utils/move-automation/scripts/area.ts",
+      "version": 1,
+      "definitionHash": "98c753e383434193c16414057fffe2f4ac213504161f039bff466f37aa5d4395"
+    },
+    {
+      "canonicalId": "Iron Head",
+      "sourceModule": "src/utils/move-automation/scripts/singleTargetConditions.ts",
+      "version": 1,
+      "definitionHash": "6f60c74602975651e58f5c0ed1b8258b14db2d6be6f22ac9e46e15c4c652a59c"
+    },
+    {
+      "canonicalId": "Iron Tail",
+      "sourceModule": "src/utils/move-automation/scripts/singleTargetStages.ts",
+      "version": 1,
+      "definitionHash": "6e158f7f0941e7375923a4a228f1c8963f17807caae03804a7fcc0f28fd25741"
+    },
+    {
+      "canonicalId": "Karate Chop",
+      "sourceModule": "src/utils/move-automation/scripts/singleTargetAttacks.ts",
+      "version": 1,
+      "definitionHash": "7efdb81f98cc7cd54b7f1278d6f8a5ba4fdb71664459cbbee6a571ebbbf26bc3"
+    },
+    {
+      "canonicalId": "Knock Off",
+      "sourceModule": "src/utils/move-automation/scripts/additionalSingleTarget.ts",
+      "version": 1,
+      "definitionHash": "56014db680d280d69beac4bcbc52e7c7fead1858069c02e6be9bf817a98dc72c"
+    },
+    {
+      "canonicalId": "Land’s Wrath",
+      "sourceModule": "src/utils/move-automation/scripts/area.ts",
+      "version": 1,
+      "definitionHash": "f0df83a1f8b478e5384cfd3f98738e88828a016cf2d7ba334da0e77fb4fef11c"
+    },
+    {
+      "canonicalId": "Lava Plume",
+      "sourceModule": "src/utils/move-automation/scripts/area.ts",
+      "version": 1,
+      "definitionHash": "640851bf0ed02b9734acc5ec86ffea1aad7d24cb01337e32d9bfa4861cec9e35"
+    },
+    {
+      "canonicalId": "Leaf Blade",
+      "sourceModule": "src/utils/move-automation/scripts/area.ts",
+      "version": 1,
+      "definitionHash": "55e59414d00fe6ee49acf50736c547b813a39634674aa7d2f57303a66eac33ea"
+    },
+    {
+      "canonicalId": "Leafage",
+      "sourceModule": "src/utils/move-automation/scripts/singleTargetAttacks.ts",
+      "version": 1,
+      "definitionHash": "7aa534991636e26283e1fecf0d546f1d14bf833d674c48ce86d207956da9772a"
+    },
+    {
+      "canonicalId": "Leer",
+      "sourceModule": "src/utils/move-automation/scripts/area.ts",
+      "version": 1,
+      "definitionHash": "31e84ac4b9b7f8d5779996a884016922dd0643a2f6b67456c64e835c66f155d8"
+    },
+    {
+      "canonicalId": "Lick",
+      "sourceModule": "src/utils/move-automation/scripts/singleTargetAttacks.ts",
+      "version": 1,
+      "definitionHash": "144cb36caaf8b4bb04604e8b65218810821f90dc194887f2cab04f8dd36b4748"
+    },
+    {
+      "canonicalId": "Liquidation",
+      "sourceModule": "src/utils/move-automation/scripts/singleTargetStages.ts",
+      "version": 1,
+      "definitionHash": "78885e53ab3a27beb4a492b8c8d043c6582748694861670e852e9b547ed300c8"
+    },
+    {
+      "canonicalId": "Lovely Kiss",
+      "sourceModule": "src/utils/move-automation/scripts/singleTargetStatus.ts",
+      "version": 1,
+      "definitionHash": "0901d31dd5c1f221ad656f867f9cf082410d6dd92165c62685708c166ac5a26e"
+    },
+    {
+      "canonicalId": "Low Sweep",
+      "sourceModule": "src/utils/move-automation/scripts/singleTargetStages.ts",
+      "version": 1,
+      "definitionHash": "5dc32a14485aa801369282a25e8b5ba2059cab42e41293448b77c1a6469548e5"
+    },
+    {
+      "canonicalId": "Luster Purge",
+      "sourceModule": "src/utils/move-automation/scripts/singleTargetStages.ts",
+      "version": 1,
+      "definitionHash": "b14e00785be4920acdb5a95faccefc75567c2a97e74a99e0b63d06eb6114de38"
+    },
+    {
+      "canonicalId": "Mach Punch",
+      "sourceModule": "src/utils/move-automation/scripts/singleTargetAttacks.ts",
+      "version": 1,
+      "definitionHash": "26041596521ae717b77ee65d7512e8b72d820adca2a4a9906d8aacecaab2e4b1"
+    },
+    {
+      "canonicalId": "Magical Leaf",
+      "sourceModule": "src/utils/move-automation/scripts/singleTargetAttacks.ts",
+      "version": 1,
+      "definitionHash": "a38f4af253c23e657159a32b83f5d80043b95b9844592fc2e1444d577894c7e5"
+    },
+    {
+      "canonicalId": "Magnet Bomb",
+      "sourceModule": "src/utils/move-automation/scripts/singleTargetAttacks.ts",
+      "version": 1,
+      "definitionHash": "f2b8d357413445ce3e372a2c01352cecdbe62bba820784d3cfc7b7933bec5717"
+    },
+    {
+      "canonicalId": "Mega Punch",
+      "sourceModule": "src/utils/move-automation/scripts/singleTargetAttacks.ts",
+      "version": 1,
+      "definitionHash": "10b784725e7f02e2331e8e2ccc580880ae63757e8f1b892f03e6ac4f9060fb84"
+    },
+    {
+      "canonicalId": "Metal Sound",
+      "sourceModule": "src/utils/move-automation/scripts/area.ts",
+      "version": 1,
+      "definitionHash": "131e6c060e05608715887ac22716255e85a590bd0304523a7205d230cce08e35"
+    },
+    {
+      "canonicalId": "Mirror Shot",
+      "sourceModule": "src/utils/move-automation/scripts/area.ts",
+      "version": 1,
+      "definitionHash": "1385cb914c880e8bc600f9d69352fca128a46a9318870b9ea7acd81d5443aafd"
+    },
+    {
+      "canonicalId": "Mist Ball",
+      "sourceModule": "src/utils/move-automation/scripts/singleTargetStages.ts",
+      "version": 1,
+      "definitionHash": "c32f6c2cf436726fe80d051917bc7d4d02cea9f278de587abe35022754182f0e"
+    },
+    {
+      "canonicalId": "Moonblast",
+      "sourceModule": "src/utils/move-automation/scripts/singleTargetStages.ts",
+      "version": 1,
+      "definitionHash": "c7245aa2489249190c574930755a6b44d28d7a46f1b9ecc344260eab1cadab7d"
+    },
+    {
+      "canonicalId": "Mountain Gale",
+      "sourceModule": "src/utils/move-automation/scripts/singleTargetConditions.ts",
+      "version": 1,
+      "definitionHash": "0271f1ad857b11428cae06f6f42110c1bcea7b763287307f7ae5560dc0a88e6e"
+    },
+    {
+      "canonicalId": "Mud Bomb",
+      "sourceModule": "src/utils/move-automation/scripts/singleTargetStages.ts",
+      "version": 1,
+      "definitionHash": "516e73eba0940e4e483401e7d06028d3547f41d47dda8143d1eef29887fa6bce"
+    },
+    {
+      "canonicalId": "Mud Shot",
+      "sourceModule": "src/utils/move-automation/scripts/singleTargetStages.ts",
+      "version": 1,
+      "definitionHash": "61ae19897c0ed6c11201c417eb1339a700adf5c3c649121a4612e3464192e19a"
+    },
+    {
+      "canonicalId": "Mud Sport",
+      "sourceModule": "src/utils/move-automation/scripts/area.ts",
+      "version": 1,
+      "definitionHash": "a88561bf5ea2f4e256a79f538107658e5b871aa080093023f99eac1366be81af"
+    },
+    {
+      "canonicalId": "Mud-Slap",
+      "sourceModule": "src/utils/move-automation/scripts/singleTargetStages.ts",
+      "version": 1,
+      "definitionHash": "aad6d1aaf3c186366cacb45ad25d940c36925dcb65247b38a5b5f71b0ea98040"
+    },
+    {
+      "canonicalId": "Mystical Fire",
+      "sourceModule": "src/utils/move-automation/scripts/singleTargetStages.ts",
+      "version": 1,
+      "definitionHash": "eddba020df312f07dfaad9f2133c4b562549efceca611feb7c60d00d559ac7e6"
+    },
+    {
+      "canonicalId": "Needle Arm",
+      "sourceModule": "src/utils/move-automation/scripts/singleTargetAttacks.ts",
+      "version": 1,
+      "definitionHash": "9f3e55162cf7811fe029dd00a6a5ff387a9c7e475fa35d89092c6cf68bd6d8af"
+    },
+    {
+      "canonicalId": "Night Daze",
+      "sourceModule": "src/utils/move-automation/scripts/singleTargetStages.ts",
+      "version": 1,
+      "definitionHash": "2ad6433faad4b91935b4b3cea8dd4bdf5a60f502dc0fbbc38944436584e4abfa"
+    },
+    {
+      "canonicalId": "Night Slash",
+      "sourceModule": "src/utils/move-automation/scripts/area.ts",
+      "version": 1,
+      "definitionHash": "25e5b935d9e811bc5a797c5db38bdb3257e45aab4e620e71202ad3701cc070e1"
+    },
+    {
+      "canonicalId": "Noble Roar",
+      "sourceModule": "src/utils/move-automation/scripts/area.ts",
+      "version": 1,
+      "definitionHash": "3019f21dab620f3e901940f57428b610d84ae0a610092b9007716e8eb7b3152b"
+    },
+    {
+      "canonicalId": "Nuzzle",
+      "sourceModule": "src/utils/move-automation/scripts/singleTargetConditions.ts",
+      "version": 1,
+      "definitionHash": "c234f365fdf5707799bfceb9ccb7f6f2cf82845a1b5cf9b19bbc09636180f655"
+    },
+    {
+      "canonicalId": "Octazooka",
+      "sourceModule": "src/utils/move-automation/scripts/singleTargetStages.ts",
+      "version": 1,
+      "definitionHash": "c68b56250eb04c124df75c483760b8b17ac890e227028b7c7c84695eed8840f7"
+    },
+    {
+      "canonicalId": "Origin Pulse",
+      "sourceModule": "src/utils/move-automation/scripts/area.ts",
+      "version": 1,
+      "definitionHash": "e3cfbad6985f3f4fbe5cadbde5d5cbc443dc044c07794e29c9df4712af22025e"
+    },
+    {
+      "canonicalId": "Overdrive",
+      "sourceModule": "src/utils/move-automation/scripts/area.ts",
+      "version": 1,
+      "definitionHash": "9bb8c5ea2c7dc57fa07f7438640609d641efd4b01fdd05510ec57c5691ae57cb"
+    },
+    {
+      "canonicalId": "Peck",
+      "sourceModule": "src/utils/move-automation/scripts/singleTargetAttacks.ts",
+      "version": 1,
+      "definitionHash": "61cb8232148160b6df6a4c3895237b41abe160fa3e6e80b9dda274e2a2d1c955"
+    },
+    {
+      "canonicalId": "Petal Blizzard",
+      "sourceModule": "src/utils/move-automation/scripts/area.ts",
+      "version": 1,
+      "definitionHash": "5018d241507442a34f532a24d2d6522b5c8a3a8cfea8bff64ee3e300ea5ffdfa"
+    },
+    {
+      "canonicalId": "Pin Missile",
+      "sourceModule": "src/utils/move-automation/scripts/additionalSingleTarget.ts",
+      "version": 1,
+      "definitionHash": "617bd0a4edcefee4c3898d88496cb501b5d07e0b5d63017972cdaef8a9e0086f"
+    },
+    {
+      "canonicalId": "Play Nice",
+      "sourceModule": "src/utils/move-automation/scripts/singleTargetStages.ts",
+      "version": 1,
+      "definitionHash": "8fe5f08427859302ecc1a950f9fb88c90f97897fe3847d64a95d7dafa6d9f6a5"
+    },
+    {
+      "canonicalId": "Play Rough",
+      "sourceModule": "src/utils/move-automation/scripts/singleTargetStages.ts",
+      "version": 1,
+      "definitionHash": "2293fd24a07a15b68b093e6a2d1952a58b0179112f01cecf3ac45a539467ea9a"
+    },
+    {
+      "canonicalId": "Poison Fang",
+      "sourceModule": "src/utils/move-automation/scripts/singleTargetConditions.ts",
+      "version": 1,
+      "definitionHash": "2f331dae9468f78908427dac1041f94cd57c3f706a6a5e7be591d36f74b7639e"
+    },
+    {
+      "canonicalId": "Poison Gas",
+      "sourceModule": "src/utils/move-automation/scripts/area.ts",
+      "version": 1,
+      "definitionHash": "1281440f9eef080e87b6b0fd3fecb8a2afffe06cae8f502988a6811ef99037d8"
+    },
+    {
+      "canonicalId": "Poison Jab",
+      "sourceModule": "src/utils/move-automation/scripts/singleTargetAttacks.ts",
+      "version": 1,
+      "definitionHash": "73631d4a1d63aa6882338902a3a779abd639eb122230d2b98f4e730a0ec9c89c"
+    },
+    {
+      "canonicalId": "Poison Powder",
+      "sourceModule": "src/utils/move-automation/scripts/singleTargetStatus.ts",
+      "version": 1,
+      "definitionHash": "ab6e90b3dbc182357d48cbbc00030ca20bcbba01d91b697a4a06c486b96dc731"
+    },
+    {
+      "canonicalId": "Poison Sting",
+      "sourceModule": "src/utils/move-automation/scripts/singleTargetAttacks.ts",
+      "version": 1,
+      "definitionHash": "fe0612c8d35958c5b7eee1d41b49a63b34b6500f4edbb04e33ca20fb90425165"
+    },
+    {
+      "canonicalId": "Poison Tail",
+      "sourceModule": "src/utils/move-automation/scripts/singleTargetConditions.ts",
+      "version": 1,
+      "definitionHash": "6c147a43950bb3ad85aeb45ce23bf6252c4c3d78a87763bc3869959507c8dd63"
+    },
+    {
+      "canonicalId": "Pound",
+      "sourceModule": "src/utils/move-automation/scripts/singleTargetAttacks.ts",
+      "version": 1,
+      "definitionHash": "f79142e6199f29d30675f421a1ca473d4c8c7853564eafb64d22fa5b2ef456b8"
+    },
+    {
+      "canonicalId": "Powder Snow",
+      "sourceModule": "src/utils/move-automation/scripts/area.ts",
+      "version": 1,
+      "definitionHash": "db11764ccf9d07eec57bdd682aa45d8cd24330d12515f9f4338884a78b72b6a8"
+    },
+    {
+      "canonicalId": "Power Gem",
+      "sourceModule": "src/utils/move-automation/scripts/singleTargetAttacks.ts",
+      "version": 1,
+      "definitionHash": "380dd50cbaf50548d8b0318c5d0e6d71fd2fbe5e729caad66a9710d92f2ae5d1"
+    },
+    {
+      "canonicalId": "Power Trip",
+      "sourceModule": "src/utils/move-automation/scripts/additionalSingleTarget.ts",
+      "version": 1,
+      "definitionHash": "6bacfeec488371d1ccbe5c144f8e87b6c112eb4b24cbddcf80b4c2502e4113dd"
+    },
+    {
+      "canonicalId": "Power Whip",
+      "sourceModule": "src/utils/move-automation/scripts/singleTargetAttacks.ts",
+      "version": 1,
+      "definitionHash": "bf74a07dd7bcb7162f0638ede132cf664c1ff0bbe39f5660f4db2639918525f3"
+    },
+    {
+      "canonicalId": "Precipice Blades",
+      "sourceModule": "src/utils/move-automation/scripts/area.ts",
+      "version": 1,
+      "definitionHash": "d705287d7625c975745131846229d4d0e28230ec1be2e853dbf7b9e7b360c077"
+    },
+    {
+      "canonicalId": "Psybeam",
+      "sourceModule": "src/utils/move-automation/scripts/singleTargetConditions.ts",
+      "version": 1,
+      "definitionHash": "3d8b5bc38e1544931a049ef8e1397e11cfb6f253dc90ebd15609751ae953c093"
+    },
+    {
+      "canonicalId": "Psycho Cut",
+      "sourceModule": "src/utils/move-automation/scripts/singleTargetAttacks.ts",
+      "version": 1,
+      "definitionHash": "86df76e0f7500eaac312fdfa0e2e469b246994b2b6ecb57f75cdbeedcdea16e7"
+    },
+    {
+      "canonicalId": "Psywave",
+      "sourceModule": "src/utils/move-automation/scripts/directHpLoss.ts",
+      "version": 1,
+      "definitionHash": "00be2d81e3c96f70547e561abad398037f749fb9232dbc15db64d192c85b2394"
+    },
+    {
+      "canonicalId": "Pyro Ball",
+      "sourceModule": "src/utils/move-automation/scripts/singleTargetAttacks.ts",
+      "version": 1,
+      "definitionHash": "fbfc4804c91af82a7467d7960a409c491e8162dc0fca1bd29b67f8f4cdd9de13"
+    },
+    {
+      "canonicalId": "Quick Attack",
+      "sourceModule": "src/utils/move-automation/scripts/singleTargetAttacks.ts",
+      "version": 1,
+      "definitionHash": "59bddb0afc5f70a88781f9b672d8dd724162887c3e2038b71a9571a1d2a4871b"
+    },
+    {
+      "canonicalId": "Raging Fury",
+      "sourceModule": "src/utils/move-automation/scripts/area.ts",
+      "version": 1,
+      "definitionHash": "73c39eec8e0dae2d221bf63ac4c6e1eb2db98029128673cfeeb013536396daf5"
+    },
+    {
+      "canonicalId": "Razor Leaf",
+      "sourceModule": "src/utils/move-automation/scripts/area.ts",
+      "version": 1,
+      "definitionHash": "5cb330c5e349c5e1330c28fc70d8f395394979134da68822fb6c3255a85272fc"
+    },
+    {
+      "canonicalId": "Razor Shell",
+      "sourceModule": "src/utils/move-automation/scripts/singleTargetStages.ts",
+      "version": 1,
+      "definitionHash": "bcaaa6ae4cd21dc64735c25c8be27f2130130765da9264421791d1472732d7b6"
+    },
+    {
+      "canonicalId": "Reflect",
+      "sourceModule": "src/utils/move-automation/scripts/self.ts",
+      "version": 1,
+      "definitionHash": "f406db70a66b9488e74d94ba4582e5cd2795ea27e52431a43ddb4b8ede3c3e92"
+    },
+    {
+      "canonicalId": "Return",
+      "sourceModule": "src/utils/move-automation/scripts/singleTargetAttacks.ts",
+      "version": 1,
+      "definitionHash": "e96670f1a035b5b9297b9a5e4afd168cec6df09a788c6c64a414544cd1c9adf9"
+    },
+    {
+      "canonicalId": "Rock Climb",
+      "sourceModule": "src/utils/move-automation/scripts/singleTargetConditions.ts",
+      "version": 1,
+      "definitionHash": "257192f722e32096cfa3a51470fbd0ae5df9c05792fb2a991affa243631df98c"
+    },
+    {
+      "canonicalId": "Rock Slide",
+      "sourceModule": "src/utils/move-automation/scripts/area.ts",
+      "version": 1,
+      "definitionHash": "231d5cbaa26c6e176728cdf00343774ac0d7a010a6e621e6ac2f2991d9b3f70d"
+    },
+    {
+      "canonicalId": "Rock Smash",
+      "sourceModule": "src/utils/move-automation/scripts/singleTargetStages.ts",
+      "version": 1,
+      "definitionHash": "869dd0f8faae5912c63b53d5a59799f9379961c534079a0940e95053292d83c5"
+    },
+    {
+      "canonicalId": "Rock Throw",
+      "sourceModule": "src/utils/move-automation/scripts/singleTargetAttacks.ts",
+      "version": 1,
+      "definitionHash": "b56cc1e261cf51ca6be0b9f61022771876aa92586c5bc4268efa7e5a0540286d"
+    },
+    {
+      "canonicalId": "Rock Tomb",
+      "sourceModule": "src/utils/move-automation/scripts/singleTargetStages.ts",
+      "version": 1,
+      "definitionHash": "10b274b871ed11d6da87051119e459a461df418c5829edf5d50ed4d99c3080d8"
+    },
+    {
+      "canonicalId": "Rolling Kick",
+      "sourceModule": "src/utils/move-automation/scripts/singleTargetAttacks.ts",
+      "version": 1,
+      "definitionHash": "468a31932af57287a935f80bb98f99c498f1feb554041867cb14650a1e2d24f8"
+    },
+    {
+      "canonicalId": "Sacred Fire",
+      "sourceModule": "src/utils/move-automation/scripts/singleTargetConditions.ts",
+      "version": 1,
+      "definitionHash": "e0003d12e3e7d6acd543f7efe97d0d23c9ff22584a1f5adcbe15d463ff64ee5a"
+    },
+    {
+      "canonicalId": "Sacred Sword",
+      "sourceModule": "src/utils/move-automation/scripts/singleTargetAttacks.ts",
+      "version": 1,
+      "definitionHash": "8238ac8d5b0226a0b16d125bdbad26d1519f42498c18d30a0685475192ad87dd"
+    },
+    {
+      "canonicalId": "Sand Attack",
+      "sourceModule": "src/utils/move-automation/scripts/singleTargetConditions.ts",
+      "version": 1,
+      "definitionHash": "b1d19c2cf2fb9f93bb85e1b12ae362e975e471170bb0c6fdd9006e89efcb6f40"
+    },
+    {
+      "canonicalId": "Sand Tomb",
+      "sourceModule": "src/utils/move-automation/scripts/additionalSingleTarget.ts",
+      "version": 1,
+      "definitionHash": "88c19c85fa32c01cd253b425dd6ff3f34bd30b96d147e7a46d49c0dc6113f246"
+    },
+    {
+      "canonicalId": "Sandstorm Sear",
+      "sourceModule": "src/utils/move-automation/scripts/area.ts",
+      "version": 1,
+      "definitionHash": "1269644d8d3b8c30071a1fa6066d7138eff25b32d8675cca5fef1d3702286c89"
+    },
+    {
+      "canonicalId": "Scald",
+      "sourceModule": "src/utils/move-automation/scripts/singleTargetAttacks.ts",
+      "version": 1,
+      "definitionHash": "58ee4ff567e35e801e69d7b9f8207012cc296361a6beed35bcd8d0224c09982b"
+    },
+    {
+      "canonicalId": "Scary Face",
+      "sourceModule": "src/utils/move-automation/scripts/singleTargetStages.ts",
+      "version": 1,
+      "definitionHash": "397fdc874c57c4360399bceda1538b67c05ab1a75d6f74edda04ed7e858f0cc4"
+    },
+    {
+      "canonicalId": "Scorching Sands",
+      "sourceModule": "src/utils/move-automation/scripts/singleTargetAttacks.ts",
+      "version": 1,
+      "definitionHash": "412b91670af1eb396d917403ed79089f0bb1107ebe7f7fc1ee3bb47545c186dc"
+    },
+    {
+      "canonicalId": "Scratch",
+      "sourceModule": "src/utils/move-automation/scripts/area.ts",
+      "version": 1,
+      "definitionHash": "27d1e2a99da5b775b3a9a4cdafc9b04953726748087b6f690a4d6575625f6d18"
+    },
+    {
+      "canonicalId": "Screech",
+      "sourceModule": "src/utils/move-automation/scripts/area.ts",
+      "version": 1,
+      "definitionHash": "f4305ea5c0ab83e1a532cbf0983fbef88daf44518901b7a10f458c98e04a1b4e"
+    },
+    {
+      "canonicalId": "Searing Shot",
+      "sourceModule": "src/utils/move-automation/scripts/area.ts",
+      "version": 1,
+      "definitionHash": "91397da8cd0df711e31d836fe40562128fdac18e9b449a5fce05b95327729bc5"
+    },
+    {
+      "canonicalId": "Seed Bomb",
+      "sourceModule": "src/utils/move-automation/scripts/singleTargetAttacks.ts",
+      "version": 1,
+      "definitionHash": "6bc5f472fc614e73325847003170078fa3c8b9f8a1a4b1398dff3b7a294019b9"
+    },
+    {
+      "canonicalId": "Seed Flare",
+      "sourceModule": "src/utils/move-automation/scripts/area.ts",
+      "version": 1,
+      "definitionHash": "a031f490436893a74f24215da3da72b9571c0eb6c9cd8f92946908c5ddd862d7"
+    },
+    {
+      "canonicalId": "Shadow Ball",
+      "sourceModule": "src/utils/move-automation/scripts/singleTargetStages.ts",
+      "version": 1,
+      "definitionHash": "640d9f1d6f58ac5590c857d629d0f01e864757321c13d73a1b9b9f5cdc2f76a2"
+    },
+    {
+      "canonicalId": "Shadow Bone",
+      "sourceModule": "src/utils/move-automation/scripts/singleTargetStages.ts",
+      "version": 1,
+      "definitionHash": "6e2ae865395e1820ea55a90078916727d021635d3828a3b9d13408373a5132c2"
+    },
+    {
+      "canonicalId": "Shadow Claw",
+      "sourceModule": "src/utils/move-automation/scripts/area.ts",
+      "version": 1,
+      "definitionHash": "5f0d9063b51a9172e6ff7acd33da3619449394cb6ed3b7c6813d74a994a55e75"
+    },
+    {
+      "canonicalId": "Shadow Punch",
+      "sourceModule": "src/utils/move-automation/scripts/singleTargetAttacks.ts",
+      "version": 1,
+      "definitionHash": "a63389326cc72df52bca034060955352d33b1f72d6feb06a1fe5419f39eeebef"
+    },
+    {
+      "canonicalId": "Shadow Sneak",
+      "sourceModule": "src/utils/move-automation/scripts/singleTargetAttacks.ts",
+      "version": 1,
+      "definitionHash": "ef3c8bea2adacc2adf4e054329ebf09abe53e2952bfc6a1b8393ea488456bd67"
+    },
+    {
+      "canonicalId": "Shock Wave",
+      "sourceModule": "src/utils/move-automation/scripts/singleTargetAttacks.ts",
+      "version": 1,
+      "definitionHash": "be0b3d2baafc1d8aa3aefaa56a9f9dea111c3e53979ccabf25d38b5ff0244df0"
+    },
+    {
+      "canonicalId": "Signal Beam",
+      "sourceModule": "src/utils/move-automation/scripts/singleTargetConditions.ts",
+      "version": 1,
+      "definitionHash": "fc890d476798b976dbbf94c6feccf0585aa23acfaf2c3cb0e1e45dc7e5c8608f"
+    },
+    {
+      "canonicalId": "Slash",
+      "sourceModule": "src/utils/move-automation/scripts/area.ts",
+      "version": 1,
+      "definitionHash": "330ee7b29ced74cab2a26f2bfe1a47aefea91093e6c4308fc0ff44d72c5342b2"
+    },
+    {
+      "canonicalId": "Sleep Powder",
+      "sourceModule": "src/utils/move-automation/scripts/singleTargetStatus.ts",
+      "version": 1,
+      "definitionHash": "709b884378a3222f658609b709c8e0b371efde2b1dbc801a2480eeb6b0167769"
+    },
+    {
+      "canonicalId": "Sludge",
+      "sourceModule": "src/utils/move-automation/scripts/singleTargetAttacks.ts",
+      "version": 1,
+      "definitionHash": "aff8c7710cd2b06ca168a62a8c02b730014aef693cbfb644568ec242f82cc932"
+    },
+    {
+      "canonicalId": "Sludge Bomb",
+      "sourceModule": "src/utils/move-automation/scripts/singleTargetAttacks.ts",
+      "version": 1,
+      "definitionHash": "c08058fce7037f0ec7fd2ce75c7587eb28f023d37c6e9c05aa5e7bc17d44fdf0"
+    },
+    {
+      "canonicalId": "Sludge Wave",
+      "sourceModule": "src/utils/move-automation/scripts/area.ts",
+      "version": 1,
+      "definitionHash": "94a14a667fed38388bfc78437e21c57e5e029f0ad55656f9fcacd36369c4f66d"
+    },
+    {
+      "canonicalId": "Smart Strike",
+      "sourceModule": "src/utils/move-automation/scripts/singleTargetAttacks.ts",
+      "version": 1,
+      "definitionHash": "55b7e90ac2a3353dd22526cabd7ba1e6a5f5ac975d7e4811b31a5349e9c9d632"
+    },
+    {
+      "canonicalId": "Smog",
+      "sourceModule": "src/utils/move-automation/scripts/area.ts",
+      "version": 1,
+      "definitionHash": "440f837a1c7dfe22418e7aacf4ffbc487daff931ff1cc71c0be5a74937d03339"
+    },
+    {
+      "canonicalId": "Snarl",
+      "sourceModule": "src/utils/move-automation/scripts/area.ts",
+      "version": 1,
+      "definitionHash": "34c015b4da39d826c0d7088d6721bed379c0ba6811ad9f89ea311ccebe0a9d9f"
+    },
+    {
+      "canonicalId": "Spark",
+      "sourceModule": "src/utils/move-automation/scripts/singleTargetConditions.ts",
+      "version": 1,
+      "definitionHash": "12b3e7c7522c5020b3a2e81ae2230a645e2c0b9aec2588ef9ffd3b13bd1cf6e8"
+    },
+    {
+      "canonicalId": "Spirit Break",
+      "sourceModule": "src/utils/move-automation/scripts/singleTargetStages.ts",
+      "version": 1,
+      "definitionHash": "2c75d9d4a073bc12c38973c8de2b7a80e0144c70e9d59b4b2acd6959ca4d0af2"
+    },
+    {
+      "canonicalId": "Spore",
+      "sourceModule": "src/utils/move-automation/scripts/singleTargetStatus.ts",
+      "version": 1,
+      "definitionHash": "fc5eb9044f03a7fdabc47443cfde1df0c5713d5890228e1824a501f3aa7fd516"
+    },
+    {
+      "canonicalId": "Steam Eruption",
+      "sourceModule": "src/utils/move-automation/scripts/area.ts",
+      "version": 1,
+      "definitionHash": "653bc5359b2e9d1c2e183932ea683c8915273ebd11e16dfb98cf22c2dbfa3294"
+    },
+    {
+      "canonicalId": "Stone Edge",
+      "sourceModule": "src/utils/move-automation/scripts/singleTargetAttacks.ts",
+      "version": 1,
+      "definitionHash": "ced5d60d9183bcfe2c779a22ac5c56b9d28fa47dcd853ff207ff8a562ebe803a"
+    },
+    {
+      "canonicalId": "Strange Steam",
+      "sourceModule": "src/utils/move-automation/scripts/area.ts",
+      "version": 1,
+      "definitionHash": "80bcc6c47a30e91fdd3f2e52b983db05a71f676d0f419ddab4f93cc2a5b9b664"
+    },
+    {
+      "canonicalId": "Struggle",
+      "sourceModule": "src/utils/move-automation/scripts/singleTargetAttacks.ts",
+      "version": 1,
+      "definitionHash": "46d323aec58430f9f348105a8a177e2aa345c842fcd1a409ebb98ba78e139ff0"
+    },
+    {
+      "canonicalId": "Struggle (Firestarter Physical)",
+      "sourceModule": "src/utils/move-automation/scripts/singleTargetAttacks.ts",
+      "version": 1,
+      "definitionHash": "a2b011cdd3d1778720a001a8a635338c6a1dde786dd81dbf5a46a7e2bc1fbdba"
+    },
+    {
+      "canonicalId": "Struggle (Firestarter Special)",
+      "sourceModule": "src/utils/move-automation/scripts/singleTargetAttacks.ts",
+      "version": 1,
+      "definitionHash": "0ebb4507024a08189582780f42452ec5381b4f61bf5556483b74f5b642cf6172"
+    },
+    {
+      "canonicalId": "Struggle (Fountain Physical)",
+      "sourceModule": "src/utils/move-automation/scripts/singleTargetAttacks.ts",
+      "version": 1,
+      "definitionHash": "bbd3ad6b5b0da13e36b2dc76c86528652082cfa239da4198ac9cdfe9e82f21ba"
+    },
+    {
+      "canonicalId": "Struggle (Fountain Special)",
+      "sourceModule": "src/utils/move-automation/scripts/singleTargetAttacks.ts",
+      "version": 1,
+      "definitionHash": "c4ae85ed3e0248fc58c04a68c542f58819a8ce67ac2682d228a51ddd034ec965"
+    },
+    {
+      "canonicalId": "Struggle (Freezer Physical)",
+      "sourceModule": "src/utils/move-automation/scripts/singleTargetAttacks.ts",
+      "version": 1,
+      "definitionHash": "16cffa88f1759bebeffd00417ddc5cd965c5bc94ce0518f7822d726f04801bc8"
+    },
+    {
+      "canonicalId": "Struggle (Freezer Special)",
+      "sourceModule": "src/utils/move-automation/scripts/singleTargetAttacks.ts",
+      "version": 1,
+      "definitionHash": "36b19c5fc7cd49adadc2bbe38b667768feca25b0d6778a010af7ef6c14d06ee9"
+    },
+    {
+      "canonicalId": "Struggle (Guster Physical)",
+      "sourceModule": "src/utils/move-automation/scripts/singleTargetAttacks.ts",
+      "version": 1,
+      "definitionHash": "db3312dccd83c753e8cb55d62784451919d5e9239133081a50f9d27aff25dfd9"
+    },
+    {
+      "canonicalId": "Struggle (Guster Special)",
+      "sourceModule": "src/utils/move-automation/scripts/singleTargetAttacks.ts",
+      "version": 1,
+      "definitionHash": "be8ed129a43188ac2852c22256f72625a4f5e026023ba7d24c030f43eecc6f13"
+    },
+    {
+      "canonicalId": "Struggle (Materializer Physical)",
+      "sourceModule": "src/utils/move-automation/scripts/singleTargetAttacks.ts",
+      "version": 1,
+      "definitionHash": "92941ae948a45c7012411eea8ba0cf9e67e321eb1d40702adfd1a904a1fba689"
+    },
+    {
+      "canonicalId": "Struggle (Materializer Special)",
+      "sourceModule": "src/utils/move-automation/scripts/singleTargetAttacks.ts",
+      "version": 1,
+      "definitionHash": "58d6e9795f733e5e7d13afac4f9d9cb8e9097bea430e019e29d2535f6e52ae43"
+    },
+    {
+      "canonicalId": "Struggle (Telekinetic Physical)",
+      "sourceModule": "src/utils/move-automation/scripts/singleTargetAttacks.ts",
+      "version": 1,
+      "definitionHash": "767e7f0294a0eb898d93ee4639f686f959350ce5bf829867a00b812cf10768e6"
+    },
+    {
+      "canonicalId": "Struggle (Telekinetic Special)",
+      "sourceModule": "src/utils/move-automation/scripts/singleTargetAttacks.ts",
+      "version": 1,
+      "definitionHash": "aea0f1ddf5abca4e9073cee0890509f7bf6b2ffccf78c63ecfa73c2860c63ee8"
+    },
+    {
+      "canonicalId": "Struggle (Zapper Physical)",
+      "sourceModule": "src/utils/move-automation/scripts/singleTargetAttacks.ts",
+      "version": 1,
+      "definitionHash": "7fb11cbcec3ec740e5ee2835d0d1cef1bc526432d89edc7ed6392f438130febb"
+    },
+    {
+      "canonicalId": "Struggle (Zapper Special)",
+      "sourceModule": "src/utils/move-automation/scripts/singleTargetAttacks.ts",
+      "version": 1,
+      "definitionHash": "500ad1eccca0f0925fa3a3742679975604ff350adaa166a9b06c66bdbe4ac2ed"
+    },
+    {
+      "canonicalId": "Struggle Bug",
+      "sourceModule": "src/utils/move-automation/scripts/area.ts",
+      "version": 1,
+      "definitionHash": "9bff3117dfd19b048df53a22796b62d21ea2c039ffd82f052728ef21c27dc566"
+    },
+    {
+      "canonicalId": "Stun Spore",
+      "sourceModule": "src/utils/move-automation/scripts/singleTargetStatus.ts",
+      "version": 1,
+      "definitionHash": "892eb9403831ab367063ad92b02c15da958cd4bd037ac44ad26b8f295f2fbcaf"
+    },
+    {
+      "canonicalId": "Supersonic",
+      "sourceModule": "src/utils/move-automation/scripts/additionalSingleTarget.ts",
+      "version": 1,
+      "definitionHash": "3674e3c2c888102e0613c38ad678e6507d3769335f8eeb41d564cba47f19a98f"
+    },
+    {
+      "canonicalId": "Swagger",
+      "sourceModule": "src/utils/move-automation/scripts/singleTargetConditions.ts",
+      "version": 1,
+      "definitionHash": "65a016b249bf2056cb98c8a63c7a0612a1aa0c1a2ed9ca54879220a7e27bbee8"
+    },
+    {
+      "canonicalId": "Sweet Scent",
+      "sourceModule": "src/utils/move-automation/scripts/area.ts",
+      "version": 1,
+      "definitionHash": "71a9a8c6963f6442b36f785190d9855ae04dbfe21139e415f4da893d78f4b6fc"
+    },
+    {
+      "canonicalId": "Swift",
+      "sourceModule": "src/utils/move-automation/scripts/area.ts",
+      "version": 1,
+      "definitionHash": "fef9f1b556e411eb804412f945f4bda09c35517cc9fb8eb067887264a8a56b3e"
+    },
+    {
+      "canonicalId": "Swords Dance",
+      "sourceModule": "src/utils/move-automation/scripts/self.ts",
+      "version": 1,
+      "definitionHash": "14e5559f0ebf62a3ba1797e12b66439b73d51fad4b01380bd92c1bf71586faa4"
+    },
+    {
+      "canonicalId": "Synthesis",
+      "sourceModule": "src/utils/move-automation/scripts/self.ts",
+      "version": 1,
+      "definitionHash": "d20a51577f333d2a38a2e979250331947a9112a2694445bd1515de940a53dab8"
+    },
+    {
+      "canonicalId": "Tackle",
+      "sourceModule": "src/utils/move-automation/scripts/additionalSingleTarget.ts",
+      "version": 1,
+      "definitionHash": "7c8923e8c6a525a31f90d08867dd97ef8eb5f538a0f6e0b37449186e4ad6c61e"
+    },
+    {
+      "canonicalId": "Tail Whip",
+      "sourceModule": "src/utils/move-automation/scripts/area.ts",
+      "version": 1,
+      "definitionHash": "ee90ab534c3c419e7ca0ecd0d4649a1f18cf80d0abb331b9c0afb1417e1b4ea5"
+    },
+    {
+      "canonicalId": "Take Down",
+      "sourceModule": "src/utils/move-automation/scripts/additionalSingleTarget.ts",
+      "version": 1,
+      "definitionHash": "2566e5ac0d4291ec31b71d4c9525604fd297e8e5eb82c74e82c30e40a150801e"
+    },
+    {
+      "canonicalId": "Taunt",
+      "sourceModule": "src/utils/move-automation/scripts/singleTargetConditions.ts",
+      "version": 1,
+      "definitionHash": "eee5c4c09778979c46f9877ba5ef6f66bca02c5949d309c4bbe083e04dd6ae08"
+    },
+    {
+      "canonicalId": "Tearful Look",
+      "sourceModule": "src/utils/move-automation/scripts/area.ts",
+      "version": 1,
+      "definitionHash": "b6456ec419f0a0287f812503d6b19aa4416430784f0086c2ba9b59854c9ab59a"
+    },
+    {
+      "canonicalId": "Teeter Dance",
+      "sourceModule": "src/utils/move-automation/scripts/area.ts",
+      "version": 1,
+      "definitionHash": "4d87354cc27a4493b8963e639c4afb756995079755a1ffa3c61101f3b99afbf7"
+    },
+    {
+      "canonicalId": "Thunder Punch",
+      "sourceModule": "src/utils/move-automation/scripts/singleTargetAttacks.ts",
+      "version": 1,
+      "definitionHash": "0cccfa5c9f9443e523605e7e8c491f17992090d4c98063e393306ad10149f6f2"
+    },
+    {
+      "canonicalId": "Thunder Shock",
+      "sourceModule": "src/utils/move-automation/scripts/singleTargetAttacks.ts",
+      "version": 1,
+      "definitionHash": "fcd475c39c80ad217c9948a22d812bfa7f82c37b4caf6f60dc4510d6e2a032f4"
+    },
+    {
+      "canonicalId": "Thunderbolt",
+      "sourceModule": "src/utils/move-automation/scripts/singleTargetAttacks.ts",
+      "version": 1,
+      "definitionHash": "87c05615edaf01015c43c3799a10e41ebb63ad54ca4270169961ff3fc0d680ca"
+    },
+    {
+      "canonicalId": "Tickle",
+      "sourceModule": "src/utils/move-automation/scripts/singleTargetStages.ts",
+      "version": 1,
+      "definitionHash": "b0d5592a1c99aedae8be34a9cdb1cd8e9efdc4703b63ee0ae32ac8973c721360"
+    },
+    {
+      "canonicalId": "Torment",
+      "sourceModule": "src/utils/move-automation/scripts/additionalSingleTarget.ts",
+      "version": 1,
+      "definitionHash": "5da80a77081b48ae8e0dc26c97d8c0d696741366e13cca599aee65adcb7b98d2"
+    },
+    {
+      "canonicalId": "U-Turn",
+      "sourceModule": "src/utils/move-automation/scripts/additionalSingleTarget.ts",
+      "version": 1,
+      "definitionHash": "420cadf6b63e155af5d09704f059db98e244d17669fd48b2d3f5740655e38ffd"
+    },
+    {
+      "canonicalId": "Vacuum Wave",
+      "sourceModule": "src/utils/move-automation/scripts/singleTargetAttacks.ts",
+      "version": 1,
+      "definitionHash": "3d8732c58db74dcc79a8c17114f2aa9eeb99ec6494bf47aad1b4c88cfb62a4e9"
+    },
+    {
+      "canonicalId": "Vice Grip",
+      "sourceModule": "src/utils/move-automation/scripts/singleTargetAttacks.ts",
+      "version": 1,
+      "definitionHash": "738c34f3c62a24d4e497518b99a91c493cf451b1b72b92780dbb3d58b86bd7aa"
+    },
+    {
+      "canonicalId": "Vine Whip",
+      "sourceModule": "src/utils/move-automation/scripts/singleTargetAttacks.ts",
+      "version": 1,
+      "definitionHash": "733917e4c7ad3af93c4a242cc1de863b08bbdfcc60f6de25ff816ba822af6a9b"
+    },
+    {
+      "canonicalId": "Water Gun",
+      "sourceModule": "src/utils/move-automation/scripts/singleTargetAttacks.ts",
+      "version": 1,
+      "definitionHash": "64910f48b06077cf7a1a227117ec78b8c17e9bcc0efabfabc3985649acaeb079"
+    },
+    {
+      "canonicalId": "Water Pulse",
+      "sourceModule": "src/utils/move-automation/scripts/singleTargetConditions.ts",
+      "version": 1,
+      "definitionHash": "5547288efb17d8eec2e6b5ceb3b331b391c094eebc71f50ef7258ebb4fd21898"
+    },
+    {
+      "canonicalId": "Waterfall",
+      "sourceModule": "src/utils/move-automation/scripts/singleTargetAttacks.ts",
+      "version": 1,
+      "definitionHash": "6f386c2740f37a12b59d3861f1c08d5c40e406db51cd65271b0be0bfc0a4a946"
+    },
+    {
+      "canonicalId": "Wildbolt Storm",
+      "sourceModule": "src/utils/move-automation/scripts/area.ts",
+      "version": 1,
+      "definitionHash": "2431e2fc04ee45820f19fccf8b47a3c6be36cfc277084a30d7c288b960da12dd"
+    },
+    {
+      "canonicalId": "Will-O-Wisp",
+      "sourceModule": "src/utils/move-automation/scripts/singleTargetStatus.ts",
+      "version": 1,
+      "definitionHash": "acdc8b33406beaabd9b8ce4bfc39d5ca794284e13722282f5d95ba3bac55eabb"
+    },
+    {
+      "canonicalId": "Wing Attack",
+      "sourceModule": "src/utils/move-automation/scripts/singleTargetAttacks.ts",
+      "version": 1,
+      "definitionHash": "8d2194db478564f8ebfb82761b32181af2ad10d1a2aee2e600d4c9d36d7ecb04"
+    },
+    {
+      "canonicalId": "X-Scissor",
+      "sourceModule": "src/utils/move-automation/scripts/singleTargetAttacks.ts",
+      "version": 1,
+      "definitionHash": "ef32714cc307eb5111f77ba4ea5b5516c8408089b4fc06635845fbe23faf3883"
+    },
+    {
+      "canonicalId": "Yawn",
+      "sourceModule": "src/utils/move-automation/scripts/additionalSingleTarget.ts",
+      "version": 1,
+      "definitionHash": "e7945f05985b25c0e822ad612453f25aadfc6a49c9660b20b312e0869f470c24"
+    },
+    {
+      "canonicalId": "Zen Headbutt",
+      "sourceModule": "src/utils/move-automation/scripts/singleTargetConditions.ts",
+      "version": 1,
+      "definitionHash": "dcb7b29cdf840aee4599bff1c10bdb49b4d780c12db7735e14b16c2132d414dd"
+    },
+    {
+      "canonicalId": "Zing Zap",
+      "sourceModule": "src/utils/move-automation/scripts/singleTargetAttacks.ts",
+      "version": 1,
+      "definitionHash": "323893db6fa04f997398976c5aaf6840ed752d6856581b4e4f0c6287a014ffc5"
+    }
+  ]
+}

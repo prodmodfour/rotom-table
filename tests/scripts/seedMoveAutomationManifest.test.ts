@@ -77,6 +77,7 @@ describe('move automation semantic manifest seed script', () => {
       expect(result.status, `${result.stdout}\n${result.stderr}`).toBe(0)
       const seeded = JSON.parse(readFileSync(manifestPath, 'utf8')) as typeof manifestJson
       const registeredIds = new Set(EXPLICIT_MOVE_AUTOMATION_SCRIPTS.keys())
+      const committedById = new Map(manifestJson.moves.map(row => [row.canonicalId, row]))
       const manifestIds = seeded.moves.map(({ canonicalId }) => canonicalId)
       const assisted = seeded.moves.filter(({ baseStatus }) => baseStatus === 'assisted')
       const blocked = seeded.moves.filter(({ baseStatus }) => baseStatus === 'blocked')
@@ -91,11 +92,17 @@ describe('move automation semantic manifest seed script', () => {
         if (registeredIds.has(row.canonicalId)) {
           expect(row).toMatchObject({
             baseStatus: 'assisted',
-            runtime: { kind: 'legacy-v1' },
+            runtime: {
+              kind: 'legacy-v1',
+              version: expect.any(Number),
+              definitionHash: expect.stringMatching(/^[a-f0-9]{64}$/),
+              sourceModule: expect.stringMatching(/^src\/utils\/move-automation\/scripts\/.+\.ts$/),
+            },
             suggestedCapabilityTags: [],
             blockerCodes: [],
             limitations: [{ code: 'audit.required' }],
           })
+          expect(row.runtime).toEqual(committedById.get(row.canonicalId)?.runtime)
         }
         else {
           expect(row).toMatchObject({

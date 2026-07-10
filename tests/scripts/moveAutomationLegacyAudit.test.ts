@@ -38,7 +38,7 @@ describe('legacy move automation audit metadata', () => {
 
     expect(JSON.stringify(second)).toBe(JSON.stringify(first))
     expect(first).toMatchObject({
-      schemaVersion: 1,
+      schemaVersion: 2,
       generatedFrom: 'EXPLICIT_MOVE_AUTOMATION_SCRIPTS',
       entryCount: EXPLICIT_MOVE_AUTOMATION_SCRIPTS.size,
     })
@@ -51,6 +51,7 @@ describe('legacy move automation audit metadata', () => {
       const script = EXPLICIT_MOVE_AUTOMATION_SCRIPTS.get(entry.canonicalId)
       expect(script).toBeDefined()
       expect(entry.v1Version).toBe(script?.version)
+      expect(entry.definitionHash).toMatch(/^[a-f0-9]{64}$/)
       expect(entry.sourceModule).toMatch(/^src\/utils\/move-automation\/scripts\/.+\.ts$/)
       expect(existsSync(resolve(repoRoot, entry.sourceModule))).toBe(true)
       expect(entry).not.toHaveProperty('baseStatus')
@@ -67,6 +68,7 @@ describe('legacy move automation audit metadata', () => {
     expect(entries.get('Scratch')).toMatchObject({
       sourceModule: 'src/utils/move-automation/scripts/area.ts',
       v1Version: 1,
+      definitionHash: expect.stringMatching(/^[a-f0-9]{64}$/),
       targetMode: 'multi-target',
       scriptShape: {
         damageKind: 'ordinary-damage',
@@ -124,6 +126,7 @@ describe('legacy move automation audit metadata', () => {
     expect(reportResult.stdout).toContain(`Registry entries: ${EXPLICIT_MOVE_AUTOMATION_SCRIPTS.size}`)
     expect(reportResult.stdout).toContain('Capability hints are inferred planning aids')
     expect(reportResult.stdout).toContain('\nScratch\n  Source module: src/utils/move-automation/scripts/area.ts')
+    expect(reportResult.stdout).toMatch(/Scratch[\s\S]*Definition hash: [a-f0-9]{64}/)
     expect(reportResult.stdout).toContain('\nYawn\n  Source module: src/utils/move-automation/scripts/additionalSingleTarget.ts')
   })
 })
