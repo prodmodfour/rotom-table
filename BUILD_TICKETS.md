@@ -912,18 +912,46 @@ Status: DONE
 
 **Done:** Target legality and accuracy modifiers use one tested server result.
 
-## MA-073 — Apply relation/state filters to area templates
+## MA-073A — Build the authoritative area-target filtering seam
 
 Status: TODO
 
 **Depends on:** MA-070–MA-072, existing area geometry
-**Commit:** `feat(move-automation): filter authoritative area targets`
+**Commit:** `feat(move-automation): filter geometric area candidates`
 
-**Touch:** authoritative area resolver and tests.
+**Touch:** `shared/moveAutomation/spec.ts`, `server/domain/moveAutomation/areaTargets.ts`, MoveSpec validation/interpreter seams, and focused tests.
 
-**Implement:** Generate geometrically affected placements first, then apply spec predicates per target. Record excluded tokens and reasons without revealing hidden tokens to unauthorized clients.
+**Implement:**
 
-**Done:** Bursts, cones, lines, blasts, pass, and cardinal adjacency can express allies-only, enemies-only, and all-target effects.
+- Allow a reviewed relation/state predicate only on geometric area targeting declarations and validate it strictly.
+- Accept only placement IDs already produced by authoritative geometry, preserve deterministic map order, and evaluate the predicate once for every geometric candidate through the server relationship/state query seams.
+- Return separate eligible IDs and complete server-only inclusion/exclusion evaluations with stable reason codes.
+- Apply bounded explicit Friendly exclusions after predicate evaluation; they may narrow the eligible set but never add an out-of-area or predicate-illegal recipient.
+- Let the interpreter consume server-produced area evaluations without accepting target mechanics from the client.
+
+**Tests:** Cover ally-only, enemy-only, all-target, unknown-side, state exclusion, deterministic order, duplicate/out-of-area Friendly exclusions, and immutable interpreter inputs/results.
+
+**Done:** A pure, bounded seam proves that geometry precedes mechanics and produces complete internal decision evidence without allowing an excluded or out-of-area placement to become eligible.
+
+## MA-073B — Integrate filtered area targets with privacy-safe results
+
+Status: TODO
+
+**Depends on:** MA-073A
+**Commit:** `feat(move-automation): integrate authoritative area filters`
+
+**Touch:** authoritative v1/v2 area resolver, trace and accepted-result projection, authority documentation, and resolver/command tests.
+
+**Implement:**
+
+- Invoke the MA-073A seam for legacy and native v2 moves only after authoritative cells and intersecting placements have been generated; remove any parallel area-filtering path.
+- Apply reviewed relation/state predicates across Burst, Cone, Line, Close Blast, Ranged Blast, Pass, and Cardinally Adjacent templates.
+- Retain complete excluded-token identities and reasons in server audit evidence while redacting rule-excluded or hidden token details from unauthorized accepted results, realtime payloads, trace summaries, and logs. Explicit legal Friendly exclusions may remain visible to their authorized requester.
+- Document the geometry-first and privacy boundary.
+
+**Tests:** Add a template matrix plus mixed ally/enemy/unknown/state scenarios, all-target coverage, v1/v2 parity where applicable, and accepted-command privacy assertions for authorized and unauthorized viewers.
+
+**Done:** Every listed area shape can express allies-only, enemies-only, and all-target effects; server audit evidence records each decision, and no unauthorized client can infer a hidden or rule-excluded token.
 
 ## MA-074 — Implement the bounded numeric expression evaluator
 
@@ -1348,7 +1376,7 @@ Status: TODO
 
 Status: TODO
 
-**Depends on:** MA-108, MA-073, MA-081
+**Depends on:** MA-108, MA-073B, MA-081
 **Commit:** `feat(move-automation): resolve shield reaction families`
 
 **Touch:** reviewed handler/spec modules and scenario tests.
@@ -1374,7 +1402,7 @@ Status: TODO
 
 Status: TODO
 
-**Depends on:** MA-108, MA-060, MA-073
+**Depends on:** MA-108, MA-060, MA-073B
 **Commit:** `feat(move-automation): resolve setup and redirection reactions`
 
 **Touch:** lifecycle/reaction handlers and scenarios.
@@ -1625,7 +1653,7 @@ Status: TODO
 
 Status: TODO
 
-**Depends on:** MA-073, MA-125, MA-133
+**Depends on:** MA-073B, MA-125, MA-133
 **Commit:** `feat(move-automation): select authoritative hazard cells`
 
 **Touch:** `shared/livePlayMoveResolution.ts`, targeting overlays, resolver tests.
@@ -2135,7 +2163,7 @@ Status: TODO
 
 Status: TODO
 
-**Depends on:** MA-055, MA-073
+**Depends on:** MA-055, MA-073B
 **Commit:** `feat(move-automation): complete ally area scripts`
 
 **Implement:** Remove manual ally filtering from Howl, Aromatic Mist, Coaching, and any audited registered peers. Add mixed-side area scenarios.
