@@ -215,27 +215,26 @@ const createDamageQuery = (options: {
         hpLoss: calculation.breakdown.hpLoss,
         preventedBy: null,
         consultedPlacementIds: [],
-        ...(calculation.evaluationTrace.length > 0 ? {
-          details: {
-            contextualDamageBase: calculation.contextualDamageBase
-              ? {
-                  expressionValue: calculation.contextualDamageBase.expressionValue,
-                  rounding: calculation.contextualDamageBase.rounding,
-                  roundedExpressionValue: calculation.contextualDamageBase.roundedExpressionValue,
-                  stabTiming: calculation.contextualDamageBase.stabTiming,
-                  stabBonus: calculation.contextualDamageBase.stabBonus,
-                  valueBeforeBounds: calculation.contextualDamageBase.valueBeforeBounds,
-                  minimum: calculation.contextualDamageBase.minimum,
-                  maximum: calculation.contextualDamageBase.maximum,
-                  boundedValue: calculation.contextualDamageBase.boundedValue,
-                  finalDamageBase: calculation.contextualDamageBase.finalDamageBase,
-                }
-              : null,
-            attackStat: calculation.stats.attackStat ?? null,
-            defenseStat: calculation.stats.defenseStat ?? null,
-            evaluationTrace: calculation.evaluationTrace,
-          } as unknown as MoveResolutionTraceJsonValue,
-        } : {}),
+        details: {
+          contextualDamageBase: calculation.contextualDamageBase
+            ? {
+                expressionValue: calculation.contextualDamageBase.expressionValue,
+                rounding: calculation.contextualDamageBase.rounding,
+                roundedExpressionValue: calculation.contextualDamageBase.roundedExpressionValue,
+                stabTiming: calculation.contextualDamageBase.stabTiming,
+                stabBonus: calculation.contextualDamageBase.stabBonus,
+                valueBeforeBounds: calculation.contextualDamageBase.valueBeforeBounds,
+                minimum: calculation.contextualDamageBase.minimum,
+                maximum: calculation.contextualDamageBase.maximum,
+                boundedValue: calculation.contextualDamageBase.boundedValue,
+                finalDamageBase: calculation.contextualDamageBase.finalDamageBase,
+              }
+            : null,
+          attackStat: calculation.stats.attackStat ?? null,
+          defenseStat: calculation.stats.defenseStat ?? null,
+          evaluationTrace: calculation.evaluationTrace,
+          damagePipeline: calculation.damagePipeline,
+        } as unknown as MoveResolutionTraceJsonValue,
       }
     },
   }

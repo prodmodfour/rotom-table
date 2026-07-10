@@ -994,7 +994,7 @@ Status: DONE
 
 ## MA-077 — Add ordered attack and damage modifier phases
 
-Status: TODO
+Status: DONE
 
 **Depends on:** MA-076
 **Commit:** `feat(move-automation): order attack and damage modifiers`

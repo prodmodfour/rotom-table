@@ -13,6 +13,7 @@ import {
 import {
   resolveMoveDamageStatSelections,
   resolveMoveSpecDamageBreakdown,
+  resolveMoveSpecDamageCalculation,
 } from '~~/server/domain/moveAutomation/damageStats'
 import {
   createFiniteAuthoritativeMoveRandomStream,
@@ -254,6 +255,73 @@ describe('MoveSpec alternate attack and defense stat selection', () => {
       { kind: 'pokemon', slug: 'actor', revision: 3 },
       { kind: 'pokemon', slug: 'target', revision: 5 },
     ])
+  })
+
+  it('records default and contextual contributors through the ordered pipeline', () => {
+    const rules = context()
+    const move = { ...script('Physical'), type: 'Fire' }
+    const operation = damageOperation({ damageClass: 'physical' })
+    const resolution = {
+      ...rolledDamage(move),
+      crit: true,
+      damageRoll: {
+        formula: '2d6+8',
+        count: 2,
+        sides: 6,
+        total: 20,
+        rolls: [4, 6],
+        mod: 10,
+      },
+    }
+    const calculation = resolveMoveSpecDamageCalculation({
+      context: rules,
+      operation,
+      script: move,
+      recipient: rules.queries.tokens.get('target-token')!,
+      resolution,
+      fieldEffects: {
+        weather: [{ kind: 'sunny' }],
+        terrains: [],
+        rooms: [],
+      },
+    })
+
+    expect(calculation.damagePipeline?.stages.map(stage => stage.stage)).toEqual([
+      'base-damage-base',
+      'attack-stat',
+      'defense-stat',
+      'pre-type-modifiers',
+      'type-effectiveness',
+      'critical-modifiers',
+      'post-damage-modifiers',
+      'minimum-damage',
+      'final-hp-loss',
+    ])
+    expect(calculation.damagePipeline).toMatchObject({
+      damageBase: 4,
+      minimumDamageApplied: false,
+    })
+    expect(calculation.damagePipeline?.stages.flatMap(stage => stage.modifiers)).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          id: 'damage.field-roll',
+          source: { kind: 'field', id: 'active-field-effects' },
+          stackingGroup: 'field-damage-roll',
+          reasonCode: 'damage.field-roll-modifier',
+          value: 5,
+        }),
+        expect.objectContaining({
+          id: 'damage.critical-roll',
+          stage: 'critical-modifiers',
+          source: { kind: 'move', id: 'Stat Selector Test' },
+          value: 10,
+        }),
+      ]),
+    )
+    expect(calculation.damagePipeline?.criticalScaledDamage).toBe(
+      (calculation.damagePipeline?.typeScaledDamage ?? 0) + 10,
+    )
+    expect(calculation.breakdown.hpLoss).toBe(calculation.damagePipeline?.hpLoss)
   })
 
   it('compares alternate offense and defense stats deterministically', () => {

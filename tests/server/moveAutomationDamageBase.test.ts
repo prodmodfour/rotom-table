@@ -453,6 +453,26 @@ describe('native MoveSpec contextual Damage Base resolver', () => {
                   value: 6,
                 }),
               ],
+              damagePipeline: {
+                damageBase: 8,
+                hpLoss: expect.any(Number),
+                stages: expect.arrayContaining([
+                  expect.objectContaining({
+                    stage: 'base-damage-base',
+                    damageBase: 8,
+                    modifiers: expect.arrayContaining([
+                      expect.objectContaining({
+                        id: 'damage.base-roll',
+                        priority: -100_000,
+                        source: { kind: 'move', id: 'Tackle' },
+                        stackingGroup: 'base-damage-roll',
+                        reasonCode: 'damage.base-roll',
+                      }),
+                    ]),
+                  }),
+                  expect.objectContaining({ stage: 'final-hp-loss' }),
+                ]),
+              },
             },
           },
         }],

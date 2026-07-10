@@ -94,7 +94,8 @@ describe('move automation target resolution helpers', () => {
       damageRoll: { formula: '2d6+8', count: 2, sides: 6, total: 20, rolls: [6, 6], mod: 8 },
     }
     expect(resolveMoveAutomationTargetDamageLoss(s, user, target, rolledDamage)).toBe(37)
-    expect(resolveMoveAutomationTargetDamageBreakdown(s, user, target, rolledDamage)).toMatchObject({
+    const breakdown = resolveMoveAutomationTargetDamageBreakdown(s, user, target, rolledDamage)
+    expect(breakdown).toMatchObject({
       kind: 'standard',
       hpLoss: 37,
       terms: [
@@ -104,6 +105,28 @@ describe('move automation target resolution helpers', () => {
       ],
       multiplierLabel: '1.5',
     })
+    const pipeline = breakdown.kind === 'standard' ? breakdown.pipeline : null
+    expect(pipeline).toMatchObject({
+      damageBase: 4,
+      preTypeDamage: 25,
+      typeScaledDamage: 37,
+      criticalScaledDamage: 37,
+      hpLoss: 37,
+    })
+    expect(pipeline?.stages.flatMap(stage => stage.modifiers)).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        id: 'damage.attack-stat',
+        priority: 0,
+        source: { kind: 'placement', id: 'u' },
+        stackingGroup: 'attack-stat',
+        reasonCode: 'damage.default-attack-stat',
+      }),
+      expect.objectContaining({
+        id: 'damage.type-effectiveness',
+        stage: 'type-effectiveness',
+        value: 1.5,
+      }),
+    ]))
 
     expect(resolveMoveAutomationTargetDamageLoss(s, user, target, {
       ...defaultTargetResolutionState(s),

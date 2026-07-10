@@ -16,6 +16,12 @@ import { conditionBaseName, normalizeConditionNames } from '~/utils/statusCondit
 import { ELECTRIC_RESISTANT_COAT_CONDITION } from '~/utils/moveAutomationSpecialConditions'
 import { moveAutomationMoveImmunitySource } from '~/utils/moveAutomationMoveImmunity'
 import { moveAutomationPassiveImmunityKeywordsForTarget } from '~/utils/moveAutomationKeywordImmunity'
+import {
+  resolveMoveDamagePipeline,
+  type MoveDamageModifier,
+  type MoveDamageModifierSource,
+  type MoveDamagePipelineResult,
+} from '~/utils/moveAutomationDamagePipeline'
 import type { MapFieldEffects } from '~/types/map'
 import type { MoveAutomationScript } from '~/types/moveAutomation'
 import type { SpawnedPokemon } from '~/types/pokemon'
@@ -69,6 +75,8 @@ export interface MoveAutomationStandardDamageBreakdown extends MoveAutomationDam
   scaledDamage: number
   minimumDamageApplied: boolean
   critical: boolean
+  /** Complete ordered arithmetic evidence; optional only for legacy formatted fixtures. */
+  pipeline?: MoveDamagePipelineResult
 }
 
 export type MoveAutomationDamageBreakdown =
@@ -153,11 +161,21 @@ export interface MoveAutomationResolvedDamageStat {
   readonly label: string
   /** Applies actor-owned contextual offense modifiers such as Infatuation. */
   readonly applyActorOffenseModifiers?: boolean
+  /** Reviewed origin retained when an operation selects a non-default stat. */
+  readonly source?: MoveDamageModifierSource
 }
 
 export interface MoveAutomationResolvedDamageStats {
   readonly attackStat?: MoveAutomationResolvedDamageStat
   readonly defenseStat?: MoveAutomationResolvedDamageStat
+}
+
+export interface MoveAutomationResolvedDamageInputs {
+  readonly stats?: MoveAutomationResolvedDamageStats
+  /** Final per-recipient DB that produced the authoritative damage roll. */
+  readonly damageBase?: number | null
+  /** Future server-owned queries may contribute only fully attributed modifiers. */
+  readonly additionalModifiers?: readonly MoveDamageModifier[]
 }
 
 export const resolveMoveAutomationTargetDamageBreakdown = (
@@ -167,7 +185,7 @@ export const resolveMoveAutomationTargetDamageBreakdown = (
   resolution: MoveAutomationTargetResolutionState | undefined,
   fieldEffects?: MapFieldEffects,
   selectedTargets: readonly SpawnedPokemon[] = [target],
-  resolvedStats: MoveAutomationResolvedDamageStats = {},
+  resolvedDamage: MoveAutomationResolvedDamageInputs = {},
 ): MoveAutomationDamageBreakdown => {
   if (!script?.damaging) return NO_DAMAGE_BREAKDOWN
   const state = resolution ?? defaultTargetResolutionState(script)
@@ -184,6 +202,7 @@ export const resolveMoveAutomationTargetDamageBreakdown = (
     if (directHpLoss <= 0) return NO_DAMAGE_BREAKDOWN
     return { kind: 'direct', hpLoss: directHpLoss, label: script.directHpLoss?.label ?? 'direct HP loss' }
   }
+  const resolvedStats = resolvedDamage.stats ?? {}
   const baseRollTotal = state.damageRoll?.total ?? 0
   const criticalDamageBonus = state.criticalBonusDamage != null
     ? state.criticalBonusDamage
@@ -194,7 +213,6 @@ export const resolveMoveAutomationTargetDamageBreakdown = (
   if (unmodifiedRaw <= 0) return NO_DAMAGE_BREAKDOWN
   const infatuation = resolveInfatuationDamageEffect(user.conditions, selectedTargets)
   const conditionRollModifier = conditionDamageRollModifier(user.conditions)
-  const raw = unmodifiedRaw + infatuation.damageRollModifier + conditionRollModifier
   const physical = script.damageClass === 'Physical'
   const defaultOffense = physical
     ? applyCombatStageToStat(user.atk, conditionAdjustedCombatStage(
@@ -229,9 +247,134 @@ export const resolveMoveAutomationTargetDamageBreakdown = (
   const fieldBonus = fieldEffectDamageBonus(script.type, fieldEffects)
   const multiplier = moveAutomationTargetDamageMultiplier(script, target)
   if (multiplier === 0) return NO_DAMAGE_BREAKDOWN
-  const afterDefense = raw + offense + fieldBonus - defense
-  const scaledDamage = Math.floor(afterDefense * multiplier)
-  const hpLoss = Math.max(1, scaledDamage)
+
+  const moveSource = { kind: 'move', id: script.moveName } as const
+  const modifiers: MoveDamageModifier[] = [{
+    id: 'damage.base-roll',
+    stage: 'base-damage-base',
+    priority: -100_000,
+    source: moveSource,
+    stackingGroup: 'base-damage-roll',
+    reasonCode: 'damage.base-roll',
+    operation: 'set',
+    value: baseRollTotal,
+  }, {
+    id: 'damage.attack-stat',
+    stage: 'attack-stat',
+    priority: 0,
+    source: resolvedStats.attackStat?.source ?? { kind: 'placement', id: user.id },
+    stackingGroup: 'attack-stat',
+    reasonCode: resolvedStats.attackStat
+      ? 'damage.reviewed-attack-stat'
+      : 'damage.default-attack-stat',
+    operation: 'add',
+    value: offense,
+  }, {
+    id: 'damage.defense-stat',
+    stage: 'defense-stat',
+    priority: 0,
+    source: resolvedStats.defenseStat?.source ?? { kind: 'placement', id: target.id },
+    stackingGroup: 'defense-stat',
+    reasonCode: resolvedStats.defenseStat
+      ? 'damage.reviewed-defense-stat'
+      : 'damage.default-defense-stat',
+    operation: 'subtract',
+    value: defense,
+  }]
+  if (conditionRollModifier !== 0) {
+    modifiers.push({
+      id: 'damage.condition-roll',
+      stage: 'pre-type-modifiers',
+      priority: 100,
+      source: { kind: 'condition', id: 'Helping Hand' },
+      stackingGroup: 'condition-damage-roll',
+      reasonCode: 'damage.condition-roll-modifier',
+      operation: 'add',
+      value: conditionRollModifier,
+    })
+  }
+  if (infatuation.damageRollModifier !== 0) {
+    modifiers.push({
+      id: 'damage.infatuation-roll',
+      stage: 'pre-type-modifiers',
+      priority: 110,
+      source: { kind: 'condition', id: 'Infatuation' },
+      stackingGroup: 'condition-damage-roll',
+      reasonCode: 'damage.infatuation-roll-modifier',
+      operation: 'add',
+      value: infatuation.damageRollModifier,
+    })
+  }
+  if (fieldBonus !== 0) {
+    modifiers.push({
+      id: 'damage.field-roll',
+      stage: 'pre-type-modifiers',
+      priority: 200,
+      source: { kind: 'field', id: 'active-field-effects' },
+      stackingGroup: 'field-damage-roll',
+      reasonCode: 'damage.field-roll-modifier',
+      operation: 'add',
+      value: fieldBonus,
+    })
+  }
+  modifiers.push({
+    id: 'damage.type-effectiveness',
+    stage: 'type-effectiveness',
+    priority: 0,
+    source: { kind: 'type', id: target.id },
+    stackingGroup: 'type-effectiveness',
+    reasonCode: 'damage.type-effectiveness',
+    operation: 'multiply-floor',
+    value: multiplier,
+  })
+  if (state.crit || criticalDamageBonus !== 0) {
+    modifiers.push({
+      id: 'damage.critical-roll',
+      stage: 'critical-modifiers',
+      priority: 0,
+      source: moveSource,
+      stackingGroup: 'critical-damage-roll',
+      reasonCode: 'damage.critical-hit-roll',
+      operation: 'add-before-type',
+      value: criticalDamageBonus,
+    })
+  }
+  modifiers.push(
+    ...(resolvedDamage.additionalModifiers ?? []),
+    {
+      id: 'damage.minimum',
+      stage: 'minimum-damage',
+      priority: 100_000,
+      source: { kind: 'rules', id: 'ptu.minimum-damage' },
+      stackingGroup: 'minimum-damage',
+      reasonCode: 'damage.minimum-one',
+      operation: 'floor-at-least',
+      value: 1,
+    },
+    {
+      id: 'damage.final-non-negative',
+      stage: 'final-hp-loss',
+      priority: 99_998,
+      source: { kind: 'rules', id: 'ptu.final-hp-loss' },
+      stackingGroup: 'final-hp-loss',
+      reasonCode: 'damage.final-non-negative',
+      operation: 'floor-at-least',
+      value: 0,
+    },
+    {
+      id: 'damage.final-floor',
+      stage: 'final-hp-loss',
+      priority: 99_999,
+      source: { kind: 'rules', id: 'ptu.final-hp-loss' },
+      stackingGroup: 'final-hp-loss',
+      reasonCode: 'damage.final-floor',
+      operation: 'floor',
+    },
+  )
+  const pipeline = resolveMoveDamagePipeline({
+    damageBase: resolvedDamage.damageBase ?? script.damageBase,
+    modifiers,
+  })
   const terms: MoveAutomationDamageBreakdownTerm[] = [
     damageTerm(baseRollTotal, 'roll'),
   ]
@@ -251,13 +394,14 @@ export const resolveMoveAutomationTargetDamageBreakdown = (
 
   return {
     kind: 'standard',
-    hpLoss,
+    hpLoss: pipeline.hpLoss,
     terms,
     multiplier,
     multiplierLabel: formatMultiplier(multiplier),
-    scaledDamage,
-    minimumDamageApplied: hpLoss !== scaledDamage,
+    scaledDamage: pipeline.postModifierDamage,
+    minimumDamageApplied: pipeline.minimumDamageApplied,
     critical: state.crit,
+    pipeline,
   }
 }
 

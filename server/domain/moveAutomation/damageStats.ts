@@ -18,6 +18,7 @@ import type { MapFieldEffects } from '~/types/map'
 import type { MoveAutomationScript } from '~/types/moveAutomation'
 import type { AuthoritativeMoveRulesContext } from './context'
 import type { MoveContextualDamageBaseResolution } from './damageBase'
+import type { MoveDamagePipelineResult } from '~/utils/moveAutomationDamagePipeline'
 import {
   evaluateMoveExpression,
   type MoveRuleEvaluationTraceEntry,
@@ -54,6 +55,7 @@ export interface MoveSpecDamageCalculation {
   readonly breakdown: MoveAutomationDamageBreakdown
   readonly stats: MoveDamageStatSelectionResolution
   readonly contextualDamageBase: MoveContextualDamageBaseResolution | null
+  readonly damagePipeline: MoveDamagePipelineResult | null
   /** Contextual DB nodes precede attack/defense selection nodes in audit order. */
   readonly evaluationTrace: readonly MoveRuleEvaluationTraceEntry[]
 }
@@ -124,6 +126,7 @@ const evaluateStatSelection = (options: {
     stat: {
       value: result.value,
       label: statSelectionLabel(options.expression),
+      source: { kind: 'operation', id: options.operation.id },
       ...(options.field === 'attackStat' ? {
         applyActorOffenseModifiers: appliesActorOffenseModifiers(options.expression),
       } : {}),
@@ -175,10 +178,7 @@ export interface ResolveMoveSpecDamageCalculationInput {
   readonly contextualDamageBase?: MoveContextualDamageBaseResolution
 }
 
-/**
- * Apply reviewed stat selections to the existing damage kernel without moving
- * type, critical, or ordered-modifier work forward from later tickets.
- */
+/** Resolve reviewed DB/stat inputs through the single ordered damage pipeline. */
 export const resolveMoveSpecDamageCalculation = (
   options: ResolveMoveSpecDamageCalculationInput,
 ): MoveSpecDamageCalculation => {
@@ -187,6 +187,12 @@ export const resolveMoveSpecDamageCalculation = (
     operation: options.operation,
     recipientId: options.recipient.id,
   })
+  const contextualDamageBase = options.contextualDamageBase ?? null
+  const damageBase = contextualDamageBase?.finalDamageBase
+    ?? options.script.damageBase
+    ?? (typeof options.operation.payload.damageBase === 'number'
+      ? options.operation.payload.damageBase
+      : null)
   const breakdown = resolveMoveAutomationTargetDamageBreakdown(
     options.script,
     options.context.actor.token,
@@ -194,13 +200,13 @@ export const resolveMoveSpecDamageCalculation = (
     options.resolution,
     options.fieldEffects,
     options.selectedTargets,
-    stats,
+    { stats, damageBase },
   )
-  const contextualDamageBase = options.contextualDamageBase ?? null
   return deepFreeze({
     breakdown,
     stats,
     contextualDamageBase,
+    damagePipeline: breakdown.kind === 'standard' ? breakdown.pipeline ?? null : null,
     evaluationTrace: [
       ...(contextualDamageBase?.evaluationTrace ?? []),
       ...stats.trace,
