@@ -563,7 +563,7 @@ Status: DONE
 
 ## MA-038 — Implement the phased interpreter skeleton
 
-Status: TODO
+Status: DONE
 
 **Depends on:** MA-033, MA-035–MA-037
 **Commit:** `feat(move-automation): execute phased movespec plans`
