@@ -334,6 +334,35 @@ describe('resolveAuthoritativeMove', () => {
         finalValue: 1,
       }),
     ])
+    expect(lowDamage.auditTrace).toMatchObject({
+      schemaVersion: 1,
+      program: {
+        canonicalId: 'Tackle',
+        runtimeKind: 'legacy-v1',
+        runtimeVersion: 1,
+        definitionHash: expect.stringMatching(/^[a-f0-9]{64}$/),
+      },
+      ruleset: {
+        rulesetId: 'rotom-table-reference-moves-v1',
+        sourceDataSha256: expect.stringMatching(/^[a-f0-9]{64}$/),
+      },
+    })
+    expect(lowDamage.auditTrace.events).toEqual(expect.arrayContaining([
+      expect.objectContaining({ kind: 'target', targetId: 'target-a', outcome: 'included' }),
+      expect.objectContaining({ kind: 'predicate', predicateId: 'legacy-v1.accuracy.1', outcome: true }),
+      expect.objectContaining({ kind: 'roll', roll: expect.objectContaining({ rollId: 'legacy-v1.accuracy.1' }) }),
+      expect.objectContaining({
+        kind: 'operation',
+        operationKind: 'direct-hp',
+        recipientIds: ['target-a'],
+        outcome: 'applied',
+        result: expect.objectContaining({ id: 'target-a' }),
+      }),
+    ]))
+    expect(miss.auditTrace.events).toEqual(expect.arrayContaining([
+      expect.objectContaining({ kind: 'predicate', predicateId: 'legacy-v1.accuracy.1', outcome: false }),
+      expect.objectContaining({ kind: 'phase-transition', to: 'miss' }),
+    ]))
     expect(lowDamage.desiredFacing).toBe('south-east')
     expect(highDamage.transaction.hpUpdates).not.toEqual(lowDamage.transaction.hpUpdates)
   })
@@ -567,6 +596,17 @@ describe('resolveAuthoritativeMove', () => {
       blockedBy: 'Sweet Veil (aura)',
     })
     expect(resolution.transaction.conditionUpdates).toEqual([])
+    expect(resolution.auditTrace.events).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        kind: 'operation',
+        operationKind: 'condition',
+        recipientIds: ['target-token'],
+        outcome: 'prevented',
+        reasonCode: 'condition-prevented',
+        input: { condition: 'Sleep' },
+        result: { applied: false, blockedBy: 'Sweet Veil (aura)' },
+      }),
+    ]))
     expect(resolution.sheetReads).toEqual([
       { kind: 'pokemon', slug: 'actor', revision: 2 },
       { kind: 'pokemon', slug: 'target-a', revision: 0 },

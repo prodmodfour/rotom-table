@@ -260,6 +260,7 @@ const cloneResolution = (resolution: AuthoritativeMoveResolution): Authoritative
   selectedTargetIds: [...resolution.selectedTargetIds],
   sheetReads: cloneJson(resolution.sheetReads),
   rollLedger: cloneJson(resolution.rollLedger),
+  auditTrace: cloneJson(resolution.auditTrace),
   script: cloneJson(resolution.script),
   transaction: cloneMoveAutomationTransaction(resolution.transaction),
   ...(resolution.feedback === undefined ? {} : { feedback: cloneJson(resolution.feedback) }),

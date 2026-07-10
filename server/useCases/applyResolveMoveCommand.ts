@@ -36,6 +36,7 @@ import {
   type PlanAuthoritativeMoveStateInput,
 } from '../domain/planAuthoritativeMoveState'
 import type { AuthoritativeMoveRandomSource } from '../domain/moveAutomation/random'
+import { summarizeMoveResolutionTrace } from '../domain/moveAutomation/trace'
 import {
   actorCanControlMapPlacement,
   playerProfileLinkedTrainerSheetsForTokenControl,
@@ -315,9 +316,12 @@ const planMoveState = (
 }
 
 const moveResultFromPlan = (plan: AuthoritativeMoveStatePlan): LivePlayResolvedMoveResult => {
+  const clonedResolution = deepCloneJson(plan.resolution)
+  const { auditTrace, ...publicResolution } = clonedResolution
   const candidate = {
     schemaVersion: LIVE_PLAY_RESOLVED_MOVE_RESULT_SCHEMA_VERSION,
-    ...deepCloneJson(plan.resolution),
+    ...publicResolution,
+    trace: summarizeMoveResolutionTrace(auditTrace),
   }
   const parsed = parseLivePlayResolvedMoveResult(candidate)
   if (!parsed.valid) {

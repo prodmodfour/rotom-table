@@ -4,6 +4,11 @@ import {
   type MoveAutomationRollLedgerEntry,
 } from './moveAutomation/random'
 import {
+  MoveResolutionTraceValidationError,
+  parseMoveResolutionTraceSummary,
+  type MoveResolutionTraceSummary,
+} from './moveAutomation/trace'
+import {
   MOVE_AUTOMATION_AREA_DIRECTIONS,
   type MoveAutomationAreaDirection,
   type MoveAutomationAreaTemplate,
@@ -85,6 +90,8 @@ export interface LivePlayResolvedMoveResult {
   readonly targetBranchId?: string
   readonly selectedTargetIds: readonly string[]
   readonly rollLedger: readonly MoveAutomationRollLedgerEntry[]
+  /** New accepted results always include this; historical stored results remain readable without it. */
+  readonly trace?: MoveResolutionTraceSummary
   readonly script: MoveAutomationScript
   readonly transaction: MoveAutomationTransaction
   readonly feedback?: MoveAutomationFeedbackState
@@ -161,6 +168,9 @@ const FORBIDDEN_CLIENT_AUTHORITY_FIELDS = new Set([
   'roll',
   'rolls',
   'rollLedger',
+  'trace',
+  'auditTrace',
+  'resolutionTrace',
   'accuracyRoll',
   'accuracyRolls',
   'damage',
@@ -613,6 +623,23 @@ const parseResolvedMoveRollLedger = (
   }
 }
 
+const parseResolvedMoveTrace = (
+  value: unknown,
+  path: string,
+  issues: LivePlayResolvedMoveResultValidationIssue[],
+): MoveResolutionTraceSummary | null => {
+  try {
+    return parseMoveResolutionTraceSummary(value, path)
+  }
+  catch (error) {
+    if (error instanceof MoveResolutionTraceValidationError) {
+      addResolvedMoveIssue(issues, error.path, 'invalid-field', error.message)
+      return null
+    }
+    throw error
+  }
+}
+
 const parseResolvedMoveRecordArray = (
   value: unknown,
   path: string,
@@ -885,6 +912,9 @@ export const parseLivePlayResolvedMoveResult = (value: unknown): ParseLivePlayRe
   const rollLedger = hasOwn(value, 'rollLedger')
     ? parseResolvedMoveRollLedger(value.rollLedger, 'rollLedger', issues)
     : []
+  const trace = hasOwn(value, 'trace')
+    ? parseResolvedMoveTrace(value.trace, 'trace', issues)
+    : null
   if (!isRecord(value.script)) {
     addResolvedMoveIssue(issues, 'script', 'invalid-field', 'script must be an object.')
   }
@@ -927,6 +957,7 @@ export const parseLivePlayResolvedMoveResult = (value: unknown): ParseLivePlayRe
       ...(targetBranchId ? { targetBranchId } : {}),
       selectedTargetIds,
       rollLedger,
+      ...(trace ? { trace } : {}),
       script: cloneJson(value.script) as unknown as MoveAutomationScript,
       transaction,
       ...(feedback ? { feedback } : {}),

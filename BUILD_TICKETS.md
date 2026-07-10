@@ -550,7 +550,7 @@ Status: DONE
 
 ## MA-037 — Add a structured effect and decision trace
 
-Status: TODO
+Status: DONE
 
 **Depends on:** MA-031, MA-036
 **Commit:** `feat(move-automation): emit structured resolution trace`

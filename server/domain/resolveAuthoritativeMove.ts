@@ -1,4 +1,5 @@
 import type { MoveAutomationRollLedgerEntry } from '#shared/moveAutomation/random'
+import type { MoveResolutionAuditTrace } from '#shared/moveAutomation/trace'
 import { MOVE_AUTOMATION_AREA_DIRECTIONS } from '~/types/moveAutomation'
 import type { ResolveMoveIntent, ResolveMoveSelection } from '#shared/livePlayMoveResolution'
 import { LIVE_PLAY_MOVE_RESOLUTION_MAX_TARGET_IDS } from '#shared/livePlayMoveResolution'
@@ -59,6 +60,8 @@ import {
   type AuthoritativeMoveRulesContext,
   type AuthoritativeMoveSheetRead,
 } from './moveAutomation/context'
+import { hashLegacyMoveAutomationDefinition } from './moveAutomation/legacyV1Definition'
+import { buildLegacyV1MoveResolutionTrace } from './moveAutomation/legacyV1Trace'
 import type { AuthoritativeMoveRandomSource } from './moveAutomation/random'
 
 export type { AuthoritativeMoveSheetRead } from './moveAutomation/context'
@@ -162,6 +165,8 @@ export interface AuthoritativeMoveResolution {
   readonly selectedTargetIds: readonly string[]
   readonly sheetReads: readonly AuthoritativeMoveSheetRead[]
   readonly rollLedger: readonly MoveAutomationRollLedgerEntry[]
+  /** Complete server-only trace; accepted results receive its bounded sanitized projection. */
+  readonly auditTrace: MoveResolutionAuditTrace
   readonly script: MoveAutomationScript
   readonly transaction: MoveAutomationTransaction
   readonly feedback?: MoveAutomationFeedbackState
@@ -172,7 +177,7 @@ export interface AuthoritativeMoveResolution {
 
 type UnfinalizedAuthoritativeMoveResolution = Omit<
   AuthoritativeMoveResolution,
-  'sheetReads' | 'rollLedger'
+  'sheetReads' | 'rollLedger' | 'auditTrace'
 >
 
 const fail = (
@@ -252,11 +257,45 @@ const authoritativeConditionImmunityContext = (
 const finalizeResolution = (
   context: AuthoritativeMoveRulesContext,
   resolution: UnfinalizedAuthoritativeMoveResolution,
-): AuthoritativeMoveResolution => ({
-  ...resolution,
-  sheetReads: context.reads.snapshot(),
-  rollLedger: context.random.complete(),
-})
+): AuthoritativeMoveResolution => {
+  const rollLedger = context.random.complete()
+  const registeredRuntime = context.queries.rules.runtimeFor(resolution.canonicalMoveName)
+  const program = registeredRuntime
+    ? {
+        canonicalId: registeredRuntime.canonicalId,
+        runtimeKind: registeredRuntime.kind,
+        runtimeVersion: registeredRuntime.version,
+        definitionHash: registeredRuntime.definitionHash,
+      }
+    : {
+        canonicalId: resolution.canonicalMoveName,
+        runtimeKind: 'legacy-v1' as const,
+        runtimeVersion: resolution.script.version,
+        definitionHash: hashLegacyMoveAutomationDefinition(resolution.script),
+      }
+  const auditTrace = buildLegacyV1MoveResolutionTrace({
+    program,
+    ruleset: {
+      rulesetId: context.ruleset.rulesetId,
+      sourceDataSha256: context.ruleset.sourceData.sha256,
+    },
+    actorPlacementId: resolution.actorPlacementId,
+    selectionKind: context.intent.selection.kind,
+    selectedTargetIds: resolution.selectedTargetIds,
+    script: resolution.script,
+    transaction: resolution.transaction,
+    rollLedger,
+    feedback: resolution.feedback,
+    area: resolution.area,
+    movement: resolution.movement,
+  })
+  return {
+    ...resolution,
+    sheetReads: context.reads.snapshot(),
+    rollLedger,
+    auditTrace,
+  }
+}
 
 const resolveSelectedTarget = (
   context: AuthoritativeMoveRulesContext,

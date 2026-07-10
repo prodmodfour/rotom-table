@@ -367,6 +367,27 @@ describe('executeLivePlayResolveMoveCommandUseCase', () => {
       'legacy-v1.accuracy',
       'legacy-v1.damage',
     ])
+    expect(targetPayload.move.trace).toMatchObject({
+      schemaVersion: 1,
+      program: {
+        canonicalId: 'Tackle',
+        runtimeKind: 'legacy-v1',
+        runtimeVersion: 1,
+        definitionHash: expect.stringMatching(/^[a-f0-9]{64}$/),
+      },
+      ruleset: {
+        rulesetId: 'rotom-table-reference-moves-v1',
+        sourceDataSha256: expect.stringMatching(/^[a-f0-9]{64}$/),
+      },
+      truncated: false,
+    })
+    expect(targetPayload.move.trace?.events).toEqual(expect.arrayContaining([
+      expect.objectContaining({ kind: 'target', targetId: 'target-a', outcome: 'included' }),
+      expect.objectContaining({ kind: 'roll', rollId: 'legacy-v1.accuracy.1' }),
+      expect.objectContaining({ kind: 'operation', operationKind: 'direct-hp', outcome: 'applied' }),
+    ]))
+    expect('auditTrace' in targetPayload.move).toBe(false)
+    expect(JSON.stringify(targetPayload.move.trace)).not.toContain('absolute-hp-state')
     expect(targetPayload.sheets.map((sheet) => `${sheet.kind}:${sheet.slug}`)).toContain('pokemon:target-a')
     expect(targetResponse.map).toEqual(targetHarness.maps.getBySlug('arena'))
     expect(targetResponse.sheetUpdates?.[0]?.sheet).toEqual(targetHarness.sheets.getByRef('pokemon', 'target-a')?.sheet)
@@ -722,6 +743,8 @@ describe('executeLivePlayResolveMoveCommandUseCase', () => {
       ])
       expect(storedResult).toEqual(firstResult)
       const expectedRollLedger = moveRollLedger(first.move)
+      const expectedTrace = deepCloneJson(first.move?.trace)
+      expect(expectedTrace).toBeDefined()
       expect(expectedRollLedger).toEqual([
         expect.objectContaining({
           rollId: 'legacy-v1.accuracy.1',
@@ -745,6 +768,15 @@ describe('executeLivePlayResolveMoveCommandUseCase', () => {
         expectedRollLedger,
         expectedRollLedger,
       ])
+      expect([
+        firstPayload.move.trace,
+        storedPayload.move.trace,
+        realtimePayload.move.trace,
+      ]).toEqual([
+        expectedTrace,
+        expectedTrace,
+        expectedTrace,
+      ])
 
       const firstEventCount = harness.events.length
       const firstCommittedMap = deepCloneJson(harness.maps.getBySlug('arena'))
@@ -764,6 +796,8 @@ describe('executeLivePlayResolveMoveCommandUseCase', () => {
       expect(moveTargetIdentity(duplicatePayload.move)).toEqual(expectedTargetIdentity)
       expect(moveRollLedger(duplicate.move)).toEqual(expectedRollLedger)
       expect(moveRollLedger(duplicatePayload.move)).toEqual(expectedRollLedger)
+      expect(duplicate.move?.trace).toEqual(expectedTrace)
+      expect(duplicatePayload.move.trace).toEqual(expectedTrace)
       expect(plannerCalls).toBe(1)
       expect(randomCalls).toBe(2)
       expect(harness.events).toHaveLength(firstEventCount)

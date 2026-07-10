@@ -112,6 +112,8 @@ describe('live play move-resolution intent parsing', () => {
       ...baseIntent({ kind: 'single-target', targetPlacementId: 'target' }),
       accuracyRoll: 20,
       rollLedger: [{ rollId: 'client-roll' }],
+      trace: { events: [] },
+      auditTrace: { events: [] },
       damageRoll: { total: 99 },
       script: { moveName: 'Fake' },
       runtime: { kind: 'movespec-v2' },

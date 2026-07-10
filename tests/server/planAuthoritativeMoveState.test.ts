@@ -201,6 +201,11 @@ describe('planAuthoritativeMoveState', () => {
       { rollId: 'legacy-v1.damage.1', parentEffectId: 'legacy-v1.damage', naturalResult: 1, finalValue: 7 },
     ])
     expect(structuredClone(plan.resolution).rollLedger).toEqual(plan.resolution.rollLedger)
+    expect(structuredClone(plan.resolution).auditTrace).toEqual(plan.resolution.auditTrace)
+    expect(plan.resolution.auditTrace.events).toEqual(expect.arrayContaining([
+      expect.objectContaining({ kind: 'roll', roll: expect.objectContaining({ rollId: 'legacy-v1.accuracy.1' }) }),
+      expect.objectContaining({ kind: 'operation', operationKind: 'direct-hp', recipientIds: ['target-token'] }),
+    ]))
     expect(plan.sheetWrites).toHaveLength(1)
     expect(plan.sheetWrites[0]?.slug).toBe('target')
     expect(plan.sheetWrites[0]?.changedFields).toContain('hp')
