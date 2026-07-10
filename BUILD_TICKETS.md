@@ -485,7 +485,7 @@ Status: DONE
 
 ## MA-032 — Define expressions, selectors, and predicates
 
-Status: TODO
+Status: DONE
 
 **Depends on:** MA-030
 **Commit:** `feat(move-automation): define rules expression language`
