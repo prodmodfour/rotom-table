@@ -1,5 +1,6 @@
 import {
   isLivePlayOpId,
+  type LivePlayCommandAccepted,
   type LivePlayOpId,
 } from '../livePlayCommands'
 import { isSlug } from '../paths'
@@ -173,6 +174,16 @@ export interface PendingMoveResolutionPublicSummary {
   readonly outstandingWindowCount: number
   readonly createdAt: number
   readonly updatedAt: number
+}
+
+/**
+ * Non-terminal acknowledgement for a declaration that durably suspended.
+ * It deliberately remains outside `live_play_ops` even though its revision
+ * and patch envelope match ordinary accepted map-command responses.
+ */
+export interface PendingMoveDeclarationResult extends LivePlayCommandAccepted {
+  readonly pending: true
+  readonly pendingResolution: PendingMoveResolutionPublicSummary
 }
 
 export interface PendingMoveResolution {
@@ -1228,6 +1239,79 @@ export const parsePendingMoveResolutionPublicSummary = (
 ): PendingMoveResolutionPublicSummary => deepFreeze(
   parsePublicSummaryRecord(detachedJson(value, path), path),
 )
+
+export const createPendingMoveDeclarationResult = (input: {
+  readonly opId: string
+  readonly mapSlug: string
+  readonly previousRevision: number
+  readonly revision: number
+  readonly pendingResolution: PendingMoveResolutionPublicSummary
+}): PendingMoveDeclarationResult => {
+  if (!isLivePlayOpId(input.opId)) {
+    fail('invalid-pending-resolution', 'pendingDeclaration.opId', 'must be a valid live-play operation ID.')
+  }
+  if (!isSlug(input.mapSlug)) {
+    fail('invalid-pending-resolution', 'pendingDeclaration.mapSlug', 'must be a lowercase map slug.')
+  }
+  const previousRevision = parseInteger(
+    input.previousRevision,
+    'pendingDeclaration.previousRevision',
+    0,
+    Number.MAX_SAFE_INTEGER,
+  )
+  const revision = parseInteger(
+    input.revision,
+    'pendingDeclaration.revision',
+    0,
+    Number.MAX_SAFE_INTEGER,
+  )
+  if (revision !== previousRevision + 1) {
+    fail(
+      'inconsistent-state',
+      'pendingDeclaration.revision',
+      'must advance the originating map revision exactly once.',
+    )
+  }
+  const pendingResolution = parsePendingMoveResolutionPublicSummary(
+    input.pendingResolution,
+    'pendingDeclaration.pendingResolution',
+  )
+  if (pendingResolution.status !== 'pending') {
+    fail(
+      'inconsistent-state',
+      'pendingDeclaration.pendingResolution.status',
+      'a suspended declaration must expose pending status.',
+    )
+  }
+  return deepFreeze({
+    ok: true,
+    pending: true,
+    opId: input.opId,
+    mapSlug: input.mapSlug,
+    previousRevision,
+    revision,
+    patches: [],
+    pendingResolution,
+  })
+}
+
+export const isPendingMoveDeclarationResult = (
+  value: unknown,
+): value is PendingMoveDeclarationResult => {
+  if (!isPlainRecord(value) || value.ok !== true || value.pending !== true) return false
+  if (!isLivePlayOpId(value.opId) || !isSlug(value.mapSlug)) return false
+  if (!Number.isSafeInteger(value.previousRevision) || !Number.isSafeInteger(value.revision)) {
+    return false
+  }
+  if (value.revision !== Number(value.previousRevision) + 1) return false
+  if (!Array.isArray(value.patches) || value.patches.length !== 0) return false
+  try {
+    return parsePendingMoveResolutionPublicSummary(value.pendingResolution).status === 'pending'
+  }
+  catch {
+    return false
+  }
+}
 
 /** Strictly parse, cross-check, detach, and freeze a durable suspended resolution. */
 export const parsePendingMoveResolution = (

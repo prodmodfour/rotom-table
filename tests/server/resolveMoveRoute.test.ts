@@ -124,6 +124,48 @@ describe('resolve-move API route', () => {
     })
   })
 
+  it('returns durable non-terminal pending declarations without a resolved move payload', async () => {
+    const body = { ...command(), clientId: 'gm-client' }
+    const pendingResolution = {
+      schemaVersion: 1,
+      resolutionId: 'resolution-pending-route',
+      actorPlacementId: 'actor-token',
+      canonicalMoveId: 'Tackle',
+      phase: 'hit',
+      status: 'pending',
+      outstandingWindowCount: 1,
+      createdAt: 1_000,
+      updatedAt: 1_000,
+    }
+    mocks.executeLivePlayResolveMoveCommandUseCase.mockResolvedValue({
+      result: {
+        ok: true,
+        pending: true,
+        opId: body.opId,
+        mapSlug: body.mapSlug,
+        previousRevision: 4,
+        revision: 5,
+        patches: [],
+        pendingResolution,
+      },
+      path: 'data/maps/arena.json',
+      map: { slug: 'arena', revision: 5 },
+    })
+
+    await expect(invokeRoute(route, { role: 'gm', body })).resolves.toEqual({
+      ok: true,
+      pending: true,
+      opId: body.opId,
+      mapSlug: body.mapSlug,
+      previousRevision: 4,
+      revision: 5,
+      patches: [],
+      pendingResolution,
+      path: 'data/maps/arena.json',
+      map: { slug: 'arena', revision: 5 },
+    })
+  })
+
   it('resolves selected player profiles before executing player resolveMove commands', async () => {
     const profile = {
       schemaVersion: 1,

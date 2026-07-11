@@ -63,8 +63,9 @@ import {
 } from './moveAutomation/context'
 import type { MoveAutomationRuntimeRegistry, MoveSpecV2Runtime } from './moveAutomation/registry'
 import {
-  resolveImmediateMoveSpec,
+  resolveMoveSpecOutcome,
   type NativeMoveSpecResolutionProjection,
+  type PendingMoveSpecResolution,
 } from './moveAutomation/resolveImmediateSpec'
 import { hashLegacyMoveAutomationDefinition } from './moveAutomation/legacyV1Definition'
 import { buildLegacyV1MoveResolutionTrace } from './moveAutomation/legacyV1Trace'
@@ -122,6 +123,7 @@ export type AuthoritativeMoveResolutionFailureCode =
   | 'unsupported-range'
   | 'unsupported-damage-resolution'
   | 'unsupported-move-script'
+  | 'move-response-required'
   | 'sheet-read-revision-conflict'
 
 export class AuthoritativeMoveResolutionError extends Error {
@@ -197,6 +199,32 @@ export interface AuthoritativeMoveResolution {
   /** Server-only native planning projection; omitted from accepted wire results. */
   readonly nativeV2?: NativeMoveSpecResolutionProjection
 }
+
+/** Pure native-v2 execution suspended before any state planner mutation. */
+export interface AuthoritativePendingMoveResolution {
+  readonly kind: 'pending'
+  readonly actorPlacementId: string
+  readonly moveName: string
+  readonly canonicalMoveName: string
+  readonly moveKey: string
+  readonly frequency: string | null
+  readonly damageFormula: string | null
+  readonly selectedTargetIds: readonly string[]
+  readonly sheetReads: readonly AuthoritativeMoveSheetRead[]
+  readonly runtime: MoveSpecV2Runtime
+  readonly execution: PendingMoveSpecResolution['execution']
+  readonly declarationStateChanges: PendingMoveSpecResolution['declarationStateChanges']
+}
+
+export type AuthoritativeMoveExecution =
+  | AuthoritativeMoveResolution
+  | AuthoritativePendingMoveResolution
+
+export const isAuthoritativePendingMoveResolution = (
+  value: AuthoritativeMoveExecution,
+): value is AuthoritativePendingMoveResolution => (
+  'kind' in value && value.kind === 'pending'
+)
 
 type UnfinalizedAuthoritativeMoveResolution = Omit<
   AuthoritativeMoveResolution,
@@ -782,7 +810,7 @@ const resolveNativeSelfMove = (options: {
   readonly runtime: MoveSpecV2Runtime
   readonly entry: ResolvedCanonicalMoveEntry
   readonly moveKey: string
-}): AuthoritativeMoveResolution => {
+}): AuthoritativeMoveExecution => {
   if (options.runtime.definition.spec.targeting.kind !== 'self') {
     return fail(
       'invalid',
@@ -805,12 +833,29 @@ const resolveNativeSelfMove = (options: {
     )
   }
 
-  const immediate = resolveImmediateMoveSpec({
+  const outcome = resolveMoveSpecOutcome({
     context: options.context,
     runtime: options.runtime,
     entry: options.entry,
     authoritativeTargetIds: [],
   })
+  if (outcome.kind === 'pending') {
+    return {
+      kind: 'pending',
+      actorPlacementId: options.context.actor.placement.id,
+      moveName: options.runtime.definition.spec.presentation.displayName,
+      canonicalMoveName: options.entry.canonicalMoveName,
+      moveKey: options.moveKey,
+      frequency: options.entry.frequency,
+      damageFormula: options.entry.damageFormula,
+      selectedTargetIds: [],
+      sheetReads: outcome.sheetReads,
+      runtime: options.runtime,
+      execution: outcome.execution,
+      declarationStateChanges: outcome.declarationStateChanges,
+    }
+  }
+  const immediate = outcome.resolution
 
   return {
     actorPlacementId: options.context.actor.placement.id,
@@ -943,7 +988,7 @@ const resolveNativeSingleTargetMove = (options: {
   readonly entry: ResolvedCanonicalMoveEntry
   readonly selection: Extract<ResolveMoveSelection, { kind: 'single-target' }>
   readonly moveKey: string
-}): AuthoritativeMoveResolution => {
+}): AuthoritativeMoveExecution => {
   if (options.runtime.definition.spec.targeting.kind !== 'single-target') {
     return fail(
       'invalid',
@@ -974,12 +1019,29 @@ const resolveNativeSingleTargetMove = (options: {
     script: options.entry.script,
     targetPlacementId: options.selection.targetPlacementId,
   })
-  const immediate = resolveImmediateMoveSpec({
+  const outcome = resolveMoveSpecOutcome({
     context: options.context,
     runtime: options.runtime,
     entry: options.entry,
     authoritativeTargetIds: [target.id],
   })
+  if (outcome.kind === 'pending') {
+    return {
+      kind: 'pending',
+      actorPlacementId: actorPlacement.id,
+      moveName: options.runtime.definition.spec.presentation.displayName,
+      canonicalMoveName: options.entry.canonicalMoveName,
+      moveKey: options.moveKey,
+      frequency: options.entry.frequency,
+      damageFormula: options.entry.damageFormula,
+      selectedTargetIds: [target.id],
+      sheetReads: outcome.sheetReads,
+      runtime: options.runtime,
+      execution: outcome.execution,
+      declarationStateChanges: outcome.declarationStateChanges,
+    }
+  }
+  const immediate = outcome.resolution
 
   return {
     actorPlacementId: actorPlacement.id,
@@ -1185,7 +1247,7 @@ const resolveNativeAreaMove = (options: {
   readonly entry: ResolvedCanonicalMoveEntry
   readonly selection: Extract<ResolveMoveSelection, { kind: 'area' }>
   readonly moveKey: string
-}): AuthoritativeMoveResolution => {
+}): AuthoritativeMoveExecution => {
   if (options.runtime.definition.spec.targeting.kind !== 'area') {
     return fail(
       'invalid',
@@ -1257,13 +1319,30 @@ const resolveNativeAreaMove = (options: {
   const eligibleTargetIds = new Set(areaTargets.eligibleTargetPlacementIds)
   const selectedTargets = placement.candidateTargets.filter(target => eligibleTargetIds.has(target.id))
   const selectedTargetIds = selectedTargets.map(target => target.id)
-  const immediate = resolveImmediateMoveSpec({
+  const outcome = resolveMoveSpecOutcome({
     context: options.context,
     runtime: options.runtime,
     entry: options.entry,
     authoritativeTargetIds: selectedTargetIds,
     authoritativeTargetEvaluations: areaTargets.evaluations,
   })
+  if (outcome.kind === 'pending') {
+    return {
+      kind: 'pending',
+      actorPlacementId: actorPlacement.id,
+      moveName: options.runtime.definition.spec.presentation.displayName,
+      canonicalMoveName: options.entry.canonicalMoveName,
+      moveKey: options.moveKey,
+      frequency: options.entry.frequency,
+      damageFormula: options.entry.damageFormula,
+      selectedTargetIds,
+      sheetReads: outcome.sheetReads,
+      runtime: options.runtime,
+      execution: outcome.execution,
+      declarationStateChanges: outcome.declarationStateChanges,
+    }
+  }
+  const immediate = outcome.resolution
   const currentFacing = tokenFacingForPlacement(actorPlacement)
   const desiredFacing = placement.direction
     ? tokenFacingFromAreaDirection(placement.direction, currentFacing)
@@ -1337,9 +1416,9 @@ const failFromContextError = (error: AuthoritativeMoveRulesContextError): never 
 }
 
 /** Resolve mechanics exclusively from one detached authoritative snapshot. */
-export const resolveAuthoritativeMoveFromContext = (
+export const resolveAuthoritativeMoveExecutionFromContext = (
   context: AuthoritativeMoveRulesContext,
-): AuthoritativeMoveResolution => {
+): AuthoritativeMoveExecution => {
   const { placement: actorPlacement } = context.actor
   const { intent } = context
   recordSheetReadForPlacement(context, actorPlacement)
@@ -1449,7 +1528,9 @@ export const resolveAuthoritativeMoveFromContext = (
   return fail('unsupported', 'unsupported-move-script', 'Unsupported move selection.')
 }
 
-export const resolveAuthoritativeMove = (input: ResolveAuthoritativeMoveInput): AuthoritativeMoveResolution => {
+export const resolveAuthoritativeMoveExecution = (
+  input: ResolveAuthoritativeMoveInput,
+): AuthoritativeMoveExecution => {
   const selectedPlacementIds = selectedTargetIdsForSelection(input.intent.selection)
   assertNoDuplicateTargetIds(selectedPlacementIds)
   const random = input.random ?? Math.random
@@ -1468,13 +1549,38 @@ export const resolveAuthoritativeMove = (input: ResolveAuthoritativeMoveInput): 
       runtimeRegistry: input.runtimeRegistry,
       legacyScripts: input.legacyScripts,
     })
-    return resolveAuthoritativeMoveFromContext(context)
+    return resolveAuthoritativeMoveExecutionFromContext(context)
   }
   catch (error) {
     if (error instanceof AuthoritativeMoveRulesContextError) return failFromContextError(error)
     throw error
   }
 }
+
+const requireImmediateMoveExecution = (
+  execution: AuthoritativeMoveExecution,
+): AuthoritativeMoveResolution => {
+  if (!isAuthoritativePendingMoveResolution(execution)) return execution
+  return fail(
+    'unsupported',
+    'move-response-required',
+    `${execution.canonicalMoveName} requires durable response orchestration.`,
+  )
+}
+
+/** Compatibility boundary for callers that explicitly require an immediate move. */
+export const resolveAuthoritativeMoveFromContext = (
+  context: AuthoritativeMoveRulesContext,
+): AuthoritativeMoveResolution => requireImmediateMoveExecution(
+  resolveAuthoritativeMoveExecutionFromContext(context),
+)
+
+/** Compatibility boundary for immediate resolver and planner tests. */
+export const resolveAuthoritativeMove = (
+  input: ResolveAuthoritativeMoveInput,
+): AuthoritativeMoveResolution => requireImmediateMoveExecution(
+  resolveAuthoritativeMoveExecution(input),
+)
 
 export const isAuthoritativeMoveResolutionError = (value: unknown): value is AuthoritativeMoveResolutionError =>
   value instanceof AuthoritativeMoveResolutionError

@@ -37,7 +37,7 @@ describe('move automation encounter state', () => {
       history: ENCOUNTER_HISTORY_LIMITS.moveAncestryPerScene,
       turnResources: ENCOUNTER_RESOURCE_LIMITS.placementLedgers,
       zones: 0,
-      pendingResolutionSummaries: 0,
+      pendingResolutionSummaries: 64,
     })
     expect(JSON.stringify(state)).toBe(
       '{"schemaVersion":1,"sides":{},"effects":[],"counters":{},"history":{"sceneId":null,"currentRound":null,"currentTurn":null,"lastDeclaredMoves":[],"lastCompletedMoves":[],"lastDamagingMovesReceived":[],"damageBySourceThisTurn":[],"damageBySourceThisRound":[],"actedThisTurnPlacementIds":[],"actedThisRoundPlacementIds":[],"consecutiveMoves":[],"switchedPlacementIds":[],"faintedPlacementIds":[],"switches":[],"knockouts":[],"moveAncestry":[],"eventMoveLinks":[]},"turnResources":{},"zones":[],"pendingResolutionSummaries":[]}',
@@ -94,6 +94,37 @@ describe('move automation encounter state', () => {
     expect(another.effects).not.toBe(state.effects)
     expect(another.turnResources).not.toBe(state.turnResources)
     expect(another.history).not.toBe(state.history)
+  })
+
+  it('round-trips bounded public pending summaries without private window data', () => {
+    const summary = {
+      schemaVersion: 1 as const,
+      resolutionId: 'resolution-pending-1',
+      actorPlacementId: 'actor-token',
+      canonicalMoveId: 'Pending Test',
+      phase: 'hit' as const,
+      status: 'pending' as const,
+      outstandingWindowCount: 1,
+      createdAt: 1_000,
+      updatedAt: 1_000,
+    }
+    const source = {
+      ...canonicalEncounterState(),
+      pendingResolutionSummaries: [summary],
+    }
+    const parsed = parseEncounterState(source)
+
+    expect(parsed.pendingResolutionSummaries).toEqual([summary])
+    expect(parsed.pendingResolutionSummaries).not.toBe(source.pendingResolutionSummaries)
+    expect(parsed.pendingResolutionSummaries[0]).not.toBe(summary)
+    expect(() => parseEncounterState({
+      ...source,
+      pendingResolutionSummaries: [summary, { ...summary }],
+    })).toThrow('duplicates pending resolution resolution-pending-1')
+    expect(() => parseEncounterState({
+      ...source,
+      pendingResolutionSummaries: [{ ...summary, optionIds: ['private-option'] }],
+    })).toThrow('must contain exactly the supported fields')
   })
 
   it('rejects malformed side identities, records, presentation hints, and directory overflow', () => {

@@ -11,7 +11,10 @@ import type { SheetKind, SheetPlacement, TabletopMap } from '~/types/map'
 import { sameJsonValue } from '~/utils/serialization'
 import { tokenFacingForPlacement } from '~/utils/tokenFacing'
 import { rejectLivePlayCommand } from '../livePlay/commandExecutor'
-import type { AuthoritativeMoveStatePlan } from '../domain/planAuthoritativeMoveState'
+import type {
+  AuthoritativeMoveStatePlan,
+  AuthoritativePendingMoveStatePlan,
+} from '../domain/planAuthoritativeMoveState'
 
 const ALLOWED_MAP_LANES = new Set<LivePlayMapScope['lane']>(['metadata', 'hazards', 'fieldEffects'])
 const ACTOR_TOKEN_FIELDS = new Set<LivePlayTokenScope['field']>([
@@ -264,6 +267,53 @@ export const validateResolveMoveScopes = (input: {
   }
 
   const actualScopes = actualResolveMoveWriteScopes(input.plan)
+  assertActualScopesWereSubmitted(input.command.scopes, actualScopes)
+  return actualScopes
+}
+
+/** Validate the conservative declaration scopes before only a public summary is committed. */
+export const validatePendingResolveMoveScopes = (input: {
+  readonly command: ResolveMoveLivePlayCommand
+  readonly map: TabletopMap
+  readonly plan: AuthoritativePendingMoveStatePlan
+}): readonly LivePlayScope[] => {
+  if (input.command.scopes.length > LIVE_PLAY_RESOLVE_MOVE_SCOPE_LIMIT) {
+    rejectLivePlayCommand(
+      'invalid',
+      `resolveMove scopes must contain at most ${LIVE_PLAY_RESOLVE_MOVE_SCOPE_LIMIT} entries`,
+    )
+  }
+  assertNoDuplicateScopes(input.command.scopes)
+
+  const actorPlacementId = input.plan.execution.actorPlacementId
+  const relatedPlacementIds = new Set<string>([
+    actorPlacementId,
+    ...input.plan.execution.selectedTargetIds,
+  ])
+  const readSheetRefs = new Set(
+    input.plan.sheetReads.map(read => `${read.kind}:${read.slug}`),
+  )
+  for (const placement of input.map.placements) {
+    if (readSheetRefs.has(`${placement.sheetKind}:${placement.sheetSlug}`)) {
+      relatedPlacementIds.add(placement.id)
+    }
+  }
+  const placementsById = placementById(input.map)
+
+  assertRequiredConservativeScopes(input.command, actorPlacementId)
+  for (const scope of input.command.scopes) {
+    assertSubmittedScopeAllowed(
+      scope,
+      actorPlacementId,
+      relatedPlacementIds,
+      placementsById,
+    )
+  }
+
+  const actualScopes: readonly LivePlayScope[] = [
+    tokenScope(actorPlacementId, 'action'),
+    mapScope('metadata'),
+  ]
   assertActualScopesWereSubmitted(input.command.scopes, actualScopes)
   return actualScopes
 }

@@ -5,6 +5,12 @@ import {
   parseEncounterState,
   type EncounterState,
 } from '#shared/moveAutomation/encounterState'
+import {
+  PENDING_MOVE_RESOLUTION_SCHEMA_VERSION,
+  parsePendingMoveResolution,
+  type PendingMoveResolution,
+  type PendingMoveResponseWindow,
+} from '#shared/moveAutomation/pendingResolution'
 import type { CharacterSheet } from '~/types/characterSheet'
 import type { CombatStageMap } from '~/types/combatStages'
 import type {
@@ -35,7 +41,9 @@ import {
 import {
   AuthoritativeMoveResolutionError,
   deduplicateAuthoritativeMoveSheetReads,
-  resolveAuthoritativeMove,
+  isAuthoritativePendingMoveResolution,
+  resolveAuthoritativeMoveExecution,
+  type AuthoritativePendingMoveResolution,
   type AuthoritativeMoveResolution,
   type AuthoritativeMoveSheetRead,
 } from './resolveAuthoritativeMove'
@@ -45,7 +53,11 @@ import {
   type AdaptV1SheetWrite,
 } from './moveAutomation/adaptV1Transaction'
 import { buildAuthoritativeMoveMapChanges } from './moveAutomation/mapChanges'
-import { planNativeV2MoveState } from './moveAutomation/planNativeV2MoveState'
+import {
+  applyNativeCoreMapChanges,
+  nativeSheetWritesFromStateChanges,
+  planNativeV2MoveState,
+} from './moveAutomation/planNativeV2MoveState'
 import { applyAuthoritativeMovePlacementTransition } from './moveAutomation/placementTransition'
 import {
   RESTORE_PREVIOUS_MOVE_STATE_VALUE,
@@ -93,6 +105,8 @@ export interface PlanAuthoritativeMoveStateInput {
   readonly now?: () => number
   readonly idFactory?: () => string
   readonly operationId?: string
+  /** Deterministic server identity derived from the exact declaration command. */
+  readonly pendingResolutionId?: string
   readonly maxMoveLogEntries?: number
   /** Test/migration seam; production uses the manifest-selected global registry. */
   readonly runtimeRegistry?: MoveAutomationRuntimeRegistry
@@ -123,6 +137,30 @@ export interface AuthoritativeMoveStatePlan {
   /** Ordered, resource-grouped persistence intent for the typed planning path. */
   readonly stateChanges: MoveStateChangePlan
 }
+
+export interface AuthoritativePendingMoveStatePlan {
+  readonly kind: 'pending'
+  readonly previousMap: TabletopMap
+  readonly nextMap: TabletopMap
+  readonly previousRevision: number
+  readonly revision: number
+  readonly execution: AuthoritativePendingMoveResolution
+  readonly pendingResolution: PendingMoveResolution
+  readonly sheetReads: readonly AuthoritativeMoveSheetRead[]
+  readonly sheetWrites: readonly AuthoritativeMoveSheetWritePlan[]
+  readonly mapChanges: AuthoritativeMoveMapChanges
+  readonly stateChanges: MoveStateChangePlan<EncounterState>
+}
+
+export type AuthoritativeMoveStatePlanningResult =
+  | AuthoritativeMoveStatePlan
+  | AuthoritativePendingMoveStatePlan
+
+export const isAuthoritativePendingMoveStatePlan = (
+  value: AuthoritativeMoveStatePlanningResult,
+): value is AuthoritativePendingMoveStatePlan => (
+  'kind' in value && value.kind === 'pending'
+)
 
 type SheetDocument = CharacterSheet | TrainerSheet
 
@@ -601,12 +639,187 @@ const observeMovePlanResources = (input: {
   }
 }
 
-export const planAuthoritativeMoveState = (input: PlanAuthoritativeMoveStateInput): AuthoritativeMoveStatePlan => {
+const pendingResponseWindow = (
+  execution: AuthoritativePendingMoveResolution,
+): PendingMoveResponseWindow => {
+  const request = execution.execution.request
+  return {
+    windowId: request.requestId,
+    operationId: request.operationId,
+    kind: request.kind === 'reaction' ? 'reaction' : 'choice',
+    phase: request.phase,
+    reasonCode: request.reasonCode,
+    promptKey: request.promptKey,
+    // MA-104 broadens this conservative actor-owned default through the
+    // authoritative placement/profile/side authorization seam.
+    ownership: [{ kind: 'actor', id: null }],
+    options: request.options.map(option => ({ ...option })),
+    allowPass: request.allowPass,
+    priority: request.kind === 'reaction' ? request.priority : null,
+  }
+}
+
+const planPendingMoveState = (options: {
+  readonly input: PlanAuthoritativeMoveStateInput
+  readonly execution: AuthoritativePendingMoveResolution
+  readonly plannedAt: number
+  readonly previousMap: TabletopMap
+  readonly previousRevision: number
+}): AuthoritativePendingMoveStatePlan => {
+  const operationId = options.input.operationId
+    ?? fail(
+      'invalid',
+      'pending-origin-operation-missing',
+      'A suspended move requires its originating live-play operation ID.',
+    )
+  const resolutionId = options.input.pendingResolutionId
+    ?? fail(
+      'invalid',
+      'pending-resolution-id-missing',
+      'A suspended move requires a deterministic pending resolution ID.',
+    )
+  const sheetReads = reobserveAuthoritativeMoveSheetReads(
+    options.execution.sheetReads,
+    options.input.pokemonSheets,
+    options.input.trainerSheets,
+  )
+  const request = options.execution.execution.request
+  const revision = nextRevision(options.previousRevision)
+  const committedSheetRevisions = new Map(
+    options.execution.declarationStateChanges.changes.flatMap(change => (
+      change.kind === 'sheet-state'
+        ? [[`${change.scope.sheetKind}:${change.scope.sheetSlug}`, change.current.revision] as const]
+        : []
+    )),
+  )
+  const publicSummary = {
+    schemaVersion: PENDING_MOVE_RESOLUTION_SCHEMA_VERSION,
+    resolutionId,
+    actorPlacementId: options.execution.actorPlacementId,
+    canonicalMoveId: options.execution.canonicalMoveName,
+    phase: request.phase,
+    status: 'pending' as const,
+    outstandingWindowCount: 1,
+    createdAt: options.plannedAt,
+    updatedAt: options.plannedAt,
+  }
+  const pendingResolution = parsePendingMoveResolution({
+    schemaVersion: PENDING_MOVE_RESOLUTION_SCHEMA_VERSION,
+    resolutionId,
+    originMapSlug: options.input.map.slug,
+    originOpId: operationId,
+    actorPlacementId: options.execution.actorPlacementId,
+    canonicalMoveId: options.execution.canonicalMoveName,
+    specVersion: options.execution.runtime.version,
+    specHash: options.execution.runtime.definitionHash,
+    rulesetId: options.execution.runtime.definition.rulesetVersion.rulesetId,
+    rulesetHash: options.execution.runtime.definition.rulesetVersion.sourceDataSha256,
+    phase: request.phase,
+    readSet: [
+      {
+        kind: 'map',
+        slug: options.input.map.slug,
+        revision,
+      },
+      ...sheetReads.map(read => ({
+        kind: 'sheet' as const,
+        sheetKind: read.kind,
+        slug: read.slug,
+        revision: committedSheetRevisions.get(`${read.kind}:${read.slug}`) ?? read.revision,
+      })),
+    ],
+    trace: options.execution.execution.trace,
+    rollLedger: options.execution.execution.rollLedger,
+    outstandingWindows: [pendingResponseWindow(options.execution)],
+    chosenOptions: [],
+    causalAncestry: options.execution.execution.trace.ancestry,
+    status: 'pending',
+    createdAt: options.plannedAt,
+    updatedAt: options.plannedAt,
+    publicSummary,
+  })
+
+  const previousEncounterState = parseEncounterState(
+    options.input.map.encounterState ?? createEmptyEncounterState(),
+  )
+  const mapAfterDeclarationCosts = applyNativeCoreMapChanges(
+    options.input.map,
+    options.execution.declarationStateChanges,
+  )
+  const declarationEncounterChange = options.execution.declarationStateChanges.changes.find(
+    change => change.kind === 'encounter-state',
+  )
+  const encounterStateAfterDeclarationCosts = declarationEncounterChange
+    ? parseEncounterState(declarationEncounterChange.current)
+    : previousEncounterState
+  if (encounterStateAfterDeclarationCosts.pendingResolutionSummaries.some(
+    summary => summary.resolutionId === resolutionId,
+  )) {
+    fail(
+      'conflict',
+      'pending-resolution-summary-conflict',
+      `Pending resolution ${resolutionId} is already visible on map ${options.input.map.slug}.`,
+    )
+  }
+  const currentEncounterState = parseEncounterState({
+    ...encounterStateAfterDeclarationCosts,
+    pendingResolutionSummaries: [
+      ...encounterStateAfterDeclarationCosts.pendingResolutionSummaries,
+      pendingResolution.publicSummary,
+    ],
+  })
+  const nextMap = cloneJson({
+    ...mapAfterDeclarationCosts,
+    encounterState: currentEncounterState,
+    revision,
+    updatedAt: options.plannedAt,
+  })
+  const declarationInputs: MoveStateChangeInput<EncounterState>[] = options.execution
+    .declarationStateChanges.changes
+    .filter(change => change.kind !== 'encounter-state')
+    .map(change => withoutPlanIdentity(change) as MoveStateChangeInput<EncounterState>)
+  const stateChanges = createMoveStateChangePlan<EncounterState>([
+    ...declarationInputs,
+    {
+      kind: 'encounter-state',
+      scope: { kind: 'encounter', mapSlug: options.input.map.slug },
+      expectedRevision: options.previousRevision,
+      sourceOperationId: request.operationId,
+      reasonCode: 'move-resolution-suspended',
+      previous: cloneJson(previousEncounterState),
+      current: cloneJson(currentEncounterState),
+      compensation: RESTORE_PREVIOUS_MOVE_STATE_VALUE,
+    },
+  ])
+  const sheetWrites = nativeSheetWritesFromStateChanges(
+    options.input.map,
+    options.execution,
+    stateChanges,
+  )
+
+  return {
+    kind: 'pending',
+    previousMap: options.previousMap,
+    nextMap,
+    previousRevision: options.previousRevision,
+    revision,
+    execution: options.execution,
+    pendingResolution,
+    sheetReads: cloneJson(sheetReads),
+    sheetWrites,
+    mapChanges: buildAuthoritativeMoveMapChanges(options.previousMap, nextMap),
+    stateChanges,
+  }
+}
+
+export const planAuthoritativeMoveStateExecution = (
+  input: PlanAuthoritativeMoveStateInput,
+): AuthoritativeMoveStatePlanningResult => {
   const plannedAt = (input.now ?? Date.now)()
   const previousMap = cloneJson(input.map)
   const previousRevision = normalizeRevision(input.map.revision)
 
-  const resolution = resolveAuthoritativeMove({
+  const execution = resolveAuthoritativeMoveExecution({
     map: input.map,
     pokemonSheets: input.pokemonSheets,
     trainerSheets: input.trainerSheets,
@@ -617,6 +830,16 @@ export const planAuthoritativeMoveState = (input: PlanAuthoritativeMoveStateInpu
     runtimeRegistry: input.runtimeRegistry,
     legacyScripts: input.legacyScripts,
   })
+  if (isAuthoritativePendingMoveResolution(execution)) {
+    return planPendingMoveState({
+      input,
+      execution,
+      plannedAt,
+      previousMap,
+      previousRevision,
+    })
+  }
+  const resolution = execution
   validateTransactionUser(resolution)
   const sheetReads = reobserveAuthoritativeMoveSheetReads(
     resolution.sheetReads,
@@ -768,6 +991,19 @@ export const planAuthoritativeMoveState = (input: PlanAuthoritativeMoveStateInpu
     mapChanges: observedResources.mapChanges,
     stateChanges: observedResources.stateChanges,
   }
+}
+
+/** Compatibility boundary for callers that cannot yet return a durable saga. */
+export const planAuthoritativeMoveState = (
+  input: PlanAuthoritativeMoveStateInput,
+): AuthoritativeMoveStatePlan => {
+  const result = planAuthoritativeMoveStateExecution(input)
+  if (!isAuthoritativePendingMoveStatePlan(result)) return result
+  return fail(
+    'unsupported',
+    'pending-resolution-requires-orchestrator',
+    `${result.execution.canonicalMoveName} requires durable pending-resolution orchestration.`,
+  )
 }
 
 export const isAuthoritativeMoveStatePlanError = (value: unknown): value is AuthoritativeMoveStatePlanError =>

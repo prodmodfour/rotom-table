@@ -16,7 +16,7 @@ import type {
 } from '~/utils/moveAutomationTargetResolution'
 import type { ResolvedCanonicalMoveEntry } from '~/utils/authoritativeMoveEntries'
 import { deepCloneJson, sameJsonValue } from '~/utils/serialization'
-import type { MoveStateChangePlan } from './plan'
+import { createMoveStateChangePlan, type MoveStateChangePlan } from './plan'
 import type {
   AuthoritativeMoveRulesContext,
   AuthoritativeMoveSheetRead,
@@ -29,6 +29,8 @@ import {
   executeMoveSpec,
   type MoveSpecAuthoritativeTargetEvaluation,
   type MoveSpecEmittedOperation,
+  type MoveSpecExecutionCompleteResult,
+  type MoveSpecExecutionPendingResult,
   type MoveSpecResolvedRoll,
 } from './executeSpec'
 import type { MoveSpecV2Runtime } from './registry'
@@ -499,14 +501,29 @@ const assertSupportedImmediateOperations = (
   }
 }
 
-/** Execute and reduce the immediate core-token portion of one native MoveSpec. */
-export const resolveImmediateMoveSpec = (options: {
+export interface ResolveMoveSpecOptions {
   readonly context: AuthoritativeMoveRulesContext
   readonly runtime: MoveSpecV2Runtime
   readonly entry: ResolvedCanonicalMoveEntry
   readonly authoritativeTargetIds: readonly string[]
   readonly authoritativeTargetEvaluations?: readonly MoveSpecAuthoritativeTargetEvaluation[]
-}): ImmediateMoveSpecResolution => {
+}
+
+export interface PendingMoveSpecResolution {
+  readonly kind: 'pending'
+  readonly execution: MoveSpecExecutionPendingResult
+  readonly sheetReads: readonly AuthoritativeMoveSheetRead[]
+  /** Only reviewed pay-phase HP costs explicitly timed for declaration. */
+  readonly declarationStateChanges: MoveStateChangePlan
+}
+
+export type MoveSpecResolutionOutcome =
+  | { readonly kind: 'complete'; readonly resolution: ImmediateMoveSpecResolution }
+  | PendingMoveSpecResolution
+
+const executeReviewedMoveSpec = (
+  options: ResolveMoveSpecOptions,
+): MoveSpecExecutionCompleteResult | MoveSpecExecutionPendingResult => {
   const execution = executeMoveSpec({
     definition: options.runtime.definition,
     context: options.context,
@@ -520,12 +537,14 @@ export const resolveImmediateMoveSpec = (options: {
       `MoveSpec ${options.runtime.canonicalId} rejected: ${execution.rejection.reasonCode}.`,
     )
   }
-  if (execution.kind === 'pending-request') {
-    return fail(
-      'execution-pending',
-      `MoveSpec ${options.runtime.canonicalId} unexpectedly requires ${execution.request.requestId}.`,
-    )
-  }
+  return execution
+}
+
+/** Reduce one already completed interpreter result into the immediate planner projection. */
+const reduceImmediateMoveSpec = (
+  options: ResolveMoveSpecOptions,
+  execution: MoveSpecExecutionCompleteResult,
+): ImmediateMoveSpecResolution => {
   assertSupportedImmediateOperations(execution.operations)
 
   const script = compatibilityScript(options.entry, options.runtime)
@@ -638,4 +657,103 @@ export const resolveImmediateMoveSpec = (options: {
       trace: core.trace,
     }),
   })
+}
+
+const reducePendingDeclarationCosts = (options: {
+  readonly resolve: ResolveMoveSpecOptions
+  readonly execution: MoveSpecExecutionPendingResult
+}): {
+  readonly execution: MoveSpecExecutionPendingResult
+  readonly stateChanges: MoveStateChangePlan
+  readonly sheetReads: readonly AuthoritativeMoveSheetRead[]
+} => {
+  const declarationCosts = options.execution.operations.filter((emission) => {
+    const operation = emission.operation
+    if (operation.kind !== 'direct-hp' || operation.payload.cost?.timing !== 'declaration') {
+      return false
+    }
+    if (operation.phase !== 'pay') {
+      return fail(
+        'unsupported-operation',
+        `Declaration HP cost ${operation.id} must execute in the explicit pay phase before suspension.`,
+      )
+    }
+    return true
+  })
+  if (declarationCosts.length === 0) {
+    return {
+      execution: options.execution,
+      stateChanges: createMoveStateChangePlan([]),
+      sheetReads: options.execution.sheetReads,
+    }
+  }
+
+  const exposesAttackedTargets = options.resolve.runtime.definition.spec.targeting.kind !== 'self'
+  const dynamicRecipients: MoveCoreTokenDynamicRecipientSets = {
+    attackedTargetIds: exposesAttackedTargets ? [...options.execution.targetIds] : [],
+    hitTargetIds: exposesAttackedTargets ? [...options.execution.hitTargetIds] : [],
+    missedTargetIds: exposesAttackedTargets ? [...options.execution.missedTargetIds] : [],
+    damagedTargetIds: exposesAttackedTargets ? [...options.execution.damagedTargetIds] : [],
+    faintedTargetIds: exposesAttackedTargets ? [...options.execution.faintedTargetIds] : [],
+  }
+  const reduction = reduceMoveCoreTokenEffects({
+    context: options.resolve.context,
+    operations: declarationCosts.filter(isMoveCoreTokenEffectEmission),
+    dynamicRecipients,
+    immunities: createStandardMoveCoreTokenEffectImmunityQueries({
+      moveType: options.resolve.entry.script.type,
+      context: options.resolve.context,
+    }),
+    trace: options.execution.trace,
+  })
+  const execution = Object.freeze({
+    ...options.execution,
+    trace: reduction.trace,
+    sheetReads: deduplicateAuthoritativeMoveSheetReads([
+      ...options.execution.sheetReads,
+      ...reduction.sheetReads,
+    ]),
+  })
+  return {
+    execution,
+    stateChanges: reduction.stateChanges,
+    sheetReads: execution.sheetReads,
+  }
+}
+
+/** Execute a native MoveSpec and retain an unresolved request for saga orchestration. */
+export const resolveMoveSpecOutcome = (
+  options: ResolveMoveSpecOptions,
+): MoveSpecResolutionOutcome => {
+  const execution = executeReviewedMoveSpec(options)
+  if (execution.kind === 'pending-request') {
+    const declaration = reducePendingDeclarationCosts({ resolve: options, execution })
+    return Object.freeze({
+      kind: 'pending',
+      execution: declaration.execution,
+      sheetReads: Object.freeze(deduplicateAuthoritativeMoveSheetReads([
+        ...options.context.reads.snapshot(),
+        ...declaration.sheetReads,
+      ])),
+      declarationStateChanges: declaration.stateChanges,
+    })
+  }
+  return Object.freeze({
+    kind: 'complete',
+    resolution: reduceImmediateMoveSpec(options, execution),
+  })
+}
+
+/** Execute and reduce a MoveSpec that is required to finish without a response window. */
+export const resolveImmediateMoveSpec = (
+  options: ResolveMoveSpecOptions,
+): ImmediateMoveSpecResolution => {
+  const outcome = resolveMoveSpecOutcome(options)
+  if (outcome.kind === 'pending') {
+    return fail(
+      'execution-pending',
+      `MoveSpec ${options.runtime.canonicalId} unexpectedly requires ${outcome.execution.request.requestId}.`,
+    )
+  }
+  return outcome.resolution
 }

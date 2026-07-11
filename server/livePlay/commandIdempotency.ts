@@ -142,6 +142,7 @@ export const isAcceptedTerminalResult = (
   && result.ok === true
   && typeof result.opId === 'string'
   && (!hasOwn(result, 'duplicate') || result.duplicate !== true)
+  && (!hasOwn(result, 'pending') || result.pending !== true)
 )
 
 export const isRejectedTerminalResult = (

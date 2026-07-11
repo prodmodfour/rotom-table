@@ -18,6 +18,12 @@ import {
   parseEncounterTurnResources,
   type EncounterTurnResourceDirectory,
 } from './encounterResources'
+import {
+  PENDING_MOVE_RESOLUTION_LIMITS,
+  PendingMoveResolutionValidationError,
+  parsePendingMoveResolutionPublicSummary,
+  type PendingMoveResolutionPublicSummary,
+} from './pendingResolution'
 
 export * from './encounterEffects'
 export * from './encounterHistory'
@@ -28,10 +34,11 @@ export * from './encounterResources'
  *
  * MA-050 introduced the envelope, MA-052 added side identity, MA-056 added
  * strict typed effect instances, MA-057 added their lifecycle policies,
- * MA-063 added structured bounded history indexes, and MA-064 added action and
- * movement resource ledgers. Remaining containers stay empty until their
- * owning tickets. Existing map hazards, field effects, temporary HP, and move
- * usage remain in their current map fields during this compatibility period.
+ * MA-063 added structured bounded history indexes, MA-064 added action and
+ * movement resource ledgers, and MA-103 enabled privacy-safe pending-resolution
+ * summaries. Remaining containers stay empty until their owning tickets.
+ * Existing map hazards, field effects, temporary HP, and move usage remain in
+ * their current map fields during this compatibility period.
  */
 export const ENCOUNTER_STATE_SCHEMA_VERSION = 1 as const
 
@@ -68,7 +75,7 @@ export const ENCOUNTER_STATE_LIMITS = Object.freeze({
   history: ENCOUNTER_HISTORY_LIMITS.moveAncestryPerScene,
   turnResources: ENCOUNTER_RESOURCE_LIMITS.placementLedgers,
   zones: 0,
-  pendingResolutionSummaries: 0,
+  pendingResolutionSummaries: PENDING_MOVE_RESOLUTION_LIMITS.responseWindows,
 })
 
 export type EmptyEncounterStateList = readonly []
@@ -82,7 +89,7 @@ export interface EncounterState {
   readonly history: EncounterHistory
   readonly turnResources: EncounterTurnResourceDirectory
   readonly zones: EmptyEncounterStateList
-  readonly pendingResolutionSummaries: EmptyEncounterStateList
+  readonly pendingResolutionSummaries: readonly PendingMoveResolutionPublicSummary[]
 }
 
 export type EncounterStateValidationCode =
@@ -323,6 +330,52 @@ const parseEncounterTurnResourceState = (
   }
 }
 
+const parsePendingResolutionSummaries = (
+  value: unknown,
+): readonly PendingMoveResolutionPublicSummary[] => {
+  const path = 'encounterState.pendingResolutionSummaries'
+  if (!Array.isArray(value)) {
+    return fail('invalid-encounter-state', path, 'must be an array.')
+  }
+  if (value.length > ENCOUNTER_STATE_LIMITS.pendingResolutionSummaries) {
+    fail(
+      'limit-exceeded',
+      path,
+      `must contain at most ${ENCOUNTER_STATE_LIMITS.pendingResolutionSummaries} entries.`,
+    )
+  }
+
+  const summaries: PendingMoveResolutionPublicSummary[] = []
+  const resolutionIds = new Set<string>()
+  for (const [index, entry] of value.entries()) {
+    const entryPath = `${path}[${index}]`
+    let summary: PendingMoveResolutionPublicSummary
+    try {
+      summary = parsePendingMoveResolutionPublicSummary(entry, entryPath)
+    }
+    catch (error) {
+      if (error instanceof PendingMoveResolutionValidationError) {
+        fail(
+          error.code === 'limit-exceeded' ? 'limit-exceeded' : 'invalid-encounter-state',
+          error.path,
+          error.detail,
+        )
+      }
+      throw error
+    }
+    if (resolutionIds.has(summary.resolutionId)) {
+      fail(
+        'invalid-encounter-state',
+        `${entryPath}.resolutionId`,
+        `duplicates pending resolution ${summary.resolutionId}.`,
+      )
+    }
+    resolutionIds.add(summary.resolutionId)
+    summaries.push(summary)
+  }
+  return summaries
+}
+
 const parseEncounterEffectList = (
   value: unknown,
   sides: EncounterSideDirectory,
@@ -402,5 +455,8 @@ export const parseEncounterState = (value: unknown): EncounterState => {
     effects: parseEncounterEffectList(value.effects, sides),
     history: parseEncounterHistoryState(value.history),
     turnResources: parseEncounterTurnResourceState(value.turnResources),
+    pendingResolutionSummaries: parsePendingResolutionSummaries(
+      value.pendingResolutionSummaries,
+    ),
   }
 }

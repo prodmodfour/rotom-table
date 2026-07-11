@@ -81,7 +81,7 @@ const stripPlanIdentity = (change: MoveStateChange): MoveStateChangeInput => {
   } as MoveStateChangeInput
 }
 
-const applyCoreMapChanges = (
+export const applyNativeCoreMapChanges = (
   map: TabletopMap,
   plan: MoveStateChangePlan,
 ): TabletopMap => {
@@ -182,16 +182,16 @@ const combinedStateChanges = (options: {
 }
 
 const relatedPlacementIds = (
-  resolution: AuthoritativeMoveResolution,
+  resolution: Pick<AuthoritativeMoveResolution, 'actorPlacementId' | 'selectedTargetIds' | 'area'>,
 ): ReadonlySet<string> => new Set([
   resolution.actorPlacementId,
   ...resolution.selectedTargetIds,
   ...(resolution.area?.candidateTargetIds ?? []),
 ])
 
-const sheetWritesFromStateChanges = (
+export const nativeSheetWritesFromStateChanges = (
   map: TabletopMap,
-  resolution: AuthoritativeMoveResolution,
+  resolution: Pick<AuthoritativeMoveResolution, 'actorPlacementId' | 'selectedTargetIds' | 'area'>,
   stateChanges: MoveStateChangePlan,
 ): readonly AuthoritativeMoveSheetWritePlan[] => {
   const related = relatedPlacementIds(resolution)
@@ -351,7 +351,7 @@ export const planNativeV2MoveState = (options: {
       `${options.resolution.canonicalMoveName} did not emit its reviewed usage operation.`,
     )
 
-  const mapWithCore = applyCoreMapChanges(mapReduction.nextMap, native.coreStateChanges)
+  const mapWithCore = applyNativeCoreMapChanges(mapReduction.nextMap, native.coreStateChanges)
   const transitionedMap = applyAuthoritativeMovePlacementTransition({
     map: mapWithCore,
     actorPlacement: actorPlacement(options.map, options.resolution.actorPlacementId),
@@ -394,7 +394,7 @@ export const planNativeV2MoveState = (options: {
     previousUsage: deepCloneJson(usageProjection.previousUsage),
     usage: deepCloneJson(usageProjection.usage),
     sheetReads: deepCloneJson(sheetReads),
-    sheetWrites: sheetWritesFromStateChanges(options.map, options.resolution, stateChanges),
+    sheetWrites: nativeSheetWritesFromStateChanges(options.map, options.resolution, stateChanges),
     mapChanges: buildAuthoritativeMoveMapChanges(options.map, nextMap),
     stateChanges,
     auditTrace,

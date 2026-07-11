@@ -98,6 +98,7 @@ describe('live-play command idempotency helpers', () => {
     expect(() => validateLivePlayOperationId('bad-op')).toThrow('/^op_[A-Za-z0-9_-]{8,96}$/')
 
     expect(isAcceptedTerminalResult({ ok: true, opId: 'op_validhelper01', revision: 2 })).toBe(true)
+    expect(isAcceptedTerminalResult({ ok: true, pending: true, opId: 'op_validhelper01', revision: 2 })).toBe(false)
     expect(isAcceptedTerminalResult({ ok: true, duplicate: true, opId: 'op_validhelper01', original: {} })).toBe(false)
     expect(isRejectedTerminalResult({ ok: false, opId: 'op_validhelper01', reason: 'invalid', message: 'Nope' })).toBe(true)
   })

@@ -104,6 +104,22 @@ export interface AcceptedLivePlayCommandApplication<TMap> {
   readonly revision?: number
 }
 
+/** A durable, non-terminal acknowledgement that must never enter the op store. */
+export interface LivePlayCommandSuspendedResult extends LivePlayCommandAccepted {
+  readonly pending: true
+}
+
+export interface SuspendedLivePlayCommandApplication<TMap> {
+  readonly status: 'suspended'
+  readonly nextMap: TMap
+  readonly result: LivePlayCommandSuspendedResult
+}
+
+export interface NonTerminalRejectedLivePlayCommandApplication {
+  readonly status: 'non-terminal-rejected'
+  readonly result: LivePlayCommandRejected
+}
+
 export interface RejectedLivePlayCommandApplication {
   readonly status: 'rejected'
   readonly reason: LivePlayCommandRejectionReason
@@ -114,6 +130,8 @@ export interface RejectedLivePlayCommandApplication {
 
 export type LivePlayCommandApplication<TMap> =
   | AcceptedLivePlayCommandApplication<TMap>
+  | SuspendedLivePlayCommandApplication<TMap>
+  | NonTerminalRejectedLivePlayCommandApplication
   | RejectedLivePlayCommandApplication
 
 export interface LivePlayCommandPersistContext<
@@ -133,6 +151,16 @@ export interface LivePlayCommandCommitContext<
   readonly commandHash: LivePlayCommandHash
   recordRealtimeEvents(inputs: readonly AppendRealtimeEventInput[]): readonly PersistedRealtimeEvent[]
   saveOpResult(): LivePlayOpRecord
+}
+
+export interface LivePlayCommandSuspendContext<
+  TCommand extends LivePlayCommandEnvelope,
+  TActor,
+  TMap,
+> extends Omit<LivePlayCommandPersistContext<TCommand, TActor, TMap>, 'result'> {
+  readonly result: LivePlayCommandSuspendedResult
+  readonly commandHash: LivePlayCommandHash
+  recordRealtimeEvents(inputs: readonly AppendRealtimeEventInput[]): readonly PersistedRealtimeEvent[]
 }
 
 export interface LivePlayCommandPublishContext<
@@ -171,9 +199,27 @@ export interface ExecuteAuthoritativeLivePlayCommandOptions<
   readonly commit?: (
     context: LivePlayCommandCommitContext<TCommand, TActor, TMap>,
   ) => MaybePromise<void>
+  /** Finalize a durable suspension without writing a terminal operation result. */
+  readonly commitSuspended?: (
+    context: LivePlayCommandSuspendContext<TCommand, TActor, TMap>,
+  ) => MaybePromise<void>
   readonly publish?: (
     context: LivePlayCommandPublishContext<TCommand, TActor, TMap>,
   ) => MaybePromise<void>
+  readonly publishSuspended?: (
+    context: Omit<LivePlayCommandPublishContext<TCommand, TActor, TMap>, 'result'> & {
+      readonly result: LivePlayCommandSuspendedResult
+    },
+  ) => MaybePromise<void>
+  /**
+   * Resolve an already durable suspension before authorization or planning.
+   * A conflict result returned here is intentionally non-stored because the
+   * originating operation identity belongs to the pending-resolution store.
+   */
+  readonly findSuspendedResult?: (context: {
+    readonly command: TCommand
+    readonly commandHash: LivePlayCommandHash
+  }) => MaybePromise<LivePlayCommandSuspendedResult | LivePlayCommandRejected | null>
   readonly recordedAt?: string
 }
 
@@ -453,6 +499,13 @@ export class AuthoritativeLivePlayCommandExecutor {
     )
     if (preQueueResult) return preQueueResult
 
+    const preQueueSuspended = await this.findSuspendedResult({
+      command,
+      commandHash,
+      options,
+    })
+    if (preQueueSuspended) return preQueueSuspended
+
     const modeRejection = await this.livePlayModeRejection(command)
     if (modeRejection) return modeRejection
 
@@ -461,6 +514,46 @@ export class AuthoritativeLivePlayCommandExecutor {
       commandHash,
       options,
     }))
+  }
+
+  private async findSuspendedResult<
+    TCommand extends LivePlayCommandEnvelope,
+    TMap,
+    TActorInput,
+    TActor,
+  >(
+    context: ValidCommandExecutionContext<TCommand, TMap, TActorInput, TActor>,
+  ): Promise<LivePlayCommandSuspendedResult | LivePlayCommandRejected | null> {
+    const finder = context.options.findSuspendedResult
+    if (!finder) return null
+
+    try {
+      const result = await finder({
+        command: context.command,
+        commandHash: context.commandHash,
+      })
+      if (!result) return null
+      if (result.opId !== context.command.opId) {
+        throw new Error('Suspended live-play result opId must match the command opId')
+      }
+      if (result.mapSlug !== context.command.mapSlug) {
+        throw new Error('Suspended live-play result mapSlug must match the command mapSlug')
+      }
+      if (result.ok) {
+        if (result.pending !== true) {
+          throw new Error('A non-terminal accepted result must be marked pending')
+        }
+        parseApplicationRevision(result.previousRevision, 'suspended previousRevision')
+        const revision = parseApplicationRevision(result.revision, 'suspended revision')
+        validateAcceptedPatches(context.command, revision, result.patches)
+      }
+      return result
+    }
+    catch (error) {
+      // The pending store owns this opId, so even a collision rejection must
+      // not be inserted into the terminal operation-result store.
+      return rejectionFromError(context.command, error)
+    }
   }
 
   private async livePlayModeRejection(
@@ -493,6 +586,9 @@ export class AuthoritativeLivePlayCommandExecutor {
     )
     if (queuedResult) return queuedResult
 
+    const queuedSuspended = await this.findSuspendedResult(context)
+    if (queuedSuspended) return queuedSuspended
+
     let currentRevision: number | undefined
 
     const modeRejection = await this.livePlayModeRejection(command)
@@ -514,6 +610,10 @@ export class AuthoritativeLivePlayCommandExecutor {
       await options.detectConflicts?.({ command, actor, map, currentRevision })
 
       const application = await options.apply({ command, actor, map, currentRevision })
+      if (application.status === 'non-terminal-rejected') {
+        return application.result
+      }
+
       if (application.status === 'rejected') {
         return this.saveResult(command, commandHash, createLivePlayRejectedResult({
           opId: command.opId,
@@ -523,6 +623,18 @@ export class AuthoritativeLivePlayCommandExecutor {
           currentRevision: application.currentRevision ?? currentRevision,
           currentState: application.currentState,
         }))
+      }
+
+      if (application.status === 'suspended') {
+        return await this.finishSuspendedApplication({
+          command,
+          commandHash,
+          options,
+          actor,
+          map,
+          currentRevision,
+          application,
+        })
       }
 
       const result = this.acceptedResult(command, map, application, options)
@@ -561,6 +673,144 @@ export class AuthoritativeLivePlayCommandExecutor {
     } catch (error) {
       const rejection = rejectionFromError(command, error, currentRevision)
       return this.saveResult(command, commandHash, rejection)
+    }
+  }
+
+  private async finishSuspendedApplication<
+    TCommand extends LivePlayCommandEnvelope,
+    TMap,
+    TActorInput,
+    TActor,
+  >(context: ValidCommandExecutionContext<TCommand, TMap, TActorInput, TActor> & {
+    readonly actor: TActor
+    readonly map: TMap
+    readonly currentRevision: number
+    readonly application: SuspendedLivePlayCommandApplication<TMap>
+  }): Promise<LivePlayCommandResult> {
+    const {
+      command,
+      commandHash,
+      options,
+      actor,
+      map,
+      currentRevision,
+      application,
+    } = context
+    const { result, nextMap } = application
+
+    try {
+      if (result.opId !== command.opId || result.mapSlug !== command.mapSlug) {
+        throw new Error('Suspended live-play result identity must match its command')
+      }
+      if (result.previousRevision !== currentRevision) {
+        throw new Error('Suspended live-play result must start from the current map revision')
+      }
+      const revision = parseApplicationRevision(result.revision, 'suspended revision')
+      validateAcceptedPatches(command, revision, result.patches)
+      if (!options.commitSuspended) {
+        throw new Error('Suspended live-play commands require a non-terminal commit hook')
+      }
+
+      const eventsBySequence = new Map<number, PersistedRealtimeEvent>()
+      await options.commitSuspended({
+        command,
+        actor,
+        map,
+        currentRevision,
+        nextMap,
+        result,
+        commandHash,
+        recordRealtimeEvents: (inputs) => {
+          if (inputs.length === 0) return []
+          if (!this.recordRealtimeEventInputs) {
+            throw new Error('durable live-play realtime event recording is not configured')
+          }
+          const events = this.recordRealtimeEventInputs(inputs)
+          for (const event of events) eventsBySequence.set(event.sequence, event)
+          return events
+        },
+      })
+
+      const realtimeEvents = [...eventsBySequence.values()]
+        .sort((left, right) => left.sequence - right.sequence)
+      await this.publishSuspendedResultAfterCommit({
+        command,
+        options,
+        actor,
+        map,
+        currentRevision,
+        nextMap,
+        result,
+        realtimeEvents,
+      })
+      return result
+    }
+    catch (error) {
+      return error instanceof LivePlayCommandRejectionError
+        ? rejectionFromError(command, error, currentRevision)
+        : persistenceFailedResult(command, error, currentRevision)
+    }
+  }
+
+  private async publishSuspendedResultAfterCommit<
+    TCommand extends LivePlayCommandEnvelope,
+    TMap,
+    TActorInput,
+    TActor,
+  >(context: {
+    readonly command: TCommand
+    readonly options: ExecuteAuthoritativeLivePlayCommandOptions<TCommand, TMap, TActorInput, TActor>
+    readonly actor: TActor
+    readonly map: TMap
+    readonly currentRevision: number
+    readonly nextMap: TMap
+    readonly result: LivePlayCommandSuspendedResult
+    readonly realtimeEvents: readonly PersistedRealtimeEvent[]
+  }): Promise<void> {
+    const {
+      command,
+      options,
+      actor,
+      map,
+      currentRevision,
+      nextMap,
+      result,
+      realtimeEvents,
+    } = context
+
+    try {
+      await options.publishSuspended?.({
+        command,
+        actor,
+        map,
+        currentRevision,
+        nextMap,
+        result,
+      })
+    }
+    catch (error) {
+      this.reportAfterCommitPublicationFailure({ phase: 'use-case', command, result, error })
+    }
+
+    if (!this.publishPersistedRealtimeEvent) return
+    for (const event of realtimeEvents) {
+      try {
+        await this.publishPersistedRealtimeEvent(event)
+      }
+      catch (error) {
+        this.reportAfterCommitPublicationFailure({
+          phase: 'persisted-realtime',
+          command,
+          result,
+          error,
+          event,
+          sequence: event.sequence,
+          channel: event.event.channel,
+          type: event.event.type,
+          mapSlug: command.mapSlug,
+          opId: command.opId,
+        })
+      }
     }
   }
 

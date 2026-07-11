@@ -4,6 +4,8 @@ import {
   PENDING_MOVE_RESOLUTION_SCHEMA_VERSION,
   PENDING_MOVE_RESOLUTION_STATUSES,
   PendingMoveResolutionValidationError,
+  createPendingMoveDeclarationResult,
+  isPendingMoveDeclarationResult,
   parsePendingMoveResolution,
   parsePendingMoveResolutionPublicSummary,
 } from '#shared/moveAutomation/pendingResolution'
@@ -313,6 +315,41 @@ describe('pending move resolution contract', () => {
       () => parsePendingMoveResolutionPublicSummary({ ...source, optionIds: ['secret'] }),
       'invalid-pending-resolution',
     )
+  })
+
+  it('builds a bounded non-terminal declaration acknowledgement', () => {
+    const result = createPendingMoveDeclarationResult({
+      opId: 'op_declare0001',
+      mapSlug: 'pending-arena',
+      previousRevision: 12,
+      revision: 13,
+      pendingResolution: publicSummary() as ReturnType<typeof parsePendingMoveResolutionPublicSummary>,
+    })
+
+    expect(result).toEqual({
+      ok: true,
+      pending: true,
+      opId: 'op_declare0001',
+      mapSlug: 'pending-arena',
+      previousRevision: 12,
+      revision: 13,
+      patches: [],
+      pendingResolution: publicSummary(),
+    })
+    expect(isPendingMoveDeclarationResult(result)).toBe(true)
+    expect(Object.isFrozen(result)).toBe(true)
+    expect(Object.isFrozen(result.pendingResolution)).toBe(true)
+    expectPendingError(
+      () => createPendingMoveDeclarationResult({
+        opId: 'op_declare0001',
+        mapSlug: 'pending-arena',
+        previousRevision: 12,
+        revision: 14,
+        pendingResolution: publicSummary() as ReturnType<typeof parsePendingMoveResolutionPublicSummary>,
+      }),
+      'inconsistent-state',
+    )
+    expect(isPendingMoveDeclarationResult({ ...result, patches: [{}] })).toBe(false)
   })
 
   it('rejects unknown fields, malformed identities, duplicate resources, and invalid lifecycle shape', () => {

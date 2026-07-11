@@ -185,7 +185,11 @@
         "history": { "$ref": "#/$defs/emptyEncounterDirectory" },
         "turnResources": { "$ref": "#/$defs/emptyEncounterDirectory" },
         "zones": { "$ref": "#/$defs/emptyEncounterList" },
-        "pendingResolutionSummaries": { "$ref": "#/$defs/emptyEncounterList" }
+        "pendingResolutionSummaries": {
+          "type": "array",
+          "maxItems": 64,
+          "items": { "$ref": "#/$defs/pendingMoveResolutionPublicSummary" }
+        }
       }
     },
     "encounterSideId": {
@@ -485,6 +489,60 @@
       "properties": {
         "capabilityId": { "$ref": "#/$defs/encounterEffectStableId" },
         "action": { "enum": ["grant", "suppress"] }
+      }
+    },
+    "pendingMoveResolutionPublicSummary": {
+      "type": "object",
+      "required": [
+        "schemaVersion",
+        "resolutionId",
+        "actorPlacementId",
+        "canonicalMoveId",
+        "phase",
+        "status",
+        "outstandingWindowCount",
+        "createdAt",
+        "updatedAt"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "schemaVersion": { "const": 1 },
+        "resolutionId": { "type": "string", "minLength": 1, "maxLength": 160 },
+        "actorPlacementId": { "type": "string", "minLength": 1, "maxLength": 200 },
+        "canonicalMoveId": { "type": "string", "minLength": 1, "maxLength": 160 },
+        "phase": {
+          "enum": [
+            "declare",
+            "precondition",
+            "pay",
+            "target",
+            "pre-hit",
+            "accuracy",
+            "hit",
+            "miss",
+            "damage",
+            "after-damage",
+            "ko",
+            "movement",
+            "schedule",
+            "usage",
+            "cleanup"
+          ]
+        },
+        "status": {
+          "enum": [
+            "pending",
+            "resuming",
+            "committed",
+            "cancelled",
+            "expired",
+            "conflicted",
+            "abandoned"
+          ]
+        },
+        "outstandingWindowCount": { "type": "integer", "minimum": 0, "maximum": 64 },
+        "createdAt": { "type": "integer", "minimum": 0 },
+        "updatedAt": { "type": "integer", "minimum": 0 }
       }
     },
     "emptyEncounterList": {

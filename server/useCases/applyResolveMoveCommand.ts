@@ -2,7 +2,9 @@ import {
   LIVE_PLAY_COMMAND_SCHEMA_VERSION,
   LIVE_PLAY_COMMAND_TYPES,
   LIVE_PLAY_PATCH_TYPES,
+  createLivePlayRejectedResult,
   type LivePlayCommandAccepted,
+  type LivePlayCommandRejected,
   type LivePlayCommandResult,
   type LivePlayPatch,
   type ResolveMoveLivePlayCommand,
@@ -19,6 +21,12 @@ import {
 } from '#shared/livePlayMoveResolution'
 import { createLivePlayMovePresentationSummary } from '#shared/livePlayMovePresentation'
 import {
+  createPendingMoveDeclarationResult,
+  isPendingMoveDeclarationResult,
+  type PendingMoveDeclarationResult,
+  type PendingMoveResolutionPublicSummary,
+} from '#shared/moveAutomation/pendingResolution'
+import {
   parseLivePlayMoveStatePatchPayload,
   type LivePlayMoveSheetChangeRef,
   type LivePlayMoveStatePatchChanges,
@@ -30,9 +38,12 @@ import type { TrainerSheet } from '~/types/trainerSheet'
 import { deepCloneJson } from '~/utils/serialization'
 import { toPersistableSheetPayload } from '~/utils/sheets/persistence'
 import {
-  planAuthoritativeMoveState,
+  planAuthoritativeMoveStateExecution,
   isAuthoritativeMoveStatePlanningError,
+  isAuthoritativePendingMoveStatePlan,
   type AuthoritativeMoveStatePlan,
+  type AuthoritativeMoveStatePlanningResult,
+  type AuthoritativePendingMoveStatePlan,
   type PlanAuthoritativeMoveStateInput,
 } from '../domain/planAuthoritativeMoveState'
 import type { AuthoritativeMoveRandomSource } from '../domain/moveAutomation/random'
@@ -44,16 +55,24 @@ import {
 } from '../policies/playerProfileTokenControlPolicy'
 import { canAccessMapForRole } from '../policies/mapPolicy'
 import {
+  LivePlayCommandRejectionError,
   rejectLivePlayCommand,
   type AuthoritativeLivePlayCommandExecutor,
+  type LivePlayCommandApplication,
 } from '../livePlay/commandExecutor'
 import { createSqliteAuthoritativeLivePlayCommandExecutor } from '../livePlay/sqliteCommandExecutor'
+import { createLivePlayCommandHash } from '../livePlay/opResult'
 import { livePlaySheetUpdateRealtimeAppendInputs } from '../livePlay/sheetUpdateRealtime'
 import { getRotomDatabase, type RotomDatabase } from '../storage/database'
 import {
   createSqliteMapRepository,
   type MapRepository,
 } from '../storage/mapRepository'
+import {
+  createSqlitePendingMoveResolutionRepository,
+  type PendingMoveResolutionRepository,
+  type StoredPendingMoveResolution,
+} from '../storage/pendingMoveResolutionRepository'
 import {
   createSqliteSheetRepository,
   SheetRevisionConflictError,
@@ -64,9 +83,20 @@ import { logicalMapResourcePath, logicalSheetResourcePath } from '../utils/runti
 import { redactSheetUpdatesForPlayer } from '../utils/sheetPrivacy'
 import { UseCaseHttpError } from '../utils/useCaseErrors'
 import { toPersistedMap } from './saveMap'
-import { validateResolveMoveScopes } from './resolveMoveCommandScopes'
+import {
+  validatePendingResolveMoveScopes,
+  validateResolveMoveScopes,
+} from './resolveMoveCommandScopes'
 
 export class LivePlayResolveMoveCommandUseCaseError extends UseCaseHttpError<400 | 403 | 404 | 409> {}
+
+class PendingMoveDeclarationPersistenceError extends Error {
+  constructor(cause: unknown) {
+    super(cause instanceof Error ? cause.message : String(cause))
+    this.name = 'PendingMoveDeclarationPersistenceError'
+    this.cause = cause
+  }
+}
 
 export interface LivePlayResolveMoveCommandActor {
   readonly role: AuthRole
@@ -102,7 +132,11 @@ export interface LivePlayResolveMoveCommandDependencies {
   readonly database?: Pick<RotomDatabase, 'withTransaction'> & Partial<RotomDatabase>
   readonly mapRepository?: Pick<MapRepository<TabletopMap>, 'getBySlug' | 'applyLivePlayUpdate'>
   readonly sheetRepository?: Pick<SheetRepository<Record<string, unknown>>, 'getByRef' | 'assertRevisions' | 'applyLivePlayUpdate'>
-  readonly planner?: (input: PlanAuthoritativeMoveStateInput) => AuthoritativeMoveStatePlan
+  readonly pendingResolutionRepository?: Pick<
+    PendingMoveResolutionRepository,
+    'getByOrigin' | 'create'
+  >
+  readonly planner?: (input: PlanAuthoritativeMoveStateInput) => AuthoritativeMoveStatePlanningResult
   readonly random?: AuthoritativeMoveRandomSource
   readonly now?: () => number
   readonly idFactory?: () => string
@@ -119,6 +153,8 @@ interface ResolvedResolveMoveCommandContext {
   readonly trainerSheets: ReadonlyMap<string, TrainerSheet>
   readonly linkedTrainerSheets: readonly ServerTokenControlLinkedTrainerSheet[]
   readonly plan?: AuthoritativeMoveStatePlan
+  readonly pendingPlan?: AuthoritativePendingMoveStatePlan
+  readonly pendingResolution?: PendingMoveResolutionPublicSummary
   readonly move?: LivePlayResolvedMoveResult
   readonly sheetUpdates?: readonly LivePlayResolveMoveCommandSheetUpdate[]
 }
@@ -137,6 +173,8 @@ const actionDependencies = (dependencies: LivePlayResolveMoveCommandDependencies
   const concreteDatabase = database as RotomDatabase
   const mapRepository = dependencies.mapRepository ?? createSqliteMapRepository<TabletopMap>(concreteDatabase)
   const sheetRepository = dependencies.sheetRepository ?? createSqliteSheetRepository<Record<string, unknown>>(concreteDatabase)
+  const pendingResolutionRepository = dependencies.pendingResolutionRepository
+    ?? createSqlitePendingMoveResolutionRepository(concreteDatabase)
   const commandExecutor = dependencies.commandExecutor ?? createSqliteAuthoritativeLivePlayCommandExecutor({
     database: concreteDatabase,
   })
@@ -144,8 +182,9 @@ const actionDependencies = (dependencies: LivePlayResolveMoveCommandDependencies
     database,
     mapRepository,
     sheetRepository,
+    pendingResolutionRepository,
     commandExecutor,
-    planner: dependencies.planner ?? planAuthoritativeMoveState,
+    planner: dependencies.planner ?? planAuthoritativeMoveStateExecution,
     random: dependencies.random,
     now: dependencies.now ?? defaultNow,
     idFactory: dependencies.idFactory,
@@ -288,11 +327,15 @@ const plannerRejectionReason = (reason: string) => {
   return 'invalid' as const
 }
 
+const pendingResolutionIdForCommand = (
+  command: ResolveMoveLivePlayCommand,
+): string => `resolution-${createLivePlayCommandHash(command)}`
+
 const planMoveState = (
   context: ResolvedResolveMoveCommandContext,
   dependencies: DependencySet,
-  operationId: string,
-): AuthoritativeMoveStatePlan => {
+  command: ResolveMoveLivePlayCommand,
+): AuthoritativeMoveStatePlanningResult => {
   try {
     return dependencies.planner({
       map: context.map,
@@ -302,7 +345,8 @@ const planMoveState = (
       random: dependencies.random,
       now: dependencies.now,
       idFactory: dependencies.idFactory,
-      operationId,
+      operationId: command.opId,
+      pendingResolutionId: pendingResolutionIdForCommand(command),
       maxMoveLogEntries: dependencies.maxMoveLogEntries,
     })
   } catch (error) {
@@ -444,19 +488,52 @@ const moveStatePatch = (
   }
 }
 
+type ResolveMoveCommandApplication =
+  | {
+      readonly kind: 'complete'
+      readonly context: ResolvedResolveMoveCommandContext
+      readonly patches: readonly LivePlayPatch[]
+    }
+  | {
+      readonly kind: 'pending'
+      readonly context: ResolvedResolveMoveCommandContext
+      readonly result: PendingMoveDeclarationResult
+      readonly patches: readonly []
+    }
+
 const applyResolveMoveCommand = (
   command: ResolveMoveLivePlayCommand,
   context: ResolvedResolveMoveCommandContext,
   dependencies: DependencySet,
-): {
-  readonly context: ResolvedResolveMoveCommandContext
-  readonly patches: readonly LivePlayPatch[]
-} => {
-  const plan = planMoveState(context, dependencies, command.opId)
+): ResolveMoveCommandApplication => {
+  const plan = planMoveState(context, dependencies, command)
+  if (isAuthoritativePendingMoveStatePlan(plan)) {
+    validatePendingResolveMoveScopes({ command, map: context.map, plan })
+    const result = createPendingMoveDeclarationResult({
+      opId: command.opId,
+      mapSlug: command.mapSlug,
+      previousRevision: plan.previousRevision,
+      revision: plan.revision,
+      pendingResolution: plan.pendingResolution.publicSummary,
+    })
+    return {
+      kind: 'pending',
+      context: {
+        ...context,
+        map: plan.nextMap,
+        pendingPlan: plan,
+        pendingResolution: plan.pendingResolution.publicSummary,
+      },
+      result,
+      patches: [],
+    }
+  }
+
   const move = moveResultFromPlan(plan)
   const scopes = validateResolveMoveScopes({ command, intent: context.intent, map: context.map, plan })
   const patch = moveStatePatch(command, plan, move, scopes)
   return {
+    kind: 'complete',
     context: {
       ...context,
       map: plan.nextMap,
@@ -467,12 +544,8 @@ const applyResolveMoveCommand = (
   }
 }
 
-const isAcceptedResult = (result: LivePlayCommandResult): result is LivePlayCommandAccepted => (
-  result.ok === true && !('duplicate' in result)
-)
-
 const acceptedResult = (result: LivePlayCommandResult): LivePlayCommandAccepted | null => {
-  if (!result.ok) return null
+  if (!result.ok || isPendingMoveDeclarationResult(result)) return null
   if ('duplicate' in result) return result.original.ok ? result.original : null
   return result
 }
@@ -524,7 +597,7 @@ const sheetUpdateFromPersisted = (
 }
 
 const assertConsultedSheetRevisions = (
-  plan: AuthoritativeMoveStatePlan,
+  plan: Pick<AuthoritativeMoveStatePlan | AuthoritativePendingMoveStatePlan, 'sheetReads'>,
   dependencies: DependencySet,
   currentRevision: number,
 ): void => {
@@ -542,7 +615,10 @@ const assertConsultedSheetRevisions = (
   }
 }
 
-const assertCommittedMapMatchesPlan = (map: TabletopMap, plan: AuthoritativeMoveStatePlan): void => {
+const assertCommittedMapMatchesPlan = (
+  map: TabletopMap,
+  plan: Pick<AuthoritativeMoveStatePlan | AuthoritativePendingMoveStatePlan, 'revision' | 'nextMap'>,
+): void => {
   if (normalizeRevision(map.revision) !== plan.revision) {
     throw new LivePlayResolveMoveCommandUseCaseError(409, `Committed map revision ${normalizeRevision(map.revision)} did not match planned revision ${plan.revision}`)
   }
@@ -554,6 +630,272 @@ const assertCommittedMapMatchesPlan = (map: TabletopMap, plan: AuthoritativeMove
 const assertCommittedSheetMatchesPlan = (sheet: PersistedSheet, expectedRevision: number): void => {
   if (normalizeRevision(sheet.revision) !== expectedRevision) {
     throw new LivePlayResolveMoveCommandUseCaseError(409, `Committed ${sheet.kind} sheet ${sheet.slug} revision ${sheet.revision} did not match planned revision ${expectedRevision}`)
+  }
+}
+
+const persistPendingMoveDeclaration = (options: {
+  readonly command: ResolveMoveLivePlayCommand
+  readonly plan: AuthoritativePendingMoveStatePlan
+  readonly dependencies: DependencySet
+  readonly currentRevision: number
+}): {
+  readonly map: TabletopMap
+  readonly sheetUpdates: readonly LivePlayResolveMoveCommandSheetUpdate[]
+} => {
+  const { command, plan, dependencies, currentRevision } = options
+  if (plan.previousRevision !== currentRevision) {
+    throw new LivePlayResolveMoveCommandUseCaseError(
+      409,
+      'Pending move plan revision did not match the command revision context',
+    )
+  }
+  assertConsultedSheetRevisions(plan, dependencies, currentRevision)
+
+  const persisted = toPersistedMap(
+    plan.nextMap,
+    plan.nextMap.folder ?? '',
+    plan.nextMap.updatedAt ?? dependencies.now(),
+    { revision: plan.revision },
+  )
+  const mapResult = dependencies.mapRepository.applyLivePlayUpdate({
+    slug: command.mapSlug,
+    expectedRevision: plan.previousRevision,
+    nextMap: persisted,
+  })
+  if (mapResult === 'stale') {
+    throw new LivePlayResolveMoveCommandUseCaseError(
+      409,
+      `Map ${command.mapSlug} changed before the pending move declaration could be persisted`,
+    )
+  }
+
+  for (const write of plan.sheetWrites) {
+    const nextSheet = sheetPayloadForPersistence(
+      write.nextSheet as unknown as Record<string, unknown>,
+      write.slug,
+      plan.nextMap.updatedAt ?? dependencies.now(),
+    )
+    const sheetResult = dependencies.sheetRepository.applyLivePlayUpdate({
+      kind: write.kind,
+      slug: write.slug,
+      expectedRevision: write.expectedRevision,
+      nextSheet,
+    })
+    if (sheetResult === 'stale') {
+      throw new LivePlayResolveMoveCommandUseCaseError(
+        409,
+        `${write.kind} sheet ${write.slug} changed before the pending move declaration could be persisted`,
+      )
+    }
+  }
+
+  const storedPending = dependencies.pendingResolutionRepository.create({
+    resolution: plan.pendingResolution,
+  })
+  if (
+    storedPending.resolutionId !== plan.pendingResolution.resolutionId
+    || storedPending.originOpId !== command.opId
+    || storedPending.status !== 'pending'
+  ) {
+    throw new LivePlayResolveMoveCommandUseCaseError(
+      409,
+      'Pending move declaration did not persist its canonical resolution identity',
+    )
+  }
+  const sheetUpdates: LivePlayResolveMoveCommandSheetUpdate[] = []
+  for (const write of plan.sheetWrites) {
+    const authoritativeSheet = dependencies.sheetRepository.getByRef(write.kind, write.slug)
+    if (!authoritativeSheet) {
+      throw new LivePlayResolveMoveCommandUseCaseError(
+        404,
+        `${write.kind} sheet ${write.slug} not found after pending move declaration`,
+      )
+    }
+    assertCommittedSheetMatchesPlan(authoritativeSheet, write.revision)
+    sheetUpdates.push(sheetUpdateFromPersisted(authoritativeSheet, dependencies))
+  }
+  const authoritativeMap = dependencies.mapRepository.getBySlug(command.mapSlug)
+  if (!authoritativeMap) {
+    throw new LivePlayResolveMoveCommandUseCaseError(
+      404,
+      `Map ${command.mapSlug}.json not found after pending move declaration`,
+    )
+  }
+  assertCommittedMapMatchesPlan(authoritativeMap, plan)
+  return { map: authoritativeMap, sheetUpdates }
+}
+
+const storedPendingMapReadRevision = (
+  stored: StoredPendingMoveResolution,
+): number => stored.resolution.readSet.find(read => read.kind === 'map')?.revision
+  ?? (() => { throw new LivePlayResolveMoveCommandUseCaseError(409, 'Stored pending move resolution is missing its map read') })()
+
+const pendingResultFromStored = (
+  command: ResolveMoveLivePlayCommand,
+  stored: StoredPendingMoveResolution,
+  currentRevision?: number,
+): PendingMoveDeclarationResult | LivePlayCommandRejected => {
+  if (stored.resolutionId !== pendingResolutionIdForCommand(command)) {
+    return createLivePlayRejectedResult({
+      opId: command.opId,
+      mapSlug: command.mapSlug,
+      reason: 'conflict',
+      message: `Operation ID ${command.mapSlug}:${command.opId} already identifies a different pending move declaration`,
+      ...(currentRevision === undefined ? {} : { currentRevision }),
+    })
+  }
+  if (stored.status !== 'pending' || stored.resolution.status !== 'pending') {
+    return createLivePlayRejectedResult({
+      opId: command.opId,
+      mapSlug: command.mapSlug,
+      reason: 'conflict',
+      message: 'The move declaration no longer has an active pending resolution.',
+      ...(currentRevision === undefined ? {} : { currentRevision }),
+    })
+  }
+  const revision = storedPendingMapReadRevision(stored)
+  if (revision < 1) {
+    throw new LivePlayResolveMoveCommandUseCaseError(
+      409,
+      'Stored pending move resolution map read cannot precede its declaration commit',
+    )
+  }
+  const previousRevision = revision - 1
+  return createPendingMoveDeclarationResult({
+    opId: command.opId,
+    mapSlug: command.mapSlug,
+    previousRevision,
+    revision,
+    pendingResolution: stored.resolution.publicSummary,
+  })
+}
+
+interface AppliedResolveMoveCommand {
+  readonly application: LivePlayCommandApplication<ResolvedResolveMoveCommandContext>
+  readonly persistedContext: ResolvedResolveMoveCommandContext | null
+}
+
+const applyResolveMoveCommandWithPendingPersistence = (options: {
+  readonly command: ResolveMoveLivePlayCommand
+  readonly context: ResolvedResolveMoveCommandContext
+  readonly currentRevision: number
+  readonly dependencies: DependencySet
+}): AppliedResolveMoveCommand => {
+  const { command, context, currentRevision, dependencies } = options
+  try {
+    return dependencies.database.withTransaction(() => {
+      // Re-check under SQLite's write lock so cross-process duplicates cannot
+      // replan or reroll between the fast pending lookup and durable insert.
+      const existing = dependencies.pendingResolutionRepository.getByOrigin(
+        command.mapSlug,
+        command.opId,
+      )
+      if (existing) {
+        const replay = pendingResultFromStored(command, existing, currentRevision)
+        if (!replay.ok) {
+          return {
+            application: { status: 'non-terminal-rejected', result: replay },
+            persistedContext: null,
+          }
+        }
+        const authoritativeMap = dependencies.mapRepository.getBySlug(command.mapSlug)
+        if (!authoritativeMap) {
+          throw new LivePlayResolveMoveCommandUseCaseError(
+            404,
+            `Map ${command.mapSlug}.json not found after pending move declaration`,
+          )
+        }
+        const replayContext: ResolvedResolveMoveCommandContext = {
+          ...context,
+          map: authoritativeMap,
+          pendingResolution: existing.resolution.publicSummary,
+        }
+        return {
+          application: {
+            status: 'suspended',
+            nextMap: replayContext,
+            result: replay,
+          },
+          persistedContext: replayContext,
+        }
+      }
+
+      const authoritativeMap = dependencies.mapRepository.getBySlug(command.mapSlug)
+      if (!authoritativeMap) {
+        throw new LivePlayResolveMoveCommandUseCaseError(404, `Map ${command.mapSlug}.json not found`)
+      }
+      if (normalizeRevision(authoritativeMap.revision) !== currentRevision) {
+        rejectLivePlayCommand(
+          'stale-revision',
+          `resolveMove requires an exact map revision. Refresh and retry from revision ${normalizeRevision(authoritativeMap.revision)}.`,
+          { currentRevision: normalizeRevision(authoritativeMap.revision) },
+        )
+      }
+
+      const resolved = applyResolveMoveCommand(command, context, dependencies)
+      if (resolved.kind === 'complete') {
+        return {
+          application: {
+            status: 'accepted',
+            nextMap: resolved.context,
+            previousRevision: resolved.context.plan?.previousRevision ?? currentRevision,
+            revision: resolved.context.plan?.revision ?? currentRevision,
+            patches: resolved.patches,
+          },
+          persistedContext: null,
+        }
+      }
+
+      const pendingPlan = resolved.context.pendingPlan
+      if (!pendingPlan) {
+        throw new LivePlayResolveMoveCommandUseCaseError(
+          409,
+          'resolveMove suspended without a pending move plan',
+        )
+      }
+      let committed: ReturnType<typeof persistPendingMoveDeclaration>
+      try {
+        committed = persistPendingMoveDeclaration({
+          command,
+          plan: pendingPlan,
+          dependencies,
+          currentRevision,
+        })
+      }
+      catch (error) {
+        if (error instanceof LivePlayCommandRejectionError) throw error
+        throw new PendingMoveDeclarationPersistenceError(error)
+      }
+      const committedContext: ResolvedResolveMoveCommandContext = {
+        ...resolved.context,
+        map: committed.map,
+        sheetUpdates: committed.sheetUpdates,
+      }
+      return {
+        application: {
+          status: 'suspended',
+          nextMap: committedContext,
+          result: resolved.result,
+        },
+        persistedContext: committedContext,
+      }
+    })
+  }
+  catch (error) {
+    if (!(error instanceof PendingMoveDeclarationPersistenceError)) throw error
+    return {
+      application: {
+        status: 'non-terminal-rejected',
+        result: createLivePlayRejectedResult({
+          opId: command.opId,
+          mapSlug: command.mapSlug,
+          reason: 'persistence-failed',
+          message: `Could not persist pending move declaration: ${error.message}`,
+          currentRevision,
+        }),
+      },
+      persistedContext: null,
+    }
   }
 }
 
@@ -575,6 +917,49 @@ const responseFromContext = (
   } : {}),
   ...(move === undefined ? {} : { move }),
 })
+
+const currentContextForPendingResult = (
+  result: PendingMoveDeclarationResult,
+  role: AuthRole,
+  dependencies: DependencySet,
+): ResolvedResolveMoveCommandContext => {
+  const stored = dependencies.pendingResolutionRepository.getByOrigin(
+    result.mapSlug,
+    result.opId,
+  )
+  if (!stored || stored.resolutionId !== result.pendingResolution.resolutionId) {
+    throw new LivePlayResolveMoveCommandUseCaseError(
+      409,
+      'Pending move declaration acknowledgement has no matching durable resolution',
+    )
+  }
+  const map = dependencies.mapRepository.getBySlug(result.mapSlug)
+  if (!map) {
+    throw new LivePlayResolveMoveCommandUseCaseError(
+      404,
+      `Map ${result.mapSlug}.json not found after pending move declaration`,
+    )
+  }
+  if (!canAccessMapForRole(role, map)) {
+    throw new LivePlayResolveMoveCommandUseCaseError(403, 'Map is not player visible')
+  }
+  const mapPath = mapPathForDocument(map)
+  return {
+    mapPath,
+    relativePath: dependencies.relativePath(mapPath),
+    map,
+    intent: {
+      schemaVersion: 1,
+      placementId: stored.resolution.actorPlacementId,
+      moveName: stored.resolution.canonicalMoveId,
+      selection: { kind: 'self' },
+    },
+    pokemonSheets: new Map(),
+    trainerSheets: new Map(),
+    linkedTrainerSheets: [],
+    pendingResolution: stored.resolution.publicSummary,
+  }
+}
 
 const currentContextForAcceptedResult = (
   result: LivePlayCommandAccepted,
@@ -647,19 +1032,35 @@ export const executeLivePlayResolveMoveCommandUseCase = async (
         throw new LivePlayResolveMoveCommandUseCaseError(403, controlDeniedMessage(actor.role, actor.playerProfile))
       }
     },
-    apply: ({ command, map }) => {
-      const application = applyResolveMoveCommand(command, map, deps)
-      return {
-        status: 'accepted',
-        nextMap: application.context,
-        previousRevision: application.context.plan?.previousRevision ?? normalizeRevision(map.map.revision),
-        revision: application.context.plan?.revision ?? normalizeRevision(map.map.revision),
-        patches: application.patches,
-      }
+    findSuspendedResult: ({ command }) => {
+      const stored = deps.pendingResolutionRepository.getByOrigin(
+        command.mapSlug,
+        command.opId,
+      )
+      if (!stored) return null
+      const currentMap = deps.mapRepository.getBySlug(command.mapSlug)
+      return pendingResultFromStored(
+        command,
+        stored,
+        currentMap ? normalizeRevision(currentMap.revision) : undefined,
+      )
+    },
+    apply: ({ command, map, currentRevision }) => {
+      const applied = applyResolveMoveCommandWithPendingPersistence({
+        command,
+        context: map,
+        currentRevision,
+        dependencies: deps,
+      })
+      if (applied.persistedContext) persistedContext = applied.persistedContext
+      return applied.application
     },
     persist: () => {
       throw new Error('resolveMove live-play commands must persist through the accepted-result commit hook')
     },
+    // Pending state is already atomically persisted under the SQLite write
+    // lock in apply; this hook intentionally does not create a terminal op row.
+    commitSuspended: () => {},
     commit: ({ actor, command, currentRevision, nextMap, result, recordRealtimeEvents, saveOpResult }) => {
       deps.database.withTransaction(() => {
         const plan = nextMap.plan
@@ -732,9 +1133,14 @@ export const executeLivePlayResolveMoveCommandUseCase = async (
   })
 
   const committedContext = persistedContext as ResolvedResolveMoveCommandContext | null
+  const pending = isPendingMoveDeclarationResult(result) ? result : null
   const accepted = acceptedResult(result)
   const responseContext = committedContext
-    ?? (accepted ? currentContextForAcceptedResult(accepted, input.role, deps) : null)
+    ?? (pending
+      ? currentContextForPendingResult(pending, input.role, deps)
+      : accepted
+        ? currentContextForAcceptedResult(accepted, input.role, deps)
+        : null)
   const move = committedContext?.move ?? responseContext?.move
   return responseFromContext(result, responseContext, input.role, move)
 }
