@@ -1281,7 +1281,7 @@ Status: DONE
 
 ## MA-102 — Add strict response command schemas
 
-Status: TODO
+Status: DONE
 
 **Depends on:** MA-100
 **Commit:** `feat(move-automation): parse move response commands`
