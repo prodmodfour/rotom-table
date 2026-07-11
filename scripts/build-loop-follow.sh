@@ -66,15 +66,15 @@ if ! state_dir="$(build_loop_resolve_state_dir "$repo_root")"; then
 fi
 
 lock_dir="$(build_loop_lock_dir "$state_dir")"
-current_log="$(build_loop_current_log "$state_dir")"
+follow_log="$(build_loop_follow_log "$state_dir")"
 stop_request_file="$(build_loop_stop_request_file "$state_dir")"
 loop_pid="$(build_loop_active_pid "$state_dir" 2>/dev/null || true)"
 
 if [[ -z "$loop_pid" ]]; then
   pp_warn "No active build loop was found for this repository."
-  if [[ -f "$current_log" ]]; then
-    pp_kv "Latest run log" "$current_log"
-    pp_hint "Inspect it with: tail -n $LINES '$current_log'"
+  if [[ -f "$follow_log" ]]; then
+    pp_kv "Latest follow log" "$follow_log"
+    pp_hint "Inspect it with: tail -n $LINES '$follow_log'"
   else
     pp_hint "Start one with: just run"
   fi
@@ -82,7 +82,7 @@ if [[ -z "$loop_pid" ]]; then
 fi
 
 for _ in {1..50}; do
-  if [[ -f "$current_log" ]]; then
+  if [[ -f "$follow_log" ]]; then
     break
   fi
   if ! kill -0 "$loop_pid" 2>/dev/null; then
@@ -91,8 +91,8 @@ for _ in {1..50}; do
   sleep 0.1
 done
 
-if [[ ! -f "$current_log" ]]; then
-  pp_error "The active build loop has not created its current log: $current_log"
+if [[ ! -f "$follow_log" ]]; then
+  pp_error "The active build loop has not created its follow log: $follow_log"
   exit 1
 fi
 
@@ -112,14 +112,14 @@ fi
 if [[ -n "$phase" ]]; then
   pp_kv "Phase" "$phase"
 fi
-pp_kv "Log" "$current_log"
+pp_kv "Log" "$follow_log"
 if [[ -f "$stop_request_file" ]]; then
   pp_kv "Status" "graceful stop requested"
 fi
 pp_info "Ctrl-C detaches this follower; the build loop keeps running."
 pp_blank
 
-tail -n "$LINES" -F "$current_log" &
+tail -n "$LINES" -F "$follow_log" &
 tail_pid=$!
 stop_notice_shown=0
 if [[ -f "$stop_request_file" ]]; then

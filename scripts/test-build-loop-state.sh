@@ -108,6 +108,14 @@ if [[ ! -d "$state_dir/logs" ]]; then
   fail "build-loop did not recreate the external log directory"
 fi
 
+if [[ ! -f "$state_dir/follow.log" ]]; then
+  fail "build-loop did not preserve the stable follow log"
+fi
+follow_line_count="$(grep -c 'Stub agent cycle' "$state_dir/follow.log" || true)"
+if [[ "$follow_line_count" -ne 2 ]]; then
+  fail "stable follow log did not retain detailed output across cycles"
+fi
+
 log_count="$(find "$state_dir/logs" -type f -name 'cycle-*.log' | wc -l | tr -d ' ')"
 if [[ "$log_count" -lt 1 ]]; then
   fail "expected at least one external build-loop log in $state_dir/logs"

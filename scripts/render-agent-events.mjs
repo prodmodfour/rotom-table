@@ -11,17 +11,16 @@ if (args.some((arg) => arg !== '--raw')) {
 const rawOutput = args.includes('--raw')
 const startedAt = Date.now()
 const heartbeatSeconds = parseHeartbeatSeconds(process.env.AGENT_EVENT_HEARTBEAT_SECONDS)
-const toolStartedAt = new Map()
 const activeTools = new Map()
 
+let nextToolSequence = 1
 let agentStarted = false
 let agentEnded = false
 let agentFailed = false
 let agentFailureReported = false
 let rendererFailed = false
 let assistantLineOpen = false
-let thinkingAnnounced = false
-let lastEventAt = startedAt
+let lastOutputAt = startedAt
 let lastHeartbeatAt = 0
 
 function parseHeartbeatSeconds(value) {
@@ -82,6 +81,7 @@ function writeLine(symbol, message) {
   if (rawOutput) return
 
   finishAssistantLine()
+  lastOutputAt = Date.now()
   process.stdout.write(`  ${elapsedLabel()}  ${symbol} ${stripTerminalControls(message)}\n`)
 }
 
@@ -90,6 +90,7 @@ function writeAssistantDelta(delta) {
   const safeDelta = stripTerminalControls(delta).replace(/\r/g, '')
   if (safeDelta.length === 0) return
 
+  lastOutputAt = Date.now()
   const pieces = safeDelta.split(/(\n)/)
 
   for (const piece of pieces) {
@@ -115,7 +116,23 @@ function finishAssistantLine() {
   assistantLineOpen = false
 }
 
-function summarizeTool(toolName, args) {
+function describeShellCommand(command) {
+  const detail = singleLine(command ?? '(command missing)', 180)
+  const normalized = detail.toLowerCase()
+
+  if (normalized.includes('quality-gate.sh')) return { action: 'Run quality gate', detail }
+  if (/^npm (test|run test)(\s|$)/.test(normalized)) return { action: 'Run tests', detail }
+  if (/^npm run typecheck(\s|$)/.test(normalized)) return { action: 'Run typecheck', detail }
+  if (/^npm run build(\s|$)/.test(normalized)) return { action: 'Build project', detail }
+  if (/^git status(\s|$)/.test(normalized)) return { action: 'Inspect repository', detail }
+  if (/^git (diff|log|show)(\s|$)/.test(normalized)) return { action: 'Inspect Git changes', detail }
+  if (/^(find|fd)(\s|$)/.test(normalized)) return { action: 'Find files', detail }
+  if (/^(grep|rg)(\s|$)/.test(normalized)) return { action: 'Search files', detail }
+
+  return { action: 'Run shell command', detail }
+}
+
+function describeTool(toolName, args) {
   const safeArgs = args && typeof args === 'object' ? args : {}
 
   switch (toolName) {
@@ -124,29 +141,57 @@ function summarizeTool(toolName, args) {
         safeArgs.offset !== undefined ? `offset ${safeArgs.offset}` : '',
         safeArgs.limit !== undefined ? `limit ${safeArgs.limit}` : '',
       ].filter(Boolean)
-      return `${singleLine(safeArgs.path ?? '(path missing)')}${range.length > 0 ? ` (${range.join(', ')})` : ''}`
+      const path = singleLine(safeArgs.path ?? '(path missing)', 170)
+      return { action: 'Read file', detail: `${path}${range.length > 0 ? ` (${range.join(', ')})` : ''}` }
     }
     case 'bash':
-      return singleLine(safeArgs.command ?? '(command missing)', 260)
+      return describeShellCommand(safeArgs.command)
     case 'edit': {
       const editCount = Array.isArray(safeArgs.edits) ? safeArgs.edits.length : undefined
-      return `${singleLine(safeArgs.path ?? '(path missing)')}${editCount === undefined ? '' : ` (${editCount} replacement${editCount === 1 ? '' : 's'})`}`
+      const path = singleLine(safeArgs.path ?? '(path missing)', 170)
+      return {
+        action: 'Edit file',
+        detail: `${path}${editCount === undefined ? '' : ` (${editCount} replacement${editCount === 1 ? '' : 's'})`}`,
+      }
     }
     case 'write': {
       const byteCount = typeof safeArgs.content === 'string' ? Buffer.byteLength(safeArgs.content) : undefined
-      return `${singleLine(safeArgs.path ?? '(path missing)')}${byteCount === undefined ? '' : ` (${byteCount} bytes)`}`
+      const path = singleLine(safeArgs.path ?? '(path missing)', 170)
+      return { action: 'Write file', detail: `${path}${byteCount === undefined ? '' : ` (${byteCount} bytes)`}` }
     }
     case 'grep':
-      return singleLine(`${safeArgs.pattern ?? ''}${safeArgs.path ? ` in ${safeArgs.path}` : ''}` || stableJson(safeArgs))
+      return {
+        action: 'Search files',
+        detail: singleLine(`${safeArgs.pattern ?? ''}${safeArgs.path ? ` in ${safeArgs.path}` : ''}` || stableJson(safeArgs), 180),
+      }
     case 'find':
-      return singleLine(`${safeArgs.pattern ?? ''}${safeArgs.path ? ` in ${safeArgs.path}` : ''}` || stableJson(safeArgs))
+      return {
+        action: 'Find files',
+        detail: singleLine(`${safeArgs.pattern ?? ''}${safeArgs.path ? ` in ${safeArgs.path}` : ''}` || stableJson(safeArgs), 180),
+      }
     case 'ls':
-      return singleLine(safeArgs.path ?? '.')
+      return { action: 'List directory', detail: singleLine(safeArgs.path ?? '.', 180) }
     default: {
       const argumentNames = Object.keys(safeArgs)
-      return argumentNames.length > 0 ? `arguments: ${argumentNames.join(', ')}` : 'no arguments'
+      const readableName = singleLine(toolName.replace(/[_-]+/g, ' '), 80)
+      return {
+        action: `Use ${readableName}`,
+        detail: argumentNames.length > 0 ? `arguments: ${argumentNames.join(', ')}` : 'no arguments',
+      }
     }
   }
+}
+
+function toolReference(sequence) {
+  return `[${String(sequence).padStart(2, '0')}]`
+}
+
+function formatToolActivity(activity) {
+  return `${activity.reference} ${activity.action}${activity.detail ? ` — ${activity.detail}` : ''}`
+}
+
+function formatToolCompletion(activity) {
+  return `${activity.reference} ${activity.action}`
 }
 
 function extractResultText(result) {
@@ -180,29 +225,17 @@ function recordAssistantFailure(message) {
 }
 
 function handleEvent(event) {
-  lastEventAt = Date.now()
-
   switch (event.type) {
     case 'agent_start':
       agentStarted = true
       writeLine('•', 'Agent started.')
       break
 
-    case 'message_start':
-      thinkingAnnounced = false
-      break
-
     case 'message_update': {
       const update = event.assistantMessageEvent
       if (!update || typeof update !== 'object') break
 
-      if (update.type === 'thinking_start' || update.type === 'thinking_delta') {
-        if (!thinkingAnnounced) {
-          writeLine('•', 'Thinking…')
-          thinkingAnnounced = true
-        }
-        break
-      }
+      if (update.type === 'thinking_start' || update.type === 'thinking_delta') break
 
       if (update.type === 'text_delta' && typeof update.delta === 'string') {
         writeAssistantDelta(update.delta)
@@ -218,25 +251,37 @@ function handleEvent(event) {
     case 'tool_execution_start': {
       const toolName = String(event.toolName || 'tool')
       const toolCallId = String(event.toolCallId || `${toolName}-${Date.now()}`)
-      toolStartedAt.set(toolCallId, Date.now())
-      activeTools.set(toolCallId, toolName)
-      writeLine('→', `${toolName} ${summarizeTool(toolName, event.args)}`.trimEnd())
+      const description = describeTool(toolName, event.args)
+      const activity = {
+        ...description,
+        reference: toolReference(nextToolSequence),
+        startedAt: Date.now(),
+        toolName,
+      }
+      nextToolSequence += 1
+      activeTools.set(toolCallId, activity)
+      writeLine('→', formatToolActivity(activity))
       break
     }
 
     case 'tool_execution_end': {
-      const toolName = String(event.toolName || activeTools.get(String(event.toolCallId)) || 'tool')
       const toolCallId = String(event.toolCallId || '')
-      const toolStart = toolStartedAt.get(toolCallId) ?? Date.now()
+      const existingActivity = activeTools.get(toolCallId)
+      const toolName = String(event.toolName || existingActivity?.toolName || 'tool')
+      const activity = existingActivity ?? {
+        ...describeTool(toolName, undefined),
+        reference: '[??]',
+        startedAt: Date.now(),
+        toolName,
+      }
       const status = event.isError ? '✕' : '✓'
-      writeLine(status, `${toolName} (${durationLabel(toolStart)})`)
+      writeLine(status, `${formatToolCompletion(activity)} (${durationLabel(activity.startedAt)})`)
 
       if (event.isError) {
         const detail = singleLine(extractResultText(event.result), 1200)
-        if (detail) writeLine('↳', detail)
+        if (detail) writeLine('↳', `${activity.reference} ${detail}`)
       }
 
-      toolStartedAt.delete(toolCallId)
       activeTools.delete(toolCallId)
       break
     }
@@ -277,14 +322,17 @@ const heartbeat = !rawOutput && heartbeatSeconds > 0
       if (!agentStarted || agentEnded) return
 
       const now = Date.now()
-      const idleMs = now - lastEventAt
+      const idleMs = now - lastOutputAt
       const heartbeatMs = heartbeatSeconds * 1000
       if (idleMs < heartbeatMs || now - lastHeartbeatAt < heartbeatMs) return
 
       lastHeartbeatAt = now
-      if (activeTools.size > 0) {
-        const toolNames = [...new Set(activeTools.values())].join(', ')
-        writeLine('•', `${toolNames} still running…`)
+      if (activeTools.size === 1) {
+        const [activity] = activeTools.values()
+        writeLine('•', `${formatToolActivity(activity)} is still running…`)
+      } else if (activeTools.size > 1) {
+        const references = [...activeTools.values()].map((activity) => activity.reference).join(', ')
+        writeLine('•', `${activeTools.size} tools are still running: ${references}.`)
       } else {
         writeLine('•', 'Waiting for model…')
       }

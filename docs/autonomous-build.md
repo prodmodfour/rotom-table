@@ -12,7 +12,7 @@ The current queue maps GitHub issues #27-#44 to local tickets in `BUILD_TICKETS.
 - `scripts/build-loop.sh` — cycle runner.
 - `scripts/run-agent.sh` — Pi wrapper used by the loop.
 - `scripts/render-agent-events.mjs` — dependency-free live Pi event renderer.
-- `scripts/build-loop-follow.sh` — observer for the active aggregate log.
+- `scripts/build-loop-follow.sh` — observer for the active detailed-agent log.
 - `scripts/build-loop-stop.sh` — graceful stop-request command.
 - `scripts/quality-gate.sh` — Rotom Table validation gate.
 
@@ -37,7 +37,7 @@ To push the branch after each successful ticket, omit `--no-push`.
 
 ## Live agent output
 
-The default `live` agent-output mode renders Pi's JSON event stream as concise, line-oriented terminal output. It shows assistant progress text, safe tool argument summaries, tool completion and duration, provider retries, compaction, and a periodic heartbeat while the model or a tool is still running. Thinking deltas and successful tool results are not printed. Failed tool output is bounded so a single failure cannot flood the terminal.
+The default `live` agent-log format renders Pi's JSON event stream as concise, line-oriented output in the external logs. The terminal that launched `just run` stays focused on cycle-level state and directs the operator to `just follow` instead of echoing every agent event. The detailed stream shows assistant progress text, safe tool argument summaries, stable tool identifiers that correlate parallel starts and completions, semantic actions such as **Read file**, **Find files**, or **Run tests**, provider retries, compaction, durations, and a periodic heartbeat while the model or a tool is still running. Thinking events/deltas and successful tool results are not printed. Failed tool output is bounded so a single failure cannot flood the log.
 
 Select another mode when needed:
 
@@ -45,7 +45,7 @@ Select another mode when needed:
 # Preserve the older final-response-only Pi print mode.
 scripts/build-loop.sh --max-cycles 1 --agent-output final --no-push
 
-# Emit Pi's raw JSONL event stream for low-level debugging.
+# Store Pi's raw JSONL event stream in the detailed logs for low-level debugging.
 scripts/build-loop.sh --max-cycles 1 --agent-output json --no-push
 ```
 
@@ -53,7 +53,7 @@ Raw JSON events can contain complete messages, tool arguments, and tool results.
 
 ## Follow and gracefully stop a long run
 
-Every active loop writes its complete human-readable output to a stable `current.log` in the external build-loop state directory, in addition to the existing per-cycle logs. Follow it from another terminal without finding a PID or log filename:
+Every active loop writes high-level launcher output to `current.log`, detailed agent activity to `follow.log`, and individual attempts to the existing per-cycle logs in the external build-loop state directory. Detailed activity is not mirrored to the `just run` terminal. Follow the stable detailed log from another terminal without finding a PID or cycle filename:
 
 ```bash
 just follow       # show the latest 40 lines, then follow

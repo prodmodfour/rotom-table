@@ -64,6 +64,10 @@ build_loop_current_log() {
   printf '%s/current.log\n' "$1"
 }
 
+build_loop_follow_log() {
+  printf '%s/follow.log\n' "$1"
+}
+
 build_loop_stop_request_file() {
   printf '%s/stop-requested\n' "$(build_loop_lock_dir "$1")"
 }

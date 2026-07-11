@@ -66,7 +66,7 @@ default:
       '      delete the planning file, commit the refresh, and push the current branch.' \
       '' \
       '  just run' \
-      '      Run the default 180-cycle autonomous build loop with push enabled.' \
+      '      Run the default 180-cycle loop with high-level status; use just follow for agent details.' \
       '' \
       '  just follow' \
       '  just follow <lines>' \

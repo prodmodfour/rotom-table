@@ -182,16 +182,27 @@ if [[ "$(< "$success_state/invocation-count")" != "1" ]]; then
 fi
 grep -Fq 'Cycle 1/2 finished; graceful stop requested.' "$success_output" \
   || fail "build loop did not report its graceful cycle-boundary stop"
+grep -Fq 'Detailed agent activity is streaming to the follow log' "$success_output" \
+  || fail "build-loop launcher did not direct the operator to just follow"
+if grep -Fq 'Completed graceful-stop fixture cycle.' "$success_output"; then
+  fail "build-loop launcher exposed detailed agent output"
+fi
 grep -Fq 'Graceful stop requested for build loop PID' "$stop_output" \
   || fail "stop command did not confirm the graceful request"
 if [[ -d "$success_state/lock" ]]; then
   fail "build-loop lock remained after graceful stop"
 fi
 if [[ ! -f "$success_state/current.log" ]]; then
-  fail "build loop did not create the stable current log"
+  fail "build loop did not create the stable launcher log"
 fi
-grep -Fq 'Completed graceful-stop fixture cycle.' "$success_state/current.log" \
-  || fail "stable current log omitted agent output"
+if [[ ! -f "$success_state/follow.log" ]]; then
+  fail "build loop did not create the stable follow log"
+fi
+if grep -Fq 'Completed graceful-stop fixture cycle.' "$success_state/current.log"; then
+  fail "stable launcher log exposed detailed agent output"
+fi
+grep -Fq 'Completed graceful-stop fixture cycle.' "$success_state/follow.log" \
+  || fail "stable follow log omitted detailed agent output"
 
 (
   cd "$success_work"
@@ -273,7 +284,7 @@ pp_step "Regression: follower discovers the active loop and streams appended out
 follow_state="$tmp_dir/follow-state"
 follow_output="$tmp_dir/follow.log"
 mkdir -p "$follow_state/lock"
-printf 'Initial aggregate line.\n' > "$follow_state/current.log"
+printf 'Initial detailed line.\n' > "$follow_state/follow.log"
 sleep 20 &
 fake_loop_pid=$!
 printf '%s\n' "$fake_loop_pid" > "$follow_state/lock/pid"
@@ -290,9 +301,9 @@ printf 'agent\n' > "$follow_state/lock/phase"
 ) > "$follow_output" 2>&1 &
 follow_job=$!
 
-wait_for_text "$follow_output" 'Initial aggregate line.' \
-  || fail "follower did not show existing aggregate output"
-printf 'Appended live line.\n' >> "$follow_state/current.log"
+wait_for_text "$follow_output" 'Initial detailed line.' \
+  || fail "follower did not show existing detailed output"
+printf 'Appended live line.\n' >> "$follow_state/follow.log"
 wait_for_text "$follow_output" 'Appended live line.' \
   || fail "follower did not stream newly appended output"
 touch "$follow_state/lock/stop-requested"

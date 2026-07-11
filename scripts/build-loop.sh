@@ -287,6 +287,7 @@ BUILD_LOOP_STATE_DIR=""
 LOG_DIR=""
 LOCK_DIR=""
 CURRENT_LOG=""
+FOLLOW_LOG=""
 STOP_REQUEST_FILE=""
 CYCLE_UPSTREAM_REF=""
 CYCLE_UPSTREAM_HEAD=""
@@ -366,8 +367,19 @@ run_agent_with_log() {
   local agent_status
   local tee_status
 
+  pp_info "Detailed agent activity is streaming to the follow log; use: just follow"
+  {
+    printf '\nAgent activity — cycle %s/%s\n' "$cycle" "$MAX_CYCLES"
+    printf '%s\n' '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━'
+    if [[ -n "${next_ticket:-}" ]]; then
+      printf 'Ticket: %s\n' "$next_ticket"
+    fi
+    printf 'Cycle log: %s\n\n' "$log_file"
+  } >> "$FOLLOW_LOG"
+
   set +e
-  PI_AGENT_OUTPUT_MODE="$AGENT_OUTPUT_MODE" scripts/run-agent.sh "$prompt" 2>&1 | tee "$log_file"
+  PI_AGENT_OUTPUT_MODE="$AGENT_OUTPUT_MODE" scripts/run-agent.sh "$prompt" 2>&1 \
+    | tee "$log_file" >> "$FOLLOW_LOG"
   pipeline_status=("${PIPESTATUS[@]}")
   set -e
 
@@ -872,6 +884,7 @@ configure_build_loop_state_paths() {
   LOG_DIR="$(build_loop_log_dir "$BUILD_LOOP_STATE_DIR")"
   LOCK_DIR="$(build_loop_lock_dir "$BUILD_LOOP_STATE_DIR")"
   CURRENT_LOG="$(build_loop_current_log "$BUILD_LOOP_STATE_DIR")"
+  FOLLOW_LOG="$(build_loop_follow_log "$BUILD_LOOP_STATE_DIR")"
   STOP_REQUEST_FILE="$(build_loop_stop_request_file "$BUILD_LOOP_STATE_DIR")"
   export AUTONOMOUS_BUILD_LOOP_STATE_DIR="$BUILD_LOOP_STATE_DIR"
 }
@@ -888,8 +901,9 @@ acquire_lock() {
   trap 'rm -rf "$LOCK_DIR"' EXIT
 }
 
-start_current_log() {
+start_run_logs() {
   : > "$CURRENT_LOG"
+  : > "$FOLLOW_LOG"
   exec > >(tee -a "$CURRENT_LOG") 2>&1
 }
 
@@ -907,13 +921,14 @@ write_lock_value max-cycles "$MAX_CYCLES"
 write_lock_value cycle "0"
 write_lock_value ticket ""
 set_loop_phase "starting"
-start_current_log
+start_run_logs
 
 pp_banner "Autonomous build loop"
 pp_kv "Max cycles" "$MAX_CYCLES"
 pp_kv "Sleep" "${SLEEP_SECONDS}s"
 pp_kv "Agent retry sleep" "${AGENT_RETRY_SECONDS}s"
-pp_kv "Agent output" "$AGENT_OUTPUT_MODE"
+pp_kv "Agent log format" "$AGENT_OUTPUT_MODE"
+pp_kv "Agent details" "just follow (hidden from launcher)"
 pp_kv "Push after commit" "$(pp_on_off "$PUSH_AFTER")"
 pp_kv "PR/MR mode" "$PR_MODE"
 if [[ "$PR_MODE" != "none" ]]; then
@@ -933,7 +948,8 @@ elif [[ -n "$CREATE_BRANCH" ]]; then
 fi
 pp_kv "Allow ahead" "$(pp_on_off "$ALLOW_AHEAD")"
 pp_kv "State dir" "$BUILD_LOOP_STATE_DIR"
-pp_kv "Current log" "$CURRENT_LOG"
+pp_kv "Launcher log" "$CURRENT_LOG"
+pp_kv "Follow log" "$FOLLOW_LOG"
 pp_kv "Cycle logs" "$LOG_DIR"
 pp_kv "Follow" "just follow"
 pp_kv "Graceful stop" "just stop"

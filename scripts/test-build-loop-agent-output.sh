@@ -26,9 +26,9 @@ cat > "$tmp_dir/events.jsonl" <<'JSON'
 {"type":"message_update","assistantMessageEvent":{"type":"text_delta","delta":"Now working on fixture output.\nSecond progress line."}}
 {"type":"message_end","message":{"role":"assistant","stopReason":"toolUse"}}
 {"type":"tool_execution_start","toolCallId":"read-1","toolName":"read","args":{"path":"tests/fixture.ts","offset":4,"limit":8}}
-{"type":"tool_execution_end","toolCallId":"read-1","toolName":"read","result":{"content":[{"type":"text","text":"large successful result that should stay hidden"}]},"isError":false}
 {"type":"tool_execution_start","toolCallId":"bash-1","toolName":"bash","args":{"command":"npm test -- fixture"}}
 {"type":"tool_execution_end","toolCallId":"bash-1","toolName":"bash","result":{"content":[{"type":"text","text":"fixture command failed"}]},"isError":true}
+{"type":"tool_execution_end","toolCallId":"read-1","toolName":"read","result":{"content":[{"type":"text","text":"large successful result that should stay hidden"}]},"isError":false}
 {"type":"agent_end","messages":[{"role":"assistant","stopReason":"stop"}]}
 JSON
 
@@ -41,14 +41,18 @@ grep -Fq '• Agent started.' "$tmp_dir/rendered.log" \
   || fail "live renderer omitted the agent start event"
 grep -Fq 'ℹ Now working on fixture output.' "$tmp_dir/rendered.log" \
   || fail "live renderer omitted assistant text deltas"
-grep -Fq '→ read tests/fixture.ts (offset 4, limit 8)' "$tmp_dir/rendered.log" \
-  || fail "live renderer omitted the read summary"
-grep -Fq '✓ read (' "$tmp_dir/rendered.log" \
-  || fail "live renderer omitted the successful tool completion"
-grep -Fq 'fixture command failed' "$tmp_dir/rendered.log" \
-  || fail "live renderer omitted failed tool output"
-if grep -Fq 'private reasoning fixture' "$tmp_dir/rendered.log"; then
-  fail "live renderer exposed thinking deltas"
+grep -Fq '→ [01] Read file — tests/fixture.ts (offset 4, limit 8)' "$tmp_dir/rendered.log" \
+  || fail "live renderer omitted the identified read summary"
+grep -Fq '→ [02] Run tests — npm test -- fixture' "$tmp_dir/rendered.log" \
+  || fail "live renderer omitted the semantic shell summary"
+grep -Fq '✕ [02] Run tests (' "$tmp_dir/rendered.log" \
+  || fail "live renderer did not correlate the failed parallel tool completion"
+grep -Fq '✓ [01] Read file (' "$tmp_dir/rendered.log" \
+  || fail "live renderer did not correlate the successful parallel tool completion"
+grep -Fq '[02] fixture command failed' "$tmp_dir/rendered.log" \
+  || fail "live renderer omitted identified failed tool output"
+if grep -Fq 'Thinking…' "$tmp_dir/rendered.log" || grep -Fq 'private reasoning fixture' "$tmp_dir/rendered.log"; then
+  fail "live renderer exposed noisy thinking events or deltas"
 fi
 if grep -Fq 'large successful result that should stay hidden' "$tmp_dir/rendered.log"; then
   fail "live renderer exposed successful tool results"
