@@ -14,6 +14,9 @@ PROMPT="$1"
 AGENT_COMMAND="${PI_AGENT_COMMAND:-pi-dan-rinse}"
 AGENT_OUTPUT_MODE="${PI_AGENT_OUTPUT_MODE:-live}"
 AGENT_EVENT_LOG="${PI_AGENT_EVENT_LOG:-}"
+# The sink belongs to this wrapper. Do not leak it into the agent or commands
+# launched by the agent, where a nested run-agent invocation could truncate it.
+unset PI_AGENT_EVENT_LOG
 EVENT_RENDERER="$SCRIPT_DIR/render-agent-events.mjs"
 
 if ! command -v "$AGENT_COMMAND" >/dev/null 2>&1; then

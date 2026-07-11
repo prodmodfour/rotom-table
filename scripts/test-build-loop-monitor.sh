@@ -117,12 +117,34 @@ cat > "$state_dir/logs/cycle-fixture.log" <<'LOG'
 LOG
 cat > "$state_dir/logs/cycle-fixture.pi-events.jsonl" <<'JSONL'
 {"type":"agent_start"}
-{"type":"message_update","assistantMessageEvent":{"type":"thinking_delta","delta":"FULL_PI_THINKING_EVENT"}}
+{"type":"message_update","assistantMessageEvent":{"type":"thinking_delta","delta":"FULL_PI_THINKING_EVENT","partial":{"text":"REDUNDANT_PARTIAL_SNAPSHOT"}},"message":{"role":"assistant","content":[{"type":"thinking","thinking":"REDUNDANT_CUMULATIVE_MESSAGE"}]}}
 {"type":"tool_execution_start","toolCallId":"read-1","toolName":"read","args":{"path":"work.txt","offset":1,"limit":20}}
 {"type":"tool_execution_end","toolCallId":"read-1","toolName":"read","result":{"content":[{"type":"text","text":"FULL_SUCCESSFUL_PI_TOOL_RESULT"}]},"isError":false}
 JSONL
 node -e 'const fs = require("fs"); fs.appendFileSync(process.argv[1], JSON.stringify({ type: "tool_execution_end", result: "x".repeat(60000) + "FULL_LONG_EVENT_TAIL" }) + "\n")' "$state_dir/logs/cycle-fixture.pi-events.jsonl"
 chmod 600 "$state_dir/logs/cycle-fixture.pi-events.jsonl"
+
+pp_step "Regression: event projection stays bounded for a sparse/corrupt source line"
+oversized_event_log="$tmp_dir/oversized.pi-events.jsonl"
+printf '%s\n' '{"type":"agent_start"}' > "$oversized_event_log"
+truncate -s $((128 * 1024 * 1024)) "$oversized_event_log"
+printf '\n' >> "$oversized_event_log"
+(
+  ulimit -c 0
+  node --max-old-space-size=32 \
+    "$SCRIPT_DIR/prepare-pi-event-range.mjs" \
+    "$oversized_event_log" \
+    1 \
+    2 \
+    "$tmp_dir/oversized-events.txt"
+)
+assert_file_contains "$tmp_dir/oversized-events.txt" \
+  'event-line-exceeds-safe-projection-limit' \
+  "event projection did not bound an oversized source line"
+if (( $(stat -c '%s' "$tmp_dir/oversized-events.txt") > 100000 )); then
+  fail "event projection copied an oversized source line into the analyzer view"
+fi
+
 cat > "$state_dir/current.log" <<'LOG'
 Autonomous build cycle 3/12
 Agent run in progress.
@@ -190,6 +212,15 @@ assert_file_contains "$tmp_dir/analyzer-events.jsonl" \
 assert_file_contains "$tmp_dir/analyzer-events.jsonl" \
   'PI EVENT LINE 5 SEGMENT 2/' \
   "monitor did not segment an oversized Pi event for complete read access"
+assert_file_contains "$tmp_dir/analyzer-events.jsonl" \
+  'NORMALIZED PI EVENT VIEW' \
+  "monitor did not identify its normalized analyzer view"
+assert_file_omits "$tmp_dir/analyzer-events.jsonl" \
+  'REDUNDANT_PARTIAL_SNAPSHOT' \
+  "monitor retained a redundant cumulative partial snapshot"
+assert_file_omits "$tmp_dir/analyzer-events.jsonl" \
+  'REDUNDANT_CUMULATIVE_MESSAGE' \
+  "monitor retained a redundant cumulative message snapshot"
 assert_file_contains "$tmp_dir/analyzer-input.log" \
   'work.txt | 1 +' \
   "monitor snapshot omitted the Git change summary"

@@ -74,7 +74,7 @@ default:
       '' \
       '  just monitor' \
       '  just monitor <minutes>' \
-      '      Interpret the full Pi event stream immediately, then repeat every 10 minutes by default.' \
+      '      Interpret a normalized Pi event view immediately, then repeat every 10 minutes by default.' \
       '' \
       '  just dan-usage' \
       '      Send one minimal request and report Dan Codex five-hour/weekly usage.' \
