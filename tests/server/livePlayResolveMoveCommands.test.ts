@@ -340,9 +340,11 @@ describe('executeLivePlayResolveMoveCommandUseCase', () => {
     const selfHarness = seedHarness({ actorMoves: [{ name: 'Swords Dance' }] })
     const selfMap = selfHarness.maps.getBySlug('arena')!
     const selfIntent = intent({ placementId: 'actor-token', moveName: 'Swords Dance', selection: { kind: 'self' } })
-    const selfResponse = await execute(selfHarness, commandFor(selfMap, selfIntent, 'op_resolveself01'), { random: randomSequence([0]) })
+    const selfCommand = commandFor(selfMap, selfIntent, 'op_resolveself01')
+    const selfResponse = await execute(selfHarness, selfCommand, { random: randomSequence([0]) })
     expect(selfResponse.result.ok).toBe(true)
-    const selfPayload = moveStatePatchPayload(accepted(selfResponse.result))
+    const selfAccepted = accepted(selfResponse.result)
+    const selfPayload = moveStatePatchPayload(selfAccepted)
     expect(selfPayload.move.canonicalMoveName).toBe('Swords Dance')
     expect(selfPayload.presentation).toMatchObject({
       operationId: 'op_resolveself01',
@@ -357,7 +359,46 @@ describe('executeLivePlayResolveMoveCommandUseCase', () => {
       actions: { standard: { spent: 1 } },
       oncePerTurnFlags: [{ id: 'move.swords-dance', sourceOperationId: 'op_resolveself01' }],
     })
-    expect(selfResponse.sheetUpdates?.[0]).toMatchObject({ kind: 'pokemon', slug: 'actor', sheet: { revision: 3 } })
+    expect(selfResponse.sheetUpdates?.[0]).toMatchObject({
+      kind: 'pokemon',
+      slug: 'actor',
+      sheet: { revision: 3, stats: { atk: { stage: 2 } } },
+    })
+    expect(selfPayload.move).toMatchObject({
+      transaction: {
+        attackedTargetIds: [],
+        hitTargetIds: [],
+        combatStageUpdates: [{
+          id: 'actor-token',
+          stages: { atk: 2, def: 0, satk: 0, sdef: 0, spd: 0, acc: 0 },
+        }],
+      },
+      trace: {
+        program: {
+          canonicalId: 'Swords Dance',
+          runtimeKind: 'movespec-v2',
+          runtimeVersion: 2,
+        },
+        events: expect.arrayContaining([
+          expect.objectContaining({
+            kind: 'operation',
+            operationId: 'swords-dance.raise-attack',
+            outcome: 'applied',
+          }),
+        ]),
+      },
+    })
+
+    const committedSelfMap = deepCloneJson(selfHarness.maps.getBySlug('arena'))
+    const committedSelfSheet = deepCloneJson(selfHarness.sheets.getByRef('pokemon', 'actor'))
+    const duplicateSelf = await execute(selfHarness, selfCommand, {
+      random: () => { throw new Error('duplicate Swords Dance must not use RNG') },
+      planner: () => { throw new Error('duplicate Swords Dance must not replan') },
+    })
+    expect(duplicateSelf.result).toEqual(selfAccepted)
+    expect(duplicateSelf.move).toEqual(selfResponse.move)
+    expect(selfHarness.maps.getBySlug('arena')).toEqual(committedSelfMap)
+    expect(selfHarness.sheets.getByRef('pokemon', 'actor')).toEqual(committedSelfSheet)
 
     const targetHarness = seedHarness({ actorMoves: [{ name: 'Tackle' }] })
     const targetMap = targetHarness.maps.getBySlug('arena')!

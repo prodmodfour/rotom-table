@@ -3,6 +3,7 @@ import type {
   MoveResolutionTraceJsonValue,
 } from '#shared/moveAutomation/trace'
 import type {
+  MoveAutomationCombatStageUpdate,
   MoveAutomationConditionUpdate,
   MoveAutomationHpUpdate,
   MoveAutomationScript,
@@ -373,6 +374,36 @@ const conditionUpdatesFromResults = (
     : [{ id, conditions: [...state.current] }])
 }
 
+const combatStageUpdatesFromResults = (
+  results: readonly MoveCoreTokenEffectOperationResult[],
+): MoveAutomationCombatStageUpdate[] => {
+  const states = new Map<string, {
+    readonly previous: MoveAutomationCombatStageUpdate['stages']
+    current: MoveAutomationCombatStageUpdate['stages']
+  }>()
+  for (const operation of results) {
+    for (const recipient of operation.recipients) {
+      if (
+        recipient.previous.kind !== 'combat-stages'
+        || recipient.current.kind !== 'combat-stages'
+      ) {
+        continue
+      }
+      const state = states.get(recipient.recipientId)
+      if (state) state.current = recipient.current.stages
+      else {
+        states.set(recipient.recipientId, {
+          previous: recipient.previous.stages,
+          current: recipient.current.stages,
+        })
+      }
+    }
+  }
+  return [...states].flatMap(([id, state]) => sameJsonValue(state.previous, state.current)
+    ? []
+    : [{ id, stages: deepCloneJson(state.current) }])
+}
+
 const compatibilityLogLines = (options: {
   readonly context: AuthoritativeMoveRulesContext
   readonly script: MoveAutomationScript
@@ -454,6 +485,7 @@ const assertSupportedImmediateOperations = (
     'direct-hp',
     'heal',
     'condition',
+    'combat-stage',
     'movement-request',
     'usage',
     'log',
@@ -497,13 +529,16 @@ export const resolveImmediateMoveSpec = (options: {
   assertSupportedImmediateOperations(execution.operations)
 
   const script = compatibilityScript(options.entry, options.runtime)
-  const attackedTargetIds = [...execution.targetIds]
+  // A self target is explicit interpreter evidence, not an attacked-target wire
+  // identity. Self-only operations must address the actor selector directly.
+  const exposesAttackedTargets = options.runtime.definition.spec.targeting.kind !== 'self'
+  const attackedTargetIds = exposesAttackedTargets ? [...execution.targetIds] : []
   const initialDynamic: MoveCoreTokenDynamicRecipientSets = {
     attackedTargetIds,
-    hitTargetIds: [...execution.hitTargetIds],
-    missedTargetIds: [...execution.missedTargetIds],
-    damagedTargetIds: [...execution.damagedTargetIds],
-    faintedTargetIds: [...execution.faintedTargetIds],
+    hitTargetIds: exposesAttackedTargets ? [...execution.hitTargetIds] : [],
+    missedTargetIds: exposesAttackedTargets ? [...execution.missedTargetIds] : [],
+    damagedTargetIds: exposesAttackedTargets ? [...execution.damagedTargetIds] : [],
+    faintedTargetIds: exposesAttackedTargets ? [...execution.faintedTargetIds] : [],
   }
 
   const coreOperations = execution.operations.filter(isMoveCoreTokenEffectEmission)
@@ -553,28 +588,32 @@ export const resolveImmediateMoveSpec = (options: {
     damagedTargetIds: attackedTargetIds.filter(id => damagedSet.has(id)),
     faintedTargetIds: attackedTargetIds.filter(id => faintedSet.has(id)),
   }
+  const transactionTargetIds = dynamicRecipients.attackedTargetIds
+  const transactionHitTargetIds = dynamicRecipients.hitTargetIds
   const transaction: MoveAutomationTransaction = {
     userId: options.context.actor.placement.id,
     userName: options.context.actor.token.species,
     moveName: options.runtime.canonicalId,
     scriptKind: 'explicit',
     scriptVersion: options.runtime.version,
-    attackedTargetIds: [...dynamicRecipients.attackedTargetIds],
-    hitTargetIds: [...dynamicRecipients.hitTargetIds],
+    attackedTargetIds: [...transactionTargetIds],
+    hitTargetIds: [...transactionHitTargetIds],
     hpUpdates: multiHit
       ? [...multiHit.hpUpdates]
       : hpUpdatesFromResults(core.operationResults),
     conditionUpdates: multiHit
       ? [...multiHit.conditionUpdates]
       : conditionUpdatesFromResults(core.operationResults),
-    combatStageUpdates: multiHit ? [...multiHit.combatStageUpdates] : [],
+    combatStageUpdates: multiHit
+      ? [...multiHit.combatStageUpdates]
+      : combatStageUpdatesFromResults(core.operationResults),
     hazardsToAdd: [],
     fieldEffectsToApply: [],
     logLines: compatibilityLogLines({
       context: options.context,
       script,
-      targetIds: dynamicRecipients.attackedTargetIds,
-      hitTargetIds: dynamicRecipients.hitTargetIds,
+      targetIds: transactionTargetIds,
+      hitTargetIds: transactionHitTargetIds,
       executionRolls: execution.resolvedRolls,
       rollLedger: execution.rollLedger,
       coreResults: core.operationResults,

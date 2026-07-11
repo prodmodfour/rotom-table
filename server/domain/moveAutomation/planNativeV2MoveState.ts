@@ -70,8 +70,14 @@ const fail = (code: NativeMoveSpecPlanErrorCode, message: string): never => {
 }
 
 const stripPlanIdentity = (change: MoveStateChange): MoveStateChangeInput => {
-  const { id: _id, order: _order, ...input } = deepCloneJson(change)
-  return input as MoveStateChangeInput
+  const { id: _id, order: _order, ...input } = change
+  return {
+    ...deepCloneJson(input),
+    // Optional map slots use an own `undefined` value to represent absence.
+    // JSON cloning drops those keys, so restore both required value fields.
+    previous: deepCloneJson(input.previous),
+    current: deepCloneJson(input.current),
+  } as MoveStateChangeInput
 }
 
 const applyCoreMapChanges = (

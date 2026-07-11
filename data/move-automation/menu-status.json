@@ -8991,12 +8991,12 @@
       "displayName": "Swords Dance",
       "baseStatus": "assisted",
       "interactionStatus": "unassessed",
-      "runtimeKind": "legacy-v1",
+      "runtimeKind": "movespec-v2",
       "blockerCodes": [],
       "limitations": [
         {
           "code": "audit.required",
-          "summary": "Semantic conformance review is required before this legacy implementation can be marked complete."
+          "summary": "Semantic conformance review is required before this native implementation can be marked complete."
         }
       ],
       "manualSteps": []

@@ -1,10 +1,17 @@
 import { describe, expect, it } from 'vitest'
+import manifestJson from '../../data/move-automation/manifest.json'
+import legacyFingerprintsJson from '../../data/move-automation/legacy-v1-fingerprints.json'
 import {
   LIVE_PLAY_MOVE_RESOLUTION_SCHEMA_VERSION,
   type ResolveMoveIntent,
 } from '#shared/livePlayMoveResolution'
+import type { MoveAutomationManifest } from '#shared/moveAutomation/manifest'
 import { adaptV1Transaction } from '~~/server/domain/moveAutomation/adaptV1Transaction'
 import { buildLegacyV1MoveResolutionTrace } from '~~/server/domain/moveAutomation/legacyV1Trace'
+import {
+  createMoveAutomationRuntimeRegistry,
+  REVIEWED_MOVE_SPEC_V2_REGISTRATIONS,
+} from '~~/server/domain/moveAutomation/registry'
 import type { CharacterSheet, CharacterSheetMove } from '~/types/characterSheet'
 import type { GridAnchor, SheetPlacement, TabletopMap } from '~/types/map'
 import type {
@@ -15,6 +22,9 @@ import type {
 import type { TrainerSheet } from '~/types/trainerSheet'
 import { applyMoveFieldEffectToFieldEffects, cloneMapFieldEffects } from '~/utils/mapFieldEffects'
 import { applyMapHazardPlacement } from '~/utils/mapHazards'
+import {
+  EXPLICIT_MOVE_AUTOMATION_REGISTRY_SOURCES,
+} from '~/utils/move-automation/registry'
 import { EXPLICIT_MOVE_AUTOMATION_SCRIPTS } from '~/utils/moveAutomation'
 import { moveAutomationAreaTemplateId } from '~/utils/moveAutomationAreaTemplates'
 import { appendMoveAutomationLogEntry } from '~/utils/moveAutomationLog'
@@ -24,6 +34,25 @@ import {
   runLegacyV1ProjectionParity,
   type LegacyV1PlanningParityResult,
 } from '../fixtures/moveAutomation/legacyV1PlanningParity'
+
+const legacySwordsDanceRuntimeRegistry = (() => {
+  const manifest = structuredClone(manifestJson) as unknown as MoveAutomationManifest
+  const row = manifest.moves.find(move => move.canonicalId === 'Swords Dance')!
+  const legacy = legacyFingerprintsJson.entries.find(
+    entry => entry.canonicalId === 'Swords Dance',
+  )!
+  ;(row as { runtime: unknown }).runtime = {
+    kind: 'legacy-v1',
+    version: legacy.version,
+    definitionHash: legacy.definitionHash,
+    sourceModule: legacy.sourceModule,
+  }
+  return createMoveAutomationRuntimeRegistry({
+    manifest,
+    legacySources: EXPLICIT_MOVE_AUTOMATION_REGISTRY_SOURCES,
+    moveSpecs: REVIEWED_MOVE_SPEC_V2_REGISTRATIONS,
+  })
+})()
 
 const moveIntent = (
   overrides: Omit<ResolveMoveIntent, 'schemaVersion'>,
@@ -219,6 +248,7 @@ const PLANNING_SCENARIOS: readonly PlanningParityScenario[] = [
         selection: { kind: 'self' },
       }),
       randomValues: [],
+      runtimeRegistry: legacySwordsDanceRuntimeRegistry,
     }),
     verify: ({ adaptedPlan }) => {
       expect(adaptedPlan.resolution.transaction.combatStageUpdates).toEqual([

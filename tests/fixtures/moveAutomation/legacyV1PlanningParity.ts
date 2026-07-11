@@ -16,6 +16,7 @@ import {
 } from '~~/server/domain/planAuthoritativeMoveState'
 import type { MoveStateChangePlan } from '~~/server/domain/moveAutomation/plan'
 import { createFiniteAuthoritativeMoveRandomStream } from '~~/server/domain/moveAutomation/random'
+import type { MoveAutomationRuntimeRegistry } from '~~/server/domain/moveAutomation/registry'
 
 export interface LegacyV1PlanningFixture {
   readonly map: TabletopMap
@@ -24,6 +25,8 @@ export interface LegacyV1PlanningFixture {
   readonly intent: ResolveMoveIntent
   readonly randomValues?: readonly number[]
   readonly maxMoveLogEntries?: number
+  /** Pin a retained runtime when production metadata has already cut over. */
+  readonly runtimeRegistry?: MoveAutomationRuntimeRegistry
 }
 
 export interface LegacyV1PlanningState {
@@ -304,6 +307,7 @@ const runPlan = (
     random: createFiniteAuthoritativeMoveRandomStream(fixture.randomValues ?? []),
     now: () => plannedAt,
     idFactory: () => `${variant}-generated-id-${++idSequence}`,
+    ...(fixture.runtimeRegistry ? { runtimeRegistry: fixture.runtimeRegistry } : {}),
     ...(fixture.maxMoveLogEntries === undefined
       ? {}
       : { maxMoveLogEntries: fixture.maxMoveLogEntries }),

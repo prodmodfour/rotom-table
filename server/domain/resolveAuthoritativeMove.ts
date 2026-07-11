@@ -777,6 +777,58 @@ const resolveSelfMove = (options: {
   }
 }
 
+const resolveNativeSelfMove = (options: {
+  readonly context: AuthoritativeMoveRulesContext
+  readonly runtime: MoveSpecV2Runtime
+  readonly entry: ResolvedCanonicalMoveEntry
+  readonly moveKey: string
+}): AuthoritativeMoveResolution => {
+  if (options.runtime.definition.spec.targeting.kind !== 'self') {
+    return fail(
+      'invalid',
+      'selection-kind-mismatch',
+      `${options.runtime.canonicalId} does not accept a self selection.`,
+    )
+  }
+  if (options.context.intent.targetBranchId) {
+    fail(
+      'invalid',
+      'target-branch-unexpected',
+      `${options.runtime.canonicalId} does not accept a target branch.`,
+    )
+  }
+  if (!isSeamlessSelfMoveScript(options.entry.script)) {
+    fail(
+      'invalid',
+      'selection-kind-mismatch',
+      `${options.runtime.canonicalId} is not a seamless self move.`,
+    )
+  }
+
+  const immediate = resolveImmediateMoveSpec({
+    context: options.context,
+    runtime: options.runtime,
+    entry: options.entry,
+    authoritativeTargetIds: [],
+  })
+
+  return {
+    actorPlacementId: options.context.actor.placement.id,
+    moveName: options.runtime.definition.spec.presentation.displayName,
+    canonicalMoveName: options.entry.canonicalMoveName,
+    moveKey: options.moveKey,
+    frequency: options.entry.frequency,
+    damageFormula: options.entry.damageFormula,
+    selectedTargetIds: [],
+    sheetReads: immediate.sheetReads,
+    rollLedger: immediate.rollLedger,
+    auditTrace: immediate.trace,
+    script: immediate.script,
+    transaction: immediate.transaction,
+    nativeV2: immediate.native,
+  }
+}
+
 const resolveLegalSingleTarget = (options: {
   readonly context: AuthoritativeMoveRulesContext
   readonly script: MoveAutomationScript
@@ -1323,6 +1375,14 @@ export const resolveAuthoritativeMoveFromContext = (
   }
   const selectedRuntime = context.queries.rules.runtimeFor(entry.canonicalMoveName)
   if (selectedRuntime?.kind === 'movespec-v2') {
+    if (intent.selection.kind === 'self') {
+      return resolveNativeSelfMove({
+        context,
+        runtime: selectedRuntime,
+        entry,
+        moveKey: resolvedMoveKey,
+      })
+    }
     if (intent.selection.kind === 'area') {
       return resolveNativeAreaMove({
         context,

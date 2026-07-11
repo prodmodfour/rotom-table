@@ -158,32 +158,36 @@ describe('planAuthoritativeMoveState', () => {
       oncePerTurnFlags: [{ id: 'move.swords-dance' }],
     })
     expect(plan.stateChanges.changes.map(change => change.kind)).toEqual([
+      'sheet-state',
       'map-move-usage',
       'map-metadata',
-      'sheet-state',
       'encounter-state',
     ])
     expect(plan.stateChanges.changes.map(change => ({
       kind: change.kind,
       sourceOperationId: change.sourceOperationId,
     }))).toEqual([
-      { kind: 'map-move-usage', sourceOperationId: null },
-      { kind: 'map-metadata', sourceOperationId: 'legacy-v1.log.1' },
-      { kind: 'sheet-state', sourceOperationId: 'legacy-v1.combat-stage.1' },
+      { kind: 'sheet-state', sourceOperationId: 'swords-dance.raise-attack' },
+      { kind: 'map-move-usage', sourceOperationId: 'swords-dance.usage' },
+      { kind: 'map-metadata', sourceOperationId: 'swords-dance.log-completed' },
       { kind: 'encounter-state', sourceOperationId: 'move.swords-dance.resource-observation' },
     ])
     expect(plan.stateChanges.groups.map).toHaveLength(1)
     expect(plan.stateChanges.groups.encounter).toHaveLength(1)
     expect(plan.stateChanges.groups.sheets).toHaveLength(1)
     expect(plan.stateChanges.expectedRevisions).toEqual([
-      { kind: 'map', mapSlug: 'planner-test', expectedRevision: 7 },
       { kind: 'sheet', sheetKind: 'pokemon', sheetSlug: 'actor', expectedRevision: 4 },
+      { kind: 'map', mapSlug: 'planner-test', expectedRevision: 7 },
     ])
     expect(plan.stateChanges.changes[0]?.compensation).toEqual({
+      kind: 'unavailable',
+      reasonCode: 'field-level-inverse-not-yet-recorded',
+    })
+    expect(plan.stateChanges.changes[1]?.compensation).toEqual({
       kind: 'inverse',
       strategy: 'restore-previous-value',
     })
-    expect(plan.stateChanges.changes[1]?.compensation).toEqual({
+    expect(plan.stateChanges.changes[2]?.compensation).toEqual({
       kind: 'unavailable',
       reasonCode: 'accepted-log-may-be-observed',
     })

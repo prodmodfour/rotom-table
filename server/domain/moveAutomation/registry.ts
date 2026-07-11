@@ -20,6 +20,7 @@ import {
 } from './validateSpec'
 import { EMBER_MOVE_SPEC_REGISTRATION } from './specs/ember'
 import { SCRATCH_MOVE_SPEC_REGISTRATION } from './specs/scratch'
+import { SWORDS_DANCE_MOVE_SPEC_REGISTRATION } from './specs/swordsDance'
 
 export interface LegacyV1MoveAutomationAdapter extends MoveAutomationRuntimeRegistrationReference {
   readonly kind: 'legacy-v1'
@@ -238,6 +239,7 @@ export const createMoveAutomationRuntimeRegistry = (
 export const REVIEWED_MOVE_SPEC_V2_REGISTRATIONS: readonly MoveSpecV2Registration[] = Object.freeze([
   EMBER_MOVE_SPEC_REGISTRATION,
   SCRATCH_MOVE_SPEC_REGISTRATION,
+  SWORDS_DANCE_MOVE_SPEC_REGISTRATION,
 ])
 
 export const MOVE_AUTOMATION_RUNTIME_REGISTRY = createMoveAutomationRuntimeRegistry({
