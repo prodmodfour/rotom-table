@@ -93,6 +93,33 @@ if [[ ! -f "$PI_EVENT_RANGE_PREPARER" ]]; then
   exit 127
 fi
 
+build_loop_process_identity() {
+  local pid="$1"
+
+  ps -o lstart= -p "$pid" 2>/dev/null \
+    | awk '{$1 = $1; print; exit}'
+}
+
+build_loop_process_matches_identity() {
+  local pid="$1"
+  local expected_identity="$2"
+  local current_identity
+  local process_state
+
+  if ! kill -0 "$pid" 2>/dev/null; then
+    return 1
+  fi
+
+  process_state="$(ps -o stat= -p "$pid" 2>/dev/null || true)"
+  process_state="${process_state//[[:space:]]/}"
+  if [[ -z "$process_state" || "$process_state" == Z* ]]; then
+    return 1
+  fi
+
+  current_identity="$(build_loop_process_identity "$pid")"
+  [[ -n "$expected_identity" && "$current_identity" == "$expected_identity" ]]
+}
+
 repo_root="$(git rev-parse --show-toplevel)"
 if ! state_dir="$(build_loop_resolve_state_dir "$repo_root")"; then
   pp_error "Unable to resolve the build-loop state directory."
@@ -116,6 +143,7 @@ if [[ -z "$loop_pid" ]]; then
 fi
 
 initial_loop_pid="$loop_pid"
+initial_loop_identity="$(build_loop_process_identity "$initial_loop_pid")"
 tmp_dir="$(mktemp -d)"
 sleep_pid=""
 previous_head=""
@@ -353,6 +381,7 @@ capture_snapshot() {
   local pi_event_first_required_line="$8"
   local pi_event_read_file="$9"
   local head="${10}"
+  local lock_status="${11}"
   local cycle
   local max_cycles
   local ticket
@@ -376,6 +405,7 @@ capture_snapshot() {
       "$([[ $report_number -eq 0 ]] && printf 'initial report' || printf '%s' "$INTERVAL_MINUTES")"
     printf 'Loop active: %s\n' "$active"
     printf 'Loop PID: %s\n' "${active_pid:-$initial_loop_pid}"
+    printf 'Loop state lock: %s\n' "$lock_status"
     printf 'Cycle: %s/%s\n' "${cycle:-unknown}" "${max_cycles:-unknown}"
     printf 'Ticket lock summary: %s\n' "${ticket:-unavailable}"
     printf 'Loop phase: %s\n' "${phase:-unavailable}"
@@ -524,9 +554,15 @@ pp_info "Ctrl-C detaches this monitor; it does not interrupt the build loop."
 while true; do
   active_pid="$(build_loop_active_pid "$state_dir" 2>/dev/null || true)"
   active="yes"
+  lock_status="available"
   if [[ -z "$active_pid" ]]; then
-    active="no"
     active_pid="$initial_loop_pid"
+    if build_loop_process_matches_identity "$initial_loop_pid" "$initial_loop_identity"; then
+      lock_status="missing; original process identity remains active"
+    else
+      active="no"
+      lock_status="missing"
+    fi
   fi
 
   cycle_log="$(latest_cycle_log_path)"
@@ -568,7 +604,8 @@ while true; do
     "$pi_event_log_lines" \
     "$pi_event_first_required_line" \
     "$pi_event_read_file" \
-    "$head"
+    "$head" \
+    "$lock_status"
 
   analyzer_succeeded=0
   pp_blank

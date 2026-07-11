@@ -418,11 +418,33 @@ is_token_context_failure() {
   return 1
 }
 
+lock_owned_by_current_process() {
+  local recorded_pid
+
+  recorded_pid="$(build_loop_read_lock_value "$BUILD_LOOP_STATE_DIR" pid 2>/dev/null || true)"
+  [[ "$recorded_pid" == "$$" ]]
+}
+
+require_lock_ownership() {
+  local recorded_pid
+
+  if lock_owned_by_current_process; then
+    return 0
+  fi
+
+  recorded_pid="$(build_loop_read_lock_value "$BUILD_LOOP_STATE_DIR" pid 2>/dev/null || true)"
+  pp_error "Build-loop lock ownership was lost; refusing to modify another loop's state."
+  pp_kv "Expected PID" "$$" >&2
+  pp_kv "Recorded PID" "${recorded_pid:-missing}" >&2
+  return 1
+}
+
 write_lock_value() {
   local name="$1"
   local value="$2"
   local temporary_file="$LOCK_DIR/.${name}.$$"
 
+  require_lock_ownership || return 1
   printf '%s\n' "$value" > "$temporary_file"
   mv "$temporary_file" "$LOCK_DIR/$name"
 }
@@ -901,6 +923,12 @@ configure_build_loop_state_paths() {
   export AUTONOMOUS_BUILD_LOOP_STATE_DIR="$BUILD_LOOP_STATE_DIR"
 }
 
+release_lock() {
+  if lock_owned_by_current_process; then
+    rm -rf "$LOCK_DIR"
+  fi
+}
+
 acquire_lock() {
   mkdir -p "$BUILD_LOOP_STATE_DIR" "$LOG_DIR"
 
@@ -910,7 +938,7 @@ acquire_lock() {
   fi
 
   printf '%s\n' "$$" > "$LOCK_DIR/pid"
-  trap 'rm -rf "$LOCK_DIR"' EXIT
+  trap release_lock EXIT
 }
 
 start_run_logs() {

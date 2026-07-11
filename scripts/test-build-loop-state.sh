@@ -131,4 +131,49 @@ if ! grep -Fq 'Full Pi event log:' "$state_dir/follow.log"; then
   fail "stable follow log did not identify the full Pi event sidecar"
 fi
 
-pp_success "Build-loop state regression passed."
+pp_step "Regression: an exiting stale loop preserves a replacement lock"
+ownership_work_dir="$tmp_dir/ownership-work"
+ownership_state_dir="$tmp_dir/ownership-state"
+git clone -q "$work_dir" "$ownership_work_dir"
+(
+  cd "$ownership_work_dir"
+  git config user.name "Build Loop Ownership Test"
+  git config user.email "build-loop-ownership-test@example.invalid"
+
+  cat > scripts/run-agent.sh <<'RUN_AGENT'
+#!/usr/bin/env bash
+set -euo pipefail
+
+: "${AUTONOMOUS_BUILD_LOOP_STATE_DIR:?AUTONOMOUS_BUILD_LOOP_STATE_DIR must be set by the test}"
+
+rm -rf "$AUTONOMOUS_BUILD_LOOP_STATE_DIR/lock"
+mkdir "$AUTONOMOUS_BUILD_LOOP_STATE_DIR/lock"
+printf '%s\n' '999999' > "$AUTONOMOUS_BUILD_LOOP_STATE_DIR/lock/pid"
+printf '%s\n' 'replacement-loop' > "$AUTONOMOUS_BUILD_LOOP_STATE_DIR/lock/phase"
+exit 130
+RUN_AGENT
+  chmod +x scripts/run-agent.sh
+  git add scripts/run-agent.sh
+  git commit -q -m "test: replace active lock during agent exit"
+)
+
+set +e
+(
+  cd "$ownership_work_dir"
+  AUTONOMOUS_BUILD_LOOP_STATE_DIR="$ownership_state_dir" \
+    bash scripts/build-loop.sh --max-cycles 1 --no-push
+) > "$tmp_dir/ownership-loop.log" 2>&1
+ownership_status=$?
+set -e
+
+if [[ "$ownership_status" -ne 130 ]]; then
+  fail "replacement-lock fixture exited with status $ownership_status instead of 130"
+fi
+if [[ ! -d "$ownership_state_dir/lock" ]]; then
+  fail "exiting stale loop deleted the replacement lock"
+fi
+if [[ "$(< "$ownership_state_dir/lock/pid")" != "999999" ]]; then
+  fail "replacement lock owner changed during stale-loop cleanup"
+fi
+
+pp_success "Build-loop state regressions passed."

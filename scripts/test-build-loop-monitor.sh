@@ -70,6 +70,7 @@ count=$((count + 1))
 printf '%s\n' "$count" > "$FAKE_ANALYZER_COUNT_FILE"
 printf '%s\n' "$@" > "$FAKE_ANALYZER_ARGS_LOG"
 cat > "$FAKE_ANALYZER_INPUT_LOG"
+cp "$FAKE_ANALYZER_INPUT_LOG" "$FAKE_ANALYZER_INPUT_LOG.$count"
 
 if [[ -n "${FAKE_ANALYZER_EVENT_CAPTURE:-}" ]]; then
   analyzer_read_line="$(grep -E '^ANALYZER READ FILE: ' "$FAKE_ANALYZER_INPUT_LOG" | head -1)"
@@ -81,6 +82,10 @@ fi
 
 if [[ -n "${FAKE_ANALYZER_REMOVE_LOCK_AFTER_FIRST:-}" && "$count" == "1" ]]; then
   rm -rf "$FAKE_ANALYZER_REMOVE_LOCK_AFTER_FIRST"
+fi
+
+if [[ -n "${FAKE_ANALYZER_KILL_PID_AFTER_SECOND:-}" && "$count" == "2" ]]; then
+  kill "$FAKE_ANALYZER_KILL_PID_AFTER_SECOND" 2>/dev/null || true
 fi
 
 if [[ "${FAKE_ANALYZER_FAIL:-0}" == "1" ]]; then
@@ -230,7 +235,7 @@ assert_file_contains "$tmp_dir/analyzer-failure.log" \
   'This is a monitoring failure, not evidence that the build itself failed.' \
   "monitor fallback confused analyzer failure with build failure"
 
-pp_step "Regression: monitor repeats, compares reports, and notices loop exit"
+pp_step "Regression: monitor survives lock loss and notices the actual process exit"
 mkdir -p "$tmp_dir/fake-bin"
 cat > "$tmp_dir/fake-bin/sleep" <<'FAKE_SLEEP'
 #!/usr/bin/env bash
@@ -243,18 +248,25 @@ printf '%s\n' '0' > "$tmp_dir/analyzer-count"
   env "${common_env[@]}" \
     "PATH=$tmp_dir/fake-bin:$PATH" \
     "FAKE_ANALYZER_REMOVE_LOCK_AFTER_FIRST=$state_dir/lock" \
+    "FAKE_ANALYZER_KILL_PID_AFTER_SECOND=$fake_loop_pid" \
     bash "$SCRIPT_DIR/build-loop-monitor.sh" --interval-minutes 7
 ) > "$tmp_dir/repeating-monitor.log" 2>&1
-if [[ "$(< "$tmp_dir/analyzer-count")" != "2" ]]; then
-  fail "monitor did not produce a final second report after the observed loop exited"
+if [[ "$(< "$tmp_dir/analyzer-count")" != "3" ]]; then
+  fail "monitor did not retain the live process after lock loss, then report its exit"
 fi
-if [[ "$(grep -Fc '**12:34 update — focused implementation is advancing.**' "$tmp_dir/repeating-monitor.log")" != "2" ]]; then
-  fail "monitor did not print both the immediate and final interpreted reports"
+if [[ "$(grep -Fc '**12:34 update — focused implementation is advancing.**' "$tmp_dir/repeating-monitor.log")" != "3" ]]; then
+  fail "monitor did not print the immediate, lock-loss, and final reports"
 fi
-assert_file_contains "$tmp_dir/analyzer-input.log" \
+assert_file_contains "$tmp_dir/analyzer-input.log.2" \
+  'Loop active: yes' \
+  "monitor mistook lock loss for process exit"
+assert_file_contains "$tmp_dir/analyzer-input.log.2" \
+  'Loop state lock: missing; original process identity remains active' \
+  "monitor did not explain its process-identity fallback"
+assert_file_contains "$tmp_dir/analyzer-input.log.3" \
   'Loop active: no' \
-  "final monitor snapshot did not record loop exit"
-assert_file_contains "$tmp_dir/analyzer-input.log" \
+  "final monitor snapshot did not record the actual process exit"
+assert_file_contains "$tmp_dir/analyzer-input.log.3" \
   'PREVIOUS INTERPRETED REPORT (comparison context only):' \
   "repeated monitor snapshot omitted prior-report comparison context"
 assert_file_contains "$tmp_dir/repeating-monitor.log" \
@@ -288,7 +300,7 @@ fake_loop_pid=""
 assert_file_contains "$tmp_dir/no-loop.log" \
   'No active build loop was found for this repository.' \
   "monitor did not report an inactive loop"
-if [[ "$(< "$tmp_dir/analyzer-count")" != "2" ]]; then
+if [[ "$(< "$tmp_dir/analyzer-count")" != "3" ]]; then
   fail "monitor invoked the analyzer when no build loop was active"
 fi
 
