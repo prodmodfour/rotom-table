@@ -55,7 +55,7 @@ Run one local cycle from a clean working tree:
 scripts/build-loop.sh --max-cycles 1 --no-push
 ```
 
-Long runs keep the launcher focused on cycle-level status while writing concise live Pi progress to the follow log and the complete raw Pi event stream to private external sidecars. From another terminal, use `just follow` for the concise stream, `just monitor 10` to interpret the full Pi stream immediately and then every 10 minutes, and `just stop` to request a graceful stop after the current attempt/cycle reaches a safe boundary. See [Autonomous build loop](docs/autonomous-build.md#follow-monitor-and-gracefully-stop-a-long-run) for output modes, monitoring, logging, and exact stop semantics.
+Long runs keep the launcher focused on cycle-level status while writing concise live Pi progress to the follow log and the complete raw Pi event stream to private external sidecars. From another terminal, use `just follow` for the concise stream, `just monitor 10` to interpret a normalized, semantically complete event view immediately and then every 10 minutes, and `just stop` to request a graceful stop after the current attempt/cycle reaches a safe boundary. See [Autonomous build loop](docs/autonomous-build.md#follow-monitor-and-gracefully-stop-a-long-run) for output modes, monitoring, logging, and exact stop semantics.
 
 ## npm scripts
 

@@ -14,7 +14,7 @@ The current queue maps GitHub issues #27-#44 to local tickets in `BUILD_TICKETS.
 - `scripts/render-agent-events.mjs` — dependency-free live Pi event renderer.
 - `scripts/build-loop-follow.sh` — observer for the active detailed-agent log.
 - `scripts/build-loop-monitor.sh` — read-only periodic progress interpreter.
-- `scripts/prepare-pi-event-range.mjs` — lossless event-range segmenter for bounded read-tool access.
+- `scripts/prepare-pi-event-range.mjs` — streaming semantic event projector for bounded read-tool access.
 - `scripts/build-loop-stop.sh` — graceful stop-request command.
 - `scripts/quality-gate.sh` — Rotom Table validation gate.
 
@@ -73,9 +73,9 @@ just monitor       # report immediately, then every 10 minutes
 just monitor 5     # report immediately, then every 5 minutes
 ```
 
-Each report uses a fresh, ephemeral Pi invocation with only the read tool enabled; project context, extensions, and skills remain disabled. The monitor creates a private, lossless segmented view of every new line in the active invocation's complete `*.pi-events.jsonl` stream; the analyzer is instructed to read that view to EOF using offsets, and it also receives sanitized process activity, Git status/statistics, commit metadata, and bounded rendered context. The first report reads the full stream from its beginning; later reports read every event added since the previous successful report. This lets it interpret actual Pi activity—including successful tool results and emitted thinking events—rather than merely repeating the ticket heading. Set `PI_MONITOR_AGENT_COMMAND` to choose another Pi-compatible executable or `PI_MONITOR_THINKING_LEVEL` to override the default `low` thinking level. Pressing Ctrl-C detaches the monitor without affecting the build loop; the monitor emits a final report and exits after observing that the loop ended.
+Each report uses a fresh, ephemeral Pi invocation with only the read tool enabled; project context, extensions, and skills remain disabled. The monitor streams every new line in the active invocation's complete `*.pi-events.jsonl` sidecar into a private, segmented semantic view. Cumulative message snapshots, partial tool-call snapshots, and duplicate terminal message bodies are reduced to incremental deltas and metadata; authoritative tool starts, full emitted arguments/results, thinking/text deltas, retries, failures, and lifecycle events remain. Malformed or exceptionally large individual source lines produce bounded warning records instead of exhausting monitor memory. The analyzer is instructed to read this view to EOF using offsets, and it also receives sanitized process activity, Git status/statistics, commit metadata, and bounded rendered context. The first report projects the stream from its beginning; later reports project every event added since the previous successful report. Set `PI_MONITOR_AGENT_COMMAND` to choose another Pi-compatible executable or `PI_MONITOR_THINKING_LEVEL` to override the default `low` thinking level. Pressing Ctrl-C detaches the monitor without affecting the build loop; the monitor emits a final report and exits after observing that the loop ended.
 
-The complete event ranges read by the monitor are sent to the analyzer's configured model provider. They can contain source contents, command output, model reasoning, and secrets accidentally exposed to Pi; use full-stream monitoring only with a trusted provider and keep the external logs private.
+The normalized event ranges read by the monitor are sent to the analyzer's configured model provider. They can still contain source contents, command output, model reasoning, and secrets accidentally exposed to Pi; use monitoring only with a trusted provider and keep the external logs private.
 
 Request a safe cycle-boundary shutdown with:
 

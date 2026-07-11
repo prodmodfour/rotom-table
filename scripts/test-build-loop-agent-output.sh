@@ -74,6 +74,10 @@ set -euo pipefail
 
 : "${FAKE_PI_ARGS_LOG:?FAKE_PI_ARGS_LOG must be set}"
 : "${FAKE_PI_SCENARIO:?FAKE_PI_SCENARIO must be set}"
+if [[ -n "${PI_AGENT_EVENT_LOG:-}" ]]; then
+  printf '%s\n' 'run-agent leaked its private event sink into the agent environment' >&2
+  exit 98
+fi
 printf '%s\n' "$*" > "$FAKE_PI_ARGS_LOG"
 
 case "$FAKE_PI_SCENARIO" in

@@ -15,8 +15,8 @@ Usage: scripts/build-loop-monitor.sh [--interval-minutes N] [--once]
 
 Prints an immediate AI-interpreted progress report for the active autonomous
 build loop, then prints another report every N minutes. The monitor gives its
-read-only analyzer access to the complete Pi event stream plus process and Git
-metadata without controlling the loop.
+read-only analyzer access to a bounded, normalized view of the complete Pi
+event stream plus process and Git metadata without controlling the loop.
 
 Options:
 --interval-minutes N  Minutes between reports. Default: 10.
@@ -85,7 +85,7 @@ if ! command -v "$MONITOR_AGENT_COMMAND" >/dev/null 2>&1; then
   exit 127
 fi
 if ! command -v node >/dev/null 2>&1; then
-  pp_error "Node.js is required to prepare complete Pi event ranges."
+  pp_error "Node.js is required to prepare normalized Pi event ranges."
   exit 127
 fi
 if [[ ! -f "$PI_EVENT_RANGE_PREPARER" ]]; then
@@ -316,7 +316,7 @@ write_pi_event_access() {
 
   byte_count="$(stat -c '%s' "$pi_event_log" 2>/dev/null || printf 'unknown')"
   printf 'Source path: %s\n' "$pi_event_log"
-  printf 'Format: Pi JSONL event stream (complete terminal-equivalent source)\n'
+  printf 'Format: normalized Pi JSONL event view (complete semantic source)\n'
   printf 'Captured lines at snapshot time: %s\n' "$pi_event_log_lines"
   printf 'Captured bytes at snapshot time: %s\n' "$byte_count"
 
@@ -336,7 +336,7 @@ write_pi_event_access() {
     printf 'SOURCE RANGE: lines %s through %s inclusive.\n' \
       "$first_required_line" "$pi_event_log_lines"
     printf 'ANALYZER READ FILE: %s\n' "$analyzer_read_file"
-    printf '%s\n' 'The analyzer file contains every character from that source range, split into bounded labeled segments without omissions.'
+    printf '%s\n' 'The analyzer file preserves semantic event deltas, authoritative tool arguments/results, failures, and lifecycle events while removing cumulative snapshot duplication.'
     printf '%s\n' 'REQUIRED: read the analyzer file from first line to EOF using repeated read calls with offsets.'
   else
     printf '%s\n' 'The stream exists but contained no complete event lines at snapshot time.'
@@ -458,12 +458,12 @@ must not propose or perform file changes.
 You have exactly one tool: read. Before writing the report, use it to inspect
 the designated ANALYZER READ FILE from its first line through EOF. Make
 repeated reads with increasing offsets when the tool truncates. That file is a
-lossless segmented view of the required complete Pi JSONL event range. Do not
-read any other path. The source stream is the authoritative equivalent of
-the headless Pi terminal and includes emitted assistant deltas, thinking
-events, tool arguments and results, retries, errors, and lifecycle events.
+bounded, normalized view of the required complete Pi JSONL event range. Do not
+read any other path. Cumulative message and partial-tool snapshots are reduced
+to their deltas and metadata, while assistant/thinking deltas, authoritative
+tool arguments and results, retries, errors, and lifecycle events remain.
 
-Infer the current activity from that full Pi stream, process state, Git state,
+Infer the current activity from that normalized Pi event view, process state, Git state,
 commits, validations, failures, and changes since the prior report.
 Distinguish an old/resolved failure from a currently blocking failure. Do not
 claim a test passed, a commit landed, or work completed unless the snapshot
@@ -546,7 +546,7 @@ print_analyzer_fallback() {
 pp_banner "Monitoring autonomous build loop"
 pp_kv "PID" "$initial_loop_pid"
 pp_kv "Interval" "${INTERVAL_MINUTES} minute(s)"
-pp_kv "Analyzer" "$MONITOR_AGENT_COMMAND (read-only; full Pi stream)"
+pp_kv "Analyzer" "$MONITOR_AGENT_COMMAND (read-only; normalized Pi stream)"
 pp_kv "State dir" "$state_dir"
 pp_info "The first interpreted report is generated immediately."
 pp_info "Ctrl-C detaches this monitor; it does not interrupt the build loop."
