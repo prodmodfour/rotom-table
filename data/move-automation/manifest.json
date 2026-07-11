@@ -17213,10 +17213,10 @@
       "baseStatus": "assisted",
       "interactionStatus": "unassessed",
       "runtime": {
-        "kind": "legacy-v1",
-        "version": 1,
-        "definitionHash": "6bacfeec488371d1ccbe5c144f8e87b6c112eb4b24cbddcf80b4c2502e4113dd",
-        "sourceModule": "src/utils/move-automation/scripts/additionalSingleTarget.ts"
+        "kind": "movespec-v2",
+        "version": 2,
+        "definitionHash": "7dedaadc10bffd93abb92c9281410eff4fcde3bc9ffd5c08f56cc5b11a40273c",
+        "sourceModule": "server/domain/moveAutomation/specs/powerTrip.ts"
       },
       "rulesProvenance": {
         "rulesetId": "rotom-table-reference-moves-v1",
@@ -17229,14 +17229,27 @@
       "limitations": [
         {
           "code": "audit.required",
-          "summary": "Semantic conformance review is required before this legacy implementation can be marked complete."
+          "summary": "Semantic conformance review is required before this native implementation can be marked complete."
         }
       ],
       "manualSteps": [],
-      "scenarioIds": [],
+      "scenarioIds": [
+        "power-trip.v2-capped-stages",
+        "power-trip.v2-mixed-stages",
+        "power-trip.v2-zero-stages"
+      ],
       "conformanceEvidence": {
-        "requirementTags": [],
-        "scenarios": [],
+        "requirementTags": [
+          "recovery.retry"
+        ],
+        "scenarios": [
+          {
+            "scenarioId": "power-trip.v2-capped-stages",
+            "evidenceClasses": [
+              "retry"
+            ]
+          }
+        ],
         "notApplicable": []
       },
       "reviewedAt": null,

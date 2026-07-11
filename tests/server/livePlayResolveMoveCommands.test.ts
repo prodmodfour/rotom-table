@@ -713,6 +713,92 @@ describe('executeLivePlayResolveMoveCommandUseCase', () => {
     expect(harness.events).toEqual([])
   })
 
+  it('commits native Power Trip contextual damage once across duplicate delivery', async () => {
+    const harness = seedHarness({
+      actorMoves: [{ name: 'Power Trip' }],
+      actorSheet: {
+        species: 'Zorua',
+        types: ['Dark'],
+        stats: {
+          hp: { added: 20 },
+          atk: { added: 10, stage: 0 },
+          def: { stage: 6 },
+          satk: { stage: 4 },
+          sdef: { stage: 0 },
+          spd: { stage: 0 },
+        },
+        combatStages: { acc: 0 },
+        combat: { currentHp: 100, conditions: [] },
+      },
+      targetASheet: {
+        types: ['Normal'],
+        stats: { hp: { added: 500 } },
+        combat: { currentHp: 1_000, conditions: [] },
+      },
+    })
+    const map = harness.maps.getBySlug('arena')!
+    const moveIntent = intent({
+      placementId: 'actor-token',
+      moveName: 'Power Trip',
+      selection: { kind: 'single-target', targetPlacementId: 'target-a' },
+    })
+    const command = commandFor(map, moveIntent, 'op_resolvepowertrip1', ['target-a'])
+    const response = await execute(harness, command, {
+      random: randomSequence([0.5, 0, 0, 0, 0, 0, 0]),
+      now: () => 5_000,
+    })
+    const acceptedResult = accepted(response.result)
+
+    expect(response.move).toMatchObject({
+      canonicalMoveName: 'Power Trip',
+      selectedTargetIds: ['target-a'],
+      transaction: {
+        attackedTargetIds: ['target-a'],
+        hitTargetIds: ['target-a'],
+        hpUpdates: [{ id: 'target-a', currentHp: 939 }],
+      },
+      rollLedger: [
+        { rollId: 'power-trip.accuracy-roll.1', naturalResult: 11 },
+        {
+          rollId: 'power-trip.damage.roll.1',
+          formula: { kind: 'dice', count: 6, sides: 12, modifier: 45 },
+          naturalResult: 6,
+        },
+      ],
+      trace: {
+        program: {
+          canonicalId: 'Power Trip',
+          runtimeKind: 'movespec-v2',
+          runtimeVersion: 2,
+        },
+        events: expect.arrayContaining([
+          expect.objectContaining({
+            kind: 'operation',
+            operationId: 'power-trip.damage',
+            operationKind: 'damage',
+            outcome: 'applied',
+          }),
+        ]),
+      },
+    })
+    expect(harness.sheets.getByRef('pokemon', 'target-a')?.sheet).toMatchObject({
+      revision: 3,
+      combat: { currentHp: 939, conditions: [] },
+    })
+
+    const committedMap = deepCloneJson(harness.maps.getBySlug('arena'))
+    const committedSheets = deepCloneJson(harness.sheets.list())
+    const duplicate = await execute(harness, command, {
+      random: () => { throw new Error('duplicate Power Trip must not reroll') },
+      planner: () => { throw new Error('duplicate Power Trip must not replan') },
+    })
+
+    expect(duplicate.result).toEqual(acceptedResult)
+    expect(duplicate.move).toEqual(response.move)
+    expect(harness.maps.getBySlug('arena')).toEqual(committedMap)
+    expect(harness.sheets.list()).toEqual(committedSheets)
+  })
+
   it('commits native Synthesis healing and Daily usage once across duplicate delivery', async () => {
     const harness = seedHarness({
       map: mapFixture({ fieldEffects: { weather: [{ kind: 'sunny' }], terrains: [], rooms: [] } }),

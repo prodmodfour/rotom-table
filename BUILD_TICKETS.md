@@ -1229,7 +1229,7 @@ Status: DONE
 
 ## MA-094 — Port Power Trip as the dynamic-DB canary
 
-Status: TODO
+Status: DONE
 
 **Depends on:** MA-076–MA-078, MA-087
 **Commit:** `feat(move-automation): port power trip to movespec v2`
