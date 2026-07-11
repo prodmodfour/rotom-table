@@ -103,6 +103,7 @@ const seedHarness = (options: {
   readonly map?: TabletopMap
   readonly actorMoves?: readonly CharacterSheetMove[]
   readonly actorSheet?: Partial<CharacterSheet>
+  readonly targetASheet?: Partial<CharacterSheet>
   readonly extraSheets?: readonly CharacterSheet[]
 } = {}): Harness => {
   const database = openRotomDatabase({ path: ':memory:', enableWal: false })
@@ -125,7 +126,11 @@ const seedHarness = (options: {
     [...(options.actorMoves ?? [{ name: 'Tackle' }])],
     options.actorSheet,
   )
-  const targets = [targetSheet('target-a'), targetSheet('target-b'), ...(options.extraSheets ?? [])]
+  const targets = [
+    targetSheet('target-a', options.targetASheet),
+    targetSheet('target-b'),
+    ...(options.extraSheets ?? []),
+  ]
   for (const sheet of [actor, ...targets]) {
     sheets.save({ kind: 'pokemon', slug: sheet.slug, document: sheet as unknown as Record<string, unknown>, revision: sheet.revision ?? 0, updatedAt: (sheet as { readonly updatedAt?: number }).updatedAt ?? 50 })
   }
@@ -571,6 +576,141 @@ describe('executeLivePlayResolveMoveCommandUseCase', () => {
     expect(duplicate.move).toEqual(response.move)
     expect(harness.maps.getBySlug('arena')).toEqual(committedMap)
     expect(harness.sheets.getByRef('pokemon', 'target-a')).toEqual(committedSheet)
+  })
+
+  it('commits native Absorb damage and drain once across duplicate delivery', async () => {
+    const harness = seedHarness({
+      actorMoves: [{ name: 'Absorb' }],
+      actorSheet: {
+        species: 'Bulbasaur',
+        types: ['Grass'],
+        stats: { hp: { added: 18 }, satk: { added: 10 } },
+        combat: { currentHp: 10, conditions: [] },
+      },
+      targetASheet: {
+        types: ['Normal'],
+        stats: { hp: { added: 20 } },
+        combat: { currentHp: 50, conditions: [] },
+      },
+    })
+    const map = harness.maps.getBySlug('arena')!
+    const moveIntent = intent({
+      placementId: 'actor-token',
+      moveName: 'Absorb',
+      selection: { kind: 'single-target', targetPlacementId: 'target-a' },
+    })
+    const command = commandFor(map, moveIntent, 'op_resolveabsorb1', ['target-a'])
+    const response = await execute(harness, command, {
+      random: randomSequence([0.5, 0]),
+      now: () => 5_000,
+    })
+    const acceptedResult = accepted(response.result)
+
+    expect(response.move).toMatchObject({
+      canonicalMoveName: 'Absorb',
+      selectedTargetIds: ['target-a'],
+      transaction: {
+        attackedTargetIds: ['target-a'],
+        hitTargetIds: ['target-a'],
+        hpUpdates: [
+          { id: 'target-a', currentHp: 37 },
+          { id: 'actor-token', currentHp: 17 },
+        ],
+      },
+      rollLedger: [
+        { rollId: 'absorb.accuracy-roll.1', naturalResult: 11 },
+        { rollId: 'absorb.damage.roll.1', naturalResult: 1 },
+      ],
+      trace: {
+        program: {
+          canonicalId: 'Absorb',
+          runtimeKind: 'movespec-v2',
+          runtimeVersion: 2,
+        },
+        events: expect.arrayContaining([
+          expect.objectContaining({
+            kind: 'operation',
+            operationId: 'absorb.damage',
+            operationKind: 'damage',
+            outcome: 'applied',
+          }),
+          expect.objectContaining({
+            kind: 'operation',
+            operationId: 'absorb.drain',
+            operationKind: 'heal',
+            outcome: 'applied',
+          }),
+        ]),
+      },
+    })
+    expect(harness.sheets.getByRef('pokemon', 'target-a')?.sheet).toMatchObject({
+      revision: 3,
+      combat: { currentHp: 37, conditions: [] },
+    })
+    expect(harness.sheets.getByRef('pokemon', 'actor')?.sheet).toMatchObject({
+      revision: 3,
+      combat: { currentHp: 17, conditions: [] },
+    })
+
+    const committedMap = deepCloneJson(harness.maps.getBySlug('arena'))
+    const committedSheets = deepCloneJson(harness.sheets.list())
+    const duplicate = await execute(harness, command, {
+      random: () => { throw new Error('duplicate Absorb must not reroll') },
+      planner: () => { throw new Error('duplicate Absorb must not replan') },
+    })
+
+    expect(duplicate.result).toEqual(acceptedResult)
+    expect(duplicate.move).toEqual(response.move)
+    expect(harness.maps.getBySlug('arena')).toEqual(committedMap)
+    expect(harness.sheets.list()).toEqual(committedSheets)
+  })
+
+  it('rolls back both Absorb HP writes when the actor changes after planning', async () => {
+    const harness = seedHarness({
+      actorMoves: [{ name: 'Absorb' }],
+      actorSheet: {
+        species: 'Bulbasaur',
+        types: ['Grass'],
+        stats: { hp: { added: 18 }, satk: { added: 10 } },
+        combat: { currentHp: 10, conditions: [] },
+      },
+      targetASheet: {
+        types: ['Normal'],
+        stats: { hp: { added: 20 } },
+        combat: { currentHp: 50, conditions: [] },
+      },
+    })
+    const map = harness.maps.getBySlug('arena')!
+    const targetBefore = deepCloneJson(harness.sheets.getByRef('pokemon', 'target-a'))
+    const moveIntent = intent({
+      placementId: 'actor-token',
+      moveName: 'Absorb',
+      selection: { kind: 'single-target', targetPlacementId: 'target-a' },
+    })
+    const opId = 'op_absorbatomic01'
+    const race = raceConsultedSheetAfterPlanning(harness, 'actor', (plan) => {
+      expect(plan.sheetWrites.map(write => write.slug)).toEqual(['target-a', 'actor'])
+      expect(plan.resolution.transaction.hpUpdates).toEqual([
+        expect.objectContaining({ id: 'target-a', currentHp: 37 }),
+        expect.objectContaining({ id: 'actor-token', currentHp: 17 }),
+      ])
+    })
+    const response = await execute(
+      harness,
+      commandFor(map, moveIntent, opId, ['target-a']),
+      { planner: race.planner, random: randomSequence([0.5, 0]) },
+    )
+
+    expect(response.result).toMatchObject({
+      ok: false,
+      reason: 'conflict',
+      message: expect.stringContaining('consulted while resolving the move changed'),
+    })
+    expect(harness.maps.getBySlug('arena')).toEqual(map)
+    expect(harness.sheets.getByRef('pokemon', 'target-a')).toEqual(targetBefore)
+    expect(harness.sheets.list()).toEqual(race.sheetsAfterRace())
+    expect(harness.ops.getOpResult('arena', opId)).toBeNull()
+    expect(harness.events).toEqual([])
   })
 
   it('commits native Synthesis healing and Daily usage once across duplicate delivery', async () => {

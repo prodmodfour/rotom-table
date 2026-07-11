@@ -11,6 +11,7 @@ import {
   hasGroundsourceImmunityCapability,
   hasLevitateAbility,
   hasMudDwellerAbility,
+  hasSapSipperAbility,
   hasSoundproofAbility,
   hasToleranceAbility,
   moveHasGroundsourceKeyword,
@@ -19,13 +20,16 @@ import {
 } from '~/utils/sheetPassiveAbilityEffects'
 
 describe('sheet passive ability effects', () => {
-  it('recognizes Levitate, Flash Fire, Tolerance, Soundproof, and Mud Dweller by canonical ability lookup', () => {
+  it('recognizes passive abilities by canonical ability lookup', () => {
     expect(hasLevitateAbility([{ name: 'levitate' }])).toBe(true)
     expect(hasLevitateAbility(['Levitate'])).toBe(true)
     expect(hasLevitateAbility([{ name: 'Run Away' }])).toBe(false)
     expect(hasFlashFireAbility([{ name: 'flash fire' }])).toBe(true)
     expect(hasFlashFireAbility(['Flash Fire'])).toBe(true)
     expect(hasFlashFireAbility([{ name: 'Run Away' }])).toBe(false)
+    expect(hasSapSipperAbility([{ name: 'sap sipper' }])).toBe(true)
+    expect(hasSapSipperAbility(['Sap Sipper'])).toBe(true)
+    expect(hasSapSipperAbility([{ name: 'Run Away' }])).toBe(false)
     expect(hasToleranceAbility([{ name: 'tolerance' }])).toBe(true)
     expect(hasToleranceAbility(['Tolerance'])).toBe(true)
     expect(hasToleranceAbility([{ name: 'Run Away' }])).toBe(false)
@@ -65,11 +69,16 @@ describe('sheet passive ability effects', () => {
     expect(getPassiveTypeEffectivenessSource('Water', [{ name: 'Mud Dweller' }], undefined, { baseMultiplier: 1 })).toBe('Mud Dweller')
   })
 
-  it('makes Fire attacks immune with Flash Fire', () => {
+  it('makes Fire and Grass attacks immune with their defensive abilities', () => {
     expect(applySheetPassiveAbilityTypeEffectiveness('Fire', 2, [{ name: 'Flash Fire' }])).toBe(0)
     expect(applySheetPassiveAbilityTypeEffectiveness('Water', 1.5, [{ name: 'Flash Fire' }])).toBe(1.5)
     expect(computeSheetAbilityAwareMultiplier('Fire', ['Grass'], [{ name: 'flash fire' }])).toBe(0)
     expect(getPassiveTypeEffectivenessSource('Fire', [{ name: 'Flash Fire' }])).toBe('Flash Fire')
+
+    expect(applySheetPassiveAbilityTypeEffectiveness('Grass', 1.5, [{ name: 'Sap Sipper' }])).toBe(0)
+    expect(applySheetPassiveAbilityTypeEffectiveness('Water', 1.5, [{ name: 'Sap Sipper' }])).toBe(1.5)
+    expect(computeSheetAbilityAwareMultiplier('Grass', ['Water'], [{ name: 'sap sipper' }])).toBe(0)
+    expect(getPassiveTypeEffectivenessSource('Grass', [{ name: 'Sap Sipper' }])).toBe('Sap Sipper')
   })
 
   it('makes Sonic moves immune with Soundproof', () => {

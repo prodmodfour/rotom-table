@@ -1218,7 +1218,7 @@ Status: DONE
 
 ## MA-093 — Port Absorb as the drain canary
 
-Status: TODO
+Status: DONE
 
 **Depends on:** MA-081, MA-087
 **Commit:** `feat(move-automation): port absorb to movespec v2`

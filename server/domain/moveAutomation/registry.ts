@@ -18,6 +18,7 @@ import {
   validateMoveSpec,
   type ValidatedMoveSpecDefinition,
 } from './validateSpec'
+import { ABSORB_MOVE_SPEC_REGISTRATION } from './specs/absorb'
 import { DRAGON_RAGE_MOVE_SPEC_REGISTRATION } from './specs/dragonRage'
 import { EMBER_MOVE_SPEC_REGISTRATION } from './specs/ember'
 import { SCRATCH_MOVE_SPEC_REGISTRATION } from './specs/scratch'
@@ -239,6 +240,7 @@ export const createMoveAutomationRuntimeRegistry = (
 
 /** Native v2 definitions are added here only after their manifest metadata is reviewed. */
 export const REVIEWED_MOVE_SPEC_V2_REGISTRATIONS: readonly MoveSpecV2Registration[] = Object.freeze([
+  ABSORB_MOVE_SPEC_REGISTRATION,
   DRAGON_RAGE_MOVE_SPEC_REGISTRATION,
   EMBER_MOVE_SPEC_REGISTRATION,
   SCRATCH_MOVE_SPEC_REGISTRATION,

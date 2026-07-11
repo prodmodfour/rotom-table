@@ -7,6 +7,7 @@ import { moveAutomationKeywordsInclude } from '~/utils/moveAutomationKeywordImmu
 
 export const LEVITATE_ABILITY_NAME = 'Levitate'
 export const FLASH_FIRE_ABILITY_NAME = 'Flash Fire'
+export const SAP_SIPPER_ABILITY_NAME = 'Sap Sipper'
 export const TOLERANCE_ABILITY_NAME = 'Tolerance'
 export const SOUNDPROOF_ABILITY_NAME = 'Soundproof'
 export const MUD_DWELLER_ABILITY_NAME = 'Mud Dweller'
@@ -44,6 +45,10 @@ export const hasLevitateAbility = (
 export const hasFlashFireAbility = (
   abilities: readonly SheetAbilityNameSource[] | null | undefined,
 ): boolean => sheetHasCanonicalAbility(abilities, FLASH_FIRE_ABILITY_NAME)
+
+export const hasSapSipperAbility = (
+  abilities: readonly SheetAbilityNameSource[] | null | undefined,
+): boolean => sheetHasCanonicalAbility(abilities, SAP_SIPPER_ABILITY_NAME)
 
 export const hasToleranceAbility = (
   abilities: readonly SheetAbilityNameSource[] | null | undefined,
@@ -145,6 +150,19 @@ export const getPassiveFireImmunitySource = (
   abilities: readonly SheetAbilityNameSource[] | null | undefined,
 ): string | null => hasFlashFireAbility(abilities) ? FLASH_FIRE_ABILITY_NAME : null
 
+const getPassiveTypedAttackImmunitySource = (
+  attackingType: string,
+  abilities: readonly SheetAbilityNameSource[] | null | undefined,
+): string | null => {
+  if (attackingType === 'Fire' && hasFlashFireAbility(abilities)) {
+    return FLASH_FIRE_ABILITY_NAME
+  }
+  if (attackingType === 'Grass' && hasSapSipperAbility(abilities)) {
+    return SAP_SIPPER_ABILITY_NAME
+  }
+  return null
+}
+
 const isResistanceMultiplier = (multiplier: number): boolean => multiplier > 0 && multiplier < 1
 
 export const resolveSheetPassiveTypeEffectiveness = (
@@ -161,8 +179,12 @@ export const resolveSheetPassiveTypeEffectiveness = (
       context.moveKeywords,
     )
     if (moveImmunitySource) return { multiplier: 0, sources: [moveImmunitySource] }
-    if (attackingType === 'Fire' && hasFlashFireAbility(abilities)) {
-      return { multiplier: 0, sources: [FLASH_FIRE_ABILITY_NAME] }
+    const typedAttackImmunitySource = getPassiveTypedAttackImmunitySource(
+      attackingType,
+      abilities,
+    )
+    if (typedAttackImmunitySource) {
+      return { multiplier: 0, sources: [typedAttackImmunitySource] }
     }
   }
 
@@ -221,9 +243,9 @@ export const resolveLevitateAbilitySpeed = (
 }
 
 /**
- * Passive type effects used by sheets and token automation. Flash Fire makes
- * Fire attacks immune. Levitate makes Ground one effectiveness step more
- * resisted. Mud Dweller makes Ground and Water one effectiveness step more
+ * Passive type effects used by sheets and token automation. Flash Fire and
+ * Sap Sipper make Fire and Grass attacks immune respectively. Levitate makes
+ * Ground one effectiveness step more resisted. Mud Dweller makes Ground and Water one effectiveness step more
  * resisted. Tolerance makes any currently resisted type one additional step
  * resisted. Soundproof makes Sonic moves immune. Sky and
  * Levitate capabilities make moves with the Groundsource keyword immune.

@@ -7,10 +7,10 @@
       "baseStatus": "assisted",
       "interactionStatus": "unassessed",
       "runtime": {
-        "kind": "legacy-v1",
-        "version": 1,
-        "definitionHash": "2d04f6718d7106421c82b1c12f6e3f448f72239706f9626d42ee99698f16fee1",
-        "sourceModule": "src/utils/move-automation/scripts/additionalSingleTarget.ts"
+        "kind": "movespec-v2",
+        "version": 2,
+        "definitionHash": "b616729b13e53d7dbca6cef4f4c4b0deaddb5a1c18f18900c6dd24313428128f",
+        "sourceModule": "server/domain/moveAutomation/specs/absorb.ts"
       },
       "rulesProvenance": {
         "rulesetId": "rotom-table-reference-moves-v1",
@@ -23,14 +23,74 @@
       "limitations": [
         {
           "code": "audit.required",
-          "summary": "Semantic conformance review is required before this legacy implementation can be marked complete."
+          "summary": "Semantic conformance review is required before this native implementation can be marked complete."
         }
       ],
       "manualSteps": [],
-      "scenarioIds": [],
+      "scenarioIds": [
+        "absorb.v2-critical-hit",
+        "absorb.v2-full-hp-user",
+        "absorb.v2-hit-mitigated",
+        "absorb.v2-immunity",
+        "absorb.v2-miss",
+        "absorb.v2-target-ko",
+        "absorb.v2-temporary-hp"
+      ],
       "conformanceEvidence": {
-        "requirementTags": [],
-        "scenarios": [],
+        "requirementTags": [
+          "branch.accuracy",
+          "branch.critical-hit",
+          "branch.immunity",
+          "mechanic.damage",
+          "recovery.retry",
+          "target.self"
+        ],
+        "scenarios": [
+          {
+            "scenarioId": "absorb.v2-critical-hit",
+            "evidenceClasses": [
+              "crit"
+            ]
+          },
+          {
+            "scenarioId": "absorb.v2-full-hp-user",
+            "evidenceClasses": [
+              "hit",
+              "self"
+            ]
+          },
+          {
+            "scenarioId": "absorb.v2-hit-mitigated",
+            "evidenceClasses": [
+              "hit",
+              "retry"
+            ]
+          },
+          {
+            "scenarioId": "absorb.v2-immunity",
+            "evidenceClasses": [
+              "immunity"
+            ]
+          },
+          {
+            "scenarioId": "absorb.v2-miss",
+            "evidenceClasses": [
+              "miss"
+            ]
+          },
+          {
+            "scenarioId": "absorb.v2-target-ko",
+            "evidenceClasses": [
+              "hit"
+            ]
+          },
+          {
+            "scenarioId": "absorb.v2-temporary-hp",
+            "evidenceClasses": [
+              "hit"
+            ]
+          }
+        ],
         "notApplicable": []
       },
       "reviewedAt": null,
