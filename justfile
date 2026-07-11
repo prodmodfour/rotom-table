@@ -76,6 +76,9 @@ default:
       '  just monitor <minutes>' \
       '      Interpret the full Pi event stream immediately, then repeat every 10 minutes by default.' \
       '' \
+      '  just dan-usage' \
+      '      Send one minimal request and report Dan Codex five-hour/weekly usage.' \
+      '' \
       '  just stop' \
       '      Gracefully stop the active build loop after its current attempt/cycle.'
 
@@ -101,6 +104,10 @@ follow lines="40":
 # Periodically summarize and interpret active autonomous build progress.
 monitor minutes="10":
     bash scripts/build-loop-monitor.sh --interval-minutes {{quote(minutes)}}
+
+# Report Dan Codex five-hour and weekly usage with one minimal request.
+dan-usage:
+    bash scripts/dan-usage.sh
 
 # Request a graceful stop after the active attempt/cycle reaches a safe boundary.
 stop:

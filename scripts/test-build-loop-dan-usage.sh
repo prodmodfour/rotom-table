@@ -1,0 +1,118 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=scripts/lib/pretty-print.sh
+source "$SCRIPT_DIR/lib/pretty-print.sh"
+
+fail() {
+  pp_error "$*"
+  exit 1
+}
+
+assert_contains() {
+  local file="$1"
+  local expected="$2"
+  local message="$3"
+
+  grep -Fq -- "$expected" "$file" || fail "$message"
+}
+
+tmp_dir="$(mktemp -d)"
+cleanup() {
+  rm -rf "$tmp_dir"
+}
+trap cleanup EXIT
+
+runtime_tmp="$tmp_dir/runtime"
+mkdir -p "$runtime_tmp"
+
+cat > "$tmp_dir/fake-pi-dan-rinse" <<'FAKE_PI'
+#!/usr/bin/env bash
+set -euo pipefail
+
+: "${CODEX_RATE_HEADER_LOG:?rate header log is required}"
+: "${FAKE_DAN_ARGS_LOG:?argument log is required}"
+: "${FAKE_DAN_MODE:?fixture mode is required}"
+
+printf '%s\n' "$@" > "$FAKE_DAN_ARGS_LOG"
+grep -Fq '"transport": "sse"' .pi/settings.json
+
+case "$FAKE_DAN_MODE" in
+  limited)
+    cat > "$CODEX_RATE_HEADER_LOG" <<'JSON'
+{"status":429,"headers":{"x-codex-active-limit":"premium","x-codex-plan-type":"prolite","x-codex-primary-used-percent":"100","x-codex-primary-window-minutes":"300","x-codex-primary-reset-after-seconds":"1497","x-codex-primary-reset-at":"1893456000","x-codex-secondary-used-percent":"29","x-codex-secondary-window-minutes":"10080","x-codex-secondary-reset-after-seconds":"570287","x-codex-secondary-reset-at":"1894060800"}}
+JSON
+    printf '%s\n' 'You have hit your ChatGPT usage limit.' >&2
+    exit 1
+    ;;
+  available)
+    cat > "$CODEX_RATE_HEADER_LOG" <<'JSON'
+{"status":200,"headers":{"x-codex-active-limit":"premium","x-codex-plan-type":"prolite","x-codex-primary-used-percent":"42","x-codex-primary-window-minutes":"300","x-codex-primary-reset-after-seconds":"3600","x-codex-primary-reset-at":"1893456000","x-codex-secondary-used-percent":"29","x-codex-secondary-window-minutes":"10080","x-codex-secondary-reset-after-seconds":"570287","x-codex-secondary-reset-at":"1894060800"}}
+JSON
+    printf '%s\n' 'OK'
+    ;;
+  missing)
+    printf '%s\n' 'Codex error: fixture unavailable' >&2
+    exit 23
+    ;;
+  *)
+    printf 'Unknown fixture mode: %s\n' "$FAKE_DAN_MODE" >&2
+    exit 2
+    ;;
+esac
+FAKE_PI
+chmod +x "$tmp_dir/fake-pi-dan-rinse"
+
+common_env=(
+  "NO_COLOR=1"
+  "TMPDIR=$runtime_tmp"
+  "PI_DAN_USAGE_COMMAND=$tmp_dir/fake-pi-dan-rinse"
+  "FAKE_DAN_ARGS_LOG=$tmp_dir/fake-args.log"
+)
+
+pp_step "Regression: Dan usage reports the limiting five-hour window"
+env "${common_env[@]}" FAKE_DAN_MODE=limited \
+  bash "$SCRIPT_DIR/dan-usage.sh" > "$tmp_dir/limited.log" 2>&1
+assert_contains "$tmp_dir/limited.log" 'Dan Codex usage' \
+  "Dan usage omitted its heading"
+assert_contains "$tmp_dir/limited.log" 'Primary (5 hours): 100% used' \
+  "Dan usage omitted the exhausted primary window"
+assert_contains "$tmp_dir/limited.log" 'Secondary (7 days): 29% used' \
+  "Dan usage omitted the weekly percentage"
+assert_contains "$tmp_dir/limited.log" \
+  'The 5-hour window is exhausted; the weekly window has remaining capacity.' \
+  "Dan usage misclassified the limiting window"
+for required_arg in --approve --no-session --no-context-files --no-tools --print; do
+  grep -Fxq -- "$required_arg" "$tmp_dir/fake-args.log" \
+    || fail "Dan usage omitted safety argument $required_arg"
+done
+
+pp_step "Regression: Dan usage reports available capacity"
+env "${common_env[@]}" FAKE_DAN_MODE=available \
+  bash "$SCRIPT_DIR/dan-usage.sh" > "$tmp_dir/available.log" 2>&1
+assert_contains "$tmp_dir/available.log" 'HTTP status:          200' \
+  "Dan usage omitted the successful provider status"
+assert_contains "$tmp_dir/available.log" 'Primary (5 hours): 42% used' \
+  "Dan usage omitted available primary usage"
+assert_contains "$tmp_dir/available.log" 'Codex is currently available.' \
+  "Dan usage misclassified available capacity"
+
+pp_step "Regression: Dan usage fails clearly when headers are unavailable"
+set +e
+env "${common_env[@]}" FAKE_DAN_MODE=missing \
+  bash "$SCRIPT_DIR/dan-usage.sh" > "$tmp_dir/missing.log" 2>&1
+missing_status=$?
+set -e
+if [[ "$missing_status" -eq 0 ]]; then
+  fail "Dan usage succeeded without rate-limit headers"
+fi
+assert_contains "$tmp_dir/missing.log" \
+  'Pi did not expose Codex rate-limit headers (exit status 23).' \
+  "Dan usage did not explain missing headers"
+
+if find "$runtime_tmp" -mindepth 1 -print -quit | grep -q .; then
+  fail "Dan usage left temporary diagnostic files behind"
+fi
+
+pp_success "Dan usage regressions passed."
