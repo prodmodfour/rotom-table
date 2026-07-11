@@ -1150,7 +1150,7 @@ Status: DONE
 
 ## MA-089A — Gate secondary conditions with authoritative accuracy rolls
 
-Status: TODO
+Status: DONE
 
 **Depends on:** MA-077–MA-087
 **Commit:** `feat(move-automation): gate secondary conditions by accuracy rolls`

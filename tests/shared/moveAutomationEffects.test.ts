@@ -715,6 +715,25 @@ describe('MoveSpec typed effect operations', () => {
         },
       },
     }), 'invalid-effect-operation', 'operation.payload.accuracyRollTrigger')
+    expectEffectError(validOperation('condition', {
+      payload: {
+        ...VALID_PAYLOADS.condition,
+        accuracyRollTrigger: {
+          rollId: 'roll.accuracy',
+          trigger: { kind: 'range', minimum: 21 },
+        },
+      },
+    }), 'limit-exceeded', 'operation.payload.accuracyRollTrigger.trigger.minimum')
+    expectEffectError(validOperation('condition', {
+      payload: {
+        ...VALID_PAYLOADS.condition,
+        accuracyRollTrigger: {
+          rollId: 'roll.accuracy',
+          trigger: { kind: 'range', minimum: 18 },
+          naturalResult: 20,
+        },
+      },
+    }), 'invalid-effect-operation', 'operation.payload.accuracyRollTrigger')
   })
 
   it('parses advanced combat-stage transforms and concrete selected-Stat choices', () => {

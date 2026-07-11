@@ -1022,6 +1022,17 @@ describe('authoritative MoveSpec validation and hashing', () => {
       'spec.phases[2].operations[0].payload.accuracyRollTrigger.rollId',
     )
 
+    const forward = triggeredConditionSpec()
+    const forwardCondition = forward.phases[2]!.operations[0]!
+    forwardCondition.source = { kind: 'move', id: 'move.scratch' }
+    forwardCondition.phase = 'declare'
+    forward.phases[2] = { phase: 'declare', operations: [forwardCondition] }
+    expectDefinitionError(
+      () => validateMoveSpec(forward),
+      'invalid-reference-order',
+      'spec.phases[0].operations[0].payload.accuracyRollTrigger.rollId',
+    )
+
     const wrongFormula = triggeredConditionSpec()
     wrongFormula.phases[0]!.operations[0]!.payload.formula = {
       kind: 'dice', count: 2, sides: 10, modifier: 0,

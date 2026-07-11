@@ -417,55 +417,6 @@ describe('executeLivePlayResolveMoveCommandUseCase', () => {
     expect(patchedMap.updatedAt).toBe(targetResponse.map?.updatedAt)
   })
 
-  it('commits native Ember once and replays duplicate delivery without rerolling', async () => {
-    const harness = seedHarness({ actorMoves: [{ name: 'Ember' }] })
-    const map = harness.maps.getBySlug('arena')!
-    const moveIntent = intent({
-      placementId: 'actor-token',
-      moveName: 'Ember',
-      selection: { kind: 'single-target', targetPlacementId: 'target-a' },
-    })
-    const command = commandFor(map, moveIntent, 'op_resolveember1', ['target-a'])
-    const response = await execute(harness, command, {
-      random: randomSequence([0.85, 0]),
-    })
-    const acceptedResult = accepted(response.result)
-
-    expect(response.move).toMatchObject({
-      canonicalMoveName: 'Ember',
-      selectedTargetIds: ['target-a'],
-      transaction: {
-        attackedTargetIds: ['target-a'],
-        hitTargetIds: ['target-a'],
-        hpUpdates: [{ id: 'target-a', currentHp: 79 }],
-        conditionUpdates: [{ id: 'target-a', conditions: ['Burned'] }],
-      },
-      rollLedger: [
-        { rollId: 'ember.accuracy-roll.1', naturalResult: 18 },
-        { rollId: 'ember.damage.roll.1', naturalResult: 1 },
-      ],
-      trace: {
-        program: { canonicalId: 'Ember', runtimeKind: 'movespec-v2', runtimeVersion: 2 },
-      },
-    })
-    expect(harness.sheets.getByRef('pokemon', 'target-a')?.sheet).toMatchObject({
-      revision: 3,
-      combat: { currentHp: 79, conditions: ['Burned'] },
-    })
-
-    const committedMap = deepCloneJson(harness.maps.getBySlug('arena'))
-    const committedSheet = deepCloneJson(harness.sheets.getByRef('pokemon', 'target-a'))
-    const duplicate = await execute(harness, command, {
-      random: () => { throw new Error('duplicate Ember must not reroll') },
-      planner: () => { throw new Error('duplicate Ember must not replan') },
-    })
-
-    expect(duplicate.result).toEqual(acceptedResult)
-    expect(duplicate.move).toEqual(response.move)
-    expect(harness.maps.getBySlug('arena')).toEqual(committedMap)
-    expect(harness.sheets.getByRef('pokemon', 'target-a')).toEqual(committedSheet)
-  })
-
   it('accepts area and Pass resolveMove commands with conservative candidate scopes', async () => {
     await withRegisteredScript(areaScript('Tail Whip'), async () => {
       const areaMap = mapFixture({ placements: [

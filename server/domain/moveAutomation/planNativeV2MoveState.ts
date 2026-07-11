@@ -99,7 +99,7 @@ const applyCoreMapChanges = (
   return next
 }
 
-const placementStateChange = (options: {
+const movementStateChange = (options: {
   readonly previousMap: TabletopMap
   readonly nextMap: TabletopMap
   readonly resolution: AuthoritativeMoveResolution
@@ -111,16 +111,13 @@ const placementStateChange = (options: {
     ?? fail('actor-placement-missing', `Actor placement ${actorId} disappeared during planning.`)
   if (sameJsonValue(previous, current)) return null
 
-  const moved = !sameJsonValue(previous.position, current.position)
-  const operation = moved
-    ? options.resolution.nativeV2?.operations.find(({ operation: candidate }) => (
-        candidate.kind === 'movement-request'
-      ))?.operation
-    : null
-  if (moved && (!operation || operation.kind !== 'movement-request')) {
+  const operation = options.resolution.nativeV2?.operations.find(({ operation: candidate }) => (
+    candidate.kind === 'movement-request'
+  ))?.operation
+  if (!operation || operation.kind !== 'movement-request') {
     return fail(
       'movement-operation-missing',
-      `${options.resolution.canonicalMoveName} changed position without a movement operation.`,
+      `${options.resolution.canonicalMoveName} changed placement state without a movement operation.`,
     )
   }
   return {
@@ -131,8 +128,8 @@ const placementStateChange = (options: {
       placementId: actorId,
     },
     expectedRevision: normalizeRevision(options.previousMap.revision),
-    sourceOperationId: operation?.id ?? null,
-    reasonCode: operation?.reasonCode ?? 'move-facing',
+    sourceOperationId: operation.id,
+    reasonCode: operation.reasonCode,
     previous: deepCloneJson(previous),
     current: deepCloneJson(current),
     compensation: RESTORE_PREVIOUS_MOVE_STATE_VALUE,
@@ -142,7 +139,7 @@ const placementStateChange = (options: {
 const combinedStateChanges = (options: {
   readonly resolution: AuthoritativeMoveResolution
   readonly mapPlan: MoveStateChangePlan
-  readonly placement: MoveStateChangeInput | null
+  readonly movement: MoveStateChangeInput | null
 }): MoveStateChangePlan => {
   const native = options.resolution.nativeV2
     ?? fail('native-projection-missing', 'Native resolution projection is missing.')
@@ -151,7 +148,7 @@ const combinedStateChanges = (options: {
   )
   const inputs = [
     ...native.coreStateChanges.changes.map(stripPlanIdentity),
-    ...(options.placement ? [options.placement] : []),
+    ...(options.movement ? [options.movement] : []),
     ...options.mapPlan.changes.map(stripPlanIdentity),
   ].map((input, index) => ({
     input,
@@ -362,7 +359,7 @@ export const planNativeV2MoveState = (options: {
     revision: mapReduction.revision,
     updatedAt: options.plannedAt,
   }
-  const placement = placementStateChange({
+  const movement = movementStateChange({
     previousMap: options.map,
     nextMap,
     resolution: options.resolution,
@@ -370,7 +367,7 @@ export const planNativeV2MoveState = (options: {
   const stateChanges = combinedStateChanges({
     resolution: options.resolution,
     mapPlan: mapReduction.stateChanges,
-    placement,
+    movement,
   })
   const auditTrace = applyMovementTrace({
     trace: mapReduction.trace,

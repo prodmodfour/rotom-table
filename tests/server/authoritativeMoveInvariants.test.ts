@@ -223,6 +223,10 @@ describe('authoritative move invariants', () => {
       payload: {
         ...validIntent,
         rolls: [20],
+        rollId: 'client.accuracy',
+        threshold: 20,
+        accuracyRollTrigger: { rollId: 'client.accuracy', minimum: 1 },
+        effectOperations: [{ kind: 'condition', conditionId: 'burned' }],
         damage: 999,
         script: { moveName: 'Client Tackle' },
         transaction: { hpUpdates: [] },
@@ -243,6 +247,10 @@ describe('authoritative move invariants', () => {
         code: 'invalid-resolve-move-intent',
         issues: expect.arrayContaining([
           expect.objectContaining({ path: 'rolls', code: 'forbidden-field' }),
+          expect.objectContaining({ path: 'rollId', code: 'forbidden-field' }),
+          expect.objectContaining({ path: 'threshold', code: 'forbidden-field' }),
+          expect.objectContaining({ path: 'accuracyRollTrigger', code: 'forbidden-field' }),
+          expect.objectContaining({ path: 'effectOperations', code: 'forbidden-field' }),
           expect.objectContaining({ path: 'damage', code: 'forbidden-field' }),
           expect.objectContaining({ path: 'script', code: 'forbidden-field' }),
           expect.objectContaining({ path: 'transaction', code: 'forbidden-field' }),

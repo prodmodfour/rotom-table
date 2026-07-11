@@ -34,8 +34,6 @@ type ReportManifestRow = {
   baseStatus: string
   blockerCodes: string[]
   rolloutCohortId: string | null
-  scenarioIds: string[]
-  conformanceEvidence: { requirementTags: string[] }
 }
 
 const reportManifestRows = manifestJson.moves as unknown as ReportManifestRow[]
@@ -62,9 +60,6 @@ const currentLinkedRuntimeCount = manifestJson.moves.filter(({ runtime }) =>
 const currentDefinitionHashCount = manifestJson.moves.filter(({ runtime }) =>
   runtime.definitionHash !== null,
 ).length
-const currentRequirementsUnassignedMoves = reportManifestRows
-  .filter(move => move.conformanceEvidence.requirementTags.length === 0)
-  .map(move => move.canonicalId)
 
 const expectedSemanticStatusGroups = ['complete', 'assisted', 'blocked'].map(status => ({
   count: reportManifestRows.filter(move => move.baseStatus === status).length,
@@ -162,23 +157,6 @@ const writeScenarioRequirements = (
 const mutableScenarioRequirements = (): MutableScenarioRequirements =>
   structuredClone(scenarioRequirementsJson) as MutableScenarioRequirements
 
-const writeBaselineScenarioFixtures = (
-  directory: string,
-  excludedCanonicalIds: readonly string[] = [],
-): number => {
-  const excluded = new Set(excludedCanonicalIds)
-  const scenarioIds = reportManifestRows.flatMap(row => (
-    excluded.has(row.canonicalId) ? [] : row.scenarioIds
-  ))
-  writeFileSync(
-    join(directory, 'baseline-scenarios.ts'),
-    `${scenarioIds.map((scenarioId, index) => (
-      `export const scenario${index + 1} = { scenarioId: '${scenarioId}' }`
-    )).join('\n')}\n`,
-  )
-  return scenarioIds.length
-}
-
 describe('move automation semantic coverage checker', () => {
   it('prints a byte-stable Markdown progress report from reviewed metadata', () => {
     const first = runChecker('--report')
@@ -234,9 +212,9 @@ describe('move automation semantic coverage checker', () => {
           capabilityBlocker: expectedCapabilityBlockerGroups,
           cohort: expectedCohortGroups,
           missingTestEvidence: [{
-            count: currentRequirementsUnassignedMoves.length,
+            count: manifestMoveCount,
             evidenceCode: 'requirements-unassigned',
-            moves: currentRequirementsUnassignedMoves,
+            moves: manifestJson.moves.map(move => move.canonicalId),
             summary: 'Reviewed scenario requirement tags have not been assigned.',
           }],
         },
@@ -271,7 +249,6 @@ describe('move automation semantic coverage checker', () => {
         join(directory, 'scratch-progress.ts'),
         "export const hit = { scenarioId: 'scratch.progress.hit' }\n",
       )
-      writeBaselineScenarioFixtures(directory, ['Scratch'])
 
       const first = runChecker(
         '--manifest', manifestPath,
@@ -300,17 +277,13 @@ describe('move automation semantic coverage checker', () => {
       expect(groups.capabilityBlocker.find(
         ({ blockerCode }: { blockerCode: string }) => blockerCode === 'targeting.authoritative',
       )).toMatchObject({ moves: expect.arrayContaining(['Scratch']) })
-      const unassignedMoves = manifest.moves
-        .filter(move => (
-          move.canonicalId !== 'Scratch'
-          && move.conformanceEvidence.requirementTags.length === 0
-        ))
-        .map(move => move.canonicalId)
       expect(groups.missingTestEvidence).toEqual([
         {
-          count: unassignedMoves.length,
+          count: manifestMoveCount - 1,
           evidenceCode: 'requirements-unassigned',
-          moves: unassignedMoves,
+          moves: manifest.moves
+            .filter(move => move.canonicalId !== 'Scratch')
+            .map(move => move.canonicalId),
           summary: 'Reviewed scenario requirement tags have not been assigned.',
         },
         {
@@ -443,7 +416,6 @@ describe('move automation semantic coverage checker', () => {
         join(directory, 'scratch.ts'),
         "export const hit = { scenarioId: 'scratch.hit' }\n",
       )
-      writeBaselineScenarioFixtures(directory, ['Scratch'])
 
       const accepted = runChecker(
         '--manifest', manifestPath,
@@ -552,7 +524,6 @@ describe('move automation semantic coverage checker', () => {
         "export const immunity = { scenarioId: 'scratch.immunity' }",
         '',
       ].join('\n'))
-      const baselineScenarioCount = writeBaselineScenarioFixtures(directory, ['Scratch'])
       const linkedResult = runChecker(
         '--manifest', manifestPath,
         '--scenario-root', directory,
@@ -563,10 +534,10 @@ describe('move automation semantic coverage checker', () => {
         valid: true,
         baseStatus: baseStatusCounts(reviewed.moves),
         references: {
-          discoveredScenarios: baselineScenarioCount + 4,
+          discoveredScenarios: 4,
           linkedRuntimes: currentLinkedRuntimeCount,
           runtimeDefinitionHashes: currentDefinitionHashCount,
-          scenarioReferences: baselineScenarioCount + 4,
+          scenarioReferences: 4,
         },
       })
     })

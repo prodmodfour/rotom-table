@@ -1,8 +1,6 @@
 import {
   moveAutomationCombatStageBlockSource,
-  tokenHasShieldDust,
 } from '~/utils/moveAutomationAbilityProtection'
-import { SHIELD_DUST_ABILITY_NAME } from '~/utils/abilityAutomation'
 import {
   moveAutomationConditionImmunitySource,
   type MoveAutomationConditionImmunityContext,
@@ -126,7 +124,7 @@ export const createStandardMoveCoreTokenEffectImmunityQueries = (
         { baseMultiplier },
       ) ?? `${options.moveType} immunity`)
     },
-    condition: ({ operation, condition, recipient }) => {
+    condition: ({ condition, recipient }) => {
       const providerIds = conditionProviderIds(
         condition,
         recipient.placement.id,
@@ -139,9 +137,6 @@ export const createStandardMoveCoreTokenEffectImmunityQueries = (
         conditionContext,
       )
       if (passiveBlocker) return decision(passiveBlocker, providerIds)
-      if (operation.payload.accuracyRollTrigger && tokenHasShieldDust(recipient.token)) {
-        return decision(SHIELD_DUST_ABILITY_NAME)
-      }
       const encounter = encounterConditionPrevention({
         condition,
         recipientId: recipient.placement.id,
