@@ -49,6 +49,10 @@ import {
 import type { AuthoritativeMoveRandomSource } from '../domain/moveAutomation/random'
 import { summarizeMoveResolutionTrace } from '../domain/moveAutomation/trace'
 import {
+  PendingMovePersistencePlanError,
+  validatePendingMovePersistencePlan,
+} from '../domain/moveAutomation/validateSuspensionPersistence'
+import {
   actorCanControlMapPlacement,
   playerProfileLinkedTrainerSheetsForTokenControl,
   type ServerTokenControlLinkedTrainerSheet,
@@ -633,6 +637,28 @@ const assertCommittedSheetMatchesPlan = (sheet: PersistedSheet, expectedRevision
   }
 }
 
+const assertPendingPersistencePlan = (options: {
+  readonly command: ResolveMoveLivePlayCommand
+  readonly plan: AuthoritativePendingMoveStatePlan
+  readonly currentRevision: number
+}): void => {
+  try {
+    validatePendingMovePersistencePlan({
+      originMapSlug: options.command.mapSlug,
+      originOpId: options.command.opId,
+      currentRevision: options.currentRevision,
+      plan: options.plan,
+    })
+  } catch (error) {
+    if (error instanceof PendingMovePersistencePlanError) {
+      rejectLivePlayCommand('invalid', error.message, {
+        currentRevision: options.currentRevision,
+      })
+    }
+    throw error
+  }
+}
+
 const persistPendingMoveDeclaration = (options: {
   readonly command: ResolveMoveLivePlayCommand
   readonly plan: AuthoritativePendingMoveStatePlan
@@ -643,12 +669,7 @@ const persistPendingMoveDeclaration = (options: {
   readonly sheetUpdates: readonly LivePlayResolveMoveCommandSheetUpdate[]
 } => {
   const { command, plan, dependencies, currentRevision } = options
-  if (plan.previousRevision !== currentRevision) {
-    throw new LivePlayResolveMoveCommandUseCaseError(
-      409,
-      'Pending move plan revision did not match the command revision context',
-    )
-  }
+  assertPendingPersistencePlan({ command, plan, currentRevision })
   assertConsultedSheetRevisions(plan, dependencies, currentRevision)
 
   const persisted = toPersistedMap(
@@ -663,9 +684,10 @@ const persistPendingMoveDeclaration = (options: {
     nextMap: persisted,
   })
   if (mapResult === 'stale') {
-    throw new LivePlayResolveMoveCommandUseCaseError(
-      409,
+    rejectLivePlayCommand(
+      'conflict',
       `Map ${command.mapSlug} changed before the pending move declaration could be persisted`,
+      { currentRevision },
     )
   }
 
@@ -682,9 +704,10 @@ const persistPendingMoveDeclaration = (options: {
       nextSheet,
     })
     if (sheetResult === 'stale') {
-      throw new LivePlayResolveMoveCommandUseCaseError(
-        409,
+      rejectLivePlayCommand(
+        'conflict',
         `${write.kind} sheet ${write.slug} changed before the pending move declaration could be persisted`,
+        { currentRevision },
       )
     }
   }

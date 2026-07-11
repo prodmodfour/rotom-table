@@ -1314,7 +1314,7 @@ Status: DONE
 
 ## MA-103B — Persist interpreter suspensions atomically
 
-Status: TODO
+Status: DONE
 
 **Depends on:** MA-103A
 **Commit:** `feat(move-automation): persist suspended move resolutions`

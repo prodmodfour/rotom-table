@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import {
   LIVE_PLAY_COMMAND_SCHEMA_VERSION,
   LIVE_PLAY_COMMAND_TYPES,
@@ -13,13 +13,19 @@ import {
 } from '#shared/moveAutomation/pendingResolution'
 import { openRotomDatabase, type RotomDatabase } from '~~/server/storage/database'
 import { createSqliteMapRepository } from '~~/server/storage/mapRepository'
-import { createSqliteSheetRepository } from '~~/server/storage/sheetRepository'
+import {
+  createSqliteSheetRepository,
+  SheetRevisionConflictError,
+} from '~~/server/storage/sheetRepository'
 import { createSqliteLivePlayOpRepository } from '~~/server/storage/opRepository'
 import { createSqlitePendingMoveResolutionRepository } from '~~/server/storage/pendingMoveResolutionRepository'
 import { createSqliteMapInteractionModeRepository } from '~~/server/storage/mapInteractionModeRepository'
 import { createAuthoritativeLivePlayCommandExecutor } from '~~/server/livePlay/commandExecutor'
 import { createInProcessMapWriteQueue } from '~~/server/livePlay/mapWriteQueue'
-import { planAuthoritativeMoveStateExecution } from '~~/server/domain/planAuthoritativeMoveState'
+import {
+  isAuthoritativePendingMoveStatePlan,
+  planAuthoritativeMoveStateExecution,
+} from '~~/server/domain/planAuthoritativeMoveState'
 import { validateMoveSpec } from '~~/server/domain/moveAutomation/validateSpec'
 import {
   REGISTERED_MOVE_HANDLER_REGISTRY,
@@ -91,77 +97,129 @@ const sheetFixture = (
   revision: 2,
 })
 
-const pendingScratchSpec = (withDeclarationCost: boolean) => ({
-  schemaVersion: 2,
-  canonicalId: 'Ember',
-  version: withDeclarationCost ? 102 : 101,
-  targeting: {
-    kind: 'single-target',
-    minTargets: 1,
-    maxTargets: 1,
-    selector: { kind: 'selected-targets' },
-  },
-  preconditions: [],
-  costs: [],
-  phases: [
-    ...(withDeclarationCost ? [{
-      phase: 'pay',
-      operations: [{
-        id: 'scratch.declaration-cost',
-        kind: 'direct-hp',
-        source: { kind: 'move', id: 'move.scratch' },
-        recipients: { kind: 'actor' },
-        phase: 'pay',
-        reasonCode: 'move.scratch.declaration-cost',
-        payload: {
-          mode: 'lose',
-          pool: 'hit-points',
-          calculation: { kind: 'fixed', value: 5 },
-          copySource: null,
-          bounds: { minimum: null, maximum: null },
-          rounding: 'floor',
-          applyTypeImmunity: false,
-          cost: {
-            kind: 'cost',
-            timing: 'declaration',
-            minimumRemaining: 1,
-            damageOperationId: null,
-          },
-          injury: { hitPointMarkers: 'ignore', massiveDamage: 'never' },
-        },
-      }],
-    }] : []),
-    {
-      phase: 'hit',
-      operations: [{
-        id: 'scratch.choose-style',
-        kind: 'choice-request',
-        source: { kind: 'move', id: 'move.scratch' },
-        recipients: { kind: 'actor' },
-        phase: 'hit',
-        reasonCode: 'move.scratch.choose-style',
-        payload: {
-          requestId: 'scratch.style-window',
-          promptKey: 'move.scratch.choose-style',
-          options: [
-            { id: 'style.power', labelKey: 'move.scratch.style-power' },
-            { id: 'style.control', labelKey: 'move.scratch.style-control' },
-          ],
-          allowPass: true,
-        },
-      }],
-    },
-  ],
-  registeredHandlerId: null,
-  presentation: {
-    displayName: 'Ember',
-    vfxKey: null,
-    tags: ['pending-test'],
-  },
-})
+interface PendingSpecOptions {
+  readonly withDeclarationCost: boolean
+  readonly withDeferredEffects?: boolean
+  readonly invalidDeclarationPhase?: boolean
+}
 
-const pendingRegistry = (withDeclarationCost: boolean): MoveAutomationRuntimeRegistry => {
-  const definition = validateMoveSpec(pendingScratchSpec(withDeclarationCost))
+const pendingScratchSpec = (options: PendingSpecOptions) => {
+  const declarationPhase = options.invalidDeclarationPhase ? 'declare' : 'pay'
+  const choicePhase = options.withDeferredEffects ? 'after-damage' : 'hit'
+  const choiceOperation = {
+    id: 'scratch.choose-style',
+    kind: 'choice-request',
+    source: { kind: 'move', id: 'move.scratch' },
+    recipients: { kind: 'actor' },
+    phase: choicePhase,
+    reasonCode: 'move.scratch.choose-style',
+    payload: {
+      requestId: 'scratch.style-window',
+      promptKey: 'move.scratch.choose-style',
+      options: [
+        { id: 'style.power', labelKey: 'move.scratch.style-power' },
+        { id: 'style.control', labelKey: 'move.scratch.style-control' },
+      ],
+      allowPass: true,
+    },
+  }
+  return {
+    schemaVersion: 2,
+    canonicalId: 'Ember',
+    version: 101
+      + (options.withDeclarationCost ? 1 : 0)
+      + (options.withDeferredEffects ? 2 : 0)
+      + (options.invalidDeclarationPhase ? 4 : 0),
+    targeting: {
+      kind: 'single-target',
+      minTargets: 1,
+      maxTargets: 1,
+      selector: { kind: 'selected-targets' },
+    },
+    preconditions: [],
+    costs: [],
+    phases: [
+      ...(options.withDeclarationCost ? [{
+        phase: declarationPhase,
+        operations: [{
+          id: 'scratch.declaration-cost',
+          kind: 'direct-hp',
+          source: { kind: 'move', id: 'move.scratch' },
+          recipients: { kind: 'actor' },
+          phase: declarationPhase,
+          reasonCode: 'move.scratch.declaration-cost',
+          payload: {
+            mode: 'lose',
+            pool: 'hit-points',
+            calculation: { kind: 'fixed', value: 5 },
+            copySource: null,
+            bounds: { minimum: null, maximum: null },
+            rounding: 'floor',
+            applyTypeImmunity: false,
+            cost: {
+              kind: 'cost',
+              timing: 'declaration',
+              minimumRemaining: 1,
+              damageOperationId: null,
+            },
+            injury: { hitPointMarkers: 'ignore', massiveDamage: 'never' },
+          },
+        }],
+      }] : []),
+      ...(options.withDeferredEffects ? [{
+        phase: 'damage',
+        operations: [{
+          id: 'scratch.deferred-damage',
+          kind: 'damage',
+          source: { kind: 'move', id: 'move.scratch' },
+          recipients: { kind: 'attacked-targets' },
+          phase: 'damage',
+          reasonCode: 'move.scratch.deferred-damage',
+          payload: {
+            damageClass: 'special',
+            damageBase: 4,
+            moveType: 'fire',
+            accuracyRollId: null,
+            criticalRollId: null,
+          },
+        }],
+      }, {
+        phase: 'after-damage',
+        operations: [{
+          id: 'scratch.deferred-condition',
+          kind: 'condition',
+          source: { kind: 'operation', id: 'scratch.deferred-damage' },
+          recipients: { kind: 'attacked-targets' },
+          phase: 'after-damage',
+          reasonCode: 'move.scratch.deferred-condition',
+          payload: {
+            action: 'apply',
+            conditionId: 'burned',
+            conditionSource: null,
+            filter: null,
+            randomChoice: null,
+            duration: null,
+            saveTiming: 'canonical',
+            stackPolicy: { kind: 'refresh', maxStacks: null },
+          },
+        }, choiceOperation],
+      }] : []),
+      ...(!options.withDeferredEffects ? [{
+        phase: choicePhase,
+        operations: [choiceOperation],
+      }] : []),
+    ],
+    registeredHandlerId: null,
+    presentation: {
+      displayName: 'Ember',
+      vfxKey: null,
+      tags: ['pending-test'],
+    },
+  }
+}
+
+const pendingRegistry = (options: PendingSpecOptions): MoveAutomationRuntimeRegistry => {
+  const definition = validateMoveSpec(pendingScratchSpec(options))
   const runtime: MoveSpecV2Runtime = Object.freeze({
     canonicalId: 'Ember',
     kind: 'movespec-v2',
@@ -249,8 +307,13 @@ const executePending = (
   command: ResolveMoveLivePlayCommand,
   options: {
     readonly withDeclarationCost?: boolean
+    readonly withDeferredEffects?: boolean
+    readonly invalidDeclarationPhase?: boolean
     readonly planner?: LivePlayResolveMoveCommandDependencies['planner']
+    readonly mapRepository?: LivePlayResolveMoveCommandDependencies['mapRepository']
+    readonly sheetRepository?: LivePlayResolveMoveCommandDependencies['sheetRepository']
     readonly pendingResolutionRepository?: LivePlayResolveMoveCommandDependencies['pendingResolutionRepository']
+    readonly random?: LivePlayResolveMoveCommandDependencies['random']
   } = {},
 ) => executeLivePlayResolveMoveCommandUseCase({
   role: 'gm',
@@ -260,20 +323,24 @@ const executePending = (
   expectedType: LIVE_PLAY_COMMAND_TYPES.RESOLVE_MOVE,
 }, {
   database: harness.database,
-  mapRepository: harness.maps,
-  sheetRepository: harness.sheets,
+  mapRepository: options.mapRepository ?? harness.maps,
+  sheetRepository: options.sheetRepository ?? harness.sheets,
   pendingResolutionRepository: options.pendingResolutionRepository ?? harness.pending,
   commandExecutor: harness.commandExecutor,
   planner: options.planner ?? (input => planAuthoritativeMoveStateExecution({
     ...input,
-    runtimeRegistry: pendingRegistry(options.withDeclarationCost ?? false),
+    runtimeRegistry: pendingRegistry({
+      withDeclarationCost: options.withDeclarationCost ?? false,
+      withDeferredEffects: options.withDeferredEffects,
+      invalidDeclarationPhase: options.invalidDeclarationPhase,
+    }),
   })),
-  random: () => { throw new Error('the pending canary must not draw randomness') },
+  random: options.random ?? (() => { throw new Error('the pending canary must not draw randomness') }),
   now: () => 1_000,
 })
 
 describe('pending move resolution creation', () => {
-  it('atomically stores interpreter suspension and a privacy-safe map summary without a terminal op', async () => {
+  it('atomically stores a privacy-safe suspension without a terminal op or open transaction', async () => {
     const harness = createHarness()
     const beforeMap = deepCloneJson(harness.maps.getBySlug('pending-arena'))
     const beforeSheets = deepCloneJson(harness.sheets.list())
@@ -351,6 +418,44 @@ describe('pending move resolution creation', () => {
     expect(response.map).toEqual(committedMap)
     expect(harness.sheets.list()).toEqual(beforeSheets)
     expect(harness.ops.getOpRecord('pending-arena', command.opId)).toBeNull()
+    expect(harness.database.connection.isTransaction).toBe(false)
+  })
+
+  it('keeps ordinary damage and conditions deferred when it publishes the pending summary', async () => {
+    const harness = createHarness()
+    const map = harness.maps.getBySlug('pending-arena')!
+    const command = commandFor(map, 'op_pendingdeferred1')
+    const beforeSheets = deepCloneJson(harness.sheets.list())
+    const random = vi.fn(() => 0.5)
+
+    const response = await executePending(harness, command, {
+      withDeferredEffects: true,
+      random,
+    })
+
+    expect(response.result).toMatchObject({ ok: true, pending: true })
+    if (!isPendingMoveDeclarationResult(response.result)) return
+    expect(response.result.pendingResolution.phase).toBe('after-damage')
+    expect(random).toHaveBeenCalled()
+    expect(harness.sheets.list()).toEqual(beforeSheets)
+    expect(harness.pending.getByOrigin('pending-arena', command.opId)?.resolution)
+      .toMatchObject({
+        rollLedger: [expect.objectContaining({ reason: expect.any(String) })],
+        trace: {
+          events: expect.arrayContaining([
+            expect.objectContaining({
+              kind: 'operation',
+              operationId: 'scratch.deferred-damage',
+            }),
+            expect.objectContaining({
+              kind: 'operation',
+              operationId: 'scratch.deferred-condition',
+            }),
+          ]),
+        },
+      })
+    expect(response.map?.metadata).toEqual(map.metadata)
+    expect(response.map?.moveUsage).toEqual(map.moveUsage)
   })
 
   it('commits an explicit pay-phase declaration HP cost once with the pending record', async () => {
@@ -358,8 +463,13 @@ describe('pending move resolution creation', () => {
     const map = harness.maps.getBySlug('pending-arena')!
     const command = commandFor(map, 'op_pendingcost001')
 
-    const first = await executePending(harness, command, { withDeclarationCost: true })
-    expect(isPendingMoveDeclarationResult(first.result)).toBe(true)
+    const random = vi.fn(() => 0.5)
+    const first = await executePending(harness, command, {
+      withDeclarationCost: true,
+      withDeferredEffects: true,
+      random,
+    })
+    expect(first.result).toMatchObject({ ok: true, pending: true })
     expect(harness.sheets.getByRef('pokemon', 'actor')).toMatchObject({
       revision: 3,
       sheet: { combat: { currentHp: 35 }, revision: 3 },
@@ -380,17 +490,169 @@ describe('pending move resolution creation', () => {
 
     const mapAfterFirst = deepCloneJson(harness.maps.getBySlug('pending-arena'))
     const sheetAfterFirst = deepCloneJson(harness.sheets.getByRef('pokemon', 'actor'))
+    const targetAfterFirst = deepCloneJson(harness.sheets.getByRef('pokemon', 'target'))
     const storedAfterFirst = deepCloneJson(harness.pending.getByOrigin('pending-arena', command.opId))
+    const randomDrawsAfterFirst = random.mock.calls.length
+    expect(randomDrawsAfterFirst).toBeGreaterThan(0)
     const duplicate = await executePending(harness, command, {
       withDeclarationCost: true,
+      withDeferredEffects: true,
       planner: () => { throw new Error('duplicate declaration must not replan') },
+      random: () => { throw new Error('duplicate declaration must not reroll') },
     })
 
     expect(duplicate.result).toEqual(first.result)
     expect(harness.maps.getBySlug('pending-arena')).toEqual(mapAfterFirst)
     expect(harness.sheets.getByRef('pokemon', 'actor')).toEqual(sheetAfterFirst)
+    expect(harness.sheets.getByRef('pokemon', 'target')).toEqual(targetAfterFirst)
     expect(harness.pending.getByOrigin('pending-arena', command.opId)).toEqual(storedAfterFirst)
+    expect(random).toHaveBeenCalledTimes(randomDrawsAfterFirst)
     expect(harness.ops.getOpRecord('pending-arena', command.opId)).toBeNull()
+  })
+
+  it('requires conflict scopes for every approved declaration-cost write', async () => {
+    const harness = createHarness()
+    const map = harness.maps.getBySlug('pending-arena')!
+    const scopedCommand = commandFor(map, 'op_pendingscope001')
+    const command: ResolveMoveLivePlayCommand = {
+      ...scopedCommand,
+      scopes: scopedCommand.scopes.filter(scope => !(
+        scope.kind === 'sheet'
+        && scope.sheetKind === 'pokemon'
+        && scope.sheetSlug === 'actor'
+        && scope.field === 'hp'
+      )),
+    }
+    const beforeMap = deepCloneJson(map)
+    const beforeSheets = deepCloneJson(harness.sheets.list())
+
+    const response = await executePending(harness, command, {
+      withDeclarationCost: true,
+    })
+
+    expect(response.result).toMatchObject({
+      ok: false,
+      reason: 'invalid',
+      message: expect.stringContaining('sheet:pokemon:actor:hp'),
+    })
+    expect(harness.maps.getBySlug('pending-arena')).toEqual(beforeMap)
+    expect(harness.sheets.list()).toEqual(beforeSheets)
+    expect(harness.pending.getByOrigin('pending-arena', command.opId)).toBeNull()
+  })
+
+  it('rolls back declaration state when the full consulted sheet read set conflicts', async () => {
+    const harness = createHarness()
+    const map = harness.maps.getBySlug('pending-arena')!
+    const command = commandFor(map, 'op_pendingreadconf1')
+    const beforeMap = deepCloneJson(map)
+    const beforeSheets = deepCloneJson(harness.sheets.list())
+    const assertedReads = vi.fn(() => {
+      throw new SheetRevisionConflictError([{
+        kind: 'pokemon',
+        slug: 'target',
+        expectedRevision: 2,
+        currentRevision: 3,
+      }])
+    })
+
+    const response = await executePending(harness, command, {
+      withDeclarationCost: true,
+      sheetRepository: {
+        getByRef: (kind, slug) => harness.sheets.getByRef(kind, slug),
+        assertRevisions: assertedReads,
+        applyLivePlayUpdate: input => harness.sheets.applyLivePlayUpdate(input),
+      },
+    })
+
+    expect(response.result).toMatchObject({ ok: false, reason: 'conflict' })
+    expect(assertedReads).toHaveBeenCalledWith([
+      { kind: 'pokemon', slug: 'actor', revision: 2 },
+      { kind: 'pokemon', slug: 'target', revision: 2 },
+    ])
+    expect(harness.maps.getBySlug('pending-arena')).toEqual(beforeMap)
+    expect(harness.sheets.list()).toEqual(beforeSheets)
+    expect(harness.pending.getByOrigin('pending-arena', command.opId)).toBeNull()
+    expect(harness.database.connection.isTransaction).toBe(false)
+  })
+
+  it('returns a clean conflict and no mutation when the map CAS becomes stale', async () => {
+    const harness = createHarness()
+    const map = harness.maps.getBySlug('pending-arena')!
+    const command = commandFor(map, 'op_pendingmapconf01')
+    const beforeMap = deepCloneJson(map)
+    const beforeSheets = deepCloneJson(harness.sheets.list())
+
+    const response = await executePending(harness, command, {
+      withDeclarationCost: true,
+      mapRepository: {
+        getBySlug: slug => harness.maps.getBySlug(slug),
+        applyLivePlayUpdate: () => 'stale',
+      },
+    })
+
+    expect(response.result).toMatchObject({ ok: false, reason: 'conflict' })
+    expect(harness.maps.getBySlug('pending-arena')).toEqual(beforeMap)
+    expect(harness.sheets.list()).toEqual(beforeSheets)
+    expect(harness.pending.getByOrigin('pending-arena', command.opId)).toBeNull()
+  })
+
+  it('rejects a planner envelope that adds an unapproved pre-window map change', async () => {
+    const harness = createHarness()
+    const map = harness.maps.getBySlug('pending-arena')!
+    const command = commandFor(map, 'op_pendinginvalid1')
+    const beforeMap = deepCloneJson(map)
+    const beforeSheets = deepCloneJson(harness.sheets.list())
+
+    const response = await executePending(harness, command, {
+      withDeclarationCost: true,
+      planner: (input) => {
+        const plan = planAuthoritativeMoveStateExecution({
+          ...input,
+          runtimeRegistry: pendingRegistry({ withDeclarationCost: true }),
+        })
+        if (!isAuthoritativePendingMoveStatePlan(plan)) {
+          throw new Error('test canary must suspend')
+        }
+        return {
+          ...plan,
+          nextMap: {
+            ...plan.nextMap,
+            metadata: { injectedDeferredState: true },
+          },
+        }
+      },
+    })
+
+    expect(response.result).toMatchObject({
+      ok: false,
+      reason: 'invalid',
+      message: expect.stringContaining('outside the approved pre-window plan'),
+    })
+    expect(harness.maps.getBySlug('pending-arena')).toEqual(beforeMap)
+    expect(harness.sheets.list()).toEqual(beforeSheets)
+    expect(harness.pending.getByOrigin('pending-arena', command.opId)).toBeNull()
+  })
+
+  it('rejects an implicitly phased declaration cost without opening a window', async () => {
+    const harness = createHarness()
+    const map = harness.maps.getBySlug('pending-arena')!
+    const command = commandFor(map, 'op_pendingbadphase1')
+    const beforeMap = deepCloneJson(map)
+    const beforeSheets = deepCloneJson(harness.sheets.list())
+
+    const response = await executePending(harness, command, {
+      withDeclarationCost: true,
+      invalidDeclarationPhase: true,
+    })
+
+    expect(response.result).toMatchObject({
+      ok: false,
+      reason: 'invalid',
+      message: expect.stringContaining('must use the reviewed pay phase'),
+    })
+    expect(harness.maps.getBySlug('pending-arena')).toEqual(beforeMap)
+    expect(harness.sheets.list()).toEqual(beforeSheets)
+    expect(harness.pending.getByOrigin('pending-arena', command.opId)).toBeNull()
   })
 
   it('rejects changed command material for a pending opId without replacing either authority record', async () => {
@@ -428,7 +690,10 @@ describe('pending move resolution creation', () => {
       withDeclarationCost: true,
       pendingResolutionRepository: {
         getByOrigin: (mapSlug, opId) => harness.pending.getByOrigin(mapSlug, opId),
-        create: () => { throw new Error('injected pending store failure') },
+        create: (input) => {
+          harness.pending.create(input)
+          throw new Error('injected pending store failure after insert')
+        },
       },
     })
 

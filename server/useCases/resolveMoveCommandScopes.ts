@@ -163,7 +163,9 @@ const assertRequiredConservativeScopes = (
   }
 }
 
-const temporaryHpChangedPlacementIds = (plan: AuthoritativeMoveStatePlan): readonly string[] => {
+const temporaryHpChangedPlacementIds = (
+  plan: Pick<AuthoritativeMoveStatePlan | AuthoritativePendingMoveStatePlan, 'mapChanges'>,
+): readonly string[] => {
   const change = plan.mapChanges.temporaryHitPoints
   if (!change) return []
   const ids = new Set<string>([
@@ -199,6 +201,25 @@ const actorFacingChanged = (plan: AuthoritativeMoveStatePlan): boolean => {
     || placements.previous.turned !== placements.current.turned
 }
 
+const pushSheetWriteScopes = (
+  scopes: LivePlayScope[],
+  seen: Set<string>,
+  writes: AuthoritativeMoveStatePlan['sheetWrites'],
+): void => {
+  for (const write of writes) {
+    for (const field of write.changedFields) {
+      pushScope(scopes, seen, sheetScope(write.kind, write.slug, field))
+      if (field === 'hp') {
+        for (const placementId of write.placementIds) pushScope(scopes, seen, tokenScope(placementId, 'hp'))
+      } else if (field === 'combatStages') {
+        for (const placementId of write.placementIds) pushScope(scopes, seen, tokenScope(placementId, 'combatStages'))
+      } else if (field === 'conditions') {
+        for (const placementId of write.placementIds) pushScope(scopes, seen, tokenScope(placementId, 'conditions'))
+      }
+    }
+  }
+}
+
 export const actualResolveMoveWriteScopes = (plan: AuthoritativeMoveStatePlan): readonly LivePlayScope[] => {
   const scopes: LivePlayScope[] = []
   const seen = new Set<string>()
@@ -214,20 +235,25 @@ export const actualResolveMoveWriteScopes = (plan: AuthoritativeMoveStatePlan): 
   if (actorFacingChanged(plan)) pushScope(scopes, seen, tokenScope(actorId, 'facing'))
 
   for (const placementId of temporaryHpChangedPlacementIds(plan)) pushScope(scopes, seen, tokenScope(placementId, 'hp'))
+  pushSheetWriteScopes(scopes, seen, plan.sheetWrites)
 
-  for (const write of plan.sheetWrites) {
-    for (const field of write.changedFields) {
-      pushScope(scopes, seen, sheetScope(write.kind, write.slug, field))
-      if (field === 'hp') {
-        for (const placementId of write.placementIds) pushScope(scopes, seen, tokenScope(placementId, 'hp'))
-      } else if (field === 'combatStages') {
-        for (const placementId of write.placementIds) pushScope(scopes, seen, tokenScope(placementId, 'combatStages'))
-      } else if (field === 'conditions') {
-        for (const placementId of write.placementIds) pushScope(scopes, seen, tokenScope(placementId, 'conditions'))
-      }
-    }
+  return scopes
+}
+
+const actualPendingResolveMoveWriteScopes = (
+  plan: AuthoritativePendingMoveStatePlan,
+): readonly LivePlayScope[] => {
+  const scopes: LivePlayScope[] = []
+  const seen = new Set<string>()
+  const actorId = plan.execution.actorPlacementId
+
+  pushScope(scopes, seen, tokenScope(actorId, 'action'))
+  // Encounter-state pending summaries currently share the map metadata lane.
+  pushScope(scopes, seen, mapScope('metadata'))
+  for (const placementId of temporaryHpChangedPlacementIds(plan)) {
+    pushScope(scopes, seen, tokenScope(placementId, 'hp'))
   }
-
+  pushSheetWriteScopes(scopes, seen, plan.sheetWrites)
   return scopes
 }
 
@@ -271,7 +297,7 @@ export const validateResolveMoveScopes = (input: {
   return actualScopes
 }
 
-/** Validate the conservative declaration scopes before only a public summary is committed. */
+/** Validate declaration scopes against the summary and approved pre-window writes. */
 export const validatePendingResolveMoveScopes = (input: {
   readonly command: ResolveMoveLivePlayCommand
   readonly map: TabletopMap
@@ -310,10 +336,7 @@ export const validatePendingResolveMoveScopes = (input: {
     )
   }
 
-  const actualScopes: readonly LivePlayScope[] = [
-    tokenScope(actorPlacementId, 'action'),
-    mapScope('metadata'),
-  ]
+  const actualScopes = actualPendingResolveMoveWriteScopes(input.plan)
   assertActualScopesWereSubmitted(input.command.scopes, actualScopes)
   return actualScopes
 }
