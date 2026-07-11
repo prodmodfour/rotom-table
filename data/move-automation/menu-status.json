@@ -1950,12 +1950,12 @@
       "displayName": "Double Kick",
       "baseStatus": "assisted",
       "interactionStatus": "unassessed",
-      "runtimeKind": "legacy-v1",
+      "runtimeKind": "movespec-v2",
       "blockerCodes": [],
       "limitations": [
         {
           "code": "audit.required",
-          "summary": "Semantic conformance review is required before this legacy implementation can be marked complete."
+          "summary": "Semantic conformance review is required before this native implementation can be marked complete."
         }
       ],
       "manualSteps": []
@@ -3299,22 +3299,15 @@
       "displayName": "Fury Attack",
       "baseStatus": "assisted",
       "interactionStatus": "unassessed",
-      "runtimeKind": "legacy-v1",
-      "blockerCodes": [
-        "expressions.bounded"
-      ],
+      "runtimeKind": "movespec-v2",
+      "blockerCodes": [],
       "limitations": [
         {
-          "code": "five-strike.aggregate",
-          "summary": "The legacy runtime turns one 1d8 strike-count roll into multiplied Damage Base and one aggregate damage result instead of preserving an ordered per-hit resolution."
+          "code": "audit.required",
+          "summary": "Semantic conformance review is required before this native implementation can be marked complete."
         }
       ],
-      "manualSteps": [
-        {
-          "code": "five-strike.per-hit",
-          "summary": "Resolve the rolled number of strikes in order, including each strike’s critical and effect outcome and early knockout, then correct the aggregate legacy result as needed."
-        }
-      ]
+      "manualSteps": []
     },
     {
       "canonicalId": "Fury Cutter",

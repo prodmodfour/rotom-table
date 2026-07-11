@@ -19,8 +19,10 @@ import {
   type ValidatedMoveSpecDefinition,
 } from './validateSpec'
 import { ABSORB_MOVE_SPEC_REGISTRATION } from './specs/absorb'
+import { DOUBLE_KICK_MOVE_SPEC_REGISTRATION } from './specs/doubleKick'
 import { DRAGON_RAGE_MOVE_SPEC_REGISTRATION } from './specs/dragonRage'
 import { EMBER_MOVE_SPEC_REGISTRATION } from './specs/ember'
+import { FURY_ATTACK_MOVE_SPEC_REGISTRATION } from './specs/furyAttack'
 import { POWER_TRIP_MOVE_SPEC_REGISTRATION } from './specs/powerTrip'
 import { SCRATCH_MOVE_SPEC_REGISTRATION } from './specs/scratch'
 import { SWORDS_DANCE_MOVE_SPEC_REGISTRATION } from './specs/swordsDance'
@@ -242,8 +244,10 @@ export const createMoveAutomationRuntimeRegistry = (
 /** Native v2 definitions are added here only after their manifest metadata is reviewed. */
 export const REVIEWED_MOVE_SPEC_V2_REGISTRATIONS: readonly MoveSpecV2Registration[] = Object.freeze([
   ABSORB_MOVE_SPEC_REGISTRATION,
+  DOUBLE_KICK_MOVE_SPEC_REGISTRATION,
   DRAGON_RAGE_MOVE_SPEC_REGISTRATION,
   EMBER_MOVE_SPEC_REGISTRATION,
+  FURY_ATTACK_MOVE_SPEC_REGISTRATION,
   POWER_TRIP_MOVE_SPEC_REGISTRATION,
   SCRATCH_MOVE_SPEC_REGISTRATION,
   SWORDS_DANCE_MOVE_SPEC_REGISTRATION,

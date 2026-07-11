@@ -1240,7 +1240,7 @@ Status: DONE
 
 ## MA-095 — Port Double Kick and Fury Attack as strike canaries
 
-Status: TODO
+Status: DONE
 
 **Depends on:** MA-079, MA-087
 **Commit:** `feat(move-automation): port double and five strike canaries`

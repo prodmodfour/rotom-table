@@ -799,6 +799,128 @@ describe('executeLivePlayResolveMoveCommandUseCase', () => {
     expect(harness.sheets.list()).toEqual(committedSheets)
   })
 
+  it.each([{
+    moveName: 'Double Kick',
+    opId: 'op_resolvedoublekick1',
+    multiHitOperationId: 'double-kick.multi-hit',
+    randomValues: [0.5, 0, 0.999, 0],
+    expectedHitCount: 2,
+    expectedRollIds: [
+      'double-kick.accuracy-roll.t1.h1',
+      'double-kick.multi-hit.t1.h1.roll',
+      'double-kick.accuracy-roll.t1.h2',
+      'double-kick.multi-hit.t1.h2.roll',
+    ],
+  }, {
+    moveName: 'Fury Attack',
+    opId: 'op_resolvefuryattack1',
+    multiHitOperationId: 'fury-attack.multi-hit',
+    randomValues: [
+      0.5,
+      0.999,
+      0, 0,
+      0, 0,
+      0.999, 0,
+      0, 0,
+      0, 0,
+    ],
+    expectedHitCount: 5,
+    expectedRollIds: [
+      'fury-attack.accuracy-roll.t1',
+      'fury-attack.hit-count-roll',
+      'fury-attack.critical-roll.t1.h1',
+      'fury-attack.multi-hit.t1.h1.roll',
+      'fury-attack.critical-roll.t1.h2',
+      'fury-attack.multi-hit.t1.h2.roll',
+      'fury-attack.critical-roll.t1.h3',
+      'fury-attack.multi-hit.t1.h3.roll',
+      'fury-attack.critical-roll.t1.h4',
+      'fury-attack.multi-hit.t1.h4.roll',
+      'fury-attack.critical-roll.t1.h5',
+      'fury-attack.multi-hit.t1.h5.roll',
+    ],
+  }] as const)(
+    'commits native $moveName strike rolls once across duplicate delivery',
+    async ({
+      moveName,
+      opId,
+      multiHitOperationId,
+      randomValues,
+      expectedHitCount,
+      expectedRollIds,
+    }) => {
+      const harness = seedHarness({
+        actorMoves: [{ name: moveName }],
+        targetASheet: {
+          types: ['Normal'],
+          stats: { hp: { added: 500 }, def: { added: 10 } },
+          combat: { currentHp: 1_000, conditions: [] },
+        },
+      })
+      const map = harness.maps.getBySlug('arena')!
+      const moveIntent = intent({
+        placementId: 'actor-token',
+        moveName,
+        selection: { kind: 'single-target', targetPlacementId: 'target-a' },
+      })
+      const command = commandFor(map, moveIntent, opId, ['target-a'])
+      const response = await execute(harness, command, {
+        random: randomSequence(randomValues),
+        now: () => 5_000,
+      })
+      const acceptedResult = accepted(response.result)
+
+      expect(response.move).toMatchObject({
+        canonicalMoveName: moveName,
+        selectedTargetIds: ['target-a'],
+        transaction: {
+          attackedTargetIds: ['target-a'],
+          hitTargetIds: ['target-a'],
+          hpUpdates: [{ id: 'target-a' }],
+        },
+        trace: {
+          program: {
+            canonicalId: moveName,
+            runtimeKind: 'movespec-v2',
+            runtimeVersion: 2,
+          },
+          events: expect.arrayContaining([
+            expect.objectContaining({
+              kind: 'operation',
+              operationId: multiHitOperationId,
+              operationKind: 'multi-hit',
+              outcome: 'applied',
+            }),
+          ]),
+        },
+      })
+      expect(response.move?.rollLedger.map(roll => roll.rollId)).toEqual(expectedRollIds)
+      expect(response.move?.transaction.logLines).toEqual(expect.arrayContaining([
+        expect.stringContaining(`${expectedHitCount} hit, 0 missed`),
+      ]))
+      const targetHp = response.move?.transaction.hpUpdates[0]?.currentHp
+      expect(targetHp).toBeLessThan(1_000)
+      expect(harness.sheets.getByRef('pokemon', 'target-a')?.sheet).toMatchObject({
+        revision: 3,
+        combat: { currentHp: targetHp, conditions: [] },
+      })
+
+      const committedMap = deepCloneJson(harness.maps.getBySlug('arena'))
+      const committedSheets = deepCloneJson(harness.sheets.list())
+      const committedEvents = deepCloneJson(harness.events)
+      const duplicate = await execute(harness, command, {
+        random: () => { throw new Error(`duplicate ${moveName} must not reroll`) },
+        planner: () => { throw new Error(`duplicate ${moveName} must not replan`) },
+      })
+
+      expect(duplicate.result).toEqual(acceptedResult)
+      expect(duplicate.move).toEqual(response.move)
+      expect(harness.maps.getBySlug('arena')).toEqual(committedMap)
+      expect(harness.sheets.list()).toEqual(committedSheets)
+      expect(harness.events).toEqual(committedEvents)
+    },
+  )
+
   it('commits native Synthesis healing and Daily usage once across duplicate delivery', async () => {
     const harness = seedHarness({
       map: mapFixture({ fieldEffects: { weather: [{ kind: 'sunny' }], terrains: [], rooms: [] } }),

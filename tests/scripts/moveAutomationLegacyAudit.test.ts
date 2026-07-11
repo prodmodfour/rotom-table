@@ -142,12 +142,6 @@ describe('legacy move automation audit metadata', () => {
         manualStepCodes: ['fake-out.joining-flinch'],
         summaryTerms: ['joined', 'Priority'],
       }],
-      ['Fury Attack', {
-        blockerCodes: ['expressions.bounded'],
-        limitationCodes: ['five-strike.aggregate'],
-        manualStepCodes: ['five-strike.per-hit'],
-        summaryTerms: ['per-hit', 'early knockout'],
-      }],
       ['Fury Cutter', {
         blockerCodes: ['expressions.bounded', 'history.structured'],
         limitationCodes: ['fury-cutter.chain'],

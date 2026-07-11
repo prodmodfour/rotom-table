@@ -5317,10 +5317,10 @@
       "baseStatus": "assisted",
       "interactionStatus": "unassessed",
       "runtime": {
-        "kind": "legacy-v1",
-        "version": 1,
-        "definitionHash": "15d9b8b434810c6c6afb1f1092ae8d5894bf803c26620cf338f912a1c69a487f",
-        "sourceModule": "src/utils/move-automation/scripts/additionalSingleTarget.ts"
+        "kind": "movespec-v2",
+        "version": 2,
+        "definitionHash": "6deeebee2b386656defd0c033642ec4c8a4cfd9d974e014a21f56d99f6cc4f89",
+        "sourceModule": "server/domain/moveAutomation/specs/doubleKick.ts"
       },
       "rulesProvenance": {
         "rulesetId": "rotom-table-reference-moves-v1",
@@ -5333,14 +5333,47 @@
       "limitations": [
         {
           "code": "audit.required",
-          "summary": "Semantic conformance review is required before this legacy implementation can be marked complete."
+          "summary": "Semantic conformance review is required before this native implementation can be marked complete."
         }
       ],
       "manualSteps": [],
-      "scenarioIds": [],
+      "scenarioIds": [
+        "double-kick.v2-critical-double-hit",
+        "double-kick.v2-double-miss",
+        "double-kick.v2-early-ko",
+        "double-kick.v2-immunity",
+        "double-kick.v2-mixed-hit-miss"
+      ],
       "conformanceEvidence": {
-        "requirementTags": [],
-        "scenarios": [],
+        "requirementTags": [
+          "branch.accuracy",
+          "branch.critical-hit",
+          "branch.immunity",
+          "mechanic.damage",
+          "recovery.retry"
+        ],
+        "scenarios": [
+          {
+            "scenarioId": "double-kick.v2-critical-double-hit",
+            "evidenceClasses": [
+              "crit",
+              "hit",
+              "retry"
+            ]
+          },
+          {
+            "scenarioId": "double-kick.v2-double-miss",
+            "evidenceClasses": [
+              "miss"
+            ]
+          },
+          {
+            "scenarioId": "double-kick.v2-immunity",
+            "evidenceClasses": [
+              "immunity"
+            ]
+          }
+        ],
         "notApplicable": []
       },
       "reviewedAt": null,
@@ -9039,10 +9072,10 @@
       "baseStatus": "assisted",
       "interactionStatus": "unassessed",
       "runtime": {
-        "kind": "legacy-v1",
-        "version": 1,
-        "definitionHash": "e5da8f991632b1c37004c682272e524d3d163c78e5cfe90adde7bd005d5722c2",
-        "sourceModule": "src/utils/move-automation/scripts/additionalSingleTarget.ts"
+        "kind": "movespec-v2",
+        "version": 2,
+        "definitionHash": "b159369dcfed9ec8f6de6b542634eaeb40dcf28f59a93ea64f552458e314e13f",
+        "sourceModule": "server/domain/moveAutomation/specs/furyAttack.ts"
       },
       "rulesProvenance": {
         "rulesetId": "rotom-table-reference-moves-v1",
@@ -9051,25 +9084,51 @@
       },
       "capabilityTags": [],
       "suggestedCapabilityTags": [],
-      "blockerCodes": [
-        "expressions.bounded"
-      ],
+      "blockerCodes": [],
       "limitations": [
         {
-          "code": "five-strike.aggregate",
-          "summary": "The legacy runtime turns one 1d8 strike-count roll into multiplied Damage Base and one aggregate damage result instead of preserving an ordered per-hit resolution."
+          "code": "audit.required",
+          "summary": "Semantic conformance review is required before this native implementation can be marked complete."
         }
       ],
-      "manualSteps": [
-        {
-          "code": "five-strike.per-hit",
-          "summary": "Resolve the rolled number of strikes in order, including each strike’s critical and effect outcome and early knockout, then correct the aggregate legacy result as needed."
-        }
+      "manualSteps": [],
+      "scenarioIds": [
+        "fury-attack.v2-early-ko",
+        "fury-attack.v2-five-hit-critical",
+        "fury-attack.v2-immunity",
+        "fury-attack.v2-miss",
+        "fury-attack.v2-one-hit"
       ],
-      "scenarioIds": [],
       "conformanceEvidence": {
-        "requirementTags": [],
-        "scenarios": [],
+        "requirementTags": [
+          "branch.accuracy",
+          "branch.critical-hit",
+          "branch.immunity",
+          "mechanic.damage",
+          "recovery.retry"
+        ],
+        "scenarios": [
+          {
+            "scenarioId": "fury-attack.v2-five-hit-critical",
+            "evidenceClasses": [
+              "crit",
+              "hit",
+              "retry"
+            ]
+          },
+          {
+            "scenarioId": "fury-attack.v2-immunity",
+            "evidenceClasses": [
+              "immunity"
+            ]
+          },
+          {
+            "scenarioId": "fury-attack.v2-miss",
+            "evidenceClasses": [
+              "miss"
+            ]
+          }
+        ],
         "notApplicable": []
       },
       "reviewedAt": "2026-07-10",
