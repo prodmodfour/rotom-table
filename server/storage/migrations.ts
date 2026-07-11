@@ -1,6 +1,6 @@
 import type { DatabaseSync } from 'node:sqlite'
 
-export const LATEST_STORAGE_SCHEMA_VERSION = 8
+export const LATEST_STORAGE_SCHEMA_VERSION = 9
 
 export interface StorageMigration {
   readonly version: number
@@ -149,6 +149,37 @@ const createShopCheckoutOperationHistoryTable = (connection: DatabaseSync): void
   `)
 }
 
+const createPendingMoveResolutionTable = (connection: DatabaseSync): void => {
+  connection.exec(`
+    CREATE TABLE IF NOT EXISTS pending_move_resolutions (
+      resolution_id TEXT PRIMARY KEY,
+      map_slug TEXT NOT NULL,
+      origin_op_id TEXT NOT NULL,
+      resolution_json TEXT NOT NULL,
+      status TEXT NOT NULL CHECK (
+        status IN (
+          'pending',
+          'resuming',
+          'committed',
+          'cancelled',
+          'expired',
+          'conflicted',
+          'abandoned'
+        )
+      ),
+      revision INTEGER NOT NULL CHECK (revision >= 0),
+      created_at INTEGER NOT NULL CHECK (created_at >= 0),
+      updated_at INTEGER NOT NULL CHECK (updated_at >= created_at),
+      terminal_op_id TEXT UNIQUE,
+      UNIQUE (map_slug, origin_op_id),
+      FOREIGN KEY (terminal_op_id) REFERENCES live_play_ops (op_id) ON DELETE SET NULL
+    );
+
+    CREATE INDEX IF NOT EXISTS pending_move_resolutions_map_status_idx
+      ON pending_move_resolutions (map_slug, status, updated_at, resolution_id);
+  `)
+}
+
 export const STORAGE_MIGRATIONS: readonly StorageMigration[] = [
   {
     version: 1,
@@ -189,6 +220,11 @@ export const STORAGE_MIGRATIONS: readonly StorageMigration[] = [
     version: 8,
     name: 'store shop checkout operation history',
     up: createShopCheckoutOperationHistoryTable,
+  },
+  {
+    version: 9,
+    name: 'store pending move resolutions',
+    up: createPendingMoveResolutionTable,
   },
 ]
 

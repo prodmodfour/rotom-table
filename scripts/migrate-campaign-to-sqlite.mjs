@@ -29,7 +29,7 @@ export const ROTOM_DB_PATH_ENV = 'ROTOM_DB_PATH'
 export const DEFAULT_ROTOM_DB_FILENAME = 'rotom-table.sqlite'
 export const DEFAULT_MIGRATION_BACKUP_DIRNAME = 'backups'
 export const SQLITE_MIGRATION_BACKUP_PREFIX = 'rotom-sqlite-migration-'
-export const STORAGE_SCHEMA_VERSION = 8
+export const STORAGE_SCHEMA_VERSION = 9
 
 const scriptPath = fileURLToPath(import.meta.url)
 const appRoot = resolve(dirname(scriptPath), '..')
@@ -753,6 +753,37 @@ const applyStorageMigrations = (connection) => {
           ON shop_checkout_ops (shop_slug, result_revision);
       `)
       setUserVersion(connection, 8)
+    }
+    if (fromVersion < 9) {
+      connection.exec(`
+        CREATE TABLE IF NOT EXISTS pending_move_resolutions (
+          resolution_id TEXT PRIMARY KEY,
+          map_slug TEXT NOT NULL,
+          origin_op_id TEXT NOT NULL,
+          resolution_json TEXT NOT NULL,
+          status TEXT NOT NULL CHECK (
+            status IN (
+              'pending',
+              'resuming',
+              'committed',
+              'cancelled',
+              'expired',
+              'conflicted',
+              'abandoned'
+            )
+          ),
+          revision INTEGER NOT NULL CHECK (revision >= 0),
+          created_at INTEGER NOT NULL CHECK (created_at >= 0),
+          updated_at INTEGER NOT NULL CHECK (updated_at >= created_at),
+          terminal_op_id TEXT UNIQUE,
+          UNIQUE (map_slug, origin_op_id),
+          FOREIGN KEY (terminal_op_id) REFERENCES live_play_ops (op_id) ON DELETE SET NULL
+        );
+
+        CREATE INDEX IF NOT EXISTS pending_move_resolutions_map_status_idx
+          ON pending_move_resolutions (map_slug, status, updated_at, resolution_id);
+      `)
+      setUserVersion(connection, 9)
     }
     connection.exec('COMMIT')
   } catch (error) {

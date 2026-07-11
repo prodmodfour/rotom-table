@@ -21,6 +21,10 @@ A map stores the state the tabletop needs to render and run a scene:
 
 The map renderer and map editor treat the SQLite document as the source of truth for table play in both Prepare Map and Run Live Play. During player play, token control is derived from the selected player profile: a player can act with placements whose `sheetKind` and `sheetSlug` match a linked character sheet on that profile.
 
+## Pending move resolutions
+
+A MoveSpec execution suspended for an authorized choice or reaction is stored in `pending_move_resolutions`, separately from terminal command results in `live_play_ops`. Each row contains canonical strictly parsed resolution JSON plus indexed status, originating map and operation identity, a repository CAS revision, creation/update timestamps, and an optional link to the eventual terminal operation. Resolution IDs are primary keys and each originating map/operation pair is unique, so a suspended command survives restart without masquerading as an accepted terminal command. The private durable record owns resource reads, rolls, audit trace, response ownership, and stable option IDs; map encounter state may expose only its bounded public summary/ID.
+
 ## Sheets
 
 Pokémon sheets live as SQLite documents keyed by `kind='pokemon'` and slug. `data/sheets/` is now an explicit import/export hierarchy, not runtime authority.

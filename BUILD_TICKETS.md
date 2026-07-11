@@ -1268,7 +1268,7 @@ Status: DONE
 
 ## MA-101 — Persist pending resolutions separately from terminal ops
 
-Status: TODO
+Status: DONE
 
 **Depends on:** MA-100
 **Commit:** `feat(move-automation): persist pending move resolutions`

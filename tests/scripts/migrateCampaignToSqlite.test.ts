@@ -10,6 +10,7 @@ import {
 } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { dirname, join, resolve } from 'node:path'
+import { DatabaseSync } from 'node:sqlite'
 import { fileURLToPath } from 'node:url'
 import { afterEach, describe, expect, it } from 'vitest'
 import { openRotomDatabase, type RotomDatabase } from '~~/server/storage/database'
@@ -163,6 +164,14 @@ describe('SQLite campaign migration script', () => {
     expect(existsSync(join(backupPath, 'campaign/data/group-inventories/main.json'))).toBe(true)
     expect(existsSync(join(backupPath, 'campaign/data/shops/city/potion-mart.json'))).toBe(true)
     expect(existsSync(join(backupPath, 'campaign/data/player-profiles/profile_ash00000.json'))).toBe(true)
+
+    const migratedConnection = new DatabaseSync(join(campaignRoot, 'rotom-table.sqlite'))
+    expect(migratedConnection.prepare('PRAGMA user_version').get()).toEqual({ user_version: 9 })
+    expect(migratedConnection.prepare(`
+      SELECT name FROM sqlite_master
+      WHERE type = 'table' AND name = 'pending_move_resolutions'
+    `).get()).toEqual({ name: 'pending_move_resolutions' })
+    migratedConnection.close()
 
     const database = openDatabase(campaignRoot)
     const maps = createSqliteMapRepository<TabletopMap>(database)
