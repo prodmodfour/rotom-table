@@ -1137,7 +1137,7 @@ Status: DONE
 
 ## MA-088 — Add mechanics property and invariant tests
 
-Status: TODO
+Status: DONE
 
 **Depends on:** MA-074–MA-087
 **Commit:** `test(move-automation): verify mechanics invariants`
