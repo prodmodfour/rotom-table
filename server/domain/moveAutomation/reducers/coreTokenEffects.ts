@@ -47,6 +47,7 @@ import {
   reduceRedistributionDirectHpEffectForRecipients,
 } from './hp'
 import type {
+  MoveConditionAccuracyRollQueries,
   MoveCoreTokenDamageQuery,
   MoveCoreTokenDynamicRecipientSets,
   MoveCoreTokenEffectImmunityQueries,
@@ -76,6 +77,8 @@ export interface ReduceMoveCoreTokenOperationStateInput {
   readonly dynamicRecipients: MoveCoreTokenDynamicRecipientSets
   /** Required only when a `damage` operation is present. */
   readonly damage?: MoveCoreTokenDamageQuery
+  /** Required only by a condition with an explicit accuracy-roll trigger. */
+  readonly conditionAccuracyRolls?: MoveConditionAccuracyRollQueries
   readonly immunities: MoveCoreTokenEffectImmunityQueries
   /**
    * Optional server-owned recipient query for non-MoveSpec orchestration such
@@ -322,6 +325,9 @@ export const reduceMoveCoreTokenOperationState = (
         accumulator: conditionAccumulator,
         encounter: conditionEncounterAccumulator,
         immunities: input.immunities,
+        ...(input.conditionAccuracyRolls
+          ? { accuracyRolls: input.conditionAccuracyRolls }
+          : {}),
         context: input.context,
       })
     }
@@ -425,6 +431,9 @@ export const reduceMoveCoreTokenEffects = (
     operations: input.operations,
     dynamicRecipients: input.dynamicRecipients,
     ...(input.damage === undefined ? {} : { damage: input.damage }),
+    ...(input.conditionAccuracyRolls === undefined
+      ? {}
+      : { conditionAccuracyRolls: input.conditionAccuracyRolls }),
     immunities: input.immunities,
     ...(input.recipientIdsForOperation === undefined
       ? {}

@@ -976,6 +976,79 @@ describe('authoritative MoveSpec validation and hashing', () => {
     )
   })
 
+  it('binds hit-only condition thresholds to an earlier damage accuracy d20', () => {
+    const triggeredConditionSpec = (): TestSpec => {
+      const spec = validSpec()
+      spec.phases[0]!.operations[0]!.recipients = { kind: 'attacked-targets' }
+      spec.phases.splice(2, 0, {
+        phase: 'after-damage',
+        operations: [{
+          id: 'operation.burn',
+          kind: 'condition',
+          source: { kind: 'operation', id: 'operation.damage' },
+          recipients: { kind: 'hit-targets' },
+          phase: 'after-damage',
+          reasonCode: 'move.scratch.burn',
+          payload: {
+            action: 'apply',
+            conditionId: 'burned',
+            accuracyRollTrigger: {
+              rollId: 'roll.accuracy',
+              trigger: { kind: 'range', minimum: 18 },
+            },
+          },
+        }],
+      })
+      return spec
+    }
+
+    expect(validateMoveSpec(triggeredConditionSpec()).spec.phases[2]?.operations[0])
+      .toMatchObject({
+        kind: 'condition',
+        payload: {
+          accuracyRollTrigger: {
+            rollId: 'roll.accuracy',
+            trigger: { kind: 'range', minimum: 18 },
+          },
+        },
+      })
+
+    const unknown = triggeredConditionSpec()
+    ;(unknown.phases[2]!.operations[0]!.payload.accuracyRollTrigger as Record<string, unknown>)
+      .rollId = 'roll.missing'
+    expectDefinitionError(
+      () => validateMoveSpec(unknown),
+      'unknown-reference',
+      'spec.phases[2].operations[0].payload.accuracyRollTrigger.rollId',
+    )
+
+    const wrongFormula = triggeredConditionSpec()
+    wrongFormula.phases[0]!.operations[0]!.payload.formula = {
+      kind: 'dice', count: 2, sides: 10, modifier: 0,
+    }
+    expectDefinitionError(
+      () => validateMoveSpec(wrongFormula),
+      'invalid-definition',
+      'spec.phases[2].operations[0].payload.accuracyRollTrigger.rollId',
+    )
+
+    const notHitOnly = triggeredConditionSpec()
+    notHitOnly.phases[2]!.operations[0]!.recipients = { kind: 'attacked-targets' }
+    expectDefinitionError(
+      () => validateMoveSpec(notHitOnly),
+      'invalid-definition',
+      'spec.phases[2].operations[0].payload.accuracyRollTrigger.rollId',
+    )
+
+    const notDamageLinked = triggeredConditionSpec()
+    notDamageLinked.phases[1]!.operations[0]!.payload.accuracyRollId = null
+    expectDefinitionError(
+      () => validateMoveSpec(notDamageLinked),
+      'invalid-definition',
+      'spec.phases[2].operations[0].payload.accuracyRollTrigger.rollId',
+    )
+  })
+
   it('requires damage-linked HP and damage-timed costs to reference earlier damage', () => {
     const drainOperation = (damageOperationId: string): TestOperation => ({
       id: 'operation.drain',

@@ -1,6 +1,7 @@
 export type MoveCoreConditionReductionErrorCode =
   | 'unknown-condition'
   | 'invalid-condition-random-choice'
+  | 'invalid-condition-accuracy-roll-trigger'
   | 'invalid-condition-stack-policy'
   | 'invalid-condition-effect-scope'
 

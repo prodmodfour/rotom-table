@@ -6565,10 +6565,10 @@
       "baseStatus": "assisted",
       "interactionStatus": "unassessed",
       "runtime": {
-        "kind": "legacy-v1",
-        "version": 1,
-        "definitionHash": "282484956132b2cfc5b8d122df627f47a8917334c2bf5bf9ab9549763fa150ab",
-        "sourceModule": "src/utils/move-automation/scripts/singleTargetAttacks.ts"
+        "kind": "movespec-v2",
+        "version": 2,
+        "definitionHash": "3c94f42831d1b0113ae53576c9ad2c84efb06529beb718b8f6c50c527583266f",
+        "sourceModule": "server/domain/moveAutomation/specs/ember.ts"
       },
       "rulesProvenance": {
         "rulesetId": "rotom-table-reference-moves-v1",
@@ -6581,14 +6581,60 @@
       "limitations": [
         {
           "code": "audit.required",
-          "summary": "Semantic conformance review is required before this legacy implementation can be marked complete."
+          "summary": "Semantic conformance review is required before this native implementation can be marked complete."
         }
       ],
       "manualSteps": [],
-      "scenarioIds": [],
+      "scenarioIds": [
+        "ember.v2-burn-immunity",
+        "ember.v2-critical-hit",
+        "ember.v2-miss",
+        "ember.v2-threshold-fail",
+        "ember.v2-threshold-pass"
+      ],
       "conformanceEvidence": {
-        "requirementTags": [],
-        "scenarios": [],
+        "requirementTags": [
+          "branch.accuracy",
+          "branch.critical-hit",
+          "branch.immunity",
+          "branch.threshold",
+          "mechanic.damage",
+          "recovery.retry"
+        ],
+        "scenarios": [
+          {
+            "scenarioId": "ember.v2-burn-immunity",
+            "evidenceClasses": [
+              "immunity"
+            ]
+          },
+          {
+            "scenarioId": "ember.v2-critical-hit",
+            "evidenceClasses": [
+              "crit"
+            ]
+          },
+          {
+            "scenarioId": "ember.v2-miss",
+            "evidenceClasses": [
+              "miss"
+            ]
+          },
+          {
+            "scenarioId": "ember.v2-threshold-fail",
+            "evidenceClasses": [
+              "threshold-fail"
+            ]
+          },
+          {
+            "scenarioId": "ember.v2-threshold-pass",
+            "evidenceClasses": [
+              "hit",
+              "retry",
+              "threshold-pass"
+            ]
+          }
+        ],
         "notApplicable": []
       },
       "reviewedAt": null,

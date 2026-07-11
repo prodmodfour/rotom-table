@@ -516,6 +516,22 @@ describe('MoveSpec typed effect operations', () => {
         stabTiming: 'after-bounds',
         expression: { kind: 'lookup-table' },
       })
+    const triggeredCondition = parseMoveEffectOperation(validOperation('condition', {
+      payload: {
+        ...VALID_PAYLOADS.condition,
+        accuracyRollTrigger: {
+          rollId: 'roll.accuracy',
+          trigger: { kind: 'natural-rolls', values: [20, 18, 19] },
+        },
+      },
+    }))
+    expect(triggeredCondition.kind === 'condition' && triggeredCondition.payload)
+      .toMatchObject({
+        accuracyRollTrigger: {
+          rollId: 'roll.accuracy',
+          trigger: { kind: 'natural-rolls', values: [18, 19, 20] },
+        },
+      })
     expect(parseMoveEffectOperation(validOperation('condition', {
       payload: { action: 'clear', conditionId: null },
     })).payload).toEqual({
@@ -680,6 +696,25 @@ describe('MoveSpec typed effect operations', () => {
         },
       },
     }), 'invalid-effect-operation', 'operation.payload.duration')
+    expectEffectError(validOperation('condition', {
+      payload: {
+        ...VALID_PAYLOADS.condition,
+        accuracyRollTrigger: {
+          rollId: 'roll.accuracy',
+          trigger: { kind: 'always' },
+        },
+      },
+    }), 'invalid-effect-operation', 'operation.payload.accuracyRollTrigger.trigger.kind')
+    expectEffectError(validOperation('condition', {
+      payload: {
+        ...VALID_PAYLOADS.condition,
+        action: 'remove',
+        accuracyRollTrigger: {
+          rollId: 'roll.accuracy',
+          trigger: { kind: 'range', minimum: 18 },
+        },
+      },
+    }), 'invalid-effect-operation', 'operation.payload.accuracyRollTrigger')
   })
 
   it('parses advanced combat-stage transforms and concrete selected-Stat choices', () => {

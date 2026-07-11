@@ -37,6 +37,7 @@ import {
   type MoveCoreTokenEffectReduction,
 } from './reducers/coreTokenEffects'
 import type {
+  MoveConditionAccuracyRollQueries,
   MoveCoreTokenDamageQuery,
   MoveCoreTokenDynamicRecipientSets,
   MoveCoreTokenEffectOperationResult,
@@ -52,6 +53,8 @@ export type ImmediateMoveSpecResolutionErrorCode =
   | 'damage-roll-invalid'
   | 'damage-type-resolution-missing'
   | 'damage-base-resolution-missing'
+  | 'condition-roll-missing'
+  | 'condition-roll-invalid'
   | 'multi-hit-operation-conflict'
 
 export class ImmediateMoveSpecResolutionError extends Error {
@@ -150,6 +153,47 @@ const damageRollResult = (
     total: entry.finalValue,
   }
 }
+
+const createConditionAccuracyRollQueries = (options: {
+  readonly resolvedRolls: readonly MoveSpecResolvedRoll[]
+  readonly rollLedger: ImmediateMoveSpecResolution['rollLedger']
+}): MoveConditionAccuracyRollQueries => ({
+  resolve: ({ operation, recipient }) => {
+    const trigger = operation.payload.accuracyRollTrigger
+      ?? fail(
+        'condition-roll-missing',
+        `Condition operation ${operation.id} has no accuracy-roll trigger.`,
+      )
+    const resolved = options.resolvedRolls.find(roll => (
+      roll.purpose === 'accuracy'
+      && roll.referenceId === trigger.rollId
+      && roll.recipientId === recipient.placement.id
+    )) ?? fail(
+      'condition-roll-missing',
+      `Accuracy roll ${trigger.rollId} for condition operation ${operation.id} and recipient ${recipient.placement.id} is missing.`,
+    )
+    const ledger = options.rollLedger.find(entry => entry.rollId === resolved.rollId)
+      ?? fail('condition-roll-missing', `Roll ledger entry ${resolved.rollId} is missing.`)
+    if (
+      ledger.formula.kind !== 'dice'
+      || ledger.formula.count !== 1
+      || ledger.formula.sides !== 20
+      || ledger.formula.modifier !== 0
+      || !Number.isSafeInteger(ledger.naturalResult)
+      || ledger.naturalResult < 1
+      || ledger.naturalResult > 20
+    ) {
+      return fail(
+        'condition-roll-invalid',
+        `Accuracy roll ${resolved.rollId} is not an unmodified natural d20.`,
+      )
+    }
+    return {
+      rollId: resolved.rollId,
+      naturalResult: ledger.naturalResult,
+    }
+  },
+})
 
 const createDamageQuery = (options: {
   readonly context: AuthoritativeMoveRulesContext
@@ -485,6 +529,10 @@ export const resolveImmediateMoveSpec = (options: {
           selectedTargetIds: execution.targetIds,
         })
       : undefined,
+    conditionAccuracyRolls: createConditionAccuracyRollQueries({
+      resolvedRolls: execution.resolvedRolls,
+      rollLedger: execution.rollLedger,
+    }),
     immunities: createStandardMoveCoreTokenEffectImmunityQueries({
       moveType: script.type,
       context: options.context,

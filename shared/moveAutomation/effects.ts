@@ -926,6 +926,16 @@ export interface MoveConditionRandomChoice {
   readonly conditionIds: readonly string[]
 }
 
+export type MoveConditionNaturalRollTrigger =
+  | MoveCriticalHitRangeTrigger
+  | MoveCriticalHitNaturalRollsTrigger
+
+/** A hit-only secondary condition gated by an earlier authoritative accuracy d20. */
+export interface MoveConditionAccuracyRollTrigger {
+  readonly rollId: string
+  readonly trigger: MoveConditionNaturalRollTrigger
+}
+
 export interface MoveConditionDurationPolicy {
   /** Stable reviewed base identity; the reducer derives one instance per recipient. */
   readonly effectId: string
@@ -942,6 +952,8 @@ export interface MoveConditionEffectPayload {
   readonly filter: MoveConditionCleanseFilter | null
   /** Required only for random-choice. */
   readonly randomChoice: MoveConditionRandomChoice | null
+  /** Optional reviewed natural-roll gate for an accuracy-triggered secondary effect. */
+  readonly accuracyRollTrigger?: MoveConditionAccuracyRollTrigger
   /** Non-null stores an application as a source-linked encounter effect. */
   readonly duration: MoveConditionDurationPolicy | null
   readonly saveTiming: MoveEffectConditionSaveTiming
@@ -1336,12 +1348,14 @@ const CONDITION_OPTIONAL_FIELDS = [
   'conditionSource',
   'filter',
   'randomChoice',
+  'accuracyRollTrigger',
   'duration',
   'saveTiming',
   'stackPolicy',
 ] as const
 const CONDITION_FILTER_FIELDS = ['groups', 'conditionIds', 'excludedConditionIds'] as const
 const CONDITION_RANDOM_CHOICE_FIELDS = ['rollId', 'conditionIds'] as const
+const CONDITION_ACCURACY_ROLL_TRIGGER_FIELDS = ['rollId', 'trigger'] as const
 const CONDITION_DURATION_FIELDS = ['effectId', 'duration'] as const
 const CONDITION_STACK_POLICY_FIELDS = ['kind', 'maxStacks'] as const
 const COMBAT_STAGE_REQUIRED_FIELDS = ['action', 'stage', 'value'] as const
@@ -2561,6 +2575,28 @@ const parseConditionRandomChoice = (
   }
 }
 
+const parseConditionAccuracyRollTrigger = (
+  value: unknown,
+  path: string,
+): MoveConditionAccuracyRollTrigger => {
+  const input = parseExactRecord(value, CONDITION_ACCURACY_ROLL_TRIGGER_FIELDS, path)
+  const trigger = parseCriticalHitTrigger(
+    ownValue(input, 'trigger', path),
+    `${path}.trigger`,
+  )
+  if (trigger.kind !== 'range' && trigger.kind !== 'natural-rolls') {
+    return fail(
+      'invalid-effect-operation',
+      `${path}.trigger.kind`,
+      'must be range or natural-rolls for an accuracy-triggered condition.',
+    )
+  }
+  return {
+    rollId: parseStableId(ownValue(input, 'rollId', path), `${path}.rollId`),
+    trigger,
+  }
+}
+
 const rethrowEncounterPolicyError = (error: EncounterEffectValidationError): never => fail(
   error.code === 'limit-exceeded' ? 'limit-exceeded' : 'invalid-effect-operation',
   error.path,
@@ -2636,6 +2672,16 @@ const parseConditionPayload = (value: unknown, path: string): MoveConditionEffec
   const randomChoice = rawRandomChoice === null
     ? null
     : parseConditionRandomChoice(rawRandomChoice, `${path}.randomChoice`)
+  const hasAccuracyRollTrigger = Object.prototype.hasOwnProperty.call(
+    input,
+    'accuracyRollTrigger',
+  )
+  const accuracyRollTrigger = hasAccuracyRollTrigger
+    ? parseConditionAccuracyRollTrigger(
+        ownValue(input, 'accuracyRollTrigger', path),
+        `${path}.accuracyRollTrigger`,
+      )
+    : undefined
   const rawDuration = Object.prototype.hasOwnProperty.call(input, 'duration')
     ? ownValue(input, 'duration', path)
     : null
@@ -2687,6 +2733,13 @@ const parseConditionPayload = (value: unknown, path: string): MoveConditionEffec
       'must be present only for random-choice.',
     )
   }
+  if (accuracyRollTrigger && !['apply', 'replace', 'random-choice'].includes(action)) {
+    fail(
+      'invalid-effect-operation',
+      `${path}.accuracyRollTrigger`,
+      'is supported only when applying a condition.',
+    )
+  }
   if (duration !== null && !['apply', 'replace', 'random-choice'].includes(action)) {
     fail(
       'invalid-effect-operation',
@@ -2732,6 +2785,7 @@ const parseConditionPayload = (value: unknown, path: string): MoveConditionEffec
     conditionSource,
     filter,
     randomChoice,
+    ...(accuracyRollTrigger ? { accuracyRollTrigger } : {}),
     duration,
     saveTiming,
     stackPolicy,
@@ -3075,17 +3129,26 @@ const parseMultiHitEffects = (
       'condition or combat-stage',
     )
     const payload = ownValue(input, 'payload', effectPath)
-    return kind === 'condition'
-      ? {
-          ...common,
-          kind,
-          payload: parseConditionPayload(payload, `${effectPath}.payload`),
-        }
-      : {
-          ...common,
-          kind,
-          payload: parseCombatStagePayload(payload, `${effectPath}.payload`),
-        }
+    if (kind === 'condition') {
+      const conditionPayload = parseConditionPayload(payload, `${effectPath}.payload`)
+      if (conditionPayload.accuracyRollTrigger) {
+        fail(
+          'invalid-effect-operation',
+          `${effectPath}.payload.accuracyRollTrigger`,
+          'multi-hit follow-ups use sequence-owned triggers and cannot reference a top-level accuracy roll.',
+        )
+      }
+      return {
+        ...common,
+        kind,
+        payload: conditionPayload,
+      }
+    }
+    return {
+      ...common,
+      kind,
+      payload: parseCombatStagePayload(payload, `${effectPath}.payload`),
+    }
   })
   assertUnique(effects.map(effect => effect.id), `${path}.id`)
   return effects

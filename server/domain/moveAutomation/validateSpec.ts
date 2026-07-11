@@ -872,6 +872,51 @@ export const validateMoveSpecOperationSequence = (
         )
       }
     }
+    if (operation.kind === 'condition' && operation.payload.accuracyRollTrigger) {
+      const referencePath = `${path}.payload.accuracyRollTrigger.rollId`
+      const rollId = operation.payload.accuracyRollTrigger.rollId
+      assertPriorReference(rollId, index, referencePath, rollIndexById, 'roll ID')
+      const referencedIndex = rollIndexById.get(rollId)!
+      const referenced = indexed[referencedIndex]?.operation
+      if (!referenced || referenced.kind !== 'roll') {
+        return fail('invalid-definition', referencePath, `${rollId} must identify an earlier roll operation.`)
+      }
+      const formula = referenced.payload.formula
+      if (
+        formula.kind !== 'dice'
+        || formula.count !== 1
+        || formula.sides !== 20
+        || formula.modifier !== 0
+      ) {
+        fail(
+          'invalid-definition',
+          referencePath,
+          `roll ${rollId} must be an unmodified authoritative d20.`,
+        )
+      }
+      if (
+        referenced.recipients.kind !== 'attacked-targets'
+        || operation.recipients.kind !== 'hit-targets'
+      ) {
+        fail(
+          'invalid-definition',
+          referencePath,
+          'an accuracy-triggered condition must narrow an attacked-targets roll to hit-targets.',
+        )
+      }
+      const linkedDamage = indexed.find(entry => (
+        entry.index < index
+        && entry.operation.kind === 'damage'
+        && entry.operation.payload.accuracyRollId === rollId
+      ))
+      if (!linkedDamage) {
+        fail(
+          'invalid-definition',
+          referencePath,
+          `roll ${rollId} must be the accuracy roll of an earlier damage operation.`,
+        )
+      }
+    }
     const damage = operation.kind === 'damage'
       ? operation.payload
       : operation.kind === 'multi-hit'

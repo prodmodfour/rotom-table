@@ -777,6 +777,47 @@ const resolveSelfMove = (options: {
   }
 }
 
+const resolveLegalSingleTarget = (options: {
+  readonly context: AuthoritativeMoveRulesContext
+  readonly script: MoveAutomationScript
+  readonly targetPlacementId: string
+}): {
+  readonly actorPlacement: SheetPlacement
+  readonly actor: SpawnedPokemon
+  readonly target: SpawnedPokemon
+  readonly desiredFacing: ReturnType<typeof desiredFacingTowardToken>
+} => {
+  const { placement: actorPlacement, token: actor } = options.context.actor
+  const rangeMeters = parseSingleTargetMoveRangeMeters(options.script.range, {
+    focusSkillRankValue: actor.focusSkillRankValue,
+  }) ?? fail(
+    'unsupported',
+    'unsupported-range',
+    `${options.script.moveName} has an unsupported target range.`,
+  )
+  const resolvedTarget = resolveSelectedTarget(options.context, options.targetPlacementId)
+  recordSheetReadForPlacement(options.context, resolvedTarget.placement)
+  const legalTargets = legalSingleTargetTokens({
+    script: options.script,
+    user: actor,
+    tokens: options.context.queries.tokens.all(),
+    rangeMeters,
+  })
+  if (!legalTargets.some(candidate => candidate.id === resolvedTarget.token.id)) {
+    fail(
+      'invalid',
+      'target-out-of-range',
+      `Target ${resolvedTarget.token.id} is outside ${options.script.moveName}'s authoritative range.`,
+    )
+  }
+  return {
+    actorPlacement,
+    actor,
+    target: resolvedTarget.token,
+    desiredFacing: desiredFacingTowardToken(actorPlacement, actor, resolvedTarget.token),
+  }
+}
+
 const resolveSingleTargetMove = (options: {
   readonly context: AuthoritativeMoveRulesContext
   readonly script: MoveAutomationScript
@@ -787,31 +828,16 @@ const resolveSingleTargetMove = (options: {
   readonly moveKey: string
   readonly targetBranchId?: string
 }): UnfinalizedAuthoritativeMoveResolution => {
-  const { placement: actorPlacement, token: actor } = options.context.actor
   const moveName = options.script.moveName
   if (!isSeamlessSingleTargetMoveScript(options.script)) {
     fail('invalid', 'selection-kind-mismatch', `${moveName} is not a seamless single-target move.`)
   }
   assertResolvableDamage(options.script, options.damageFormula)
-
-  const rangeMeters = parseSingleTargetMoveRangeMeters(options.script.range, {
-    focusSkillRankValue: actor.focusSkillRankValue,
-  }) ?? fail('unsupported', 'unsupported-range', `${options.script.moveName} has an unsupported target range.`)
-
-  const resolvedTarget = resolveSelectedTarget(options.context, options.selection.targetPlacementId)
-  recordSheetReadForPlacement(options.context, resolvedTarget.placement)
-  const target = resolvedTarget.token
-  const legalTargets = legalSingleTargetTokens({
+  const { actorPlacement, actor, target, desiredFacing } = resolveLegalSingleTarget({
+    context: options.context,
     script: options.script,
-    user: actor,
-    tokens: options.context.queries.tokens.all(),
-    rangeMeters,
+    targetPlacementId: options.selection.targetPlacementId,
   })
-  if (!legalTargets.some((candidate) => candidate.id === target.id)) {
-    fail('invalid', 'target-out-of-range', `Target ${target.id} is outside ${options.script.moveName}'s authoritative range.`)
-  }
-
-  const desiredFacing = desiredFacingTowardToken(actorPlacement, actor, target)
   const common = {
     script: options.script,
     user: actor,
@@ -856,6 +882,65 @@ const resolveSingleTargetMove = (options: {
     transaction: result.transaction,
     feedback: result.feedback,
     ...(desiredFacing ? { desiredFacing } : {}),
+  }
+}
+
+const resolveNativeSingleTargetMove = (options: {
+  readonly context: AuthoritativeMoveRulesContext
+  readonly runtime: MoveSpecV2Runtime
+  readonly entry: ResolvedCanonicalMoveEntry
+  readonly selection: Extract<ResolveMoveSelection, { kind: 'single-target' }>
+  readonly moveKey: string
+}): AuthoritativeMoveResolution => {
+  if (options.runtime.definition.spec.targeting.kind !== 'single-target') {
+    return fail(
+      'invalid',
+      'selection-kind-mismatch',
+      `${options.runtime.canonicalId} does not accept a single-target selection.`,
+    )
+  }
+  if (options.context.intent.targetBranchId) {
+    fail(
+      'invalid',
+      'target-branch-unexpected',
+      `${options.runtime.canonicalId} does not accept a target branch.`,
+    )
+  }
+  if (!isSeamlessSingleTargetMoveScript(options.entry.script)) {
+    fail(
+      'invalid',
+      'selection-kind-mismatch',
+      `${options.runtime.canonicalId} is not a seamless single-target move.`,
+    )
+  }
+
+  const { actorPlacement, target, desiredFacing } = resolveLegalSingleTarget({
+    context: options.context,
+    script: options.entry.script,
+    targetPlacementId: options.selection.targetPlacementId,
+  })
+  const immediate = resolveImmediateMoveSpec({
+    context: options.context,
+    runtime: options.runtime,
+    entry: options.entry,
+    authoritativeTargetIds: [target.id],
+  })
+
+  return {
+    actorPlacementId: actorPlacement.id,
+    moveName: options.runtime.definition.spec.presentation.displayName,
+    canonicalMoveName: options.entry.canonicalMoveName,
+    moveKey: options.moveKey,
+    frequency: options.entry.frequency,
+    damageFormula: options.entry.damageFormula,
+    selectedTargetIds: [target.id],
+    sheetReads: immediate.sheetReads,
+    rollLedger: immediate.rollLedger,
+    auditTrace: immediate.trace,
+    script: immediate.script,
+    transaction: immediate.transaction,
+    ...(desiredFacing ? { desiredFacing } : {}),
+    nativeV2: immediate.native,
   }
 }
 
@@ -1238,20 +1323,29 @@ export const resolveAuthoritativeMoveFromContext = (
   }
   const selectedRuntime = context.queries.rules.runtimeFor(entry.canonicalMoveName)
   if (selectedRuntime?.kind === 'movespec-v2') {
-    if (intent.selection.kind !== 'area') {
-      return fail(
-        'invalid',
-        'selection-kind-mismatch',
-        `${entry.canonicalMoveName} requires an area selection.`,
-      )
+    if (intent.selection.kind === 'area') {
+      return resolveNativeAreaMove({
+        context,
+        runtime: selectedRuntime,
+        entry,
+        selection: intent.selection,
+        moveKey: resolvedMoveKey,
+      })
     }
-    return resolveNativeAreaMove({
-      context,
-      runtime: selectedRuntime,
-      entry,
-      selection: intent.selection,
-      moveKey: resolvedMoveKey,
-    })
+    if (intent.selection.kind === 'single-target') {
+      return resolveNativeSingleTargetMove({
+        context,
+        runtime: selectedRuntime,
+        entry,
+        selection: intent.selection,
+        moveKey: resolvedMoveKey,
+      })
+    }
+    return fail(
+      'invalid',
+      'selection-kind-mismatch',
+      `${entry.canonicalMoveName} does not accept a ${intent.selection.kind} selection.`,
+    )
   }
 
   const { script, targetBranchId } = resolveCanonicalScript({
