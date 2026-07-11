@@ -24413,10 +24413,10 @@
       "baseStatus": "assisted",
       "interactionStatus": "unassessed",
       "runtime": {
-        "kind": "legacy-v1",
-        "version": 1,
-        "definitionHash": "d20a51577f333d2a38a2e979250331947a9112a2694445bd1515de940a53dab8",
-        "sourceModule": "src/utils/move-automation/scripts/self.ts"
+        "kind": "movespec-v2",
+        "version": 2,
+        "definitionHash": "6d1c85c81b2e0740f0ebaeda09df2d19daa20f8624fdcc5007ef6d3c56c8c2c4",
+        "sourceModule": "server/domain/moveAutomation/specs/synthesis.ts"
       },
       "rulesProvenance": {
         "rulesetId": "rotom-table-reference-moves-v1",
@@ -24429,14 +24429,68 @@
       "limitations": [
         {
           "code": "audit.required",
-          "summary": "Semantic conformance review is required before this legacy implementation can be marked complete."
+          "summary": "Semantic conformance review is required before this native implementation can be marked complete."
         }
       ],
       "manualSteps": [],
-      "scenarioIds": [],
+      "scenarioIds": [
+        "synthesis.v2-full-hp",
+        "synthesis.v2-hail",
+        "synthesis.v2-normal",
+        "synthesis.v2-rain",
+        "synthesis.v2-sandstorm",
+        "synthesis.v2-sunny"
+      ],
       "conformanceEvidence": {
-        "requirementTags": [],
-        "scenarios": [],
+        "requirementTags": [
+          "branch.alternate",
+          "recovery.retry",
+          "target.self"
+        ],
+        "scenarios": [
+          {
+            "scenarioId": "synthesis.v2-full-hp",
+            "evidenceClasses": [
+              "self"
+            ]
+          },
+          {
+            "scenarioId": "synthesis.v2-hail",
+            "evidenceClasses": [
+              "alternate-branch",
+              "self"
+            ]
+          },
+          {
+            "scenarioId": "synthesis.v2-normal",
+            "evidenceClasses": [
+              "alternate-branch",
+              "self"
+            ]
+          },
+          {
+            "scenarioId": "synthesis.v2-rain",
+            "evidenceClasses": [
+              "alternate-branch",
+              "self"
+            ]
+          },
+          {
+            "scenarioId": "synthesis.v2-sandstorm",
+            "evidenceClasses": [
+              "alternate-branch",
+              "self"
+            ]
+          },
+          {
+            "scenarioId": "synthesis.v2-sunny",
+            "evidenceClasses": [
+              "alternate-branch",
+              "retry",
+              "self"
+            ]
+          }
+        ],
         "notApplicable": []
       },
       "reviewedAt": null,

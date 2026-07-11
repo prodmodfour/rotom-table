@@ -102,6 +102,7 @@ const targetSheet = (slug: string, overrides: Partial<CharacterSheet> = {}): Cha
 const seedHarness = (options: {
   readonly map?: TabletopMap
   readonly actorMoves?: readonly CharacterSheetMove[]
+  readonly actorSheet?: Partial<CharacterSheet>
   readonly extraSheets?: readonly CharacterSheet[]
 } = {}): Harness => {
   const database = openRotomDatabase({ path: ':memory:', enableWal: false })
@@ -119,7 +120,11 @@ const seedHarness = (options: {
   })
   const map = options.map ?? mapFixture()
   maps.save({ slug: map.slug, document: map, revision: map.revision ?? 0, updatedAt: map.updatedAt ?? 100 })
-  const actor = pokemonSheet('actor', [...(options.actorMoves ?? [{ name: 'Tackle' }])])
+  const actor = pokemonSheet(
+    'actor',
+    [...(options.actorMoves ?? [{ name: 'Tackle' }])],
+    options.actorSheet,
+  )
   const targets = [targetSheet('target-a'), targetSheet('target-b'), ...(options.extraSheets ?? [])]
   for (const sheet of [actor, ...targets]) {
     sheets.save({ kind: 'pokemon', slug: sheet.slug, document: sheet as unknown as Record<string, unknown>, revision: sheet.revision ?? 0, updatedAt: (sheet as { readonly updatedAt?: number }).updatedAt ?? 50 })
@@ -566,6 +571,77 @@ describe('executeLivePlayResolveMoveCommandUseCase', () => {
     expect(duplicate.move).toEqual(response.move)
     expect(harness.maps.getBySlug('arena')).toEqual(committedMap)
     expect(harness.sheets.getByRef('pokemon', 'target-a')).toEqual(committedSheet)
+  })
+
+  it('commits native Synthesis healing and Daily usage once across duplicate delivery', async () => {
+    const harness = seedHarness({
+      map: mapFixture({ fieldEffects: { weather: [{ kind: 'sunny' }], terrains: [], rooms: [] } }),
+      actorMoves: [{ name: 'Synthesis' }],
+      actorSheet: {
+        species: 'Bulbasaur',
+        stats: { hp: { added: 18 } },
+        combat: { currentHp: 1, conditions: [] },
+      },
+    })
+    const map = harness.maps.getBySlug('arena')!
+    const moveIntent = intent({
+      placementId: 'actor-token',
+      moveName: 'Synthesis',
+      selection: { kind: 'self' },
+    })
+    const command = commandFor(map, moveIntent, 'op_resolvesynthesis1')
+    const response = await execute(harness, command, {
+      random: () => { throw new Error('Synthesis must not draw randomness') },
+      now: () => 5_000,
+    })
+    const acceptedResult = accepted(response.result)
+
+    expect(response.move).toMatchObject({
+      canonicalMoveName: 'Synthesis',
+      selectedTargetIds: [],
+      transaction: {
+        attackedTargetIds: [],
+        hitTargetIds: [],
+        hpUpdates: [{ id: 'actor-token', currentHp: 67 }],
+      },
+      rollLedger: [],
+      trace: {
+        program: {
+          canonicalId: 'Synthesis',
+          runtimeKind: 'movespec-v2',
+          runtimeVersion: 2,
+        },
+        events: expect.arrayContaining([
+          expect.objectContaining({
+            kind: 'operation',
+            operationId: 'synthesis.heal-sunny',
+            operationKind: 'heal',
+            outcome: 'applied',
+          }),
+        ]),
+      },
+    })
+    expect(harness.sheets.getByRef('pokemon', 'actor')?.sheet).toMatchObject({
+      revision: 3,
+      combat: { currentHp: 67, conditions: [] },
+      moveUsage: {
+        daily: {
+          synthesis: { moveName: 'Synthesis', uses: 1, updatedAt: 5_000 },
+        },
+      },
+    })
+
+    const committedMap = deepCloneJson(harness.maps.getBySlug('arena'))
+    const committedSheet = deepCloneJson(harness.sheets.getByRef('pokemon', 'actor'))
+    const duplicate = await execute(harness, command, {
+      random: () => { throw new Error('duplicate Synthesis must not use RNG') },
+      planner: () => { throw new Error('duplicate Synthesis must not replan') },
+    })
+
+    expect(duplicate.result).toEqual(acceptedResult)
+    expect(duplicate.move).toEqual(response.move)
+    expect(harness.maps.getBySlug('arena')).toEqual(committedMap)
+    expect(harness.sheets.getByRef('pokemon', 'actor')).toEqual(committedSheet)
   })
 
   it('accepts area and Pass resolveMove commands with conservative candidate scopes', async () => {

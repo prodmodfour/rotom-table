@@ -1207,7 +1207,7 @@ Status: DONE
 
 ## MA-092 — Port Synthesis as the healing canary
 
-Status: TODO
+Status: DONE
 
 **Depends on:** MA-080, MA-087
 **Commit:** `feat(move-automation): port synthesis to movespec v2`

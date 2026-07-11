@@ -20,6 +20,7 @@ import {
   type AuthoritativeMoveSheetRead,
 } from './context'
 import { buildAuthoritativeMoveMapChanges } from './mapChanges'
+import { mergeDisjointMoveSheetStateChanges } from './mergeSheetStateChanges'
 import {
   RESTORE_PREVIOUS_MOVE_STATE_VALUE,
   createMoveStateChangePlan,
@@ -170,7 +171,7 @@ const combinedStateChanges = (options: {
   )).map(({ input }) => input)
 
   try {
-    return createMoveStateChangePlan(inputs)
+    return createMoveStateChangePlan(mergeDisjointMoveSheetStateChanges(inputs))
   }
   catch (error) {
     return fail(
