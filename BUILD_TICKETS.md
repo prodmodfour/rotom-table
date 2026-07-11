@@ -1255,7 +1255,7 @@ Status: DONE
 
 ## MA-100 — Define the pending-resolution contract
 
-Status: TODO
+Status: DONE
 
 **Depends on:** MA-038, MA-050, MA-086
 **Commit:** `feat(move-automation): define pending move resolutions`
