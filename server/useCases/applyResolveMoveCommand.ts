@@ -514,7 +514,7 @@ const applyResolveMoveCommand = (
       mapSlug: command.mapSlug,
       previousRevision: plan.previousRevision,
       revision: plan.revision,
-      pendingResolution: plan.pendingResolution.publicSummary,
+      pendingResolution: plan.suspension.publicSummary,
     })
     return {
       kind: 'pending',
@@ -522,7 +522,7 @@ const applyResolveMoveCommand = (
         ...context,
         map: plan.nextMap,
         pendingPlan: plan,
-        pendingResolution: plan.pendingResolution.publicSummary,
+        pendingResolution: plan.suspension.publicSummary,
       },
       result,
       patches: [],
@@ -690,10 +690,10 @@ const persistPendingMoveDeclaration = (options: {
   }
 
   const storedPending = dependencies.pendingResolutionRepository.create({
-    resolution: plan.pendingResolution,
+    resolution: plan.suspension.pendingResolution,
   })
   if (
-    storedPending.resolutionId !== plan.pendingResolution.resolutionId
+    storedPending.resolutionId !== plan.suspension.pendingResolution.resolutionId
     || storedPending.originOpId !== command.opId
     || storedPending.status !== 'pending'
   ) {

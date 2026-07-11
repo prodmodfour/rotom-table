@@ -213,7 +213,7 @@ export interface AuthoritativePendingMoveResolution {
   readonly sheetReads: readonly AuthoritativeMoveSheetRead[]
   readonly runtime: MoveSpecV2Runtime
   readonly execution: PendingMoveSpecResolution['execution']
-  readonly declarationStateChanges: PendingMoveSpecResolution['declarationStateChanges']
+  readonly preWindowPlan: PendingMoveSpecResolution['preWindowPlan']
 }
 
 export type AuthoritativeMoveExecution =
@@ -852,7 +852,7 @@ const resolveNativeSelfMove = (options: {
       sheetReads: outcome.sheetReads,
       runtime: options.runtime,
       execution: outcome.execution,
-      declarationStateChanges: outcome.declarationStateChanges,
+      preWindowPlan: outcome.preWindowPlan,
     }
   }
   const immediate = outcome.resolution
@@ -1038,7 +1038,7 @@ const resolveNativeSingleTargetMove = (options: {
       sheetReads: outcome.sheetReads,
       runtime: options.runtime,
       execution: outcome.execution,
-      declarationStateChanges: outcome.declarationStateChanges,
+      preWindowPlan: outcome.preWindowPlan,
     }
   }
   const immediate = outcome.resolution
@@ -1339,7 +1339,7 @@ const resolveNativeAreaMove = (options: {
       sheetReads: outcome.sheetReads,
       runtime: options.runtime,
       execution: outcome.execution,
-      declarationStateChanges: outcome.declarationStateChanges,
+      preWindowPlan: outcome.preWindowPlan,
     }
   }
   const immediate = outcome.resolution

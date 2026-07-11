@@ -19,11 +19,11 @@ import {
   type EncounterTurnResourceDirectory,
 } from './encounterResources'
 import {
-  PENDING_MOVE_RESOLUTION_LIMITS,
+  PENDING_MOVE_RESOLUTION_SUMMARY_LIMITS,
   PendingMoveResolutionValidationError,
   parsePendingMoveResolutionPublicSummary,
   type PendingMoveResolutionPublicSummary,
-} from './pendingResolution'
+} from './pendingResolutionSummary'
 
 export * from './encounterEffects'
 export * from './encounterHistory'
@@ -75,7 +75,7 @@ export const ENCOUNTER_STATE_LIMITS = Object.freeze({
   history: ENCOUNTER_HISTORY_LIMITS.moveAncestryPerScene,
   turnResources: ENCOUNTER_RESOURCE_LIMITS.placementLedgers,
   zones: 0,
-  pendingResolutionSummaries: PENDING_MOVE_RESOLUTION_LIMITS.responseWindows,
+  pendingResolutionSummaries: PENDING_MOVE_RESOLUTION_SUMMARY_LIMITS.responseWindows,
 })
 
 export type EmptyEncounterStateList = readonly []

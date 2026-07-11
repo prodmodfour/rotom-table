@@ -1,0 +1,272 @@
+import { isRevision, nextRevision } from '#shared/sessionRevisions'
+import {
+  PENDING_MOVE_RESOLUTION_SCHEMA_VERSION,
+  parsePendingMoveResolution,
+  type PendingMoveResolution,
+  type PendingMoveResolutionPublicSummary,
+  type PendingMoveResolutionResourceRead,
+  type PendingMoveResponseWindow,
+} from '#shared/moveAutomation/pendingResolution'
+import type { AuthoritativeMoveSheetRead } from './context'
+import { deduplicateAuthoritativeMoveSheetReads } from './context'
+import type {
+  MoveSpecDeferredContinuation,
+  MoveSpecExecutionPendingResult,
+} from './executeSpec'
+import type { MoveStateChangePlan } from './plan'
+import type { ValidatedMoveSpecDefinition } from './validateSpec'
+
+export type MoveSpecSuspensionMaterializationErrorCode =
+  | 'invalid-continuation-revision'
+  | 'pre-window-plan-invalid'
+  | 'read-set-revision-conflict'
+
+export class MoveSpecSuspensionMaterializationError extends Error {
+  readonly code: MoveSpecSuspensionMaterializationErrorCode
+
+  constructor(code: MoveSpecSuspensionMaterializationErrorCode, message: string) {
+    super(message)
+    this.name = 'MoveSpecSuspensionMaterializationError'
+    this.code = code
+  }
+}
+
+export interface MaterializedMoveSpecSuspension {
+  /** Strict, bounded record ready for the pending-resolution repository. */
+  readonly pendingResolution: PendingMoveResolution
+  /** The exact nested projection used for map-visible encounter state. */
+  readonly publicSummary: PendingMoveResolutionPublicSummary
+  /** State mutations explicitly approved to commit with suspension creation. */
+  readonly preWindowPlan: MoveStateChangePlan
+  /** Evaluated ordinary work that remains non-committing until resume. */
+  readonly deferredContinuation: MoveSpecDeferredContinuation
+}
+
+export interface MaterializeMoveSpecSuspensionInput {
+  readonly resolutionId: string
+  readonly originOpId: string
+  readonly definition: ValidatedMoveSpecDefinition
+  readonly originMapSlug: string
+  readonly originMapRevision: number
+  readonly actorPlacementId: string
+  readonly suspendedAt: number
+  readonly authoritativeSheetReads: readonly AuthoritativeMoveSheetRead[]
+  readonly execution: MoveSpecExecutionPendingResult
+  /** Map revision visible after the summary and pre-window plan commit together. */
+  readonly continuationMapRevision: number
+  readonly preWindowPlan: MoveStateChangePlan
+}
+
+const fail = (
+  code: MoveSpecSuspensionMaterializationErrorCode,
+  message: string,
+): never => {
+  throw new MoveSpecSuspensionMaterializationError(code, message)
+}
+
+const sheetReadKey = (
+  read: Pick<AuthoritativeMoveSheetRead, 'kind' | 'slug'>,
+): string => `${read.kind}:${read.slug}`
+
+const assertPlanOperationSources = (input: MaterializeMoveSpecSuspensionInput): void => {
+  const allowedOperationIds = new Set<string>()
+  for (const emission of input.execution.preWindowOperations) {
+    const operation = emission.operation
+    if (
+      operation.kind !== 'direct-hp'
+      || operation.phase !== 'pay'
+      || operation.payload.cost?.timing !== 'declaration'
+    ) {
+      fail(
+        'pre-window-plan-invalid',
+        `Operation ${operation.id} is not an explicit pay-phase declaration HP cost.`,
+      )
+    }
+    allowedOperationIds.add(operation.id)
+  }
+  for (const change of input.preWindowPlan.changes) {
+    if (
+      change.kind !== 'sheet-state'
+      && change.kind !== 'map-temporary-hit-points'
+      && change.kind !== 'encounter-state'
+    ) {
+      fail(
+        'pre-window-plan-invalid',
+        `Declaration HP cost cannot produce pre-window state change ${change.kind}.`,
+      )
+    }
+    if (
+      change.kind === 'sheet-state'
+      && change.changedFields.some(field => field !== 'hp')
+    ) {
+      fail(
+        'pre-window-plan-invalid',
+        `Declaration HP cost cannot change non-HP sheet fields in ${change.id}.`,
+      )
+    }
+    if (
+      change.sourceOperationId === null
+      || !allowedOperationIds.has(change.sourceOperationId)
+    ) {
+      fail(
+        'pre-window-plan-invalid',
+        `Pre-window state change ${change.id} is not sourced by an interpreter-approved operation.`,
+      )
+    }
+    if (
+      (change.scope.kind === 'map'
+        || change.scope.kind === 'encounter'
+        || change.scope.kind === 'placement')
+      && change.scope.mapSlug !== input.originMapSlug
+    ) {
+      fail(
+        'pre-window-plan-invalid',
+        `Pre-window state change ${change.id} belongs to a different map.`,
+      )
+    }
+  }
+}
+
+const continuationReadSet = (
+  input: MaterializeMoveSpecSuspensionInput,
+): readonly PendingMoveResolutionResourceRead[] => {
+  const originMapRevision = input.originMapRevision
+  if (
+    !isRevision(originMapRevision)
+    || !isRevision(input.continuationMapRevision)
+    || input.continuationMapRevision !== nextRevision(originMapRevision)
+  ) {
+    return fail(
+      'invalid-continuation-revision',
+      'A suspension must advance the originating map revision exactly once.',
+    )
+  }
+
+  const sheetReads = deduplicateAuthoritativeMoveSheetReads([
+    ...input.execution.sheetReads,
+    ...input.authoritativeSheetReads,
+  ])
+  const originalSheetRevisions = new Map(
+    sheetReads.map(read => [sheetReadKey(read), read.revision]),
+  )
+  const committedSheetRevisions = new Map<string, number>()
+
+  for (const change of input.preWindowPlan.changes) {
+    if (
+      (change.scope.kind === 'map'
+        || change.scope.kind === 'encounter'
+        || change.scope.kind === 'placement')
+      && change.expectedRevision !== originMapRevision
+    ) {
+      fail(
+        'read-set-revision-conflict',
+        `Pre-window map state expected revision ${change.expectedRevision}, not ${originMapRevision}.`,
+      )
+    }
+    if (change.kind === 'sheet-state') {
+      const key = `${change.scope.sheetKind}:${change.scope.sheetSlug}`
+      const observedRevision = originalSheetRevisions.get(key)
+      if (observedRevision !== undefined && observedRevision !== change.expectedRevision) {
+        fail(
+          'read-set-revision-conflict',
+          `Pre-window sheet ${key} was read at revision ${observedRevision} but planned from ${change.expectedRevision}.`,
+        )
+      }
+      committedSheetRevisions.set(key, change.current.revision ?? nextRevision(change.expectedRevision))
+      if (observedRevision === undefined) {
+        sheetReads.push({
+          kind: change.scope.sheetKind,
+          slug: change.scope.sheetSlug,
+          revision: change.expectedRevision,
+        })
+      }
+    }
+  }
+
+  return [
+    {
+      kind: 'map',
+      slug: input.originMapSlug,
+      revision: input.continuationMapRevision,
+    },
+    ...sheetReads.map((read): PendingMoveResolutionResourceRead => ({
+      kind: 'sheet',
+      sheetKind: read.kind,
+      slug: read.slug,
+      revision: committedSheetRevisions.get(sheetReadKey(read)) ?? read.revision,
+    })),
+  ]
+}
+
+const responseWindow = (
+  execution: MoveSpecExecutionPendingResult,
+): PendingMoveResponseWindow => {
+  const request = execution.request
+  return {
+    windowId: request.requestId,
+    operationId: request.operationId,
+    kind: request.kind === 'reaction' ? 'reaction' : 'choice',
+    phase: request.phase,
+    reasonCode: request.reasonCode,
+    promptKey: request.promptKey,
+    // MA-104 replaces this conservative actor role with the complete
+    // placement/profile/side authorization projection.
+    ownership: [{ kind: 'actor', id: null }],
+    options: request.options.map(option => ({ ...option })),
+    allowPass: request.allowPass,
+    priority: request.kind === 'reaction' ? request.priority : null,
+  }
+}
+
+/**
+ * Assemble one repository-free, persistence-ready interpreter suspension.
+ * Strict pending parsing cross-checks identity, trace, rolls, ancestry, window,
+ * read-set, and public-summary fields before this boundary returns.
+ */
+export const materializeMoveSpecSuspension = (
+  input: MaterializeMoveSpecSuspensionInput,
+): MaterializedMoveSpecSuspension => {
+  assertPlanOperationSources(input)
+  const request = input.execution.request
+  const publicSummary = {
+    schemaVersion: PENDING_MOVE_RESOLUTION_SCHEMA_VERSION,
+    resolutionId: input.resolutionId,
+    actorPlacementId: input.actorPlacementId,
+    canonicalMoveId: input.definition.spec.canonicalId,
+    phase: request.phase,
+    status: 'pending' as const,
+    outstandingWindowCount: 1,
+    createdAt: input.suspendedAt,
+    updatedAt: input.suspendedAt,
+  }
+  const pendingResolution = parsePendingMoveResolution({
+    schemaVersion: PENDING_MOVE_RESOLUTION_SCHEMA_VERSION,
+    resolutionId: input.resolutionId,
+    originMapSlug: input.originMapSlug,
+    originOpId: input.originOpId,
+    actorPlacementId: input.actorPlacementId,
+    canonicalMoveId: input.definition.spec.canonicalId,
+    specVersion: input.definition.spec.version,
+    specHash: input.definition.definitionHash,
+    rulesetId: input.definition.rulesetVersion.rulesetId,
+    rulesetHash: input.definition.rulesetVersion.sourceDataSha256,
+    phase: request.phase,
+    readSet: continuationReadSet(input),
+    trace: input.execution.trace,
+    rollLedger: input.execution.rollLedger,
+    outstandingWindows: [responseWindow(input.execution)],
+    chosenOptions: [],
+    causalAncestry: input.execution.trace.ancestry,
+    status: 'pending',
+    createdAt: input.suspendedAt,
+    updatedAt: input.suspendedAt,
+    publicSummary,
+  })
+
+  return Object.freeze({
+    pendingResolution,
+    publicSummary: pendingResolution.publicSummary,
+    preWindowPlan: input.preWindowPlan,
+    deferredContinuation: input.execution.deferredContinuation,
+  })
+}

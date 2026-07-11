@@ -87,6 +87,7 @@ export type MoveSpecExecutionErrorCode =
   | 'move-mechanics-unavailable'
   | 'damage-formula-unsupported'
   | 'resolved-roll-id-too-long'
+  | 'pre-window-operation-forbidden'
 
 export class MoveSpecExecutionError extends Error {
   readonly code: MoveSpecExecutionErrorCode
@@ -211,9 +212,21 @@ export interface MoveSpecExecutionCompleteResult extends MoveSpecExecutionResult
   readonly kind: 'complete'
 }
 
+export interface MoveSpecDeferredContinuation {
+  /** Exact phase and operation where authoritative execution suspended. */
+  readonly phase: MoveSpecPhase
+  readonly requestOperationId: string
+  /** Already evaluated operations whose state effects must wait for continuation. */
+  readonly operations: readonly MoveSpecEmittedOperation[]
+}
+
 export interface MoveSpecExecutionPendingResult extends MoveSpecExecutionResultBase {
   readonly kind: 'pending-request'
   readonly request: MoveSpecPendingRequest
+  /** The only accumulated operations eligible for an atomic pre-window commit. */
+  readonly preWindowOperations: readonly MoveSpecEmittedOperation[]
+  /** Non-committing accumulated work retained for the eventual resume boundary. */
+  readonly deferredContinuation: MoveSpecDeferredContinuation
 }
 
 export interface MoveSpecExecutionRejectedResult extends MoveSpecExecutionResultBase {
@@ -750,6 +763,72 @@ const terminalBase = (
   trace,
 })
 
+interface MoveSpecSuspendedOperationPartition {
+  readonly preWindowOperations: readonly MoveSpecEmittedOperation[]
+  readonly deferredContinuation: MoveSpecDeferredContinuation
+}
+
+const suspendedOperationPartition = (
+  operations: readonly MoveSpecEmittedOperation[],
+  request: MoveSpecPendingRequest,
+): MoveSpecSuspendedOperationPartition => {
+  const preWindowOperations: MoveSpecEmittedOperation[] = []
+  const deferredOperations: MoveSpecEmittedOperation[] = []
+  let foundRequestOperation = false
+
+  for (const emission of operations) {
+    const operation = emission.operation
+    if (operation.id === request.operationId) {
+      foundRequestOperation = true
+      continue
+    }
+
+    if (operation.kind === 'direct-hp' && operation.payload.cost?.timing === 'declaration') {
+      if (operation.phase !== 'pay') {
+        fail(
+          'pre-window-operation-forbidden',
+          `Declaration HP cost ${operation.id} must use the reviewed pay phase before a response window.`,
+        )
+      }
+      preWindowOperations.push(emission)
+      continue
+    }
+
+    // Execution evidence (including ordinary damage/effects) is durable, but
+    // no implicit phase convention makes it safe to commit before the answer.
+    deferredOperations.push(emission)
+  }
+
+  if (!foundRequestOperation) {
+    fail(
+      'definition-integrity-mismatch',
+      `Pending request ${request.requestId} has no matching operation ${request.operationId}.`,
+    )
+  }
+
+  return Object.freeze({
+    preWindowOperations: freezeEmittedOperations(preWindowOperations),
+    deferredContinuation: Object.freeze({
+      phase: request.phase,
+      requestOperationId: request.operationId,
+      operations: freezeEmittedOperations(deferredOperations),
+    }),
+  })
+}
+
+const materializePendingExecutionResult = (
+  base: MoveSpecExecutionResultBase,
+  request: MoveSpecPendingRequest,
+): MoveSpecExecutionPendingResult => {
+  const partition = suspendedOperationPartition(base.operations, request)
+  return Object.freeze({
+    kind: 'pending-request',
+    ...base,
+    request,
+    ...partition,
+  })
+}
+
 interface ExecutableMoveSpecOperationEntry {
   readonly operation: MoveEffectOperation
   readonly path: string
@@ -1248,9 +1327,8 @@ export const executeMoveSpec = (
             optionId: null,
             reasonCode: operation.reasonCode,
           })
-          return Object.freeze({
-            kind: 'pending-request',
-            ...terminalBase(
+          return materializePendingExecutionResult(
+            terminalBase(
               input.context,
               operations,
               targetIds,
@@ -1265,7 +1343,7 @@ export const executeMoveSpec = (
               currentSelectorState(),
             ),
             request,
-          })
+          )
         }
 
         const execution = executeServerMoveBranch({
@@ -1357,9 +1435,8 @@ export const executeMoveSpec = (
           optionId: null,
           reasonCode: operation.reasonCode,
         })
-        return Object.freeze({
-          kind: 'pending-request',
-          ...terminalBase(
+        return materializePendingExecutionResult(
+          terminalBase(
             input.context,
             operations,
             targetIds,
@@ -1374,7 +1451,7 @@ export const executeMoveSpec = (
             currentSelectorState(),
           ),
           request,
-        })
+        )
       }
 
       if (operation.kind === 'roll') {
@@ -1662,9 +1739,8 @@ export const executeMoveSpec = (
           optionId: null,
           reasonCode: operation.reasonCode,
         })
-        return Object.freeze({
-          kind: 'pending-request',
-          ...terminalBase(
+        return materializePendingExecutionResult(
+          terminalBase(
             input.context,
             operations,
             targetIds,
@@ -1679,7 +1755,7 @@ export const executeMoveSpec = (
             currentSelectorState(),
           ),
           request,
-        })
+        )
       }
 
       trace = reduceMoveResolutionTrace(trace, {

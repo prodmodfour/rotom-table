@@ -5,12 +5,6 @@ import {
   parseEncounterState,
   type EncounterState,
 } from '#shared/moveAutomation/encounterState'
-import {
-  PENDING_MOVE_RESOLUTION_SCHEMA_VERSION,
-  parsePendingMoveResolution,
-  type PendingMoveResolution,
-  type PendingMoveResponseWindow,
-} from '#shared/moveAutomation/pendingResolution'
 import type { CharacterSheet } from '~/types/characterSheet'
 import type { CombatStageMap } from '~/types/combatStages'
 import type {
@@ -53,6 +47,10 @@ import {
   type AdaptV1SheetWrite,
 } from './moveAutomation/adaptV1Transaction'
 import { buildAuthoritativeMoveMapChanges } from './moveAutomation/mapChanges'
+import {
+  materializeMoveSpecSuspension,
+  type MaterializedMoveSpecSuspension,
+} from './moveAutomation/materializeSuspension'
 import {
   applyNativeCoreMapChanges,
   nativeSheetWritesFromStateChanges,
@@ -145,7 +143,7 @@ export interface AuthoritativePendingMoveStatePlan {
   readonly previousRevision: number
   readonly revision: number
   readonly execution: AuthoritativePendingMoveResolution
-  readonly pendingResolution: PendingMoveResolution
+  readonly suspension: MaterializedMoveSpecSuspension
   readonly sheetReads: readonly AuthoritativeMoveSheetRead[]
   readonly sheetWrites: readonly AuthoritativeMoveSheetWritePlan[]
   readonly mapChanges: AuthoritativeMoveMapChanges
@@ -639,26 +637,6 @@ const observeMovePlanResources = (input: {
   }
 }
 
-const pendingResponseWindow = (
-  execution: AuthoritativePendingMoveResolution,
-): PendingMoveResponseWindow => {
-  const request = execution.execution.request
-  return {
-    windowId: request.requestId,
-    operationId: request.operationId,
-    kind: request.kind === 'reaction' ? 'reaction' : 'choice',
-    phase: request.phase,
-    reasonCode: request.reasonCode,
-    promptKey: request.promptKey,
-    // MA-104 broadens this conservative actor-owned default through the
-    // authoritative placement/profile/side authorization seam.
-    ownership: [{ kind: 'actor', id: null }],
-    options: request.options.map(option => ({ ...option })),
-    allowPass: request.allowPass,
-    priority: request.kind === 'reaction' ? request.priority : null,
-  }
-}
-
 const planPendingMoveState = (options: {
   readonly input: PlanAuthoritativeMoveStateInput
   readonly execution: AuthoritativePendingMoveResolution
@@ -685,74 +663,35 @@ const planPendingMoveState = (options: {
   )
   const request = options.execution.execution.request
   const revision = nextRevision(options.previousRevision)
-  const committedSheetRevisions = new Map(
-    options.execution.declarationStateChanges.changes.flatMap(change => (
-      change.kind === 'sheet-state'
-        ? [[`${change.scope.sheetKind}:${change.scope.sheetSlug}`, change.current.revision] as const]
-        : []
-    )),
-  )
-  const publicSummary = {
-    schemaVersion: PENDING_MOVE_RESOLUTION_SCHEMA_VERSION,
+  const suspension = materializeMoveSpecSuspension({
     resolutionId,
-    actorPlacementId: options.execution.actorPlacementId,
-    canonicalMoveId: options.execution.canonicalMoveName,
-    phase: request.phase,
-    status: 'pending' as const,
-    outstandingWindowCount: 1,
-    createdAt: options.plannedAt,
-    updatedAt: options.plannedAt,
-  }
-  const pendingResolution = parsePendingMoveResolution({
-    schemaVersion: PENDING_MOVE_RESOLUTION_SCHEMA_VERSION,
-    resolutionId,
-    originMapSlug: options.input.map.slug,
     originOpId: operationId,
+    definition: options.execution.runtime.definition,
+    originMapSlug: options.input.map.slug,
+    originMapRevision: options.previousRevision,
     actorPlacementId: options.execution.actorPlacementId,
-    canonicalMoveId: options.execution.canonicalMoveName,
-    specVersion: options.execution.runtime.version,
-    specHash: options.execution.runtime.definitionHash,
-    rulesetId: options.execution.runtime.definition.rulesetVersion.rulesetId,
-    rulesetHash: options.execution.runtime.definition.rulesetVersion.sourceDataSha256,
-    phase: request.phase,
-    readSet: [
-      {
-        kind: 'map',
-        slug: options.input.map.slug,
-        revision,
-      },
-      ...sheetReads.map(read => ({
-        kind: 'sheet' as const,
-        sheetKind: read.kind,
-        slug: read.slug,
-        revision: committedSheetRevisions.get(`${read.kind}:${read.slug}`) ?? read.revision,
-      })),
-    ],
-    trace: options.execution.execution.trace,
-    rollLedger: options.execution.execution.rollLedger,
-    outstandingWindows: [pendingResponseWindow(options.execution)],
-    chosenOptions: [],
-    causalAncestry: options.execution.execution.trace.ancestry,
-    status: 'pending',
-    createdAt: options.plannedAt,
-    updatedAt: options.plannedAt,
-    publicSummary,
+    suspendedAt: options.plannedAt,
+    authoritativeSheetReads: sheetReads,
+    execution: options.execution.execution,
+    continuationMapRevision: revision,
+    preWindowPlan: options.execution.preWindowPlan,
   })
+  const pendingResolution = suspension.pendingResolution
 
   const previousEncounterState = parseEncounterState(
     options.input.map.encounterState ?? createEmptyEncounterState(),
   )
-  const mapAfterDeclarationCosts = applyNativeCoreMapChanges(
+  const mapAfterPreWindowPlan = applyNativeCoreMapChanges(
     options.input.map,
-    options.execution.declarationStateChanges,
+    suspension.preWindowPlan,
   )
-  const declarationEncounterChange = options.execution.declarationStateChanges.changes.find(
+  const preWindowEncounterChange = suspension.preWindowPlan.changes.find(
     change => change.kind === 'encounter-state',
   )
-  const encounterStateAfterDeclarationCosts = declarationEncounterChange
-    ? parseEncounterState(declarationEncounterChange.current)
+  const encounterStateAfterPreWindowPlan = preWindowEncounterChange
+    ? parseEncounterState(preWindowEncounterChange.current)
     : previousEncounterState
-  if (encounterStateAfterDeclarationCosts.pendingResolutionSummaries.some(
+  if (encounterStateAfterPreWindowPlan.pendingResolutionSummaries.some(
     summary => summary.resolutionId === resolutionId,
   )) {
     fail(
@@ -762,24 +701,24 @@ const planPendingMoveState = (options: {
     )
   }
   const currentEncounterState = parseEncounterState({
-    ...encounterStateAfterDeclarationCosts,
+    ...encounterStateAfterPreWindowPlan,
     pendingResolutionSummaries: [
-      ...encounterStateAfterDeclarationCosts.pendingResolutionSummaries,
+      ...encounterStateAfterPreWindowPlan.pendingResolutionSummaries,
       pendingResolution.publicSummary,
     ],
   })
   const nextMap = cloneJson({
-    ...mapAfterDeclarationCosts,
+    ...mapAfterPreWindowPlan,
     encounterState: currentEncounterState,
     revision,
     updatedAt: options.plannedAt,
   })
-  const declarationInputs: MoveStateChangeInput<EncounterState>[] = options.execution
-    .declarationStateChanges.changes
+  const preWindowInputs: MoveStateChangeInput<EncounterState>[] = suspension.preWindowPlan
+    .changes
     .filter(change => change.kind !== 'encounter-state')
     .map(change => withoutPlanIdentity(change) as MoveStateChangeInput<EncounterState>)
   const stateChanges = createMoveStateChangePlan<EncounterState>([
-    ...declarationInputs,
+    ...preWindowInputs,
     {
       kind: 'encounter-state',
       scope: { kind: 'encounter', mapSlug: options.input.map.slug },
@@ -804,7 +743,7 @@ const planPendingMoveState = (options: {
     previousRevision: options.previousRevision,
     revision,
     execution: options.execution,
-    pendingResolution,
+    suspension,
     sheetReads: cloneJson(sheetReads),
     sheetWrites,
     mapChanges: buildAuthoritativeMoveMapChanges(options.previousMap, nextMap),

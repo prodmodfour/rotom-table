@@ -513,8 +513,8 @@ export interface PendingMoveSpecResolution {
   readonly kind: 'pending'
   readonly execution: MoveSpecExecutionPendingResult
   readonly sheetReads: readonly AuthoritativeMoveSheetRead[]
-  /** Only reviewed pay-phase HP costs explicitly timed for declaration. */
-  readonly declarationStateChanges: MoveStateChangePlan
+  /** Explicit typed plan containing only interpreter-approved pre-window operations. */
+  readonly preWindowPlan: MoveStateChangePlan
 }
 
 export type MoveSpecResolutionOutcome =
@@ -659,7 +659,7 @@ const reduceImmediateMoveSpec = (
   })
 }
 
-const reducePendingDeclarationCosts = (options: {
+const reducePreWindowPlan = (options: {
   readonly resolve: ResolveMoveSpecOptions
   readonly execution: MoveSpecExecutionPendingResult
 }): {
@@ -667,25 +667,19 @@ const reducePendingDeclarationCosts = (options: {
   readonly stateChanges: MoveStateChangePlan
   readonly sheetReads: readonly AuthoritativeMoveSheetRead[]
 } => {
-  const declarationCosts = options.execution.operations.filter((emission) => {
-    const operation = emission.operation
-    if (operation.kind !== 'direct-hp' || operation.payload.cost?.timing !== 'declaration') {
-      return false
-    }
-    if (operation.phase !== 'pay') {
-      return fail(
-        'unsupported-operation',
-        `Declaration HP cost ${operation.id} must execute in the explicit pay phase before suspension.`,
-      )
-    }
-    return true
-  })
-  if (declarationCosts.length === 0) {
+  const preWindowOperations = options.execution.preWindowOperations
+  if (preWindowOperations.length === 0) {
     return {
       execution: options.execution,
       stateChanges: createMoveStateChangePlan([]),
       sheetReads: options.execution.sheetReads,
     }
+  }
+  if (preWindowOperations.some(emission => !isMoveCoreTokenEffectEmission(emission))) {
+    return fail(
+      'unsupported-operation',
+      'The interpreter approved a pre-window operation without a typed core-state reducer.',
+    )
   }
 
   const exposesAttackedTargets = options.resolve.runtime.definition.spec.targeting.kind !== 'self'
@@ -698,7 +692,7 @@ const reducePendingDeclarationCosts = (options: {
   }
   const reduction = reduceMoveCoreTokenEffects({
     context: options.resolve.context,
-    operations: declarationCosts.filter(isMoveCoreTokenEffectEmission),
+    operations: preWindowOperations.filter(isMoveCoreTokenEffectEmission),
     dynamicRecipients,
     immunities: createStandardMoveCoreTokenEffectImmunityQueries({
       moveType: options.resolve.entry.script.type,
@@ -727,15 +721,15 @@ export const resolveMoveSpecOutcome = (
 ): MoveSpecResolutionOutcome => {
   const execution = executeReviewedMoveSpec(options)
   if (execution.kind === 'pending-request') {
-    const declaration = reducePendingDeclarationCosts({ resolve: options, execution })
+    const preWindow = reducePreWindowPlan({ resolve: options, execution })
     return Object.freeze({
       kind: 'pending',
-      execution: declaration.execution,
+      execution: preWindow.execution,
       sheetReads: Object.freeze(deduplicateAuthoritativeMoveSheetReads([
         ...options.context.reads.snapshot(),
-        ...declaration.sheetReads,
+        ...preWindow.sheetReads,
       ])),
-      declarationStateChanges: declaration.stateChanges,
+      preWindowPlan: preWindow.stateChanges,
     })
   }
   return Object.freeze({

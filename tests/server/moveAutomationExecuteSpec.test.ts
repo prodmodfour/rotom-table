@@ -12,6 +12,14 @@ import {
   executeMoveSpec,
 } from '~~/server/domain/moveAutomation/executeSpec'
 import {
+  MoveSpecSuspensionMaterializationError,
+  materializeMoveSpecSuspension,
+} from '~~/server/domain/moveAutomation/materializeSuspension'
+import {
+  RESTORE_PREVIOUS_MOVE_STATE_VALUE,
+  createMoveStateChangePlan,
+} from '~~/server/domain/moveAutomation/plan'
+import {
   RegisteredMoveHandlerOutputValidationError,
   createRegisteredMoveHandlerRegistry,
   type RegisteredMoveHandlerRegistry,
@@ -171,6 +179,37 @@ const rollOperation = (): TestOperation => ({
   },
 })
 
+const directHpOperation = (
+  id: string,
+  phase: string,
+  declarationCost: boolean,
+): TestOperation => ({
+  id,
+  kind: 'direct-hp',
+  source: { kind: 'move', id: 'move.interpreter-test' },
+  recipients: { kind: 'actor' },
+  phase,
+  reasonCode: `move.interpreter-test.${id.split('.').at(-1)}`,
+  payload: {
+    mode: 'lose',
+    pool: 'hit-points',
+    calculation: { kind: 'fixed', value: 5 },
+    copySource: null,
+    bounds: { minimum: null, maximum: null },
+    rounding: 'floor',
+    applyTypeImmunity: false,
+    cost: declarationCost
+      ? {
+          kind: 'cost',
+          timing: 'declaration',
+          minimumRemaining: 1,
+          damageOperationId: null,
+        }
+      : null,
+    injury: { hitPointMarkers: 'ignore', massiveDamage: 'never' },
+  },
+})
+
 const baseSpec = (): TestSpec => ({
   schemaVersion: 2,
   canonicalId: 'Interpreter Test',
@@ -252,6 +291,8 @@ describe('phased MoveSpec interpreter', () => {
     const result = executeMoveSpec({ definition: definitionFor(spec), context })
 
     expect(result.kind).toBe('complete')
+    expect('preWindowOperations' in result).toBe(false)
+    expect('deferredContinuation' in result).toBe(false)
     expect(result.targetIds).toEqual(['target-token'])
     expect(result.operations.map(({ operation, recipientIds }) => ({
       id: operation.id,
@@ -641,6 +682,15 @@ describe('phased MoveSpec interpreter', () => {
       'operation.declared',
       'operation.choose-branch',
     ])
+    expect(result.preWindowOperations).toEqual([])
+    expect(result.deferredContinuation).toMatchObject({
+      phase: 'hit',
+      requestOperationId: 'operation.choose-branch',
+      operations: [{ operation: { id: 'operation.declared' }, recipientIds: [] }],
+    })
+    expect(Object.isFrozen(result.preWindowOperations)).toBe(true)
+    expect(Object.isFrozen(result.deferredContinuation)).toBe(true)
+    expect(Object.isFrozen(result.deferredContinuation.operations)).toBe(true)
     expect(traceEventsOfKind(result, 'phase-transition').map(event => (
       event.kind === 'phase-transition' ? event.to : null
     ))).toEqual(['declare', 'hit'])
@@ -653,6 +703,220 @@ describe('phased MoveSpec interpreter', () => {
     ])
     expect(stream.consumed).toBe(0)
     expect(stream.remaining).toBe(1)
+  })
+
+  it('partitions an explicit pay-phase declaration cost from deferred ordinary effects', () => {
+    const spec = baseSpec()
+    spec.phases = [
+      {
+        phase: 'pay',
+        operations: [directHpOperation('operation.declaration-cost', 'pay', true)],
+      },
+      {
+        phase: 'hit',
+        operations: [
+          directHpOperation('operation.deferred-hp-loss', 'hit', false),
+          {
+            id: 'operation.choose-effect',
+            kind: 'choice-request',
+            source: { kind: 'move', id: 'move.interpreter-test' },
+            recipients: { kind: 'actor' },
+            phase: 'hit',
+            reasonCode: 'move.interpreter-test.choose-effect',
+            payload: {
+              requestId: 'request.effect',
+              promptKey: 'move.interpreter-test.choose-effect',
+              options: [{ id: 'option.apply', labelKey: 'move.interpreter-test.apply' }],
+              allowPass: true,
+            },
+          },
+        ],
+      },
+    ]
+
+    const result = executeMoveSpec({
+      definition: definitionFor(spec),
+      context: buildContext(),
+    })
+
+    expect(result.kind).toBe('pending-request')
+    if (result.kind !== 'pending-request') return
+    expect(result.preWindowOperations.map(({ operation }) => operation.id)).toEqual([
+      'operation.declaration-cost',
+    ])
+    expect(result.deferredContinuation).toMatchObject({
+      phase: 'hit',
+      requestOperationId: 'operation.choose-effect',
+      operations: [{ operation: { id: 'operation.deferred-hp-loss' } }],
+    })
+    expect(result.operations.map(({ operation }) => operation.id)).toEqual([
+      'operation.declaration-cost',
+      'operation.deferred-hp-loss',
+      'operation.choose-effect',
+    ])
+  })
+
+  it('rejects a declaration mutation whose phase is not explicitly pre-window safe', () => {
+    const spec = baseSpec()
+    spec.phases = [
+      {
+        phase: 'declare',
+        operations: [directHpOperation('operation.implicit-cost', 'declare', true)],
+      },
+      {
+        phase: 'hit',
+        operations: [{
+          id: 'operation.choose-effect',
+          kind: 'choice-request',
+          source: { kind: 'move', id: 'move.interpreter-test' },
+          recipients: { kind: 'actor' },
+          phase: 'hit',
+          reasonCode: 'move.interpreter-test.choose-effect',
+          payload: {
+            requestId: 'request.effect',
+            promptKey: 'move.interpreter-test.choose-effect',
+            options: [{ id: 'option.apply', labelKey: 'move.interpreter-test.apply' }],
+            allowPass: false,
+          },
+        }],
+      },
+    ]
+
+    expect(() => executeMoveSpec({
+      definition: definitionFor(spec),
+      context: buildContext(),
+    })).toThrowError(expect.objectContaining({
+      name: MoveSpecExecutionError.name,
+      code: 'pre-window-operation-forbidden',
+    }))
+  })
+
+  it('materializes one strict suspension and rejects deferred work in its pre-window plan', () => {
+    const spec = baseSpec()
+    spec.phases = [
+      { phase: 'accuracy', operations: [rollOperation()] },
+      {
+        phase: 'hit',
+        operations: [{
+          id: 'operation.choose-effect',
+          kind: 'choice-request',
+          source: { kind: 'move', id: 'move.interpreter-test' },
+          recipients: { kind: 'actor' },
+          phase: 'hit',
+          reasonCode: 'move.interpreter-test.choose-effect',
+          payload: {
+            requestId: 'request.effect',
+            promptKey: 'move.interpreter-test.choose-effect',
+            options: [{ id: 'option.apply', labelKey: 'move.interpreter-test.apply' }],
+            allowPass: true,
+          },
+        }],
+      },
+    ]
+    const definition = definitionFor(spec)
+    const context = buildContext({
+      random: createFiniteAuthoritativeMoveRandomStream([0.5]),
+    })
+    context.reads.recordPlacement(context.actor.placement)
+    const mapBefore = structuredClone(context.map)
+    const sheetsBefore = structuredClone(context.resolvedSheets)
+    const ancestry = [{
+      depth: 0,
+      resolutionId: 'parent-resolution-1',
+      canonicalId: 'Parent Move',
+      definitionHash: 'a'.repeat(64),
+      parentOperationId: 'operation.parent',
+    }] as const
+    const execution = executeMoveSpec({ definition, context, ancestry })
+    expect(execution.kind).toBe('pending-request')
+    if (execution.kind !== 'pending-request') return
+    const emptyPreWindowPlan = createMoveStateChangePlan([])
+
+    const suspension = materializeMoveSpecSuspension({
+      resolutionId: 'resolution-suspension-1',
+      originOpId: 'op_suspend001',
+      definition,
+      originMapSlug: context.map.slug,
+      originMapRevision: 4,
+      actorPlacementId: context.actor.placement.id,
+      suspendedAt: context.time,
+      authoritativeSheetReads: execution.sheetReads,
+      execution,
+      continuationMapRevision: 5,
+      preWindowPlan: emptyPreWindowPlan,
+    })
+
+    expect(suspension.pendingResolution).toMatchObject({
+      resolutionId: 'resolution-suspension-1',
+      originMapSlug: 'movespec-arena',
+      originOpId: 'op_suspend001',
+      actorPlacementId: 'actor-token',
+      canonicalMoveId: 'Interpreter Test',
+      specVersion: 1,
+      specHash: definition.definitionHash,
+      phase: 'hit',
+      status: 'pending',
+      readSet: [
+        { kind: 'map', slug: 'movespec-arena', revision: 5 },
+        { kind: 'sheet', sheetKind: 'pokemon', slug: 'actor', revision: 3 },
+      ],
+      rollLedger: [expect.objectContaining({ rollId: 'roll.accuracy', finalValue: 11 })],
+      outstandingWindows: [{
+        windowId: 'request.effect',
+        operationId: 'operation.choose-effect',
+        kind: 'choice',
+        ownership: [{ kind: 'actor', id: null }],
+      }],
+      chosenOptions: [],
+      causalAncestry: ancestry,
+    })
+    expect(suspension.publicSummary).toBe(suspension.pendingResolution.publicSummary)
+    expect(suspension.publicSummary).toEqual({
+      schemaVersion: 1,
+      resolutionId: 'resolution-suspension-1',
+      actorPlacementId: 'actor-token',
+      canonicalMoveId: 'Interpreter Test',
+      phase: 'hit',
+      status: 'pending',
+      outstandingWindowCount: 1,
+      createdAt: 10_000,
+      updatedAt: 10_000,
+    })
+    expect(suspension.deferredContinuation.operations.map(({ operation }) => operation.id))
+      .toEqual(['operation.accuracy'])
+    expect(suspension.preWindowPlan).toBe(emptyPreWindowPlan)
+    expect(Object.isFrozen(suspension)).toBe(true)
+    expect(Object.isFrozen(suspension.pendingResolution)).toBe(true)
+    expect('options' in suspension.publicSummary).toBe(false)
+    expect(context.map).toEqual(mapBefore)
+    expect(context.resolvedSheets).toEqual(sheetsBefore)
+
+    const forgedPreWindowPlan = createMoveStateChangePlan([{
+      kind: 'map-metadata',
+      scope: { kind: 'map', mapSlug: context.map.slug },
+      expectedRevision: 4,
+      sourceOperationId: 'operation.accuracy',
+      reasonCode: 'move.interpreter-test.implicit-pre-window-change',
+      previous: undefined,
+      current: { forbidden: true },
+      compensation: RESTORE_PREVIOUS_MOVE_STATE_VALUE,
+    }])
+    expect(() => materializeMoveSpecSuspension({
+      resolutionId: 'resolution-suspension-2',
+      originOpId: 'op_suspend002',
+      definition,
+      originMapSlug: context.map.slug,
+      originMapRevision: 4,
+      actorPlacementId: context.actor.placement.id,
+      suspendedAt: context.time,
+      authoritativeSheetReads: execution.sheetReads,
+      execution,
+      continuationMapRevision: 5,
+      preWindowPlan: forgedPreWindowPlan,
+    })).toThrowError(expect.objectContaining({
+      name: MoveSpecSuspensionMaterializationError.name,
+      code: 'pre-window-plan-invalid',
+    }))
   })
 
   it('returns a traced rejection for failed preconditions and target-count mismatches', () => {

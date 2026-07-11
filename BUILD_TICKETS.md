@@ -1294,7 +1294,7 @@ Status: DONE
 
 ## MA-103A — Materialize durable interpreter suspensions
 
-Status: TODO
+Status: DONE
 
 **Depends on:** MA-101–MA-102
 **Commit:** `feat(move-automation): materialize durable suspensions`
