@@ -1167,7 +1167,7 @@ Status: DONE
 
 ## MA-089B — Port Ember as the secondary-condition canary
 
-Status: TODO
+Status: DONE
 
 **Depends on:** MA-089A
 **Commit:** `feat(move-automation): port ember to movespec v2`

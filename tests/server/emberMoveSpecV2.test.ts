@@ -100,6 +100,7 @@ describe('Ember native MoveSpec v2', () => {
         .toEqual(legacy.resolution.transaction.hpUpdates.map(({ id, currentHp }) => ({ id, currentHp })))
       expect(native.resolution.transaction.conditionUpdates)
         .toEqual(legacy.resolution.transaction.conditionUpdates)
+      expect(native.nextMap.placements).toEqual(legacy.nextMap.placements)
       expect(native.sheetWrites).toEqual(legacy.sheetWrites)
       expect(native.resolution.auditTrace.program.runtimeKind).toBe('movespec-v2')
       expect(legacy.resolution.auditTrace.program.runtimeKind).toBe('legacy-v1')
