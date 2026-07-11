@@ -9,7 +9,7 @@ Ticket statuses:
 
 The build loop must select the lowest-numbered TODO ticket. Each ticket below maps to one ticket from the supplied planning file; build ticket numbers follow that document's suggested order when present.
 
-Autonomous cycle rules for every ticket: implement only the selected ticket, run `scripts/quality-gate.sh`, update only the selected ticket status, commit with a conventional commit message, and leave the working tree clean. The final ticket (`MA-299`) may also set `AUTOMATION_STATUS: DONE` after all 281 refreshed tickets are complete.
+Autonomous cycle rules for every ticket: implement only the selected ticket, run `scripts/quality-gate.sh`, update only the selected ticket status, commit with a conventional commit message, and leave the working tree clean. The final ticket (`MA-299`) may also set `AUTOMATION_STATUS: DONE` after all 282 refreshed tickets are complete.
 
 ---
 
@@ -50,7 +50,7 @@ When a ticket introduces a new pure module, prefer this layout:
 
 The existing `src/utils/move-automation/` registry remains the v1 compatibility surface until the retirement tickets at the end.
 
-Queue size at this baseline: **281 commits**—175 engine/state/QA tickets, 33 conformance batches for the registered 258, and 73 implementation batches for the missing 518.
+Queue size at this baseline: **282 commits**—176 engine/state/QA tickets, 33 conformance batches for the registered 258, and 73 implementation batches for the missing 518.
 
 ## Decisions already locked
 
@@ -1292,24 +1292,51 @@ Status: DONE
 
 **Done:** Unknown, expired, duplicate, oversized, or forged option IDs reject before use-case code.
 
-## MA-103 — Create pending resolutions from the interpreter
+## MA-103A — Materialize durable interpreter suspensions
 
 Status: TODO
 
 **Depends on:** MA-101–MA-102
-**Commit:** `feat(move-automation): suspend resolution for durable choices`
+**Commit:** `feat(move-automation): materialize durable suspensions`
 
-**Touch:** `executeSpec.ts`, resolve use case, pending repository, tests.
+**Touch:** `server/domain/moveAutomation/executeSpec.ts`, pending-resolution assembly helpers, focused interpreter/domain tests.
 
-**Implement:** When execution reaches an unresolved choice/window, persist the pending record and public map summary atomically with any allowed declaration costs. Usually no damage/effect mutations commit before the window; exceptions must be explicit typed phases.
+**Implement:**
 
-**Done:** No database transaction remains open while waiting and duplicate declaration returns the same pending resolution.
+- When execution reaches an unresolved typed choice or response window, stop at the exact phase and materialize a strict pending-resolution candidate containing the authoritative origin IDs, actor/spec/ruleset metadata, full read set, completed trace and roll ledger, outstanding windows, chosen options, and causal ancestry.
+- Derive the bounded public map summary from that same candidate; do not accept mechanics or summary fields from the client.
+- Separate accumulated operations into an explicit pre-window plan and deferred continuation. Only typed operations whose reviewed phase permits pre-window commit may enter that plan; ordinary damage and effects remain deferred, and implicit exceptions reject.
+- Keep completed immediate-move execution unchanged and keep the interpreter/pending assembly boundary free of repository writes.
+
+**Tests:** Cover a representative unresolved choice, parser-valid candidate and public summary output, preserved trace/read-set/roll state, an explicitly allowed declaration cost, rejection of a forbidden pre-window mutation, and an unaffected immediate spec.
+
+**Done:** The pure execution boundary produces one bounded, persistence-ready suspension plus an explicit allowed pre-window plan, without mutating map, sheets, or repositories.
+
+## MA-103B — Persist interpreter suspensions atomically
+
+Status: TODO
+
+**Depends on:** MA-103A
+**Commit:** `feat(move-automation): persist suspended move resolutions`
+
+**Touch:** `server/useCases/applyResolveMoveCommand.ts`, `server/storage/pendingMoveResolutionRepository.ts`, map/encounter commit orchestration, and integration tests.
+
+**Implement:**
+
+- Consume the MA-103A suspension in the authoritative resolve use case and, in one short SQLite transaction, validate the map and full sheet read set, insert the pending record, publish its bounded public map summary, and apply exactly the allowed pre-window typed plan.
+- Roll back the pending row, public summary, and declaration costs together on stale revisions, repository failures, or invalid pre-window changes. Do not commit ordinary damage or effects before the response window.
+- Use the unique origin map/op ID as the declaration idempotency key. A duplicate returns the original pending resolution and public result without rerunning execution or RNG, spending again, incrementing the map revision, or opening another window.
+- Finish the transaction before returning the pending result; no transaction may remain open while a participant decides.
+
+**Tests:** Cover atomic pending creation with and without an allowed declaration cost, deferred damage/effects, rollback on conflict/failure, exact duplicate replay, and verification that the transaction is closed while waiting.
+
+**Done:** The pending row, public summary, and any allowed declaration costs become visible atomically; failures leave no mutation, duplicate declarations return the same pending resolution, and waiting holds no database transaction.
 
 ## MA-104 — Enforce response ownership and privacy
 
 Status: TODO
 
-**Depends on:** MA-103, MA-054
+**Depends on:** MA-103B, MA-054
 **Commit:** `feat(move-automation): authorize move response windows`
 
 **Touch:** token-control/profile access helpers, pending-resolution query/use cases, tests.
@@ -1322,7 +1349,7 @@ Status: TODO
 
 Status: TODO
 
-**Depends on:** MA-103–MA-104
+**Depends on:** MA-103B, MA-104
 **Commit:** `feat(move-automation): resume durable move resolutions`
 
 **Touch:** new resume use case/route, interpreter, planner, commit orchestration, tests.
