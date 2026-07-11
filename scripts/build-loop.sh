@@ -62,8 +62,9 @@ AUTONOMOUS_BUILD_RETRY_SECONDS
                    Seconds to wait before retrying after transient agent failures.
                    Defaults to 600 (10 minutes).
 
-While a loop is active, use `just follow` from another terminal to watch it
-and `just stop` to request a graceful stop after the current cycle or attempt.
+While a loop is active, use `just follow` from another terminal for raw activity,
+`just monitor 10` for interpreted 10-minute updates, and `just stop` to request a
+graceful stop after the current cycle or attempt.
 
 This script intentionally does not pass a model or thinking level.
 Agent invocation is delegated to scripts/run-agent.sh.
@@ -952,6 +953,7 @@ pp_kv "Launcher log" "$CURRENT_LOG"
 pp_kv "Follow log" "$FOLLOW_LOG"
 pp_kv "Cycle logs" "$LOG_DIR"
 pp_kv "Follow" "just follow"
+pp_kv "Progress monitor" "just monitor 10"
 pp_kv "Graceful stop" "just stop"
 
 if [[ -n "$SELECT_BRANCH" || -n "$CREATE_BRANCH" ]]; then

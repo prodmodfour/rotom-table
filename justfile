@@ -72,6 +72,10 @@ default:
       '  just follow <lines>' \
       '      Follow the active build loop, showing 40 recent lines by default.' \
       '' \
+      '  just monitor' \
+      '  just monitor <minutes>' \
+      '      Immediately summarize and interpret build progress, then repeat every 10 minutes by default.' \
+      '' \
       '  just stop' \
       '      Gracefully stop the active build loop after its current attempt/cycle.'
 
@@ -93,6 +97,10 @@ run cycles="180":
 # Follow the active autonomous build loop without interrupting it.
 follow lines="40":
     bash scripts/build-loop-follow.sh --lines {{quote(lines)}}
+
+# Periodically summarize and interpret active autonomous build progress.
+monitor minutes="10":
+    bash scripts/build-loop-monitor.sh --interval-minutes {{quote(minutes)}}
 
 # Request a graceful stop after the active attempt/cycle reaches a safe boundary.
 stop:

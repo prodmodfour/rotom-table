@@ -13,6 +13,7 @@ The current queue maps GitHub issues #27-#44 to local tickets in `BUILD_TICKETS.
 - `scripts/run-agent.sh` — Pi wrapper used by the loop.
 - `scripts/render-agent-events.mjs` — dependency-free live Pi event renderer.
 - `scripts/build-loop-follow.sh` — observer for the active detailed-agent log.
+- `scripts/build-loop-monitor.sh` — read-only periodic progress interpreter.
 - `scripts/build-loop-stop.sh` — graceful stop-request command.
 - `scripts/quality-gate.sh` — Rotom Table validation gate.
 
@@ -51,7 +52,7 @@ scripts/build-loop.sh --max-cycles 1 --agent-output json --no-push
 
 Raw JSON events can contain complete messages, tool arguments, and tool results. Keep raw event logs private and do not commit them. The normal live renderer is the recommended operator view.
 
-## Follow and gracefully stop a long run
+## Follow, monitor, and gracefully stop a long run
 
 Every active loop writes high-level launcher output to `current.log`, detailed agent activity to `follow.log`, and individual attempts to the existing per-cycle logs in the external build-loop state directory. Detailed activity is not mirrored to the `just run` terminal. Follow the stable detailed log from another terminal without finding a PID or cycle filename:
 
@@ -62,6 +63,17 @@ just follow 100   # show the latest 100 lines, then follow
 
 The follower reports the active PID, cycle, ticket, and phase. It follows cycle transitions automatically and exits when the loop exits. Pressing Ctrl-C detaches only the follower; it does not interrupt the build loop.
 
+For concise interpreted updates instead of the raw activity stream, run:
+
+```bash
+just monitor       # report immediately, then every 10 minutes
+just monitor 5     # report immediately, then every 5 minutes
+```
+
+Each report uses a fresh, ephemeral Pi invocation with all tools, project context, extensions, and skills disabled. The analyzer receives only bounded recent build-loop logs, sanitized process activity, Git status/statistics, and commit metadata—not source-file bodies or diffs. It compares reports to distinguish active progress, resolved failures, validation, commits, and stalls rather than merely repeating the ticket heading. Set `PI_MONITOR_AGENT_COMMAND` to choose another Pi-compatible executable or `PI_MONITOR_THINKING_LEVEL` to override the default `low` thinking level. Pressing Ctrl-C detaches the monitor without affecting the build loop; the monitor emits a final report and exits after observing that the loop ended.
+
+The selected metadata and bounded log excerpts are sent to the analyzer's configured model provider. Build-loop logs should remain private because failed command excerpts can contain project details.
+
 Request a safe cycle-boundary shutdown with:
 
 ```bash
@@ -70,7 +82,7 @@ just stop
 
 A graceful stop does not terminate an active Pi process. The current agent attempt may finish, and a successful cycle still completes its normal commit and push or PR/MR publication. No next cycle starts. If the attempt fails, existing failure checkpoint guardrails finish but the loop exits before ticket-split recovery or another retry. A stop requested during a cycle or retry sleep ends that sleep without starting more work. Repeated `just stop` commands are harmless.
 
-`just follow` and `just stop` resolve the same per-repository external state directory as the loop. If the loop was started with `AUTONOMOUS_BUILD_LOOP_STATE_DIR`, pass the same environment variable to those commands.
+`just follow`, `just monitor`, and `just stop` resolve the same per-repository external state directory as the loop. If the loop was started with `AUTONOMOUS_BUILD_LOOP_STATE_DIR`, pass the same environment variable to those commands.
 
 ## PR mode
 
