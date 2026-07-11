@@ -9,7 +9,7 @@ Ticket statuses:
 
 The build loop must select the lowest-numbered TODO ticket. Each ticket below maps to one ticket from the supplied planning file; build ticket numbers follow that document's suggested order when present.
 
-Autonomous cycle rules for every ticket: implement only the selected ticket, run `scripts/quality-gate.sh`, update only the selected ticket status, commit with a conventional commit message, and leave the working tree clean. The final ticket (`MA-299`) may also set `AUTOMATION_STATUS: DONE` after all 279 refreshed tickets are complete.
+Autonomous cycle rules for every ticket: implement only the selected ticket, run `scripts/quality-gate.sh`, update only the selected ticket status, commit with a conventional commit message, and leave the working tree clean. The final ticket (`MA-299`) may also set `AUTOMATION_STATUS: DONE` after all 281 refreshed tickets are complete.
 
 ---
 
@@ -50,7 +50,7 @@ When a ticket introduces a new pure module, prefer this layout:
 
 The existing `src/utils/move-automation/` registry remains the v1 compatibility surface until the retirement tickets at the end.
 
-Queue size at this baseline: **279 commits**—173 engine/state/QA tickets, 33 conformance batches for the registered 258, and 73 implementation batches for the missing 518.
+Queue size at this baseline: **281 commits**—175 engine/state/QA tickets, 33 conformance batches for the registered 258, and 73 implementation batches for the missing 518.
 
 ## Decisions already locked
 
@@ -1148,16 +1148,40 @@ Status: DONE
 
 **Done:** Kernel refactors fail on semantic invariants rather than only named examples.
 
-## MA-089 — Port Ember as the secondary-condition canary
+## MA-089A — Gate secondary conditions with authoritative accuracy rolls
 
 Status: TODO
 
 **Depends on:** MA-077–MA-087
+**Commit:** `feat(move-automation): gate secondary conditions by accuracy rolls`
+
+**Touch:** bounded effect-operation contracts and validation, condition planning/reducers, structured traces, and focused tests.
+
+**Implement:**
+
+- Let a reviewed v2 condition operation reference a previously declared server-owned accuracy roll through a bounded threshold trigger. Validate that the roll exists, precedes the condition operation, and is not supplied by the client; evaluating the trigger must not draw new randomness.
+- Evaluate the trigger only for hit recipients. Record threshold failures as traced no-ops and authoritative condition immunities as prevented outcomes without undoing qualifying damage.
+- Add focused contract, spec-validation, planner/reducer, and trace tests for valid threshold pass/fail, missed recipients, immunity, and invalid or forward roll references. Keep the manifest-selected Ember runtime on v1 in this foundation ticket.
+
+**Done:** The native v2 pipeline can deterministically plan an Ember-style accuracy-gated condition from an existing roll, cannot affect a missed or immune recipient, and cannot accept client-authored roll or threshold mechanics.
+
+## MA-089B — Port Ember as the secondary-condition canary
+
+Status: TODO
+
+**Depends on:** MA-089A
 **Commit:** `feat(move-automation): port ember to movespec v2`
 
-**Implement:** Encode ordinary special damage plus its reviewed Burn threshold, immunity, hit/miss, and crit behavior. Add full semantic scenarios and switch the manifest runtime.
+**Touch:** the reviewed Ember spec and registry entry, semantic scenario fixtures, manifest runtime metadata, and resolver/accepted-command tests.
 
-**Done:** Ember resolves natively through v2 with no v1 fallback or manual step.
+**Implement:**
+
+- Encode Ember's ordinary special Fire damage and reviewed Burn threshold, reusing the authoritative accuracy roll for hit, critical-hit, and secondary-condition decisions without rerolling or applying Burn on a miss.
+- Add full semantic scenarios for ordinary hit, threshold pass/fail, miss, critical hit, and condition immunity, including the rule that immunity prevents Burn without erasing damage.
+- Run the scenarios through the interpreter, planner, and accepted-command boundary; cover duplicate `opId` replay and compare the reviewed v1/v2 plans before cutover.
+- Update Ember's manifest runtime version/hash/source and scenario evidence, clear manual steps, and select v2 without prematurely promoting its Phase 8B semantic conformance status.
+
+**Done:** Ember resolves natively through v2 with its damage, accuracy, Burn, immunity, hit/miss, critical-hit, and retry behavior fully traced and tested, with no v1 fallback or manual step.
 
 ## MA-090 — Port Swords Dance as the stage canary
 
