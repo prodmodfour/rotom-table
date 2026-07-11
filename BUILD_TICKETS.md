@@ -1185,7 +1185,7 @@ Status: DONE
 
 ## MA-090 — Port Swords Dance as the stage canary
 
-Status: TODO
+Status: DONE
 
 **Depends on:** MA-083, MA-087
 **Commit:** `feat(move-automation): port swords dance to movespec v2`
