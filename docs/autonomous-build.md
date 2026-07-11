@@ -11,6 +11,9 @@ The current queue maps GitHub issues #27-#44 to local tickets in `BUILD_TICKETS.
 - `AGENTS.md` — repository and autonomous workflow rules.
 - `scripts/build-loop.sh` — cycle runner.
 - `scripts/run-agent.sh` — Pi wrapper used by the loop.
+- `scripts/render-agent-events.mjs` — dependency-free live Pi event renderer.
+- `scripts/build-loop-follow.sh` — observer for the active aggregate log.
+- `scripts/build-loop-stop.sh` — graceful stop-request command.
 - `scripts/quality-gate.sh` — Rotom Table validation gate.
 
 ## Run one local cycle
@@ -31,6 +34,43 @@ scripts/build-loop.sh --create-branch feature/group-inventory-autobuild --max-cy
 ```
 
 To push the branch after each successful ticket, omit `--no-push`.
+
+## Live agent output
+
+The default `live` agent-output mode renders Pi's JSON event stream as concise, line-oriented terminal output. It shows assistant progress text, safe tool argument summaries, tool completion and duration, provider retries, compaction, and a periodic heartbeat while the model or a tool is still running. Thinking deltas and successful tool results are not printed. Failed tool output is bounded so a single failure cannot flood the terminal.
+
+Select another mode when needed:
+
+```bash
+# Preserve the older final-response-only Pi print mode.
+scripts/build-loop.sh --max-cycles 1 --agent-output final --no-push
+
+# Emit Pi's raw JSONL event stream for low-level debugging.
+scripts/build-loop.sh --max-cycles 1 --agent-output json --no-push
+```
+
+Raw JSON events can contain complete messages, tool arguments, and tool results. Keep raw event logs private and do not commit them. The normal live renderer is the recommended operator view.
+
+## Follow and gracefully stop a long run
+
+Every active loop writes its complete human-readable output to a stable `current.log` in the external build-loop state directory, in addition to the existing per-cycle logs. Follow it from another terminal without finding a PID or log filename:
+
+```bash
+just follow       # show the latest 40 lines, then follow
+just follow 100   # show the latest 100 lines, then follow
+```
+
+The follower reports the active PID, cycle, ticket, and phase. It follows cycle transitions automatically and exits when the loop exits. Pressing Ctrl-C detaches only the follower; it does not interrupt the build loop.
+
+Request a safe cycle-boundary shutdown with:
+
+```bash
+just stop
+```
+
+A graceful stop does not terminate an active Pi process. The current agent attempt may finish, and a successful cycle still completes its normal commit and push or PR/MR publication. No next cycle starts. If the attempt fails, existing failure checkpoint guardrails finish but the loop exits before ticket-split recovery or another retry. A stop requested during a cycle or retry sleep ends that sleep without starting more work. Repeated `just stop` commands are harmless.
+
+`just follow` and `just stop` resolve the same per-repository external state directory as the loop. If the loop was started with `AUTONOMOUS_BUILD_LOOP_STATE_DIR`, pass the same environment variable to those commands.
 
 ## PR mode
 

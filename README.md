@@ -55,6 +55,7 @@ Run one local cycle from a clean working tree:
 scripts/build-loop.sh --max-cycles 1 --no-push
 ```
 
+Long runs show concise live Pi progress and tool events by default. From another terminal, use `just follow` to attach to the active loop and `just stop` to request a graceful stop after its current attempt/cycle reaches a safe boundary. See [Autonomous build loop](docs/autonomous-build.md#follow-and-gracefully-stop-a-long-run) for output modes, logging, and exact stop semantics.
 
 ## npm scripts
 

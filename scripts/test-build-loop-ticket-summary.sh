@@ -41,6 +41,7 @@ run_summary_fixture() {
     cp "$REPO_ROOT/scripts/lib/pretty-print.sh" scripts/lib/pretty-print.sh
     cp "$REPO_ROOT/scripts/lib/git-branch.sh" scripts/lib/git-branch.sh
     cp "$REPO_ROOT/scripts/lib/pull-request.sh" scripts/lib/pull-request.sh
+    cp "$REPO_ROOT/scripts/lib/build-loop-state.sh" scripts/lib/build-loop-state.sh
 
     cat > scripts/quality-gate.sh <<'QUALITY_GATE'
 #!/usr/bin/env bash

@@ -8,6 +8,8 @@ source "$SCRIPT_DIR/lib/pretty-print.sh"
 source "$SCRIPT_DIR/lib/git-branch.sh"
 # shellcheck source=scripts/lib/pull-request.sh
 source "$SCRIPT_DIR/lib/pull-request.sh"
+# shellcheck source=scripts/lib/build-loop-state.sh
+source "$SCRIPT_DIR/lib/build-loop-state.sh"
 
 usage() {
   cat <<'USAGE'
@@ -31,6 +33,7 @@ Each cycle:
 Options:
 --max-cycles N       Number of cycles to run. Default: 1.
 --sleep SECONDS      Pause between successful cycles. Default: 0.
+--agent-output MODE  Agent output mode: live, final, or json. Default: live.
 --no-push            Do not push after successful cycles. By default, each new commit is pushed.
 --push               Push after successful cycles (default; kept for compatibility).
 --branch NAME        Select an existing local branch, or a unique remote branch, before running.
@@ -59,6 +62,9 @@ AUTONOMOUS_BUILD_RETRY_SECONDS
                    Seconds to wait before retrying after transient agent failures.
                    Defaults to 600 (10 minutes).
 
+While a loop is active, use `just follow` from another terminal to watch it
+and `just stop` to request a graceful stop after the current cycle or attempt.
+
 This script intentionally does not pass a model or thinking level.
 Agent invocation is delegated to scripts/run-agent.sh.
 USAGE
@@ -74,6 +80,7 @@ BRANCH_START_SET=0
 ALLOW_AHEAD=1
 ALLOW_TEMPLATE=0
 AGENT_RETRY_SECONDS="${AUTONOMOUS_BUILD_RETRY_SECONDS:-600}"
+AGENT_OUTPUT_MODE="live"
 PR_MODE="none"
 PR_PROVIDER="auto"
 PR_REMOTE_NAME="origin"
@@ -103,6 +110,15 @@ while [[ $# -gt 0 ]]; do
         exit 2
       fi
       SLEEP_SECONDS="$2"
+      shift 2
+      ;;
+    --agent-output)
+      if [[ $# -lt 2 ]]; then
+        pp_error "--agent-output requires a value"
+        usage >&2
+        exit 2
+      fi
+      AGENT_OUTPUT_MODE="$2"
       shift 2
       ;;
     --push)
@@ -211,6 +227,14 @@ if ! [[ "$AGENT_RETRY_SECONDS" =~ ^[0-9]+$ ]]; then
   exit 2
 fi
 
+case "$AGENT_OUTPUT_MODE" in
+  live|final|json) ;;
+  *)
+    pp_error "--agent-output must be live, final, or json: $AGENT_OUTPUT_MODE"
+    exit 2
+    ;;
+esac
+
 if [[ -n "$SELECT_BRANCH" && -n "$CREATE_BRANCH" ]]; then
   pp_error "--branch and --create-branch cannot be used together"
   exit 2
@@ -256,11 +280,14 @@ REQUIRED_FILES=(
   scripts/lib/pretty-print.sh
   scripts/lib/git-branch.sh
   scripts/lib/pull-request.sh
+  scripts/lib/build-loop-state.sh
 )
 
 BUILD_LOOP_STATE_DIR=""
 LOG_DIR=""
 LOCK_DIR=""
+CURRENT_LOG=""
+STOP_REQUEST_FILE=""
 CYCLE_UPSTREAM_REF=""
 CYCLE_UPSTREAM_HEAD=""
 
@@ -340,7 +367,7 @@ run_agent_with_log() {
   local tee_status
 
   set +e
-  scripts/run-agent.sh "$prompt" 2>&1 | tee "$log_file"
+  PI_AGENT_OUTPUT_MODE="$AGENT_OUTPUT_MODE" scripts/run-agent.sh "$prompt" 2>&1 | tee "$log_file"
   pipeline_status=("${PIPESTATUS[@]}")
   set -e
 
@@ -367,12 +394,62 @@ is_token_context_failure() {
   return 1
 }
 
+write_lock_value() {
+  local name="$1"
+  local value="$2"
+  local temporary_file="$LOCK_DIR/.${name}.$$"
+
+  printf '%s\n' "$value" > "$temporary_file"
+  mv "$temporary_file" "$LOCK_DIR/$name"
+}
+
+set_loop_phase() {
+  write_lock_value phase "$1"
+}
+
+stop_requested() {
+  [[ -f "$STOP_REQUEST_FILE" ]]
+}
+
+stop_if_requested() {
+  local message="$1"
+
+  if ! stop_requested; then
+    return 0
+  fi
+
+  set_loop_phase "stopping"
+  pp_section "Graceful stop"
+  pp_success "$message"
+  pp_info "No further autonomous cycle will start."
+  exit 0
+}
+
+sleep_with_stop_checks() {
+  local seconds="$1"
+  local stop_message="$2"
+  local remaining="$seconds"
+
+  while (( remaining > 0 )); do
+    stop_if_requested "$stop_message"
+    sleep 1
+    remaining=$((remaining - 1))
+  done
+
+  stop_if_requested "$stop_message"
+}
+
 sleep_before_agent_retry() {
   local reason="$1"
 
+  stop_if_requested "Stop requested; cycle $cycle will not be retried."
+
   if (( AGENT_RETRY_SECONDS > 0 )); then
+    set_loop_phase "retry-wait"
     pp_warn "$reason; retrying in ${AGENT_RETRY_SECONDS}s."
-    sleep "$AGENT_RETRY_SECONDS"
+    sleep_with_stop_checks \
+      "$AGENT_RETRY_SECONDS" \
+      "Stop requested during the retry wait; cycle $cycle will not be retried."
   else
     pp_warn "$reason; retrying immediately."
   fi
@@ -456,7 +533,7 @@ checkpoint_failed_agent_run() {
   local checkpoint_needed=0
 
   pp_section "Failure checkpoint"
-  pp_warn "Checkpointing failed-run state before retry."
+  pp_warn "Checkpointing failed-run state before deciding whether to retry."
   pp_kv "Reason" "$reason"
   pp_kv "Log file" "$log_file"
 
@@ -492,7 +569,7 @@ checkpoint_failed_agent_run() {
   if (( checkpoint_needed == 1 )); then
     refuse_if_remote_advanced "$CYCLE_UPSTREAM_REF" "$CYCLE_UPSTREAM_HEAD"
     push_failure_checkpoint || return 1
-    pp_success "Failure checkpoint preserved; retrying from current HEAD."
+    pp_success "Failure checkpoint preserved at current HEAD."
   else
     pp_info "No failed-run changes or commits to checkpoint."
   fi
@@ -732,6 +809,7 @@ split_current_ticket_after_context_failure() {
   local split_status
   local split_after_head
 
+  set_loop_phase "token-context-recovery"
   pp_section "Token/context recovery"
   pp_warn "Detected a token/context-length failure in the agent log."
   pp_info "Asking the configured agent wrapper to split the current ticket into two smaller tickets."
@@ -780,50 +858,22 @@ split_current_ticket_after_context_failure() {
   publish_current_commit "ticket split recovery" "$(git rev-parse HEAD)"
 }
 
-sanitize_state_component() {
-  local value="$1"
-  local sanitized
-
-  sanitized="$(printf '%s' "$value" | tr -c 'A-Za-z0-9._-' '-')"
-  sanitized="${sanitized:0:80}"
-
-  if [[ -z "$sanitized" ]]; then
-    sanitized="repo"
-  fi
-
-  printf '%s\n' "$sanitized"
-}
-
 configure_build_loop_state_paths() {
   local repo_root
-  local repo_name
-  local repo_slug
-  local repo_hash
-  local state_home
   local state_dir
 
-  if [[ -n "${AUTONOMOUS_BUILD_LOOP_STATE_DIR:-}" ]]; then
-    state_dir="$AUTONOMOUS_BUILD_LOOP_STATE_DIR"
-  else
-    if [[ -n "${XDG_STATE_HOME:-}" ]]; then
-      state_home="$XDG_STATE_HOME"
-    elif [[ -n "${HOME:-}" ]]; then
-      state_home="$HOME/.local/state"
-    else
-      pp_error "HOME must be set when XDG_STATE_HOME and AUTONOMOUS_BUILD_LOOP_STATE_DIR are not set."
-      exit 1
-    fi
-
-    repo_root="$(git rev-parse --show-toplevel)"
-    repo_name="$(basename "$repo_root")"
-    repo_slug="$(sanitize_state_component "$repo_name")"
-    repo_hash="$(printf '%s' "$repo_root" | git hash-object --stdin | cut -c 1-12)"
-    state_dir="$state_home/autonomous-build-template/build-loop/${repo_slug}-${repo_hash}"
+  repo_root="$(git rev-parse --show-toplevel)"
+  if ! state_dir="$(build_loop_resolve_state_dir "$repo_root")"; then
+    pp_error "Unable to resolve the build-loop state directory."
+    exit 1
   fi
 
   BUILD_LOOP_STATE_DIR="$state_dir"
-  LOG_DIR="$BUILD_LOOP_STATE_DIR/logs"
-  LOCK_DIR="$BUILD_LOOP_STATE_DIR/lock"
+  LOG_DIR="$(build_loop_log_dir "$BUILD_LOOP_STATE_DIR")"
+  LOCK_DIR="$(build_loop_lock_dir "$BUILD_LOOP_STATE_DIR")"
+  CURRENT_LOG="$(build_loop_current_log "$BUILD_LOOP_STATE_DIR")"
+  STOP_REQUEST_FILE="$(build_loop_stop_request_file "$BUILD_LOOP_STATE_DIR")"
+  export AUTONOMOUS_BUILD_LOOP_STATE_DIR="$BUILD_LOOP_STATE_DIR"
 }
 
 acquire_lock() {
@@ -834,11 +884,17 @@ acquire_lock() {
     exit 1
   fi
 
-  echo "$$" > "$LOCK_DIR/pid"
+  printf '%s\n' "$$" > "$LOCK_DIR/pid"
   trap 'rm -rf "$LOCK_DIR"' EXIT
 }
 
+start_current_log() {
+  : > "$CURRENT_LOG"
+  exec > >(tee -a "$CURRENT_LOG") 2>&1
+}
+
 require_command git
+require_command tee
 
 if ! git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
   pp_error "Not inside a git work tree."
@@ -847,11 +903,17 @@ fi
 
 configure_build_loop_state_paths
 acquire_lock
+write_lock_value max-cycles "$MAX_CYCLES"
+write_lock_value cycle "0"
+write_lock_value ticket ""
+set_loop_phase "starting"
+start_current_log
 
 pp_banner "Autonomous build loop"
 pp_kv "Max cycles" "$MAX_CYCLES"
 pp_kv "Sleep" "${SLEEP_SECONDS}s"
 pp_kv "Agent retry sleep" "${AGENT_RETRY_SECONDS}s"
+pp_kv "Agent output" "$AGENT_OUTPUT_MODE"
 pp_kv "Push after commit" "$(pp_on_off "$PUSH_AFTER")"
 pp_kv "PR/MR mode" "$PR_MODE"
 if [[ "$PR_MODE" != "none" ]]; then
@@ -871,7 +933,10 @@ elif [[ -n "$CREATE_BRANCH" ]]; then
 fi
 pp_kv "Allow ahead" "$(pp_on_off "$ALLOW_AHEAD")"
 pp_kv "State dir" "$BUILD_LOOP_STATE_DIR"
-pp_kv "Logs" "$LOG_DIR"
+pp_kv "Current log" "$CURRENT_LOG"
+pp_kv "Cycle logs" "$LOG_DIR"
+pp_kv "Follow" "just follow"
+pp_kv "Graceful stop" "just stop"
 
 if [[ -n "$SELECT_BRANCH" || -n "$CREATE_BRANCH" ]]; then
   pp_section "Branch setup"
@@ -894,29 +959,37 @@ cycle=0
 log_sequence=0
 
 while (( cycle < MAX_CYCLES )); do
+  stop_if_requested "Stop requested before cycle $((cycle + 1)); the loop is stopping now."
+  set_loop_phase "checking-queue"
+
   automation_status="$(get_automation_status)"
   if [[ -z "$automation_status" ]]; then
     pp_error "Missing top-level AUTOMATION_STATUS line in BUILD_TICKETS.md."
     exit 1
   fi
   if [[ "$automation_status" == "DONE" ]]; then
+    set_loop_phase "completed"
     pp_success "Build tickets marked done."
     exit 0
   fi
 
   cycle=$((cycle + 1))
+  write_lock_value cycle "$cycle"
   pp_banner "Autonomous build cycle" "$cycle/$MAX_CYCLES"
 
   pp_section "Current work"
   next_ticket="$(get_next_ticket_summary)"
+  write_lock_value ticket "$next_ticket"
   if [[ -n "$next_ticket" ]]; then
     pp_info "Now working on: ticket $next_ticket"
   else
     pp_warn "No TODO ticket found; agent will inspect BUILD_TICKETS.md."
   fi
 
+  set_loop_phase "pre-flight"
   pp_section "Pre-flight checks"
   sync_before_cycle
+  stop_if_requested "Stop requested during pre-flight; cycle $cycle did not launch an agent."
 
   before_head="$(git rev-parse HEAD)"
   mkdir -p "$LOG_DIR"
@@ -925,6 +998,8 @@ while (( cycle < MAX_CYCLES )); do
 
   pp_kv "Log file" "$log_file"
   pp_section "Agent run"
+  set_loop_phase "agent"
+  stop_if_requested "Stop requested before the agent launched; cycle $cycle did not start work."
 
   if run_agent_with_log "$PROMPT" "$log_file"; then
     agent_status=0
@@ -934,7 +1009,7 @@ while (( cycle < MAX_CYCLES )); do
 
   if (( agent_status != 0 )); then
     if (( agent_status == 125 )); then
-      pp_error "Agent log capture failed during cycle $cycle; stopping."
+      pp_error "Agent output capture failed during cycle $cycle; stopping."
       pp_hint "See $log_file"
       exit 1
     fi
@@ -948,12 +1023,15 @@ while (( cycle < MAX_CYCLES )); do
     pp_error "Agent failed during cycle $cycle with exit status $agent_status."
     pp_hint "See $log_file"
 
+    set_loop_phase "failure-checkpoint"
     if ! checkpoint_failed_agent_run "$before_head" "agent failed with exit status $agent_status" "$log_file"; then
       exit 1
     fi
+    stop_if_requested "Stop requested after the failed attempt was checkpointed; cycle $cycle will not be retried."
 
     if is_token_context_failure "$log_file"; then
       if split_current_ticket_after_context_failure; then
+        stop_if_requested "Stop requested after ticket-split recovery; cycle $cycle will not be retried."
         pp_info "Continuing with the split ticket queue."
         cycle=$((cycle - 1))
         continue
@@ -995,16 +1073,26 @@ while (( cycle < MAX_CYCLES )); do
 
   pp_success "Cycle committed $(git rev-parse --short HEAD)"
 
+  set_loop_phase "publishing"
   publish_current_commit "cycle $cycle/$MAX_CYCLES" "$after_head"
 
   automation_status="$(get_automation_status)"
   if [[ "$automation_status" == "DONE" ]]; then
+    set_loop_phase "completed"
     pp_success "Build tickets marked done."
     exit 0
   fi
 
+  stop_if_requested "Cycle $cycle/$MAX_CYCLES finished; graceful stop requested."
+
   if (( SLEEP_SECONDS > 0 )); then
+    set_loop_phase "cycle-wait"
     pp_info "Sleeping ${SLEEP_SECONDS}s before next cycle."
-    sleep "$SLEEP_SECONDS"
+    sleep_with_stop_checks \
+      "$SLEEP_SECONDS" \
+      "Stop requested during the cycle pause after cycle $cycle/$MAX_CYCLES."
   fi
 done
+
+set_loop_phase "completed"
+pp_success "Reached the configured maximum of $MAX_CYCLES cycle(s)."

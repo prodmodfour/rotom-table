@@ -66,7 +66,14 @@ default:
       '      delete the planning file, commit the refresh, and push the current branch.' \
       '' \
       '  just run' \
-      '      Run the default 180-cycle autonomous build loop with push enabled.' 
+      '      Run the default 180-cycle autonomous build loop with push enabled.' \
+      '' \
+      '  just follow' \
+      '  just follow <lines>' \
+      '      Follow the active build loop, showing 40 recent lines by default.' \
+      '' \
+      '  just stop' \
+      '      Gracefully stop the active build loop after its current attempt/cycle.'
 
 help:
     @just default
@@ -82,6 +89,14 @@ autobuild cycles="1":
 # Compatibility recipe from the autonomous build template.
 run cycles="180":
     bash scripts/build-loop.sh --max-cycles {{cycles}}
+
+# Follow the active autonomous build loop without interrupting it.
+follow lines="40":
+    bash scripts/build-loop-follow.sh --lines {{quote(lines)}}
+
+# Request a graceful stop after the active attempt/cycle reaches a safe boundary.
+stop:
+    bash scripts/build-loop-stop.sh
 
 # Refresh the autonomous queue and project brief from a ticket planning file.
 refresh ticket_file:
