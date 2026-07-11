@@ -35,11 +35,11 @@ import {
   type LegacyV1PlanningParityResult,
 } from '../fixtures/moveAutomation/legacyV1PlanningParity'
 
-const legacySwordsDanceRuntimeRegistry = (() => {
+const legacyRuntimeRegistryFor = (canonicalId: string) => {
   const manifest = structuredClone(manifestJson) as unknown as MoveAutomationManifest
-  const row = manifest.moves.find(move => move.canonicalId === 'Swords Dance')!
+  const row = manifest.moves.find(move => move.canonicalId === canonicalId)!
   const legacy = legacyFingerprintsJson.entries.find(
-    entry => entry.canonicalId === 'Swords Dance',
+    entry => entry.canonicalId === canonicalId,
   )!
   ;(row as { runtime: unknown }).runtime = {
     kind: 'legacy-v1',
@@ -52,7 +52,10 @@ const legacySwordsDanceRuntimeRegistry = (() => {
     legacySources: EXPLICIT_MOVE_AUTOMATION_REGISTRY_SOURCES,
     moveSpecs: REVIEWED_MOVE_SPEC_V2_REGISTRATIONS,
   })
-})()
+}
+
+const legacyDragonRageRuntimeRegistry = legacyRuntimeRegistryFor('Dragon Rage')
+const legacySwordsDanceRuntimeRegistry = legacyRuntimeRegistryFor('Swords Dance')
 
 const moveIntent = (
   overrides: Omit<ResolveMoveIntent, 'schemaVersion'>,
@@ -406,6 +409,7 @@ const PLANNING_SCENARIOS: readonly PlanningParityScenario[] = [
         selection: { kind: 'single-target', targetPlacementId: 'target-token' },
       }),
       randomValues: [0.5],
+      runtimeRegistry: legacyDragonRageRuntimeRegistry,
     }),
     verify: ({ adaptedPlan }) => {
       expect(adaptedPlan.resolution.transaction.hpUpdates).toEqual([

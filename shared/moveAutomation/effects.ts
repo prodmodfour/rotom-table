@@ -896,6 +896,8 @@ export interface MoveDirectHpEffectPayload {
   readonly copySource: MoveSelector | null
   readonly bounds: MoveHpFinalBounds
   readonly rounding: MoveEffectRoundingPolicy
+  /** Earlier server-owned accuracy roll that narrows attacked targets to hit targets. */
+  readonly accuracyRollId?: string | null
   readonly applyTypeImmunity: boolean
   /** Null for ordinary loss/recoil; non-null marks an authoritative HP payment. */
   readonly cost: MoveHpCostPolicy | null
@@ -1304,7 +1306,7 @@ const CRITICAL_HIT_FIELDS = ['trigger', 'prevention'] as const
 const CRITICAL_TRIGGER_KIND_FIELDS = ['kind'] as const
 const CRITICAL_RANGE_TRIGGER_FIELDS = ['kind', 'minimum'] as const
 const CRITICAL_NATURAL_ROLLS_TRIGGER_FIELDS = ['kind', 'values'] as const
-const DIRECT_HP_FIELDS = [
+const DIRECT_HP_REQUIRED_FIELDS = [
   'mode',
   'pool',
   'calculation',
@@ -1315,6 +1317,7 @@ const DIRECT_HP_FIELDS = [
   'cost',
   'injury',
 ] as const
+const DIRECT_HP_OPTIONAL_FIELDS = ['accuracyRollId'] as const
 const HEAL_FIELDS = [
   'mode',
   'pool',
@@ -2281,7 +2284,12 @@ const parseEffectSelector = (value: unknown, path: string): MoveSelector => {
 }
 
 const parseDirectHpPayload = (value: unknown, path: string): MoveDirectHpEffectPayload => {
-  const input = parseExactRecord(value, DIRECT_HP_FIELDS, path)
+  const input = parseRecordWithOptionalFields(
+    value,
+    DIRECT_HP_REQUIRED_FIELDS,
+    DIRECT_HP_OPTIONAL_FIELDS,
+    path,
+  )
   const mode = parseEnum<MoveEffectDirectHpMode>(
     ownValue(input, 'mode', path),
     DIRECT_HP_MODE_SET,
@@ -2302,6 +2310,9 @@ const parseDirectHpPayload = (value: unknown, path: string): MoveDirectHpEffectP
     ? null
     : parseEffectSelector(ownValue(input, 'copySource', path), `${path}.copySource`)
   const bounds = parseHpBounds(ownValue(input, 'bounds', path), `${path}.bounds`)
+  const accuracyRollId = Object.prototype.hasOwnProperty.call(input, 'accuracyRollId')
+    ? parseNullableStableId(ownValue(input, 'accuracyRollId', path), `${path}.accuracyRollId`)
+    : null
   const applyTypeImmunity = parseBoolean(
     ownValue(input, 'applyTypeImmunity', path),
     `${path}.applyTypeImmunity`,
@@ -2367,6 +2378,7 @@ const parseDirectHpPayload = (value: unknown, path: string): MoveDirectHpEffectP
   if (cost !== null) {
     if (
       pool !== 'hit-points'
+      || accuracyRollId !== null
       || applyTypeImmunity
       || copySource !== null
       || bounds.minimum !== null
@@ -2415,6 +2427,7 @@ const parseDirectHpPayload = (value: unknown, path: string): MoveDirectHpEffectP
       `${path}.rounding`,
       'floor, round, or ceil',
     ),
+    accuracyRollId,
     applyTypeImmunity,
     cost,
     injury,
@@ -4118,6 +4131,16 @@ const validateHpOperationEnvelope = (options: {
 }): void => {
   const damageLinked = options.payload.calculation?.kind === 'damage-dealt'
   const cost = 'cost' in options.payload ? options.payload.cost : null
+  const accuracyRollId = 'accuracyRollId' in options.payload
+    ? options.payload.accuracyRollId ?? null
+    : null
+  if (accuracyRollId !== null && options.common.recipients.kind !== 'hit-targets') {
+    fail(
+      'invalid-effect-operation',
+      `${options.path}.recipients.kind`,
+      'accuracy-gated direct HP must use authoritative hit targets.',
+    )
+  }
   if ((damageLinked || cost !== null) && options.common.recipients.kind !== 'actor') {
     fail(
       'invalid-effect-operation',

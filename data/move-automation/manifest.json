@@ -5717,10 +5717,10 @@
       "baseStatus": "assisted",
       "interactionStatus": "unassessed",
       "runtime": {
-        "kind": "legacy-v1",
-        "version": 1,
-        "definitionHash": "2d212045568880abd5bcec131a0c575e35b1364f7fd627c874183bb042b5ade7",
-        "sourceModule": "src/utils/move-automation/scripts/directHpLoss.ts"
+        "kind": "movespec-v2",
+        "version": 2,
+        "definitionHash": "7dbb354c8e126fad212bbb1c9e719cde76c58c4bc832c3ede56cf573fddc60bc",
+        "sourceModule": "server/domain/moveAutomation/specs/dragonRage.ts"
       },
       "rulesProvenance": {
         "rulesetId": "rotom-table-reference-moves-v1",
@@ -5733,14 +5733,42 @@
       "limitations": [
         {
           "code": "audit.required",
-          "summary": "Semantic conformance review is required before this legacy implementation can be marked complete."
+          "summary": "Semantic conformance review is required before this native implementation can be marked complete."
         }
       ],
       "manualSteps": [],
-      "scenarioIds": [],
+      "scenarioIds": [
+        "dragon-rage.v2-hit",
+        "dragon-rage.v2-immunity",
+        "dragon-rage.v2-miss"
+      ],
       "conformanceEvidence": {
-        "requirementTags": [],
-        "scenarios": [],
+        "requirementTags": [
+          "branch.accuracy",
+          "branch.immunity",
+          "recovery.retry"
+        ],
+        "scenarios": [
+          {
+            "scenarioId": "dragon-rage.v2-hit",
+            "evidenceClasses": [
+              "hit",
+              "retry"
+            ]
+          },
+          {
+            "scenarioId": "dragon-rage.v2-immunity",
+            "evidenceClasses": [
+              "immunity"
+            ]
+          },
+          {
+            "scenarioId": "dragon-rage.v2-miss",
+            "evidenceClasses": [
+              "miss"
+            ]
+          }
+        ],
         "notApplicable": []
       },
       "reviewedAt": null,

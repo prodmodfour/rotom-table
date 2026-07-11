@@ -1196,7 +1196,7 @@ Status: DONE
 
 ## MA-091 — Port Dragon Rage as the direct-HP canary
 
-Status: TODO
+Status: DONE
 
 **Depends on:** MA-082, MA-087
 **Commit:** `feat(move-automation): port dragon rage to movespec v2`

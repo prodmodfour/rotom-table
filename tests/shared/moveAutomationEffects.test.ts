@@ -106,6 +106,7 @@ const VALID_PAYLOADS = {
     copySource: null,
     bounds: { minimum: 1, maximum: null },
     rounding: 'floor',
+    accuracyRollId: null,
     applyTypeImmunity: true,
     cost: null,
     injury: {
@@ -918,6 +919,35 @@ describe('MoveSpec typed effect operations', () => {
     for (const parsed of [...parsedCalculations, set, copy, split, swap, full]) {
       expectDeeplyFrozen(parsed)
     }
+  })
+
+  it('parses an explicit server-owned accuracy link for hit-only direct HP', () => {
+    const parsed = parseMoveEffectOperation(validOperation('direct-hp', {
+      recipients: { kind: 'hit-targets' },
+      payload: {
+        ...VALID_PAYLOADS['direct-hp'],
+        accuracyRollId: 'dragon-rage.accuracy-roll',
+      },
+    }))
+
+    expect(parsed).toMatchObject({
+      kind: 'direct-hp',
+      recipients: { kind: 'hit-targets' },
+      payload: { accuracyRollId: 'dragon-rage.accuracy-roll' },
+    })
+    expectDeeplyFrozen(parsed)
+
+    expectEffectError(
+      validOperation('direct-hp', {
+        recipients: { kind: 'attacked-targets' },
+        payload: {
+          ...VALID_PAYLOADS['direct-hp'],
+          accuracyRollId: 'dragon-rage.accuracy-roll',
+        },
+      }),
+      'invalid-effect-operation',
+      'operation.recipients.kind',
+    )
   })
 
   it('parses linked drain/recoil, authoritative HP-loss links, timed costs, and self-KO policies', () => {

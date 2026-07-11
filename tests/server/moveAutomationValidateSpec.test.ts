@@ -1148,6 +1148,73 @@ describe('authoritative MoveSpec validation and hashing', () => {
     })
   })
 
+  it('requires accuracy-gated direct HP to reference an earlier authoritative d20', () => {
+    const directHp: TestOperation = {
+      id: 'operation.fixed-loss',
+      kind: 'direct-hp',
+      source: { kind: 'move', id: 'move.dragon-rage' },
+      recipients: { kind: 'hit-targets' },
+      phase: 'damage',
+      reasonCode: 'move.dragon-rage.fixed-loss',
+      payload: {
+        mode: 'lose',
+        pool: 'hit-points',
+        calculation: { kind: 'fixed', value: 15 },
+        copySource: null,
+        bounds: { minimum: null, maximum: null },
+        rounding: 'floor',
+        accuracyRollId: 'roll.accuracy',
+        applyTypeImmunity: true,
+        cost: null,
+        injury: { hitPointMarkers: 'apply-after-operation', massiveDamage: 'never' },
+      },
+    }
+    const valid = validSpec()
+    valid.phases[0]!.operations = [rollOperation({
+      recipients: { kind: 'attacked-targets' },
+    })]
+    valid.phases[1]!.operations = [directHp]
+
+    expect(validateMoveSpec(valid).spec.phases[1]?.operations[0]).toMatchObject({
+      kind: 'direct-hp',
+      recipients: { kind: 'hit-targets' },
+      payload: { accuracyRollId: 'roll.accuracy' },
+    })
+
+    const unknown = structuredClone(valid)
+    unknown.phases[1]!.operations[0]!.payload.accuracyRollId = 'roll.missing'
+    expectDefinitionError(
+      () => validateMoveSpec(unknown),
+      'unknown-reference',
+      'spec.phases[1].operations[0].payload.accuracyRollId',
+    )
+
+    const forward = structuredClone(valid)
+    forward.phases[0]!.operations = []
+    forward.phases[1]!.operations = [
+      { ...directHp, phase: 'damage' },
+      rollOperation({ phase: 'damage', recipients: { kind: 'attacked-targets' } }),
+    ]
+    expectDefinitionError(
+      () => validateMoveSpec(forward),
+      'invalid-reference-order',
+      'spec.phases[1].operations[0].payload.accuracyRollId',
+    )
+
+    const modified = structuredClone(valid)
+    modified.phases[0]!.operations[0]!.payload.formula = {
+      kind: 'dice',
+      count: 1,
+      sides: 20,
+      modifier: 1,
+    }
+    expectDefinitionError(
+      () => validateMoveSpec(modified),
+      'invalid-definition',
+      'spec.phases[1].operations[0].payload.accuracyRollId',
+    )
+  })
+
   it('requires linked HP loss to reference an earlier direct-HP operation with the same pool', () => {
     const source: TestOperation = {
       id: 'operation.sacrifice',

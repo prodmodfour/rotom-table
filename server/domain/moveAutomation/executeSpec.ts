@@ -708,11 +708,15 @@ const resolvedCheckRolls = (
 const accuracyReferenceIds = (
   operations: readonly MoveEffectOperation[],
 ): ReadonlySet<string> => new Set(
-  operations.flatMap(operation => (
-    operation.kind === 'damage' && operation.payload.accuracyRollId !== null
-      ? [operation.payload.accuracyRollId]
-      : []
-  )),
+  operations.flatMap((operation) => {
+    if (operation.kind === 'damage' && operation.payload.accuracyRollId !== null) {
+      return [operation.payload.accuracyRollId]
+    }
+    if (operation.kind === 'direct-hp' && operation.payload.accuracyRollId) {
+      return [operation.payload.accuracyRollId]
+    }
+    return []
+  }),
 )
 
 const terminalBase = (

@@ -11,6 +11,7 @@ import {
   type MoveBranchEffectOperation,
   type MoveEffectBranchPath,
   type MoveEffectOperation,
+  type MoveEffectRecipientSelectorKind,
 } from '#shared/moveAutomation/effects'
 import {
   MOVE_RULE_AST_LIMITS,
@@ -666,6 +667,54 @@ export const validateMoveSpecOperationSequence = (
     }
   }
 
+  const assertPriorAccuracyRollReference = (options: {
+    readonly rollId: string
+    readonly currentIndex: number
+    readonly path: string
+    readonly effectRecipientKind: MoveEffectRecipientSelectorKind
+    readonly label: string
+  }): void => {
+    assertPriorReference(
+      options.rollId,
+      options.currentIndex,
+      options.path,
+      rollIndexById,
+      'roll ID',
+    )
+    const referencedIndex = rollIndexById.get(options.rollId)!
+    const referenced = indexed[referencedIndex]?.operation
+    if (!referenced || referenced.kind !== 'roll') {
+      return fail(
+        'invalid-definition',
+        options.path,
+        `${options.rollId} must identify an earlier roll operation.`,
+      )
+    }
+    const formula = referenced.payload.formula
+    if (
+      formula.kind !== 'dice'
+      || formula.count !== 1
+      || formula.sides !== 20
+      || formula.modifier !== 0
+    ) {
+      fail(
+        'invalid-definition',
+        options.path,
+        `roll ${options.rollId} must be an unmodified authoritative d20.`,
+      )
+    }
+    if (
+      referenced.recipients.kind !== 'attacked-targets'
+      || options.effectRecipientKind !== 'hit-targets'
+    ) {
+      fail(
+        'invalid-definition',
+        options.path,
+        `${options.label} must narrow an attacked-targets roll to hit-targets.`,
+      )
+    }
+  }
+
   const assertPriorDamageReference = (
     referenceId: string,
     currentIndex: number,
@@ -810,6 +859,15 @@ export const validateMoveSpecOperationSequence = (
       }
     }
     if (operation.kind === 'direct-hp' || operation.kind === 'heal') {
+      if (operation.kind === 'direct-hp' && operation.payload.accuracyRollId) {
+        assertPriorAccuracyRollReference({
+          rollId: operation.payload.accuracyRollId,
+          currentIndex: index,
+          path: `${path}.payload.accuracyRollId`,
+          effectRecipientKind: operation.recipients.kind,
+          label: 'accuracy-gated direct HP',
+        })
+      }
       const calculation = operation.payload.calculation
       if (calculation?.kind === 'damage-dealt') {
         assertPriorDamageReference(
@@ -875,35 +933,13 @@ export const validateMoveSpecOperationSequence = (
     if (operation.kind === 'condition' && operation.payload.accuracyRollTrigger) {
       const referencePath = `${path}.payload.accuracyRollTrigger.rollId`
       const rollId = operation.payload.accuracyRollTrigger.rollId
-      assertPriorReference(rollId, index, referencePath, rollIndexById, 'roll ID')
-      const referencedIndex = rollIndexById.get(rollId)!
-      const referenced = indexed[referencedIndex]?.operation
-      if (!referenced || referenced.kind !== 'roll') {
-        return fail('invalid-definition', referencePath, `${rollId} must identify an earlier roll operation.`)
-      }
-      const formula = referenced.payload.formula
-      if (
-        formula.kind !== 'dice'
-        || formula.count !== 1
-        || formula.sides !== 20
-        || formula.modifier !== 0
-      ) {
-        fail(
-          'invalid-definition',
-          referencePath,
-          `roll ${rollId} must be an unmodified authoritative d20.`,
-        )
-      }
-      if (
-        referenced.recipients.kind !== 'attacked-targets'
-        || operation.recipients.kind !== 'hit-targets'
-      ) {
-        fail(
-          'invalid-definition',
-          referencePath,
-          'an accuracy-triggered condition must narrow an attacked-targets roll to hit-targets.',
-        )
-      }
+      assertPriorAccuracyRollReference({
+        rollId,
+        currentIndex: index,
+        path: referencePath,
+        effectRecipientKind: operation.recipients.kind,
+        label: 'an accuracy-triggered condition',
+      })
       const linkedDamage = indexed.find(entry => (
         entry.index < index
         && entry.operation.kind === 'damage'

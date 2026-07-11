@@ -507,6 +507,67 @@ describe('executeLivePlayResolveMoveCommandUseCase', () => {
     expect(harness.sheets.getByRef('pokemon', 'target-a')).toEqual(committedSheet)
   })
 
+  it('commits native Dragon Rage once and replays its fixed loss without rerolling', async () => {
+    const harness = seedHarness({ actorMoves: [{ name: 'Dragon Rage' }] })
+    const map = harness.maps.getBySlug('arena')!
+    const moveIntent = intent({
+      placementId: 'actor-token',
+      moveName: 'Dragon Rage',
+      selection: { kind: 'single-target', targetPlacementId: 'target-a' },
+    })
+    const command = commandFor(map, moveIntent, 'op_resolvedragon1', ['target-a'])
+    const response = await execute(harness, command, {
+      random: randomSequence([0.999]),
+    })
+    const acceptedResult = accepted(response.result)
+
+    expect(response.move).toMatchObject({
+      canonicalMoveName: 'Dragon Rage',
+      selectedTargetIds: ['target-a'],
+      transaction: {
+        attackedTargetIds: ['target-a'],
+        hitTargetIds: ['target-a'],
+        hpUpdates: [{ id: 'target-a', currentHp: 65 }],
+      },
+      rollLedger: [{
+        rollId: 'dragon-rage.accuracy-roll.1',
+        parentEffectId: 'dragon-rage.accuracy',
+        naturalResult: 20,
+      }],
+      trace: {
+        program: {
+          canonicalId: 'Dragon Rage',
+          runtimeKind: 'movespec-v2',
+          runtimeVersion: 2,
+        },
+        events: expect.arrayContaining([
+          expect.objectContaining({
+            kind: 'operation',
+            operationId: 'dragon-rage.fixed-hp-loss',
+            operationKind: 'direct-hp',
+            outcome: 'applied',
+          }),
+        ]),
+      },
+    })
+    expect(harness.sheets.getByRef('pokemon', 'target-a')?.sheet).toMatchObject({
+      revision: 3,
+      combat: { currentHp: 65 },
+    })
+
+    const committedMap = deepCloneJson(harness.maps.getBySlug('arena'))
+    const committedSheet = deepCloneJson(harness.sheets.getByRef('pokemon', 'target-a'))
+    const duplicate = await execute(harness, command, {
+      random: () => { throw new Error('duplicate Dragon Rage must not reroll') },
+      planner: () => { throw new Error('duplicate Dragon Rage must not replan') },
+    })
+
+    expect(duplicate.result).toEqual(acceptedResult)
+    expect(duplicate.move).toEqual(response.move)
+    expect(harness.maps.getBySlug('arena')).toEqual(committedMap)
+    expect(harness.sheets.getByRef('pokemon', 'target-a')).toEqual(committedSheet)
+  })
+
   it('accepts area and Pass resolveMove commands with conservative candidate scopes', async () => {
     await withRegisteredScript(areaScript('Tail Whip'), async () => {
       const areaMap = mapFixture({ placements: [

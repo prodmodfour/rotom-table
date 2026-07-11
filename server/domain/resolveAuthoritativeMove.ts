@@ -958,11 +958,14 @@ const resolveNativeSingleTargetMove = (options: {
       `${options.runtime.canonicalId} does not accept a target branch.`,
     )
   }
-  if (!isSeamlessSingleTargetMoveScript(options.entry.script)) {
+  if (
+    options.entry.script.targetMode !== 'one-target'
+    || options.entry.script.targetCount !== 1
+  ) {
     fail(
       'invalid',
       'selection-kind-mismatch',
-      `${options.runtime.canonicalId} is not a seamless single-target move.`,
+      `${options.runtime.canonicalId} canonical data is not single-target.`,
     )
   }
 
