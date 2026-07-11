@@ -196,14 +196,15 @@ const operationEvent = (
 }
 
 describe('native v2 accuracy-gated secondary conditions', () => {
-  it('keeps canonical Ember selected on legacy v1 in the foundation ticket', () => {
+  it('selects canonical Ember through the reviewed native canary runtime', () => {
     const row = manifestJson.moves.find(candidate => candidate.canonicalId === 'Ember')
     expect(row?.runtime).toMatchObject({
-      kind: 'legacy-v1',
-      sourceModule: 'src/utils/move-automation/scripts/singleTargetAttacks.ts',
+      kind: 'movespec-v2',
+      sourceModule: 'server/domain/moveAutomation/specs/ember.ts',
     })
     expect(registeredMoveAutomationRuntimeFor('Ember')).toMatchObject({
-      kind: 'legacy-v1',
+      kind: 'movespec-v2',
+      definitionHash: row?.runtime.definitionHash,
     })
   })
 

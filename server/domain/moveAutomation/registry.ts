@@ -18,6 +18,7 @@ import {
   validateMoveSpec,
   type ValidatedMoveSpecDefinition,
 } from './validateSpec'
+import { EMBER_MOVE_SPEC_REGISTRATION } from './specs/ember'
 import { SCRATCH_MOVE_SPEC_REGISTRATION } from './specs/scratch'
 
 export interface LegacyV1MoveAutomationAdapter extends MoveAutomationRuntimeRegistrationReference {
@@ -235,6 +236,7 @@ export const createMoveAutomationRuntimeRegistry = (
 
 /** Native v2 definitions are added here only after their manifest metadata is reviewed. */
 export const REVIEWED_MOVE_SPEC_V2_REGISTRATIONS: readonly MoveSpecV2Registration[] = Object.freeze([
+  EMBER_MOVE_SPEC_REGISTRATION,
   SCRATCH_MOVE_SPEC_REGISTRATION,
 ])
 
