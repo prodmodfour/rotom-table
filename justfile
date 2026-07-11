@@ -74,7 +74,7 @@ default:
       '' \
       '  just monitor' \
       '  just monitor <minutes>' \
-      '      Immediately summarize and interpret build progress, then repeat every 10 minutes by default.' \
+      '      Interpret the full Pi event stream immediately, then repeat every 10 minutes by default.' \
       '' \
       '  just stop' \
       '      Gracefully stop the active build loop after its current attempt/cycle.'

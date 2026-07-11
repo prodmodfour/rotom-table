@@ -71,6 +71,14 @@ printf '%s\n' "$count" > "$FAKE_ANALYZER_COUNT_FILE"
 printf '%s\n' "$@" > "$FAKE_ANALYZER_ARGS_LOG"
 cat > "$FAKE_ANALYZER_INPUT_LOG"
 
+if [[ -n "${FAKE_ANALYZER_EVENT_CAPTURE:-}" ]]; then
+  analyzer_read_line="$(grep -E '^ANALYZER READ FILE: ' "$FAKE_ANALYZER_INPUT_LOG" | head -1)"
+  analyzer_read_file="${analyzer_read_line#ANALYZER READ FILE: }"
+  if [[ -n "$analyzer_read_file" && -f "$analyzer_read_file" ]]; then
+    cat "$analyzer_read_file" > "$FAKE_ANALYZER_EVENT_CAPTURE"
+  fi
+fi
+
 if [[ -n "${FAKE_ANALYZER_REMOVE_LOCK_AFTER_FIRST:-}" && "$count" == "1" ]]; then
   rm -rf "$FAKE_ANALYZER_REMOVE_LOCK_AFTER_FIRST"
 fi
@@ -102,6 +110,14 @@ cat > "$state_dir/logs/cycle-fixture.log" <<'LOG'
   00:05  → [01] Edit file — work.txt (1 replacement)
   00:07  ✓ [02] Run tests (2.0s)
 LOG
+cat > "$state_dir/logs/cycle-fixture.pi-events.jsonl" <<'JSONL'
+{"type":"agent_start"}
+{"type":"message_update","assistantMessageEvent":{"type":"thinking_delta","delta":"FULL_PI_THINKING_EVENT"}}
+{"type":"tool_execution_start","toolCallId":"read-1","toolName":"read","args":{"path":"work.txt","offset":1,"limit":20}}
+{"type":"tool_execution_end","toolCallId":"read-1","toolName":"read","result":{"content":[{"type":"text","text":"FULL_SUCCESSFUL_PI_TOOL_RESULT"}]},"isError":false}
+JSONL
+node -e 'const fs = require("fs"); fs.appendFileSync(process.argv[1], JSON.stringify({ type: "tool_execution_end", result: "x".repeat(60000) + "FULL_LONG_EVENT_TAIL" }) + "\n")' "$state_dir/logs/cycle-fixture.pi-events.jsonl"
+chmod 600 "$state_dir/logs/cycle-fixture.pi-events.jsonl"
 cat > "$state_dir/current.log" <<'LOG'
 Autonomous build cycle 3/12
 Agent run in progress.
@@ -117,6 +133,7 @@ common_env=(
   "FAKE_ANALYZER_ARGS_LOG=$tmp_dir/analyzer-args.log"
   "FAKE_ANALYZER_INPUT_LOG=$tmp_dir/analyzer-input.log"
   "FAKE_ANALYZER_COUNT_FILE=$tmp_dir/analyzer-count"
+  "FAKE_ANALYZER_EVENT_CAPTURE=$tmp_dir/analyzer-events.jsonl"
 )
 
 pp_step "Regression: monitor produces an immediate interpreted, read-only report"
@@ -145,6 +162,30 @@ assert_file_contains "$tmp_dir/analyzer-input.log" \
   'Edit file — work.txt' \
   "monitor snapshot omitted recent rendered activity"
 assert_file_contains "$tmp_dir/analyzer-input.log" \
+  'FULL PI TERMINAL-EQUIVALENT EVENT STREAM:' \
+  "monitor snapshot omitted full Pi event-stream access"
+assert_file_contains "$tmp_dir/analyzer-input.log" \
+  "Source path: $state_dir/logs/cycle-fixture.pi-events.jsonl" \
+  "monitor snapshot omitted the full Pi event-log path"
+assert_file_contains "$tmp_dir/analyzer-input.log" \
+  'SOURCE RANGE: lines 1 through 5 inclusive.' \
+  "monitor did not require inspection of the complete Pi stream"
+assert_file_contains "$tmp_dir/analyzer-input.log" \
+  'ANALYZER READ FILE:' \
+  "monitor did not provide a complete read-tool-safe event view"
+assert_file_contains "$tmp_dir/analyzer-events.jsonl" \
+  'FULL_PI_THINKING_EVENT' \
+  "monitor analyzer could not access emitted Pi thinking events"
+assert_file_contains "$tmp_dir/analyzer-events.jsonl" \
+  'FULL_SUCCESSFUL_PI_TOOL_RESULT' \
+  "monitor analyzer could not access successful Pi tool results"
+assert_file_contains "$tmp_dir/analyzer-events.jsonl" \
+  'FULL_LONG_EVENT_TAIL' \
+  "monitor analyzer could not access the tail of an oversized Pi event"
+assert_file_contains "$tmp_dir/analyzer-events.jsonl" \
+  'PI EVENT LINE 5 SEGMENT 2/' \
+  "monitor did not segment an oversized Pi event for complete read access"
+assert_file_contains "$tmp_dir/analyzer-input.log" \
   'work.txt | 1 +' \
   "monitor snapshot omitted the Git change summary"
 assert_file_contains "$tmp_dir/analyzer-input.log" \
@@ -156,7 +197,8 @@ assert_file_omits "$tmp_dir/analyzer-input.log" \
 
 for required_arg in \
   --no-session \
-  --no-tools \
+  --tools \
+  read \
   --no-context-files \
   --no-extensions \
   --no-skills \
@@ -167,6 +209,9 @@ for required_arg in \
   grep -Fxq -- "$required_arg" "$tmp_dir/analyzer-args.log" \
     || fail "monitor analyzer omitted safety argument $required_arg"
 done
+if grep -Fxq -- '--no-tools' "$tmp_dir/analyzer-args.log"; then
+  fail "monitor disabled the read tool required for full Pi event access"
+fi
 
 if [[ "$(< "$tmp_dir/analyzer-count")" != "1" ]]; then
   fail "monitor did not invoke the analyzer exactly once in --once mode"

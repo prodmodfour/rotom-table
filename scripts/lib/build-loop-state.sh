@@ -68,6 +68,16 @@ build_loop_follow_log() {
   printf '%s/follow.log\n' "$1"
 }
 
+build_loop_pi_event_log() {
+  local rendered_log="$1"
+
+  if [[ "$rendered_log" == *.log ]]; then
+    printf '%s.pi-events.jsonl\n' "${rendered_log%.log}"
+  else
+    printf '%s.pi-events.jsonl\n' "$rendered_log"
+  fi
+}
+
 build_loop_stop_request_file() {
   printf '%s/stop-requested\n' "$(build_loop_lock_dir "$1")"
 }

@@ -81,6 +81,8 @@ case "$FAKE_PI_SCENARIO" in
     printf '%s\n' \
       '{"type":"agent_start"}' \
       '{"type":"message_update","assistantMessageEvent":{"type":"text_delta","delta":"Live wrapper output."}}' \
+      '{"type":"tool_execution_start","toolCallId":"read-full","toolName":"read","args":{"path":"fixture.ts"}}' \
+      '{"type":"tool_execution_end","toolCallId":"read-full","toolName":"read","result":{"content":[{"type":"text","text":"FULL_SUCCESSFUL_TOOL_OUTPUT"}]},"isError":false}' \
       '{"type":"message_end","message":{"role":"assistant","stopReason":"stop"}}' \
       '{"type":"agent_end","messages":[{"role":"assistant","stopReason":"stop"}]}'
     ;;
@@ -105,6 +107,7 @@ chmod +x "$tmp_dir/fake-pi"
 
 PI_AGENT_COMMAND="$tmp_dir/fake-pi" \
 PI_AGENT_OUTPUT_MODE=live \
+PI_AGENT_EVENT_LOG="$tmp_dir/live.pi-events.jsonl" \
 FAKE_PI_ARGS_LOG="$tmp_dir/args.log" \
 FAKE_PI_SCENARIO=success \
 AGENT_EVENT_HEARTBEAT_SECONDS=0 \
@@ -114,6 +117,14 @@ grep -Fq -- '--no-session --mode json' "$tmp_dir/args.log" \
   || fail "run-agent did not select Pi JSON mode for live output"
 grep -Fq 'Live wrapper output.' "$tmp_dir/live.log" \
   || fail "run-agent did not render live Pi output"
+grep -Fq 'FULL_SUCCESSFUL_TOOL_OUTPUT' "$tmp_dir/live.pi-events.jsonl" \
+  || fail "run-agent full event log omitted a successful tool result"
+if grep -Fq 'FULL_SUCCESSFUL_TOOL_OUTPUT' "$tmp_dir/live.log"; then
+  fail "run-agent concise renderer unexpectedly exposed successful tool output"
+fi
+if [[ "$(stat -c '%a' "$tmp_dir/live.pi-events.jsonl")" != "600" ]]; then
+  fail "run-agent full Pi event log was not private"
+fi
 
 set +e
 PI_AGENT_COMMAND="$tmp_dir/fake-pi" \

@@ -13,6 +13,7 @@ fi
 PROMPT="$1"
 AGENT_COMMAND="${PI_AGENT_COMMAND:-pi-dan-rinse}"
 AGENT_OUTPUT_MODE="${PI_AGENT_OUTPUT_MODE:-live}"
+AGENT_EVENT_LOG="${PI_AGENT_EVENT_LOG:-}"
 EVENT_RENDERER="$SCRIPT_DIR/render-agent-events.mjs"
 
 if ! command -v "$AGENT_COMMAND" >/dev/null 2>&1; then
@@ -37,10 +38,16 @@ run_json_agent() {
   local -a renderer_args=()
   local -a pipeline_status
   local agent_status
+  local event_log_status
   local renderer_status
+  local event_sink="/dev/null"
 
   if ! command -v node >/dev/null 2>&1; then
     pp_error "Node.js is required for $AGENT_OUTPUT_MODE agent output."
+    return 127
+  fi
+  if ! command -v tee >/dev/null 2>&1; then
+    pp_error "tee is required to capture $AGENT_OUTPUT_MODE agent output."
     return 127
   fi
   if [[ ! -f "$EVENT_RENDERER" ]]; then
@@ -51,17 +58,35 @@ run_json_agent() {
     renderer_args+=(--raw)
   fi
 
+  if [[ -n "$AGENT_EVENT_LOG" ]]; then
+    if [[ ! -d "$(dirname "$AGENT_EVENT_LOG")" ]]; then
+      pp_error "Pi event-log directory does not exist: $(dirname "$AGENT_EVENT_LOG")"
+      return 125
+    fi
+    if ! (umask 077 && : > "$AGENT_EVENT_LOG") || ! chmod 600 "$AGENT_EVENT_LOG"; then
+      pp_error "Could not prepare private Pi event log: $AGENT_EVENT_LOG"
+      return 125
+    fi
+    event_sink="$AGENT_EVENT_LOG"
+  fi
+
   set +e
   "$AGENT_COMMAND" --no-session --mode json @AGENTS.md @PROJECT_BRIEF.md @BUILD_TICKETS.md "$PROMPT" \
+    | tee "$event_sink" \
     | node "$EVENT_RENDERER" "${renderer_args[@]}"
   pipeline_status=("${PIPESTATUS[@]}")
   set -e
 
   agent_status="${pipeline_status[0]}"
-  renderer_status="${pipeline_status[1]}"
+  event_log_status="${pipeline_status[1]}"
+  renderer_status="${pipeline_status[2]}"
 
   if (( agent_status == 130 || agent_status == 143 )); then
     return "$agent_status"
+  fi
+  if (( event_log_status != 0 )); then
+    pp_error "Failed to capture the full Pi event stream."
+    return 125
   fi
   if (( renderer_status > 1 )); then
     pp_error "Agent output renderer failed with exit status $renderer_status."

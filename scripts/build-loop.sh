@@ -63,7 +63,7 @@ AUTONOMOUS_BUILD_RETRY_SECONDS
                    Defaults to 600 (10 minutes).
 
 While a loop is active, use `just follow` from another terminal for raw activity,
-`just monitor 10` for interpreted 10-minute updates, and `just stop` to request a
+`just monitor 10` for full-stream interpreted updates, and `just stop` to request a
 graceful stop after the current cycle or attempt.
 
 This script intentionally does not pass a model or thinking level.
@@ -367,7 +367,12 @@ run_agent_with_log() {
   local -a pipeline_status
   local agent_status
   local tee_status
+  local pi_event_log
 
+  pi_event_log=""
+  if [[ "$AGENT_OUTPUT_MODE" != "final" ]]; then
+    pi_event_log="$(build_loop_pi_event_log "$log_file")"
+  fi
   pp_info "Detailed agent activity is streaming to the follow log; use: just follow"
   {
     printf '\nAgent activity — cycle %s/%s\n' "$cycle" "$MAX_CYCLES"
@@ -375,11 +380,17 @@ run_agent_with_log() {
     if [[ -n "${next_ticket:-}" ]]; then
       printf 'Ticket: %s\n' "$next_ticket"
     fi
-    printf 'Cycle log: %s\n\n' "$log_file"
+    printf 'Cycle log: %s\n' "$log_file"
+    if [[ -n "$pi_event_log" ]]; then
+      printf 'Full Pi event log: %s\n' "$pi_event_log"
+    fi
+    printf '\n'
   } >> "$FOLLOW_LOG"
 
   set +e
-  PI_AGENT_OUTPUT_MODE="$AGENT_OUTPUT_MODE" scripts/run-agent.sh "$prompt" 2>&1 \
+  PI_AGENT_OUTPUT_MODE="$AGENT_OUTPUT_MODE" \
+  PI_AGENT_EVENT_LOG="$pi_event_log" \
+    scripts/run-agent.sh "$prompt" 2>&1 \
     | tee "$log_file" >> "$FOLLOW_LOG"
   pipeline_status=("${PIPESTATUS[@]}")
   set -e

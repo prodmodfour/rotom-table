@@ -48,9 +48,11 @@ QUALITY_GATE
 set -euo pipefail
 
 : "${AUTONOMOUS_BUILD_LOOP_STATE_DIR:?AUTONOMOUS_BUILD_LOOP_STATE_DIR must be set by the test}"
+: "${PI_AGENT_EVENT_LOG:?PI_AGENT_EVENT_LOG must be supplied by the build loop}"
 
 commit_count="$(git rev-list --count HEAD)"
 echo "Stub agent cycle from commit count ${commit_count}."
+(umask 077 && printf '{"type":"fixture","cycle":%s}\n' "$commit_count" > "$PI_AGENT_EVENT_LOG")
 printf '\nStub cycle %s\n' "$commit_count" >> WORK_LOG.md
 git add WORK_LOG.md
 git commit -q -m "test: stub cycle ${commit_count}"
@@ -119,6 +121,14 @@ fi
 log_count="$(find "$state_dir/logs" -type f -name 'cycle-*.log' | wc -l | tr -d ' ')"
 if [[ "$log_count" -lt 1 ]]; then
   fail "expected at least one external build-loop log in $state_dir/logs"
+fi
+
+event_log_count="$(find "$state_dir/logs" -type f -name 'cycle-*.pi-events.jsonl' | wc -l | tr -d ' ')"
+if [[ "$event_log_count" -lt 1 ]]; then
+  fail "build loop did not provide a full Pi event sidecar path to the agent wrapper"
+fi
+if ! grep -Fq 'Full Pi event log:' "$state_dir/follow.log"; then
+  fail "stable follow log did not identify the full Pi event sidecar"
 fi
 
 pp_success "Build-loop state regression passed."

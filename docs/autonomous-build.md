@@ -14,6 +14,7 @@ The current queue maps GitHub issues #27-#44 to local tickets in `BUILD_TICKETS.
 - `scripts/render-agent-events.mjs` — dependency-free live Pi event renderer.
 - `scripts/build-loop-follow.sh` — observer for the active detailed-agent log.
 - `scripts/build-loop-monitor.sh` — read-only periodic progress interpreter.
+- `scripts/prepare-pi-event-range.mjs` — lossless event-range segmenter for bounded read-tool access.
 - `scripts/build-loop-stop.sh` — graceful stop-request command.
 - `scripts/quality-gate.sh` — Rotom Table validation gate.
 
@@ -38,7 +39,9 @@ To push the branch after each successful ticket, omit `--no-push`.
 
 ## Live agent output
 
-The default `live` agent-log format renders Pi's JSON event stream as concise, line-oriented output in the external logs. The terminal that launched `just run` stays focused on cycle-level state and directs the operator to `just follow` instead of echoing every agent event. The detailed stream shows assistant progress text, safe tool argument summaries, stable tool identifiers that correlate parallel starts and completions, semantic actions such as **Read file**, **Find files**, or **Run tests**, provider retries, compaction, durations, and a periodic heartbeat while the model or a tool is still running. Thinking events/deltas and successful tool results are not printed. Failed tool output is bounded so a single failure cannot flood the log.
+The default `live` agent-log format renders Pi's JSON event stream as concise, line-oriented output in the external logs. The terminal that launched `just run` stays focused on cycle-level state and directs the operator to `just follow` instead of echoing every agent event. The detailed stream shows assistant progress text, safe tool argument summaries, stable tool identifiers that correlate parallel starts and completions, semantic actions such as **Read file**, **Find files**, or **Run tests**, provider retries, compaction, durations, and a periodic heartbeat while the model or a tool is still running. Thinking events/deltas and successful tool results are not printed in this concise view. Failed tool output is bounded so a single failure cannot flood it.
+
+In parallel, every `live` or `json` invocation is tee'd byte-for-byte into a private `*.pi-events.jsonl` sidecar beside its rendered `*.log` file. This is the complete event source emitted by the headless Pi process, including assistant and thinking events, full emitted tool arguments/results, retries, failures, and lifecycle events. Sidecars are created with mode `0600`, remain in the external state directory, and must never be committed.
 
 Select another mode when needed:
 
@@ -50,11 +53,11 @@ scripts/build-loop.sh --max-cycles 1 --agent-output final --no-push
 scripts/build-loop.sh --max-cycles 1 --agent-output json --no-push
 ```
 
-Raw JSON events can contain complete messages, tool arguments, and tool results. Keep raw event logs private and do not commit them. The normal live renderer is the recommended operator view.
+Raw JSON events can contain complete messages, source excerpts, tool arguments, tool results, model reasoning emitted by the provider, and sensitive command output. Keep raw event logs private and do not commit them. The normal live renderer remains the recommended human operator view. `final` output mode does not expose a live JSON event stream, so full-stream monitoring is unavailable in that mode.
 
 ## Follow, monitor, and gracefully stop a long run
 
-Every active loop writes high-level launcher output to `current.log`, detailed agent activity to `follow.log`, and individual attempts to the existing per-cycle logs in the external build-loop state directory. Detailed activity is not mirrored to the `just run` terminal. Follow the stable detailed log from another terminal without finding a PID or cycle filename:
+Every active loop writes high-level launcher output to `current.log`, concise detailed agent activity to `follow.log`, and rendered plus full-event files for individual attempts in the external build-loop state directory. Detailed activity is not mirrored to the `just run` terminal. Follow the stable concise log from another terminal without finding a PID or cycle filename:
 
 ```bash
 just follow       # show the latest 40 lines, then follow
@@ -70,9 +73,9 @@ just monitor       # report immediately, then every 10 minutes
 just monitor 5     # report immediately, then every 5 minutes
 ```
 
-Each report uses a fresh, ephemeral Pi invocation with all tools, project context, extensions, and skills disabled. The analyzer receives only bounded recent build-loop logs, sanitized process activity, Git status/statistics, and commit metadata—not source-file bodies or diffs. It compares reports to distinguish active progress, resolved failures, validation, commits, and stalls rather than merely repeating the ticket heading. Set `PI_MONITOR_AGENT_COMMAND` to choose another Pi-compatible executable or `PI_MONITOR_THINKING_LEVEL` to override the default `low` thinking level. Pressing Ctrl-C detaches the monitor without affecting the build loop; the monitor emits a final report and exits after observing that the loop ended.
+Each report uses a fresh, ephemeral Pi invocation with only the read tool enabled; project context, extensions, and skills remain disabled. The monitor creates a private, lossless segmented view of every new line in the active invocation's complete `*.pi-events.jsonl` stream; the analyzer is instructed to read that view to EOF using offsets, and it also receives sanitized process activity, Git status/statistics, commit metadata, and bounded rendered context. The first report reads the full stream from its beginning; later reports read every event added since the previous successful report. This lets it interpret actual Pi activity—including successful tool results and emitted thinking events—rather than merely repeating the ticket heading. Set `PI_MONITOR_AGENT_COMMAND` to choose another Pi-compatible executable or `PI_MONITOR_THINKING_LEVEL` to override the default `low` thinking level. Pressing Ctrl-C detaches the monitor without affecting the build loop; the monitor emits a final report and exits after observing that the loop ended.
 
-The selected metadata and bounded log excerpts are sent to the analyzer's configured model provider. Build-loop logs should remain private because failed command excerpts can contain project details.
+The complete event ranges read by the monitor are sent to the analyzer's configured model provider. They can contain source contents, command output, model reasoning, and secrets accidentally exposed to Pi; use full-stream monitoring only with a trusted provider and keep the external logs private.
 
 Request a safe cycle-boundary shutdown with:
 
