@@ -1334,7 +1334,7 @@ Status: DONE
 
 ## MA-104 — Enforce response ownership and privacy
 
-Status: TODO
+Status: DONE
 
 **Depends on:** MA-103B, MA-054
 **Commit:** `feat(move-automation): authorize move response windows`
