@@ -226,6 +226,27 @@ describe('pending move response command parser', () => {
     }), 'duplicate-response')
   })
 
+  it('runs response ownership authorization before resolving private option IDs', () => {
+    const pending = createPendingMoveResolutionFixture()
+    const authorize = vi.fn(() => {
+      throw new Error('not available')
+    })
+    const forgedOption = responseCommand()
+    forgedOption.payload = {
+      resolutionId: pending.resolutionId,
+      windowId: 'window.branch',
+      optionId: 'option.forged',
+    }
+
+    expect(() => parsePendingMoveResponseCommand(forgedOption, {
+      pendingResolutionRepository: repositoryFor(pending),
+      authorize,
+    })).toThrow('not available')
+    expect(authorize).toHaveBeenCalledWith(expect.objectContaining({
+      window: expect.objectContaining({ windowId: 'window.branch' }),
+    }))
+  })
+
   it('rejects forged window and option IDs before a use case can run', () => {
     const pending = createPendingMoveResolutionFixture()
     const forgedWindow = responseCommand()

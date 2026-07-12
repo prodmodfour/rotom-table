@@ -246,6 +246,30 @@ describe('pending move resolution contract', () => {
     expect(Object.isFrozen(parsed.outstandingWindows[0]?.options)).toBe(true)
   })
 
+  it('strictly validates concrete profile and side response-owner identities', () => {
+    const concrete = pendingResolution()
+    concrete.outstandingWindows[0]!.ownership = [
+      { kind: 'profile', id: 'profile_responder1' },
+      { kind: 'side', id: 'red-side' },
+      { kind: 'placement', id: 'target-token' },
+      { kind: 'target', id: 'target-token' },
+    ]
+    expect(parsePendingMoveResolution(concrete).outstandingWindows[0]?.ownership).toEqual([
+      { kind: 'target', id: 'target-token' },
+      { kind: 'placement', id: 'target-token' },
+      { kind: 'profile', id: 'profile_responder1' },
+      { kind: 'side', id: 'red-side' },
+    ])
+
+    const invalidProfile = pendingResolution()
+    invalidProfile.outstandingWindows[0]!.ownership = [{ kind: 'profile', id: 'not-a-profile' }]
+    expectPendingError(() => parsePendingMoveResolution(invalidProfile), 'invalid-pending-resolution')
+
+    const invalidSide = pendingResolution()
+    invalidSide.outstandingWindows[0]!.ownership = [{ kind: 'side', id: 'Bad Side' }]
+    expectPendingError(() => parsePendingMoveResolution(invalidSide), 'invalid-pending-resolution')
+  })
+
   it('parses chosen options and authorized passes without executable response data', () => {
     const selected = parsePendingMoveResolution(withSelectedChoice())
     expect(selected.status).toBe('resuming')

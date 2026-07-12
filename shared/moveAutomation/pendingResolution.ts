@@ -4,7 +4,9 @@ import {
   type LivePlayOpId,
 } from '../livePlayCommands'
 import { isSlug } from '../paths'
+import { isPlayerProfileId } from '../playerProfiles'
 import { isSheetKind, type SheetKind } from '../sheets'
+import { isEncounterSideId } from './encounterState'
 import {
   MoveAutomationRollLedgerValidationError,
   parseMoveAutomationRollLedger,
@@ -749,12 +751,25 @@ const parseOwner = (value: unknown, path: string): PendingMoveResponseOwner => {
     }
     return { kind, id: null }
   }
-  if (record.id === null) {
+  const ownerId = record.id
+  if (ownerId === null) {
     fail('invalid-pending-resolution', `${path}.id`, `must identify the ${kind} owner.`)
+  }
+  if (kind === 'profile') {
+    const profileId = isPlayerProfileId(ownerId)
+      ? ownerId
+      : fail('invalid-pending-resolution', `${path}.id`, 'must identify a valid player profile owner.')
+    return { kind, id: profileId }
+  }
+  if (kind === 'side') {
+    const sideId = isEncounterSideId(ownerId)
+      ? ownerId
+      : fail('invalid-pending-resolution', `${path}.id`, 'must identify a valid encounter side owner.')
+    return { kind, id: sideId }
   }
   return {
     kind,
-    id: parsePlacementId(record.id, `${path}.id`),
+    id: parsePlacementId(ownerId, `${path}.id`),
   }
 }
 

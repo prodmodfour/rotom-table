@@ -17,6 +17,10 @@ import {
   createSqliteShopTableRepository,
   type ShopTableRepository,
 } from '../storage/shopTableRepository'
+import {
+  createSqlitePendingMoveResolutionRepository,
+  type PendingMoveResolutionRepository,
+} from '../storage/pendingMoveResolutionRepository'
 import { sqlitePlayerVisibleMapSheetAccessKeys } from '../utils/mapSheetAccess'
 import type {
   RealtimeEventAccessDependencies,
@@ -29,6 +33,7 @@ export interface SqliteRealtimeEventAccessAdapterOptions {
   readonly sheetRepository?: Pick<SheetRepository<Record<string, unknown>>, 'getByRef' | 'list'>
   readonly groupInventoryRepository?: Pick<GroupInventoryRepository, 'get'>
   readonly shopTableRepository?: Pick<ShopTableRepository, 'get'>
+  readonly pendingMoveResolutionRepository?: Pick<PendingMoveResolutionRepository, 'getById'>
 }
 
 const defaultDatabase = (database: RotomDatabase | undefined): RotomDatabase => database ?? getRotomDatabase()
@@ -86,12 +91,17 @@ export const createSqliteRealtimeEventAccessDependencies = (
   const sheetRepository = options.sheetRepository ?? defaultSheetRepository(database)
   const groupInventoryRepository = options.groupInventoryRepository ?? defaultGroupInventoryRepository(database)
   const shopTableRepository = options.shopTableRepository ?? defaultShopTableRepository(database)
+  const pendingMoveResolutionRepository = options.pendingMoveResolutionRepository
+    ?? createSqlitePendingMoveResolutionRepository(database)
 
   return {
     getMap: (slug) => mapRepository.getBySlug(slug),
     getSheet: (kind, slug) => persistedSheetForPolicy(sheetRepository, kind, slug),
     getGroupInventory: (slug) => groupInventoryRepository.get(slug)?.document ?? null,
     getShop: (slug) => shopTableRepository.get(slug)?.document ?? null,
+    getPendingMoveResolution: (resolutionId) => (
+      pendingMoveResolutionRepository.getById(resolutionId)?.resolution ?? null
+    ),
     listTrainerSheets: () => sheetRepository.list('trainer').map(trainerSheetFromStored),
     playerVisibleMapSheetAccessKeys: () => sqlitePlayerVisibleMapSheetAccessKeys(mapRepository),
   }

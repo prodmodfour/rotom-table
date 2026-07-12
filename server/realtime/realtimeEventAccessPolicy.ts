@@ -7,7 +7,9 @@ import type { TabletopMap } from '~/types/map'
 import type { TrainerSheet } from '~/types/trainerSheet'
 import type { GroupInventoryDocument } from '~/types/groupInventory'
 import type { ShopTableDocument } from '~/types/shop'
+import type { PendingMoveResolution } from '#shared/moveAutomation/pendingResolution'
 import { canAccessMapForRole } from '../policies/mapPolicy'
+import { pendingMoveResponseAuthorizationGrant } from '../policies/pendingMoveResponsePolicy'
 import { authorizeSheetList, playerSheetAccessContextFromKeys } from '../useCases/authorizeSheetList'
 
 export type RealtimePlayerSheetAccessKey = `${SheetKind}:${string}`
@@ -38,6 +40,7 @@ export interface RealtimeEventAccessDependencies {
   ) => RealtimePolicyPersistedSheet | null
   readonly getGroupInventory?: (slug: string) => Pick<GroupInventoryDocument, 'slug'> | null
   readonly getShop?: (slug: string) => Pick<ShopTableDocument, 'slug' | 'playerVisible' | 'open'> | null
+  readonly getPendingMoveResolution?: (resolutionId: string) => PendingMoveResolution | null
   readonly listTrainerSheets: () => readonly TrainerSheet[]
   readonly playerVisibleMapSheetAccessKeys: () => ReadonlySet<RealtimePlayerSheetAccessKey>
 }
@@ -55,6 +58,7 @@ export type RealtimeEventAccessDecision =
         | 'group-inventory-not-found'
         | 'shop-not-found'
         | 'shop-not-accessible'
+        | 'pending-move-response-not-accessible'
         | 'invalid-access'
     }
 
@@ -202,6 +206,44 @@ const evaluateShopAccess = (
     : denied('shop-not-accessible')
 }
 
+const evaluatePendingMoveResponseAccess = (
+  access: Extract<RealtimeEventAccess, { readonly kind: 'pending-move-response-access' }>,
+  principal: RealtimeDeliveryPrincipal,
+  dependencies: RealtimeEventAccessDependencies,
+): RealtimeEventAccessDecision => {
+  const mapDecision = evaluateMapAccess(
+    { kind: 'map-access', mapSlug: access.mapSlug },
+    principal,
+    dependencies,
+  )
+  if (!mapDecision.allowed) return mapDecision
+
+  const resolution = dependencies.getPendingMoveResolution?.(access.resolutionId) ?? null
+  const map = dependencies.getMap(access.mapSlug)
+  const window = resolution?.outstandingWindows.find(
+    candidate => candidate.windowId === access.windowId,
+  ) ?? null
+  if (
+    !resolution
+    || !map
+    || resolution.originMapSlug !== access.mapSlug
+    || resolution.status !== 'pending'
+    || !window
+  ) return denied('pending-move-response-not-accessible')
+
+  const grant = pendingMoveResponseAuthorizationGrant({
+    resolution,
+    window,
+    map,
+    viewer: {
+      role: principal.role,
+      playerProfile: principal.playerProfile ?? null,
+      linkedTrainerSheets: dependencies.listTrainerSheets(),
+    },
+  })
+  return grant ? allowed() : denied('pending-move-response-not-accessible')
+}
+
 /**
  * Evaluates durable event-log records only. Replay control messages are
  * connection metadata without RealtimeEventAccess and must be delivered outside
@@ -224,6 +266,9 @@ export const evaluateRealtimeEventAccess = (
   }
   if (input.access.kind === 'shop-access') {
     return evaluateShopAccess(input.access, input.principal, input.dependencies)
+  }
+  if (input.access.kind === 'pending-move-response-access') {
+    return evaluatePendingMoveResponseAccess(input.access, input.principal, input.dependencies)
   }
 
   return denied('invalid-access')

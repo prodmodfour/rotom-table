@@ -42,8 +42,16 @@ export class MoveResponseCommandParserError
   }
 }
 
+export interface AuthorizeMoveResponseReferencesInput {
+  readonly command: MoveResponseCommand
+  readonly storedResolution: StoredPendingMoveResolution
+  readonly window: PendingMoveResponseWindow | null
+}
+
 export interface MoveResponseCommandParserDependencies {
   readonly pendingResolutionRepository?: Pick<PendingMoveResolutionRepository, 'getById'>
+  /** Runs before an option ID is resolved, so denied callers never inspect option detail. */
+  readonly authorize?: (input: AuthorizeMoveResponseReferencesInput) => void
 }
 
 export interface ParsedMoveResponseCommand {
@@ -208,6 +216,7 @@ export const parsePendingMoveResponseCommand = (
   assertUnusedResponseIdentity(command, storedResolution, windowId)
 
   if (command.type === MOVE_RESPONSE_COMMAND_TYPES.GM_CANCEL) {
+    options.authorize?.({ command, storedResolution, window: null })
     return Object.freeze({
       command,
       storedResolution,
@@ -220,6 +229,7 @@ export const parsePendingMoveResponseCommand = (
     return parserError(400, 'invalid-command', 'This move response command requires a window ID.')
   }
   const window = resolveWindow(command, storedResolution, windowId)
+  options.authorize?.({ command, storedResolution, window })
   const option = resolveOption(commandOptionId(command), window)
 
   return Object.freeze({ command, storedResolution, window, option })

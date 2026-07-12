@@ -3,6 +3,7 @@ import {
   isLivePlayMapSlug,
   isLivePlayOpId,
 } from '../livePlayCommands'
+import { isPlayerProfileId, type PlayerProfileId } from '../playerProfiles'
 import { PENDING_MOVE_RESOLUTION_LIMITS } from './pendingResolution'
 
 /**
@@ -44,6 +45,8 @@ export interface MoveResponseCommandEnvelope<
   readonly opId: string
   readonly mapSlug: string
   readonly baseRevision: number
+  /** Selected player authorization context; omitted for GM commands. */
+  readonly profileId?: PlayerProfileId
   readonly type: TType
   readonly payload: TPayload
 }
@@ -169,6 +172,7 @@ const ROOT_FIELDS = [
   'type',
   'payload',
 ] as const
+const ROOT_OPTIONAL_FIELDS = ['profileId'] as const
 const OPTION_RESPONSE_PAYLOAD_FIELDS = [
   'resolutionId',
   'windowId',
@@ -244,8 +248,9 @@ const collectExactFieldIssues = (
   fields: readonly string[],
   path: string,
   issues: MutableIssueList,
+  optionalFields: readonly string[] = [],
 ): void => {
-  const allowed = new Set(fields)
+  const allowed = new Set([...fields, ...optionalFields])
   for (const field of fields) {
     if (!hasOwn(record, field)) {
       addIssue(issues, `${path}.${field}`, 'missing-field', `${path}.${field} is required.`)
@@ -391,7 +396,7 @@ export const collectMoveResponseCommandIssues = (
     }])
   }
 
-  collectExactFieldIssues(value, ROOT_FIELDS, '$', issues)
+  collectExactFieldIssues(value, ROOT_FIELDS, '$', issues, ROOT_OPTIONAL_FIELDS)
 
   if (value.schemaVersion !== MOVE_RESPONSE_COMMAND_SCHEMA_VERSION) {
     addIssue(
@@ -413,6 +418,14 @@ export const collectMoveResponseCommandIssues = (
       '$.baseRevision',
       'invalid-base-revision',
       '$.baseRevision must be a safe non-negative map revision.',
+    )
+  }
+  if (hasOwn(value, 'profileId') && !isPlayerProfileId(value.profileId)) {
+    addIssue(
+      issues,
+      '$.profileId',
+      'invalid-identifier',
+      '$.profileId must be a valid player profile ID when provided.',
     )
   }
 
@@ -464,6 +477,7 @@ export const validateMoveResponseCommand = <
     opId: value.opId as string,
     mapSlug: value.mapSlug as string,
     baseRevision: value.baseRevision as number,
+    ...(isPlayerProfileId(value.profileId) ? { profileId: value.profileId } : {}),
     type: value.type,
     payload,
   }) as TCommand

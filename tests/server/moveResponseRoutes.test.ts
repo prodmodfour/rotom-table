@@ -3,12 +3,20 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import type { EventHandler, EventHandlerRequest, H3Event } from 'h3'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { parsePendingMoveResolution } from '#shared/moveAutomation/pendingResolution'
 import {
   MOVE_RESPONSE_COMMAND_LIMITS,
   MOVE_RESPONSE_COMMAND_SCHEMA_VERSION,
   MOVE_RESPONSE_COMMAND_TYPES,
   type MoveResponseCommandType,
 } from '#shared/moveAutomation/responseCommands'
+import {
+  PLAYER_PROFILE_SCHEMA_VERSION,
+  type PlayerProfile,
+  type PlayerProfileDisplayName,
+  type PlayerProfileId,
+} from '#shared/playerProfiles'
+import type { TabletopMap } from '~/types/map'
 import {
   MOVE_RESPONSE_ROUTE_NOT_IMPLEMENTED_MESSAGE,
   createMoveResponseRoute,
@@ -22,6 +30,7 @@ import {
   createSqlitePendingMoveResolutionRepository,
   type PendingMoveResolutionRepository,
 } from '~~/server/storage/pendingMoveResolutionRepository'
+import { createSqliteMapRepository } from '~~/server/storage/mapRepository'
 import {
   createPendingMoveResolutionFixture,
   createTerminalMoveResolutionFixture,
@@ -44,6 +53,10 @@ const responseCommand = (options: ResponseCommandOptions = {}): Record<string, u
     opId: options.opId ?? 'op_responseroute01',
     mapSlug: 'pending-arena',
     baseRevision: 12,
+    ...(type === MOVE_RESPONSE_COMMAND_TYPES.GM_CANCEL
+      || type === MOVE_RESPONSE_COMMAND_TYPES.GM_FORCE_RESOLVE
+      ? {}
+      : { profileId: 'profile_attacker1' }),
     type,
     payload: options.payload ?? (
       type === MOVE_RESPONSE_COMMAND_TYPES.GM_CANCEL
@@ -83,6 +96,41 @@ const invokeRoute = async (
     },
   } as unknown as H3Event)
 }
+
+const selectedProfile: PlayerProfile = {
+  schemaVersion: PLAYER_PROFILE_SCHEMA_VERSION,
+  id: 'profile_attacker1' as PlayerProfileId,
+  displayName: 'Attacker' as PlayerProfileDisplayName,
+  linkedCharacters: [{ sheetKind: 'pokemon', sheetSlug: 'actor' }],
+}
+
+const responseMap = (): TabletopMap => ({
+  schemaVersion: 2,
+  slug: 'pending-arena',
+  name: 'Pending Arena',
+  folder: '',
+  revision: 12,
+  dimensions: { x: 4, y: 2, z: 4 },
+  playerVisible: true,
+  voxels: [],
+  hazards: [],
+  fieldEffects: { weather: [], terrains: [], rooms: [] },
+  placements: [{
+    id: 'actor-token',
+    sheetKind: 'pokemon',
+    sheetSlug: 'actor',
+    position: { x: 0, y: 0, z: 0 },
+  }],
+  lights: [],
+  initiative: { activeId: null, round: 1 },
+})
+
+const accessDependencies = () => ({
+  mapRepository: {
+    getBySlug: vi.fn((slug: string) => slug === 'pending-arena' ? responseMap() : null),
+  },
+  sheetRepository: { getByRef: vi.fn(() => null) },
+})
 
 const originalDatabasePath = process.env[ROTOM_DB_PATH_ENV]
 const originalNodeEnv = process.env.NODE_ENV
@@ -144,6 +192,8 @@ describe('move response API route boundary', () => {
     const route = createMoveResponseRoute({
       expectedType: MOVE_RESPONSE_COMMAND_TYPES.CHOOSE,
       parserDependencies: { pendingResolutionRepository: repositoryWithPending() },
+      accessDependencies: accessDependencies(),
+      resolvePlayerProfile: () => selectedProfile,
       execute,
     })
 
@@ -153,7 +203,12 @@ describe('move response API route boundary', () => {
     })).resolves.toEqual({ acceptedForTest: true })
     expect(execute).toHaveBeenCalledWith(expect.objectContaining({
       role: 'player',
-      command: expect.objectContaining({ type: 'choose' }),
+      playerProfile: selectedProfile,
+      authorization: {
+        source: 'window-owner',
+        chosenBy: { kind: 'actor', id: null },
+      },
+      command: expect.objectContaining({ type: 'choose', profileId: selectedProfile.id }),
       window: expect.objectContaining({ windowId: 'window.branch' }),
       option: expect.objectContaining({ id: 'option.attack' }),
     }))
@@ -165,11 +220,15 @@ describe('move response API route boundary', () => {
     const route = createMoveResponseRoute({
       expectedType: MOVE_RESPONSE_COMMAND_TYPES.CHOOSE,
       parserDependencies: { pendingResolutionRepository: pendingRepository },
+      accessDependencies: accessDependencies(),
+      resolvePlayerProfile: () => selectedProfile,
       execute,
     })
     const expiredRoute = createMoveResponseRoute({
       expectedType: MOVE_RESPONSE_COMMAND_TYPES.CHOOSE,
       parserDependencies: { pendingResolutionRepository: repositoryWithPending(true) },
+      accessDependencies: accessDependencies(),
+      resolvePlayerProfile: () => selectedProfile,
       execute,
     })
 
@@ -213,6 +272,54 @@ describe('move response API route boundary', () => {
     expect(execute).not.toHaveBeenCalled()
   })
 
+  it('denies ineligible windows before resolving private option IDs', async () => {
+    const source = createPendingMoveResolutionFixture()
+    const targetOwned = parsePendingMoveResolution({
+      ...source,
+      outstandingWindows: source.outstandingWindows.map(window => ({
+        ...window,
+        ownership: [{ kind: 'target', id: 'target-token' }],
+      })),
+    })
+    const pendingResolutionRepository = repositoryWithPending()
+    ;(pendingResolutionRepository.getById as ReturnType<typeof vi.fn>).mockImplementation(
+      (id: string) => id === targetOwned.resolutionId
+        ? {
+            schemaVersion: 1,
+            resolutionId: targetOwned.resolutionId,
+            originMapSlug: targetOwned.originMapSlug,
+            originOpId: targetOwned.originOpId,
+            status: targetOwned.status,
+            resolution: targetOwned,
+            revision: 0,
+            createdAt: targetOwned.createdAt,
+            updatedAt: targetOwned.updatedAt,
+            terminalOpId: null,
+          }
+        : null,
+    )
+    const execute = vi.fn()
+    const route = createMoveResponseRoute({
+      expectedType: MOVE_RESPONSE_COMMAND_TYPES.CHOOSE,
+      parserDependencies: { pendingResolutionRepository },
+      accessDependencies: accessDependencies(),
+      resolvePlayerProfile: () => selectedProfile,
+      execute,
+    })
+
+    await expect(invokeRoute(route, {
+      role: 'player',
+      body: responseCommand({
+        payload: {
+          resolutionId: targetOwned.resolutionId,
+          windowId: 'window.branch',
+          optionId: 'option.forged',
+        },
+      }),
+    })).rejects.toMatchObject({ statusCode: 403 })
+    expect(execute).not.toHaveBeenCalled()
+  })
+
   it('requires authentication and reserves GM controls for GMs', async () => {
     await expect(invokeRoute(chooseRoute, { body: responseCommand() })).rejects.toMatchObject({
       statusCode: 401,
@@ -240,36 +347,46 @@ describe('move response API route boundary', () => {
     ).get()).toEqual({ count: 0 })
   })
 
-  it('keeps the newly exposed routes inert and private until resume orchestration lands', async () => {
+  it('authorizes the exposed routes but keeps them non-mutating until resume orchestration lands', async () => {
     createSqlitePendingMoveResolutionRepository(getRotomDatabase()).create({
       resolution: createPendingMoveResolutionFixture(),
     })
+    const map = responseMap()
+    createSqliteMapRepository<TabletopMap>(getRotomDatabase()).save({
+      slug: map.slug,
+      document: map,
+      revision: map.revision ?? 0,
+      updatedAt: 1_000,
+    })
+    const gmCommand = responseCommand()
+    delete gmCommand.profileId
 
     const unavailable = {
       statusCode: 501,
       statusMessage: MOVE_RESPONSE_ROUTE_NOT_IMPLEMENTED_MESSAGE,
     }
     await expect(invokeRoute(chooseRoute, {
-      role: 'player',
-      body: responseCommand(),
+      role: 'gm',
+      body: gmCommand,
     })).rejects.toMatchObject(unavailable)
     await expect(invokeRoute(chooseRoute, {
-      role: 'player',
-      body: responseCommand({
+      role: 'gm',
+      body: {
+        ...gmCommand,
         payload: {
           resolutionId: 'resolution-pending-1',
           windowId: 'window.branch',
           optionId: 'option.forged',
         },
-      }),
-    })).rejects.toMatchObject(unavailable)
+      },
+    })).rejects.toMatchObject({ statusCode: 400 })
 
     await expect(invokeRoute(chooseRoute, {
-      role: 'player',
+      role: 'gm',
       body: {
-        ...responseCommand(),
+        ...gmCommand,
         payload: {
-          ...(responseCommand().payload as Record<string, unknown>),
+          ...(gmCommand.payload as Record<string, unknown>),
           damage: 999,
         },
       },

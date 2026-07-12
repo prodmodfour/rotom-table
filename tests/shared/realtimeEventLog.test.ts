@@ -30,6 +30,17 @@ describe('durable realtime event-log contracts', () => {
       kind: 'shop-access',
       shopSlug: 'viridian-mart',
     })
+    expect(parseRealtimeEventAccess({
+      kind: 'pending-move-response-access',
+      mapSlug: 'training-yard',
+      resolutionId: 'resolution-pending-1',
+      windowId: 'window.branch',
+    })).toEqual({
+      kind: 'pending-move-response-access',
+      mapSlug: 'training-yard',
+      resolutionId: 'resolution-pending-1',
+      windowId: 'window.branch',
+    })
 
     expect(() => parseRealtimeEventAccess({ kind: 'public' })).toThrow(/kind/)
   })
@@ -40,6 +51,18 @@ describe('durable realtime event-log contracts', () => {
     expect(() => parseRealtimeEventAccess({ kind: 'sheet-access', sheetKind: 'pokemon', sheetSlug: 'Pika Chu' })).toThrow(/sheetSlug/)
     expect(() => parseRealtimeEventAccess({ kind: 'group-inventory-access', groupSlug: 'Bad Slug' })).toThrow(/groupSlug/)
     expect(() => parseRealtimeEventAccess({ kind: 'shop-access', shopSlug: 'Bad Slug' })).toThrow(/shopSlug/)
+    expect(() => parseRealtimeEventAccess({
+      kind: 'pending-move-response-access',
+      mapSlug: 'Bad Slug',
+      resolutionId: 'resolution-pending-1',
+      windowId: 'window.branch',
+    })).toThrow(/mapSlug/)
+    expect(() => parseRealtimeEventAccess({
+      kind: 'pending-move-response-access',
+      mapSlug: 'training-yard',
+      resolutionId: 'resolution-pending-1',
+      windowId: 'Window Branch',
+    })).toThrow(/windowId/)
   })
 
   it('validates event drafts and rejects caller-owned sequence or timestamp', () => {

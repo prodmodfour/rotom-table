@@ -7,6 +7,10 @@ import {
   type PlayerProfileId,
 } from '#shared/playerProfiles'
 import type { RealtimeEventAccess, PersistedRealtimeEvent } from '#shared/realtimeEventLog'
+import {
+  parsePendingMoveResolution,
+  type PendingMoveResolution,
+} from '#shared/moveAutomation/pendingResolution'
 import type { SheetKind } from '#shared/sheets'
 import type { CharacterSheet } from '~/types/characterSheet'
 import type { TabletopMap } from '~/types/map'
@@ -20,6 +24,7 @@ import {
   type RealtimePlayerSheetAccessKey,
   type RealtimePolicyPersistedSheet,
 } from '../../server/realtime/realtimeEventAccessPolicy'
+import { createPendingMoveResolutionFixture } from '../fixtures/moveAutomation/pendingResolution'
 
 const map = (overrides: Partial<TabletopMap> = {}): TabletopMap => ({
   schemaVersion: 2,
@@ -120,11 +125,15 @@ const dependencies = (input: {
   readonly trainerSheets?: readonly TrainerSheet[]
   readonly groupInventorySlugs?: readonly string[]
   readonly shops?: readonly ShopTableDocument[]
+  readonly pendingResolutions?: readonly PendingMoveResolution[]
   readonly playerVisibleMapKeys?: readonly RealtimePlayerSheetAccessKey[]
 } = {}): RealtimeEventAccessDependencies => {
   const maps = new Map((input.maps ?? []).map((item) => [item.slug, item]))
   const groupInventories = new Set(input.groupInventorySlugs ?? [])
   const shops = new Map((input.shops ?? []).map((item) => [item.slug, item]))
+  const pendingResolutions = new Map(
+    (input.pendingResolutions ?? []).map((item) => [item.resolutionId, item]),
+  )
   const sheets = new Map<string, RealtimePolicyPersistedSheet>()
 
   for (const sheet of input.pokemonSheets ?? []) {
@@ -139,6 +148,9 @@ const dependencies = (input: {
     getSheet: vi.fn((kind: SheetKind, slug: string) => sheets.get(`${kind}:${slug}`) ?? null),
     getGroupInventory: vi.fn((slug: string) => (groupInventories.has(slug) ? { slug } : null)),
     getShop: vi.fn((slug: string) => shops.get(slug) ?? null),
+    getPendingMoveResolution: vi.fn((resolutionId: string) => (
+      pendingResolutions.get(resolutionId) ?? null
+    )),
     listTrainerSheets: vi.fn(() => [...(input.trainerSheets ?? [])]),
     playerVisibleMapSheetAccessKeys: vi.fn(() => new Set(input.playerVisibleMapKeys ?? [])),
   }
@@ -362,6 +374,82 @@ describe('realtime event shop access policy', () => {
     expect(evaluate({ kind: 'shop-access', shopSlug: 'missing' }, gm, dependencies())).toEqual({
       allowed: false,
       reason: 'shop-not-found',
+    })
+  })
+})
+
+describe('realtime pending move response access policy', () => {
+  const targetOwnedResolution = (): PendingMoveResolution => {
+    const source = createPendingMoveResolutionFixture()
+    return parsePendingMoveResolution({
+      ...source,
+      outstandingWindows: source.outstandingWindows.map(window => ({
+        ...window,
+        ownership: [{ kind: 'target', id: 'target-token' }],
+      })),
+    })
+  }
+
+  const pendingAccess = (): Extract<RealtimeEventAccess, {
+    readonly kind: 'pending-move-response-access'
+  }> => ({
+    kind: 'pending-move-response-access',
+    mapSlug: 'pending-arena',
+    resolutionId: 'resolution-pending-1',
+    windowId: 'window.branch',
+  })
+
+  it('delivers private option events only to the target controller or a GM', () => {
+    const resolution = targetOwnedResolution()
+    const pendingMap = map({
+      slug: 'pending-arena',
+      placements: [
+        {
+          id: 'actor-token',
+          sheetKind: 'pokemon',
+          sheetSlug: 'actor',
+          position: { x: 0, y: 0, z: 0 },
+        },
+        {
+          id: 'target-token',
+          sheetKind: 'pokemon',
+          sheetSlug: 'target',
+          position: { x: 1, y: 0, z: 0 },
+        },
+      ],
+    })
+    const deps = dependencies({ maps: [pendingMap], pendingResolutions: [resolution] })
+    const targetProfile = profile('profile_target01', [
+      { sheetKind: 'pokemon', sheetSlug: 'target' },
+    ])
+    const actorProfile = profile('profile_actor001', [
+      { sheetKind: 'pokemon', sheetSlug: 'actor' },
+    ])
+
+    expect(evaluate(pendingAccess(), player({ playerProfile: targetProfile }), deps)).toEqual({
+      allowed: true,
+    })
+    expect(evaluate(pendingAccess(), player({ playerProfile: actorProfile }), deps)).toEqual({
+      allowed: false,
+      reason: 'pending-move-response-not-accessible',
+    })
+    expect(evaluate(pendingAccess(), gm, deps)).toEqual({ allowed: true })
+  })
+
+  it('fails closed for forged, missing, or cross-map pending window descriptors', () => {
+    const resolution = targetOwnedResolution()
+    const deps = dependencies({
+      maps: [map({ slug: 'pending-arena' })],
+      pendingResolutions: [resolution],
+    })
+
+    expect(evaluate({ ...pendingAccess(), windowId: 'window.forged' }, gm, deps)).toEqual({
+      allowed: false,
+      reason: 'pending-move-response-not-accessible',
+    })
+    expect(evaluate({ ...pendingAccess(), resolutionId: 'resolution-missing' }, gm, deps)).toEqual({
+      allowed: false,
+      reason: 'pending-move-response-not-accessible',
     })
   })
 })

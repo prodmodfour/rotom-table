@@ -46,6 +46,7 @@ export const MAP_API_PATHS = {
   interactionMode: '/api/maps/interaction-mode',
   useMove: '/api/maps/use-move',
   resolveMove: '/api/maps/tokens/resolve-move',
+  pendingMoveResponses: '/api/maps/move-responses/pending',
   chooseMoveResponse: '/api/maps/move-responses/choose',
   reactMoveResponse: '/api/maps/move-responses/react',
   passMoveResponse: '/api/maps/move-responses/pass',

@@ -919,6 +919,54 @@ describe('phased MoveSpec interpreter', () => {
     }))
   })
 
+  it('materializes non-actor response recipients as target-owned windows', () => {
+    const spec = baseSpec()
+    spec.phases = [{
+      phase: 'hit',
+      operations: [{
+        id: 'operation.defender-reaction',
+        kind: 'reaction-request',
+        source: { kind: 'move', id: 'move.interpreter-test' },
+        recipients: { kind: 'selected-targets' },
+        phase: 'hit',
+        reasonCode: 'move.interpreter-test.defender-reaction',
+        payload: {
+          requestId: 'request.defender-reaction',
+          promptKey: 'move.interpreter-test.defender-reaction',
+          options: [{ id: 'option.react', labelKey: 'move.interpreter-test.react' }],
+          allowPass: true,
+          priority: 5,
+        },
+      }],
+    }]
+    const definition = definitionFor(spec)
+    const context = buildContext()
+    const execution = executeMoveSpec({ definition, context })
+    expect(execution.kind).toBe('pending-request')
+    if (execution.kind !== 'pending-request') return
+
+    const suspension = materializeMoveSpecSuspension({
+      resolutionId: 'resolution-target-reaction',
+      originOpId: 'op_targetreact01',
+      definition,
+      originMapSlug: context.map.slug,
+      originMapRevision: 4,
+      actorPlacementId: context.actor.placement.id,
+      suspendedAt: context.time,
+      authoritativeSheetReads: execution.sheetReads,
+      execution,
+      continuationMapRevision: 5,
+      preWindowPlan: createMoveStateChangePlan([]),
+    })
+
+    expect(execution.request.recipientIds).toEqual(['target-token'])
+    expect(suspension.pendingResolution.outstandingWindows[0]).toMatchObject({
+      kind: 'reaction',
+      ownership: [{ kind: 'target', id: 'target-token' }],
+      priority: 5,
+    })
+  })
+
   it('returns a traced rejection for failed preconditions and target-count mismatches', () => {
     const failedPrecondition = baseSpec()
     failedPrecondition.preconditions = [{

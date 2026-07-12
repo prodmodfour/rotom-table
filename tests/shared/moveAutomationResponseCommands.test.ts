@@ -95,6 +95,28 @@ describe('move response command contract', () => {
     expectTypeOf(react).toEqualTypeOf<ReactMoveResponseCommand>()
   })
 
+  it('accepts only a valid optional selected-profile authorization context', () => {
+    const profiled = {
+      ...command(),
+      profileId: 'profile_attacker1',
+    }
+    expect(parseMoveResponseCommand(profiled)).toMatchObject({
+      profileId: 'profile_attacker1',
+      type: 'choose',
+    })
+
+    expect(validateMoveResponseCommand({
+      ...command(),
+      profileId: 'attacker',
+    })).toMatchObject({
+      valid: false,
+      issues: expect.arrayContaining([expect.objectContaining({
+        path: '$.profileId',
+        code: 'invalid-identifier',
+      })]),
+    })
+  })
+
   it('enforces the command kind selected by each response route', () => {
     expect(parseMoveResponseCommand(
       command(MOVE_RESPONSE_COMMAND_TYPES.REACT),

@@ -20,6 +20,7 @@ export type MoveSpecSuspensionMaterializationErrorCode =
   | 'invalid-continuation-revision'
   | 'pre-window-plan-invalid'
   | 'read-set-revision-conflict'
+  | 'response-owner-missing'
 
 export class MoveSpecSuspensionMaterializationError extends Error {
   readonly code: MoveSpecSuspensionMaterializationErrorCode
@@ -198,8 +199,33 @@ const continuationReadSet = (
   ]
 }
 
+const responseOwnership = (
+  execution: MoveSpecExecutionPendingResult,
+  actorPlacementId: string,
+): PendingMoveResponseWindow['ownership'] => {
+  const owners = [] as Array<PendingMoveResponseWindow['ownership'][number]>
+  const seen = new Set<string>()
+  for (const placementId of execution.request.recipientIds) {
+    const owner = placementId === actorPlacementId
+      ? { kind: 'actor' as const, id: null }
+      : { kind: 'target' as const, id: placementId }
+    const key = `${owner.kind}:${owner.id ?? ''}`
+    if (seen.has(key)) continue
+    seen.add(key)
+    owners.push(owner)
+  }
+  if (owners.length === 0) {
+    fail(
+      'response-owner-missing',
+      `Pending request ${execution.request.requestId} has no authoritative response owner.`,
+    )
+  }
+  return owners
+}
+
 const responseWindow = (
   execution: MoveSpecExecutionPendingResult,
+  actorPlacementId: string,
 ): PendingMoveResponseWindow => {
   const request = execution.request
   return {
@@ -209,9 +235,7 @@ const responseWindow = (
     phase: request.phase,
     reasonCode: request.reasonCode,
     promptKey: request.promptKey,
-    // MA-104 replaces this conservative actor role with the complete
-    // placement/profile/side authorization projection.
-    ownership: [{ kind: 'actor', id: null }],
+    ownership: responseOwnership(execution, actorPlacementId),
     options: request.options.map(option => ({ ...option })),
     allowPass: request.allowPass,
     priority: request.kind === 'reaction' ? request.priority : null,
@@ -254,7 +278,7 @@ export const materializeMoveSpecSuspension = (
     readSet: continuationReadSet(input),
     trace: input.execution.trace,
     rollLedger: input.execution.rollLedger,
-    outstandingWindows: [responseWindow(input.execution)],
+    outstandingWindows: [responseWindow(input.execution, input.actorPlacementId)],
     chosenOptions: [],
     causalAncestry: input.execution.trace.ancestry,
     status: 'pending',

@@ -30,6 +30,12 @@ export type RealtimeEventAccess =
       readonly kind: 'shop-access'
       readonly shopSlug: string
     }
+  | {
+      readonly kind: 'pending-move-response-access'
+      readonly mapSlug: string
+      readonly resolutionId: string
+      readonly windowId: string
+    }
 
 export interface SequencedRealtimeEvent<TData = unknown> extends RealtimeEvent<TData> {
   readonly sequence: number
@@ -74,6 +80,9 @@ export const MAX_REALTIME_EVENT_JSON_BYTES = 1024 * 1024
 export const DEFAULT_REALTIME_EVENT_READ_LIMIT = 100
 export const MAX_REALTIME_EVENT_READ_LIMIT = 500
 
+const PENDING_MOVE_RESPONSE_ACCESS_ID_MAX_LENGTH = 160
+const PENDING_MOVE_RESPONSE_WINDOW_ID_RE = /^[a-z0-9]+(?:[._:/-][a-z0-9]+)*$/
+const CONTROL_CHARACTER_RE = /[\u0000-\u001f\u007f]/
 const textEncoder = new TextEncoder()
 
 type UnknownRecord = Record<string, unknown>
@@ -246,6 +255,25 @@ const parseStrictSlug = (value: unknown, label: string): string => {
   return value
 }
 
+const parsePendingMoveResponseAccessId = (
+  value: unknown,
+  label: string,
+  stable: boolean,
+): string => {
+  const parsed = parseBoundedNonEmptyString(
+    value,
+    label,
+    PENDING_MOVE_RESPONSE_ACCESS_ID_MAX_LENGTH,
+  )
+  if (CONTROL_CHARACTER_RE.test(parsed)) {
+    throw new Error(`${label} must not contain control characters`)
+  }
+  if (stable && !PENDING_MOVE_RESPONSE_WINDOW_ID_RE.test(parsed)) {
+    throw new Error(`${label} must be a lowercase stable identifier`)
+  }
+  return parsed
+}
+
 const assertOnlyKeys = (record: UnknownRecord, allowedKeys: readonly string[], label: string): void => {
   const allowed = new Set(allowedKeys)
   for (const key of Object.keys(record)) {
@@ -409,7 +437,25 @@ export const parseRealtimeEventAccess = (value: unknown, label = 'access'): Real
     }
   }
 
-  throw new Error(`${label}.kind must be gm-only, map-access, sheet-access, group-inventory-access, or shop-access`)
+  if (access.kind === 'pending-move-response-access') {
+    assertOnlyKeys(access, ['kind', 'mapSlug', 'resolutionId', 'windowId'], label)
+    return {
+      kind: 'pending-move-response-access',
+      mapSlug: parseLivePlayMapSlug(access.mapSlug, `${label}.mapSlug`),
+      resolutionId: parsePendingMoveResponseAccessId(
+        access.resolutionId,
+        `${label}.resolutionId`,
+        false,
+      ),
+      windowId: parsePendingMoveResponseAccessId(
+        access.windowId,
+        `${label}.windowId`,
+        true,
+      ),
+    }
+  }
+
+  throw new Error(`${label}.kind must be gm-only, map-access, sheet-access, group-inventory-access, shop-access, or pending-move-response-access`)
 }
 
 export const parseRealtimeEventDraft = <TData = unknown>(value: unknown): RealtimeEventDraft<TData> => {

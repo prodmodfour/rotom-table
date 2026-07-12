@@ -15,6 +15,10 @@ import type { PlayerProfile } from '#shared/playerProfiles'
 import type { SheetKind, SheetPlacement } from '~/types/map'
 
 export type ServerTokenControlPlacementRef = Pick<SheetPlacement, 'id' | 'sheetKind' | 'sheetSlug'>
+export type ServerSideTokenControlPlacementRef = Pick<
+  SheetPlacement,
+  'id' | 'sheetKind' | 'sheetSlug' | 'sideId'
+>
 export type ServerTokenControlLinkedTrainerSheet = PlayerProfileTokenControlLinkedTrainerSheet
 
 export type ServerTokenControlSheetPredicate = (kind: SheetKind, slug: string) => boolean
@@ -54,6 +58,23 @@ export const actorControlledMapPlacementIds = (
   placements: asTokenControlPlacements(input.placements),
   linkedTrainerSheets: input.linkedTrainerSheets,
 })
+
+/** True when the selected profile controls at least one placement on an explicit side. */
+export const playerProfileControlsMapSide = (input: {
+  readonly profile?: PlayerProfile | null
+  readonly sideId: string
+  readonly placements: readonly ServerSideTokenControlPlacementRef[]
+  readonly linkedTrainerSheets?: readonly ServerTokenControlLinkedTrainerSheet[]
+}): boolean => {
+  const controlledIds = new Set(playerProfileControlledMapPlacementIds(
+    input.profile,
+    input.placements,
+    input.linkedTrainerSheets,
+  ))
+  return input.placements.some(placement => (
+    placement.sideId === input.sideId && controlledIds.has(placement.id)
+  ))
+}
 
 export const actorCanControlMapPlacement = (input: {
   readonly role: AuthRole | null | undefined

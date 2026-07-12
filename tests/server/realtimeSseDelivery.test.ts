@@ -18,6 +18,7 @@ import {
   type PlayerProfileId,
 } from '#shared/playerProfiles'
 import type { RealtimeEventAccess } from '#shared/realtimeEventLog'
+import { parsePendingMoveResolution } from '#shared/moveAutomation/pendingResolution'
 import type { RealtimeEventRetentionPolicy } from '../../server/realtime/realtimeEventRetentionConfig'
 import { openRealtimeSseStream } from '../../server/realtime/realtimeSseDelivery'
 import { createSqliteRealtimeEventAccessDependencies } from '../../server/realtime/sqliteRealtimeEventAccessAdapter'
@@ -27,9 +28,11 @@ import { createSqliteMapRepository } from '../../server/storage/mapRepository'
 import { createSqliteRealtimeEventRepository } from '../../server/storage/realtimeEventRepository'
 import { createSqliteSheetRepository } from '../../server/storage/sheetRepository'
 import { createSqliteShopTableRepository } from '../../server/storage/shopTableRepository'
+import { createSqlitePendingMoveResolutionRepository } from '../../server/storage/pendingMoveResolutionRepository'
 import { createRealtimeHub } from '../../server/utils/realtime'
 import type { SseRequest, SseResponse } from '../../server/utils/sseStream'
 import { mapDoc, pokemonSheet, trainerSheet } from './helpers/durableLibraryHarness'
+import { createPendingMoveResolutionFixture } from '../fixtures/moveAutomation/pendingResolution'
 
 interface ParsedSseFrame {
   readonly id: string | null
@@ -330,6 +333,68 @@ describe('repository-backed realtime SSE replay', () => {
     expect(reconnectFrames.map((frame) => frame.id)).toEqual(['2', '2'])
     expect(reconnectFrames[0]?.data).toMatchObject({ sequence: 2, data: { label: 'visible' } })
     await closeStream(reconnect)
+  })
+
+  it('advances replay cursors across response-window events denied to an ineligible attacker', async () => {
+    const harness = createHarness()
+    harness.maps.saveSetupMap(mapDoc({
+      slug: 'pending-arena',
+      playerVisible: true,
+      placements: [
+        {
+          id: 'actor-token',
+          sheetKind: 'pokemon',
+          sheetSlug: 'actor',
+          position: { x: 0, y: 0, z: 0 },
+        },
+        {
+          id: 'target-token',
+          sheetKind: 'pokemon',
+          sheetSlug: 'target',
+          position: { x: 1, y: 0, z: 0 },
+        },
+      ],
+    }))
+    const source = createPendingMoveResolutionFixture()
+    const resolution = parsePendingMoveResolution({
+      ...source,
+      outstandingWindows: source.outstandingWindows.map(window => ({
+        ...window,
+        ownership: [{ kind: 'target', id: 'target-token' }],
+      })),
+    })
+    createSqlitePendingMoveResolutionRepository(harness.database).create({ resolution })
+    append(harness, 'private-target-options', {
+      kind: 'pending-move-response-access',
+      mapSlug: 'pending-arena',
+      resolutionId: resolution.resolutionId,
+      windowId: 'window.branch',
+    })
+    append(harness, 'public-map-update', {
+      kind: 'map-access',
+      mapSlug: 'pending-arena',
+    })
+
+    const connection = startStream({
+      harness,
+      afterSequence: 0,
+      readLimit: 1,
+      principal: {
+        role: 'player',
+        playerProfile: playerProfile([{ sheetKind: 'pokemon', sheetSlug: 'actor' }]),
+        sessionAccess: null,
+      },
+    })
+    const frames = await waitForFrameCount(connection.writes, 3)
+
+    expect(frames.map(frame => frame.id)).toEqual(['1', '2', '2'])
+    expect(frames[0]?.data).toMatchObject({
+      type: 'replay-caught-up',
+      replayedThroughSequence: 1,
+    })
+    expect(frames[1]?.data).toMatchObject({ data: { label: 'public-map-update' } })
+    expect(connection.writes.join('')).not.toContain('private-target-options')
+    await closeStream(connection)
   })
 
   it('emits an interim checkpoint when a replay page contains only denied events', async () => {
