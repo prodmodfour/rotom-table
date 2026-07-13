@@ -428,6 +428,11 @@ export interface FindMovementPathForPokemonOptions {
    * explicitly authorized movement policy.
    */
   costLimit?: number
+  /**
+   * Optional server-selected one-cell directions. Pass movement supplies its
+   * single declared direction so the pathfinder cannot route around a blocker.
+   */
+  allowedDirections?: readonly GridAnchor[]
 }
 
 const resolveMovementTerrainIndex = ({
@@ -436,6 +441,25 @@ const resolveMovementTerrainIndex = ({
   terrainRevision,
 }: Pick<FindMovementPathForPokemonOptions, 'terrainIndex' | 'voxels' | 'terrainRevision'>): MapMovementTerrainIndex =>
   terrainIndex ?? movementTerrainIndexCache.get(voxels, terrainRevision)
+
+const supportedMovementDirection = (candidate: GridAnchor): boolean => DIRECTIONS.some((direction) => (
+  direction.x === candidate.x
+  && direction.y === candidate.y
+  && direction.z === candidate.z
+))
+
+const resolvedMovementDirections = (
+  allowedDirections: readonly GridAnchor[] | undefined,
+): readonly GridAnchor[] => {
+  if (allowedDirections === undefined) return DIRECTIONS
+  const byKey = new Map<string, GridAnchor>()
+  for (const direction of allowedDirections) {
+    if (!supportedMovementDirection(direction)) continue
+    const key = `${direction.x},${direction.y},${direction.z}`
+    if (!byKey.has(key)) byKey.set(key, cloneAnchor(direction))
+  }
+  return [...byKey.values()]
+}
 
 export const findMovementPathForPokemon = ({
   pokemon,
@@ -449,8 +473,10 @@ export const findMovementPathForPokemon = ({
   terrainRevision = null,
   terrainIndex: providedTerrainIndex = null,
   costLimit,
+  allowedDirections,
 }: FindMovementPathForPokemonOptions): MovementPathResult => {
   const directDistance = anchorHeuristic(start, goal)
+  const directions = resolvedMovementDirections(allowedDirections)
   const capabilities = pokemon.movementCapabilities
   const selectedCostLimit = costLimit === undefined
     ? null
@@ -559,7 +585,7 @@ export const findMovementPathForPokemon = ({
       continue
     }
 
-    for (const direction of DIRECTIONS) {
+    for (const direction of directions) {
       const nextAnchor = {
         x: current.anchor.x + direction.x,
         y: current.anchor.y + direction.y,

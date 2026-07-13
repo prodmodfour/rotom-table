@@ -9,10 +9,16 @@ import {
 } from '~/utils/gridLineTraversal'
 import { tokenGridDistance } from '~/utils/moveAutomationRange'
 import {
-  ptuAlternatingDiagonalDistance,
   ptuGridDistanceBetweenFootprints,
   ptuGridVectorDistance,
 } from '~/utils/ptuGridDistance'
+import {
+  MOVE_AUTOMATION_AREA_DIRECTION_DEFINITIONS,
+  buildMoveAutomationPassDirectionSteps,
+  moveAutomationAreaDirectionDefinition,
+  moveAutomationDirectionStepDistance,
+  type MoveAutomationAreaDirectionDefinition,
+} from '~/utils/moveAutomationDirections'
 import { MOVE_AUTOMATION_AREA_DIRECTIONS } from '~/types/moveAutomation'
 import type {
   MoveAutomationAreaDirection,
@@ -21,14 +27,6 @@ import type {
   MoveAutomationScript,
 } from '~/types/moveAutomation'
 import type { GridAnchor, GridDimensions, SpawnedPokemon } from '~/types/pokemon'
-
-interface DirectionDefinition {
-  id: MoveAutomationAreaDirection
-  label: string
-  dx: -1 | 0 | 1
-  dy: -1 | 0 | 1
-  dz: -1 | 0 | 1
-}
 
 export interface MoveAutomationAreaTemplatePlacement {
   id: string
@@ -114,28 +112,13 @@ export interface MoveAutomationPassPlacement {
   readonly destination: GridAnchor
 }
 
-const AREA_DIRECTION_METADATA: Record<MoveAutomationAreaDirection, Omit<DirectionDefinition, 'id'>> = {
-  north: { label: 'north', dx: 0, dy: 0, dz: -1 },
-  'north-east': { label: 'north-east', dx: 1, dy: 0, dz: -1 },
-  east: { label: 'east', dx: 1, dy: 0, dz: 0 },
-  'south-east': { label: 'south-east', dx: 1, dy: 0, dz: 1 },
-  south: { label: 'south', dx: 0, dy: 0, dz: 1 },
-  'south-west': { label: 'south-west', dx: -1, dy: 0, dz: 1 },
-  west: { label: 'west', dx: -1, dy: 0, dz: 0 },
-  'north-west': { label: 'north-west', dx: -1, dy: 0, dz: -1 },
-  up: { label: 'up', dx: 0, dy: 1, dz: 0 },
-  down: { label: 'down', dx: 0, dy: -1, dz: 0 },
-}
-
-const AREA_DIRECTIONS: readonly DirectionDefinition[] = MOVE_AUTOMATION_AREA_DIRECTIONS.map((id) => ({
-  id,
-  ...AREA_DIRECTION_METADATA[id],
-}))
-
 export { MOVE_AUTOMATION_AREA_DIRECTIONS }
 
-const directionDefinition = (direction: MoveAutomationAreaDirection | undefined): DirectionDefinition | null =>
-  AREA_DIRECTIONS.find((item) => item.id === direction) ?? null
+/** Local aliases keep area-shape code independent from direction storage. */
+type DirectionDefinition = MoveAutomationAreaDirectionDefinition
+const AREA_DIRECTIONS = MOVE_AUTOMATION_AREA_DIRECTION_DEFINITIONS
+const directionDefinition = moveAutomationAreaDirectionDefinition
+const directionStepDistance = moveAutomationDirectionStepDistance
 
 const positiveInt = (raw: string | undefined): number | null => {
   const value = Number(raw)
@@ -414,9 +397,6 @@ const closeBlastStart = (user: AreaTemplateFootprint, size: number, direction: D
   }
 }
 
-const directionStepDistance = (step: number, direction: DirectionDefinition): number =>
-  direction.dx !== 0 && direction.dz !== 0 ? ptuAlternatingDiagonalDistance(step) : step
-
 const buildLineCells = (user: AreaTemplateFootprint, length: number, direction: DirectionDefinition): GridAnchor[] => {
   const origin = originCellForDirection(user, direction)
   const cells: GridAnchor[] = []
@@ -596,16 +576,6 @@ const applyCellConstraints = (
   )
 }
 
-const offsetPositionByDirectionStep = (
-  position: GridAnchor,
-  direction: DirectionDefinition,
-  step: number,
-): GridAnchor => ({
-  x: position.x + direction.dx * step,
-  y: position.y + direction.dy * step,
-  z: position.z + direction.dz * step,
-})
-
 const footprintOverlapsBlockedCells = (
   footprint: AreaTemplateFootprint,
   position: GridAnchor,
@@ -651,12 +621,15 @@ const buildPassPlacementForDirection = (
   let destination: GridAnchor | null = null
   let destinationDistance = 0
 
-  for (let step = 1; directionStepDistance(step, direction) <= template.size; step += 1) {
-    const position = offsetPositionByDirectionStep(user.position, direction, step)
-    if (!footprintCanOccupyTerrain(user, position, constraints)) break
-    if (!passDestinationIsEmpty(user, position, tokens)) continue
-    destination = position
-    destinationDistance = directionStepDistance(step, direction)
+  for (const step of buildMoveAutomationPassDirectionSteps({
+    origin: user.position,
+    direction: direction.id,
+    maximumDistance: template.size,
+  })) {
+    if (!footprintCanOccupyTerrain(user, step.position, constraints)) break
+    if (!passDestinationIsEmpty(user, step.position, tokens)) continue
+    destination = step.position
+    destinationDistance = step.distance
   }
 
   if (!destination) return null

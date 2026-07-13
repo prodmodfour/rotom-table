@@ -13,6 +13,7 @@ import type {
   MovementCapabilitySpeeds,
   ShiftMovementCapabilityKey,
 } from '~/types/movement'
+import type { MoveAutomationAreaDirection } from '~/types/moveAutomation'
 import type { TrainerSheet } from '~/types/trainerSheet'
 import {
   footprintsOverlap,
@@ -29,6 +30,10 @@ import {
   type MovementPathStep,
 } from '~/utils/mapMovementPathfinding'
 import {
+  buildMoveAutomationPassDirectionSteps,
+  moveAutomationAreaDirectionVector,
+} from '~/utils/moveAutomationDirections'
+import {
   buildMapMovementTerrainIndex,
   movementTerrainForAnchor,
   type MapMovementTerrainIndex,
@@ -42,7 +47,7 @@ import {
 } from '~/utils/movementCapabilities'
 import { placementToSpawned, type SheetLookup } from '~/utils/placement'
 
-export const AUTHORITATIVE_MOVEMENT_MODES = ['shift'] as const
+export const AUTHORITATIVE_MOVEMENT_MODES = ['shift', 'pass'] as const
 export type AuthoritativeMovementMode = (typeof AUTHORITATIVE_MOVEMENT_MODES)[number]
 
 export const AUTHORITATIVE_MOVEMENT_LIMITS = Object.freeze({
@@ -120,9 +125,18 @@ export interface ResolvedGmOverrideAuthoritativeMovementPolicy {
   readonly maximumCost: number
 }
 
+/** A reviewed Pass path is straight, bounded, and may cross occupied anchors. */
+export interface ResolvedPassAuthoritativeMovementPolicy {
+  readonly kind: 'pass'
+  readonly allowSamePosition: false
+  readonly direction: MoveAutomationAreaDirection
+  readonly maximumCost: number
+}
+
 export type ResolvedAuthoritativeMovementPolicy =
   | ResolvedStandardAuthoritativeMovementPolicy
   | ResolvedGmOverrideAuthoritativeMovementPolicy
+  | ResolvedPassAuthoritativeMovementPolicy
 
 export const STANDARD_AUTHORITATIVE_MOVEMENT_POLICY: ResolvedStandardAuthoritativeMovementPolicy = Object.freeze({
   kind: 'standard',
@@ -141,16 +155,33 @@ export interface AuthoritativeMovementSheets {
   readonly trainer: ReadonlyMap<string, TrainerSheet>
 }
 
-export interface ResolveMovementInput {
+interface ResolveMovementInputBase {
   readonly map: TabletopMap
   readonly sheets: AuthoritativeMovementSheets
   /** Map-local placement identity. Geometry never comes from a client copy. */
   readonly placementId: string
-  readonly mode: AuthoritativeMovementMode
+}
+
+export interface ResolveShiftMovementInput extends ResolveMovementInputBase {
+  readonly mode: 'shift'
   /** Requested endpoint only. A path and cost are always server-derived. */
   readonly destination: GridAnchor
   readonly policy?: AuthoritativeMovementPolicy
+  readonly direction?: never
+  readonly maximumDistance?: never
 }
+
+export interface ResolvePassMovementInput extends ResolveMovementInputBase {
+  readonly mode: 'pass'
+  /** Server-selected direction from the reviewed Pass area declaration. */
+  readonly direction: MoveAutomationAreaDirection
+  /** Server-selected reviewed Pass distance; never supplied by move intent. */
+  readonly maximumDistance: number
+  readonly destination?: never
+  readonly policy?: never
+}
+
+export type ResolveMovementInput = ResolveShiftMovementInput | ResolvePassMovementInput
 
 export interface AuthoritativeMovementSheetRead {
   readonly kind: SheetKind
@@ -395,7 +426,7 @@ const failure = (input: {
 
 const resolvedPolicy = (
   policy: AuthoritativeMovementPolicy | undefined,
-): ResolvedAuthoritativeMovementPolicy | null => {
+): ResolvedStandardAuthoritativeMovementPolicy | ResolvedGmOverrideAuthoritativeMovementPolicy | null => {
   if (policy === undefined) return { ...STANDARD_AUTHORITATIVE_MOVEMENT_POLICY }
   if (typeof policy !== 'object' || policy === null) return null
   if (policy.kind === 'gm-override') return { ...GM_OVERRIDE_AUTHORITATIVE_MOVEMENT_POLICY }
@@ -419,6 +450,30 @@ const resolvedPolicy = (
     kind: 'standard',
     allowSamePosition: policy.allowSamePosition ?? false,
     maximumCost: policy.maximumCost ?? null,
+  }
+}
+
+const resolvedPassPolicy = (
+  input: ResolveMovementInput,
+): ResolvedPassAuthoritativeMovementPolicy | null => {
+  const raw = input as Partial<ResolvePassMovementInput>
+  const direction = raw.direction
+  const maximumDistance = raw.maximumDistance
+  if (
+    typeof direction !== 'string'
+    || moveAutomationAreaDirectionVector(direction as MoveAutomationAreaDirection) === null
+    || typeof maximumDistance !== 'number'
+    || !Number.isSafeInteger(maximumDistance)
+    || maximumDistance <= 0
+    || maximumDistance > AUTHORITATIVE_MOVEMENT_LIMITS.policyCost
+  ) {
+    return null
+  }
+  return {
+    kind: 'pass',
+    allowSamePosition: false,
+    direction: direction as MoveAutomationAreaDirection,
+    maximumCost: maximumDistance,
   }
 }
 
@@ -738,6 +793,7 @@ const effectiveLimit = (
   policy: ResolvedAuthoritativeMovementPolicy,
 ): number => {
   if (policy.kind === 'gm-override') return policy.maximumCost
+  if (policy.kind === 'pass') return Math.min(capabilityLimit, policy.maximumCost)
   return policy.maximumCost === null
     ? capabilityLimit
     : Math.min(capabilityLimit, policy.maximumCost)
@@ -787,6 +843,206 @@ const pathFailureMessage = (
   return 'No collision-free authoritative route reaches the requested destination.'
 }
 
+interface ResolvePreparedPassMovementInput {
+  readonly map: TabletopMap
+  readonly placementId: string
+  readonly policy: ResolvedPassAuthoritativeMovementPolicy
+  readonly mover: MovementPlacementSnapshot
+  readonly placements: readonly MovementPlacementSnapshot[]
+  readonly origin: GridAnchor
+  readonly footprint: AuthoritativeMovementFootprint
+  readonly terrainIndex: MapMovementTerrainIndex
+  readonly groundLevelY: number
+  readonly consultedPlacementIds: readonly string[]
+  readonly sheetReads: readonly AuthoritativeMovementSheetRead[]
+}
+
+interface PassMovementFailureEvidence {
+  readonly reasonCode: AuthoritativeMovementFailureReasonCode
+  readonly message: string
+  readonly destination: GridAnchor
+  readonly path: readonly GridAnchor[] | null
+  readonly cost: number | null
+  readonly capabilityLimit: number | null
+  readonly effectiveLimit: number | null
+  readonly capabilities: AuthoritativeMovementCapabilities
+  readonly occupancy: AuthoritativeMovementOccupancy
+  readonly collision: AuthoritativeMovementCollision | null
+}
+
+/** Resolve a straight reviewed Pass path while allowing occupied intermediate anchors. */
+const resolvePreparedPassMovement = (
+  input: ResolvePreparedPassMovementInput,
+): AuthoritativeMovementResult => {
+  const direction = moveAutomationAreaDirectionVector(input.policy.direction)
+  if (!direction) {
+    return failure({
+      reasonCode: 'movement-policy-invalid',
+      message: 'The authoritative Pass direction is invalid.',
+      placementId: input.placementId,
+      mode: 'pass',
+      policy: input.policy,
+      origin: input.origin,
+      footprint: input.footprint,
+      capabilities: resolvedCapabilities(input.mover, []),
+      consultedPlacementIds: input.consultedPlacementIds,
+      sheetReads: input.sheetReads,
+    })
+  }
+
+  const candidates = buildMoveAutomationPassDirectionSteps({
+    origin: input.origin,
+    direction: input.policy.direction,
+    maximumDistance: input.policy.maximumCost,
+  })
+  let failureEvidence: PassMovementFailureEvidence | null = null
+
+  for (const candidate of [...candidates].reverse()) {
+    const occupancy = occupancyFor(input.mover, candidate.position, input.placements)
+    if (!isAnchorWithinBounds(candidate.position, input.mover, input.map.dimensions)) {
+      failureEvidence = {
+        reasonCode: 'movement-destination-out-of-bounds',
+        message: 'The reviewed Pass direction cannot contain the authoritative footprint within map bounds.',
+        destination: candidate.position,
+        path: null,
+        cost: candidate.distance,
+        capabilityLimit: null,
+        effectiveLimit: input.policy.maximumCost,
+        capabilities: resolvedCapabilities(input.mover, []),
+        occupancy,
+        collision: boundsCollision(candidate.position),
+      }
+      continue
+    }
+
+    const endpointCollision = collisionAt(
+      candidate.position,
+      input.mover,
+      input.placements,
+      input.terrainIndex,
+      input.groundLevelY,
+    )
+    if (endpointCollision) {
+      const reasonCode = endpointCollision.kind === 'placement'
+        ? 'movement-destination-occupied'
+        : endpointCollision.kind === 'terrain'
+          ? 'movement-destination-terrain-blocked'
+          : 'movement-destination-collision'
+      failureEvidence = {
+        reasonCode,
+        message: endpointCollision.kind === 'placement'
+          ? 'The reviewed Pass endpoint is occupied; Pass must end in an empty footprint.'
+          : 'The reviewed Pass endpoint intersects authoritative Blocking Terrain.',
+        destination: candidate.position,
+        path: null,
+        cost: candidate.distance,
+        capabilityLimit: null,
+        effectiveLimit: input.policy.maximumCost,
+        capabilities: resolvedCapabilities(input.mover, []),
+        occupancy,
+        collision: endpointCollision,
+      }
+      continue
+    }
+
+    const pathResult = findMovementPathForPokemon({
+      pokemon: input.mover,
+      start: input.origin,
+      goal: candidate.position,
+      // Pass treats crossed combatants as traversable; endpoint occupancy was
+      // checked above against the complete authoritative placement snapshot.
+      pokemons: [],
+      dimensions: input.map.dimensions,
+      terrainIndex: input.terrainIndex,
+      groundLevelY: input.groundLevelY,
+      allowedDirections: [direction],
+    })
+    const capabilities = resolvedCapabilities(input.mover, pathResult.capabilityKeys)
+    const capabilityLimit = pathResult.movementLimit
+    const resolvedEffectiveLimit = capabilityLimit === null
+      ? null
+      : effectiveLimit(capabilityLimit, input.policy)
+
+    if (!pathResult.legal || capabilityLimit === null || !pathResult.path) {
+      const reasonCode = pathFailureReason(pathResult)
+      failureEvidence = {
+        reasonCode,
+        message: pathFailureMessage(reasonCode, pathResult),
+        destination: candidate.position,
+        path: pathResult.path,
+        cost: pathResult.distance,
+        capabilityLimit,
+        effectiveLimit: resolvedEffectiveLimit,
+        capabilities,
+        occupancy,
+        collision: reasonCode === 'movement-route-blocked' ? routeCollision() : null,
+      }
+      continue
+    }
+
+    if (resolvedEffectiveLimit === null || pathResult.distance > resolvedEffectiveLimit) {
+      failureEvidence = {
+        reasonCode: 'movement-cost-exceeds-limit',
+        message: `The server-derived Pass cost ${pathResult.distance} exceeds its effective limit ${resolvedEffectiveLimit ?? 0}.`,
+        destination: candidate.position,
+        path: pathResult.path,
+        cost: pathResult.distance,
+        capabilityLimit,
+        effectiveLimit: resolvedEffectiveLimit,
+        capabilities,
+        occupancy,
+        collision: null,
+      }
+      continue
+    }
+
+    const triggeringSteps = pathResult.steps.map(step => (
+      triggeringStep(step, input.mover, pathResult.steps.length)
+    ))
+    return deepFreeze({
+      ok: true,
+      reasonCode: 'movement-legal',
+      placementId: input.placementId,
+      mode: 'pass',
+      policy: { ...input.policy },
+      origin: cloneAnchor(input.origin),
+      destination: cloneAnchor(candidate.position),
+      path: cloneAnchors(pathResult.path),
+      cost: pathResult.distance,
+      capabilityLimit,
+      effectiveLimit: resolvedEffectiveLimit,
+      capabilities,
+      footprint: { ...input.footprint },
+      occupancy,
+      collision: null,
+      triggeringSteps,
+      consultedPlacementIds: [...input.consultedPlacementIds],
+      sheetReads: input.sheetReads.map(read => ({ ...read })),
+    })
+  }
+
+  return failure({
+    reasonCode: failureEvidence?.reasonCode ?? 'movement-route-blocked',
+    message: failureEvidence?.message
+      ?? 'No legal empty endpoint is available along the reviewed Pass direction.',
+    placementId: input.placementId,
+    mode: 'pass',
+    policy: input.policy,
+    origin: input.origin,
+    destination: failureEvidence?.destination ?? null,
+    path: failureEvidence?.path ?? null,
+    cost: failureEvidence?.cost ?? null,
+    capabilityLimit: failureEvidence?.capabilityLimit ?? null,
+    effectiveLimit: failureEvidence?.effectiveLimit ?? input.policy.maximumCost,
+    capabilities: failureEvidence?.capabilities ?? resolvedCapabilities(input.mover, []),
+    footprint: input.footprint,
+    occupancy: failureEvidence?.occupancy ?? null,
+    collision: failureEvidence?.collision ?? routeCollision(),
+    consultedPlacementIds: input.consultedPlacementIds,
+    sheetReads: input.sheetReads,
+  })
+}
+
 /**
  * Resolve movement from authoritative map and sheet state only.
  *
@@ -797,9 +1053,10 @@ export const resolveMovement = (input: ResolveMovementInput): AuthoritativeMovem
   const rawMode = (input as { readonly mode?: unknown }).mode
   const mode = typeof rawMode === 'string' ? rawMode : String(rawMode)
   const placementId = typeof input.placementId === 'string' ? input.placementId : String(input.placementId)
-  const destination = validAnchor(input.destination) ? cloneAnchor(input.destination) : null
+  const rawDestination = (input as { readonly destination?: unknown }).destination
+  const destination = validAnchor(rawDestination) ? cloneAnchor(rawDestination) : null
 
-  if (rawMode !== 'shift') {
+  if (rawMode !== 'shift' && rawMode !== 'pass') {
     return failure({
       reasonCode: 'movement-mode-unsupported',
       message: `Movement mode ${mode} is not supported by the authoritative oracle.`,
@@ -809,11 +1066,15 @@ export const resolveMovement = (input: ResolveMovementInput): AuthoritativeMovem
     })
   }
 
-  const policy = resolvedPolicy(input.policy)
+  const policy = rawMode === 'pass'
+    ? resolvedPassPolicy(input)
+    : resolvedPolicy((input as ResolveShiftMovementInput).policy)
   if (!policy) {
     return failure({
       reasonCode: 'movement-policy-invalid',
-      message: 'The authoritative movement policy is malformed or exceeds its bounded cost.',
+      message: rawMode === 'pass'
+        ? 'The authoritative Pass direction or maximum distance is malformed or exceeds its bounded cost.'
+        : 'The authoritative movement policy is malformed or exceeds its bounded cost.',
       placementId,
       mode,
       destination,
@@ -831,7 +1092,7 @@ export const resolveMovement = (input: ResolveMovementInput): AuthoritativeMovem
     })
   }
 
-  if (!destination) {
+  if (policy.kind !== 'pass' && !destination) {
     return failure({
       reasonCode: 'movement-destination-invalid',
       message: 'Movement destination must contain safe integer x, y, and z coordinates.',
@@ -873,7 +1134,7 @@ export const resolveMovement = (input: ResolveMovementInput): AuthoritativeMovem
     base: mover.base,
     clearance: getClearanceValue(mover),
   }
-  const occupancy = occupancyFor(mover, destination, placements)
+  const requestedOccupancy = destination ? occupancyFor(mover, destination, placements) : null
   const consultedPlacementIds = placements.map(placement => placement.id)
   const capabilities = resolvedCapabilities(mover, [])
   const terrainIndex = buildMapMovementTerrainIndex(input.map.voxels)
@@ -889,7 +1150,7 @@ export const resolveMovement = (input: ResolveMovementInput): AuthoritativeMovem
       origin,
       destination,
       footprint,
-      occupancy,
+      occupancy: requestedOccupancy,
       capabilities,
       collision: boundsCollision(origin),
       consultedPlacementIds,
@@ -911,13 +1172,48 @@ export const resolveMovement = (input: ResolveMovementInput): AuthoritativeMovem
       origin,
       destination,
       footprint,
-      occupancy,
+      occupancy: requestedOccupancy,
       capabilities,
       collision: originCollision,
       consultedPlacementIds,
       sheetReads,
     })
   }
+
+  if (policy.kind === 'pass') {
+    return resolvePreparedPassMovement({
+      map: input.map,
+      placementId,
+      policy,
+      mover,
+      placements,
+      origin,
+      footprint,
+      terrainIndex,
+      groundLevelY,
+      consultedPlacementIds,
+      sheetReads,
+    })
+  }
+
+  // The mode-specific validation above already rejected this case. Keep the
+  // guard local so all ordinary Shift code below remains exhaustively typed.
+  if (!destination) {
+    return failure({
+      reasonCode: 'movement-destination-invalid',
+      message: 'Movement destination must contain safe integer x, y, and z coordinates.',
+      placementId,
+      mode,
+      policy,
+      origin,
+      footprint,
+      capabilities,
+      consultedPlacementIds,
+      sheetReads,
+    })
+  }
+
+  const occupancy = occupancyFor(mover, destination, placements)
 
   if (sameAnchor(origin, destination) && !policy.allowSamePosition) {
     return failure({

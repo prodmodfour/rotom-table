@@ -1567,7 +1567,7 @@ Status: DONE
 
 ## MA-122 — Route Pass movement through the oracle
 
-Status: TODO
+Status: DONE
 
 **Depends on:** MA-120
 **Commit:** `refactor(move-automation): unify pass movement validation`

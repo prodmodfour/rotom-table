@@ -8,6 +8,7 @@ import {
   parseMoveAutomationAreaTemplates,
   tokensInMoveAutomationArea,
 } from '~/utils/moveAutomationAreaTemplates'
+import { buildMoveAutomationPassDirectionSteps } from '~/utils/moveAutomationDirections'
 import type { MoveAutomationAreaTemplate } from '~/types/moveAutomation'
 import type { SpawnedPokemon } from '~/types/pokemon'
 
@@ -287,6 +288,18 @@ describe('move automation area templates', () => {
     })
 
     expect(outOfRange).toBeNull()
+  })
+
+  it('shares bounded PTU direction steps between Pass previews and authority', () => {
+    expect(buildMoveAutomationPassDirectionSteps({
+      origin: { x: 1, y: 0, z: 5 },
+      direction: 'north-east',
+      maximumDistance: 4,
+    })).toEqual([
+      { index: 1, position: { x: 2, y: 0, z: 4 }, distance: 1 },
+      { index: 2, position: { x: 3, y: 0, z: 3 }, distance: 3 },
+      { index: 3, position: { x: 4, y: 0, z: 2 }, distance: 4 },
+    ])
   })
 
   it('builds Pass placements that stop at the farthest legal empty end square', () => {

@@ -205,6 +205,47 @@ describe('resolveAuthoritativeMove Pass area selections', () => {
     })
   })
 
+  it('uses oracle capability limits and records every occupancy sheet read', async () => {
+    await withRegisteredScratchScript(passScript(), () => {
+      const resolution = resolveAuthoritativeMove({
+        map: mapFixture({
+          placements: [
+            placement('actor-token', 'actor', { x: 1, y: 0, z: 1 }),
+            placement('target-a', 'target-a', { x: 2, y: 0, z: 1 }),
+            placement('far-target', 'far-target', { x: 7, y: 0, z: 1 }),
+          ],
+        }),
+        pokemonSheets: sheetMap([{ name: 'Aqua Tail' }], ['actor', 'target-a', 'far-target'], {
+          actor: pokemonSheet('actor', [{ name: 'Aqua Tail' }], {
+            nickname: 'Scratcher',
+            species: 'Meowth',
+            revision: 3,
+            capabilities: { overland: 2, swim: 0, sky: 0, levitate: 0, burrow: 0 },
+          }),
+          'target-a': pokemonSheet('target-a', [], { revision: 4 }),
+          'far-target': pokemonSheet('far-target', [], { revision: 5 }),
+        }),
+        trainerSheets: new Map(),
+        intent: passIntent(),
+        random: randomSequence([0.99, 0]),
+      })
+
+      expect(resolution.movement).toMatchObject({
+        destination: { x: 3, y: 0, z: 1 },
+        pathCells: [
+          { x: 2, y: 0, z: 1 },
+          { x: 3, y: 0, z: 1 },
+        ],
+      })
+      expect(resolution.area?.candidateTargetIds).toEqual(['target-a'])
+      expect(resolution.sheetReads).toEqual([
+        { kind: 'pokemon', slug: 'actor', revision: 3 },
+        { kind: 'pokemon', slug: 'target-a', revision: 4 },
+        { kind: 'pokemon', slug: 'far-target', revision: 5 },
+      ])
+    })
+  })
+
   it('rejects missing direction, aim cells, invalid directions, and unavailable destinations without mutating inputs', async () => {
     await withRegisteredScratchScript(passScript(), () => {
       expectFailure(() => resolveAuthoritativeMove({

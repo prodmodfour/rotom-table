@@ -24,7 +24,6 @@ import {
   buildMoveAutomationAreaTemplateCells,
   buildMoveAutomationAreaTemplatePlacementAtCenter,
   buildMoveAutomationCloseBlastPlacementAtAimCell,
-  buildMoveAutomationPassPlacement,
   moveAutomationAreaTemplateId,
   tokensInMoveAutomationArea,
 } from '~/utils/moveAutomationAreaTemplates'
@@ -41,6 +40,7 @@ import {
   parseSingleTargetMoveRangeMeters,
 } from '~/utils/moveAutomationRange'
 import { passDestinationLogLine } from '~/utils/moveAutomationPass'
+import { ptuGridVectorDistance } from '~/utils/ptuGridDistance'
 import { tokenFacingForPlacement, tokenFacingFromAreaDirection, tokenFacingTowardPoint } from '~/utils/tokenFacing'
 import { buildAllVoxelOccupancy } from '~/utils/voxelOccupancy'
 import type { CharacterSheet } from '~/types/characterSheet'
@@ -81,6 +81,10 @@ import {
   type ResolveMoveAutomationAreaTargetsInput,
 } from './moveAutomation/areaTargets'
 import type { AuthoritativeMoveRandomSource } from './moveAutomation/random'
+import {
+  resolveAuthoritativeMovement,
+  type AuthoritativeMovementSheets,
+} from './movement/resolveMovement'
 
 export type { AuthoritativeMoveSheetRead } from './moveAutomation/context'
 
@@ -602,6 +606,27 @@ const authoritativeAreaCandidates = (options: {
   excludeIds: [options.actor.id],
 })
 
+const authoritativeMovementSheets = (
+  context: AuthoritativeMoveRulesContext,
+): AuthoritativeMovementSheets => {
+  const pokemon = new Map<string, CharacterSheet>()
+  const trainer = new Map<string, TrainerSheet>()
+  for (const resolved of context.resolvedSheets) {
+    if (resolved.kind === 'pokemon') pokemon.set(resolved.slug, resolved.sheet as CharacterSheet)
+    else trainer.set(resolved.slug, resolved.sheet as TrainerSheet)
+  }
+  return { pokemon, trainer }
+}
+
+const uniqueGridAnchors = (anchors: readonly GridAnchor[]): GridAnchor[] => {
+  const byCell = new Map<string, GridAnchor>()
+  for (const anchor of anchors) {
+    const key = `${anchor.x},${anchor.y},${anchor.z}`
+    if (!byCell.has(key)) byCell.set(key, cloneGridAnchor(anchor))
+  }
+  return [...byCell.values()]
+}
+
 interface ResolvedAuthoritativeAreaPlacement {
   readonly cells: readonly GridAnchor[]
   readonly candidateTargets: readonly SpawnedPokemon[]
@@ -701,29 +726,45 @@ const resolvedAreaPlacement = (options: {
     assertSupportedPassTemplate(options.template)
     assertNoPassAimCell(options.selection, options.template)
     const direction = requirePassDirection(options.selection, options.template)
-    const placement = buildMoveAutomationPassPlacement({
-      template: options.template,
-      user: options.actor,
-      tokens,
+    const movement = resolveAuthoritativeMovement({
+      map: options.context.map,
+      sheets: authoritativeMovementSheets(options.context),
+      placementId: options.actor.id,
+      mode: 'pass',
       direction,
-      ...constraints,
-    }) ?? fail(
-      'conflict',
-      'pass-destination-unavailable',
-      `${options.template.label} cannot reach a legal empty Pass destination in the current map state.`,
-    )
-    if (!placement.cells.length) {
+      maximumDistance: options.template.size,
+    })
+    for (const read of movement.sheetReads) options.context.reads.recordSheet(read)
+    if (!movement.ok) {
+      return fail(
+        'conflict',
+        'pass-destination-unavailable',
+        `${options.template.label} cannot reach a legal empty Pass destination in the current map state (${movement.reasonCode}).`,
+      )
+    }
+
+    const passDistance = ptuGridVectorDistance({
+      x: movement.destination.x - movement.origin.x,
+      y: movement.destination.y - movement.origin.y,
+      z: movement.destination.z - movement.origin.z,
+    })
+    const cells = uniqueGridAnchors(buildMoveAutomationAreaTemplateCells({
+      template: { ...options.template, size: passDistance },
+      user: options.actor,
+      direction,
+      bounds: constraints.bounds,
+    }))
+    if (!cells.length || movement.triggeringSteps.length === 0) {
       fail('unsupported', 'pass-geometry-empty', `${options.template.label} did not produce authoritative Pass path cells.`)
     }
-    const cells = cloneGridAnchors(placement.cells)
     return {
       cells,
       candidateTargets: authoritativeAreaCandidates({ actor: options.actor, tokens, cells }),
       direction,
       movement: {
         kind: 'pass',
-        from: cloneGridAnchor(options.actor.position),
-        destination: cloneGridAnchor(placement.destination),
+        from: cloneGridAnchor(movement.origin),
+        destination: cloneGridAnchor(movement.destination),
         direction,
         pathCells: cloneGridAnchors(cells),
       },

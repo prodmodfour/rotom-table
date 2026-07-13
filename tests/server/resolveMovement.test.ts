@@ -1,12 +1,13 @@
 import { describe, expect, it } from 'vitest'
 import type { CharacterSheet } from '~/types/characterSheet'
-import type { MapVoxelV2, SheetPlacement, TabletopMap } from '~/types/map'
+import type { GridAnchor, MapVoxelV2, SheetPlacement, TabletopMap } from '~/types/map'
 import type { MovementCapabilitySpeeds } from '~/types/movement'
 import type { TrainerSheet } from '~/types/trainerSheet'
 import {
   resolveMovement,
   type AuthoritativeMovementSheets,
   type ResolveMovementInput,
+  type ResolvePassMovementInput,
 } from '~~/server/domain/movement/resolveMovement'
 
 const pokemonSheet = (
@@ -74,6 +75,23 @@ const input = (options: {
   mode: 'shift',
   destination: options.destination ?? { x: 2, y: 0, z: 2 },
   ...(options.policy === undefined ? {} : { policy: options.policy }),
+})
+
+const passInput = (options: {
+  readonly map?: TabletopMap
+  readonly sheets?: AuthoritativeMovementSheets
+  readonly placementId?: string
+  readonly direction?: ResolvePassMovementInput['direction']
+  readonly maximumDistance?: number
+} = {}): ResolvePassMovementInput => ({
+  map: options.map ?? map(),
+  sheets: options.sheets ?? sheets([
+    pokemonSheet('actor', { capabilities: { overland: 6, swim: 0, sky: 0, levitate: 0 } }),
+  ]),
+  placementId: options.placementId ?? 'actor',
+  mode: 'pass',
+  direction: options.direction ?? 'east',
+  maximumDistance: options.maximumDistance ?? 4,
 })
 
 const wall = (x: number, z: number): MapVoxelV2 => ({
@@ -167,6 +185,123 @@ describe('authoritative movement oracle', () => {
     expect(Object.isFrozen(result)).toBe(true)
     expect(Object.isFrozen(result.path)).toBe(true)
     expect(Object.isFrozen(result.triggeringSteps[0]?.terrain)).toBe(true)
+  })
+
+  it('derives a straight Pass destination, occupancy, and triggers while crossing placements', () => {
+    const arena = map([
+      placement('actor', 0, 1),
+      placement('crossed', 1, 1),
+      placement('occupied-end', 4, 1),
+    ], {
+      dimensions: { x: 7, y: 2, z: 3 },
+    })
+    const result = resolveMovement(passInput({
+      map: arena,
+      sheets: sheets([
+        pokemonSheet('actor', { revision: 4, capabilities: { overland: 6 } }),
+        pokemonSheet('crossed', { revision: 5 }),
+        pokemonSheet('occupied-end', { revision: 6 }),
+      ]),
+    }))
+
+    expect(result).toMatchObject({
+      ok: true,
+      reasonCode: 'movement-legal',
+      mode: 'pass',
+      policy: {
+        kind: 'pass',
+        direction: 'east',
+        maximumCost: 4,
+      },
+      origin: { x: 0, y: 0, z: 1 },
+      destination: { x: 3, y: 0, z: 1 },
+      path: [
+        { x: 0, y: 0, z: 1 },
+        { x: 1, y: 0, z: 1 },
+        { x: 2, y: 0, z: 1 },
+        { x: 3, y: 0, z: 1 },
+      ],
+      cost: 3,
+      capabilityLimit: 6,
+      effectiveLimit: 4,
+      occupancy: {
+        destinationCells: [{ x: 3, y: 0, z: 1 }],
+        checkedPlacementIds: ['crossed', 'occupied-end'],
+      },
+      consultedPlacementIds: ['actor', 'crossed', 'occupied-end'],
+      sheetReads: [
+        { kind: 'pokemon', slug: 'actor', revision: 4 },
+        { kind: 'pokemon', slug: 'crossed', revision: 5 },
+        { kind: 'pokemon', slug: 'occupied-end', revision: 6 },
+      ],
+    })
+    if (!result.ok) throw new Error('expected legal Pass movement')
+    expect(result.triggeringSteps.map(step => step.enteredCells)).toEqual([
+      [{ x: 1, y: 0, z: 1 }],
+      [{ x: 2, y: 0, z: 1 }],
+      [{ x: 3, y: 0, z: 1 }],
+    ])
+    expect(result.triggeringSteps.map(step => step.finalDestination)).toEqual([false, false, true])
+    expect(Object.isFrozen(result.triggeringSteps)).toBe(true)
+  })
+
+  it('keeps Pass on its declared line and chooses the farthest capability-legal empty endpoint', () => {
+    const blockedLine = resolveMovement(passInput({
+      map: map([placement('actor', 0, 1)], {
+        dimensions: { x: 6, y: 2, z: 4 },
+        voxels: [wall(3, 1)],
+      }),
+    }))
+    expect(blockedLine).toMatchObject({
+      ok: true,
+      destination: { x: 2, y: 0, z: 1 },
+      path: [
+        { x: 0, y: 0, z: 1 },
+        { x: 1, y: 0, z: 1 },
+        { x: 2, y: 0, z: 1 },
+      ],
+    })
+
+    const capabilityLimited = resolveMovement(passInput({
+      sheets: sheets([
+        pokemonSheet('actor', { capabilities: { overland: 2 } }),
+      ]),
+    }))
+    expect(capabilityLimited).toMatchObject({
+      ok: true,
+      destination: { x: 2, y: 0, z: 0 },
+      cost: 2,
+      capabilityLimit: 2,
+      effectiveLimit: 2,
+    })
+  })
+
+  it('fails Pass when every endpoint is occupied and ignores forged endpoint/path hints', () => {
+    const occupiedArena = map([
+      placement('actor', 0, 0),
+      ...[1, 2, 3, 4].map(x => placement(`blocker-${x}`, x, 0)),
+    ], { dimensions: { x: 6, y: 2, z: 2 } })
+    const occupiedSheets = sheets([
+      pokemonSheet('actor', { capabilities: { overland: 6 } }),
+      ...[1, 2, 3, 4].map(x => pokemonSheet(`blocker-${x}`)),
+    ])
+    expect(resolveMovement(passInput({ map: occupiedArena, sheets: occupiedSheets }))).toMatchObject({
+      ok: false,
+      reasonCode: 'movement-destination-occupied',
+    })
+
+    const authoritative = passInput()
+    const forged = resolveMovement({
+      ...authoritative,
+      destination: { x: 7, y: 0, z: 7 },
+      path: [{ x: 7, y: 0, z: 7 }],
+      cost: 0,
+    } as ResolvePassMovementInput & { destination: GridAnchor; path: GridAnchor[]; cost: number })
+    expect(forged).toMatchObject({
+      ok: true,
+      destination: { x: 4, y: 0, z: 0 },
+      cost: 4,
+    })
   })
 
   it('uses authoritative mixed capabilities and records slow terrain cost per step', () => {
