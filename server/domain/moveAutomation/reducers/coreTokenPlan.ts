@@ -333,7 +333,7 @@ export const buildMoveCoreTokenStateChanges = (
           updatedAt: context.time,
         } as unknown as MoveSheetDocument,
         changedFields,
-        compensation: unavailableMoveStateCompensation('field-level-inverse-not-yet-recorded'),
+        compensation: RESTORE_PREVIOUS_MOVE_STATE_VALUE,
       },
     })
   }

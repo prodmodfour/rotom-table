@@ -152,7 +152,10 @@ export const buildMoveMapOperationStateChanges = (options: {
         reasonCode: source.reasonCode,
         previous: deepCloneJson(options.previousMap.metadata),
         current: deepCloneJson(options.workingMap.metadata),
-        compensation: unavailableMoveStateCompensation('accepted-log-may-be-observed'),
+        compensation: unavailableMoveStateCompensation(
+          'accepted-log-may-be-observed',
+          'externally-observed',
+        ),
       },
     })
   }
@@ -181,7 +184,7 @@ export const buildMoveMapOperationStateChanges = (options: {
           updatedAt: options.time,
         } as unknown as MoveSheetDocument,
         changedFields: ['moveUsage'],
-        compensation: unavailableMoveStateCompensation('field-level-inverse-not-yet-recorded'),
+        compensation: RESTORE_PREVIOUS_MOVE_STATE_VALUE,
       },
     })
   }

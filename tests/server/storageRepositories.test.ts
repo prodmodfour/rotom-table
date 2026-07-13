@@ -13,6 +13,11 @@ import {
   type LivePlayTokenScope,
 } from '#shared/livePlayCommands'
 import { createLivePlayCommandHash } from '~~/server/livePlay/opResult'
+import { createAcceptedMoveCompensationResult } from '~~/server/domain/moveAutomation/planAcceptedMoveCompensation'
+import {
+  RESTORE_PREVIOUS_MOVE_STATE_VALUE,
+  createMoveStateChangePlan,
+} from '~~/server/domain/moveAutomation/plan'
 import { closeRotomDatabase, openRotomDatabase, resolveConfiguredDatabasePath, type RotomDatabase } from '~~/server/storage/database'
 import { getStorageSchemaVersion, LATEST_STORAGE_SCHEMA_VERSION } from '~~/server/storage/migrations'
 import { createSqliteMapRepository } from '~~/server/storage/mapRepository'
@@ -578,6 +583,20 @@ describe('SQLite storage foundation', () => {
       patches: [patch],
     })
     const commandHash = createLivePlayCommandHash(command)
+    const moveCompensation = createAcceptedMoveCompensationResult({
+      mapSlug: command.mapSlug,
+      originOperationId: command.opId,
+      plan: createMoveStateChangePlan([{
+        kind: 'map-hazards',
+        scope: { kind: 'map', mapSlug: command.mapSlug },
+        expectedRevision: 2,
+        sourceOperationId: 'move.add-hazard',
+        reasonCode: 'hazard-added',
+        previous: [],
+        current: [{ kind: 'spikes', x: 1, y: 0, z: 1 }],
+        compensation: RESTORE_PREVIOUS_MOVE_STATE_VALUE,
+      }]),
+    })
 
     const stored = ops.saveCommandResult({
       mapSlug: command.mapSlug,
@@ -585,6 +604,7 @@ describe('SQLite storage foundation', () => {
       commandHash,
       command,
       result,
+      moveCompensation,
     })
     const duplicate = ops.saveCommandResult({
       mapSlug: command.mapSlug,
@@ -592,6 +612,7 @@ describe('SQLite storage foundation', () => {
       commandHash,
       command,
       result,
+      moveCompensation,
     })
 
     expect(duplicate).toEqual(stored)
@@ -603,6 +624,7 @@ describe('SQLite storage foundation', () => {
       commandHash,
       command,
       result,
+      moveCompensation,
       resultRevision: 3,
       createdAt: 1_700_000_000_500,
       recordedAt: new Date(1_700_000_000_500).toISOString(),
@@ -626,6 +648,13 @@ describe('SQLite storage foundation', () => {
       baseRevision: 3,
       currentRevision: 3,
     })).toEqual([])
+    expect(() => ops.saveCommandResult({
+      mapSlug: command.mapSlug,
+      opId: command.opId,
+      commandHash,
+      command,
+      result,
+    })).toThrow('different move compensation metadata')
     expect(() => ops.saveCommandResult({
       mapSlug: command.mapSlug,
       opId: command.opId,

@@ -47,6 +47,7 @@ import {
   type PlanAuthoritativeMoveStateInput,
 } from '../domain/planAuthoritativeMoveState'
 import { createMoveStateChangePlan } from '../domain/moveAutomation/plan'
+import { createAcceptedMoveCompensationResult } from '../domain/moveAutomation/planAcceptedMoveCompensation'
 import type { AuthoritativeMoveRandomSource } from '../domain/moveAutomation/random'
 import { summarizeMoveResolutionTrace } from '../domain/moveAutomation/trace'
 import {
@@ -1160,7 +1161,11 @@ export const executeLivePlayResolveMoveCommandUseCase = async (
           updates,
           clientId: actor.clientId,
         }))
-        saveOpResult()
+        saveOpResult(createAcceptedMoveCompensationResult({
+          mapSlug: command.mapSlug,
+          originOperationId: command.opId,
+          plan: plan.stateChanges,
+        }))
 
         const authoritativeMap = deps.mapRepository.getBySlug(result.mapSlug)
         if (!authoritativeMap) throw new LivePlayResolveMoveCommandUseCaseError(404, `Map ${result.mapSlug}.json not found after resolveMove command`)

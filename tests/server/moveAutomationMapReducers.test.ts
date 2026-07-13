@@ -286,6 +286,13 @@ describe('MoveSpec map, usage, and log reducers', () => {
     ])
     expect(result.stateChanges.groups.map).toHaveLength(1)
     expect(result.stateChanges.groups.map[0]?.changes).toHaveLength(4)
+    expect(result.stateChanges.groups.map[0]?.changes.find(change => (
+      change.kind === 'map-metadata'
+    ))?.compensation).toEqual({
+      kind: 'unavailable',
+      safety: 'externally-observed',
+      reasonCode: 'accepted-log-may-be-observed',
+    })
     expect(result.stateChanges.expectedRevisions).toEqual([
       { kind: 'map', mapSlug: 'map-reducer-arena', expectedRevision: 8 },
     ])
@@ -396,6 +403,10 @@ describe('MoveSpec map, usage, and log reducers', () => {
         moveUsage: { daily: { 'reducer-move': { uses: 1, updatedAt: 5_000 } } },
       },
       changedFields: ['moveUsage'],
+      compensation: {
+        kind: 'inverse',
+        strategy: 'restore-previous-value',
+      },
     })
     expect(result.nextMap.moveUsage?.byPlacementId['actor-token']?.['reducer-move']).toMatchObject({
       frequency: 'daily',

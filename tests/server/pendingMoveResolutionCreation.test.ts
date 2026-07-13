@@ -1161,9 +1161,28 @@ describe('pending move resolution creation', () => {
       outcome: 'selected',
       optionId: 'style.power',
     }))
-    expect(harness.ops.getOpRecord('pending-arena', command.opId)?.result).toEqual(
-      completed.result,
-    )
+    const terminalOp = harness.ops.getOpRecord('pending-arena', command.opId)
+    expect(terminalOp?.result).toEqual(completed.result)
+    expect(terminalOp?.moveCompensation).toMatchObject({
+      mapSlug: 'pending-arena',
+      originOperationId: command.opId,
+      operations: expect.arrayContaining([
+        expect.objectContaining({
+          stateChangeKind: 'encounter-state',
+          availability: 'available',
+          inverse: expect.objectContaining({
+            kind: 'restore-encounter-turn-resources',
+          }),
+        }),
+        expect.objectContaining({
+          stateChangeKind: 'encounter-state',
+          availability: 'unavailable',
+          safety: 'irreversible',
+          unavailableReasonCode: 'pending-resolution-transition-is-terminal',
+        }),
+      ]),
+    })
+    expect(JSON.stringify(completed)).not.toContain('restore-encounter-turn-resources')
 
     const replay = replayMoveResponseCommandUseCase({ role: 'gm', command }, {
       database: harness.database,

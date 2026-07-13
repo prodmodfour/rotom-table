@@ -436,7 +436,10 @@ const adaptedStateChanges = (options: {
       ...source,
       previous: options.mapChanges.metadata.previous,
       current: options.mapChanges.metadata.current,
-      compensation: unavailableMoveStateCompensation('accepted-log-may-be-observed'),
+      compensation: unavailableMoveStateCompensation(
+        'accepted-log-may-be-observed',
+        'externally-observed',
+      ),
     })
   }
 
@@ -458,7 +461,7 @@ const adaptedStateChanges = (options: {
       previous: write.previousSheet,
       current: write.nextSheet,
       changedFields: write.changedFields,
-      compensation: unavailableMoveStateCompensation('field-level-inverse-not-yet-recorded'),
+      compensation: RESTORE_PREVIOUS_MOVE_STATE_VALUE,
     })
   }
 

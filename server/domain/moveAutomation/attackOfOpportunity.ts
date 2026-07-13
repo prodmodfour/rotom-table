@@ -47,6 +47,7 @@ import { buildAuthoritativeMoveMapChanges } from './mapChanges'
 import {
   RESTORE_PREVIOUS_MOVE_STATE_VALUE,
   createMoveStateChangePlan,
+  unavailableMoveStateCompensation,
   type MoveStateChangeInput,
 } from './plan'
 import type { AuthoritativeMoveRandomSource } from './random'
@@ -505,7 +506,10 @@ const finalizedChildPlan = (input: {
       reasonCode: 'attack-of-opportunity-used',
       previous: deepCloneJson(input.previousMap.metadata),
       current: deepCloneJson(input.nextMap.metadata),
-      compensation: RESTORE_PREVIOUS_MOVE_STATE_VALUE,
+      compensation: unavailableMoveStateCompensation(
+        'accepted-log-may-be-observed',
+        'externally-observed',
+      ),
     })
   }
   changes.push({

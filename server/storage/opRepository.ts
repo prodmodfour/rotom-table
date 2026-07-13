@@ -13,6 +13,10 @@ import {
 } from '../livePlay/opResult'
 import { validateLivePlayOperationId } from '../livePlay/commandIdempotency'
 import {
+  parseAcceptedMoveCompensationResult,
+  type AcceptedMoveCompensationResult,
+} from '../domain/moveAutomation/acceptedMoveCompensation'
+import {
   LIVE_PLAY_OP_STORE_SCHEMA_VERSION,
   type LivePlayOpRecord,
   type LivePlayOpStore,
@@ -59,6 +63,7 @@ interface OpRow {
   readonly command_json: unknown
   readonly result_json: unknown
   readonly result_revision: unknown
+  readonly move_compensation_json: unknown
   readonly created_at: unknown
 }
 
@@ -82,6 +87,19 @@ const parseRecordedResult = (json: string, opId: string): StorableLivePlayComman
   return cloneStoredJson(result)
 }
 
+const parseMoveCompensation = (
+  value: unknown,
+  opId: string,
+): AcceptedMoveCompensationResult | undefined => {
+  if (value === null || value === undefined) return undefined
+  if (typeof value !== 'string') {
+    throw new Error('live_play_ops.move_compensation_json must be null or a string')
+  }
+  return parseAcceptedMoveCompensationResult(
+    parseStoredDocumentJson<unknown>(value, `live-play op ${opId} move compensation`),
+  )
+}
+
 const rowToOpRecord = (row: OpRow): SqliteLivePlayOpRecord => {
   if (typeof row.command_json !== 'string') throw new Error('live_play_ops.command_json must be a string')
   if (typeof row.result_json !== 'string') throw new Error('live_play_ops.result_json must be a string')
@@ -91,6 +109,7 @@ const rowToOpRecord = (row: OpRow): SqliteLivePlayOpRecord => {
   const commandHash = validateCommandHash(row.command_hash)
   const command = parseStoredDocumentJson<unknown>(row.command_json, `live-play op ${opId} command`)
   const result = parseRecordedResult(row.result_json, opId)
+  const moveCompensation = parseMoveCompensation(row.move_compensation_json, opId)
   const createdAt = parseStoredTimestamp(row.created_at, 'live_play_ops.created_at')
   const resultRevision = parseResultRevision(row.result_revision)
 
@@ -100,6 +119,13 @@ const rowToOpRecord = (row: OpRow): SqliteLivePlayOpRecord => {
   if (result.mapSlug !== mapSlug) {
     throw new Error(`live-play op ${opId} result_json mapSlug must match map_slug`)
   }
+  if (moveCompensation && (
+    !result.ok
+    || moveCompensation.mapSlug !== mapSlug
+    || moveCompensation.originOperationId !== opId
+  )) {
+    throw new Error(`live-play op ${opId} move_compensation_json must match an accepted row identity`)
+  }
 
   return {
     schemaVersion: LIVE_PLAY_OP_STORE_SCHEMA_VERSION,
@@ -108,6 +134,7 @@ const rowToOpRecord = (row: OpRow): SqliteLivePlayOpRecord => {
     commandHash,
     command: cloneStoredJson(command),
     result,
+    ...(moveCompensation === undefined ? {} : { moveCompensation }),
     ...(resultRevision === undefined ? {} : { resultRevision }),
     createdAt,
     recordedAt: new Date(createdAt).toISOString(),
@@ -173,6 +200,15 @@ const validateSaveInput = (input: SaveLivePlayOpResultInput): void => {
   if (input.result.mapSlug !== mapSlug) {
     throw new Error('live-play op result mapSlug must match the stored mapSlug')
   }
+  if (input.moveCompensation !== undefined) {
+    const compensation = parseAcceptedMoveCompensationResult(input.moveCompensation)
+    if (!input.result.ok) {
+      throw new Error('rejected live-play operations cannot store move compensation metadata')
+    }
+    if (compensation.mapSlug !== mapSlug || compensation.originOperationId !== opId) {
+      throw new Error('move compensation identity must match the stored live-play operation')
+    }
+  }
 }
 
 export const createSqliteLivePlayOpRepository = (
@@ -184,7 +220,15 @@ export const createSqliteLivePlayOpRepository = (
   const findByOpId = (opId: string): SqliteLivePlayOpRecord | null => {
     const parsedOpId = validateLivePlayOperationId(opId, 'live-play op opId')
     const row = database.connection.prepare(`
-      SELECT op_id, map_slug, command_hash, command_json, result_json, result_revision, created_at
+      SELECT
+        op_id,
+        map_slug,
+        command_hash,
+        command_json,
+        result_json,
+        result_revision,
+        move_compensation_json,
+        created_at
       FROM live_play_ops
       WHERE op_id = ?
     `).get(parsedOpId) as OpRow | undefined
@@ -206,7 +250,15 @@ export const createSqliteLivePlayOpRepository = (
     if (baseRevision >= currentRevision) return []
 
     const rows = database.connection.prepare(`
-      SELECT op_id, map_slug, command_hash, command_json, result_json, result_revision, created_at
+      SELECT
+        op_id,
+        map_slug,
+        command_hash,
+        command_json,
+        result_json,
+        result_revision,
+        move_compensation_json,
+        created_at
       FROM live_play_ops
       WHERE map_slug = ?
         AND result_revision > ?
@@ -237,6 +289,14 @@ export const createSqliteLivePlayOpRepository = (
           existingResult: existing.result,
           attemptedResult: input.result,
         })
+        if (
+          JSON.stringify(existing.moveCompensation ?? null)
+          !== JSON.stringify(input.moveCompensation ?? null)
+        ) {
+          throw new Error(
+            `Operation ID ${existing.mapSlug}:${existing.opId} was already recorded with different move compensation metadata`,
+          )
+        }
         return existing
       }
 
@@ -249,8 +309,9 @@ export const createSqliteLivePlayOpRepository = (
           command_json,
           result_json,
           result_revision,
+          move_compensation_json,
           created_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?)
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
       `).run(
         opId,
         mapSlug,
@@ -258,6 +319,11 @@ export const createSqliteLivePlayOpRepository = (
         stringifyStoredDocument(input.command),
         stringifyStoredDocument(input.result),
         resultRevision(input.result),
+        input.moveCompensation === undefined
+          ? null
+          : stringifyStoredDocument(
+              parseAcceptedMoveCompensationResult(input.moveCompensation),
+            ),
         createdAt,
       )
       const record = findByOpId(opId)

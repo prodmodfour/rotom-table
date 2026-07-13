@@ -1,6 +1,6 @@
 import type { DatabaseSync } from 'node:sqlite'
 
-export const LATEST_STORAGE_SCHEMA_VERSION = 10
+export const LATEST_STORAGE_SCHEMA_VERSION = 11
 
 export interface StorageMigration {
   readonly version: number
@@ -187,6 +187,13 @@ const addPendingMoveDeclarationCompensation = (connection: DatabaseSync): void =
   `)
 }
 
+const addAcceptedMoveCompensationResults = (connection: DatabaseSync): void => {
+  connection.exec(`
+    ALTER TABLE live_play_ops
+    ADD COLUMN move_compensation_json TEXT;
+  `)
+}
+
 export const STORAGE_MIGRATIONS: readonly StorageMigration[] = [
   {
     version: 1,
@@ -237,6 +244,11 @@ export const STORAGE_MIGRATIONS: readonly StorageMigration[] = [
     version: 10,
     name: 'store pending move declaration compensation plans',
     up: addPendingMoveDeclarationCompensation,
+  },
+  {
+    version: 11,
+    name: 'store accepted move compensation results',
+    up: addAcceptedMoveCompensationResults,
   },
 ]
 

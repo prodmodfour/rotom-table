@@ -398,6 +398,32 @@ describe('executeLivePlayResolveMoveCommandUseCase', () => {
         ]),
       },
     })
+    const privateCompensation = selfHarness.ops.getStoredOpRecord(
+      'arena',
+      selfCommand.opId,
+    )?.moveCompensation
+    expect(privateCompensation).toMatchObject({
+      mapSlug: 'arena',
+      originOperationId: selfCommand.opId,
+      operations: expect.arrayContaining([
+        expect.objectContaining({
+          stateChangeKind: 'sheet-state',
+          availability: 'available',
+          inverse: expect.objectContaining({
+            kind: 'restore-sheet-combat-stages',
+            expectedCurrent: { atk: 2, def: 0, satk: 0, sdef: 0, spd: 0, acc: 0 },
+            restore: { atk: 0, def: 0, satk: 0, sdef: 0, spd: 0, acc: 0 },
+          }),
+        }),
+        expect.objectContaining({
+          stateChangeKind: 'map-metadata',
+          availability: 'unavailable',
+          safety: 'externally-observed',
+        }),
+      ]),
+    })
+    expect(JSON.stringify(selfResponse.result)).not.toContain('moveCompensation')
+    expect(JSON.stringify(selfHarness.events)).not.toContain('restore-sheet-combat-stages')
 
     const committedSelfMap = deepCloneJson(selfHarness.maps.getBySlug('arena'))
     const committedSelfSheet = deepCloneJson(selfHarness.sheets.getByRef('pokemon', 'actor'))

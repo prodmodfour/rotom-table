@@ -265,7 +265,10 @@ export const planPendingResolutionTermination = (
         reasonCode: input.reasonCode,
         previous,
         current,
-        compensation: unavailableMoveStateCompensation('declaration-cost-already-compensated'),
+        compensation: unavailableMoveStateCompensation(
+          'declaration-cost-already-compensated',
+          'irreversible',
+        ),
       })
       continue
     }
@@ -306,7 +309,10 @@ export const planPendingResolutionTermination = (
         previous: live,
         current,
         changedFields: [...change.changedFields],
-        compensation: unavailableMoveStateCompensation('declaration-cost-already-compensated'),
+        compensation: unavailableMoveStateCompensation(
+          'declaration-cost-already-compensated',
+          'irreversible',
+        ),
       }
       inverseInputs.push(inverse)
       const write = {
@@ -343,7 +349,10 @@ export const planPendingResolutionTermination = (
     reasonCode: input.reasonCode,
     previous: initialEncounterState,
     current: currentEncounterState,
-    compensation: unavailableMoveStateCompensation('pending-summary-termination-is-terminal'),
+    compensation: unavailableMoveStateCompensation(
+      'pending-summary-termination-is-terminal',
+      'irreversible',
+    ),
   })
 
   return Object.freeze({

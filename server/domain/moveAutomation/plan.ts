@@ -84,6 +84,15 @@ export type MoveStateChangeScope =
  * `inverse` is only a compensation candidate. Applying it later still requires
  * current-value and revision validation; MA-115 persists that correction data.
  */
+export const MOVE_STATE_COMPENSATION_SAFETY_KINDS = [
+  'irreversible',
+  'externally-observed',
+] as const
+
+export type MoveStateCompensationSafety = (
+  typeof MOVE_STATE_COMPENSATION_SAFETY_KINDS
+)[number]
+
 export type MoveStateChangeCompensation =
   | {
       readonly kind: 'inverse'
@@ -91,6 +100,8 @@ export type MoveStateChangeCompensation =
     }
   | {
       readonly kind: 'unavailable'
+      /** Why no typed inverse may be offered for this accepted operation. */
+      readonly safety: MoveStateCompensationSafety
       readonly reasonCode: string
     }
 
@@ -101,8 +112,10 @@ export const RESTORE_PREVIOUS_MOVE_STATE_VALUE = Object.freeze({
 
 export const unavailableMoveStateCompensation = (
   reasonCode: string,
+  safety: MoveStateCompensationSafety,
 ): MoveStateChangeCompensation => Object.freeze({
   kind: 'unavailable',
+  safety,
   reasonCode,
 })
 
@@ -297,6 +310,7 @@ interface MutableMoveStateChangeGroup<Scope extends MoveStateChangeScope, Change
 
 const CHANGE_KIND_SET = new Set<string>(MOVE_STATE_CHANGE_KINDS)
 const SHEET_FIELD_SET = new Set<string>(MOVE_SHEET_STATE_FIELDS)
+const COMPENSATION_SAFETY_SET = new Set<string>(MOVE_STATE_COMPENSATION_SAFETY_KINDS)
 
 function fail(code: MoveStateChangePlanErrorCode, message: string): never {
   throw new MoveStateChangePlanError(code, message)
@@ -325,6 +339,14 @@ const assertCompensation = (value: unknown): void => {
     return
   }
   if (value.kind === 'unavailable') {
+    // Stored declaration plans created before MA-115 omitted this discriminator.
+    // They remain readable and are canonicalized by createMoveStateChangePlan.
+    if (value.safety !== undefined && (
+      typeof value.safety !== 'string'
+      || !COMPENSATION_SAFETY_SET.has(value.safety)
+    )) {
+      fail('invalid-change', 'Unavailable compensation safety is unsupported.')
+    }
     assertIdentifier(value.reasonCode, 'Compensation reasonCode')
     return
   }
@@ -579,6 +601,31 @@ export const createMoveStateChangePlan = <
     let detached: MoveStateChangeInput<EncounterState>
     try {
       detached = structuredClone(source)
+      const legacyCompensation = detached.compensation as
+        | MoveStateChangeCompensation
+        | {
+            readonly kind: 'unavailable'
+            readonly reasonCode: string
+            readonly safety?: undefined
+          }
+      if (
+        legacyCompensation.kind === 'unavailable'
+        && legacyCompensation.safety === undefined
+      ) {
+        const safety: MoveStateCompensationSafety = /observ/i.test(
+          legacyCompensation.reasonCode,
+        )
+          ? 'externally-observed'
+          : 'irreversible'
+        detached = {
+          ...detached,
+          compensation: {
+            kind: 'unavailable',
+            reasonCode: legacyCompensation.reasonCode,
+            safety,
+          },
+        } as MoveStateChangeInput<EncounterState>
+      }
     } catch (error) {
       return fail(
         'invalid-change',

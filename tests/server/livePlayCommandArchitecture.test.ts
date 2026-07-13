@@ -92,7 +92,7 @@ describe('production live-play command architecture', () => {
     const wrongOrder = productionSheetChangingLivePlayCommandFiles
       .filter(({ text }) => {
         const recordIndex = text.indexOf('recordRealtimeEvents(livePlaySheetUpdateRealtimeAppendInputs')
-        const saveIndex = text.indexOf('saveOpResult()', recordIndex)
+        const saveIndex = text.indexOf('saveOpResult(', recordIndex)
         return recordIndex < 0 || saveIndex < 0 || recordIndex > saveIndex
       })
       .map(({ name }) => name)

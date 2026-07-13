@@ -5,7 +5,7 @@ import {
   MoveSheetStateChangeMergeError,
 } from '~~/server/domain/moveAutomation/mergeSheetStateChanges'
 import {
-  unavailableMoveStateCompensation,
+  RESTORE_PREVIOUS_MOVE_STATE_VALUE,
   type MoveSheetStateField,
   type MoveStateChangeInput,
 } from '~~/server/domain/moveAutomation/plan'
@@ -36,7 +36,7 @@ const sheetChange = (
   previous: previousSheet(),
   current,
   changedFields,
-  compensation: unavailableMoveStateCompensation('field-level-inverse-not-yet-recorded'),
+  compensation: RESTORE_PREVIOUS_MOVE_STATE_VALUE,
 })
 
 describe('native MoveSpec sheet-state merging', () => {

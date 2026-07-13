@@ -37,7 +37,7 @@ const sheetStateChange = (
   previous: sheet(slug, revision, previousHp),
   current: sheet(slug, revision + 1, currentHp),
   changedFields: ['hp'],
-  compensation: unavailableMoveStateCompensation('field-level-inverse-not-yet-recorded'),
+  compensation: RESTORE_PREVIOUS_MOVE_STATE_VALUE,
 })
 
 describe('typed move state change plans', () => {
@@ -206,7 +206,10 @@ describe('typed move state change plans', () => {
         reasonCode: 'inventory-updated',
         previous: previousInventory,
         current: currentInventory,
-        compensation: unavailableMoveStateCompensation('external-observation-unsafe'),
+        compensation: unavailableMoveStateCompensation(
+          'external-observation-unsafe',
+          'externally-observed',
+        ),
       },
     ])
 
@@ -225,7 +228,30 @@ describe('typed move state change plans', () => {
     ])
     expect(plan.changes[2]?.compensation).toEqual({
       kind: 'unavailable',
+      safety: 'externally-observed',
       reasonCode: 'external-observation-unsafe',
+    })
+  })
+
+  it('canonicalizes pre-MA-115 unavailable safety metadata without making it reversible', () => {
+    const plan = createMoveStateChangePlan([{
+      kind: 'map-metadata',
+      scope: { kind: 'map', mapSlug: 'arena' },
+      expectedRevision: 4,
+      sourceOperationId: 'operation.log',
+      reasonCode: 'accepted-log',
+      previous: { moveLog: [] },
+      current: { moveLog: [{ moveName: 'Scratch' }] },
+      compensation: {
+        kind: 'unavailable',
+        reasonCode: 'accepted-log-may-be-observed',
+      },
+    } as never])
+
+    expect(plan.changes[0]?.compensation).toEqual({
+      kind: 'unavailable',
+      safety: 'externally-observed',
+      reasonCode: 'accepted-log-may-be-observed',
     })
   })
 

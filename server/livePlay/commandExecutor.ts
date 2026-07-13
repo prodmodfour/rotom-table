@@ -25,6 +25,7 @@ import {
   type StorableLivePlayCommandResult,
 } from './opResult'
 import { livePlayOpStore, type LivePlayOpRecord, type LivePlayOpStore, type SaveLivePlayOpResultInput } from './opStore'
+import type { AcceptedMoveCompensationResult } from '../domain/moveAutomation/acceptedMoveCompensation'
 import { livePlayMapWriteQueue, type MapWriteQueue } from './mapWriteQueue'
 import {
   evaluateLivePlayCommandConflicts,
@@ -150,7 +151,7 @@ export interface LivePlayCommandCommitContext<
 > extends LivePlayCommandPersistContext<TCommand, TActor, TMap> {
   readonly commandHash: LivePlayCommandHash
   recordRealtimeEvents(inputs: readonly AppendRealtimeEventInput[]): readonly PersistedRealtimeEvent[]
-  saveOpResult(): LivePlayOpRecord
+  saveOpResult(moveCompensation?: AcceptedMoveCompensationResult): LivePlayOpRecord
 }
 
 export interface LivePlayCommandSuspendContext<
@@ -873,10 +874,24 @@ export class AuthoritativeLivePlayCommandExecutor {
         retainRealtimeEvents(events)
         return events
       },
-      saveOpResult: () => {
-        if (savedRecord) return savedRecord
+      saveOpResult: (moveCompensation) => {
+        if (savedRecord) {
+          if (
+            JSON.stringify(savedRecord.moveCompensation ?? null)
+            !== JSON.stringify(moveCompensation ?? null)
+          ) {
+            throw new Error('saveOpResult() cannot change move compensation metadata after persistence')
+          }
+          return savedRecord
+        }
         saveOpResultCalled = true
-        const record = this.saveOpResult(command, commandHash, result, options.recordedAt)
+        const record = this.saveOpResult(
+          command,
+          commandHash,
+          result,
+          options.recordedAt,
+          moveCompensation,
+        )
         const realtimeEvent = this.recordAcceptedRealtimeEvent?.({
           command,
           result,
@@ -1039,12 +1054,14 @@ export class AuthoritativeLivePlayCommandExecutor {
     commandHash: LivePlayCommandHash,
     result: StorableLivePlayCommandResult,
     recordedAt?: string,
+    moveCompensation?: AcceptedMoveCompensationResult,
   ): LivePlayOpRecord {
     const input = {
       mapSlug: command.mapSlug,
       opId: command.opId,
       commandHash,
       result,
+      ...(moveCompensation === undefined ? {} : { moveCompensation }),
       ...(recordedAt === undefined ? {} : { recordedAt }),
     }
     return canRecordCommand(this.opStore)

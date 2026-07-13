@@ -424,6 +424,10 @@ describe('MoveSpec core token effect reducers', () => {
       reasonCode: 'core-token-effects',
       expectedRevision: 4,
       changedFields: ['hp'],
+      compensation: {
+        kind: 'inverse',
+        strategy: 'restore-previous-value',
+      },
       current: { revision: 5, updatedAt: 5_000 },
     })
     if (sheetChange?.kind !== 'sheet-state') throw new Error('Expected sheet state change')

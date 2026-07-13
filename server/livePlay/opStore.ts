@@ -11,6 +11,10 @@ import {
   type StorableLivePlayCommandResult,
 } from './opResult'
 import { validateLivePlayOperationId } from './commandIdempotency'
+import {
+  parseAcceptedMoveCompensationResult,
+  type AcceptedMoveCompensationResult,
+} from '../domain/moveAutomation/acceptedMoveCompensation'
 
 export const LIVE_PLAY_OP_STORE_SCHEMA_VERSION = 1 as const
 export const LIVE_PLAY_OP_STORE_ROOT = campaignPath('data', 'live-play-ops')
@@ -21,6 +25,8 @@ export interface LivePlayOpRecord {
   readonly opId: string
   readonly commandHash: LivePlayCommandHash
   readonly result: StorableLivePlayCommandResult
+  /** Private server-only correction metadata; never included in command results. */
+  readonly moveCompensation?: AcceptedMoveCompensationResult
   readonly recordedAt: string
 }
 
@@ -29,6 +35,7 @@ export interface SaveLivePlayOpResultInput {
   readonly opId: string
   readonly commandHash: LivePlayCommandHash
   readonly result: StorableLivePlayCommandResult
+  readonly moveCompensation?: AcceptedMoveCompensationResult
   readonly recordedAt?: string
 }
 
@@ -80,6 +87,18 @@ const assertSaveInputMatchesResult = (input: SaveLivePlayOpResultInput): void =>
   if (input.result.mapSlug !== input.mapSlug) {
     throw new Error('Live-play op store result mapSlug must match the stored mapSlug')
   }
+  if (input.moveCompensation !== undefined) {
+    const compensation = parseAcceptedMoveCompensationResult(input.moveCompensation)
+    if (!input.result.ok) {
+      throw new Error('Rejected live-play operations cannot store move compensation metadata')
+    }
+    if (
+      compensation.mapSlug !== input.mapSlug
+      || compensation.originOperationId !== input.opId
+    ) {
+      throw new Error('Move compensation identity must match the stored live-play operation')
+    }
+  }
 }
 
 const recordFromSaveInput = (
@@ -91,6 +110,9 @@ const recordFromSaveInput = (
   opId: input.opId,
   commandHash: input.commandHash,
   result: cloneJson(input.result),
+  ...(input.moveCompensation === undefined
+    ? {}
+    : { moveCompensation: parseAcceptedMoveCompensationResult(input.moveCompensation) }),
   recordedAt: input.recordedAt ?? clock(),
 })
 
@@ -110,6 +132,17 @@ const assertExistingRecordCompatible = (
     existingResult: existing.result,
     attemptedResult,
   })
+}
+
+const assertExistingCompensationCompatible = (
+  existing: LivePlayOpRecord,
+  attempted: AcceptedMoveCompensationResult | undefined,
+): void => {
+  if (JSON.stringify(existing.moveCompensation ?? null) !== JSON.stringify(attempted ?? null)) {
+    throw new Error(
+      `Operation ID ${existing.mapSlug}:${existing.opId} was already recorded with different move compensation metadata`,
+    )
+  }
 }
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
@@ -133,11 +166,21 @@ const parseStoredRecord = (value: unknown, source: string): LivePlayOpRecord => 
   if (!isStorableLivePlayCommandResult(value.result)) {
     throw new Error(`Live-play op record ${source}.result must be an accepted or rejected result`)
   }
+  const moveCompensation = value.moveCompensation === undefined
+    ? undefined
+    : parseAcceptedMoveCompensationResult(value.moveCompensation)
   if (value.result.opId !== opId) {
     throw new Error(`Live-play op record ${source}.result.opId must match the record opId`)
   }
   if (value.result.mapSlug !== mapSlug) {
     throw new Error(`Live-play op record ${source}.result.mapSlug must match the record mapSlug`)
+  }
+  if (moveCompensation && (
+    !value.result.ok
+    || moveCompensation.mapSlug !== mapSlug
+    || moveCompensation.originOperationId !== opId
+  )) {
+    throw new Error(`Live-play op record ${source}.moveCompensation must match an accepted record identity`)
   }
 
   return {
@@ -146,6 +189,7 @@ const parseStoredRecord = (value: unknown, source: string): LivePlayOpRecord => 
     opId,
     commandHash: value.commandHash as LivePlayCommandHash,
     result: cloneJson(value.result),
+    ...(moveCompensation === undefined ? {} : { moveCompensation }),
     recordedAt: value.recordedAt,
   }
 }
@@ -175,6 +219,7 @@ export const createFileLivePlayOpStore = (
       const existing = readRecordFile(path)
       if (existing) {
         assertExistingRecordCompatible(existing, input.commandHash, input.result)
+        assertExistingCompensationCompatible(existing, input.moveCompensation)
         return cloneRecord(existing)
       }
 
@@ -208,6 +253,7 @@ export const createInMemoryLivePlayOpStore = (
       const existing = records.get(key)
       if (existing) {
         assertExistingRecordCompatible(existing, input.commandHash, input.result)
+        assertExistingCompensationCompatible(existing, input.moveCompensation)
         return cloneRecord(existing)
       }
 

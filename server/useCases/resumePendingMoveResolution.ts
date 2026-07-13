@@ -43,6 +43,7 @@ import {
   type AttackOfOpportunityResponsePlan,
 } from '../domain/moveAutomation/attackOfOpportunity'
 import { createMoveStateChangePlan } from '../domain/moveAutomation/plan'
+import { createAcceptedMoveCompensationResult } from '../domain/moveAutomation/planAcceptedMoveCompensation'
 import { planResumedMoveState } from '../domain/moveAutomation/planResumedMoveState'
 import type { AuthoritativeMoveRandomSource } from '../domain/moveAutomation/random'
 import { ResumeMoveSpecError, resumeMoveSpec } from '../domain/moveAutomation/resumeSpec'
@@ -626,6 +627,13 @@ export const resumePendingMoveResolutionUseCase = (
         commandHash,
         command: input.command,
         result,
+        ...(childPlan ? {
+          moveCompensation: createAcceptedMoveCompensationResult({
+            mapSlug: input.command.mapSlug,
+            originOperationId: input.command.opId,
+            plan: childPlan.stateChanges,
+          }),
+        } : {}),
       })
       dependencies.pendingResolutionRepository.update({
         resolution: plan.pendingResolution,
@@ -696,6 +704,11 @@ export const resumePendingMoveResolutionUseCase = (
         commandHash,
         command: input.command,
         result,
+        moveCompensation: createAcceptedMoveCompensationResult({
+          mapSlug: input.command.mapSlug,
+          originOperationId: input.command.opId,
+          plan: plan.stateChanges,
+        }),
       })
       dependencies.pendingResolutionRepository.update({
         resolution: plan.pendingResolution,
@@ -822,6 +835,11 @@ export const resumePendingMoveResolutionUseCase = (
       commandHash,
       command: input.command,
       result,
+      moveCompensation: createAcceptedMoveCompensationResult({
+        mapSlug: input.command.mapSlug,
+        originOperationId: input.command.opId,
+        plan: plan.stateChanges,
+      }),
     })
     dependencies.pendingResolutionRepository.update({
       resolution: terminalResolution({

@@ -180,8 +180,8 @@ describe('planAuthoritativeMoveState', () => {
       { kind: 'map', mapSlug: 'planner-test', expectedRevision: 7 },
     ])
     expect(plan.stateChanges.changes[0]?.compensation).toEqual({
-      kind: 'unavailable',
-      reasonCode: 'field-level-inverse-not-yet-recorded',
+      kind: 'inverse',
+      strategy: 'restore-previous-value',
     })
     expect(plan.stateChanges.changes[1]?.compensation).toEqual({
       kind: 'inverse',
@@ -189,6 +189,7 @@ describe('planAuthoritativeMoveState', () => {
     })
     expect(plan.stateChanges.changes[2]?.compensation).toEqual({
       kind: 'unavailable',
+      safety: 'externally-observed',
       reasonCode: 'accepted-log-may-be-observed',
     })
     expect(moveLog(plan.nextMap)).toHaveLength(1)

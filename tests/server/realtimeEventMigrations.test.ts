@@ -74,9 +74,9 @@ const documentStoreTableColumns = [
 ]
 
 describe('SQLite storage migrations', () => {
-  it('keeps migration versions contiguous through schema version 10', () => {
-    expect(LATEST_STORAGE_SCHEMA_VERSION).toBe(10)
-    expect(STORAGE_MIGRATIONS.map((migration) => migration.version)).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
+  it('keeps migration versions contiguous through schema version 11', () => {
+    expect(LATEST_STORAGE_SCHEMA_VERSION).toBe(11)
+    expect(STORAGE_MIGRATIONS.map((migration) => migration.version)).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11])
   })
 
   it('creates realtime, inventory, shop, and pending-resolution tables for a fresh database', () => {
@@ -84,8 +84,8 @@ describe('SQLite storage migrations', () => {
 
     const result = applyStorageMigrations(connection)
 
-    expect(result).toMatchObject({ fromVersion: 0, toVersion: 10, appliedVersions: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10] })
-    expect(getStorageSchemaVersion(connection)).toBe(10)
+    expect(result).toMatchObject({ fromVersion: 0, toVersion: 11, appliedVersions: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11] })
+    expect(getStorageSchemaVersion(connection)).toBe(11)
     expect(tableNames(connection)).toEqual(expectedTableNames)
     expect(connection.prepare('SELECT latest_sequence, earliest_available_sequence FROM realtime_event_log_state WHERE singleton = 1').get())
       .toEqual({ latest_sequence: 0, earliest_available_sequence: 1 })
@@ -97,6 +97,16 @@ describe('SQLite storage migrations', () => {
 
     expect(tableColumns(connection, 'group_inventories')).toEqual(documentStoreTableColumns)
     expect(tableColumns(connection, 'shop_tables')).toEqual(documentStoreTableColumns)
+    expect(tableColumns(connection, 'live_play_ops')).toEqual([
+      { name: 'op_id', type: 'TEXT', notNull: 0, primaryKeyPosition: 1 },
+      { name: 'map_slug', type: 'TEXT', notNull: 1, primaryKeyPosition: 0 },
+      { name: 'command_hash', type: 'TEXT', notNull: 1, primaryKeyPosition: 0 },
+      { name: 'command_json', type: 'TEXT', notNull: 1, primaryKeyPosition: 0 },
+      { name: 'result_json', type: 'TEXT', notNull: 1, primaryKeyPosition: 0 },
+      { name: 'result_revision', type: 'INTEGER', notNull: 0, primaryKeyPosition: 0 },
+      { name: 'created_at', type: 'INTEGER', notNull: 1, primaryKeyPosition: 0 },
+      { name: 'move_compensation_json', type: 'TEXT', notNull: 0, primaryKeyPosition: 0 },
+    ])
     expect(tableColumns(connection, 'shop_checkout_ops')).toEqual([
       { name: 'op_id', type: 'TEXT', notNull: 0, primaryKeyPosition: 1 },
       { name: 'shop_slug', type: 'TEXT', notNull: 1, primaryKeyPosition: 0 },
@@ -151,8 +161,8 @@ describe('SQLite storage migrations', () => {
 
     const result = applyStorageMigrations(connection)
 
-    expect(result).toEqual({ fromVersion: 4, toVersion: 10, appliedVersions: [5, 6, 7, 8, 9, 10] })
-    expect(getStorageSchemaVersion(connection)).toBe(10)
+    expect(result).toEqual({ fromVersion: 4, toVersion: 11, appliedVersions: [5, 6, 7, 8, 9, 10, 11] })
+    expect(getStorageSchemaVersion(connection)).toBe(11)
     expect(tableNames(connection)).toEqual(expectedTableNames)
     expect(connection.prepare('SELECT COUNT(*) AS count FROM maps').get()).toEqual({ count: 1 })
     expect(connection.prepare('SELECT COUNT(*) AS count FROM sheets').get()).toEqual({ count: 1 })
@@ -165,7 +175,7 @@ describe('SQLite storage migrations', () => {
     expect(connection.prepare('SELECT latest_sequence, earliest_available_sequence FROM realtime_event_log_state WHERE singleton = 1').get())
       .toEqual({ latest_sequence: 0, earliest_available_sequence: 1 })
 
-    expect(applyStorageMigrations(connection)).toEqual({ fromVersion: 10, toVersion: 10, appliedVersions: [] })
+    expect(applyStorageMigrations(connection)).toEqual({ fromVersion: 11, toVersion: 11, appliedVersions: [] })
   })
 
   it('upgrades schema version 6 databases with the shop table without touching existing rows', () => {
@@ -190,8 +200,8 @@ describe('SQLite storage migrations', () => {
 
     const result = applyStorageMigrations(connection)
 
-    expect(result).toEqual({ fromVersion: 6, toVersion: 10, appliedVersions: [7, 8, 9, 10] })
-    expect(getStorageSchemaVersion(connection)).toBe(10)
+    expect(result).toEqual({ fromVersion: 6, toVersion: 11, appliedVersions: [7, 8, 9, 10, 11] })
+    expect(getStorageSchemaVersion(connection)).toBe(11)
     expect(tableNames(connection)).toEqual(expectedTableNames)
     expect(tableColumns(connection, 'shop_tables')).toEqual(documentStoreTableColumns)
     expect(connection.prepare('SELECT slug, revision, updated_at FROM maps').get())
@@ -227,8 +237,8 @@ describe('SQLite storage migrations', () => {
 
     const result = applyStorageMigrations(connection)
 
-    expect(result).toEqual({ fromVersion: 7, toVersion: 10, appliedVersions: [8, 9, 10] })
-    expect(getStorageSchemaVersion(connection)).toBe(10)
+    expect(result).toEqual({ fromVersion: 7, toVersion: 11, appliedVersions: [8, 9, 10, 11] })
+    expect(getStorageSchemaVersion(connection)).toBe(11)
     expect(tableNames(connection)).toEqual(expectedTableNames)
     expect(connection.prepare('SELECT slug, revision, updated_at FROM shop_tables').get())
       .toEqual({ slug: 'mart', revision: 2, updated_at: 104 })
@@ -262,8 +272,8 @@ describe('SQLite storage migrations', () => {
 
     const result = applyStorageMigrations(connection)
 
-    expect(result).toEqual({ fromVersion: 8, toVersion: 10, appliedVersions: [9, 10] })
-    expect(getStorageSchemaVersion(connection)).toBe(10)
+    expect(result).toEqual({ fromVersion: 8, toVersion: 11, appliedVersions: [9, 10, 11] })
+    expect(getStorageSchemaVersion(connection)).toBe(11)
     expect(tableNames(connection)).toEqual(expectedTableNames)
     expect(connection.prepare('SELECT op_id, map_slug FROM live_play_ops').get())
       .toEqual({ op_id: 'op_beforepending1', map_slug: 'training-yard' })
@@ -283,8 +293,8 @@ describe('SQLite storage migrations', () => {
 
     expect(applyStorageMigrations(connection)).toEqual({
       fromVersion: 9,
-      toVersion: 10,
-      appliedVersions: [10],
+      toVersion: 11,
+      appliedVersions: [10, 11],
     })
     expect(connection.prepare(`
       SELECT resolution_id, declaration_plan_json
@@ -292,6 +302,34 @@ describe('SQLite storage migrations', () => {
     `).get()).toEqual({
       resolution_id: 'resolution-legacy',
       declaration_plan_json: null,
+    })
+  })
+
+  it('upgrades schema version 10 operation rows with null private compensation metadata', () => {
+    const connection = openMemoryConnection()
+    applyMigrationsThroughVersion(connection, 10)
+    connection.prepare(`
+      INSERT INTO live_play_ops (
+        op_id, map_slug, command_hash, command_json, result_json,
+        result_revision, created_at
+      ) VALUES (
+        'op_beforecomp01', 'training-yard', 'hash', '{}',
+        '{"ok":false,"opId":"op_beforecomp01","mapSlug":"training-yard","reason":"invalid","message":"old"}',
+        NULL, 108
+      )
+    `).run()
+
+    expect(applyStorageMigrations(connection)).toEqual({
+      fromVersion: 10,
+      toVersion: 11,
+      appliedVersions: [11],
+    })
+    expect(connection.prepare(`
+      SELECT op_id, move_compensation_json
+      FROM live_play_ops
+    `).get()).toEqual({
+      op_id: 'op_beforecomp01',
+      move_compensation_json: null,
     })
   })
 
@@ -309,8 +347,8 @@ describe('SQLite storage migrations', () => {
 
     const result = applyStorageMigrations(connection)
 
-    expect(result).toEqual({ fromVersion: 5, toVersion: 10, appliedVersions: [6, 7, 8, 9, 10] })
-    expect(getStorageSchemaVersion(connection)).toBe(10)
+    expect(result).toEqual({ fromVersion: 5, toVersion: 11, appliedVersions: [6, 7, 8, 9, 10, 11] })
+    expect(getStorageSchemaVersion(connection)).toBe(11)
     expect(tableNames(connection)).toEqual(expectedTableNames)
     expect(tableColumns(connection, 'group_inventories')).toEqual(documentStoreTableColumns)
     expect(tableColumns(connection, 'shop_tables')).toEqual(documentStoreTableColumns)

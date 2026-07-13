@@ -1,7 +1,7 @@
 import { deepCloneJson, sameJsonValue } from '~/utils/serialization'
 import {
   MOVE_SHEET_STATE_FIELDS,
-  unavailableMoveStateCompensation,
+  RESTORE_PREVIOUS_MOVE_STATE_VALUE,
   type MoveStateChangeInput,
 } from './plan'
 
@@ -125,7 +125,7 @@ export const mergeDisjointMoveSheetStateChanges = (
         key,
       ) as MoveSheetStateChangeInput['current'],
       changedFields: MOVE_SHEET_STATE_FIELDS.filter(field => changedFieldSet.has(field)),
-      compensation: unavailableMoveStateCompensation('field-level-inverse-not-yet-recorded'),
+      compensation: RESTORE_PREVIOUS_MOVE_STATE_VALUE,
     }
   }
 
