@@ -669,7 +669,11 @@ const movementChoiceSet = (
   const choice = operation.payload.choice
   const destinationSetId = operation.payload.destinationSetId
   const maximumDistance = operation.payload.distance
-  if (!choice || destinationSetId === null || maximumDistance === null) {
+  if (
+    !choice
+    || destinationSetId === null
+    || typeof maximumDistance !== 'number'
+  ) {
     return fail(
       'definition-integrity-mismatch',
       `Movement operation ${operation.id} has no complete durable choice declaration.`,

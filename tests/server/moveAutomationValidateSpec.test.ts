@@ -820,6 +820,62 @@ describe('authoritative MoveSpec validation and hashing', () => {
     )
   })
 
+  it('validates reviewed forced and voluntary spatial displacement declarations', () => {
+    const displacementOperation = () => ({
+      id: 'operation.weighted-push',
+      kind: 'movement-request',
+      source: { kind: 'move', id: 'move.scratch' },
+      recipients: { kind: 'hit-targets' },
+      phase: 'movement',
+      reasonCode: 'move.scratch.weighted-push',
+      payload: {
+        requestId: 'request.weighted-push',
+        mode: 'forced',
+        distance: {
+          kind: 'expression',
+          expression: {
+            kind: 'weight',
+            subject: { kind: 'current-target' },
+            metric: 'weight-class',
+          },
+          minimum: 0,
+          maximum: 7,
+          rounding: 'floor',
+        },
+        destinationSetId: null,
+        displacement: {
+          vector: { kind: 'away', source: { kind: 'actor' } },
+          opportunityAttacks: 'ignore',
+        },
+      },
+    })
+    const valid = validSpec()
+    valid.phases.push({ phase: 'movement', operations: [displacementOperation()] })
+    expect(validateMoveSpec(valid).spec.phases
+      .flatMap(block => block.operations)
+      .find(operation => operation.id === 'operation.weighted-push')).toMatchObject({
+      kind: 'movement-request',
+      payload: { mode: 'forced', displacement: { vector: { kind: 'away' } } },
+    })
+
+    const wrongPhase = structuredClone(valid)
+    wrongPhase.phases.at(-1)!.phase = 'schedule'
+    wrongPhase.phases.at(-1)!.operations[0]!.phase = 'schedule'
+    expectDefinitionError(
+      () => validateMoveSpec(wrongPhase),
+      'invalid-definition',
+      'spec.phases[2].operations[0].phase',
+    )
+
+    const noRecipients = structuredClone(valid)
+    noRecipients.phases.at(-1)!.operations[0]!.recipients = { kind: 'none' }
+    expectDefinitionError(
+      () => validateMoveSpec(noRecipients),
+      'invalid-definition',
+      'spec.phases[2].operations[0].recipients',
+    )
+  })
+
   it('validates branch identities and later-operation control without executable payloads', () => {
     const branched = validSpec()
     branched.phases.splice(1, 0, {

@@ -660,7 +660,7 @@ export const validateMoveSpecOperationSequence = (
       )
     }
     if (
-      operation.payload.distance === null
+      typeof operation.payload.distance !== 'number'
       || operation.payload.distance <= 0
       || operation.payload.destinationSetId === null
     ) {
@@ -668,6 +668,41 @@ export const validateMoveSpecOperationSequence = (
         'invalid-definition',
         `${path}.payload`,
         'a durable movement choice requires a positive distance and destination set ID.',
+      )
+    }
+  }
+
+  const displacementEntries = indexed.filter(({ operation }) => (
+    operation.kind === 'movement-request' && operation.payload.displacement !== undefined
+  ))
+  for (const { operation, path } of displacementEntries) {
+    if (operation.kind !== 'movement-request' || !operation.payload.displacement) continue
+    if (operation.phase !== 'movement') {
+      fail(
+        'invalid-definition',
+        `${path}.phase`,
+        'spatial displacement must execute in the movement phase.',
+      )
+    }
+    if (operation.recipients.kind === 'none') {
+      fail(
+        'invalid-definition',
+        `${path}.recipients`,
+        'spatial displacement must resolve at least one authoritative recipient selector.',
+      )
+    }
+    if (operation.payload.mode !== 'forced' && operation.payload.mode !== 'voluntary') {
+      fail(
+        'invalid-definition',
+        `${path}.payload.mode`,
+        'spatial displacement supports forced or voluntary movement only.',
+      )
+    }
+    if (operation.payload.distance === null || operation.payload.destinationSetId !== null) {
+      fail(
+        'invalid-definition',
+        `${path}.payload`,
+        'spatial displacement requires a distance and a server-derived destination.',
       )
     }
   }

@@ -178,6 +178,10 @@ const VALID_PAYLOADS = {
     mode: 'forced',
     distance: 2,
     destinationSetId: null,
+    displacement: {
+      vector: { kind: 'away', source: { kind: 'actor' } },
+      opportunityAttacks: 'ignore',
+    },
   },
   usage: {
     action: 'spend',
@@ -394,6 +398,116 @@ describe('MoveSpec typed effect operations', () => {
         },
       },
     }), 'limit-exceeded', 'operation.payload.distance')
+  })
+
+  it('parses strict spatial vectors, contextual distances, and opportunity policy', () => {
+    const contextual = parseMoveEffectOperation(validOperation('movement-request', {
+      recipients: { kind: 'hit-targets' },
+      phase: 'movement',
+      payload: {
+        requestId: 'movement.weighted-push',
+        mode: 'forced',
+        distance: {
+          kind: 'expression',
+          expression: {
+            kind: 'arithmetic',
+            operator: 'subtract',
+            operands: [
+              { kind: 'constant', value: 6 },
+              {
+                kind: 'weight',
+                subject: { kind: 'current-target' },
+                metric: 'weight-class',
+              },
+            ],
+          },
+          minimum: 0,
+          maximum: 6,
+          rounding: 'floor',
+        },
+        destinationSetId: null,
+        displacement: {
+          vector: { kind: 'away', source: { kind: 'actor' } },
+          opportunityAttacks: 'ignore',
+        },
+      },
+    }))
+    expect(contextual.payload).toMatchObject({
+      mode: 'forced',
+      distance: {
+        kind: 'expression',
+        minimum: 0,
+        maximum: 6,
+      },
+      displacement: {
+        vector: { kind: 'away', source: { kind: 'actor' } },
+        opportunityAttacks: 'ignore',
+      },
+    })
+    expectDeeplyFrozen(contextual)
+
+    for (const vector of [
+      { kind: 'toward', source: { kind: 'actor' } },
+      { kind: 'chosen', directionSetId: 'directions.psychic' },
+      { kind: 'cardinal', direction: 'west' },
+    ]) {
+      expect(parseMoveEffectOperation(validOperation('movement-request', {
+        phase: 'movement',
+        payload: {
+          requestId: `movement.${vector.kind}`,
+          mode: vector.kind === 'cardinal' ? 'voluntary' : 'forced',
+          distance: 1,
+          destinationSetId: null,
+          displacement: {
+            vector,
+            opportunityAttacks: vector.kind === 'cardinal' ? 'provoke' : 'ignore',
+          },
+        },
+      }))).toMatchObject({ payload: { displacement: { vector } } })
+    }
+
+    expectEffectError(validOperation('movement-request', {
+      payload: {
+        requestId: 'movement.bad-cardinal',
+        mode: 'forced',
+        distance: 1,
+        destinationSetId: null,
+        displacement: {
+          vector: { kind: 'cardinal', direction: 'north-east' },
+          opportunityAttacks: 'ignore',
+        },
+      },
+    }), 'invalid-effect-operation', 'operation.payload.displacement.vector.direction')
+    expectEffectError(validOperation('movement-request', {
+      payload: {
+        requestId: 'movement.bad-bounds',
+        mode: 'forced',
+        distance: {
+          kind: 'expression',
+          expression: { kind: 'constant', value: 1 },
+          minimum: 4,
+          maximum: 2,
+          rounding: 'floor',
+        },
+        destinationSetId: null,
+        displacement: {
+          vector: { kind: 'away', source: { kind: 'actor' } },
+          opportunityAttacks: 'ignore',
+        },
+      },
+    }), 'invalid-effect-operation', 'operation.payload.distance')
+    expectEffectError(validOperation('movement-request', {
+      payload: {
+        requestId: 'movement.client-vector',
+        mode: 'forced',
+        distance: 1,
+        destinationSetId: null,
+        displacement: {
+          vector: { kind: 'chosen', directionSetId: 'directions.test', direction: 'east' },
+          opportunityAttacks: 'ignore',
+        },
+      },
+    }), 'invalid-effect-operation', 'operation.payload.displacement.vector')
   })
 
   it('supports each bounded payload variant without accepting generic metadata', () => {

@@ -502,6 +502,16 @@ const assertSupportedImmediateOperations = (
       `Immediate MoveSpec operation ${unsupported.operation.kind} is not reducible.`,
     )
   }
+  const unvalidatedDisplacement = operations.find(({ operation }) => (
+    operation.kind === 'movement-request'
+    && operation.payload.displacement !== undefined
+  ))
+  if (unvalidatedDisplacement) {
+    fail(
+      'unsupported-operation',
+      `Spatial operation ${unvalidatedDisplacement.operation.id} has not passed authoritative collision planning.`,
+    )
+  }
 }
 
 export interface ResolveMoveSpecOptions {

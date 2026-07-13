@@ -278,6 +278,24 @@ export const MOVE_EFFECT_MOVEMENT_CHOICE_KINDS = [
   'destination',
   'direction',
 ] as const
+export const MOVE_EFFECT_MOVEMENT_VECTOR_KINDS = [
+  'away',
+  'toward',
+  'chosen',
+  'cardinal',
+] as const
+export const MOVE_EFFECT_MOVEMENT_CARDINAL_DIRECTIONS = [
+  'north',
+  'east',
+  'south',
+  'west',
+  'up',
+  'down',
+] as const satisfies readonly MoveAutomationAreaDirection[]
+export const MOVE_EFFECT_MOVEMENT_OPPORTUNITY_ATTACK_POLICIES = [
+  'provoke',
+  'ignore',
+] as const
 export const MOVE_EFFECT_USAGE_ACTIONS = ['spend', 'restore', 'set'] as const
 export const MOVE_EFFECT_HISTORY_EVENTS = [
   'move-declared',
@@ -300,6 +318,7 @@ export const MOVE_EFFECT_OPERATION_LIMITS = Object.freeze({
   diceSides: 10_000,
   numericMagnitude: 1_000_000,
   movementChoiceDistance: 1_000,
+  movementDisplacementDistance: 1_000,
   durationCount: 10_000,
   effectStacks: ENCOUNTER_EFFECT_LIMITS.stacks,
   hazardLayers: 64,
@@ -389,6 +408,12 @@ export type MoveEffectFieldCategory = (typeof MOVE_EFFECT_FIELD_CATEGORIES)[numb
 export type MoveEffectMovementMode = (typeof MOVE_EFFECT_MOVEMENT_MODES)[number]
 export type MoveEffectMovementChoiceKind =
   (typeof MOVE_EFFECT_MOVEMENT_CHOICE_KINDS)[number]
+export type MoveEffectMovementVectorKind =
+  (typeof MOVE_EFFECT_MOVEMENT_VECTOR_KINDS)[number]
+export type MoveEffectMovementCardinalDirection =
+  (typeof MOVE_EFFECT_MOVEMENT_CARDINAL_DIRECTIONS)[number]
+export type MoveEffectMovementOpportunityAttackPolicy =
+  (typeof MOVE_EFFECT_MOVEMENT_OPPORTUNITY_ATTACK_POLICIES)[number]
 export type MoveEffectUsageAction = (typeof MOVE_EFFECT_USAGE_ACTIONS)[number]
 export type MoveEffectHistoryEvent = (typeof MOVE_EFFECT_HISTORY_EVENTS)[number]
 
@@ -1068,14 +1093,55 @@ export type MoveMovementChoice =
   | MoveDestinationMovementChoice
   | MoveDirectionMovementChoice
 
+export interface MoveContextualMovementDistance {
+  readonly kind: 'expression'
+  readonly expression: MoveExpression
+  /** Inclusive post-rounding bounds for the authoritative movement distance. */
+  readonly minimum: number
+  readonly maximum: number
+  readonly rounding: MoveEffectRoundingPolicy
+}
+
+export type MoveMovementDistance = number | MoveContextualMovementDistance
+
+export interface MoveRelativeMovementVector {
+  readonly kind: 'away' | 'toward'
+  /** Exactly one server-owned placement used as the footprint-relative origin. */
+  readonly source: MoveSelector
+}
+
+export interface MoveChosenMovementVector {
+  readonly kind: 'chosen'
+  /** Stable server-owned direction option set resolved before spatial reduction. */
+  readonly directionSetId: string
+}
+
+export interface MoveCardinalMovementVector {
+  readonly kind: 'cardinal'
+  readonly direction: MoveEffectMovementCardinalDirection
+}
+
+export type MoveMovementVector =
+  | MoveRelativeMovementVector
+  | MoveChosenMovementVector
+  | MoveCardinalMovementVector
+
+export interface MoveMovementDisplacement {
+  readonly vector: MoveMovementVector
+  /** Explicit policy; forced/voluntary identity never implicitly decides reaction timing. */
+  readonly opportunityAttacks: MoveEffectMovementOpportunityAttackPolicy
+}
+
 export interface MoveMovementRequestEffectPayload {
   readonly requestId: string
   readonly mode: MoveEffectMovementMode
-  readonly distance: number | null
+  readonly distance: MoveMovementDistance | null
   /** Null when the movement mode derives its destination without a choice set. */
   readonly destinationSetId: string | null
   /** Omitted for retained immediate movement such as reviewed Pass geometry. */
   readonly choice?: MoveMovementChoice
+  /** Reviewed straight-line push, pull, or immediate shift semantics. */
+  readonly displacement?: MoveMovementDisplacement
 }
 
 export interface MoveUsageEffectPayload {
@@ -1427,6 +1493,10 @@ const MOVEMENT_REQUEST_FIELDS = [
   'destinationSetId',
 ] as const
 const MOVEMENT_CHOICE_REQUEST_FIELDS = [...MOVEMENT_REQUEST_FIELDS, 'choice'] as const
+const MOVEMENT_DISPLACEMENT_REQUEST_FIELDS = [
+  ...MOVEMENT_REQUEST_FIELDS,
+  'displacement',
+] as const
 const DESTINATION_MOVEMENT_CHOICE_FIELDS = ['kind', 'promptKey', 'allowPass'] as const
 const DIRECTION_MOVEMENT_CHOICE_FIELDS = [
   'kind',
@@ -1434,6 +1504,17 @@ const DIRECTION_MOVEMENT_CHOICE_FIELDS = [
   'allowPass',
   'directions',
 ] as const
+const CONTEXTUAL_MOVEMENT_DISTANCE_FIELDS = [
+  'kind',
+  'expression',
+  'minimum',
+  'maximum',
+  'rounding',
+] as const
+const RELATIVE_MOVEMENT_VECTOR_FIELDS = ['kind', 'source'] as const
+const CHOSEN_MOVEMENT_VECTOR_FIELDS = ['kind', 'directionSetId'] as const
+const CARDINAL_MOVEMENT_VECTOR_FIELDS = ['kind', 'direction'] as const
+const MOVEMENT_DISPLACEMENT_FIELDS = ['vector', 'opportunityAttacks'] as const
 const USAGE_FIELDS = ['action', 'resourceId', 'amount'] as const
 const HISTORY_FIELDS = ['event', 'detailCode'] as const
 const LOG_FIELDS = ['messageKey', 'arguments'] as const
@@ -1511,7 +1592,14 @@ const COMBAT_STAGE_SET = new Set<string>(MOVE_EFFECT_COMBAT_STAGES)
 const FIELD_CATEGORY_SET = new Set<string>(MOVE_EFFECT_FIELD_CATEGORIES)
 const MOVEMENT_MODE_SET = new Set<string>(MOVE_EFFECT_MOVEMENT_MODES)
 const MOVEMENT_CHOICE_KIND_SET = new Set<string>(MOVE_EFFECT_MOVEMENT_CHOICE_KINDS)
+const MOVEMENT_VECTOR_KIND_SET = new Set<string>(MOVE_EFFECT_MOVEMENT_VECTOR_KINDS)
 const MOVEMENT_DIRECTION_SET = new Set<string>(MOVE_AUTOMATION_AREA_DIRECTIONS)
+const MOVEMENT_CARDINAL_DIRECTION_SET = new Set<string>(
+  MOVE_EFFECT_MOVEMENT_CARDINAL_DIRECTIONS,
+)
+const MOVEMENT_OPPORTUNITY_ATTACK_POLICY_SET = new Set<string>(
+  MOVE_EFFECT_MOVEMENT_OPPORTUNITY_ATTACK_POLICIES,
+)
 const USAGE_ACTION_SET = new Set<string>(MOVE_EFFECT_USAGE_ACTIONS)
 const HISTORY_EVENT_SET = new Set<string>(MOVE_EFFECT_HISTORY_EVENTS)
 const RECIPIENT_SCOPED_BRANCH_SELECTOR_SET = new Set<MoveEffectRecipientSelectorKind>(
@@ -3433,39 +3521,188 @@ const parseMovementChoice = (
   return { kind, ...common, directions }
 }
 
+const parseContextualMovementDistance = (
+  value: unknown,
+  path: string,
+): MoveContextualMovementDistance => {
+  const input = parseExactRecord(value, CONTEXTUAL_MOVEMENT_DISTANCE_FIELDS, path)
+  if (ownValue(input, 'kind', path) !== 'expression') {
+    return fail('invalid-effect-operation', `${path}.kind`, 'must be expression.')
+  }
+  const minimum = parseInteger(
+    ownValue(input, 'minimum', path),
+    `${path}.minimum`,
+    0,
+    MOVE_EFFECT_OPERATION_LIMITS.movementDisplacementDistance,
+  )
+  const maximum = parseInteger(
+    ownValue(input, 'maximum', path),
+    `${path}.maximum`,
+    0,
+    MOVE_EFFECT_OPERATION_LIMITS.movementDisplacementDistance,
+  )
+  if (minimum > maximum) {
+    fail('invalid-effect-operation', path, 'movement distance minimum cannot exceed maximum.')
+  }
+  return {
+    kind: 'expression',
+    expression: parseMoveExpression(
+      ownValue(input, 'expression', path),
+      `${path}.expression`,
+    ),
+    minimum,
+    maximum,
+    rounding: parseEnum<MoveEffectRoundingPolicy>(
+      ownValue(input, 'rounding', path),
+      ROUNDING_POLICY_SET,
+      `${path}.rounding`,
+      'floor, round, or ceil',
+    ),
+  }
+}
+
+const parseMovementDistance = (
+  value: unknown,
+  path: string,
+  maximum: number,
+  allowExpression: boolean,
+): MoveMovementDistance | null => {
+  if (value === null) return null
+  if (typeof value === 'number') return parseInteger(value, path, 0, maximum)
+  if (!allowExpression) {
+    return fail('invalid-effect-operation', path, 'must be a bounded integer or null.')
+  }
+  return parseContextualMovementDistance(value, path)
+}
+
+const parseMovementVector = (
+  value: unknown,
+  path: string,
+): MoveMovementVector => {
+  const candidate = parseRecord(value, path)
+  const kind = parseEnum<MoveEffectMovementVectorKind>(
+    ownValue(candidate, 'kind', path),
+    MOVEMENT_VECTOR_KIND_SET,
+    `${path}.kind`,
+    'away, toward, chosen, or cardinal',
+  )
+  if (kind === 'away' || kind === 'toward') {
+    const input = parseExactRecord(value, RELATIVE_MOVEMENT_VECTOR_FIELDS, path)
+    return {
+      kind,
+      source: parseMoveSelector(ownValue(input, 'source', path), `${path}.source`),
+    }
+  }
+  if (kind === 'chosen') {
+    const input = parseExactRecord(value, CHOSEN_MOVEMENT_VECTOR_FIELDS, path)
+    return {
+      kind,
+      directionSetId: parseStableId(
+        ownValue(input, 'directionSetId', path),
+        `${path}.directionSetId`,
+      ),
+    }
+  }
+  const input = parseExactRecord(value, CARDINAL_MOVEMENT_VECTOR_FIELDS, path)
+  return {
+    kind,
+    direction: parseEnum<MoveEffectMovementCardinalDirection>(
+      ownValue(input, 'direction', path),
+      MOVEMENT_CARDINAL_DIRECTION_SET,
+      `${path}.direction`,
+      'a cardinal or vertical direction',
+    ),
+  }
+}
+
+const parseMovementDisplacement = (
+  value: unknown,
+  path: string,
+): MoveMovementDisplacement => {
+  const input = parseExactRecord(value, MOVEMENT_DISPLACEMENT_FIELDS, path)
+  return {
+    vector: parseMovementVector(ownValue(input, 'vector', path), `${path}.vector`),
+    opportunityAttacks: parseEnum<MoveEffectMovementOpportunityAttackPolicy>(
+      ownValue(input, 'opportunityAttacks', path),
+      MOVEMENT_OPPORTUNITY_ATTACK_POLICY_SET,
+      `${path}.opportunityAttacks`,
+      'provoke or ignore',
+    ),
+  }
+}
+
 const parseMovementRequestPayload = (
   value: unknown,
   path: string,
 ): MoveMovementRequestEffectPayload => {
   const candidate = parseRecord(value, path)
   const hasChoice = Object.prototype.hasOwnProperty.call(candidate, 'choice')
+  const hasDisplacement = Object.prototype.hasOwnProperty.call(candidate, 'displacement')
+  if (hasChoice && hasDisplacement) {
+    return fail(
+      'invalid-effect-operation',
+      path,
+      'movement choice and displacement declarations are mutually exclusive.',
+    )
+  }
   const input = parseExactRecord(
     value,
-    hasChoice ? MOVEMENT_CHOICE_REQUEST_FIELDS : MOVEMENT_REQUEST_FIELDS,
+    hasChoice
+      ? MOVEMENT_CHOICE_REQUEST_FIELDS
+      : hasDisplacement
+        ? MOVEMENT_DISPLACEMENT_REQUEST_FIELDS
+        : MOVEMENT_REQUEST_FIELDS,
     path,
   )
+  const mode = parseEnum<MoveEffectMovementMode>(
+    ownValue(input, 'mode', path),
+    MOVEMENT_MODE_SET,
+    `${path}.mode`,
+    'a supported movement mode',
+  )
+  if (hasDisplacement && mode !== 'forced' && mode !== 'voluntary') {
+    fail(
+      'invalid-effect-operation',
+      `${path}.mode`,
+      'spatial displacement supports forced or voluntary movement only.',
+    )
+  }
+  const distance = parseMovementDistance(
+    ownValue(input, 'distance', path),
+    `${path}.distance`,
+    hasChoice
+      ? MOVE_EFFECT_OPERATION_LIMITS.movementChoiceDistance
+      : hasDisplacement
+        ? MOVE_EFFECT_OPERATION_LIMITS.movementDisplacementDistance
+        : MOVE_EFFECT_OPERATION_LIMITS.numericMagnitude,
+    hasDisplacement,
+  )
+  const destinationSetId = parseNullableStableId(
+    ownValue(input, 'destinationSetId', path),
+    `${path}.destinationSetId`,
+  )
+  if (hasDisplacement && (distance === null || destinationSetId !== null)) {
+    fail(
+      'invalid-effect-operation',
+      path,
+      'spatial displacement requires a distance and derives its destination without a destination set.',
+    )
+  }
   return {
     requestId: parseStableId(ownValue(input, 'requestId', path), `${path}.requestId`),
-    mode: parseEnum<MoveEffectMovementMode>(
-      ownValue(input, 'mode', path),
-      MOVEMENT_MODE_SET,
-      `${path}.mode`,
-      'a supported movement mode',
-    ),
-    distance: parseNullableInteger(
-      ownValue(input, 'distance', path),
-      `${path}.distance`,
-      0,
-      hasChoice
-        ? MOVE_EFFECT_OPERATION_LIMITS.movementChoiceDistance
-        : MOVE_EFFECT_OPERATION_LIMITS.numericMagnitude,
-    ),
-    destinationSetId: parseNullableStableId(
-      ownValue(input, 'destinationSetId', path),
-      `${path}.destinationSetId`,
-    ),
+    mode,
+    distance,
+    destinationSetId,
     ...(hasChoice
       ? { choice: parseMovementChoice(ownValue(input, 'choice', path), `${path}.choice`) }
+      : {}),
+    ...(hasDisplacement
+      ? {
+          displacement: parseMovementDisplacement(
+            ownValue(input, 'displacement', path),
+            `${path}.displacement`,
+          ),
+        }
       : {}),
   }
 }
