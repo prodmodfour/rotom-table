@@ -1670,7 +1670,7 @@ Status: DONE
 
 ## MA-125B — Resume durable destination and direction choices
 
-Status: TODO
+Status: DONE
 
 **Depends on:** MA-125A
 **Commit:** `feat(move-automation): choose legal movement destinations`

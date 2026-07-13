@@ -165,7 +165,7 @@ describe('move response command contract', () => {
     ]))
   })
 
-  it('rejects mechanics, scopes, state patches, and arbitrary command fields', () => {
+  it('rejects mechanics, movement coordinates, scopes, state patches, and arbitrary command fields', () => {
     const mechanics = {
       ...command(),
       scopes: [{ kind: 'map', lane: 'metadata' }],
@@ -174,6 +174,11 @@ describe('move response command contract', () => {
         roll: 20,
         damage: 999,
         effectOperations: [{ kind: 'damage' }],
+        destination: { x: 3, y: 0, z: 1 },
+        direction: 'east',
+        pathCells: [{ x: 2, y: 0, z: 1 }],
+        maximumDistance: 12,
+        movementMode: 'sky',
       },
     }
 
@@ -183,6 +188,11 @@ describe('move response command contract', () => {
       expect.objectContaining({ path: '$.payload.roll', code: 'forbidden-field' }),
       expect.objectContaining({ path: '$.payload.damage', code: 'forbidden-field' }),
       expect.objectContaining({ path: '$.payload.effectOperations', code: 'forbidden-field' }),
+      expect.objectContaining({ path: '$.payload.destination', code: 'forbidden-field' }),
+      expect.objectContaining({ path: '$.payload.direction', code: 'forbidden-field' }),
+      expect.objectContaining({ path: '$.payload.pathCells', code: 'forbidden-field' }),
+      expect.objectContaining({ path: '$.payload.maximumDistance', code: 'forbidden-field' }),
+      expect.objectContaining({ path: '$.payload.movementMode', code: 'forbidden-field' }),
     ]))
     expect(() => parseMoveResponseCommand(mechanics)).toThrow(MoveResponseCommandValidationError)
   })

@@ -1,8 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import type { CharacterSheet } from '~/types/characterSheet'
-import type { SheetPlacement, TabletopMap } from '~/types/map'
+import type { TabletopMap } from '~/types/map'
 import type { TrainerSheet } from '~/types/trainerSheet'
-import { createEmptyEncounterState } from '#shared/moveAutomation/encounterState'
 import {
   parsePendingMoveResolution,
 } from '#shared/moveAutomation/pendingResolution'
@@ -14,155 +12,16 @@ import { isAuthoritativePendingMoveResolution } from '~~/server/domain/resolveAu
 import { planResumedMoveState } from '~~/server/domain/moveAutomation/planResumedMoveState'
 import { ResumeMoveSpecError, resumeMoveSpec } from '~~/server/domain/moveAutomation/resumeSpec'
 import {
-  REGISTERED_MOVE_HANDLER_REGISTRY,
-} from '~~/server/domain/moveAutomation/handlers/registry'
-import type {
-  MoveAutomationRuntimeRegistry,
-  MoveSpecV2Runtime,
-} from '~~/server/domain/moveAutomation/registry'
-import { validateMoveSpec } from '~~/server/domain/moveAutomation/validateSpec'
+  MOVEMENT_CHOICE_DIRECTION_DECLARATION,
+  createMovementChoiceActorSheet as actorSheet,
+  createMovementChoiceMap as mapFixture,
+  createMovementChoiceRuntimeRegistry as runtimeRegistry,
+  movementChoiceActorPlacement as actorPlacement,
+  movementChoiceIntent,
+  movementChoiceSheets as sheets,
+} from '../fixtures/moveAutomation/movementChoices'
 
-const actorPlacement = (): SheetPlacement => ({
-  id: 'actor-token',
-  sheetKind: 'pokemon',
-  sheetSlug: 'actor',
-  position: { x: 1, y: 0, z: 1 },
-})
-
-const mapFixture = (): TabletopMap => ({
-  schemaVersion: 2,
-  slug: 'durable-movement-arena',
-  name: 'Durable Movement Arena',
-  revision: 7,
-  dimensions: { x: 5, y: 2, z: 4 },
-  groundLevelY: 0,
-  playerVisible: true,
-  voxels: [],
-  hazards: [],
-  fieldEffects: { weather: [], terrains: [], rooms: [] },
-  placements: [actorPlacement()],
-  lights: [],
-  initiative: { activeId: 'actor-token', round: 2 },
-  activeScene: { name: 'Movement Scene', startedAt: 100 },
-  encounterState: createEmptyEncounterState(),
-  createdAt: 1,
-  updatedAt: 100,
-})
-
-const actorSheet = (): CharacterSheet => ({
-  slug: 'actor',
-  nickname: 'Dancer',
-  species: 'Scyther',
-  level: 20,
-  revision: 3,
-  movelist: [{ name: 'Swords Dance' }],
-  capabilities: { overland: 6, sky: 0, swim: 0, levitate: 0 },
-  combat: { currentHp: 50 },
-})
-
-const movementSpec = (choice: Record<string, unknown> = {
-  kind: 'destination',
-  promptKey: 'movement-test.choose-destination',
-  allowPass: true,
-}) => ({
-  schemaVersion: 2,
-  canonicalId: 'Swords Dance',
-  version: 125,
-  targeting: {
-    kind: 'self',
-    minTargets: 1,
-    maxTargets: 1,
-    selector: { kind: 'actor' },
-  },
-  preconditions: [],
-  costs: [{
-    id: 'movement-test.no-cost',
-    phase: 'pay',
-    cost: { kind: 'no-cost', reasonCode: 'movement-test.reviewed-exception' },
-  }],
-  phases: [{
-    phase: 'movement',
-    operations: [{
-      id: 'movement-test.choose-destination',
-      kind: 'movement-request',
-      source: { kind: 'move', id: 'move.swords-dance' },
-      recipients: { kind: 'actor' },
-      phase: 'movement',
-      reasonCode: 'movement-test.choose-destination',
-      payload: {
-        requestId: 'movement-test.destination-window',
-        mode: 'voluntary',
-        distance: 3,
-        destinationSetId: 'movement-test.destinations',
-        choice,
-      },
-    }],
-  }, {
-    phase: 'usage',
-    operations: [{
-      id: 'movement-test.usage',
-      kind: 'usage',
-      source: { kind: 'move', id: 'move.swords-dance' },
-      recipients: { kind: 'actor' },
-      phase: 'usage',
-      reasonCode: 'movement-test.frequency-use',
-      payload: {
-        action: 'spend',
-        resourceId: 'movement-test.frequency-use',
-        amount: 1,
-      },
-    }],
-  }, {
-    phase: 'cleanup',
-    operations: [{
-      id: 'movement-test.completed',
-      kind: 'log',
-      source: { kind: 'move', id: 'move.swords-dance' },
-      recipients: { kind: 'none' },
-      phase: 'cleanup',
-      reasonCode: 'movement-test.completed',
-      payload: { messageKey: 'movement-test.completed', arguments: [] },
-    }],
-  }],
-  registeredHandlerId: null,
-  presentation: {
-    displayName: 'Swords Dance',
-    vfxKey: null,
-    tags: ['movement-choice-test'],
-  },
-})
-
-const runtimeRegistry = (
-  spec: ReturnType<typeof movementSpec> = movementSpec(),
-): MoveAutomationRuntimeRegistry => {
-  const definition = validateMoveSpec(spec)
-  const runtime: MoveSpecV2Runtime = Object.freeze({
-    canonicalId: definition.spec.canonicalId,
-    kind: 'movespec-v2',
-    version: definition.spec.version,
-    definitionHash: definition.definitionHash,
-    sourceModule: 'tests/server/moveMovementChoiceResolution.test.ts',
-    definition,
-  })
-  return Object.freeze({
-    size: 1,
-    handlerRegistry: REGISTERED_MOVE_HANDLER_REGISTRY,
-    resolve: (canonicalId: string) => canonicalId === runtime.canonicalId ? runtime : null,
-    entries: () => Object.freeze([runtime]),
-  })
-}
-
-const sheets = () => ({
-  pokemonSheets: new Map([['actor', actorSheet()]]),
-  trainerSheets: new Map<string, TrainerSheet>(),
-})
-
-const intent = {
-  schemaVersion: 1 as const,
-  placementId: 'actor-token',
-  moveName: 'Swords Dance',
-  selection: { kind: 'self' as const },
-}
+const intent = movementChoiceIntent()
 
 describe('durable MoveSpec movement choices', () => {
   it('suspends on server-issued cells, revalidates the selected ID, and atomically plans the shift', () => {
@@ -264,13 +123,8 @@ describe('durable MoveSpec movement choices', () => {
     ]))
   })
 
-  it('materializes canonical direction options in a round-trippable pending candidate without moving', () => {
-    const registry = runtimeRegistry(movementSpec({
-      kind: 'direction',
-      promptKey: 'movement-test.choose-direction',
-      allowPass: false,
-      directions: ['south', 'east', 'north'],
-    }))
+  it('round-trips canonical directions and resumes the selected server-owned endpoint', () => {
+    const registry = runtimeRegistry(MOVEMENT_CHOICE_DIRECTION_DECLARATION)
     const resources = sheets()
     const map = mapFixture()
     const mapBefore = structuredClone(map)
@@ -304,6 +158,35 @@ describe('durable MoveSpec movement choices', () => {
     expect(map).toEqual(mapBefore)
     expect(Object.keys(pending.publicSummary)).not.toContain('options')
     expect(Object.keys(pending.publicSummary)).not.toContain('ownership')
+
+    const window = pending.outstandingWindows[0]!
+    const east = window.options.find(option => (
+      option.selection?.kind === 'movement-direction'
+      && option.selection.direction === 'east'
+    ))!
+    const execution = resumeMoveSpec({
+      pendingResolution: pending,
+      map: declaration.nextMap,
+      ...resources,
+      response: { requestId: window.windowId, optionId: east.id },
+      now: 2_000,
+      random: () => { throw new Error('movement choices must not draw randomness') },
+      runtimeRegistry: registry,
+    })
+    expect(isAuthoritativePendingMoveResolution(execution)).toBe(false)
+    if (isAuthoritativePendingMoveResolution(execution)) return
+    expect(execution.movement).toEqual({
+      kind: 'shift',
+      from: { x: 1, y: 0, z: 1 },
+      destination: { x: 4, y: 0, z: 1 },
+      pathCells: [
+        { x: 1, y: 0, z: 1 },
+        { x: 2, y: 0, z: 1 },
+        { x: 3, y: 0, z: 1 },
+        { x: 4, y: 0, z: 1 },
+      ],
+      direction: 'east',
+    })
   })
 
   it('fails closed when the stored destination is no longer oracle-legal on resume', () => {
@@ -359,6 +242,58 @@ describe('durable MoveSpec movement choices', () => {
       name: 'ResumeMoveSpecError',
       code: 'execution-rejected',
     } satisfies Partial<ResumeMoveSpecError>))
+  })
+
+  it('rejects a stored cell when fresh range, bounds, or movement capability no longer permits it', () => {
+    const registry = runtimeRegistry()
+    const resources = sheets()
+    const declaration = planAuthoritativeMoveStateExecution({
+      map: mapFixture(),
+      ...resources,
+      intent,
+      random: () => 0,
+      now: () => 1_000,
+      operationId: 'op_movementdeclare5',
+      pendingResolutionId: 'resolution-movement-choice-5',
+      runtimeRegistry: registry,
+    })
+    if (!isAuthoritativePendingMoveStatePlan(declaration)) {
+      throw new Error('expected a pending movement declaration')
+    }
+    const pending = declaration.suspension.pendingResolution
+    const window = pending.outstandingWindows[0]!
+    const selected = window.options.find(option => (
+      option.selection?.destination.x === 3
+      && option.selection.destination.y === 0
+      && option.selection.destination.z === 1
+    ))!
+    const response = { requestId: window.windowId, optionId: selected.id }
+    const assertRejected = (input: {
+      readonly map: TabletopMap
+      readonly resources: ReturnType<typeof sheets>
+    }) => expect(() => resumeMoveSpec({
+      pendingResolution: pending,
+      map: input.map,
+      ...input.resources,
+      response,
+      now: 2_000,
+      random: () => 0,
+      runtimeRegistry: registry,
+    })).toThrowError(expect.objectContaining({
+      name: 'ResumeMoveSpecError',
+      code: 'execution-rejected',
+    } satisfies Partial<ResumeMoveSpecError>))
+
+    assertRejected({
+      map: declaration.nextMap,
+      resources: sheets(actorSheet({
+        capabilities: { overland: 1, sky: 0, swim: 0, levitate: 0 },
+      })),
+    })
+    assertRejected({
+      map: { ...structuredClone(declaration.nextMap), dimensions: { x: 2, y: 2, z: 4 } },
+      resources,
+    })
   })
 
   it('keeps a reviewed pass as an explicit no-movement response', () => {
