@@ -1488,24 +1488,45 @@ Status: DONE
 
 **Done:** The server can explain which parts of an accepted move are safely compensable and why other parts are not.
 
-## MA-116 — Add an atomic GM correction command
+## MA-116A — Define GM correction commands and plans
 
 Status: TODO
 
 **Depends on:** MA-115
+**Commit:** `feat(move-automation): plan audited gm move corrections`
+
+**Touch:** shared correction command/result contracts, strict command parser, new pure correction planner, focused contract/planner tests.
+
+**Implement:**
+
+- Define a bounded command that references an accepted move operation and selects durable typed compensation operation IDs. Carry the correction `opId`, map identity, and expected map revision, but reject client-authored inverse mechanics, resource patches, rolls, unknown fields, duplicate selections, and unavailable operation IDs.
+- Resolve selected IDs only from the accepted operation's private compensation metadata. Given current map and sheet snapshots, deterministically verify every selected resource revision and exact expected after-value, reject overlapping inverse targets, and produce typed map/sheet writes plus a privacy-safe audit projection.
+- Keep parsing and planning free of repository writes, authorization side effects, realtime publication, and RNG execution.
+
+**Done:** The client can only select reviewed durable inverse IDs, and the pure planner either returns one bounded correction plan for the exact recorded current state or a typed conflict without mutating any input.
+
+## MA-116B — Apply GM corrections atomically
+
+Status: TODO
+
+**Depends on:** MA-116A
 **Commit:** `feat(move-automation): apply audited gm move corrections`
 
-**Touch:** shared command/parser, new correction use case/route, operation storage, repositories, tests.
+**Touch:** new correction use case/route, authorization, operation storage, map/sheet repositories, realtime publication, integration tests.
 
-**Implement:** Let an authorized GM reference an accepted resolution and choose typed inverse/correction operation IDs. Re-read all affected resources, require expected current values/revisions, apply one compensating transaction, and append an ancestry-linked audit/realtime result. Never rerun original RNG.
+**Implement:**
 
-**Done:** A concurrent later change causes a clean conflict instead of being overwritten; duplicate correction `opId` applies once.
+- Allow only an authorized GM to load an accepted same-map source operation and invoke the MA-116A planner with freshly read affected resources. Never rerun or draw from the original move's RNG.
+- In one SQLite transaction, revalidate the map and every affected sheet revision/current value, apply all selected compensating writes, and store an ancestry-linked accepted correction result. Roll back every write and audit record on a stale value, stale revision, missing resource, or repository failure.
+- Append and publish a privacy-safe ancestry-linked realtime audit result only from the durable outcome. Make correction `opId` handling idempotent: an exact duplicate returns the stored result without applying or publishing twice, while reuse with a different command rejects.
+
+**Done:** A supported correction updates all selected resources and its audit record exactly once; a concurrent later change causes a clean conflict instead of being overwritten, and duplicate correction delivery applies no second mutation.
 
 ## MA-117 — Add correction UI and audit scenarios
 
 Status: TODO
 
-**Depends on:** MA-116
+**Depends on:** MA-116B
 **Commit:** `feat(move-automation): expose safe gm corrections`
 
 **Touch:** move log/operation details UI, GM controls, component/integration tests.
