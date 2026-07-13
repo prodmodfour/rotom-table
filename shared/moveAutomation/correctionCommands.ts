@@ -159,6 +159,7 @@ const RESOURCE_COMMON_FIELDS = ['kind', 'expectedRevision', 'revision'] as const
 const FORBIDDEN_MECHANICS_FIELDS = new Set([
   'after',
   'before',
+  'changes',
   'current',
   'damage',
   'effectOperations',
@@ -170,11 +171,17 @@ const FORBIDDEN_MECHANICS_FIELDS = new Set([
   'patch',
   'patches',
   'recipients',
+  'resource',
+  'resourcePatch',
+  'resourcePatches',
+  'resources',
   'restore',
   'rng',
   'roll',
   'rollLedger',
   'scopes',
+  'sheetPatch',
+  'sheetPatches',
   'sheetUpdates',
   'trace',
 ])
@@ -273,6 +280,7 @@ const parseOperationIds = (
       'limit-exceeded',
       `${path} must contain at most ${MOVE_CORRECTION_LIMITS.operationCount} operation IDs.`,
     )
+    return null
   }
   const result: string[] = []
   const seen = new Set<string>()

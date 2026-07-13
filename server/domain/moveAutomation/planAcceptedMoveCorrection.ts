@@ -27,10 +27,11 @@ import {
   type AnyLiveSheet,
 } from '~/utils/sheetMutations'
 import { pokemonHpSnapshot, trainerHpSnapshot } from '~/utils/sheetSpawn'
-import type {
-  AcceptedMoveAvailableCompensationOperation,
-  AcceptedMoveSheetHpValue,
-  AcceptedMoveTypedInverseOperation,
+import {
+  ACCEPTED_MOVE_COMPENSATION_MAX_OPERATIONS,
+  type AcceptedMoveAvailableCompensationOperation,
+  type AcceptedMoveSheetHpValue,
+  type AcceptedMoveTypedInverseOperation,
 } from './acceptedMoveCompensation'
 
 export type AcceptedMoveCorrectionPlanErrorCode =
@@ -232,6 +233,12 @@ const inverseTargetKey = (inverse: AcceptedMoveTypedInverseOperation): string =>
 const assertOperationsAgainstSnapshot = (input: PlanAcceptedMoveCorrectionInput): void => {
   if (input.operations.length === 0) {
     fail('invalid-operation', 'A correction must select at least one typed inverse operation.')
+  }
+  if (input.operations.length > ACCEPTED_MOVE_COMPENSATION_MAX_OPERATIONS) {
+    fail(
+      'invalid-operation',
+      `A correction may select at most ${ACCEPTED_MOVE_COMPENSATION_MAX_OPERATIONS} typed inverse operations.`,
+    )
   }
   if (!Number.isSafeInteger(input.updatedAt) || input.updatedAt < 0) {
     fail('invalid-operation', 'Correction updatedAt must be a safe non-negative timestamp.')

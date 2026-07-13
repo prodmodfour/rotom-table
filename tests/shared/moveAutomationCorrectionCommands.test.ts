@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import {
   GM_MOVE_CORRECTION_COMMAND_TYPE,
   MOVE_CORRECTION_COMMAND_SCHEMA_VERSION,
+  MOVE_CORRECTION_LIMITS,
   MOVE_CORRECTION_PATCH_SCHEMA_VERSION,
   parseGmMoveCorrectionCommand,
   parseLivePlayMoveCorrectionPatchPayload,
@@ -34,7 +35,7 @@ describe('GM move correction wire contracts', () => {
     expect(Object.isFrozen(parsed.payload.operationIds)).toBe(true)
   })
 
-  it('rejects duplicate IDs, self ancestry, unknown fields, and client-authored inverse mechanics', () => {
+  it('rejects duplicate IDs, self ancestry, unknown fields, and client-authored mechanics', () => {
     const candidates = [
       {
         ...command(),
@@ -53,26 +54,51 @@ describe('GM move correction wire contracts', () => {
       { ...command(), extra: true },
       {
         ...command(),
-        payload: {
-          ...command().payload,
-          inverse: { kind: 'restore-sheet-hp', restore: { currentHp: 999 } },
-        },
-      },
-      {
-        ...command(),
         payload: { ...command().payload, operationIds: [] },
       },
+      { ...command(), baseRevision: -1 },
     ]
 
     for (const candidate of candidates) {
       expect(validateGmMoveCorrectionCommand(candidate).valid).toBe(false)
     }
-    const mechanics = validateGmMoveCorrectionCommand(candidates[3])
-    expect(mechanics.valid).toBe(false)
-    if (!mechanics.valid) {
-      expect(mechanics.issues).toContainEqual(expect.objectContaining({
-        path: '$.payload.inverse',
-        code: 'forbidden-field',
+
+    for (const [field, value] of [
+      ['inverse', { kind: 'restore-sheet-hp', restore: { currentHp: 999 } }],
+      ['resources', [{ kind: 'sheet', revision: 5 }]],
+      ['roll', { natural: 20 }],
+    ] as const) {
+      const mechanics = validateGmMoveCorrectionCommand({
+        ...command(),
+        payload: { ...command().payload, [field]: value },
+      })
+      expect(mechanics.valid).toBe(false)
+      if (!mechanics.valid) {
+        expect(mechanics.issues).toContainEqual(expect.objectContaining({
+          path: `$.payload.${field}`,
+          code: 'forbidden-field',
+        }))
+      }
+    }
+  })
+
+  it('rejects an oversized selection at the strict command boundary', () => {
+    const result = validateGmMoveCorrectionCommand({
+      ...command(),
+      payload: {
+        ...command().payload,
+        operationIds: Array.from(
+          { length: MOVE_CORRECTION_LIMITS.operationCount + 1 },
+          (_, index) => `inverse.state-change.${index}`,
+        ),
+      },
+    })
+
+    expect(result.valid).toBe(false)
+    if (!result.valid) {
+      expect(result.issues).toContainEqual(expect.objectContaining({
+        path: '$.payload.operationIds',
+        code: 'limit-exceeded',
       }))
     }
   })

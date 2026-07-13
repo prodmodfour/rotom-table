@@ -1490,7 +1490,7 @@ Status: DONE
 
 ## MA-116A — Define GM correction commands and plans
 
-Status: TODO
+Status: DONE
 
 **Depends on:** MA-115
 **Commit:** `feat(move-automation): plan audited gm move corrections`

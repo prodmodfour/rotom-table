@@ -77,6 +77,21 @@ const command = (operationIds: readonly string[]) => ({
 })
 
 describe('move correction server parser', () => {
+  it('rejects mechanics-bearing syntax before reading private operation metadata', () => {
+    const getStoredOpRecord = vi.fn(() => acceptedRecord())
+
+    expect(() => parseMoveCorrectionCommand({
+      ...command(['inverse.forged']),
+      payload: {
+        ...command(['inverse.forged']).payload,
+        resources: [{ kind: 'sheet', revision: 5 }],
+      },
+    }, { opRepository: { getStoredOpRecord } })).toThrow(expect.objectContaining({
+      code: 'invalid-command',
+    }))
+    expect(getStoredOpRecord).not.toHaveBeenCalled()
+  })
+
   it('resolves available IDs from private accepted metadata in canonical source order', () => {
     const source = acceptedRecord()
     const available = source.moveCompensation!.operations.filter(
