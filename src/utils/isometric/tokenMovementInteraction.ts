@@ -198,8 +198,9 @@ export const createIsometricTokenMovementInteractionController = (
     activePreviewAnchor = anchor
     activePreviewPath = movementPathAnchors
     lastPreviewAnchorKey = nextAnchorKey
-    // Movement legality is tactical information only; placement integrity is the
-    // only gate for committing a manual token move.
+    // Keep an unreachable but geometrically placeable preview selectable so an
+    // authorized GM can explicitly request the server override. The server is
+    // authoritative for ordinary reachability and cost.
     activePreviewCanPlace = canForcePlace
     activePreview = {
       position: anchor,

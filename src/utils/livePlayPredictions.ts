@@ -2,6 +2,7 @@ import {
   LIVE_PLAY_COMMAND_SCHEMA_VERSION,
   LIVE_PLAY_COMMAND_TYPES,
   LIVE_PLAY_PATCH_TYPES,
+  isMoveTokenMovementPolicy,
   type LivePlayPatch,
   type LivePlayScope,
   type ModifyConditionsPayload,
@@ -157,7 +158,13 @@ const finiteNumber = (value: unknown): value is number => (
 )
 
 const isGridAnchor = (value: unknown): value is GridAnchor => (
-  isRecord(value) && finiteNumber(value.x) && finiteNumber(value.y) && finiteNumber(value.z)
+  isRecord(value)
+  && Number.isSafeInteger(value.x)
+  && Number.isSafeInteger(value.y)
+  && Number.isSafeInteger(value.z)
+  && (value.x as number) >= 0
+  && (value.y as number) >= 0
+  && (value.z as number) >= 0
 )
 
 const cloneAnchor = (anchor: GridAnchor): GridAnchor => ({
@@ -213,10 +220,17 @@ const parsePredictionCommand = (command: unknown): ParsedPredictionCommand | nul
 const parseMoveTokenPayload = (payload: unknown): MoveTokenPayload | null => {
   if (!isRecord(payload) || !nonEmptyString(payload.placementId) || !isGridAnchor(payload.position)) return null
   const pathLength = payload.pathLength
+  const movementPolicy = payload.movementPolicy
   if (
     pathLength !== undefined
     && pathLength !== null
     && (!finiteNumber(pathLength) || pathLength < 0)
+  ) {
+    return null
+  }
+  if (
+    movementPolicy !== undefined
+    && !isMoveTokenMovementPolicy(movementPolicy)
   ) {
     return null
   }
@@ -225,6 +239,7 @@ const parseMoveTokenPayload = (payload: unknown): MoveTokenPayload | null => {
     placementId: payload.placementId,
     position: cloneAnchor(payload.position),
     ...(pathLength === undefined ? {} : { pathLength }),
+    ...(isMoveTokenMovementPolicy(movementPolicy) ? { movementPolicy } : {}),
   }
 }
 
@@ -267,17 +282,11 @@ const parseModifyConditionsPayload = (payload: unknown): ModifyConditionsPayload
   }
 }
 
-const clampAxis = (value: number, fallback: number, max: number): number => {
-  const upper = Math.max(0, Math.floor(Number.isFinite(max) ? max : 1) - 1)
-  if (!Number.isFinite(value)) return fallback
-  return Math.min(upper, Math.max(0, Math.round(value)))
-}
-
-const clampAnchorToMap = (value: GridAnchor, fallback: GridAnchor, map: TabletopMap): GridAnchor => ({
-  x: clampAxis(value.x, fallback.x, map.dimensions.x),
-  y: clampAxis(value.y, fallback.y, map.dimensions.y),
-  z: clampAxis(value.z, fallback.z, map.dimensions.z),
-})
+const anchorWithinMap = (anchor: GridAnchor, map: TabletopMap): boolean => (
+  anchor.x < map.dimensions.x
+  && anchor.y < map.dimensions.y
+  && anchor.z < map.dimensions.z
+)
 
 const mapCanAcceptPrediction = (
   map: TabletopMap | null | undefined,
@@ -427,8 +436,10 @@ const buildMoveTokenPredictionFromCommand = (
   const placement = placementForPayload(map, payload.placementId)
   if (!placement) return null
 
+  if (!anchorWithinMap(payload.position, map)) return null
+
   const previousPlacement = clonePlacement(placement)
-  const position = clampAnchorToMap(payload.position, placement.position, map)
+  const position = cloneAnchor(payload.position)
   const facing = sameAnchor(placement.position, position)
     ? null
     : tokenFacingTowardPoint(placement.position, position, tokenFacingForPlacement(placement))

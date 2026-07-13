@@ -100,7 +100,7 @@ const moveCommand = (
   payload: {
     placementId: 'linked-token',
     position: { x: 4, y: 0, z: 1 },
-    pathLength: 3,
+    pathLength: 999,
   },
   ...overrides,
 })
@@ -190,8 +190,22 @@ const createHarness = (initialMap: TabletopMap = baseMap()) => {
     database: { withTransaction: <T>(work: () => T) => work() },
     readSheet: vi.fn((kind: string, slug: string) => ({
       sheet: kind === 'pokemon'
-        ? { slug, nickname: 'Bolt', species: 'Pikachu' }
-        : { slug, name: 'Boss', currentTeam: ['eevee'] },
+        ? {
+            slug,
+            nickname: 'Bolt',
+            species: 'Pikachu',
+            level: 10,
+            revision: 1,
+            capabilities: { overland: 6 },
+          }
+        : {
+            slug,
+            name: 'Boss',
+            level: 10,
+            revision: 1,
+            currentTeam: ['eevee'],
+            capabilities: { overland: 5 },
+          },
     })),
     relativePath: vi.fn((filePath: string) => filePath.replace(`${MAPS_ROOT}/`, 'data/maps/')),
     now: vi.fn(() => 2000),
@@ -247,7 +261,7 @@ describe('live-play map token commands', () => {
     ])
   })
 
-  it('applies a selected player profile move only for controlled tokens', async () => {
+  it('applies a controlled player move and logs the server-derived cost instead of the client hint', async () => {
     const harness = createHarness()
 
     const response = await executeMapTokenLivePlayCommandUseCase({
@@ -275,6 +289,118 @@ describe('live-play map token commands', () => {
         pathLength: 3,
       },
     ])
+  })
+
+  it('enforces reachability, restricts the explicit override to GMs, and never clamps destinations', async () => {
+    const arena = baseMap({ dimensions: { x: 10, y: 3, z: 10 } })
+    const configureSlowActor = (harness: ReturnType<typeof createHarness>) => {
+      harness.deps.readSheet.mockImplementation((kind: string, slug: string) => ({
+        sheet: kind === 'pokemon'
+          ? {
+              slug,
+              nickname: 'Bolt',
+              species: 'Pikachu',
+              level: 10,
+              revision: 1,
+              capabilities: { overland: 2 },
+            }
+          : {
+              slug,
+              name: 'Boss',
+              level: 10,
+              revision: 1,
+              currentTeam: ['eevee'],
+              capabilities: { overland: 5 },
+            },
+      }))
+    }
+
+    const playerHarness = createHarness(arena)
+    configureSlowActor(playerHarness)
+    const playerProfileInput = playerProfile([{ sheetKind: 'pokemon', sheetSlug: 'pikachu' }])
+    const tooFar = await executeMapTokenLivePlayCommandUseCase({
+      role: 'player',
+      command: moveCommand({
+        opId: 'op_standardtoofar',
+        payload: { placementId: 'linked-token', position: { x: 8, y: 0, z: 1 }, pathLength: 0 },
+      }),
+      playerProfile: playerProfileInput,
+      expectedType: LIVE_PLAY_COMMAND_TYPES.MOVE_TOKEN,
+    }, playerHarness.deps)
+    const forgedOverride = await executeMapTokenLivePlayCommandUseCase({
+      role: 'player',
+      command: moveCommand({
+        opId: 'op_playergmovr',
+        payload: {
+          placementId: 'linked-token',
+          position: { x: 8, y: 0, z: 1 },
+          movementPolicy: 'gm-override',
+        },
+      }),
+      playerProfile: playerProfileInput,
+      expectedType: LIVE_PLAY_COMMAND_TYPES.MOVE_TOKEN,
+    }, playerHarness.deps)
+
+    expect(tooFar.result).toMatchObject({
+      ok: false,
+      reason: 'conflict',
+      currentRevision: 4,
+      message: expect.stringContaining('movement-cost-exceeds-limit'),
+    })
+    expect(forgedOverride.result).toMatchObject({
+      ok: false,
+      reason: 'unauthorized',
+      currentRevision: 4,
+      message: 'Only a GM can request the explicit movement override policy',
+    })
+    expect(playerHarness.writes).toEqual([])
+
+    const gmHarness = createHarness(arena)
+    configureSlowActor(gmHarness)
+    const overridden = await executeMapTokenLivePlayCommandUseCase({
+      role: 'gm',
+      command: moveCommand({
+        opId: 'op_gmoverride01',
+        payload: {
+          placementId: 'linked-token',
+          position: { x: 8, y: 0, z: 1 },
+          pathLength: 0,
+          movementPolicy: 'gm-override',
+        },
+      }),
+      playerProfile: null,
+      expectedType: LIVE_PLAY_COMMAND_TYPES.MOVE_TOKEN,
+    }, gmHarness.deps)
+
+    expect(overridden.result).toMatchObject({ ok: true, previousRevision: 4, revision: 5 })
+    expect(gmHarness.storedMap.placements[0]?.position).toEqual({ x: 8, y: 0, z: 1 })
+    expect(gmHarness.storedMap.metadata?.movementLog).toEqual([
+      expect.objectContaining({ pathLength: 7 }),
+    ])
+
+    const boundsHarness = createHarness(arena)
+    configureSlowActor(boundsHarness)
+    const outOfBounds = await executeMapTokenLivePlayCommandUseCase({
+      role: 'gm',
+      command: moveCommand({
+        opId: 'op_gmoutbounds',
+        payload: {
+          placementId: 'linked-token',
+          position: { x: 10, y: 0, z: 1 },
+          movementPolicy: 'gm-override',
+        },
+      }),
+      playerProfile: null,
+      expectedType: LIVE_PLAY_COMMAND_TYPES.MOVE_TOKEN,
+    }, boundsHarness.deps)
+
+    expect(outOfBounds.result).toMatchObject({
+      ok: false,
+      reason: 'conflict',
+      message: expect.stringContaining('movement-destination-out-of-bounds'),
+    })
+    expect(boundsHarness.writes).toEqual([])
+    expect(boundsHarness.storedMap.placements[0]?.position).toEqual({ x: 1, y: 0, z: 1 })
   })
 
   it('allows a selected player profile to move Pokémon from their linked trainer team', async () => {
@@ -418,6 +544,48 @@ describe('live-play map token commands', () => {
       database.close()
       rmSync(root, { recursive: true, force: true })
     }
+  })
+
+  it('revalidates every movement sheet read inside commit before writing the map', async () => {
+    const harness = createHarness()
+    let trainerReads = 0
+    harness.deps.readSheet.mockImplementation((kind: string, slug: string) => ({
+      sheet: kind === 'pokemon'
+        ? {
+            slug,
+            nickname: 'Bolt',
+            species: 'Pikachu',
+            level: 10,
+            revision: 1,
+            capabilities: { overland: 6 },
+          }
+        : {
+            slug,
+            name: 'Boss',
+            level: 10,
+            revision: ++trainerReads === 1 ? 1 : 2,
+            currentTeam: ['eevee'],
+            capabilities: { overland: 5 },
+          },
+    }))
+
+    const response = await executeMapTokenLivePlayCommandUseCase({
+      role: 'player',
+      command: moveCommand({ opId: 'op_movestalesheet' }),
+      playerProfile: playerProfile([{ sheetKind: 'pokemon', sheetSlug: 'pikachu' }]),
+      expectedType: LIVE_PLAY_COMMAND_TYPES.MOVE_TOKEN,
+    }, harness.deps)
+
+    expect(response.result).toMatchObject({
+      ok: false,
+      reason: 'conflict',
+      currentRevision: 4,
+      message: 'A sheet consulted by authoritative movement changed before the token position could commit.',
+    })
+    expect(harness.writes).toEqual([])
+    expect(harness.published).toEqual([])
+    expect(harness.storedMap.revision).toBe(4)
+    expect(harness.storedMap.placements[0]?.position).toEqual({ x: 1, y: 0, z: 1 })
   })
 
   it('returns the stored result for duplicate move opIds without applying movement twice', async () => {

@@ -8,6 +8,8 @@ export interface CommitLivePlayMapUpdateInput {
   readonly mapSlug: string
   readonly expectedRevision: number
   readonly nextMap: TabletopMap
+  /** Runs inside the write transaction immediately before the map CAS. */
+  readonly validateBeforeWrite?: () => void
   readonly staleError: () => Error
   readonly missingMapError: () => Error
   readonly saveOpResult: () => unknown
@@ -15,6 +17,7 @@ export interface CommitLivePlayMapUpdateInput {
 }
 
 export const commitLivePlayMapUpdate = (input: CommitLivePlayMapUpdateInput): TabletopMap => input.database.withTransaction(() => {
+  input.validateBeforeWrite?.()
   const updateResult = input.mapRepository.applyLivePlayUpdate({
     slug: input.mapSlug,
     expectedRevision: input.expectedRevision,

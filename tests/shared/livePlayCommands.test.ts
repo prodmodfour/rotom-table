@@ -22,6 +22,7 @@ import {
   LIVE_PLAY_PATCH_TYPE_VALUES,
   LIVE_PLAY_SHOP_SCOPE_FIELDS,
   LIVE_PLAY_TOKEN_SCOPE_FIELDS,
+  MOVE_TOKEN_MOVEMENT_POLICIES,
   SHOP_CHECKOUT_COMMAND_REQUIRED_FIELDS,
   SHOP_CHECKOUT_TRAINER_SHEET_SCOPE_FIELDS,
   assertValidLivePlayCommandEnvelope,
@@ -53,6 +54,7 @@ import {
   isLivePlayPatchType,
   isLivePlayShopScopeField,
   isLivePlayTokenScopeField,
+  isMoveTokenMovementPolicy,
   isShopCheckoutTrainerSheetScopeField,
   isValidLivePlayCommandEnvelope,
   isValidShopCheckoutCommandEnvelope,
@@ -382,6 +384,13 @@ describe('live-play command contract', () => {
     expect(trainerCheckoutScope.field).toBe('money')
     expectTypeOf(mapScope.lane).toMatchTypeOf<LivePlayMapScopeLane>()
     expectTypeOf(tokenScope.field).toMatchTypeOf<LivePlayTokenScopeField>()
+  })
+
+  it('defines bounded normal and explicit GM token-movement policies', () => {
+    expect(MOVE_TOKEN_MOVEMENT_POLICIES).toEqual(['standard', 'gm-override'])
+    expect(isMoveTokenMovementPolicy('standard')).toBe(true)
+    expect(isMoveTokenMovementPolicy('gm-override')).toBe(true)
+    expect(isMoveTokenMovementPolicy('ignore-collision')).toBe(false)
   })
 
   it('models canonical command envelopes without command-specific persistence imports', () => {

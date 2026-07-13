@@ -280,7 +280,7 @@ describe('getLivePlayOperationStatusUseCase', () => {
         opId: 'op_statuswrite',
         baseRevision: 0,
         placementId: 'token-a',
-        position: { x: 2, y: 0, z: 1 },
+        position: { x: 3, y: 0, z: 1 },
       })
       const accepted = assertAccepted((await harness.moveToken({
         actor: { role: 'gm', clientId: 'gm-client' },

@@ -86,11 +86,7 @@ export type AuthoritativeMovementFailureReasonCode = Exclude<
   'movement-legal'
 >
 
-/**
- * The first oracle policy is deliberately narrow. Later tickets may add
- * reviewed forced-movement or GM policies as new discriminated members; they
- * must not turn these flags into generic collision or terrain bypasses.
- */
+/** Standard voluntary Shift movement, bounded by authoritative capabilities. */
 export interface StandardAuthoritativeMovementPolicy {
   readonly kind: 'standard'
   /** A server-selected no-op query may be legal; ordinary movement defaults false. */
@@ -99,18 +95,45 @@ export interface StandardAuthoritativeMovementPolicy {
   readonly maximumCost?: number | null
 }
 
-export type AuthoritativeMovementPolicy = StandardAuthoritativeMovementPolicy
+/**
+ * Explicit live-play GM repositioning. It replaces only the capability-speed
+ * ceiling; terrain capabilities, route geometry, occupancy, and bounds remain
+ * authoritative and cannot be bypassed.
+ */
+export interface GmOverrideAuthoritativeMovementPolicy {
+  readonly kind: 'gm-override'
+}
 
-export interface ResolvedAuthoritativeMovementPolicy {
+export type AuthoritativeMovementPolicy =
+  | StandardAuthoritativeMovementPolicy
+  | GmOverrideAuthoritativeMovementPolicy
+
+export interface ResolvedStandardAuthoritativeMovementPolicy {
   readonly kind: 'standard'
   readonly allowSamePosition: boolean
   readonly maximumCost: number | null
 }
 
-export const STANDARD_AUTHORITATIVE_MOVEMENT_POLICY: ResolvedAuthoritativeMovementPolicy = Object.freeze({
+export interface ResolvedGmOverrideAuthoritativeMovementPolicy {
+  readonly kind: 'gm-override'
+  readonly allowSamePosition: false
+  readonly maximumCost: number
+}
+
+export type ResolvedAuthoritativeMovementPolicy =
+  | ResolvedStandardAuthoritativeMovementPolicy
+  | ResolvedGmOverrideAuthoritativeMovementPolicy
+
+export const STANDARD_AUTHORITATIVE_MOVEMENT_POLICY: ResolvedStandardAuthoritativeMovementPolicy = Object.freeze({
   kind: 'standard',
   allowSamePosition: false,
   maximumCost: null,
+})
+
+export const GM_OVERRIDE_AUTHORITATIVE_MOVEMENT_POLICY: ResolvedGmOverrideAuthoritativeMovementPolicy = Object.freeze({
+  kind: 'gm-override',
+  allowSamePosition: false,
+  maximumCost: AUTHORITATIVE_MOVEMENT_LIMITS.policyCost,
 })
 
 export interface AuthoritativeMovementSheets {
@@ -374,10 +397,10 @@ const resolvedPolicy = (
   policy: AuthoritativeMovementPolicy | undefined,
 ): ResolvedAuthoritativeMovementPolicy | null => {
   if (policy === undefined) return { ...STANDARD_AUTHORITATIVE_MOVEMENT_POLICY }
+  if (typeof policy !== 'object' || policy === null) return null
+  if (policy.kind === 'gm-override') return { ...GM_OVERRIDE_AUTHORITATIVE_MOVEMENT_POLICY }
   if (
-    typeof policy !== 'object'
-    || policy === null
-    || policy.kind !== 'standard'
+    policy.kind !== 'standard'
     || (policy.allowSamePosition !== undefined && typeof policy.allowSamePosition !== 'boolean')
     || (
       policy.maximumCost !== undefined
@@ -713,9 +736,12 @@ const occupancyFor = (
 const effectiveLimit = (
   capabilityLimit: number,
   policy: ResolvedAuthoritativeMovementPolicy,
-): number => policy.maximumCost === null
-  ? capabilityLimit
-  : Math.min(capabilityLimit, policy.maximumCost)
+): number => {
+  if (policy.kind === 'gm-override') return policy.maximumCost
+  return policy.maximumCost === null
+    ? capabilityLimit
+    : Math.min(capabilityLimit, policy.maximumCost)
+}
 
 const triggeringStep = (
   step: MovementPathStep,
@@ -965,6 +991,7 @@ export const resolveMovement = (input: ResolveMovementInput): AuthoritativeMovem
     exceptId: mover.id,
     terrainIndex,
     groundLevelY,
+    ...(policy.kind === 'gm-override' ? { costLimit: policy.maximumCost } : {}),
   })
   const pathCapabilities = resolvedCapabilities(mover, pathResult.capabilityKeys)
   const capabilityLimit = pathResult.movementLimit

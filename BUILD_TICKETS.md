@@ -1554,7 +1554,7 @@ Status: DONE
 
 ## MA-121 — Route normal token movement through the oracle
 
-Status: TODO
+Status: DONE
 
 **Depends on:** MA-120
 **Commit:** `refactor(live-play): validate token movement server side`

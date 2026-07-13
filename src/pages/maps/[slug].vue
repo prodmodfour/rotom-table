@@ -1320,6 +1320,7 @@ const movePokemon = (payload: TokenMovementCommitPayload) => {
     placementId: payload.id,
     position: payload.position,
     pathLength: previewState.value.pathLength,
+    ...(isGm.value && !previewState.value.reachable ? { movementPolicy: 'gm-override' as const } : {}),
   })
   const predictedMove = newPendingMovePredictionForPlacement(pendingPredictionOpIdsBeforeMove, payload.id)
   if (predictedMove) {

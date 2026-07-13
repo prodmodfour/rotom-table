@@ -168,6 +168,7 @@ describe('map page route authority', () => {
     expect(commandBlockerSection).not.toContain('mapPresence')
     expect(mapPage).toContain('const dispatch = livePlayCommands.turnToken({ placementId: id, facing })')
     expect(mapPage).toContain('const dispatch = livePlayCommands.moveToken({')
+    expect(mapPage).toContain("...(isGm.value && !previewState.value.reachable ? { movementPolicy: 'gm-override' as const } : {})")
     expect(mapPage).toContain('await livePlayCommands.modifyHp({')
     expect(mapPage).toContain('const dispatch = livePlayCommands.modifyConditions({')
     expect(mapPage).not.toContain('presenceCommandBlocked')

@@ -2,6 +2,7 @@ import { UseCaseHttpError } from '../utils/useCaseErrors'
 import {
   LIVE_PLAY_COMMAND_TYPES,
   LIVE_PLAY_PATCH_TYPES,
+  isMoveTokenMovementPolicy,
   type DeleteTokenLivePlayCommand,
   type DeleteTokenPayload,
   type LivePlayCommandAccepted,
@@ -9,6 +10,7 @@ import {
   type LivePlayPatch,
   type LivePlayTokenScope,
   type MoveTokenLivePlayCommand,
+  type MoveTokenMovementPolicy,
   type MoveTokenPayload,
   type SendOutPokemonLivePlayCommand,
   type SendOutPokemonPayload,
@@ -28,7 +30,7 @@ import type { SpawnedPokemon } from '~/types/pokemon'
 import type { TokenFacingDirection } from '~/types/tokenFacing'
 import type { TrainerSheet } from '~/types/trainerSheet'
 import { canPlacePokemon } from '~/utils/gridPlacement'
-import { appendMovementLogEntry, sameGridAnchor } from '~/utils/mapMovementLog'
+import { appendMovementLogEntry } from '~/utils/mapMovementLog'
 import {
   isSendOutPositionWithinThrowRange,
   POKEBALL_THROW_RANGE_SQUARES,
@@ -44,7 +46,7 @@ import {
 import { buildVoxelOccupancy } from '~/utils/voxelOccupancy'
 import { logicalMapResourcePath } from '../utils/runtimeResourcePaths'
 import { readRuntimeSheet } from '../utils/sqliteSheetRuntimeHelpers'
-import { canAccessMapForRole, clampAnchorToDimensions } from '../policies/mapPolicy'
+import { canAccessMapForRole } from '../policies/mapPolicy'
 import {
   actorCanControlMapPlacement,
   playerProfileLinkedTrainerSheetsForTokenControl,
@@ -57,6 +59,13 @@ import {
 import { createSqliteAuthoritativeLivePlayCommandExecutor } from '../livePlay/sqliteCommandExecutor'
 import { getRotomDatabase, type RotomDatabase } from '../storage/database'
 import { sqliteMapRepository, type MapRepository } from '../storage/mapRepository'
+import { sqliteSheetRepository, type SheetRepository } from '../storage/sheetRepository'
+import {
+  resolveAuthoritativeMovement,
+  type AuthoritativeMovementSheetRead,
+  type AuthoritativeMovementSheets,
+  type AuthoritativeMovementSuccess,
+} from '../domain/movement/resolveMovement'
 import { commitLivePlayMapUpdate } from './livePlayMapPersistence'
 import { toPersistedMap } from './saveMap'
 
@@ -69,7 +78,9 @@ export interface MoveMapTokenInput {
   position: GridAnchor
   clientId?: string
   playerProfile?: PlayerProfile | null
+  /** Legacy preview hint; authoritative movement never consumes it. */
   pathLength?: number | null
+  movementPolicy?: MoveTokenMovementPolicy
 }
 
 export interface TurnMapTokenInput {
@@ -127,6 +138,7 @@ export interface MapTokenActionDependencies {
   maxMovementLogEntries?: number
   commandExecutor?: Pick<AuthoritativeLivePlayCommandExecutor, 'execute'>
   mapRepository?: Pick<MapRepository, 'getBySlug' | 'applyLivePlayUpdate'>
+  sheetRepository?: Pick<SheetRepository<Record<string, unknown>>, 'getByRef'>
   database?: Pick<RotomDatabase, 'withTransaction'>
 }
 
@@ -171,25 +183,27 @@ const sheetDisplayName = (
   }
 }
 
-const normalizedPathLength = (value: number | null | undefined): number | null => {
-  if (typeof value !== 'number' || !Number.isFinite(value) || value <= 0) return null
-  return Math.max(0, Math.round(value))
-}
-
-const readDefaultSheet = (kind: SheetKind, slug: string): SheetFileRecord | null =>
-  readRuntimeSheet<Record<string, unknown>>(kind, slug)
+const readDefaultSheet = (
+  kind: SheetKind,
+  slug: string,
+  repository: Pick<SheetRepository<Record<string, unknown>>, 'getByRef'>,
+): SheetFileRecord | null => readRuntimeSheet<Record<string, unknown>>(kind, slug, repository)
 
 const livePlayMapTokenCommandExecutor = createSqliteAuthoritativeLivePlayCommandExecutor()
 
-const actionDependencies = (dependencies: MapTokenActionDependencies) => ({
-  readSheet: dependencies.readSheet ?? readDefaultSheet,
-  now: dependencies.now ?? Date.now,
-  relativePath: dependencies.relativePath ?? ((path: string) => path),
-  maxMovementLogEntries: dependencies.maxMovementLogEntries,
-  commandExecutor: dependencies.commandExecutor ?? livePlayMapTokenCommandExecutor,
-  mapRepository: dependencies.mapRepository ?? sqliteMapRepository,
-  database: dependencies.database ?? getRotomDatabase(),
-})
+const actionDependencies = (dependencies: MapTokenActionDependencies) => {
+  const sheetRepository = dependencies.sheetRepository ?? sqliteSheetRepository
+  return {
+    readSheet: dependencies.readSheet
+      ?? ((kind: SheetKind, slug: string) => readDefaultSheet(kind, slug, sheetRepository)),
+    now: dependencies.now ?? Date.now,
+    relativePath: dependencies.relativePath ?? ((path: string) => path),
+    maxMovementLogEntries: dependencies.maxMovementLogEntries,
+    commandExecutor: dependencies.commandExecutor ?? livePlayMapTokenCommandExecutor,
+    mapRepository: dependencies.mapRepository ?? sqliteMapRepository,
+    database: dependencies.database ?? getRotomDatabase(),
+  }
+}
 
 type MapTokenActionDependencySet = ReturnType<typeof actionDependencies>
 
@@ -240,26 +254,100 @@ const clonePosition = (position: GridAnchor): GridAnchor => ({
   z: position.z,
 })
 
+const authoritativeMovementSheetsForMap = (
+  map: TabletopMap,
+  readSheet: NonNullable<MapTokenActionDependencies['readSheet']>,
+): AuthoritativeMovementSheets => {
+  const pokemon = new Map<string, CharacterSheet>()
+  const trainer = new Map<string, TrainerSheet>()
+
+  for (const placement of map.placements) {
+    const destination = placement.sheetKind === 'pokemon' ? pokemon : trainer
+    if (destination.has(placement.sheetSlug)) continue
+    const record = readSheet(placement.sheetKind, placement.sheetSlug)
+    if (!record) continue
+    const sheet = { ...record.sheet, slug: placement.sheetSlug }
+    if (placement.sheetKind === 'pokemon') {
+      pokemon.set(placement.sheetSlug, sheet as unknown as CharacterSheet)
+    } else {
+      trainer.set(placement.sheetSlug, sheet as unknown as TrainerSheet)
+    }
+  }
+
+  return { pokemon, trainer }
+}
+
+const resolveNormalTokenMovement = (
+  payload: MoveTokenPayload,
+  actor: MapTokenLivePlayActor,
+  context: ResolvedMapTokenActionContext,
+  currentRevision: number,
+  readSheet: NonNullable<MapTokenActionDependencies['readSheet']>,
+): AuthoritativeMovementSuccess | null => {
+  if (payload.movementPolicy === 'gm-override' && actor.role !== 'gm') {
+    rejectLivePlayCommand('unauthorized', 'Only a GM can request the explicit movement override policy', {
+      currentRevision,
+    })
+  }
+
+  const movement = resolveAuthoritativeMovement({
+    map: context.map,
+    sheets: authoritativeMovementSheetsForMap(context.map, readSheet),
+    placementId: payload.placementId,
+    mode: 'shift',
+    destination: payload.position,
+    policy: payload.movementPolicy === 'gm-override'
+      ? { kind: 'gm-override' }
+      : { kind: 'standard' },
+  })
+
+  if (movement.ok) return movement
+  if (movement.reasonCode === 'movement-same-position-disallowed') return null
+
+  return rejectLivePlayCommand(
+    'conflict',
+    `Token ${payload.placementId} cannot move to the requested destination (${movement.reasonCode}): ${movement.message}`,
+    {
+      currentRevision,
+      currentState: context.placement,
+    },
+  )
+}
+
+const assertMovementSheetReads = (
+  reads: readonly AuthoritativeMovementSheetRead[],
+  readSheet: NonNullable<MapTokenActionDependencies['readSheet']>,
+  currentRevision: number,
+): void => {
+  for (const read of reads) {
+    const current = readSheet(read.kind, read.slug)
+    if (current && normalizeRevision(current.sheet.revision) === read.revision) continue
+    rejectLivePlayCommand(
+      'conflict',
+      'A sheet consulted by authoritative movement changed before the token position could commit.',
+      { currentRevision },
+    )
+  }
+}
+
 interface AppliedMapTokenChange {
   readonly nextMap: TabletopMap
   readonly placement: SheetPlacement
   readonly timestamp?: number
 }
 
-const applyMoveTokenToMap = (
-  input: Pick<MoveMapTokenInput, 'position' | 'pathLength'>,
+const applyResolvedMoveTokenToMap = (
+  movement: AuthoritativeMovementSuccess,
   context: ResolvedMapTokenActionContext,
   dependencies: Required<Pick<MapTokenActionDependencies, 'readSheet' | 'now'>> & Pick<MapTokenActionDependencies, 'maxMovementLogEntries'>,
-): AppliedMapTokenChange | null => {
-  const nextPosition = clampAnchorToDimensions(input.position, context.placement.position, context.map.dimensions)
+): AppliedMapTokenChange => {
   const currentPosition = context.placement.position
-  const moving = !sameGridAnchor(currentPosition, nextPosition)
-  const nextFacing = moving
-    ? tokenFacingTowardPoint(currentPosition, nextPosition, tokenFacingForPlacement(context.placement))
-    : null
-
-  if (!moving && nextFacing === null) return null
-
+  const nextPosition = clonePosition(movement.destination)
+  const nextFacing = tokenFacingTowardPoint(
+    currentPosition,
+    nextPosition,
+    tokenFacingForPlacement(context.placement),
+  )
   const nextPlacement: SheetPlacement = {
     ...context.placement,
     position: nextPosition,
@@ -274,18 +362,16 @@ const applyMoveTokenToMap = (
     placement.id === context.placement.id ? nextPlacement : placement
   ))
   const timestamp = dependencies.now()
-  const metadata = moving
-    ? appendMovementLogEntry(context.map.metadata, {
-        userId: context.placement.id,
-        userName: sheetDisplayName(context.placement, dependencies.readSheet),
-        from: currentPosition,
-        to: nextPosition,
-        pathLength: normalizedPathLength(input.pathLength),
-      }, {
-        now: () => timestamp,
-        maxLogEntries: dependencies.maxMovementLogEntries,
-      })
-    : context.map.metadata
+  const metadata = appendMovementLogEntry(context.map.metadata, {
+    userId: context.placement.id,
+    userName: sheetDisplayName(context.placement, dependencies.readSheet),
+    from: currentPosition,
+    to: nextPosition,
+    pathLength: movement.cost,
+  }, {
+    now: () => timestamp,
+    maxLogEntries: dependencies.maxMovementLogEntries,
+  })
 
   return {
     nextMap: {
@@ -584,6 +670,7 @@ const expectMoveTokenPayload = (payload: unknown): MoveTokenPayload => {
   const placementId = record.placementId
   const position = record.position
   const pathLength = record.pathLength
+  const movementPolicy = record.movementPolicy
 
   if (typeof placementId !== 'string' || placementId.trim().length === 0) {
     rejectLivePlayCommand('invalid', 'moveToken payload.placementId is required')
@@ -595,8 +682,15 @@ const expectMoveTokenPayload = (payload: unknown): MoveTokenPayload => {
   const x = positionRecord.x
   const y = positionRecord.y
   const z = positionRecord.z
-  if (!isFiniteCoordinate(x) || !isFiniteCoordinate(y) || !isFiniteCoordinate(z)) {
-    rejectLivePlayCommand('invalid', 'moveToken payload.position coordinates must be finite numbers')
+  if (
+    !Number.isSafeInteger(x)
+    || !Number.isSafeInteger(y)
+    || !Number.isSafeInteger(z)
+    || (x as number) < 0
+    || (y as number) < 0
+    || (z as number) < 0
+  ) {
+    rejectLivePlayCommand('invalid', 'moveToken payload.position coordinates must be safe non-negative integers')
   }
   if (
     pathLength !== undefined
@@ -604,6 +698,12 @@ const expectMoveTokenPayload = (payload: unknown): MoveTokenPayload => {
     && (typeof pathLength !== 'number' || !Number.isFinite(pathLength) || pathLength < 0)
   ) {
     rejectLivePlayCommand('invalid', 'moveToken payload.pathLength must be a non-negative finite number')
+  }
+  if (
+    movementPolicy !== undefined
+    && !isMoveTokenMovementPolicy(movementPolicy)
+  ) {
+    rejectLivePlayCommand('invalid', 'moveToken payload.movementPolicy must be standard or gm-override')
   }
 
   return {
@@ -614,6 +714,7 @@ const expectMoveTokenPayload = (payload: unknown): MoveTokenPayload => {
       z: z as number,
     },
     ...(pathLength === undefined ? {} : { pathLength: pathLength as number | null }),
+    ...(isMoveTokenMovementPolicy(movementPolicy) ? { movementPolicy } : {}),
   }
 }
 
@@ -980,6 +1081,7 @@ export const executeMapTokenLivePlayCommandUseCase = async (
 ): Promise<MapTokenLivePlayCommandResponse> => {
   const deps = actionDependencies(dependencies)
   let persistedContext: ResolvedMapTokenCommandResponseContext | null = null
+  let movementSheetReads: readonly AuthoritativeMovementSheetRead[] = []
 
   const result = await deps.commandExecutor.execute<MapTokenLivePlayCommand, ResolvedMapWriteContext, MapTokenLivePlayActor>({
     command: input.command,
@@ -1002,6 +1104,13 @@ export const executeMapTokenLivePlayCommandUseCase = async (
         && command.type !== LIVE_PLAY_COMMAND_TYPES.DELETE_TOKEN
       ) {
         rejectLivePlayCommand('invalid', 'Map token live-play routes support moveToken, turnToken, spawnToken, sendOutPokemon, and deleteToken commands only')
+      }
+
+      if (command.type === LIVE_PLAY_COMMAND_TYPES.MOVE_TOKEN) {
+        const payload = expectMoveTokenPayload(command.payload)
+        if (payload.movementPolicy === 'gm-override' && actor.role !== 'gm') {
+          rejectLivePlayCommand('unauthorized', 'Only a GM can request the explicit movement override policy')
+        }
       }
 
       if (command.type === LIVE_PLAY_COMMAND_TYPES.SEND_OUT_POKEMON) {
@@ -1079,19 +1188,28 @@ export const executeMapTokenLivePlayCommandUseCase = async (
         throw new MapTokenActionUseCaseError(403, message)
       }
     },
-    apply: ({ command, map, currentRevision }) => {
+    apply: ({ command, actor, map, currentRevision }) => {
       const placementId = commandPlacementId(command)
       const existingPlacement = map.map.placements.find((candidate) => candidate.id === placementId)
       const context = existingPlacement ? { ...map, placement: existingPlacement } : null
-      const change = command.type === LIVE_PLAY_COMMAND_TYPES.MOVE_TOKEN
-        ? (context ? applyMoveTokenToMap(command.payload, context, deps) : null)
-        : command.type === LIVE_PLAY_COMMAND_TYPES.TURN_TOKEN
-          ? (context ? applyTurnTokenToMap(command.payload, context) : null)
-          : command.type === LIVE_PLAY_COMMAND_TYPES.SPAWN_TOKEN
-            ? applySpawnTokenToMap(expectSpawnTokenPayload(command.payload), map)
-            : command.type === LIVE_PLAY_COMMAND_TYPES.SEND_OUT_POKEMON
-              ? applySendOutPokemonToMap(expectSendOutPokemonPayload(command.payload), map, deps)
-              : applyDeleteTokenToMap(expectDeleteTokenPayload(command.payload), map)
+      let change: AppliedMapTokenChange | null
+
+      if (command.type === LIVE_PLAY_COMMAND_TYPES.MOVE_TOKEN) {
+        const payload = expectMoveTokenPayload(command.payload)
+        const movement = context
+          ? resolveNormalTokenMovement(payload, actor, context, currentRevision, deps.readSheet)
+          : null
+        movementSheetReads = movement?.sheetReads ?? []
+        change = movement && context ? applyResolvedMoveTokenToMap(movement, context, deps) : null
+      } else if (command.type === LIVE_PLAY_COMMAND_TYPES.TURN_TOKEN) {
+        change = context ? applyTurnTokenToMap(expectTurnTokenPayload(command.payload), context) : null
+      } else if (command.type === LIVE_PLAY_COMMAND_TYPES.SPAWN_TOKEN) {
+        change = applySpawnTokenToMap(expectSpawnTokenPayload(command.payload), map)
+      } else if (command.type === LIVE_PLAY_COMMAND_TYPES.SEND_OUT_POKEMON) {
+        change = applySendOutPokemonToMap(expectSendOutPokemonPayload(command.payload), map, deps)
+      } else {
+        change = applyDeleteTokenToMap(expectDeleteTokenPayload(command.payload), map)
+      }
 
       if (!change) {
         if (!existingPlacement) throw new MapTokenActionUseCaseError(404, `Placement ${placementId} not found`)
@@ -1136,6 +1254,15 @@ export const executeMapTokenLivePlayCommandUseCase = async (
         mapSlug: result.mapSlug,
         expectedRevision: currentRevision,
         nextMap: persisted,
+        ...(command.type === LIVE_PLAY_COMMAND_TYPES.MOVE_TOKEN
+          ? {
+              validateBeforeWrite: () => assertMovementSheetReads(
+                movementSheetReads,
+                deps.readSheet,
+                currentRevision,
+              ),
+            }
+          : {}),
         staleError: () => new MapTokenActionUseCaseError(409, `Map ${result.mapSlug} changed before the live-play command could be persisted`),
         missingMapError: () => new MapTokenActionUseCaseError(404, `Map ${result.mapSlug}.json not found after live-play command`),
         saveOpResult,

@@ -767,7 +767,7 @@ describe('Final Wave C full-system live-play chaos hardening', () => {
     await flushAsync()
     await harness.executeCommandPath(
       MAP_API_PATHS.moveToken,
-      harness.moveTokenCommand({ baseRevision: 0, placementId: 'token-beta', position: { x: 2, y: 0, z: 6 }, clientId: 'remote-gap' }),
+      harness.moveTokenCommand({ baseRevision: 0, placementId: 'token-beta', position: { x: 2, y: 0, z: 5 }, clientId: 'remote-gap' }),
       'gm',
       null,
     )
@@ -783,7 +783,7 @@ describe('Final Wave C full-system live-play chaos hardening', () => {
     await vi.waitFor(() => expect(tab.currentMap?.revision).toBe(1))
     expect(tab.pendingPredictionOpIds).toEqual([])
     expect(moveTokenPosition(tab.currentMap, 'token-alpha')).toEqual({ x: 1, y: 0, z: 1 })
-    expect(moveTokenPosition(tab.currentMap, 'token-beta')).toEqual({ x: 2, y: 0, z: 6 })
+    expect(moveTokenPosition(tab.currentMap, 'token-beta')).toEqual({ x: 2, y: 0, z: 5 })
 
     heldUncertain.gate.resolve()
     await expect(uncertainMove).resolves.toMatchObject({ dispatched: false, uncertain: true, opId: uncertainOpId })
@@ -793,7 +793,7 @@ describe('Final Wave C full-system live-play chaos hardening', () => {
     await expect(tab.commands.checkOutboxCommandStatus(uncertainOpId)).resolves.toMatchObject({ status: 'unknown', opId: uncertainOpId })
     expect(tab.pendingPredictionOpIds).toEqual([])
     expect(moveTokenPosition(tab.currentMap, 'token-alpha')).toEqual({ x: 1, y: 0, z: 1 })
-    expect(moveTokenPosition(harness.readMap(), 'token-beta')).toEqual({ x: 2, y: 0, z: 6 })
+    expect(moveTokenPosition(harness.readMap(), 'token-beta')).toEqual({ x: 2, y: 0, z: 5 })
   })
 
   it('keeps profile scopes, stale profile events, and logout transport isolated', async () => {

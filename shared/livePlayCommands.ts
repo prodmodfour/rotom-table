@@ -275,10 +275,21 @@ export interface LivePlayCommandEnvelope<
   readonly baseRevision: number
 }
 
+export const MOVE_TOKEN_MOVEMENT_POLICIES = ['standard', 'gm-override'] as const
+export type MoveTokenMovementPolicy = (typeof MOVE_TOKEN_MOVEMENT_POLICIES)[number]
+export const isMoveTokenMovementPolicy = (value: unknown): value is MoveTokenMovementPolicy =>
+  (MOVE_TOKEN_MOVEMENT_POLICIES as readonly unknown[]).includes(value)
+
 export interface MoveTokenPayload {
   readonly placementId: string
   readonly position: GridAnchor
+  /**
+   * Legacy browser-preview hint retained for exact outbox retries. The server
+   * never uses this value for movement legality, cost, or logs.
+   */
   readonly pathLength?: number | null
+  /** Defaults to standard. Only an authenticated GM may request gm-override. */
+  readonly movementPolicy?: MoveTokenMovementPolicy
 }
 
 export interface TurnTokenPayload {

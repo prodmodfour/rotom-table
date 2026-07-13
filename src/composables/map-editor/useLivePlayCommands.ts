@@ -352,6 +352,7 @@ export interface UseLivePlayCommandsReturn {
     placementId: string
     position: GridAnchor
     pathLength?: number | null
+    movementPolicy?: MoveTokenPayload['movementPolicy']
   }) => Promise<LivePlayCommandDispatchResult>
   turnToken: (payload: {
     placementId: string
@@ -2154,6 +2155,7 @@ export const useLivePlayCommands = (
     placementId: payload.placementId,
     position: { ...payload.position },
     ...(payload.pathLength === undefined || payload.pathLength === null ? {} : { pathLength: payload.pathLength }),
+    ...(payload.movementPolicy === undefined ? {} : { movementPolicy: payload.movementPolicy }),
   })
 
   const createQueuedMoveTokenCommand = (input: {

@@ -379,9 +379,10 @@ const resultForPath = (
   distance: number,
   capabilityKeys: readonly MovementCapabilityKey[],
   movementLimit: number | null,
+  costLimit: number | null = movementLimit,
 ): MovementPathResult => {
   const labels = movementCapabilityLabels(capabilityKeys)
-  const legal = Boolean(route) && movementLimit != null && distance <= movementLimit
+  const legal = Boolean(route) && movementLimit != null && costLimit != null && distance <= costLimit
   return {
     path: route?.path ?? null,
     steps: route?.steps ?? [],
@@ -421,6 +422,12 @@ export interface FindMovementPathForPokemonOptions {
   groundLevelY?: number
   terrainRevision?: string | number | null
   terrainIndex?: MapMovementTerrainIndex | null
+  /**
+   * Optional server-selected path-cost ceiling. Capability requirements still
+   * apply, but this can replace the ordinary capability-speed ceiling for an
+   * explicitly authorized movement policy.
+   */
+  costLimit?: number
 }
 
 const resolveMovementTerrainIndex = ({
@@ -441,9 +448,13 @@ export const findMovementPathForPokemon = ({
   groundLevelY = 0,
   terrainRevision = null,
   terrainIndex: providedTerrainIndex = null,
+  costLimit,
 }: FindMovementPathForPokemonOptions): MovementPathResult => {
   const directDistance = anchorHeuristic(start, goal)
   const capabilities = pokemon.movementCapabilities
+  const selectedCostLimit = costLimit === undefined
+    ? null
+    : Number.isSafeInteger(costLimit) && costLimit >= 0 ? costLimit : 0
 
   if (!tokenFootprintsAllowAnchor(pokemon, start, pokemons, dimensions, exceptId)) {
     return blockedResult(directDistance)
@@ -488,10 +499,11 @@ export const findMovementPathForPokemon = ({
       directDistance,
       capabilityKeys,
       mixedMovementCapabilityLimit(capabilities, capabilityKeys),
+      selectedCostLimit,
     )
   }
 
-  const maxPotentialDistance = highestShiftMovementSpeed(capabilities)
+  const maxPotentialDistance = selectedCostLimit ?? highestShiftMovementSpeed(capabilities)
   if (maxPotentialDistance <= 0 || directDistance > maxPotentialDistance) return directTooFarResult()
 
   const queue = new MovementPriorityQueue()
@@ -523,7 +535,13 @@ export const findMovementPathForPokemon = ({
       const route = reconstructRoute(current.key, states, cameFrom)
       const capabilityKeys = capabilityKeysForMask(current.capabilityMask)
       const movementLimit = mixedMovementCapabilityLimit(capabilities, capabilityKeys)
-      const result = resultForPath(route, current.cost, capabilityKeys, movementLimit)
+      const result = resultForPath(
+        route,
+        current.cost,
+        capabilityKeys,
+        movementLimit,
+        selectedCostLimit ?? movementLimit,
+      )
       if (result.legal) {
         if (
           !bestLegalGoalResult ||

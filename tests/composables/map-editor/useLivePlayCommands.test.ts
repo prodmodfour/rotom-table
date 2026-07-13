@@ -901,6 +901,7 @@ describe('useLivePlayCommands', () => {
       placementId: 'token-pikachu',
       position: { x: 3, y: 0, z: 2 },
       pathLength: 2,
+      movementPolicy: 'gm-override',
     })
 
     expect(result).toMatchObject({ dispatched: true, opId: expect.stringMatching(LIVE_PLAY_OP_ID_RE) })
@@ -913,6 +914,7 @@ describe('useLivePlayCommands', () => {
         placementId: 'token-pikachu',
         position: { x: 3, y: 0, z: 2 },
         pathLength: 2,
+        movementPolicy: 'gm-override',
       },
     })
     expect(apiMocks.postJson).toHaveBeenCalledTimes(1)

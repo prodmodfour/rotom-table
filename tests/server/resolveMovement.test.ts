@@ -364,6 +364,58 @@ describe('authoritative movement oracle', () => {
     })
   })
 
+  it('lets an explicit GM policy replace only the capability-speed ceiling', () => {
+    const slowActor = sheets([
+      pokemonSheet('actor', { capabilities: { overland: 1, swim: 0, sky: 0, levitate: 0 } }),
+    ])
+    const standard = resolveMovement(input({
+      sheets: slowActor,
+      destination: { x: 4, y: 0, z: 0 },
+    }))
+    const overridden = resolveMovement(input({
+      sheets: slowActor,
+      destination: { x: 4, y: 0, z: 0 },
+      policy: { kind: 'gm-override' },
+    }))
+
+    expect(standard).toMatchObject({
+      ok: false,
+      reasonCode: 'movement-cost-exceeds-limit',
+      capabilityLimit: 1,
+    })
+    expect(overridden).toMatchObject({
+      ok: true,
+      policy: {
+        kind: 'gm-override',
+        allowSamePosition: false,
+        maximumCost: 1_000,
+      },
+      cost: 4,
+      capabilityLimit: 1,
+      effectiveLimit: 1_000,
+      path: [
+        { x: 0, y: 0, z: 0 },
+        { x: 1, y: 0, z: 0 },
+        { x: 2, y: 0, z: 0 },
+        { x: 3, y: 0, z: 0 },
+        { x: 4, y: 0, z: 0 },
+      ],
+    })
+
+    expect(resolveMovement(input({
+      map: map(undefined, {
+        dimensions: { x: 5, y: 2, z: 2 },
+        voxels: [wall(1, 0), wall(1, 1)],
+      }),
+      sheets: slowActor,
+      destination: { x: 4, y: 0, z: 0 },
+      policy: { kind: 'gm-override' },
+    }))).toMatchObject({
+      ok: false,
+      reasonCode: 'movement-route-blocked',
+    })
+  })
+
   it('fails closed for missing, duplicate, unresolved, malformed, and no-op inputs', () => {
     expect(resolveMovement(input({ placementId: 'missing' }))).toMatchObject({
       ok: false,
