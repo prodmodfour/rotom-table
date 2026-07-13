@@ -1477,7 +1477,7 @@ Status: DONE
 
 ## MA-115 — Record safe compensating metadata for accepted moves
 
-Status: TODO
+Status: DONE
 
 **Depends on:** MA-039–MA-041, MA-105
 **Commit:** `feat(move-automation): plan safe move compensation`
