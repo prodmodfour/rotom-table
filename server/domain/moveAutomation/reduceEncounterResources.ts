@@ -16,8 +16,15 @@ import type {
   EncounterEvent,
   EncounterTurnEvent,
 } from '#shared/moveAutomation/events'
-import type { MoveSpecCostDeclaration } from '#shared/moveAutomation/spec'
-
+import {
+  MoveResourceCostValidationError,
+  validateMoveResourceCostCombination,
+} from '#shared/moveAutomation/resourceCosts'
+import {
+  MoveSpecValidationError,
+  parseMoveSpecCostDeclarations,
+  type MoveSpecCostDeclaration,
+} from '#shared/moveAutomation/spec'
 
 export const ENCOUNTER_REACTION_AVAILABLE_RESOURCE_ID = 'reaction.available' as const
 export const ENCOUNTER_MOVEMENT_RESOURCE_ID = 'movement' as const
@@ -414,7 +421,9 @@ const prepareLedgerWindow = (
     turn: input.turn ?? ledger.turn,
     movement: {
       ...ledger.movement,
-      budget: input.movementBudget ?? ledger.movement.budget,
+      // Null is an authoritative fail-closed result, not permission to reuse a
+      // stale capability observed in an earlier movement window.
+      budget: input.movementBudget,
     },
   }
 }
@@ -462,24 +471,63 @@ export const spendEncounterMoveResourceCosts = (
     input.movementDistance,
     'Authoritative movement distance',
   )
-  if (!Array.isArray(input.costs)) {
-    return fail('invalid-resource-cost', 'Move resource costs must be an array.')
+  let costs: readonly MoveSpecCostDeclaration[]
+  try {
+    costs = parseMoveSpecCostDeclarations(input.costs, 'moveResourceCosts')
+    validateMoveResourceCostCombination(
+      costs.map(declaration => declaration.cost),
+      'moveResourceCosts',
+    )
   }
-  const costIds = input.costs.map(cost => cost.id)
-  if (new Set(costIds).size !== costIds.length) {
-    return fail('invalid-resource-cost', 'Move resource costs must have unique IDs.')
+  catch (error) {
+    if (
+      error instanceof MoveSpecValidationError
+      || error instanceof MoveResourceCostValidationError
+    ) {
+      return fail('invalid-resource-cost', error.message)
+    }
+    throw error
   }
 
+  const compatibilityFlagId = input.compatibilityOncePerTurnFlagId ?? null
+  if (compatibilityFlagId !== null && !STABLE_ID_PATTERN.test(compatibilityFlagId)) {
+    fail(
+      'invalid-resource-cost',
+      'Compatibility once-per-turn flag must be a lowercase stable identifier.',
+    )
+  }
+
+  const noCostSpends = costs
+    .filter(declaration => declaration.cost.kind === 'no-cost')
+    .map((declaration): EncounterMoveResourceCostSpend => ({
+      costId: declaration.id,
+      phase: declaration.phase,
+      kind: declaration.cost.kind,
+      resourceId: null,
+      amount: 0,
+    }))
+  if (
+    costs.every(declaration => declaration.cost.kind === 'no-cost')
+    && compatibilityFlagId === null
+  ) {
+    return deepFreeze({ resources, spends: noCostSpends })
+  }
+
+  const plannedMovementBudget = costs.some(declaration => (
+    declaration.cost.kind === 'movement-distance'
+  ))
+    ? movementBudget
+    : resources[input.placementId]?.movement.budget ?? movementBudget
   let ledger = prepareLedgerWindow(resources, {
     placementId: input.placementId,
     round: input.round,
     turn: input.turn,
-    movementBudget,
+    movementBudget: plannedMovementBudget,
   })
   const initialLedger = ledger
   const spends: EncounterMoveResourceCostSpend[] = []
 
-  for (const declaration of input.costs) {
+  for (const declaration of costs) {
     const cost = declaration.cost
     if (cost.kind === 'action-resource') {
       assertActionAvailable(ledger, cost.resource, cost.amount)
@@ -674,14 +722,7 @@ export const spendEncounterMoveResourceCosts = (
     })
   }
 
-  const compatibilityFlagId = input.compatibilityOncePerTurnFlagId ?? null
   if (compatibilityFlagId !== null) {
-    if (!STABLE_ID_PATTERN.test(compatibilityFlagId)) {
-      fail(
-        'invalid-resource-cost',
-        'Compatibility once-per-turn flag must be a lowercase stable identifier.',
-      )
-    }
     ledger = appendCostFlag(ledger, {
       id: compatibilityFlagId,
       sourceOperationId: input.sourceOperationId,

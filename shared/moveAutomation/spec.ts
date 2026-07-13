@@ -468,8 +468,10 @@ const parsePreconditions = (value: unknown): readonly MoveSpecPrecondition[] => 
   return preconditions
 }
 
-const parseCosts = (value: unknown): readonly MoveSpecCostDeclaration[] => {
-  const path = 'spec.costs'
+const parseCosts = (
+  value: unknown,
+  path = 'spec.costs',
+): readonly MoveSpecCostDeclaration[] => {
   const costs = parseBoundedArray(value, path, MOVE_SPEC_LIMITS.costs)
     .map((entry, index): MoveSpecCostDeclaration => {
       const entryPath = `${path}[${index}]`
@@ -497,6 +499,21 @@ const parseCosts = (value: unknown): readonly MoveSpecCostDeclaration[] => {
     })
   assertUnique(costs.map(({ id }) => id), `${path}.id`)
   return costs
+}
+
+/**
+ * Strictly parse a standalone reviewed cost declaration list for server
+ * planning boundaries that do not otherwise need to parse an entire spec.
+ */
+export const parseMoveSpecCostDeclarations = (
+  value: unknown,
+  path = 'moveSpecCosts',
+): readonly MoveSpecCostDeclaration[] => {
+  const detached = clonePlainJson(value, path, 0, {
+    ancestors: new WeakSet<object>(),
+    nodes: 0,
+  })
+  return deepFreeze(parseCosts(detached, path))
 }
 
 const parsePhaseBlocks = (value: unknown): readonly MoveSpecPhaseBlock[] => {

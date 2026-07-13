@@ -285,7 +285,26 @@ describe('authoritative encounter action resources', () => {
     }, 'usage')])).toThrowError(expect.objectContaining({
       code: 'once-per-turn-unavailable',
     }))
+    expect(() => spend(first.resources, [cost('cost.no-current-budget', {
+      kind: 'movement-distance', amount: 'resolved-distance',
+    }, 'movement')], {
+      movementBudget: null,
+      movementDistance: 1,
+    })).toThrowError(expect.objectContaining({ code: 'movement-unavailable' }))
+    const actionOnly = spend(first.resources, [cost('cost.free', {
+      kind: 'action-resource', resource: 'free', amount: 1,
+    })], { movementBudget: null })
+    expect(createMoveAutomationResourceResolver(actionOnly.resources)
+      .movementBudget('actor-token')).toBe(6)
     expect(first.resources).toEqual(snapshot)
+
+    const nextTurn = reduceEncounterLifecycle({
+      ...createEmptyEncounterState(),
+      turnResources: first.resources,
+    }, [turnStart(2, 5)])
+    const resetQueries = createMoveAutomationResourceResolver(nextTurn.state.turnResources)
+    expect(resetQueries.hasOncePerTurnFlag('actor-token', 'feature.test-once')).toBe(false)
+    expect(resetQueries.movementSpent('actor-token')).toBe(0)
   })
 
   it('schedules Exhaust and advanced Priority forfeits at the next authoritative turn', () => {
@@ -359,21 +378,52 @@ describe('authoritative encounter action resources', () => {
         setupExecute: { ...settingUp.setupExecute!, status: 'ready-to-execute' as const },
       },
     }
+    expect(() => spend(ready, [cost('cost.execute-wrong-move', {
+      kind: 'setup-execute', step: 'execute',
+    }, 'declare')], {
+      canonicalMoveId: 'Different Move',
+    })).toThrowError(expect.objectContaining({ code: 'setup-state-conflict' }))
     const executed = spend(ready, [cost('cost.execute', {
       kind: 'setup-execute', step: 'execute',
     }, 'declare')])
     expect(createMoveAutomationResourceResolver(executed.resources)
       .setupExecuteState('actor-token')).toBeNull()
 
-    const waived = spend({}, [cost('cost.waived', {
+    const waivedInput = {}
+    const waived = spend(waivedInput, [cost('cost.waived', {
       kind: 'no-cost', reasonCode: 'move.triggered-child',
     }, 'declare')])
     const waivedQueries = createMoveAutomationResourceResolver(waived.resources)
+    expect(waived.resources).toEqual(waivedInput)
     expect(waivedQueries.actionSpent('actor-token', 'standard')).toBe(0)
     expect(waived.spends).toEqual([expect.objectContaining({
       costId: 'cost.waived',
       resourceId: null,
       amount: 0,
     })])
+    expect(Object.isFrozen(waived)).toBe(true)
+    expect(Object.isFrozen(waived.spends)).toBe(true)
+  })
+
+  it('rejects malformed runtime declarations before reducing any resource', () => {
+    const resources = spend({}, [cost('cost.free', {
+      kind: 'action-resource', resource: 'free', amount: 1,
+    })]).resources
+    const snapshot = structuredClone(resources)
+
+    expect(() => spend(resources, [{
+      id: 'cost.client-authored',
+      phase: 'pay',
+      cost: {
+        kind: 'action-resource',
+        resource: 'standard',
+        amount: 1,
+        patch: { standard: 0 },
+      },
+    } as never])).toThrowError(expect.objectContaining({
+      name: EncounterResourceReductionError.name,
+      code: 'invalid-resource-cost',
+    }))
+    expect(resources).toEqual(snapshot)
   })
 })

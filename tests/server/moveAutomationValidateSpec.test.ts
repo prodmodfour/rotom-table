@@ -452,6 +452,65 @@ describe('authoritative MoveSpec validation and hashing', () => {
     expect(second.definitionHash).toBe(first.definitionHash)
   })
 
+  it('rejects contradictory reviewed resource-cost combinations', () => {
+    const fullAndShift = validSpec()
+    fullAndShift.costs = [
+      {
+        id: 'cost.full',
+        phase: 'pay',
+        cost: { kind: 'action-resource', resource: 'full', amount: 1 },
+      },
+      {
+        id: 'cost.shift',
+        phase: 'movement',
+        cost: { kind: 'action-resource', resource: 'shift', amount: 1 },
+      },
+    ]
+    expectDefinitionError(
+      () => validateMoveSpec(fullAndShift),
+      'invalid-definition',
+      'spec.costs',
+    )
+
+    const sharedReaction = validSpec()
+    sharedReaction.costs = [
+      {
+        id: 'cost.interrupt',
+        phase: 'declare',
+        cost: { kind: 'action-resource', resource: 'interrupt', amount: 1 },
+      },
+      {
+        id: 'cost.reaction',
+        phase: 'pay',
+        cost: { kind: 'action-resource', resource: 'reaction', amount: 1 },
+      },
+    ]
+    expectDefinitionError(
+      () => validateMoveSpec(sharedReaction),
+      'invalid-definition',
+      'spec.costs',
+    )
+
+    const duplicateFlag = validSpec()
+    duplicateFlag.costs = [
+      {
+        id: 'cost.once-declare',
+        phase: 'declare',
+        cost: { kind: 'once-per-turn', flagId: 'move.once' },
+      },
+      {
+        id: 'cost.once-usage',
+        phase: 'usage',
+        cost: { kind: 'once-per-turn', flagId: 'move.once' },
+      },
+    ]
+    expectDefinitionError(
+      () => validateMoveSpec(duplicateFlag),
+      'duplicate-id',
+      'spec.costs',
+    )
+  })
+
   it('changes the hash for behavior, ordered operations, capabilities, or ruleset data', () => {
     const baseline = validateMoveSpec(validSpec(), {
       capabilityIds: ['targeting.authoritative', 'hp.typed'],

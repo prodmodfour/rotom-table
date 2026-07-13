@@ -28,6 +28,10 @@ import {
   type MoveSelector,
 } from '#shared/moveAutomation/selectors'
 import {
+  MoveResourceCostValidationError,
+  validateMoveResourceCostCombination,
+} from '#shared/moveAutomation/resourceCosts'
+import {
   MOVE_SPEC_LIMITS,
   MOVE_SPEC_PHASES,
   parseMoveSpec,
@@ -1029,41 +1033,21 @@ export const validateMoveSpecOperationSequence = (
 const validateResourceCostCombinations = (
   costs: readonly MoveSpecCostDeclaration[],
 ): void => {
-  const actionCosts = costs.filter(({ cost }) => cost.kind === 'action-resource')
-  const actionResources = actionCosts.map(({ cost }) => (
-    cost.kind === 'action-resource' ? cost.resource : 'free'
-  ))
-  if (new Set(actionResources).size !== actionResources.length) {
-    fail(
-      'duplicate-id',
+  try {
+    validateMoveResourceCostCombination(
+      costs.map(declaration => declaration.cost),
       'spec.costs',
-      'an action resource may be declared at most once.',
     )
   }
-  if (
-    actionResources.includes('full')
-    && (actionResources.includes('standard') || actionResources.includes('shift'))
-  ) {
-    fail(
-      'invalid-definition',
-      'spec.costs',
-      'a Full action already consumes Standard and Shift and cannot overlap either declaration.',
-    )
-  }
-  const noCostCount = costs.filter(({ cost }) => cost.kind === 'no-cost').length
-  if (noCostCount > 1) {
-    fail('duplicate-id', 'spec.costs', 'a MoveSpec may declare at most one no-cost exception.')
-  }
-  if (noCostCount > 0 && actionCosts.length > 0) {
-    fail(
-      'invalid-definition',
-      'spec.costs',
-      'a reviewed no-cost exception cannot overlap an action-resource spend.',
-    )
-  }
-  for (const kind of ['exhaust', 'setup-execute', 'priority'] as const) {
-    if (costs.filter(({ cost }) => cost.kind === kind).length <= 1) continue
-    fail('duplicate-id', 'spec.costs', `a MoveSpec may declare at most one ${kind} policy.`)
+  catch (error) {
+    if (error instanceof MoveResourceCostValidationError) {
+      fail(
+        error.code === 'duplicate-resource-cost' ? 'duplicate-id' : 'invalid-definition',
+        error.path,
+        error.message.slice(error.path.length + 2),
+      )
+    }
+    throw error
   }
 }
 

@@ -19,13 +19,7 @@ import {
   type TurnTokenLivePlayCommand,
   type TurnTokenPayload,
 } from '#shared/livePlayCommands'
-import {
-  createEmptyEncounterState,
-  encounterStateHasSide,
-  isEncounterSideId,
-  parseEncounterState,
-  type EncounterState,
-} from '#shared/moveAutomation/encounterState'
+import { encounterStateHasSide, isEncounterSideId } from '#shared/moveAutomation/encounterState'
 import { nextRevision, normalizeRevision } from '#shared/sessionRevisions'
 import type { AuthRole } from '#shared/auth'
 import type { PlayerProfile } from '#shared/playerProfiles'
@@ -72,10 +66,6 @@ import {
   type AuthoritativeMovementSheets,
   type AuthoritativeMovementSuccess,
 } from '../domain/movement/resolveMovement'
-import {
-  EncounterResourceReductionError,
-  spendEncounterMoveResourceCosts,
-} from '../domain/moveAutomation/reduceEncounterResources'
 import { commitLivePlayMapUpdate } from './livePlayMapPersistence'
 import { toPersistedMap } from './saveMap'
 
@@ -287,19 +277,13 @@ const authoritativeMovementSheetsForMap = (
   return { pokemon, trainer }
 }
 
-interface ResolvedNormalTokenMovement {
-  readonly movement: AuthoritativeMovementSuccess
-  readonly encounterState: EncounterState
-}
-
 const resolveNormalTokenMovement = (
   payload: MoveTokenPayload,
   actor: MapTokenLivePlayActor,
   context: ResolvedMapTokenActionContext,
   currentRevision: number,
-  sourceOperationId: string,
   readSheet: NonNullable<MapTokenActionDependencies['readSheet']>,
-): ResolvedNormalTokenMovement | null => {
+): AuthoritativeMovementSuccess | null => {
   if (payload.movementPolicy === 'gm-override' && actor.role !== 'gm') {
     rejectLivePlayCommand('unauthorized', 'Only a GM can request the explicit movement override policy', {
       currentRevision,
@@ -317,66 +301,7 @@ const resolveNormalTokenMovement = (
       : { kind: 'standard' },
   })
 
-  if (movement.ok) {
-    const previousEncounterState = parseEncounterState(
-      context.map.encounterState ?? createEmptyEncounterState(),
-    )
-    if (movement.policy.kind === 'gm-override') {
-      return { movement, encounterState: previousEncounterState }
-    }
-    try {
-      const spent = spendEncounterMoveResourceCosts(
-        previousEncounterState.turnResources,
-        {
-          placementId: context.placement.id,
-          canonicalMoveId: 'Shift Movement',
-          resolutionId: sourceOperationId,
-          sourceOperationId,
-          costs: [
-            {
-              id: 'movement.cost.shift-action',
-              phase: 'pay',
-              cost: { kind: 'action-resource', resource: 'shift', amount: 1 },
-            },
-            {
-              id: 'movement.cost.distance',
-              phase: 'movement',
-              cost: { kind: 'movement-distance', amount: 'resolved-distance' },
-            },
-          ],
-          movementBudget: movement.capabilityLimit,
-          movementDistance: movement.cost,
-          round: context.map.initiative?.round ?? null,
-          turn: previousEncounterState.history.currentTurn?.placementId === context.placement.id
-            ? previousEncounterState.history.currentTurn.turn
-            : null,
-          actedThisRound: previousEncounterState.history.actedThisRoundPlacementIds.includes(
-            context.placement.id,
-          ),
-        },
-      )
-      return {
-        movement,
-        encounterState: parseEncounterState({
-          ...previousEncounterState,
-          turnResources: spent.resources,
-        }),
-      }
-    }
-    catch (error) {
-      if (error instanceof EncounterResourceReductionError) {
-        return rejectLivePlayCommand(
-          'conflict',
-          `Token ${payload.placementId} cannot pay its authoritative movement resources (${error.code}): ${error.message}`,
-          {
-            currentRevision,
-            currentState: context.placement,
-          },
-        )
-      }
-      throw error
-    }
-  }
+  if (movement.ok) return movement
   if (movement.reasonCode === 'movement-same-position-disallowed') return null
 
   return rejectLivePlayCommand(
@@ -412,11 +337,10 @@ interface AppliedMapTokenChange {
 }
 
 const applyResolvedMoveTokenToMap = (
-  resolved: ResolvedNormalTokenMovement,
+  movement: AuthoritativeMovementSuccess,
   context: ResolvedMapTokenActionContext,
   dependencies: Required<Pick<MapTokenActionDependencies, 'readSheet' | 'now'>> & Pick<MapTokenActionDependencies, 'maxMovementLogEntries'>,
 ): AppliedMapTokenChange => {
-  const movement = resolved.movement
   const currentPosition = context.placement.position
   const nextPosition = clonePosition(movement.destination)
   const nextFacing = tokenFacingTowardPoint(
@@ -454,7 +378,6 @@ const applyResolvedMoveTokenToMap = (
       ...context.map,
       placements,
       metadata,
-      encounterState: parseEncounterState(resolved.encounterState),
       updatedAt: timestamp,
     },
     placement: nextPlacement,
@@ -1274,16 +1197,9 @@ export const executeMapTokenLivePlayCommandUseCase = async (
       if (command.type === LIVE_PLAY_COMMAND_TYPES.MOVE_TOKEN) {
         const payload = expectMoveTokenPayload(command.payload)
         const movement = context
-          ? resolveNormalTokenMovement(
-              payload,
-              actor,
-              context,
-              currentRevision,
-              command.opId,
-              deps.readSheet,
-            )
+          ? resolveNormalTokenMovement(payload, actor, context, currentRevision, deps.readSheet)
           : null
-        movementSheetReads = movement?.movement.sheetReads ?? []
+        movementSheetReads = movement?.sheetReads ?? []
         change = movement && context ? applyResolvedMoveTokenToMap(movement, context, deps) : null
       } else if (command.type === LIVE_PLAY_COMMAND_TYPES.TURN_TOKEN) {
         change = context ? applyTurnTokenToMap(expectTurnTokenPayload(command.payload), context) : null

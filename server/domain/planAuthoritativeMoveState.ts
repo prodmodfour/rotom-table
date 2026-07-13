@@ -70,16 +70,9 @@ import {
   type MoveStateChangeInput,
   type MoveStateChangePlan,
 } from './moveAutomation/plan'
-import {
-  planEncounterMoveResourceCosts,
-  planMoveResourceObservation,
-} from './moveAutomation/planMoveResources'
-import { EncounterResourceReductionError } from './moveAutomation/reduceEncounterResources'
+import { planMoveResourceObservation } from './moveAutomation/planMoveResources'
 import type { AuthoritativeMoveRandomSource } from './moveAutomation/random'
-import {
-  MOVE_AUTOMATION_RUNTIME_REGISTRY,
-  type MoveAutomationRuntimeRegistry,
-} from './moveAutomation/registry'
+import type { MoveAutomationRuntimeRegistry } from './moveAutomation/registry'
 import {
   isMoveUsageTransitionError,
   planMoveUsageTransition,
@@ -585,24 +578,12 @@ const withoutPlanIdentity = (
   return input as MoveStateChangeInput
 }
 
-const reviewedMoveResourceCosts = (
-  input: Pick<PlanAuthoritativeMoveStateInput, 'runtimeRegistry'>,
-  canonicalMoveId: string,
-) => {
-  const runtime = (input.runtimeRegistry ?? MOVE_AUTOMATION_RUNTIME_REGISTRY)
-    .resolve(canonicalMoveId)
-  return runtime?.kind === 'movespec-v2' ? runtime.definition.spec.costs : undefined
-}
-
 export const observeMovePlanResources = (input: {
   readonly planningInput: PlanAuthoritativeMoveStateInput
   readonly resolution: AuthoritativeMoveResolution
   readonly nextMap: TabletopMap
   readonly previousRevision: number
   readonly stateChanges: MoveStateChangePlan
-  readonly minimumCostPhaseExclusive?: import('#shared/moveAutomation/spec').MoveSpecPhase | null
-  readonly maximumCostPhaseInclusive?: import('#shared/moveAutomation/spec').MoveSpecPhase | null
-  readonly allowLegacyCostFallback?: boolean
 }): {
   readonly nextMap: TabletopMap
   readonly mapChanges: AuthoritativeMoveMapChanges
@@ -625,43 +606,12 @@ export const observeMovePlanResources = (input: {
   )
   const sourceOperationId = input.planningInput.operationId
     ?? `move.${input.resolution.moveKey}.resource-observation`
-  let observation: ReturnType<typeof planMoveResourceObservation>
-  try {
-    observation = planMoveResourceObservation({
-      map: input.nextMap,
-      actor,
-      resolution: input.resolution,
-      sourceOperationId,
-      reviewedCosts: reviewedMoveResourceCosts(
-        input.planningInput,
-        input.resolution.canonicalMoveName,
-      ),
-      minimumPhaseExclusive: input.minimumCostPhaseExclusive,
-      maximumPhaseInclusive: input.maximumCostPhaseInclusive,
-      allowLegacyFallback: input.allowLegacyCostFallback,
-    })
-  }
-  catch (error) {
-    if (error instanceof EncounterResourceReductionError) {
-      fail(
-        'conflict',
-        'move-resource-unavailable',
-        `${input.resolution.canonicalMoveName} cannot pay its authoritative action resources (${error.code}): ${error.message}`,
-        error,
-      )
-    }
-    throw error
-  }
-  if (!observation.changed) {
-    return {
-      nextMap: cloneJson(input.nextMap),
-      mapChanges: buildAuthoritativeMoveMapChanges(
-        input.planningInput.map,
-        input.nextMap,
-      ),
-      stateChanges: input.stateChanges,
-    }
-  }
+  const observation = planMoveResourceObservation({
+    map: input.nextMap,
+    actor,
+    resolution: input.resolution,
+    sourceOperationId,
+  })
   const previousEncounterState = parseEncounterState(
     input.planningInput.map.encounterState ?? createEmptyEncounterState(),
   )
@@ -697,97 +647,6 @@ export const observeMovePlanResources = (input: {
   }
 }
 
-export const planPendingMoveResourceCosts = (options: {
-  readonly input: PlanAuthoritativeMoveStateInput
-  readonly execution: AuthoritativePendingMoveResolution
-  readonly existingPlan: MoveStateChangePlan
-  readonly resolutionId: string
-  readonly minimumPhaseExclusive?: import('#shared/moveAutomation/spec').MoveSpecPhase | null
-}): MoveStateChangePlan => {
-  const reviewedCosts = options.execution.runtime.definition.spec.costs
-  if (reviewedCosts.length === 0) return options.existingPlan
-
-  const actorPlacement = options.input.map.placements.find(
-    placement => placement.id === options.execution.actorPlacementId,
-  ) ?? fail(
-    'not-found',
-    'actor-placement-missing',
-    `Actor placement ${options.execution.actorPlacementId} was not found while planning pending resources.`,
-  )
-  const actor = placementToSpawned(actorPlacement, {
-    pokemon: new Map(options.input.pokemonSheets),
-    trainer: new Map(options.input.trainerSheets),
-  }, options.input.map) ?? fail(
-    'not-found',
-    'actor-token-missing',
-    `Actor placement ${options.execution.actorPlacementId} could not resolve while planning pending resources.`,
-  )
-  const mapAfterExistingPlan = applyNativeCoreMapChanges(
-    options.input.map,
-    options.existingPlan,
-  )
-  let observation: ReturnType<typeof planEncounterMoveResourceCosts>
-  try {
-    observation = planEncounterMoveResourceCosts({
-      map: mapAfterExistingPlan,
-      actor,
-      actorPlacementId: options.execution.actorPlacementId,
-      canonicalMoveId: options.execution.canonicalMoveName,
-      moveKey: options.execution.moveKey,
-      range: options.input.map.slug,
-      sourceOperationId: options.input.operationId ?? options.execution.execution.request.operationId,
-      resolutionId: options.resolutionId,
-      movementDistance: 0,
-      reviewedCosts,
-      allowLegacyFallback: false,
-      minimumPhaseExclusive: options.minimumPhaseExclusive,
-      maximumPhaseInclusive: options.execution.execution.request.phase,
-    })
-  }
-  catch (error) {
-    if (error instanceof EncounterResourceReductionError) {
-      fail(
-        'conflict',
-        'move-resource-unavailable',
-        `${options.execution.canonicalMoveName} cannot pay its pending action resources (${error.code}): ${error.message}`,
-        error,
-      )
-    }
-    throw error
-  }
-  if (!observation.changed) return options.existingPlan
-
-  const previousEncounterState = parseEncounterState(
-    options.input.map.encounterState ?? createEmptyEncounterState(),
-  )
-  const existingEncounterChange = options.existingPlan.changes.find(
-    change => change.kind === 'encounter-state',
-  )
-  const nonEncounterInputs = options.existingPlan.changes
-    .filter(change => change.kind !== 'encounter-state')
-    .map(change => withoutPlanIdentity(change) as MoveStateChangeInput<EncounterState>)
-  return createMoveStateChangePlan<EncounterState>([
-    ...nonEncounterInputs,
-    {
-      kind: 'encounter-state',
-      scope: { kind: 'encounter', mapSlug: options.input.map.slug },
-      expectedRevision: normalizeRevision(options.input.map.revision),
-      sourceOperationId: observation.spends[0]?.costId
-        ?? existingEncounterChange?.sourceOperationId
-        ?? options.execution.execution.request.operationId,
-      reasonCode: existingEncounterChange
-        ? 'move-declaration-and-resource-costs'
-        : 'move-declaration-resource-costs',
-      previous: cloneJson(
-        existingEncounterChange?.previous as EncounterState | undefined
-          ?? previousEncounterState,
-      ),
-      current: cloneJson(observation.currentEncounterState),
-      compensation: RESTORE_PREVIOUS_MOVE_STATE_VALUE,
-    },
-  ])
-}
-
 const planPendingMoveState = (options: {
   readonly input: PlanAuthoritativeMoveStateInput
   readonly execution: AuthoritativePendingMoveResolution
@@ -814,12 +673,6 @@ const planPendingMoveState = (options: {
   )
   const request = options.execution.execution.request
   const revision = nextRevision(options.previousRevision)
-  const preWindowPlan = planPendingMoveResourceCosts({
-    input: options.input,
-    execution: options.execution,
-    existingPlan: options.execution.preWindowPlan,
-    resolutionId,
-  })
   const suspension = materializeMoveSpecSuspension({
     resolutionId,
     originOpId: operationId,
@@ -831,7 +684,7 @@ const planPendingMoveState = (options: {
     authoritativeSheetReads: sheetReads,
     execution: options.execution.execution,
     continuationMapRevision: revision,
-    preWindowPlan,
+    preWindowPlan: options.execution.preWindowPlan,
   })
   const pendingResolution = suspension.pendingResolution
 

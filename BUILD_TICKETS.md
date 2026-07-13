@@ -1593,7 +1593,7 @@ Status: DONE
 
 ## MA-124A — Define authoritative action-resource cost plans
 
-Status: TODO
+Status: DONE
 
 **Depends on:** MA-064, MA-120
 **Commit:** `feat(move-automation): plan authoritative action resource costs`

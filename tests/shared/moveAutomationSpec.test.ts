@@ -5,6 +5,7 @@ import {
   MOVE_SPEC_SCHEMA_VERSION,
   MoveSpecValidationError,
   parseMoveSpec,
+  parseMoveSpecCostDeclarations,
   type MoveSpecValidationCode,
 } from '#shared/moveAutomation/spec'
 
@@ -184,6 +185,43 @@ describe('MoveSpec v2 contract', () => {
       kind: 'action-resource', resource: 'full', amount: 1,
     })
     expectDeeplyFrozen(spec.costs)
+  })
+
+  it('strictly parses standalone phase-scoped cost declarations', () => {
+    const input = [
+      {
+        id: 'cost.shift',
+        phase: 'movement',
+        cost: { kind: 'action-resource', resource: 'shift', amount: 1 },
+      },
+      {
+        id: 'cost.distance',
+        phase: 'movement',
+        cost: { kind: 'movement-distance', amount: 'resolved-distance' },
+      },
+    ]
+    const costs = parseMoveSpecCostDeclarations(input)
+
+    expect(costs).toEqual(input)
+    expectDeeplyFrozen(costs)
+    input[0]!.id = 'client.rewritten'
+    expect(costs[0]?.id).toBe('cost.shift')
+
+    expect(() => parseMoveSpecCostDeclarations([
+      { ...input[1], id: 'cost.bad-phase', phase: 'browser' },
+    ])).toThrowError(expect.objectContaining({
+      name: MoveSpecValidationError.name,
+      code: 'invalid-spec',
+      path: 'moveSpecCosts[0].phase',
+    }))
+    expect(() => parseMoveSpecCostDeclarations([
+      costs[0],
+      { ...costs[0] },
+    ])).toThrowError(expect.objectContaining({
+      name: MoveSpecValidationError.name,
+      code: 'duplicate-id',
+      path: 'moveSpecCosts.id',
+    }))
   })
 
   it('returns detached, deeply immutable plain JSON data', () => {

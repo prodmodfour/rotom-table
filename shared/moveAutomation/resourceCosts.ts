@@ -93,6 +93,8 @@ export type MoveResourceCostValidationCode =
   | 'invalid-resource-cost'
   | 'limit-exceeded'
   | 'unknown-resource-cost'
+  | 'duplicate-resource-cost'
+  | 'conflicting-resource-cost'
 
 export class MoveResourceCostValidationError extends Error {
   readonly code: MoveResourceCostValidationCode
@@ -146,6 +148,38 @@ const parseRecord = (value: unknown, path: string): UnknownRecord => {
     return fail('invalid-resource-cost', path, 'must be a plain object.')
   }
   return value
+}
+
+/**
+ * Detach one untrusted shallow cost object without invoking accessors or
+ * retaining caller-owned properties. Cost payloads intentionally contain only
+ * scalar values; nested mechanics belong in reviewed effect operations.
+ */
+const detachCostRecord = (value: unknown, path: string): UnknownRecord => {
+  const input = parseRecord(value, path)
+  if (Object.getOwnPropertySymbols(input).length > 0) {
+    fail('invalid-resource-cost', path, 'symbol properties are not allowed.')
+  }
+
+  const detached: UnknownRecord = Object.create(null) as UnknownRecord
+  for (const key of Object.getOwnPropertyNames(input)) {
+    const descriptor = Object.getOwnPropertyDescriptor(input, key)
+    if (!descriptor || !descriptor.enumerable || !('value' in descriptor)) {
+      fail(
+        'invalid-resource-cost',
+        `${path}.${key}`,
+        'fields must be enumerable data properties.',
+      )
+    }
+    const dataDescriptor = descriptor as PropertyDescriptor & { value: unknown }
+    Object.defineProperty(detached, key, {
+      value: dataDescriptor.value,
+      enumerable: true,
+      configurable: true,
+      writable: true,
+    })
+  }
+  return detached
 }
 
 const assertExactFields = (
@@ -202,7 +236,7 @@ export const parseMoveResourceCost = (
   value: unknown,
   path = 'moveResourceCost',
 ): MoveResourceCost => {
-  const cost = parseRecord(value, path)
+  const cost = detachCostRecord(value, path)
   const kind = cost.kind
   if (typeof kind !== 'string' || !COST_KIND_SET.has(kind)) {
     return fail(
@@ -221,29 +255,29 @@ export const parseMoveResourceCost = (
         'must be Standard, Shift, Swift, Free, Full, Interrupt, or Reaction.',
       )
     }
-    return {
+    return Object.freeze({
       kind,
       resource: cost.resource as EncounterActionType,
       amount: parseAmount(cost.amount, `${path}.amount`),
-    }
+    })
   }
 
   if (kind === 'movement-distance') {
     assertExactFields(cost, MOVEMENT_FIELDS, path)
-    return {
+    return Object.freeze({
       kind,
       amount: cost.amount === 'resolved-distance'
         ? cost.amount
         : parseAmount(cost.amount, `${path}.amount`),
-    }
+    })
   }
 
   if (kind === 'once-per-turn') {
     assertExactFields(cost, ONCE_PER_TURN_FIELDS, path)
-    return {
+    return Object.freeze({
       kind,
       flagId: parseStableId(cost.flagId, `${path}.flagId`),
-    }
+    })
   }
 
   if (kind === 'exhaust') {
@@ -254,7 +288,11 @@ export const parseMoveResourceCost = (
     if (typeof cost.forfeitCommand !== 'boolean') {
       fail('invalid-resource-cost', `${path}.forfeitCommand`, 'must be boolean.')
     }
-    return { kind, timing: 'next-turn', forfeitCommand: cost.forfeitCommand as boolean }
+    return Object.freeze({
+      kind,
+      timing: 'next-turn',
+      forfeitCommand: cost.forfeitCommand as boolean,
+    })
   }
 
   if (kind === 'setup-execute') {
@@ -262,7 +300,7 @@ export const parseMoveResourceCost = (
     if (typeof cost.step !== 'string' || !SETUP_STEP_SET.has(cost.step)) {
       fail('invalid-resource-cost', `${path}.step`, 'must be set-up or execute.')
     }
-    return { kind, step: cost.step as MoveSetupExecuteCostStep }
+    return Object.freeze({ kind, step: cost.step as MoveSetupExecuteCostStep })
   }
 
   if (kind === 'priority') {
@@ -270,12 +308,96 @@ export const parseMoveResourceCost = (
     if (typeof cost.mode !== 'string' || !PRIORITY_MODE_SET.has(cost.mode)) {
       fail('invalid-resource-cost', `${path}.mode`, 'must be standard, limited, or advanced.')
     }
-    return { kind, mode: cost.mode as MovePriorityCostMode }
+    return Object.freeze({ kind, mode: cost.mode as MovePriorityCostMode })
   }
 
   assertExactFields(cost, NO_COST_FIELDS, path)
-  return {
+  return Object.freeze({
     kind: 'no-cost',
     reasonCode: parseStableId(cost.reasonCode, `${path}.reasonCode`),
+  })
+}
+
+const duplicatedValue = (values: readonly string[]): string | null => {
+  const seen = new Set<string>()
+  for (const value of values) {
+    if (seen.has(value)) return value
+    seen.add(value)
+  }
+  return null
+}
+
+/**
+ * Validate semantic combinations shared by registration and pure planning.
+ * Individual declarations have already passed parseMoveResourceCost.
+ */
+export const validateMoveResourceCostCombination = (
+  costs: readonly MoveResourceCost[],
+  path = 'moveResourceCosts',
+): void => {
+  const actionResources = costs.flatMap(cost => (
+    cost.kind === 'action-resource' ? [cost.resource] : []
+  ))
+  const duplicateAction = duplicatedValue(actionResources)
+  if (duplicateAction !== null) {
+    fail(
+      'duplicate-resource-cost',
+      path,
+      `action resource ${duplicateAction} may be declared at most once.`,
+    )
+  }
+  if (
+    actionResources.includes('full')
+    && (actionResources.includes('standard') || actionResources.includes('shift'))
+  ) {
+    fail(
+      'conflicting-resource-cost',
+      path,
+      'Full already consumes Standard and Shift and cannot overlap either declaration.',
+    )
+  }
+  if (actionResources.includes('interrupt') && actionResources.includes('reaction')) {
+    fail(
+      'conflicting-resource-cost',
+      path,
+      'Interrupt and Reaction share one availability and cannot both be declared.',
+    )
+  }
+
+  const noCostCount = costs.filter(cost => cost.kind === 'no-cost').length
+  if (noCostCount > 1) {
+    fail(
+      'duplicate-resource-cost',
+      path,
+      'a reviewed no-cost exception may be declared at most once.',
+    )
+  }
+  if (noCostCount > 0 && actionResources.length > 0) {
+    fail(
+      'conflicting-resource-cost',
+      path,
+      'a reviewed no-cost exception cannot overlap an action-resource spend.',
+    )
+  }
+
+  for (const kind of ['exhaust', 'setup-execute', 'priority'] as const) {
+    if (costs.filter(cost => cost.kind === kind).length <= 1) continue
+    fail(
+      'duplicate-resource-cost',
+      path,
+      `${kind} may be declared at most once.`,
+    )
+  }
+
+  const oncePerTurnFlags = costs.flatMap(cost => (
+    cost.kind === 'once-per-turn' ? [cost.flagId] : []
+  ))
+  const duplicateFlag = duplicatedValue(oncePerTurnFlags)
+  if (duplicateFlag !== null) {
+    fail(
+      'duplicate-resource-cost',
+      path,
+      `once-per-turn flag ${duplicateFlag} may be declared at most once.`,
+    )
   }
 }

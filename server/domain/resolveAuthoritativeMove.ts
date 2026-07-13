@@ -64,11 +64,7 @@ import {
   type AuthoritativeMoveRulesContext,
   type AuthoritativeMoveSheetRead,
 } from './moveAutomation/context'
-import type {
-  MoveAutomationRuntimeRegistry,
-  MoveSpecV2Runtime,
-  RegisteredMoveAutomationRuntime,
-} from './moveAutomation/registry'
+import type { MoveAutomationRuntimeRegistry, MoveSpecV2Runtime } from './moveAutomation/registry'
 import {
   resolveMoveSpecOutcome,
   type NativeMoveSpecResolutionProjection,
@@ -85,8 +81,6 @@ import {
   type ResolveMoveAutomationAreaTargetsInput,
 } from './moveAutomation/areaTargets'
 import type { AuthoritativeMoveRandomSource } from './moveAutomation/random'
-import { planEncounterMoveResourceCosts } from './moveAutomation/planMoveResources'
-import { EncounterResourceReductionError } from './moveAutomation/reduceEncounterResources'
 import {
   resolveAuthoritativeMovement,
   type AuthoritativeMovementSheets,
@@ -111,7 +105,6 @@ export type AuthoritativeMoveResolutionFailureCode =
   | 'move-condition-blocked'
   | 'move-usage-unavailable'
   | 'move-usage-key-invalid'
-  | 'move-resource-unavailable'
   | 'target-branch-required'
   | 'target-branch-invalid'
   | 'target-branch-unexpected'
@@ -212,8 +205,6 @@ export interface AuthoritativeMoveResolution {
   readonly desiredFacing?: TokenFacingDirection
   readonly area?: AuthoritativeMoveArea
   readonly movement?: AuthoritativeMovePassMovement
-  /** Server-only oracle cost; omitted from accepted wire results. */
-  readonly resourceMovementCost?: number
   /** Server-only native planning projection; omitted from accepted wire results. */
   readonly nativeV2?: NativeMoveSpecResolutionProjection
 }
@@ -642,7 +633,6 @@ interface ResolvedAuthoritativeAreaPlacement {
   readonly direction?: MoveAutomationAreaDirection
   readonly aimCell?: GridAnchor
   readonly movement?: AuthoritativeMovePassMovement
-  readonly resourceMovementCost?: number
 }
 
 const resolvedAreaPlacement = (options: {
@@ -778,7 +768,6 @@ const resolvedAreaPlacement = (options: {
         direction,
         pathCells: cloneGridAnchors(cells),
       },
-      resourceMovementCost: movement.cost,
     }
   }
 
@@ -1288,9 +1277,6 @@ const resolveAreaMove = (options: {
     transaction,
     ...(desiredFacing ? { desiredFacing } : {}),
     ...(movement ? { movement } : {}),
-    ...(placement.resourceMovementCost === undefined
-      ? {}
-      : { resourceMovementCost: placement.resourceMovementCost }),
     area: {
       areaTemplateId: options.selection.areaTemplateId,
       template: cloneAreaTemplate(template),
@@ -1443,9 +1429,6 @@ const resolveNativeAreaMove = (options: {
     transaction,
     ...(desiredFacing ? { desiredFacing } : {}),
     ...(movement ? { movement } : {}),
-    ...(placement.resourceMovementCost === undefined
-      ? {}
-      : { resourceMovementCost: placement.resourceMovementCost }),
     area: {
       areaTemplateId: options.selection.areaTemplateId,
       template: cloneAreaTemplate(template),
@@ -1480,42 +1463,6 @@ const failFromContextError = (error: AuthoritativeMoveRulesContextError): never 
     return fail('conflict', 'sheet-read-revision-conflict', error.message)
   }
   return fail('conflict', 'duplicate-placement-id', error.message)
-}
-
-const assertAuthoritativeMoveResourcesAvailable = (input: {
-  readonly context: AuthoritativeMoveRulesContext
-  readonly entry: ResolvedCanonicalMoveEntry
-  readonly moveKey: string
-  readonly runtime: RegisteredMoveAutomationRuntime | null
-}): void => {
-  try {
-    planEncounterMoveResourceCosts({
-      map: input.context.map,
-      actor: input.context.actor.token,
-      actorPlacementId: input.context.actor.placement.id,
-      canonicalMoveId: input.entry.canonicalMoveName,
-      moveKey: input.moveKey,
-      range: input.entry.script.range,
-      sourceOperationId: 'move.resource-preflight',
-      resolutionId: 'move.resource-preflight',
-      // Movement geometry and exact oracle cost are validated by the area or
-      // movement seam; this early check intentionally consumes no distance.
-      movementDistance: 0,
-      reviewedCosts: input.runtime?.kind === 'movespec-v2'
-        ? input.runtime.definition.spec.costs
-        : undefined,
-    })
-  }
-  catch (error) {
-    if (error instanceof EncounterResourceReductionError) {
-      fail(
-        'conflict',
-        'move-resource-unavailable',
-        `${input.entry.canonicalMoveName} cannot pay its authoritative action resources (${error.code}): ${error.message}`,
-      )
-    }
-    throw error
-  }
 }
 
 /** Resolve mechanics exclusively from one detached authoritative snapshot. */
@@ -1559,12 +1506,6 @@ export const resolveAuthoritativeMoveExecutionFromContext = (
     fail('invalid', 'move-usage-key-invalid', `${entry.canonicalMoveName} did not produce a valid move usage key.`)
   }
   const selectedRuntime = context.queries.rules.runtimeFor(entry.canonicalMoveName)
-  assertAuthoritativeMoveResourcesAvailable({
-    context,
-    entry,
-    moveKey: resolvedMoveKey,
-    runtime: selectedRuntime,
-  })
   if (selectedRuntime?.kind === 'movespec-v2') {
     if (intent.selection.kind === 'self') {
       return resolveNativeSelfMove({
