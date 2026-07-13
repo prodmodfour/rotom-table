@@ -75,7 +75,14 @@ const withoutPlanIdentity = (
   change: MoveStateChangePlan['changes'][number],
 ): MoveStateChangeInput => {
   const { id: _id, order: _order, ...input } = change
-  return deepCloneJson(input) as MoveStateChangeInput
+  const clone = deepCloneJson(input) as MoveStateChangeInput
+  return {
+    ...clone,
+    // Optional map slots use an own undefined value to represent absence;
+    // JSON cloning drops those required state-plan keys.
+    previous: deepCloneJson(input.previous),
+    current: deepCloneJson(input.current),
+  } as MoveStateChangeInput
 }
 
 const encounterPlan = (input: {

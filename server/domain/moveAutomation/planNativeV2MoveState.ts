@@ -240,7 +240,7 @@ const applyMovementTrace = (options: {
         status: 'applied',
         from: movement.from,
         destination: movement.destination,
-        direction: movement.direction,
+        ...(movement.direction ? { direction: movement.direction } : {}),
         pathCells: movement.pathCells,
       },
     }
@@ -330,7 +330,7 @@ export const planNativeV2MoveState = (options: {
             : {}),
         },
       } : {}),
-      ...(options.resolution.movement ? {
+      ...(options.resolution.movement?.kind === 'pass' ? {
         pass: {
           from: options.resolution.movement.from,
           destination: options.resolution.movement.destination,
@@ -358,7 +358,7 @@ export const planNativeV2MoveState = (options: {
     movement: options.resolution.movement,
     desiredFacing: options.resolution.desiredFacing,
     fail: (code, message) => fail(
-      code === 'pass-source-position-mismatch'
+      code === 'pass-source-position-mismatch' || code === 'shift-source-position-mismatch'
         ? 'state-change-conflict'
         : 'unsupported-core-map-change',
       `${code}: ${message}`,

@@ -8,6 +8,31 @@ import { isPlayerProfileId } from '../playerProfiles'
 import { isSheetKind, type SheetKind } from '../sheets'
 import { isEncounterSideId } from './encounterState'
 import {
+  MOVE_AUTOMATION_AREA_DIRECTIONS,
+  type MoveAutomationAreaDirection,
+} from '~/types/moveAutomation'
+import {
+  MOVE_RESPONSE_OPTION_LIMITS,
+  PENDING_MOVE_MOVEMENT_SELECTION_KINDS,
+  type MoveResponseGridAnchor,
+  type PendingMoveMovementSelection,
+  type PendingMoveMovementSelectionKind,
+  type PendingMoveResponseOption,
+} from './responseOptions'
+
+export {
+  MOVE_RESPONSE_OPTION_LIMITS,
+  PENDING_MOVE_MOVEMENT_SELECTION_KINDS,
+} from './responseOptions'
+export type {
+  MoveResponseGridAnchor,
+  PendingMoveDestinationSelection,
+  PendingMoveDirectionSelection,
+  PendingMoveMovementSelection,
+  PendingMoveMovementSelectionKind,
+  PendingMoveResponseOption,
+} from './responseOptions'
+import {
   MoveAutomationRollLedgerValidationError,
   parseMoveAutomationRollLedger,
   type MoveAutomationRollLedgerEntry,
@@ -85,13 +110,13 @@ export const PENDING_MOVE_RESPONSE_OWNER_KINDS = [
 ] as const
 
 export const PENDING_MOVE_RESOLUTION_LIMITS = Object.freeze({
-  identifierChars: 160,
-  placementIdChars: 200,
+  identifierChars: MOVE_RESPONSE_OPTION_LIMITS.identifierChars,
+  placementIdChars: MOVE_RESPONSE_OPTION_LIMITS.placementIdChars,
   canonicalMoveChars: 160,
   resourceReads: 512,
   responseWindows: 64,
   ownersPerWindow: 64,
-  optionsPerWindow: 64,
+  optionsPerWindow: MOVE_RESPONSE_OPTION_LIMITS.optionsPerWindow,
   chosenOptions: 256,
   reactionPriorityMagnitude: MOVE_REACTION_LIMITS.priorityMagnitude,
   reactionNestedWindowDepth: MOVE_REACTION_LIMITS.nestedWindowDepth,
@@ -144,12 +169,6 @@ export interface PendingMoveResponseOwner {
   readonly kind: PendingMoveResponseOwnerKind
   /** Null only for the current actor role and authorized-GM role. */
   readonly id: string | null
-}
-
-/** Presentation lookup only. Mechanics remain in the reviewed server definition. */
-export interface PendingMoveResponseOption {
-  readonly id: string
-  readonly labelKey: string
 }
 
 interface PendingMoveResponseWindowBase {
@@ -341,6 +360,14 @@ const SHEET_READ_FIELDS = ['kind', 'sheetKind', 'slug', 'revision'] as const
 const GROUP_INVENTORY_READ_FIELDS = ['kind', 'slug', 'revision'] as const
 const OWNER_FIELDS = ['kind', 'id'] as const
 const OPTION_FIELDS = ['id', 'labelKey'] as const
+const MOVEMENT_OPTION_FIELDS = [...OPTION_FIELDS, 'selection'] as const
+const MOVEMENT_DESTINATION_SELECTION_FIELDS = ['kind', 'setId', 'destination'] as const
+const MOVEMENT_DIRECTION_SELECTION_FIELDS = [
+  'kind',
+  'setId',
+  'direction',
+  'destination',
+] as const
 const WINDOW_FIELDS = [
   'windowId',
   'operationId',
@@ -400,6 +427,8 @@ const TERMINAL_STATUS_SET = new Set<string>(PENDING_MOVE_RESOLUTION_TERMINAL_STA
 const RESOURCE_KIND_SET = new Set<string>(PENDING_MOVE_RESOLUTION_RESOURCE_KINDS)
 const WINDOW_KIND_SET = new Set<string>(PENDING_MOVE_RESPONSE_WINDOW_KINDS)
 const OWNER_KIND_SET = new Set<string>(PENDING_MOVE_RESPONSE_OWNER_KINDS)
+const MOVEMENT_SELECTION_KIND_SET = new Set<string>(PENDING_MOVE_MOVEMENT_SELECTION_KINDS)
+const AREA_DIRECTION_SET = new Set<string>(MOVE_AUTOMATION_AREA_DIRECTIONS)
 const PHASE_SET = new Set<string>(MOVE_SPEC_PHASES)
 const RESOURCE_KIND_ORDER = new Map<string, number>(
   PENDING_MOVE_RESOLUTION_RESOURCE_KINDS.map((kind, index) => [kind, index]),
@@ -901,6 +930,90 @@ const parseOwnership = (
   return [...ownership].sort(compareOwners)
 }
 
+const parseMovementSelectionAnchor = (
+  value: unknown,
+  path: string,
+): MoveResponseGridAnchor => {
+  const record = parseExactRecord(value, GRID_ANCHOR_FIELDS, path)
+  return {
+    x: parseInteger(record.x, `${path}.x`, 0, 1_000_000),
+    y: parseInteger(record.y, `${path}.y`, 0, 1_000_000),
+    z: parseInteger(record.z, `${path}.z`, 0, 1_000_000),
+  }
+}
+
+const parseMovementSelection = (
+  value: unknown,
+  path: string,
+): PendingMoveMovementSelection => {
+  const candidate = parseRecord(value, path)
+  if (
+    typeof candidate.kind !== 'string'
+    || !MOVEMENT_SELECTION_KIND_SET.has(candidate.kind)
+  ) {
+    fail(
+      'invalid-pending-resolution',
+      `${path}.kind`,
+      'must be movement-destination or movement-direction.',
+    )
+  }
+  const kind = candidate.kind as PendingMoveMovementSelectionKind
+  const record = parseExactRecord(
+    value,
+    kind === 'movement-direction'
+      ? MOVEMENT_DIRECTION_SELECTION_FIELDS
+      : MOVEMENT_DESTINATION_SELECTION_FIELDS,
+    path,
+  )
+  const common = {
+    setId: parseStableId(record.setId, `${path}.setId`),
+    destination: parseMovementSelectionAnchor(record.destination, `${path}.destination`),
+  }
+  if (kind === 'movement-destination') {
+    return { kind, ...common }
+  }
+  const direction = typeof record.direction === 'string'
+    && AREA_DIRECTION_SET.has(record.direction)
+    ? record.direction as MoveAutomationAreaDirection
+    : fail(
+        'invalid-pending-resolution',
+        `${path}.direction`,
+        'must be a canonical movement direction.',
+      )
+  return { kind, ...common, direction }
+}
+
+const movementSelectionKey = (selection: PendingMoveMovementSelection): string => (
+  `${selection.kind}:${selection.setId}:${'direction' in selection ? `${selection.direction}:` : ''}`
+  + `${selection.destination.x},${selection.destination.y},${selection.destination.z}`
+)
+
+const parseResponseOption = (
+  value: unknown,
+  path: string,
+): PendingMoveResponseOption => {
+  const candidate = parseRecord(value, path)
+  const hasSelection = Object.prototype.hasOwnProperty.call(candidate, 'selection')
+  const record = parseExactRecord(
+    value,
+    hasSelection ? MOVEMENT_OPTION_FIELDS : OPTION_FIELDS,
+    path,
+  )
+  return {
+    id: parseStableId(record.id, `${path}.id`),
+    labelKey: parseStableId(record.labelKey, `${path}.labelKey`),
+    ...(hasSelection
+      ? { selection: parseMovementSelection(record.selection, `${path}.selection`) }
+      : {}),
+  }
+}
+
+/** Strict parser for one authorized presentation option. */
+export const parsePendingMoveResponseOption = (
+  value: unknown,
+  path = 'pendingMoveResponseOption',
+): PendingMoveResponseOption => deepFreeze(parseResponseOption(detachedJson(value, path), path))
+
 const parseOptions = (
   value: unknown,
   path: string,
@@ -909,23 +1022,27 @@ const parseOptions = (
     value,
     path,
     PENDING_MOVE_RESOLUTION_LIMITS.optionsPerWindow,
-  ).map((entry, index): PendingMoveResponseOption => {
-    const optionPath = `${path}[${index}]`
-    const record = parseExactRecord(entry, OPTION_FIELDS, optionPath)
-    return {
-      id: parseStableId(record.id, `${optionPath}.id`),
-      labelKey: parseStableId(record.labelKey, `${optionPath}.labelKey`),
-    }
-  })
+  ).map((entry, index) => parseResponseOption(entry, `${path}[${index}]`))
   if (options.length === 0) {
     fail('invalid-pending-resolution', path, 'must contain at least one option.')
   }
   const seen = new Set<string>()
+  const seenSelections = new Set<string>()
   for (const [index, option] of options.entries()) {
     if (seen.has(option.id)) {
       fail('duplicate-id', `${path}[${index}].id`, `duplicates option ${option.id}.`)
     }
     seen.add(option.id)
+    if (!option.selection) continue
+    const selectionKey = movementSelectionKey(option.selection)
+    if (seenSelections.has(selectionKey)) {
+      fail(
+        'duplicate-id',
+        `${path}[${index}].selection`,
+        `duplicates movement selection ${selectionKey}.`,
+      )
+    }
+    seenSelections.add(selectionKey)
   }
   return options
 }

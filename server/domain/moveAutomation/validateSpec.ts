@@ -626,6 +626,45 @@ export const validateMoveSpecOperationSequence = (
     }
   })
 
+  const movementChoiceEntries = indexed.filter(({ operation }) => (
+    operation.kind === 'movement-request' && operation.payload.choice !== undefined
+  ))
+  if (movementChoiceEntries.length > 1) {
+    fail(
+      'invalid-definition',
+      movementChoiceEntries[1]!.path,
+      'a MoveSpec may contain at most one durable movement choice.',
+    )
+  }
+  for (const { operation, path } of movementChoiceEntries) {
+    if (operation.kind !== 'movement-request' || !operation.payload.choice) continue
+    if (operation.recipients.kind !== 'actor') {
+      fail(
+        'invalid-definition',
+        `${path}.recipients`,
+        'a durable movement choice must belong to the authoritative actor.',
+      )
+    }
+    if (operation.payload.mode !== 'voluntary') {
+      fail(
+        'invalid-definition',
+        `${path}.payload.mode`,
+        'durable movement choices currently support reviewed voluntary movement only.',
+      )
+    }
+    if (
+      operation.payload.distance === null
+      || operation.payload.distance <= 0
+      || operation.payload.destinationSetId === null
+    ) {
+      fail(
+        'invalid-definition',
+        `${path}.payload`,
+        'a durable movement choice requires a positive distance and destination set ID.',
+      )
+    }
+  }
+
   const multiHitEntries = indexed.filter(({ operation }) => operation.kind === 'multi-hit')
   if (multiHitEntries.length > 1) {
     fail(

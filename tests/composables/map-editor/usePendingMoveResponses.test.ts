@@ -8,6 +8,7 @@ import {
 import { parsePlayerProfileId } from '#shared/playerProfiles'
 import {
   usePendingMoveResponses,
+  pendingMoveMovementChoiceReferences,
   pendingMoveResponseWindowKey,
 } from '~/composables/map-editor/usePendingMoveResponses'
 import { MAP_API_PATHS } from '~/utils/apiRoutes'
@@ -143,6 +144,41 @@ beforeEach(() => {
 })
 
 describe('usePendingMoveResponses', () => {
+  it('projects only server-issued movement selections into durable map-overlay references', () => {
+    const source = responseWindow()
+    source.window.options = [
+      ...source.window.options,
+      {
+        id: 'movement.destination.1234abcd.3.0.1',
+        labelKey: 'move.movement.destination',
+        selection: {
+          kind: 'movement-destination',
+          setId: 'movement.destinations',
+          destination: { x: 3, y: 0, z: 1 },
+        },
+      },
+    ] as typeof source.window.options
+    const parsed = responseList([source])
+    const windows = parsed.windows as unknown as Parameters<typeof pendingMoveMovementChoiceReferences>[0]
+
+    expect(pendingMoveMovementChoiceReferences(windows)).toEqual([{
+      resolutionId: 'resolution-pending-1',
+      windowId: 'window.branch',
+      optionId: 'movement.destination.1234abcd.3.0.1',
+      actorPlacementId: 'actor-token',
+      canonicalMoveId: 'Pending Test',
+      selection: {
+        kind: 'movement-destination',
+        setId: 'movement.destinations',
+        destination: { x: 3, y: 0, z: 1 },
+      },
+      disabled: false,
+    }])
+    expect(pendingMoveMovementChoiceReferences(windows, {
+      'resolution-pending-1:window.branch': { status: 'sending' },
+    })[0]?.disabled).toBe(true)
+  })
+
   it('loads only the selected profile prompt and journals the exact ID-only response before sending', async () => {
     apiMocks.getJson
       .mockResolvedValueOnce(responseList())

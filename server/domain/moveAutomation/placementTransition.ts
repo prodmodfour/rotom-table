@@ -13,6 +13,16 @@ export interface ImmediatePassPlacementTransition {
   readonly destination: GridAnchor
 }
 
+export interface DurableShiftPlacementTransition {
+  readonly kind: 'shift'
+  readonly from: GridAnchor
+  readonly destination: GridAnchor
+}
+
+export type AuthoritativeMovePlacementMovement =
+  | ImmediatePassPlacementTransition
+  | DurableShiftPlacementTransition
+
 export type FailMovePlacementTransition = (
   code: string,
   message: string,
@@ -72,15 +82,18 @@ const applyFacing = (
 export const applyAuthoritativeMovePlacementTransition = (options: {
   readonly map: TabletopMap
   readonly actorPlacement: SheetPlacement
-  readonly movement?: ImmediatePassPlacementTransition
+  readonly movement?: AuthoritativeMovePlacementMovement
   readonly desiredFacing?: TokenFacingDirection
   readonly fail: FailMovePlacementTransition
 }): TabletopMap => {
-  if (options.movement?.kind === 'pass') {
+  if (options.movement) {
+    const movementLabel = options.movement.kind === 'pass' ? 'Pass' : 'Shift'
     if (!gridAnchorsEqual(options.movement.from, options.actorPlacement.position)) {
       return options.fail(
-        'pass-source-position-mismatch',
-        `Pass source ${options.movement.from.x},${options.movement.from.y},${options.movement.from.z} does not match actor position ${options.actorPlacement.position.x},${options.actorPlacement.position.y},${options.actorPlacement.position.z}.`,
+        options.movement.kind === 'pass'
+          ? 'pass-source-position-mismatch'
+          : 'shift-source-position-mismatch',
+        `${movementLabel} source ${options.movement.from.x},${options.movement.from.y},${options.movement.from.z} does not match actor position ${options.actorPlacement.position.x},${options.actorPlacement.position.y},${options.actorPlacement.position.z}.`,
       )
     }
     if (
@@ -88,14 +101,17 @@ export const applyAuthoritativeMovePlacementTransition = (options: {
       || !gridAnchorInBounds(options.movement.destination, options.map)
     ) {
       return options.fail(
-        'invalid-pass-destination',
-        'Resolved Pass destination is not a valid map cell.',
+        options.movement.kind === 'pass'
+          ? 'invalid-pass-destination'
+          : 'invalid-shift-destination',
+        `Resolved ${movementLabel} destination is not a valid map cell.`,
       )
     }
+    const destination = options.movement.destination
     const moved = setActorPlacement(
       options.map,
       options.actorPlacement.id,
-      placement => ({ ...placement, position: deepCloneJson(options.movement!.destination) }),
+      placement => ({ ...placement, position: deepCloneJson(destination) }),
     )
     return applyFacing(moved, options.actorPlacement.id, options.desiredFacing)
   }

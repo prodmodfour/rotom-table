@@ -186,6 +186,19 @@ export interface AuthoritativeMovePassMovement {
   readonly pathCells: readonly GridAnchor[]
 }
 
+export interface AuthoritativeMoveShiftMovement {
+  readonly kind: 'shift'
+  readonly from: GridAnchor
+  readonly destination: GridAnchor
+  readonly pathCells: readonly GridAnchor[]
+  /** Present when the durable choice selected a reviewed direction. */
+  readonly direction?: MoveAutomationAreaDirection
+}
+
+export type AuthoritativeMoveMovement =
+  | AuthoritativeMovePassMovement
+  | AuthoritativeMoveShiftMovement
+
 export interface AuthoritativeMoveResourceMovement {
   /** Exact cost and capability ceiling emitted by the authoritative oracle. */
   readonly distance: number
@@ -210,7 +223,7 @@ export interface AuthoritativeMoveResolution {
   readonly feedback?: MoveAutomationFeedbackState
   readonly desiredFacing?: TokenFacingDirection
   readonly area?: AuthoritativeMoveArea
-  readonly movement?: AuthoritativeMovePassMovement
+  readonly movement?: AuthoritativeMoveMovement
   /** Server-only MA-120 facts; omitted from accepted wire results. */
   readonly resourceMovement?: AuthoritativeMoveResourceMovement
   /** Server-only native planning projection; omitted from accepted wire results. */
@@ -359,7 +372,7 @@ const finalizeResolution = (
     rollLedger,
     feedback: resolution.feedback,
     area: resolution.area,
-    movement: resolution.movement,
+    movement: resolution.movement?.kind === 'pass' ? resolution.movement : undefined,
   })
   return {
     ...resolution,

@@ -45,6 +45,7 @@ import type { InitiativeRow } from '~/composables/map-editor/useInitiativeTracke
 import type { LivePlayConnectionState } from '~/composables/map-editor/useLivePlayStateMachine'
 import type { GmMoveCorrectionPanelStatus } from '~/composables/map-editor/useGmMoveCorrections'
 import type {
+  PendingMoveMovementChoiceReference,
   PendingMoveResponseOptionReference,
   PendingMoveResponseReference,
   PendingMoveResponseWindowState,
@@ -106,6 +107,7 @@ const props = defineProps<{
   actionSplashSpeedLinesDurationMs?: number
   moveUsageError?: string | null
   pendingMoveResponseWindows?: readonly PendingMoveResponseWindowView[]
+  pendingMoveMovementChoices?: readonly PendingMoveMovementChoiceReference[]
   pendingMoveResponseStateByWindow?: Readonly<Record<string, PendingMoveResponseWindowState>>
   pendingMoveResponseActorLabels?: Readonly<Record<string, string>>
   pendingMoveResponseOwnerLabel?: string
@@ -304,6 +306,7 @@ defineExpose({ focusPokemon, focusCell })
         :move-automation-feedback="moveAutomationFeedback"
         :move-animations="moveAnimations ?? []"
         :move-animations-reduced-motion="moveAnimationsReducedMotion === true"
+        :pending-move-movement-choices="props.pendingMoveMovementChoices ?? []"
         @select-pokemon="emit('select-pokemon', $event)"
         @hover-pokemon="emit('hover-pokemon', $event)"
         @place-presence-ping="emit('place-presence-ping', $event)"
@@ -335,6 +338,7 @@ defineExpose({ focusPokemon, focusCell })
         @aim-move-area="emit('aim-move-area', $event)"
         @select-move-target-branch="emit('select-move-target-branch', $event)"
         @cancel-move-targeting="emit('cancel-move-targeting')"
+        @choose-pending-move-response="emit('choose-pending-move-response', $event)"
         @move-vfx-settled="emit('move-vfx-settled', $event)"
         @token-motion-debug-metrics="emit('token-motion-debug-metrics', $event)"
       />

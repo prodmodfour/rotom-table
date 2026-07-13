@@ -80,6 +80,18 @@ export interface LivePlayResolvedMovePassMovement {
   readonly pathCells: readonly GridAnchor[]
 }
 
+export interface LivePlayResolvedMoveShiftMovement {
+  readonly kind: 'shift'
+  readonly from: GridAnchor
+  readonly destination: GridAnchor
+  readonly pathCells: readonly GridAnchor[]
+  readonly direction?: MoveAutomationAreaDirection
+}
+
+export type LivePlayResolvedMoveMovement =
+  | LivePlayResolvedMovePassMovement
+  | LivePlayResolvedMoveShiftMovement
+
 export interface LivePlayResolvedMoveResult {
   readonly schemaVersion: typeof LIVE_PLAY_RESOLVED_MOVE_RESULT_SCHEMA_VERSION
   readonly actorPlacementId: string
@@ -98,7 +110,7 @@ export interface LivePlayResolvedMoveResult {
   readonly feedback?: MoveAutomationFeedbackState
   readonly desiredFacing?: TokenFacingDirection
   readonly area?: LivePlayResolvedMoveArea
-  readonly movement?: LivePlayResolvedMovePassMovement
+  readonly movement?: LivePlayResolvedMoveMovement
 }
 
 export type LivePlayResolvedMoveResultValidationCode =
@@ -854,26 +866,45 @@ const parseResolvedMoveMovement = (
   value: unknown,
   path: string,
   issues: LivePlayResolvedMoveResultValidationIssue[],
-): LivePlayResolvedMovePassMovement | null => {
+): LivePlayResolvedMoveMovement | null => {
   if (!isRecord(value)) {
     addResolvedMoveIssue(issues, path, 'invalid-field', `${path} must be an object.`)
     return null
   }
-  if (value.kind !== 'pass') {
-    addResolvedMoveIssue(issues, `${path}.kind`, 'invalid-field', `${path}.kind must be pass.`)
+  if (value.kind !== 'pass' && value.kind !== 'shift') {
+    addResolvedMoveIssue(issues, `${path}.kind`, 'invalid-field', `${path}.kind must be pass or shift.`)
   }
   requireResolvedMoveField(value, 'from', issues, `${path}.from`)
   requireResolvedMoveField(value, 'destination', issues, `${path}.destination`)
-  requireResolvedMoveField(value, 'direction', issues, `${path}.direction`)
   requireResolvedMoveField(value, 'pathCells', issues, `${path}.pathCells`)
+  if (value.kind === 'pass') {
+    requireResolvedMoveField(value, 'direction', issues, `${path}.direction`)
+  }
 
   const from = parseResolvedMoveGridAnchor(value.from, `${path}.from`, issues)
   const destination = parseResolvedMoveGridAnchor(value.destination, `${path}.destination`, issues)
-  const direction = parseResolvedMoveDirection(value.direction, `${path}.direction`, issues)
+  const direction = hasOwn(value, 'direction')
+    ? parseResolvedMoveDirection(value.direction, `${path}.direction`, issues)
+    : null
   const pathCells = parseResolvedMoveGridAnchorArray(value.pathCells, `${path}.pathCells`, issues)
 
-  if (issues.length > 0 || value.kind !== 'pass' || !from || !destination || !direction || !pathCells) return null
-  return { kind: 'pass', from, destination, direction, pathCells }
+  if (
+    issues.length > 0
+    || (value.kind !== 'pass' && value.kind !== 'shift')
+    || !from
+    || !destination
+    || !pathCells
+    || (value.kind === 'pass' && !direction)
+  ) return null
+  return value.kind === 'pass'
+    ? { kind: 'pass', from, destination, direction: direction!, pathCells }
+    : {
+        kind: 'shift',
+        from,
+        destination,
+        pathCells,
+        ...(direction ? { direction } : {}),
+      }
 }
 
 export const parseLivePlayResolvedMoveResult = (value: unknown): ParseLivePlayResolvedMoveResultResult => {

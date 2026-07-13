@@ -301,6 +301,80 @@ describe('MoveSpec typed effect operations', () => {
     })
   })
 
+  it('parses strict durable destination and direction movement declarations', () => {
+    const destination = parseMoveEffectOperation(validOperation('movement-request', {
+      recipients: { kind: 'actor' },
+      phase: 'movement',
+      payload: {
+        requestId: 'movement.destination-window',
+        mode: 'voluntary',
+        distance: 4,
+        destinationSetId: 'movement.destinations',
+        choice: {
+          kind: 'destination',
+          promptKey: 'move.movement.choose-destination',
+          allowPass: true,
+        },
+      },
+    }))
+    expect(destination.payload).toMatchObject({
+      choice: { kind: 'destination', allowPass: true },
+    })
+
+    const direction = parseMoveEffectOperation(validOperation('movement-request', {
+      recipients: { kind: 'actor' },
+      phase: 'movement',
+      payload: {
+        requestId: 'movement.direction-window',
+        mode: 'voluntary',
+        distance: 3,
+        destinationSetId: 'movement.directions',
+        choice: {
+          kind: 'direction',
+          promptKey: 'move.movement.choose-direction',
+          allowPass: false,
+          directions: ['north', 'east', 'up'],
+        },
+      },
+    }))
+    expect(direction.payload).toMatchObject({
+      choice: {
+        kind: 'direction',
+        directions: ['north', 'east', 'up'],
+      },
+    })
+    expectDeeplyFrozen(direction)
+
+    expectEffectError(validOperation('movement-request', {
+      payload: {
+        requestId: 'movement.direction-window',
+        mode: 'voluntary',
+        distance: 3,
+        destinationSetId: 'movement.directions',
+        choice: {
+          kind: 'direction',
+          promptKey: 'move.movement.choose-direction',
+          allowPass: false,
+          directions: ['north', 'north'],
+        },
+      },
+    }), 'duplicate-id', 'operation.payload.choice.directions')
+    expectEffectError(validOperation('movement-request', {
+      payload: {
+        requestId: 'movement.destination-window',
+        mode: 'voluntary',
+        distance: 3,
+        destinationSetId: 'movement.destinations',
+        choice: {
+          kind: 'destination',
+          promptKey: 'move.movement.choose-destination',
+          allowPass: true,
+          destination: { x: 1, y: 0, z: 1 },
+        },
+      },
+    }), 'invalid-effect-operation', 'operation.payload.choice')
+  })
+
   it('supports each bounded payload variant without accepting generic metadata', () => {
     expect(parseMoveEffectOperation(validOperation('roll', {
       payload: {

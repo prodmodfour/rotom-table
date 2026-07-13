@@ -1125,7 +1125,9 @@ export const planAuthoritativeMoveStateExecution = (
     movement: resolution.movement,
     desiredFacing: resolution.desiredFacing,
     fail: (code, message) => fail(
-      code === 'pass-source-position-mismatch' ? 'conflict' : 'invalid',
+      code === 'pass-source-position-mismatch' || code === 'shift-source-position-mismatch'
+        ? 'conflict'
+        : 'invalid',
       code,
       message,
     ),

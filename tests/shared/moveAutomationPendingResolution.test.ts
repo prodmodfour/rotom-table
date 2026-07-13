@@ -270,6 +270,50 @@ describe('pending move resolution contract', () => {
     expect(Object.isFrozen(parsed.outstandingWindows[0]?.options)).toBe(true)
   })
 
+  it('strictly stores server-issued movement selections without accepting arbitrary coordinates', () => {
+    const source = pendingResolution()
+    source.outstandingWindows[0].options = [{
+      id: 'movement.destination.1234abcd.3.0.1',
+      labelKey: 'move.movement.destination',
+      selection: {
+        kind: 'movement-destination',
+        setId: 'movement.destinations',
+        destination: { x: 3, y: 0, z: 1 },
+      },
+    }, {
+      id: 'movement.direction.1234abcd.north',
+      labelKey: 'move.movement.direction.north',
+      selection: {
+        kind: 'movement-direction',
+        setId: 'movement.directions',
+        direction: 'north',
+        destination: { x: 1, y: 0, z: 0 },
+      },
+    }]
+
+    const parsed = parsePendingMoveResolution(source)
+    expect(parsed.outstandingWindows[0]?.options).toEqual(source.outstandingWindows[0].options)
+    expect(Object.isFrozen(parsed.outstandingWindows[0]?.options[0]?.selection)).toBe(true)
+
+    const clientMechanics = structuredClone(source)
+    clientMechanics.outstandingWindows[0].options[0].selection.path = [{ x: 3, y: 0, z: 1 }]
+    expectPendingError(
+      () => parsePendingMoveResolution(clientMechanics),
+      'invalid-pending-resolution',
+    )
+
+    const duplicateDestination = structuredClone(source)
+    duplicateDestination.outstandingWindows[0].options[1].selection = {
+      kind: 'movement-destination',
+      setId: 'movement.destinations',
+      destination: { x: 3, y: 0, z: 1 },
+    }
+    expectPendingError(
+      () => parsePendingMoveResolution(duplicateDestination),
+      'duplicate-id',
+    )
+  })
+
   it('normalizes pre-follow-up records to the MoveSpec continuation kind', () => {
     const legacyStoredRecord = pendingResolution()
     delete legacyStoredRecord.continuationKind

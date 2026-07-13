@@ -35,6 +35,10 @@ import type { MapPresenceIntentOverlay } from '~/utils/mapPresenceIntentOverlays
 import type { IsometricPresencePing } from '~/utils/isometric/pingRenderer'
 import type { TokenMovementCommitPayload } from '~/utils/isometric/tokenMovementInteraction'
 import type { TokenMotionDebugMetrics } from '~/utils/isometric/tokenMotionDebugMetrics'
+import type {
+  PendingMoveMovementChoiceReference,
+  PendingMoveResponseOptionReference,
+} from '~/composables/map-editor/usePendingMoveResponses'
 
 interface IsometricGridHandle {
   focusPokemon: (id: string) => boolean
@@ -88,6 +92,7 @@ defineProps<{
   moveAutomationFeedback?: MoveAutomationFeedbackState | null
   moveAnimations?: readonly MoveAnimationEvent[]
   moveAnimationsReducedMotion?: boolean
+  pendingMoveMovementChoices?: readonly PendingMoveMovementChoiceReference[]
 }>()
 
 const emit = defineEmits<{
@@ -122,6 +127,7 @@ const emit = defineEmits<{
   (event: 'aim-move-area', center: GridAnchor): void
   (event: 'select-move-target-branch', branchId: string): void
   (event: 'cancel-move-targeting'): void
+  (event: 'choose-pending-move-response', payload: PendingMoveResponseOptionReference): void
   (event: 'move-vfx-settled', payload: { nowMs: number }): void
   (event: 'token-motion-debug-metrics', metrics: TokenMotionDebugMetrics): void
 }>()
@@ -183,6 +189,7 @@ defineExpose({ focusPokemon, focusCell })
     :move-automation-feedback="moveAutomationFeedback"
     :move-animations="moveAnimations ?? []"
     :move-animations-reduced-motion="moveAnimationsReducedMotion === true"
+    :pending-move-movement-choices="pendingMoveMovementChoices ?? []"
     @select-pokemon="emit('select-pokemon', $event)"
     @hover-pokemon="emit('hover-pokemon', $event)"
     @place-presence-ping="emit('place-presence-ping', $event)"
@@ -214,6 +221,7 @@ defineExpose({ focusPokemon, focusCell })
     @aim-move-area="emit('aim-move-area', $event)"
     @select-move-target-branch="emit('select-move-target-branch', $event)"
     @cancel-move-targeting="emit('cancel-move-targeting')"
+    @choose-pending-move-response="emit('choose-pending-move-response', $event)"
     @move-vfx-settled="emit('move-vfx-settled', $event)"
     @token-motion-debug-metrics="emit('token-motion-debug-metrics', $event)"
   />

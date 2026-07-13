@@ -72,6 +72,55 @@ describe('MapMoveResponsePanel', () => {
     expect(wrapper.emitted('cancel')).toEqual([['resolution-pending-1']])
   })
 
+  it('renders server-issued movement coordinates without putting them in command intent', async () => {
+    const view: PendingMoveResponseWindowView = {
+      ...choiceWindow(),
+      resolution: {
+        ...choiceWindow().resolution,
+        canonicalMoveId: 'Movement Choice',
+        phase: 'movement',
+      },
+      window: {
+        ...choiceWindow().window,
+        windowId: 'movement.destination-window',
+        phase: 'movement',
+        promptKey: 'move.movement.choose-destination',
+        options: [{
+          id: 'movement.destination.1234abcd.3.0.1',
+          labelKey: 'move.movement.destination',
+          selection: {
+            kind: 'movement-destination',
+            setId: 'movement.destinations',
+            destination: { x: 3, y: 0, z: 1 },
+          },
+        }, {
+          id: 'movement.direction.1234abcd.north',
+          labelKey: 'move.movement.direction.north',
+          selection: {
+            kind: 'movement-direction',
+            setId: 'movement.directions',
+            direction: 'north',
+            destination: { x: 1, y: 0, z: 0 },
+          },
+        }],
+      },
+    }
+    const wrapper = mount(MapMoveResponsePanel, {
+      props: { windows: [view], eligibleOwnerLabel: 'Actor controller' },
+    })
+
+    expect(wrapper.text()).toContain('Cell (3, 0, 1)')
+    expect(wrapper.text()).toContain('North → (1, 0, 0)')
+    await wrapper.get('[data-option-id="movement.destination.1234abcd.3.0.1"]').trigger('click')
+    expect(wrapper.emitted('choose')).toEqual([[
+      {
+        resolutionId: 'resolution-pending-1',
+        windowId: 'movement.destination-window',
+        optionId: 'movement.destination.1234abcd.3.0.1',
+      },
+    ]])
+  })
+
   it('shows the explicit post-action limitation on durable opportunity responses', () => {
     const view: PendingMoveResponseWindowView = {
       ...choiceWindow(),

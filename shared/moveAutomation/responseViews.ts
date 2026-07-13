@@ -1,6 +1,7 @@
 import {
   PENDING_MOVE_RESOLUTION_LIMITS,
   parsePendingMoveResolutionPublicSummary,
+  parsePendingMoveResponseOption,
   type PendingMoveResolutionPublicSummary,
   type PendingMoveResponseOption,
 } from './pendingResolution'
@@ -77,7 +78,6 @@ const WINDOW_FIELDS = [
   'priority',
 ] as const
 const REACTION_WINDOW_FIELDS = [...WINDOW_FIELDS, 'timing', 'depth'] as const
-const OPTION_FIELDS = ['id', 'labelKey'] as const
 const STABLE_ID_PATTERN = /^[a-z0-9]+(?:[._:/-][a-z0-9]+)*$/
 const WINDOW_KIND_SET = new Set<unknown>(['choice', 'reaction'])
 const PHASE_SET = new Set<unknown>(MOVE_SPEC_PHASES)
@@ -115,14 +115,6 @@ const stableId = (value: unknown, path: string): string => {
   return value
 }
 
-const parseOption = (value: unknown, path: string): PendingMoveResponseOption => {
-  const record = exactRecord(value, OPTION_FIELDS, path)
-  return Object.freeze({
-    id: stableId(record.id, `${path}.id`),
-    labelKey: stableId(record.labelKey, `${path}.labelKey`),
-  })
-}
-
 const parseWindow = (
   value: unknown,
   path: string,
@@ -155,7 +147,10 @@ const parseWindow = (
     throw new Error(`${path}.priority is invalid.`)
   }
 
-  const options = record.options.map((option, index) => parseOption(option, `${path}.options[${index}]`))
+  const options = record.options.map((option, index) => parsePendingMoveResponseOption(
+    option,
+    `${path}.options[${index}]`,
+  ))
   const optionIds = new Set(options.map(option => option.id))
   if (optionIds.size !== options.length) throw new Error(`${path}.options contains duplicate IDs.`)
 

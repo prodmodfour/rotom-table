@@ -1,7 +1,6 @@
 import { isLivePlayOpId } from './livePlayCommands'
 import type {
   LivePlayResolvedMoveArea,
-  LivePlayResolvedMovePassMovement,
   LivePlayResolvedMoveResult,
 } from './livePlayMoveResolution'
 import {
@@ -460,8 +459,8 @@ const areaPresentation = (
 } : undefined
 
 const passPresentation = (
-  movement: LivePlayResolvedMovePassMovement | undefined,
-): LivePlayMovePresentationPassGeometry | undefined => movement ? {
+  movement: LivePlayResolvedMoveResult['movement'],
+): LivePlayMovePresentationPassGeometry | undefined => movement?.kind === 'pass' ? {
   from: { ...movement.from },
   destination: { ...movement.destination },
   pathCells: movement.pathCells.map((cell) => ({ ...cell })),
@@ -534,5 +533,7 @@ export const createLivePlayMovePresentationSummary = (input: {
   hitTargetIds: input.move.transaction.hitTargetIds,
   selectedTargetIds: input.move.selectedTargetIds,
   ...(input.move.area ? { area: areaPresentation(input.move.area) } : {}),
-  ...(input.move.movement ? { pass: passPresentation(input.move.movement) } : {}),
+  ...(input.move.movement?.kind === 'pass'
+    ? { pass: passPresentation(input.move.movement) }
+    : {}),
 })

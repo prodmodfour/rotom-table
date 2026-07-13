@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { PendingMoveResponseWindowView } from '#shared/moveAutomation/responseViews'
+import type { PendingMoveResponseOption } from '#shared/moveAutomation/responseOptions'
 import { ATTACK_OF_OPPORTUNITY_ASSISTANCE_NOTICE } from '~/utils/moveAutomationAssistedFollowUps'
 import {
   pendingMoveResponseWindowKey,
@@ -50,7 +51,15 @@ const actorLabel = (view: PendingMoveResponseWindowView): string => (
 
 const phaseLabel = (phase: string): string => safeLookupLabel(phase)
 const promptLabel = (view: PendingMoveResponseWindowView): string => safeLookupLabel(view.window.promptKey)
-const optionLabel = (labelKey: string): string => safeLookupLabel(labelKey)
+const optionLabel = (option: PendingMoveResponseOption): string => {
+  const selection = option.selection
+  if (!selection) return safeLookupLabel(option.labelKey)
+  const destination = selection.destination
+  if (selection.kind === 'movement-direction') {
+    return `${safeLookupLabel(selection.direction)} → (${destination.x}, ${destination.y}, ${destination.z})`
+  }
+  return `Cell (${destination.x}, ${destination.y}, ${destination.z})`
+}
 const responseKindLabel = (view: PendingMoveResponseWindowView): string => (
   view.window.kind === 'reaction' ? 'Durable reaction' : 'Durable choice'
 )
@@ -165,7 +174,7 @@ const retry = (view: PendingMoveResponseWindowView): void => {
           :disabled="isBusy(view)"
           @click="chooseOption(view, option.id)"
         >
-          {{ optionLabel(option.labelKey) }}
+          {{ optionLabel(option) }}
         </button>
         <button
           v-if="view.window.allowPass"

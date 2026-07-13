@@ -7,10 +7,12 @@ import {
   type MoveDamageEffectOperation,
   type MoveEffectOperation,
   type MoveEffectRecipientSelectorKind,
+  type MoveMovementRequestEffectOperation,
   type MoveReactionRequestEffectOperation,
   type MoveRollEffectOperation,
 } from '#shared/moveAutomation/effects'
 import type { MoveAutomationRollLedgerEntry } from '#shared/moveAutomation/random'
+import type { PendingMoveResponseOption } from '#shared/moveAutomation/responseOptions'
 import {
   MOVE_REACTION_LIMITS,
   moveReactionTimingDefinition,
@@ -35,6 +37,8 @@ import {
 import { resolveMoveAutomationAccuracyRoll } from '~/utils/moveAutomationResolution'
 import type { MoveAutomationScript } from '~/types/moveAutomation'
 import type { SpawnedPokemon } from '~/types/pokemon'
+import type { CharacterSheet } from '~/types/characterSheet'
+import type { TrainerSheet } from '~/types/trainerSheet'
 import type {
   AuthoritativeMoveRulesContext,
   AuthoritativeMoveSheetRead,
@@ -82,6 +86,12 @@ import {
   createMoveSpecResponseResolver,
   type MoveSpecResolvedResponse,
 } from './responses'
+import {
+  enumerateAuthoritativeMovementChoices,
+  revalidateAuthoritativeMovementChoice,
+  type AuthoritativeMovementChoice,
+  type AuthoritativeMovementChoiceSet,
+} from '../movement/resolveMovementChoices'
 import {
   validateMoveSpec,
   validateMoveSpecOperationSequence,
@@ -144,10 +154,7 @@ interface MoveSpecPendingRequestBase {
   readonly recipientIds: readonly string[]
   readonly requestId: string
   readonly promptKey: string
-  readonly options: readonly {
-    readonly id: string
-    readonly labelKey: string
-  }[]
+  readonly options: readonly PendingMoveResponseOption[]
   readonly allowPass: boolean
 }
 
@@ -184,12 +191,26 @@ export interface MoveSpecPendingResourceSpendRequest extends MoveSpecPendingRequ
   readonly checkRecipientId: string
 }
 
+export interface MoveSpecPendingMovementRequest extends MoveSpecPendingRequestBase {
+  readonly kind: 'movement-choice'
+  readonly movementChoiceKind: AuthoritativeMovementChoiceSet['kind']
+  readonly destinationSetId: string
+}
+
 export type MoveSpecPendingRequest =
   | MoveSpecPendingChoiceRequest
   | MoveSpecPendingBranchChoiceRequest
   | MoveSpecPendingReactionRequest
   | MoveSpecPendingCheckSelectionRequest
   | MoveSpecPendingResourceSpendRequest
+  | MoveSpecPendingMovementRequest
+
+export interface MoveSpecResolvedMovement {
+  readonly operationId: string
+  readonly requestId: string
+  readonly optionId: string
+  readonly choice: AuthoritativeMovementChoice
+}
 
 export interface MoveSpecExecutionRejection {
   readonly code: 'precondition-failed' | 'target-count-out-of-range'
@@ -216,6 +237,8 @@ interface MoveSpecExecutionResultBase {
   readonly resolvedChecks: readonly MoveCheckResolution[]
   /** Server-determined branch paths in reviewed execution order. */
   readonly branchSelections: readonly MoveBranchSelection[]
+  /** Fresh oracle result for each answered server-issued movement option. */
+  readonly resolvedMovements: readonly MoveSpecResolvedMovement[]
   readonly hitTargetIds: readonly string[]
   readonly missedTargetIds: readonly string[]
   readonly damagedTargetIds: readonly string[]
@@ -322,6 +345,13 @@ const freezeResolvedChecks = (
 const freezeBranchSelections = (
   selections: readonly MoveBranchSelection[],
 ): readonly MoveBranchSelection[] => Object.freeze([...selections])
+
+const freezeResolvedMovements = (
+  movements: readonly MoveSpecResolvedMovement[],
+): readonly MoveSpecResolvedMovement[] => Object.freeze(movements.map(movement => Object.freeze({
+  ...movement,
+  choice: movement.choice,
+})))
 
 const rulesetMatchesContext = (
   definition: ValidatedMoveSpecDefinition,
@@ -620,6 +650,116 @@ const pendingRequest = (
   })
 }
 
+const movementSheetsForContext = (
+  context: AuthoritativeMoveRulesContext,
+): { readonly pokemon: ReadonlyMap<string, CharacterSheet>; readonly trainer: ReadonlyMap<string, TrainerSheet> } => {
+  const pokemon = new Map<string, CharacterSheet>()
+  const trainer = new Map<string, TrainerSheet>()
+  for (const resolved of context.resolvedSheets) {
+    if (resolved.kind === 'pokemon') pokemon.set(resolved.slug, resolved.sheet as CharacterSheet)
+    else trainer.set(resolved.slug, resolved.sheet as TrainerSheet)
+  }
+  return { pokemon, trainer }
+}
+
+const movementChoiceSet = (
+  operation: MoveMovementRequestEffectOperation,
+  context: AuthoritativeMoveRulesContext,
+): AuthoritativeMovementChoiceSet => {
+  const choice = operation.payload.choice
+  const destinationSetId = operation.payload.destinationSetId
+  const maximumDistance = operation.payload.distance
+  if (!choice || destinationSetId === null || maximumDistance === null) {
+    return fail(
+      'definition-integrity-mismatch',
+      `Movement operation ${operation.id} has no complete durable choice declaration.`,
+    )
+  }
+  let set: AuthoritativeMovementChoiceSet
+  try {
+    const common = {
+      map: context.map,
+      sheets: movementSheetsForContext(context),
+      placementId: context.actor.placement.id,
+      setId: destinationSetId,
+      maximumDistance,
+    }
+    set = choice.kind === 'direction'
+      ? enumerateAuthoritativeMovementChoices({
+          ...common,
+          kind: 'direction',
+          directions: choice.directions,
+        })
+      : enumerateAuthoritativeMovementChoices({
+          ...common,
+          kind: 'destination',
+        })
+  }
+  catch (error) {
+    return fail(
+      'move-mechanics-unavailable',
+      `Movement choices for ${operation.id} could not be resolved: ${error instanceof Error ? error.message : String(error)}`,
+    )
+  }
+  for (const read of set.sheetReads) context.reads.recordSheet(read)
+  return set
+}
+
+const revalidateMovementChoice = (
+  operation: MoveMovementRequestEffectOperation,
+  context: AuthoritativeMoveRulesContext,
+  set: AuthoritativeMovementChoiceSet,
+  optionId: string,
+): AuthoritativeMovementChoice => {
+  const option = set.choices.find(entry => entry.option.id === optionId)?.option
+    ?? fail(
+      'definition-integrity-mismatch',
+      `Movement option ${optionId} disappeared from ${operation.payload.requestId}.`,
+    )
+  const choice = operation.payload.choice
+    ?? fail('definition-integrity-mismatch', `Movement operation ${operation.id} has no choice.`)
+  try {
+    return revalidateAuthoritativeMovementChoice({
+      map: context.map,
+      sheets: movementSheetsForContext(context),
+      placementId: context.actor.placement.id,
+      setId: set.setId,
+      maximumDistance: set.maximumDistance,
+      kind: set.kind,
+      option,
+      ...(choice.kind === 'direction' ? { directions: choice.directions } : {}),
+    })
+  }
+  catch (error) {
+    return fail(
+      'move-mechanics-unavailable',
+      `Movement option ${optionId} failed resume validation: ${error instanceof Error ? error.message : String(error)}`,
+    )
+  }
+}
+
+const pendingMovementRequest = (
+  operation: MoveMovementRequestEffectOperation,
+  recipientIds: readonly string[],
+  set: AuthoritativeMovementChoiceSet,
+): MoveSpecPendingMovementRequest => {
+  const choice = operation.payload.choice
+    ?? fail('definition-integrity-mismatch', `Movement operation ${operation.id} has no choice.`)
+  return Object.freeze({
+    kind: 'movement-choice',
+    movementChoiceKind: set.kind,
+    destinationSetId: set.setId,
+    operationId: operation.id,
+    phase: operation.phase,
+    reasonCode: operation.reasonCode,
+    recipientIds: frozenIds(recipientIds),
+    requestId: operation.payload.requestId,
+    promptKey: choice.promptKey,
+    options: Object.freeze(set.choices.map(entry => entry.option)),
+    allowPass: choice.allowPass,
+  })
+}
+
 const pendingBranchRequest = (
   operation: MoveBranchEffectOperation,
   recipientIds: readonly string[],
@@ -770,6 +910,7 @@ const terminalBase = (
   multiHitExecutions: readonly MoveMultiHitExecution[],
   resolvedChecks: readonly MoveCheckResolution[],
   branchSelections: readonly MoveBranchSelection[],
+  resolvedMovements: readonly MoveSpecResolvedMovement[],
   selectorState: MoveSpecSelectorState,
 ): MoveSpecExecutionResultBase => ({
   operations: freezeEmittedOperations(operations),
@@ -782,6 +923,7 @@ const terminalBase = (
   multiHitExecutions: freezeMultiHitExecutions(multiHitExecutions),
   resolvedChecks: freezeResolvedChecks(resolvedChecks),
   branchSelections: freezeBranchSelections(branchSelections),
+  resolvedMovements: freezeResolvedMovements(resolvedMovements),
   hitTargetIds: frozenIds(selectorState.hitTargetIds),
   missedTargetIds: frozenIds(selectorState.missedTargetIds),
   damagedTargetIds: frozenIds(selectorState.damagedTargetIds),
@@ -1084,6 +1226,7 @@ export const executeMoveSpec = (
   const multiHitExecutions: MoveMultiHitExecution[] = []
   const resolvedChecks: MoveCheckResolution[] = []
   const branchSelections: MoveBranchSelection[] = []
+  const resolvedMovements: MoveSpecResolvedMovement[] = []
   const branchExecutions = new Map<string, ExecutedMoveBranch>()
   const currentSelectorState = (): MoveSpecSelectorState => ({
     targetIds,
@@ -1151,6 +1294,7 @@ export const executeMoveSpec = (
               multiHitExecutions,
               resolvedChecks,
               branchSelections,
+              resolvedMovements,
               currentSelectorState(),
             ),
             rejection: Object.freeze({
@@ -1241,6 +1385,7 @@ export const executeMoveSpec = (
             multiHitExecutions,
             resolvedChecks,
             branchSelections,
+            resolvedMovements,
             currentSelectorState(),
           ),
           rejection: Object.freeze({
@@ -1403,6 +1548,7 @@ export const executeMoveSpec = (
               multiHitExecutions,
               resolvedChecks,
               branchSelections,
+              resolvedMovements,
               currentSelectorState(),
             ),
             request,
@@ -1524,6 +1670,7 @@ export const executeMoveSpec = (
             multiHitExecutions,
             resolvedChecks,
             branchSelections,
+            resolvedMovements,
             currentSelectorState(),
           ),
           request,
@@ -1790,6 +1937,98 @@ export const executeMoveSpec = (
         continue
       }
 
+      if (operation.kind === 'movement-request' && operation.payload.choice) {
+        const set = movementChoiceSet(operation, input.context)
+        const request = pendingMovementRequest(operation, recipientIds, set)
+        if (request.options.length === 0) {
+          if (!request.allowPass) {
+            return fail(
+              'move-mechanics-unavailable',
+              `Movement request ${request.requestId} has no legal authoritative option and cannot pass.`,
+            )
+          }
+          trace = reduceMoveResolutionTrace(trace, {
+            kind: 'operation',
+            phase,
+            operationId: operation.id,
+            operationKind: operation.kind,
+            recipientIds,
+            outcome: 'no-op',
+            reasonCode: operation.reasonCode,
+            input: traceJson(operation.payload),
+            result: { status: 'no-legal-options' },
+          })
+          continue
+        }
+        const response = responseResolver.resolve({
+          requestId: request.requestId,
+          options: request.options,
+          allowPass: request.allowPass,
+        })
+        const selectedChoice = response?.optionId === null || !response
+          ? null
+          : revalidateMovementChoice(operation, input.context, set, response.optionId)
+        if (selectedChoice && response?.optionId) {
+          resolvedMovements.push(Object.freeze({
+            operationId: operation.id,
+            requestId: request.requestId,
+            optionId: response.optionId,
+            choice: selectedChoice,
+          }))
+        }
+        trace = reduceMoveResolutionTrace(trace, {
+          kind: 'operation',
+          phase,
+          operationId: operation.id,
+          operationKind: operation.kind,
+          recipientIds,
+          outcome: response ? (selectedChoice ? 'applied' : 'no-op') : 'pending',
+          reasonCode: operation.reasonCode,
+          input: traceJson(operation.payload),
+          result: traceJson(response
+            ? {
+                status: selectedChoice ? 'selected' : 'passed',
+                ...(selectedChoice ? { selection: selectedChoice.option.selection } : {}),
+              }
+            : {
+                requestId: request.requestId,
+                requestKind: request.kind,
+                optionCount: request.options.length,
+              }),
+        })
+        trace = reduceMoveResolutionTrace(trace, {
+          kind: 'choice',
+          phase,
+          requestId: request.requestId,
+          requestKind: 'choice',
+          outcome: response
+            ? (selectedChoice ? 'selected' : 'passed')
+            : 'requested',
+          optionId: response?.optionId ?? null,
+          reasonCode: operation.reasonCode,
+        })
+        if (response) continue
+        responseResolver.assertAllConsumed()
+        return materializePendingExecutionResult(
+          terminalBase(
+            input.context,
+            operations,
+            targetIds,
+            trace,
+            input.context.random.snapshot(),
+            resolvedRolls,
+            resolvedDamageTypes,
+            resolvedDamageBases,
+            multiHitExecutions,
+            resolvedChecks,
+            branchSelections,
+            resolvedMovements,
+            currentSelectorState(),
+          ),
+          request,
+        )
+      }
+
       if (operation.kind === 'choice-request' || operation.kind === 'reaction-request') {
         const request = pendingRequest(
           operation,
@@ -1843,6 +2082,7 @@ export const executeMoveSpec = (
             multiHitExecutions,
             resolvedChecks,
             branchSelections,
+            resolvedMovements,
             currentSelectorState(),
           ),
           request,
@@ -1878,6 +2118,7 @@ export const executeMoveSpec = (
       multiHitExecutions,
       resolvedChecks,
       branchSelections,
+      resolvedMovements,
       currentSelectorState(),
     ),
   })

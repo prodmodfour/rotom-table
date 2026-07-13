@@ -25,6 +25,7 @@ import {
   parsePendingMoveResponseWindowList,
   type PendingMoveResponseWindowView,
 } from '#shared/moveAutomation/responseViews'
+import type { PendingMoveMovementSelection } from '#shared/moveAutomation/responseOptions'
 import { isPlayerProfileId, type PlayerProfileId } from '#shared/playerProfiles'
 import { MAP_API_PATHS } from '~/utils/apiRoutes'
 import { getClientId } from '~/utils/clientId'
@@ -61,6 +62,14 @@ export interface PendingMoveResponseOptionReference extends PendingMoveResponseR
   readonly optionId: string
 }
 
+export interface PendingMoveMovementChoiceReference
+  extends PendingMoveResponseOptionReference {
+  readonly actorPlacementId: string
+  readonly canonicalMoveId: string
+  readonly selection: PendingMoveMovementSelection
+  readonly disabled: boolean
+}
+
 export interface PendingMoveResponseDispatchResult {
   readonly dispatched: boolean
   readonly opId?: string
@@ -95,6 +104,7 @@ export interface UsePendingMoveResponsesReturn {
   readonly loadStatus: Ref<PendingMoveResponseLoadStatus>
   readonly loadError: Ref<string | null>
   readonly responseStateByWindow: ComputedRef<Readonly<Record<string, PendingMoveResponseWindowState>>>
+  readonly movementChoices: ComputedRef<readonly PendingMoveMovementChoiceReference[]>
   readonly responseOutboxEntries: Ref<readonly MoveResponseCommandOutboxEntry[]>
   readonly refresh: () => Promise<readonly PendingMoveResponseWindowView[]>
   readonly choose: (input: PendingMoveResponseOptionReference) => Promise<PendingMoveResponseDispatchResult>
@@ -125,6 +135,37 @@ const isRecord = (value: unknown): value is Record<string, unknown> => (
 export const pendingMoveResponseWindowKey = (
   input: PendingMoveResponseReference,
 ): string => `${input.resolutionId}:${input.windowId}`
+
+const cloneMovementSelection = (
+  selection: PendingMoveMovementSelection,
+): PendingMoveMovementSelection => ({
+  ...selection,
+  destination: { ...selection.destination },
+})
+
+/** Flatten authorized typed movement options into map-overlay references. */
+export const pendingMoveMovementChoiceReferences = (
+  windows: readonly PendingMoveResponseWindowView[],
+  stateByWindow: Readonly<Record<string, PendingMoveResponseWindowState>> = {},
+): readonly PendingMoveMovementChoiceReference[] => Object.freeze(windows.flatMap((view) => {
+  const reference = {
+    resolutionId: view.resolution.resolutionId,
+    windowId: view.window.windowId,
+  }
+  const state = stateByWindow[pendingMoveResponseWindowKey(reference)]
+  return view.window.options.flatMap((option): PendingMoveMovementChoiceReference[] => (
+    option.selection
+      ? [{
+          ...reference,
+          optionId: option.id,
+          actorPlacementId: view.resolution.actorPlacementId,
+          canonicalMoveId: view.resolution.canonicalMoveId,
+          selection: cloneMovementSelection(option.selection),
+          disabled: state !== undefined && state.status !== 'pending',
+        }]
+      : []
+  ))
+}))
 
 const commandWindowKey = (command: MoveResponseCommand): string | null => (
   'windowId' in command.payload
@@ -325,6 +366,10 @@ export const usePendingMoveResponses = (
     }
     return Object.freeze(states)
   })
+
+  const movementChoices = computed<readonly PendingMoveMovementChoiceReference[]>(() => (
+    pendingMoveMovementChoiceReferences(windows.value, responseStateByWindow.value)
+  ))
 
   const windowFor = (input: PendingMoveResponseReference): PendingMoveResponseWindowView | null => (
     windows.value.find(view => (
@@ -618,6 +663,7 @@ export const usePendingMoveResponses = (
     loadStatus,
     loadError,
     responseStateByWindow,
+    movementChoices,
     responseOutboxEntries,
     refresh,
     choose,

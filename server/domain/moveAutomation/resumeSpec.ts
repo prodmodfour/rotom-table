@@ -4,10 +4,16 @@ import type { TabletopMap } from '~/types/map'
 import type { MoveAutomationScript } from '~/types/moveAutomation'
 import type { TrainerSheet } from '~/types/trainerSheet'
 import { moveUsageKey } from '~/utils/moveUsage'
+import {
+  tokenFacingForPlacement,
+  tokenFacingTowardPoint,
+} from '~/utils/tokenFacing'
 import { sameJsonValue } from '~/utils/serialization'
 import type {
   AuthoritativeMoveExecution,
   AuthoritativeMoveResolution,
+  AuthoritativeMoveResourceMovement,
+  AuthoritativeMoveShiftMovement,
 } from '../resolveAuthoritativeMove'
 import {
   buildAuthoritativeMoveRulesContext,
@@ -15,6 +21,7 @@ import {
 } from './context'
 import {
   executeMoveSpec,
+  MoveSpecExecutionError,
   type MoveSpecAuthoritativeTargetEvaluation,
   type MoveSpecExecutionCompleteResult,
 } from './executeSpec'
@@ -29,7 +36,10 @@ import {
   type MoveAutomationRuntimeRegistry,
   type MoveSpecV2Runtime,
 } from './registry'
-import type { MoveSpecResolvedResponse } from './responses'
+import {
+  MoveSpecResolvedResponseError,
+  type MoveSpecResolvedResponse,
+} from './responses'
 import { reduceCompletedMoveSpec } from './resolveImmediateSpec'
 
 export type ResumeMoveSpecErrorCode =
@@ -194,6 +204,55 @@ const alreadyCommittedOperationIds = (
   )))
 }
 
+const resolvedMovementProjection = (
+  context: ReturnType<typeof buildAuthoritativeMoveRulesContext>,
+  execution: MoveSpecExecutionCompleteResult | Extract<
+    ReturnType<typeof executeMoveSpec>,
+    { readonly kind: 'pending-request' }
+  >,
+): {
+  readonly movement?: AuthoritativeMoveShiftMovement
+  readonly resourceMovement?: AuthoritativeMoveResourceMovement
+  readonly desiredFacing?: AuthoritativeMoveResolution['desiredFacing']
+} => {
+  if (execution.resolvedMovements.length === 0) return {}
+  if (execution.resolvedMovements.length > 1) {
+    return fail(
+      'execution-rejected',
+      'A resumed MoveSpec resolved more than one durable movement choice.',
+    )
+  }
+  const resolved = execution.resolvedMovements[0]!
+  const authoritative = resolved.choice.movement
+  const selection = resolved.choice.option.selection
+  if (!selection) {
+    return fail('execution-rejected', 'A resolved movement option lost its server selection.')
+  }
+  const movement: AuthoritativeMoveShiftMovement = {
+    kind: 'shift',
+    from: { ...authoritative.origin },
+    destination: { ...authoritative.destination },
+    pathCells: authoritative.path.map(cell => ({ ...cell })),
+    ...(selection.kind === 'movement-direction'
+      ? { direction: selection.direction }
+      : {}),
+  }
+  const currentFacing = tokenFacingForPlacement(context.actor.placement)
+  const desiredFacing = tokenFacingTowardPoint(
+    authoritative.origin,
+    authoritative.destination,
+    currentFacing,
+  ) ?? undefined
+  return {
+    movement,
+    resourceMovement: {
+      distance: authoritative.cost,
+      budget: authoritative.effectiveLimit,
+    },
+    ...(desiredFacing ? { desiredFacing } : {}),
+  }
+}
+
 /**
  * Rebuild one immutable authoritative context, deterministically replay its
  * durable prefix, apply one authorized response, and continue to the next
@@ -252,6 +311,15 @@ export const resumeMoveSpec = (
     if (error instanceof MoveAutomationReplayRandomError) {
       return fail('roll-ledger-mismatch', error.message)
     }
+    if (
+      error instanceof MoveSpecResolvedResponseError
+      || error instanceof MoveSpecExecutionError
+    ) {
+      return fail(
+        'execution-rejected',
+        `MoveSpec ${pending.canonicalMoveId} could not revalidate its response: ${error.message}`,
+      )
+    }
     throw error
   }
   if (execution.kind === 'rejected') {
@@ -261,6 +329,7 @@ export const resumeMoveSpec = (
     )
   }
   assertDurableExecutionPrefix(pending, execution)
+  const movementProjection = resolvedMovementProjection(context, execution)
 
   const resolvedMoveKey = moveUsageKey(entry.canonicalMoveName)
   if (!resolvedMoveKey) {
@@ -276,6 +345,9 @@ export const resumeMoveSpec = (
       frequency: entry.frequency,
       damageFormula: entry.damageFormula,
       resourceRange: entry.script.range,
+      ...(movementProjection.resourceMovement
+        ? { resourceMovement: movementProjection.resourceMovement }
+        : {}),
       selectedTargetIds: [...authoritativeTargetIds],
       sheetReads: deduplicateAuthoritativeMoveSheetReads([
         ...context.reads.snapshot(),
@@ -315,6 +387,7 @@ export const resumeMoveSpec = (
     auditTrace: immediate.trace,
     script: immediate.script,
     transaction: immediate.transaction,
+    ...movementProjection,
     nativeV2: immediate.native,
   }
   return Object.freeze(result)

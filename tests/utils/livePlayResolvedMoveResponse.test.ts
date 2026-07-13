@@ -130,6 +130,31 @@ describe('extractResolvedMoveResult', () => {
     expect(result.move).not.toBe(move)
   })
 
+  it('parses durable shift movement while keeping Pass-only presentation geometry absent', () => {
+    const move = resolvedMove({
+      movement: {
+        kind: 'shift',
+        from: { x: 1, y: 0, z: 1 },
+        destination: { x: 3, y: 0, z: 1 },
+        pathCells: [
+          { x: 1, y: 0, z: 1 },
+          { x: 2, y: 0, z: 1 },
+          { x: 3, y: 0, z: 1 },
+        ],
+      },
+    })
+    const result = extractResolvedMoveResult({ ...accepted(move), move })
+
+    expect(result).toMatchObject({
+      ok: true,
+      move: { movement: { kind: 'shift', destination: { x: 3, y: 0, z: 1 } } },
+    })
+    expect(createLivePlayMovePresentationSummary({
+      operationId: 'op_resolve001',
+      move,
+    })).not.toHaveProperty('pass')
+  })
+
   it('recovers a valid move result from the MOVE_STATE patch when response.move is absent', () => {
     const move = resolvedMove()
     const result = extractResolvedMoveResult(accepted(move))

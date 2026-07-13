@@ -47,6 +47,10 @@ import {
   MOVE_SPEC_PHASES,
   type MoveSpecPhase,
 } from './spec'
+import {
+  MOVE_AUTOMATION_AREA_DIRECTIONS,
+  type MoveAutomationAreaDirection,
+} from '~/types/moveAutomation'
 
 /**
  * The closed set of state requests a reviewed MoveSpec or registered handler
@@ -270,6 +274,10 @@ export const MOVE_EFFECT_MOVEMENT_MODES = [
   'teleport',
   'swap',
 ] as const
+export const MOVE_EFFECT_MOVEMENT_CHOICE_KINDS = [
+  'destination',
+  'direction',
+] as const
 export const MOVE_EFFECT_USAGE_ACTIONS = ['spend', 'restore', 'set'] as const
 export const MOVE_EFFECT_HISTORY_EVENTS = [
   'move-declared',
@@ -378,6 +386,8 @@ export type MoveEffectCombatStage = (typeof MOVE_EFFECT_COMBAT_STAGES)[number]
 export type MoveEffectDurationKind = (typeof MOVE_EFFECT_DURATION_KINDS)[number]
 export type MoveEffectFieldCategory = (typeof MOVE_EFFECT_FIELD_CATEGORIES)[number]
 export type MoveEffectMovementMode = (typeof MOVE_EFFECT_MOVEMENT_MODES)[number]
+export type MoveEffectMovementChoiceKind =
+  (typeof MOVE_EFFECT_MOVEMENT_CHOICE_KINDS)[number]
 export type MoveEffectUsageAction = (typeof MOVE_EFFECT_USAGE_ACTIONS)[number]
 export type MoveEffectHistoryEvent = (typeof MOVE_EFFECT_HISTORY_EVENTS)[number]
 
@@ -1039,12 +1049,32 @@ export interface MoveRemoveHazardEffectPayload {
 
 export type MoveHazardEffectPayload = MoveAddHazardEffectPayload | MoveRemoveHazardEffectPayload
 
+export interface MoveDestinationMovementChoice {
+  readonly kind: 'destination'
+  readonly promptKey: string
+  readonly allowPass: boolean
+}
+
+export interface MoveDirectionMovementChoice {
+  readonly kind: 'direction'
+  readonly promptKey: string
+  readonly allowPass: boolean
+  /** Reviewed directions; the server derives and validates each endpoint. */
+  readonly directions: readonly MoveAutomationAreaDirection[]
+}
+
+export type MoveMovementChoice =
+  | MoveDestinationMovementChoice
+  | MoveDirectionMovementChoice
+
 export interface MoveMovementRequestEffectPayload {
   readonly requestId: string
   readonly mode: MoveEffectMovementMode
   readonly distance: number | null
   /** Null when the movement mode derives its destination without a choice set. */
   readonly destinationSetId: string | null
+  /** Omitted for retained immediate movement such as reviewed Pass geometry. */
+  readonly choice?: MoveMovementChoice
 }
 
 export interface MoveUsageEffectPayload {
@@ -1395,6 +1425,14 @@ const MOVEMENT_REQUEST_FIELDS = [
   'distance',
   'destinationSetId',
 ] as const
+const MOVEMENT_CHOICE_REQUEST_FIELDS = [...MOVEMENT_REQUEST_FIELDS, 'choice'] as const
+const DESTINATION_MOVEMENT_CHOICE_FIELDS = ['kind', 'promptKey', 'allowPass'] as const
+const DIRECTION_MOVEMENT_CHOICE_FIELDS = [
+  'kind',
+  'promptKey',
+  'allowPass',
+  'directions',
+] as const
 const USAGE_FIELDS = ['action', 'resourceId', 'amount'] as const
 const HISTORY_FIELDS = ['event', 'detailCode'] as const
 const LOG_FIELDS = ['messageKey', 'arguments'] as const
@@ -1471,6 +1509,8 @@ const COMBAT_STAT_STAGE_SET = new Set<string>(MOVE_EFFECT_COMBAT_STAT_STAGES)
 const COMBAT_STAGE_SET = new Set<string>(MOVE_EFFECT_COMBAT_STAGES)
 const FIELD_CATEGORY_SET = new Set<string>(MOVE_EFFECT_FIELD_CATEGORIES)
 const MOVEMENT_MODE_SET = new Set<string>(MOVE_EFFECT_MOVEMENT_MODES)
+const MOVEMENT_CHOICE_KIND_SET = new Set<string>(MOVE_EFFECT_MOVEMENT_CHOICE_KINDS)
+const MOVEMENT_DIRECTION_SET = new Set<string>(MOVE_AUTOMATION_AREA_DIRECTIONS)
 const USAGE_ACTION_SET = new Set<string>(MOVE_EFFECT_USAGE_ACTIONS)
 const HISTORY_EVENT_SET = new Set<string>(MOVE_EFFECT_HISTORY_EVENTS)
 const RECIPIENT_SCOPED_BRANCH_SELECTOR_SET = new Set<MoveEffectRecipientSelectorKind>(
@@ -3350,11 +3390,59 @@ const parseHazardPayload = (value: unknown, path: string): MoveHazardEffectPaylo
   return fail('invalid-effect-operation', `${path}.action`, 'must be add or remove.')
 }
 
+const parseMovementChoice = (
+  value: unknown,
+  path: string,
+): MoveMovementChoice => {
+  const candidate = parseRecord(value, path)
+  const kind = parseEnum<MoveEffectMovementChoiceKind>(
+    ownValue(candidate, 'kind', path),
+    MOVEMENT_CHOICE_KIND_SET,
+    `${path}.kind`,
+    'destination or direction',
+  )
+  const input = parseExactRecord(
+    value,
+    kind === 'direction'
+      ? DIRECTION_MOVEMENT_CHOICE_FIELDS
+      : DESTINATION_MOVEMENT_CHOICE_FIELDS,
+    path,
+  )
+  const common = {
+    promptKey: parseStableId(ownValue(input, 'promptKey', path), `${path}.promptKey`),
+    allowPass: parseBoolean(ownValue(input, 'allowPass', path), `${path}.allowPass`),
+  }
+  if (kind === 'destination') return { kind, ...common }
+  const directions = parseBoundedArray(
+    ownValue(input, 'directions', path),
+    `${path}.directions`,
+    MOVE_AUTOMATION_AREA_DIRECTIONS.length,
+  ).map((direction, index) => parseEnum<MoveAutomationAreaDirection>(
+    direction,
+    MOVEMENT_DIRECTION_SET,
+    `${path}.directions[${index}]`,
+    'a canonical movement direction',
+  ))
+  if (directions.length === 0) {
+    fail('invalid-effect-operation', `${path}.directions`, 'must contain at least one direction.')
+  }
+  if (new Set(directions).size !== directions.length) {
+    fail('duplicate-id', `${path}.directions`, 'must not contain duplicate directions.')
+  }
+  return { kind, ...common, directions }
+}
+
 const parseMovementRequestPayload = (
   value: unknown,
   path: string,
 ): MoveMovementRequestEffectPayload => {
-  const input = parseExactRecord(value, MOVEMENT_REQUEST_FIELDS, path)
+  const candidate = parseRecord(value, path)
+  const hasChoice = Object.prototype.hasOwnProperty.call(candidate, 'choice')
+  const input = parseExactRecord(
+    value,
+    hasChoice ? MOVEMENT_CHOICE_REQUEST_FIELDS : MOVEMENT_REQUEST_FIELDS,
+    path,
+  )
   return {
     requestId: parseStableId(ownValue(input, 'requestId', path), `${path}.requestId`),
     mode: parseEnum<MoveEffectMovementMode>(
@@ -3373,6 +3461,9 @@ const parseMovementRequestPayload = (
       ownValue(input, 'destinationSetId', path),
       `${path}.destinationSetId`,
     ),
+    ...(hasChoice
+      ? { choice: parseMovementChoice(ownValue(input, 'choice', path), `${path}.choice`) }
+      : {}),
   }
 }
 

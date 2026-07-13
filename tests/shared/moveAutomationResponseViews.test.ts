@@ -47,6 +47,36 @@ describe('pending move response views', () => {
     expect(Object.isFrozen(parsed.windows[0]?.window.options)).toBe(true)
   })
 
+  it('projects typed movement cells and directions for the authorized targeting overlay', () => {
+    const movement = responseList() as Record<string, any>
+    movement.windows[0].window.options = [{
+      id: 'movement.destination.1234abcd.2.0.1',
+      labelKey: 'move.movement.destination',
+      selection: {
+        kind: 'movement-destination',
+        setId: 'movement.destinations',
+        destination: { x: 2, y: 0, z: 1 },
+      },
+    }, {
+      id: 'movement.direction.1234abcd.east',
+      labelKey: 'move.movement.direction.east',
+      selection: {
+        kind: 'movement-direction',
+        setId: 'movement.directions',
+        direction: 'east',
+        destination: { x: 3, y: 0, z: 1 },
+      },
+    }]
+
+    const parsed = parsePendingMoveResponseWindowList(movement)
+    expect(parsed.windows[0]?.window.options).toEqual(movement.windows[0].window.options)
+    expect('ownership' in parsed.windows[0]!.window).toBe(false)
+    expect('operationId' in parsed.windows[0]!.window).toBe(false)
+
+    movement.windows[0].window.options[0].selection.destination.x = -1
+    expect(() => parsePendingMoveResponseWindowList(movement)).toThrow(/destination.x/)
+  })
+
   it('parses authorized canonical reaction timing without private mechanics', () => {
     const reaction = responseList() as Record<string, any>
     reaction.windows[0].window = {

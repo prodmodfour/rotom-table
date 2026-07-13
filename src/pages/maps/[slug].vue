@@ -2665,6 +2665,7 @@ useMapDimensionReconciliation({
         :action-splash-speed-lines-duration-ms="actionSplashSpeedLinesDurationMs"
         :move-usage-error="sceneActionError"
         :pending-move-response-windows="pendingMoveResponses.windows.value"
+        :pending-move-movement-choices="pendingMoveResponses.movementChoices.value"
         :pending-move-response-state-by-window="pendingMoveResponses.responseStateByWindow.value"
         :pending-move-response-actor-labels="pendingMoveResponseActorLabels"
         :pending-move-response-owner-label="pendingMoveResponseOwnerLabel"

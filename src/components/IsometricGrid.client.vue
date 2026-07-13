@@ -41,6 +41,10 @@ import type {
   MoveAutomationTargetBranchSelectionOption,
   MoveAutomationTargetBranchSelectionState,
 } from '~/composables/map-editor/useMoveAutomationPanel'
+import type {
+  PendingMoveMovementChoiceReference,
+  PendingMoveResponseOptionReference,
+} from '~/composables/map-editor/usePendingMoveResponses'
 import type { TokenAbilityMenuOption } from '~/utils/mapTokenAbilities'
 import type { TokenMoveMenuOption } from '~/utils/mapTokenMoves'
 import type { TokenManeuverMenuOption } from '~/utils/mapTokenManeuvers'
@@ -253,6 +257,7 @@ const props = defineProps<{
   moveAutomationFeedback?: MoveAutomationFeedbackState | null
   moveAnimations?: readonly MoveAnimationEvent[]
   moveAnimationsReducedMotion?: boolean
+  pendingMoveMovementChoices?: readonly PendingMoveMovementChoiceReference[]
 }>()
 
 const emit = defineEmits<{
@@ -287,6 +292,7 @@ const emit = defineEmits<{
   (event: 'aim-move-area', center: GridAnchor): void
   (event: 'select-move-target-branch', branchId: string): void
   (event: 'cancel-move-targeting'): void
+  (event: 'choose-pending-move-response', payload: PendingMoveResponseOptionReference): void
   (event: 'move-vfx-settled', payload: { nowMs: number }): void
   (event: 'token-motion-debug-metrics', metrics: TokenMotionDebugMetrics): void
 }>()
@@ -313,6 +319,19 @@ type TargetReticleButton = {
 }
 
 const targetReticleButtons = ref<TargetReticleButton[]>([])
+
+type PendingMovementChoiceButton = {
+  readonly reference: PendingMoveResponseOptionReference
+  readonly actorPlacementId: string
+  readonly canonicalMoveId: string
+  readonly destination: GridAnchor
+  readonly direction?: MoveAutomationAreaDirection
+  readonly left: number
+  readonly top: number
+  readonly disabled: boolean
+}
+
+const pendingMovementChoiceButtons = ref<PendingMovementChoiceButton[]>([])
 
 const emitPokemonSelection = (id: string | null) => {
   if (props.moveAutomationTargeting || props.moveAutomationTargetBranchSelection) return
@@ -2060,6 +2079,15 @@ watch(
 )
 
 watch(
+  () => props.pendingMoveMovementChoices,
+  () => {
+    if (!renderer) return
+    requestScheduledSceneFrame('targeting')
+  },
+  { deep: true },
+)
+
+watch(
   () => props.moveAutomationFeedback,
   () => {
     if (!renderer) return
@@ -2173,6 +2201,65 @@ const syncTargetReticleButtons = (options: {
   return false
 }
 
+const syncPendingMovementChoiceButtons = (): boolean => {
+  const next = (props.pendingMoveMovementChoices ?? []).flatMap(
+    (choice): PendingMovementChoiceButton[] => {
+      const destination = choice.selection.destination
+      const point = worldPointToContainerPoint(new THREE.Vector3(
+        destination.x + 0.5,
+        destination.y + 0.12,
+        destination.z + 0.5,
+      ))
+      return point ? [{
+        reference: {
+          resolutionId: choice.resolutionId,
+          windowId: choice.windowId,
+          optionId: choice.optionId,
+        },
+        actorPlacementId: choice.actorPlacementId,
+        canonicalMoveId: choice.canonicalMoveId,
+        destination: { ...destination },
+        ...(choice.selection.kind === 'movement-direction'
+          ? { direction: choice.selection.direction }
+          : {}),
+        left: point.x,
+        top: point.y,
+        disabled: choice.disabled,
+      }] : []
+    },
+  )
+  const current = pendingMovementChoiceButtons.value
+  const unchanged = next.length === current.length && next.every((entry, index) => {
+    const old = current[index]
+    return old?.reference.resolutionId === entry.reference.resolutionId
+      && old.reference.windowId === entry.reference.windowId
+      && old.reference.optionId === entry.reference.optionId
+      && old.actorPlacementId === entry.actorPlacementId
+      && old.canonicalMoveId === entry.canonicalMoveId
+      && isSameAnchor(old.destination, entry.destination)
+      && old.direction === entry.direction
+      && old.disabled === entry.disabled
+      && Math.abs(old.left - entry.left) < 0.5
+      && Math.abs(old.top - entry.top) < 0.5
+  })
+  if (unchanged) return false
+  pendingMovementChoiceButtons.value = next
+  return true
+}
+
+const pendingMovementChoiceLabel = (button: PendingMovementChoiceButton): string => {
+  const destination = button.destination
+  const coordinate = `(${destination.x}, ${destination.y}, ${destination.z})`
+  return button.direction
+    ? `Choose ${button.direction} movement to ${coordinate}`
+    : `Choose movement destination ${coordinate}`
+}
+
+const choosePendingMovement = (button: PendingMovementChoiceButton): void => {
+  if (button.disabled) return
+  emit('choose-pending-move-response', button.reference)
+}
+
 const targetReticleButtonTitle = (button: TargetReticleButton): string => {
   if (!button.showsReticle) return button.selected ? 'Exclude this target from the move' : 'Include this target in the move'
   if (props.moveAutomationTargeting?.mode === 'target-count') {
@@ -2207,6 +2294,7 @@ const updateMoveAutomationOverlays = (): boolean => {
     showsReticle: showSingleTargetReticles || showTargetCountReticles,
     selectedIds: showTargetCountReticles || showAreaToggleButtons ? selectedIds : null,
   })
+  cssUiChanged = syncPendingMovementChoiceButtons() || cssUiChanged
   moveAreaTemplateRenderer.update({
     cells: targeting?.areaCells ?? [],
     show: showAreaTemplate,
@@ -2556,6 +2644,15 @@ watch(
     </div>
 
     <div
+      v-if="pendingMovementChoiceButtons.length"
+      class="pending-movement-choice-hud"
+      aria-live="polite"
+    >
+      <strong>Choose movement</strong>
+      <span>Select a server-approved destination on the battlefield.</span>
+    </div>
+
+    <div
       v-if="props.moveAutomationTargetBranchSelection"
       class="move-branch-selection-hud"
       :style="moveTargetBranchSelectionAccentStyle"
@@ -2714,6 +2811,29 @@ watch(
       enabled
       :metrics="renderMetricsOverlaySnapshot"
     />
+
+    <div
+      v-if="pendingMovementChoiceButtons.length"
+      class="pending-movement-choice-layer"
+      aria-label="Legal move destinations"
+      @contextmenu.prevent
+    >
+      <button
+        v-for="button in pendingMovementChoiceButtons"
+        :key="`${button.reference.resolutionId}:${button.reference.windowId}:${button.reference.optionId}`"
+        type="button"
+        class="pending-movement-choice-button"
+        :style="{ left: `${button.left}px`, top: `${button.top}px` }"
+        :disabled="button.disabled"
+        :aria-label="pendingMovementChoiceLabel(button)"
+        :title="pendingMovementChoiceLabel(button)"
+        @pointerdown.stop
+        @click.stop="choosePendingMovement(button)"
+      >
+        <span aria-hidden="true">◆</span>
+        <small v-if="button.direction">{{ areaDirectionButtonLabel(button.direction) }}</small>
+      </button>
+    </div>
 
     <div v-if="targetReticleButtons.length" class="move-targeting-click-layer" @contextmenu.prevent>
       <button
@@ -3237,6 +3357,85 @@ watch(
 .move-targeting-hud__template.is-active,
 .move-targeting-hud__direction.is-active {
   background: color-mix(in srgb, var(--accent) 14%, var(--paper-accent));
+}
+
+.pending-movement-choice-hud {
+  position: absolute;
+  z-index: 10;
+  top: var(--map-top-info-top, calc(var(--map-overlay-gutter, 0.75rem) + var(--map-initiative-info-bar-height, 4rem) + 0.6rem));
+  left: 50%;
+  display: grid;
+  gap: 0.15rem;
+  max-width: min(28rem, calc(100% - 2rem));
+  padding: 0.55rem 0.8rem;
+  border: 1px solid color-mix(in srgb, var(--accent) 68%, var(--rule-soft));
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--paper) 94%, transparent);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.28);
+  color: var(--ink);
+  text-align: center;
+  transform: translateX(-50%);
+  pointer-events: none;
+}
+
+.pending-movement-choice-hud strong {
+  color: var(--accent);
+}
+
+.pending-movement-choice-hud span {
+  font-size: 0.78rem;
+}
+
+.pending-movement-choice-layer {
+  position: absolute;
+  z-index: 9;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.pending-movement-choice-button {
+  position: absolute;
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  border: 2px solid var(--accent);
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--paper) 78%, transparent);
+  box-shadow: 0 0 0 5px color-mix(in srgb, var(--accent) 20%, transparent), 0 5px 14px rgba(0, 0, 0, 0.35);
+  color: var(--accent);
+  cursor: crosshair;
+  transform: translate(-50%, -50%);
+  pointer-events: auto;
+}
+
+.pending-movement-choice-button small {
+  position: absolute;
+  top: 100%;
+  padding: 0.1rem 0.25rem;
+  border-radius: 5px;
+  background: var(--paper);
+  color: var(--ink);
+  font-size: 0.62rem;
+  font-weight: 800;
+}
+
+.pending-movement-choice-button:hover,
+.pending-movement-choice-button:focus-visible {
+  background: var(--accent);
+  color: var(--paper);
+}
+
+.pending-movement-choice-button:focus-visible {
+  outline: 2px solid var(--ink-bright);
+  outline-offset: 5px;
+}
+
+.pending-movement-choice-button:disabled {
+  cursor: wait;
+  opacity: 0.48;
 }
 
 .move-targeting-click-layer {

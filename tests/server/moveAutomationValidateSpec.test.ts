@@ -756,6 +756,61 @@ describe('authoritative MoveSpec validation and hashing', () => {
     )
   })
 
+  it('bounds durable movement choices to one voluntary actor-owned request', () => {
+    const movementOperation = () => ({
+      id: 'operation.movement-choice',
+      kind: 'movement-request',
+      source: { kind: 'move', id: 'move.scratch' },
+      recipients: { kind: 'actor' },
+      phase: 'movement',
+      reasonCode: 'move.scratch.choose-destination',
+      payload: {
+        requestId: 'request.destination',
+        mode: 'voluntary',
+        distance: 3,
+        destinationSetId: 'destinations.scratch',
+        choice: {
+          kind: 'destination',
+          promptKey: 'move.scratch.choose-destination',
+          allowPass: true,
+        },
+      },
+    })
+    const valid = validSpec()
+    valid.phases.push({ phase: 'movement', operations: [movementOperation()] })
+    expect(validateMoveSpec(valid).spec.phases
+      .flatMap(block => block.operations)
+      .find(operation => operation.id === 'operation.movement-choice')).toMatchObject({
+      kind: 'movement-request',
+      payload: { choice: { kind: 'destination' } },
+    })
+
+    const forced = structuredClone(valid)
+    forced.phases.at(-1)!.operations[0]!.payload.mode = 'forced'
+    expectDefinitionError(
+      () => validateMoveSpec(forced),
+      'invalid-definition',
+    )
+
+    const targetOwned = structuredClone(valid)
+    targetOwned.phases.at(-1)!.operations[0]!.recipients = { kind: 'hit-targets' }
+    expectDefinitionError(
+      () => validateMoveSpec(targetOwned),
+      'invalid-definition',
+    )
+
+    const duplicate = structuredClone(valid)
+    const second = movementOperation()
+    second.id = 'operation.movement-choice-second'
+    second.payload.requestId = 'request.destination-second'
+    second.payload.destinationSetId = 'destinations.scratch-second'
+    duplicate.phases.at(-1)!.operations.push(second)
+    expectDefinitionError(
+      () => validateMoveSpec(duplicate),
+      'invalid-definition',
+    )
+  })
+
   it('validates branch identities and later-operation control without executable payloads', () => {
     const branched = validSpec()
     branched.phases.splice(1, 0, {
