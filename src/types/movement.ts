@@ -39,17 +39,20 @@ export type MovementGroundingState = 'grounded' | 'airborne'
 
 /**
  * Rule state is intentionally independent from token sprite/display height.
- * MA-129 supplies the lifecycle and targeting semantics for the named setup
- * states; this union keeps their authoritative projection typed now.
+ * Named setup states are projected only from authoritative encounter effects.
  */
+export const MOVEMENT_SEMI_INVULNERABLE_STATES = [
+  'none',
+  'underground',
+  'underwater',
+  'airborne',
+  'vanished',
+  'carried',
+  'phased',
+] as const
+
 export type MovementSemiInvulnerableState =
-  | 'none'
-  | 'underground'
-  | 'underwater'
-  | 'airborne'
-  | 'vanished'
-  | 'carried'
-  | 'phased'
+  (typeof MOVEMENT_SEMI_INVULNERABLE_STATES)[number]
 
 export interface MovementRuleState {
   readonly grounding: MovementGroundingState

@@ -51,7 +51,7 @@ export interface MoveAutomationTargetState {
   readonly targetPlacementId: string
   readonly vitality: MoveAutomationTargetVitality
   readonly grounding: MoveAutomationTargetGrounding
-  /** Separate from grounding and visual elevation; MA-129 adds targetability semantics. */
+  /** Separate from grounding/elevation and consumed by the authoritative targetability gate. */
   readonly semiInvulnerable: MovementSemiInvulnerableState
   readonly switchedThisScene: boolean
   readonly actedThisTurn: boolean

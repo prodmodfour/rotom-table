@@ -7,6 +7,7 @@ import type {
 import type { EncounterSideId } from '#shared/moveAutomation/encounterState'
 import {
   MOVEMENT_MODES,
+  MOVEMENT_SEMI_INVULNERABLE_STATES,
   type EffectiveMovementMode,
   type EffectiveMovementProfile,
   type MovementCapabilityKey,
@@ -185,16 +186,8 @@ const semiInvulnerableStateFromCapabilityId = (
 ): MovementSemiInvulnerableState | null => {
   if (!capabilityId.startsWith(SEMI_INVULNERABLE_EFFECT_PREFIX)) return null
   const state = capabilityId.slice(SEMI_INVULNERABLE_EFFECT_PREFIX.length)
-  const supported: readonly MovementSemiInvulnerableState[] = [
-    'none',
-    'underground',
-    'underwater',
-    'airborne',
-    'vanished',
-    'carried',
-    'phased',
-  ]
-  return supported.includes(state as MovementSemiInvulnerableState)
+  return (MOVEMENT_SEMI_INVULNERABLE_STATES as readonly string[])
+    .includes(state)
     ? state as MovementSemiInvulnerableState
     : null
 }

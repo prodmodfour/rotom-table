@@ -5,6 +5,7 @@ import type {
   MoveAutomationRelationshipResolver,
   MoveAutomationRelationshipResult,
 } from '../relationships'
+import type { MoveSemiInvulnerableTargetabilityResolver } from '../semiInvulnerableTargetability'
 import type { MoveAutomationTargetStateResolver } from '../targetState'
 import {
   evaluateMoveAutomationTargetStatePredicates,
@@ -84,6 +85,7 @@ export type MoveAutomationTargetPredicateReasonCode =
   | 'target-excluded-willingness-undeclared'
   | 'target-excluded-not-willing'
   | 'target-excluded-not-unwilling'
+  | 'target-excluded-semi-invulnerable'
   | Exclude<MoveAutomationTargetStatePredicateReasonCode, 'target-state-included'>
 
 export interface MoveAutomationTargetPredicateEvaluation {
@@ -116,6 +118,10 @@ export interface EvaluateMoveAutomationTargetPredicatesInput {
   readonly predicate: MoveAutomationTargetPredicateDeclaration
   readonly relationships: MoveAutomationRelationshipResolver
   readonly states?: MoveAutomationTargetStateResolver
+  /** Server-owned global targetability gate for active setup states. */
+  readonly targetability?: MoveSemiInvulnerableTargetabilityResolver
+  readonly attackingMoveId?: string
+  readonly originatingSetupOperationId?: string | null
   readonly willingnessDeclarations?: readonly MoveAutomationTargetWillingnessDeclaration[]
 }
 
@@ -126,6 +132,7 @@ export type MoveAutomationTargetPredicateErrorCode =
   | 'invalid-willingness-declaration'
   | 'duplicate-willingness-declaration'
   | 'target-state-resolver-missing'
+  | 'targetability-move-id-missing'
   | 'too-many-requested-targets'
 
 export class MoveAutomationTargetPredicateError extends Error {
@@ -314,6 +321,9 @@ const evaluateAuthoritativeCandidate = (options: {
   readonly predicate: MoveAutomationTargetPredicateDeclaration
   readonly relationships: MoveAutomationRelationshipResolver
   readonly states?: MoveAutomationTargetStateResolver
+  readonly targetability?: MoveSemiInvulnerableTargetabilityResolver
+  readonly attackingMoveId?: string
+  readonly originatingSetupOperationId?: string | null
   readonly willingnessByTarget: ReadonlyMap<string, MoveAutomationTargetWillingnessDeclarationValue>
 }): MoveAutomationTargetPredicateEvaluation => {
   const relationshipEvaluation = evaluateRelationship(
@@ -369,6 +379,23 @@ const evaluateAuthoritativeCandidate = (options: {
         options.predicate.willingness === 'willing'
           ? 'target-excluded-not-willing'
           : 'target-excluded-not-unwilling',
+        relationship,
+        willingness,
+      )
+    }
+  }
+  if (options.targetability && options.attackingMoveId) {
+    const targetability = options.targetability.resolve({
+      actorPlacementId: options.actorPlacementId,
+      targetPlacementId: options.targetPlacementId,
+      attackingMoveId: options.attackingMoveId,
+      originatingSetupOperationId: options.originatingSetupOperationId,
+    })
+    if (!targetability.targetable) {
+      return freezeEvaluation(
+        options.targetPlacementId,
+        'excluded',
+        'target-excluded-semi-invulnerable',
         relationship,
         willingness,
       )
@@ -444,6 +471,16 @@ export const evaluateMoveAutomationTargetPredicates = (
       'Target state predicates require the server-owned target-state resolver.',
     )
   }
+  if (input.targetability && (
+    typeof input.attackingMoveId !== 'string'
+    || input.attackingMoveId.length === 0
+    || input.attackingMoveId.trim() !== input.attackingMoveId
+  )) {
+    return fail(
+      'targetability-move-id-missing',
+      'Semi-invulnerable targetability requires a server-owned attacking move ID.',
+    )
+  }
   const candidates = authoritativeCandidateSet(input.authoritativeCandidatePlacementIds)
   const willingness = willingnessByTarget(input.willingnessDeclarations ?? [])
 
@@ -464,6 +501,9 @@ export const evaluateMoveAutomationTargetPredicates = (
       predicate,
       relationships: input.relationships,
       states: input.states,
+      targetability: input.targetability,
+      attackingMoveId: input.attackingMoveId,
+      originatingSetupOperationId: input.originatingSetupOperationId,
       willingnessByTarget: willingness,
     })
   ))

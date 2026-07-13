@@ -103,6 +103,7 @@ export type AuthoritativeMoveResolutionFailureCode =
   | 'move-absent'
   | 'move-automation-blocked'
   | 'move-condition-blocked'
+  | 'move-semi-invulnerable'
   | 'move-usage-unavailable'
   | 'move-usage-key-invalid'
   | 'target-branch-required'
@@ -113,6 +114,7 @@ export type AuthoritativeMoveResolutionFailureCode =
   | 'target-sheet-missing'
   | 'target-token-unresolved'
   | 'target-out-of-range'
+  | 'target-semi-invulnerable'
   | 'duplicate-target-id'
   | 'empty-target-selection'
   | 'too-many-targets'
@@ -972,13 +974,28 @@ const resolveLegalSingleTarget = (options: {
   )
   const resolvedTarget = resolveSelectedTarget(options.context, options.targetPlacementId)
   recordSheetReadForPlacement(options.context, resolvedTarget.placement)
+  const targetability = options.context.queries.targetability.resolve({
+    actorPlacementId: actorPlacement.id,
+    targetPlacementId: resolvedTarget.token.id,
+    attackingMoveId: options.script.moveName,
+  })
+  if (!targetability.targetable) {
+    fail(
+      'unauthorized-state',
+      'target-semi-invulnerable',
+      `Target ${resolvedTarget.token.id} cannot be targeted by ${options.script.moveName} while ${targetability.state}.`,
+    )
+  }
   const legalTargets = legalSingleTargetTokens({
     script: options.script,
     user: actor,
     tokens: options.context.queries.tokens.all(),
     rangeMeters,
   })
-  if (!legalTargets.some(candidate => candidate.id === resolvedTarget.token.id)) {
+  if (
+    !legalTargets.some(candidate => candidate.id === resolvedTarget.token.id)
+    && targetability.exception?.ignoresRange !== true
+  ) {
     fail(
       'invalid',
       'target-out-of-range',
@@ -1175,9 +1192,25 @@ const resolveTargetCountMove = (options: {
   const rangeMeters = parseExplicitMultiTargetMoveRangeMeters(options.script.range)
     ?? fail('unsupported', 'unsupported-range', `${options.script.moveName} has an unsupported target-count range.`)
 
+  const targetabilityById = new Map<string, ReturnType<
+    AuthoritativeMoveRulesContext['queries']['targetability']['resolve']
+  >>()
   for (const targetId of submittedTargetIds) {
     const target = resolveSelectedTarget(options.context, targetId)
     recordSheetReadForPlacement(options.context, target.placement)
+    const targetability = options.context.queries.targetability.resolve({
+      actorPlacementId: actorPlacement.id,
+      targetPlacementId: targetId,
+      attackingMoveId: options.canonicalMoveName,
+    })
+    if (!targetability.targetable) {
+      fail(
+        'unauthorized-state',
+        'target-semi-invulnerable',
+        `Target ${targetId} cannot be targeted by ${options.canonicalMoveName} while ${targetability.state}.`,
+      )
+    }
+    targetabilityById.set(targetId, targetability)
   }
 
   const legalTargets = moveAutomationTargetsInRange({
@@ -1187,7 +1220,10 @@ const resolveTargetCountMove = (options: {
   })
   const legalTargetIds = new Set(legalTargets.map((target) => target.id))
   for (const targetId of submittedTargetIds) {
-    if (!legalTargetIds.has(targetId)) {
+    if (
+      !legalTargetIds.has(targetId)
+      && targetabilityById.get(targetId)?.exception?.ignoresRange !== true
+    ) {
       fail('invalid', 'target-out-of-range', `Target ${targetId} is outside ${options.script.moveName}'s authoritative range.`)
     }
   }
@@ -1256,6 +1292,8 @@ const resolveAreaMove = (options: {
       : DEFAULT_MOVE_AUTOMATION_AREA_TARGET_PREDICATE,
     relationships: options.context.queries.relationships,
     states: options.context.queries.targetStates,
+    targetability: options.context.queries.targetability,
+    attackingMoveId: options.canonicalMoveName,
     requestedExcludedPlacementIds: excludedTargetIds,
   })
   const eligibleTargetIds = new Set(areaTargets.eligibleTargetPlacementIds)
@@ -1397,6 +1435,8 @@ const resolveNativeAreaMove = (options: {
       ?? DEFAULT_MOVE_AUTOMATION_AREA_TARGET_PREDICATE,
     relationships: options.context.queries.relationships,
     states: options.context.queries.targetStates,
+    targetability: options.context.queries.targetability,
+    attackingMoveId: options.runtime.canonicalId,
     requestedExcludedPlacementIds: excludedTargetIds,
   })
   const eligibleTargetIds = new Set(areaTargets.eligibleTargetPlacementIds)
@@ -1533,6 +1573,17 @@ export const resolveAuthoritativeMoveExecutionFromContext = (
   const entry = moveEntryResult.ok
     ? moveEntryResult.entry
     : fail('not-found', 'move-absent', 'Move entry resolution failed.')
+  const actionAvailability = context.queries.targetability.resolveAction({
+    actorPlacementId: actorPlacement.id,
+    moveCanonicalId: entry.canonicalMoveName,
+  })
+  if (!actionAvailability.available) {
+    fail(
+      'unauthorized-state',
+      'move-semi-invulnerable',
+      `${actorPlacement.id} cannot declare ${entry.canonicalMoveName} while ${actionAvailability.state} (${actionAvailability.reasonCode}).`,
+    )
+  }
   const semanticStatus = context.queries.rules.semanticStatusFor(entry.canonicalMoveName)
   if (semanticStatus?.baseStatus === 'blocked') {
     const details = moveAutomationStatusDetailsText(semanticStatus)

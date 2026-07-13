@@ -55,6 +55,10 @@ import {
   type MoveAutomationResourceResolver,
 } from './resources'
 import {
+  createMoveSemiInvulnerableTargetabilityResolver,
+  type MoveSemiInvulnerableTargetabilityResolver,
+} from './semiInvulnerableTargetability'
+import {
   createMoveAutomationStatResolver,
   type MoveAutomationStatResolver,
 } from './stats'
@@ -106,6 +110,7 @@ export type AuthoritativeMoveHistoryQueries = MoveAutomationHistoryResolver
 export type AuthoritativeMoveResourceQueries = MoveAutomationResourceResolver
 export type AuthoritativeMoveStatQueries = MoveAutomationStatResolver
 export type AuthoritativeMoveTargetStateQueries = MoveAutomationTargetStateResolver
+export type AuthoritativeMoveTargetabilityQueries = MoveSemiInvulnerableTargetabilityResolver
 export type AuthoritativeMoveLineOfSightQueries = MoveAutomationLineOfSightResolver
 
 export interface AuthoritativeMoveRuleQueries {
@@ -123,6 +128,7 @@ export interface AuthoritativeMoveContextQueries {
   readonly resources: AuthoritativeMoveResourceQueries
   readonly stats: AuthoritativeMoveStatQueries
   readonly targetStates: AuthoritativeMoveTargetStateQueries
+  readonly targetability: AuthoritativeMoveTargetabilityQueries
   readonly lineOfSight: AuthoritativeMoveLineOfSightQueries
   readonly rules: AuthoritativeMoveRuleQueries
   resolveActorMoveEntry(moveName: string): CanonicalMoveEntryResult
@@ -447,6 +453,9 @@ export const buildAuthoritativeMoveRulesContext = (
     placements,
     sides: map.encounterState?.sides ?? {},
   })
+  const targetability = createMoveSemiInvulnerableTargetabilityResolver({
+    effects: map.encounterState?.effects ?? [],
+  })
   const history = createMoveAutomationHistoryResolver(
     map.encounterState?.history ?? createEmptyEncounterHistory(),
   )
@@ -601,6 +610,7 @@ export const buildAuthoritativeMoveRulesContext = (
     resources,
     stats,
     targetStates,
+    targetability,
     lineOfSight,
     rules: Object.freeze({
       runtimeFor: (canonicalId: string) => runtimes.get(canonicalId) ?? null,

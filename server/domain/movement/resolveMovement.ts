@@ -71,6 +71,7 @@ export const AUTHORITATIVE_MOVEMENT_REASON_CODES = [
   'movement-placement-duplicate',
   'movement-placement-unresolved',
   'movement-footprint-invalid',
+  'movement-semi-invulnerable-state',
   'movement-destination-invalid',
   'movement-same-position-disallowed',
   'movement-origin-out-of-bounds',
@@ -1257,6 +1258,23 @@ export const resolveMovement = (input: ResolveMovementInput): AuthoritativeMovem
   const requestedOccupancy = destination ? occupancyFor(mover, destination, placements) : null
   const consultedPlacementIds = placements.map(placement => placement.id)
   const capabilities = resolvedCapabilities(mover, [])
+  if (mover.movementProfile.state.semiInvulnerable !== 'none') {
+    return failure({
+      reasonCode: 'movement-semi-invulnerable-state',
+      message: `Placement ${placementId} cannot use ordinary movement while ${mover.movementProfile.state.semiInvulnerable}.`,
+      placementId,
+      mode,
+      policy,
+      origin,
+      destination,
+      footprint,
+      occupancy: requestedOccupancy,
+      capabilities,
+      movementProfile: mover.movementProfile,
+      consultedPlacementIds,
+      sheetReads,
+    })
+  }
   const terrainIndex = buildMapMovementTerrainIndex(input.map.voxels)
   const groundLevelY = input.map.groundLevelY ?? 0
 

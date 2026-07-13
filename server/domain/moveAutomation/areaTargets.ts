@@ -1,5 +1,6 @@
 import { MOVE_SPEC_LIMITS } from '#shared/moveAutomation/spec'
 import type { MoveAutomationRelationshipResolver } from './relationships'
+import type { MoveSemiInvulnerableTargetabilityResolver } from './semiInvulnerableTargetability'
 import type { MoveAutomationTargetStateResolver } from './targetState'
 import {
   evaluateMoveAutomationTargetPredicates,
@@ -40,6 +41,9 @@ export interface ResolveMoveAutomationAreaTargetsInput {
   readonly predicate: MoveAutomationTargetPredicateDeclaration
   readonly relationships: MoveAutomationRelationshipResolver
   readonly states?: MoveAutomationTargetStateResolver
+  readonly targetability?: MoveSemiInvulnerableTargetabilityResolver
+  readonly attackingMoveId?: string
+  readonly originatingSetupOperationId?: string | null
   /** Already validated Friendly intent; it may narrow but never widen geometry. */
   readonly requestedExcludedPlacementIds?: readonly string[]
 }
@@ -182,6 +186,9 @@ export const resolveMoveAutomationAreaTargets = (
     predicate: input.predicate,
     relationships: input.relationships,
     states: input.states,
+    targetability: input.targetability,
+    attackingMoveId: input.attackingMoveId,
+    originatingSetupOperationId: input.originatingSetupOperationId,
   })
   const evaluations = predicateResult.legalTargetEvaluations.map(evaluation => (
     freezeEvaluation(evaluation, requestedExclusions)
