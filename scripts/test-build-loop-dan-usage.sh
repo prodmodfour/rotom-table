@@ -18,6 +18,16 @@ assert_contains() {
   grep -Fq -- "$expected" "$file" || fail "$message"
 }
 
+assert_not_contains() {
+  local file="$1"
+  local unexpected="$2"
+  local message="$3"
+
+  if grep -Fq -- "$unexpected" "$file"; then
+    fail "$message"
+  fi
+}
+
 tmp_dir="$(mktemp -d)"
 cleanup() {
   rm -rf "$tmp_dir"
@@ -49,6 +59,12 @@ JSON
   available)
     cat > "$CODEX_RATE_HEADER_LOG" <<'JSON'
 {"status":200,"headers":{"x-codex-active-limit":"premium","x-codex-plan-type":"prolite","x-codex-primary-used-percent":"42","x-codex-primary-window-minutes":"300","x-codex-primary-reset-after-seconds":"3600","x-codex-primary-reset-at":"1893456000","x-codex-secondary-used-percent":"29","x-codex-secondary-window-minutes":"10080","x-codex-secondary-reset-after-seconds":"570287","x-codex-secondary-reset-at":"1894060800"}}
+JSON
+    printf '%s\n' 'OK'
+    ;;
+  inactive-secondary)
+    cat > "$CODEX_RATE_HEADER_LOG" <<'JSON'
+{"status":200,"headers":{"x-codex-active-limit":"premium","x-codex-plan-type":"prolite","x-codex-primary-used-percent":"35","x-codex-primary-window-minutes":"10080","x-codex-primary-reset-after-seconds":"561600","x-codex-primary-reset-at":"1784504839","x-codex-secondary-used-percent":"0","x-codex-secondary-window-minutes":"0","x-codex-secondary-reset-after-seconds":"0","x-codex-secondary-reset-at":"0"}}
 JSON
     printf '%s\n' 'OK'
     ;;
@@ -97,6 +113,18 @@ assert_contains "$tmp_dir/available.log" 'Primary (5 hours): 42% used' \
   "Dan usage omitted available primary usage"
 assert_contains "$tmp_dir/available.log" 'Codex is currently available.' \
   "Dan usage misclassified available capacity"
+
+pp_step "Regression: Dan usage ignores an inactive secondary-window sentinel"
+env "${common_env[@]}" FAKE_DAN_MODE=inactive-secondary \
+  bash "$SCRIPT_DIR/dan-usage.sh" > "$tmp_dir/inactive-secondary.log" 2>&1
+assert_contains "$tmp_dir/inactive-secondary.log" 'Primary (7 days): 35% used' \
+  "Dan usage omitted the active weekly window"
+assert_contains "$tmp_dir/inactive-secondary.log" 'Secondary:            not active' \
+  "Dan usage did not classify the zero-length secondary window as inactive"
+assert_not_contains "$tmp_dir/inactive-secondary.log" 'Secondary reset:' \
+  "Dan usage printed a reset for an inactive secondary window"
+assert_not_contains "$tmp_dir/inactive-secondary.log" '1970' \
+  "Dan usage rendered the zero reset sentinel as an epoch timestamp"
 
 pp_step "Regression: Dan usage fails clearly when headers are unavailable"
 set +e

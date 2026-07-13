@@ -10,7 +10,7 @@ usage() {
 Usage: scripts/dan-usage.sh
 
 Sends one minimal Codex request through pi-dan-rinse using a process-local SSE
-transport override, then reports the five-hour and weekly usage windows.
+transport override, then reports the active Codex usage windows.
 
 The command does not run login/logout, create a Pi session, or persist transport
 settings. A normal OAuth access-token refresh may occur if Pi needs one.
@@ -156,6 +156,12 @@ const formatWindow = (minutes) => {
   if (minutes === 10080) return "7 days";
   return minutes === undefined ? "unknown" : `${minutes} minutes`;
 };
+const formatWindowName = (minutes) => {
+  if (minutes === 300) return "5-hour";
+  if (minutes === 10080) return "weekly";
+  return minutes === undefined ? "unknown" : `${minutes}-minute`;
+};
+const isActiveWindow = (minutes) => minutes !== undefined && minutes > 0;
 const formatDuration = (seconds) => {
   if (seconds === undefined) return "unknown";
   let remaining = Math.max(0, Math.round(seconds));
@@ -175,7 +181,7 @@ const formatDuration = (seconds) => {
   return parts.join(" ");
 };
 const formatReset = (epochSeconds) => {
-  if (epochSeconds === undefined) return "unknown";
+  if (epochSeconds === undefined || epochSeconds <= 0) return "unknown";
   return new Intl.DateTimeFormat(undefined, {
     year: "numeric",
     month: "short",
@@ -195,16 +201,20 @@ const secondaryWindow = numericHeader("x-codex-secondary-window-minutes");
 const secondaryUsed = numericHeader("x-codex-secondary-used-percent");
 const secondaryResetAfter = numericHeader("x-codex-secondary-reset-after-seconds");
 const secondaryResetAt = numericHeader("x-codex-secondary-reset-at");
-const primaryLimited = primaryUsed !== undefined && primaryUsed >= 100;
-const secondaryLimited = secondaryUsed !== undefined && secondaryUsed >= 100;
+const primaryActive = isActiveWindow(primaryWindow);
+const secondaryActive = isActiveWindow(secondaryWindow);
+const primaryLimited = primaryActive && primaryUsed !== undefined && primaryUsed >= 100;
+const secondaryLimited = secondaryActive && secondaryUsed !== undefined && secondaryUsed >= 100;
 
 let result;
 if (primaryLimited && secondaryLimited) {
-  result = "Both the 5-hour and weekly windows are exhausted.";
+  result = `Both the ${formatWindowName(primaryWindow)} and ${formatWindowName(secondaryWindow)} windows are exhausted.`;
 } else if (primaryLimited) {
-  result = "The 5-hour window is exhausted; the weekly window has remaining capacity.";
+  result = secondaryActive
+    ? `The ${formatWindowName(primaryWindow)} window is exhausted; the ${formatWindowName(secondaryWindow)} window has remaining capacity.`
+    : `The ${formatWindowName(primaryWindow)} window is exhausted.`;
 } else if (secondaryLimited) {
-  result = "The weekly window is exhausted.";
+  result = `The ${formatWindowName(secondaryWindow)} window is exhausted.`;
 } else if (record.status === 429) {
   result = "Codex returned HTTP 429, but neither reported window is at 100%.";
 } else {
@@ -215,9 +225,17 @@ const percent = (value) => value === undefined ? "unknown" : `${value}%`;
 console.log(`  HTTP status:          ${record.status}`);
 console.log(`  Plan:                 ${textHeader("x-codex-plan-type")}`);
 console.log(`  Active limit:         ${textHeader("x-codex-active-limit")}`);
-console.log(`  Primary (${formatWindow(primaryWindow)}): ${percent(primaryUsed)} used`);
-console.log(`  Primary reset:        in ${formatDuration(primaryResetAfter)} at ${formatReset(primaryResetAt)}`);
-console.log(`  Secondary (${formatWindow(secondaryWindow)}): ${percent(secondaryUsed)} used`);
-console.log(`  Secondary reset:      in ${formatDuration(secondaryResetAfter)} at ${formatReset(secondaryResetAt)}`);
+if (primaryActive) {
+  console.log(`  Primary (${formatWindow(primaryWindow)}): ${percent(primaryUsed)} used`);
+  console.log(`  Primary reset:        in ${formatDuration(primaryResetAfter)} at ${formatReset(primaryResetAt)}`);
+} else {
+  console.log("  Primary:              not active");
+}
+if (secondaryActive) {
+  console.log(`  Secondary (${formatWindow(secondaryWindow)}): ${percent(secondaryUsed)} used`);
+  console.log(`  Secondary reset:      in ${formatDuration(secondaryResetAfter)} at ${formatReset(secondaryResetAt)}`);
+} else {
+  console.log("  Secondary:            not active");
+}
 console.log(`  Result:               ${result}`);
 NODE
