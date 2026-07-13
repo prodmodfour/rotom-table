@@ -707,6 +707,63 @@ export const validateMoveSpecOperationSequence = (
     }
   }
 
+  const relocationEntries = indexed.filter(({ operation }) => (
+    operation.kind === 'movement-request'
+    && (operation.payload.mode === 'teleport' || operation.payload.mode === 'swap')
+  ))
+  for (const { operation, path } of relocationEntries) {
+    if (
+      operation.kind !== 'movement-request'
+      || (operation.payload.mode !== 'teleport' && operation.payload.mode !== 'swap')
+    ) continue
+    const mode = operation.payload.mode
+    if (operation.phase !== 'movement') {
+      fail(
+        'invalid-definition',
+        `${path}.phase`,
+        'teleports and swaps must execute in the movement phase.',
+      )
+    }
+    if (
+      typeof operation.payload.distance !== 'number'
+      || operation.payload.distance <= 0
+      || operation.payload.choice !== undefined
+      || operation.payload.displacement !== undefined
+    ) {
+      fail(
+        'invalid-definition',
+        `${path}.payload`,
+        'teleports and swaps require a positive reviewed range and no displacement or inline choice mechanics.',
+      )
+    }
+    if (
+      mode === 'teleport'
+      && (
+        operation.recipients.kind !== 'actor'
+        || operation.payload.destinationSetId === null
+      )
+    ) {
+      fail(
+        'invalid-definition',
+        `${path}.payload`,
+        'a teleport must address the actor and reference one server-owned destination set.',
+      )
+    }
+    if (
+      mode === 'swap'
+      && (
+        operation.recipients.kind !== 'actor-and-attacked-targets'
+        || operation.payload.destinationSetId !== null
+      )
+    ) {
+      fail(
+        'invalid-definition',
+        `${path}.payload`,
+        'a position swap must address the actor and attacked target and derive both destinations from their authoritative origins.',
+      )
+    }
+  }
+
   const multiHitEntries = indexed.filter(({ operation }) => operation.kind === 'multi-hit')
   if (multiHitEntries.length > 1) {
     fail(

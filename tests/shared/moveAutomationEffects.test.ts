@@ -532,6 +532,63 @@ describe('MoveSpec typed effect operations', () => {
     }), 'invalid-effect-operation', 'operation.payload.displacement.vector')
   })
 
+  it('parses bounded teleport and swap requests without client-authored endpoints', () => {
+    const teleport = parseMoveEffectOperation(validOperation('movement-request', {
+      recipients: { kind: 'actor' },
+      phase: 'movement',
+      payload: {
+        requestId: 'movement.teleport',
+        mode: 'teleport',
+        distance: 6,
+        destinationSetId: 'destinations.teleport',
+      },
+    }))
+    const swap = parseMoveEffectOperation(validOperation('movement-request', {
+      recipients: { kind: 'actor-and-attacked-targets' },
+      phase: 'movement',
+      payload: {
+        requestId: 'movement.swap',
+        mode: 'swap',
+        distance: 6,
+        destinationSetId: null,
+      },
+    }))
+
+    expect(teleport.payload).toEqual({
+      requestId: 'movement.teleport',
+      mode: 'teleport',
+      distance: 6,
+      destinationSetId: 'destinations.teleport',
+    })
+    expect(swap.payload).toEqual({
+      requestId: 'movement.swap',
+      mode: 'swap',
+      distance: 6,
+      destinationSetId: null,
+    })
+    expectDeeplyFrozen(teleport)
+    expectDeeplyFrozen(swap)
+
+    for (const clientMechanics of [
+      { destination: { x: 4, y: 0, z: 4 } },
+      { targetPosition: { x: 1, y: 0, z: 1 } },
+      { willing: true },
+      { relationship: 'ally' },
+      { ignoreTerrain: true },
+    ]) {
+      expectEffectError(validOperation('movement-request', {
+        phase: 'movement',
+        payload: {
+          requestId: 'movement.teleport',
+          mode: 'teleport',
+          distance: 6,
+          destinationSetId: 'destinations.teleport',
+          ...clientMechanics,
+        },
+      }), 'invalid-effect-operation', 'operation.payload')
+    }
+  })
+
   it('supports each bounded payload variant without accepting generic metadata', () => {
     expect(parseMoveEffectOperation(validOperation('roll', {
       payload: {

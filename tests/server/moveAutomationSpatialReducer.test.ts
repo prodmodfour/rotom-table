@@ -4,6 +4,7 @@ import {
   type MoveMovementDisplacement,
   type MoveMovementDistance,
 } from '#shared/moveAutomation/effects'
+import { createEmptyEncounterState } from '#shared/moveAutomation/encounterState'
 import type { CharacterSheet } from '~/types/characterSheet'
 import type { SheetPlacement, TabletopMap } from '~/types/map'
 import type { TrainerSheet } from '~/types/trainerSheet'
@@ -14,6 +15,7 @@ import {
   reduceMoveSpatialEffects,
   type MoveResolvedSpatialEffectOperation,
   type MoveSpatialEffectOperation,
+  type MoveSpatialRelocationEffectOperation,
 } from '~~/server/domain/moveAutomation/reducers/spatial'
 
 const placement = (
@@ -21,11 +23,13 @@ const placement = (
   sheetSlug: string,
   x: number,
   z: number,
+  sideId?: string,
 ): SheetPlacement => ({
   id,
   sheetKind: 'pokemon',
   sheetSlug,
   position: { x, y: 0, z },
+  ...(sideId ? { sideId } : {}),
 })
 
 const pokemonSheet = (
@@ -62,16 +66,18 @@ const mapFixture = (
 
 const buildContext = (options: {
   readonly map?: TabletopMap
+  readonly actorSheet?: CharacterSheet
   readonly targetSheet?: CharacterSheet
+  readonly secondSheet?: CharacterSheet
   readonly selectedPlacementIds?: readonly string[]
 } = {}) => buildAuthoritativeMoveRulesContext({
   map: options.map ?? mapFixture(),
   pokemonSheets: new Map([
-    ['actor', pokemonSheet('actor', 'Snorlax')],
+    ['actor', options.actorSheet ?? pokemonSheet('actor', 'Snorlax')],
     ['target', options.targetSheet ?? pokemonSheet('target', 'Pikachu', {
       capabilities: { overland: 6, weight: 4 },
     })],
-    ['second', pokemonSheet('second', 'Pikachu', {
+    ['second', options.secondSheet ?? pokemonSheet('second', 'Pikachu', {
       capabilities: { overland: 6, weight: 2 },
     })],
   ]),
@@ -133,8 +139,33 @@ const operation = (options: {
   },
 }) as MoveSpatialEffectOperation
 
+const relocationOperation = (options: {
+  readonly id?: string
+  readonly mode: 'teleport' | 'swap'
+  readonly recipients?: 'actor' | 'actor-and-attacked-targets'
+  readonly distance?: number
+  readonly destinationSetId?: string | null
+}): MoveSpatialRelocationEffectOperation => parseMoveEffectOperation({
+  id: options.id ?? `operation.${options.mode}`,
+  kind: 'movement-request',
+  source: { kind: 'move', id: 'move.scratch' },
+  recipients: { kind: options.recipients ?? (options.mode === 'teleport'
+    ? 'actor'
+    : 'actor-and-attacked-targets') },
+  phase: 'movement',
+  reasonCode: `move.scratch.${options.mode}`,
+  payload: {
+    requestId: `request.${options.mode}`,
+    mode: options.mode,
+    distance: options.distance ?? 6,
+    destinationSetId: options.destinationSetId === undefined
+      ? (options.mode === 'teleport' ? 'destinations.teleport' : null)
+      : options.destinationSetId,
+  },
+}) as MoveSpatialRelocationEffectOperation
+
 const emission = (
-  value: MoveSpatialEffectOperation,
+  value: MoveSpatialEffectOperation | MoveSpatialRelocationEffectOperation,
   recipientIds: readonly string[] = ['target-token'],
 ): MoveResolvedSpatialEffectOperation => ({ operation: value, recipientIds })
 
@@ -496,6 +527,331 @@ describe('MoveSpec spatial effect reducer', () => {
       1,
       1,
     )).toBe(false)
+  })
+
+  it('teleports only the actor to a server-owned endpoint without traversing intermediate cells', () => {
+    const arena: TabletopMap = {
+      ...mapFixture([
+        placement('actor-token', 'actor', 1, 1, 'red'),
+        placement('target-token', 'target', 5, 5, 'blue'),
+      ]),
+      voxels: [{ x: 4, y: 0, z: 1, materialId: 'airship_wall_bulkhead' }],
+      encounterState: {
+        ...createEmptyEncounterState(),
+        sides: {
+          red: { id: 'red', label: 'Red', status: 'active' },
+          blue: { id: 'blue', label: 'Blue', status: 'active' },
+        },
+      },
+    }
+    const context = buildContext({ map: arena, selectedPlacementIds: [] })
+    const originalMap = structuredClone(context.map)
+    const resolve = vi.fn(() => ({ x: 8, y: 0, z: 1 }))
+    const teleport = relocationOperation({ mode: 'teleport', distance: 8 })
+
+    const result = reduceMoveSpatialEffects({
+      context,
+      operations: [emission(teleport, ['actor-token'])],
+      dynamicRecipients: dynamicRecipients({
+        attackedTargetIds: [],
+        hitTargetIds: [],
+        damagedTargetIds: [],
+      }),
+      destinations: { resolve },
+    })
+
+    expect(resolve).toHaveBeenCalledWith({
+      operationId: 'operation.teleport',
+      destinationSetId: 'destinations.teleport',
+      recipientPlacementId: 'actor-token',
+    })
+    expect(result.movements).toEqual([expect.objectContaining({
+      operationId: 'operation.teleport',
+      recipientPlacementId: 'actor-token',
+      mode: 'teleport',
+      origin: { x: 1, y: 0, z: 1 },
+      destination: { x: 8, y: 0, z: 1 },
+      path: [
+        { x: 1, y: 0, z: 1 },
+        { x: 8, y: 0, z: 1 },
+      ],
+      traversesIntermediateCells: false,
+      resolvedDistance: 7,
+      shortened: false,
+      relationship: 'self',
+      willingness: 'willing',
+      terrain: {
+        requirements: ['overland'],
+        air: false,
+        airHeight: 0,
+        touchingSurface: true,
+      },
+      triggers: expect.objectContaining({
+        placementLeaving: true,
+        placementEntering: true,
+        placementMoving: true,
+        opportunityAttacks: false,
+      }),
+    })])
+    const movement = result.movements[0]!
+    if (movement.mode !== 'teleport') throw new Error('Expected teleport movement.')
+    expect(movement.triggers.leftCells).toHaveLength(8)
+    expect(movement.triggers.enteredCells).toHaveLength(8)
+    expect(result.operationResults[0]).toMatchObject({
+      outcome: 'applied',
+      details: {
+        mode: 'teleport',
+        movementCount: 1,
+        movedCount: 1,
+        traversesIntermediateCells: false,
+        triggerPolicy: {
+          placementLeaving: true,
+          placementEntering: true,
+          placementMoving: true,
+          opportunityAttacks: false,
+        },
+      },
+    })
+    expect(context.map).toEqual(originalMap)
+    expect(Object.isFrozen(result)).toBe(true)
+    expect(Object.isFrozen(movement.triggers.leftCells)).toBe(true)
+  })
+
+  it('rejects unavailable, occupied, out-of-range, and unsupported aerial teleport endpoints', () => {
+    const arena = mapFixture([
+      placement('actor-token', 'actor', 1, 1),
+      placement('target-token', 'target', 5, 5),
+    ])
+    const run = (
+      destination: { x: number; y: number; z: number } | null,
+      distance = 8,
+    ) => reduceMoveSpatialEffects({
+      context: buildContext({ map: arena, selectedPlacementIds: [] }),
+      operations: [emission(
+        relocationOperation({ mode: 'teleport', distance }),
+        ['actor-token'],
+      )],
+      dynamicRecipients: dynamicRecipients({
+        attackedTargetIds: [],
+        hitTargetIds: [],
+        damagedTargetIds: [],
+      }),
+      ...(destination ? { destinations: { resolve: () => destination } } : {}),
+    })
+
+    expectSpatialError(() => run(null), 'destination-unavailable')
+    expectSpatialError(() => run({ x: 5, y: 0, z: 5 }), 'relocation-destination-invalid')
+    expectSpatialError(() => run({ x: 8, y: 0, z: 1 }, 2), 'relocation-range-exceeded')
+    expectSpatialError(() => run({ x: 8, y: 2, z: 1 }), 'relocation-destination-invalid')
+
+    const aerial = reduceMoveSpatialEffects({
+      context: buildContext({
+        map: arena,
+        actorSheet: pokemonSheet('actor', 'Snorlax', {
+          capabilities: { overland: 6, levitate: 6 },
+        }),
+        selectedPlacementIds: [],
+      }),
+      operations: [emission(
+        relocationOperation({ mode: 'teleport', distance: 12 }),
+        ['actor-token'],
+      )],
+      dynamicRecipients: dynamicRecipients({
+        attackedTargetIds: [],
+        hitTargetIds: [],
+        damagedTargetIds: [],
+      }),
+      destinations: { resolve: () => ({ x: 8, y: 2, z: 1 }) },
+    })
+    expect(aerial.movements[0]).toMatchObject({
+      mode: 'teleport',
+      terrain: { air: true, airHeight: 2, touchingSurface: false },
+    })
+  })
+
+  it('swaps one willing ally through simultaneous final occupancy and marks relocation triggers', () => {
+    const arena: TabletopMap = {
+      ...mapFixture([
+        placement('actor-token', 'actor', 1, 1, 'red'),
+        placement('target-token', 'target', 5, 1, 'red'),
+      ]),
+      encounterState: {
+        ...createEmptyEncounterState(),
+        sides: { red: { id: 'red', label: 'Red', status: 'active' } },
+      },
+    }
+    const context = buildContext({ map: arena, selectedPlacementIds: ['target-token'] })
+    const originalMap = structuredClone(context.map)
+    const resolve = vi.fn(() => 'willing' as const)
+    const swap = relocationOperation({ mode: 'swap', distance: 6 })
+
+    const result = reduceMoveSpatialEffects({
+      context,
+      operations: [emission(swap, ['actor-token', 'target-token'])],
+      dynamicRecipients: dynamicRecipients(),
+      willingness: { resolve },
+    })
+
+    expect(resolve).toHaveBeenCalledWith({
+      operationId: 'operation.swap',
+      actorPlacementId: 'actor-token',
+      targetPlacementId: 'target-token',
+    })
+    expect(result.movements).toEqual([
+      expect.objectContaining({
+        recipientPlacementId: 'actor-token',
+        mode: 'swap',
+        origin: { x: 1, y: 0, z: 1 },
+        destination: { x: 5, y: 0, z: 1 },
+        relationship: 'self',
+        willingness: 'willing',
+        traversesIntermediateCells: false,
+        triggers: expect.objectContaining({
+          placementLeaving: true,
+          placementEntering: true,
+          placementMoving: true,
+          opportunityAttacks: false,
+        }),
+      }),
+      expect.objectContaining({
+        recipientPlacementId: 'target-token',
+        mode: 'swap',
+        origin: { x: 5, y: 0, z: 1 },
+        destination: { x: 1, y: 0, z: 1 },
+        relationship: 'ally',
+        willingness: 'willing',
+        traversesIntermediateCells: false,
+      }),
+    ])
+    expect(result.operationResults[0]).toMatchObject({
+      recipientIds: ['actor-token', 'target-token'],
+      outcome: 'applied',
+      details: { mode: 'swap', movementCount: 2, movedCount: 2 },
+    })
+    expect(context.map).toEqual(originalMap)
+    expect(footprintsOverlap(
+      result.movements[0]!.destination,
+      2,
+      2,
+      result.movements[1]!.destination,
+      1,
+      1,
+    )).toBe(false)
+  })
+
+  it('requires explicit ally relationship and server-owned willingness for swaps', () => {
+    const encounterState = {
+      ...createEmptyEncounterState(),
+      sides: {
+        red: { id: 'red', label: 'Red', status: 'active' as const },
+        blue: { id: 'blue', label: 'Blue', status: 'active' as const },
+      },
+    }
+    const swap = relocationOperation({ mode: 'swap' })
+    const reduce = (map: TabletopMap, willingness?: 'willing' | 'unwilling') => (
+      reduceMoveSpatialEffects({
+        context: buildContext({ map, selectedPlacementIds: ['target-token'] }),
+        operations: [emission(swap, ['actor-token', 'target-token'])],
+        dynamicRecipients: dynamicRecipients(),
+        ...(willingness ? { willingness: { resolve: () => willingness } } : {}),
+      })
+    )
+
+    const enemyMap: TabletopMap = {
+      ...mapFixture([
+        placement('actor-token', 'actor', 1, 1, 'red'),
+        placement('target-token', 'target', 5, 1, 'blue'),
+      ]),
+      encounterState,
+    }
+    expectSpatialError(() => reduce(enemyMap, 'willing'), 'relocation-relationship-invalid')
+
+    const allyMap: TabletopMap = {
+      ...enemyMap,
+      placements: [
+        placement('actor-token', 'actor', 1, 1, 'red'),
+        placement('target-token', 'target', 5, 1, 'red'),
+      ],
+    }
+    expectSpatialError(() => reduce(allyMap), 'relocation-willingness-unavailable')
+    expectSpatialError(() => reduce(allyMap, 'unwilling'), 'relocation-willingness-unavailable')
+  })
+
+  it('validates each swap participant against destination terrain capabilities', () => {
+    const arena: TabletopMap = {
+      ...mapFixture([
+        placement('actor-token', 'actor', 1, 1, 'red'),
+        placement('target-token', 'target', 6, 1, 'red'),
+      ]),
+      voxels: [{ x: 1, y: 0, z: 1, materialId: 'deep_water' }],
+      encounterState: {
+        ...createEmptyEncounterState(),
+        sides: { red: { id: 'red', label: 'Red', status: 'active' } },
+      },
+    }
+    const context = buildContext({
+      map: arena,
+      actorSheet: pokemonSheet('actor', 'Pikachu', {
+        capabilities: { overland: 6, swim: 6 },
+      }),
+      targetSheet: pokemonSheet('target', 'Diglett', {
+        capabilities: { overland: 6 },
+      }),
+      selectedPlacementIds: ['target-token'],
+    })
+    const before = structuredClone(context.map)
+
+    expectSpatialError(() => reduceMoveSpatialEffects({
+      context,
+      operations: [emission(
+        relocationOperation({ mode: 'swap', distance: 8 }),
+        ['actor-token', 'target-token'],
+      )],
+      dynamicRecipients: dynamicRecipients(),
+      willingness: { resolve: () => 'willing' },
+    }), 'relocation-destination-invalid')
+    expect(context.map).toEqual(before)
+  })
+
+  it('leaves both swap participants unchanged when the second final footprint is invalid', () => {
+    const arena: TabletopMap = {
+      ...mapFixture([
+        placement('actor-token', 'actor', 1, 1, 'red'),
+        placement('target-token', 'target', 6, 1, 'red'),
+        placement('second-token', 'second', 2, 1, 'blue'),
+      ]),
+      encounterState: {
+        ...createEmptyEncounterState(),
+        sides: {
+          red: { id: 'red', label: 'Red', status: 'active' },
+          blue: { id: 'blue', label: 'Blue', status: 'active' },
+        },
+      },
+    }
+    const context = buildContext({
+      map: arena,
+      actorSheet: pokemonSheet('actor', 'Pikachu'),
+      targetSheet: pokemonSheet('target', 'Snorlax'),
+      selectedPlacementIds: ['target-token'],
+    })
+    const before = structuredClone(context.map)
+
+    expectSpatialError(() => reduceMoveSpatialEffects({
+      context,
+      operations: [emission(
+        relocationOperation({ mode: 'swap', distance: 8 }),
+        ['actor-token', 'target-token'],
+      )],
+      dynamicRecipients: dynamicRecipients(),
+      willingness: { resolve: () => 'willing' },
+    }), 'relocation-destination-invalid')
+
+    expect(context.map).toEqual(before)
+    expect(context.map.placements.map(({ id, position }) => ({ id, position }))).toEqual([
+      { id: 'actor-token', position: { x: 1, y: 0, z: 1 } },
+      { id: 'target-token', position: { x: 6, y: 0, z: 1 } },
+      { id: 'second-token', position: { x: 2, y: 0, z: 1 } },
+    ])
   })
 
   it('fails closed for overlapping relative footprints, missing choices, and recipient drift', () => {

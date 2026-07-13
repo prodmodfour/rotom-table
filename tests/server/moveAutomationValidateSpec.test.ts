@@ -891,6 +891,88 @@ describe('authoritative MoveSpec validation and hashing', () => {
     )
   })
 
+  it('validates actor teleports and willing-ally position swap operation shapes', () => {
+    const relocationOperation = (mode: 'teleport' | 'swap') => ({
+      id: `operation.${mode}`,
+      kind: 'movement-request',
+      source: { kind: 'move', id: 'move.scratch' },
+      recipients: {
+        kind: mode === 'teleport' ? 'actor' : 'actor-and-attacked-targets',
+      },
+      phase: 'movement',
+      reasonCode: `move.scratch.${mode}`,
+      payload: {
+        requestId: `request.${mode}`,
+        mode,
+        distance: 6,
+        destinationSetId: mode === 'teleport' ? 'destinations.teleport' : null,
+      },
+    })
+    const valid = validSpec()
+    valid.phases.splice(-1, 0, {
+      phase: 'movement',
+      operations: [relocationOperation('teleport'), relocationOperation('swap')],
+    })
+    const validated = validateMoveSpec(valid)
+    expect(validated.spec.phases[2]?.operations).toEqual([
+      expect.objectContaining({
+        kind: 'movement-request',
+        recipients: { kind: 'actor' },
+        payload: expect.objectContaining({
+          mode: 'teleport',
+          distance: 6,
+          destinationSetId: 'destinations.teleport',
+        }),
+      }),
+      expect.objectContaining({
+        kind: 'movement-request',
+        recipients: { kind: 'actor-and-attacked-targets' },
+        payload: expect.objectContaining({ mode: 'swap', distance: 6, destinationSetId: null }),
+      }),
+    ])
+
+    const wrongPhase = structuredClone(valid)
+    wrongPhase.phases[2]!.phase = 'schedule'
+    wrongPhase.phases[2]!.operations.forEach(operation => { operation.phase = 'schedule' })
+    expectDefinitionError(
+      () => validateMoveSpec(wrongPhase),
+      'invalid-definition',
+      'spec.phases[2].operations[0].phase',
+    )
+
+    const targetTeleport = structuredClone(valid)
+    targetTeleport.phases[2]!.operations[0]!.recipients = { kind: 'hit-targets' }
+    expectDefinitionError(
+      () => validateMoveSpec(targetTeleport),
+      'invalid-definition',
+      'spec.phases[2].operations[0].payload',
+    )
+
+    const unboundTeleport = structuredClone(valid)
+    unboundTeleport.phases[2]!.operations[0]!.payload.destinationSetId = null
+    expectDefinitionError(
+      () => validateMoveSpec(unboundTeleport),
+      'invalid-definition',
+      'spec.phases[2].operations[0].payload',
+    )
+
+    const oneSidedSwap = structuredClone(valid)
+    oneSidedSwap.phases[2]!.operations[1]!.recipients = { kind: 'actor' }
+    expectDefinitionError(
+      () => validateMoveSpec(oneSidedSwap),
+      'invalid-definition',
+      'spec.phases[2].operations[1].payload',
+    )
+
+    const clientDestinationSwap = structuredClone(valid)
+    clientDestinationSwap.phases[2]!.operations[1]!.payload.destinationSetId = 'browser.cells'
+    expectDefinitionError(
+      () => validateMoveSpec(clientDestinationSwap),
+      'invalid-definition',
+      'spec.phases[2].operations[1].payload',
+    )
+  })
+
   it('validates branch identities and later-operation control without executable payloads', () => {
     const branched = validSpec()
     branched.phases.splice(1, 0, {

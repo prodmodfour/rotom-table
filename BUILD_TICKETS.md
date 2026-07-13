@@ -1715,7 +1715,7 @@ Status: DONE
 
 ## MA-128 — Implement teleport and position swaps
 
-Status: TODO
+Status: DONE
 
 **Depends on:** MA-120, MA-125B
 **Commit:** `feat(move-automation): resolve teleports and swaps`

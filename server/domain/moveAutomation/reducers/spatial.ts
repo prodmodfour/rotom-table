@@ -21,6 +21,7 @@ import type { CharacterSheet } from '~/types/characterSheet'
 import type { GridAnchor, TabletopMap } from '~/types/map'
 import type { TrainerSheet } from '~/types/trainerSheet'
 import { getClearanceValue } from '~/utils/gridGeometry'
+import { buildMapMovementTerrainIndex } from '~/utils/mapMovementTerrain'
 import { moveAutomationAreaDirectionVector } from '~/utils/moveAutomationDirections'
 import {
   AUTHORITATIVE_DISPLACEMENT_SHORTENING_REASONS,
@@ -47,6 +48,31 @@ import {
   type MoveEffectDynamicRecipientSets,
   type ResolvedMoveEffectDynamicRecipients,
 } from './effectRecipients'
+import {
+  assertMoveSpatialRelocationOperation,
+  isMoveSpatialRelocationOperation,
+  resolveMoveSpatialRelocation,
+  type MoveSpatialDestinationResolver,
+  type MoveSpatialRelocationEffectOperation,
+  type MoveSpatialRelocationErrorCode,
+  type MoveSpatialRelocationMovement,
+  type MoveSpatialWillingnessResolver,
+} from './spatialRelocation'
+
+export {
+  MOVE_SPATIAL_WILLINGNESS_VALUES,
+  type MoveSpatialDestinationResolver,
+  type MoveSpatialRelocationEffectOperation,
+  type MoveSpatialRelocationMovement,
+  type MoveSpatialRelocationTerrain,
+  type MoveSpatialRelocationTriggers,
+  type MoveSpatialSwapEffectOperation,
+  type MoveSpatialTeleportEffectOperation,
+  type MoveSpatialWillingness,
+  type MoveSpatialWillingnessResolver,
+  type ResolveMoveSpatialDestinationInput,
+  type ResolveMoveSpatialWillingnessInput,
+} from './spatialRelocation'
 
 export const MOVE_SPATIAL_SHORTENING_REASONS =
   AUTHORITATIVE_DISPLACEMENT_SHORTENING_REASONS
@@ -68,6 +94,7 @@ export type MoveSpatialEffectReductionErrorCode =
   | 'distance-evaluation-failed'
   | 'full-distance-unavailable'
   | 'movement-validation-failed'
+  | MoveSpatialRelocationErrorCode
 
 export class MoveSpatialEffectReductionError extends Error {
   readonly code: MoveSpatialEffectReductionErrorCode
@@ -83,13 +110,18 @@ export type MoveSpatialEffectOperation = MoveMovementRequestEffectOperation & {
   readonly payload: MoveMovementRequestEffectOperation['payload'] & {
     readonly mode: Extract<MoveEffectMovementMode, 'forced' | 'voluntary'>
     readonly distance: MoveMovementDistance
+    readonly destinationSetId: null
     readonly displacement: MoveMovementDisplacement
   }
 }
 
+export type MoveReducibleSpatialEffectOperation =
+  | MoveSpatialEffectOperation
+  | MoveSpatialRelocationEffectOperation
+
 export interface MoveResolvedSpatialEffectOperation
   extends Omit<MoveSpecEmittedOperation, 'operation'> {
-  readonly operation: MoveSpatialEffectOperation
+  readonly operation: MoveReducibleSpatialEffectOperation
 }
 
 export interface ResolveMoveSpatialChosenDirectionInput {
@@ -141,16 +173,20 @@ export interface MoveSpatialMovement {
   readonly obstruction: AuthoritativeDisplacementObstruction | null
 }
 
+export type MoveReducedSpatialMovement =
+  | MoveSpatialMovement
+  | MoveSpatialRelocationMovement
+
 export interface MoveSpatialEffectOperationResult {
   readonly operationId: string
   readonly recipientIds: readonly string[]
   readonly outcome: 'applied' | 'no-op'
-  readonly movements: readonly MoveSpatialMovement[]
+  readonly movements: readonly MoveReducedSpatialMovement[]
   readonly details: MoveResolutionTraceJsonValue
 }
 
 export interface MoveSpatialEffectReduction {
-  readonly movements: readonly MoveSpatialMovement[]
+  readonly movements: readonly MoveReducedSpatialMovement[]
   readonly operationResults: readonly MoveSpatialEffectOperationResult[]
   readonly sheetReads: readonly AuthoritativeMoveSheetRead[]
 }
@@ -160,6 +196,8 @@ export interface ReduceMoveSpatialEffectsInput {
   readonly operations: readonly MoveResolvedSpatialEffectOperation[]
   readonly dynamicRecipients: MoveEffectDynamicRecipientSets
   readonly chosenDirections?: MoveSpatialChosenDirectionResolver
+  readonly destinations?: MoveSpatialDestinationResolver
+  readonly willingness?: MoveSpatialWillingnessResolver
 }
 
 interface SpatialFootprint {
@@ -207,7 +245,7 @@ const recipientFailure = (
   message,
 )
 
-const assertSpatialOperation = (
+const assertDisplacementOperation = (
   operation: MoveSpatialEffectOperation,
 ): void => {
   const { payload } = operation
@@ -238,6 +276,10 @@ const assertSpatialOperation = (
     )
   }
 }
+
+const isDisplacementOperation = (
+  operation: MoveReducibleSpatialEffectOperation,
+): operation is MoveSpatialEffectOperation => operation.payload.displacement !== undefined
 
 const selectorStateFor = (
   recipientId: string,
@@ -470,7 +512,7 @@ const assertStaticDistance = (value: number, operationId: string): number => {
 
 const resolveSpatialDistance = (input: {
   readonly context: AuthoritativeMoveRulesContext
-  readonly operation: MoveSpatialEffectOperation
+  readonly operation: MoveReducibleSpatialEffectOperation
   readonly selectorState: MoveRuleSelectorState
 }): MoveSpatialDistanceResolution => {
   const declaration = input.operation.payload.distance
@@ -566,7 +608,7 @@ const recordMovementSheetReads = (
   for (const read of reads) context.reads.recordSheet(read)
 }
 
-const resolveMovement = (input: {
+const resolveDisplacementMovement = (input: {
   readonly context: AuthoritativeMoveRulesContext
   readonly operation: MoveSpatialEffectOperation
   readonly recipientId: string
@@ -653,7 +695,7 @@ export const reduceMoveSpatialEffects = (
     recipientFailure,
   )
   const operationIds = new Set<string>()
-  const movements: MoveSpatialMovement[] = []
+  const movements: MoveReducedSpatialMovement[] = []
   const operationResults: MoveSpatialEffectOperationResult[] = []
   const positions = new Map(
     input.context.map.placements.map(placement => [
@@ -662,10 +704,16 @@ export const reduceMoveSpatialEffects = (
     ]),
   )
   const movementSheets = movementSheetsForContext(input.context)
+  const terrainIndex = buildMapMovementTerrainIndex(input.context.map.voxels)
 
   for (const emission of input.operations) {
     const { operation } = emission
-    assertSpatialOperation(operation)
+    const operationId = operation.id
+    if (isDisplacementOperation(operation)) assertDisplacementOperation(operation)
+    else if (isMoveSpatialRelocationOperation(operation)) {
+      assertMoveSpatialRelocationOperation(operation, fail)
+    }
+    else fail('unsupported-operation', `Spatial operation ${operationId} is unsupported.`)
     if (operationIds.has(operation.id)) {
       fail('duplicate-operation-id', `Spatial operation ${operation.id} is duplicated.`)
     }
@@ -693,19 +741,68 @@ export const reduceMoveSpatialEffects = (
       )
     }
 
-    const resolved: MoveSpatialMovement[] = []
-    for (const recipientId of expectedIds) {
-      const movement = resolveMovement({
+    if (isDisplacementOperation(operation)) {
+      const resolved: MoveSpatialMovement[] = []
+      for (const recipientId of expectedIds) {
+        const movement = resolveDisplacementMovement({
+          context: input.context,
+          operation,
+          recipientId,
+          dynamic,
+          positions,
+          movementSheets,
+          chosenDirections: input.chosenDirections,
+        })
+        resolved.push(movement)
+        positions.set(recipientId, cloneAnchor(movement.destination))
+      }
+      movements.push(...resolved)
+      operationResults.push({
+        operationId: operation.id,
+        recipientIds: [...expectedIds],
+        outcome: resolved.some(movement => movement.resolvedDistance > 0)
+          ? 'applied'
+          : 'no-op',
+        movements: resolved,
+        details: {
+          mode: operation.payload.mode,
+          distancePolicy: operation.payload.displacement.distancePolicy,
+          opportunityAttackPolicy: operation.payload.displacement.opportunityAttacks,
+          movementCount: resolved.length,
+          movedCount: resolved.filter(movement => movement.resolvedDistance > 0).length,
+          shortenedCount: resolved.filter(movement => movement.shortened).length,
+        },
+      })
+      continue
+    }
+
+    if (!isMoveSpatialRelocationOperation(operation)) {
+      fail('unsupported-operation', `Spatial operation ${operationId} is unsupported.`)
+    }
+    const resolved = resolveMoveSpatialRelocation({
+      context: input.context,
+      operation,
+      recipientIds: expectedIds,
+      positions,
+      terrainIndex,
+      destinations: input.destinations,
+      willingness: input.willingness,
+      resolveFootprint: (placementId, role, currentPositions) => spatialFootprint(
+        input.context,
+        placementId,
+        role,
+        currentPositions,
+      ),
+      resolveDistance: recipientPlacementId => resolveSpatialDistance({
         context: input.context,
         operation,
-        recipientId,
-        dynamic,
-        positions,
-        movementSheets,
-        chosenDirections: input.chosenDirections,
-      })
-      resolved.push(movement)
-      positions.set(recipientId, cloneAnchor(movement.destination))
+        selectorState: selectorStateFor(recipientPlacementId, dynamic),
+      }),
+      fail,
+    })
+    // Relocation helpers validate the complete final footprint set first.
+    for (const movement of resolved) {
+      positions.set(movement.recipientPlacementId, cloneAnchor(movement.destination))
     }
     movements.push(...resolved)
     operationResults.push({
@@ -717,11 +814,15 @@ export const reduceMoveSpatialEffects = (
       movements: resolved,
       details: {
         mode: operation.payload.mode,
-        distancePolicy: operation.payload.displacement.distancePolicy,
-        opportunityAttackPolicy: operation.payload.displacement.opportunityAttacks,
         movementCount: resolved.length,
         movedCount: resolved.filter(movement => movement.resolvedDistance > 0).length,
-        shortenedCount: resolved.filter(movement => movement.shortened).length,
+        traversesIntermediateCells: false,
+        triggerPolicy: {
+          placementLeaving: true,
+          placementEntering: true,
+          placementMoving: true,
+          opportunityAttacks: false,
+        },
       },
     })
   }
@@ -737,5 +838,9 @@ export const isMoveSpatialEffectEmission = (
   value: MoveSpecEmittedOperation,
 ): value is MoveResolvedSpatialEffectOperation => (
   value.operation.kind === 'movement-request'
-  && value.operation.payload.displacement !== undefined
+  && (
+    value.operation.payload.displacement !== undefined
+    || value.operation.payload.mode === 'teleport'
+    || value.operation.payload.mode === 'swap'
+  )
 )
