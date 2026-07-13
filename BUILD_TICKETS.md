@@ -1631,7 +1631,7 @@ Status: DONE
 
 ## MA-124C — Spend resources for pending resolutions and movement
 
-Status: TODO
+Status: DONE
 
 **Depends on:** MA-124B
 **Commit:** `feat(move-automation): spend deferred and movement resources`
