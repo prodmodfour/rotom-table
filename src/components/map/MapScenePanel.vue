@@ -3,6 +3,7 @@ import { computed, ref } from 'vue'
 import MapSceneRenderer from '~/components/map/MapSceneRenderer.vue'
 import MapSceneStatus from '~/components/map/MapSceneStatus.vue'
 import MapMoveResponsePanel from '~/components/map/MapMoveResponsePanel.vue'
+import MapMoveCorrectionPanel from '~/components/map/MapMoveCorrectionPanel.vue'
 import MoveVfxDebugPanel from '~/components/map/MoveVfxDebugPanel.vue'
 import InitiativeInfoBar from '~/components/map/InitiativeInfoBar.vue'
 import MapActionSplash from '~/components/map/MapActionSplash.vue'
@@ -10,6 +11,7 @@ import MapCombatLog from '~/components/map/MapCombatLog.vue'
 import type { BuildTool } from '#shared/mapEditor'
 import type { LivePlayPresenceAttentionTarget, LivePlayPresenceGridCell } from '#shared/livePlayPresence'
 import type { PendingMoveResponseWindowView } from '#shared/moveAutomation/responseViews'
+import type { GmMoveCorrectionDetails } from '#shared/moveAutomation/correctionViews'
 import type { CombatStageMap } from '~/types/combatStages'
 import type {
   GridAnchor,
@@ -41,6 +43,7 @@ import type { MapSaveStatus } from '~/composables/useEditableMap'
 import type { MoveAutomationTargetBranchSelectionState } from '~/composables/map-editor/useMoveAutomationPanel'
 import type { InitiativeRow } from '~/composables/map-editor/useInitiativeTracker'
 import type { LivePlayConnectionState } from '~/composables/map-editor/useLivePlayStateMachine'
+import type { GmMoveCorrectionPanelStatus } from '~/composables/map-editor/useGmMoveCorrections'
 import type {
   PendingMoveResponseOptionReference,
   PendingMoveResponseReference,
@@ -109,6 +112,10 @@ const props = defineProps<{
   pendingMoveResponsesLoading?: boolean
   pendingMoveResponsesError?: string | null
   canManagePendingMoveResponses?: boolean
+  moveCorrectionDetails?: GmMoveCorrectionDetails | null
+  moveCorrectionStatus?: GmMoveCorrectionPanelStatus
+  moveCorrectionMessage?: string | null
+  canManageMoveCorrections?: boolean
   tokenMoveOptionsById?: Record<string, TokenMoveMenuOption[]>
   tokenManeuverOptionsById?: Record<string, TokenManeuverMenuOption[]>
   tokenAbilityOptionsById?: Record<string, TokenAbilityMenuOption[]>
@@ -180,6 +187,10 @@ const emit = defineEmits<{
   (event: 'cancel-pending-move-resolution', resolutionId: string): void
   (event: 'retry-pending-move-response', opId: string): void
   (event: 'refresh-pending-move-responses'): void
+  (event: 'inspect-move-operation', operationId: string): void
+  (event: 'apply-move-correction', operationIds: readonly string[]): void
+  (event: 'refresh-move-correction'): void
+  (event: 'close-move-correction'): void
   (event: 'token-motion-debug-metrics', metrics: TokenMotionDebugMetrics): void
 }>()
 
@@ -405,6 +416,18 @@ defineExpose({ focusPokemon, focusCell })
       <MapCombatLog
         v-if="props.map && canViewMap"
         :messages="combatLogMessages"
+        :can-inspect-move-operations="props.canManageMoveCorrections === true"
+        @inspect-move-operation="emit('inspect-move-operation', $event)"
+      />
+
+      <MapMoveCorrectionPanel
+        v-if="props.canManageMoveCorrections"
+        :details="props.moveCorrectionDetails ?? null"
+        :status="props.moveCorrectionStatus ?? 'idle'"
+        :message="props.moveCorrectionMessage ?? null"
+        @apply="emit('apply-move-correction', $event)"
+        @refresh="emit('refresh-move-correction')"
+        @close="emit('close-move-correction')"
       />
 
       <MapActionSplash

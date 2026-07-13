@@ -17,6 +17,7 @@ describe('move log projections', () => {
     const metadata = appendMoveLogEntry(
       { note: 'keep' },
       {
+        operationId: 'op_movelog0001',
         userId: 'actor-token',
         userName: 'Sparky',
         moveName: 'Scratch',
@@ -35,6 +36,7 @@ describe('move log projections', () => {
       note: 'keep',
       moveLog: [{
         at: 1_000,
+        operationId: 'op_movelog0001',
         userId: 'actor-token',
         userName: 'Sparky',
         moveName: 'Scratch',
@@ -71,9 +73,13 @@ describe('move log projections', () => {
       logLines: ['Sparky used Scratch.'],
     }
 
-    expect(appendMoveAutomationLogEntry(undefined, transaction, { now: () => 2_000 })).toEqual({
+    expect(appendMoveAutomationLogEntry(undefined, transaction, {
+      now: () => 2_000,
+      operationId: 'op_legacymove01',
+    })).toEqual({
       moveLog: [{
         at: 2_000,
+        operationId: 'op_legacymove01',
         userId: 'actor-token',
         userName: 'Sparky',
         moveName: 'Scratch',

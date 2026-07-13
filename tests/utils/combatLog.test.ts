@@ -11,6 +11,7 @@ describe('combatLog utilities', () => {
       moveLog: [
         {
           at: 200,
+          operationId: 'op_combatlog001',
           userName: 'Foil',
           moveName: 'Ember',
           lines: [
@@ -91,6 +92,7 @@ describe('combatLog utilities', () => {
     expect(messages[4]?.details).toEqual(['3 squares from (0, 0, 0) to (3, 0, 0).'])
     expect(messages[5]?.details).toEqual([])
     expect(messages[6]?.details).toEqual(['Crockefeller: 9 damage.'])
+    expect(messages[6]?.operationId).toBe('op_combatlog001')
   })
 
   it('includes Poké Ball capture attempts', () => {

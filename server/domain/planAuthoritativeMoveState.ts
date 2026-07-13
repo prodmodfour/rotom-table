@@ -980,6 +980,7 @@ export const planAuthoritativeMoveStateExecution = (
   workingMap.metadata = appendMoveAutomationLogEntry(workingMap.metadata, resolution.transaction, {
     now: () => plannedAt,
     maxLogEntries: input.maxMoveLogEntries,
+    operationId: input.operationId,
   })
 
   const revision = nextRevision(previousRevision)

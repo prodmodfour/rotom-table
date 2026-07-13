@@ -1,3 +1,4 @@
+import { isLivePlayOpId } from '#shared/livePlayCommands'
 import type { MapActionSplashProfileEntry } from '~/types/mapActionSplash'
 import type { MapSceneState } from '~/types/map'
 import { mapSceneStatesEqual, normalizeMapSceneState } from '~/utils/mapSceneState'
@@ -11,6 +12,8 @@ export interface CombatLogMessage {
   id: string
   at: number
   source: CombatLogSource
+  /** Present only for an accepted move linked to durable operation history. */
+  operationId?: string
   userName: string
   actionName: string
   title: string
@@ -55,6 +58,7 @@ interface CombatLogEntry {
   at: number
   source: CombatLogSource
   sourceOrder: number
+  operationId?: string
   entryIndex: number
   userName: string
   actionName: string
@@ -158,10 +162,15 @@ const readEntriesForSource = (
     const accentColor = normalizeTrainerAccentColor(rawEntry.accentColor) ?? actorAccentById.get(userId)
     const profileEntry = actorProfileById.get(userId)
 
+    const operationId = config.source === 'move' && isLivePlayOpId(rawEntry.operationId)
+      ? rawEntry.operationId
+      : undefined
+
     return [{
       at: numberOrFallback(rawEntry.at, 0),
       source: config.source,
       sourceOrder,
+      ...(operationId === undefined ? {} : { operationId }),
       entryIndex,
       userName: stringOrFallback(rawEntry.userName, 'Unknown'),
       actionName: stringOrFallback(rawEntry[config.actionKey], config.fallbackActionName),
@@ -209,6 +218,7 @@ const toMessage = (entry: CombatLogEntry): SortableCombatLogMessage => {
     source: entry.source,
     sourceOrder: entry.sourceOrder,
     entryIndex: entry.entryIndex,
+    ...(entry.operationId === undefined ? {} : { operationId: entry.operationId }),
     userName: entry.userName,
     actionName: entry.actionName,
     title,

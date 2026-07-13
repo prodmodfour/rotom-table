@@ -6,6 +6,11 @@ import { trainerAccentCssVariables } from '~/utils/trainerAccent'
 
 const props = defineProps<{
   messages: CombatLogMessage[]
+  canInspectMoveOperations?: boolean
+}>()
+
+const emit = defineEmits<{
+  inspectMoveOperation: [operationId: string]
 }>()
 
 const rootRef = ref<HTMLElement | null>(null)
@@ -29,6 +34,17 @@ const formatMessageTime = (message: CombatLogMessage): string =>
 
 const messageAccentStyle = (message: CombatLogMessage): Record<string, string> | undefined =>
   message.accentColor ? trainerAccentCssVariables(message.accentColor) : undefined
+
+const canInspectOperation = (message: CombatLogMessage): message is CombatLogMessage & { operationId: string } => (
+  props.canInspectMoveOperations === true
+  && message.source === 'move'
+  && typeof message.operationId === 'string'
+)
+
+const inspectOperation = (message: CombatLogMessage): void => {
+  if (!canInspectOperation(message)) return
+  emit('inspectMoveOperation', message.operationId)
+}
 
 const scrollToBottom = () => {
   const viewport = scrollViewportRef.value
@@ -117,6 +133,16 @@ onBeforeUnmount(() => {
                 {{ line }}
               </li>
             </ol>
+
+            <button
+              v-if="canInspectOperation(message)"
+              type="button"
+              class="combat-log__operation-button"
+              :aria-label="`Inspect ${message.actionName} operation details`"
+              @click.stop="inspectOperation(message)"
+            >
+              Operation details
+            </button>
           </div>
         </li>
       </ol>
@@ -277,6 +303,26 @@ onBeforeUnmount(() => {
   font-weight: 700;
   line-height: 1.22;
   overflow-wrap: anywhere;
+}
+
+.combat-log__operation-button {
+  justify-self: start;
+  border: 1px solid color-mix(in srgb, var(--accent) 58%, var(--rule-soft));
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--paper-accent) 88%, transparent);
+  color: var(--accent);
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.66rem;
+  font-weight: 850;
+  letter-spacing: 0.03em;
+  padding: 0.28rem 0.5rem;
+}
+
+.combat-log__operation-button:hover,
+.combat-log__operation-button:focus-visible {
+  border-color: var(--accent);
+  outline: none;
 }
 
 @media (max-width: 900px) {

@@ -365,6 +365,8 @@ describe('executeLivePlayResolveMoveCommandUseCase', () => {
       outcomeKind: 'self',
     })
     expect(selfResponse.map?.revision).toBe(5)
+    expect((selfResponse.map?.metadata?.moveLog as Array<Record<string, unknown>> | undefined)?.at(-1))
+      .toMatchObject({ operationId: selfCommand.opId, moveName: 'Swords Dance' })
     expect(selfPayload.changes.encounterState?.current.turnResources['actor-token']).toMatchObject({
       actions: { standard: { spent: 1 } },
       oncePerTurnFlags: [{ id: 'move.swords-dance', sourceOperationId: 'op_resolveself01' }],
@@ -472,6 +474,8 @@ describe('executeLivePlayResolveMoveCommandUseCase', () => {
     expect(JSON.stringify(targetPayload.move.trace)).not.toContain('absolute-hp-state')
     expect(targetPayload.sheets.map((sheet) => `${sheet.kind}:${sheet.slug}`)).toContain('pokemon:target-a')
     expect(targetResponse.map).toEqual(targetHarness.maps.getBySlug('arena'))
+    expect((targetResponse.map?.metadata?.moveLog as Array<Record<string, unknown>> | undefined)?.at(-1))
+      .toMatchObject({ operationId: 'op_resolvetarg1', moveName: 'Tackle' })
     expect(targetResponse.sheetUpdates?.[0]?.sheet).toEqual(targetHarness.sheets.getByRef('pokemon', 'target-a')?.sheet)
     expect(targetHarness.events.map((event) => (event as { type?: string }).type)).toEqual(['updated', 'updated', 'live-play-command-accepted'])
 

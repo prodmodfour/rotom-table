@@ -1524,7 +1524,7 @@ Status: DONE
 
 ## MA-117 — Add correction UI and audit scenarios
 
-Status: TODO
+Status: DONE
 
 **Depends on:** MA-116B
 **Commit:** `feat(move-automation): expose safe gm corrections`

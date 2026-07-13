@@ -29,6 +29,7 @@ import {
 import { useAcceptedMovePresentation } from '~/composables/map-editor/useAcceptedMovePresentation'
 import { useLivePlayCommandRecoveryGate } from '~/composables/map-editor/useLivePlayCommandRecoveryGate'
 import { usePendingMoveResponses } from '~/composables/map-editor/usePendingMoveResponses'
+import { useGmMoveCorrections } from '~/composables/map-editor/useGmMoveCorrections'
 import { useLivePlayStateMachine, type LivePlayConnectionState } from '~/composables/map-editor/useLivePlayStateMachine'
 import { useMapPageTableActionDispatchers } from '~/composables/map-editor/useMapPageTableActionDispatchers'
 import { useMapPageTokenSpawning } from '~/composables/map-editor/useMapPageTokenSpawning'
@@ -565,6 +566,24 @@ const livePlayCommands = useLivePlayCommands({
   onCommandErrorCleared: livePlayStateMachine.clearCommandError,
 })
 livePlayCommandsForPatchAdoption.value = livePlayCommands
+
+const gmMoveCorrections = useGmMoveCorrections({
+  slug,
+  enabled: isGm,
+  mapRevision,
+  applyPersistedMap,
+  applySheetUpdate: applyLivePlaySheetUpdate,
+})
+const inspectMoveOperation = (operationId: string): void => {
+  void gmMoveCorrections.open(operationId)
+}
+const applyMoveCorrection = (operationIds: readonly string[]): void => {
+  void gmMoveCorrections.apply(operationIds)
+}
+const refreshMoveCorrection = (): void => {
+  void gmMoveCorrections.refresh()
+}
+
 acceptedRealtimeAcknowledgementHandler = livePlayCommands.acknowledgeAcceptedRealtimeEvent
 acknowledgeAcceptedRealtimeEvent = async (event: LivePlayAcceptedRealtimeEvent): Promise<void> => {
   scheduleAcceptedRealtimePokeballCaptureResult(event)
@@ -2651,6 +2670,10 @@ useMapDimensionReconciliation({
         :pending-move-responses-loading="pendingMoveResponses.loadStatus.value === 'loading'"
         :pending-move-responses-error="pendingMoveResponses.loadError.value"
         :can-manage-pending-move-responses="isGm"
+        :move-correction-details="gmMoveCorrections.details.value"
+        :move-correction-status="gmMoveCorrections.status.value"
+        :move-correction-message="gmMoveCorrections.message.value"
+        :can-manage-move-corrections="isGm"
         :token-move-options-by-id="tokenMoveOptionsById"
         :token-maneuver-options-by-id="tokenManeuverOptionsById"
         :token-ability-options-by-id="tokenAbilityOptionsById"
@@ -2704,6 +2727,10 @@ useMapDimensionReconciliation({
         @cancel-pending-move-resolution="pendingMoveResponses.cancel($event)"
         @retry-pending-move-response="pendingMoveResponses.retry($event)"
         @refresh-pending-move-responses="pendingMoveResponses.refresh()"
+        @inspect-move-operation="inspectMoveOperation"
+        @apply-move-correction="applyMoveCorrection"
+        @refresh-move-correction="refreshMoveCorrection"
+        @close-move-correction="gmMoveCorrections.close()"
       />
 
       <MapPresencePanel

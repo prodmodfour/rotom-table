@@ -19,6 +19,8 @@ export interface MoveStructuredLogProjection {
 }
 
 export interface MoveLogTransaction {
+  /** Causal accepted command identity used by GM-only operation details. */
+  readonly operationId?: string
   readonly userId: string
   readonly userName: string
   readonly moveName: string
@@ -31,6 +33,7 @@ export interface MoveLogTransaction {
 
 export interface MoveLogEntry {
   readonly at: number
+  readonly operationId?: string
   readonly userId: string
   readonly userName: string
   readonly moveName: string
@@ -75,6 +78,7 @@ export const appendMoveLogEntry = (
   const previous = Array.isArray(next.moveLog) ? next.moveLog : []
   const entry: MoveLogEntry = {
     at: options.now?.() ?? Date.now(),
+    ...(transaction.operationId === undefined ? {} : { operationId: transaction.operationId }),
     userId: transaction.userId,
     userName: transaction.userName,
     moveName: transaction.moveName,

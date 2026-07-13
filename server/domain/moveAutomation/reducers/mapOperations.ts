@@ -270,6 +270,7 @@ export const reduceMoveMapOperations = (
   workingMap.metadata = appendMoveLogEntry(
     workingMap.metadata,
     {
+      operationId: input.presentation.operationId,
       userId: input.context.actor.placement.id,
       userName: actorName,
       moveName: input.presentation.move.name,
