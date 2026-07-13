@@ -1451,7 +1451,7 @@ Status: DONE
 
 ## MA-113 — Implement setup, cancellation, and redirection reactions
 
-Status: TODO
+Status: DONE
 
 **Depends on:** MA-108, MA-060, MA-073B
 **Commit:** `feat(move-automation): resolve setup and redirection reactions`
