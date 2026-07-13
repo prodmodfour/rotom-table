@@ -9,6 +9,12 @@ import { createInProcessMapWriteQueue } from '~~/server/livePlay/mapWriteQueue'
 import { executeLivePlayResolveMoveCommandUseCase, type LivePlayResolveMoveCommandDependencies } from '~~/server/useCases/applyResolveMoveCommand'
 import { acceptedRealtimeTestHooks } from './livePlayAcceptedRealtimeTestUtils'
 import { redBlueEncounterStateFixture } from '../fixtures/moveAutomation/encounterSides'
+import { createEmptyEncounterState } from '#shared/moveAutomation/encounterState'
+import {
+  ENCOUNTER_EXHAUST_COMMAND_FLAG_ID,
+  ENCOUNTER_EXHAUST_NEXT_TURN_FLAG_ID,
+  spendEncounterMoveResourceCosts,
+} from '~~/server/domain/moveAutomation/reduceEncounterResources'
 import { planAuthoritativeMoveState, type AuthoritativeMoveStatePlan } from '~~/server/domain/planAuthoritativeMoveState'
 import { LIVE_PLAY_COMMAND_SCHEMA_VERSION, LIVE_PLAY_COMMAND_TYPES, LIVE_PLAY_PATCH_TYPES, type LivePlayCommandAccepted, type ResolveMoveLivePlayCommand } from '#shared/livePlayCommands'
 import {
@@ -496,6 +502,97 @@ describe('executeLivePlayResolveMoveCommandUseCase', () => {
     expect(patchedMap.metadata).toEqual(targetResponse.map?.metadata)
     expect(patchedMap.encounterState).toEqual(targetResponse.map?.encounterState)
     expect(patchedMap.updatedAt).toBe(targetResponse.map?.updatedAt)
+  })
+
+  it.each([
+    { moveName: 'Tackle', runtime: 'legacy-v1' },
+    { moveName: 'Swords Dance', runtime: 'movespec-v2' },
+  ] as const)('rejects an unavailable $runtime action cost atomically and replays it without replanning', async ({ moveName }) => {
+    const seeded = spendEncounterMoveResourceCosts({}, {
+      placementId: 'actor-token',
+      canonicalMoveId: 'Seed Standard',
+      resolutionId: 'seed.standard.resolution',
+      sourceOperationId: 'seed.standard.operation',
+      costs: [{
+        id: 'seed.cost.standard',
+        phase: 'pay',
+        cost: { kind: 'action-resource', resource: 'standard', amount: 1 },
+      }],
+      movementBudget: null,
+      movementDistance: 0,
+      round: 1,
+      turn: null,
+      actedThisRound: false,
+    })
+    const map = mapFixture({
+      encounterState: {
+        ...createEmptyEncounterState(),
+        turnResources: seeded.resources,
+      },
+    })
+    const harness = seedHarness({ map, actorMoves: [{ name: moveName }] })
+    const moveIntent = moveName === 'Swords Dance'
+      ? intent({ placementId: 'actor-token', moveName, selection: { kind: 'self' } })
+      : intent({
+          placementId: 'actor-token',
+          moveName,
+          selection: { kind: 'single-target', targetPlacementId: 'target-a' },
+        })
+    const command = commandFor(
+      map,
+      moveIntent,
+      moveName === 'Tackle' ? 'op_costrejectv1' : 'op_costrejectv2',
+    )
+    const beforeMap = deepCloneJson(harness.maps.getBySlug('arena'))
+    const beforeSheets = deepCloneJson(harness.sheets.list())
+
+    const first = await execute(harness, command)
+    const duplicate = await execute(harness, command, {
+      planner: () => { throw new Error('stored resource rejection must not replan') },
+      random: () => { throw new Error('stored resource rejection must not reroll') },
+    })
+
+    expect(first.result).toMatchObject({
+      ok: false,
+      reason: 'conflict',
+      currentRevision: 4,
+      message: expect.stringContaining('action-unavailable'),
+    })
+    expect(duplicate.result).toEqual(first.result)
+    expect(harness.maps.getBySlug('arena')).toEqual(beforeMap)
+    expect(harness.sheets.list()).toEqual(beforeSheets)
+    expect(harness.events).toEqual([])
+  })
+
+  it('applies adapted v1 Priority and Exhaust policies in the accepted move transaction', async () => {
+    const tackle = EXPLICIT_MOVE_AUTOMATION_SCRIPTS.get('Tackle')
+    if (!tackle) throw new Error('expected registered Tackle script')
+    await withRegisteredScript({
+      ...tackle,
+      range: 'Melee, 1 Target, Priority, Exhaust',
+    }, async () => {
+      const harness = seedHarness({ actorMoves: [{ name: 'Tackle' }] })
+      const map = harness.maps.getBySlug('arena')!
+      const moveIntent = intent({
+        placementId: 'actor-token',
+        moveName: 'Tackle',
+        selection: { kind: 'single-target', targetPlacementId: 'target-a' },
+      })
+      const response = await execute(
+        harness,
+        commandFor(map, moveIntent, 'op_specialcostv1'),
+      )
+
+      expect(response.result).toMatchObject({ ok: true, revision: 5 })
+      const resources = response.map?.encounterState?.turnResources['actor-token']
+      expect(resources).toMatchObject({
+        actions: { standard: { spent: 1 } },
+        oncePerTurnFlags: expect.arrayContaining([
+          expect.objectContaining({ id: ENCOUNTER_EXHAUST_NEXT_TURN_FLAG_ID }),
+          expect.objectContaining({ id: ENCOUNTER_EXHAUST_COMMAND_FLAG_ID }),
+        ]),
+      })
+    })
   })
 
   it('commits native Ember once and replays duplicate delivery without rerolling', async () => {
@@ -1078,8 +1175,11 @@ describe('executeLivePlayResolveMoveCommandUseCase', () => {
       expect(payload.presentation.pass?.pathCells).toEqual(payload.move.movement?.pathCells)
       expect(response.map?.placements.find((item) => item.id === 'actor-token')?.position).toEqual(payload.move.movement?.destination)
       expect(payload.changes.encounterState?.current.turnResources['actor-token']).toMatchObject({
-        actions: { standard: { spent: 1 } },
-        movement: { spent: 4 },
+        actions: {
+          standard: { spent: 1 },
+          shift: { spent: 1 },
+        },
+        movement: { budget: 7, spent: 4 },
         oncePerTurnFlags: [{ id: 'move.scratch', sourceOperationId: 'op_resolvepass1' }],
       })
 
@@ -1259,6 +1359,8 @@ describe('executeLivePlayResolveMoveCommandUseCase', () => {
     })
     expect(failing.result).toMatchObject({ ok: false, reason: 'persistence-failed' })
     expect(failingHarness.maps.getBySlug('arena')?.revision).toBe(4)
+    expect(failingHarness.maps.getBySlug('arena')?.encounterState?.turnResources ?? {})
+      .toEqual({})
     expect(failingHarness.sheets.getByRef('pokemon', 'target-a')?.revision).toBe(2)
     expect(failingHarness.ops.getOpResult('arena', 'op_atomicfail1')).toBeNull()
   })

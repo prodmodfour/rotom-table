@@ -22,6 +22,7 @@ import { createInProcessMapWriteQueue } from '~~/server/livePlay/mapWriteQueue'
 import { createInMemoryLivePlayOpStore } from '~~/server/livePlay/opStore'
 import { acceptedRealtimeTestHooks } from './livePlayAcceptedRealtimeTestUtils'
 import { executeMapTokenLivePlayCommandUseCase } from '~~/server/useCases/applyMapTokenAction'
+import { spendEncounterMoveResourceCosts } from '~~/server/domain/moveAutomation/reduceEncounterResources'
 import { openRotomDatabase } from '~~/server/storage/database'
 import { createSqliteMapRepository } from '~~/server/storage/mapRepository'
 import { createSqliteLivePlayOpRepository } from '~~/server/storage/opRepository'
@@ -279,6 +280,10 @@ describe('live-play map token commands', () => {
       facing: 'north-east',
       turned: false,
     })
+    expect(harness.storedMap.encounterState?.turnResources['linked-token']).toMatchObject({
+      actions: { shift: { spent: 1 } },
+      movement: { budget: 6, spent: 3 },
+    })
     expect(harness.storedMap.metadata?.movementLog).toMatchObject([
       {
         at: 2000,
@@ -377,6 +382,7 @@ describe('live-play map token commands', () => {
     expect(gmHarness.storedMap.metadata?.movementLog).toEqual([
       expect.objectContaining({ pathLength: 7 }),
     ])
+    expect(gmHarness.storedMap.encounterState?.turnResources).toEqual({})
 
     const boundsHarness = createHarness(arena)
     configureSlowActor(boundsHarness)
@@ -588,6 +594,58 @@ describe('live-play map token commands', () => {
     expect(harness.storedMap.placements[0]?.position).toEqual({ x: 1, y: 0, z: 1 })
   })
 
+  it('rejects unavailable movement resources atomically and replays the stored rejection', async () => {
+    const seeded = spendEncounterMoveResourceCosts({}, {
+      placementId: 'linked-token',
+      canonicalMoveId: 'Seed Shift',
+      resolutionId: 'seed.shift.resolution',
+      sourceOperationId: 'seed.shift.operation',
+      costs: [{
+        id: 'seed.cost.shift',
+        phase: 'pay',
+        cost: { kind: 'action-resource', resource: 'shift', amount: 1 },
+      }],
+      movementBudget: 6,
+      movementDistance: 0,
+      round: 1,
+      turn: null,
+      actedThisRound: false,
+    })
+    const map = baseMap()
+    const initialMap: TabletopMap = {
+      ...map,
+      encounterState: {
+        ...map.encounterState!,
+        turnResources: seeded.resources,
+      },
+    }
+    const harness = createHarness(initialMap)
+    const before = structuredClone(harness.storedMap)
+    const command = moveCommand({ opId: 'op_moveunavailable' })
+    const request = () => executeMapTokenLivePlayCommandUseCase({
+      role: 'player' as const,
+      command,
+      playerProfile: playerProfile([{ sheetKind: 'pokemon', sheetSlug: 'pikachu' }]),
+      expectedType: LIVE_PLAY_COMMAND_TYPES.MOVE_TOKEN,
+    }, harness.deps)
+
+    const first = await request()
+    const readsAfterFirst = harness.deps.readSheet.mock.calls.length
+    const duplicate = await request()
+
+    expect(first.result).toMatchObject({
+      ok: false,
+      reason: 'conflict',
+      currentRevision: 4,
+      message: expect.stringContaining('action-unavailable'),
+    })
+    expect(duplicate.result).toEqual(first.result)
+    expect(harness.deps.readSheet.mock.calls).toHaveLength(readsAfterFirst)
+    expect(harness.writes).toEqual([])
+    expect(harness.published).toEqual([])
+    expect(harness.storedMap).toEqual(before)
+  })
+
   it('returns the stored result for duplicate move opIds without applying movement twice', async () => {
     const harness = createHarness()
     const command = moveCommand({ opId: 'op_duplicatemove1' })
@@ -609,6 +667,10 @@ describe('live-play map token commands', () => {
     expect(harness.writes).toHaveLength(1)
     expect(harness.storedMap.revision).toBe(5)
     expect(harness.storedMap.metadata?.movementLog).toHaveLength(1)
+    expect(harness.storedMap.encounterState?.turnResources['linked-token']).toMatchObject({
+      actions: { shift: { spent: 1 } },
+      movement: { budget: 6, spent: 3 },
+    })
   })
 
   it('applies a GM spawn through the authoritative executor and publishes a placement patch', async () => {

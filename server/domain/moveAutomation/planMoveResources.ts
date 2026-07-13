@@ -18,13 +18,10 @@ import {
   type EncounterTurnResourceDirectory,
 } from '#shared/moveAutomation/encounterState'
 import type { TabletopMap } from '~/types/map'
-import type { SpawnedPokemon } from '~/types/pokemon'
 import type { AuthoritativeMoveResolution } from '../resolveAuthoritativeMove'
-import { ptuGridVectorDistance } from '~/utils/ptuGridDistance'
 import { deepCloneJson, sameJsonValue } from '~/utils/serialization'
 import {
   EncounterResourceReductionError,
-  observeEncounterMoveResources,
   spendEncounterMoveResourceCosts,
   type EncounterMoveResourceCostSpend,
 } from './reduceEncounterResources'
@@ -33,11 +30,34 @@ export interface PlannedMoveResourceObservation {
   readonly previousEncounterState: EncounterState
   readonly currentEncounterState: EncounterState
   readonly nextMap: TabletopMap
-  readonly actionType: EncounterActionType
-  readonly consumesReaction: boolean
+  readonly changed: boolean
+  readonly costs: readonly MoveSpecCostDeclaration[]
+  readonly spends: readonly EncounterMoveResourceCostSpend[]
   readonly movementBudget: number | null
   readonly movementSpent: number
-  readonly oncePerTurnFlagId: string
+  readonly compatibilityOncePerTurnFlagId: string | null
+}
+
+export interface AuthoritativeMoveResourceMovementFacts {
+  /** Exact effective distance returned by the MA-120 movement oracle. */
+  readonly distance: number
+  /** Current capability ceiling returned by the same oracle. */
+  readonly budget: number
+}
+
+export interface PlanEncounterMoveResourceCostsInput extends MoveResourceCostPhaseWindow {
+  readonly map: TabletopMap
+  readonly placementId: string
+  readonly canonicalMoveId: string
+  readonly moveKey: string
+  readonly range: string
+  readonly resolutionId: string
+  readonly sourceOperationId: string
+  readonly movement: AuthoritativeMoveResourceMovementFacts | null
+  /** Non-empty reviewed declarations take precedence over v1 compatibility. */
+  readonly reviewedCosts?: readonly MoveSpecCostDeclaration[]
+  /** Pending v2 execution disables range inference unless the spec reviewed costs. */
+  readonly allowLegacyFallback?: boolean
 }
 
 export interface MoveResourceCostPhaseWindow {
@@ -58,6 +78,8 @@ export interface PlanMoveResourceCostWindowInput extends MoveResourceCostPhaseWi
   readonly round: number | null
   readonly turn: number | null
   readonly actedThisRound: boolean
+  /** Temporary v1/pre-cost-v2 observation retained without making it a reviewed cost. */
+  readonly compatibilityOncePerTurnFlagId?: string | null
 }
 
 export interface PlannedMoveResourceCostWindow {
@@ -94,24 +116,12 @@ export const actionTypeFromMoveRange = (range: string): EncounterActionType => {
   return 'standard'
 }
 
-const usesReactionTiming = (range: string): boolean => (
-  /\b(?:Interrupt|Reaction)\b/i.test(range)
-)
-
-const boundedMovementBudget = (token: SpawnedPokemon): number | null => {
-  const budget = token.movementCapabilities?.overland
-  if (typeof budget !== 'number' || !Number.isFinite(budget) || budget < 0) return null
-  return Math.floor(budget)
-}
-
-const movementSpent = (resolution: AuthoritativeMoveResolution): number => {
-  const movement = resolution.movement
-  if (!movement) return 0
-  return ptuGridVectorDistance({
-    x: movement.destination.x - movement.from.x,
-    y: movement.destination.y - movement.from.y,
-    z: movement.destination.z - movement.from.z,
-  })
+const priorityModeFromMoveRange = (
+  range: string,
+): Extract<MoveSpecCostDeclaration['cost'], { readonly kind: 'priority' }>['mode'] | null => {
+  if (/\bPriority\s*\(Advanced\)/i.test(range)) return 'advanced'
+  if (/\bPriority\s*\(Limited\)/i.test(range)) return 'limited'
+  return /\bPriority\b/i.test(range) ? 'standard' : null
 }
 
 const resourceTurn = (
@@ -120,6 +130,79 @@ const resourceTurn = (
 ): number | null => state.history.currentTurn?.placementId === actorPlacementId
   ? state.history.currentTurn.turn
   : null
+
+const setupExecuteStep = (
+  state: EncounterState,
+  placementId: string,
+  canonicalMoveId: string,
+): 'set-up' | 'execute' => {
+  const setup = state.turnResources[placementId]?.setupExecute
+  return setup?.canonicalMoveId === canonicalMoveId && setup.status === 'ready-to-execute'
+    ? 'execute'
+    : 'set-up'
+}
+
+/**
+ * Adapt retained v1 range metadata into bounded server-owned declarations.
+ * This compatibility path is deliberately closed and never consumes prose,
+ * automation notes, client payloads, or arbitrary action labels.
+ */
+export const adaptLegacyMoveResourceCosts = (input: {
+  readonly range: string
+  readonly movementDistance: number
+  readonly setupStep: 'set-up' | 'execute'
+}): readonly MoveSpecCostDeclaration[] => {
+  const actionType = actionTypeFromMoveRange(input.range)
+  const costs: MoveSpecCostDeclaration[] = [{
+    id: 'legacy.cost.action',
+    phase: 'pay',
+    cost: { kind: 'action-resource', resource: actionType, amount: 1 },
+  }]
+
+  if (
+    input.movementDistance > 0
+    && actionType !== 'shift'
+    && actionType !== 'full'
+  ) {
+    costs.push({
+      id: 'legacy.cost.pass-shift',
+      phase: 'movement',
+      cost: { kind: 'action-resource', resource: 'shift', amount: 1 },
+    })
+  }
+  if (input.movementDistance > 0) {
+    costs.push({
+      id: 'legacy.cost.movement',
+      phase: 'movement',
+      cost: { kind: 'movement-distance', amount: 'resolved-distance' },
+    })
+  }
+
+  const priorityMode = priorityModeFromMoveRange(input.range)
+  if (priorityMode !== null) {
+    costs.unshift({
+      id: 'legacy.cost.priority',
+      phase: 'declare',
+      cost: { kind: 'priority', mode: priorityMode },
+    })
+  }
+  if (/\bExhaust\b/i.test(input.range)) {
+    costs.push({
+      id: 'legacy.cost.exhaust',
+      phase: 'cleanup',
+      cost: { kind: 'exhaust', timing: 'next-turn', forfeitCommand: true },
+    })
+  }
+  if (/\bSet-Up\b/i.test(input.range)) {
+    costs.push({
+      id: 'legacy.cost.setup-execute',
+      phase: input.setupStep === 'set-up' ? 'schedule' : 'declare',
+      cost: { kind: 'setup-execute', step: input.setupStep },
+    })
+  }
+
+  return parseMoveSpecCostDeclarations(costs, 'legacyMoveResourceCosts')
+}
 
 /**
  * Select reviewed declarations in canonical interpreter phase order. The
@@ -199,6 +282,7 @@ export const planMoveResourceCostWindow = (
     round: input.round,
     turn: input.turn,
     actedThisRound: input.actedThisRound,
+    compatibilityOncePerTurnFlagId: input.compatibilityOncePerTurnFlagId,
   })
   const currentResources = parseEncounterTurnResources(spent.resources)
   return deepFreeze({
@@ -211,54 +295,105 @@ export const planMoveResourceCostWindow = (
 }
 
 /**
- * Observe an accepted current-runtime move without enforcing reviewed costs.
- * MA-124B replaces this compatibility observation at live-command boundaries
- * with planMoveResourceCostWindow and atomic persistence.
+ * Plan one move-cost phase window against the map-owned encounter ledger.
+ * Reviewed v2 declarations win; retained v1 and pre-cost-v2 definitions use
+ * only the closed range adapter. Exact movement facts must come from MA-120.
  */
-export const planMoveResourceObservation = (input: {
-  readonly map: TabletopMap
-  readonly actor: SpawnedPokemon
-  readonly resolution: AuthoritativeMoveResolution
-  readonly sourceOperationId: string
-}): PlannedMoveResourceObservation => {
+export const planEncounterMoveResourceCosts = (
+  input: PlanEncounterMoveResourceCostsInput,
+): PlannedMoveResourceObservation => {
   const previousEncounterState = parseEncounterState(
     input.map.encounterState ?? createEmptyEncounterState(),
   )
-  const actionType = actionTypeFromMoveRange(input.resolution.script.range)
-  const consumesReaction = usesReactionTiming(input.resolution.script.range)
-  const movementBudget = boundedMovementBudget(input.actor)
-  const spent = movementSpent(input.resolution)
-  const oncePerTurnFlagId = `move.${input.resolution.moveKey}`
-  const turnResources = observeEncounterMoveResources(
-    previousEncounterState.turnResources,
-    {
-      placementId: input.resolution.actorPlacementId,
-      actionType,
-      consumesReaction,
-      movementBudget,
-      movementSpent: spent,
-      oncePerTurnFlagId,
-      sourceOperationId: input.sourceOperationId,
-      round: input.map.initiative?.round ?? null,
-      turn: resourceTurn(previousEncounterState, input.resolution.actorPlacementId),
-    },
-  )
+  const reviewed = input.reviewedCosts ?? []
+  const useReviewed = reviewed.length > 0
+  const allowLegacyFallback = input.allowLegacyFallback ?? true
+  const movementDistance = input.movement?.distance ?? 0
+  const movementBudget = input.movement?.budget ?? null
+  const declarations = useReviewed
+    ? reviewed
+    : allowLegacyFallback
+      ? adaptLegacyMoveResourceCosts({
+          range: input.range,
+          movementDistance,
+          setupStep: setupExecuteStep(
+            previousEncounterState,
+            input.placementId,
+            input.canonicalMoveId,
+          ),
+        })
+      : []
+  const selectedCosts = moveResourceCostsInPhaseWindow(declarations, input)
+  const compatibilityOncePerTurnFlagId = !useReviewed
+    && allowLegacyFallback
+    && selectedCosts.length > 0
+    ? `move.${input.moveKey}`
+    : null
+  const planned = planMoveResourceCostWindow({
+    resources: previousEncounterState.turnResources,
+    placementId: input.placementId,
+    canonicalMoveId: input.canonicalMoveId,
+    resolutionId: input.resolutionId,
+    sourceOperationId: input.sourceOperationId,
+    declarations,
+    movementDistance,
+    movementBudget,
+    round: input.map.initiative?.round ?? null,
+    turn: resourceTurn(previousEncounterState, input.placementId),
+    actedThisRound: previousEncounterState.history.actedThisRoundPlacementIds.includes(
+      input.placementId,
+    ),
+    minimumPhaseExclusive: input.minimumPhaseExclusive,
+    maximumPhaseInclusive: input.maximumPhaseInclusive,
+    compatibilityOncePerTurnFlagId,
+  })
   const currentEncounterState = parseEncounterState({
     ...previousEncounterState,
-    turnResources,
+    turnResources: planned.currentResources,
   })
+  const changed = !sameJsonValue(previousEncounterState, currentEncounterState)
 
-  return Object.freeze({
+  return deepFreeze({
     previousEncounterState: deepCloneJson(previousEncounterState),
     currentEncounterState: deepCloneJson(currentEncounterState),
-    nextMap: {
-      ...deepCloneJson(input.map),
-      encounterState: deepCloneJson(currentEncounterState),
-    },
-    actionType,
-    consumesReaction,
+    nextMap: changed
+      ? {
+          ...deepCloneJson(input.map),
+          encounterState: deepCloneJson(currentEncounterState),
+        }
+      : deepCloneJson(input.map),
+    changed,
+    costs: deepCloneJson(planned.costs),
+    spends: deepCloneJson(planned.spends),
     movementBudget,
-    movementSpent: spent,
-    oncePerTurnFlagId,
+    movementSpent: planned.spends
+      .filter(spend => spend.kind === 'movement-distance')
+      .reduce((total, spend) => total + spend.amount, 0),
+    compatibilityOncePerTurnFlagId,
   })
 }
+
+/** Enforce and plan resource costs for one completed authoritative move. */
+export const planMoveResourceObservation = (input: {
+  readonly map: TabletopMap
+  readonly resolution: AuthoritativeMoveResolution
+  readonly sourceOperationId: string
+  readonly resolutionId?: string
+  readonly reviewedCosts?: readonly MoveSpecCostDeclaration[]
+  readonly minimumPhaseExclusive?: MoveSpecPhase | null
+  readonly maximumPhaseInclusive?: MoveSpecPhase | null
+  readonly allowLegacyFallback?: boolean
+}): PlannedMoveResourceObservation => planEncounterMoveResourceCosts({
+  map: input.map,
+  placementId: input.resolution.actorPlacementId,
+  canonicalMoveId: input.resolution.canonicalMoveName,
+  moveKey: input.resolution.moveKey,
+  range: input.resolution.script.range,
+  resolutionId: input.resolutionId ?? input.sourceOperationId,
+  sourceOperationId: input.sourceOperationId,
+  movement: input.resolution.resourceMovement ?? null,
+  reviewedCosts: input.reviewedCosts,
+  minimumPhaseExclusive: input.minimumPhaseExclusive,
+  maximumPhaseInclusive: input.maximumPhaseInclusive,
+  allowLegacyFallback: input.allowLegacyFallback,
+})

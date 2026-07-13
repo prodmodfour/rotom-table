@@ -186,6 +186,12 @@ export interface AuthoritativeMovePassMovement {
   readonly pathCells: readonly GridAnchor[]
 }
 
+export interface AuthoritativeMoveResourceMovement {
+  /** Exact cost and capability ceiling emitted by the authoritative oracle. */
+  readonly distance: number
+  readonly budget: number
+}
+
 export interface AuthoritativeMoveResolution {
   readonly actorPlacementId: string
   readonly moveName: string
@@ -205,6 +211,8 @@ export interface AuthoritativeMoveResolution {
   readonly desiredFacing?: TokenFacingDirection
   readonly area?: AuthoritativeMoveArea
   readonly movement?: AuthoritativeMovePassMovement
+  /** Server-only MA-120 facts; omitted from accepted wire results. */
+  readonly resourceMovement?: AuthoritativeMoveResourceMovement
   /** Server-only native planning projection; omitted from accepted wire results. */
   readonly nativeV2?: NativeMoveSpecResolutionProjection
 }
@@ -218,6 +226,9 @@ export interface AuthoritativePendingMoveResolution {
   readonly moveKey: string
   readonly frequency: string | null
   readonly damageFormula: string | null
+  /** Retained server-only v1 compatibility range for phased cost planning. */
+  readonly resourceRange: string
+  readonly resourceMovement?: AuthoritativeMoveResourceMovement
   readonly selectedTargetIds: readonly string[]
   readonly sheetReads: readonly AuthoritativeMoveSheetRead[]
   readonly runtime: MoveSpecV2Runtime
@@ -633,6 +644,7 @@ interface ResolvedAuthoritativeAreaPlacement {
   readonly direction?: MoveAutomationAreaDirection
   readonly aimCell?: GridAnchor
   readonly movement?: AuthoritativeMovePassMovement
+  readonly resourceMovement?: AuthoritativeMoveResourceMovement
 }
 
 const resolvedAreaPlacement = (options: {
@@ -768,6 +780,10 @@ const resolvedAreaPlacement = (options: {
         direction,
         pathCells: cloneGridAnchors(cells),
       },
+      resourceMovement: {
+        distance: movement.cost,
+        budget: movement.capabilityLimit,
+      },
     }
   }
 
@@ -896,6 +912,7 @@ const resolveNativeSelfMove = (options: {
       moveKey: options.moveKey,
       frequency: options.entry.frequency,
       damageFormula: options.entry.damageFormula,
+      resourceRange: options.entry.script.range,
       selectedTargetIds: [],
       sheetReads: outcome.sheetReads,
       runtime: options.runtime,
@@ -1083,6 +1100,7 @@ const resolveNativeSingleTargetMove = (options: {
       moveKey: options.moveKey,
       frequency: options.entry.frequency,
       damageFormula: options.entry.damageFormula,
+      resourceRange: options.entry.script.range,
       selectedTargetIds: [target.id],
       sheetReads: outcome.sheetReads,
       runtime: options.runtime,
@@ -1277,6 +1295,9 @@ const resolveAreaMove = (options: {
     transaction,
     ...(desiredFacing ? { desiredFacing } : {}),
     ...(movement ? { movement } : {}),
+    ...(placement.resourceMovement
+      ? { resourceMovement: { ...placement.resourceMovement } }
+      : {}),
     area: {
       areaTemplateId: options.selection.areaTemplateId,
       template: cloneAreaTemplate(template),
@@ -1385,6 +1406,10 @@ const resolveNativeAreaMove = (options: {
       moveKey: options.moveKey,
       frequency: options.entry.frequency,
       damageFormula: options.entry.damageFormula,
+      resourceRange: options.entry.script.range,
+      ...(placement.resourceMovement
+        ? { resourceMovement: { ...placement.resourceMovement } }
+        : {}),
       selectedTargetIds,
       sheetReads: outcome.sheetReads,
       runtime: options.runtime,
@@ -1429,6 +1454,9 @@ const resolveNativeAreaMove = (options: {
     transaction,
     ...(desiredFacing ? { desiredFacing } : {}),
     ...(movement ? { movement } : {}),
+    ...(placement.resourceMovement
+      ? { resourceMovement: { ...placement.resourceMovement } }
+      : {}),
     area: {
       areaTemplateId: options.selection.areaTemplateId,
       template: cloneAreaTemplate(template),

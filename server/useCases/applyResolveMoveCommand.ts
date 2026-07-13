@@ -369,7 +369,12 @@ const planMoveState = (
 
 export const moveResultFromPlan = (plan: AuthoritativeMoveStatePlan): LivePlayResolvedMoveResult => {
   const clonedResolution = deepCloneJson(plan.resolution)
-  const { auditTrace, ...publicResolution } = clonedResolution
+  const {
+    auditTrace,
+    resourceMovement: _resourceMovement,
+    nativeV2: _nativeV2,
+    ...publicResolution
+  } = clonedResolution
   const publicArea = (() => {
     const area = clonedResolution.area
     if (!area) return undefined

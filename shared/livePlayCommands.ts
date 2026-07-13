@@ -847,6 +847,11 @@ export interface TokenMovedPatchPayload {
   readonly facing?: TokenFacingDirection
   readonly turned?: boolean
   readonly movementLogEntry?: Record<string, unknown>
+  /** Authoritative action/movement spend committed with this position. */
+  readonly turnResources?: {
+    readonly previous: EncounterState['turnResources']
+    readonly current: EncounterState['turnResources']
+  }
 }
 
 export interface TokenTurnedPatchPayload {

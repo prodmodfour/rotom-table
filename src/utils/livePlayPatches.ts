@@ -1,6 +1,8 @@
 import {
+  createEmptyEncounterState,
   isEncounterSideId,
   parseEncounterState,
+  parseEncounterTurnResources,
   type EncounterState,
 } from '#shared/moveAutomation/encounterState'
 import {
@@ -158,6 +160,36 @@ const applyTokenMovedPatch = (map: TabletopMap, payload: unknown): LivePlayPatch
   const index = placementIndex(map, payload.placementId)
   if (index < 0) return failed('invalid-patch', `token.position patch references missing placement ${payload.placementId}`)
 
+  let nextEncounter: EncounterState | null = null
+  if (payload.turnResources !== undefined) {
+    if (!isRecord(payload.turnResources)) {
+      return failed('invalid-patch', 'token.position turnResources must be a lane change object')
+    }
+    try {
+      const previous = parseEncounterTurnResources(payload.turnResources.previous)
+      const currentResources = parseEncounterTurnResources(payload.turnResources.current)
+      const encounter = parseEncounterState(
+        map.encounterState ?? createEmptyEncounterState(),
+      )
+      if (!sameJsonValue(encounter.turnResources, previous)) {
+        return failed(
+          'invalid-patch',
+          'token.position turnResources previous value does not match the local authoritative lane',
+        )
+      }
+      nextEncounter = parseEncounterState({
+        ...encounter,
+        turnResources: currentResources,
+      })
+    }
+    catch (error) {
+      return failed(
+        'invalid-patch',
+        `token.position turnResources are invalid: ${error instanceof Error ? error.message : String(error)}`,
+      )
+    }
+  }
+
   const current = map.placements[index]
   if (!current) return failed('invalid-patch', `token.position patch references missing placement ${payload.placementId}`)
   const next: SheetPlacement = {
@@ -168,6 +200,7 @@ const applyTokenMovedPatch = (map: TabletopMap, payload: unknown): LivePlayPatch
   if (typeof payload.turned === 'boolean') next.turned = payload.turned
   map.placements.splice(index, 1, next)
   appendMetadataEntry(map, 'movementLog', payload.movementLogEntry)
+  if (nextEncounter) map.encounterState = nextEncounter
   return null
 }
 

@@ -1,9 +1,8 @@
 /**
- * Bounded map-owned action-economy observations for one encounter.
+ * Bounded map-owned authoritative action economy for one encounter.
  *
- * These ledgers are authoritative mechanics state, but MA-064 deliberately
- * records current move use without rejecting overspend. Later cost-capability
- * tickets consume the same query seam and add enforcement.
+ * Compatibility observations remain readable, while reviewed command paths
+ * validate budgets and atomically persist spends through the cost planner.
  */
 export const ENCOUNTER_ACTION_TYPES = [
   'standard',
@@ -54,7 +53,7 @@ export interface EncounterActionResource {
   readonly type: EncounterActionType
   /** Null means the action is not numerically capped by this base ledger. */
   readonly budget: number | null
-  /** Observed accepted spends; it may exceed budget until cost enforcement lands. */
+  /** Accepted spends; legacy observations may predate strict enforcement. */
   readonly spent: number
   readonly resetOn: readonly EncounterResourceResetTiming[]
 }

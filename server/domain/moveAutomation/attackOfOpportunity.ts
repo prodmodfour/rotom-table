@@ -530,6 +530,16 @@ const finalizedChildPlan = (input: {
   }
 }
 
+const OPPORTUNITY_ATTACK_RESOURCE_COSTS = Object.freeze([Object.freeze({
+  id: 'reaction.cost.opportunity-attack',
+  phase: 'pay' as const,
+  cost: Object.freeze({
+    kind: 'action-resource' as const,
+    resource: 'interrupt' as const,
+    amount: 1,
+  }),
+})])
+
 export const planAttackOfOpportunityResponse = (input: {
   readonly pendingResolution: PendingMoveResolution
   readonly responseOpId: string
@@ -579,6 +589,7 @@ export const planAttackOfOpportunityResponse = (input: {
         operationId: input.responseOpId,
         maxMoveLogEntries: input.maxMoveLogEntries,
         ancestry: childAncestry(pending, window),
+        resourceCostDeclarations: OPPORTUNITY_ATTACK_RESOURCE_COSTS,
         tokenPositionOverrides: pending.continuationContext?.triggerReason === 'movement'
           && pending.continuationContext.from
           ? new Map([[pending.actorPlacementId, pending.continuationContext.from]])
