@@ -1438,7 +1438,7 @@ Status: DONE
 
 ## MA-112 — Implement counter, storage, and reflected-effect reactions
 
-Status: TODO
+Status: DONE
 
 **Depends on:** MA-108, MA-063, MA-082
 **Commit:** `feat(move-automation): resolve counter reaction families`
