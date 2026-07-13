@@ -7,6 +7,7 @@ import {
 import type { CharacterSheet } from '~/types/characterSheet'
 import type { SheetPlacement, TabletopMap } from '~/types/map'
 import type { TrainerSheet } from '~/types/trainerSheet'
+import { footprintsOverlap } from '~/utils/gridGeometry'
 import { buildAuthoritativeMoveRulesContext } from '~~/server/domain/moveAutomation/context'
 import {
   MoveSpatialEffectReductionError,
@@ -126,6 +127,7 @@ const operation = (options: {
     destinationSetId: null,
     displacement: options.displacement ?? {
       vector: { kind: 'away', source: { kind: 'actor' } },
+      distancePolicy: 'up-to-distance',
       opportunityAttacks: 'ignore',
     },
   },
@@ -179,6 +181,7 @@ describe('MoveSpec spatial effect reducer', () => {
       operationId: 'operation.spatial',
       recipientPlacementId: 'target-token',
       mode: 'forced',
+      distancePolicy: 'up-to-distance',
       opportunityAttackPolicy: 'ignore',
       provokesOpportunityAttacks: false,
       vector: {
@@ -211,6 +214,7 @@ describe('MoveSpec spatial effect reducer', () => {
       resolvedDistance: 2,
       shortened: false,
       shorteningReason: 'none',
+      obstruction: null,
     }])
     expect(result.operationResults).toEqual([{
       operationId: 'operation.spatial',
@@ -219,9 +223,11 @@ describe('MoveSpec spatial effect reducer', () => {
       movements: result.movements,
       details: {
         mode: 'forced',
+        distancePolicy: 'up-to-distance',
         opportunityAttackPolicy: 'ignore',
         movementCount: 1,
         movedCount: 1,
+        shortenedCount: 0,
       },
     }])
     // Snorlax occupies x=1..2 and z=1..2. The target begins directly east
@@ -238,7 +244,12 @@ describe('MoveSpec spatial effect reducer', () => {
   })
 
   it('derives toward and cardinal vectors while keeping mode and AoO policy independent', () => {
-    const context = buildContext()
+    const context = buildContext({
+      map: mapFixture([
+        placement('actor-token', 'actor', 1, 1),
+        placement('target-token', 'target', 4, 2),
+      ]),
+    })
     const result = reduceMoveSpatialEffects({
       context,
       operations: [
@@ -247,6 +258,7 @@ describe('MoveSpec spatial effect reducer', () => {
           distance: 1,
           displacement: {
             vector: { kind: 'toward', source: { kind: 'actor' } },
+            distancePolicy: 'up-to-distance',
             opportunityAttacks: 'ignore',
           },
         })),
@@ -257,6 +269,7 @@ describe('MoveSpec spatial effect reducer', () => {
           distance: 2,
           displacement: {
             vector: { kind: 'cardinal', direction: 'south' },
+            distancePolicy: 'up-to-distance',
             opportunityAttacks: 'provoke',
           },
         }), ['actor-token']),
@@ -272,8 +285,8 @@ describe('MoveSpec spatial effect reducer', () => {
         provokesOpportunityAttacks: false,
         vector: expect.objectContaining({ kind: 'toward', x: -1, y: 0, z: 0 }),
         path: [
+          { x: 4, y: 0, z: 2 },
           { x: 3, y: 0, z: 2 },
-          { x: 2, y: 0, z: 2 },
         ],
       }),
       expect.objectContaining({
@@ -307,6 +320,7 @@ describe('MoveSpec spatial effect reducer', () => {
         distance: 2,
         displacement: {
           vector: { kind: 'chosen', directionSetId: 'directions.psychic' },
+          distancePolicy: 'up-to-distance',
           opportunityAttacks: 'ignore',
         },
       }))],
@@ -379,6 +393,111 @@ describe('MoveSpec spatial effect reducer', () => {
     expect(result.operationResults[0]?.outcome).toBe('no-op')
   })
 
+  it('shortens up-to displacement at occupied footprints and rejects full-distance displacement', () => {
+    const arena = mapFixture([
+      placement('actor-token', 'actor', 1, 1),
+      placement('target-token', 'target', 3, 2),
+      placement('second-token', 'second', 5, 2),
+    ])
+    const upToContext = buildContext({ map: arena })
+    const upTo = reduceMoveSpatialEffects({
+      context: upToContext,
+      operations: [emission(operation({ distance: 4 }))],
+      dynamicRecipients: dynamicRecipients(),
+    })
+
+    expect(upTo.movements[0]).toMatchObject({
+      origin: { x: 3, y: 0, z: 2 },
+      destination: { x: 4, y: 0, z: 2 },
+      path: [
+        { x: 3, y: 0, z: 2 },
+        { x: 4, y: 0, z: 2 },
+      ],
+      resolvedDistance: 1,
+      shortened: true,
+      shorteningReason: 'occupied-footprint',
+      obstruction: {
+        at: { x: 5, y: 0, z: 2 },
+        collision: {
+          kind: 'placement',
+          placementIds: ['second-token'],
+        },
+      },
+    })
+    expect(upTo.sheetReads).toEqual([
+      { kind: 'pokemon', slug: 'target', revision: 4 },
+      { kind: 'pokemon', slug: 'actor', revision: 3 },
+      { kind: 'pokemon', slug: 'second', revision: 4 },
+    ])
+    expect(upTo.operationResults[0]).toMatchObject({
+      outcome: 'applied',
+      details: { movedCount: 1, shortenedCount: 1 },
+    })
+
+    expectSpatialError(() => reduceMoveSpatialEffects({
+      context: buildContext({ map: arena }),
+      operations: [emission(operation({
+        distance: 4,
+        displacement: {
+          vector: { kind: 'away', source: { kind: 'actor' } },
+          distancePolicy: 'full-distance-required',
+          opportunityAttacks: 'ignore',
+        },
+      }))],
+      dynamicRecipients: dynamicRecipients(),
+    }), 'full-distance-unavailable')
+  })
+
+  it('reserves ordered destinations so one reduction cannot overlap recipients', () => {
+    const arena = mapFixture([
+      placement('actor-token', 'actor', 0, 0),
+      placement('target-token', 'target', 3, 0),
+      placement('second-token', 'second', 5, 0),
+    ])
+    const recipients = ['target-token', 'second-token']
+    const result = reduceMoveSpatialEffects({
+      context: buildContext({ map: arena, selectedPlacementIds: recipients }),
+      operations: [emission(operation({
+        distance: 3,
+        displacement: {
+          vector: { kind: 'cardinal', direction: 'east' },
+          distancePolicy: 'up-to-distance',
+          opportunityAttacks: 'ignore',
+        },
+      }), recipients)],
+      dynamicRecipients: dynamicRecipients({
+        attackedTargetIds: recipients,
+        hitTargetIds: recipients,
+        damagedTargetIds: recipients,
+      }),
+    })
+
+    expect(result.movements.map(movement => ({
+      id: movement.recipientPlacementId,
+      destination: movement.destination,
+      reason: movement.shorteningReason,
+    }))).toEqual([
+      {
+        id: 'target-token',
+        destination: { x: 4, y: 0, z: 0 },
+        reason: 'occupied-footprint',
+      },
+      {
+        id: 'second-token',
+        destination: { x: 8, y: 0, z: 0 },
+        reason: 'none',
+      },
+    ])
+    expect(footprintsOverlap(
+      result.movements[0]!.destination,
+      1,
+      1,
+      result.movements[1]!.destination,
+      1,
+      1,
+    )).toBe(false)
+  })
+
   it('fails closed for overlapping relative footprints, missing choices, and recipient drift', () => {
     const overlapContext = buildContext({
       map: mapFixture([
@@ -397,6 +516,7 @@ describe('MoveSpec spatial effect reducer', () => {
       operations: [emission(operation({
         displacement: {
           vector: { kind: 'chosen', directionSetId: 'directions.missing' },
+          distancePolicy: 'up-to-distance',
           opportunityAttacks: 'ignore',
         },
       }))],

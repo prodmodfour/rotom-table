@@ -180,6 +180,7 @@ const VALID_PAYLOADS = {
     destinationSetId: null,
     displacement: {
       vector: { kind: 'away', source: { kind: 'actor' } },
+      distancePolicy: 'up-to-distance',
       opportunityAttacks: 'ignore',
     },
   },
@@ -428,6 +429,7 @@ describe('MoveSpec typed effect operations', () => {
         destinationSetId: null,
         displacement: {
           vector: { kind: 'away', source: { kind: 'actor' } },
+          distancePolicy: 'up-to-distance',
           opportunityAttacks: 'ignore',
         },
       },
@@ -441,6 +443,7 @@ describe('MoveSpec typed effect operations', () => {
       },
       displacement: {
         vector: { kind: 'away', source: { kind: 'actor' } },
+        distancePolicy: 'up-to-distance',
         opportunityAttacks: 'ignore',
       },
     })
@@ -460,6 +463,9 @@ describe('MoveSpec typed effect operations', () => {
           destinationSetId: null,
           displacement: {
             vector,
+            distancePolicy: vector.kind === 'cardinal'
+              ? 'full-distance-required'
+              : 'up-to-distance',
             opportunityAttacks: vector.kind === 'cardinal' ? 'provoke' : 'ignore',
           },
         },
@@ -474,6 +480,7 @@ describe('MoveSpec typed effect operations', () => {
         destinationSetId: null,
         displacement: {
           vector: { kind: 'cardinal', direction: 'north-east' },
+          distancePolicy: 'up-to-distance',
           opportunityAttacks: 'ignore',
         },
       },
@@ -492,10 +499,24 @@ describe('MoveSpec typed effect operations', () => {
         destinationSetId: null,
         displacement: {
           vector: { kind: 'away', source: { kind: 'actor' } },
+          distancePolicy: 'up-to-distance',
           opportunityAttacks: 'ignore',
         },
       },
     }), 'invalid-effect-operation', 'operation.payload.distance')
+    expectEffectError(validOperation('movement-request', {
+      payload: {
+        requestId: 'movement.bad-distance-policy',
+        mode: 'forced',
+        distance: 1,
+        destinationSetId: null,
+        displacement: {
+          vector: { kind: 'away', source: { kind: 'actor' } },
+          distancePolicy: 'ignore-collisions',
+          opportunityAttacks: 'ignore',
+        },
+      },
+    }), 'invalid-effect-operation', 'operation.payload.displacement.distancePolicy')
     expectEffectError(validOperation('movement-request', {
       payload: {
         requestId: 'movement.client-vector',
@@ -504,6 +525,7 @@ describe('MoveSpec typed effect operations', () => {
         destinationSetId: null,
         displacement: {
           vector: { kind: 'chosen', directionSetId: 'directions.test', direction: 'east' },
+          distancePolicy: 'up-to-distance',
           opportunityAttacks: 'ignore',
         },
       },

@@ -35,6 +35,7 @@ import {
   buildMoveAutomationPassDirectionSteps,
   moveAutomationAreaDirectionVector,
 } from '~/utils/moveAutomationDirections'
+import { ptuGridVectorDistance } from '~/utils/ptuGridDistance'
 import {
   buildMapMovementTerrainIndex,
   movementTerrainForAnchor,
@@ -184,6 +185,106 @@ export interface ResolvePassMovementInput extends ResolveMovementInputBase {
 }
 
 export type ResolveMovementInput = ResolveShiftMovementInput | ResolvePassMovementInput
+
+export const AUTHORITATIVE_DISPLACEMENT_MOVEMENT_MODES = [
+  'forced',
+  'voluntary',
+] as const
+
+export const AUTHORITATIVE_DISPLACEMENT_DISTANCE_POLICIES = [
+  'up-to-distance',
+  'full-distance-required',
+] as const
+
+export const AUTHORITATIVE_DISPLACEMENT_SHORTENING_REASONS = [
+  'none',
+  'grid-distance-quantized',
+  'map-bounds',
+  'blocking-terrain',
+  'height-change',
+  'occupied-footprint',
+  'mixed-collision',
+  'movement-mode-unavailable',
+] as const
+
+export const AUTHORITATIVE_DISPLACEMENT_FAILURE_REASON_CODES = [
+  'displacement-mode-unsupported',
+  'displacement-policy-invalid',
+  'displacement-vector-invalid',
+  'displacement-distance-invalid',
+  'displacement-map-invalid',
+  'displacement-placement-missing',
+  'displacement-placement-duplicate',
+  'displacement-placement-unresolved',
+  'displacement-footprint-invalid',
+  'displacement-origin-out-of-bounds',
+  'displacement-origin-collision',
+  'displacement-full-distance-unavailable',
+] as const
+
+export type AuthoritativeDisplacementMovementMode =
+  (typeof AUTHORITATIVE_DISPLACEMENT_MOVEMENT_MODES)[number]
+export type AuthoritativeDisplacementDistancePolicy =
+  (typeof AUTHORITATIVE_DISPLACEMENT_DISTANCE_POLICIES)[number]
+export type AuthoritativeDisplacementShorteningReason =
+  (typeof AUTHORITATIVE_DISPLACEMENT_SHORTENING_REASONS)[number]
+export type AuthoritativeDisplacementFailureReasonCode =
+  (typeof AUTHORITATIVE_DISPLACEMENT_FAILURE_REASON_CODES)[number]
+
+/** Server-only straight displacement input; no command parser accepts these mechanics. */
+export interface ResolveAuthoritativeDisplacementInput extends ResolveMovementInputBase {
+  readonly movementMode: AuthoritativeDisplacementMovementMode
+  readonly vector: GridAnchor
+  readonly requestedDistance: number
+  readonly distancePolicy: AuthoritativeDisplacementDistancePolicy
+}
+
+export interface AuthoritativeDisplacementObstruction {
+  readonly reason: Exclude<
+    AuthoritativeDisplacementShorteningReason,
+    'none' | 'grid-distance-quantized'
+  >
+  readonly at: GridAnchor
+  readonly collision: AuthoritativeMovementCollision | null
+  readonly terrainRequirements: readonly MovementTerrainRequirement[]
+}
+
+export interface AuthoritativeDisplacementPartial {
+  readonly origin: GridAnchor
+  readonly destination: GridAnchor
+  readonly path: readonly GridAnchor[]
+  readonly requestedDistance: number
+  readonly resolvedDistance: number
+  readonly shortened: boolean
+  readonly shorteningReason: AuthoritativeDisplacementShorteningReason
+  readonly obstruction: AuthoritativeDisplacementObstruction | null
+}
+
+export interface AuthoritativeDisplacementSuccess extends AuthoritativeDisplacementPartial {
+  readonly ok: true
+  readonly reasonCode: 'displacement-legal'
+  readonly placementId: string
+  readonly movementMode: AuthoritativeDisplacementMovementMode
+  readonly distancePolicy: AuthoritativeDisplacementDistancePolicy
+  readonly consultedPlacementIds: readonly string[]
+  readonly sheetReads: readonly AuthoritativeMovementSheetRead[]
+}
+
+export interface AuthoritativeDisplacementFailure {
+  readonly ok: false
+  readonly reasonCode: AuthoritativeDisplacementFailureReasonCode
+  readonly message: string
+  readonly placementId: string
+  readonly movementMode: string
+  readonly distancePolicy: string
+  readonly partial: AuthoritativeDisplacementPartial | null
+  readonly consultedPlacementIds: readonly string[]
+  readonly sheetReads: readonly AuthoritativeMovementSheetRead[]
+}
+
+export type AuthoritativeDisplacementResult =
+  | AuthoritativeDisplacementSuccess
+  | AuthoritativeDisplacementFailure
 
 export interface AuthoritativeMovementSheetRead {
   readonly kind: SheetKind
@@ -1401,6 +1502,417 @@ export const resolveMovement = (input: ResolveMovementInput): AuthoritativeMovem
     collision: null,
     triggeringSteps,
     consultedPlacementIds,
+    sheetReads: sheetReads.map(read => ({ ...read })),
+  })
+}
+
+const DISPLACEMENT_MOVEMENT_MODE_SET = new Set<string>(
+  AUTHORITATIVE_DISPLACEMENT_MOVEMENT_MODES,
+)
+const DISPLACEMENT_DISTANCE_POLICY_SET = new Set<string>(
+  AUTHORITATIVE_DISPLACEMENT_DISTANCE_POLICIES,
+)
+
+const cloneDisplacementObstruction = (
+  obstruction: AuthoritativeDisplacementObstruction | null,
+): AuthoritativeDisplacementObstruction | null => obstruction === null ? null : ({
+  reason: obstruction.reason,
+  at: cloneAnchor(obstruction.at),
+  collision: obstruction.collision === null ? null : {
+    kind: obstruction.collision.kind,
+    at: obstruction.collision.at === null ? null : cloneAnchor(obstruction.collision.at),
+    placementIds: [...obstruction.collision.placementIds],
+    voxelCells: cloneAnchors(obstruction.collision.voxelCells),
+  },
+  terrainRequirements: [...obstruction.terrainRequirements],
+})
+
+const cloneDisplacementPartial = (
+  partial: AuthoritativeDisplacementPartial,
+): AuthoritativeDisplacementPartial => ({
+  origin: cloneAnchor(partial.origin),
+  destination: cloneAnchor(partial.destination),
+  path: cloneAnchors(partial.path),
+  requestedDistance: partial.requestedDistance,
+  resolvedDistance: partial.resolvedDistance,
+  shortened: partial.shortened,
+  shorteningReason: partial.shorteningReason,
+  obstruction: cloneDisplacementObstruction(partial.obstruction),
+})
+
+const displacementFailure = (input: {
+  readonly reasonCode: AuthoritativeDisplacementFailureReasonCode
+  readonly message: string
+  readonly placementId: string
+  readonly movementMode: string
+  readonly distancePolicy: string
+  readonly partial?: AuthoritativeDisplacementPartial | null
+  readonly consultedPlacementIds?: readonly string[]
+  readonly sheetReads?: readonly AuthoritativeMovementSheetRead[]
+}): AuthoritativeDisplacementFailure => deepFreeze({
+  ok: false,
+  reasonCode: input.reasonCode,
+  message: input.message,
+  placementId: input.placementId,
+  movementMode: input.movementMode,
+  distancePolicy: input.distancePolicy,
+  partial: input.partial ? cloneDisplacementPartial(input.partial) : null,
+  consultedPlacementIds: [...(input.consultedPlacementIds ?? [])],
+  sheetReads: (input.sheetReads ?? []).map(read => ({ ...read })),
+})
+
+const displacementSnapshotFailureCode = (
+  reasonCode: MovementSnapshotFailure['reasonCode'],
+): AuthoritativeDisplacementFailureReasonCode => {
+  if (reasonCode === 'movement-placement-missing') return 'displacement-placement-missing'
+  if (reasonCode === 'movement-placement-duplicate') return 'displacement-placement-duplicate'
+  if (reasonCode === 'movement-placement-unresolved') return 'displacement-placement-unresolved'
+  if (reasonCode === 'movement-footprint-invalid') return 'displacement-footprint-invalid'
+  return 'displacement-map-invalid'
+}
+
+const validDisplacementVector = (value: unknown): value is GridAnchor => (
+  validAnchor(value)
+  && value.x >= -1
+  && value.x <= 1
+  && value.y >= -1
+  && value.y <= 1
+  && value.z >= -1
+  && value.z <= 1
+  && (value.x !== 0 || value.y !== 0 || value.z !== 0)
+)
+
+interface AuthoritativeDisplacementCandidate {
+  readonly anchor: GridAnchor
+  readonly distance: number
+}
+
+const authoritativeDisplacementCandidates = (input: {
+  readonly origin: GridAnchor
+  readonly vector: GridAnchor
+  readonly requestedDistance: number
+}): readonly AuthoritativeDisplacementCandidate[] => {
+  const candidates: AuthoritativeDisplacementCandidate[] = []
+  for (let step = 1; step <= AUTHORITATIVE_MOVEMENT_LIMITS.policyCost; step += 1) {
+    const distance = ptuGridVectorDistance({
+      x: input.vector.x * step,
+      y: input.vector.y * step,
+      z: input.vector.z * step,
+    })
+    if (distance > input.requestedDistance) break
+    candidates.push({
+      anchor: {
+        x: input.origin.x + input.vector.x * step,
+        y: input.origin.y + input.vector.y * step,
+        z: input.origin.z + input.vector.z * step,
+      },
+      distance,
+    })
+  }
+  return candidates
+}
+
+const displacementTerrain = (input: {
+  readonly anchor: GridAnchor
+  readonly mover: MovementPlacementSnapshot
+  readonly terrainIndex: MapMovementTerrainIndex
+  readonly groundLevelY: number
+}): MovementAnchorTerrain => movementTerrainForAnchor({
+  anchor: input.anchor,
+  footprint: input.mover,
+  terrain: input.terrainIndex,
+  groundLevelY: input.groundLevelY,
+})
+
+const unavailableDisplacementModeReason = (input: {
+  readonly from: GridAnchor
+  readonly to: GridAnchor
+  readonly mover: MovementPlacementSnapshot
+  readonly terrainIndex: MapMovementTerrainIndex
+  readonly groundLevelY: number
+}): Extract<
+  AuthoritativeDisplacementShorteningReason,
+  'height-change' | 'movement-mode-unavailable'
+> => {
+  const fromTerrain = displacementTerrain({
+    anchor: input.from,
+    mover: input.mover,
+    terrainIndex: input.terrainIndex,
+    groundLevelY: input.groundLevelY,
+  })
+  const toTerrain = displacementTerrain({
+    anchor: input.to,
+    mover: input.mover,
+    terrainIndex: input.terrainIndex,
+    groundLevelY: input.groundLevelY,
+  })
+  return input.from.y !== input.to.y
+    || (!fromTerrain.air && toTerrain.requirements.includes('aerial'))
+    ? 'height-change'
+    : 'movement-mode-unavailable'
+}
+
+const displacementObstruction = (input: {
+  readonly reason: AuthoritativeDisplacementObstruction['reason']
+  readonly at: GridAnchor
+  readonly collision?: AuthoritativeMovementCollision | null
+  readonly terrainRequirements?: readonly MovementTerrainRequirement[]
+}): AuthoritativeDisplacementObstruction => ({
+  reason: input.reason,
+  at: cloneAnchor(input.at),
+  collision: input.collision ?? null,
+  terrainRequirements: [...(input.terrainRequirements ?? [])],
+})
+
+/**
+ * Validate one server-derived straight push, pull, or shift ray.
+ *
+ * Speed ceilings do not reduce a reviewed move's displacement distance, but
+ * every step still needs a legal authoritative traversal mode. The first
+ * bounds, footprint, voxel, height, or mode obstruction either truncates an
+ * up-to operation or rejects a full-distance operation.
+ */
+export const resolveAuthoritativeDisplacement = (
+  input: ResolveAuthoritativeDisplacementInput,
+): AuthoritativeDisplacementResult => {
+  const raw = input as ResolveAuthoritativeDisplacementInput & Record<string, unknown>
+  const placementId = typeof raw.placementId === 'string'
+    ? raw.placementId
+    : String(raw.placementId)
+  const movementMode = typeof raw.movementMode === 'string'
+    ? raw.movementMode
+    : String(raw.movementMode)
+  const distancePolicy = typeof raw.distancePolicy === 'string'
+    ? raw.distancePolicy
+    : String(raw.distancePolicy)
+
+  if (!DISPLACEMENT_MOVEMENT_MODE_SET.has(movementMode)) {
+    return displacementFailure({
+      reasonCode: 'displacement-mode-unsupported',
+      message: `Displacement mode ${movementMode} is not supported.`,
+      placementId,
+      movementMode,
+      distancePolicy,
+    })
+  }
+  if (!DISPLACEMENT_DISTANCE_POLICY_SET.has(distancePolicy)) {
+    return displacementFailure({
+      reasonCode: 'displacement-policy-invalid',
+      message: `Displacement distance policy ${distancePolicy} is not supported.`,
+      placementId,
+      movementMode,
+      distancePolicy,
+    })
+  }
+  if (!validIdentifier(placementId)) {
+    return displacementFailure({
+      reasonCode: 'displacement-placement-missing',
+      message: 'Displacement placement identity must be a bounded non-empty string.',
+      placementId,
+      movementMode,
+      distancePolicy,
+    })
+  }
+  if (!validDisplacementVector(raw.vector)) {
+    return displacementFailure({
+      reasonCode: 'displacement-vector-invalid',
+      message: 'Displacement vector must be a non-zero unit grid vector.',
+      placementId,
+      movementMode,
+      distancePolicy,
+    })
+  }
+  if (
+    !Number.isSafeInteger(raw.requestedDistance)
+    || raw.requestedDistance < 0
+    || raw.requestedDistance > AUTHORITATIVE_MOVEMENT_LIMITS.policyCost
+  ) {
+    return displacementFailure({
+      reasonCode: 'displacement-distance-invalid',
+      message: `Displacement distance must be a safe integer from 0 through ${AUTHORITATIVE_MOVEMENT_LIMITS.policyCost}.`,
+      placementId,
+      movementMode,
+      distancePolicy,
+    })
+  }
+
+  const invalidMap = validateMapGeometry(input.map)
+  if (invalidMap) {
+    return displacementFailure({
+      reasonCode: 'displacement-map-invalid',
+      message: invalidMap,
+      placementId,
+      movementMode,
+      distancePolicy,
+    })
+  }
+  const snapshots = buildMovementSnapshots(input.map, input.sheets, placementId)
+  if (!snapshots.ok) {
+    return displacementFailure({
+      reasonCode: displacementSnapshotFailureCode(snapshots.reasonCode),
+      message: snapshots.message,
+      placementId,
+      movementMode,
+      distancePolicy,
+      consultedPlacementIds: snapshots.consultedPlacementIds,
+      sheetReads: snapshots.sheetReads,
+    })
+  }
+
+  const { mover, placements, sheetReads } = snapshots
+  const origin = cloneAnchor(mover.position)
+  const consultedPlacementIds = placements.map(placement => placement.id)
+  const terrainIndex = buildMapMovementTerrainIndex(input.map.voxels)
+  const groundLevelY = input.map.groundLevelY ?? 0
+  if (!isAnchorWithinBounds(origin, mover, input.map.dimensions)) {
+    return displacementFailure({
+      reasonCode: 'displacement-origin-out-of-bounds',
+      message: 'The authoritative displacement origin footprint is outside map bounds.',
+      placementId,
+      movementMode,
+      distancePolicy,
+      consultedPlacementIds,
+      sheetReads,
+    })
+  }
+  const originCollision = collisionAt(
+    origin,
+    mover,
+    placements,
+    terrainIndex,
+    groundLevelY,
+  )
+  if (originCollision) {
+    return displacementFailure({
+      reasonCode: 'displacement-origin-collision',
+      message: 'The authoritative displacement origin intersects a placement or Blocking Terrain.',
+      placementId,
+      movementMode,
+      distancePolicy,
+      consultedPlacementIds,
+      sheetReads,
+    })
+  }
+
+  const requestedDistance = raw.requestedDistance
+  const candidates = authoritativeDisplacementCandidates({
+    origin,
+    vector: raw.vector,
+    requestedDistance,
+  })
+  const path: GridAnchor[] = [origin]
+  let resolvedDistance = 0
+  let obstruction: AuthoritativeDisplacementObstruction | null = null
+
+  for (const candidate of candidates) {
+    if (!isAnchorWithinBounds(candidate.anchor, mover, input.map.dimensions)) {
+      obstruction = displacementObstruction({
+        reason: 'map-bounds',
+        at: candidate.anchor,
+        collision: boundsCollision(candidate.anchor),
+      })
+      break
+    }
+
+    const collision = collisionAt(
+      candidate.anchor,
+      mover,
+      placements,
+      terrainIndex,
+      groundLevelY,
+    )
+    if (collision) {
+      obstruction = displacementObstruction({
+        reason: collision.kind === 'placement'
+          ? 'occupied-footprint'
+          : collision.kind === 'terrain'
+            ? 'blocking-terrain'
+            : 'mixed-collision',
+        at: candidate.anchor,
+        collision,
+      })
+      break
+    }
+
+    const previous = path.at(-1)!
+    const step = findMovementPathForPokemon({
+      pokemon: mover,
+      start: previous,
+      goal: candidate.anchor,
+      pokemons: placements,
+      dimensions: input.map.dimensions,
+      exceptId: mover.id,
+      terrainIndex,
+      groundLevelY,
+      costLimit: AUTHORITATIVE_MOVEMENT_LIMITS.policyCost,
+      allowedDirections: [raw.vector],
+    })
+    if (
+      !step.legal
+      || step.path?.length !== 2
+      || !sameAnchor(step.path[0]!, previous)
+      || !sameAnchor(step.path[1]!, candidate.anchor)
+    ) {
+      const reason = unavailableDisplacementModeReason({
+        from: previous,
+        to: candidate.anchor,
+        mover,
+        terrainIndex,
+        groundLevelY,
+      })
+      obstruction = displacementObstruction({
+        reason,
+        at: candidate.anchor,
+        terrainRequirements: displacementTerrain({
+          anchor: candidate.anchor,
+          mover,
+          terrainIndex,
+          groundLevelY,
+        }).requirements,
+      })
+      break
+    }
+
+    path.push(cloneAnchor(candidate.anchor))
+    resolvedDistance = candidate.distance
+  }
+
+  const shortened = resolvedDistance < requestedDistance
+  const shorteningReason: AuthoritativeDisplacementShorteningReason = !shortened
+    ? 'none'
+    : obstruction?.reason ?? 'grid-distance-quantized'
+  const partial: AuthoritativeDisplacementPartial = {
+    origin,
+    destination: cloneAnchor(path.at(-1) ?? origin),
+    path,
+    requestedDistance,
+    resolvedDistance,
+    shortened,
+    shorteningReason,
+    obstruction,
+  }
+
+  if (shortened && distancePolicy === 'full-distance-required') {
+    return displacementFailure({
+      reasonCode: 'displacement-full-distance-unavailable',
+      message: `Full displacement distance ${requestedDistance} is unavailable (${shorteningReason}).`,
+      placementId,
+      movementMode,
+      distancePolicy,
+      partial,
+      consultedPlacementIds,
+      sheetReads,
+    })
+  }
+
+  return deepFreeze({
+    ok: true,
+    reasonCode: 'displacement-legal',
+    placementId,
+    movementMode: movementMode as AuthoritativeDisplacementMovementMode,
+    distancePolicy: distancePolicy as AuthoritativeDisplacementDistancePolicy,
+    ...cloneDisplacementPartial(partial),
+    consultedPlacementIds: [...consultedPlacementIds],
     sheetReads: sheetReads.map(read => ({ ...read })),
   })
 }

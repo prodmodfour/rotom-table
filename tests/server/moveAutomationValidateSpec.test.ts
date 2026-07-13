@@ -845,18 +845,33 @@ describe('authoritative MoveSpec validation and hashing', () => {
         destinationSetId: null,
         displacement: {
           vector: { kind: 'away', source: { kind: 'actor' } },
+          distancePolicy: 'up-to-distance',
           opportunityAttacks: 'ignore',
         },
       },
     })
     const valid = validSpec()
     valid.phases.push({ phase: 'movement', operations: [displacementOperation()] })
-    expect(validateMoveSpec(valid).spec.phases
+    const validated = validateMoveSpec(valid)
+    expect(validated.spec.phases
       .flatMap(block => block.operations)
       .find(operation => operation.id === 'operation.weighted-push')).toMatchObject({
       kind: 'movement-request',
-      payload: { mode: 'forced', displacement: { vector: { kind: 'away' } } },
+      payload: {
+        mode: 'forced',
+        displacement: {
+          vector: { kind: 'away' },
+          distancePolicy: 'up-to-distance',
+        },
+      },
     })
+
+    const fullDistance = structuredClone(valid)
+    const fullDistancePayload = fullDistance.phases.at(-1)!.operations[0]!.payload as {
+      displacement: { distancePolicy: string }
+    }
+    fullDistancePayload.displacement.distancePolicy = 'full-distance-required'
+    expect(validateMoveSpec(fullDistance).definitionHash).not.toBe(validated.definitionHash)
 
     const wrongPhase = structuredClone(valid)
     wrongPhase.phases.at(-1)!.phase = 'schedule'

@@ -296,6 +296,10 @@ export const MOVE_EFFECT_MOVEMENT_OPPORTUNITY_ATTACK_POLICIES = [
   'provoke',
   'ignore',
 ] as const
+export const MOVE_EFFECT_MOVEMENT_DISPLACEMENT_DISTANCE_POLICIES = [
+  'up-to-distance',
+  'full-distance-required',
+] as const
 export const MOVE_EFFECT_USAGE_ACTIONS = ['spend', 'restore', 'set'] as const
 export const MOVE_EFFECT_HISTORY_EVENTS = [
   'move-declared',
@@ -414,6 +418,8 @@ export type MoveEffectMovementCardinalDirection =
   (typeof MOVE_EFFECT_MOVEMENT_CARDINAL_DIRECTIONS)[number]
 export type MoveEffectMovementOpportunityAttackPolicy =
   (typeof MOVE_EFFECT_MOVEMENT_OPPORTUNITY_ATTACK_POLICIES)[number]
+export type MoveEffectMovementDisplacementDistancePolicy =
+  (typeof MOVE_EFFECT_MOVEMENT_DISPLACEMENT_DISTANCE_POLICIES)[number]
 export type MoveEffectUsageAction = (typeof MOVE_EFFECT_USAGE_ACTIONS)[number]
 export type MoveEffectHistoryEvent = (typeof MOVE_EFFECT_HISTORY_EVENTS)[number]
 
@@ -1128,6 +1134,8 @@ export type MoveMovementVector =
 
 export interface MoveMovementDisplacement {
   readonly vector: MoveMovementVector
+  /** A shortened legal prefix is accepted only for the up-to policy. */
+  readonly distancePolicy: MoveEffectMovementDisplacementDistancePolicy
   /** Explicit policy; forced/voluntary identity never implicitly decides reaction timing. */
   readonly opportunityAttacks: MoveEffectMovementOpportunityAttackPolicy
 }
@@ -1514,7 +1522,11 @@ const CONTEXTUAL_MOVEMENT_DISTANCE_FIELDS = [
 const RELATIVE_MOVEMENT_VECTOR_FIELDS = ['kind', 'source'] as const
 const CHOSEN_MOVEMENT_VECTOR_FIELDS = ['kind', 'directionSetId'] as const
 const CARDINAL_MOVEMENT_VECTOR_FIELDS = ['kind', 'direction'] as const
-const MOVEMENT_DISPLACEMENT_FIELDS = ['vector', 'opportunityAttacks'] as const
+const MOVEMENT_DISPLACEMENT_FIELDS = [
+  'vector',
+  'distancePolicy',
+  'opportunityAttacks',
+] as const
 const USAGE_FIELDS = ['action', 'resourceId', 'amount'] as const
 const HISTORY_FIELDS = ['event', 'detailCode'] as const
 const LOG_FIELDS = ['messageKey', 'arguments'] as const
@@ -1599,6 +1611,9 @@ const MOVEMENT_CARDINAL_DIRECTION_SET = new Set<string>(
 )
 const MOVEMENT_OPPORTUNITY_ATTACK_POLICY_SET = new Set<string>(
   MOVE_EFFECT_MOVEMENT_OPPORTUNITY_ATTACK_POLICIES,
+)
+const MOVEMENT_DISPLACEMENT_DISTANCE_POLICY_SET = new Set<string>(
+  MOVE_EFFECT_MOVEMENT_DISPLACEMENT_DISTANCE_POLICIES,
 )
 const USAGE_ACTION_SET = new Set<string>(MOVE_EFFECT_USAGE_ACTIONS)
 const HISTORY_EVENT_SET = new Set<string>(MOVE_EFFECT_HISTORY_EVENTS)
@@ -3622,6 +3637,12 @@ const parseMovementDisplacement = (
   const input = parseExactRecord(value, MOVEMENT_DISPLACEMENT_FIELDS, path)
   return {
     vector: parseMovementVector(ownValue(input, 'vector', path), `${path}.vector`),
+    distancePolicy: parseEnum<MoveEffectMovementDisplacementDistancePolicy>(
+      ownValue(input, 'distancePolicy', path),
+      MOVEMENT_DISPLACEMENT_DISTANCE_POLICY_SET,
+      `${path}.distancePolicy`,
+      'up-to-distance or full-distance-required',
+    ),
     opportunityAttacks: parseEnum<MoveEffectMovementOpportunityAttackPolicy>(
       ownValue(input, 'opportunityAttacks', path),
       MOVEMENT_OPPORTUNITY_ATTACK_POLICY_SET,

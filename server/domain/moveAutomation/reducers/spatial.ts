@@ -1,8 +1,10 @@
 import {
   MOVE_EFFECT_MOVEMENT_CARDINAL_DIRECTIONS,
+  MOVE_EFFECT_MOVEMENT_DISPLACEMENT_DISTANCE_POLICIES,
   MOVE_EFFECT_MOVEMENT_OPPORTUNITY_ATTACK_POLICIES,
   MOVE_EFFECT_OPERATION_LIMITS,
   type MoveContextualMovementDistance,
+  type MoveEffectMovementDisplacementDistancePolicy,
   type MoveEffectMovementMode,
   type MoveEffectMovementOpportunityAttackPolicy,
   type MoveMovementDisplacement,
@@ -15,10 +17,17 @@ import {
   MOVE_AUTOMATION_AREA_DIRECTIONS,
   type MoveAutomationAreaDirection,
 } from '~/types/moveAutomation'
-import type { GridAnchor } from '~/types/map'
+import type { CharacterSheet } from '~/types/characterSheet'
+import type { GridAnchor, TabletopMap } from '~/types/map'
+import type { TrainerSheet } from '~/types/trainerSheet'
 import { getClearanceValue } from '~/utils/gridGeometry'
 import { moveAutomationAreaDirectionVector } from '~/utils/moveAutomationDirections'
-import { ptuGridVectorDistance } from '~/utils/ptuGridDistance'
+import {
+  AUTHORITATIVE_DISPLACEMENT_SHORTENING_REASONS,
+  resolveAuthoritativeDisplacement,
+  type AuthoritativeDisplacementObstruction,
+  type AuthoritativeMovementSheets,
+} from '../../movement/resolveMovement'
 import type {
   AuthoritativeMoveRulesContext,
   AuthoritativeMoveSheetRead,
@@ -39,10 +48,8 @@ import {
   type ResolvedMoveEffectDynamicRecipients,
 } from './effectRecipients'
 
-export const MOVE_SPATIAL_SHORTENING_REASONS = [
-  'none',
-  'grid-distance-quantized',
-] as const
+export const MOVE_SPATIAL_SHORTENING_REASONS =
+  AUTHORITATIVE_DISPLACEMENT_SHORTENING_REASONS
 
 export type MoveSpatialShorteningReason =
   (typeof MOVE_SPATIAL_SHORTENING_REASONS)[number]
@@ -59,6 +66,8 @@ export type MoveSpatialEffectReductionErrorCode =
   | 'chosen-direction-unavailable'
   | 'distance-invalid'
   | 'distance-evaluation-failed'
+  | 'full-distance-unavailable'
+  | 'movement-validation-failed'
 
 export class MoveSpatialEffectReductionError extends Error {
   readonly code: MoveSpatialEffectReductionErrorCode
@@ -117,17 +126,19 @@ export interface MoveSpatialMovement {
   readonly operationId: string
   readonly recipientPlacementId: string
   readonly mode: Extract<MoveEffectMovementMode, 'forced' | 'voluntary'>
+  readonly distancePolicy: MoveEffectMovementDisplacementDistancePolicy
   readonly opportunityAttackPolicy: MoveEffectMovementOpportunityAttackPolicy
   readonly provokesOpportunityAttacks: boolean
   readonly vector: MoveSpatialVectorResolution
   readonly distance: MoveSpatialDistanceResolution
   readonly origin: GridAnchor
   readonly destination: GridAnchor
-  /** Collision-independent straight ray, including origin and destination. */
+  /** Authoritative collision-checked straight path, including origin and destination. */
   readonly path: readonly GridAnchor[]
   readonly resolvedDistance: number
   readonly shortened: boolean
   readonly shorteningReason: MoveSpatialShorteningReason
+  readonly obstruction: AuthoritativeDisplacementObstruction | null
 }
 
 export interface MoveSpatialEffectOperationResult {
@@ -162,6 +173,9 @@ const MOVEMENT_DIRECTION_SET = new Set<string>(MOVE_AUTOMATION_AREA_DIRECTIONS)
 const CARDINAL_DIRECTION_SET = new Set<string>(MOVE_EFFECT_MOVEMENT_CARDINAL_DIRECTIONS)
 const OPPORTUNITY_ATTACK_POLICY_SET = new Set<string>(
   MOVE_EFFECT_MOVEMENT_OPPORTUNITY_ATTACK_POLICIES,
+)
+const DISPLACEMENT_DISTANCE_POLICY_SET = new Set<string>(
+  MOVE_EFFECT_MOVEMENT_DISPLACEMENT_DISTANCE_POLICIES,
 )
 
 const fail = (
@@ -211,6 +225,12 @@ const assertSpatialOperation = (
       `Operation ${operation.id} is not a reviewed movement-phase displacement.`,
     )
   }
+  if (!DISPLACEMENT_DISTANCE_POLICY_SET.has(payload.displacement.distancePolicy)) {
+    fail(
+      'invalid-displacement',
+      `Operation ${operation.id} has an unsupported displacement distance policy.`,
+    )
+  }
   if (!OPPORTUNITY_ATTACK_POLICY_SET.has(payload.displacement.opportunityAttacks)) {
     fail(
       'invalid-displacement',
@@ -234,6 +254,7 @@ const spatialFootprint = (
   context: AuthoritativeMoveRulesContext,
   placementId: string,
   role: 'recipient' | 'source',
+  positions: ReadonlyMap<string, GridAnchor>,
 ): SpatialFootprint => {
   const placement = context.queries.placements.get(placementId)
   const token = context.queries.tokens.get(placementId)
@@ -257,7 +278,7 @@ const spatialFootprint = (
   context.reads.recordPlacement(placement)
   return {
     placementId,
-    position: cloneAnchor(token.position),
+    position: cloneAnchor(positions.get(placementId) ?? token.position),
     base: token.base,
     clearance: getClearanceValue(token),
   }
@@ -352,6 +373,7 @@ const resolveSpatialVector = (input: {
   readonly operation: MoveSpatialEffectOperation
   readonly recipient: SpatialFootprint
   readonly selectorState: MoveRuleSelectorState
+  readonly positions: ReadonlyMap<string, GridAnchor>
   readonly chosenDirections?: MoveSpatialChosenDirectionResolver
 }): MoveSpatialVectorResolution => {
   const declaration = input.operation.payload.displacement.vector
@@ -363,7 +385,7 @@ const resolveSpatialVector = (input: {
       vector: declaration,
       selectorState: input.selectorState,
     })
-    const source = spatialFootprint(input.context, sourceId, 'source')
+    const source = spatialFootprint(input.context, sourceId, 'source', input.positions)
     const away = deriveMoveSpatialAwayVector({ source, recipient: input.recipient })
       ?? fail(
         'vector-unavailable',
@@ -510,42 +532,38 @@ const resolveSpatialDistance = (input: {
   }
 }
 
-const buildSpatialPath = (input: {
-  readonly origin: GridAnchor
-  readonly vector: Pick<MoveSpatialVectorResolution, 'x' | 'y' | 'z'>
-  readonly requestedDistance: number
-}): {
-  readonly path: readonly GridAnchor[]
-  readonly resolvedDistance: number
-  readonly shorteningReason: MoveSpatialShorteningReason
-} => {
-  const path: GridAnchor[] = [cloneAnchor(input.origin)]
-  let resolvedDistance = 0
-  for (
-    let step = 1;
-    step <= MOVE_EFFECT_OPERATION_LIMITS.movementDisplacementDistance;
-    step += 1
-  ) {
-    const distance = ptuGridVectorDistance({
-      x: input.vector.x * step,
-      y: input.vector.y * step,
-      z: input.vector.z * step,
-    })
-    if (distance > input.requestedDistance) break
-    path.push({
-      x: input.origin.x + input.vector.x * step,
-      y: input.origin.y + input.vector.y * step,
-      z: input.origin.z + input.vector.z * step,
-    })
-    resolvedDistance = distance
+const movementSheetsForContext = (
+  context: AuthoritativeMoveRulesContext,
+): AuthoritativeMovementSheets => {
+  const pokemon = new Map<string, CharacterSheet>()
+  const trainer = new Map<string, TrainerSheet>()
+  for (const resolved of context.resolvedSheets) {
+    if (resolved.kind === 'pokemon') {
+      pokemon.set(resolved.slug, resolved.sheet as CharacterSheet)
+    }
+    else {
+      trainer.set(resolved.slug, resolved.sheet as TrainerSheet)
+    }
   }
-  return {
-    path,
-    resolvedDistance,
-    shorteningReason: resolvedDistance < input.requestedDistance
-      ? 'grid-distance-quantized'
-      : 'none',
-  }
+  return { pokemon, trainer }
+}
+
+const mapWithSpatialPositions = (
+  map: TabletopMap,
+  positions: ReadonlyMap<string, GridAnchor>,
+): TabletopMap => ({
+  ...map,
+  placements: map.placements.map(placement => ({
+    ...placement,
+    position: cloneAnchor(positions.get(placement.id) ?? placement.position),
+  })),
+})
+
+const recordMovementSheetReads = (
+  context: AuthoritativeMoveRulesContext,
+  reads: readonly AuthoritativeMoveSheetRead[],
+): void => {
+  for (const read of reads) context.reads.recordSheet(read)
 }
 
 const resolveMovement = (input: {
@@ -553,15 +571,23 @@ const resolveMovement = (input: {
   readonly operation: MoveSpatialEffectOperation
   readonly recipientId: string
   readonly dynamic: ResolvedMoveEffectDynamicRecipients
+  readonly positions: ReadonlyMap<string, GridAnchor>
+  readonly movementSheets: AuthoritativeMovementSheets
   readonly chosenDirections?: MoveSpatialChosenDirectionResolver
 }): MoveSpatialMovement => {
-  const recipient = spatialFootprint(input.context, input.recipientId, 'recipient')
+  const recipient = spatialFootprint(
+    input.context,
+    input.recipientId,
+    'recipient',
+    input.positions,
+  )
   const selectorState = selectorStateFor(input.recipientId, input.dynamic)
   const vector = resolveSpatialVector({
     context: input.context,
     operation: input.operation,
     recipient,
     selectorState,
+    positions: input.positions,
     chosenDirections: input.chosenDirections,
   })
   const distance = resolveSpatialDistance({
@@ -569,34 +595,54 @@ const resolveMovement = (input: {
     operation: input.operation,
     selectorState,
   })
-  const path = buildSpatialPath({
-    origin: recipient.position,
+  const distancePolicy = input.operation.payload.displacement.distancePolicy
+  const movement = resolveAuthoritativeDisplacement({
+    map: mapWithSpatialPositions(input.context.map, input.positions),
+    sheets: input.movementSheets,
+    placementId: input.recipientId,
+    movementMode: input.operation.payload.mode,
     vector,
     requestedDistance: distance.value,
+    distancePolicy,
   })
-  const destination = path.path.at(-1) ?? recipient.position
+  recordMovementSheetReads(input.context, movement.sheetReads)
+  if (!movement.ok) {
+    if (movement.reasonCode === 'displacement-full-distance-unavailable') {
+      return fail(
+        'full-distance-unavailable',
+        `Spatial operation ${input.operation.id} requires its full distance for ${input.recipientId}: ${movement.partial?.shorteningReason ?? 'unavailable'}.`,
+      )
+    }
+    return fail(
+      'movement-validation-failed',
+      `Spatial operation ${input.operation.id} failed authoritative movement validation for ${input.recipientId}: ${movement.reasonCode}.`,
+    )
+  }
+
   const opportunityAttackPolicy = input.operation.payload.displacement.opportunityAttacks
   return {
     operationId: input.operation.id,
     recipientPlacementId: input.recipientId,
     mode: input.operation.payload.mode,
+    distancePolicy,
     opportunityAttackPolicy,
     provokesOpportunityAttacks: opportunityAttackPolicy === 'provoke',
     vector,
     distance,
-    origin: cloneAnchor(recipient.position),
-    destination: cloneAnchor(destination),
-    path: path.path.map(cloneAnchor),
-    resolvedDistance: path.resolvedDistance,
-    shortened: path.resolvedDistance < distance.value,
-    shorteningReason: path.shorteningReason,
+    origin: cloneAnchor(movement.origin),
+    destination: cloneAnchor(movement.destination),
+    path: movement.path.map(cloneAnchor),
+    resolvedDistance: movement.resolvedDistance,
+    shortened: movement.shortened,
+    shorteningReason: movement.shorteningReason,
+    obstruction: movement.obstruction,
   }
 }
 
 /**
- * Reduce reviewed spatial operations into immutable collision-independent rays.
- * This boundary does not mutate placements. Bounds, obstruction, occupancy,
- * height transitions, and persistence remain the movement oracle's concern.
+ * Reduce reviewed spatial operations into immutable collision-checked rays.
+ * The local position accumulator reserves each ordered destination so one
+ * reduction cannot overlap recipients. Persistence remains a later boundary.
  */
 export const reduceMoveSpatialEffects = (
   input: ReduceMoveSpatialEffectsInput,
@@ -609,6 +655,13 @@ export const reduceMoveSpatialEffects = (
   const operationIds = new Set<string>()
   const movements: MoveSpatialMovement[] = []
   const operationResults: MoveSpatialEffectOperationResult[] = []
+  const positions = new Map(
+    input.context.map.placements.map(placement => [
+      placement.id,
+      cloneAnchor(placement.position),
+    ]),
+  )
+  const movementSheets = movementSheetsForContext(input.context)
 
   for (const emission of input.operations) {
     const { operation } = emission
@@ -640,13 +693,20 @@ export const reduceMoveSpatialEffects = (
       )
     }
 
-    const resolved = expectedIds.map(recipientId => resolveMovement({
-      context: input.context,
-      operation,
-      recipientId,
-      dynamic,
-      chosenDirections: input.chosenDirections,
-    }))
+    const resolved: MoveSpatialMovement[] = []
+    for (const recipientId of expectedIds) {
+      const movement = resolveMovement({
+        context: input.context,
+        operation,
+        recipientId,
+        dynamic,
+        positions,
+        movementSheets,
+        chosenDirections: input.chosenDirections,
+      })
+      resolved.push(movement)
+      positions.set(recipientId, cloneAnchor(movement.destination))
+    }
     movements.push(...resolved)
     operationResults.push({
       operationId: operation.id,
@@ -657,9 +717,11 @@ export const reduceMoveSpatialEffects = (
       movements: resolved,
       details: {
         mode: operation.payload.mode,
+        distancePolicy: operation.payload.displacement.distancePolicy,
         opportunityAttackPolicy: operation.payload.displacement.opportunityAttacks,
         movementCount: resolved.length,
         movedCount: resolved.filter(movement => movement.resolvedDistance > 0).length,
+        shortenedCount: resolved.filter(movement => movement.shortened).length,
       },
     })
   }

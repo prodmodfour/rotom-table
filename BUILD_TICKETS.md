@@ -1702,7 +1702,7 @@ Status: DONE
 
 ## MA-127 — Handle collision, obstruction, and shortening
 
-Status: TODO
+Status: DONE
 
 **Depends on:** MA-126
 **Commit:** `feat(move-automation): resolve displacement collisions`
