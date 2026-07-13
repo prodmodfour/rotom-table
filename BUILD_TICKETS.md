@@ -1507,7 +1507,7 @@ Status: DONE
 
 ## MA-116B — Apply GM corrections atomically
 
-Status: TODO
+Status: DONE
 
 **Depends on:** MA-116A
 **Commit:** `feat(move-automation): apply audited gm move corrections`

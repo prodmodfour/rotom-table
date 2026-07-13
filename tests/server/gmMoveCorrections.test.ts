@@ -27,7 +27,10 @@ import { createSqliteMapRepository } from '~~/server/storage/mapRepository'
 import { createSqliteLivePlayOpRepository } from '~~/server/storage/opRepository'
 import { createSqliteRealtimeEventRepository } from '~~/server/storage/realtimeEventRepository'
 import { createSqliteSheetRepository } from '~~/server/storage/sheetRepository'
-import { applyGmMoveCorrectionUseCase } from '~~/server/useCases/applyGmMoveCorrection'
+import {
+  applyGmMoveCorrectionUseCase,
+  type ApplyGmMoveCorrectionDependencies,
+} from '~~/server/useCases/applyGmMoveCorrection'
 
 const originOperationId = 'op_originalmove01'
 const correctionOperationId = 'op_correctmove001'
@@ -176,17 +179,20 @@ const seed = () => {
   return { database, maps, modes, sheets, ops, realtime, source, operationIds }
 }
 
-const execute = (harness: ReturnType<typeof seed>, command = correctionCommand(harness.operationIds)) => (
-  applyGmMoveCorrectionUseCase({ role: 'gm', command, clientId: 'gm-client' }, {
-    database: harness.database,
-    mapRepository: harness.maps,
-    sheetRepository: harness.sheets,
-    opRepository: harness.ops,
-    realtimeEventRepository: harness.realtime,
-    publishPersistedRealtimeEvent: vi.fn(),
-    now: () => 1_000,
-  })
-)
+const execute = (
+  harness: ReturnType<typeof seed>,
+  command = correctionCommand(harness.operationIds),
+  overrides: ApplyGmMoveCorrectionDependencies = {},
+) => applyGmMoveCorrectionUseCase({ role: 'gm', command, clientId: 'gm-client' }, {
+  database: harness.database,
+  mapRepository: harness.maps,
+  sheetRepository: harness.sheets,
+  opRepository: harness.ops,
+  realtimeEventRepository: harness.realtime,
+  publishPersistedRealtimeEvent: vi.fn(),
+  now: () => 1_000,
+  ...overrides,
+})
 
 describe('atomic GM move corrections', () => {
   it('applies selected map and sheet inverses atomically with durable ancestry and realtime audit', () => {
@@ -259,17 +265,54 @@ describe('atomic GM move corrections', () => {
     expect(harness.ops.getStoredOpRecord('arena', correctionOperationId)).toBeNull()
   })
 
-  it('replays a duplicate correction opId without applying or publishing twice', () => {
+  it('replays a duplicate correction opId without reloading the source, applying, or publishing twice', () => {
     const harness = seed()
-    const first = execute(harness)
+    const publish = vi.fn()
+    const first = execute(harness, correctionCommand(harness.operationIds), {
+      publishPersistedRealtimeEvent: publish,
+    })
     const eventCount = harness.realtime.cursorState().latestSequence
-    const second = execute(harness)
+    expect(publish).toHaveBeenCalledTimes(3)
+
+    const replayOps = {
+      getStoredOpRecord: (mapSlug: string, opId: string) => {
+        if (opId === originOperationId) throw new Error('duplicate replay reloaded its source')
+        return harness.ops.getStoredOpRecord(mapSlug, opId)
+      },
+      saveCommandResult: harness.ops.saveCommandResult,
+    }
+    const second = execute(harness, correctionCommand(harness.operationIds), {
+      opRepository: replayOps,
+      publishPersistedRealtimeEvent: publish,
+    })
 
     expect(second.result).toEqual(first.result)
     expect(harness.maps.getBySlug('arena')?.revision).toBe(9)
     expect(harness.sheets.getByRef('pokemon', 'actor')?.revision).toBe(6)
     expect(harness.realtime.cursorState().latestSequence).toBe(eventCount)
+    expect(publish).toHaveBeenCalledTimes(3)
     expect(harness.ops.listMoveCorrectionRecords('arena', originOperationId)).toHaveLength(1)
+  })
+
+  it('rejects a correction opId reused with different command material before loading another source', () => {
+    const harness = seed()
+    execute(harness)
+    const changedCommand = {
+      ...correctionCommand(harness.operationIds),
+      payload: {
+        originOperationId: 'op_otherorigin001',
+        operationIds: harness.operationIds,
+      },
+    }
+
+    expect(() => execute(harness, changedCommand)).toThrow(expect.objectContaining({
+      statusCode: 409,
+    }))
+    expect(harness.maps.getBySlug('arena')?.revision).toBe(9)
+    expect(harness.sheets.getByRef('pokemon', 'actor')?.revision).toBe(6)
+    expect(harness.ops.getStoredOpRecord('arena', correctionOperationId)?.command)
+      .toEqual(correctionCommand(harness.operationIds))
+    expect(harness.realtime.cursorState().latestSequence).toBe(3)
   })
 
   it('returns a clean conflict without overwriting a later affected-resource revision', () => {
@@ -328,6 +371,30 @@ describe('atomic GM move corrections', () => {
     })
     expect(harness.ops.getStoredOpRecord('arena', correctionOperationId)).toBeNull()
     expect(harness.realtime.cursorState().latestSequence).toBe(0)
+  })
+
+  it('rolls back map, sheet, operation, and publication when realtime audit storage fails', () => {
+    const harness = seed()
+    const publish = vi.fn()
+
+    expect(() => execute(harness, correctionCommand(harness.operationIds), {
+      realtimeEventRepository: {
+        appendMany: () => { throw new Error('injected realtime repository failure') },
+      },
+      publishPersistedRealtimeEvent: publish,
+    })).toThrow('injected realtime repository failure')
+
+    expect(harness.maps.getBySlug('arena')).toMatchObject({
+      revision: 8,
+      hazards: [{ kind: 'spikes', x: 1, y: 0, z: 1 }],
+    })
+    expect(harness.sheets.getByRef('pokemon', 'actor')).toMatchObject({
+      revision: 5,
+      sheet: { stats: { atk: { stage: 2 } } },
+    })
+    expect(harness.ops.getStoredOpRecord('arena', correctionOperationId)).toBeNull()
+    expect(harness.realtime.cursorState().latestSequence).toBe(0)
+    expect(publish).not.toHaveBeenCalled()
   })
 
   it('fails closed when an expected current value drifts without a revision change', () => {

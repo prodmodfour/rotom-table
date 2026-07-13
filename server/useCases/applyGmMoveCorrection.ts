@@ -30,6 +30,7 @@ import { acceptedCommandRealtimeAppendInput } from '../livePlay/acceptedCommandR
 import { createCanonicalCommandHash } from '../livePlay/commandIdempotency'
 import {
   parseMoveCorrectionCommand,
+  parseMoveCorrectionCommandSyntax,
   type ParsedMoveCorrectionCommand,
 } from '../livePlay/moveCorrectionCommandParser'
 import type { LivePlayCommandHash } from '../livePlay/opResult'
@@ -373,22 +374,19 @@ const responseForRecord = (
 }
 
 const existingCorrection = (
-  parsed: ParsedMoveCorrectionCommand,
+  command: GmMoveCorrectionCommand,
   commandHash: LivePlayCommandHash,
   dependencies: Dependencies,
 ): GmMoveCorrectionResponse | null => {
-  const record = dependencies.opRepository.getStoredOpRecord(
-    parsed.command.mapSlug,
-    parsed.command.opId,
-  )
+  const record = dependencies.opRepository.getStoredOpRecord(command.mapSlug, command.opId)
   if (!record) return null
   if (
     record.commandHash !== commandHash
-    || record.correctionOriginOperationId !== parsed.command.payload.originOperationId
+    || record.correctionOriginOperationId !== command.payload.originOperationId
   ) {
     throw new GmMoveCorrectionUseCaseError(
       409,
-      `Operation ID ${parsed.command.mapSlug}:${parsed.command.opId} was already used by another command.`,
+      `Operation ID ${command.mapSlug}:${command.opId} was already used by another command.`,
     )
   }
   return responseForRecord(record, dependencies)
@@ -430,18 +428,16 @@ export const applyGmMoveCorrectionUseCase = (
     throw new GmMoveCorrectionUseCaseError(403, 'GM authorization is required for move corrections.')
   }
   const dependencies = dependenciesWithDefaults(dependencyInput)
-  const parsed = parseMoveCorrectionCommand(input.command, {
-    opRepository: dependencies.opRepository,
-  })
-  const commandHash = gmMoveCorrectionCommandHash(parsed.command)
-  const replay = existingCorrection(parsed, commandHash, dependencies)
+  const command = parseMoveCorrectionCommandSyntax(input.command)
+  const commandHash = gmMoveCorrectionCommandHash(command)
+  const replay = existingCorrection(command, commandHash, dependencies)
   if (replay) return replay
 
   let persistedEvents: ReturnType<Dependencies['realtimeEventRepository']['appendMany']> = []
   const response = dependencies.database.withTransaction((): GmMoveCorrectionResponse => {
-    const duplicate = existingCorrection(parsed, commandHash, dependencies)
+    const duplicate = existingCorrection(command, commandHash, dependencies)
     if (duplicate) return duplicate
-    const currentParsed = parseMoveCorrectionCommand(parsed.command, {
+    const currentParsed = parseMoveCorrectionCommand(command, {
       opRepository: dependencies.opRepository,
     })
     const map = dependencies.mapRepository.getBySlug(currentParsed.command.mapSlug)
