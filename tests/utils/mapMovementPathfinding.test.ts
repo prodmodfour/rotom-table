@@ -72,6 +72,31 @@ describe('map movement pathfinding', () => {
     expect(result.reason).toBe('too-far')
   })
 
+  it('records deterministic per-step movement evidence for the selected route', () => {
+    const result = route(token({ movementCapabilities: { overland: 3 } }), { x: 2, y: 0, z: 2 })
+
+    expect(result.steps).toEqual([
+      expect.objectContaining({
+        index: 1,
+        from: { x: 0, y: 0, z: 0 },
+        to: { x: 1, y: 0, z: 1 },
+        cost: 1,
+        cumulativeCost: 1,
+        diagonal: true,
+        capabilityKeys: ['overland'],
+      }),
+      expect.objectContaining({
+        index: 2,
+        from: { x: 1, y: 0, z: 1 },
+        to: { x: 2, y: 0, z: 2 },
+        cost: 2,
+        cumulativeCost: 3,
+        diagonal: true,
+        capabilityKeys: ['overland'],
+      }),
+    ])
+  })
+
   it('uses mixed movement capability averages for routes crossing terrain types', () => {
     const swimmer = token({ movementCapabilities: { overland: 3, swim: 1 } })
     const water: MapVoxelV2[] = [{ x: 1, y: 0, z: 0, materialId: 'deep_water' }]

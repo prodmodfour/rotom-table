@@ -1,0 +1,447 @@
+import { describe, expect, it } from 'vitest'
+import type { CharacterSheet } from '~/types/characterSheet'
+import type { MapVoxelV2, SheetPlacement, TabletopMap } from '~/types/map'
+import type { MovementCapabilitySpeeds } from '~/types/movement'
+import type { TrainerSheet } from '~/types/trainerSheet'
+import {
+  resolveMovement,
+  type AuthoritativeMovementSheets,
+  type ResolveMovementInput,
+} from '~~/server/domain/movement/resolveMovement'
+
+const pokemonSheet = (
+  slug: string,
+  options: {
+    readonly species?: string
+    readonly revision?: number
+    readonly capabilities?: MovementCapabilitySpeeds
+  } = {},
+): CharacterSheet => ({
+  slug,
+  nickname: slug,
+  species: options.species ?? 'Bulbasaur',
+  level: 10,
+  revision: options.revision ?? 1,
+  capabilities: options.capabilities,
+})
+
+const placement = (
+  id: string,
+  x: number,
+  z: number,
+  sheetSlug = id,
+): SheetPlacement => ({
+  id,
+  sheetKind: 'pokemon',
+  sheetSlug,
+  position: { x, y: 0, z },
+})
+
+const map = (
+  placements: readonly SheetPlacement[] = [placement('actor', 0, 0)],
+  overrides: Partial<TabletopMap> = {},
+): TabletopMap => ({
+  schemaVersion: 2,
+  slug: 'movement-arena',
+  name: 'Movement Arena',
+  revision: 7,
+  dimensions: { x: 8, y: 4, z: 8 },
+  groundLevelY: 0,
+  voxels: [],
+  placements: [...placements],
+  ...overrides,
+})
+
+const sheets = (
+  pokemon: readonly CharacterSheet[],
+): AuthoritativeMovementSheets => ({
+  pokemon: new Map(pokemon.map(sheet => [sheet.slug, sheet])),
+  trainer: new Map<string, TrainerSheet>(),
+})
+
+const input = (options: {
+  readonly map?: TabletopMap
+  readonly sheets?: AuthoritativeMovementSheets
+  readonly placementId?: string
+  readonly destination?: { readonly x: number; readonly y: number; readonly z: number }
+  readonly policy?: ResolveMovementInput['policy']
+} = {}): ResolveMovementInput => ({
+  map: options.map ?? map(),
+  sheets: options.sheets ?? sheets([
+    pokemonSheet('actor', { capabilities: { overland: 6, swim: 0, sky: 0, levitate: 0 } }),
+  ]),
+  placementId: options.placementId ?? 'actor',
+  mode: 'shift',
+  destination: options.destination ?? { x: 2, y: 0, z: 2 },
+  ...(options.policy === undefined ? {} : { policy: options.policy }),
+})
+
+const wall = (x: number, z: number): MapVoxelV2 => ({
+  x,
+  y: 0,
+  z,
+  materialId: 'airship_wall_bulkhead',
+})
+
+describe('authoritative movement oracle', () => {
+  it('derives path, PTU cost, capabilities, terrain, occupancy, and triggering steps', () => {
+    const result = resolveMovement(input())
+
+    expect(result).toMatchObject({
+      ok: true,
+      reasonCode: 'movement-legal',
+      placementId: 'actor',
+      mode: 'shift',
+      policy: {
+        kind: 'standard',
+        allowSamePosition: false,
+        maximumCost: null,
+      },
+      origin: { x: 0, y: 0, z: 0 },
+      destination: { x: 2, y: 0, z: 2 },
+      path: [
+        { x: 0, y: 0, z: 0 },
+        { x: 1, y: 0, z: 1 },
+        { x: 2, y: 0, z: 2 },
+      ],
+      cost: 3,
+      capabilityLimit: 6,
+      effectiveLimit: 6,
+      footprint: { base: 1, clearance: 1 },
+      collision: null,
+      consultedPlacementIds: ['actor'],
+      sheetReads: [{ kind: 'pokemon', slug: 'actor', revision: 1 }],
+    })
+    if (!result.ok) throw new Error('expected legal authoritative movement')
+
+    expect(result.capabilities.used).toEqual([
+      { key: 'overland', label: 'Overland', speed: 6 },
+    ])
+    expect(result.occupancy).toEqual({
+      originCells: [{ x: 0, y: 0, z: 0 }],
+      destinationCells: [{ x: 2, y: 0, z: 2 }],
+      checkedPlacementIds: [],
+    })
+    expect(result.triggeringSteps).toEqual([
+      {
+        index: 1,
+        from: { x: 0, y: 0, z: 0 },
+        to: { x: 1, y: 0, z: 1 },
+        cost: 1,
+        cumulativeCost: 1,
+        diagonal: true,
+        slowCostApplied: false,
+        capabilities: [{ key: 'overland', label: 'Overland', speed: 6 }],
+        terrain: {
+          requirements: ['overland'],
+          slow: false,
+          air: false,
+          airHeight: 0,
+          hoverable: true,
+        },
+        leftCells: [{ x: 0, y: 0, z: 0 }],
+        enteredCells: [{ x: 1, y: 0, z: 1 }],
+        finalDestination: false,
+      },
+      {
+        index: 2,
+        from: { x: 1, y: 0, z: 1 },
+        to: { x: 2, y: 0, z: 2 },
+        cost: 2,
+        cumulativeCost: 3,
+        diagonal: true,
+        slowCostApplied: false,
+        capabilities: [{ key: 'overland', label: 'Overland', speed: 6 }],
+        terrain: {
+          requirements: ['overland'],
+          slow: false,
+          air: false,
+          airHeight: 0,
+          hoverable: true,
+        },
+        leftCells: [{ x: 1, y: 0, z: 1 }],
+        enteredCells: [{ x: 2, y: 0, z: 2 }],
+        finalDestination: true,
+      },
+    ])
+    expect(Object.isFrozen(result)).toBe(true)
+    expect(Object.isFrozen(result.path)).toBe(true)
+    expect(Object.isFrozen(result.triggeringSteps[0]?.terrain)).toBe(true)
+  })
+
+  it('uses authoritative mixed capabilities and records slow terrain cost per step', () => {
+    const actor = pokemonSheet('actor', {
+      capabilities: { overland: 4, swim: 2, sky: 0, levitate: 0 },
+    })
+    const waterResult = resolveMovement(input({
+      map: map(undefined, {
+        dimensions: { x: 4, y: 2, z: 2 },
+        voxels: [{ x: 1, y: 0, z: 0, materialId: 'deep_water' }],
+      }),
+      sheets: sheets([actor]),
+      destination: { x: 2, y: 0, z: 0 },
+    }))
+
+    expect(waterResult).toMatchObject({
+      ok: true,
+      cost: 2,
+      capabilityLimit: 3,
+      capabilities: {
+        used: [
+          { key: 'overland', speed: 4 },
+          { key: 'swim', speed: 2 },
+        ],
+      },
+    })
+    if (!waterResult.ok) throw new Error('expected mixed terrain movement')
+    expect(waterResult.triggeringSteps[0]).toMatchObject({
+      capabilities: [{ key: 'swim', speed: 2 }],
+      terrain: { requirements: ['swim'] },
+      slowCostApplied: false,
+    })
+
+    const slowResult = resolveMovement(input({
+      map: map(undefined, {
+        dimensions: { x: 3, y: 2, z: 2 },
+        voxels: [{
+          x: 1,
+          y: 0,
+          z: 0,
+          materialId: 'mud',
+          blocksMovement: false,
+        }],
+      }),
+      sheets: sheets([actor]),
+      destination: { x: 1, y: 0, z: 0 },
+    }))
+
+    expect(slowResult).toMatchObject({ ok: true, cost: 2 })
+    if (!slowResult.ok) throw new Error('expected slow terrain movement')
+    expect(slowResult.triggeringSteps).toEqual([
+      expect.objectContaining({
+        cost: 2,
+        cumulativeCost: 2,
+        slowCostApplied: true,
+        terrain: expect.objectContaining({ slow: true }),
+      }),
+    ])
+  })
+
+  it('derives large-footprint occupancy transitions from authoritative sheet geometry', () => {
+    const actor = pokemonSheet('actor', {
+      species: 'Snorlax',
+      revision: 4,
+      capabilities: { overland: 6 },
+    })
+    const result = resolveMovement(input({
+      map: map([placement('actor', 0, 1)], {
+        dimensions: { x: 6, y: 3, z: 5 },
+      }),
+      sheets: sheets([actor]),
+      destination: { x: 1, y: 0, z: 1 },
+    }))
+
+    expect(result).toMatchObject({
+      ok: true,
+      footprint: { base: 2, clearance: 2 },
+      sheetReads: [{ kind: 'pokemon', slug: 'actor', revision: 4 }],
+    })
+    if (!result.ok) throw new Error('expected large-footprint movement')
+    expect(result.occupancy.originCells).toHaveLength(8)
+    expect(result.occupancy.destinationCells).toHaveLength(8)
+    expect(result.triggeringSteps).toHaveLength(1)
+    expect(result.triggeringSteps[0]?.leftCells).toHaveLength(4)
+    expect(result.triggeringSteps[0]?.enteredCells).toHaveLength(4)
+  })
+
+  it('returns typed endpoint collision failures with map-order evidence', () => {
+    const arena = map([
+      placement('actor', 0, 0),
+      placement('first-blocker', 2, 0),
+      placement('second-blocker', 2, 0),
+    ])
+    const result = resolveMovement(input({
+      map: arena,
+      sheets: sheets([
+        pokemonSheet('actor', { capabilities: { overland: 6 } }),
+        pokemonSheet('first-blocker', { revision: 2 }),
+        pokemonSheet('second-blocker', { revision: 3 }),
+      ]),
+      destination: { x: 2, y: 0, z: 0 },
+    }))
+
+    expect(result).toMatchObject({
+      ok: false,
+      reasonCode: 'movement-destination-occupied',
+      collision: {
+        kind: 'placement',
+        at: { x: 2, y: 0, z: 0 },
+        placementIds: ['first-blocker', 'second-blocker'],
+        voxelCells: [],
+      },
+      occupancy: {
+        checkedPlacementIds: ['first-blocker', 'second-blocker'],
+      },
+      consultedPlacementIds: ['actor', 'first-blocker', 'second-blocker'],
+      sheetReads: [
+        { kind: 'pokemon', slug: 'actor', revision: 1 },
+        { kind: 'pokemon', slug: 'first-blocker', revision: 2 },
+        { kind: 'pokemon', slug: 'second-blocker', revision: 3 },
+      ],
+    })
+  })
+
+  it('distinguishes terrain, capability, route, bounds, and cost failures', () => {
+    const walker = sheets([
+      pokemonSheet('actor', {
+        capabilities: { overland: 6, swim: 0, sky: 0, levitate: 0, burrow: 0 },
+      }),
+    ])
+
+    expect(resolveMovement(input({
+      map: map(undefined, { voxels: [wall(1, 0)] }),
+      sheets: walker,
+      destination: { x: 1, y: 0, z: 0 },
+    }))).toMatchObject({
+      ok: false,
+      reasonCode: 'movement-destination-terrain-blocked',
+      collision: {
+        kind: 'terrain',
+        voxelCells: [{ x: 1, y: 0, z: 0 }],
+      },
+    })
+
+    expect(resolveMovement(input({
+      map: map(undefined, {
+        voxels: [{ x: 1, y: 0, z: 0, materialId: 'deep_water' }],
+      }),
+      sheets: walker,
+      destination: { x: 1, y: 0, z: 0 },
+    }))).toMatchObject({
+      ok: false,
+      reasonCode: 'movement-capability-missing',
+      collision: null,
+    })
+
+    expect(resolveMovement(input({
+      map: map(undefined, {
+        dimensions: { x: 3, y: 2, z: 3 },
+        voxels: [wall(1, 0), wall(1, 1), wall(1, 2)],
+      }),
+      sheets: walker,
+      destination: { x: 2, y: 0, z: 1 },
+    }))).toMatchObject({
+      ok: false,
+      reasonCode: 'movement-route-blocked',
+      collision: { kind: 'route', at: null },
+    })
+
+    expect(resolveMovement(input({
+      sheets: walker,
+      destination: { x: 8, y: 0, z: 0 },
+    }))).toMatchObject({
+      ok: false,
+      reasonCode: 'movement-destination-out-of-bounds',
+      collision: { kind: 'bounds' },
+    })
+
+    expect(resolveMovement(input({
+      sheets: walker,
+      destination: { x: 2, y: 0, z: 0 },
+      policy: { kind: 'standard', maximumCost: 1 },
+    }))).toMatchObject({
+      ok: false,
+      reasonCode: 'movement-cost-exceeds-limit',
+      path: [
+        { x: 0, y: 0, z: 0 },
+        { x: 1, y: 0, z: 0 },
+        { x: 2, y: 0, z: 0 },
+      ],
+      cost: 2,
+      capabilityLimit: 6,
+      effectiveLimit: 1,
+      collision: null,
+    })
+  })
+
+  it('fails closed for missing, duplicate, unresolved, malformed, and no-op inputs', () => {
+    expect(resolveMovement(input({ placementId: 'missing' }))).toMatchObject({
+      ok: false,
+      reasonCode: 'movement-placement-missing',
+    })
+
+    const duplicated = placement('actor', 1, 0)
+    expect(resolveMovement(input({
+      map: map([placement('actor', 0, 0), duplicated]),
+    }))).toMatchObject({
+      ok: false,
+      reasonCode: 'movement-placement-duplicate',
+    })
+
+    expect(resolveMovement(input({
+      sheets: sheets([]),
+    }))).toMatchObject({
+      ok: false,
+      reasonCode: 'movement-placement-unresolved',
+    })
+
+    expect(resolveMovement(input({
+      destination: { x: 0.5, y: 0, z: 0 },
+    }))).toMatchObject({
+      ok: false,
+      reasonCode: 'movement-destination-invalid',
+    })
+
+    expect(resolveMovement(input({
+      destination: { x: 0, y: 0, z: 0 },
+    }))).toMatchObject({
+      ok: false,
+      reasonCode: 'movement-same-position-disallowed',
+    })
+
+    expect(resolveMovement(input({
+      destination: { x: 0, y: 0, z: 0 },
+      policy: { kind: 'standard', allowSamePosition: true },
+    }))).toMatchObject({
+      ok: true,
+      cost: 0,
+      path: [{ x: 0, y: 0, z: 0 }],
+      triggeringSteps: [],
+    })
+  })
+
+  it('breaks equal-cost path ties deterministically and ignores client-style path or cost fields', () => {
+    const arena = map([
+      placement('actor', 0, 1),
+      placement('blocker', 1, 1),
+    ], {
+      dimensions: { x: 4, y: 2, z: 4 },
+    })
+    const authoritativeInput = input({
+      map: arena,
+      sheets: sheets([
+        pokemonSheet('actor', { capabilities: { overland: 8 } }),
+        pokemonSheet('blocker'),
+      ]),
+      destination: { x: 2, y: 0, z: 1 },
+    })
+
+    const first = resolveMovement(authoritativeInput)
+    const second = resolveMovement(authoritativeInput)
+    const forged = resolveMovement({
+      ...authoritativeInput,
+      path: [{ x: 99, y: 99, z: 99 }],
+      cost: 0,
+    } as ResolveMovementInput & { path: unknown; cost: number })
+
+    expect(first.ok).toBe(true)
+    expect(second).toEqual(first)
+    expect(forged).toEqual(first)
+    if (!first.ok) throw new Error('expected deterministic movement route')
+    expect(first.path).toEqual([
+      { x: 0, y: 0, z: 1 },
+      { x: 1, y: 0, z: 2 },
+      { x: 2, y: 0, z: 1 },
+    ])
+  })
+})

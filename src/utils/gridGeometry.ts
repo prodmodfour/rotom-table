@@ -34,6 +34,62 @@ export const normalizeDimensions = (dimensions: GridDimensions): GridDimensions 
 
 export const getAnchorKey = (position: GridAnchor) => `${position.x},${position.y},${position.z}`
 
+const cloneGridAnchor = (position: GridAnchor): GridAnchor => ({
+  x: position.x,
+  y: position.y,
+  z: position.z,
+})
+
+/**
+ * Enumerate the occupied cells for one validated footprint in stable
+ * y/z/x order. Callers remain responsible for validating the anchor and
+ * footprint before using this geometry as game authority.
+ */
+export const gridFootprintCells = (
+  position: GridAnchor,
+  footprint: GridFootprint,
+): GridAnchor[] => {
+  const cells: GridAnchor[] = []
+  const base = Math.max(0, Math.trunc(footprint.base))
+  const clearance = Math.max(0, Math.trunc(getClearanceValue(footprint)))
+
+  for (let y = position.y; y < position.y + clearance; y += 1) {
+    for (let z = position.z; z < position.z + base; z += 1) {
+      for (let x = position.x; x < position.x + base; x += 1) {
+        cells.push({ x, y, z })
+      }
+    }
+  }
+
+  return cells
+}
+
+export interface GridFootprintTransition {
+  readonly fromCells: readonly GridAnchor[]
+  readonly toCells: readonly GridAnchor[]
+  readonly leftCells: readonly GridAnchor[]
+  readonly enteredCells: readonly GridAnchor[]
+}
+
+/** Derive exact footprint occupancy changes for one movement step. */
+export const gridFootprintTransition = (
+  from: GridAnchor,
+  to: GridAnchor,
+  footprint: GridFootprint,
+): GridFootprintTransition => {
+  const fromCells = gridFootprintCells(from, footprint)
+  const toCells = gridFootprintCells(to, footprint)
+  const fromKeys = new Set(fromCells.map(getAnchorKey))
+  const toKeys = new Set(toCells.map(getAnchorKey))
+
+  return {
+    fromCells: fromCells.map(cloneGridAnchor),
+    toCells: toCells.map(cloneGridAnchor),
+    leftCells: fromCells.filter(cell => !toKeys.has(getAnchorKey(cell))).map(cloneGridAnchor),
+    enteredCells: toCells.filter(cell => !fromKeys.has(getAnchorKey(cell))).map(cloneGridAnchor),
+  }
+}
+
 export const isSameAnchor = (left: GridAnchor | null, right: GridAnchor | null) =>
   Boolean(
     left &&

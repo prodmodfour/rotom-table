@@ -6,6 +6,8 @@ import {
   getAnchorCenter,
   getAnchorKey,
   getPokemonCenter,
+  gridFootprintCells,
+  gridFootprintTransition,
   isAnchorWithinBounds,
   isSameAnchor,
   normalizeDimensions,
@@ -57,6 +59,49 @@ describe('grid geometry helpers', () => {
     expect(isSameAnchor(null, { x: 1, y: 0, z: 1 })).toBe(false)
     expect(getAnchorCenter({ x: 2, y: 1, z: 4 }, 2)).toEqual({ x: 3, y: 1, z: 5 })
     expect(getPokemonCenter(token({ position: { x: 3, y: 0, z: 5 }, base: 2 }))).toEqual({ x: 4, y: 0, z: 6 })
+  })
+
+  it('enumerates footprint occupancy and movement transitions deterministically', () => {
+    expect(gridFootprintCells(
+      { x: 1, y: 2, z: 3 },
+      { base: 2, clearance: 2 },
+    )).toEqual([
+      { x: 1, y: 2, z: 3 },
+      { x: 2, y: 2, z: 3 },
+      { x: 1, y: 2, z: 4 },
+      { x: 2, y: 2, z: 4 },
+      { x: 1, y: 3, z: 3 },
+      { x: 2, y: 3, z: 3 },
+      { x: 1, y: 3, z: 4 },
+      { x: 2, y: 3, z: 4 },
+    ])
+
+    expect(gridFootprintTransition(
+      { x: 1, y: 0, z: 1 },
+      { x: 2, y: 0, z: 1 },
+      { base: 2, clearance: 1 },
+    )).toEqual({
+      fromCells: [
+        { x: 1, y: 0, z: 1 },
+        { x: 2, y: 0, z: 1 },
+        { x: 1, y: 0, z: 2 },
+        { x: 2, y: 0, z: 2 },
+      ],
+      toCells: [
+        { x: 2, y: 0, z: 1 },
+        { x: 3, y: 0, z: 1 },
+        { x: 2, y: 0, z: 2 },
+        { x: 3, y: 0, z: 2 },
+      ],
+      leftCells: [
+        { x: 1, y: 0, z: 1 },
+        { x: 1, y: 0, z: 2 },
+      ],
+      enteredCells: [
+        { x: 3, y: 0, z: 1 },
+        { x: 3, y: 0, z: 2 },
+      ],
+    })
   })
 
   it('checks bounds and 3D footprint overlap', () => {

@@ -35,10 +35,25 @@ interface MovementPathState {
 interface QueuedMovementPathState extends MovementPathState {
   key: string
   priority: number
+  /** Stable insertion order used to break equal-cost queue ties. */
+  order: number
+}
+
+export interface MovementPathStep {
+  readonly index: number
+  readonly from: GridAnchor
+  readonly to: GridAnchor
+  readonly cost: number
+  readonly cumulativeCost: number
+  readonly diagonal: boolean
+  readonly slow: boolean
+  readonly capabilityKeys: MovementCapabilityKey[]
+  readonly terrain: MovementAnchorTerrain
 }
 
 export interface MovementPathResult {
   path: GridAnchor[] | null
+  steps: MovementPathStep[]
   distance: number
   movementLimit: number | null
   capabilityKeys: MovementCapabilityKey[]
@@ -51,6 +66,12 @@ export interface MovementPathResult {
 interface AnchorMovementEvaluation {
   capabilityKeys: MovementCapabilityKey[]
   slow: boolean
+  terrain: MovementAnchorTerrain
+}
+
+interface MovementPathLink {
+  readonly previousKey: string | null
+  readonly step: Omit<MovementPathStep, 'index'> | null
 }
 
 const MOVEMENT_CAPABILITY_MASK_BITS: Record<MovementCapabilityKey, number> = {
@@ -103,6 +124,11 @@ const capabilitySummaryLabel = (keys: readonly MovementCapabilityKey[]): string 
 class MovementPriorityQueue {
   private heap: QueuedMovementPathState[] = []
 
+  private compare(left: QueuedMovementPathState, right: QueuedMovementPathState): number {
+    if (left.priority !== right.priority) return left.priority - right.priority
+    return left.order - right.order
+  }
+
   get size(): number {
     return this.heap.length
   }
@@ -129,7 +155,7 @@ class MovementPriorityQueue {
     let current = index
     while (current > 0) {
       const parent = Math.floor((current - 1) / 2)
-      if (this.heap[parent]!.priority <= this.heap[current]!.priority) return
+      if (this.compare(this.heap[parent]!, this.heap[current]!) <= 0) return
       this.swap(parent, current)
       current = parent
     }
@@ -142,8 +168,8 @@ class MovementPriorityQueue {
       const right = left + 1
       let smallest = current
 
-      if (this.heap[left] && this.heap[left]!.priority < this.heap[smallest]!.priority) smallest = left
-      if (this.heap[right] && this.heap[right]!.priority < this.heap[smallest]!.priority) smallest = right
+      if (this.heap[left] && this.compare(this.heap[left]!, this.heap[smallest]!) < 0) smallest = left
+      if (this.heap[right] && this.compare(this.heap[right]!, this.heap[smallest]!) < 0) smallest = right
       if (smallest === current) return
 
       this.swap(current, smallest)
@@ -279,6 +305,7 @@ const evaluateAnchorMovementOptions = ({
     options.push({
       capabilityKeys: primaryCapabilityKeys,
       slow: terrain.slow,
+      terrain,
     })
   }
 
@@ -288,6 +315,7 @@ const evaluateAnchorMovementOptions = ({
       options.push({
         capabilityKeys: [aerialCapability],
         slow: false,
+        terrain,
       })
     }
   }
@@ -295,34 +323,68 @@ const evaluateAnchorMovementOptions = ({
   return sortedMovementOptions(options, capabilities)
 }
 
-const reconstructPath = (
+interface ReconstructedMovementRoute {
+  readonly path: GridAnchor[]
+  readonly steps: MovementPathStep[]
+}
+
+const cloneAnchor = (anchor: GridAnchor): GridAnchor => ({
+  x: anchor.x,
+  y: anchor.y,
+  z: anchor.z,
+})
+
+const cloneTerrain = (terrain: MovementAnchorTerrain): MovementAnchorTerrain => ({
+  ...terrain,
+  requirements: [...terrain.requirements],
+})
+
+const reconstructRoute = (
   goalKey: string,
   states: ReadonlyMap<string, MovementPathState>,
-  cameFrom: ReadonlyMap<string, string | null>,
-): GridAnchor[] => {
+  cameFrom: ReadonlyMap<string, MovementPathLink>,
+): ReconstructedMovementRoute => {
   const path: GridAnchor[] = []
+  const reverseSteps: Array<Omit<MovementPathStep, 'index'>> = []
   let currentKey: string | null = goalKey
 
   while (currentKey) {
     const state = states.get(currentKey)
     if (!state) break
-    path.push(state.anchor)
-    currentKey = cameFrom.get(currentKey) ?? null
+    path.push(cloneAnchor(state.anchor))
+    const link = cameFrom.get(currentKey)
+    if (!link) break
+    if (link.step) {
+      reverseSteps.push({
+        ...link.step,
+        from: cloneAnchor(link.step.from),
+        to: cloneAnchor(link.step.to),
+        capabilityKeys: [...link.step.capabilityKeys],
+        terrain: cloneTerrain(link.step.terrain),
+      })
+    }
+    currentKey = link.previousKey
   }
 
-  return path.reverse()
+  path.reverse()
+  reverseSteps.reverse()
+  return {
+    path,
+    steps: reverseSteps.map((step, index) => ({ ...step, index: index + 1 })),
+  }
 }
 
 const resultForPath = (
-  path: GridAnchor[] | null,
+  route: ReconstructedMovementRoute | null,
   distance: number,
   capabilityKeys: readonly MovementCapabilityKey[],
   movementLimit: number | null,
 ): MovementPathResult => {
   const labels = movementCapabilityLabels(capabilityKeys)
-  const legal = Boolean(path) && movementLimit != null && distance <= movementLimit
+  const legal = Boolean(route) && movementLimit != null && distance <= movementLimit
   return {
-    path,
+    path: route?.path ?? null,
+    steps: route?.steps ?? [],
     distance,
     movementLimit,
     capabilityKeys: [...capabilityKeys],
@@ -338,6 +400,7 @@ const blockedResult = (
   reason: 'blocked' | 'missing-capability' = 'blocked',
 ): MovementPathResult => ({
   path: null,
+  steps: [],
   distance,
   movementLimit: null,
   capabilityKeys: [],
@@ -392,7 +455,8 @@ export const findMovementPathForPokemon = ({
 
   if (sameAnchor(start, goal)) {
     return {
-      path: [start],
+      path: [cloneAnchor(start)],
+      steps: [],
       distance: 0,
       movementLimit: 0,
       capabilityKeys: [],
@@ -439,9 +503,13 @@ export const findMovementPathForPokemon = ({
   }
   const startKey = stateKey(start, 0, 0)
   const bestCostByKey = new Map<string, number>([[startKey, 0]])
-  const cameFrom = new Map<string, string | null>([[startKey, null]])
+  const cameFrom = new Map<string, MovementPathLink>([[
+    startKey,
+    { previousKey: null, step: null },
+  ]])
   const states = new Map<string, MovementPathState>([[startKey, startState]])
-  queue.push({ ...startState, key: startKey, priority: 0 })
+  let queueOrder = 0
+  queue.push({ ...startState, key: startKey, priority: 0, order: queueOrder })
   let bestLegalGoalResult: MovementPathResult | null = null
   let bestIllegalGoalResult: MovementPathResult | null = null
 
@@ -452,10 +520,10 @@ export const findMovementPathForPokemon = ({
     if (bestLegalGoalResult && current.cost > bestLegalGoalResult.distance) break
 
     if (sameAnchor(current.anchor, goal)) {
-      const path = reconstructPath(current.key, states, cameFrom)
+      const route = reconstructRoute(current.key, states, cameFrom)
       const capabilityKeys = capabilityKeysForMask(current.capabilityMask)
       const movementLimit = mixedMovementCapabilityLimit(capabilities, capabilityKeys)
-      const result = resultForPath(path, current.cost, capabilityKeys, movementLimit)
+      const result = resultForPath(route, current.cost, capabilityKeys, movementLimit)
       if (result.legal) {
         if (
           !bestLegalGoalResult ||
@@ -507,11 +575,25 @@ export const findMovementPathForPokemon = ({
         }
         bestCostByKey.set(nextKey, nextCost)
         states.set(nextKey, nextState)
-        cameFrom.set(nextKey, current.key)
+        cameFrom.set(nextKey, {
+          previousKey: current.key,
+          step: {
+            from: cloneAnchor(current.anchor),
+            to: cloneAnchor(nextAnchor),
+            cost: step.cost,
+            cumulativeCost: nextCost,
+            diagonal: isDiagonalHorizontalStep(direction),
+            slow: movement.slow,
+            capabilityKeys: [...movement.capabilityKeys],
+            terrain: cloneTerrain(movement.terrain),
+          },
+        })
+        queueOrder += 1
         queue.push({
           ...nextState,
           key: nextKey,
           priority: nextCost,
+          order: queueOrder,
         })
       }
     }

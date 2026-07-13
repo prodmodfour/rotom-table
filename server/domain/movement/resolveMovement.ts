@@ -1,0 +1,1066 @@
+import { normalizeRevision } from '#shared/sessionRevisions'
+import type { CharacterSheet } from '~/types/characterSheet'
+import type {
+  GridAnchor,
+  GridDimensions,
+  MapVoxelV2,
+  SheetKind,
+  SheetPlacement,
+  TabletopMap,
+} from '~/types/map'
+import type {
+  MovementCapabilityKey,
+  MovementCapabilitySpeeds,
+  ShiftMovementCapabilityKey,
+} from '~/types/movement'
+import type { TrainerSheet } from '~/types/trainerSheet'
+import {
+  footprintsOverlap,
+  getClearanceValue,
+  gridFootprintCells,
+  gridFootprintTransition,
+  isAnchorWithinBounds,
+  type GridFootprint,
+  type PositionedGridFootprint,
+} from '~/utils/gridGeometry'
+import {
+  findMovementPathForPokemon,
+  type MovementPathResult,
+  type MovementPathStep,
+} from '~/utils/mapMovementPathfinding'
+import {
+  buildMapMovementTerrainIndex,
+  movementTerrainForAnchor,
+  type MapMovementTerrainIndex,
+  type MovementAnchorTerrain,
+  type MovementTerrainRequirement,
+} from '~/utils/mapMovementTerrain'
+import {
+  movementCapabilityLabel,
+  movementCapabilitySpeed,
+  SHIFT_MOVEMENT_CAPABILITY_KEYS,
+} from '~/utils/movementCapabilities'
+import { placementToSpawned, type SheetLookup } from '~/utils/placement'
+
+export const AUTHORITATIVE_MOVEMENT_MODES = ['shift'] as const
+export type AuthoritativeMovementMode = (typeof AUTHORITATIVE_MOVEMENT_MODES)[number]
+
+export const AUTHORITATIVE_MOVEMENT_LIMITS = Object.freeze({
+  identifierChars: 160,
+  mapDimension: 200,
+  footprintExtent: 32,
+  footprintCells: 512,
+  capabilitySpeed: 1_000,
+  policyCost: 1_000,
+})
+
+export const AUTHORITATIVE_MOVEMENT_REASON_CODES = [
+  'movement-legal',
+  'movement-mode-unsupported',
+  'movement-policy-invalid',
+  'movement-map-invalid',
+  'movement-placement-missing',
+  'movement-placement-duplicate',
+  'movement-placement-unresolved',
+  'movement-footprint-invalid',
+  'movement-destination-invalid',
+  'movement-same-position-disallowed',
+  'movement-origin-out-of-bounds',
+  'movement-origin-collision',
+  'movement-origin-terrain-blocked',
+  'movement-destination-out-of-bounds',
+  'movement-destination-occupied',
+  'movement-destination-terrain-blocked',
+  'movement-destination-collision',
+  'movement-capability-missing',
+  'movement-route-blocked',
+  'movement-cost-exceeds-limit',
+] as const
+
+export type AuthoritativeMovementReasonCode = (
+  typeof AUTHORITATIVE_MOVEMENT_REASON_CODES
+)[number]
+
+export type AuthoritativeMovementFailureReasonCode = Exclude<
+  AuthoritativeMovementReasonCode,
+  'movement-legal'
+>
+
+/**
+ * The first oracle policy is deliberately narrow. Later tickets may add
+ * reviewed forced-movement or GM policies as new discriminated members; they
+ * must not turn these flags into generic collision or terrain bypasses.
+ */
+export interface StandardAuthoritativeMovementPolicy {
+  readonly kind: 'standard'
+  /** A server-selected no-op query may be legal; ordinary movement defaults false. */
+  readonly allowSamePosition?: boolean
+  /** Optional server-owned cap such as remaining movement. Null uses capability limit only. */
+  readonly maximumCost?: number | null
+}
+
+export type AuthoritativeMovementPolicy = StandardAuthoritativeMovementPolicy
+
+export interface ResolvedAuthoritativeMovementPolicy {
+  readonly kind: 'standard'
+  readonly allowSamePosition: boolean
+  readonly maximumCost: number | null
+}
+
+export const STANDARD_AUTHORITATIVE_MOVEMENT_POLICY: ResolvedAuthoritativeMovementPolicy = Object.freeze({
+  kind: 'standard',
+  allowSamePosition: false,
+  maximumCost: null,
+})
+
+export interface AuthoritativeMovementSheets {
+  readonly pokemon: ReadonlyMap<string, CharacterSheet>
+  readonly trainer: ReadonlyMap<string, TrainerSheet>
+}
+
+export interface ResolveMovementInput {
+  readonly map: TabletopMap
+  readonly sheets: AuthoritativeMovementSheets
+  /** Map-local placement identity. Geometry never comes from a client copy. */
+  readonly placementId: string
+  readonly mode: AuthoritativeMovementMode
+  /** Requested endpoint only. A path and cost are always server-derived. */
+  readonly destination: GridAnchor
+  readonly policy?: AuthoritativeMovementPolicy
+}
+
+export interface AuthoritativeMovementSheetRead {
+  readonly kind: SheetKind
+  readonly slug: string
+  readonly revision: number
+}
+
+export interface AuthoritativeMovementFootprint {
+  readonly base: number
+  readonly clearance: number
+}
+
+export interface AuthoritativeMovementCapability {
+  readonly key: MovementCapabilityKey
+  readonly label: string
+  readonly speed: number
+}
+
+export interface AuthoritativeMovementCapabilities {
+  readonly available: readonly AuthoritativeMovementCapability[]
+  readonly used: readonly AuthoritativeMovementCapability[]
+}
+
+export interface AuthoritativeMovementTerrain {
+  readonly requirements: readonly MovementTerrainRequirement[]
+  readonly slow: boolean
+  readonly air: boolean
+  readonly airHeight: number
+  readonly hoverable: boolean
+}
+
+export type AuthoritativeMovementCollisionKind =
+  | 'bounds'
+  | 'placement'
+  | 'terrain'
+  | 'mixed'
+  | 'route'
+
+export interface AuthoritativeMovementCollision {
+  readonly kind: AuthoritativeMovementCollisionKind
+  readonly at: GridAnchor | null
+  /** Deterministic authoritative map order. */
+  readonly placementIds: readonly string[]
+  /** Deterministic footprint-cell order. */
+  readonly voxelCells: readonly GridAnchor[]
+}
+
+export interface AuthoritativeMovementOccupancy {
+  readonly originCells: readonly GridAnchor[]
+  readonly destinationCells: readonly GridAnchor[]
+  /** Every other footprint checked for path and endpoint collision. */
+  readonly checkedPlacementIds: readonly string[]
+}
+
+/**
+ * One path transition that later lifecycle tickets can turn into ordered
+ * leave/enter/final-destination events. No event is emitted by this pure oracle.
+ */
+export interface AuthoritativeMovementTriggeringStep {
+  readonly index: number
+  readonly from: GridAnchor
+  readonly to: GridAnchor
+  readonly cost: number
+  readonly cumulativeCost: number
+  readonly diagonal: boolean
+  readonly slowCostApplied: boolean
+  readonly capabilities: readonly AuthoritativeMovementCapability[]
+  readonly terrain: AuthoritativeMovementTerrain
+  readonly leftCells: readonly GridAnchor[]
+  readonly enteredCells: readonly GridAnchor[]
+  readonly finalDestination: boolean
+}
+
+export interface AuthoritativeMovementSuccess {
+  readonly ok: true
+  readonly reasonCode: 'movement-legal'
+  readonly placementId: string
+  readonly mode: AuthoritativeMovementMode
+  readonly policy: ResolvedAuthoritativeMovementPolicy
+  readonly origin: GridAnchor
+  readonly destination: GridAnchor
+  readonly path: readonly GridAnchor[]
+  readonly cost: number
+  readonly capabilityLimit: number
+  readonly effectiveLimit: number
+  readonly capabilities: AuthoritativeMovementCapabilities
+  readonly footprint: AuthoritativeMovementFootprint
+  readonly occupancy: AuthoritativeMovementOccupancy
+  readonly collision: null
+  readonly triggeringSteps: readonly AuthoritativeMovementTriggeringStep[]
+  readonly consultedPlacementIds: readonly string[]
+  readonly sheetReads: readonly AuthoritativeMovementSheetRead[]
+}
+
+export interface AuthoritativeMovementFailure {
+  readonly ok: false
+  readonly reasonCode: AuthoritativeMovementFailureReasonCode
+  readonly message: string
+  readonly placementId: string
+  /** Retains an unsupported runtime value for diagnostics without accepting it. */
+  readonly mode: string
+  readonly policy: ResolvedAuthoritativeMovementPolicy | null
+  readonly origin: GridAnchor | null
+  readonly destination: GridAnchor | null
+  readonly path: readonly GridAnchor[] | null
+  readonly cost: number | null
+  readonly capabilityLimit: number | null
+  readonly effectiveLimit: number | null
+  readonly capabilities: AuthoritativeMovementCapabilities
+  readonly footprint: AuthoritativeMovementFootprint | null
+  readonly occupancy: AuthoritativeMovementOccupancy | null
+  readonly collision: AuthoritativeMovementCollision | null
+  readonly triggeringSteps: readonly []
+  readonly consultedPlacementIds: readonly string[]
+  readonly sheetReads: readonly AuthoritativeMovementSheetRead[]
+}
+
+export type AuthoritativeMovementResult =
+  | AuthoritativeMovementSuccess
+  | AuthoritativeMovementFailure
+
+interface MovementPlacementSnapshot extends PositionedGridFootprint {
+  readonly id: string
+  readonly sheetKind: SheetKind
+  readonly sheetSlug: string
+  readonly movementCapabilities: MovementCapabilitySpeeds
+}
+
+interface MovementSnapshotSuccess {
+  readonly ok: true
+  readonly placements: readonly MovementPlacementSnapshot[]
+  readonly mover: MovementPlacementSnapshot
+  readonly sheetReads: readonly AuthoritativeMovementSheetRead[]
+}
+
+interface MovementSnapshotFailure {
+  readonly ok: false
+  readonly reasonCode:
+    | 'movement-placement-missing'
+    | 'movement-placement-duplicate'
+    | 'movement-placement-unresolved'
+    | 'movement-footprint-invalid'
+    | 'movement-map-invalid'
+  readonly message: string
+  readonly consultedPlacementIds: readonly string[]
+  readonly sheetReads: readonly AuthoritativeMovementSheetRead[]
+}
+
+type MovementSnapshotResult = MovementSnapshotSuccess | MovementSnapshotFailure
+
+const deepFreeze = <Value>(value: Value): Value => {
+  if (typeof value !== 'object' || value === null || Object.isFrozen(value)) return value
+  for (const key of Object.getOwnPropertyNames(value)) {
+    deepFreeze((value as Record<string, unknown>)[key])
+  }
+  return Object.freeze(value)
+}
+
+const cloneAnchor = (anchor: GridAnchor): GridAnchor => ({
+  x: anchor.x,
+  y: anchor.y,
+  z: anchor.z,
+})
+
+const cloneAnchors = (anchors: readonly GridAnchor[]): GridAnchor[] => anchors.map(cloneAnchor)
+
+const validIdentifier = (value: unknown): value is string => (
+  typeof value === 'string'
+  && value.length > 0
+  && value.length <= AUTHORITATIVE_MOVEMENT_LIMITS.identifierChars
+  && value.trim() === value
+)
+
+const validCoordinate = (value: unknown): value is number => Number.isSafeInteger(value)
+
+const validAnchor = (value: unknown): value is GridAnchor => {
+  if (typeof value !== 'object' || value === null || Array.isArray(value)) return false
+  const record = value as Record<string, unknown>
+  return validCoordinate(record.x) && validCoordinate(record.y) && validCoordinate(record.z)
+}
+
+const validDimensions = (dimensions: GridDimensions): boolean => (
+  Number.isSafeInteger(dimensions.x)
+  && dimensions.x >= 1
+  && dimensions.x <= AUTHORITATIVE_MOVEMENT_LIMITS.mapDimension
+  && Number.isSafeInteger(dimensions.y)
+  && dimensions.y >= 1
+  && dimensions.y <= AUTHORITATIVE_MOVEMENT_LIMITS.mapDimension
+  && Number.isSafeInteger(dimensions.z)
+  && dimensions.z >= 1
+  && dimensions.z <= AUTHORITATIVE_MOVEMENT_LIMITS.mapDimension
+)
+
+const sameAnchor = (left: GridAnchor, right: GridAnchor): boolean => (
+  left.x === right.x && left.y === right.y && left.z === right.z
+)
+
+const emptyCapabilities = (): AuthoritativeMovementCapabilities => ({
+  available: [],
+  used: [],
+})
+
+const failure = (input: {
+  readonly reasonCode: AuthoritativeMovementFailureReasonCode
+  readonly message: string
+  readonly placementId: string
+  readonly mode: string
+  readonly policy?: ResolvedAuthoritativeMovementPolicy | null
+  readonly origin?: GridAnchor | null
+  readonly destination?: GridAnchor | null
+  readonly path?: readonly GridAnchor[] | null
+  readonly cost?: number | null
+  readonly capabilityLimit?: number | null
+  readonly effectiveLimit?: number | null
+  readonly capabilities?: AuthoritativeMovementCapabilities
+  readonly footprint?: AuthoritativeMovementFootprint | null
+  readonly occupancy?: AuthoritativeMovementOccupancy | null
+  readonly collision?: AuthoritativeMovementCollision | null
+  readonly consultedPlacementIds?: readonly string[]
+  readonly sheetReads?: readonly AuthoritativeMovementSheetRead[]
+}): AuthoritativeMovementFailure => deepFreeze({
+  ok: false,
+  reasonCode: input.reasonCode,
+  message: input.message,
+  placementId: input.placementId,
+  mode: input.mode,
+  policy: input.policy ?? null,
+  origin: input.origin ? cloneAnchor(input.origin) : null,
+  destination: input.destination ? cloneAnchor(input.destination) : null,
+  path: input.path ? cloneAnchors(input.path) : null,
+  cost: input.cost ?? null,
+  capabilityLimit: input.capabilityLimit ?? null,
+  effectiveLimit: input.effectiveLimit ?? null,
+  capabilities: input.capabilities ?? emptyCapabilities(),
+  footprint: input.footprint ?? null,
+  occupancy: input.occupancy ?? null,
+  collision: input.collision ?? null,
+  triggeringSteps: [],
+  consultedPlacementIds: [...(input.consultedPlacementIds ?? [])],
+  sheetReads: (input.sheetReads ?? []).map(read => ({ ...read })),
+})
+
+const resolvedPolicy = (
+  policy: AuthoritativeMovementPolicy | undefined,
+): ResolvedAuthoritativeMovementPolicy | null => {
+  if (policy === undefined) return { ...STANDARD_AUTHORITATIVE_MOVEMENT_POLICY }
+  if (
+    typeof policy !== 'object'
+    || policy === null
+    || policy.kind !== 'standard'
+    || (policy.allowSamePosition !== undefined && typeof policy.allowSamePosition !== 'boolean')
+    || (
+      policy.maximumCost !== undefined
+      && policy.maximumCost !== null
+      && (
+        !Number.isSafeInteger(policy.maximumCost)
+        || policy.maximumCost < 0
+        || policy.maximumCost > AUTHORITATIVE_MOVEMENT_LIMITS.policyCost
+      )
+    )
+  ) {
+    return null
+  }
+
+  return {
+    kind: 'standard',
+    allowSamePosition: policy.allowSamePosition ?? false,
+    maximumCost: policy.maximumCost ?? null,
+  }
+}
+
+const validVoxel = (voxel: MapVoxelV2, dimensions: GridDimensions): boolean => (
+  validCoordinate(voxel.x)
+  && validCoordinate(voxel.y)
+  && validCoordinate(voxel.z)
+  && voxel.x >= 0
+  && voxel.x < dimensions.x
+  && voxel.y >= 0
+  && voxel.y < dimensions.y
+  && voxel.z >= 0
+  && voxel.z < dimensions.z
+  && typeof voxel.materialId === 'string'
+  && voxel.materialId.trim().length > 0
+  && (voxel.blocksMovement === undefined || typeof voxel.blocksMovement === 'boolean')
+  && (voxel.tags === undefined || (
+    Array.isArray(voxel.tags)
+    && voxel.tags.every(tag => typeof tag === 'string')
+  ))
+)
+
+const validateMapGeometry = (map: TabletopMap): string | null => {
+  if (!validDimensions(map.dimensions)) {
+    return `Movement map dimensions must be safe integers from 1 to ${AUTHORITATIVE_MOVEMENT_LIMITS.mapDimension}.`
+  }
+  const groundLevelY = map.groundLevelY ?? 0
+  if (!Number.isSafeInteger(groundLevelY) || groundLevelY < 0 || groundLevelY >= map.dimensions.y) {
+    return 'Movement map groundLevelY must be a safe in-bounds integer.'
+  }
+  if (!Array.isArray(map.voxels) || !Array.isArray(map.placements)) {
+    return 'Movement map voxels and placements must be arrays.'
+  }
+
+  const voxelKeys = new Set<string>()
+  for (const voxel of map.voxels) {
+    if (!validVoxel(voxel, map.dimensions)) {
+      return 'Movement map contains malformed or out-of-bounds voxel geometry.'
+    }
+    const key = `${voxel.x},${voxel.y},${voxel.z}`
+    if (voxelKeys.has(key)) return `Movement map contains duplicate voxel ${key}.`
+    voxelKeys.add(key)
+  }
+
+  return null
+}
+
+const sheetForPlacement = (
+  placement: SheetPlacement,
+  sheets: AuthoritativeMovementSheets,
+): CharacterSheet | TrainerSheet | null => (
+  placement.sheetKind === 'pokemon'
+    ? sheets.pokemon.get(placement.sheetSlug) ?? null
+    : sheets.trainer.get(placement.sheetSlug) ?? null
+)
+
+const validMovementCapabilities = (capabilities: MovementCapabilitySpeeds): boolean => (
+  Object.entries(capabilities).every(([key, speed]) => (
+    (SHIFT_MOVEMENT_CAPABILITY_KEYS as readonly string[]).includes(key)
+    || key === 'teleporter'
+  ) && (
+    speed === undefined
+    || (
+      Number.isSafeInteger(speed)
+      && speed >= 0
+      && speed <= AUTHORITATIVE_MOVEMENT_LIMITS.capabilitySpeed
+    )
+  ))
+)
+
+const validFootprint = (footprint: GridFootprint): boolean => {
+  const clearance = getClearanceValue(footprint)
+  return Number.isSafeInteger(footprint.base)
+    && footprint.base >= 1
+    && footprint.base <= AUTHORITATIVE_MOVEMENT_LIMITS.footprintExtent
+    && Number.isSafeInteger(clearance)
+    && clearance >= 1
+    && clearance <= AUTHORITATIVE_MOVEMENT_LIMITS.footprintExtent
+    && footprint.base * footprint.base * clearance <= AUTHORITATIVE_MOVEMENT_LIMITS.footprintCells
+}
+
+const buildMovementSnapshots = (
+  map: TabletopMap,
+  sheets: AuthoritativeMovementSheets,
+  placementId: string,
+): MovementSnapshotResult => {
+  const sheetLookup: SheetLookup = {
+    pokemon: new Map(sheets.pokemon),
+    trainer: new Map(sheets.trainer),
+  }
+  const placements: MovementPlacementSnapshot[] = []
+  const placementIds = new Set<string>()
+  const readByKey = new Map<string, AuthoritativeMovementSheetRead>()
+  const consultedPlacementIds: string[] = []
+
+  for (const placement of map.placements) {
+    if (!validIdentifier(placement.id) || !validIdentifier(placement.sheetSlug) || !validAnchor(placement.position)) {
+      return {
+        ok: false,
+        reasonCode: 'movement-map-invalid',
+        message: 'Movement map contains malformed placement identity or position geometry.',
+        consultedPlacementIds,
+        sheetReads: [...readByKey.values()],
+      }
+    }
+    if (placement.sheetKind !== 'pokemon' && placement.sheetKind !== 'trainer') {
+      return {
+        ok: false,
+        reasonCode: 'movement-map-invalid',
+        message: `Movement placement ${placement.id} has an unsupported sheet kind.`,
+        consultedPlacementIds,
+        sheetReads: [...readByKey.values()],
+      }
+    }
+    if (placementIds.has(placement.id)) {
+      return {
+        ok: false,
+        reasonCode: 'movement-placement-duplicate',
+        message: `Movement placement ${placement.id} occurs more than once on the authoritative map.`,
+        consultedPlacementIds,
+        sheetReads: [...readByKey.values()],
+      }
+    }
+    placementIds.add(placement.id)
+    consultedPlacementIds.push(placement.id)
+
+    const sheet = sheetForPlacement(placement, sheets)
+    if (!sheet) {
+      return {
+        ok: false,
+        reasonCode: 'movement-placement-unresolved',
+        message: `Movement placement ${placement.id} cannot resolve sheet ${placement.sheetKind}/${placement.sheetSlug}.`,
+        consultedPlacementIds,
+        sheetReads: [...readByKey.values()],
+      }
+    }
+    const readKey = `${placement.sheetKind}:${placement.sheetSlug}`
+    if (!readByKey.has(readKey)) {
+      readByKey.set(readKey, {
+        kind: placement.sheetKind,
+        slug: placement.sheetSlug,
+        revision: normalizeRevision(sheet.revision),
+      })
+    }
+
+    let token: ReturnType<typeof placementToSpawned>
+    try {
+      token = placementToSpawned(placement, sheetLookup, map)
+    } catch {
+      token = null
+    }
+    if (!token) {
+      return {
+        ok: false,
+        reasonCode: 'movement-placement-unresolved',
+        message: `Movement placement ${placement.id} cannot resolve authoritative catalog and sheet geometry.`,
+        consultedPlacementIds,
+        sheetReads: [...readByKey.values()],
+      }
+    }
+    if (!validFootprint(token) || !validMovementCapabilities(token.movementCapabilities ?? {})) {
+      return {
+        ok: false,
+        reasonCode: 'movement-footprint-invalid',
+        message: `Movement placement ${placement.id} has invalid footprint or capability geometry.`,
+        consultedPlacementIds,
+        sheetReads: [...readByKey.values()],
+      }
+    }
+
+    placements.push({
+      id: placement.id,
+      sheetKind: placement.sheetKind,
+      sheetSlug: placement.sheetSlug,
+      position: cloneAnchor(placement.position),
+      base: token.base,
+      clearance: getClearanceValue(token),
+      movementCapabilities: { ...(token.movementCapabilities ?? {}) },
+    })
+  }
+
+  const movers = placements.filter(placement => placement.id === placementId)
+  if (movers.length === 0) {
+    return {
+      ok: false,
+      reasonCode: 'movement-placement-missing',
+      message: `Movement placement ${placementId} is not present on the authoritative map.`,
+      consultedPlacementIds,
+      sheetReads: [...readByKey.values()],
+    }
+  }
+  if (movers.length !== 1) {
+    return {
+      ok: false,
+      reasonCode: 'movement-placement-duplicate',
+      message: `Movement placement ${placementId} is not unique on the authoritative map.`,
+      consultedPlacementIds,
+      sheetReads: [...readByKey.values()],
+    }
+  }
+
+  return {
+    ok: true,
+    placements,
+    mover: movers[0]!,
+    sheetReads: [...readByKey.values()],
+  }
+}
+
+const capabilityList = (
+  capabilities: MovementCapabilitySpeeds,
+  keys: readonly MovementCapabilityKey[] = SHIFT_MOVEMENT_CAPABILITY_KEYS,
+): AuthoritativeMovementCapability[] => keys.flatMap((key) => {
+  const speed = movementCapabilitySpeed(capabilities, key)
+  return speed === undefined ? [] : [{
+    key,
+    label: movementCapabilityLabel(key),
+    speed,
+  }]
+})
+
+const resolvedCapabilities = (
+  mover: MovementPlacementSnapshot,
+  usedKeys: readonly MovementCapabilityKey[],
+): AuthoritativeMovementCapabilities => ({
+  available: capabilityList(mover.movementCapabilities),
+  used: capabilityList(mover.movementCapabilities, usedKeys),
+})
+
+const terrainSnapshot = (terrain: MovementAnchorTerrain): AuthoritativeMovementTerrain => ({
+  requirements: [...terrain.requirements],
+  slow: terrain.slow,
+  air: terrain.air,
+  airHeight: terrain.airHeight,
+  hoverable: terrain.hoverable,
+})
+
+const collidingPlacementIds = (
+  anchor: GridAnchor,
+  mover: MovementPlacementSnapshot,
+  placements: readonly MovementPlacementSnapshot[],
+): string[] => placements.flatMap((placement) => {
+  if (placement.id === mover.id) return []
+  return footprintsOverlap(
+    anchor,
+    mover.base,
+    getClearanceValue(mover),
+    placement.position,
+    placement.base,
+    getClearanceValue(placement),
+  ) ? [placement.id] : []
+})
+
+const blockingVoxelCells = (
+  anchor: GridAnchor,
+  footprint: GridFootprint,
+  terrainIndex: MapMovementTerrainIndex,
+  groundLevelY: number,
+): GridAnchor[] => gridFootprintCells(anchor, footprint).filter((cell) => (
+  terrainIndex.voxelAt(cell.x, cell.y, cell.z) !== null
+  && movementTerrainForAnchor({
+    anchor: cell,
+    footprint: { base: 1, clearance: 1 },
+    terrain: terrainIndex,
+    groundLevelY,
+  }).blocked
+))
+
+const collisionAt = (
+  anchor: GridAnchor,
+  mover: MovementPlacementSnapshot,
+  placements: readonly MovementPlacementSnapshot[],
+  terrainIndex: MapMovementTerrainIndex,
+  groundLevelY: number,
+): AuthoritativeMovementCollision | null => {
+  const placementIds = collidingPlacementIds(anchor, mover, placements)
+  const voxelCells = blockingVoxelCells(anchor, mover, terrainIndex, groundLevelY)
+  if (placementIds.length === 0 && voxelCells.length === 0) return null
+  return {
+    kind: placementIds.length > 0 && voxelCells.length > 0
+      ? 'mixed'
+      : placementIds.length > 0 ? 'placement' : 'terrain',
+    at: cloneAnchor(anchor),
+    placementIds,
+    voxelCells: cloneAnchors(voxelCells),
+  }
+}
+
+const boundsCollision = (anchor: GridAnchor): AuthoritativeMovementCollision => ({
+  kind: 'bounds',
+  at: cloneAnchor(anchor),
+  placementIds: [],
+  voxelCells: [],
+})
+
+const routeCollision = (): AuthoritativeMovementCollision => ({
+  kind: 'route',
+  at: null,
+  placementIds: [],
+  voxelCells: [],
+})
+
+const occupancyFor = (
+  mover: MovementPlacementSnapshot,
+  destination: GridAnchor,
+  placements: readonly MovementPlacementSnapshot[],
+): AuthoritativeMovementOccupancy => ({
+  originCells: gridFootprintCells(mover.position, mover),
+  destinationCells: gridFootprintCells(destination, mover),
+  checkedPlacementIds: placements
+    .filter(placement => placement.id !== mover.id)
+    .map(placement => placement.id),
+})
+
+const effectiveLimit = (
+  capabilityLimit: number,
+  policy: ResolvedAuthoritativeMovementPolicy,
+): number => policy.maximumCost === null
+  ? capabilityLimit
+  : Math.min(capabilityLimit, policy.maximumCost)
+
+const triggeringStep = (
+  step: MovementPathStep,
+  mover: MovementPlacementSnapshot,
+  finalStepIndex: number,
+): AuthoritativeMovementTriggeringStep => {
+  const transition = gridFootprintTransition(step.from, step.to, mover)
+  return {
+    index: step.index,
+    from: cloneAnchor(step.from),
+    to: cloneAnchor(step.to),
+    cost: step.cost,
+    cumulativeCost: step.cumulativeCost,
+    diagonal: step.diagonal,
+    slowCostApplied: step.slow,
+    capabilities: capabilityList(mover.movementCapabilities, step.capabilityKeys),
+    terrain: terrainSnapshot(step.terrain),
+    leftCells: cloneAnchors(transition.leftCells),
+    enteredCells: cloneAnchors(transition.enteredCells),
+    finalDestination: step.index === finalStepIndex,
+  }
+}
+
+const pathFailureReason = (
+  result: MovementPathResult,
+): Extract<AuthoritativeMovementFailureReasonCode,
+  'movement-capability-missing' | 'movement-route-blocked' | 'movement-cost-exceeds-limit'> => {
+  if (result.reason === 'missing-capability') return 'movement-capability-missing'
+  if (result.reason === 'too-far') return 'movement-cost-exceeds-limit'
+  return 'movement-route-blocked'
+}
+
+const pathFailureMessage = (
+  reasonCode: ReturnType<typeof pathFailureReason>,
+  result: MovementPathResult,
+): string => {
+  if (reasonCode === 'movement-capability-missing') {
+    return 'The authoritative sheet has no Movement Capability that can traverse the required terrain.'
+  }
+  if (reasonCode === 'movement-cost-exceeds-limit') {
+    return `The server-derived movement cost ${result.distance} exceeds the capability limit ${result.movementLimit ?? 0}.`
+  }
+  return 'No collision-free authoritative route reaches the requested destination.'
+}
+
+/**
+ * Resolve movement from authoritative map and sheet state only.
+ *
+ * The input intentionally has no path, cost, capability, occupancy, or trigger
+ * fields. Browser path previews are hints for presentation and never mechanics.
+ */
+export const resolveMovement = (input: ResolveMovementInput): AuthoritativeMovementResult => {
+  const rawMode = (input as { readonly mode?: unknown }).mode
+  const mode = typeof rawMode === 'string' ? rawMode : String(rawMode)
+  const placementId = typeof input.placementId === 'string' ? input.placementId : String(input.placementId)
+  const destination = validAnchor(input.destination) ? cloneAnchor(input.destination) : null
+
+  if (rawMode !== 'shift') {
+    return failure({
+      reasonCode: 'movement-mode-unsupported',
+      message: `Movement mode ${mode} is not supported by the authoritative oracle.`,
+      placementId,
+      mode,
+      destination,
+    })
+  }
+
+  const policy = resolvedPolicy(input.policy)
+  if (!policy) {
+    return failure({
+      reasonCode: 'movement-policy-invalid',
+      message: 'The authoritative movement policy is malformed or exceeds its bounded cost.',
+      placementId,
+      mode,
+      destination,
+    })
+  }
+
+  if (!validIdentifier(placementId)) {
+    return failure({
+      reasonCode: 'movement-placement-missing',
+      message: 'Movement placement identity must be a bounded non-empty string.',
+      placementId,
+      mode,
+      policy,
+      destination,
+    })
+  }
+
+  if (!destination) {
+    return failure({
+      reasonCode: 'movement-destination-invalid',
+      message: 'Movement destination must contain safe integer x, y, and z coordinates.',
+      placementId,
+      mode,
+      policy,
+    })
+  }
+
+  const invalidMap = validateMapGeometry(input.map)
+  if (invalidMap) {
+    return failure({
+      reasonCode: 'movement-map-invalid',
+      message: invalidMap,
+      placementId,
+      mode,
+      policy,
+      destination,
+    })
+  }
+
+  const snapshots = buildMovementSnapshots(input.map, input.sheets, placementId)
+  if (!snapshots.ok) {
+    return failure({
+      reasonCode: snapshots.reasonCode,
+      message: snapshots.message,
+      placementId,
+      mode,
+      policy,
+      destination,
+      consultedPlacementIds: snapshots.consultedPlacementIds,
+      sheetReads: snapshots.sheetReads,
+    })
+  }
+
+  const { mover, placements, sheetReads } = snapshots
+  const origin = cloneAnchor(mover.position)
+  const footprint: AuthoritativeMovementFootprint = {
+    base: mover.base,
+    clearance: getClearanceValue(mover),
+  }
+  const occupancy = occupancyFor(mover, destination, placements)
+  const consultedPlacementIds = placements.map(placement => placement.id)
+  const capabilities = resolvedCapabilities(mover, [])
+  const terrainIndex = buildMapMovementTerrainIndex(input.map.voxels)
+  const groundLevelY = input.map.groundLevelY ?? 0
+
+  if (!isAnchorWithinBounds(origin, mover, input.map.dimensions)) {
+    return failure({
+      reasonCode: 'movement-origin-out-of-bounds',
+      message: 'The authoritative movement origin footprint is outside map bounds.',
+      placementId,
+      mode,
+      policy,
+      origin,
+      destination,
+      footprint,
+      occupancy,
+      capabilities,
+      collision: boundsCollision(origin),
+      consultedPlacementIds,
+      sheetReads,
+    })
+  }
+
+  const originCollision = collisionAt(origin, mover, placements, terrainIndex, groundLevelY)
+  if (originCollision) {
+    const terrainOnly = originCollision.kind === 'terrain'
+    return failure({
+      reasonCode: terrainOnly ? 'movement-origin-terrain-blocked' : 'movement-origin-collision',
+      message: terrainOnly
+        ? 'The authoritative movement origin intersects Blocking Terrain.'
+        : 'The authoritative movement origin intersects another placement or mixed collision.',
+      placementId,
+      mode,
+      policy,
+      origin,
+      destination,
+      footprint,
+      occupancy,
+      capabilities,
+      collision: originCollision,
+      consultedPlacementIds,
+      sheetReads,
+    })
+  }
+
+  if (sameAnchor(origin, destination) && !policy.allowSamePosition) {
+    return failure({
+      reasonCode: 'movement-same-position-disallowed',
+      message: 'The requested destination is already the authoritative origin.',
+      placementId,
+      mode,
+      policy,
+      origin,
+      destination,
+      footprint,
+      occupancy,
+      capabilities,
+      consultedPlacementIds,
+      sheetReads,
+    })
+  }
+
+  if (!isAnchorWithinBounds(destination, mover, input.map.dimensions)) {
+    return failure({
+      reasonCode: 'movement-destination-out-of-bounds',
+      message: 'The requested destination cannot contain the authoritative footprint within map bounds.',
+      placementId,
+      mode,
+      policy,
+      origin,
+      destination,
+      footprint,
+      occupancy,
+      capabilities,
+      collision: boundsCollision(destination),
+      consultedPlacementIds,
+      sheetReads,
+    })
+  }
+
+  const destinationCollision = collisionAt(destination, mover, placements, terrainIndex, groundLevelY)
+  if (destinationCollision) {
+    const reasonCode = destinationCollision.kind === 'placement'
+      ? 'movement-destination-occupied'
+      : destinationCollision.kind === 'terrain'
+        ? 'movement-destination-terrain-blocked'
+        : 'movement-destination-collision'
+    return failure({
+      reasonCode,
+      message: destinationCollision.kind === 'placement'
+        ? 'The requested destination footprint is occupied by another authoritative placement.'
+        : destinationCollision.kind === 'terrain'
+          ? 'The requested destination footprint intersects Blocking Terrain.'
+          : 'The requested destination footprint has mixed placement and terrain collisions.',
+      placementId,
+      mode,
+      policy,
+      origin,
+      destination,
+      footprint,
+      occupancy,
+      capabilities,
+      collision: destinationCollision,
+      consultedPlacementIds,
+      sheetReads,
+    })
+  }
+
+  const pathResult = findMovementPathForPokemon({
+    pokemon: mover,
+    start: origin,
+    goal: destination,
+    pokemons: placements,
+    dimensions: input.map.dimensions,
+    exceptId: mover.id,
+    terrainIndex,
+    groundLevelY,
+  })
+  const pathCapabilities = resolvedCapabilities(mover, pathResult.capabilityKeys)
+  const capabilityLimit = pathResult.movementLimit
+  const resolvedEffectiveLimit = capabilityLimit === null
+    ? null
+    : effectiveLimit(capabilityLimit, policy)
+
+  if (!pathResult.legal) {
+    const reasonCode = pathFailureReason(pathResult)
+    return failure({
+      reasonCode,
+      message: pathFailureMessage(reasonCode, pathResult),
+      placementId,
+      mode,
+      policy,
+      origin,
+      destination,
+      path: pathResult.path,
+      cost: pathResult.distance,
+      capabilityLimit,
+      effectiveLimit: resolvedEffectiveLimit,
+      footprint,
+      occupancy,
+      capabilities: pathCapabilities,
+      collision: reasonCode === 'movement-route-blocked' ? routeCollision() : null,
+      consultedPlacementIds,
+      sheetReads,
+    })
+  }
+
+  if (resolvedEffectiveLimit === null || pathResult.distance > resolvedEffectiveLimit) {
+    return failure({
+      reasonCode: 'movement-cost-exceeds-limit',
+      message: `The server-derived movement cost ${pathResult.distance} exceeds the effective limit ${resolvedEffectiveLimit ?? 0}.`,
+      placementId,
+      mode,
+      policy,
+      origin,
+      destination,
+      path: pathResult.path,
+      cost: pathResult.distance,
+      capabilityLimit,
+      effectiveLimit: resolvedEffectiveLimit,
+      footprint,
+      occupancy,
+      capabilities: pathCapabilities,
+      consultedPlacementIds,
+      sheetReads,
+    })
+  }
+
+  const path = pathResult.path
+  if (!path || capabilityLimit === null) {
+    return failure({
+      reasonCode: 'movement-route-blocked',
+      message: 'The movement pathfinder returned no authoritative path for a legal result.',
+      placementId,
+      mode,
+      policy,
+      origin,
+      destination,
+      cost: pathResult.distance,
+      footprint,
+      occupancy,
+      capabilities: pathCapabilities,
+      collision: routeCollision(),
+      consultedPlacementIds,
+      sheetReads,
+    })
+  }
+
+  const triggeringSteps = pathResult.steps.map(step => (
+    triggeringStep(step, mover, pathResult.steps.length)
+  ))
+
+  return deepFreeze({
+    ok: true,
+    reasonCode: 'movement-legal',
+    placementId,
+    mode: 'shift',
+    policy,
+    origin,
+    destination,
+    path: cloneAnchors(path),
+    cost: pathResult.distance,
+    capabilityLimit,
+    effectiveLimit: resolvedEffectiveLimit,
+    capabilities: pathCapabilities,
+    footprint,
+    occupancy,
+    collision: null,
+    triggeringSteps,
+    consultedPlacementIds,
+    sheetReads: sheetReads.map(read => ({ ...read })),
+  })
+}
+
+/** Explicit name for callers that want the authority boundary visible. */
+export const resolveAuthoritativeMovement = resolveMovement

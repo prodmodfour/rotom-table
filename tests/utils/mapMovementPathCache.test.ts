@@ -37,6 +37,24 @@ const cacheOptions = (
 
 const movementResult = (overrides: Partial<MovementPathResult> = {}): MovementPathResult => ({
   path: [{ x: 0, y: 0, z: 0 }, { x: 1, y: 0, z: 1 }],
+  steps: [{
+    index: 1,
+    from: { x: 0, y: 0, z: 0 },
+    to: { x: 1, y: 0, z: 1 },
+    cost: 1,
+    cumulativeCost: 1,
+    diagonal: true,
+    slow: false,
+    capabilityKeys: ['overland'],
+    terrain: {
+      blocked: false,
+      requirements: ['overland'],
+      slow: false,
+      air: false,
+      airHeight: 0,
+      hoverable: true,
+    },
+  }],
   distance: 1,
   movementLimit: 6,
   capabilityKeys: ['overland'],
@@ -142,6 +160,9 @@ describe('movement path cache', () => {
     expect(hit.result.distance).toBe(1)
 
     hit.result.path?.push({ x: 9, y: 9, z: 9 })
+    hit.result.steps[0]!.from.x = 9
+    hit.result.steps[0]!.capabilityKeys.push('sky')
+    hit.result.steps[0]!.terrain.requirements.push('swim')
     hit.result.capabilityLabels.push('Mutated')
 
     expect(cache.get(key)).toEqual(movementResult())
@@ -227,6 +248,8 @@ describe('movement path cache', () => {
 
     const miss = cache.getOrCompute(key, () => computed)
     miss.result.path?.push({ x: 9, y: 9, z: 9 })
+    miss.result.steps[0]!.to.z = 9
+    miss.result.steps[0]!.terrain.requirements.push('swim')
     miss.result.capabilityKeys.push('sky')
     computed.capabilityLabels.push('Mutated')
 

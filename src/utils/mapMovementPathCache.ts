@@ -151,6 +151,16 @@ const clonePathAnchor = (anchor: GridAnchor): GridAnchor => ({
 export const cloneMovementPathResult = (result: MovementPathResult): MovementPathResult => ({
   ...result,
   path: result.path?.map(clonePathAnchor) ?? null,
+  steps: result.steps.map(step => ({
+    ...step,
+    from: clonePathAnchor(step.from),
+    to: clonePathAnchor(step.to),
+    capabilityKeys: [...step.capabilityKeys],
+    terrain: {
+      ...step.terrain,
+      requirements: [...step.terrain.requirements],
+    },
+  })),
   capabilityKeys: [...result.capabilityKeys],
   capabilityLabels: [...result.capabilityLabels],
 })

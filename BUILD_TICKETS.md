@@ -1541,7 +1541,7 @@ Status: DONE
 
 ## MA-120 — Define one authoritative movement oracle
 
-Status: TODO
+Status: DONE
 
 **Depends on:** MA-035, MA-072
 **Commit:** `feat(move-automation): define server movement oracle`
