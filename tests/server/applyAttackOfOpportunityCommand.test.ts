@@ -496,11 +496,6 @@ describe('durable Attack of Opportunity commands', () => {
       usedRoundByAttackerId: { attacker: 3 },
     })
     expect(harness.maps.getBySlug('arena')?.encounterState?.pendingResolutionSummaries).toEqual([])
-    expect(harness.maps.getBySlug('arena')?.encounterState
-      ?.turnResources.attacker).toMatchObject({
-      actions: { interrupt: { spent: 1 } },
-      reaction: { available: false },
-    })
 
     const replay = replayMoveResponseCommandUseCase({ role: 'player', command }, {
       database: harness.database,

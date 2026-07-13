@@ -16,7 +16,6 @@ import { deepCloneJson } from '~/utils/serialization'
 import {
   attachAbilityFollowUpsToMovePlan,
   observeMovePlanResources,
-  planPendingMoveResourceCosts,
   type AuthoritativeMoveStatePlan,
   type AuthoritativePendingMoveStatePlan,
   type PlanAuthoritativeMoveStateInput,
@@ -27,10 +26,7 @@ import {
 } from '../resolveAuthoritativeMove'
 import { buildAuthoritativeMoveMapChanges } from './mapChanges'
 import { materializeMoveSpecSuspension } from './materializeSuspension'
-import {
-  applyNativeCoreMapChanges,
-  planNativeV2MoveState,
-} from './planNativeV2MoveState'
+import { planNativeV2MoveState } from './planNativeV2MoveState'
 import {
   RESTORE_PREVIOUS_MOVE_STATE_VALUE,
   createMoveStateChangePlan,
@@ -117,26 +113,6 @@ const planNextWindow = (
   const currentState = previousEncounterState(input.map)
   assertSummaryPresent(currentState, input.pendingResolution.resolutionId)
 
-  const planningInput: PlanAuthoritativeMoveStateInput = {
-    map: input.map,
-    pokemonSheets: input.pokemonSheets,
-    trainerSheets: input.trainerSheets,
-    intent: {
-      schemaVersion: 1,
-      placementId: input.pendingResolution.actorPlacementId,
-      moveName: input.pendingResolution.canonicalMoveId,
-      selection: { kind: 'self' },
-    },
-    operationId: input.responseOpId,
-    runtimeRegistry: input.runtimeRegistry,
-  }
-  const preWindowPlan = planPendingMoveResourceCosts({
-    input: planningInput,
-    execution: input.execution,
-    existingPlan: input.execution.preWindowPlan,
-    resolutionId: input.pendingResolution.resolutionId,
-    minimumPhaseExclusive: input.pendingResolution.phase,
-  })
   const materialized = materializeMoveSpecSuspension({
     resolutionId: input.pendingResolution.resolutionId,
     originOpId: input.pendingResolution.originOpId,
@@ -148,7 +124,7 @@ const planNextWindow = (
     authoritativeSheetReads: input.execution.sheetReads,
     execution: input.execution.execution,
     continuationMapRevision: revision,
-    preWindowPlan,
+    preWindowPlan: input.execution.preWindowPlan,
   })
   const pendingResolution = parsePendingMoveResolution({
     ...materialized.pendingResolution,
@@ -170,10 +146,8 @@ const planNextWindow = (
       updatedAt: input.plannedAt,
     },
   })
-  const mapAfterPreWindowPlan = applyNativeCoreMapChanges(input.map, preWindowPlan)
-  const stateAfterPreWindowPlan = previousEncounterState(mapAfterPreWindowPlan)
   const nextEncounterState = parseEncounterState({
-    ...stateAfterPreWindowPlan,
+    ...currentState,
     pendingResolutionSummaries: [
       ...currentState.pendingResolutionSummaries.filter(
         summary => summary.resolutionId !== pendingResolution.resolutionId,
@@ -182,7 +156,7 @@ const planNextWindow = (
     ],
   })
   const nextMap = deepCloneJson({
-    ...mapAfterPreWindowPlan,
+    ...input.map,
     encounterState: nextEncounterState,
     revision,
     updatedAt: input.plannedAt,
@@ -192,7 +166,6 @@ const planNextWindow = (
     current: nextEncounterState,
     sourceOperationId: input.responseOpId,
     reasonCode: 'move-resolution-response-recorded',
-    existing: preWindowPlan,
   })
 
   return {
@@ -244,7 +217,6 @@ const planCompletion = (
       selection: { kind: 'self' },
     },
     operationId: input.responseOpId,
-    runtimeRegistry: input.runtimeRegistry,
   }
   const observed = observeMovePlanResources({
     planningInput,
@@ -252,11 +224,6 @@ const planCompletion = (
     nextMap: native.nextMap,
     previousRevision: normalizeRevision(input.map.revision),
     stateChanges: native.stateChanges,
-    resolutionId: input.pendingResolution.resolutionId,
-    minimumCostPhaseExclusive: input.pendingResolution.phase,
-    // A suspended native definition must explicitly review every phased cost;
-    // legacy fallback must not appear only after a person has already waited.
-    allowLegacyCostFallback: false,
   })
   const completedEncounterState = summaryWithout(
     previousEncounterState(observed.nextMap),

@@ -226,9 +226,6 @@ export interface AuthoritativePendingMoveResolution {
   readonly moveKey: string
   readonly frequency: string | null
   readonly damageFormula: string | null
-  /** Retained server-only v1 compatibility range for phased cost planning. */
-  readonly resourceRange: string
-  readonly resourceMovement?: AuthoritativeMoveResourceMovement
   readonly selectedTargetIds: readonly string[]
   readonly sheetReads: readonly AuthoritativeMoveSheetRead[]
   readonly runtime: MoveSpecV2Runtime
@@ -912,7 +909,6 @@ const resolveNativeSelfMove = (options: {
       moveKey: options.moveKey,
       frequency: options.entry.frequency,
       damageFormula: options.entry.damageFormula,
-      resourceRange: options.entry.script.range,
       selectedTargetIds: [],
       sheetReads: outcome.sheetReads,
       runtime: options.runtime,
@@ -1100,7 +1096,6 @@ const resolveNativeSingleTargetMove = (options: {
       moveKey: options.moveKey,
       frequency: options.entry.frequency,
       damageFormula: options.entry.damageFormula,
-      resourceRange: options.entry.script.range,
       selectedTargetIds: [target.id],
       sheetReads: outcome.sheetReads,
       runtime: options.runtime,
@@ -1406,10 +1401,6 @@ const resolveNativeAreaMove = (options: {
       moveKey: options.moveKey,
       frequency: options.entry.frequency,
       damageFormula: options.entry.damageFormula,
-      resourceRange: options.entry.script.range,
-      ...(placement.resourceMovement
-        ? { resourceMovement: { ...placement.resourceMovement } }
-        : {}),
       selectedTargetIds,
       sheetReads: outcome.sheetReads,
       runtime: options.runtime,

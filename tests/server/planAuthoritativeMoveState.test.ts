@@ -170,7 +170,7 @@ describe('planAuthoritativeMoveState', () => {
       { kind: 'sheet-state', sourceOperationId: 'swords-dance.raise-attack' },
       { kind: 'map-move-usage', sourceOperationId: 'swords-dance.usage' },
       { kind: 'map-metadata', sourceOperationId: 'swords-dance.log-completed' },
-      { kind: 'encounter-state', sourceOperationId: 'legacy.cost.action' },
+      { kind: 'encounter-state', sourceOperationId: 'move.swords-dance.resource-spend' },
     ])
     expect(plan.stateChanges.groups.map).toHaveLength(1)
     expect(plan.stateChanges.groups.encounter).toHaveLength(1)

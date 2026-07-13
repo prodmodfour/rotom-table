@@ -28,7 +28,6 @@ import type { SheetKind, TabletopMap } from '~/types/map'
 import type { TrainerSheet } from '~/types/trainerSheet'
 import { deepCloneJson } from '~/utils/serialization'
 import {
-  isAuthoritativeMoveStatePlanningError,
   isAuthoritativePendingMoveStatePlan,
   type AuthoritativeMoveStatePlan,
   type AuthoritativePendingMoveStatePlan,
@@ -44,7 +43,6 @@ import {
   type AttackOfOpportunityResponsePlan,
 } from '../domain/moveAutomation/attackOfOpportunity'
 import { createMoveStateChangePlan } from '../domain/moveAutomation/plan'
-import { appendPendingDeclarationResourcePlan } from '../domain/moveAutomation/declarationCompensation'
 import { createAcceptedMoveCompensationResult } from '../domain/moveAutomation/planAcceptedMoveCompensation'
 import { planResumedMoveState } from '../domain/moveAutomation/planResumedMoveState'
 import type { AuthoritativeMoveRandomSource } from '../domain/moveAutomation/random'
@@ -493,34 +491,6 @@ const existingResponse = (
   return responseFromState({ role: input.role, result: existing.result, map })
 }
 
-const persistResourceCostRejection = (input: {
-  readonly request: ResumePendingMoveResolutionInput
-  readonly map: TabletopMap
-  readonly commandHash: LivePlayCommandHash
-  readonly dependencies: Dependencies
-  readonly error: unknown
-}): LivePlayResolveMoveCommandResponse | null => {
-  if (
-    !isAuthoritativeMoveStatePlanningError(input.error)
-    || input.error.code !== 'move-resource-unavailable'
-  ) return null
-  const result = createLivePlayRejectedResult({
-    opId: input.request.command.opId,
-    mapSlug: input.request.command.mapSlug,
-    reason: 'conflict',
-    message: input.error.message,
-    currentRevision: normalizeRevision(input.map.revision),
-  })
-  input.dependencies.opRepository.saveCommandResult({
-    mapSlug: input.request.command.mapSlug,
-    opId: input.request.command.opId,
-    commandHash: input.commandHash,
-    command: input.request.command,
-    result,
-  })
-  return responseFromState({ role: input.request.role, result, map: input.map })
-}
-
 const persistConflict = (input: {
   readonly request: ResumePendingMoveResolutionInput
   readonly stored: StoredPendingMoveResolution
@@ -620,32 +590,18 @@ export const resumePendingMoveResolutionUseCase = (
     }
     const sheets = loadSheets(map, dependencies)
     if (isAttackOfOpportunityPendingResolution(stored.resolution)) {
-      let plan: AttackOfOpportunityResponsePlan
-      try {
-        plan = planAttackOfOpportunityResponse({
-          pendingResolution: stored.resolution,
-          responseOpId: input.command.opId,
-          responseWindowId: responseWindowId(input.command),
-          responseOptionId: responseOptionId(input.command),
-          chosenBy: input.authorization.chosenBy,
-          map,
-          ...sheets,
-          plannedAt: now,
-          random: dependencies.random,
-          maxMoveLogEntries: dependencies.maxMoveLogEntries,
-        })
-      }
-      catch (error) {
-        const rejection = persistResourceCostRejection({
-          request: input,
-          map,
-          commandHash,
-          dependencies,
-          error,
-        })
-        if (rejection) return rejection
-        throw error
-      }
+      const plan = planAttackOfOpportunityResponse({
+        pendingResolution: stored.resolution,
+        responseOpId: input.command.opId,
+        responseWindowId: responseWindowId(input.command),
+        responseOptionId: responseOptionId(input.command),
+        chosenBy: input.authorization.chosenBy,
+        map,
+        ...sheets,
+        plannedAt: now,
+        random: dependencies.random,
+        maxMoveLogEntries: dependencies.maxMoveLogEntries,
+      })
       dependencies.beforeCommit?.()
       dependencies.sheetRepository.assertRevisions(plan.sheetReads)
       applyMap(map, plan.nextMap, dependencies)
@@ -811,33 +767,19 @@ export const resumePendingMoveResolutionUseCase = (
         message: error.message,
       })
     }
-    let plan: AuthoritativeMoveStatePlan | AuthoritativePendingMoveStatePlan
-    try {
-      plan = planResumedMoveState({
-        pendingResolution: stored.resolution,
-        responseOpId: input.command.opId,
-        responseWindowId: responseWindowId(input.command),
-        responseOptionId: responseOptionId(input.command),
-        chosenBy: input.authorization.chosenBy,
-        map,
-        ...sheets,
-        execution,
-        plannedAt: now,
-        runtimeRegistry: dependencies.runtimeRegistry,
-        maxMoveLogEntries: dependencies.maxMoveLogEntries,
-      })
-    }
-    catch (error) {
-      const rejection = persistResourceCostRejection({
-        request: input,
-        map,
-        commandHash,
-        dependencies,
-        error,
-      })
-      if (rejection) return rejection
-      throw error
-    }
+    const plan = planResumedMoveState({
+      pendingResolution: stored.resolution,
+      responseOpId: input.command.opId,
+      responseWindowId: responseWindowId(input.command),
+      responseOptionId: responseOptionId(input.command),
+      chosenBy: input.authorization.chosenBy,
+      map,
+      ...sheets,
+      execution,
+      plannedAt: now,
+      runtimeRegistry: dependencies.runtimeRegistry,
+      maxMoveLogEntries: dependencies.maxMoveLogEntries,
+    })
     dependencies.beforeCommit?.()
     dependencies.sheetRepository.assertRevisions(plan.sheetReads)
     applyMap(map, plan.nextMap, dependencies)
@@ -853,11 +795,6 @@ export const resumePendingMoveResolutionUseCase = (
       dependencies.pendingResolutionRepository.update({
         resolution: plan.suspension.pendingResolution,
         expectedRevision: stored.revision,
-        declarationPlan: appendPendingDeclarationResourcePlan({
-          existing: stored.declarationPlan,
-          additional: plan.suspension.preWindowPlan,
-          resolutionId: stored.resolutionId,
-        }),
       })
       dependencies.opRepository.saveCommandResult({
         mapSlug: input.command.mapSlug,

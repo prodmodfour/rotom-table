@@ -16,6 +16,12 @@ import {
   spendEncounterMoveResourceCosts,
 } from '~~/server/domain/moveAutomation/reduceEncounterResources'
 import { planAuthoritativeMoveState, type AuthoritativeMoveStatePlan } from '~~/server/domain/planAuthoritativeMoveState'
+import {
+  MOVE_AUTOMATION_RUNTIME_REGISTRY,
+  type MoveAutomationRuntimeRegistry,
+} from '~~/server/domain/moveAutomation/registry'
+import { validateMoveSpec } from '~~/server/domain/moveAutomation/validateSpec'
+import type { MoveSpecCostDeclaration } from '#shared/moveAutomation/spec'
 import { LIVE_PLAY_COMMAND_SCHEMA_VERSION, LIVE_PLAY_COMMAND_TYPES, LIVE_PLAY_PATCH_TYPES, type LivePlayCommandAccepted, type ResolveMoveLivePlayCommand } from '#shared/livePlayCommands'
 import {
   LIVE_PLAY_MOVE_RESOLUTION_SCHEMA_VERSION,
@@ -351,6 +357,39 @@ const withRegisteredScript = async <T>(script: MoveAutomationScript, run: () => 
   }
 }
 
+const runtimeRegistryWithReviewedCosts = (
+  canonicalId: string,
+  costs: readonly MoveSpecCostDeclaration[],
+): MoveAutomationRuntimeRegistry => {
+  const selected = MOVE_AUTOMATION_RUNTIME_REGISTRY.resolve(canonicalId)
+  if (selected?.kind !== 'movespec-v2') {
+    throw new Error(`expected native runtime for ${canonicalId}`)
+  }
+  const definition = validateMoveSpec({
+    ...selected.definition.spec,
+    costs,
+  }, {
+    capabilityIds: selected.definition.capabilityIds,
+    rulesetVersion: selected.definition.rulesetVersion,
+    handlerRegistry: MOVE_AUTOMATION_RUNTIME_REGISTRY.handlerRegistry,
+  })
+  const runtime = Object.freeze({
+    ...selected,
+    definitionHash: definition.definitionHash,
+    definition,
+  })
+  return Object.freeze({
+    size: MOVE_AUTOMATION_RUNTIME_REGISTRY.size,
+    handlerRegistry: MOVE_AUTOMATION_RUNTIME_REGISTRY.handlerRegistry,
+    resolve: (candidateId: string) => candidateId === canonicalId
+      ? runtime
+      : MOVE_AUTOMATION_RUNTIME_REGISTRY.resolve(candidateId),
+    entries: () => Object.freeze(MOVE_AUTOMATION_RUNTIME_REGISTRY.entries().map(candidate => (
+      candidate.canonicalId === canonicalId ? runtime : candidate
+    ))),
+  })
+}
+
 describe('executeLivePlayResolveMoveCommandUseCase', () => {
   it('accepts self and single-target resolveMove commands and returns committed map, sheets, and one MOVE_STATE patch', async () => {
     const selfHarness = seedHarness({ actorMoves: [{ name: 'Swords Dance' }] })
@@ -593,6 +632,57 @@ describe('executeLivePlayResolveMoveCommandUseCase', () => {
         ]),
       })
     })
+  })
+
+  it('honors a server-reviewed immediate no-cost exception without mutating the resource ledger', async () => {
+    const harness = seedHarness({ actorMoves: [{ name: 'Swords Dance' }] })
+    const map = harness.maps.getBySlug('arena')!
+    const moveIntent = intent({
+      placementId: 'actor-token',
+      moveName: 'Swords Dance',
+      selection: { kind: 'self' },
+    })
+    const command = commandFor(map, moveIntent, 'op_nocostnative1')
+    const runtimeRegistry = runtimeRegistryWithReviewedCosts('Swords Dance', [{
+      id: 'test.cost.reviewed-trigger',
+      phase: 'declare',
+      cost: {
+        kind: 'no-cost',
+        reasonCode: 'move.reviewed-trigger',
+      },
+    }])
+    let plannerCalls = 0
+    const planner: NonNullable<LivePlayResolveMoveCommandDependencies['planner']> = (input) => {
+      plannerCalls += 1
+      return planAuthoritativeMoveState({ ...input, runtimeRegistry })
+    }
+
+    const response = await execute(harness, command, { planner })
+    const acceptedResult = accepted(response.result)
+
+    expect(response.map?.encounterState?.turnResources ?? {}).toEqual({})
+    expect(response.sheetUpdates?.[0]).toMatchObject({
+      kind: 'pokemon',
+      slug: 'actor',
+      sheet: { revision: 3, stats: { atk: { stage: 2 } } },
+    })
+    expect(harness.events.map(event => (event as { readonly type?: string }).type)).toEqual([
+      'updated',
+      'updated',
+      'live-play-command-accepted',
+    ])
+
+    const committedMap = deepCloneJson(harness.maps.getBySlug('arena'))
+    const committedSheet = deepCloneJson(harness.sheets.getByRef('pokemon', 'actor'))
+    const duplicate = await execute(harness, command, {
+      planner: () => { throw new Error('duplicate no-cost move must not replan') },
+      random: () => { throw new Error('duplicate no-cost move must not reroll') },
+    })
+
+    expect(duplicate.result).toEqual(acceptedResult)
+    expect(plannerCalls).toBe(1)
+    expect(harness.maps.getBySlug('arena')).toEqual(committedMap)
+    expect(harness.sheets.getByRef('pokemon', 'actor')).toEqual(committedSheet)
   })
 
   it('commits native Ember once and replays duplicate delivery without rerolling', async () => {
@@ -1280,7 +1370,16 @@ describe('executeLivePlayResolveMoveCommandUseCase', () => {
     const map = harness.maps.getBySlug('arena')!
     const moveIntent = intent({ placementId: 'actor-token', moveName: 'Tackle', selection: { kind: 'single-target', targetPlacementId: 'target-a' } })
 
-    const invalidIntent = await execute(harness, { ...commandFor(map, moveIntent, 'op_badintent01'), payload: { placementId: 'actor-token', moveName: 'Tackle', selection: { kind: 'self' }, rolls: [20] } as never })
+    const invalidIntent = await execute(harness, {
+      ...commandFor(map, moveIntent, 'op_badintent01'),
+      payload: {
+        placementId: 'actor-token',
+        moveName: 'Tackle',
+        selection: { kind: 'self' },
+        rolls: [20],
+        resourceCosts: [{ kind: 'no-cost', reasonCode: 'client-forged' }],
+      } as never,
+    })
     expect(invalidIntent.result).toMatchObject({ ok: false, reason: 'invalid' })
 
     createSqliteMapInteractionModeRepository(harness.database).set({ slug: 'arena', interactionMode: MAP_INTERACTION_MODES.SETUP_EDIT, updatedAt: 1 })

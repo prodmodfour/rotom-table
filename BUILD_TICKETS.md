@@ -1612,7 +1612,7 @@ Status: DONE
 
 ## MA-124B — Spend authoritative resources for immediate moves
 
-Status: TODO
+Status: DONE
 
 **Depends on:** MA-124A
 **Commit:** `feat(move-automation): spend resources for immediate moves`

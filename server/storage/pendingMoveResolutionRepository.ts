@@ -54,8 +54,6 @@ export interface CreatePendingMoveResolutionInput {
 export interface UpdatePendingMoveResolutionInput {
   readonly resolution: PendingMoveResolution
   readonly expectedRevision: number
-  /** Omit to preserve prior declaration compensation; supplied plans replace it atomically. */
-  readonly declarationPlan?: MoveStateChangePlan
   /** Omit to preserve the current link. A durable terminal link cannot be replaced or cleared. */
   readonly terminalOpId?: string | null
 }
@@ -587,10 +585,6 @@ export const createSqlitePendingMoveResolutionRepository = (
       )
     }
 
-    const declarationPlan = input.declarationPlan === undefined
-      ? existing.declarationPlan
-      : normalizeDeclarationCompensationPlan(input.declarationPlan)
-
     const requestedTerminalOpId = input.terminalOpId === undefined
       ? existing.terminalOpId
       : parseNullableTerminalOpId(
@@ -618,8 +612,7 @@ export const createSqlitePendingMoveResolutionRepository = (
           status = ?,
           revision = ?,
           updated_at = ?,
-          terminal_op_id = ?,
-          declaration_plan_json = ?
+          terminal_op_id = ?
       WHERE resolution_id = ? AND revision = ?
     `).run(
       serializeResolution(resolution),
@@ -627,7 +620,6 @@ export const createSqlitePendingMoveResolutionRepository = (
       next,
       resolution.updatedAt,
       requestedTerminalOpId,
-      declarationPlan == null ? null : serializeDeclarationPlan(declarationPlan),
       resolution.resolutionId,
       expectedRevision,
     )

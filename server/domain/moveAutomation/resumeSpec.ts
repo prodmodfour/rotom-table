@@ -275,7 +275,6 @@ export const resumeMoveSpec = (
       moveKey: resolvedMoveKey,
       frequency: entry.frequency,
       damageFormula: entry.damageFormula,
-      resourceRange: entry.script.range,
       selectedTargetIds: [...authoritativeTargetIds],
       sheetReads: deduplicateAuthoritativeMoveSheetReads([
         ...context.reads.snapshot(),
