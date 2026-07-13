@@ -1347,7 +1347,7 @@ Status: DONE
 
 ## MA-105 — Resume and commit pending resolutions
 
-Status: DONE
+Status: TODO
 
 **Depends on:** MA-103B, MA-104
 **Commit:** `feat(move-automation): resume durable move resolutions`
