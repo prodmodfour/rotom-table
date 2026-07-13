@@ -1728,7 +1728,7 @@ Status: DONE
 
 ## MA-129 — Implement semi-invulnerable setup states
 
-Status: DONE
+Status: TODO
 
 **Depends on:** MA-056, MA-123, MA-108
 **Commit:** `feat(move-automation): model semi invulnerable movement states`
