@@ -568,7 +568,7 @@ const withoutPlanIdentity = (
   return input as MoveStateChangeInput
 }
 
-const observeMovePlanResources = (input: {
+export const observeMovePlanResources = (input: {
   readonly planningInput: PlanAuthoritativeMoveStateInput
   readonly resolution: AuthoritativeMoveResolution
   readonly nextMap: TabletopMap

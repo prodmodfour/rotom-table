@@ -58,6 +58,12 @@ export interface ExecuteServerMoveBranchInput {
   readonly resolvedChecks: readonly MoveCheckResolution[]
 }
 
+export interface ExecuteResolvedMoveChoiceBranchInput {
+  readonly operation: MoveBranchEffectOperation
+  readonly recipientIds: readonly string[]
+  readonly optionId: string | null
+}
+
 const deepFreeze = <Value>(value: Value): Value => {
   if (typeof value !== 'object' || value === null || Object.isFrozen(value)) return value
   for (const key of Object.getOwnPropertyNames(value)) {
@@ -154,10 +160,50 @@ const executeCheckResultBranch = (
   })
 }
 
-/**
- * Resolve a server-owned branch against one immutable snapshot. Human choices
- * deliberately stop at the interpreter boundary until durable resume support.
- */
+/** Resolve one authorized durable option into only its reviewed branch path. */
+export const executeResolvedMoveChoiceBranch = (
+  input: ExecuteResolvedMoveChoiceBranchInput,
+): ExecutedMoveBranch => {
+  const payload = input.operation.payload
+  if (payload.kind !== 'choice') {
+    throw new MoveBranchExecutionError(
+      'human-choice-not-resolved',
+      `Branch ${payload.selectionId} is not a human choice.`,
+    )
+  }
+  const branch = input.optionId === null
+    ? payload.pass
+    : payload.options.find(option => option.id === input.optionId) ?? null
+  if (!branch) {
+    throw new MoveBranchExecutionError(
+      'human-choice-not-resolved',
+      `Branch ${payload.selectionId} received an unavailable durable option.`,
+    )
+  }
+  const subjects: readonly (string | null)[] = payload.scope === 'resolution'
+    ? [null]
+    : input.recipientIds
+  const decisions = subjects.map(recipientId => deepFreeze({
+    recipientId,
+    branchId: branch.id,
+    reasonCode: input.optionId === null ? 'branch-choice-passed' : 'branch-choice-selected',
+    operationIds: [...branch.operationIds],
+    predicateEvaluation: null,
+  }))
+  const selection: MoveBranchSelection = deepFreeze({
+    operationId: input.operation.id,
+    selectionId: payload.selectionId,
+    scope: payload.scope,
+    decisions: decisions.map(({ recipientId, branchId, reasonCode }) => ({
+      recipientId,
+      branchId,
+      reasonCode,
+    })),
+  })
+  return deepFreeze({ selection, decisions })
+}
+
+/** Resolve a server-owned branch against one immutable snapshot. */
 export const executeServerMoveBranch = (
   input: ExecuteServerMoveBranchInput,
 ): ExecutedMoveBranch => {

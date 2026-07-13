@@ -34,6 +34,7 @@ import type {
   AuthoritativeMoveSheetRead,
 } from './context'
 import {
+  executeResolvedMoveChoiceBranch,
   executeServerMoveBranch,
   type ExecutedMoveBranch,
   type MoveBranchSelection,
@@ -70,6 +71,10 @@ import {
   createMoveResolutionTrace,
   reduceMoveResolutionTrace,
 } from './trace'
+import {
+  createMoveSpecResponseResolver,
+  type MoveSpecResolvedResponse,
+} from './responses'
 import {
   validateMoveSpec,
   validateMoveSpecOperationSequence,
@@ -254,6 +259,8 @@ export interface ExecuteMoveSpecInput {
   /** Complete server-only area-filter evidence in geometric candidate order. */
   readonly authoritativeTargetEvaluations?: readonly MoveSpecAuthoritativeTargetEvaluation[]
   readonly ancestry?: readonly MoveResolutionTraceAncestryEntry[]
+  /** Authorized durable responses, resolved only against reviewed request IDs/options. */
+  readonly responses?: readonly MoveSpecResolvedResponse[]
   /** Test/migration seam; production resolves only the audited global registry. */
   readonly handlerRegistry?: RegisteredMoveHandlerRegistry
 }
@@ -1018,6 +1025,7 @@ export const executeMoveSpec = (
   const { spec } = definition
   const program = executableProgram(definition, input.context, handlerRegistry)
   const branchControllers = branchControllerIndex(program.operations)
+  const responseResolver = createMoveSpecResponseResolver(input.responses)
 
   const activePhases = new Set<MoveSpecPhase>(program.operationsByPhase.keys())
   for (const phase of program.handlerTraceEntriesByPhase.keys()) activePhases.add(phase)
@@ -1302,6 +1310,41 @@ export const executeMoveSpec = (
             continue
           }
           const request = pendingBranchRequest(operation, recipientIds)
+          const response = responseResolver.resolve({
+            requestId: request.requestId,
+            options: request.options,
+            allowPass: request.allowPass,
+          })
+          if (response) {
+            const execution = executeResolvedMoveChoiceBranch({
+              operation,
+              recipientIds,
+              optionId: response.optionId,
+            })
+            branchSelections.push(execution.selection)
+            branchExecutions.set(operation.payload.selectionId, execution)
+            trace = reduceMoveResolutionTrace(trace, {
+              kind: 'operation',
+              phase,
+              operationId: operation.id,
+              operationKind: operation.kind,
+              recipientIds,
+              outcome: response.optionId === null ? 'no-op' : 'applied',
+              reasonCode: operation.reasonCode,
+              input: traceJson(operation.payload),
+              result: traceJson({ selection: execution.selection }),
+            })
+            trace = reduceMoveResolutionTrace(trace, {
+              kind: 'choice',
+              phase,
+              requestId: request.requestId,
+              requestKind: 'choice',
+              outcome: response.optionId === null ? 'passed' : 'selected',
+              optionId: response.optionId,
+              reasonCode: operation.reasonCode,
+            })
+            continue
+          }
           trace = reduceMoveResolutionTrace(trace, {
             kind: 'operation',
             phase,
@@ -1327,6 +1370,7 @@ export const executeMoveSpec = (
             optionId: null,
             reasonCode: operation.reasonCode,
           })
+          responseResolver.assertAllConsumed()
           return materializePendingExecutionResult(
             terminalBase(
               input.context,
@@ -1392,6 +1436,7 @@ export const executeMoveSpec = (
           recipientIds,
           selectorState,
           canonicalMoveId: spec.canonicalId,
+          responseResolver,
         })
         resolvedChecks.push(...execution.resolutions)
         resolvedRolls.push(...resolvedCheckRolls(operation, execution))
@@ -1425,6 +1470,17 @@ export const executeMoveSpec = (
             roll,
           })
         }
+        for (const response of execution.resolvedResponses) {
+          trace = reduceMoveResolutionTrace(trace, {
+            kind: 'choice',
+            phase,
+            requestId: response.requestId,
+            requestKind: 'choice',
+            outcome: 'selected',
+            optionId: response.optionId,
+            reasonCode: operation.reasonCode,
+          })
+        }
         if (!request) continue
         trace = reduceMoveResolutionTrace(trace, {
           kind: 'choice',
@@ -1435,6 +1491,7 @@ export const executeMoveSpec = (
           optionId: null,
           reasonCode: operation.reasonCode,
         })
+        responseResolver.assertAllConsumed()
         return materializePendingExecutionResult(
           terminalBase(
             input.context,
@@ -1716,29 +1773,40 @@ export const executeMoveSpec = (
 
       if (operation.kind === 'choice-request' || operation.kind === 'reaction-request') {
         const request = pendingRequest(operation, recipientIds)
+        const response = responseResolver.resolve({
+          requestId: request.requestId,
+          options: request.options,
+          allowPass: request.allowPass,
+        })
         trace = reduceMoveResolutionTrace(trace, {
           kind: 'operation',
           phase,
           operationId: operation.id,
           operationKind: operation.kind,
           recipientIds,
-          outcome: 'pending',
+          outcome: response ? (response.optionId === null ? 'no-op' : 'applied') : 'pending',
           reasonCode: operation.reasonCode,
           input: traceJson(operation.payload),
-          result: {
-            requestId: request.requestId,
-            requestKind: request.kind,
-          },
+          result: response
+            ? { status: response.optionId === null ? 'passed' : 'selected' }
+            : {
+                requestId: request.requestId,
+                requestKind: request.kind,
+              },
         })
         trace = reduceMoveResolutionTrace(trace, {
           kind: 'choice',
           phase,
           requestId: request.requestId,
           requestKind: request.kind,
-          outcome: 'requested',
-          optionId: null,
+          outcome: response
+            ? (response.optionId === null ? 'passed' : 'selected')
+            : 'requested',
+          optionId: response?.optionId ?? null,
           reasonCode: operation.reasonCode,
         })
+        if (response) continue
+        responseResolver.assertAllConsumed()
         return materializePendingExecutionResult(
           terminalBase(
             input.context,
@@ -1772,6 +1840,7 @@ export const executeMoveSpec = (
     }
   }
 
+  responseResolver.assertAllConsumed()
   return Object.freeze({
     kind: 'complete',
     ...terminalBase(

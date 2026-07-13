@@ -365,7 +365,7 @@ const planMoveState = (
   }
 }
 
-const moveResultFromPlan = (plan: AuthoritativeMoveStatePlan): LivePlayResolvedMoveResult => {
+export const moveResultFromPlan = (plan: AuthoritativeMoveStatePlan): LivePlayResolvedMoveResult => {
   const clonedResolution = deepCloneJson(plan.resolution)
   const { auditTrace, ...publicResolution } = clonedResolution
   const publicArea = (() => {
@@ -471,7 +471,7 @@ const moveStatePayload = (
   changes: patchChangesFromPlan(plan),
 })
 
-const moveStatePatch = (
+export const moveStatePatch = (
   command: ResolveMoveLivePlayCommand,
   plan: AuthoritativeMoveStatePlan,
   move: LivePlayResolvedMoveResult,
@@ -577,7 +577,7 @@ const moveStatePatchFromAccepted = (result: LivePlayCommandAccepted): LivePlayPa
   return { ...patch, payload: parsed.payload } as LivePlayPatch<typeof LIVE_PLAY_PATCH_TYPES.MOVE_STATE, LivePlayMoveStatePatchPayload>
 }
 
-const sheetPayloadForPersistence = (
+export const sheetPayloadForPersistence = (
   sheet: Record<string, unknown>,
   slug: string,
   updatedAt: number,
@@ -587,7 +587,7 @@ const sheetPayloadForPersistence = (
   updatedAt,
 })
 
-const sheetUpdateFromPersisted = (
+export const sheetUpdateFromPersisted = (
   sheet: PersistedSheet,
   dependencies: DependencySet,
 ): LivePlayResolveMoveCommandSheetUpdate => {

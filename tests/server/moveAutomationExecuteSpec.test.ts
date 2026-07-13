@@ -705,6 +705,76 @@ describe('phased MoveSpec interpreter', () => {
     expect(stream.remaining).toBe(1)
   })
 
+  it('resumes a durable branch option and emits only its reviewed path', () => {
+    const spec = baseSpec()
+    spec.phases = [{
+      phase: 'hit',
+      operations: [
+        {
+          id: 'operation.choose-path',
+          kind: 'branch',
+          source: { kind: 'move', id: 'move.interpreter-test' },
+          recipients: { kind: 'actor' },
+          phase: 'hit',
+          reasonCode: 'move.interpreter-test.choose-path',
+          payload: {
+            kind: 'choice',
+            selectionId: 'selection.path',
+            scope: 'resolution',
+            requestId: 'request.path',
+            promptKey: 'move.interpreter-test.choose-path',
+            options: [
+              {
+                id: 'path.attack',
+                labelKey: 'move.interpreter-test.path-attack',
+                operationIds: ['operation.attack-path'],
+              },
+              {
+                id: 'path.support',
+                labelKey: 'move.interpreter-test.path-support',
+                operationIds: ['operation.support-path'],
+              },
+            ],
+            pass: null,
+          },
+        },
+        logOperation('operation.attack-path', 'hit'),
+        logOperation('operation.support-path', 'hit'),
+      ],
+    }]
+    const definition = definitionFor(spec)
+
+    const suspended = executeMoveSpec({ definition, context: buildContext() })
+    expect(suspended).toMatchObject({
+      kind: 'pending-request',
+      request: { requestId: 'request.path' },
+    })
+
+    const resumed = executeMoveSpec({
+      definition,
+      context: buildContext(),
+      responses: [{ requestId: 'request.path', optionId: 'path.attack' }],
+    })
+    expect(resumed.kind).toBe('complete')
+    expect(resumed.operations.map(({ operation }) => operation.id)).toEqual([
+      'operation.choose-path',
+      'operation.attack-path',
+    ])
+    expect(resumed.branchSelections).toEqual([
+      expect.objectContaining({
+        selectionId: 'selection.path',
+        decisions: [expect.objectContaining({ branchId: 'path.attack' })],
+      }),
+    ])
+    expect(traceEventsOfKind(resumed, 'choice')).toEqual([
+      expect.objectContaining({
+        requestId: 'request.path',
+        outcome: 'selected',
+        optionId: 'path.attack',
+      }),
+    ])
+  })
+
   it('partitions an explicit pay-phase declaration cost from deferred ordinary effects', () => {
     const spec = baseSpec()
     spec.phases = [

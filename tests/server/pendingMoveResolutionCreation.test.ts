@@ -11,6 +11,11 @@ import {
 import {
   isPendingMoveDeclarationResult,
 } from '#shared/moveAutomation/pendingResolution'
+import {
+  MOVE_RESPONSE_COMMAND_SCHEMA_VERSION,
+  MOVE_RESPONSE_COMMAND_TYPES,
+  type MoveResponseCommand,
+} from '#shared/moveAutomation/responseCommands'
 import { openRotomDatabase, type RotomDatabase } from '~~/server/storage/database'
 import { createSqliteMapRepository } from '~~/server/storage/mapRepository'
 import {
@@ -38,6 +43,12 @@ import {
   executeLivePlayResolveMoveCommandUseCase,
   type LivePlayResolveMoveCommandDependencies,
 } from '~~/server/useCases/applyResolveMoveCommand'
+import { parsePendingMoveResponseCommand } from '~~/server/livePlay/moveResponseCommandParser'
+import {
+  replayMoveResponseCommandUseCase,
+  resumePendingMoveResolutionUseCase,
+  type ResumePendingMoveResolutionDependencies,
+} from '~~/server/useCases/resumePendingMoveResolution'
 import { buildResolveMoveScopes } from '~/utils/livePlayMoveCommandScopes'
 import { deepCloneJson } from '~/utils/serialization'
 import type { CharacterSheet } from '~/types/characterSheet'
@@ -101,6 +112,7 @@ interface PendingSpecOptions {
   readonly withDeclarationCost: boolean
   readonly withDeferredEffects?: boolean
   readonly invalidDeclarationPhase?: boolean
+  readonly withSecondWindow?: boolean
 }
 
 const pendingScratchSpec = (options: PendingSpecOptions) => {
@@ -129,7 +141,8 @@ const pendingScratchSpec = (options: PendingSpecOptions) => {
     version: 101
       + (options.withDeclarationCost ? 1 : 0)
       + (options.withDeferredEffects ? 2 : 0)
-      + (options.invalidDeclarationPhase ? 4 : 0),
+      + (options.invalidDeclarationPhase ? 4 : 0)
+      + (options.withSecondWindow ? 8 : 0),
     targeting: {
       kind: 'single-target',
       minTargets: 1,
@@ -206,8 +219,55 @@ const pendingScratchSpec = (options: PendingSpecOptions) => {
       }] : []),
       ...(!options.withDeferredEffects ? [{
         phase: choicePhase,
-        operations: [choiceOperation],
+        operations: [
+          choiceOperation,
+          ...(options.withSecondWindow ? [{
+            id: 'scratch.choose-follow-up',
+            kind: 'choice-request',
+            source: { kind: 'move', id: 'move.scratch' },
+            recipients: { kind: 'actor' },
+            phase: choicePhase,
+            reasonCode: 'move.scratch.choose-follow-up',
+            payload: {
+              requestId: 'scratch.follow-up-window',
+              promptKey: 'move.scratch.choose-follow-up',
+              options: [{
+                id: 'follow-up.finish',
+                labelKey: 'move.scratch.follow-up-finish',
+              }],
+              allowPass: true,
+            },
+          }] : []),
+        ],
       }] : []),
+      {
+        phase: 'usage',
+        operations: [{
+          id: 'scratch.usage',
+          kind: 'usage',
+          source: { kind: 'move', id: 'move.scratch' },
+          recipients: { kind: 'actor' },
+          phase: 'usage',
+          reasonCode: 'move.scratch.frequency-use',
+          payload: {
+            action: 'spend',
+            resourceId: 'scratch.frequency-use',
+            amount: 1,
+          },
+        }],
+      },
+      {
+        phase: 'cleanup',
+        operations: [{
+          id: 'scratch.completed',
+          kind: 'log',
+          source: { kind: 'move', id: 'move.scratch' },
+          recipients: { kind: 'none' },
+          phase: 'cleanup',
+          reasonCode: 'move.scratch.completed',
+          payload: { messageKey: 'move.scratch.completed', arguments: [] },
+        }],
+      },
     ],
     registeredHandlerId: null,
     presentation: {
@@ -309,6 +369,7 @@ const executePending = (
     readonly withDeclarationCost?: boolean
     readonly withDeferredEffects?: boolean
     readonly invalidDeclarationPhase?: boolean
+    readonly withSecondWindow?: boolean
     readonly planner?: LivePlayResolveMoveCommandDependencies['planner']
     readonly mapRepository?: LivePlayResolveMoveCommandDependencies['mapRepository']
     readonly sheetRepository?: LivePlayResolveMoveCommandDependencies['sheetRepository']
@@ -333,11 +394,70 @@ const executePending = (
       withDeclarationCost: options.withDeclarationCost ?? false,
       withDeferredEffects: options.withDeferredEffects,
       invalidDeclarationPhase: options.invalidDeclarationPhase,
+      withSecondWindow: options.withSecondWindow,
     }),
   })),
   random: options.random ?? (() => { throw new Error('the pending canary must not draw randomness') }),
   now: () => 1_000,
 })
+
+const responseCommand = (input: {
+  readonly resolutionId: string
+  readonly baseRevision: number
+  readonly opId?: string
+  readonly windowId?: string
+  readonly optionId?: string
+}) => ({
+  schemaVersion: MOVE_RESPONSE_COMMAND_SCHEMA_VERSION,
+  opId: input.opId ?? 'op_pendinganswer01',
+  mapSlug: 'pending-arena',
+  baseRevision: input.baseRevision,
+  type: MOVE_RESPONSE_COMMAND_TYPES.CHOOSE,
+  payload: {
+    resolutionId: input.resolutionId,
+    windowId: input.windowId ?? 'scratch.style-window',
+    optionId: input.optionId ?? 'style.power',
+  },
+}) as MoveResponseCommand
+
+const executeResponse = (input: {
+  readonly harness: Harness
+  readonly command: MoveResponseCommand
+  readonly withDeclarationCost?: boolean
+  readonly withDeferredEffects?: boolean
+  readonly withSecondWindow?: boolean
+  readonly now?: number
+  readonly random?: LivePlayResolveMoveCommandDependencies['random']
+  readonly pendingResolutionRepository?: ResumePendingMoveResolutionDependencies['pendingResolutionRepository']
+}) => {
+  const parsed = parsePendingMoveResponseCommand(input.command, {
+    pendingResolutionRepository: input.harness.pending,
+  })
+  return resumePendingMoveResolutionUseCase({
+    ...parsed,
+    role: 'gm',
+    playerProfile: null,
+    authorization: {
+      chosenBy: { kind: 'gm', id: null },
+      source: 'gm-authority',
+    },
+    clientId: 'response-client',
+  }, {
+    database: input.harness.database,
+    mapRepository: input.harness.maps,
+    sheetRepository: input.harness.sheets,
+    pendingResolutionRepository: input.pendingResolutionRepository ?? input.harness.pending,
+    opRepository: input.harness.ops,
+    runtimeRegistry: pendingRegistry({
+      withDeclarationCost: input.withDeclarationCost ?? false,
+      withDeferredEffects: input.withDeferredEffects,
+      withSecondWindow: input.withSecondWindow,
+    }),
+    random: input.random ?? (() => 0),
+    now: () => input.now ?? 2_000,
+    publishPersistedRealtimeEvent: vi.fn(),
+  })
+}
 
 describe('pending move resolution creation', () => {
   it('atomically stores a privacy-safe suspension without a terminal op or open transaction', async () => {
@@ -677,6 +797,289 @@ describe('pending move resolution creation', () => {
     expect(harness.maps.getBySlug('pending-arena')).toEqual(mapAfterFirst)
     expect(harness.pending.getByOrigin('pending-arena', command.opId)).toEqual(pendingAfterFirst)
     expect(harness.ops.getOpRecord('pending-arena', command.opId)).toBeNull()
+  })
+
+  it('resumes one durable response, commits the final plan, and replays the terminal op exactly', async () => {
+    const harness = createHarness()
+    const declaration = commandFor(harness.maps.getBySlug('pending-arena')!, 'op_resumecomplete01')
+    const pendingResponse = await executePending(harness, declaration, {
+      withDeclarationCost: true,
+    })
+    expect(isPendingMoveDeclarationResult(pendingResponse.result)).toBe(true)
+    if (!isPendingMoveDeclarationResult(pendingResponse.result)) return
+
+    const command = responseCommand({
+      resolutionId: pendingResponse.result.pendingResolution.resolutionId,
+      baseRevision: 5,
+      opId: 'op_resumefinal001',
+    })
+    expect((harness.sheets.getByRef('pokemon', 'actor')!.sheet.combat as { currentHp: number }).currentHp).toBe(35)
+    const completed = executeResponse({
+      harness,
+      command,
+      withDeclarationCost: true,
+    })
+
+    expect(completed.result).toMatchObject({
+      ok: true,
+      opId: command.opId,
+      previousRevision: 5,
+      revision: 6,
+      patches: [{ type: 'move.state' }],
+    })
+    expect(completed.move).toMatchObject({
+      canonicalMoveName: 'Ember',
+      actorPlacementId: 'actor-token',
+    })
+    expect(JSON.stringify(completed)).not.toContain('style.power')
+    expect(harness.maps.getBySlug('pending-arena')).toMatchObject({
+      revision: 6,
+      encounterState: { pendingResolutionSummaries: [] },
+    })
+    expect((harness.sheets.getByRef('pokemon', 'actor')!.sheet.combat as { currentHp: number }).currentHp).toBe(35)
+    const terminal = harness.pending.getById(
+      pendingResponse.result.pendingResolution.resolutionId,
+    )
+    expect(terminal).toMatchObject({
+      status: 'committed',
+      terminalOpId: command.opId,
+      resolution: {
+        status: 'committed',
+        outstandingWindows: [],
+        chosenOptions: [{
+          windowId: 'scratch.style-window',
+          responseOpId: command.opId,
+          optionId: 'style.power',
+          chosenBy: { kind: 'gm', id: null },
+        }],
+      },
+    })
+    expect(terminal?.resolution.trace.events).toContainEqual(expect.objectContaining({
+      kind: 'choice',
+      requestId: 'scratch.style-window',
+      outcome: 'selected',
+      optionId: 'style.power',
+    }))
+    expect(harness.ops.getOpRecord('pending-arena', command.opId)?.result).toEqual(
+      completed.result,
+    )
+
+    const replay = replayMoveResponseCommandUseCase({ role: 'gm', command }, {
+      database: harness.database,
+      mapRepository: harness.maps,
+      opRepository: harness.ops,
+    })
+    expect(replay?.result).toEqual(completed.result)
+    expect(harness.maps.getBySlug('pending-arena')?.revision).toBe(6)
+    expect(harness.pending.getById(terminal!.resolutionId)?.revision).toBe(1)
+  })
+
+  it('reuses the durable roll prefix without drawing fresh randomness on resume', async () => {
+    const harness = createHarness()
+    const declaration = commandFor(harness.maps.getBySlug('pending-arena')!, 'op_resumerolls001')
+    const pendingResponse = await executePending(harness, declaration, {
+      withDeferredEffects: true,
+      random: () => 0.25,
+    })
+    expect(isPendingMoveDeclarationResult(pendingResponse.result)).toBe(true)
+    if (!isPendingMoveDeclarationResult(pendingResponse.result)) return
+    const storedBefore = harness.pending.getById(
+      pendingResponse.result.pendingResolution.resolutionId,
+    )!
+    expect(storedBefore.resolution.rollLedger).toHaveLength(1)
+    const freshRandom = vi.fn(() => {
+      throw new Error('resume must not reroll the durable damage prefix')
+    })
+
+    const completed = executeResponse({
+      harness,
+      command: responseCommand({
+        resolutionId: storedBefore.resolutionId,
+        baseRevision: 5,
+        opId: 'op_resumerollfinal',
+      }),
+      withDeferredEffects: true,
+      random: freshRandom,
+    })
+
+    expect(completed.result).toMatchObject({ ok: true, revision: 6 })
+    expect(freshRandom).not.toHaveBeenCalled()
+    const storedAfter = harness.pending.getById(storedBefore.resolutionId)!
+    expect(storedAfter.resolution.rollLedger).toEqual(storedBefore.resolution.rollLedger)
+    expect((harness.sheets.getByRef('pokemon', 'target')!.sheet.combat as { currentHp: number }).currentHp).toBeLessThan(80)
+    expect(completed.move?.transaction.conditionUpdates).toContainEqual({
+      id: 'target-token',
+      conditions: ['Burned'],
+    })
+  })
+
+  it('resumes an authorized pass as a traced null option', async () => {
+    const harness = createHarness()
+    const declaration = commandFor(harness.maps.getBySlug('pending-arena')!, 'op_resumepassdecl')
+    const pendingResponse = await executePending(harness, declaration)
+    expect(isPendingMoveDeclarationResult(pendingResponse.result)).toBe(true)
+    if (!isPendingMoveDeclarationResult(pendingResponse.result)) return
+    const command: MoveResponseCommand = {
+      schemaVersion: MOVE_RESPONSE_COMMAND_SCHEMA_VERSION,
+      opId: 'op_resumepass0001',
+      mapSlug: 'pending-arena',
+      baseRevision: 5,
+      type: MOVE_RESPONSE_COMMAND_TYPES.PASS,
+      payload: {
+        resolutionId: pendingResponse.result.pendingResolution.resolutionId,
+        windowId: 'scratch.style-window',
+      },
+    }
+
+    const completed = executeResponse({ harness, command })
+
+    expect(completed.result).toMatchObject({ ok: true, revision: 6 })
+    const terminal = harness.pending.getById(
+      pendingResponse.result.pendingResolution.resolutionId,
+    )!
+    expect(terminal.resolution.chosenOptions[0]?.optionId).toBeNull()
+    expect(terminal.resolution.trace.events).toContainEqual(expect.objectContaining({
+      kind: 'choice',
+      requestId: 'scratch.style-window',
+      outcome: 'passed',
+      optionId: null,
+    }))
+  })
+
+  it('records one response and atomically opens the next durable window', async () => {
+    const harness = createHarness()
+    const declaration = commandFor(harness.maps.getBySlug('pending-arena')!, 'op_resumenext0001')
+    const pendingResponse = await executePending(harness, declaration, {
+      withSecondWindow: true,
+    })
+    expect(isPendingMoveDeclarationResult(pendingResponse.result)).toBe(true)
+    if (!isPendingMoveDeclarationResult(pendingResponse.result)) return
+    const resolutionId = pendingResponse.result.pendingResolution.resolutionId
+
+    const first = executeResponse({
+      harness,
+      command: responseCommand({
+        resolutionId,
+        baseRevision: 5,
+        opId: 'op_resumefirst001',
+      }),
+      withSecondWindow: true,
+    })
+    expect(first.result).toMatchObject({
+      ok: true,
+      previousRevision: 5,
+      revision: 6,
+      patches: [],
+    })
+    expect(harness.pending.getById(resolutionId)).toMatchObject({
+      status: 'pending',
+      revision: 1,
+      resolution: {
+        outstandingWindows: [{ windowId: 'scratch.follow-up-window' }],
+        chosenOptions: [{ windowId: 'scratch.style-window' }],
+        publicSummary: { outstandingWindowCount: 1, status: 'pending' },
+      },
+    })
+
+    const second = executeResponse({
+      harness,
+      command: responseCommand({
+        resolutionId,
+        baseRevision: 6,
+        opId: 'op_resumesecond01',
+        windowId: 'scratch.follow-up-window',
+        optionId: 'follow-up.finish',
+      }),
+      withSecondWindow: true,
+      now: 3_000,
+    })
+    expect(second.result).toMatchObject({ ok: true, revision: 7 })
+    expect(harness.pending.getById(resolutionId)).toMatchObject({
+      status: 'committed',
+      revision: 2,
+      resolution: { chosenOptions: [{}, {}] },
+    })
+  })
+
+  it('rolls back final map, sheets, op result, and pending status on persistence failure', async () => {
+    const harness = createHarness()
+    const declaration = commandFor(harness.maps.getBySlug('pending-arena')!, 'op_resumerollback1')
+    const pendingResponse = await executePending(harness, declaration)
+    expect(isPendingMoveDeclarationResult(pendingResponse.result)).toBe(true)
+    if (!isPendingMoveDeclarationResult(pendingResponse.result)) return
+    const beforeMap = deepCloneJson(harness.maps.getBySlug('pending-arena'))
+    const beforeSheets = deepCloneJson(harness.sheets.list())
+    const beforePending = deepCloneJson(harness.pending.getById(
+      pendingResponse.result.pendingResolution.resolutionId,
+    ))
+    const command = responseCommand({
+      resolutionId: pendingResponse.result.pendingResolution.resolutionId,
+      baseRevision: 5,
+      opId: 'op_resumerollback2',
+    })
+
+    expect(() => executeResponse({
+      harness,
+      command,
+      pendingResolutionRepository: {
+        getById: id => harness.pending.getById(id),
+        update: (update) => {
+          harness.pending.update(update)
+          throw new Error('injected pending update failure')
+        },
+      },
+    })).toThrow('injected pending update failure')
+
+    expect(harness.maps.getBySlug('pending-arena')).toEqual(beforeMap)
+    expect(harness.sheets.list()).toEqual(beforeSheets)
+    expect(harness.pending.getById(beforePending!.resolutionId)).toEqual(beforePending)
+    expect(harness.ops.getOpRecord('pending-arena', command.opId)).toBeNull()
+  })
+
+  it('terminally conflicts a stale full read set without applying deferred effects', async () => {
+    const harness = createHarness()
+    const declaration = commandFor(harness.maps.getBySlug('pending-arena')!, 'op_resumestale001')
+    const pendingResponse = await executePending(harness, declaration, {
+      withDeferredEffects: true,
+      random: () => 0,
+    })
+    expect(isPendingMoveDeclarationResult(pendingResponse.result)).toBe(true)
+    if (!isPendingMoveDeclarationResult(pendingResponse.result)) return
+    const target = harness.sheets.getByRef('pokemon', 'target')!
+    harness.sheets.save({
+      kind: 'pokemon',
+      slug: target.slug,
+      document: target.sheet,
+      revision: 3,
+      updatedAt: 1_500,
+    })
+    const beforeTargetHp = harness.sheets.getByRef('pokemon', 'target')!.sheet.combat
+
+    const conflicted = executeResponse({
+      harness,
+      command: responseCommand({
+        resolutionId: pendingResponse.result.pendingResolution.resolutionId,
+        baseRevision: 5,
+        opId: 'op_resumeconflict1',
+      }),
+      withDeferredEffects: true,
+    })
+    expect(conflicted.result).toMatchObject({
+      ok: false,
+      reason: 'conflict',
+      currentRevision: 6,
+    })
+    expect(harness.pending.getById(
+      pendingResponse.result.pendingResolution.resolutionId,
+    )).toMatchObject({
+      status: 'conflicted',
+      terminalOpId: 'op_resumeconflict1',
+    })
+    expect(harness.sheets.getByRef('pokemon', 'target')!.sheet.combat).toEqual(beforeTargetHp)
+    expect(harness.maps.getBySlug('pending-arena')).toMatchObject({
+      revision: 6,
+      encounterState: { pendingResolutionSummaries: [] },
+    })
   })
 
   it('rolls back map and declaration costs when pending-record persistence fails', async () => {

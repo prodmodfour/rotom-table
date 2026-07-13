@@ -19,6 +19,7 @@ import { parseSkillDiceValue } from '~/utils/skillRanks'
 import { resolveSkills } from '~/utils/sheets/pokemonDerived'
 import { resolveTrainerSkills } from '~/utils/sheets/trainerDerived'
 import type { AuthoritativeMoveRulesContext } from './context'
+import type { MoveSpecResponseResolver } from './responses'
 import {
   evaluateMoveExpression,
   type MoveRuleEvaluationTraceEntry,
@@ -33,6 +34,7 @@ export type MoveCheckExecutionErrorCode =
   | 'check-expression-not-numeric'
   | 'check-roll-budget-exceeded'
   | 'check-roll-id-too-long'
+  | 'check-resource-reroll-spend-unsupported'
 
 export class MoveCheckExecutionError extends Error {
   readonly code: MoveCheckExecutionErrorCode
@@ -141,10 +143,16 @@ export type MoveCheckPendingRequest =
   | MoveCheckPendingSelection
   | MoveCheckPendingResourceReroll
 
+export interface MoveCheckResolvedResponse {
+  readonly requestId: string
+  readonly optionId: string
+}
+
 interface MoveCheckExecutionBase {
   readonly resolutions: readonly MoveCheckResolution[]
   readonly rollReferences: readonly MoveCheckResolvedRollReference[]
   readonly rollLedgerEntries: readonly MoveAutomationRollLedgerEntry[]
+  readonly resolvedResponses: readonly MoveCheckResolvedResponse[]
 }
 
 export interface MoveCheckExecutionComplete extends MoveCheckExecutionBase {
@@ -164,6 +172,7 @@ export interface ExecuteMoveCheckOperationInput {
   readonly recipientIds: readonly string[]
   readonly selectorState: MoveRuleSelectorState
   readonly canonicalMoveId: string
+  readonly responseResolver?: MoveSpecResponseResolver
 }
 
 interface PreparedCheckRoll {
@@ -497,11 +506,9 @@ const assertRollBudget = (
   }
 }
 
-const pendingSelection = (
-  input: ExecuteMoveCheckOperationInput,
-): MoveCheckPendingSelection | null => {
+const checkRollCandidates = (input: ExecuteMoveCheckOperationInput) => {
   const payload = input.operation.payload
-  const candidates = payload.kind === 'opposed'
+  return payload.kind === 'opposed'
     ? [
         {
           role: 'actor' as const,
@@ -515,7 +522,21 @@ const pendingSelection = (
         },
       ]
     : [{ role: 'target' as const, roll: payload.roll, owners: input.recipientIds }]
-  const unresolved = candidates.find(candidate => candidate.roll.source.kind === 'choice')
+}
+
+const pendingSelection = (
+  input: ExecuteMoveCheckOperationInput,
+): MoveCheckPendingSelection | null => {
+  const payload = input.operation.payload
+  const unresolved = checkRollCandidates(input).find((candidate) => {
+    const source = candidate.roll.source
+    if (source.kind !== 'choice') return false
+    return input.responseResolver?.resolve({
+      requestId: source.requestId,
+      options: source.options,
+      allowPass: false,
+    }) === null || input.responseResolver === undefined
+  })
   if (!unresolved || unresolved.roll.source.kind !== 'choice') return null
   return deepFreeze({
     kind: 'selection',
@@ -529,6 +550,28 @@ const pendingSelection = (
       labelKey: option.labelKey,
     })),
   })
+}
+
+const resolvedCheckRollSource = (
+  input: ExecuteMoveCheckOperationInput,
+  definition: MoveCheckRollDefinition,
+): MoveCheckResolvedRollSource => {
+  const source = definition.source
+  if (source.kind !== 'choice') return source
+  const response = input.responseResolver?.resolve({
+    requestId: source.requestId,
+    options: source.options,
+    allowPass: false,
+  }) ?? fail(
+    'check-expression-not-numeric',
+    `Check ${input.operation.payload.checkId} has no durable source response.`,
+  )
+  const option = source.options.find(candidate => candidate.id === response.optionId)
+    ?? fail(
+      'check-expression-not-numeric',
+      `Check ${input.operation.payload.checkId} received an unavailable source response.`,
+    )
+  return option.source
 }
 
 const outcomeForComparison = (
@@ -609,6 +652,18 @@ export const executeMoveCheckOperation = (
     )
   }
   const ledgerStart = input.context.random.snapshot().length
+  const resolvedResponses: MoveCheckResolvedResponse[] = checkRollCandidates(input).flatMap((candidate) => {
+    const source = candidate.roll.source
+    if (source.kind !== 'choice') return []
+    const response = input.responseResolver?.resolve({
+      requestId: source.requestId,
+      options: source.options,
+      allowPass: false,
+    }) ?? null
+    return response?.optionId
+      ? [{ requestId: source.requestId, optionId: response.optionId }]
+      : []
+  })
   const selection = pendingSelection(input)
   if (selection) {
     return deepFreeze({
@@ -616,6 +671,7 @@ export const executeMoveCheckOperation = (
       resolutions: [],
       rollReferences: [],
       rollLedgerEntries: [],
+      resolvedResponses,
       request: selection,
     })
   }
@@ -636,7 +692,7 @@ export const executeMoveCheckOperation = (
       ? prepareRoll({
           input,
           definition: payload.actorRoll,
-          source: payload.actorRoll.source as MoveCheckResolvedRollSource,
+          source: resolvedCheckRollSource(input, payload.actorRoll),
           role: 'actor',
           placementId: input.context.actor.placement.id,
           recipientId,
@@ -647,7 +703,7 @@ export const executeMoveCheckOperation = (
     const targetPrepared = prepareRoll({
       input,
       definition: targetDefinition,
-      source: targetDefinition.source as MoveCheckResolvedRollSource,
+      source: resolvedCheckRollSource(input, targetDefinition),
       role: 'target',
       placementId: recipientId,
       recipientId,
@@ -730,27 +786,44 @@ export const executeMoveCheckOperation = (
   }
 
   const resourceRequest = pendingResourceReroll(input, resolutions)
-  const finalizedResolutions = resourceRequest
-    ? resolutions.map(resolution => deepFreeze({
-        ...resolution,
-        status: 'provisional' as const,
-        selectedBranchId: null,
-      }))
-    : resolutions
-  const rollLedgerEntries = input.context.random.snapshot().slice(ledgerStart)
-  if (resourceRequest) {
+  const resourceResponse = resourceRequest
+    ? input.responseResolver?.resolve({
+        requestId: resourceRequest.requestId,
+        options: resourceRequest.options,
+        allowPass: false,
+      }) ?? null
+    : null
+  if (resourceRequest && resourceResponse === null) {
+    const provisionalResolutions = resolutions.map(resolution => deepFreeze({
+      ...resolution,
+      status: 'provisional' as const,
+      selectedBranchId: null,
+    }))
     return deepFreeze({
       kind: 'pending',
-      resolutions: finalizedResolutions,
+      resolutions: provisionalResolutions,
       rollReferences,
-      rollLedgerEntries,
+      rollLedgerEntries: input.context.random.snapshot().slice(ledgerStart),
+      resolvedResponses,
       request: resourceRequest,
     })
   }
+  if (resourceRequest && resourceResponse?.optionId === resourceRequest.options[0]?.id) {
+    return fail(
+      'check-resource-reroll-spend-unsupported',
+      `Check ${resourceRequest.checkId} cannot spend ${resourceRequest.resourceId} until typed resource-cost planning is enabled.`,
+    )
+  }
   return deepFreeze({
     kind: 'complete',
-    resolutions: finalizedResolutions,
+    resolutions,
     rollReferences,
-    rollLedgerEntries,
+    rollLedgerEntries: input.context.random.snapshot().slice(ledgerStart),
+    resolvedResponses: [
+      ...resolvedResponses,
+      ...(resourceRequest && resourceResponse?.optionId
+        ? [{ requestId: resourceRequest.requestId, optionId: resourceResponse.optionId }]
+        : []),
+    ],
   })
 }

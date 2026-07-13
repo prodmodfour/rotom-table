@@ -33,12 +33,19 @@ export type ExecuteParsedMoveResponse = (
   input: ExecuteParsedMoveResponseInput,
 ) => unknown | Promise<unknown>
 
+export type ReplayMoveResponse = (input: {
+  readonly role: AuthRole
+  readonly playerProfile: PlayerProfile | null
+  readonly command: ReturnType<typeof parseMoveResponseCommandSyntax>
+}) => unknown | null | Promise<unknown | null>
+
 export interface CreateMoveResponseRouteOptions {
   readonly expectedType: MoveResponseCommandType
   readonly gmOnly?: boolean
   readonly parserDependencies?: Omit<MoveResponseCommandParserDependencies, 'authorize'>
   readonly accessDependencies?: PendingMoveResponseAccessDependencies
   readonly resolvePlayerProfile?: typeof resolvePlayerProfileForPolicy
+  readonly replay?: ReplayMoveResponse
   readonly execute?: ExecuteParsedMoveResponse
 }
 
@@ -60,6 +67,8 @@ export const createMoveResponseRoute = (
       ? (options.resolvePlayerProfile ?? resolvePlayerProfileForPolicy)(command.profileId)
       : null
     assertPendingMoveResponseProfileBoundary({ role, command, playerProfile })
+    const replay = await options.replay?.({ role, playerProfile, command })
+    if (replay !== null && replay !== undefined) return replay
 
     let authorization: PendingMoveResponseAuthorizationGrant | null = null
     const parsed = parsePendingMoveResponseCommand(command, {

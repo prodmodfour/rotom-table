@@ -491,6 +491,8 @@ const assertSupportedImmediateOperations = (
     'movement-request',
     'usage',
     'log',
+    'choice-request',
+    'reaction-request',
   ])
   const unsupported = operations.find(({ operation }) => !supported.has(operation.kind))
   if (unsupported) {
@@ -541,11 +543,15 @@ const executeReviewedMoveSpec = (
 }
 
 /** Reduce one already completed interpreter result into the immediate planner projection. */
-const reduceImmediateMoveSpec = (
+export const reduceCompletedMoveSpec = (
   options: ResolveMoveSpecOptions,
   execution: MoveSpecExecutionCompleteResult,
+  alreadyCommittedOperationIds: ReadonlySet<string> = new Set(),
 ): ImmediateMoveSpecResolution => {
-  assertSupportedImmediateOperations(execution.operations)
+  const uncommittedOperations = execution.operations.filter(({ operation }) => (
+    !alreadyCommittedOperationIds.has(operation.id)
+  ))
+  assertSupportedImmediateOperations(uncommittedOperations)
 
   const script = compatibilityScript(options.entry, options.runtime)
   // A self target is explicit interpreter evidence, not an attacked-target wire
@@ -560,7 +566,7 @@ const reduceImmediateMoveSpec = (
     faintedTargetIds: exposesAttackedTargets ? [...execution.faintedTargetIds] : [],
   }
 
-  const coreOperations = execution.operations.filter(isMoveCoreTokenEffectEmission)
+  const coreOperations = uncommittedOperations.filter(isMoveCoreTokenEffectEmission)
   const multiHit = execution.multiHitExecutions[0] ?? null
   if (execution.multiHitExecutions.length > 1 || (multiHit && coreOperations.length > 0)) {
     return fail(
@@ -651,7 +657,7 @@ const reduceImmediateMoveSpec = (
     rollLedger: execution.rollLedger,
     trace: core.trace,
     native: Object.freeze({
-      operations: execution.operations,
+      operations: uncommittedOperations,
       dynamicRecipients: Object.freeze(dynamicRecipients),
       coreStateChanges: multiHit?.stateChanges ?? core.stateChanges,
       trace: core.trace,
@@ -734,7 +740,7 @@ export const resolveMoveSpecOutcome = (
   }
   return Object.freeze({
     kind: 'complete',
-    resolution: reduceImmediateMoveSpec(options, execution),
+    resolution: reduceCompletedMoveSpec(options, execution),
   })
 }
 

@@ -17,10 +17,7 @@ import {
   type PlayerProfileId,
 } from '#shared/playerProfiles'
 import type { TabletopMap } from '~/types/map'
-import {
-  MOVE_RESPONSE_ROUTE_NOT_IMPLEMENTED_MESSAGE,
-  createMoveResponseRoute,
-} from '~~/server/livePlay/moveResponseRoute'
+import { createMoveResponseRoute } from '~~/server/livePlay/moveResponseRoute'
 import {
   closeRotomDatabase,
   getRotomDatabase,
@@ -347,7 +344,7 @@ describe('move response API route boundary', () => {
     ).get()).toEqual({ count: 0 })
   })
 
-  it('authorizes the exposed routes but keeps them non-mutating until resume orchestration lands', async () => {
+  it('executes authorized response routes while rejecting forged mechanics and options', async () => {
     createSqlitePendingMoveResolutionRepository(getRotomDatabase()).create({
       resolution: createPendingMoveResolutionFixture(),
     })
@@ -361,14 +358,6 @@ describe('move response API route boundary', () => {
     const gmCommand = responseCommand()
     delete gmCommand.profileId
 
-    const unavailable = {
-      statusCode: 501,
-      statusMessage: MOVE_RESPONSE_ROUTE_NOT_IMPLEMENTED_MESSAGE,
-    }
-    await expect(invokeRoute(chooseRoute, {
-      role: 'gm',
-      body: gmCommand,
-    })).rejects.toMatchObject(unavailable)
     await expect(invokeRoute(chooseRoute, {
       role: 'gm',
       body: {
@@ -391,5 +380,15 @@ describe('move response API route boundary', () => {
         },
       },
     })).rejects.toMatchObject({ statusCode: 400 })
+
+    await expect(invokeRoute(chooseRoute, {
+      role: 'gm',
+      body: gmCommand,
+    })).resolves.toMatchObject({
+      result: {
+        ok: false,
+        reason: 'conflict',
+      },
+    })
   })
 })
