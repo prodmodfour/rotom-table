@@ -15,6 +15,11 @@ import {
   type PendingMoveResolution,
   type PendingMoveResponseOwner,
 } from '#shared/moveAutomation/pendingResolution'
+import {
+  pendingMoveMovementOptionId,
+  pendingMoveMovementOptionLabelKey,
+  type PendingMoveDestinationSelection,
+} from '#shared/moveAutomation/responseOptions'
 import { createEmptyEncounterState } from '#shared/moveAutomation/encounterState'
 import type { TabletopMap } from '~/types/map'
 import {
@@ -280,6 +285,54 @@ describe('pending move response query privacy', () => {
     expect(Object.isFrozen(result)).toBe(true)
     expect(Object.isFrozen(result.windows)).toBe(true)
     expect(Object.isFrozen(result.windows[0]?.window.options)).toBe(true)
+
+    expect(listPendingMoveResponsesUseCase({
+      role: 'player',
+      mapSlug: 'pending-arena',
+      playerProfile: outsiderProfile,
+    }, dependencies).windows).toEqual([])
+  })
+
+  it('projects server-owned movement cells only to the eligible responder', () => {
+    const source = createPendingMoveResolutionFixture({ resolutionId: 'resolution-movement' })
+    const selection: PendingMoveDestinationSelection = {
+      kind: 'movement-destination',
+      setId: 'movement.destinations',
+      destination: { x: 2, y: 0, z: 1 },
+    }
+    const movement = parsePendingMoveResolution({
+      ...source,
+      outstandingWindows: source.outstandingWindows.map(window => ({
+        ...window,
+        ownership: [{ kind: 'actor', id: null }],
+        options: [{
+          id: pendingMoveMovementOptionId(selection),
+          labelKey: pendingMoveMovementOptionLabelKey(selection),
+          selection,
+        }],
+      })),
+      publicSummary: {
+        ...source.publicSummary,
+        resolutionId: 'resolution-movement',
+      },
+    })
+    const dependencies = {
+      ...accessDependencies(),
+      pendingResolutionRepository: { listByMap: vi.fn(() => [stored(movement)]) },
+    }
+
+    const eligible = listPendingMoveResponsesUseCase({
+      role: 'player',
+      mapSlug: 'pending-arena',
+      playerProfile: attackerProfile,
+    }, dependencies)
+    expect(eligible.windows[0]?.window.options).toEqual([{
+      id: pendingMoveMovementOptionId(selection),
+      labelKey: 'move.movement.destination',
+      selection,
+    }])
+    expect(JSON.stringify(eligible)).not.toContain('ownership')
+    expect(JSON.stringify(eligible)).not.toContain('readSet')
 
     expect(listPendingMoveResponsesUseCase({
       role: 'player',

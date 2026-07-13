@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest'
 import {
+  pendingMoveMovementOptionId,
+  pendingMoveMovementOptionLabelKey,
+  type PendingMoveMovementSelection,
+} from '#shared/moveAutomation/responseOptions'
+import {
   parsePendingMoveResponseWindowList,
 } from '#shared/moveAutomation/responseViews'
 
@@ -48,30 +53,33 @@ describe('pending move response views', () => {
   })
 
   it('projects typed movement cells and directions for the authorized targeting overlay', () => {
+    const movementOption = (selection: PendingMoveMovementSelection) => ({
+      id: pendingMoveMovementOptionId(selection),
+      labelKey: pendingMoveMovementOptionLabelKey(selection),
+      selection,
+    })
     const movement = responseList() as Record<string, any>
-    movement.windows[0].window.options = [{
-      id: 'movement.destination.1234abcd.2.0.1',
-      labelKey: 'move.movement.destination',
-      selection: {
-        kind: 'movement-destination',
-        setId: 'movement.destinations',
-        destination: { x: 2, y: 0, z: 1 },
-      },
-    }, {
-      id: 'movement.direction.1234abcd.east',
-      labelKey: 'move.movement.direction.east',
-      selection: {
-        kind: 'movement-direction',
-        setId: 'movement.directions',
-        direction: 'east',
-        destination: { x: 3, y: 0, z: 1 },
-      },
-    }]
+    movement.windows[0].window.options = [movementOption({
+      kind: 'movement-destination',
+      setId: 'movement.destinations',
+      destination: { x: 2, y: 0, z: 1 },
+    })]
 
     const parsed = parsePendingMoveResponseWindowList(movement)
     expect(parsed.windows[0]?.window.options).toEqual(movement.windows[0].window.options)
     expect('ownership' in parsed.windows[0]!.window).toBe(false)
     expect('operationId' in parsed.windows[0]!.window).toBe(false)
+
+    const direction = responseList() as Record<string, any>
+    direction.windows[0].window.options = [movementOption({
+      kind: 'movement-direction',
+      setId: 'movement.directions',
+      direction: 'east',
+      destination: { x: 3, y: 0, z: 1 },
+    })]
+    expect(parsePendingMoveResponseWindowList(direction).windows[0]?.window.options).toEqual(
+      direction.windows[0].window.options,
+    )
 
     movement.windows[0].window.options[0].selection.destination.x = -1
     expect(() => parsePendingMoveResponseWindowList(movement)).toThrow(/destination.x/)

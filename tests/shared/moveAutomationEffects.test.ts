@@ -359,20 +359,41 @@ describe('MoveSpec typed effect operations', () => {
         },
       },
     }), 'duplicate-id', 'operation.payload.choice.directions')
+    for (const clientMechanics of [
+      { destination: { x: 1, y: 0, z: 1 } },
+      { range: 8 },
+      { occupancyPolicy: 'ignore' },
+      { movementMode: 'sky' },
+    ]) {
+      expectEffectError(validOperation('movement-request', {
+        payload: {
+          requestId: 'movement.destination-window',
+          mode: 'voluntary',
+          distance: 3,
+          destinationSetId: 'movement.destinations',
+          choice: {
+            kind: 'destination',
+            promptKey: 'move.movement.choose-destination',
+            allowPass: true,
+            ...clientMechanics,
+          },
+        },
+      }), 'invalid-effect-operation', 'operation.payload.choice')
+    }
+
     expectEffectError(validOperation('movement-request', {
       payload: {
         requestId: 'movement.destination-window',
         mode: 'voluntary',
-        distance: 3,
+        distance: MOVE_EFFECT_OPERATION_LIMITS.movementChoiceDistance + 1,
         destinationSetId: 'movement.destinations',
         choice: {
           kind: 'destination',
           promptKey: 'move.movement.choose-destination',
           allowPass: true,
-          destination: { x: 1, y: 0, z: 1 },
         },
       },
-    }), 'invalid-effect-operation', 'operation.payload.choice')
+    }), 'limit-exceeded', 'operation.payload.distance')
   })
 
   it('supports each bounded payload variant without accepting generic metadata', () => {

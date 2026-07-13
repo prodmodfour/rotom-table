@@ -14,6 +14,8 @@ import {
 import {
   MOVE_RESPONSE_OPTION_LIMITS,
   PENDING_MOVE_MOVEMENT_SELECTION_KINDS,
+  isCanonicalPendingMoveMovementOption,
+  pendingMoveMovementSelectionKey,
   type MoveResponseGridAnchor,
   type PendingMoveMovementSelection,
   type PendingMoveMovementSelectionKind,
@@ -936,9 +938,24 @@ const parseMovementSelectionAnchor = (
 ): MoveResponseGridAnchor => {
   const record = parseExactRecord(value, GRID_ANCHOR_FIELDS, path)
   return {
-    x: parseInteger(record.x, `${path}.x`, 0, 1_000_000),
-    y: parseInteger(record.y, `${path}.y`, 0, 1_000_000),
-    z: parseInteger(record.z, `${path}.z`, 0, 1_000_000),
+    x: parseInteger(
+      record.x,
+      `${path}.x`,
+      0,
+      MOVE_RESPONSE_OPTION_LIMITS.coordinateMagnitude,
+    ),
+    y: parseInteger(
+      record.y,
+      `${path}.y`,
+      0,
+      MOVE_RESPONSE_OPTION_LIMITS.coordinateMagnitude,
+    ),
+    z: parseInteger(
+      record.z,
+      `${path}.z`,
+      0,
+      MOVE_RESPONSE_OPTION_LIMITS.coordinateMagnitude,
+    ),
   }
 }
 
@@ -983,11 +1000,6 @@ const parseMovementSelection = (
   return { kind, ...common, direction }
 }
 
-const movementSelectionKey = (selection: PendingMoveMovementSelection): string => (
-  `${selection.kind}:${selection.setId}:${'direction' in selection ? `${selection.direction}:` : ''}`
-  + `${selection.destination.x},${selection.destination.y},${selection.destination.z}`
-)
-
 const parseResponseOption = (
   value: unknown,
   path: string,
@@ -999,13 +1011,21 @@ const parseResponseOption = (
     hasSelection ? MOVEMENT_OPTION_FIELDS : OPTION_FIELDS,
     path,
   )
-  return {
+  const option: PendingMoveResponseOption = {
     id: parseStableId(record.id, `${path}.id`),
     labelKey: parseStableId(record.labelKey, `${path}.labelKey`),
     ...(hasSelection
       ? { selection: parseMovementSelection(record.selection, `${path}.selection`) }
       : {}),
   }
+  if (option.selection && !isCanonicalPendingMoveMovementOption(option)) {
+    fail(
+      'invalid-pending-resolution',
+      path,
+      'movement option ID and label must exactly match its server-owned selection.',
+    )
+  }
+  return option
 }
 
 /** Strict parser for one authorized presentation option. */
@@ -1026,6 +1046,25 @@ const parseOptions = (
   if (options.length === 0) {
     fail('invalid-pending-resolution', path, 'must contain at least one option.')
   }
+  const movementOptions = options.filter(option => option.selection !== undefined)
+  if (movementOptions.length > 0 && movementOptions.length !== options.length) {
+    fail(
+      'inconsistent-state',
+      path,
+      'a movement response window cannot mix movement and generic options.',
+    )
+  }
+  const movementSetKinds = new Set(movementOptions.map(option => (
+    `${option.selection!.kind}:${option.selection!.setId}`
+  )))
+  if (movementSetKinds.size > 1) {
+    fail(
+      'inconsistent-state',
+      path,
+      'movement response options must belong to one typed server-owned set.',
+    )
+  }
+
   const seen = new Set<string>()
   const seenSelections = new Set<string>()
   for (const [index, option] of options.entries()) {
@@ -1034,7 +1073,7 @@ const parseOptions = (
     }
     seen.add(option.id)
     if (!option.selection) continue
-    const selectionKey = movementSelectionKey(option.selection)
+    const selectionKey = pendingMoveMovementSelectionKey(option.selection)
     if (seenSelections.has(selectionKey)) {
       fail(
         'duplicate-id',

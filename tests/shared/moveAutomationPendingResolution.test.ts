@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest'
 import {
+  pendingMoveMovementOptionId,
+  pendingMoveMovementOptionLabelKey,
+  type PendingMoveMovementSelection,
+} from '#shared/moveAutomation/responseOptions'
+import {
   PENDING_MOVE_RESOLUTION_LIMITS,
   PENDING_MOVE_RESOLUTION_SCHEMA_VERSION,
   PENDING_MOVE_RESOLUTION_STATUSES,
@@ -270,30 +275,41 @@ describe('pending move resolution contract', () => {
     expect(Object.isFrozen(parsed.outstandingWindows[0]?.options)).toBe(true)
   })
 
-  it('strictly stores server-issued movement selections without accepting arbitrary coordinates', () => {
+  it('strictly stores canonical server-issued movement selections without accepting mechanics', () => {
+    const movementOption = (selection: PendingMoveMovementSelection) => ({
+      id: pendingMoveMovementOptionId(selection),
+      labelKey: pendingMoveMovementOptionLabelKey(selection),
+      selection,
+    })
     const source = pendingResolution()
-    source.outstandingWindows[0].options = [{
-      id: 'movement.destination.1234abcd.3.0.1',
-      labelKey: 'move.movement.destination',
-      selection: {
+    source.outstandingWindows[0].options = [
+      movementOption({
         kind: 'movement-destination',
         setId: 'movement.destinations',
         destination: { x: 3, y: 0, z: 1 },
-      },
-    }, {
-      id: 'movement.direction.1234abcd.north',
-      labelKey: 'move.movement.direction.north',
-      selection: {
-        kind: 'movement-direction',
-        setId: 'movement.directions',
-        direction: 'north',
-        destination: { x: 1, y: 0, z: 0 },
-      },
-    }]
+      }),
+      movementOption({
+        kind: 'movement-destination',
+        setId: 'movement.destinations',
+        destination: { x: 4, y: 0, z: 1 },
+      }),
+    ]
 
     const parsed = parsePendingMoveResolution(source)
     expect(parsed.outstandingWindows[0]?.options).toEqual(source.outstandingWindows[0].options)
     expect(Object.isFrozen(parsed.outstandingWindows[0]?.options[0]?.selection)).toBe(true)
+
+    const directionSource = pendingResolution()
+    const direction = movementOption({
+      kind: 'movement-direction',
+      setId: 'movement.directions',
+      direction: 'north',
+      destination: { x: 1, y: 0, z: 0 },
+    })
+    directionSource.outstandingWindows[0].options = [direction]
+    expect(parsePendingMoveResolution(directionSource).outstandingWindows[0]?.options).toEqual([
+      direction,
+    ])
 
     const clientMechanics = structuredClone(source)
     clientMechanics.outstandingWindows[0].options[0].selection.path = [{ x: 3, y: 0, z: 1 }]
@@ -302,12 +318,26 @@ describe('pending move resolution contract', () => {
       'invalid-pending-resolution',
     )
 
-    const duplicateDestination = structuredClone(source)
-    duplicateDestination.outstandingWindows[0].options[1].selection = {
-      kind: 'movement-destination',
-      setId: 'movement.destinations',
-      destination: { x: 3, y: 0, z: 1 },
+    for (const forged of [
+      { ...source.outstandingWindows[0].options[0], id: 'movement.destination.forged.3.0.1' },
+      { ...source.outstandingWindows[0].options[0], labelKey: 'move.movement.direction.north' },
+    ]) {
+      const forgedSource = structuredClone(source)
+      forgedSource.outstandingWindows[0].options[0] = forged
+      expectPendingError(
+        () => parsePendingMoveResolution(forgedSource),
+        'invalid-pending-resolution',
+      )
     }
+
+    const mixedKinds = structuredClone(source)
+    mixedKinds.outstandingWindows[0].options[1] = direction
+    expectPendingError(() => parsePendingMoveResolution(mixedKinds), 'inconsistent-state')
+
+    const duplicateDestination = structuredClone(source)
+    duplicateDestination.outstandingWindows[0].options[1] = structuredClone(
+      duplicateDestination.outstandingWindows[0].options[0],
+    )
     expectPendingError(
       () => parsePendingMoveResolution(duplicateDestination),
       'duplicate-id',

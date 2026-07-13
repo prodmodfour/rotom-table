@@ -638,6 +638,13 @@ export const validateMoveSpecOperationSequence = (
   }
   for (const { operation, path } of movementChoiceEntries) {
     if (operation.kind !== 'movement-request' || !operation.payload.choice) continue
+    if (operation.phase !== 'movement') {
+      fail(
+        'invalid-definition',
+        `${path}.phase`,
+        'a durable movement choice must execute in the movement phase.',
+      )
+    }
     if (operation.recipients.kind !== 'actor') {
       fail(
         'invalid-definition',

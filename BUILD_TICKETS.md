@@ -1651,7 +1651,7 @@ Status: DONE
 
 ## MA-125A — Materialize authoritative movement choice options
 
-Status: TODO
+Status: DONE
 
 **Depends on:** MA-105, MA-120
 **Commit:** `feat(move-automation): materialize legal movement choices`

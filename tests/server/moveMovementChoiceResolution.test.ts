@@ -4,6 +4,9 @@ import type { SheetPlacement, TabletopMap } from '~/types/map'
 import type { TrainerSheet } from '~/types/trainerSheet'
 import { createEmptyEncounterState } from '#shared/moveAutomation/encounterState'
 import {
+  parsePendingMoveResolution,
+} from '#shared/moveAutomation/pendingResolution'
+import {
   isAuthoritativePendingMoveStatePlan,
   planAuthoritativeMoveStateExecution,
 } from '~~/server/domain/planAuthoritativeMoveState'
@@ -57,7 +60,11 @@ const actorSheet = (): CharacterSheet => ({
   combat: { currentHp: 50 },
 })
 
-const movementSpec = () => ({
+const movementSpec = (choice: Record<string, unknown> = {
+  kind: 'destination',
+  promptKey: 'movement-test.choose-destination',
+  allowPass: true,
+}) => ({
   schemaVersion: 2,
   canonicalId: 'Swords Dance',
   version: 125,
@@ -87,11 +94,7 @@ const movementSpec = () => ({
         mode: 'voluntary',
         distance: 3,
         destinationSetId: 'movement-test.destinations',
-        choice: {
-          kind: 'destination',
-          promptKey: 'movement-test.choose-destination',
-          allowPass: true,
-        },
+        choice,
       },
     }],
   }, {
@@ -129,8 +132,10 @@ const movementSpec = () => ({
   },
 })
 
-const runtimeRegistry = (): MoveAutomationRuntimeRegistry => {
-  const definition = validateMoveSpec(movementSpec())
+const runtimeRegistry = (
+  spec: ReturnType<typeof movementSpec> = movementSpec(),
+): MoveAutomationRuntimeRegistry => {
+  const definition = validateMoveSpec(spec)
   const runtime: MoveSpecV2Runtime = Object.freeze({
     canonicalId: definition.spec.canonicalId,
     kind: 'movespec-v2',
@@ -257,6 +262,48 @@ describe('durable MoveSpec movement choices', () => {
         }),
       }),
     ]))
+  })
+
+  it('materializes canonical direction options in a round-trippable pending candidate without moving', () => {
+    const registry = runtimeRegistry(movementSpec({
+      kind: 'direction',
+      promptKey: 'movement-test.choose-direction',
+      allowPass: false,
+      directions: ['south', 'east', 'north'],
+    }))
+    const resources = sheets()
+    const map = mapFixture()
+    const mapBefore = structuredClone(map)
+    const declaration = planAuthoritativeMoveStateExecution({
+      map,
+      ...resources,
+      intent,
+      random: () => { throw new Error('movement choices must not draw randomness') },
+      now: () => 1_000,
+      operationId: 'op_movementdeclare4',
+      pendingResolutionId: 'resolution-movement-choice-4',
+      runtimeRegistry: registry,
+    })
+    expect(isAuthoritativePendingMoveStatePlan(declaration)).toBe(true)
+    if (!isAuthoritativePendingMoveStatePlan(declaration)) return
+
+    const pending = declaration.suspension.pendingResolution
+    expect(pending.outstandingWindows[0]?.options.map(option => (
+      option.selection?.kind === 'movement-direction'
+        ? [option.selection.direction, option.selection.destination]
+        : null
+    ))).toEqual([
+      ['north', { x: 1, y: 0, z: 0 }],
+      ['east', { x: 4, y: 0, z: 1 }],
+      ['south', { x: 1, y: 0, z: 3 }],
+    ])
+    expect(parsePendingMoveResolution(
+      JSON.parse(JSON.stringify(pending)) as unknown,
+    )).toEqual(pending)
+    expect(declaration.nextMap.placements[0]?.position).toEqual({ x: 1, y: 0, z: 1 })
+    expect(map).toEqual(mapBefore)
+    expect(Object.keys(pending.publicSummary)).not.toContain('options')
+    expect(Object.keys(pending.publicSummary)).not.toContain('ownership')
   })
 
   it('fails closed when the stored destination is no longer oracle-legal on resume', () => {

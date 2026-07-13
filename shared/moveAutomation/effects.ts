@@ -299,6 +299,7 @@ export const MOVE_EFFECT_OPERATION_LIMITS = Object.freeze({
   diceCount: 100,
   diceSides: 10_000,
   numericMagnitude: 1_000_000,
+  movementChoiceDistance: 1_000,
   durationCount: 10_000,
   effectStacks: ENCOUNTER_EFFECT_LIMITS.stacks,
   hazardLayers: 64,
@@ -3455,7 +3456,9 @@ const parseMovementRequestPayload = (
       ownValue(input, 'distance', path),
       `${path}.distance`,
       0,
-      MOVE_EFFECT_OPERATION_LIMITS.numericMagnitude,
+      hasChoice
+        ? MOVE_EFFECT_OPERATION_LIMITS.movementChoiceDistance
+        : MOVE_EFFECT_OPERATION_LIMITS.numericMagnitude,
     ),
     destinationSetId: parseNullableStableId(
       ownValue(input, 'destinationSetId', path),

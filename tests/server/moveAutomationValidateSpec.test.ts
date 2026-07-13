@@ -792,6 +792,15 @@ describe('authoritative MoveSpec validation and hashing', () => {
       'invalid-definition',
     )
 
+    const wrongPhase = structuredClone(valid)
+    wrongPhase.phases.at(-1)!.phase = 'schedule'
+    wrongPhase.phases.at(-1)!.operations[0]!.phase = 'schedule'
+    expectDefinitionError(
+      () => validateMoveSpec(wrongPhase),
+      'invalid-definition',
+      'spec.phases[2].operations[0].phase',
+    )
+
     const targetOwned = structuredClone(valid)
     targetOwned.phases.at(-1)!.operations[0]!.recipients = { kind: 'hit-targets' }
     expectDefinitionError(

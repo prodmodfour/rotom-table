@@ -1,5 +1,7 @@
 import {
   MOVE_RESPONSE_OPTION_LIMITS,
+  pendingMoveMovementOptionId,
+  pendingMoveMovementOptionLabelKey,
   type PendingMoveDirectionSelection,
   type PendingMoveDestinationSelection,
   type PendingMoveMovementSelection,
@@ -10,8 +12,12 @@ import {
   MOVE_AUTOMATION_AREA_DIRECTIONS,
   type MoveAutomationAreaDirection,
 } from '~/types/moveAutomation'
-import { buildMoveAutomationPassDirectionSteps } from '~/utils/moveAutomationDirections'
 import {
+  buildMoveAutomationPassDirectionSteps,
+  moveAutomationAreaDirectionVector,
+} from '~/utils/moveAutomationDirections'
+import {
+  AUTHORITATIVE_MOVEMENT_LIMITS,
   resolveAuthoritativeMovement,
   type AuthoritativeMovementSheetRead,
   type AuthoritativeMovementSheets,
@@ -122,7 +128,9 @@ const validPlacementId = (value: unknown): value is string => (
 )
 
 const validDistance = (value: unknown): value is number => (
-  Number.isSafeInteger(value) && Number(value) > 0 && Number(value) <= 1_000
+  Number.isSafeInteger(value)
+  && Number(value) > 0
+  && Number(value) <= AUTHORITATIVE_MOVEMENT_LIMITS.policyCost
 )
 
 const validAnchor = (value: unknown): value is GridAnchor => {
@@ -135,32 +143,23 @@ const validAnchor = (value: unknown): value is GridAnchor => {
 
 const anchorKey = (anchor: GridAnchor): string => `${anchor.x},${anchor.y},${anchor.z}`
 
+/** Canonical map order: elevation, row, then column. */
+const compareAnchors = (left: GridAnchor, right: GridAnchor): number => (
+  left.y - right.y || left.z - right.z || left.x - right.x
+)
+
 const sameAnchor = (left: GridAnchor, right: GridAnchor): boolean => (
   left.x === right.x && left.y === right.y && left.z === right.z
 )
 
-const stableNamespaceHash = (value: string): string => {
-  let hash = 0x811c9dc5
-  for (let index = 0; index < value.length; index += 1) {
-    hash ^= value.charCodeAt(index)
-    hash = Math.imul(hash, 0x01000193)
-  }
-  return (hash >>> 0).toString(16).padStart(8, '0')
+interface ValidatedMovementChoiceBase {
+  readonly origin: GridAnchor
+  readonly sheetReads: readonly AuthoritativeMovementSheetRead[]
 }
 
-const destinationOptionId = (setId: string, destination: GridAnchor): string => (
-  `movement.destination.${stableNamespaceHash(setId)}.${destination.x}.${destination.y}.${destination.z}`
-)
-
-const directionOptionId = (
-  setId: string,
-  direction: MoveAutomationAreaDirection,
-  destination: GridAnchor,
-): string => (
-  `movement.direction.${stableNamespaceHash(setId)}.${direction}.${destination.x}.${destination.y}.${destination.z}`
-)
-
-const validateBaseInput = (input: AuthoritativeMovementChoiceInputBase): GridAnchor => {
+const validateBaseInput = (
+  input: AuthoritativeMovementChoiceInputBase,
+): ValidatedMovementChoiceBase => {
   if (!validStableId(input.setId) || !validPlacementId(input.placementId)) {
     return fail('movement-choice-invalid', 'Movement choice set and placement IDs must be bounded identifiers.')
   }
@@ -171,7 +170,29 @@ const validateBaseInput = (input: AuthoritativeMovementChoiceInputBase): GridAnc
   if (placements.length !== 1 || !validAnchor(placements[0]?.position)) {
     return fail('movement-choice-invalid', 'Movement choice actor must resolve to one authoritative placement.')
   }
-  return { ...placements[0]!.position }
+  const origin = { ...placements[0]!.position }
+  const validation = resolveAuthoritativeMovement({
+    map: input.map,
+    sheets: input.sheets,
+    placementId: input.placementId,
+    mode: 'shift',
+    destination: origin,
+    policy: {
+      kind: 'standard',
+      allowSamePosition: true,
+      maximumCost: input.maximumDistance,
+    },
+  })
+  if (!validation.ok) {
+    return fail(
+      'movement-choice-invalid',
+      `Movement choice authoritative snapshot is invalid (${validation.reasonCode}).`,
+    )
+  }
+  return {
+    origin,
+    sheetReads: validation.sheetReads,
+  }
 }
 
 const deduplicateSheetReads = (
@@ -239,19 +260,15 @@ const normalizedCandidates = (
       `Movement choice candidate list exceeds ${AUTHORITATIVE_MOVEMENT_CHOICE_LIMITS.candidateAnchors} anchors.`,
     )
   }
-  const seen = new Set<string>()
-  return input.candidateDestinations.map((candidate) => {
+  const byAnchor = new Map<string, GridAnchor>()
+  for (const candidate of input.candidateDestinations) {
     if (!validAnchor(candidate)) {
       return fail('movement-choice-invalid', 'Movement choice candidates must be safe integer anchors.')
     }
     const detached = { x: candidate.x, y: candidate.y, z: candidate.z }
-    const key = anchorKey(detached)
-    if (seen.has(key)) {
-      return fail('movement-choice-invalid', `Movement choice candidate ${key} is duplicated.`)
-    }
-    seen.add(key)
-    return detached
-  })
+    if (!byAnchor.has(anchorKey(detached))) byAnchor.set(anchorKey(detached), detached)
+  }
+  return [...byAnchor.values()].sort(compareAnchors)
 }
 
 const resolveDestination = (
@@ -292,27 +309,33 @@ const directionSelection = (
 const choiceForDestination = (
   input: AuthoritativeMovementChoiceInputBase,
   movement: AuthoritativeMovementSuccess,
-): AuthoritativeMovementChoice => ({
-  option: {
-    id: destinationOptionId(input.setId, movement.destination),
-    labelKey: 'move.movement.destination',
-    selection: destinationSelection(input.setId, movement.destination),
-  },
-  movement,
-})
+): AuthoritativeMovementChoice => {
+  const selection = destinationSelection(input.setId, movement.destination)
+  return {
+    option: {
+      id: pendingMoveMovementOptionId(selection),
+      labelKey: pendingMoveMovementOptionLabelKey(selection),
+      selection,
+    },
+    movement,
+  }
+}
 
 const choiceForDirection = (
   input: AuthoritativeMovementChoiceInputBase,
   direction: MoveAutomationAreaDirection,
   movement: AuthoritativeMovementSuccess,
-): AuthoritativeMovementChoice => ({
-  option: {
-    id: directionOptionId(input.setId, direction, movement.destination),
-    labelKey: `move.movement.direction.${direction}`,
-    selection: directionSelection(input.setId, direction, movement.destination),
-  },
-  movement,
-})
+): AuthoritativeMovementChoice => {
+  const selection = directionSelection(input.setId, direction, movement.destination)
+  return {
+    option: {
+      id: pendingMoveMovementOptionId(selection),
+      labelKey: pendingMoveMovementOptionLabelKey(selection),
+      selection,
+    },
+    movement,
+  }
+}
 
 const assertOptionLimit = (choices: readonly AuthoritativeMovementChoice[]): void => {
   if (choices.length > AUTHORITATIVE_MOVEMENT_CHOICE_LIMITS.options) {
@@ -326,10 +349,10 @@ const assertOptionLimit = (choices: readonly AuthoritativeMovementChoice[]): voi
 const enumerateDestinations = (
   input: EnumerateAuthoritativeDestinationChoicesInput,
 ): AuthoritativeMovementChoiceSet => {
-  const origin = validateBaseInput(input)
-  const candidates = normalizedCandidates(input, origin)
+  const base = validateBaseInput(input)
+  const candidates = normalizedCandidates(input, base.origin)
   const choices: AuthoritativeMovementChoice[] = []
-  const reads: AuthoritativeMovementSheetRead[] = []
+  const reads: AuthoritativeMovementSheetRead[] = [...base.sheetReads]
   for (const destination of candidates) {
     const result = resolveDestination(input, destination)
     reads.push(...result.sheetReads)
@@ -347,6 +370,21 @@ const enumerateDestinations = (
   })
 }
 
+const followsReviewedDirection = (
+  movement: AuthoritativeMovementSuccess,
+  direction: MoveAutomationAreaDirection,
+): boolean => {
+  const vector = moveAutomationAreaDirectionVector(direction)
+  if (!vector) return false
+  return movement.path.slice(1).every((anchor, index) => {
+    const previous = movement.path[index]
+    return previous !== undefined
+      && anchor.x - previous.x === vector.x
+      && anchor.y - previous.y === vector.y
+      && anchor.z - previous.z === vector.z
+  })
+}
+
 const legalDirectionMovement = (
   input: EnumerateAuthoritativeDirectionChoicesInput,
   origin: GridAnchor,
@@ -361,7 +399,7 @@ const legalDirectionMovement = (
   for (const step of [...steps].reverse()) {
     const result = resolveDestination(input, step.position)
     reads.push(...result.sheetReads)
-    if (result.ok) return result
+    if (result.ok && followsReviewedDirection(result, direction)) return result
   }
   return null
 }
@@ -369,22 +407,25 @@ const legalDirectionMovement = (
 const enumerateDirections = (
   input: EnumerateAuthoritativeDirectionChoicesInput,
 ): AuthoritativeMovementChoiceSet => {
-  const origin = validateBaseInput(input)
+  const base = validateBaseInput(input)
   if (
     input.directions.length === 0
     || input.directions.length > MOVE_AUTOMATION_AREA_DIRECTIONS.length
-    || new Set(input.directions).size !== input.directions.length
     || input.directions.some(direction => !MOVEMENT_DIRECTION_SET.has(direction))
   ) {
     return fail(
       'movement-choice-invalid',
-      'Movement direction choices must contain one to ten distinct reviewed directions.',
+      'Movement direction choices must contain one to ten reviewed directions.',
     )
   }
+  const requestedDirections = new Set(input.directions)
+  const directions = MOVE_AUTOMATION_AREA_DIRECTIONS.filter(direction => (
+    requestedDirections.has(direction)
+  ))
   const choices: AuthoritativeMovementChoice[] = []
-  const reads: AuthoritativeMovementSheetRead[] = []
-  for (const direction of input.directions) {
-    const movement = legalDirectionMovement(input, origin, direction, reads)
+  const reads: AuthoritativeMovementSheetRead[] = [...base.sheetReads]
+  for (const direction of directions) {
+    const movement = legalDirectionMovement(input, base.origin, direction, reads)
     if (movement) choices.push(choiceForDirection(input, direction, movement))
   }
   assertOptionLimit(choices)
@@ -405,12 +446,6 @@ export const enumerateAuthoritativeMovementChoices = (
   ? enumerateDirections(input)
   : enumerateDestinations(input)
 
-const expectedOptionId = (selection: PendingMoveMovementSelection): string => (
-  selection.kind === 'movement-direction'
-    ? directionOptionId(selection.setId, selection.direction, selection.destination)
-    : destinationOptionId(selection.setId, selection.destination)
-)
-
 /**
  * Revalidate one stored server-issued option against fresh authoritative state.
  * A changed endpoint, direction set, occupancy, capability, path, or distance
@@ -424,7 +459,7 @@ export const revalidateAuthoritativeMovementChoice = (
   if (
     !selection
     || selection.setId !== input.setId
-    || input.option.id !== expectedOptionId(selection)
+    || input.option.id !== pendingMoveMovementOptionId(selection)
     || (input.kind === 'destination' && selection.kind !== 'movement-destination')
     || (input.kind === 'direction' && selection.kind !== 'movement-direction')
   ) {
