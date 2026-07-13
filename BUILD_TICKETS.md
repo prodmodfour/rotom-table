@@ -9,7 +9,7 @@ Ticket statuses:
 
 The build loop must select the lowest-numbered TODO ticket. Each ticket below maps to one ticket from the supplied planning file; build ticket numbers follow that document's suggested order when present.
 
-Autonomous cycle rules for every ticket: implement only the selected ticket, run `scripts/quality-gate.sh`, update only the selected ticket status, commit with a conventional commit message, and leave the working tree clean. The final ticket (`MA-299`) may also set `AUTOMATION_STATUS: DONE` after all 282 refreshed tickets are complete.
+Autonomous cycle rules for every ticket: implement only the selected ticket, run `scripts/quality-gate.sh`, update only the selected ticket status, commit with a conventional commit message, and leave the working tree clean. The final ticket (`MA-299`) may also set `AUTOMATION_STATUS: DONE` after all 284 refreshed tickets are complete.
 
 ---
 
@@ -50,7 +50,7 @@ When a ticket introduces a new pure module, prefer this layout:
 
 The existing `src/utils/move-automation/` registry remains the v1 compatibility surface until the retirement tickets at the end.
 
-Queue size at this baseline: **282 commits**—176 engine/state/QA tickets, 33 conformance batches for the registered 258, and 73 implementation batches for the missing 518.
+Queue size at this baseline: **284 commits**—178 engine/state/QA tickets, 33 conformance batches for the registered 258, and 73 implementation batches for the missing 518.
 
 ## Decisions already locked
 
@@ -1591,18 +1591,44 @@ Status: DONE
 
 **Done:** Movement legality can be altered by typed effects and restored on expiry.
 
-## MA-124 — Enforce action and movement costs
+## MA-124A — Define authoritative action-resource cost plans
 
 Status: TODO
 
 **Depends on:** MA-064, MA-120
+**Commit:** `feat(move-automation): plan authoritative action resource costs`
+
+**Touch:** `shared/moveAutomation/resourceCosts.ts`, `shared/moveAutomation/spec.ts`, `server/domain/moveAutomation/reduceEncounterResources.ts`, `server/domain/moveAutomation/planMoveResources.ts`, and focused parser/reducer/planner tests.
+
+**Implement:**
+
+- Define strict reviewed MoveSpec cost declarations with stable IDs and explicit phases for Standard, Shift, Swift, Free, Full, Interrupt/Reaction, movement distance, once-per-turn, Exhaust, Set-Up/Execute, Priority, and explicit no-cost exceptions. Reject unknown, unbounded, or client-authored cost mechanics.
+- Build a pure immutable planning seam that consumes the authoritative encounter resource ledger plus server-derived movement distance/budget and returns ordered typed spends for a selected phase window.
+- Centralize action coupling and policy semantics, including Full versus Standard/Shift, shared Interrupt/Reaction availability, once-per-turn resets, Exhaust forfeiture, Set-Up/Execute identity, Priority restrictions, and reviewed no-cost outcomes.
+
+**Tests:** Cover strict cost/spec parsing, every action family, Full and reaction coupling, oracle-derived movement limits, once-per-turn reset, Exhaust, Set-Up/Execute, Priority, no-cost, deterministic phase-window ordering, and failed-plan immutability.
+
+**Done:** For one authoritative snapshot, cost planning returns either one deterministic bounded phase-scoped resource plan or a typed failure without mutating any input; persistence and live-command integration remain out of scope.
+
+## MA-124B — Apply authoritative action and movement costs
+
+Status: TODO
+
+**Depends on:** MA-124A
 **Commit:** `feat(move-automation): spend authoritative action resources`
 
-**Touch:** movement/move preconditions, resource reducer, tests.
+**Touch:** movement and move preconditions/planners, immediate and pending resolve orchestration, normal token movement, and integration/idempotency tests.
 
-**Implement:** Spend Standard, Shift, Swift, Free, Full, Interrupt/Reaction, movement distance, and once-per-turn resources at declared phases. Encode Exhaust, Set-Up/Execute, Priority, and no-cost exceptions as reviewed spec data.
+**Implement:**
 
-**Done:** Cost failure rejects before mutations and duplicate resolution never spends twice.
+- Consume MA-124A plans for native v2 and adapted v1 moves, normal token movement, and suspended/resumed resolutions. Spend each declaration only at its reviewed phase, and derive movement distance and budget solely through the MA-120 oracle.
+- Commit resource spends atomically with the corresponding move effects, pending declaration state, or token movement. Validate availability before map, sheet, pending-resolution, operation-result, or realtime mutation; stale or rejected commands leave every resource unchanged.
+- Keep GM movement overrides and no-cost exceptions explicit and server-reviewed. On resume, skip phase costs already committed and do not pay deferred costs early.
+- Return stored outcomes for duplicate operation IDs without rerunning planning or spending any action, reaction, movement, or once-per-turn resource again.
+
+**Tests:** Cover accepted and rejected immediate v1/v2 moves, normal movement, representative action/reaction and special-policy costs, phase-split pending/resume flow, stale/atomic rollback, and duplicate declaration, response, and movement delivery.
+
+**Done:** Cost failure rejects before any mutation; accepted immediate, pending/resumed, and movement commands persist exactly the phase-authorized spends atomically; duplicate resolution never spends twice.
 
 ## MA-125 — Add durable destination and direction choices
 
@@ -2723,7 +2749,7 @@ Status: TODO
 
 ### Field, weather, terrain, room, and hazard cohorts
 
-**Start after:** MA-124 and MA-133–MA-145.
+**Start after:** MA-124B and MA-133–MA-145.
 
 ## MA-226 — Implement Acid Armor through Floral Healing
 
