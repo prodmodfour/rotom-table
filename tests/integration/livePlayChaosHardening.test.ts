@@ -317,7 +317,11 @@ describe('Final Wave C full-system live-play chaos hardening', () => {
     await tab.hydrate()
     await waitForReady(tab)
 
-    const lostHttp = tab.commands.moveToken({ placementId: 'token-alpha', position: { x: 3, y: 0, z: 3 } })
+    const lostHttp = tab.commands.moveToken({
+      placementId: 'token-alpha',
+      position: { x: 3, y: 0, z: 3 },
+      movementPolicy: 'gm-override',
+    })
     await vi.waitFor(() => expect(capturedHttpBody).not.toBeNull())
     await vi.waitFor(() => expect(tab.currentMap?.revision).toBe(1))
     rejectHttp(new Error('response lost'))
@@ -330,7 +334,12 @@ describe('Final Wave C full-system live-play chaos hardening', () => {
     tab.latestSource?.emitTransportError()
     await harness.executeCommandPath(
       MAP_API_PATHS.moveToken,
-      harness.moveTokenCommand({ baseRevision: 1, position: { x: 4, y: 0, z: 4 }, clientId: 'server-a' }),
+      harness.moveTokenCommand({
+        baseRevision: 1,
+        position: { x: 4, y: 0, z: 4 },
+        movementPolicy: 'gm-override',
+        clientId: 'server-a',
+      }),
       'gm',
       null,
     )
@@ -340,7 +349,11 @@ describe('Final Wave C full-system live-play chaos hardening', () => {
     expect(moveTokenPosition(tab.currentMap)).toEqual({ x: 4, y: 0, z: 4 })
 
     harness.serverA.publishLocalWakeups = false
-    const duplicate = await tab.commands.moveToken({ placementId: 'token-alpha', position: { x: 5, y: 0, z: 5 } })
+    const duplicate = await tab.commands.moveToken({
+      placementId: 'token-alpha',
+      position: { x: 5, y: 0, z: 5 },
+      movementPolicy: 'gm-override',
+    })
     expect(duplicate).toMatchObject({ dispatched: true })
     expect(tab.currentMap?.revision).toBe(3)
     const presentationCount = tab.presentationEvents.length
@@ -624,13 +637,21 @@ describe('Final Wave C full-system live-play chaos hardening', () => {
 
     const heldAlpha = createMoveInterception('hold-before-server')
     nextInterception.current = heldAlpha
-    const alphaMove = tabA.commands.moveToken({ placementId: 'token-alpha', position: { x: 3, y: 0, z: 3 } })
+    const alphaMove = tabA.commands.moveToken({
+      placementId: 'token-alpha',
+      position: { x: 3, y: 0, z: 3 },
+      movementPolicy: 'gm-override',
+    })
     await vi.waitFor(() => expect(heldAlpha.bodies).toHaveLength(1))
     expect(tabA.pendingPredictionOpIds).toEqual([interceptedOpId(heldAlpha)])
     expect(moveTokenPosition(tabA.currentMap, 'token-alpha')).toEqual({ x: 3, y: 0, z: 3 })
     expect(harness.readMap().revision).toBe(0)
 
-    await expect(tabB.commands.moveToken({ placementId: 'token-beta', position: { x: 5, y: 0, z: 1 } }))
+    await expect(tabB.commands.moveToken({
+      placementId: 'token-beta',
+      position: { x: 5, y: 0, z: 1 },
+      movementPolicy: 'gm-override',
+    }))
       .resolves.toMatchObject({ dispatched: true })
     await vi.waitFor(() => expect(tabA.currentMap?.revision).toBe(1))
     expect(tabA.pendingPredictionOpIds).toEqual([interceptedOpId(heldAlpha)])
@@ -648,12 +669,20 @@ describe('Final Wave C full-system live-play chaos hardening', () => {
 
     const heldStaleAlpha = createMoveInterception('hold-before-server')
     nextInterception.current = heldStaleAlpha
-    const staleAlphaMove = tabA.commands.moveToken({ placementId: 'token-alpha', position: { x: 7, y: 0, z: 7 } })
+    const staleAlphaMove = tabA.commands.moveToken({
+      placementId: 'token-alpha',
+      position: { x: 7, y: 0, z: 7 },
+      movementPolicy: 'gm-override',
+    })
     await vi.waitFor(() => expect(heldStaleAlpha.bodies).toHaveLength(1))
     expect(tabA.pendingPredictionOpIds).toEqual([interceptedOpId(heldStaleAlpha)])
     expect(moveTokenPosition(tabA.currentMap, 'token-alpha')).toEqual({ x: 7, y: 0, z: 7 })
 
-    await expect(tabB.commands.moveToken({ placementId: 'token-alpha', position: { x: 1, y: 0, z: 6 } }))
+    await expect(tabB.commands.moveToken({
+      placementId: 'token-alpha',
+      position: { x: 1, y: 0, z: 6 },
+      movementPolicy: 'gm-override',
+    }))
       .resolves.toMatchObject({ dispatched: true })
     await vi.waitFor(() => expect(tabA.pendingPredictionOpIds).toEqual([]))
     expect(moveTokenPosition(tabA.currentMap, 'token-alpha')).toEqual({ x: 1, y: 0, z: 6 })
@@ -679,14 +708,22 @@ describe('Final Wave C full-system live-play chaos hardening', () => {
 
     const heldFirstMove = createMoveInterception('hold-before-server')
     nextInterception.current = heldFirstMove
-    const firstMove = tab.commands.moveToken({ placementId: 'token-alpha', position: { x: 3, y: 0, z: 3 } })
+    const firstMove = tab.commands.moveToken({
+      placementId: 'token-alpha',
+      position: { x: 3, y: 0, z: 3 },
+      movementPolicy: 'gm-override',
+    })
     await vi.waitFor(() => expect(heldFirstMove.bodies).toHaveLength(1))
     const firstOpId = interceptedOpId(heldFirstMove)
     expect(tab.pendingPredictionOpIds).toEqual([firstOpId])
     expect(moveTokenPosition(tab.currentMap, 'token-alpha')).toEqual({ x: 3, y: 0, z: 3 })
     expect(harness.readMap().revision).toBe(0)
 
-    const latestMove = tab.commands.moveToken({ placementId: 'token-alpha', position: { x: 5, y: 0, z: 4 } })
+    const latestMove = tab.commands.moveToken({
+      placementId: 'token-alpha',
+      position: { x: 5, y: 0, z: 4 },
+      movementPolicy: 'gm-override',
+    })
     expect(moveTokenPosition(tab.currentMap, 'token-alpha')).toEqual({ x: 5, y: 0, z: 4 })
     expect(harness.readMap().revision).toBe(0)
 
@@ -915,7 +952,12 @@ describe('Final Wave C full-system live-play chaos hardening', () => {
     expect(tabOne.cursorStorage).not.toBe(tabTwo.cursorStorage)
     const direct = await harness.executeCommandPath(
       MAP_API_PATHS.moveToken,
-      harness.moveTokenCommand({ baseRevision: 0, position: { x: 6, y: 0, z: 6 }, clientId: 'tab-one-client' }),
+      harness.moveTokenCommand({
+        baseRevision: 0,
+        position: { x: 6, y: 0, z: 6 },
+        movementPolicy: 'gm-override',
+        clientId: 'tab-one-client',
+      }),
       'gm',
       null,
     )
@@ -928,7 +970,11 @@ describe('Final Wave C full-system live-play chaos hardening', () => {
 
     const queued = await tabOne.outbox.enqueue({
       requestPath: MAP_API_PATHS.moveToken,
-      body: harness.moveTokenCommand({ baseRevision: tabOne.currentMap?.revision ?? 0, position: { x: 7, y: 0, z: 7 } }) as unknown as Record<string, unknown>,
+      body: harness.moveTokenCommand({
+        baseRevision: tabOne.currentMap?.revision ?? 0,
+        position: { x: 7, y: 0, z: 7 },
+        movementPolicy: 'gm-override',
+      }) as unknown as Record<string, unknown>,
       authContext: { role: 'gm', profileId: null },
     })
     await tabTwo.commands.refreshOutboxEntries()

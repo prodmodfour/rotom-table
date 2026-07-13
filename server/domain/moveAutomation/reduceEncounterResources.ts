@@ -94,6 +94,12 @@ export interface SpendEncounterMoveResourceCostsInput {
   readonly round: number | null
   readonly turn: number | null
   readonly actedThisRound: boolean
+  /**
+   * Resource snapshot from before this resolution's already committed phases.
+   * Availability spends still use current resources; only cross-phase policy
+   * prerequisites such as Exhaust/Priority consult this baseline.
+   */
+  readonly prerequisiteResources?: EncounterTurnResourceDirectory
   /** Compatibility observation only; explicit once-per-turn costs enforce themselves. */
   readonly compatibilityOncePerTurnFlagId?: string | null
 }
@@ -524,7 +530,14 @@ export const spendEncounterMoveResourceCosts = (
     turn: input.turn,
     movementBudget: plannedMovementBudget,
   })
-  const initialLedger = ledger
+  const prerequisiteLedger = input.prerequisiteResources === undefined
+    ? ledger
+    : prepareLedgerWindow(parseEncounterTurnResources(input.prerequisiteResources), {
+        placementId: input.placementId,
+        round: input.round,
+        turn: input.turn,
+        movementBudget: plannedMovementBudget,
+      })
   const spends: EncounterMoveResourceCostSpend[] = []
 
   for (const declaration of costs) {
@@ -600,8 +613,8 @@ export const spendEncounterMoveResourceCosts = (
 
     if (cost.kind === 'exhaust') {
       if (
-        effectiveActionSpend(initialLedger, 'standard') > 0
-        || effectiveActionSpend(initialLedger, 'shift') > 0
+        effectiveActionSpend(prerequisiteLedger, 'standard') > 0
+        || effectiveActionSpend(prerequisiteLedger, 'shift') > 0
       ) {
         fail(
           'exhaust-prerequisite-failed',
@@ -681,7 +694,7 @@ export const spendEncounterMoveResourceCosts = (
     }
 
     if (cost.kind === 'priority') {
-      const acted = hasActedForPriority(initialLedger, input.actedThisRound)
+      const acted = hasActedForPriority(prerequisiteLedger, input.actedThisRound)
       if (cost.mode !== 'advanced' && acted) {
         fail(
           'priority-unavailable',

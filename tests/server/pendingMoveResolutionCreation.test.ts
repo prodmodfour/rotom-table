@@ -17,6 +17,10 @@ import {
   parsePendingMoveResolution,
 } from '#shared/moveAutomation/pendingResolution'
 import {
+  createEmptyEncounterState,
+  parseEncounterState,
+} from '#shared/moveAutomation/encounterState'
+import {
   MOVE_RESPONSE_COMMAND_SCHEMA_VERSION,
   MOVE_RESPONSE_COMMAND_TYPES,
   type GmCancelMoveResolutionCommand,
@@ -48,6 +52,7 @@ import {
   planAuthoritativeMoveStateExecution,
 } from '~~/server/domain/planAuthoritativeMoveState'
 import { validateMoveSpec } from '~~/server/domain/moveAutomation/validateSpec'
+import { spendEncounterMoveResourceCosts } from '~~/server/domain/moveAutomation/reduceEncounterResources'
 import {
   REGISTERED_MOVE_HANDLER_REGISTRY,
 } from '~~/server/domain/moveAutomation/handlers/registry'
@@ -151,6 +156,7 @@ interface PendingSpecOptions {
   readonly withDeferredEffects?: boolean
   readonly invalidDeclarationPhase?: boolean
   readonly withSecondWindow?: boolean
+  readonly withDeferredResourceCost?: boolean
   readonly allowPass?: boolean
   readonly canonicalMoveId?: string
 }
@@ -184,7 +190,8 @@ const pendingScratchSpec = (options: PendingSpecOptions) => {
       + (options.withDeferredEffects ? 2 : 0)
       + (options.invalidDeclarationPhase ? 4 : 0)
       + (options.withSecondWindow ? 8 : 0)
-      + (options.allowPass === false ? 16 : 0),
+      + (options.allowPass === false ? 16 : 0)
+      + (options.withDeferredResourceCost ? 32 : 0),
     targeting: {
       kind: 'single-target',
       minTargets: 1,
@@ -192,7 +199,23 @@ const pendingScratchSpec = (options: PendingSpecOptions) => {
       selector: { kind: 'selected-targets' },
     },
     preconditions: [],
-    costs: [],
+    costs: [{
+      id: 'scratch.cost.standard',
+      phase: 'pay',
+      cost: { kind: 'action-resource', resource: 'standard', amount: 1 },
+    }, ...(options.withDeferredResourceCost ? [{
+      id: 'scratch.cost.swift',
+      phase: 'schedule',
+      cost: { kind: 'action-resource' as const, resource: 'swift' as const, amount: 1 },
+    }, {
+      id: 'scratch.cost.exhaust',
+      phase: 'cleanup' as const,
+      cost: {
+        kind: 'exhaust' as const,
+        timing: 'next-turn' as const,
+        forfeitCommand: true,
+      },
+    }] : [])],
     phases: [
       ...(options.withDeclarationCost ? [{
         phase: declarationPhase,
@@ -261,26 +284,27 @@ const pendingScratchSpec = (options: PendingSpecOptions) => {
       }] : []),
       ...(!options.withDeferredEffects ? [{
         phase: choicePhase,
-        operations: [
-          choiceOperation,
-          ...(options.withSecondWindow ? [{
-            id: 'scratch.choose-follow-up',
-            kind: 'choice-request',
-            source: { kind: 'move', id: 'move.scratch' },
-            recipients: { kind: 'actor' },
-            phase: choicePhase,
-            reasonCode: 'move.scratch.choose-follow-up',
-            payload: {
-              requestId: 'scratch.follow-up-window',
-              promptKey: 'move.scratch.choose-follow-up',
-              options: [{
-                id: 'follow-up.finish',
-                labelKey: 'move.scratch.follow-up-finish',
-              }],
-              allowPass: true,
-            },
-          }] : []),
-        ],
+        operations: [choiceOperation],
+      }] : []),
+      ...(options.withSecondWindow ? [{
+        phase: 'schedule',
+        operations: [{
+          id: 'scratch.choose-follow-up',
+          kind: 'choice-request',
+          source: { kind: 'move', id: 'move.scratch' },
+          recipients: { kind: 'actor' },
+          phase: 'schedule',
+          reasonCode: 'move.scratch.choose-follow-up',
+          payload: {
+            requestId: 'scratch.follow-up-window',
+            promptKey: 'move.scratch.choose-follow-up',
+            options: [{
+              id: 'follow-up.finish',
+              labelKey: 'move.scratch.follow-up-finish',
+            }],
+            allowPass: true,
+          },
+        }],
       }] : []),
       {
         phase: 'usage',
@@ -423,6 +447,7 @@ const executePending = (
     readonly withDeferredEffects?: boolean
     readonly invalidDeclarationPhase?: boolean
     readonly withSecondWindow?: boolean
+    readonly withDeferredResourceCost?: boolean
     readonly planner?: LivePlayResolveMoveCommandDependencies['planner']
     readonly mapRepository?: LivePlayResolveMoveCommandDependencies['mapRepository']
     readonly sheetRepository?: LivePlayResolveMoveCommandDependencies['sheetRepository']
@@ -450,6 +475,7 @@ const executePending = (
       withDeferredEffects: options.withDeferredEffects,
       invalidDeclarationPhase: options.invalidDeclarationPhase,
       withSecondWindow: options.withSecondWindow,
+      withDeferredResourceCost: options.withDeferredResourceCost,
       allowPass: options.allowPass,
       canonicalMoveId: options.canonicalMoveId,
     }),
@@ -513,6 +539,7 @@ interface ResponseExecutionOptions {
   readonly withDeclarationCost?: boolean
   readonly withDeferredEffects?: boolean
   readonly withSecondWindow?: boolean
+  readonly withDeferredResourceCost?: boolean
   readonly allowPass?: boolean
   readonly canonicalMoveId?: string
   readonly now?: number
@@ -548,6 +575,7 @@ const executeParsedResponse = (input: ResponseExecutionOptions & {
     withDeclarationCost: input.withDeclarationCost ?? false,
     withDeferredEffects: input.withDeferredEffects,
     withSecondWindow: input.withSecondWindow,
+    withDeferredResourceCost: input.withDeferredResourceCost,
     allowPass: input.allowPass,
     canonicalMoveId: input.canonicalMoveId,
   }),
@@ -824,7 +852,9 @@ describe('pending move resolution creation', () => {
     expect(committedMap.revision).toBe(5)
     expect(committedMap.metadata).toEqual(beforeMap?.metadata)
     expect(committedMap.moveUsage).toEqual(beforeMap?.moveUsage)
-    expect(committedMap.encounterState?.turnResources).toEqual({})
+    expect(committedMap.encounterState?.turnResources['actor-token']).toMatchObject({
+      actions: { standard: { spent: 1 } },
+    })
     expect(committedMap.encounterState?.pendingResolutionSummaries).toEqual([
       response.result.pendingResolution,
     ])
@@ -832,6 +862,55 @@ describe('pending move resolution creation', () => {
     expect(harness.sheets.list()).toEqual(beforeSheets)
     expect(harness.ops.getOpRecord('pending-arena', command.opId)).toBeNull()
     expect(harness.database.connection.isTransaction).toBe(false)
+  })
+
+  it('rejects an unavailable declaration cost before creating pending state and replays the rejection', async () => {
+    const harness = createHarness()
+    const original = harness.maps.getBySlug('pending-arena')!
+    const seeded = spendEncounterMoveResourceCosts({}, {
+      placementId: 'actor-token',
+      canonicalMoveId: 'Seed Standard',
+      resolutionId: 'seed.pending.standard',
+      sourceOperationId: 'seed.pending.operation',
+      costs: [{
+        id: 'seed.cost.standard',
+        phase: 'pay',
+        cost: { kind: 'action-resource', resource: 'standard', amount: 1 },
+      }],
+      movementBudget: null,
+      movementDistance: 0,
+      round: 1,
+      turn: null,
+      actedThisRound: false,
+    })
+    const map = {
+      ...original,
+      encounterState: {
+        ...createEmptyEncounterState(),
+        turnResources: seeded.resources,
+      },
+    }
+    harness.maps.save({ slug: map.slug, document: map, revision: 4, updatedAt: 100 })
+    const command = commandFor(map, 'op_pendingcostreject')
+    const beforeMap = deepCloneJson(harness.maps.getBySlug('pending-arena'))
+    const beforeSheets = deepCloneJson(harness.sheets.list())
+
+    const first = await executePending(harness, command)
+    const duplicate = await executePending(harness, command, {
+      planner: () => { throw new Error('stored rejection must not replan') },
+      random: () => { throw new Error('stored rejection must not reroll') },
+    })
+
+    expect(first.result).toMatchObject({
+      ok: false,
+      reason: 'conflict',
+      currentRevision: 4,
+      message: expect.stringContaining('action-unavailable'),
+    })
+    expect(duplicate.result).toEqual(first.result)
+    expect(harness.maps.getBySlug('pending-arena')).toEqual(beforeMap)
+    expect(harness.sheets.list()).toEqual(beforeSheets)
+    expect(harness.pending.getByOrigin('pending-arena', command.opId)).toBeNull()
   })
 
   it('keeps ordinary damage and conditions deferred when it publishes the pending summary', async () => {
@@ -1169,19 +1248,17 @@ describe('pending move resolution creation', () => {
       operations: expect.arrayContaining([
         expect.objectContaining({
           stateChangeKind: 'encounter-state',
-          availability: 'available',
-          inverse: expect.objectContaining({
-            kind: 'restore-encounter-turn-resources',
-          }),
-        }),
-        expect.objectContaining({
-          stateChangeKind: 'encounter-state',
           availability: 'unavailable',
           safety: 'irreversible',
           unavailableReasonCode: 'pending-resolution-transition-is-terminal',
         }),
       ]),
     })
+    expect(terminalOp?.moveCompensation?.operations).not.toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        inverse: expect.objectContaining({ kind: 'restore-encounter-turn-resources' }),
+      }),
+    ]))
     expect(JSON.stringify(completed)).not.toContain('restore-encounter-turn-resources')
 
     const replay = replayMoveResponseCommandUseCase({ role: 'gm', command }, {
@@ -1192,6 +1269,131 @@ describe('pending move resolution creation', () => {
     expect(replay?.result).toEqual(completed.result)
     expect(harness.maps.getBySlug('pending-arena')?.revision).toBe(6)
     expect(harness.pending.getById(terminal!.resolutionId)?.revision).toBe(1)
+  })
+
+  it('stores a deferred-cost response rejection without mutating or closing its pending window', async () => {
+    const harness = createHarness()
+    const original = harness.maps.getBySlug('pending-arena')!
+    const seeded = spendEncounterMoveResourceCosts({}, {
+      placementId: 'actor-token',
+      canonicalMoveId: 'Seed Swift',
+      resolutionId: 'seed.pending.swift',
+      sourceOperationId: 'seed.pending.swift.operation',
+      costs: [{
+        id: 'seed.cost.swift',
+        phase: 'pay',
+        cost: { kind: 'action-resource', resource: 'swift', amount: 1 },
+      }],
+      movementBudget: null,
+      movementDistance: 0,
+      round: 1,
+      turn: null,
+      actedThisRound: false,
+    })
+    const map = {
+      ...original,
+      encounterState: {
+        ...createEmptyEncounterState(),
+        turnResources: seeded.resources,
+      },
+    }
+    harness.maps.save({ slug: map.slug, document: map, revision: 4, updatedAt: 100 })
+    const declaration = commandFor(map, 'op_deferredrejectdecl')
+    const pendingResponse = await executePending(harness, declaration, {
+      withDeferredResourceCost: true,
+    })
+    expect(isPendingMoveDeclarationResult(pendingResponse.result)).toBe(true)
+    if (!isPendingMoveDeclarationResult(pendingResponse.result)) return
+    const command = responseCommand({
+      resolutionId: pendingResponse.result.pendingResolution.resolutionId,
+      baseRevision: 5,
+      opId: 'op_deferredrejectans',
+    })
+    const parsed = parsePendingMoveResponseCommand(command, {
+      pendingResolutionRepository: harness.pending,
+    })
+    const beforeMap = deepCloneJson(harness.maps.getBySlug('pending-arena'))
+    const beforePending = deepCloneJson(harness.pending.getById(
+      pendingResponse.result.pendingResolution.resolutionId,
+    ))
+
+    const first = executeParsedResponse({
+      harness,
+      parsed,
+      withDeferredResourceCost: true,
+    })
+    const duplicate = executeParsedResponse({
+      harness,
+      parsed,
+      withDeferredResourceCost: true,
+      random: () => { throw new Error('stored response rejection must not resume') },
+    })
+
+    expect(first.result).toMatchObject({
+      ok: false,
+      reason: 'conflict',
+      currentRevision: 5,
+      message: expect.stringMatching(/resumed authoritative resources .*action-unavailable/),
+    })
+    expect(duplicate.result).toEqual(first.result)
+    expect(harness.maps.getBySlug('pending-arena')).toEqual(beforeMap)
+    expect(harness.pending.getById(beforePending!.resolutionId)).toEqual(beforePending)
+  })
+
+  it('spends only reached cost phases and never repays declaration costs on resume or replay', async () => {
+    const harness = createHarness()
+    const declaration = commandFor(
+      harness.maps.getBySlug('pending-arena')!,
+      'op_phasecostdeclare',
+    )
+    const pendingResponse = await executePending(harness, declaration, {
+      withDeferredResourceCost: true,
+    })
+    expect(isPendingMoveDeclarationResult(pendingResponse.result)).toBe(true)
+    if (!isPendingMoveDeclarationResult(pendingResponse.result)) return
+
+    expect(harness.maps.getBySlug('pending-arena')?.encounterState
+      ?.turnResources['actor-token']).toMatchObject({
+      actions: {
+        standard: { spent: 1 },
+        swift: { spent: 0 },
+      },
+    })
+    const command = responseCommand({
+      resolutionId: pendingResponse.result.pendingResolution.resolutionId,
+      baseRevision: pendingResponse.result.revision,
+      opId: 'op_phasecostanswer',
+    })
+    const parsed = parsePendingMoveResponseCommand(command, {
+      pendingResolutionRepository: harness.pending,
+    })
+    const completed = executeParsedResponse({
+      harness,
+      parsed,
+      withDeferredResourceCost: true,
+    })
+    expect(completed.result).toMatchObject({ ok: true, revision: 6 })
+    expect(harness.maps.getBySlug('pending-arena')?.encounterState
+      ?.turnResources['actor-token']).toMatchObject({
+      actions: {
+        standard: { spent: 1 },
+        swift: { spent: 1 },
+      },
+      oncePerTurnFlags: [
+        { id: 'cost.exhaust.command' },
+        { id: 'cost.exhaust.next-turn' },
+      ],
+    })
+    const committedMap = deepCloneJson(harness.maps.getBySlug('pending-arena'))
+
+    const duplicate = executeParsedResponse({
+      harness,
+      parsed,
+      withDeferredResourceCost: true,
+      random: () => { throw new Error('duplicate response must not resume') },
+    })
+    expect(duplicate.result).toEqual(completed.result)
+    expect(harness.maps.getBySlug('pending-arena')).toEqual(committedMap)
   })
 
   it('reuses the durable roll prefix without drawing fresh randomness on resume', async () => {
@@ -1310,6 +1512,8 @@ describe('pending move resolution creation', () => {
     if (!isPendingMoveDeclarationResult(pendingResponse.result)) return
     expect((harness.sheets.getByRef('pokemon', 'actor')!.sheet.combat as { currentHp: number }).currentHp)
       .toBe(35)
+    expect(harness.maps.getBySlug('pending-arena')?.encounterState
+      ?.turnResources['actor-token']?.actions.standard.spent).toBe(1)
     const command = cancelCommand({
       resolutionId: pendingResponse.result.pendingResolution.resolutionId,
       baseRevision: 5,
@@ -1333,7 +1537,10 @@ describe('pending move resolution creation', () => {
     expect(harness.sheets.getByRef('pokemon', 'actor')?.revision).toBe(4)
     expect(harness.maps.getBySlug('pending-arena')).toMatchObject({
       revision: 6,
-      encounterState: { pendingResolutionSummaries: [] },
+      encounterState: {
+        pendingResolutionSummaries: [],
+        turnResources: {},
+      },
     })
     const terminal = harness.pending.getById(command.payload.resolutionId)
     expect(terminal).toMatchObject({
@@ -1467,6 +1674,7 @@ describe('pending move resolution creation', () => {
     const declaration = commandFor(harness.maps.getBySlug('pending-arena')!, 'op_resumenext0001')
     const pendingResponse = await executePending(harness, declaration, {
       withSecondWindow: true,
+      withDeferredResourceCost: true,
     })
     expect(isPendingMoveDeclarationResult(pendingResponse.result)).toBe(true)
     if (!isPendingMoveDeclarationResult(pendingResponse.result)) return
@@ -1480,6 +1688,7 @@ describe('pending move resolution creation', () => {
         opId: 'op_resumefirst001',
       }),
       withSecondWindow: true,
+      withDeferredResourceCost: true,
     })
     expect(first.result).toMatchObject({
       ok: true,
@@ -1487,13 +1696,40 @@ describe('pending move resolution creation', () => {
       revision: 6,
       patches: [],
     })
-    expect(harness.pending.getById(resolutionId)).toMatchObject({
+    expect(harness.maps.getBySlug('pending-arena')?.encounterState
+      ?.turnResources['actor-token']).toMatchObject({
+      actions: {
+        standard: { spent: 1 },
+        swift: { spent: 1 },
+      },
+      oncePerTurnFlags: [],
+    })
+    const storedAfterFirst = harness.pending.getById(resolutionId)
+    expect(storedAfterFirst).toMatchObject({
       status: 'pending',
       revision: 1,
       resolution: {
         outstandingWindows: [{ windowId: 'scratch.follow-up-window' }],
         chosenOptions: [{ windowId: 'scratch.style-window' }],
         publicSummary: { outstandingWindowCount: 1, status: 'pending' },
+      },
+    })
+    const cumulativeCost = storedAfterFirst?.declarationPlan?.changes.find(
+      change => change.kind === 'encounter-state',
+    )
+    const cumulativePrevious = cumulativeCost
+      ? parseEncounterState(cumulativeCost.previous)
+      : null
+    const cumulativeCurrent = cumulativeCost
+      ? parseEncounterState(cumulativeCost.current)
+      : null
+    expect(cumulativePrevious?.turnResources).toEqual({})
+    expect(cumulativePrevious?.pendingResolutionSummaries).toEqual([])
+    expect(cumulativeCurrent?.pendingResolutionSummaries).toEqual([])
+    expect(cumulativeCurrent?.turnResources['actor-token']).toMatchObject({
+      actions: {
+        standard: { spent: 1 },
+        swift: { spent: 1 },
       },
     })
 
@@ -1507,9 +1743,18 @@ describe('pending move resolution creation', () => {
         optionId: 'follow-up.finish',
       }),
       withSecondWindow: true,
+      withDeferredResourceCost: true,
       now: 3_000,
     })
     expect(second.result).toMatchObject({ ok: true, revision: 7 })
+    expect(harness.maps.getBySlug('pending-arena')?.encounterState
+      ?.turnResources['actor-token']).toMatchObject({
+      actions: { swift: { spent: 1 } },
+      oncePerTurnFlags: [
+        { id: 'cost.exhaust.command' },
+        { id: 'cost.exhaust.next-turn' },
+      ],
+    })
     expect(harness.pending.getById(resolutionId)).toMatchObject({
       status: 'committed',
       revision: 2,

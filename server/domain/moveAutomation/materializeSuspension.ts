@@ -7,6 +7,11 @@ import {
   type PendingMoveResolutionResourceRead,
   type PendingMoveResponseWindow,
 } from '#shared/moveAutomation/pendingResolution'
+import {
+  createEmptyEncounterState,
+  parseEncounterState,
+} from '#shared/moveAutomation/encounterState'
+import { sameJsonValue } from '~/utils/serialization'
 import type { AuthoritativeMoveSheetRead } from './context'
 import { deduplicateAuthoritativeMoveSheetReads } from './context'
 import type {
@@ -15,6 +20,7 @@ import type {
 } from './executeSpec'
 import type { MoveStateChangePlan } from './plan'
 import type { ValidatedMoveSpecDefinition } from './validateSpec'
+import { moveResourceCostsInPhaseWindow } from './planMoveResources'
 
 export type MoveSpecSuspensionMaterializationErrorCode =
   | 'invalid-continuation-revision'
@@ -85,6 +91,10 @@ const assertPlanOperationSources = (input: MaterializeMoveSpecSuspensionInput): 
     }
     allowedOperationIds.add(operation.id)
   }
+  const allowedCostIds = new Set(moveResourceCostsInPhaseWindow(
+    input.definition.spec.costs,
+    { maximumPhaseInclusive: input.execution.request.phase },
+  ).map(cost => cost.id))
   for (const change of input.preWindowPlan.changes) {
     if (
       change.kind !== 'sheet-state'
@@ -105,14 +115,35 @@ const assertPlanOperationSources = (input: MaterializeMoveSpecSuspensionInput): 
         `Declaration HP cost cannot change non-HP sheet fields in ${change.id}.`,
       )
     }
-    if (
-      change.sourceOperationId === null
-      || !allowedOperationIds.has(change.sourceOperationId)
-    ) {
+    const effectSource = change.sourceOperationId !== null
+      && allowedOperationIds.has(change.sourceOperationId)
+    const resourceCostSource = change.sourceOperationId !== null
+      && allowedCostIds.has(change.sourceOperationId)
+    if (!effectSource && !resourceCostSource) {
       fail(
         'pre-window-plan-invalid',
-        `Pre-window state change ${change.id} is not sourced by an interpreter-approved operation.`,
+        `Pre-window state change ${change.id} is not sourced by an interpreter-approved operation or reviewed resource cost.`,
       )
+    }
+    if (resourceCostSource) {
+      if (change.kind !== 'encounter-state') {
+        fail(
+          'pre-window-plan-invalid',
+          `Resource cost ${change.sourceOperationId} may change only encounter turn resources.`,
+        )
+      }
+      const previous = parseEncounterState(
+        change.previous ?? createEmptyEncounterState(),
+      )
+      const current = parseEncounterState(
+        change.current ?? createEmptyEncounterState(),
+      )
+      if (!sameJsonValue(previous, { ...current, turnResources: previous.turnResources })) {
+        fail(
+          'pre-window-plan-invalid',
+          `Resource cost ${change.sourceOperationId} changed state outside encounter turn resources.`,
+        )
+      }
     }
     if (
       (change.scope.kind === 'map'

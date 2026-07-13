@@ -3,6 +3,7 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { createEmptyEncounterState } from '#shared/moveAutomation/encounterState'
+import { spendEncounterMoveResourceCosts } from '../../server/domain/moveAutomation/reduceEncounterResources'
 import {
   MOVE_RESPONSE_COMMAND_SCHEMA_VERSION,
   MOVE_RESPONSE_COMMAND_TYPES,
@@ -414,6 +415,99 @@ describe('durable Attack of Opportunity commands', () => {
     ])
   })
 
+  it('rejects an unavailable reaction cost without changing the pending response or map', async () => {
+    const harness = createHarness()
+    const map = harness.maps.getBySlug('arena')!
+    const spent = spendEncounterMoveResourceCosts({}, {
+      placementId: 'attacker',
+      canonicalMoveId: 'Seed Reaction',
+      resolutionId: 'seed.reaction.resolution',
+      sourceOperationId: 'seed.reaction.operation',
+      costs: [{
+        id: 'seed.cost.interrupt',
+        phase: 'pay',
+        cost: { kind: 'action-resource', resource: 'interrupt', amount: 1 },
+      }],
+      movementBudget: null,
+      movementDistance: 0,
+      round: 3,
+      turn: null,
+      actedThisRound: false,
+    })
+    harness.maps.save({
+      slug: map.slug,
+      document: {
+        ...map,
+        encounterState: {
+          ...createEmptyEncounterState(),
+          turnResources: spent.resources,
+        },
+      },
+      revision: map.revision ?? 0,
+      updatedAt: map.updatedAt ?? 20,
+    })
+    await executeAttackOfOpportunityLivePlayCommandUseCase({
+      role: 'gm',
+      command: triggerCommand('op_aoounavailable1'),
+      clientId: 'gm-client',
+      expectedType: LIVE_PLAY_COMMAND_TYPES.UPDATE_ATTACK_OF_OPPORTUNITY,
+    }, harness.triggerDeps)
+    const pending = harness.pending.listByMap('arena')[0]!
+    const window = pending.resolution.outstandingWindows[0]!
+    const command: MoveResponseCommand = {
+      schemaVersion: MOVE_RESPONSE_COMMAND_SCHEMA_VERSION,
+      opId: 'op_aoounavailable2',
+      mapSlug: 'arena',
+      baseRevision: 8,
+      type: MOVE_RESPONSE_COMMAND_TYPES.REACT,
+      payload: {
+        resolutionId: pending.resolutionId,
+        windowId: window.windowId,
+        optionId: window.options[0]!.id,
+      },
+    }
+    const random = vi.fn(() => 0.95)
+    const request = () => resumePendingMoveResolutionUseCase({
+      command,
+      storedResolution: pending,
+      window,
+      option: window.options[0]!,
+      role: 'gm' as const,
+      playerProfile: null,
+      authorization: { chosenBy: { kind: 'gm' as const, id: null }, source: 'gm-authority' as const },
+      clientId: 'gm-client',
+    }, {
+      database: harness.database,
+      mapRepository: harness.maps,
+      sheetRepository: harness.sheets,
+      pendingResolutionRepository: harness.pending,
+      opRepository: harness.ops,
+      realtimeEventRepository: harness.realtime,
+      publishPersistedRealtimeEvent: vi.fn(),
+      random,
+      now: () => 2_000,
+    })
+    const mapBeforeResponse = structuredClone(harness.maps.getBySlug('arena'))
+    const pendingBeforeResponse = structuredClone(harness.pending.getById(pending.resolutionId))
+
+    const first = request()
+    const drawsAfterFirst = random.mock.calls.length
+    const duplicate = request()
+
+    expect(first.result).toMatchObject({
+      ok: false,
+      reason: 'conflict',
+      currentRevision: 8,
+      message: expect.stringContaining('action-unavailable'),
+    })
+    expect(duplicate.result).toEqual(first.result)
+    expect(random).toHaveBeenCalledTimes(drawsAfterFirst)
+    expect(harness.maps.getBySlug('arena')).toEqual(mapBeforeResponse)
+    expect(harness.pending.getById(pending.resolutionId)).toEqual(pendingBeforeResponse)
+    expect(harness.sheets.getByRef('pokemon', 'provoker-mon')?.sheet)
+      .toMatchObject({ combat: { currentHp: 60 } })
+  })
+
   it('commits a chosen Struggle as an ancestry-linked child and replays the response once', async () => {
     const harness = createHarness()
     await executeAttackOfOpportunityLivePlayCommandUseCase({
@@ -496,6 +590,11 @@ describe('durable Attack of Opportunity commands', () => {
       usedRoundByAttackerId: { attacker: 3 },
     })
     expect(harness.maps.getBySlug('arena')?.encounterState?.pendingResolutionSummaries).toEqual([])
+    expect(harness.maps.getBySlug('arena')?.encounterState
+      ?.turnResources.attacker).toMatchObject({
+      actions: { interrupt: { spent: 1 } },
+      reaction: { available: false },
+    })
 
     const replay = replayMoveResponseCommandUseCase({ role: 'player', command }, {
       database: harness.database,
@@ -504,5 +603,10 @@ describe('durable Attack of Opportunity commands', () => {
     })
     expect(replay?.result).toEqual(response.result)
     expect(harness.maps.getBySlug('arena')?.revision).toBe(9)
+    expect(harness.maps.getBySlug('arena')?.encounterState
+      ?.turnResources.attacker).toMatchObject({
+      actions: { interrupt: { spent: 1 } },
+      reaction: { available: false },
+    })
   })
 })

@@ -126,6 +126,46 @@ describe('authoritative move resource cost planning', () => {
     expect(resources.hasOncePerTurnFlag('actor-token', 'move.test-once')).toBe(true)
   })
 
+  it('uses the pre-resolution baseline for deferred special-policy prerequisites', () => {
+    const costs = [
+      cost('cost.standard', 'pay', {
+        kind: 'action-resource', resource: 'standard', amount: 1,
+      }),
+      cost('cost.exhaust', 'cleanup', {
+        kind: 'exhaust', timing: 'next-turn', forfeitCommand: true,
+      }),
+    ]
+    const firstWindow = planMoveResourceCostWindow(planningInput({
+      declarations: costs,
+      maximumPhaseInclusive: 'pay',
+      movementDistance: 0,
+      movementBudget: null,
+    }))
+
+    expect(() => planMoveResourceCostWindow(planningInput({
+      resources: firstWindow.currentResources,
+      declarations: costs,
+      minimumPhaseExclusive: 'pay',
+      movementDistance: 0,
+      movementBudget: null,
+    }))).toThrowError(expect.objectContaining({
+      code: 'exhaust-prerequisite-failed',
+    }))
+
+    const resumed = planMoveResourceCostWindow(planningInput({
+      resources: firstWindow.currentResources,
+      prerequisiteResources: {},
+      declarations: costs,
+      minimumPhaseExclusive: 'pay',
+      movementDistance: 0,
+      movementBudget: null,
+    }))
+    const resources = createMoveAutomationResourceResolver(resumed.currentResources)
+    expect(resources.actionSpent('actor-token', 'standard')).toBe(1)
+    expect(resources.hasOncePerTurnFlag('actor-token', 'cost.exhaust.next-turn')).toBe(true)
+    expect(resources.hasOncePerTurnFlag('actor-token', 'cost.exhaust.command')).toBe(true)
+  })
+
   it('records an explicit no-cost outcome without creating a ledger mutation', () => {
     const plan = planMoveResourceCostWindow(planningInput({
       declarations: [cost('cost.waived', 'declare', {

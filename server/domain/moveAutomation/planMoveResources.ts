@@ -58,6 +58,8 @@ export interface PlanEncounterMoveResourceCostsInput extends MoveResourceCostPha
   readonly reviewedCosts?: readonly MoveSpecCostDeclaration[]
   /** Pending v2 execution disables range inference unless the spec reviewed costs. */
   readonly allowLegacyFallback?: boolean
+  /** Server-recovered ledger before earlier phases of this same resolution. */
+  readonly prerequisiteResources?: EncounterTurnResourceDirectory
 }
 
 export interface MoveResourceCostPhaseWindow {
@@ -78,6 +80,8 @@ export interface PlanMoveResourceCostWindowInput extends MoveResourceCostPhaseWi
   readonly round: number | null
   readonly turn: number | null
   readonly actedThisRound: boolean
+  /** Server-recovered ledger before earlier phases of this same resolution. */
+  readonly prerequisiteResources?: EncounterTurnResourceDirectory
   /** Temporary v1/pre-cost-v2 observation retained without making it a reviewed cost. */
   readonly compatibilityOncePerTurnFlagId?: string | null
 }
@@ -282,6 +286,7 @@ export const planMoveResourceCostWindow = (
     round: input.round,
     turn: input.turn,
     actedThisRound: input.actedThisRound,
+    prerequisiteResources: input.prerequisiteResources,
     compatibilityOncePerTurnFlagId: input.compatibilityOncePerTurnFlagId,
   })
   const currentResources = parseEncounterTurnResources(spent.resources)
@@ -343,6 +348,7 @@ export const planEncounterMoveResourceCosts = (
     actedThisRound: previousEncounterState.history.actedThisRoundPlacementIds.includes(
       input.placementId,
     ),
+    prerequisiteResources: input.prerequisiteResources,
     minimumPhaseExclusive: input.minimumPhaseExclusive,
     maximumPhaseInclusive: input.maximumPhaseInclusive,
     compatibilityOncePerTurnFlagId,
@@ -383,6 +389,7 @@ export const planMoveResourceObservation = (input: {
   readonly minimumPhaseExclusive?: MoveSpecPhase | null
   readonly maximumPhaseInclusive?: MoveSpecPhase | null
   readonly allowLegacyFallback?: boolean
+  readonly prerequisiteResources?: EncounterTurnResourceDirectory
 }): PlannedMoveResourceObservation => planEncounterMoveResourceCosts({
   map: input.map,
   placementId: input.resolution.actorPlacementId,
@@ -396,4 +403,5 @@ export const planMoveResourceObservation = (input: {
   minimumPhaseExclusive: input.minimumPhaseExclusive,
   maximumPhaseInclusive: input.maximumPhaseInclusive,
   allowLegacyFallback: input.allowLegacyFallback,
+  prerequisiteResources: input.prerequisiteResources,
 })

@@ -757,6 +757,7 @@ export class FullSystemChaosHarness {
     readonly baseRevision: number
     readonly placementId?: string
     readonly position: { readonly x: number; readonly y: number; readonly z: number }
+    readonly movementPolicy?: 'standard' | 'gm-override'
     readonly clientId?: string
   }): LivePlayCommandEnvelope {
     const placementId = input.placementId ?? 'token-alpha'
@@ -767,7 +768,13 @@ export class FullSystemChaosHarness {
       baseRevision: input.baseRevision,
       type: LIVE_PLAY_COMMAND_TYPES.MOVE_TOKEN,
       scopes: [{ kind: 'token', placementId, field: 'position' }],
-      payload: { placementId, position: input.position },
+      payload: {
+        placementId,
+        position: input.position,
+        ...(input.movementPolicy === undefined
+          ? {}
+          : { movementPolicy: input.movementPolicy }),
+      },
       ...(input.clientId ? { clientId: input.clientId } : {}),
     } as LivePlayCommandEnvelope
   }

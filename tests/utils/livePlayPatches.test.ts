@@ -4,6 +4,8 @@ import {
   LIVE_PLAY_PATCH_TYPES,
   type LivePlayPatch,
 } from '#shared/livePlayCommands'
+import { createEmptyEncounterState } from '#shared/moveAutomation/encounterState'
+import { createEncounterTurnResourceLedger } from '#shared/moveAutomation/encounterResources'
 import { applyLivePlayPatchesToMap } from '~/utils/livePlayPatches'
 import type { TabletopMap } from '~/types/map'
 
@@ -51,9 +53,22 @@ const patchBase = (type: LivePlayPatch['type'], payload: unknown): LivePlayPatch
 })
 
 describe('live-play patch application', () => {
-  it('applies token movement patches without replacing unrelated terrain arrays', () => {
-    const map = baseMap()
+  it('applies token movement and authoritative resource patches without replacing unrelated terrain arrays', () => {
+    const map = baseMap({ encounterState: createEmptyEncounterState() })
     const originalVoxels = map.voxels
+    const ledger = createEncounterTurnResourceLedger({
+      placementId: 'token-a',
+      round: 1,
+      movementBudget: 6,
+    })
+    const spentLedger = {
+      ...ledger,
+      actions: {
+        ...ledger.actions,
+        shift: { ...ledger.actions.shift, spent: 1 },
+      },
+      movement: { ...ledger.movement, spent: 3 },
+    }
 
     const result = applyLivePlayPatchesToMap({
       map,
@@ -73,6 +88,10 @@ describe('live-play patch application', () => {
             from: { x: 1, y: 0, z: 1 },
             to: { x: 4, y: 0, z: 3 },
           },
+          turnResources: {
+            previous: {},
+            current: { 'token-a': spentLedger },
+          },
         }),
         scopes: [{ kind: 'token', placementId: 'token-a', field: 'position' }],
       }],
@@ -89,6 +108,48 @@ describe('live-play patch application', () => {
     expect(map.metadata?.movementLog).toEqual([
       expect.objectContaining({ userId: 'token-a', to: { x: 4, y: 0, z: 3 } }),
     ])
+    expect(map.encounterState?.turnResources['token-a']).toMatchObject({
+      actions: { shift: { spent: 1 } },
+      movement: { budget: 6, spent: 3 },
+    })
+  })
+
+  it('rejects a token movement patch whose resource before-value is stale', () => {
+    const ledger = createEncounterTurnResourceLedger({
+      placementId: 'token-a',
+      round: 1,
+      movementBudget: 6,
+    })
+    const map = baseMap({
+      encounterState: {
+        ...createEmptyEncounterState(),
+        turnResources: { 'token-a': ledger },
+      },
+    })
+
+    const result = applyLivePlayPatchesToMap({
+      map,
+      mapSlug: 'arena',
+      previousRevision: 4,
+      revision: 5,
+      patches: [{
+        ...patchBase(LIVE_PLAY_PATCH_TYPES.TOKEN_POSITION, {
+          placementId: 'token-a',
+          position: { x: 4, y: 0, z: 3 },
+          turnResources: { previous: {}, current: {} },
+        }),
+        scopes: [{ kind: 'token', placementId: 'token-a', field: 'position' }],
+      }],
+    })
+
+    expect(result).toMatchObject({
+      ok: false,
+      reason: 'invalid-patch',
+      message: expect.stringContaining('previous value does not match'),
+    })
+    expect(map.revision).toBe(4)
+    expect(map.placements[0]?.position).toEqual({ x: 1, y: 0, z: 1 })
+    expect(map.encounterState?.turnResources).toEqual({ 'token-a': ledger })
   })
 
   it('applies initiative patches and appends initiative log metadata', () => {
