@@ -1464,7 +1464,7 @@ Status: DONE
 
 ## MA-114 — Stress reaction races and recovery
 
-Status: TODO
+Status: DONE
 
 **Depends on:** MA-106–MA-113
 **Commit:** `test(move-automation): harden response window concurrency`
