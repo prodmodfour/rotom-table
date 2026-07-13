@@ -92,7 +92,6 @@ import {
 export type MoveSpecExecutionErrorCode =
   | 'definition-integrity-mismatch'
   | 'ruleset-mismatch'
-  | 'cost-unsupported'
   | 'random-table-unsupported'
   | 'recipient-limit-exceeded'
   | 'authoritative-target-invalid'
@@ -366,15 +365,8 @@ const executableDefinition = (
 
 /** Fail closed for capability families whose semantics arrive in later tickets. */
 const assertSkeletonExecutable = (
-  spec: ValidatedMoveSpec,
   operations: readonly MoveEffectOperation[],
 ): void => {
-  if (spec.costs.length > 0) {
-    fail(
-      'cost-unsupported',
-      `MoveSpec ${spec.canonicalId} declares costs that do not yet have typed reducer semantics.`,
-    )
-  }
   for (const operation of operations) {
     if (operation.kind === 'roll' && operation.payload.formula.kind === 'table') {
       fail(
@@ -921,7 +913,6 @@ const executableProgram = (
 ): ExecutableMoveSpecProgram => {
   const staticEntries = staticOperationEntries(definition.spec)
   assertSkeletonExecutable(
-    definition.spec,
     staticEntries.map(({ operation }) => operation),
   )
   const handlerOutput = handlerOutputFor(
@@ -945,7 +936,7 @@ const executableProgram = (
   const orderedEntries = MOVE_SPEC_PHASES.flatMap(phase => entriesByPhase.get(phase) ?? [])
   validateMoveSpecOperationSequence(orderedEntries, 'moveSpecExecution.operations')
   const operations = Object.freeze(orderedEntries.map(({ operation }) => operation))
-  assertSkeletonExecutable(definition.spec, operations)
+  assertSkeletonExecutable(operations)
 
   const handlerTraceEntriesByPhase = new Map<
     MoveSpecPhase,
@@ -1056,6 +1047,7 @@ export const executeMoveSpec = (
 
   const activePhases = new Set<MoveSpecPhase>(program.operationsByPhase.keys())
   for (const phase of program.handlerTraceEntriesByPhase.keys()) activePhases.add(phase)
+  for (const declaration of spec.costs) activePhases.add(declaration.phase)
   if (spec.preconditions.length > 0) activePhases.add('precondition')
   if (
     spec.targeting.kind !== 'none'

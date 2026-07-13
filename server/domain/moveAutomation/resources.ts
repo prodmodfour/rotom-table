@@ -73,7 +73,17 @@ export const createMoveAutomationResourceResolver = (
     if (!current) return null
     const budget = current.actions[actionType].budget
     if (budget === null) return null
-    return Math.max(0, budget - effectiveActionSpend(current, actionType))
+    const directRemaining = Math.max(0, budget - effectiveActionSpend(current, actionType))
+    if (actionType !== 'full') return directRemaining
+    const standardBudget = current.actions.standard.budget
+    const shiftBudget = current.actions.shift.budget
+    const standardRemaining = standardBudget === null
+      ? Number.MAX_SAFE_INTEGER
+      : Math.max(0, standardBudget - effectiveActionSpend(current, 'standard'))
+    const shiftRemaining = shiftBudget === null
+      ? Number.MAX_SAFE_INTEGER
+      : Math.max(0, shiftBudget - effectiveActionSpend(current, 'shift'))
+    return Math.min(directRemaining, standardRemaining, shiftRemaining)
   }
   const movementRemaining = (placementId: string): number | null => {
     const current = ledger(placementId)
@@ -89,8 +99,11 @@ export const createMoveAutomationResourceResolver = (
     actionAvailable: (placementId, actionType) => {
       const current = ledger(placementId)
       if (!current) return false
-      const budget = current.actions[actionType].budget
-      return budget === null || effectiveActionSpend(current, actionType) < budget
+      const remaining = actionRemaining(placementId, actionType)
+      if (remaining !== null && remaining < 1) return false
+      return actionType !== 'interrupt' && actionType !== 'reaction'
+        ? true
+        : current.reaction.available
     },
     reactionAvailable: placementId => ledger(placementId)?.reaction.available ?? false,
     movementBudget: placementId => ledger(placementId)?.movement.budget ?? null,

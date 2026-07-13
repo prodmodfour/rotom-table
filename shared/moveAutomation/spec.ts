@@ -1,3 +1,9 @@
+import {
+  MoveResourceCostValidationError,
+  parseMoveResourceCost,
+  type MoveResourceCost,
+} from './resourceCosts'
+
 export const MOVE_SPEC_SCHEMA_VERSION = 2 as const
 
 /** Canonical interpreter order. Specs may omit phases they do not use. */
@@ -51,7 +57,7 @@ export type MoveSpecJsonObject = {
  */
 export type MoveSpecSelector = MoveSpecJsonObject
 export type MoveSpecPredicate = MoveSpecJsonObject
-export type MoveSpecCost = MoveSpecJsonObject
+export type MoveSpecCost = MoveResourceCost
 export type MoveSpecEffectOperation = MoveSpecJsonObject
 
 export interface MoveSpecTargetingDeclaration {
@@ -469,10 +475,24 @@ const parseCosts = (value: unknown): readonly MoveSpecCostDeclaration[] => {
       const entryPath = `${path}[${index}]`
       const input = parseRecord(entry, entryPath)
       assertExactKeys(input, COST_FIELDS, entryPath)
+      let cost: MoveResourceCost
+      try {
+        cost = parseMoveResourceCost(input.cost, `${entryPath}.cost`)
+      }
+      catch (error) {
+        if (error instanceof MoveResourceCostValidationError) {
+          return fail(
+            error.code === 'limit-exceeded' ? 'limit-exceeded' : 'invalid-spec',
+            error.path,
+            error.message.slice(error.path.length + 2),
+          )
+        }
+        throw error
+      }
       return {
         id: parseStableId(input.id, `${entryPath}.id`),
         phase: parsePhase(input.phase, `${entryPath}.phase`),
-        cost: parseDataObject(input.cost, `${entryPath}.cost`),
+        cost,
       }
     })
   assertUnique(costs.map(({ id }) => id), `${path}.id`)

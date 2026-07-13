@@ -1026,6 +1026,47 @@ export const validateMoveSpecOperationSequence = (
   })
 }
 
+const validateResourceCostCombinations = (
+  costs: readonly MoveSpecCostDeclaration[],
+): void => {
+  const actionCosts = costs.filter(({ cost }) => cost.kind === 'action-resource')
+  const actionResources = actionCosts.map(({ cost }) => (
+    cost.kind === 'action-resource' ? cost.resource : 'free'
+  ))
+  if (new Set(actionResources).size !== actionResources.length) {
+    fail(
+      'duplicate-id',
+      'spec.costs',
+      'an action resource may be declared at most once.',
+    )
+  }
+  if (
+    actionResources.includes('full')
+    && (actionResources.includes('standard') || actionResources.includes('shift'))
+  ) {
+    fail(
+      'invalid-definition',
+      'spec.costs',
+      'a Full action already consumes Standard and Shift and cannot overlap either declaration.',
+    )
+  }
+  const noCostCount = costs.filter(({ cost }) => cost.kind === 'no-cost').length
+  if (noCostCount > 1) {
+    fail('duplicate-id', 'spec.costs', 'a MoveSpec may declare at most one no-cost exception.')
+  }
+  if (noCostCount > 0 && actionCosts.length > 0) {
+    fail(
+      'invalid-definition',
+      'spec.costs',
+      'a reviewed no-cost exception cannot overlap an action-resource spend.',
+    )
+  }
+  for (const kind of ['exhaust', 'setup-execute', 'priority'] as const) {
+    if (costs.filter(({ cost }) => cost.kind === kind).length <= 1) continue
+    fail('duplicate-id', 'spec.costs', `a MoveSpec may declare at most one ${kind} policy.`)
+  }
+}
+
 const normalizeSpec = (input: unknown): ValidatedMoveSpec => {
   const detached = strictJsonClone(input, 'spec', {
     maxDepth: MOVE_SPEC_LIMITS.jsonDepth,
@@ -1037,6 +1078,7 @@ const normalizeSpec = (input: unknown): ValidatedMoveSpec => {
   const spec = parseMoveSpec(applyMoveSpecDefaultsAndPhaseOrder(detached))
   const rules = parseRules(spec)
   const phases = parseOperations(spec)
+  validateResourceCostCombinations(spec.costs)
   const branchRuleAstNodes = phases.reduce((total, phase) => total + phase.operations.reduce(
     (phaseTotal, operation) => phaseTotal + (
       operation.kind === 'branch' && operation.payload.kind === 'predicate'

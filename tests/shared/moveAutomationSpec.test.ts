@@ -157,6 +157,35 @@ describe('MoveSpec v2 contract', () => {
     })
   })
 
+  it('parses every bounded authoritative resource cost policy', () => {
+    const spec = parseMoveSpec({
+      ...validSpec(),
+      costs: [
+        { id: 'cost.full', phase: 'pay', cost: { kind: 'action-resource', resource: 'full', amount: 1 } },
+        { id: 'cost.movement', phase: 'movement', cost: { kind: 'movement-distance', amount: 'resolved-distance' } },
+        { id: 'cost.once', phase: 'usage', cost: { kind: 'once-per-turn', flagId: 'move.once' } },
+        { id: 'cost.exhaust', phase: 'cleanup', cost: { kind: 'exhaust', timing: 'next-turn', forfeitCommand: true } },
+        { id: 'cost.setup', phase: 'schedule', cost: { kind: 'setup-execute', step: 'set-up' } },
+        { id: 'cost.priority', phase: 'declare', cost: { kind: 'priority', mode: 'limited' } },
+        { id: 'cost.waived', phase: 'declare', cost: { kind: 'no-cost', reasonCode: 'move.triggered-child' } },
+      ],
+    })
+
+    expect(spec.costs.map(({ cost }) => cost.kind)).toEqual([
+      'action-resource',
+      'movement-distance',
+      'once-per-turn',
+      'exhaust',
+      'setup-execute',
+      'priority',
+      'no-cost',
+    ])
+    expect(spec.costs[0]?.cost).toEqual({
+      kind: 'action-resource', resource: 'full', amount: 1,
+    })
+    expectDeeplyFrozen(spec.costs)
+  })
+
   it('returns detached, deeply immutable plain JSON data', () => {
     const input = validSpec()
     const spec = parseMoveSpec(input)

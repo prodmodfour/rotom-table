@@ -1383,16 +1383,20 @@ describe('phased MoveSpec interpreter', () => {
     }))
   })
 
-  it('fails closed before phases for unsupported costs and evaluates bounded preconditions', () => {
+  it('activates reviewed cost phases and evaluates bounded preconditions', () => {
     const context = buildContext()
 
     const withCost = baseSpec()
-    withCost.costs = [{ id: 'cost.action', phase: 'pay', cost: { kind: 'standard-action' } }]
-    expect(() => executeMoveSpec({ definition: definitionFor(withCost), context }))
-      .toThrowError(expect.objectContaining({
-        name: MoveSpecExecutionError.name,
-        code: 'cost-unsupported',
-      }))
+    withCost.costs = [{
+      id: 'cost.action',
+      phase: 'pay',
+      cost: { kind: 'action-resource', resource: 'standard', amount: 1 },
+    }]
+    const costResult = executeMoveSpec({ definition: definitionFor(withCost), context })
+    expect(costResult.kind).toBe('complete')
+    expect(traceEventsOfKind(costResult, 'phase-transition')).toEqual([
+      expect.objectContaining({ kind: 'phase-transition', to: 'pay' }),
+    ])
 
     const withExpression = baseSpec()
     withExpression.preconditions = [{
