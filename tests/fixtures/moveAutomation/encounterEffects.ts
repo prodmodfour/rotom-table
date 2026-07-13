@@ -99,6 +99,7 @@ export const capabilityEncounterEffectFixture = (): EncounterCapabilityEffect =>
   payload: {
     capabilityId: 'movement.levitate',
     action: 'grant',
+    value: 4,
   },
   dispel: {
     policy: 'matching-tags',

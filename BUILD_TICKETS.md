@@ -1580,7 +1580,7 @@ Status: DONE
 
 ## MA-123 — Model movement modes and capabilities
 
-Status: TODO
+Status: DONE
 
 **Depends on:** MA-120, MA-058
 **Commit:** `feat(move-automation): model movement capabilities`

@@ -1,5 +1,9 @@
 import type { CombatStageMap } from '~/types/combatStages'
-import type { MovementCapabilitySpeeds } from '~/types/movement'
+import type {
+  EffectiveMovementProfile,
+  MovementCapabilitySpeeds,
+  MovementCapabilityTraits,
+} from '~/types/movement'
 import type { TokenFacingDirection } from '~/types/tokenFacing'
 
 export interface PokemonSizeRecord {
@@ -255,9 +259,13 @@ export interface SpawnedPokemon extends PokemonCatalogEntry {
   accuracyRollBonus?: number
   /** Defender's types (sheet override > species default; empty for trainers). */
   defenderTypes: string[]
-  /** Adjusted Movement Capability speeds copied from the source sheet for map Shift movement validation. */
+  /** Effective Movement Capability speeds used for map Shift movement validation. */
   movementCapabilities?: MovementCapabilitySpeeds
-  /** Airborne movement capabilities that can grant Groundsource move immunity, copied from the source sheet. */
+  /** Effective non-speed movement capabilities used by route and mode queries. */
+  movementTraits?: MovementCapabilityTraits
+  /** Complete sheet-plus-encounter movement projection; display height is not a rule input. */
+  movementProfile?: EffectiveMovementProfile
+  /** Airborne movement capabilities that can grant Groundsource move immunity, copied from the effective movement projection. */
   defenderCapabilities?: Pick<PokedexCapabilities, 'sky' | 'levitate'>
   /** Ability names copied from the source sheet for passive automation modifiers. */
   abilityNames?: string[]

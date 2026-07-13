@@ -37,7 +37,11 @@ import { normalizePokemonLoyalty } from '~/utils/sheets/pokemonLoyalty'
 import { movementCapabilityKeyFromLabel, normalizeMovementCapabilitySpeed } from '~/utils/movementCapabilities'
 import type { CharacterSheet, CharacterSheetSkills } from '~/types/characterSheet'
 import type { CombatStageMap } from '~/types/combatStages'
-import type { MovementCapabilitySpeeds } from '~/types/movement'
+import type {
+  MovementCapabilitySpeeds,
+  MovementCapabilityTraits,
+  MovementJumpCapability,
+} from '~/types/movement'
 import type { PokedexRecord, PokemonCatalogEntry } from '~/types/pokemon'
 import type { TrainerSheet, TrainerSkillKey } from '~/types/trainerSheet'
 
@@ -86,6 +90,7 @@ const movementCapabilitiesFromRows = (
   conditions: readonly string[] | null | undefined,
   trainingFeature: unknown,
   speedCombatStage: unknown,
+  otherCapabilities: readonly string[],
 ): MovementCapabilitySpeeds => {
   const capabilities: MovementCapabilitySpeeds = {}
 
@@ -103,8 +108,49 @@ const movementCapabilitiesFromRows = (
     if (speed != null) capabilities[key] = speed
   }
 
+  const wallclimber = otherCapabilities.some(
+    capability => capability.trim().replace(/\s+/g, ' ').toLowerCase() === 'wallclimber',
+  )
+  if (wallclimber && capabilities.overland !== undefined) {
+    capabilities.climb = Math.floor(capabilities.overland / 2)
+  }
   return capabilities
 }
+
+const nonNegativeInteger = (value: unknown): number => (
+  typeof value === 'number' && Number.isFinite(value)
+    ? Math.max(0, Math.trunc(value))
+    : 0
+)
+
+const movementJumpFromRows = (
+  rows: readonly CapabilityNumberRow[],
+): MovementJumpCapability => {
+  const combined = rows.find(row => row.label === 'Jump')?.value
+  if (typeof combined === 'string') {
+    const match = /^\s*(\d+)\s*\/\s*(\d+)\s*$/.exec(combined)
+    if (match) {
+      return {
+        long: Number.parseInt(match[1] ?? '0', 10),
+        high: Number.parseInt(match[2] ?? '0', 10),
+      }
+    }
+  }
+  return {
+    long: nonNegativeInteger(rows.find(row => row.label === 'Long Jump')?.value),
+    high: nonNegativeInteger(rows.find(row => row.label === 'High Jump')?.value),
+  }
+}
+
+const movementTraitsFromRows = (
+  rows: readonly CapabilityNumberRow[],
+  otherCapabilities: readonly string[],
+): MovementCapabilityTraits => ({
+  phasing: otherCapabilities.some(
+    capability => capability.trim().replace(/\s+/g, ' ').toLowerCase() === 'phasing',
+  ),
+  jump: movementJumpFromRows(rows),
+})
 
 type ResolvedPokemonSkills = ReturnType<typeof resolveSkills>
 
@@ -172,6 +218,7 @@ export const pokemonHpSnapshot = (
   evasion: ReturnType<typeof pokemonEvasionModifiers>
   defenderTypes: string[]
   movementCapabilities: MovementCapabilitySpeeds
+  movementTraits: MovementCapabilityTraits
   defenderCapabilities?: DefenderCapabilities
   combatSkillRankValue?: number
   focusSkillRankValue?: number
@@ -195,7 +242,8 @@ export const pokemonHpSnapshot = (
   const evasion = pokemonEvasionModifiers(sheet)
   const species = getPokedexEntryForSpawnSnapshot(sheet.species)
   const defenderTypes = sheet.types ?? species?.types ?? []
-  const capabilityRows = resolveCapabilities(sheet).rows
+  const resolvedCapabilities = resolveCapabilities(sheet)
+  const capabilityRows = resolvedCapabilities.rows
   const defenderCapabilities = defenderCapabilitiesFromRows(capabilityRows)
   const combatStages = normalizeCombatStages({
     atk: sheet.stats?.atk?.stage,
@@ -216,6 +264,11 @@ export const pokemonHpSnapshot = (
     conditions,
     activeTrainingFeature,
     combatStages.spd,
+    resolvedCapabilities.other,
+  )
+  const movementTraits = movementTraitsFromRows(
+    capabilityRows,
+    resolvedCapabilities.other,
   )
   const loyalty = normalizePokemonLoyalty(sheet.loyalty)
   return {
@@ -231,6 +284,7 @@ export const pokemonHpSnapshot = (
     evasion,
     defenderTypes,
     movementCapabilities,
+    movementTraits,
     defenderCapabilities,
     combatSkillRankValue: pokemonSkillRankValue(skillRows, 'combat'),
     focusSkillRankValue: pokemonSkillRankValue(skillRows, 'focus'),
@@ -259,6 +313,7 @@ export const trainerHpSnapshot = (
   evasion: ReturnType<typeof trainerEvasionModifiers>
   defenderTypes: string[]
   movementCapabilities: MovementCapabilitySpeeds
+  movementTraits: MovementCapabilityTraits
   defenderCapabilities?: DefenderCapabilities
   combatSkillRankValue?: number
   focusSkillRankValue?: number
@@ -276,7 +331,8 @@ export const trainerHpSnapshot = (
   const sdef = stats.find((row) => row.key === 'sdef')?.total ?? 0
   const spd = stats.find((row) => row.key === 'spd')?.total ?? 0
   const evasion = trainerEvasionModifiers(sheet)
-  const capabilityRows = resolveTrainerCapabilities(sheet).rows
+  const resolvedCapabilities = resolveTrainerCapabilities(sheet)
+  const capabilityRows = resolvedCapabilities.rows
   const defenderCapabilities = defenderCapabilitiesFromRows(capabilityRows)
   const stageSource = Object.fromEntries(
     COMBAT_STAT_STAGE_KEYS.map((key) => [key, sheet.stats?.[key]?.stage ?? sheet.combatStages?.[key]]),
@@ -291,6 +347,11 @@ export const trainerHpSnapshot = (
     conditions,
     undefined,
     combatStages.spd,
+    resolvedCapabilities.other,
+  )
+  const movementTraits = movementTraitsFromRows(
+    capabilityRows,
+    resolvedCapabilities.other,
   )
   return {
     currentHp,
@@ -305,6 +366,7 @@ export const trainerHpSnapshot = (
     evasion,
     defenderTypes: [],
     movementCapabilities,
+    movementTraits,
     defenderCapabilities,
     combatSkillRankValue: trainerSkillRankValue(skillRows, 'combat'),
     focusSkillRankValue: trainerSkillRankValue(skillRows, 'focus'),

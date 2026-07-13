@@ -488,8 +488,15 @@
       "additionalProperties": false,
       "properties": {
         "capabilityId": { "$ref": "#/$defs/encounterEffectStableId" },
-        "action": { "enum": ["grant", "suppress"] }
-      }
+        "action": { "enum": ["grant", "suppress"] },
+        "value": { "type": "integer", "minimum": 0, "maximum": 1000000 }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "action": { "const": "suppress" } }, "required": ["action"] },
+          "then": { "not": { "required": ["value"] } }
+        }
+      ]
     },
     "pendingMoveResolutionPublicSummary": {
       "type": "object",

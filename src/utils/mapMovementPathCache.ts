@@ -1,10 +1,14 @@
-import type { MovementCapabilityKey, MovementCapabilitySpeeds } from '~/types/movement'
+import type {
+  MovementCapabilityKey,
+  MovementCapabilitySpeeds,
+  MovementCapabilityTraits,
+} from '~/types/movement'
 import type { GridAnchor, GridDimensions } from '~/types/pokemon'
 import { getClearanceValue, type PositionedGridFootprint } from '~/utils/gridGeometry'
 import type { MovementPathResult } from '~/utils/mapMovementPathfinding'
 import { normalizeMovementCapabilitySpeed } from '~/utils/movementCapabilities'
 
-export const MOVEMENT_PATH_CACHE_KEY_VERSION = 'movement-path:v1'
+export const MOVEMENT_PATH_CACHE_KEY_VERSION = 'movement-path:v2'
 
 const MOVEMENT_PATH_CACHE_CAPABILITY_ORDER: readonly MovementCapabilityKey[] = [
   'overland',
@@ -12,6 +16,7 @@ const MOVEMENT_PATH_CACHE_CAPABILITY_ORDER: readonly MovementCapabilityKey[] = [
   'swim',
   'levitate',
   'burrow',
+  'climb',
   'teleporter',
 ]
 
@@ -25,6 +30,7 @@ export interface MovementPathCacheSelectedToken {
   base: number
   clearance?: number
   movementCapabilities?: MovementCapabilitySpeeds | null
+  movementTraits?: MovementCapabilityTraits | null
 }
 
 export interface MovementPathCacheKeyOptions {
@@ -100,6 +106,13 @@ export const movementPathSelectedTokenCacheParts = (
   numberCachePart(selectedToken.base),
   numberCachePart(getClearanceValue(selectedToken)),
   movementPathCapabilitiesCachePart(selectedToken.movementCapabilities),
+  selectedToken.movementTraits
+    ? [
+        `phasing:${selectedToken.movementTraits.phasing ? 1 : 0}`,
+        `jump-long:${numberCachePart(selectedToken.movementTraits.jump.long)}`,
+        `jump-high:${numberCachePart(selectedToken.movementTraits.jump.high)}`,
+      ]
+    : [],
 ]
 
 const movementPathPlacementCacheParts = (

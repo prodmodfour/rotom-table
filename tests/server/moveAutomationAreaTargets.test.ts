@@ -46,6 +46,7 @@ const targetState = (
   targetPlacementId,
   vitality,
   grounding: 'grounded',
+  semiInvulnerable: 'none',
   switchedThisScene: false,
   actedThisTurn: false,
   actedThisRound: false,

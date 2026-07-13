@@ -9,8 +9,10 @@ import type {
   TabletopMap,
 } from '~/types/map'
 import type {
+  EffectiveMovementProfile,
   MovementCapabilityKey,
   MovementCapabilitySpeeds,
+  MovementCapabilityTraits,
   ShiftMovementCapabilityKey,
 } from '~/types/movement'
 import type { MoveAutomationAreaDirection } from '~/types/moveAutomation'
@@ -268,6 +270,7 @@ export interface AuthoritativeMovementSuccess {
   readonly capabilityLimit: number
   readonly effectiveLimit: number
   readonly capabilities: AuthoritativeMovementCapabilities
+  readonly movementProfile: EffectiveMovementProfile
   readonly footprint: AuthoritativeMovementFootprint
   readonly occupancy: AuthoritativeMovementOccupancy
   readonly collision: null
@@ -291,6 +294,7 @@ export interface AuthoritativeMovementFailure {
   readonly capabilityLimit: number | null
   readonly effectiveLimit: number | null
   readonly capabilities: AuthoritativeMovementCapabilities
+  readonly movementProfile: EffectiveMovementProfile | null
   readonly footprint: AuthoritativeMovementFootprint | null
   readonly occupancy: AuthoritativeMovementOccupancy | null
   readonly collision: AuthoritativeMovementCollision | null
@@ -308,6 +312,8 @@ interface MovementPlacementSnapshot extends PositionedGridFootprint {
   readonly sheetKind: SheetKind
   readonly sheetSlug: string
   readonly movementCapabilities: MovementCapabilitySpeeds
+  readonly movementTraits: MovementCapabilityTraits
+  readonly movementProfile: EffectiveMovementProfile
 }
 
 interface MovementSnapshotSuccess {
@@ -397,6 +403,7 @@ const failure = (input: {
   readonly capabilityLimit?: number | null
   readonly effectiveLimit?: number | null
   readonly capabilities?: AuthoritativeMovementCapabilities
+  readonly movementProfile?: EffectiveMovementProfile | null
   readonly footprint?: AuthoritativeMovementFootprint | null
   readonly occupancy?: AuthoritativeMovementOccupancy | null
   readonly collision?: AuthoritativeMovementCollision | null
@@ -416,6 +423,7 @@ const failure = (input: {
   capabilityLimit: input.capabilityLimit ?? null,
   effectiveLimit: input.effectiveLimit ?? null,
   capabilities: input.capabilities ?? emptyCapabilities(),
+  movementProfile: input.movementProfile ?? null,
   footprint: input.footprint ?? null,
   occupancy: input.occupancy ?? null,
   collision: input.collision ?? null,
@@ -634,7 +642,12 @@ const buildMovementSnapshots = (
         sheetReads: [...readByKey.values()],
       }
     }
-    if (!validFootprint(token) || !validMovementCapabilities(token.movementCapabilities ?? {})) {
+    if (
+      !validFootprint(token)
+      || !validMovementCapabilities(token.movementCapabilities ?? {})
+      || !token.movementTraits
+      || !token.movementProfile
+    ) {
       return {
         ok: false,
         reasonCode: 'movement-footprint-invalid',
@@ -652,6 +665,11 @@ const buildMovementSnapshots = (
       base: token.base,
       clearance: getClearanceValue(token),
       movementCapabilities: { ...(token.movementCapabilities ?? {}) },
+      movementTraits: {
+        phasing: token.movementTraits.phasing,
+        jump: { ...token.movementTraits.jump },
+      },
+      movementProfile: token.movementProfile,
     })
   }
 
@@ -1012,6 +1030,7 @@ const resolvePreparedPassMovement = (
       capabilityLimit,
       effectiveLimit: resolvedEffectiveLimit,
       capabilities,
+      movementProfile: input.mover.movementProfile,
       footprint: { ...input.footprint },
       occupancy,
       collision: null,
@@ -1376,6 +1395,7 @@ export const resolveMovement = (input: ResolveMovementInput): AuthoritativeMovem
     capabilityLimit,
     effectiveLimit: resolvedEffectiveLimit,
     capabilities: pathCapabilities,
+    movementProfile: mover.movementProfile,
     footprint,
     occupancy,
     collision: null,

@@ -182,6 +182,7 @@ describe('authoritative target state queries', () => {
       targetPlacementId: 'target',
       vitality: 'conscious',
       grounding: 'airborne',
+      semiInvulnerable: 'none',
       switchedThisScene: true,
       actedThisTurn: true,
       actedThisRound: true,

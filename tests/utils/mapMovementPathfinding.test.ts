@@ -214,4 +214,52 @@ describe('map movement pathfinding', () => {
       legal: true,
     })
   })
+
+  it('lets Phasing ignore Slow Terrain without making blocking terrain passable', () => {
+    const phaser = token({
+      movementCapabilities: { overland: 4 },
+      movementTraits: { phasing: true, jump: { long: 1, high: 1 } },
+    })
+    const mud: MapVoxelV2[] = [{
+      x: 1,
+      y: 0,
+      z: 0,
+      materialId: 'mud',
+      blocksMovement: false,
+    }]
+
+    expect(route(phaser, { x: 1, y: 0, z: 0 }, mud)).toMatchObject({
+      legal: true,
+      distance: 1,
+      capabilityLabels: ['Overland'],
+      steps: [expect.objectContaining({ slow: false })],
+    })
+    expect(route(phaser, { x: 1, y: 0, z: 0 }, [{
+      x: 1,
+      y: 0,
+      z: 0,
+      materialId: 'airship_wall_bulkhead',
+    }]).legal).toBe(false)
+  })
+
+  it('uses Climb only for elevated anchors adjacent to blocking terrain', () => {
+    const climber = token({ movementCapabilities: { overland: 6, climb: 3 } })
+    const wall: MapVoxelV2[] = [{
+      x: 1,
+      y: 1,
+      z: 0,
+      materialId: 'airship_wall_bulkhead',
+    }]
+
+    expect(route(climber, { x: 0, y: 1, z: 0 }, wall)).toMatchObject({
+      legal: true,
+      distance: 1,
+      movementLimit: 3,
+      capabilityLabels: ['Climb'],
+    })
+    expect(route(climber, { x: 0, y: 1, z: 0 })).toMatchObject({
+      legal: false,
+      reason: 'missing-capability',
+    })
+  })
 })

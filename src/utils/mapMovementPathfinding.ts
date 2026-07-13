@@ -1,6 +1,10 @@
 import type { GridAnchor, GridDimensions } from '~/types/pokemon'
 import type { MapVoxelV2 } from '~/types/map'
-import type { MovementCapabilityKey, MovementCapabilitySpeeds } from '~/types/movement'
+import type {
+  MovementCapabilityKey,
+  MovementCapabilitySpeeds,
+  MovementCapabilityTraits,
+} from '~/types/movement'
 import {
   bestAerialMovementCapability,
   highestShiftMovementSpeed,
@@ -80,7 +84,8 @@ const MOVEMENT_CAPABILITY_MASK_BITS: Record<MovementCapabilityKey, number> = {
   swim: 1 << 2,
   levitate: 1 << 3,
   burrow: 1 << 4,
-  teleporter: 1 << 5,
+  climb: 1 << 5,
+  teleporter: 1 << 6,
 }
 
 const HORIZONTAL_DIRECTIONS: readonly GridAnchor[] = [
@@ -278,18 +283,50 @@ const sortedMovementOptions = (
   })
 }
 
+const anchorTouchesClimbableTerrain = (
+  pokemon: GridFootprint,
+  anchor: GridAnchor,
+  terrainIndex: MapMovementTerrainIndex,
+  groundLevelY: number,
+): boolean => {
+  const base = Math.max(1, Math.trunc(pokemon.base))
+  const clearance = Math.max(1, Math.trunc(getClearanceValue(pokemon)))
+  const adjacent = new Set<string>()
+  for (let y = anchor.y; y < anchor.y + clearance; y += 1) {
+    for (let offset = 0; offset < base; offset += 1) {
+      adjacent.add(`${anchor.x - 1},${y},${anchor.z + offset}`)
+      adjacent.add(`${anchor.x + base},${y},${anchor.z + offset}`)
+      adjacent.add(`${anchor.x + offset},${y},${anchor.z - 1}`)
+      adjacent.add(`${anchor.x + offset},${y},${anchor.z + base}`)
+    }
+  }
+
+  return [...adjacent].some((key) => {
+    const [x, y, z] = key.split(',').map(Number)
+    if (!terrainIndex.voxelAt(x!, y!, z!)) return false
+    return movementTerrainForAnchor({
+      anchor: { x: x!, y: y!, z: z! },
+      footprint: { base: 1, clearance: 1 },
+      terrain: terrainIndex,
+      groundLevelY,
+    }).blocked
+  })
+}
+
 const evaluateAnchorMovementOptions = ({
   pokemon,
   anchor,
   terrainIndex,
   groundLevelY,
   capabilities,
+  traits,
 }: {
   pokemon: GridFootprint
   anchor: GridAnchor
   terrainIndex: MapMovementTerrainIndex
   groundLevelY: number
   capabilities: MovementCapabilitySpeeds | null | undefined
+  traits: MovementCapabilityTraits | null | undefined
 }): AnchorMovementEvaluation[] => {
   const terrain = movementTerrainForAnchor({
     anchor,
@@ -304,7 +341,20 @@ const evaluateAnchorMovementOptions = ({
   if (primaryCapabilityKeys) {
     options.push({
       capabilityKeys: primaryCapabilityKeys,
-      slow: terrain.slow,
+      slow: traits?.phasing === true ? false : terrain.slow,
+      terrain,
+    })
+  }
+
+  const climb = movementCapabilitySpeed(capabilities, 'climb')
+  if (
+    terrain.air
+    && climb !== undefined
+    && anchorTouchesClimbableTerrain(pokemon, anchor, terrainIndex, groundLevelY)
+  ) {
+    options.push({
+      capabilityKeys: ['climb'],
+      slow: false,
       terrain,
     })
   }
@@ -412,7 +462,10 @@ const blockedResult = (
 })
 
 export interface FindMovementPathForPokemonOptions {
-  pokemon: GridFootprint & { movementCapabilities?: MovementCapabilitySpeeds }
+  pokemon: GridFootprint & {
+    movementCapabilities?: MovementCapabilitySpeeds
+    movementTraits?: MovementCapabilityTraits
+  }
   start: GridAnchor
   goal: GridAnchor
   pokemons: readonly PositionedGridFootprint[]
@@ -478,6 +531,7 @@ export const findMovementPathForPokemon = ({
   const directDistance = anchorHeuristic(start, goal)
   const directions = resolvedMovementDirections(allowedDirections)
   const capabilities = pokemon.movementCapabilities
+  const traits = pokemon.movementTraits
   const selectedCostLimit = costLimit === undefined
     ? null
     : Number.isSafeInteger(costLimit) && costLimit >= 0 ? costLimit : 0
@@ -515,6 +569,7 @@ export const findMovementPathForPokemon = ({
     terrainIndex,
     groundLevelY,
     capabilities,
+    traits,
   })
   const directTooFarResult = (): MovementPathResult => {
     const bestDirectMovement = directGoalMovementOptions[0]
@@ -600,6 +655,7 @@ export const findMovementPathForPokemon = ({
         terrainIndex,
         groundLevelY,
         capabilities,
+        traits,
       })
       if (!movementOptions.length) continue
 

@@ -191,6 +191,8 @@ export interface EncounterNumericModifierEffectPayload {
 export interface EncounterCapabilityEffectPayload {
   readonly capabilityId: string
   readonly action: EncounterEffectCapabilityAction
+  /** Optional bounded value for valued capabilities such as temporary movement speeds. */
+  readonly value?: number
 }
 
 export type EncounterEffectPayload =
@@ -369,7 +371,8 @@ const SUPPRESSION_SOURCE_FIELDS = ['effectId', 'reasonCode'] as const
 const CONDITION_PAYLOAD_FIELDS = ['conditionId', 'action', 'saveTiming'] as const
 const LEGACY_CONDITION_PAYLOAD_FIELDS = ['conditionId', 'action'] as const
 const NUMERIC_MODIFIER_PAYLOAD_FIELDS = ['attribute', 'operation', 'value', 'rounding'] as const
-const CAPABILITY_PAYLOAD_FIELDS = ['capabilityId', 'action'] as const
+const CAPABILITY_PAYLOAD_FIELDS = ['capabilityId', 'action', 'value'] as const
+const CAPABILITY_PAYLOAD_REQUIRED_FIELDS = ['capabilityId', 'action'] as const
 
 const STABLE_ID_PATTERN = /^[a-z0-9]+(?:[._:/-][a-z0-9]+)*$/
 const CONTROL_CHARACTER_PATTERN = /[\u0000-\u001f\u007f]/
@@ -833,15 +836,34 @@ const parseCapabilityPayload = (
   value: unknown,
   path: string,
 ): EncounterCapabilityEffectPayload => {
-  const payload = parseExactRecord(value, CAPABILITY_PAYLOAD_FIELDS, path)
+  const payload = parseExactRecord(
+    value,
+    CAPABILITY_PAYLOAD_FIELDS,
+    path,
+    CAPABILITY_PAYLOAD_REQUIRED_FIELDS,
+  )
+  const action = parseEnum<EncounterEffectCapabilityAction>(
+    payload.action,
+    CAPABILITY_ACTION_SET,
+    `${path}.action`,
+    'grant or suppress',
+  )
+  if (action === 'suppress' && payload.value !== undefined) {
+    fail('invalid-encounter-effect', `${path}.value`, 'is supported only for capability grants.')
+  }
   return {
     capabilityId: parseStableId(payload.capabilityId, `${path}.capabilityId`),
-    action: parseEnum<EncounterEffectCapabilityAction>(
-      payload.action,
-      CAPABILITY_ACTION_SET,
-      `${path}.action`,
-      'grant or suppress',
-    ),
+    action,
+    ...(payload.value === undefined
+      ? {}
+      : {
+          value: parseInteger(
+            payload.value,
+            `${path}.value`,
+            0,
+            ENCOUNTER_EFFECT_LIMITS.numericMagnitude,
+          ),
+        }),
   }
 }
 

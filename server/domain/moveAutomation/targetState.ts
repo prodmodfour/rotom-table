@@ -1,4 +1,5 @@
 import type { CharacterSheet } from '~/types/characterSheet'
+import type { MovementSemiInvulnerableState } from '~/types/movement'
 import type { SheetKind, SheetPlacement } from '~/types/map'
 import type { SpawnedPokemon } from '~/types/pokemon'
 import type { TrainerSheet } from '~/types/trainerSheet'
@@ -50,6 +51,8 @@ export interface MoveAutomationTargetState {
   readonly targetPlacementId: string
   readonly vitality: MoveAutomationTargetVitality
   readonly grounding: MoveAutomationTargetGrounding
+  /** Separate from grounding and visual elevation; MA-129 adds targetability semantics. */
+  readonly semiInvulnerable: MovementSemiInvulnerableState
   readonly switchedThisScene: boolean
   readonly actedThisTurn: boolean
   readonly actedThisRound: boolean
@@ -231,10 +234,13 @@ const normalizedItemIds = (items: readonly string[]): readonly string[] => (
 )
 
 const targetGrounding = (token: SpawnedPokemon): MoveAutomationTargetGrounding => (
-  hasGroundsourceImmunityCapability(token.defenderCapabilities)
-  && !moveAutomationTargetSuppressesGroundsourceImmunity(token)
-    ? 'airborne'
-    : 'grounded'
+  token.movementProfile?.state.grounding
+  ?? (
+    hasGroundsourceImmunityCapability(token.defenderCapabilities)
+    && !moveAutomationTargetSuppressesGroundsourceImmunity(token)
+      ? 'airborne'
+      : 'grounded'
+  )
 )
 
 const targetImmunityTagIds = (
@@ -275,6 +281,7 @@ const targetState = (options: {
       ? 'fainted'
       : 'conscious',
     grounding,
+    semiInvulnerable: options.token.movementProfile?.state.semiInvulnerable ?? 'none',
     switchedThisScene: options.history.switchedThisScene(options.placement.id),
     actedThisTurn: options.history.actedThisTurn(options.placement.id),
     actedThisRound: options.history.actedThisRound(options.placement.id),

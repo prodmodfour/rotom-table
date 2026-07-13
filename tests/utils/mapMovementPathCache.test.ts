@@ -88,6 +88,11 @@ describe('movement path cache', () => {
       { selectedToken: selectedToken({ base: 2 }) },
       { selectedToken: selectedToken({ clearance: 2 }) },
       { selectedToken: selectedToken({ movementCapabilities: { overland: 7 } }) },
+      {
+        selectedToken: selectedToken({
+          movementTraits: { phasing: true, jump: { long: 2, high: 1 } },
+        }),
+      },
       { start: { x: 1, y: 0, z: 0 } },
       { goal: { x: 2, y: 1, z: 2 } },
       { dimensions: { x: 9, y: 4, z: 8 } },
@@ -102,10 +107,16 @@ describe('movement path cache', () => {
   })
 
   it('normalizes movement capabilities in pathfinder order', () => {
-    expect(movementPathCapabilitiesCachePart({ sky: 4, overland: 6, swim: 0 })).toEqual([
+    expect(movementPathCapabilitiesCachePart({
+      sky: 4,
+      overland: 6,
+      swim: 0,
+      climb: 3,
+    })).toEqual([
       'overland:6',
       'sky:4',
       'swim:0',
+      'climb:3',
     ])
     expect(movementPathCapabilitiesCachePart({ overland: 6.8, swim: -2, sky: Number.NaN })).toEqual([
       'overland:6',

@@ -139,6 +139,24 @@ describe('typed encounter effects', () => {
     })).toThrow('requires a finite charge count for consume-on-trigger')
   })
 
+  it('accepts bounded valued capability grants and rejects valued suppressions', () => {
+    const effect = capabilityEncounterEffectFixture()
+
+    expect(parseEncounterEffect(effect).payload).toEqual({
+      capabilityId: 'movement.levitate',
+      action: 'grant',
+      value: 4,
+    })
+    expect(() => parseEncounterEffect({
+      ...effect,
+      payload: { ...effect.payload, value: 1.5 },
+    })).toThrow('encounterEffect.payload.value: must be a safe integer')
+    expect(() => parseEncounterEffect({
+      ...effect,
+      payload: { ...effect.payload, action: 'suppress', value: 4 },
+    })).toThrow('encounterEffect.payload.value: is supported only for capability grants')
+  })
+
   it('requires bounded unique tags, recipients, cells, and effect ids', () => {
     const effect = conditionEncounterEffectFixture()
 

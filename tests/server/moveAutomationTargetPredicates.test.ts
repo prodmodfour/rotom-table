@@ -249,6 +249,7 @@ const targetState = (
   targetPlacementId,
   vitality: 'conscious',
   grounding: 'grounded',
+  semiInvulnerable: 'none',
   switchedThisScene: false,
   actedThisTurn: false,
   actedThisRound: false,

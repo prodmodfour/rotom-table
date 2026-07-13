@@ -24,6 +24,7 @@ import {
 } from '~/utils/tokenFacing'
 import { temporaryHpForPlacement } from '~/utils/mapTemporaryHitPoints'
 import { projectEffectiveConditions } from '~/utils/encounterConditions'
+import { projectEffectiveMovement } from '~/utils/encounterMovement'
 import {
   pokemonSheetConditionNames,
   trainerSheetConditionNames,
@@ -59,6 +60,40 @@ const effectiveConditionsForPlacement = (
     clearance: footprint.clearance,
   },
 }).conditions
+
+const effectiveMovementForPlacement = (
+  placement: SheetPlacement,
+  footprint: { readonly base: number; readonly clearance: number },
+  movementCapabilities: NonNullable<SpawnedPokemon['movementCapabilities']>,
+  movementTraits: NonNullable<SpawnedPokemon['movementTraits']>,
+  conditions: readonly string[],
+  map: PlacementConditionMap | null | undefined,
+) => projectEffectiveMovement({
+  sheetCapabilities: movementCapabilities,
+  sheetTraits: movementTraits,
+  sheetConditions: conditions,
+  encounterEffects: map?.encounterState?.effects,
+  target: {
+    placementId: placement.id,
+    ...(placement.sideId === undefined ? {} : { sideId: placement.sideId }),
+    position: placement.position,
+    base: footprint.base,
+    clearance: footprint.clearance,
+  },
+})
+
+const defenderCapabilitiesForMovement = (
+  movement: ReturnType<typeof effectiveMovementForPlacement>,
+): Pick<NonNullable<SpawnedPokemon['defenderCapabilities']>, 'sky' | 'levitate'> | undefined => {
+  const sky = movement.speeds.sky
+  const levitate = movement.speeds.levitate
+  return (sky ?? 0) > 0 || (levitate ?? 0) > 0
+    ? {
+        ...((sky ?? 0) > 0 ? { sky } : {}),
+        ...((levitate ?? 0) > 0 ? { levitate } : {}),
+      }
+    : undefined
+}
 
 export type UnresolvedPlacementReason = 'missing-sheet' | 'missing-catalog'
 
@@ -158,6 +193,15 @@ export const placementToSpawned = (
       map,
     )
     const hp = pokemonHpSnapshot(sheet, { conditions })
+    const movement = effectiveMovementForPlacement(
+      placement,
+      catalog,
+      hp.movementCapabilities,
+      hp.movementTraits,
+      hp.conditions,
+      map,
+    )
+    const defenderCapabilities = defenderCapabilitiesForMovement(movement)
     const abilityNames = pokemonTokenAbilityNames(sheet)
     const accentColor = trainerAccentColorForPokemonSlug(sheets.trainer.values(), sheet.slug)
     return {
@@ -188,8 +232,10 @@ export const placementToSpawned = (
       ...(hp.activeTrainingFeature ? { activeTrainingFeature: hp.activeTrainingFeature } : {}),
       ...(hp.accuracyRollBonus ? { accuracyRollBonus: hp.accuracyRollBonus } : {}),
       defenderTypes: hp.defenderTypes,
-      movementCapabilities: hp.movementCapabilities,
-      ...(hp.defenderCapabilities ? { defenderCapabilities: hp.defenderCapabilities } : {}),
+      movementCapabilities: movement.speeds,
+      movementTraits: movement.traits,
+      movementProfile: movement,
+      ...(defenderCapabilities ? { defenderCapabilities } : {}),
       ...(abilityNames.length ? { abilityNames } : {}),
       combatSkillRankValue: hp.combatSkillRankValue,
       focusSkillRankValue: hp.focusSkillRankValue,
@@ -211,6 +257,15 @@ export const placementToSpawned = (
     map,
   )
   const hp = trainerHpSnapshot(sheet, { conditions })
+  const movement = effectiveMovementForPlacement(
+    placement,
+    catalog,
+    hp.movementCapabilities,
+    hp.movementTraits,
+    hp.conditions,
+    map,
+  )
+  const defenderCapabilities = defenderCapabilitiesForMovement(movement)
   const abilityNames = trainerTokenAbilityNames(sheet)
   const accentColor = normalizeTrainerAccentColor(sheet.accentColor)
   return {
@@ -237,8 +292,10 @@ export const placementToSpawned = (
     spd: hp.spd,
     evasion: hp.evasion,
     defenderTypes: hp.defenderTypes,
-    movementCapabilities: hp.movementCapabilities,
-    ...(hp.defenderCapabilities ? { defenderCapabilities: hp.defenderCapabilities } : {}),
+    movementCapabilities: movement.speeds,
+    movementTraits: movement.traits,
+    movementProfile: movement,
+    ...(defenderCapabilities ? { defenderCapabilities } : {}),
     ...(abilityNames.length ? { abilityNames } : {}),
     combatSkillRankValue: hp.combatSkillRankValue,
     focusSkillRankValue: hp.focusSkillRankValue,

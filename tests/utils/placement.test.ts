@@ -37,6 +37,10 @@ describe('placement helpers', () => {
     expect(spawned?.gender).toBe('Female')
     expect(spawned?.defenderCapabilities).toEqual({ levitate: 4 })
     expect(spawned?.movementCapabilities).toMatchObject({ overland: 7, levitate: 4 })
+    expect(spawned?.movementProfile?.state).toEqual({
+      grounding: 'airborne',
+      semiInvulnerable: 'none',
+    })
     expect(spawned?.combatSkillRankValue).toBe(5)
     expect(spawned?.focusSkillRankValue).toBe(4)
     expect(spawned?.combatStages.acc).toBe(2)
@@ -93,6 +97,12 @@ describe('placement helpers', () => {
       level: 5,
       height: '1.72',
       portraitUrl: catalog.spriteUrl,
+      capabilities: {
+        overland: 8,
+        highJump: 2,
+        longJump: 3,
+        other: ['Phasing', 'Wallclimber'],
+      },
     }
     const placement: SheetPlacement = {
       id: 'placement-1',
@@ -110,5 +120,14 @@ describe('placement helpers', () => {
     expect(spawned?.height).toBe(1.72)
     expect(spawned?.width).toBeCloseTo(catalog.width * (1.72 / catalog.height))
     expect(spawned?.base).toBe(catalog.base)
+    expect(spawned?.movementCapabilities).toMatchObject({ overland: 8, climb: 4 })
+    expect(spawned?.movementTraits).toEqual({
+      phasing: true,
+      jump: { long: 3, high: 2 },
+    })
+    expect(spawned?.movementProfile?.state).toEqual({
+      grounding: 'grounded',
+      semiInvulnerable: 'none',
+    })
   })
 })

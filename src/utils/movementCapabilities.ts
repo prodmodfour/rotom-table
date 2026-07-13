@@ -12,6 +12,7 @@ export const SHIFT_MOVEMENT_CAPABILITY_KEYS: readonly ShiftMovementCapabilityKey
   'swim',
   'levitate',
   'burrow',
+  'climb',
 ] as const
 
 export const MOVEMENT_CAPABILITY_LABEL_BY_KEY: Record<MovementCapabilityKey, string> = {
@@ -20,6 +21,7 @@ export const MOVEMENT_CAPABILITY_LABEL_BY_KEY: Record<MovementCapabilityKey, str
   swim: 'Swim',
   levitate: 'Levitate',
   burrow: 'Burrow',
+  climb: 'Climb',
   teleporter: 'Teleporter',
 }
 
@@ -29,6 +31,7 @@ export const MOVEMENT_CAPABILITY_KEY_BY_LABEL: Record<string, MovementCapability
   swim: 'swim',
   levitate: 'levitate',
   burrow: 'burrow',
+  climb: 'climb',
   teleporter: 'teleporter',
 }
 
