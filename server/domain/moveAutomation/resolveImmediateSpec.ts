@@ -490,6 +490,7 @@ const assertSupportedImmediateOperations = (
     'condition',
     'combat-stage',
     'movement-request',
+    'switch-request',
     'usage',
     'log',
     'choice-request',

@@ -91,21 +91,28 @@ const encounterPlan = (input: {
   readonly sourceOperationId: string
   readonly reasonCode: string
   readonly existing?: MoveStateChangePlan
-}): MoveStateChangePlan<EncounterState> => createMoveStateChangePlan<EncounterState>([
-  ...(input.existing?.changes ?? [])
-    .filter(change => change.kind !== 'encounter-state')
-    .map(change => withoutPlanIdentity(change) as MoveStateChangeInput<EncounterState>),
-  {
-    kind: 'encounter-state',
-    scope: { kind: 'encounter', mapSlug: input.previousMap.slug },
-    expectedRevision: normalizeRevision(input.previousMap.revision),
-    sourceOperationId: input.sourceOperationId,
-    reasonCode: input.reasonCode,
-    previous: deepCloneJson(previousEncounterState(input.previousMap)),
-    current: deepCloneJson(input.current),
-    compensation: RESTORE_PREVIOUS_MOVE_STATE_VALUE,
-  },
-])
+}): MoveStateChangePlan<EncounterState> => {
+  const existingEncounter = input.existing?.changes.find(
+    change => change.kind === 'encounter-state',
+  )
+  return createMoveStateChangePlan<EncounterState>([
+    ...(input.existing?.changes ?? [])
+      .filter(change => change.kind !== 'encounter-state')
+      .map(change => withoutPlanIdentity(change) as MoveStateChangeInput<EncounterState>),
+    {
+      kind: 'encounter-state',
+      scope: { kind: 'encounter', mapSlug: input.previousMap.slug },
+      expectedRevision: normalizeRevision(input.previousMap.revision),
+      sourceOperationId: input.sourceOperationId,
+      reasonCode: input.reasonCode,
+      previous: deepCloneJson(previousEncounterState(input.previousMap)),
+      current: deepCloneJson(input.current),
+      compensation: existingEncounter?.compensation.kind === 'unavailable'
+        ? deepCloneJson(existingEncounter.compensation)
+        : RESTORE_PREVIOUS_MOVE_STATE_VALUE,
+    },
+  ])
+}
 
 const summaryWithout = (
   state: EncounterState,

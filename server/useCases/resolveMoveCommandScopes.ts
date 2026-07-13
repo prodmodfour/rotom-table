@@ -16,7 +16,13 @@ import type {
   AuthoritativePendingMoveStatePlan,
 } from '../domain/planAuthoritativeMoveState'
 
-const ALLOWED_MAP_LANES = new Set<LivePlayMapScope['lane']>(['metadata', 'hazards', 'fieldEffects'])
+const ALLOWED_MAP_LANES = new Set<LivePlayMapScope['lane']>([
+  'metadata',
+  'hazards',
+  'fieldEffects',
+  'placements',
+  'initiative',
+])
 const ACTOR_TOKEN_FIELDS = new Set<LivePlayTokenScope['field']>([
   'action',
   'moveUsage',
@@ -230,6 +236,12 @@ export const actualResolveMoveWriteScopes = (plan: AuthoritativeMoveStatePlan): 
 
   if (plan.mapChanges.hazards) pushScope(scopes, seen, mapScope('hazards'))
   if (plan.mapChanges.fieldEffects) pushScope(scopes, seen, mapScope('fieldEffects'))
+  if (plan.resolution.switchTransition && plan.mapChanges.placements) {
+    pushScope(scopes, seen, mapScope('placements'))
+    pushScope(scopes, seen, tokenScope(plan.resolution.switchTransition.recalledPlacementId, 'delete'))
+    pushScope(scopes, seen, tokenScope(plan.resolution.switchTransition.sentOutPlacement.id, 'sendOut'))
+  }
+  if (plan.mapChanges.initiative) pushScope(scopes, seen, mapScope('initiative'))
   if (plan.mapChanges.moveUsage) pushScope(scopes, seen, tokenScope(actorId, 'moveUsage'))
   if (actorPositionChanged(plan)) pushScope(scopes, seen, tokenScope(actorId, 'position'))
   if (actorFacingChanged(plan)) pushScope(scopes, seen, tokenScope(actorId, 'facing'))

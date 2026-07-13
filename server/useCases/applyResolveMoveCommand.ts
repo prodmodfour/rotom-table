@@ -89,6 +89,7 @@ import { logicalMapResourcePath, logicalSheetResourcePath } from '../utils/runti
 import { redactSheetUpdatesForPlayer } from '../utils/sheetPrivacy'
 import { UseCaseHttpError } from '../utils/useCaseErrors'
 import { toPersistedMap } from './saveMap'
+import { loadMoveResolutionSheets } from './loadMoveResolutionSheets'
 import {
   validatePendingResolveMoveScopes,
   validateResolveMoveScopes,
@@ -218,21 +219,6 @@ const linkedTrainerSheetsForActor = (
   },
 )
 
-const persistedSheetRecord = (sheet: PersistedSheet): Record<string, unknown> => ({
-  ...sheet.sheet,
-  slug: sheet.slug,
-  revision: sheet.revision,
-  updatedAt: sheet.updatedAt,
-})
-
-const persistedPokemonSheet = (sheet: PersistedSheet): CharacterSheet => (
-  persistedSheetRecord(sheet) as unknown as CharacterSheet
-)
-
-const persistedTrainerSheet = (sheet: PersistedSheet): TrainerSheet => (
-  persistedSheetRecord(sheet) as unknown as TrainerSheet
-)
-
 const assertResolveMoveCommandType = (
   command: ResolveMoveLivePlayCommand,
   expectedType?: typeof LIVE_PLAY_COMMAND_TYPES.RESOLVE_MOVE,
@@ -256,20 +242,6 @@ const parseResolveMoveCommandIntent = (command: ResolveMoveLivePlayCommand): Res
   throw new Error('unreachable')
 }
 
-const uniquePlacementSheetRefs = (
-  placements: readonly SheetPlacement[],
-): readonly { readonly kind: SheetKind; readonly slug: string }[] => {
-  const refs: Array<{ kind: SheetKind; slug: string }> = []
-  const seen = new Set<string>()
-  for (const placement of placements) {
-    const key = `${placement.sheetKind}:${placement.sheetSlug}`
-    if (seen.has(key)) continue
-    seen.add(key)
-    refs.push({ kind: placement.sheetKind, slug: placement.sheetSlug })
-  }
-  return refs
-}
-
 const readAuthoritativeContext = (
   command: ResolveMoveLivePlayCommand,
   actor: LivePlayResolveMoveCommandActor,
@@ -287,14 +259,10 @@ const readAuthoritativeContext = (
       throw new LivePlayResolveMoveCommandUseCaseError(403, 'Map is not player visible')
     }
 
-    const pokemonSheets = new Map<string, CharacterSheet>()
-    const trainerSheets = new Map<string, TrainerSheet>()
-    for (const ref of uniquePlacementSheetRefs(map.placements)) {
-      const sheet = dependencies.sheetRepository.getByRef(ref.kind, ref.slug)
-      if (!sheet) continue
-      if (ref.kind === 'pokemon') pokemonSheets.set(ref.slug, persistedPokemonSheet(sheet))
-      else trainerSheets.set(ref.slug, persistedTrainerSheet(sheet))
-    }
+    const { pokemonSheets, trainerSheets } = loadMoveResolutionSheets({
+      map,
+      sheetRepository: dependencies.sheetRepository,
+    })
 
     const mapPath = mapPathForDocument(map)
     return {
@@ -372,6 +340,7 @@ export const moveResultFromPlan = (plan: AuthoritativeMoveStatePlan): LivePlayRe
   const {
     auditTrace,
     resourceMovement: _resourceMovement,
+    switchTransition: _switchTransition,
     nativeV2: _nativeV2,
     ...publicResolution
   } = clonedResolution
@@ -445,6 +414,14 @@ const patchChangesFromPlan = (plan: AuthoritativeMoveStatePlan): LivePlayMoveSta
       metadata: {
         previous: nullableMapState(plan.mapChanges.metadata.previous),
         current: nullableMapState(plan.mapChanges.metadata.current),
+      },
+    })
+  }
+  if (plan.mapChanges.initiative) {
+    Object.assign(changes, {
+      initiative: {
+        previous: nullableMapState(plan.mapChanges.initiative.previous),
+        current: nullableMapState(plan.mapChanges.initiative.current),
       },
     })
   }

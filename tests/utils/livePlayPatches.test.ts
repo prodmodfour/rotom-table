@@ -699,6 +699,10 @@ describe('live-play patch application', () => {
         hazards: { previous: [], current: [{ kind: 'fire', x: 2, y: 0, z: 2 }] },
         fieldEffects: { previous: { weather: [], terrains: [], rooms: [] }, current: { weather: [{ kind: 'sunny', rounds: 2 }], terrains: [], rooms: [] } },
         metadata: { previous: null, current: { moveLog: [{ at: 999, lines: ['Pika used Tackle.'] }] } },
+        initiative: {
+          previous: { activeId: 'token-a', round: 1 },
+          current: { activeId: 'token-b', round: 1, manualOrderIds: ['token-b', 'token-a'] },
+        },
       },
     }
     const beforePayload = JSON.stringify(payload)
@@ -719,6 +723,11 @@ describe('live-play patch application', () => {
     expect(map.hazards).toEqual([{ kind: 'fire', x: 2, y: 0, z: 2 }])
     expect(map.fieldEffects).toEqual({ weather: [{ kind: 'sunny', rounds: 2 }], terrains: [], rooms: [] })
     expect(map.metadata).toEqual({ moveLog: [{ at: 999, lines: ['Pika used Tackle.'] }] })
+    expect(map.initiative).toEqual({
+      activeId: 'token-b',
+      round: 1,
+      manualOrderIds: ['token-b', 'token-a'],
+    })
     expect(JSON.stringify(payload)).toBe(beforePayload)
   })
 
@@ -778,6 +787,7 @@ describe('live-play patch application', () => {
           temporaryHitPoints: { previous: map.temporaryHitPoints, current: null },
           moveUsage: { previous: map.moveUsage, current: null },
           metadata: { previous: map.metadata, current: null },
+          initiative: { previous: { activeId: 'token-a', round: 1 }, current: null },
         },
       })],
     })
@@ -786,6 +796,7 @@ describe('live-play patch application', () => {
     expect(map.temporaryHitPoints).toBeUndefined()
     expect(map.moveUsage).toBeUndefined()
     expect(map.metadata).toBeUndefined()
+    expect(map.initiative).toBeUndefined()
 
     const malformed = applyLivePlayPatchesToMap({
       map: baseMap(),

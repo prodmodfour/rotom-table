@@ -207,6 +207,17 @@ export interface AuthoritativeMoveResourceMovement {
   readonly budget: number
 }
 
+/** Server-only, roster-validated recall/send-out transition selected durably. */
+export interface AuthoritativeMoveSwitchTransition {
+  readonly operationId: string
+  readonly recalledPlacementId: string
+  readonly sentOutPlacement: SheetPlacement
+  readonly trainerPlacementId: string
+  readonly trainerSheetSlug: string
+  readonly positionPolicy: 'recalled-position'
+  readonly initiativePolicy: 'inherit-slot'
+}
+
 export interface AuthoritativeMoveResolution {
   readonly actorPlacementId: string
   readonly moveName: string
@@ -228,6 +239,8 @@ export interface AuthoritativeMoveResolution {
   readonly movement?: AuthoritativeMoveMovement
   /** Server-only MA-120 facts; omitted from accepted wire results. */
   readonly resourceMovement?: AuthoritativeMoveResourceMovement
+  /** Server-only roster/send-out transition; the map patch carries its durable result. */
+  readonly switchTransition?: AuthoritativeMoveSwitchTransition
   /** Server-only native planning projection; omitted from accepted wire results. */
   readonly nativeV2?: NativeMoveSpecResolutionProjection
 }

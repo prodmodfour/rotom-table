@@ -9,6 +9,7 @@ import {
   type MoveEffectRecipientSelectorKind,
   type MoveMovementRequestEffectOperation,
   type MoveReactionRequestEffectOperation,
+  type MoveSwitchRequestEffectOperation,
   type MoveRollEffectOperation,
 } from '#shared/moveAutomation/effects'
 import type { MoveAutomationRollLedgerEntry } from '#shared/moveAutomation/random'
@@ -92,6 +93,12 @@ import {
   type AuthoritativeMovementChoice,
   type AuthoritativeMovementChoiceSet,
 } from '../movement/resolveMovementChoices'
+import {
+  enumerateAuthoritativeSwitchChoices,
+  revalidateAuthoritativeSwitchChoice,
+  type AuthoritativeSwitchChoice,
+  type AuthoritativeSwitchChoiceSet,
+} from './switchChoices'
 import {
   validateMoveSpec,
   validateMoveSpecOperationSequence,
@@ -197,6 +204,11 @@ export interface MoveSpecPendingMovementRequest extends MoveSpecPendingRequestBa
   readonly destinationSetId: string
 }
 
+export interface MoveSpecPendingSwitchRequest extends MoveSpecPendingRequestBase {
+  readonly kind: 'switch-choice'
+  readonly replacementSetId: string
+}
+
 export type MoveSpecPendingRequest =
   | MoveSpecPendingChoiceRequest
   | MoveSpecPendingBranchChoiceRequest
@@ -204,12 +216,20 @@ export type MoveSpecPendingRequest =
   | MoveSpecPendingCheckSelectionRequest
   | MoveSpecPendingResourceSpendRequest
   | MoveSpecPendingMovementRequest
+  | MoveSpecPendingSwitchRequest
 
 export interface MoveSpecResolvedMovement {
   readonly operationId: string
   readonly requestId: string
   readonly optionId: string
   readonly choice: AuthoritativeMovementChoice
+}
+
+export interface MoveSpecResolvedSwitch {
+  readonly operationId: string
+  readonly requestId: string
+  readonly optionId: string
+  readonly choice: AuthoritativeSwitchChoice
 }
 
 export interface MoveSpecExecutionRejection {
@@ -239,6 +259,8 @@ interface MoveSpecExecutionResultBase {
   readonly branchSelections: readonly MoveBranchSelection[]
   /** Fresh oracle result for each answered server-issued movement option. */
   readonly resolvedMovements: readonly MoveSpecResolvedMovement[]
+  /** Fresh roster/send-out result for each answered server-issued replacement. */
+  readonly resolvedSwitches: readonly MoveSpecResolvedSwitch[]
   readonly hitTargetIds: readonly string[]
   readonly missedTargetIds: readonly string[]
   readonly damagedTargetIds: readonly string[]
@@ -351,6 +373,13 @@ const freezeResolvedMovements = (
 ): readonly MoveSpecResolvedMovement[] => Object.freeze(movements.map(movement => Object.freeze({
   ...movement,
   choice: movement.choice,
+})))
+
+const freezeResolvedSwitches = (
+  switches: readonly MoveSpecResolvedSwitch[],
+): readonly MoveSpecResolvedSwitch[] => Object.freeze(switches.map(switchResult => Object.freeze({
+  ...switchResult,
+  choice: switchResult.choice,
 })))
 
 const rulesetMatchesContext = (
@@ -764,6 +793,67 @@ const pendingMovementRequest = (
   })
 }
 
+const switchChoiceSet = (
+  operation: MoveSwitchRequestEffectOperation,
+  context: AuthoritativeMoveRulesContext,
+): AuthoritativeSwitchChoiceSet => {
+  try {
+    return enumerateAuthoritativeSwitchChoices({
+      context,
+      recalledPlacementId: context.actor.placement.id,
+      setId: operation.payload.replacementSetId,
+      positionPolicy: operation.payload.positionPolicy,
+      initiativePolicy: operation.payload.initiativePolicy,
+    })
+  }
+  catch (error) {
+    return fail(
+      'move-mechanics-unavailable',
+      `Switch choices for ${operation.id} could not be resolved: ${error instanceof Error ? error.message : String(error)}`,
+    )
+  }
+}
+
+const revalidateSwitchChoice = (
+  operation: MoveSwitchRequestEffectOperation,
+  context: AuthoritativeMoveRulesContext,
+  optionId: string,
+): AuthoritativeSwitchChoice => {
+  try {
+    return revalidateAuthoritativeSwitchChoice({
+      context,
+      recalledPlacementId: context.actor.placement.id,
+      setId: operation.payload.replacementSetId,
+      positionPolicy: operation.payload.positionPolicy,
+      initiativePolicy: operation.payload.initiativePolicy,
+      optionId,
+    })
+  }
+  catch (error) {
+    return fail(
+      'move-mechanics-unavailable',
+      `Switch option ${optionId} failed resume validation: ${error instanceof Error ? error.message : String(error)}`,
+    )
+  }
+}
+
+const pendingSwitchRequest = (
+  operation: MoveSwitchRequestEffectOperation,
+  recipientIds: readonly string[],
+  set: AuthoritativeSwitchChoiceSet,
+): MoveSpecPendingSwitchRequest => Object.freeze({
+  kind: 'switch-choice',
+  replacementSetId: set.setId,
+  operationId: operation.id,
+  phase: operation.phase,
+  reasonCode: operation.reasonCode,
+  recipientIds: frozenIds(recipientIds),
+  requestId: operation.payload.requestId,
+  promptKey: operation.payload.promptKey,
+  options: Object.freeze(set.choices.map(choice => choice.option)),
+  allowPass: !operation.payload.required,
+})
+
 const pendingBranchRequest = (
   operation: MoveBranchEffectOperation,
   recipientIds: readonly string[],
@@ -915,6 +1005,7 @@ const terminalBase = (
   resolvedChecks: readonly MoveCheckResolution[],
   branchSelections: readonly MoveBranchSelection[],
   resolvedMovements: readonly MoveSpecResolvedMovement[],
+  resolvedSwitches: readonly MoveSpecResolvedSwitch[],
   selectorState: MoveSpecSelectorState,
 ): MoveSpecExecutionResultBase => ({
   operations: freezeEmittedOperations(operations),
@@ -928,6 +1019,7 @@ const terminalBase = (
   resolvedChecks: freezeResolvedChecks(resolvedChecks),
   branchSelections: freezeBranchSelections(branchSelections),
   resolvedMovements: freezeResolvedMovements(resolvedMovements),
+  resolvedSwitches: freezeResolvedSwitches(resolvedSwitches),
   hitTargetIds: frozenIds(selectorState.hitTargetIds),
   missedTargetIds: frozenIds(selectorState.missedTargetIds),
   damagedTargetIds: frozenIds(selectorState.damagedTargetIds),
@@ -1231,6 +1323,7 @@ export const executeMoveSpec = (
   const resolvedChecks: MoveCheckResolution[] = []
   const branchSelections: MoveBranchSelection[] = []
   const resolvedMovements: MoveSpecResolvedMovement[] = []
+  const resolvedSwitches: MoveSpecResolvedSwitch[] = []
   const branchExecutions = new Map<string, ExecutedMoveBranch>()
   const currentSelectorState = (): MoveSpecSelectorState => ({
     targetIds,
@@ -1299,6 +1392,7 @@ export const executeMoveSpec = (
               resolvedChecks,
               branchSelections,
               resolvedMovements,
+              resolvedSwitches,
               currentSelectorState(),
             ),
             rejection: Object.freeze({
@@ -1390,6 +1484,7 @@ export const executeMoveSpec = (
             resolvedChecks,
             branchSelections,
             resolvedMovements,
+            resolvedSwitches,
             currentSelectorState(),
           ),
           rejection: Object.freeze({
@@ -1553,6 +1648,7 @@ export const executeMoveSpec = (
               resolvedChecks,
               branchSelections,
               resolvedMovements,
+              resolvedSwitches,
               currentSelectorState(),
             ),
             request,
@@ -1675,6 +1771,7 @@ export const executeMoveSpec = (
             resolvedChecks,
             branchSelections,
             resolvedMovements,
+            resolvedSwitches,
             currentSelectorState(),
           ),
           request,
@@ -2027,6 +2124,106 @@ export const executeMoveSpec = (
             resolvedChecks,
             branchSelections,
             resolvedMovements,
+            resolvedSwitches,
+            currentSelectorState(),
+          ),
+          request,
+        )
+      }
+
+      if (operation.kind === 'switch-request') {
+        const set = switchChoiceSet(operation, input.context)
+        const request = pendingSwitchRequest(operation, recipientIds, set)
+        if (request.options.length === 0) {
+          if (operation.payload.required) {
+            return fail(
+              'move-mechanics-unavailable',
+              `Switch request ${request.requestId} has no legal authoritative replacement.`,
+            )
+          }
+          trace = reduceMoveResolutionTrace(trace, {
+            kind: 'operation',
+            phase,
+            operationId: operation.id,
+            operationKind: operation.kind,
+            recipientIds,
+            outcome: 'no-op',
+            reasonCode: operation.reasonCode,
+            input: traceJson(operation.payload),
+            result: { status: 'no-legal-replacements' },
+          })
+          continue
+        }
+        const response = responseResolver.resolve({
+          requestId: request.requestId,
+          options: request.options,
+          allowPass: request.allowPass,
+        })
+        const selectedChoice = response?.optionId === null || !response
+          ? null
+          : revalidateSwitchChoice(operation, input.context, response.optionId)
+        if (selectedChoice && response?.optionId) {
+          resolvedSwitches.push(Object.freeze({
+            operationId: operation.id,
+            requestId: request.requestId,
+            optionId: response.optionId,
+            choice: selectedChoice,
+          }))
+        }
+        trace = reduceMoveResolutionTrace(trace, {
+          kind: 'operation',
+          phase,
+          operationId: operation.id,
+          operationKind: operation.kind,
+          recipientIds,
+          outcome: response ? (selectedChoice ? 'applied' : 'no-op') : 'pending',
+          reasonCode: operation.reasonCode,
+          input: traceJson(operation.payload),
+          result: traceJson(response
+            ? {
+                status: selectedChoice ? 'selected' : 'passed',
+                ...(selectedChoice
+                  ? {
+                      recalledPlacementId: selectedChoice.recalledPlacementId,
+                      sentOutPlacementId: selectedChoice.sentOutPlacement.id,
+                      replacementSheetSlug: selectedChoice.replacementSheetSlug,
+                    }
+                  : {}),
+              }
+            : {
+                requestId: request.requestId,
+                requestKind: request.kind,
+                optionCount: request.options.length,
+              }),
+        })
+        trace = reduceMoveResolutionTrace(trace, {
+          kind: 'choice',
+          phase,
+          requestId: request.requestId,
+          requestKind: 'choice',
+          outcome: response
+            ? (selectedChoice ? 'selected' : 'passed')
+            : 'requested',
+          optionId: response?.optionId ?? null,
+          reasonCode: operation.reasonCode,
+        })
+        if (response) continue
+        responseResolver.assertAllConsumed()
+        return materializePendingExecutionResult(
+          terminalBase(
+            input.context,
+            operations,
+            targetIds,
+            trace,
+            input.context.random.snapshot(),
+            resolvedRolls,
+            resolvedDamageTypes,
+            resolvedDamageBases,
+            multiHitExecutions,
+            resolvedChecks,
+            branchSelections,
+            resolvedMovements,
+            resolvedSwitches,
             currentSelectorState(),
           ),
           request,
@@ -2087,6 +2284,7 @@ export const executeMoveSpec = (
             resolvedChecks,
             branchSelections,
             resolvedMovements,
+            resolvedSwitches,
             currentSelectorState(),
           ),
           request,
@@ -2123,6 +2321,7 @@ export const executeMoveSpec = (
       resolvedChecks,
       branchSelections,
       resolvedMovements,
+      resolvedSwitches,
       currentSelectorState(),
     ),
   })

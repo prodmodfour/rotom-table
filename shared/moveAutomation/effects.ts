@@ -70,6 +70,7 @@ export const MOVE_EFFECT_OPERATION_KINDS = [
   'field',
   'hazard',
   'movement-request',
+  'switch-request',
   'usage',
   'history',
   'log',
@@ -300,6 +301,8 @@ export const MOVE_EFFECT_MOVEMENT_DISPLACEMENT_DISTANCE_POLICIES = [
   'up-to-distance',
   'full-distance-required',
 ] as const
+export const MOVE_EFFECT_SWITCH_POSITION_POLICIES = ['recalled-position'] as const
+export const MOVE_EFFECT_SWITCH_INITIATIVE_POLICIES = ['inherit-slot'] as const
 export const MOVE_EFFECT_USAGE_ACTIONS = ['spend', 'restore', 'set'] as const
 export const MOVE_EFFECT_HISTORY_EVENTS = [
   'move-declared',
@@ -420,6 +423,10 @@ export type MoveEffectMovementOpportunityAttackPolicy =
   (typeof MOVE_EFFECT_MOVEMENT_OPPORTUNITY_ATTACK_POLICIES)[number]
 export type MoveEffectMovementDisplacementDistancePolicy =
   (typeof MOVE_EFFECT_MOVEMENT_DISPLACEMENT_DISTANCE_POLICIES)[number]
+export type MoveEffectSwitchPositionPolicy =
+  (typeof MOVE_EFFECT_SWITCH_POSITION_POLICIES)[number]
+export type MoveEffectSwitchInitiativePolicy =
+  (typeof MOVE_EFFECT_SWITCH_INITIATIVE_POLICIES)[number]
 export type MoveEffectUsageAction = (typeof MOVE_EFFECT_USAGE_ACTIONS)[number]
 export type MoveEffectHistoryEvent = (typeof MOVE_EFFECT_HISTORY_EVENTS)[number]
 
@@ -1152,6 +1159,16 @@ export interface MoveMovementRequestEffectPayload {
   readonly displacement?: MoveMovementDisplacement
 }
 
+export interface MoveSwitchRequestEffectPayload {
+  readonly requestId: string
+  readonly replacementSetId: string
+  readonly promptKey: string
+  /** Mandatory switches cannot pass and fail closed when no legal replacement exists. */
+  readonly required: boolean
+  readonly positionPolicy: MoveEffectSwitchPositionPolicy
+  readonly initiativePolicy: MoveEffectSwitchInitiativePolicy
+}
+
 export interface MoveUsageEffectPayload {
   readonly action: MoveEffectUsageAction
   readonly resourceId: string
@@ -1224,6 +1241,7 @@ export type MoveTemporaryEffectOperation = MoveEffectOperationEnvelope<'temporar
 export type MoveFieldEffectOperation = MoveEffectOperationEnvelope<'field', MoveFieldEffectPayload>
 export type MoveHazardEffectOperation = MoveEffectOperationEnvelope<'hazard', MoveHazardEffectPayload>
 export type MoveMovementRequestEffectOperation = MoveEffectOperationEnvelope<'movement-request', MoveMovementRequestEffectPayload>
+export type MoveSwitchRequestEffectOperation = MoveEffectOperationEnvelope<'switch-request', MoveSwitchRequestEffectPayload>
 export type MoveUsageEffectOperation = MoveEffectOperationEnvelope<'usage', MoveUsageEffectPayload>
 export type MoveHistoryEffectOperation = MoveEffectOperationEnvelope<'history', MoveHistoryEffectPayload>
 export type MoveLogEffectOperation = MoveEffectOperationEnvelope<'log', MoveLogEffectPayload>
@@ -1244,6 +1262,7 @@ export type MoveEffectOperation =
   | MoveFieldEffectOperation
   | MoveHazardEffectOperation
   | MoveMovementRequestEffectOperation
+  | MoveSwitchRequestEffectOperation
   | MoveUsageEffectOperation
   | MoveHistoryEffectOperation
   | MoveLogEffectOperation
@@ -1527,6 +1546,14 @@ const MOVEMENT_DISPLACEMENT_FIELDS = [
   'distancePolicy',
   'opportunityAttacks',
 ] as const
+const SWITCH_REQUEST_FIELDS = [
+  'requestId',
+  'replacementSetId',
+  'promptKey',
+  'required',
+  'positionPolicy',
+  'initiativePolicy',
+] as const
 const USAGE_FIELDS = ['action', 'resourceId', 'amount'] as const
 const HISTORY_FIELDS = ['event', 'detailCode'] as const
 const LOG_FIELDS = ['messageKey', 'arguments'] as const
@@ -1615,6 +1642,8 @@ const MOVEMENT_OPPORTUNITY_ATTACK_POLICY_SET = new Set<string>(
 const MOVEMENT_DISPLACEMENT_DISTANCE_POLICY_SET = new Set<string>(
   MOVE_EFFECT_MOVEMENT_DISPLACEMENT_DISTANCE_POLICIES,
 )
+const SWITCH_POSITION_POLICY_SET = new Set<string>(MOVE_EFFECT_SWITCH_POSITION_POLICIES)
+const SWITCH_INITIATIVE_POLICY_SET = new Set<string>(MOVE_EFFECT_SWITCH_INITIATIVE_POLICIES)
 const USAGE_ACTION_SET = new Set<string>(MOVE_EFFECT_USAGE_ACTIONS)
 const HISTORY_EVENT_SET = new Set<string>(MOVE_EFFECT_HISTORY_EVENTS)
 const RECIPIENT_SCOPED_BRANCH_SELECTOR_SET = new Set<MoveEffectRecipientSelectorKind>(
@@ -3728,6 +3757,34 @@ const parseMovementRequestPayload = (
   }
 }
 
+const parseSwitchRequestPayload = (
+  value: unknown,
+  path: string,
+): MoveSwitchRequestEffectPayload => {
+  const input = parseExactRecord(value, SWITCH_REQUEST_FIELDS, path)
+  return {
+    requestId: parseStableId(ownValue(input, 'requestId', path), `${path}.requestId`),
+    replacementSetId: parseStableId(
+      ownValue(input, 'replacementSetId', path),
+      `${path}.replacementSetId`,
+    ),
+    promptKey: parseStableId(ownValue(input, 'promptKey', path), `${path}.promptKey`),
+    required: parseBoolean(ownValue(input, 'required', path), `${path}.required`),
+    positionPolicy: parseEnum<MoveEffectSwitchPositionPolicy>(
+      ownValue(input, 'positionPolicy', path),
+      SWITCH_POSITION_POLICY_SET,
+      `${path}.positionPolicy`,
+      'recalled-position',
+    ),
+    initiativePolicy: parseEnum<MoveEffectSwitchInitiativePolicy>(
+      ownValue(input, 'initiativePolicy', path),
+      SWITCH_INITIATIVE_POLICY_SET,
+      `${path}.initiativePolicy`,
+      'inherit-slot',
+    ),
+  }
+}
+
 const parseUsagePayload = (value: unknown, path: string): MoveUsageEffectPayload => {
   const input = parseExactRecord(value, USAGE_FIELDS, path)
   return {
@@ -4624,6 +4681,8 @@ const parseDetachedOperation = (value: unknown, path: string): MoveEffectOperati
       return { ...common, kind, payload: parseHazardPayload(payload, payloadPath) }
     case 'movement-request':
       return { ...common, kind, payload: parseMovementRequestPayload(payload, payloadPath) }
+    case 'switch-request':
+      return { ...common, kind, payload: parseSwitchRequestPayload(payload, payloadPath) }
     case 'usage':
       return { ...common, kind, payload: parseUsagePayload(payload, payloadPath) }
     case 'history':

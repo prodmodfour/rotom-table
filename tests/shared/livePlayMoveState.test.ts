@@ -74,6 +74,10 @@ const payload = () => ({
     hazards: { previous: [], current: [{ kind: 'fire', x: 1, y: 0, z: 1, layer: 1, owner: 'actor' }] },
     fieldEffects: { previous: { weather: [], terrains: [], rooms: [] }, current: { weather: [{ kind: 'sunny', rounds: 2, source: 'Tackle' }], terrains: [], rooms: [] } },
     metadata: { previous: null, current: { moveLog: [{ at: 1000 }] } },
+    initiative: {
+      previous: { activeId: 'token-a', round: 1, manualOrderIds: ['token-a', 'token-b'] },
+      current: { activeId: 'token-b', round: 1, manualOrderIds: ['token-b', 'token-a'] },
+    },
     encounterState: {
       previous: createEmptyEncounterState(),
       current: {
@@ -106,6 +110,8 @@ describe('livePlayMoveState patch contract', () => {
     expect(result.payload.move).not.toBe(raw.move)
     expect(result.payload.presentation).not.toBe(raw.presentation)
     expect(result.payload.changes.placements?.current).not.toBe(raw.changes.placements.current)
+    expect(result.payload.changes.initiative?.current)
+      .not.toBe(raw.changes.initiative.current)
     expect(result.payload.changes.encounterState?.current)
       .not.toBe(raw.changes.encounterState.current)
     expect(isLivePlayMoveStatePatchPayload(raw)).toBe(true)
@@ -158,6 +164,7 @@ describe('livePlayMoveState patch contract', () => {
         temporaryHitPoints: { previous: payload().changes.temporaryHitPoints.current, current: null },
         moveUsage: { previous: payload().changes.moveUsage.current, current: null },
         metadata: { previous: { moveLog: [] }, current: null },
+        initiative: { previous: { activeId: 'token-a', round: 1 }, current: null },
       },
     })
     expect(result.valid).toBe(true)
@@ -165,5 +172,6 @@ describe('livePlayMoveState patch contract', () => {
     expect(result.payload.changes.temporaryHitPoints?.current).toBeNull()
     expect(result.payload.changes.moveUsage?.current).toBeNull()
     expect(result.payload.changes.metadata?.current).toBeNull()
+    expect(result.payload.changes.initiative?.current).toBeNull()
   })
 })

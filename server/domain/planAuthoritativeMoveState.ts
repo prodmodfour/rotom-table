@@ -299,6 +299,9 @@ const cloneResolution = (resolution: AuthoritativeMoveResolution): Authoritative
   ...(resolution.resourceMovement === undefined
     ? {}
     : { resourceMovement: cloneJson(resolution.resourceMovement) }),
+  ...(resolution.switchTransition === undefined
+    ? {}
+    : { switchTransition: cloneJson(resolution.switchTransition) }),
 })
 
 const cloneUsageSummary = (usage: UseMoveUsageSummary): UseMoveUsageSummary => cloneJson(usage)

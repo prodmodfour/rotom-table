@@ -56,6 +56,12 @@ export const buildAuthoritativeMoveMapChanges = (
       current: deepCloneJson(nextMap.metadata),
     }
   }
+  if (!sameJsonValue(previousMap.initiative, nextMap.initiative)) {
+    changes.initiative = {
+      previous: deepCloneJson(previousMap.initiative),
+      current: deepCloneJson(nextMap.initiative),
+    }
+  }
   const previousEncounterState = parseEncounterState(
     previousMap.encounterState ?? createEmptyEncounterState(),
   )

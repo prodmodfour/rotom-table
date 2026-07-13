@@ -24,6 +24,7 @@ export const MOVE_STATE_CHANGE_KINDS = [
   'map-hazards',
   'map-field-effects',
   'map-metadata',
+  'map-initiative',
   'encounter-state',
   'placement-state',
   'sheet-state',
@@ -170,12 +171,19 @@ export type MoveMapMetadataStateChange = MoveStateValueChange<
   TabletopMap['metadata']
 >
 
+export type MoveMapInitiativeStateChange = MoveStateValueChange<
+  'map-initiative',
+  MoveMapStateChangeScope,
+  TabletopMap['initiative']
+>
+
 export type MoveMapStateChange =
   | MoveMapTemporaryHitPointsStateChange
   | MoveMapMoveUsageStateChange
   | MoveMapHazardsStateChange
   | MoveMapFieldEffectsStateChange
   | MoveMapMetadataStateChange
+  | MoveMapInitiativeStateChange
 
 export type MoveEncounterStateChange<
   EncounterState extends VersionedMoveEncounterState = VersionedMoveEncounterState,
@@ -446,6 +454,7 @@ function assertChangeShape(value: unknown): void {
     case 'map-hazards':
     case 'map-field-effects':
     case 'map-metadata':
+    case 'map-initiative':
       assertScopeKind(value.scope, 'map')
       break
     case 'encounter-state':

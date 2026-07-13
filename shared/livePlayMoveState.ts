@@ -16,6 +16,7 @@ import {
 } from './livePlayMovePresentation'
 import type {
   GridAnchor,
+  InitiativeTrackerState,
   MapFieldEffects,
   MapHazardV2,
   MapSceneState,
@@ -65,6 +66,11 @@ export interface LivePlayMoveStatePatchChanges {
   readonly metadata?: {
     readonly previous: Record<string, unknown> | null
     readonly current: Record<string, unknown> | null
+  }
+
+  readonly initiative?: {
+    readonly previous: InitiativeTrackerState | null
+    readonly current: InitiativeTrackerState | null
   }
 
   readonly encounterState?: {
@@ -754,6 +760,48 @@ const parseLaneChange = <T>(
   return { previous: previous as T, current: current as T }
 }
 
+const parseInitiativeState = (
+  value: unknown,
+  path: string,
+  issues: MutableIssueList,
+): InitiativeTrackerState | null => {
+  if (value === null) return null
+  if (!isRecord(value)) {
+    addIssue(issues, path, 'invalid-field', `${path} must be an initiative object or null.`)
+    return null
+  }
+  rejectUnknownFields(value, new Set(['activeId', 'round', 'manualOrderIds']), path, issues)
+  if (
+    hasOwn(value, 'activeId')
+    && value.activeId !== null
+    && (typeof value.activeId !== 'string' || !value.activeId.trim())
+  ) {
+    addIssue(issues, `${path}.activeId`, 'invalid-field', `${path}.activeId must be a placement ID or null.`)
+  }
+  if (hasOwn(value, 'round') && (!Number.isSafeInteger(value.round) || Number(value.round) < 1)) {
+    addIssue(issues, `${path}.round`, 'invalid-field', `${path}.round must be a positive safe integer.`)
+  }
+  const manualOrderIds = hasOwn(value, 'manualOrderIds')
+    ? parseStringArray(value.manualOrderIds, `${path}.manualOrderIds`, issues)
+    : undefined
+  if (
+    (hasOwn(value, 'activeId')
+      && value.activeId !== null
+      && (typeof value.activeId !== 'string' || !value.activeId.trim()))
+    || (hasOwn(value, 'round') && (!Number.isSafeInteger(value.round) || Number(value.round) < 1))
+    || (hasOwn(value, 'manualOrderIds') && manualOrderIds === null)
+  ) return null
+  return {
+    ...(hasOwn(value, 'activeId')
+      ? { activeId: value.activeId as string | null }
+      : {}),
+    ...(hasOwn(value, 'round') ? { round: Number(value.round) } : {}),
+    ...(manualOrderIds === undefined || manualOrderIds === null
+      ? {}
+      : { manualOrderIds }),
+  }
+}
+
 const parseChanges = (value: unknown, path: string, issues: MutableIssueList): LivePlayMoveStatePatchChanges | null => {
   if (!isRecord(value)) {
     addIssue(issues, path, 'invalid-field', `${path} must be an object.`)
@@ -772,6 +820,8 @@ const parseChanges = (value: unknown, path: string, issues: MutableIssueList): L
   if (fieldEffects) Object.assign(changes, { fieldEffects })
   const metadata = parseLaneChange(value, 'metadata', path, parseJsonRecordOrNull, issues)
   if (metadata) Object.assign(changes, { metadata })
+  const initiative = parseLaneChange(value, 'initiative', path, parseInitiativeState, issues)
+  if (initiative) Object.assign(changes, { initiative })
   const encounterState = parseLaneChange(
     value,
     'encounterState',

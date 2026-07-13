@@ -35,6 +35,7 @@ export interface AdaptV1MapChanges {
   readonly hazards?: AdaptV1ValueChange<readonly MapHazardV2[]>
   readonly fieldEffects?: AdaptV1ValueChange<MapFieldEffects>
   readonly metadata?: AdaptV1ValueChange<TabletopMap['metadata']>
+  readonly initiative?: AdaptV1ValueChange<TabletopMap['initiative']>
   readonly encounterState?: AdaptV1ValueChange<EncounterState>
 }
 

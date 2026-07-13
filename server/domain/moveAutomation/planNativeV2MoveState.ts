@@ -1,5 +1,8 @@
 import { normalizeRevision } from '#shared/sessionRevisions'
-import { parseEncounterState } from '#shared/moveAutomation/encounterState'
+import {
+  createEmptyEncounterState,
+  parseEncounterState,
+} from '#shared/moveAutomation/encounterState'
 import {
   parseMoveResolutionAuditTrace,
   type MoveResolutionAuditTrace,
@@ -24,11 +27,13 @@ import { mergeDisjointMoveSheetStateChanges } from './mergeSheetStateChanges'
 import {
   RESTORE_PREVIOUS_MOVE_STATE_VALUE,
   createMoveStateChangePlan,
+  unavailableMoveStateCompensation,
   type MoveStateChange,
   type MoveStateChangeInput,
   type MoveStateChangePlan,
 } from './plan'
 import { applyAuthoritativeMovePlacementTransition } from './placementTransition'
+import { planAuthoritativeMoveSwitch } from './planMoveSwitch'
 import type { MoveAutomationRuntimeRegistry } from './registry'
 import {
   isMoveMapOperationEmission,
@@ -96,6 +101,11 @@ export const applyNativeCoreMapChanges = (
       next.encounterState = parseEncounterState(change.current)
       continue
     }
+    if (change.kind === 'map-initiative') {
+      if (change.current === undefined) delete next.initiative
+      else next.initiative = deepCloneJson(change.current)
+      continue
+    }
     if (change.scope.kind === 'map' || change.scope.kind === 'placement') {
       return fail(
         'unsupported-core-map-change',
@@ -106,17 +116,64 @@ export const applyNativeCoreMapChanges = (
   return next
 }
 
-const placementStateChange = (options: {
+const placementStateChanges = (options: {
   readonly previousMap: TabletopMap
   readonly nextMap: TabletopMap
   readonly resolution: AuthoritativeMoveResolution
-}): MoveStateChangeInput | null => {
+}): readonly MoveStateChangeInput[] => {
   const actorId = options.resolution.actorPlacementId
   const previous = options.previousMap.placements.find(placement => placement.id === actorId)
     ?? fail('actor-placement-missing', `Actor placement ${actorId} was not found.`)
+  const switchTransition = options.resolution.switchTransition
+  if (switchTransition) {
+    const currentActor = options.nextMap.placements.find(placement => placement.id === actorId)
+    const sentOut = options.nextMap.placements.find(
+      placement => placement.id === switchTransition.sentOutPlacement.id,
+    )
+    if (currentActor || !sentOut) {
+      return fail(
+        'state-change-conflict',
+        `${options.resolution.canonicalMoveName} did not produce an exact recall/send-out pair.`,
+      )
+    }
+    const common = {
+      expectedRevision: normalizeRevision(options.previousMap.revision),
+      sourceOperationId: switchTransition.operationId,
+      reasonCode: 'move-switch-recall-and-send-out',
+      compensation: unavailableMoveStateCompensation(
+        'accepted-switch-placement-may-be-observed',
+        'externally-observed',
+      ),
+    } as const
+    return [
+      {
+        ...common,
+        kind: 'placement-state',
+        scope: {
+          kind: 'placement',
+          mapSlug: options.previousMap.slug,
+          placementId: actorId,
+        },
+        previous: deepCloneJson(previous),
+        current: null,
+      },
+      {
+        ...common,
+        kind: 'placement-state',
+        scope: {
+          kind: 'placement',
+          mapSlug: options.previousMap.slug,
+          placementId: sentOut.id,
+        },
+        previous: null,
+        current: deepCloneJson(sentOut),
+      },
+    ]
+  }
+
   const current = options.nextMap.placements.find(placement => placement.id === actorId)
     ?? fail('actor-placement-missing', `Actor placement ${actorId} disappeared during planning.`)
-  if (sameJsonValue(previous, current)) return null
+  if (sameJsonValue(previous, current)) return []
 
   const moved = !sameJsonValue(previous.position, current.position)
   const operation = moved
@@ -130,7 +187,7 @@ const placementStateChange = (options: {
       `${options.resolution.canonicalMoveName} changed position without a movement operation.`,
     )
   }
-  return {
+  return [{
     kind: 'placement-state',
     scope: {
       kind: 'placement',
@@ -143,23 +200,109 @@ const placementStateChange = (options: {
     previous: deepCloneJson(previous),
     current: deepCloneJson(current),
     compensation: RESTORE_PREVIOUS_MOVE_STATE_VALUE,
+  }]
+}
+
+const switchMapStateChanges = (options: {
+  readonly previousMap: TabletopMap
+  readonly nextMap: TabletopMap
+  readonly resolution: AuthoritativeMoveResolution
+  readonly existing: readonly MoveStateChange[]
+}): readonly MoveStateChangeInput[] => {
+  const transition = options.resolution.switchTransition
+  if (!transition) return []
+  const expectedRevision = normalizeRevision(options.previousMap.revision)
+  const mapScope = { kind: 'map' as const, mapSlug: options.previousMap.slug }
+  const sourceFor = (kind: MoveStateChange['kind']): string | null => (
+    options.existing.some(change => change.kind === kind)
+      ? null
+      : transition.operationId
+  )
+  const changes: MoveStateChangeInput[] = []
+  if (!sameJsonValue(options.previousMap.temporaryHitPoints, options.nextMap.temporaryHitPoints)) {
+    changes.push({
+      kind: 'map-temporary-hit-points',
+      scope: mapScope,
+      expectedRevision,
+      sourceOperationId: sourceFor('map-temporary-hit-points'),
+      reasonCode: 'move-switch-source-leave-temporary-hp',
+      previous: deepCloneJson(options.previousMap.temporaryHitPoints),
+      current: deepCloneJson(options.nextMap.temporaryHitPoints),
+      compensation: unavailableMoveStateCompensation(
+        'accepted-switch-source-leave-cleanup',
+        'externally-observed',
+      ),
+    })
   }
+  if (!sameJsonValue(options.previousMap.initiative, options.nextMap.initiative)) {
+    changes.push({
+      kind: 'map-initiative',
+      scope: mapScope,
+      expectedRevision,
+      sourceOperationId: transition.operationId,
+      reasonCode: 'move-switch-inherit-initiative-slot',
+      previous: deepCloneJson(options.previousMap.initiative),
+      current: deepCloneJson(options.nextMap.initiative),
+      compensation: unavailableMoveStateCompensation(
+        'accepted-switch-initiative-may-be-observed',
+        'externally-observed',
+      ),
+    })
+  }
+  const previousEncounter = parseEncounterState(
+    options.previousMap.encounterState ?? createEmptyEncounterState(),
+  )
+  const currentEncounter = parseEncounterState(
+    options.nextMap.encounterState ?? createEmptyEncounterState(),
+  )
+  if (!sameJsonValue(previousEncounter, currentEncounter)) {
+    changes.push({
+      kind: 'encounter-state',
+      scope: { kind: 'encounter', mapSlug: options.previousMap.slug },
+      expectedRevision,
+      sourceOperationId: sourceFor('encounter-state'),
+      reasonCode: sourceFor('encounter-state') === null
+        ? 'move-effects-and-switch-lifecycle'
+        : 'move-switch-source-leave-lifecycle',
+      previous: deepCloneJson(previousEncounter),
+      current: deepCloneJson(currentEncounter),
+      compensation: unavailableMoveStateCompensation(
+        'accepted-switch-lifecycle-may-be-observed',
+        'externally-observed',
+      ),
+    })
+  }
+  return changes
+}
+
+const stateSlotKey = (input: MoveStateChangeInput): string => {
+  if (input.scope.kind === 'map') return `map:${input.kind}`
+  if (input.scope.kind === 'encounter') return 'encounter'
+  if (input.scope.kind === 'placement') return `placement:${input.scope.placementId}`
+  if (input.scope.kind === 'sheet') return `sheet:${input.scope.sheetKind}:${input.scope.sheetSlug}`
+  return `external:${input.scope.resourceKind}:${input.scope.resourceId}`
 }
 
 const combinedStateChanges = (options: {
   readonly resolution: AuthoritativeMoveResolution
   readonly mapPlan: MoveStateChangePlan
-  readonly placement: MoveStateChangeInput | null
+  readonly placements: readonly MoveStateChangeInput[]
+  readonly switchMapChanges: readonly MoveStateChangeInput[]
 }): MoveStateChangePlan => {
   const native = options.resolution.nativeV2
     ?? fail('native-projection-missing', 'Native resolution projection is missing.')
   const operationOrder = new Map(
     native.operations.map(({ operation }, index) => [operation.id, index]),
   )
-  const inputs = [
+  const replacedSlots = new Set(options.switchMapChanges.map(stateSlotKey))
+  const existingInputs = [
     ...native.coreStateChanges.changes.map(stripPlanIdentity),
-    ...(options.placement ? [options.placement] : []),
+    ...options.placements,
     ...options.mapPlan.changes.map(stripPlanIdentity),
+  ].filter(input => !replacedSlots.has(stateSlotKey(input)))
+  const inputs = [
+    ...existingInputs,
+    ...options.switchMapChanges,
   ].map((input, index) => ({
     input,
     index,
@@ -352,7 +495,7 @@ export const planNativeV2MoveState = (options: {
     )
 
   const mapWithCore = applyNativeCoreMapChanges(mapReduction.nextMap, native.coreStateChanges)
-  const transitionedMap = applyAuthoritativeMovePlacementTransition({
+  const placementTransitionMap = applyAuthoritativeMovePlacementTransition({
     map: mapWithCore,
     actorPlacement: actorPlacement(options.map, options.resolution.actorPlacementId),
     movement: options.resolution.movement,
@@ -364,20 +507,37 @@ export const planNativeV2MoveState = (options: {
       `${code}: ${message}`,
     ),
   })
+  const switchedMap = options.resolution.switchTransition
+    ? planAuthoritativeMoveSwitch({
+        map: placementTransitionMap,
+        transition: options.resolution.switchTransition,
+      }).nextMap
+    : placementTransitionMap
   const nextMap: TabletopMap = {
-    ...transitionedMap,
+    ...switchedMap,
     revision: mapReduction.revision,
     updatedAt: options.plannedAt,
   }
-  const placement = placementStateChange({
+  const placements = placementStateChanges({
     previousMap: options.map,
     nextMap,
     resolution: options.resolution,
   })
+  const existingChanges = [
+    ...native.coreStateChanges.changes,
+    ...mapReduction.stateChanges.changes,
+  ]
+  const switchMapChanges = switchMapStateChanges({
+    previousMap: options.map,
+    nextMap,
+    resolution: options.resolution,
+    existing: existingChanges,
+  })
   const stateChanges = combinedStateChanges({
     resolution: options.resolution,
     mapPlan: mapReduction.stateChanges,
-    placement,
+    placements,
+    switchMapChanges,
   })
   const auditTrace = applyMovementTrace({
     trace: mapReduction.trace,

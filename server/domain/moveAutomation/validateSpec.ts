@@ -619,6 +619,7 @@ export const validateMoveSpecOperationSequence = (
 
     if (
       operation.kind === 'movement-request'
+      || operation.kind === 'switch-request'
       || operation.kind === 'choice-request'
       || operation.kind === 'reaction-request'
     ) {
@@ -670,6 +671,41 @@ export const validateMoveSpecOperationSequence = (
         'a durable movement choice requires a positive distance and destination set ID.',
       )
     }
+  }
+
+  const switchEntries = indexed.filter(({ operation }) => (
+    operation.kind === 'switch-request'
+  ))
+  if (switchEntries.length > 1) {
+    fail(
+      'invalid-definition',
+      switchEntries[1]!.path,
+      'a MoveSpec may contain at most one durable switch request.',
+    )
+  }
+  for (const { operation, path } of switchEntries) {
+    if (operation.kind !== 'switch-request') continue
+    if (operation.phase !== 'movement') {
+      fail(
+        'invalid-definition',
+        `${path}.phase`,
+        'a durable switch request must execute in the movement phase.',
+      )
+    }
+    if (operation.recipients.kind !== 'actor') {
+      fail(
+        'invalid-definition',
+        `${path}.recipients`,
+        'a durable switch request must belong to the authoritative actor.',
+      )
+    }
+  }
+  if (switchEntries.length > 0 && movementChoiceEntries.length > 0) {
+    fail(
+      'invalid-definition',
+      switchEntries[0]!.path,
+      'a durable switch and movement choice cannot coexist in one MoveSpec.',
+    )
   }
 
   const displacementEntries = indexed.filter(({ operation }) => (

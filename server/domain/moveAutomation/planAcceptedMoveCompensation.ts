@@ -275,6 +275,9 @@ const scalarInverse = (
       restore: deepCloneJson(change.previous),
     }
   }
+  if (change.kind === 'map-initiative') {
+    return fail('Initiative state changes require unavailable compensation metadata.')
+  }
   return {
     kind: 'restore-placement-state',
     scope: deepCloneJson(change.scope),

@@ -820,6 +820,77 @@ describe('authoritative MoveSpec validation and hashing', () => {
     )
   })
 
+  it('bounds move-driven switch choices to one actor-owned movement-phase request', () => {
+    const switchOperation = () => ({
+      id: 'operation.switch-choice',
+      kind: 'switch-request',
+      source: { kind: 'move', id: 'move.scratch' },
+      recipients: { kind: 'actor' },
+      phase: 'movement',
+      reasonCode: 'move.scratch.choose-replacement',
+      payload: {
+        requestId: 'request.switch-replacement',
+        replacementSetId: 'replacements.scratch',
+        promptKey: 'move.scratch.choose-replacement',
+        required: true,
+        positionPolicy: 'recalled-position',
+        initiativePolicy: 'inherit-slot',
+      },
+    })
+    const valid = validSpec()
+    valid.phases.push({ phase: 'movement', operations: [switchOperation()] })
+    expect(validateMoveSpec(valid).spec.phases
+      .flatMap(block => block.operations)
+      .find(operation => operation.id === 'operation.switch-choice')).toMatchObject({
+      kind: 'switch-request',
+      recipients: { kind: 'actor' },
+      payload: { required: true, initiativePolicy: 'inherit-slot' },
+    })
+
+    const wrongPhase = structuredClone(valid)
+    wrongPhase.phases.at(-1)!.phase = 'schedule'
+    wrongPhase.phases.at(-1)!.operations[0]!.phase = 'schedule'
+    expectDefinitionError(
+      () => validateMoveSpec(wrongPhase),
+      'invalid-definition',
+      'spec.phases[2].operations[0].phase',
+    )
+
+    const targetOwned = structuredClone(valid)
+    targetOwned.phases.at(-1)!.operations[0]!.recipients = { kind: 'hit-targets' }
+    expectDefinitionError(() => validateMoveSpec(targetOwned), 'invalid-definition')
+
+    const duplicate = structuredClone(valid)
+    const second = switchOperation()
+    second.id = 'operation.switch-choice-second'
+    second.payload.requestId = 'request.switch-replacement-second'
+    second.payload.replacementSetId = 'replacements.scratch-second'
+    duplicate.phases.at(-1)!.operations.push(second)
+    expectDefinitionError(() => validateMoveSpec(duplicate), 'invalid-definition')
+
+    const withMovementChoice = structuredClone(valid)
+    withMovementChoice.phases.at(-1)!.operations.unshift({
+      id: 'operation.movement-choice',
+      kind: 'movement-request',
+      source: { kind: 'move', id: 'move.scratch' },
+      recipients: { kind: 'actor' },
+      phase: 'movement',
+      reasonCode: 'move.scratch.choose-destination',
+      payload: {
+        requestId: 'request.destination',
+        mode: 'voluntary',
+        distance: 1,
+        destinationSetId: 'destinations.scratch',
+        choice: {
+          kind: 'destination',
+          promptKey: 'move.scratch.choose-destination',
+          allowPass: false,
+        },
+      },
+    })
+    expectDefinitionError(() => validateMoveSpec(withMovementChoice), 'invalid-definition')
+  })
+
   it('validates reviewed forced and voluntary spatial displacement declarations', () => {
     const displacementOperation = () => ({
       id: 'operation.weighted-push',

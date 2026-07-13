@@ -556,6 +556,11 @@ const applyMoveDerivedStateChanges = (
     else map.metadata = deepCloneJson(changes.metadata.current)
   }
 
+  if (changes.initiative) {
+    if (changes.initiative.current === null) delete map.initiative
+    else map.initiative = deepCloneJson(changes.initiative.current)
+  }
+
   if (changes.encounterState) {
     map.encounterState = deepCloneJson(changes.encounterState.current)
   }

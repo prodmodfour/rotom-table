@@ -184,6 +184,14 @@ const VALID_PAYLOADS = {
       opportunityAttacks: 'ignore',
     },
   },
+  'switch-request': {
+    requestId: 'switch.u-turn',
+    replacementSetId: 'switch.u-turn.replacements',
+    promptKey: 'move.u-turn.choose-replacement',
+    required: true,
+    positionPolicy: 'recalled-position',
+    initiativePolicy: 'inherit-slot',
+  },
   usage: {
     action: 'spend',
     resourceId: 'move.daily-use',
@@ -274,6 +282,7 @@ describe('MoveSpec typed effect operations', () => {
       'field',
       'hazard',
       'movement-request',
+      'switch-request',
       'usage',
       'history',
       'log',

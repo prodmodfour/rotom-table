@@ -23,9 +23,7 @@ import {
 } from '#shared/moveAutomation/responseCommands'
 import type { PlayerProfile } from '#shared/playerProfiles'
 import { nextRevision, normalizeRevision } from '#shared/sessionRevisions'
-import type { CharacterSheet } from '~/types/characterSheet'
-import type { SheetKind, TabletopMap } from '~/types/map'
-import type { TrainerSheet } from '~/types/trainerSheet'
+import type { TabletopMap } from '~/types/map'
 import { deepCloneJson } from '~/utils/serialization'
 import {
   isAuthoritativeMoveStatePlanningError,
@@ -87,7 +85,6 @@ import {
 import {
   createSqliteSheetRepository,
   SheetRevisionConflictError,
-  type PersistedSheet,
   type SheetRepository,
 } from '../storage/sheetRepository'
 import {
@@ -97,6 +94,7 @@ import {
 import { redactSheetUpdatesForPlayer } from '../utils/sheetPrivacy'
 import { UseCaseHttpError } from '../utils/useCaseErrors'
 import { toPersistedMap } from './saveMap'
+import { loadMoveResolutionSheets } from './loadMoveResolutionSheets'
 import {
   moveResultFromPlan,
   moveStatePatch,
@@ -186,49 +184,15 @@ const responseWindowId = (command: MoveResponseCommand): string => {
   return command.payload.windowId
 }
 
-const uniquePlacementSheetRefs = (map: TabletopMap): readonly {
-  readonly kind: SheetKind
-  readonly slug: string
-}[] => {
-  const result: Array<{ kind: SheetKind; slug: string }> = []
-  const seen = new Set<string>()
-  for (const placement of map.placements) {
-    const key = `${placement.sheetKind}:${placement.sheetSlug}`
-    if (seen.has(key)) continue
-    seen.add(key)
-    result.push({ kind: placement.sheetKind, slug: placement.sheetSlug })
-  }
-  return result
-}
-
-const persistedSheetRecord = (sheet: PersistedSheet): Record<string, unknown> => ({
-  ...sheet.sheet,
-  slug: sheet.slug,
-  revision: sheet.revision,
-  updatedAt: sheet.updatedAt,
-})
-
 const loadSheets = (
   map: TabletopMap,
   dependencies: Dependencies,
-): {
-  readonly pokemonSheets: ReadonlyMap<string, CharacterSheet>
-  readonly trainerSheets: ReadonlyMap<string, TrainerSheet>
-} => {
-  const pokemonSheets = new Map<string, CharacterSheet>()
-  const trainerSheets = new Map<string, TrainerSheet>()
-  for (const ref of uniquePlacementSheetRefs(map)) {
-    const stored = dependencies.sheetRepository.getByRef(ref.kind, ref.slug)
-    if (!stored) continue
-    if (ref.kind === 'pokemon') {
-      pokemonSheets.set(ref.slug, persistedSheetRecord(stored) as unknown as CharacterSheet)
-    }
-    else {
-      trainerSheets.set(ref.slug, persistedSheetRecord(stored) as unknown as TrainerSheet)
-    }
-  }
-  return { pokemonSheets, trainerSheets }
-}
+  resolution: PendingMoveResolution,
+) => loadMoveResolutionSheets({
+  map,
+  sheetRepository: dependencies.sheetRepository,
+  durableReads: resolution.readSet,
+})
 
 const pendingMapRevision = (resolution: PendingMoveResolution): number => (
   resolution.readSet.find(read => read.kind === 'map')?.revision
@@ -618,7 +582,7 @@ export const resumePendingMoveResolutionUseCase = (
         message: 'Authoritative state consulted by this move changed before the response.',
       })
     }
-    const sheets = loadSheets(map, dependencies)
+    const sheets = loadSheets(map, dependencies, stored.resolution)
     if (isAttackOfOpportunityPendingResolution(stored.resolution)) {
       let plan: AttackOfOpportunityResponsePlan
       try {

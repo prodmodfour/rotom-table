@@ -14,6 +14,7 @@ import type {
   AuthoritativeMoveResolution,
   AuthoritativeMoveResourceMovement,
   AuthoritativeMoveShiftMovement,
+  AuthoritativeMoveSwitchTransition,
 } from '../resolveAuthoritativeMove'
 import {
   buildAuthoritativeMoveRulesContext,
@@ -204,6 +205,37 @@ const alreadyCommittedOperationIds = (
   )))
 }
 
+const resolvedSwitchProjection = (
+  execution: MoveSpecExecutionCompleteResult | Extract<
+    ReturnType<typeof executeMoveSpec>,
+    { readonly kind: 'pending-request' }
+  >,
+): { readonly switchTransition?: AuthoritativeMoveSwitchTransition } => {
+  if (execution.resolvedSwitches.length === 0) return {}
+  if (execution.resolvedSwitches.length > 1) {
+    return fail(
+      'execution-rejected',
+      'A resumed MoveSpec resolved more than one durable switch choice.',
+    )
+  }
+  const resolved = execution.resolvedSwitches[0]!
+  const choice = resolved.choice
+  return {
+    switchTransition: {
+      operationId: resolved.operationId,
+      recalledPlacementId: choice.recalledPlacementId,
+      sentOutPlacement: {
+        ...choice.sentOutPlacement,
+        position: { ...choice.sentOutPlacement.position },
+      },
+      trainerPlacementId: choice.trainerPlacementId,
+      trainerSheetSlug: choice.trainerSheetSlug,
+      positionPolicy: 'recalled-position',
+      initiativePolicy: 'inherit-slot',
+    },
+  }
+}
+
 const resolvedMovementProjection = (
   context: ReturnType<typeof buildAuthoritativeMoveRulesContext>,
   execution: MoveSpecExecutionCompleteResult | Extract<
@@ -330,6 +362,7 @@ export const resumeMoveSpec = (
   }
   assertDurableExecutionPrefix(pending, execution)
   const movementProjection = resolvedMovementProjection(context, execution)
+  const switchProjection = resolvedSwitchProjection(execution)
 
   const resolvedMoveKey = moveUsageKey(entry.canonicalMoveName)
   if (!resolvedMoveKey) {
@@ -388,6 +421,7 @@ export const resumeMoveSpec = (
     script: immediate.script,
     transaction: immediate.transaction,
     ...movementProjection,
+    ...switchProjection,
     nativeV2: immediate.native,
   }
   return Object.freeze(result)
