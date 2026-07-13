@@ -1360,7 +1360,7 @@ Status: DONE
 
 ## MA-106 — Add cancellation, expiry, and GM correction
 
-Status: TODO
+Status: DONE
 
 **Depends on:** MA-105
 **Commit:** `feat(move-automation): terminate stalled move resolutions`

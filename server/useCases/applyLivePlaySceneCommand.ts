@@ -38,12 +38,24 @@ import {
   type SheetRepository,
 } from '../storage/sheetRepository'
 import {
+  createSqlitePendingMoveResolutionRepository,
+  type PendingMoveResolutionRepository,
+  type StoredPendingMoveResolution,
+} from '../storage/pendingMoveResolutionRepository'
+import {
   encounterLifecyclePatchPayload,
 } from '../domain/moveAutomation/lifecyclePatch'
 import {
+  createSceneLifecycleEvents,
   planSceneLifecycle,
   type SceneLifecyclePlan,
 } from '../domain/moveAutomation/planSceneLifecycle'
+import {
+  DeclarationCompensationError,
+  planPendingResolutionTermination,
+  type PendingResolutionTerminationPlan,
+} from '../domain/moveAutomation/declarationCompensation'
+import { pendingResolutionGameEventExpiry } from '../domain/moveAutomation/pendingResolutionExpiry'
 import type { EncounterLifecycleTriggerHandler } from '../domain/moveAutomation/reduceLifecycle'
 import {
   logicalMapResourcePath,
@@ -88,14 +100,24 @@ export interface LivePlaySceneCommandDependencies {
   readonly mapRepository?: Pick<MapRepository, 'getBySlug' | 'applyLivePlayUpdate'>
   readonly database?: Pick<RotomDatabase, 'withTransaction'>
   readonly sheetRepository?: SceneSheetRepository
+  readonly pendingResolutionRepository?: Pick<
+    PendingMoveResolutionRepository,
+    'getById' | 'listByMap' | 'update'
+  >
   readonly now?: () => number
   readonly relativePath?: (path: string) => string
   /** Server-owned trigger registry seam; production registrations are never client supplied. */
   readonly lifecycleHandlers?: readonly EncounterLifecycleTriggerHandler[]
 }
 
+interface ScenePendingResolutionTermination {
+  readonly stored: StoredPendingMoveResolution
+  readonly plan: PendingResolutionTerminationPlan
+}
+
 interface SceneCommitPlan {
   readonly lifecycle: SceneLifecyclePlan
+  readonly pendingTerminations: readonly ScenePendingResolutionTermination[]
 }
 
 interface ResolvedSceneContext {
@@ -122,15 +144,31 @@ type UnknownRecord = Record<string, unknown>
 
 const livePlaySceneCommandExecutor = createSqliteAuthoritativeLivePlayCommandExecutor()
 
-const actionDependencies = (dependencies: LivePlaySceneCommandDependencies) => ({
-  commandExecutor: dependencies.commandExecutor ?? livePlaySceneCommandExecutor,
-  mapRepository: dependencies.mapRepository ?? sqliteMapRepository,
-  database: dependencies.database ?? getRotomDatabase(),
-  sheetRepository: dependencies.sheetRepository ?? (sqliteSheetRepository as SceneSheetRepository),
-  now: dependencies.now ?? Date.now,
-  relativePath: dependencies.relativePath ?? ((path: string) => path),
-  lifecycleHandlers: dependencies.lifecycleHandlers ?? [],
-})
+const actionDependencies = (dependencies: LivePlaySceneCommandDependencies) => {
+  const injectedDatabase = dependencies.database
+  const repositoryDatabase = injectedDatabase && 'connection' in injectedDatabase
+    ? injectedDatabase as RotomDatabase
+    : (injectedDatabase === undefined ? getRotomDatabase() : null)
+  const database = injectedDatabase ?? repositoryDatabase!
+  const pendingResolutionRepository = dependencies.pendingResolutionRepository
+    ?? (repositoryDatabase
+      ? createSqlitePendingMoveResolutionRepository(repositoryDatabase)
+      : {
+          getById: () => null,
+          listByMap: () => [],
+          update: () => { throw new Error('Pending resolution updates require a repository.') },
+        })
+  return {
+    commandExecutor: dependencies.commandExecutor ?? livePlaySceneCommandExecutor,
+    mapRepository: dependencies.mapRepository ?? sqliteMapRepository,
+    database,
+    sheetRepository: dependencies.sheetRepository ?? (sqliteSheetRepository as SceneSheetRepository),
+    pendingResolutionRepository,
+    now: dependencies.now ?? Date.now,
+    relativePath: dependencies.relativePath ?? ((path: string) => path),
+    lifecycleHandlers: dependencies.lifecycleHandlers ?? [],
+  }
+}
 
 const isRecord = (value: unknown): value is UnknownRecord => (
   typeof value === 'object' && value !== null && !Array.isArray(value)
@@ -215,10 +253,63 @@ const lifecycleSheetSnapshots = (
   return { pokemonSheets, trainerSheets }
 }
 
+type SceneSheetSnapshots = ReturnType<typeof lifecycleSheetSnapshots>
+
+const snapshotsAfterTermination = (
+  snapshots: SceneSheetSnapshots,
+  termination: PendingResolutionTerminationPlan,
+): SceneSheetSnapshots => {
+  const pokemonSheets = new Map(snapshots.pokemonSheets)
+  const trainerSheets = new Map(snapshots.trainerSheets)
+  for (const write of termination.sheetWrites) {
+    if (write.kind === 'pokemon') {
+      pokemonSheets.set(write.slug, deepCloneJson(write.nextSheet) as CharacterSheet)
+    }
+    else {
+      trainerSheets.set(write.slug, deepCloneJson(write.nextSheet) as TrainerSheet)
+    }
+  }
+  return { pokemonSheets, trainerSheets }
+}
+
+const compensationSnapshots = (
+  map: TabletopMap,
+  stored: readonly StoredPendingMoveResolution[],
+  repository: SceneSheetRepository,
+): SceneSheetSnapshots => {
+  const snapshots = lifecycleSheetSnapshots(map, repository)
+  const pokemonSheets = new Map(snapshots.pokemonSheets)
+  const trainerSheets = new Map(snapshots.trainerSheets)
+  for (const pending of stored) {
+    for (const group of pending.declarationPlan?.groups.sheets ?? []) {
+      const destination = group.scope.sheetKind === 'pokemon' ? pokemonSheets : trainerSheets
+      if (destination.has(group.scope.sheetSlug)) continue
+      const sheet = repository.get(group.scope.sheetKind, group.scope.sheetSlug)
+      if (!sheet) continue
+      const document = {
+        ...sheet.document,
+        slug: sheet.slug,
+        revision: sheet.revision,
+        updatedAt: sheet.updatedAt,
+      }
+      if (group.scope.sheetKind === 'pokemon') {
+        pokemonSheets.set(group.scope.sheetSlug, document as unknown as CharacterSheet)
+      }
+      else {
+        trainerSheets.set(group.scope.sheetSlug, document as unknown as TrainerSheet)
+      }
+    }
+  }
+  return { pokemonSheets, trainerSheets }
+}
+
 const applySceneChange = (
   command: SetSceneLivePlayCommand,
   context: ResolvedSceneContext,
-  dependencies: Pick<LivePlaySceneDependencySet, 'sheetRepository' | 'lifecycleHandlers'>,
+  dependencies: Pick<
+    LivePlaySceneDependencySet,
+    'sheetRepository' | 'pendingResolutionRepository' | 'lifecycleHandlers'
+  >,
   timestamp: number,
 ): AppliedSceneChange => {
   const payload = expectSetScenePayload(command.payload)
@@ -234,13 +325,56 @@ const applySceneChange = (
     })
   }
 
+  const events = createSceneLifecycleEvents({
+    mapSlug: context.map.slug,
+    previous,
+    current,
+    operationId: command.opId,
+  })
+  const pending = dependencies.pendingResolutionRepository
+    .listByMap(context.map.slug)
+    .filter(candidate => candidate.status === 'pending')
+    .reverse()
+  let workingMap = deepCloneJson(context.map)
+  let snapshots = compensationSnapshots(workingMap, pending, dependencies.sheetRepository)
+  const pendingTerminations: ScenePendingResolutionTermination[] = []
+  for (const stored of pending) {
+    const expiry = pendingResolutionGameEventExpiry(stored.resolution, events)
+    if (!expiry) continue
+    try {
+      const plan = planPendingResolutionTermination({
+        pendingResolution: stored.resolution,
+        declarationPlan: stored.declarationPlan ?? null,
+        map: workingMap,
+        ...snapshots,
+        status: expiry.status,
+        reasonCode: expiry.reasonCode,
+        sourceOperationId: expiry.sourceOperationId,
+        terminatedAt: boundaryTime,
+      })
+      pendingTerminations.push({ stored, plan })
+      workingMap = plan.nextMap
+      snapshots = snapshotsAfterTermination(snapshots, plan)
+    }
+    catch (error) {
+      if (error instanceof DeclarationCompensationError) {
+        rejectLivePlayCommand(
+          'conflict',
+          `Pending move ${stored.resolutionId} could not expire safely: ${error.message}`,
+          { currentRevision: normalizeRevision(context.map.revision) },
+        )
+      }
+      throw error
+    }
+  }
+
   const lifecycle = planSceneLifecycle({
-    map: context.map,
+    map: workingMap,
     previous,
     current,
     operationId: command.opId,
     time: boundaryTime,
-    loadSheets: () => lifecycleSheetSnapshots(context.map, dependencies.sheetRepository),
+    loadSheets: () => snapshots,
     handlers: dependencies.lifecycleHandlers,
   })
 
@@ -248,7 +382,7 @@ const applySceneChange = (
     previous,
     current,
     nextMap: lifecycle.nextMap,
-    commitPlan: { lifecycle },
+    commitPlan: { lifecycle, pendingTerminations },
   }
 }
 
@@ -428,7 +562,44 @@ export const executeLivePlaySceneCommandUseCase = async (
       saveOpResult,
     }) => {
       deps.database.withTransaction(() => {
-        const lifecycle = nextMap.commitPlan!.lifecycle
+        const commitPlan = nextMap.commitPlan!
+        const lifecycle = commitPlan.lifecycle
+        for (const termination of commitPlan.pendingTerminations) {
+          const current = deps.pendingResolutionRepository.getById(
+            termination.stored.resolutionId,
+          )
+          if (
+            !current
+            || current.status !== 'pending'
+            || current.revision !== termination.stored.revision
+          ) {
+            rejectLivePlayCommand(
+              'conflict',
+              `Pending move ${termination.stored.resolutionId} changed before scene-end expiry.`,
+              { currentRevision },
+            )
+          }
+          for (const write of termination.plan.sheetWrites) {
+            const sheetResult = deps.sheetRepository.applyLivePlayUpdate({
+              kind: write.kind,
+              slug: write.slug,
+              expectedRevision: write.expectedRevision,
+              nextSheet: {
+                ...toPersistableSheetPayload(write.nextSheet as unknown as Record<string, unknown>),
+                slug: write.slug,
+                updatedAt: nextMap.map.updatedAt ?? deps.now(),
+              },
+            })
+            if (sheetResult === 'stale') {
+              rejectLivePlayCommand(
+                'conflict',
+                `${write.kind} sheet ${write.slug} changed before pending declaration compensation could be persisted`,
+                { currentRevision },
+              )
+            }
+          }
+        }
+
         try {
           if (lifecycle.sheetReads.length > 0) {
             deps.sheetRepository.assertRevisions(lifecycle.sheetReads)
@@ -484,7 +655,27 @@ export const executeLivePlaySceneCommandUseCase = async (
           }
         }
 
-        const sheetUpdates = lifecycle.sheetWrites.map((write) => {
+        for (const termination of commitPlan.pendingTerminations) {
+          deps.pendingResolutionRepository.update({
+            resolution: termination.plan.pendingResolution,
+            expectedRevision: termination.stored.revision,
+          })
+        }
+
+        const finalSheetRevisions = new Map<string, {
+          readonly kind: SheetKind
+          readonly slug: string
+          readonly revision: number
+        }>()
+        for (const termination of commitPlan.pendingTerminations) {
+          for (const write of termination.plan.sheetWrites) {
+            finalSheetRevisions.set(`${write.kind}:${write.slug}`, write)
+          }
+        }
+        for (const write of lifecycle.sheetWrites) {
+          finalSheetRevisions.set(`${write.kind}:${write.slug}`, write)
+        }
+        const sheetUpdates = [...finalSheetRevisions.values()].map((write) => {
           const sheet = deps.sheetRepository.getByRef(write.kind, write.slug)
           if (!sheet) {
             throw new LivePlaySceneCommandUseCaseError(

@@ -146,7 +146,7 @@ const dependenciesWithDefaults = (input: ResumePendingMoveResolutionDependencies
   }
 }
 
-const responseCommandHash = (command: MoveResponseCommand): LivePlayCommandHash => (
+export const moveResponseCommandHash = (command: MoveResponseCommand): LivePlayCommandHash => (
   createCanonicalCommandHash<LivePlayCommandHash, MoveResponseCommand>({
     command,
     normalize: value => value,
@@ -523,17 +523,14 @@ export const resumePendingMoveResolutionUseCase = (
   input: ResumePendingMoveResolutionInput,
   dependencyInput: ResumePendingMoveResolutionDependencies = {},
 ): LivePlayResolveMoveCommandResponse => {
-  if (
-    input.command.type === MOVE_RESPONSE_COMMAND_TYPES.GM_CANCEL
-    || input.command.type === MOVE_RESPONSE_COMMAND_TYPES.GM_FORCE_RESOLVE
-  ) {
+  if (input.command.type === MOVE_RESPONSE_COMMAND_TYPES.GM_CANCEL) {
     throw new ResumePendingMoveResolutionUseCaseError(
       400,
-      'Cancellation and force-pass are not enabled by this response continuation.',
+      'Cancellation must use pending-resolution termination orchestration.',
     )
   }
   const dependencies = dependenciesWithDefaults(dependencyInput)
-  const commandHash = responseCommandHash(input.command)
+  const commandHash = moveResponseCommandHash(input.command)
   const replay = existingResponse(input, dependencies, commandHash)
   if (replay) return replay
 
@@ -567,6 +564,9 @@ export const resumePendingMoveResolutionUseCase = (
         response: {
           requestId: responseWindowId(input.command),
           optionId: responseOptionId(input.command),
+          ...(input.command.type === MOVE_RESPONSE_COMMAND_TYPES.GM_FORCE_RESOLVE
+            ? { forcePass: true }
+            : {}),
         },
         now,
         random: dependencies.random,
@@ -709,7 +709,7 @@ export const replayMoveResponseCommandUseCase = (input: {
     input.command.opId,
   )
   if (!existing) return null
-  const hash = responseCommandHash(input.command)
+  const hash = moveResponseCommandHash(input.command)
   if (existing.commandHash !== hash) {
     throw new ResumePendingMoveResolutionUseCaseError(
       409,

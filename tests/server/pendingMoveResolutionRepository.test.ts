@@ -7,6 +7,7 @@ import {
   type LivePlayOpId,
 } from '#shared/livePlayCommands'
 import type { LivePlayCommandHash } from '~~/server/livePlay/opResult'
+import { createMoveStateChangePlan } from '~~/server/domain/moveAutomation/plan'
 import { stableJsonStringify } from '~~/server/domain/moveAutomation/stableJson'
 import { openRotomDatabase, type RotomDatabase } from '~~/server/storage/database'
 import { createSqliteLivePlayOpRepository } from '~~/server/storage/opRepository'
@@ -92,6 +93,7 @@ describe('SQLite pending move resolution repository', () => {
       createdAt: resolution.createdAt,
       updatedAt: resolution.updatedAt,
       terminalOpId: null,
+      declarationPlan: createMoveStateChangePlan([]),
     })
     expect(repository.getById(resolution.resolutionId)).toEqual(stored)
     expect(repository.getByOrigin(resolution.originMapSlug, resolution.originOpId)).toEqual(stored)
@@ -100,7 +102,8 @@ describe('SQLite pending move resolution repository', () => {
       .toEqual({ count: 0 })
 
     const row = database.connection.prepare(`
-      SELECT resolution_json, status, revision, created_at, updated_at, terminal_op_id
+      SELECT resolution_json, status, revision, created_at, updated_at, terminal_op_id,
+             declaration_plan_json
       FROM pending_move_resolutions
       WHERE resolution_id = ?
     `).get(resolution.resolutionId)
@@ -111,6 +114,7 @@ describe('SQLite pending move resolution repository', () => {
       created_at: resolution.createdAt,
       updated_at: resolution.updatedAt,
       terminal_op_id: null,
+      declaration_plan_json: stableJsonStringify(createMoveStateChangePlan([])),
     })
 
     closeTrackedDatabase(database)

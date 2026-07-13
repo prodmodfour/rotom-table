@@ -3,6 +3,7 @@ import {
   LIVE_PLAY_COMMAND_SCHEMA_VERSION,
   LIVE_PLAY_COMMAND_TYPES,
   type ResolveMoveLivePlayCommand,
+  type SetSceneLivePlayCommand,
 } from '#shared/livePlayCommands'
 import {
   LIVE_PLAY_MOVE_RESOLUTION_SCHEMA_VERSION,
@@ -15,6 +16,8 @@ import {
 import {
   MOVE_RESPONSE_COMMAND_SCHEMA_VERSION,
   MOVE_RESPONSE_COMMAND_TYPES,
+  type GmCancelMoveResolutionCommand,
+  type GmForceResolveMoveResolutionCommand,
   type MoveResponseCommand,
 } from '#shared/moveAutomation/responseCommands'
 import { openRotomDatabase, type RotomDatabase } from '~~/server/storage/database'
@@ -51,10 +54,16 @@ import {
   resumePendingMoveResolutionUseCase,
   type ResumePendingMoveResolutionDependencies,
 } from '~~/server/useCases/resumePendingMoveResolution'
+import {
+  abandonPendingMoveResolutionUseCase,
+  cancelPendingMoveResolutionUseCase,
+} from '~~/server/useCases/terminatePendingMoveResolution'
+import { executeLivePlaySceneCommandUseCase } from '~~/server/useCases/applyLivePlaySceneCommand'
 import { buildResolveMoveScopes } from '~/utils/livePlayMoveCommandScopes'
 import { deepCloneJson } from '~/utils/serialization'
 import type { CharacterSheet } from '~/types/characterSheet'
 import type { SheetPlacement, TabletopMap } from '~/types/map'
+import { acceptedRealtimeTestHooks } from './livePlayAcceptedRealtimeTestUtils'
 
 const openDatabases: RotomDatabase[] = []
 
@@ -115,6 +124,7 @@ interface PendingSpecOptions {
   readonly withDeferredEffects?: boolean
   readonly invalidDeclarationPhase?: boolean
   readonly withSecondWindow?: boolean
+  readonly allowPass?: boolean
 }
 
 const pendingScratchSpec = (options: PendingSpecOptions) => {
@@ -134,7 +144,7 @@ const pendingScratchSpec = (options: PendingSpecOptions) => {
         { id: 'style.power', labelKey: 'move.scratch.style-power' },
         { id: 'style.control', labelKey: 'move.scratch.style-control' },
       ],
-      allowPass: true,
+      allowPass: options.allowPass ?? true,
     },
   }
   return {
@@ -144,7 +154,8 @@ const pendingScratchSpec = (options: PendingSpecOptions) => {
       + (options.withDeclarationCost ? 1 : 0)
       + (options.withDeferredEffects ? 2 : 0)
       + (options.invalidDeclarationPhase ? 4 : 0)
-      + (options.withSecondWindow ? 8 : 0),
+      + (options.withSecondWindow ? 8 : 0)
+      + (options.allowPass === false ? 16 : 0),
     targeting: {
       kind: 'single-target',
       minTargets: 1,
@@ -321,6 +332,7 @@ const createHarness = (): Harness => {
     opStore: ops,
     queue: createInProcessMapWriteQueue(),
     readMapInteractionMode: mapSlug => modes.get(mapSlug).interactionMode,
+    ...acceptedRealtimeTestHooks([]),
   })
 
   const map = mapFixture()
@@ -379,6 +391,7 @@ const executePending = (
     readonly sheetRepository?: LivePlayResolveMoveCommandDependencies['sheetRepository']
     readonly pendingResolutionRepository?: LivePlayResolveMoveCommandDependencies['pendingResolutionRepository']
     readonly random?: LivePlayResolveMoveCommandDependencies['random']
+    readonly allowPass?: boolean
   } = {},
 ) => executeLivePlayResolveMoveCommandUseCase({
   role: 'gm',
@@ -399,6 +412,7 @@ const executePending = (
       withDeferredEffects: options.withDeferredEffects,
       invalidDeclarationPhase: options.invalidDeclarationPhase,
       withSecondWindow: options.withSecondWindow,
+      allowPass: options.allowPass,
     }),
   })),
   random: options.random ?? (() => { throw new Error('the pending canary must not draw randomness') }),
@@ -424,12 +438,42 @@ const responseCommand = (input: {
   },
 }) as MoveResponseCommand
 
+const cancelCommand = (input: {
+  readonly resolutionId: string
+  readonly baseRevision: number
+  readonly opId?: string
+}): GmCancelMoveResolutionCommand => ({
+  schemaVersion: MOVE_RESPONSE_COMMAND_SCHEMA_VERSION,
+  opId: input.opId ?? 'op_pendingcancel01',
+  mapSlug: 'pending-arena',
+  baseRevision: input.baseRevision,
+  type: MOVE_RESPONSE_COMMAND_TYPES.GM_CANCEL,
+  payload: { resolutionId: input.resolutionId },
+})
+
+const forcePassCommand = (input: {
+  readonly resolutionId: string
+  readonly baseRevision: number
+  readonly opId?: string
+}): GmForceResolveMoveResolutionCommand => ({
+  schemaVersion: MOVE_RESPONSE_COMMAND_SCHEMA_VERSION,
+  opId: input.opId ?? 'op_pendingforce001',
+  mapSlug: 'pending-arena',
+  baseRevision: input.baseRevision,
+  type: MOVE_RESPONSE_COMMAND_TYPES.GM_FORCE_RESOLVE,
+  payload: {
+    resolutionId: input.resolutionId,
+    windowId: 'scratch.style-window',
+  },
+})
+
 const executeResponse = (input: {
   readonly harness: Harness
   readonly command: MoveResponseCommand
   readonly withDeclarationCost?: boolean
   readonly withDeferredEffects?: boolean
   readonly withSecondWindow?: boolean
+  readonly allowPass?: boolean
   readonly now?: number
   readonly random?: LivePlayResolveMoveCommandDependencies['random']
   readonly pendingResolutionRepository?: ResumePendingMoveResolutionDependencies['pendingResolutionRepository']
@@ -456,8 +500,40 @@ const executeResponse = (input: {
       withDeclarationCost: input.withDeclarationCost ?? false,
       withDeferredEffects: input.withDeferredEffects,
       withSecondWindow: input.withSecondWindow,
+      allowPass: input.allowPass,
     }),
     random: input.random ?? (() => 0),
+    now: () => input.now ?? 2_000,
+    publishPersistedRealtimeEvent: vi.fn(),
+  })
+}
+
+const executeTermination = (input: {
+  readonly harness: Harness
+  readonly command: MoveResponseCommand
+  readonly abandon?: boolean
+  readonly now?: number
+}) => {
+  const parsed = parsePendingMoveResponseCommand(input.command, {
+    pendingResolutionRepository: input.harness.pending,
+  })
+  const terminate = input.abandon
+    ? abandonPendingMoveResolutionUseCase
+    : cancelPendingMoveResolutionUseCase
+  return terminate({
+    ...parsed,
+    role: 'gm',
+    authorization: {
+      chosenBy: { kind: 'gm', id: null },
+      source: 'gm-authority',
+    },
+    clientId: 'termination-client',
+  }, {
+    database: input.harness.database,
+    mapRepository: input.harness.maps,
+    sheetRepository: input.harness.sheets,
+    pendingResolutionRepository: input.harness.pending,
+    opRepository: input.harness.ops,
     now: () => input.now ?? 2_000,
     publishPersistedRealtimeEvent: vi.fn(),
   })
@@ -605,12 +681,20 @@ describe('pending move resolution creation', () => {
         sheet: expect.objectContaining({ combat: { currentHp: 35 }, revision: 3 }),
       }),
     ])
-    expect(harness.pending.getByOrigin('pending-arena', command.opId)?.resolution.readSet)
-      .toEqual([
-        { kind: 'map', slug: 'pending-arena', revision: 5 },
-        { kind: 'sheet', sheetKind: 'pokemon', slug: 'actor', revision: 3 },
-        { kind: 'sheet', sheetKind: 'pokemon', slug: 'target', revision: 2 },
-      ])
+    const storedDeclaration = harness.pending.getByOrigin('pending-arena', command.opId)
+    expect(storedDeclaration?.resolution.readSet).toEqual([
+      { kind: 'map', slug: 'pending-arena', revision: 5 },
+      { kind: 'sheet', sheetKind: 'pokemon', slug: 'actor', revision: 3 },
+      { kind: 'sheet', sheetKind: 'pokemon', slug: 'target', revision: 2 },
+    ])
+    expect(storedDeclaration?.declarationPlan?.changes).toContainEqual(expect.objectContaining({
+      kind: 'sheet-state',
+      expectedRevision: 2,
+      sourceOperationId: 'scratch.declaration-cost',
+      changedFields: ['hp'],
+      previous: expect.objectContaining({ combat: { currentHp: 40 } }),
+      current: expect.objectContaining({ combat: { currentHp: 35 }, revision: 3 }),
+    }))
 
     const mapAfterFirst = deepCloneJson(harness.maps.getBySlug('pending-arena'))
     const sheetAfterFirst = deepCloneJson(harness.sheets.getByRef('pokemon', 'actor'))
@@ -948,6 +1032,202 @@ describe('pending move resolution creation', () => {
       outcome: 'passed',
       optionId: null,
     }))
+  })
+
+  it('lets an authorized GM force-pass a reviewed non-passable window exactly once', async () => {
+    const harness = createHarness()
+    const declaration = commandFor(harness.maps.getBySlug('pending-arena')!, 'op_forcepassdeclare')
+    const pendingResponse = await executePending(harness, declaration, {
+      allowPass: false,
+    })
+    expect(isPendingMoveDeclarationResult(pendingResponse.result)).toBe(true)
+    if (!isPendingMoveDeclarationResult(pendingResponse.result)) return
+    const command = forcePassCommand({
+      resolutionId: pendingResponse.result.pendingResolution.resolutionId,
+      baseRevision: 5,
+    })
+
+    const completed = executeResponse({
+      harness,
+      command,
+      allowPass: false,
+    })
+
+    expect(completed.result).toMatchObject({ ok: true, revision: 6 })
+    expect(harness.pending.getById(command.payload.resolutionId)).toMatchObject({
+      status: 'committed',
+      terminalOpId: command.opId,
+      resolution: {
+        chosenOptions: [{
+          optionId: null,
+          chosenBy: { kind: 'gm', id: null },
+        }],
+      },
+    })
+    expect(harness.ops.getStoredOpRecord('pending-arena', command.opId)?.command)
+      .toMatchObject({ type: 'gm-force-resolve' })
+  })
+
+  it('cancels a pending resolution with an audited terminal and typed declaration-cost inverse', async () => {
+    const harness = createHarness()
+    const declaration = commandFor(harness.maps.getBySlug('pending-arena')!, 'op_canceldeclare01')
+    const pendingResponse = await executePending(harness, declaration, {
+      withDeclarationCost: true,
+    })
+    expect(isPendingMoveDeclarationResult(pendingResponse.result)).toBe(true)
+    if (!isPendingMoveDeclarationResult(pendingResponse.result)) return
+    expect((harness.sheets.getByRef('pokemon', 'actor')!.sheet.combat as { currentHp: number }).currentHp)
+      .toBe(35)
+    const command = cancelCommand({
+      resolutionId: pendingResponse.result.pendingResolution.resolutionId,
+      baseRevision: 5,
+    })
+
+    const cancelled = executeTermination({ harness, command })
+
+    expect(cancelled.result).toMatchObject({
+      ok: true,
+      previousRevision: 5,
+      revision: 6,
+      patches: [],
+    })
+    expect((harness.sheets.getByRef('pokemon', 'actor')!.sheet.combat as { currentHp: number }).currentHp)
+      .toBe(40)
+    expect(cancelled.sheetUpdates).toEqual([expect.objectContaining({
+      kind: 'pokemon',
+      slug: 'actor',
+      sheet: expect.objectContaining({ combat: { currentHp: 40 }, revision: 4 }),
+    })])
+    expect(harness.sheets.getByRef('pokemon', 'actor')?.revision).toBe(4)
+    expect(harness.maps.getBySlug('pending-arena')).toMatchObject({
+      revision: 6,
+      encounterState: { pendingResolutionSummaries: [] },
+    })
+    const terminal = harness.pending.getById(command.payload.resolutionId)
+    expect(terminal).toMatchObject({
+      status: 'cancelled',
+      terminalOpId: command.opId,
+      resolution: { status: 'cancelled', outstandingWindows: [] },
+    })
+    expect(terminal?.resolution.trace.events).toContainEqual(expect.objectContaining({
+      kind: 'operation',
+      operationId: command.opId,
+      reasonCode: 'pending-resolution.gm-cancelled',
+      result: expect.objectContaining({ declarationCompensation: 'applied' }),
+    }))
+    const replay = replayMoveResponseCommandUseCase({ role: 'gm', command }, {
+      database: harness.database,
+      mapRepository: harness.maps,
+      opRepository: harness.ops,
+    })
+    expect(replay?.result).toEqual(cancelled.result)
+    expect(harness.maps.getBySlug('pending-arena')?.revision).toBe(6)
+    expect(harness.pending.getById(command.payload.resolutionId)?.revision).toBe(1)
+    expect(() => parsePendingMoveResponseCommand(command, {
+      pendingResolutionRepository: harness.pending,
+    })).toThrowError(expect.objectContaining({ code: 'inactive-resolution' }))
+  })
+
+  it('fails closed on a changed declaration-cost value and supports explicit non-restoring abandonment', async () => {
+    const harness = createHarness()
+    const declaration = commandFor(harness.maps.getBySlug('pending-arena')!, 'op_abandondeclare1')
+    const pendingResponse = await executePending(harness, declaration, {
+      withDeclarationCost: true,
+    })
+    expect(isPendingMoveDeclarationResult(pendingResponse.result)).toBe(true)
+    if (!isPendingMoveDeclarationResult(pendingResponse.result)) return
+    const actor = harness.sheets.getByRef('pokemon', 'actor')!
+    harness.sheets.save({
+      kind: 'pokemon',
+      slug: actor.slug,
+      document: {
+        ...actor.sheet,
+        combat: { currentHp: 34 },
+      },
+      revision: 4,
+      updatedAt: 1_500,
+    })
+    const command = cancelCommand({
+      resolutionId: pendingResponse.result.pendingResolution.resolutionId,
+      baseRevision: 5,
+      opId: 'op_abandonpending1',
+    })
+    const beforeMap = deepCloneJson(harness.maps.getBySlug('pending-arena'))
+
+    expect(() => executeTermination({ harness, command })).toThrowError(expect.objectContaining({
+      statusCode: 409,
+    }))
+    expect(harness.maps.getBySlug('pending-arena')).toEqual(beforeMap)
+    expect(harness.pending.getById(command.payload.resolutionId)?.status).toBe('pending')
+    expect(harness.ops.getOpRecord('pending-arena', command.opId)).toBeNull()
+
+    const abandoned = executeTermination({ harness, command, abandon: true, now: 2_500 })
+    expect(abandoned.result).toMatchObject({ ok: true, revision: 6 })
+    expect((harness.sheets.getByRef('pokemon', 'actor')!.sheet.combat as { currentHp: number }).currentHp)
+      .toBe(34)
+    expect(harness.pending.getById(command.payload.resolutionId)).toMatchObject({
+      status: 'abandoned',
+      resolution: {
+        trace: {
+          events: expect.arrayContaining([expect.objectContaining({
+            reasonCode: 'pending-resolution.gm-abandoned',
+            result: expect.objectContaining({ declarationCompensation: 'explicitly-abandoned' }),
+          })]),
+        },
+      },
+    })
+  })
+
+  it('expires pending work from a scene-end game event and compensates costs in the scene transaction', async () => {
+    const harness = createHarness()
+    const declaration = commandFor(harness.maps.getBySlug('pending-arena')!, 'op_expiredeclare01')
+    const pendingResponse = await executePending(harness, declaration, {
+      withDeclarationCost: true,
+    })
+    expect(isPendingMoveDeclarationResult(pendingResponse.result)).toBe(true)
+    if (!isPendingMoveDeclarationResult(pendingResponse.result)) return
+    const command: SetSceneLivePlayCommand = {
+      schemaVersion: LIVE_PLAY_COMMAND_SCHEMA_VERSION,
+      opId: 'op_sceneexpire001',
+      mapSlug: 'pending-arena',
+      baseRevision: 5,
+      type: LIVE_PLAY_COMMAND_TYPES.SET_SCENE,
+      scopes: [{ kind: 'map', lane: 'scene' }],
+      payload: { name: null },
+    }
+
+    const ended = await executeLivePlaySceneCommandUseCase({
+      role: 'gm',
+      command,
+      expectedType: LIVE_PLAY_COMMAND_TYPES.SET_SCENE,
+    }, {
+      database: harness.database,
+      commandExecutor: harness.commandExecutor,
+      mapRepository: harness.maps,
+      sheetRepository: harness.sheets,
+      pendingResolutionRepository: harness.pending,
+      now: () => 3_000,
+    })
+
+    expect(ended.result).toMatchObject({ ok: true, revision: 6 })
+    expect((harness.sheets.getByRef('pokemon', 'actor')!.sheet.combat as { currentHp: number }).currentHp)
+      .toBe(40)
+    const expired = harness.pending.getById(
+      pendingResponse.result.pendingResolution.resolutionId,
+    )
+    expect(expired).toMatchObject({
+      status: 'expired',
+      terminalOpId: null,
+      resolution: { status: 'expired', outstandingWindows: [] },
+    })
+    expect(expired?.resolution.trace.events).toContainEqual(expect.objectContaining({
+      operationId: expect.stringMatching(/^scene\./),
+      reasonCode: 'pending-resolution.scene-ended',
+    }))
+    expect(harness.maps.getBySlug('pending-arena')).toMatchObject({
+      encounterState: { pendingResolutionSummaries: [] },
+    })
+    expect(harness.maps.getBySlug('pending-arena')).not.toHaveProperty('activeScene')
   })
 
   it('records one response and atomically opens the next durable window', async () => {

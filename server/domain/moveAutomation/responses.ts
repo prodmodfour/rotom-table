@@ -19,6 +19,8 @@ export class MoveSpecResolvedResponseError extends Error {
 export interface MoveSpecResolvedResponse {
   readonly requestId: string
   readonly optionId: string | null
+  /** Server-only GM correction; never accepted from a response command payload. */
+  readonly forcePass?: boolean
 }
 
 export interface MoveSpecResponseResolver {
@@ -63,7 +65,7 @@ export const createMoveSpecResponseResolver = (
       const response = byRequestId.get(requestId) ?? null
       if (!response) return null
       if (response.optionId === null) {
-        if (!allowPass) {
+        if (!allowPass && response.forcePass !== true) {
           return fail(
             'response-pass-not-allowed',
             `Response request ${requestId} does not allow pass.`,

@@ -714,6 +714,7 @@ const persistPendingMoveDeclaration = (options: {
 
   const storedPending = dependencies.pendingResolutionRepository.create({
     resolution: plan.suspension.pendingResolution,
+    declarationPlan: plan.suspension.preWindowPlan,
   })
   if (
     storedPending.resolutionId !== plan.suspension.pendingResolution.resolutionId

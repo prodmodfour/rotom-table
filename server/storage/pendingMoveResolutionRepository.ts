@@ -12,6 +12,13 @@ import {
   type LivePlayOpId,
 } from '#shared/livePlayCommands'
 import { nextRevision } from '#shared/sessionRevisions'
+import {
+  normalizeDeclarationCompensationPlan,
+} from '../domain/moveAutomation/declarationCompensation'
+import {
+  createMoveStateChangePlan,
+  type MoveStateChangePlan,
+} from '../domain/moveAutomation/plan'
 import { stableJsonStringify } from '../domain/moveAutomation/stableJson'
 import { getRotomDatabase, type RotomDatabase } from './database'
 import {
@@ -33,11 +40,15 @@ export interface StoredPendingMoveResolution {
   readonly createdAt: number
   readonly updatedAt: number
   readonly terminalOpId: LivePlayOpId | null
+  /** Missing/null identifies a pre-MA-106 row whose declaration inverse is unknown. */
+  readonly declarationPlan?: MoveStateChangePlan | null
 }
 
 export interface CreatePendingMoveResolutionInput {
   readonly resolution: PendingMoveResolution
   readonly terminalOpId?: string | null
+  /** Exact typed declaration-time plan; omitted means a known no-op plan. */
+  readonly declarationPlan?: MoveStateChangePlan
 }
 
 export interface UpdatePendingMoveResolutionInput {
@@ -124,6 +135,7 @@ interface PendingMoveResolutionRow {
   readonly updated_at: unknown
   readonly terminal_op_id: unknown
   readonly terminal_map_slug: unknown
+  readonly declaration_plan_json: unknown
 }
 
 interface LivePlayOperationIdentityRow {
@@ -141,7 +153,8 @@ const PENDING_MOVE_RESOLUTION_COLUMNS = `
   pending.created_at,
   pending.updated_at,
   pending.terminal_op_id,
-  terminal.map_slug AS terminal_map_slug
+  terminal.map_slug AS terminal_map_slug,
+  pending.declaration_plan_json
 `
 
 const CONTROL_CHARACTER_PATTERN = /[\u0000-\u001f\u007f]/
@@ -209,6 +222,37 @@ const parseResolutionJson = (value: unknown, resolutionId: string): {
   return { resolution, canonicalJson }
 }
 
+const serializeDeclarationPlan = (plan: MoveStateChangePlan): string => stableJsonStringify(
+  plan,
+  {
+    path: 'declarationCompensationPlan',
+    limits: {
+      maxDepth: PENDING_MOVE_RESOLUTION_LIMITS.jsonDepth,
+      maxNodes: PENDING_MOVE_RESOLUTION_LIMITS.jsonNodes,
+      maxObjectFields: PENDING_MOVE_RESOLUTION_LIMITS.jsonObjectFields,
+      maxArrayEntries: PENDING_MOVE_RESOLUTION_LIMITS.jsonArrayEntries,
+      maxStringLength: PENDING_MOVE_RESOLUTION_LIMITS.jsonStringChars,
+    },
+  },
+)
+
+const parseDeclarationPlanJson = (
+  value: unknown,
+  resolutionId: string,
+): MoveStateChangePlan | null => {
+  if (value === null || value === undefined) return null
+  if (typeof value !== 'string') {
+    throw new Error('pending_move_resolutions.declaration_plan_json must be a string or null')
+  }
+  const plan = normalizeDeclarationCompensationPlan(
+    parseStoredDocumentJson<unknown>(value, `pending move declaration plan ${resolutionId}`),
+  )
+  if (value !== serializeDeclarationPlan(plan)) {
+    throw new Error(`pending move resolution ${resolutionId} declaration_plan_json must use canonical JSON`)
+  }
+  return plan
+}
+
 const rowToStoredResolution = (
   row: PendingMoveResolutionRow,
 ): StoredPendingMoveResolution => {
@@ -267,6 +311,7 @@ const rowToStoredResolution = (
   }
 
   const { resolution } = parseResolutionJson(row.resolution_json, resolutionId)
+  const declarationPlan = parseDeclarationPlanJson(row.declaration_plan_json, resolutionId)
   if (
     resolution.resolutionId !== resolutionId
     || resolution.originMapSlug !== originMapSlug
@@ -291,6 +336,7 @@ const rowToStoredResolution = (
     createdAt,
     updatedAt,
     terminalOpId,
+    declarationPlan,
   }
 }
 
@@ -447,6 +493,10 @@ export const createSqlitePendingMoveResolutionRepository = (
       input.terminalOpId,
       'pending move resolution terminalOpId',
     )
+    const declarationPlan = input.declarationPlan === undefined
+      ? createMoveStateChangePlan([])
+      : normalizeDeclarationCompensationPlan(input.declarationPlan)
+    const declarationPlanJson = serializeDeclarationPlan(declarationPlan)
     const canonicalJson = serializeResolution(resolution)
     const existingById = getById(resolution.resolutionId)
     const existingByOrigin = getByOrigin(resolution.originMapSlug, resolution.originOpId)
@@ -457,6 +507,8 @@ export const createSqlitePendingMoveResolutionRepository = (
         existingById?.resolutionId === existingByOrigin?.resolutionId
         && serializeResolution(existing.resolution) === canonicalJson
         && existing.terminalOpId === terminalOpId
+        && existing.declarationPlan != null
+        && serializeDeclarationPlan(existing.declarationPlan) === declarationPlanJson
       ) {
         assertTerminalLink(resolution, terminalOpId)
         assertOriginDoesNotMasqueradeAsTerminal(resolution, terminalOpId)
@@ -478,8 +530,9 @@ export const createSqlitePendingMoveResolutionRepository = (
         revision,
         created_at,
         updated_at,
-        terminal_op_id
-      ) VALUES (?, ?, ?, ?, ?, 0, ?, ?, ?)
+        terminal_op_id,
+        declaration_plan_json
+      ) VALUES (?, ?, ?, ?, ?, 0, ?, ?, ?, ?)
     `).run(
       resolution.resolutionId,
       resolution.originMapSlug,
@@ -489,6 +542,7 @@ export const createSqlitePendingMoveResolutionRepository = (
       resolution.createdAt,
       resolution.updatedAt,
       terminalOpId,
+      declarationPlanJson,
     )
 
     const stored = getById(resolution.resolutionId)
