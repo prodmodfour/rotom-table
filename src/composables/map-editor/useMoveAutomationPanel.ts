@@ -53,26 +53,6 @@ import {
   tokenFacingTowardPoint,
 } from '~/utils/tokenFacing'
 import {
-  buildSpiteReactionConditionUpdate,
-  buildSpiteReactionPrompts,
-} from '~/utils/moveAutomationSpite'
-import {
-  buildCuteCharmReactionConditionUpdate,
-  buildCuteCharmReactionPrompts,
-} from '~/utils/moveAutomationCuteCharm'
-import {
-  buildPoisonPointReactionConditionUpdate,
-  buildPoisonPointReactionPrompts,
-} from '~/utils/moveAutomationPoisonPoint'
-import {
-  buildMoxieTriggerPrompts,
-  buildMoxieTriggerTransaction,
-} from '~/utils/moveAutomationMoxie'
-import {
-  buildCelebrateTriggerPrompts,
-  buildCelebrateTriggerTransaction,
-} from '~/utils/moveAutomationCelebrate'
-import {
   MELEE_MOVE_RANGE_METERS,
   moveAutomationTargetsInRange,
   parseExplicitMultiTargetMoveRangeMeters,
@@ -85,13 +65,11 @@ import { getClearanceValue } from '~/utils/gridGeometry'
 import { getErrorMessage } from '~/utils/errorMessages'
 import { MOVE_VFX_DEFAULT_DURATIONS_MS } from '~/utils/isometric/moveVfxTiming'
 import { moveFrequencyTracksOnMap, moveFrequencyTracksOnSheet, parseMoveFrequency } from '~/utils/moveUsage'
-import { appendAbilityAutomationLogEntry } from '~/utils/abilityAutomationLog'
 import {
   DEFAULT_MOVE_AUTOMATION_LOG_ENTRIES,
   appendMoveAutomationLogEntry,
 } from '~/utils/moveAutomationLog'
 import { playDiceRollSound } from '~/utils/soundEffects'
-import type { AbilityAutomationTransaction } from '~/types/abilityAutomation'
 import type { CharacterSheet } from '~/types/characterSheet'
 import type { GridAnchor, MapFieldEffects, MapHazardV2, TabletopMap } from '~/types/map'
 import type {
@@ -412,6 +390,8 @@ export const useMoveAutomationPanel = ({
   const moveAutomationFeedback = ref<MoveAutomationFeedbackState | null>(null)
   const moveUsageError = ref<string | null>(null)
   const moveDispatchPending = ref(false)
+  // Compatibility-only presentation state. Live-play mechanics are available
+  // exclusively through the durable response panel and remain empty here.
   const spiteReactionPrompts = ref<MoveAutomationSpitePrompt[]>([])
   const cuteCharmReactionPrompts = ref<MoveAutomationCuteCharmPrompt[]>([])
   const poisonPointReactionPrompts = ref<MoveAutomationPoisonPointPrompt[]>([])
@@ -1465,201 +1445,16 @@ export const useMoveAutomationPanel = ({
     })
   }
 
-  const appendAbilityAutomationLog = (transaction: AbilityAutomationTransaction) => {
-    if (!map.value) return
-    map.value.metadata = appendAbilityAutomationLogEntry(map.value.metadata, transaction, {
-      now,
-      maxLogEntries,
-    })
-  }
-
-  const queueSpiteReactionPrompts = (transaction: MoveAutomationTransaction) => {
-    const attacker = findSpawnedPokemon(transaction.userId)
-    const hitTargets = (transaction.hitTargetIds ?? [])
-      .map((id) => findSpawnedPokemon(id))
-      .filter((token): token is SpawnedPokemon => Boolean(token))
-    if (!attacker || !hitTargets.length) return
-
-    const prompts = buildSpiteReactionPrompts({
-      attacker,
-      moveName: transaction.moveName,
-      hitTargets,
-      moveEntriesForTarget: (target) => moveEntriesForId(target.id),
-      existingPrompts: spiteReactionPrompts.value,
-    })
-    if (prompts.length) spiteReactionPrompts.value = [...spiteReactionPrompts.value, ...prompts]
-  }
-
-  const queueCuteCharmReactionPrompts = (transaction: MoveAutomationTransaction) => {
-    const attacker = findSpawnedPokemon(transaction.userId)
-    const attackedTargets = (transaction.attackedTargetIds ?? transaction.hitTargetIds ?? [])
-      .map((id) => findSpawnedPokemon(id))
-      .filter((token): token is SpawnedPokemon => Boolean(token))
-    if (!attacker || !attackedTargets.length) return
-
-    const prompts = buildCuteCharmReactionPrompts({
-      attacker,
-      moveName: transaction.moveName,
-      attackedTargets,
-      existingPrompts: cuteCharmReactionPrompts.value,
-    })
-    if (prompts.length) cuteCharmReactionPrompts.value = [...cuteCharmReactionPrompts.value, ...prompts]
-  }
-
-  const scriptForPoisonPointReaction = (
-    transaction: MoveAutomationTransaction,
-    script?: MoveAutomationScript,
-  ): MoveAutomationScript | null => {
-    if (script) return script
-    const move = findMove(transaction.moveName)
-    return move ? buildMoveAutomationScriptFromMoveData(move) : null
-  }
-
-  const queuePoisonPointReactionPrompts = (
-    transaction: MoveAutomationTransaction,
-    script?: MoveAutomationScript,
-  ) => {
-    const attacker = findSpawnedPokemon(transaction.userId)
-    const hitTargets = (transaction.hitTargetIds ?? [])
-      .map((id) => findSpawnedPokemon(id))
-      .filter((token): token is SpawnedPokemon => Boolean(token))
-    if (!attacker || !hitTargets.length) return
-
-    const prompts = buildPoisonPointReactionPrompts({
-      attacker,
-      moveName: transaction.moveName,
-      hitTargets,
-      script: scriptForPoisonPointReaction(transaction, script),
-      existingPrompts: poisonPointReactionPrompts.value,
-    })
-    if (prompts.length) poisonPointReactionPrompts.value = [...poisonPointReactionPrompts.value, ...prompts]
-  }
-
-  const moxieTriggerPromptsForTransaction = (
-    transaction: MoveAutomationTransaction,
-  ): MoveAutomationMoxiePrompt[] => {
-    const attacker = findSpawnedPokemon(transaction.userId)
-    if (!attacker) return []
-
-    return buildMoxieTriggerPrompts({
-      attacker,
-      moveName: transaction.moveName,
-      hpUpdates: transaction.hpUpdates,
-      hitTargetIds: transaction.hitTargetIds,
-      tokens: spawnedPokemon.value,
-      existingPrompts: moxieTriggerPrompts.value,
-    })
-  }
-
-  const queueMoxieTriggerPrompts = (prompts: readonly MoveAutomationMoxiePrompt[]) => {
-    if (prompts.length) moxieTriggerPrompts.value = [...moxieTriggerPrompts.value, ...prompts]
-  }
-
-  const celebrateTriggerPromptsForTransaction = (
-    transaction: MoveAutomationTransaction,
-    script?: MoveAutomationScript,
-  ): MoveAutomationCelebratePrompt[] => {
-    const attacker = findSpawnedPokemon(transaction.userId)
-    if (!attacker || !script?.damaging) return []
-
-    const hitTargets = (transaction.hitTargetIds ?? [])
-      .map((id) => findSpawnedPokemon(id))
-      .filter((token): token is SpawnedPokemon => Boolean(token))
-
-    return buildCelebrateTriggerPrompts({
-      attacker,
-      moveName: transaction.moveName,
-      damaging: script.damaging,
-      hitTargets,
-      existingPrompts: celebrateTriggerPrompts.value,
-    })
-  }
-
-  const queueCelebrateTriggerPrompts = (prompts: readonly MoveAutomationCelebratePrompt[]) => {
-    if (prompts.length) celebrateTriggerPrompts.value = [...celebrateTriggerPrompts.value, ...prompts]
-  }
-
-  const dismissSpiteReactionPrompt = (id: string) => {
-    spiteReactionPrompts.value = spiteReactionPrompts.value.filter((prompt) => prompt.id !== id)
-  }
-
-  const applySpiteReactionPrompt = async (id: string) => {
-    const prompt = spiteReactionPrompts.value.find((item) => item.id === id)
-    if (!prompt) return
-
-    const attacker = findSpawnedPokemon(prompt.attackerId)
-    const update = attacker ? buildSpiteReactionConditionUpdate(attacker, prompt.moveName) : null
-    if (update) await modifyConditions(update, { allowAnyTarget: true })
-    dismissSpiteReactionPrompt(id)
-  }
-
-  const dismissCuteCharmReactionPrompt = (id: string) => {
-    cuteCharmReactionPrompts.value = cuteCharmReactionPrompts.value.filter((prompt) => prompt.id !== id)
-  }
-
-  const applyCuteCharmReactionPrompt = async (id: string) => {
-    const prompt = cuteCharmReactionPrompts.value.find((item) => item.id === id)
-    if (!prompt) return
-
-    const attacker = findSpawnedPokemon(prompt.attackerId)
-    const defender = findSpawnedPokemon(prompt.defenderId)
-    const update = attacker && defender ? buildCuteCharmReactionConditionUpdate(attacker, defender) : null
-    if (update) await modifyConditions(update, { allowAnyTarget: true })
-    dismissCuteCharmReactionPrompt(id)
-  }
-
-  const dismissPoisonPointReactionPrompt = (id: string) => {
-    poisonPointReactionPrompts.value = poisonPointReactionPrompts.value.filter((prompt) => prompt.id !== id)
-  }
-
-  const applyPoisonPointReactionPrompt = async (id: string) => {
-    const prompt = poisonPointReactionPrompts.value.find((item) => item.id === id)
-    if (!prompt) return
-
-    const attacker = findSpawnedPokemon(prompt.attackerId)
-    const defender = findSpawnedPokemon(prompt.defenderId)
-    const update = attacker && defender ? buildPoisonPointReactionConditionUpdate(attacker, defender) : null
-    if (update) await modifyConditions(update, { allowAnyTarget: true })
-    dismissPoisonPointReactionPrompt(id)
-  }
-
-  const dismissMoxieTriggerPrompt = (id: string) => {
-    moxieTriggerPrompts.value = moxieTriggerPrompts.value.filter((prompt) => prompt.id !== id)
-  }
-
-  const applyMoxieTriggerPrompt = async (id: string) => {
-    const prompt = moxieTriggerPrompts.value.find((item) => item.id === id)
-    if (!prompt) return
-
-    const attacker = findSpawnedPokemon(prompt.attackerId)
-    const firstFaintedTarget = prompt.faintedTargetIds
-      .map((targetId) => findSpawnedPokemon(targetId))
-      .find((target): target is SpawnedPokemon => Boolean(target)) ?? null
-    const transaction = attacker ? buildMoxieTriggerTransaction(attacker, firstFaintedTarget) : null
-    if (transaction) {
-      for (const update of transaction.combatStageUpdates) {
-        await modifyCombatStages(update, { allowAnyTarget: true })
-      }
-    }
-    dismissMoxieTriggerPrompt(id)
-  }
-
-  const dismissCelebrateTriggerPrompt = (id: string) => {
-    celebrateTriggerPrompts.value = celebrateTriggerPrompts.value.filter((prompt) => prompt.id !== id)
-  }
-
-  const applyCelebrateTriggerPrompt = (id: string) => {
-    const prompt = celebrateTriggerPrompts.value.find((item) => item.id === id)
-    if (!prompt) return
-
-    const attacker = findSpawnedPokemon(prompt.attackerId)
-    const firstHitTarget = prompt.hitTargetIds
-      .map((targetId) => findSpawnedPokemon(targetId))
-      .find((target): target is SpawnedPokemon => Boolean(target)) ?? null
-    const transaction = attacker ? buildCelebrateTriggerTransaction(attacker, firstHitTarget) : null
-    if (transaction) appendAbilityAutomationLog(transaction)
-    dismissCelebrateTriggerPrompt(id)
-  }
+  const dismissSpiteReactionPrompt = (_id: string) => {}
+  const applySpiteReactionPrompt = async (_id: string) => {}
+  const dismissCuteCharmReactionPrompt = (_id: string) => {}
+  const applyCuteCharmReactionPrompt = async (_id: string) => {}
+  const dismissPoisonPointReactionPrompt = (_id: string) => {}
+  const applyPoisonPointReactionPrompt = async (_id: string) => {}
+  const dismissMoxieTriggerPrompt = (_id: string) => {}
+  const applyMoxieTriggerPrompt = async (_id: string) => {}
+  const dismissCelebrateTriggerPrompt = (_id: string) => {}
+  const applyCelebrateTriggerPrompt = (_id: string) => {}
 
   const faceTokenForTransaction = (transaction: MoveAutomationTransaction) => {
     const user = findSpawnedPokemon(transaction.userId)
@@ -1684,8 +1479,6 @@ export const useMoveAutomationPanel = ({
   ) => {
     if (!map.value || !canControlPlacement(transaction.userId)) return
     if (options.updateFacing !== false) faceTokenForTransaction(transaction)
-    const moxiePrompts = moxieTriggerPromptsForTransaction(transaction)
-    const celebratePrompts = celebrateTriggerPromptsForTransaction(transaction, options.script)
     for (const update of transaction.hpUpdates) await modifyHp(update, { allowAnyTarget: true })
     for (const update of transaction.combatStageUpdates) await modifyCombatStages(update, { allowAnyTarget: true })
     for (const update of transaction.conditionUpdates) await modifyConditions(update, { allowAnyTarget: true })
@@ -1694,11 +1487,6 @@ export const useMoveAutomationPanel = ({
       for (const hazard of transaction.hazardsToAdd) await placeHazard(hazard)
     }
     appendMoveAutomationLog(transaction)
-    queueMoxieTriggerPrompts(moxiePrompts)
-    queueCelebrateTriggerPrompts(celebratePrompts)
-    queueCuteCharmReactionPrompts(transaction)
-    queuePoisonPointReactionPrompts(transaction, options.script)
-    queueSpiteReactionPrompts(transaction)
   }
 
   const showMoveAutomationResolution = (
@@ -2079,71 +1867,6 @@ export const useMoveAutomationPanel = ({
     }
   }
 
-  const authoritativeReactionPromptSets = (
-    move: LivePlayResolvedMoveResult,
-    snapshot: MoveAutomationPresentationSnapshot,
-  ): {
-    readonly spite: MoveAutomationSpitePrompt[]
-    readonly cuteCharm: MoveAutomationCuteCharmPrompt[]
-    readonly poisonPoint: MoveAutomationPoisonPointPrompt[]
-    readonly moxie: MoveAutomationMoxiePrompt[]
-    readonly celebrate: MoveAutomationCelebratePrompt[]
-  } => {
-    const attacker = snapshotToken(snapshot, move.transaction.userId)
-    if (!attacker) return { spite: [], cuteCharm: [], poisonPoint: [], moxie: [], celebrate: [] }
-
-    const hitTargets = snapshotTokensForIds(snapshot, [...(move.transaction.hitTargetIds ?? [])])
-    const attackedTargets = snapshotTokensForIds(snapshot, [...(move.transaction.attackedTargetIds ?? move.transaction.hitTargetIds ?? [])])
-
-    return {
-      spite: buildSpiteReactionPrompts({
-        attacker,
-        moveName: move.transaction.moveName,
-        hitTargets,
-        moveEntriesForTarget: (target) => moveEntriesForId(target.id),
-        existingPrompts: spiteReactionPrompts.value,
-      }),
-      cuteCharm: buildCuteCharmReactionPrompts({
-        attacker,
-        moveName: move.transaction.moveName,
-        attackedTargets,
-        existingPrompts: cuteCharmReactionPrompts.value,
-      }),
-      poisonPoint: buildPoisonPointReactionPrompts({
-        attacker,
-        moveName: move.transaction.moveName,
-        hitTargets,
-        script: move.script,
-        existingPrompts: poisonPointReactionPrompts.value,
-      }),
-      moxie: buildMoxieTriggerPrompts({
-        attacker,
-        moveName: move.transaction.moveName,
-        hpUpdates: move.transaction.hpUpdates,
-        hitTargetIds: move.transaction.hitTargetIds,
-        tokens: snapshot.tokens,
-        existingPrompts: moxieTriggerPrompts.value,
-      }),
-      celebrate: buildCelebrateTriggerPrompts({
-        attacker,
-        moveName: move.transaction.moveName,
-        damaging: move.script.damaging,
-        hitTargets,
-        existingPrompts: celebrateTriggerPrompts.value,
-      }),
-    }
-  }
-
-  const queueAuthoritativeReactionPrompts = (
-    promptSets: ReturnType<typeof authoritativeReactionPromptSets>,
-  ) => {
-    if (promptSets.spite.length) spiteReactionPrompts.value = [...spiteReactionPrompts.value, ...promptSets.spite]
-    if (promptSets.cuteCharm.length) cuteCharmReactionPrompts.value = [...cuteCharmReactionPrompts.value, ...promptSets.cuteCharm]
-    if (promptSets.poisonPoint.length) poisonPointReactionPrompts.value = [...poisonPointReactionPrompts.value, ...promptSets.poisonPoint]
-    if (promptSets.moxie.length) moxieTriggerPrompts.value = [...moxieTriggerPrompts.value, ...promptSets.moxie]
-    if (promptSets.celebrate.length) celebrateTriggerPrompts.value = [...celebrateTriggerPrompts.value, ...promptSets.celebrate]
-  }
-
   const presentAuthoritativeMove = ({
     move,
     snapshot,
@@ -2161,7 +1884,6 @@ export const useMoveAutomationPanel = ({
       : planAuthoritativeMoveAnimations(move, snapshot, intent, request)
     if (animationPlan && !animationPlan.ok) return animationPlan
 
-    const promptSets = authoritativeReactionPromptSets(move, snapshot)
     if (animationPlan?.ok) enqueuePlannedMoveAnimations(animationPlan.userId, animationPlan.events)
     if (move.feedback) {
       showMoveAutomationResolution(move.feedback, move.transaction, {
@@ -2169,7 +1891,6 @@ export const useMoveAutomationPanel = ({
         applyPersistentTransaction: false,
       })
     }
-    queueAuthoritativeReactionPrompts(promptSets)
     return { ok: true }
   }
 

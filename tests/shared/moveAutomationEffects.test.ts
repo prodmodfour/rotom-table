@@ -2039,6 +2039,49 @@ describe('MoveSpec typed effect operations', () => {
     )
   })
 
+  it('accepts bounded server-authored details only for Disabled and Infatuation applications', () => {
+    expect(parseMoveEffectOperation(validOperation('condition', {
+      payload: {
+        ...VALID_PAYLOADS.condition,
+        conditionId: 'disabled',
+        conditionDetail: 'Ember',
+      },
+    }))).toMatchObject({
+      payload: { conditionId: 'disabled', conditionDetail: 'Ember' },
+    })
+    expect(parseMoveEffectOperation(validOperation('condition', {
+      payload: {
+        ...VALID_PAYLOADS.condition,
+        conditionId: 'infatuation',
+        conditionDetail: 'Defender',
+      },
+    }))).toMatchObject({
+      payload: { conditionId: 'infatuation', conditionDetail: 'Defender' },
+    })
+    expectEffectError(
+      validOperation('condition', {
+        payload: {
+          ...VALID_PAYLOADS.condition,
+          conditionDetail: 'not allowed',
+        },
+      }),
+      'invalid-effect-operation',
+      'operation.payload.conditionDetail',
+    )
+    expectEffectError(
+      validOperation('condition', {
+        payload: {
+          ...VALID_PAYLOADS.condition,
+          action: 'remove',
+          conditionId: 'disabled',
+          conditionDetail: 'Ember',
+        },
+      }),
+      'invalid-effect-operation',
+      'operation.payload.conditionDetail',
+    )
+  })
+
   it('rejects callbacks, class instances, accessors, and lossy arrays', () => {
     expectEffectError(
       validOperation('log', {

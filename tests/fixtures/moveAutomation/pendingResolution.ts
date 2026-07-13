@@ -29,6 +29,7 @@ export const createPendingMoveResolutionFixture = (
 
   return parsePendingMoveResolution({
     schemaVersion: PENDING_MOVE_RESOLUTION_SCHEMA_VERSION,
+    continuationKind: 'movespec-v2',
     resolutionId,
     originMapSlug,
     originOpId,

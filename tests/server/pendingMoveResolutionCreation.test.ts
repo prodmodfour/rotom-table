@@ -58,6 +58,7 @@ import {
   abandonPendingMoveResolutionUseCase,
   cancelPendingMoveResolutionUseCase,
 } from '~~/server/useCases/terminatePendingMoveResolution'
+import { listPendingMoveResponsesUseCase } from '~~/server/useCases/listPendingMoveResponses'
 import { executeLivePlaySceneCommandUseCase } from '~~/server/useCases/applyLivePlaySceneCommand'
 import { buildResolveMoveScopes } from '~/utils/livePlayMoveCommandScopes'
 import { deepCloneJson } from '~/utils/serialization'
@@ -540,6 +541,155 @@ const executeTermination = (input: {
 }
 
 describe('pending move resolution creation', () => {
+  it('persists accepted-move ability follow-ups and applies one authorized response exactly once', async () => {
+    const harness = createHarness()
+    const actor = harness.sheets.getByRef('pokemon', 'actor')!
+    const target = harness.sheets.getByRef('pokemon', 'target')!
+    expect(harness.sheets.applyLivePlayUpdate({
+      kind: 'pokemon',
+      slug: 'actor',
+      expectedRevision: actor.revision,
+      nextSheet: {
+        ...actor.sheet,
+        gender: 'Male',
+        abilities: [{ name: 'Celebrate' }],
+      },
+    })).toBe('applied')
+    expect(harness.sheets.applyLivePlayUpdate({
+      kind: 'pokemon',
+      slug: 'target',
+      expectedRevision: target.revision,
+      nextSheet: {
+        ...target.sheet,
+        gender: 'Female',
+        movelist: [{ name: 'Spite' }],
+        abilities: [{ name: 'Cute Charm' }],
+      },
+    })).toBe('applied')
+
+    const map = harness.maps.getBySlug('pending-arena')!
+    const command = commandFor(map, 'op_abilitydeclare1')
+    const accepted = await executeLivePlayResolveMoveCommandUseCase({
+      role: 'gm',
+      command,
+      clientId: 'ability-client',
+      playerProfile: null,
+      expectedType: LIVE_PLAY_COMMAND_TYPES.RESOLVE_MOVE,
+    }, {
+      database: harness.database,
+      mapRepository: harness.maps,
+      sheetRepository: harness.sheets,
+      pendingResolutionRepository: harness.pending,
+      commandExecutor: harness.commandExecutor,
+      random: () => 0.95,
+      now: () => 1_000,
+    })
+
+    expect(accepted.result).toMatchObject({ ok: true, revision: 5 })
+    expect(isPendingMoveDeclarationResult(accepted.result)).toBe(false)
+    expect(harness.ops.getOpRecord('pending-arena', command.opId)).not.toBeNull()
+    const summary = accepted.map?.encounterState?.pendingResolutionSummaries[0]
+    const stored = summary ? harness.pending.getById(summary.resolutionId) : null
+    expect(stored?.originOpId).toMatch(/^op_followup_/)
+    expect(stored?.originOpId).not.toBe(command.opId)
+    expect(stored?.resolution).toMatchObject({
+      continuationKind: 'ability-follow-ups',
+      status: 'pending',
+      outstandingWindows: expect.arrayContaining([
+        expect.objectContaining({
+          reasonCode: 'ability.celebrate.follow-up',
+          ownership: [{ kind: 'actor', id: null }],
+        }),
+        expect.objectContaining({
+          reasonCode: 'ability.cute-charm.follow-up',
+          ownership: [{ kind: 'placement', id: 'target-token' }],
+        }),
+        expect.objectContaining({
+          reasonCode: 'move.spite.follow-up',
+          ownership: [{ kind: 'placement', id: 'target-token' }],
+        }),
+      ]),
+    })
+    expect(accepted.map?.encounterState?.pendingResolutionSummaries).toEqual([
+      stored?.resolution.publicSummary,
+    ])
+    const refreshedWindows = listPendingMoveResponsesUseCase({
+      role: 'gm',
+      mapSlug: 'pending-arena',
+    }, {
+      database: harness.database,
+      mapRepository: harness.maps,
+      sheetRepository: harness.sheets,
+      pendingResolutionRepository: harness.pending,
+    })
+    expect(refreshedWindows.windows).toEqual([
+      expect.objectContaining({
+        window: expect.objectContaining({
+          reasonCode: 'ability.celebrate.follow-up',
+          options: [{ id: 'ability.celebrate.apply', labelKey: 'ability.celebrate.use-celebrate' }],
+        }),
+      }),
+    ])
+
+    const celebrateWindow = stored!.resolution.outstandingWindows[0]!
+    const passCelebrate: MoveResponseCommand = {
+      schemaVersion: MOVE_RESPONSE_COMMAND_SCHEMA_VERSION,
+      opId: 'op_abilitypass001',
+      mapSlug: 'pending-arena',
+      baseRevision: 5,
+      type: MOVE_RESPONSE_COMMAND_TYPES.PASS,
+      payload: {
+        resolutionId: stored!.resolutionId,
+        windowId: celebrateWindow.windowId,
+      },
+    }
+    expect(executeResponse({ harness, command: passCelebrate, now: 1_500 }).result)
+      .toMatchObject({ ok: true, previousRevision: 5, revision: 6 })
+
+    const afterPass = harness.pending.getById(stored!.resolutionId)!
+    const cuteCharmWindow = afterPass.resolution.outstandingWindows[0]!
+    expect(cuteCharmWindow.reasonCode).toBe('ability.cute-charm.follow-up')
+    const reaction: MoveResponseCommand = {
+      schemaVersion: MOVE_RESPONSE_COMMAND_SCHEMA_VERSION,
+      opId: 'op_abilityanswer01',
+      mapSlug: 'pending-arena',
+      baseRevision: 6,
+      type: MOVE_RESPONSE_COMMAND_TYPES.REACT,
+      payload: {
+        resolutionId: stored!.resolutionId,
+        windowId: cuteCharmWindow.windowId,
+        optionId: cuteCharmWindow.options[0]!.id,
+      },
+    }
+    const response = executeResponse({ harness, command: reaction, now: 2_000 })
+    expect(response.result).toMatchObject({ ok: true, previousRevision: 6, revision: 7 })
+    expect(harness.sheets.getByRef('pokemon', 'actor')?.sheet).toMatchObject({
+      combat: { conditions: ['Infatuation: target'] },
+    })
+    const afterResponse = harness.pending.getById(stored!.resolutionId)!
+    expect(afterResponse.status).toBe('pending')
+    expect(afterResponse.resolution.chosenOptions).toEqual([
+      expect.objectContaining({
+        windowId: celebrateWindow.windowId,
+        optionId: null,
+      }),
+      expect.objectContaining({
+        windowId: cuteCharmWindow.windowId,
+        optionId: cuteCharmWindow.options[0]!.id,
+      }),
+    ])
+    expect(afterResponse.resolution.outstandingWindows).toHaveLength(1)
+
+    const replay = replayMoveResponseCommandUseCase({ role: 'gm', command: reaction }, {
+      database: harness.database,
+      mapRepository: harness.maps,
+      opRepository: harness.ops,
+    })
+    expect(replay?.result).toEqual(response.result)
+    expect(harness.maps.getBySlug('pending-arena')?.revision).toBe(7)
+    expect(harness.sheets.getByRef('pokemon', 'actor')?.revision).toBe(4)
+  })
+
   it('atomically stores a privacy-safe suspension without a terminal op or open transaction', async () => {
     const harness = createHarness()
     const beforeMap = deepCloneJson(harness.maps.getBySlug('pending-arena'))

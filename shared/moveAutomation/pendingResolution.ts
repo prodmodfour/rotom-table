@@ -36,6 +36,11 @@ import {
  */
 export const PENDING_MOVE_RESOLUTION_SCHEMA_VERSION = 1 as const
 
+export const PENDING_MOVE_RESOLUTION_CONTINUATION_KINDS = [
+  'movespec-v2',
+  'ability-follow-ups',
+] as const
+
 export const PENDING_MOVE_RESOLUTION_STATUSES = [
   'pending',
   'resuming',
@@ -96,6 +101,8 @@ export const PENDING_MOVE_RESOLUTION_LIMITS = Object.freeze({
   jsonStringChars: 500,
 })
 
+export type PendingMoveResolutionContinuationKind =
+  (typeof PENDING_MOVE_RESOLUTION_CONTINUATION_KINDS)[number]
 export type PendingMoveResolutionStatus =
   (typeof PENDING_MOVE_RESOLUTION_STATUSES)[number]
 export type PendingMoveResolutionTerminalStatus =
@@ -176,6 +183,17 @@ export type PendingMoveResponseWindow =
   | PendingMoveChoiceResponseWindow
   | PendingMoveReactionResponseWindow
 
+/**
+ * Legacy post-commit follow-ups resolve in reviewed priority order. Their
+ * remaining windows stay durable but only the first is answerable/visible.
+ * MoveSpec suspensions currently materialize one active window at a time.
+ */
+export const activePendingMoveResponseWindows = (
+  resolution: Pick<PendingMoveResolution, 'continuationKind' | 'outstandingWindows'>,
+): readonly PendingMoveResponseWindow[] => resolution.continuationKind === 'ability-follow-ups'
+  ? resolution.outstandingWindows.slice(0, 1)
+  : resolution.outstandingWindows
+
 export interface PendingMoveResolutionChosenOption {
   readonly windowId: string
   /** The idempotency identity of the accepted response command. */
@@ -215,6 +233,7 @@ export interface PendingMoveDeclarationResult extends LivePlayCommandAccepted {
 
 export interface PendingMoveResolution {
   readonly schemaVersion: typeof PENDING_MOVE_RESOLUTION_SCHEMA_VERSION
+  readonly continuationKind: PendingMoveResolutionContinuationKind
   readonly resolutionId: string
   readonly originMapSlug: string
   readonly originOpId: LivePlayOpId
@@ -277,7 +296,7 @@ type JsonCloneState = {
   nodes: number
 }
 
-const ROOT_FIELDS = [
+const ROOT_REQUIRED_FIELDS = [
   'schemaVersion',
   'resolutionId',
   'originMapSlug',
@@ -300,6 +319,7 @@ const ROOT_FIELDS = [
   'updatedAt',
   'publicSummary',
 ] as const
+const ROOT_OPTIONAL_FIELDS = ['continuationKind'] as const
 const MAP_READ_FIELDS = ['kind', 'slug', 'revision'] as const
 const SHEET_READ_FIELDS = ['kind', 'sheetKind', 'slug', 'revision'] as const
 const GROUP_INVENTORY_READ_FIELDS = ['kind', 'slug', 'revision'] as const
@@ -348,6 +368,7 @@ const STABLE_ID_PATTERN = /^[a-z0-9]+(?:[._:/-][a-z0-9]+)*$/
 const SHA256_PATTERN = /^[a-f0-9]{64}$/
 const CONTROL_CHARACTER_PATTERN = /[\u0000-\u001f\u007f]/
 const ARRAY_INDEX_PATTERN = /^(0|[1-9][0-9]*)$/
+const CONTINUATION_KIND_SET = new Set<string>(PENDING_MOVE_RESOLUTION_CONTINUATION_KINDS)
 const STATUS_SET = new Set<string>(PENDING_MOVE_RESOLUTION_STATUSES)
 const TERMINAL_STATUS_SET = new Set<string>(PENDING_MOVE_RESOLUTION_TERMINAL_STATUSES)
 const RESOURCE_KIND_SET = new Set<string>(PENDING_MOVE_RESOLUTION_RESOURCE_KINDS)
@@ -550,6 +571,28 @@ const parseExactRecord = (
   const record = parseRecord(value, path)
   assertExactFields(record, fields, path)
   return record
+}
+
+const parseRecordWithOptionalFields = (
+  value: unknown,
+  requiredFields: readonly string[],
+  optionalFields: readonly string[],
+  path: string,
+): UnknownRecord => {
+  const record = parseRecord(value, path)
+  const allowed = new Set([...requiredFields, ...optionalFields])
+  const missing = requiredFields.filter(field => !Object.prototype.hasOwnProperty.call(record, field))
+  const unknown = Object.keys(record).filter(field => !allowed.has(field))
+  if (missing.length === 0 && unknown.length === 0) return record
+  const detail = [
+    missing.length > 0 ? `missing ${missing.join(', ')}` : '',
+    unknown.length > 0 ? `unknown ${unknown.join(', ')}` : '',
+  ].filter(Boolean).join('; ')
+  return fail(
+    'invalid-pending-resolution',
+    path,
+    `must contain only the supported fields (${detail}).`,
+  )
 }
 
 const parseBoundedArray = (
@@ -1126,6 +1169,7 @@ const sameJson = (left: unknown, right: unknown): boolean => (
 )
 
 const assertTraceIdentity = (options: {
+  readonly continuationKind: PendingMoveResolutionContinuationKind
   readonly canonicalMoveId: string
   readonly specVersion: number
   readonly specHash: string
@@ -1138,8 +1182,11 @@ const assertTraceIdentity = (options: {
   readonly path: string
 }): void => {
   const { trace, path } = options
+  const expectedRuntimeKind = options.continuationKind === 'movespec-v2'
+    ? 'movespec-v2'
+    : 'ability-follow-ups'
   if (
-    trace.program.runtimeKind !== 'movespec-v2'
+    trace.program.runtimeKind !== expectedRuntimeKind
     || trace.program.canonicalId !== options.canonicalMoveId
     || trace.program.runtimeVersion !== options.specVersion
     || trace.program.definitionHash !== options.specHash
@@ -1417,7 +1464,12 @@ export const parsePendingMoveResolution = (
   value: unknown,
   path = 'pendingResolution',
 ): PendingMoveResolution => {
-  const record = parseExactRecord(detachedJson(value, path), ROOT_FIELDS, path)
+  const record = parseRecordWithOptionalFields(
+    detachedJson(value, path),
+    ROOT_REQUIRED_FIELDS,
+    ROOT_OPTIONAL_FIELDS,
+    path,
+  )
   if (record.schemaVersion !== PENDING_MOVE_RESOLUTION_SCHEMA_VERSION) {
     fail(
       'unsupported-schema-version',
@@ -1426,6 +1478,20 @@ export const parsePendingMoveResolution = (
     )
   }
 
+  const rawContinuationKind = Object.prototype.hasOwnProperty.call(record, 'continuationKind')
+    ? record.continuationKind
+    : 'movespec-v2'
+  if (
+    typeof rawContinuationKind !== 'string'
+    || !CONTINUATION_KIND_SET.has(rawContinuationKind)
+  ) {
+    fail(
+      'invalid-pending-resolution',
+      `${path}.continuationKind`,
+      'must be movespec-v2 or ability-follow-ups.',
+    )
+  }
+  const continuationKind = rawContinuationKind as PendingMoveResolutionContinuationKind
   const resolutionId = parseBoundedText(
     record.resolutionId,
     `${path}.resolutionId`,
@@ -1485,6 +1551,7 @@ export const parsePendingMoveResolution = (
   )
 
   assertTraceIdentity({
+    continuationKind,
     canonicalMoveId,
     specVersion,
     specHash,
@@ -1511,6 +1578,7 @@ export const parsePendingMoveResolution = (
 
   const parsed: PendingMoveResolution = {
     schemaVersion: PENDING_MOVE_RESOLUTION_SCHEMA_VERSION,
+    continuationKind,
     resolutionId,
     originMapSlug,
     originOpId,

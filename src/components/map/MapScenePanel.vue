@@ -2,7 +2,6 @@
 import { computed, ref } from 'vue'
 import MapSceneRenderer from '~/components/map/MapSceneRenderer.vue'
 import MapSceneStatus from '~/components/map/MapSceneStatus.vue'
-import MapMoveReactionPromptStack from '~/components/map/MapMoveReactionPromptStack.vue'
 import MapMoveResponsePanel from '~/components/map/MapMoveResponsePanel.vue'
 import MoveVfxDebugPanel from '~/components/map/MoveVfxDebugPanel.vue'
 import InitiativeInfoBar from '~/components/map/InitiativeInfoBar.vue'
@@ -27,11 +26,6 @@ import type {
   MoveAutomationAreaDirection,
   MoveAutomationFeedbackState,
   MoveAutomationHpUpdate,
-  MoveAutomationCelebratePrompt,
-  MoveAutomationCuteCharmPrompt,
-  MoveAutomationMoxiePrompt,
-  MoveAutomationPoisonPointPrompt,
-  MoveAutomationSpitePrompt,
   MoveAutomationTargetingOverlayState,
 } from '~/types/moveAutomation'
 import type { MoveAnimationEvent, MoveVfxKind } from '~/types/moveAnimation'
@@ -109,11 +103,6 @@ const props = defineProps<{
   actionSplash?: MapActionSplashState | null
   actionSplashSpeedLinesDurationMs?: number
   moveUsageError?: string | null
-  spiteReactionPrompts?: MoveAutomationSpitePrompt[]
-  cuteCharmReactionPrompts?: MoveAutomationCuteCharmPrompt[]
-  poisonPointReactionPrompts?: MoveAutomationPoisonPointPrompt[]
-  moxieTriggerPrompts?: MoveAutomationMoxiePrompt[]
-  celebrateTriggerPrompts?: MoveAutomationCelebratePrompt[]
   pendingMoveResponseWindows?: readonly PendingMoveResponseWindowView[]
   pendingMoveResponseStateByWindow?: Readonly<Record<string, PendingMoveResponseWindowState>>
   pendingMoveResponseActorLabels?: Readonly<Record<string, string>>
@@ -187,16 +176,6 @@ const emit = defineEmits<{
   (event: 'preview-all-move-vfx'): void
   (event: 'clear-move-vfx'): void
   (event: 'move-vfx-settled', payload: { nowMs: number }): void
-  (event: 'dismiss-spite-reaction', id: string): void
-  (event: 'apply-spite-reaction', id: string): void
-  (event: 'dismiss-cute-charm-reaction', id: string): void
-  (event: 'apply-cute-charm-reaction', id: string): void
-  (event: 'dismiss-poison-point-reaction', id: string): void
-  (event: 'apply-poison-point-reaction', id: string): void
-  (event: 'dismiss-moxie-trigger', id: string): void
-  (event: 'apply-moxie-trigger', id: string): void
-  (event: 'dismiss-celebrate-trigger', id: string): void
-  (event: 'apply-celebrate-trigger', id: string): void
   (event: 'choose-pending-move-response', payload: PendingMoveResponseOptionReference): void
   (event: 'pass-pending-move-response', payload: PendingMoveResponseReference): void
   (event: 'force-pass-pending-move-response', payload: PendingMoveResponseReference): void
@@ -469,24 +448,6 @@ defineExpose({ focusPokemon, focusCell })
         @cancel="emit('cancel-pending-move-resolution', $event)"
         @retry="emit('retry-pending-move-response', $event)"
         @refresh="emit('refresh-pending-move-responses')"
-      />
-
-      <MapMoveReactionPromptStack
-        :spite-prompts="props.spiteReactionPrompts ?? []"
-        :cute-charm-prompts="props.cuteCharmReactionPrompts ?? []"
-        :poison-point-prompts="props.poisonPointReactionPrompts ?? []"
-        :moxie-prompts="props.moxieTriggerPrompts ?? []"
-        :celebrate-prompts="props.celebrateTriggerPrompts ?? []"
-        @dismiss="emit('dismiss-spite-reaction', $event)"
-        @apply="emit('apply-spite-reaction', $event)"
-        @dismiss-cute-charm="emit('dismiss-cute-charm-reaction', $event)"
-        @apply-cute-charm="emit('apply-cute-charm-reaction', $event)"
-        @dismiss-poison-point="emit('dismiss-poison-point-reaction', $event)"
-        @apply-poison-point="emit('apply-poison-point-reaction', $event)"
-        @dismiss-moxie="emit('dismiss-moxie-trigger', $event)"
-        @apply-moxie="emit('apply-moxie-trigger', $event)"
-        @dismiss-celebrate="emit('dismiss-celebrate-trigger', $event)"
-        @apply-celebrate="emit('apply-celebrate-trigger', $event)"
       />
 
 

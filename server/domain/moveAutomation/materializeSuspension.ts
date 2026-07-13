@@ -277,6 +277,7 @@ export const materializeMoveSpecSuspension = (
   }
   const pendingResolution = parsePendingMoveResolution({
     schemaVersion: PENDING_MOVE_RESOLUTION_SCHEMA_VERSION,
+    continuationKind: 'movespec-v2',
     resolutionId: input.resolutionId,
     originMapSlug: input.originMapSlug,
     originOpId: input.originOpId,

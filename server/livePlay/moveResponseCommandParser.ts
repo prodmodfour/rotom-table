@@ -5,9 +5,10 @@ import {
   type MoveResponseCommand,
   type MoveResponseCommandType,
 } from '#shared/moveAutomation/responseCommands'
-import type {
-  PendingMoveResponseOption,
-  PendingMoveResponseWindow,
+import {
+  activePendingMoveResponseWindows,
+  type PendingMoveResponseOption,
+  type PendingMoveResponseWindow,
 } from '#shared/moveAutomation/pendingResolution'
 import {
   sqlitePendingMoveResolutionRepository,
@@ -133,7 +134,7 @@ const resolveWindow = (
   stored: StoredPendingMoveResolution,
   windowId: string,
 ): PendingMoveResponseWindow => {
-  const window = stored.resolution.outstandingWindows.find(
+  const window = activePendingMoveResponseWindows(stored.resolution).find(
     candidate => candidate.windowId === windowId,
   )
   if (!window) {

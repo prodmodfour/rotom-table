@@ -14,6 +14,7 @@ import type { TabletopMap } from '~/types/map'
 import type { TrainerSheet } from '~/types/trainerSheet'
 import { deepCloneJson } from '~/utils/serialization'
 import {
+  attachAbilityFollowUpsToMovePlan,
   observeMovePlanResources,
   type AuthoritativeMoveStatePlan,
   type AuthoritativePendingMoveStatePlan,
@@ -240,7 +241,7 @@ const planCompletion = (
     existing: observed.stateChanges,
   })
 
-  return {
+  const plan: AuthoritativeMoveStatePlan = {
     previousMap: deepCloneJson(input.map),
     nextMap,
     previousRevision: normalizeRevision(input.map.revision),
@@ -257,6 +258,14 @@ const planCompletion = (
     mapChanges: buildAuthoritativeMoveMapChanges(input.map, nextMap),
     stateChanges,
   }
+  return attachAbilityFollowUpsToMovePlan({
+    plan,
+    sourceMap: input.map,
+    pokemonSheets: input.pokemonSheets,
+    trainerSheets: input.trainerSheets,
+    causalOpId: input.responseOpId,
+    createdAt: input.plannedAt,
+  })
 }
 
 export const planResumedMoveState = (

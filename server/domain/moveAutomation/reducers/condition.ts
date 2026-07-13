@@ -9,6 +9,8 @@ import type { MoveAutomationConditionUpdateAccumulator } from '~/utils/moveAutom
 import {
   conditionBaseName,
   conditionLookupKey,
+  formatDisabledCondition,
+  formatInfatuationCondition,
   normalizeConditionNames,
 } from '~/utils/statusConditions'
 import { sameJsonValue } from '~/utils/serialization'
@@ -241,10 +243,15 @@ const reduceUnaryCondition = (options: {
   const random = operation.payload.action === 'random-choice'
     ? randomChoiceForRecipient(options)
     : null
-  const condition = random?.condition
+  const canonicalCondition = random?.condition
     ?? (operation.payload.conditionId === null
       ? null
       : canonicalMoveCondition(operation.payload.conditionId))
+  const condition = canonicalCondition === 'Disabled' && operation.payload.conditionDetail
+    ? formatDisabledCondition(operation.payload.conditionDetail)
+    : canonicalCondition === 'Infatuation' && operation.payload.conditionDetail
+      ? formatInfatuationCondition(operation.payload.conditionDetail)
+      : canonicalCondition
   const accuracyRollTrigger = accuracyRollTriggerForRecipient({
     operation,
     recipient,

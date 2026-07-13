@@ -18,6 +18,7 @@ export const MOVE_RESOLUTION_TRACE_SCHEMA_VERSION = 1 as const
 export const MOVE_RESOLUTION_TRACE_RUNTIME_KINDS = [
   'legacy-v1',
   'movespec-v2',
+  'ability-follow-ups',
 ] as const
 
 export const MOVE_RESOLUTION_TRACE_EVENT_KINDS = [

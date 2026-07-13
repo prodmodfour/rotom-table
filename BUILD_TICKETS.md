@@ -1399,7 +1399,7 @@ Status: DONE
 
 ## MA-109 — Migrate current local ability prompts
 
-Status: TODO
+Status: DONE
 
 **Depends on:** MA-107–MA-108
 **Commit:** `feat(move-automation): persist existing ability follow ups`

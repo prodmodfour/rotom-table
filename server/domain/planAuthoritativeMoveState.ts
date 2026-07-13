@@ -46,6 +46,10 @@ import {
   type AdaptV1MapChanges,
   type AdaptV1SheetWrite,
 } from './moveAutomation/adaptV1Transaction'
+import {
+  abilityFollowUpPersistenceIdentity,
+  materializeAbilityFollowUps,
+} from './moveAutomation/abilityFollowUps'
 import { buildAuthoritativeMoveMapChanges } from './moveAutomation/mapChanges'
 import {
   materializeMoveSpecSuspension,
@@ -134,6 +138,8 @@ export interface AuthoritativeMoveStatePlan {
   readonly mapChanges: AuthoritativeMoveMapChanges
   /** Ordered, resource-grouped persistence intent for the typed planning path. */
   readonly stateChanges: MoveStateChangePlan
+  /** Post-commit assisted follow-ups opened atomically with the accepted move. */
+  readonly followUpResolution?: import('#shared/moveAutomation/pendingResolution').PendingMoveResolution
 }
 
 export interface AuthoritativePendingMoveStatePlan {
@@ -751,6 +757,80 @@ const planPendingMoveState = (options: {
   }
 }
 
+export const attachAbilityFollowUpsToMovePlan = (input: {
+  readonly plan: AuthoritativeMoveStatePlan
+  readonly sourceMap: TabletopMap
+  readonly pokemonSheets: ReadonlyMap<string, CharacterSheet>
+  readonly trainerSheets: ReadonlyMap<string, TrainerSheet>
+  readonly causalOpId: string | undefined
+  readonly createdAt: number
+}): AuthoritativeMoveStatePlan => {
+  if (!input.causalOpId) return input.plan
+  const identity = abilityFollowUpPersistenceIdentity({
+    mapSlug: input.plan.nextMap.slug,
+    causalOpId: input.causalOpId,
+  })
+  const pending = materializeAbilityFollowUps({
+    resolutionId: identity.resolutionId,
+    originOpId: identity.originOpId,
+    originMapSlug: input.plan.nextMap.slug,
+    continuationMapRevision: input.plan.revision,
+    createdAt: input.createdAt,
+    resolution: input.plan.resolution,
+    map: input.sourceMap,
+    pokemonSheets: input.pokemonSheets,
+    trainerSheets: input.trainerSheets,
+    sheetWrites: input.plan.sheetWrites,
+  })
+  if (!pending) return input.plan
+
+  const previousEncounter = parseEncounterState(
+    input.plan.previousMap.encounterState ?? createEmptyEncounterState(),
+  )
+  const currentEncounter = parseEncounterState(
+    input.plan.nextMap.encounterState ?? createEmptyEncounterState(),
+  )
+  const nextEncounter = parseEncounterState({
+    ...currentEncounter,
+    pendingResolutionSummaries: [
+      ...currentEncounter.pendingResolutionSummaries.filter(summary => (
+        summary.resolutionId !== pending.resolutionId
+      )),
+      pending.publicSummary,
+    ],
+  })
+  const nextMap = cloneJson({
+    ...input.plan.nextMap,
+    encounterState: nextEncounter,
+  })
+  const nonEncounterChanges = input.plan.stateChanges.changes
+    .filter(change => change.kind !== 'encounter-state')
+    .map(withoutPlanIdentity)
+  const existingEncounter = input.plan.stateChanges.changes.find(
+    change => change.kind === 'encounter-state',
+  )
+  const stateChanges = createMoveStateChangePlan([
+    ...nonEncounterChanges,
+    {
+      kind: 'encounter-state',
+      scope: { kind: 'encounter', mapSlug: input.plan.nextMap.slug },
+      expectedRevision: input.plan.previousRevision,
+      sourceOperationId: existingEncounter?.sourceOperationId ?? null,
+      reasonCode: 'move-and-ability-follow-up-state',
+      previous: cloneJson(existingEncounter?.previous ?? previousEncounter),
+      current: cloneJson(nextEncounter),
+      compensation: RESTORE_PREVIOUS_MOVE_STATE_VALUE,
+    },
+  ])
+  return {
+    ...input.plan,
+    nextMap,
+    mapChanges: buildAuthoritativeMoveMapChanges(input.plan.previousMap, nextMap),
+    stateChanges,
+    followUpResolution: pending,
+  }
+}
+
 export const planAuthoritativeMoveStateExecution = (
   input: PlanAuthoritativeMoveStateInput,
 ): AuthoritativeMoveStatePlanningResult => {
@@ -811,7 +891,7 @@ export const planAuthoritativeMoveStateExecution = (
       previousRevision,
       stateChanges: nativePlan.stateChanges,
     })
-    return {
+    const plan: AuthoritativeMoveStatePlan = {
       previousMap,
       nextMap: observedResources.nextMap,
       previousRevision,
@@ -828,6 +908,14 @@ export const planAuthoritativeMoveStateExecution = (
       mapChanges: observedResources.mapChanges,
       stateChanges: observedResources.stateChanges,
     }
+    return attachAbilityFollowUpsToMovePlan({
+      plan,
+      sourceMap: input.map,
+      pokemonSheets: input.pokemonSheets,
+      trainerSheets: input.trainerSheets,
+      causalOpId: input.operationId,
+      createdAt: plannedAt,
+    })
   }
 
   const originalPlacementsById = placementById(input.map)
@@ -914,7 +1002,7 @@ export const planAuthoritativeMoveStateExecution = (
     stateChanges: adaptedTransaction.stateChanges,
   })
 
-  return {
+  const plan: AuthoritativeMoveStatePlan = {
     previousMap,
     nextMap: observedResources.nextMap,
     previousRevision,
@@ -930,6 +1018,14 @@ export const planAuthoritativeMoveStateExecution = (
     mapChanges: observedResources.mapChanges,
     stateChanges: observedResources.stateChanges,
   }
+  return attachAbilityFollowUpsToMovePlan({
+    plan,
+    sourceMap: input.map,
+    pokemonSheets: input.pokemonSheets,
+    trainerSheets: input.trainerSheets,
+    causalOpId: input.operationId,
+    createdAt: plannedAt,
+  })
 }
 
 /** Compatibility boundary for callers that cannot yet return a durable saga. */

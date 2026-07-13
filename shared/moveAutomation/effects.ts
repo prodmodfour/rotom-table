@@ -954,6 +954,11 @@ export interface MoveConditionEffectPayload {
   readonly action: MoveEffectConditionAction
   /** Applied/removed/transferred/replacement condition; null for clear/random-choice. */
   readonly conditionId: string | null
+  /**
+   * Bounded display identity retained by the two canonical detailed conditions.
+   * Only Disabled and Infatuation applications accept this server-authored text.
+   */
+  readonly conditionDetail?: string | null
   /** Exactly one authoritative source for transfer; null for every other action. */
   readonly conditionSource: MoveSelector | null
   /** Required for replace, optional for filtered clear, null for other actions. */
@@ -1356,6 +1361,7 @@ const HP_INJURY_FIELDS = ['hitPointMarkers', 'massiveDamage'] as const
 const HP_COST_FIELDS = ['kind', 'timing', 'minimumRemaining', 'damageOperationId'] as const
 const CONDITION_REQUIRED_FIELDS = ['action', 'conditionId'] as const
 const CONDITION_OPTIONAL_FIELDS = [
+  'conditionDetail',
   'conditionSource',
   'filter',
   'randomChoice',
@@ -2676,6 +2682,17 @@ const parseConditionPayload = (value: unknown, path: string): MoveConditionEffec
     ownValue(input, 'conditionId', path),
     `${path}.conditionId`,
   )
+  const hasConditionDetail = Object.prototype.hasOwnProperty.call(input, 'conditionDetail')
+  const rawConditionDetail = hasConditionDetail
+    ? ownValue(input, 'conditionDetail', path)
+    : null
+  const conditionDetail = rawConditionDetail === null
+    ? null
+    : parseBoundedText(
+        rawConditionDetail,
+        `${path}.conditionDetail`,
+        MOVE_EFFECT_OPERATION_LIMITS.textLength,
+      )
   const rawSource = Object.prototype.hasOwnProperty.call(input, 'conditionSource')
     ? ownValue(input, 'conditionSource', path)
     : null
@@ -2731,6 +2748,19 @@ const parseConditionPayload = (value: unknown, path: string): MoveConditionEffec
       'invalid-effect-operation',
       `${path}.conditionId`,
       'must be null for clear/random-choice and a stable identifier for every other action.',
+    )
+  }
+  if (
+    conditionDetail !== null
+    && (
+      action !== 'apply'
+      || (conditionId !== 'disabled' && conditionId !== 'infatuation')
+    )
+  ) {
+    fail(
+      'invalid-effect-operation',
+      `${path}.conditionDetail`,
+      'is supported only for Disabled or Infatuation apply operations.',
     )
   }
   if ((action === 'transfer') !== (conditionSource !== null)) {
@@ -2804,6 +2834,7 @@ const parseConditionPayload = (value: unknown, path: string): MoveConditionEffec
   return {
     action,
     conditionId,
+    ...(hasConditionDetail ? { conditionDetail } : {}),
     conditionSource,
     filter,
     randomChoice,

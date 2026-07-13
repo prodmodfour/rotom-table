@@ -579,7 +579,7 @@ describe('useMoveAutomationPanel authoritative dispatcher', () => {
     })
   })
 
-  it('queues Moxie from the pre-dispatch HP snapshot after server adoption changes token HP', async () => {
+  it('does not reconstruct durable Moxie mechanics from the pre-dispatch browser snapshot', async () => {
     const moveScript = reviewedScript('Ember')
     await withRegisteredScripts([moveScript], async () => {
       const tokens = ref([
@@ -610,14 +610,7 @@ describe('useMoveAutomationPanel authoritative dispatcher', () => {
       await panel.selectMoveAutomationTarget('target-a')
 
       expect(tokens.value.find((token) => token.id === 'target-a')?.currentHp).toBe(0)
-      expect(panel.moxieTriggerPrompts.value).toMatchObject([
-        {
-          attackerId: 'user-token',
-          moveName: moveScript.moveName,
-          faintedTargetIds: ['target-a'],
-          faintedTargetNames: ['Target A'],
-        },
-      ])
+      expect(panel.moxieTriggerPrompts.value).toEqual([])
     })
   })
 

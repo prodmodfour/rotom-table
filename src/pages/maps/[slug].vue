@@ -2062,11 +2062,6 @@ const {
   moveAutomationFeedback,
   moveUsageError,
   moveDispatchPending,
-  spiteReactionPrompts,
-  cuteCharmReactionPrompts,
-  poisonPointReactionPrompts,
-  moxieTriggerPrompts,
-  celebrateTriggerPrompts,
   tokenMoveOptionsById,
   openMoveAutomation: openMoveAutomationPanel,
   useMoveAgainstTarget,
@@ -2077,16 +2072,6 @@ const {
   selectMoveAutomationAreaTemplate: selectMoveAutomationAreaTemplatePanel,
   selectMoveAutomationAreaDirection: selectMoveAutomationAreaDirectionPanel,
   aimMoveAutomationArea: aimMoveAutomationAreaPanel,
-  dismissSpiteReactionPrompt,
-  applySpiteReactionPrompt,
-  dismissCuteCharmReactionPrompt,
-  applyCuteCharmReactionPrompt,
-  dismissPoisonPointReactionPrompt,
-  applyPoisonPointReactionPrompt,
-  dismissMoxieTriggerPrompt,
-  applyMoxieTriggerPrompt,
-  dismissCelebrateTriggerPrompt,
-  applyCelebrateTriggerPrompt,
 } = useMoveAutomationPanel({
   map,
   spawnedPokemon,
@@ -2553,36 +2538,6 @@ const cancelActionAutomationTargeting = () => {
   cancelOrderActionTargeting()
 }
 
-const applySpiteReactionPromptFromScene = async (id: string) => {
-  const prompt = spiteReactionPrompts.value.find((item) => item.id === id)
-  if (prompt) await showActionSplash({ userId: prompt.defenderId, actionName: 'Spite' })
-  await applySpiteReactionPrompt(id)
-}
-
-const applyCuteCharmReactionPromptFromScene = async (id: string) => {
-  const prompt = cuteCharmReactionPrompts.value.find((item) => item.id === id)
-  if (prompt) await showActionSplash({ userId: prompt.defenderId, actionName: 'Cute Charm' })
-  await applyCuteCharmReactionPrompt(id)
-}
-
-const applyPoisonPointReactionPromptFromScene = async (id: string) => {
-  const prompt = poisonPointReactionPrompts.value.find((item) => item.id === id)
-  if (prompt) await showActionSplash({ userId: prompt.defenderId, actionName: 'Poison Point' })
-  await applyPoisonPointReactionPrompt(id)
-}
-
-const applyMoxieTriggerPromptFromScene = async (id: string) => {
-  const prompt = moxieTriggerPrompts.value.find((item) => item.id === id)
-  if (prompt) await showActionSplash({ userId: prompt.attackerId, actionName: 'Moxie' })
-  await applyMoxieTriggerPrompt(id)
-}
-
-const applyCelebrateTriggerPromptFromScene = async (id: string) => {
-  const prompt = celebrateTriggerPrompts.value.find((item) => item.id === id)
-  if (prompt) await showActionSplash({ userId: prompt.attackerId, actionName: 'Celebrate' })
-  applyCelebrateTriggerPrompt(id)
-}
-
 const sharedMapInteractionModeBusy = computed(() => (
   sharedMapInteractionModeStatus.value === 'loading' || sharedMapInteractionModeStatus.value === 'saving'
 ))
@@ -2735,11 +2690,6 @@ useMapDimensionReconciliation({
         :action-splash="actionSplash"
         :action-splash-speed-lines-duration-ms="actionSplashSpeedLinesDurationMs"
         :move-usage-error="sceneActionError"
-        :spite-reaction-prompts="spiteReactionPrompts"
-        :cute-charm-reaction-prompts="cuteCharmReactionPrompts"
-        :poison-point-reaction-prompts="poisonPointReactionPrompts"
-        :moxie-trigger-prompts="moxieTriggerPrompts"
-        :celebrate-trigger-prompts="celebrateTriggerPrompts"
         :pending-move-response-windows="pendingMoveResponses.windows.value"
         :pending-move-response-state-by-window="pendingMoveResponses.responseStateByWindow.value"
         :pending-move-response-actor-labels="pendingMoveResponseActorLabels"
@@ -2795,16 +2745,6 @@ useMapDimensionReconciliation({
         @clear-move-vfx="clearMoveAnimations"
         @move-vfx-settled="pruneSettledMoveAnimations"
         @token-motion-debug-metrics="updateLivePlayTokenMotionDebugMetrics"
-        @dismiss-spite-reaction="dismissSpiteReactionPrompt"
-        @apply-spite-reaction="applySpiteReactionPromptFromScene"
-        @dismiss-cute-charm-reaction="dismissCuteCharmReactionPrompt"
-        @apply-cute-charm-reaction="applyCuteCharmReactionPromptFromScene"
-        @dismiss-poison-point-reaction="dismissPoisonPointReactionPrompt"
-        @apply-poison-point-reaction="applyPoisonPointReactionPromptFromScene"
-        @dismiss-moxie-trigger="dismissMoxieTriggerPrompt"
-        @apply-moxie-trigger="applyMoxieTriggerPromptFromScene"
-        @dismiss-celebrate-trigger="dismissCelebrateTriggerPrompt"
-        @apply-celebrate-trigger="applyCelebrateTriggerPromptFromScene"
         @choose-pending-move-response="pendingMoveResponses.choose($event)"
         @pass-pending-move-response="pendingMoveResponses.pass($event)"
         @force-pass-pending-move-response="pendingMoveResponses.forcePass($event)"

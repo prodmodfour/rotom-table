@@ -104,9 +104,9 @@ export const isSeamlessTargetCountMoveScript = (
 /**
  * Explicit v1 move automation scripts. Registry presence means a script is
  * available; it does not claim that every canonical clause or cross-cutting
- * interaction is complete. In particular, browser-local post-commit prompts
- * remain assisted follow-ups until a durable server reaction flow replaces
- * them. Small factories may copy canonical move data, but this registry stays
+ * interaction is complete. Durable post-commit ability windows remain
+ * assisted until their canonical interrupt timing is certified. Small
+ * factories may copy canonical move data, but this registry stays
  * an allow-list of reviewed v1 implementations.
  */
 export interface ExplicitMoveAutomationRegistrySource {

@@ -1,7 +1,8 @@
 import type { AuthRole } from '#shared/auth'
-import type {
-  PendingMoveResolution,
-  PendingMoveResponseWindow,
+import {
+  activePendingMoveResponseWindows,
+  type PendingMoveResolution,
+  type PendingMoveResponseWindow,
 } from '#shared/moveAutomation/pendingResolution'
 import type { PlayerProfile } from '#shared/playerProfiles'
 import {
@@ -85,7 +86,7 @@ export const listPendingMoveResponsesUseCase = (input: {
       || stored.resolution.status !== 'pending'
     ) continue
 
-    for (const window of stored.resolution.outstandingWindows) {
+    for (const window of activePendingMoveResponseWindows(stored.resolution)) {
       if (!pendingMoveResponseAuthorizationGrant({
         resolution: stored.resolution,
         window,

@@ -2,11 +2,13 @@ import type { AuthRole } from '#shared/auth'
 import {
   LIVE_PLAY_COMMAND_SCHEMA_VERSION,
   LIVE_PLAY_COMMAND_TYPES,
+  LIVE_PLAY_PATCH_TYPES,
   createLivePlayAcceptedResult,
   createLivePlayRejectedResult,
   type LivePlayCommandAccepted,
   type LivePlayCommandRejected,
   type LivePlayCommandResult,
+  type LivePlayPatch,
   type ResolveMoveLivePlayCommand,
 } from '#shared/livePlayCommands'
 import type { LivePlayResolvedMoveResult } from '#shared/livePlayMoveResolution'
@@ -30,6 +32,12 @@ import {
   type AuthoritativeMoveStatePlan,
   type AuthoritativePendingMoveStatePlan,
 } from '../domain/planAuthoritativeMoveState'
+import {
+  isAbilityFollowUpPendingResolution,
+  planAbilityFollowUpResponse,
+  type AbilityFollowUpResponsePlan,
+} from '../domain/moveAutomation/abilityFollowUps'
+import { createMoveStateChangePlan } from '../domain/moveAutomation/plan'
 import { planResumedMoveState } from '../domain/moveAutomation/planResumedMoveState'
 import type { AuthoritativeMoveRandomSource } from '../domain/moveAutomation/random'
 import { ResumeMoveSpecError, resumeMoveSpec } from '../domain/moveAutomation/resumeSpec'
@@ -110,6 +118,7 @@ export interface ResumePendingMoveResolutionDependencies {
   >
   readonly groupInventoryRepository?: Pick<GroupInventoryRepository, 'get'>
   readonly pendingResolutionRepository?: Pick<PendingMoveResolutionRepository, 'getById' | 'update'>
+    & Partial<Pick<PendingMoveResolutionRepository, 'create'>>
   readonly opRepository?: Pick<LivePlayOpRepository, 'getStoredOpRecord' | 'saveCommandResult'>
   readonly realtimeEventRepository?: Pick<RealtimeEventRepository, 'appendMany'>
   readonly publishPersistedRealtimeEvent?: PersistedRealtimeEventPublisher
@@ -357,7 +366,7 @@ const applyMap = (
 }
 
 const applySheets = (
-  plan: AuthoritativeMoveStatePlan,
+  plan: Pick<AuthoritativeMoveStatePlan | AbilityFollowUpResponsePlan, 'sheetWrites' | 'nextMap'>,
   dependencies: Dependencies,
 ): readonly LivePlayResolveMoveCommandSheetUpdate[] => {
   for (const write of plan.sheetWrites) {
@@ -431,6 +440,21 @@ const responseFromState = (input: {
       }
     : {}),
   ...(input.move ? { move: input.move } : {}),
+})
+
+const abilityFollowUpMetadataPatch = (
+  plan: AbilityFollowUpResponsePlan,
+): LivePlayPatch<typeof LIVE_PLAY_PATCH_TYPES.MAP_METADATA> => ({
+  schemaVersion: LIVE_PLAY_COMMAND_SCHEMA_VERSION,
+  type: LIVE_PLAY_PATCH_TYPES.MAP_METADATA,
+  mapSlug: plan.nextMap.slug,
+  revision: plan.revision,
+  scopes: [{ kind: 'map', lane: 'metadata' }],
+  payload: {
+    command: 'resolveAbilityFollowUp',
+    previous: deepCloneJson(plan.previousMap.metadata ?? {}),
+    current: deepCloneJson(plan.nextMap.metadata ?? {}),
+  },
 })
 
 const existingResponse = (
@@ -555,6 +579,64 @@ export const resumePendingMoveResolutionUseCase = (
       })
     }
     const sheets = loadSheets(map, dependencies)
+    if (isAbilityFollowUpPendingResolution(stored.resolution)) {
+      const plan = planAbilityFollowUpResponse({
+        pendingResolution: stored.resolution,
+        responseOpId: input.command.opId,
+        responseWindowId: responseWindowId(input.command),
+        responseOptionId: responseOptionId(input.command),
+        chosenBy: input.authorization.chosenBy,
+        map,
+        ...sheets,
+        plannedAt: now,
+        maxMoveLogEntries: dependencies.maxMoveLogEntries,
+      })
+      dependencies.beforeCommit?.()
+      dependencies.sheetRepository.assertRevisions(plan.sheetReads)
+      applyMap(map, plan.nextMap, dependencies)
+      const sheetUpdates = applySheets(plan, dependencies)
+      const patch = abilityFollowUpMetadataPatch(plan)
+      const result = createLivePlayAcceptedResult({
+        opId: input.command.opId,
+        mapSlug: input.command.mapSlug,
+        previousRevision: plan.previousRevision,
+        revision: plan.revision,
+        patches: [patch],
+      })
+      dependencies.opRepository.saveCommandResult({
+        mapSlug: input.command.mapSlug,
+        opId: input.command.opId,
+        commandHash,
+        command: input.command,
+        result,
+      })
+      dependencies.pendingResolutionRepository.update({
+        resolution: plan.pendingResolution,
+        expectedRevision: stored.revision,
+        ...(plan.pendingResolution.status === 'pending'
+          ? {}
+          : { terminalOpId: input.command.opId }),
+      })
+      persistedEvents = dependencies.realtimeEventRepository.appendMany([
+        ...livePlaySheetUpdateRealtimeAppendInputs({
+          command: input.command as unknown as ResolveMoveLivePlayCommand,
+          updates: sheetUpdates,
+          clientId: input.clientId,
+        }),
+        acceptedCommandRealtimeAppendInput({
+          command: input.command as unknown as ResolveMoveLivePlayCommand,
+          result,
+          clientId: input.clientId,
+        }),
+      ])
+      return responseFromState({
+        role: input.role,
+        result,
+        map: plan.nextMap,
+        sheetUpdates,
+      })
+    }
+
     let execution
     try {
       execution = resumeMoveSpec({
@@ -669,6 +751,18 @@ export const resumePendingMoveResolutionUseCase = (
       expectedRevision: stored.revision,
       terminalOpId: input.command.opId,
     })
+    if (plan.followUpResolution) {
+      if (!dependencies.pendingResolutionRepository.create) {
+        throw new ResumePendingMoveResolutionUseCaseError(
+          409,
+          'Pending repository cannot persist accepted-move ability follow-ups.',
+        )
+      }
+      dependencies.pendingResolutionRepository.create({
+        resolution: plan.followUpResolution,
+        declarationPlan: createMoveStateChangePlan([]),
+      })
+    }
     persistedEvents = dependencies.realtimeEventRepository.appendMany([
       ...livePlaySheetUpdateRealtimeAppendInputs({
         command: internalCommand,

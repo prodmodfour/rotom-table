@@ -139,6 +139,7 @@ const publicSummary = (overrides: Record<string, unknown> = {}) => ({
 
 const pendingResolution = (): Record<string, any> => ({
   schemaVersion: PENDING_MOVE_RESOLUTION_SCHEMA_VERSION,
+  continuationKind: 'movespec-v2',
   resolutionId: 'resolution-pending-1',
   originMapSlug: 'pending-arena',
   originOpId: 'op_declare0001',
@@ -267,6 +268,13 @@ describe('pending move resolution contract', () => {
     expect(Object.isFrozen(parsed.trace)).toBe(true)
     expect(Object.isFrozen(parsed.rollLedger)).toBe(true)
     expect(Object.isFrozen(parsed.outstandingWindows[0]?.options)).toBe(true)
+  })
+
+  it('normalizes pre-follow-up records to the MoveSpec continuation kind', () => {
+    const legacyStoredRecord = pendingResolution()
+    delete legacyStoredRecord.continuationKind
+
+    expect(parsePendingMoveResolution(legacyStoredRecord).continuationKind).toBe('movespec-v2')
   })
 
   it('strictly validates concrete profile and side response-owner identities', () => {

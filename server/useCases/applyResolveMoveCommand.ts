@@ -46,6 +46,7 @@ import {
   type AuthoritativePendingMoveStatePlan,
   type PlanAuthoritativeMoveStateInput,
 } from '../domain/planAuthoritativeMoveState'
+import { createMoveStateChangePlan } from '../domain/moveAutomation/plan'
 import type { AuthoritativeMoveRandomSource } from '../domain/moveAutomation/random'
 import { summarizeMoveResolutionTrace } from '../domain/moveAutomation/trace'
 import {
@@ -1126,6 +1127,24 @@ export const executeLivePlayResolveMoveCommandUseCase = async (
           })
           if (sheetResult === 'stale') {
             throw new LivePlayResolveMoveCommandUseCaseError(409, `${write.kind} sheet ${write.slug} changed before the resolveMove command could be persisted`)
+          }
+        }
+
+        if (plan.followUpResolution) {
+          const storedFollowUp = deps.pendingResolutionRepository.create({
+            resolution: plan.followUpResolution,
+            // The provoking move is already accepted and is never compensation
+            // material for an optional post-commit follow-up.
+            declarationPlan: createMoveStateChangePlan([]),
+          })
+          if (
+            storedFollowUp.resolutionId !== plan.followUpResolution.resolutionId
+            || storedFollowUp.status !== 'pending'
+          ) {
+            throw new LivePlayResolveMoveCommandUseCaseError(
+              409,
+              'Accepted move ability follow-ups did not persist their canonical identity',
+            )
           }
         }
 

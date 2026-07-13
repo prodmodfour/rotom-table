@@ -94,11 +94,6 @@ const moveOption = (name: string, overrides: Partial<TokenMoveMenuOption> = {}):
 describe('attack of opportunity helpers', () => {
   it('identifies every current local prompt and labels AoO as an assisted non-durable follow-up', () => {
     expect(LOCAL_ASSISTED_FOLLOW_UP_NAMES).toEqual([
-      'Spite',
-      'Cute Charm',
-      'Poison Point',
-      'Moxie',
-      'Celebrate',
       'Attack of Opportunity',
     ])
     expect(ATTACK_OF_OPPORTUNITY_ASSISTANCE_NOTICE).toContain('after the provoking action')

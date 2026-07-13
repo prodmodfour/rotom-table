@@ -30,8 +30,6 @@ const defaultMoxiePromptId = (prompt: Omit<MoveAutomationMoxiePrompt, 'id'>): st
   'moxie',
   prompt.attackerId,
   normalizeMoveKey(prompt.moveName).replace(/[^a-z0-9]+/g, '-') || 'move',
-  Date.now().toString(36),
-  Math.random().toString(36).slice(2, 8),
 ].join('-')
 
 export interface BuildMoxieTriggerPromptsInput {
