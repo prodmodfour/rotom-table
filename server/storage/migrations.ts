@@ -1,6 +1,6 @@
 import type { DatabaseSync } from 'node:sqlite'
 
-export const LATEST_STORAGE_SCHEMA_VERSION = 11
+export const LATEST_STORAGE_SCHEMA_VERSION = 12
 
 export interface StorageMigration {
   readonly version: number
@@ -194,6 +194,17 @@ const addAcceptedMoveCompensationResults = (connection: DatabaseSync): void => {
   `)
 }
 
+const addMoveCorrectionAncestry = (connection: DatabaseSync): void => {
+  connection.exec(`
+    ALTER TABLE live_play_ops
+    ADD COLUMN correction_origin_op_id TEXT
+      REFERENCES live_play_ops (op_id) ON DELETE CASCADE;
+
+    CREATE INDEX IF NOT EXISTS live_play_ops_correction_origin_idx
+      ON live_play_ops (map_slug, correction_origin_op_id, created_at);
+  `)
+}
+
 export const STORAGE_MIGRATIONS: readonly StorageMigration[] = [
   {
     version: 1,
@@ -249,6 +260,11 @@ export const STORAGE_MIGRATIONS: readonly StorageMigration[] = [
     version: 11,
     name: 'store accepted move compensation results',
     up: addAcceptedMoveCompensationResults,
+  },
+  {
+    version: 12,
+    name: 'link audited GM move corrections to accepted moves',
+    up: addMoveCorrectionAncestry,
   },
 ]
 

@@ -48,6 +48,7 @@ export interface SaveSqliteLivePlayOpResultInput extends SaveLivePlayOpResultInp
 export interface LivePlayOpRepository extends LivePlayOpStore {
   getStoredOpRecord(mapSlug: string, opId: string): SqliteLivePlayOpRecord | null
   listAcceptedOpsSinceRevision(input: LivePlayAcceptedOperationHistoryInput): readonly LivePlayAcceptedOperationMetadata[]
+  listMoveCorrectionRecords(mapSlug: string, originOperationId: string): readonly SqliteLivePlayOpRecord[]
   saveCommandResult(input: SaveSqliteLivePlayOpResultInput): SqliteLivePlayOpRecord
 }
 
@@ -64,6 +65,7 @@ interface OpRow {
   readonly result_json: unknown
   readonly result_revision: unknown
   readonly move_compensation_json: unknown
+  readonly correction_origin_op_id: unknown
   readonly created_at: unknown
 }
 
@@ -110,6 +112,13 @@ const rowToOpRecord = (row: OpRow): SqliteLivePlayOpRecord => {
   const command = parseStoredDocumentJson<unknown>(row.command_json, `live-play op ${opId} command`)
   const result = parseRecordedResult(row.result_json, opId)
   const moveCompensation = parseMoveCompensation(row.move_compensation_json, opId)
+  const correctionOriginOperationId = row.correction_origin_op_id === null
+    || row.correction_origin_op_id === undefined
+    ? undefined
+    : validateLivePlayOperationId(
+        row.correction_origin_op_id,
+        'live_play_ops.correction_origin_op_id',
+      )
   const createdAt = parseStoredTimestamp(row.created_at, 'live_play_ops.created_at')
   const resultRevision = parseResultRevision(row.result_revision)
 
@@ -126,6 +135,12 @@ const rowToOpRecord = (row: OpRow): SqliteLivePlayOpRecord => {
   )) {
     throw new Error(`live-play op ${opId} move_compensation_json must match an accepted row identity`)
   }
+  if (correctionOriginOperationId === opId) {
+    throw new Error(`live-play op ${opId} cannot reference itself as a correction origin`)
+  }
+  if (correctionOriginOperationId !== undefined && moveCompensation !== undefined) {
+    throw new Error(`live-play op ${opId} cannot be both a correction and a compensation source`)
+  }
 
   return {
     schemaVersion: LIVE_PLAY_OP_STORE_SCHEMA_VERSION,
@@ -135,6 +150,7 @@ const rowToOpRecord = (row: OpRow): SqliteLivePlayOpRecord => {
     command: cloneStoredJson(command),
     result,
     ...(moveCompensation === undefined ? {} : { moveCompensation }),
+    ...(correctionOriginOperationId === undefined ? {} : { correctionOriginOperationId }),
     ...(resultRevision === undefined ? {} : { resultRevision }),
     createdAt,
     recordedAt: new Date(createdAt).toISOString(),
@@ -209,6 +225,18 @@ const validateSaveInput = (input: SaveLivePlayOpResultInput): void => {
       throw new Error('move compensation identity must match the stored live-play operation')
     }
   }
+  if (input.correctionOriginOperationId !== undefined) {
+    const originOperationId = validateLivePlayOperationId(
+      input.correctionOriginOperationId,
+      'correction origin operation ID',
+    )
+    if (originOperationId === opId) {
+      throw new Error('a live-play correction operation cannot reference itself')
+    }
+    if (input.moveCompensation !== undefined) {
+      throw new Error('a live-play operation cannot be both an original compensation source and a correction')
+    }
+  }
 }
 
 export const createSqliteLivePlayOpRepository = (
@@ -228,6 +256,7 @@ export const createSqliteLivePlayOpRepository = (
         result_json,
         result_revision,
         move_compensation_json,
+        correction_origin_op_id,
         created_at
       FROM live_play_ops
       WHERE op_id = ?
@@ -258,6 +287,7 @@ export const createSqliteLivePlayOpRepository = (
         result_json,
         result_revision,
         move_compensation_json,
+        correction_origin_op_id,
         created_at
       FROM live_play_ops
       WHERE map_slug = ?
@@ -270,6 +300,34 @@ export const createSqliteLivePlayOpRepository = (
       .map(rowToOpRecord)
       .map(acceptedOperationFromRecord)
       .filter((record): record is LivePlayAcceptedOperationMetadata => record !== null)
+  }
+
+  const listMoveCorrectionRecords = (
+    mapSlugInput: string,
+    originOperationIdInput: string,
+  ): readonly SqliteLivePlayOpRecord[] => {
+    const mapSlug = parseLivePlayMapSlug(mapSlugInput, 'live-play correction mapSlug')
+    const originOperationId = validateLivePlayOperationId(
+      originOperationIdInput,
+      'live-play correction origin operation ID',
+    )
+    const rows = database.connection.prepare(`
+      SELECT
+        op_id,
+        map_slug,
+        command_hash,
+        command_json,
+        result_json,
+        result_revision,
+        move_compensation_json,
+        correction_origin_op_id,
+        created_at
+      FROM live_play_ops
+      WHERE map_slug = ?
+        AND correction_origin_op_id = ?
+      ORDER BY created_at ASC, op_id ASC
+    `).all(mapSlug, originOperationId) as unknown as OpRow[]
+    return rows.map(rowToOpRecord)
   }
 
   const saveCommandResult = (input: SaveSqliteLivePlayOpResultInput): SqliteLivePlayOpRecord =>
@@ -297,7 +355,29 @@ export const createSqliteLivePlayOpRepository = (
             `Operation ID ${existing.mapSlug}:${existing.opId} was already recorded with different move compensation metadata`,
           )
         }
+        if (
+          (existing.correctionOriginOperationId ?? null)
+          !== (input.correctionOriginOperationId ?? null)
+        ) {
+          throw new Error(
+            `Operation ID ${existing.mapSlug}:${existing.opId} was already recorded with different correction ancestry`,
+          )
+        }
         return existing
+      }
+
+      if (input.correctionOriginOperationId !== undefined) {
+        const origin = findByOpId(input.correctionOriginOperationId)
+        if (
+          !origin
+          || origin.mapSlug !== mapSlug
+          || !origin.result.ok
+          || !origin.moveCompensation
+        ) {
+          throw new Error(
+            'Correction ancestry must reference an accepted move with private compensation metadata on the same map',
+          )
+        }
       }
 
       const createdAt = createdAtFromInput(input, clock)
@@ -310,8 +390,9 @@ export const createSqliteLivePlayOpRepository = (
           result_json,
           result_revision,
           move_compensation_json,
+          correction_origin_op_id,
           created_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
       `).run(
         opId,
         mapSlug,
@@ -324,6 +405,7 @@ export const createSqliteLivePlayOpRepository = (
           : stringifyStoredDocument(
               parseAcceptedMoveCompensationResult(input.moveCompensation),
             ),
+        input.correctionOriginOperationId ?? null,
         createdAt,
       )
       const record = findByOpId(opId)
@@ -336,6 +418,7 @@ export const createSqliteLivePlayOpRepository = (
     getOpRecord: getStoredOpRecord,
     getOpResult: (mapSlug, opId) => getStoredOpRecord(mapSlug, opId)?.result ?? null,
     listAcceptedOpsSinceRevision,
+    listMoveCorrectionRecords,
     saveCommandResult,
     saveOpResult: (input) => saveCommandResult({
       ...input,
@@ -352,6 +435,9 @@ export const sqliteLivePlayOpRepository: LivePlayOpRepository = {
   getOpRecord: (mapSlug, opId) => defaultOpRepository().getOpRecord(mapSlug, opId),
   getOpResult: (mapSlug, opId) => defaultOpRepository().getOpResult(mapSlug, opId),
   listAcceptedOpsSinceRevision: (input) => defaultOpRepository().listAcceptedOpsSinceRevision(input),
+  listMoveCorrectionRecords: (mapSlug, originOperationId) => (
+    defaultOpRepository().listMoveCorrectionRecords(mapSlug, originOperationId)
+  ),
   saveCommandResult: (input) => defaultOpRepository().saveCommandResult(input),
   saveOpResult: (input) => defaultOpRepository().saveOpResult(input),
 }

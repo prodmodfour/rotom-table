@@ -27,6 +27,8 @@ export interface LivePlayOpRecord {
   readonly result: StorableLivePlayCommandResult
   /** Private server-only correction metadata; never included in command results. */
   readonly moveCompensation?: AcceptedMoveCompensationResult
+  /** Durable ancestry for a GM correction attempt or accepted correction. */
+  readonly correctionOriginOperationId?: string
   readonly recordedAt: string
 }
 
@@ -36,6 +38,7 @@ export interface SaveLivePlayOpResultInput {
   readonly commandHash: LivePlayCommandHash
   readonly result: StorableLivePlayCommandResult
   readonly moveCompensation?: AcceptedMoveCompensationResult
+  readonly correctionOriginOperationId?: string
   readonly recordedAt?: string
 }
 
@@ -99,6 +102,18 @@ const assertSaveInputMatchesResult = (input: SaveLivePlayOpResultInput): void =>
       throw new Error('Move compensation identity must match the stored live-play operation')
     }
   }
+  if (input.correctionOriginOperationId !== undefined) {
+    const originOperationId = validateLivePlayOperationId(
+      input.correctionOriginOperationId,
+      'correction origin operation ID',
+    )
+    if (originOperationId === input.opId) {
+      throw new Error('A live-play correction operation cannot reference itself')
+    }
+    if (input.moveCompensation !== undefined) {
+      throw new Error('A live-play operation cannot be both an original compensation source and a correction')
+    }
+  }
 }
 
 const recordFromSaveInput = (
@@ -113,6 +128,14 @@ const recordFromSaveInput = (
   ...(input.moveCompensation === undefined
     ? {}
     : { moveCompensation: parseAcceptedMoveCompensationResult(input.moveCompensation) }),
+  ...(input.correctionOriginOperationId === undefined
+    ? {}
+    : {
+        correctionOriginOperationId: validateLivePlayOperationId(
+          input.correctionOriginOperationId,
+          'correction origin operation ID',
+        ),
+      }),
   recordedAt: input.recordedAt ?? clock(),
 })
 
@@ -145,6 +168,17 @@ const assertExistingCompensationCompatible = (
   }
 }
 
+const assertExistingCorrectionOriginCompatible = (
+  existing: LivePlayOpRecord,
+  attempted: string | undefined,
+): void => {
+  if ((existing.correctionOriginOperationId ?? null) !== (attempted ?? null)) {
+    throw new Error(
+      `Operation ID ${existing.mapSlug}:${existing.opId} was already recorded with different correction ancestry`,
+    )
+  }
+}
+
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null && !Array.isArray(value)
 
@@ -169,6 +203,12 @@ const parseStoredRecord = (value: unknown, source: string): LivePlayOpRecord => 
   const moveCompensation = value.moveCompensation === undefined
     ? undefined
     : parseAcceptedMoveCompensationResult(value.moveCompensation)
+  const correctionOriginOperationId = value.correctionOriginOperationId === undefined
+    ? undefined
+    : validateLivePlayOperationId(
+        value.correctionOriginOperationId,
+        `${source}.correctionOriginOperationId`,
+      )
   if (value.result.opId !== opId) {
     throw new Error(`Live-play op record ${source}.result.opId must match the record opId`)
   }
@@ -182,6 +222,12 @@ const parseStoredRecord = (value: unknown, source: string): LivePlayOpRecord => 
   )) {
     throw new Error(`Live-play op record ${source}.moveCompensation must match an accepted record identity`)
   }
+  if (correctionOriginOperationId === opId) {
+    throw new Error(`Live-play op record ${source} cannot reference itself as a correction origin`)
+  }
+  if (correctionOriginOperationId !== undefined && moveCompensation !== undefined) {
+    throw new Error(`Live-play op record ${source} cannot be both a correction and a compensation source`)
+  }
 
   return {
     schemaVersion: LIVE_PLAY_OP_STORE_SCHEMA_VERSION,
@@ -190,6 +236,7 @@ const parseStoredRecord = (value: unknown, source: string): LivePlayOpRecord => 
     commandHash: value.commandHash as LivePlayCommandHash,
     result: cloneJson(value.result),
     ...(moveCompensation === undefined ? {} : { moveCompensation }),
+    ...(correctionOriginOperationId === undefined ? {} : { correctionOriginOperationId }),
     recordedAt: value.recordedAt,
   }
 }
@@ -220,6 +267,7 @@ export const createFileLivePlayOpStore = (
       if (existing) {
         assertExistingRecordCompatible(existing, input.commandHash, input.result)
         assertExistingCompensationCompatible(existing, input.moveCompensation)
+        assertExistingCorrectionOriginCompatible(existing, input.correctionOriginOperationId)
         return cloneRecord(existing)
       }
 
@@ -254,6 +302,7 @@ export const createInMemoryLivePlayOpStore = (
       if (existing) {
         assertExistingRecordCompatible(existing, input.commandHash, input.result)
         assertExistingCompensationCompatible(existing, input.moveCompensation)
+        assertExistingCorrectionOriginCompatible(existing, input.correctionOriginOperationId)
         return cloneRecord(existing)
       }
 

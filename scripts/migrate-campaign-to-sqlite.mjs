@@ -29,7 +29,7 @@ export const ROTOM_DB_PATH_ENV = 'ROTOM_DB_PATH'
 export const DEFAULT_ROTOM_DB_FILENAME = 'rotom-table.sqlite'
 export const DEFAULT_MIGRATION_BACKUP_DIRNAME = 'backups'
 export const SQLITE_MIGRATION_BACKUP_PREFIX = 'rotom-sqlite-migration-'
-export const STORAGE_SCHEMA_VERSION = 11
+export const STORAGE_SCHEMA_VERSION = 12
 
 const scriptPath = fileURLToPath(import.meta.url)
 const appRoot = resolve(dirname(scriptPath), '..')
@@ -798,6 +798,17 @@ const applyStorageMigrations = (connection) => {
         ADD COLUMN move_compensation_json TEXT;
       `)
       setUserVersion(connection, 11)
+    }
+    if (fromVersion < 12) {
+      connection.exec(`
+        ALTER TABLE live_play_ops
+        ADD COLUMN correction_origin_op_id TEXT
+          REFERENCES live_play_ops (op_id) ON DELETE CASCADE;
+
+        CREATE INDEX IF NOT EXISTS live_play_ops_correction_origin_idx
+          ON live_play_ops (map_slug, correction_origin_op_id, created_at);
+      `)
+      setUserVersion(connection, 12)
     }
     connection.exec('COMMIT')
   } catch (error) {

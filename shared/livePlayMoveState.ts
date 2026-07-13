@@ -709,6 +709,28 @@ const parseSheetRefs = (value: unknown, path: string, issues: MutableIssueList):
   return refs
 }
 
+export type ParseLivePlayMoveSheetChangeRefsResult =
+  | {
+      readonly valid: true
+      readonly sheets: readonly LivePlayMoveSheetChangeRef[]
+      readonly issues: readonly []
+    }
+  | {
+      readonly valid: false
+      readonly issues: readonly LivePlayMoveStatePatchPayloadValidationIssue[]
+    }
+
+/** Reusable strict sheet-reference boundary for move-derived state patches. */
+export const parseLivePlayMoveSheetChangeRefs = (
+  value: unknown,
+): ParseLivePlayMoveSheetChangeRefsResult => {
+  const issues: MutableIssueList = []
+  const sheets = parseSheetRefs(value, 'sheets', issues)
+  return issues.length > 0 || sheets === null
+    ? { valid: false, issues }
+    : { valid: true, sheets: cloneJson(sheets), issues: [] }
+}
+
 const parseLaneChange = <T>(
   record: UnknownRecord,
   key: string,
@@ -759,6 +781,28 @@ const parseChanges = (value: unknown, path: string, issues: MutableIssueList): L
   )
   if (encounterState) Object.assign(changes, { encounterState })
   return changes
+}
+
+export type ParseLivePlayMoveStatePatchChangesResult =
+  | {
+      readonly valid: true
+      readonly changes: LivePlayMoveStatePatchChanges
+      readonly issues: readonly []
+    }
+  | {
+      readonly valid: false
+      readonly issues: readonly LivePlayMoveStatePatchPayloadValidationIssue[]
+    }
+
+/** Reusable strict map-change boundary for move and correction patches. */
+export const parseLivePlayMoveStatePatchChanges = (
+  value: unknown,
+): ParseLivePlayMoveStatePatchChangesResult => {
+  const issues: MutableIssueList = []
+  const changes = parseChanges(value, 'changes', issues)
+  return issues.length > 0 || changes === null
+    ? { valid: false, issues }
+    : { valid: true, changes: cloneJson(changes), issues: [] }
 }
 
 export const parseLivePlayMoveStatePatchPayload = (

@@ -11,7 +11,8 @@ import {
   type LivePlayPatch,
   type LivePlayPatchType,
 } from '#shared/livePlayCommands'
-import { parseLivePlayMoveStatePatchPayload } from '#shared/livePlayMoveState'
+import { parseLivePlayMoveStatePatchPayload, type LivePlayMoveStatePatchChanges } from '#shared/livePlayMoveState'
+import { parseLivePlayMoveCorrectionPatchPayload } from '#shared/moveAutomation/correctionCommands'
 import { normalizeRevision } from '#shared/sessionRevisions'
 import type {
   GridAnchor,
@@ -497,16 +498,11 @@ const applyMetadataPatch = (map: TabletopMap, payload: unknown): LivePlayPatches
   return null
 }
 
-const applyMoveStatePatch = (map: TabletopMap, payload: unknown): LivePlayPatchesRejected | null => {
-  const parsed = parseLivePlayMoveStatePatchPayload(payload)
-  if (!parsed.valid) {
-    return failed(
-      'invalid-patch',
-      `move.state patch payload is invalid: ${parsed.issues.map((issue) => `${issue.path}: ${issue.message}`).join('; ')}`,
-    )
-  }
-
-  const { changes } = parsed.payload
+const applyMoveDerivedStateChanges = (
+  map: TabletopMap,
+  changes: LivePlayMoveStatePatchChanges,
+  updatedAt: number,
+): void => {
   if (changes.placements) map.placements = deepCloneJson([...changes.placements.current])
 
   if (changes.temporaryHitPoints) {
@@ -531,7 +527,36 @@ const applyMoveStatePatch = (map: TabletopMap, payload: unknown): LivePlayPatche
     map.encounterState = deepCloneJson(changes.encounterState.current)
   }
 
-  map.updatedAt = parsed.payload.updatedAt
+  map.updatedAt = updatedAt
+}
+
+const applyMoveStatePatch = (map: TabletopMap, payload: unknown): LivePlayPatchesRejected | null => {
+  const parsed = parseLivePlayMoveStatePatchPayload(payload)
+  if (!parsed.valid) {
+    return failed(
+      'invalid-patch',
+      `move.state patch payload is invalid: ${parsed.issues.map((issue) => `${issue.path}: ${issue.message}`).join('; ')}`,
+    )
+  }
+
+  applyMoveDerivedStateChanges(map, parsed.payload.changes, parsed.payload.updatedAt)
+  return null
+}
+
+const applyMoveCorrectionPatch = (map: TabletopMap, payload: unknown): LivePlayPatchesRejected | null => {
+  const parsed = parseLivePlayMoveCorrectionPatchPayload(payload)
+  if (!parsed.valid) {
+    return failed(
+      'invalid-patch',
+      `move.correction patch payload is invalid: ${parsed.issues.map((issue) => `${issue.path}: ${issue.message}`).join('; ')}`,
+    )
+  }
+
+  const mapResource = parsed.payload.resources.find(resource => resource.kind === 'map')
+  if (!mapResource || mapResource.mapSlug !== map.slug) {
+    return failed('invalid-patch', 'move.correction patch audit resource must match the current map')
+  }
+  applyMoveDerivedStateChanges(map, parsed.payload.changes, parsed.payload.updatedAt)
   return null
 }
 
@@ -565,6 +590,8 @@ const applyKnownPatch = (map: TabletopMap, patch: LivePlayPatch): LivePlayPatche
       return null
     case LIVE_PLAY_PATCH_TYPES.MOVE_STATE:
       return applyMoveStatePatch(map, patch.payload)
+    case LIVE_PLAY_PATCH_TYPES.MOVE_CORRECTION:
+      return applyMoveCorrectionPatch(map, patch.payload)
     case LIVE_PLAY_PATCH_TYPES.MAP_METADATA:
       return applyMetadataPatch(map, patch.payload)
     case LIVE_PLAY_PATCH_TYPES.RECONCILIATION_REQUIRED:
