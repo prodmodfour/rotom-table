@@ -5,9 +5,11 @@ import {
   parseEncounterEffectDefinition,
   parseEncounterEffectDuration,
   parseEncounterEffectStackPolicy,
+  parseEncounterEffectTransferPolicy,
   type EncounterEffectDefinition,
   type EncounterEffectDuration,
   type EncounterEffectStackPolicy,
+  type EncounterEffectTransferPolicy,
 } from './encounterEffects'
 import {
   MOVE_EXPRESSION_STATS,
@@ -303,6 +305,8 @@ export const MOVE_EFFECT_MOVEMENT_DISPLACEMENT_DISTANCE_POLICIES = [
 ] as const
 export const MOVE_EFFECT_SWITCH_POSITION_POLICIES = ['recalled-position'] as const
 export const MOVE_EFFECT_SWITCH_INITIATIVE_POLICIES = ['inherit-slot'] as const
+/** Only a reviewed Baton Pass-style switch transfers stages and passable effects. */
+export const MOVE_EFFECT_SWITCH_STATE_TRANSFER_POLICIES = ['none', 'baton-pass'] as const
 export const MOVE_EFFECT_USAGE_ACTIONS = ['spend', 'restore', 'set'] as const
 export const MOVE_EFFECT_HISTORY_EVENTS = [
   'move-declared',
@@ -427,6 +431,8 @@ export type MoveEffectSwitchPositionPolicy =
   (typeof MOVE_EFFECT_SWITCH_POSITION_POLICIES)[number]
 export type MoveEffectSwitchInitiativePolicy =
   (typeof MOVE_EFFECT_SWITCH_INITIATIVE_POLICIES)[number]
+export type MoveEffectSwitchStateTransferPolicy =
+  (typeof MOVE_EFFECT_SWITCH_STATE_TRANSFER_POLICIES)[number]
 export type MoveEffectUsageAction = (typeof MOVE_EFFECT_USAGE_ACTIONS)[number]
 export type MoveEffectHistoryEvent = (typeof MOVE_EFFECT_HISTORY_EVENTS)[number]
 
@@ -997,6 +1003,8 @@ export interface MoveConditionDurationPolicy {
   /** Stable reviewed base identity; the reducer derives one instance per recipient. */
   readonly effectId: string
   readonly duration: EncounterEffectDuration
+  /** Explicitly opts a source-linked condition into expiry or Baton Pass transfer. */
+  readonly transferPolicy?: EncounterEffectTransferPolicy
 }
 
 export interface MoveConditionEffectPayload {
@@ -1167,6 +1175,8 @@ export interface MoveSwitchRequestEffectPayload {
   readonly required: boolean
   readonly positionPolicy: MoveEffectSwitchPositionPolicy
   readonly initiativePolicy: MoveEffectSwitchInitiativePolicy
+  /** Server-reviewed state behavior; clients select only a replacement option ID. */
+  readonly stateTransferPolicy: MoveEffectSwitchStateTransferPolicy
 }
 
 export interface MoveUsageEffectPayload {
@@ -1497,7 +1507,8 @@ const CONDITION_OPTIONAL_FIELDS = [
 const CONDITION_FILTER_FIELDS = ['groups', 'conditionIds', 'excludedConditionIds'] as const
 const CONDITION_RANDOM_CHOICE_FIELDS = ['rollId', 'conditionIds'] as const
 const CONDITION_ACCURACY_ROLL_TRIGGER_FIELDS = ['rollId', 'trigger'] as const
-const CONDITION_DURATION_FIELDS = ['effectId', 'duration'] as const
+const CONDITION_DURATION_REQUIRED_FIELDS = ['effectId', 'duration'] as const
+const CONDITION_DURATION_OPTIONAL_FIELDS = ['transferPolicy'] as const
 const CONDITION_STACK_POLICY_FIELDS = ['kind', 'maxStacks'] as const
 const COMBAT_STAGE_REQUIRED_FIELDS = ['action', 'stage', 'value'] as const
 const COMBAT_STAGE_OPTIONAL_FIELDS = ['selectedStage', 'stageSource', 'rounding'] as const
@@ -1553,6 +1564,7 @@ const SWITCH_REQUEST_FIELDS = [
   'required',
   'positionPolicy',
   'initiativePolicy',
+  'stateTransferPolicy',
 ] as const
 const USAGE_FIELDS = ['action', 'resourceId', 'amount'] as const
 const HISTORY_FIELDS = ['event', 'detailCode'] as const
@@ -1644,6 +1656,9 @@ const MOVEMENT_DISPLACEMENT_DISTANCE_POLICY_SET = new Set<string>(
 )
 const SWITCH_POSITION_POLICY_SET = new Set<string>(MOVE_EFFECT_SWITCH_POSITION_POLICIES)
 const SWITCH_INITIATIVE_POLICY_SET = new Set<string>(MOVE_EFFECT_SWITCH_INITIATIVE_POLICIES)
+const SWITCH_STATE_TRANSFER_POLICY_SET = new Set<string>(
+  MOVE_EFFECT_SWITCH_STATE_TRANSFER_POLICIES,
+)
 const USAGE_ACTION_SET = new Set<string>(MOVE_EFFECT_USAGE_ACTIONS)
 const HISTORY_EVENT_SET = new Set<string>(MOVE_EFFECT_HISTORY_EVENTS)
 const RECIPIENT_SCOPED_BRANCH_SELECTOR_SET = new Set<MoveEffectRecipientSelectorKind>(
@@ -2808,7 +2823,12 @@ const parseConditionDuration = (
   value: unknown,
   path: string,
 ): MoveConditionDurationPolicy => {
-  const input = parseExactRecord(value, CONDITION_DURATION_FIELDS, path)
+  const input = parseRecordWithOptionalFields(
+    value,
+    CONDITION_DURATION_REQUIRED_FIELDS,
+    CONDITION_DURATION_OPTIONAL_FIELDS,
+    path,
+  )
   try {
     return {
       effectId: parseStableId(ownValue(input, 'effectId', path), `${path}.effectId`),
@@ -2816,6 +2836,14 @@ const parseConditionDuration = (
         ownValue(input, 'duration', path),
         `${path}.duration`,
       ),
+      ...(input.transferPolicy === undefined
+        ? {}
+        : {
+            transferPolicy: parseEncounterEffectTransferPolicy(
+              input.transferPolicy,
+              `${path}.transferPolicy`,
+            ),
+          }),
     }
   } catch (error) {
     if (error instanceof EncounterEffectValidationError) return rethrowEncounterPolicyError(error)
@@ -3781,6 +3809,12 @@ const parseSwitchRequestPayload = (
       SWITCH_INITIATIVE_POLICY_SET,
       `${path}.initiativePolicy`,
       'inherit-slot',
+    ),
+    stateTransferPolicy: parseEnum<MoveEffectSwitchStateTransferPolicy>(
+      ownValue(input, 'stateTransferPolicy', path),
+      SWITCH_STATE_TRANSFER_POLICY_SET,
+      `${path}.stateTransferPolicy`,
+      'none or baton-pass',
     ),
   }
 }

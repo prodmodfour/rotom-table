@@ -294,6 +294,7 @@ const immutableDefinitionMatches = (
   && sameJson(existing.tags, incoming.tags)
   && sameJson(existing.payload, incoming.payload)
   && sameJson(existing.dispel, incoming.dispel)
+  && (existing.transferPolicy ?? 'retain') === (incoming.transferPolicy ?? 'retain')
   && sameJson(existing.stackPolicy, incoming.stackPolicy)
   && sameJson(existing.chargePolicy, incoming.chargePolicy)
 )

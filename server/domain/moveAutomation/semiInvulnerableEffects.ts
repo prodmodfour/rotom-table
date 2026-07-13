@@ -221,6 +221,7 @@ const parseSetupEffect = (effect: EncounterCapabilityEffect): ParsedSetupEffect 
     || effect.stackPolicy.kind !== 'independent-instance'
     || effect.chargePolicy.kind !== 'none'
     || effect.dispel.policy !== 'none'
+    || (effect.transferPolicy ?? 'expire') !== 'expire'
   ) {
     return failMoveSemiInvulnerableSetup(
       'invalid-setup-effect',
@@ -414,6 +415,7 @@ const setupEffect = (input: {
       action: 'grant',
     },
     dispel: { policy: 'none', tags: [] },
+    transferPolicy: 'expire',
     suppression: { sources: [] },
   }, `semiInvulnerable.${input.definition.familyId}.${input.role}`) as EncounterCapabilityEffect
 }

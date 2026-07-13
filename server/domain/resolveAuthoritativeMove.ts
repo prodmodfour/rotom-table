@@ -216,6 +216,7 @@ export interface AuthoritativeMoveSwitchTransition {
   readonly trainerSheetSlug: string
   readonly positionPolicy: 'recalled-position'
   readonly initiativePolicy: 'inherit-slot'
+  readonly stateTransferPolicy: 'none' | 'baton-pass'
 }
 
 export interface AuthoritativeMoveResolution {

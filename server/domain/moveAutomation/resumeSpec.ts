@@ -232,6 +232,7 @@ const resolvedSwitchProjection = (
       trainerSheetSlug: choice.trainerSheetSlug,
       positionPolicy: 'recalled-position',
       initiativePolicy: 'inherit-slot',
+      stateTransferPolicy: resolved.stateTransferPolicy,
     },
   }
 }

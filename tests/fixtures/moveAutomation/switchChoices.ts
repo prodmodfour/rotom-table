@@ -188,6 +188,7 @@ export const SWITCH_CHOICE_SPEC = {
           required: true,
           positionPolicy: 'recalled-position',
           initiativePolicy: 'inherit-slot',
+          stateTransferPolicy: 'none',
         },
       }],
     },
@@ -228,8 +229,20 @@ export const SWITCH_CHOICE_SPEC = {
   },
 }
 
-export const createSwitchChoiceRuntimeRegistry = (): MoveAutomationRuntimeRegistry => {
-  const definition = validateMoveSpec(SWITCH_CHOICE_SPEC)
+export const createSwitchChoiceRuntimeRegistry = (options: {
+  readonly stateTransferPolicy?: 'none' | 'baton-pass'
+} = {}): MoveAutomationRuntimeRegistry => {
+  const spec = structuredClone(SWITCH_CHOICE_SPEC) as unknown as {
+    phases: Array<{
+      operations: Array<{ kind: string; payload: Record<string, unknown> }>
+    }>
+  }
+  const switchOperation = spec.phases
+    .flatMap(block => block.operations)
+    .find(operation => operation.kind === 'switch-request')
+  if (!switchOperation) throw new Error('Switch fixture has no switch request.')
+  switchOperation.payload.stateTransferPolicy = options.stateTransferPolicy ?? 'none'
+  const definition = validateMoveSpec(spec)
   const runtime: MoveSpecV2Runtime = Object.freeze({
     canonicalId: 'Ember',
     kind: 'movespec-v2',

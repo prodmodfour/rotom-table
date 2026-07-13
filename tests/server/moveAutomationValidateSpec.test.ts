@@ -835,6 +835,7 @@ describe('authoritative MoveSpec validation and hashing', () => {
         required: true,
         positionPolicy: 'recalled-position',
         initiativePolicy: 'inherit-slot',
+        stateTransferPolicy: 'none',
       },
     })
     const valid = validSpec()

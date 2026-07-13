@@ -10,6 +10,7 @@ import {
   type MoveMovementRequestEffectOperation,
   type MoveReactionRequestEffectOperation,
   type MoveSwitchRequestEffectOperation,
+  type MoveEffectSwitchStateTransferPolicy,
   type MoveRollEffectOperation,
 } from '#shared/moveAutomation/effects'
 import type { MoveAutomationRollLedgerEntry } from '#shared/moveAutomation/random'
@@ -230,6 +231,7 @@ export interface MoveSpecResolvedSwitch {
   readonly requestId: string
   readonly optionId: string
   readonly choice: AuthoritativeSwitchChoice
+  readonly stateTransferPolicy: MoveEffectSwitchStateTransferPolicy
 }
 
 export interface MoveSpecExecutionRejection {
@@ -2168,6 +2170,7 @@ export const executeMoveSpec = (
             requestId: request.requestId,
             optionId: response.optionId,
             choice: selectedChoice,
+            stateTransferPolicy: operation.payload.stateTransferPolicy,
           }))
         }
         trace = reduceMoveResolutionTrace(trace, {

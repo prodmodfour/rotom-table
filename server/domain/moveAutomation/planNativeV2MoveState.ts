@@ -34,6 +34,7 @@ import {
 } from './plan'
 import { applyAuthoritativeMovePlacementTransition } from './placementTransition'
 import { planAuthoritativeMoveSwitch } from './planMoveSwitch'
+import { planMoveSwitchCombatStageTransfer } from './planSwitchCombatStages'
 import type { MoveAutomationRuntimeRegistry } from './registry'
 import {
   isMoveMapOperationEmission,
@@ -284,6 +285,9 @@ const stateSlotKey = (input: MoveStateChangeInput): string => {
 }
 
 const combinedStateChanges = (options: {
+  readonly previousMap: TabletopMap
+  readonly pokemonSheets: ReadonlyMap<string, CharacterSheet>
+  readonly plannedAt: number
   readonly resolution: AuthoritativeMoveResolution
   readonly mapPlan: MoveStateChangePlan
   readonly placements: readonly MoveStateChangeInput[]
@@ -300,21 +304,37 @@ const combinedStateChanges = (options: {
     ...options.placements,
     ...options.mapPlan.changes.map(stripPlanIdentity),
   ].filter(input => !replacedSlots.has(stateSlotKey(input)))
-  const inputs = [
+  const rawInputs = [
     ...existingInputs,
     ...options.switchMapChanges,
-  ].map((input, index) => ({
-    input,
-    index,
-    operationOrder: input.sourceOperationId === null
-      ? Number.MAX_SAFE_INTEGER
-      : operationOrder.get(input.sourceOperationId) ?? Number.MAX_SAFE_INTEGER,
-  })).sort((left, right) => (
-    left.operationOrder - right.operationOrder || left.index - right.index
-  )).map(({ input }) => input)
+  ]
 
   try {
-    return createMoveStateChangePlan(mergeDisjointMoveSheetStateChanges(inputs))
+    const transition = options.resolution.switchTransition
+    const mergedInputs = transition
+      ? planMoveSwitchCombatStageTransfer({
+          stateChanges: rawInputs,
+          recalledPlacement: actorPlacement(
+            options.previousMap,
+            transition.recalledPlacementId,
+          ),
+          sentOutPlacement: transition.sentOutPlacement,
+          pokemonSheets: options.pokemonSheets,
+          operationId: transition.operationId,
+          plannedAt: options.plannedAt,
+          stateTransferPolicy: transition.stateTransferPolicy,
+        }).stateChanges
+      : mergeDisjointMoveSheetStateChanges(rawInputs)
+    const inputs = mergedInputs.map((input, index) => ({
+      input,
+      index,
+      operationOrder: input.sourceOperationId === null
+        ? Number.MAX_SAFE_INTEGER
+        : operationOrder.get(input.sourceOperationId) ?? Number.MAX_SAFE_INTEGER,
+    })).sort((left, right) => (
+      left.operationOrder - right.operationOrder || left.index - right.index
+    )).map(({ input }) => input)
+    return createMoveStateChangePlan(inputs)
   }
   catch (error) {
     return fail(
@@ -325,16 +345,23 @@ const combinedStateChanges = (options: {
 }
 
 const relatedPlacementIds = (
-  resolution: Pick<AuthoritativeMoveResolution, 'actorPlacementId' | 'selectedTargetIds' | 'area'>,
+  resolution: Pick<
+    AuthoritativeMoveResolution,
+    'actorPlacementId' | 'selectedTargetIds' | 'area' | 'switchTransition'
+  >,
 ): ReadonlySet<string> => new Set([
   resolution.actorPlacementId,
   ...resolution.selectedTargetIds,
   ...(resolution.area?.candidateTargetIds ?? []),
+  ...(resolution.switchTransition ? [resolution.switchTransition.sentOutPlacement.id] : []),
 ])
 
 export const nativeSheetWritesFromStateChanges = (
   map: TabletopMap,
-  resolution: Pick<AuthoritativeMoveResolution, 'actorPlacementId' | 'selectedTargetIds' | 'area'>,
+  resolution: Pick<
+    AuthoritativeMoveResolution,
+    'actorPlacementId' | 'selectedTargetIds' | 'area' | 'switchTransition'
+  >,
   stateChanges: MoveStateChangePlan,
 ): readonly AuthoritativeMoveSheetWritePlan[] => {
   const related = relatedPlacementIds(resolution)
@@ -534,6 +561,9 @@ export const planNativeV2MoveState = (options: {
     existing: existingChanges,
   })
   const stateChanges = combinedStateChanges({
+    previousMap: options.map,
+    pokemonSheets: options.pokemonSheets,
+    plannedAt: options.plannedAt,
     resolution: options.resolution,
     mapPlan: mapReduction.stateChanges,
     placements,
@@ -554,7 +584,7 @@ export const planNativeV2MoveState = (options: {
     previousUsage: deepCloneJson(usageProjection.previousUsage),
     usage: deepCloneJson(usageProjection.usage),
     sheetReads: deepCloneJson(sheetReads),
-    sheetWrites: nativeSheetWritesFromStateChanges(options.map, options.resolution, stateChanges),
+    sheetWrites: nativeSheetWritesFromStateChanges(nextMap, options.resolution, stateChanges),
     mapChanges: buildAuthoritativeMoveMapChanges(options.map, nextMap),
     stateChanges,
     auditTrace,

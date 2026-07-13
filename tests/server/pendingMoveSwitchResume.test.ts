@@ -14,6 +14,7 @@ import type { CharacterSheet } from '~/types/characterSheet'
 import type { TabletopMap } from '~/types/map'
 import { buildResolveMoveScopes } from '~/utils/livePlayMoveCommandScopes'
 import { pokemonHpSnapshot } from '~/utils/sheetSpawn'
+import { applyCombatStagesToSheet } from '~/utils/sheetMutations'
 import { deepCloneJson } from '~/utils/serialization'
 import { openRotomDatabase, type RotomDatabase } from '~~/server/storage/database'
 import { createSqliteMapRepository } from '~~/server/storage/mapRepository'
@@ -115,10 +116,13 @@ const resolveCommand = (map: TabletopMap, opId: string): ResolveMoveLivePlayComm
   }
 }
 
-const declare = async (harness: Harness, opId: string) => {
+const declare = async (
+  harness: Harness,
+  opId: string,
+  runtimeRegistry = createSwitchChoiceRuntimeRegistry(),
+) => {
   const map = harness.maps.getBySlug('durable-switch-arena')!
   const command = resolveCommand(map, opId)
-  const runtimeRegistry = createSwitchChoiceRuntimeRegistry()
   const response = await executeLivePlayResolveMoveCommandUseCase({
     role: 'gm',
     command,
@@ -166,6 +170,7 @@ const resume = (input: {
   readonly harness: Harness
   readonly command: ChooseMoveResponseCommand
   readonly now?: number
+  readonly runtimeRegistry?: ReturnType<typeof createSwitchChoiceRuntimeRegistry>
 }) => {
   const parsed = parsePendingMoveResponseCommand(input.command, {
     pendingResolutionRepository: input.harness.pending,
@@ -186,7 +191,7 @@ const resume = (input: {
     pendingResolutionRepository: input.harness.pending,
     opRepository: input.harness.ops,
     realtimeEventRepository: input.harness.realtime,
-    runtimeRegistry: createSwitchChoiceRuntimeRegistry(),
+    runtimeRegistry: input.runtimeRegistry ?? createSwitchChoiceRuntimeRegistry(),
     random: () => { throw new Error('switch fixture does not use randomness') },
     now: () => input.now ?? 2_000,
     publishPersistedRealtimeEvent: vi.fn(),
@@ -260,6 +265,80 @@ describe('pending move-driven switch resume integration', () => {
     expect(harness.maps.getBySlug(committed.slug)?.revision).toBe(revision)
     expect(harness.realtime.cursorState().latestSequence).toBe(realtimeSequence)
     expect(harness.pending.getById(declaration.stored.resolutionId)).toEqual(terminalBeforeReplay)
+  })
+
+  it('commits Baton Pass stage writes with the switch and never reapplies them on replay', async () => {
+    const harness = createHarness()
+    for (const [slug, stages] of [
+      ['switch-actor-sheet', { atk: 2, def: -1, satk: 0, sdef: 0, spd: 3, acc: 1 }],
+      ['switch-replacement', { atk: 1, def: 0, satk: 0, sdef: 0, spd: 0, acc: 0 }],
+    ] as const) {
+      const stored = harness.sheets.getByRef('pokemon', slug)!
+      const staged = applyCombatStagesToSheet(
+        'pokemon',
+        stored.sheet as unknown as CharacterSheet,
+        stages,
+      ) as CharacterSheet
+      expect(harness.sheets.applyLivePlayUpdate({
+        kind: 'pokemon',
+        slug,
+        expectedRevision: stored.revision,
+        nextSheet: {
+          ...staged,
+          revision: stored.revision + 1,
+          updatedAt: 500,
+        },
+      })).toBe('applied')
+    }
+    const runtimeRegistry = createSwitchChoiceRuntimeRegistry({
+      stateTransferPolicy: 'baton-pass',
+    })
+    const declaration = await declare(harness, 'op_batonpassdeclare', runtimeRegistry)
+    const pendingMap = harness.maps.getBySlug('durable-switch-arena')!
+    const window = declaration.stored.resolution.outstandingWindows[0]!
+    const command = chooseCommand({
+      map: pendingMap,
+      resolutionId: declaration.stored.resolutionId,
+      windowId: window.windowId,
+      optionId: window.options[0]!.id,
+      opId: 'op_batonpassresponse',
+    })
+
+    const first = resume({ harness, command, runtimeRegistry })
+    expect(first.result).toMatchObject({ ok: true })
+    const source = harness.sheets.getByRef('pokemon', 'switch-actor-sheet')!
+    const replacement = harness.sheets.getByRef('pokemon', 'switch-replacement')!
+    expect(pokemonHpSnapshot(source.sheet as unknown as CharacterSheet).combatStages).toEqual({
+      atk: 0,
+      def: 0,
+      satk: 0,
+      sdef: 0,
+      spd: 0,
+      acc: 0,
+    })
+    expect(pokemonHpSnapshot(replacement.sheet as unknown as CharacterSheet).combatStages).toEqual({
+      atk: 3,
+      def: -1,
+      satk: 0,
+      sdef: 0,
+      spd: 3,
+      acc: 1,
+    })
+    const sourceRevision = source.revision
+    const replacementRevision = replacement.revision
+    const mapRevision = harness.maps.getBySlug('durable-switch-arena')!.revision
+
+    const replay = replayMoveResponseCommandUseCase({ role: 'gm', command }, {
+      database: harness.database,
+      mapRepository: harness.maps,
+      opRepository: harness.ops,
+    })
+    expect(replay?.result).toEqual(first.result)
+    expect(harness.sheets.getByRef('pokemon', 'switch-actor-sheet')?.revision)
+      .toBe(sourceRevision)
+    expect(harness.sheets.getByRef('pokemon', 'switch-replacement')?.revision)
+      .toBe(replacementRevision)
+    expect(harness.maps.getBySlug('durable-switch-arena')?.revision).toBe(mapRevision)
   })
 
   it('terminally conflicts a stale replacement sheet with no partial attack or switch', async () => {

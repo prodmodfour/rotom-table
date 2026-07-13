@@ -54,6 +54,16 @@ export const ENCOUNTER_EFFECT_NUMERIC_OPERATIONS = ['add', 'multiply', 'set'] as
 export const ENCOUNTER_EFFECT_ROUNDING_POLICIES = ['none', 'floor', 'round', 'ceil'] as const
 export const ENCOUNTER_EFFECT_CAPABILITY_ACTIONS = ['grant', 'suppress'] as const
 export const ENCOUNTER_EFFECT_DISPEL_POLICIES = ['none', 'matching-tags'] as const
+/**
+ * Switch behavior is explicit per durable effect. Retained effects keep their
+ * existing identity, expiring effects leave with a recalled source/recipient,
+ * and Baton Pass effects rebind every reference to the selected replacement.
+ */
+export const ENCOUNTER_EFFECT_TRANSFER_POLICIES = [
+  'retain',
+  'expire',
+  'baton-pass',
+] as const
 
 export const ENCOUNTER_EFFECT_LIMITS = Object.freeze({
   count: 256,
@@ -86,6 +96,8 @@ export type EncounterEffectNumericOperation = (typeof ENCOUNTER_EFFECT_NUMERIC_O
 export type EncounterEffectRoundingPolicy = (typeof ENCOUNTER_EFFECT_ROUNDING_POLICIES)[number]
 export type EncounterEffectCapabilityAction = (typeof ENCOUNTER_EFFECT_CAPABILITY_ACTIONS)[number]
 export type EncounterEffectDispelPolicy = (typeof ENCOUNTER_EFFECT_DISPEL_POLICIES)[number]
+export type EncounterEffectTransferPolicy =
+  (typeof ENCOUNTER_EFFECT_TRANSFER_POLICIES)[number]
 
 /** Every effect is attributable to the accepted operation, reviewed move, and source placement. */
 export interface EncounterEffectSource {
@@ -213,6 +225,8 @@ interface EncounterEffectDefinitionEnvelope<
   readonly tags: readonly string[]
   readonly payload: Payload
   readonly dispel: EncounterEffectDispelMetadata
+  /** Omitted legacy data canonicalizes to retain at the switch-planning boundary. */
+  readonly transferPolicy?: EncounterEffectTransferPolicy
 }
 
 export type EncounterConditionEffectDefinition = EncounterEffectDefinitionEnvelope<
@@ -257,6 +271,8 @@ interface EncounterEffectEnvelope<
   readonly tags: readonly string[]
   readonly payload: Payload
   readonly dispel: EncounterEffectDispelMetadata
+  /** Omitted legacy data canonicalizes to retain at the switch-planning boundary. */
+  readonly transferPolicy?: EncounterEffectTransferPolicy
   readonly suppression: EncounterEffectSuppressionMetadata
 }
 
@@ -316,6 +332,7 @@ const EFFECT_DEFINITION_FIELDS = [
   'tags',
   'payload',
   'dispel',
+  'transferPolicy',
 ] as const
 const LEGACY_EFFECT_DEFINITION_FIELDS = [
   'kind',
@@ -341,6 +358,7 @@ const EFFECT_FIELDS = [
   'tags',
   'payload',
   'dispel',
+  'transferPolicy',
   'suppression',
 ] as const
 const LEGACY_EFFECT_FIELDS = [
@@ -389,6 +407,7 @@ const NUMERIC_OPERATION_SET = new Set<string>(ENCOUNTER_EFFECT_NUMERIC_OPERATION
 const ROUNDING_POLICY_SET = new Set<string>(ENCOUNTER_EFFECT_ROUNDING_POLICIES)
 const CAPABILITY_ACTION_SET = new Set<string>(ENCOUNTER_EFFECT_CAPABILITY_ACTIONS)
 const DISPEL_POLICY_SET = new Set<string>(ENCOUNTER_EFFECT_DISPEL_POLICIES)
+const TRANSFER_POLICY_SET = new Set<string>(ENCOUNTER_EFFECT_TRANSFER_POLICIES)
 
 const fail = (
   code: EncounterEffectValidationCode,
@@ -727,6 +746,16 @@ const parseChargePolicy = (
   }
 }
 
+export const parseEncounterEffectTransferPolicy = (
+  value: unknown,
+  path = 'encounterEffect.transferPolicy',
+): EncounterEffectTransferPolicy => parseEnum<EncounterEffectTransferPolicy>(
+  value,
+  TRANSFER_POLICY_SET,
+  path,
+  'retain, expire, or baton-pass',
+)
+
 const parseDispel = (value: unknown, path: string): EncounterEffectDispelMetadata => {
   const dispel = parseExactRecord(value, DISPEL_FIELDS, path)
   const policy = parseEnum<EncounterEffectDispelPolicy>(
@@ -891,6 +920,9 @@ const definitionWithPayload = <Kind extends EncounterEffectKind, Payload>(
   tags: common.tags,
   payload,
   dispel: common.dispel,
+  ...(common.transferPolicy === undefined
+    ? {}
+    : { transferPolicy: common.transferPolicy }),
 })
 
 const effectWithPayload = <Kind extends EncounterEffectKind, Payload>(
@@ -912,6 +944,9 @@ const effectWithPayload = <Kind extends EncounterEffectKind, Payload>(
   tags: common.tags,
   payload,
   dispel: common.dispel,
+  ...(common.transferPolicy === undefined
+    ? {}
+    : { transferPolicy: common.transferPolicy }),
   suppression: common.suppression,
 })
 
@@ -957,6 +992,14 @@ export const parseEncounterEffectDefinition = (
     chargePolicy: parseChargePolicy(definition.chargePolicy, `${path}.chargePolicy`, charges),
     tags: parseStableIdList(definition.tags, `${path}.tags`, ENCOUNTER_EFFECT_LIMITS.tags),
     dispel: parseDispel(definition.dispel, `${path}.dispel`),
+    ...(definition.transferPolicy === undefined
+      ? {}
+      : {
+          transferPolicy: parseEncounterEffectTransferPolicy(
+            definition.transferPolicy,
+            `${path}.transferPolicy`,
+          ),
+        }),
   }
 
   switch (kind) {
@@ -1024,6 +1067,14 @@ export const parseEncounterEffect = (
     chargePolicy: parseChargePolicy(effect.chargePolicy, `${path}.chargePolicy`, charges),
     tags: parseStableIdList(effect.tags, `${path}.tags`, ENCOUNTER_EFFECT_LIMITS.tags),
     dispel: parseDispel(effect.dispel, `${path}.dispel`),
+    ...(effect.transferPolicy === undefined
+      ? {}
+      : {
+          transferPolicy: parseEncounterEffectTransferPolicy(
+            effect.transferPolicy,
+            `${path}.transferPolicy`,
+          ),
+        }),
     suppression: parseSuppression(effect.suppression, `${path}.suppression`),
   }
 

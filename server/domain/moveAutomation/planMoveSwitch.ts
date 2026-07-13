@@ -12,6 +12,7 @@ import type { SheetPlacement, TabletopMap } from '~/types/map'
 import { mapWithTemporaryHpForPlacement } from '~/utils/mapTemporaryHitPoints'
 import { deepCloneJson, sameJsonValue } from '~/utils/serialization'
 import type { AuthoritativeMoveSwitchTransition } from '../resolveAuthoritativeMove'
+import { resolveEncounterEffectSwitchTransfer } from './effectTransfer'
 import { reduceEncounterLifecycle } from './reduceLifecycle'
 import { createMoveSemiInvulnerableLifecycleHandler } from './semiInvulnerableLifecycle'
 
@@ -21,6 +22,7 @@ export type MoveSwitchPlanningErrorCode =
   | 'switch-policy-mismatch'
   | 'switch-trainer-missing'
   | 'switch-lifecycle-operation-unsupported'
+  | 'switch-effect-transfer-conflict'
 
 export class MoveSwitchPlanningError extends Error {
   readonly code: MoveSwitchPlanningErrorCode
@@ -38,6 +40,8 @@ export interface PlannedMoveSwitch {
   readonly recalledPlacement: SheetPlacement
   readonly sentOutPlacement: SheetPlacement
   readonly event: EncounterSwitchEvent
+  readonly transferredEffectIds: readonly string[]
+  readonly expiredEffectIds: readonly string[]
   readonly cleanupEventIds: readonly string[]
 }
 
@@ -161,8 +165,21 @@ export const planAuthoritativeMoveSwitch = (input: {
     recalledPlacementId: recalled.id,
     sentOutPlacementId: sentOutPlacement.id,
   }) as EncounterSwitchEvent
+  const previousEncounterState = parseEncounterState(
+    previousMap.encounterState ?? createEmptyEncounterState(),
+  )
+  const effectTransfer = resolveEncounterEffectSwitchTransfer({
+    effects: previousEncounterState.effects,
+    recalledPlacementId: recalled.id,
+    sentOutPlacementId: sentOutPlacement.id,
+    stateTransferPolicy: input.transition.stateTransferPolicy,
+  })
+  const transferState = parseEncounterState({
+    ...previousEncounterState,
+    effects: effectTransfer.effects,
+  })
   const lifecycle = reduceEncounterLifecycle(
-    parseEncounterState(previousMap.encounterState ?? createEmptyEncounterState()),
+    transferState,
     [event],
     [createMoveSemiInvulnerableLifecycleHandler()],
   )
@@ -170,6 +187,16 @@ export const planAuthoritativeMoveSwitch = (input: {
     return fail(
       'switch-lifecycle-operation-unsupported',
       'Source-leave switch cleanup emitted mechanics that require a dedicated switch reducer.',
+    )
+  }
+  const transferredIds = new Set(effectTransfer.transferredEffectIds)
+  const cleanupRemovedTransferred = lifecycle.transitions.some(({ transition }) => (
+    transferredIds.has(transition.effectId) && transition.current === null
+  ))
+  if (cleanupRemovedTransferred) {
+    return fail(
+      'switch-effect-transfer-conflict',
+      'Source-leave cleanup cannot remove an effect transferred to the replacement.',
     )
   }
 
@@ -202,6 +229,8 @@ export const planAuthoritativeMoveSwitch = (input: {
     recalledPlacement: deepCloneJson(recalled),
     sentOutPlacement,
     event,
+    transferredEffectIds: effectTransfer.transferredEffectIds,
+    expiredEffectIds: effectTransfer.expiredEffectIds,
     cleanupEventIds: Object.freeze(lifecycle.emittedEvents.map(item => item.eventId)),
   })
 }

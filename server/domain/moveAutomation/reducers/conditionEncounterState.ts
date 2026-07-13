@@ -179,6 +179,9 @@ export const createSourceLinkedMoveConditionEffect = (options: {
       saveTiming: resolvedMoveConditionSaveTiming(options.condition, options.operation),
     },
     dispel: { policy: 'matching-tags', tags: ['condition'] },
+    ...(duration.transferPolicy === undefined
+      ? {}
+      : { transferPolicy: duration.transferPolicy }),
     suppression: { sources: [] },
   }, `conditionOperation.${options.operation.id}.effect`) as EncounterConditionEffect
 }

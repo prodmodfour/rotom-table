@@ -158,6 +158,7 @@ const VALID_PAYLOADS = {
         rounding: 'floor',
       },
       dispel: { policy: 'none', tags: [] },
+      transferPolicy: 'baton-pass',
     },
   },
   field: {
@@ -191,6 +192,7 @@ const VALID_PAYLOADS = {
     required: true,
     positionPolicy: 'recalled-position',
     initiativePolicy: 'inherit-slot',
+    stateTransferPolicy: 'none',
   },
   usage: {
     action: 'spend',
@@ -923,6 +925,7 @@ describe('MoveSpec typed effect operations', () => {
         duration: {
           effectId: 'effect.random-condition',
           duration: { kind: 'turns', subject: 'target', boundary: 'end', remaining: 1 },
+          transferPolicy: 'expire',
         },
         saveTiming: 'end-turn',
         stackPolicy: { kind: 'add-stack', maxStacks: 3 },
@@ -937,12 +940,32 @@ describe('MoveSpec typed effect operations', () => {
       duration: {
         effectId: 'effect.random-condition',
         duration: { kind: 'turns', subject: 'target', boundary: 'end', remaining: 1 },
+        transferPolicy: 'expire',
       },
       saveTiming: 'end-turn',
       stackPolicy: { kind: 'add-stack', maxStacks: 3 },
     })
     if (random.kind !== 'condition') throw new Error('Expected condition operation')
     expect(Object.isFrozen(random.payload.duration?.duration)).toBe(true)
+  })
+
+  it('requires a reviewed switch transfer policy and rejects unknown effect transfer data', () => {
+    expectEffectError(validOperation('switch-request', {
+      payload: {
+        ...VALID_PAYLOADS['switch-request'],
+        stateTransferPolicy: 'copy-all-state',
+      },
+    }), 'invalid-effect-operation', 'operation.payload.stateTransferPolicy')
+    expectEffectError(validOperation('condition', {
+      payload: {
+        ...VALID_PAYLOADS.condition,
+        duration: {
+          effectId: 'effect.invalid-transfer',
+          duration: { kind: 'scene', remaining: null },
+          transferPolicy: 'copy-on-switch',
+        },
+      },
+    }), 'invalid-effect-operation', 'operation.payload.duration.transferPolicy')
   })
 
   it('rejects ambiguous or unbounded typed condition policies', () => {

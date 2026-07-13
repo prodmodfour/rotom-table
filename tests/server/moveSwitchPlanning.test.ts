@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest'
+import { parseEncounterEffect } from '#shared/moveAutomation/encounterEffects'
 import { pokemonHpSnapshot } from '~/utils/sheetSpawn'
+import { applyCombatStagesToSheet } from '~/utils/sheetMutations'
 import {
   isAuthoritativePendingMoveStatePlan,
   planAuthoritativeMoveStateExecution,
@@ -17,16 +19,26 @@ import {
   switchChoiceIntent,
   switchChoiceSheets,
 } from '../fixtures/moveAutomation/switchChoices'
+import {
+  conditionEncounterEffectFixture,
+  numericEncounterEffectFixture,
+} from '../fixtures/moveAutomation/encounterEffects'
 
-const declarationPlan = (sheets = switchChoiceSheets()) => planAuthoritativeMoveStateExecution({
-  map: createSwitchChoiceMap(),
+const declarationPlan = (
+  sheets = switchChoiceSheets(),
+  options: {
+    readonly map?: ReturnType<typeof createSwitchChoiceMap>
+    readonly runtimeRegistry?: ReturnType<typeof createSwitchChoiceRuntimeRegistry>
+  } = {},
+) => planAuthoritativeMoveStateExecution({
+  map: options.map ?? createSwitchChoiceMap(),
   ...sheets,
   intent: switchChoiceIntent(),
   random: () => { throw new Error('switch fixture does not use randomness') },
   now: () => 1_000,
   operationId: 'op_switchdeclare01',
   pendingResolutionId: 'resolution-switch-choice-1',
-  runtimeRegistry: createSwitchChoiceRuntimeRegistry(),
+  runtimeRegistry: options.runtimeRegistry ?? createSwitchChoiceRuntimeRegistry(),
 })
 
 describe('move-driven switch planning', () => {
@@ -154,6 +166,144 @@ describe('move-driven switch planning', () => {
       }),
       expect.objectContaining({ kind: 'encounter-state' }),
     ]))
+  })
+
+  it('transfers reviewed stages and effects without source-leave duplication', () => {
+    const resources = switchChoiceSheets()
+    const actorSheet = resources.pokemonSheets.get('switch-actor-sheet')!
+    const replacementSheet = resources.pokemonSheets.get('switch-replacement')!
+    resources.pokemonSheets.set(
+      actorSheet.slug,
+      applyCombatStagesToSheet('pokemon', actorSheet, {
+        atk: 2,
+        def: -1,
+        satk: 0,
+        sdef: 0,
+        spd: 3,
+        acc: 1,
+      }) as typeof actorSheet,
+    )
+    resources.pokemonSheets.set(
+      replacementSheet.slug,
+      applyCombatStagesToSheet('pokemon', replacementSheet, {
+        atk: 1,
+        def: 0,
+        satk: 0,
+        sdef: 0,
+        spd: 0,
+        acc: 0,
+      }) as typeof replacementSheet,
+    )
+    const passable = parseEncounterEffect({
+      ...numericEncounterEffectFixture(),
+      id: 'effect.baton-pass.coat',
+      source: {
+        ...numericEncounterEffectFixture().source,
+        placementId: SWITCH_ACTOR_PLACEMENT_ID,
+      },
+      affected: {
+        placementIds: [SWITCH_ACTOR_PLACEMENT_ID],
+        sideIds: [],
+        cells: [],
+      },
+      tags: ['coat'],
+      transferPolicy: 'baton-pass',
+    })
+    const expiring = parseEncounterEffect({
+      ...conditionEncounterEffectFixture(),
+      id: 'effect.baton-pass.non-passable',
+      source: {
+        ...conditionEncounterEffectFixture().source,
+        placementId: SWITCH_ACTOR_PLACEMENT_ID,
+      },
+      affected: {
+        placementIds: [SWITCH_ACTOR_PLACEMENT_ID],
+        sideIds: [],
+        cells: [],
+      },
+      transferPolicy: 'expire',
+    })
+    const map = createSwitchChoiceMap()
+    map.encounterState = {
+      ...map.encounterState!,
+      effects: [passable, expiring],
+    }
+    const runtimeRegistry = createSwitchChoiceRuntimeRegistry({
+      stateTransferPolicy: 'baton-pass',
+    })
+    const declaration = declarationPlan(resources, { map, runtimeRegistry })
+    if (!isAuthoritativePendingMoveStatePlan(declaration)) {
+      throw new Error('Expected a pending Baton Pass-style switch.')
+    }
+    const pending = declaration.suspension.pendingResolution
+    const window = pending.outstandingWindows[0]!
+    const execution = resumeMoveSpec({
+      pendingResolution: pending,
+      map: declaration.nextMap,
+      ...resources,
+      response: { requestId: window.windowId, optionId: window.options[0]!.id },
+      now: 2_000,
+      random: () => { throw new Error('switch fixture does not use randomness') },
+      runtimeRegistry,
+    })
+    if (isAuthoritativePendingMoveResolution(execution)) {
+      throw new Error('Expected a completed Baton Pass-style switch.')
+    }
+    expect(execution.switchTransition?.stateTransferPolicy).toBe('baton-pass')
+
+    const completed = planResumedMoveState({
+      pendingResolution: pending,
+      declarationPlan: declaration.suspension.preWindowPlan,
+      responseOpId: 'op_batonpassanswer1',
+      responseWindowId: window.windowId,
+      responseOptionId: window.options[0]!.id,
+      chosenBy: { kind: 'gm', id: null },
+      map: declaration.nextMap,
+      ...resources,
+      execution,
+      plannedAt: 2_000,
+      runtimeRegistry,
+    })
+    if (isAuthoritativePendingMoveStatePlan(completed)) {
+      throw new Error('Expected a completed Baton Pass-style plan.')
+    }
+    const replacement = completed.nextMap.placements.find(
+      placement => placement.sheetSlug === 'switch-replacement',
+    )!
+    const effects = completed.nextMap.encounterState?.effects ?? []
+    expect(effects).toHaveLength(1)
+    expect(effects[0]).toMatchObject({
+      id: passable.id,
+      source: { placementId: replacement.id },
+      affected: { placementIds: [replacement.id] },
+      transferPolicy: 'baton-pass',
+    })
+    expect(effects.filter(effect => effect.id === passable.id)).toHaveLength(1)
+    expect(effects.some(effect => effect.id === expiring.id)).toBe(false)
+
+    const sourceWrite = completed.sheetWrites.find(
+      write => write.slug === 'switch-actor-sheet',
+    )!
+    const replacementWrite = completed.sheetWrites.find(
+      write => write.slug === 'switch-replacement',
+    )!
+    expect(pokemonHpSnapshot(sourceWrite.nextSheet as never).combatStages).toEqual({
+      atk: 0,
+      def: 0,
+      satk: 0,
+      sdef: 0,
+      spd: 0,
+      acc: 0,
+    })
+    expect(pokemonHpSnapshot(replacementWrite.nextSheet as never).combatStages).toEqual({
+      atk: 3,
+      def: -1,
+      satk: 0,
+      sdef: 0,
+      spd: 3,
+      acc: 1,
+    })
+    expect(replacementWrite.placementIds).toEqual([replacement.id])
   })
 
   it('fails closed before a mandatory switch can commit when the roster has no replacement', () => {

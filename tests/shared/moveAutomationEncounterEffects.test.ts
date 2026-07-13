@@ -139,6 +139,21 @@ describe('typed encounter effects', () => {
     })).toThrow('requires a finite charge count for consume-on-trigger')
   })
 
+  it('stores explicit switch transfer policy and rejects unknown behavior', () => {
+    const effect = numericEncounterEffectFixture()
+    const passable = parseEncounterEffect({
+      ...effect,
+      transferPolicy: 'baton-pass',
+    })
+
+    expect(passable.transferPolicy).toBe('baton-pass')
+    expect(parseEncounterEffect(effect).transferPolicy).toBeUndefined()
+    expect(() => parseEncounterEffect({
+      ...effect,
+      transferPolicy: 'copy-on-any-switch',
+    })).toThrow('encounterEffect.transferPolicy: must be retain, expire, or baton-pass')
+  })
+
   it('accepts bounded valued capability grants and rejects valued suppressions', () => {
     const effect = capabilityEncounterEffectFixture()
 
