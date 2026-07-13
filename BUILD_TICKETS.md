@@ -9,7 +9,7 @@ Ticket statuses:
 
 The build loop must select the lowest-numbered TODO ticket. Each ticket below maps to one ticket from the supplied planning file; build ticket numbers follow that document's suggested order when present.
 
-Autonomous cycle rules for every ticket: implement only the selected ticket, run `scripts/quality-gate.sh`, update only the selected ticket status, commit with a conventional commit message, and leave the working tree clean. The final ticket (`MA-299`) may also set `AUTOMATION_STATUS: DONE` after all 285 refreshed tickets are complete.
+Autonomous cycle rules for every ticket: implement only the selected ticket, run `scripts/quality-gate.sh`, update only the selected ticket status, commit with a conventional commit message, and leave the working tree clean. The final ticket (`MA-299`) may also set `AUTOMATION_STATUS: DONE` after all 286 refreshed tickets are complete.
 
 ---
 
@@ -50,7 +50,7 @@ When a ticket introduces a new pure module, prefer this layout:
 
 The existing `src/utils/move-automation/` registry remains the v1 compatibility surface until the retirement tickets at the end.
 
-Queue size at this baseline: **285 commits**—179 engine/state/QA tickets, 33 conformance batches for the registered 258, and 73 implementation batches for the missing 518.
+Queue size at this baseline: **286 commits**—180 engine/state/QA tickets, 33 conformance batches for the registered 258, and 73 implementation batches for the missing 518.
 
 ## Decisions already locked
 
@@ -1649,24 +1649,49 @@ Status: DONE
 
 **Done:** Pending declarations, resumed resolutions, and normal movement persist exactly their phase-authorized spends atomically; deferred costs are neither early nor repeated; cost failure mutates nothing; duplicate delivery never spends twice.
 
-## MA-125 — Add durable destination and direction choices
+## MA-125A — Materialize authoritative movement choice options
 
 Status: TODO
 
 **Depends on:** MA-105, MA-120
+**Commit:** `feat(move-automation): materialize legal movement choices`
+
+**Touch:** bounded movement-choice and response-option contracts, a pure server movement-choice resolver, interpreter pending-window assembly, and focused contract/domain tests.
+
+**Implement:**
+
+- Define strict server-reviewed declarations and bounded response options for destination-cell and direction choices. The client cannot supply coordinates, directions, range, occupancy policy, or movement-mode mechanics.
+- From the immutable authoritative context, enumerate or validate legal cells and directions through the MA-120 movement oracle. Deduplicate and deterministically order the results, issue stable option IDs, and retain the server-owned value needed for later revalidation.
+- Materialize those options in the interpreter's durable pending-resolution candidate and privacy-safe public window projection. Do not resume or apply the selected movement and do not add the map targeting UI in this ticket.
+
+**Tests:** Cover strict parsing and bounds, deterministic IDs/order, legal and illegal cells/directions, range, map bounds, footprint occupancy, movement mode, duplicate candidates, pending-candidate round trips, and immutable inputs.
+
+**Done:** An unresolved reviewed movement choice produces one bounded durable option set whose server-owned cells or directions are legal for the authoritative creation snapshot; no client-authored movement mechanics enter the option set and no map mutation occurs.
+
+## MA-125B — Resume durable destination and direction choices
+
+Status: TODO
+
+**Depends on:** MA-125A
 **Commit:** `feat(move-automation): choose legal movement destinations`
 
-**Touch:** response-window options, map targeting overlay, tests.
+**Touch:** response command/resume orchestration, typed placement transitions, pending/public response views, map targeting overlay, authority documentation, and focused integration/component tests.
 
-**Implement:** Server enumerates or validates bounded legal cells/directions and issues stable option IDs. Client chooses an option, which is revalidated on resume.
+**Implement:**
 
-**Done:** No client-authored coordinate can bypass range, bounds, occupancy, or movement mode.
+- Present eligible destination and direction options through the map targeting overlay and submit only the durable resolution, window, and option IDs; never send a client-authored coordinate or direction as mechanics.
+- On resume, resolve the selected server-owned option and revalidate it against fresh authoritative state through the movement oracle before producing the typed movement result. A stale range, bounds, occupancy, or movement-mode failure must apply no partial mutation.
+- Preserve generic durable-response authorization, privacy, reconnect, and duplicate-delivery behavior, and document the server-owned option/revalidation boundary.
+
+**Tests:** Cover destination and direction selection, forged or unknown option IDs, stale occupancy and movement capability, out-of-range/out-of-bounds rejection, authorized public projections, overlay submission, refresh/reconnect, atomic failure, and duplicate response delivery.
+
+**Done:** The client can choose and resume a legal server-issued destination or direction by stable option ID, while no client-authored coordinate can bypass range, bounds, occupancy, or movement mode and stale choices mutate nothing.
 
 ## MA-126 — Implement forced push, pull, and shift vectors
 
 Status: TODO
 
-**Depends on:** MA-120, MA-125
+**Depends on:** MA-120, MA-125B
 **Commit:** `feat(move-automation): resolve forced displacement`
 
 **Touch:** new spatial effect reducer, tests.
@@ -1692,7 +1717,7 @@ Status: TODO
 
 Status: TODO
 
-**Depends on:** MA-120, MA-125
+**Depends on:** MA-120, MA-125B
 **Commit:** `feat(move-automation): resolve teleports and swaps`
 
 **Touch:** spatial reducer and tests.
@@ -1770,7 +1795,7 @@ Status: TODO
 
 Status: TODO
 
-**Depends on:** MA-073B, MA-125, MA-133
+**Depends on:** MA-073B, MA-125B, MA-133
 **Commit:** `feat(move-automation): select authoritative hazard cells`
 
 **Touch:** `shared/livePlayMoveResolution.ts`, targeting overlays, resolver tests.
@@ -2214,7 +2239,7 @@ Status: TODO
 
 Status: TODO
 
-**Depends on:** MA-085, MA-125–MA-127
+**Depends on:** MA-085, MA-125B, MA-126–MA-127
 **Commit:** `feat(move-automation): resolve tackle family displacement`
 
 **Implement:** Encode optional/required opposed checks, legal direction, push distance, collision/shortening, and simultaneous damage/cost ordering for Tackle and Take Down.
