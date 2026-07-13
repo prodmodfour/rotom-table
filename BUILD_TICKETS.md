@@ -1741,7 +1741,7 @@ Status: DONE
 
 ## MA-130 — Add recall and send-out operations to move plans
 
-Status: TODO
+Status: DONE
 
 **Depends on:** MA-039, MA-105, existing send-out authority
 **Commit:** `feat(move-automation): plan move driven switches`

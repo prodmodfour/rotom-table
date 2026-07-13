@@ -229,7 +229,11 @@ describe('pending move-driven switch resume integration', () => {
     expect(committed.temporaryHitPoints).toBeUndefined()
     expect(committed.encounterState?.history.switches).toHaveLength(1)
     expect(committed.encounterState?.pendingResolutionSummaries).toEqual([])
-    expect(first.result.ok && first.result.patches[0]?.scopes).toEqual(expect.arrayContaining([
+    expect(first.result).toMatchObject({ ok: true, patches: expect.any(Array) })
+    if (!first.result.ok || 'duplicate' in first.result) {
+      throw new Error('Expected the first switch response to be accepted.')
+    }
+    expect(first.result.patches[0]?.scopes).toEqual(expect.arrayContaining([
       { kind: 'map', lane: 'placements' },
       { kind: 'map', lane: 'initiative' },
       { kind: 'token', placementId: SWITCH_ACTOR_PLACEMENT_ID, field: 'delete' },
