@@ -89,17 +89,10 @@ import { useStartTurnModal } from '~/composables/map-editor/useStartTurnModal'
 import { useTerrainBuilder } from '~/composables/map-editor/useTerrainBuilder'
 import { useLivePlayHazardBrushBatcher } from '~/composables/map-editor/useLivePlayHazardBrushBatcher'
 import { useLivePlayTerrainBrushBatcher } from '~/composables/map-editor/useLivePlayTerrainBrushBatcher'
-import {
-  useAttackOfOpportunityPanel,
-  type AttackOfOpportunitySuppressionContext,
-} from '~/utils/attackOfOpportunity'
+import { useAttackOfOpportunityTriggers } from '~/utils/attackOfOpportunity'
 import { useTokenSheetMutations } from '~/composables/map-editor/useTokenSheetMutations'
 import { useTokenControls } from '~/composables/map-editor/useTokenControls'
 import { buildClientPlayerProfileTokenControlModel } from '~/utils/playerProfileTokenControl'
-import {
-  isPlayerCharacterAttackOfOpportunityPair,
-  playerCharacterSheetKeysForProfiles,
-} from '~/utils/playerCharacterTokens'
 import { clearCombatLogMetadata, countCombatLogMessages } from '~/utils/combatLog'
 import { buildLivePlayBatchPendingLabel } from '~/utils/livePlayBatchCommandUi'
 import { textValueFromEvent } from '~/utils/domEvents'
@@ -740,19 +733,6 @@ const playerProfileTokenControlModel = computed(() => buildClientPlayerProfileTo
   placements: map.value?.placements ?? [],
   linkedTrainerSheets: Array.from(trainerBySlug.value.values()),
 }))
-const playerCharacterSheetKeys = computed(() => playerCharacterSheetKeysForProfiles(playerProfiles.value))
-const shouldSuppressPlayerCharacterAttackOfOpportunity = ({
-  attacker,
-  provoker,
-}: Pick<AttackOfOpportunitySuppressionContext, 'attacker' | 'provoker'>) => (
-  isPlayerCharacterAttackOfOpportunityPair({
-    attacker,
-    provoker,
-    playerCharacterSheetKeys: playerCharacterSheetKeys.value,
-    pokemonBySlug: pokemonBySlug.value,
-    trainerBySlug: trainerBySlug.value,
-  })
-)
 const tokenControlNotice = computed(() => {
   if (isPlayer.value && mapInPrepareMode.value) {
     return 'The GM is preparing this map. Live play controls are paused.'
@@ -1265,7 +1245,7 @@ const turnPokemon = (id: string) => {
   })
 }
 
-let attackOfOpportunityPanel: ReturnType<typeof useAttackOfOpportunityPanel> | null = null
+let attackOfOpportunityTriggers: ReturnType<typeof useAttackOfOpportunityTriggers> | null = null
 
 const newPendingTokenPredictionForPlacement = (
   previousOpIds: ReadonlySet<string>,
@@ -1338,8 +1318,7 @@ const movePokemon = (payload: TokenMovementCommitPayload) => {
     if (!moveWasPredicted) clearSelection()
     const currentPosition = placementById(payload.id)?.position
     if (!previousPosition || !currentPosition || isSameAnchor(previousPosition, currentPosition)) return
-    await Promise.resolve(attackOfOpportunityPanel?.clearAttackOfOpportunityPromptsForNonImmediateAction(payload.id))
-    await Promise.resolve(attackOfOpportunityPanel?.provokeMovementAttackOfOpportunity({
+    await Promise.resolve(attackOfOpportunityTriggers?.provokeMovementAttackOfOpportunity({
       provokerId: payload.id,
       from: previousPosition,
       to: { ...currentPosition },
@@ -1831,7 +1810,6 @@ const previousInitiativeFromControls = async () => {
     await Promise.resolve(previousInitiative())
     return
   }
-  await Promise.resolve(attackOfOpportunityPanel?.clearAttackOfOpportunityPromptsForNonImmediateAction())
   await Promise.resolve(previousInitiative())
 }
 
@@ -1841,7 +1819,6 @@ const nextInitiativeFromControls = async () => {
     return
   }
   const before = orderTimelinePoint()
-  await Promise.resolve(attackOfOpportunityPanel?.clearAttackOfOpportunityPromptsForNonImmediateAction())
   await Promise.resolve(nextInitiative())
   expireActiveOrdersLocallyAfterInitiativeAdvance({ before, after: orderTimelinePoint() })
 }
@@ -2093,38 +2070,18 @@ const {
     clearRemotePokeballCapture()
     broadcastMoveFeedback(event.feedback)
   },
-  onBeforeNonImmediateAction: (event) => (
-    attackOfOpportunityPanel?.clearAttackOfOpportunityPromptsForNonImmediateAction(event.userId)
-  ),
-  onRangedAttackOfOpportunity: (event) => (
-    attackOfOpportunityPanel?.provokeRangedAttackOfOpportunity(event)
+  onRangedAttackOfOpportunity: event => (
+    attackOfOpportunityTriggers?.provokeRangedAttackOfOpportunity(event)
   ),
 })
 
-attackOfOpportunityPanel = useAttackOfOpportunityPanel({
-  map,
-  spawnedPokemon,
-  tokenMoveOptionsById,
-  canControlPlacement,
-  shouldSuppressAttackOfOpportunity: shouldSuppressPlayerCharacterAttackOfOpportunity,
-  dispatchStateUpdate: (payload) => {
+attackOfOpportunityTriggers = useAttackOfOpportunityTriggers({
+  dispatchTrigger: (payload) => {
     if (isSetupEditMode()) return undefined
     return livePlayCommands.updateAttackOfOpportunity(payload).then((result) => result.dispatched)
   },
-  performStruggleAttack: ({ attackerId, targetId, moveName, prompt }) => useMoveAgainstTarget({
-    id: attackerId,
-    targetId,
-    moveName,
-    skipActionNotifications: true,
-    logLine: `${prompt.attackerName} makes an Attack of Opportunity against ${prompt.provokerName}.`,
-  }),
 })
 
-const {
-  attackOfOpportunityPrompts,
-  removeAttackOfOpportunityPrompt,
-  useAttackOfOpportunity,
-} = attackOfOpportunityPanel
 
 const {
   abilityAutomationTargeting,
@@ -2142,10 +2099,9 @@ const {
   modifyConditions: modifyConditionsFromScene,
   modifyAbilityActivation,
   dispatchAbilityUse: tableActionDispatchers.dispatchAbilityUse,
-  onBeforeNonImmediateAction: async (event) => {
-    await Promise.resolve(attackOfOpportunityPanel?.clearAttackOfOpportunityPromptsForNonImmediateAction(event.userId))
-    return showActionSplash({ userId: event.userId, actionName: event.abilityName })
-  },
+  onBeforeNonImmediateAction: event => (
+    showActionSplash({ userId: event.userId, actionName: event.abilityName })
+  ),
 })
 
 const {
@@ -2160,10 +2116,9 @@ const {
   trainerBySlug,
   canControlPlacement,
   dispatchManeuverUse: tableActionDispatchers.dispatchManeuverUse,
-  onBeforeManeuverAction: async (event) => {
-    await Promise.resolve(attackOfOpportunityPanel?.clearAttackOfOpportunityPromptsForNonImmediateAction(event.userId))
-    return showActionSplash({ userId: event.userId, actionName: event.maneuverName })
-  },
+  onBeforeManeuverAction: event => (
+    showActionSplash({ userId: event.userId, actionName: event.maneuverName })
+  ),
 })
 
 const orderActionPanel = useOrderActionPanel({
@@ -2172,10 +2127,9 @@ const orderActionPanel = useOrderActionPanel({
   trainerBySlug,
   canControlPlacement,
   dispatchOrderUse: tableActionDispatchers.dispatchOrderUse,
-  onBeforeOrderAction: async (event) => {
-    await Promise.resolve(attackOfOpportunityPanel?.clearAttackOfOpportunityPromptsForNonImmediateAction(event.userId))
-    return showActionSplash({ userId: event.userId, actionName: event.orderName })
-  },
+  onBeforeOrderAction: event => (
+    showActionSplash({ userId: event.userId, actionName: event.orderName })
+  ),
 })
 const {
   orderActionTargeting,
@@ -2697,7 +2651,6 @@ useMapDimensionReconciliation({
         :pending-move-responses-loading="pendingMoveResponses.loadStatus.value === 'loading'"
         :pending-move-responses-error="pendingMoveResponses.loadError.value"
         :can-manage-pending-move-responses="isGm"
-        :attack-of-opportunity-prompts="attackOfOpportunityPrompts"
         :token-move-options-by-id="tokenMoveOptionsById"
         :token-maneuver-options-by-id="tokenManeuverOptionsById"
         :token-ability-options-by-id="tokenAbilityOptionsById"
@@ -2751,8 +2704,6 @@ useMapDimensionReconciliation({
         @cancel-pending-move-resolution="pendingMoveResponses.cancel($event)"
         @retry-pending-move-response="pendingMoveResponses.retry($event)"
         @refresh-pending-move-responses="pendingMoveResponses.refresh()"
-        @use-attack-of-opportunity="useAttackOfOpportunity"
-        @clear-attack-of-opportunity="removeAttackOfOpportunityPrompt"
       />
 
       <MapPresencePanel

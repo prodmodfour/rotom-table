@@ -3269,7 +3269,7 @@ describe('useLivePlayCommands', () => {
     expect(applyPersistedMap).toHaveBeenCalledWith(map)
   })
 
-  it('posts live-play Attack of Opportunity state updates through the command dispatcher', async () => {
+  it('posts live-play Attack of Opportunity trigger intent through the command dispatcher', async () => {
     const map = mapFixture()
     const mapRevision = ref(4)
     const profileId = ref(parsePlayerProfileId('profile_ash00000'))
@@ -3290,7 +3290,13 @@ describe('useLivePlayCommands', () => {
       playerProfileId: profileId,
       mapRevision,
     })
-    const payload = { action: 'clear-prompt' as const, promptId: 'aoo-1' }
+    const payload = {
+      action: 'provoke' as const,
+      reason: 'movement' as const,
+      provokerId: 'provoker',
+      from: { x: 1, y: 0, z: 1 },
+      to: { x: 2, y: 0, z: 1 },
+    }
     const result = await actions.updateAttackOfOpportunity(payload)
 
     expect(result.dispatched).toBe(true)

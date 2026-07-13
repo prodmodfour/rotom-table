@@ -27,6 +27,32 @@ export type AttackOfOpportunityStateUpdatePayload =
   | { readonly action: 'clear-all'; readonly actorId?: string }
   | { readonly action: 'mark-attacker-used'; readonly attackerId: string; readonly round?: number | null }
 
+export interface AttackOfOpportunityGridAnchor {
+  readonly x: number
+  readonly y: number
+  readonly z: number
+}
+
+/**
+ * Client intent for the current post-action opportunity-attack trigger.
+ * Candidate defenders, response IDs, move options, and mechanics are omitted:
+ * the server derives all of them from the authoritative map and sheets.
+ */
+export type AttackOfOpportunityTriggerPayload =
+  | {
+      readonly action: 'provoke'
+      readonly reason: 'movement'
+      readonly provokerId: string
+      readonly from: AttackOfOpportunityGridAnchor
+      readonly to: AttackOfOpportunityGridAnchor
+    }
+  | {
+      readonly action: 'provoke'
+      readonly reason: 'ranged-attack'
+      readonly provokerId: string
+      readonly targetIds: readonly string[]
+    }
+
 const ATTACK_OF_OPPORTUNITY_REASONS = new Set<unknown>(['movement', 'ranged-attack'])
 
 const isRecord = (value: unknown): value is Record<string, unknown> => (
@@ -36,6 +62,28 @@ const isRecord = (value: unknown): value is Record<string, unknown> => (
 const nonEmptyString = (value: unknown): value is string => (
   typeof value === 'string' && value.trim().length > 0
 )
+
+const boundedPlacementId = (value: unknown): value is string => (
+  nonEmptyString(value)
+  && value.length <= 200
+  && value.trim() === value
+  && !/[\u0000-\u001f\u007f]/.test(value)
+)
+
+const hasExactFields = (
+  value: Record<string, unknown>,
+  fields: readonly string[],
+): boolean => {
+  const expected = new Set(fields)
+  return fields.every(field => Object.prototype.hasOwnProperty.call(value, field))
+    && Object.keys(value).every(field => expected.has(field))
+}
+
+const normalizeGridAnchor = (value: unknown): AttackOfOpportunityGridAnchor | null => {
+  if (!isRecord(value) || !hasExactFields(value, ['x', 'y', 'z'])) return null
+  if (![value.x, value.y, value.z].every(Number.isSafeInteger)) return null
+  return { x: Number(value.x), y: Number(value.y), z: Number(value.z) }
+}
 
 const normalizeRound = (value: unknown): number | null => (
   typeof value === 'number' && Number.isSafeInteger(value) && value > 0 ? value : null
@@ -127,6 +175,41 @@ export const attackOfOpportunityStatesEqual = (
   left: AttackOfOpportunityState,
   right: AttackOfOpportunityState,
 ): boolean => JSON.stringify(normalizeAttackOfOpportunityState(left)) === JSON.stringify(normalizeAttackOfOpportunityState(right))
+
+export const normalizeAttackOfOpportunityTriggerPayload = (
+  payload: unknown,
+): AttackOfOpportunityTriggerPayload | null => {
+  if (!isRecord(payload) || payload.action !== 'provoke' || !boundedPlacementId(payload.provokerId)) {
+    return null
+  }
+
+  if (payload.reason === 'movement') {
+    if (!hasExactFields(payload, ['action', 'reason', 'provokerId', 'from', 'to'])) return null
+    const from = normalizeGridAnchor(payload.from)
+    const to = normalizeGridAnchor(payload.to)
+    return from && to
+      ? { action: 'provoke', reason: 'movement', provokerId: payload.provokerId, from, to }
+      : null
+  }
+
+  if (payload.reason === 'ranged-attack') {
+    if (!hasExactFields(payload, ['action', 'reason', 'provokerId', 'targetIds'])) return null
+    if (
+      !Array.isArray(payload.targetIds)
+      || payload.targetIds.length > 64
+      || !payload.targetIds.every(boundedPlacementId)
+      || new Set(payload.targetIds).size !== payload.targetIds.length
+    ) return null
+    return {
+      action: 'provoke',
+      reason: 'ranged-attack',
+      provokerId: payload.provokerId,
+      targetIds: [...payload.targetIds],
+    }
+  }
+
+  return null
+}
 
 export const normalizeAttackOfOpportunityStateUpdatePayload = (
   payload: unknown,

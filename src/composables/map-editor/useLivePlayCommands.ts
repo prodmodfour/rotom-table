@@ -104,7 +104,7 @@ import { buildResolveMoveScopes } from '~/utils/livePlayMoveCommandScopes'
 import { extractAcceptedMovePresentation } from '~/utils/livePlayAcceptedMovePresentation'
 import { extractResolvedMoveResult } from '~/utils/livePlayResolvedMoveResponse'
 import { useApiClient } from '~/composables/useApiClient'
-import type { AttackOfOpportunityStateUpdatePayload } from '#shared/attackOfOpportunityState'
+import type { AttackOfOpportunityTriggerPayload } from '#shared/attackOfOpportunityState'
 import type { PlayerProfileId } from '#shared/playerProfiles'
 import type { StartTurnModalStateUpdatePayload } from '#shared/startTurnModalState'
 import { temporaryHpForPlacement } from '~/utils/mapTemporaryHitPoints'
@@ -418,7 +418,7 @@ export interface UseLivePlayCommandsReturn {
     targetPlacementId?: string
   }) => Promise<LivePlayCommandDispatchResult>
   setScene: (payload: SetScenePayload) => Promise<LivePlayCommandDispatchResult>
-  updateAttackOfOpportunity: (payload: AttackOfOpportunityStateUpdatePayload) => Promise<LivePlayCommandDispatchResult>
+  updateAttackOfOpportunity: (payload: AttackOfOpportunityTriggerPayload) => Promise<LivePlayCommandDispatchResult>
   updateStartTurnModal: (payload: StartTurnModalStateUpdatePayload) => Promise<LivePlayCommandDispatchResult>
 }
 
@@ -492,7 +492,7 @@ type LivePlayClientCommandPayload =
   | LivePlayMapEffectsCommandPayload
   | ResolveMoveLivePlayCommand['payload']
   | SetScenePayload
-  | AttackOfOpportunityStateUpdatePayload
+  | AttackOfOpportunityTriggerPayload
   | StartTurnModalStateUpdatePayload
   | Record<string, never>
 

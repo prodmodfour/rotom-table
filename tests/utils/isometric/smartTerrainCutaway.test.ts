@@ -62,23 +62,12 @@ describe('smart terrain cutaway utilities', () => {
         candidateIds: ['candidate', 'selected'],
       },
       hoveredId: 'hovered',
-      attackOfOpportunityPrompts: [{
-        id: 'aoo-1',
-        attackerId: 'attacker',
-        attackerName: 'Attacker',
-        provokerId: 'selected',
-        provokerName: 'Selected',
-        reason: 'movement',
-        round: 1,
-        struggleOptions: [],
-      }],
     })).toEqual([
       'selected',
       'active',
       'user',
       'affected',
       'candidate',
-      'attacker',
     ])
 
     expect(resolveSmartCutawayFocusTokenIds({

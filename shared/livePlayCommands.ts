@@ -20,7 +20,7 @@ import type { GroupInventoryDocument } from '~/types/groupInventory'
 import type { ShopEntrySectionKey, ShopStockValue, ShopTableDocument } from '~/types/shop'
 import type { TokenFacingDirection } from '~/types/tokenFacing'
 import type { TrainerSheet } from '~/types/trainerSheet'
-import type { AttackOfOpportunityStateUpdatePayload } from './attackOfOpportunityState'
+import type { AttackOfOpportunityTriggerPayload } from './attackOfOpportunityState'
 import type { StartTurnModalStateUpdatePayload } from './startTurnModalState'
 import type { ResolveMoveIntent } from './livePlayMoveResolution'
 import type { LivePlayMoveStatePatchPayload } from './livePlayMoveState'
@@ -773,7 +773,7 @@ export type EditTerrainVoxelsLivePlayCommand = LivePlayCommandEnvelope<
 
 export type UpdateAttackOfOpportunityLivePlayCommand = LivePlayCommandEnvelope<
   typeof LIVE_PLAY_COMMAND_TYPES.UPDATE_ATTACK_OF_OPPORTUNITY,
-  AttackOfOpportunityStateUpdatePayload,
+  AttackOfOpportunityTriggerPayload,
   LivePlayMapScope
 >
 

@@ -72,6 +72,42 @@ describe('MapMoveResponsePanel', () => {
     expect(wrapper.emitted('cancel')).toEqual([['resolution-pending-1']])
   })
 
+  it('shows the explicit post-action limitation on durable opportunity responses', () => {
+    const view: PendingMoveResponseWindowView = {
+      ...choiceWindow(),
+      resolution: {
+        ...choiceWindow().resolution,
+        canonicalMoveId: 'Attack of Opportunity',
+        phase: 'cleanup',
+      },
+      window: {
+        windowId: 'attack-of-opportunity.window.1',
+        kind: 'reaction',
+        phase: 'cleanup',
+        reasonCode: 'maneuver.attack-of-opportunity.movement',
+        promptKey: 'maneuver.attack-of-opportunity.resolve-after-provoking-action',
+        options: [{
+          id: 'attack-of-opportunity.move.struggle',
+          labelKey: 'attack-of-opportunity.struggle',
+        }],
+        allowPass: true,
+        timing: 'cleanup',
+        priority: 0,
+        depth: 0,
+      },
+    }
+    const wrapper = mount(MapMoveResponsePanel, {
+      props: {
+        windows: [view],
+        eligibleOwnerLabel: 'Defender controller',
+      },
+    })
+
+    expect(wrapper.text()).toContain('Durable reaction')
+    expect(wrapper.text()).toContain('durable, reconnect-safe')
+    expect(wrapper.text()).toContain('post-movement timing remains assisted')
+  })
+
   it('locks labels out of command intent and exposes exact retry only for uncertainty', async () => {
     const view = choiceWindow()
     const key = pendingMoveResponseWindowKey(reference)

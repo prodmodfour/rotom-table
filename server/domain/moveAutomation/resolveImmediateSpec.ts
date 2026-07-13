@@ -1,5 +1,6 @@
 import type {
   MoveResolutionAuditTrace,
+  MoveResolutionTraceAncestryEntry,
   MoveResolutionTraceJsonValue,
 } from '#shared/moveAutomation/trace'
 import type {
@@ -509,6 +510,7 @@ export interface ResolveMoveSpecOptions {
   readonly entry: ResolvedCanonicalMoveEntry
   readonly authoritativeTargetIds: readonly string[]
   readonly authoritativeTargetEvaluations?: readonly MoveSpecAuthoritativeTargetEvaluation[]
+  readonly ancestry?: readonly MoveResolutionTraceAncestryEntry[]
 }
 
 export interface PendingMoveSpecResolution {
@@ -531,6 +533,7 @@ const executeReviewedMoveSpec = (
     context: options.context,
     authoritativeTargetIds: options.authoritativeTargetIds,
     authoritativeTargetEvaluations: options.authoritativeTargetEvaluations,
+    ancestry: options.ancestry,
     handlerRegistry: options.context.handlerRegistry,
   })
   if (execution.kind === 'rejected') {

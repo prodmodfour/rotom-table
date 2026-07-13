@@ -19,6 +19,7 @@ export const MOVE_RESOLUTION_TRACE_RUNTIME_KINDS = [
   'legacy-v1',
   'movespec-v2',
   'ability-follow-ups',
+  'attack-of-opportunity',
 ] as const
 
 export const MOVE_RESOLUTION_TRACE_EVENT_KINDS = [

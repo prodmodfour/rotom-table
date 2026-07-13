@@ -22,7 +22,6 @@ import type {
   VoxelMaterial,
 } from '~/types/map'
 import type { SpawnedPokemon } from '~/types/pokemon'
-import type { AttackOfOpportunityPrompt } from '~/utils/attackOfOpportunity'
 import type { PreviewState } from '~/utils/gridPreview'
 import type { TokenAbilityMenuOption } from '~/utils/mapTokenAbilities'
 import type { TokenMoveMenuOption } from '~/utils/mapTokenMoves'
@@ -89,7 +88,6 @@ defineProps<{
   moveAutomationFeedback?: MoveAutomationFeedbackState | null
   moveAnimations?: readonly MoveAnimationEvent[]
   moveAnimationsReducedMotion?: boolean
-  attackOfOpportunityPrompts?: AttackOfOpportunityPrompt[]
 }>()
 
 const emit = defineEmits<{
@@ -124,8 +122,6 @@ const emit = defineEmits<{
   (event: 'aim-move-area', center: GridAnchor): void
   (event: 'select-move-target-branch', branchId: string): void
   (event: 'cancel-move-targeting'): void
-  (event: 'use-attack-of-opportunity', payload: { promptId: string; moveName: string }): void
-  (event: 'clear-attack-of-opportunity', promptId: string): void
   (event: 'move-vfx-settled', payload: { nowMs: number }): void
   (event: 'token-motion-debug-metrics', metrics: TokenMotionDebugMetrics): void
 }>()
@@ -187,7 +183,6 @@ defineExpose({ focusPokemon, focusCell })
     :move-automation-feedback="moveAutomationFeedback"
     :move-animations="moveAnimations ?? []"
     :move-animations-reduced-motion="moveAnimationsReducedMotion === true"
-    :attack-of-opportunity-prompts="attackOfOpportunityPrompts ?? []"
     @select-pokemon="emit('select-pokemon', $event)"
     @hover-pokemon="emit('hover-pokemon', $event)"
     @place-presence-ping="emit('place-presence-ping', $event)"
@@ -219,8 +214,6 @@ defineExpose({ focusPokemon, focusCell })
     @aim-move-area="emit('aim-move-area', $event)"
     @select-move-target-branch="emit('select-move-target-branch', $event)"
     @cancel-move-targeting="emit('cancel-move-targeting')"
-    @use-attack-of-opportunity="emit('use-attack-of-opportunity', $event)"
-    @clear-attack-of-opportunity="emit('clear-attack-of-opportunity', $event)"
     @move-vfx-settled="emit('move-vfx-settled', $event)"
     @token-motion-debug-metrics="emit('token-motion-debug-metrics', $event)"
   />

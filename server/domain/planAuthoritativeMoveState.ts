@@ -1,5 +1,6 @@
 import { nextRevision, normalizeRevision } from '#shared/sessionRevisions'
 import type { ResolveMoveIntent } from '#shared/livePlayMoveResolution'
+import type { MoveResolutionTraceAncestryEntry } from '#shared/moveAutomation/trace'
 import {
   createEmptyEncounterState,
   parseEncounterState,
@@ -8,6 +9,7 @@ import {
 import type { CharacterSheet } from '~/types/characterSheet'
 import type { CombatStageMap } from '~/types/combatStages'
 import type {
+  GridAnchor,
   SheetKind,
   SheetPlacement,
   TabletopMap,
@@ -105,6 +107,8 @@ export interface PlanAuthoritativeMoveStateInput {
   readonly intent: ResolveMoveIntent
   readonly random?: AuthoritativeMoveRandomSource
   readonly now?: () => number
+  readonly ancestry?: readonly MoveResolutionTraceAncestryEntry[]
+  readonly tokenPositionOverrides?: ReadonlyMap<string, GridAnchor>
   readonly idFactory?: () => string
   readonly operationId?: string
   /** Deterministic server identity derived from the exact declaration command. */
@@ -845,6 +849,8 @@ export const planAuthoritativeMoveStateExecution = (
     intent: input.intent,
     random: input.random,
     now: () => plannedAt,
+    ancestry: input.ancestry,
+    tokenPositionOverrides: input.tokenPositionOverrides,
     idFactory: input.idFactory,
     runtimeRegistry: input.runtimeRegistry,
     legacyScripts: input.legacyScripts,

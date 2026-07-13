@@ -35,7 +35,7 @@ describe('map page route authority', () => {
     expect(mapPage).toContain('if (predictedMove) {\n    rememberLivePlayPredictedToken(predictedMove, livePlayTokenLabel(payload.id))\n    clearSelection()\n  }')
     expect(mapPage).toContain('const moveWasPredicted = predictedMove !== null\n    if (!moveWasPredicted) clearSelection()')
     expect(mapPage).toContain('if (!result.dispatched) {\n      if (result.opId) forgetLivePlayPredictedToken(result.opId)\n      return\n    }')
-    expect(mapPage).toContain('await Promise.resolve(attackOfOpportunityPanel?.provokeMovementAttackOfOpportunity({')
+    expect(mapPage).toContain('await Promise.resolve(attackOfOpportunityTriggers?.provokeMovementAttackOfOpportunity({')
   })
 
   it('wires clicked live-play facing through local prediction feedback', () => {

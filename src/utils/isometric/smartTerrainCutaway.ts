@@ -1,7 +1,6 @@
 import * as THREE from 'three'
 import type { MoveAutomationTargetingOverlayState } from '~/types/moveAutomation'
 import type { MapVoxelV2 } from '~/types/map'
-import type { AttackOfOpportunityPrompt } from '~/utils/attackOfOpportunity'
 import { voxelKey } from '~/utils/voxelOccupancy'
 
 export const SMART_TERRAIN_CUTAWAY_DEFAULT_OPACITY = 0.16
@@ -27,7 +26,6 @@ export interface SmartCutawayFocusTokenIdOptions {
   readonly activeTurnId?: string | null
   readonly moveAutomationTargeting?: MoveAutomationTargetingOverlayState | null
   readonly hoveredId?: string | null
-  readonly attackOfOpportunityPrompts?: readonly AttackOfOpportunityPrompt[] | null
 }
 
 export interface SmartCutawayFocusToken {
@@ -85,7 +83,6 @@ export const resolveSmartCutawayFocusTokenIds = ({
   activeTurnId,
   moveAutomationTargeting,
   hoveredId,
-  attackOfOpportunityPrompts,
 }: SmartCutawayFocusTokenIdOptions): string[] => {
   const ids: string[] = []
   const seen = new Set<string>()
@@ -100,11 +97,6 @@ export const resolveSmartCutawayFocusTokenIds = ({
   }
 
   if (!selectedId) appendUniqueId(ids, seen, hoveredId)
-
-  for (const prompt of attackOfOpportunityPrompts ?? []) {
-    appendUniqueId(ids, seen, prompt.attackerId)
-    appendUniqueId(ids, seen, prompt.provokerId)
-  }
 
   return ids
 }

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { PendingMoveResponseWindowView } from '#shared/moveAutomation/responseViews'
+import { ATTACK_OF_OPPORTUNITY_ASSISTANCE_NOTICE } from '~/utils/moveAutomationAssistedFollowUps'
 import {
   pendingMoveResponseWindowKey,
   type PendingMoveResponseOptionReference,
@@ -52,6 +53,9 @@ const promptLabel = (view: PendingMoveResponseWindowView): string => safeLookupL
 const optionLabel = (labelKey: string): string => safeLookupLabel(labelKey)
 const responseKindLabel = (view: PendingMoveResponseWindowView): string => (
   view.window.kind === 'reaction' ? 'Durable reaction' : 'Durable choice'
+)
+const isAttackOfOpportunity = (view: PendingMoveResponseWindowView): boolean => (
+  view.window.reasonCode.startsWith('maneuver.attack-of-opportunity.')
 )
 
 const isBusy = (view: PendingMoveResponseWindowView): boolean => (
@@ -147,6 +151,9 @@ const retry = (view: PendingMoveResponseWindowView): void => {
       </dl>
 
       <p class="move-response-card__prompt">{{ promptLabel(view) }}</p>
+      <p v-if="isAttackOfOpportunity(view)" class="move-response-card__limitation">
+        {{ ATTACK_OF_OPPORTUNITY_ASSISTANCE_NOTICE }}
+      </p>
 
       <div class="move-response-card__actions">
         <button
@@ -348,6 +355,7 @@ const retry = (view: PendingMoveResponseWindowView): void => {
 
 .move-response-card__notice,
 .move-response-card__uncertain,
+.move-response-card__limitation,
 .move-response-panel__status,
 .move-response-panel__error {
   color: var(--muted);
@@ -356,7 +364,8 @@ const retry = (view: PendingMoveResponseWindowView): void => {
 }
 
 .move-response-panel__error,
-.move-response-card__uncertain {
+.move-response-card__uncertain,
+.move-response-card__limitation {
   color: #efad2f;
 }
 

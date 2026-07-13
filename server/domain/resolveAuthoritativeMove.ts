@@ -1,5 +1,8 @@
 import type { MoveAutomationRollLedgerEntry } from '#shared/moveAutomation/random'
-import type { MoveResolutionAuditTrace } from '#shared/moveAutomation/trace'
+import type {
+  MoveResolutionAuditTrace,
+  MoveResolutionTraceAncestryEntry,
+} from '#shared/moveAutomation/trace'
 import { MOVE_AUTOMATION_AREA_DIRECTIONS } from '~/types/moveAutomation'
 import type { ResolveMoveIntent, ResolveMoveSelection } from '#shared/livePlayMoveResolution'
 import { LIVE_PLAY_MOVE_RESOLUTION_MAX_TARGET_IDS } from '#shared/livePlayMoveResolution'
@@ -149,6 +152,8 @@ export interface ResolveAuthoritativeMoveInput {
   readonly intent: ResolveMoveIntent
   readonly random?: AuthoritativeMoveRandomSource
   readonly now?: () => number
+  readonly ancestry?: readonly MoveResolutionTraceAncestryEntry[]
+  readonly tokenPositionOverrides?: ReadonlyMap<string, GridAnchor>
   readonly idFactory?: () => string
   /** Test/migration seam; production uses the manifest-selected global registry. */
   readonly runtimeRegistry?: MoveAutomationRuntimeRegistry
@@ -330,6 +335,7 @@ const finalizeResolution = (
       rulesetId: context.ruleset.rulesetId,
       sourceDataSha256: context.ruleset.sourceData.sha256,
     },
+    ancestry: context.ancestry,
     actorPlacementId: resolution.actorPlacementId,
     selectionKind: context.intent.selection.kind,
     selectedTargetIds: resolution.selectedTargetIds,
@@ -838,6 +844,7 @@ const resolveNativeSelfMove = (options: {
     runtime: options.runtime,
     entry: options.entry,
     authoritativeTargetIds: [],
+    ancestry: options.context.ancestry,
   })
   if (outcome.kind === 'pending') {
     return {
@@ -1024,6 +1031,7 @@ const resolveNativeSingleTargetMove = (options: {
     runtime: options.runtime,
     entry: options.entry,
     authoritativeTargetIds: [target.id],
+    ancestry: options.context.ancestry,
   })
   if (outcome.kind === 'pending') {
     return {
@@ -1325,6 +1333,7 @@ const resolveNativeAreaMove = (options: {
     entry: options.entry,
     authoritativeTargetIds: selectedTargetIds,
     authoritativeTargetEvaluations: areaTargets.evaluations,
+    ancestry: options.context.ancestry,
   })
   if (outcome.kind === 'pending') {
     return {
@@ -1545,6 +1554,8 @@ export const resolveAuthoritativeMoveExecution = (
       selectedPlacementIds,
       random,
       time,
+      ancestry: input.ancestry,
+      tokenPositionOverrides: input.tokenPositionOverrides,
       idFactory: input.idFactory,
       runtimeRegistry: input.runtimeRegistry,
       legacyScripts: input.legacyScripts,

@@ -2,18 +2,27 @@ import { mkdtempSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterEach, describe, expect, it, vi } from 'vitest'
+import { createEmptyEncounterState } from '#shared/moveAutomation/encounterState'
+import {
+  MOVE_RESPONSE_COMMAND_SCHEMA_VERSION,
+  MOVE_RESPONSE_COMMAND_TYPES,
+  type MoveResponseCommand,
+} from '#shared/moveAutomation/responseCommands'
 import { acceptedRealtimeTestHooks } from './livePlayAcceptedRealtimeTestUtils'
 import { createAuthoritativeLivePlayCommandExecutor } from '../../server/livePlay/commandExecutor'
 import { createInProcessMapWriteQueue } from '../../server/livePlay/mapWriteQueue'
 import { openRotomDatabase, type RotomDatabase } from '../../server/storage/database'
 import { createSqliteLivePlayOpRepository } from '../../server/storage/opRepository'
 import { createSqliteMapRepository } from '../../server/storage/mapRepository'
+import { createSqlitePendingMoveResolutionRepository } from '../../server/storage/pendingMoveResolutionRepository'
+import { createSqliteRealtimeEventRepository } from '../../server/storage/realtimeEventRepository'
+import { createSqliteSheetRepository } from '../../server/storage/sheetRepository'
 import { executeAttackOfOpportunityLivePlayCommandUseCase } from '../../server/useCases/applyAttackOfOpportunityCommand'
+import { listPendingMoveResponsesUseCase } from '../../server/useCases/listPendingMoveResponses'
 import {
-  ATTACK_OF_OPPORTUNITY_METADATA_KEY,
-  writeAttackOfOpportunityState,
-  type AttackOfOpportunityPromptRecord,
-} from '../../shared/attackOfOpportunityState'
+  replayMoveResponseCommandUseCase,
+  resumePendingMoveResolutionUseCase,
+} from '../../server/useCases/resumePendingMoveResolution'
 import {
   LIVE_PLAY_COMMAND_SCHEMA_VERSION,
   LIVE_PLAY_COMMAND_TYPES,
@@ -26,30 +35,34 @@ import {
   type PlayerProfileDisplayName,
   type PlayerProfileId,
 } from '../../shared/playerProfiles'
+import type { CharacterSheet } from '~/types/characterSheet'
 import type { TabletopMap } from '~/types/map'
 
 const tempRoots: string[] = []
 const databases: RotomDatabase[] = []
 
-const playerProfile = (linkedCharacters: PlayerProfile['linkedCharacters']): PlayerProfile => ({
+const playerProfile = (sheetSlug: string): PlayerProfile => ({
   schemaVersion: PLAYER_PROFILE_SCHEMA_VERSION,
-  id: 'profile_aoo00000' as PlayerProfileId,
-  displayName: 'AoO Player' as PlayerProfileDisplayName,
-  linkedCharacters,
+  id: `profile_${sheetSlug}00000`.slice(0, 20) as PlayerProfileId,
+  displayName: `${sheetSlug} player` as PlayerProfileDisplayName,
+  linkedCharacters: [{ sheetKind: 'pokemon', sheetSlug }],
 })
 
-const prompt = (overrides: Partial<AttackOfOpportunityPromptRecord> = {}): AttackOfOpportunityPromptRecord => ({
-  id: 'aoo-1-attacker-provoker',
-  attackerId: 'attacker',
-  attackerName: 'Attacker',
-  provokerId: 'provoker',
-  provokerName: 'Provoker',
-  reason: 'movement',
-  round: 3,
-  ...overrides,
+const sheet = (slug: string, species: string, nickname: string): CharacterSheet => ({
+  slug,
+  species,
+  nickname,
+  level: 20,
+  movelist: [],
+  abilities: [],
+  combat: { currentHp: 60 },
+  revision: 2,
 })
 
-const baseMap = (overrides: Partial<TabletopMap> = {}): TabletopMap => ({
+const baseMap = (
+  includeSecondDefender = false,
+  movementDestination = false,
+): TabletopMap => ({
   schemaVersion: 2,
   revision: 7,
   slug: 'arena',
@@ -61,51 +74,101 @@ const baseMap = (overrides: Partial<TabletopMap> = {}): TabletopMap => ({
   hazards: [],
   fieldEffects: { weather: [], terrains: [], rooms: [] },
   placements: [
-    { id: 'provoker', sheetKind: 'pokemon', sheetSlug: 'provoker-mon', position: { x: 1, y: 0, z: 1 } },
+    {
+      id: 'provoker',
+      sheetKind: 'pokemon',
+      sheetSlug: 'provoker-mon',
+      position: { x: movementDestination ? 2 : 1, y: 0, z: 1 },
+    },
     { id: 'attacker', sheetKind: 'pokemon', sheetSlug: 'attacker-mon', position: { x: 0, y: 0, z: 1 } },
-    { id: 'other', sheetKind: 'pokemon', sheetSlug: 'other-mon', position: { x: 5, y: 0, z: 5 } },
+    ...(includeSecondDefender
+      ? [{ id: 'attacker-two', sheetKind: 'pokemon' as const, sheetSlug: 'attacker-two-mon', position: { x: 1, y: 0, z: 0 } }]
+      : []),
+    { id: 'target', sheetKind: 'pokemon', sheetSlug: 'target-mon', position: { x: 5, y: 0, z: 5 } },
   ],
   lights: [],
   initiative: { activeId: 'provoker', round: 3 },
+  encounterState: createEmptyEncounterState(),
   metadata: { owner: 'gm' },
   createdAt: 10,
   updatedAt: 20,
-  ...overrides,
 })
 
-const createDeps = (options: { map?: TabletopMap; now?: number } = {}) => {
+const createHarness = (options: {
+  readonly includeSecondDefender?: boolean
+  readonly movementDestination?: boolean
+} = {}) => {
   const root = mkdtempSync(join(tmpdir(), 'rotom-table-aoo-'))
   tempRoots.push(root)
   const database = openRotomDatabase({ path: join(root, 'rotom.sqlite'), enableWal: false })
   databases.push(database)
-  const mapRepository = createSqliteMapRepository(database)
-  const opRepository = createSqliteLivePlayOpRepository({ database, clock: () => options.now ?? 5000 })
+  const maps = createSqliteMapRepository(database)
+  const sheets = createSqliteSheetRepository<Record<string, unknown>>(database)
+  const pending = createSqlitePendingMoveResolutionRepository(database)
+  const ops = createSqliteLivePlayOpRepository({ database, clock: () => 5_000 })
+  const realtime = createSqliteRealtimeEventRepository({ database })
   const events: unknown[] = []
   const commandExecutor = createAuthoritativeLivePlayCommandExecutor({
-    opStore: opRepository,
+    opStore: ops,
     queue: createInProcessMapWriteQueue(),
     ...acceptedRealtimeTestHooks(events),
   })
-  const map = options.map ?? baseMap()
-  mapRepository.save({ slug: map.slug, document: map, revision: map.revision ?? 0, updatedAt: map.updatedAt ?? 20 })
+  const map = baseMap(
+    options.includeSecondDefender === true,
+    options.movementDestination === true,
+  )
+  maps.save({ slug: map.slug, document: map, revision: map.revision ?? 0, updatedAt: map.updatedAt ?? 20 })
+  for (const document of [
+    sheet('provoker-mon', 'Snorlax', 'Provoker'),
+    sheet('attacker-mon', 'Machop', 'Defender'),
+    ...(options.includeSecondDefender ? [sheet('attacker-two-mon', 'Pikachu', 'Second Defender')] : []),
+    sheet('target-mon', 'Abra', 'Target'),
+  ]) {
+    sheets.save({
+      kind: 'pokemon',
+      slug: document.slug,
+      document: document as unknown as Record<string, unknown>,
+      revision: document.revision ?? 0,
+      updatedAt: 20,
+    })
+  }
 
+  const readSheet = (kind: 'pokemon' | 'trainer', slug: string) => {
+    const stored = sheets.getByRef(kind, slug)
+    return stored ? { sheet: { ...stored.sheet, revision: stored.revision } } : null
+  }
   return {
-    deps: {
-      commandExecutor,
-      mapRepository,
-      database,
-      now: vi.fn(() => options.now ?? 5000),
-      relativePath: vi.fn((path: string) => path.replace(/.*data\//, 'data/')),
-      readSheet: vi.fn(() => null),
-    },
-    mapRepository,
+    database,
+    maps,
+    sheets,
+    pending,
+    ops,
+    realtime,
     events,
+    triggerDeps: {
+      commandExecutor,
+      mapRepository: maps,
+      pendingResolutionRepository: pending,
+      database,
+      readSheet,
+      listProfiles: vi.fn(() => []),
+      now: vi.fn(() => 1_111),
+    },
   }
 }
 
 const metadataScope = { kind: 'map' as const, lane: 'metadata' as const }
 
-const command = (opId: string, payload: Record<string, unknown>, scopes: readonly LivePlayScope[] = [metadataScope]) => ({
+const triggerCommand = (
+  opId = 'op_aooprovoke1',
+  payload: Record<string, unknown> = {
+    action: 'provoke',
+    reason: 'ranged-attack',
+    provokerId: 'provoker',
+    targetIds: ['target'],
+  },
+  scopes: readonly LivePlayScope[] = [metadataScope],
+) => ({
   schemaVersion: LIVE_PLAY_COMMAND_SCHEMA_VERSION,
   opId,
   mapSlug: 'arena',
@@ -120,81 +183,326 @@ afterEach(() => {
   for (const root of tempRoots.splice(0)) rmSync(root, { recursive: true, force: true })
 })
 
-describe('live-play Attack of Opportunity commands', () => {
-  it('lets a linked player clear their token\'s persisted AoO prompt and broadcasts metadata', async () => {
-    const map = baseMap({
-      metadata: writeAttackOfOpportunityState({ owner: 'gm' }, {
-        schemaVersion: 1,
-        prompts: [prompt()],
-        usedRoundByAttackerId: {},
-      }),
-    })
-    const { deps, mapRepository, events } = createDeps({ map, now: 1111 })
-
+describe('durable Attack of Opportunity commands', () => {
+  it('creates one server-owned defender window and exposes it only to its controller', async () => {
+    const harness = createHarness()
     const response = await executeAttackOfOpportunityLivePlayCommandUseCase({
       role: 'player',
-      command: command('op_aooclear1', { action: 'clear-prompt', promptId: 'aoo-1-attacker-provoker' }),
-      playerProfile: playerProfile([{ sheetKind: 'pokemon', sheetSlug: 'attacker-mon' }]),
-      clientId: 'client-1',
+      command: triggerCommand(),
+      playerProfile: playerProfile('provoker-mon'),
+      clientId: 'provoker-client',
       expectedType: LIVE_PLAY_COMMAND_TYPES.UPDATE_ATTACK_OF_OPPORTUNITY,
-    }, deps)
+    }, harness.triggerDeps)
 
-    expect(response.result).toMatchObject({ ok: true, opId: 'op_aooclear1', previousRevision: 7, revision: 8 })
+    expect(response.result).toMatchObject({
+      ok: true,
+      opId: 'op_aooprovoke1',
+      previousRevision: 7,
+      revision: 8,
+    })
     expect('patches' in response.result ? response.result.patches[0] : null).toMatchObject({
       type: LIVE_PLAY_PATCH_TYPES.MAP_METADATA,
-      payload: { action: 'clear-prompt' },
+      payload: { action: 'provoke' },
     })
-    const storedMap = await mapRepository.getBySlug('arena')
-    expect(storedMap?.revision).toBe(8)
-    expect(storedMap?.metadata?.[ATTACK_OF_OPPORTUNITY_METADATA_KEY]).toBeUndefined()
-    expect(storedMap?.metadata?.owner).toBe('gm')
-    expect(events).toHaveLength(1)
-    expect(events[0]).toMatchObject({ channel: 'map:arena', type: 'live-play-command-accepted', clientId: 'client-1' })
-  })
+    const storedMap = harness.maps.getBySlug('arena')!
+    const summary = storedMap.encounterState?.pendingResolutionSummaries[0]
+    expect(summary).toMatchObject({
+      canonicalMoveId: 'Attack of Opportunity',
+      actorPlacementId: 'provoker',
+      status: 'pending',
+      outstandingWindowCount: 1,
+    })
+    const stored = harness.pending.getById(summary!.resolutionId)!
+    expect(stored.resolution).toMatchObject({
+      continuationKind: 'attack-of-opportunity',
+      outstandingWindows: [{
+        reasonCode: 'maneuver.attack-of-opportunity.ranged-attack',
+        ownership: [{ kind: 'placement', id: 'attacker' }],
+        options: [expect.objectContaining({ id: 'attack-of-opportunity.move.struggle' })],
+      }],
+    })
+    expect(stored.resolution.trace.events).toContainEqual(expect.objectContaining({
+      kind: 'operation',
+      outcome: 'pending',
+      input: expect.objectContaining({ timingLimitation: 'post-provoking-action' }),
+    }))
 
-  it('lets a linked provoker queue persisted AoO prompts for broadcast live play', async () => {
-    const { deps, mapRepository, events } = createDeps({ now: 2222 })
-    const queuedPrompt = prompt({ id: 'aoo-queue', round: 1 })
-
-    const response = await executeAttackOfOpportunityLivePlayCommandUseCase({
+    const defenderWindows = listPendingMoveResponsesUseCase({
       role: 'player',
-      command: command('op_aooqueue1', { action: 'queue', records: [queuedPrompt] }),
-      playerProfile: playerProfile([{ sheetKind: 'pokemon', sheetSlug: 'provoker-mon' }]),
-      clientId: 'client-2',
-      expectedType: LIVE_PLAY_COMMAND_TYPES.UPDATE_ATTACK_OF_OPPORTUNITY,
-    }, deps)
-
-    expect(response.result).toMatchObject({ ok: true, opId: 'op_aooqueue1', previousRevision: 7, revision: 8 })
-    const storedMap = await mapRepository.getBySlug('arena')
-    expect(storedMap?.metadata?.[ATTACK_OF_OPPORTUNITY_METADATA_KEY]).toMatchObject({
-      prompts: [expect.objectContaining({ id: 'aoo-queue', attackerId: 'attacker', provokerId: 'provoker', round: 3 })],
+      mapSlug: 'arena',
+      playerProfile: playerProfile('attacker-mon'),
+    }, {
+      database: harness.database,
+      mapRepository: harness.maps,
+      sheetRepository: harness.sheets,
+      pendingResolutionRepository: harness.pending,
     })
-    expect(events).toHaveLength(1)
+    const provokerWindows = listPendingMoveResponsesUseCase({
+      role: 'player',
+      mapSlug: 'arena',
+      playerProfile: playerProfile('provoker-mon'),
+    }, {
+      database: harness.database,
+      mapRepository: harness.maps,
+      sheetRepository: harness.sheets,
+      pendingResolutionRepository: harness.pending,
+    })
+    expect(defenderWindows.windows).toHaveLength(1)
+    expect(provokerWindows.windows).toEqual([])
+    expect(harness.events).toHaveLength(1)
   })
 
-  it('rejects player attempts to clear another token owner\'s AoO prompt', async () => {
-    const map = baseMap({
-      metadata: writeAttackOfOpportunityState({}, {
-        schemaVersion: 1,
-        prompts: [prompt()],
-        usedRoundByAttackerId: {},
+  it('resolves a post-movement child against the authoritative provoking origin without moving the target back', async () => {
+    const harness = createHarness({ movementDestination: true })
+    await executeAttackOfOpportunityLivePlayCommandUseCase({
+      role: 'gm',
+      command: triggerCommand('op_aoomovement01', {
+        action: 'provoke',
+        reason: 'movement',
+        provokerId: 'provoker',
+        from: { x: 1, y: 0, z: 1 },
+        to: { x: 2, y: 0, z: 1 },
       }),
+      clientId: 'gm-client',
+      expectedType: LIVE_PLAY_COMMAND_TYPES.UPDATE_ATTACK_OF_OPPORTUNITY,
+    }, harness.triggerDeps)
+    const pending = harness.pending.listByMap('arena')[0]!
+    expect(pending.resolution.continuationContext).toEqual({
+      kind: 'attack-of-opportunity',
+      triggerReason: 'movement',
+      provokerPlacementId: 'provoker',
+      from: { x: 1, y: 0, z: 1 },
+      to: { x: 2, y: 0, z: 1 },
+      targetPlacementIds: [],
+      timingLimitation: 'post-provoking-action',
     })
-    const { deps, mapRepository, events } = createDeps({ map })
+    const window = pending.resolution.outstandingWindows[0]!
+    const command: MoveResponseCommand = {
+      schemaVersion: MOVE_RESPONSE_COMMAND_SCHEMA_VERSION,
+      opId: 'op_aoomovementhit1',
+      mapSlug: 'arena',
+      baseRevision: 8,
+      type: MOVE_RESPONSE_COMMAND_TYPES.REACT,
+      payload: {
+        resolutionId: pending.resolutionId,
+        windowId: window.windowId,
+        optionId: window.options[0]!.id,
+      },
+    }
+    const response = resumePendingMoveResolutionUseCase({
+      command,
+      storedResolution: pending,
+      window,
+      option: window.options[0]!,
+      role: 'gm',
+      playerProfile: null,
+      authorization: { chosenBy: { kind: 'gm', id: null }, source: 'gm-authority' },
+      clientId: 'gm-client',
+    }, {
+      database: harness.database,
+      mapRepository: harness.maps,
+      sheetRepository: harness.sheets,
+      pendingResolutionRepository: harness.pending,
+      opRepository: harness.ops,
+      realtimeEventRepository: harness.realtime,
+      publishPersistedRealtimeEvent: vi.fn(),
+      random: () => 0.95,
+      now: () => 2_000,
+    })
 
+    expect(response.result).toMatchObject({ ok: true, revision: 9 })
+    expect(response.move?.transaction.attackedTargetIds).toEqual(['provoker'])
+    expect(harness.maps.getBySlug('arena')?.placements.find(
+      placement => placement.id === 'provoker',
+    )?.position).toEqual({ x: 2, y: 0, z: 1 })
+  })
+
+  it('rejects a player who does not control the provoking token', async () => {
+    const harness = createHarness()
     const response = await executeAttackOfOpportunityLivePlayCommandUseCase({
       role: 'player',
-      command: command('op_aoodenied', { action: 'clear-prompt', promptId: 'aoo-1-attacker-provoker' }),
-      playerProfile: playerProfile([{ sheetKind: 'pokemon', sheetSlug: 'provoker-mon' }]),
-      clientId: 'client-3',
+      command: triggerCommand('op_aoodenied1'),
+      playerProfile: playerProfile('attacker-mon'),
+      clientId: 'attacker-client',
       expectedType: LIVE_PLAY_COMMAND_TYPES.UPDATE_ATTACK_OF_OPPORTUNITY,
-    }, deps)
+    }, harness.triggerDeps)
 
     expect(response.result).toMatchObject({ ok: false, reason: 'unauthorized' })
-    const storedMap = await mapRepository.getBySlug('arena')
-    expect(storedMap?.metadata?.[ATTACK_OF_OPPORTUNITY_METADATA_KEY]).toMatchObject({
-      prompts: [expect.objectContaining({ id: 'aoo-1-attacker-provoker' })],
+    expect(harness.maps.getBySlug('arena')?.revision).toBe(7)
+    expect(harness.pending.listByMap('arena')).toEqual([])
+  })
+
+  it('replays a duplicate trigger without creating another window or revision', async () => {
+    const harness = createHarness()
+    const input = {
+      role: 'gm' as const,
+      command: triggerCommand('op_aooduplicate1'),
+      clientId: 'gm-client',
+      expectedType: LIVE_PLAY_COMMAND_TYPES.UPDATE_ATTACK_OF_OPPORTUNITY,
+    }
+    const first = await executeAttackOfOpportunityLivePlayCommandUseCase(input, harness.triggerDeps)
+    const duplicate = await executeAttackOfOpportunityLivePlayCommandUseCase(input, harness.triggerDeps)
+
+    expect(first.result).toMatchObject({ ok: true, revision: 8 })
+    expect(duplicate.result).toEqual(first.result)
+    expect(harness.maps.getBySlug('arena')?.revision).toBe(8)
+    expect(harness.pending.listByMap('arena')).toHaveLength(1)
+  })
+
+  it('records a pass idempotently while another defender window remains reconnect-safe', async () => {
+    const harness = createHarness({ includeSecondDefender: true })
+    await executeAttackOfOpportunityLivePlayCommandUseCase({
+      role: 'gm',
+      command: triggerCommand('op_aoomultiwindow1'),
+      clientId: 'gm-client',
+      expectedType: LIVE_PLAY_COMMAND_TYPES.UPDATE_ATTACK_OF_OPPORTUNITY,
+    }, harness.triggerDeps)
+    const pending = harness.pending.listByMap('arena')[0]!
+    expect(pending.resolution.outstandingWindows.map(window => window.ownership)).toEqual([
+      [{ kind: 'placement', id: 'attacker' }],
+      [{ kind: 'placement', id: 'attacker-two' }],
+    ])
+    const window = pending.resolution.outstandingWindows[0]!
+    const command: MoveResponseCommand = {
+      schemaVersion: MOVE_RESPONSE_COMMAND_SCHEMA_VERSION,
+      opId: 'op_aoomultipass01',
+      mapSlug: 'arena',
+      baseRevision: 8,
+      type: MOVE_RESPONSE_COMMAND_TYPES.PASS,
+      payload: {
+        resolutionId: pending.resolutionId,
+        windowId: window.windowId,
+      },
+    }
+    const response = resumePendingMoveResolutionUseCase({
+      command,
+      storedResolution: pending,
+      window,
+      option: null,
+      role: 'gm',
+      playerProfile: null,
+      authorization: {
+        chosenBy: { kind: 'gm', id: null },
+        source: 'gm-authority',
+      },
+      clientId: 'gm-client',
+    }, {
+      database: harness.database,
+      mapRepository: harness.maps,
+      sheetRepository: harness.sheets,
+      pendingResolutionRepository: harness.pending,
+      opRepository: harness.ops,
+      realtimeEventRepository: harness.realtime,
+      publishPersistedRealtimeEvent: vi.fn(),
+      now: () => 1_500,
     })
-    expect(events).toEqual([])
+
+    expect(response.result).toMatchObject({ ok: true, previousRevision: 8, revision: 9 })
+    expect(response.move).toBeUndefined()
+    const remaining = harness.pending.getById(pending.resolutionId)!
+    expect(remaining.status).toBe('pending')
+    expect(remaining.resolution.outstandingWindows).toHaveLength(1)
+    expect(remaining.resolution.outstandingWindows[0]?.ownership).toEqual([
+      { kind: 'placement', id: 'attacker-two' },
+    ])
+    expect(remaining.resolution.chosenOptions).toEqual([
+      expect.objectContaining({ windowId: window.windowId, optionId: null }),
+    ])
+    expect(harness.maps.getBySlug('arena')?.metadata?.attackOfOpportunity).toBeUndefined()
+    expect(harness.maps.getBySlug('arena')?.encounterState?.pendingResolutionSummaries).toEqual([
+      remaining.resolution.publicSummary,
+    ])
+  })
+
+  it('commits a chosen Struggle as an ancestry-linked child and replays the response once', async () => {
+    const harness = createHarness()
+    await executeAttackOfOpportunityLivePlayCommandUseCase({
+      role: 'gm',
+      command: triggerCommand('op_aoochildtrigger1'),
+      clientId: 'gm-client',
+      expectedType: LIVE_PLAY_COMMAND_TYPES.UPDATE_ATTACK_OF_OPPORTUNITY,
+    }, harness.triggerDeps)
+    const pending = harness.pending.listByMap('arena')[0]!
+    const window = pending.resolution.outstandingWindows[0]!
+    const command: MoveResponseCommand = {
+      schemaVersion: MOVE_RESPONSE_COMMAND_SCHEMA_VERSION,
+      opId: 'op_aoochildanswer1',
+      mapSlug: 'arena',
+      baseRevision: 8,
+      profileId: playerProfile('attacker-mon').id,
+      type: MOVE_RESPONSE_COMMAND_TYPES.REACT,
+      payload: {
+        resolutionId: pending.resolutionId,
+        windowId: window.windowId,
+        optionId: window.options[0]!.id,
+      },
+    }
+    const response = resumePendingMoveResolutionUseCase({
+      command,
+      storedResolution: pending,
+      window,
+      option: window.options[0]!,
+      role: 'player',
+      playerProfile: playerProfile('attacker-mon'),
+      authorization: {
+        chosenBy: { kind: 'placement', id: 'attacker' },
+        source: 'window-owner',
+      },
+      clientId: 'attacker-client',
+    }, {
+      database: harness.database,
+      mapRepository: harness.maps,
+      sheetRepository: harness.sheets,
+      pendingResolutionRepository: harness.pending,
+      opRepository: harness.ops,
+      realtimeEventRepository: harness.realtime,
+      publishPersistedRealtimeEvent: vi.fn(),
+      random: () => 0.95,
+      now: () => 2_000,
+    })
+
+    expect(response.result).toMatchObject({
+      ok: true,
+      opId: 'op_aoochildanswer1',
+      previousRevision: 8,
+      revision: 9,
+    })
+    expect(response.move).toMatchObject({
+      actorPlacementId: 'attacker',
+      moveName: 'Struggle',
+      transaction: expect.objectContaining({ attackedTargetIds: ['provoker'] }),
+      trace: expect.objectContaining({
+        ancestry: [expect.objectContaining({
+          resolutionId: pending.resolutionId,
+          canonicalId: 'Attack of Opportunity',
+          parentOperationId: window.operationId,
+        })],
+      }),
+    })
+    const terminal = harness.pending.getById(pending.resolutionId)!
+    expect(terminal.status).toBe('committed')
+    expect(terminal.resolution.trace.events).toContainEqual(expect.objectContaining({
+      kind: 'child-move',
+      canonicalId: 'Struggle',
+      outcome: 'completed',
+    }))
+    expect(terminal.resolution.chosenOptions).toEqual([
+      expect.objectContaining({
+        responseOpId: 'op_aoochildanswer1',
+        optionId: 'attack-of-opportunity.move.struggle',
+      }),
+    ])
+    expect(harness.maps.getBySlug('arena')?.metadata?.attackOfOpportunity).toMatchObject({
+      usedRoundByAttackerId: { attacker: 3 },
+    })
+    expect(harness.maps.getBySlug('arena')?.encounterState?.pendingResolutionSummaries).toEqual([])
+
+    const replay = replayMoveResponseCommandUseCase({ role: 'player', command }, {
+      database: harness.database,
+      mapRepository: harness.maps,
+      opRepository: harness.ops,
+    })
+    expect(replay?.result).toEqual(response.result)
+    expect(harness.maps.getBySlug('arena')?.revision).toBe(9)
   })
 })

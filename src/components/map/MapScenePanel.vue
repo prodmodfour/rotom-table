@@ -31,7 +31,6 @@ import type {
 import type { MoveAnimationEvent, MoveVfxKind } from '~/types/moveAnimation'
 import type { MapActionSplashState } from '~/types/mapActionSplash'
 import type { SpawnedPokemon } from '~/types/pokemon'
-import type { AttackOfOpportunityPrompt } from '~/utils/attackOfOpportunity'
 import type { TokenAbilityMenuOption } from '~/utils/mapTokenAbilities'
 import type { TokenMoveMenuOption } from '~/utils/mapTokenMoves'
 import type { TokenManeuverMenuOption } from '~/utils/mapTokenManeuvers'
@@ -110,7 +109,6 @@ const props = defineProps<{
   pendingMoveResponsesLoading?: boolean
   pendingMoveResponsesError?: string | null
   canManagePendingMoveResponses?: boolean
-  attackOfOpportunityPrompts?: AttackOfOpportunityPrompt[]
   tokenMoveOptionsById?: Record<string, TokenMoveMenuOption[]>
   tokenManeuverOptionsById?: Record<string, TokenManeuverMenuOption[]>
   tokenAbilityOptionsById?: Record<string, TokenAbilityMenuOption[]>
@@ -182,8 +180,6 @@ const emit = defineEmits<{
   (event: 'cancel-pending-move-resolution', resolutionId: string): void
   (event: 'retry-pending-move-response', opId: string): void
   (event: 'refresh-pending-move-responses'): void
-  (event: 'use-attack-of-opportunity', payload: { promptId: string; moveName: string }): void
-  (event: 'clear-attack-of-opportunity', promptId: string): void
   (event: 'token-motion-debug-metrics', metrics: TokenMotionDebugMetrics): void
 }>()
 
@@ -297,7 +293,6 @@ defineExpose({ focusPokemon, focusCell })
         :move-automation-feedback="moveAutomationFeedback"
         :move-animations="moveAnimations ?? []"
         :move-animations-reduced-motion="moveAnimationsReducedMotion === true"
-        :attack-of-opportunity-prompts="props.attackOfOpportunityPrompts ?? []"
         @select-pokemon="emit('select-pokemon', $event)"
         @hover-pokemon="emit('hover-pokemon', $event)"
         @place-presence-ping="emit('place-presence-ping', $event)"
@@ -329,8 +324,6 @@ defineExpose({ focusPokemon, focusCell })
         @aim-move-area="emit('aim-move-area', $event)"
         @select-move-target-branch="emit('select-move-target-branch', $event)"
         @cancel-move-targeting="emit('cancel-move-targeting')"
-        @use-attack-of-opportunity="emit('use-attack-of-opportunity', $event)"
-        @clear-attack-of-opportunity="emit('clear-attack-of-opportunity', $event)"
         @move-vfx-settled="emit('move-vfx-settled', $event)"
         @token-motion-debug-metrics="emit('token-motion-debug-metrics', $event)"
       />

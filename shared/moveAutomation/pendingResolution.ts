@@ -39,6 +39,7 @@ export const PENDING_MOVE_RESOLUTION_SCHEMA_VERSION = 1 as const
 export const PENDING_MOVE_RESOLUTION_CONTINUATION_KINDS = [
   'movespec-v2',
   'ability-follow-ups',
+  'attack-of-opportunity',
 ] as const
 
 export const PENDING_MOVE_RESOLUTION_STATUSES = [
@@ -187,6 +188,8 @@ export type PendingMoveResponseWindow =
  * Legacy post-commit follow-ups resolve in reviewed priority order. Their
  * remaining windows stay durable but only the first is answerable/visible.
  * MoveSpec suspensions currently materialize one active window at a time.
+ * Opportunity-attack windows are independent defenders and remain concurrently
+ * visible only to each window's authorized owner.
  */
 export const activePendingMoveResponseWindows = (
   resolution: Pick<PendingMoveResolution, 'continuationKind' | 'outstandingWindows'>,
@@ -231,9 +234,22 @@ export interface PendingMoveDeclarationResult extends LivePlayCommandAccepted {
   readonly pendingResolution: PendingMoveResolutionPublicSummary
 }
 
+export interface PendingMoveAttackOfOpportunityContext {
+  readonly kind: 'attack-of-opportunity'
+  readonly triggerReason: 'movement' | 'ranged-attack'
+  readonly provokerPlacementId: string
+  readonly from: { readonly x: number; readonly y: number; readonly z: number } | null
+  readonly to: { readonly x: number; readonly y: number; readonly z: number } | null
+  readonly targetPlacementIds: readonly string[]
+  readonly timingLimitation: 'post-provoking-action'
+}
+
+export type PendingMoveResolutionContinuationContext = PendingMoveAttackOfOpportunityContext
+
 export interface PendingMoveResolution {
   readonly schemaVersion: typeof PENDING_MOVE_RESOLUTION_SCHEMA_VERSION
   readonly continuationKind: PendingMoveResolutionContinuationKind
+  readonly continuationContext?: PendingMoveResolutionContinuationContext
   readonly resolutionId: string
   readonly originMapSlug: string
   readonly originOpId: LivePlayOpId
@@ -319,7 +335,7 @@ const ROOT_REQUIRED_FIELDS = [
   'updatedAt',
   'publicSummary',
 ] as const
-const ROOT_OPTIONAL_FIELDS = ['continuationKind'] as const
+const ROOT_OPTIONAL_FIELDS = ['continuationKind', 'continuationContext'] as const
 const MAP_READ_FIELDS = ['kind', 'slug', 'revision'] as const
 const SHEET_READ_FIELDS = ['kind', 'sheetKind', 'slug', 'revision'] as const
 const GROUP_INVENTORY_READ_FIELDS = ['kind', 'slug', 'revision'] as const
@@ -352,6 +368,16 @@ const ANCESTRY_FIELDS = [
   'definitionHash',
   'parentOperationId',
 ] as const
+const ATTACK_OF_OPPORTUNITY_CONTEXT_FIELDS = [
+  'kind',
+  'triggerReason',
+  'provokerPlacementId',
+  'from',
+  'to',
+  'targetPlacementIds',
+  'timingLimitation',
+] as const
+const GRID_ANCHOR_FIELDS = ['x', 'y', 'z'] as const
 const PUBLIC_SUMMARY_FIELDS = [
   'schemaVersion',
   'resolutionId',
@@ -904,6 +930,87 @@ const parseOptions = (
   return options
 }
 
+const parseContinuationGridAnchor = (
+  value: unknown,
+  path: string,
+): PendingMoveAttackOfOpportunityContext['from'] => {
+  if (value === null) return null
+  const record = parseExactRecord(value, GRID_ANCHOR_FIELDS, path)
+  return {
+    x: parseInteger(record.x, `${path}.x`, -1_000_000, 1_000_000),
+    y: parseInteger(record.y, `${path}.y`, -1_000_000, 1_000_000),
+    z: parseInteger(record.z, `${path}.z`, -1_000_000, 1_000_000),
+  }
+}
+
+const parseContinuationContext = (
+  value: unknown,
+  continuationKind: PendingMoveResolutionContinuationKind,
+  actorPlacementId: string,
+  path: string,
+): PendingMoveResolutionContinuationContext | undefined => {
+  if (value === undefined) {
+    if (continuationKind === 'attack-of-opportunity') {
+      fail('inconsistent-state', path, 'is required for an Attack of Opportunity continuation.')
+    }
+    return undefined
+  }
+  if (continuationKind !== 'attack-of-opportunity') {
+    fail('inconsistent-state', path, 'is allowed only for an Attack of Opportunity continuation.')
+  }
+  const record = parseExactRecord(value, ATTACK_OF_OPPORTUNITY_CONTEXT_FIELDS, path)
+  if (record.kind !== 'attack-of-opportunity') {
+    fail('invalid-pending-resolution', `${path}.kind`, 'must be attack-of-opportunity.')
+  }
+  if (record.triggerReason !== 'movement' && record.triggerReason !== 'ranged-attack') {
+    fail('invalid-pending-resolution', `${path}.triggerReason`, 'must be movement or ranged-attack.')
+  }
+  const triggerReason = record.triggerReason as PendingMoveAttackOfOpportunityContext['triggerReason']
+  const provokerPlacementId = parsePlacementId(
+    record.provokerPlacementId,
+    `${path}.provokerPlacementId`,
+  )
+  if (provokerPlacementId !== actorPlacementId) {
+    fail('inconsistent-state', `${path}.provokerPlacementId`, 'must match actorPlacementId.')
+  }
+  const from = parseContinuationGridAnchor(record.from, `${path}.from`)
+  const to = parseContinuationGridAnchor(record.to, `${path}.to`)
+  const targetPlacementIds = parseBoundedArray(
+    record.targetPlacementIds,
+    `${path}.targetPlacementIds`,
+    64,
+  ).map((id, index) => parsePlacementId(id, `${path}.targetPlacementIds[${index}]`))
+  if (new Set(targetPlacementIds).size !== targetPlacementIds.length) {
+    fail('duplicate-id', `${path}.targetPlacementIds`, 'must not contain duplicate placements.')
+  }
+  if (record.timingLimitation !== 'post-provoking-action') {
+    fail(
+      'invalid-pending-resolution',
+      `${path}.timingLimitation`,
+      'must be post-provoking-action.',
+    )
+  }
+  if (
+    (triggerReason === 'movement' && (from === null || to === null || targetPlacementIds.length > 0))
+    || (triggerReason === 'ranged-attack' && (from !== null || to !== null))
+  ) {
+    fail(
+      'inconsistent-state',
+      path,
+      'must contain movement anchors or ranged target IDs according to its trigger reason.',
+    )
+  }
+  return {
+    kind: 'attack-of-opportunity',
+    triggerReason,
+    provokerPlacementId,
+    from,
+    to,
+    targetPlacementIds,
+    timingLimitation: 'post-provoking-action',
+  }
+}
+
 const parseWindow = (value: unknown, path: string): PendingMoveResponseWindow => {
   const candidate = parseRecord(value, path)
   if (typeof candidate.kind !== 'string' || !WINDOW_KIND_SET.has(candidate.kind)) {
@@ -1182,9 +1289,7 @@ const assertTraceIdentity = (options: {
   readonly path: string
 }): void => {
   const { trace, path } = options
-  const expectedRuntimeKind = options.continuationKind === 'movespec-v2'
-    ? 'movespec-v2'
-    : 'ability-follow-ups'
+  const expectedRuntimeKind = options.continuationKind
   if (
     trace.program.runtimeKind !== expectedRuntimeKind
     || trace.program.canonicalId !== options.canonicalMoveId
@@ -1488,7 +1593,7 @@ export const parsePendingMoveResolution = (
     fail(
       'invalid-pending-resolution',
       `${path}.continuationKind`,
-      'must be movespec-v2 or ability-follow-ups.',
+      'must be movespec-v2, ability-follow-ups, or attack-of-opportunity.',
     )
   }
   const continuationKind = rawContinuationKind as PendingMoveResolutionContinuationKind
@@ -1502,6 +1607,12 @@ export const parsePendingMoveResolution = (
   const actorPlacementId = parsePlacementId(
     record.actorPlacementId,
     `${path}.actorPlacementId`,
+  )
+  const continuationContext = parseContinuationContext(
+    record.continuationContext,
+    continuationKind,
+    actorPlacementId,
+    `${path}.continuationContext`,
   )
   const canonicalMoveId = parseCanonicalMoveId(
     record.canonicalMoveId,
@@ -1579,6 +1690,7 @@ export const parsePendingMoveResolution = (
   const parsed: PendingMoveResolution = {
     schemaVersion: PENDING_MOVE_RESOLUTION_SCHEMA_VERSION,
     continuationKind,
+    ...(continuationContext ? { continuationContext } : {}),
     resolutionId,
     originMapSlug,
     originOpId,

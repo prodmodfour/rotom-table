@@ -1,5 +1,6 @@
 import { normalizeRevision } from '#shared/sessionRevisions'
 import type { ResolveMoveIntent } from '#shared/livePlayMoveResolution'
+import type { MoveResolutionTraceAncestryEntry } from '#shared/moveAutomation/trace'
 import { createEmptyEncounterHistory } from '#shared/moveAutomation/encounterHistory'
 import { createEmptyEncounterTurnResources } from '#shared/moveAutomation/encounterResources'
 import {
@@ -8,7 +9,7 @@ import {
 } from '#shared/moveAutomation/ruleset'
 import { findMove } from '~~/data/ptuReference'
 import type { CharacterSheet } from '~/types/characterSheet'
-import type { SheetKind, SheetPlacement, TabletopMap } from '~/types/map'
+import type { GridAnchor, SheetKind, SheetPlacement, TabletopMap } from '~/types/map'
 import type { MoveAutomationScript } from '~/types/moveAutomation'
 import type { SpawnedPokemon } from '~/types/pokemon'
 import type { TrainerSheet } from '~/types/trainerSheet'
@@ -149,6 +150,7 @@ export interface AuthoritativeMoveRulesContext {
   readonly selectedPlacements: readonly SheetPlacement[]
   readonly resolvedSheets: readonly AuthoritativeMoveResolvedSheet[]
   readonly ruleset: MoveRulesetProvenance
+  readonly ancestry: readonly MoveResolutionTraceAncestryEntry[]
   /** Audited lookup used by the interpreter; never exposed to a handler callback. */
   readonly handlerRegistry: RegisteredMoveHandlerRegistry
   /** Server-owned bounded random requests and their immutable resolution ledger. */
@@ -193,6 +195,9 @@ export interface BuildAuthoritativeMoveRulesContextInput {
   /** Server-only continuation seam for a validated durable random prefix. */
   readonly randomRoller?: AuthoritativeMoveRandom
   readonly time: number
+  readonly ancestry?: readonly MoveResolutionTraceAncestryEntry[]
+  /** Server-owned historical positions used by post-action reaction compatibility. */
+  readonly tokenPositionOverrides?: ReadonlyMap<string, GridAnchor>
   readonly idFactory?: () => string
   readonly ruleset?: MoveRulesetProvenance
   readonly runtimeRegistry?: MoveAutomationRuntimeRegistry
@@ -338,6 +343,7 @@ const tokenSnapshots = (
   map: TabletopMap,
   placements: readonly SheetPlacement[],
   sheets: SheetLookup,
+  positionOverrides: ReadonlyMap<string, GridAnchor> = new Map(),
 ): {
   readonly tokens: readonly SpawnedPokemon[]
   readonly byId: ReadonlyMap<string, SpawnedPokemon>
@@ -345,7 +351,12 @@ const tokenSnapshots = (
   const tokens: SpawnedPokemon[] = []
   const byId = new Map<string, SpawnedPokemon>()
   for (const placement of placements) {
-    const token = placementToSpawned(placement, sheets, map)
+    const position = positionOverrides.get(placement.id)
+    const token = placementToSpawned(
+      position ? { ...placement, position: { ...position } } : placement,
+      sheets,
+      map,
+    )
     if (!token) continue
     const snapshot = detachedFrozenJson(token)
     tokens.push(snapshot)
@@ -442,7 +453,12 @@ export const buildAuthoritativeMoveRulesContext = (
   const resources = createMoveAutomationResourceResolver(
     map.encounterState?.turnResources ?? createEmptyEncounterTurnResources(),
   )
-  const { tokens, byId: tokenById } = tokenSnapshots(map, placements, sheetLookup)
+  const { tokens, byId: tokenById } = tokenSnapshots(
+    map,
+    placements,
+    sheetLookup,
+    input.tokenPositionOverrides,
+  )
 
   const actorPlacement = placementById.get(intent.placementId)
     ?? fail('actor-placement-missing', `Actor placement ${intent.placementId} was not found.`)
@@ -616,6 +632,7 @@ export const buildAuthoritativeMoveRulesContext = (
     selectedPlacements,
     resolvedSheets,
     ruleset,
+    ancestry: detachedFrozenJson(input.ancestry ?? []),
     handlerRegistry: runtimeRegistry.handlerRegistry,
     random,
     time: input.time,

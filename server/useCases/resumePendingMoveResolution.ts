@@ -37,6 +37,11 @@ import {
   planAbilityFollowUpResponse,
   type AbilityFollowUpResponsePlan,
 } from '../domain/moveAutomation/abilityFollowUps'
+import {
+  isAttackOfOpportunityPendingResolution,
+  planAttackOfOpportunityResponse,
+  type AttackOfOpportunityResponsePlan,
+} from '../domain/moveAutomation/attackOfOpportunity'
 import { createMoveStateChangePlan } from '../domain/moveAutomation/plan'
 import { planResumedMoveState } from '../domain/moveAutomation/planResumedMoveState'
 import type { AuthoritativeMoveRandomSource } from '../domain/moveAutomation/random'
@@ -366,7 +371,10 @@ const applyMap = (
 }
 
 const applySheets = (
-  plan: Pick<AuthoritativeMoveStatePlan | AbilityFollowUpResponsePlan, 'sheetWrites' | 'nextMap'>,
+  plan: Pick<
+    AuthoritativeMoveStatePlan | AbilityFollowUpResponsePlan | AttackOfOpportunityResponsePlan,
+    'sheetWrites' | 'nextMap'
+  >,
   dependencies: Dependencies,
 ): readonly LivePlayResolveMoveCommandSheetUpdate[] => {
   for (const write of plan.sheetWrites) {
@@ -442,8 +450,9 @@ const responseFromState = (input: {
   ...(input.move ? { move: input.move } : {}),
 })
 
-const abilityFollowUpMetadataPatch = (
-  plan: AbilityFollowUpResponsePlan,
+const responseMetadataPatch = (
+  plan: Pick<AbilityFollowUpResponsePlan | AttackOfOpportunityResponsePlan, 'previousMap' | 'nextMap' | 'revision'>,
+  command: 'resolveAbilityFollowUp' | 'resolveAttackOfOpportunity',
 ): LivePlayPatch<typeof LIVE_PLAY_PATCH_TYPES.MAP_METADATA> => ({
   schemaVersion: LIVE_PLAY_COMMAND_SCHEMA_VERSION,
   type: LIVE_PLAY_PATCH_TYPES.MAP_METADATA,
@@ -451,7 +460,7 @@ const abilityFollowUpMetadataPatch = (
   revision: plan.revision,
   scopes: [{ kind: 'map', lane: 'metadata' }],
   payload: {
-    command: 'resolveAbilityFollowUp',
+    command,
     previous: deepCloneJson(plan.previousMap.metadata ?? {}),
     current: deepCloneJson(plan.nextMap.metadata ?? {}),
   },
@@ -579,6 +588,84 @@ export const resumePendingMoveResolutionUseCase = (
       })
     }
     const sheets = loadSheets(map, dependencies)
+    if (isAttackOfOpportunityPendingResolution(stored.resolution)) {
+      const plan = planAttackOfOpportunityResponse({
+        pendingResolution: stored.resolution,
+        responseOpId: input.command.opId,
+        responseWindowId: responseWindowId(input.command),
+        responseOptionId: responseOptionId(input.command),
+        chosenBy: input.authorization.chosenBy,
+        map,
+        ...sheets,
+        plannedAt: now,
+        random: dependencies.random,
+        maxMoveLogEntries: dependencies.maxMoveLogEntries,
+      })
+      dependencies.beforeCommit?.()
+      dependencies.sheetRepository.assertRevisions(plan.sheetReads)
+      applyMap(map, plan.nextMap, dependencies)
+      const sheetUpdates = applySheets(plan, dependencies)
+      const childPlan = plan.childMovePlan
+      const move = childPlan ? moveResultFromPlan(childPlan) : undefined
+      const internalCommand = childPlan
+        ? wireCommand(input.command, childPlan)
+        : input.command as unknown as ResolveMoveLivePlayCommand
+      const patches = childPlan
+        ? [moveStatePatch(internalCommand, childPlan, move!, internalCommand.scopes)]
+        : [responseMetadataPatch(plan, 'resolveAttackOfOpportunity')]
+      const result = createLivePlayAcceptedResult({
+        opId: input.command.opId,
+        mapSlug: input.command.mapSlug,
+        previousRevision: plan.previousRevision,
+        revision: plan.revision,
+        patches,
+      })
+      dependencies.opRepository.saveCommandResult({
+        mapSlug: input.command.mapSlug,
+        opId: input.command.opId,
+        commandHash,
+        command: input.command,
+        result,
+      })
+      dependencies.pendingResolutionRepository.update({
+        resolution: plan.pendingResolution,
+        expectedRevision: stored.revision,
+        ...(plan.pendingResolution.status === 'pending'
+          ? {}
+          : { terminalOpId: input.command.opId }),
+      })
+      if (childPlan?.followUpResolution) {
+        if (!dependencies.pendingResolutionRepository.create) {
+          throw new ResumePendingMoveResolutionUseCaseError(
+            409,
+            'Pending repository cannot persist opportunity-attack child follow-ups.',
+          )
+        }
+        dependencies.pendingResolutionRepository.create({
+          resolution: childPlan.followUpResolution,
+          declarationPlan: createMoveStateChangePlan([]),
+        })
+      }
+      persistedEvents = dependencies.realtimeEventRepository.appendMany([
+        ...livePlaySheetUpdateRealtimeAppendInputs({
+          command: internalCommand,
+          updates: sheetUpdates,
+          clientId: input.clientId,
+        }),
+        acceptedCommandRealtimeAppendInput({
+          command: internalCommand,
+          result,
+          clientId: input.clientId,
+        }),
+      ])
+      return responseFromState({
+        role: input.role,
+        result,
+        map: plan.nextMap,
+        sheetUpdates,
+        ...(move ? { move } : {}),
+      })
+    }
     if (isAbilityFollowUpPendingResolution(stored.resolution)) {
       const plan = planAbilityFollowUpResponse({
         pendingResolution: stored.resolution,
@@ -595,7 +682,7 @@ export const resumePendingMoveResolutionUseCase = (
       dependencies.sheetRepository.assertRevisions(plan.sheetReads)
       applyMap(map, plan.nextMap, dependencies)
       const sheetUpdates = applySheets(plan, dependencies)
-      const patch = abilityFollowUpMetadataPatch(plan)
+      const patch = responseMetadataPatch(plan, 'resolveAbilityFollowUp')
       const result = createLivePlayAcceptedResult({
         opId: input.command.opId,
         mapSlug: input.command.mapSlug,

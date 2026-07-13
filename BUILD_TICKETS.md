@@ -1412,7 +1412,7 @@ Status: DONE
 
 ## MA-110 — Persist current attack-of-opportunity responses
 
-Status: TODO
+Status: DONE
 
 **Depends on:** MA-108
 **Commit:** `feat(move-automation): persist opportunity attack responses`

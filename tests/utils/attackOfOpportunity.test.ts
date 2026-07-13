@@ -1,4 +1,3 @@
-import { computed, ref } from 'vue'
 import { describe, expect, it, vi } from 'vitest'
 import {
   attackOfOpportunityStruggleOptions,
@@ -6,14 +5,9 @@ import {
   movementAttackOfOpportunityAttackerIds,
   rangedAttackOfOpportunityAttackerIds,
   tokensAreAdjacent,
-  useAttackOfOpportunityPanel,
+  useAttackOfOpportunityTriggers,
 } from '~/utils/attackOfOpportunity'
-import {
-  ATTACK_OF_OPPORTUNITY_ASSISTANCE_NOTICE,
-  LOCAL_ASSISTED_FOLLOW_UP_NAMES,
-  attackOfOpportunityAssistedFollowUpTitle,
-} from '~/utils/moveAutomationAssistedFollowUps'
-import type { TabletopMap } from '~/types/map'
+import { ATTACK_OF_OPPORTUNITY_ASSISTANCE_NOTICE } from '~/utils/moveAutomationAssistedFollowUps'
 import type { SpawnedPokemon } from '~/types/pokemon'
 import { moveAutomationSemanticStatusForMenu } from '~/utils/moveAutomationSemanticStatus'
 import type { TokenMoveMenuOption } from '~/utils/mapTokenMoves'
@@ -44,16 +38,6 @@ const token = (id: string, x: number, z: number, overrides: Partial<SpawnedPokem
   conditions: [],
   tokenItems: [],
   ...overrides,
-})
-
-const mapFixture = (): TabletopMap => ({
-  schemaVersion: 2,
-  slug: 'aoo-test',
-  name: 'AoO Test',
-  dimensions: { x: 8, y: 3, z: 8 },
-  voxels: [],
-  placements: [],
-  initiative: { round: 1, activeId: null },
 })
 
 const moveOption = (name: string, overrides: Partial<TokenMoveMenuOption> = {}): TokenMoveMenuOption => ({
@@ -92,19 +76,10 @@ const moveOption = (name: string, overrides: Partial<TokenMoveMenuOption> = {}):
 })
 
 describe('attack of opportunity helpers', () => {
-  it('identifies every current local prompt and labels AoO as an assisted non-durable follow-up', () => {
-    expect(LOCAL_ASSISTED_FOLLOW_UP_NAMES).toEqual([
-      'Attack of Opportunity',
-    ])
+  it('labels the remaining post-action timing limitation without denying durable recovery', () => {
+    expect(ATTACK_OF_OPPORTUNITY_ASSISTANCE_NOTICE).toContain('durable, reconnect-safe')
     expect(ATTACK_OF_OPPORTUNITY_ASSISTANCE_NOTICE).toContain('after the provoking action')
-    expect(ATTACK_OF_OPPORTUNITY_ASSISTANCE_NOTICE).toContain('not a durable interrupt')
-    expect(ATTACK_OF_OPPORTUNITY_ASSISTANCE_NOTICE).toContain('do not rely on reconnect recovery')
-    expect(attackOfOpportunityAssistedFollowUpTitle({
-      attackerName: 'Machop',
-      provokerName: 'Abra',
-    })).toBe(
-      `Machop has an assisted Attack of Opportunity follow-up against Abra. ${ATTACK_OF_OPPORTUNITY_ASSISTANCE_NOTICE} Right-click to clear this indicator.`,
-    )
+    expect(ATTACK_OF_OPPORTUNITY_ASSISTANCE_NOTICE).toContain('timing remains assisted')
   })
 
   it('uses PTU footprint adjacency, including diagonals and larger bases', () => {
@@ -173,121 +148,33 @@ describe('attack of opportunity helpers', () => {
   })
 })
 
-describe('useAttackOfOpportunityPanel', () => {
-  it('does not queue prompts suppressed by the table relationship policy', () => {
-    const map = ref(mapFixture())
-    const tokens = ref([
-      token('provoker', 1, 1),
-      token('attacker', 0, 1),
-    ])
-    const playerCharacterIds = new Set(['provoker', 'attacker'])
-    const panel = useAttackOfOpportunityPanel({
-      map,
-      spawnedPokemon: computed(() => tokens.value),
-      tokenMoveOptionsById: computed(() => ({
-        attacker: [moveOption('Struggle')],
-      })),
-      canControlPlacement: (id) => id === 'attacker',
-      shouldSuppressAttackOfOpportunity: ({ attacker, provoker }) => (
-        playerCharacterIds.has(attacker.id) && playerCharacterIds.has(provoker.id)
-      ),
-      performStruggleAttack: vi.fn(async () => true),
-    })
+describe('useAttackOfOpportunityTriggers', () => {
+  it('sends trigger-only intent and never creates a browser-owned prompt ID', async () => {
+    const dispatchTrigger = vi.fn(async () => true)
+    const triggers = useAttackOfOpportunityTriggers({ dispatchTrigger })
 
-    panel.provokeMovementAttackOfOpportunity({
+    await triggers.provokeMovementAttackOfOpportunity({
       provokerId: 'provoker',
       from: { x: 1, y: 0, z: 1 },
       to: { x: 2, y: 0, z: 1 },
     })
-    expect(panel.attackOfOpportunityPrompts.value).toEqual([])
+    await triggers.provokeRangedAttackOfOpportunity({
+      provokerId: 'provoker',
+      targetIds: ['distant-target'],
+    })
 
-    playerCharacterIds.delete('provoker')
-    panel.provokeMovementAttackOfOpportunity({
+    expect(dispatchTrigger).toHaveBeenNthCalledWith(1, {
+      action: 'provoke',
+      reason: 'movement',
       provokerId: 'provoker',
       from: { x: 1, y: 0, z: 1 },
       to: { x: 2, y: 0, z: 1 },
     })
-    expect(panel.attackOfOpportunityPrompts.value).toHaveLength(1)
-  })
-
-  it('clears a controlled prompt without spending the attack of opportunity', () => {
-    const map = ref(mapFixture())
-    const tokens = ref([
-      token('provoker', 1, 1),
-      token('attacker', 0, 1),
-    ])
-    const panel = useAttackOfOpportunityPanel({
-      map,
-      spawnedPokemon: computed(() => tokens.value),
-      tokenMoveOptionsById: computed(() => ({
-        attacker: [moveOption('Struggle')],
-      })),
-      canControlPlacement: (id) => id === 'attacker',
-      performStruggleAttack: vi.fn(async () => true),
-    })
-
-    panel.provokeMovementAttackOfOpportunity({
+    expect(dispatchTrigger).toHaveBeenNthCalledWith(2, {
+      action: 'provoke',
+      reason: 'ranged-attack',
       provokerId: 'provoker',
-      from: { x: 1, y: 0, z: 1 },
-      to: { x: 2, y: 0, z: 1 },
+      targetIds: ['distant-target'],
     })
-
-    const promptId = panel.attackOfOpportunityPrompts.value[0]?.id ?? ''
-    expect(panel.removeAttackOfOpportunityPrompt(promptId)).toBe(true)
-    expect(panel.attackOfOpportunityPrompts.value).toEqual([])
-
-    panel.provokeRangedAttackOfOpportunity({ provokerId: 'provoker', targetIds: [] })
-    expect(panel.attackOfOpportunityPrompts.value).toHaveLength(1)
-    expect(panel.removeAttackOfOpportunityPrompt('missing')).toBe(false)
-  })
-
-  it('queues pressable prompts with Struggle variants and enforces once per round', async () => {
-    const map = ref(mapFixture())
-    const tokens = ref([
-      token('provoker', 1, 1),
-      token('attacker', 0, 1, { accentColor: '#2e77d0' }),
-    ])
-    const performStruggleAttack = vi.fn(async () => true)
-    const panel = useAttackOfOpportunityPanel({
-      map,
-      spawnedPokemon: computed(() => tokens.value),
-      tokenMoveOptionsById: computed(() => ({
-        attacker: [moveOption('Struggle'), moveOption('Struggle (Zapper Special)', { type: 'Electric', damageClass: 'Special' })],
-      })),
-      canControlPlacement: (id) => id === 'attacker',
-      performStruggleAttack,
-    })
-
-    panel.provokeMovementAttackOfOpportunity({
-      provokerId: 'provoker',
-      from: { x: 1, y: 0, z: 1 },
-      to: { x: 2, y: 0, z: 1 },
-    })
-
-    expect(panel.attackOfOpportunityPrompts.value).toHaveLength(1)
-    expect(panel.attackOfOpportunityPrompts.value[0]?.attackerAccentColor).toBe('#2e77d0')
-    expect(panel.attackOfOpportunityPrompts.value[0]?.struggleOptions.map((move) => move.name)).toEqual([
-      'Struggle',
-      'Struggle (Zapper Special)',
-    ])
-
-    await panel.useAttackOfOpportunity({
-      promptId: panel.attackOfOpportunityPrompts.value[0]?.id ?? '',
-      moveName: 'Struggle (Zapper Special)',
-    })
-
-    expect(performStruggleAttack).toHaveBeenCalledWith(expect.objectContaining({
-      attackerId: 'attacker',
-      targetId: 'provoker',
-      moveName: 'Struggle (Zapper Special)',
-    }))
-    expect(panel.attackOfOpportunityPrompts.value).toEqual([])
-
-    panel.provokeRangedAttackOfOpportunity({ provokerId: 'provoker', targetIds: [] })
-    expect(panel.attackOfOpportunityPrompts.value).toEqual([])
-
-    map.value.initiative = { activeId: null, round: 2 }
-    panel.provokeRangedAttackOfOpportunity({ provokerId: 'provoker', targetIds: [] })
-    expect(panel.attackOfOpportunityPrompts.value).toHaveLength(1)
   })
 })

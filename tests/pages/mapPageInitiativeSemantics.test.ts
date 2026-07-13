@@ -14,7 +14,7 @@ describe('map page initiative control semantics', () => {
 
     expect(source).toContain(`const previousInitiativeFromControls = async () => {\n  if (!isSetupEditMode()) {\n    await Promise.resolve(previousInitiative())\n    return\n  }`)
     expect(source).toContain(`const nextInitiativeFromControls = async () => {\n  if (!isSetupEditMode()) {\n    await Promise.resolve(nextInitiative())\n    return\n  }`)
-    expect(source).toContain('attackOfOpportunityPanel?.clearAttackOfOpportunityPromptsForNonImmediateAction()')
+    expect(source).not.toContain('clearAttackOfOpportunityPromptsForNonImmediateAction')
     expect(source).toContain('expireActiveOrdersLocallyAfterInitiativeAdvance({ before, after: orderTimelinePoint() })')
     expect(source).not.toContain('nextInitiativeAndExpireAoo')
     expect(source).not.toContain('previousInitiativeAndExpireAoo')

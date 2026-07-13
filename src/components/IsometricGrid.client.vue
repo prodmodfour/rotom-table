@@ -37,12 +37,6 @@ import type {
 import type { MoveAnimationEvent } from '~/types/moveAnimation'
 import type { BuildTool } from '#shared/mapEditor'
 import type { LivePlayPresenceAttentionTarget, LivePlayPresenceGridCell } from '#shared/livePlayPresence'
-import type { AttackOfOpportunityPrompt } from '~/utils/attackOfOpportunity'
-import {
-  ATTACK_OF_OPPORTUNITY_ASSISTANCE_NOTICE,
-  attackOfOpportunityAssistedFollowUpTitle,
-  localAssistedFollowUpLabel,
-} from '~/utils/moveAutomationAssistedFollowUps'
 import type {
   MoveAutomationTargetBranchSelectionOption,
   MoveAutomationTargetBranchSelectionState,
@@ -259,7 +253,6 @@ const props = defineProps<{
   moveAutomationFeedback?: MoveAutomationFeedbackState | null
   moveAnimations?: readonly MoveAnimationEvent[]
   moveAnimationsReducedMotion?: boolean
-  attackOfOpportunityPrompts?: AttackOfOpportunityPrompt[]
 }>()
 
 const emit = defineEmits<{
@@ -294,8 +287,6 @@ const emit = defineEmits<{
   (event: 'aim-move-area', center: GridAnchor): void
   (event: 'select-move-target-branch', branchId: string): void
   (event: 'cancel-move-targeting'): void
-  (event: 'use-attack-of-opportunity', payload: { promptId: string; moveName: string }): void
-  (event: 'clear-attack-of-opportunity', promptId: string): void
   (event: 'move-vfx-settled', payload: { nowMs: number }): void
   (event: 'token-motion-debug-metrics', metrics: TokenMotionDebugMetrics): void
 }>()
@@ -321,14 +312,7 @@ type TargetReticleButton = {
   hitChance?: MoveAutomationTargetHitChance
 }
 
-type AttackOfOpportunityButton = AttackOfOpportunityPrompt & {
-  left: number
-  top: number
-}
-
 const targetReticleButtons = ref<TargetReticleButton[]>([])
-const attackOfOpportunityButtons = ref<AttackOfOpportunityButton[]>([])
-const openAttackOfOpportunityMenuId = ref<string | null>(null)
 
 const emitPokemonSelection = (id: string | null) => {
   if (props.moveAutomationTargeting || props.moveAutomationTargetBranchSelection) return
@@ -494,12 +478,6 @@ const moveTargetingAccentStyle = computed(() =>
 const moveTargetBranchSelectionAccentStyle = computed(() =>
   moveAutomationAccentStyleForUser(props.moveAutomationTargetBranchSelection?.userId),
 )
-const attackOfOpportunityAnchorStyle = (button: AttackOfOpportunityButton): Record<string, string> => ({
-  left: `${button.left}px`,
-  top: `${button.top}px`,
-  ...(button.attackerAccentColor ? trainerAccentCssVariables(button.attackerAccentColor) : {}),
-})
-
 const emptyMovementPreview = (): PreviewState => ({ position: null, reachable: false, pathLength: 0 })
 const movementPreviewState = ref<PreviewState>(emptyMovementPreview())
 const emitMovementPreviewChange = (preview: PreviewState) => {
@@ -1213,7 +1191,6 @@ const resolveSmartTerrainCutawayKeys = (): ReadonlySet<string> => {
     activeTurnId: props.activeTurnId,
     moveAutomationTargeting: props.moveAutomationTargeting,
     hoveredId: hoverController.id(),
-    attackOfOpportunityPrompts: props.attackOfOpportunityPrompts,
   })
   if (focusIds.length === 0) return new Set()
 
@@ -1459,12 +1436,6 @@ const worldPointToContainerPoint = (point: THREE.Vector3): { x: number; y: numbe
 const moveTargetReticleCenter = (renderObject: PokemonRenderObject): THREE.Vector3 => new THREE.Vector3(
   renderObject.currentCenter.x,
   renderObject.currentCenter.y + Math.max(renderObject.height * 0.58, 0.45),
-  renderObject.currentCenter.z,
-)
-
-const attackOfOpportunityButtonCenter = (renderObject: PokemonRenderObject): THREE.Vector3 => new THREE.Vector3(
-  renderObject.currentCenter.x,
-  renderObject.currentCenter.y + Math.max(renderObject.height * 0.92, 0.85),
   renderObject.currentCenter.z,
 )
 
@@ -2140,15 +2111,6 @@ watch(
   { deep: true },
 )
 
-watch(
-  () => props.attackOfOpportunityPrompts,
-  () => {
-    if (!renderer) return
-    requestScheduledSceneFrame('targeting')
-  },
-  { deep: true },
-)
-
 const sameMoveTargetHitChance = (
   a: MoveAutomationTargetHitChance | undefined,
   b: MoveAutomationTargetHitChance | undefined,
@@ -2211,75 +2173,6 @@ const syncTargetReticleButtons = (options: {
   return false
 }
 
-const syncAttackOfOpportunityButtons = (): boolean => {
-  const layers = visibleLayers()
-  const prompts = props.attackOfOpportunityPrompts ?? []
-  if (!layers.tokens || !prompts.length) {
-    let changed = false
-    if (attackOfOpportunityButtons.value.length) {
-      attackOfOpportunityButtons.value = []
-      changed = true
-    }
-    if (openAttackOfOpportunityMenuId.value) {
-      openAttackOfOpportunityMenuId.value = null
-      changed = true
-    }
-    return changed
-  }
-
-  const next = prompts.flatMap((prompt): AttackOfOpportunityButton[] => {
-    const renderObject = renderObjects.get(prompt.attackerId)
-    const point = renderObject ? worldPointToContainerPoint(attackOfOpportunityButtonCenter(renderObject)) : null
-    return point ? [{ ...prompt, left: point.x, top: point.y }] : []
-  })
-  const current = attackOfOpportunityButtons.value
-  const unchanged = next.length === current.length && next.every((entry, index) => {
-    const old = current[index]
-    return old?.id === entry.id
-      && Math.abs(old.left - entry.left) < 0.5
-      && Math.abs(old.top - entry.top) < 0.5
-      && old.attackerAccentColor === entry.attackerAccentColor
-      && old.struggleOptions.length === entry.struggleOptions.length
-      && old.struggleOptions.every((move, moveIndex) => move.name === entry.struggleOptions[moveIndex]?.name)
-  })
-  let changed = false
-  if (!unchanged) {
-    attackOfOpportunityButtons.value = next
-    changed = true
-  }
-
-  if (openAttackOfOpportunityMenuId.value && !next.some((button) => button.id === openAttackOfOpportunityMenuId.value)) {
-    openAttackOfOpportunityMenuId.value = null
-    changed = true
-  }
-  return changed
-}
-
-const useAttackOfOpportunityMove = (promptId: string, moveName: string) => {
-  openAttackOfOpportunityMenuId.value = null
-  emit('use-attack-of-opportunity', { promptId, moveName })
-}
-
-const clearAttackOfOpportunityButton = (button: AttackOfOpportunityButton) => {
-  openAttackOfOpportunityMenuId.value = null
-  emit('clear-attack-of-opportunity', button.id)
-}
-
-const toggleAttackOfOpportunityButton = (button: AttackOfOpportunityButton) => {
-  if (button.struggleOptions.length <= 1) {
-    const moveName = button.struggleOptions[0]?.name
-    if (moveName) useAttackOfOpportunityMove(button.id, moveName)
-    return
-  }
-  openAttackOfOpportunityMenuId.value = openAttackOfOpportunityMenuId.value === button.id ? null : button.id
-}
-
-const attackOfOpportunityTitle = (button: AttackOfOpportunityButton): string =>
-  attackOfOpportunityAssistedFollowUpTitle(button)
-
-const attackOfOpportunityReasonLabel = (button: AttackOfOpportunityButton): string =>
-  button.reason === 'movement' ? 'Provoked by movement' : 'Provoked by a ranged attack'
-
 const targetReticleButtonTitle = (button: TargetReticleButton): string => {
   if (!button.showsReticle) return button.selected ? 'Exclude this target from the move' : 'Include this target in the move'
   if (props.moveAutomationTargeting?.mode === 'target-count') {
@@ -2331,7 +2224,6 @@ const updateMoveAutomationOverlays = (): boolean => {
     show: layers.tokens,
   }) || cssUiChanged
   cssUiChanged = syncPresenceIntentOverlays() || cssUiChanged
-  cssUiChanged = syncAttackOfOpportunityButtons() || cssUiChanged
   return cssUiChanged
 }
 
@@ -2629,7 +2521,6 @@ watch(
     terrainVoxelRevision,
     () => [props.dimensions.x, props.dimensions.y, props.dimensions.z] as const,
     () => props.moveAutomationTargeting,
-    () => props.attackOfOpportunityPrompts,
     () => props.layerVisibility,
     () => props.ghostVoxelsFaded,
   ],
@@ -2853,56 +2744,6 @@ watch(
           aria-hidden="true"
         />
       </button>
-    </div>
-
-    <div v-if="attackOfOpportunityButtons.length" class="attack-of-opportunity-layer" @contextmenu.prevent>
-      <div
-        v-for="button in attackOfOpportunityButtons"
-        :key="button.id"
-        class="attack-of-opportunity-anchor"
-        :style="attackOfOpportunityAnchorStyle(button)"
-      >
-        <button
-          class="attack-of-opportunity-button"
-          type="button"
-          :title="attackOfOpportunityTitle(button)"
-          @pointerdown.stop
-          @click.stop="toggleAttackOfOpportunityButton(button)"
-          @contextmenu.prevent.stop="clearAttackOfOpportunityButton(button)"
-        >
-          AoO follow-up
-        </button>
-        <div
-          v-if="openAttackOfOpportunityMenuId === button.id && button.struggleOptions.length > 1"
-          class="attack-of-opportunity-menu"
-          role="menu"
-          :aria-label="`Choose ${button.attackerName}'s Struggle attack`"
-          @pointerdown.stop
-          @click.stop
-        >
-          <div class="attack-of-opportunity-menu__heading">
-            <span class="attack-of-opportunity-menu__status">{{ localAssistedFollowUpLabel('Attack of Opportunity') }}</span>
-            <strong>{{ button.provokerName }}</strong>
-            <span>{{ attackOfOpportunityReasonLabel(button) }}</span>
-            <small>{{ ATTACK_OF_OPPORTUNITY_ASSISTANCE_NOTICE }}</small>
-          </div>
-          <button
-            v-for="move in button.struggleOptions"
-            :key="move.name"
-            class="attack-of-opportunity-menu__item"
-            type="button"
-            role="menuitem"
-            @click="useAttackOfOpportunityMove(button.id, move.name)"
-          >
-            <span>{{ move.name }}</span>
-            <small>
-              <template v-if="move.type">{{ move.type }}</template>
-              <template v-if="move.damageClass"> · {{ move.damageClass }}</template>
-              <template v-if="move.damageBase != null"> · DB {{ move.damageBase }}</template>
-            </small>
-          </button>
-        </div>
-      </div>
     </div>
 
     <TokenContextMenu
@@ -3398,129 +3239,12 @@ watch(
   background: color-mix(in srgb, var(--accent) 14%, var(--paper-accent));
 }
 
-.move-targeting-click-layer,
-.attack-of-opportunity-layer {
+.move-targeting-click-layer {
   position: absolute;
   z-index: 9;
   inset: 0;
   overflow: hidden;
   pointer-events: none;
-}
-
-.attack-of-opportunity-layer {
-  z-index: 11;
-}
-
-.attack-of-opportunity-anchor {
-  position: absolute;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.32rem;
-  transform: translateX(-50%);
-  pointer-events: none;
-}
-
-.attack-of-opportunity-button {
-  border: 1px solid color-mix(in srgb, var(--accent) 76%, white 18%);
-  border-radius: 999px;
-  background: linear-gradient(180deg, color-mix(in srgb, var(--accent) 88%, white 12%), var(--accent));
-  box-shadow: 0 10px 22px rgba(0, 0, 0, 0.32), 0 0 0 2px rgba(var(--accent-rgb), 0.28);
-  color: var(--accent-contrast);
-  font: inherit;
-  font-size: 0.75rem;
-  font-weight: 950;
-  letter-spacing: 0.04em;
-  padding: 0.34rem 0.52rem;
-  cursor: pointer;
-  pointer-events: auto;
-  text-transform: uppercase;
-  transform: translateY(-100%);
-}
-
-.attack-of-opportunity-button:hover,
-.attack-of-opportunity-button:focus-visible {
-  filter: brightness(1.08);
-  transform: translateY(calc(-100% - 1px));
-}
-
-.attack-of-opportunity-button:focus-visible {
-  outline: 2px solid var(--accent);
-  outline-offset: 3px;
-}
-
-.attack-of-opportunity-menu {
-  min-width: 14rem;
-  max-width: 18rem;
-  padding: 0.45rem;
-  border: 1px solid var(--rule-strong);
-  border-radius: 0.85rem;
-  background: color-mix(in srgb, var(--paper) 96%, transparent);
-  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.38);
-  color: var(--ink);
-  pointer-events: auto;
-}
-
-.attack-of-opportunity-menu__heading {
-  display: flex;
-  flex-direction: column;
-  gap: 0.08rem;
-  padding: 0.2rem 0.35rem 0.4rem;
-  border-bottom: 1px solid var(--rule);
-  font-size: 0.74rem;
-}
-
-.attack-of-opportunity-menu__heading strong,
-.attack-of-opportunity-menu__status {
-  color: var(--accent);
-}
-
-.attack-of-opportunity-menu__heading strong {
-  font-size: 0.82rem;
-}
-
-.attack-of-opportunity-menu__status {
-  font-size: 0.67rem;
-  font-weight: 850;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-}
-
-.attack-of-opportunity-menu__heading small {
-  margin-top: 0.16rem;
-  color: var(--muted);
-  line-height: 1.25;
-}
-
-.attack-of-opportunity-menu__item {
-  display: flex;
-  width: 100%;
-  flex-direction: column;
-  gap: 0.08rem;
-  margin-top: 0.25rem;
-  padding: 0.42rem 0.5rem;
-  border: 1px solid transparent;
-  border-radius: 0.65rem;
-  background: transparent;
-  color: inherit;
-  font: inherit;
-  text-align: left;
-  cursor: pointer;
-}
-
-.attack-of-opportunity-menu__item:hover,
-.attack-of-opportunity-menu__item:focus-visible {
-  border-color: color-mix(in srgb, var(--accent) 55%, var(--rule-strong));
-  background: color-mix(in srgb, var(--accent) 11%, transparent);
-}
-
-.attack-of-opportunity-menu__item span {
-  font-weight: 850;
-}
-
-.attack-of-opportunity-menu__item small {
-  color: var(--muted);
-  font-size: 0.7rem;
 }
 
 .move-target-reticle-button {
