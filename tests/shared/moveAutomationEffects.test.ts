@@ -210,6 +210,7 @@ const VALID_PAYLOADS = {
     promptKey: 'move.reaction.protect',
     options: [{ id: 'protect', labelKey: 'move.reaction.use-protect' }],
     allowPass: true,
+    timing: 'pre-damage',
     priority: 10,
   },
 } satisfies Record<MoveEffectOperationKind, unknown>
@@ -1458,6 +1459,34 @@ describe('MoveSpec typed effect operations', () => {
       }),
       'limit-exceeded',
       'operation.payload.operationIds',
+    )
+  })
+
+  it('requires canonical phase-bound optional reaction windows', () => {
+    const parsed = parseMoveEffectOperation(validOperation('reaction-request'))
+    expect(parsed).toMatchObject({
+      phase: 'damage',
+      payload: { timing: 'pre-damage', allowPass: true, priority: 10 },
+    })
+
+    expectEffectError(
+      validOperation('reaction-request', {
+        payload: { ...VALID_PAYLOADS['reaction-request'], timing: 'browser-prompt' },
+      }),
+      'invalid-effect-operation',
+      'operation.payload.timing',
+    )
+    expectEffectError(
+      validOperation('reaction-request', { phase: 'hit' }),
+      'invalid-effect-operation',
+      'operation.payload.timing',
+    )
+    expectEffectError(
+      validOperation('reaction-request', {
+        payload: { ...VALID_PAYLOADS['reaction-request'], allowPass: false },
+      }),
+      'invalid-effect-operation',
+      'operation.payload.allowPass',
     )
   })
 

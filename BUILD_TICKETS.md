@@ -1386,7 +1386,7 @@ Status: DONE
 
 ## MA-108 — Add canonical reaction phases and priority
 
-Status: TODO
+Status: DONE
 
 **Depends on:** MA-059, MA-105
 **Commit:** `feat(move-automation): order reaction phases`

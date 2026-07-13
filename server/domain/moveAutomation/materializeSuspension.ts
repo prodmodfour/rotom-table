@@ -228,18 +228,30 @@ const responseWindow = (
   actorPlacementId: string,
 ): PendingMoveResponseWindow => {
   const request = execution.request
-  return {
+  const common = {
     windowId: request.requestId,
     operationId: request.operationId,
-    kind: request.kind === 'reaction' ? 'reaction' : 'choice',
     phase: request.phase,
     reasonCode: request.reasonCode,
     promptKey: request.promptKey,
     ownership: responseOwnership(execution, actorPlacementId),
     options: request.options.map(option => ({ ...option })),
-    allowPass: request.allowPass,
-    priority: request.kind === 'reaction' ? request.priority : null,
   }
+  return request.kind === 'reaction'
+    ? {
+        ...common,
+        kind: 'reaction',
+        allowPass: true,
+        timing: request.timing,
+        priority: request.priority,
+        depth: request.depth,
+      }
+    : {
+        ...common,
+        kind: 'choice',
+        allowPass: request.allowPass,
+        priority: null,
+      }
 }
 
 /**

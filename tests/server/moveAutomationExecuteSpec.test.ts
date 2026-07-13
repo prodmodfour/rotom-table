@@ -5,6 +5,13 @@ import {
 } from '#shared/livePlayMoveResolution'
 import { MoveEffectOperationValidationError } from '#shared/moveAutomation/effects'
 import {
+  MOVE_REACTION_LIMITS,
+  MOVE_REACTION_TIMINGS,
+  moveReactionTimingDefinition,
+  type MoveReactionTiming,
+} from '#shared/moveAutomation/reactions'
+import { MOVE_SPEC_PHASES } from '#shared/moveAutomation/spec'
+import {
   buildAuthoritativeMoveRulesContext,
 } from '~~/server/domain/moveAutomation/context'
 import {
@@ -176,6 +183,27 @@ const rollOperation = (): TestOperation => ({
   payload: {
     rollId: 'roll.accuracy',
     formula: { kind: 'dice', count: 1, sides: 20, modifier: 0 },
+  },
+})
+
+const reactionOperation = (
+  timing: MoveReactionTiming,
+  priority = 0,
+  suffix: string = timing,
+): TestOperation => ({
+  id: `operation.reaction-${suffix}`,
+  kind: 'reaction-request',
+  source: { kind: 'move', id: 'move.interpreter-test' },
+  recipients: { kind: 'actor' },
+  phase: moveReactionTimingDefinition(timing).phase,
+  reasonCode: `move.interpreter-test.reaction-${suffix}`,
+  payload: {
+    requestId: `request.reaction-${suffix}`,
+    promptKey: `move.interpreter-test.reaction-${suffix}`,
+    options: [{ id: 'option.react', labelKey: 'move.interpreter-test.react' }],
+    allowPass: true,
+    timing,
+    priority,
   },
 })
 
@@ -1005,6 +1033,7 @@ describe('phased MoveSpec interpreter', () => {
           promptKey: 'move.interpreter-test.defender-reaction',
           options: [{ id: 'option.react', labelKey: 'move.interpreter-test.react' }],
           allowPass: true,
+          timing: 'post-hit',
           priority: 5,
         },
       }],
@@ -1033,8 +1062,142 @@ describe('phased MoveSpec interpreter', () => {
     expect(suspension.pendingResolution.outstandingWindows[0]).toMatchObject({
       kind: 'reaction',
       ownership: [{ kind: 'target', id: 'target-token' }],
+      timing: 'post-hit',
       priority: 5,
+      depth: 0,
     })
+  })
+
+  it('executes every canonical checkpoint in phase, priority, and stable simultaneous order', () => {
+    const spec = baseSpec()
+    const reactionOperations = MOVE_REACTION_TIMINGS.map(timing => reactionOperation(timing))
+    const blocks: TestSpec['phases'] = []
+    for (const phase of MOVE_SPEC_PHASES) {
+      const reactions = reactionOperations
+        .filter(operation => operation.phase === phase)
+        .reverse()
+      if (phase === 'hit') {
+        blocks.push({
+          phase,
+          operations: [reactionOperation('post-hit'), logOperation('operation.hit-marker', phase)],
+        })
+      }
+      else if (phase === 'damage') {
+        blocks.push({
+          phase,
+          operations: [logOperation('operation.damage-marker', phase), reactionOperation('pre-damage')],
+        })
+      }
+      else if (reactions.length > 0) {
+        blocks.push({ phase, operations: reactions })
+      }
+    }
+    spec.phases = blocks
+    const definition = definitionFor(spec)
+    const responses: Array<{ requestId: string; optionId: null }> = []
+    const observed: MoveReactionTiming[] = []
+    let final: ReturnType<typeof executeMoveSpec> | null = null
+
+    for (let index = 0; index <= MOVE_REACTION_TIMINGS.length; index += 1) {
+      const execution = executeMoveSpec({
+        definition,
+        context: buildContext(),
+        responses,
+      })
+      if (execution.kind === 'complete') {
+        final = execution
+        break
+      }
+      expect(execution.kind).toBe('pending-request')
+      if (execution.kind !== 'pending-request' || execution.request.kind !== 'reaction') return
+      observed.push(execution.request.timing)
+      expect(execution.request.depth).toBe(0)
+      expect(execution.request.revealedInformation).toEqual(
+        moveReactionTimingDefinition(execution.request.timing).revealedInformation,
+      )
+      const tracedOperationIds = traceEventsOfKind(execution, 'operation').flatMap(event => (
+        event.kind === 'operation' ? [event.operationId] : []
+      ))
+      if (execution.request.timing === 'post-hit') {
+        expect(tracedOperationIds.indexOf('operation.hit-marker'))
+          .toBeLessThan(tracedOperationIds.indexOf(execution.request.operationId))
+      }
+      if (execution.request.timing === 'pre-damage') {
+        expect(tracedOperationIds).not.toContain('operation.damage-marker')
+      }
+      responses.push({ requestId: execution.request.requestId, optionId: null })
+    }
+
+    expect(observed).toEqual(MOVE_REACTION_TIMINGS)
+    expect(final?.kind).toBe('complete')
+    expect(traceEventsOfKind(final!, 'choice').filter(event => (
+      event.kind === 'choice' && event.requestKind === 'reaction'
+    ))).toHaveLength(MOVE_REACTION_TIMINGS.length)
+    expect(traceEventsOfKind(final!, 'choice').every(event => (
+      event.kind !== 'choice' || event.requestKind !== 'reaction' || event.outcome === 'passed'
+    ))).toBe(true)
+  })
+
+  it('orders simultaneous reactions by descending priority then stable operation identity', () => {
+    const spec = baseSpec()
+    spec.phases = [{
+      phase: 'pre-hit',
+      operations: [
+        reactionOperation('pre-hit', 1, 'low'),
+        reactionOperation('pre-hit', 5, 'z-high'),
+        reactionOperation('pre-hit', 5, 'a-high'),
+      ],
+    }]
+    const definition = definitionFor(spec)
+    const responses: Array<{ requestId: string; optionId: null }> = []
+    const observed: string[] = []
+
+    for (let index = 0; index < 3; index += 1) {
+      const execution = executeMoveSpec({ definition, context: buildContext(), responses })
+      expect(execution.kind).toBe('pending-request')
+      if (execution.kind !== 'pending-request' || execution.request.kind !== 'reaction') return
+      observed.push(execution.request.operationId)
+      responses.push({ requestId: execution.request.requestId, optionId: null })
+    }
+
+    expect(observed).toEqual([
+      'operation.reaction-a-high',
+      'operation.reaction-z-high',
+      'operation.reaction-low',
+    ])
+    expect(executeMoveSpec({ definition, context: buildContext(), responses }).kind).toBe('complete')
+  })
+
+  it('bounds nested reaction windows by causal ancestry depth', () => {
+    const spec = baseSpec()
+    spec.phases = [{ phase: 'pre-hit', operations: [reactionOperation('pre-hit')] }]
+    const definition = definitionFor(spec)
+    const ancestry = (length: number) => Array.from({ length }, (_, depth) => ({
+      depth,
+      resolutionId: `resolution-parent-${depth}`,
+      canonicalId: `Parent ${depth}`,
+      definitionHash: 'a'.repeat(64),
+      parentOperationId: depth === 0 ? null : `operation.parent-${depth}`,
+    }))
+
+    const allowed = executeMoveSpec({
+      definition,
+      context: buildContext(),
+      ancestry: ancestry(MOVE_REACTION_LIMITS.nestedWindowDepth),
+    })
+    expect(allowed.kind).toBe('pending-request')
+    if (allowed.kind === 'pending-request' && allowed.request.kind === 'reaction') {
+      expect(allowed.request.depth).toBe(MOVE_REACTION_LIMITS.nestedWindowDepth)
+    }
+
+    expect(() => executeMoveSpec({
+      definition,
+      context: buildContext(),
+      ancestry: ancestry(MOVE_REACTION_LIMITS.nestedWindowDepth + 1),
+    })).toThrowError(expect.objectContaining({
+      name: MoveSpecExecutionError.name,
+      code: 'reaction-nesting-limit-exceeded',
+    }))
   })
 
   it('returns a traced rejection for failed preconditions and target-count mismatches', () => {

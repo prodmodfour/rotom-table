@@ -38,6 +38,12 @@ import {
   type MoveSelector,
 } from './selectors'
 import {
+  MOVE_REACTION_LIMITS,
+  isMoveReactionTiming,
+  moveReactionTimingDefinition,
+  type MoveReactionTiming,
+} from './reactions'
+import {
   MOVE_SPEC_PHASES,
   type MoveSpecPhase,
 } from './spec'
@@ -299,7 +305,7 @@ export const MOVE_EFFECT_OPERATION_LIMITS = Object.freeze({
   checkSourceOptions: 16,
   checkRerolls: 3,
   branchOperationReferences: 128,
-  reactionPriorityMagnitude: 1_000,
+  reactionPriorityMagnitude: MOVE_REACTION_LIMITS.priorityMagnitude,
 })
 
 export type MoveEffectOperationKind = (typeof MOVE_EFFECT_OPERATION_KINDS)[number]
@@ -1076,7 +1082,9 @@ export interface MoveReactionRequestEffectPayload {
   readonly requestId: string
   readonly promptKey: string
   readonly options: readonly MoveEffectRequestOption[]
-  readonly allowPass: boolean
+  /** Reactions are optional; pass closes only this priority window. */
+  readonly allowPass: true
+  readonly timing: MoveReactionTiming
   readonly priority: number
 }
 
@@ -1391,6 +1399,7 @@ const REACTION_REQUEST_FIELDS = [
   'promptKey',
   'options',
   'allowPass',
+  'timing',
   'priority',
 ] as const
 const REQUEST_OPTION_FIELDS = ['id', 'labelKey'] as const
@@ -3682,11 +3691,28 @@ const parseReactionRequestPayload = (
   path: string,
 ): MoveReactionRequestEffectPayload => {
   const input = parseExactRecord(value, REACTION_REQUEST_FIELDS, path)
+  const allowPass = parseBoolean(ownValue(input, 'allowPass', path), `${path}.allowPass`)
+  if (!allowPass) {
+    fail(
+      'invalid-effect-operation',
+      `${path}.allowPass`,
+      'reaction windows must allow an explicit decline; mandatory outcomes are not reactions.',
+    )
+  }
+  const timingValue = ownValue(input, 'timing', path)
+  const timing = isMoveReactionTiming(timingValue)
+    ? timingValue
+    : fail(
+        'invalid-effect-operation',
+        `${path}.timing`,
+        'must be a canonical move reaction timing.',
+      )
   return {
     requestId: parseStableId(ownValue(input, 'requestId', path), `${path}.requestId`),
     promptKey: parseStableId(ownValue(input, 'promptKey', path), `${path}.promptKey`),
     options: parseRequestOptions(ownValue(input, 'options', path), `${path}.options`),
-    allowPass: parseBoolean(ownValue(input, 'allowPass', path), `${path}.allowPass`),
+    allowPass: true,
+    timing,
     priority: parseInteger(
       ownValue(input, 'priority', path),
       `${path}.priority`,
@@ -4223,8 +4249,18 @@ const parseDetachedOperation = (value: unknown, path: string): MoveEffectOperati
       return { ...common, kind, payload: parseLogPayload(payload, payloadPath) }
     case 'choice-request':
       return { ...common, kind, payload: parseChoiceRequestPayload(payload, payloadPath) }
-    case 'reaction-request':
-      return { ...common, kind, payload: parseReactionRequestPayload(payload, payloadPath) }
+    case 'reaction-request': {
+      const parsedPayload = parseReactionRequestPayload(payload, payloadPath)
+      const expectedPhase = moveReactionTimingDefinition(parsedPayload.timing).phase
+      if (common.phase !== expectedPhase) {
+        fail(
+          'invalid-effect-operation',
+          `${payloadPath}.timing`,
+          `${parsedPayload.timing} reactions must execute in the ${expectedPhase} phase.`,
+        )
+      }
+      return { ...common, kind, payload: parsedPayload }
+    }
   }
 }
 

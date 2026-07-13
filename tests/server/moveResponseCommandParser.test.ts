@@ -77,7 +77,11 @@ const reactionResolution = (): PendingMoveResolution => {
       ...source.trace,
       events: source.trace.events.map((event) => {
         if (event.kind === 'operation') {
-          return { ...event, operationKind: 'reaction-request' }
+          return {
+            ...event,
+            operationKind: 'reaction-request',
+            input: { timing: 'post-hit', priority: 5 },
+          }
         }
         if (event.kind === 'choice') {
           return { ...event, requestKind: 'reaction' }
@@ -88,7 +92,9 @@ const reactionResolution = (): PendingMoveResolution => {
     outstandingWindows: source.outstandingWindows.map(window => ({
       ...window,
       kind: 'reaction',
+      timing: 'post-hit',
       priority: 5,
+      depth: 0,
     })),
   })
 }

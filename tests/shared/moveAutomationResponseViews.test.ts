@@ -47,6 +47,31 @@ describe('pending move response views', () => {
     expect(Object.isFrozen(parsed.windows[0]?.window.options)).toBe(true)
   })
 
+  it('parses authorized canonical reaction timing without private mechanics', () => {
+    const reaction = responseList() as Record<string, any>
+    reaction.windows[0].window = {
+      ...reaction.windows[0].window,
+      kind: 'reaction',
+      timing: 'post-hit',
+      priority: 5,
+      depth: 0,
+    }
+    const parsed = parsePendingMoveResponseWindowList(reaction)
+
+    expect(parsed.windows[0]?.window).toMatchObject({
+      kind: 'reaction',
+      phase: 'hit',
+      timing: 'post-hit',
+      priority: 5,
+      depth: 0,
+      allowPass: true,
+    })
+    expect('operationId' in parsed.windows[0]!.window).toBe(false)
+
+    reaction.windows[0].window.timing = 'pre-hit'
+    expect(() => parsePendingMoveResponseWindowList(reaction)).toThrow(/does not match/)
+  })
+
   it('rejects unknown fields, duplicate windows/options, unsupported phases, and terminal summaries', () => {
     expect(() => parsePendingMoveResponseWindowList({
       ...responseList(),

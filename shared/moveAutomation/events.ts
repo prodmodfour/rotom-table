@@ -7,6 +7,7 @@ import {
   isEncounterSideId,
   type EncounterSideId,
 } from './encounterState'
+import type { MoveReactionTiming } from './reactions'
 
 /**
  * Versioned, server-internal facts consumed by encounter lifecycle reducers.
@@ -87,6 +88,23 @@ export type EncounterEventMoveOutcome =
   (typeof ENCOUNTER_EVENT_MOVE_OUTCOMES)[number]
 export type EncounterEventMovementMode =
   (typeof ENCOUNTER_EVENT_MOVEMENT_MODES)[number]
+
+/**
+ * Event-backed reaction checkpoints. Preconditions such as pre-cost, target,
+ * pre-hit, and pre-damage are emitted directly by the phased interpreter;
+ * these entries bind post-fact windows to authoritative lifecycle facts.
+ */
+export const ENCOUNTER_EVENT_REACTION_TIMINGS: Readonly<
+  Partial<Record<EncounterEventKind, MoveReactionTiming>>
+> = Object.freeze({
+  'move-declared': 'declare',
+  'move-hit': 'post-hit',
+  'move-damaged': 'post-damage',
+  'move-ko': 'ko',
+  'placement-moving': 'movement-step',
+  switch: 'switch',
+  'move-completed': 'cleanup',
+})
 
 interface EncounterEventEnvelope<Kind extends EncounterEventKind> {
   readonly schemaVersion: typeof ENCOUNTER_EVENT_SCHEMA_VERSION
@@ -1098,6 +1116,11 @@ const detachedJson = (value: unknown, path: string): JsonValue => clonePlainJson
   0,
   { ancestors: new WeakSet<object>(), nodes: 0 },
 )
+
+/** Return the canonical reaction checkpoint established by an authoritative fact. */
+export const encounterEventReactionTiming = (
+  event: Pick<EncounterEvent, 'kind'>,
+): MoveReactionTiming | null => ENCOUNTER_EVENT_REACTION_TIMINGS[event.kind] ?? null
 
 /** Strictly parse, detach, and deeply freeze one server-internal encounter fact. */
 export const parseEncounterEvent = (

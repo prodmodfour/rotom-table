@@ -3,9 +3,13 @@ import {
   parsePendingMoveResolutionPublicSummary,
   type PendingMoveResolutionPublicSummary,
   type PendingMoveResponseOption,
-  type PendingMoveResponseWindowKind,
 } from './pendingResolution'
 import { isSlug } from '../paths'
+import {
+  isMoveReactionTiming,
+  moveReactionTimingDefinition,
+  type MoveReactionTiming,
+} from './reactions'
 import {
   MOVE_SPEC_PHASES,
   type MoveSpecPhase,
@@ -23,19 +27,32 @@ export const PENDING_MOVE_RESPONSE_VIEW_LIMITS = Object.freeze({
  * Window detail available only after server authorization. Ownership principals,
  * operation IDs, target identities, reads, rolls, and audit traces stay private.
  */
+interface PendingMoveResponseWindowViewBase {
+  readonly windowId: string
+  readonly phase: MoveSpecPhase
+  readonly reasonCode: string
+  readonly promptKey: string
+  readonly options: readonly PendingMoveResponseOption[]
+}
+
+export type PendingMoveResponseWindowViewWindow =
+  | (PendingMoveResponseWindowViewBase & {
+      readonly kind: 'choice'
+      readonly allowPass: boolean
+      readonly priority: null
+    })
+  | (PendingMoveResponseWindowViewBase & {
+      readonly kind: 'reaction'
+      readonly allowPass: true
+      readonly timing: MoveReactionTiming
+      readonly priority: number
+      readonly depth: number
+    })
+
 export interface PendingMoveResponseWindowView {
   readonly schemaVersion: typeof PENDING_MOVE_RESPONSE_VIEW_SCHEMA_VERSION
   readonly resolution: PendingMoveResolutionPublicSummary
-  readonly window: {
-    readonly windowId: string
-    readonly kind: PendingMoveResponseWindowKind
-    readonly phase: MoveSpecPhase
-    readonly reasonCode: string
-    readonly promptKey: string
-    readonly options: readonly PendingMoveResponseOption[]
-    readonly allowPass: boolean
-    readonly priority: number | null
-  }
+  readonly window: PendingMoveResponseWindowViewWindow
 }
 
 /** Authorized windows for one currently accessible map. */
@@ -59,6 +76,7 @@ const WINDOW_FIELDS = [
   'allowPass',
   'priority',
 ] as const
+const REACTION_WINDOW_FIELDS = [...WINDOW_FIELDS, 'timing', 'depth'] as const
 const OPTION_FIELDS = ['id', 'labelKey'] as const
 const STABLE_ID_PATTERN = /^[a-z0-9]+(?:[._:/-][a-z0-9]+)*$/
 const WINDOW_KIND_SET = new Set<unknown>(['choice', 'reaction'])
@@ -109,7 +127,17 @@ const parseWindow = (
   value: unknown,
   path: string,
 ): PendingMoveResponseWindowView['window'] => {
-  const record = exactRecord(value, WINDOW_FIELDS, path)
+  const candidate = exactRecord(
+    value,
+    typeof value === 'object'
+      && value !== null
+      && 'kind' in value
+      && value.kind === 'reaction'
+      ? REACTION_WINDOW_FIELDS
+      : WINDOW_FIELDS,
+    path,
+  )
+  const record = candidate
   if (!WINDOW_KIND_SET.has(record.kind)) throw new Error(`${path}.kind is unsupported.`)
   if (!PHASE_SET.has(record.phase)) throw new Error(`${path}.phase is unsupported.`)
   if (!Array.isArray(record.options)) throw new Error(`${path}.options must be an array.`)
@@ -131,15 +159,43 @@ const parseWindow = (
   const optionIds = new Set(options.map(option => option.id))
   if (optionIds.size !== options.length) throw new Error(`${path}.options contains duplicate IDs.`)
 
-  return Object.freeze({
+  const common = {
     windowId: stableId(record.windowId, `${path}.windowId`),
-    kind: record.kind as PendingMoveResponseWindowKind,
     phase: record.phase as MoveSpecPhase,
     reasonCode: stableId(record.reasonCode, `${path}.reasonCode`),
     promptKey: stableId(record.promptKey, `${path}.promptKey`),
     options: Object.freeze(options),
-    allowPass: record.allowPass,
-    priority: record.priority as number | null,
+  }
+  if (record.kind === 'choice') {
+    if (record.priority !== null) throw new Error(`${path}.priority must be null for a choice.`)
+    return Object.freeze({
+      ...common,
+      kind: 'choice',
+      allowPass: record.allowPass,
+      priority: null,
+    })
+  }
+  if (!record.allowPass) throw new Error(`${path}.allowPass must be true for a reaction.`)
+  if (!Number.isSafeInteger(record.priority)) throw new Error(`${path}.priority is invalid.`)
+  if (!isMoveReactionTiming(record.timing)) throw new Error(`${path}.timing is unsupported.`)
+  const timing = record.timing
+  if (moveReactionTimingDefinition(timing).phase !== record.phase) {
+    throw new Error(`${path}.timing does not match its MoveSpec phase.`)
+  }
+  if (
+    !Number.isSafeInteger(record.depth)
+    || Number(record.depth) < 0
+    || Number(record.depth) > PENDING_MOVE_RESOLUTION_LIMITS.reactionNestedWindowDepth
+  ) {
+    throw new Error(`${path}.depth is invalid.`)
+  }
+  return Object.freeze({
+    ...common,
+    kind: 'reaction',
+    allowPass: true,
+    timing,
+    priority: record.priority as number,
+    depth: Number(record.depth),
   })
 }
 

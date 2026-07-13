@@ -12,6 +12,12 @@ import {
 } from '#shared/moveAutomation/effects'
 import type { MoveAutomationRollLedgerEntry } from '#shared/moveAutomation/random'
 import {
+  MOVE_REACTION_LIMITS,
+  moveReactionTimingDefinition,
+  type MoveReactionInformationKind,
+  type MoveReactionTiming,
+} from '#shared/moveAutomation/reactions'
+import {
   MOVE_SPEC_LIMITS,
   MOVE_SPEC_PHASES,
   type MoveSpecPhase,
@@ -71,6 +77,7 @@ import {
   createMoveResolutionTrace,
   reduceMoveResolutionTrace,
 } from './trace'
+import { orderMoveReactionOperationEntries } from './reactionOrder'
 import {
   createMoveSpecResponseResolver,
   type MoveSpecResolvedResponse,
@@ -93,6 +100,7 @@ export type MoveSpecExecutionErrorCode =
   | 'damage-formula-unsupported'
   | 'resolved-roll-id-too-long'
   | 'pre-window-operation-forbidden'
+  | 'reaction-nesting-limit-exceeded'
 
 export class MoveSpecExecutionError extends Error {
   readonly code: MoveSpecExecutionErrorCode
@@ -156,7 +164,10 @@ export interface MoveSpecPendingBranchChoiceRequest extends MoveSpecPendingReque
 
 export interface MoveSpecPendingReactionRequest extends MoveSpecPendingRequestBase {
   readonly kind: 'reaction'
+  readonly timing: MoveReactionTiming
   readonly priority: number
+  readonly depth: number
+  readonly revealedInformation: readonly MoveReactionInformationKind[]
 }
 
 export interface MoveSpecPendingCheckSelectionRequest extends MoveSpecPendingRequestBase {
@@ -585,6 +596,7 @@ const traceJson = (value: unknown): MoveResolutionTraceJsonValue => (
 const pendingRequest = (
   operation: MoveChoiceRequestEffectOperation | MoveReactionRequestEffectOperation,
   recipientIds: readonly string[],
+  ancestryDepth: number,
 ): MoveSpecPendingChoiceRequest | MoveSpecPendingReactionRequest => {
   const common = {
     operationId: operation.id,
@@ -596,9 +608,24 @@ const pendingRequest = (
     options: Object.freeze(operation.payload.options.map(option => Object.freeze({ ...option }))),
     allowPass: operation.payload.allowPass,
   }
-  return operation.kind === 'choice-request'
-    ? Object.freeze({ kind: 'choice', ...common })
-    : Object.freeze({ kind: 'reaction', ...common, priority: operation.payload.priority })
+  if (operation.kind === 'choice-request') {
+    return Object.freeze({ kind: 'choice', ...common })
+  }
+  if (ancestryDepth > MOVE_REACTION_LIMITS.nestedWindowDepth) {
+    return fail(
+      'reaction-nesting-limit-exceeded',
+      `Reaction ${operation.payload.requestId} reached nested depth ${ancestryDepth}; at most ${MOVE_REACTION_LIMITS.nestedWindowDepth} is allowed.`,
+    )
+  }
+  const timing = moveReactionTimingDefinition(operation.payload.timing)
+  return Object.freeze({
+    kind: 'reaction',
+    ...common,
+    timing: timing.timing,
+    priority: operation.payload.priority,
+    depth: ancestryDepth,
+    revealedInformation: timing.revealedInformation,
+  })
 }
 
 const pendingBranchRequest = (
@@ -909,11 +936,11 @@ const executableProgram = (
   }))
   const entriesByPhase = new Map<MoveSpecPhase, ExecutableMoveSpecOperationEntry[]>()
   for (const phase of MOVE_SPEC_PHASES) {
-    const entries = [
+    const entries = orderMoveReactionOperationEntries([
       ...staticEntries.filter(entry => entry.operation.phase === phase),
       ...handlerEntries.filter(entry => entry.operation.phase === phase),
-    ]
-    if (entries.length > 0) entriesByPhase.set(phase, entries)
+    ])
+    if (entries.length > 0) entriesByPhase.set(phase, [...entries])
   }
   const orderedEntries = MOVE_SPEC_PHASES.flatMap(phase => entriesByPhase.get(phase) ?? [])
   validateMoveSpecOperationSequence(orderedEntries, 'moveSpecExecution.operations')
@@ -1772,7 +1799,11 @@ export const executeMoveSpec = (
       }
 
       if (operation.kind === 'choice-request' || operation.kind === 'reaction-request') {
-        const request = pendingRequest(operation, recipientIds)
+        const request = pendingRequest(
+          operation,
+          recipientIds,
+          input.ancestry?.length ?? 0,
+        )
         const response = responseResolver.resolve({
           requestId: request.requestId,
           options: request.options,

@@ -165,6 +165,29 @@ const pendingResolution = (): Record<string, any> => ({
   publicSummary: publicSummary(),
 })
 
+const reactionResolution = () => {
+  const value = pendingResolution()
+  value.trace.events = value.trace.events.map((event: Record<string, any>) => {
+    if (event.kind === 'operation') {
+      return {
+        ...event,
+        operationKind: 'reaction-request',
+        input: { timing: 'post-hit', priority: 5 },
+      }
+    }
+    if (event.kind === 'choice') return { ...event, requestKind: 'reaction' }
+    return event
+  })
+  value.outstandingWindows = [{
+    ...value.outstandingWindows[0],
+    kind: 'reaction',
+    timing: 'post-hit',
+    priority: 5,
+    depth: 1,
+  }]
+  return value
+}
+
 const withSelectedChoice = () => {
   const value = pendingResolution()
   value.trace.events.push({
@@ -268,6 +291,34 @@ describe('pending move resolution contract', () => {
     const invalidSide = pendingResolution()
     invalidSide.outstandingWindows[0]!.ownership = [{ kind: 'side', id: 'Bad Side' }]
     expectPendingError(() => parsePendingMoveResolution(invalidSide), 'invalid-pending-resolution')
+  })
+
+  it('cross-checks durable reaction timing, priority, and causal depth', () => {
+    const parsed = parsePendingMoveResolution(reactionResolution())
+    expect(parsed.outstandingWindows[0]).toMatchObject({
+      kind: 'reaction',
+      phase: 'hit',
+      timing: 'post-hit',
+      priority: 5,
+      depth: 1,
+      allowPass: true,
+    })
+
+    const wrongPhase = reactionResolution()
+    wrongPhase.outstandingWindows[0].timing = 'pre-hit'
+    expectPendingError(() => parsePendingMoveResolution(wrongPhase), 'inconsistent-state')
+
+    const wrongPriority = reactionResolution()
+    wrongPriority.outstandingWindows[0].priority = 4
+    expectPendingError(() => parsePendingMoveResolution(wrongPriority), 'inconsistent-state')
+
+    const wrongDepth = reactionResolution()
+    wrongDepth.outstandingWindows[0].depth = 0
+    expectPendingError(() => parsePendingMoveResolution(wrongDepth), 'inconsistent-state')
+
+    const nonPassable = reactionResolution()
+    nonPassable.outstandingWindows[0].allowPass = false
+    expectPendingError(() => parsePendingMoveResolution(nonPassable), 'inconsistent-state')
   })
 
   it('parses chosen options and authorized passes without executable response data', () => {

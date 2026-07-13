@@ -28,20 +28,35 @@ export interface ListPendingMoveResponsesDependencies
 const safeWindowView = (input: {
   readonly resolution: PendingMoveResolution
   readonly window: PendingMoveResponseWindow
-}): PendingMoveResponseWindowView => Object.freeze({
-  schemaVersion: PENDING_MOVE_RESPONSE_VIEW_SCHEMA_VERSION,
-  resolution: input.resolution.publicSummary,
-  window: Object.freeze({
+}): PendingMoveResponseWindowView => {
+  const common = {
     windowId: input.window.windowId,
-    kind: input.window.kind,
     phase: input.window.phase,
     reasonCode: input.window.reasonCode,
     promptKey: input.window.promptKey,
     options: Object.freeze(input.window.options.map(option => Object.freeze({ ...option }))),
-    allowPass: input.window.allowPass,
-    priority: input.window.priority,
-  }),
-})
+  }
+  const window = input.window.kind === 'reaction'
+    ? Object.freeze({
+        ...common,
+        kind: 'reaction' as const,
+        allowPass: true as const,
+        timing: input.window.timing,
+        priority: input.window.priority,
+        depth: input.window.depth,
+      })
+    : Object.freeze({
+        ...common,
+        kind: 'choice' as const,
+        allowPass: input.window.allowPass,
+        priority: null,
+      })
+  return Object.freeze({
+    schemaVersion: PENDING_MOVE_RESPONSE_VIEW_SCHEMA_VERSION,
+    resolution: input.resolution.publicSummary,
+    window,
+  })
+}
 
 /**
  * Return only windows the current principal may answer. The projection has no

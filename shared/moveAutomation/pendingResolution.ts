@@ -13,6 +13,12 @@ import {
   type MoveAutomationRollLedgerEntry,
 } from './random'
 import {
+  MOVE_REACTION_LIMITS,
+  isMoveReactionTiming,
+  moveReactionTimingDefinition,
+  type MoveReactionTiming,
+} from './reactions'
+import {
   MOVE_SPEC_PHASES,
   type MoveSpecPhase,
 } from './spec'
@@ -81,7 +87,8 @@ export const PENDING_MOVE_RESOLUTION_LIMITS = Object.freeze({
   ownersPerWindow: 64,
   optionsPerWindow: 64,
   chosenOptions: 256,
-  reactionPriorityMagnitude: 1_000,
+  reactionPriorityMagnitude: MOVE_REACTION_LIMITS.priorityMagnitude,
+  reactionNestedWindowDepth: MOVE_REACTION_LIMITS.nestedWindowDepth,
   jsonDepth: 24,
   jsonNodes: 131_072,
   jsonObjectFields: 128,
@@ -137,19 +144,37 @@ export interface PendingMoveResponseOption {
   readonly labelKey: string
 }
 
-export interface PendingMoveResponseWindow {
+interface PendingMoveResponseWindowBase {
   readonly windowId: string
   readonly operationId: string
-  readonly kind: PendingMoveResponseWindowKind
   readonly phase: MoveSpecPhase
   readonly reasonCode: string
   readonly promptKey: string
   readonly ownership: readonly PendingMoveResponseOwner[]
   readonly options: readonly PendingMoveResponseOption[]
-  readonly allowPass: boolean
-  /** Null for ordinary choices; server-authored and bounded for reactions. */
-  readonly priority: number | null
 }
+
+export interface PendingMoveChoiceResponseWindow
+  extends PendingMoveResponseWindowBase {
+  readonly kind: 'choice'
+  readonly allowPass: boolean
+  readonly priority: null
+}
+
+export interface PendingMoveReactionResponseWindow
+  extends PendingMoveResponseWindowBase {
+  readonly kind: 'reaction'
+  /** An eligible responder may always decline the current reaction window. */
+  readonly allowPass: true
+  readonly timing: MoveReactionTiming
+  readonly priority: number
+  /** Server-derived causal ancestry depth; never supplied by a response. */
+  readonly depth: number
+}
+
+export type PendingMoveResponseWindow =
+  | PendingMoveChoiceResponseWindow
+  | PendingMoveReactionResponseWindow
 
 export interface PendingMoveResolutionChosenOption {
   readonly windowId: string
@@ -292,6 +317,7 @@ const WINDOW_FIELDS = [
   'allowPass',
   'priority',
 ] as const
+const REACTION_WINDOW_FIELDS = [...WINDOW_FIELDS, 'timing', 'depth'] as const
 const CHOSEN_OPTION_FIELDS = [
   'windowId',
   'responseOpId',
@@ -836,35 +862,73 @@ const parseOptions = (
 }
 
 const parseWindow = (value: unknown, path: string): PendingMoveResponseWindow => {
-  const record = parseExactRecord(value, WINDOW_FIELDS, path)
-  if (typeof record.kind !== 'string' || !WINDOW_KIND_SET.has(record.kind)) {
+  const candidate = parseRecord(value, path)
+  if (typeof candidate.kind !== 'string' || !WINDOW_KIND_SET.has(candidate.kind)) {
     fail('invalid-pending-resolution', `${path}.kind`, 'must be choice or reaction.')
   }
-  const kind = record.kind as PendingMoveResponseWindowKind
-  let priority: number | null = null
-  if (kind === 'reaction') {
-    priority = parseInteger(
-      record.priority,
-      `${path}.priority`,
-      -PENDING_MOVE_RESOLUTION_LIMITS.reactionPriorityMagnitude,
-      PENDING_MOVE_RESOLUTION_LIMITS.reactionPriorityMagnitude,
-    )
-  }
-  else if (record.priority !== null) {
-    fail('invalid-pending-resolution', `${path}.priority`, 'must be null for a choice window.')
-  }
-
-  return {
+  const kind = candidate.kind as PendingMoveResponseWindowKind
+  const record = parseExactRecord(
+    value,
+    kind === 'reaction' ? REACTION_WINDOW_FIELDS : WINDOW_FIELDS,
+    path,
+  )
+  const common = {
     windowId: parseStableId(record.windowId, `${path}.windowId`),
     operationId: parseStableId(record.operationId, `${path}.operationId`),
-    kind,
     phase: parsePhase(record.phase, `${path}.phase`),
     reasonCode: parseStableId(record.reasonCode, `${path}.reasonCode`),
     promptKey: parseStableId(record.promptKey, `${path}.promptKey`),
     ownership: parseOwnership(record.ownership, `${path}.ownership`),
     options: parseOptions(record.options, `${path}.options`),
-    allowPass: parseBoolean(record.allowPass, `${path}.allowPass`),
-    priority,
+  }
+  const allowPass = parseBoolean(record.allowPass, `${path}.allowPass`)
+
+  if (kind === 'choice') {
+    if (record.priority !== null) {
+      fail('invalid-pending-resolution', `${path}.priority`, 'must be null for a choice window.')
+    }
+    return { ...common, kind, allowPass, priority: null }
+  }
+
+  if (!allowPass) {
+    fail(
+      'inconsistent-state',
+      `${path}.allowPass`,
+      'reaction windows must allow an explicit decline.',
+    )
+  }
+  const timing = isMoveReactionTiming(record.timing)
+    ? record.timing
+    : fail(
+        'invalid-pending-resolution',
+        `${path}.timing`,
+        'must be a canonical move reaction timing.',
+      )
+  const expectedPhase = moveReactionTimingDefinition(timing).phase
+  if (common.phase !== expectedPhase) {
+    fail(
+      'inconsistent-state',
+      `${path}.timing`,
+      `${timing} reactions must suspend in the ${expectedPhase} phase.`,
+    )
+  }
+  return {
+    ...common,
+    kind,
+    allowPass: true,
+    timing,
+    priority: parseInteger(
+      record.priority,
+      `${path}.priority`,
+      -PENDING_MOVE_RESOLUTION_LIMITS.reactionPriorityMagnitude,
+      PENDING_MOVE_RESOLUTION_LIMITS.reactionPriorityMagnitude,
+    ),
+    depth: parseInteger(
+      record.depth,
+      `${path}.depth`,
+      0,
+      PENDING_MOVE_RESOLUTION_LIMITS.reactionNestedWindowDepth,
+    ),
   }
 }
 
@@ -1150,6 +1214,26 @@ const assertWindowTraceLinks = (
         windowPath,
         'must reference a matching pending operation in the completed trace.',
       )
+    }
+    const pendingOperationEvent = operationEvent as Extract<
+      MoveResolutionAuditTrace['events'][number],
+      { readonly kind: 'operation' }
+    >
+    if (window.kind === 'reaction') {
+      const operationInput = pendingOperationEvent.input
+      if (
+        pendingOperationEvent.operationKind !== 'reaction-request'
+        || !isPlainRecord(operationInput)
+        || operationInput.timing !== window.timing
+        || operationInput.priority !== window.priority
+        || window.depth !== trace.ancestry.length
+      ) {
+        fail(
+          'inconsistent-state',
+          windowPath,
+          'reaction timing and priority must match the reviewed pending operation trace.',
+        )
+      }
     }
     const requestKind = window.kind === 'reaction' ? 'reaction' : 'choice'
     const choiceEvent = trace.events.find(event => (
