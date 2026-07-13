@@ -20,7 +20,10 @@ import {
 } from './executeSpec'
 import { createMoveStateChangePlan } from './plan'
 import type { AuthoritativeMoveRandomSource } from './random'
-import { createMoveAutomationReplayRandomSource } from './replayRandom'
+import {
+  createMoveAutomationReplayRandom,
+  MoveAutomationReplayRandomError,
+} from './replayRandom'
 import {
   MOVE_AUTOMATION_RUNTIME_REGISTRY,
   type MoveAutomationRuntimeRegistry,
@@ -219,7 +222,8 @@ export const resumeMoveSpec = (
     },
     candidatePlacementIds: evidence.evaluations.map(evaluation => evaluation.targetPlacementId),
     selectedPlacementIds: authoritativeTargetIds,
-    random: createMoveAutomationReplayRandomSource(pending.rollLedger, input.random),
+    random: input.random ?? Math.random,
+    randomRoller: createMoveAutomationReplayRandom(pending.rollLedger, input.random),
     time: input.now,
     runtimeRegistry: registry,
     legacyScripts: input.legacyScripts,
@@ -230,17 +234,26 @@ export const resumeMoveSpec = (
     return fail('move-entry-unavailable', entryResult.message)
   }
   const entry = entryResult.entry
-  const execution = executeMoveSpec({
-    definition: runtime.definition,
-    context,
-    authoritativeTargetIds,
-    ...(targetingKind === 'area'
-      ? { authoritativeTargetEvaluations: evidence.evaluations }
-      : {}),
-    ancestry: pending.causalAncestry,
-    responses: chosenResponses(pending, input.response),
-    handlerRegistry: context.handlerRegistry,
-  })
+  let execution: ReturnType<typeof executeMoveSpec>
+  try {
+    execution = executeMoveSpec({
+      definition: runtime.definition,
+      context,
+      authoritativeTargetIds,
+      ...(targetingKind === 'area'
+        ? { authoritativeTargetEvaluations: evidence.evaluations }
+        : {}),
+      ancestry: pending.causalAncestry,
+      responses: chosenResponses(pending, input.response),
+      handlerRegistry: context.handlerRegistry,
+    })
+  }
+  catch (error) {
+    if (error instanceof MoveAutomationReplayRandomError) {
+      return fail('roll-ledger-mismatch', error.message)
+    }
+    throw error
+  }
   if (execution.kind === 'rejected') {
     return fail(
       'execution-rejected',

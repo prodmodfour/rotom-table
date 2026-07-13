@@ -48,6 +48,10 @@ import {
 } from '../realtime/persistedBatchPublication'
 import { getRotomDatabase, type RotomDatabase } from '../storage/database'
 import {
+  createSqliteGroupInventoryRepository,
+  type GroupInventoryRepository,
+} from '../storage/groupInventoryRepository'
+import {
   createSqliteMapRepository,
   type MapRepository,
 } from '../storage/mapRepository'
@@ -104,6 +108,7 @@ export interface ResumePendingMoveResolutionDependencies {
     SheetRepository<Record<string, unknown>>,
     'getByRef' | 'assertRevisions' | 'applyLivePlayUpdate'
   >
+  readonly groupInventoryRepository?: Pick<GroupInventoryRepository, 'get'>
   readonly pendingResolutionRepository?: Pick<PendingMoveResolutionRepository, 'getById' | 'update'>
   readonly opRepository?: Pick<LivePlayOpRepository, 'getStoredOpRecord' | 'saveCommandResult'>
   readonly realtimeEventRepository?: Pick<RealtimeEventRepository, 'appendMany'>
@@ -124,6 +129,8 @@ const dependenciesWithDefaults = (input: ResumePendingMoveResolutionDependencies
     mapRepository: input.mapRepository ?? createSqliteMapRepository<TabletopMap>(database),
     sheetRepository: input.sheetRepository
       ?? createSqliteSheetRepository<Record<string, unknown>>(database),
+    groupInventoryRepository: input.groupInventoryRepository
+      ?? createSqliteGroupInventoryRepository(database),
     pendingResolutionRepository: input.pendingResolutionRepository
       ?? createSqlitePendingMoveResolutionRepository(database),
     opRepository: input.opRepository ?? createSqliteLivePlayOpRepository({ database }),
@@ -231,6 +238,11 @@ const hasCurrentReadSet = (
     dependencies.sheetRepository.assertRevisions(
       pendingSheetReads(input.storedResolution.resolution),
     )
+    for (const read of input.storedResolution.resolution.readSet) {
+      if (read.kind !== 'group-inventory') continue
+      const inventory = dependencies.groupInventoryRepository.get(read.slug)
+      if (!inventory || inventory.revision !== read.revision) return false
+    }
     return true
   }
   catch (error) {

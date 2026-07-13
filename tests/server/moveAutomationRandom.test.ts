@@ -4,6 +4,10 @@ import {
   createAuthoritativeMoveRandom,
   createFiniteAuthoritativeMoveRandomStream,
 } from '~~/server/domain/moveAutomation/random'
+import {
+  createMoveAutomationReplayRandom,
+  MoveAutomationReplayRandomError,
+} from '~~/server/domain/moveAutomation/replayRandom'
 
 const expectRandomError = (
   run: () => unknown,
@@ -112,6 +116,76 @@ describe('authoritative move randomness', () => {
         finalValue: 5,
       }),
     ])
+  })
+
+  it('replays durable table draws before consuming fresh continuation entropy', () => {
+    const tableRequest = {
+      rollId: 'hit-count.1',
+      parentEffectId: 'effect.hit-count',
+      reason: 'Five Strike hit count',
+      formula: { kind: 'table' as const, tableId: 'five-strike-hit-count' },
+      drawFormula: { kind: 'dice' as const, count: 1, sides: 8, modifier: 0 },
+      entries: [
+        { minimum: 1, maximum: 1, value: 1 },
+        { minimum: 2, maximum: 3, value: 2 },
+        { minimum: 4, maximum: 6, value: 3 },
+        { minimum: 7, maximum: 7, value: 4 },
+        { minimum: 8, maximum: 8, value: 5 },
+      ],
+    }
+    const original = createAuthoritativeMoveRandom(
+      createFiniteAuthoritativeMoveRandomStream([0.99]),
+    )
+    original.rollTable(tableRequest)
+    const durableLedger = original.complete()
+    const freshStream = createFiniteAuthoritativeMoveRandomStream([0])
+    const replay = createMoveAutomationReplayRandom(durableLedger, freshStream)
+
+    expect(replay.rollTable(tableRequest)).toEqual({
+      naturalResults: [8],
+      naturalResult: 8,
+      modifiedResult: 8,
+      finalValue: 5,
+    })
+    expect(freshStream.consumed).toBe(0)
+    expect(replay.roll({
+      rollId: 'continuation.roll',
+      parentEffectId: 'effect.continuation',
+      reason: 'Continuation roll',
+      formula: { kind: 'dice', count: 1, sides: 6, modifier: 0 },
+    })).toMatchObject({ naturalResult: 1, finalValue: 1 })
+    expect(replay.complete()).toEqual([
+      ...durableLedger,
+      expect.objectContaining({ rollId: 'continuation.roll', naturalResult: 1 }),
+    ])
+    expect(freshStream.consumed).toBe(1)
+  })
+
+  it('fails closed when a durable table result no longer matches its reviewed request', () => {
+    const original = createAuthoritativeMoveRandom(
+      createFiniteAuthoritativeMoveRandomStream([0.99]),
+    )
+    original.rollTable({
+      rollId: 'hit-count.1',
+      parentEffectId: 'effect.hit-count',
+      reason: 'Five Strike hit count',
+      formula: { kind: 'table', tableId: 'five-strike-hit-count' },
+      drawFormula: { kind: 'dice', count: 1, sides: 8, modifier: 0 },
+      entries: [{ minimum: 1, maximum: 8, value: 5 }],
+    })
+    const replay = createMoveAutomationReplayRandom(original.complete(), () => 0)
+
+    expect(() => replay.rollTable({
+      rollId: 'hit-count.1',
+      parentEffectId: 'effect.hit-count',
+      reason: 'Five Strike hit count',
+      formula: { kind: 'table', tableId: 'five-strike-hit-count' },
+      drawFormula: { kind: 'dice', count: 1, sides: 8, modifier: 0 },
+      entries: [{ minimum: 1, maximum: 8, value: 4 }],
+    })).toThrowError(expect.objectContaining({
+      name: 'MoveAutomationReplayRandomError',
+      code: 'replay-request-mismatch',
+    } satisfies Partial<MoveAutomationReplayRandomError>))
   })
 
   it('replays the same requests and finite draws to the same ledger', () => {

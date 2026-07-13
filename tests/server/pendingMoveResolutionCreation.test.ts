@@ -10,6 +10,7 @@ import {
 } from '#shared/livePlayMoveResolution'
 import {
   isPendingMoveDeclarationResult,
+  parsePendingMoveResolution,
 } from '#shared/moveAutomation/pendingResolution'
 import {
   MOVE_RESPONSE_COMMAND_SCHEMA_VERSION,
@@ -18,6 +19,7 @@ import {
 } from '#shared/moveAutomation/responseCommands'
 import { openRotomDatabase, type RotomDatabase } from '~~/server/storage/database'
 import { createSqliteMapRepository } from '~~/server/storage/mapRepository'
+import { createSqliteGroupInventoryRepository } from '~~/server/storage/groupInventoryRepository'
 import {
   createSqliteSheetRepository,
   SheetRevisionConflictError,
@@ -300,6 +302,7 @@ interface Harness {
   readonly database: RotomDatabase
   readonly maps: ReturnType<typeof createSqliteMapRepository<TabletopMap>>
   readonly sheets: ReturnType<typeof createSqliteSheetRepository<Record<string, unknown>>>
+  readonly inventories: ReturnType<typeof createSqliteGroupInventoryRepository>
   readonly ops: ReturnType<typeof createSqliteLivePlayOpRepository>
   readonly pending: ReturnType<typeof createSqlitePendingMoveResolutionRepository>
   readonly commandExecutor: ReturnType<typeof createAuthoritativeLivePlayCommandExecutor>
@@ -310,6 +313,7 @@ const createHarness = (): Harness => {
   openDatabases.push(database)
   const maps = createSqliteMapRepository<TabletopMap>(database)
   const sheets = createSqliteSheetRepository<Record<string, unknown>>(database)
+  const inventories = createSqliteGroupInventoryRepository(database)
   const ops = createSqliteLivePlayOpRepository({ database, clock: () => 1_000 })
   const pending = createSqlitePendingMoveResolutionRepository(database)
   const modes = createSqliteMapInteractionModeRepository(database)
@@ -330,7 +334,7 @@ const createHarness = (): Harness => {
       updatedAt: 50,
     })
   }
-  return { database, maps, sheets, ops, pending, commandExecutor }
+  return { database, maps, sheets, inventories, ops, pending, commandExecutor }
 }
 
 const moveIntent = (): ResolveMoveIntent => ({
@@ -1076,6 +1080,58 @@ describe('pending move resolution creation', () => {
       terminalOpId: 'op_resumeconflict1',
     })
     expect(harness.sheets.getByRef('pokemon', 'target')!.sheet.combat).toEqual(beforeTargetHp)
+    expect(harness.maps.getBySlug('pending-arena')).toMatchObject({
+      revision: 6,
+      encounterState: { pendingResolutionSummaries: [] },
+    })
+  })
+
+  it('terminally conflicts when a consulted group inventory revision becomes stale', async () => {
+    const harness = createHarness()
+    const inventory = harness.inventories.getOrCreate({ slug: 'main', now: 900 })
+    const declaration = commandFor(harness.maps.getBySlug('pending-arena')!, 'op_resumegroup001')
+    const pendingResponse = await executePending(harness, declaration)
+    expect(isPendingMoveDeclarationResult(pendingResponse.result)).toBe(true)
+    if (!isPendingMoveDeclarationResult(pendingResponse.result)) return
+    const stored = harness.pending.getById(
+      pendingResponse.result.pendingResolution.resolutionId,
+    )!
+    harness.pending.update({
+      resolution: parsePendingMoveResolution({
+        ...stored.resolution,
+        readSet: [
+          ...stored.resolution.readSet,
+          { kind: 'group-inventory', slug: inventory.slug, revision: inventory.revision },
+        ],
+        updatedAt: 1_100,
+        publicSummary: {
+          ...stored.resolution.publicSummary,
+          updatedAt: 1_100,
+        },
+      }),
+      expectedRevision: stored.revision,
+    })
+    harness.inventories.save({
+      slug: inventory.slug,
+      document: inventory.document,
+      revision: inventory.revision + 1,
+      updatedAt: 1_500,
+    })
+
+    const conflicted = executeResponse({
+      harness,
+      command: responseCommand({
+        resolutionId: stored.resolutionId,
+        baseRevision: 5,
+        opId: 'op_resumegroup002',
+      }),
+    })
+
+    expect(conflicted.result).toMatchObject({ ok: false, reason: 'conflict' })
+    expect(harness.pending.getById(stored.resolutionId)).toMatchObject({
+      status: 'conflicted',
+      terminalOpId: 'op_resumegroup002',
+    })
     expect(harness.maps.getBySlug('pending-arena')).toMatchObject({
       revision: 6,
       encounterState: { pendingResolutionSummaries: [] },

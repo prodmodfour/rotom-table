@@ -190,6 +190,8 @@ export interface BuildAuthoritativeMoveRulesContextInput {
   /** Requested placement identities; final legal recipients remain server-derived. */
   readonly selectedPlacementIds?: readonly string[]
   readonly random: AuthoritativeMoveRandomSource
+  /** Server-only continuation seam for a validated durable random prefix. */
+  readonly randomRoller?: AuthoritativeMoveRandom
   readonly time: number
   readonly idFactory?: () => string
   readonly ruleset?: MoveRulesetProvenance
@@ -479,7 +481,7 @@ export const buildAuthoritativeMoveRulesContext = (
     ...runtimes.keys(),
   ])
   const ruleset = detachedFrozenJson(input.ruleset ?? MOVE_RULESET_PROVENANCE)
-  const random = createAuthoritativeMoveRandom(input.random)
+  const random = input.randomRoller ?? createAuthoritativeMoveRandom(input.random)
   const reads: AuthoritativeMoveSheetRead[] = []
 
   const sheetForPlacement = (
