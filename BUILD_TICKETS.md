@@ -1425,7 +1425,7 @@ Status: DONE
 
 ## MA-111 — Implement shield and guard reactions
 
-Status: TODO
+Status: DONE
 
 **Depends on:** MA-108, MA-073B, MA-081
 **Commit:** `feat(move-automation): resolve shield reaction families`
