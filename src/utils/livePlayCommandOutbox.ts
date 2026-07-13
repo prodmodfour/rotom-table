@@ -11,6 +11,11 @@ import {
   type LivePlayShopCheckoutCommandType,
 } from '#shared/livePlayCommands'
 import { isSlug } from '#shared/paths'
+import {
+  isMoveResponseCommandType,
+  validateMoveResponseCommand,
+  type MoveResponseCommandType,
+} from '#shared/moveAutomation/responseCommands'
 import { isPlayerProfileId, type PlayerProfileId } from '#shared/playerProfiles'
 
 export const LIVE_PLAY_COMMAND_OUTBOX_DB_NAME = 'rotom-table-client' as const
@@ -35,12 +40,14 @@ export interface LivePlayCommandOutboxAuthContext {
   readonly profileId?: PlayerProfileId | null
 }
 
+export type LivePlayCommandOutboxCommandType = LivePlayCommandType | MoveResponseCommandType
+
 export interface LivePlayCommandOutboxEntry {
   readonly schemaVersion: typeof LIVE_PLAY_COMMAND_OUTBOX_SCHEMA_VERSION
   readonly opId: string
   readonly mapSlug?: string
   readonly shopSlug?: string
-  readonly commandType: LivePlayCommandType
+  readonly commandType: LivePlayCommandOutboxCommandType
   readonly requestPath: string
   readonly body: Record<string, unknown>
   readonly authContext: LivePlayCommandOutboxAuthContext
@@ -59,6 +66,12 @@ export type LivePlayMapCommandOutboxEntry = LivePlayCommandOutboxEntry & {
   readonly mapSlug: string
   readonly shopSlug?: never
   readonly commandType: LivePlayMapCommandType
+}
+
+export type MoveResponseCommandOutboxEntry = LivePlayCommandOutboxEntry & {
+  readonly mapSlug: string
+  readonly shopSlug?: never
+  readonly commandType: MoveResponseCommandType
 }
 
 export type ShopCheckoutCommandOutboxEntry = LivePlayCommandOutboxEntry & {
@@ -209,7 +222,7 @@ type LivePlayCommandOutboxIdentity =
       readonly kind: 'map'
       readonly opId: string
       readonly mapSlug: string
-      readonly commandType: LivePlayMapCommandType
+      readonly commandType: LivePlayMapCommandType | MoveResponseCommandType
     }
   | {
       readonly kind: 'shop'
@@ -250,6 +263,12 @@ export const isLivePlayMapCommandOutboxEntry = (
   entry: LivePlayCommandOutboxEntry,
 ): entry is LivePlayMapCommandOutboxEntry => (
   isLivePlayMapCommandType(entry.commandType) && typeof entry.mapSlug === 'string'
+)
+
+export const isMoveResponseCommandOutboxEntry = (
+  entry: LivePlayCommandOutboxEntry,
+): entry is MoveResponseCommandOutboxEntry => (
+  isMoveResponseCommandType(entry.commandType) && typeof entry.mapSlug === 'string'
 )
 
 const describeValue = (value: unknown): string => {
@@ -494,6 +513,20 @@ export const createLivePlayCommandOutboxFingerprint = (input: {
 const validatedCommandIdentityFromBody = (
   body: Record<string, unknown>,
 ): LivePlayCommandOutboxIdentity => {
+  if (isMoveResponseCommandType(body.type)) {
+    const result = validateMoveResponseCommand(body)
+    if (!result.valid) {
+      const summary = result.issues.map(issue => `${issue.path}: ${issue.message}`).join('; ')
+      throw validationError(`body is not a valid move response command envelope: ${summary}`)
+    }
+    return {
+      kind: 'map',
+      opId: result.command.opId,
+      mapSlug: result.command.mapSlug,
+      commandType: result.command.type,
+    }
+  }
+
   if (body.type === LIVE_PLAY_COMMAND_TYPES.SHOP_CHECKOUT) {
     const result = validateShopCheckoutCommandEnvelope(body)
     if (!result.valid) {

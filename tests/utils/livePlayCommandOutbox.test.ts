@@ -5,8 +5,12 @@ import {
   LIVE_PLAY_COMMAND_SCHEMA_VERSION,
   LIVE_PLAY_COMMAND_TYPES,
 } from '#shared/livePlayCommands'
+import {
+  MOVE_RESPONSE_COMMAND_SCHEMA_VERSION,
+  MOVE_RESPONSE_COMMAND_TYPES,
+} from '#shared/moveAutomation/responseCommands'
 import { parsePlayerProfileId } from '#shared/playerProfiles'
-import { SHOP_API_PATHS } from '~/utils/apiRoutes'
+import { MAP_API_PATHS, SHOP_API_PATHS } from '~/utils/apiRoutes'
 import {
   LIVE_PLAY_COMMAND_OUTBOX_DB_VERSION,
   LIVE_PLAY_COMMAND_OUTBOX_MAX_BODY_BYTES,
@@ -69,6 +73,20 @@ const buildBody = (overrides: Record<string, unknown> = {}): Record<string, unkn
     position: { x: 4, y: 5, z: 0 },
   },
   clientId: 'client-001',
+  ...overrides,
+})
+
+const buildMoveResponseBody = (overrides: Record<string, unknown> = {}): Record<string, unknown> => ({
+  schemaVersion: MOVE_RESPONSE_COMMAND_SCHEMA_VERSION,
+  opId: 'op_response001',
+  mapSlug: 'arena-map',
+  baseRevision: 7,
+  type: MOVE_RESPONSE_COMMAND_TYPES.CHOOSE,
+  payload: {
+    resolutionId: 'resolution-pending-1',
+    windowId: 'window.branch',
+    optionId: 'option.attack',
+  },
   ...overrides,
 })
 
@@ -185,6 +203,49 @@ describe('live-play command outbox contracts', () => {
       state: 'queued',
       attemptCount: 0,
     })
+  })
+
+  it('persists the exact typed move response body as a map-scoped journal entry', async () => {
+    const harness = createHarness()
+    const body = buildMoveResponseBody()
+
+    const entry = await enqueue(
+      harness.outbox,
+      body,
+      gmAuth,
+      MAP_API_PATHS.chooseMoveResponse,
+    )
+    expect(entry).toMatchObject({
+      opId: 'op_response001',
+      mapSlug: 'arena-map',
+      commandType: MOVE_RESPONSE_COMMAND_TYPES.CHOOSE,
+      requestPath: MAP_API_PATHS.chooseMoveResponse,
+      state: 'queued',
+    })
+    expect(entry.body).toEqual(body)
+
+    await expect(enqueue(
+      harness.outbox,
+      buildMoveResponseBody({
+        payload: {
+          resolutionId: 'resolution-pending-1',
+          windowId: 'window.branch',
+          optionId: 'option.support',
+        },
+      }),
+      gmAuth,
+      MAP_API_PATHS.chooseMoveResponse,
+    )).rejects.toThrow(/different command fingerprint/)
+  })
+
+  it('rejects move response mechanics fields instead of journaling browser-authored rules', async () => {
+    const { outbox } = createHarness()
+    await expect(enqueue(
+      outbox,
+      buildMoveResponseBody({ damage: 999 }),
+      gmAuth,
+      MAP_API_PATHS.chooseMoveResponse,
+    )).rejects.toThrow(/server-owned mechanics data/)
   })
 
   it('persists shop checkout entries without requiring a map slug', async () => {

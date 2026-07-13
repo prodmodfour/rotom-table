@@ -3,12 +3,14 @@ import { computed, ref } from 'vue'
 import MapSceneRenderer from '~/components/map/MapSceneRenderer.vue'
 import MapSceneStatus from '~/components/map/MapSceneStatus.vue'
 import MapMoveReactionPromptStack from '~/components/map/MapMoveReactionPromptStack.vue'
+import MapMoveResponsePanel from '~/components/map/MapMoveResponsePanel.vue'
 import MoveVfxDebugPanel from '~/components/map/MoveVfxDebugPanel.vue'
 import InitiativeInfoBar from '~/components/map/InitiativeInfoBar.vue'
 import MapActionSplash from '~/components/map/MapActionSplash.vue'
 import MapCombatLog from '~/components/map/MapCombatLog.vue'
 import type { BuildTool } from '#shared/mapEditor'
 import type { LivePlayPresenceAttentionTarget, LivePlayPresenceGridCell } from '#shared/livePlayPresence'
+import type { PendingMoveResponseWindowView } from '#shared/moveAutomation/responseViews'
 import type { CombatStageMap } from '~/types/combatStages'
 import type {
   GridAnchor,
@@ -46,6 +48,11 @@ import type { MapSaveStatus } from '~/composables/useEditableMap'
 import type { MoveAutomationTargetBranchSelectionState } from '~/composables/map-editor/useMoveAutomationPanel'
 import type { InitiativeRow } from '~/composables/map-editor/useInitiativeTracker'
 import type { LivePlayConnectionState } from '~/composables/map-editor/useLivePlayStateMachine'
+import type {
+  PendingMoveResponseOptionReference,
+  PendingMoveResponseReference,
+  PendingMoveResponseWindowState,
+} from '~/composables/map-editor/usePendingMoveResponses'
 import type { LivePlayTokenCorrectionNotice } from '~/types/livePlayUi'
 import { buildCombatLogMessages } from '~/utils/combatLog'
 import type { PreviewState } from '~/utils/gridPreview'
@@ -107,6 +114,13 @@ const props = defineProps<{
   poisonPointReactionPrompts?: MoveAutomationPoisonPointPrompt[]
   moxieTriggerPrompts?: MoveAutomationMoxiePrompt[]
   celebrateTriggerPrompts?: MoveAutomationCelebratePrompt[]
+  pendingMoveResponseWindows?: readonly PendingMoveResponseWindowView[]
+  pendingMoveResponseStateByWindow?: Readonly<Record<string, PendingMoveResponseWindowState>>
+  pendingMoveResponseActorLabels?: Readonly<Record<string, string>>
+  pendingMoveResponseOwnerLabel?: string
+  pendingMoveResponsesLoading?: boolean
+  pendingMoveResponsesError?: string | null
+  canManagePendingMoveResponses?: boolean
   attackOfOpportunityPrompts?: AttackOfOpportunityPrompt[]
   tokenMoveOptionsById?: Record<string, TokenMoveMenuOption[]>
   tokenManeuverOptionsById?: Record<string, TokenManeuverMenuOption[]>
@@ -183,6 +197,12 @@ const emit = defineEmits<{
   (event: 'apply-moxie-trigger', id: string): void
   (event: 'dismiss-celebrate-trigger', id: string): void
   (event: 'apply-celebrate-trigger', id: string): void
+  (event: 'choose-pending-move-response', payload: PendingMoveResponseOptionReference): void
+  (event: 'pass-pending-move-response', payload: PendingMoveResponseReference): void
+  (event: 'force-pass-pending-move-response', payload: PendingMoveResponseReference): void
+  (event: 'cancel-pending-move-resolution', resolutionId: string): void
+  (event: 'retry-pending-move-response', opId: string): void
+  (event: 'refresh-pending-move-responses'): void
   (event: 'use-attack-of-opportunity', payload: { promptId: string; moveName: string }): void
   (event: 'clear-attack-of-opportunity', promptId: string): void
   (event: 'token-motion-debug-metrics', metrics: TokenMotionDebugMetrics): void
@@ -433,6 +453,22 @@ defineExpose({ focusPokemon, focusCell })
         @preview-kind="emit('preview-move-vfx', $event)"
         @preview-all="emit('preview-all-move-vfx')"
         @clear="emit('clear-move-vfx')"
+      />
+
+      <MapMoveResponsePanel
+        :windows="props.pendingMoveResponseWindows ?? []"
+        :state-by-window="props.pendingMoveResponseStateByWindow ?? {}"
+        :actor-labels="props.pendingMoveResponseActorLabels ?? {}"
+        :eligible-owner-label="props.pendingMoveResponseOwnerLabel ?? 'Eligible participant'"
+        :loading="props.pendingMoveResponsesLoading === true"
+        :error="props.pendingMoveResponsesError ?? null"
+        :can-manage="props.canManagePendingMoveResponses === true"
+        @choose="emit('choose-pending-move-response', $event)"
+        @pass="emit('pass-pending-move-response', $event)"
+        @force-pass="emit('force-pass-pending-move-response', $event)"
+        @cancel="emit('cancel-pending-move-resolution', $event)"
+        @retry="emit('retry-pending-move-response', $event)"
+        @refresh="emit('refresh-pending-move-responses')"
       />
 
       <MapMoveReactionPromptStack

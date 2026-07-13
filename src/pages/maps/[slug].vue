@@ -28,6 +28,7 @@ import {
 } from '~/composables/map-editor/useLivePlayCommands'
 import { useAcceptedMovePresentation } from '~/composables/map-editor/useAcceptedMovePresentation'
 import { useLivePlayCommandRecoveryGate } from '~/composables/map-editor/useLivePlayCommandRecoveryGate'
+import { usePendingMoveResponses } from '~/composables/map-editor/usePendingMoveResponses'
 import { useLivePlayStateMachine, type LivePlayConnectionState } from '~/composables/map-editor/useLivePlayStateMachine'
 import { useMapPageTableActionDispatchers } from '~/composables/map-editor/useMapPageTableActionDispatchers'
 import { useMapPageTokenSpawning } from '~/composables/map-editor/useMapPageTokenSpawning'
@@ -953,6 +954,28 @@ const {
     controllablePlacementIds: computed(() => playerProfileTokenControlModel.value.controllablePlacementIds),
   },
 })
+
+const pendingMoveResponses = usePendingMoveResponses({
+  slug,
+  authRole: role,
+  playerProfileId: computed(() => (isPlayer.value ? selectedProfileId.value : null)),
+  mapRevision,
+  enabled: computed(() => (
+    canViewMap.value
+    && !mapInPrepareMode.value
+    && (isGm.value || (isPlayer.value && Boolean(selectedProfileId.value)))
+  )),
+  applyPersistedMap,
+  applySheetUpdate: applyLivePlaySheetUpdate,
+})
+const pendingMoveResponseActorLabels = computed<Readonly<Record<string, string>>>(() => (
+  Object.fromEntries(spawnedPokemon.value.map(token => [token.id, token.species]))
+))
+const pendingMoveResponseOwnerLabel = computed(() => (
+  isGm.value
+    ? 'Game Master'
+    : selectedProfile.value?.displayName ?? 'Selected player profile'
+))
 
 const hoveredPresenceTokenId = ref<string | null>(null)
 const visiblePresenceTokenIds = computed<readonly string[]>(() => spawnedPokemon.value.map((pokemon) => pokemon.id))
@@ -2717,6 +2740,13 @@ useMapDimensionReconciliation({
         :poison-point-reaction-prompts="poisonPointReactionPrompts"
         :moxie-trigger-prompts="moxieTriggerPrompts"
         :celebrate-trigger-prompts="celebrateTriggerPrompts"
+        :pending-move-response-windows="pendingMoveResponses.windows.value"
+        :pending-move-response-state-by-window="pendingMoveResponses.responseStateByWindow.value"
+        :pending-move-response-actor-labels="pendingMoveResponseActorLabels"
+        :pending-move-response-owner-label="pendingMoveResponseOwnerLabel"
+        :pending-move-responses-loading="pendingMoveResponses.loadStatus.value === 'loading'"
+        :pending-move-responses-error="pendingMoveResponses.loadError.value"
+        :can-manage-pending-move-responses="isGm"
         :attack-of-opportunity-prompts="attackOfOpportunityPrompts"
         :token-move-options-by-id="tokenMoveOptionsById"
         :token-maneuver-options-by-id="tokenManeuverOptionsById"
@@ -2775,6 +2805,12 @@ useMapDimensionReconciliation({
         @apply-moxie-trigger="applyMoxieTriggerPromptFromScene"
         @dismiss-celebrate-trigger="dismissCelebrateTriggerPrompt"
         @apply-celebrate-trigger="applyCelebrateTriggerPromptFromScene"
+        @choose-pending-move-response="pendingMoveResponses.choose($event)"
+        @pass-pending-move-response="pendingMoveResponses.pass($event)"
+        @force-pass-pending-move-response="pendingMoveResponses.forcePass($event)"
+        @cancel-pending-move-resolution="pendingMoveResponses.cancel($event)"
+        @retry-pending-move-response="pendingMoveResponses.retry($event)"
+        @refresh-pending-move-responses="pendingMoveResponses.refresh()"
         @use-attack-of-opportunity="useAttackOfOpportunity"
         @clear-attack-of-opportunity="removeAttackOfOpportunityPrompt"
       />

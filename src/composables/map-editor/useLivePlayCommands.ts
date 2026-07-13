@@ -94,6 +94,7 @@ import type { LivePlayPatchAdoptionContext } from '~/utils/livePlayPatchAdoption
 import {
   createLivePlayCommandOutboxFingerprint,
   getLivePlayCommandOutbox,
+  isLivePlayMapCommandOutboxEntry,
   type LivePlayCommandOutbox,
   type LivePlayCommandOutboxAuthContext,
   type LivePlayCommandOutboxEntry,
@@ -1083,7 +1084,9 @@ export const useLivePlayCommands = (
 
   const entryMatchesCurrentContext = (entry: LivePlayCommandOutboxEntry): boolean => {
     const authContext = currentAuthContext()
-    return authContext !== null && entryMatchesAuthContext(entry, authContext)
+    return authContext !== null
+      && isLivePlayMapCommandOutboxEntry(entry)
+      && entryMatchesAuthContext(entry, authContext)
   }
 
   const outboxEntries = computed<readonly LivePlayCommandOutboxEntry[]>(() => (

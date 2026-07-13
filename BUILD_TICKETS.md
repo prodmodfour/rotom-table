@@ -1373,7 +1373,7 @@ Status: DONE
 
 ## MA-107 — Build the generic choice/reaction panel
 
-Status: TODO
+Status: DONE
 
 **Depends on:** MA-104–MA-105
 **Commit:** `feat(move-automation): render durable response windows`
