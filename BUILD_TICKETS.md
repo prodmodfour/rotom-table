@@ -9,7 +9,7 @@ Ticket statuses:
 
 The build loop must select the lowest-numbered TODO ticket. Each ticket below maps to one ticket from the supplied planning file; build ticket numbers follow that document's suggested order when present.
 
-Autonomous cycle rules for every ticket: implement only the selected ticket, run `scripts/quality-gate.sh`, update only the selected ticket status, commit with a conventional commit message, and leave the working tree clean. The final ticket (`MA-299`) may also set `AUTOMATION_STATUS: DONE` after all 286 refreshed tickets are complete.
+Autonomous cycle rules for every ticket: implement only the selected ticket, run `scripts/quality-gate.sh`, update only the selected ticket status, commit with a conventional commit message, and leave the working tree clean. The final ticket (`MA-299`) may also set `AUTOMATION_STATUS: DONE` after all 287 refreshed tickets are complete.
 
 ---
 
@@ -50,7 +50,7 @@ When a ticket introduces a new pure module, prefer this layout:
 
 The existing `src/utils/move-automation/` registry remains the v1 compatibility surface until the retirement tickets at the end.
 
-Queue size at this baseline: **286 commits**—180 engine/state/QA tickets, 33 conformance batches for the registered 258, and 73 implementation batches for the missing 518.
+Queue size at this baseline: **287 commits**—181 engine/state/QA tickets, 33 conformance batches for the registered 258, and 73 implementation batches for the missing 518.
 
 ## Decisions already locked
 
@@ -1791,24 +1791,49 @@ Status: DONE
 
 **Done:** Smoke, local terrain, pledges, barriers, vortexes, and side conditions share one queryable shape.
 
-## MA-134 — Add hazard-cell selection to move intent
+## MA-134A — Define authoritative hazard-cell selection windows
 
 Status: TODO
 
 **Depends on:** MA-073B, MA-125B, MA-133
+**Commit:** `feat(move-automation): define authoritative hazard cell choices`
+
+**Touch:** `shared/livePlayMoveResolution.ts`, a pure server hazard-cell selection resolver, durable selection-window contracts, and focused contract/domain tests.
+
+**Implement:**
+
+- Define strict bounded server-authored declarations, windows, and cell options for exact/up-to counts, origin and range, adjacency/connectedness, occupancy, and reviewed geometry. Bind each window to its authoritative map revision and move context; the client cannot author coordinates or constraint mechanics.
+- From an immutable authoritative map snapshot, deterministically materialize legal cells as stable option IDs while retaining each server-owned cell value for later revalidation. Add a pure validator that resolves a proposed option-ID set and enforces count, uniqueness, bounds, range, occupancy, adjacency, connectedness, and geometry.
+- Produce the bounded public window shape required by the durable choice machinery. Do not add the targeting overlay, resume resolution, or mutate map state in this ticket; the existing instant-flow limitation remains until MA-134B.
+
+**Tests:** Cover strict parsing and bounds, exact and up-to counts, deterministic IDs/order, duplicate or forged options, over-count, disconnected, occupied, out-of-range, out-of-bounds, and immutable inputs.
+
+**Done:** Given one authoritative snapshot, the server can materialize one bounded hazard-cell window and purely validate selected option IDs without accepting client-authored cells or mechanics; no map mutation occurs.
+
+## MA-134B — Integrate authoritative hazard-cell selection
+
+Status: TODO
+
+**Depends on:** MA-134A
 **Commit:** `feat(move-automation): select authoritative hazard cells`
 
-**Touch:** `shared/livePlayMoveResolution.ts`, targeting overlays, resolver tests.
+**Touch:** `shared/livePlayMoveResolution.ts`, targeting overlays, pending-response and move-resolver orchestration, live-play authority documentation, and component/resolver/integration tests.
 
-**Implement:** Server describes legal count/range/adjacency/geometry; client returns option IDs or selected cells within a signed window. Remove the current instant-flow `hazardCells: []` limitation.
+**Implement:**
 
-**Done:** Over-count, disconnected, occupied, out-of-range, and stale cell selections reject.
+- For a move that requires hazard placement, create the MA-134A window, present only its authorized options through the targeting overlay, and submit only the durable resolution/window IDs plus selected option IDs. Preserve existing choice authorization, privacy, reconnect, and duplicate-delivery behavior.
+- On resolution or resume, load the server-owned cells and revalidate the complete selection against fresh authoritative map state before including it in the move plan. A forged option, changed occupancy, stale revision, invalid count, range, adjacency, connectedness, or geometry result must apply no partial mutation.
+- Remove the current instant-flow `hazardCells: []` limitation and route the revalidated cells into authoritative move resolution. Document that the client selects server-issued options and never supplies hazard mechanics or trusted coordinates.
+
+**Tests:** Cover overlay selection/submission, exact and up-to selections, forged options, over-count, disconnected, occupied, out-of-range, stale windows, refresh/reconnect, atomic failure, accepted cell propagation, and duplicate response delivery.
+
+**Done:** Legal hazard cells selected by stable server-issued option IDs reach the accepted authoritative move exactly once; over-count, disconnected, occupied, out-of-range, forged, and stale selections reject without mutation.
 
 ## MA-135 — Add hazard ownership, layers, and geometry
 
 Status: TODO
 
-**Depends on:** MA-133–MA-134
+**Depends on:** MA-133, MA-134B
 **Commit:** `feat(move-automation): validate owned hazard zones`
 
 **Touch:** hazard types/reducers, geometry property tests.
