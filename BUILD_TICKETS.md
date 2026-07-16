@@ -1754,7 +1754,7 @@ Status: DONE
 
 ## MA-131 — Implement transferable state for Baton Pass
 
-Status: TODO
+Status: DONE
 
 **Depends on:** MA-057, MA-130
 **Commit:** `feat(move-automation): transfer eligible effects on switch`
