@@ -33,6 +33,7 @@ const movementIdentity = (): Record<string, unknown> => ({
   movementId: 'movement.path.1',
   mode: 'voluntary',
   step: 1,
+  stepCount: 1,
 })
 
 const effectForEvent = () => {
@@ -114,11 +115,20 @@ const validEvents = (): Record<string, unknown>[] => [
     cell: { x: 1, y: 0, z: 1 },
   },
   {
+    ...common('placement-leaving-adjacency'),
+    placementId: 'actor-token',
+    adjacentPlacementId: 'defender-token',
+    movement: movementIdentity(),
+    from: { x: 1, y: 0, z: 1 },
+    to: { x: 2, y: 0, z: 1 },
+  },
+  {
     ...common('placement-moving'),
     placementId: 'actor-token',
     movement: movementIdentity(),
     from: { x: 1, y: 0, z: 1 },
     to: { x: 2, y: 0, z: 1 },
+    finalDestination: true,
   },
   {
     ...common('switch'),
@@ -189,6 +199,7 @@ describe('authoritative encounter events', () => {
       'move-completed',
       'placement-entering',
       'placement-leaving',
+      'placement-leaving-adjacency',
       'placement-moving',
       'switch',
       'recall',
@@ -344,8 +355,26 @@ describe('authoritative encounter events', () => {
     }, 'invalid-encounter-event', 'encounterEvent.movement.mode')
     expectEventError({
       ...moving,
+      movement: { ...(moving.movement as object), step: 2 },
+    }, 'invalid-encounter-event', 'encounterEvent.movement.step')
+    expectEventError({
+      ...moving,
+      movement: { ...(moving.movement as object), stepCount: 2 },
+    }, 'invalid-encounter-event', 'encounterEvent.finalDestination')
+    expectEventError({
+      ...moving,
+      finalDestination: false,
+    }, 'invalid-encounter-event', 'encounterEvent.finalDestination')
+    expectEventError({
+      ...moving,
       to: { x: -1, y: 0, z: 0 },
     }, 'limit-exceeded', 'encounterEvent.to.x')
+
+    const leavingAdjacency = eventOfKind('placement-leaving-adjacency')
+    expectEventError({
+      ...leavingAdjacency,
+      adjacentPlacementId: leavingAdjacency.placementId,
+    }, 'invalid-encounter-event', 'encounterEvent')
 
     const switched = eventOfKind('switch')
     expectEventError({

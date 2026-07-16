@@ -5,6 +5,7 @@ import {
   type MoveMovementRequestEffectOperation,
 } from '#shared/moveAutomation/effects'
 import type { GridAnchor } from '~/types/map'
+import type { AuthoritativeMovementTriggeringStep } from '../../movement/resolveMovement'
 import {
   footprintsOverlap,
   gridFootprintTransition,
@@ -97,7 +98,7 @@ export interface MoveSpatialRelocationTerrain {
   readonly touchingSurface: boolean
 }
 
-/** Explicit lifecycle policy consumed later by movement-step event planning. */
+/** Explicit lifecycle policy projected into the shared movement-step evidence. */
 export interface MoveSpatialRelocationTriggers {
   readonly placementLeaving: boolean
   readonly placementEntering: boolean
@@ -125,6 +126,8 @@ export interface MoveSpatialRelocationMovement {
   readonly willingness: Extract<MoveSpatialWillingness, 'willing'>
   readonly terrain: MoveSpatialRelocationTerrain
   readonly triggers: MoveSpatialRelocationTriggers
+  /** One endpoint transition for shared lifecycle event planning; never an intermediate route. */
+  readonly triggeringSteps: readonly AuthoritativeMovementTriggeringStep[]
 }
 
 export interface MoveSpatialRelocationFootprint {
@@ -396,6 +399,42 @@ const anchorDistance = (origin: GridAnchor, destination: GridAnchor): number => 
   })
 )
 
+const relocationTriggeringSteps = (input: {
+  readonly origin: GridAnchor
+  readonly destination: GridAnchor
+  readonly distance: number
+  readonly terrain: MovementAnchorTerrain
+  readonly triggers: MoveSpatialRelocationTriggers
+}): readonly AuthoritativeMovementTriggeringStep[] => {
+  if (!input.triggers.placementMoving) return []
+  const changedAxisCount = [
+    input.origin.x !== input.destination.x,
+    input.origin.y !== input.destination.y,
+    input.origin.z !== input.destination.z,
+  ].filter(Boolean).length
+  return [{
+    index: 1,
+    from: cloneAnchor(input.origin),
+    to: cloneAnchor(input.destination),
+    cost: input.distance,
+    cumulativeCost: input.distance,
+    diagonal: changedAxisCount > 1,
+    slowCostApplied: false,
+    capabilities: [],
+    terrain: {
+      requirements: [...input.terrain.requirements],
+      slow: false,
+      air: input.terrain.air,
+      airHeight: input.terrain.airHeight,
+      hoverable: input.terrain.hoverable,
+    },
+    leftAdjacentPlacementIds: [],
+    leftCells: input.triggers.leftCells.map(cloneAnchor),
+    enteredCells: input.triggers.enteredCells.map(cloneAnchor),
+    finalDestination: true,
+  }]
+}
+
 const relocationMovement = (input: {
   readonly operation: MoveSpatialRelocationEffectOperation
   readonly recipient: MoveSpatialRelocationFootprint
@@ -408,6 +447,14 @@ const relocationMovement = (input: {
   const destination = cloneAnchor(input.destination)
   const moved = !anchorsEqual(origin, destination)
   const transition = gridFootprintTransition(origin, destination, input.recipient)
+  const triggers: MoveSpatialRelocationTriggers = {
+    placementLeaving: moved && transition.leftCells.length > 0,
+    placementEntering: moved && transition.enteredCells.length > 0,
+    placementMoving: moved,
+    opportunityAttacks: false,
+    leftCells: transition.leftCells.map(cloneAnchor),
+    enteredCells: transition.enteredCells.map(cloneAnchor),
+  }
   return {
     operationId: input.operation.id,
     recipientPlacementId: input.recipient.placementId,
@@ -424,14 +471,14 @@ const relocationMovement = (input: {
     relationship: input.relationship,
     willingness: 'willing',
     terrain: relocationTerrainEvidence(input.terrain),
-    triggers: {
-      placementLeaving: moved && transition.leftCells.length > 0,
-      placementEntering: moved && transition.enteredCells.length > 0,
-      placementMoving: moved,
-      opportunityAttacks: false,
-      leftCells: transition.leftCells.map(cloneAnchor),
-      enteredCells: transition.enteredCells.map(cloneAnchor),
-    },
+    triggers,
+    triggeringSteps: relocationTriggeringSteps({
+      origin,
+      destination,
+      distance: anchorDistance(origin, destination),
+      terrain: input.terrain,
+      triggers,
+    }),
   }
 }
 

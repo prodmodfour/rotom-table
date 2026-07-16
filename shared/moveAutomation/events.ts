@@ -33,6 +33,7 @@ export const ENCOUNTER_EVENT_KINDS = [
   'move-completed',
   'placement-entering',
   'placement-leaving',
+  'placement-leaving-adjacency',
   'placement-moving',
   'switch',
   'recall',
@@ -101,6 +102,7 @@ export const ENCOUNTER_EVENT_REACTION_TIMINGS: Readonly<
   'move-hit': 'post-hit',
   'move-damaged': 'post-damage',
   'move-ko': 'ko',
+  'placement-leaving-adjacency': 'movement-step',
   'placement-moving': 'movement-step',
   switch: 'switch',
   'move-completed': 'cleanup',
@@ -205,6 +207,8 @@ export interface EncounterMovementIdentity {
   readonly mode: EncounterEventMovementMode
   /** One-based position in the authoritative movement path. */
   readonly step: number
+  /** Immutable authoritative path length used to identify the final step. */
+  readonly stepCount: number
 }
 
 export interface EncounterPlacementEnteringEvent
@@ -221,12 +225,24 @@ export interface EncounterPlacementLeavingEvent
   readonly cell: EncounterEventCell
 }
 
+export interface EncounterPlacementLeavingAdjacencyEvent
+  extends EncounterEventEnvelope<'placement-leaving-adjacency'> {
+  readonly placementId: string
+  /** Placement whose adjacency is lost before this path step commits. */
+  readonly adjacentPlacementId: string
+  readonly movement: EncounterMovementIdentity
+  readonly from: EncounterEventCell
+  readonly to: EncounterEventCell
+}
+
 export interface EncounterPlacementMovingEvent
   extends EncounterEventEnvelope<'placement-moving'> {
   readonly placementId: string
   readonly movement: EncounterMovementIdentity
   readonly from: EncounterEventCell
   readonly to: EncounterEventCell
+  /** True exactly on the final authoritative path step. */
+  readonly finalDestination: boolean
 }
 
 export interface EncounterSwitchEvent
@@ -276,6 +292,7 @@ export type EncounterEvent =
   | EncounterMoveCompletedEvent
   | EncounterPlacementEnteringEvent
   | EncounterPlacementLeavingEvent
+  | EncounterPlacementLeavingAdjacencyEvent
   | EncounterPlacementMovingEvent
   | EncounterSwitchEvent
   | EncounterRecallEvent
@@ -369,12 +386,21 @@ const PLACEMENT_CELL_FIELDS = [
   'movement',
   'cell',
 ] as const
+const PLACEMENT_LEAVING_ADJACENCY_FIELDS = [
+  ...COMMON_FIELDS,
+  'placementId',
+  'adjacentPlacementId',
+  'movement',
+  'from',
+  'to',
+] as const
 const PLACEMENT_MOVING_FIELDS = [
   ...COMMON_FIELDS,
   'placementId',
   'movement',
   'from',
   'to',
+  'finalDestination',
 ] as const
 const SWITCH_FIELDS = [
   ...COMMON_FIELDS,
@@ -403,7 +429,7 @@ const DAMAGE_FIELDS = [
   'moveType',
 ] as const
 const CELL_FIELDS = ['x', 'y', 'z'] as const
-const MOVEMENT_IDENTITY_FIELDS = ['movementId', 'mode', 'step'] as const
+const MOVEMENT_IDENTITY_FIELDS = ['movementId', 'mode', 'step', 'stepCount'] as const
 
 const STABLE_ID_PATTERN = /^[a-z0-9]+(?:[._:/-][a-z0-9]+)*$/
 const CONTROL_CHARACTER_PATTERN = /[\u0000-\u001f\u007f]/
@@ -830,6 +856,25 @@ const parseMovementIdentity = (
   path: string,
 ): EncounterMovementIdentity => {
   const movement = parseExactRecord(value, MOVEMENT_IDENTITY_FIELDS, path)
+  const step = parseInteger(
+    movement.step,
+    `${path}.step`,
+    1,
+    ENCOUNTER_EVENT_LIMITS.movementStep,
+  )
+  const stepCount = parseInteger(
+    movement.stepCount,
+    `${path}.stepCount`,
+    1,
+    ENCOUNTER_EVENT_LIMITS.movementStep,
+  )
+  if (step > stepCount) {
+    fail(
+      'invalid-encounter-event',
+      `${path}.step`,
+      'must not exceed the authoritative movement step count.',
+    )
+  }
   return {
     movementId: parseStableId(movement.movementId, `${path}.movementId`),
     mode: parseEnum<EncounterEventMovementMode>(
@@ -838,12 +883,8 @@ const parseMovementIdentity = (
       `${path}.mode`,
       'voluntary, forced, teleport, or swap',
     ),
-    step: parseInteger(
-      movement.step,
-      `${path}.step`,
-      1,
-      ENCOUNTER_EVENT_LIMITS.movementStep,
-    ),
+    step,
+    stepCount,
   }
 }
 
@@ -1025,8 +1066,20 @@ const parseDetachedEvent = (value: unknown, path: string): EncounterEvent => {
     }
   }
 
-  if (kind === 'placement-moving') {
-    assertExactFields(record, PLACEMENT_MOVING_FIELDS, path)
+  if (kind === 'placement-leaving-adjacency') {
+    assertExactFields(record, PLACEMENT_LEAVING_ADJACENCY_FIELDS, path)
+    const placementId = parsePlacementId(record.placementId, `${path}.placementId`)
+    const adjacentPlacementId = parsePlacementId(
+      record.adjacentPlacementId,
+      `${path}.adjacentPlacementId`,
+    )
+    if (placementId === adjacentPlacementId) {
+      fail(
+        'invalid-encounter-event',
+        path,
+        'a placement cannot leave adjacency with itself.',
+      )
+    }
     const from = parseCell(record.from, `${path}.from`)
     const to = parseCell(record.to, `${path}.to`)
     if (cellsEqual(from, to)) {
@@ -1034,10 +1087,45 @@ const parseDetachedEvent = (value: unknown, path: string): EncounterEvent => {
     }
     return {
       ...parseCommon(record, kind, path),
-      placementId: parsePlacementId(record.placementId, `${path}.placementId`),
+      placementId,
+      adjacentPlacementId,
       movement: parseMovementIdentity(record.movement, `${path}.movement`),
       from,
       to,
+    }
+  }
+
+  if (kind === 'placement-moving') {
+    assertExactFields(record, PLACEMENT_MOVING_FIELDS, path)
+    const from = parseCell(record.from, `${path}.from`)
+    const to = parseCell(record.to, `${path}.to`)
+    if (cellsEqual(from, to)) {
+      fail('invalid-encounter-event', path, 'movement must change the placement cell.')
+    }
+    const movement = parseMovementIdentity(record.movement, `${path}.movement`)
+    if (typeof record.finalDestination !== 'boolean') {
+      fail(
+        'invalid-encounter-event',
+        `${path}.finalDestination`,
+        'must be a boolean.',
+      )
+    }
+    const finalDestination = record.finalDestination as boolean
+    const expectedFinalDestination = movement.step === movement.stepCount
+    if (finalDestination !== expectedFinalDestination) {
+      fail(
+        'invalid-encounter-event',
+        `${path}.finalDestination`,
+        `must be ${String(expectedFinalDestination)} for movement step ${movement.step} of ${movement.stepCount}.`,
+      )
+    }
+    return {
+      ...parseCommon(record, kind, path),
+      placementId: parsePlacementId(record.placementId, `${path}.placementId`),
+      movement,
+      from,
+      to,
+      finalDestination,
     }
   }
 

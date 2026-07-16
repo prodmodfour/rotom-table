@@ -1767,7 +1767,7 @@ Status: DONE
 
 ## MA-132 — Emit lifecycle events for every movement step
 
-Status: TODO
+Status: DONE
 
 **Depends on:** MA-059–MA-060, MA-120
 **Commit:** `feat(move-automation): trigger effects during movement paths`

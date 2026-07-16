@@ -68,6 +68,7 @@ describe('canonical move reaction contract', () => {
       ['move-hit', 'post-hit'],
       ['move-damaged', 'post-damage'],
       ['move-ko', 'ko'],
+      ['placement-leaving-adjacency', 'movement-step'],
       ['placement-moving', 'movement-step'],
       ['switch', 'switch'],
       ['move-completed', 'cleanup'],

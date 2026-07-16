@@ -13,6 +13,7 @@ import {
   parseMoveEffectOperations,
   type MoveEffectOperation,
   type MoveEffectOperationKind,
+  type MoveReactionRequestEffectOperation,
 } from '#shared/moveAutomation/effects'
 import {
   parseEncounterState,
@@ -150,6 +151,17 @@ export interface EncounterLifecycleAppliedTransition {
   readonly transition: EncounterEffectLifecycleTransition
 }
 
+/**
+ * A typed reaction request enqueued by one lifecycle fact. Movement-path
+ * orchestration uses this explicit signal to suspend before later path facts;
+ * the reducer itself remains repository-free and never opens a window.
+ */
+export interface EncounterLifecyclePendingInterrupt {
+  readonly eventId: string
+  readonly eventKind: EncounterEventKind
+  readonly operation: MoveReactionRequestEffectOperation
+}
+
 export interface EncounterLifecycleReductionResult {
   readonly state: EncounterState
   /** True only when the final encounter state differs from the input state. */
@@ -160,6 +172,8 @@ export interface EncounterLifecycleReductionResult {
   readonly emittedEvents: readonly EncounterEvent[]
   /** Typed mechanics work for the caller's planner, in exact enqueue order. */
   readonly operations: readonly MoveEffectOperation[]
+  /** Typed suspension signals, in the same order as their operations. */
+  readonly pendingInterrupts: readonly EncounterLifecyclePendingInterrupt[]
   readonly transitions: readonly EncounterLifecycleAppliedTransition[]
   readonly trace: readonly EncounterLifecycleTraceEntry[]
   readonly counters: EncounterLifecycleReductionCounters
@@ -389,6 +403,7 @@ export const reduceEncounterLifecycle = (
   const processedEvents: EncounterEvent[] = []
   const emittedEvents: EncounterEvent[] = []
   const operations: MoveEffectOperation[] = []
+  const pendingInterrupts: EncounterLifecyclePendingInterrupt[] = []
   const transitions: EncounterLifecycleAppliedTransition[] = []
   const trace: EncounterLifecycleTraceEntry[] = []
   const operationIds = new Set<string>()
@@ -571,6 +586,13 @@ export const reduceEncounterLifecycle = (
           }
           operationIds.add(operation.id)
           operations.push(operation)
+          if (operation.kind === 'reaction-request') {
+            pendingInterrupts.push(deepFreeze({
+              eventId: event.eventId,
+              eventKind: event.kind,
+              operation,
+            }))
+          }
           counters.operationCount += 1
           appendTrace({
             kind: 'operation-enqueued',
@@ -648,6 +670,7 @@ export const reduceEncounterLifecycle = (
     processedEvents,
     emittedEvents,
     operations,
+    pendingInterrupts,
     transitions,
     trace,
     counters,

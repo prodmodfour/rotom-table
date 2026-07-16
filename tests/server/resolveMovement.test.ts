@@ -157,6 +157,7 @@ describe('authoritative movement oracle', () => {
           airHeight: 0,
           hoverable: true,
         },
+        leftAdjacentPlacementIds: [],
         leftCells: [{ x: 0, y: 0, z: 0 }],
         enteredCells: [{ x: 1, y: 0, z: 1 }],
         finalDestination: false,
@@ -177,6 +178,7 @@ describe('authoritative movement oracle', () => {
           airHeight: 0,
           hoverable: true,
         },
+        leftAdjacentPlacementIds: [],
         leftCells: [{ x: 1, y: 0, z: 1 }],
         enteredCells: [{ x: 2, y: 0, z: 2 }],
         finalDestination: true,
@@ -185,6 +187,32 @@ describe('authoritative movement oracle', () => {
     expect(Object.isFrozen(result)).toBe(true)
     expect(Object.isFrozen(result.path)).toBe(true)
     expect(Object.isFrozen(result.triggeringSteps[0]?.terrain)).toBe(true)
+  })
+
+  it('records the exact step where authoritative footprint adjacency is lost', () => {
+    const arena = map([
+      placement('actor', 0, 1),
+      placement('defender', 0, 0),
+    ], { dimensions: { x: 5, y: 2, z: 4 } })
+    const result = resolveMovement(input({
+      map: arena,
+      sheets: sheets([
+        pokemonSheet('actor', { capabilities: { overland: 6 } }),
+        pokemonSheet('defender'),
+      ]),
+      destination: { x: 2, y: 0, z: 1 },
+    }))
+
+    expect(result).toMatchObject({ ok: true })
+    if (!result.ok) throw new Error('expected legal adjacency-leaving movement')
+    expect(result.triggeringSteps.map(step => ({
+      index: step.index,
+      leftAdjacentPlacementIds: step.leftAdjacentPlacementIds,
+    }))).toEqual([
+      { index: 1, leftAdjacentPlacementIds: [] },
+      { index: 2, leftAdjacentPlacementIds: ['defender'] },
+    ])
+    expect(Object.isFrozen(result.triggeringSteps[1]?.leftAdjacentPlacementIds)).toBe(true)
   })
 
   it('derives a straight Pass destination, occupancy, and triggers while crossing placements', () => {

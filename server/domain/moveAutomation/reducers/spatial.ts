@@ -28,6 +28,7 @@ import {
   resolveAuthoritativeDisplacement,
   type AuthoritativeDisplacementObstruction,
   type AuthoritativeMovementSheets,
+  type AuthoritativeMovementTriggeringStep,
 } from '../../movement/resolveMovement'
 import type {
   AuthoritativeMoveRulesContext,
@@ -167,6 +168,7 @@ export interface MoveSpatialMovement {
   readonly destination: GridAnchor
   /** Authoritative collision-checked straight path, including origin and destination. */
   readonly path: readonly GridAnchor[]
+  readonly triggeringSteps: readonly AuthoritativeMovementTriggeringStep[]
   readonly resolvedDistance: number
   readonly shortened: boolean
   readonly shorteningReason: MoveSpatialShorteningReason
@@ -674,6 +676,7 @@ const resolveDisplacementMovement = (input: {
     origin: cloneAnchor(movement.origin),
     destination: cloneAnchor(movement.destination),
     path: movement.path.map(cloneAnchor),
+    triggeringSteps: movement.triggeringSteps,
     resolvedDistance: movement.resolvedDistance,
     shortened: movement.shortened,
     shorteningReason: movement.shorteningReason,

@@ -35,7 +35,10 @@ import {
   buildMoveAutomationPassDirectionSteps,
   moveAutomationAreaDirectionVector,
 } from '~/utils/moveAutomationDirections'
-import { ptuGridVectorDistance } from '~/utils/ptuGridDistance'
+import {
+  ptuGridDistanceBetweenFootprints,
+  ptuGridVectorDistance,
+} from '~/utils/ptuGridDistance'
 import {
   buildMapMovementTerrainIndex,
   movementTerrainForAnchor,
@@ -267,6 +270,7 @@ export interface AuthoritativeDisplacementSuccess extends AuthoritativeDisplacem
   readonly placementId: string
   readonly movementMode: AuthoritativeDisplacementMovementMode
   readonly distancePolicy: AuthoritativeDisplacementDistancePolicy
+  readonly triggeringSteps: readonly AuthoritativeMovementTriggeringStep[]
   readonly consultedPlacementIds: readonly string[]
   readonly sheetReads: readonly AuthoritativeMovementSheetRead[]
 }
@@ -341,8 +345,9 @@ export interface AuthoritativeMovementOccupancy {
 }
 
 /**
- * One path transition that later lifecycle tickets can turn into ordered
- * leave/enter/final-destination events. No event is emitted by this pure oracle.
+ * One immutable path transition consumed by movement lifecycle planning for
+ * ordered adjacency/leave/enter/final-destination facts. The oracle itself
+ * remains event- and repository-free.
  */
 export interface AuthoritativeMovementTriggeringStep {
   readonly index: number
@@ -354,6 +359,8 @@ export interface AuthoritativeMovementTriggeringStep {
   readonly slowCostApplied: boolean
   readonly capabilities: readonly AuthoritativeMovementCapability[]
   readonly terrain: AuthoritativeMovementTerrain
+  /** Other placements whose footprint was adjacent at `from` but not at `to`. */
+  readonly leftAdjacentPlacementIds: readonly string[]
   readonly leftCells: readonly GridAnchor[]
   readonly enteredCells: readonly GridAnchor[]
   readonly finalDestination: boolean
@@ -919,9 +926,31 @@ const effectiveLimit = (
     : Math.min(capabilityLimit, policy.maximumCost)
 }
 
+const footprintsAdjacentAt = (
+  mover: MovementPlacementSnapshot,
+  anchor: GridAnchor,
+  other: MovementPlacementSnapshot,
+): boolean => ptuGridDistanceBetweenFootprints(
+  { ...mover, position: anchor },
+  other,
+) === 1
+
+const leftAdjacentPlacementIds = (
+  step: Pick<MovementPathStep, 'from' | 'to'>,
+  mover: MovementPlacementSnapshot,
+  placements: readonly MovementPlacementSnapshot[],
+): readonly string[] => placements.flatMap(placement => (
+  placement.id !== mover.id
+  && footprintsAdjacentAt(mover, step.from, placement)
+  && !footprintsAdjacentAt(mover, step.to, placement)
+    ? [placement.id]
+    : []
+))
+
 const triggeringStep = (
   step: MovementPathStep,
   mover: MovementPlacementSnapshot,
+  placements: readonly MovementPlacementSnapshot[],
   finalStepIndex: number,
 ): AuthoritativeMovementTriggeringStep => {
   const transition = gridFootprintTransition(step.from, step.to, mover)
@@ -935,6 +964,7 @@ const triggeringStep = (
     slowCostApplied: step.slow,
     capabilities: capabilityList(mover.movementCapabilities, step.capabilityKeys),
     terrain: terrainSnapshot(step.terrain),
+    leftAdjacentPlacementIds: [...leftAdjacentPlacementIds(step, mover, placements)],
     leftCells: cloneAnchors(transition.leftCells),
     enteredCells: cloneAnchors(transition.enteredCells),
     finalDestination: step.index === finalStepIndex,
@@ -1117,7 +1147,7 @@ const resolvePreparedPassMovement = (
     }
 
     const triggeringSteps = pathResult.steps.map(step => (
-      triggeringStep(step, input.mover, pathResult.steps.length)
+      triggeringStep(step, input.mover, input.placements, pathResult.steps.length)
     ))
     return deepFreeze({
       ok: true,
@@ -1498,7 +1528,7 @@ export const resolveMovement = (input: ResolveMovementInput): AuthoritativeMovem
   }
 
   const triggeringSteps = pathResult.steps.map(step => (
-    triggeringStep(step, mover, pathResult.steps.length)
+    triggeringStep(step, mover, placements, pathResult.steps.length)
   ))
 
   return deepFreeze({
@@ -1819,6 +1849,7 @@ export const resolveAuthoritativeDisplacement = (
     requestedDistance,
   })
   const path: GridAnchor[] = [origin]
+  const pathSteps: MovementPathStep[] = []
   let resolvedDistance = 0
   let obstruction: AuthoritativeDisplacementObstruction | null = null
 
@@ -1891,6 +1922,20 @@ export const resolveAuthoritativeDisplacement = (
       break
     }
 
+    const resolvedStep = step.steps[0]
+    if (!resolvedStep) {
+      obstruction = displacementObstruction({
+        reason: 'movement-mode-unavailable',
+        at: candidate.anchor,
+      })
+      break
+    }
+    pathSteps.push({
+      ...resolvedStep,
+      index: pathSteps.length + 1,
+      cost: candidate.distance - resolvedDistance,
+      cumulativeCost: candidate.distance,
+    })
     path.push(cloneAnchor(candidate.anchor))
     resolvedDistance = candidate.distance
   }
@@ -1923,6 +1968,9 @@ export const resolveAuthoritativeDisplacement = (
     })
   }
 
+  const triggeringSteps = pathSteps.map(step => (
+    triggeringStep(step, mover, placements, pathSteps.length)
+  ))
   return deepFreeze({
     ok: true,
     reasonCode: 'displacement-legal',
@@ -1930,6 +1978,7 @@ export const resolveAuthoritativeDisplacement = (
     movementMode: movementMode as AuthoritativeDisplacementMovementMode,
     distancePolicy: distancePolicy as AuthoritativeDisplacementDistancePolicy,
     ...cloneDisplacementPartial(partial),
+    triggeringSteps,
     consultedPlacementIds: [...consultedPlacementIds],
     sheetReads: sheetReads.map(read => ({ ...read })),
   })

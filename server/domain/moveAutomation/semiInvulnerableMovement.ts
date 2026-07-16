@@ -13,6 +13,7 @@ import type { TrainerSheet } from '~/types/trainerSheet'
 import {
   footprintsOverlap,
   getClearanceValue,
+  gridFootprintTransition,
   isAnchorWithinBounds,
 } from '~/utils/gridGeometry'
 import {
@@ -494,7 +495,7 @@ const appearMovement = (input: {
     capabilityModes: [],
     traversesIntermediateCells: false,
     ignoresMovementCapabilities: true,
-    triggeringSteps: [],
+    triggeringSteps: movement.triggeringSteps,
   })
 }
 
@@ -614,6 +615,19 @@ const carriedPairMovements = (input: {
     ...primary,
     resolutionOperationId: input.resolutionOperationId,
   })
+  const carriedTriggeringSteps = primary.triggeringSteps.map((step, index) => {
+    const from = targetPath[index]!
+    const to = targetPath[index + 1]!
+    const transition = gridFootprintTransition(from, to, target)
+    return {
+      ...step,
+      from: cloneAnchor(from),
+      to: cloneAnchor(to),
+      leftAdjacentPlacementIds: [],
+      leftCells: transition.leftCells.map(cloneAnchor),
+      enteredCells: transition.enteredCells.map(cloneAnchor),
+    }
+  })
   const carriedMovement = deepFreeze({
     resolutionOperationId: input.resolutionOperationId,
     placementId: target.id,
@@ -627,7 +641,7 @@ const carriedPairMovements = (input: {
     capabilityModes: [],
     traversesIntermediateCells: true,
     ignoresMovementCapabilities: true,
-    triggeringSteps: [],
+    triggeringSteps: carriedTriggeringSteps,
   })
   return deepFreeze([actorMovement, carriedMovement])
 }

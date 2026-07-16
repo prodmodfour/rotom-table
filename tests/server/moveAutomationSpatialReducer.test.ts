@@ -208,7 +208,7 @@ describe('MoveSpec spatial effect reducer', () => {
       dynamicRecipients: dynamicRecipients(),
     })
 
-    expect(result.movements).toEqual([{
+    expect(result.movements).toEqual([expect.objectContaining({
       operationId: 'operation.spatial',
       recipientPlacementId: 'target-token',
       mode: 'forced',
@@ -246,7 +246,15 @@ describe('MoveSpec spatial effect reducer', () => {
       shortened: false,
       shorteningReason: 'none',
       obstruction: null,
-    }])
+    })])
+    expect(result.movements[0]?.triggeringSteps.map(step => ({
+      index: step.index,
+      leftAdjacentPlacementIds: step.leftAdjacentPlacementIds,
+      finalDestination: step.finalDestination,
+    }))).toEqual([
+      { index: 1, leftAdjacentPlacementIds: ['actor-token'], finalDestination: false },
+      { index: 2, leftAdjacentPlacementIds: [], finalDestination: true },
+    ])
     expect(result.operationResults).toEqual([{
       operationId: 'operation.spatial',
       recipientIds: ['target-token'],
@@ -597,6 +605,15 @@ describe('MoveSpec spatial effect reducer', () => {
     if (movement.mode !== 'teleport') throw new Error('Expected teleport movement.')
     expect(movement.triggers.leftCells).toHaveLength(8)
     expect(movement.triggers.enteredCells).toHaveLength(8)
+    expect(movement.triggeringSteps).toEqual([
+      expect.objectContaining({
+        index: 1,
+        from: { x: 1, y: 0, z: 1 },
+        to: { x: 8, y: 0, z: 1 },
+        leftAdjacentPlacementIds: [],
+        finalDestination: true,
+      }),
+    ])
     expect(result.operationResults[0]).toMatchObject({
       outcome: 'applied',
       details: {

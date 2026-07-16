@@ -9,7 +9,10 @@ import {
   type EncounterEvent,
   type EncounterEventKind,
 } from '#shared/moveAutomation/events'
-import type { MoveLogEffectOperation } from '#shared/moveAutomation/effects'
+import type {
+  MoveLogEffectOperation,
+  MoveReactionRequestEffectOperation,
+} from '#shared/moveAutomation/effects'
 import {
   createEmptyEncounterState,
   type EncounterState,
@@ -112,6 +115,26 @@ const logOperation = (
   payload: {
     messageKey: 'move.lifecycle.triggered',
     arguments: [],
+  },
+})
+
+const reactionOperation = (
+  id: string,
+  eventId: string,
+): MoveReactionRequestEffectOperation => ({
+  id,
+  kind: 'reaction-request',
+  source: { kind: 'lifecycle-event', id: eventId },
+  recipients: { kind: 'actor' },
+  phase: 'movement',
+  reasonCode: 'lifecycle.pending-interrupt',
+  payload: {
+    requestId: `${id}.request`,
+    promptKey: 'lifecycle.pending-interrupt',
+    options: [{ id: 'option.react', labelKey: 'lifecycle.react' }],
+    allowPass: true,
+    timing: 'movement-step',
+    priority: 0,
   },
 })
 
@@ -282,6 +305,34 @@ describe('pure encounter lifecycle reducer', () => {
       'operation-enqueued',
     ])
     expect(result.operations.every(operation => Object.isFrozen(operation))).toBe(true)
+  })
+
+  it('surfaces typed reaction requests as explicit pending-interrupt signals', () => {
+    const event = moveHitEvent('event.pending-interrupt')
+    const handler: EncounterLifecycleTriggerHandler = {
+      id: 'handler.pending-interrupt',
+      resolve: ({ event: current }) => [{
+        effectId: null,
+        reasonCode: 'lifecycle.pending-interrupt',
+        operations: [reactionOperation('operation.pending-interrupt', current.eventId)],
+        emittedEvents: [],
+      }],
+    }
+
+    const result = reduceEncounterLifecycle(
+      stateWithEffects([]),
+      [event],
+      [handler],
+    )
+
+    expect(result.pendingInterrupts).toEqual([{
+      eventId: event.eventId,
+      eventKind: 'move-hit',
+      operation: result.operations[0],
+    }])
+    expect(result.pendingInterrupts[0]?.operation.kind).toBe('reaction-request')
+    expect(Object.isFrozen(result.pendingInterrupts)).toBe(true)
+    expect(Object.isFrozen(result.pendingInterrupts[0])).toBe(true)
   })
 
   it('applies effect facts and reduces emitted children depth-first in declared order', () => {
