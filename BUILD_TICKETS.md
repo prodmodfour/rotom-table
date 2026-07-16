@@ -9,7 +9,7 @@ Ticket statuses:
 
 The build loop must select the lowest-numbered TODO ticket. Each ticket below maps to one ticket from the supplied planning file; build ticket numbers follow that document's suggested order when present.
 
-Autonomous cycle rules for every ticket: implement only the selected ticket, run `scripts/quality-gate.sh`, update only the selected ticket status, commit with a conventional commit message, and leave the working tree clean. The final ticket (`MA-299`) may also set `AUTOMATION_STATUS: DONE` after all 287 refreshed tickets are complete.
+Autonomous cycle rules for every ticket: implement only the selected ticket, run `scripts/quality-gate.sh`, update only the selected ticket status, commit with a conventional commit message, and leave the working tree clean. The final ticket (`MA-299`) may also set `AUTOMATION_STATUS: DONE` after all 288 refreshed tickets are complete.
 
 ---
 
@@ -50,7 +50,7 @@ When a ticket introduces a new pure module, prefer this layout:
 
 The existing `src/utils/move-automation/` registry remains the v1 compatibility surface until the retirement tickets at the end.
 
-Queue size at this baseline: **287 commits**—181 engine/state/QA tickets, 33 conformance batches for the registered 258, and 73 implementation batches for the missing 518.
+Queue size at this baseline: **288 commits**—182 engine/state/QA tickets, 33 conformance batches for the registered 258, and 73 implementation batches for the missing 518.
 
 ## Decisions already locked
 
@@ -1804,26 +1804,45 @@ Status: DONE
 
 - Define strict bounded server-authored declarations, windows, and cell options for exact/up-to counts, origin and range, adjacency/connectedness, occupancy, and reviewed geometry. Bind each window to its authoritative map revision and move context; the client cannot author coordinates or constraint mechanics.
 - From an immutable authoritative map snapshot, deterministically materialize legal cells as stable option IDs while retaining each server-owned cell value for later revalidation. Add a pure validator that resolves a proposed option-ID set and enforces count, uniqueness, bounds, range, occupancy, adjacency, connectedness, and geometry.
-- Produce the bounded public window shape required by the durable choice machinery. Do not add the targeting overlay, resume resolution, or mutate map state in this ticket; the existing instant-flow limitation remains until MA-134B.
+- Produce the bounded public window shape required by the durable choice machinery. Do not add the targeting overlay, resume resolution, or mutate map state in this ticket; the existing instant-flow limitation remains until MA-134C.
 
 **Tests:** Cover strict parsing and bounds, exact and up-to counts, deterministic IDs/order, duplicate or forged options, over-count, disconnected, occupied, out-of-range, out-of-bounds, and immutable inputs.
 
 **Done:** Given one authoritative snapshot, the server can materialize one bounded hazard-cell window and purely validate selected option IDs without accepting client-authored cells or mechanics; no map mutation occurs.
 
-## MA-134B — Integrate authoritative hazard-cell selection
+## MA-134B — Materialize durable hazard-cell move suspensions
 
 Status: TODO
 
 **Depends on:** MA-134A
-**Commit:** `feat(move-automation): select authoritative hazard cells`
+**Commit:** `feat(move-automation): suspend for authoritative hazard cells`
 
-**Touch:** `shared/livePlayMoveResolution.ts`, targeting overlays, pending-response and move-resolver orchestration, live-play authority documentation, and component/resolver/integration tests.
+**Touch:** `shared/livePlayMoveResolution.ts`, MoveSpec hazard-choice execution, pending-resolution assembly/persistence and authorized response views, move-resolver orchestration, and focused interpreter/resolver/pending tests.
 
 **Implement:**
 
-- For a move that requires hazard placement, create the MA-134A window, present only its authorized options through the targeting overlay, and submit only the durable resolution/window IDs plus selected option IDs. Preserve existing choice authorization, privacy, reconnect, and duplicate-delivery behavior.
-- On resolution or resume, load the server-owned cells and revalidate the complete selection against fresh authoritative map state before including it in the move plan. A forged option, changed occupancy, stale revision, invalid count, range, adjacency, connectedness, or geometry result must apply no partial mutation.
-- Remove the current instant-flow `hazardCells: []` limitation and route the revalidated cells into authoritative move resolution. Document that the client selects server-issued options and never supplies hazard mechanics or trusted coordinates.
+- Connect a reviewed move's hazard-cell requirement to the MA-134A materializer. When the requirement is unresolved, stop execution before hazard mutation and create a typed pending window that retains the private server-owned options plus the bounded public projection.
+- Carry that window through suspension assembly, pending persistence, and authorized response listing. Bind it to the originating map revision, move context, resolution, and operation while preserving existing response ownership and privacy rules; no client-authored cell or constraint may enter the pending record.
+- Make window creation reconnect-safe and declaration-idempotent. Replaying the originating operation returns the same pending window without opening another window, spending again, incrementing the map revision again, or applying hazard state. Selecting, resuming, and applying cells remain in MA-134C.
+
+**Tests:** Cover exact-count and up-to-count reviewed moves suspending at the interpreter and authoritative resolver boundaries, strict pending/public round trips, eligible and ineligible response views, refresh listing, duplicate declaration replay, and absence of hazard mutation.
+
+**Done:** A move that needs hazard cells creates one durable, authorized, server-owned pending window and can restore that window after reconnect without trusting coordinates or mutating hazard state.
+
+## MA-134C — Select and apply authoritative hazard cells
+
+Status: TODO
+
+**Depends on:** MA-134B
+**Commit:** `feat(move-automation): select authoritative hazard cells`
+
+**Touch:** `shared/livePlayMoveResolution.ts`, targeting overlays, response-command/resume and move-plan orchestration, live-play authority documentation, and component/resolver/integration tests.
+
+**Implement:**
+
+- Present only the authorized MA-134B options through the targeting overlay, support exact and up-to selections, and submit only durable resolution/window IDs plus selected option IDs. Never send client-authored coordinates or hazard constraints, and preserve authorization, privacy, refresh, and reconnect behavior.
+- On response or resume, load the private server-owned window, resolve the selected option IDs, and revalidate the complete selection against fresh authoritative map state before including it in the move plan. A forged option, changed occupancy, stale revision, invalid count, range, adjacency, connectedness, or geometry result must apply no partial mutation.
+- Remove the current instant-flow `hazardCells: []` limitation, route only revalidated cells into authoritative move resolution, and make duplicate response delivery return the stored outcome without applying cells twice. Document the server-issued option and fresh-revalidation boundary.
 
 **Tests:** Cover overlay selection/submission, exact and up-to selections, forged options, over-count, disconnected, occupied, out-of-range, stale windows, refresh/reconnect, atomic failure, accepted cell propagation, and duplicate response delivery.
 
@@ -1833,7 +1852,7 @@ Status: TODO
 
 Status: TODO
 
-**Depends on:** MA-133, MA-134B
+**Depends on:** MA-133, MA-134C
 **Commit:** `feat(move-automation): validate owned hazard zones`
 
 **Touch:** hazard types/reducers, geometry property tests.
