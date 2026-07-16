@@ -271,7 +271,7 @@ const createDamageQuery = (options: {
         script: options.script,
         recipient: recipient.token,
         resolution: state,
-        fieldEffects: options.context.map.fieldEffects,
+        fieldEffects: options.context.queries.weather.projectFieldEffects(),
         selectedTargets,
         resolvedMoveType,
         naturalCriticalRoll: criticalEntry?.naturalResult ?? null,
@@ -303,6 +303,7 @@ const createDamageQuery = (options: {
           defenseStat: calculation.stats.defenseStat ?? null,
           evaluationTrace: calculation.evaluationTrace,
           damagePipeline: calculation.damagePipeline,
+          weather: calculation.weather.trace,
         } as unknown as MoveResolutionTraceJsonValue,
       }
     },

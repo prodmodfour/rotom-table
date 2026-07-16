@@ -932,7 +932,7 @@ const evaluateExpressionNode = (
       break
     case 'weather':
       value = activeFieldValue(
-        state.context.map.fieldEffects?.weather,
+        state.context.queries.weather.active(),
         'weather',
         nodeId,
       )

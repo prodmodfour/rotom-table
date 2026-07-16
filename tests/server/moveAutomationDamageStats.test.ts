@@ -19,7 +19,7 @@ import {
   createFiniteAuthoritativeMoveRandomStream,
 } from '~~/server/domain/moveAutomation/random'
 import type { CharacterSheet } from '~/types/characterSheet'
-import type { SheetPlacement, TabletopMap } from '~/types/map'
+import type { MapWeatherKind, SheetPlacement, TabletopMap } from '~/types/map'
 import type { MoveAutomationScript } from '~/types/moveAutomation'
 import type { TrainerSheet } from '~/types/trainerSheet'
 import {
@@ -33,7 +33,7 @@ const placement = (id: string, sheetSlug: string, x: number): SheetPlacement => 
   position: { x, y: 0, z: 0 },
 })
 
-const mapFixture = (): TabletopMap => ({
+const mapFixture = (weather: readonly MapWeatherKind[] = []): TabletopMap => ({
   schemaVersion: 2,
   slug: 'damage-stat-arena',
   name: 'Damage Stat Arena',
@@ -43,7 +43,11 @@ const mapFixture = (): TabletopMap => ({
   playerVisible: true,
   voxels: [],
   hazards: [],
-  fieldEffects: { weather: [], terrains: [], rooms: [] },
+  fieldEffects: {
+    weather: weather.map(kind => ({ kind })),
+    terrains: [],
+    rooms: [],
+  },
   placements: [
     placement('actor-token', 'actor', 0),
     placement('target-token', 'target', 1),
@@ -67,8 +71,11 @@ const pokemonSheet = (
   ...overrides,
 })
 
-const context = () => buildAuthoritativeMoveRulesContext({
-  map: mapFixture(),
+const context = (options: {
+  readonly weather?: readonly MapWeatherKind[]
+  readonly targetAbilities?: readonly string[]
+} = {}) => buildAuthoritativeMoveRulesContext({
+  map: mapFixture(options.weather),
   pokemonSheets: new Map([
     ['actor', pokemonSheet('actor', {
       stats: {
@@ -80,6 +87,9 @@ const context = () => buildAuthoritativeMoveRulesContext({
       },
     })],
     ['target', pokemonSheet('target', {
+      ...(options.targetAbilities
+        ? { abilities: options.targetAbilities.map(name => ({ name })) }
+        : {}),
       stats: {
         atk: { added: 15, stage: 3 },
         def: { added: 3, stage: -1 },
@@ -259,7 +269,7 @@ describe('MoveSpec alternate attack and defense stat selection', () => {
   })
 
   it('records default and contextual contributors through the ordered pipeline', () => {
-    const rules = context()
+    const rules = context({ weather: ['sunny'] })
     const move = { ...script('Physical'), type: 'Fire' }
     const operation = damageOperation({ damageClass: 'physical', moveType: 'fire' })
     const resolution = {
@@ -280,11 +290,6 @@ describe('MoveSpec alternate attack and defense stat selection', () => {
       script: move,
       recipient: rules.queries.tokens.get('target-token')!,
       resolution,
-      fieldEffects: {
-        weather: [{ kind: 'sunny' }],
-        terrains: [],
-        rooms: [],
-      },
     })
 
     expect(calculation.damagePipeline?.stages.map(stage => stage.stage)).toEqual([
@@ -305,10 +310,10 @@ describe('MoveSpec alternate attack and defense stat selection', () => {
     expect(calculation.damagePipeline?.stages.flatMap(stage => stage.modifiers)).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
-          id: 'damage.field-roll',
-          source: { kind: 'field', id: 'active-field-effects' },
-          stackingGroup: 'field-damage-roll',
-          reasonCode: 'damage.field-roll-modifier',
+          id: 'damage.weather.sunny.fire',
+          source: { kind: 'field', id: expect.stringMatching(/^legacy\./) },
+          stackingGroup: 'weather.sunny.damage-roll',
+          reasonCode: 'weather.sunny.fire-damage-bonus',
           value: 5,
         }),
         expect.objectContaining({
@@ -323,6 +328,75 @@ describe('MoveSpec alternate attack and defense stat selection', () => {
       (calculation.damagePipeline?.typeScaledDamage ?? 0) + 10,
     )
     expect(calculation.breakdown.hpLoss).toBe(calculation.damagePipeline?.hpLoss)
+  })
+
+  it.each([
+    ['sunny', 'Fire', 5, 'weather.sunny.fire-damage-bonus'],
+    ['sunny', 'Water', -5, 'weather.sunny.water-damage-penalty'],
+    ['rainy', 'Water', 5, 'weather.rainy.water-damage-bonus'],
+    ['rainy', 'Fire', -5, 'weather.rainy.fire-damage-penalty'],
+  ] as const)(
+    'changes authoritative %s %s damage by the traced weather amount',
+    (weather, moveType, delta, reasonCode) => {
+      const calculate = (rules: ReturnType<typeof context>) => {
+        const move = { ...script('Special'), type: moveType }
+        return resolveMoveSpecDamageCalculation({
+          context: rules,
+          operation: damageOperation({
+            damageClass: 'special',
+            moveType: moveType.toLowerCase(),
+          }),
+          script: move,
+          recipient: rules.queries.tokens.get('target-token')!,
+          resolution: rolledDamage(move),
+          selectedTargets: [rules.queries.tokens.get('target-token')!],
+        })
+      }
+      const baseline = calculate(context())
+      const changed = calculate(context({ weather: [weather] }))
+
+      expect(changed.breakdown.hpLoss - baseline.breakdown.hpLoss).toBe(delta)
+      expect(changed.weather.trace).toEqual([
+        expect.objectContaining({
+          interaction: 'damage',
+          weatherKind: weather,
+          outcome: 'applied',
+          reasonCode,
+          value: delta,
+        }),
+      ])
+      expect(changed.damagePipeline?.stages.flatMap(stage => stage.modifiers))
+        .toContainEqual(expect.objectContaining({ reasonCode, value: delta }))
+    },
+  )
+
+  it('records immunity as a prevented weather decision without creating damage', () => {
+    const rules = context({ weather: ['sunny'], targetAbilities: ['Flash Fire'] })
+    const move = { ...script('Special'), type: 'Fire' }
+    const calculation = resolveMoveSpecDamageCalculation({
+      context: rules,
+      operation: damageOperation({ damageClass: 'special', moveType: 'fire' }),
+      script: move,
+      recipient: rules.queries.tokens.get('target-token')!,
+      resolution: rolledDamage(move),
+      selectedTargets: [rules.queries.tokens.get('target-token')!],
+    })
+
+    expect(calculation.moveType).toMatchObject({
+      finalMultiplier: 0,
+      immunitySource: 'Flash Fire',
+    })
+    expect(calculation.breakdown).toEqual({ kind: 'none', hpLoss: 0 })
+    expect(calculation.damagePipeline).toBeNull()
+    expect(calculation.weather).toMatchObject({
+      modifiers: [],
+      trace: [{
+        interaction: 'damage',
+        weatherKind: 'sunny',
+        outcome: 'prevented',
+        reasonCode: 'weather.damage.target-immune',
+      }],
+    })
   })
 
   it('compares alternate offense and defense stats deterministically', () => {

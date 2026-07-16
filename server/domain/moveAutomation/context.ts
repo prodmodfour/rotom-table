@@ -66,6 +66,10 @@ import {
   createMoveAutomationTargetStateResolver,
   type MoveAutomationTargetStateResolver,
 } from './targetState'
+import {
+  createMoveAutomationWeatherResolver,
+  type MoveAutomationWeatherResolver,
+} from './weather'
 
 export interface AuthoritativeMoveSheetRead {
   readonly kind: SheetKind
@@ -112,6 +116,7 @@ export type AuthoritativeMoveStatQueries = MoveAutomationStatResolver
 export type AuthoritativeMoveTargetStateQueries = MoveAutomationTargetStateResolver
 export type AuthoritativeMoveTargetabilityQueries = MoveSemiInvulnerableTargetabilityResolver
 export type AuthoritativeMoveLineOfSightQueries = MoveAutomationLineOfSightResolver
+export type AuthoritativeMoveWeatherQueries = MoveAutomationWeatherResolver
 
 export interface AuthoritativeMoveRuleQueries {
   runtimeFor(canonicalId: string): RegisteredMoveAutomationRuntime | null
@@ -130,6 +135,7 @@ export interface AuthoritativeMoveContextQueries {
   readonly targetStates: AuthoritativeMoveTargetStateQueries
   readonly targetability: AuthoritativeMoveTargetabilityQueries
   readonly lineOfSight: AuthoritativeMoveLineOfSightQueries
+  readonly weather: AuthoritativeMoveWeatherQueries
   readonly rules: AuthoritativeMoveRuleQueries
   resolveActorMoveEntry(moveName: string): CanonicalMoveEntryResult
 }
@@ -462,6 +468,7 @@ export const buildAuthoritativeMoveRulesContext = (
   const resources = createMoveAutomationResourceResolver(
     map.encounterState?.turnResources ?? createEmptyEncounterTurnResources(),
   )
+  const weather = createMoveAutomationWeatherResolver(map)
   const { tokens, byId: tokenById } = tokenSnapshots(
     map,
     placements,
@@ -612,6 +619,7 @@ export const buildAuthoritativeMoveRulesContext = (
     targetStates,
     targetability,
     lineOfSight,
+    weather,
     rules: Object.freeze({
       runtimeFor: (canonicalId: string) => runtimes.get(canonicalId) ?? null,
       legacyScriptFor,

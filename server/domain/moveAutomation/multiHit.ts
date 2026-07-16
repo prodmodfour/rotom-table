@@ -28,7 +28,10 @@ import {
   resolveMoveAutomationTargetEvasion,
 } from '~/utils/moveAutomationAccuracy'
 import { createMoveAutomationHpUpdateAccumulator } from '~/utils/moveAutomationHpUpdates'
-import { resolveMoveAutomationAccuracyRoll } from '~/utils/moveAutomationResolution'
+import {
+  resolveMoveAutomationAccuracyRoll,
+  type MoveAutomationAccuracyRule,
+} from '~/utils/moveAutomationResolution'
 import {
   createMoveAutomationCombatStageUpdateAccumulator,
   createMoveAutomationConditionUpdateAccumulator,
@@ -106,6 +109,7 @@ export interface MoveMultiHitAccuracyResolution {
   readonly hit: boolean
   readonly criticalCandidate: boolean
   readonly reasonCode: string
+  readonly contextualRule: MoveAutomationAccuracyRule | null
 }
 
 export interface MoveMultiHitEffectResolution {
@@ -455,6 +459,7 @@ const rollAccuracy = (options: {
         hit: true,
         criticalCandidate: false,
         reasonCode: 'multi-hit-automatic-hit',
+        contextualRule: null,
       },
     }
   }
@@ -479,9 +484,13 @@ const rollAccuracy = (options: {
       value: userAccuracy,
     }],
   })
+  const weatherAccuracy = options.context.queries.weather.accuracy({
+    canonicalMoveId: options.script.moveName,
+  })
   const result = resolveMoveAutomationAccuracyRoll(options.script, rolled.naturalResult, {
     userAccuracy,
     targetEvasion,
+    accuracyRule: weatherAccuracy.rule,
   })
   options.resolvedRolls.push({
     operationId: options.operation.id,
@@ -500,6 +509,7 @@ const rollAccuracy = (options: {
       hit: result.hit,
       criticalCandidate: result.crit,
       reasonCode: result.hit ? 'multi-hit-accuracy-hit' : 'multi-hit-accuracy-miss',
+      contextualRule: result.accuracyRule ?? null,
     },
   }
 }
@@ -859,6 +869,7 @@ export const executeMoveMultiHitOperation = (options: {
                 hit: true,
                 criticalCandidate: false,
                 reasonCode: 'multi-hit-automatic-hit',
+                contextualRule: null,
               },
             }
 
@@ -953,7 +964,7 @@ export const executeMoveMultiHitOperation = (options: {
               manualHpLoss: '',
               applyDamage: true,
             },
-            fieldEffects: context.map.fieldEffects,
+            fieldEffects: context.queries.weather.projectFieldEffects(),
             selectedTargets: options.recipientIds.flatMap((id) => {
               const selected = context.queries.tokens.get(id)
               return selected ? [selected] : []
@@ -982,6 +993,7 @@ export const executeMoveMultiHitOperation = (options: {
                   defenseStat: calculation.stats.defenseStat ?? null,
                   evaluationTrace: calculation.evaluationTrace,
                   damagePipeline: calculation.damagePipeline,
+                  weather: calculation.weather.trace,
                 } as unknown as MoveResolutionTraceJsonValue,
               }),
             },

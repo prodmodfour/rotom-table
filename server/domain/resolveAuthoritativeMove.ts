@@ -880,7 +880,7 @@ const resolveSelfMove = (options: {
   const transaction = resolveInstantSelfMoveAutomation({
     script: options.script,
     user: actor,
-    fieldEffects: options.context.map.fieldEffects,
+    fieldEffects: options.context.queries.weather.projectFieldEffects(),
     randomRoller: options.context.random,
   })
   return {
@@ -1051,8 +1051,11 @@ const resolveSingleTargetMove = (options: {
     user: actor,
     target,
     damageFormula: options.damageFormula,
-    fieldEffects: options.context.map.fieldEffects,
+    fieldEffects: options.context.queries.weather.projectFieldEffects(),
     conditionImmunityContext: authoritativeConditionImmunityContext(options.context, options.script),
+    accuracyRule: options.context.queries.weather.accuracy({
+      canonicalMoveId: options.canonicalMoveName,
+    }).rule,
     randomRoller: options.context.random,
   }
 
@@ -1252,8 +1255,11 @@ const resolveTargetCountMove = (options: {
     user: actor,
     selectedTargets,
     damageFormula: options.damageFormula,
-    fieldEffects: options.context.map.fieldEffects,
+    fieldEffects: options.context.queries.weather.projectFieldEffects(),
     conditionImmunityContext: authoritativeConditionImmunityContext(options.context, options.script),
+    accuracyRule: options.context.queries.weather.accuracy({
+      canonicalMoveId: options.canonicalMoveName,
+    }).rule,
     randomRoller: options.context.random,
   })
   const desiredFacing = desiredFacingTowardNearestTarget(actorPlacement, actor, selectedTargets)
@@ -1321,8 +1327,11 @@ const resolveAreaMove = (options: {
     user: actor,
     targets: selectedTargets,
     damageFormula: options.damageFormula,
-    fieldEffects: options.context.map.fieldEffects,
+    fieldEffects: options.context.queries.weather.projectFieldEffects(),
     conditionImmunityContext: authoritativeConditionImmunityContext(options.context, confirmedScript),
+    accuracyRule: options.context.queries.weather.accuracy({
+      canonicalMoveId: options.canonicalMoveName,
+    }).rule,
     randomRoller: options.context.random,
   })
   const targetExclusionLogLines = areaTargetPolicyLogLines(confirmedScript)

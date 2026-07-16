@@ -37,7 +37,10 @@ import {
   moveAutomationUserAccuracy,
   resolveMoveAutomationTargetEvasion,
 } from '~/utils/moveAutomationAccuracy'
-import { resolveMoveAutomationAccuracyRoll } from '~/utils/moveAutomationResolution'
+import {
+  resolveMoveAutomationAccuracyRoll,
+  type MoveAutomationAccuracyRule,
+} from '~/utils/moveAutomationResolution'
 import type { MoveAutomationScript } from '~/types/moveAutomation'
 import type { SpawnedPokemon } from '~/types/pokemon'
 import type { CharacterSheet } from '~/types/characterSheet'
@@ -1882,6 +1885,11 @@ export const executeMoveSpec = (
         const purpose = referencedAccuracyRollIds.has(operation.payload.rollId)
           ? 'accuracy' as const
           : 'generic' as const
+        const weatherAccuracy = purpose === 'accuracy'
+          ? input.context.queries.weather.accuracy({
+              canonicalMoveId: getMechanics().script.moveName,
+            })
+          : null
         const subjects: readonly (string | null)[] = operation.recipients.kind === 'none'
           ? [null]
           : recipientIds
@@ -1890,6 +1898,7 @@ export const executeMoveSpec = (
           readonly recipientId: string | null
           readonly naturalResult: number
           readonly finalValue: number
+          readonly accuracyRule: MoveAutomationAccuracyRule | null
         }> = []
         const hitSet = new Set(hitTargetIds)
         const missedSet = new Set(missedTargetIds)
@@ -1944,13 +1953,7 @@ export const executeMoveSpec = (
             recipientId,
             rollId,
           })
-          rollSummaries.push({
-            rollId,
-            recipientId,
-            naturalResult: result.naturalResult,
-            finalValue: result.finalValue,
-          })
-
+          let resolvedAccuracyRule: MoveAutomationAccuracyRule | null = null
           if (purpose === 'accuracy' && recipientId !== null && target) {
             const accuracy = resolveMoveAutomationAccuracyRoll(
               getMechanics().script,
@@ -1958,8 +1961,10 @@ export const executeMoveSpec = (
               {
                 userAccuracy: modifiers[0]?.value ?? 0,
                 targetEvasion,
+                accuracyRule: weatherAccuracy?.rule,
               },
             )
+            resolvedAccuracyRule = accuracy.accuracyRule ?? null
             if (accuracy.hit) {
               hitSet.add(recipientId)
               missedSet.delete(recipientId)
@@ -1969,6 +1974,13 @@ export const executeMoveSpec = (
               hitSet.delete(recipientId)
             }
           }
+          rollSummaries.push({
+            rollId,
+            recipientId,
+            naturalResult: result.naturalResult,
+            finalValue: result.finalValue,
+            accuracyRule: resolvedAccuracyRule,
+          })
         }
 
         hitTargetIds = canonicalPlacementIds(input.context, hitSet)

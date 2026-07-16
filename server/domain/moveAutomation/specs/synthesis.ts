@@ -3,6 +3,7 @@ import type {
   MoveHealEffectOperation,
 } from '#shared/moveAutomation/effects'
 import type { MovePredicate } from '#shared/moveAutomation/predicates'
+import { SUNNY_RAINY_HEALING_PROFILES } from '#shared/moveAutomation/weather'
 import type { MoveSpec } from '#shared/moveAutomation/spec'
 import type { MapWeatherKind } from '~/types/map'
 import type { MoveSpecV2Registration } from '../registry'
@@ -137,9 +138,18 @@ export const SYNTHESIS_MOVE_SPEC = Object.freeze({
           inactiveBranchId: 'synthesis.weather.normal-inactive',
           healOperationId: 'synthesis.heal-normal',
         }),
-        healOperation('sunny', 200 / 3),
-        healOperation('adverse', 25),
-        healOperation('normal', 50),
+        healOperation(
+          'sunny',
+          SUNNY_RAINY_HEALING_PROFILES['solar-restoration'].sunny,
+        ),
+        healOperation(
+          'adverse',
+          SUNNY_RAINY_HEALING_PROFILES['solar-restoration'].rainy,
+        ),
+        healOperation(
+          'normal',
+          SUNNY_RAINY_HEALING_PROFILES['solar-restoration'].clear,
+        ),
       ],
     },
     {

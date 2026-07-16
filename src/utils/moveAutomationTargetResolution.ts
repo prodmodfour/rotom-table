@@ -3,7 +3,10 @@ import {
   conditionAdjustedCombatStage,
   conditionDamageRollModifier,
 } from '~/utils/sheetConditionEffects'
-import { fieldEffectDamageBonus, type DamageRollResult } from '~/utils/moveAutomation'
+import {
+  fieldEffectDamageContributions,
+  type DamageRollResult,
+} from '~/utils/moveAutomation'
 import { parsePositiveInt } from '~/utils/moveAutomationDialog'
 import { applyInfatuationOffenseModifier, resolveInfatuationDamageEffect } from '~/utils/infatuationDamage'
 import { resolveMoveAutomationDirectHpLoss } from '~/utils/moveAutomationDirectHpLoss'
@@ -250,7 +253,7 @@ export const resolveMoveAutomationTargetDamageBreakdown = (
       { abilities: target.abilityNames },
     )))
   const resolvedMoveType = resolvedDamage.typeEffectiveness?.moveType ?? script.type
-  const fieldBonus = fieldEffectDamageBonus(resolvedMoveType, fieldEffects)
+  const fieldContributions = fieldEffectDamageContributions(resolvedMoveType, fieldEffects)
   const multiplier = resolvedDamage.typeEffectiveness?.multiplier
     ?? moveAutomationTargetDamageMultiplier(script, target)
   if (multiplier === 0) return NO_DAMAGE_BREAKDOWN
@@ -312,16 +315,16 @@ export const resolveMoveAutomationTargetDamageBreakdown = (
       value: infatuation.damageRollModifier,
     })
   }
-  if (fieldBonus !== 0) {
+  for (const field of fieldContributions) {
     modifiers.push({
-      id: 'damage.field-roll',
+      id: field.id,
       stage: 'pre-type-modifiers',
       priority: 200,
-      source: { kind: 'field', id: 'active-field-effects' },
-      stackingGroup: 'field-damage-roll',
-      reasonCode: 'damage.field-roll-modifier',
+      source: { kind: 'field', id: field.sourceId },
+      stackingGroup: field.stackingGroup,
+      reasonCode: field.reasonCode,
       operation: 'add',
-      value: fieldBonus,
+      value: field.value,
     })
   }
   modifiers.push({
@@ -392,7 +395,7 @@ export const resolveMoveAutomationTargetDamageBreakdown = (
     offense,
     resolvedStats.attackStat?.label ?? (physical ? 'Atk' : 'Sp.Atk'),
   ))
-  if (fieldBonus !== 0) terms.push(damageTerm(fieldBonus, 'field'))
+  for (const field of fieldContributions) terms.push(damageTerm(field.value, field.label))
   terms.push({
     operator: 'subtract',
     amount: defense,

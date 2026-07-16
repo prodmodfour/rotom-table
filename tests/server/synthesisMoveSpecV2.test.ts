@@ -8,6 +8,11 @@ import type {
   MoveResolutionOperationTraceEvent,
 } from '#shared/moveAutomation/trace'
 import {
+  parseEncounterZone,
+  type EncounterGlobalFieldZone,
+} from '#shared/moveAutomation/encounterZones'
+import { createEmptyEncounterState } from '#shared/moveAutomation/encounterState'
+import {
   allSynthesisV2SemanticScenarios,
   synthesisV2Fixture,
   synthesisV2ScenarioDefinition,
@@ -28,6 +33,9 @@ import {
 import {
   SYNTHESIS_MOVE_SPEC,
 } from '~~/server/domain/moveAutomation/specs/synthesis'
+import {
+  createEncounterGlobalFieldZone,
+} from '~~/server/domain/moveAutomation/fieldLifecycle'
 import {
   EXPLICIT_MOVE_AUTOMATION_REGISTRY_SOURCES,
 } from '~/utils/move-automation/registry'
@@ -112,6 +120,58 @@ describe('Synthesis native MoveSpec v2', () => {
       path: 'hpUpdates',
       code: 'forbidden-field',
     }))
+  })
+
+  it('ignores a suppressed native Sun even when its compatibility row is still visible', () => {
+    const fixture = synthesisV2Fixture('synthesis.v2-sunny')
+    const field = (kind: 'weather' | 'room', fieldId: string): EncounterGlobalFieldZone => (
+      createEncounterGlobalFieldZone({
+        kind,
+        fieldId,
+        source: {
+          kind: 'operation',
+          operationId: `operation.${fieldId}`,
+          moveId: `move.${fieldId}`,
+          placementId: 'actor-token',
+        },
+        sideId: null,
+        duration: { kind: 'rounds', boundary: 'end', remaining: 5 },
+        replacementGroup: kind === 'weather' ? 'field.weather' : `field.room.${fieldId}`,
+      })
+    )
+    const suppressor = field('room', 'magic')
+    const sunnyBase = field('weather', 'sunny')
+    const sunny = parseEncounterZone({
+      ...sunnyBase,
+      fieldPolicy: {
+        ...sunnyBase.fieldPolicy,
+        suppression: {
+          sources: [{
+            zoneId: suppressor.id,
+            reasonCode: 'field.weather.suppressed',
+          }],
+        },
+      },
+    })
+    fixture.map.encounterState = {
+      ...createEmptyEncounterState(),
+      zones: [sunny, suppressor],
+    }
+
+    const result = planAuthoritativeMoveState({
+      ...fixture,
+      random: createFiniteAuthoritativeMoveRandomStream([]),
+      now: () => 5_000,
+      operationId: 'op_synthesissuppress',
+    })
+
+    expect(result.resolution.transaction.hpUpdates).toEqual([
+      { id: 'actor-token', currentHp: 50, injuries: 0 },
+    ])
+    expect(predicateOutcome(result.resolution.auditTrace.events, 'synthesis.weather.sunny'))
+      .toBe(false)
+    expect(predicateOutcome(result.resolution.auditTrace.events, 'synthesis.weather.normal'))
+      .toBe(true)
   })
 
   it('shadow-plans every weather and full-HP branch with the same v1 mechanics', () => {

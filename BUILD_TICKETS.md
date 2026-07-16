@@ -1889,7 +1889,7 @@ Status: DONE
 
 ## MA-138 — Implement sun and rain mechanics
 
-Status: TODO
+Status: DONE
 
 **Depends on:** MA-077, MA-137
 **Commit:** `feat(move-automation): resolve sun and rain`

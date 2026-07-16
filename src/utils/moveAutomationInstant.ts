@@ -13,6 +13,7 @@ import {
   randomD20,
   resolveMoveAutomationAccuracyRoll,
   type MoveAutomationAccuracyRollResult,
+  type MoveAutomationAccuracyRule,
 } from '~/utils/moveAutomationResolution'
 import { formatDamageBase, rollDamageFormula } from '~/utils/moveAutomation'
 import {
@@ -63,6 +64,7 @@ export interface ResolveInstantAreaMoveAutomationInput {
   damageFormula?: string | null
   fieldEffects?: MapFieldEffects
   conditionImmunityContext?: MoveAutomationConditionImmunityContext
+  accuracyRule?: MoveAutomationAccuracyRule | null
   random?: () => number
   randomRoller?: MoveAutomationRandomRoller
 }
@@ -76,6 +78,7 @@ export interface ResolveInstantMultiTargetMoveAutomationInput {
   damageFormula?: string | null
   fieldEffects?: MapFieldEffects
   conditionImmunityContext?: MoveAutomationConditionImmunityContext
+  accuracyRule?: MoveAutomationAccuracyRule | null
   random?: () => number
   randomRoller?: MoveAutomationRandomRoller
 }
@@ -87,6 +90,7 @@ export interface ResolveInstantMoveAutomationInput {
   damageFormula: string | null | undefined
   fieldEffects?: MapFieldEffects
   conditionImmunityContext?: MoveAutomationConditionImmunityContext
+  accuracyRule?: MoveAutomationAccuracyRule | null
   random?: () => number
   randomRoller?: MoveAutomationRandomRoller
   idFactory?: () => string
@@ -99,6 +103,7 @@ export interface ResolveInstantTargetMoveAutomationInput {
   damageFormula?: string | null
   fieldEffects?: MapFieldEffects
   conditionImmunityContext?: MoveAutomationConditionImmunityContext
+  accuracyRule?: MoveAutomationAccuracyRule | null
   random?: () => number
   randomRoller?: MoveAutomationRandomRoller
 }
@@ -455,6 +460,7 @@ const resolveInstantDoubleStrikeMoveAutomation = ({
   damageFormula,
   fieldEffects,
   conditionImmunityContext,
+  accuracyRule,
   random,
   randomRoller,
   idFactory,
@@ -472,6 +478,7 @@ const resolveInstantDoubleStrikeMoveAutomation = ({
     }), {
       userAccuracy,
       targetEvasion: targetEvasion.value,
+      accuracyRule,
     }),
   )
   const hitCount = accuracyRolls.filter((roll) => roll.hit).length
@@ -578,6 +585,7 @@ export const resolveInstantMoveAutomation = ({
   damageFormula,
   fieldEffects,
   conditionImmunityContext,
+  accuracyRule,
   random,
   randomRoller,
   idFactory,
@@ -592,6 +600,7 @@ export const resolveInstantMoveAutomation = ({
       damageFormula,
       fieldEffects,
       conditionImmunityContext,
+      accuracyRule,
       random,
       randomRoller,
       idFactory,
@@ -610,6 +619,7 @@ export const resolveInstantMoveAutomation = ({
   const accuracy = resolveMoveAutomationAccuracyRoll(script, naturalRoll, {
     userAccuracy,
     targetEvasion: targetEvasion.value,
+    accuracyRule,
   })
   const runtimeDamage = accuracy.hit && script.damaging
     ? resolveMoveAutomationRuntimeDamageFormula({
@@ -848,6 +858,7 @@ interface ResolveInstantTargetGroupMoveAutomationInput {
   damageFormula?: string | null
   fieldEffects?: MapFieldEffects
   conditionImmunityContext?: MoveAutomationConditionImmunityContext
+  accuracyRule?: MoveAutomationAccuracyRule | null
   random?: () => number
   randomRoller?: MoveAutomationRandomRoller
 }
@@ -864,6 +875,7 @@ const resolveInstantTargetGroupMoveAutomation = ({
   damageFormula,
   fieldEffects,
   conditionImmunityContext,
+  accuracyRule,
   random,
   randomRoller,
 }: ResolveInstantTargetGroupMoveAutomationInput): InstantTargetGroupMoveAutomationResolution => {
@@ -885,6 +897,7 @@ const resolveInstantTargetGroupMoveAutomation = ({
       }), {
         userAccuracy,
         targetEvasion: targetEvasion.value,
+        accuracyRule,
       })
       state.accuracyRoll = accuracy.accuracyRoll
       state.hit = accuracy.hit
@@ -951,6 +964,7 @@ export const resolveInstantMultiTargetMoveAutomation = ({
   damageFormula,
   fieldEffects,
   conditionImmunityContext,
+  accuracyRule,
   random,
   randomRoller,
 }: ResolveInstantMultiTargetMoveAutomationInput): MoveAutomationTransaction => {
@@ -962,6 +976,7 @@ export const resolveInstantMultiTargetMoveAutomation = ({
     damageFormula,
     fieldEffects,
     conditionImmunityContext,
+    accuracyRule,
     random,
     randomRoller,
   })
@@ -977,6 +992,7 @@ export const resolveInstantAreaMoveAutomation = ({
   damageFormula,
   fieldEffects,
   conditionImmunityContext,
+  accuracyRule,
   random,
   randomRoller,
 }: ResolveInstantAreaMoveAutomationInput): MoveAutomationTransaction => {
@@ -987,6 +1003,7 @@ export const resolveInstantAreaMoveAutomation = ({
     damageFormula,
     fieldEffects,
     conditionImmunityContext,
+    accuracyRule,
     random,
     randomRoller,
   })

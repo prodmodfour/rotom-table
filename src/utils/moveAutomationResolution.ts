@@ -25,9 +25,24 @@ export interface MoveAutomationResetInput {
   manualTargetStageDeltas: MoveAutomationStageDeltaRecord
 }
 
+export type MoveAutomationAccuracyRule =
+  | {
+      readonly kind: 'automatic-hit'
+      readonly sourceId: string
+      readonly reasonCode: string
+    }
+  | {
+      readonly kind: 'accuracy-check-override'
+      readonly accuracyCheck: number
+      readonly sourceId: string
+      readonly reasonCode: string
+    }
+
 export interface MoveAutomationAccuracyRollOptions {
   userAccuracy?: number
   targetEvasion?: number
+  /** Server-reviewed contextual rule; clients never submit accuracy mechanics. */
+  accuracyRule?: MoveAutomationAccuracyRule | null
 }
 
 export interface MoveAutomationAccuracyRollResult {
@@ -39,6 +54,7 @@ export interface MoveAutomationAccuracyRollResult {
   accuracyCheck?: number | null
   userAccuracy?: number
   targetEvasion?: number
+  accuracyRule?: MoveAutomationAccuracyRule | null
 }
 
 export const clearMutableRecord = (record: Record<string, unknown>): void => {
@@ -57,14 +73,25 @@ export const resolveMoveAutomationAccuracyRoll = (
   options?: MoveAutomationAccuracyRollOptions,
 ): MoveAutomationAccuracyRollResult => {
   const ac = script?.ac
-  const hasContext = options?.userAccuracy != null || options?.targetEvasion != null
+  const accuracyRule = options?.accuracyRule ?? null
+  const hasContext = options?.userAccuracy != null
+    || options?.targetEvasion != null
+    || accuracyRule !== null
   const userAccuracy = options?.userAccuracy ?? 0
   const targetEvasion = options?.targetEvasion ?? 0
   const modifiedRoll = roll + userAccuracy
-  const accuracyCheck = ac == null ? null : ac + targetEvasion
-  const hit = ac == null
+  const effectiveAccuracyCheck = accuracyRule?.kind === 'accuracy-check-override'
+    ? accuracyRule.accuracyCheck
+    : ac
+  const accuracyCheck = accuracyRule?.kind === 'automatic-hit'
+    ? null
+    : effectiveAccuracyCheck == null
+      ? null
+      : effectiveAccuracyCheck + targetEvasion
+  const hit = accuracyRule?.kind === 'automatic-hit'
+    || effectiveAccuracyCheck == null
     ? true
-    : roll === 20 || (roll !== 1 && modifiedRoll >= ac + targetEvasion)
+    : roll === 20 || (roll !== 1 && modifiedRoll >= effectiveAccuracyCheck + targetEvasion)
   const criticalRange = script?.criticalRange ?? (script?.damaging && !script?.directHpLoss ? 20 : null)
   const crit = Boolean(criticalRange && roll >= criticalRange)
 
@@ -85,6 +112,7 @@ export const resolveMoveAutomationAccuracyRoll = (
     accuracyCheck,
     userAccuracy,
     targetEvasion,
+    accuracyRule,
   }
 }
 
