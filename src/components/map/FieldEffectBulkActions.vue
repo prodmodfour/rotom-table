@@ -12,13 +12,17 @@ const emit = defineEmits<{
 
 <template>
   <div v-if="canEditMap" class="field-effect-actions">
+    <p class="field-effect-correction-note">
+      Initiative advances durations automatically. Use correction only to repair bookkeeping.
+    </p>
     <button
       type="button"
       class="bulk-button"
+      title="GM correction: subtract one round from finite field durations"
       :disabled="!fieldEffectCount"
       @click="emit('tick-durations')"
     >
-      Advance durations
+      Correct durations −1
     </button>
     <button
       type="button"
@@ -38,6 +42,14 @@ const emit = defineEmits<{
   gap: 0.5rem;
   border-top: 1px solid var(--rule-soft);
   padding-top: 0.85rem;
+}
+
+.field-effect-correction-note {
+  grid-column: 1 / -1;
+  margin: 0;
+  color: var(--ink-muted);
+  font-size: 0.78rem;
+  line-height: 1.4;
 }
 
 .bulk-button {

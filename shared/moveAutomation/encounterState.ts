@@ -45,10 +45,11 @@ export * from './encounterZones'
  * movement resource ledgers, MA-103 enabled privacy-safe pending-resolution
  * summaries, MA-133 added generalized battlefield zones, MA-135 made native
  * move hazards write owned layered zones, and MA-136 registered bounded zone
- * entry mechanics. Legacy editor hazards and
- * field effects remain in compatibility lanes until their migration tickets;
- * server zone queries adapt them without persisting or applying a matching
- * migrated zone twice.
+ * entry mechanics, and MA-137 made global fields zone-owned with authoritative
+ * round/scene lifecycle. Legacy editor hazards and the field-effect renderer
+ * arrays remain compatibility lanes until their migration tickets; server zone
+ * queries and accepted field boundaries adapt/mirror them without applying a
+ * matching native zone twice.
  */
 export const ENCOUNTER_STATE_SCHEMA_VERSION = 1 as const
 

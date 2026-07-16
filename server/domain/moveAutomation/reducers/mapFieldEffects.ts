@@ -1,22 +1,15 @@
 import type { MoveFieldEffectOperation } from '#shared/moveAutomation/effects'
 import type { MoveResolutionTraceJsonValue } from '#shared/moveAutomation/trace'
-import type {
-  MapFieldEffects,
-  MapRoomEffect,
-  MapTerrainEffect,
-  MapWeatherEffect,
-} from '~/types/map'
+import type { TabletopMap } from '~/types/map'
+import type { AuthoritativeMoveRulesContext } from '../context'
 import {
-  isMapRoomKind,
-  isMapTerrainKind,
-  isMapWeatherKind,
-} from '~/utils/mapFieldEffectDefinitions'
-import { cloneMapFieldEffects } from '~/utils/mapFieldEffects'
-import { sameJsonValue } from '~/utils/serialization'
+  applyMapGlobalField,
+  removeMapGlobalFields,
+} from '../fieldMapState'
 import { failMoveMapOperationReduction } from './mapOperationError'
 
-export interface MoveFieldPlaceholderReduction {
-  readonly current: MapFieldEffects
+export interface MoveFieldReduction {
+  readonly currentMap: TabletopMap
   readonly changed: boolean
   readonly details: MoveResolutionTraceJsonValue
 }
@@ -24,115 +17,78 @@ export interface MoveFieldPlaceholderReduction {
 const unsupportedSideField = (operation: MoveFieldEffectOperation): never => (
   failMoveMapOperationReduction(
     'field-placeholder-unsupported',
-    `Field operation ${operation.id} targets side state, which remains blocked until typed encounter fields are available.`,
+    `Field operation ${operation.id} targets side state, which remains blocked until typed side fields are available.`,
   )
 )
 
-const invalidField = (operation: MoveFieldEffectOperation): never => (
-  failMoveMapOperationReduction(
-    'field-placeholder-invalid',
-    `Field operation ${operation.id} uses unsupported ${operation.payload.category} field ${operation.payload.fieldId}.`,
-  )
-)
-
-const applyWeather = (
-  current: Required<MapFieldEffects>,
-  operation: MoveFieldEffectOperation,
-): void => {
-  if (!isMapWeatherKind(operation.payload.fieldId)) return invalidField(operation)
-  const effect: MapWeatherEffect = {
-    kind: operation.payload.fieldId,
-    rounds: operation.payload.action === 'apply' ? operation.payload.rounds : null,
-    source: operation.source.id,
-  }
-  current.weather = [effect]
-}
-
-const applyTerrain = (
-  current: Required<MapFieldEffects>,
-  operation: MoveFieldEffectOperation,
-): void => {
-  if (!isMapTerrainKind(operation.payload.fieldId)) return invalidField(operation)
-  const effect: MapTerrainEffect = {
-    kind: operation.payload.fieldId,
-    scope: 'field',
-    rounds: operation.payload.action === 'apply' ? operation.payload.rounds : null,
-    source: operation.source.id,
-  }
-  current.terrains = [
-    ...current.terrains.filter(item => item.kind !== effect.kind),
-    effect,
-  ]
-}
-
-const applyRoom = (
-  current: Required<MapFieldEffects>,
-  operation: MoveFieldEffectOperation,
-): void => {
-  if (!isMapRoomKind(operation.payload.fieldId)) return invalidField(operation)
-  const effect: MapRoomEffect = {
-    kind: operation.payload.fieldId,
-    rounds: operation.payload.action === 'apply' ? operation.payload.rounds : null,
-    ...(operation.payload.fieldId === 'trick' ? { startsNextRound: true } : {}),
-    source: operation.source.id,
-  }
-  current.rooms = [
-    ...current.rooms.filter(item => item.kind !== effect.kind),
-    effect,
-  ]
-}
-
-const applyField = (
-  current: Required<MapFieldEffects>,
-  operation: MoveFieldEffectOperation,
-): void => {
-  if (operation.payload.category === 'side') return unsupportedSideField(operation)
-  if (operation.payload.category === 'weather') return applyWeather(current, operation)
-  if (operation.payload.category === 'terrain') return applyTerrain(current, operation)
-  return applyRoom(current, operation)
-}
-
-const removeField = (
-  current: Required<MapFieldEffects>,
-  operation: MoveFieldEffectOperation,
-): void => {
-  if (operation.payload.category === 'side') return unsupportedSideField(operation)
-  if (operation.payload.category === 'weather') {
-    if (!isMapWeatherKind(operation.payload.fieldId)) return invalidField(operation)
-    current.weather = current.weather.filter(item => item.kind !== operation.payload.fieldId)
-    return
-  }
-  if (operation.payload.category === 'terrain') {
-    if (!isMapTerrainKind(operation.payload.fieldId)) return invalidField(operation)
-    current.terrains = current.terrains.filter(item => item.kind !== operation.payload.fieldId)
-    return
-  }
-  if (!isMapRoomKind(operation.payload.fieldId)) return invalidField(operation)
-  current.rooms = current.rooms.filter(item => item.kind !== operation.payload.fieldId)
+const fieldIdForZone = (
+  zone: Parameters<Parameters<typeof removeMapGlobalFields>[0]['matches']>[0],
+): string => {
+  if (zone.kind === 'weather') return zone.payload.weatherId
+  if (zone.kind === 'terrain') return zone.payload.terrainId
+  return zone.payload.roomId
 }
 
 /**
- * Bridge v2 field operations into the current bounded map arrays. This owns
- * only apply/remove placeholders; lifecycle, side ownership, stacking, and
- * suppression remain blocked for the typed field tickets in Phase 6.
+ * Reduce a reviewed global-field operation into native encounter state while
+ * retaining the legacy map lane only as a renderer/editor projection.
  */
-export const reduceMoveFieldPlaceholder = (
-  previous: MapFieldEffects | null | undefined,
-  operation: MoveFieldEffectOperation,
-): MoveFieldPlaceholderReduction => {
-  const before = cloneMapFieldEffects(previous)
-  const current = cloneMapFieldEffects(previous)
-  if (operation.payload.action === 'apply') applyField(current, operation)
-  else removeField(current, operation)
-  const changed = !sameJsonValue(before, current)
+export const reduceMoveGlobalFields = (input: {
+  readonly map: TabletopMap
+  readonly operation: MoveFieldEffectOperation
+  readonly context: AuthoritativeMoveRulesContext
+}): MoveFieldReduction => {
+  const { operation } = input
+  if (operation.payload.category === 'side') return unsupportedSideField(operation)
+  const kind = operation.payload.category
+  const common = {
+    map: input.map,
+    kind,
+    fieldId: operation.payload.fieldId,
+  } as const
+  const reduced = operation.payload.action === 'apply'
+    ? applyMapGlobalField({
+        ...common,
+        source: {
+          kind: 'operation',
+          operationId: operation.id,
+          moveId: operation.source.kind === 'move' ? operation.source.id : null,
+          placementId: input.context.actor.placement.id,
+        },
+        sideId: input.context.actor.placement.sideId ?? null,
+        duration: operation.payload.rounds === null
+          ? { kind: 'permanent', remaining: null }
+          : { kind: 'rounds', boundary: 'end', remaining: operation.payload.rounds },
+        replacementGroup: kind === 'weather'
+          ? 'field.weather'
+          : `field.${kind}.${operation.payload.fieldId}`,
+        replacementScope: kind === 'weather' ? 'category' : 'kind',
+        startsNextRound: kind === 'room' && operation.payload.fieldId === 'trick',
+        sourceLabel: operation.source.id,
+      })
+    : removeMapGlobalFields({
+        map: input.map,
+        matches: zone => zone.kind === kind && fieldIdForZone(zone) === operation.payload.fieldId,
+      })
+  const transitions = reduced.lifecycle.transitions.map(transition => ({
+    zoneId: transition.zoneId,
+    kind: transition.kind,
+    reasonCode: transition.reasonCode,
+    replacedZoneIds: [...transition.replacedZoneIds],
+  }))
+
   return {
-    current,
-    changed,
+    currentMap: reduced.map,
+    changed: reduced.lifecycle.changed,
     details: {
       action: operation.payload.action,
-      category: operation.payload.category,
+      category: kind,
       fieldId: operation.payload.fieldId,
-      changed,
+      changed: reduced.lifecycle.changed,
+      transitions,
     },
   }
 }
+
+/** @deprecated Use reduceMoveGlobalFields. */
+export const reduceMoveFieldPlaceholder = reduceMoveGlobalFields

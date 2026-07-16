@@ -63,7 +63,7 @@ export type MapRoomKind = 'magic' | 'trick' | 'wonder'
 
 export interface MapWeatherEffect {
   kind: MapWeatherKind
-  /** Remaining duration. `null` means untracked / sustained manually. */
+  /** Compatibility projection of native field duration; `null` means sustained until removal. */
   rounds?: number | null
   source?: string
 }
@@ -174,7 +174,7 @@ export interface TabletopMapV2 {
   shopInterfaces?: MapShopInterface[]
   /** Sparse battlefield hazards placed on map squares. */
   hazards?: MapHazardV2[]
-  /** Active PTU Weather, Terrain field effects, and Rooms. */
+  /** Renderer/editor projection of zone-owned PTU Weather, Terrain, and Rooms. */
   fieldEffects?: MapFieldEffects
   placements: SheetPlacement[]
   lights?: LightPlacement[]

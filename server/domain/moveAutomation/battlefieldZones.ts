@@ -1,6 +1,8 @@
 import {
   ENCOUNTER_ZONE_KINDS,
   ENCOUNTER_ZONE_LIMITS,
+  isEncounterGlobalFieldZone,
+  isEncounterGlobalFieldZoneActive,
   legacyEncounterZoneId,
   parseEncounterZone,
   parseEncounterZones,
@@ -35,7 +37,11 @@ import type {
  * cannot make one battlefield fact apply twice.
  */
 export interface BattlefieldZoneProjection {
+  /** Complete canonical projection, including retained inactive global fields. */
   readonly zones: readonly EncounterZone[]
+  /** Mechanics contributors after suppression and delayed Room activation. */
+  readonly activeZones: readonly EncounterZone[]
+  readonly inactiveGlobalFieldZoneIds: readonly string[]
   readonly nativeZoneCount: number
   readonly adaptedLegacyZoneCount: number
   readonly shadowedLegacyZoneIds: readonly string[]
@@ -55,6 +61,8 @@ export type BattlefieldZoneQuerySubject =
 
 export interface BattlefieldZoneQueryOptions {
   readonly kinds?: readonly EncounterZoneKind[]
+  /** Audit/setup queries may inspect retained suppressed or not-yet-started fields. */
+  readonly includeInactiveGlobalFields?: boolean
 }
 
 export interface BattlefieldZoneContribution<Value> {
@@ -218,6 +226,7 @@ const adaptLegacyWeather = (
   effects: readonly MapWeatherEffect[] | null | undefined,
 ): readonly EncounterZone[] => {
   const byId = new Map<string, EncounterZone>()
+  const coexisting = (effects?.length ?? 0) > 1
   for (const [index, effect] of (effects ?? []).entries()) {
     if (!WEATHER_KIND_SET.has(effect.kind)) continue
     const duration = finiteRoundDuration(effect.rounds)
@@ -233,6 +242,11 @@ const adaptLegacyWeather = (
       layer: 1,
       duration,
       stacking: replaceStacking(),
+      fieldPolicy: {
+        priority: 0,
+        replacementGroup: coexisting ? `field.weather.${effect.kind}` : 'field.weather',
+        suppression: { sources: [] },
+      },
       hooks: emptyHooks(),
       modifiers: emptyModifiers(),
       tags: ['legacy-map', 'weather'],
@@ -263,6 +277,11 @@ const adaptLegacyTerrains = (
       layer: 1,
       duration,
       stacking: replaceStacking(),
+      fieldPolicy: {
+        priority: 0,
+        replacementGroup: `field.terrain.${effect.kind}`,
+        suppression: { sources: [] },
+      },
       hooks: emptyHooks(),
       modifiers: emptyModifiers(),
       tags: ['legacy-map', 'terrain'],
@@ -291,6 +310,11 @@ const adaptLegacyRooms = (
       layer: 1,
       duration,
       stacking: replaceStacking(),
+      fieldPolicy: {
+        priority: 0,
+        replacementGroup: `field.room.${effect.kind}`,
+        suppression: { sources: [] },
+      },
       hooks: emptyHooks(),
       modifiers: emptyModifiers(),
       tags: ['legacy-map', 'room'],
@@ -333,10 +357,23 @@ export const projectBattlefieldZones = (map: Pick<
   )
   const legacy = adaptLegacyMapStateToBattlefieldZones(map)
   const nativeIds = new Set(native.map(zone => zone.id))
+  const globalFieldIdentity = (zone: EncounterZone): string | null => {
+    if (!isEncounterGlobalFieldZone(zone)) return null
+    if (zone.kind === 'weather') return `weather:${zone.payload.weatherId}`
+    if (zone.kind === 'terrain') return `terrain:${zone.payload.terrainId}`
+    return `room:${zone.payload.roomId}`
+  }
+  const nativeGlobalFieldIds = new Set(native.flatMap(zone => {
+    const identity = globalFieldIdentity(zone)
+    return identity === null ? [] : [identity]
+  }))
   const shadowedLegacyZoneIds: string[] = []
   const adaptedLegacy: EncounterZone[] = []
   for (const zone of legacy) {
-    if (nativeIds.has(zone.id)) shadowedLegacyZoneIds.push(zone.id)
+    const identity = globalFieldIdentity(zone)
+    if (nativeIds.has(zone.id) || (identity !== null && nativeGlobalFieldIds.has(identity))) {
+      shadowedLegacyZoneIds.push(zone.id)
+    }
     else adaptedLegacy.push(zone)
   }
   if (native.length + adaptedLegacy.length > ENCOUNTER_ZONE_LIMITS.count) {
@@ -345,8 +382,17 @@ export const projectBattlefieldZones = (map: Pick<
       `Native and adapted battlefield zones cannot exceed ${ENCOUNTER_ZONE_LIMITS.count} unique entries.`,
     )
   }
+  const zones = [...native, ...adaptedLegacy]
+  const activeZones = zones.filter(zone => (
+    !isEncounterGlobalFieldZone(zone) || isEncounterGlobalFieldZoneActive(zone)
+  ))
   return deepFreeze({
-    zones: [...native, ...adaptedLegacy],
+    zones,
+    activeZones,
+    inactiveGlobalFieldZoneIds: zones
+      .filter(isEncounterGlobalFieldZone)
+      .filter(zone => !isEncounterGlobalFieldZoneActive(zone))
+      .map(zone => zone.id),
     nativeZoneCount: native.length,
     adaptedLegacyZoneCount: adaptedLegacy.length,
     shadowedLegacyZoneIds,
@@ -450,7 +496,11 @@ export const queryBattlefieldZones = (
 ): readonly EncounterZone[] => {
   assertQuery(subject)
   const kinds = queryKinds(options)
-  return deepFreeze(projectBattlefieldZones(map).zones.filter(zone => (
+  const projection = projectBattlefieldZones(map)
+  const zones = options.includeInactiveGlobalFields
+    ? projection.zones
+    : projection.activeZones
+  return deepFreeze(zones.filter(zone => (
     (kinds === null || kinds.has(zone.kind))
     && geometryMatches(zone, subject)
   )))

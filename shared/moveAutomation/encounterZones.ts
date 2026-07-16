@@ -37,6 +37,7 @@ export const ENCOUNTER_ZONE_STACKING_KINDS = [
   'add-layer',
   'independent',
 ] as const
+export const ENCOUNTER_GLOBAL_FIELD_KINDS = ['weather', 'terrain', 'room'] as const
 export const ENCOUNTER_ZONE_NUMERIC_OPERATIONS = ['add', 'multiply', 'set'] as const
 export const ENCOUNTER_ZONE_MODIFIER_OPERATIONS = [
   ...ENCOUNTER_ZONE_NUMERIC_OPERATIONS,
@@ -68,6 +69,8 @@ export const ENCOUNTER_ZONE_LIMITS = Object.freeze({
   tags: 32,
   layer: 64,
   charges: 10_000,
+  fieldSuppressionSources: 32,
+  fieldPriorityMagnitude: 1_000_000,
   coordinate: 1_000_000,
   numericMagnitude: 1_000_000,
 })
@@ -78,6 +81,7 @@ export type EncounterZoneSourceKind = (typeof ENCOUNTER_ZONE_SOURCE_KINDS)[numbe
 export type EncounterZoneLegacyLane = (typeof ENCOUNTER_ZONE_LEGACY_LANES)[number]
 export type EncounterZoneGeometryKind = (typeof ENCOUNTER_ZONE_GEOMETRY_KINDS)[number]
 export type EncounterZoneStackingKind = (typeof ENCOUNTER_ZONE_STACKING_KINDS)[number]
+export type EncounterGlobalFieldKind = (typeof ENCOUNTER_GLOBAL_FIELD_KINDS)[number]
 export type EncounterZoneNumericOperation = (typeof ENCOUNTER_ZONE_NUMERIC_OPERATIONS)[number]
 export type EncounterZoneModifierOperation = (typeof ENCOUNTER_ZONE_MODIFIER_OPERATIONS)[number]
 export type EncounterZoneTargetingAttribute =
@@ -128,6 +132,27 @@ export type EncounterZoneStacking =
       readonly kind: 'add-layer'
       readonly maxLayers: number
     }
+
+/** One durable field may be inactive while an exact server-owned zone suppresses it. */
+export interface EncounterGlobalFieldSuppressionSource {
+  readonly zoneId: EncounterZoneId
+  readonly reasonCode: string
+}
+
+export interface EncounterGlobalFieldSuppression {
+  readonly sources: readonly EncounterGlobalFieldSuppressionSource[]
+}
+
+/**
+ * Mechanics policy shared only by battlefield-wide Weather, Terrain, and Rooms.
+ * The replacement group is server-reviewed; priority resolves one winner in a
+ * group, while suppression retains ownership/duration without contributing rules.
+ */
+export interface EncounterGlobalFieldPolicy {
+  readonly priority: number
+  readonly replacementGroup: string
+  readonly suppression: EncounterGlobalFieldSuppression
+}
 
 /** Hooks identify audited server handlers; no callback or effect program is persisted. */
 export interface EncounterZoneHook {
@@ -240,6 +265,8 @@ interface EncounterZoneEnvelope<Kind extends EncounterZoneKind, Payload> {
   readonly layer: number
   readonly duration: EncounterZoneDuration
   readonly stacking: EncounterZoneStacking
+  /** Present after parsing only for battlefield-wide Weather, Terrain, and Rooms. */
+  readonly fieldPolicy?: EncounterGlobalFieldPolicy
   readonly hooks: EncounterZoneHooks
   readonly modifiers: EncounterZoneModifiers
   readonly tags: readonly string[]
@@ -271,6 +298,33 @@ export type EncounterZone =
   | EncounterVortexZone
   | EncounterSideConditionZone
 
+export type EncounterGlobalFieldZone = (
+  | EncounterWeatherZone
+  | EncounterTerrainZone
+  | EncounterRoomZone
+) & {
+  readonly geometry: { readonly kind: 'battlefield' }
+  readonly fieldPolicy: EncounterGlobalFieldPolicy
+}
+
+/** Local Terrain zones remain ordinary cell zones; only battlefield geometry is a global field. */
+export const isEncounterGlobalFieldZone = (
+  zone: EncounterZone,
+): zone is EncounterGlobalFieldZone => (
+  zone.geometry.kind === 'battlefield'
+  && (zone.kind === 'weather' || zone.kind === 'terrain' || zone.kind === 'room')
+  && zone.fieldPolicy !== undefined
+)
+
+/** A suppressed or not-yet-started Room remains durable but contributes no mechanics. */
+export const isEncounterGlobalFieldZoneActive = (
+  zone: EncounterZone,
+): boolean => (
+  isEncounterGlobalFieldZone(zone)
+  && zone.fieldPolicy.suppression.sources.length === 0
+  && !(zone.kind === 'room' && zone.payload.startsNextRound)
+)
+
 export type EncounterZoneValidationCode =
   | 'invalid-encounter-zone'
   | 'unknown-zone-kind'
@@ -297,7 +351,7 @@ type ParsedZoneCommon = Omit<
   'kind' | 'payload'
 >
 
-const ZONE_FIELDS = [
+const LEGACY_ZONE_FIELDS = [
   'id',
   'kind',
   'source',
@@ -311,6 +365,7 @@ const ZONE_FIELDS = [
   'tags',
   'payload',
 ] as const
+const ZONE_FIELDS = [...LEGACY_ZONE_FIELDS, 'fieldPolicy'] as const
 const OPERATION_SOURCE_FIELDS = ['kind', 'operationId', 'moveId', 'placementId'] as const
 const LEGACY_SOURCE_FIELDS = ['kind', 'lane', 'key'] as const
 const BATTLEFIELD_GEOMETRY_FIELDS = ['kind'] as const
@@ -319,6 +374,9 @@ const PLACEMENT_GEOMETRY_FIELDS = ['kind', 'placementId'] as const
 const SIDE_GEOMETRY_FIELDS = ['kind', 'sideId'] as const
 const CELL_FIELDS = ['x', 'y', 'z'] as const
 const STACKING_FIELDS = ['kind', 'maxLayers'] as const
+const FIELD_POLICY_FIELDS = ['priority', 'replacementGroup', 'suppression'] as const
+const FIELD_SUPPRESSION_FIELDS = ['sources'] as const
+const FIELD_SUPPRESSION_SOURCE_FIELDS = ['zoneId', 'reasonCode'] as const
 const HOOKS_FIELDS = ['entry', 'exit'] as const
 const HOOK_FIELDS = ['id', 'handlerId', 'oncePerMovement'] as const
 const MODIFIERS_FIELDS = ['targeting', 'damage', 'movement'] as const
@@ -374,9 +432,10 @@ const assertExactFields = (
   record: UnknownRecord,
   fields: readonly string[],
   path: string,
+  requiredFields: readonly string[] = fields,
 ): void => {
   const expected = new Set(fields)
-  const missing = fields.filter(field => !Object.prototype.hasOwnProperty.call(record, field))
+  const missing = requiredFields.filter(field => !Object.prototype.hasOwnProperty.call(record, field))
   const unknown = Object.keys(record).filter(field => !expected.has(field))
   if (missing.length === 0 && unknown.length === 0) return
   const details = [
@@ -394,9 +453,10 @@ const parseExactRecord = (
   value: unknown,
   fields: readonly string[],
   path: string,
+  requiredFields: readonly string[] = fields,
 ): UnknownRecord => {
   const record = parseRecord(value, path)
-  assertExactFields(record, fields, path)
+  assertExactFields(record, fields, path, requiredFields)
   return record
 }
 
@@ -819,6 +879,81 @@ const parsePayload = (
   return parseSingleIdPayload(value, key, path) as EncounterZonePayload
 }
 
+const globalFieldPayloadId = (
+  kind: EncounterGlobalFieldKind,
+  payload: EncounterZonePayload,
+): string => {
+  if (kind === 'weather') return (payload as EncounterWeatherZonePayload).weatherId
+  if (kind === 'terrain') return (payload as EncounterTerrainZonePayload).terrainId
+  return (payload as EncounterRoomZonePayload).roomId
+}
+
+/** Stable compatibility default; authoritative applications may choose a broader reviewed group. */
+export const defaultEncounterGlobalFieldReplacementGroup = (
+  kind: EncounterGlobalFieldKind,
+  fieldId: string,
+): string => `field.${kind}.${fieldId}`
+
+const parseGlobalFieldSuppression = (
+  value: unknown,
+  path: string,
+  zoneId: string,
+): EncounterGlobalFieldSuppression => {
+  const suppression = parseExactRecord(value, FIELD_SUPPRESSION_FIELDS, path)
+  const sources = parseArray(
+    suppression.sources,
+    `${path}.sources`,
+    ENCOUNTER_ZONE_LIMITS.fieldSuppressionSources,
+  ).map((entry, index): EncounterGlobalFieldSuppressionSource => {
+    const sourcePath = `${path}.sources[${index}]`
+    const source = parseExactRecord(entry, FIELD_SUPPRESSION_SOURCE_FIELDS, sourcePath)
+    const sourceZoneId = parseStableId(source.zoneId, `${sourcePath}.zoneId`)
+    if (sourceZoneId === zoneId) {
+      fail('invalid-encounter-zone', `${sourcePath}.zoneId`, 'cannot suppress its own zone.')
+    }
+    return {
+      zoneId: sourceZoneId,
+      reasonCode: parseStableId(source.reasonCode, `${sourcePath}.reasonCode`),
+    }
+  })
+  assertUnique(sources.map(source => source.zoneId), `${path}.sources.zoneId`)
+  return { sources }
+}
+
+const parseGlobalFieldPolicy = (input: {
+  readonly value: unknown
+  readonly path: string
+  readonly zoneId: string
+  readonly kind: EncounterGlobalFieldKind
+  readonly fieldId: string
+}): EncounterGlobalFieldPolicy => {
+  if (input.value === undefined) {
+    return {
+      priority: 0,
+      replacementGroup: defaultEncounterGlobalFieldReplacementGroup(input.kind, input.fieldId),
+      suppression: { sources: [] },
+    }
+  }
+  const policy = parseExactRecord(input.value, FIELD_POLICY_FIELDS, input.path)
+  return {
+    priority: parseInteger(
+      policy.priority,
+      `${input.path}.priority`,
+      -ENCOUNTER_ZONE_LIMITS.fieldPriorityMagnitude,
+      ENCOUNTER_ZONE_LIMITS.fieldPriorityMagnitude,
+    ),
+    replacementGroup: parseStableId(
+      policy.replacementGroup,
+      `${input.path}.replacementGroup`,
+    ),
+    suppression: parseGlobalFieldSuppression(
+      policy.suppression,
+      `${input.path}.suppression`,
+      input.zoneId,
+    ),
+  }
+}
+
 const assertGeometrySupportsKind = (
   kind: EncounterZoneKind,
   geometry: EncounterZoneGeometry,
@@ -857,6 +992,7 @@ const zoneWithPayload = <Kind extends EncounterZoneKind, Payload>(
   layer: common.layer,
   duration: common.duration,
   stacking: common.stacking,
+  ...(common.fieldPolicy === undefined ? {} : { fieldPolicy: common.fieldPolicy }),
   hooks: common.hooks,
   modifiers: common.modifiers,
   tags: common.tags,
@@ -868,7 +1004,7 @@ export const parseEncounterZone = (
   value: unknown,
   path = 'encounterZone',
 ): EncounterZone => {
-  const zone = parseExactRecord(value, ZONE_FIELDS, path)
+  const zone = parseExactRecord(value, ZONE_FIELDS, path, LEGACY_ZONE_FIELDS)
   const rawKind = zone.kind
   if (typeof rawKind !== 'string' || !ZONE_KIND_SET.has(rawKind)) {
     fail('unknown-zone-kind', `${path}.kind`, 'must be a supported encounter zone kind.')
@@ -928,6 +1064,31 @@ export const parseEncounterZone = (
     `${path}.componentIds`,
   )
 
+  const payload = parsePayload(kind, zone.payload, `${path}.payload`)
+  const globalFieldKind = geometry.kind === 'battlefield'
+    && (kind === 'weather' || kind === 'terrain' || kind === 'room')
+    ? kind
+    : null
+  if (globalFieldKind === null && zone.fieldPolicy !== undefined) {
+    fail(
+      'invalid-encounter-zone',
+      `${path}.fieldPolicy`,
+      'is supported only for battlefield-wide Weather, Terrain, and Room zones.',
+    )
+  }
+  if (
+    globalFieldKind !== null
+    && duration.kind !== 'rounds'
+    && duration.kind !== 'scene'
+    && duration.kind !== 'permanent'
+  ) {
+    fail(
+      'invalid-encounter-zone',
+      `${path}.duration`,
+      'global fields support fixed-round, scene, or permanent durations only.',
+    )
+  }
+
   const common: ParsedZoneCommon = {
     id,
     source,
@@ -936,11 +1097,21 @@ export const parseEncounterZone = (
     layer,
     duration,
     stacking: parseStacking(zone.stacking, `${path}.stacking`, layer),
+    ...(globalFieldKind === null
+      ? {}
+      : {
+          fieldPolicy: parseGlobalFieldPolicy({
+            value: zone.fieldPolicy,
+            path: `${path}.fieldPolicy`,
+            zoneId: id,
+            kind: globalFieldKind,
+            fieldId: globalFieldPayloadId(globalFieldKind, payload),
+          }),
+        }),
     hooks,
     modifiers,
     tags: parseStableIdList(zone.tags, `${path}.tags`, ENCOUNTER_ZONE_LIMITS.tags),
   }
-  const payload = parsePayload(kind, zone.payload, `${path}.payload`)
 
   switch (kind) {
     case 'hazard': return zoneWithPayload(common, kind, payload as EncounterHazardZonePayload)
@@ -967,5 +1138,13 @@ export const parseEncounterZones = (
   const zones = parseArray(value, path, ENCOUNTER_ZONE_LIMITS.count)
     .map((zone, index) => parseEncounterZone(zone, `${path}[${index}]`))
   assertUnique(zones.map(zone => zone.id), `${path}.id`)
+
+  const activeReplacementGroups = zones.flatMap(zone => (
+    isEncounterGlobalFieldZone(zone)
+    && zone.fieldPolicy.suppression.sources.length === 0
+      ? [zone.fieldPolicy.replacementGroup]
+      : []
+  ))
+  assertUnique(activeReplacementGroups, `${path}.fieldPolicy.replacementGroup`)
   return zones
 }

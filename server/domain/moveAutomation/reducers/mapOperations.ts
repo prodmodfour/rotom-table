@@ -20,7 +20,7 @@ import {
   moveEffectRecipientIdsEqual,
   resolveMoveEffectDynamicRecipients,
 } from './effectRecipients'
-import { reduceMoveFieldPlaceholder } from './mapFieldEffects'
+import { reduceMoveGlobalFields } from './mapFieldEffects'
 import { reduceMoveHazardZones } from './mapHazardEffects'
 import {
   failMoveMapOperationReduction,
@@ -180,9 +180,14 @@ export const reduceMoveMapOperations = (
     }
 
     if (operation.kind === 'field') {
-      const reduced = reduceMoveFieldPlaceholder(workingMap.fieldEffects, operation)
+      const reduced = reduceMoveGlobalFields({
+        map: workingMap,
+        operation,
+        context: input.context,
+      })
       if (reduced.changed) {
-        workingMap.fieldEffects = deepCloneJson(reduced.current)
+        workingMap = deepCloneJson(reduced.currentMap)
+        touch('encounterState', operationTouch)
         touch('fieldEffects', operationTouch)
       }
       operationResults.push(resultFor({

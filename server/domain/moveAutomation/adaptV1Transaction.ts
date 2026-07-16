@@ -410,6 +410,23 @@ const adaptedStateChanges = (options: {
       current: options.mapChanges.hazards.current,
     })
   }
+  if (options.mapChanges.encounterState) {
+    const source = provenance(
+      operationIds.fieldEffects,
+      options.traceEventsById,
+      'legacy-v1-encounter-fields',
+      operationIds.fieldEffects.length === 0,
+    )
+    inputs.push({
+      kind: 'encounter-state',
+      scope: { kind: 'encounter', mapSlug: options.previousMap.slug },
+      expectedRevision: options.expectedMapRevision,
+      ...source,
+      previous: options.mapChanges.encounterState.previous,
+      current: options.mapChanges.encounterState.current,
+      compensation: RESTORE_PREVIOUS_MOVE_STATE_VALUE,
+    })
+  }
   if (options.mapChanges.fieldEffects) {
     const source = provenance(
       operationIds.fieldEffects,

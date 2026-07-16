@@ -433,6 +433,7 @@ export interface RemoveFieldEffectPayload {
 }
 
 export interface TickFieldEffectDurationsPayload {
+  /** Typed GM correction only; forward initiative owns ordinary round advancement. */
   readonly amount?: number
 }
 
@@ -937,6 +938,13 @@ export interface EncounterLifecycleEffectTransitionSummary {
   readonly reasonCode: string
 }
 
+export interface EncounterLifecycleFieldTransitionSummary {
+  readonly eventId: string
+  readonly zoneId: string
+  readonly kind: string
+  readonly reasonCode: string
+}
+
 export interface EncounterLifecycleSheetChangeRef {
   readonly kind: SheetKind
   readonly slug: string
@@ -949,17 +957,22 @@ export interface EncounterLifecycleSheetChangeRef {
 export interface EncounterLifecyclePatchPayload {
   readonly events: readonly EncounterLifecycleEventSummary[]
   readonly effectTransitions: readonly EncounterLifecycleEffectTransitionSummary[]
+  readonly fieldTransitions?: readonly EncounterLifecycleFieldTransitionSummary[]
   readonly operationIds: readonly string[]
   readonly previousEncounterState: EncounterState
   readonly currentEncounterState: EncounterState
   readonly previousTemporaryHitPoints: TabletopMap['temporaryHitPoints'] | null
   readonly currentTemporaryHitPoints: TabletopMap['temporaryHitPoints'] | null
+  /** Added with global-field lifecycle; omitted stored patches retain their local lane. */
+  readonly previousFieldEffects?: MapFieldEffects
+  readonly currentFieldEffects?: MapFieldEffects
   readonly sheetChanges: readonly EncounterLifecycleSheetChangeRef[]
 }
 
 /** Backward-compatible initiative aliases for the shared lifecycle patch contract. */
 export type InitiativeLifecycleEventSummary = EncounterLifecycleEventSummary
 export type InitiativeLifecycleEffectTransitionSummary = EncounterLifecycleEffectTransitionSummary
+export type InitiativeLifecycleFieldTransitionSummary = EncounterLifecycleFieldTransitionSummary
 export type InitiativeLifecycleSheetChangeRef = EncounterLifecycleSheetChangeRef
 export type InitiativeLifecyclePatchPayload = EncounterLifecyclePatchPayload
 
@@ -1036,6 +1049,12 @@ export type HazardsUpdatedPatchPayload =
   | HazardsClearedPatchPayload
   | HazardsEditedPatchPayload
 
+export interface GlobalFieldTransitionPatchSummary {
+  readonly zoneId: string
+  readonly kind: string
+  readonly reasonCode: string
+}
+
 export interface FieldEffectsUpdatedPatchPayload {
   readonly command:
     | typeof LIVE_PLAY_COMMAND_TYPES.CLEAR_FIELD_EFFECTS
@@ -1048,6 +1067,12 @@ export interface FieldEffectsUpdatedPatchPayload {
   readonly kind?: FieldEffectKind
   readonly kinds?: readonly FieldEffectKind[]
   readonly tickAmount?: number
+  /** Native mechanics state is carried with the compatibility presentation lane. */
+  readonly previousEncounterState?: EncounterState
+  readonly currentEncounterState?: EncounterState
+  readonly fieldTransitions?: readonly GlobalFieldTransitionPatchSummary[]
+  /** Manual ticking is an explicit GM correction; initiative owns normal round advancement. */
+  readonly durationCorrection?: 'gm-correction'
 }
 
 export interface TerrainVoxelUpdatedPatchPayload {

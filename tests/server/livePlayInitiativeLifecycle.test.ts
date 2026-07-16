@@ -183,4 +183,66 @@ describe('live-play initiative lifecycle integration', () => {
     expect(remote.map?.encounterState?.effects).toEqual([])
     expect(remote.map?.initiative).toEqual({ activeId: 'target-token', round: 1 })
   })
+
+  it('advances legacy global fields at a round boundary and never expires them twice on retry', async () => {
+    const map: TabletopMap = {
+      ...lifecycleMap(dueEffect()),
+      fieldEffects: {
+        weather: [{ kind: 'rainy', rounds: 1, source: 'Rain Dance' }],
+        terrains: [],
+        rooms: [],
+      },
+      initiative: { activeId: 'target-token', round: 1 },
+      encounterState: createEmptyEncounterState(),
+    }
+    const harness = LivePlayIntegrationHarness.create({
+      map,
+      sheets: [
+        pokemonSheet('actor-mon', 'Pikachu', 30),
+        pokemonSheet('target-mon', 'Eevee', 40),
+      ],
+    })
+    harnesses.push(harness)
+    const remote = await harness.loadClient('remote-field-lifecycle-client')
+    const command = harness.nextInitiativeCommand({
+      opId: 'op_field_round_boundary',
+      baseRevision: 0,
+      orderIds: ['actor-token', 'target-token'],
+      activeId: 'target-token',
+      round: 1,
+    })
+
+    const first = await harness.nextInitiative({
+      actor: { role: 'gm', clientId: 'gm-client' },
+      command,
+    })
+    const duplicate = await harness.nextInitiative({
+      actor: { role: 'gm', clientId: 'gm-client' },
+      command,
+    })
+
+    const accepted = assertAccepted(first.result)
+    expect(accepted).toMatchObject({ previousRevision: 0, revision: 1 })
+    expect(duplicate.result).toEqual(first.result)
+    expect(harness.operationRecordCount()).toBe(1)
+    expect((await harness.readMap())?.initiative).toEqual({ activeId: 'actor-token', round: 2 })
+    expect((await harness.readMap())?.fieldEffects).toEqual({
+      weather: [],
+      terrains: [],
+      rooms: [],
+    })
+    expect((await harness.readMap())?.encounterState?.zones).toEqual([])
+    const lifecycle = accepted.patches.find(patch => patch.type === 'map.initiative')?.payload as {
+      lifecycle?: { fieldTransitions?: Array<{ kind: string; reasonCode: string }> }
+    }
+    expect(lifecycle.lifecycle?.fieldTransitions).toEqual([{
+      eventId: expect.any(String),
+      zoneId: 'legacy.weather.rainy',
+      kind: 'expired',
+      reasonCode: 'field-duration-expired',
+    }])
+    expect(remote.patchFailures).toEqual([])
+    expect(remote.map?.fieldEffects).toEqual({ weather: [], terrains: [], rooms: [] })
+    expect(remote.map?.encounterState?.zones).toEqual([])
+  })
 })

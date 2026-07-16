@@ -26,6 +26,12 @@ import {
   type EncounterEffectLifecycleTransition,
   type EncounterEffectLifecycleTransitionKind,
 } from './effectLifecycle'
+import {
+  advanceEncounterGlobalFields,
+  type GlobalFieldLifecycleEvent,
+  type GlobalFieldTransition,
+  type GlobalFieldTransitionKind,
+} from './fieldLifecycle'
 import { reduceEncounterHistoryEvent } from './reduceEncounterHistory'
 import { reduceEncounterResourceEvent } from './reduceEncounterResources'
 
@@ -54,6 +60,7 @@ export interface EncounterLifecycleReductionCounters {
   readonly triggerCount: number
   readonly operationCount: number
   readonly effectTransitionCount: number
+  readonly fieldTransitionCount: number
   /** Root events are depth zero. */
   readonly maximumDepth: number
 }
@@ -116,6 +123,12 @@ export interface EncounterLifecycleEffectTransitionTraceEntry
   readonly transitionKind: EncounterEffectLifecycleTransitionKind
 }
 
+export interface EncounterLifecycleFieldTransitionTraceEntry
+  extends EncounterLifecycleTraceEntryBase<'field-transition'> {
+  readonly zoneId: string
+  readonly transitionKind: GlobalFieldTransitionKind
+}
+
 export interface EncounterLifecycleTriggerTraceEntry
   extends EncounterLifecycleTraceEntryBase<'trigger'> {
   readonly handlerId: string
@@ -139,6 +152,7 @@ export interface EncounterLifecycleEmittedEventTraceEntry
 export type EncounterLifecycleTraceEntry =
   | EncounterLifecycleEventTraceEntry
   | EncounterLifecycleEffectTransitionTraceEntry
+  | EncounterLifecycleFieldTransitionTraceEntry
   | EncounterLifecycleTriggerTraceEntry
   | EncounterLifecycleOperationTraceEntry
   | EncounterLifecycleEmittedEventTraceEntry
@@ -149,6 +163,14 @@ export interface EncounterLifecycleAppliedTransition {
   readonly eventKind: EncounterEventKind
   readonly depth: number
   readonly transition: EncounterEffectLifecycleTransition
+}
+
+export interface EncounterLifecycleAppliedFieldTransition {
+  readonly sequence: number
+  readonly eventId: string
+  readonly eventKind: EncounterEventKind
+  readonly depth: number
+  readonly transition: GlobalFieldTransition
 }
 
 /**
@@ -175,6 +197,7 @@ export interface EncounterLifecycleReductionResult {
   /** Typed suspension signals, in the same order as their operations. */
   readonly pendingInterrupts: readonly EncounterLifecyclePendingInterrupt[]
   readonly transitions: readonly EncounterLifecycleAppliedTransition[]
+  readonly fieldTransitions: readonly EncounterLifecycleAppliedFieldTransition[]
   readonly trace: readonly EncounterLifecycleTraceEntry[]
   readonly counters: EncounterLifecycleReductionCounters
 }
@@ -366,6 +389,16 @@ const lifecycleEventAfterTriggers = (
   return null
 }
 
+const globalFieldEventAfterTriggers = (
+  event: EncounterEvent,
+): GlobalFieldLifecycleEvent | null => {
+  if (event.kind === 'round-start' || event.kind === 'round-end') {
+    return { kind: event.kind }
+  }
+  if (event.kind === 'scene-end') return { kind: 'scene-end' }
+  return null
+}
+
 const operationHasAuthoritativeTriggerSource = (
   operation: MoveEffectOperation,
   eventId: string,
@@ -405,6 +438,7 @@ export const reduceEncounterLifecycle = (
   const operations: MoveEffectOperation[] = []
   const pendingInterrupts: EncounterLifecyclePendingInterrupt[] = []
   const transitions: EncounterLifecycleAppliedTransition[] = []
+  const fieldTransitions: EncounterLifecycleAppliedFieldTransition[] = []
   const trace: EncounterLifecycleTraceEntry[] = []
   const operationIds = new Set<string>()
   const knownEventIds = new Set(initialEvents.map(event => event.eventId))
@@ -415,6 +449,7 @@ export const reduceEncounterLifecycle = (
     triggerCount: 0,
     operationCount: 0,
     effectTransitionCount: 0,
+    fieldTransitionCount: 0,
     maximumDepth: 0,
   }
 
@@ -433,6 +468,10 @@ export const reduceEncounterLifecycle = (
 
   const setEffects = (effects: readonly EncounterEffect[]): void => {
     state = deepFreeze(parseEncounterState({ ...state, effects }))
+  }
+
+  const setZones = (zones: EncounterState['zones']): void => {
+    state = deepFreeze(parseEncounterState({ ...state, zones }))
   }
 
   const applyIndexedStateEvent = (event: EncounterEvent): void => {
@@ -657,6 +696,29 @@ export const reduceEncounterLifecycle = (
     if (afterTriggerEvent) {
       applyEffectEvent(event, depth, afterTriggerEvent, eventTransitions)
     }
+    const fieldEvent = globalFieldEventAfterTriggers(event)
+    if (fieldEvent) {
+      const result = advanceEncounterGlobalFields({ zones: state.zones, event: fieldEvent })
+      if (result.changed) setZones(result.zones)
+      for (const fieldTransition of result.transitions) {
+        fieldTransitions.push(deepFreeze({
+          sequence: fieldTransitions.length + 1,
+          eventId: event.eventId,
+          eventKind: event.kind,
+          depth,
+          transition: fieldTransition,
+        }))
+        counters.fieldTransitionCount += 1
+        appendTrace({
+          kind: 'field-transition',
+          eventId: event.eventId,
+          depth,
+          reasonCode: fieldTransition.reasonCode,
+          zoneId: fieldTransition.zoneId,
+          transitionKind: fieldTransition.kind,
+        })
+      }
+    }
     if (event.kind === 'scene-end') applyIndexedStateEvent(event)
 
     for (const childEvent of childEvents) processEvent(childEvent, depth + 1)
@@ -672,6 +734,7 @@ export const reduceEncounterLifecycle = (
     operations,
     pendingInterrupts,
     transitions,
+    fieldTransitions,
     trace,
     counters,
   })

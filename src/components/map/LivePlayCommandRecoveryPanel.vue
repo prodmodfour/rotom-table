@@ -54,7 +54,7 @@ const COMMAND_LABELS: Record<LivePlayMapCommandType, string> = {
   [LIVE_PLAY_COMMAND_TYPES.CLEAR_FIELD_EFFECTS]: 'Clear field effects',
   [LIVE_PLAY_COMMAND_TYPES.SET_FIELD_EFFECT]: 'Set field effect',
   [LIVE_PLAY_COMMAND_TYPES.REMOVE_FIELD_EFFECT]: 'Remove field effect',
-  [LIVE_PLAY_COMMAND_TYPES.TICK_FIELD_EFFECT_DURATIONS]: 'Tick field effect durations',
+  [LIVE_PLAY_COMMAND_TYPES.TICK_FIELD_EFFECT_DURATIONS]: 'Correct field effect durations',
   [LIVE_PLAY_COMMAND_TYPES.BUILD_TERRAIN_VOXEL]: 'Build terrain voxel',
   [LIVE_PLAY_COMMAND_TYPES.REMOVE_TERRAIN_VOXEL]: 'Remove terrain voxel',
   [LIVE_PLAY_COMMAND_TYPES.EDIT_TERRAIN_VOXELS]: 'Edit terrain voxels',

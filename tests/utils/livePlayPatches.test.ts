@@ -5,6 +5,7 @@ import {
   type LivePlayPatch,
 } from '#shared/livePlayCommands'
 import { createEmptyEncounterState } from '#shared/moveAutomation/encounterState'
+import { parseEncounterZone } from '#shared/moveAutomation/encounterZones'
 import { createEncounterTurnResourceLedger } from '#shared/moveAutomation/encounterResources'
 import { applyLivePlayPatchesToMap } from '~/utils/livePlayPatches'
 import type { TabletopMap } from '~/types/map'
@@ -53,6 +54,68 @@ const patchBase = (type: LivePlayPatch['type'], payload: unknown): LivePlayPatch
 })
 
 describe('live-play patch application', () => {
+  it('adopts native field ownership with its compatibility field-effects patch', () => {
+    const map = baseMap({ encounterState: createEmptyEncounterState() })
+    const field = parseEncounterZone({
+      id: 'zone.field.weather.test',
+      kind: 'weather',
+      source: {
+        kind: 'operation',
+        operationId: 'field.command.test',
+        moveId: null,
+        placementId: null,
+      },
+      sideId: null,
+      geometry: { kind: 'battlefield' },
+      layer: 1,
+      duration: { kind: 'rounds', boundary: 'end', remaining: 3 },
+      stacking: { kind: 'replace', maxLayers: null },
+      fieldPolicy: {
+        priority: 0,
+        replacementGroup: 'field.weather',
+        suppression: { sources: [] },
+      },
+      hooks: { entry: [], exit: [] },
+      modifiers: { targeting: [], damage: [], movement: [] },
+      tags: ['global-field', 'weather', 'sunny'],
+      payload: { weatherId: 'sunny' },
+    })
+    const currentEncounterState = {
+      ...createEmptyEncounterState(),
+      zones: [field],
+    }
+
+    const result = applyLivePlayPatchesToMap({
+      map,
+      mapSlug: 'arena',
+      previousRevision: 4,
+      revision: 5,
+      patches: [{
+        ...patchBase(LIVE_PLAY_PATCH_TYPES.MAP_FIELD_EFFECTS, {
+          command: 'setFieldEffect',
+          previous: { weather: [], terrains: [], rooms: [] },
+          current: { weather: [{ kind: 'sunny', rounds: 3 }], terrains: [], rooms: [] },
+          previousEncounterState: createEmptyEncounterState(),
+          currentEncounterState,
+          fieldTransitions: [{
+            zoneId: field.id,
+            kind: 'added',
+            reasonCode: 'field-added',
+          }],
+        }),
+        scopes: [{ kind: 'map', lane: 'fieldEffects' }],
+      }],
+    })
+
+    expect(result).toMatchObject({ ok: true, applied: true, revision: 5 })
+    expect(map.fieldEffects).toEqual({
+      weather: [{ kind: 'sunny', rounds: 3 }],
+      terrains: [],
+      rooms: [],
+    })
+    expect(map.encounterState?.zones).toEqual([field])
+  })
+
   it('applies token movement and authoritative resource patches without replacing unrelated terrain arrays', () => {
     const map = baseMap({ encounterState: createEmptyEncounterState() })
     const originalVoxels = map.voxels

@@ -313,6 +313,23 @@ describe('MoveSpec map, usage, and log reducers', () => {
     expect(result.nextMap.hazards).toEqual([])
     expect(result.nextMap.encounterState?.zones).toEqual([
       expect.objectContaining({
+        kind: 'weather',
+        source: {
+          kind: 'operation',
+          operationId: 'operation.sun',
+          moveId: 'move.reducer-test',
+          placementId: 'actor-token',
+        },
+        sideId: null,
+        duration: { kind: 'rounds', boundary: 'end', remaining: 5 },
+        fieldPolicy: {
+          priority: 0,
+          replacementGroup: 'field.weather',
+          suppression: { sources: [] },
+        },
+        payload: { weatherId: 'sunny' },
+      }),
+      expect.objectContaining({
         kind: 'hazard',
         sideId: null,
         geometry: { kind: 'cells', cells: [cell(3)] },
@@ -338,8 +355,8 @@ describe('MoveSpec map, usage, and log reducers', () => {
     })
 
     expect(result.stateChanges.changes.map(change => change.kind)).toEqual([
-      'map-field-effects',
       'encounter-state',
+      'map-field-effects',
       'map-move-usage',
       'map-metadata',
     ])

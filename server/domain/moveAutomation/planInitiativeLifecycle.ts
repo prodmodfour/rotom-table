@@ -15,15 +15,12 @@ import type {
   MoveEffectOperation,
   MoveHealEffectOperation,
 } from '#shared/moveAutomation/effects'
-import {
-  createEmptyEncounterState,
-  parseEncounterState,
-  type EncounterState,
-} from '#shared/moveAutomation/encounterState'
+import type { EncounterState } from '#shared/moveAutomation/encounterState'
 import { normalizeRevision } from '#shared/sessionRevisions'
 import type { CharacterSheet } from '~/types/characterSheet'
 import type { SheetKind, SheetPlacement, TabletopMap } from '~/types/map'
 import type { TrainerSheet } from '~/types/trainerSheet'
+import { cloneMapFieldEffects } from '~/utils/mapFieldEffects'
 import { deepCloneJson } from '~/utils/serialization'
 import {
   buildAuthoritativeMoveRulesContext,
@@ -34,6 +31,10 @@ import {
   type EncounterLifecycleReductionResult,
   type EncounterLifecycleTriggerHandler,
 } from './reduceLifecycle'
+import {
+  materializeMapGlobalFieldZones,
+  projectGlobalFieldZonesToMapEffects,
+} from './fieldMapState'
 import type { MoveStateChange } from './plan'
 import {
   reduceMoveCoreTokenOperationState,
@@ -90,6 +91,8 @@ export interface EncounterLifecyclePlan {
   readonly currentEncounterState: EncounterState
   readonly previousTemporaryHitPoints: TabletopMap['temporaryHitPoints']
   readonly currentTemporaryHitPoints: TabletopMap['temporaryHitPoints']
+  readonly previousFieldEffects: Required<NonNullable<TabletopMap['fieldEffects']>>
+  readonly currentFieldEffects: Required<NonNullable<TabletopMap['fieldEffects']>>
   readonly nextMap: TabletopMap
   readonly sheetReads: readonly AuthoritativeMoveSheetRead[]
   readonly sheetWrites: readonly EncounterLifecycleSheetWrite[]
@@ -408,9 +411,12 @@ const sheetWriteFromChange = (input: {
 export const planEncounterLifecycle = (
   input: PlanEncounterLifecycleInput,
 ): EncounterLifecyclePlan => {
-  const previousEncounterState = parseEncounterState(
-    input.map.encounterState ?? createEmptyEncounterState(),
-  )
+  const previousEncounterState = materializeMapGlobalFieldZones(input.map)
+  const previousFieldEffects = cloneMapFieldEffects(input.map.fieldEffects)
+  const lifecycleMap: TabletopMap = {
+    ...deepCloneJson(input.map),
+    encounterState: deepCloneJson(previousEncounterState),
+  }
   const events = parseEncounterEvents(input.events)
   const reduction = reduceEncounterLifecycle(
     previousEncounterState,
@@ -428,7 +434,7 @@ export const planEncounterLifecycle = (
       )
     }
     recipientsByOperationId.set(operation.id, recipientsForOperation({
-      map: input.map,
+      map: lifecycleMap,
       reduction,
       effects,
       operation,
@@ -439,15 +445,19 @@ export const planEncounterLifecycle = (
     [...recipientsByOperationId.values()].flatMap(ids => [...ids]),
   )
   let nextMap: TabletopMap = {
-    ...deepCloneJson(input.map),
+    ...lifecycleMap,
     encounterState: deepCloneJson(reduction.state),
+    fieldEffects: projectGlobalFieldZonesToMapEffects({
+      previous: previousFieldEffects,
+      state: reduction.state,
+    }),
   }
   let sheetReads: readonly AuthoritativeMoveSheetRead[] = []
   let sheetWrites: readonly InitiativeLifecycleSheetWrite[] = []
 
   if (reduction.operations.length > 0 && operationRecipientIds.size > 0) {
     const { pokemonSheets, trainerSheets } = input.loadSheets()
-    const actorId = input.map.placements.find(placement => (
+    const actorId = lifecycleMap.placements.find(placement => (
       operationRecipientIds.has(placement.id)
       && (placement.sheetKind === 'pokemon'
         ? pokemonSheets.has(placement.sheetSlug)
@@ -459,7 +469,7 @@ export const planEncounterLifecycle = (
     const context = buildAuthoritativeMoveRulesContext({
       // Trigger operations resolve against the boundary snapshot. Encounter
       // cleanup is persisted afterward from `reduction.state`.
-      map: input.map,
+      map: lifecycleMap,
       pokemonSheets,
       trainerSheets,
       intent: {
@@ -468,7 +478,7 @@ export const planEncounterLifecycle = (
         moveName: 'Initiative Lifecycle',
         selection: { kind: 'self' },
       },
-      candidatePlacementIds: input.map.placements.map(placement => placement.id),
+      candidatePlacementIds: lifecycleMap.placements.map(placement => placement.id),
       selectedPlacementIds: [...operationRecipientIds],
       random: () => 0.5,
       time: input.time,
@@ -499,7 +509,7 @@ export const planEncounterLifecycle = (
       }
       if (change.kind === 'sheet-state') {
         writes.push(sheetWriteFromChange({
-          map: input.map,
+          map: lifecycleMap,
           change,
           recipientIds: operationRecipientIds,
         }))
@@ -520,6 +530,8 @@ export const planEncounterLifecycle = (
     currentEncounterState: reduction.state,
     previousTemporaryHitPoints: deepCloneJson(input.map.temporaryHitPoints),
     currentTemporaryHitPoints: deepCloneJson(nextMap.temporaryHitPoints),
+    previousFieldEffects,
+    currentFieldEffects: cloneMapFieldEffects(nextMap.fieldEffects),
     nextMap,
     sheetReads: deepCloneJson(sheetReads),
     sheetWrites: deepCloneJson(sheetWrites),

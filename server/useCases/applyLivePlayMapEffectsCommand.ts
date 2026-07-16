@@ -26,6 +26,11 @@ import {
 } from '#shared/livePlayBatchCommands'
 import type { AuthRole } from '#shared/auth'
 import { nextRevision, normalizeRevision } from '#shared/sessionRevisions'
+import {
+  createEmptyEncounterState,
+  parseEncounterState,
+  type EncounterState,
+} from '#shared/moveAutomation/encounterState'
 import type {
   MapFieldEffects,
   MapHazardKind,
@@ -66,6 +71,14 @@ import { sqliteMapRepository, type MapRepository } from '../storage/mapRepositor
 import { logicalMapResourcePath } from '../utils/runtimeResourcePaths'
 import { UseCaseHttpError } from '../utils/useCaseErrors'
 import { commitLivePlayMapUpdate } from './livePlayMapPersistence'
+import {
+  advanceMapGlobalFields,
+  applyMapGlobalField,
+  removeMapGlobalFields,
+  type MapGlobalFieldLifecycleResult,
+} from '../domain/moveAutomation/fieldMapState'
+import type { GlobalFieldTransition } from '../domain/moveAutomation/fieldLifecycle'
+import { createHash } from 'node:crypto'
 import { toPersistedMap } from './saveMap'
 
 export class LivePlayMapEffectsCommandUseCaseError extends UseCaseHttpError<400 | 403 | 404 | 409> {}
@@ -122,6 +135,12 @@ export interface EditHazardsPatchPayload {
 
 export type HazardPatchPayload = HazardCellPatchPayload | ClearHazardsPatchPayload | EditHazardsPatchPayload
 
+export interface GlobalFieldTransitionPatchSummary {
+  readonly zoneId: string
+  readonly kind: string
+  readonly reasonCode: string
+}
+
 export interface FieldEffectsPatchPayload {
   readonly command:
     | typeof LIVE_PLAY_COMMAND_TYPES.CLEAR_FIELD_EFFECTS
@@ -134,6 +153,10 @@ export interface FieldEffectsPatchPayload {
   readonly kind?: FieldEffectKind
   readonly kinds?: readonly FieldEffectKind[]
   readonly tickAmount?: number
+  readonly previousEncounterState?: EncounterState
+  readonly currentEncounterState?: EncounterState
+  readonly fieldTransitions?: readonly GlobalFieldTransitionPatchSummary[]
+  readonly durationCorrection?: 'gm-correction'
 }
 
 export interface LivePlayMapEffectsCommandActor {
@@ -209,10 +232,14 @@ interface AppliedFieldEffectsChange {
   readonly nextMap: TabletopMap
   readonly previous: MapFieldEffects
   readonly current: MapFieldEffects
+  readonly previousEncounterState: EncounterState
+  readonly currentEncounterState: EncounterState
+  readonly fieldTransitions: readonly GlobalFieldTransitionPatchSummary[]
   readonly category?: FieldEffectRemoveCategory
   readonly kind?: FieldEffectKind
   readonly kinds?: readonly FieldEffectKind[]
   readonly tickAmount?: number
+  readonly durationCorrection?: 'gm-correction'
 }
 
 type AppliedMapEffectsChange = AppliedHazardChange | AppliedFieldEffectsChange
@@ -1031,14 +1058,87 @@ const roomEffectFromPayload = (payload: SetFieldEffectPayload): MapRoomEffect =>
   return setEffectSource(effect, payload.source)
 }
 
-const withFieldEffects = (
+const fieldCommandSource = (
+  command: Pick<LivePlayMapEffectCommand, 'opId'>,
+) => ({
+  kind: 'operation' as const,
+  operationId: `field.command.${createHash('sha256').update(command.opId).digest('hex').slice(0, 24)}`,
+  moveId: null,
+  placementId: null,
+})
+
+const transitionSummaries = (
+  transitions: readonly GlobalFieldTransition[],
+): readonly GlobalFieldTransitionPatchSummary[] => transitions.map(transition => ({
+  zoneId: transition.zoneId,
+  kind: transition.kind,
+  reasonCode: transition.reasonCode,
+}))
+
+const fieldDuration = (rounds: number | null | undefined) => rounds === null
+  ? { kind: 'permanent' as const, remaining: null }
+  : {
+      kind: 'rounds' as const,
+      boundary: 'end' as const,
+      remaining: rounds ?? 1,
+    }
+
+const fieldChangeFromLifecycle = (input: {
+  readonly context: ResolvedMapEffectsContext
+  readonly timestamp: number
+  readonly result: MapGlobalFieldLifecycleResult
+  readonly transitions?: readonly GlobalFieldTransition[]
+  readonly category?: FieldEffectRemoveCategory
+  readonly kind?: FieldEffectKind
+  readonly kinds?: readonly FieldEffectKind[]
+  readonly tickAmount?: number
+  readonly durationCorrection?: 'gm-correction'
+  readonly currentFieldEffects?: MapFieldEffects
+}): AppliedFieldEffectsChange => {
+  const current = cloneFieldEffects(
+    input.currentFieldEffects ?? input.result.currentFieldEffects,
+  )
+  return {
+    lane: 'fieldEffects',
+    nextMap: timestampedMap({
+      ...input.result.map,
+      fieldEffects: current,
+    }, input.timestamp),
+    previous: cloneFieldEffects(input.context.map.fieldEffects),
+    current,
+    previousEncounterState: parseEncounterState(
+      input.context.map.encounterState ?? createEmptyEncounterState(),
+    ),
+    currentEncounterState: input.result.currentEncounterState,
+    fieldTransitions: transitionSummaries(
+      input.transitions ?? input.result.lifecycle.transitions,
+    ),
+    ...(input.category === undefined ? {} : { category: input.category }),
+    ...(input.kind === undefined ? {} : { kind: input.kind }),
+    ...(input.kinds === undefined ? {} : { kinds: [...input.kinds] }),
+    ...(input.tickAmount === undefined ? {} : { tickAmount: input.tickAmount }),
+    ...(input.durationCorrection === undefined
+      ? {}
+      : { durationCorrection: input.durationCorrection }),
+  }
+}
+
+const unchangedFieldLifecycleResult = (
   map: TabletopMap,
-  fieldEffects: MapFieldEffects,
-  timestamp: number,
-): TabletopMap => timestampedMap({
-  ...map,
-  fieldEffects: cloneFieldEffects(fieldEffects),
-}, timestamp)
+): MapGlobalFieldLifecycleResult => {
+  const state = parseEncounterState(map.encounterState ?? createEmptyEncounterState())
+  const fieldEffects = cloneFieldEffects(map.fieldEffects)
+  return {
+    map: deepCloneMap(map),
+    previousEncounterState: state,
+    currentEncounterState: state,
+    previousFieldEffects: fieldEffects,
+    currentFieldEffects: fieldEffects,
+    lifecycle: { zones: state.zones, changed: false, transitions: [] },
+  }
+}
+
+const deepCloneMap = (map: TabletopMap): TabletopMap => structuredClone(map)
 
 const clearFieldEffectsKinds = (payload: ClearFieldEffectsPayload): readonly FieldEffectKind[] | undefined => (
   'kinds' in payload && payload.kinds !== undefined ? [...payload.kinds] as readonly FieldEffectKind[] : undefined
@@ -1062,41 +1162,44 @@ const applyClearFieldEffects = (
   }
 
   const payload = expectClearFieldEffectsPayload(command.payload)
-  const previous = cloneFieldEffects(context.map.fieldEffects)
-  const current = cloneFieldEffects(previous)
   const kinds = clearFieldEffectsKinds(payload)
-  const kindSet = new Set(kinds ?? [])
-
-  if (payload.category === 'all') {
-    current.weather = []
-    current.terrains = []
-    current.rooms = []
-  } else if (payload.category === 'weather') {
-    current.weather = kinds === undefined
-      ? []
-      : current.weather.filter((effect) => !kindSet.has(effect.kind))
-  } else if (payload.category === 'terrain') {
-    current.terrains = kinds === undefined
-      ? []
-      : current.terrains.filter((effect) => !kindSet.has(effect.kind))
-  } else {
-    current.rooms = kinds === undefined
-      ? []
-      : current.rooms.filter((effect) => !kindSet.has(effect.kind))
+  const kindSet = new Set<string>(kinds ?? [])
+  const result = removeMapGlobalFields({
+    map: context.map,
+    matches: zone => {
+      if (payload.category !== 'all' && zone.kind !== payload.category) return false
+      return kinds === undefined || kindSet.has(
+        zone.kind === 'weather'
+          ? zone.payload.weatherId
+          : zone.kind === 'terrain'
+            ? zone.payload.terrainId
+            : zone.payload.roomId,
+      )
+    },
+  })
+  const current = cloneFieldEffects(result.currentFieldEffects)
+  // Local area Terrain remains a compatibility-only lane until its geometry migration.
+  if (payload.category === 'all') current.terrains = []
+  else if (payload.category === 'terrain') {
+    current.terrains = current.terrains.filter(effect => (
+      effect.scope !== 'area' || (kinds !== undefined && !kindSet.has(effect.kind))
+    ))
   }
 
-  if (fieldEffectsEqual(previous, current)) {
-    rejectLivePlayCommand('no-op', clearFieldEffectsNoOpMessage(payload, command.mapSlug), { currentState: previous })
+  if (!result.lifecycle.changed && fieldEffectsEqual(result.currentFieldEffects, current)) {
+    rejectLivePlayCommand('no-op', clearFieldEffectsNoOpMessage(payload, command.mapSlug), {
+      currentState: cloneFieldEffects(context.map.fieldEffects),
+    })
   }
 
-  return {
-    lane: 'fieldEffects',
-    nextMap: withFieldEffects(context.map, current, timestamp),
-    previous,
-    current,
+  return fieldChangeFromLifecycle({
+    context,
+    timestamp,
+    result,
+    currentFieldEffects: current,
     category: payload.category,
     ...(kinds === undefined ? {} : { kinds }),
-  }
+  })
 }
 
 const applySetFieldEffect = (
@@ -1110,45 +1213,119 @@ const applySetFieldEffect = (
 
   const payload = expectSetFieldEffectPayload(command.payload)
   const previous = cloneFieldEffects(context.map.fieldEffects)
-  const current = cloneFieldEffects(previous)
 
   if (payload.rounds === 0) {
-    if (payload.category === 'weather') current.weather = current.weather.filter((effect) => effect.kind !== payload.kind)
-    else if (payload.category === 'terrain') current.terrains = current.terrains.filter((effect) => effect.kind !== payload.kind)
-    else current.rooms = current.rooms.filter((effect) => effect.kind !== payload.kind)
-  } else if (payload.category === 'weather') {
-    const effect = weatherEffectFromPayload(payload)
-    if (payload.weatherMode === 'append') {
-      current.weather = [...current.weather.filter((item) => item.kind !== effect.kind), effect].slice(-2)
-    } else {
-      current.weather = [effect]
+    const result = removeMapGlobalFields({
+      map: context.map,
+      matches: zone => zone.kind === payload.category && (
+        zone.kind === 'weather'
+          ? zone.payload.weatherId === payload.kind
+          : zone.kind === 'terrain'
+            ? zone.payload.terrainId === payload.kind
+            : zone.payload.roomId === payload.kind
+      ),
+    })
+    const current = cloneFieldEffects(result.currentFieldEffects)
+    if (payload.category === 'terrain') {
+      current.terrains = current.terrains.filter(effect => effect.kind !== payload.kind)
     }
-  } else if (payload.category === 'terrain') {
-    const effect = terrainEffectFromPayload(payload)
-    current.terrains = [...current.terrains.filter((item) => item.kind !== effect.kind), effect]
-  } else {
-    const effect = roomEffectFromPayload(payload)
-    current.rooms = [...current.rooms.filter((item) => item.kind !== effect.kind), effect]
+    if (!result.lifecycle.changed && fieldEffectsEqual(previous, current)) {
+      rejectLivePlayCommand(
+        'no-op',
+        `${payload.category} effect ${payload.kind} is not active on map ${command.mapSlug}.`,
+        { currentState: previous },
+      )
+    }
+    return fieldChangeFromLifecycle({
+      context,
+      timestamp,
+      result,
+      currentFieldEffects: current,
+      category: payload.category,
+      kind: payload.kind,
+    })
   }
 
-  if (fieldEffectsEqual(previous, current)) {
+  if (payload.category === 'terrain' && payload.terrainScope === 'area') {
+    const current = cloneFieldEffects(previous)
+    const effect = terrainEffectFromPayload(payload)
+    current.terrains = [...current.terrains.filter(item => item.kind !== effect.kind), effect]
+    if (fieldEffectsEqual(previous, current)) {
+      rejectLivePlayCommand(
+        'no-op',
+        `terrain effect ${payload.kind} is already current on map ${command.mapSlug}.`,
+        { currentState: previous },
+      )
+    }
+    return fieldChangeFromLifecycle({
+      context,
+      timestamp,
+      result: unchangedFieldLifecycleResult(context.map),
+      currentFieldEffects: current,
+      category: payload.category,
+      kind: payload.kind,
+    })
+  }
+
+  let workingMap = context.map
+  const transitions: GlobalFieldTransition[] = []
+  if (payload.category === 'weather' && payload.weatherMode === 'append') {
+    const otherWeather = previous.weather.filter(effect => effect.kind !== payload.kind)
+    if (otherWeather.length >= 2) {
+      const staleKind = otherWeather[0]!.kind
+      const cleanup = removeMapGlobalFields({
+        map: workingMap,
+        matches: zone => zone.kind === 'weather' && zone.payload.weatherId === staleKind,
+      })
+      workingMap = cleanup.map
+      transitions.push(...cleanup.lifecycle.transitions)
+    }
+  }
+
+  const effect = payload.category === 'weather'
+    ? weatherEffectFromPayload(payload)
+    : payload.category === 'terrain'
+      ? terrainEffectFromPayload(payload)
+      : roomEffectFromPayload(payload)
+  const startsNextRound = payload.category === 'room'
+    ? roomEffectFromPayload(payload).startsNextRound
+    : undefined
+  const replacementGroup = payload.category === 'weather'
+    ? payload.weatherMode === 'append'
+      ? `field.weather.${payload.kind}`
+      : 'field.weather'
+    : `field.${payload.category}.${payload.kind}`
+  const result = applyMapGlobalField({
+    map: workingMap,
+    kind: payload.category,
+    fieldId: payload.kind,
+    source: fieldCommandSource(command),
+    sideId: null,
+    duration: fieldDuration(effect.rounds),
+    replacementGroup,
+    replacementScope: payload.category === 'weather' && payload.weatherMode !== 'append'
+      ? 'category'
+      : 'kind',
+    startsNextRound,
+    sourceLabel: payload.source,
+  })
+  transitions.push(...result.lifecycle.transitions)
+  if (!result.lifecycle.changed && transitions.every(item => item.kind === 'retained' || item.kind === 'prevented')) {
     rejectLivePlayCommand(
       'no-op',
-      payload.rounds === 0
-        ? `${payload.category} effect ${payload.kind} is not active on map ${command.mapSlug}.`
-        : `${payload.category} effect ${payload.kind} is already current on map ${command.mapSlug}.`,
+      `${payload.category} effect ${payload.kind} is already current on map ${command.mapSlug}.`,
       { currentState: previous },
     )
   }
 
-  return {
-    lane: 'fieldEffects',
-    nextMap: withFieldEffects(context.map, current, timestamp),
-    previous,
-    current,
+  return fieldChangeFromLifecycle({
+    context,
+    timestamp,
+    result,
+    transitions,
     category: payload.category,
     kind: payload.kind,
-  }
+  })
 }
 
 const applyRemoveFieldEffect = (
@@ -1162,27 +1339,27 @@ const applyRemoveFieldEffect = (
 
   const payload = expectRemoveFieldEffectPayload(command.payload)
   const previous = cloneFieldEffects(context.map.fieldEffects)
-  const current = cloneFieldEffects(previous)
-
-  if (payload.category === 'all') {
-    current.weather = []
-    current.terrains = []
-    current.rooms = []
-  } else if (payload.category === 'weather') {
-    current.weather = payload.kind === undefined
-      ? []
-      : current.weather.filter((effect) => effect.kind !== payload.kind)
-  } else if (payload.category === 'terrain') {
-    current.terrains = payload.kind === undefined
-      ? []
-      : current.terrains.filter((effect) => effect.kind !== payload.kind)
-  } else {
-    current.rooms = payload.kind === undefined
-      ? []
-      : current.rooms.filter((effect) => effect.kind !== payload.kind)
+  const result = removeMapGlobalFields({
+    map: context.map,
+    matches: zone => {
+      if (payload.category !== 'all' && zone.kind !== payload.category) return false
+      if (payload.kind === undefined) return true
+      return zone.kind === 'weather'
+        ? zone.payload.weatherId === payload.kind
+        : zone.kind === 'terrain'
+          ? zone.payload.terrainId === payload.kind
+          : zone.payload.roomId === payload.kind
+    },
+  })
+  const current = cloneFieldEffects(result.currentFieldEffects)
+  if (payload.category === 'all') current.terrains = []
+  else if (payload.category === 'terrain') {
+    current.terrains = current.terrains.filter(effect => (
+      effect.scope !== 'area' || (payload.kind !== undefined && effect.kind !== payload.kind)
+    ))
   }
 
-  if (fieldEffectsEqual(previous, current)) {
+  if (!result.lifecycle.changed && fieldEffectsEqual(previous, current)) {
     const label = payload.category === 'all'
       ? 'No field effects are active'
       : payload.kind === undefined
@@ -1191,14 +1368,14 @@ const applyRemoveFieldEffect = (
     rejectLivePlayCommand('no-op', `${label} on map ${command.mapSlug}.`, { currentState: previous })
   }
 
-  return {
-    lane: 'fieldEffects',
-    nextMap: withFieldEffects(context.map, current, timestamp),
-    previous,
-    current,
+  return fieldChangeFromLifecycle({
+    context,
+    timestamp,
+    result,
+    currentFieldEffects: current,
     category: payload.category,
     ...(payload.kind === undefined ? {} : { kind: payload.kind }),
-  }
+  })
 }
 
 const tickEffects = <TEffect extends { rounds?: number | null }>(
@@ -1230,25 +1407,35 @@ const applyTickFieldEffectDurations = (
   const payload = expectTickFieldEffectDurationsPayload(command.payload)
   const amount = payload.amount ?? 1
   const previous = cloneFieldEffects(context.map.fieldEffects)
-  const current: Required<MapFieldEffects> = {
-    weather: tickEffects(previous.weather, amount, cloneWeatherEffect),
-    terrains: tickEffects(previous.terrains, amount, cloneTerrainEffect),
-    rooms: tickEffects(previous.rooms, amount, cloneRoomEffect),
-  }
+  const result = advanceMapGlobalFields({
+    map: context.map,
+    event: { kind: 'gm-duration-correction', amount },
+  })
+  const current = cloneFieldEffects(result.currentFieldEffects)
+  const correctedAreaTerrains = tickEffects(
+    previous.terrains.filter(effect => effect.scope === 'area'),
+    amount,
+    cloneTerrainEffect,
+  )
+  current.terrains = [
+    ...correctedAreaTerrains,
+    ...current.terrains.filter(effect => effect.scope !== 'area'),
+  ]
 
-  if (fieldEffectsEqual(previous, current)) {
+  if (!result.lifecycle.changed && fieldEffectsEqual(previous, current)) {
     rejectLivePlayCommand('no-op', `No finite field-effect durations changed on map ${command.mapSlug}.`, {
       currentState: previous,
     })
   }
 
-  return {
-    lane: 'fieldEffects',
-    nextMap: withFieldEffects(context.map, current, timestamp),
-    previous,
-    current,
+  return fieldChangeFromLifecycle({
+    context,
+    timestamp,
+    result,
+    currentFieldEffects: current,
     tickAmount: amount,
-  }
+    durationCorrection: 'gm-correction',
+  })
 }
 
 const applyMapEffectsChange = (
@@ -1359,6 +1546,12 @@ const fieldEffectsPatch = (
       ...(change.kind === undefined ? {} : { kind: change.kind }),
       ...(change.kinds === undefined ? {} : { kinds: [...change.kinds] }),
       ...(change.tickAmount === undefined ? {} : { tickAmount: change.tickAmount }),
+      previousEncounterState: structuredClone(change.previousEncounterState),
+      currentEncounterState: structuredClone(change.currentEncounterState),
+      fieldTransitions: change.fieldTransitions.map(transition => ({ ...transition })),
+      ...(change.durationCorrection === undefined
+        ? {}
+        : { durationCorrection: change.durationCorrection }),
     },
   }
 }

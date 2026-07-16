@@ -545,6 +545,7 @@
         "layer": { "type": "integer", "minimum": 1, "maximum": 64 },
         "duration": { "$ref": "#/$defs/encounterEffectDuration" },
         "stacking": { "$ref": "#/$defs/encounterZoneStacking" },
+        "fieldPolicy": { "$ref": "#/$defs/encounterGlobalFieldPolicy" },
         "hooks": { "$ref": "#/$defs/encounterZoneHooks" },
         "modifiers": { "$ref": "#/$defs/encounterZoneModifiers" },
         "tags": {
@@ -693,6 +694,37 @@
           }
         }
       ]
+    },
+    "encounterGlobalFieldPolicy": {
+      "type": "object",
+      "required": ["priority", "replacementGroup", "suppression"],
+      "additionalProperties": false,
+      "properties": {
+        "priority": { "type": "integer", "minimum": -1000000, "maximum": 1000000 },
+        "replacementGroup": { "$ref": "#/$defs/encounterEffectStableId" },
+        "suppression": { "$ref": "#/$defs/encounterGlobalFieldSuppression" }
+      }
+    },
+    "encounterGlobalFieldSuppression": {
+      "type": "object",
+      "required": ["sources"],
+      "additionalProperties": false,
+      "properties": {
+        "sources": {
+          "type": "array",
+          "maxItems": 32,
+          "items": { "$ref": "#/$defs/encounterGlobalFieldSuppressionSource" }
+        }
+      }
+    },
+    "encounterGlobalFieldSuppressionSource": {
+      "type": "object",
+      "required": ["zoneId", "reasonCode"],
+      "additionalProperties": false,
+      "properties": {
+        "zoneId": { "$ref": "#/$defs/encounterEffectStableId" },
+        "reasonCode": { "$ref": "#/$defs/encounterEffectStableId" }
+      }
     },
     "encounterZoneHooks": {
       "type": "object",

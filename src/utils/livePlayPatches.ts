@@ -258,6 +258,7 @@ const encounterLifecycleState = (
 ): {
   readonly encounterState: EncounterState
   readonly temporaryHitPoints: TabletopMap['temporaryHitPoints']
+  readonly fieldEffects: MapFieldEffects
 } | LivePlayPatchesRejected | null => {
   if (payload.lifecycle === undefined) return null
   if (!isRecord(payload.lifecycle)) {
@@ -273,6 +274,18 @@ const encounterLifecycleState = (
       `${patchLabel} lifecycle encounter state is invalid: ${error instanceof Error ? error.message : String(error)}`,
     )
   }
+  if (
+    lifecycle.currentFieldEffects !== undefined
+    && !isRecord(lifecycle.currentFieldEffects)
+  ) {
+    return failed(
+      'invalid-patch',
+      `${patchLabel} lifecycle field effects must be an object when present`,
+    )
+  }
+  const fieldEffects = lifecycle.currentFieldEffects === undefined
+    ? cloneFieldEffects(map.fieldEffects ?? {})
+    : cloneFieldEffects(lifecycle.currentFieldEffects as MapFieldEffects)
   if (
     lifecycle.currentTemporaryHitPoints !== null
     && !isRecord(lifecycle.currentTemporaryHitPoints)
@@ -294,7 +307,7 @@ const encounterLifecycleState = (
       `${patchLabel} lifecycle temporary HP does not match the active scene`,
     )
   }
-  return { encounterState, temporaryHitPoints }
+  return { encounterState, temporaryHitPoints, fieldEffects }
 }
 
 const applyInitiativePatch = (map: TabletopMap, payload: unknown): LivePlayPatchesRejected | null => {
@@ -331,6 +344,7 @@ const applyInitiativePatch = (map: TabletopMap, payload: unknown): LivePlayPatch
 
   if (lifecycle) {
     map.encounterState = lifecycle.encounterState
+    map.fieldEffects = cloneFieldEffects(lifecycle.fieldEffects)
     if (lifecycle.temporaryHitPoints === undefined) delete map.temporaryHitPoints
     else map.temporaryHitPoints = deepCloneJson(lifecycle.temporaryHitPoints)
   }
@@ -366,7 +380,20 @@ const applyFieldEffectsPatch = (map: TabletopMap, payload: unknown): LivePlayPat
   if (!isRecord(payload) || !isRecord(payload.current)) {
     return failed('invalid-patch', 'map.fieldEffects patches require a current field-effects object')
   }
+  let encounterState: EncounterState | undefined
+  if (payload.currentEncounterState !== undefined) {
+    try {
+      encounterState = parseEncounterState(payload.currentEncounterState)
+    }
+    catch (error) {
+      return failed(
+        'invalid-patch',
+        `map.fieldEffects encounter state is invalid: ${error instanceof Error ? error.message : String(error)}`,
+      )
+    }
+  }
   map.fieldEffects = cloneFieldEffects(payload.current as MapFieldEffects)
+  if (encounterState) map.encounterState = encounterState
   return null
 }
 
@@ -504,6 +531,7 @@ const applyScenePatch = (map: TabletopMap, payload: unknown): LivePlayPatchesRej
   if (lifecycle && 'ok' in lifecycle) return lifecycle
   if (lifecycle) {
     map.encounterState = lifecycle.encounterState
+    map.fieldEffects = cloneFieldEffects(lifecycle.fieldEffects)
     if (lifecycle.temporaryHitPoints === undefined) delete map.temporaryHitPoints
     else map.temporaryHitPoints = deepCloneJson(lifecycle.temporaryHitPoints)
   }

@@ -444,12 +444,16 @@ describe('live-play hazard and field-effect commands', () => {
         type: LIVE_PLAY_PATCH_TYPES.MAP_FIELD_EFFECTS,
         revision: 5,
         scopes: [{ kind: 'map', lane: 'fieldEffects' }],
-        payload: {
+        payload: expect.objectContaining({
           command: LIVE_PLAY_COMMAND_TYPES.CLEAR_FIELD_EFFECTS,
           category: 'all',
           previous: initialFieldEffects,
           current: { weather: [], terrains: [], rooms: [] },
-        },
+          currentEncounterState: expect.objectContaining({ zones: [] }),
+          fieldTransitions: expect.arrayContaining([
+            expect.objectContaining({ kind: 'removed' }),
+          ]),
+        }),
       }),
     ])
     expect(harness.published).toHaveLength(1)
@@ -529,6 +533,25 @@ describe('live-play hazard and field-effect commands', () => {
       rooms: [],
     })
     expect(response.fieldEffects).toEqual(harness.storedMap.fieldEffects)
+    expect(harness.storedMap.encounterState?.zones).toEqual([
+      expect.objectContaining({
+        kind: 'weather',
+        source: {
+          kind: 'operation',
+          operationId: expect.stringMatching(/^field\.command\./),
+          moveId: null,
+          placementId: null,
+        },
+        sideId: null,
+        duration: { kind: 'rounds', boundary: 'end', remaining: 3 },
+        fieldPolicy: {
+          priority: 0,
+          replacementGroup: 'field.weather',
+          suppression: { sources: [] },
+        },
+        payload: { weatherId: 'sunny' },
+      }),
+    ])
     expect(acceptedPatches(response)[0]).toMatchObject({
       type: LIVE_PLAY_PATCH_TYPES.MAP_FIELD_EFFECTS,
       scopes: [{ kind: 'map', lane: 'fieldEffects' }],
@@ -538,6 +561,7 @@ describe('live-play hazard and field-effect commands', () => {
         current: { weather: [{ kind: 'sunny', rounds: 3 }], terrains: [], rooms: [] },
         category: 'weather',
         kind: 'sunny',
+        fieldTransitions: [expect.objectContaining({ kind: 'added', reasonCode: 'field-added' })],
       },
     })
   })
@@ -592,11 +616,19 @@ describe('live-play hazard and field-effect commands', () => {
       payload: {
         command: LIVE_PLAY_COMMAND_TYPES.TICK_FIELD_EFFECT_DURATIONS,
         tickAmount: 1,
+        durationCorrection: 'gm-correction',
         current: {
           weather: [{ kind: 'rainy', rounds: 1 }],
           terrains: [],
           rooms: [{ kind: 'wonder', rounds: null }],
         },
+        fieldTransitions: expect.arrayContaining([
+          expect.objectContaining({
+            kind: 'duration-decremented',
+            reasonCode: 'field-gm-duration-correction',
+          }),
+          expect.objectContaining({ kind: 'expired' }),
+        ]),
       },
     })
   })

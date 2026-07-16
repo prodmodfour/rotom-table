@@ -100,7 +100,7 @@ const slowZoneIndex = (input: {
 }): SlowZoneIndex => {
   let battlefield = false
   const cells = new Set<string>()
-  for (const zone of projectBattlefieldZones(input.map).zones) {
+  for (const zone of projectBattlefieldZones(input.map).activeZones) {
     if (!slowTerrainModifier(zone)) continue
     if (!zoneAffectsMovementSubject({ zone, subject: input.subject, registry: input.registry })) {
       continue

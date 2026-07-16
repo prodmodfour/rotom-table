@@ -291,6 +291,44 @@ describe('generalized battlefield zone queries', () => {
     ).map(item => item.id)).toEqual(['zone.vortex.target', 'zone.side.reflect'])
   })
 
+  it('excludes suppressed and delayed global fields from mechanics queries while retaining audit access', () => {
+    const [weather, suppressor] = nativeZones()
+    if (!weather || !weather.fieldPolicy || !suppressor) throw new Error('expected field fixtures')
+    const suppressedWeather = parseEncounterZone({
+      ...weather,
+      fieldPolicy: {
+        ...weather.fieldPolicy,
+        suppression: {
+          sources: [{ zoneId: suppressor.id, reasonCode: 'field.weather.suppressed' }],
+        },
+      },
+    })
+    const delayedRoom = zone({
+      id: 'zone.room.trick.pending',
+      kind: 'room',
+      geometry: { kind: 'battlefield' },
+      payload: { roomId: 'trick', startsNextRound: true },
+    })
+    const map = mapFixture({
+      encounterState: {
+        ...mapFixture().encounterState!,
+        zones: [suppressedWeather, suppressor, delayedRoom],
+      },
+    })
+
+    const projection = projectBattlefieldZones(map)
+    expect(projection.inactiveGlobalFieldZoneIds).toEqual([
+      suppressedWeather.id,
+      delayedRoom.id,
+    ])
+    expect(queryBattlefieldZones(map, { kind: 'battlefield' })).toEqual([])
+    expect(queryBattlefieldZones(
+      map,
+      { kind: 'battlefield' },
+      { includeInactiveGlobalFields: true },
+    ).map(item => item.id)).toEqual([suppressedWeather.id, delayedRoom.id])
+  })
+
   it('projects typed hooks and modifiers with their owning zone provenance', () => {
     const map = mapFixture({
       encounterState: {

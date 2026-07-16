@@ -15,6 +15,7 @@ import type { CharacterSheet } from '~/types/characterSheet'
 import type { MapSceneState, SheetKind, TabletopMap } from '~/types/map'
 import type { TrainerSheet } from '~/types/trainerSheet'
 import { clearMapSceneResources } from '~/utils/mapSceneCleanup'
+import { cloneMapFieldEffects } from '~/utils/mapFieldEffects'
 import { deepCloneJson } from '~/utils/serialization'
 import {
   deduplicateAuthoritativeMoveSheetReads,
@@ -56,6 +57,8 @@ export interface SceneLifecyclePlan {
   readonly currentTemporaryHitPoints: TabletopMap['temporaryHitPoints']
   readonly previousMoveUsage: TabletopMap['moveUsage']
   readonly currentMoveUsage: TabletopMap['moveUsage']
+  readonly previousFieldEffects: Required<NonNullable<TabletopMap['fieldEffects']>>
+  readonly currentFieldEffects: Required<NonNullable<TabletopMap['fieldEffects']>>
   readonly nextMap: TabletopMap
   readonly sheetReads: readonly AuthoritativeMoveSheetRead[]
   readonly sheetWrites: readonly EncounterLifecycleSheetWrite[]
@@ -332,6 +335,8 @@ export const planSceneLifecycle = (
     currentTemporaryHitPoints: deepCloneJson(workingMap.temporaryHitPoints),
     previousMoveUsage: deepCloneJson(input.map.moveUsage),
     currentMoveUsage: deepCloneJson(workingMap.moveUsage),
+    previousFieldEffects: cloneMapFieldEffects(input.map.fieldEffects),
+    currentFieldEffects: cloneMapFieldEffects(workingMap.fieldEffects),
     nextMap: workingMap,
     sheetReads: deepCloneJson(sheetReads),
     sheetWrites: deepCloneJson(sheetWrites),

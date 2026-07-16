@@ -396,6 +396,8 @@ const sceneLifecyclePatchPayload = (
     currentEncounterState: lifecycle.currentEncounterState,
     previousTemporaryHitPoints: lifecycle.previousTemporaryHitPoints,
     currentTemporaryHitPoints: lifecycle.currentTemporaryHitPoints,
+    previousFieldEffects: lifecycle.previousFieldEffects,
+    currentFieldEffects: lifecycle.currentFieldEffects,
     sheetWrites: lifecycle.sheetWrites,
   }),
   previousMoveUsage: lifecycle.previousMoveUsage === undefined

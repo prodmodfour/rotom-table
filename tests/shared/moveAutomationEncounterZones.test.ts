@@ -202,8 +202,24 @@ describe('move automation encounter zones', () => {
       payload: { roomId: 'trick', startsNextRound: true },
     })
 
-    expect(weather).toMatchObject({ id: 'legacy.weather.rainy', payload: { weatherId: 'rainy' } })
-    expect(room).toMatchObject({ kind: 'room', payload: { roomId: 'trick', startsNextRound: true } })
+    expect(weather).toMatchObject({
+      id: 'legacy.weather.rainy',
+      fieldPolicy: {
+        priority: 0,
+        replacementGroup: 'field.weather.rainy',
+        suppression: { sources: [] },
+      },
+      payload: { weatherId: 'rainy' },
+    })
+    expect(room).toMatchObject({
+      kind: 'room',
+      fieldPolicy: {
+        priority: 0,
+        replacementGroup: 'field.room.trick',
+        suppression: { sources: [] },
+      },
+      payload: { roomId: 'trick', startsNextRound: true },
+    })
     expect(() => parseEncounterZone({ ...weather, id: 'legacy.weather.sunny' }))
       .toThrow('must be legacy.weather.rainy for its legacy map source')
     expect(() => parseEncounterZone({
@@ -261,6 +277,14 @@ describe('move automation encounter zones', () => {
       layer: 3,
       stacking: { kind: 'add-layer', maxLayers: 2 },
     })).toThrow('layer 3 exceeds maxLayers 2')
+    expect(() => parseEncounterZone({
+      ...baseZone(),
+      fieldPolicy: {
+        priority: 0,
+        replacementGroup: 'field.smoke',
+        suppression: { sources: [] },
+      },
+    })).toThrow('supported only for battlefield-wide Weather, Terrain, and Room zones')
     expect(() => parseEncounterZone({
       ...baseZone(),
       modifiers: {

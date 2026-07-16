@@ -1562,6 +1562,10 @@ const tickFieldEffectDurationsFromMenu = async () => {
     return
   }
   if (!canEditMap.value) return
+  const confirmed = typeof window === 'undefined' || window.confirm(
+    'Apply a GM correction and subtract one round from every finite field duration? Normal round advancement is automatic.',
+  )
+  if (!confirmed) return
   await livePlayCommands.tickFieldEffectDurations()
 }
 

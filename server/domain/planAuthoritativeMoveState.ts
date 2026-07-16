@@ -58,6 +58,7 @@ import {
   materializeMoveSpecSuspension,
   type MaterializedMoveSpecSuspension,
 } from './moveAutomation/materializeSuspension'
+import { applyMapGlobalField } from './moveAutomation/fieldMapState'
 import {
   applyNativeCoreMapChanges,
   nativeSheetWritesFromStateChanges,
@@ -550,12 +551,60 @@ const applyHazardsToMap = (map: TabletopMap, transaction: MoveAutomationTransact
   return next
 }
 
-const applyFieldEffectsToMap = (map: TabletopMap, transaction: MoveAutomationTransaction): TabletopMap => {
+const applyFieldEffectsToMap = (
+  map: TabletopMap,
+  transaction: MoveAutomationTransaction,
+  actorPlacement: SheetPlacement,
+): TabletopMap => {
   let next = map
-  for (const effect of transaction.fieldEffectsToApply) {
-    const result = applyMoveFieldEffectToFieldEffects(next.fieldEffects, effect)
-    if (!result.ok) fail('invalid', 'invalid-generated-field-effect', result.message)
-    else next = { ...next, fieldEffects: cloneJson(result.fieldEffects) }
+  for (const [index, effect] of transaction.fieldEffectsToApply.entries()) {
+    const legacy = applyMoveFieldEffectToFieldEffects(next.fieldEffects, effect)
+    if (legacy.ok === false) {
+      return fail('invalid', 'invalid-generated-field-effect', legacy.message)
+    }
+    const projectedFieldEffects = legacy.fieldEffects
+    let rounds: number | null | undefined
+    let startsNextRound: boolean | undefined
+    if (effect.kind === 'weather') {
+      rounds = projectedFieldEffects.weather?.find(item => item.kind === effect.value)?.rounds
+    }
+    else if (effect.kind === 'terrain') {
+      rounds = projectedFieldEffects.terrains?.find(item => item.kind === effect.value)?.rounds
+    }
+    else {
+      const projected = projectedFieldEffects.rooms?.find(item => item.kind === effect.value)
+      rounds = projected?.rounds
+      startsNextRound = projected?.startsNextRound
+    }
+    if (rounds === undefined) {
+      return fail(
+        'invalid',
+        'invalid-generated-field-effect',
+        `Generated ${effect.kind} field ${effect.value} could not be projected.`,
+      )
+    }
+    const applied = applyMapGlobalField({
+      map: next,
+      kind: effect.kind,
+      fieldId: effect.value,
+      source: {
+        kind: 'operation',
+        operationId: `legacy-v1.field.${index + 1}`,
+        moveId: null,
+        placementId: actorPlacement.id,
+      },
+      sideId: actorPlacement.sideId ?? null,
+      duration: rounds === null
+        ? { kind: 'permanent', remaining: null }
+        : { kind: 'rounds', boundary: 'end', remaining: rounds },
+      replacementGroup: effect.kind === 'weather'
+        ? 'field.weather'
+        : `field.${effect.kind}.${effect.value}`,
+      replacementScope: effect.kind === 'weather' ? 'category' : 'kind',
+      startsNextRound: effect.kind === 'room' ? startsNextRound : undefined,
+      sourceLabel: effect.source,
+    })
+    next = applied.map
   }
   return next
 }
@@ -1137,7 +1186,11 @@ export const planAuthoritativeMoveStateExecution = (
     ),
   })
   workingMap = applyHazardsToMap(workingMap, resolution.transaction)
-  workingMap = applyFieldEffectsToMap(workingMap, resolution.transaction)
+  workingMap = applyFieldEffectsToMap(
+    workingMap,
+    resolution.transaction,
+    actorPlacement,
+  )
   workingMap.metadata = appendMoveAutomationLogEntry(workingMap.metadata, resolution.transaction, {
     now: () => plannedAt,
     maxLogEntries: input.maxMoveLogEntries,

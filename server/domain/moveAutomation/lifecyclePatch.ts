@@ -15,6 +15,8 @@ export interface EncounterLifecyclePatchProjectionInput {
   readonly currentEncounterState: EncounterState
   readonly previousTemporaryHitPoints: TabletopMap['temporaryHitPoints']
   readonly currentTemporaryHitPoints: TabletopMap['temporaryHitPoints']
+  readonly previousFieldEffects: NonNullable<TabletopMap['fieldEffects']>
+  readonly currentFieldEffects: NonNullable<TabletopMap['fieldEffects']>
   readonly sheetWrites: readonly EncounterLifecycleSheetWrite[]
 }
 
@@ -35,6 +37,14 @@ export const encounterLifecyclePatchPayload = (
       reasonCode: transition.reasonCode,
     }))
   )),
+  fieldTransitions: input.reductions.flatMap(reduction => (
+    reduction.fieldTransitions.map(({ eventId, transition }) => ({
+      eventId,
+      zoneId: transition.zoneId,
+      kind: transition.kind,
+      reasonCode: transition.reasonCode,
+    }))
+  )),
   operationIds: input.reductions.flatMap(reduction => (
     reduction.operations.map(operation => operation.id)
   )),
@@ -46,6 +56,8 @@ export const encounterLifecyclePatchPayload = (
   currentTemporaryHitPoints: input.currentTemporaryHitPoints === undefined
     ? null
     : deepCloneJson(input.currentTemporaryHitPoints),
+  previousFieldEffects: deepCloneJson(input.previousFieldEffects),
+  currentFieldEffects: deepCloneJson(input.currentFieldEffects),
   sheetChanges: input.sheetWrites.map(write => ({
     kind: write.kind,
     slug: write.slug,

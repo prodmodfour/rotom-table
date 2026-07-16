@@ -115,7 +115,7 @@ export const buildMoveMapOperationStateChanges = (options: {
   )
   if (!sameJsonValue(previousEncounterState, currentEncounterState)) {
     const touches = touchesForLane(options.laneTouches, 'encounterState')
-    const source = provenance(touches, 'hazard-zone-operations')
+    const source = provenance(touches, 'encounter-zone-operations')
     ordered.push({
       firstOrder: firstOrder(touches, options.implicitLogOrder),
       laneOrder: 1,
@@ -157,7 +157,7 @@ export const buildMoveMapOperationStateChanges = (options: {
   const currentFieldEffects = cloneMapFieldEffects(options.workingMap.fieldEffects)
   if (!sameJsonValue(previousFieldEffects, currentFieldEffects)) {
     const touches = touchesForLane(options.laneTouches, 'fieldEffects')
-    const source = provenance(touches, 'field-placeholder-operations')
+    const source = provenance(touches, 'field-compatibility-projection')
     ordered.push({
       firstOrder: firstOrder(touches, options.implicitLogOrder),
       laneOrder: 3,

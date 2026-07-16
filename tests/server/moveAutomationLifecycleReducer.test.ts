@@ -210,6 +210,7 @@ describe('pure encounter lifecycle reducer', () => {
       triggerCount: 0,
       operationCount: 0,
       effectTransitionCount: 3,
+      fieldTransitionCount: 0,
       maximumDepth: 0,
     })
     expect(first.trace.map(entry => entry.kind)).toEqual([
