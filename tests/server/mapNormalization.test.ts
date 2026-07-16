@@ -6,6 +6,26 @@ import {
   normalizeMapGroundLevelY,
 } from '../../server/utils/mapNormalization'
 
+const battlefieldZone = (cell = { x: 2, y: 0, z: 2 }) => ({
+  id: 'zone.smoke.1',
+  kind: 'smoke',
+  source: {
+    kind: 'operation',
+    operationId: 'op.zone.1',
+    moveId: 'smokescreen',
+    placementId: 'token-1',
+  },
+  sideId: null,
+  geometry: { kind: 'cells', cells: [cell] },
+  layer: 1,
+  duration: { kind: 'scene', remaining: null },
+  stacking: { kind: 'independent', maxLayers: null },
+  hooks: { entry: [], exit: [] },
+  modifiers: { targeting: [], damage: [], movement: [] },
+  tags: ['smoke'],
+  payload: { smokeId: 'dense-smoke' },
+})
+
 const validMap = () => ({
   schemaVersion: 2,
   revision: 12,
@@ -172,6 +192,29 @@ describe('map document normalization', () => {
     expect(normalized.encounterState?.effects).not.toBe(encounterState.effects)
     expect(normalized.encounterState?.effects[0]?.payload).not.toBe(encounterState.effects[0]?.payload)
     expect(normalized.encounterState?.counters).not.toBe(encounterState.counters)
+  })
+
+  it('normalizes generalized zones and rejects cells outside map dimensions', () => {
+    const encounterState = {
+      ...createEmptyEncounterState(),
+      zones: [battlefieldZone()],
+    }
+    const normalized = normalizeMapDocument({
+      ...validMap(),
+      encounterState,
+    }, { sourceLabel: 'zone-map.json' })
+
+    expect(normalized.encounterState?.zones).toEqual(encounterState.zones)
+    expect(normalized.encounterState?.zones).not.toBe(encounterState.zones)
+    expect(normalized.encounterState?.zones[0]?.geometry).not.toBe(encounterState.zones[0]?.geometry)
+    expect(() => normalizeMapDocument({
+      ...validMap(),
+      encounterState: {
+        ...encounterState,
+        zones: [battlefieldZone({ x: 6, y: 0, z: 2 })],
+      },
+    }, { sourceLabel: 'out-of-bounds-zone.json' }))
+      .toThrow('Map out-of-bounds-zone.json is invalid: encounterState.zones[0].geometry.cells[0] is outside map bounds')
   })
 
   it('preserves explicit placement sides while leaving legacy allegiance unknown', () => {

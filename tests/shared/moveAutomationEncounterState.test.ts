@@ -6,6 +6,7 @@ import {
   ENCOUNTER_SIDE_LIMITS,
   ENCOUNTER_STATE_LIMITS,
   ENCOUNTER_STATE_SCHEMA_VERSION,
+  ENCOUNTER_ZONE_LIMITS,
   EncounterStateValidationError,
   createEmptyEncounterHistory,
   createEmptyEncounterState,
@@ -25,6 +26,36 @@ const canonicalEncounterState = () => ({
   pendingResolutionSummaries: [],
 })
 
+const sideConditionZone = (sideId = 'allies') => ({
+  id: 'zone.side.reflect',
+  kind: 'side-condition',
+  source: {
+    kind: 'operation',
+    operationId: 'op.reflect',
+    moveId: 'reflect',
+    placementId: 'actor-token',
+  },
+  sideId,
+  geometry: { kind: 'side', sideId },
+  layer: 1,
+  duration: { kind: 'rounds', boundary: 'end', remaining: 5 },
+  stacking: { kind: 'refresh', maxLayers: null },
+  hooks: { entry: [], exit: [] },
+  modifiers: {
+    targeting: [],
+    damage: [{
+      id: 'reflect.reduction',
+      attribute: 'damage-reduction',
+      operation: 'multiply',
+      value: 0.5,
+      reasonCode: 'zone.reflect.reduction',
+    }],
+    movement: [],
+  },
+  tags: ['barrier', 'side-condition'],
+  payload: { conditionId: 'reflect' },
+})
+
 describe('move automation encounter state', () => {
   it('creates the bounded canonical empty envelope', () => {
     const state = createEmptyEncounterState()
@@ -36,7 +67,7 @@ describe('move automation encounter state', () => {
       counters: 0,
       history: ENCOUNTER_HISTORY_LIMITS.moveAncestryPerScene,
       turnResources: ENCOUNTER_RESOURCE_LIMITS.placementLedgers,
-      zones: 0,
+      zones: ENCOUNTER_ZONE_LIMITS.count,
       pendingResolutionSummaries: 64,
     })
     expect(JSON.stringify(state)).toBe(
@@ -94,6 +125,29 @@ describe('move automation encounter state', () => {
     expect(another.effects).not.toBe(state.effects)
     expect(another.turnResources).not.toBe(state.turnResources)
     expect(another.history).not.toBe(state.history)
+  })
+
+  it('round-trips zones and validates every owning or affected side reference', () => {
+    const source = {
+      ...canonicalEncounterState(),
+      sides: {
+        allies: { id: 'allies', label: 'Allies', status: 'active' },
+      },
+      zones: [sideConditionZone()],
+    }
+    const parsed = parseEncounterState(source)
+
+    expect(parsed.zones).toEqual(source.zones)
+    expect(parsed.zones).not.toBe(source.zones)
+    expect(parsed.zones[0]?.geometry).not.toBe(source.zones[0]?.geometry)
+    expect(() => parseEncounterState({
+      ...source,
+      zones: [sideConditionZone('unknown-side')],
+    })).toThrow('encounterState.zones[0].sideId: references unknown encounter side unknown-side')
+    expect(() => parseEncounterState({
+      ...source,
+      zones: [{ ...sideConditionZone(), sideId: null, geometry: { kind: 'side', sideId: 'unknown-side' } }],
+    })).toThrow('encounterState.zones[0].geometry.sideId: references unknown encounter side unknown-side')
   })
 
   it('round-trips bounded public pending summaries without private window data', () => {

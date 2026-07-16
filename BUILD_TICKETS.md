@@ -1780,7 +1780,7 @@ Status: DONE
 
 ## MA-133 — Define generalized battlefield zones
 
-Status: TODO
+Status: DONE
 
 **Depends on:** MA-050, MA-056
 **Commit:** `feat(move-automation): model battlefield zones`

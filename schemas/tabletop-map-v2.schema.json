@@ -184,7 +184,11 @@
         "counters": { "$ref": "#/$defs/emptyEncounterDirectory" },
         "history": { "$ref": "#/$defs/emptyEncounterDirectory" },
         "turnResources": { "$ref": "#/$defs/emptyEncounterDirectory" },
-        "zones": { "$ref": "#/$defs/emptyEncounterList" },
+        "zones": {
+          "type": "array",
+          "maxItems": 256,
+          "items": { "$ref": "#/$defs/encounterZone" }
+        },
         "pendingResolutionSummaries": {
           "type": "array",
           "maxItems": 64,
@@ -498,6 +502,333 @@
         }
       ]
     },
+    "encounterZone": {
+      "type": "object",
+      "required": [
+        "id",
+        "kind",
+        "source",
+        "sideId",
+        "geometry",
+        "layer",
+        "duration",
+        "stacking",
+        "hooks",
+        "modifiers",
+        "tags",
+        "payload"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "$ref": "#/$defs/encounterEffectStableId" },
+        "kind": {
+          "enum": [
+            "hazard",
+            "weather",
+            "terrain",
+            "room",
+            "smoke",
+            "barrier",
+            "pledge",
+            "vortex",
+            "side-condition"
+          ]
+        },
+        "source": { "$ref": "#/$defs/encounterZoneSource" },
+        "sideId": {
+          "anyOf": [
+            { "$ref": "#/$defs/encounterSideId" },
+            { "type": "null" }
+          ]
+        },
+        "geometry": { "$ref": "#/$defs/encounterZoneGeometry" },
+        "layer": { "type": "integer", "minimum": 1, "maximum": 64 },
+        "duration": { "$ref": "#/$defs/encounterEffectDuration" },
+        "stacking": { "$ref": "#/$defs/encounterZoneStacking" },
+        "hooks": { "$ref": "#/$defs/encounterZoneHooks" },
+        "modifiers": { "$ref": "#/$defs/encounterZoneModifiers" },
+        "tags": {
+          "type": "array",
+          "maxItems": 32,
+          "uniqueItems": true,
+          "items": { "$ref": "#/$defs/encounterEffectStableId" }
+        },
+        "payload": { "type": "object" }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "kind": { "const": "hazard" } }, "required": ["kind"] },
+          "then": { "properties": { "payload": { "$ref": "#/$defs/encounterHazardZonePayload" } } }
+        },
+        {
+          "if": { "properties": { "kind": { "const": "weather" } }, "required": ["kind"] },
+          "then": { "properties": { "payload": { "$ref": "#/$defs/encounterWeatherZonePayload" } } }
+        },
+        {
+          "if": { "properties": { "kind": { "const": "terrain" } }, "required": ["kind"] },
+          "then": { "properties": { "payload": { "$ref": "#/$defs/encounterTerrainZonePayload" } } }
+        },
+        {
+          "if": { "properties": { "kind": { "const": "room" } }, "required": ["kind"] },
+          "then": { "properties": { "payload": { "$ref": "#/$defs/encounterRoomZonePayload" } } }
+        },
+        {
+          "if": { "properties": { "kind": { "const": "smoke" } }, "required": ["kind"] },
+          "then": { "properties": { "payload": { "$ref": "#/$defs/encounterSmokeZonePayload" } } }
+        },
+        {
+          "if": { "properties": { "kind": { "const": "barrier" } }, "required": ["kind"] },
+          "then": { "properties": { "payload": { "$ref": "#/$defs/encounterBarrierZonePayload" } } }
+        },
+        {
+          "if": { "properties": { "kind": { "const": "pledge" } }, "required": ["kind"] },
+          "then": { "properties": { "payload": { "$ref": "#/$defs/encounterPledgeZonePayload" } } }
+        },
+        {
+          "if": { "properties": { "kind": { "const": "vortex" } }, "required": ["kind"] },
+          "then": { "properties": { "payload": { "$ref": "#/$defs/encounterVortexZonePayload" } } }
+        },
+        {
+          "if": { "properties": { "kind": { "const": "side-condition" } }, "required": ["kind"] },
+          "then": { "properties": { "payload": { "$ref": "#/$defs/encounterSideConditionZonePayload" } } }
+        }
+      ]
+    },
+    "encounterZoneSource": {
+      "oneOf": [
+        {
+          "type": "object",
+          "required": ["kind", "operationId", "moveId", "placementId"],
+          "additionalProperties": false,
+          "properties": {
+            "kind": { "const": "operation" },
+            "operationId": { "$ref": "#/$defs/encounterEffectStableId" },
+            "moveId": {
+              "anyOf": [
+                { "$ref": "#/$defs/encounterEffectStableId" },
+                { "type": "null" }
+              ]
+            },
+            "placementId": {
+              "anyOf": [
+                { "$ref": "#/$defs/encounterEffectStableId" },
+                { "type": "null" }
+              ]
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["kind", "lane", "key"],
+          "additionalProperties": false,
+          "properties": {
+            "kind": { "const": "legacy-map" },
+            "lane": { "enum": ["hazards", "weather", "terrain", "room"] },
+            "key": { "$ref": "#/$defs/encounterEffectStableId" }
+          }
+        }
+      ]
+    },
+    "encounterZoneGeometry": {
+      "oneOf": [
+        {
+          "type": "object",
+          "required": ["kind"],
+          "additionalProperties": false,
+          "properties": { "kind": { "const": "battlefield" } }
+        },
+        {
+          "type": "object",
+          "required": ["kind", "cells"],
+          "additionalProperties": false,
+          "properties": {
+            "kind": { "const": "cells" },
+            "cells": {
+              "type": "array",
+              "minItems": 1,
+              "maxItems": 512,
+              "uniqueItems": true,
+              "items": { "$ref": "#/$defs/encounterEffectCell" }
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["kind", "placementId"],
+          "additionalProperties": false,
+          "properties": {
+            "kind": { "const": "placement" },
+            "placementId": { "$ref": "#/$defs/encounterEffectStableId" }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["kind", "sideId"],
+          "additionalProperties": false,
+          "properties": {
+            "kind": { "const": "side" },
+            "sideId": { "$ref": "#/$defs/encounterSideId" }
+          }
+        }
+      ]
+    },
+    "encounterZoneStacking": {
+      "oneOf": [
+        {
+          "type": "object",
+          "required": ["kind", "maxLayers"],
+          "additionalProperties": false,
+          "properties": {
+            "kind": { "enum": ["replace", "refresh", "independent"] },
+            "maxLayers": { "type": "null" }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["kind", "maxLayers"],
+          "additionalProperties": false,
+          "properties": {
+            "kind": { "const": "add-layer" },
+            "maxLayers": { "type": "integer", "minimum": 1, "maximum": 64 }
+          }
+        }
+      ]
+    },
+    "encounterZoneHooks": {
+      "type": "object",
+      "required": ["entry", "exit"],
+      "additionalProperties": false,
+      "properties": {
+        "entry": {
+          "type": "array",
+          "maxItems": 16,
+          "items": { "$ref": "#/$defs/encounterZoneHook" }
+        },
+        "exit": {
+          "type": "array",
+          "maxItems": 16,
+          "items": { "$ref": "#/$defs/encounterZoneHook" }
+        }
+      }
+    },
+    "encounterZoneHook": {
+      "type": "object",
+      "required": ["id", "handlerId", "oncePerMovement"],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "$ref": "#/$defs/encounterEffectStableId" },
+        "handlerId": { "$ref": "#/$defs/encounterEffectStableId" },
+        "oncePerMovement": { "type": "boolean" }
+      }
+    },
+    "encounterZoneModifiers": {
+      "type": "object",
+      "required": ["targeting", "damage", "movement"],
+      "additionalProperties": false,
+      "properties": {
+        "targeting": {
+          "type": "array",
+          "maxItems": 32,
+          "items": { "$ref": "#/$defs/encounterZoneModifier" }
+        },
+        "damage": {
+          "type": "array",
+          "maxItems": 32,
+          "items": { "$ref": "#/$defs/encounterZoneModifier" }
+        },
+        "movement": {
+          "type": "array",
+          "maxItems": 32,
+          "items": { "$ref": "#/$defs/encounterZoneModifier" }
+        }
+      }
+    },
+    "encounterZoneModifier": {
+      "type": "object",
+      "required": ["id", "attribute", "operation", "value", "reasonCode"],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "$ref": "#/$defs/encounterEffectStableId" },
+        "attribute": {
+          "enum": [
+            "accuracy",
+            "evasion",
+            "cover",
+            "line-of-sight",
+            "damage-base",
+            "damage",
+            "damage-reduction",
+            "cost",
+            "budget",
+            "traversal"
+          ]
+        },
+        "operation": { "enum": ["add", "multiply", "set", "block"] },
+        "value": {
+          "type": ["number", "null"],
+          "minimum": -1000000,
+          "maximum": 1000000
+        },
+        "reasonCode": { "$ref": "#/$defs/encounterEffectStableId" }
+      }
+    },
+    "encounterHazardZonePayload": {
+      "type": "object",
+      "required": ["hazardId"],
+      "additionalProperties": false,
+      "properties": { "hazardId": { "$ref": "#/$defs/encounterEffectStableId" } }
+    },
+    "encounterWeatherZonePayload": {
+      "type": "object",
+      "required": ["weatherId"],
+      "additionalProperties": false,
+      "properties": { "weatherId": { "$ref": "#/$defs/encounterEffectStableId" } }
+    },
+    "encounterTerrainZonePayload": {
+      "type": "object",
+      "required": ["terrainId"],
+      "additionalProperties": false,
+      "properties": { "terrainId": { "$ref": "#/$defs/encounterEffectStableId" } }
+    },
+    "encounterRoomZonePayload": {
+      "type": "object",
+      "required": ["roomId", "startsNextRound"],
+      "additionalProperties": false,
+      "properties": {
+        "roomId": { "$ref": "#/$defs/encounterEffectStableId" },
+        "startsNextRound": { "type": "boolean" }
+      }
+    },
+    "encounterSmokeZonePayload": {
+      "type": "object",
+      "required": ["smokeId"],
+      "additionalProperties": false,
+      "properties": { "smokeId": { "$ref": "#/$defs/encounterEffectStableId" } }
+    },
+    "encounterBarrierZonePayload": {
+      "type": "object",
+      "required": ["barrierId"],
+      "additionalProperties": false,
+      "properties": { "barrierId": { "$ref": "#/$defs/encounterEffectStableId" } }
+    },
+    "encounterPledgeZonePayload": {
+      "type": "object",
+      "required": ["pledgeId"],
+      "additionalProperties": false,
+      "properties": { "pledgeId": { "$ref": "#/$defs/encounterEffectStableId" } }
+    },
+    "encounterVortexZonePayload": {
+      "type": "object",
+      "required": ["vortexId"],
+      "additionalProperties": false,
+      "properties": { "vortexId": { "$ref": "#/$defs/encounterEffectStableId" } }
+    },
+    "encounterSideConditionZonePayload": {
+      "type": "object",
+      "required": ["conditionId"],
+      "additionalProperties": false,
+      "properties": { "conditionId": { "$ref": "#/$defs/encounterEffectStableId" } }
+    },
     "pendingMoveResolutionPublicSummary": {
       "type": "object",
       "required": [
@@ -551,10 +882,6 @@
         "createdAt": { "type": "integer", "minimum": 0 },
         "updatedAt": { "type": "integer", "minimum": 0 }
       }
-    },
-    "emptyEncounterList": {
-      "type": "array",
-      "maxItems": 0
     },
     "emptyEncounterDirectory": {
       "type": "object",

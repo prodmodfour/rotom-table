@@ -89,10 +89,30 @@ const normalizeHazardForEditor = (value: unknown, index: number, sourceLabel: st
   return hazard as MapHazardV2
 }
 
-const normalizeMapEncounterState = (value: unknown, sourceLabel: string): EncounterState => {
+const normalizeMapEncounterState = (
+  value: unknown,
+  sourceLabel: string,
+  dimensions: GridDimensions,
+): EncounterState => {
   if (value === undefined) return createEmptyEncounterState()
   try {
-    return parseEncounterState(value)
+    const state = parseEncounterState(value)
+    state.zones.forEach((zone, zoneIndex) => {
+      if (zone.geometry.kind !== 'cells') return
+      zone.geometry.cells.forEach((cell, cellIndex) => {
+        if (
+          cell.x >= dimensions.x
+          || cell.y >= dimensions.y
+          || cell.z >= dimensions.z
+        ) {
+          invalidMapDocument(
+            sourceLabel,
+            `encounterState.zones[${zoneIndex}].geometry.cells[${cellIndex}] is outside map bounds`,
+          )
+        }
+      })
+    })
+    return state
   } catch (error) {
     if (error instanceof EncounterStateValidationError) {
       invalidMapDocument(sourceLabel, error.message)
@@ -153,7 +173,11 @@ export const normalizeMapDocument = (
 
   const activeScene = normalizeMapSceneState(record.activeScene)
   const temporaryHitPoints = normalizeMapTemporaryHitPointsState(record.temporaryHitPoints, activeScene)
-  const encounterState = normalizeMapEncounterState(record.encounterState, sourceLabel)
+  const encounterState = normalizeMapEncounterState(
+    record.encounterState,
+    sourceLabel,
+    dimensions,
+  )
   const placements = Array.isArray(record.placements)
     ? (record.placements as unknown[]).map((placement, index) => (
         normalizePlacementForEditor(placement, index, sourceLabel, encounterState)

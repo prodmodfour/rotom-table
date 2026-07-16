@@ -19,6 +19,12 @@ import {
   type EncounterTurnResourceDirectory,
 } from './encounterResources'
 import {
+  ENCOUNTER_ZONE_LIMITS,
+  EncounterZoneValidationError,
+  parseEncounterZones,
+  type EncounterZone,
+} from './encounterZones'
+import {
   PENDING_MOVE_RESOLUTION_SUMMARY_LIMITS,
   PendingMoveResolutionValidationError,
   parsePendingMoveResolutionPublicSummary,
@@ -28,6 +34,7 @@ import {
 export * from './encounterEffects'
 export * from './encounterHistory'
 export * from './encounterResources'
+export * from './encounterZones'
 
 /**
  * Versioned map-owned state for authoritative encounter mechanics.
@@ -35,10 +42,11 @@ export * from './encounterResources'
  * MA-050 introduced the envelope, MA-052 added side identity, MA-056 added
  * strict typed effect instances, MA-057 added their lifecycle policies,
  * MA-063 added structured bounded history indexes, MA-064 added action and
- * movement resource ledgers, and MA-103 enabled privacy-safe pending-resolution
- * summaries. Remaining containers stay empty until their owning tickets.
- * Existing map hazards, field effects, temporary HP, and move usage remain in
- * their current map fields during this compatibility period.
+ * movement resource ledgers, MA-103 enabled privacy-safe pending-resolution
+ * summaries, and MA-133 added generalized battlefield zones. Existing map
+ * hazards and field effects remain in their compatibility lanes until their
+ * owning migration tickets; server zone queries adapt them without persisting
+ * or applying a matching migrated zone twice.
  */
 export const ENCOUNTER_STATE_SCHEMA_VERSION = 1 as const
 
@@ -74,11 +82,10 @@ export const ENCOUNTER_STATE_LIMITS = Object.freeze({
   counters: 0,
   history: ENCOUNTER_HISTORY_LIMITS.moveAncestryPerScene,
   turnResources: ENCOUNTER_RESOURCE_LIMITS.placementLedgers,
-  zones: 0,
+  zones: ENCOUNTER_ZONE_LIMITS.count,
   pendingResolutionSummaries: PENDING_MOVE_RESOLUTION_SUMMARY_LIMITS.responseWindows,
 })
 
-export type EmptyEncounterStateList = readonly []
 export type EmptyEncounterStateDirectory = Readonly<Record<string, never>>
 
 export interface EncounterState {
@@ -88,7 +95,7 @@ export interface EncounterState {
   readonly counters: EmptyEncounterStateDirectory
   readonly history: EncounterHistory
   readonly turnResources: EncounterTurnResourceDirectory
-  readonly zones: EmptyEncounterStateList
+  readonly zones: readonly EncounterZone[]
   readonly pendingResolutionSummaries: readonly PendingMoveResolutionPublicSummary[]
 }
 
@@ -376,6 +383,51 @@ const parsePendingResolutionSummaries = (
   return summaries
 }
 
+const parseEncounterZoneList = (
+  value: unknown,
+  sides: EncounterSideDirectory,
+): readonly EncounterZone[] => {
+  let zones: readonly EncounterZone[]
+  try {
+    zones = parseEncounterZones(value, 'encounterState.zones')
+  }
+  catch (error) {
+    if (error instanceof EncounterZoneValidationError) {
+      fail(
+        error.code === 'limit-exceeded' ? 'limit-exceeded' : 'invalid-encounter-state',
+        error.path,
+        error.detail,
+      )
+    }
+    throw error
+  }
+
+  zones.forEach((zone, zoneIndex) => {
+    const sideReferences = [
+      ...(zone.sideId === null
+        ? []
+        : [{ sideId: zone.sideId, path: `encounterState.zones[${zoneIndex}].sideId` }]),
+      ...(zone.geometry.kind === 'side'
+        ? [{
+            sideId: zone.geometry.sideId,
+            path: `encounterState.zones[${zoneIndex}].geometry.sideId`,
+          }]
+        : []),
+    ]
+    for (const reference of sideReferences) {
+      if (!Object.prototype.hasOwnProperty.call(sides, reference.sideId)) {
+        fail(
+          'invalid-encounter-state',
+          reference.path,
+          `references unknown encounter side ${reference.sideId}.`,
+        )
+      }
+    }
+  })
+
+  return zones
+}
+
 const parseEncounterEffectList = (
   value: unknown,
   sides: EncounterSideDirectory,
@@ -455,6 +507,7 @@ export const parseEncounterState = (value: unknown): EncounterState => {
     effects: parseEncounterEffectList(value.effects, sides),
     history: parseEncounterHistoryState(value.history),
     turnResources: parseEncounterTurnResourceState(value.turnResources),
+    zones: parseEncounterZoneList(value.zones, sides),
     pendingResolutionSummaries: parsePendingResolutionSummaries(
       value.pendingResolutionSummaries,
     ),
