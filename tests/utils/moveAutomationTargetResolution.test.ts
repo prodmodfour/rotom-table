@@ -134,6 +134,55 @@ describe('move automation target resolution helpers', () => {
       damageRoll: { formula: 'flat', count: 0, sides: 0, total: 20, rolls: [], mod: 20 },
     }, { weather: [{ kind: 'sunny' }], terrains: [], rooms: [] })).toBe(45)
 
+    const groundMove = script({ type: 'Ground', damageClass: 'Physical' })
+    const sandForceUser = token({
+      id: 'sand-user',
+      species: 'Sand User',
+      atk: 12,
+      abilityNames: ['Sand Force'],
+    })
+    const neutralTarget = token({
+      id: 'neutral',
+      species: 'Neutral',
+      currentHp: 30,
+      def: 7,
+      defenderTypes: [],
+    })
+    const groundRoll = {
+      ...defaultTargetResolutionState(groundMove),
+      hit: true,
+      damageRoll: { formula: 'flat', count: 0, sides: 0, total: 20, rolls: [], mod: 20 },
+    }
+    const clearGround = resolveMoveAutomationTargetDamageLoss(
+      groundMove,
+      sandForceUser,
+      neutralTarget,
+      groundRoll,
+    )
+    const sandGround = resolveMoveAutomationTargetDamageBreakdown(
+      groundMove,
+      sandForceUser,
+      neutralTarget,
+      groundRoll,
+      { weather: [{ kind: 'sandstorm' }], terrains: [], rooms: [] },
+    )
+    expect(sandGround.hpLoss - clearGround).toBe(5)
+    expect(sandGround.kind === 'standard' ? sandGround.pipeline : null)
+      .toMatchObject({
+        stages: expect.arrayContaining([
+          expect.objectContaining({
+            modifiers: expect.arrayContaining([
+              expect.objectContaining({
+                id: 'damage.weather.sandstorm.sand-force',
+                source: { kind: 'ability', id: 'Sand Force' },
+                reasonCode: 'weather.sandstorm.sand-force-damage-bonus',
+                value: 5,
+              }),
+            ]),
+          }),
+        ]),
+      })
+
     expect(resolveMoveAutomationTargetDamageLoss(s, user, target, {
       ...defaultTargetResolutionState(s),
       hit: true,

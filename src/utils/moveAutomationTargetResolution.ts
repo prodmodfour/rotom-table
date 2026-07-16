@@ -253,7 +253,11 @@ export const resolveMoveAutomationTargetDamageBreakdown = (
       { abilities: target.abilityNames },
     )))
   const resolvedMoveType = resolvedDamage.typeEffectiveness?.moveType ?? script.type
-  const fieldContributions = fieldEffectDamageContributions(resolvedMoveType, fieldEffects)
+  const fieldContributions = fieldEffectDamageContributions(
+    resolvedMoveType,
+    fieldEffects,
+    user.abilityNames,
+  )
   const multiplier = resolvedDamage.typeEffectiveness?.multiplier
     ?? moveAutomationTargetDamageMultiplier(script, target)
   if (multiplier === 0) return NO_DAMAGE_BREAKDOWN
@@ -320,7 +324,7 @@ export const resolveMoveAutomationTargetDamageBreakdown = (
       id: field.id,
       stage: 'pre-type-modifiers',
       priority: 200,
-      source: { kind: 'field', id: field.sourceId },
+      source: { kind: field.sourceKind, id: field.sourceId },
       stackingGroup: field.stackingGroup,
       reasonCode: field.reasonCode,
       operation: 'add',

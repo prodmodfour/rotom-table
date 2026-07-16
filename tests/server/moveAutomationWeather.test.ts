@@ -4,7 +4,7 @@ import {
   parseEncounterZone,
   type EncounterGlobalFieldZone,
 } from '#shared/moveAutomation/encounterZones'
-import { SUNNY_RAINY_HEALING_PROFILES } from '#shared/moveAutomation/weather'
+import { WEATHER_HEALING_PROFILES } from '#shared/moveAutomation/weather'
 import type { MapWeatherKind, TabletopMap } from '~/types/map'
 import type { MoveAutomationScript } from '~/types/moveAutomation'
 import { resolveMoveAutomationAccuracyRoll } from '~/utils/moveAutomationResolution'
@@ -56,7 +56,7 @@ const globalField = (
   replacementGroup: kind === 'weather' ? 'field.weather' : `field.room.${fieldId}`,
 })
 
-const accuracyScript = (moveName: 'Thunder' | 'Hurricane'): MoveAutomationScript => ({
+const accuracyScript = (moveName: 'Thunder' | 'Hurricane' | 'Blizzard'): MoveAutomationScript => ({
   kind: 'explicit',
   moveName,
   version: 1,
@@ -66,7 +66,7 @@ const accuracyScript = (moveName: 'Thunder' | 'Hurricane'): MoveAutomationScript
   requiresAccuracy: true,
   damageBase: 11,
   damageClass: 'Special',
-  type: moveName === 'Thunder' ? 'Electric' : 'Flying',
+  type: moveName === 'Thunder' ? 'Electric' : moveName === 'Blizzard' ? 'Ice' : 'Flying',
   ac: 7,
   range: '12, 1 Target',
   effect: '',
@@ -80,7 +80,7 @@ const accuracyScript = (moveName: 'Thunder' | 'Hurricane'): MoveAutomationScript
   automationNotes: [],
 })
 
-describe('authoritative Sunny and Rainy weather mechanics', () => {
+describe('authoritative weather mechanics', () => {
   it('queries active typed weather and fails suppressed native weather closed', () => {
     const suppressor = globalField('room', 'magic', 'magic-room')
     const sunnyBase = globalField('weather', 'sunny', 'sunny-day')
@@ -172,6 +172,34 @@ describe('authoritative Sunny and Rainy weather mechanics', () => {
     })
   })
 
+  it('adds Sand Force damage once with authoritative ability and field attribution', () => {
+    const resolver = createMoveAutomationWeatherResolver(mapFixture(['sandstorm']))
+    const actor = { placementId: 'sand-user', abilityNames: ['Sand Force'] }
+
+    expect(resolver.damage({ moveType: 'Ground', actor })).toEqual({
+      modifiers: [expect.objectContaining({
+        id: 'damage.weather.sandstorm.sand-force',
+        stage: 'pre-type-modifiers',
+        source: { kind: 'ability', id: 'sand-user:Sand Force' },
+        stackingGroup: 'ability.sand-force.damage-roll',
+        reasonCode: 'weather.sandstorm.sand-force-damage-bonus',
+        value: 5,
+      })],
+      trace: [expect.objectContaining({
+        interaction: 'damage',
+        weatherKind: 'sandstorm',
+        outcome: 'applied',
+        reasonCode: 'weather.sandstorm.sand-force-damage-bonus',
+        value: 5,
+      })],
+    })
+    expect(resolver.damage({ moveType: 'Water', actor })).toMatchObject({
+      modifiers: [],
+      trace: [{ outcome: 'not-applicable', value: null }],
+    })
+    expect(resolver.damage({ moveType: 'Rock' })).toEqual({ modifiers: [], trace: [] })
+  })
+
   it('applies Sunny AC 11 and Rainy cannot-miss without accepting a roll from the client', () => {
     const sun = createMoveAutomationWeatherResolver(mapFixture(['sunny']))
       .accuracy({ canonicalMoveId: 'Thunder' })
@@ -216,6 +244,30 @@ describe('authoritative Sunny and Rainy weather mechanics', () => {
     })
   })
 
+  it('makes Blizzard an authoritative automatic hit only during Hail', () => {
+    const hail = createMoveAutomationWeatherResolver(mapFixture(['hail']))
+      .accuracy({ canonicalMoveId: 'Blizzard' })
+    const clear = createMoveAutomationWeatherResolver(mapFixture())
+      .accuracy({ canonicalMoveId: 'Blizzard' })
+
+    expect(hail).toMatchObject({
+      rule: {
+        kind: 'automatic-hit',
+        reasonCode: 'weather.hail.blizzard-cannot-miss',
+      },
+      trace: [{ weatherKind: 'hail', outcome: 'applied', value: true }],
+    })
+    expect(resolveMoveAutomationAccuracyRoll(
+      accuracyScript('Blizzard'),
+      1,
+      { userAccuracy: -6, targetEvasion: 6, accuracyRule: hail.rule },
+    )).toMatchObject({ hit: true, accuracyCheck: null })
+    expect(clear).toMatchObject({
+      rule: null,
+      trace: [{ outcome: 'defaulted', reasonCode: 'weather.accuracy.default' }],
+    })
+  })
+
   it('gives Rainy automatic accuracy deterministic precedence when both weathers coexist', () => {
     const resolution = createMoveAutomationWeatherResolver(mapFixture(['sunny', 'rainy']))
       .accuracy({ canonicalMoveId: 'Thunder' })
@@ -232,9 +284,13 @@ describe('authoritative Sunny and Rainy weather mechanics', () => {
     [null, 'solar-restoration', 50, 'defaulted'],
     ['sunny', 'solar-restoration', 200 / 3, 'applied'],
     ['rainy', 'solar-restoration', 25, 'applied'],
+    ['hail', 'solar-restoration', 25, 'applied'],
+    ['sandstorm', 'solar-restoration', 25, 'applied'],
     [null, 'shore-up', 50, 'defaulted'],
     ['sunny', 'shore-up', 25, 'applied'],
     ['rainy', 'shore-up', 25, 'applied'],
+    ['hail', 'shore-up', 25, 'applied'],
+    ['sandstorm', 'shore-up', 200 / 3, 'applied'],
   ] as const)(
     'resolves %s weather for the %s healing profile',
     (weather, profile, percent, outcome) => {
@@ -256,6 +312,8 @@ describe('authoritative Sunny and Rainy weather mechanics', () => {
     [null, 'required', null, 'defaulted'],
     ['sunny', 'skipped', null, 'applied'],
     ['rainy', 'required', 6, 'applied'],
+    ['hail', 'required', 6, 'applied'],
+    ['sandstorm', 'required', 6, 'applied'],
   ] as const)(
     'resolves Solar charge behavior under %s weather',
     (weather, setup, damageBaseOverride, outcome) => {
@@ -276,17 +334,23 @@ describe('authoritative Sunny and Rainy weather mechanics', () => {
     },
   )
 
-  it('fails exclusive healing and charge rules closed under concurrent sun and rain', () => {
-    const resolver = createMoveAutomationWeatherResolver(mapFixture(['sunny', 'rainy']))
+  it('fails exclusive healing and charge rules closed under concurrent weather', () => {
+    const resolver = createMoveAutomationWeatherResolver(mapFixture(['hail', 'sandstorm']))
 
-    expect(() => resolver.healing({ profile: 'solar-restoration' }))
+    expect(() => resolver.healing({ profile: 'shore-up' }))
       .toThrowError(expect.objectContaining({
         name: WeatherMechanicsError.name,
         code: 'ambiguous-exclusive-weather',
       }))
     expect(() => resolver.charge({ canonicalMoveId: 'Solar Blade' }))
       .toThrowError(expect.objectContaining({ code: 'ambiguous-exclusive-weather' }))
-    expect(SUNNY_RAINY_HEALING_PROFILES['solar-restoration'])
-      .toEqual({ clear: 50, sunny: 200 / 3, rainy: 25 })
+    expect(WEATHER_HEALING_PROFILES['solar-restoration']).toEqual({
+      clear: 50,
+      sunny: 200 / 3,
+      rainy: 25,
+      hail: 25,
+      sandstorm: 25,
+    })
+    expect(WEATHER_HEALING_PROFILES['shore-up'].sandstorm).toBe(200 / 3)
   })
 })

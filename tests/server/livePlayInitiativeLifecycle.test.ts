@@ -7,7 +7,9 @@ import { createEmptyEncounterState } from '#shared/moveAutomation/encounterState
 import type { MoveDirectHpEffectOperation } from '#shared/moveAutomation/effects'
 import type { EncounterLifecycleTriggerHandler } from '~~/server/domain/moveAutomation/reduceLifecycle'
 import type { PersistedSheet } from '~~/server/storage/sheetRepository'
+import type { CharacterSheet } from '~/types/characterSheet'
 import type { TabletopMap } from '~/types/map'
+import { pokemonHpSnapshot } from '~/utils/sheetSpawn'
 import { LivePlayIntegrationHarness, assertAccepted } from './livePlayIntegrationHarness'
 
 const harnesses: LivePlayIntegrationHarness[] = []
@@ -90,6 +92,7 @@ const pokemonSheet = (
   slug: string,
   species: string,
   currentHp: number,
+  overrides: Record<string, unknown> = {},
 ): PersistedSheet => ({
   kind: 'pokemon',
   slug,
@@ -104,6 +107,7 @@ const pokemonSheet = (
     updatedAt: 1_700_000_000_000,
     combat: { currentHp, injuries: 0, conditions: [] },
     movelist: [],
+    ...overrides,
   },
 })
 
@@ -182,6 +186,77 @@ describe('live-play initiative lifecycle integration', () => {
     expect(remote.patchFailures).toEqual([])
     expect(remote.map?.encounterState?.effects).toEqual([])
     expect(remote.map?.initiative).toEqual({ activeId: 'target-token', round: 1 })
+  })
+
+  it('ticks built-in Hail residuals and duration atomically once across duplicate initiative', async () => {
+    const map: TabletopMap = {
+      ...lifecycleMap(dueEffect()),
+      fieldEffects: {
+        weather: [{ kind: 'hail', rounds: 1, source: 'Hail' }],
+        terrains: [],
+        rooms: [],
+      },
+      initiative: { activeId: 'target-token', round: 1 },
+      encounterState: createEmptyEncounterState(),
+    }
+    const vulnerable = pokemonSheet('actor-mon', 'Pikachu', 30)
+    const immune = pokemonSheet('target-mon', 'Eevee', 40, { types: ['Ice'] })
+    const tick = Math.floor(
+      pokemonHpSnapshot(vulnerable.sheet as unknown as CharacterSheet).fullMaxHp * 0.1,
+    )
+    const harness = LivePlayIntegrationHarness.create({
+      map,
+      sheets: [vulnerable, immune],
+    })
+    harnesses.push(harness)
+    const remote = await harness.loadClient('remote-hail-lifecycle-client')
+    const command = harness.nextInitiativeCommand({
+      opId: 'op_hail_round_boundary',
+      baseRevision: 0,
+      orderIds: ['actor-token', 'target-token'],
+      activeId: 'target-token',
+      round: 1,
+    })
+
+    const first = await harness.nextInitiative({
+      actor: { role: 'gm', clientId: 'gm-client' },
+      command,
+    })
+    const duplicate = await harness.nextInitiative({
+      actor: { role: 'gm', clientId: 'gm-client' },
+      command,
+    })
+
+    const accepted = assertAccepted(first.result)
+    expect(duplicate.result).toEqual(first.result)
+    expect(harness.operationRecordCount()).toBe(1)
+    expect((await harness.readMap())?.initiative).toEqual({ activeId: 'actor-token', round: 2 })
+    expect((await harness.readMap())?.fieldEffects?.weather).toEqual([])
+    expect(((await harness.readSheet('pokemon', 'actor-mon'))?.sheet.combat as {
+      currentHp: number
+    }).currentHp).toBe(30 - tick)
+    expect(((await harness.readSheet('pokemon', 'target-mon'))?.sheet.combat as {
+      currentHp: number
+    }).currentHp).toBe(40)
+    expect((await harness.readSheet('pokemon', 'actor-mon'))?.revision).toBe(1)
+    expect((await harness.readSheet('pokemon', 'target-mon'))?.revision).toBe(0)
+    const lifecycle = accepted.patches.find(patch => patch.type === 'map.initiative')?.payload as {
+      lifecycle?: {
+        operationIds?: string[]
+        fieldTransitions?: Array<{ kind: string; reasonCode: string }>
+      }
+    }
+    expect(lifecycle.lifecycle?.operationIds).toEqual([
+      expect.stringMatching(/^weather\.residual\.hail\.[0-9a-f]{32}$/),
+    ])
+    expect(lifecycle.lifecycle?.fieldTransitions).toEqual([{
+      eventId: expect.any(String),
+      zoneId: 'legacy.weather.hail',
+      kind: 'expired',
+      reasonCode: 'field-duration-expired',
+    }])
+    expect(remote.patchFailures).toEqual([])
+    expect(remote.map?.fieldEffects?.weather).toEqual([])
   })
 
   it('advances legacy global fields at a round boundary and never expires them twice on retry', async () => {

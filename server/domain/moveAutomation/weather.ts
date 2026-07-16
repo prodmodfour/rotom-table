@@ -1,10 +1,13 @@
 import type { EncounterZoneSource } from '#shared/moveAutomation/encounterZones'
 import {
+  HAIL_ACCURACY_MOVE_IDS,
+  SAND_FORCE_ABILITY_NAME,
   SUNNY_RAINY_ACCURACY_MOVE_IDS,
-  SUNNY_RAINY_HEALING_PROFILES,
+  WEATHER_HEALING_PROFILES,
+  sandForceDamagePolicy,
   sunnyRainyDamagePolicy,
-  type SunnyRainyHealingProfile,
   type SunnyRainyWeatherKind,
+  type WeatherHealingProfile,
 } from '#shared/moveAutomation/weather'
 import type {
   MapFieldEffects,
@@ -15,9 +18,12 @@ import { cloneMapFieldEffects } from '~/utils/mapFieldEffects'
 import type { MoveDamageModifier } from '~/utils/moveAutomationDamagePipeline'
 import type { MoveAutomationAccuracyRule } from '~/utils/moveAutomationResolution'
 import { isMapWeatherKind } from '~/utils/mapFieldEffectDefinitions'
+import { sheetHasCanonicalAbility } from '~/utils/sheetAbilities'
 import { queryBattlefieldZones } from './battlefieldZones'
 
-export type SunnyRainyChargeMove = 'Solar Beam' | 'Solar Blade'
+export type WeatherChargeMove = 'Solar Beam' | 'Solar Blade'
+/** @deprecated Use WeatherChargeMove. */
+export type SunnyRainyChargeMove = WeatherChargeMove
 
 export interface AuthoritativeWeatherInstance {
   readonly kind: MapWeatherKind
@@ -48,28 +54,41 @@ export interface WeatherMechanicsTraceEntry {
   readonly value: number | string | boolean | null
 }
 
-export interface SunnyRainyDamageResolution {
+export interface WeatherDamageActor {
+  readonly placementId: string
+  readonly abilityNames?: readonly string[]
+}
+
+export interface WeatherDamageResolution {
   readonly modifiers: readonly MoveDamageModifier[]
   readonly trace: readonly WeatherMechanicsTraceEntry[]
 }
+/** @deprecated Use WeatherDamageResolution. */
+export type SunnyRainyDamageResolution = WeatherDamageResolution
 
-export interface SunnyRainyAccuracyResolution {
+export interface WeatherAccuracyResolution {
   readonly rule: MoveAutomationAccuracyRule | null
   readonly trace: readonly WeatherMechanicsTraceEntry[]
 }
+/** @deprecated Use WeatherAccuracyResolution. */
+export type SunnyRainyAccuracyResolution = WeatherAccuracyResolution
 
-export interface SunnyRainyHealingResolution {
+export interface WeatherHealingResolution {
   readonly handled: boolean
   readonly percent: number | null
   readonly trace: readonly WeatherMechanicsTraceEntry[]
 }
+/** @deprecated Use WeatherHealingResolution. */
+export type SunnyRainyHealingResolution = WeatherHealingResolution
 
-export interface SunnyRainyChargeResolution {
+export interface WeatherChargeResolution {
   readonly handled: boolean
   readonly setup: 'required' | 'skipped'
   readonly damageBaseOverride: number | null
   readonly trace: readonly WeatherMechanicsTraceEntry[]
 }
+/** @deprecated Use WeatherChargeResolution. */
+export type SunnyRainyChargeResolution = WeatherChargeResolution
 
 export interface MoveAutomationWeatherResolver {
   /** Active native-plus-compatibility weather in authoritative map order. */
@@ -79,16 +98,17 @@ export interface MoveAutomationWeatherResolver {
   damage(input: {
     readonly moveType: string
     readonly targetImmune?: boolean
-  }): SunnyRainyDamageResolution
+    readonly actor?: WeatherDamageActor
+  }): WeatherDamageResolution
   accuracy(input: {
     readonly canonicalMoveId: string
-  }): SunnyRainyAccuracyResolution
+  }): WeatherAccuracyResolution
   healing(input: {
-    readonly profile: SunnyRainyHealingProfile
-  }): SunnyRainyHealingResolution
+    readonly profile: WeatherHealingProfile
+  }): WeatherHealingResolution
   charge(input: {
-    readonly canonicalMoveId: SunnyRainyChargeMove
-  }): SunnyRainyChargeResolution
+    readonly canonicalMoveId: WeatherChargeMove
+  }): WeatherChargeResolution
 }
 
 export type WeatherMechanicsErrorCode = 'ambiguous-exclusive-weather'
@@ -140,63 +160,61 @@ const activeWeatherInstances = (
   return deepFreeze(result)
 }
 
-const sunnyRainyInstances = (
+const weatherByKind = (
   active: readonly AuthoritativeWeatherInstance[],
-): ReadonlyMap<SunnyRainyWeatherKind, AuthoritativeWeatherInstance> => {
-  const result = new Map<SunnyRainyWeatherKind, AuthoritativeWeatherInstance>()
-  for (const weather of active) {
-    if (weather.kind === 'sunny' || weather.kind === 'rainy') {
-      result.set(weather.kind, weather)
-    }
-  }
-  return result
-}
+): ReadonlyMap<MapWeatherKind, AuthoritativeWeatherInstance> => new Map(
+  active.map(weather => [weather.kind, weather]),
+)
 
-const exclusiveSunnyRainy = (
+const exclusiveWeather = (
   active: readonly AuthoritativeWeatherInstance[],
   interaction: 'healing' | 'charge',
 ): AuthoritativeWeatherInstance | null => {
-  const relevant = [...sunnyRainyInstances(active).values()]
-  if (relevant.length > 1) {
+  if (active.length > 1) {
     throw new WeatherMechanicsError(
       'ambiguous-exclusive-weather',
-      `Concurrent Sunny and Rainy weather require a reviewed ${interaction} conflict policy.`,
+      `Concurrent weather effects require a reviewed ${interaction} conflict policy.`,
     )
   }
-  return relevant[0] ?? null
+  return active[0] ?? null
 }
 
-const resolveDamage = (
-  active: readonly AuthoritativeWeatherInstance[],
+const sunnyRainyDamage = (
+  weather: AuthoritativeWeatherInstance,
   input: { readonly moveType: string; readonly targetImmune?: boolean },
-): SunnyRainyDamageResolution => {
-  const modifiers: MoveDamageModifier[] = []
-  const trace: WeatherMechanicsTraceEntry[] = []
-  for (const weather of sunnyRainyInstances(active).values()) {
-    const policy = sunnyRainyDamagePolicy(weather.kind as SunnyRainyWeatherKind, input.moveType)
-    if (!policy) {
-      trace.push(traceEntry({
+): {
+  readonly modifier: MoveDamageModifier | null
+  readonly trace: WeatherMechanicsTraceEntry
+} => {
+  const policy = sunnyRainyDamagePolicy(weather.kind as SunnyRainyWeatherKind, input.moveType)
+  if (!policy) {
+    return {
+      modifier: null,
+      trace: traceEntry({
         interaction: 'damage',
         weatherKind: weather.kind,
         zoneId: weather.zoneId,
         outcome: 'not-applicable',
         reasonCode: `weather.${weather.kind}.damage-type-not-applicable`,
         value: null,
-      }))
-      continue
+      }),
     }
-    if (input.targetImmune === true) {
-      trace.push(traceEntry({
+  }
+  if (input.targetImmune === true) {
+    return {
+      modifier: null,
+      trace: traceEntry({
         interaction: 'damage',
         weatherKind: weather.kind,
         zoneId: weather.zoneId,
         outcome: 'prevented',
         reasonCode: 'weather.damage.target-immune',
         value: null,
-      }))
-      continue
+      }),
     }
-    modifiers.push({
+  }
+  return {
+    modifier: {
       id: `damage.weather.${weather.kind}.${policy.typeId}`,
       stage: 'pre-type-modifiers',
       priority: 200,
@@ -205,29 +223,152 @@ const resolveDamage = (
       reasonCode: policy.reasonCode,
       operation: 'add',
       value: policy.value,
-    })
-    trace.push(traceEntry({
+    },
+    trace: traceEntry({
       interaction: 'damage',
       weatherKind: weather.kind,
       zoneId: weather.zoneId,
       outcome: 'applied',
       reasonCode: policy.reasonCode,
       value: policy.value,
-    }))
+    }),
+  }
+}
+
+const sandForceDamage = (
+  weather: AuthoritativeWeatherInstance,
+  input: {
+    readonly moveType: string
+    readonly targetImmune?: boolean
+    readonly actor: WeatherDamageActor
+  },
+): {
+  readonly modifier: MoveDamageModifier | null
+  readonly trace: WeatherMechanicsTraceEntry
+} => {
+  const hasSandForce = sheetHasCanonicalAbility(
+    input.actor.abilityNames,
+    SAND_FORCE_ABILITY_NAME,
+  )
+  const policy = sandForceDamagePolicy(input.moveType, hasSandForce)
+  if (!policy) {
+    return {
+      modifier: null,
+      trace: traceEntry({
+        interaction: 'damage',
+        weatherKind: weather.kind,
+        zoneId: weather.zoneId,
+        outcome: 'not-applicable',
+        reasonCode: hasSandForce
+          ? 'weather.sandstorm.sand-force-type-not-applicable'
+          : 'weather.sandstorm.sand-force-absent',
+        value: null,
+      }),
+    }
+  }
+  if (input.targetImmune === true) {
+    return {
+      modifier: null,
+      trace: traceEntry({
+        interaction: 'damage',
+        weatherKind: weather.kind,
+        zoneId: weather.zoneId,
+        outcome: 'prevented',
+        reasonCode: 'weather.damage.target-immune',
+        value: null,
+      }),
+    }
+  }
+  return {
+    modifier: {
+      id: 'damage.weather.sandstorm.sand-force',
+      stage: 'pre-type-modifiers',
+      priority: 210,
+      source: {
+        kind: 'ability',
+        id: `${input.actor.placementId}:${SAND_FORCE_ABILITY_NAME}`,
+      },
+      stackingGroup: 'ability.sand-force.damage-roll',
+      reasonCode: policy.reasonCode,
+      operation: 'add',
+      value: policy.value,
+    },
+    trace: traceEntry({
+      interaction: 'damage',
+      weatherKind: weather.kind,
+      zoneId: weather.zoneId,
+      outcome: 'applied',
+      reasonCode: policy.reasonCode,
+      value: policy.value,
+    }),
+  }
+}
+
+const resolveDamage = (
+  active: readonly AuthoritativeWeatherInstance[],
+  input: {
+    readonly moveType: string
+    readonly targetImmune?: boolean
+    readonly actor?: WeatherDamageActor
+  },
+): WeatherDamageResolution => {
+  const modifiers: MoveDamageModifier[] = []
+  const trace: WeatherMechanicsTraceEntry[] = []
+  for (const weather of active) {
+    const result = weather.kind === 'sunny' || weather.kind === 'rainy'
+      ? sunnyRainyDamage(weather, input)
+      : weather.kind === 'sandstorm' && input.actor
+        ? sandForceDamage(weather, { ...input, actor: input.actor })
+        : null
+    if (!result) continue
+    if (result.modifier) modifiers.push(result.modifier)
+    trace.push(result.trace)
   }
   return deepFreeze({ modifiers, trace })
 }
 
-const WEATHER_ACCURACY_MOVE_IDS = new Set<string>(SUNNY_RAINY_ACCURACY_MOVE_IDS)
+const SUNNY_RAINY_ACCURACY_IDS = new Set<string>(SUNNY_RAINY_ACCURACY_MOVE_IDS)
+const HAIL_ACCURACY_IDS = new Set<string>(HAIL_ACCURACY_MOVE_IDS)
 
-const resolveAccuracy = (
+const defaultAccuracy = (): WeatherAccuracyResolution => deepFreeze({
+  rule: null,
+  trace: [traceEntry({
+    interaction: 'accuracy',
+    weatherKind: null,
+    zoneId: null,
+    outcome: 'defaulted',
+    reasonCode: 'weather.accuracy.default',
+    value: null,
+  })],
+})
+
+const resolveHailAccuracy = (
   active: readonly AuthoritativeWeatherInstance[],
-  canonicalMoveId: string,
-): SunnyRainyAccuracyResolution => {
-  if (!WEATHER_ACCURACY_MOVE_IDS.has(normalizedMoveId(canonicalMoveId))) {
-    return deepFreeze({ rule: null, trace: [] })
-  }
-  const relevant = sunnyRainyInstances(active)
+): WeatherAccuracyResolution => {
+  const hail = weatherByKind(active).get('hail') ?? null
+  if (!hail) return defaultAccuracy()
+  const reasonCode = 'weather.hail.blizzard-cannot-miss'
+  return deepFreeze({
+    rule: {
+      kind: 'automatic-hit',
+      sourceId: hail.zoneId,
+      reasonCode,
+    },
+    trace: [traceEntry({
+      interaction: 'accuracy',
+      weatherKind: 'hail',
+      zoneId: hail.zoneId,
+      outcome: 'applied',
+      reasonCode,
+      value: true,
+    })],
+  })
+}
+
+const resolveSunnyRainyAccuracy = (
+  active: readonly AuthoritativeWeatherInstance[],
+): WeatherAccuracyResolution => {
+  const relevant = weatherByKind(active)
   const rain = relevant.get('rainy') ?? null
   const sun = relevant.get('sunny') ?? null
   if (rain) {
@@ -278,40 +419,26 @@ const resolveAccuracy = (
       })],
     })
   }
-  return deepFreeze({
-    rule: null,
-    trace: [traceEntry({
-      interaction: 'accuracy',
-      weatherKind: null,
-      zoneId: null,
-      outcome: 'defaulted',
-      reasonCode: 'weather.accuracy.default',
-      value: null,
-    })],
-  })
+  return defaultAccuracy()
+}
+
+const resolveAccuracy = (
+  active: readonly AuthoritativeWeatherInstance[],
+  canonicalMoveId: string,
+): WeatherAccuracyResolution => {
+  const moveId = normalizedMoveId(canonicalMoveId)
+  if (HAIL_ACCURACY_IDS.has(moveId)) return resolveHailAccuracy(active)
+  if (SUNNY_RAINY_ACCURACY_IDS.has(moveId)) return resolveSunnyRainyAccuracy(active)
+  return deepFreeze({ rule: null, trace: [] })
 }
 
 const resolveHealing = (
   active: readonly AuthoritativeWeatherInstance[],
-  profile: SunnyRainyHealingProfile,
-): SunnyRainyHealingResolution => {
-  const weather = exclusiveSunnyRainy(active, 'healing')
-  const values = SUNNY_RAINY_HEALING_PROFILES[profile]
+  profile: WeatherHealingProfile,
+): WeatherHealingResolution => {
+  const weather = exclusiveWeather(active, 'healing')
+  const values = WEATHER_HEALING_PROFILES[profile]
   if (!weather) {
-    if (active.length > 0) {
-      return deepFreeze({
-        handled: false,
-        percent: null,
-        trace: [traceEntry({
-          interaction: 'healing',
-          weatherKind: active[0]!.kind,
-          zoneId: active[0]!.zoneId,
-          outcome: 'unhandled',
-          reasonCode: 'weather.healing.non-sun-rain-deferred',
-          value: null,
-        })],
-      })
-    }
     return deepFreeze({
       handled: true,
       percent: values.clear,
@@ -325,7 +452,7 @@ const resolveHealing = (
       })],
     })
   }
-  const percent = weather.kind === 'sunny' ? values.sunny : values.rainy
+  const percent = values[weather.kind]
   return deepFreeze({
     handled: true,
     percent,
@@ -342,25 +469,10 @@ const resolveHealing = (
 
 const resolveCharge = (
   active: readonly AuthoritativeWeatherInstance[],
-  canonicalMoveId: SunnyRainyChargeMove,
-): SunnyRainyChargeResolution => {
-  const weather = exclusiveSunnyRainy(active, 'charge')
+  canonicalMoveId: WeatherChargeMove,
+): WeatherChargeResolution => {
+  const weather = exclusiveWeather(active, 'charge')
   if (!weather) {
-    if (active.length > 0) {
-      return deepFreeze({
-        handled: false,
-        setup: 'required',
-        damageBaseOverride: null,
-        trace: [traceEntry({
-          interaction: 'charge',
-          weatherKind: active[0]!.kind,
-          zoneId: active[0]!.zoneId,
-          outcome: 'unhandled',
-          reasonCode: 'weather.charge.non-sun-rain-deferred',
-          value: null,
-        })],
-      })
-    }
     return deepFreeze({
       handled: true,
       setup: 'required',
@@ -399,7 +511,7 @@ const resolveCharge = (
       weatherKind: weather.kind,
       zoneId: weather.zoneId,
       outcome: 'applied',
-      reasonCode: 'weather.rainy.solar-damage-base-six',
+      reasonCode: `weather.${weather.kind}.solar-damage-base-six`,
       value: 6,
     })],
   })
@@ -426,15 +538,16 @@ export const createMoveAutomationWeatherResolver = (
     damage: (input: {
       readonly moveType: string
       readonly targetImmune?: boolean
+      readonly actor?: WeatherDamageActor
     }) => resolveDamage(active, input),
     accuracy: (input: {
       readonly canonicalMoveId: string
     }) => resolveAccuracy(active, input.canonicalMoveId),
     healing: (input: {
-      readonly profile: SunnyRainyHealingProfile
+      readonly profile: WeatherHealingProfile
     }) => resolveHealing(active, input.profile),
     charge: (input: {
-      readonly canonicalMoveId: SunnyRainyChargeMove
+      readonly canonicalMoveId: WeatherChargeMove
     }) => resolveCharge(active, input.canonicalMoveId),
   })
 }

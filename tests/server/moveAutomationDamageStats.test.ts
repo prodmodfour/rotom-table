@@ -73,11 +73,15 @@ const pokemonSheet = (
 
 const context = (options: {
   readonly weather?: readonly MapWeatherKind[]
+  readonly actorAbilities?: readonly string[]
   readonly targetAbilities?: readonly string[]
 } = {}) => buildAuthoritativeMoveRulesContext({
   map: mapFixture(options.weather),
   pokemonSheets: new Map([
     ['actor', pokemonSheet('actor', {
+      ...(options.actorAbilities
+        ? { abilities: options.actorAbilities.map(name => ({ name })) }
+        : {}),
       stats: {
         atk: { added: 1, stage: -1 },
         def: { added: 12, stage: 2 },
@@ -369,6 +373,38 @@ describe('MoveSpec alternate attack and defense stat selection', () => {
         .toContainEqual(expect.objectContaining({ reasonCode, value: delta }))
     },
   )
+
+  it('applies Sand Force once through the authoritative weather pipeline', () => {
+    const calculate = (rules: ReturnType<typeof context>) => {
+      const move = { ...script('Physical'), type: 'Ground' }
+      return resolveMoveSpecDamageCalculation({
+        context: rules,
+        operation: damageOperation({ damageClass: 'physical', moveType: 'ground' }),
+        script: move,
+        recipient: rules.queries.tokens.get('target-token')!,
+        resolution: rolledDamage(move),
+      })
+    }
+    const baseline = calculate(context({ weather: ['sandstorm'] }))
+    const boosted = calculate(context({
+      weather: ['sandstorm'],
+      actorAbilities: ['Sand Force'],
+    }))
+
+    expect(boosted.breakdown.hpLoss - baseline.breakdown.hpLoss).toBe(5)
+    expect(boosted.weather).toMatchObject({
+      modifiers: [{
+        id: 'damage.weather.sandstorm.sand-force',
+        source: { kind: 'ability', id: 'actor-token:Sand Force' },
+        reasonCode: 'weather.sandstorm.sand-force-damage-bonus',
+        value: 5,
+      }],
+      trace: [{ outcome: 'applied', weatherKind: 'sandstorm', value: 5 }],
+    })
+    expect(boosted.damagePipeline?.stages.flatMap(stage => stage.modifiers)
+      .filter(modifier => modifier.id === 'damage.weather.sandstorm.sand-force'))
+      .toHaveLength(1)
+  })
 
   it('records immunity as a prevented weather decision without creating damage', () => {
     const rules = context({ weather: ['sunny'], targetAbilities: ['Flash Fire'] })

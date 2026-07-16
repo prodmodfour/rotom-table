@@ -38,7 +38,7 @@ import {
 import {
   MOVE_AUTOMATION_STAT_SHORT_LABELS,
 } from './stats'
-import type { SunnyRainyDamageResolution } from './weather'
+import type { WeatherDamageResolution } from './weather'
 
 export type MoveDamageStatSelectionErrorCode = 'non-numeric-stat-selection'
 
@@ -70,8 +70,8 @@ export interface MoveSpecDamageCalculation {
   readonly criticalHit: MoveCriticalHitResolution
   readonly contextualDamageBase: MoveContextualDamageBaseResolution | null
   readonly damagePipeline: MoveDamagePipelineResult | null
-  /** Active Sunny/Rainy decisions, including immunity prevention, with stable reasons. */
-  readonly weather: SunnyRainyDamageResolution
+  /** Active weather decisions, including immunity prevention, with stable reasons. */
+  readonly weather: WeatherDamageResolution
   /** Type, contextual DB, then attack/defense nodes appear in deterministic audit order. */
   readonly evaluationTrace: readonly MoveRuleEvaluationTraceEntry[]
 }
@@ -231,27 +231,30 @@ export const resolveMoveSpecDamageCalculation = (
       ? options.operation.payload.damageBase
         + (moveType.hasStab ? MOVE_CONTEXTUAL_DAMAGE_BASE_STAB_BONUS : 0)
       : options.script.damageBase)
+  const actor = options.actor ?? options.context.actor.token
   const weather = options.context.queries.weather.damage({
     moveType: moveType.moveType,
     targetImmune: moveType.finalMultiplier === 0,
+    actor: {
+      placementId: actor.id,
+      abilityNames: actor.abilityNames,
+    },
   })
   const authoritativeFieldEffects = options.context.queries.weather.projectFieldEffects(
     options.fieldEffects ?? options.context.map.fieldEffects,
   )
-  // Native weather modifiers carry exact zone identity and trace reasons. Keep
-  // only non-Sunny/Rainy compatibility entries on the legacy field lane.
-  const nonSunnyRainyFieldEffects: MapFieldEffects = {
+  // Native weather modifiers carry exact zone/ability identity and trace reasons.
+  // Keep weather out of the legacy contribution lane to avoid double application.
+  const nonAuthoritativeWeatherFieldEffects: MapFieldEffects = {
     ...authoritativeFieldEffects,
-    weather: authoritativeFieldEffects.weather.filter(effect => (
-      effect.kind !== 'sunny' && effect.kind !== 'rainy'
-    )),
+    weather: [],
   }
   const breakdown = resolveMoveAutomationTargetDamageBreakdown(
     options.script,
-    options.actor ?? options.context.actor.token,
+    actor,
     options.recipient,
     { ...options.resolution, crit: criticalHit.critical },
-    nonSunnyRainyFieldEffects,
+    nonAuthoritativeWeatherFieldEffects,
     options.selectedTargets,
     {
       stats,

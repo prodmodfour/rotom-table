@@ -44,6 +44,10 @@ import type {
   MoveResolvedCoreTokenEffectOperation,
 } from './reducers/coreTokenEffectTypes'
 import { createStandardMoveCoreTokenEffectImmunityQueries } from './reducers/immunities'
+import {
+  createWeatherLifecycleImmunityQueries,
+  createWeatherResidualLifecycleHandler,
+} from './weatherLifecycle'
 
 export type InitiativeLifecyclePlanningErrorCode =
   | 'active-placement-missing'
@@ -418,10 +422,17 @@ export const planEncounterLifecycle = (
     encounterState: deepCloneJson(previousEncounterState),
   }
   const events = parseEncounterEvents(input.events)
+  const weatherHandler = createWeatherResidualLifecycleHandler(lifecycleMap)
+  // Registered effect handlers retain caller order. Weather residuals run last,
+  // while reduceEncounterLifecycle advances field duration only after all work.
+  const handlers = [
+    ...(input.handlers ?? []),
+    ...(weatherHandler ? [weatherHandler] : []),
+  ]
   const reduction = reduceEncounterLifecycle(
     previousEncounterState,
     events,
-    input.handlers ?? [],
+    handlers,
   )
   const effects = effectSources(previousEncounterState, reduction)
   const recipientsByOperationId = new Map<string, readonly string[]>()
@@ -489,13 +500,17 @@ export const planEncounterLifecycle = (
         recipientIds: [...(recipientsByOperationId.get(operation.id) ?? [])],
       }),
     )
+    const standardImmunities = createStandardMoveCoreTokenEffectImmunityQueries({
+      moveType: null,
+      context,
+    })
     const core = reduceMoveCoreTokenOperationState({
       context,
       operations: emissions,
       dynamicRecipients: EMPTY_DYNAMIC_RECIPIENTS,
-      immunities: createStandardMoveCoreTokenEffectImmunityQueries({
-        moveType: null,
+      immunities: createWeatherLifecycleImmunityQueries({
         context,
+        fallback: standardImmunities,
       }),
       recipientIdsForOperation: operation => recipientsByOperationId.get(operation.id) ?? [],
     })
