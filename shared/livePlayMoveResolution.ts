@@ -1,3 +1,5 @@
+export * from './moveAutomation/hazardCellSelection'
+
 import {
   MoveAutomationRollLedgerValidationError,
   parseMoveAutomationRollLedger,
@@ -214,6 +216,20 @@ const FORBIDDEN_CLIENT_AUTHORITY_FIELDS = new Set([
   'combatStageUpdates',
   'cells',
   'areaCells',
+  'hazardCells',
+  'cellOptions',
+  'optionIds',
+  'selectedOptionIds',
+  'cellSetId',
+  'constraints',
+  'origin',
+  'adjacency',
+  'connectedness',
+  'occupancy',
+  'geometry',
+  'minimumCount',
+  'maximumCount',
+  'mapRevision',
   'pathCells',
   'movement',
   'movementDistance',

@@ -1793,7 +1793,7 @@ Status: DONE
 
 ## MA-134A — Define authoritative hazard-cell selection windows
 
-Status: TODO
+Status: DONE
 
 **Depends on:** MA-073B, MA-125B, MA-133
 **Commit:** `feat(move-automation): define authoritative hazard cell choices`
