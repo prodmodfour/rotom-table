@@ -31,6 +31,7 @@ import {
   type AuthoritativeMoveStatePlan,
   type AuthoritativePendingMoveStatePlan,
 } from '../domain/planAuthoritativeMoveState'
+import { isAuthoritativePendingMoveResolution } from '../domain/resolveAuthoritativeMove'
 import {
   isAbilityFollowUpPendingResolution,
   planAbilityFollowUpResponse,
@@ -174,6 +175,10 @@ const responseOptionId = (command: MoveResponseCommand): string | null => (
   'optionId' in command.payload ? command.payload.optionId : null
 )
 
+const responseOptionIds = (command: MoveResponseCommand): readonly string[] | null => (
+  'optionIds' in command.payload ? command.payload.optionIds : null
+)
+
 const responseWindowId = (command: MoveResponseCommand): string => {
   if (!('windowId' in command.payload)) {
     throw new ResumePendingMoveResolutionUseCaseError(
@@ -276,6 +281,7 @@ const terminalResolution = (input: {
   readonly responseOpId?: string
   readonly responseWindowId?: string
   readonly responseOptionId?: string | null
+  readonly responseOptionIds?: readonly string[]
   readonly chosenBy?: PendingMoveResponseOwner
   readonly trace?: PendingMoveResolution['trace']
   readonly rollLedger?: PendingMoveResolution['rollLedger']
@@ -288,6 +294,9 @@ const terminalResolution = (input: {
           windowId: input.responseWindowId,
           responseOpId: input.responseOpId,
           optionId: input.responseOptionId ?? null,
+          ...(input.responseOptionIds === undefined
+            ? {}
+            : { optionIds: [...input.responseOptionIds] }),
           chosenBy: input.chosenBy,
           chosenAt: input.updatedAt,
         },
@@ -747,17 +756,42 @@ export const resumePendingMoveResolutionUseCase = (
 
     let execution
     try {
+      const answeredWindowId = responseWindowId(input.command)
+      const answeredWindow = stored.resolution.outstandingWindows.find(
+        window => window.windowId === answeredWindowId,
+      )
+      const hazardCellWindow = answeredWindow?.kind === 'choice'
+        ? answeredWindow.hazardCellSelection
+        : undefined
+      const selectedHazardOptionIds = responseOptionIds(input.command)
+      if ((hazardCellWindow === undefined) !== (selectedHazardOptionIds === null)) {
+        throw new ResumeMoveSpecError(
+          'execution-rejected',
+          hazardCellWindow
+            ? 'Hazard-cell resolution requires the complete server-issued option ID list.'
+            : 'Multiple option IDs are not valid for this response window.',
+        )
+      }
       execution = resumeMoveSpec({
         pendingResolution: stored.resolution,
         map,
         ...sheets,
-        response: {
-          requestId: responseWindowId(input.command),
-          optionId: responseOptionId(input.command),
-          ...(input.command.type === MOVE_RESPONSE_COMMAND_TYPES.GM_FORCE_RESOLVE
-            ? { forcePass: true }
-            : {}),
-        },
+        ...(hazardCellWindow && selectedHazardOptionIds
+          ? {
+              hazardCellResponse: {
+                window: hazardCellWindow,
+                selectedOptionIds: selectedHazardOptionIds,
+              },
+            }
+          : {
+              response: {
+                requestId: answeredWindowId,
+                optionId: responseOptionId(input.command),
+                ...(input.command.type === MOVE_RESPONSE_COMMAND_TYPES.GM_FORCE_RESOLVE
+                  ? { forcePass: true }
+                  : {}),
+              },
+            }),
         now,
         random: dependencies.random,
         runtimeRegistry: dependencies.runtimeRegistry,
@@ -775,6 +809,9 @@ export const resumePendingMoveResolutionUseCase = (
         message: error.message,
       })
     }
+    const resolvedHazardCells = isAuthoritativePendingMoveResolution(execution)
+      ? undefined
+      : execution.nativeV2?.resolvedHazardCells[0]
     let plan: AuthoritativeMoveStatePlan | AuthoritativePendingMoveStatePlan
     try {
       plan = planResumedMoveState({
@@ -782,7 +819,10 @@ export const resumePendingMoveResolutionUseCase = (
         declarationPlan: stored.declarationPlan ?? null,
         responseOpId: input.command.opId,
         responseWindowId: responseWindowId(input.command),
-        responseOptionId: responseOptionId(input.command),
+        responseOptionId: resolvedHazardCells?.selectionId ?? responseOptionId(input.command),
+        ...(resolvedHazardCells
+          ? { responseOptionIds: resolvedHazardCells.optionIds }
+          : {}),
         chosenBy: input.authorization.chosenBy,
         map,
         ...sheets,
@@ -876,7 +916,10 @@ export const resumePendingMoveResolutionUseCase = (
         updatedAt: now,
         responseOpId: input.command.opId,
         responseWindowId: responseWindowId(input.command),
-        responseOptionId: responseOptionId(input.command),
+        responseOptionId: resolvedHazardCells?.selectionId ?? responseOptionId(input.command),
+        ...(resolvedHazardCells
+          ? { responseOptionIds: resolvedHazardCells.optionIds }
+          : {}),
         chosenBy: input.authorization.chosenBy,
         trace: plan.resolution.auditTrace,
         rollLedger: plan.resolution.rollLedger,

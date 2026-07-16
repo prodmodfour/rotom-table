@@ -121,6 +121,69 @@ describe('MapMoveResponsePanel', () => {
     ]])
   })
 
+  it('delegates multi-cell hazard choices to the battlefield overlay', async () => {
+    const view: PendingMoveResponseWindowView = {
+      ...choiceWindow(),
+      resolution: {
+        ...choiceWindow().resolution,
+        resolutionId: 'resolution-hazard-1',
+        canonicalMoveId: 'Spikes',
+        phase: 'schedule',
+      },
+      window: {
+        windowId: 'hazard.select-cells',
+        kind: 'choice',
+        phase: 'schedule',
+        reasonCode: 'move.spikes.choose-cells',
+        promptKey: 'move.spikes.choose-cells',
+        options: [{
+          id: 'hazard.cell.1234abcd.1.0.1',
+          labelKey: 'move.hazard.select-cell',
+        }],
+        allowPass: false,
+        priority: null,
+        hazardCellSelection: {
+          schemaVersion: 1,
+          windowId: 'hazard.select-cells',
+          promptKey: 'move.spikes.choose-cells',
+          map: { slug: 'pending-arena', revision: 12 },
+          move: {
+            resolutionId: 'resolution-hazard-1',
+            actorPlacementId: 'actor-token',
+            canonicalMoveId: 'Spikes',
+          },
+          count: { kind: 'exact', count: 1 },
+          origin: { x: 0, y: 0, z: 0 },
+          range: 3,
+          adjacency: 'orthogonal',
+          connectedness: 'none',
+          occupancy: 'empty-of-placements',
+          geometry: { kind: 'horizontal-plane' },
+          options: [{
+            id: 'hazard.cell.1234abcd.1.0.1',
+            cell: { x: 1, y: 0, z: 1 },
+          }],
+        },
+      },
+    }
+    const wrapper = mount(MapMoveResponsePanel, {
+      props: {
+        windows: [view],
+        eligibleOwnerLabel: 'Actor controller',
+        canManage: true,
+      },
+    })
+
+    expect(wrapper.text()).toContain('Select the authorized cells on the battlefield')
+    expect(wrapper.findAll('.move-response-card__option')).toHaveLength(0)
+    expect(wrapper.find('.move-response-card__pass').exists()).toBe(false)
+    const gmButtons = wrapper.findAll('.move-response-card__gm-controls button')
+    expect(gmButtons).toHaveLength(1)
+    expect(gmButtons[0]!.text()).toContain('Cancel resolution')
+    await gmButtons[0]!.trigger('click')
+    expect(wrapper.emitted('cancel')).toEqual([['resolution-hazard-1']])
+  })
+
   it('shows the explicit post-action limitation on durable opportunity responses', () => {
     const view: PendingMoveResponseWindowView = {
       ...choiceWindow(),

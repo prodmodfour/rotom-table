@@ -3,6 +3,7 @@ import { computed, onBeforeUnmount, onMounted, ref, shallowRef, watch } from 'vu
 import * as THREE from 'three'
 import RenderMetricsOverlay from '~/components/isometric/RenderMetricsOverlay.vue'
 import PendingMoveMovementOverlay from '~/components/isometric/PendingMoveMovementOverlay.vue'
+import PendingMoveHazardCellOverlay from '~/components/isometric/PendingMoveHazardCellOverlay.vue'
 import TokenActionDialogs from '~/components/isometric/TokenActionDialogs.vue'
 import TokenContextMenu from '~/components/isometric/TokenContextMenu.vue'
 import { useTokenActionController } from '~/composables/isometric/useTokenActionController'
@@ -37,12 +38,15 @@ import type {
 } from '~/types/moveAutomation'
 import type { MoveAnimationEvent } from '~/types/moveAnimation'
 import type { BuildTool } from '#shared/mapEditor'
+import type { MoveHazardCellSelectionCount } from '#shared/moveAutomation/hazardCellSelection'
 import type { LivePlayPresenceAttentionTarget, LivePlayPresenceGridCell } from '#shared/livePlayPresence'
 import type {
   MoveAutomationTargetBranchSelectionOption,
   MoveAutomationTargetBranchSelectionState,
 } from '~/composables/map-editor/useMoveAutomationPanel'
 import type {
+  PendingMoveHazardCellResponseReference,
+  PendingMoveHazardCellSelectionReference,
   PendingMoveMovementChoiceReference,
   PendingMoveResponseOptionReference,
 } from '~/composables/map-editor/usePendingMoveResponses'
@@ -259,6 +263,7 @@ const props = defineProps<{
   moveAnimations?: readonly MoveAnimationEvent[]
   moveAnimationsReducedMotion?: boolean
   pendingMoveMovementChoices?: readonly PendingMoveMovementChoiceReference[]
+  pendingMoveHazardCellSelections?: readonly PendingMoveHazardCellSelectionReference[]
 }>()
 
 const emit = defineEmits<{
@@ -294,6 +299,7 @@ const emit = defineEmits<{
   (event: 'select-move-target-branch', branchId: string): void
   (event: 'cancel-move-targeting'): void
   (event: 'choose-pending-move-response', payload: PendingMoveResponseOptionReference): void
+  (event: 'choose-pending-move-hazard-cells', payload: PendingMoveHazardCellResponseReference): void
   (event: 'move-vfx-settled', payload: { nowMs: number }): void
   (event: 'token-motion-debug-metrics', metrics: TokenMotionDebugMetrics): void
 }>()
@@ -333,6 +339,21 @@ type PendingMovementChoiceButton = {
 }
 
 const pendingMovementChoiceButtons = ref<PendingMovementChoiceButton[]>([])
+
+type PendingHazardCellSelectionOverlay = {
+  readonly reference: { readonly resolutionId: string; readonly windowId: string }
+  readonly canonicalMoveId: string
+  readonly count: MoveHazardCellSelectionCount
+  readonly options: readonly {
+    readonly id: string
+    readonly cell: GridAnchor
+    readonly left: number
+    readonly top: number
+  }[]
+  readonly disabled: boolean
+}
+
+const pendingHazardCellSelectionOverlays = ref<PendingHazardCellSelectionOverlay[]>([])
 
 const emitPokemonSelection = (id: string | null) => {
   if (props.moveAutomationTargeting || props.moveAutomationTargetBranchSelection) return
@@ -2080,7 +2101,10 @@ watch(
 )
 
 watch(
-  () => props.pendingMoveMovementChoices,
+  [
+    () => props.pendingMoveMovementChoices,
+    () => props.pendingMoveHazardCellSelections,
+  ],
   () => {
     if (!renderer) return
     requestScheduledSceneFrame('targeting')
@@ -2248,6 +2272,53 @@ const syncPendingMovementChoiceButtons = (): boolean => {
   return true
 }
 
+const syncPendingHazardCellSelectionOverlays = (): boolean => {
+  const next = (props.pendingMoveHazardCellSelections ?? []).map(
+    (selection): PendingHazardCellSelectionOverlay => ({
+      reference: {
+        resolutionId: selection.resolutionId,
+        windowId: selection.windowId,
+      },
+      canonicalMoveId: selection.canonicalMoveId,
+      count: selection.selection.count,
+      options: selection.selection.options.flatMap((option) => {
+        const point = worldPointToContainerPoint(new THREE.Vector3(
+          option.cell.x + 0.5,
+          option.cell.y + 0.1,
+          option.cell.z + 0.5,
+        ))
+        return point ? [{
+          id: option.id,
+          cell: { ...option.cell },
+          left: point.x,
+          top: point.y,
+        }] : []
+      }),
+      disabled: selection.disabled,
+    }),
+  )
+  const current = pendingHazardCellSelectionOverlays.value
+  const unchanged = next.length === current.length && next.every((entry, index) => {
+    const old = current[index]
+    return old?.reference.resolutionId === entry.reference.resolutionId
+      && old.reference.windowId === entry.reference.windowId
+      && old.canonicalMoveId === entry.canonicalMoveId
+      && old.disabled === entry.disabled
+      && JSON.stringify(old.count) === JSON.stringify(entry.count)
+      && old.options.length === entry.options.length
+      && entry.options.every((option, optionIndex) => {
+        const previous = old.options[optionIndex]
+        return previous?.id === option.id
+          && isSameAnchor(previous.cell, option.cell)
+          && Math.abs(previous.left - option.left) < 0.5
+          && Math.abs(previous.top - option.top) < 0.5
+      })
+  })
+  if (unchanged) return false
+  pendingHazardCellSelectionOverlays.value = next
+  return true
+}
+
 const targetReticleButtonTitle = (button: TargetReticleButton): string => {
   if (!button.showsReticle) return button.selected ? 'Exclude this target from the move' : 'Include this target in the move'
   if (props.moveAutomationTargeting?.mode === 'target-count') {
@@ -2283,6 +2354,7 @@ const updateMoveAutomationOverlays = (): boolean => {
     selectedIds: showTargetCountReticles || showAreaToggleButtons ? selectedIds : null,
   })
   cssUiChanged = syncPendingMovementChoiceButtons() || cssUiChanged
+  cssUiChanged = syncPendingHazardCellSelectionOverlays() || cssUiChanged
   moveAreaTemplateRenderer.update({
     cells: targeting?.areaCells ?? [],
     show: showAreaTemplate,
@@ -2634,6 +2706,11 @@ watch(
     <PendingMoveMovementOverlay
       :choices="pendingMovementChoiceButtons"
       @choose="emit('choose-pending-move-response', $event)"
+    />
+
+    <PendingMoveHazardCellOverlay
+      :selections="pendingHazardCellSelectionOverlays"
+      @confirm="emit('choose-pending-move-hazard-cells', $event)"
     />
 
     <div

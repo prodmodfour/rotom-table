@@ -46,6 +46,7 @@ export interface PlanResumedMoveStateInput {
   readonly responseOpId: string
   readonly responseWindowId: string
   readonly responseOptionId: string | null
+  readonly responseOptionIds?: readonly string[]
   readonly chosenBy: PendingMoveResponseOwner
   readonly map: TabletopMap
   readonly pokemonSheets: ReadonlyMap<string, CharacterSheet>
@@ -186,6 +187,9 @@ const planNextWindow = (
         windowId: input.responseWindowId,
         responseOpId: input.responseOpId,
         optionId: input.responseOptionId,
+        ...(input.responseOptionIds === undefined
+          ? {}
+          : { optionIds: [...input.responseOptionIds] }),
         chosenBy: input.chosenBy,
         chosenAt: input.plannedAt,
       },

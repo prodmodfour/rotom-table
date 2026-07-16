@@ -12,6 +12,7 @@ import {
   type MoveAutomationAreaDirection,
 } from '~/types/moveAutomation'
 import {
+  moveHazardCellSelectionResponseId,
   parseMoveHazardCellSelectionWindow,
   type MoveHazardCellSelectionWindow,
 } from './hazardCellSelection'
@@ -228,8 +229,10 @@ export interface PendingMoveResolutionChosenOption {
   readonly windowId: string
   /** The idempotency identity of the accepted response command. */
   readonly responseOpId: LivePlayOpId
-  /** Null records an authorized pass. */
+  /** Null records an authorized pass; multi-cell choices use their stable selection digest. */
   readonly optionId: string | null
+  /** Canonical server-issued IDs retained only for an audited multi-cell choice. */
+  readonly optionIds?: readonly string[]
   readonly chosenBy: PendingMoveResponseOwner
   readonly chosenAt: number
 }
@@ -394,6 +397,14 @@ const CHOSEN_OPTION_FIELDS = [
   'windowId',
   'responseOpId',
   'optionId',
+  'chosenBy',
+  'chosenAt',
+] as const
+const MULTI_CHOSEN_OPTION_FIELDS = [
+  'windowId',
+  'responseOpId',
+  'optionId',
+  'optionIds',
   'chosenBy',
   'chosenAt',
 ] as const
@@ -1324,13 +1335,45 @@ const parseChosenOptions = (
     PENDING_MOVE_RESOLUTION_LIMITS.chosenOptions,
   ).map((entry, index): PendingMoveResolutionChosenOption => {
     const entryPath = `${path}[${index}]`
-    const record = parseExactRecord(entry, CHOSEN_OPTION_FIELDS, entryPath)
+    const candidate = parseRecord(entry, entryPath)
+    const hasOptionIds = Object.prototype.hasOwnProperty.call(candidate, 'optionIds')
+    const record = parseExactRecord(
+      entry,
+      hasOptionIds ? MULTI_CHOSEN_OPTION_FIELDS : CHOSEN_OPTION_FIELDS,
+      entryPath,
+    )
+    const windowId = parseStableId(record.windowId, `${entryPath}.windowId`)
+    const optionId = record.optionId === null
+      ? null
+      : parseStableId(record.optionId, `${entryPath}.optionId`)
+    const optionIds = hasOptionIds
+      ? parseBoundedArray(
+          record.optionIds,
+          `${entryPath}.optionIds`,
+          PENDING_MOVE_RESOLUTION_LIMITS.optionsPerWindow,
+        ).map((id, optionIndex) => parseStableId(
+          id,
+          `${entryPath}.optionIds[${optionIndex}]`,
+        ))
+      : undefined
+    if (optionIds && new Set(optionIds).size !== optionIds.length) {
+      fail('duplicate-id', `${entryPath}.optionIds`, 'must not contain duplicate option IDs.')
+    }
+    if (
+      optionIds
+      && optionId !== moveHazardCellSelectionResponseId(windowId, optionIds)
+    ) {
+      fail(
+        'inconsistent-state',
+        `${entryPath}.optionId`,
+        'must be the stable audit identity for the canonical multi-cell option IDs.',
+      )
+    }
     return {
-      windowId: parseStableId(record.windowId, `${entryPath}.windowId`),
+      windowId,
       responseOpId: parseOriginOpId(record.responseOpId, `${entryPath}.responseOpId`),
-      optionId: record.optionId === null
-        ? null
-        : parseStableId(record.optionId, `${entryPath}.optionId`),
+      optionId,
+      ...(optionIds ? { optionIds } : {}),
       chosenBy: parseOwner(record.chosenBy, `${entryPath}.chosenBy`),
       chosenAt: parseTimestamp(record.chosenAt, `${entryPath}.chosenAt`),
     }

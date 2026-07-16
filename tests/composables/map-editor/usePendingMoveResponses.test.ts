@@ -5,9 +5,11 @@ import type { AuthRole } from '#shared/auth'
 import {
   MOVE_RESPONSE_COMMAND_TYPES,
 } from '#shared/moveAutomation/responseCommands'
+import { moveHazardCellSelectionOptionId } from '#shared/moveAutomation/hazardCellSelection'
 import { parsePlayerProfileId } from '#shared/playerProfiles'
 import {
   usePendingMoveResponses,
+  pendingMoveHazardCellSelectionReferences,
   pendingMoveMovementChoiceReferences,
   pendingMoveResponseWindowKey,
 } from '~/composables/map-editor/usePendingMoveResponses'
@@ -69,6 +71,67 @@ function responseWindow() {
       ],
       allowPass: true,
       priority: null,
+    },
+  }
+}
+
+const hazardResponseWindow = () => {
+  const windowId = 'hazard.select-cells'
+  const map = { slug: 'pending-arena', revision: 12 }
+  const move = {
+    resolutionId: 'resolution-hazard-1',
+    actorPlacementId: 'actor-token',
+    canonicalMoveId: 'Spikes',
+  }
+  const cells = [
+    { x: 1, y: 0, z: 1 },
+    { x: 2, y: 0, z: 1 },
+    { x: 3, y: 0, z: 1 },
+  ]
+  const options = cells.map(cell => ({
+    id: moveHazardCellSelectionOptionId({ windowId, map, move }, cell),
+    cell,
+  }))
+  return {
+    schemaVersion: 1,
+    resolution: {
+      schemaVersion: 1,
+      resolutionId: move.resolutionId,
+      actorPlacementId: move.actorPlacementId,
+      canonicalMoveId: move.canonicalMoveId,
+      phase: 'schedule',
+      status: 'pending',
+      outstandingWindowCount: 1,
+      createdAt: 1_000,
+      updatedAt: 1_000,
+    },
+    window: {
+      windowId,
+      kind: 'choice',
+      phase: 'schedule',
+      reasonCode: 'move.spikes.choose-cells',
+      promptKey: 'move.spikes.choose-cells',
+      options: options.map(option => ({
+        id: option.id,
+        labelKey: 'move.hazard.select-cell',
+      })),
+      allowPass: false,
+      priority: null,
+      hazardCellSelection: {
+        schemaVersion: 1,
+        windowId,
+        promptKey: 'move.spikes.choose-cells',
+        map,
+        move,
+        count: { kind: 'exact', count: 2 },
+        origin: { x: 0, y: 0, z: 1 },
+        range: 3,
+        adjacency: 'orthogonal',
+        connectedness: 'connected',
+        occupancy: 'empty-of-placements',
+        geometry: { kind: 'horizontal-plane' },
+        options,
+      },
     },
   }
 }
@@ -177,6 +240,108 @@ describe('usePendingMoveResponses', () => {
     expect(pendingMoveMovementChoiceReferences(windows, {
       'resolution-pending-1:window.branch': { status: 'sending' },
     })[0]?.disabled).toBe(true)
+  })
+
+  it('projects authorized hazard options and journals one canonical multi-ID response', async () => {
+    const hazardWindow = hazardResponseWindow()
+    apiMocks.getJson
+      .mockResolvedValueOnce(responseList([hazardWindow]))
+      .mockResolvedValueOnce(responseList([]))
+    const pendingPost = deferred<unknown>()
+    apiMocks.postJson.mockReturnValueOnce(pendingPost.promise)
+    const { actions, outbox } = createHarness()
+
+    await actions.refresh()
+    const projected = pendingMoveHazardCellSelectionReferences(actions.windows.value)
+    expect(projected).toHaveLength(1)
+    expect(actions.hazardCellSelections.value).toEqual(projected)
+    expect(projected[0]).toMatchObject({
+      resolutionId: 'resolution-hazard-1',
+      windowId: 'hazard.select-cells',
+      canonicalMoveId: 'Spikes',
+      disabled: false,
+    })
+
+    const optionIds = hazardWindow.window.hazardCellSelection.options.map(option => option.id)
+    await expect(actions.choose({
+      resolutionId: 'resolution-hazard-1',
+      windowId: 'hazard.select-cells',
+      optionId: optionIds[0]!,
+    })).resolves.toMatchObject({ dispatched: false })
+    expect(apiMocks.postJson).not.toHaveBeenCalled()
+
+    const dispatch = actions.chooseHazardCells({
+      resolutionId: 'resolution-hazard-1',
+      windowId: 'hazard.select-cells',
+      optionIds: [optionIds[1]!, optionIds[0]!],
+    })
+    await vi.waitFor(() => expect(apiMocks.postJson).toHaveBeenCalledTimes(1))
+    const [requestPath, body] = apiMocks.postJson.mock.calls[0] as [string, Record<string, unknown>]
+    expect(requestPath).toBe(MAP_API_PATHS.chooseMoveResponse)
+    expect(body).toMatchObject({
+      mapSlug: 'pending-arena',
+      baseRevision: 12,
+      profileId,
+      type: MOVE_RESPONSE_COMMAND_TYPES.CHOOSE,
+      payload: {
+        resolutionId: 'resolution-hazard-1',
+        windowId: 'hazard.select-cells',
+        optionIds: [optionIds[0], optionIds[1]],
+      },
+    })
+    expect(JSON.stringify(body)).not.toContain('"cells"')
+    expect(JSON.stringify(body)).not.toContain('geometry')
+    expect(JSON.stringify(body)).not.toContain('occupancy')
+    expect((await outbox.get(String(body.opId)))?.body).toEqual(body)
+
+    pendingPost.resolve(acceptedEnvelope(String(body.opId)))
+    await expect(dispatch).resolves.toMatchObject({ dispatched: true, accepted: true })
+    expect(actions.windows.value).toEqual([])
+  })
+
+  it('restores an uncertain hazard selection after reconnect and retries its exact ID list', async () => {
+    const hazardWindow = hazardResponseWindow()
+    apiMocks.getJson
+      .mockResolvedValueOnce(responseList([hazardWindow]))
+      .mockResolvedValueOnce(responseList([hazardWindow]))
+      .mockResolvedValueOnce(responseList([]))
+    apiMocks.postJson.mockRejectedValueOnce(new Error('connection lost'))
+    const outbox = createOutbox()
+    const first = createHarness({ outbox, leaseOwner: 'hazard-first-tab' })
+    await first.actions.refresh()
+    const optionIds = hazardWindow.window.hazardCellSelection.options
+      .slice(0, 2)
+      .map(option => option.id)
+
+    const uncertain = await first.actions.chooseHazardCells({
+      resolutionId: 'resolution-hazard-1',
+      windowId: 'hazard.select-cells',
+      optionIds,
+    })
+    expect(uncertain).toMatchObject({ dispatched: false, uncertain: true })
+    const stored = await outbox.get(uncertain.opId!)
+    const exactBody = structuredClone(stored!.body)
+    expect(exactBody).toMatchObject({ payload: { optionIds } })
+
+    const reconnected = createHarness({
+      outbox,
+      leaseOwner: 'hazard-reconnected-tab',
+    })
+    await reconnected.actions.refresh()
+    expect(reconnected.actions.hazardCellSelections.value).toMatchObject([{
+      resolutionId: 'resolution-hazard-1',
+      windowId: 'hazard.select-cells',
+      disabled: true,
+    }])
+
+    apiMocks.postJson.mockImplementationOnce((_path: string, body: Record<string, unknown>) => (
+      Promise.resolve(acceptedEnvelope(String(body.opId), 14))
+    ))
+    const retried = await reconnected.actions.retry(uncertain.opId!)
+    expect(retried).toMatchObject({ dispatched: true, accepted: true, opId: uncertain.opId })
+    expect(apiMocks.postJson.mock.calls[1]?.[0]).toBe(MAP_API_PATHS.chooseMoveResponse)
+    expect(apiMocks.postJson.mock.calls[1]?.[1]).toEqual(exactBody)
+    await expect(outbox.get(uncertain.opId!)).resolves.toBeNull()
   })
 
   it('loads only the selected profile prompt and journals the exact ID-only response before sending', async () => {

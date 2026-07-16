@@ -95,6 +95,66 @@ describe('move response command contract', () => {
     expectTypeOf(react).toEqualTypeOf<ReactMoveResponseCommand>()
   })
 
+  it('parses bounded multi-option hazard intent without coordinates or constraints', () => {
+    const multi = command(MOVE_RESPONSE_COMMAND_TYPES.CHOOSE)
+    multi.payload = {
+      resolutionId: 'resolution-pending-1',
+      windowId: 'window.hazard-cells',
+      optionIds: [
+        'hazard.cell.1234abcd.1.0.1',
+        'hazard.cell.1234abcd.2.0.1',
+      ],
+    }
+
+    const parsed = parseMoveResponseCommand<ChooseMoveResponseCommand>(multi)
+    expect(parsed.payload).toEqual(multi.payload)
+    expect(Object.isFrozen(parsed.payload)).toBe(true)
+    if (!('optionIds' in parsed.payload)) throw new Error('Expected multi-option choice intent.')
+    expect(Object.isFrozen(parsed.payload.optionIds)).toBe(true)
+    expect(JSON.stringify(parsed.payload)).not.toContain('"x"')
+    expect(JSON.stringify(parsed.payload)).not.toContain('geometry')
+
+    const empty = structuredClone(multi)
+    ;(empty.payload as Record<string, unknown>).optionIds = []
+    expect(parseMoveResponseCommand(empty)).toMatchObject({
+      payload: { optionIds: [] },
+    })
+  })
+
+  it('rejects duplicate or malformed multi-option IDs and client-authored hazard mechanics', () => {
+    const duplicate = command(MOVE_RESPONSE_COMMAND_TYPES.CHOOSE)
+    duplicate.payload = {
+      resolutionId: 'resolution-pending-1',
+      windowId: 'window.hazard-cells',
+      optionIds: [
+        'hazard.cell.1234abcd.1.0.1',
+        'hazard.cell.1234abcd.1.0.1',
+      ],
+    }
+    expect(validateMoveResponseCommand(duplicate)).toMatchObject({
+      valid: false,
+      issues: expect.arrayContaining([expect.objectContaining({
+        path: '$.payload.optionIds[1]',
+        code: 'invalid-identifier',
+      })]),
+    })
+
+    const mechanics = structuredClone(duplicate)
+    mechanics.payload = {
+      resolutionId: 'resolution-pending-1',
+      windowId: 'window.hazard-cells',
+      optionIds: ['hazard.cell.1234abcd.1.0.1'],
+      cells: [{ x: 1, y: 0, z: 1 }],
+      range: 9,
+      connectedness: 'client-owned',
+    }
+    expect(collectMoveResponseCommandIssues(mechanics)).toEqual(expect.arrayContaining([
+      expect.objectContaining({ path: '$.payload.cells', code: 'forbidden-field' }),
+      expect.objectContaining({ path: '$.payload.range', code: 'forbidden-field' }),
+      expect.objectContaining({ path: '$.payload.connectedness', code: 'forbidden-field' }),
+    ]))
+  })
+
   it('accepts only a valid optional selected-profile authorization context', () => {
     const profiled = {
       ...command(),

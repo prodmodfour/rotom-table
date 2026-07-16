@@ -42,6 +42,7 @@ import type { MoveAutomationScript } from '~/types/moveAutomation'
 import type { SpawnedPokemon } from '~/types/pokemon'
 import type { CharacterSheet } from '~/types/characterSheet'
 import type { TrainerSheet } from '~/types/trainerSheet'
+import type { GridAnchor } from '~/types/map'
 import type {
   AuthoritativeMoveRulesContext,
   AuthoritativeMoveSheetRead,
@@ -101,6 +102,7 @@ import {
   type AuthoritativeSwitchChoice,
   type AuthoritativeSwitchChoiceSet,
 } from './switchChoices'
+import type { ValidatedAuthoritativeHazardCellSelection } from './hazardCellSelection'
 import {
   validateMoveSpec,
   validateMoveSpecOperationSequence,
@@ -245,6 +247,15 @@ export interface MoveSpecResolvedSwitch {
   readonly stateTransferPolicy: MoveEffectSwitchStateTransferPolicy
 }
 
+export interface MoveSpecResolvedHazardCells {
+  readonly operationId: string
+  readonly requestId: string
+  readonly cellSetId: string
+  readonly selectionId: string
+  readonly optionIds: readonly string[]
+  readonly cells: readonly GridAnchor[]
+}
+
 export interface MoveSpecExecutionRejection {
   readonly code: 'precondition-failed' | 'target-count-out-of-range'
   readonly reasonCode: string
@@ -274,6 +285,8 @@ interface MoveSpecExecutionResultBase {
   readonly resolvedMovements: readonly MoveSpecResolvedMovement[]
   /** Fresh roster/send-out result for each answered server-issued replacement. */
   readonly resolvedSwitches: readonly MoveSpecResolvedSwitch[]
+  /** Freshly revalidated server-issued hazard cells keyed by operation/cell set. */
+  readonly resolvedHazardCells: readonly MoveSpecResolvedHazardCells[]
   readonly hitTargetIds: readonly string[]
   readonly missedTargetIds: readonly string[]
   readonly damagedTargetIds: readonly string[]
@@ -329,6 +342,8 @@ export interface ExecuteMoveSpecInput {
   readonly ancestry?: readonly MoveResolutionTraceAncestryEntry[]
   /** Authorized durable responses, resolved only against reviewed request IDs/options. */
   readonly responses?: readonly MoveSpecResolvedResponse[]
+  /** Freshly revalidated multi-cell answers; response commands never populate cells. */
+  readonly authoritativeHazardCellSelections?: readonly ValidatedAuthoritativeHazardCellSelection[]
   /** Test/migration seam; production resolves only the audited global registry. */
   readonly handlerRegistry?: RegisteredMoveHandlerRegistry
 }
@@ -393,6 +408,14 @@ const freezeResolvedSwitches = (
 ): readonly MoveSpecResolvedSwitch[] => Object.freeze(switches.map(switchResult => Object.freeze({
   ...switchResult,
   choice: switchResult.choice,
+})))
+
+const freezeResolvedHazardCells = (
+  selections: readonly MoveSpecResolvedHazardCells[],
+): readonly MoveSpecResolvedHazardCells[] => Object.freeze(selections.map(selection => Object.freeze({
+  ...selection,
+  optionIds: frozenIds(selection.optionIds),
+  cells: Object.freeze(selection.cells.map(cell => Object.freeze({ ...cell }))),
 })))
 
 const rulesetMatchesContext = (
@@ -1052,6 +1075,7 @@ const terminalBase = (
   branchSelections: readonly MoveBranchSelection[],
   resolvedMovements: readonly MoveSpecResolvedMovement[],
   resolvedSwitches: readonly MoveSpecResolvedSwitch[],
+  resolvedHazardCells: readonly MoveSpecResolvedHazardCells[],
   selectorState: MoveSpecSelectorState,
 ): MoveSpecExecutionResultBase => ({
   operations: freezeEmittedOperations(operations),
@@ -1066,6 +1090,7 @@ const terminalBase = (
   branchSelections: freezeBranchSelections(branchSelections),
   resolvedMovements: freezeResolvedMovements(resolvedMovements),
   resolvedSwitches: freezeResolvedSwitches(resolvedSwitches),
+  resolvedHazardCells: freezeResolvedHazardCells(resolvedHazardCells),
   hitTargetIds: frozenIds(selectorState.hitTargetIds),
   missedTargetIds: frozenIds(selectorState.missedTargetIds),
   damagedTargetIds: frozenIds(selectorState.damagedTargetIds),
@@ -1328,6 +1353,17 @@ export const executeMoveSpec = (
   const program = executableProgram(definition, input.context, handlerRegistry)
   const branchControllers = branchControllerIndex(program.operations)
   const responseResolver = createMoveSpecResponseResolver(input.responses)
+  const hazardSelections = new Map<string, ValidatedAuthoritativeHazardCellSelection>()
+  for (const selection of input.authoritativeHazardCellSelections ?? []) {
+    if (hazardSelections.has(selection.operationId)) {
+      fail(
+        'definition-integrity-mismatch',
+        `Hazard operation ${selection.operationId} received more than one authoritative cell selection.`,
+      )
+    }
+    hazardSelections.set(selection.operationId, selection)
+  }
+  const consumedHazardSelections = new Set<string>()
 
   const activePhases = new Set<MoveSpecPhase>(program.operationsByPhase.keys())
   for (const phase of program.handlerTraceEntriesByPhase.keys()) activePhases.add(phase)
@@ -1370,6 +1406,7 @@ export const executeMoveSpec = (
   const branchSelections: MoveBranchSelection[] = []
   const resolvedMovements: MoveSpecResolvedMovement[] = []
   const resolvedSwitches: MoveSpecResolvedSwitch[] = []
+  const resolvedHazardCells: MoveSpecResolvedHazardCells[] = []
   const branchExecutions = new Map<string, ExecutedMoveBranch>()
   const currentSelectorState = (): MoveSpecSelectorState => ({
     targetIds,
@@ -1439,6 +1476,7 @@ export const executeMoveSpec = (
               branchSelections,
               resolvedMovements,
               resolvedSwitches,
+              resolvedHazardCells,
               currentSelectorState(),
             ),
             rejection: Object.freeze({
@@ -1531,6 +1569,7 @@ export const executeMoveSpec = (
             branchSelections,
             resolvedMovements,
             resolvedSwitches,
+            resolvedHazardCells,
             currentSelectorState(),
           ),
           rejection: Object.freeze({
@@ -1695,6 +1734,7 @@ export const executeMoveSpec = (
               branchSelections,
               resolvedMovements,
               resolvedSwitches,
+              resolvedHazardCells,
               currentSelectorState(),
             ),
             request,
@@ -1818,6 +1858,7 @@ export const executeMoveSpec = (
             branchSelections,
             resolvedMovements,
             resolvedSwitches,
+            resolvedHazardCells,
             currentSelectorState(),
           ),
           request,
@@ -2093,6 +2134,55 @@ export const executeMoveSpec = (
           operation,
           input.context.actor.placement.id,
         )
+        const selected = hazardSelections.get(operation.id) ?? null
+        if (selected) {
+          if (
+            selected.windowId !== request.requestId
+            || selected.operationId !== operation.id
+            || selected.cellSetId !== operation.payload.cellSetId
+          ) {
+            return fail(
+              'definition-integrity-mismatch',
+              `Hazard selection for ${operation.id} does not match its reviewed request and cell-set identity.`,
+            )
+          }
+          consumedHazardSelections.add(operation.id)
+          resolvedHazardCells.push(Object.freeze({
+            operationId: operation.id,
+            requestId: request.requestId,
+            cellSetId: operation.payload.cellSetId,
+            selectionId: selected.selectionId,
+            optionIds: frozenIds(selected.optionIds),
+            cells: Object.freeze(selected.cells.map(cell => Object.freeze({ ...cell }))),
+          }))
+          trace = reduceMoveResolutionTrace(trace, {
+            kind: 'operation',
+            phase,
+            operationId: operation.id,
+            operationKind: operation.kind,
+            recipientIds,
+            outcome: 'applied',
+            reasonCode: operation.reasonCode,
+            input: traceJson(operation.payload),
+            result: traceJson({
+              status: 'selected',
+              cellSetId: operation.payload.cellSetId,
+              selectionId: selected.selectionId,
+              optionIds: selected.optionIds,
+              cells: selected.cells,
+            }),
+          })
+          trace = reduceMoveResolutionTrace(trace, {
+            kind: 'choice',
+            phase,
+            requestId: request.requestId,
+            requestKind: 'choice',
+            outcome: 'selected',
+            optionId: selected.selectionId,
+            reasonCode: operation.reasonCode,
+          })
+          continue
+        }
         trace = reduceMoveResolutionTrace(trace, {
           kind: 'operation',
           phase,
@@ -2133,6 +2223,7 @@ export const executeMoveSpec = (
             branchSelections,
             resolvedMovements,
             resolvedSwitches,
+            resolvedHazardCells,
             currentSelectorState(),
           ),
           request,
@@ -2226,6 +2317,7 @@ export const executeMoveSpec = (
             branchSelections,
             resolvedMovements,
             resolvedSwitches,
+            resolvedHazardCells,
             currentSelectorState(),
           ),
           request,
@@ -2326,6 +2418,7 @@ export const executeMoveSpec = (
             branchSelections,
             resolvedMovements,
             resolvedSwitches,
+            resolvedHazardCells,
             currentSelectorState(),
           ),
           request,
@@ -2387,6 +2480,7 @@ export const executeMoveSpec = (
             branchSelections,
             resolvedMovements,
             resolvedSwitches,
+            resolvedHazardCells,
             currentSelectorState(),
           ),
           request,
@@ -2408,6 +2502,15 @@ export const executeMoveSpec = (
   }
 
   responseResolver.assertAllConsumed()
+  const unusedHazardSelection = [...hazardSelections.keys()].find(
+    operationId => !consumedHazardSelections.has(operationId),
+  )
+  if (unusedHazardSelection) {
+    fail(
+      'definition-integrity-mismatch',
+      `Authoritative hazard selection for ${unusedHazardSelection} was not reached by the reviewed MoveSpec.`,
+    )
+  }
   return Object.freeze({
     kind: 'complete',
     ...terminalBase(
@@ -2424,6 +2527,7 @@ export const executeMoveSpec = (
       branchSelections,
       resolvedMovements,
       resolvedSwitches,
+      resolvedHazardCells,
       currentSelectorState(),
     ),
   })

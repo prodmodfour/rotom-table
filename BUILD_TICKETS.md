@@ -1831,7 +1831,7 @@ Status: DONE
 
 ## MA-134C — Select and apply authoritative hazard cells
 
-Status: TODO
+Status: DONE
 
 **Depends on:** MA-134B
 **Commit:** `feat(move-automation): select authoritative hazard cells`

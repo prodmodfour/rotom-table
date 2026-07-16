@@ -45,6 +45,8 @@ import type { InitiativeRow } from '~/composables/map-editor/useInitiativeTracke
 import type { LivePlayConnectionState } from '~/composables/map-editor/useLivePlayStateMachine'
 import type { GmMoveCorrectionPanelStatus } from '~/composables/map-editor/useGmMoveCorrections'
 import type {
+  PendingMoveHazardCellResponseReference,
+  PendingMoveHazardCellSelectionReference,
   PendingMoveMovementChoiceReference,
   PendingMoveResponseOptionReference,
   PendingMoveResponseReference,
@@ -108,6 +110,7 @@ const props = defineProps<{
   moveUsageError?: string | null
   pendingMoveResponseWindows?: readonly PendingMoveResponseWindowView[]
   pendingMoveMovementChoices?: readonly PendingMoveMovementChoiceReference[]
+  pendingMoveHazardCellSelections?: readonly PendingMoveHazardCellSelectionReference[]
   pendingMoveResponseStateByWindow?: Readonly<Record<string, PendingMoveResponseWindowState>>
   pendingMoveResponseActorLabels?: Readonly<Record<string, string>>
   pendingMoveResponseOwnerLabel?: string
@@ -184,6 +187,7 @@ const emit = defineEmits<{
   (event: 'clear-move-vfx'): void
   (event: 'move-vfx-settled', payload: { nowMs: number }): void
   (event: 'choose-pending-move-response', payload: PendingMoveResponseOptionReference): void
+  (event: 'choose-pending-move-hazard-cells', payload: PendingMoveHazardCellResponseReference): void
   (event: 'pass-pending-move-response', payload: PendingMoveResponseReference): void
   (event: 'force-pass-pending-move-response', payload: PendingMoveResponseReference): void
   (event: 'cancel-pending-move-resolution', resolutionId: string): void
@@ -307,6 +311,7 @@ defineExpose({ focusPokemon, focusCell })
         :move-animations="moveAnimations ?? []"
         :move-animations-reduced-motion="moveAnimationsReducedMotion === true"
         :pending-move-movement-choices="props.pendingMoveMovementChoices ?? []"
+        :pending-move-hazard-cell-selections="props.pendingMoveHazardCellSelections ?? []"
         @select-pokemon="emit('select-pokemon', $event)"
         @hover-pokemon="emit('hover-pokemon', $event)"
         @place-presence-ping="emit('place-presence-ping', $event)"
@@ -339,6 +344,7 @@ defineExpose({ focusPokemon, focusCell })
         @select-move-target-branch="emit('select-move-target-branch', $event)"
         @cancel-move-targeting="emit('cancel-move-targeting')"
         @choose-pending-move-response="emit('choose-pending-move-response', $event)"
+        @choose-pending-move-hazard-cells="emit('choose-pending-move-hazard-cells', $event)"
         @move-vfx-settled="emit('move-vfx-settled', $event)"
         @token-motion-debug-metrics="emit('token-motion-debug-metrics', $event)"
       />

@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
   MOVE_HAZARD_CELL_SELECTION_SCHEMA_VERSION,
+  moveHazardCellSelectionResponseId,
   parseMoveHazardCellSelectionDeclaration,
   type MoveHazardCellSelectionDeclaration,
   type MoveHazardCellSelectionWindow,
@@ -148,6 +149,10 @@ describe('authoritative hazard-cell selection', () => {
     })
 
     expect(validated.optionIds).toEqual([first.id, second.id])
+    expect(validated.selectionId).toBe(moveHazardCellSelectionResponseId(
+      exact.declaration.windowId,
+      [first.id, second.id],
+    ))
     expect(validated.cells).toEqual([first.cell, second.cell])
     expect(ids).toEqual(idsBefore)
     expect(Object.isFrozen(validated)).toBe(true)
