@@ -21,7 +21,7 @@ import {
   resolveMoveEffectDynamicRecipients,
 } from './effectRecipients'
 import { reduceMoveFieldPlaceholder } from './mapFieldEffects'
-import { reduceMoveHazardPlaceholder } from './mapHazardEffects'
+import { reduceMoveHazardZones } from './mapHazardEffects'
 import {
   failMoveMapOperationReduction,
   MoveMapOperationReductionError,
@@ -48,7 +48,7 @@ export { MoveMapOperationReductionError }
 export type { MoveMapOperationReductionErrorCode } from './mapOperationError'
 export type {
   MoveAcceptedPresentationProjection,
-  MoveHazardPlaceholderResolution,
+  MoveHazardGeometryResolution,
   MoveMapEffectOperation,
   MoveMapOperationReduction,
   MoveMapOperationResult,
@@ -104,7 +104,7 @@ const operationDetails = (value: unknown): MoveResolutionTraceJsonValue => (
 
 /**
  * Reduce MoveSpec map/usage/log operations into one immutable immediate-write
- * envelope. Map arrays remain compatibility placeholders until Phase 6, while
+ * envelope. Native hazard operations mutate typed encounter zones while
  * all resource revisions and accepted presentation/log projections are ready
  * for the same atomic command boundary used by v1.
  */
@@ -127,7 +127,7 @@ export const reduceMoveMapOperations = (
   const operationResults: MoveMapOperationResult[] = []
   const usage: MoveUsageOperationProjection[] = []
   const structuredLog: MoveStructuredLogProjection[] = []
-  let workingMap = deepCloneJson(previousMap)
+  let workingMap = deepCloneJson(input.initialMap ?? previousMap)
 
   const touch = (lane: MoveMapOperationLane, value: MoveMapOperationTouch): void => {
     const entries = laneTouches.get(lane) ?? []
@@ -195,15 +195,16 @@ export const reduceMoveMapOperations = (
     }
 
     if (operation.kind === 'hazard') {
-      const reduced = reduceMoveHazardPlaceholder({
-        map: workingMap,
-        previous: workingMap.hazards,
+      const reduced = reduceMoveHazardZones({
+        context: input.context,
+        previous: workingMap.encounterState,
         operation,
-        placeholders: input.hazards,
+        recipientIds: expectedIds,
+        resolutions: input.hazards,
       })
       if (reduced.changed) {
-        workingMap.hazards = deepCloneJson(reduced.current) as TabletopMap['hazards']
-        touch('hazards', operationTouch)
+        workingMap.encounterState = deepCloneJson(reduced.current)
+        touch('encounterState', operationTouch)
       }
       operationResults.push(resultFor({
         operation,

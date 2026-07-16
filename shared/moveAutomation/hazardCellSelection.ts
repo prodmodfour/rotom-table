@@ -373,7 +373,11 @@ export const compareMoveHazardCellSelectionCells = (
   right: GridAnchor,
 ): number => left.y - right.y || left.z - right.z || left.x - right.x
 
-const parseCount = (value: unknown, path: string): MoveHazardCellSelectionCount => {
+/** Strict parser reused by reviewed hazard-zone geometry declarations. */
+export const parseMoveHazardCellSelectionCount = (
+  value: unknown,
+  path = 'hazardCellSelection.count',
+): MoveHazardCellSelectionCount => {
   if (!isPlainRecord(value) || !COUNT_KIND_SET.has(value.kind)) {
     return fail(
       'unknown-kind',
@@ -544,7 +548,7 @@ export const parseMoveHazardCellSelectionRules = (
       `must be one of: ${MOVE_HAZARD_CELL_SELECTION_OCCUPANCY_KINDS.join(', ')}.`,
     )
   }
-  const count = parseCount(record.count, `${path}.count`)
+  const count = parseMoveHazardCellSelectionCount(record.count, `${path}.count`)
   const geometry = parseGeometry(record.geometry, `${path}.geometry`)
   const maximumCount = count.kind === 'exact' ? count.count : count.maximum
   if (geometry.kind === 'reviewed-cells' && maximumCount > geometry.cells.length) {
@@ -762,7 +766,7 @@ export const parseMoveHazardCellSelectionPublicWindow = (
   const windowId = stableId(record.windowId, `${path}.windowId`)
   const map = parseMapContext(record.map, `${path}.map`)
   const move = parsePublicMoveContext(record.move, `${path}.move`)
-  const count = parseCount(record.count, `${path}.count`)
+  const count = parseMoveHazardCellSelectionCount(record.count, `${path}.count`)
   const namespace = { windowId, map, move }
   const options = parseOptions(record.options, namespace, `${path}.options`)
   if (options.length < minimumCount(count)) {

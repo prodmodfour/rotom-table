@@ -35,8 +35,14 @@ import {
   type MovePredicate,
 } from './predicates'
 import {
+  MOVE_HAZARD_CELL_SELECTION_ADJACENCY_KINDS,
+  MOVE_HAZARD_CELL_SELECTION_CONNECTEDNESS_KINDS,
   MoveHazardCellSelectionValidationError,
+  parseMoveHazardCellSelectionCount,
   parseMoveHazardCellSelectionRules,
+  type MoveHazardCellSelectionAdjacency,
+  type MoveHazardCellSelectionConnectedness,
+  type MoveHazardCellSelectionCount,
   type MoveHazardCellSelectionRules,
 } from './hazardCellSelection'
 import {
@@ -276,6 +282,20 @@ export const MOVE_EFFECT_FIELD_CATEGORIES = [
   'room',
   'side',
 ] as const
+
+/** Native map-owned zone families emitted by reviewed hazard operations. */
+export const MOVE_EFFECT_HAZARD_ZONE_KINDS = ['hazard', 'pledge'] as const
+export const MOVE_EFFECT_HAZARD_OWNERSHIP_KINDS = ['source-side', 'neutral'] as const
+export const MOVE_EFFECT_HAZARD_OWNERSHIP_FILTER_KINDS = [
+  'any',
+  'source-side',
+  'recipient-side',
+  'neutral',
+] as const
+export const MOVE_EFFECT_HAZARD_GEOMETRY_KINDS = ['selection', 'blast', 'line'] as const
+export const MOVE_EFFECT_HAZARD_BLAST_CENTERS = ['actor', 'selected-target'] as const
+export const MOVE_EFFECT_HAZARD_REMOVAL_TARGET_KINDS = ['zone-id', 'matching'] as const
+
 export const MOVE_EFFECT_MOVEMENT_MODES = [
   'voluntary',
   'forced',
@@ -338,6 +358,9 @@ export const MOVE_EFFECT_OPERATION_LIMITS = Object.freeze({
   durationCount: 10_000,
   effectStacks: ENCOUNTER_EFFECT_LIMITS.stacks,
   hazardLayers: 64,
+  hazardCharges: ENCOUNTER_EFFECT_LIMITS.charges,
+  hazardGeometrySize: 32,
+  hazardZoneKinds: MOVE_EFFECT_HAZARD_ZONE_KINDS.length,
   typeOverrides: 18,
   criticalNaturalRolls: 20,
   multiHitStrikes: 10,
@@ -421,6 +444,14 @@ export type MoveEffectCombatStage = (typeof MOVE_EFFECT_COMBAT_STAGES)[number]
 /** @deprecated Temporary-effect definitions use EncounterEffectDuration. */
 export type MoveEffectDurationKind = (typeof MOVE_EFFECT_DURATION_KINDS)[number]
 export type MoveEffectFieldCategory = (typeof MOVE_EFFECT_FIELD_CATEGORIES)[number]
+export type MoveEffectHazardZoneKind = (typeof MOVE_EFFECT_HAZARD_ZONE_KINDS)[number]
+export type MoveEffectHazardOwnership = (typeof MOVE_EFFECT_HAZARD_OWNERSHIP_KINDS)[number]
+export type MoveEffectHazardOwnershipFilter =
+  (typeof MOVE_EFFECT_HAZARD_OWNERSHIP_FILTER_KINDS)[number]
+export type MoveEffectHazardGeometryKind = (typeof MOVE_EFFECT_HAZARD_GEOMETRY_KINDS)[number]
+export type MoveEffectHazardBlastCenter = (typeof MOVE_EFFECT_HAZARD_BLAST_CENTERS)[number]
+export type MoveEffectHazardRemovalTargetKind =
+  (typeof MOVE_EFFECT_HAZARD_REMOVAL_TARGET_KINDS)[number]
 export type MoveEffectMovementMode = (typeof MOVE_EFFECT_MOVEMENT_MODES)[number]
 export type MoveEffectMovementChoiceKind =
   (typeof MOVE_EFFECT_MOVEMENT_CHOICE_KINDS)[number]
@@ -1090,23 +1121,87 @@ export interface MoveHazardCellSelectionRequest extends MoveHazardCellSelectionR
   readonly promptKey: string
 }
 
+interface MoveHazardGeometryPolicy {
+  readonly count: MoveHazardCellSelectionCount
+  readonly adjacency: MoveHazardCellSelectionAdjacency
+  readonly connectedness: MoveHazardCellSelectionConnectedness
+}
+
+/** Cells supplied only by an interpreter-owned set such as a durable selection. */
+export interface MoveHazardSelectionGeometry extends MoveHazardGeometryPolicy {
+  readonly kind: 'selection'
+  readonly cellSetId: string
+}
+
+/** A bounded Blast is derived around a server-resolved placement center. */
+export interface MoveHazardBlastGeometry extends MoveHazardGeometryPolicy {
+  readonly kind: 'blast'
+  readonly center: MoveEffectHazardBlastCenter
+  readonly size: number
+}
+
+/** A bounded Line is derived from the actor and authoritative area direction. */
+export interface MoveHazardLineGeometry extends MoveHazardGeometryPolicy {
+  readonly kind: 'line'
+  readonly length: number
+}
+
+export type MoveHazardGeometry =
+  | MoveHazardSelectionGeometry
+  | MoveHazardBlastGeometry
+  | MoveHazardLineGeometry
+
 export interface MoveAddHazardEffectPayload {
   readonly action: 'add'
-  readonly hazardId: string
-  readonly hazardKind: string
-  /** Stable reference to cells resolved by authoritative targeting. */
-  readonly cellSetId: string
+  /** Stable stacking/removal family; concrete zone IDs remain server-derived. */
+  readonly familyId: string
+  readonly zoneKind: MoveEffectHazardZoneKind
+  /** Typed mechanic ID, such as spikes, stealth-rock, or fire-grass. */
+  readonly effectId: string
+  readonly ownership: MoveEffectHazardOwnership
+  readonly geometry: MoveHazardGeometry
   readonly layers: number
-  /** Reviewed durable policy; omit only when another server-owned selector resolves the cell set. */
+  readonly maxLayers: number
+  readonly charges: number | null
+  readonly maxCharges: number | null
+  /** Reviewed durable policy; valid only for selection geometry. */
   readonly cellSelection?: MoveHazardCellSelectionRequest
 }
 
-export interface MoveRemoveHazardEffectPayload {
-  readonly action: 'remove'
-  readonly hazardId: string
+export interface MoveHazardZoneIdRemovalTarget {
+  readonly kind: 'zone-id'
+  readonly zoneId: string
 }
 
-export type MoveHazardEffectPayload = MoveAddHazardEffectPayload | MoveRemoveHazardEffectPayload
+export interface MoveHazardMatchingRemovalTarget {
+  readonly kind: 'matching'
+  readonly zoneKinds: readonly MoveEffectHazardZoneKind[]
+  readonly ownership: MoveEffectHazardOwnershipFilter
+  /** Null matches every stacking family. */
+  readonly familyId: string | null
+  /** Null matches the whole battlefield; otherwise cells remain server-derived. */
+  readonly geometry: MoveHazardGeometry | null
+}
+
+export type MoveHazardRemovalTarget =
+  | MoveHazardZoneIdRemovalTarget
+  | MoveHazardMatchingRemovalTarget
+
+export interface MoveRemoveHazardEffectPayload {
+  readonly action: 'remove'
+  readonly target: MoveHazardRemovalTarget
+}
+
+/** Swap the actor side with the single recipient side; no side ID is spec-authored. */
+export interface MoveSwapHazardSidesEffectPayload {
+  readonly action: 'swap-sides'
+  readonly zoneKinds: readonly MoveEffectHazardZoneKind[]
+}
+
+export type MoveHazardEffectPayload =
+  | MoveAddHazardEffectPayload
+  | MoveRemoveHazardEffectPayload
+  | MoveSwapHazardSidesEffectPayload
 
 export interface MoveDestinationMovementChoice {
   readonly kind: 'destination'
@@ -1530,10 +1625,15 @@ const APPLY_FIELD_FIELDS = ['action', 'category', 'fieldId', 'rounds'] as const
 const REMOVE_FIELD_FIELDS = ['action', 'category', 'fieldId'] as const
 const ADD_HAZARD_FIELDS = [
   'action',
-  'hazardId',
-  'hazardKind',
-  'cellSetId',
+  'familyId',
+  'zoneKind',
+  'effectId',
+  'ownership',
+  'geometry',
   'layers',
+  'maxLayers',
+  'charges',
+  'maxCharges',
 ] as const
 const ADD_HAZARD_SELECTION_FIELDS = [...ADD_HAZARD_FIELDS, 'cellSelection'] as const
 const HAZARD_CELL_SELECTION_FIELDS = [
@@ -1546,7 +1646,20 @@ const HAZARD_CELL_SELECTION_FIELDS = [
   'occupancy',
   'geometry',
 ] as const
-const REMOVE_HAZARD_FIELDS = ['action', 'hazardId'] as const
+const HAZARD_GEOMETRY_POLICY_FIELDS = ['kind', 'count', 'adjacency', 'connectedness'] as const
+const HAZARD_SELECTION_GEOMETRY_FIELDS = [...HAZARD_GEOMETRY_POLICY_FIELDS, 'cellSetId'] as const
+const HAZARD_BLAST_GEOMETRY_FIELDS = [...HAZARD_GEOMETRY_POLICY_FIELDS, 'center', 'size'] as const
+const HAZARD_LINE_GEOMETRY_FIELDS = [...HAZARD_GEOMETRY_POLICY_FIELDS, 'length'] as const
+const REMOVE_HAZARD_FIELDS = ['action', 'target'] as const
+const HAZARD_ZONE_ID_REMOVAL_FIELDS = ['kind', 'zoneId'] as const
+const HAZARD_MATCHING_REMOVAL_FIELDS = [
+  'kind',
+  'zoneKinds',
+  'ownership',
+  'familyId',
+  'geometry',
+] as const
+const SWAP_HAZARD_SIDES_FIELDS = ['action', 'zoneKinds'] as const
 const MOVEMENT_REQUEST_FIELDS = [
   'requestId',
   'mode',
@@ -1664,6 +1777,22 @@ const COMBAT_STAGE_ACTION_SET = new Set<string>(MOVE_EFFECT_COMBAT_STAGE_ACTIONS
 const COMBAT_STAT_STAGE_SET = new Set<string>(MOVE_EFFECT_COMBAT_STAT_STAGES)
 const COMBAT_STAGE_SET = new Set<string>(MOVE_EFFECT_COMBAT_STAGES)
 const FIELD_CATEGORY_SET = new Set<string>(MOVE_EFFECT_FIELD_CATEGORIES)
+const HAZARD_ZONE_KIND_SET = new Set<string>(MOVE_EFFECT_HAZARD_ZONE_KINDS)
+const HAZARD_OWNERSHIP_SET = new Set<string>(MOVE_EFFECT_HAZARD_OWNERSHIP_KINDS)
+const HAZARD_OWNERSHIP_FILTER_SET = new Set<string>(
+  MOVE_EFFECT_HAZARD_OWNERSHIP_FILTER_KINDS,
+)
+const HAZARD_GEOMETRY_KIND_SET = new Set<string>(MOVE_EFFECT_HAZARD_GEOMETRY_KINDS)
+const HAZARD_GEOMETRY_ADJACENCY_SET = new Set<string>(
+  MOVE_HAZARD_CELL_SELECTION_ADJACENCY_KINDS,
+)
+const HAZARD_GEOMETRY_CONNECTEDNESS_SET = new Set<string>(
+  MOVE_HAZARD_CELL_SELECTION_CONNECTEDNESS_KINDS,
+)
+const HAZARD_BLAST_CENTER_SET = new Set<string>(MOVE_EFFECT_HAZARD_BLAST_CENTERS)
+const HAZARD_REMOVAL_TARGET_KIND_SET = new Set<string>(
+  MOVE_EFFECT_HAZARD_REMOVAL_TARGET_KINDS,
+)
 const MOVEMENT_MODE_SET = new Set<string>(MOVE_EFFECT_MOVEMENT_MODES)
 const MOVEMENT_CHOICE_KIND_SET = new Set<string>(MOVE_EFFECT_MOVEMENT_CHOICE_KINDS)
 const MOVEMENT_VECTOR_KIND_SET = new Set<string>(MOVE_EFFECT_MOVEMENT_VECTOR_KINDS)
@@ -3579,36 +3708,281 @@ const parseHazardCellSelection = (
   }
 }
 
+const parseHazardGeometryCount = (
+  value: unknown,
+  path: string,
+): MoveHazardCellSelectionCount => {
+  try {
+    return parseMoveHazardCellSelectionCount(value, path)
+  }
+  catch (error) {
+    if (error instanceof MoveHazardCellSelectionValidationError) {
+      return fail(
+        error.code === 'limit-exceeded' ? 'limit-exceeded' : 'invalid-effect-operation',
+        error.path,
+        error.detail,
+      )
+    }
+    throw error
+  }
+}
+
+const parseHazardGeometry = (value: unknown, path: string): MoveHazardGeometry => {
+  const candidate = parseRecord(value, path)
+  const kind = parseEnum<MoveEffectHazardGeometryKind>(
+    ownValue(candidate, 'kind', path),
+    HAZARD_GEOMETRY_KIND_SET,
+    `${path}.kind`,
+    'selection, blast, or line',
+  )
+  const fields = kind === 'selection'
+    ? HAZARD_SELECTION_GEOMETRY_FIELDS
+    : kind === 'blast'
+      ? HAZARD_BLAST_GEOMETRY_FIELDS
+      : HAZARD_LINE_GEOMETRY_FIELDS
+  const input = parseExactRecord(value, fields, path)
+  const common: MoveHazardGeometryPolicy = {
+    count: parseHazardGeometryCount(ownValue(input, 'count', path), `${path}.count`),
+    adjacency: parseEnum<MoveHazardCellSelectionAdjacency>(
+      ownValue(input, 'adjacency', path),
+      HAZARD_GEOMETRY_ADJACENCY_SET,
+      `${path}.adjacency`,
+      'orthogonal or including-diagonal',
+    ),
+    connectedness: parseEnum<MoveHazardCellSelectionConnectedness>(
+      ownValue(input, 'connectedness', path),
+      HAZARD_GEOMETRY_CONNECTEDNESS_SET,
+      `${path}.connectedness`,
+      'none, no-isolated, or connected',
+    ),
+  }
+  if (kind === 'selection') {
+    return {
+      kind,
+      ...common,
+      cellSetId: parseStableId(ownValue(input, 'cellSetId', path), `${path}.cellSetId`),
+    }
+  }
+  if (kind === 'blast') {
+    return {
+      kind,
+      ...common,
+      center: parseEnum<MoveEffectHazardBlastCenter>(
+        ownValue(input, 'center', path),
+        HAZARD_BLAST_CENTER_SET,
+        `${path}.center`,
+        'actor or selected-target',
+      ),
+      size: parseInteger(
+        ownValue(input, 'size', path),
+        `${path}.size`,
+        1,
+        MOVE_EFFECT_OPERATION_LIMITS.hazardGeometrySize,
+      ),
+    }
+  }
+  return {
+    kind,
+    ...common,
+    length: parseInteger(
+      ownValue(input, 'length', path),
+      `${path}.length`,
+      1,
+      MOVE_EFFECT_OPERATION_LIMITS.hazardGeometrySize,
+    ),
+  }
+}
+
+const parseHazardZoneKinds = (
+  value: unknown,
+  path: string,
+): readonly MoveEffectHazardZoneKind[] => {
+  const values = parseBoundedArray(
+    value,
+    path,
+    MOVE_EFFECT_OPERATION_LIMITS.hazardZoneKinds,
+  ).map((entry, index) => parseEnum<MoveEffectHazardZoneKind>(
+    entry,
+    HAZARD_ZONE_KIND_SET,
+    `${path}[${index}]`,
+    'hazard or pledge',
+  ))
+  if (values.length === 0) {
+    fail('invalid-effect-operation', path, 'must contain at least one zone kind.')
+  }
+  if (new Set(values).size !== values.length) {
+    fail('duplicate-id', path, 'must not contain duplicate zone kinds.')
+  }
+  return values
+}
+
+const sameHazardCount = (
+  left: MoveHazardCellSelectionCount,
+  right: MoveHazardCellSelectionCount,
+): boolean => left.kind === right.kind && (
+  left.kind === 'exact'
+    ? right.kind === 'exact' && left.count === right.count
+    : right.kind === 'up-to'
+      && left.minimum === right.minimum
+      && left.maximum === right.maximum
+)
+
+const assertSelectionMatchesGeometry = (
+  selection: MoveHazardCellSelectionRequest,
+  geometry: MoveHazardGeometry,
+  path: string,
+): void => {
+  if (geometry.kind !== 'selection') {
+    fail(
+      'invalid-effect-operation',
+      path,
+      'is valid only when hazard geometry is selection.',
+    )
+  }
+  if (
+    !sameHazardCount(selection.count, geometry.count)
+    || selection.adjacency !== geometry.adjacency
+    || selection.connectedness !== geometry.connectedness
+  ) {
+    fail(
+      'invalid-effect-operation',
+      path,
+      'count, adjacency, and connectedness must match the enclosing selection geometry.',
+    )
+  }
+}
+
+const parseHazardRemovalTarget = (
+  value: unknown,
+  path: string,
+): MoveHazardRemovalTarget => {
+  const candidate = parseRecord(value, path)
+  const kind = parseEnum<MoveEffectHazardRemovalTargetKind>(
+    ownValue(candidate, 'kind', path),
+    HAZARD_REMOVAL_TARGET_KIND_SET,
+    `${path}.kind`,
+    'zone-id or matching',
+  )
+  if (kind === 'zone-id') {
+    const input = parseExactRecord(value, HAZARD_ZONE_ID_REMOVAL_FIELDS, path)
+    return {
+      kind,
+      zoneId: parseStableId(ownValue(input, 'zoneId', path), `${path}.zoneId`),
+    }
+  }
+  const input = parseExactRecord(value, HAZARD_MATCHING_REMOVAL_FIELDS, path)
+  return {
+    kind,
+    zoneKinds: parseHazardZoneKinds(ownValue(input, 'zoneKinds', path), `${path}.zoneKinds`),
+    ownership: parseEnum<MoveEffectHazardOwnershipFilter>(
+      ownValue(input, 'ownership', path),
+      HAZARD_OWNERSHIP_FILTER_SET,
+      `${path}.ownership`,
+      'any, source-side, recipient-side, or neutral',
+    ),
+    familyId: parseNullableStableId(ownValue(input, 'familyId', path), `${path}.familyId`),
+    geometry: input.geometry === null
+      ? null
+      : parseHazardGeometry(input.geometry, `${path}.geometry`),
+  }
+}
+
 const parseHazardPayload = (value: unknown, path: string): MoveHazardEffectPayload => {
   const input = parseRecord(value, path)
   const action = ownValue(input, 'action', path)
   if (action === 'add') {
     const hasCellSelection = Object.prototype.hasOwnProperty.call(input, 'cellSelection')
     assertExactKeys(input, hasCellSelection ? ADD_HAZARD_SELECTION_FIELDS : ADD_HAZARD_FIELDS, path)
+    const geometry = parseHazardGeometry(ownValue(input, 'geometry', path), `${path}.geometry`)
+    const layers = parseInteger(
+      ownValue(input, 'layers', path),
+      `${path}.layers`,
+      1,
+      MOVE_EFFECT_OPERATION_LIMITS.hazardLayers,
+    )
+    const maxLayers = parseInteger(
+      ownValue(input, 'maxLayers', path),
+      `${path}.maxLayers`,
+      1,
+      MOVE_EFFECT_OPERATION_LIMITS.hazardLayers,
+    )
+    if (layers > maxLayers) {
+      fail('invalid-effect-operation', `${path}.layers`, 'cannot exceed maxLayers.')
+    }
+    const charges = parseNullableInteger(
+      ownValue(input, 'charges', path),
+      `${path}.charges`,
+      1,
+      MOVE_EFFECT_OPERATION_LIMITS.hazardCharges,
+    )
+    const maxCharges = parseNullableInteger(
+      ownValue(input, 'maxCharges', path),
+      `${path}.maxCharges`,
+      1,
+      MOVE_EFFECT_OPERATION_LIMITS.hazardCharges,
+    )
+    if ((charges === null) !== (maxCharges === null)) {
+      fail(
+        'invalid-effect-operation',
+        `${path}.charges`,
+        'charges and maxCharges must both be null or both be positive integers.',
+      )
+    }
+    if (charges !== null && maxCharges !== null && charges > maxCharges) {
+      fail('invalid-effect-operation', `${path}.charges`, 'cannot exceed maxCharges.')
+    }
+    const cellSelection = hasCellSelection
+      ? parseHazardCellSelection(input.cellSelection, `${path}.cellSelection`)
+      : null
+    if (cellSelection) {
+      assertSelectionMatchesGeometry(cellSelection, geometry, `${path}.cellSelection`)
+    }
     return {
       action,
-      hazardId: parseStableId(ownValue(input, 'hazardId', path), `${path}.hazardId`),
-      hazardKind: parseStableId(ownValue(input, 'hazardKind', path), `${path}.hazardKind`),
-      cellSetId: parseStableId(ownValue(input, 'cellSetId', path), `${path}.cellSetId`),
-      layers: parseInteger(
-        ownValue(input, 'layers', path),
-        `${path}.layers`,
-        1,
-        MOVE_EFFECT_OPERATION_LIMITS.hazardLayers,
+      familyId: parseStableId(ownValue(input, 'familyId', path), `${path}.familyId`),
+      zoneKind: parseEnum<MoveEffectHazardZoneKind>(
+        ownValue(input, 'zoneKind', path),
+        HAZARD_ZONE_KIND_SET,
+        `${path}.zoneKind`,
+        'hazard or pledge',
       ),
-      ...(hasCellSelection
-        ? { cellSelection: parseHazardCellSelection(input.cellSelection, `${path}.cellSelection`) }
-        : {}),
+      effectId: parseStableId(ownValue(input, 'effectId', path), `${path}.effectId`),
+      ownership: parseEnum<MoveEffectHazardOwnership>(
+        ownValue(input, 'ownership', path),
+        HAZARD_OWNERSHIP_SET,
+        `${path}.ownership`,
+        'source-side or neutral',
+      ),
+      geometry,
+      layers,
+      maxLayers,
+      charges,
+      maxCharges,
+      ...(cellSelection ? { cellSelection } : {}),
     }
   }
   if (action === 'remove') {
     assertExactKeys(input, REMOVE_HAZARD_FIELDS, path)
     return {
       action,
-      hazardId: parseStableId(ownValue(input, 'hazardId', path), `${path}.hazardId`),
+      target: parseHazardRemovalTarget(ownValue(input, 'target', path), `${path}.target`),
     }
   }
-  return fail('invalid-effect-operation', `${path}.action`, 'must be add or remove.')
+  if (action === 'swap-sides') {
+    assertExactKeys(input, SWAP_HAZARD_SIDES_FIELDS, path)
+    return {
+      action,
+      zoneKinds: parseHazardZoneKinds(
+        ownValue(input, 'zoneKinds', path),
+        `${path}.zoneKinds`,
+      ),
+    }
+  }
+  return fail(
+    'invalid-effect-operation',
+    `${path}.action`,
+    'must be add, remove, or swap-sides.',
+  )
 }
 
 const parseMovementChoice = (

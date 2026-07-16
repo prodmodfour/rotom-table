@@ -1,4 +1,8 @@
 import { nextRevision } from '#shared/sessionRevisions'
+import {
+  createEmptyEncounterState,
+  parseEncounterState,
+} from '#shared/moveAutomation/encounterState'
 import type { TabletopMap } from '~/types/map'
 import { cloneMapFieldEffects } from '~/utils/mapFieldEffects'
 import { deepCloneJson, sameJsonValue } from '~/utils/serialization'
@@ -12,7 +16,12 @@ import {
   type MoveStateChangePlan,
 } from '../plan'
 
-export type MoveMapOperationLane = 'moveUsage' | 'hazards' | 'fieldEffects' | 'metadata'
+export type MoveMapOperationLane =
+  | 'moveUsage'
+  | 'encounterState'
+  | 'hazards'
+  | 'fieldEffects'
+  | 'metadata'
 
 export interface MoveMapOperationTouch {
   readonly order: number
@@ -98,14 +107,40 @@ export const buildMoveMapOperationStateChanges = (options: {
     })
   }
 
+  const previousEncounterState = parseEncounterState(
+    options.previousMap.encounterState ?? createEmptyEncounterState(),
+  )
+  const currentEncounterState = parseEncounterState(
+    options.workingMap.encounterState ?? createEmptyEncounterState(),
+  )
+  if (!sameJsonValue(previousEncounterState, currentEncounterState)) {
+    const touches = touchesForLane(options.laneTouches, 'encounterState')
+    const source = provenance(touches, 'hazard-zone-operations')
+    ordered.push({
+      firstOrder: firstOrder(touches, options.implicitLogOrder),
+      laneOrder: 1,
+      tieKey: options.previousMap.slug,
+      input: {
+        kind: 'encounter-state',
+        scope: { kind: 'encounter', mapSlug: options.previousMap.slug },
+        expectedRevision: options.previousRevision,
+        sourceOperationId: source.sourceOperationId,
+        reasonCode: source.reasonCode,
+        previous: deepCloneJson(previousEncounterState),
+        current: deepCloneJson(currentEncounterState),
+        compensation: RESTORE_PREVIOUS_MOVE_STATE_VALUE,
+      },
+    })
+  }
+
   const previousHazards = deepCloneJson(options.previousMap.hazards ?? [])
   const currentHazards = deepCloneJson(options.workingMap.hazards ?? [])
   if (!sameJsonValue(previousHazards, currentHazards)) {
     const touches = touchesForLane(options.laneTouches, 'hazards')
-    const source = provenance(touches, 'hazard-placeholder-operations')
+    const source = provenance(touches, 'legacy-hazard-operations')
     ordered.push({
       firstOrder: firstOrder(touches, options.implicitLogOrder),
-      laneOrder: 1,
+      laneOrder: 2,
       tieKey: options.previousMap.slug,
       input: {
         ...commonMap,
@@ -125,7 +160,7 @@ export const buildMoveMapOperationStateChanges = (options: {
     const source = provenance(touches, 'field-placeholder-operations')
     ordered.push({
       firstOrder: firstOrder(touches, options.implicitLogOrder),
-      laneOrder: 2,
+      laneOrder: 3,
       tieKey: options.previousMap.slug,
       input: {
         ...commonMap,
@@ -143,7 +178,7 @@ export const buildMoveMapOperationStateChanges = (options: {
     const source = provenance(touches, 'accepted-move-log-projection')
     ordered.push({
       firstOrder: firstOrder(touches, options.implicitLogOrder),
-      laneOrder: 3,
+      laneOrder: 4,
       tieKey: options.previousMap.slug,
       input: {
         ...commonMap,
@@ -165,7 +200,7 @@ export const buildMoveMapOperationStateChanges = (options: {
     const source = provenance(projection.touches, 'move-usage-operations')
     ordered.push({
       firstOrder: firstOrder(projection.touches, options.implicitLogOrder),
-      laneOrder: 4,
+      laneOrder: 5,
       tieKey: key,
       input: {
         kind: 'sheet-state',

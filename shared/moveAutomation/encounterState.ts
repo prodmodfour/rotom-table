@@ -43,10 +43,11 @@ export * from './encounterZones'
  * strict typed effect instances, MA-057 added their lifecycle policies,
  * MA-063 added structured bounded history indexes, MA-064 added action and
  * movement resource ledgers, MA-103 enabled privacy-safe pending-resolution
- * summaries, and MA-133 added generalized battlefield zones. Existing map
- * hazards and field effects remain in their compatibility lanes until their
- * owning migration tickets; server zone queries adapt them without persisting
- * or applying a matching migrated zone twice.
+ * summaries, MA-133 added generalized battlefield zones, and MA-135 made
+ * native move hazards write owned layered zones. Legacy editor hazards and
+ * field effects remain in compatibility lanes until their migration tickets;
+ * server zone queries adapt them without persisting or applying a matching
+ * migrated zone twice.
  */
 export const ENCOUNTER_STATE_SCHEMA_VERSION = 1 as const
 

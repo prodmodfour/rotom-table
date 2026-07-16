@@ -15,7 +15,7 @@ import type {
   MoveResolutionTraceJsonValue,
   MoveResolutionTraceOperationOutcome,
 } from '#shared/moveAutomation/trace'
-import type { GridAnchor, MapHazardV2, TabletopMap } from '~/types/map'
+import type { GridAnchor, TabletopMap } from '~/types/map'
 import type { MoveStructuredLogProjection } from '~/utils/moveLog'
 import type {
   MoveUsageTransitionMove,
@@ -40,10 +40,9 @@ export interface MoveResolvedMapEffectOperation
   readonly operation: MoveMapEffectOperation
 }
 
-/** Server-resolved geometry for the temporary v2-to-legacy hazard bridge. */
-export interface MoveHazardPlaceholderResolution {
+/** Server-resolved cell sets consumed by typed encounter-zone geometry. */
+export interface MoveHazardGeometryResolution {
   readonly cellSets?: ReadonlyMap<string, readonly GridAnchor[]>
-  readonly removalTargets?: ReadonlyMap<string, readonly MapHazardV2[]>
 }
 
 /** A reviewed usage resource binds an operation ID to one authoritative move owner. */
@@ -80,11 +79,13 @@ export interface MoveUsageOperationProjection {
 
 export interface ReduceMoveMapOperationsInput {
   readonly context: AuthoritativeMoveRulesContext
+  /** Optional server-reduced core state composed before map-operation lanes. */
+  readonly initialMap?: TabletopMap
   /** Exact server-emitted operations, retained in canonical phase/operation order. */
   readonly operations: readonly MoveResolvedMapEffectOperation[]
   readonly dynamicRecipients: MoveEffectDynamicRecipientSets
   readonly usageResources?: readonly MoveUsageEffectResource[]
-  readonly hazards?: MoveHazardPlaceholderResolution
+  readonly hazards?: MoveHazardGeometryResolution
   readonly presentation: MoveAcceptedPresentationProjection
   readonly actorName?: string
   readonly frequency?: string | null

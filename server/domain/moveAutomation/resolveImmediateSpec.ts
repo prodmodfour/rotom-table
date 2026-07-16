@@ -17,8 +17,6 @@ import type {
 } from '~/utils/moveAutomationTargetResolution'
 import type { ResolvedCanonicalMoveEntry } from '~/utils/authoritativeMoveEntries'
 import { deepCloneJson, sameJsonValue } from '~/utils/serialization'
-import type { MapHazardV2 } from '~/types/map'
-import { isMapHazardKind } from '~/utils/mapHazardDefinitions'
 import { createMoveStateChangePlan, type MoveStateChangePlan } from './plan'
 import type {
   AuthoritativeMoveRulesContext,
@@ -479,37 +477,6 @@ const compatibilityLogLines = (options: {
   return lines
 }
 
-const hazardsFromResolvedCells = (
-  execution: MoveSpecExecutionCompleteResult,
-): MapHazardV2[] => execution.resolvedHazardCells.flatMap((selection) => {
-  const emission = execution.operations.find(({ operation }) => (
-    operation.id === selection.operationId
-  ))
-  const operation = emission?.operation
-  if (!operation || operation.kind !== 'hazard' || operation.payload.action !== 'add') {
-    return fail(
-      'unsupported-operation',
-      `Resolved hazard cells ${selection.cellSetId} have no matching add operation.`,
-    )
-  }
-  const payload = operation.payload
-  if (!isMapHazardKind(payload.hazardKind)) {
-    return fail(
-      'unsupported-operation',
-      `Hazard operation ${operation.id} uses unsupported kind ${payload.hazardKind}.`,
-    )
-  }
-  const hazardKind = payload.hazardKind as MapHazardV2['kind']
-  return selection.cells.flatMap(cell => Array.from(
-    { length: payload.layers },
-    (): MapHazardV2 => ({
-      kind: hazardKind,
-      ...cell,
-      owner: operation.source.id,
-    }),
-  ))
-})
-
 const assertSupportedImmediateOperations = (
   operations: readonly MoveSpecEmittedOperation[],
 ): void => {
@@ -685,7 +652,9 @@ export const reduceCompletedMoveSpec = (
     combatStageUpdates: multiHit
       ? [...multiHit.combatStageUpdates]
       : combatStageUpdatesFromResults(core.operationResults),
-    hazardsToAdd: hazardsFromResolvedCells(execution),
+    // Native hazard mechanics persist as typed encounter zones, never as the
+    // legacy free-form `hazards[]` compatibility lane.
+    hazardsToAdd: [],
     fieldEffectsToApply: [],
     logLines: compatibilityLogLines({
       context: options.context,

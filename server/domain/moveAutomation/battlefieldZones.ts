@@ -196,7 +196,12 @@ const adaptLegacyHazards = (
       hooks: emptyHooks(),
       modifiers: emptyModifiers(),
       tags: ['legacy-map', 'hazard'],
-      payload: { hazardId: hazard.kind },
+      payload: {
+        hazardId: hazard.kind,
+        familyId: hazard.kind,
+        charges: null,
+        maxCharges: null,
+      },
     }, `legacyMap.hazards[${index}]`)
     const existing = byId.get(id)
     if (!existing || candidate.layer > existing.layer) byId.set(id, candidate)

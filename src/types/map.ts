@@ -100,7 +100,7 @@ export interface MapHazardV2 {
   z: number
   /** Toxic Spikes supports 2 layers. Other hazards ignore this field. */
   layer?: number
-  /** Optional free-form side/owner label for future move automation. */
+  /** Legacy/editor presentation label only; native mechanics use encounter-zone side IDs. */
   owner?: string
 }
 

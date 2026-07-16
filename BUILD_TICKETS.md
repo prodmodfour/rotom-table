@@ -1850,7 +1850,7 @@ Status: DONE
 
 ## MA-135 — Add hazard ownership, layers, and geometry
 
-Status: TODO
+Status: DONE
 
 **Depends on:** MA-133, MA-134C
 **Commit:** `feat(move-automation): validate owned hazard zones`

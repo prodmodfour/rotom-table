@@ -67,6 +67,7 @@ export const ENCOUNTER_ZONE_LIMITS = Object.freeze({
   modifiersPerCategory: 32,
   tags: 32,
   layer: 64,
+  charges: 10_000,
   coordinate: 1_000_000,
   numericMagnitude: 1_000_000,
 })
@@ -173,7 +174,15 @@ export interface EncounterZoneModifiers {
   readonly movement: readonly EncounterZoneMovementModifier[]
 }
 
-export interface EncounterHazardZonePayload {
+export interface EncounterLayeredZonePayload {
+  /** Stable stacking/removal family; concrete zone IDs are server-derived. */
+  readonly familyId: string
+  /** Null means the zone is not charge-limited. Zero is retained until lifecycle cleanup. */
+  readonly charges: number | null
+  readonly maxCharges: number | null
+}
+
+export interface EncounterHazardZonePayload extends EncounterLayeredZonePayload {
   readonly hazardId: string
 }
 
@@ -198,7 +207,7 @@ export interface EncounterBarrierZonePayload {
   readonly barrierId: string
 }
 
-export interface EncounterPledgeZonePayload {
+export interface EncounterPledgeZonePayload extends EncounterLayeredZonePayload {
   readonly pledgeId: string
 }
 
@@ -324,6 +333,7 @@ const SINGLE_ID_PAYLOAD_FIELDS = Object.freeze({
   vortex: ['vortexId'],
   'side-condition': ['conditionId'],
 } as const)
+const LAYERED_PAYLOAD_FIELDS = ['familyId', 'charges', 'maxCharges'] as const
 const ROOM_PAYLOAD_FIELDS = ['roomId', 'startsNextRound'] as const
 
 const STABLE_ID_PATTERN = /^[a-z0-9]+(?:[._:/-][a-z0-9]+)*$/
@@ -742,6 +752,52 @@ const parseSingleIdPayload = <Key extends string>(
   return { [key]: parseStableId(payload[key], `${path}.${key}`) } as Readonly<Record<Key, string>>
 }
 
+const parseLayeredPayload = <Key extends 'hazardId' | 'pledgeId'>(
+  value: unknown,
+  key: Key,
+  path: string,
+): Readonly<Record<Key, string>> & EncounterLayeredZonePayload => {
+  const payload = parseRecord(value, path)
+  const legacyFields = [key] as const
+  const canonicalFields = [key, ...LAYERED_PAYLOAD_FIELDS] as const
+  const isLegacy = Object.keys(payload).length === 1
+    && Object.prototype.hasOwnProperty.call(payload, key)
+  assertExactFields(payload, isLegacy ? legacyFields : canonicalFields, path)
+  const effectId = parseStableId(payload[key], `${path}.${key}`)
+  if (isLegacy) {
+    return {
+      [key]: effectId,
+      familyId: effectId,
+      charges: null,
+      maxCharges: null,
+    } as unknown as Readonly<Record<Key, string>> & EncounterLayeredZonePayload
+  }
+
+  const familyId = parseStableId(payload.familyId, `${path}.familyId`)
+  const charges = payload.charges === null
+    ? null
+    : parseInteger(payload.charges, `${path}.charges`, 0, ENCOUNTER_ZONE_LIMITS.charges)
+  const maxCharges = payload.maxCharges === null
+    ? null
+    : parseInteger(payload.maxCharges, `${path}.maxCharges`, 1, ENCOUNTER_ZONE_LIMITS.charges)
+  if ((charges === null) !== (maxCharges === null)) {
+    fail(
+      'invalid-encounter-zone',
+      path,
+      'charges and maxCharges must both be null or both be integers.',
+    )
+  }
+  if (charges !== null && maxCharges !== null && charges > maxCharges) {
+    fail('invalid-encounter-zone', `${path}.charges`, 'cannot exceed maxCharges.')
+  }
+  return {
+    [key]: effectId,
+    familyId,
+    charges,
+    maxCharges,
+  } as unknown as Readonly<Record<Key, string>> & EncounterLayeredZonePayload
+}
+
 const parsePayload = (
   kind: EncounterZoneKind,
   value: unknown,
@@ -757,6 +813,8 @@ const parsePayload = (
       startsNextRound: payload.startsNextRound as boolean,
     }
   }
+  if (kind === 'hazard') return parseLayeredPayload(value, 'hazardId', path)
+  if (kind === 'pledge') return parseLayeredPayload(value, 'pledgeId', path)
   const key = SINGLE_ID_PAYLOAD_FIELDS[kind][0]
   return parseSingleIdPayload(value, key, path) as EncounterZonePayload
 }

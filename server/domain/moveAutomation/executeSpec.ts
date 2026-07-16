@@ -840,6 +840,13 @@ const pendingHazardCellRequest = (
     )
   }
   const selection = operation.payload.cellSelection
+  const geometry = operation.payload.geometry
+  if (geometry.kind !== 'selection') {
+    return fail(
+      'definition-integrity-mismatch',
+      `Hazard operation ${operation.id} has a durable selection without selection geometry.`,
+    )
+  }
   const minimum = selection.count.kind === 'exact'
     ? selection.count.count
     : selection.count.minimum
@@ -857,7 +864,7 @@ const pendingHazardCellRequest = (
     // revision, so suspension materialization creates them after execution.
     options: Object.freeze([]),
     allowPass: minimum === 0,
-    cellSetId: operation.payload.cellSetId,
+    cellSetId: geometry.cellSetId,
     selection,
   })
 }
@@ -2139,7 +2146,7 @@ export const executeMoveSpec = (
           if (
             selected.windowId !== request.requestId
             || selected.operationId !== operation.id
-            || selected.cellSetId !== operation.payload.cellSetId
+            || selected.cellSetId !== request.cellSetId
           ) {
             return fail(
               'definition-integrity-mismatch',
@@ -2150,7 +2157,7 @@ export const executeMoveSpec = (
           resolvedHazardCells.push(Object.freeze({
             operationId: operation.id,
             requestId: request.requestId,
-            cellSetId: operation.payload.cellSetId,
+            cellSetId: request.cellSetId,
             selectionId: selected.selectionId,
             optionIds: frozenIds(selected.optionIds),
             cells: Object.freeze(selected.cells.map(cell => Object.freeze({ ...cell }))),
@@ -2166,7 +2173,7 @@ export const executeMoveSpec = (
             input: traceJson(operation.payload),
             result: traceJson({
               status: 'selected',
-              cellSetId: operation.payload.cellSetId,
+              cellSetId: request.cellSetId,
               selectionId: selected.selectionId,
               optionIds: selected.optionIds,
               cells: selected.cells,

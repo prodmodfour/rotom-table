@@ -3,6 +3,8 @@ import {
   LIVE_PLAY_MOVE_RESOLUTION_SCHEMA_VERSION,
   type ResolveMoveIntent,
 } from '#shared/livePlayMoveResolution'
+import { createEmptyEncounterState } from '#shared/moveAutomation/encounterState'
+import { parseEncounterZone } from '#shared/moveAutomation/encounterZones'
 import {
   parseMoveEffectOperation,
   type MoveEffectOperation,
@@ -24,6 +26,7 @@ import {
 import type { CharacterSheet } from '~/types/characterSheet'
 import type { GridAnchor, SheetPlacement, TabletopMap } from '~/types/map'
 import type { TrainerSheet } from '~/types/trainerSheet'
+import { capabilityEncounterEffectFixture } from '../fixtures/moveAutomation/encounterEffects'
 
 const placement = (id: string, sheetSlug: string, x: number): SheetPlacement => ({
   id,
@@ -43,6 +46,7 @@ const mapFixture = (overrides: Partial<TabletopMap> = {}): TabletopMap => ({
   voxels: [],
   hazards: [],
   fieldEffects: { weather: [{ kind: 'rainy', rounds: 2 }], terrains: [], rooms: [] },
+  encounterState: createEmptyEncounterState(),
   placements: [
     placement('actor-token', 'actor', 0),
     placement('target-token', 'target', 1),
@@ -185,11 +189,13 @@ const presentation = () => ({
 
 const reduce = (options: {
   readonly context?: ReturnType<typeof buildContext>
+  readonly initialMap?: TabletopMap
   readonly operations: readonly MoveResolvedMapEffectOperation[]
   readonly hazards?: Parameters<typeof reduceMoveMapOperations>[0]['hazards']
   readonly usageResources?: Parameters<typeof reduceMoveMapOperations>[0]['usageResources']
 }) => reduceMoveMapOperations({
   context: options.context ?? buildContext(),
+  ...(options.initialMap ? { initialMap: options.initialMap } : {}),
   operations: options.operations,
   dynamicRecipients: dynamicRecipients(),
   usageResources: options.usageResources ?? [{
@@ -214,6 +220,31 @@ const operationTraceEvents = (trace: MoveResolutionAuditTrace) => trace.events.f
 
 const cell = (x: number, z = 0): GridAnchor => ({ x, y: 0, z })
 
+const hazardZone = (id: string, familyId: string, at: GridAnchor) => parseEncounterZone({
+  id,
+  kind: 'hazard',
+  source: {
+    kind: 'operation',
+    operationId: 'operation.seed-hazard',
+    moveId: 'move.seed-hazard',
+    placementId: 'actor-token',
+  },
+  sideId: null,
+  geometry: { kind: 'cells', cells: [at] },
+  layer: 1,
+  duration: { kind: 'scene', remaining: null },
+  stacking: { kind: 'add-layer', maxLayers: 3 },
+  hooks: { entry: [], exit: [] },
+  modifiers: { targeting: [], damage: [], movement: [] },
+  tags: ['hazard', 'move-zone', 'spikes'],
+  payload: {
+    hazardId: 'spikes',
+    familyId,
+    charges: null,
+    maxCharges: null,
+  },
+})
+
 describe('MoveSpec map, usage, and log reducers', () => {
   it('reduces placeholders, usage, logs, and presentation into one map revision', () => {
     const operations = [
@@ -225,10 +256,21 @@ describe('MoveSpec map, usage, and log reducers', () => {
       }, 'schedule')),
       emission(operation('operation.spikes', 'hazard', {
         action: 'add',
-        hazardId: 'hazard.spikes',
-        hazardKind: 'spikes',
-        cellSetId: 'cells.spikes',
+        familyId: 'hazard.spikes',
+        zoneKind: 'hazard',
+        effectId: 'spikes',
+        ownership: 'neutral',
+        geometry: {
+          kind: 'selection',
+          cellSetId: 'cells.spikes',
+          count: { kind: 'exact', count: 2 },
+          adjacency: 'orthogonal',
+          connectedness: 'none',
+        },
         layers: 1,
+        maxLayers: 3,
+        charges: null,
+        maxCharges: null,
       }, 'schedule')),
       emission(operation('operation.usage', 'usage', {
         action: 'spend',
@@ -268,9 +310,26 @@ describe('MoveSpec map, usage, and log reducers', () => {
       rounds: 5,
       source: 'move.reducer-test',
     }])
-    expect(result.nextMap.hazards).toEqual([
-      { kind: 'spikes', ...cell(3), owner: 'move.reducer-test' },
-      { kind: 'spikes', ...cell(4), owner: 'move.reducer-test' },
+    expect(result.nextMap.hazards).toEqual([])
+    expect(result.nextMap.encounterState?.zones).toEqual([
+      expect.objectContaining({
+        kind: 'hazard',
+        sideId: null,
+        geometry: { kind: 'cells', cells: [cell(3)] },
+        layer: 1,
+        stacking: { kind: 'add-layer', maxLayers: 3 },
+        payload: {
+          hazardId: 'spikes',
+          familyId: 'hazard.spikes',
+          charges: null,
+          maxCharges: null,
+        },
+      }),
+      expect.objectContaining({
+        kind: 'hazard',
+        sideId: null,
+        geometry: { kind: 'cells', cells: [cell(4)] },
+      }),
     ])
     expect(result.nextMap.moveUsage?.byPlacementId['actor-token']?.['reducer-move']).toMatchObject({
       frequency: 'scene',
@@ -280,12 +339,13 @@ describe('MoveSpec map, usage, and log reducers', () => {
 
     expect(result.stateChanges.changes.map(change => change.kind)).toEqual([
       'map-field-effects',
-      'map-hazards',
+      'encounter-state',
       'map-move-usage',
       'map-metadata',
     ])
     expect(result.stateChanges.groups.map).toHaveLength(1)
-    expect(result.stateChanges.groups.map[0]?.changes).toHaveLength(4)
+    expect(result.stateChanges.groups.map[0]?.changes).toHaveLength(3)
+    expect(result.stateChanges.groups.encounter).toHaveLength(1)
     expect(result.stateChanges.groups.map[0]?.changes.find(change => (
       change.kind === 'map-metadata'
     ))?.compensation).toEqual({
@@ -356,6 +416,55 @@ describe('MoveSpec map, usage, and log reducers', () => {
     expect(Object.isFrozen(result.structuredLog)).toBe(true)
   })
 
+  it('coalesces prior core encounter effects with native hazard zones', () => {
+    const context = buildContext()
+    const initialMap: TabletopMap = {
+      ...structuredClone(context.map),
+      encounterState: {
+        ...createEmptyEncounterState(),
+        effects: [capabilityEncounterEffectFixture()],
+      },
+    }
+    const hazard = emission(operation('operation.core-and-hazard', 'hazard', {
+      action: 'add',
+      familyId: 'hazard.sticky-web',
+      zoneKind: 'hazard',
+      effectId: 'sticky-web',
+      ownership: 'neutral',
+      geometry: {
+        kind: 'selection',
+        cellSetId: 'cells.web',
+        count: { kind: 'exact', count: 1 },
+        adjacency: 'orthogonal',
+        connectedness: 'none',
+      },
+      layers: 1,
+      maxLayers: 1,
+      charges: null,
+      maxCharges: null,
+    }, 'schedule'))
+
+    const result = reduce({
+      context,
+      initialMap,
+      operations: [hazard],
+      hazards: { cellSets: new Map([['cells.web', [cell(5, 5)]]]) },
+    })
+
+    expect(result.nextMap.encounterState?.effects).toEqual(initialMap.encounterState?.effects)
+    expect(result.nextMap.encounterState?.zones).toHaveLength(1)
+    expect(result.stateChanges.groups.encounter).toHaveLength(1)
+    expect(result.stateChanges.groups.encounter[0]?.changes).toHaveLength(1)
+    expect(result.stateChanges.groups.encounter[0]?.changes[0]).toMatchObject({
+      kind: 'encounter-state',
+      previous: { effects: [], zones: [] },
+      current: {
+        effects: [expect.objectContaining({ id: 'effect.capability.actor-token' })],
+        zones: [expect.objectContaining({ payload: expect.objectContaining({ hazardId: 'sticky-web' }) })],
+      },
+    })
+  })
+
   it('groups Daily map and sheet usage in the same atomic revision envelope', () => {
     const dailyActor = pokemonSheet('actor', {
       revision: 11,
@@ -416,13 +525,16 @@ describe('MoveSpec map, usage, and log reducers', () => {
     expect(result.stateChanges.groups.sheets).toHaveLength(1)
   })
 
-  it('removes authoritative field/hazard placeholders and traces absent targets as no-ops', () => {
+  it('removes authoritative fields/zones and traces absent zone IDs as no-ops', () => {
     const map = mapFixture({
-      hazards: [
-        { kind: 'spikes', ...cell(3), owner: 'move.reducer-test' },
-        { kind: 'fire', ...cell(4) },
-      ],
+      // Legacy rows stay in their compatibility lane; typed move operations do
+      // not match free-form owners or mutate them.
+      hazards: [{ kind: 'fire', ...cell(4), owner: 'legacy-label' }],
       fieldEffects: { weather: [{ kind: 'sunny', rounds: 2 }], terrains: [], rooms: [] },
+      encounterState: {
+        ...createEmptyEncounterState(),
+        zones: [hazardZone('zone.seed.spikes', 'hazard.spikes', cell(3))],
+      },
     })
     const context = buildContext({ map })
     const operations = [
@@ -430,26 +542,20 @@ describe('MoveSpec map, usage, and log reducers', () => {
         action: 'remove', category: 'weather', fieldId: 'sunny',
       }, 'cleanup')),
       emission(operation('operation.remove-spikes', 'hazard', {
-        action: 'remove', hazardId: 'hazard.spikes',
+        action: 'remove',
+        target: { kind: 'zone-id', zoneId: 'zone.seed.spikes' },
       }, 'cleanup')),
       emission(operation('operation.remove-missing', 'hazard', {
-        action: 'remove', hazardId: 'hazard.missing',
+        action: 'remove',
+        target: { kind: 'zone-id', zoneId: 'zone.missing' },
       }, 'cleanup')),
     ]
 
-    const result = reduce({
-      context,
-      operations,
-      hazards: {
-        removalTargets: new Map([
-          ['hazard.spikes', [{ kind: 'spikes', ...cell(3), owner: 'move.reducer-test' }]],
-          ['hazard.missing', [{ kind: 'sticky-web', ...cell(7, 7) }]],
-        ]),
-      },
-    })
+    const result = reduce({ context, operations })
 
     expect(result.nextMap.fieldEffects?.weather).toEqual([])
-    expect(result.nextMap.hazards).toEqual([{ kind: 'fire', ...cell(4) }])
+    expect(result.nextMap.hazards).toEqual([{ kind: 'fire', ...cell(4), owner: 'legacy-label' }])
+    expect(result.nextMap.encounterState?.zones).toEqual([])
     expect(result.operationResults.map(item => item.outcome)).toEqual([
       'applied',
       'applied',
@@ -460,20 +566,31 @@ describe('MoveSpec map, usage, and log reducers', () => {
     ))).toEqual(['applied', 'applied', 'no-op'])
   })
 
-  it('fails closed for unresolved placeholders, side fields, and forged recipients', () => {
+  it('fails closed for unresolved geometry, side fields, and forged recipients', () => {
     const hazard = emission(operation('operation.unresolved-hazard', 'hazard', {
       action: 'add',
-      hazardId: 'hazard.spikes',
-      hazardKind: 'spikes',
-      cellSetId: 'cells.missing',
+      familyId: 'hazard.spikes',
+      zoneKind: 'hazard',
+      effectId: 'spikes',
+      ownership: 'neutral',
+      geometry: {
+        kind: 'selection',
+        cellSetId: 'cells.missing',
+        count: { kind: 'exact', count: 1 },
+        adjacency: 'orthogonal',
+        connectedness: 'none',
+      },
       layers: 1,
+      maxLayers: 3,
+      charges: null,
+      maxCharges: null,
     }, 'schedule'))
     const context = buildContext()
     const before = structuredClone(context.map)
 
     expect(() => reduce({ context, operations: [hazard] })).toThrowError(expect.objectContaining({
       name: MoveMapOperationReductionError.name,
-      code: 'hazard-placeholder-missing',
+      code: 'hazard-geometry-missing',
     }))
     expect(context.map).toEqual(before)
 

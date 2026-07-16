@@ -397,11 +397,17 @@ const cellsAreAdjacent = (
     : deltas.reduce((total, delta) => total + delta, 0) === 1
 }
 
+export interface AuthoritativeHazardCellSetPolicy {
+  readonly count: MoveHazardCellSelectionCount
+  readonly adjacency: MoveHazardCellSelectionAdjacency
+  readonly connectedness: MoveHazardCellSelectionDeclaration['constraints']['connectedness']
+}
+
 const assertConnectedness = (
-  declaration: MoveHazardCellSelectionDeclaration,
+  policy: Pick<AuthoritativeHazardCellSetPolicy, 'adjacency' | 'connectedness'>,
   cells: readonly GridAnchor[],
 ): void => {
-  const { connectedness, adjacency } = declaration.constraints
+  const { connectedness, adjacency } = policy
   if (connectedness === 'none' || cells.length === 0) return
   if (connectedness === 'no-isolated') {
     if (cells.some((cell, index) => !cells.some((other, otherIndex) => (
@@ -430,6 +436,15 @@ const assertConnectedness = (
   if (visited.size !== cells.length) {
     fail('hazard-cell-disconnected', 'Selected hazard cells must form one connected set.')
   }
+}
+
+/** Reuse exact/up-to and connectivity policy for selected and server-derived zone cells. */
+export const assertAuthoritativeHazardCellSetPolicy = (
+  policy: AuthoritativeHazardCellSetPolicy,
+  cells: readonly GridAnchor[],
+): void => {
+  assertSelectionCount(policy.count, cells.length)
+  assertConnectedness(policy, cells)
 }
 
 const resolveSelectedOptions = (
@@ -484,7 +499,7 @@ export const validateAuthoritativeHazardCellSelection = (
   const selected = resolveSelectedOptions(selectionWindow, selectedOptionIds)
   assertSelectedCellsRemainLegal(input.map, declaration, selected)
   const cells = selected.map(option => ({ ...option.cell }))
-  assertConnectedness(declaration, cells)
+  assertAuthoritativeHazardCellSetPolicy(declaration.constraints, cells)
   const optionIds = Object.freeze(selected.map(option => option.id))
   return Object.freeze({
     resolutionId: declaration.move.resolutionId,

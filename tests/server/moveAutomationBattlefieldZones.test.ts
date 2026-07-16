@@ -87,7 +87,12 @@ const nativeZones = (): readonly EncounterZone[] => [
     id: 'zone.pledge.swamp',
     kind: 'pledge',
     geometry: { kind: 'cells', cells: [{ x: 4, y: 0, z: 4 }] },
-    payload: { pledgeId: 'swamp' },
+    payload: {
+      pledgeId: 'swamp',
+      familyId: 'pledge.water-grass',
+      charges: null,
+      maxCharges: null,
+    },
   }),
   zone({
     id: 'zone.barrier.wall',
@@ -170,7 +175,12 @@ describe('generalized battlefield zone queries', () => {
         key: 'toxic-spikes.1.0.1',
       },
       stacking: { kind: 'add-layer', maxLayers: 2 },
-      payload: { hazardId: 'toxic-spikes' },
+      payload: {
+        hazardId: 'toxic-spikes',
+        familyId: 'toxic-spikes',
+        charges: null,
+        maxCharges: null,
+      },
     })
     expect(adapted[2]?.duration).toEqual({ kind: 'rounds', boundary: 'end', remaining: 2 })
     expect(adapted[3]?.duration).toEqual({ kind: 'permanent', remaining: null })

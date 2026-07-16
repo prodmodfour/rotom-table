@@ -169,10 +169,21 @@ const VALID_PAYLOADS = {
   },
   hazard: {
     action: 'add',
-    hazardId: 'hazard.spikes',
-    hazardKind: 'spikes',
-    cellSetId: 'cells.spikes',
+    familyId: 'hazard.spikes',
+    zoneKind: 'hazard',
+    effectId: 'spikes',
+    ownership: 'source-side',
+    geometry: {
+      kind: 'selection',
+      cellSetId: 'cells.spikes',
+      count: { kind: 'exact', count: 1 },
+      adjacency: 'orthogonal',
+      connectedness: 'none',
+    },
     layers: 1,
+    maxLayers: 3,
+    charges: null,
+    maxCharges: null,
   },
   'movement-request': {
     requestId: 'movement.tackle',
@@ -862,8 +873,98 @@ describe('MoveSpec typed effect operations', () => {
       payload: { action: 'remove', category: 'weather', fieldId: 'sunny' },
     })).payload).toEqual({ action: 'remove', category: 'weather', fieldId: 'sunny' })
     expect(parseMoveEffectOperation(validOperation('hazard', {
-      payload: { action: 'remove', hazardId: 'hazard.spikes' },
-    })).payload).toEqual({ action: 'remove', hazardId: 'hazard.spikes' })
+      payload: {
+        action: 'remove',
+        target: { kind: 'zone-id', zoneId: 'zone.hazard.spikes' },
+      },
+    })).payload).toEqual({
+      action: 'remove',
+      target: { kind: 'zone-id', zoneId: 'zone.hazard.spikes' },
+    })
+  })
+
+  it('parses owned layered hazard geometry, removal, and side-swap operations', () => {
+    const pledge = parseMoveEffectOperation(validOperation('hazard', {
+      recipients: { kind: 'none' },
+      payload: {
+        action: 'add',
+        familyId: 'pledge.fire-grass',
+        zoneKind: 'pledge',
+        effectId: 'sea-of-fire',
+        ownership: 'neutral',
+        geometry: {
+          kind: 'blast',
+          center: 'actor',
+          size: 2,
+          count: { kind: 'up-to', minimum: 1, maximum: 8 },
+          adjacency: 'including-diagonal',
+          connectedness: 'connected',
+        },
+        layers: 1,
+        maxLayers: 1,
+        charges: 2,
+        maxCharges: 3,
+      },
+    }))
+    expect(pledge.kind === 'hazard' && pledge.payload).toMatchObject({
+      action: 'add',
+      zoneKind: 'pledge',
+      ownership: 'neutral',
+      geometry: { kind: 'blast', size: 2 },
+      charges: 2,
+      maxCharges: 3,
+    })
+
+    const removal = parseMoveEffectOperation(validOperation('hazard', {
+      payload: {
+        action: 'remove',
+        target: {
+          kind: 'matching',
+          zoneKinds: ['hazard', 'pledge'],
+          ownership: 'recipient-side',
+          familyId: null,
+          geometry: {
+            kind: 'line',
+            length: 3,
+            count: { kind: 'exact', count: 3 },
+            adjacency: 'orthogonal',
+            connectedness: 'connected',
+          },
+        },
+      },
+    }))
+    expect(removal.kind === 'hazard' && removal.payload).toMatchObject({
+      action: 'remove',
+      target: { kind: 'matching', ownership: 'recipient-side', geometry: { kind: 'line' } },
+    })
+    expect(parseMoveEffectOperation(validOperation('hazard', {
+      payload: { action: 'swap-sides', zoneKinds: ['hazard', 'pledge'] },
+    })).payload).toEqual({ action: 'swap-sides', zoneKinds: ['hazard', 'pledge'] })
+
+    expectEffectError(validOperation('hazard', {
+      payload: { ...VALID_PAYLOADS.hazard, owner: 'Team Heroes' },
+    }), 'invalid-effect-operation', 'operation.payload')
+    expectEffectError(validOperation('hazard', {
+      payload: { ...VALID_PAYLOADS.hazard, layers: 4, maxLayers: 3 },
+    }), 'invalid-effect-operation', 'operation.payload.layers')
+    expectEffectError(validOperation('hazard', {
+      payload: { ...VALID_PAYLOADS.hazard, charges: 1, maxCharges: null },
+    }), 'invalid-effect-operation', 'operation.payload.charges')
+    expectEffectError(validOperation('hazard', {
+      payload: {
+        ...VALID_PAYLOADS.hazard,
+        cellSelection: {
+          requestId: 'hazard.choose',
+          promptKey: 'hazard.choose-cells',
+          count: { kind: 'exact', count: 2 },
+          range: 3,
+          adjacency: 'orthogonal',
+          connectedness: 'none',
+          occupancy: 'empty-of-placements',
+          geometry: { kind: 'horizontal-plane' },
+        },
+      },
+    }), 'invalid-effect-operation', 'operation.payload.cellSelection')
   })
 
   it('parses typed condition transforms, cleanse groups, randomness, timing, and stacking', () => {

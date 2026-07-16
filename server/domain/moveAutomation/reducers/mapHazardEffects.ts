@@ -1,208 +1,458 @@
-import type { MoveHazardEffectOperation } from '#shared/moveAutomation/effects'
-import type { MoveResolutionTraceJsonValue } from '#shared/moveAutomation/trace'
-import type { GridAnchor, MapHazardV2, TabletopMap } from '~/types/map'
-import { isMapHazardKind } from '~/utils/mapHazardDefinitions'
+import { createHash } from 'node:crypto'
 import {
-  applyMapHazardPlacement,
-  mapHazardKey,
-  normalizeMapHazard,
-} from '~/utils/mapHazards'
-import { deepCloneJson, sameJsonValue } from '~/utils/serialization'
+  createEmptyEncounterState,
+  parseEncounterState,
+  type EncounterSideId,
+  type EncounterState,
+} from '#shared/moveAutomation/encounterState'
+import {
+  ENCOUNTER_ZONE_LIMITS,
+  type EncounterZone,
+  type EncounterZoneCell,
+  type EncounterZoneOperationSource,
+} from '#shared/moveAutomation/encounterZones'
+import {
+  compareMoveHazardCellSelectionCells,
+  moveHazardCellSelectionCellKey,
+} from '#shared/moveAutomation/hazardCellSelection'
+import type {
+  MoveAddHazardEffectPayload,
+  MoveEffectHazardOwnershipFilter,
+  MoveEffectHazardZoneKind,
+  MoveHazardEffectOperation,
+} from '#shared/moveAutomation/effects'
+import type { MoveResolutionTraceJsonValue } from '#shared/moveAutomation/trace'
+import { sameJsonValue } from '~/utils/serialization'
+import type { AuthoritativeMoveRulesContext } from '../context'
+import { resolveMoveHazardGeometryCells } from '../hazardGeometry'
 import { failMoveMapOperationReduction } from './mapOperationError'
-import type { MoveHazardPlaceholderResolution } from './mapOperationTypes'
+import type { MoveHazardGeometryResolution } from './mapOperationTypes'
 
-export const MOVE_HAZARD_PLACEHOLDER_MAX_CELLS = 128 as const
-
-export interface MoveHazardPlaceholderReduction {
-  readonly current: readonly MapHazardV2[]
+export interface MoveHazardZoneReduction {
+  readonly current: EncounterState
   readonly changed: boolean
   readonly details: MoveResolutionTraceJsonValue
 }
 
-const canonicalCells = (
-  operation: MoveHazardEffectOperation,
-  cells: readonly GridAnchor[] | undefined,
-): readonly GridAnchor[] => {
-  if (!cells) {
+type LayeredEncounterZone = Extract<EncounterZone, { readonly kind: 'hazard' | 'pledge' }>
+
+const actorSideId = (
+  context: AuthoritativeMoveRulesContext,
+  operationId: string,
+): EncounterSideId => {
+  const sideId = context.queries.relationships.resolve(
+    context.actor.placement.id,
+    context.actor.placement.id,
+  ).sourceSideId
+  if (!sideId) {
     return failMoveMapOperationReduction(
-      'hazard-placeholder-missing',
-      `Hazard operation ${operation.id} has no authoritative cell set ${operation.payload.action === 'add' ? operation.payload.cellSetId : ''}.`,
+      'hazard-ownership-invalid',
+      `Hazard operation ${operationId} requires the actor to have an explicit encounter side.`,
     )
   }
-  if (cells.length > MOVE_HAZARD_PLACEHOLDER_MAX_CELLS) {
-    return failMoveMapOperationReduction(
-      'hazard-placeholder-invalid',
-      `Hazard operation ${operation.id} resolved more than ${MOVE_HAZARD_PLACEHOLDER_MAX_CELLS} cells.`,
-    )
-  }
-  const seen = new Set<string>()
-  return cells.map((cell) => {
-    if (
-      !cell
-      || !Number.isSafeInteger(cell.x)
-      || !Number.isSafeInteger(cell.y)
-      || !Number.isSafeInteger(cell.z)
-    ) {
-      return failMoveMapOperationReduction(
-        'hazard-placeholder-invalid',
-        `Hazard operation ${operation.id} resolved an invalid cell.`,
-      )
-    }
-    const key = `${cell.x},${cell.y},${cell.z}`
-    if (seen.has(key)) {
-      return failMoveMapOperationReduction(
-        'hazard-placeholder-invalid',
-        `Hazard operation ${operation.id} resolved duplicate cell ${key}.`,
-      )
-    }
-    seen.add(key)
-    return { x: cell.x, y: cell.y, z: cell.z }
-  })
+  return sideId
 }
 
-const reduceAdd = (options: {
-  readonly map: Pick<TabletopMap, 'dimensions'>
-  readonly previous: readonly MapHazardV2[]
-  readonly operation: MoveHazardEffectOperation
-  readonly placeholders: MoveHazardPlaceholderResolution
-}): MoveHazardPlaceholderReduction => {
-  const { operation } = options
-  if (operation.payload.action !== 'add') {
+const recipientSideId = (
+  context: AuthoritativeMoveRulesContext,
+  recipientIds: readonly string[],
+  operationId: string,
+): EncounterSideId => {
+  if (recipientIds.length !== 1) {
     return failMoveMapOperationReduction(
-      'hazard-placeholder-invalid',
-      `Hazard operation ${operation.id} is not an add operation.`,
+      'hazard-ownership-invalid',
+      `Hazard operation ${operationId} requires exactly one authoritative side recipient.`,
     )
   }
-  if (!isMapHazardKind(operation.payload.hazardKind)) {
+  const sideId = context.queries.relationships.resolve(
+    context.actor.placement.id,
+    recipientIds[0]!,
+  ).targetSideId
+  if (!sideId) {
     return failMoveMapOperationReduction(
-      'hazard-placeholder-invalid',
-      `Hazard operation ${operation.id} uses unsupported hazard kind ${operation.payload.hazardKind}.`,
+      'hazard-ownership-invalid',
+      `Hazard operation ${operationId} requires its recipient to have an explicit encounter side.`,
     )
   }
-  const cells = canonicalCells(
-    operation,
-    options.placeholders.cellSets?.get(operation.payload.cellSetId),
-  )
-  let current = deepCloneJson(options.previous)
-  for (const cell of cells) {
-    for (let layer = 0; layer < operation.payload.layers; layer += 1) {
-      const result = applyMapHazardPlacement({
-        hazards: current,
-        dimensions: options.map.dimensions,
-        hazard: {
-          kind: operation.payload.hazardKind,
-          ...cell,
-          owner: operation.source.id,
-        },
-      })
-      if (!result.ok) {
-        return failMoveMapOperationReduction(
-          'hazard-placeholder-invalid',
-          `Hazard operation ${operation.id} could not apply ${operation.payload.hazardKind}: ${result.message}`,
-        )
-      }
-      current = [...result.hazards]
+  return sideId
+}
+
+const operationSource = (
+  operation: MoveHazardEffectOperation,
+  context: AuthoritativeMoveRulesContext,
+): EncounterZoneOperationSource => ({
+  kind: 'operation',
+  operationId: operation.id,
+  moveId: operation.source.kind === 'move' ? operation.source.id : null,
+  placementId: context.actor.placement.id,
+})
+
+const zonePayload = (
+  payload: MoveAddHazardEffectPayload,
+): LayeredEncounterZone['payload'] => payload.zoneKind === 'hazard'
+  ? {
+      hazardId: payload.effectId,
+      familyId: payload.familyId,
+      charges: payload.charges,
+      maxCharges: payload.maxCharges,
     }
+  : {
+      pledgeId: payload.effectId,
+      familyId: payload.familyId,
+      charges: payload.charges,
+      maxCharges: payload.maxCharges,
+    }
+
+const zoneFamilyId = (zone: LayeredEncounterZone): string => zone.payload.familyId
+const zoneEffectId = (zone: LayeredEncounterZone): string => (
+  zone.kind === 'hazard' ? zone.payload.hazardId : zone.payload.pledgeId
+)
+
+const sameCellGeometry = (
+  zone: EncounterZone,
+  cell: EncounterZoneCell,
+): boolean => zone.geometry.kind === 'cells'
+  && zone.geometry.cells.length === 1
+  && moveHazardCellSelectionCellKey(zone.geometry.cells[0]!)
+    === moveHazardCellSelectionCellKey(cell)
+
+const zoneIdentity = (input: {
+  readonly kind: MoveEffectHazardZoneKind
+  readonly familyId: string
+  readonly sideId: EncounterSideId | null
+  readonly cells: readonly EncounterZoneCell[]
+}): string => {
+  const cells = [...input.cells]
+    .sort(compareMoveHazardCellSelectionCells)
+    .map(moveHazardCellSelectionCellKey)
+    .join('|')
+  const digest = createHash('sha256')
+    .update(`${input.kind}\u0000${input.familyId}\u0000${input.sideId ?? 'neutral'}\u0000${cells}`, 'utf8')
+    .digest('hex')
+    .slice(0, 32)
+  return `zone.${input.kind}.${digest}`
+}
+
+const parseReducedState = (
+  operationId: string,
+  previous: EncounterState,
+  zones: readonly EncounterZone[],
+): EncounterState => {
+  if (zones.length > ENCOUNTER_ZONE_LIMITS.count) {
+    return failMoveMapOperationReduction(
+      'hazard-zone-invalid',
+      `Hazard operation ${operationId} would exceed the ${ENCOUNTER_ZONE_LIMITS.count}-zone limit.`,
+    )
   }
-  const changed = !sameJsonValue(options.previous, current)
+  try {
+    return parseEncounterState({ ...previous, zones })
+  }
+  catch (error) {
+    return failMoveMapOperationReduction(
+      'hazard-zone-invalid',
+      `Hazard operation ${operationId} produced invalid encounter-zone state.`,
+      error,
+    )
+  }
+}
+
+const newZone = (input: {
+  readonly operation: MoveHazardEffectOperation
+  readonly payload: MoveAddHazardEffectPayload
+  readonly context: AuthoritativeMoveRulesContext
+  readonly sideId: EncounterSideId | null
+  readonly cell: EncounterZoneCell
+}): LayeredEncounterZone => {
+  const { operation, payload, context, sideId, cell } = input
+  const common = {
+    id: zoneIdentity({
+      kind: payload.zoneKind,
+      familyId: payload.familyId,
+      sideId,
+      cells: [cell],
+    }),
+    source: operationSource(operation, context),
+    sideId,
+    geometry: { kind: 'cells' as const, cells: [cell] },
+    layer: payload.layers,
+    duration: { kind: 'scene' as const, remaining: null },
+    stacking: payload.maxLayers > 1
+      ? { kind: 'add-layer' as const, maxLayers: payload.maxLayers }
+      : { kind: 'refresh' as const, maxLayers: null },
+    hooks: { entry: [], exit: [] },
+    modifiers: { targeting: [], damage: [], movement: [] },
+    tags: [...new Set(['move-zone', payload.zoneKind, payload.effectId])],
+  }
+  return payload.zoneKind === 'hazard'
+    ? { ...common, kind: 'hazard', payload: zonePayload(payload) as Extract<LayeredEncounterZone, { kind: 'hazard' }>['payload'] }
+    : { ...common, kind: 'pledge', payload: zonePayload(payload) as Extract<LayeredEncounterZone, { kind: 'pledge' }>['payload'] }
+}
+
+const validateExistingZone = (
+  operation: MoveHazardEffectOperation,
+  payload: MoveAddHazardEffectPayload,
+  zone: LayeredEncounterZone,
+): void => {
+  const expectedMaximum = zone.stacking.kind === 'add-layer'
+    ? zone.stacking.maxLayers
+    : 1
+  if (
+    zoneEffectId(zone) !== payload.effectId
+    || expectedMaximum !== payload.maxLayers
+    || zone.payload.maxCharges !== payload.maxCharges
+    || (zone.payload.charges === null) !== (payload.charges === null)
+  ) {
+    failMoveMapOperationReduction(
+      'hazard-zone-conflict',
+      `Hazard operation ${operation.id} conflicts with existing zone ${zone.id}.`,
+    )
+  }
+}
+
+const reduceAdd = (input: {
+  readonly previous: EncounterState
+  readonly operation: MoveHazardEffectOperation
+  readonly context: AuthoritativeMoveRulesContext
+  readonly recipientIds: readonly string[]
+  readonly resolutions?: MoveHazardGeometryResolution
+}): MoveHazardZoneReduction => {
+  const payload = input.operation.payload
+  if (payload.action !== 'add') {
+    return failMoveMapOperationReduction(
+      'hazard-zone-invalid',
+      `Hazard operation ${input.operation.id} is not an add operation.`,
+    )
+  }
+  const sideId = payload.ownership === 'neutral'
+    ? null
+    : actorSideId(input.context, input.operation.id)
+  const cells = resolveMoveHazardGeometryCells({
+    context: input.context,
+    geometry: payload.geometry,
+    recipientIds: input.recipientIds,
+    resolutions: input.resolutions,
+    operationId: input.operation.id,
+  })
+  const zones = [...input.previous.zones]
+  let createdCount = 0
+  let updatedCount = 0
+  let addedLayers = 0
+  let addedCharges = 0
+
+  for (const cell of cells) {
+    const matches = zones.flatMap((zone, index) => (
+      (zone.kind === payload.zoneKind)
+      && zone.sideId === sideId
+      && zoneFamilyId(zone) === payload.familyId
+      && sameCellGeometry(zone, cell)
+        ? [{ zone, index }]
+        : []
+    ))
+    if (matches.length > 1) {
+      return failMoveMapOperationReduction(
+        'hazard-zone-conflict',
+        `Hazard operation ${input.operation.id} found duplicate ${payload.familyId} zones on one cell.`,
+      )
+    }
+    const match = matches[0]
+    if (!match) {
+      zones.push(newZone({
+        operation: input.operation,
+        payload,
+        context: input.context,
+        sideId,
+        cell,
+      }))
+      createdCount += 1
+      addedLayers += payload.layers
+      addedCharges += payload.charges ?? 0
+      continue
+    }
+
+    validateExistingZone(input.operation, payload, match.zone)
+    const layer = Math.min(payload.maxLayers, match.zone.layer + payload.layers)
+    const charges = payload.charges === null || payload.maxCharges === null
+      ? null
+      : Math.min(payload.maxCharges, (match.zone.payload.charges ?? 0) + payload.charges)
+    if (layer === match.zone.layer && charges === match.zone.payload.charges) continue
+    zones[match.index] = {
+      ...match.zone,
+      source: operationSource(input.operation, input.context),
+      layer,
+      payload: { ...match.zone.payload, charges },
+    } as LayeredEncounterZone
+    updatedCount += 1
+    addedLayers += layer - match.zone.layer
+    addedCharges += (charges ?? 0) - (match.zone.payload.charges ?? 0)
+  }
+
+  const current = parseReducedState(input.operation.id, input.previous, zones)
+  const changed = !sameJsonValue(input.previous, current)
   return {
     current,
     changed,
     details: {
-      action: operation.payload.action,
-      hazardId: operation.payload.hazardId,
-      hazardKind: operation.payload.hazardKind,
-      cellSetId: operation.payload.cellSetId,
+      action: 'add',
+      zoneKind: payload.zoneKind,
+      familyId: payload.familyId,
       cellCount: cells.length,
-      requestedLayers: operation.payload.layers,
+      createdCount,
+      updatedCount,
+      addedLayers,
+      addedCharges,
       changed,
     },
   }
 }
 
-const canonicalRemovalTargets = (
-  operation: MoveHazardEffectOperation,
-  placeholders: MoveHazardPlaceholderResolution,
-): readonly MapHazardV2[] => {
-  if (operation.payload.action !== 'remove') return []
-  const source = placeholders.removalTargets?.get(operation.payload.hazardId)
-  if (!source) {
-    return failMoveMapOperationReduction(
-      'hazard-placeholder-missing',
-      `Hazard operation ${operation.id} has no authoritative removal target ${operation.payload.hazardId}.`,
-    )
-  }
-  if (source.length > MOVE_HAZARD_PLACEHOLDER_MAX_CELLS) {
-    return failMoveMapOperationReduction(
-      'hazard-placeholder-invalid',
-      `Hazard operation ${operation.id} resolved more than ${MOVE_HAZARD_PLACEHOLDER_MAX_CELLS} removal targets.`,
-    )
-  }
-  const targets: MapHazardV2[] = []
-  const seen = new Set<string>()
-  for (const value of source) {
-    const target = normalizeMapHazard(value)
-    if (!target) {
-      return failMoveMapOperationReduction(
-        'hazard-placeholder-invalid',
-        `Hazard operation ${operation.id} resolved an invalid removal target.`,
-      )
-    }
-    const key = `${mapHazardKey(target)}:${target.owner ?? '*'}`
-    if (seen.has(key)) {
-      return failMoveMapOperationReduction(
-        'hazard-placeholder-invalid',
-        `Hazard operation ${operation.id} resolved duplicate removal target ${key}.`,
-      )
-    }
-    seen.add(key)
-    targets.push(target)
-  }
-  return targets
+const zoneMatchesOwnership = (
+  zone: LayeredEncounterZone,
+  filter: MoveEffectHazardOwnershipFilter,
+  sourceSide: EncounterSideId | null,
+  recipientSide: EncounterSideId | null,
+): boolean => {
+  if (filter === 'any') return true
+  if (filter === 'neutral') return zone.sideId === null
+  if (filter === 'source-side') return zone.sideId === sourceSide
+  return zone.sideId === recipientSide
 }
 
-const reduceRemove = (options: {
-  readonly previous: readonly MapHazardV2[]
+const geometryIntersects = (
+  zone: LayeredEncounterZone,
+  cells: ReadonlySet<string> | null,
+): boolean => cells === null || (
+  zone.geometry.kind === 'cells'
+  && zone.geometry.cells.some(cell => cells.has(moveHazardCellSelectionCellKey(cell)))
+)
+
+const reduceRemove = (input: {
+  readonly previous: EncounterState
   readonly operation: MoveHazardEffectOperation
-  readonly placeholders: MoveHazardPlaceholderResolution
-}): MoveHazardPlaceholderReduction => {
-  const targets = canonicalRemovalTargets(options.operation, options.placeholders)
-  const current = options.previous.filter(existing => !targets.some(target => (
-    mapHazardKey(existing) === mapHazardKey(target)
-    && (target.owner === undefined || target.owner === existing.owner)
-  ))).map(hazard => deepCloneJson(hazard))
-  const changed = !sameJsonValue(options.previous, current)
+  readonly context: AuthoritativeMoveRulesContext
+  readonly recipientIds: readonly string[]
+  readonly resolutions?: MoveHazardGeometryResolution
+}): MoveHazardZoneReduction => {
+  const payload = input.operation.payload
+  if (payload.action !== 'remove') {
+    return failMoveMapOperationReduction(
+      'hazard-zone-invalid',
+      `Hazard operation ${input.operation.id} is not a remove operation.`,
+    )
+  }
+  let removedCount = 0
+  const target = payload.target
+  const sourceSide = target.kind === 'matching' && target.ownership === 'source-side'
+    ? actorSideId(input.context, input.operation.id)
+    : null
+  const recipientSide = target.kind === 'matching' && target.ownership === 'recipient-side'
+    ? recipientSideId(input.context, input.recipientIds, input.operation.id)
+    : null
+  const geometryCells = target.kind === 'matching' && target.geometry
+    ? new Set(resolveMoveHazardGeometryCells({
+        context: input.context,
+        geometry: target.geometry,
+        recipientIds: input.recipientIds,
+        resolutions: input.resolutions,
+        operationId: input.operation.id,
+      }).map(moveHazardCellSelectionCellKey))
+    : null
+  const zones = input.previous.zones.filter((zone) => {
+    const matches = target.kind === 'zone-id'
+      ? zone.id === target.zoneId
+      : (zone.kind === 'hazard' || zone.kind === 'pledge')
+        && target.zoneKinds.includes(zone.kind)
+        && (target.familyId === null || zoneFamilyId(zone) === target.familyId)
+        && zoneMatchesOwnership(zone, target.ownership, sourceSide, recipientSide)
+        && geometryIntersects(zone, geometryCells)
+    if (matches) removedCount += 1
+    return !matches
+  })
+  const current = parseReducedState(input.operation.id, input.previous, zones)
+  const changed = removedCount > 0
   return {
     current,
     changed,
     details: {
       action: 'remove',
-      hazardId: options.operation.payload.hazardId,
-      targetCount: targets.length,
-      removedCount: options.previous.length - current.length,
+      targetKind: target.kind,
+      removedCount,
       changed,
     },
   }
 }
 
-/**
- * Bridge authoritative cell/instance placeholders into the legacy sparse
- * hazard array. Ownership, entry triggers, zones, and lifecycle stay deferred.
- */
-export const reduceMoveHazardPlaceholder = (options: {
-  readonly map: Pick<TabletopMap, 'dimensions'>
-  readonly previous: readonly MapHazardV2[] | null | undefined
+const reduceSwapSides = (input: {
+  readonly previous: EncounterState
   readonly operation: MoveHazardEffectOperation
-  readonly placeholders?: MoveHazardPlaceholderResolution
-}): MoveHazardPlaceholderReduction => {
-  const previous = deepCloneJson(options.previous ?? [])
-  const placeholders = options.placeholders ?? {}
-  return options.operation.payload.action === 'add'
-    ? reduceAdd({
-        map: options.map,
-        previous,
-        operation: options.operation,
-        placeholders,
-      })
-    : reduceRemove({ previous, operation: options.operation, placeholders })
+  readonly context: AuthoritativeMoveRulesContext
+  readonly recipientIds: readonly string[]
+}): MoveHazardZoneReduction => {
+  const payload = input.operation.payload
+  if (payload.action !== 'swap-sides') {
+    return failMoveMapOperationReduction(
+      'hazard-zone-invalid',
+      `Hazard operation ${input.operation.id} is not a side-swap operation.`,
+    )
+  }
+  const sourceSide = actorSideId(input.context, input.operation.id)
+  const targetSide = recipientSideId(input.context, input.recipientIds, input.operation.id)
+  if (sourceSide === targetSide) {
+    return {
+      current: input.previous,
+      changed: false,
+      details: { action: 'swap-sides', swappedCount: 0, changed: false },
+    }
+  }
+  let swappedCount = 0
+  const zones = input.previous.zones.map((zone): EncounterZone => {
+    if (
+      (zone.kind !== 'hazard' && zone.kind !== 'pledge')
+      || !payload.zoneKinds.includes(zone.kind)
+      || (zone.sideId !== sourceSide && zone.sideId !== targetSide)
+      || zone.geometry.kind !== 'cells'
+    ) return zone
+    const sideId = zone.sideId === sourceSide ? targetSide : sourceSide
+    swappedCount += 1
+    return {
+      ...zone,
+      id: zoneIdentity({
+        kind: zone.kind,
+        familyId: zoneFamilyId(zone),
+        sideId,
+        cells: zone.geometry.cells,
+      }),
+      source: operationSource(input.operation, input.context),
+      sideId,
+    } as LayeredEncounterZone
+  })
+  const current = parseReducedState(input.operation.id, input.previous, zones)
+  return {
+    current,
+    changed: swappedCount > 0,
+    details: {
+      action: 'swap-sides',
+      zoneKinds: payload.zoneKinds,
+      swappedCount,
+      changed: swappedCount > 0,
+    },
+  }
+}
+
+/** Reduce typed move-owned hazards directly into canonical encounter zones. */
+export const reduceMoveHazardZones = (input: {
+  readonly context: AuthoritativeMoveRulesContext
+  readonly previous?: EncounterState | null
+  readonly operation: MoveHazardEffectOperation
+  readonly recipientIds: readonly string[]
+  readonly resolutions?: MoveHazardGeometryResolution
+}): MoveHazardZoneReduction => {
+  const previous = parseEncounterState(
+    input.previous
+      ?? input.context.map.encounterState
+      ?? createEmptyEncounterState(),
+  )
+  const common = { ...input, previous }
+  if (input.operation.payload.action === 'add') return reduceAdd(common)
+  if (input.operation.payload.action === 'remove') return reduceRemove(common)
+  return reduceSwapSides(common)
 }

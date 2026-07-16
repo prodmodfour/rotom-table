@@ -84,7 +84,12 @@ const representativeZones = () => [
       }],
       movement: [],
     },
-    payload: { pledgeId: 'sea-of-fire' },
+    payload: {
+      pledgeId: 'sea-of-fire',
+      familyId: 'pledge.fire-grass',
+      charges: 2,
+      maxCharges: 3,
+    },
   },
   {
     ...baseZone(),
@@ -205,6 +210,30 @@ describe('move automation encounter zones', () => {
       ...baseZone(),
       id: 'legacy.hazards.fake',
     })).toThrow('legacy namespace is reserved')
+  })
+
+  it('normalizes legacy layered payloads and rejects invalid charge state', () => {
+    const legacyHazard = parseEncounterZone({
+      ...baseZone(),
+      id: 'zone.hazard.legacy-shape',
+      kind: 'hazard',
+      payload: { hazardId: 'spikes' },
+    })
+    expect(legacyHazard.payload).toEqual({
+      hazardId: 'spikes',
+      familyId: 'spikes',
+      charges: null,
+      maxCharges: null,
+    })
+
+    expect(() => parseEncounterZone({
+      ...legacyHazard,
+      payload: { ...legacyHazard.payload, charges: 3, maxCharges: 2 },
+    })).toThrow('charges: cannot exceed maxCharges')
+    expect(() => parseEncounterZone({
+      ...legacyHazard,
+      payload: { ...legacyHazard.payload, charges: null, maxCharges: 2 },
+    })).toThrow('charges and maxCharges must both be null or both be integers')
   })
 
   it('rejects unknown fields, payloads, geometry, duplicate component identities, and invalid layers', () => {

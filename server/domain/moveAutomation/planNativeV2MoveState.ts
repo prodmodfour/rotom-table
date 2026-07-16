@@ -299,10 +299,27 @@ const combinedStateChanges = (options: {
     native.operations.map(({ operation }, index) => [operation.id, index]),
   )
   const replacedSlots = new Set(options.switchMapChanges.map(stateSlotKey))
+  const mapInputs = options.mapPlan.changes.map(stripPlanIdentity)
+  const coalescedEncounterSlots = new Set(mapInputs
+    .filter(input => input.kind === 'encounter-state')
+    .map(stateSlotKey))
+  const coreInputs = native.coreStateChanges.changes
+    .map(stripPlanIdentity)
+    .filter(input => !coalescedEncounterSlots.has(stateSlotKey(input)))
+  const coalescedMapInputs = mapInputs.map((input): MoveStateChangeInput => (
+    input.kind === 'encounter-state'
+    && native.coreStateChanges.changes.some(change => change.kind === 'encounter-state')
+      ? {
+          ...input,
+          sourceOperationId: null,
+          reasonCode: 'core-effects-and-hazard-zones',
+        }
+      : input
+  ))
   const existingInputs = [
-    ...native.coreStateChanges.changes.map(stripPlanIdentity),
+    ...coreInputs,
     ...options.placements,
-    ...options.mapPlan.changes.map(stripPlanIdentity),
+    ...coalescedMapInputs,
   ].filter(input => !replacedSlots.has(stateSlotKey(input)))
   const rawInputs = [
     ...existingInputs,
@@ -468,6 +485,7 @@ export const planNativeV2MoveState = (options: {
   context.reads.recordPlacement(context.actor.placement)
 
   const mapOperations = native.operations.filter(isMoveMapOperationEmission)
+  const hasHazardOperations = mapOperations.some(({ operation }) => operation.kind === 'hazard')
   const usageResources = mapOperations.flatMap(({ operation }) => operation.kind === 'usage'
     ? [{
         resourceId: operation.payload.resourceId,
@@ -481,6 +499,9 @@ export const planNativeV2MoveState = (options: {
     : [])
   const mapReduction = reduceMoveMapOperations({
     context,
+    ...(hasHazardOperations
+      ? { initialMap: applyNativeCoreMapChanges(options.map, native.coreStateChanges) }
+      : {}),
     operations: mapOperations,
     dynamicRecipients: native.dynamicRecipients,
     usageResources,
@@ -527,7 +548,9 @@ export const planNativeV2MoveState = (options: {
       `${options.resolution.canonicalMoveName} did not emit its reviewed usage operation.`,
     )
 
-  const mapWithCore = applyNativeCoreMapChanges(mapReduction.nextMap, native.coreStateChanges)
+  const mapWithCore = hasHazardOperations
+    ? mapReduction.nextMap
+    : applyNativeCoreMapChanges(mapReduction.nextMap, native.coreStateChanges)
   const placementTransitionMap = applyAuthoritativeMovePlacementTransition({
     map: mapWithCore,
     actorPlacement: actorPlacement(options.map, options.resolution.actorPlacementId),

@@ -295,13 +295,22 @@ describe('pending hazard-cell choice resume integration', () => {
       previousRevision: mapBeforeResponse.revision,
       revision: (mapBeforeResponse.revision ?? 0) + 1,
     })
-    expect(accepted.map?.hazards).toEqual(selected.map(option => ({
-      kind: 'spikes',
-      ...option.cell,
-      owner: 'move.hazard-test',
-    })))
-    expect(accepted.move?.transaction.hazardsToAdd).toEqual(accepted.map?.hazards)
-    expect(accepted.move?.transaction.hazardsToAdd).not.toEqual([])
+    expect(accepted.map?.hazards).toEqual([])
+    expect(accepted.map?.encounterState?.zones).toEqual(selected.map(option => (
+      expect.objectContaining({
+        kind: 'hazard',
+        sideId: null,
+        geometry: { kind: 'cells', cells: [option.cell] },
+        layer: 1,
+        payload: {
+          hazardId: 'spikes',
+          familyId: 'hazard-test.spikes',
+          charges: null,
+          maxCharges: null,
+        },
+      })
+    )))
+    expect(accepted.move?.transaction.hazardsToAdd).toEqual([])
     expect(accepted.move?.transaction.logLines).toEqual(expect.arrayContaining([
       expect.stringContaining(HAZARD_CELL_CHOICE_CANONICAL_MOVE_ID),
     ]))
@@ -336,7 +345,8 @@ describe('pending hazard-cell choice resume integration', () => {
     expect(harness.maps.getBySlug(command.mapSlug)).toEqual(durableMap)
     expect(harness.pending.getById(declaration.stored.resolutionId)).toEqual(durableTerminal)
     expect(harness.realtime.readAfter({ afterSequence: 0, limit: 100 }).events).toEqual(durableRealtime)
-    expect(harness.maps.getBySlug(command.mapSlug)?.hazards).toHaveLength(2)
+    expect(harness.maps.getBySlug(command.mapSlug)?.hazards).toEqual([])
+    expect(harness.maps.getBySlug(command.mapSlug)?.encounterState?.zones).toHaveLength(2)
   })
 
   it('accepts a reviewed zero-cell up-to selection without inventing a hazard', async () => {
@@ -364,6 +374,7 @@ describe('pending hazard-cell choice resume integration', () => {
 
     expect(accepted.result.ok).toBe(true)
     expect(accepted.map?.hazards).toEqual([])
+    expect(accepted.map?.encounterState?.zones).toEqual([])
     expect(accepted.move?.transaction.hazardsToAdd).toEqual([])
     expect(harness.pending.getById(declaration.stored.resolutionId)).toMatchObject({
       resolution: {

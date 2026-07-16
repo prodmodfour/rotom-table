@@ -46,7 +46,7 @@ export interface SessionHazardPlacement extends SessionHazardCell {
   readonly kind: SessionHazardKind
   /** Toxic Spikes supports up to two layers. Other hazard kinds ignore this value after validation. */
   readonly layer?: number
-  /** Optional free-form side/owner label for future move automation. */
+  /** Legacy/editor presentation label only; native mechanics use encounter-zone side IDs. */
   readonly owner?: string
 }
 
