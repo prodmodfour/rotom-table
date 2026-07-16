@@ -389,6 +389,20 @@ export const advanceEncounterGlobalFields = (input: {
       continue
     }
 
+    if (input.event.kind === 'scene-end' && zone.duration.kind === 'scene') {
+      transitions.push(transition({
+        zoneId: zone.id,
+        fieldKind: zone.kind,
+        fieldId: encounterGlobalFieldId(zone),
+        kind: 'expired',
+        reasonCode: 'field-scene-expired',
+        previous: zone,
+        current: null,
+      }))
+      removedIds.add(zone.id)
+      continue
+    }
+
     if (
       zone.kind === 'room'
       && zone.payload.startsNextRound
@@ -417,20 +431,6 @@ export const advanceEncounterGlobalFields = (input: {
       && input.event.kind !== 'gm-duration-correction'
     ) {
       current.push(zone)
-      continue
-    }
-
-    if (input.event.kind === 'scene-end' && zone.duration.kind === 'scene') {
-      transitions.push(transition({
-        zoneId: zone.id,
-        fieldKind: zone.kind,
-        fieldId: encounterGlobalFieldId(zone),
-        kind: 'expired',
-        reasonCode: 'field-scene-expired',
-        previous: zone,
-        current: null,
-      }))
-      removedIds.add(zone.id)
       continue
     }
 

@@ -1876,7 +1876,7 @@ Status: DONE
 
 ## MA-137 — Unify field ownership, replacement, and duration
 
-Status: TODO
+Status: DONE
 
 **Depends on:** MA-060, MA-133
 **Commit:** `feat(move-automation): unify field lifecycle`

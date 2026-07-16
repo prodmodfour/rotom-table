@@ -219,6 +219,31 @@ describe('global field lifecycle', () => {
     })
   })
 
+  it('expires a scene-owned Room even when its delayed activation never occurred', () => {
+    const room = field({
+      kind: 'room',
+      fieldId: 'trick',
+      operationId: 'operation.trick-scene',
+      group: 'field.room.trick',
+      duration: { kind: 'scene', remaining: null },
+      startsNextRound: true,
+    })
+
+    const result = advanceEncounterGlobalFields({
+      zones: [room],
+      event: { kind: 'scene-end' },
+    })
+
+    expect(result.zones).toEqual([])
+    expect(result.transitions).toEqual([
+      expect.objectContaining({
+        fieldId: 'trick',
+        kind: 'expired',
+        reasonCode: 'field-scene-expired',
+      }),
+    ])
+  })
+
   it('rejects unsupported global timing and duplicate active replacement groups', () => {
     const sun = field({
       kind: 'weather',
