@@ -1863,7 +1863,7 @@ Status: DONE
 
 ## MA-136 — Resolve zone and hazard entry effects
 
-Status: TODO
+Status: DONE
 
 **Depends on:** MA-132, MA-135, MA-080–MA-084
 **Commit:** `feat(move-automation): trigger battlefield zones on entry`
