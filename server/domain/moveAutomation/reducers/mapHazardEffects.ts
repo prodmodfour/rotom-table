@@ -24,6 +24,7 @@ import type {
 import type { MoveResolutionTraceJsonValue } from '#shared/moveAutomation/trace'
 import { sameJsonValue } from '~/utils/serialization'
 import type { AuthoritativeMoveRulesContext } from '../context'
+import { canonicalBattlefieldZoneComponents } from '../battlefieldZoneDefinitions'
 import { resolveMoveHazardGeometryCells } from '../hazardGeometry'
 import { failMoveMapOperationReduction } from './mapOperationError'
 import type { MoveHazardGeometryResolution } from './mapOperationTypes'
@@ -164,6 +165,10 @@ const newZone = (input: {
   readonly cell: EncounterZoneCell
 }): LayeredEncounterZone => {
   const { operation, payload, context, sideId, cell } = input
+  const components = canonicalBattlefieldZoneComponents({
+    kind: payload.zoneKind,
+    effectId: payload.effectId,
+  })
   const common = {
     id: zoneIdentity({
       kind: payload.zoneKind,
@@ -179,8 +184,8 @@ const newZone = (input: {
     stacking: payload.maxLayers > 1
       ? { kind: 'add-layer' as const, maxLayers: payload.maxLayers }
       : { kind: 'refresh' as const, maxLayers: null },
-    hooks: { entry: [], exit: [] },
-    modifiers: { targeting: [], damage: [], movement: [] },
+    hooks: components.hooks,
+    modifiers: components.modifiers,
     tags: [...new Set(['move-zone', payload.zoneKind, payload.effectId])],
   }
   return payload.zoneKind === 'hazard'

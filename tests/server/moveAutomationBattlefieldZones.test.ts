@@ -185,7 +185,18 @@ describe('generalized battlefield zone queries', () => {
     expect(adapted[2]?.duration).toEqual({ kind: 'rounds', boundary: 'end', remaining: 2 })
     expect(adapted[3]?.duration).toEqual({ kind: 'permanent', remaining: null })
     expect(adapted[4]?.payload).toEqual({ roomId: 'trick', startsNextRound: true })
-    expect(adapted.every(item => item.hooks.entry.length === 0)).toBe(true)
+    expect(adapted[0]?.hooks.entry).toEqual([{
+      id: 'zone.hazard.toxic-spikes.entry',
+      handlerId: 'zone.hazard.toxic-spikes.entry',
+      oncePerMovement: true,
+    }])
+    expect(adapted[0]?.modifiers.movement).toEqual([expect.objectContaining({
+      attribute: 'cost',
+      operation: 'multiply',
+      value: 2,
+    })])
+    expect(adapted[1]?.hooks.entry[0]?.handlerId).toBe('zone.hazard.fire.entry')
+    expect(adapted.slice(2).every(item => item.hooks.entry.length === 0)).toBe(true)
     expect(Object.isFrozen(adapted)).toBe(true)
   })
 

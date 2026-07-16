@@ -18,6 +18,7 @@ import {
   isEncounterSideId,
   type EncounterSideId,
 } from '#shared/moveAutomation/encounterState'
+import { canonicalBattlefieldZoneComponents } from './battlefieldZoneDefinitions'
 import type {
   GridDimensions,
   MapHazardKind,
@@ -178,6 +179,10 @@ const adaptLegacyHazards = (
     const layer = hazard.kind === 'toxic-spikes'
       ? Math.min(2, Math.max(1, Number.isSafeInteger(hazard.layer) ? Number(hazard.layer) : 1))
       : 1
+    const components = canonicalBattlefieldZoneComponents({
+      kind: 'hazard',
+      effectId: hazard.kind,
+    })
     const candidate = parseAdaptedZone({
       id,
       kind: 'hazard',
@@ -193,8 +198,8 @@ const adaptLegacyHazards = (
       stacking: hazard.kind === 'toxic-spikes'
         ? { kind: 'add-layer', maxLayers: 2 }
         : independentStacking(),
-      hooks: emptyHooks(),
-      modifiers: emptyModifiers(),
+      hooks: components.hooks,
+      modifiers: components.modifiers,
       tags: ['legacy-map', 'hazard'],
       payload: {
         hazardId: hazard.kind,

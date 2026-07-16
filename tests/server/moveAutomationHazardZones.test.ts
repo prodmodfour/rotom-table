@@ -231,6 +231,18 @@ describe('typed move hazard zones', () => {
       charges: null,
       maxCharges: null,
     })))
+    expect(state.zones[0]?.hooks.entry).toEqual([{
+      id: 'zone.hazard.spikes.entry',
+      handlerId: 'zone.hazard.spikes.entry',
+      oncePerMovement: true,
+    }])
+    expect(state.zones[0]?.modifiers.movement).toEqual([expect.objectContaining({
+      attribute: 'cost',
+      operation: 'multiply',
+      value: 2,
+    })])
+    expect(state.zones[2]?.hooks.entry[0]?.handlerId).toBe('zone.hazard.sticky-web.entry')
+    expect(state.zones[5]?.hooks.entry[0]?.handlerId).toBe('zone.pledge.fire-grass.entry')
   })
 
   it('adds and caps independent per-cell layers and charges without mutating inputs', () => {

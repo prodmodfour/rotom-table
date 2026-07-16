@@ -52,6 +52,7 @@ import {
   SHIFT_MOVEMENT_CAPABILITY_KEYS,
 } from '~/utils/movementCapabilities'
 import { placementToSpawned, type SheetLookup } from '~/utils/placement'
+import { withBattlefieldZoneMovementTerrain } from '../moveAutomation/battlefieldZoneMovementTerrain'
 
 export const AUTHORITATIVE_MOVEMENT_MODES = ['shift', 'pass'] as const
 export type AuthoritativeMovementMode = (typeof AUTHORITATIVE_MOVEMENT_MODES)[number]
@@ -420,6 +421,8 @@ interface MovementPlacementSnapshot extends PositionedGridFootprint {
   readonly id: string
   readonly sheetKind: SheetKind
   readonly sheetSlug: string
+  readonly sideId: string | null
+  readonly typeIds: readonly string[]
   readonly movementCapabilities: MovementCapabilitySpeeds
   readonly movementTraits: MovementCapabilityTraits
   readonly movementProfile: EffectiveMovementProfile
@@ -770,6 +773,8 @@ const buildMovementSnapshots = (
       id: placement.id,
       sheetKind: placement.sheetKind,
       sheetSlug: placement.sheetSlug,
+      sideId: placement.sideId ?? null,
+      typeIds: [...new Set(token.defenderTypes.map(type => type.trim().toLowerCase()).filter(Boolean))],
       position: cloneAnchor(placement.position),
       base: token.base,
       clearance: getClearanceValue(token),
@@ -1305,7 +1310,16 @@ export const resolveMovement = (input: ResolveMovementInput): AuthoritativeMovem
       sheetReads,
     })
   }
-  const terrainIndex = buildMapMovementTerrainIndex(input.map.voxels)
+  const terrainIndex = withBattlefieldZoneMovementTerrain({
+    map: input.map,
+    terrain: buildMapMovementTerrainIndex(input.map.voxels),
+    subject: {
+      placementId: mover.id,
+      sideId: mover.sideId,
+      grounding: mover.movementProfile.state.grounding,
+      typeIds: mover.typeIds,
+    },
+  })
   const groundLevelY = input.map.groundLevelY ?? 0
 
   if (!isAnchorWithinBounds(origin, mover, input.map.dimensions)) {
@@ -1810,7 +1824,16 @@ export const resolveAuthoritativeDisplacement = (
   const { mover, placements, sheetReads } = snapshots
   const origin = cloneAnchor(mover.position)
   const consultedPlacementIds = placements.map(placement => placement.id)
-  const terrainIndex = buildMapMovementTerrainIndex(input.map.voxels)
+  const terrainIndex = withBattlefieldZoneMovementTerrain({
+    map: input.map,
+    terrain: buildMapMovementTerrainIndex(input.map.voxels),
+    subject: {
+      placementId: mover.id,
+      sideId: mover.sideId,
+      grounding: mover.movementProfile.state.grounding,
+      typeIds: mover.typeIds,
+    },
+  })
   const groundLevelY = input.map.groundLevelY ?? 0
   if (!isAnchorWithinBounds(origin, mover, input.map.dimensions)) {
     return displacementFailure({

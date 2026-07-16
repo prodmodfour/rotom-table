@@ -9,6 +9,8 @@ export type MovementTerrainRequirement = 'overland' | 'swim' | 'burrow' | 'aeria
 export interface MapMovementTerrainIndex {
   voxelAt: (x: number, y: number, z: number) => MapVoxelV2 | null
   highestVoxelYBelow: (x: number, y: number, z: number) => number | null
+  /** Optional server-owned overlay such as a typed battlefield Slow Terrain zone. */
+  slowAt?: (x: number, y: number, z: number) => boolean
 }
 
 export type MapMovementTerrainIndexBuilder = (
@@ -239,25 +241,30 @@ const cellTerrainAt = ({
   terrain: MapMovementTerrainIndex
   groundLevelY: number
 }): MovementCellTerrain => {
+  const withSlowOverlay = (value: MovementCellTerrain): MovementCellTerrain => (
+    terrain.slowAt?.(x, y, z) === true && !value.blocked
+      ? { ...value, slow: true }
+      : value
+  )
   const occupied = terrain.voxelAt(x, y, z)
-  if (occupied) return occupiedVoxelTerrain(occupied)
+  if (occupied) return withSlowOverlay(occupiedVoxelTerrain(occupied))
 
   const underfoot = terrain.voxelAt(x, y - 1, z)
-  if (underfoot) return surfaceVoxelTerrain(underfoot)
+  if (underfoot) return withSlowOverlay(surfaceVoxelTerrain(underfoot))
 
   if (y > groundLevelY) {
     const surfaceY = terrain.highestVoxelYBelow(x, y, z)
-    return {
+    return withSlowOverlay({
       blocked: false,
       requirements: ['aerial'],
       slow: false,
       air: true,
       airHeight: Math.max(0, y - (surfaceY == null ? groundLevelY : surfaceY + 1)),
       hoverable: false,
-    }
+    })
   }
 
-  return REGULAR_TERRAIN
+  return withSlowOverlay(REGULAR_TERRAIN)
 }
 
 const mergeCellTerrain = (cells: readonly MovementCellTerrain[]): MovementAnchorTerrain => {
