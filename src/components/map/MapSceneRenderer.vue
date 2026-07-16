@@ -36,8 +36,6 @@ import type { IsometricPresencePing } from '~/utils/isometric/pingRenderer'
 import type { TokenMovementCommitPayload } from '~/utils/isometric/tokenMovementInteraction'
 import type { TokenMotionDebugMetrics } from '~/utils/isometric/tokenMotionDebugMetrics'
 import type {
-  PendingMoveHazardCellResponseReference,
-  PendingMoveHazardCellSelectionReference,
   PendingMoveMovementChoiceReference,
   PendingMoveResponseOptionReference,
 } from '~/composables/map-editor/usePendingMoveResponses'
@@ -95,7 +93,6 @@ defineProps<{
   moveAnimations?: readonly MoveAnimationEvent[]
   moveAnimationsReducedMotion?: boolean
   pendingMoveMovementChoices?: readonly PendingMoveMovementChoiceReference[]
-  pendingMoveHazardCellSelections?: readonly PendingMoveHazardCellSelectionReference[]
 }>()
 
 const emit = defineEmits<{
@@ -131,7 +128,6 @@ const emit = defineEmits<{
   (event: 'select-move-target-branch', branchId: string): void
   (event: 'cancel-move-targeting'): void
   (event: 'choose-pending-move-response', payload: PendingMoveResponseOptionReference): void
-  (event: 'choose-pending-move-hazard-cells', payload: PendingMoveHazardCellResponseReference): void
   (event: 'move-vfx-settled', payload: { nowMs: number }): void
   (event: 'token-motion-debug-metrics', metrics: TokenMotionDebugMetrics): void
 }>()
@@ -194,7 +190,6 @@ defineExpose({ focusPokemon, focusCell })
     :move-animations="moveAnimations ?? []"
     :move-animations-reduced-motion="moveAnimationsReducedMotion === true"
     :pending-move-movement-choices="pendingMoveMovementChoices ?? []"
-    :pending-move-hazard-cell-selections="pendingMoveHazardCellSelections ?? []"
     @select-pokemon="emit('select-pokemon', $event)"
     @hover-pokemon="emit('hover-pokemon', $event)"
     @place-presence-ping="emit('place-presence-ping', $event)"
@@ -227,7 +222,6 @@ defineExpose({ focusPokemon, focusCell })
     @select-move-target-branch="emit('select-move-target-branch', $event)"
     @cancel-move-targeting="emit('cancel-move-targeting')"
     @choose-pending-move-response="emit('choose-pending-move-response', $event)"
-    @choose-pending-move-hazard-cells="emit('choose-pending-move-hazard-cells', $event)"
     @move-vfx-settled="emit('move-vfx-settled', $event)"
     @token-motion-debug-metrics="emit('token-motion-debug-metrics', $event)"
   />

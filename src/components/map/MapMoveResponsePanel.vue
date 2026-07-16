@@ -66,12 +66,6 @@ const responseKindLabel = (view: PendingMoveResponseWindowView): string => (
 const isAttackOfOpportunity = (view: PendingMoveResponseWindowView): boolean => (
   view.window.reasonCode.startsWith('maneuver.attack-of-opportunity.')
 )
-const isHazardCellSelection = (view: PendingMoveResponseWindowView): boolean => (
-  view.window.kind === 'choice' && view.window.hazardCellSelection !== undefined
-)
-const panelOptions = (view: PendingMoveResponseWindowView): readonly PendingMoveResponseOption[] => (
-  isHazardCellSelection(view) ? [] : view.window.options
-)
 
 const isBusy = (view: PendingMoveResponseWindowView): boolean => (
   stateFor(view).status !== 'pending'
@@ -169,13 +163,10 @@ const retry = (view: PendingMoveResponseWindowView): void => {
       <p v-if="isAttackOfOpportunity(view)" class="move-response-card__limitation">
         {{ ATTACK_OF_OPPORTUNITY_ASSISTANCE_NOTICE }}
       </p>
-      <p v-if="isHazardCellSelection(view)" class="move-response-card__map-choice">
-        Select the authorized cells on the battlefield, then confirm the complete set.
-      </p>
 
       <div class="move-response-card__actions">
         <button
-          v-for="option in panelOptions(view)"
+          v-for="option in view.window.options"
           :key="option.id"
           type="button"
           class="move-response-card__option"
@@ -186,7 +177,7 @@ const retry = (view: PendingMoveResponseWindowView): void => {
           {{ optionLabel(option) }}
         </button>
         <button
-          v-if="view.window.allowPass && !isHazardCellSelection(view)"
+          v-if="view.window.allowPass"
           type="button"
           class="move-response-card__pass"
           :disabled="isBusy(view)"
@@ -208,12 +199,7 @@ const retry = (view: PendingMoveResponseWindowView): void => {
 
       <div v-if="props.canManage" class="move-response-card__gm-controls">
         <span>GM controls</span>
-        <button
-          v-if="!isHazardCellSelection(view)"
-          type="button"
-          :disabled="isBusy(view)"
-          @click="forcePass(view)"
-        >
+        <button type="button" :disabled="isBusy(view)" @click="forcePass(view)">
           Force pass
         </button>
         <button type="button" :disabled="isBusy(view)" @click="cancel(view)">
@@ -379,7 +365,6 @@ const retry = (view: PendingMoveResponseWindowView): void => {
 .move-response-card__notice,
 .move-response-card__uncertain,
 .move-response-card__limitation,
-.move-response-card__map-choice,
 .move-response-panel__status,
 .move-response-panel__error {
   color: var(--muted);

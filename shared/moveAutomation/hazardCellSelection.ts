@@ -634,12 +634,6 @@ export const moveHazardCellSelectionOptionId = (
   + `${cell.x}.${cell.y}.${cell.z}`
 )
 
-/** One bounded audit identity for a canonical multi-cell response. */
-export const moveHazardCellSelectionResponseId = (
-  windowId: string,
-  optionIds: readonly string[],
-): string => `hazard.selection.${stableNamespaceHash(`${windowId}:${optionIds.join(':')}`)}`
-
 const parseOption = (
   value: unknown,
   path: string,

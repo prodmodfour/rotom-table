@@ -100,9 +100,9 @@ export const createHazardCellChoiceSpec = (
   },
   preconditions: [],
   costs: [{
-    id: 'hazard-test.no-cost',
+    id: 'hazard-test.standard-action',
     phase: 'pay',
-    cost: { kind: 'no-cost', reasonCode: 'hazard-test.reviewed-exception' },
+    cost: { kind: 'action-resource', resource: 'standard', amount: 1 },
   }],
   phases: [{
     phase: 'schedule',

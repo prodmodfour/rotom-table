@@ -1812,7 +1812,7 @@ Status: DONE
 
 ## MA-134B — Materialize durable hazard-cell move suspensions
 
-Status: TODO
+Status: DONE
 
 **Depends on:** MA-134A
 **Commit:** `feat(move-automation): suspend for authoritative hazard cells`

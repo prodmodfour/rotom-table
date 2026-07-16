@@ -1097,7 +1097,7 @@ export interface MoveAddHazardEffectPayload {
   /** Stable reference to cells resolved by authoritative targeting. */
   readonly cellSetId: string
   readonly layers: number
-  /** Reviewed durable selection policy. Omitted only for pre-MA-134B server-resolved placeholders. */
+  /** Reviewed durable policy; omit only when another server-owned selector resolves the cell set. */
   readonly cellSelection?: MoveHazardCellSelectionRequest
 }
 

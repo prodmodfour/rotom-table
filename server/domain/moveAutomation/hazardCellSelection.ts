@@ -5,7 +5,6 @@ import {
   compareMoveHazardCellSelectionCells,
   moveHazardCellSelectionCellKey,
   moveHazardCellSelectionOptionId,
-  moveHazardCellSelectionResponseId,
   parseMoveHazardCellSelectionDeclaration,
   parseMoveHazardCellSelectionWindow,
   projectMoveHazardCellSelectionPublicWindow,
@@ -73,8 +72,6 @@ export interface ValidatedAuthoritativeHazardCellSelection {
   readonly windowId: string
   readonly operationId: string
   readonly cellSetId: string
-  /** Stable audit identity for the complete canonical option set. */
-  readonly selectionId: string
   /** Canonical map order, independent of client option-ID order. */
   readonly optionIds: readonly string[]
   readonly cells: readonly GridAnchor[]
@@ -485,14 +482,12 @@ export const validateAuthoritativeHazardCellSelection = (
   assertSelectedCellsRemainLegal(input.map, declaration, selected)
   const cells = selected.map(option => ({ ...option.cell }))
   assertConnectedness(declaration, cells)
-  const optionIds = Object.freeze(selected.map(option => option.id))
   return Object.freeze({
     resolutionId: declaration.move.resolutionId,
     windowId: declaration.windowId,
     operationId: declaration.move.operationId,
     cellSetId: declaration.move.cellSetId,
-    selectionId: moveHazardCellSelectionResponseId(declaration.windowId, optionIds),
-    optionIds,
+    optionIds: Object.freeze(selected.map(option => option.id)),
     cells: Object.freeze(cells.map(cell => Object.freeze(cell))),
   })
 }

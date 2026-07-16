@@ -7,6 +7,9 @@ import {
   type PendingMoveResolutionResourceRead,
   type PendingMoveResponseWindow,
 } from '#shared/moveAutomation/pendingResolution'
+import type {
+  MoveHazardCellSelectionWindow,
+} from '#shared/moveAutomation/hazardCellSelection'
 import {
   createEmptyEncounterState,
   parseEncounterState,
@@ -29,6 +32,7 @@ export type MoveSpecSuspensionMaterializationErrorCode =
   | 'pre-window-plan-invalid'
   | 'read-set-revision-conflict'
   | 'response-owner-missing'
+  | 'hazard-cell-context-mismatch'
 
 export class MoveSpecSuspensionMaterializationError extends Error {
   readonly code: MoveSpecSuspensionMaterializationErrorCode
@@ -258,55 +262,67 @@ const responseOwnership = (
   return owners
 }
 
+const hazardCellSelectionWindow = (
+  input: MaterializeMoveSpecSuspensionInput,
+): MoveHazardCellSelectionWindow | undefined => {
+  const request = input.execution.request
+  if (request.kind !== 'hazard-cell-choice') return undefined
+
+  const map = input.authoritativeMap ?? fail(
+    'hazard-cell-context-mismatch',
+    'Hazard-cell suspension requires its immutable authoritative map snapshot.',
+  )
+  if (
+    map.slug !== input.originMapSlug
+    || (map.revision ?? 0) !== input.originMapRevision
+  ) {
+    fail(
+      'hazard-cell-context-mismatch',
+      'Hazard-cell suspension map identity must match the originating authoritative snapshot.',
+    )
+  }
+  const actor = map.placements.find(placement => placement.id === input.actorPlacementId)
+    ?? fail(
+      'response-owner-missing',
+      `Hazard selection actor ${input.actorPlacementId} is missing from the authoritative map.`,
+    )
+
+  return materializeAuthoritativeHazardCellSelection({
+    map: { ...map, revision: input.continuationMapRevision },
+    declaration: {
+      schemaVersion: 1,
+      windowId: request.requestId,
+      promptKey: request.promptKey,
+      map: {
+        slug: input.originMapSlug,
+        revision: input.continuationMapRevision,
+      },
+      move: {
+        resolutionId: input.resolutionId,
+        actorPlacementId: input.actorPlacementId,
+        canonicalMoveId: input.definition.spec.canonicalId,
+        operationId: request.operationId,
+        cellSetId: request.cellSetId,
+      },
+      constraints: {
+        count: request.selection.count,
+        range: request.selection.range,
+        adjacency: request.selection.adjacency,
+        connectedness: request.selection.connectedness,
+        occupancy: request.selection.occupancy,
+        geometry: request.selection.geometry,
+        origin: actor.position,
+      },
+    },
+  }).window
+}
+
 const responseWindow = (
   input: MaterializeMoveSpecSuspensionInput,
 ): PendingMoveResponseWindow => {
   const execution = input.execution
   const request = execution.request
-  const authoritativeHazardMap = request.kind === 'hazard-cell-choice'
-    ? input.authoritativeMap ?? fail(
-        'response-owner-missing',
-        'Hazard-cell suspension requires its immutable authoritative map snapshot.',
-      )
-    : undefined
-  const hazardCellSelection = request.kind === 'hazard-cell-choice'
-    ? materializeAuthoritativeHazardCellSelection({
-        map: {
-          ...authoritativeHazardMap!,
-          revision: input.continuationMapRevision,
-        },
-        declaration: {
-          schemaVersion: 1,
-          windowId: request.requestId,
-          promptKey: request.promptKey,
-          map: {
-            slug: input.originMapSlug,
-            revision: input.continuationMapRevision,
-          },
-          move: {
-            resolutionId: input.resolutionId,
-            actorPlacementId: input.actorPlacementId,
-            canonicalMoveId: input.definition.spec.canonicalId,
-            operationId: request.operationId,
-            cellSetId: request.cellSetId,
-          },
-          constraints: {
-            count: request.selection.count,
-            range: request.selection.range,
-            adjacency: request.selection.adjacency,
-            connectedness: request.selection.connectedness,
-            occupancy: request.selection.occupancy,
-            geometry: request.selection.geometry,
-            origin: authoritativeHazardMap!.placements.find(
-              placement => placement.id === input.actorPlacementId,
-            )?.position ?? fail(
-              'response-owner-missing',
-              `Hazard selection actor ${input.actorPlacementId} is missing from the authoritative map.`,
-            ),
-          },
-        },
-      }).window
-    : undefined
+  const hazardCellSelection = hazardCellSelectionWindow(input)
   const common = {
     windowId: request.requestId,
     operationId: request.operationId,

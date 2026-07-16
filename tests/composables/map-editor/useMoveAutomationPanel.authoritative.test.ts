@@ -677,6 +677,50 @@ describe('useMoveAutomationPanel authoritative dispatcher', () => {
     })
   })
 
+  it('declares hazard placement as mechanics-free self intent without local fallback', async () => {
+    const moveScript = script({
+      moveName: 'Authoritative Hazard',
+      targetMode: 'hazard',
+      targetCount: null,
+      requiresAccuracy: false,
+      range: 'Hazard',
+      keywords: ['Hazard'],
+      hazardSuggestions: [{ kind: 'spikes', squares: 2, label: 'Place Spikes' }],
+    })
+    await withRegisteredScripts([moveScript], async () => {
+      const dispatch = vi.fn<MoveAutomationAuthoritativeDispatchHandler>().mockResolvedValue({
+        accepted: false,
+        message: 'Waiting for authoritative hazard cells.',
+      })
+      const recordMoveUsage = vi.fn()
+      const placeHazard = vi.fn()
+      const { panel } = panelFixture({
+        moveName: moveScript.moveName,
+        scripts: [moveScript],
+        dispatchAuthoritativeMove: dispatch,
+        recordMoveUsage,
+        placeHazard,
+      })
+
+      panel.openMoveAutomation({ id: 'user-token', moveName: moveScript.moveName })
+      await Promise.resolve()
+      await nextTick()
+
+      expect(dispatch).toHaveBeenCalledTimes(1)
+      expect(dispatch.mock.calls[0]?.[0]).toEqual({
+        intent: {
+          schemaVersion: 1,
+          placementId: 'user-token',
+          moveName: moveScript.moveName,
+          selection: { kind: 'self' },
+        },
+      })
+      expect(JSON.stringify(dispatch.mock.calls[0]?.[0].intent)).not.toContain('hazardCells')
+      expect(recordMoveUsage).not.toHaveBeenCalled()
+      expect(placeHazard).not.toHaveBeenCalled()
+    })
+  })
+
   it('submits all selected target-count targets to the authoritative dispatcher', async () => {
     const moveScript = targetCountScript()
     await withRegisteredScripts([moveScript], async () => {

@@ -12,7 +12,6 @@ import {
   type MoveAutomationAreaDirection,
 } from '~/types/moveAutomation'
 import {
-  moveHazardCellSelectionResponseId,
   parseMoveHazardCellSelectionWindow,
   type MoveHazardCellSelectionWindow,
 } from './hazardCellSelection'
@@ -193,7 +192,7 @@ export interface PendingMoveChoiceResponseWindow
   readonly kind: 'choice'
   readonly allowPass: boolean
   readonly priority: null
-  /** Private server-owned cell values; projected only after ordinary window authorization. */
+  /** Private server-owned cell values; projected only after window authorization. */
   readonly hazardCellSelection?: MoveHazardCellSelectionWindow
 }
 
@@ -229,10 +228,8 @@ export interface PendingMoveResolutionChosenOption {
   readonly windowId: string
   /** The idempotency identity of the accepted response command. */
   readonly responseOpId: LivePlayOpId
-  /** Null records an authorized pass; multi-cell choices use their stable selection digest. */
+  /** Null records an authorized pass. */
   readonly optionId: string | null
-  /** Canonical server-issued IDs retained only for an audited multi-cell choice. */
-  readonly optionIds?: readonly string[]
   readonly chosenBy: PendingMoveResponseOwner
   readonly chosenAt: number
 }
@@ -397,14 +394,6 @@ const CHOSEN_OPTION_FIELDS = [
   'windowId',
   'responseOpId',
   'optionId',
-  'chosenBy',
-  'chosenAt',
-] as const
-const MULTI_CHOSEN_OPTION_FIELDS = [
-  'windowId',
-  'responseOpId',
-  'optionId',
-  'optionIds',
   'chosenBy',
   'chosenAt',
 ] as const
@@ -1335,45 +1324,13 @@ const parseChosenOptions = (
     PENDING_MOVE_RESOLUTION_LIMITS.chosenOptions,
   ).map((entry, index): PendingMoveResolutionChosenOption => {
     const entryPath = `${path}[${index}]`
-    const candidate = parseRecord(entry, entryPath)
-    const hasOptionIds = Object.prototype.hasOwnProperty.call(candidate, 'optionIds')
-    const record = parseExactRecord(
-      entry,
-      hasOptionIds ? MULTI_CHOSEN_OPTION_FIELDS : CHOSEN_OPTION_FIELDS,
-      entryPath,
-    )
-    const windowId = parseStableId(record.windowId, `${entryPath}.windowId`)
-    const optionId = record.optionId === null
-      ? null
-      : parseStableId(record.optionId, `${entryPath}.optionId`)
-    const optionIds = hasOptionIds
-      ? parseBoundedArray(
-          record.optionIds,
-          `${entryPath}.optionIds`,
-          PENDING_MOVE_RESOLUTION_LIMITS.optionsPerWindow,
-        ).map((id, optionIndex) => parseStableId(
-          id,
-          `${entryPath}.optionIds[${optionIndex}]`,
-        ))
-      : undefined
-    if (optionIds && new Set(optionIds).size !== optionIds.length) {
-      fail('duplicate-id', `${entryPath}.optionIds`, 'must not contain duplicate option IDs.')
-    }
-    if (
-      optionIds
-      && optionId !== moveHazardCellSelectionResponseId(windowId, optionIds)
-    ) {
-      fail(
-        'inconsistent-state',
-        `${entryPath}.optionId`,
-        'must be the stable audit identity for the canonical multi-cell option IDs.',
-      )
-    }
+    const record = parseExactRecord(entry, CHOSEN_OPTION_FIELDS, entryPath)
     return {
-      windowId,
+      windowId: parseStableId(record.windowId, `${entryPath}.windowId`),
       responseOpId: parseOriginOpId(record.responseOpId, `${entryPath}.responseOpId`),
-      optionId,
-      ...(optionIds ? { optionIds } : {}),
+      optionId: record.optionId === null
+        ? null
+        : parseStableId(record.optionId, `${entryPath}.optionId`),
       chosenBy: parseOwner(record.chosenBy, `${entryPath}.chosenBy`),
       chosenAt: parseTimestamp(record.chosenAt, `${entryPath}.chosenAt`),
     }
@@ -1827,7 +1784,8 @@ const assertHazardCellWindowBindings = (input: {
   readonly readSet: readonly PendingMoveResolutionResourceRead[]
   readonly path: string
 }): void => {
-  const mapRead = input.readSet.find(read => read.kind === 'map')
+  const mapReads = input.readSet.filter(read => read.kind === 'map')
+  const mapRead = mapReads.length === 1 ? mapReads[0] : undefined
   for (const [index, window] of input.windows.entries()) {
     if (window.kind !== 'choice' || !window.hazardCellSelection) continue
     const declaration = window.hazardCellSelection.declaration

@@ -26,7 +26,6 @@ import {
   type PendingMoveResponseWindowView,
 } from '#shared/moveAutomation/responseViews'
 import type { PendingMoveMovementSelection } from '#shared/moveAutomation/responseOptions'
-import type { MoveHazardCellSelectionPublicWindow } from '#shared/moveAutomation/hazardCellSelection'
 import { isPlayerProfileId, type PlayerProfileId } from '#shared/playerProfiles'
 import { MAP_API_PATHS } from '~/utils/apiRoutes'
 import { getClientId } from '~/utils/clientId'
@@ -71,18 +70,6 @@ export interface PendingMoveMovementChoiceReference
   readonly disabled: boolean
 }
 
-export interface PendingMoveHazardCellSelectionReference
-  extends PendingMoveResponseReference {
-  readonly canonicalMoveId: string
-  readonly selection: MoveHazardCellSelectionPublicWindow
-  readonly disabled: boolean
-}
-
-export interface PendingMoveHazardCellResponseReference
-  extends PendingMoveResponseReference {
-  readonly optionIds: readonly string[]
-}
-
 export interface PendingMoveResponseDispatchResult {
   readonly dispatched: boolean
   readonly opId?: string
@@ -118,11 +105,9 @@ export interface UsePendingMoveResponsesReturn {
   readonly loadError: Ref<string | null>
   readonly responseStateByWindow: ComputedRef<Readonly<Record<string, PendingMoveResponseWindowState>>>
   readonly movementChoices: ComputedRef<readonly PendingMoveMovementChoiceReference[]>
-  readonly hazardCellSelections: ComputedRef<readonly PendingMoveHazardCellSelectionReference[]>
   readonly responseOutboxEntries: Ref<readonly MoveResponseCommandOutboxEntry[]>
   readonly refresh: () => Promise<readonly PendingMoveResponseWindowView[]>
   readonly choose: (input: PendingMoveResponseOptionReference) => Promise<PendingMoveResponseDispatchResult>
-  readonly chooseHazardCells: (input: PendingMoveHazardCellResponseReference) => Promise<PendingMoveResponseDispatchResult>
   readonly pass: (input: PendingMoveResponseReference) => Promise<PendingMoveResponseDispatchResult>
   readonly forcePass: (input: PendingMoveResponseReference) => Promise<PendingMoveResponseDispatchResult>
   readonly cancel: (resolutionId: string) => Promise<PendingMoveResponseDispatchResult>
@@ -180,28 +165,6 @@ export const pendingMoveMovementChoiceReferences = (
         }]
       : []
   ))
-}))
-
-/** Group authorized multi-cell windows for the battlefield selection overlay. */
-export const pendingMoveHazardCellSelectionReferences = (
-  windows: readonly PendingMoveResponseWindowView[],
-  stateByWindow: Readonly<Record<string, PendingMoveResponseWindowState>> = {},
-): readonly PendingMoveHazardCellSelectionReference[] => Object.freeze(windows.flatMap((view) => {
-  const selection = view.window.kind === 'choice'
-    ? view.window.hazardCellSelection
-    : undefined
-  if (!selection) return []
-  const reference = {
-    resolutionId: view.resolution.resolutionId,
-    windowId: view.window.windowId,
-  }
-  const state = stateByWindow[pendingMoveResponseWindowKey(reference)]
-  return [{
-    ...reference,
-    canonicalMoveId: view.resolution.canonicalMoveId,
-    selection,
-    disabled: state !== undefined && state.status !== 'pending',
-  }]
 }))
 
 const commandWindowKey = (command: MoveResponseCommand): string | null => (
@@ -406,9 +369,6 @@ export const usePendingMoveResponses = (
 
   const movementChoices = computed<readonly PendingMoveMovementChoiceReference[]>(() => (
     pendingMoveMovementChoiceReferences(windows.value, responseStateByWindow.value)
-  ))
-  const hazardCellSelections = computed<readonly PendingMoveHazardCellSelectionReference[]>(() => (
-    pendingMoveHazardCellSelectionReferences(windows.value, responseStateByWindow.value)
   ))
 
   const windowFor = (input: PendingMoveResponseReference): PendingMoveResponseWindowView | null => (
@@ -615,9 +575,6 @@ export const usePendingMoveResponses = (
   const choose: UsePendingMoveResponsesReturn['choose'] = async (input) => {
     const view = windowFor(input)
     if (!view) return localFailure('This move response window is no longer available.')
-    if (view.window.kind === 'choice' && view.window.hazardCellSelection) {
-      return localFailure('Hazard cells must be submitted as one complete server-issued selection.')
-    }
     if (!view.window.options.some(option => option.id === input.optionId)) {
       return localFailure('This move response option is no longer available.')
     }
@@ -630,42 +587,6 @@ export const usePendingMoveResponses = (
       resolutionId: input.resolutionId,
       windowId: input.windowId,
       optionId: input.optionId,
-    }))
-  }
-
-  const chooseHazardCells: UsePendingMoveResponsesReturn['chooseHazardCells'] = async (input) => {
-    const view = windowFor(input)
-    const selection = view?.window.kind === 'choice'
-      ? view.window.hazardCellSelection
-      : undefined
-    if (!view || !selection) {
-      return localFailure('This hazard-cell response window is no longer available.')
-    }
-    if (new Set(input.optionIds).size !== input.optionIds.length) {
-      return localFailure('Hazard-cell selections cannot contain duplicate option IDs.')
-    }
-    const requested = new Set(input.optionIds)
-    if ([...requested].some(id => !selection.options.some(option => option.id === id))) {
-      return localFailure('A selected hazard cell is no longer available.')
-    }
-    const selectedOptionIds = selection.options
-      .filter(option => requested.has(option.id))
-      .map(option => option.id)
-    const minimum = selection.count.kind === 'exact'
-      ? selection.count.count
-      : selection.count.minimum
-    const maximum = selection.count.kind === 'exact'
-      ? selection.count.count
-      : selection.count.maximum
-    if (selectedOptionIds.length < minimum || selectedOptionIds.length > maximum) {
-      return localFailure(`Select ${minimum === maximum ? `exactly ${minimum}` : `${minimum} through ${maximum}`} hazard cells.`)
-    }
-    const existing = existingEntryFor(input.resolutionId, input.windowId)
-    if (existing) return localFailure('This move response is already pending confirmation.', existing.opId)
-    return enqueueAndDispatch(buildCommand(MOVE_RESPONSE_COMMAND_TYPES.CHOOSE, {
-      resolutionId: input.resolutionId,
-      windowId: input.windowId,
-      optionIds: selectedOptionIds,
     }))
   }
 
@@ -743,11 +664,9 @@ export const usePendingMoveResponses = (
     loadError,
     responseStateByWindow,
     movementChoices,
-    hazardCellSelections,
     responseOutboxEntries,
     refresh,
     choose,
-    chooseHazardCells,
     pass,
     forcePass,
     cancel,
