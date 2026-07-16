@@ -171,6 +171,7 @@ const planNextWindow = (
     definition: input.execution.runtime.definition,
     originMapSlug: input.map.slug,
     originMapRevision: previousRevision,
+    authoritativeMap: input.map,
     actorPlacementId: input.pendingResolution.actorPlacementId,
     suspendedAt: input.plannedAt,
     authoritativeSheetReads: input.execution.sheetReads,

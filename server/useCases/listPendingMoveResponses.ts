@@ -5,6 +5,7 @@ import {
   type PendingMoveResponseWindow,
 } from '#shared/moveAutomation/pendingResolution'
 import type { PlayerProfile } from '#shared/playerProfiles'
+import { projectMoveHazardCellSelectionPublicWindow } from '#shared/moveAutomation/hazardCellSelection'
 import {
   PENDING_MOVE_RESPONSE_VIEW_SCHEMA_VERSION,
   type PendingMoveResponseWindowList,
@@ -51,6 +52,13 @@ const safeWindowView = (input: {
         kind: 'choice' as const,
         allowPass: input.window.allowPass,
         priority: null,
+        ...(input.window.hazardCellSelection
+          ? {
+              hazardCellSelection: projectMoveHazardCellSelectionPublicWindow(
+                input.window.hazardCellSelection,
+              ),
+            }
+          : {}),
       })
   return Object.freeze({
     schemaVersion: PENDING_MOVE_RESPONSE_VIEW_SCHEMA_VERSION,

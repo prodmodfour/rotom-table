@@ -1,4 +1,5 @@
 import type { PendingMoveResolution } from '#shared/moveAutomation/pendingResolution'
+import type { MoveHazardCellSelectionWindow } from '#shared/moveAutomation/hazardCellSelection'
 import type { CharacterSheet } from '~/types/characterSheet'
 import type { TabletopMap } from '~/types/map'
 import type { MoveAutomationScript } from '~/types/moveAutomation'
@@ -27,6 +28,10 @@ import {
   type MoveSpecExecutionCompleteResult,
 } from './executeSpec'
 import { createMoveStateChangePlan } from './plan'
+import {
+  AuthoritativeHazardCellSelectionError,
+  validateAuthoritativeHazardCellSelection,
+} from './hazardCellSelection'
 import type { AuthoritativeMoveRandomSource } from './random'
 import {
   createMoveAutomationReplayRandom,
@@ -67,7 +72,11 @@ export interface ResumeMoveSpecInput {
   readonly map: TabletopMap
   readonly pokemonSheets: ReadonlyMap<string, CharacterSheet>
   readonly trainerSheets: ReadonlyMap<string, TrainerSheet>
-  readonly response: MoveSpecResolvedResponse
+  readonly response?: MoveSpecResolvedResponse
+  readonly hazardCellResponse?: {
+    readonly window: MoveHazardCellSelectionWindow
+    readonly selectedOptionIds: readonly string[]
+  }
   readonly now: number
   readonly random?: AuthoritativeMoveRandomSource
   readonly runtimeRegistry?: MoveAutomationRuntimeRegistry
@@ -126,13 +135,15 @@ const targetEvidence = (
 
 const chosenResponses = (
   pending: PendingMoveResolution,
-  response: MoveSpecResolvedResponse,
+  response: MoveSpecResolvedResponse | undefined,
 ): readonly MoveSpecResolvedResponse[] => [
-  ...pending.chosenOptions.map(choice => ({
-    requestId: choice.windowId,
-    optionId: choice.optionId,
-  })),
-  response,
+  ...pending.chosenOptions
+    .filter(choice => choice.optionIds === undefined)
+    .map(choice => ({
+      requestId: choice.windowId,
+      optionId: choice.optionId,
+    })),
+  ...(response ? [response] : []),
 ]
 
 const traceBeforeCurrentWindow = (pending: PendingMoveResolution) => {
@@ -328,6 +339,19 @@ export const resumeMoveSpec = (
   const entry = entryResult.entry
   let execution: ReturnType<typeof executeMoveSpec>
   try {
+    if (Boolean(input.response) === Boolean(input.hazardCellResponse)) {
+      return fail(
+        'execution-rejected',
+        'A resumed MoveSpec must receive exactly one ordinary or hazard-cell response.',
+      )
+    }
+    const hazardCellSelection = input.hazardCellResponse
+      ? validateAuthoritativeHazardCellSelection({
+          map: input.map,
+          window: input.hazardCellResponse.window,
+          selectedOptionIds: input.hazardCellResponse.selectedOptionIds,
+        })
+      : undefined
     execution = executeMoveSpec({
       definition: runtime.definition,
       context,
@@ -337,6 +361,9 @@ export const resumeMoveSpec = (
         : {}),
       ancestry: pending.causalAncestry,
       responses: chosenResponses(pending, input.response),
+      ...(hazardCellSelection
+        ? { authoritativeHazardCellSelections: [hazardCellSelection] }
+        : {}),
       handlerRegistry: context.handlerRegistry,
     })
   }
@@ -347,6 +374,7 @@ export const resumeMoveSpec = (
     if (
       error instanceof MoveSpecResolvedResponseError
       || error instanceof MoveSpecExecutionError
+      || error instanceof AuthoritativeHazardCellSelectionError
     ) {
       return fail(
         'execution-rejected',

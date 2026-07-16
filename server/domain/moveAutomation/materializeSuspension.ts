@@ -12,6 +12,7 @@ import {
   parseEncounterState,
 } from '#shared/moveAutomation/encounterState'
 import { sameJsonValue } from '~/utils/serialization'
+import type { TabletopMap } from '~/types/map'
 import type { AuthoritativeMoveSheetRead } from './context'
 import { deduplicateAuthoritativeMoveSheetReads } from './context'
 import type {
@@ -21,6 +22,7 @@ import type {
 import type { MoveStateChangePlan } from './plan'
 import type { ValidatedMoveSpecDefinition } from './validateSpec'
 import { moveResourceCostsInPhaseWindow } from './planMoveResources'
+import { materializeAuthoritativeHazardCellSelection } from './hazardCellSelection'
 
 export type MoveSpecSuspensionMaterializationErrorCode =
   | 'invalid-continuation-revision'
@@ -55,6 +57,8 @@ export interface MaterializeMoveSpecSuspensionInput {
   readonly definition: ValidatedMoveSpecDefinition
   readonly originMapSlug: string
   readonly originMapRevision: number
+  /** Immutable creation snapshot required only for server-owned spatial options. */
+  readonly authoritativeMap?: TabletopMap
   readonly actorPlacementId: string
   readonly suspendedAt: number
   readonly authoritativeSheetReads: readonly AuthoritativeMoveSheetRead[]
@@ -255,18 +259,67 @@ const responseOwnership = (
 }
 
 const responseWindow = (
-  execution: MoveSpecExecutionPendingResult,
-  actorPlacementId: string,
+  input: MaterializeMoveSpecSuspensionInput,
 ): PendingMoveResponseWindow => {
+  const execution = input.execution
   const request = execution.request
+  const authoritativeHazardMap = request.kind === 'hazard-cell-choice'
+    ? input.authoritativeMap ?? fail(
+        'response-owner-missing',
+        'Hazard-cell suspension requires its immutable authoritative map snapshot.',
+      )
+    : undefined
+  const hazardCellSelection = request.kind === 'hazard-cell-choice'
+    ? materializeAuthoritativeHazardCellSelection({
+        map: {
+          ...authoritativeHazardMap!,
+          revision: input.continuationMapRevision,
+        },
+        declaration: {
+          schemaVersion: 1,
+          windowId: request.requestId,
+          promptKey: request.promptKey,
+          map: {
+            slug: input.originMapSlug,
+            revision: input.continuationMapRevision,
+          },
+          move: {
+            resolutionId: input.resolutionId,
+            actorPlacementId: input.actorPlacementId,
+            canonicalMoveId: input.definition.spec.canonicalId,
+            operationId: request.operationId,
+            cellSetId: request.cellSetId,
+          },
+          constraints: {
+            count: request.selection.count,
+            range: request.selection.range,
+            adjacency: request.selection.adjacency,
+            connectedness: request.selection.connectedness,
+            occupancy: request.selection.occupancy,
+            geometry: request.selection.geometry,
+            origin: authoritativeHazardMap!.placements.find(
+              placement => placement.id === input.actorPlacementId,
+            )?.position ?? fail(
+              'response-owner-missing',
+              `Hazard selection actor ${input.actorPlacementId} is missing from the authoritative map.`,
+            ),
+          },
+        },
+      }).window
+    : undefined
   const common = {
     windowId: request.requestId,
     operationId: request.operationId,
     phase: request.phase,
     reasonCode: request.reasonCode,
     promptKey: request.promptKey,
-    ownership: responseOwnership(execution, actorPlacementId),
-    options: request.options.map(option => ({ ...option })),
+    ownership: responseOwnership(execution, input.actorPlacementId),
+    options: hazardCellSelection
+      ? hazardCellSelection.options.map(option => ({
+          id: option.id,
+          labelKey: 'move.hazard.select-cell',
+        }))
+      : request.options.map(option => ({ ...option })),
   }
   return request.kind === 'reaction'
     ? {
@@ -282,6 +335,7 @@ const responseWindow = (
         kind: 'choice',
         allowPass: request.allowPass,
         priority: null,
+        ...(hazardCellSelection ? { hazardCellSelection } : {}),
       }
 }
 
@@ -322,7 +376,7 @@ export const materializeMoveSpecSuspension = (
     readSet: continuationReadSet(input),
     trace: input.execution.trace,
     rollLedger: input.execution.rollLedger,
-    outstandingWindows: [responseWindow(input.execution, input.actorPlacementId)],
+    outstandingWindows: [responseWindow(input)],
     chosenOptions: [],
     causalAncestry: input.execution.trace.ancestry,
     status: 'pending',

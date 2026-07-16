@@ -625,7 +625,51 @@ export const validateMoveSpecOperationSequence = (
     ) {
       reserveRequestId(operation.payload.requestId, index, `${path}.payload.requestId`)
     }
+    if (operation.kind === 'hazard' && operation.payload.action === 'add' && operation.payload.cellSelection) {
+      reserveRequestId(
+        operation.payload.cellSelection.requestId,
+        index,
+        `${path}.payload.cellSelection.requestId`,
+      )
+    }
   })
+
+  const hazardCellChoiceEntries = indexed.filter(({ operation }) => (
+    operation.kind === 'hazard'
+    && operation.payload.action === 'add'
+    && operation.payload.cellSelection !== undefined
+  ))
+  if (hazardCellChoiceEntries.length > 1) {
+    fail(
+      'invalid-definition',
+      hazardCellChoiceEntries[1]!.path,
+      'a MoveSpec may contain at most one durable hazard-cell selection.',
+    )
+  }
+  for (const { operation, path } of hazardCellChoiceEntries) {
+    if (operation.kind !== 'hazard' || operation.payload.action !== 'add') continue
+    if (operation.phase !== 'schedule') {
+      fail(
+        'invalid-definition',
+        `${path}.phase`,
+        'a durable hazard-cell selection must execute in the schedule phase.',
+      )
+    }
+    if (operation.recipients.kind !== 'none') {
+      fail(
+        'invalid-definition',
+        `${path}.recipients`,
+        'a durable hazard-cell selection must use the mechanics-free none recipient set.',
+      )
+    }
+  }
+  if (hazardCellChoiceEntries.length > 0 && requestIndexById.size > 1) {
+    fail(
+      'invalid-definition',
+      hazardCellChoiceEntries[0]!.path,
+      'a durable hazard-cell selection cannot coexist with another response request.',
+    )
+  }
 
   const movementChoiceEntries = indexed.filter(({ operation }) => (
     operation.kind === 'movement-request' && operation.payload.choice !== undefined

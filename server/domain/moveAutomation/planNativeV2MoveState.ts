@@ -484,6 +484,12 @@ export const planNativeV2MoveState = (options: {
     operations: mapOperations,
     dynamicRecipients: native.dynamicRecipients,
     usageResources,
+    hazards: {
+      cellSets: new Map(native.resolvedHazardCells.map(selection => [
+        selection.cellSetId,
+        selection.cells,
+      ])),
+    },
     presentation: {
       operationId: options.operationId ?? 'op_nativeplan0001',
       move: {

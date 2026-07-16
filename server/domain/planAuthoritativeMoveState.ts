@@ -302,6 +302,9 @@ const cloneResolution = (resolution: AuthoritativeMoveResolution): Authoritative
   ...(resolution.switchTransition === undefined
     ? {}
     : { switchTransition: cloneJson(resolution.switchTransition) }),
+  ...(resolution.nativeV2 === undefined
+    ? {}
+    : { nativeV2: cloneJson(resolution.nativeV2) }),
 })
 
 const cloneUsageSummary = (usage: UseMoveUsageSummary): UseMoveUsageSummary => cloneJson(usage)
@@ -837,6 +840,7 @@ const planPendingMoveState = (options: {
     definition: options.execution.runtime.definition,
     originMapSlug: options.input.map.slug,
     originMapRevision: options.previousRevision,
+    authoritativeMap: options.input.map,
     actorPlacementId: options.execution.actorPlacementId,
     suspendedAt: options.plannedAt,
     authoritativeSheetReads: sheetReads,

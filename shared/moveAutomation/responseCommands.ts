@@ -5,6 +5,7 @@ import {
 } from '../livePlayCommands'
 import { isPlayerProfileId, type PlayerProfileId } from '../playerProfiles'
 import { PENDING_MOVE_RESOLUTION_LIMITS } from './pendingResolution'
+import { MOVE_HAZARD_CELL_SELECTION_LIMITS } from './hazardCellSelection'
 
 /**
  * Client intent for one durable response window. These commands carry stable
@@ -51,11 +52,21 @@ export interface MoveResponseCommandEnvelope<
   readonly payload: TPayload
 }
 
-export interface ChooseMoveResponsePayload {
+export interface ChooseSingleMoveResponsePayload {
   readonly resolutionId: string
   readonly windowId: string
   readonly optionId: string
 }
+
+export interface ChooseMultipleMoveResponsePayload {
+  readonly resolutionId: string
+  readonly windowId: string
+  readonly optionIds: readonly string[]
+}
+
+export type ChooseMoveResponsePayload =
+  | ChooseSingleMoveResponsePayload
+  | ChooseMultipleMoveResponsePayload
 
 export interface ReactMoveResponsePayload {
   readonly resolutionId: string
@@ -178,6 +189,11 @@ const OPTION_RESPONSE_PAYLOAD_FIELDS = [
   'windowId',
   'optionId',
 ] as const
+const MULTI_OPTION_RESPONSE_PAYLOAD_FIELDS = [
+  'resolutionId',
+  'windowId',
+  'optionIds',
+] as const
 const WINDOW_RESPONSE_PAYLOAD_FIELDS = [
   'resolutionId',
   'windowId',
@@ -191,6 +207,8 @@ const FORBIDDEN_CLIENT_MECHANICS_FIELDS = new Set([
   'branch',
   'choices',
   'conditionUpdates',
+  'cell',
+  'cells',
   'coordinate',
   'coordinates',
   'damage',
@@ -200,6 +218,10 @@ const FORBIDDEN_CLIENT_MECHANICS_FIELDS = new Set([
   'distance',
   'effectOperations',
   'effects',
+  'hazardCells',
+  'geometry',
+  'connectedness',
+  'adjacency',
   'finalState',
   'hit',
   'hpUpdates',
@@ -208,6 +230,7 @@ const FORBIDDEN_CLIENT_MECHANICS_FIELDS = new Set([
   'maximumDistance',
   'mechanics',
   'movementMode',
+  'occupancy',
   'occupancyPolicy',
   'operations',
   'path',
@@ -329,7 +352,12 @@ const collectIdentifier = (
 
 const payloadFieldsForType = (
   type: MoveResponseCommandType,
+  value: UnknownRecord,
 ): readonly string[] => {
+  if (
+    type === MOVE_RESPONSE_COMMAND_TYPES.CHOOSE
+    && hasOwn(value, 'optionIds')
+  ) return MULTI_OPTION_RESPONSE_PAYLOAD_FIELDS
   if (
     type === MOVE_RESPONSE_COMMAND_TYPES.CHOOSE
     || type === MOVE_RESPONSE_COMMAND_TYPES.REACT
@@ -351,7 +379,7 @@ const parsePayload = (
     return null
   }
 
-  const fields = payloadFieldsForType(type)
+  const fields = payloadFieldsForType(type, value)
   collectExactFieldIssues(value, fields, '$.payload', issues)
   const resolutionId = collectIdentifier(
     value.resolutionId,
@@ -378,18 +406,59 @@ const parsePayload = (
         true,
       )
     : null
+  let optionIds: string[] | null = null
+  if (fields.includes('optionIds')) {
+    if (!Array.isArray(value.optionIds)) {
+      addIssue(issues, '$.payload.optionIds', 'invalid-identifier', '$.payload.optionIds must be an array.')
+    }
+    else if (value.optionIds.length > MOVE_HAZARD_CELL_SELECTION_LIMITS.selectedCells) {
+      addIssue(
+        issues,
+        '$.payload.optionIds',
+        'limit-exceeded',
+        `$.payload.optionIds must contain at most ${MOVE_HAZARD_CELL_SELECTION_LIMITS.selectedCells} IDs.`,
+      )
+    }
+    else {
+      optionIds = []
+      const seen = new Set<string>()
+      value.optionIds.forEach((candidate, index) => {
+        const parsed = collectIdentifier(
+          candidate,
+          `$.payload.optionIds[${index}]`,
+          MOVE_RESPONSE_COMMAND_LIMITS.optionIdChars,
+          issues,
+          true,
+        )
+        if (parsed === null) return
+        if (seen.has(parsed)) {
+          addIssue(
+            issues,
+            `$.payload.optionIds[${index}]`,
+            'invalid-identifier',
+            `$.payload.optionIds[${index}] duplicates a server-issued option ID.`,
+          )
+          return
+        }
+        seen.add(parsed)
+        optionIds!.push(parsed)
+      })
+    }
+  }
 
   if (
     issues.some(issue => issue.path.startsWith('$.payload'))
     || resolutionId === null
     || (fields.includes('windowId') && windowId === null)
     || (fields.includes('optionId') && optionId === null)
+    || (fields.includes('optionIds') && optionIds === null)
   ) return null
 
   return Object.freeze({
     resolutionId,
     ...(windowId === null ? {} : { windowId }),
     ...(optionId === null ? {} : { optionId }),
+    ...(optionIds === null ? {} : { optionIds: Object.freeze(optionIds) }),
   }) as MoveResponseCommand['payload']
 }
 

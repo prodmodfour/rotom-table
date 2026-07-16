@@ -35,6 +35,11 @@ import {
   type MovePredicate,
 } from './predicates'
 import {
+  MoveHazardCellSelectionValidationError,
+  parseMoveHazardCellSelectionRules,
+  type MoveHazardCellSelectionRules,
+} from './hazardCellSelection'
+import {
   MoveSelectorValidationError,
   parseMoveSelector,
   type MoveSelector,
@@ -1080,6 +1085,11 @@ export interface MoveRemoveFieldEffectPayload {
 
 export type MoveFieldEffectPayload = MoveApplyFieldEffectPayload | MoveRemoveFieldEffectPayload
 
+export interface MoveHazardCellSelectionRequest extends MoveHazardCellSelectionRules {
+  readonly requestId: string
+  readonly promptKey: string
+}
+
 export interface MoveAddHazardEffectPayload {
   readonly action: 'add'
   readonly hazardId: string
@@ -1087,6 +1097,8 @@ export interface MoveAddHazardEffectPayload {
   /** Stable reference to cells resolved by authoritative targeting. */
   readonly cellSetId: string
   readonly layers: number
+  /** Reviewed durable selection policy. Omitted only for pre-MA-134B server-resolved placeholders. */
+  readonly cellSelection?: MoveHazardCellSelectionRequest
 }
 
 export interface MoveRemoveHazardEffectPayload {
@@ -1522,6 +1534,17 @@ const ADD_HAZARD_FIELDS = [
   'hazardKind',
   'cellSetId',
   'layers',
+] as const
+const ADD_HAZARD_SELECTION_FIELDS = [...ADD_HAZARD_FIELDS, 'cellSelection'] as const
+const HAZARD_CELL_SELECTION_FIELDS = [
+  'requestId',
+  'promptKey',
+  'count',
+  'range',
+  'adjacency',
+  'connectedness',
+  'occupancy',
+  'geometry',
 ] as const
 const REMOVE_HAZARD_FIELDS = ['action', 'hazardId'] as const
 const MOVEMENT_REQUEST_FIELDS = [
@@ -3523,11 +3546,45 @@ const parseFieldPayload = (value: unknown, path: string): MoveFieldEffectPayload
   return fail('invalid-effect-operation', `${path}.action`, 'must be apply or remove.')
 }
 
+const parseHazardCellSelection = (
+  value: unknown,
+  path: string,
+): MoveHazardCellSelectionRequest => {
+  const input = parseExactRecord(value, HAZARD_CELL_SELECTION_FIELDS, path)
+  let rules: MoveHazardCellSelectionRules
+  try {
+    rules = parseMoveHazardCellSelectionRules({
+      count: ownValue(input, 'count', path),
+      range: ownValue(input, 'range', path),
+      adjacency: ownValue(input, 'adjacency', path),
+      connectedness: ownValue(input, 'connectedness', path),
+      occupancy: ownValue(input, 'occupancy', path),
+      geometry: ownValue(input, 'geometry', path),
+    }, path)
+  }
+  catch (error) {
+    if (error instanceof MoveHazardCellSelectionValidationError) {
+      return fail(
+        error.code === 'limit-exceeded' ? 'limit-exceeded' : 'invalid-effect-operation',
+        error.path,
+        error.detail,
+      )
+    }
+    throw error
+  }
+  return {
+    requestId: parseStableId(ownValue(input, 'requestId', path), `${path}.requestId`),
+    promptKey: parseStableId(ownValue(input, 'promptKey', path), `${path}.promptKey`),
+    ...rules,
+  }
+}
+
 const parseHazardPayload = (value: unknown, path: string): MoveHazardEffectPayload => {
   const input = parseRecord(value, path)
   const action = ownValue(input, 'action', path)
   if (action === 'add') {
-    assertExactKeys(input, ADD_HAZARD_FIELDS, path)
+    const hasCellSelection = Object.prototype.hasOwnProperty.call(input, 'cellSelection')
+    assertExactKeys(input, hasCellSelection ? ADD_HAZARD_SELECTION_FIELDS : ADD_HAZARD_FIELDS, path)
     return {
       action,
       hazardId: parseStableId(ownValue(input, 'hazardId', path), `${path}.hazardId`),
@@ -3539,6 +3596,9 @@ const parseHazardPayload = (value: unknown, path: string): MoveHazardEffectPaylo
         1,
         MOVE_EFFECT_OPERATION_LIMITS.hazardLayers,
       ),
+      ...(hasCellSelection
+        ? { cellSelection: parseHazardCellSelection(input.cellSelection, `${path}.cellSelection`) }
+        : {}),
     }
   }
   if (action === 'remove') {

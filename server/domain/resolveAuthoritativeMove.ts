@@ -917,11 +917,13 @@ const resolveNativeSelfMove = (options: {
       `${options.runtime.canonicalId} does not accept a target branch.`,
     )
   }
-  if (!isSeamlessSelfMoveScript(options.entry.script)) {
+  const hazardPlacementMove = options.entry.script.targetMode === 'hazard'
+    && options.entry.script.hazardSuggestions.length > 0
+  if (!isSeamlessSelfMoveScript(options.entry.script) && !hazardPlacementMove) {
     fail(
       'invalid',
       'selection-kind-mismatch',
-      `${options.runtime.canonicalId} is not a seamless self move.`,
+      `${options.runtime.canonicalId} is not a seamless self or hazard-placement move.`,
     )
   }
 

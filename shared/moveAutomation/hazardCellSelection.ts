@@ -100,16 +100,19 @@ export interface MoveHazardCellSelectionPublicMoveContext {
   readonly canonicalMoveId: string
 }
 
-export interface MoveHazardCellSelectionConstraints {
+export interface MoveHazardCellSelectionRules {
   readonly count: MoveHazardCellSelectionCount
-  /** Server-selected range origin, not a coordinate accepted from response intent. */
-  readonly origin: GridAnchor
-  /** Inclusive PTU grid distance from `origin`. */
+  /** Inclusive PTU grid distance from the server-selected origin. */
   readonly range: number
   readonly adjacency: MoveHazardCellSelectionAdjacency
   readonly connectedness: MoveHazardCellSelectionConnectedness
   readonly occupancy: MoveHazardCellSelectionOccupancy
   readonly geometry: MoveHazardCellSelectionGeometry
+}
+
+export interface MoveHazardCellSelectionConstraints extends MoveHazardCellSelectionRules {
+  /** Server-selected range origin, not a coordinate accepted from response intent. */
+  readonly origin: GridAnchor
 }
 
 /** Strict server-authored declaration used to materialize a durable window. */
@@ -211,14 +214,17 @@ const PUBLIC_MOVE_CONTEXT_FIELDS = [
   'actorPlacementId',
   'canonicalMoveId',
 ] as const
-const CONSTRAINT_FIELDS = [
+const RULE_FIELDS = [
   'count',
-  'origin',
   'range',
   'adjacency',
   'connectedness',
   'occupancy',
   'geometry',
+] as const
+const CONSTRAINT_FIELDS = [
+  ...RULE_FIELDS,
+  'origin',
 ] as const
 const EXACT_COUNT_FIELDS = ['kind', 'count'] as const
 const UP_TO_COUNT_FIELDS = ['kind', 'minimum', 'maximum'] as const
@@ -511,11 +517,12 @@ const parsePublicMoveContext = (
   })
 }
 
-const parseConstraints = (
+/** Strictly parse the reusable reviewed rules attached to a hazard operation. */
+export const parseMoveHazardCellSelectionRules = (
   value: unknown,
-  path: string,
-): MoveHazardCellSelectionConstraints => {
-  const record = exactRecord(value, CONSTRAINT_FIELDS, path)
+  path = 'hazardCellSelection.rules',
+): MoveHazardCellSelectionRules => {
+  const record = exactRecord(value, RULE_FIELDS, path)
   if (!ADJACENCY_SET.has(record.adjacency)) {
     return fail(
       'unknown-kind',
@@ -549,7 +556,6 @@ const parseConstraints = (
   }
   return Object.freeze({
     count,
-    origin: parseCell(record.origin, `${path}.origin`),
     range: boundedInteger(
       record.range,
       `${path}.range`,
@@ -560,6 +566,25 @@ const parseConstraints = (
     connectedness: record.connectedness as MoveHazardCellSelectionConnectedness,
     occupancy: record.occupancy as MoveHazardCellSelectionOccupancy,
     geometry,
+  })
+}
+
+const parseConstraints = (
+  value: unknown,
+  path: string,
+): MoveHazardCellSelectionConstraints => {
+  const record = exactRecord(value, CONSTRAINT_FIELDS, path)
+  const rules = parseMoveHazardCellSelectionRules({
+    count: record.count,
+    range: record.range,
+    adjacency: record.adjacency,
+    connectedness: record.connectedness,
+    occupancy: record.occupancy,
+    geometry: record.geometry,
+  }, path)
+  return Object.freeze({
+    ...rules,
+    origin: parseCell(record.origin, `${path}.origin`),
   })
 }
 
@@ -608,6 +633,12 @@ export const moveHazardCellSelectionOptionId = (
   `hazard.cell.${stableNamespaceHash(optionNamespace(namespace))}.`
   + `${cell.x}.${cell.y}.${cell.z}`
 )
+
+/** One bounded audit identity for a canonical multi-cell response. */
+export const moveHazardCellSelectionResponseId = (
+  windowId: string,
+  optionIds: readonly string[],
+): string => `hazard.selection.${stableNamespaceHash(`${windowId}:${optionIds.join(':')}`)}`
 
 const parseOption = (
   value: unknown,

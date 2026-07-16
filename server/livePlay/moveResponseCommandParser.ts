@@ -60,6 +60,7 @@ export interface ParsedMoveResponseCommand {
   readonly storedResolution: StoredPendingMoveResolution
   readonly window: PendingMoveResponseWindow | null
   readonly option: PendingMoveResponseOption | null
+  readonly options?: readonly PendingMoveResponseOption[]
 }
 
 const parserError = (
@@ -91,6 +92,10 @@ const commandWindowId = (command: MoveResponseCommand): string | null => (
 
 const commandOptionId = (command: MoveResponseCommand): string | null => (
   'optionId' in command.payload ? command.payload.optionId : null
+)
+
+const commandOptionIds = (command: MoveResponseCommand): readonly string[] | null => (
+  'optionIds' in command.payload ? command.payload.optionIds : null
 )
 
 const expectedWindowKind = (
@@ -177,6 +182,24 @@ const resolveOption = (
   return option
 }
 
+const resolveOptions = (
+  optionIds: readonly string[] | null,
+  window: PendingMoveResponseWindow,
+): readonly PendingMoveResponseOption[] => {
+  if (optionIds === null) return []
+  const requested = new Set(optionIds)
+  for (const optionId of requested) {
+    if (!window.options.some(option => option.id === optionId)) {
+      return parserError(
+        400,
+        'unknown-option',
+        'A referenced move response option is invalid or no longer available.',
+      )
+    }
+  }
+  return Object.freeze(window.options.filter(option => requested.has(option.id)))
+}
+
 /**
  * Parses client intent and resolves every submitted ID against one current
  * durable pending record. No use-case callback runs until this boundary has
@@ -223,6 +246,7 @@ export const parsePendingMoveResponseCommand = (
       storedResolution,
       window: null,
       option: null,
+      options: Object.freeze([]),
     })
   }
 
@@ -231,7 +255,26 @@ export const parsePendingMoveResponseCommand = (
   }
   const window = resolveWindow(command, storedResolution, windowId)
   options.authorize?.({ command, storedResolution, window })
-  const option = resolveOption(commandOptionId(command), window)
+  const optionId = commandOptionId(command)
+  const optionIds = commandOptionIds(command)
+  const isHazardCellWindow = window.kind === 'choice' && window.hazardCellSelection !== undefined
+  if (isHazardCellWindow !== (optionIds !== null)) {
+    return parserError(
+      400,
+      'invalid-command',
+      isHazardCellWindow
+        ? 'Hazard-cell responses must submit the complete server-issued option ID list.'
+        : 'Multiple option IDs are accepted only for a hazard-cell response window.',
+    )
+  }
+  const option = resolveOption(optionId, window)
+  const selectedOptions = resolveOptions(optionIds, window)
 
-  return Object.freeze({ command, storedResolution, window, option })
+  return Object.freeze({
+    command,
+    storedResolution,
+    window,
+    option,
+    options: selectedOptions,
+  })
 }

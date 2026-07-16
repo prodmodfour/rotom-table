@@ -1390,7 +1390,7 @@ export const useMoveAutomationPanel = ({
       return true
     }
 
-    if (isSeamlessSelfMoveScript(script)) {
+    if (isSeamlessSelfMoveScript(script) || script.targetMode === 'hazard') {
       clearMoveAutomationFeedback()
       activeMoveTargetBranchSelection.value = null
       activeMoveTargeting.value = null
@@ -2016,6 +2016,11 @@ export const useMoveAutomationPanel = ({
         dispatchRequest: buildSelfAuthoritativeDispatchRequest(request),
       })
       if (authoritative.handled) return authoritative.accepted
+    }
+
+    if (request.script.targetMode === 'hazard') {
+      moveUsageError.value = 'Hazard placement requires the authoritative durable cell-selection flow.'
+      return false
     }
 
     const recorded = await recordMoveUseIfTracked({ placementId: request.userId, moveName: request.moveName }, request.frequency)

@@ -15,6 +15,10 @@ import {
   MOVE_SPEC_PHASES,
   type MoveSpecPhase,
 } from './spec'
+import {
+  parseMoveHazardCellSelectionPublicWindow,
+  type MoveHazardCellSelectionPublicWindow,
+} from './hazardCellSelection'
 
 /** Client-safe projection version for authorized durable move-response prompts. */
 export const PENDING_MOVE_RESPONSE_VIEW_SCHEMA_VERSION = 1 as const
@@ -41,6 +45,7 @@ export type PendingMoveResponseWindowViewWindow =
       readonly kind: 'choice'
       readonly allowPass: boolean
       readonly priority: null
+      readonly hazardCellSelection?: MoveHazardCellSelectionPublicWindow
     })
   | (PendingMoveResponseWindowViewBase & {
       readonly kind: 'reaction'
@@ -77,6 +82,7 @@ const WINDOW_FIELDS = [
   'allowPass',
   'priority',
 ] as const
+const HAZARD_CELL_WINDOW_FIELDS = [...WINDOW_FIELDS, 'hazardCellSelection'] as const
 const REACTION_WINDOW_FIELDS = [...WINDOW_FIELDS, 'timing', 'depth'] as const
 const STABLE_ID_PATTERN = /^[a-z0-9]+(?:[._:/-][a-z0-9]+)*$/
 const WINDOW_KIND_SET = new Set<unknown>(['choice', 'reaction'])
@@ -119,14 +125,20 @@ const parseWindow = (
   value: unknown,
   path: string,
 ): PendingMoveResponseWindowView['window'] => {
+  const isReaction = typeof value === 'object'
+    && value !== null
+    && 'kind' in value
+    && value.kind === 'reaction'
+  const hasHazardCellSelection = typeof value === 'object'
+    && value !== null
+    && 'hazardCellSelection' in value
   const candidate = exactRecord(
     value,
-    typeof value === 'object'
-      && value !== null
-      && 'kind' in value
-      && value.kind === 'reaction'
+    isReaction
       ? REACTION_WINDOW_FIELDS
-      : WINDOW_FIELDS,
+      : hasHazardCellSelection
+        ? HAZARD_CELL_WINDOW_FIELDS
+        : WINDOW_FIELDS,
     path,
   )
   const record = candidate
@@ -163,11 +175,29 @@ const parseWindow = (
   }
   if (record.kind === 'choice') {
     if (record.priority !== null) throw new Error(`${path}.priority must be null for a choice.`)
+    const hazardCellSelection = hasHazardCellSelection
+      ? parseMoveHazardCellSelectionPublicWindow(
+          record.hazardCellSelection,
+          `${path}.hazardCellSelection`,
+        )
+      : undefined
+    if (hazardCellSelection) {
+      const optionIds = options.map(option => option.id)
+      const cellOptionIds = hazardCellSelection.options.map(option => option.id)
+      if (
+        hazardCellSelection.windowId !== common.windowId
+        || optionIds.length !== cellOptionIds.length
+        || optionIds.some((id, index) => id !== cellOptionIds[index])
+      ) {
+        throw new Error(`${path}.hazardCellSelection must match its choice window and options.`)
+      }
+    }
     return Object.freeze({
       ...common,
       kind: 'choice',
       allowPass: record.allowPass,
       priority: null,
+      ...(hazardCellSelection ? { hazardCellSelection } : {}),
     })
   }
   if (!record.allowPass) throw new Error(`${path}.allowPass must be true for a reaction.`)

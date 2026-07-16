@@ -12,6 +12,11 @@ import {
   type MoveAutomationAreaDirection,
 } from '~/types/moveAutomation'
 import {
+  moveHazardCellSelectionResponseId,
+  parseMoveHazardCellSelectionWindow,
+  type MoveHazardCellSelectionWindow,
+} from './hazardCellSelection'
+import {
   MOVE_RESPONSE_OPTION_LIMITS,
   PENDING_MOVE_MOVEMENT_SELECTION_KINDS,
   isCanonicalPendingMoveMovementOption,
@@ -188,6 +193,8 @@ export interface PendingMoveChoiceResponseWindow
   readonly kind: 'choice'
   readonly allowPass: boolean
   readonly priority: null
+  /** Private server-owned cell values; projected only after ordinary window authorization. */
+  readonly hazardCellSelection?: MoveHazardCellSelectionWindow
 }
 
 export interface PendingMoveReactionResponseWindow
@@ -222,8 +229,10 @@ export interface PendingMoveResolutionChosenOption {
   readonly windowId: string
   /** The idempotency identity of the accepted response command. */
   readonly responseOpId: LivePlayOpId
-  /** Null records an authorized pass. */
+  /** Null records an authorized pass; multi-cell choices use their stable selection digest. */
   readonly optionId: string | null
+  /** Canonical server-issued IDs retained only for an audited multi-cell choice. */
+  readonly optionIds?: readonly string[]
   readonly chosenBy: PendingMoveResponseOwner
   readonly chosenAt: number
 }
@@ -382,11 +391,20 @@ const WINDOW_FIELDS = [
   'allowPass',
   'priority',
 ] as const
+const HAZARD_CELL_WINDOW_FIELDS = [...WINDOW_FIELDS, 'hazardCellSelection'] as const
 const REACTION_WINDOW_FIELDS = [...WINDOW_FIELDS, 'timing', 'depth'] as const
 const CHOSEN_OPTION_FIELDS = [
   'windowId',
   'responseOpId',
   'optionId',
+  'chosenBy',
+  'chosenAt',
+] as const
+const MULTI_CHOSEN_OPTION_FIELDS = [
+  'windowId',
+  'responseOpId',
+  'optionId',
+  'optionIds',
   'chosenBy',
   'chosenAt',
 ] as const
@@ -1173,9 +1191,20 @@ const parseWindow = (value: unknown, path: string): PendingMoveResponseWindow =>
     fail('invalid-pending-resolution', `${path}.kind`, 'must be choice or reaction.')
   }
   const kind = candidate.kind as PendingMoveResponseWindowKind
+  const hasHazardCellSelection = Object.prototype.hasOwnProperty.call(
+    candidate,
+    'hazardCellSelection',
+  )
+  if (kind === 'reaction' && hasHazardCellSelection) {
+    fail('inconsistent-state', `${path}.hazardCellSelection`, 'is available only for a choice window.')
+  }
   const record = parseExactRecord(
     value,
-    kind === 'reaction' ? REACTION_WINDOW_FIELDS : WINDOW_FIELDS,
+    kind === 'reaction'
+      ? REACTION_WINDOW_FIELDS
+      : hasHazardCellSelection
+        ? HAZARD_CELL_WINDOW_FIELDS
+        : WINDOW_FIELDS,
     path,
   )
   const common = {
@@ -1193,7 +1222,44 @@ const parseWindow = (value: unknown, path: string): PendingMoveResponseWindow =>
     if (record.priority !== null) {
       fail('invalid-pending-resolution', `${path}.priority`, 'must be null for a choice window.')
     }
-    return { ...common, kind, allowPass, priority: null }
+    if (!hasHazardCellSelection) return { ...common, kind, allowPass, priority: null }
+
+    let hazardCellSelection: MoveHazardCellSelectionWindow
+    try {
+      hazardCellSelection = parseMoveHazardCellSelectionWindow(
+        record.hazardCellSelection,
+        `${path}.hazardCellSelection`,
+      )
+    }
+    catch (error) {
+      return fail(
+        'invalid-pending-resolution',
+        `${path}.hazardCellSelection`,
+        error instanceof Error ? error.message : 'must be a valid private hazard-cell window.',
+      )
+    }
+    const declaration = hazardCellSelection.declaration
+    const optionIds = common.options.map(option => option.id)
+    const hazardOptionIds = hazardCellSelection.options.map(option => option.id)
+    const minimum = declaration.constraints.count.kind === 'exact'
+      ? declaration.constraints.count.count
+      : declaration.constraints.count.minimum
+    if (
+      declaration.windowId !== common.windowId
+      || declaration.move.operationId !== common.operationId
+      || common.promptKey !== declaration.promptKey
+      || optionIds.length !== hazardOptionIds.length
+      || optionIds.some((id, index) => id !== hazardOptionIds[index])
+      || allowPass !== (minimum === 0)
+      || common.options.some(option => option.selection !== undefined)
+    ) {
+      fail(
+        'inconsistent-state',
+        `${path}.hazardCellSelection`,
+        'must exactly match the choice identity, options, prompt, and pass policy.',
+      )
+    }
+    return { ...common, kind, allowPass, priority: null, hazardCellSelection }
   }
 
   if (!allowPass) {
@@ -1269,13 +1335,45 @@ const parseChosenOptions = (
     PENDING_MOVE_RESOLUTION_LIMITS.chosenOptions,
   ).map((entry, index): PendingMoveResolutionChosenOption => {
     const entryPath = `${path}[${index}]`
-    const record = parseExactRecord(entry, CHOSEN_OPTION_FIELDS, entryPath)
+    const candidate = parseRecord(entry, entryPath)
+    const hasOptionIds = Object.prototype.hasOwnProperty.call(candidate, 'optionIds')
+    const record = parseExactRecord(
+      entry,
+      hasOptionIds ? MULTI_CHOSEN_OPTION_FIELDS : CHOSEN_OPTION_FIELDS,
+      entryPath,
+    )
+    const windowId = parseStableId(record.windowId, `${entryPath}.windowId`)
+    const optionId = record.optionId === null
+      ? null
+      : parseStableId(record.optionId, `${entryPath}.optionId`)
+    const optionIds = hasOptionIds
+      ? parseBoundedArray(
+          record.optionIds,
+          `${entryPath}.optionIds`,
+          PENDING_MOVE_RESOLUTION_LIMITS.optionsPerWindow,
+        ).map((id, optionIndex) => parseStableId(
+          id,
+          `${entryPath}.optionIds[${optionIndex}]`,
+        ))
+      : undefined
+    if (optionIds && new Set(optionIds).size !== optionIds.length) {
+      fail('duplicate-id', `${entryPath}.optionIds`, 'must not contain duplicate option IDs.')
+    }
+    if (
+      optionIds
+      && optionId !== moveHazardCellSelectionResponseId(windowId, optionIds)
+    ) {
+      fail(
+        'inconsistent-state',
+        `${entryPath}.optionId`,
+        'must be the stable audit identity for the canonical multi-cell option IDs.',
+      )
+    }
     return {
-      windowId: parseStableId(record.windowId, `${entryPath}.windowId`),
+      windowId,
       responseOpId: parseOriginOpId(record.responseOpId, `${entryPath}.responseOpId`),
-      optionId: record.optionId === null
-        ? null
-        : parseStableId(record.optionId, `${entryPath}.optionId`),
+      optionId,
+      ...(optionIds ? { optionIds } : {}),
       chosenBy: parseOwner(record.chosenBy, `${entryPath}.chosenBy`),
       chosenAt: parseTimestamp(record.chosenAt, `${entryPath}.chosenAt`),
     }
@@ -1720,6 +1818,35 @@ export const isPendingMoveDeclarationResult = (
   }
 }
 
+const assertHazardCellWindowBindings = (input: {
+  readonly windows: readonly PendingMoveResponseWindow[]
+  readonly resolutionId: string
+  readonly originMapSlug: string
+  readonly actorPlacementId: string
+  readonly canonicalMoveId: string
+  readonly readSet: readonly PendingMoveResolutionResourceRead[]
+  readonly path: string
+}): void => {
+  const mapRead = input.readSet.find(read => read.kind === 'map')
+  for (const [index, window] of input.windows.entries()) {
+    if (window.kind !== 'choice' || !window.hazardCellSelection) continue
+    const declaration = window.hazardCellSelection.declaration
+    if (
+      declaration.move.resolutionId !== input.resolutionId
+      || declaration.move.actorPlacementId !== input.actorPlacementId
+      || declaration.move.canonicalMoveId !== input.canonicalMoveId
+      || declaration.map.slug !== input.originMapSlug
+      || declaration.map.revision !== mapRead?.revision
+    ) {
+      fail(
+        'inconsistent-state',
+        `${input.path}.outstandingWindows[${index}].hazardCellSelection`,
+        'must match the durable resolution identity and current authoritative map read.',
+      )
+    }
+  }
+}
+
 /** Strictly parse, cross-check, detach, and freeze a durable suspended resolution. */
 export const parsePendingMoveResolution = (
   value: unknown,
@@ -1831,6 +1958,15 @@ export const parsePendingMoveResolution = (
     path,
   })
   assertWindowTraceLinks(outstandingWindows, trace, phase, path)
+  assertHazardCellWindowBindings({
+    windows: outstandingWindows,
+    resolutionId,
+    originMapSlug,
+    actorPlacementId,
+    canonicalMoveId,
+    readSet,
+    path,
+  })
   assertChosenTraceLinks(chosenOptions, trace, path)
   assertStatusShape(status, outstandingWindows, path)
   const outstandingIds = new Set(outstandingWindows.map(window => window.windowId))
