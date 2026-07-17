@@ -2196,7 +2196,7 @@ Status: DONE
 
 ## MA-160 — Bound recursion and nested resource use
 
-Status: TODO
+Status: DONE
 
 **Depends on:** MA-159
 **Commit:** `fix(move-automation): bound nested move execution`

@@ -33,6 +33,7 @@ import {
 import {
   MOVE_RESOLUTION_TRACE_LIMITS,
   type MoveResolutionAuditTrace,
+  type MoveResolutionAuditTraceEventInput,
   type MoveResolutionTraceAncestryEntry,
   type MoveResolutionTraceJsonValue,
 } from '#shared/moveAutomation/trace'
@@ -89,7 +90,7 @@ import {
 } from './handlers/registry'
 import {
   createMoveResolutionTrace,
-  reduceMoveResolutionTrace,
+  reduceMoveResolutionTrace as appendMoveResolutionTrace,
 } from './trace'
 import { orderMoveReactionOperationEntries } from './reactionOrder'
 import {
@@ -118,6 +119,13 @@ import {
 import type { ValidatedAuthoritativeHazardCellSelection } from './hazardCellSelection'
 import type { MoveSpecV2Runtime } from './registry'
 import {
+  createNestedMoveExecutionBudget,
+  NestedMoveExecutionBudgetError,
+  type NestedMoveExecutionBudget,
+  type NestedMoveExecutionBudgetErrorCode,
+  type NestedMoveExecutionPolicy,
+} from './nestedExecution'
+import {
   validateMoveSpec,
   validateMoveSpecOperationSequence,
   type ValidatedMoveSpec,
@@ -141,6 +149,7 @@ export type MoveSpecExecutionErrorCode =
   | 'nested-targeting-invalid'
   | 'nested-operation-id-conflict'
   | 'nested-execution-rejected'
+  | `nested-${NestedMoveExecutionBudgetErrorCode}`
 
 export class MoveSpecExecutionError extends Error {
   readonly code: MoveSpecExecutionErrorCode
@@ -411,6 +420,8 @@ export interface ExecuteMoveSpecInput {
   readonly authoritativeHazardCellSelections?: readonly ValidatedAuthoritativeHazardCellSelection[]
   /** Test/migration seam; production resolves only the audited global registry. */
   readonly handlerRegistry?: RegisteredMoveHandlerRegistry
+  /** Server-reviewed child deny policy; never parsed from a command or response. */
+  readonly nestedExecutionPolicy?: NestedMoveExecutionPolicy
 }
 
 interface MoveSpecSelectorState {
@@ -426,6 +437,18 @@ const fail = (
   message: string,
 ): never => {
   throw new MoveSpecExecutionError(code, message)
+}
+
+const enforceNestedExecutionBudget = <Result>(operation: () => Result): Result => {
+  try {
+    return operation()
+  }
+  catch (error) {
+    if (error instanceof NestedMoveExecutionBudgetError) {
+      return fail(`nested-${error.code}`, error.message)
+    }
+    throw error
+  }
 }
 
 const frozenIds = (ids: readonly string[]): readonly string[] => Object.freeze([...ids])
@@ -1519,6 +1542,9 @@ interface MoveSpecExecutionState {
   readonly mechanicsSource: 'actor-move' | 'registered-spec'
   readonly sealRandomLedger: boolean
   readonly assertResponsesAtCompletion: boolean
+  readonly nestedBudget: NestedMoveExecutionBudget
+  readonly nestedDepth: number
+  readonly root: boolean
 }
 
 interface NestedMoveTargetOption {
@@ -1648,6 +1674,7 @@ const nestedTargetOptions = (input: {
   readonly operation: MoveNestedMoveEffectOperation
   readonly runtime: MoveSpecV2Runtime
   readonly selectorState: MoveSpecSelectorState
+  readonly budget: NestedMoveExecutionBudget
 }): readonly NestedMoveTargetOption[] => {
   const targeting = input.operation.payload.targeting
   if (targeting.kind !== 'fresh-choice') return Object.freeze([])
@@ -1671,6 +1698,10 @@ const nestedTargetOptions = (input: {
     selectorState: input.selectorState,
     selector: targeting.selector,
   })
+  enforceNestedExecutionBudget(() => input.budget.reserveTargets(
+    ids.length,
+    `Nested fresh-target request ${targeting.requestId}`,
+  ))
   if (ids.length === 0) {
     return fail(
       'nested-targeting-invalid',
@@ -1751,20 +1782,29 @@ const appendNestedTrace = (
   parent: MoveResolutionAuditTrace,
   child: MoveResolutionAuditTrace,
   invocationPhase: MoveSpecPhase,
+  budget: NestedMoveExecutionBudget,
 ): MoveResolutionAuditTrace => {
   let trace = parent
   for (const event of child.events) {
     if (event.kind === 'phase-transition') continue
     const { sequence: _sequence, ...withoutSequence } = event
     if (event.kind === 'target') {
-      trace = reduceMoveResolutionTrace(trace, {
+      enforceNestedExecutionBudget(() => budget.reserveEmittedEvents(
+        1,
+        `Nested trace projection for ${child.program.canonicalId}`,
+      ))
+      trace = appendMoveResolutionTrace(trace, {
         ...withoutSequence,
         phase: invocationPhase,
         reasonCode: 'nested-child-target',
       })
       continue
     }
-    trace = reduceMoveResolutionTrace(trace, {
+    enforceNestedExecutionBudget(() => budget.reserveEmittedEvents(
+      1,
+      `Nested trace projection for ${child.program.canonicalId}`,
+    ))
+    trace = appendMoveResolutionTrace(trace, {
       ...withoutSequence,
       phase: invocationPhase,
     })
@@ -1808,7 +1848,26 @@ const executeMoveSpecInternal = (
   const handlerRegistry = input.handlerRegistry ?? REGISTERED_MOVE_HANDLER_REGISTRY
   const definition = executableDefinition(input, handlerRegistry)
   const { spec } = definition
+  enforceNestedExecutionBudget(() => executionState.nestedBudget.enterSpec(
+    spec.canonicalId,
+    executionState.nestedDepth,
+    executionState.root,
+  ))
   const program = executableProgram(definition, input.context, handlerRegistry)
+  enforceNestedExecutionBudget(() => executionState.nestedBudget.reserveOperations(
+    program.operations.length,
+    `MoveSpec ${spec.canonicalId}`,
+  ))
+  const reduceMoveResolutionTrace = (
+    current: MoveResolutionAuditTrace,
+    event: MoveResolutionAuditTraceEventInput,
+  ): MoveResolutionAuditTrace => {
+    enforceNestedExecutionBudget(() => executionState.nestedBudget.reserveEmittedEvents(
+      1,
+      `MoveSpec ${spec.canonicalId}`,
+    ))
+    return appendMoveResolutionTrace(current, event)
+  }
   const branchControllers = branchControllerIndex(program.operations)
   const responseResolver = executionState.responseResolver
   const hazardSelections = new Map<string, ValidatedAuthoritativeHazardCellSelection>()
@@ -1982,6 +2041,10 @@ const executeMoveSpecInternal = (
         spec,
         input.authoritativeTargetIds,
       )
+      enforceNestedExecutionBudget(() => executionState.nestedBudget.reserveTargets(
+        resolvedTargetIds.length,
+        `MoveSpec ${spec.canonicalId}`,
+      ))
       targetIds = resolvedTargetIds.length <= MOVE_SPEC_LIMITS.targetCount
         ? resolvedTargetIds
         : []
@@ -3082,6 +3145,7 @@ const executeMoveSpecInternal = (
             operation,
             runtime,
             selectorState,
+            budget: executionState.nestedBudget,
           })
           const request = nestedTargetRequest({ operation, actorPlacementId, options: choices })
           const response = responseResolver.resolve({
@@ -3187,6 +3251,9 @@ const executeMoveSpecInternal = (
           mechanicsSource: 'registered-spec',
           sealRandomLedger: false,
           assertResponsesAtCompletion: false,
+          nestedBudget: executionState.nestedBudget,
+          nestedDepth: executionState.nestedDepth + 1,
+          root: false,
         })
         if (child.kind === 'rejected') {
           return fail(
@@ -3273,7 +3340,12 @@ const executeMoveSpecInternal = (
           ...faintedTargetIds,
           ...child.faintedTargetIds,
         ])
-        trace = appendNestedTrace(trace, child.trace, phase)
+        trace = appendNestedTrace(
+          trace,
+          child.trace,
+          phase,
+          executionState.nestedBudget,
+        )
 
         if (child.kind === 'pending-request') {
           const request = projectNestedRequest(child.request, phase)
@@ -3447,10 +3519,18 @@ const executeMoveSpecInternal = (
 
 export const executeMoveSpec = (
   input: ExecuteMoveSpecInput,
-): MoveSpecExecutionResult => executeMoveSpecInternal(input, {
-  responseResolver: createMoveSpecResponseResolver(input.responses),
-  resolutionId: input.resolutionId ?? input.context.resolutionId,
-  mechanicsSource: 'actor-move',
-  sealRandomLedger: true,
-  assertResponsesAtCompletion: true,
-})
+): MoveSpecExecutionResult => {
+  const nestedBudget = enforceNestedExecutionBudget(() => createNestedMoveExecutionBudget({
+    policy: input.nestedExecutionPolicy,
+  }))
+  return executeMoveSpecInternal(input, {
+    responseResolver: createMoveSpecResponseResolver(input.responses),
+    resolutionId: input.resolutionId ?? input.context.resolutionId,
+    mechanicsSource: 'actor-move',
+    sealRandomLedger: true,
+    assertResponsesAtCompletion: true,
+    nestedBudget,
+    nestedDepth: 0,
+    root: true,
+  })
+}

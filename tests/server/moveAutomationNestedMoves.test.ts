@@ -13,6 +13,9 @@ import {
   MoveSpecExecutionError,
 } from '~~/server/domain/moveAutomation/executeSpec'
 import {
+  NESTED_MOVE_EXECUTION_LIMITS,
+} from '~~/server/domain/moveAutomation/nestedExecution'
+import {
   REGISTERED_MOVE_HANDLER_REGISTRY,
 } from '~~/server/domain/moveAutomation/handlers/registry'
 import {
@@ -227,14 +230,13 @@ const runtime = (
   definition,
 })
 
-const registryFor = (
-  parentDefinition: ValidatedMoveSpecDefinition,
-  childDefinition: ValidatedMoveSpecDefinition,
+const registryFromDefinitions = (
+  ...definitions: readonly ValidatedMoveSpecDefinition[]
 ): MoveAutomationRuntimeRegistry => {
-  const entries = Object.freeze([
-    runtime(parentDefinition, 'tests/fixtures/parent.ts'),
-    runtime(childDefinition, 'tests/fixtures/child.ts'),
-  ])
+  const entries = Object.freeze(definitions.map((definition, index) => runtime(
+    definition,
+    `tests/fixtures/nested-${index + 1}.ts`,
+  )))
   const byId = new Map(entries.map(entry => [entry.canonicalId, entry]))
   return Object.freeze({
     size: entries.length,
@@ -243,6 +245,11 @@ const registryFor = (
     entries: () => entries,
   })
 }
+
+const registryFor = (
+  parentDefinition: ValidatedMoveSpecDefinition,
+  childDefinition: ValidatedMoveSpecDefinition,
+): MoveAutomationRuntimeRegistry => registryFromDefinitions(parentDefinition, childDefinition)
 
 const contextFor = (options: {
   readonly registry: MoveAutomationRuntimeRegistry
@@ -289,6 +296,19 @@ const childUsageOperation = {
     amount: 1,
   },
 }
+
+const logOperation = (id: string) => ({
+  id,
+  kind: 'log',
+  source: { kind: 'move', id: 'move.swords-dance' },
+  recipients: { kind: 'none' },
+  phase: 'hit',
+  reasonCode: `${id}.reason`,
+  payload: {
+    messageKey: `${id}.message`,
+    arguments: [],
+  },
+})
 
 const usageOperation = {
   id: 'parent.usage',
@@ -691,6 +711,239 @@ describe('reviewed nested MoveSpec execution', () => {
       }),
       expect.objectContaining({ kind: 'encounter-state' }),
     ]))
+  })
+
+  it('rejects Metronome-style self recursion and mutual copy loops before they can recurse', () => {
+    const selfDefinition = validateMoveSpec(parentSpec([nestedOperation({
+      id: 'parent.invoke-self',
+      recipients: { kind: 'actor' },
+      payload: {
+        canonicalId: 'Tackle',
+        actor: { kind: 'parent-actor' },
+        source: { kind: 'registered-spec' },
+        targeting: { kind: 'operation-recipients' },
+      },
+    })]))
+    const selfRegistry = registryFromDefinitions(selfDefinition)
+    const selfContext = contextFor({ registry: selfRegistry })
+
+    expect(() => executeMoveSpec({
+      definition: selfDefinition,
+      context: selfContext,
+      authoritativeTargetIds: ['target-token'],
+      resolutionId: 'resolution-parent',
+    })).toThrowError(expect.objectContaining<Partial<MoveSpecExecutionError>>({
+      code: 'nested-spec-already-visited',
+    }))
+    expect(selfContext.random.snapshot()).toEqual([])
+
+    const childDefinition = validateMoveSpec(childSpec([nestedOperation({
+      id: 'child.copy-parent',
+      recipients: { kind: 'actor' },
+      payload: {
+        canonicalId: 'Tackle',
+        actor: { kind: 'parent-actor' },
+        source: { kind: 'registered-spec' },
+        targeting: { kind: 'operation-recipients' },
+      },
+    })]))
+    const parentDefinition = validateMoveSpec(parentSpec([nestedOperation()]))
+    const copyRegistry = registryFor(parentDefinition, childDefinition)
+    const copyContext = contextFor({ registry: copyRegistry })
+
+    expect(() => executeMoveSpec({
+      definition: parentDefinition,
+      context: copyContext,
+      authoritativeTargetIds: ['target-token'],
+      resolutionId: 'resolution-parent',
+    })).toThrowError(expect.objectContaining<Partial<MoveSpecExecutionError>>({
+      code: 'nested-spec-already-visited',
+    }))
+    expect(copyContext.random.snapshot()).toEqual([])
+  })
+
+  it('stops a unique child chain at the aggregate nesting-depth boundary', () => {
+    const canonicalIds = [
+      'Tackle',
+      'Swords Dance',
+      'Scratch',
+      'Ember',
+      'Dragon Rage',
+      'Synthesis',
+      'Absorb',
+      'Power Trip',
+      'Double Kick',
+      'Fury Attack',
+    ] as const
+    expect(canonicalIds).toHaveLength(NESTED_MOVE_EXECUTION_LIMITS.depth + 2)
+    const definitions = canonicalIds.map((canonicalId, index) => {
+      const nextCanonicalId = canonicalIds[index + 1]
+      const operations = nextCanonicalId
+        ? [nestedOperation({
+            id: `chain.invoke-${index}`,
+            source: { kind: 'move', id: `move.chain-${index}` },
+            recipients: { kind: 'actor' },
+            payload: {
+              canonicalId: nextCanonicalId,
+              actor: { kind: 'parent-actor' },
+              source: { kind: 'registered-spec' },
+              targeting: { kind: 'operation-recipients' },
+            },
+          })]
+        : []
+      return validateMoveSpec({
+        ...childSpec(operations),
+        canonicalId,
+        presentation: {
+          displayName: canonicalId,
+          vfxKey: null,
+          tags: ['test-only'],
+        },
+      })
+    })
+    const registry = registryFromDefinitions(...definitions)
+    const context = contextFor({ registry })
+
+    expect(() => executeMoveSpec({
+      definition: definitions[0]!,
+      context,
+      resolutionId: 'resolution-parent',
+    })).toThrowError(expect.objectContaining<Partial<MoveSpecExecutionError>>({
+      code: 'nested-depth-limit-exceeded',
+    }))
+    expect(context.random.snapshot()).toEqual([])
+  })
+
+  it('enforces server-reviewed child bans before child execution', () => {
+    const childDefinition = validateMoveSpec(childSpec([roll('child.roll', 'accuracy')]))
+    const parentDefinition = validateMoveSpec(parentSpec([nestedOperation()]))
+    const registry = registryFor(parentDefinition, childDefinition)
+    const context = contextFor({ registry, random: [0.5] })
+
+    expect(() => executeMoveSpec({
+      definition: parentDefinition,
+      context,
+      authoritativeTargetIds: ['target-token'],
+      resolutionId: 'resolution-parent',
+      nestedExecutionPolicy: { bannedCanonicalIds: ['Swords Dance'] },
+    })).toThrowError(expect.objectContaining<Partial<MoveSpecExecutionError>>({
+      code: 'nested-spec-banned',
+    }))
+    expect(context.random.snapshot()).toEqual([])
+  })
+
+  it('rejects an oversized child program before planning or drawing randomness', () => {
+    const childDefinition = validateMoveSpec(childSpec([
+      roll('child.first-roll', 'accuracy'),
+      ...Array.from({ length: 127 }, (_, index) => (
+        logOperation(`child.log-${index.toString().padStart(3, '0')}`)
+      )),
+    ]))
+    const parentDefinition = validateMoveSpec(parentSpec([nestedOperation()]))
+    const registry = registryFor(parentDefinition, childDefinition)
+    const map = mapFixture()
+    const sheets = pokemonSheets()
+    const mapBefore = structuredClone(map)
+    const sheetsBefore = structuredClone([...sheets.entries()])
+    const random = createFiniteAuthoritativeMoveRandomStream([0.5])
+
+    expect(() => planAuthoritativeMoveStateExecution({
+      map,
+      pokemonSheets: sheets,
+      trainerSheets: new Map<string, TrainerSheet>(),
+      intent: intent(),
+      random,
+      now: () => 12_000,
+      operationId: 'op_nestedlimit0001',
+      pendingResolutionId: 'resolution-parent',
+      runtimeRegistry: registry,
+    })).toThrowError(expect.objectContaining<Partial<MoveSpecExecutionError>>({
+      code: 'nested-operation-limit-exceeded',
+    }))
+    expect(random.consumed).toBe(0)
+    expect(random.remaining).toBe(1)
+    expect(map).toEqual(mapBefore)
+    expect([...sheets.entries()]).toEqual(sheetsBefore)
+  })
+
+  it('bounds aggregate server-derived fresh-target candidates', () => {
+    const crowdSize = NESTED_MOVE_EXECUTION_LIMITS.targets + 1
+    const crowdPlacements = Array.from({ length: crowdSize }, (_, index) => (
+      placement(`crowd-token-${index}`, `crowd-${index}`, index + 1)
+    ))
+    const map: TabletopMap = {
+      ...mapFixture(),
+      dimensions: { x: crowdSize + 2, y: 3, z: 8 },
+      placements: [placement('actor-token', 'actor', 0), ...crowdPlacements],
+    }
+    const sheets = new Map<string, CharacterSheet>([
+      ['actor', sheet('actor', ['Tackle'])],
+      ...crowdPlacements.map((entry, index): [string, CharacterSheet] => [
+        entry.sheetSlug,
+        sheet(`crowd-${index}`),
+      ]),
+    ])
+    const childDefinition = validateMoveSpec({
+      ...childSpec([]),
+      canonicalId: 'Scratch',
+      targeting: {
+        kind: 'single-target',
+        minTargets: 1,
+        maxTargets: 1,
+        selector: { kind: 'selected-targets' },
+      },
+      presentation: {
+        displayName: 'Scratch',
+        vfxKey: null,
+        tags: ['test-only'],
+      },
+    })
+    const parentDefinition = validateMoveSpec(parentSpec([nestedOperation({
+      recipients: { kind: 'none' },
+      payload: {
+        canonicalId: 'Scratch',
+        actor: { kind: 'parent-actor' },
+        source: { kind: 'registered-spec' },
+        targeting: {
+          kind: 'fresh-choice',
+          requestId: 'parent.oversized-target-window',
+          promptKey: 'move.parent.choose-target',
+          selector: { kind: 'candidate-targets' },
+        },
+      },
+    })]))
+    const registry = registryFor(parentDefinition, childDefinition)
+    const candidateIds = crowdPlacements.map(entry => entry.id)
+    const context = buildAuthoritativeMoveRulesContext({
+      map,
+      pokemonSheets: sheets,
+      trainerSheets: new Map<string, TrainerSheet>(),
+      intent: {
+        schemaVersion: LIVE_PLAY_MOVE_RESOLUTION_SCHEMA_VERSION,
+        placementId: 'actor-token',
+        moveName: 'Tackle',
+        selection: {
+          kind: 'single-target',
+          targetPlacementId: crowdPlacements[0]!.id,
+        },
+      },
+      candidatePlacementIds: candidateIds,
+      selectedPlacementIds: [crowdPlacements[0]!.id],
+      random: createFiniteAuthoritativeMoveRandomStream([]),
+      time: 12_000,
+      resolutionId: 'resolution-parent',
+      runtimeRegistry: registry,
+    })
+
+    expect(() => executeMoveSpec({
+      definition: parentDefinition,
+      context,
+      authoritativeTargetIds: [crowdPlacements[0]!.id],
+      resolutionId: 'resolution-parent',
+    })).toThrowError(expect.objectContaining<Partial<MoveSpecExecutionError>>({
+      code: 'nested-target-limit-exceeded',
+    }))
+    expect(context.random.snapshot()).toEqual([])
   })
 
   it('fails closed when the reviewed child runtime or stable parent identity is absent', () => {
