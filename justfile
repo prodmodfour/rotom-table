@@ -66,7 +66,10 @@ default:
       '      delete the planning file, commit the refresh, and push the current branch.' \
       '' \
       '  just run' \
-      '      Run the default 180-cycle loop with high-level status; use just follow for agent details.' \
+      '      Run the default 180-cycle loop with pi-dan-rinse; use just follow for agent details.' \
+      '' \
+      '  just run-ashraf' \
+      '      Run the default 180-cycle loop with pi; use just follow for agent details.' \
       '' \
       '  just follow' \
       '  just follow <lines>' \
@@ -96,6 +99,10 @@ autobuild cycles="1":
 # Compatibility recipe from the autonomous build template.
 run cycles="180":
     bash scripts/build-loop.sh --max-cycles {{cycles}}
+
+# Run the autonomous ticket loop with the standard Ashraf Pi profile.
+run-ashraf cycles="180":
+    PI_AGENT_COMMAND=pi bash scripts/build-loop.sh --max-cycles {{cycles}}
 
 # Follow the active autonomous build loop without interrupting it.
 follow lines="40":
