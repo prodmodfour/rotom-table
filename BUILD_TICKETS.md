@@ -9,7 +9,7 @@ Ticket statuses:
 
 The build loop must select the lowest-numbered TODO ticket. Each ticket below maps to one ticket from the supplied planning file; build ticket numbers follow that document's suggested order when present.
 
-Autonomous cycle rules for every ticket: implement only the selected ticket, run `scripts/quality-gate.sh`, update only the selected ticket status, commit with a conventional commit message, and leave the working tree clean. The final ticket (`MA-299`) may also set `AUTOMATION_STATUS: DONE` after all 289 refreshed tickets are complete.
+Autonomous cycle rules for every ticket: implement only the selected ticket, run `scripts/quality-gate.sh`, update only the selected ticket status, commit with a conventional commit message, and leave the working tree clean. The final ticket (`MA-299`) may also set `AUTOMATION_STATUS: DONE` after all 290 refreshed tickets are complete.
 
 ---
 
@@ -50,7 +50,7 @@ When a ticket introduces a new pure module, prefer this layout:
 
 The existing `src/utils/move-automation/` registry remains the v1 compatibility surface until the retirement tickets at the end.
 
-Queue size at this baseline: **289 commits**—183 engine/state/QA tickets, 33 conformance batches for the registered 258, and 73 implementation batches for the missing 518.
+Queue size at this baseline: **290 commits**—184 engine/state/QA tickets, 33 conformance batches for the registered 258, and 73 implementation batches for the missing 518.
 
 ## Decisions already locked
 
@@ -1965,18 +1965,40 @@ Status: DONE
 
 **Done:** Neither Room destructively rewrites sheet stats or manual initiative data.
 
-## MA-143 — Implement Magic Room, Gravity, and Tailwind
+## MA-143A — Define authoritative remaining-global-field queries
 
 Status: TODO
 
 **Depends on:** MA-054, MA-064, MA-123, MA-137
+**Commit:** `feat(move-automation): define remaining global field queries`
+
+**Touch:** field state contracts and queries, item-suppression and movement/initiative overlay contracts, focused query tests.
+
+**Implement:**
+
+- Extend the bounded field representation as needed so Magic Room, Gravity, and side-owned Tailwind instances retain their source, ownership, and MA-137 lifecycle data.
+- Add pure authoritative queries for Magic Room item suppression, active Gravity, and the Tailwind modifier applicable to a queried side.
+- Return immutable active/inactive results with ownership and duration data. Do not unequip items, rewrite sheets, or mutate movement or initiative state; consumer integration remains in MA-143B.
+
+**Done:** Given one encounter snapshot, the server deterministically exposes each field's active state, ownership, duration, and applicable side without mutating any input; focused tests cover inactive, active, expired, and wrong-side cases.
+
+## MA-143B — Apply Magic Room, Gravity, and Tailwind rules
+
+Status: TODO
+
+**Depends on:** MA-143A
 **Commit:** `feat(move-automation): resolve remaining global fields`
 
-**Touch:** item-effect query seam, movement/accuracy, side initiative modifiers, tests.
+**Touch:** item-effect query seam, movement/accuracy, side initiative modifiers, authority documentation, integration tests.
 
-**Implement:** Store/query Magic Room item suppression, Gravity grounding/movement/accuracy, and side-owned Tailwind initiative. MA-157 later connects the generic item-suppression query to every equipment contribution.
+**Implement:**
 
-**Done:** Each field has real authoritative query behavior, ownership, duration, and no sheet rewrite.
+- Consume the MA-143A Magic Room query at the generic item-effect seam so item contributions can be suppressed without unequipping or rewriting a sheet. MA-157 later connects that seam to every equipment contribution.
+- Apply Gravity's authoritative grounding, movement, and accuracy behavior through the existing movement and accuracy queries.
+- Apply Tailwind only to its owning side's calculated initiative, preserving manual initiative order.
+- Document the read-only overlay boundary and test activation, side isolation, expiry, and removal for all three fields.
+
+**Done:** Magic Room suppression, Gravity grounding/movement/accuracy, and side-owned Tailwind initiative materially affect authoritative queries while retaining real ownership and duration; no field rewrites a sheet, and focused integration tests cover each active and inactive path.
 
 ## MA-144 — Implement barriers and smoke zones
 
