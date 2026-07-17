@@ -65,6 +65,15 @@ const moveOption = (name: string, overrides: Partial<TokenMoveMenuOption> = {}):
   additionalAttackStatKey: null,
   additionalAttackStatLabel: null,
   automatic: true,
+  moveList: {
+    source: 'placement',
+    effectId: null,
+    copiedSpecHash: null,
+    available: true,
+    blockReason: null,
+    blockingEffectIds: [],
+  },
+  disabledByMoveList: false,
   hasAutomationScript: true,
   automation: moveAutomationSemanticStatusForMenu(name),
   disabledByAutomation: false,
@@ -144,6 +153,7 @@ describe('attack of opportunity helpers', () => {
       moveOption('Tackle'),
       moveOption('Struggle (Fountain Physical)', { disabledByCondition: true }),
       moveOption('Struggle (Materializer Physical)', { disabledByAutomation: true }),
+      moveOption('Struggle (Guster Physical)', { disabledByMoveList: true }),
     ]).map((move) => move.name)).toEqual(['Struggle', 'Struggle (Zapper Special)'])
   })
 })

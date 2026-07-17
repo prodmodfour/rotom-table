@@ -6,6 +6,7 @@ export const ENCOUNTER_EFFECT_KINDS = [
   'numeric-modifier',
   'capability',
   'item-suppression',
+  'move-list-overlay',
 ] as const
 
 export const ENCOUNTER_EFFECT_DURATION_KINDS = [
@@ -58,6 +59,12 @@ export const ENCOUNTER_EFFECT_ITEM_SUPPRESSION_SCOPES = [
   'all-equipped',
   'item-bindings',
 ] as const
+export const ENCOUNTER_EFFECT_MOVE_LIST_ACTIONS = [
+  'add',
+  'replace',
+  'disable',
+  'restrict',
+] as const
 export const ENCOUNTER_EFFECT_DISPEL_POLICIES = ['none', 'matching-tags'] as const
 /**
  * Switch behavior is explicit per durable effect. Retained effects keep their
@@ -78,6 +85,8 @@ export const ENCOUNTER_EFFECT_LIMITS = Object.freeze({
   affectedCells: 256,
   tags: 32,
   suppressionSources: 32,
+  moveListMoves: 64,
+  canonicalMoveChars: 160,
   stacks: 64,
   charges: 10_000,
   round: 1_000_000,
@@ -102,6 +111,8 @@ export type EncounterEffectRoundingPolicy = (typeof ENCOUNTER_EFFECT_ROUNDING_PO
 export type EncounterEffectCapabilityAction = (typeof ENCOUNTER_EFFECT_CAPABILITY_ACTIONS)[number]
 export type EncounterEffectItemSuppressionScope =
   (typeof ENCOUNTER_EFFECT_ITEM_SUPPRESSION_SCOPES)[number]
+export type EncounterEffectMoveListAction =
+  (typeof ENCOUNTER_EFFECT_MOVE_LIST_ACTIONS)[number]
 export type EncounterEffectDispelPolicy = (typeof ENCOUNTER_EFFECT_DISPEL_POLICIES)[number]
 export type EncounterEffectTransferPolicy =
   (typeof ENCOUNTER_EFFECT_TRANSFER_POLICIES)[number]
@@ -225,11 +236,48 @@ export interface EncounterItemSuppressionEffectPayload {
   readonly blocksBenefit: boolean
 }
 
+export interface EncounterMoveListAddEffectPayload {
+  readonly action: 'add'
+  /** Canonical catalog identity added to the affected move list. */
+  readonly canonicalMoveId: string
+  /** Exact reviewed runtime definition copied when this overlay was created. */
+  readonly copiedSpecHash: string
+}
+
+export interface EncounterMoveListReplaceEffectPayload {
+  readonly action: 'replace'
+  /** Existing move identity removed for the lifetime of this effect. */
+  readonly replacedCanonicalMoveId: string
+  /** Canonical catalog identity projected in the removed move's position. */
+  readonly canonicalMoveId: string
+  /** Exact reviewed runtime definition copied when this overlay was created. */
+  readonly copiedSpecHash: string
+}
+
+export interface EncounterMoveListDisableEffectPayload {
+  readonly action: 'disable'
+  /** Moves that remain visible but cannot be declared. */
+  readonly canonicalMoveIds: readonly string[]
+}
+
+export interface EncounterMoveListRestrictEffectPayload {
+  readonly action: 'restrict'
+  /** Exclusive allow-list; every other projected move remains visible but unavailable. */
+  readonly canonicalMoveIds: readonly string[]
+}
+
+export type EncounterMoveListOverlayEffectPayload =
+  | EncounterMoveListAddEffectPayload
+  | EncounterMoveListReplaceEffectPayload
+  | EncounterMoveListDisableEffectPayload
+  | EncounterMoveListRestrictEffectPayload
+
 export type EncounterEffectPayload =
   | EncounterConditionEffectPayload
   | EncounterNumericModifierEffectPayload
   | EncounterCapabilityEffectPayload
   | EncounterItemSuppressionEffectPayload
+  | EncounterMoveListOverlayEffectPayload
 
 interface EncounterEffectDefinitionEnvelope<
   Kind extends EncounterEffectKind,
@@ -268,12 +316,18 @@ export type EncounterItemSuppressionEffectDefinition = EncounterEffectDefinition
   EncounterItemSuppressionEffectPayload
 >
 
+export type EncounterMoveListOverlayEffectDefinition = EncounterEffectDefinitionEnvelope<
+  'move-list-overlay',
+  EncounterMoveListOverlayEffectPayload
+>
+
 /** Server-owned operations may request only this typed, context-free effect definition. */
 export type EncounterEffectDefinition =
   | EncounterConditionEffectDefinition
   | EncounterNumericModifierEffectDefinition
   | EncounterCapabilityEffectDefinition
   | EncounterItemSuppressionEffectDefinition
+  | EncounterMoveListOverlayEffectDefinition
 
 interface EncounterEffectEnvelope<
   Kind extends EncounterEffectKind,
@@ -321,6 +375,11 @@ export type EncounterItemSuppressionEffect = EncounterEffectEnvelope<
   EncounterItemSuppressionEffectPayload
 >
 
+export type EncounterMoveListOverlayEffect = EncounterEffectEnvelope<
+  'move-list-overlay',
+  EncounterMoveListOverlayEffectPayload
+>
+
 /**
  * Durable encounter effects are a discriminated union. The `kind` selects one
  * exact payload shape; arbitrary metadata objects are never accepted.
@@ -330,6 +389,7 @@ export type EncounterEffect =
   | EncounterNumericModifierEffect
   | EncounterCapabilityEffect
   | EncounterItemSuppressionEffect
+  | EncounterMoveListOverlayEffect
 
 export type EncounterEffectValidationCode =
   | 'invalid-encounter-effect'
@@ -429,8 +489,17 @@ const ITEM_SUPPRESSION_PAYLOAD_FIELDS = [
   'blocksUse',
   'blocksBenefit',
 ] as const
+const MOVE_LIST_ADD_PAYLOAD_FIELDS = ['action', 'canonicalMoveId', 'copiedSpecHash'] as const
+const MOVE_LIST_REPLACE_PAYLOAD_FIELDS = [
+  'action',
+  'replacedCanonicalMoveId',
+  'canonicalMoveId',
+  'copiedSpecHash',
+] as const
+const MOVE_LIST_FILTER_PAYLOAD_FIELDS = ['action', 'canonicalMoveIds'] as const
 
 const STABLE_ID_PATTERN = /^[a-z0-9]+(?:[._:/-][a-z0-9]+)*$/
+const SHA_256_PATTERN = /^[a-f0-9]{64}$/
 const CONTROL_CHARACTER_PATTERN = /[\u0000-\u001f\u007f]/
 const EFFECT_KIND_SET = new Set<string>(ENCOUNTER_EFFECT_KINDS)
 const DURATION_KIND_SET = new Set<string>(ENCOUNTER_EFFECT_DURATION_KINDS)
@@ -447,6 +516,7 @@ const CAPABILITY_ACTION_SET = new Set<string>(ENCOUNTER_EFFECT_CAPABILITY_ACTION
 const ITEM_SUPPRESSION_SCOPE_SET = new Set<string>(
   ENCOUNTER_EFFECT_ITEM_SUPPRESSION_SCOPES,
 )
+const MOVE_LIST_ACTION_SET = new Set<string>(ENCOUNTER_EFFECT_MOVE_LIST_ACTIONS)
 const DISPEL_POLICY_SET = new Set<string>(ENCOUNTER_EFFECT_DISPEL_POLICIES)
 const TRANSFER_POLICY_SET = new Set<string>(ENCOUNTER_EFFECT_TRANSFER_POLICIES)
 
@@ -514,6 +584,30 @@ const parseStableId = (value: unknown, path: string): string => {
       path,
       `must be a lowercase stable identifier of at most ${ENCOUNTER_EFFECT_LIMITS.identifierChars} characters.`,
     )
+  }
+  return value
+}
+
+const parseCanonicalMoveId = (value: unknown, path: string): string => {
+  if (
+    typeof value !== 'string'
+    || value.length === 0
+    || value.length > ENCOUNTER_EFFECT_LIMITS.canonicalMoveChars
+    || value.trim() !== value
+    || CONTROL_CHARACTER_PATTERN.test(value)
+  ) {
+    return fail(
+      'invalid-encounter-effect',
+      path,
+      `must be a trimmed canonical move identity of at most ${ENCOUNTER_EFFECT_LIMITS.canonicalMoveChars} characters.`,
+    )
+  }
+  return value
+}
+
+const parseCopiedSpecHash = (value: unknown, path: string): string => {
+  if (typeof value !== 'string' || !SHA_256_PATTERN.test(value)) {
+    return fail('invalid-encounter-effect', path, 'must be a lowercase SHA-256 hash.')
   }
   return value
 }
@@ -588,6 +682,20 @@ const parseStableIdList = (
   const ids = parseArray(value, path, maximum)
     .map((entry, index) => parseStableId(entry, `${path}[${index}]`))
   assertUnique(ids, path)
+  return ids
+}
+
+const parseCanonicalMoveIdList = (
+  value: unknown,
+  path: string,
+): readonly string[] => {
+  const ids = parseArray(value, path, ENCOUNTER_EFFECT_LIMITS.moveListMoves)
+    .map((entry, index) => parseCanonicalMoveId(entry, `${path}[${index}]`))
+  if (ids.length === 0) {
+    fail('invalid-encounter-effect', path, 'must contain at least one canonical move identity.')
+  }
+  const normalized = ids.map(id => id.toLowerCase())
+  assertUnique(normalized, path)
   return ids
 }
 
@@ -977,6 +1085,71 @@ const parseItemSuppressionPayload = (
   }
 }
 
+const parseMoveListOverlayPayload = (
+  value: unknown,
+  path: string,
+): EncounterMoveListOverlayEffectPayload => {
+  const payload = parseRecord(value, path)
+  const action = parseEnum<EncounterEffectMoveListAction>(
+    payload.action,
+    MOVE_LIST_ACTION_SET,
+    `${path}.action`,
+    'add, replace, disable, or restrict',
+  )
+
+  if (action === 'add') {
+    assertExactFields(payload, MOVE_LIST_ADD_PAYLOAD_FIELDS, path)
+    return {
+      action,
+      canonicalMoveId: parseCanonicalMoveId(
+        payload.canonicalMoveId,
+        `${path}.canonicalMoveId`,
+      ),
+      copiedSpecHash: parseCopiedSpecHash(
+        payload.copiedSpecHash,
+        `${path}.copiedSpecHash`,
+      ),
+    }
+  }
+
+  if (action === 'replace') {
+    assertExactFields(payload, MOVE_LIST_REPLACE_PAYLOAD_FIELDS, path)
+    const replacedCanonicalMoveId = parseCanonicalMoveId(
+      payload.replacedCanonicalMoveId,
+      `${path}.replacedCanonicalMoveId`,
+    )
+    const canonicalMoveId = parseCanonicalMoveId(
+      payload.canonicalMoveId,
+      `${path}.canonicalMoveId`,
+    )
+    if (replacedCanonicalMoveId.toLowerCase() === canonicalMoveId.toLowerCase()) {
+      fail(
+        'invalid-encounter-effect',
+        path,
+        'replacement source and destination canonical move identities must differ.',
+      )
+    }
+    return {
+      action,
+      replacedCanonicalMoveId,
+      canonicalMoveId,
+      copiedSpecHash: parseCopiedSpecHash(
+        payload.copiedSpecHash,
+        `${path}.copiedSpecHash`,
+      ),
+    }
+  }
+
+  assertExactFields(payload, MOVE_LIST_FILTER_PAYLOAD_FIELDS, path)
+  return {
+    action,
+    canonicalMoveIds: parseCanonicalMoveIdList(
+      payload.canonicalMoveIds,
+      `${path}.canonicalMoveIds`,
+    ),
+  }
+}
+
 type ParsedEncounterEffectDefinitionCommon = Omit<
   EncounterEffectDefinitionEnvelope<EncounterEffectKind, never>,
   'kind' | 'payload'
@@ -1108,6 +1281,12 @@ export const parseEncounterEffectDefinition = (
         kind,
         parseItemSuppressionPayload(definition.payload, `${path}.payload`),
       )
+    case 'move-list-overlay':
+      return definitionWithPayload(
+        common,
+        kind,
+        parseMoveListOverlayPayload(definition.payload, `${path}.payload`),
+      )
   }
 }
 
@@ -1190,6 +1369,20 @@ export const parseEncounterEffect = (
         kind,
         parseItemSuppressionPayload(effect.payload, `${path}.payload`),
       )
+    case 'move-list-overlay': {
+      if (common.affected.placementIds.length === 0 && common.affected.sideIds.length === 0) {
+        fail(
+          'invalid-encounter-effect',
+          `${path}.affected`,
+          'move-list overlays must target at least one placement or side.',
+        )
+      }
+      return effectWithPayload(
+        common,
+        kind,
+        parseMoveListOverlayPayload(effect.payload, `${path}.payload`),
+      )
+    }
   }
 }
 

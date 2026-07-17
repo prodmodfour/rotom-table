@@ -6,10 +6,7 @@ import {
 import { findMove } from '~~/data/ptuReference'
 import type { CharacterSheet } from '~/types/characterSheet'
 import type { TrainerSheet } from '~/types/trainerSheet'
-import {
-  pokemonMoveEntriesForSheet,
-  trainerMoveEntriesForSheet,
-} from '~/utils/mapTokenMoves'
+import { moveEntriesForPlacement } from '~/utils/mapTokenMoves'
 import type { AuthoritativeMoveRulesContext } from './context'
 import type { NestedMoveExecutionBudget } from './nestedExecution'
 import {
@@ -137,14 +134,25 @@ const canonicalMoveListForOwner = (
       `Authoritative move-pool owner ${ownerPlacementId} has no resolved sheet.`,
     )
   context.reads.recordPlacement(placement)
-  const entries = resolved.kind === 'pokemon'
-    ? pokemonMoveEntriesForSheet(resolved.sheet as CharacterSheet)
-    : trainerMoveEntriesForSheet(resolved.sheet as TrainerSheet)
+  const entries = moveEntriesForPlacement(placement, resolved.kind === 'pokemon'
+    ? { pokemon: new Map([[resolved.slug, resolved.sheet as CharacterSheet]]) }
+    : { trainer: new Map([[resolved.slug, resolved.sheet as TrainerSheet]]) }, {
+    encounterEffects: context.map.encounterState?.effects ?? [],
+  })
   return Object.freeze({
     ownerPlacementId,
-    canonicalIds: Object.freeze(entries.map(entry => (
-      canonicalMoveId(entry.move.name) ?? entry.move.name
-    ))),
+    canonicalIds: Object.freeze(entries.flatMap((entry) => {
+      if (entry.moveListProjection?.available === false) return []
+      const canonicalId = canonicalMoveId(entry.move.name) ?? entry.move.name
+      const source = entry.moveListProjection?.source
+      if (
+        source?.kind === 'encounter-overlay'
+        && context.queries.rules.runtimeFor(canonicalId)?.definitionHash !== source.copiedSpecHash
+      ) {
+        return []
+      }
+      return [canonicalId]
+    })),
   })
 }
 

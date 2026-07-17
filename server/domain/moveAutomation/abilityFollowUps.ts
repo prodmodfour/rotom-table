@@ -202,6 +202,7 @@ export const detectAbilityFollowUps = (input: {
     moveEntriesForTarget: target => moveEntriesForPlacement(
       input.map.placements.find(placement => placement.id === target.id),
       sheets,
+      { encounterEffects: input.map.encounterState?.effects ?? [] },
     ),
     idFactory: stablePromptId('spite'),
   })) {

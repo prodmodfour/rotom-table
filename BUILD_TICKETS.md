@@ -2222,7 +2222,7 @@ Status: DONE
 
 ## MA-162 — Add encounter-local move-list overlays
 
-Status: TODO
+Status: DONE
 
 **Depends on:** MA-056, MA-158
 **Commit:** `feat(move-automation): apply temporary move list overlays`

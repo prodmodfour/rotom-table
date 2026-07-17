@@ -22,6 +22,7 @@ import {
 } from './effectRecipients'
 import { reduceMoveGlobalFields } from './mapFieldEffects'
 import { reduceMoveHazardZones } from './mapHazardEffects'
+import { reduceMoveTemporaryEffect } from './mapTemporaryEffects'
 import {
   failMoveMapOperationReduction,
   MoveMapOperationReductionError,
@@ -42,7 +43,13 @@ import type {
 } from './mapOperationTypes'
 import { createMoveUsageOperationReducer } from './mapUsageEffects'
 
-const MAP_OPERATION_KINDS = new Set<string>(['field', 'hazard', 'usage', 'log'])
+const MAP_OPERATION_KINDS = new Set<string>([
+  'field',
+  'hazard',
+  'temporary-effect',
+  'usage',
+  'log',
+])
 
 export { MoveMapOperationReductionError }
 export type { MoveMapOperationReductionErrorCode } from './mapOperationError'
@@ -211,6 +218,26 @@ export const reduceMoveMapOperations = (
         operation,
         recipientIds: expectedIds,
         resolutions: input.hazards,
+      })
+      if (reduced.changed) {
+        workingMap.encounterState = deepCloneJson(reduced.current)
+        touch('encounterState', operationTouch)
+      }
+      operationResults.push(resultFor({
+        operation,
+        recipientIds: expectedIds,
+        changed: reduced.changed,
+        details: reduced.details,
+      }))
+      return
+    }
+
+    if (operation.kind === 'temporary-effect') {
+      const reduced = reduceMoveTemporaryEffect({
+        context: operationContext,
+        previous: workingMap.encounterState,
+        operation,
+        recipientIds: expectedIds,
       })
       if (reduced.changed) {
         workingMap.encounterState = deepCloneJson(reduced.current)

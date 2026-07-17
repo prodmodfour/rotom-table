@@ -9,6 +9,7 @@ import {
   capabilityEncounterEffectFixture,
   conditionEncounterEffectFixture,
   itemSuppressionEncounterEffectFixture,
+  moveListOverlayEncounterEffectFixture,
   numericEncounterEffectFixture,
 } from '../fixtures/moveAutomation/encounterEffects'
 
@@ -19,6 +20,7 @@ describe('typed encounter effects', () => {
       numericEncounterEffectFixture(),
       capabilityEncounterEffectFixture(),
       itemSuppressionEncounterEffectFixture(),
+      moveListOverlayEncounterEffectFixture(),
     ]
     const parsed = parseEncounterEffects(structuredClone(input))
 
@@ -173,6 +175,47 @@ describe('typed encounter effects', () => {
       ...effect,
       payload: { ...effect.payload, blocksUse: false, blocksBenefit: false },
     })).toThrow('must block item use, item benefit, or both')
+  })
+
+  it('accepts strict add, replace, disable, and restrict move-list overlays', () => {
+    const add = moveListOverlayEncounterEffectFixture()
+    const replace = moveListOverlayEncounterEffectFixture({
+      action: 'replace',
+      replacedCanonicalMoveId: 'Mimic',
+      canonicalMoveId: 'Scratch',
+      copiedSpecHash: 'b'.repeat(64),
+    })
+    const disable = moveListOverlayEncounterEffectFixture({
+      action: 'disable',
+      canonicalMoveIds: ['Tackle', 'Ember'],
+    })
+    const restrict = moveListOverlayEncounterEffectFixture({
+      action: 'restrict',
+      canonicalMoveIds: ['Scratch'],
+    })
+
+    expect(parseEncounterEffect(add).payload).toEqual(add.payload)
+    expect(parseEncounterEffect(replace).payload).toEqual(replace.payload)
+    expect(parseEncounterEffect(disable).payload).toEqual(disable.payload)
+    expect(parseEncounterEffect(restrict).payload).toEqual(restrict.payload)
+    expect(() => parseEncounterEffect({
+      ...add,
+      payload: { ...add.payload, copiedSpecHash: 'not-a-hash' },
+    })).toThrow('encounterEffect.payload.copiedSpecHash: must be a lowercase SHA-256 hash')
+    expect(() => parseEncounterEffect(moveListOverlayEncounterEffectFixture({
+      action: 'replace',
+      replacedCanonicalMoveId: 'Scratch',
+      canonicalMoveId: 'scratch',
+      copiedSpecHash: 'b'.repeat(64),
+    }))).toThrow('replacement source and destination canonical move identities must differ')
+    expect(() => parseEncounterEffect(moveListOverlayEncounterEffectFixture({
+      action: 'disable',
+      canonicalMoveIds: [],
+    }))).toThrow('must contain at least one canonical move identity')
+    expect(() => parseEncounterEffect({
+      ...add,
+      affected: { placementIds: [], sideIds: [], cells: [{ x: 1, y: 0, z: 1 }] },
+    })).toThrow('move-list overlays must target at least one placement or side')
   })
 
   it('accepts bounded valued capability grants and rejects valued suppressions', () => {

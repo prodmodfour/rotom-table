@@ -2,6 +2,7 @@ import type {
   MoveFieldEffectOperation,
   MoveHazardEffectOperation,
   MoveLogEffectOperation,
+  MoveTemporaryEffectOperation,
   MoveUsageEffectOperation,
 } from '#shared/moveAutomation/effects'
 import type {
@@ -32,6 +33,7 @@ import type { MoveEffectDynamicRecipientSets } from './effectRecipients'
 export type MoveMapEffectOperation =
   | MoveFieldEffectOperation
   | MoveHazardEffectOperation
+  | MoveTemporaryEffectOperation
   | MoveUsageEffectOperation
   | MoveLogEffectOperation
 

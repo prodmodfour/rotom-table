@@ -2,6 +2,7 @@ import type {
   EncounterCapabilityEffect,
   EncounterConditionEffect,
   EncounterItemSuppressionEffect,
+  EncounterMoveListOverlayEffect,
   EncounterNumericModifierEffect,
 } from '#shared/moveAutomation/encounterEffects'
 
@@ -107,6 +108,42 @@ export const itemSuppressionEncounterEffectFixture = (): EncounterItemSuppressio
   dispel: {
     policy: 'matching-tags',
     tags: ['item-suppression'],
+  },
+  transferPolicy: 'expire',
+  suppression: { sources: [] },
+})
+
+export const moveListOverlayEncounterEffectFixture = (
+  payload: EncounterMoveListOverlayEffect['payload'] = {
+    action: 'add',
+    canonicalMoveId: 'Scratch',
+    copiedSpecHash: 'a'.repeat(64),
+  },
+): EncounterMoveListOverlayEffect => ({
+  id: 'effect.move-list.target-token',
+  kind: 'move-list-overlay',
+  source: {
+    operationId: 'op_effect_move_list_01',
+    moveId: 'move.mimic',
+    placementId: 'actor-token',
+  },
+  affected: {
+    placementIds: ['target-token'],
+    sideIds: [],
+    cells: [],
+  },
+  createdRound: 3,
+  createdTurn: 7,
+  duration: { kind: 'turns', subject: 'target', boundary: 'end', remaining: 2 },
+  stacks: 1,
+  charges: null,
+  stackPolicy: { kind: 'replace', maxStacks: null },
+  chargePolicy: { kind: 'none', amount: null },
+  tags: ['move-list', 'temporary'],
+  payload,
+  dispel: {
+    policy: 'matching-tags',
+    tags: ['move-list'],
   },
   transferPolicy: 'expire',
   suppression: { sources: [] },

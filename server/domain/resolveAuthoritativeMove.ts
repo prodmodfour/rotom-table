@@ -125,6 +125,8 @@ export type AuthoritativeMoveResolutionFailureCode =
   | 'move-semi-invulnerable'
   | 'move-terrain-blocked'
   | 'move-usage-unavailable'
+  | 'move-list-overlay-blocked'
+  | 'move-list-overlay-stale'
   | 'move-usage-key-invalid'
   | 'target-branch-required'
   | 'target-branch-invalid'
@@ -1742,6 +1744,12 @@ export const resolveAuthoritativeMoveExecutionFromContext = (
     }
     if (moveEntryResult.reason === 'usage-blocked') {
       fail('conflict', 'move-usage-unavailable', moveEntryResult.message)
+    }
+    if (moveEntryResult.reason === 'move-list-blocked') {
+      fail('unauthorized-state', 'move-list-overlay-blocked', moveEntryResult.message)
+    }
+    if (moveEntryResult.reason === 'copied-spec-mismatch') {
+      fail('conflict', 'move-list-overlay-stale', moveEntryResult.message)
     }
     if (moveEntryResult.reason === 'move-absent') {
       fail('not-found', 'move-absent', moveEntryResult.message)

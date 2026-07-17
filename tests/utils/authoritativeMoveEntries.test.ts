@@ -6,6 +6,7 @@ import type { SheetPlacement } from '~/types/map'
 import type { MoveAutomationScript } from '~/types/moveAutomation'
 import type { SpawnedPokemon } from '~/types/pokemon'
 import type { TrainerSheet } from '~/types/trainerSheet'
+import { moveListOverlayEncounterEffectFixture } from '../fixtures/moveAutomation/encounterEffects'
 
 const placement = (overrides: Partial<SheetPlacement> = {}): SheetPlacement => ({
   id: 'actor-token',
@@ -199,6 +200,90 @@ describe('canonical authoritative move-entry resolution', () => {
       })
       expect(daily).toMatchObject({ ok: false, reason: 'usage-blocked' })
     })
+  })
+
+  it('enforces encounter move-list gates and copied runtime hashes', () => {
+    const effect = (
+      id: string,
+      payload: ReturnType<typeof moveListOverlayEncounterEffectFixture>['payload'],
+    ) => ({
+      ...moveListOverlayEncounterEffectFixture(payload),
+      id,
+      affected: { placementIds: ['actor-token'], sideIds: [], cells: [] },
+    })
+    const sheets = {
+      pokemon: new Map([['actor', pokemonSheet({
+        movelist: [{ name: 'Tackle' }, { name: 'Ember' }],
+      })]]),
+      trainer: new Map<string, TrainerSheet>(),
+    }
+    const disabled = resolveCanonicalMoveEntryForPlacement({
+      placement: placement(),
+      token: token(),
+      sheets,
+      moveName: 'Tackle',
+      encounterEffects: [effect('effect.move-list.disable', {
+        action: 'disable',
+        canonicalMoveIds: ['Tackle'],
+      })],
+    })
+    const restricted = resolveCanonicalMoveEntryForPlacement({
+      placement: placement(),
+      token: token(),
+      sheets,
+      moveName: 'Ember',
+      encounterEffects: [effect('effect.move-list.restrict', {
+        action: 'restrict',
+        canonicalMoveIds: ['Tackle'],
+      })],
+    })
+    const copied = effect('effect.move-list.replace', {
+      action: 'replace',
+      replacedCanonicalMoveId: 'Tackle',
+      canonicalMoveId: 'Scratch',
+      copiedSpecHash: 'd'.repeat(64),
+    })
+    const acceptedCopy = resolveCanonicalMoveEntryForPlacement({
+      placement: placement(),
+      token: token(),
+      sheets,
+      moveName: 'Scratch',
+      encounterEffects: [copied],
+      definitionHashForMove: () => 'd'.repeat(64),
+    })
+    const staleCopy = resolveCanonicalMoveEntryForPlacement({
+      placement: placement(),
+      token: token(),
+      sheets,
+      moveName: 'Scratch',
+      encounterEffects: [copied],
+      definitionHashForMove: () => 'e'.repeat(64),
+    })
+    const replacedMove = resolveCanonicalMoveEntryForPlacement({
+      placement: placement(),
+      token: token(),
+      sheets,
+      moveName: 'Tackle',
+      encounterEffects: [copied],
+      definitionHashForMove: () => 'd'.repeat(64),
+    })
+
+    expect(disabled).toMatchObject({ ok: false, reason: 'move-list-blocked' })
+    expect(restricted).toMatchObject({ ok: false, reason: 'move-list-blocked' })
+    expect(acceptedCopy).toMatchObject({
+      ok: true,
+      entry: {
+        canonicalMoveName: 'Scratch',
+        copiedSpecHash: 'd'.repeat(64),
+        moveListSource: {
+          kind: 'encounter-overlay',
+          placementId: 'actor-token',
+          effectId: 'effect.move-list.replace',
+        },
+      },
+    })
+    expect(staleCopy).toMatchObject({ ok: false, reason: 'copied-spec-mismatch' })
+    expect(replacedMove).toMatchObject({ ok: false, reason: 'move-absent' })
   })
 
   it('rejects EOT usage when the authoritative round has not advanced enough', () => {

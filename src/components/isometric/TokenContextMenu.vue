@@ -88,6 +88,7 @@ const abilityCanBeUsed = (ability: TokenAbilityMenuOption): boolean =>
 const moveCanBeUsed = (move: TokenMoveMenuOption): boolean =>
   !move.disabledByAutomation
   && move.hasAutomationScript
+  && !move.disabledByMoveList
   && !move.conditionUseBlock
   && !move.disabledByUsage
 
@@ -100,6 +101,11 @@ const moveAvailabilityTitle = (move: TokenMoveMenuOption): string | undefined =>
   const semanticDetails = moveAutomationStatusDetailsText(move.automation)
   if (move.disabledByAutomation) {
     return `Blocked automation.${semanticDetails ? ` ${semanticDetails}` : ''}`
+  }
+  if (move.disabledByMoveList) {
+    return move.moveList.blockReason === 'move-list-disabled'
+      ? `${move.name} is disabled by an active encounter effect.`
+      : `${move.name} is outside the active encounter move restriction.`
   }
   if (move.conditionUseBlock) return move.conditionUseBlock.reason
   if (move.disabledByUsage && move.usage) return move.usage.title
@@ -533,6 +539,10 @@ watch(orders, (nextOrders) => {
                   {{ move.usage.label }}
                 </span>
                 <span v-if="move.automatic" class="action-submenu__badge" title="Added automatically from the token's capabilities">Auto-added</span>
+                <span v-if="move.moveList.source === 'encounter-overlay'" class="action-submenu__badge" title="Temporarily projected by an authoritative encounter effect">Temporary</span>
+                <span v-if="move.disabledByMoveList" class="action-submenu__badge action-submenu__badge--disabled">
+                  {{ move.moveList.blockReason === 'move-list-disabled' ? 'Disabled' : 'Restricted' }}
+                </span>
                 <span v-if="move.conditionUseBlock" class="action-submenu__badge action-submenu__badge--disabled">{{ move.conditionUseBlock.label }}</span>
               </span>
               <span

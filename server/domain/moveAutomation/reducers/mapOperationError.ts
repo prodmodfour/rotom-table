@@ -12,6 +12,8 @@ export type MoveMapOperationReductionErrorCode =
   | 'hazard-ownership-invalid'
   | 'hazard-zone-invalid'
   | 'hazard-zone-conflict'
+  | 'temporary-effect-invalid'
+  | 'temporary-effect-conflict'
   | 'duplicate-usage-resource'
   | 'usage-resource-missing'
   | 'usage-owner-mismatch'

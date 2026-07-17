@@ -1,4 +1,5 @@
 import { computed, ref } from 'vue'
+import { createEmptyEncounterState } from '#shared/moveAutomation/encounterState'
 import { describe, expect, it, vi } from 'vitest'
 import {
   appendMoveAutomationLogEntry,
@@ -13,6 +14,7 @@ import type { TabletopMap } from '~/types/map'
 import type { MoveAutomationScript, MoveAutomationTransaction } from '~/types/moveAutomation'
 import type { SpawnedPokemon } from '~/types/pokemon'
 import type { TrainerSheet } from '~/types/trainerSheet'
+import { moveListOverlayEncounterEffectFixture } from '../../fixtures/moveAutomation/encounterEffects'
 
 const mapFixture = (): TabletopMap => ({
   schemaVersion: 2,
@@ -806,6 +808,64 @@ describe('useMoveAutomationPanel', () => {
 
     expect(panel.moveAutomationTargeting.value).toBeNull()
     expect(panel.tokenMoveOptionsById.value['user-token'].find((move) => move.name === 'Tackle')?.disabledByCondition).toBe(true)
+  })
+
+  it('projects encounter-local move additions and gates into the live token menu', () => {
+    const mapValue = mapFixture()
+    mapValue.encounterState = {
+      ...createEmptyEncounterState(),
+      effects: [
+        {
+          ...moveListOverlayEncounterEffectFixture({
+            action: 'add',
+            canonicalMoveId: 'Scratch',
+            copiedSpecHash: 'a'.repeat(64),
+          }),
+          id: 'effect.move-list.add-scratch',
+          affected: { placementIds: ['user-token'], sideIds: [], cells: [] },
+        },
+        {
+          ...moveListOverlayEncounterEffectFixture({
+            action: 'disable',
+            canonicalMoveIds: ['Tackle'],
+          }),
+          id: 'effect.move-list.disable-tackle',
+          affected: { placementIds: ['user-token'], sideIds: [], cells: [] },
+        },
+      ],
+    }
+    const map = ref(mapValue)
+    const pokemonSheet = {
+      slug: 'bolt',
+      nickname: 'Bolt',
+      species: 'Bulbasaur',
+      level: 5,
+      movelist: [{ name: 'Tackle' }],
+    } as CharacterSheet
+    const panel = useMoveAutomationPanel({
+      map,
+      spawnedPokemon: computed(() => [spawned()]),
+      pokemonBySlug: ref(new Map([[pokemonSheet.slug, pokemonSheet]])),
+      trainerBySlug: ref(new Map<string, TrainerSheet>()),
+      canEditMap: computed(() => false),
+      canControlPlacement: id => id === 'user-token',
+      modifyHp: () => undefined,
+      modifyCombatStages: () => undefined,
+      modifyConditions: () => undefined,
+      applyMoveFieldEffect: () => undefined,
+      placeHazard: () => undefined,
+    })
+
+    expect(panel.tokenMoveOptionsById.value['user-token'].find(move => move.name === 'Scratch')).toMatchObject({
+      moveList: { source: 'encounter-overlay', effectId: 'effect.move-list.add-scratch' },
+      disabledByMoveList: false,
+    })
+    expect(panel.tokenMoveOptionsById.value['user-token'].find(move => move.name === 'Tackle')).toMatchObject({
+      moveList: { blockReason: 'move-list-disabled' },
+      disabledByMoveList: true,
+    })
+    panel.openMoveAutomation({ id: 'user-token', moveName: 'Tackle' })
+    expect(panel.moveAutomationTargeting.value).toBeNull()
   })
 
   it('omits non-damaging non-Struggle moves from automation while Enraged', () => {

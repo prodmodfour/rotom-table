@@ -99,7 +99,7 @@ export const attackOfOpportunityStruggleOptions = (
 ): AttackOfOpportunityStruggleOption[] => (moves ?? [])
   .filter((move) => isStruggleAttackMoveName(move.name))
   .filter((move) => move.hasAutomationScript && !move.disabledByAutomation)
-  .filter((move) => !move.disabledByCondition && !move.disabledByUsage)
+  .filter((move) => !move.disabledByMoveList && !move.disabledByCondition && !move.disabledByUsage)
   .map((move) => ({
     name: move.name,
     type: move.type,

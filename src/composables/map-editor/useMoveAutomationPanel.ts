@@ -436,6 +436,7 @@ export const useMoveAutomationPanel = ({
     return moveEntriesForPlacement(
       map.value.placements.find((item) => item.id === id),
       sheetLookup(),
+      { encounterEffects: map.value.encounterState?.effects ?? [] },
     )
   }
 
@@ -523,6 +524,7 @@ export const useMoveAutomationPanel = ({
       sheets: sheetLookup(),
       moveName,
       usageContext: tokenMoveUsageContext(id),
+      encounterEffects: map.value?.encounterState?.effects ?? [],
     })
     if (!result.ok) return null
 

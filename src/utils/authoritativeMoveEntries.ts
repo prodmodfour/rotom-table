@@ -1,3 +1,5 @@
+import type { EncounterEffect } from '#shared/moveAutomation/encounterEffects'
+import type { MoveHistoryMoveListSource } from '#shared/moveAutomation/moveHistoryMetadata'
 import { directHpLossRollFormulaForScript } from '~/utils/moveAutomationDirectHpLoss'
 import { damageFormulaForMove } from '~/utils/moveAutomation'
 import { buildMoveAutomationMoveEntries, type MoveAutomationMoveEntry } from '~/utils/moveAutomationMoves'
@@ -20,6 +22,8 @@ export type CanonicalMoveEntryFailureReason =
   | 'move-absent'
   | 'condition-blocked'
   | 'usage-blocked'
+  | 'move-list-blocked'
+  | 'copied-spec-mismatch'
 
 export interface ResolvedCanonicalMoveEntry extends MoveAutomationMoveEntry {
   readonly canonicalMoveName: string
@@ -30,6 +34,8 @@ export interface ResolvedCanonicalMoveEntry extends MoveAutomationMoveEntry {
   readonly damageFormula: string | null
   readonly conditionUseBlock: MoveConditionUseBlock | null
   readonly usage: TokenMoveUsageMenuState | null
+  readonly moveListSource: MoveHistoryMoveListSource
+  readonly copiedSpecHash: string | null
 }
 
 export interface CanonicalMoveEntrySuccess {
@@ -53,8 +59,11 @@ export interface ResolveCanonicalMoveEntryInput {
   readonly sheets: MapTokenSheetLookup
   readonly moveName: string
   readonly usageContext?: TokenMoveUsageContext
+  readonly encounterEffects?: readonly EncounterEffect[]
   /** Server resolution injects the immutable runtime selected for this snapshot. */
   readonly scriptForMove?: (moveName: string) => MoveAutomationScript | null
+  /** Required by server contexts to reject stale temporary copies after runtime drift. */
+  readonly definitionHashForMove?: (moveName: string) => string | null
 }
 
 const cloneJson = <T>(value: T): T => {
@@ -77,6 +86,27 @@ const moveEntryMatchesName = (entry: MoveAutomationMoveEntry, normalizedMoveName
 ]
   .some((name) => name.trim().toLowerCase() === normalizedMoveName)
 
+const moveListSourceFor = (
+  sourceEntry: TokenSheetMoveEntry,
+  placementId: string,
+): { readonly source: MoveHistoryMoveListSource; readonly copiedSpecHash: string | null } => {
+  const projection = sourceEntry.moveListProjection
+  if (projection?.source.kind === 'encounter-overlay') {
+    return {
+      source: {
+        kind: 'encounter-overlay',
+        placementId,
+        effectId: projection.source.effectId,
+      },
+      copiedSpecHash: projection.source.copiedSpecHash,
+    }
+  }
+  return {
+    source: { kind: 'placement', placementId },
+    copiedSpecHash: null,
+  }
+}
+
 const buildResolvedMoveEntries = (
   sourceEntries: readonly TokenSheetMoveEntry[],
   token: SpawnedPokemon,
@@ -95,18 +125,24 @@ const buildResolvedMoveEntries = (
     hasStab: entry.hasStab,
   }
   const frequency = resolvedFrequencyForEntry(clonedEntry)
+  const moveList = moveListSourceFor(sourceEntry, token.id)
   return {
     ...clonedEntry,
     canonicalMoveName: clonedEntry.move.name,
     sourceEntry: {
       move: cloneJson(sourceEntry.move),
       automatic: sourceEntry.automatic,
+      ...(sourceEntry.moveListProjection
+        ? { moveListProjection: cloneJson(sourceEntry.moveListProjection) }
+        : {}),
     },
     automatic: sourceEntry.automatic,
     frequency,
     damageFormula: damageFormulaForResolvedMoveEntry(clonedEntry),
     conditionUseBlock: null,
     usage: null,
+    moveListSource: moveList.source,
+    copiedSpecHash: moveList.copiedSpecHash,
   }
 }))
 
@@ -116,7 +152,9 @@ export const resolveCanonicalMoveEntryForPlacement = ({
   sheets,
   moveName,
   usageContext = {},
+  encounterEffects,
   scriptForMove,
+  definitionHashForMove,
 }: ResolveCanonicalMoveEntryInput): CanonicalMoveEntryResult => {
   if (!placement) {
     return { ok: false, reason: 'missing-placement', message: 'Actor placement is missing.' }
@@ -126,7 +164,7 @@ export const resolveCanonicalMoveEntryForPlacement = ({
   }
 
   const normalizedMoveName = normalizeMoveName(moveName)
-  const sourceEntries = moveEntriesForPlacement(placement, sheets)
+  const sourceEntries = moveEntriesForPlacement(placement, sheets, { encounterEffects })
   const entry = buildResolvedMoveEntries(sourceEntries, token, scriptForMove)
     .find((candidate) => moveEntryMatchesName(candidate, normalizedMoveName)) ?? null
 
@@ -135,6 +173,29 @@ export const resolveCanonicalMoveEntryForPlacement = ({
       ok: false,
       reason: 'move-absent',
       message: `${moveName.trim() || 'Move'} is not available to ${token.species}.`,
+    }
+  }
+
+  const moveListProjection = entry.sourceEntry.moveListProjection
+  if (moveListProjection?.available === false) {
+    const label = moveListProjection.blockReason === 'move-list-disabled'
+      ? 'disabled by an encounter effect'
+      : 'outside the encounter move restriction'
+    return {
+      ok: false,
+      reason: 'move-list-blocked',
+      message: `${entry.move.name} is ${label}.`,
+    }
+  }
+
+  if (entry.copiedSpecHash !== null && definitionHashForMove) {
+    const selectedDefinitionHash = definitionHashForMove(entry.canonicalMoveName)
+    if (selectedDefinitionHash !== entry.copiedSpecHash) {
+      return {
+        ok: false,
+        reason: 'copied-spec-mismatch',
+        message: `${entry.move.name}'s temporary copy no longer matches its reviewed runtime definition.`,
+      }
     }
   }
 

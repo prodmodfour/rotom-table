@@ -1,4 +1,11 @@
 import { getPokedexEntry } from '~~/data/characterSheets'
+import { findMove } from '~~/data/ptuReference'
+import type { EncounterEffect } from '#shared/moveAutomation/encounterEffects'
+import {
+  projectEncounterMoveList,
+  type EncounterMoveListBlockReason,
+  type EncounterMoveListProjectionEntry,
+} from '#shared/moveAutomation/moveListOverlays'
 import { explicitScriptForMove } from '~/utils/moveAutomation'
 import { resolvePokemonOtherCapabilities } from '~/utils/sheets/pokemonCapabilities'
 import { resolveMoveGrantedCapabilities } from '~/utils/sheets/pokemonMoveGrantedCapabilities'
@@ -31,6 +38,8 @@ export type TokenSheetMove = CharacterSheetMove | TrainerMove
 export interface TokenSheetMoveEntry {
   move: TokenSheetMove
   automatic: boolean
+  /** Shared encounter-local projection consumed by both menu and server legality. */
+  moveListProjection?: EncounterMoveListProjectionEntry
 }
 
 export interface MapTokenSheetLookup {
@@ -62,6 +71,15 @@ export interface TokenMoveUsageContext {
   currentRound?: number | null
 }
 
+export interface TokenMoveListMenuState {
+  readonly source: 'placement' | 'encounter-overlay'
+  readonly effectId: string | null
+  readonly copiedSpecHash: string | null
+  readonly available: boolean
+  readonly blockReason: EncounterMoveListBlockReason | null
+  readonly blockingEffectIds: readonly string[]
+}
+
 export interface TokenMoveMenuOption {
   name: string
   type: string | null
@@ -87,6 +105,8 @@ export interface TokenMoveMenuOption {
   additionalAttackStatKey: 'atk' | 'satk' | null
   additionalAttackStatLabel: string | null
   automatic: boolean
+  moveList: TokenMoveListMenuState
+  disabledByMoveList: boolean
   /** Legacy runtime presence; semantic status is the user-facing automation contract. */
   hasAutomationScript: boolean
   automation: MoveAutomationSemanticStatus
@@ -128,17 +148,49 @@ export const trainerMoveEntriesForSheet = (sheet: TrainerSheet): TokenSheetMoveE
   ]
 }
 
+export interface MoveEntriesForPlacementOptions {
+  readonly encounterEffects?: readonly EncounterEffect[]
+}
+
+const canonicalMoveIdForEntry = (entry: TokenSheetMoveEntry): string => {
+  const name = entry.move.name.trim()
+  return findMove(name)?.name ?? name
+}
+
+const projectTokenMoveEntries = (
+  placement: Pick<SheetPlacement, 'id' | 'sideId'>,
+  entries: readonly TokenSheetMoveEntry[],
+  effects: readonly EncounterEffect[] | undefined,
+): TokenSheetMoveEntry[] => projectEncounterMoveList({
+  placementId: placement.id,
+  ...(placement.sideId === undefined ? {} : { sideId: placement.sideId }),
+  baseCanonicalMoveIds: entries.map(canonicalMoveIdForEntry),
+  effects,
+}).map((projection): TokenSheetMoveEntry => {
+  const base = projection.baseIndex === null ? null : entries[projection.baseIndex] ?? null
+  return {
+    move: base?.move ?? { name: projection.canonicalMoveId },
+    automatic: base?.automatic ?? false,
+    moveListProjection: projection,
+  }
+})
+
 export const moveEntriesForPlacement = (
-  placement: Pick<SheetPlacement, 'sheetKind' | 'sheetSlug'> | null | undefined,
+  placement: Pick<SheetPlacement, 'id' | 'sheetKind' | 'sheetSlug' | 'sideId'> | null | undefined,
   sheets: MapTokenSheetLookup,
+  options: MoveEntriesForPlacementOptions = {},
 ): TokenSheetMoveEntry[] => {
   if (!placement) return []
-  if (placement.sheetKind === 'pokemon') {
-    const sheet = sheets.pokemon?.get(placement.sheetSlug)
-    return sheet ? pokemonMoveEntriesForSheet(sheet) : []
-  }
-  const sheet = sheets.trainer?.get(placement.sheetSlug)
-  return sheet ? trainerMoveEntriesForSheet(sheet) : []
+  const entries = placement.sheetKind === 'pokemon'
+    ? (() => {
+        const sheet = sheets.pokemon?.get(placement.sheetSlug)
+        return sheet ? pokemonMoveEntriesForSheet(sheet) : []
+      })()
+    : (() => {
+        const sheet = sheets.trainer?.get(placement.sheetSlug)
+        return sheet ? trainerMoveEntriesForSheet(sheet) : []
+      })()
+  return projectTokenMoveEntries(placement, entries, options.encounterEffects)
 }
 
 const fallback = <T>(...values: T[]): NonNullable<T> | null => {
@@ -252,9 +304,37 @@ export const buildTokenMoveUsageState = (
   return null
 }
 
+const moveListMenuState = (
+  entry: TokenSheetMoveEntry,
+): TokenMoveListMenuState => {
+  const projection = entry.moveListProjection
+  if (!projection) {
+    return {
+      source: 'placement',
+      effectId: null,
+      copiedSpecHash: null,
+      available: true,
+      blockReason: null,
+      blockingEffectIds: [],
+    }
+  }
+  return {
+    source: projection.source.kind,
+    effectId: projection.source.kind === 'encounter-overlay'
+      ? projection.source.effectId
+      : null,
+    copiedSpecHash: projection.source.kind === 'encounter-overlay'
+      ? projection.source.copiedSpecHash
+      : null,
+    available: projection.available,
+    blockReason: projection.blockReason,
+    blockingEffectIds: [...projection.blockingEffectIds],
+  }
+}
+
 const optionForMoveRow = (
   row: MoveLookupRow<TokenSheetMove>,
-  automatic: boolean,
+  entry: TokenSheetMoveEntry,
   token: SpawnedPokemon,
   hasAutomationScript: boolean,
   usageContext: TokenMoveUsageContext = {},
@@ -264,6 +344,7 @@ const optionForMoveRow = (
   const frequency = fallback(row.reference?.frequency, row.move.frequency)
   const usage = buildTokenMoveUsageState(token.id, name, frequency, usageContext)
   const automation = moveAutomationSemanticStatusForMenu(name)
+  const moveList = moveListMenuState(entry)
   const conditionUseBlock = moveConditionUseBlock({
     name,
     aliases: [row.move.name],
@@ -294,7 +375,9 @@ const optionForMoveRow = (
     additionalAttackStage: row.additionalAttackStage,
     additionalAttackStatKey: row.additionalAttackStatKey,
     additionalAttackStatLabel: row.additionalAttackStatLabel,
-    automatic,
+    automatic: entry.automatic,
+    moveList,
+    disabledByMoveList: !moveList.available,
     hasAutomationScript,
     automation,
     disabledByAutomation: automation.baseStatus === 'blocked',
@@ -321,6 +404,6 @@ export const buildTokenMoveMenuOptions = (
     loyalty: token.sheetKind === 'pokemon' ? token.loyalty : undefined,
   })
   return rows
-    .map((row, index) => ({ row, automatic: entries[index]?.automatic ?? false }))
-    .map(({ row, automatic }) => optionForMoveRow(row, automatic, token, moveHasAutomationScript(row), usageContext))
+    .map((row, index) => ({ row, entry: entries[index] ?? { move: row.move, automatic: false } }))
+    .map(({ row, entry }) => optionForMoveRow(row, entry, token, moveHasAutomationScript(row), usageContext))
 }

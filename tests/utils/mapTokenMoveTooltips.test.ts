@@ -28,6 +28,15 @@ const moveOption = (overrides: Partial<TokenMoveMenuOption> = {}): TokenMoveMenu
   additionalAttackStatKey: null,
   additionalAttackStatLabel: null,
   automatic: false,
+  moveList: {
+    source: 'placement',
+    effectId: null,
+    copiedSpecHash: null,
+    available: true,
+    blockReason: null,
+    blockingEffectIds: [],
+  },
+  disabledByMoveList: false,
   hasAutomationScript: true,
   automation: moveAutomationSemanticStatusForMenu('Tackle'),
   disabledByAutomation: false,
@@ -52,6 +61,23 @@ describe('map token move tooltips', () => {
     expect(automationBody).toContain('Capability blocker [movement.authoritative]')
     expect(automationBody).toContain('Limitation [tackle.push]')
     expect(automationBody).toContain('Manual step [tackle.push]')
+  })
+
+  it('explains temporary and encounter-blocked move-list state', () => {
+    const move = moveOption({
+      moveList: {
+        source: 'encounter-overlay',
+        effectId: 'effect.move-list.copy',
+        copiedSpecHash: 'a'.repeat(64),
+        available: false,
+        blockReason: 'move-list-restricted',
+        blockingEffectIds: ['effect.move-list.encore'],
+      },
+      disabledByMoveList: true,
+    })
+
+    expect(sheetBody(move)).toContain('Source: Temporary encounter move')
+    expect(sheetBody(move)).toContain('Encounter: Outside the active move restriction')
   })
 
   it('shows average damage by default and can show damage roll formulas', () => {

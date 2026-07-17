@@ -3,6 +3,7 @@ import {
   LIVE_PLAY_MOVE_RESOLUTION_SCHEMA_VERSION,
   type ResolveMoveIntent,
 } from '#shared/livePlayMoveResolution'
+import type { EncounterEffect } from '#shared/moveAutomation/encounterEffects'
 import { createEmptyEncounterState } from '#shared/moveAutomation/encounterState'
 import type { MoveSpec } from '#shared/moveAutomation/spec'
 import {
@@ -47,6 +48,7 @@ import {
 import type { CharacterSheet } from '~/types/characterSheet'
 import type { SheetPlacement, TabletopMap } from '~/types/map'
 import type { TrainerSheet } from '~/types/trainerSheet'
+import { moveListOverlayEncounterEffectFixture } from '../fixtures/moveAutomation/encounterEffects'
 
 const placement = (id: string, sheetSlug: string, x: number): SheetPlacement => ({
   id,
@@ -257,18 +259,25 @@ const contextFor = (options: {
   readonly random?: readonly number[]
   readonly candidatePlacementIds?: readonly string[]
   readonly actorMovelist?: readonly string[]
-} ) => buildAuthoritativeMoveRulesContext({
-  map: mapFixture(),
-  pokemonSheets: pokemonSheets(options.actorMovelist),
-  trainerSheets: new Map<string, TrainerSheet>(),
-  intent: intent(),
-  candidatePlacementIds: options.candidatePlacementIds ?? ['target-token'],
-  selectedPlacementIds: ['target-token'],
-  random: createFiniteAuthoritativeMoveRandomStream(options.random ?? []),
-  time: 12_000,
-  resolutionId: 'resolution-parent',
-  runtimeRegistry: options.registry,
-})
+  readonly effects?: readonly EncounterEffect[]
+} ) => {
+  const map = mapFixture()
+  if (options.effects) {
+    map.encounterState = { ...map.encounterState!, effects: [...options.effects] }
+  }
+  return buildAuthoritativeMoveRulesContext({
+    map,
+    pokemonSheets: pokemonSheets(options.actorMovelist),
+    trainerSheets: new Map<string, TrainerSheet>(),
+    intent: intent(),
+    candidatePlacementIds: options.candidatePlacementIds ?? ['target-token'],
+    selectedPlacementIds: ['target-token'],
+    random: createFiniteAuthoritativeMoveRandomStream(options.random ?? []),
+    time: 12_000,
+    resolutionId: 'resolution-parent',
+    runtimeRegistry: options.registry,
+  })
+}
 
 const childFieldOperation = {
   id: 'child.sun',
@@ -787,6 +796,68 @@ describe('reviewed nested MoveSpec execution', () => {
     const publicTrace = summarizeMoveResolutionTrace(result.trace)
     expect(JSON.stringify(publicTrace)).not.toContain('Scratch')
     expect(JSON.stringify(publicTrace)).toContain('Swords Dance')
+  })
+
+  it('filters encounter-disabled moves from authoritative random move-list pools', () => {
+    const childDefinition = validateMoveSpec(childSpec([
+      stage('child.raise-attack'),
+    ]))
+    const pooledOperation = nestedOperation({
+      recipients: { kind: 'none' },
+      payload: {
+        canonicalId: null,
+        actor: { kind: 'parent-actor' },
+        source: {
+          kind: 'random-move-pool',
+          pool: {
+            poolId: 'pool.overlay-filter',
+            rollId: 'roll.overlay-filter',
+            source: { kind: 'authoritative-move-lists', owners: 'actor' },
+            allowCanonicalIds: ['Scratch', 'Swords Dance'],
+            denyCanonicalIds: [],
+            maximumRerolls: 0,
+          },
+        },
+        targeting: { kind: 'operation-recipients' },
+      },
+    })
+    const parentDefinition = validateMoveSpec(parentSpec([pooledOperation]))
+    const context = contextFor({
+      registry: registryFor(parentDefinition, childDefinition),
+      random: [0],
+      actorMovelist: ['Scratch', 'Swords Dance'],
+      effects: [{
+        ...moveListOverlayEncounterEffectFixture({
+          action: 'disable',
+          canonicalMoveIds: ['Scratch'],
+        }),
+        id: 'effect.move-list.disable-scratch',
+        affected: { placementIds: ['actor-token'], sideIds: [], cells: [] },
+      }],
+    })
+
+    const result = executeMoveSpec({
+      definition: parentDefinition,
+      context,
+      authoritativeTargetIds: ['target-token'],
+      resolutionId: 'resolution-parent',
+    })
+
+    expect(result.kind).toBe('complete')
+    expect(result.childExecutions).toEqual([
+      expect.objectContaining({ canonicalId: 'Swords Dance' }),
+    ])
+    expect(result.trace.events.find(event => (
+      event.kind === 'operation' && event.operationId === 'parent.invoke-child'
+    ))).toMatchObject({
+      result: {
+        randomSelection: {
+          candidateCount: 1,
+          selectedId: 'Swords Dance',
+          attemptCount: 1,
+        },
+      },
+    })
   })
 
   it('rejects Metronome-style self recursion and mutual copy loops before they can recurse', () => {

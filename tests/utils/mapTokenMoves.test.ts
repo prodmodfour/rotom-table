@@ -2,11 +2,14 @@ import { describe, expect, it } from 'vitest'
 import {
   buildTokenMoveMenuOptions,
   buildTokenMoveUsageState,
+  moveEntriesForPlacement,
   pokemonMoveEntriesForSheet,
   trainerMoveEntriesForSheet,
 } from '~/utils/mapTokenMoves'
+import type { CharacterSheet } from '~/types/characterSheet'
 import type { CombatStageMap } from '~/types/combatStages'
 import type { SpawnedPokemon } from '~/types/pokemon'
+import { moveListOverlayEncounterEffectFixture } from '../fixtures/moveAutomation/encounterEffects'
 
 const stages = (overrides: Partial<CombatStageMap> = {}): CombatStageMap => ({
   atk: 0,
@@ -147,6 +150,77 @@ describe('map token move menu options', () => {
         baseStatus: 'blocked',
         blockerCodes: ['catalog.unreviewed'],
       },
+    })
+  })
+
+  it('uses the shared encounter projection for temporary and unavailable menu moves', () => {
+    const effect = (
+      id: string,
+      payload: ReturnType<typeof moveListOverlayEncounterEffectFixture>['payload'],
+    ) => ({
+      ...moveListOverlayEncounterEffectFixture(payload),
+      id,
+      affected: { placementIds: ['token'], sideIds: [], cells: [] },
+    })
+    const sheet: CharacterSheet = {
+      slug: 'bolt',
+      nickname: 'Bolt',
+      species: 'Pikachu',
+      level: 10,
+      movelist: [{ name: 'Tackle' }, { name: 'Mimic' }, { name: 'Growl' }],
+    }
+    const entries = moveEntriesForPlacement({
+      id: 'token',
+      sheetKind: 'pokemon',
+      sheetSlug: 'bolt',
+    }, {
+      pokemon: new Map([['bolt', sheet]]),
+    }, {
+      encounterEffects: [
+        effect('effect.move-list.replace', {
+          action: 'replace',
+          replacedCanonicalMoveId: 'Mimic',
+          canonicalMoveId: 'Scratch',
+          copiedSpecHash: '1'.repeat(64),
+        }),
+        effect('effect.move-list.add', {
+          action: 'add',
+          canonicalMoveId: 'Swords Dance',
+          copiedSpecHash: '2'.repeat(64),
+        }),
+        effect('effect.move-list.disable', {
+          action: 'disable',
+          canonicalMoveIds: ['Tackle'],
+        }),
+        effect('effect.move-list.restrict', {
+          action: 'restrict',
+          canonicalMoveIds: ['Tackle', 'Scratch', 'Swords Dance'],
+        }),
+      ],
+    })
+    const moves = buildTokenMoveMenuOptions(token(), entries)
+
+    expect(moves.some(move => move.name === 'Mimic')).toBe(false)
+    expect(moves.find(move => move.name === 'Scratch')).toMatchObject({
+      moveList: {
+        source: 'encounter-overlay',
+        effectId: 'effect.move-list.replace',
+        copiedSpecHash: '1'.repeat(64),
+        available: true,
+      },
+      disabledByMoveList: false,
+    })
+    expect(moves.find(move => move.name === 'Swords Dance')).toMatchObject({
+      moveList: { source: 'encounter-overlay', effectId: 'effect.move-list.add' },
+      disabledByMoveList: false,
+    })
+    expect(moves.find(move => move.name === 'Tackle')).toMatchObject({
+      moveList: { blockReason: 'move-list-disabled' },
+      disabledByMoveList: true,
+    })
+    expect(moves.find(move => move.name === 'Growl')).toMatchObject({
+      moveList: { blockReason: 'move-list-restricted' },
+      disabledByMoveList: true,
     })
   })
 

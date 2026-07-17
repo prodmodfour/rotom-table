@@ -755,6 +755,11 @@ export const buildAuthoritativeMoveRulesContext = (
           activeScene: map.activeScene ?? null,
           currentRound: map.initiative?.round ?? null,
         },
+        encounterEffects: map.encounterState?.effects ?? [],
+        definitionHashForMove: (moveName: string): string | null => {
+          const canonicalMove = findMove(moveName)
+          return canonicalMove ? runtimes.get(canonicalMove.name)?.definitionHash ?? null : null
+        },
       }),
     ),
   })

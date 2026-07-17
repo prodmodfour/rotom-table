@@ -53,6 +53,15 @@ const moveOption = (
   additionalAttackStatKey: null,
   additionalAttackStatLabel: null,
   automatic: false,
+  moveList: {
+    source: 'placement',
+    effectId: null,
+    copiedSpecHash: null,
+    available: true,
+    blockReason: null,
+    blockingEffectIds: [],
+  },
+  disabledByMoveList: false,
   // Keep this true for every fixture to prove registry presence cannot enable blocked rows.
   hasAutomationScript: true,
   automation,
@@ -63,7 +72,7 @@ const moveOption = (
   disabledByUsage: false,
 })
 
-const mountMenu = (): VueWrapper => mount(TokenContextMenu, {
+const mountMenu = (moves?: TokenMoveMenuOption[]): VueWrapper => mount(TokenContextMenu, {
   props: {
     menu: {
       id: 'token',
@@ -75,7 +84,7 @@ const mountMenu = (): VueWrapper => mount(TokenContextMenu, {
       canUseOrders: false,
       canThrowPokeball: false,
     },
-    moves: [
+    moves: moves ?? [
       moveOption('Complete Move', semanticStatus('complete', {
         canonicalId: 'Complete Move',
         interactionStatus: 'partial',
@@ -149,6 +158,47 @@ describe('TokenContextMenu move semantic status', () => {
     expect(moveButtons[1]?.text()).toContain('Interactions: Unassessed')
     expect(moveButtons[2]?.text()).toContain('Blocked automation')
     expect(moveButtons[2]?.text()).toContain('Interactions: Unassessed')
+  })
+
+  it('shows temporary move sources and enforces encounter disable/restriction results', async () => {
+    const temporary = {
+      ...moveOption('Temporary Move', semanticStatus('complete')),
+      moveList: {
+        source: 'encounter-overlay' as const,
+        effectId: 'effect.move-list.copy',
+        copiedSpecHash: 'a'.repeat(64),
+        available: true,
+        blockReason: null,
+        blockingEffectIds: [],
+      },
+    }
+    const disabled = {
+      ...moveOption('Disabled Move', semanticStatus('complete')),
+      moveList: {
+        source: 'placement' as const,
+        effectId: null,
+        copiedSpecHash: null,
+        available: false,
+        blockReason: 'move-list-disabled' as const,
+        blockingEffectIds: ['effect.move-list.disable'],
+      },
+      disabledByMoveList: true,
+    }
+    const wrapper = mountMenu([temporary, disabled])
+    const openMoves = wrapper.findAll('button').find(button => button.text().includes('Use Move'))
+    if (!openMoves) throw new Error('Use Move button was not found')
+    await openMoves.trigger('click')
+
+    const moveButtons = wrapper.findAll<HTMLButtonElement>('.action-submenu__item')
+    expect(moveButtons[0]?.text()).toContain('Temporary')
+    expect(moveButtons[0]?.element.disabled).toBe(false)
+    expect(moveButtons[1]?.text()).toContain('Disabled')
+    expect(moveButtons[1]?.attributes('title')).toContain('disabled by an active encounter effect')
+    expect(moveButtons[1]?.element.disabled).toBe(true)
+
+    await moveButtons[0]?.trigger('click')
+    await moveButtons[1]?.trigger('click')
+    expect(wrapper.emitted('use-move')).toEqual([['Temporary Move']])
   })
 
   it('keeps assisted limitations visible before use and disables blocked registry entries', async () => {

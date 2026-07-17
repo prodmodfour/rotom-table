@@ -26,7 +26,10 @@ import {
 import type { CharacterSheet } from '~/types/characterSheet'
 import type { GridAnchor, SheetPlacement, TabletopMap } from '~/types/map'
 import type { TrainerSheet } from '~/types/trainerSheet'
-import { capabilityEncounterEffectFixture } from '../fixtures/moveAutomation/encounterEffects'
+import {
+  capabilityEncounterEffectFixture,
+  moveListOverlayEncounterEffectFixture,
+} from '../fixtures/moveAutomation/encounterEffects'
 
 const placement = (id: string, sheetSlug: string, x: number): SheetPlacement => ({
   id,
@@ -455,6 +458,83 @@ describe('MoveSpec map, usage, and log reducers', () => {
     expect(Object.isFrozen(result)).toBe(true)
     expect(Object.isFrozen(result.nextMap)).toBe(true)
     expect(Object.isFrozen(result.structuredLog)).toBe(true)
+  })
+
+  it('materializes and removes typed move-list effects through temporary-effect operations', () => {
+    const add = emission(operation('operation.copy-move', 'temporary-effect', {
+      action: 'add',
+      effectId: 'effect.move-list.target-token',
+      definition: {
+        kind: 'move-list-overlay',
+        duration: { kind: 'turns', subject: 'target', boundary: 'end', remaining: 2 },
+        stacks: 1,
+        charges: null,
+        stackPolicy: { kind: 'replace', maxStacks: null },
+        chargePolicy: { kind: 'none', amount: null },
+        tags: ['move-list', 'temporary'],
+        payload: {
+          action: 'add',
+          canonicalMoveId: 'Scratch',
+          copiedSpecHash: 'c'.repeat(64),
+        },
+        dispel: { policy: 'matching-tags', tags: ['move-list'] },
+        transferPolicy: 'expire',
+      },
+    }, 'schedule', 'hit-targets'), ['target-token'])
+
+    const added = reduce({ operations: [add] })
+
+    expect(added.nextMap.encounterState?.effects).toEqual([
+      expect.objectContaining({
+        id: 'effect.move-list.target-token',
+        kind: 'move-list-overlay',
+        source: {
+          operationId: 'operation.copy-move',
+          moveId: 'move.reducer-test',
+          placementId: 'actor-token',
+        },
+        affected: {
+          placementIds: ['target-token'],
+          sideIds: [],
+          cells: [],
+        },
+        createdRound: 2,
+        createdTurn: 0,
+        duration: { kind: 'turns', subject: 'target', boundary: 'end', remaining: 2 },
+        payload: {
+          action: 'add',
+          canonicalMoveId: 'Scratch',
+          copiedSpecHash: 'c'.repeat(64),
+        },
+      }),
+    ])
+    expect(added.operationResults[0]).toMatchObject({
+      outcome: 'applied',
+      details: {
+        action: 'add',
+        effectId: 'effect.move-list.target-token',
+        transitionKinds: ['added'],
+      },
+    })
+    expect(added.stateChanges.groups.encounter).toHaveLength(1)
+
+    const seededMap = mapFixture({
+      encounterState: {
+        ...createEmptyEncounterState(),
+        effects: [moveListOverlayEncounterEffectFixture()],
+      },
+    })
+    const remove = emission(operation('operation.remove-copy', 'temporary-effect', {
+      action: 'remove',
+      effectId: 'effect.move-list.target-token',
+    }, 'cleanup'))
+    const removed = reduce({ context: buildContext({ map: seededMap }), operations: [remove] })
+
+    expect(removed.nextMap.encounterState?.effects).toEqual([])
+    expect(removed.operationResults[0]).toMatchObject({
+      outcome: 'applied',
+      details: { action: 'remove', transitionKinds: ['removed'] },
+    })
   })
 
   it('coalesces prior core encounter effects with native hazard zones', () => {

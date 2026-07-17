@@ -21,6 +21,8 @@ import type { SheetPlacement, TabletopMap } from '~/types/map'
 import type { MoveAutomationScript } from '~/types/moveAutomation'
 import type { TrainerSheet } from '~/types/trainerSheet'
 import { EXPLICIT_MOVE_AUTOMATION_SCRIPTS } from '~/utils/move-automation/registry'
+import { MOVE_AUTOMATION_RUNTIME_REGISTRY } from '~~/server/domain/moveAutomation/registry'
+import { moveListOverlayEncounterEffectFixture } from '../fixtures/moveAutomation/encounterEffects'
 
 const placement = (
   id: string,
@@ -143,6 +145,7 @@ const buildContext = (overrides: {
   readonly map?: TabletopMap
   readonly pokemonSheets?: ReadonlyMap<string, CharacterSheet>
   readonly random?: () => number
+  readonly intent?: ResolveMoveIntent
 } = {}) => buildAuthoritativeMoveRulesContext({
   map: overrides.map ?? mapFixture(),
   pokemonSheets: overrides.pokemonSheets ?? new Map([
@@ -151,7 +154,7 @@ const buildContext = (overrides: {
     ['ally', pokemonSheet('ally')],
   ]),
   trainerSheets: new Map<string, TrainerSheet>(),
-  intent: intent(),
+  intent: overrides.intent ?? intent(),
   candidatePlacementIds: ['target-token', 'ally-token'],
   selectedPlacementIds: ['target-token'],
   random: overrides.random ?? randomSequence([0.5, 0, 0.25]),
@@ -283,6 +286,101 @@ describe('immutable authoritative move rules context', () => {
       canonicalId: 'Tackle',
       baseStatus: 'assisted',
     })
+  })
+
+  it('uses encounter move-list overlays and validates temporary copy hashes in actor legality', () => {
+    const disabledMap = mapFixture()
+    disabledMap.encounterState = {
+      ...disabledMap.encounterState!,
+      effects: [{
+        ...moveListOverlayEncounterEffectFixture({
+          action: 'disable',
+          canonicalMoveIds: ['Tackle'],
+        }),
+        id: 'effect.move-list.disable-tackle',
+        affected: { placementIds: ['actor-token'], sideIds: [], cells: [] },
+      }],
+    }
+    const disabledContext = buildContext({ map: disabledMap })
+    const disabled = disabledContext.queries.resolveActorMoveEntry('Tackle')
+
+    const runtime = MOVE_AUTOMATION_RUNTIME_REGISTRY.resolve('Swords Dance')
+    if (!runtime) throw new Error('Swords Dance runtime is missing')
+    const copiedMap = mapFixture()
+    const copiedEffect = {
+      ...moveListOverlayEncounterEffectFixture({
+        action: 'add',
+        canonicalMoveId: 'Swords Dance',
+        copiedSpecHash: runtime.definitionHash,
+      }),
+      id: 'effect.move-list.copy-swords-dance',
+      affected: { placementIds: ['actor-token'], sideIds: [], cells: [] },
+    }
+    copiedMap.encounterState = {
+      ...copiedMap.encounterState!,
+      effects: [copiedEffect],
+    }
+    const copiedContext = buildContext({
+      map: copiedMap,
+      intent: {
+        schemaVersion: LIVE_PLAY_MOVE_RESOLUTION_SCHEMA_VERSION,
+        placementId: 'actor-token',
+        moveName: 'Swords Dance',
+        selection: { kind: 'self' },
+      },
+    })
+    const copied = copiedContext.queries.resolveActorMoveEntry('Swords Dance')
+
+    copiedMap.encounterState = {
+      ...copiedMap.encounterState,
+      effects: [{
+        ...copiedEffect,
+        payload: {
+          action: 'add',
+          canonicalMoveId: 'Swords Dance',
+          copiedSpecHash: 'f'.repeat(64),
+        },
+      }],
+    }
+    const staleContext = buildContext({
+      map: copiedMap,
+      intent: {
+        schemaVersion: LIVE_PLAY_MOVE_RESOLUTION_SCHEMA_VERSION,
+        placementId: 'actor-token',
+        moveName: 'Swords Dance',
+        selection: { kind: 'self' },
+      },
+    })
+    const stale = staleContext.queries.resolveActorMoveEntry('Swords Dance')
+
+    expect(disabled).toMatchObject({ ok: false, reason: 'move-list-blocked' })
+    expect(() => resolveAuthoritativeMoveFromContext(disabledContext)).toThrow(expect.objectContaining({
+      code: 'move-list-overlay-blocked',
+      reason: 'unauthorized-state',
+    }))
+    expect(copied).toMatchObject({
+      ok: true,
+      entry: {
+        canonicalMoveName: 'Swords Dance',
+        copiedSpecHash: runtime.definitionHash,
+        moveListSource: {
+          kind: 'encounter-overlay',
+          effectId: 'effect.move-list.copy-swords-dance',
+        },
+      },
+    })
+    expect(resolveAuthoritativeMoveFromContext(copiedContext)).toMatchObject({
+      canonicalMoveName: 'Swords Dance',
+      transaction: {
+        userId: 'actor-token',
+        combatStageUpdates: [expect.objectContaining({ id: 'actor-token' })],
+      },
+    })
+    expect(stale).toMatchObject({ ok: false, reason: 'copied-spec-mismatch' })
+    expect(() => resolveAuthoritativeMoveFromContext(staleContext)).toThrow(expect.objectContaining({
+      code: 'move-list-overlay-stale',
+      reason: 'conflict',
+    }))
   })
 
   it('derives relationship results from the snapshotted side directory and requires unknown-target opt-in', () => {

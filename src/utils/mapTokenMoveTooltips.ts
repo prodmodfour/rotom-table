@@ -65,6 +65,12 @@ const buildSheetSpecificLines = (
   if (attackStat) lines.push(`Attack Stat: ${attackStat}`)
   if (move.hasStab) lines.push('STAB: +2 DB included')
   if (move.automatic) lines.push('Source: Automatic Struggle Attack')
+  if (move.moveList.source === 'encounter-overlay') lines.push('Source: Temporary encounter move')
+  if (move.disabledByMoveList) {
+    lines.push(move.moveList.blockReason === 'move-list-disabled'
+      ? 'Encounter: Disabled by an active move-list effect'
+      : 'Encounter: Outside the active move restriction')
+  }
   if (move.conditionUseBlock) lines.push(`Condition: ${move.conditionUseBlock.reason}`)
   return lines
 }

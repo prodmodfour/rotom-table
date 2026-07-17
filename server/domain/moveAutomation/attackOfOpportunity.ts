@@ -203,7 +203,9 @@ const moveOptionsForPlacement = (
 ) => {
   const options = attackOfOpportunityStruggleOptions(buildTokenMoveMenuOptions(
     token,
-    moveEntriesForPlacement(placement, sheetsLookup(documents)),
+    moveEntriesForPlacement(placement, sheetsLookup(documents), {
+      encounterEffects: map.encounterState?.effects ?? [],
+    }),
     {
       mapMoveUsage: map.moveUsage,
       sheetMoveUsage: sheetForPlacement(placement, documents).moveUsage,
