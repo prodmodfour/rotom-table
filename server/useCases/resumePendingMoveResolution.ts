@@ -31,7 +31,10 @@ import {
   type AuthoritativeMoveStatePlan,
   type AuthoritativePendingMoveStatePlan,
 } from '../domain/planAuthoritativeMoveState'
-import { isAuthoritativePendingMoveResolution } from '../domain/resolveAuthoritativeMove'
+import {
+  AuthoritativeMoveResolutionError,
+  isAuthoritativePendingMoveResolution,
+} from '../domain/resolveAuthoritativeMove'
 import {
   isAbilityFollowUpPendingResolution,
   planAbilityFollowUpResponse,
@@ -466,22 +469,32 @@ const existingResponse = (
   return responseFromState({ role: input.role, result: existing.result, map })
 }
 
-const persistResourceCostRejection = (input: {
+const retryableChildMoveRejectionMessage = (error: unknown): string | null => {
+  if (
+    isAuthoritativeMoveStatePlanningError(error)
+    && error.code === 'move-resource-unavailable'
+  ) return error.message
+  if (
+    error instanceof AuthoritativeMoveResolutionError
+    && error.code === 'move-terrain-blocked'
+  ) return error.message
+  return null
+}
+
+const persistChildMoveDeclarationRejection = (input: {
   readonly request: ResumePendingMoveResolutionInput
   readonly map: TabletopMap
   readonly commandHash: LivePlayCommandHash
   readonly dependencies: Dependencies
   readonly error: unknown
 }): LivePlayResolveMoveCommandResponse | null => {
-  if (
-    !isAuthoritativeMoveStatePlanningError(input.error)
-    || input.error.code !== 'move-resource-unavailable'
-  ) return null
+  const message = retryableChildMoveRejectionMessage(input.error)
+  if (!message) return null
   const result = createLivePlayRejectedResult({
     opId: input.request.command.opId,
     mapSlug: input.request.command.mapSlug,
     reason: 'conflict',
-    message: input.error.message,
+    message,
     currentRevision: normalizeRevision(input.map.revision),
   })
   input.dependencies.opRepository.saveCommandResult({
@@ -609,7 +622,7 @@ export const resumePendingMoveResolutionUseCase = (
         })
       }
       catch (error) {
-        const rejection = persistResourceCostRejection({
+        const rejection = persistChildMoveDeclarationRejection({
           request: input,
           map,
           commandHash,
@@ -833,7 +846,7 @@ export const resumePendingMoveResolutionUseCase = (
       })
     }
     catch (error) {
-      const rejection = persistResourceCostRejection({
+      const rejection = persistChildMoveDeclarationRejection({
         request: input,
         map,
         commandHash,

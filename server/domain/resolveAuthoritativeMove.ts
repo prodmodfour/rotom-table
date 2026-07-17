@@ -1715,12 +1715,18 @@ export const resolveAuthoritativeMoveExecutionFromContext = (
     fail('invalid', 'move-usage-key-invalid', `${entry.canonicalMoveName} did not produce a valid move usage key.`)
   }
   const selectedRuntime = context.queries.rules.runtimeFor(entry.canonicalMoveName)
+  const legacySelection = selectedRuntime?.kind === 'movespec-v2'
+    ? null
+    : resolveCanonicalScript({
+        baseScript: entry.script,
+        targetBranchId: intent.targetBranchId,
+      })
   const reviewedCosts = options.resourceCostDeclarations
     ?? (selectedRuntime?.kind === 'movespec-v2'
       ? selectedRuntime.definition.spec.costs
       : undefined)
   const actionTiming = resolveAuthoritativeMoveActionTiming({
-    range: entry.script.range,
+    range: legacySelection?.script.range ?? entry.script.range,
     ...(reviewedCosts && reviewedCosts.length > 0 ? { reviewedCosts } : {}),
   })
   const terrainAction = context.queries.terrain.action({
@@ -1768,10 +1774,12 @@ export const resolveAuthoritativeMoveExecutionFromContext = (
     )
   }
 
-  const { script, targetBranchId } = resolveCanonicalScript({
-    baseScript: entry.script,
-    targetBranchId: intent.targetBranchId,
-  })
+  const { script, targetBranchId } = legacySelection
+    ?? fail(
+      'unsupported',
+      'unsupported-move-script',
+      `${entry.canonicalMoveName} did not resolve a retained script.`,
+    )
   const common = {
     context,
     script,

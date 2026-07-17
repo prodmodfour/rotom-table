@@ -686,49 +686,44 @@ export const createMoveAutomationTerrainResolver = (input: {
       .filter(entry => entry.terrainKind === 'psychic' && entry.outcome !== 'applied')
       .map(entry => traceEntry({ ...entry, interaction: 'action' }))
     if (!psychic) return deepFreeze({ allowed: true, blockedBy: null, trace })
-    if (placements.get(query.placementId)?.sheetKind !== 'pokemon') {
-      return deepFreeze({
-        allowed: true,
-        blockedBy: null,
-        trace: [traceEntry({
+    const decision = (result: {
+      readonly allowed: boolean
+      readonly outcome: Extract<TerrainMechanicsTraceOutcome, 'not-applicable' | 'prevented'>
+      readonly reasonCode: string
+    }): TerrainActionResolution => deepFreeze({
+      allowed: result.allowed,
+      blockedBy: result.allowed ? null : `${terrainLabel(psychic.kind)} (${psychic.zoneId})`,
+      trace: [
+        ...trace,
+        traceEntry({
           interaction: 'action',
           terrainKind: psychic.kind,
           zoneId: psychic.zoneId,
           placementId: query.placementId,
-          outcome: 'not-applicable',
-          reasonCode: 'terrain.psychic.non-pokemon-action-unrestricted',
+          outcome: result.outcome,
+          reasonCode: result.reasonCode,
           value: query.timing,
-        })],
+        }),
+      ],
+    })
+    if (placements.get(query.placementId)?.sheetKind !== 'pokemon') {
+      return decision({
+        allowed: true,
+        outcome: 'not-applicable',
+        reasonCode: 'terrain.psychic.non-pokemon-action-unrestricted',
       })
     }
     if (input.map.initiative?.activeId === query.placementId) {
-      return deepFreeze({
+      return decision({
         allowed: true,
-        blockedBy: null,
-        trace: [traceEntry({
-          interaction: 'action',
-          terrainKind: psychic.kind,
-          zoneId: psychic.zoneId,
-          placementId: query.placementId,
-          outcome: 'not-applicable',
-          reasonCode: 'terrain.psychic.action-on-own-initiative',
-          value: query.timing,
-        })],
+        outcome: 'not-applicable',
+        reasonCode: 'terrain.psychic.action-on-own-initiative',
       })
     }
-    const reasonCode = 'terrain.psychic.off-turn-priority-interrupt-prevention'
-    return deepFreeze({
+    return decision({
       allowed: false,
-      blockedBy: `${terrainLabel(psychic.kind)} (${psychic.zoneId})`,
-      trace: [traceEntry({
-        interaction: 'action',
-        terrainKind: psychic.kind,
-        zoneId: psychic.zoneId,
-        placementId: query.placementId,
-        outcome: 'prevented',
-        reasonCode,
-        value: query.timing,
-      })],
+      outcome: 'prevented',
+      reasonCode: 'terrain.psychic.off-turn-priority-interrupt-prevention',
     })
   }
 

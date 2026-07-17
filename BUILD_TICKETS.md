@@ -1941,7 +1941,7 @@ Status: DONE
 
 ## MA-141B — Implement Psychic Terrain mechanics
 
-Status: TODO
+Status: DONE
 
 **Depends on:** MA-141A, MA-077, MA-108, MA-123, MA-137
 **Commit:** `feat(move-automation): resolve psychic terrain`

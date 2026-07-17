@@ -415,6 +415,86 @@ describe('durable Attack of Opportunity commands', () => {
     ])
   })
 
+  it('rejects a grounded off-turn opportunity attack under Psychic Terrain before RNG', async () => {
+    const harness = createHarness()
+    const map = harness.maps.getBySlug('arena')!
+    harness.maps.save({
+      slug: map.slug,
+      document: {
+        ...map,
+        fieldEffects: {
+          weather: [],
+          terrains: [{ kind: 'psychic', scope: 'field' }],
+          rooms: [],
+        },
+      },
+      revision: map.revision ?? 0,
+      updatedAt: map.updatedAt ?? 20,
+    })
+    await executeAttackOfOpportunityLivePlayCommandUseCase({
+      role: 'gm',
+      command: triggerCommand('op_aoopsychictrigger1'),
+      clientId: 'gm-client',
+      expectedType: LIVE_PLAY_COMMAND_TYPES.UPDATE_ATTACK_OF_OPPORTUNITY,
+    }, harness.triggerDeps)
+    const pending = harness.pending.listByMap('arena')[0]!
+    const window = pending.resolution.outstandingWindows[0]!
+    const command: MoveResponseCommand = {
+      schemaVersion: MOVE_RESPONSE_COMMAND_SCHEMA_VERSION,
+      opId: 'op_aoopsychicanswer1',
+      mapSlug: 'arena',
+      baseRevision: 8,
+      type: MOVE_RESPONSE_COMMAND_TYPES.REACT,
+      payload: {
+        resolutionId: pending.resolutionId,
+        windowId: window.windowId,
+        optionId: window.options[0]!.id,
+      },
+    }
+    const random = vi.fn(() => 0.95)
+    const mapBeforeResponse = structuredClone(harness.maps.getBySlug('arena'))
+    const pendingBeforeResponse = structuredClone(harness.pending.getById(pending.resolutionId))
+
+    const response = resumePendingMoveResolutionUseCase({
+      command,
+      storedResolution: pending,
+      window,
+      option: window.options[0]!,
+      role: 'gm',
+      playerProfile: null,
+      authorization: { chosenBy: { kind: 'gm', id: null }, source: 'gm-authority' },
+      clientId: 'gm-client',
+    }, {
+      database: harness.database,
+      mapRepository: harness.maps,
+      sheetRepository: harness.sheets,
+      pendingResolutionRepository: harness.pending,
+      opRepository: harness.ops,
+      realtimeEventRepository: harness.realtime,
+      publishPersistedRealtimeEvent: vi.fn(),
+      random,
+      now: () => 2_000,
+    })
+
+    expect(response.result).toMatchObject({
+      ok: false,
+      reason: 'conflict',
+      currentRevision: 8,
+      message: expect.stringContaining('Psychic Terrain (legacy.terrain.psychic)'),
+    })
+    const replay = replayMoveResponseCommandUseCase({ role: 'gm', command }, {
+      database: harness.database,
+      mapRepository: harness.maps,
+      opRepository: harness.ops,
+    })
+    expect(replay?.result).toEqual(response.result)
+    expect(random).not.toHaveBeenCalled()
+    expect(harness.maps.getBySlug('arena')).toEqual(mapBeforeResponse)
+    expect(harness.pending.getById(pending.resolutionId)).toEqual(pendingBeforeResponse)
+    expect(harness.sheets.getByRef('pokemon', 'provoker-mon')?.sheet)
+      .toMatchObject({ combat: { currentHp: 60 } })
+  })
+
   it('rejects an unavailable reaction cost without changing the pending response or map', async () => {
     const harness = createHarness()
     const map = harness.maps.getBySlug('arena')!
