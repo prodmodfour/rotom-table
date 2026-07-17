@@ -215,6 +215,77 @@ describe('authoritative move item resources', () => {
     expect(Object.isFrozen(queries.all())).toBe(true)
   })
 
+  it('exposes only strict private consumed-item evidence by stable identity', () => {
+    const map = mapFixture()
+    const trainer = trainerSheet()
+    const target = pokemonSheet('target-mon', 'Leftovers', 3)
+    const sourceResources = resolveAuthoritativeMoveItemResources({
+      map,
+      actorPlacementId: 'actor',
+      selectedTargetPlacementIds: ['target'],
+      pokemonSheets: new Map([[target.slug, target]]),
+      trainerSheets: new Map([[trainer.slug, trainer]]),
+      groupInventories: new Map(),
+      requirements: [{ id: 'test.target-equipped', source: { kind: 'selected-target-equipped' } }],
+    })
+    const consumedItem = {
+      consumptionId: 'consumption.leftovers',
+      sourceOperationId: 'item.consume-leftovers',
+      source: sourceResources.candidates[0]!.reference,
+      canonicalItemId: 'leftovers',
+      quantity: 1,
+    }
+    const resources = resolveAuthoritativeMoveItemResources({
+      map,
+      actorPlacementId: 'actor',
+      selectedTargetPlacementIds: [],
+      pokemonSheets: new Map([[target.slug, target]]),
+      trainerSheets: new Map([[trainer.slug, trainer]]),
+      groupInventories: new Map(),
+      consumedItems: [consumedItem],
+      requirements: [],
+    })
+    const queries = createAuthoritativeMoveItemResourceQueries(resources)
+
+    expect(queries.consumedById('consumption.leftovers')).toEqual(consumedItem)
+    expect(queries.consumedById('consumption.unknown')).toBeNull()
+    expect(Object.isFrozen(resources.consumedItems)).toBe(true)
+    expect(Object.isFrozen(resources.consumedItems[0])).toBe(true)
+
+    expect(() => resolveAuthoritativeMoveItemResources({
+      map,
+      actorPlacementId: 'actor',
+      selectedTargetPlacementIds: [],
+      pokemonSheets: new Map([[target.slug, target]]),
+      trainerSheets: new Map([[trainer.slug, trainer]]),
+      groupInventories: new Map(),
+      consumedItems: [consumedItem, consumedItem],
+      requirements: [],
+    })).toThrowError(expect.objectContaining({
+      name: AuthoritativeMoveItemResourceError.name,
+      code: 'duplicate-consumed-item',
+    }))
+
+    for (const invalidRecord of [
+      { ...consumedItem, canonicalItemId: 'iron-ball' },
+      { ...consumedItem, consumptionId: 'Client supplied identity' },
+    ]) {
+      expect(() => resolveAuthoritativeMoveItemResources({
+        map,
+        actorPlacementId: 'actor',
+        selectedTargetPlacementIds: [],
+        pokemonSheets: new Map([[target.slug, target]]),
+        trainerSheets: new Map([[trainer.slug, trainer]]),
+        groupInventories: new Map(),
+        consumedItems: [invalidRecord],
+        requirements: [],
+      })).toThrowError(expect.objectContaining({
+        name: AuthoritativeMoveItemResourceError.name,
+        code: 'invalid-consumed-item',
+      }))
+    }
+  })
+
   it('fails closed on ambiguous stored row identities while retaining the owner read', () => {
     const map = mapFixture()
     const trainer = trainerSheet()

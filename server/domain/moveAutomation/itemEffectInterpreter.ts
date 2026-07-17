@@ -696,13 +696,23 @@ const interpretRestore = (input: InterpretOperationInput): OperationInterpretati
   if (payload.action !== 'restore') {
     return fail('unsupported-operation', `Operation ${input.operation.id} is not restore.`)
   }
+  const consumed = input.context.queries.items.consumedById(payload.consumptionId)
+  if (!consumed) {
+    return { result: unavailable({
+      operation: input.operation,
+      policy: payload.onUnavailable,
+      code: 'selection-unavailable',
+      message: `Restore operation ${input.operation.id} has no recorded consumption ${payload.consumptionId}.`,
+    }), mutations: [] }
+  }
+
   let mutation: MoveItemMutation
   if (payload.mode === 'effect') {
     mutation = {
       id: mutationId(input.operation.id, 0),
       kind: 'reuse-consumed',
       reasonCode: input.operation.reasonCode,
-      consumptionId: payload.consumptionId,
+      consumptionId: consumed.consumptionId,
     }
   }
   else {
@@ -716,13 +726,14 @@ const interpretRestore = (input: InterpretOperationInput): OperationInterpretati
         policy: payload.onUnavailable,
         code: 'destination-occupied',
         message: `Restore operation ${input.operation.id} destination ${placement.id} is occupied.`,
+        outcome: 'prevented',
       }), mutations: [] }
     }
     mutation = {
       id: mutationId(input.operation.id, 0),
       kind: 'restore-consumed',
       reasonCode: input.operation.reasonCode,
-      consumptionId: payload.consumptionId,
+      consumptionId: consumed.consumptionId,
       destination: heldDestination(input.context, placement),
     }
   }
@@ -746,12 +757,20 @@ const interpretSuppression = (input: InterpretOperationInput): OperationInterpre
   if (input.recipientIds.length > MOVE_ITEM_EFFECT_INTERPRETER_LIMITS.recipients) {
     return fail('recipient-count-invalid', `Item suppression ${input.operation.id} has too many recipients.`)
   }
+  if (new Set(input.recipientIds).size !== input.recipientIds.length) {
+    return fail('recipient-count-invalid', `Item suppression ${input.operation.id} duplicates a recipient.`)
+  }
   const recipientPlacements = input.recipientIds.map(id => (
     input.context.queries.placements.get(id)
       ?? fail('recipient-count-invalid', `Item suppression recipient ${id} is unavailable.`)
   ))
   const bindingsByPlacement = new Map<string, string[]>()
-  let itemCount = 0
+  let itemCount = payload.scope === 'all-equipped'
+    ? recipientPlacements.reduce(
+        (count, placement) => count + heldItemCount(input.context, placement),
+        0,
+      )
+    : 0
   if (payload.scope === 'selected-items' && payload.item) {
     const references = resolveSelection({
       selection: payload.item,
@@ -940,6 +959,9 @@ export const applyMoveItemEffectResultsToTrace = (input: {
         itemCount: result.itemCount,
         mutationCount: result.mutationIds.length,
         quantityEffects: reduced.flatMap(entry => entry.quantityEffects),
+        consumptionIds: [...new Set(reduced.flatMap(entry => (
+          entry.consumptionId === null ? [] : [entry.consumptionId]
+        )))],
         resourceScopeCount: new Set(reduced.flatMap(entry => entry.resourceScopes.map(scope => (
           scope.kind === 'sheet'
             ? `sheet:${scope.sheetKind}:${scope.slug}`

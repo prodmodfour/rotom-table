@@ -23,7 +23,10 @@ import {
   type AuthoritativeMoveItemResourceRequirement,
   type AuthoritativeMoveItemResources,
 } from '~~/server/domain/moveAutomation/itemResources'
-import { MoveItemMutationError } from '~~/server/domain/moveAutomation/itemMutationTypes'
+import {
+  MoveItemMutationError,
+  type MoveConsumedItemRecord,
+} from '~~/server/domain/moveAutomation/itemMutationTypes'
 import { planMoveItemMutations } from '~~/server/domain/moveAutomation/planItemMutations'
 import {
   createMoveResolutionTrace,
@@ -106,6 +109,7 @@ const resourcesFor = (input: {
   readonly sheets: ReadonlyMap<string, CharacterSheet>
   readonly selectedTargetIds: readonly string[]
   readonly requirements: readonly AuthoritativeMoveItemResourceRequirement[]
+  readonly consumedItems?: readonly MoveConsumedItemRecord[]
 }): AuthoritativeMoveItemResources => resolveAuthoritativeMoveItemResources({
   map: input.map,
   actorPlacementId: actorId,
@@ -113,6 +117,7 @@ const resourcesFor = (input: {
   pokemonSheets: input.sheets,
   trainerSheets: new Map(),
   groupInventories: new Map(),
+  consumedItems: input.consumedItems,
   requirements: input.requirements,
 })
 
@@ -732,17 +737,17 @@ describe('shared authoritative item effect interpreter', () => {
     })
   })
 
-  it('audits consume, effect-only restore, and destroy through typed quantity policies', () => {
+  it('records consumption provenance and replays only server-loaded Recycle evidence', () => {
     const map = mapFixture()
-    const consumeSheets = sheetsFixture({ actorHeld: 'Leftovers', firstHeld: 'Iron Ball' })
-    const resources = resourcesFor({
+    const initialSheets = sheetsFixture({ actorHeld: 'Leftovers' })
+    const initialResources = resourcesFor({
       map,
-      sheets: consumeSheets,
-      selectedTargetIds: [firstTargetId],
-      requirements: [requirements.actor, requirements.targets],
+      sheets: initialSheets,
+      selectedTargetIds: [],
+      requirements: [requirements.actor],
     })
-    const consume = operation({
-      id: 'item.consume',
+    const consumeOperation = operation({
+      id: 'item.consume-leftovers',
       recipients: 'actor',
       payload: {
         action: 'consume',
@@ -752,8 +757,35 @@ describe('shared authoritative item effect interpreter', () => {
         onUnavailable: 'reject',
       },
     })
-    const restore = operation({
-      id: 'item.restore-effect',
+    const consumed = interpretAndPlan({
+      map,
+      sheets: initialSheets,
+      resources: initialResources,
+      operations: [emission(consumeOperation, [actorId])],
+    })
+    const consumedRecord = consumed.plan.consumedItems[0]
+    expect(consumedRecord).toEqual({
+      consumptionId: 'consumption.leftovers',
+      sourceOperationId: 'item.consume-leftovers.mutation-1',
+      source: initialResources.candidates[0]?.reference,
+      canonicalItemId: 'leftovers',
+      quantity: 1,
+    })
+
+    const afterConsumeActor = consumed.plan.sheetWrites.find(
+      write => write.slug === 'item-actor-sheet',
+    )?.nextSheet as CharacterSheet
+    const afterConsumeSheets = new Map(initialSheets)
+    afterConsumeSheets.set('item-actor-sheet', afterConsumeActor)
+    const recycleResources = resourcesFor({
+      map,
+      sheets: afterConsumeSheets,
+      selectedTargetIds: [],
+      requirements: [],
+      consumedItems: [consumedRecord!],
+    })
+    const recycleOperation = operation({
+      id: 'item.recycle-effect',
       recipients: 'actor',
       payload: {
         action: 'restore',
@@ -763,35 +795,114 @@ describe('shared authoritative item effect interpreter', () => {
         onUnavailable: 'reject',
       },
     })
-    const destroy = operation({
-      id: 'item.destroy',
-      recipients: 'hit-targets',
-      payload: selectedPayload('destroy', requirements.targets.id),
-    })
-    const planned = interpretAndPlan({
+    const recycled = interpretAndPlan({
       map,
-      sheets: consumeSheets,
-      resources,
-      operations: [
-        emission(consume, [actorId]),
-        emission(restore, [actorId]),
-        emission(destroy, [firstTargetId]),
-      ],
+      sheets: afterConsumeSheets,
+      resources: recycleResources,
+      operations: [emission(recycleOperation, [actorId])],
     })
 
-    expect(planned.plan.operationResults.map(result => ({
-      kind: result.kind,
-      policy: result.quantityPolicy,
-      effects: result.quantityEffects,
-    }))).toEqual([
-      { kind: 'consume', policy: 'consume', effects: [{ canonicalItemId: 'leftovers', delta: -1 }] },
-      { kind: 'reuse-consumed', policy: 'conserve', effects: [{ canonicalItemId: 'leftovers', delta: 0 }] },
-      { kind: 'destroy', policy: 'destroy', effects: [{ canonicalItemId: 'iron-ball', delta: -1 }] },
-    ])
-    expect(planned.plan.availableConsumedItems).toHaveLength(1)
+    expect(recycled.plan.operationResults[0]).toMatchObject({
+      kind: 'reuse-consumed',
+      quantityPolicy: 'conserve',
+      quantityEffects: [{ canonicalItemId: 'leftovers', delta: 0 }],
+      consumptionId: 'consumption.leftovers',
+    })
+    expect(recycled.plan.sheetWrites).toEqual([])
+    expect(recycled.plan.availableConsumedItems).toEqual([consumedRecord])
+    const auditTrace = applyMoveItemEffectResultsToTrace({
+      trace: emittedItemTrace(recycleOperation, [actorId]),
+      interpretation: recycled.interpretation,
+      mutationResults: recycled.plan.operationResults,
+    })
+    expect(auditTrace.events.find(event => event.kind === 'operation')).toMatchObject({
+      result: {
+        action: 'restore',
+        consumptionIds: ['consumption.leftovers'],
+        quantityEffects: [{ canonicalItemId: 'leftovers', delta: 0 }],
+      },
+    })
   })
 
-  it('persists replace-by-source and item-bound suppression as typed encounter effects', () => {
+  it('restores recorded quantity to a legal destination and makes destruction explicit', () => {
+    const map = mapFixture()
+    const historicalSheets = sheetsFixture({ actorHeld: 'Leftovers' })
+    const historicalResources = resourcesFor({
+      map,
+      sheets: historicalSheets,
+      selectedTargetIds: [],
+      requirements: [requirements.actor],
+    })
+    const consumedRecord: MoveConsumedItemRecord = {
+      consumptionId: 'consumption.physical-leftovers',
+      sourceOperationId: 'item.prior-consume',
+      source: historicalResources.candidates[0]!.reference,
+      canonicalItemId: 'leftovers',
+      quantity: 1,
+    }
+    const emptySheets = sheetsFixture()
+    const restoreResources = resourcesFor({
+      map,
+      sheets: emptySheets,
+      selectedTargetIds: [],
+      requirements: [],
+      consumedItems: [consumedRecord],
+    })
+    const restored = interpretAndPlan({
+      map,
+      sheets: emptySheets,
+      resources: restoreResources,
+      operations: [emission(operation({
+        id: 'item.restore-physical',
+        recipients: 'actor',
+        payload: {
+          action: 'restore',
+          consumptionId: consumedRecord.consumptionId,
+          mode: 'item',
+          destination: 'actor-held',
+          onUnavailable: 'reject',
+        },
+      }), [actorId])],
+    })
+    expect(restored.plan.sheetWrites[0]?.nextSheet).toMatchObject({
+      items: { held: 'Leftovers' },
+    })
+    expect(restored.plan.operationResults[0]).toMatchObject({
+      kind: 'restore-consumed',
+      quantityPolicy: 'restore-consumed',
+      quantityEffects: [{ canonicalItemId: 'leftovers', delta: 1 }],
+    })
+    expect(restored.plan.availableConsumedItems).toEqual([])
+
+    const destroySheets = sheetsFixture({ firstHeld: 'Iron Ball' })
+    const destroyResources = resourcesFor({
+      map,
+      sheets: destroySheets,
+      selectedTargetIds: [firstTargetId],
+      requirements: [requirements.targets],
+    })
+    const destroyed = interpretAndPlan({
+      map,
+      sheets: destroySheets,
+      resources: destroyResources,
+      operations: [emission(operation({
+        id: 'item.incinerate-destroy',
+        recipients: 'hit-targets',
+        payload: selectedPayload('destroy', requirements.targets.id),
+      }), [firstTargetId])],
+    })
+    expect(destroyed.plan.sheetWrites[0]?.nextSheet).toMatchObject({ items: {} })
+    expect(destroyed.plan.operationResults[0]).toMatchObject({
+      kind: 'destroy',
+      quantityPolicy: 'destroy',
+      quantityEffects: [{ canonicalItemId: 'iron-ball', delta: -1 }],
+      consumptionId: null,
+    })
+    expect(destroyed.plan.consumedItems).toEqual([])
+    expect(destroySheets.get('item-target-one-sheet')?.items?.held).toBe('Iron Ball')
+  })
+
+  it('models Embargo and Corrosive Gas as suppression without unequipping', () => {
     const map = mapFixture()
     const sheets = sheetsFixture({ firstHeld: 'Iron Ball', secondHeld: 'Leftovers' })
     const allResources = resourcesFor({
@@ -818,10 +929,7 @@ describe('shared authoritative item effect interpreter', () => {
     const second = operation({
       id: 'item.embargo-second',
       recipients: 'hit-targets',
-      payload: {
-        ...first.payload,
-        action: 'suppress',
-      },
+      payload: { ...first.payload, action: 'suppress' },
     })
     const replaced = interpretAndPlan({
       map,
@@ -832,6 +940,7 @@ describe('shared authoritative item effect interpreter', () => {
         emission(second, [secondTargetId]),
       ],
     })
+    expect(replaced.interpretation.results.map(result => result.itemCount)).toEqual([1, 1])
     expect(replaced.plan.nextMap.encounterState?.effects).toHaveLength(1)
     expect(replaced.plan.nextMap.encounterState?.effects[0]).toMatchObject({
       kind: 'item-suppression',
@@ -843,6 +952,7 @@ describe('shared authoritative item effect interpreter', () => {
         blocksBenefit: true,
       },
     })
+    expect(replaced.plan.sheetWrites).toEqual([])
 
     const bound = interpretAndPlan({
       map,
@@ -871,12 +981,15 @@ describe('shared authoritative item effect interpreter', () => {
       && effect.payload.scope === 'item-bindings'
       && effect.payload.itemBindingIds.length === 1
     ))).toBe(true)
+    expect(bound.plan.sheetWrites).toEqual([])
+    expect(sheets.get('item-target-one-sheet')?.items?.held).toBe('Iron Ball')
+    expect(sheets.get('item-target-two-sheet')?.items?.held).toBe('Leftovers')
     expect(JSON.stringify(effects)).not.toContain('item-target-one-sheet')
   })
 
-  it('stores and digests one authoritative food buff without restoring item quantity', () => {
+  it('stores and consumes the bounded Stuff Cheeks digestion buff atomically', () => {
     const map = mapFixture()
-    const initialSheets = sheetsFixture({ actorHeld: 'Leftovers' })
+    const initialSheets = sheetsFixture({ actorHeld: 'Candy Bar' })
     const resources = resourcesFor({
       map,
       sheets: initialSheets,
@@ -888,13 +1001,13 @@ describe('shared authoritative item effect interpreter', () => {
       sheets: initialSheets,
       resources,
       operations: [emission(operation({
-        id: 'item.store-buff',
+        id: 'item.store-food-buff',
         recipients: 'actor',
         payload: {
           action: 'store-buff',
           item: requirementSelection(requirements.actor.id),
           quantity: 1,
-          consumptionId: 'consumption.food-buff',
+          consumptionId: 'consumption.candy-bar-buff',
           onUnavailable: 'reject',
         },
       }), [actorId])],
@@ -902,27 +1015,32 @@ describe('shared authoritative item effect interpreter', () => {
     const storedActor = stored.plan.sheetWrites.find(
       write => write.slug === 'item-actor-sheet',
     )?.nextSheet as CharacterSheet
-    expect(storedActor.items).toEqual({ digestionFood: 'Leftovers' })
+    expect(storedActor.items).toEqual({ digestionFood: 'Candy Bar' })
     expect(stored.plan.operationResults[0]).toMatchObject({
       kind: 'store-digestion-buff',
       quantityPolicy: 'consume',
-      quantityEffects: [{ canonicalItemId: 'leftovers', delta: -1 }],
+      quantityEffects: [{ canonicalItemId: 'candy-bar', delta: -1 }],
+      consumptionId: 'consumption.candy-bar-buff',
+    })
+    expect(stored.plan.consumedItems[0]).toMatchObject({
+      sourceOperationId: 'item.store-food-buff.mutation-1',
+      canonicalItemId: 'candy-bar',
+      quantity: 1,
     })
 
     const digestSheets = new Map(initialSheets)
     digestSheets.set('item-actor-sheet', storedActor)
-    const digestContext = contextFor({ map, sheets: digestSheets })
     const digestOperation = operation({
-      id: 'item.digest-buff',
+      id: 'item.stuff-cheeks-digest',
       recipients: 'actor',
       payload: {
         action: 'digest-buff',
-        canonicalItemIds: ['leftovers'],
+        canonicalItemIds: ['candy-bar'],
         onUnavailable: 'reject',
       },
     })
     const digestInterpretation = interpretMoveItemEffects({
-      context: digestContext,
+      context: contextFor({ map, sheets: digestSheets }),
       operations: [emission(digestOperation, [actorId])],
       resolvedItemChoices: [],
     })
@@ -939,7 +1057,122 @@ describe('shared authoritative item effect interpreter', () => {
     expect(digested.operationResults[0]).toMatchObject({
       kind: 'digest-buff',
       quantityPolicy: 'conserve',
-      quantityEffects: [{ canonicalItemId: 'leftovers', delta: 0 }],
+      quantityEffects: [{ canonicalItemId: 'candy-bar', delta: 0 }],
     })
+    expect(storedActor.items?.digestionFood).toBe('Candy Bar')
+  })
+
+  it('rejects illegal lifecycle transitions deterministically without a partial plan', () => {
+    const map = mapFixture()
+    const emptySheets = sheetsFixture()
+    const missingRestore = operation({
+      id: 'item.recycle-missing',
+      recipients: 'actor',
+      payload: {
+        action: 'restore',
+        consumptionId: 'consumption.missing',
+        mode: 'effect',
+        destination: null,
+        onUnavailable: 'no-op',
+      },
+    })
+    expect(interpretMoveItemEffects({
+      context: contextFor({ map, sheets: emptySheets }),
+      operations: [emission(missingRestore, [actorId])],
+      resolvedItemChoices: [],
+    })).toMatchObject({
+      mutations: [],
+      results: [{ outcome: 'no-op', outcomeCode: 'selection-unavailable' }],
+    })
+
+    const occupiedSheets = sheetsFixture({ actorHeld: 'Leftovers' })
+    const occupiedResources = resourcesFor({
+      map,
+      sheets: occupiedSheets,
+      selectedTargetIds: [],
+      requirements: [requirements.actor],
+    })
+    const consumedRecord: MoveConsumedItemRecord = {
+      consumptionId: 'consumption.recorded',
+      sourceOperationId: 'item.prior-consume',
+      source: occupiedResources.candidates[0]!.reference,
+      canonicalItemId: 'leftovers',
+      quantity: 1,
+    }
+    const recordedResources = resourcesFor({
+      map,
+      sheets: occupiedSheets,
+      selectedTargetIds: [],
+      requirements: [],
+      consumedItems: [consumedRecord],
+    })
+    const occupiedRestore = interpretMoveItemEffects({
+      context: contextFor({ map, sheets: occupiedSheets, resources: recordedResources }),
+      operations: [emission(operation({
+        id: 'item.restore-occupied',
+        recipients: 'actor',
+        payload: {
+          action: 'restore',
+          consumptionId: consumedRecord.consumptionId,
+          mode: 'item',
+          destination: 'actor-held',
+          onUnavailable: 'no-op',
+        },
+      }), [actorId])],
+      resolvedItemChoices: [],
+    })
+    expect(occupiedRestore).toMatchObject({
+      mutations: [],
+      results: [{ outcome: 'prevented', outcomeCode: 'destination-occupied' }],
+    })
+
+    const destroySheets = sheetsFixture({ firstHeld: 'Iron Ball' })
+    const destroyResources = resourcesFor({
+      map,
+      sheets: destroySheets,
+      selectedTargetIds: [firstTargetId],
+      requirements: [requirements.targets],
+    })
+    const destroyOperation = operation({
+      id: 'item.destroy-once',
+      recipients: 'hit-targets',
+      payload: selectedPayload('destroy', requirements.targets.id),
+    })
+    const duplicateDestroyOperation = operation({
+      id: 'item.destroy-twice',
+      recipients: 'hit-targets',
+      payload: selectedPayload('destroy', requirements.targets.id),
+    })
+    const interpretation = interpretMoveItemEffects({
+      context: contextFor({
+        map,
+        sheets: destroySheets,
+        selectedTargetIds: [firstTargetId],
+        resources: destroyResources,
+      }),
+      operations: [
+        emission(destroyOperation, [firstTargetId]),
+        emission(duplicateDestroyOperation, [firstTargetId]),
+      ],
+      resolvedItemChoices: [],
+    })
+    const mapSnapshot = structuredClone(map)
+    const sheetSnapshot = structuredClone(destroySheets)
+    const resourceSnapshot = structuredClone(destroyResources)
+    expect(() => planMoveItemMutations({
+      map,
+      pokemonSheets: destroySheets,
+      trainerSheets: new Map(),
+      groupInventories: new Map(),
+      operations: interpretation.mutations,
+      originOperationId: 'op_itemlifecyclefail01',
+      plannedAt: 4_000,
+    })).toThrowError(expect.objectContaining({
+      name: MoveItemMutationError.name,
+      code: 'item-missing',
+    }))
+    expect(map).toEqual(mapSnapshot)
+    expect(destroySheets).toEqual(sheetSnapshot)
+    expect(destroyResources).toEqual(resourceSnapshot)
   })
 })

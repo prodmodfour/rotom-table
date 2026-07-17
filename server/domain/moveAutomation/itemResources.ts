@@ -16,7 +16,10 @@ import type { InventoryEntry, TrainerSheet } from '~/types/trainerSheet'
 import { splitSheetItemNames } from '~/utils/sheetItemNames'
 import { deepCloneJson } from '~/utils/serialization'
 import { TRAINER_EQUIPMENT_SLOTS } from '~/utils/sheets/trainerInventorySections'
-import type { MoveConsumedItemRecord } from './itemMutationTypes'
+import {
+  MOVE_ITEM_MUTATION_LIMITS,
+  type MoveConsumedItemRecord,
+} from './itemMutationTypes'
 
 export const AUTHORITATIVE_MOVE_ITEM_RESOURCE_LIMITS = Object.freeze({
   requirements: 32,
@@ -113,6 +116,8 @@ export interface AuthoritativeMoveItemResources {
 export type AuthoritativeMoveItemResourceErrorCode =
   | 'invalid-requirement'
   | 'duplicate-requirement'
+  | 'invalid-consumed-item'
+  | 'duplicate-consumed-item'
   | 'limit-exceeded'
   | 'resource-missing'
   | 'revision-conflict'
@@ -167,6 +172,18 @@ const parseRequirementId = (value: unknown, path: string): string => {
     || !REQUIREMENT_ID_PATTERN.test(value)
   ) {
     return fail('invalid-requirement', `${path} must be a bounded stable identifier.`)
+  }
+  return value
+}
+
+const parseConsumedItemStableId = (value: unknown, path: string): string => {
+  if (
+    typeof value !== 'string'
+    || value.length === 0
+    || value.length > MOVE_ITEM_MUTATION_LIMITS.identifierChars
+    || !REQUIREMENT_ID_PATTERN.test(value)
+  ) {
+    return fail('invalid-consumed-item', `${path} must be a bounded stable identifier.`)
   }
   return value
 }
@@ -319,6 +336,85 @@ const canonicalItemIdentity = (
   if (!item) return null
   const id = toSlug(item.name)
   return id ? { id } : null
+}
+
+const normalizeConsumedItems = (
+  value: readonly MoveConsumedItemRecord[] | undefined,
+): readonly MoveConsumedItemRecord[] => {
+  const records = value ?? []
+  if (!Array.isArray(records)) {
+    return fail('invalid-consumed-item', 'Consumed-item evidence must be an array.')
+  }
+  if (records.length > MOVE_ITEM_MUTATION_LIMITS.consumptions) {
+    fail(
+      'limit-exceeded',
+      `Move item resources may load at most ${MOVE_ITEM_MUTATION_LIMITS.consumptions} consumed-item records.`,
+    )
+  }
+
+  const normalized: MoveConsumedItemRecord[] = []
+  const consumptionIds = new Set<string>()
+  for (const [index, value] of records.entries()) {
+    const path = `consumedItems[${index}]`
+    if (!isRecord(value)) {
+      return fail('invalid-consumed-item', `${path} must be an object.`)
+    }
+    const expected = new Set(['consumptionId', 'sourceOperationId', 'source', 'canonicalItemId', 'quantity'])
+    const missing = [...expected].filter(field => !Object.hasOwn(value, field))
+    const unknown = Object.keys(value).filter(field => !expected.has(field))
+    if (missing.length > 0 || unknown.length > 0) {
+      fail(
+        'invalid-consumed-item',
+        `${path} has an invalid shape (missing: ${missing.join(', ') || 'none'}; unknown: ${unknown.join(', ') || 'none'}).`,
+      )
+    }
+    const consumptionId = parseConsumedItemStableId(
+      value.consumptionId,
+      `${path}.consumptionId`,
+    )
+    if (consumptionIds.has(consumptionId)) {
+      fail('duplicate-consumed-item', `Consumed-item identity ${consumptionId} is duplicated.`)
+    }
+    consumptionIds.add(consumptionId)
+    const sourceOperationId = parseConsumedItemStableId(
+      value.sourceOperationId,
+      `${path}.sourceOperationId`,
+    )
+    let source: MoveItemReference
+    try {
+      source = parseMoveItemReference(value.source, `${path}.source`)
+    }
+    catch (error) {
+      if (!(error instanceof MoveItemReferenceValidationError)) throw error
+      return fail('invalid-consumed-item', error.message)
+    }
+    const canonicalItemId = canonicalItemIdentity(value.canonicalItemId)?.id
+      ?? fail('invalid-consumed-item', `${path} has unknown canonical item identity.`)
+    if (
+      canonicalItemId !== value.canonicalItemId
+      || canonicalItemId !== source.canonicalItemId
+    ) {
+      fail('invalid-consumed-item', `${path} has inconsistent canonical item identity.`)
+    }
+    if (
+      !Number.isSafeInteger(value.quantity)
+      || Number(value.quantity) < 1
+      || Number(value.quantity) > source.quantity
+    ) {
+      fail(
+        'invalid-consumed-item',
+        `${path}.quantity must be a positive safe integer within its source snapshot.`,
+      )
+    }
+    normalized.push(Object.freeze({
+      consumptionId,
+      sourceOperationId,
+      source,
+      canonicalItemId,
+      quantity: Number(value.quantity),
+    }))
+  }
+  return Object.freeze(normalized)
 }
 
 const quantityForInventoryEntry = (
@@ -586,7 +682,9 @@ export const resolveAuthoritativeMoveItemResources = (
   input: ResolveAuthoritativeMoveItemResourcesInput,
 ): AuthoritativeMoveItemResources => {
   const requirements = parseAuthoritativeMoveItemResourceRequirements(input.requirements)
-  if (requirements.length === 0 && (input.consumedItems?.length ?? 0) === 0) {
+  const hasConsumedItemInput = input.consumedItems !== undefined
+    && (!Array.isArray(input.consumedItems) || input.consumedItems.length > 0)
+  if (requirements.length === 0 && !hasConsumedItemInput) {
     return EMPTY_ITEM_RESOURCES
   }
 
@@ -677,13 +775,15 @@ export const resolveAuthoritativeMoveItemResources = (
     sheetReads: deduplicateSheetReads(sheetReads),
     groupInventoryReads: deduplicateAuthoritativeMoveGroupInventoryReads(groupInventoryReads),
     groupInventories,
-    consumedItems: Object.freeze(deepCloneJson(input.consumedItems ?? [])),
+    consumedItems: normalizeConsumedItems(input.consumedItems),
   })
 }
 
 export interface AuthoritativeMoveItemResourceQueries {
   all(): readonly MoveItemReference[]
   forRequirement(requirementId: string): readonly MoveItemReference[]
+  /** Private recorded consumption; never projected into accepted client results. */
+  consumedById(consumptionId: string): MoveConsumedItemRecord | null
 }
 
 /** Private immutable query seam consumed only by server rules and handlers. */
@@ -700,8 +800,12 @@ export const createAuthoritativeMoveItemResourceQueries = (
         .map(candidate => candidate.reference)),
     )
   }
+  const consumedById = new Map(
+    resources.consumedItems.map(record => [record.consumptionId, record] as const),
+  )
   return Object.freeze({
     all: () => all,
     forRequirement: (requirementId: string) => byRequirement.get(requirementId) ?? Object.freeze([]),
+    consumedById: (consumptionId: string) => consumedById.get(consumptionId) ?? null,
   })
 }

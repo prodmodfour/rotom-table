@@ -117,6 +117,27 @@ describe('shared MoveSpec item effects', () => {
     }
   })
 
+  it('bounds lifecycle quantities, consumption identities, and stored-buff shape', () => {
+    expect(parseMoveItemEffectPayload({
+      ...commonSelected('destroy'),
+      quantity: 3,
+    })).toMatchObject({ action: 'destroy', quantity: 3 })
+
+    expect(() => parseMoveItemEffectPayload({
+      ...payloads['store-buff'] as object,
+      quantity: 2,
+    })).toThrowError(expect.objectContaining({ code: 'inconsistent-item-effect' }))
+    expect(() => parseMoveItemEffectPayload({
+      ...payloads.consume as object,
+      consumptionId: 'Client Authored Consumption',
+    })).toThrowError(expect.objectContaining({ code: 'invalid-item-effect' }))
+    expect(() => parseMoveItemEffectPayload({
+      ...payloads.restore as object,
+      mode: 'effect',
+      destination: 'actor-held',
+    })).toThrowError(expect.objectContaining({ code: 'inconsistent-item-effect' }))
+  })
+
   it('rejects unknown mechanics and inconsistent restore/suppression shapes', () => {
     expect(() => parseMoveItemEffectPayload({
       ...payloads.give as object,

@@ -2140,7 +2140,7 @@ Status: DONE
 
 ## MA-156B — Interpret item lifecycle, suppression, and stored-buff mutations
 
-Status: TODO
+Status: DONE
 
 **Depends on:** MA-156A
 **Commit:** `feat(move-automation): resolve item lifecycle mutations`
