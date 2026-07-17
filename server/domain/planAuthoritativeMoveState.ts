@@ -1101,6 +1101,7 @@ export const planAuthoritativeMoveStateExecution = (
     intent: input.intent,
     random: input.random,
     now: () => plannedAt,
+    resolutionId: input.pendingResolutionId,
     ancestry: input.ancestry,
     tokenPositionOverrides: input.tokenPositionOverrides,
     idFactory: input.idFactory,

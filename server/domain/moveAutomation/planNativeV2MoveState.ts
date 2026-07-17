@@ -7,11 +7,13 @@ import {
   parseMoveResolutionAuditTrace,
   type MoveResolutionAuditTrace,
 } from '#shared/moveAutomation/trace'
+import { findMove } from '~~/data/ptuReference'
 import type { CharacterSheet } from '~/types/characterSheet'
 import type { SheetPlacement, TabletopMap } from '~/types/map'
 import type { MoveAutomationScript } from '~/types/moveAutomation'
 import type { TrainerSheet } from '~/types/trainerSheet'
 import { deepCloneJson, sameJsonValue } from '~/utils/serialization'
+import { moveUsageKey } from '~/utils/moveUsage'
 import type {
   AuthoritativeMoveMapChanges,
   AuthoritativeMoveSheetWritePlan,
@@ -44,6 +46,7 @@ import { applyAuthoritativeMovePlacementTransition } from './placementTransition
 import { planAuthoritativeMoveSwitch } from './planMoveSwitch'
 import { planMoveSwitchCombatStageTransfer } from './planSwitchCombatStages'
 import type { MoveAutomationRuntimeRegistry } from './registry'
+import { createMoveSpecOperationContextResolver } from './resolveImmediateSpec'
 import {
   isMoveMapOperationEmission,
   reduceMoveMapOperations,
@@ -535,8 +538,15 @@ export const planNativeV2MoveState = (options: {
     mutationResults: itemPlan.operationResults,
   })
   const mapOperations = native.operations.filter(isMoveMapOperationEmission)
-  const usageResources = mapOperations.flatMap(({ operation }) => operation.kind === 'usage'
-    ? [{
+  const contextForOperation = createMoveSpecOperationContextResolver({
+    root: context,
+    children: native.childExecutions,
+  })
+  const usageResources = mapOperations.flatMap((emission) => {
+    const { operation } = emission
+    if (operation.kind !== 'usage') return []
+    if (!emission.childResolutionId) {
+      return [{
         resourceId: operation.payload.resourceId,
         placementId: options.resolution.actorPlacementId,
         move: {
@@ -545,12 +555,37 @@ export const planNativeV2MoveState = (options: {
           frequency: options.resolution.frequency,
         },
       }]
-    : [])
+    }
+    const child = native.childExecutions.find(execution => (
+      execution.resolutionId === emission.childResolutionId
+    )) ?? fail(
+      'state-change-conflict',
+      `Usage operation ${operation.id} lost its reviewed child execution identity.`,
+    )
+    const move = findMove(child.canonicalId)
+    const childMoveKey = moveUsageKey(child.canonicalId)
+    if (!move || !childMoveKey) {
+      return fail(
+        'usage-projection-missing',
+        `Reviewed child ${child.canonicalId} has no canonical usage metadata.`,
+      )
+    }
+    return [{
+      resourceId: operation.payload.resourceId,
+      placementId: child.actorPlacementId,
+      move: {
+        moveName: child.canonicalId,
+        moveKey: childMoveKey,
+        frequency: move.frequency ?? null,
+      },
+    }]
+  })
   const mapReduction = reduceMoveMapOperations({
     context,
     initialMap: itemPlan.nextMap,
     operations: mapOperations,
     dynamicRecipients: native.dynamicRecipients,
+    contextForOperation,
     usageResources,
     hazards: {
       cellSets: new Map(native.resolvedHazardCells.map(selection => [
@@ -589,11 +624,15 @@ export const planNativeV2MoveState = (options: {
     trace: itemTrace,
     maxLogEntries: options.maxMoveLogEntries,
   })
-  const usageProjection = mapReduction.usage[0]
-    ?? fail(
-      'usage-projection-missing',
-      `${options.resolution.canonicalMoveName} did not emit its reviewed usage operation.`,
-    )
+  const rootUsageOperationId = mapOperations.find(emission => (
+    emission.operation.kind === 'usage' && !emission.childResolutionId
+  ))?.operation.id
+  const usageProjection = mapReduction.usage.find(projection => (
+    projection.operationId === rootUsageOperationId
+  )) ?? fail(
+    'usage-projection-missing',
+    `${options.resolution.canonicalMoveName} did not emit its reviewed usage operation.`,
+  )
 
   const placementTransitionMap = applyAuthoritativeMovePlacementTransition({
     map: mapReduction.nextMap,

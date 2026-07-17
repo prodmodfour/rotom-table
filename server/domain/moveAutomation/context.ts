@@ -162,6 +162,8 @@ export type AuthoritativeMoveWeatherQueries = MoveAutomationWeatherResolver
 export interface AuthoritativeMoveRuleQueries {
   runtimeFor(canonicalId: string): RegisteredMoveAutomationRuntime | null
   legacyScriptFor(moveName: string): MoveAutomationScript | null
+  /** Canonical mechanics for a server-selected reviewed v2 child, independent of the actor's move list. */
+  reviewedScriptFor(canonicalId: string): MoveAutomationScript | null
   semanticStatusFor(moveName: string): MoveAutomationSemanticStatus | null
 }
 
@@ -208,6 +210,8 @@ export interface AuthoritativeMoveReadSet {
 export interface AuthoritativeMoveRulesContext {
   readonly map: TabletopMap
   readonly intent: ResolveMoveIntent
+  /** Server-owned resolution identity required before a reviewed child can be invoked. */
+  readonly resolutionId: string | null
   readonly actor: AuthoritativeMoveRulesActor
   readonly candidatePlacements: readonly SheetPlacement[]
   readonly selectedPlacements: readonly SheetPlacement[]
@@ -258,6 +262,7 @@ export interface BuildAuthoritativeMoveRulesContextInput {
   /** Server-only continuation seam for a validated durable random prefix. */
   readonly randomRoller?: AuthoritativeMoveRandom
   readonly time: number
+  readonly resolutionId?: string
   readonly ancestry?: readonly MoveResolutionTraceAncestryEntry[]
   /** Server-owned historical positions used by post-action reaction compatibility. */
   readonly tokenPositionOverrides?: ReadonlyMap<string, GridAnchor>
@@ -693,6 +698,13 @@ export const buildAuthoritativeMoveRulesContext = (
     return legacyScriptFor(moveName)
   }
 
+  const reviewedScriptFor = (canonicalId: string): MoveAutomationScript | null => {
+    const runtime = runtimes.get(canonicalId)
+    const canonicalMove = findMove(canonicalId)
+    if (!canonicalMove || runtime?.kind !== 'movespec-v2') return null
+    return detachedFrozenJson(createMoveAutomationScriptFromMoveData(canonicalMove))
+  }
+
   const queries: AuthoritativeMoveContextQueries = Object.freeze({
     placements: Object.freeze({
       get: (placementId: string) => placementById.get(placementId) ?? null,
@@ -727,6 +739,7 @@ export const buildAuthoritativeMoveRulesContext = (
     rules: Object.freeze({
       runtimeFor: (canonicalId: string) => runtimes.get(canonicalId) ?? null,
       legacyScriptFor,
+      reviewedScriptFor,
       semanticStatusFor: (moveName: string) => semanticStatuses.get(normalizedMoveName(moveName)) ?? null,
     }),
     resolveActorMoveEntry: (moveName: string): CanonicalMoveEntryResult => detachedFrozenJson(
@@ -749,6 +762,7 @@ export const buildAuthoritativeMoveRulesContext = (
   const context: AuthoritativeMoveRulesContext = {
     map,
     intent,
+    resolutionId: input.resolutionId ?? null,
     actor: deepFreeze({ placement: actorPlacement, token: actorToken, sheet: actorSheet }),
     candidatePlacements,
     selectedPlacements,

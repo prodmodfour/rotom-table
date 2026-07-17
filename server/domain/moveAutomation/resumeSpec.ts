@@ -121,7 +121,9 @@ const targetEvidence = (
   readonly includedIds: readonly string[]
   readonly evaluations: readonly MoveSpecAuthoritativeTargetEvaluation[]
 } => {
-  const evaluations = pending.trace.events.flatMap(event => event.kind === 'target'
+  const evaluations = pending.trace.events.flatMap(event => (
+    event.kind === 'target' && event.reasonCode !== 'nested-child-target'
+  )
     ? [{
         targetPlacementId: event.targetId,
         outcome: event.outcome,
@@ -331,6 +333,7 @@ export const resumeMoveSpec = (
     random: input.random ?? Math.random,
     randomRoller: createMoveAutomationReplayRandom(pending.rollLedger, input.random),
     time: input.now,
+    resolutionId: pending.resolutionId,
     itemResources: input.itemResources,
     runtimeRegistry: registry,
     legacyScripts: input.legacyScripts,
@@ -373,6 +376,7 @@ export const resumeMoveSpec = (
         ? { authoritativeTargetEvaluations: evidence.evaluations }
         : {}),
       ancestry: pending.causalAncestry,
+      resolutionId: pending.resolutionId,
       responses: chosenResponses(pending, input.response),
       ...(hazardCellSelection
         ? { authoritativeHazardCellSelections: [hazardCellSelection] }

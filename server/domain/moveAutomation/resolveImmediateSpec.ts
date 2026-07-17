@@ -32,8 +32,10 @@ import type { MoveContextualDamageBaseResolution } from './damageBase'
 import type { MoveDamageTypeResolution } from './damageTypes'
 import { resolveMoveSpecDamageCalculation } from './damageStats'
 import {
+  deriveNestedMoveRulesContext,
   executeMoveSpec,
   type MoveSpecAuthoritativeTargetEvaluation,
+  type MoveSpecChildExecution,
   type MoveSpecEmittedOperation,
   type MoveSpecExecutionCompleteResult,
   type MoveSpecExecutionPendingResult,
@@ -49,10 +51,15 @@ import type {
   MoveConditionAccuracyRollQueries,
   MoveCoreTokenDamageQuery,
   MoveCoreTokenDynamicRecipientSets,
+  MoveCoreTokenEffectImmunityQueries,
   MoveCoreTokenEffectOperationResult,
   MoveDamageResolutionQueryInput,
 } from './reducers/coreTokenEffectTypes'
 import { createStandardMoveCoreTokenEffectImmunityQueries } from './reducers/immunities'
+import {
+  expectedMoveCoreTokenRecipientIds,
+  resolveMoveCoreTokenDynamicRecipients,
+} from './reducers/coreTokenRecipients'
 
 export type ImmediateMoveSpecResolutionErrorCode =
   | 'execution-rejected'
@@ -78,6 +85,7 @@ export class ImmediateMoveSpecResolutionError extends Error {
 
 export interface NativeMoveSpecResolutionProjection {
   readonly operations: readonly MoveSpecEmittedOperation[]
+  readonly childExecutions: readonly MoveSpecChildExecution[]
   readonly dynamicRecipients: MoveCoreTokenDynamicRecipientSets
   readonly coreStateChanges: MoveStateChangePlan
   readonly itemEffects: InterpretedMoveItemEffects
@@ -207,21 +215,22 @@ const createConditionAccuracyRollQueries = (options: {
 })
 
 const createDamageQuery = (options: {
-  readonly context: AuthoritativeMoveRulesContext
-  readonly script: MoveAutomationScript
+  readonly contextForOperation: (
+    operation: string | { readonly id: string },
+  ) => AuthoritativeMoveRulesContext
+  readonly scriptForOperation: (operationId: string) => MoveAutomationScript
   readonly resolvedRolls: readonly MoveSpecResolvedRoll[]
   readonly rollLedger: ImmediateMoveSpecResolution['rollLedger']
   readonly resolvedDamageTypes: readonly MoveDamageTypeResolution[]
   readonly resolvedDamageBases: readonly MoveContextualDamageBaseResolution[]
-  readonly selectedTargetIds: readonly string[]
 }): MoveCoreTokenDamageQuery => {
-  const selectedTargets = options.selectedTargetIds.flatMap((placementId) => {
-    const token = options.context.queries.tokens.get(placementId)
-    return token ? [token] : []
-  })
-
   return {
     resolve: ({ operation, recipient }: MoveDamageResolutionQueryInput) => {
+      const context = options.contextForOperation(operation.id)
+      const selectedTargets = context.selectedPlacements.flatMap((placement) => {
+        const token = context.queries.tokens.get(placement.id)
+        return token ? [token] : []
+      })
       const damageEntry = rollLedgerEntry(
         options.rollLedger,
         options.resolvedRolls,
@@ -272,12 +281,12 @@ const createDamageQuery = (options: {
             `Contextual Damage Base for operation ${operation.id} and recipient ${recipient.placement.id} is missing.`,
           )
       const calculation = resolveMoveSpecDamageCalculation({
-        context: options.context,
+        context,
         operation,
-        script: options.script,
+        script: options.scriptForOperation(operation.id),
         recipient: recipient.token,
         resolution: state,
-        fieldEffects: options.context.queries.weather.projectFieldEffects(),
+        fieldEffects: context.queries.weather.projectFieldEffects(),
         selectedTargets,
         resolvedMoveType,
         naturalCriticalRoll: criticalEntry?.naturalResult ?? null,
@@ -315,6 +324,122 @@ const createDamageQuery = (options: {
       }
     },
   }
+}
+
+const childContextByOperationId = (input: {
+  readonly root: AuthoritativeMoveRulesContext
+  readonly children: readonly MoveSpecChildExecution[]
+}): ReadonlyMap<string, AuthoritativeMoveRulesContext> => {
+  const contexts = new Map<string, AuthoritativeMoveRulesContext>()
+  for (const child of input.children) {
+    const context = deriveNestedMoveRulesContext({
+      parent: input.root,
+      actorPlacementId: child.actorPlacementId,
+      canonicalId: child.canonicalId,
+      targetIds: child.targetIds,
+      resolutionId: child.resolutionId,
+      ancestry: child.trace.ancestry,
+    })
+    for (const operationId of child.operationIds) contexts.set(operationId, context)
+  }
+  return contexts
+}
+
+export const createMoveSpecOperationContextResolver = (input: {
+  readonly root: AuthoritativeMoveRulesContext
+  readonly children: readonly MoveSpecChildExecution[]
+}): ((operation: string | { readonly id: string }) => AuthoritativeMoveRulesContext) => {
+  const childContexts = childContextByOperationId(input)
+  return operation => childContexts.get(
+    typeof operation === 'string' ? operation : operation.id,
+  ) ?? input.root
+}
+
+const childMechanicsByOperationId = (
+  children: readonly MoveSpecChildExecution[],
+): ReadonlyMap<string, MoveAutomationScript> => {
+  const mechanics = new Map<string, MoveAutomationScript>()
+  for (const child of children) {
+    for (const operationId of child.operationIds) mechanics.set(operationId, child.mechanics)
+  }
+  return mechanics
+}
+
+const operationMechanicsResolver = (input: {
+  readonly root: MoveAutomationScript
+  readonly children: readonly MoveSpecChildExecution[]
+}): ((operationId: string) => MoveAutomationScript) => {
+  const childMechanics = childMechanicsByOperationId(input.children)
+  return operationId => childMechanics.get(operationId) ?? input.root
+}
+
+const createOperationAwareImmunityQueries = (input: {
+  readonly contextForOperation: (
+    operation: string | { readonly id: string },
+  ) => AuthoritativeMoveRulesContext
+  readonly root: MoveAutomationScript
+  readonly children: readonly MoveSpecChildExecution[]
+}): MoveCoreTokenEffectImmunityQueries => {
+  const scriptFor = operationMechanicsResolver(input)
+  const queries = new Map<string, MoveCoreTokenEffectImmunityQueries>()
+  const forOperation = (operationId: string): MoveCoreTokenEffectImmunityQueries => {
+    const moveType = scriptFor(operationId).type ?? null
+    let query = queries.get(operationId)
+    if (!query) {
+      query = createStandardMoveCoreTokenEffectImmunityQueries({
+        moveType,
+        context: input.contextForOperation(operationId),
+      })
+      queries.set(operationId, query)
+    }
+    return query
+  }
+  return {
+    directHp: query => forOperation(query.operation.id).directHp(query),
+    condition: query => forOperation(query.operation.id).condition(query),
+    combatStage: query => forOperation(query.operation.id).combatStage(query),
+  }
+}
+
+const createMoveSpecOperationDynamicRecipientsResolver = (input: {
+  readonly root: MoveCoreTokenDynamicRecipientSets
+  readonly children: readonly MoveSpecChildExecution[]
+}) => {
+  const childDynamic = new Map<string, MoveCoreTokenDynamicRecipientSets>()
+  for (const child of input.children) {
+    const dynamic: MoveCoreTokenDynamicRecipientSets = {
+      attackedTargetIds: child.targetIds,
+      hitTargetIds: child.hitTargetIds,
+      missedTargetIds: child.missedTargetIds,
+      damagedTargetIds: child.damagedTargetIds,
+      faintedTargetIds: child.faintedTargetIds,
+    }
+    for (const operationId of child.operationIds) childDynamic.set(operationId, dynamic)
+  }
+  return (operation: string | { readonly id: string }): MoveCoreTokenDynamicRecipientSets => (
+    childDynamic.get(typeof operation === 'string' ? operation : operation.id) ?? input.root
+  )
+}
+
+const nestedRecipientResolver = (input: {
+  readonly context: AuthoritativeMoveRulesContext
+  readonly operations: readonly MoveSpecEmittedOperation[]
+  readonly dynamicRecipients: MoveCoreTokenDynamicRecipientSets
+}) => {
+  const nestedRecipients = new Map(input.operations.flatMap(emission => (
+    emission.childResolutionId
+      ? [[emission.operation.id, emission.recipientIds] as const]
+      : []
+  )))
+  if (nestedRecipients.size === 0) return undefined
+  const dynamic = resolveMoveCoreTokenDynamicRecipients(
+    input.context,
+    input.dynamicRecipients,
+  )
+  return (operation: Parameters<typeof expectedMoveCoreTokenRecipientIds>[1]) => (
+    nestedRecipients.get(operation.id)
+    ?? expectedMoveCoreTokenRecipientIds(input.context, operation, dynamic)
+  )
 }
 
 const damagedAndFaintedRecipients = (
@@ -502,6 +627,7 @@ const assertSupportedImmediateOperations = (
     'hazard',
     'movement-request',
     'switch-request',
+    'nested-move',
     'item',
     'usage',
     'log',
@@ -561,6 +687,7 @@ const executeReviewedMoveSpec = (
     authoritativeTargetIds: options.authoritativeTargetIds,
     authoritativeTargetEvaluations: options.authoritativeTargetEvaluations,
     ancestry: options.ancestry,
+    resolutionId: options.context.resolutionId ?? undefined,
     handlerRegistry: options.context.handlerRegistry,
   })
   if (execution.kind === 'rejected') {
@@ -584,10 +711,15 @@ export const reduceCompletedMoveSpec = (
   assertSupportedImmediateOperations(uncommittedOperations)
 
   const script = compatibilityScript(options.entry, options.runtime)
+  const contextForOperation = createMoveSpecOperationContextResolver({
+    root: options.context,
+    children: execution.childExecutions,
+  })
   const itemEffects = interpretMoveItemEffects({
     context: options.context,
     operations: uncommittedOperations.filter(isMoveItemEffectEmission),
     resolvedItemChoices: execution.resolvedItemChoices,
+    contextForOperation,
   })
   // A self target is explicit interpreter evidence, not an attacked-target wire
   // identity. Self-only operations must address the actor selector directly.
@@ -602,6 +734,10 @@ export const reduceCompletedMoveSpec = (
   }
 
   const coreOperations = uncommittedOperations.filter(isMoveCoreTokenEffectEmission)
+  const scriptForOperation = operationMechanicsResolver({
+    root: script,
+    children: execution.childExecutions,
+  })
   const multiHit = execution.multiHitExecutions[0] ?? null
   if (execution.multiHitExecutions.length > 1 || (multiHit && coreOperations.length > 0)) {
     return fail(
@@ -609,28 +745,40 @@ export const reduceCompletedMoveSpec = (
       'An immediate MoveSpec may contain one pre-reduced multi-hit operation or ordinary core effects, not overlapping state reducers.',
     )
   }
+  const nestedRecipients = nestedRecipientResolver({
+    context: options.context,
+    operations: coreOperations,
+    dynamicRecipients: initialDynamic,
+  })
+  const dynamicRecipientsForOperation = createMoveSpecOperationDynamicRecipientsResolver({
+    root: initialDynamic,
+    children: execution.childExecutions,
+  })
   const core: MoveCoreTokenEffectReduction = reduceMoveCoreTokenEffects({
     context: options.context,
     operations: coreOperations,
     dynamicRecipients: initialDynamic,
+    ...(nestedRecipients ? { recipientIdsForOperation: nestedRecipients } : {}),
+    contextForOperation,
+    dynamicRecipientsForOperation,
     damage: coreOperations.some(({ operation }) => operation.kind === 'damage')
       ? createDamageQuery({
-          context: options.context,
-          script,
+          contextForOperation,
+          scriptForOperation,
           resolvedRolls: execution.resolvedRolls,
           rollLedger: execution.rollLedger,
           resolvedDamageTypes: execution.resolvedDamageTypes,
           resolvedDamageBases: execution.resolvedDamageBases,
-          selectedTargetIds: execution.targetIds,
         })
       : undefined,
     conditionAccuracyRolls: createConditionAccuracyRollQueries({
       resolvedRolls: execution.resolvedRolls,
       rollLedger: execution.rollLedger,
     }),
-    immunities: createStandardMoveCoreTokenEffectImmunityQueries({
-      moveType: script.type,
-      context: options.context,
+    immunities: createOperationAwareImmunityQueries({
+      root: script,
+      children: execution.childExecutions,
+      contextForOperation,
     }),
     trace: execution.trace,
   })
@@ -695,6 +843,7 @@ export const reduceCompletedMoveSpec = (
     trace: core.trace,
     native: Object.freeze({
       operations: uncommittedOperations,
+      childExecutions: execution.childExecutions,
       dynamicRecipients: Object.freeze(dynamicRecipients),
       coreStateChanges: multiHit?.stateChanges ?? core.stateChanges,
       itemEffects,
@@ -735,13 +884,31 @@ const reducePreWindowPlan = (options: {
     damagedTargetIds: exposesAttackedTargets ? [...options.execution.damagedTargetIds] : [],
     faintedTargetIds: exposesAttackedTargets ? [...options.execution.faintedTargetIds] : [],
   }
+  const corePreWindowOperations = preWindowOperations.filter(isMoveCoreTokenEffectEmission)
+  const nestedRecipients = nestedRecipientResolver({
+    context: options.resolve.context,
+    operations: corePreWindowOperations,
+    dynamicRecipients,
+  })
+  const contextForOperation = createMoveSpecOperationContextResolver({
+    root: options.resolve.context,
+    children: options.execution.childExecutions,
+  })
+  const dynamicRecipientsForOperation = createMoveSpecOperationDynamicRecipientsResolver({
+    root: dynamicRecipients,
+    children: options.execution.childExecutions,
+  })
   const reduction = reduceMoveCoreTokenEffects({
     context: options.resolve.context,
-    operations: preWindowOperations.filter(isMoveCoreTokenEffectEmission),
+    operations: corePreWindowOperations,
     dynamicRecipients,
-    immunities: createStandardMoveCoreTokenEffectImmunityQueries({
-      moveType: options.resolve.entry.script.type,
-      context: options.resolve.context,
+    ...(nestedRecipients ? { recipientIdsForOperation: nestedRecipients } : {}),
+    contextForOperation,
+    dynamicRecipientsForOperation,
+    immunities: createOperationAwareImmunityQueries({
+      root: options.resolve.entry.script,
+      children: options.execution.childExecutions,
+      contextForOperation,
     }),
     trace: options.execution.trace,
   })

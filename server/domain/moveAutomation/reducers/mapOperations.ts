@@ -137,6 +137,7 @@ export const reduceMoveMapOperations = (
 
   input.operations.forEach((emission, order) => {
     const { operation } = emission
+    const operationContext = input.contextForOperation?.(operation) ?? input.context
     if (!MAP_OPERATION_KINDS.has(operation.kind)) {
       failMoveMapOperationReduction(
         'unsupported-operation',
@@ -151,18 +152,20 @@ export const reduceMoveMapOperations = (
     }
     operationIds.add(operation.id)
 
-    const expectedIds = expectedMoveEffectRecipientIds(
-      input.context,
-      operation,
-      dynamic,
-      failMoveMapOperationReduction,
-    )
     const emittedIds = canonicalMoveEffectPlacementIds(
       input.context,
       emission.recipientIds,
       `operation ${operation.id} recipients`,
       failMoveMapOperationReduction,
     )
+    const expectedIds = emission.childResolutionId
+      ? emittedIds
+      : expectedMoveEffectRecipientIds(
+          input.context,
+          operation,
+          dynamic,
+          failMoveMapOperationReduction,
+        )
     if (
       !moveEffectRecipientIdsEqual(emission.recipientIds, emittedIds)
       || !moveEffectRecipientIdsEqual(emittedIds, expectedIds)
@@ -183,7 +186,7 @@ export const reduceMoveMapOperations = (
       const reduced = reduceMoveGlobalFields({
         map: workingMap,
         operation,
-        context: input.context,
+        context: operationContext,
         recipientIds: expectedIds,
         resolutions: input.hazards,
       })
@@ -203,7 +206,7 @@ export const reduceMoveMapOperations = (
 
     if (operation.kind === 'hazard') {
       const reduced = reduceMoveHazardZones({
-        context: input.context,
+        context: operationContext,
         previous: workingMap.encounterState,
         operation,
         recipientIds: expectedIds,

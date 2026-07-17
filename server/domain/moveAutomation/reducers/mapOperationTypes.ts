@@ -84,6 +84,10 @@ export interface ReduceMoveMapOperationsInput {
   /** Exact server-emitted operations, retained in canonical phase/operation order. */
   readonly operations: readonly MoveResolvedMapEffectOperation[]
   readonly dynamicRecipients: MoveEffectDynamicRecipientSets
+  /** Preserve an ancestry-linked child's explicit actor/source context. */
+  readonly contextForOperation?: (
+    operation: MoveMapEffectOperation,
+  ) => AuthoritativeMoveRulesContext
   readonly usageResources?: readonly MoveUsageEffectResource[]
   readonly hazards?: MoveHazardGeometryResolution
   readonly presentation: MoveAcceptedPresentationProjection

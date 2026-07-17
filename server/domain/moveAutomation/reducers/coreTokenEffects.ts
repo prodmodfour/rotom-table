@@ -80,6 +80,13 @@ export interface ReduceMoveCoreTokenOperationStateInput {
   /** Required only by a condition with an explicit accuracy-roll trigger. */
   readonly conditionAccuracyRolls?: MoveConditionAccuracyRollQueries
   readonly immunities: MoveCoreTokenEffectImmunityQueries
+  /** Child operations retain their explicitly selected actor/source context. */
+  readonly contextForOperation?: (
+    operation: MoveResolvedCoreTokenEffectOperation['operation'],
+  ) => AuthoritativeMoveRulesContext
+  readonly dynamicRecipientsForOperation?: (
+    operation: MoveResolvedCoreTokenEffectOperation['operation'],
+  ) => MoveCoreTokenDynamicRecipientSets
   /**
    * Optional server-owned recipient query for non-MoveSpec orchestration such
    * as lifecycle facts. Emitted IDs must still match this canonical result.
@@ -263,6 +270,13 @@ export const reduceMoveCoreTokenOperationState = (
 
   input.operations.forEach((emission, operationOrder) => {
     const { operation } = emission
+    const operationContext = input.contextForOperation?.(operation) ?? input.context
+    const operationDynamic = input.dynamicRecipientsForOperation
+      ? resolveMoveCoreTokenDynamicRecipients(
+          operationContext,
+          input.dynamicRecipientsForOperation(operation),
+        )
+      : dynamic
     if (!CORE_TOKEN_EFFECT_KINDS.has(operation.kind)) {
       failMoveCoreTokenEffectReduction(
         'unsupported-operation',
@@ -316,8 +330,8 @@ export const reduceMoveCoreTokenOperationState = (
           operationId: operation.id,
           label: 'Condition',
           errorCode: 'invalid-condition-source',
-          context: input.context,
-          dynamic,
+          context: operationContext,
+          dynamic: operationDynamic,
           recipientsById,
           sheetReads,
           sheetReadsByKey,
@@ -328,7 +342,7 @@ export const reduceMoveCoreTokenOperationState = (
         ...(input.conditionAccuracyRolls
           ? { accuracyRolls: input.conditionAccuracyRolls }
           : {}),
-        context: input.context,
+        context: operationContext,
       })
     }
     else if (operation.kind === 'combat-stage') {
@@ -340,8 +354,8 @@ export const reduceMoveCoreTokenOperationState = (
           operationId: operation.id,
           label: 'Combat-stage',
           errorCode: 'invalid-stage-source',
-          context: input.context,
-          dynamic,
+          context: operationContext,
+          dynamic: operationDynamic,
           recipientsById,
           sheetReads,
           sheetReadsByKey,
@@ -372,8 +386,8 @@ export const reduceMoveCoreTokenOperationState = (
         temporaryHpAvailable,
         damage: input.damage,
         immunities: input.immunities,
-        context: input.context,
-        hitTargetIds: dynamic['hit-targets'],
+        context: operationContext,
+        hitTargetIds: operationDynamic['hit-targets'],
         priorOperationResults: operationResults,
       }))
     }
@@ -435,6 +449,12 @@ export const reduceMoveCoreTokenEffects = (
       ? {}
       : { conditionAccuracyRolls: input.conditionAccuracyRolls }),
     immunities: input.immunities,
+    ...(input.contextForOperation === undefined
+      ? {}
+      : { contextForOperation: input.contextForOperation }),
+    ...(input.dynamicRecipientsForOperation === undefined
+      ? {}
+      : { dynamicRecipientsForOperation: input.dynamicRecipientsForOperation }),
     ...(input.recipientIdsForOperation === undefined
       ? {}
       : { recipientIdsForOperation: input.recipientIdsForOperation }),

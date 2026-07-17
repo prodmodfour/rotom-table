@@ -179,6 +179,8 @@ export interface ResolveAuthoritativeMoveInput {
   readonly intent: ResolveMoveIntent
   readonly random?: AuthoritativeMoveRandomSource
   readonly now?: () => number
+  /** Stable server-owned identity used by nested child ancestry and durable replay. */
+  readonly resolutionId?: string
   readonly ancestry?: readonly MoveResolutionTraceAncestryEntry[]
   readonly tokenPositionOverrides?: ReadonlyMap<string, GridAnchor>
   readonly idFactory?: () => string
@@ -1891,6 +1893,7 @@ export const resolveAuthoritativeMoveExecution = (
       selectedPlacementIds,
       random,
       time,
+      resolutionId: input.resolutionId,
       ancestry: input.ancestry,
       tokenPositionOverrides: input.tokenPositionOverrides,
       idFactory: input.idFactory,

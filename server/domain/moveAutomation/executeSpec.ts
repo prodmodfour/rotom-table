@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto'
 import {
   MOVE_EFFECT_OPERATION_LIMITS,
   moveEffectBranchPaths,
@@ -9,12 +10,14 @@ import {
   type MoveEffectRecipientSelectorKind,
   type MoveHazardEffectOperation,
   type MoveMovementRequestEffectOperation,
+  type MoveNestedMoveEffectOperation,
   type MoveReactionRequestEffectOperation,
   type MoveSwitchRequestEffectOperation,
   type MoveEffectSwitchStateTransferPolicy,
   type MoveRollEffectOperation,
 } from '#shared/moveAutomation/effects'
 import type { MoveAutomationRollLedgerEntry } from '#shared/moveAutomation/random'
+import type { ResolveMoveIntent } from '#shared/livePlayMoveResolution'
 import type { PendingMoveResponseOption } from '#shared/moveAutomation/responseOptions'
 import {
   MOVE_REACTION_LIMITS,
@@ -92,6 +95,7 @@ import { orderMoveReactionOperationEntries } from './reactionOrder'
 import {
   createMoveSpecResponseResolver,
   type MoveSpecResolvedResponse,
+  type MoveSpecResponseResolver,
 } from './responses'
 import {
   enumerateAuthoritativeMovementChoices,
@@ -112,6 +116,7 @@ import {
   type AuthoritativeMoveItemChoiceSet,
 } from './itemChoices'
 import type { ValidatedAuthoritativeHazardCellSelection } from './hazardCellSelection'
+import type { MoveSpecV2Runtime } from './registry'
 import {
   validateMoveSpec,
   validateMoveSpecOperationSequence,
@@ -130,6 +135,12 @@ export type MoveSpecExecutionErrorCode =
   | 'resolved-roll-id-too-long'
   | 'pre-window-operation-forbidden'
   | 'reaction-nesting-limit-exceeded'
+  | 'nested-resolution-id-missing'
+  | 'nested-runtime-unavailable'
+  | 'nested-actor-invalid'
+  | 'nested-targeting-invalid'
+  | 'nested-operation-id-conflict'
+  | 'nested-execution-rejected'
 
 export class MoveSpecExecutionError extends Error {
   readonly code: MoveSpecExecutionErrorCode
@@ -146,6 +157,25 @@ export interface MoveSpecEmittedOperation {
   readonly operation: MoveEffectOperation
   /** Authoritative placement IDs resolved from the operation's recipient selector. */
   readonly recipientIds: readonly string[]
+  /** Present only when this operation was emitted by an ancestry-linked child spec. */
+  readonly childResolutionId?: string
+}
+
+/** Server-only evidence retained for each reviewed child invocation. */
+export interface MoveSpecChildExecution {
+  readonly resolutionId: string
+  readonly parentOperationId: string
+  readonly actorPlacementId: string
+  readonly canonicalId: string
+  readonly definitionHash: string
+  readonly operationIds: readonly string[]
+  readonly targetIds: readonly string[]
+  readonly hitTargetIds: readonly string[]
+  readonly missedTargetIds: readonly string[]
+  readonly damagedTargetIds: readonly string[]
+  readonly faintedTargetIds: readonly string[]
+  readonly mechanics: MoveAutomationScript
+  readonly trace: MoveResolutionAuditTrace
 }
 
 export interface MoveSpecResolvedRoll {
@@ -237,6 +267,11 @@ export interface MoveSpecPendingItemRequest extends MoveSpecPendingRequestBase {
   readonly requirementId: string
 }
 
+export interface MoveSpecPendingNestedTargetRequest extends MoveSpecPendingRequestBase {
+  readonly kind: 'nested-target-choice'
+  readonly childCanonicalId: string
+}
+
 export type MoveSpecPendingRequest =
   | MoveSpecPendingChoiceRequest
   | MoveSpecPendingBranchChoiceRequest
@@ -247,6 +282,7 @@ export type MoveSpecPendingRequest =
   | MoveSpecPendingHazardCellRequest
   | MoveSpecPendingSwitchRequest
   | MoveSpecPendingItemRequest
+  | MoveSpecPendingNestedTargetRequest
 
 export interface MoveSpecResolvedMovement {
   readonly operationId: string
@@ -312,6 +348,8 @@ interface MoveSpecExecutionResultBase {
   readonly resolvedItemChoices: readonly MoveSpecResolvedItemChoice[]
   /** Freshly revalidated server-issued hazard cells keyed by operation/cell set. */
   readonly resolvedHazardCells: readonly MoveSpecResolvedHazardCells[]
+  /** Full server-only child traces and mechanics, flattened in execution order. */
+  readonly childExecutions: readonly MoveSpecChildExecution[]
   readonly hitTargetIds: readonly string[]
   readonly missedTargetIds: readonly string[]
   readonly damagedTargetIds: readonly string[]
@@ -365,6 +403,8 @@ export interface ExecuteMoveSpecInput {
   /** Complete server-only area-filter evidence in geometric candidate order. */
   readonly authoritativeTargetEvaluations?: readonly MoveSpecAuthoritativeTargetEvaluation[]
   readonly ancestry?: readonly MoveResolutionTraceAncestryEntry[]
+  /** Stable server-owned root identity; required when a nested operation is reached. */
+  readonly resolutionId?: string
   /** Authorized durable responses, resolved only against reviewed request IDs/options. */
   readonly responses?: readonly MoveSpecResolvedResponse[]
   /** Freshly revalidated multi-cell answers; response commands never populate cells. */
@@ -392,9 +432,24 @@ const frozenIds = (ids: readonly string[]): readonly string[] => Object.freeze([
 
 const freezeEmittedOperations = (
   operations: readonly MoveSpecEmittedOperation[],
-): readonly MoveSpecEmittedOperation[] => Object.freeze(operations.map(operation => Object.freeze({
-  operation: operation.operation,
-  recipientIds: frozenIds(operation.recipientIds),
+): readonly MoveSpecEmittedOperation[] => Object.freeze(operations.map(emission => Object.freeze({
+  operation: emission.operation,
+  recipientIds: frozenIds(emission.recipientIds),
+  ...(emission.childResolutionId
+    ? { childResolutionId: emission.childResolutionId }
+    : {}),
+})))
+
+const freezeChildExecutions = (
+  executions: readonly MoveSpecChildExecution[],
+): readonly MoveSpecChildExecution[] => Object.freeze(executions.map(execution => Object.freeze({
+  ...execution,
+  operationIds: frozenIds(execution.operationIds),
+  targetIds: frozenIds(execution.targetIds),
+  hitTargetIds: frozenIds(execution.hitTargetIds),
+  missedTargetIds: frozenIds(execution.missedTargetIds),
+  damagedTargetIds: frozenIds(execution.damagedTargetIds),
+  faintedTargetIds: frozenIds(execution.faintedTargetIds),
 })))
 
 const freezeResolvedRolls = (
@@ -1087,7 +1142,20 @@ interface MoveSpecAuthoritativeMoveMechanics {
 const authoritativeMoveMechanics = (
   context: AuthoritativeMoveRulesContext,
   canonicalId: string,
+  source: 'actor-move' | 'registered-spec',
 ): MoveSpecAuthoritativeMoveMechanics => {
+  if (source === 'registered-spec') {
+    const script = context.queries.rules.reviewedScriptFor(canonicalId)
+    if (!script) {
+      return fail(
+        'move-mechanics-unavailable',
+        `Reviewed child mechanics for ${canonicalId} are not available from the server registry.`,
+      )
+    }
+    context.reads.recordPlacement(context.actor.placement)
+    return { script }
+  }
+
   const result = context.queries.resolveActorMoveEntry(canonicalId)
   if (!result.ok || result.entry.canonicalMoveName !== canonicalId) {
     return fail(
@@ -1179,6 +1247,7 @@ const terminalBase = (
   resolvedSwitches: readonly MoveSpecResolvedSwitch[],
   resolvedItemChoices: readonly MoveSpecResolvedItemChoice[],
   resolvedHazardCells: readonly MoveSpecResolvedHazardCells[],
+  childExecutions: readonly MoveSpecChildExecution[],
   selectorState: MoveSpecSelectorState,
 ): MoveSpecExecutionResultBase => ({
   operations: freezeEmittedOperations(operations),
@@ -1195,6 +1264,7 @@ const terminalBase = (
   resolvedSwitches: freezeResolvedSwitches(resolvedSwitches),
   resolvedItemChoices: freezeResolvedItemChoices(resolvedItemChoices),
   resolvedHazardCells: freezeResolvedHazardCells(resolvedHazardCells),
+  childExecutions: freezeChildExecutions(childExecutions),
   hitTargetIds: frozenIds(selectorState.hitTargetIds),
   missedTargetIds: frozenIds(selectorState.missedTargetIds),
   damagedTargetIds: frozenIds(selectorState.damagedTargetIds),
@@ -1443,20 +1513,304 @@ const gateBranchControlledOperation = (options: {
   }
 }
 
+interface MoveSpecExecutionState {
+  readonly responseResolver: MoveSpecResponseResolver
+  readonly resolutionId: string | null
+  readonly mechanicsSource: 'actor-move' | 'registered-spec'
+  readonly sealRandomLedger: boolean
+  readonly assertResponsesAtCompletion: boolean
+}
+
+interface NestedMoveTargetOption {
+  readonly option: PendingMoveResponseOption
+  readonly targetPlacementId: string
+}
+
+const nestedChildResolutionId = (input: {
+  readonly parentResolutionId: string
+  readonly operationId: string
+  readonly canonicalId: string
+  readonly actorPlacementId: string
+}): string => `resolution-nested-${createHash('sha256')
+  .update([
+    input.parentResolutionId,
+    input.operationId,
+    input.canonicalId,
+    input.actorPlacementId,
+  ].join('\u0000'))
+  .digest('hex')}`
+
+const nestedTargetOptionId = (
+  requestId: string,
+  placementId: string,
+): string => `nested-target.${createHash('sha256')
+  .update(`${requestId}\u0000${placementId}`)
+  .digest('hex')}`
+
+const nestedTargetLabelKey = (index: number): string => (
+  `move.nested-target-option-${index + 1}`
+)
+
+const nestedRuntimeFor = (
+  context: AuthoritativeMoveRulesContext,
+  operation: MoveNestedMoveEffectOperation,
+): MoveSpecV2Runtime => {
+  const runtime = context.queries.rules.runtimeFor(operation.payload.canonicalId)
+  if (
+    !runtime
+    || runtime.kind !== 'movespec-v2'
+    || runtime.definition.spec.canonicalId !== operation.payload.canonicalId
+  ) {
+    return fail(
+      'nested-runtime-unavailable',
+      `Nested operation ${operation.id} can invoke only the server-selected reviewed spec ${operation.payload.canonicalId}.`,
+    )
+  }
+  return runtime
+}
+
+const nestedActorPlacementId = (
+  context: AuthoritativeMoveRulesContext,
+  operation: MoveNestedMoveEffectOperation,
+  recipientIds: readonly string[],
+): string => {
+  if (operation.payload.actor.kind === 'parent-actor') {
+    return context.actor.placement.id
+  }
+  if (recipientIds.length !== 1) {
+    return fail(
+      'nested-actor-invalid',
+      `Nested operation ${operation.id} requires exactly one recipient to own the child actor.`,
+    )
+  }
+  return recipientIds[0]!
+}
+
+const nestedIntentSelection = (
+  targetIds: readonly string[],
+): ResolveMoveIntent['selection'] => targetIds.length === 0
+  ? { kind: 'self' }
+  : targetIds.length === 1
+    ? { kind: 'single-target', targetPlacementId: targetIds[0]! }
+    : { kind: 'target-count', targetPlacementIds: [...targetIds] }
+
+export const deriveNestedMoveRulesContext = (input: {
+  readonly parent: AuthoritativeMoveRulesContext
+  readonly actorPlacementId: string
+  readonly canonicalId: string
+  readonly targetIds: readonly string[]
+  readonly resolutionId: string
+  readonly ancestry: readonly MoveResolutionTraceAncestryEntry[]
+}): AuthoritativeMoveRulesContext => {
+  const placement = input.parent.queries.placements.get(input.actorPlacementId)
+  const token = input.parent.queries.tokens.get(input.actorPlacementId)
+  const sheet = placement ? input.parent.queries.sheets.forPlacement(placement) : null
+  if (!placement || !token || !sheet) {
+    return fail(
+      'nested-actor-invalid',
+      `Nested child actor ${input.actorPlacementId} is not a fully resolved authoritative placement.`,
+    )
+  }
+  const selectedPlacements = input.targetIds.map(targetId => (
+    input.parent.queries.placements.get(targetId)
+    ?? fail('nested-targeting-invalid', `Nested child target ${targetId} is not authoritative.`)
+  ))
+  const candidatePlacements = input.parent.queries.placements.all()
+  input.parent.reads.recordPlacement(placement)
+  const placements = Object.freeze({
+    ...input.parent.queries.placements,
+    candidates: () => candidatePlacements,
+    selected: () => Object.freeze([...selectedPlacements]),
+  })
+  const queries = Object.freeze({
+    ...input.parent.queries,
+    placements,
+  })
+  return Object.freeze({
+    ...input.parent,
+    intent: Object.freeze({
+      schemaVersion: 1 as const,
+      placementId: placement.id,
+      moveName: input.canonicalId,
+      selection: nestedIntentSelection(input.targetIds),
+    }),
+    resolutionId: input.resolutionId,
+    actor: Object.freeze({ placement, token, sheet }),
+    candidatePlacements,
+    selectedPlacements: Object.freeze([...selectedPlacements]),
+    ancestry: Object.freeze(input.ancestry.map(entry => Object.freeze({ ...entry }))),
+    queries,
+  })
+}
+
+const nestedTargetOptions = (input: {
+  readonly context: AuthoritativeMoveRulesContext
+  readonly operation: MoveNestedMoveEffectOperation
+  readonly runtime: MoveSpecV2Runtime
+  readonly selectorState: MoveSpecSelectorState
+}): readonly NestedMoveTargetOption[] => {
+  const targeting = input.operation.payload.targeting
+  if (targeting.kind !== 'fresh-choice') return Object.freeze([])
+  const childTargeting = input.runtime.definition.spec.targeting
+  if (
+    childTargeting.kind === 'none'
+    || childTargeting.kind === 'self'
+    || childTargeting.kind === 'area'
+    || childTargeting.kind === 'field'
+    || childTargeting.kind === 'hazard'
+    || childTargeting.minTargets !== 1
+    || childTargeting.maxTargets !== 1
+  ) {
+    return fail(
+      'nested-targeting-invalid',
+      `Nested fresh target ${input.operation.id} requires a reviewed child with exactly one non-area target.`,
+    )
+  }
+  const ids = evaluateMoveSelector({
+    context: input.context,
+    selectorState: input.selectorState,
+    selector: targeting.selector,
+  })
+  if (ids.length === 0) {
+    return fail(
+      'nested-targeting-invalid',
+      `Nested fresh target ${input.operation.id} has no legal server-derived option.`,
+    )
+  }
+  const options = ids.map((targetPlacementId, index): NestedMoveTargetOption => Object.freeze({
+    targetPlacementId,
+    option: Object.freeze({
+      id: nestedTargetOptionId(targeting.requestId, targetPlacementId),
+      // Dynamic target identity stays server-only until a dedicated authorized
+      // targeting view projects it; generic option labels reveal no placement.
+      labelKey: nestedTargetLabelKey(index),
+    }),
+  }))
+  if (new Set(options.map(({ option }) => option.id)).size !== options.length) {
+    return fail(
+      'nested-targeting-invalid',
+      `Nested target options for ${input.operation.id} produced an identity collision.`,
+    )
+  }
+  return Object.freeze(options)
+}
+
+const nestedTargetRequest = (input: {
+  readonly operation: MoveNestedMoveEffectOperation
+  readonly actorPlacementId: string
+  readonly options: readonly NestedMoveTargetOption[]
+}): MoveSpecPendingNestedTargetRequest => {
+  const targeting = input.operation.payload.targeting
+  if (targeting.kind !== 'fresh-choice') {
+    return fail('nested-targeting-invalid', `Nested operation ${input.operation.id} has no fresh target request.`)
+  }
+  return Object.freeze({
+    kind: 'nested-target-choice',
+    childCanonicalId: input.operation.payload.canonicalId,
+    operationId: input.operation.id,
+    phase: input.operation.phase,
+    reasonCode: input.operation.reasonCode,
+    recipientIds: frozenIds([input.actorPlacementId]),
+    requestId: targeting.requestId,
+    promptKey: targeting.promptKey,
+    options: Object.freeze(input.options.map(({ option }) => option)),
+    allowPass: false,
+  })
+}
+
+const projectNestedEmission = (input: {
+  readonly emission: MoveSpecEmittedOperation
+  readonly invocationPhase: MoveSpecPhase
+  readonly childResolutionId: string
+}): MoveSpecEmittedOperation => Object.freeze({
+  operation: Object.freeze({
+    ...input.emission.operation,
+    phase: input.invocationPhase,
+  }) as MoveEffectOperation,
+  recipientIds: frozenIds(input.emission.recipientIds),
+  childResolutionId: input.emission.childResolutionId ?? input.childResolutionId,
+})
+
+const projectNestedRequest = (
+  request: MoveSpecPendingRequest,
+  invocationPhase: MoveSpecPhase,
+): MoveSpecPendingRequest => {
+  if (
+    request.kind === 'reaction'
+    && moveReactionTimingDefinition(request.timing).phase !== invocationPhase
+  ) {
+    return fail(
+      'nested-targeting-invalid',
+      `Nested reaction ${request.requestId} must be invoked from its reviewed ${moveReactionTimingDefinition(request.timing).phase} phase.`,
+    )
+  }
+  return Object.freeze({ ...request, phase: invocationPhase })
+}
+
+const appendNestedTrace = (
+  parent: MoveResolutionAuditTrace,
+  child: MoveResolutionAuditTrace,
+  invocationPhase: MoveSpecPhase,
+): MoveResolutionAuditTrace => {
+  let trace = parent
+  for (const event of child.events) {
+    if (event.kind === 'phase-transition') continue
+    const { sequence: _sequence, ...withoutSequence } = event
+    if (event.kind === 'target') {
+      trace = reduceMoveResolutionTrace(trace, {
+        ...withoutSequence,
+        phase: invocationPhase,
+        reasonCode: 'nested-child-target',
+      })
+      continue
+    }
+    trace = reduceMoveResolutionTrace(trace, {
+      ...withoutSequence,
+      phase: invocationPhase,
+    })
+  }
+  return trace
+}
+
+const childAncestry = (input: {
+  readonly parentAncestry: readonly MoveResolutionTraceAncestryEntry[]
+  readonly parentResolutionId: string
+  readonly parentCanonicalId: string
+  readonly parentDefinitionHash: string
+  readonly parentOperationId: string
+}): readonly MoveResolutionTraceAncestryEntry[] => Object.freeze([
+  ...input.parentAncestry,
+  Object.freeze({
+    depth: input.parentAncestry.length,
+    resolutionId: input.parentResolutionId,
+    canonicalId: input.parentCanonicalId,
+    definitionHash: input.parentDefinitionHash,
+    parentOperationId: input.parentOperationId,
+  }),
+])
+
+const terminalRollLedger = (
+  context: AuthoritativeMoveRulesContext,
+  seal: boolean,
+): readonly MoveAutomationRollLedgerEntry[] => seal
+  ? context.random.complete()
+  : context.random.snapshot()
+
 /**
  * Execute one reviewed MoveSpec against an immutable authoritative snapshot.
  * This layer emits typed operations only; repositories and state reducers are
  * intentionally outside the interpreter boundary.
  */
-export const executeMoveSpec = (
+const executeMoveSpecInternal = (
   input: ExecuteMoveSpecInput,
+  executionState: MoveSpecExecutionState,
 ): MoveSpecExecutionResult => {
   const handlerRegistry = input.handlerRegistry ?? REGISTERED_MOVE_HANDLER_REGISTRY
   const definition = executableDefinition(input, handlerRegistry)
   const { spec } = definition
   const program = executableProgram(definition, input.context, handlerRegistry)
   const branchControllers = branchControllerIndex(program.operations)
-  const responseResolver = createMoveSpecResponseResolver(input.responses)
+  const responseResolver = executionState.responseResolver
   const hazardSelections = new Map<string, ValidatedAuthoritativeHazardCellSelection>()
   for (const selection of input.authoritativeHazardCellSelections ?? []) {
     if (hazardSelections.has(selection.operationId)) {
@@ -1512,6 +1866,7 @@ export const executeMoveSpec = (
   const resolvedSwitches: MoveSpecResolvedSwitch[] = []
   const resolvedItemChoices: MoveSpecResolvedItemChoice[] = []
   const resolvedHazardCells: MoveSpecResolvedHazardCells[] = []
+  const childExecutions: MoveSpecChildExecution[] = []
   const branchExecutions = new Map<string, ExecutedMoveBranch>()
   const currentSelectorState = (): MoveSpecSelectorState => ({
     targetIds,
@@ -1523,7 +1878,11 @@ export const executeMoveSpec = (
   const referencedAccuracyRollIds = accuracyReferenceIds(program.operations)
   let mechanics: MoveSpecAuthoritativeMoveMechanics | null = null
   const getMechanics = (): MoveSpecAuthoritativeMoveMechanics => (
-    mechanics ??= authoritativeMoveMechanics(input.context, spec.canonicalId)
+    mechanics ??= authoritativeMoveMechanics(
+      input.context,
+      spec.canonicalId,
+      executionState.mechanicsSource,
+    )
   )
 
   for (const phase of MOVE_SPEC_PHASES) {
@@ -1572,7 +1931,7 @@ export const executeMoveSpec = (
               operations,
               targetIds,
               trace,
-              input.context.random.complete(),
+              terminalRollLedger(input.context, executionState.sealRandomLedger),
               resolvedRolls,
               resolvedDamageTypes,
               resolvedDamageBases,
@@ -1583,6 +1942,7 @@ export const executeMoveSpec = (
               resolvedSwitches,
               resolvedItemChoices,
               resolvedHazardCells,
+              childExecutions,
               currentSelectorState(),
             ),
             rejection: Object.freeze({
@@ -1679,7 +2039,7 @@ export const executeMoveSpec = (
             operations,
             targetIds,
             trace,
-            input.context.random.complete(),
+            terminalRollLedger(input.context, executionState.sealRandomLedger),
             resolvedRolls,
             resolvedDamageTypes,
             resolvedDamageBases,
@@ -1690,6 +2050,7 @@ export const executeMoveSpec = (
             resolvedSwitches,
             resolvedItemChoices,
             resolvedHazardCells,
+            childExecutions,
             currentSelectorState(),
           ),
           rejection: Object.freeze({
@@ -1856,6 +2217,7 @@ export const executeMoveSpec = (
               resolvedSwitches,
               resolvedItemChoices,
               resolvedHazardCells,
+              childExecutions,
               currentSelectorState(),
             ),
             request,
@@ -1981,6 +2343,7 @@ export const executeMoveSpec = (
             resolvedSwitches,
             resolvedItemChoices,
             resolvedHazardCells,
+            childExecutions,
             currentSelectorState(),
           ),
           request,
@@ -2357,6 +2720,7 @@ export const executeMoveSpec = (
             resolvedSwitches,
             resolvedItemChoices,
             resolvedHazardCells,
+            childExecutions,
             currentSelectorState(),
           ),
           request,
@@ -2452,6 +2816,7 @@ export const executeMoveSpec = (
             resolvedSwitches,
             resolvedItemChoices,
             resolvedHazardCells,
+            childExecutions,
             currentSelectorState(),
           ),
           request,
@@ -2554,6 +2919,7 @@ export const executeMoveSpec = (
             resolvedSwitches,
             resolvedItemChoices,
             resolvedHazardCells,
+            childExecutions,
             currentSelectorState(),
           ),
           request,
@@ -2657,10 +3023,314 @@ export const executeMoveSpec = (
             resolvedSwitches,
             resolvedItemChoices,
             resolvedHazardCells,
+            childExecutions,
             currentSelectorState(),
           ),
           request,
         )
+      }
+
+      if (operation.kind === 'nested-move') {
+        const runtime = nestedRuntimeFor(input.context, operation)
+        if (runtime.definition.spec.targeting.kind === 'area') {
+          return fail(
+            'nested-targeting-invalid',
+            `Nested operation ${operation.id} cannot reuse parent geometry for an area child.`,
+          )
+        }
+        const parentResolutionId = executionState.resolutionId
+          ?? fail(
+            'nested-resolution-id-missing',
+            `Nested operation ${operation.id} requires a stable server-owned parent resolution ID.`,
+          )
+        const actorPlacementId = nestedActorPlacementId(
+          input.context,
+          operation,
+          recipientIds,
+        )
+        const childResolutionId = nestedChildResolutionId({
+          parentResolutionId,
+          operationId: operation.id,
+          canonicalId: runtime.canonicalId,
+          actorPlacementId,
+        })
+        const ancestry = childAncestry({
+          parentAncestry: trace.ancestry,
+          parentResolutionId,
+          parentCanonicalId: spec.canonicalId,
+          parentDefinitionHash: definition.definitionHash,
+          parentOperationId: operation.id,
+        })
+        const actorContext = deriveNestedMoveRulesContext({
+          parent: input.context,
+          actorPlacementId,
+          canonicalId: runtime.canonicalId,
+          targetIds: operation.payload.targeting.kind === 'operation-recipients'
+            ? recipientIds
+            : [],
+          resolutionId: childResolutionId,
+          ancestry,
+        })
+        let childTargetIds: readonly string[] = operation.payload.targeting.kind === 'operation-recipients'
+          ? recipientIds
+          : []
+        let nestedOperationTraced = false
+
+        if (operation.payload.targeting.kind === 'fresh-choice') {
+          const choices = nestedTargetOptions({
+            context: actorContext,
+            operation,
+            runtime,
+            selectorState,
+          })
+          const request = nestedTargetRequest({ operation, actorPlacementId, options: choices })
+          const response = responseResolver.resolve({
+            requestId: request.requestId,
+            options: request.options,
+            allowPass: false,
+          })
+          trace = reduceMoveResolutionTrace(trace, {
+            kind: 'operation',
+            phase,
+            operationId: operation.id,
+            operationKind: operation.kind,
+            recipientIds,
+            outcome: response ? 'applied' : 'pending',
+            reasonCode: operation.reasonCode,
+            input: traceJson(operation.payload),
+            result: traceJson(response
+              ? { status: 'target-selected' }
+              : {
+                  requestId: request.requestId,
+                  requestKind: request.kind,
+                  optionCount: request.options.length,
+                }),
+          })
+          nestedOperationTraced = true
+          trace = reduceMoveResolutionTrace(trace, {
+            kind: 'choice',
+            phase,
+            requestId: request.requestId,
+            requestKind: 'choice',
+            outcome: response ? 'selected' : 'requested',
+            optionId: response?.optionId ?? null,
+            reasonCode: operation.reasonCode,
+          })
+          if (!response?.optionId) {
+            responseResolver.assertAllConsumed()
+            return materializePendingExecutionResult(
+              terminalBase(
+                input.context,
+                operations,
+                targetIds,
+                trace,
+                input.context.random.snapshot(),
+                resolvedRolls,
+                resolvedDamageTypes,
+                resolvedDamageBases,
+                multiHitExecutions,
+                resolvedChecks,
+                branchSelections,
+                resolvedMovements,
+                resolvedSwitches,
+                resolvedItemChoices,
+                resolvedHazardCells,
+                childExecutions,
+                currentSelectorState(),
+              ),
+              request,
+            )
+          }
+          childTargetIds = [
+            choices.find(({ option }) => option.id === response.optionId)?.targetPlacementId
+              ?? fail(
+                'nested-targeting-invalid',
+                `Nested target option ${response.optionId} disappeared before child execution.`,
+              ),
+          ]
+        }
+
+        const childContext = deriveNestedMoveRulesContext({
+          parent: input.context,
+          actorPlacementId,
+          canonicalId: runtime.canonicalId,
+          targetIds: childTargetIds,
+          resolutionId: childResolutionId,
+          ancestry,
+        })
+        const childMechanics = authoritativeMoveMechanics(
+          childContext,
+          runtime.canonicalId,
+          'registered-spec',
+        ).script
+        trace = reduceMoveResolutionTrace(trace, {
+          kind: 'child-move',
+          phase,
+          childResolutionId,
+          canonicalId: runtime.canonicalId,
+          definitionHash: runtime.definitionHash,
+          parentOperationId: operation.id,
+          depth: ancestry.length,
+          outcome: 'started',
+          reasonCode: 'nested-child-started',
+        })
+        const child = executeMoveSpecInternal({
+          definition: runtime.definition,
+          context: childContext,
+          authoritativeTargetIds: childTargetIds,
+          ancestry,
+          resolutionId: childResolutionId,
+          handlerRegistry: childContext.handlerRegistry,
+        }, {
+          responseResolver,
+          resolutionId: childResolutionId,
+          mechanicsSource: 'registered-spec',
+          sealRandomLedger: false,
+          assertResponsesAtCompletion: false,
+        })
+        if (child.kind === 'rejected') {
+          return fail(
+            'nested-execution-rejected',
+            `Nested child ${runtime.canonicalId} rejected: ${child.rejection.reasonCode}.`,
+          )
+        }
+        if (
+          child.resolvedMovements.length > 0
+          || child.resolvedSwitches.length > 0
+          || (
+            child.kind === 'pending-request'
+            && (
+              child.request.kind === 'movement-choice'
+              || child.request.kind === 'hazard-cell-choice'
+              || child.request.kind === 'switch-choice'
+              || child.request.kind === 'item-choice'
+            )
+          )
+        ) {
+          return fail(
+            'nested-execution-rejected',
+            `Nested child ${runtime.canonicalId} requested an orchestration-specific movement, switch, hazard, or item window that is not a fresh target/branch window.`,
+          )
+        }
+
+        const existingOperationIds = new Set([
+          ...program.operations.map(emitted => emitted.id),
+          ...operations.map(({ operation: emitted }) => emitted.id),
+        ])
+        const conflictingChildOperation = child.operations.find(({ operation: emitted }) => (
+          existingOperationIds.has(emitted.id)
+        ))
+        if (conflictingChildOperation) {
+          return fail(
+            'nested-operation-id-conflict',
+            `Nested child ${runtime.canonicalId} reused operation ID ${conflictingChildOperation.operation.id}.`,
+          )
+        }
+        const directChildOperationIds = child.operations.flatMap(emission => (
+          emission.childResolutionId === undefined ? [emission.operation.id] : []
+        ))
+        operations.push(...child.operations.map(emission => projectNestedEmission({
+          emission,
+          invocationPhase: phase,
+          childResolutionId,
+        })))
+        childExecutions.push(Object.freeze({
+          resolutionId: childResolutionId,
+          parentOperationId: operation.id,
+          actorPlacementId,
+          canonicalId: runtime.canonicalId,
+          definitionHash: runtime.definitionHash,
+          operationIds: frozenIds(directChildOperationIds),
+          targetIds: frozenIds(child.targetIds),
+          hitTargetIds: frozenIds(child.hitTargetIds),
+          missedTargetIds: frozenIds(child.missedTargetIds),
+          damagedTargetIds: frozenIds(child.damagedTargetIds),
+          faintedTargetIds: frozenIds(child.faintedTargetIds),
+          mechanics: childMechanics,
+          trace: child.trace,
+        }), ...child.childExecutions)
+        resolvedRolls.push(...child.resolvedRolls)
+        resolvedDamageTypes.push(...child.resolvedDamageTypes)
+        resolvedDamageBases.push(...child.resolvedDamageBases)
+        multiHitExecutions.push(...child.multiHitExecutions)
+        resolvedChecks.push(...child.resolvedChecks)
+        branchSelections.push(...child.branchSelections)
+        resolvedMovements.push(...child.resolvedMovements)
+        resolvedSwitches.push(...child.resolvedSwitches)
+        resolvedItemChoices.push(...child.resolvedItemChoices)
+        resolvedHazardCells.push(...child.resolvedHazardCells)
+        targetIds = canonicalPlacementIds(input.context, [...targetIds, ...child.targetIds])
+        hitTargetIds = canonicalPlacementIds(input.context, [...hitTargetIds, ...child.hitTargetIds])
+        missedTargetIds = canonicalPlacementIds(input.context, [
+          ...missedTargetIds,
+          ...child.missedTargetIds,
+        ])
+        damagedTargetIds = canonicalPlacementIds(input.context, [
+          ...damagedTargetIds,
+          ...child.damagedTargetIds,
+        ])
+        faintedTargetIds = canonicalPlacementIds(input.context, [
+          ...faintedTargetIds,
+          ...child.faintedTargetIds,
+        ])
+        trace = appendNestedTrace(trace, child.trace, phase)
+
+        if (child.kind === 'pending-request') {
+          const request = projectNestedRequest(child.request, phase)
+          responseResolver.assertAllConsumed()
+          return materializePendingExecutionResult(
+            terminalBase(
+              input.context,
+              operations,
+              targetIds,
+              trace,
+              input.context.random.snapshot(),
+              resolvedRolls,
+              resolvedDamageTypes,
+              resolvedDamageBases,
+              multiHitExecutions,
+              resolvedChecks,
+              branchSelections,
+              resolvedMovements,
+              resolvedSwitches,
+              resolvedItemChoices,
+              resolvedHazardCells,
+              childExecutions,
+              currentSelectorState(),
+            ),
+            request,
+          )
+        }
+
+        if (!nestedOperationTraced) {
+          trace = reduceMoveResolutionTrace(trace, {
+            kind: 'operation',
+            phase,
+            operationId: operation.id,
+            operationKind: operation.kind,
+            recipientIds,
+            outcome: 'applied',
+            reasonCode: operation.reasonCode,
+            input: traceJson(operation.payload),
+            result: traceJson({
+              status: 'child-completed',
+              childResolutionId,
+              canonicalId: runtime.canonicalId,
+            }),
+          })
+        }
+        trace = reduceMoveResolutionTrace(trace, {
+          kind: 'child-move',
+          phase,
+          childResolutionId,
+          canonicalId: runtime.canonicalId,
+          definitionHash: runtime.definitionHash,
+          parentOperationId: operation.id,
+          depth: ancestry.length,
+          outcome: 'completed',
+          reasonCode: 'nested-child-completed',
+        })
+        continue
       }
 
       if (operation.kind === 'choice-request' || operation.kind === 'reaction-request') {
@@ -2720,6 +3390,7 @@ export const executeMoveSpec = (
             resolvedSwitches,
             resolvedItemChoices,
             resolvedHazardCells,
+            childExecutions,
             currentSelectorState(),
           ),
           request,
@@ -2740,7 +3411,7 @@ export const executeMoveSpec = (
     }
   }
 
-  responseResolver.assertAllConsumed()
+  if (executionState.assertResponsesAtCompletion) responseResolver.assertAllConsumed()
   const unusedHazardSelection = [...hazardSelections.keys()].find(
     operationId => !consumedHazardSelections.has(operationId),
   )
@@ -2757,7 +3428,7 @@ export const executeMoveSpec = (
       operations,
       targetIds,
       trace,
-      input.context.random.complete(),
+      terminalRollLedger(input.context, executionState.sealRandomLedger),
       resolvedRolls,
       resolvedDamageTypes,
       resolvedDamageBases,
@@ -2768,7 +3439,18 @@ export const executeMoveSpec = (
       resolvedSwitches,
       resolvedItemChoices,
       resolvedHazardCells,
+      childExecutions,
       currentSelectorState(),
     ),
   })
 }
+
+export const executeMoveSpec = (
+  input: ExecuteMoveSpecInput,
+): MoveSpecExecutionResult => executeMoveSpecInternal(input, {
+  responseResolver: createMoveSpecResponseResolver(input.responses),
+  resolutionId: input.resolutionId ?? input.context.resolutionId,
+  mechanicsSource: 'actor-move',
+  sealRandomLedger: true,
+  assertResponsesAtCompletion: true,
+})

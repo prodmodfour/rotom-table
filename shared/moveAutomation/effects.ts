@@ -98,6 +98,7 @@ export const MOVE_EFFECT_OPERATION_KINDS = [
   'hazard',
   'movement-request',
   'switch-request',
+  'nested-move',
   'item',
   'usage',
   'history',
@@ -376,6 +377,19 @@ export const MOVE_EFFECT_SWITCH_POSITION_POLICIES = ['recalled-position'] as con
 export const MOVE_EFFECT_SWITCH_INITIATIVE_POLICIES = ['inherit-slot'] as const
 /** Only a reviewed Baton Pass-style switch transfers stages and passable effects. */
 export const MOVE_EFFECT_SWITCH_STATE_TRANSFER_POLICIES = ['none', 'baton-pass'] as const
+
+/** A child actor is inherited only through one explicit reviewed policy. */
+export const MOVE_EFFECT_NESTED_MOVE_ACTOR_KINDS = [
+  'parent-actor',
+  'sole-recipient',
+] as const
+/** Child mechanics always come from the server-selected reviewed runtime. */
+export const MOVE_EFFECT_NESTED_MOVE_SOURCE_KINDS = ['registered-spec'] as const
+export const MOVE_EFFECT_NESTED_MOVE_TARGETING_KINDS = [
+  'operation-recipients',
+  'fresh-choice',
+] as const
+
 export const MOVE_EFFECT_USAGE_ACTIONS = ['spend', 'restore', 'set'] as const
 export const MOVE_EFFECT_HISTORY_EVENTS = [
   'move-declared',
@@ -525,6 +539,12 @@ export type MoveEffectSwitchInitiativePolicy =
   (typeof MOVE_EFFECT_SWITCH_INITIATIVE_POLICIES)[number]
 export type MoveEffectSwitchStateTransferPolicy =
   (typeof MOVE_EFFECT_SWITCH_STATE_TRANSFER_POLICIES)[number]
+export type MoveEffectNestedMoveActorKind =
+  (typeof MOVE_EFFECT_NESTED_MOVE_ACTOR_KINDS)[number]
+export type MoveEffectNestedMoveSourceKind =
+  (typeof MOVE_EFFECT_NESTED_MOVE_SOURCE_KINDS)[number]
+export type MoveEffectNestedMoveTargetingKind =
+  (typeof MOVE_EFFECT_NESTED_MOVE_TARGETING_KINDS)[number]
 export type MoveEffectUsageAction = (typeof MOVE_EFFECT_USAGE_ACTIONS)[number]
 export type MoveEffectHistoryEvent = (typeof MOVE_EFFECT_HISTORY_EVENTS)[number]
 
@@ -1407,6 +1427,47 @@ export interface MoveSwitchRequestEffectPayload {
   readonly stateTransferPolicy: MoveEffectSwitchStateTransferPolicy
 }
 
+export interface MoveNestedMoveParentActor {
+  readonly kind: 'parent-actor'
+}
+
+export interface MoveNestedMoveSoleRecipientActor {
+  readonly kind: 'sole-recipient'
+}
+
+export type MoveNestedMoveActor =
+  | MoveNestedMoveParentActor
+  | MoveNestedMoveSoleRecipientActor
+
+export interface MoveNestedMoveRegisteredSpecSource {
+  readonly kind: 'registered-spec'
+}
+
+export interface MoveNestedMoveOperationRecipientTargeting {
+  readonly kind: 'operation-recipients'
+}
+
+export interface MoveNestedMoveFreshTargetChoice {
+  readonly kind: 'fresh-choice'
+  readonly requestId: string
+  readonly promptKey: string
+  /** Server-evaluated candidate selector; response commands return only an option ID. */
+  readonly selector: MoveSelector
+}
+
+export type MoveNestedMoveTargeting =
+  | MoveNestedMoveOperationRecipientTargeting
+  | MoveNestedMoveFreshTargetChoice
+
+export interface MoveNestedMoveEffectPayload {
+  readonly canonicalId: string
+  /** No actor identity is inherited unless this reviewed declaration says so. */
+  readonly actor: MoveNestedMoveActor
+  /** Parent move mechanics are never inherited as the child's source. */
+  readonly source: MoveNestedMoveRegisteredSpecSource
+  readonly targeting: MoveNestedMoveTargeting
+}
+
 export interface MoveUsageEffectPayload {
   readonly action: MoveEffectUsageAction
   readonly resourceId: string
@@ -1482,6 +1543,7 @@ export type MoveFieldEffectOperation = MoveEffectOperationEnvelope<'field', Move
 export type MoveHazardEffectOperation = MoveEffectOperationEnvelope<'hazard', MoveHazardEffectPayload>
 export type MoveMovementRequestEffectOperation = MoveEffectOperationEnvelope<'movement-request', MoveMovementRequestEffectPayload>
 export type MoveSwitchRequestEffectOperation = MoveEffectOperationEnvelope<'switch-request', MoveSwitchRequestEffectPayload>
+export type MoveNestedMoveEffectOperation = MoveEffectOperationEnvelope<'nested-move', MoveNestedMoveEffectPayload>
 export type MoveItemEffectOperation = MoveEffectOperationEnvelope<'item', MoveItemEffectPayload>
 export type MoveUsageEffectOperation = MoveEffectOperationEnvelope<'usage', MoveUsageEffectPayload>
 export type MoveHistoryEffectOperation = MoveEffectOperationEnvelope<'history', MoveHistoryEffectPayload>
@@ -1504,6 +1566,7 @@ export type MoveEffectOperation =
   | MoveHazardEffectOperation
   | MoveMovementRequestEffectOperation
   | MoveSwitchRequestEffectOperation
+  | MoveNestedMoveEffectOperation
   | MoveItemEffectOperation
   | MoveUsageEffectOperation
   | MoveHistoryEffectOperation
@@ -1857,6 +1920,16 @@ const SWITCH_REQUEST_FIELDS = [
   'initiativePolicy',
   'stateTransferPolicy',
 ] as const
+const NESTED_MOVE_FIELDS = ['canonicalId', 'actor', 'source', 'targeting'] as const
+const NESTED_MOVE_ACTOR_FIELDS = ['kind'] as const
+const NESTED_MOVE_SOURCE_FIELDS = ['kind'] as const
+const NESTED_MOVE_RECIPIENT_TARGETING_FIELDS = ['kind'] as const
+const NESTED_MOVE_FRESH_TARGETING_FIELDS = [
+  'kind',
+  'requestId',
+  'promptKey',
+  'selector',
+] as const
 const USAGE_FIELDS = ['action', 'resourceId', 'amount'] as const
 const HISTORY_FIELDS = ['event', 'detailCode'] as const
 const LOG_FIELDS = ['messageKey', 'arguments'] as const
@@ -1891,6 +1964,9 @@ const CHECK_OUTCOME_SET = new Set<string>(MOVE_EFFECT_CHECK_OUTCOMES)
 const CHECK_RESOURCE_TRIGGER_SET = new Set<string>(MOVE_EFFECT_CHECK_RESOURCE_TRIGGERS)
 const BRANCH_KIND_SET = new Set<string>(MOVE_EFFECT_BRANCH_KINDS)
 const BRANCH_SCOPE_SET = new Set<string>(MOVE_EFFECT_BRANCH_SCOPES)
+const NESTED_MOVE_ACTOR_KIND_SET = new Set<string>(MOVE_EFFECT_NESTED_MOVE_ACTOR_KINDS)
+const NESTED_MOVE_SOURCE_KIND_SET = new Set<string>(MOVE_EFFECT_NESTED_MOVE_SOURCE_KINDS)
+const NESTED_MOVE_TARGETING_KIND_SET = new Set<string>(MOVE_EFFECT_NESTED_MOVE_TARGETING_KINDS)
 const EXPRESSION_STAT_SET = new Set<string>(MOVE_EXPRESSION_STATS)
 const STAGE_AFFECTED_EXPRESSION_STAT_SET = new Set<string>(
   MOVE_STAGE_AFFECTED_EXPRESSION_STATS,
@@ -4625,6 +4701,87 @@ const parseSwitchRequestPayload = (
   }
 }
 
+const parseNestedMovePayload = (
+  value: unknown,
+  path: string,
+): MoveNestedMoveEffectPayload => {
+  const input = parseExactRecord(value, NESTED_MOVE_FIELDS, path)
+  const actorInput = parseExactRecord(
+    ownValue(input, 'actor', path),
+    NESTED_MOVE_ACTOR_FIELDS,
+    `${path}.actor`,
+  )
+  const sourceInput = parseExactRecord(
+    ownValue(input, 'source', path),
+    NESTED_MOVE_SOURCE_FIELDS,
+    `${path}.source`,
+  )
+  const targetingValue = ownValue(input, 'targeting', path)
+  const targetingInput = parseRecord(targetingValue, `${path}.targeting`)
+  const targetingKind = parseEnum<MoveEffectNestedMoveTargetingKind>(
+    ownValue(targetingInput, 'kind', `${path}.targeting`),
+    NESTED_MOVE_TARGETING_KIND_SET,
+    `${path}.targeting.kind`,
+    'operation-recipients or fresh-choice',
+  )
+  const targeting: MoveNestedMoveTargeting = targetingKind === 'operation-recipients'
+    ? (() => {
+        parseExactRecord(
+          targetingValue,
+          NESTED_MOVE_RECIPIENT_TARGETING_FIELDS,
+          `${path}.targeting`,
+        )
+        return { kind: 'operation-recipients' as const }
+      })()
+    : (() => {
+        const fresh = parseExactRecord(
+          targetingValue,
+          NESTED_MOVE_FRESH_TARGETING_FIELDS,
+          `${path}.targeting`,
+        )
+        return {
+          kind: 'fresh-choice' as const,
+          requestId: parseStableId(
+            ownValue(fresh, 'requestId', `${path}.targeting`),
+            `${path}.targeting.requestId`,
+          ),
+          promptKey: parseStableId(
+            ownValue(fresh, 'promptKey', `${path}.targeting`),
+            `${path}.targeting.promptKey`,
+          ),
+          selector: parseEffectSelector(
+            ownValue(fresh, 'selector', `${path}.targeting`),
+            `${path}.targeting.selector`,
+          ),
+        }
+      })()
+
+  return {
+    canonicalId: parseBoundedText(
+      ownValue(input, 'canonicalId', path),
+      `${path}.canonicalId`,
+      MOVE_EFFECT_OPERATION_LIMITS.identifierLength,
+    ),
+    actor: {
+      kind: parseEnum<MoveEffectNestedMoveActorKind>(
+        ownValue(actorInput, 'kind', `${path}.actor`),
+        NESTED_MOVE_ACTOR_KIND_SET,
+        `${path}.actor.kind`,
+        'parent-actor or sole-recipient',
+      ),
+    },
+    source: {
+      kind: parseEnum<MoveEffectNestedMoveSourceKind>(
+        ownValue(sourceInput, 'kind', `${path}.source`),
+        NESTED_MOVE_SOURCE_KIND_SET,
+        `${path}.source.kind`,
+        'registered-spec',
+      ),
+    },
+    targeting,
+  }
+}
+
 const parseUsagePayload = (value: unknown, path: string): MoveUsageEffectPayload => {
   const input = parseExactRecord(value, USAGE_FIELDS, path)
   return {
@@ -5556,6 +5713,21 @@ const parseDetachedOperation = (value: unknown, path: string): MoveEffectOperati
       return { ...common, kind, payload: parseMovementRequestPayload(payload, payloadPath) }
     case 'switch-request':
       return { ...common, kind, payload: parseSwitchRequestPayload(payload, payloadPath) }
+    case 'nested-move': {
+      const parsedPayload = parseNestedMovePayload(payload, payloadPath)
+      if (
+        parsedPayload.targeting.kind === 'fresh-choice'
+        && common.recipients.kind === 'none'
+        && parsedPayload.actor.kind === 'sole-recipient'
+      ) {
+        fail(
+          'invalid-effect-operation',
+          `${path}.recipients.kind`,
+          'a sole-recipient child actor requires one authoritative operation recipient.',
+        )
+      }
+      return { ...common, kind, payload: parsedPayload }
+    }
     case 'item':
       try {
         return { ...common, kind, payload: parseMoveItemEffectPayload(payload, payloadPath) }

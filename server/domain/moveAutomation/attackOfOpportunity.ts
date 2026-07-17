@@ -1320,6 +1320,7 @@ export const planAttackOfOpportunityResponse = (input: {
         random: input.random,
         now: () => input.plannedAt,
         operationId: input.responseOpId,
+        pendingResolutionId: childId ?? undefined,
         maxMoveLogEntries: input.maxMoveLogEntries,
         ancestry: childAncestry(pending, window),
         resourceCostDeclarations: OPPORTUNITY_ATTACK_RESOURCE_COSTS,

@@ -905,6 +905,9 @@ export const interpretMoveItemEffects = (input: {
   readonly context: AuthoritativeMoveRulesContext
   readonly operations: readonly MoveResolvedItemEffectOperation[]
   readonly resolvedItemChoices: readonly MoveSpecResolvedItemChoice[]
+  readonly contextForOperation?: (
+    operation: MoveItemEffectOperation,
+  ) => AuthoritativeMoveRulesContext
 }): InterpretedMoveItemEffects => {
   const mutations: MoveItemMutation[] = []
   const results: InterpretedMoveItemEffectResult[] = []
@@ -917,7 +920,7 @@ export const interpretMoveItemEffects = (input: {
     const interpreted = interpretOperation({
       operation: emission.operation,
       recipientIds: emission.recipientIds,
-      context: input.context,
+      context: input.contextForOperation?.(emission.operation) ?? input.context,
       choices: input.resolvedItemChoices,
     })
     mutations.push(...interpreted.mutations)

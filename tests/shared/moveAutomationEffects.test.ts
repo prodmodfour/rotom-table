@@ -205,6 +205,12 @@ const VALID_PAYLOADS = {
     initiativePolicy: 'inherit-slot',
     stateTransferPolicy: 'none',
   },
+  'nested-move': {
+    canonicalId: 'Scratch',
+    actor: { kind: 'parent-actor' },
+    source: { kind: 'registered-spec' },
+    targeting: { kind: 'operation-recipients' },
+  },
   item: {
     action: 'consume',
     item: {
@@ -307,6 +313,7 @@ describe('MoveSpec typed effect operations', () => {
       'hazard',
       'movement-request',
       'switch-request',
+      'nested-move',
       'item',
       'usage',
       'history',
@@ -338,6 +345,67 @@ describe('MoveSpec typed effect operations', () => {
         'payload',
       ])
     })
+  })
+
+  it('parses only server-reviewed nested child identity, actor, source, and targeting policies', () => {
+    const inherited = parseMoveEffectOperation(validOperation('nested-move', {
+      recipients: { kind: 'attacked-targets' },
+      phase: 'hit',
+    }))
+    expect(inherited).toMatchObject({
+      kind: 'nested-move',
+      payload: {
+        canonicalId: 'Scratch',
+        actor: { kind: 'parent-actor' },
+        source: { kind: 'registered-spec' },
+        targeting: { kind: 'operation-recipients' },
+      },
+    })
+
+    const fresh = parseMoveEffectOperation(validOperation('nested-move', {
+      recipients: { kind: 'none' },
+      phase: 'hit',
+      payload: {
+        canonicalId: 'Scratch',
+        actor: { kind: 'parent-actor' },
+        source: { kind: 'registered-spec' },
+        targeting: {
+          kind: 'fresh-choice',
+          requestId: 'scratch.child-target',
+          promptKey: 'move.scratch.choose-child-target',
+          selector: { kind: 'candidate-targets' },
+        },
+      },
+    }))
+    expect(fresh).toMatchObject({
+      payload: {
+        targeting: {
+          kind: 'fresh-choice',
+          selector: { kind: 'candidate-targets' },
+        },
+      },
+    })
+
+    expectEffectError(validOperation('nested-move', {
+      payload: {
+        ...structuredClone(VALID_PAYLOADS['nested-move']),
+        spec: { canonicalId: 'client-selected' },
+      },
+    }), 'invalid-effect-operation', 'operation.payload')
+    expectEffectError(validOperation('nested-move', {
+      recipients: { kind: 'none' },
+      payload: {
+        canonicalId: 'Scratch',
+        actor: { kind: 'sole-recipient' },
+        source: { kind: 'registered-spec' },
+        targeting: {
+          kind: 'fresh-choice',
+          requestId: 'scratch.child-target',
+          promptKey: 'move.scratch.choose-child-target',
+          selector: { kind: 'candidate-targets' },
+        },
+      },
+    }), 'invalid-effect-operation', 'operation.recipients.kind')
   })
 
   it('parses strict durable destination and direction movement declarations', () => {
