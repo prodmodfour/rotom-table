@@ -6,6 +6,7 @@ import {
   type EncounterMoveListOverlayEffectPayload,
 } from './encounterEffects'
 import type { EncounterSideId } from './encounterState'
+import { activeEncounterTransformation } from './transformationEffects'
 
 export const ENCOUNTER_MOVE_LIST_BLOCK_REASONS = [
   'move-list-disabled',
@@ -169,18 +170,34 @@ export const projectEncounterMoveList = (
     effect.kind === 'move-list-overlay'
     && appliesTo(effect, input.placementId, input.sideId)
   ))
-  const entries: MutableProjectionEntry[] = input.baseCanonicalMoveIds.flatMap(
-    (canonicalMoveId, baseIndex) => canonicalMoveId.trim()
-      ? [{
-          canonicalMoveId,
-          baseIndex,
-          source: {
-            kind: 'placement' as const,
-            placementId: input.placementId,
-          },
-        }]
-      : [],
-  )
+  const transformation = activeEncounterTransformation({
+    placementId: input.placementId,
+    effects: parsedEffects,
+  })
+  const entries: MutableProjectionEntry[] = transformation
+    ? transformation.payload.moves.map(move => ({
+        canonicalMoveId: move.canonicalMoveId,
+        baseIndex: null,
+        source: {
+          kind: 'encounter-overlay' as const,
+          placementId: input.placementId,
+          effectId: transformation.id,
+          sourcePlacementId: transformation.source.placementId,
+          copiedSpecHash: move.copiedSpecHash,
+        },
+      }))
+    : input.baseCanonicalMoveIds.flatMap(
+        (canonicalMoveId, baseIndex) => canonicalMoveId.trim()
+          ? [{
+              canonicalMoveId,
+              baseIndex,
+              source: {
+                kind: 'placement' as const,
+                placementId: input.placementId,
+              },
+            }]
+          : [],
+      )
 
   for (const effect of effects) {
     if (hasOverlayAction(effect, 'add')) addMove(entries, effect, input.placementId)

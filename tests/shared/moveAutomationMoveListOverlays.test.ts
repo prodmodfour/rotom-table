@@ -4,6 +4,7 @@ import { applyEncounterEffectLifecycleEvent } from '~~/server/domain/moveAutomat
 import {
   capabilityEncounterEffectFixture,
   moveListOverlayEncounterEffectFixture,
+  transformationEncounterEffectFixture,
 } from '../fixtures/moveAutomation/encounterEffects'
 
 const overlay = (
@@ -140,6 +141,40 @@ describe('encounter-local move-list projection', () => {
       { move: 'Ember', available: true, reason: null },
       { move: 'Growl', available: false, reason: 'move-list-restricted' },
     ])
+  })
+
+  it('replaces the projected list with one durable transformation snapshot', () => {
+    const transformation = transformationEncounterEffectFixture()
+    const projected = projectEncounterMoveList({
+      placementId: 'actor-token',
+      baseCanonicalMoveIds: ['Transform', 'Pound'],
+      effects: [transformation],
+    })
+
+    expect(projected.map(entry => entry.canonicalMoveId)).toEqual(['Tackle', 'Growl'])
+    expect(projected.map(entry => entry.source)).toEqual([
+      {
+        kind: 'encounter-overlay',
+        placementId: 'actor-token',
+        effectId: transformation.id,
+        sourcePlacementId: 'actor-token',
+        copiedSpecHash: '1'.repeat(64),
+      },
+      {
+        kind: 'encounter-overlay',
+        placementId: 'actor-token',
+        effectId: transformation.id,
+        sourcePlacementId: 'actor-token',
+        copiedSpecHash: '2'.repeat(64),
+      },
+    ])
+
+    const restored = projectEncounterMoveList({
+      placementId: 'actor-token',
+      baseCanonicalMoveIds: ['Transform', 'Pound'],
+      effects: [],
+    })
+    expect(restored.map(entry => entry.canonicalMoveId)).toEqual(['Transform', 'Pound'])
   })
 
   it('restores the underlying move list when lifecycle expiry removes an overlay', () => {

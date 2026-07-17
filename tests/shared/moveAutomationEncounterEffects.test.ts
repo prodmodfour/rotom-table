@@ -11,6 +11,7 @@ import {
   itemSuppressionEncounterEffectFixture,
   moveListOverlayEncounterEffectFixture,
   numericEncounterEffectFixture,
+  transformationEncounterEffectFixture,
 } from '../fixtures/moveAutomation/encounterEffects'
 
 describe('typed encounter effects', () => {
@@ -21,6 +22,7 @@ describe('typed encounter effects', () => {
       capabilityEncounterEffectFixture(),
       itemSuppressionEncounterEffectFixture(),
       moveListOverlayEncounterEffectFixture(),
+      transformationEncounterEffectFixture(),
     ]
     const parsed = parseEncounterEffects(structuredClone(input))
 
@@ -216,6 +218,46 @@ describe('typed encounter effects', () => {
       ...add,
       affected: { placementIds: [], sideIds: [], cells: [{ x: 1, y: 0, z: 1 }] },
     })).toThrow('move-list overlays must target at least one placement or side')
+  })
+
+  it('accepts only complete self-owned reversible transformation snapshots', () => {
+    const transformation = transformationEncounterEffectFixture()
+    const parsed = parseEncounterEffect(transformation)
+
+    expect(parsed).toEqual(transformation)
+    expect(() => parseEncounterEffect({
+      ...transformation,
+      duration: { kind: 'permanent', remaining: null },
+    })).toThrow('transformations must last for the scene')
+    expect(() => parseEncounterEffect({
+      ...transformation,
+      transferPolicy: 'retain',
+    })).toThrow('transformations must explicitly expire on switch')
+    expect(() => parseEncounterEffect({
+      ...transformation,
+      affected: { placementIds: ['other-token'], sideIds: [], cells: [] },
+    })).toThrow('a transformation must directly affect only its source placement')
+    expect(() => parseEncounterEffect({
+      ...transformation,
+      payload: { ...transformation.payload, copiedFromPlacementId: 'actor-token' },
+    })).toThrow('must differ from the transforming source placement')
+    expect(() => parseEncounterEffect({
+      ...transformation,
+      payload: {
+        ...transformation.payload,
+        moves: [
+          ...transformation.payload.moves,
+          { canonicalMoveId: 'tackle', copiedSpecHash: '3'.repeat(64) },
+        ],
+      },
+    })).toThrow('must not contain duplicate values')
+    expect(() => parseEncounterEffects([
+      transformation,
+      {
+        ...transformation,
+        id: 'effect.transformation.actor-token.second',
+      },
+    ])).toThrow('cannot have more than one transformation snapshot')
   })
 
   it('accepts bounded valued capability grants and rejects valued suppressions', () => {

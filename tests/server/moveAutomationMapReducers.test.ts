@@ -29,6 +29,7 @@ import type { TrainerSheet } from '~/types/trainerSheet'
 import {
   capabilityEncounterEffectFixture,
   moveListOverlayEncounterEffectFixture,
+  transformationEncounterEffectFixture,
 } from '../fixtures/moveAutomation/encounterEffects'
 
 const placement = (id: string, sheetSlug: string, x: number): SheetPlacement => ({
@@ -534,6 +535,49 @@ describe('MoveSpec map, usage, and log reducers', () => {
     expect(removed.operationResults[0]).toMatchObject({
       outcome: 'applied',
       details: { action: 'remove', transitionKinds: ['removed'] },
+    })
+  })
+
+  it('materializes a server-snapshotted transformation without a sheet write', () => {
+    const transformation = transformationEncounterEffectFixture()
+    const add = emission(operation('operation.transform', 'temporary-effect', {
+      action: 'add',
+      effectId: transformation.id,
+      definition: {
+        kind: transformation.kind,
+        duration: transformation.duration,
+        stacks: transformation.stacks,
+        charges: transformation.charges,
+        stackPolicy: transformation.stackPolicy,
+        chargePolicy: transformation.chargePolicy,
+        tags: transformation.tags,
+        payload: transformation.payload,
+        dispel: transformation.dispel,
+        transferPolicy: transformation.transferPolicy,
+      },
+    }, 'schedule', 'actor'), ['actor-token'])
+
+    const result = reduce({ operations: [add] })
+
+    expect(result.nextMap.encounterState?.effects).toEqual([
+      expect.objectContaining({
+        id: transformation.id,
+        kind: 'transformation',
+        source: {
+          operationId: 'operation.transform',
+          moveId: 'move.reducer-test',
+          placementId: 'actor-token',
+        },
+        affected: { placementIds: ['actor-token'], sideIds: [], cells: [] },
+        payload: transformation.payload,
+        transferPolicy: 'expire',
+      }),
+    ])
+    expect(result.stateChanges.groups.sheets).toEqual([])
+    expect(result.stateChanges.groups.encounter).toHaveLength(1)
+    expect(result.operationResults[0]).toMatchObject({
+      outcome: 'applied',
+      details: { transitionKinds: ['added'] },
     })
   })
 

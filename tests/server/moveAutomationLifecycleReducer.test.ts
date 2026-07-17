@@ -27,6 +27,7 @@ import {
   capabilityEncounterEffectFixture,
   conditionEncounterEffectFixture,
   numericEncounterEffectFixture,
+  transformationEncounterEffectFixture,
 } from '../fixtures/moveAutomation/encounterEffects'
 
 const effectFrom = (
@@ -113,6 +114,27 @@ const moveCompletedEvent = (
   outcome: 'hit',
   succeeded: true,
   branches: [],
+})
+
+const moveKoEvent = (
+  eventId: string,
+  targetPlacementId: string,
+): EncounterEvent => parseEncounterEvent({
+  ...eventEnvelope('move-ko', eventId),
+  move: lifecycleMoveIdentity(),
+  targetPlacementId,
+  hitIndex: 1,
+})
+
+const switchEvent = (eventId: string): EncounterEvent => parseEncounterEvent({
+  ...eventEnvelope('switch', eventId),
+  recalledPlacementId: 'actor-token',
+  sentOutPlacementId: 'replacement-token',
+})
+
+const sceneEndEvent = (eventId: string): EncounterEvent => parseEncounterEvent({
+  ...eventEnvelope('scene-end', eventId),
+  sceneId: 'scene.transformation-test',
 })
 
 const logOperation = (
@@ -245,6 +267,45 @@ describe('pure encounter lifecycle reducer', () => {
     expect(Object.isFrozen(first.state)).toBe(true)
     expect(Object.isFrozen(first.trace)).toBe(true)
     expect(Object.isFrozen(first.trace[0])).toBe(true)
+  })
+
+  it('ends reversible transformations on user KO, switch, or scene end only', () => {
+    const transformation = transformationEncounterEffectFixture()
+    const state = stateWithEffects([transformation])
+    const before = structuredClone(state)
+
+    const copiedTargetKo = reduceEncounterLifecycle(
+      state,
+      [moveKoEvent('event.ko.copied-target', 'target-token')],
+    )
+    const userKo = reduceEncounterLifecycle(
+      state,
+      [moveKoEvent('event.ko.transform-user', 'actor-token')],
+    )
+    const switched = reduceEncounterLifecycle(
+      state,
+      [switchEvent('event.switch.transform-user')],
+    )
+    const sceneEnded = reduceEncounterLifecycle(
+      state,
+      [sceneEndEvent('event.scene-end.transform-user')],
+    )
+
+    expect(copiedTargetKo.state.effects).toEqual([transformation])
+    expect(copiedTargetKo.transitions).toEqual([])
+    for (const result of [userKo, switched, sceneEnded]) {
+      expect(result.state.effects).toEqual([])
+      expect(result.transitions).toHaveLength(1)
+      expect(result.transitions[0]?.transition).toMatchObject({
+        effectId: transformation.id,
+        kind: expect.stringMatching(/removed|expired/),
+        current: null,
+      })
+    }
+    expect(userKo.transitions[0]?.transition.reasonCode).toBe('effect-explicitly-removed')
+    expect(switched.transitions[0]?.transition.reasonCode).toBe('effect-explicitly-removed')
+    expect(sceneEnded.transitions[0]?.transition.reasonCode).toBe('effect-duration-expired')
+    expect(state).toEqual(before)
   })
 
   it('consumes exact active-effect charges and enqueues only parsed typed operations', () => {

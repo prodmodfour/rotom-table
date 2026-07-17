@@ -57,8 +57,9 @@ export * from './moveHistoryMetadata'
  * round/scene lifecycle, and MA-143A added immutable Magic Room, Gravity, and
  * side-owned Tailwind query projections, and MA-144 made exact Barrier and
  * Smokescreen geometry authoritative for sight, movement, damage, and Accuracy,
- * MA-151 added bounded map-owned ground-item state, and MA-158 added canonical
- * scene move-use provenance and completion-order queries.
+ * MA-151 added bounded map-owned ground-item state, MA-158 added canonical
+ * scene move-use provenance and completion-order queries, and MA-164 added
+ * reload-safe reversible creature-form snapshots.
  * Legacy editor hazards and the field-effect renderer
  * arrays remain compatibility lanes until their migration tickets; server zone
  * queries and accepted field boundaries adapt/mirror them without applying a

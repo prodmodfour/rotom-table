@@ -91,6 +91,8 @@ export interface NativeMoveSpecResolutionProjection {
   readonly operations: readonly MoveSpecEmittedOperation[]
   readonly childExecutions: readonly MoveSpecChildExecution[]
   readonly dynamicRecipients: MoveCoreTokenDynamicRecipientSets
+  /** Every server-resolved KO recipient, including a self-KO actor. */
+  readonly faintedPlacementIds: readonly string[]
   readonly coreStateChanges: MoveStateChangePlan
   readonly permanentMoveListStateChanges: MoveStateChangePlan
   readonly itemEffects: InterpretedMoveItemEffects
@@ -861,6 +863,7 @@ export const reduceCompletedMoveSpec = (
       operations: uncommittedOperations,
       childExecutions: execution.childExecutions,
       dynamicRecipients: Object.freeze(dynamicRecipients),
+      faintedPlacementIds: Object.freeze([...faintedSet]),
       coreStateChanges: multiHit?.stateChanges ?? core.stateChanges,
       permanentMoveListStateChanges: permanentMoveLists.stateChanges,
       itemEffects,

@@ -1,4 +1,9 @@
 import type { EncounterSideId } from './encounterState'
+import {
+  EncounterTransformationValidationError,
+  parseEncounterTransformationEffectPayload,
+  type EncounterTransformationEffectPayload,
+} from './transformationSnapshots'
 
 /** Closed storage-level effect kinds. New mechanic families must add a typed payload here. */
 export const ENCOUNTER_EFFECT_KINDS = [
@@ -7,6 +12,7 @@ export const ENCOUNTER_EFFECT_KINDS = [
   'capability',
   'item-suppression',
   'move-list-overlay',
+  'transformation',
 ] as const
 
 export const ENCOUNTER_EFFECT_DURATION_KINDS = [
@@ -278,6 +284,7 @@ export type EncounterEffectPayload =
   | EncounterCapabilityEffectPayload
   | EncounterItemSuppressionEffectPayload
   | EncounterMoveListOverlayEffectPayload
+  | EncounterTransformationEffectPayload
 
 interface EncounterEffectDefinitionEnvelope<
   Kind extends EncounterEffectKind,
@@ -321,6 +328,11 @@ export type EncounterMoveListOverlayEffectDefinition = EncounterEffectDefinition
   EncounterMoveListOverlayEffectPayload
 >
 
+export type EncounterTransformationEffectDefinition = EncounterEffectDefinitionEnvelope<
+  'transformation',
+  EncounterTransformationEffectPayload
+>
+
 /** Server-owned operations may request only this typed, context-free effect definition. */
 export type EncounterEffectDefinition =
   | EncounterConditionEffectDefinition
@@ -328,6 +340,7 @@ export type EncounterEffectDefinition =
   | EncounterCapabilityEffectDefinition
   | EncounterItemSuppressionEffectDefinition
   | EncounterMoveListOverlayEffectDefinition
+  | EncounterTransformationEffectDefinition
 
 interface EncounterEffectEnvelope<
   Kind extends EncounterEffectKind,
@@ -380,6 +393,11 @@ export type EncounterMoveListOverlayEffect = EncounterEffectEnvelope<
   EncounterMoveListOverlayEffectPayload
 >
 
+export type EncounterTransformationEffect = EncounterEffectEnvelope<
+  'transformation',
+  EncounterTransformationEffectPayload
+>
+
 /**
  * Durable encounter effects are a discriminated union. The `kind` selects one
  * exact payload shape; arbitrary metadata objects are never accepted.
@@ -390,6 +408,7 @@ export type EncounterEffect =
   | EncounterCapabilityEffect
   | EncounterItemSuppressionEffect
   | EncounterMoveListOverlayEffect
+  | EncounterTransformationEffect
 
 export type EncounterEffectValidationCode =
   | 'invalid-encounter-effect'
@@ -1150,6 +1169,64 @@ const parseMoveListOverlayPayload = (
   }
 }
 
+const parseTransformationPayload = (
+  value: unknown,
+  path: string,
+): EncounterTransformationEffectPayload => {
+  try {
+    return parseEncounterTransformationEffectPayload(value, path)
+  }
+  catch (error) {
+    if (error instanceof EncounterTransformationValidationError) {
+      return fail(
+        error.code === 'limit-exceeded'
+          ? 'limit-exceeded'
+          : error.code === 'duplicate-id'
+            ? 'duplicate-id'
+            : 'invalid-encounter-effect',
+        error.path,
+        error.detail,
+      )
+    }
+    throw error
+  }
+}
+
+const assertTransformationLifecyclePolicy = (
+  common: ParsedEncounterEffectDefinitionCommon | ParsedEncounterEffectCommon,
+  path: string,
+): void => {
+  if (common.duration.kind !== 'scene') {
+    fail('invalid-encounter-effect', `${path}.duration`, 'transformations must last for the scene.')
+  }
+  if (
+    common.stacks !== 1
+    || common.charges !== null
+    || common.stackPolicy.kind !== 'replace'
+    || common.chargePolicy.kind !== 'none'
+  ) {
+    fail(
+      'invalid-encounter-effect',
+      path,
+      'transformations require one stack, no charges, replace stacking, and no charge consumption.',
+    )
+  }
+  if (common.transferPolicy !== 'expire') {
+    fail(
+      'invalid-encounter-effect',
+      `${path}.transferPolicy`,
+      'transformations must explicitly expire on switch.',
+    )
+  }
+  if (common.dispel.policy !== 'none') {
+    fail(
+      'invalid-encounter-effect',
+      `${path}.dispel`,
+      'transformations end only through typed cancellation or lifecycle cleanup.',
+    )
+  }
+}
+
 type ParsedEncounterEffectDefinitionCommon = Omit<
   EncounterEffectDefinitionEnvelope<EncounterEffectKind, never>,
   'kind' | 'payload'
@@ -1287,6 +1364,11 @@ export const parseEncounterEffectDefinition = (
         kind,
         parseMoveListOverlayPayload(definition.payload, `${path}.payload`),
       )
+    case 'transformation': {
+      const payload = parseTransformationPayload(definition.payload, `${path}.payload`)
+      assertTransformationLifecyclePolicy(common, path)
+      return definitionWithPayload(common, kind, payload)
+    }
   }
 }
 
@@ -1383,6 +1465,30 @@ export const parseEncounterEffect = (
         parseMoveListOverlayPayload(effect.payload, `${path}.payload`),
       )
     }
+    case 'transformation': {
+      const payload = parseTransformationPayload(effect.payload, `${path}.payload`)
+      assertTransformationLifecyclePolicy(common, path)
+      if (
+        common.affected.placementIds.length !== 1
+        || common.affected.placementIds[0] !== common.source.placementId
+        || common.affected.sideIds.length > 0
+        || common.affected.cells.length > 0
+      ) {
+        fail(
+          'invalid-encounter-effect',
+          `${path}.affected`,
+          'a transformation must directly affect only its source placement.',
+        )
+      }
+      if (payload.copiedFromPlacementId === common.source.placementId) {
+        fail(
+          'invalid-encounter-effect',
+          `${path}.payload.copiedFromPlacementId`,
+          'must differ from the transforming source placement.',
+        )
+      }
+      return effectWithPayload(common, kind, payload)
+    }
   }
 }
 
@@ -1396,6 +1502,7 @@ export const parseEncounterEffects = (
   assertUnique(effects.map(effect => effect.id), `${path}.id`)
 
   const effectIds = new Set(effects.map(effect => effect.id))
+  const transformedPlacementIds = new Set<string>()
   effects.forEach((effect, effectIndex) => {
     effect.suppression.sources.forEach((source, sourceIndex) => {
       const sourcePath = `${path}[${effectIndex}].suppression.sources[${sourceIndex}].effectId`
@@ -1406,6 +1513,16 @@ export const parseEncounterEffects = (
         fail('invalid-encounter-effect', sourcePath, `references unknown effect ${source.effectId}.`)
       }
     })
+    if (effect.kind !== 'transformation') return
+    const placementId = effect.affected.placementIds[0]!
+    if (transformedPlacementIds.has(placementId)) {
+      fail(
+        'duplicate-id',
+        `${path}[${effectIndex}].affected.placementIds[0]`,
+        `placement ${placementId} cannot have more than one transformation snapshot.`,
+      )
+    }
+    transformedPlacementIds.add(placementId)
   })
 
   return effects

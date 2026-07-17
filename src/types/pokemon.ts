@@ -1,4 +1,5 @@
 import type { CombatStageMap } from '~/types/combatStages'
+import type { EncounterTransformationCapabilitySnapshot } from '#shared/moveAutomation/transformationSnapshots'
 import type {
   EffectiveMovementProfile,
   MovementCapabilitySpeeds,
@@ -259,6 +260,16 @@ export interface SpawnedPokemon extends PokemonCatalogEntry {
   accuracyRollBonus?: number
   /** Defender's types (sheet override > species default; empty for trainers). */
   defenderTypes: string[]
+  /** Current authoritative Weight Class after any reversible form projection. */
+  weightClass?: number
+  /** Complete copied-capability base used by Transform and future creature overlays. */
+  ruleCapabilities?: EncounterTransformationCapabilitySnapshot
+  /** Active reversible form provenance; identity and persistent state remain sheet-owned. */
+  transformation?: {
+    effectId: string
+    copiedFromPlacementId: string
+    appearanceSpecies: string
+  }
   /** Effective Movement Capability speeds used for map Shift movement validation. */
   movementCapabilities?: MovementCapabilitySpeeds
   /** Effective non-speed movement capabilities used by route and mode queries. */

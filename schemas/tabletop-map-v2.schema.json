@@ -336,7 +336,7 @@
       "additionalProperties": false,
       "properties": {
         "id": { "$ref": "#/$defs/encounterEffectStableId" },
-        "kind": { "enum": ["condition", "numeric-modifier", "capability", "item-suppression", "move-list-overlay"] },
+        "kind": { "enum": ["condition", "numeric-modifier", "capability", "item-suppression", "move-list-overlay", "transformation"] },
         "source": { "$ref": "#/$defs/encounterEffectSource" },
         "affected": { "$ref": "#/$defs/encounterEffectAffected" },
         "createdRound": { "type": "integer", "minimum": 1, "maximum": 1000000 },
@@ -377,6 +377,45 @@
         {
           "if": { "properties": { "kind": { "const": "move-list-overlay" } }, "required": ["kind"] },
           "then": { "properties": { "payload": { "$ref": "#/$defs/encounterMoveListOverlayEffectPayload" } } }
+        },
+        {
+          "if": { "properties": { "kind": { "const": "transformation" } }, "required": ["kind"] },
+          "then": {
+            "required": ["stackPolicy", "chargePolicy", "transferPolicy"],
+            "properties": {
+              "duration": {
+                "type": "object",
+                "required": ["kind", "remaining"],
+                "additionalProperties": false,
+                "properties": {
+                  "kind": { "const": "scene" },
+                  "remaining": { "type": "null" }
+                }
+              },
+              "stacks": { "const": 1 },
+              "charges": { "type": "null" },
+              "stackPolicy": {
+                "type": "object",
+                "required": ["kind", "maxStacks"],
+                "additionalProperties": false,
+                "properties": {
+                  "kind": { "const": "replace" },
+                  "maxStacks": { "type": "null" }
+                }
+              },
+              "chargePolicy": {
+                "type": "object",
+                "required": ["kind", "amount"],
+                "additionalProperties": false,
+                "properties": {
+                  "kind": { "const": "none" },
+                  "amount": { "type": "null" }
+                }
+              },
+              "transferPolicy": { "const": "expire" },
+              "payload": { "$ref": "#/$defs/encounterTransformationEffectPayload" }
+            }
+          }
         }
       ]
     },
@@ -660,6 +699,149 @@
           }
         }
       ]
+    },
+    "encounterTransformationEffectPayload": {
+      "type": "object",
+      "required": ["copiedFromPlacementId", "moves", "typeIds", "abilityNames", "weightClass", "capabilities", "appearance"],
+      "additionalProperties": false,
+      "properties": {
+        "copiedFromPlacementId": { "$ref": "#/$defs/encounterEffectStableId" },
+        "moves": {
+          "type": "array",
+          "maxItems": 64,
+          "items": { "$ref": "#/$defs/encounterTransformationMove" }
+        },
+        "typeIds": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 4,
+          "uniqueItems": true,
+          "items": { "type": "string", "minLength": 1, "maxLength": 160 }
+        },
+        "abilityNames": {
+          "type": "array",
+          "maxItems": 32,
+          "uniqueItems": true,
+          "items": { "type": "string", "minLength": 1, "maxLength": 160 }
+        },
+        "weightClass": { "type": "integer", "minimum": 1, "maximum": 1000000 },
+        "capabilities": { "$ref": "#/$defs/encounterTransformationCapabilities" },
+        "appearance": { "$ref": "#/$defs/encounterTransformationAppearance" }
+      }
+    },
+    "encounterTransformationMove": {
+      "type": "object",
+      "required": ["canonicalMoveId", "copiedSpecHash"],
+      "additionalProperties": false,
+      "properties": {
+        "canonicalMoveId": { "$ref": "#/$defs/encounterEffectCanonicalMoveId" },
+        "copiedSpecHash": { "$ref": "#/$defs/encounterEffectSpecHash" }
+      }
+    },
+    "encounterTransformationCapabilities": {
+      "type": "object",
+      "required": ["movementSpeeds", "movementTraits", "power", "size", "naturewalk", "other"],
+      "additionalProperties": false,
+      "properties": {
+        "movementSpeeds": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "overland": { "type": "integer", "minimum": 0, "maximum": 1000000 },
+            "sky": { "type": "integer", "minimum": 0, "maximum": 1000000 },
+            "swim": { "type": "integer", "minimum": 0, "maximum": 1000000 },
+            "levitate": { "type": "integer", "minimum": 0, "maximum": 1000000 },
+            "burrow": { "type": "integer", "minimum": 0, "maximum": 1000000 },
+            "climb": { "type": "integer", "minimum": 0, "maximum": 1000000 },
+            "teleporter": { "type": "integer", "minimum": 0, "maximum": 1000000 }
+          }
+        },
+        "movementTraits": {
+          "type": "object",
+          "required": ["phasing", "jump"],
+          "additionalProperties": false,
+          "properties": {
+            "phasing": { "type": "boolean" },
+            "jump": {
+              "type": "object",
+              "required": ["long", "high"],
+              "additionalProperties": false,
+              "properties": {
+                "long": { "type": "integer", "minimum": 0, "maximum": 1000000 },
+                "high": { "type": "integer", "minimum": 0, "maximum": 1000000 }
+              }
+            }
+          }
+        },
+        "power": { "type": ["integer", "null"], "minimum": 0, "maximum": 1000000 },
+        "size": { "type": ["string", "null"], "maxLength": 160 },
+        "naturewalk": { "type": ["string", "null"], "maxLength": 160 },
+        "other": {
+          "type": "array",
+          "maxItems": 64,
+          "uniqueItems": true,
+          "items": { "type": "string", "minLength": 1, "maxLength": 160 }
+        }
+      }
+    },
+    "encounterTransformationAppearance": {
+      "type": "object",
+      "required": ["species", "size", "width", "height", "base", "clearance", "slug", "spriteUrl", "profileSpriteUrl", "backSpriteUrl", "spriteAnimation", "backSpriteAnimation", "spriteCrop"],
+      "additionalProperties": false,
+      "properties": {
+        "species": { "type": "string", "minLength": 1, "maxLength": 160 },
+        "size": { "type": "string", "minLength": 1, "maxLength": 160 },
+        "width": { "type": "number", "exclusiveMinimum": 0, "maximum": 1000000 },
+        "height": { "type": "number", "exclusiveMinimum": 0, "maximum": 1000000 },
+        "base": { "type": "number", "exclusiveMinimum": 0, "maximum": 1000000 },
+        "clearance": { "type": "number", "exclusiveMinimum": 0, "maximum": 1000000 },
+        "slug": { "$ref": "#/$defs/encounterEffectStableId" },
+        "spriteUrl": { "$ref": "#/$defs/encounterTransformationAssetPath" },
+        "profileSpriteUrl": { "anyOf": [{ "$ref": "#/$defs/encounterTransformationAssetPath" }, { "type": "null" }] },
+        "backSpriteUrl": { "anyOf": [{ "$ref": "#/$defs/encounterTransformationAssetPath" }, { "type": "null" }] },
+        "spriteAnimation": { "anyOf": [{ "$ref": "#/$defs/encounterTransformationAnimation" }, { "type": "null" }] },
+        "backSpriteAnimation": { "anyOf": [{ "$ref": "#/$defs/encounterTransformationAnimation" }, { "type": "null" }] },
+        "spriteCrop": { "anyOf": [{ "$ref": "#/$defs/encounterTransformationCrop" }, { "type": "null" }] }
+      }
+    },
+    "encounterTransformationAssetPath": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 500,
+      "pattern": "^/(?!/)[^\\\\\\u0000-\\u001f\\u007f]*$"
+    },
+    "encounterTransformationAnimation": {
+      "type": "object",
+      "required": ["url", "frameWidth", "frameHeight", "frames", "columns", "rows", "durationsMs", "totalDurationMs"],
+      "additionalProperties": false,
+      "properties": {
+        "url": { "$ref": "#/$defs/encounterTransformationAssetPath" },
+        "frameWidth": { "type": "integer", "minimum": 1, "maximum": 4096 },
+        "frameHeight": { "type": "integer", "minimum": 1, "maximum": 4096 },
+        "frames": { "type": "integer", "minimum": 1, "maximum": 512 },
+        "columns": { "type": "integer", "minimum": 1, "maximum": 4096 },
+        "rows": { "type": "integer", "minimum": 1, "maximum": 4096 },
+        "durationsMs": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 512,
+          "items": { "type": "integer", "minimum": 1, "maximum": 3600000 }
+        },
+        "totalDurationMs": { "type": "integer", "minimum": 1, "maximum": 3600000 }
+      }
+    },
+    "encounterTransformationCrop": {
+      "type": "object",
+      "required": ["canvasWidth", "canvasHeight", "left", "top", "width", "height"],
+      "additionalProperties": false,
+      "properties": {
+        "canvasWidth": { "type": "number", "exclusiveMinimum": 0, "maximum": 1000000 },
+        "canvasHeight": { "type": "number", "exclusiveMinimum": 0, "maximum": 1000000 },
+        "left": { "type": "number", "minimum": 0, "maximum": 1000000 },
+        "top": { "type": "number", "minimum": 0, "maximum": 1000000 },
+        "width": { "type": "number", "exclusiveMinimum": 0, "maximum": 1000000 },
+        "height": { "type": "number", "exclusiveMinimum": 0, "maximum": 1000000 }
+      }
     },
     "encounterZone": {
       "type": "object",

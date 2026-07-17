@@ -34,6 +34,7 @@ import {
 } from './fieldLifecycle'
 import { reduceEncounterHistoryEvent } from './reduceEncounterHistory'
 import { reduceEncounterResourceEvent } from './reduceEncounterResources'
+import { transformationEffectIdsEndedByEvent } from './transformationLifecycle'
 
 /**
  * Hard ceilings for one pure lifecycle reduction.
@@ -543,6 +544,18 @@ export const reduceEncounterLifecycle = (
     // Scene-end handlers query outgoing history/resources before both clear.
     // Every other fact updates its structured indexes before handlers observe it.
     if (event.kind !== 'scene-end') applyIndexedStateEvent(event)
+
+    for (const effectId of transformationEffectIdsEndedByEvent({
+      effects: state.effects,
+      event,
+    })) {
+      applyEffectEvent(
+        event,
+        depth,
+        { kind: 'effect-removed', effectId },
+        eventTransitions,
+      )
+    }
 
     for (const handler of handlers) {
       const context = deepFreeze({

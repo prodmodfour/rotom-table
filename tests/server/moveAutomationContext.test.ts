@@ -23,6 +23,9 @@ import type { TrainerSheet } from '~/types/trainerSheet'
 import { EXPLICIT_MOVE_AUTOMATION_SCRIPTS } from '~/utils/move-automation/registry'
 import { MOVE_AUTOMATION_RUNTIME_REGISTRY } from '~~/server/domain/moveAutomation/registry'
 import { moveListOverlayEncounterEffectFixture } from '../fixtures/moveAutomation/encounterEffects'
+import {
+  snapshotAuthoritativeEncounterTransformation,
+} from '~~/server/domain/moveAutomation/transformationSnapshot'
 
 const placement = (
   id: string,
@@ -162,6 +165,57 @@ const buildContext = (overrides: {
 })
 
 describe('immutable authoritative move rules context', () => {
+  it('snapshots a complete reviewed transformation form and records its target sheet read', () => {
+    const target = pokemonSheet('target', {
+      revision: 5,
+      species: 'Snorlax',
+      types: ['Normal'],
+      abilities: [{ name: 'Thick Fat' }, { name: 'Immunity' }],
+      movelist: [{ name: 'Tackle' }, { name: 'Growl' }],
+      capabilities: { overland: 4, power: 11, weight: 5, size: 'Large', other: ['Tracker'] },
+    })
+    const context = buildContext({
+      pokemonSheets: new Map([
+        ['actor', pokemonSheet('actor')],
+        ['target', target],
+        ['ally', pokemonSheet('ally')],
+      ]),
+    })
+    const before = structuredClone(target)
+
+    const snapshot = snapshotAuthoritativeEncounterTransformation({
+      context,
+      targetPlacementId: 'target-token',
+    })
+
+    expect(snapshot).toMatchObject({
+      copiedFromPlacementId: 'target-token',
+      moves: [
+        { canonicalMoveId: 'Struggle', copiedSpecHash: expect.stringMatching(/^[a-f0-9]{64}$/) },
+        { canonicalMoveId: 'Tackle', copiedSpecHash: expect.stringMatching(/^[a-f0-9]{64}$/) },
+        { canonicalMoveId: 'Growl', copiedSpecHash: expect.stringMatching(/^[a-f0-9]{64}$/) },
+      ],
+      typeIds: ['normal'],
+      abilityNames: ['Thick Fat', 'Immunity'],
+      weightClass: 5,
+      capabilities: {
+        movementSpeeds: { overland: 4 },
+        power: 11,
+        size: 'Large',
+        other: ['Tracker'],
+      },
+      appearance: {
+        species: 'Snorlax',
+        slug: 'snorlax',
+      },
+    })
+    expect(context.reads.snapshot()).toEqual([
+      { kind: 'pokemon', slug: 'target', revision: 5 },
+    ])
+    expect(target).toEqual(before)
+    expect(Object.isFrozen(context.actor.token)).toBe(true)
+  })
+
   it('detaches and freezes map, actor, placement, sheet, ruleset, and query snapshots', () => {
     const map = mapFixture()
     const actor = pokemonSheet('actor')

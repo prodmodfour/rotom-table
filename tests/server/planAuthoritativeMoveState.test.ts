@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { LIVE_PLAY_MOVE_RESOLUTION_SCHEMA_VERSION, type ResolveMoveIntent } from '#shared/livePlayMoveResolution'
+import { parseEncounterEffect } from '#shared/moveAutomation/encounterEffects'
+import { createEmptyEncounterState } from '#shared/moveAutomation/encounterState'
 import { planAuthoritativeMoveState } from '../../server/domain/planAuthoritativeMoveState'
 import { AuthoritativeMoveResolutionError } from '../../server/domain/resolveAuthoritativeMove'
 import { EXPLICIT_MOVE_AUTOMATION_SCRIPTS } from '~/utils/moveAutomation'
@@ -9,6 +11,7 @@ import type { CharacterSheet, CharacterSheetMove } from '~/types/characterSheet'
 import type { GridAnchor, SheetPlacement, TabletopMap } from '~/types/map'
 import type { MoveAutomationAreaTemplate, MoveAutomationScript } from '~/types/moveAutomation'
 import type { TrainerSheet } from '~/types/trainerSheet'
+import { transformationEncounterEffectFixture } from '../fixtures/moveAutomation/encounterEffects'
 
 const moveIntent = (overrides: Omit<ResolveMoveIntent, 'schemaVersion'>): ResolveMoveIntent => ({
   schemaVersion: LIVE_PLAY_MOVE_RESOLUTION_SCHEMA_VERSION,
@@ -301,6 +304,116 @@ describe('planAuthoritativeMoveState', () => {
       ]))
       expect(map.encounterState?.effects ?? []).toEqual([])
     })
+  })
+
+  it('removes a target transformation atomically when a legacy move knocks its user out', () => {
+    const transformation = parseEncounterEffect({
+      ...transformationEncounterEffectFixture(),
+      id: 'effect.transformation.target-token',
+      source: {
+        ...transformationEncounterEffectFixture().source,
+        placementId: 'target-token',
+      },
+      affected: { placementIds: ['target-token'], sideIds: [], cells: [] },
+      payload: {
+        ...transformationEncounterEffectFixture().payload,
+        copiedFromPlacementId: 'actor-token',
+      },
+    })
+    const map = mapFixture({
+      encounterState: {
+        ...createEmptyEncounterState(),
+        effects: [transformation],
+      },
+    })
+    const sheets = pokemonSheets([{ name: 'Tackle' }], {
+      target: pokemonSheet('target', [], {
+        nickname: 'Target',
+        species: 'Snorlax',
+        level: 30,
+        combat: { currentHp: 1 },
+      }),
+    })
+
+    const plan = planAuthoritativeMoveState({
+      map,
+      pokemonSheets: sheets,
+      trainerSheets: new Map<string, TrainerSheet>(),
+      intent: moveIntent({
+        placementId: 'actor-token',
+        moveName: 'Tackle',
+        selection: { kind: 'single-target', targetPlacementId: 'target-token' },
+      }),
+      random: randomSequence([0.5, 0.5]),
+      now: () => 1000,
+    })
+
+    expect(plan.resolution.transaction.hpUpdates).toEqual([
+      expect.objectContaining({ id: 'target-token' }),
+    ])
+    expect(plan.resolution.transaction.hpUpdates[0]!.currentHp).toBeLessThanOrEqual(0)
+    expect(plan.nextMap.encounterState?.effects).toEqual([])
+    expect(plan.mapChanges.encounterState).toMatchObject({
+      previous: { effects: [expect.objectContaining({ id: transformation.id })] },
+      current: { effects: [] },
+    })
+    expect(map.encounterState?.effects).toEqual([transformation])
+    expect((sheets.get('target')?.combat?.currentHp)).toBe(1)
+  })
+
+  it('removes a target transformation when native v2 direct HP loss knocks its user out', () => {
+    const transformation = parseEncounterEffect({
+      ...transformationEncounterEffectFixture(),
+      id: 'effect.transformation.target-token.native',
+      source: {
+        ...transformationEncounterEffectFixture().source,
+        placementId: 'target-token',
+      },
+      affected: { placementIds: ['target-token'], sideIds: [], cells: [] },
+      payload: {
+        ...transformationEncounterEffectFixture().payload,
+        copiedFromPlacementId: 'actor-token',
+      },
+    })
+    const map = mapFixture({
+      encounterState: {
+        ...createEmptyEncounterState(),
+        effects: [transformation],
+      },
+    })
+    const sheets = pokemonSheets([{ name: 'Dragon Rage' }], {
+      target: pokemonSheet('target', [], {
+        nickname: 'Target',
+        species: 'Snorlax',
+        level: 30,
+        combat: { currentHp: 1 },
+      }),
+    })
+
+    const plan = planAuthoritativeMoveState({
+      map,
+      pokemonSheets: sheets,
+      trainerSheets: new Map<string, TrainerSheet>(),
+      intent: moveIntent({
+        placementId: 'actor-token',
+        moveName: 'Dragon Rage',
+        selection: { kind: 'single-target', targetPlacementId: 'target-token' },
+      }),
+      random: randomSequence([0.5]),
+      now: () => 1001,
+    })
+
+    expect(plan.resolution.script).toMatchObject({ moveName: 'Dragon Rage', version: 2 })
+    expect(plan.resolution.transaction.hpUpdates).toEqual([
+      expect.objectContaining({ id: 'target-token' }),
+    ])
+    expect(plan.resolution.transaction.hpUpdates[0]!.currentHp).toBeLessThanOrEqual(0)
+    expect(plan.nextMap.encounterState?.effects).toEqual([])
+    expect(plan.stateChanges.changes).toEqual(expect.arrayContaining([
+      expect.objectContaining({ kind: 'encounter-state' }),
+      expect.objectContaining({ kind: 'sheet-state' }),
+    ]))
+    expect(map.encounterState?.effects).toEqual([transformation])
   })
 
   it('produces one target sheet write for a single-target HP move and keeps temporary HP map-local', () => {

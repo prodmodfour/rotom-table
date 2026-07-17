@@ -25,6 +25,8 @@ import {
 import { temporaryHpForPlacement } from '~/utils/mapTemporaryHitPoints'
 import { projectEffectiveConditions } from '~/utils/encounterConditions'
 import { projectEffectiveMovement } from '~/utils/encounterMovement'
+import { projectEncounterTransformationToken } from '~/utils/encounterTransformations'
+import { resolvePokemonRuleCapabilityProjection } from '~/utils/pokemonRuleCapabilities'
 import {
   pokemonSheetConditionNames,
   trainerSheetConditionNames,
@@ -204,7 +206,12 @@ export const placementToSpawned = (
     const defenderCapabilities = defenderCapabilitiesForMovement(movement)
     const abilityNames = pokemonTokenAbilityNames(sheet)
     const accentColor = trainerAccentColorForPokemonSlug(sheets.trainer.values(), sheet.slug)
-    return {
+    const ruleCapabilities = resolvePokemonRuleCapabilityProjection({
+      sheet,
+      movementSpeeds: movement.speeds,
+      movementTraits: movement.traits,
+    })
+    const baseToken: SpawnedPokemon = {
       ...catalog,
       species: sheet.nickname,
       id: placement.id,
@@ -232,6 +239,10 @@ export const placementToSpawned = (
       ...(hp.activeTrainingFeature ? { activeTrainingFeature: hp.activeTrainingFeature } : {}),
       ...(hp.accuracyRollBonus ? { accuracyRollBonus: hp.accuracyRollBonus } : {}),
       defenderTypes: hp.defenderTypes,
+      ...(ruleCapabilities.weightClass === null
+        ? {}
+        : { weightClass: ruleCapabilities.weightClass }),
+      ruleCapabilities: ruleCapabilities.capabilities,
       movementCapabilities: movement.speeds,
       movementTraits: movement.traits,
       movementProfile: movement,
@@ -244,6 +255,11 @@ export const placementToSpawned = (
       conditions: hp.conditions,
       tokenItems: pokemonHeldItemNames(sheet),
     }
+    return projectEncounterTransformationToken({
+      placement,
+      token: baseToken,
+      effects: map?.encounterState?.effects,
+    })
   }
   const sheet = sheets.trainer.get(placement.sheetSlug)
   if (!sheet) return null

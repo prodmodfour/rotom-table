@@ -19,6 +19,7 @@ A map stores the state the tabletop needs to render and run a scene:
 - field effects such as weather, terrain, and rooms
 - light placements
 - initiative round/current-turn state
+- reversible encounter transformation snapshots that project copied form data without mutating either Pokémon sheet
 
 The map renderer and map editor treat the SQLite document as the source of truth for table play in both Prepare Map and Run Live Play. During player play, token control is derived from the selected player profile: a player can act with placements whose `sheetKind` and `sheetSlug` match a linked character sheet on that profile.
 
