@@ -2002,7 +2002,7 @@ Status: DONE
 
 ## MA-144 — Implement barriers and smoke zones
 
-Status: DONE
+Status: TODO
 
 **Depends on:** MA-072, MA-077, MA-133
 **Commit:** `feat(move-automation): resolve barriers and smoke`
