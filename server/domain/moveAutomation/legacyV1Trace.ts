@@ -3,6 +3,7 @@ import {
   type MoveSpecPhase,
 } from '#shared/moveAutomation/spec'
 import type { MoveAutomationRollLedgerEntry } from '#shared/moveAutomation/random'
+import type { EncounterConditionEffect } from '#shared/moveAutomation/encounterEffects'
 import type {
   MoveResolutionAuditTrace,
   MoveResolutionAuditTraceEventInput,
@@ -37,6 +38,7 @@ export interface BuildLegacyV1MoveResolutionTraceInput {
   readonly script: MoveAutomationScript
   readonly transaction: MoveAutomationTransaction
   readonly rollLedger: readonly MoveAutomationRollLedgerEntry[]
+  readonly terrainConditionProtectionEffects?: readonly EncounterConditionEffect[]
   readonly feedback?: MoveAutomationFeedbackState
   readonly area?: {
     readonly targetEvaluations: readonly {
@@ -179,6 +181,23 @@ export const buildLegacyV1MoveResolutionTrace = (
       reasonCode: 'legacy-condition-update',
       input: { updateMode: 'absolute-condition-state' },
       result: detachedJson(update),
+    })
+  })
+
+  input.terrainConditionProtectionEffects?.forEach((effect, index) => {
+    queue(effectPhase, {
+      kind: 'operation',
+      phase: effectPhase,
+      operationId: `legacy-v1.terrain-condition-protection.${index + 1}`,
+      operationKind: 'temporary-effect',
+      recipientIds: [...effect.affected.placementIds],
+      outcome: 'applied',
+      reasonCode: 'terrain.misty.first-turn-status-protection',
+      input: {
+        sourceConditionOperationId: effect.source.operationId,
+        terrainKind: 'misty',
+      },
+      result: detachedJson(effect),
     })
   })
 

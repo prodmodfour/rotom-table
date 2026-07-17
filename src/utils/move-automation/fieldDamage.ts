@@ -1,5 +1,6 @@
 import {
-  electricGrassyTerrainDamagePolicy,
+  MOVE_AUTOMATION_TERRAIN_KINDS,
+  terrainDamagePolicy,
 } from '#shared/moveAutomation/terrain'
 import {
   SAND_FORCE_ABILITY_NAME,
@@ -45,7 +46,6 @@ export const fieldEffectDamageContributions = (
 ): readonly FieldEffectDamageContribution[] => {
   const typeId = attackType.trim().toLowerCase()
   const weatherKinds = new Set((fieldEffects?.weather ?? []).map(effect => effect.kind))
-  const terrainKinds = new Set((fieldEffects?.terrains ?? []).map(effect => effect.kind))
   const result: FieldEffectDamageContribution[] = []
 
   for (const weather of ['sunny', 'rainy'] as const) {
@@ -81,35 +81,26 @@ export const fieldEffectDamageContributions = (
     }
   }
 
-  for (const terrain of ['electric', 'grassy'] as const) {
+  for (const terrain of MOVE_AUTOMATION_TERRAIN_KINDS) {
     const effect = (fieldEffects?.terrains ?? []).find(candidate => candidate.kind === terrain)
     if (!effect) continue
-    const policy = electricGrassyTerrainDamagePolicy(terrain, typeId)
+    const policy = terrainDamagePolicy(terrain, typeId)
     if (!policy) continue
+    const label = terrain === 'electric'
+      ? 'Electric Terrain'
+      : terrain === 'grassy'
+        ? 'Grassy Terrain'
+        : terrain === 'misty'
+          ? 'Misty Terrain'
+          : 'Psychic Terrain'
     result.push(contribution(
       `damage.terrain.${terrain}.${policy.typeId}`,
       'field',
       effect.source ?? `terrain.${terrain}`,
       `terrain.${terrain}.damage-roll`,
       policy.reasonCode,
-      terrain === 'electric' ? 'Electric Terrain' : 'Grassy Terrain',
+      label,
       policy.value,
-    ))
-  }
-
-  // Misty/Psychic remain on the aggregate compatibility path until MA-141.
-  let terrainBonus = 0
-  if (terrainKinds.has('psychic') && typeId === 'psychic') terrainBonus += 10
-  if (terrainKinds.has('misty') && typeId === 'dragon') terrainBonus -= 10
-  if (terrainBonus !== 0) {
-    result.push(contribution(
-      'damage.field-roll',
-      'field',
-      'active-field-effects',
-      'field-damage-roll',
-      'damage.field-roll-modifier',
-      'field',
-      terrainBonus,
     ))
   }
 

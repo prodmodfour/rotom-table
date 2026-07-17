@@ -31,9 +31,11 @@ export interface StandardMoveCoreTokenEffectImmunityOptions {
 const decision = (
   blockedBy: string | null,
   consultedPlacementIds: readonly string[] = [],
+  firstTurnConditionProtection: MoveCoreTokenEffectImmunityDecision['firstTurnConditionProtection'] = null,
 ): MoveCoreTokenEffectImmunityDecision => ({
   blockedBy,
   consultedPlacementIds,
+  ...(firstTurnConditionProtection ? { firstTurnConditionProtection } : {}),
 })
 
 const conditionProviderIds = (
@@ -152,10 +154,17 @@ export const createStandardMoveCoreTokenEffectImmunityQueries = (
         recipientId: recipient.placement.id,
         context: options.context,
       })
-      return decision(encounter.blockedBy, [
+      const consultedPlacementIds = [
         ...providerIds,
         ...encounter.consultedPlacementIds.filter(id => !providerIds.includes(id)),
-      ])
+      ]
+      return encounter.blockedBy
+        ? decision(encounter.blockedBy, consultedPlacementIds)
+        : decision(
+            null,
+            consultedPlacementIds,
+            terrain?.firstTurnProtection ?? null,
+          )
     },
     combatStage: ({ stage, delta, recipient }) => decision(
       moveAutomationCombatStageBlockSource({

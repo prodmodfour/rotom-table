@@ -201,6 +201,14 @@ export const normalizeConditionName = (raw: unknown): string | null => {
 
 export const conditionBaseName = (raw: unknown): string | null => normalizeConditionName(raw)
 
+/** Persistent and Volatile categories are PTU Status Afflictions; Other is not. */
+export const isStatusAfflictionCondition = (raw: unknown): boolean => {
+  const canonical = normalizeConditionName(raw)
+  if (!canonical) return false
+  const category = conditionByName.get(canonical)?.category
+  return category === 'Persistent Affliction' || category === 'Volatile Affliction'
+}
+
 export const isStackableCondition = (raw: unknown): boolean => {
   const canonical = conditionBaseName(raw)
   return STACKABLE_CONDITION_NAMES.includes(canonical as StackableConditionName)

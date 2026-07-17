@@ -3,9 +3,12 @@ import type {
   EncounterZoneSource,
 } from '#shared/moveAutomation/encounterZones'
 import {
-  electricGrassyTerrainDamagePolicy,
   GRASSY_TERRAIN_TURN_HEAL_PERCENT,
+  MOVE_AUTOMATION_TERRAIN_KINDS,
+  terrainDamagePolicy,
   type ElectricGrassyTerrainKind,
+  type MistyTerrainConditionProtection,
+  type MoveAutomationTerrainKind,
 } from '#shared/moveAutomation/terrain'
 import type {
   GridAnchor,
@@ -19,7 +22,10 @@ import { gridFootprintCells } from '~/utils/gridGeometry'
 import { cloneMapFieldEffects } from '~/utils/mapFieldEffects'
 import { isMapTerrainKind } from '~/utils/mapFieldEffectDefinitions'
 import type { MoveDamageModifier } from '~/utils/moveAutomationDamagePipeline'
-import { normalizeConditionName } from '~/utils/statusConditions'
+import {
+  isStatusAfflictionCondition,
+  normalizeConditionName,
+} from '~/utils/statusConditions'
 import { queryBattlefieldZones } from './battlefieldZones'
 import type {
   MoveAutomationTargetGrounding,
@@ -39,6 +45,7 @@ export type TerrainMechanicsInteraction =
   | 'damage'
   | 'condition'
   | 'healing'
+  | 'action'
 
 export type TerrainMechanicsTraceOutcome =
   | 'applied'
@@ -85,6 +92,15 @@ export interface TerrainDamageResolution {
 
 export interface TerrainConditionResolution {
   readonly blockedBy: string | null
+  readonly firstTurnProtection: MistyTerrainConditionProtection | null
+  readonly trace: readonly TerrainMechanicsTraceEntry[]
+}
+
+export type TerrainActionTiming = 'ordinary' | 'priority' | 'interrupt' | 'reaction'
+
+export interface TerrainActionResolution {
+  readonly allowed: boolean
+  readonly blockedBy: string | null
   readonly trace: readonly TerrainMechanicsTraceEntry[]
 }
 
@@ -110,7 +126,10 @@ export interface MoveAutomationTerrainResolver {
     readonly to: GridAnchor
   }): TerrainMovementResolution
   damage(input: {
+    /** Authoritative move user. */
     readonly placementId: string
+    /** Required for target-sensitive Misty Terrain and local terrain geometry. */
+    readonly targetPlacementId?: string
     readonly moveType: string
     readonly targetImmune?: boolean
   }): TerrainDamageResolution
@@ -118,13 +137,18 @@ export interface MoveAutomationTerrainResolver {
     readonly placementId: string
     readonly conditionId: string
   }): TerrainConditionResolution
+  action(input: {
+    readonly placementId: string
+    readonly timing: TerrainActionTiming
+  }): TerrainActionResolution
   turnHealing(input: {
     readonly placementId: string
   }): TerrainHealingResolution
-  /** Project only Electric/Grassy compatibility rows for one authoritative actor. */
+  /** Project exact authoritative terrain rows for legacy damage compatibility. */
   projectFieldEffects(
     placementId: string,
     base?: MapFieldEffects | null,
+    targetPlacementId?: string,
   ): Required<MapFieldEffects>
 }
 
@@ -171,6 +195,12 @@ const isElectricGrassyTerrain = (
   kind: MapTerrainKind,
 ): kind is ElectricGrassyTerrainKind => kind === 'electric' || kind === 'grassy'
 
+const isMoveAutomationTerrain = (
+  kind: MapTerrainKind,
+): kind is MoveAutomationTerrainKind => (
+  (MOVE_AUTOMATION_TERRAIN_KINDS as readonly string[]).includes(kind)
+)
+
 const traceEntry = (input: TerrainMechanicsTraceEntry): TerrainMechanicsTraceEntry => (
   deepFreeze({ ...input })
 )
@@ -208,7 +238,10 @@ const terrainLabel = (kind: MapTerrainKind): string => (
  * the same membership boundary before damage, condition, or lifecycle rules.
  */
 export const createMoveAutomationTerrainResolver = (input: {
-  readonly map: Pick<TabletopMap, 'dimensions' | 'hazards' | 'fieldEffects' | 'encounterState'>
+  readonly map: Pick<
+    TabletopMap,
+    'dimensions' | 'hazards' | 'fieldEffects' | 'encounterState' | 'initiative'
+  >
   readonly placements: readonly SheetPlacement[]
   readonly tokens: readonly SpawnedPokemon[]
   readonly targetStates: MoveAutomationTargetStateResolver
@@ -227,6 +260,30 @@ export const createMoveAutomationTerrainResolver = (input: {
     label: 'Terrain token',
   })
 
+  const spatialMembership = (query: {
+    readonly placementId: string
+    readonly position?: GridAnchor
+  }): {
+    readonly available: boolean
+    readonly matchedIds: ReadonlySet<string>
+  } => {
+    const placement = placements.get(query.placementId) ?? null
+    const token = tokens.get(query.placementId) ?? null
+    if (!placement || !token) {
+      return { available: false, matchedIds: new Set<string>() }
+    }
+    const position = query.position ?? token.position
+    return {
+      available: true,
+      matchedIds: new Set(queryBattlefieldZones(input.map, {
+        kind: 'placement',
+        placementId: placement.id,
+        sideId: placement.sideId ?? null,
+        occupiedCells: gridFootprintCells(position, token),
+      }, { kinds: ['terrain'] }).map(zone => zone.id)),
+    }
+  }
+
   const membership = (query: {
     readonly placementId: string
     readonly position?: GridAnchor
@@ -234,7 +291,8 @@ export const createMoveAutomationTerrainResolver = (input: {
     const placement = placements.get(query.placementId) ?? null
     const token = tokens.get(query.placementId) ?? null
     const state = input.targetStates.resolve(query.placementId)
-    if (!placement || !token || !state) {
+    const spatial = spatialMembership(query)
+    if (!placement || !token || !state || !spatial.available) {
       return deepFreeze({
         placementId: query.placementId,
         grounding: null,
@@ -251,13 +309,7 @@ export const createMoveAutomationTerrainResolver = (input: {
       })
     }
 
-    const position = query.position ?? token.position
-    const matchedIds = new Set(queryBattlefieldZones(input.map, {
-      kind: 'placement',
-      placementId: placement.id,
-      sideId: placement.sideId ?? null,
-      occupiedCells: gridFootprintCells(position, token),
-    }, { kinds: ['terrain'] }).map(zone => zone.id))
+    const matchedIds = spatial.matchedIds
     const selectedKinds = new Set<MapTerrainKind>()
     const terrains: AuthoritativeTerrainInstance[] = []
     const trace: TerrainMechanicsTraceEntry[] = []
@@ -364,47 +416,162 @@ export const createMoveAutomationTerrainResolver = (input: {
     })
   }
 
+  const damageTerrainMembership = (query: {
+    readonly placementId: string
+    readonly targetPlacementId?: string
+  }): {
+    readonly terrains: readonly AuthoritativeTerrainInstance[]
+    readonly qualifyingZoneIds: ReadonlySet<string>
+    readonly sourcePlacementByZoneId: ReadonlyMap<string, string>
+    readonly actorMembership: TerrainMembershipResolution
+    readonly targetMembership: TerrainMembershipResolution | null
+    readonly actorSpatial: ReturnType<typeof spatialMembership>
+    readonly targetSpatial: ReturnType<typeof spatialMembership> | null
+  } => {
+    const actorMembership = membership({ placementId: query.placementId })
+    const targetMembership = query.targetPlacementId
+      ? membership({ placementId: query.targetPlacementId })
+      : null
+    const actorSpatial = spatialMembership({ placementId: query.placementId })
+    const targetSpatial = query.targetPlacementId
+      ? spatialMembership({ placementId: query.targetPlacementId })
+      : null
+    const actorGroundedIds = new Set(actorMembership.terrains.map(terrain => terrain.zoneId))
+    const targetGroundedIds = new Set(
+      targetMembership?.terrains.map(terrain => terrain.zoneId) ?? [],
+    )
+    const selectedKinds = new Set<MoveAutomationTerrainKind>()
+    const terrains: AuthoritativeTerrainInstance[] = []
+    const qualifyingZoneIds = new Set<string>()
+    const sourcePlacementByZoneId = new Map<string, string>()
+
+    for (const terrain of active) {
+      if (!isMoveAutomationTerrain(terrain.kind)) continue
+      const actorQualifies = terrain.kind === 'psychic'
+        ? actorSpatial.matchedIds.has(terrain.zoneId)
+        : actorGroundedIds.has(terrain.zoneId)
+      const targetQualifies = terrain.kind === 'misty'
+        ? targetGroundedIds.has(terrain.zoneId)
+        : terrain.kind === 'psychic'
+          ? Boolean(targetSpatial?.matchedIds.has(terrain.zoneId))
+          : false
+      if (!actorQualifies && !targetQualifies) continue
+      qualifyingZoneIds.add(terrain.zoneId)
+      sourcePlacementByZoneId.set(
+        terrain.zoneId,
+        actorQualifies ? query.placementId : query.targetPlacementId!,
+      )
+      if (selectedKinds.has(terrain.kind)) continue
+      selectedKinds.add(terrain.kind)
+      terrains.push(terrain)
+    }
+    return {
+      terrains,
+      qualifyingZoneIds,
+      sourcePlacementByZoneId,
+      actorMembership,
+      targetMembership,
+      actorSpatial,
+      targetSpatial,
+    }
+  }
+
   const damage = (query: {
     readonly placementId: string
+    readonly targetPlacementId?: string
     readonly moveType: string
     readonly targetImmune?: boolean
   }): TerrainDamageResolution => {
-    const resolvedMembership = membership({ placementId: query.placementId })
+    const resolved = damageTerrainMembership(query)
+    const effectiveIds = new Set(resolved.terrains.map(terrain => terrain.zoneId))
     const modifiers: MoveDamageModifier[] = []
     const trace: TerrainMechanicsTraceEntry[] = []
-    const effectiveIds = new Set(resolvedMembership.terrains.map(terrain => terrain.zoneId))
+    const traceKeys = new Set<string>()
+    const appendTrace = (entry: TerrainMechanicsTraceEntry): void => {
+      const key = `${entry.interaction}:${entry.terrainKind}:${entry.zoneId}:${entry.placementId}:${entry.outcome}`
+      if (traceKeys.has(key)) return
+      traceKeys.add(key)
+      trace.push(traceEntry(entry))
+    }
 
-    for (const membershipTrace of resolvedMembership.trace) {
-      if (!isElectricGrassyTerrain(membershipTrace.terrainKind)) continue
-      if (!effectiveIds.has(membershipTrace.zoneId)) {
-        trace.push(traceEntry({ ...membershipTrace, interaction: 'damage' }))
+    const appendGroundingEvidence = (
+      terrain: AuthoritativeTerrainInstance,
+      resolution: TerrainMembershipResolution | null,
+    ): void => {
+      for (const entry of resolution?.trace ?? []) {
+        if (entry.zoneId !== terrain.zoneId || entry.outcome === 'applied') continue
+        appendTrace({ ...entry, interaction: 'damage' })
       }
     }
-    for (const terrain of resolvedMembership.terrains) {
-      if (!isElectricGrassyTerrain(terrain.kind)) continue
-      const policy = electricGrassyTerrainDamagePolicy(terrain.kind, query.moveType)
-      if (!policy) {
-        trace.push(traceEntry({
+
+    for (const terrain of active) {
+      if (!isMoveAutomationTerrain(terrain.kind)) continue
+      const qualifies = resolved.qualifyingZoneIds.has(terrain.zoneId)
+      const effective = effectiveIds.has(terrain.zoneId)
+      if (isElectricGrassyTerrain(terrain.kind)) {
+        if (!qualifies) appendGroundingEvidence(terrain, resolved.actorMembership)
+      }
+      else if (terrain.kind === 'misty') {
+        appendGroundingEvidence(terrain, resolved.actorMembership)
+        appendGroundingEvidence(terrain, resolved.targetMembership)
+      }
+      else if (!qualifies) {
+        const spatialAvailable = resolved.actorSpatial.available
+          || Boolean(resolved.targetSpatial?.available)
+        appendTrace({
           interaction: 'damage',
           terrainKind: terrain.kind,
           zoneId: terrain.zoneId,
           placementId: query.placementId,
+          outcome: spatialAvailable ? 'outside-zone' : 'unavailable',
+          reasonCode: membershipFailureReason(
+            terrain,
+            spatialAvailable ? 'outside-zone' : 'unavailable',
+          ),
+          value: spatialAvailable ? false : null,
+        })
+      }
+      if (!qualifies) continue
+
+      const selected = resolved.terrains.find(candidate => candidate.kind === terrain.kind)
+      if (!effective || selected?.zoneId !== terrain.zoneId) {
+        appendTrace({
+          interaction: 'damage',
+          terrainKind: terrain.kind,
+          zoneId: terrain.zoneId,
+          placementId: resolved.sourcePlacementByZoneId.get(terrain.zoneId) ?? query.placementId,
+          outcome: 'superseded',
+          reasonCode: membershipFailureReason(terrain, 'superseded'),
+          value: selected?.zoneId ?? null,
+        })
+        continue
+      }
+
+      const policy = terrainDamagePolicy(terrain.kind, query.moveType)
+      const sourcePlacementId = resolved.sourcePlacementByZoneId.get(terrain.zoneId)
+        ?? query.placementId
+      if (!policy) {
+        appendTrace({
+          interaction: 'damage',
+          terrainKind: terrain.kind,
+          zoneId: terrain.zoneId,
+          placementId: sourcePlacementId,
           outcome: 'not-applicable',
           reasonCode: `terrain.${terrain.kind}.damage-type-not-applicable`,
           value: null,
-        }))
+        })
         continue
       }
       if (query.targetImmune === true) {
-        trace.push(traceEntry({
+        appendTrace({
           interaction: 'damage',
           terrainKind: terrain.kind,
           zoneId: terrain.zoneId,
-          placementId: query.placementId,
+          placementId: sourcePlacementId,
           outcome: 'prevented',
           reasonCode: 'terrain.damage.target-immune',
           value: null,
-        }))
+        })
         continue
       }
       modifiers.push({
@@ -417,15 +584,15 @@ export const createMoveAutomationTerrainResolver = (input: {
         operation: 'add',
         value: policy.value,
       })
-      trace.push(traceEntry({
+      appendTrace({
         interaction: 'damage',
         terrainKind: terrain.kind,
         zoneId: terrain.zoneId,
-        placementId: query.placementId,
+        placementId: sourcePlacementId,
         outcome: 'applied',
         reasonCode: policy.reasonCode,
         value: policy.value,
-      }))
+      })
     }
     return deepFreeze({ modifiers, trace })
   }
@@ -434,26 +601,133 @@ export const createMoveAutomationTerrainResolver = (input: {
     readonly placementId: string
     readonly conditionId: string
   }): TerrainConditionResolution => {
-    if ((normalizeConditionName(query.conditionId) ?? query.conditionId) !== 'Sleep') {
-      return deepFreeze({ blockedBy: null, trace: [] })
+    const canonical = normalizeConditionName(query.conditionId) ?? query.conditionId
+    const isSleep = canonical === 'Sleep'
+    const isStatusAffliction = isStatusAfflictionCondition(canonical)
+    if (!isSleep && !isStatusAffliction) {
+      return deepFreeze({ blockedBy: null, firstTurnProtection: null, trace: [] })
     }
     const resolvedMembership = membership({ placementId: query.placementId })
-    const electric = resolvedMembership.terrains.find(terrain => terrain.kind === 'electric') ?? null
-    const trace = resolvedMembership.trace
-      .filter(entry => entry.terrainKind === 'electric')
+    const electric = isSleep
+      ? resolvedMembership.terrains.find(terrain => terrain.kind === 'electric') ?? null
+      : null
+    const misty = isStatusAffliction
+      ? resolvedMembership.terrains.find(terrain => terrain.kind === 'misty') ?? null
+      : null
+    const relevantKinds = new Set<MapTerrainKind>([
+      ...(isSleep ? ['electric' as const] : []),
+      ...(isStatusAffliction ? ['misty' as const] : []),
+    ])
+    const membershipTrace = resolvedMembership.trace
+      .filter(entry => relevantKinds.has(entry.terrainKind))
+      .filter(entry => entry.outcome !== 'applied')
       .map(entry => traceEntry({ ...entry, interaction: 'condition' }))
-    if (!electric) return deepFreeze({ blockedBy: null, trace })
-    const reasonCode = 'terrain.electric.sleep-prevention'
+    if (electric) {
+      const reasonCode = 'terrain.electric.sleep-prevention'
+      return deepFreeze({
+        blockedBy: `${terrainLabel(electric.kind)} (${electric.zoneId})`,
+        firstTurnProtection: null,
+        trace: [
+          ...membershipTrace,
+          traceEntry({
+            interaction: 'condition',
+            terrainKind: electric.kind,
+            zoneId: electric.zoneId,
+            placementId: query.placementId,
+            outcome: 'prevented',
+            reasonCode,
+            value: 'sleep',
+          }),
+        ],
+      })
+    }
+    if (!misty) {
+      return deepFreeze({
+        blockedBy: null,
+        firstTurnProtection: null,
+        trace: membershipTrace,
+      })
+    }
+    const protection: MistyTerrainConditionProtection = {
+      kind: 'ignore-first-turn',
+      terrainKind: 'misty',
+      zoneId: misty.zoneId,
+      sourceLabel: `${terrainLabel(misty.kind)} (${misty.zoneId})`,
+      reasonCode: 'terrain.misty.first-turn-status-protection',
+    }
     return deepFreeze({
-      blockedBy: `${terrainLabel(electric.kind)} (${electric.zoneId})`,
+      blockedBy: null,
+      firstTurnProtection: protection,
+      trace: [
+        ...membershipTrace,
+        traceEntry({
+          interaction: 'condition',
+          terrainKind: misty.kind,
+          zoneId: misty.zoneId,
+          placementId: query.placementId,
+          outcome: 'applied',
+          reasonCode: protection.reasonCode,
+          value: canonical,
+        }),
+      ],
+    })
+  }
+
+  const action = (query: {
+    readonly placementId: string
+    readonly timing: TerrainActionTiming
+  }): TerrainActionResolution => {
+    if (query.timing === 'ordinary') {
+      return deepFreeze({ allowed: true, blockedBy: null, trace: [] })
+    }
+    const resolvedMembership = membership({ placementId: query.placementId })
+    const psychic = resolvedMembership.terrains.find(terrain => terrain.kind === 'psychic') ?? null
+    const trace = resolvedMembership.trace
+      .filter(entry => entry.terrainKind === 'psychic' && entry.outcome !== 'applied')
+      .map(entry => traceEntry({ ...entry, interaction: 'action' }))
+    if (!psychic) return deepFreeze({ allowed: true, blockedBy: null, trace })
+    if (placements.get(query.placementId)?.sheetKind !== 'pokemon') {
+      return deepFreeze({
+        allowed: true,
+        blockedBy: null,
+        trace: [traceEntry({
+          interaction: 'action',
+          terrainKind: psychic.kind,
+          zoneId: psychic.zoneId,
+          placementId: query.placementId,
+          outcome: 'not-applicable',
+          reasonCode: 'terrain.psychic.non-pokemon-action-unrestricted',
+          value: query.timing,
+        })],
+      })
+    }
+    if (input.map.initiative?.activeId === query.placementId) {
+      return deepFreeze({
+        allowed: true,
+        blockedBy: null,
+        trace: [traceEntry({
+          interaction: 'action',
+          terrainKind: psychic.kind,
+          zoneId: psychic.zoneId,
+          placementId: query.placementId,
+          outcome: 'not-applicable',
+          reasonCode: 'terrain.psychic.action-on-own-initiative',
+          value: query.timing,
+        })],
+      })
+    }
+    const reasonCode = 'terrain.psychic.off-turn-priority-interrupt-prevention'
+    return deepFreeze({
+      allowed: false,
+      blockedBy: `${terrainLabel(psychic.kind)} (${psychic.zoneId})`,
       trace: [traceEntry({
-        interaction: 'condition',
-        terrainKind: electric.kind,
-        zoneId: electric.zoneId,
+        interaction: 'action',
+        terrainKind: psychic.kind,
+        zoneId: psychic.zoneId,
         placementId: query.placementId,
         outcome: 'prevented',
         reasonCode,
-        value: 'sleep',
+        value: query.timing,
       })],
     })
   }
@@ -491,22 +765,23 @@ export const createMoveAutomationTerrainResolver = (input: {
     movement,
     damage,
     condition,
+    action,
     turnHealing,
     projectFieldEffects: (
       placementId: string,
       base: MapFieldEffects | null = input.map.fieldEffects ?? null,
+      targetPlacementId?: string,
     ) => {
       const projected = cloneMapFieldEffects(base)
-      const retained = projected.terrains.filter(terrain => !isElectricGrassyTerrain(terrain.kind))
-      const effective = membership({ placementId }).terrains
-        .filter((terrain): terrain is AuthoritativeTerrainInstance & {
-          readonly kind: ElectricGrassyTerrainKind
-        } => isElectricGrassyTerrain(terrain.kind))
-        .map(terrain => ({
-          kind: terrain.kind,
-          scope: terrain.geometry.kind === 'battlefield' ? 'field' as const : 'area' as const,
-          source: terrain.zoneId,
-        }))
+      const retained = projected.terrains.filter(terrain => !isMoveAutomationTerrain(terrain.kind))
+      const effective = damageTerrainMembership({
+        placementId,
+        ...(targetPlacementId ? { targetPlacementId } : {}),
+      }).terrains.map(terrain => ({
+        kind: terrain.kind,
+        scope: terrain.geometry.kind === 'battlefield' ? 'field' as const : 'area' as const,
+        source: terrain.zoneId,
+      }))
       projected.terrains = [...retained, ...effective]
       return deepFreeze(projected)
     },

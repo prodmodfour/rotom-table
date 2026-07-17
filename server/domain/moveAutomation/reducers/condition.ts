@@ -17,6 +17,7 @@ import { sameJsonValue } from '~/utils/serialization'
 import { sheetConditionNames } from '~/utils/sheetConditions'
 import type { AuthoritativeMoveRulesContext } from '../context'
 import {
+  createMistyProtectedMoveConditionEffects,
   createMoveConditionEncounterStateAccumulator,
   createSourceLinkedMoveConditionEffect,
   createTransferredMoveConditionEffect,
@@ -179,6 +180,12 @@ interface ConditionMutationAudit {
   readonly lifecycleTransitions: readonly string[]
   readonly saveTiming: EncounterEffectConditionSaveTiming | null
   readonly stackPolicy: MoveConditionEffectOperation['payload']['stackPolicy']['kind']
+  readonly firstTurnProtection?: {
+    readonly terrainKind: 'misty'
+    readonly zoneId: string
+    readonly reasonCode: string
+    readonly effectIds: readonly string[]
+  } | null
 }
 
 const auditDetails = (audit: ConditionMutationAudit): MoveResolutionTraceJsonValue => ({
@@ -195,6 +202,12 @@ const auditDetails = (audit: ConditionMutationAudit): MoveResolutionTraceJsonVal
   lifecycleTransitions: [...audit.lifecycleTransitions],
   saveTiming: audit.saveTiming,
   stackPolicy: audit.stackPolicy,
+  ...(audit.firstTurnProtection
+    ? { firstTurnProtection: {
+        ...audit.firstTurnProtection,
+        effectIds: [...audit.firstTurnProtection.effectIds],
+      } }
+    : {}),
 })
 
 const preventedResult = (options: {
@@ -356,7 +369,9 @@ const reduceUnaryCondition = (options: {
   let removedConditions: readonly string[] = []
   let removedEffectIds: readonly string[] = []
   let appliedEffectId: string | null = null
-  let lifecycleTransitions: readonly string[] = []
+  const lifecycleTransitions: string[] = []
+  let firstTurnProtection: ConditionMutationAudit['firstTurnProtection'] = null
+  let conditionApplicationChanged = false
   let capped = false
 
   if (operation.payload.action === 'remove' || operation.payload.action === 'clear' || operation.payload.action === 'replace') {
@@ -385,7 +400,8 @@ const reduceUnaryCondition = (options: {
       })
       const lifecycle = targetEncounter.apply(effect)
       appliedEffectId = effect.id
-      lifecycleTransitions = lifecycle.transitions.map(transition => transition.kind)
+      lifecycleTransitions.push(...lifecycle.transitions.map(transition => transition.kind))
+      conditionApplicationChanged = lifecycle.changed
       capped = !lifecycle.changed && lifecycle.transitions.some(transition => transition.kind === 'stack-capped')
     }
     else {
@@ -395,7 +411,42 @@ const reduceUnaryCondition = (options: {
         operation,
       })
       nextConditions = applied.conditions
+      conditionApplicationChanged = !sameJsonValue(previous.conditions, nextConditions)
       capped = applied.capped
+    }
+  }
+
+  if (
+    applies
+    && conditionApplicationChanged
+    && immunity.firstTurnConditionProtection
+  ) {
+    const context = options.context
+      ?? failMoveCoreConditionReduction(
+        'invalid-condition-effect-scope',
+        `Condition operation ${operation.id} cannot store terrain protection without an authoritative context.`,
+      )
+    const targetEncounter = encounter
+      ?? failMoveCoreConditionReduction(
+        'invalid-condition-effect-scope',
+        `Condition operation ${operation.id} cannot store terrain protection in this reducer scope.`,
+      )
+    const effects = createMistyProtectedMoveConditionEffects({
+      operation,
+      condition: condition!,
+      recipient,
+      context,
+      protection: immunity.firstTurnConditionProtection,
+    })
+    for (const effect of effects) {
+      const lifecycle = targetEncounter.apply(effect)
+      lifecycleTransitions.push(...lifecycle.transitions.map(transition => transition.kind))
+    }
+    firstTurnProtection = {
+      terrainKind: immunity.firstTurnConditionProtection.terrainKind,
+      zoneId: immunity.firstTurnConditionProtection.zoneId,
+      reasonCode: immunity.firstTurnConditionProtection.reasonCode,
+      effectIds: effects.map(effect => effect.id),
     }
   }
 
@@ -416,6 +467,7 @@ const reduceUnaryCondition = (options: {
     removedEffectIds,
     appliedEffectId,
     lifecycleTransitions,
+    firstTurnProtection,
   })
 
   if (changedFields.length === 0) {

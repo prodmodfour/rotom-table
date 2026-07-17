@@ -75,6 +75,34 @@ const moveLog = (map: TabletopMap) => map.metadata?.moveLog as Array<{ lines: st
 
 const mixedAreaTemplate: MoveAutomationAreaTemplate = { kind: 'line', size: 3, label: 'Line 3' }
 
+const mistyConditionScript = (): MoveAutomationScript => ({
+  kind: 'explicit',
+  moveName: 'Tackle',
+  version: 1,
+  targetMode: 'one-target',
+  targetCount: 1,
+  damaging: false,
+  requiresAccuracy: false,
+  damageBase: null,
+  damageClass: 'Status',
+  type: 'Normal',
+  ac: null,
+  range: 'Melee, 1 Target',
+  effect: 'The target becomes Burned.',
+  keywords: ['Melee', '1 Target'],
+  criticalRange: null,
+  conditionSuggestions: [{
+    recipient: 'target',
+    condition: 'Burned',
+    label: 'Burned',
+  }],
+  stageSuggestions: [],
+  hpSuggestions: [],
+  fieldSuggestions: [],
+  hazardSuggestions: [],
+  automationNotes: [],
+})
+
 const mixedOutcomeAreaScript = (): MoveAutomationScript => ({
   kind: 'explicit',
   moveName: 'Swift',
@@ -209,6 +237,70 @@ describe('planAuthoritativeMoveState', () => {
     expect(plan.nextMap).not.toBe(map)
     expect(plan.previousMap).not.toBe(map)
     expect(plan.mapChanges.metadata?.current).not.toBe(map.metadata)
+  })
+
+  it('atomically plans a legacy condition with Misty first-turn suppression', async () => {
+    await withRegisteredMoveAutomationScript(mistyConditionScript(), () => {
+      const map = mapFixture({
+        fieldEffects: {
+          weather: [],
+          terrains: [{ kind: 'misty', scope: 'field', rounds: 5 }],
+          rooms: [],
+        },
+      })
+      const plan = planAuthoritativeMoveState({
+        map,
+        pokemonSheets: pokemonSheets([{ name: 'Tackle' }]),
+        trainerSheets: new Map<string, TrainerSheet>(),
+        intent: moveIntent({
+          placementId: 'actor-token',
+          moveName: 'Tackle',
+          selection: { kind: 'single-target', targetPlacementId: 'target-token' },
+        }),
+        random: randomSequence([]),
+        now: () => 999,
+      })
+      const effect = plan.nextMap.encounterState?.effects.find(candidate => (
+        candidate.kind === 'condition' && candidate.payload.action === 'suppress'
+      ))
+
+      expect(plan.resolution.terrainConditionProtectionEffects).toEqual([effect])
+      expect(plan.resolution.auditTrace.events).toEqual(expect.arrayContaining([
+        expect.objectContaining({
+          kind: 'operation',
+          operationId: 'legacy-v1.terrain-condition-protection.1',
+          operationKind: 'temporary-effect',
+          recipientIds: ['target-token'],
+          outcome: 'applied',
+          reasonCode: 'terrain.misty.first-turn-status-protection',
+        }),
+      ]))
+      expect(effect).toMatchObject({
+        id: expect.stringMatching(/^condition-protection\.[0-9a-f]{32}$/),
+        source: {
+          operationId: 'legacy-v1.condition.1',
+          moveId: 'move.tackle',
+          placementId: 'actor-token',
+        },
+        affected: { placementIds: ['target-token'] },
+        duration: { kind: 'turns', subject: 'target', boundary: 'end', remaining: 1 },
+        payload: { conditionId: 'burned', action: 'suppress', saveTiming: null },
+      })
+      expect((plan.sheetWrites[0]?.nextSheet as CharacterSheet).combat?.conditions)
+        .toEqual(['Burned'])
+      expect(plan.mapChanges.encounterState?.current.effects).toEqual([effect])
+      expect(plan.stateChanges.changes).toEqual(expect.arrayContaining([
+        expect.objectContaining({
+          kind: 'sheet-state',
+          sourceOperationId: 'legacy-v1.condition.1',
+        }),
+        expect.objectContaining({
+          kind: 'encounter-state',
+          reasonCode: 'move-and-resource-state',
+        }),
+      ]))
+      expect(map.encounterState?.effects ?? []).toEqual([])
+    })
   })
 
   it('produces one target sheet write for a single-target HP move and keeps temporary HP map-local', () => {

@@ -80,6 +80,7 @@ const context = (options: {
   readonly actorAbilities?: readonly string[]
   readonly actorCapabilities?: CharacterSheet['capabilities']
   readonly targetAbilities?: readonly string[]
+  readonly targetCapabilities?: CharacterSheet['capabilities']
 } = {}) => buildAuthoritativeMoveRulesContext({
   map: mapFixture(options.weather, options.terrains),
   pokemonSheets: new Map([
@@ -100,6 +101,7 @@ const context = (options: {
       ...(options.targetAbilities
         ? { abilities: options.targetAbilities.map(name => ({ name })) }
         : {}),
+      ...(options.targetCapabilities ? { capabilities: options.targetCapabilities } : {}),
       stats: {
         atk: { added: 15, stage: 3 },
         def: { added: 3, stage: -1 },
@@ -435,6 +437,83 @@ describe('MoveSpec alternate attack and defense stat selection', () => {
       })
     },
   )
+
+  it('applies target-sensitive Misty and ungrounded Psychic damage rules once', () => {
+    const calculate = (
+      rules: ReturnType<typeof context>,
+      moveType: 'Dragon' | 'Psychic',
+    ) => {
+      const move = { ...script('Special'), type: moveType }
+      return resolveMoveSpecDamageCalculation({
+        context: rules,
+        operation: damageOperation({
+          damageClass: 'special',
+          moveType: moveType.toLowerCase(),
+        }),
+        script: move,
+        recipient: rules.queries.tokens.get('target-token')!,
+        resolution: rolledDamage(move),
+      })
+    }
+    const dragonBaseline = calculate(context(), 'Dragon')
+    const groundedMisty = calculate(context({ terrains: ['misty'] }), 'Dragon')
+    const targetGroundedMisty = calculate(context({
+      terrains: ['misty'],
+      actorCapabilities: { sky: 6 },
+    }), 'Dragon')
+    const noGroundedMisty = calculate(context({
+      terrains: ['misty'],
+      actorCapabilities: { sky: 6 },
+      targetCapabilities: { sky: 6 },
+    }), 'Dragon')
+    const psychicBaseline = calculate(context({
+      actorCapabilities: { sky: 6 },
+      targetCapabilities: { sky: 6 },
+    }), 'Psychic')
+    const psychicTerrain = calculate(context({
+      terrains: ['psychic'],
+      actorCapabilities: { sky: 6 },
+      targetCapabilities: { sky: 6 },
+    }), 'Psychic')
+
+    expect(
+      (groundedMisty.damagePipeline?.preTypeDamage ?? 0)
+      - (dragonBaseline.damagePipeline?.preTypeDamage ?? 0),
+    ).toBe(-10)
+    expect(
+      (targetGroundedMisty.damagePipeline?.preTypeDamage ?? 0)
+      - (dragonBaseline.damagePipeline?.preTypeDamage ?? 0),
+    ).toBe(-10)
+    expect(noGroundedMisty.damagePipeline?.preTypeDamage)
+      .toBe(dragonBaseline.damagePipeline?.preTypeDamage)
+    expect(groundedMisty.terrain).toMatchObject({
+      modifiers: [{
+        id: 'damage.terrain.misty.dragon',
+        source: { kind: 'field', id: 'legacy.terrain.misty' },
+        reasonCode: 'terrain.misty.dragon-damage-penalty',
+        value: -10,
+      }],
+      trace: expect.arrayContaining([expect.objectContaining({
+        outcome: 'applied',
+        reasonCode: 'terrain.misty.dragon-damage-penalty',
+      })]),
+    })
+    expect(
+      (psychicTerrain.damagePipeline?.preTypeDamage ?? 0)
+      - (psychicBaseline.damagePipeline?.preTypeDamage ?? 0),
+    ).toBe(10)
+    expect(psychicTerrain.terrain).toMatchObject({
+      modifiers: [{
+        id: 'damage.terrain.psychic.psychic',
+        source: { kind: 'field', id: 'legacy.terrain.psychic' },
+        reasonCode: 'terrain.psychic.psychic-damage-bonus',
+        value: 10,
+      }],
+    })
+    expect(psychicTerrain.damagePipeline?.stages.flatMap(stage => stage.modifiers)
+      .filter(modifier => modifier.id === 'damage.terrain.psychic.psychic'))
+      .toHaveLength(1)
+  })
 
   it('applies Sand Force once through the authoritative weather pipeline', () => {
     const calculate = (rules: ReturnType<typeof context>) => {

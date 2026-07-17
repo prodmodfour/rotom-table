@@ -13,6 +13,9 @@ import {
 import {
   createFiniteAuthoritativeMoveRandomStream,
 } from '~~/server/domain/moveAutomation/random'
+import {
+  createMistyTerrainConditionProtectionEffects,
+} from '~~/server/domain/moveAutomation/terrainConditionProtection'
 import type { CharacterSheet } from '~/types/characterSheet'
 import type { SheetPlacement, TabletopMap } from '~/types/map'
 import type { TrainerSheet } from '~/types/trainerSheet'
@@ -42,7 +45,7 @@ const sheet = (
 })
 
 const localTerrain = (
-  kind: 'electric' | 'grassy',
+  kind: 'electric' | 'grassy' | 'misty' | 'psychic',
   cells: readonly { readonly x: number; readonly y: number; readonly z: number }[],
 ): EncounterZone => parseEncounterZone({
   id: `zone.terrain.${kind}.local`,
@@ -66,7 +69,8 @@ const localTerrain = (
 
 const mapFixture = (options: {
   readonly globalElectric?: boolean
-  readonly localKinds?: readonly ('electric' | 'grassy')[]
+  readonly localKinds?: readonly ('electric' | 'grassy' | 'misty' | 'psychic')[]
+  readonly activeId?: string | null
 } = {}): TabletopMap => ({
   schemaVersion: 2,
   slug: 'terrain-mechanics-arena',
@@ -89,6 +93,7 @@ const mapFixture = (options: {
     placement('outside', 5),
     placement('airborne', 1),
   ],
+  initiative: { activeId: options.activeId ?? null, round: 1 },
   encounterState: {
     ...createEmptyEncounterState(),
     zones: (options.localKinds ?? ['grassy']).map(kind => localTerrain(kind, [
@@ -121,7 +126,7 @@ const contextFixture = (options: Parameters<typeof mapFixture>[0] = {}) => {
   })
 }
 
-describe('authoritative Electric and Grassy Terrain queries', () => {
+describe('authoritative Terrain queries', () => {
   it('uses one grounded footprint query for global and local terrain geometry', () => {
     const context = contextFixture()
     const resolver = context.queries.terrain
@@ -245,6 +250,156 @@ describe('authoritative Electric and Grassy Terrain queries', () => {
     })
   })
 
+  it('applies Misty Dragon penalties for a grounded origin or grounded target and Psychic bonuses regardless of grounding', () => {
+    const local = contextFixture({ globalElectric: false, localKinds: ['misty'] })
+
+    expect(local.queries.terrain.damage({
+      placementId: 'actor',
+      targetPlacementId: 'outside',
+      moveType: 'Dragon',
+    })).toMatchObject({
+      modifiers: [{
+        id: 'damage.terrain.misty.dragon',
+        source: { kind: 'field', id: 'zone.terrain.misty.local' },
+        reasonCode: 'terrain.misty.dragon-damage-penalty',
+        value: -10,
+      }],
+      trace: expect.arrayContaining([expect.objectContaining({
+        terrainKind: 'misty',
+        placementId: 'actor',
+        outcome: 'applied',
+        value: -10,
+      })]),
+    })
+    expect(local.queries.terrain.damage({
+      placementId: 'outside',
+      targetPlacementId: 'actor',
+      moveType: 'Dragon',
+    })).toMatchObject({
+      modifiers: [expect.objectContaining({ value: -10 })],
+      trace: expect.arrayContaining([expect.objectContaining({
+        terrainKind: 'misty',
+        placementId: 'actor',
+        outcome: 'applied',
+      })]),
+    })
+    expect(local.queries.terrain.damage({
+      placementId: 'airborne',
+      targetPlacementId: 'outside',
+      moveType: 'Dragon',
+    })).toMatchObject({
+      modifiers: [],
+      trace: expect.arrayContaining([expect.objectContaining({
+        terrainKind: 'misty',
+        outcome: 'not-grounded',
+      })]),
+    })
+    expect(local.queries.terrain.damage({
+      placementId: 'airborne',
+      targetPlacementId: 'outside',
+      moveType: 'Psychic',
+    })).toMatchObject({
+      modifiers: [{
+        id: 'damage.terrain.psychic.psychic',
+        source: { kind: 'field', id: 'legacy.terrain.psychic' },
+        reasonCode: 'terrain.psychic.psychic-damage-bonus',
+        value: 10,
+      }],
+    })
+  })
+
+  it('protects a grounded Misty member from the first turn of Status Afflictions', () => {
+    const terrain = contextFixture({
+      globalElectric: false,
+      localKinds: ['misty'],
+    }).queries.terrain
+
+    expect(terrain.condition({ placementId: 'actor', conditionId: 'Burned' }))
+      .toMatchObject({
+        blockedBy: null,
+        firstTurnProtection: {
+          kind: 'ignore-first-turn',
+          terrainKind: 'misty',
+          zoneId: 'zone.terrain.misty.local',
+          sourceLabel: 'Misty Terrain (zone.terrain.misty.local)',
+          reasonCode: 'terrain.misty.first-turn-status-protection',
+        },
+        trace: [expect.objectContaining({
+          terrainKind: 'misty',
+          outcome: 'applied',
+          reasonCode: 'terrain.misty.first-turn-status-protection',
+          value: 'Burned',
+        })],
+      })
+    expect(terrain.condition({ placementId: 'actor', conditionId: 'Vulnerable' }))
+      .toEqual({ blockedBy: null, firstTurnProtection: null, trace: [] })
+    expect(terrain.condition({ placementId: 'outside', conditionId: 'Burned' }))
+      .toMatchObject({ firstTurnProtection: null })
+    expect(terrain.condition({ placementId: 'airborne', conditionId: 'Burned' }))
+      .toMatchObject({
+        firstTurnProtection: null,
+        trace: [expect.objectContaining({ outcome: 'not-grounded' })],
+      })
+  })
+
+  it('suppresses Flinch and its derived Vulnerable state together for the protected turn', () => {
+    const effects = createMistyTerrainConditionProtectionEffects({
+      protection: {
+        kind: 'ignore-first-turn',
+        terrainKind: 'misty',
+        zoneId: 'legacy.terrain.misty',
+        sourceLabel: 'Misty Terrain (legacy.terrain.misty)',
+        reasonCode: 'terrain.misty.first-turn-status-protection',
+      },
+      conditionId: 'Flinch',
+      operationId: 'operation.apply-flinch',
+      moveId: 'move.fake-out',
+      sourcePlacementId: 'actor',
+      recipientPlacementId: 'outside',
+      createdRound: 1,
+      createdTurn: 0,
+    })
+
+    expect(effects.map(effect => effect.payload)).toEqual([
+      { conditionId: 'flinch', action: 'suppress', saveTiming: null },
+      { conditionId: 'vulnerable', action: 'suppress', saveTiming: null },
+    ])
+    expect(new Set(effects.map(effect => effect.id)).size).toBe(2)
+    expect(effects.every(effect => Object.isFrozen(effect))).toBe(true)
+  })
+
+  it('blocks grounded off-turn Priority, Interrupt, and Reaction declarations before rolls', () => {
+    const offTurn = contextFixture().queries.terrain
+    for (const timing of ['priority', 'interrupt', 'reaction'] as const) {
+      expect(offTurn.action({ placementId: 'actor', timing })).toMatchObject({
+        allowed: false,
+        blockedBy: 'Psychic Terrain (legacy.terrain.psychic)',
+        trace: [{
+          interaction: 'action',
+          terrainKind: 'psychic',
+          zoneId: 'legacy.terrain.psychic',
+          placementId: 'actor',
+          outcome: 'prevented',
+          reasonCode: 'terrain.psychic.off-turn-priority-interrupt-prevention',
+          value: timing,
+        }],
+      })
+    }
+    expect(contextFixture({ activeId: 'actor' }).queries.terrain.action({
+      placementId: 'actor',
+      timing: 'priority',
+    })).toMatchObject({
+      allowed: true,
+      trace: [expect.objectContaining({
+        reasonCode: 'terrain.psychic.action-on-own-initiative',
+      })],
+    })
+    expect(offTurn.action({ placementId: 'airborne', timing: 'interrupt' }))
+      .toMatchObject({ allowed: true, blockedBy: null })
+    expect(offTurn.action({ placementId: 'actor', timing: 'ordinary' }))
+      .toEqual({ allowed: true, blockedBy: null, trace: [] })
+  })
+
   it('prevents Sleep and enables turn healing only for grounded members', () => {
     const context = contextFixture({ globalElectric: false, localKinds: ['electric', 'grassy'] })
     const terrain = context.queries.terrain
@@ -267,7 +422,7 @@ describe('authoritative Electric and Grassy Terrain queries', () => {
     expect(terrain.condition({ placementId: 'airborne', conditionId: 'Sleep' }).blockedBy)
       .toBeNull()
     expect(terrain.condition({ placementId: 'actor', conditionId: 'Burned' }))
-      .toEqual({ blockedBy: null, trace: [] })
+      .toEqual({ blockedBy: null, firstTurnProtection: null, trace: [] })
 
     expect(terrain.turnHealing({ placementId: 'actor' })).toMatchObject({
       applies: true,
@@ -300,12 +455,12 @@ describe('authoritative Electric and Grassy Terrain queries', () => {
     const before = structuredClone(base)
 
     expect(context.queries.terrain.projectFieldEffects('actor', base).terrains).toEqual([
-      { kind: 'misty', rounds: 5, scope: 'field', source: 'future-ticket' },
       { kind: 'grassy', scope: 'area', source: 'zone.terrain.grassy.local' },
       { kind: 'electric', scope: 'field', source: 'legacy.terrain.electric' },
+      { kind: 'psychic', scope: 'field', source: 'legacy.terrain.psychic' },
     ])
     expect(context.queries.terrain.projectFieldEffects('airborne', base).terrains)
-      .toEqual([{ kind: 'misty', rounds: 5, scope: 'field', source: 'future-ticket' }])
+      .toEqual([{ kind: 'psychic', scope: 'field', source: 'legacy.terrain.psychic' }])
     expect(base).toEqual(before)
   })
 })

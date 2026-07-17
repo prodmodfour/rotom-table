@@ -309,6 +309,20 @@ const areaScript = (name: string): MoveAutomationScript => ({
 
 const mixedAreaTemplate = { kind: 'line' as const, size: 2, label: 'Line 2' }
 
+const mistyConditionScript = (): MoveAutomationScript => ({
+  ...areaScript('Tackle'),
+  targetMode: 'one-target',
+  targetCount: 1,
+  range: 'Melee, 1 Target',
+  keywords: ['Melee', '1 Target'],
+  areaTemplates: [],
+  conditionSuggestions: [{
+    recipient: 'target',
+    condition: 'Burned',
+    label: 'Burned',
+  }],
+})
+
 const mixedOutcomeAreaScript = (): MoveAutomationScript => ({
   ...areaScript('Swift'),
   requiresAccuracy: true,
@@ -631,6 +645,56 @@ describe('executeLivePlayResolveMoveCommandUseCase', () => {
           expect.objectContaining({ id: ENCOUNTER_EXHAUST_COMMAND_FLAG_ID }),
         ]),
       })
+    })
+  })
+
+  it('commits legacy Misty first-turn protection atomically and replays it once', async () => {
+    await withRegisteredScript(mistyConditionScript(), async () => {
+      const map = mapFixture({
+        fieldEffects: {
+          weather: [],
+          terrains: [{ kind: 'misty', scope: 'field', rounds: 5 }],
+          rooms: [],
+        },
+        encounterState: createEmptyEncounterState(),
+      })
+      const harness = seedHarness({ map, actorMoves: [{ name: 'Tackle' }] })
+      const moveIntent = intent({
+        placementId: 'actor-token',
+        moveName: 'Tackle',
+        selection: { kind: 'single-target', targetPlacementId: 'target-a' },
+      })
+      const command = commandFor(map, moveIntent, 'op_mistycondition1')
+      const first = await execute(harness, command, { random: randomSequence([]) })
+      const acceptedResult = accepted(first.result)
+      const committedMap = deepCloneJson(harness.maps.getBySlug('arena'))
+      const committedSheet = deepCloneJson(harness.sheets.getByRef('pokemon', 'target-a'))
+      const protection = committedMap?.encounterState?.effects.find(effect => (
+        effect.kind === 'condition' && effect.payload.action === 'suppress'
+      ))
+
+      expect(first.move).toMatchObject({
+        canonicalMoveName: 'Tackle',
+        transaction: {
+          conditionUpdates: [{ id: 'target-a', conditions: ['Burned'] }],
+        },
+      })
+      expect(first.move).not.toHaveProperty('terrainConditionProtectionEffects')
+      expect(protection).toMatchObject({
+        id: expect.stringMatching(/^condition-protection\.[0-9a-f]{32}$/),
+        affected: { placementIds: ['target-a'] },
+        payload: { conditionId: 'burned', action: 'suppress' },
+      })
+      expect((committedSheet?.sheet.combat as { conditions?: string[] }).conditions)
+        .toEqual(['Burned'])
+
+      const duplicate = await execute(harness, command, {
+        planner: () => { throw new Error('duplicate Misty condition must not replan') },
+        random: () => { throw new Error('duplicate Misty condition must not reroll') },
+      })
+      expect(duplicate.result).toEqual(acceptedResult)
+      expect(harness.maps.getBySlug('arena')).toEqual(committedMap)
+      expect(harness.sheets.getByRef('pokemon', 'target-a')).toEqual(committedSheet)
     })
   })
 

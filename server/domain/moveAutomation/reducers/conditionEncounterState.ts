@@ -9,6 +9,7 @@ import {
   type EncounterConditionEffect,
 } from '#shared/moveAutomation/encounterEffects'
 import type { MoveConditionEffectOperation } from '#shared/moveAutomation/effects'
+import type { MistyTerrainConditionProtection } from '#shared/moveAutomation/terrain'
 import { projectEffectiveConditions } from '~/utils/encounterConditions'
 import { conditionLookupKey } from '~/utils/statusConditions'
 import { deepCloneJson, sameJsonValue } from '~/utils/serialization'
@@ -18,6 +19,9 @@ import {
   type EncounterEffectLifecycleTransition,
 } from '../effectLifecycle'
 import { failMoveCoreConditionReduction } from './conditionError'
+import {
+  createMistyTerrainConditionProtectionEffects,
+} from '../terrainConditionProtection'
 import { canonicalMoveCondition, resolvedMoveConditionSaveTiming } from './conditionRules'
 import type { MoveCoreTokenEffectRecipient } from './coreTokenEffectTypes'
 
@@ -185,6 +189,23 @@ export const createSourceLinkedMoveConditionEffect = (options: {
     suppression: { sources: [] },
   }, `conditionOperation.${options.operation.id}.effect`) as EncounterConditionEffect
 }
+
+export const createMistyProtectedMoveConditionEffects = (options: {
+  readonly operation: MoveConditionEffectOperation
+  readonly condition: string
+  readonly recipient: MoveCoreTokenEffectRecipient
+  readonly context: AuthoritativeMoveRulesContext
+  readonly protection: MistyTerrainConditionProtection
+}): readonly EncounterConditionEffect[] => createMistyTerrainConditionProtectionEffects({
+  protection: options.protection,
+  conditionId: options.condition,
+  operationId: options.operation.id,
+  moveId: options.operation.source.id,
+  sourcePlacementId: options.context.actor.placement.id,
+  recipientPlacementId: options.recipient.placement.id,
+  createdRound: boundedRound(options.context),
+  createdTurn: boundedTurn(options.context),
+})
 
 export const createTransferredMoveConditionEffect = (options: {
   readonly operation: MoveConditionEffectOperation

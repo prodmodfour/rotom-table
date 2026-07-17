@@ -78,6 +78,8 @@ export interface BuildMoveAutomationTransactionInput {
   hazardCells: GridAnchor[]
   manualNote: string
   fieldEffects?: MapFieldEffects
+  /** Server-owned per-recipient terrain projection for target-sensitive fields. */
+  fieldEffectsForTarget?: (target: SpawnedPokemon) => MapFieldEffects
   conditionImmunityContext?: MoveAutomationConditionImmunityContext
   suggestionRecipientFilter?: MoveAutomationSuggestionRecipientFilter
 }
@@ -112,6 +114,7 @@ export const buildMoveAutomationTransaction = ({
   hazardCells,
   manualNote,
   fieldEffects,
+  fieldEffectsForTarget,
   conditionImmunityContext,
   suggestionRecipientFilter,
 }: BuildMoveAutomationTransactionInput): MoveAutomationTransaction => {
@@ -131,7 +134,7 @@ export const buildMoveAutomationTransaction = ({
       user,
       target,
       targetResolutions[target.id],
-      fieldEffects,
+      fieldEffectsForTarget?.(target) ?? fieldEffects,
       selectedTargets,
     )
     const loss = damageBreakdown.hpLoss

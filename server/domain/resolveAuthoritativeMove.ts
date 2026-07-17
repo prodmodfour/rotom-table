@@ -1,4 +1,6 @@
 import type { MoveAutomationRollLedgerEntry } from '#shared/moveAutomation/random'
+import type { EncounterConditionEffect } from '#shared/moveAutomation/encounterEffects'
+import type { MoveSpecCostDeclaration } from '#shared/moveAutomation/spec'
 import type {
   MoveResolutionAuditTrace,
   MoveResolutionTraceAncestryEntry,
@@ -55,7 +57,11 @@ import type {
 import type { SpawnedPokemon } from '~/types/pokemon'
 import type { TokenFacingDirection } from '~/types/tokenFacing'
 import type { TrainerSheet } from '~/types/trainerSheet'
-import { normalizeConditionName } from '~/utils/statusConditions'
+import {
+  isStatusAfflictionCondition,
+  normalizeConditionName,
+  normalizeConditionNames,
+} from '~/utils/statusConditions'
 import type { MoveAutomationConditionImmunityContext } from '~/utils/moveAutomationConditionImmunity'
 import {
   AuthoritativeMoveRulesContextError,
@@ -85,6 +91,12 @@ import {
   resolveAuthoritativeMovement,
   type AuthoritativeMovementSheets,
 } from './movement/resolveMovement'
+import {
+  createMistyTerrainConditionProtectionEffects,
+} from './moveAutomation/terrainConditionProtection'
+import {
+  resolveAuthoritativeMoveActionTiming,
+} from './moveAutomation/actionTiming'
 
 export type { AuthoritativeMoveSheetRead } from './moveAutomation/context'
 
@@ -104,6 +116,7 @@ export type AuthoritativeMoveResolutionFailureCode =
   | 'move-automation-blocked'
   | 'move-condition-blocked'
   | 'move-semi-invulnerable'
+  | 'move-terrain-blocked'
   | 'move-usage-unavailable'
   | 'move-usage-key-invalid'
   | 'target-branch-required'
@@ -165,6 +178,8 @@ export interface ResolveAuthoritativeMoveInput {
   readonly runtimeRegistry?: MoveAutomationRuntimeRegistry
   /** Test/migration seam for retained v1 definitions. */
   readonly legacyScripts?: ReadonlyMap<string, MoveAutomationScript>
+  /** Server-reviewed child/reaction cost policy; never supplied by move intent. */
+  readonly resourceCostDeclarations?: readonly MoveSpecCostDeclaration[]
 }
 
 export interface AuthoritativeMoveArea {
@@ -242,6 +257,8 @@ export interface AuthoritativeMoveResolution {
   readonly resourceMovement?: AuthoritativeMoveResourceMovement
   /** Server-only roster/send-out transition; the map patch carries its durable result. */
   readonly switchTransition?: AuthoritativeMoveSwitchTransition
+  /** Server-only Misty suppression effects planned with legacy sheet conditions. */
+  readonly terrainConditionProtectionEffects?: readonly EncounterConditionEffect[]
   /** Server-only native planning projection; omitted from accepted wire results. */
   readonly nativeV2?: NativeMoveSpecResolutionProjection
 }
@@ -363,15 +380,66 @@ const authoritativeConditionImmunityContext = (
 
 const authoritativeFieldEffectsForActor = (
   context: AuthoritativeMoveRulesContext,
+  targetPlacementId?: string,
 ) => context.queries.terrain.projectFieldEffects(
   context.actor.placement.id,
   context.queries.weather.projectFieldEffects(),
+  targetPlacementId,
 )
+
+const addedConditions = (
+  previousValue: readonly string[],
+  currentValue: readonly string[],
+): readonly string[] => {
+  const remaining = [...normalizeConditionNames(previousValue)]
+  return normalizeConditionNames(currentValue).filter((condition) => {
+    const previousIndex = remaining.indexOf(condition)
+    if (previousIndex < 0) return true
+    remaining.splice(previousIndex, 1)
+    return false
+  })
+}
+
+const legacyTerrainConditionProtectionEffects = (
+  context: AuthoritativeMoveRulesContext,
+  resolution: UnfinalizedAuthoritativeMoveResolution,
+): readonly EncounterConditionEffect[] => {
+  const effects = new Map<string, EncounterConditionEffect>()
+  for (const [updateIndex, update] of resolution.transaction.conditionUpdates.entries()) {
+    const token = context.queries.tokens.get(update.id)
+    if (!token) continue
+    for (const condition of addedConditions(token.sheetConditions ?? [], update.conditions)) {
+      if (!isStatusAfflictionCondition(condition)) continue
+      const terrain = context.queries.terrain.condition({
+        placementId: update.id,
+        conditionId: condition,
+      })
+      if (!terrain.firstTurnProtection || terrain.blockedBy) continue
+      for (const effect of createMistyTerrainConditionProtectionEffects({
+        protection: terrain.firstTurnProtection,
+        conditionId: condition,
+        operationId: `legacy-v1.condition.${updateIndex + 1}`,
+        moveId: `move.${resolution.moveKey}`,
+        sourcePlacementId: resolution.actorPlacementId,
+        recipientPlacementId: update.id,
+        createdRound: Math.max(1, context.map.initiative?.round ?? 1),
+        createdTurn: Math.max(0, context.map.encounterState?.history.currentTurn?.turn ?? 0),
+      })) {
+        effects.set(effect.id, effect)
+      }
+    }
+  }
+  return Object.freeze([...effects.values()])
+}
 
 const finalizeResolution = (
   context: AuthoritativeMoveRulesContext,
   resolution: UnfinalizedAuthoritativeMoveResolution,
 ): AuthoritativeMoveResolution => {
+  const terrainConditionProtectionEffects = legacyTerrainConditionProtectionEffects(
+    context,
+    resolution,
+  )
   const rollLedger = context.random.complete()
   const registeredRuntime = context.queries.rules.runtimeFor(resolution.canonicalMoveName)
   const program = registeredRuntime
@@ -400,6 +468,7 @@ const finalizeResolution = (
     script: resolution.script,
     transaction: resolution.transaction,
     rollLedger,
+    terrainConditionProtectionEffects,
     feedback: resolution.feedback,
     area: resolution.area,
     movement: resolution.movement?.kind === 'pass' ? resolution.movement : undefined,
@@ -409,6 +478,9 @@ const finalizeResolution = (
     sheetReads: context.reads.snapshot(),
     rollLedger,
     auditTrace,
+    ...(terrainConditionProtectionEffects.length > 0
+      ? { terrainConditionProtectionEffects }
+      : {}),
   }
 }
 
@@ -1066,7 +1138,7 @@ const resolveSingleTargetMove = (options: {
     user: actor,
     target,
     damageFormula: options.damageFormula,
-    fieldEffects: authoritativeFieldEffectsForActor(options.context),
+    fieldEffects: authoritativeFieldEffectsForActor(options.context, target.id),
     conditionImmunityContext: authoritativeConditionImmunityContext(options.context, options.script),
     accuracyRule: options.context.queries.weather.accuracy({
       canonicalMoveId: options.canonicalMoveName,
@@ -1271,6 +1343,7 @@ const resolveTargetCountMove = (options: {
     selectedTargets,
     damageFormula: options.damageFormula,
     fieldEffects: authoritativeFieldEffectsForActor(options.context),
+    fieldEffectsForTarget: target => authoritativeFieldEffectsForActor(options.context, target.id),
     conditionImmunityContext: authoritativeConditionImmunityContext(options.context, options.script),
     accuracyRule: options.context.queries.weather.accuracy({
       canonicalMoveId: options.canonicalMoveName,
@@ -1343,6 +1416,7 @@ const resolveAreaMove = (options: {
     targets: selectedTargets,
     damageFormula: options.damageFormula,
     fieldEffects: authoritativeFieldEffectsForActor(options.context),
+    fieldEffectsForTarget: target => authoritativeFieldEffectsForActor(options.context, target.id),
     conditionImmunityContext: authoritativeConditionImmunityContext(options.context, confirmedScript),
     accuracyRule: options.context.queries.weather.accuracy({
       canonicalMoveId: options.canonicalMoveName,
@@ -1589,6 +1663,9 @@ const failFromContextError = (error: AuthoritativeMoveRulesContextError): never 
 /** Resolve mechanics exclusively from one detached authoritative snapshot. */
 export const resolveAuthoritativeMoveExecutionFromContext = (
   context: AuthoritativeMoveRulesContext,
+  options: {
+    readonly resourceCostDeclarations?: readonly MoveSpecCostDeclaration[]
+  } = {},
 ): AuthoritativeMoveExecution => {
   const { placement: actorPlacement } = context.actor
   const { intent } = context
@@ -1638,6 +1715,25 @@ export const resolveAuthoritativeMoveExecutionFromContext = (
     fail('invalid', 'move-usage-key-invalid', `${entry.canonicalMoveName} did not produce a valid move usage key.`)
   }
   const selectedRuntime = context.queries.rules.runtimeFor(entry.canonicalMoveName)
+  const reviewedCosts = options.resourceCostDeclarations
+    ?? (selectedRuntime?.kind === 'movespec-v2'
+      ? selectedRuntime.definition.spec.costs
+      : undefined)
+  const actionTiming = resolveAuthoritativeMoveActionTiming({
+    range: entry.script.range,
+    ...(reviewedCosts && reviewedCosts.length > 0 ? { reviewedCosts } : {}),
+  })
+  const terrainAction = context.queries.terrain.action({
+    placementId: actorPlacement.id,
+    timing: actionTiming,
+  })
+  if (!terrainAction.allowed) {
+    fail(
+      'unauthorized-state',
+      'move-terrain-blocked',
+      `${actorPlacement.id} cannot declare ${entry.canonicalMoveName} as ${actionTiming} outside its own Initiative (${terrainAction.blockedBy}).`,
+    )
+  }
   if (selectedRuntime?.kind === 'movespec-v2') {
     if (intent.selection.kind === 'self') {
       return resolveNativeSelfMove({
@@ -1733,7 +1829,11 @@ export const resolveAuthoritativeMoveExecution = (
       runtimeRegistry: input.runtimeRegistry,
       legacyScripts: input.legacyScripts,
     })
-    return resolveAuthoritativeMoveExecutionFromContext(context)
+    return resolveAuthoritativeMoveExecutionFromContext(context, {
+      ...(input.resourceCostDeclarations === undefined
+        ? {}
+        : { resourceCostDeclarations: input.resourceCostDeclarations }),
+    })
   }
   catch (error) {
     if (error instanceof AuthoritativeMoveRulesContextError) return failFromContextError(error)

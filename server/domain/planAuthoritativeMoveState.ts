@@ -59,6 +59,7 @@ import {
   type MaterializedMoveSpecSuspension,
 } from './moveAutomation/materializeSuspension'
 import { applyMapGlobalField } from './moveAutomation/fieldMapState'
+import { applyEncounterEffectLifecycleEvent } from './moveAutomation/effectLifecycle'
 import {
   applyNativeCoreMapChanges,
   nativeSheetWritesFromStateChanges,
@@ -303,6 +304,11 @@ const cloneResolution = (resolution: AuthoritativeMoveResolution): Authoritative
   ...(resolution.switchTransition === undefined
     ? {}
     : { switchTransition: cloneJson(resolution.switchTransition) }),
+  ...(resolution.terrainConditionProtectionEffects === undefined
+    ? {}
+    : { terrainConditionProtectionEffects: cloneJson(
+        resolution.terrainConditionProtectionEffects,
+      ) }),
 })
 
 const cloneUsageSummary = (usage: UseMoveUsageSummary): UseMoveUsageSummary => cloneJson(usage)
@@ -607,6 +613,27 @@ const applyFieldEffectsToMap = (
     next = applied.map
   }
   return next
+}
+
+const applyTerrainConditionProtectionEffectsToMap = (
+  map: TabletopMap,
+  effects: AuthoritativeMoveResolution['terrainConditionProtectionEffects'],
+): TabletopMap => {
+  if (!effects || effects.length === 0) return map
+  let encounterState = parseEncounterState(
+    map.encounterState ?? createEmptyEncounterState(),
+  )
+  for (const effect of effects) {
+    const result = applyEncounterEffectLifecycleEvent(
+      { effects: encounterState.effects },
+      { kind: 'effect-applied', effect },
+    )
+    encounterState = parseEncounterState({
+      ...encounterState,
+      effects: result.effects,
+    })
+  }
+  return { ...map, encounterState }
 }
 
 const planUsage = (
@@ -1062,6 +1089,7 @@ export const planAuthoritativeMoveStateExecution = (
     idFactory: input.idFactory,
     runtimeRegistry: input.runtimeRegistry,
     legacyScripts: input.legacyScripts,
+    resourceCostDeclarations: input.resourceCostDeclarations,
   })
   if (isAuthoritativePendingMoveResolution(execution)) {
     return planPendingMoveState({
@@ -1190,6 +1218,10 @@ export const planAuthoritativeMoveStateExecution = (
     workingMap,
     resolution.transaction,
     actorPlacement,
+  )
+  workingMap = applyTerrainConditionProtectionEffectsToMap(
+    workingMap,
+    resolution.terrainConditionProtectionEffects,
   )
   workingMap.metadata = appendMoveAutomationLogEntry(workingMap.metadata, resolution.transaction, {
     now: () => plannedAt,

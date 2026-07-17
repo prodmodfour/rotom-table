@@ -237,6 +237,7 @@ export const resolveMoveSpecDamageCalculation = (
   const actor = options.actor ?? options.context.actor.token
   const terrain = options.context.queries.terrain.damage({
     placementId: actor.id,
+    targetPlacementId: options.recipient.id,
     moveType: moveType.moveType,
     targetImmune: moveType.finalMultiplier === 0,
   })
@@ -254,15 +255,14 @@ export const resolveMoveSpecDamageCalculation = (
   const authoritativeFieldEffects = options.context.queries.terrain.projectFieldEffects(
     actor.id,
     authoritativeWeatherFieldEffects,
+    options.recipient.id,
   )
-  // Native weather and Electric/Grassy Terrain modifiers carry exact zone
-  // identity and trace reasons. Keep them out of the compatibility lane.
+  // Native weather and Terrain modifiers carry exact zone identity and trace
+  // reasons. Keep them out of the compatibility lane.
   const nonAuthoritativeFieldEffects: MapFieldEffects = {
     ...authoritativeFieldEffects,
     weather: [],
-    terrains: authoritativeFieldEffects.terrains.filter(effect => (
-      effect.kind !== 'electric' && effect.kind !== 'grassy'
-    )),
+    terrains: [],
   }
   const breakdown = resolveMoveAutomationTargetDamageBreakdown(
     options.script,

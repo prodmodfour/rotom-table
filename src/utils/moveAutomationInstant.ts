@@ -63,6 +63,7 @@ export interface ResolveInstantAreaMoveAutomationInput {
   targets: readonly SpawnedPokemon[]
   damageFormula?: string | null
   fieldEffects?: MapFieldEffects
+  fieldEffectsForTarget?: (target: SpawnedPokemon) => MapFieldEffects
   conditionImmunityContext?: MoveAutomationConditionImmunityContext
   accuracyRule?: MoveAutomationAccuracyRule | null
   random?: () => number
@@ -77,6 +78,7 @@ export interface ResolveInstantMultiTargetMoveAutomationInput {
   selectedTargets?: readonly SpawnedPokemon[]
   damageFormula?: string | null
   fieldEffects?: MapFieldEffects
+  fieldEffectsForTarget?: (target: SpawnedPokemon) => MapFieldEffects
   conditionImmunityContext?: MoveAutomationConditionImmunityContext
   accuracyRule?: MoveAutomationAccuracyRule | null
   random?: () => number
@@ -89,6 +91,7 @@ export interface ResolveInstantMoveAutomationInput {
   target: SpawnedPokemon
   damageFormula: string | null | undefined
   fieldEffects?: MapFieldEffects
+  fieldEffectsForTarget?: (target: SpawnedPokemon) => MapFieldEffects
   conditionImmunityContext?: MoveAutomationConditionImmunityContext
   accuracyRule?: MoveAutomationAccuracyRule | null
   random?: () => number
@@ -102,6 +105,7 @@ export interface ResolveInstantTargetMoveAutomationInput {
   target: SpawnedPokemon
   damageFormula?: string | null
   fieldEffects?: MapFieldEffects
+  fieldEffectsForTarget?: (target: SpawnedPokemon) => MapFieldEffects
   conditionImmunityContext?: MoveAutomationConditionImmunityContext
   accuracyRule?: MoveAutomationAccuracyRule | null
   random?: () => number
@@ -460,6 +464,7 @@ const resolveInstantDoubleStrikeMoveAutomation = ({
   target,
   damageFormula,
   fieldEffects,
+  fieldEffectsForTarget,
   conditionImmunityContext,
   accuracyRule,
   random,
@@ -545,6 +550,7 @@ const resolveInstantDoubleStrikeMoveAutomation = ({
     hazardCells: [],
     manualNote: doubleStrikeNote,
     fieldEffects,
+    fieldEffectsForTarget,
     conditionImmunityContext,
   })
   const targetHpUpdate = transaction.hpUpdates.find((update) => update.id === target.id)
@@ -585,6 +591,7 @@ export const resolveInstantMoveAutomation = ({
   target,
   damageFormula,
   fieldEffects,
+  fieldEffectsForTarget,
   conditionImmunityContext,
   accuracyRule,
   random,
@@ -600,6 +607,7 @@ export const resolveInstantMoveAutomation = ({
       target,
       damageFormula,
       fieldEffects,
+      fieldEffectsForTarget,
       conditionImmunityContext,
       accuracyRule,
       random,
@@ -691,6 +699,7 @@ export const resolveInstantMoveAutomation = ({
     hazardCells: [],
     manualNote: combineManualNotes(runtimeDamage.note, randomStageNote, blockedConditionNote),
     fieldEffects,
+    fieldEffectsForTarget,
     conditionImmunityContext,
   })
   const targetHpUpdate = transaction.hpUpdates.find((update) => update.id === target.id)
@@ -725,6 +734,7 @@ const buildNoRollTargetTransaction = ({
   target,
   damageFormula,
   fieldEffects,
+  fieldEffectsForTarget,
   conditionImmunityContext,
   random,
   randomRoller,
@@ -780,6 +790,7 @@ const buildNoRollTargetTransaction = ({
     hazardCells: [],
     manualNote: combineManualNotes(runtimeDamage.note, randomStageNote, conditionApplications.blockedNotes.join(' ')),
     fieldEffects,
+    fieldEffectsForTarget,
     conditionImmunityContext,
     suggestionRecipientFilter: ({ kind, index, recipient, token }) => {
       if (recipient !== 'target') return true
@@ -860,6 +871,7 @@ interface ResolveInstantTargetGroupMoveAutomationInput {
   targets: readonly SpawnedPokemon[]
   damageFormula?: string | null
   fieldEffects?: MapFieldEffects
+  fieldEffectsForTarget?: (target: SpawnedPokemon) => MapFieldEffects
   conditionImmunityContext?: MoveAutomationConditionImmunityContext
   accuracyRule?: MoveAutomationAccuracyRule | null
   random?: () => number
@@ -877,6 +889,7 @@ const resolveInstantTargetGroupMoveAutomation = ({
   targets,
   damageFormula,
   fieldEffects,
+  fieldEffectsForTarget,
   conditionImmunityContext,
   accuracyRule,
   random,
@@ -943,6 +956,7 @@ const resolveInstantTargetGroupMoveAutomation = ({
     hazardCells: [],
     manualNote: conditionApplications.blockedNotes.join(' '),
     fieldEffects,
+    fieldEffectsForTarget,
     conditionImmunityContext,
     suggestionRecipientFilter: ({ kind, index, recipient, token }) => {
       if (recipient !== 'target') return true
@@ -966,6 +980,7 @@ export const resolveInstantMultiTargetMoveAutomation = ({
   selectedTargets,
   damageFormula,
   fieldEffects,
+  fieldEffectsForTarget,
   conditionImmunityContext,
   accuracyRule,
   random,
@@ -978,6 +993,7 @@ export const resolveInstantMultiTargetMoveAutomation = ({
     targets: resolvedTargets,
     damageFormula,
     fieldEffects,
+    fieldEffectsForTarget,
     conditionImmunityContext,
     accuracyRule,
     random,
@@ -994,6 +1010,7 @@ export const resolveInstantAreaMoveAutomation = ({
   targets,
   damageFormula,
   fieldEffects,
+  fieldEffectsForTarget,
   conditionImmunityContext,
   accuracyRule,
   random,
@@ -1005,6 +1022,7 @@ export const resolveInstantAreaMoveAutomation = ({
     targets,
     damageFormula,
     fieldEffects,
+    fieldEffectsForTarget,
     conditionImmunityContext,
     accuracyRule,
     random,

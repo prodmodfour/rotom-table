@@ -411,11 +411,15 @@ const adaptedStateChanges = (options: {
     })
   }
   if (options.mapChanges.encounterState) {
+    const encounterOperationIds = [
+      ...operationIds.fieldEffects,
+      ...[...operationIds.conditions.values()].flat(),
+    ]
     const source = provenance(
-      operationIds.fieldEffects,
+      encounterOperationIds,
       options.traceEventsById,
-      'legacy-v1-encounter-fields',
-      operationIds.fieldEffects.length === 0,
+      'legacy-v1-encounter-state',
+      encounterOperationIds.length === 0,
     )
     inputs.push({
       kind: 'encounter-state',

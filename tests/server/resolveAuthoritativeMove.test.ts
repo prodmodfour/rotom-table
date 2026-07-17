@@ -136,6 +136,19 @@ const fakeTargetCountScript = (overrides: Partial<MoveAutomationScript> = {}): M
   ...overrides,
 })
 
+const priorityScript = (): MoveAutomationScript => ({
+  ...fakeTargetCountScript(),
+  moveName: 'Tackle',
+  targetMode: 'one-target',
+  targetCount: 1,
+  damaging: false,
+  requiresAccuracy: false,
+  damageBase: null,
+  damageClass: 'Status',
+  range: 'Melee, 1 Target, Priority',
+  keywords: ['Melee', '1 Target', 'Priority'],
+})
+
 const lineTemplate: MoveAutomationAreaTemplate = { kind: 'line', size: 3, label: 'Line 3' }
 
 const mixedOutcomeAreaScript = (): MoveAutomationScript => ({
@@ -231,6 +244,82 @@ describe('resolveAuthoritativeMove', () => {
 
     expect(resolution.canonicalMoveName).toBe('Swords Dance')
     expect(resolution.moveKey).toBe('swords-dance')
+  })
+
+  it('rejects grounded off-turn Priority under Psychic Terrain before drawing randomness', async () => {
+    await withRegisteredMoveAutomationScript(priorityScript(), () => {
+      const map = mapFixture()
+      map.fieldEffects = {
+        weather: [],
+        terrains: [{ kind: 'psychic', scope: 'field' }],
+        rooms: [],
+      }
+      map.initiative = { activeId: 'target-a', round: 1 }
+      let randomCalls = 0
+      const error = expectFailure(() => resolveAuthoritativeMove({
+        map,
+        pokemonSheets: sheetMap([{ name: 'Tackle' }]),
+        trainerSheets: new Map(),
+        intent: moveIntent({
+          placementId: 'actor-token',
+          moveName: 'Tackle',
+          selection: { kind: 'single-target', targetPlacementId: 'target-a' },
+        }),
+        random: () => {
+          randomCalls += 1
+          return 0.5
+        },
+      }), 'move-terrain-blocked')
+
+      expect(error.reason).toBe('unauthorized-state')
+      expect(error.message).toContain('Psychic Terrain (legacy.terrain.psychic)')
+      expect(randomCalls).toBe(0)
+
+      map.initiative = { activeId: 'actor-token', round: 1 }
+      expect(resolveAuthoritativeMove({
+        map,
+        pokemonSheets: sheetMap([{ name: 'Tackle' }]),
+        trainerSheets: new Map(),
+        intent: moveIntent({
+          placementId: 'actor-token',
+          moveName: 'Tackle',
+          selection: { kind: 'single-target', targetPlacementId: 'target-a' },
+        }),
+        random: randomSequence([]),
+      }).transaction.attackedTargetIds).toEqual(['target-a'])
+    })
+  })
+
+  it('uses a server-reviewed Interrupt child cost for Psychic Terrain legality', () => {
+    const map = mapFixture()
+    map.fieldEffects = {
+      weather: [],
+      terrains: [{ kind: 'psychic', scope: 'field' }],
+      rooms: [],
+    }
+    map.initiative = { activeId: 'target-a', round: 1 }
+    let randomCalls = 0
+
+    expectFailure(() => resolveAuthoritativeMove({
+      map,
+      pokemonSheets: sheetMap([{ name: 'Tackle' }]),
+      trainerSheets: new Map(),
+      intent: moveIntent({
+        placementId: 'actor-token',
+        moveName: 'Tackle',
+        selection: { kind: 'single-target', targetPlacementId: 'target-a' },
+      }),
+      resourceCostDeclarations: [{
+        id: 'reaction.cost.test-interrupt',
+        phase: 'pay',
+        cost: { kind: 'action-resource', resource: 'interrupt', amount: 1 },
+      }],
+      random: () => {
+        randomCalls += 1
+        return 0.5
+      },
+    }), 'move-terrain-blocked')
+    expect(randomCalls).toBe(0)
   })
 
   it('independently rejects a manifest-blocked move even if a legacy script is registered', async () => {

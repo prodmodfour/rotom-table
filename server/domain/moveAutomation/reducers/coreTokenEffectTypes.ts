@@ -9,6 +9,9 @@ import type {
   MoveResolutionTraceJsonValue,
   MoveResolutionTraceOperationOutcome,
 } from '#shared/moveAutomation/trace'
+import type {
+  MistyTerrainConditionProtection,
+} from '#shared/moveAutomation/terrain'
 import type { AuthoritativeMoveResolvedSheet } from '../context'
 import type { MoveSpecEmittedOperation } from '../executeSpec'
 import type { MoveEffectDynamicRecipientSets } from './effectRecipients'
@@ -157,6 +160,8 @@ export interface MoveCombatStageImmunityQueryInput {
 
 export interface MoveCoreTokenEffectImmunityDecision {
   readonly blockedBy: string | null
+  /** Non-immunity protection applied only if this condition mutation succeeds. */
+  readonly firstTurnConditionProtection?: MistyTerrainConditionProtection | null
   /** Indirect placements whose sheet-derived state was inspected by the query. */
   readonly consultedPlacementIds: readonly string[]
 }

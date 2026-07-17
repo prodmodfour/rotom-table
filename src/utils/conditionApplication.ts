@@ -6,7 +6,8 @@ import {
 export const FLINCH_CONDITION_NAME = 'Flinch'
 export const VULNERABLE_CONDITION_NAME = 'Vulnerable'
 
-const conditionsAppliedWith = (condition: string): string[] => {
+/** Canonical companion conditions created by applying one condition. */
+export const conditionsAppliedWith = (condition: string): string[] => {
   const canonical = conditionBaseName(condition) ?? condition
   return canonical === FLINCH_CONDITION_NAME ? [VULNERABLE_CONDITION_NAME] : []
 }
