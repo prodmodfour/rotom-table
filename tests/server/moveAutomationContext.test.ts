@@ -139,7 +139,7 @@ describe('immutable authoritative move rules context', () => {
     }).toThrow()
   })
 
-  it('serves snapshot-only placement, token, sheet, relationship, history, resource, target-state, line-of-sight, runtime, and status queries', () => {
+  it('serves snapshot-only placement, token, sheet, relationship, global-field, history, resource, target-state, line-of-sight, runtime, and status queries', () => {
     const context = buildContext()
     const actor = context.queries.placements.get('actor-token')!
     const target = context.queries.placements.get('target-token')!
@@ -169,6 +169,19 @@ describe('immutable authoritative move rules context', () => {
       reasonCode: 'relationship-enemy',
       matches: true,
     })
+    expect(context.queries.globalFields.gravity()).toMatchObject({
+      field: { active: false, instance: null },
+      overlay: { accuracyRollBonus: 0 },
+      reasonCode: 'gravity.inactive',
+    })
+    expect(context.queries.globalFields.magicRoom({
+      scope: 'pokemon-held',
+      timing: 'static',
+    })).toMatchObject({
+      suppressed: false,
+      reasonCode: 'magic-room.inactive',
+    })
+    expect(Object.isFrozen(context.queries.globalFields)).toBe(true)
     expect(context.queries.history.query(actor.id, 'last-completed-move-id')).toBeNull()
     expect(context.queries.history.query(actor.id, 'damage-dealt-this-turn')).toBe(0)
     expect(Object.isFrozen(context.queries.history)).toBe(true)

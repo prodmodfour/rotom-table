@@ -23,7 +23,7 @@ describe('map field effect definitions', () => {
   it('keeps canonical kind lists aligned with definition maps', () => {
     expect(MAP_WEATHER_KINDS).toEqual(['sunny', 'rainy', 'hail', 'sandstorm'])
     expect(MAP_TERRAIN_KINDS).toEqual(['electric', 'grassy', 'misty', 'psychic'])
-    expect(MAP_ROOM_KINDS).toEqual(['magic', 'trick', 'wonder'])
+    expect(MAP_ROOM_KINDS).toEqual(['magic', 'trick', 'wonder', 'gravity'])
 
     expect(MAP_WEATHER_KINDS.map((kind) => MAP_WEATHER_DEFINITIONS[kind].kind)).toEqual(MAP_WEATHER_KINDS)
     expect(MAP_TERRAIN_KINDS.map((kind) => MAP_TERRAIN_DEFINITIONS[kind].kind)).toEqual(MAP_TERRAIN_KINDS)
@@ -47,6 +47,7 @@ describe('map field effect normalization', () => {
     expect(createMapTerrainEffect('grassy')).toEqual({ kind: 'grassy', rounds: 5, scope: 'field' })
     expect(createMapRoomEffect('trick')).toEqual({ kind: 'trick', rounds: 5, startsNextRound: true })
     expect(createMapRoomEffect('magic')).toEqual({ kind: 'magic', rounds: 5, startsNextRound: undefined })
+    expect(createMapRoomEffect('gravity')).toEqual({ kind: 'gravity', rounds: 5, startsNextRound: undefined })
   })
 
   it('normalizes valid effects, trims sources, clamps rounds, and dedupes by last kind', () => {

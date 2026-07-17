@@ -15,6 +15,7 @@ export interface GravityFieldIdentity {
   readonly zoneId: string
   readonly source: AuthoritativeRoomInstance['source']
   readonly sourceSideId: EncounterSideId | null
+  readonly duration: AuthoritativeRoomInstance['duration']
 }
 
 export interface GravityGroundingResolution {
@@ -55,26 +56,34 @@ export interface GravityGroundInteractionResolution {
   readonly reasonCode: 'gravity.ground-interaction-applied' | 'gravity.ground-interaction-not-applicable'
 }
 
+export interface GravityGroundingQuery {
+  readonly placementId: string
+  readonly base: MovementGroundingState
+}
+
+export interface GravityMovementQuery {
+  readonly placementId: string
+  readonly capabilityKeys: readonly MovementCapabilityKey[]
+  readonly destinationAirHeight: number
+}
+
+export interface GravityGroundInteractionQuery {
+  readonly placementId: string
+  readonly moveType: string
+}
+
+export interface GravityMovementProfileQuery {
+  readonly placementId: string
+  readonly profile: EffectiveMovementProfile
+}
+
 export interface MoveAutomationGravityResolver {
   active(): GravityFieldIdentity | null
-  grounding(input: {
-    readonly placementId: string
-    readonly base: MovementGroundingState
-  }): GravityGroundingResolution
+  grounding(input: GravityGroundingQuery): GravityGroundingResolution
   accuracy(): GravityAccuracyResolution
-  movement(input: {
-    readonly placementId: string
-    readonly capabilityKeys: readonly MovementCapabilityKey[]
-    readonly destinationAirHeight: number
-  }): GravityMovementResolution
-  groundInteraction(input: {
-    readonly placementId: string
-    readonly moveType: string
-  }): GravityGroundInteractionResolution
-  projectMovementProfile(input: {
-    readonly placementId: string
-    readonly profile: EffectiveMovementProfile
-  }): EffectiveMovementProfile
+  movement(input: GravityMovementQuery): GravityMovementResolution
+  groundInteraction(input: GravityGroundInteractionQuery): GravityGroundInteractionResolution
+  projectMovementProfile(input: GravityMovementProfileQuery): EffectiveMovementProfile
 }
 
 const deepFreeze = <Value>(value: Value): Value => {
@@ -91,6 +100,7 @@ const identityFor = (room: AuthoritativeRoomInstance | null): GravityFieldIdenti
         zoneId: room.zoneId,
         source: room.source,
         sourceSideId: room.sideId,
+        duration: room.duration,
       })
     : null
 )
@@ -111,10 +121,7 @@ export const createMoveAutomationGravityResolver = (input: {
     return placement?.sheetKind === 'pokemon' ? placement : null
   }
 
-  const grounding = (query: {
-    readonly placementId: string
-    readonly base: MovementGroundingState
-  }): GravityGroundingResolution => {
+  const grounding = (query: GravityGroundingQuery): GravityGroundingResolution => {
     if (!gravity) {
       return deepFreeze({
         placementId: query.placementId,
@@ -154,7 +161,7 @@ export const createMoveAutomationGravityResolver = (input: {
           reasonCode: 'gravity.accuracy-bonus',
         }
       : { bonus: 0, source: null, reasonCode: 'gravity.inactive' }),
-    movement: (query): GravityMovementResolution => {
+    movement: (query: GravityMovementQuery): GravityMovementResolution => {
       if (!gravity) {
         return deepFreeze({
           allowed: true,
@@ -185,7 +192,7 @@ export const createMoveAutomationGravityResolver = (input: {
           : 'gravity.aerial-endpoint-blocked',
       })
     },
-    groundInteraction: (query): GravityGroundInteractionResolution => {
+    groundInteraction: (query: GravityGroundInteractionQuery): GravityGroundInteractionResolution => {
       const applies = Boolean(
         gravity
         && affectedPokemon(query.placementId)
@@ -202,7 +209,7 @@ export const createMoveAutomationGravityResolver = (input: {
           : 'gravity.ground-interaction-not-applicable',
       })
     },
-    projectMovementProfile: (query): EffectiveMovementProfile => {
+    projectMovementProfile: (query: GravityMovementProfileQuery): EffectiveMovementProfile => {
       const resolved = grounding({
         placementId: query.placementId,
         base: query.profile.state.grounding,

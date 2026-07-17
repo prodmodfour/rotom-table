@@ -1,5 +1,5 @@
 import {
-  magicRoomSuppressesItemEffectTiming,
+  magicRoomSuppressesItemEffect,
   type MoveAutomationItemEffectScope,
   type MoveAutomationItemEffectTiming,
 } from '#shared/moveAutomation/globalFields'
@@ -29,16 +29,18 @@ export interface MoveAutomationItemEffectResolution {
     | 'item-effect.placement-unavailable'
 }
 
+export interface MoveAutomationItemEffectQuery {
+  readonly placementId: string
+  readonly scope: MoveAutomationItemEffectScope
+  readonly timing: MoveAutomationItemEffectTiming
+}
+
 export interface MoveAutomationItemEffectResolver {
   /**
    * Resolve whether one server-owned equipment contribution may apply. This
    * query never consumes, activates, equips, or otherwise mutates an item.
    */
-  resolve(input: {
-    readonly placementId: string
-    readonly scope: MoveAutomationItemEffectScope
-    readonly timing: MoveAutomationItemEffectTiming
-  }): MoveAutomationItemEffectResolution
+  resolve(input: MoveAutomationItemEffectQuery): MoveAutomationItemEffectResolution
 }
 
 const deepFreeze = <Value>(value: Value): Value => {
@@ -77,7 +79,7 @@ export const createMoveAutomationItemEffectResolver = (input: {
   const magicRoom = input.rooms.active().find(room => room.kind === 'magic') ?? null
 
   return Object.freeze({
-    resolve: (query): MoveAutomationItemEffectResolution => {
+    resolve: (query: MoveAutomationItemEffectQuery): MoveAutomationItemEffectResolution => {
       const placement = placements.get(query.placementId) ?? null
       if (!placement) {
         return deepFreeze({
@@ -107,8 +109,11 @@ export const createMoveAutomationItemEffectResolver = (input: {
       input.recordSheetRead?.(placement)
       const suppressibleScope = query.scope === 'pokemon-held'
         || query.scope === 'trainer-accessory'
-      const suppressibleTiming = magicRoomSuppressesItemEffectTiming(query.timing)
-      if (magicRoom && suppressibleScope && suppressibleTiming) {
+      const suppressedByMagicRoomPolicy = magicRoomSuppressesItemEffect(
+        query.scope,
+        query.timing,
+      )
+      if (magicRoom && suppressedByMagicRoomPolicy) {
         return deepFreeze({
           placementId: placement.id,
           scope: query.scope,
@@ -129,7 +134,7 @@ export const createMoveAutomationItemEffectResolver = (input: {
         suppressed: false,
         sourceZoneId: magicRoom?.zoneId ?? null,
         sourceSideId: magicRoom?.sideId ?? null,
-        reasonCode: magicRoom && (!suppressibleScope || !suppressibleTiming)
+        reasonCode: magicRoom && (!suppressibleScope || !suppressedByMagicRoomPolicy)
           ? 'item-effect.magic-room-exempt'
           : 'item-effect.allowed',
       })

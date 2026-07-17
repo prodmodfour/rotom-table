@@ -1967,7 +1967,7 @@ Status: DONE
 
 ## MA-143A — Define authoritative remaining-global-field queries
 
-Status: TODO
+Status: DONE
 
 **Depends on:** MA-054, MA-064, MA-123, MA-137
 **Commit:** `feat(move-automation): define remaining global field queries`

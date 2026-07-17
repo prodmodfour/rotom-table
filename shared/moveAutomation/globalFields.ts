@@ -29,6 +29,15 @@ export const magicRoomSuppressesItemEffectTiming = (
   timing: MoveAutomationItemEffectTiming,
 ): boolean => (MAGIC_ROOM_SUPPRESSED_ITEM_EFFECT_TIMINGS as readonly string[]).includes(timing)
 
+/** Magic Room affects held Pokémon items and the Trainer Accessory slot only. */
+export const magicRoomSuppressesItemEffect = (
+  scope: MoveAutomationItemEffectScope,
+  timing: MoveAutomationItemEffectTiming,
+): boolean => (
+  (scope === 'pokemon-held' || scope === 'trainer-accessory')
+  && magicRoomSuppressesItemEffectTiming(timing)
+)
+
 /** PTU Gravity applies this flat modifier to every Accuracy Roll. */
 export const GRAVITY_ACCURACY_ROLL_BONUS = 2 as const
 
@@ -43,17 +52,24 @@ export const TAILWIND_EFFECT_ID_PREFIX = 'effect.field.tailwind.' as const
 /** Recognize only the exact canonical Tailwind shape used for non-stacking queries. */
 export const isTailwindInitiativeEffect = (
   effect: EncounterNumericModifierEffect,
-): boolean => (
-  effect.id.startsWith(TAILWIND_EFFECT_ID_PREFIX)
-  && effect.tags.includes(TAILWIND_EFFECT_TAG)
-  && effect.duration.kind === 'scene'
-  && effect.affected.placementIds.length === 0
-  && effect.affected.sideIds.length === 1
-  && effect.affected.cells.length === 0
-  && effect.stacks === 1
-  && effect.stackPolicy.kind === 'refresh'
-  && effect.payload.attribute === 'initiative'
-  && effect.payload.operation === 'add'
-  && effect.payload.value === TAILWIND_INITIATIVE_BONUS
-  && effect.payload.rounding === 'none'
-)
+): boolean => {
+  const sideId = effect.affected.sideIds[0]
+  return (
+    sideId !== undefined
+    && effect.id === `${TAILWIND_EFFECT_ID_PREFIX}${sideId}`
+    && effect.tags.includes(TAILWIND_EFFECT_TAG)
+    && effect.duration.kind === 'scene'
+    && effect.affected.placementIds.length === 0
+    && effect.affected.sideIds.length === 1
+    && effect.affected.cells.length === 0
+    && effect.stacks === 1
+    && effect.stackPolicy.kind === 'refresh'
+    && effect.charges === null
+    && effect.chargePolicy.kind === 'none'
+    && (effect.transferPolicy ?? 'retain') === 'retain'
+    && effect.payload.attribute === 'initiative'
+    && effect.payload.operation === 'add'
+    && effect.payload.value === TAILWIND_INITIATIVE_BONUS
+    && effect.payload.rounding === 'none'
+  )
+}

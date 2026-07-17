@@ -59,6 +59,10 @@ import {
   type MoveAutomationRelationshipResolver,
 } from './relationships'
 import {
+  createMoveAutomationRemainingGlobalFieldResolver,
+  type MoveAutomationRemainingGlobalFieldResolver,
+} from './remainingGlobalFields'
+import {
   createMoveAutomationResourceResolver,
   type MoveAutomationResourceResolver,
 } from './resources'
@@ -126,6 +130,7 @@ export interface AuthoritativeMoveSheetQueries {
 }
 
 export type AuthoritativeMoveRelationshipQueries = MoveAutomationRelationshipResolver
+export type AuthoritativeMoveGlobalFieldQueries = MoveAutomationRemainingGlobalFieldResolver
 export type AuthoritativeMoveGravityQueries = MoveAutomationGravityResolver
 export type AuthoritativeMoveHistoryQueries = MoveAutomationHistoryResolver
 export type AuthoritativeMoveItemEffectQueries = MoveAutomationItemEffectResolver
@@ -149,6 +154,7 @@ export interface AuthoritativeMoveContextQueries {
   readonly tokens: AuthoritativeMoveTokenQueries
   readonly sheets: AuthoritativeMoveSheetQueries
   readonly relationships: AuthoritativeMoveRelationshipQueries
+  readonly globalFields: AuthoritativeMoveGlobalFieldQueries
   readonly gravity: AuthoritativeMoveGravityQueries
   readonly history: AuthoritativeMoveHistoryQueries
   readonly itemEffects: AuthoritativeMoveItemEffectQueries
@@ -493,6 +499,7 @@ export const buildAuthoritativeMoveRulesContext = (
     map.encounterState?.turnResources ?? createEmptyEncounterTurnResources(),
   )
   const rooms = createMoveAutomationRoomResolver(map)
+  const globalFields = createMoveAutomationRemainingGlobalFieldResolver(map, rooms)
   const gravity = createMoveAutomationGravityResolver({ placements, rooms })
   const weather = createMoveAutomationWeatherResolver(map)
   const { tokens, byId: tokenById } = tokenSnapshots(
@@ -655,6 +662,7 @@ export const buildAuthoritativeMoveRulesContext = (
       forPlacement: sheetForPlacement,
     }),
     relationships,
+    globalFields,
     gravity,
     history,
     itemEffects,

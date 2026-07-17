@@ -45,8 +45,10 @@ export * from './encounterZones'
  * movement resource ledgers, MA-103 enabled privacy-safe pending-resolution
  * summaries, MA-133 added generalized battlefield zones, MA-135 made native
  * move hazards write owned layered zones, and MA-136 registered bounded zone
- * entry mechanics, and MA-137 made global fields zone-owned with authoritative
- * round/scene lifecycle. Legacy editor hazards and the field-effect renderer
+ * entry mechanics, MA-137 made global fields zone-owned with authoritative
+ * round/scene lifecycle, and MA-143A added immutable Magic Room, Gravity, and
+ * side-owned Tailwind query projections. Legacy editor hazards and the
+ * field-effect renderer
  * arrays remain compatibility lanes until their migration tickets; server zone
  * queries and accepted field boundaries adapt/mirror them without applying a
  * matching native zone twice.

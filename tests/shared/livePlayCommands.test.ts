@@ -327,6 +327,7 @@ describe('live-play command contract', () => {
       'magic',
       'trick',
       'wonder',
+      'gravity',
     ])
     expect(LIVE_PLAY_EDIT_TERRAIN_VOXEL_ACTIONS).toEqual(['upsert', 'remove'])
     expect(LIVE_PLAY_EDIT_TERRAIN_VOXELS_EXPLICIT_SCOPE_LIMIT).toBe(32)
