@@ -2084,7 +2084,7 @@ Status: DONE
 
 ## MA-153 — Add typed item write plans
 
-Status: TODO
+Status: DONE
 
 **Depends on:** MA-039, MA-150–MA-152
 **Commit:** `feat(move-automation): plan item mutations`
