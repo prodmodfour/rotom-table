@@ -2097,7 +2097,7 @@ Status: DONE
 
 ## MA-154 — Commit group-inventory move changes atomically
 
-Status: TODO
+Status: DONE
 
 **Depends on:** MA-153
 **Commit:** `feat(move-automation): commit cross resource item effects`

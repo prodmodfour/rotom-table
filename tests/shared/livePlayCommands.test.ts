@@ -1451,6 +1451,39 @@ describe('live-play command contract', () => {
     expectTypeOf(duplicate).toMatchTypeOf<LivePlayCommandResult>()
   })
 
+  it('allows group inventory scopes only on resolveMove map commands', () => {
+    const groupScope = {
+      kind: 'groupInventory',
+      slug: 'main',
+      field: 'inventory',
+    } as const satisfies LivePlayGroupInventoryScope
+    const resolveMove = {
+      schemaVersion: LIVE_PLAY_COMMAND_SCHEMA_VERSION,
+      opId,
+      mapSlug,
+      baseRevision,
+      type: LIVE_PLAY_COMMAND_TYPES.RESOLVE_MOVE,
+      scopes: [tokenScope, groupScope],
+      payload: {
+        schemaVersion: 1,
+        placementId: 'placement-001',
+        moveName: 'Tackle',
+        selection: { kind: 'self' },
+      },
+    } as const
+
+    expect(validateLivePlayCommandEnvelope(resolveMove).valid).toBe(true)
+    expect(validateLivePlayCommandEnvelope({
+      ...buildMoveTokenCommand(),
+      scopes: [tokenScope, groupScope],
+    })).toMatchObject({
+      valid: false,
+      issues: expect.arrayContaining([
+        expect.objectContaining({ path: 'scopes[1].kind', code: 'invalid-scope-kind' }),
+      ]),
+    })
+  })
+
   it('validates common envelope fields including opId, baseRevision, and supported command type', () => {
     const command = buildMoveTokenCommand()
     const result = validateLivePlayCommandEnvelope<typeof command>(command)

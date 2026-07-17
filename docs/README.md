@@ -7,7 +7,7 @@ This directory collects presentation and reviewer documentation for Rotom Table.
 - [Review guide](review-guide.md) — what to inspect first, key routes, source areas, scripts, and production caveats.
 - [Architecture](architecture.md) — high-level Nuxt/Nitro/filesystem-backed architecture.
 - [Data model](data-model.md) — maps, sheets, trainers, player profiles, encounter tables, campaign reference overrides, app-owned PTU reference content, generated sheets, and local data hygiene.
-- [Group inventory workflow](group-inventory.md) — shared party inventory authority, GM revision-checked saves, linked-trainer transfers, realtime sync, maintenance export, and the deferred live-play command boundary.
+- [Group inventory workflow](group-inventory.md) — shared party inventory authority, GM revision-checked saves, linked-trainer transfers, realtime sync, maintenance export, and atomic move-automation item writes.
 - [Campaign repositories](campaign-repositories.md) — using `ROTOM_CAMPAIGN_ROOT` to keep private campaign JSON and campaign reference override diffs in a separate Git repository.
 - [Player profiles and linked character control](player-profiles.md) — normal player login/profile selection, GM profile management, linked sheet editing, player-visible map control, and reference browsing.
 - [Live play authority](live-play-authority.md) — normal `/maps/<slug>` profile-play command direction, setup/edit versus live-play boundaries, revision/idempotency glossary, and the rule forbidding browser-owned whole-map autosave for live gameplay.

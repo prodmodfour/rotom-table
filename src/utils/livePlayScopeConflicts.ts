@@ -1,8 +1,10 @@
 import {
   LIVE_PLAY_COMMAND_TYPES,
   LIVE_PLAY_PATCH_TYPES,
+  LIVE_PLAY_GROUP_INVENTORY_SCOPE_FIELDS,
   LIVE_PLAY_MAP_SCOPE_LANES,
   LIVE_PLAY_TOKEN_SCOPE_FIELDS,
+  type LivePlayGroupInventoryScopeField,
   type LivePlayMapScopeLane,
   type LivePlayScope,
   type LivePlayTokenScopeField,
@@ -32,6 +34,12 @@ export type LivePlayScopeConflictDescriptor =
       readonly sheetKind: SheetKind
       readonly sheetSlug: string
       readonly field: string
+      readonly label: string
+    }
+  | {
+      readonly kind: 'group-inventory-field'
+      readonly slug: string
+      readonly field: LivePlayGroupInventoryScopeField
       readonly label: string
     }
   | {
@@ -77,6 +85,9 @@ interface NormalizedScopeConflictInput {
 
 const MAP_SCOPE_LANES = new Set<unknown>(LIVE_PLAY_MAP_SCOPE_LANES)
 const TOKEN_SCOPE_FIELDS = new Set<unknown>(LIVE_PLAY_TOKEN_SCOPE_FIELDS)
+const GROUP_INVENTORY_SCOPE_FIELDS = new Set<unknown>(
+  LIVE_PLAY_GROUP_INVENTORY_SCOPE_FIELDS,
+)
 
 const isRecord = (value: unknown): value is JsonRecord => (
   typeof value === 'object' && value !== null && !Array.isArray(value)
@@ -181,6 +192,19 @@ const descriptorForScope = (
     }
   }
 
+  if (scope.kind === 'groupInventory') {
+    if (
+      typeof scope.slug !== 'string'
+      || !GROUP_INVENTORY_SCOPE_FIELDS.has(scope.field)
+    ) return unknownDescriptor('unknown group inventory scope')
+    return {
+      kind: 'group-inventory-field',
+      slug: scope.slug,
+      field: scope.field as LivePlayGroupInventoryScopeField,
+      label: `group inventory ${scope.slug} ${scope.field}`,
+    }
+  }
+
   if (scope.kind === 'map') {
     if (!MAP_SCOPE_LANES.has(scope.lane)) return unknownDescriptor('unknown map scope')
     const scopedCell = parseGridCell(scope.cell)
@@ -202,6 +226,9 @@ const descriptorForScope = (
 const descriptorKey = (descriptor: LivePlayScopeConflictDescriptor): string => {
   if (descriptor.kind === 'token-field') return `${descriptor.kind}:${descriptor.placementId}:${descriptor.field}`
   if (descriptor.kind === 'sheet-field') return `${descriptor.kind}:${descriptor.sheetKind}:${descriptor.sheetSlug}:${descriptor.field}`
+  if (descriptor.kind === 'group-inventory-field') {
+    return `${descriptor.kind}:${descriptor.slug}:${descriptor.field}`
+  }
   if (descriptor.kind === 'terrain-cell') return `${descriptor.kind}:${descriptor.x}:${descriptor.y}:${descriptor.z}`
   if (descriptor.kind === 'hazard-cell') return `${descriptor.kind}:${descriptor.x}:${descriptor.y}:${descriptor.z}`
   if (descriptor.kind === 'map-lane') return `${descriptor.kind}:${descriptor.lane}`
@@ -263,6 +290,12 @@ const descriptorsConflict = (
     return left.sheetKind === right.sheetKind
       && left.sheetSlug === right.sheetSlug
       && left.field === right.field
+  }
+  if (
+    left.kind === 'group-inventory-field'
+    && right.kind === 'group-inventory-field'
+  ) {
+    return left.slug === right.slug && left.field === right.field
   }
 
   return false

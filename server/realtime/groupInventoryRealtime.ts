@@ -21,7 +21,12 @@ import {
 
 export type GroupInventoryRealtimeDestination = 'specific'
 export type GroupInventoryAffectedSheetRealtimeDestination = SheetDocumentRealtimeDestination
-export type GroupInventoryRealtimeOperation = 'save' | 'transfer-to-trainer' | 'transfer-to-group' | 'shop-checkout'
+export type GroupInventoryRealtimeOperation =
+  | 'save'
+  | 'transfer-to-trainer'
+  | 'transfer-to-group'
+  | 'shop-checkout'
+  | 'resolve-move'
 
 export interface GroupInventoryAffectedSheetUpdate {
   readonly kind: SheetKind

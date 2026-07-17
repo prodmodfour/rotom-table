@@ -45,10 +45,11 @@ Affected trainer sheets are returned with the authoritative group inventory resp
 
 ## Realtime and recovery
 
-Group inventory saves and transfers append durable realtime events after the committing transaction succeeds:
+Group inventory saves, transfers, and accepted move-automation writes append durable realtime events after the committing transaction succeeds:
 
-- group inventory updates publish on `group-inventory:<slug>` with the complete authoritative document;
+- group inventory updates publish on `group-inventory:<slug>` with the complete authoritative document and a `group-inventory-access` delivery descriptor;
 - transfer operations also publish affected trainer sheet updates through the existing sheet realtime destinations;
+- `resolveMove` appends its group inventory update in the same SQLite transaction as map/sheet writes and the terminal operation result, then publishes the sequenced event only after commit;
 - client IDs let the originating tab ignore or reconcile its own echo consistently with the rest of the realtime client code;
 - stale or malformed incoming group inventory events are ignored rather than applied over newer local state.
 
@@ -60,17 +61,16 @@ Group inventory is part of the live campaign database. Private operators should 
 
 Rotom Table still uses a trusted-table GM/Player role picker. It is not public authentication. Private VPS use needs an outer access gate, and production hosted writes remain fail-closed unless the operator explicitly enables the documented hosted-write flag. Do not fix or deploy production group inventory behavior by editing production runtime files directly; change app code in the repository and deploy through the normal project path.
 
-## Future live-play command boundary
+## Move-automation live-play command boundary
 
-No `groupInventory` live-play command scope exists today. Keep that boundary unless a later feature needs in-map item consumption or another map-command workflow that must mutate shared party inventory while gameplay is running.
+`resolveMove` may now carry an explicit `{ kind: "groupInventory", slug, field: "inventory" }` scope when reviewed server move metadata requires that shared item resource. Other map command types cannot use this scope, and move scopes cannot address group money. Submitting the scope does not grant mechanics or inventory authority: the server must independently load the named group inventory through a reviewed item requirement, retain its revision in the private read set, and produce a typed `group-inventory-state` change. A scope for an unreviewed slug rejects.
 
-If a future feature adds group inventory to live-play commands, it should follow the existing server-authoritative command model:
+Before an immediate move commits, the server validates the map revision, the full consulted sheet read set, and every consulted group inventory revision under one SQLite write lock. Each typed group inventory change must match the corresponding read revision and advances that document exactly once through repository CAS. The map, damage or other sheet effects, group inventory item changes, terminal operation result, compensation audit metadata, and authorized durable realtime rows then commit together or all roll back. An exact duplicate move `opId` returns the stored result without applying the item change or publishing it again.
 
-- define an explicit command scope such as `groupInventory` rather than hiding inventory writes inside map metadata, transient map-action events, or a fake trainer sheet;
-- include the group inventory slug and expected revision alongside any map, token, or trainer sheet revision required by the command;
-- authorize GM actors directly and player actors through the selected player profile's linked trainer sheet or token control, depending on the command's gameplay target;
-- persist all affected maps, sheets, group inventory documents, operation results, and durable realtime rows in one SQLite transaction;
-- publish only after commit and make retry/idempotency behavior match the live-play command outbox contract;
-- leave direct GM full-document saves as the setup/maintenance path instead of converting them into gameplay commands.
+This boundary remains narrower than direct inventory editing:
 
-Until that need exists, the current page-level save and transfer APIs are the intended group inventory boundary.
+- clients submit move intent and conservative resource scopes, never item patches, quantities, destination mechanics, or replacement documents;
+- only typed server-reviewed item plans may produce group inventory writes;
+- direct GM full-document saves remain the setup/maintenance path;
+- page-level trainer transfers retain their existing role/profile policy and APIs;
+- item choices and shared move-family mutation semantics remain separate durable automation capabilities.

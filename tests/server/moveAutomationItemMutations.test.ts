@@ -15,6 +15,10 @@ import {
 } from '~/types/groupInventory'
 import type { TabletopMap } from '~/types/map'
 import type { TrainerInventory, TrainerSheet } from '~/types/trainerSheet'
+import {
+  MoveGroupInventoryPlanError,
+  moveGroupInventoryChangesForPersistence,
+} from '~~/server/domain/moveAutomation/groupInventoryChanges'
 import { MoveItemMutationError } from '~~/server/domain/moveAutomation/itemMutationTypes'
 import { planMoveItemMutations } from '~~/server/domain/moveAutomation/planItemMutations'
 
@@ -291,6 +295,26 @@ describe('typed move item mutation plans', () => {
       { kind: 'sheet', sheetKind: 'trainer', sheetSlug: 'ace', expectedRevision: 4 },
       { kind: 'sheet', sheetKind: 'pokemon', sheetSlug: 'sparky', expectedRevision: 3 },
     ])
+    expect(moveGroupInventoryChangesForPersistence({
+      plan: plan.stateChanges,
+      reads: [{ slug: 'main', revision: 6 }],
+    })).toEqual([
+      expect.objectContaining({
+        expectedRevision: 6,
+        scope: {
+          kind: 'external-resource',
+          resourceKind: 'group-inventory',
+          resourceId: 'main',
+        },
+        current: expect.objectContaining({ revision: 7 }),
+      }),
+    ])
+    expect(() => moveGroupInventoryChangesForPersistence({
+      plan: plan.stateChanges,
+      reads: [{ slug: 'main', revision: 5 }],
+    })).toThrowError(expect.objectContaining({
+      name: 'MoveGroupInventoryPlanError',
+    } satisfies Partial<MoveGroupInventoryPlanError>))
     expect(plan.operationResults[0]?.resourceScopes).toEqual([
       { kind: 'group-inventory', slug: 'main', expectedRevision: 6 },
       { kind: 'sheet', sheetKind: 'trainer', slug: 'ace', expectedRevision: 4 },

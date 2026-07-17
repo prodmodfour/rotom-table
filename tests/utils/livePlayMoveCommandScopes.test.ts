@@ -44,6 +44,9 @@ const intent = (selection: ResolveMoveIntent['selection'], overrides: Partial<Re
 const scopeKey = (scope: LivePlayScope): string => {
   if (scope.kind === 'map') return `map:${scope.lane}`
   if (scope.kind === 'token') return `token:${scope.placementId}:${scope.field}`
+  if (scope.kind === 'groupInventory') {
+    return `groupInventory:${scope.slug}:${scope.field}`
+  }
   return `sheet:${scope.sheetKind}:${scope.sheetSlug}:${scope.field}`
 }
 
@@ -80,6 +83,32 @@ describe('buildResolveMoveScopes', () => {
       'map:fieldEffects',
     ])
     expect(keys(result.scopes)).not.toContain('map:placements')
+  })
+
+  it('adds only explicit reviewed group inventory scopes and validates their identities', () => {
+    const result = buildResolveMoveScopes({
+      map: mapFixture(),
+      intent: intent({ kind: 'self' }),
+      groupInventorySlugs: ['main', 'party-reserve'],
+    })
+
+    expect(result.ok).toBe(true)
+    if (!result.ok) return
+    expect(keys(result.scopes)).toEqual(expect.arrayContaining([
+      'groupInventory:main:inventory',
+      'groupInventory:party-reserve:inventory',
+    ]))
+
+    expect(buildResolveMoveScopes({
+      map: mapFixture(),
+      intent: intent({ kind: 'self' }),
+      groupInventorySlugs: ['main', 'main'],
+    })).toMatchObject({ ok: false, message: expect.stringContaining('more than once') })
+    expect(buildResolveMoveScopes({
+      map: mapFixture(),
+      intent: intent({ kind: 'self' }),
+      groupInventorySlugs: ['Party Bag'],
+    })).toMatchObject({ ok: false, message: expect.stringContaining('valid resource slug') })
   })
 
   it('includes single-target token and backing sheet effect scopes', () => {

@@ -22,11 +22,11 @@ Live play uses persistent player profiles and normal map URLs. Gameplay mutation
 
 ### Shared group inventory
 
-The `/group-inventory` page is campaign-level inventory state, not map metadata and not a hidden trainer sheet. GM direct edits use revision-checked full-document saves. GM and player trainer transfers use atomic page-level APIs that validate both group inventory and trainer sheet revisions; player transfers are limited to trainer sheets linked to the selected player profile. A future `groupInventory` live-play command scope should be added only if in-map item consumption or another gameplay command needs to mutate party inventory. See [Group inventory workflow](group-inventory.md) for the current workflow and future command boundary.
+The `/group-inventory` page is campaign-level inventory state, not map metadata and not a hidden trainer sheet. GM direct edits use revision-checked full-document saves. GM and player trainer transfers use atomic page-level APIs that validate both group inventory and trainer sheet revisions; player transfers are limited to trainer sheets linked to the selected player profile. Reviewed move automation may additionally submit an inventory-only `groupInventory` resource scope. The scope is not mechanics authority: the server must have loaded the same slug through reviewed item metadata and must produce a typed group-inventory state change. See [Group inventory workflow](group-inventory.md) for the page and move-command boundaries.
 
 ## Atomic command and batch workflows
 
-Every accepted persistent command or batch workflow uses one synchronous SQLite transaction for all affected documents, live-operation results, and durable realtime rows. Expected map/sheet revisions are checked before writing. Complete changed documents are written once. Durable event rows are appended before commit. Exact sequenced events are published only after commit, so rollback cannot produce a success publication.
+Every accepted persistent command or batch workflow uses one synchronous SQLite transaction for all affected documents, live-operation results, and durable realtime rows. Expected map, sheet, and external-resource revisions are checked before writing. Complete changed documents are written once. Durable event rows are appended before commit. Exact sequenced events are published only after commit, so rollback cannot produce a success publication.
 
 This applies to:
 
@@ -37,10 +37,10 @@ This applies to:
 - setup map and sheet saves;
 - map/sheet library and folder mutations;
 - shared map interaction-mode changes;
-- group inventory GM saves and trainer transfers;
+- group inventory GM saves, trainer transfers, and reviewed `resolveMove` item writes;
 - accepted shop checkout commands that update shop stock plus trainer sheet or group inventory money/inventory.
 
-Authoritative `resolveMove` planning also records a deduplicated `sheetReads` snapshot for the acting sheet, every consulted selected or area-candidate target sheet, and indirect rule providers such as condition-immunity auras. Each entry carries sheet kind, slug, and observed revision; conflicting observations of the same sheet reference reject planning. This collection is server-internal and cannot be supplied by the client. Before any map or sheet write, the accepted-result transaction asserts every recorded sheet revision, including read-only misses, immune targets, and aura providers. A stale or missing consulted sheet rejects the move as a conflict without writing the map, sheets, operation result, or realtime rows; read-only sheets are never no-op written merely to obtain CAS protection.
+Authoritative `resolveMove` planning also records a deduplicated `sheetReads` snapshot for the acting sheet, every consulted selected or area-candidate target sheet, and indirect rule providers such as condition-immunity auras. Reviewed item requirements additionally record every consulted group inventory slug and revision, including empty candidate sources. These collections are server-internal and cannot be supplied by the client. Before any write, the accepted-result transaction asserts the map revision plus every recorded sheet and group inventory revision. A typed group-inventory write must match one of those reads and an inventory-only submitted resource scope. A stale or missing consulted resource rejects the move as a conflict without writing the map, sheets, group inventory, operation result, or realtime rows; read-only resources are never no-op written merely to obtain CAS protection.
 
 Successful move planning produces a bounded structured audit trace tied to the reviewed runtime definition hash and frozen rules-source hash. It records canonical phase transitions, predicate decisions, target inclusion/exclusion, server rolls, operation inputs/results, prevented effects, choices, and child ancestry. The durable accepted result carries a sanitized projection: raw operation/predicate data, selected option IDs, and predicate-excluded target identities and event counts remain server-only; size-bounded public summaries retain their public event count. Historical stored results from before this field remain readable. Clients cannot submit either trace form. Deterministic trace lines can be rendered for diagnostics without treating legacy prose log lines as the only audit evidence.
 

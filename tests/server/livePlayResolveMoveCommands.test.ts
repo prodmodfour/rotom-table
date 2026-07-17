@@ -17,6 +17,12 @@ import {
   spendEncounterMoveResourceCosts,
 } from '~~/server/domain/moveAutomation/reduceEncounterResources'
 import { planAuthoritativeMoveState, type AuthoritativeMoveStatePlan } from '~~/server/domain/planAuthoritativeMoveState'
+import { planMoveItemMutations } from '~~/server/domain/moveAutomation/planItemMutations'
+import {
+  createMoveStateChangePlan,
+  type MoveStateChange,
+  type MoveStateChangeInput,
+} from '~~/server/domain/moveAutomation/plan'
 import {
   MOVE_AUTOMATION_RUNTIME_REGISTRY,
   type MoveAutomationRuntimeRegistry,
@@ -41,7 +47,10 @@ import type { CharacterSheet, CharacterSheetMove } from '~/types/characterSheet'
 import type { MoveAutomationScript } from '~/types/moveAutomation'
 import type { SheetPlacement, TabletopMap } from '~/types/map'
 import type { TrainerSheet } from '~/types/trainerSheet'
-import { createDefaultGroupInventoryDocument } from '~/types/groupInventory'
+import {
+  createDefaultGroupInventoryDocument,
+  type GroupInventoryDocument,
+} from '~/types/groupInventory'
 
 interface Harness {
   readonly database: RotomDatabase
@@ -114,6 +123,29 @@ const targetSheet = (slug: string, overrides: Partial<CharacterSheet> = {}): Cha
   ...overrides,
 })
 
+const groupInventoryWithPotion = (): GroupInventoryDocument => {
+  const base = createDefaultGroupInventoryDocument({ slug: 'main', now: 10 })
+  return {
+    ...base,
+    revision: 2,
+    inventory: {
+      ...base.inventory,
+      medicalKit: [{ id: 'group-potion', name: 'Potion', qty: 2 }],
+    },
+  }
+}
+
+const sharedMedicalItemRequirementProvider: NonNullable<
+  LivePlayResolveMoveCommandDependencies['itemResourceRequirementProvider']
+> = () => [{
+  id: 'test.shared-medical-items',
+  source: {
+    kind: 'group-inventory',
+    slug: 'main',
+    sections: ['medicalKit'],
+  },
+}]
+
 const seedHarness = (options: {
   readonly map?: TabletopMap
   readonly actorMoves?: readonly CharacterSheetMove[]
@@ -179,6 +211,17 @@ const commandFor = (
   }
 }
 
+const withGroupInventoryScope = (
+  command: ResolveMoveLivePlayCommand,
+  slug = 'main',
+): ResolveMoveLivePlayCommand => ({
+  ...command,
+  scopes: [
+    ...command.scopes,
+    { kind: 'groupInventory', slug, field: 'inventory' },
+  ],
+})
+
 const execute = (
   harness: Harness,
   command: ResolveMoveLivePlayCommand,
@@ -190,6 +233,7 @@ const execute = (
     readonly idFactory?: () => string
     readonly planner?: LivePlayResolveMoveCommandDependencies['planner']
     readonly itemResourceRequirementProvider?: LivePlayResolveMoveCommandDependencies['itemResourceRequirementProvider']
+    readonly groupInventoryRepository?: LivePlayResolveMoveCommandDependencies['groupInventoryRepository']
   } = {},
 ) => executeLivePlayResolveMoveCommandUseCase({
   role: options.role ?? 'gm',
@@ -201,7 +245,7 @@ const execute = (
   database: harness.database,
   mapRepository: harness.maps,
   sheetRepository: harness.sheets,
-  groupInventoryRepository: harness.groupInventories,
+  groupInventoryRepository: options.groupInventoryRepository ?? harness.groupInventories,
   commandExecutor: harness.commandExecutor,
   planner: options.planner,
   itemResourceRequirementProvider: options.itemResourceRequirementProvider,
@@ -253,6 +297,56 @@ const accepted = (result: unknown): LivePlayCommandAccepted => {
     throw new Error('expected accepted result')
   }
   return result as LivePlayCommandAccepted
+}
+
+const withoutStateChangeIdentity = (
+  change: MoveStateChange,
+): MoveStateChangeInput => {
+  const { id: _id, order: _order, ...input } = change
+  return input as MoveStateChangeInput
+}
+
+const planWithGroupInventoryTransfer = (
+  input: Parameters<typeof planAuthoritativeMoveState>[0],
+  groupInventory: GroupInventoryDocument,
+): AuthoritativeMoveStatePlan => {
+  const basePlan = planAuthoritativeMoveState(input)
+  const source = input.itemResources?.candidates.find(candidate => (
+    candidate.reference.kind === 'group-inventory-row'
+  ))?.reference
+  if (!source || source.kind !== 'group-inventory-row') {
+    throw new Error('expected one authoritative group inventory item candidate')
+  }
+  const originOperationId = input.operationId
+  if (!originOperationId) throw new Error('expected move operation ID')
+  const itemPlan = planMoveItemMutations({
+    map: input.map,
+    pokemonSheets: input.pokemonSheets,
+    trainerSheets: input.trainerSheets,
+    groupInventories: new Map([[groupInventory.slug, groupInventory]]),
+    originOperationId,
+    plannedAt: basePlan.nextMap.updatedAt ?? 0,
+    operations: [{
+      id: 'item.transfer-potion-to-reserve',
+      kind: 'transfer',
+      reasonCode: 'item.transfer',
+      source,
+      destination: {
+        kind: 'group-inventory-row',
+        owner: source.owner,
+        itemId: 'group-potion-reserve',
+        section: 'pokemonItems',
+      },
+      quantity: 1,
+    }],
+  })
+  return {
+    ...basePlan,
+    stateChanges: createMoveStateChangePlan([
+      ...basePlan.stateChanges.changes.map(withoutStateChangeIdentity),
+      ...itemPlan.stateChanges.changes.map(withoutStateChangeIdentity),
+    ]),
+  }
 }
 
 const moveStatePayloadFromPatches = (patches: LivePlayCommandAccepted['patches']) => {
@@ -1538,6 +1632,20 @@ describe('executeLivePlayResolveMoveCommandUseCase', () => {
     const unrelated = await execute(harness, { ...valid, opId: 'op_scopeunrel1', scopes: [...valid.scopes, { kind: 'token', placementId: 'target-b', field: 'hp' }] })
     expect(unrelated.result).toMatchObject({ ok: false, reason: 'invalid', message: expect.stringContaining('not related') })
 
+    const unreviewedGroup = await execute(harness, {
+      ...valid,
+      opId: 'op_scopegroup1',
+      scopes: [
+        ...valid.scopes,
+        { kind: 'groupInventory', slug: 'main', field: 'inventory' },
+      ],
+    })
+    expect(unreviewedGroup.result).toMatchObject({
+      ok: false,
+      reason: 'invalid',
+      message: expect.stringContaining('not covered by reviewed authoritative item resources'),
+    })
+
     const acceptedResponse = await execute(harness, valid, { random: randomSequence([0.5, 0]) })
     const scopes = accepted(acceptedResponse.result).patches[0]!.scopes
     expect(scopes).toContainEqual({ kind: 'token', placementId: 'actor-token', field: 'action' })
@@ -1547,16 +1655,159 @@ describe('executeLivePlayResolveMoveCommandUseCase', () => {
     expect(scopes).not.toContainEqual({ kind: 'token', placementId: 'target-b', field: 'hp' })
   })
 
-  it('conflicts atomically when a consulted group inventory changes after item legality planning', async () => {
+  it('commits damage, a group inventory item transfer, realtime, and its op result exactly once', async () => {
     const harness = seedHarness({ actorMoves: [{ name: 'Tackle' }] })
-    const initialGroup = {
-      ...createDefaultGroupInventoryDocument({ slug: 'main', now: 10 }),
-      revision: 2,
-      inventory: {
-        ...createDefaultGroupInventoryDocument({ slug: 'main', now: 10 }).inventory,
-        medicalKit: [{ id: 'group-potion', name: 'Potion', qty: 2 }],
+    const initialGroup = groupInventoryWithPotion()
+    harness.groupInventories.save({
+      slug: initialGroup.slug,
+      revision: initialGroup.revision,
+      updatedAt: initialGroup.updatedAt,
+      document: initialGroup,
+    })
+    const map = harness.maps.getBySlug('arena')!
+    const moveIntent = intent({
+      placementId: 'actor-token',
+      moveName: 'Tackle',
+      selection: { kind: 'single-target', targetPlacementId: 'target-a' },
+    })
+    const missingScopeCommand = commandFor(map, moveIntent, 'op_itemnoscope1')
+    const missingScope = await execute(harness, missingScopeCommand, {
+      planner: input => planWithGroupInventoryTransfer(input, initialGroup),
+      itemResourceRequirementProvider: sharedMedicalItemRequirementProvider,
+    })
+    expect(missingScope.result).toMatchObject({
+      ok: false,
+      reason: 'invalid',
+      message: expect.stringContaining('missing required write scope groupInventory:main:inventory'),
+    })
+    expect(harness.maps.getBySlug('arena')?.revision).toBe(4)
+    expect(harness.sheets.getByRef('pokemon', 'target-a')?.revision).toBe(2)
+    expect(harness.groupInventories.get('main')?.document).toEqual(initialGroup)
+
+    const command = withGroupInventoryScope(
+      commandFor(map, moveIntent, 'op_itemcommit01'),
+    )
+    let plannerCalls = 0
+    const response = await execute(harness, command, {
+      planner: (input) => {
+        plannerCalls += 1
+        return planWithGroupInventoryTransfer(input, initialGroup)
       },
-    }
+      itemResourceRequirementProvider: sharedMedicalItemRequirementProvider,
+    })
+    const acceptedResult = accepted(response.result)
+    const committedGroup = harness.groupInventories.get('main')?.document
+
+    expect(committedGroup).toMatchObject({
+      revision: 3,
+      updatedAt: 1_000,
+      inventory: {
+        medicalKit: [{ id: 'group-potion', name: 'Potion', qty: 1 }],
+        pokemonItems: [{ id: 'group-potion-reserve', name: 'Potion', qty: 1 }],
+      },
+    })
+    expect(harness.sheets.getByRef('pokemon', 'target-a')?.sheet).toMatchObject({
+      revision: 3,
+      combat: { currentHp: expect.any(Number) },
+    })
+    expect(
+      (harness.sheets.getByRef('pokemon', 'target-a')?.sheet.combat as { readonly currentHp?: number })?.currentHp,
+    ).toBeLessThan(80)
+    expect(acceptedResult.patches[0]?.scopes).toContainEqual({
+      kind: 'groupInventory',
+      slug: 'main',
+      field: 'inventory',
+    })
+    expect(harness.ops.getOpResult('arena', command.opId)).toEqual(acceptedResult)
+    expect(harness.ops.getStoredOpRecord('arena', command.opId)?.moveCompensation?.operations)
+      .toContainEqual(expect.objectContaining({
+        stateChangeKind: 'group-inventory-state',
+        availability: 'unavailable',
+        resource: {
+          kind: 'external-resource',
+          resourceKind: 'group-inventory',
+          resourceId: 'main',
+          beforeRevision: 2,
+          afterRevision: 3,
+        },
+      }))
+    const groupEventIndex = harness.events.findIndex(event => (
+      (event as { readonly channel?: string }).channel === 'group-inventory:main'
+    ))
+    const acceptedEventIndex = harness.events.findIndex(event => (
+      (event as { readonly type?: string }).type === 'live-play-command-accepted'
+    ))
+    expect(groupEventIndex).toBeGreaterThanOrEqual(0)
+    expect(groupEventIndex).toBeLessThan(acceptedEventIndex)
+    expect(harness.events[groupEventIndex]).toMatchObject({
+      channel: 'group-inventory:main',
+      type: 'updated',
+      revision: 3,
+      clientId: 'client-test',
+      data: { slug: 'main', document: committedGroup },
+    })
+
+    const committedMap = deepCloneJson(harness.maps.getBySlug('arena'))
+    const committedSheets = deepCloneJson(harness.sheets.list())
+    const committedEvents = deepCloneJson(harness.events)
+    const duplicate = await execute(harness, command, {
+      random: () => { throw new Error('duplicate group item move must not reroll') },
+      planner: () => { throw new Error('duplicate group item move must not replan') },
+    })
+
+    expect(duplicate.result).toEqual(acceptedResult)
+    expect(plannerCalls).toBe(1)
+    expect(harness.maps.getBySlug('arena')).toEqual(committedMap)
+    expect(harness.sheets.list()).toEqual(committedSheets)
+    expect(harness.groupInventories.get('main')?.document).toEqual(committedGroup)
+    expect(harness.events).toEqual(committedEvents)
+  })
+
+  it('rolls map and damage writes back when group inventory CAS persistence fails', async () => {
+    const harness = seedHarness({ actorMoves: [{ name: 'Tackle' }] })
+    const initialGroup = groupInventoryWithPotion()
+    harness.groupInventories.save({
+      slug: initialGroup.slug,
+      revision: initialGroup.revision,
+      updatedAt: initialGroup.updatedAt,
+      document: initialGroup,
+    })
+    const map = harness.maps.getBySlug('arena')!
+    const moveIntent = intent({
+      placementId: 'actor-token',
+      moveName: 'Tackle',
+      selection: { kind: 'single-target', targetPlacementId: 'target-a' },
+    })
+    const command = withGroupInventoryScope(
+      commandFor(map, moveIntent, 'op_itemcasfail1'),
+    )
+    const response = await execute(harness, command, {
+      planner: input => planWithGroupInventoryTransfer(input, initialGroup),
+      itemResourceRequirementProvider: sharedMedicalItemRequirementProvider,
+      groupInventoryRepository: {
+        ...harness.groupInventories,
+        applyLivePlayUpdate: () => ({
+          status: 'stale' as const,
+          current: initialGroup,
+        }),
+      },
+    })
+
+    expect(response.result).toMatchObject({
+      ok: false,
+      reason: 'persistence-failed',
+      message: expect.stringContaining('Group inventory main changed'),
+    })
+    expect(harness.maps.getBySlug('arena')).toEqual(map)
+    expect(harness.sheets.getByRef('pokemon', 'target-a')?.revision).toBe(2)
+    expect(harness.groupInventories.get('main')?.document).toEqual(initialGroup)
+    expect(harness.ops.getOpResult('arena', command.opId)).toBeNull()
+    expect(harness.events).toEqual([])
+  })
+
+  it('conflicts atomically when a planned group inventory write becomes stale', async () => {
+    const harness = seedHarness({ actorMoves: [{ name: 'Tackle' }] })
+    const initialGroup = groupInventoryWithPotion()
     harness.groupInventories.save({
       slug: 'main',
       revision: initialGroup.revision,
@@ -1569,14 +1820,20 @@ describe('executeLivePlayResolveMoveCommandUseCase', () => {
       moveName: 'Tackle',
       selection: { kind: 'single-target', targetPlacementId: 'target-a' },
     })
-    const command = commandFor(map, moveIntent, 'op_itemreadrace1')
+    const command = withGroupInventoryScope(
+      commandFor(map, moveIntent, 'op_itemreadrace1'),
+    )
     const beforeMap = deepCloneJson(harness.maps.getBySlug('arena'))
     const beforeSheets = deepCloneJson(harness.sheets.list())
     let observedCandidates: unknown = null
     const planner: NonNullable<LivePlayResolveMoveCommandDependencies['planner']> = (input) => {
       observedCandidates = deepCloneJson(input.itemResources?.candidates ?? [])
-      const plan = planAuthoritativeMoveState(input)
+      const plan = planWithGroupInventoryTransfer(input, initialGroup)
       expect(plan.groupInventoryReads).toEqual([{ slug: 'main', revision: 2 }])
+      expect(plan.stateChanges.changes).toContainEqual(expect.objectContaining({
+        kind: 'group-inventory-state',
+        expectedRevision: 2,
+      }))
       const current = harness.groupInventories.get('main')
       if (!current) throw new Error('expected group inventory before race')
       harness.groupInventories.save({
@@ -1598,14 +1855,7 @@ describe('executeLivePlayResolveMoveCommandUseCase', () => {
 
     const response = await execute(harness, command, {
       planner,
-      itemResourceRequirementProvider: () => [{
-        id: 'test.shared-medical-items',
-        source: {
-          kind: 'group-inventory',
-          slug: 'main',
-          sections: ['medicalKit'],
-        },
-      }],
+      itemResourceRequirementProvider: sharedMedicalItemRequirementProvider,
     })
 
     expect(observedCandidates).toEqual([

@@ -237,7 +237,11 @@ export type ShopCheckoutTrainerSheetScope = LivePlaySheetScope & {
   readonly field: ShopCheckoutTrainerSheetScopeField
 }
 
-export type LivePlayScope = LivePlayMapScope | LivePlayTokenScope | LivePlaySheetScope
+export type LivePlayScope =
+  | LivePlayMapScope
+  | LivePlayTokenScope
+  | LivePlaySheetScope
+  | LivePlayGroupInventoryScope
 
 export type LivePlayHazardsScope = LivePlayMapScope & { readonly lane: 'hazards' }
 export type LivePlayHazardCellScope = LivePlayHazardsScope & { readonly cell: GridAnchor }
@@ -1925,7 +1929,7 @@ const validateShopCheckoutShopScope = (
   }
 }
 
-const validateShopCheckoutGroupInventoryScope = (
+const validateGroupInventoryScope = (
   scope: UnknownRecord,
   path: string,
   issues: MutableIssueList,
@@ -1992,19 +1996,30 @@ const validateShopCheckoutTrainerSheetScope = (
   }
 }
 
-const validateScope = (scope: unknown, path: string, issues: MutableIssueList): void => {
+const validateScope = (
+  scope: unknown,
+  path: string,
+  issues: MutableIssueList,
+  allowGroupInventory: boolean,
+): void => {
   if (!isRecord(scope)) {
     addIssue(issues, path, 'invalid-scopes', `${path} must be an object.`, EXPECTED_OBJECT, scope)
     return
   }
 
-  if (scope.kind !== 'map' && scope.kind !== 'token' && scope.kind !== 'sheet') {
+  const supportedKind = scope.kind === 'map'
+    || scope.kind === 'token'
+    || scope.kind === 'sheet'
+    || (allowGroupInventory && scope.kind === 'groupInventory')
+  if (!supportedKind) {
     addIssue(
       issues,
       `${path}.kind`,
       'invalid-scope-kind',
-      `${path}.kind must be map, token, or sheet.`,
-      'map | token | sheet',
+      allowGroupInventory
+        ? `${path}.kind must be map, token, sheet, or groupInventory.`
+        : `${path}.kind must be map, token, or sheet.`,
+      allowGroupInventory ? 'map | token | sheet | groupInventory' : 'map | token | sheet',
       scope.kind,
     )
     return
@@ -2020,10 +2035,19 @@ const validateScope = (scope: unknown, path: string, issues: MutableIssueList): 
     return
   }
 
+  if (scope.kind === 'groupInventory') {
+    validateGroupInventoryScope(scope, path, issues)
+    return
+  }
+
   validateSheetScope(scope, path, issues)
 }
 
-const validateScopes = (scopes: unknown, issues: MutableIssueList): void => {
+const validateScopes = (
+  scopes: unknown,
+  issues: MutableIssueList,
+  allowGroupInventory: boolean,
+): void => {
   if (!Array.isArray(scopes)) {
     addIssue(issues, 'scopes', 'invalid-scopes', 'scopes must be an array.', 'array', scopes)
     return
@@ -2041,7 +2065,12 @@ const validateScopes = (scopes: unknown, issues: MutableIssueList): void => {
     return
   }
 
-  scopes.forEach((scope, index) => validateScope(scope, `scopes[${index}]`, issues))
+  scopes.forEach((scope, index) => validateScope(
+    scope,
+    `scopes[${index}]`,
+    issues,
+    allowGroupInventory,
+  ))
 }
 
 const validateShopCheckoutScope = (
@@ -2060,7 +2089,7 @@ const validateShopCheckoutScope = (
   }
 
   if (scope.kind === 'groupInventory') {
-    validateShopCheckoutGroupInventoryScope(scope, path, issues)
+    validateGroupInventoryScope(scope, path, issues)
     return
   }
 
@@ -2175,7 +2204,11 @@ export const collectLivePlayCommandEnvelopeIssues = (
   }
 
   if (hasOwn(value, 'scopes')) {
-    validateScopes(value.scopes, issues)
+    validateScopes(
+      value.scopes,
+      issues,
+      value.type === LIVE_PLAY_COMMAND_TYPES.RESOLVE_MOVE,
+    )
   }
 
   if (value.type === LIVE_PLAY_COMMAND_TYPES.SET_INITIATIVE && hasOwn(value, 'payload') && value.payload !== undefined) {

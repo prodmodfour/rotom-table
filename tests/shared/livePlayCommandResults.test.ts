@@ -104,6 +104,39 @@ describe('live-play terminal command response validation', () => {
     })).toMatchObject({ valid: false })
   })
 
+  it('validates matching resolveMove group inventory scopes in terminal patches', () => {
+    const groupScope = { kind: 'groupInventory', slug: 'main', field: 'inventory' }
+    const resolveCommand = command({
+      type: LIVE_PLAY_COMMAND_TYPES.RESOLVE_MOVE,
+      scopes: [
+        { kind: 'token', placementId: 'token-pikachu', field: 'action' },
+        groupScope,
+      ],
+      payload: {
+        schemaVersion: 1,
+        placementId: 'token-pikachu',
+        moveName: 'Tackle',
+        selection: { kind: 'self' },
+      },
+    })
+    const response = accepted({
+      patches: [patch({
+        type: LIVE_PLAY_PATCH_TYPES.MOVE_STATE,
+        scopes: [groupScope],
+        payload: { command: LIVE_PLAY_COMMAND_TYPES.RESOLVE_MOVE },
+      })],
+    })
+
+    expect(validateTerminalResponseForCommand({
+      response,
+      command: resolveCommand,
+    }).valid).toBe(true)
+    expect(validateTerminalResponseForCommand({
+      response,
+      command: { ...resolveCommand, scopes: resolveCommand.scopes.slice(0, 1) },
+    })).toMatchObject({ valid: false })
+  })
+
   it('verifies terminal responses belong to the command that was sent', () => {
     expect(validateTerminalResponseForCommand({ response: accepted(), command: command() }).valid).toBe(true)
     expect(validateTerminalResponseForCommand({

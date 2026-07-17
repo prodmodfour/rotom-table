@@ -9,7 +9,7 @@ const repoRoot = resolve(testDir, '../..')
 const readRepoText = (relativePath: string): string => readFileSync(resolve(repoRoot, relativePath), 'utf8')
 
 describe('group inventory workflow docs', () => {
-  it('documents authority, transfers, realtime, export, and future live-play boundaries', () => {
+  it('documents authority, transfers, realtime, export, and move live-play boundaries', () => {
     const workflow = readRepoText('docs/group-inventory.md')
     const docsIndex = readRepoText('docs/README.md')
     const dataModel = readRepoText('docs/data-model.md')
@@ -28,7 +28,9 @@ describe('group inventory workflow docs', () => {
     expect(workflow).toContain('selected player profile ID')
     expect(workflow).toContain('group-inventory:<slug>')
     expect(workflow).toContain('data/group-inventories/')
-    expect(workflow).toContain('No `groupInventory` live-play command scope exists today')
-    expect(workflow).toContain('If a future feature adds group inventory to live-play commands')
+    expect(workflow).toContain('`resolveMove` may now carry an explicit')
+    expect(workflow).toContain('{ kind: "groupInventory", slug, field: "inventory" }')
+    expect(workflow).toContain('map, damage or other sheet effects, group inventory item changes')
+    expect(workflow).toContain('An exact duplicate move `opId` returns the stored result')
   })
 })

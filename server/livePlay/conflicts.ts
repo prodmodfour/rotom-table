@@ -4,6 +4,7 @@ import {
   type LivePlayCommandAccepted,
   type LivePlayCommandEnvelope,
   type LivePlayCommandRejectionReason,
+  type LivePlayGroupInventoryScopeField,
   type LivePlayMapScopeLane,
   type LivePlayScope,
   type LivePlayTokenScopeField,
@@ -71,6 +72,12 @@ type ConflictScopeDescriptor =
       readonly sheetKind: SheetKind
       readonly sheetSlug: string
       readonly field: string
+      readonly label: string
+    }
+  | {
+      readonly kind: 'group-inventory-field'
+      readonly slug: string
+      readonly field: LivePlayGroupInventoryScopeField
       readonly label: string
     }
   | {
@@ -226,9 +233,22 @@ const sheetFieldDescriptor = (
   label: `sheet ${sheetKind}:${sheetSlug} ${field}`,
 })
 
+const groupInventoryFieldDescriptor = (
+  slug: string,
+  field: LivePlayGroupInventoryScopeField,
+): ConflictScopeDescriptor => ({
+  kind: 'group-inventory-field',
+  slug,
+  field,
+  label: `group inventory ${slug} ${field}`,
+})
+
 const descriptorKey = (descriptor: ConflictScopeDescriptor): string => {
   if (descriptor.kind === 'token-field') return `${descriptor.kind}:${descriptor.placementId}:${descriptor.field}`
   if (descriptor.kind === 'sheet-field') return `${descriptor.kind}:${descriptor.sheetKind}:${descriptor.sheetSlug}:${descriptor.field}`
+  if (descriptor.kind === 'group-inventory-field') {
+    return `${descriptor.kind}:${descriptor.slug}:${descriptor.field}`
+  }
   if (descriptor.kind === 'terrain-cell') return `${descriptor.kind}:${descriptor.x}:${descriptor.y}:${descriptor.z}`
   if (descriptor.kind === 'hazard-cell') return `${descriptor.kind}:${descriptor.x}:${descriptor.y}:${descriptor.z}`
   return `${descriptor.kind}:${descriptor.lane}`
@@ -313,6 +333,11 @@ const descriptorsForScopes = (
       continue
     }
 
+    if (scope.kind === 'groupInventory') {
+      descriptors.push(groupInventoryFieldDescriptor(scope.slug, scope.field))
+      continue
+    }
+
     const scopedCell = cellFromScope(scope)
     if (scope.lane === 'hazards' && scopedCell) {
       descriptors.push(hazardCellDescriptor(scopedCell))
@@ -365,6 +390,12 @@ const descriptorsConflict = (
     return left.sheetKind === right.sheetKind
       && left.sheetSlug === right.sheetSlug
       && left.field === right.field
+  }
+  if (
+    left.kind === 'group-inventory-field'
+    && right.kind === 'group-inventory-field'
+  ) {
+    return left.slug === right.slug && left.field === right.field
   }
 
   return false

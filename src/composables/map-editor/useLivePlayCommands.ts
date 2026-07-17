@@ -1114,6 +1114,9 @@ export const useLivePlayCommands = (
     if (scope.kind === 'sheet' && typeof scope.sheetKind === 'string' && typeof scope.field === 'string') {
       return `${scope.sheetKind} sheet ${scope.field}`
     }
+    if (scope.kind === 'groupInventory' && typeof scope.field === 'string') {
+      return `group inventory ${scope.field}`
+    }
     return null
   }
 

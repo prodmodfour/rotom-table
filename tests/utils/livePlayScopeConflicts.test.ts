@@ -9,6 +9,7 @@ import {
   type ClearHazardsPayload,
   type EditHazardsPayload,
   type EditTerrainVoxelsPayload,
+  type LivePlayGroupInventoryScope,
   type LivePlayMapScope,
   type LivePlayScope,
   type LivePlaySheetScope,
@@ -35,6 +36,15 @@ const sheetScope = (field: string): LivePlaySheetScope => ({
   kind: 'sheet',
   sheetKind: 'pokemon',
   sheetSlug: 'pikachu',
+  field,
+})
+
+const groupInventoryScope = (
+  slug: string,
+  field: LivePlayGroupInventoryScope['field'] = 'inventory',
+): LivePlayGroupInventoryScope => ({
+  kind: 'groupInventory',
+  slug,
   field,
 })
 
@@ -109,6 +119,25 @@ describe('live-play scope conflict utilities', () => {
     expect(livePlayScopesConflict(
       [sheetScope('hp')],
       [sheetScope('conditions')],
+    )).toBe(false)
+  })
+
+  it('classifies group inventory fields by exact resource and field', () => {
+    expect(findLivePlayScopeConflict(
+      [groupInventoryScope('main')],
+      [groupInventoryScope('main')],
+    )).toMatchObject({
+      label: 'group inventory main inventory',
+      left: { kind: 'group-inventory-field', slug: 'main', field: 'inventory' },
+      right: { kind: 'group-inventory-field', slug: 'main', field: 'inventory' },
+    })
+    expect(livePlayScopesConflict(
+      [groupInventoryScope('main')],
+      [groupInventoryScope('reserve')],
+    )).toBe(false)
+    expect(livePlayScopesConflict(
+      [groupInventoryScope('main', 'money')],
+      [groupInventoryScope('main', 'inventory')],
     )).toBe(false)
   })
 

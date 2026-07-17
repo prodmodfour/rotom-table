@@ -1,4 +1,5 @@
 import {
+  type LivePlayGroupInventoryScope,
   type LivePlayMapScope,
   type LivePlayScope,
   type LivePlaySheetScope,
@@ -36,12 +37,30 @@ const ACTOR_TOKEN_FIELDS = new Set<LivePlayTokenScope['field']>([
   'facing',
 ])
 const RELATED_TOKEN_FIELDS = new Set<LivePlayTokenScope['field']>(['hp', 'combatStages', 'conditions'])
-const ACTOR_SHEET_FIELDS = new Set(['moveUsage', 'hp', 'combatStages', 'conditions'])
-const RELATED_SHEET_FIELDS = new Set(['hp', 'combatStages', 'conditions'])
+const ACTOR_SHEET_FIELDS = new Set([
+  'moveUsage',
+  'hp',
+  'combatStages',
+  'conditions',
+  'items',
+  'inventory',
+  'equipmentSlots',
+])
+const RELATED_SHEET_FIELDS = new Set([
+  'hp',
+  'combatStages',
+  'conditions',
+  'items',
+  'inventory',
+  'equipmentSlots',
+])
 
 const scopeKey = (scope: LivePlayScope): string => {
   if (scope.kind === 'map') return `map:${scope.lane}`
   if (scope.kind === 'token') return `token:${scope.placementId}:${scope.field}`
+  if (scope.kind === 'groupInventory') {
+    return `groupInventory:${scope.slug}:${scope.field}`
+  }
   return `sheet:${scope.sheetKind}:${scope.sheetSlug}:${scope.field}`
 }
 
@@ -58,6 +77,12 @@ const sheetScope = (sheetKind: SheetKind, sheetSlug: string, field: string): Liv
   sheetKind,
   sheetSlug,
   field,
+})
+
+const groupInventoryScope = (slug: string): LivePlayGroupInventoryScope => ({
+  kind: 'groupInventory',
+  slug,
+  field: 'inventory',
 })
 
 const pushScope = (scopes: LivePlayScope[], seen: Set<string>, scope: LivePlayScope): void => {
@@ -169,7 +194,24 @@ const assertSubmittedScopeAllowed = (
   actorPlacementId: string,
   relatedPlacementIds: ReadonlySet<string>,
   placementsById: ReadonlyMap<string, SheetPlacement>,
+  groupInventoryReadSlugs: ReadonlySet<string>,
 ): void => {
+  if (scope.kind === 'groupInventory') {
+    if (scope.field !== 'inventory') {
+      rejectLivePlayCommand(
+        'invalid',
+        'resolveMove group inventory scopes may only cover inventory',
+      )
+    }
+    if (!groupInventoryReadSlugs.has(scope.slug)) {
+      rejectLivePlayCommand(
+        'invalid',
+        `resolveMove group inventory scope ${scope.slug}:${scope.field} is not covered by reviewed authoritative item resources`,
+      )
+    }
+    return
+  }
+
   if (scope.kind === 'map') {
     if (!ALLOWED_MAP_LANES.has(scope.lane)) {
       rejectLivePlayCommand('invalid', 'resolveMove map scopes may only cover metadata, hazards, or fieldEffects')
@@ -301,6 +343,11 @@ export const actualResolveMoveWriteScopes = (plan: AuthoritativeMoveStatePlan): 
 
   for (const placementId of temporaryHpChangedPlacementIds(plan)) pushScope(scopes, seen, tokenScope(placementId, 'hp'))
   pushSheetWriteScopes(scopes, seen, plan.sheetWrites)
+  for (const change of plan.stateChanges.changes) {
+    if (change.kind === 'group-inventory-state') {
+      pushScope(scopes, seen, groupInventoryScope(change.scope.resourceId))
+    }
+  }
 
   return scopes
 }
@@ -351,10 +398,19 @@ export const validateResolveMoveScopes = (input: {
   const actorPlacementId = input.plan.resolution.actorPlacementId
   const relatedPlacementIds = relatedPlacementIdsForPlan(input.intent, input.plan)
   const placementsById = placementById(input.map)
+  const groupInventoryReadSlugs = new Set(
+    input.plan.groupInventoryReads.map(read => read.slug),
+  )
 
   assertRequiredConservativeScopes(input.command, actorPlacementId)
   for (const scope of input.command.scopes) {
-    assertSubmittedScopeAllowed(scope, actorPlacementId, relatedPlacementIds, placementsById)
+    assertSubmittedScopeAllowed(
+      scope,
+      actorPlacementId,
+      relatedPlacementIds,
+      placementsById,
+      groupInventoryReadSlugs,
+    )
   }
 
   const actualScopes = actualResolveMoveWriteScopes(input.plan)
@@ -390,6 +446,9 @@ export const validatePendingResolveMoveScopes = (input: {
     }
   }
   const placementsById = placementById(input.map)
+  const groupInventoryReadSlugs = new Set(
+    input.plan.groupInventoryReads.map(read => read.slug),
+  )
 
   assertRequiredConservativeScopes(input.command, actorPlacementId)
   for (const scope of input.command.scopes) {
@@ -398,6 +457,7 @@ export const validatePendingResolveMoveScopes = (input: {
       actorPlacementId,
       relatedPlacementIds,
       placementsById,
+      groupInventoryReadSlugs,
     )
   }
 

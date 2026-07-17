@@ -40,6 +40,15 @@ describe('group inventory realtime helpers', () => {
       dedupeKey: 'group-inventory:save:main:2:specific',
     }])
     expect((inputs[0]?.event.data as { document: unknown }).document).not.toBe(document)
+
+    expect(groupInventoryUpdatedRealtimeAppendInputs(
+      document,
+      'move-client',
+      'resolve-move',
+    )[0]).toMatchObject({
+      access: { kind: 'group-inventory-access', groupSlug: GROUP_INVENTORY_MAIN_SLUG },
+      dedupeKey: 'group-inventory:resolve-move:main:2:specific',
+    })
   })
 
   it('creates affected trainer sheet update events for transfer convergence', () => {

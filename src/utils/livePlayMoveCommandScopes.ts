@@ -1,6 +1,12 @@
 import type { ResolveMoveIntent } from '#shared/livePlayMoveResolution'
 import { LIVE_PLAY_RESOLVE_MOVE_SCOPE_LIMIT } from '#shared/livePlayMoveState'
-import type { LivePlayScope, LivePlaySheetScope, LivePlayTokenScope } from '#shared/livePlayCommands'
+import { isSlug } from '#shared/paths'
+import type {
+  LivePlayGroupInventoryScope,
+  LivePlayScope,
+  LivePlaySheetScope,
+  LivePlayTokenScope,
+} from '#shared/livePlayCommands'
 import type { SheetPlacement, TabletopMap } from '~/types/map'
 
 export { LIVE_PLAY_RESOLVE_MOVE_SCOPE_LIMIT }
@@ -9,6 +15,8 @@ export interface BuildResolveMoveScopesInput {
   readonly map: TabletopMap
   readonly intent: ResolveMoveIntent
   readonly candidateScopePlacementIds?: readonly string[]
+  /** Reviewed shared item resources that the move may mutate. */
+  readonly groupInventorySlugs?: readonly string[]
 }
 
 export type BuildResolveMoveScopesResult =
@@ -92,6 +100,9 @@ const parseCandidateScopeIds = (
 const scopeKey = (scope: LivePlayScope): string => {
   if (scope.kind === 'map') return `map:${scope.lane}`
   if (scope.kind === 'token') return `token:${scope.placementId}:${scope.field}`
+  if (scope.kind === 'groupInventory') {
+    return `groupInventory:${scope.slug}:${scope.field}`
+  }
   return `sheet:${scope.sheetKind}:${scope.sheetSlug}:${scope.field}`
 }
 
@@ -106,6 +117,36 @@ const tokenScope = (placementId: string, field: LivePlayTokenScope['field']): Li
   kind: 'token',
   placementId,
   field,
+})
+
+const parseGroupInventorySlugs = (
+  values: readonly string[] | undefined,
+): { readonly ok: true; readonly slugs: readonly string[] } | { readonly ok: false; readonly message: string } => {
+  const slugs: string[] = []
+  const seen = new Set<string>()
+  for (const [index, slug] of (values ?? []).entries()) {
+    if (!isSlug(slug)) {
+      return {
+        ok: false,
+        message: `Group inventory scope ${index + 1} must be a valid resource slug.`,
+      }
+    }
+    if (seen.has(slug)) {
+      return {
+        ok: false,
+        message: `Group inventory scope ${slug} was supplied more than once.`,
+      }
+    }
+    seen.add(slug)
+    slugs.push(slug)
+  }
+  return { ok: true, slugs }
+}
+
+const groupInventoryScope = (slug: string): LivePlayGroupInventoryScope => ({
+  kind: 'groupInventory',
+  slug,
+  field: 'inventory',
 })
 
 const sheetScopesForPlacement = (
@@ -137,6 +178,7 @@ export const buildResolveMoveScopes = ({
   map,
   intent,
   candidateScopePlacementIds,
+  groupInventorySlugs,
 }: BuildResolveMoveScopesInput): BuildResolveMoveScopesResult => {
   const placementsById = placementById(map)
   const actorPlacement = placementsById.get(intent.placementId)
@@ -153,6 +195,8 @@ export const buildResolveMoveScopes = ({
 
   const candidateResult = parseCandidateScopeIds(candidateScopePlacementIds)
   if (!candidateResult.ok) return candidateResult
+  const groupInventoryResult = parseGroupInventorySlugs(groupInventorySlugs)
+  if (!groupInventoryResult.ok) return groupInventoryResult
 
   for (const candidateId of candidateResult.ids) {
     if (!placementsById.has(candidateId)) {
@@ -186,6 +230,9 @@ export const buildResolveMoveScopes = ({
   pushScope(scopes, seenScopes, { kind: 'map', lane: 'metadata' })
   pushScope(scopes, seenScopes, { kind: 'map', lane: 'hazards' })
   pushScope(scopes, seenScopes, { kind: 'map', lane: 'fieldEffects' })
+  for (const slug of groupInventoryResult.slugs) {
+    pushScope(scopes, seenScopes, groupInventoryScope(slug))
+  }
 
   for (const field of ACTOR_TOKEN_FIELDS) pushScope(scopes, seenScopes, tokenScope(intent.placementId, field))
 

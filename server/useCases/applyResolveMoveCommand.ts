@@ -33,9 +33,10 @@ import {
   type LivePlayMoveStatePatchPayload,
 } from '#shared/livePlayMoveState'
 import type { CharacterSheet } from '~/types/characterSheet'
+import type { GroupInventoryDocument } from '~/types/groupInventory'
 import type { SheetKind, SheetPlacement, TabletopMap } from '~/types/map'
 import type { TrainerSheet } from '~/types/trainerSheet'
-import { deepCloneJson } from '~/utils/serialization'
+import { deepCloneJson, sameJsonValue } from '~/utils/serialization'
 import { toPersistableSheetPayload } from '~/utils/sheets/persistence'
 import {
   planAuthoritativeMoveStateExecution,
@@ -46,6 +47,10 @@ import {
   type AuthoritativePendingMoveStatePlan,
   type PlanAuthoritativeMoveStateInput,
 } from '../domain/planAuthoritativeMoveState'
+import {
+  MoveGroupInventoryPlanError,
+  moveGroupInventoryChangesForPersistence,
+} from '../domain/moveAutomation/groupInventoryChanges'
 import { createMoveStateChangePlan } from '../domain/moveAutomation/plan'
 import { AuthoritativeMoveItemResourceError } from '../domain/moveAutomation/itemResources'
 import { createAcceptedMoveCompensationResult } from '../domain/moveAutomation/planAcceptedMoveCompensation'
@@ -70,6 +75,7 @@ import {
 import { createSqliteAuthoritativeLivePlayCommandExecutor } from '../livePlay/sqliteCommandExecutor'
 import { createLivePlayCommandHash } from '../livePlay/opResult'
 import { livePlaySheetUpdateRealtimeAppendInputs } from '../livePlay/sheetUpdateRealtime'
+import { groupInventoryUpdatedRealtimeAppendInputs } from '../realtime/groupInventoryRealtime'
 import { getRotomDatabase, type RotomDatabase } from '../storage/database'
 import {
   createSqliteGroupInventoryRepository,
@@ -152,7 +158,7 @@ export interface LivePlayResolveMoveCommandDependencies {
   readonly sheetRepository?: Pick<SheetRepository<Record<string, unknown>>, 'getByRef' | 'assertRevisions' | 'applyLivePlayUpdate'>
   readonly groupInventoryRepository?: Pick<
     GroupInventoryRepository,
-    'get' | 'assertRevisions'
+    'get' | 'assertRevisions' | 'applyLivePlayUpdate'
   > & { readonly database?: RotomDatabase }
   readonly pendingResolutionRepository?: Pick<
     PendingMoveResolutionRepository,
@@ -507,6 +513,26 @@ export const moveStatePatch = (
   }
 }
 
+const validatedMoveGroupInventoryChanges = (
+  plan: Pick<
+    AuthoritativeMoveStatePlan | AuthoritativePendingMoveStatePlan,
+    'stateChanges' | 'groupInventoryReads'
+  >,
+) => {
+  try {
+    return moveGroupInventoryChangesForPersistence({
+      plan: plan.stateChanges,
+      reads: plan.groupInventoryReads,
+    })
+  }
+  catch (error) {
+    if (error instanceof MoveGroupInventoryPlanError) {
+      rejectLivePlayCommand('invalid', error.message)
+    }
+    throw error
+  }
+}
+
 type ResolveMoveCommandApplication =
   | {
       readonly kind: 'complete'
@@ -528,6 +554,12 @@ const applyResolveMoveCommand = (
 ): ResolveMoveCommandApplication => {
   const plan = planMoveState(context, dependencies, command, itemResources)
   if (isAuthoritativePendingMoveStatePlan(plan)) {
+    if (validatedMoveGroupInventoryChanges(plan).length > 0) {
+      rejectLivePlayCommand(
+        'invalid',
+        'Suspended move declarations cannot commit group inventory changes before their response window.',
+      )
+    }
     validatePendingResolveMoveScopes({ command, map: context.map, plan })
     const result = createPendingMoveDeclarationResult({
       opId: command.opId,
@@ -548,6 +580,8 @@ const applyResolveMoveCommand = (
       patches: [],
     }
   }
+
+  validatedMoveGroupInventoryChanges(plan)
 
   const move = moveResultFromPlan(plan)
   const scopes = validateResolveMoveScopes({ command, intent: context.intent, map: context.map, plan })
@@ -658,6 +692,40 @@ const assertCommittedSheetMatchesPlan = (sheet: PersistedSheet, expectedRevision
   if (normalizeRevision(sheet.revision) !== expectedRevision) {
     throw new LivePlayResolveMoveCommandUseCaseError(409, `Committed ${sheet.kind} sheet ${sheet.slug} revision ${sheet.revision} did not match planned revision ${expectedRevision}`)
   }
+}
+
+const persistMoveGroupInventoryChanges = (
+  plan: AuthoritativeMoveStatePlan,
+  dependencies: DependencySet,
+): readonly GroupInventoryDocument[] => {
+  const changes = moveGroupInventoryChangesForPersistence({
+    plan: plan.stateChanges,
+    reads: plan.groupInventoryReads,
+  })
+  const documents: GroupInventoryDocument[] = []
+  for (const change of changes) {
+    const slug = change.scope.resourceId
+    const update = dependencies.groupInventoryRepository.applyLivePlayUpdate({
+      slug,
+      expectedRevision: change.expectedRevision,
+      nextDocument: change.current,
+      now: change.current.updatedAt,
+    })
+    if (update.status === 'stale') {
+      throw new LivePlayResolveMoveCommandUseCaseError(
+        409,
+        `Group inventory ${slug} changed before the resolveMove command could be persisted`,
+      )
+    }
+    if (!sameJsonValue(update.document, change.current)) {
+      throw new LivePlayResolveMoveCommandUseCaseError(
+        409,
+        `Committed group inventory ${slug} did not match the planned move state`,
+      )
+    }
+    documents.push(update.document)
+  }
+  return documents
 }
 
 const assertPendingPersistencePlan = (options: {
@@ -1188,6 +1256,8 @@ export const executeLivePlayResolveMoveCommandUseCase = async (
           }
         }
 
+        const groupInventoryUpdates = persistMoveGroupInventoryChanges(plan, deps)
+
         if (plan.followUpResolution) {
           const storedFollowUp = deps.pendingResolutionRepository.create({
             resolution: plan.followUpResolution,
@@ -1218,6 +1288,13 @@ export const executeLivePlayResolveMoveCommandUseCase = async (
           updates,
           clientId: actor.clientId,
         }))
+        recordRealtimeEvents(groupInventoryUpdates.flatMap(document => (
+          groupInventoryUpdatedRealtimeAppendInputs(
+            document,
+            actor.clientId,
+            'resolve-move',
+          )
+        )))
         saveOpResult(createAcceptedMoveCompensationResult({
           mapSlug: command.mapSlug,
           originOperationId: command.opId,

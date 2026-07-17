@@ -365,6 +365,9 @@ const commandHasMapScope = (
 const unsupportedScopeLabel = (scope: LivePlayScope): string => {
   if (scope.kind === 'map') return `map ${scope.lane}`
   if (scope.kind === 'token') return `token ${scope.placementId} ${scope.field}`
+  if (scope.kind === 'groupInventory') {
+    return `group inventory ${scope.slug} ${scope.field}`
+  }
   return `sheet ${scope.sheetKind}:${scope.sheetSlug} ${scope.field}`
 }
 

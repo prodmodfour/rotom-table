@@ -4,6 +4,7 @@ import {
   LIVE_PLAY_PATCH_TYPES,
   LIVE_PLAY_PATCH_TYPE_VALUES,
   isLivePlayCommandRejectionReason,
+  isLivePlayGroupInventoryScopeField,
   isLivePlayMapScopeLane,
   isLivePlayMapSlug,
   isLivePlayOpId,
@@ -135,6 +136,27 @@ const validateSheetScope = (
   }
 }
 
+const validateGroupInventoryScope = (
+  scope: UnknownRecord,
+  path: string,
+  issues: MutableIssueList,
+): void => {
+  if (!isSlug(scope.slug)) {
+    addIssue(
+      issues,
+      `${path}.slug`,
+      `${path}.slug must match ${SLUG_PATTERN_DESCRIPTION}.`,
+    )
+  }
+  if (!isLivePlayGroupInventoryScopeField(scope.field)) {
+    addIssue(
+      issues,
+      `${path}.field`,
+      `${path}.field must be a supported group inventory scope field.`,
+    )
+  }
+}
+
 const validateScope = (
   scope: unknown,
   path: string,
@@ -160,7 +182,16 @@ const validateScope = (
     return
   }
 
-  addIssue(issues, `${path}.kind`, `${path}.kind must be map, token, or sheet.`)
+  if (scope.kind === 'groupInventory') {
+    validateGroupInventoryScope(scope, path, issues)
+    return
+  }
+
+  addIssue(
+    issues,
+    `${path}.kind`,
+    `${path}.kind must be map, token, sheet, or groupInventory.`,
+  )
 }
 
 const validatePatch = (
@@ -411,6 +442,14 @@ const sheetScopesCompatible = (
   && commandScope.field === patchScope.field
 )
 
+const groupInventoryScopesCompatible = (
+  commandScope: UnknownRecord,
+  patchScope: UnknownRecord,
+): boolean => (
+  commandScope.slug === patchScope.slug
+  && commandScope.field === patchScope.field
+)
+
 const scopesCompatible = (
   commandScope: LivePlayScope,
   patchScope: LivePlayScope,
@@ -421,6 +460,9 @@ const scopesCompatible = (
   if (commandRecord.kind === 'map') return mapScopesCompatible(commandRecord, patchRecord)
   if (commandRecord.kind === 'token') return tokenScopesCompatible(commandRecord, patchRecord)
   if (commandRecord.kind === 'sheet') return sheetScopesCompatible(commandRecord, patchRecord)
+  if (commandRecord.kind === 'groupInventory') {
+    return groupInventoryScopesCompatible(commandRecord, patchRecord)
+  }
   return false
 }
 
