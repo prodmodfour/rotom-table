@@ -1,4 +1,7 @@
 import {
+  electricGrassyTerrainDamagePolicy,
+} from '#shared/moveAutomation/terrain'
+import {
   SAND_FORCE_ABILITY_NAME,
   sandForceDamagePolicy,
   sunnyRainyDamagePolicy,
@@ -78,11 +81,24 @@ export const fieldEffectDamageContributions = (
     }
   }
 
-  // Terrain remains on its existing aggregate compatibility path until
-  // MA-140/MA-141 install authoritative membership and grounding queries.
+  for (const terrain of ['electric', 'grassy'] as const) {
+    const effect = (fieldEffects?.terrains ?? []).find(candidate => candidate.kind === terrain)
+    if (!effect) continue
+    const policy = electricGrassyTerrainDamagePolicy(terrain, typeId)
+    if (!policy) continue
+    result.push(contribution(
+      `damage.terrain.${terrain}.${policy.typeId}`,
+      'field',
+      effect.source ?? `terrain.${terrain}`,
+      `terrain.${terrain}.damage-roll`,
+      policy.reasonCode,
+      terrain === 'electric' ? 'Electric Terrain' : 'Grassy Terrain',
+      policy.value,
+    ))
+  }
+
+  // Misty/Psychic remain on the aggregate compatibility path until MA-141.
   let terrainBonus = 0
-  if (terrainKinds.has('electric') && typeId === 'electric') terrainBonus += 10
-  if (terrainKinds.has('grassy') && typeId === 'grass') terrainBonus += 10
   if (terrainKinds.has('psychic') && typeId === 'psychic') terrainBonus += 10
   if (terrainKinds.has('misty') && typeId === 'dragon') terrainBonus -= 10
   if (terrainBonus !== 0) {

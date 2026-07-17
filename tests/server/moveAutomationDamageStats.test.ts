@@ -19,7 +19,7 @@ import {
   createFiniteAuthoritativeMoveRandomStream,
 } from '~~/server/domain/moveAutomation/random'
 import type { CharacterSheet } from '~/types/characterSheet'
-import type { MapWeatherKind, SheetPlacement, TabletopMap } from '~/types/map'
+import type { MapTerrainKind, MapWeatherKind, SheetPlacement, TabletopMap } from '~/types/map'
 import type { MoveAutomationScript } from '~/types/moveAutomation'
 import type { TrainerSheet } from '~/types/trainerSheet'
 import {
@@ -33,7 +33,10 @@ const placement = (id: string, sheetSlug: string, x: number): SheetPlacement => 
   position: { x, y: 0, z: 0 },
 })
 
-const mapFixture = (weather: readonly MapWeatherKind[] = []): TabletopMap => ({
+const mapFixture = (
+  weather: readonly MapWeatherKind[] = [],
+  terrains: readonly MapTerrainKind[] = [],
+): TabletopMap => ({
   schemaVersion: 2,
   slug: 'damage-stat-arena',
   name: 'Damage Stat Arena',
@@ -45,7 +48,7 @@ const mapFixture = (weather: readonly MapWeatherKind[] = []): TabletopMap => ({
   hazards: [],
   fieldEffects: {
     weather: weather.map(kind => ({ kind })),
-    terrains: [],
+    terrains: terrains.map(kind => ({ kind, scope: 'field' })),
     rooms: [],
   },
   placements: [
@@ -73,15 +76,18 @@ const pokemonSheet = (
 
 const context = (options: {
   readonly weather?: readonly MapWeatherKind[]
+  readonly terrains?: readonly MapTerrainKind[]
   readonly actorAbilities?: readonly string[]
+  readonly actorCapabilities?: CharacterSheet['capabilities']
   readonly targetAbilities?: readonly string[]
 } = {}) => buildAuthoritativeMoveRulesContext({
-  map: mapFixture(options.weather),
+  map: mapFixture(options.weather, options.terrains),
   pokemonSheets: new Map([
     ['actor', pokemonSheet('actor', {
       ...(options.actorAbilities
         ? { abilities: options.actorAbilities.map(name => ({ name })) }
         : {}),
+      ...(options.actorCapabilities ? { capabilities: options.actorCapabilities } : {}),
       stats: {
         atk: { added: 1, stage: -1 },
         def: { added: 12, stage: 2 },
@@ -371,6 +377,62 @@ describe('MoveSpec alternate attack and defense stat selection', () => {
       ])
       expect(changed.damagePipeline?.stages.flatMap(stage => stage.modifiers))
         .toContainEqual(expect.objectContaining({ reasonCode, value: delta }))
+    },
+  )
+
+  it.each([
+    ['electric', 'Electric', 'terrain.electric.electric-damage-bonus'],
+    ['grassy', 'Grass', 'terrain.grassy.grass-damage-bonus'],
+  ] as const)(
+    'changes authoritative grounded %s damage by the traced terrain amount',
+    (terrain, moveType, reasonCode) => {
+      const calculate = (rules: ReturnType<typeof context>) => {
+        const move = { ...script('Special'), type: moveType }
+        return resolveMoveSpecDamageCalculation({
+          context: rules,
+          operation: damageOperation({
+            damageClass: 'special',
+            moveType: moveType.toLowerCase(),
+          }),
+          script: move,
+          recipient: rules.queries.tokens.get('target-token')!,
+          resolution: rolledDamage(move),
+          selectedTargets: [rules.queries.tokens.get('target-token')!],
+        })
+      }
+      const baseline = calculate(context())
+      const grounded = calculate(context({ terrains: [terrain] }))
+      const airborne = calculate(context({
+        terrains: [terrain],
+        actorCapabilities: { sky: 6 },
+      }))
+
+      expect(grounded.breakdown.hpLoss - baseline.breakdown.hpLoss).toBe(10)
+      expect(grounded.terrain).toMatchObject({
+        modifiers: [{
+          id: `damage.terrain.${terrain}.${moveType.toLowerCase()}`,
+          source: { kind: 'field', id: `legacy.terrain.${terrain}` },
+          reasonCode,
+          value: 10,
+        }],
+        trace: [{
+          interaction: 'damage',
+          terrainKind: terrain,
+          outcome: 'applied',
+          reasonCode,
+          value: 10,
+        }],
+      })
+      expect(grounded.damagePipeline?.stages.flatMap(stage => stage.modifiers)
+        .filter(modifier => modifier.reasonCode === reasonCode)).toHaveLength(1)
+      expect(airborne.breakdown.hpLoss).toBe(baseline.breakdown.hpLoss)
+      expect(airborne.terrain).toMatchObject({
+        modifiers: [],
+        trace: [expect.objectContaining({
+          terrainKind: terrain,
+          outcome: 'not-grounded',
+        })],
+      })
     },
   )
 

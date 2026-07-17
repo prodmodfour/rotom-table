@@ -939,7 +939,9 @@ const evaluateExpressionNode = (
       break
     case 'terrain':
       value = activeFieldValue(
-        state.context.map.fieldEffects?.terrains,
+        state.context.queries.terrain.membership({
+          placementId: state.context.actor.placement.id,
+        }).terrains,
         'terrain',
         nodeId,
       )

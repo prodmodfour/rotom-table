@@ -67,6 +67,10 @@ import {
   type MoveAutomationTargetStateResolver,
 } from './targetState'
 import {
+  createMoveAutomationTerrainResolver,
+  type MoveAutomationTerrainResolver,
+} from './terrain'
+import {
   createMoveAutomationWeatherResolver,
   type MoveAutomationWeatherResolver,
 } from './weather'
@@ -116,6 +120,7 @@ export type AuthoritativeMoveStatQueries = MoveAutomationStatResolver
 export type AuthoritativeMoveTargetStateQueries = MoveAutomationTargetStateResolver
 export type AuthoritativeMoveTargetabilityQueries = MoveSemiInvulnerableTargetabilityResolver
 export type AuthoritativeMoveLineOfSightQueries = MoveAutomationLineOfSightResolver
+export type AuthoritativeMoveTerrainQueries = MoveAutomationTerrainResolver
 export type AuthoritativeMoveWeatherQueries = MoveAutomationWeatherResolver
 
 export interface AuthoritativeMoveRuleQueries {
@@ -135,6 +140,7 @@ export interface AuthoritativeMoveContextQueries {
   readonly targetStates: AuthoritativeMoveTargetStateQueries
   readonly targetability: AuthoritativeMoveTargetabilityQueries
   readonly lineOfSight: AuthoritativeMoveLineOfSightQueries
+  readonly terrain: AuthoritativeMoveTerrainQueries
   readonly weather: AuthoritativeMoveWeatherQueries
   readonly rules: AuthoritativeMoveRuleQueries
   resolveActorMoveEntry(moveName: string): CanonicalMoveEntryResult
@@ -571,6 +577,12 @@ export const buildAuthoritativeMoveRulesContext = (
       if (placement) readSet.recordPlacement(placement)
     },
   })
+  const terrain = createMoveAutomationTerrainResolver({
+    map,
+    placements,
+    tokens,
+    targetStates,
+  })
 
   const legacyScriptFor = (moveName: string): MoveAutomationScript | null => {
     const script = legacyScripts.get(moveName)
@@ -619,6 +631,7 @@ export const buildAuthoritativeMoveRulesContext = (
     targetStates,
     targetability,
     lineOfSight,
+    terrain,
     weather,
     rules: Object.freeze({
       runtimeFor: (canonicalId: string) => runtimes.get(canonicalId) ?? null,

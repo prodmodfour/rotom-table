@@ -38,6 +38,7 @@ import {
 import {
   MOVE_AUTOMATION_STAT_SHORT_LABELS,
 } from './stats'
+import type { TerrainDamageResolution } from './terrain'
 import type { WeatherDamageResolution } from './weather'
 
 export type MoveDamageStatSelectionErrorCode = 'non-numeric-stat-selection'
@@ -70,6 +71,8 @@ export interface MoveSpecDamageCalculation {
   readonly criticalHit: MoveCriticalHitResolution
   readonly contextualDamageBase: MoveContextualDamageBaseResolution | null
   readonly damagePipeline: MoveDamagePipelineResult | null
+  /** Active terrain membership and damage decisions with stable reasons. */
+  readonly terrain: TerrainDamageResolution
   /** Active weather decisions, including immunity prevention, with stable reasons. */
   readonly weather: WeatherDamageResolution
   /** Type, contextual DB, then attack/defense nodes appear in deterministic audit order. */
@@ -232,6 +235,11 @@ export const resolveMoveSpecDamageCalculation = (
         + (moveType.hasStab ? MOVE_CONTEXTUAL_DAMAGE_BASE_STAB_BONUS : 0)
       : options.script.damageBase)
   const actor = options.actor ?? options.context.actor.token
+  const terrain = options.context.queries.terrain.damage({
+    placementId: actor.id,
+    moveType: moveType.moveType,
+    targetImmune: moveType.finalMultiplier === 0,
+  })
   const weather = options.context.queries.weather.damage({
     moveType: moveType.moveType,
     targetImmune: moveType.finalMultiplier === 0,
@@ -240,21 +248,28 @@ export const resolveMoveSpecDamageCalculation = (
       abilityNames: actor.abilityNames,
     },
   })
-  const authoritativeFieldEffects = options.context.queries.weather.projectFieldEffects(
+  const authoritativeWeatherFieldEffects = options.context.queries.weather.projectFieldEffects(
     options.fieldEffects ?? options.context.map.fieldEffects,
   )
-  // Native weather modifiers carry exact zone/ability identity and trace reasons.
-  // Keep weather out of the legacy contribution lane to avoid double application.
-  const nonAuthoritativeWeatherFieldEffects: MapFieldEffects = {
+  const authoritativeFieldEffects = options.context.queries.terrain.projectFieldEffects(
+    actor.id,
+    authoritativeWeatherFieldEffects,
+  )
+  // Native weather and Electric/Grassy Terrain modifiers carry exact zone
+  // identity and trace reasons. Keep them out of the compatibility lane.
+  const nonAuthoritativeFieldEffects: MapFieldEffects = {
     ...authoritativeFieldEffects,
     weather: [],
+    terrains: authoritativeFieldEffects.terrains.filter(effect => (
+      effect.kind !== 'electric' && effect.kind !== 'grassy'
+    )),
   }
   const breakdown = resolveMoveAutomationTargetDamageBreakdown(
     options.script,
     actor,
     options.recipient,
     { ...options.resolution, crit: criticalHit.critical },
-    nonAuthoritativeWeatherFieldEffects,
+    nonAuthoritativeFieldEffects,
     options.selectedTargets,
     {
       stats,
@@ -263,7 +278,7 @@ export const resolveMoveSpecDamageCalculation = (
         moveType: moveType.moveType,
         multiplier: moveType.finalMultiplier,
       },
-      additionalModifiers: weather.modifiers,
+      additionalModifiers: [...weather.modifiers, ...terrain.modifiers],
     },
   )
   return deepFreeze({
@@ -273,6 +288,7 @@ export const resolveMoveSpecDamageCalculation = (
     criticalHit,
     contextualDamageBase,
     damagePipeline: breakdown.kind === 'standard' ? breakdown.pipeline ?? null : null,
+    terrain,
     weather,
     evaluationTrace: [
       ...moveType.evaluationTrace,

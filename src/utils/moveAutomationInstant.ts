@@ -112,6 +112,7 @@ export interface ResolveInstantSelfMoveAutomationInput {
   script: MoveAutomationScript
   user: SpawnedPokemon
   fieldEffects?: MapFieldEffects
+  conditionImmunityContext?: MoveAutomationConditionImmunityContext
   random?: () => number
   randomRoller?: MoveAutomationRandomRoller
 }
@@ -797,6 +798,7 @@ export const resolveInstantSelfMoveAutomation = ({
   script,
   user,
   fieldEffects,
+  conditionImmunityContext,
   random,
   randomRoller,
 }: ResolveInstantSelfMoveAutomationInput): MoveAutomationTransaction => {
@@ -825,6 +827,7 @@ export const resolveInstantSelfMoveAutomation = ({
     hazardCells: [],
     manualNote: combineManualNotes(randomStageNote),
     fieldEffects,
+    conditionImmunityContext,
   })
 }
 

@@ -45,6 +45,10 @@ import type {
 } from './reducers/coreTokenEffectTypes'
 import { createStandardMoveCoreTokenEffectImmunityQueries } from './reducers/immunities'
 import {
+  createGrassyTerrainLifecycleHandler,
+  terrainLifecycleRecipientIds,
+} from './terrainLifecycle'
+import {
   createWeatherLifecycleImmunityQueries,
   createWeatherResidualLifecycleHandler,
 } from './weatherLifecycle'
@@ -423,11 +427,13 @@ export const planEncounterLifecycle = (
   }
   const events = parseEncounterEvents(input.events)
   const weatherHandler = createWeatherResidualLifecycleHandler(lifecycleMap)
-  // Registered effect handlers retain caller order. Weather residuals run last,
-  // while reduceEncounterLifecycle advances field duration only after all work.
+  const terrainHandler = createGrassyTerrainLifecycleHandler(lifecycleMap)
+  // Registered handlers retain caller order. Built-in weather and terrain work
+  // follows, while field lifecycle transitions remain event-local and last.
   const handlers = [
     ...(input.handlers ?? []),
     ...(weatherHandler ? [weatherHandler] : []),
+    ...(terrainHandler ? [terrainHandler] : []),
   ]
   const reduction = reduceEncounterLifecycle(
     previousEncounterState,
@@ -494,6 +500,13 @@ export const planEncounterLifecycle = (
       random: () => 0.5,
       time: input.time,
     })
+    for (const operation of reduction.operations) {
+      recipientsByOperationId.set(operation.id, terrainLifecycleRecipientIds({
+        context,
+        operation,
+        candidateRecipientIds: recipientsByOperationId.get(operation.id) ?? [],
+      }))
+    }
     const emissions: MoveResolvedCoreTokenEffectOperation[] = reduction.operations.map(
       operation => ({
         operation: operation as LifecycleCoreOperation,

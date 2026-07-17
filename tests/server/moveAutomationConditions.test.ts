@@ -58,6 +58,107 @@ const intent = (): ResolveMoveIntent => ({
 })
 
 describe('native MoveSpec typed conditions', () => {
+  it('prevents Sleep through grounded authoritative Electric Terrain membership', () => {
+    const definition = validateMoveSpec({
+      schemaVersion: 2,
+      canonicalId: 'Tackle',
+      version: 2,
+      targeting: {
+        kind: 'single-target',
+        minTargets: 1,
+        maxTargets: 1,
+        selector: { kind: 'selected-targets' },
+      },
+      preconditions: [],
+      costs: [],
+      phases: [{
+        phase: 'hit',
+        operations: [{
+          id: 'operation.apply-sleep',
+          kind: 'condition',
+          source: { kind: 'move', id: 'move.tackle' },
+          recipients: { kind: 'attacked-targets' },
+          phase: 'hit',
+          reasonCode: 'move.tackle.sleep',
+          payload: {
+            action: 'apply',
+            conditionId: 'sleep',
+            conditionSource: null,
+            filter: null,
+            randomChoice: null,
+            duration: null,
+            saveTiming: 'canonical',
+            stackPolicy: { kind: 'refresh', maxStacks: null },
+          },
+        }],
+      }],
+      registeredHandlerId: null,
+      presentation: { displayName: 'Tackle', vfxKey: null, tags: ['condition'] },
+    })
+    const runtime: MoveSpecV2Runtime = {
+      canonicalId: 'Tackle',
+      kind: 'movespec-v2',
+      version: definition.spec.version,
+      definitionHash: definition.definitionHash,
+      sourceModule: 'tests/electric-terrain-condition',
+      definition,
+    }
+    const terrainMap = map()
+    terrainMap.fieldEffects = {
+      weather: [],
+      terrains: [{ kind: 'electric', scope: 'field' }],
+      rooms: [],
+    }
+    const context = buildAuthoritativeMoveRulesContext({
+      map: terrainMap,
+      pokemonSheets: new Map([
+        ['actor', sheet('actor')],
+        ['target', sheet('target')],
+      ]),
+      trainerSheets: new Map<string, TrainerSheet>(),
+      intent: intent(),
+      candidatePlacementIds: ['target-token'],
+      selectedPlacementIds: ['target-token'],
+      random: createFiniteAuthoritativeMoveRandomStream([]),
+      time: 10_000,
+    })
+    const entry = context.queries.resolveActorMoveEntry('Tackle')
+    if (!entry.ok) throw new Error(entry.message)
+
+    const resolution = resolveImmediateMoveSpec({
+      context,
+      runtime,
+      entry: entry.entry,
+      authoritativeTargetIds: ['target-token'],
+    })
+
+    expect(resolution.transaction.conditionUpdates).toEqual([])
+    expect(resolution.trace.events).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        kind: 'operation',
+        operationId: 'operation.apply-sleep',
+        outcome: 'prevented',
+        reasonCode: 'move.tackle.sleep',
+        result: expect.objectContaining({
+          recipients: [expect.objectContaining({
+            recipientId: 'target-token',
+            outcome: 'prevented',
+            reasonCode: 'condition-immunity',
+            blockers: [{
+              subject: 'Sleep',
+              source: 'Electric Terrain (legacy.terrain.electric)',
+            }],
+          })],
+        }),
+      }),
+    ]))
+    expect(resolution.sheetReads).toContainEqual({
+      kind: 'pokemon',
+      slug: 'target',
+      revision: 7,
+    })
+  })
+
   it('carries persistent and source-linked conditions into the immediate atomic plan', () => {
     const definition = validateMoveSpec({
       schemaVersion: 2,

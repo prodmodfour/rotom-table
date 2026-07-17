@@ -570,6 +570,92 @@ describe('resolveAuthoritativeMove', () => {
     })
   })
 
+  it('applies legacy Electric damage only for a grounded terrain member', () => {
+    const resolve = (terrain: boolean, airborne: boolean) => {
+      const battlefield = mapFixture([
+        placement('actor-token', 'actor', { x: 0, y: 0, z: 0 }, 'red'),
+        placement('target-token', 'target-a', { x: 1, y: 0, z: 0 }, 'blue'),
+      ])
+      battlefield.fieldEffects = {
+        weather: [],
+        terrains: terrain ? [{ kind: 'electric', scope: 'field' }] : [],
+        rooms: [],
+      }
+      return resolveAuthoritativeMove({
+        map: battlefield,
+        pokemonSheets: sheetMap([{ name: 'Thunder Shock' }], {
+          actor: pokemonSheet('actor', [{ name: 'Thunder Shock' }], {
+            revision: 2,
+            ...(airborne ? { capabilities: { sky: 6 } } : {}),
+          }),
+          'target-a': targetSheet('target-a'),
+        }),
+        trainerSheets: new Map(),
+        intent: moveIntent({
+          placementId: 'actor-token',
+          moveName: 'Thunder Shock',
+          selection: { kind: 'single-target', targetPlacementId: 'target-token' },
+        }),
+        random: randomSequence([0.5]),
+      })
+    }
+    const hpLoss = (resolution: ReturnType<typeof resolveAuthoritativeMove>): number => (
+      80 - (resolution.transaction.hpUpdates[0]?.currentHp ?? 80)
+    )
+    const baseline = resolve(false, false)
+    const grounded = resolve(true, false)
+    const airborne = resolve(true, true)
+
+    expect(hpLoss(grounded) - hpLoss(baseline)).toBe(10)
+    expect(hpLoss(airborne)).toBe(hpLoss(baseline))
+  })
+
+  it('prevents legacy Sleep automation for a grounded Electric Terrain member', () => {
+    const terrainMap = mapFixture([
+      placement('actor-token', 'actor', { x: 0, y: 0, z: 0 }, 'red'),
+      placement('target-token', 'target-a', { x: 1, y: 0, z: 0 }, 'blue'),
+    ])
+    terrainMap.fieldEffects = {
+      weather: [],
+      terrains: [{ kind: 'electric', scope: 'field' }],
+      rooms: [],
+    }
+    const resolution = resolveAuthoritativeMove({
+      map: terrainMap,
+      pokemonSheets: sheetMap([{ name: 'Spore' }], {
+        actor: pokemonSheet('actor', [{ name: 'Spore' }], { revision: 2 }),
+        'target-a': targetSheet('target-a'),
+      }),
+      trainerSheets: new Map(),
+      intent: moveIntent({
+        placementId: 'actor-token',
+        moveName: 'Spore',
+        selection: { kind: 'single-target', targetPlacementId: 'target-token' },
+      }),
+      random: randomSequence([0.99]),
+      idFactory: () => 'spore-terrain-feedback',
+    })
+
+    expect(resolution.feedback?.conditions).toContainEqual({
+      condition: 'Sleep',
+      applied: false,
+      blockedBy: 'Electric Terrain (legacy.terrain.electric)',
+    })
+    expect(resolution.transaction.conditionUpdates).toEqual([])
+    expect(resolution.auditTrace.events).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        kind: 'operation',
+        operationKind: 'condition',
+        recipientIds: ['target-token'],
+        outcome: 'prevented',
+        result: {
+          applied: false,
+          blockedBy: 'Electric Terrain (legacy.terrain.electric)',
+        },
+      }),
+    ]))
+  })
+
   it('records indirect aura providers consulted for target immunity', () => {
     const resolution = resolveAuthoritativeMove({
       map: mapFixture([

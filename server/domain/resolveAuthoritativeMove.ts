@@ -334,9 +334,16 @@ const authoritativeConditionImmunityContext = (
   context: AuthoritativeMoveRulesContext,
   script: MoveAutomationScript,
 ): MoveAutomationConditionImmunityContext => {
-  if (!scriptConsultsSweetVeilProviders(script)) return {}
+  const additionalImmunitySource = (condition: string, target: SpawnedPokemon): string | null => (
+    context.queries.terrain.condition({
+      placementId: target.id,
+      conditionId: condition,
+    }).blockedBy
+  )
+  if (!scriptConsultsSweetVeilProviders(script)) return { additionalImmunitySource }
 
   return {
+    additionalImmunitySource,
     sweetVeilProviderCandidates: context.queries.tokens.all(),
     isAlly: (provider, target) => {
       const providerPlacement = context.queries.placements.get(provider.id)
@@ -353,6 +360,13 @@ const authoritativeConditionImmunityContext = (
     },
   }
 }
+
+const authoritativeFieldEffectsForActor = (
+  context: AuthoritativeMoveRulesContext,
+) => context.queries.terrain.projectFieldEffects(
+  context.actor.placement.id,
+  context.queries.weather.projectFieldEffects(),
+)
 
 const finalizeResolution = (
   context: AuthoritativeMoveRulesContext,
@@ -880,7 +894,8 @@ const resolveSelfMove = (options: {
   const transaction = resolveInstantSelfMoveAutomation({
     script: options.script,
     user: actor,
-    fieldEffects: options.context.queries.weather.projectFieldEffects(),
+    fieldEffects: authoritativeFieldEffectsForActor(options.context),
+    conditionImmunityContext: authoritativeConditionImmunityContext(options.context, options.script),
     randomRoller: options.context.random,
   })
   return {
@@ -1051,7 +1066,7 @@ const resolveSingleTargetMove = (options: {
     user: actor,
     target,
     damageFormula: options.damageFormula,
-    fieldEffects: options.context.queries.weather.projectFieldEffects(),
+    fieldEffects: authoritativeFieldEffectsForActor(options.context),
     conditionImmunityContext: authoritativeConditionImmunityContext(options.context, options.script),
     accuracyRule: options.context.queries.weather.accuracy({
       canonicalMoveId: options.canonicalMoveName,
@@ -1255,7 +1270,7 @@ const resolveTargetCountMove = (options: {
     user: actor,
     selectedTargets,
     damageFormula: options.damageFormula,
-    fieldEffects: options.context.queries.weather.projectFieldEffects(),
+    fieldEffects: authoritativeFieldEffectsForActor(options.context),
     conditionImmunityContext: authoritativeConditionImmunityContext(options.context, options.script),
     accuracyRule: options.context.queries.weather.accuracy({
       canonicalMoveId: options.canonicalMoveName,
@@ -1327,7 +1342,7 @@ const resolveAreaMove = (options: {
     user: actor,
     targets: selectedTargets,
     damageFormula: options.damageFormula,
-    fieldEffects: options.context.queries.weather.projectFieldEffects(),
+    fieldEffects: authoritativeFieldEffectsForActor(options.context),
     conditionImmunityContext: authoritativeConditionImmunityContext(options.context, confirmedScript),
     accuracyRule: options.context.queries.weather.accuracy({
       canonicalMoveId: options.canonicalMoveName,

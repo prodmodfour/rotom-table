@@ -142,6 +142,11 @@ export const createStandardMoveCoreTokenEffectImmunityQueries = (
       if (operation.payload.accuracyRollTrigger && tokenHasShieldDust(recipient.token)) {
         return decision(SHIELD_DUST_ABILITY_NAME)
       }
+      const terrain = options.context?.queries.terrain.condition({
+        placementId: recipient.placement.id,
+        conditionId: condition,
+      })
+      if (terrain?.blockedBy) return decision(terrain.blockedBy)
       const encounter = encounterConditionPrevention({
         condition,
         recipientId: recipient.placement.id,

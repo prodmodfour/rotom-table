@@ -259,6 +259,64 @@ describe('live-play initiative lifecycle integration', () => {
     expect(remote.map?.fieldEffects?.weather).toEqual([])
   })
 
+  it('heals a grounded Grassy Terrain member once across duplicate initiative delivery', async () => {
+    const map: TabletopMap = {
+      ...lifecycleMap(dueEffect()),
+      fieldEffects: {
+        weather: [],
+        terrains: [{ kind: 'grassy', rounds: 3, scope: 'field', source: 'Grassy Terrain' }],
+        rooms: [],
+      },
+      initiative: { activeId: 'actor-token', round: 1 },
+      encounterState: createEmptyEncounterState(),
+    }
+    const actor = pokemonSheet('actor-mon', 'Pikachu', 30)
+    const target = pokemonSheet('target-mon', 'Eevee', 20)
+    const tick = Math.floor(
+      pokemonHpSnapshot(target.sheet as unknown as CharacterSheet).fullMaxHp * 0.1,
+    )
+    const harness = LivePlayIntegrationHarness.create({ map, sheets: [actor, target] })
+    harnesses.push(harness)
+    const remote = await harness.loadClient('remote-grassy-lifecycle-client')
+    const command = harness.nextInitiativeCommand({
+      opId: 'op_grassy_turn_start',
+      baseRevision: 0,
+      orderIds: ['actor-token', 'target-token'],
+      activeId: 'actor-token',
+      round: 1,
+    })
+
+    const first = await harness.nextInitiative({
+      actor: { role: 'gm', clientId: 'gm-client' },
+      command,
+    })
+    const duplicate = await harness.nextInitiative({
+      actor: { role: 'gm', clientId: 'gm-client' },
+      command,
+    })
+
+    const accepted = assertAccepted(first.result)
+    expect(duplicate.result).toEqual(first.result)
+    expect(harness.operationRecordCount()).toBe(1)
+    expect((await harness.readMap())?.initiative).toEqual({ activeId: 'target-token', round: 1 })
+    expect((await harness.readMap())?.fieldEffects?.terrains).toEqual([
+      { kind: 'grassy', rounds: 3, scope: 'field', source: 'Grassy Terrain' },
+    ])
+    expect(((await harness.readSheet('pokemon', 'target-mon'))?.sheet.combat as {
+      currentHp: number
+    }).currentHp).toBe(20 + tick)
+    expect((await harness.readSheet('pokemon', 'target-mon'))?.revision).toBe(1)
+    expect((await harness.readSheet('pokemon', 'actor-mon'))?.revision).toBe(0)
+    const lifecycle = accepted.patches.find(patch => patch.type === 'map.initiative')?.payload as {
+      lifecycle?: { operationIds?: string[] }
+    }
+    expect(lifecycle.lifecycle?.operationIds).toEqual([
+      expect.stringMatching(/^terrain\.grassy\.healing\.[0-9a-f]{32}$/),
+    ])
+    expect(remote.patchFailures).toEqual([])
+    expect(remote.map?.initiative).toEqual({ activeId: 'target-token', round: 1 })
+  })
+
   it('advances legacy global fields at a round boundary and never expires them twice on retry', async () => {
     const map: TabletopMap = {
       ...lifecycleMap(dueEffect()),

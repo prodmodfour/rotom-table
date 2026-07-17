@@ -16,6 +16,16 @@ export type MoveAutomationAllyQuery = (
   target: Pick<SpawnedPokemon, 'id'>,
 ) => boolean
 
+export type MoveAutomationAdditionalConditionImmunityQuery = (
+  condition: string,
+  target: SpawnedPokemon,
+) => string | null
+
+interface MoveAutomationConditionImmunityBase {
+  /** Server-owned contextual prevention such as grounded terrain membership. */
+  readonly additionalImmunitySource?: MoveAutomationAdditionalConditionImmunityQuery
+}
+
 interface MoveAutomationConditionImmunityWithoutSweetVeilProviders {
   readonly sweetVeilProviderCandidates?: undefined
   readonly isAlly?: undefined
@@ -27,9 +37,10 @@ interface MoveAutomationConditionImmunityWithSweetVeilProviders {
   readonly isAlly: MoveAutomationAllyQuery
 }
 
-export type MoveAutomationConditionImmunityContext =
+export type MoveAutomationConditionImmunityContext = MoveAutomationConditionImmunityBase & (
   | MoveAutomationConditionImmunityWithoutSweetVeilProviders
   | MoveAutomationConditionImmunityWithSweetVeilProviders
+)
 
 const hasType = (target: SpawnedPokemon, type: string): boolean =>
   target.defenderTypes.some((entry) => entry.toLowerCase() === type.toLowerCase())
@@ -85,7 +96,10 @@ export const moveAutomationConditionImmunitySource = (
     if (sourceType === 'Fire' && hasAbility(target, FLASH_FIRE_ABILITY_NAME)) return FLASH_FIRE_ABILITY_NAME
   }
 
-  if (canonical === 'Sleep') return sweetVeilSource(target, context)
+  if (canonical === 'Sleep') {
+    const sweetVeil = sweetVeilSource(target, context)
+    if (sweetVeil) return sweetVeil
+  }
   if (canonical === 'Blindness' && hasAbility(target, KEEN_EYE_ABILITY_NAME)) return KEEN_EYE_ABILITY_NAME
 
   if (canonical === 'Paralysis' && hasType(target, 'Electric')) return 'Electric type'
@@ -97,7 +111,7 @@ export const moveAutomationConditionImmunitySource = (
   }
   if ((canonical === 'Stuck' || canonical === 'Trapped') && hasType(target, 'Ghost')) return 'Ghost type'
 
-  return null
+  return context.additionalImmunitySource?.(canonical, target) ?? null
 }
 
 export const canApplyMoveAutomationCondition = (

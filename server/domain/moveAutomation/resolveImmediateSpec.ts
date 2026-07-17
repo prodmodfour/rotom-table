@@ -303,6 +303,7 @@ const createDamageQuery = (options: {
           defenseStat: calculation.stats.defenseStat ?? null,
           evaluationTrace: calculation.evaluationTrace,
           damagePipeline: calculation.damagePipeline,
+          terrain: calculation.terrain.trace,
           weather: calculation.weather.trace,
         } as unknown as MoveResolutionTraceJsonValue,
       }

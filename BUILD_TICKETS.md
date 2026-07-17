@@ -1915,7 +1915,7 @@ Status: DONE
 
 ## MA-140 — Implement Electric and Grassy Terrain
 
-Status: TODO
+Status: DONE
 
 **Depends on:** MA-077, MA-084, MA-123, MA-137
 **Commit:** `feat(move-automation): resolve electric and grassy terrain`
