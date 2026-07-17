@@ -55,6 +55,7 @@ describe('MoveSpec rules expression AST', () => {
       'type',
       'weather',
       'terrain',
+      'item',
       'move-history',
     ])
     expect(MOVE_ARITHMETIC_OPERATORS).toEqual([
@@ -327,6 +328,84 @@ describe('MoveSpec rules expression AST', () => {
       code: 'invalid-expression',
       path: 'statSelection.stat',
     }))
+  })
+
+  it('parses only bounded server-owned item possession and contribution queries', () => {
+    expect(parseMoveExpression({
+      kind: 'item',
+      subject: { kind: 'actor' },
+      query: 'holding-nothing',
+    })).toEqual({
+      kind: 'item',
+      subject: { kind: 'actor' },
+      query: 'holding-nothing',
+    })
+    expect(parseMoveExpression({
+      kind: 'item',
+      subject: target(),
+      query: 'move-type',
+      source: 'equipped',
+      families: ['plate', 'drive', 'memory'],
+      requirementId: 'multi-attack.held-item',
+      timing: 'static',
+    })).toEqual({
+      kind: 'item',
+      subject: target(),
+      query: 'move-type',
+      source: 'equipped',
+      families: ['plate', 'drive', 'memory'],
+      requirementId: 'multi-attack.held-item',
+      timing: 'static',
+    })
+    expect(parseMoveExpression({
+      kind: 'item',
+      subject: { kind: 'actor' },
+      query: 'damage-base',
+      source: 'digestion-buff',
+      families: ['berry'],
+      requirementId: null,
+      timing: 'consumable',
+    })).toMatchObject({ source: 'digestion-buff', families: ['berry'] })
+
+    expectExpressionError(
+      {
+        kind: 'item',
+        subject: { kind: 'actor' },
+        query: 'move-type',
+        source: 'equipped',
+        families: ['plate'],
+        requirementId: null,
+        timing: 'static',
+      },
+      'invalid-expression',
+      'expression.requirementId',
+    )
+    expectExpressionError(
+      {
+        kind: 'item',
+        subject: { kind: 'actor' },
+        query: 'power',
+        source: 'equipped',
+        families: ['plate', 'plate'],
+        requirementId: 'fling.item',
+        timing: 'activated',
+      },
+      'duplicate-key',
+      'expression.families',
+    )
+    expectExpressionError(
+      {
+        kind: 'item',
+        subject: { kind: 'actor' },
+        query: 'client-item-power',
+        source: 'equipped',
+        families: ['other'],
+        requirementId: 'fling.item',
+        timing: 'activated',
+      },
+      'invalid-expression',
+      'expression.query',
+    )
   })
 
   it('parses only the closed move-history query set', () => {

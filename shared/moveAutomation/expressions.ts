@@ -18,6 +18,21 @@ import {
   type MoveRuleScalar,
 } from './ast'
 import {
+  MOVE_AUTOMATION_ITEM_EFFECT_TIMINGS,
+  type MoveAutomationItemEffectTiming,
+} from './globalFields'
+import {
+  MOVE_ITEM_CONTRIBUTION_QUERIES,
+  MOVE_ITEM_POSSESSION_QUERIES,
+  MOVE_ITEM_RULE_FAMILIES,
+  MOVE_ITEM_RULE_QUERY_LIMITS,
+  MOVE_ITEM_RULE_SOURCES,
+  type MoveItemContributionQuery,
+  type MoveItemPossessionQuery,
+  type MoveItemRuleFamily,
+  type MoveItemRuleSource,
+} from './itemRuleQueries'
+import {
   parseMoveSelectorNode,
   type MoveSelector,
 } from './selectors'
@@ -38,6 +53,7 @@ export const MOVE_EXPRESSION_KINDS = [
   'type',
   'weather',
   'terrain',
+  'item',
   'move-history',
 ] as const
 
@@ -239,6 +255,26 @@ export interface MoveTerrainExpression {
   readonly kind: 'terrain'
 }
 
+export interface MoveItemPossessionExpression {
+  readonly kind: 'item'
+  readonly subject: MoveSelector
+  readonly query: MoveItemPossessionQuery
+}
+
+export interface MoveItemContributionExpression {
+  readonly kind: 'item'
+  readonly subject: MoveSelector
+  readonly query: MoveItemContributionQuery
+  readonly source: MoveItemRuleSource
+  readonly families: readonly MoveItemRuleFamily[]
+  readonly requirementId: string | null
+  readonly timing: MoveAutomationItemEffectTiming
+}
+
+export type MoveItemExpression =
+  | MoveItemPossessionExpression
+  | MoveItemContributionExpression
+
 export interface MoveHistoryExpression {
   readonly kind: 'move-history'
   readonly subject: MoveSelector
@@ -261,6 +297,7 @@ export type MoveExpression =
   | MoveTypeExpression
   | MoveWeatherExpression
   | MoveTerrainExpression
+  | MoveItemExpression
   | MoveHistoryExpression
 
 export type MoveStatSelectionExpression =
@@ -324,6 +361,16 @@ const COMBAT_STAGE_TOTAL_FIELDS = [
 const WEIGHT_FIELDS = ['kind', 'subject', 'metric'] as const
 const TYPE_FIELDS = ['kind', 'of', 'subject'] as const
 const FIELD_QUERY_FIELDS = ['kind'] as const
+const ITEM_POSSESSION_FIELDS = ['kind', 'subject', 'query'] as const
+const ITEM_CONTRIBUTION_FIELDS = [
+  'kind',
+  'subject',
+  'query',
+  'source',
+  'families',
+  'requirementId',
+  'timing',
+] as const
 const HISTORY_FIELDS = ['kind', 'subject', 'query'] as const
 
 const EXPRESSION_KIND_SET = new Set<string>(MOVE_EXPRESSION_KINDS)
@@ -338,6 +385,11 @@ const HP_RATIO_SET = new Set<string>(MOVE_HP_RATIO_KINDS)
 const COMBAT_STAGE_SET = new Set<string>(MOVE_COMBAT_STAGE_STATS)
 const WEIGHT_METRIC_SET = new Set<string>(MOVE_WEIGHT_METRICS)
 const TYPE_SOURCE_SET = new Set<string>(MOVE_TYPE_SOURCES)
+const ITEM_POSSESSION_QUERY_SET = new Set<string>(MOVE_ITEM_POSSESSION_QUERIES)
+const ITEM_CONTRIBUTION_QUERY_SET = new Set<string>(MOVE_ITEM_CONTRIBUTION_QUERIES)
+const ITEM_RULE_SOURCE_SET = new Set<string>(MOVE_ITEM_RULE_SOURCES)
+const ITEM_RULE_FAMILY_SET = new Set<string>(MOVE_ITEM_RULE_FAMILIES)
+const ITEM_EFFECT_TIMING_SET = new Set<string>(MOVE_AUTOMATION_ITEM_EFFECT_TIMINGS)
 const HISTORY_QUERY_SET = new Set<string>(MOVE_HISTORY_QUERIES)
 const STABLE_ID_PATTERN = /^[a-z0-9]+(?:[._:/-][a-z0-9]+)*$/
 
@@ -480,6 +532,107 @@ const parseLookupTableExpression = (
       readMoveRuleAstOwnValue(input, 'fallback', path, context),
       `${path}.fallback`,
       depth,
+      context,
+    ),
+  }
+}
+
+const parseItemExpression = (
+  input: Record<string, unknown>,
+  path: string,
+  depth: number,
+  context: MoveRuleAstParseContext,
+): MoveItemExpression => {
+  const rawQuery = readMoveRuleAstOwnValue(input, 'query', path, context)
+  if (typeof rawQuery === 'string' && ITEM_POSSESSION_QUERY_SET.has(rawQuery)) {
+    assertMoveRuleAstExactKeys(input, ITEM_POSSESSION_FIELDS, path, context)
+    return {
+      kind: 'item',
+      subject: parseSubject(input, path, depth, context),
+      query: rawQuery as MoveItemPossessionQuery,
+    }
+  }
+
+  assertMoveRuleAstExactKeys(input, ITEM_CONTRIBUTION_FIELDS, path, context)
+  const query = parseMoveRuleAstEnum<MoveItemContributionQuery>(
+    rawQuery,
+    ITEM_CONTRIBUTION_QUERY_SET,
+    `${path}.query`,
+    'a supported item contribution query',
+    context,
+  )
+  const source = parseMoveRuleAstEnum<MoveItemRuleSource>(
+    readMoveRuleAstOwnValue(input, 'source', path, context),
+    ITEM_RULE_SOURCE_SET,
+    `${path}.source`,
+    'equipped or digestion-buff',
+    context,
+  )
+  const families = parseMoveRuleAstArray(
+    readMoveRuleAstOwnValue(input, 'families', path, context),
+    `${path}.families`,
+    context,
+    { minimum: 1 },
+  ).map((family, index) => parseMoveRuleAstEnum<MoveItemRuleFamily>(
+    family,
+    ITEM_RULE_FAMILY_SET,
+    `${path}.families[${index}]`,
+    'berry, plate, drive, memory, or other',
+    context,
+  ))
+  if (new Set(families).size !== families.length) {
+    failMoveRuleAst(
+      context,
+      'duplicate-key',
+      `${path}.families`,
+      'item families must be unique.',
+    )
+  }
+
+  const rawRequirementId = readMoveRuleAstOwnValue(
+    input,
+    'requirementId',
+    path,
+    context,
+  )
+  const requirementId = rawRequirementId === null
+    ? null
+    : parseMoveRuleAstString(rawRequirementId, `${path}.requirementId`, context)
+  if (
+    requirementId !== null
+    && (
+      requirementId.length > MOVE_ITEM_RULE_QUERY_LIMITS.identifierChars
+      || !STABLE_ID_PATTERN.test(requirementId)
+    )
+  ) {
+    failMoveRuleAst(
+      context,
+      context.invalidCode,
+      `${path}.requirementId`,
+      'must be a lowercase stable item requirement identifier.',
+    )
+  }
+  if ((source === 'equipped') !== (requirementId !== null)) {
+    failMoveRuleAst(
+      context,
+      context.invalidCode,
+      `${path}.requirementId`,
+      'must be non-null for equipped queries and null for digestion-buff queries.',
+    )
+  }
+
+  return {
+    kind: 'item',
+    subject: parseSubject(input, path, depth, context),
+    query,
+    source,
+    families,
+    requirementId,
+    timing: parseMoveRuleAstEnum<MoveAutomationItemEffectTiming>(
+      readMoveRuleAstOwnValue(input, 'timing', path, context),
+      ITEM_EFFECT_TIMING_SET,
+      `${path}.timing`,
+      'static, trigger, activated, or consumable',
       context,
     ),
   }
@@ -748,6 +901,8 @@ export const parseMoveExpressionNode = (
     case 'terrain':
       assertMoveRuleAstExactKeys(input, FIELD_QUERY_FIELDS, path, context)
       return { kind }
+    case 'item':
+      return parseItemExpression(input, path, depth, context)
     case 'move-history':
       assertMoveRuleAstExactKeys(input, HISTORY_FIELDS, path, context)
       return {

@@ -2,7 +2,10 @@ import type {
   MoveAutomationItemEffectScope,
   MoveAutomationItemEffectTiming,
 } from '#shared/moveAutomation/globalFields'
+import type { EncounterEffect } from '#shared/moveAutomation/encounterEffects'
 import type { EncounterSideId } from '#shared/moveAutomation/encounterState'
+import { moveItemEffectBindingId } from '#shared/moveAutomation/itemEffects'
+import type { MoveItemReference } from '#shared/moveAutomation/items'
 import type { SheetPlacement } from '~/types/map'
 import type { MoveAutomationRemainingGlobalFieldResolver } from './remainingGlobalFields'
 
@@ -20,9 +23,11 @@ export interface MoveAutomationItemEffectResolution {
   readonly suppressed: boolean
   readonly sourceZoneId: string | null
   readonly sourceSideId: EncounterSideId | null
+  readonly sourceEffectIds: readonly string[]
   readonly reasonCode:
     | 'item-effect.allowed'
     | 'item-effect.magic-room-suppressed'
+    | 'item-effect.encounter-suppressed'
     | 'item-effect.magic-room-exempt'
     | 'item-effect.scope-not-applicable'
     | 'item-effect.placement-unavailable'
@@ -32,6 +37,8 @@ export interface MoveAutomationItemEffectQuery {
   readonly placementId: string
   readonly scope: MoveAutomationItemEffectScope
   readonly timing: MoveAutomationItemEffectTiming
+  /** Exact private identity required for item-binding suppression effects. */
+  readonly item?: MoveItemReference
 }
 
 export interface MoveAutomationItemEffectResolver {
@@ -62,19 +69,40 @@ const scopeApplies = (
 )
 
 /**
- * Build the generic item-contribution suppression seam. Magic Room is queried
- * from active native-plus-compatibility field state; item identity and inventory
- * mutation remain outside this ticket and arrive through the item resource phase.
+ * Build the generic item-contribution suppression seam. Magic Room and active
+ * typed item-suppression effects are read-only overlays; neither path unequips
+ * or mutates the consulted item.
  */
 export const createMoveAutomationItemEffectResolver = (input: {
   readonly placements: readonly SheetPlacement[]
   readonly globalFields: MoveAutomationRemainingGlobalFieldResolver
+  readonly effects?: readonly EncounterEffect[]
   /** Item contributions consult their backing sheet even when Magic Room suppresses them. */
   readonly recordSheetRead?: (
     placement: Pick<SheetPlacement, 'sheetKind' | 'sheetSlug'>,
   ) => void
 }): MoveAutomationItemEffectResolver => {
   const placements = new Map(input.placements.map(placement => [placement.id, placement]))
+  const effects = input.effects ?? []
+
+  const encounterSuppressionIds = (
+    query: MoveAutomationItemEffectQuery,
+  ): readonly string[] => {
+    const blocksBenefit = query.timing === 'static' || query.timing === 'trigger'
+    const bindingId = query.item ? moveItemEffectBindingId(query.item) : null
+    return effects.flatMap((effect) => {
+      if (
+        effect.kind !== 'item-suppression'
+        || effect.suppression.sources.length > 0
+        || !effect.affected.placementIds.includes(query.placementId)
+        || (blocksBenefit ? !effect.payload.blocksBenefit : !effect.payload.blocksUse)
+      ) return []
+      if (effect.payload.scope === 'all-equipped') return [effect.id]
+      return bindingId !== null && effect.payload.itemBindingIds.includes(bindingId)
+        ? [effect.id]
+        : []
+    })
+  }
 
   return Object.freeze({
     resolve: (query: MoveAutomationItemEffectQuery): MoveAutomationItemEffectResolution => {
@@ -95,6 +123,7 @@ export const createMoveAutomationItemEffectResolver = (input: {
           suppressed: false,
           sourceZoneId: null,
           sourceSideId: null,
+          sourceEffectIds: [],
           reasonCode: 'item-effect.placement-unavailable',
         })
       }
@@ -107,11 +136,26 @@ export const createMoveAutomationItemEffectResolver = (input: {
           suppressed: false,
           sourceZoneId: null,
           sourceSideId: null,
+          sourceEffectIds: [],
           reasonCode: 'item-effect.scope-not-applicable',
         })
       }
 
       input.recordSheetRead?.(placement)
+      const sourceEffectIds = encounterSuppressionIds(query)
+      if (sourceEffectIds.length > 0) {
+        return deepFreeze({
+          placementId: placement.id,
+          scope: query.scope,
+          timing: query.timing,
+          outcome: 'suppressed',
+          suppressed: true,
+          sourceZoneId: null,
+          sourceSideId: null,
+          sourceEffectIds,
+          reasonCode: 'item-effect.encounter-suppressed',
+        })
+      }
       if (magicRoom.suppressed && activeField) {
         return deepFreeze({
           placementId: placement.id,
@@ -121,6 +165,7 @@ export const createMoveAutomationItemEffectResolver = (input: {
           suppressed: true,
           sourceZoneId: activeField.zoneId,
           sourceSideId: activeField.sideId,
+          sourceEffectIds: [],
           reasonCode: 'item-effect.magic-room-suppressed',
         })
       }
@@ -133,6 +178,7 @@ export const createMoveAutomationItemEffectResolver = (input: {
         suppressed: false,
         sourceZoneId: activeField?.zoneId ?? null,
         sourceSideId: activeField?.sideId ?? null,
+        sourceEffectIds: [],
         reasonCode: activeField
           ? 'item-effect.magic-room-exempt'
           : 'item-effect.allowed',

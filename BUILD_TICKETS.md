@@ -2157,7 +2157,7 @@ Status: DONE
 
 ## MA-157 — Add item-dependent expressions and suppression
 
-Status: TODO
+Status: DONE
 
 **Depends on:** MA-074, MA-150, MA-156B
 **Commit:** `feat(move-automation): calculate item dependent move rules`

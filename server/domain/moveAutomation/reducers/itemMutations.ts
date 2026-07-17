@@ -17,7 +17,9 @@ import {
   type MoveItemReference,
   type MoveItemTrainerSheetOwnerReference,
 } from '#shared/moveAutomation/items'
-import { findItem, toSlug } from '~~/data/ptuReference'
+import {
+  resolveMoveAutomationItemRuleIdentity,
+} from '../itemRuleData'
 import type { CharacterSheet } from '~/types/characterSheet'
 import type {
   GroupInventoryDocument,
@@ -213,9 +215,9 @@ const canonicalItem = (value: string, label: string): {
   readonly id: string
   readonly name: string
 } => {
-  const item = findItem(value)
+  const item = resolveMoveAutomationItemRuleIdentity(value)
   if (!item) return fail('item-mismatch', `${label} does not resolve to canonical item data.`)
-  return { id: toSlug(item.name), name: item.name }
+  return { id: item.canonicalItemId, name: item.canonicalItemName }
 }
 
 const assertCanonicalName = (
@@ -1029,8 +1031,8 @@ const countNamedItems = (
   names: readonly string[],
 ): void => {
   for (const name of names) {
-    const item = findItem(name)
-    if (item) addQuantity(quantities, toSlug(item.name), 1)
+    const item = resolveMoveAutomationItemRuleIdentity(name)
+    if (item) addQuantity(quantities, item.canonicalItemId, 1)
   }
 }
 
@@ -1041,14 +1043,14 @@ const countInventory = (
   if (!inventory) return
   for (const section of MOVE_ITEM_TRAINER_INVENTORY_SECTIONS) {
     for (const entry of inventory[section] ?? []) {
-      const item = findItem(entry.name)
+      const item = resolveMoveAutomationItemRuleIdentity(entry.name)
       if (!item) continue
       const quantity = section === 'equipment'
         ? 1
         : Number.isSafeInteger(entry.qty) && Number(entry.qty) > 0
           ? Number(entry.qty)
           : 0
-      if (quantity > 0) addQuantity(quantities, toSlug(item.name), quantity)
+      if (quantity > 0) addQuantity(quantities, item.canonicalItemId, quantity)
     }
   }
 }

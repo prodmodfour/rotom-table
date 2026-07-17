@@ -13,7 +13,9 @@ import {
   parseMoveResolutionAuditTrace,
   type MoveResolutionAuditTrace,
 } from '#shared/moveAutomation/trace'
-import { findItem, toSlug } from '~~/data/ptuReference'
+import {
+  resolveMoveAutomationItemRuleIdentity,
+} from './itemRuleData'
 import type { CharacterSheet } from '~/types/characterSheet'
 import type { SheetPlacement } from '~/types/map'
 import type { TrainerSheet } from '~/types/trainerSheet'
@@ -333,8 +335,7 @@ const storedDigestionBuffId = (
     ? (resolved.sheet as CharacterSheet).items?.digestionFood
     : (resolved.sheet as TrainerSheet).digestion
   if (typeof value !== 'string' || !value.trim()) return null
-  const item = findItem(value.trim())
-  return item ? toSlug(item.name) : null
+  return resolveMoveAutomationItemRuleIdentity(value.trim())?.canonicalItemId ?? null
 }
 
 const sourceOwnerPlacement = (input: {

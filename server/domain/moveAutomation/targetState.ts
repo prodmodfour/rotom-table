@@ -3,7 +3,9 @@ import type { MovementSemiInvulnerableState } from '~/types/movement'
 import type { SheetKind, SheetPlacement } from '~/types/map'
 import type { SpawnedPokemon } from '~/types/pokemon'
 import type { TrainerSheet } from '~/types/trainerSheet'
-import { findItem, toSlug } from '~~/data/ptuReference'
+import {
+  resolveMoveAutomationItemRuleIdentity,
+} from './itemRuleData'
 import {
   hasGroundsourceImmunityCapability,
   hasSoundproofAbility,
@@ -226,11 +228,9 @@ const pokemonSizeAndWeight = (
   }
 }
 
-const canonicalItemId = (itemName: string): string | null => {
-  const canonicalName = findItem(itemName)?.name ?? itemName.trim()
-  const itemId = toSlug(canonicalName)
-  return itemId || null
-}
+const canonicalItemId = (itemName: string): string | null => (
+  resolveMoveAutomationItemRuleIdentity(itemName)?.canonicalItemId ?? null
+)
 
 const normalizedItemIds = (items: readonly string[]): readonly string[] => (
   uniqueStrings(items.flatMap((item) => {

@@ -8,7 +8,9 @@ import {
   type MoveItemReference,
   type MoveItemTrainerInventorySection,
 } from '#shared/moveAutomation/items'
-import { findItem, toSlug } from '~~/data/ptuReference'
+import {
+  resolveMoveAutomationItemRuleIdentity,
+} from './itemRuleData'
 import type { CharacterSheet } from '~/types/characterSheet'
 import type { GroupInventoryDocument } from '~/types/groupInventory'
 import type { SheetKind, SheetPlacement, TabletopMap } from '~/types/map'
@@ -332,10 +334,8 @@ const canonicalItemIdentity = (
   value: unknown,
 ): { readonly id: string } | null => {
   if (typeof value !== 'string') return null
-  const item = findItem(value)
-  if (!item) return null
-  const id = toSlug(item.name)
-  return id ? { id } : null
+  const identity = resolveMoveAutomationItemRuleIdentity(value)
+  return identity ? { id: identity.canonicalItemId } : null
 }
 
 const normalizeConsumedItems = (

@@ -695,6 +695,34 @@ const weightValue = (
   return boundedNumber(targetState.weightClass, nodeId)
 }
 
+const itemValue = (
+  expression: Extract<MoveExpression, { readonly kind: 'item' }>,
+  state: EvaluationState,
+  nodeId: string,
+  depth: number,
+): MoveRuleScalar => {
+  const placementId = selectedSubjectId(
+    expression.subject,
+    state,
+    nodeId,
+    depth + 1,
+  )
+  if (!('source' in expression)) {
+    return boundedScalar(state.context.queries.itemRules.resolve({
+      placementId,
+      query: expression.query,
+    }).value, nodeId)
+  }
+  return boundedScalar(state.context.queries.itemRules.resolve({
+    placementId,
+    query: expression.query,
+    source: expression.source,
+    families: expression.families,
+    requirementId: expression.requirementId,
+    timing: expression.timing,
+  }).value, nodeId)
+}
+
 const historyValue = (
   selector: MoveSelector,
   query: MoveHistoryQuery,
@@ -945,6 +973,9 @@ const evaluateExpressionNode = (
         'terrain',
         nodeId,
       )
+      break
+    case 'item':
+      value = itemValue(expression, state, nodeId, depth)
       break
     case 'move-history':
       value = historyValue(

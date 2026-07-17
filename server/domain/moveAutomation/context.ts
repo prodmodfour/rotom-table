@@ -45,6 +45,10 @@ import {
   type MoveAutomationItemEffectResolver,
 } from './itemEffects'
 import {
+  createMoveAutomationItemRuleResolver,
+  type MoveAutomationItemRuleResolver,
+} from './itemRules'
+import {
   createAuthoritativeMoveItemResourceQueries,
   emptyAuthoritativeMoveItemResources,
   type AuthoritativeMoveItemResourceQueries,
@@ -145,6 +149,7 @@ export type AuthoritativeMoveGlobalFieldQueries = MoveAutomationRemainingGlobalF
 export type AuthoritativeMoveGravityQueries = MoveAutomationGravityResolver
 export type AuthoritativeMoveHistoryQueries = MoveAutomationHistoryResolver
 export type AuthoritativeMoveItemEffectQueries = MoveAutomationItemEffectResolver
+export type AuthoritativeMoveItemRuleQueries = MoveAutomationItemRuleResolver
 export type AuthoritativeMoveResourceQueries = MoveAutomationResourceResolver
 export type AuthoritativeMoveRoomQueries = MoveAutomationRoomResolver
 export type AuthoritativeMoveStatQueries = MoveAutomationStatResolver
@@ -170,6 +175,8 @@ export interface AuthoritativeMoveContextQueries {
   readonly gravity: AuthoritativeMoveGravityQueries
   readonly history: AuthoritativeMoveHistoryQueries
   readonly itemEffects: AuthoritativeMoveItemEffectQueries
+  /** Bounded item-dependent expression values after authoritative suppression overlays. */
+  readonly itemRules: AuthoritativeMoveItemRuleQueries
   /** Private normalized item identities; never projected to accepted wire results. */
   readonly items: AuthoritativeMoveItemResourceQueries
   readonly resources: AuthoritativeMoveResourceQueries
@@ -603,6 +610,15 @@ export const buildAuthoritativeMoveRulesContext = (
   const itemEffects = createMoveAutomationItemEffectResolver({
     placements,
     globalFields,
+    effects: map.encounterState?.effects ?? [],
+    recordSheetRead: readSet.recordPlacement,
+  })
+  const itemResourceQueries = createAuthoritativeMoveItemResourceQueries(itemResources)
+  const itemRules = createMoveAutomationItemRuleResolver({
+    placements,
+    sheets: resolvedSheets,
+    items: itemResourceQueries,
+    itemEffects,
     recordSheetRead: readSet.recordPlacement,
   })
   const stats = createMoveAutomationStatResolver({
@@ -698,7 +714,8 @@ export const buildAuthoritativeMoveRulesContext = (
     gravity,
     history,
     itemEffects,
-    items: createAuthoritativeMoveItemResourceQueries(itemResources),
+    itemRules,
+    items: itemResourceQueries,
     resources,
     rooms,
     stats,
