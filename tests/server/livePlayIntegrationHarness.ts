@@ -152,6 +152,7 @@ export class LivePlayIntegrationHarness {
 
   private readonly clients = new Map<string, LivePlayRealtimeClient>()
   private readonly lifecycleHandlers: readonly EncounterLifecycleTriggerHandler[]
+  private readonly profiles: PlayerProfile[] = []
   private readonly commandExecutor: ReturnType<typeof createAuthoritativeLivePlayCommandExecutor>
   private nowValue = 1_700_000_100_000
   private disposed = false
@@ -211,12 +212,14 @@ export class LivePlayIntegrationHarness {
     readonly displayName: string
     readonly linkedCharacters: PlayerProfile['linkedCharacters']
   }): PlayerProfile {
-    return {
+    const profile: PlayerProfile = {
       schemaVersion: PLAYER_PROFILE_SCHEMA_VERSION,
       id: input.id as PlayerProfileId,
       displayName: input.displayName as PlayerProfileDisplayName,
       linkedCharacters: input.linkedCharacters,
     }
+    this.profiles.push(profile)
+    return profile
   }
 
   async loadClient(id: string, mapSlug = 'integration-arena'): Promise<LivePlayRealtimeClient> {
@@ -665,6 +668,7 @@ export class LivePlayIntegrationHarness {
       relativePath: (path: string) => path,
       now: () => this.nextTimestamp(),
       lifecycleHandlers: this.lifecycleHandlers,
+      listProfiles: () => [...this.profiles],
     }
   }
 }

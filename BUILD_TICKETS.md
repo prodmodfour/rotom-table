@@ -2028,7 +2028,7 @@ Status: DONE
 
 ## MA-146 — Interrupt movement steps with opportunity attacks
 
-Status: TODO
+Status: DONE
 
 **Depends on:** MA-105, MA-110, MA-132
 **Commit:** `feat(move-automation): interrupt movement with opportunity attacks`

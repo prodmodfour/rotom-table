@@ -443,6 +443,21 @@ export class FullSystemChaosHarness {
 
     this.addProfile(playerProfile('profile_ash00000' as PlayerProfileId, 'ash'))
     this.addProfile(playerProfile('profile_misty000' as PlayerProfileId, 'misty'))
+    // Link the two pokemon tokens to player profiles so the movement oracle
+    // recognises them as player-character tokens and does not auto-provoke a
+    // durable Attack of Opportunity between them during chaos movements.
+    this.addProfile({
+      schemaVersion: PLAYER_PROFILE_SCHEMA_VERSION,
+      id: 'profile_alphalink' as PlayerProfileId,
+      displayName: 'alpha-link' as PlayerProfileDisplayName,
+      linkedCharacters: [{ sheetKind: 'pokemon', sheetSlug: 'alpha-mon' }],
+    })
+    this.addProfile({
+      schemaVersion: PLAYER_PROFILE_SCHEMA_VERSION,
+      id: 'profile_betalink0' as PlayerProfileId,
+      displayName: 'beta-link' as PlayerProfileDisplayName,
+      linkedCharacters: [{ sheetKind: 'pokemon', sheetSlug: 'beta-mon' }],
+    })
   }
 
   readMap(slug = 'chaos-arena'): TabletopMap {
@@ -900,6 +915,7 @@ export class FullSystemChaosHarness {
       database: this.database,
       relativePath: (path: string) => path,
       now: () => this.nextTimestamp(),
+      listProfiles: () => [...this.profiles.values()],
     }
   }
 }

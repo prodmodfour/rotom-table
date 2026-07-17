@@ -970,7 +970,17 @@ describe('live-play map token commands', () => {
 
     try {
       const mapRepository = createSqliteMapRepository<TabletopMap>(database)
-      await mapRepository.saveSetupMap(baseMap())
+      // The adjacent rival trainer is moved out of the path so this movement
+      // persistence check does not provoke a durable Attack of Opportunity.
+      const movementOnlyMap: TabletopMap = {
+        ...baseMap(),
+        placements: baseMap().placements.map((placement) => (
+          placement.id === 'unlinked-token'
+            ? { ...placement, position: { x: 7, y: 0, z: 7 } }
+            : placement
+        )),
+      }
+      await mapRepository.saveSetupMap(movementOnlyMap)
       const executor = createAuthoritativeLivePlayCommandExecutor({
         opStore: createInMemoryLivePlayOpStore(),
         queue: createInProcessMapWriteQueue(),

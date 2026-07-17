@@ -3,6 +3,7 @@ import {
   LIVE_PLAY_COMMAND_TYPES,
   LIVE_PLAY_PATCH_TYPES,
   isMoveTokenMovementPolicy,
+  parseLivePlayOpId,
   type DeleteTokenLivePlayCommand,
   type DeleteTokenPayload,
   type LivePlayCommandAccepted,
@@ -93,6 +94,7 @@ import {
 } from '../domain/moveAutomation/attackOfOpportunity'
 import { commitLivePlayMapUpdate } from './livePlayMapPersistence'
 import { toPersistedMap } from './saveMap'
+import { createMoveStateChangePlan } from '../domain/moveAutomation/plan'
 import { listPlayerProfiles } from '../utils/playerProfileStorage'
 import { playerCharacterSheetKeysForProfiles } from '~/utils/playerCharacterTokens'
 
@@ -292,6 +294,10 @@ const clonePosition = (position: GridAnchor): GridAnchor => ({
   y: position.y,
   z: position.z,
 })
+
+const positionsEqual = (left: GridAnchor, right: GridAnchor): boolean => (
+  left.x === right.x && left.y === right.y && left.z === right.z
+)
 
 const authoritativeMovementSheetsForMap = (
   map: TabletopMap,
@@ -1146,7 +1152,7 @@ const suspendMovementForOpportunityAttack = (input: {
   const commandHash = createLivePlayCommandHash(input.command)
   const identity = movementAttackOfOpportunityPersistenceIdentity({
     mapSlug: input.command.mapSlug,
-    originOpId: input.command.opId,
+    originOpId: parseLivePlayOpId(input.command.opId),
     commandHash,
   })
   const revision = nextRevision(input.currentRevision)
@@ -1229,7 +1235,7 @@ const pendingMovementResultFromStored = (input: {
   }
   const expected = movementAttackOfOpportunityPersistenceIdentity({
     mapSlug: input.command.mapSlug,
-    originOpId: input.command.opId,
+    originOpId: parseLivePlayOpId(input.command.opId),
     commandHash: input.commandHash,
   })
   const context = input.stored.resolution.continuationContext
@@ -1264,6 +1270,7 @@ export const executeMapTokenLivePlayCommandUseCase = async (
   const deps = actionDependencies(dependencies)
   let persistedContext: ResolvedMapTokenCommandResponseContext | null = null
   let movementSheetReads: readonly AuthoritativeMovementSheetRead[] = []
+  let suspendedMovement: SuspendedMovementApplication | null = null
 
   const result = await deps.commandExecutor.execute<MapTokenLivePlayCommand, ResolvedMapWriteContext, MapTokenLivePlayActor>({
     command: input.command,
@@ -1274,6 +1281,13 @@ export const executeMapTokenLivePlayCommandUseCase = async (
     },
     readMap: ({ command }) => resolveLivePlayMapWriteContext({ role: input.role, slug: command.mapSlug }, deps),
     getMapRevision: (context) => normalizeRevision(context.map.revision),
+    findSuspendedResult: ({ command, commandHash }) => {
+      if (!deps.pendingResolutionRepository) return null
+      if (command.type !== LIVE_PLAY_COMMAND_TYPES.MOVE_TOKEN) return null
+      const stored = deps.pendingResolutionRepository.getByOrigin(command.mapSlug, command.opId)
+      if (!stored) return null
+      return pendingMovementResultFromStored({ command, commandHash, stored })
+    },
     authorize: ({ command, actor, map }) => {
       if (input.expectedType && command.type !== input.expectedType) {
         rejectLivePlayCommand('invalid', `This route only accepts ${input.expectedType} commands`)
@@ -1389,7 +1403,30 @@ export const executeMapTokenLivePlayCommandUseCase = async (
             )
           : null
         movementSheetReads = movement?.movement.sheetReads ?? []
-        change = movement && context ? applyResolvedMoveTokenToMap(movement, context, deps) : null
+        if (movement && context) {
+          const suspended = suspendMovementForOpportunityAttack({
+            command,
+            resolved: movement,
+            context,
+            currentRevision,
+            dependencies: deps,
+          })
+          if (suspended) {
+            suspendedMovement = suspended
+            return {
+              status: 'suspended',
+              nextMap: {
+                mapPath: map.mapPath,
+                relativePath: map.relativePath,
+                map: suspended.change.nextMap,
+              },
+              result: suspended.result,
+            }
+          }
+          change = applyResolvedMoveTokenToMap(movement, context, deps)
+        } else {
+          change = null
+        }
       } else if (command.type === LIVE_PLAY_COMMAND_TYPES.TURN_TOKEN) {
         change = context ? applyTurnTokenToMap(expectTurnTokenPayload(command.payload), context) : null
       } else if (command.type === LIVE_PLAY_COMMAND_TYPES.SPAWN_TOKEN) {
@@ -1432,6 +1469,62 @@ export const executeMapTokenLivePlayCommandUseCase = async (
     },
     persist: () => {
       throw new Error('live-play map token commands must persist through the accepted-result commit hook')
+    },
+    commitSuspended: ({ command, currentRevision, nextMap, result }) => {
+      const suspended = suspendedMovement
+      if (!suspended || !deps.pendingResolutionRepository) {
+        throw new MapTokenActionUseCaseError(
+          409,
+          'Suspended movement declaration has no durable pending resolution to persist',
+        )
+      }
+      const persisted = toPersistedMap(
+        nextMap.map,
+        nextMap.map.folder ?? '',
+        deps.now(),
+        { revision: result.revision },
+      )
+      const authoritativeMap = commitLivePlayMapUpdate({
+        database: deps.database,
+        mapRepository: deps.mapRepository,
+        mapSlug: result.mapSlug,
+        expectedRevision: currentRevision,
+        nextMap: persisted,
+        validateBeforeWrite: () => assertMovementSheetReads(
+          movementSheetReads,
+          deps.readSheet,
+          currentRevision,
+        ),
+        staleError: () => new MapTokenActionUseCaseError(
+          409,
+          `Map ${result.mapSlug} changed before the suspended movement could persist`,
+        ),
+        missingMapError: () => new MapTokenActionUseCaseError(
+          404,
+          `Map ${result.mapSlug}.json not found after suspended movement`,
+        ),
+        saveOpResult: () => {
+          const stored = deps.pendingResolutionRepository!.create({
+            resolution: suspended.pendingResolution,
+            declarationPlan: createMoveStateChangePlan([]),
+          })
+          if (
+            stored.resolutionId !== suspended.pendingResolution.resolutionId
+            || stored.status !== 'pending'
+          ) {
+            throw new MapTokenActionUseCaseError(
+              409,
+              'Suspended movement declaration did not persist its canonical pending identity',
+            )
+          }
+        },
+      })
+      void command
+      persistedContext = {
+        mapPath: nextMap.mapPath,
+        relativePath: nextMap.relativePath,
+        map: authoritativeMap,
+      }
     },
     commit: ({ actor, command, currentRevision, nextMap, result, saveOpResult }) => {
       const persisted = toPersistedMap(nextMap.map, nextMap.map.folder ?? '', deps.now(), { revision: result.revision })

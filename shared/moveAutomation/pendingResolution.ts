@@ -312,6 +312,8 @@ export interface PendingMovePreStepAttackOfOpportunityContext
   extends PendingMoveAttackOfOpportunityContextBase {
   readonly triggerReason: 'movement'
   readonly timing: 'pre-movement-step'
+  readonly from: MoveResponseGridAnchor
+  readonly to: MoveResponseGridAnchor
   readonly movementPath: PendingMoveOpportunityMovementPath
 }
 
@@ -1227,9 +1229,9 @@ const parseOpportunityMovementPath = (
   if (record.mode !== 'shift') {
     fail('invalid-pending-resolution', `${path}.mode`, 'must be shift.')
   }
-  if (record.policy !== 'standard' && record.policy !== 'gm-override') {
-    fail('invalid-pending-resolution', `${path}.policy`, 'must be standard or gm-override.')
-  }
+  const policy = record.policy === 'standard' || record.policy === 'gm-override'
+    ? record.policy
+    : fail('invalid-pending-resolution', `${path}.policy`, 'must be standard or gm-override.')
   const origin = requiredContinuationGridAnchor(record.origin, `${path}.origin`)
   const destination = requiredContinuationGridAnchor(record.destination, `${path}.destination`)
   const requestedDestination = requiredContinuationGridAnchor(
@@ -1324,7 +1326,7 @@ const parseOpportunityMovementPath = (
     movementId,
     sourceOperationId,
     mode: 'shift',
-    policy: record.policy,
+    policy,
     origin,
     destination,
     requestedDestination,
@@ -1401,8 +1403,6 @@ const parseContinuationContext = (
     if (
       triggerReason !== 'movement'
       || record.timing !== 'pre-movement-step'
-      || from === null
-      || to === null
       || targetPlacementIds.length > 0
     ) {
       fail(
@@ -1411,19 +1411,21 @@ const parseContinuationContext = (
         'pre-step opportunity attacks require movement anchors and no ranged targets.',
       )
     }
+    const movementFrom = requiredContinuationGridAnchor(record.from, `${path}.from`)
+    const movementTo = requiredContinuationGridAnchor(record.to, `${path}.to`)
     return {
       kind: 'attack-of-opportunity',
       triggerReason: 'movement',
       provokerPlacementId,
-      from,
-      to,
+      from: movementFrom,
+      to: movementTo,
       targetPlacementIds: [],
       timing: 'pre-movement-step',
       movementPath: parseOpportunityMovementPath(
         record.movementPath,
         originOpId,
-        from,
-        to,
+        movementFrom,
+        movementTo,
         `${path}.movementPath`,
       ),
     }

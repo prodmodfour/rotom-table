@@ -595,6 +595,13 @@ export const materializeMovementAttackOfOpportunity = (
   if (input.movement.placementId !== placementFor(input.map, input.movement.placementId).id) {
     throw new Error('Movement opportunity attack placement identity is inconsistent.')
   }
+  if (input.movement.mode !== 'shift') {
+    throw new Error('Movement opportunity attacks support only shift-mode movement.')
+  }
+  const policyKind = input.movement.policy.kind
+  if (policyKind === 'pass') {
+    throw new Error('Movement opportunity attacks do not support pass-policy movement.')
+  }
   const movementId = `movement.attack-of-opportunity.${createHash('sha256')
     .update(`${input.originMapSlug}:${input.originOpId}`)
     .digest('hex')}`
@@ -653,7 +660,7 @@ export const materializeMovementAttackOfOpportunity = (
         movementId,
         sourceOperationId: input.originOpId,
         mode: 'shift',
-        policy: input.movement.policy.kind,
+        policy: policyKind,
         origin: { ...input.movement.origin },
         destination: { ...input.movement.destination },
         requestedDestination: { ...input.movement.destination },
