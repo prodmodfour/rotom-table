@@ -36,6 +36,9 @@ export const MOVE_SHEET_STATE_FIELDS = [
   'hp',
   'combatStages',
   'conditions',
+  'items',
+  'inventory',
+  'equipmentSlots',
 ] as const
 
 export type MoveStateChangeKind = (typeof MOVE_STATE_CHANGE_KINDS)[number]

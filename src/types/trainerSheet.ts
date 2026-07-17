@@ -223,6 +223,8 @@ export interface TrainerOrder {
 /* ------------------------------------------------------------------ */
 
 export interface InventoryEntry {
+  /** Optional stable row identity used by authoritative live-play item mutations. */
+  id?: string
   name: string
   qty?: number
   cost?: number | string

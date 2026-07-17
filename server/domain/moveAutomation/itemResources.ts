@@ -405,7 +405,7 @@ const trainerInventoryReferences = (
     const canonical = canonicalItemIdentity(entry.name)
     const quantity = quantityForInventoryEntry(entry, section)
     if (!canonical || quantity === null) return []
-    const storedId = (entry as InventoryEntry & { readonly id?: unknown }).id
+    const storedId: unknown = entry.id
     const itemId = typeof storedId === 'string' && storedId.trim()
       ? storedId.trim()
       : `trainer-row:${section}:${index + 1}`

@@ -26,7 +26,18 @@ import type {
 
 export const LIVE_PLAY_RESOLVE_MOVE_SCOPE_LIMIT = 128 as const
 
-export type LivePlayMoveSheetChangedField = 'moveUsage' | 'hp' | 'combatStages' | 'conditions'
+export const LIVE_PLAY_MOVE_SHEET_CHANGED_FIELDS = [
+  'moveUsage',
+  'hp',
+  'combatStages',
+  'conditions',
+  'items',
+  'inventory',
+  'equipmentSlots',
+] as const
+
+export type LivePlayMoveSheetChangedField =
+  (typeof LIVE_PLAY_MOVE_SHEET_CHANGED_FIELDS)[number]
 
 export interface LivePlayMoveSheetChangeRef {
   readonly kind: SheetKind
@@ -120,7 +131,7 @@ type UnknownRecord = Record<string, unknown>
 type MutableIssueList = LivePlayMoveStatePatchPayloadValidationIssue[]
 type JsonValue = null | string | number | boolean | JsonValue[] | { readonly [key: string]: JsonValue }
 
-const SHEET_CHANGED_FIELDS = new Set<unknown>(['moveUsage', 'hp', 'combatStages', 'conditions'])
+const SHEET_CHANGED_FIELDS = new Set<unknown>(LIVE_PLAY_MOVE_SHEET_CHANGED_FIELDS)
 const TOKEN_FACING_DIRECTIONS = new Set<unknown>(['north-east', 'south-east', 'south-west', 'north-west'])
 const HAZARD_KINDS = new Set<unknown>(['spikes', 'toxic-spikes', 'sticky-web', 'stealth-rock', 'fire'])
 const WEATHER_KINDS = new Set<unknown>(['sunny', 'rainy', 'hail', 'sandstorm'])
@@ -654,7 +665,12 @@ const parseChangedFields = (
   const seen = new Set<LivePlayMoveSheetChangedField>()
   for (const [index, item] of value.entries()) {
     if (!SHEET_CHANGED_FIELDS.has(item)) {
-      addIssue(issues, `${path}[${index}]`, 'invalid-field', `${path}[${index}] must be moveUsage, hp, combatStages, or conditions.`)
+      addIssue(
+        issues,
+        `${path}[${index}]`,
+        'invalid-field',
+        `${path}[${index}] must be one of ${LIVE_PLAY_MOVE_SHEET_CHANGED_FIELDS.join(', ')}.`,
+      )
       continue
     }
     const field = item as LivePlayMoveSheetChangedField

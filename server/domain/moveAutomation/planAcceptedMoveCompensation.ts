@@ -110,13 +110,18 @@ const sheetInverseOperations = (
         restore: sheetConditionNames(change.scope.sheetKind, change.previous),
       }
     }
-    else {
+    else if (field === 'moveUsage') {
       inverse = {
         kind: 'restore-sheet-move-usage',
         scope: deepCloneJson(change.scope),
         expectedCurrent: sheetMoveUsage(change.current),
         restore: sheetMoveUsage(change.previous),
       }
+    }
+    else {
+      return fail(
+        `Sheet item state change ${change.id} field ${field} requires explicit unavailable compensation metadata.`,
+      )
     }
     if (sameJsonValue(inverse.expectedCurrent, inverse.restore)) {
       return fail(

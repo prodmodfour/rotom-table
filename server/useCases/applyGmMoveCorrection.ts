@@ -209,9 +209,15 @@ const correctionScopes = (
         sheetSlug: sheet.slug,
         field,
       })
-      const tokenField = field === 'moveUsage' ? 'moveUsage' : field
-      for (const placementId of sheet.placementIds) {
-        push({ kind: 'token', placementId, field: tokenField })
+      if (
+        field === 'moveUsage'
+        || field === 'hp'
+        || field === 'combatStages'
+        || field === 'conditions'
+      ) {
+        for (const placementId of sheet.placementIds) {
+          push({ kind: 'token', placementId, field })
+        }
       }
     }
   }
