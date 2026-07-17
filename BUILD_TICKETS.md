@@ -2170,7 +2170,7 @@ Status: DONE
 
 ## MA-158 — Finalize structured move-history queries
 
-Status: TODO
+Status: DONE
 
 **Depends on:** MA-063, MA-037
 **Commit:** `feat(move-automation): query canonical move history`
