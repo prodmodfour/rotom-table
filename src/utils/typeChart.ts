@@ -9,29 +9,9 @@
  * converted to PTU's stepped damage values: x1.5 for one weakness, x2 for two
  * weaknesses, x3 for three, and halved for each resistance step.
  */
+import { POKEMON_TYPES, type PokemonType } from '#shared/pokemonTypes'
 
-export const POKEMON_TYPES = [
-  'Normal',
-  'Fighting',
-  'Flying',
-  'Poison',
-  'Ground',
-  'Rock',
-  'Bug',
-  'Ghost',
-  'Steel',
-  'Fire',
-  'Water',
-  'Grass',
-  'Electric',
-  'Psychic',
-  'Ice',
-  'Dragon',
-  'Dark',
-  'Fairy',
-] as const
-
-export type PokemonType = (typeof POKEMON_TYPES)[number]
+export { POKEMON_TYPES, type PokemonType } from '#shared/pokemonTypes'
 
 const SUPER: Record<PokemonType, Partial<Record<PokemonType, number>>> = {
   Normal:    { Rock: 0.5, Ghost: 0,   Steel: 0.5 },

@@ -1,4 +1,5 @@
 import type { CombatStageMap } from '~/types/combatStages'
+import type { EffectiveEncounterCreatureRules } from '#shared/moveAutomation/creatureRuleOverlays'
 import type { EncounterTransformationCapabilitySnapshot } from '#shared/moveAutomation/transformationSnapshots'
 import type {
   EffectiveMovementProfile,
@@ -270,6 +271,8 @@ export interface SpawnedPokemon extends PokemonCatalogEntry {
     copiedFromPlacementId: string
     appearanceSpecies: string
   }
+  /** Central type/ability/form/capability/size/grounding/Sonic rules projection. */
+  creatureRules?: EffectiveEncounterCreatureRules
   /** Effective Movement Capability speeds used for map Shift movement validation. */
   movementCapabilities?: MovementCapabilitySpeeds
   /** Effective non-speed movement capabilities used by route and mode queries. */

@@ -22,7 +22,11 @@ import type { MoveAutomationScript } from '~/types/moveAutomation'
 import type { TrainerSheet } from '~/types/trainerSheet'
 import { EXPLICIT_MOVE_AUTOMATION_SCRIPTS } from '~/utils/move-automation/registry'
 import { MOVE_AUTOMATION_RUNTIME_REGISTRY } from '~~/server/domain/moveAutomation/registry'
-import { moveListOverlayEncounterEffectFixture } from '../fixtures/moveAutomation/encounterEffects'
+import {
+  capabilityEncounterEffectFixture,
+  creatureRuleOverlayEncounterEffectFixture,
+  moveListOverlayEncounterEffectFixture,
+} from '../fixtures/moveAutomation/encounterEffects'
 import {
   snapshotAuthoritativeEncounterTransformation,
 } from '~~/server/domain/moveAutomation/transformationSnapshot'
@@ -320,6 +324,20 @@ describe('immutable authoritative move rules context', () => {
       sheetKind: 'pokemon',
     })
     expect(Object.isFrozen(context.queries.targetStates)).toBe(true)
+    expect(context.queries.creatureRules.resolve(target.id)).toMatchObject({
+      placementId: target.id,
+      typeIds: ['normal'],
+      formId: 'snorlax',
+      size: 'large',
+      grounding: 'grounded',
+      sonicLocked: false,
+    })
+    expect(context.queries.creatureRules.hasType(target.id, 'Normal')).toBe(true)
+    expect(context.queries.creatureRules.sonicUse(target.id)).toMatchObject({
+      allowed: true,
+      reasonCode: 'creature.sonic-available',
+    })
+    expect(Object.isFrozen(context.queries.creatureRules)).toBe(true)
     expect(context.queries.lineOfSight.resolve(actor.id, target.id)).toMatchObject({
       sourcePlacementId: actor.id,
       targetPlacementId: target.id,
@@ -434,6 +452,116 @@ describe('immutable authoritative move rules context', () => {
     expect(() => resolveAuthoritativeMoveFromContext(staleContext)).toThrow(expect.objectContaining({
       code: 'move-list-overlay-stale',
       reason: 'conflict',
+    }))
+  })
+
+  it('feeds type, ability, size, capability, and grounding overlays into authoritative queries', () => {
+    const map = mapFixture()
+    map.encounterState = {
+      ...map.encounterState!,
+      effects: [
+        {
+          ...creatureRuleOverlayEncounterEffectFixture({
+            domain: 'type',
+            action: 'replace',
+            values: ['grass'],
+            referencePlacementId: null,
+            suppressionScope: null,
+          }),
+          id: 'effect.magic-powder.target-type',
+        },
+        {
+          ...creatureRuleOverlayEncounterEffectFixture({
+            domain: 'ability',
+            action: 'replace',
+            values: ['Soundproof'],
+            referencePlacementId: null,
+            suppressionScope: null,
+          }),
+          id: 'effect.simple-beam.target-ability',
+        },
+        {
+          ...creatureRuleOverlayEncounterEffectFixture({
+            domain: 'size',
+            action: 'replace',
+            value: 'small',
+            referencePlacementId: null,
+          }),
+          id: 'effect.minimize.target-size',
+        },
+        {
+          ...capabilityEncounterEffectFixture(),
+          id: 'effect.magnet-rise.target-levitate',
+          affected: { placementIds: ['target-token'], sideIds: [], cells: [] },
+          payload: { capabilityId: 'movement.levitate', action: 'grant', value: 4 },
+        },
+      ],
+    }
+    const context = buildContext({ map })
+
+    expect(context.queries.tokens.get('target-token')).toMatchObject({
+      defenderTypes: ['grass'],
+      abilityNames: ['Soundproof'],
+      movementCapabilities: { levitate: 4 },
+      movementProfile: { state: { grounding: 'airborne' } },
+      creatureRules: {
+        typeIds: ['grass'],
+        abilityNames: ['Soundproof'],
+        size: 'small',
+        grounding: 'airborne',
+      },
+    })
+    expect(context.queries.targetStates.resolve('target-token')).toMatchObject({
+      typeIds: ['grass'],
+      size: 'small',
+      grounding: 'airborne',
+      immunityTagIds: ['groundsource', 'powder', 'sonic'],
+    })
+    expect(context.queries.creatureRules.hasType('target-token', 'Grass')).toBe(true)
+    expect(context.queries.creatureRules.hasAbility('target-token', 'soundproof')).toBe(true)
+    expect(context.queries.creatureRules.hasCapability('target-token', 'movement.levitate')).toBe(true)
+  })
+
+  it('rejects Sonic move declarations through the authoritative creature-rule projection', () => {
+    const map = mapFixture()
+    map.encounterState = {
+      ...map.encounterState!,
+      effects: [{
+        ...creatureRuleOverlayEncounterEffectFixture({
+          domain: 'sonic-lock',
+          action: 'lock',
+        }),
+        id: 'effect.throat-chop.actor-sonic-lock',
+        affected: { placementIds: ['actor-token'], sideIds: [], cells: [] },
+      }],
+    }
+    const context = buildContext({
+      map,
+      pokemonSheets: new Map([
+        ['actor', pokemonSheet('actor', { movelist: [{ name: 'Supersonic' }] })],
+        ['target', pokemonSheet('target', { revision: 5 })],
+        ['ally', pokemonSheet('ally')],
+      ]),
+      intent: {
+        schemaVersion: LIVE_PLAY_MOVE_RESOLUTION_SCHEMA_VERSION,
+        placementId: 'actor-token',
+        moveName: 'Supersonic',
+        selection: { kind: 'single-target', targetPlacementId: 'target-token' },
+      },
+    })
+
+    expect(context.queries.creatureRules.sonicUse('actor-token')).toEqual({
+      allowed: false,
+      reasonCode: 'creature.sonic-locked',
+      sourceEffectIds: ['effect.throat-chop.actor-sonic-lock'],
+    })
+    expect(context.queries.resolveActorMoveEntry('Supersonic')).toMatchObject({
+      ok: false,
+      reason: 'creature-rule-blocked',
+    })
+    expect(() => resolveAuthoritativeMoveFromContext(context)).toThrow(expect.objectContaining({
+      code: 'move-creature-rule-blocked',
+      reason: 'unauthorized-state',
     }))
   })
 

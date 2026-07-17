@@ -127,6 +127,7 @@ export type AuthoritativeMoveResolutionFailureCode =
   | 'move-usage-unavailable'
   | 'move-list-overlay-blocked'
   | 'move-list-overlay-stale'
+  | 'move-creature-rule-blocked'
   | 'move-usage-key-invalid'
   | 'target-branch-required'
   | 'target-branch-invalid'
@@ -1750,6 +1751,9 @@ export const resolveAuthoritativeMoveExecutionFromContext = (
     }
     if (moveEntryResult.reason === 'copied-spec-mismatch') {
       fail('conflict', 'move-list-overlay-stale', moveEntryResult.message)
+    }
+    if (moveEntryResult.reason === 'creature-rule-blocked') {
+      fail('unauthorized-state', 'move-creature-rule-blocked', moveEntryResult.message)
     }
     if (moveEntryResult.reason === 'move-absent') {
       fail('not-found', 'move-absent', moveEntryResult.message)

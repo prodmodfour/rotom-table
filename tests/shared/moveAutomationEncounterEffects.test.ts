@@ -3,11 +3,13 @@ import {
   ENCOUNTER_EFFECT_LIMITS,
   EncounterEffectValidationError,
   parseEncounterEffect,
+  parseEncounterEffectDefinition,
   parseEncounterEffects,
 } from '#shared/moveAutomation/encounterEffects'
 import {
   capabilityEncounterEffectFixture,
   conditionEncounterEffectFixture,
+  creatureRuleOverlayEncounterEffectFixture,
   itemSuppressionEncounterEffectFixture,
   moveListOverlayEncounterEffectFixture,
   numericEncounterEffectFixture,
@@ -20,6 +22,7 @@ describe('typed encounter effects', () => {
       conditionEncounterEffectFixture(),
       numericEncounterEffectFixture(),
       capabilityEncounterEffectFixture(),
+      creatureRuleOverlayEncounterEffectFixture(),
       itemSuppressionEncounterEffectFixture(),
       moveListOverlayEncounterEffectFixture(),
       transformationEncounterEffectFixture(),
@@ -258,6 +261,76 @@ describe('typed encounter effects', () => {
         id: 'effect.transformation.actor-token.second',
       },
     ])).toThrow('cannot have more than one transformation snapshot')
+  })
+
+  it('accepts strict creature-rule collection, scalar, and Sonic overlay payloads', () => {
+    const typeCopy = creatureRuleOverlayEncounterEffectFixture({
+      domain: 'type',
+      action: 'copy',
+      values: ['water', 'grass'],
+      referencePlacementId: 'provider-token',
+      suppressionScope: null,
+    })
+    const abilitySuppression = creatureRuleOverlayEncounterEffectFixture({
+      domain: 'ability',
+      action: 'suppress',
+      values: [],
+      referencePlacementId: null,
+      suppressionScope: 'all',
+    })
+    const form = creatureRuleOverlayEncounterEffectFixture({
+      domain: 'form',
+      action: 'swap',
+      value: 'hangry-form',
+      referencePlacementId: 'provider-token',
+    })
+    const size = creatureRuleOverlayEncounterEffectFixture({
+      domain: 'size',
+      action: 'replace',
+      value: 'small',
+      referencePlacementId: null,
+    })
+    const sonic = creatureRuleOverlayEncounterEffectFixture({
+      domain: 'sonic-lock',
+      action: 'lock',
+    })
+
+    expect(parseEncounterEffect(typeCopy).payload).toEqual(typeCopy.payload)
+    expect(parseEncounterEffectDefinition({
+      kind: typeCopy.kind,
+      duration: typeCopy.duration,
+      stacks: typeCopy.stacks,
+      charges: typeCopy.charges,
+      stackPolicy: typeCopy.stackPolicy,
+      chargePolicy: typeCopy.chargePolicy,
+      tags: typeCopy.tags,
+      payload: typeCopy.payload,
+      dispel: typeCopy.dispel,
+      transferPolicy: typeCopy.transferPolicy,
+    })).toMatchObject({
+      kind: 'creature-rule-overlay',
+      payload: typeCopy.payload,
+    })
+    expect(parseEncounterEffect(abilitySuppression).payload).toEqual(abilitySuppression.payload)
+    expect(parseEncounterEffect(form).payload).toEqual(form.payload)
+    expect(parseEncounterEffect(size).payload).toEqual(size.payload)
+    expect(parseEncounterEffect(sonic).payload).toEqual(sonic.payload)
+    expect(() => parseEncounterEffect({
+      ...typeCopy,
+      payload: { ...typeCopy.payload, values: ['Water'] },
+    })).toThrow('must use canonical lowercase type spelling')
+    expect(() => parseEncounterEffect({
+      ...typeCopy,
+      payload: { ...typeCopy.payload, referencePlacementId: 'target-token' },
+    })).toThrow('must differ from every directly affected placement')
+    expect(() => parseEncounterEffect({
+      ...abilitySuppression,
+      payload: { ...abilitySuppression.payload, suppressionScope: 'listed' },
+    })).toThrow('must be non-empty exactly when suppressionScope is listed')
+    expect(() => parseEncounterEffect({
+      ...sonic,
+      payload: { domain: 'sonic-lock', action: 'unlock' },
+    })).toThrow('encounterEffect.payload.action: must be lock')
   })
 
   it('accepts bounded valued capability grants and rejects valued suppressions', () => {

@@ -37,6 +37,10 @@ import {
   type MoveAutomationGravityResolver,
 } from './gravity'
 import {
+  createMoveAutomationCreatureRuleResolver,
+  type MoveAutomationCreatureRuleResolver,
+} from './creatureRules'
+import {
   createMoveAutomationHistoryResolver,
   type MoveAutomationHistoryResolver,
 } from './history'
@@ -147,6 +151,7 @@ export type AuthoritativeMoveRelationshipQueries = MoveAutomationRelationshipRes
 export type AuthoritativeMoveBarriersAndSmokeQueries = MoveAutomationBarriersAndSmokeResolver
 export type AuthoritativeMoveGlobalFieldQueries = MoveAutomationRemainingGlobalFieldResolver
 export type AuthoritativeMoveGravityQueries = MoveAutomationGravityResolver
+export type AuthoritativeMoveCreatureRuleQueries = MoveAutomationCreatureRuleResolver
 export type AuthoritativeMoveHistoryQueries = MoveAutomationHistoryResolver
 export type AuthoritativeMoveItemEffectQueries = MoveAutomationItemEffectResolver
 export type AuthoritativeMoveItemRuleQueries = MoveAutomationItemRuleResolver
@@ -175,6 +180,7 @@ export interface AuthoritativeMoveContextQueries {
   readonly barriersAndSmoke: AuthoritativeMoveBarriersAndSmokeQueries
   readonly globalFields: AuthoritativeMoveGlobalFieldQueries
   readonly gravity: AuthoritativeMoveGravityQueries
+  readonly creatureRules: AuthoritativeMoveCreatureRuleQueries
   readonly history: AuthoritativeMoveHistoryQueries
   readonly itemEffects: AuthoritativeMoveItemEffectQueries
   /** Bounded item-dependent expression values after authoritative suppression overlays. */
@@ -626,6 +632,15 @@ export const buildAuthoritativeMoveRulesContext = (
     itemEffects,
     recordSheetRead: readSet.recordPlacement,
   })
+  const creatureRules = createMoveAutomationCreatureRuleResolver({
+    placements,
+    tokens,
+    resolveGrounding: ({ placement, base }) => gravity.grounding({
+      placementId: placement.id,
+      base,
+    }).grounding,
+    recordSheetRead: readSet.recordPlacement,
+  })
   const stats = createMoveAutomationStatResolver({
     placements,
     tokens,
@@ -724,6 +739,7 @@ export const buildAuthoritativeMoveRulesContext = (
     barriersAndSmoke,
     globalFields,
     gravity,
+    creatureRules,
     history,
     itemEffects,
     itemRules,

@@ -220,7 +220,8 @@ const pokemonSizeAndWeight = (
   const rows = resolveCapabilities(sheet).rows
   return {
     size: normalizedTargetSize(
-      token.ruleCapabilities?.size
+      token.creatureRules?.size
+      ?? token.ruleCapabilities?.size
       ?? rows.find(row => row.label === 'Size')?.value
       ?? token.size,
     ),

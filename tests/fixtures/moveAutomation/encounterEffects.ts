@@ -1,11 +1,15 @@
 import type {
   EncounterCapabilityEffect,
   EncounterConditionEffect,
+  EncounterCreatureRuleOverlayEffect,
   EncounterItemSuppressionEffect,
   EncounterMoveListOverlayEffect,
   EncounterNumericModifierEffect,
   EncounterTransformationEffect,
 } from '#shared/moveAutomation/encounterEffects'
+import type {
+  EncounterCreatureRuleOverlayEffectPayload,
+} from '#shared/moveAutomation/creatureRuleOverlayPayloads'
 
 export const conditionEncounterEffectFixture = (): EncounterConditionEffect => ({
   id: 'effect.condition.target-token',
@@ -221,6 +225,44 @@ export const transformationEncounterEffectFixture = (): EncounterTransformationE
     },
   },
   dispel: { policy: 'none', tags: [] },
+  transferPolicy: 'expire',
+  suppression: { sources: [] },
+})
+
+export const creatureRuleOverlayEncounterEffectFixture = (
+  payload: EncounterCreatureRuleOverlayEffectPayload = {
+    domain: 'type',
+    action: 'replace',
+    values: ['water'],
+    referencePlacementId: null,
+    suppressionScope: null,
+  },
+): EncounterCreatureRuleOverlayEffect => ({
+  id: 'effect.creature-rule.target-token',
+  kind: 'creature-rule-overlay',
+  source: {
+    operationId: 'op_effect_creature_rule_01',
+    moveId: 'move.soak',
+    placementId: 'actor-token',
+  },
+  affected: {
+    placementIds: ['target-token'],
+    sideIds: [],
+    cells: [],
+  },
+  createdRound: 3,
+  createdTurn: 9,
+  duration: { kind: 'turns', subject: 'target', boundary: 'end', remaining: 2 },
+  stacks: 1,
+  charges: null,
+  stackPolicy: { kind: 'replace', maxStacks: null },
+  chargePolicy: { kind: 'none', amount: null },
+  tags: ['creature-rule'],
+  payload,
+  dispel: {
+    policy: 'matching-tags',
+    tags: ['creature-rule'],
+  },
   transferPolicy: 'expire',
   suppression: { sources: [] },
 })

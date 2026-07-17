@@ -12,6 +12,7 @@ import {
   type TokenSheetMoveEntry,
 } from '~/utils/mapTokenMoves'
 import { moveConditionUseBlock, type MoveConditionUseBlock } from '~/utils/moveConditionRestrictions'
+import { moveHasSonicKeyword } from '~/utils/sheetPassiveAbilityEffects'
 import type { SheetPlacement } from '~/types/map'
 import type { MoveAutomationScript } from '~/types/moveAutomation'
 import type { SpawnedPokemon } from '~/types/pokemon'
@@ -23,6 +24,7 @@ export type CanonicalMoveEntryFailureReason =
   | 'condition-blocked'
   | 'usage-blocked'
   | 'move-list-blocked'
+  | 'creature-rule-blocked'
   | 'copied-spec-mismatch'
 
 export interface ResolvedCanonicalMoveEntry extends MoveAutomationMoveEntry {
@@ -196,6 +198,14 @@ export const resolveCanonicalMoveEntryForPlacement = ({
         reason: 'copied-spec-mismatch',
         message: `${entry.move.name}'s temporary copy no longer matches its reviewed runtime definition.`,
       }
+    }
+  }
+
+  if (token.creatureRules?.sonicLocked && moveHasSonicKeyword(entry.script.keywords)) {
+    return {
+      ok: false,
+      reason: 'creature-rule-blocked',
+      message: `${entry.move.name} is blocked while Sonic moves are locked.`,
     }
   }
 

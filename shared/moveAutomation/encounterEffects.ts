@@ -1,5 +1,10 @@
 import type { EncounterSideId } from './encounterState'
 import {
+  EncounterCreatureRuleOverlayValidationError,
+  parseEncounterCreatureRuleOverlayEffectPayload,
+  type EncounterCreatureRuleOverlayEffectPayload,
+} from './creatureRuleOverlayPayloads'
+import {
   EncounterTransformationValidationError,
   parseEncounterTransformationEffectPayload,
   type EncounterTransformationEffectPayload,
@@ -12,6 +17,7 @@ export const ENCOUNTER_EFFECT_KINDS = [
   'capability',
   'item-suppression',
   'move-list-overlay',
+  'creature-rule-overlay',
   'transformation',
 ] as const
 
@@ -284,6 +290,7 @@ export type EncounterEffectPayload =
   | EncounterCapabilityEffectPayload
   | EncounterItemSuppressionEffectPayload
   | EncounterMoveListOverlayEffectPayload
+  | EncounterCreatureRuleOverlayEffectPayload
   | EncounterTransformationEffectPayload
 
 interface EncounterEffectDefinitionEnvelope<
@@ -328,6 +335,11 @@ export type EncounterMoveListOverlayEffectDefinition = EncounterEffectDefinition
   EncounterMoveListOverlayEffectPayload
 >
 
+export type EncounterCreatureRuleOverlayEffectDefinition = EncounterEffectDefinitionEnvelope<
+  'creature-rule-overlay',
+  EncounterCreatureRuleOverlayEffectPayload
+>
+
 export type EncounterTransformationEffectDefinition = EncounterEffectDefinitionEnvelope<
   'transformation',
   EncounterTransformationEffectPayload
@@ -340,6 +352,7 @@ export type EncounterEffectDefinition =
   | EncounterCapabilityEffectDefinition
   | EncounterItemSuppressionEffectDefinition
   | EncounterMoveListOverlayEffectDefinition
+  | EncounterCreatureRuleOverlayEffectDefinition
   | EncounterTransformationEffectDefinition
 
 interface EncounterEffectEnvelope<
@@ -393,6 +406,11 @@ export type EncounterMoveListOverlayEffect = EncounterEffectEnvelope<
   EncounterMoveListOverlayEffectPayload
 >
 
+export type EncounterCreatureRuleOverlayEffect = EncounterEffectEnvelope<
+  'creature-rule-overlay',
+  EncounterCreatureRuleOverlayEffectPayload
+>
+
 export type EncounterTransformationEffect = EncounterEffectEnvelope<
   'transformation',
   EncounterTransformationEffectPayload
@@ -408,6 +426,7 @@ export type EncounterEffect =
   | EncounterCapabilityEffect
   | EncounterItemSuppressionEffect
   | EncounterMoveListOverlayEffect
+  | EncounterCreatureRuleOverlayEffect
   | EncounterTransformationEffect
 
 export type EncounterEffectValidationCode =
@@ -1169,6 +1188,29 @@ const parseMoveListOverlayPayload = (
   }
 }
 
+const parseCreatureRuleOverlayPayload = (
+  value: unknown,
+  path: string,
+): EncounterCreatureRuleOverlayEffectPayload => {
+  try {
+    return parseEncounterCreatureRuleOverlayEffectPayload(value, path)
+  }
+  catch (error) {
+    if (error instanceof EncounterCreatureRuleOverlayValidationError) {
+      return fail(
+        error.code === 'limit-exceeded'
+          ? 'limit-exceeded'
+          : error.code === 'duplicate-id'
+            ? 'duplicate-id'
+            : 'invalid-encounter-effect',
+        error.path,
+        error.detail,
+      )
+    }
+    throw error
+  }
+}
+
 const parseTransformationPayload = (
   value: unknown,
   path: string,
@@ -1364,6 +1406,12 @@ export const parseEncounterEffectDefinition = (
         kind,
         parseMoveListOverlayPayload(definition.payload, `${path}.payload`),
       )
+    case 'creature-rule-overlay':
+      return definitionWithPayload(
+        common,
+        kind,
+        parseCreatureRuleOverlayPayload(definition.payload, `${path}.payload`),
+      )
     case 'transformation': {
       const payload = parseTransformationPayload(definition.payload, `${path}.payload`)
       assertTransformationLifecyclePolicy(common, path)
@@ -1464,6 +1512,21 @@ export const parseEncounterEffect = (
         kind,
         parseMoveListOverlayPayload(effect.payload, `${path}.payload`),
       )
+    }
+    case 'creature-rule-overlay': {
+      const payload = parseCreatureRuleOverlayPayload(effect.payload, `${path}.payload`)
+      if (
+        'referencePlacementId' in payload
+        && payload.referencePlacementId !== null
+        && common.affected.placementIds.includes(payload.referencePlacementId)
+      ) {
+        fail(
+          'invalid-encounter-effect',
+          `${path}.payload.referencePlacementId`,
+          'must differ from every directly affected placement.',
+        )
+      }
+      return effectWithPayload(common, kind, payload)
     }
     case 'transformation': {
       const payload = parseTransformationPayload(effect.payload, `${path}.payload`)

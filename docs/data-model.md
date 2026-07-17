@@ -19,9 +19,11 @@ A map stores the state the tabletop needs to render and run a scene:
 - field effects such as weather, terrain, and rooms
 - light placements
 - initiative round/current-turn state
-- reversible encounter transformation snapshots that project copied form data without mutating either Pokémon sheet
+- reversible encounter transformation snapshots and typed creature-rule overlays that project types, abilities, form, size, capabilities, grounding, and Sonic locks without mutating either Pokémon sheet
 
 The map renderer and map editor treat the SQLite document as the source of truth for table play in both Prepare Map and Run Live Play. During player play, token control is derived from the selected player profile: a player can act with placements whose `sheetKind` and `sheetSlug` match a linked character sheet on that profile.
+
+Creature-rule changes are durable typed encounter effects, not sheet patches. Their common envelope owns operation/move/source provenance, recipients, timing, duration, stack/charge policy, and suppression state. Type/ability copy and swap rows retain server-snapshotted final values and the counterpart placement ID; form and mechanical size are stable rule values, capability and grounding changes use the existing typed capability lane, and Sonic locks are explicit. The projection recomputes precedence from active effects after reload or expiry, while HP, stats, identity, inventory, visual footprint, and persistent sheet data stay on their existing owners.
 
 ## Pending move resolutions
 

@@ -336,7 +336,7 @@
       "additionalProperties": false,
       "properties": {
         "id": { "$ref": "#/$defs/encounterEffectStableId" },
-        "kind": { "enum": ["condition", "numeric-modifier", "capability", "item-suppression", "move-list-overlay", "transformation"] },
+        "kind": { "enum": ["condition", "numeric-modifier", "capability", "item-suppression", "move-list-overlay", "creature-rule-overlay", "transformation"] },
         "source": { "$ref": "#/$defs/encounterEffectSource" },
         "affected": { "$ref": "#/$defs/encounterEffectAffected" },
         "createdRound": { "type": "integer", "minimum": 1, "maximum": 1000000 },
@@ -377,6 +377,10 @@
         {
           "if": { "properties": { "kind": { "const": "move-list-overlay" } }, "required": ["kind"] },
           "then": { "properties": { "payload": { "$ref": "#/$defs/encounterMoveListOverlayEffectPayload" } } }
+        },
+        {
+          "if": { "properties": { "kind": { "const": "creature-rule-overlay" } }, "required": ["kind"] },
+          "then": { "properties": { "payload": { "$ref": "#/$defs/encounterCreatureRuleOverlayEffectPayload" } } }
         },
         {
           "if": { "properties": { "kind": { "const": "transformation" } }, "required": ["kind"] },
@@ -642,6 +646,145 @@
           "then": { "not": { "required": ["value"] } }
         }
       ]
+    },
+    "encounterCreatureRuleOverlayEffectPayload": {
+      "oneOf": [
+        { "$ref": "#/$defs/encounterCreatureTypeOverlayPayload" },
+        { "$ref": "#/$defs/encounterCreatureAbilityOverlayPayload" },
+        { "$ref": "#/$defs/encounterCreatureFormOverlayPayload" },
+        { "$ref": "#/$defs/encounterCreatureSizeOverlayPayload" },
+        { "$ref": "#/$defs/encounterCreatureSonicLockOverlayPayload" }
+      ]
+    },
+    "encounterCreatureTypeOverlayPayload": {
+      "type": "object",
+      "required": ["domain", "action", "values", "referencePlacementId", "suppressionScope"],
+      "additionalProperties": false,
+      "properties": {
+        "domain": { "const": "type" },
+        "action": { "enum": ["add", "replace", "suppress", "copy", "swap"] },
+        "values": {
+          "type": "array",
+          "maxItems": 4,
+          "uniqueItems": true,
+          "items": { "enum": ["normal", "fighting", "flying", "poison", "ground", "rock", "bug", "ghost", "steel", "fire", "water", "grass", "electric", "psychic", "ice", "dragon", "dark", "fairy"] }
+        },
+        "referencePlacementId": {
+          "anyOf": [
+            { "$ref": "#/$defs/encounterEffectStableId" },
+            { "type": "null" }
+          ]
+        },
+        "suppressionScope": { "enum": ["listed", "all", null] }
+      },
+      "allOf": [
+        { "$ref": "#/$defs/encounterCreatureCollectionOverlayPolicy" }
+      ]
+    },
+    "encounterCreatureAbilityOverlayPayload": {
+      "type": "object",
+      "required": ["domain", "action", "values", "referencePlacementId", "suppressionScope"],
+      "additionalProperties": false,
+      "properties": {
+        "domain": { "const": "ability" },
+        "action": { "enum": ["add", "replace", "suppress", "copy", "swap"] },
+        "values": {
+          "type": "array",
+          "maxItems": 32,
+          "uniqueItems": true,
+          "items": { "type": "string", "minLength": 1, "maxLength": 160 }
+        },
+        "referencePlacementId": {
+          "anyOf": [
+            { "$ref": "#/$defs/encounterEffectStableId" },
+            { "type": "null" }
+          ]
+        },
+        "suppressionScope": { "enum": ["listed", "all", null] }
+      },
+      "allOf": [
+        { "$ref": "#/$defs/encounterCreatureCollectionOverlayPolicy" }
+      ]
+    },
+    "encounterCreatureCollectionOverlayPolicy": {
+      "allOf": [
+        {
+          "if": { "properties": { "action": { "enum": ["copy", "swap"] } }, "required": ["action"] },
+          "then": { "properties": { "referencePlacementId": { "$ref": "#/$defs/encounterEffectStableId" } } },
+          "else": { "properties": { "referencePlacementId": { "type": "null" } } }
+        },
+        {
+          "if": { "properties": { "action": { "const": "suppress" } }, "required": ["action"] },
+          "then": {
+            "properties": { "suppressionScope": { "enum": ["listed", "all"] } },
+            "allOf": [
+              {
+                "if": { "properties": { "suppressionScope": { "const": "listed" } }, "required": ["suppressionScope"] },
+                "then": { "properties": { "values": { "minItems": 1 } } },
+                "else": { "properties": { "values": { "maxItems": 0 } } }
+              }
+            ]
+          },
+          "else": {
+            "properties": {
+              "values": { "minItems": 1 },
+              "suppressionScope": { "type": "null" }
+            }
+          }
+        }
+      ]
+    },
+    "encounterCreatureFormOverlayPayload": {
+      "type": "object",
+      "required": ["domain", "action", "value", "referencePlacementId"],
+      "additionalProperties": false,
+      "properties": {
+        "domain": { "const": "form" },
+        "action": { "enum": ["replace", "copy", "swap"] },
+        "value": { "$ref": "#/$defs/encounterEffectStableId" },
+        "referencePlacementId": {
+          "anyOf": [
+            { "$ref": "#/$defs/encounterEffectStableId" },
+            { "type": "null" }
+          ]
+        }
+      },
+      "allOf": [
+        { "$ref": "#/$defs/encounterCreatureScalarOverlayPolicy" }
+      ]
+    },
+    "encounterCreatureSizeOverlayPayload": {
+      "type": "object",
+      "required": ["domain", "action", "value", "referencePlacementId"],
+      "additionalProperties": false,
+      "properties": {
+        "domain": { "const": "size" },
+        "action": { "enum": ["replace", "copy", "swap"] },
+        "value": { "enum": ["small", "medium", "large", "huge", "gigantic"] },
+        "referencePlacementId": {
+          "anyOf": [
+            { "$ref": "#/$defs/encounterEffectStableId" },
+            { "type": "null" }
+          ]
+        }
+      },
+      "allOf": [
+        { "$ref": "#/$defs/encounterCreatureScalarOverlayPolicy" }
+      ]
+    },
+    "encounterCreatureScalarOverlayPolicy": {
+      "if": { "properties": { "action": { "enum": ["copy", "swap"] } }, "required": ["action"] },
+      "then": { "properties": { "referencePlacementId": { "$ref": "#/$defs/encounterEffectStableId" } } },
+      "else": { "properties": { "referencePlacementId": { "type": "null" } } }
+    },
+    "encounterCreatureSonicLockOverlayPayload": {
+      "type": "object",
+      "required": ["domain", "action"],
+      "additionalProperties": false,
+      "properties": {
+        "domain": { "const": "sonic-lock" },
+        "action": { "const": "lock" }
+      }
     },
     "encounterItemSuppressionEffectPayload": {
       "type": "object",
