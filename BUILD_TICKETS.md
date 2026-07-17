@@ -2015,7 +2015,7 @@ Status: DONE
 
 ## MA-145 — Implement field cleanup, transfer, and suppression
 
-Status: TODO
+Status: DONE
 
 **Depends on:** MA-133–MA-144
 **Commit:** `feat(move-automation): mutate battlefield field state`

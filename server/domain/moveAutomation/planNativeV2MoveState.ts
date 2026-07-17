@@ -312,7 +312,7 @@ const combinedStateChanges = (options: {
       ? {
           ...input,
           sourceOperationId: null,
-          reasonCode: 'core-effects-and-hazard-zones',
+          reasonCode: 'core-effects-and-battlefield-zones',
         }
       : input
   ))
@@ -485,7 +485,9 @@ export const planNativeV2MoveState = (options: {
   context.reads.recordPlacement(context.actor.placement)
 
   const mapOperations = native.operations.filter(isMoveMapOperationEmission)
-  const hasHazardOperations = mapOperations.some(({ operation }) => operation.kind === 'hazard')
+  const hasEncounterZoneOperations = mapOperations.some(({ operation }) => (
+    operation.kind === 'field' || operation.kind === 'hazard'
+  ))
   const usageResources = mapOperations.flatMap(({ operation }) => operation.kind === 'usage'
     ? [{
         resourceId: operation.payload.resourceId,
@@ -499,7 +501,7 @@ export const planNativeV2MoveState = (options: {
     : [])
   const mapReduction = reduceMoveMapOperations({
     context,
-    ...(hasHazardOperations
+    ...(hasEncounterZoneOperations
       ? { initialMap: applyNativeCoreMapChanges(options.map, native.coreStateChanges) }
       : {}),
     operations: mapOperations,
@@ -548,7 +550,7 @@ export const planNativeV2MoveState = (options: {
       `${options.resolution.canonicalMoveName} did not emit its reviewed usage operation.`,
     )
 
-  const mapWithCore = hasHazardOperations
+  const mapWithCore = hasEncounterZoneOperations
     ? mapReduction.nextMap
     : applyNativeCoreMapChanges(mapReduction.nextMap, native.coreStateChanges)
   const placementTransitionMap = applyAuthoritativeMovePlacementTransition({

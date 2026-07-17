@@ -967,6 +967,106 @@ describe('MoveSpec typed effect operations', () => {
     }), 'invalid-effect-operation', 'operation.payload.cellSelection')
   })
 
+  it('parses strict battlefield cleanup, transfer, suppression, and terrain mutations', () => {
+    const filter = {
+      zoneKinds: ['hazard', 'smoke'],
+      source: 'actor',
+      side: 'source-side',
+      requiredTags: ['move-zone'],
+      geometry: {
+        kind: 'selection',
+        cellSetId: 'cells.cleanup',
+        count: { kind: 'up-to', minimum: 0, maximum: 4 },
+        adjacency: 'orthogonal',
+        connectedness: 'none',
+      },
+    }
+    const mutations = [
+      { kind: 'remove', target: filter },
+      { kind: 'destroy', target: filter },
+      { kind: 'clear-side', target: filter },
+      { kind: 'transfer-side', target: filter, destinationSide: 'recipient-side' },
+      {
+        kind: 'swap-sides',
+        counterpartSide: 'other-side',
+        zoneKinds: ['hazard', 'side-condition'],
+        requiredTags: [],
+      },
+      {
+        kind: 'suppress',
+        target: {
+          ...filter,
+          zoneKinds: ['weather', 'terrain', 'room'],
+          source: 'any',
+          side: 'any',
+          geometry: null,
+        },
+        sourceZoneId: 'zone.room.magic',
+      },
+      {
+        kind: 'consume-terrain',
+        geometry: {
+          kind: 'line',
+          length: 4,
+          count: { kind: 'exact', count: 4 },
+          adjacency: 'orthogonal',
+          connectedness: 'connected',
+        },
+        includeGlobal: true,
+      },
+    ] as const
+
+    for (const mutation of mutations) {
+      const parsed = parseMoveEffectOperation(validOperation('field', {
+        payload: { action: 'mutate', mutation },
+      }))
+      expect(parsed.kind === 'field' && parsed.payload).toEqual({
+        action: 'mutate',
+        mutation,
+      })
+      expectDeeplyFrozen(parsed)
+    }
+
+    expectEffectError(validOperation('field', {
+      payload: {
+        action: 'mutate',
+        mutation: {
+          kind: 'clear-side',
+          target: { ...filter, side: 'any' },
+        },
+      },
+    }), 'invalid-effect-operation', 'operation.payload.mutation.target.side')
+    expectEffectError(validOperation('field', {
+      payload: {
+        action: 'mutate',
+        mutation: {
+          kind: 'transfer-side',
+          target: filter,
+          destinationSide: 'source-side',
+        },
+      },
+    }), 'invalid-effect-operation', 'operation.payload.mutation.destinationSide')
+    expectEffectError(validOperation('field', {
+      payload: {
+        action: 'mutate',
+        mutation: {
+          kind: 'suppress',
+          target: { ...filter, zoneKinds: ['hazard'], geometry: null },
+          sourceZoneId: 'zone.room.magic',
+        },
+      },
+    }), 'invalid-effect-operation', 'operation.payload.mutation.target.zoneKinds')
+    expectEffectError(validOperation('field', {
+      payload: {
+        action: 'mutate',
+        mutation: {
+          kind: 'destroy',
+          target: { ...filter, zoneKinds: ['hazard', 'hazard'] },
+        },
+      },
+    }), 'duplicate-id', 'operation.payload.mutation.target.zoneKinds')
+  })
+
   it('parses typed condition transforms, cleanse groups, randomness, timing, and stacking', () => {
     const clear = parseMoveEffectOperation(validOperation('condition', {
       payload: {

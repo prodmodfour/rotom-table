@@ -12,6 +12,10 @@ import {
   type EncounterEffectTransferPolicy,
 } from './encounterEffects'
 import {
+  ENCOUNTER_ZONE_KINDS,
+  type EncounterZoneKind,
+} from './encounterZones'
+import {
   MOVE_EXPRESSION_STATS,
   MOVE_STAGE_AFFECTED_EXPRESSION_STATS,
   MOVE_STAT_COMBAT_STAGE_POLICIES,
@@ -296,6 +300,35 @@ export const MOVE_EFFECT_HAZARD_GEOMETRY_KINDS = ['selection', 'blast', 'line'] 
 export const MOVE_EFFECT_HAZARD_BLAST_CENTERS = ['actor', 'selected-target'] as const
 export const MOVE_EFFECT_HAZARD_REMOVAL_TARGET_KINDS = ['zone-id', 'matching'] as const
 
+/** Bounded selectors and mutations for canonical battlefield-zone cleanup. */
+export const MOVE_EFFECT_BATTLEFIELD_ZONE_KINDS = ENCOUNTER_ZONE_KINDS
+export const MOVE_EFFECT_BATTLEFIELD_ZONE_SOURCE_FILTERS = [
+  'any',
+  'actor',
+  'recipients',
+] as const
+export const MOVE_EFFECT_BATTLEFIELD_ZONE_SIDE_FILTERS = [
+  'any',
+  'neutral',
+  'source-side',
+  'recipient-side',
+  'other-side',
+] as const
+export const MOVE_EFFECT_BATTLEFIELD_ZONE_SIDE_REFERENCES = [
+  'source-side',
+  'recipient-side',
+  'other-side',
+] as const
+export const MOVE_EFFECT_BATTLEFIELD_ZONE_MUTATIONS = [
+  'remove',
+  'destroy',
+  'clear-side',
+  'transfer-side',
+  'swap-sides',
+  'suppress',
+  'consume-terrain',
+] as const
+
 export const MOVE_EFFECT_MOVEMENT_MODES = [
   'voluntary',
   'forced',
@@ -361,6 +394,8 @@ export const MOVE_EFFECT_OPERATION_LIMITS = Object.freeze({
   hazardCharges: ENCOUNTER_EFFECT_LIMITS.charges,
   hazardGeometrySize: 32,
   hazardZoneKinds: MOVE_EFFECT_HAZARD_ZONE_KINDS.length,
+  battlefieldZoneKinds: MOVE_EFFECT_BATTLEFIELD_ZONE_KINDS.length,
+  battlefieldZoneTags: 32,
   typeOverrides: 18,
   criticalNaturalRolls: 20,
   multiHitStrikes: 10,
@@ -452,6 +487,16 @@ export type MoveEffectHazardGeometryKind = (typeof MOVE_EFFECT_HAZARD_GEOMETRY_K
 export type MoveEffectHazardBlastCenter = (typeof MOVE_EFFECT_HAZARD_BLAST_CENTERS)[number]
 export type MoveEffectHazardRemovalTargetKind =
   (typeof MOVE_EFFECT_HAZARD_REMOVAL_TARGET_KINDS)[number]
+export type MoveEffectBattlefieldZoneKind =
+  (typeof MOVE_EFFECT_BATTLEFIELD_ZONE_KINDS)[number]
+export type MoveEffectBattlefieldZoneSourceFilter =
+  (typeof MOVE_EFFECT_BATTLEFIELD_ZONE_SOURCE_FILTERS)[number]
+export type MoveEffectBattlefieldZoneSideFilter =
+  (typeof MOVE_EFFECT_BATTLEFIELD_ZONE_SIDE_FILTERS)[number]
+export type MoveEffectBattlefieldZoneSideReference =
+  (typeof MOVE_EFFECT_BATTLEFIELD_ZONE_SIDE_REFERENCES)[number]
+export type MoveEffectBattlefieldZoneMutationKind =
+  (typeof MOVE_EFFECT_BATTLEFIELD_ZONE_MUTATIONS)[number]
 export type MoveEffectMovementMode = (typeof MOVE_EFFECT_MOVEMENT_MODES)[number]
 export type MoveEffectMovementChoiceKind =
   (typeof MOVE_EFFECT_MOVEMENT_CHOICE_KINDS)[number]
@@ -1114,7 +1159,72 @@ export interface MoveRemoveFieldEffectPayload {
   readonly fieldId: string
 }
 
-export type MoveFieldEffectPayload = MoveApplyFieldEffectPayload | MoveRemoveFieldEffectPayload
+/**
+ * Server-reviewed filter over durable battlefield zones. Geometry names only
+ * interpreter/server-owned cell sets; no browser-authored coordinates enter a
+ * cleanup operation.
+ */
+export interface MoveBattlefieldZoneFilter {
+  readonly zoneKinds: readonly EncounterZoneKind[]
+  readonly source: MoveEffectBattlefieldZoneSourceFilter
+  readonly side: MoveEffectBattlefieldZoneSideFilter
+  readonly requiredTags: readonly string[]
+  readonly geometry: MoveHazardGeometry | null
+}
+
+export interface MoveRemoveBattlefieldZonesMutation {
+  readonly kind: 'remove' | 'destroy'
+  readonly target: MoveBattlefieldZoneFilter
+}
+
+export interface MoveClearBattlefieldSideMutation {
+  readonly kind: 'clear-side'
+  readonly target: MoveBattlefieldZoneFilter
+}
+
+export interface MoveTransferBattlefieldSideMutation {
+  readonly kind: 'transfer-side'
+  readonly target: MoveBattlefieldZoneFilter
+  readonly destinationSide: MoveEffectBattlefieldZoneSideReference
+}
+
+export interface MoveSwapBattlefieldSidesMutation {
+  readonly kind: 'swap-sides'
+  readonly counterpartSide: Exclude<MoveEffectBattlefieldZoneSideReference, 'source-side'>
+  readonly zoneKinds: readonly EncounterZoneKind[]
+  readonly requiredTags: readonly string[]
+}
+
+export interface MoveSuppressBattlefieldFieldsMutation {
+  readonly kind: 'suppress'
+  readonly target: MoveBattlefieldZoneFilter
+  /** Exact durable zone whose later removal automatically clears suppression. */
+  readonly sourceZoneId: string
+}
+
+export interface MoveConsumeBattlefieldTerrainMutation {
+  readonly kind: 'consume-terrain'
+  readonly geometry: MoveHazardGeometry
+  readonly includeGlobal: boolean
+}
+
+export type MoveBattlefieldZoneMutation =
+  | MoveRemoveBattlefieldZonesMutation
+  | MoveClearBattlefieldSideMutation
+  | MoveTransferBattlefieldSideMutation
+  | MoveSwapBattlefieldSidesMutation
+  | MoveSuppressBattlefieldFieldsMutation
+  | MoveConsumeBattlefieldTerrainMutation
+
+export interface MoveMutateBattlefieldFieldEffectPayload {
+  readonly action: 'mutate'
+  readonly mutation: MoveBattlefieldZoneMutation
+}
+
+export type MoveFieldEffectPayload =
+  | MoveApplyFieldEffectPayload
+  | MoveRemoveFieldEffectPayload
+  | MoveMutateBattlefieldFieldEffectPayload
 
 export interface MoveHazardCellSelectionRequest extends MoveHazardCellSelectionRules {
   readonly requestId: string
@@ -1623,6 +1733,36 @@ const ADD_TEMPORARY_EFFECT_FIELDS = ['action', 'effectId', 'definition'] as cons
 const REMOVE_TEMPORARY_EFFECT_FIELDS = ['action', 'effectId'] as const
 const APPLY_FIELD_FIELDS = ['action', 'category', 'fieldId', 'rounds'] as const
 const REMOVE_FIELD_FIELDS = ['action', 'category', 'fieldId'] as const
+const MUTATE_FIELD_FIELDS = ['action', 'mutation'] as const
+const BATTLEFIELD_ZONE_FILTER_FIELDS = [
+  'zoneKinds',
+  'source',
+  'side',
+  'requiredTags',
+  'geometry',
+] as const
+const BATTLEFIELD_ZONE_TARGET_MUTATION_FIELDS = ['kind', 'target'] as const
+const BATTLEFIELD_ZONE_TRANSFER_MUTATION_FIELDS = [
+  'kind',
+  'target',
+  'destinationSide',
+] as const
+const BATTLEFIELD_ZONE_SWAP_MUTATION_FIELDS = [
+  'kind',
+  'counterpartSide',
+  'zoneKinds',
+  'requiredTags',
+] as const
+const BATTLEFIELD_ZONE_SUPPRESS_MUTATION_FIELDS = [
+  'kind',
+  'target',
+  'sourceZoneId',
+] as const
+const BATTLEFIELD_ZONE_CONSUME_TERRAIN_MUTATION_FIELDS = [
+  'kind',
+  'geometry',
+  'includeGlobal',
+] as const
 const ADD_HAZARD_FIELDS = [
   'action',
   'familyId',
@@ -1777,6 +1917,19 @@ const COMBAT_STAGE_ACTION_SET = new Set<string>(MOVE_EFFECT_COMBAT_STAGE_ACTIONS
 const COMBAT_STAT_STAGE_SET = new Set<string>(MOVE_EFFECT_COMBAT_STAT_STAGES)
 const COMBAT_STAGE_SET = new Set<string>(MOVE_EFFECT_COMBAT_STAGES)
 const FIELD_CATEGORY_SET = new Set<string>(MOVE_EFFECT_FIELD_CATEGORIES)
+const BATTLEFIELD_ZONE_KIND_SET = new Set<string>(MOVE_EFFECT_BATTLEFIELD_ZONE_KINDS)
+const BATTLEFIELD_ZONE_SOURCE_FILTER_SET = new Set<string>(
+  MOVE_EFFECT_BATTLEFIELD_ZONE_SOURCE_FILTERS,
+)
+const BATTLEFIELD_ZONE_SIDE_FILTER_SET = new Set<string>(
+  MOVE_EFFECT_BATTLEFIELD_ZONE_SIDE_FILTERS,
+)
+const BATTLEFIELD_ZONE_SIDE_REFERENCE_SET = new Set<string>(
+  MOVE_EFFECT_BATTLEFIELD_ZONE_SIDE_REFERENCES,
+)
+const BATTLEFIELD_ZONE_MUTATION_SET = new Set<string>(
+  MOVE_EFFECT_BATTLEFIELD_ZONE_MUTATIONS,
+)
 const HAZARD_ZONE_KIND_SET = new Set<string>(MOVE_EFFECT_HAZARD_ZONE_KINDS)
 const HAZARD_OWNERSHIP_SET = new Set<string>(MOVE_EFFECT_HAZARD_OWNERSHIP_KINDS)
 const HAZARD_OWNERSHIP_FILTER_SET = new Set<string>(
@@ -3637,6 +3790,195 @@ const parseTemporaryEffectPayload = (
   return fail('invalid-effect-operation', `${path}.action`, 'must be add or remove.')
 }
 
+const parseBattlefieldZoneKinds = (
+  value: unknown,
+  path: string,
+): readonly EncounterZoneKind[] => {
+  const kinds = parseBoundedArray(
+    value,
+    path,
+    MOVE_EFFECT_OPERATION_LIMITS.battlefieldZoneKinds,
+  ).map((entry, index) => parseEnum<EncounterZoneKind>(
+    entry,
+    BATTLEFIELD_ZONE_KIND_SET,
+    `${path}[${index}]`,
+    'a supported battlefield-zone kind',
+  ))
+  if (kinds.length === 0) {
+    fail('invalid-effect-operation', path, 'must contain at least one zone kind.')
+  }
+  assertUnique(kinds, path)
+  return kinds
+}
+
+const parseBattlefieldZoneTags = (
+  value: unknown,
+  path: string,
+): readonly string[] => {
+  const tags = parseBoundedArray(
+    value,
+    path,
+    MOVE_EFFECT_OPERATION_LIMITS.battlefieldZoneTags,
+  ).map((entry, index) => parseStableId(entry, `${path}[${index}]`))
+  assertUnique(tags, path)
+  return tags
+}
+
+const parseBattlefieldZoneFilter = (
+  value: unknown,
+  path: string,
+): MoveBattlefieldZoneFilter => {
+  const input = parseExactRecord(value, BATTLEFIELD_ZONE_FILTER_FIELDS, path)
+  return {
+    zoneKinds: parseBattlefieldZoneKinds(
+      ownValue(input, 'zoneKinds', path),
+      `${path}.zoneKinds`,
+    ),
+    source: parseEnum<MoveEffectBattlefieldZoneSourceFilter>(
+      ownValue(input, 'source', path),
+      BATTLEFIELD_ZONE_SOURCE_FILTER_SET,
+      `${path}.source`,
+      'any, actor, or recipients',
+    ),
+    side: parseEnum<MoveEffectBattlefieldZoneSideFilter>(
+      ownValue(input, 'side', path),
+      BATTLEFIELD_ZONE_SIDE_FILTER_SET,
+      `${path}.side`,
+      'any, neutral, source-side, recipient-side, or other-side',
+    ),
+    requiredTags: parseBattlefieldZoneTags(
+      ownValue(input, 'requiredTags', path),
+      `${path}.requiredTags`,
+    ),
+    geometry: input.geometry === null
+      ? null
+      : parseHazardGeometry(input.geometry, `${path}.geometry`),
+  }
+}
+
+const parseBattlefieldZoneMutation = (
+  value: unknown,
+  path: string,
+): MoveBattlefieldZoneMutation => {
+  const candidate = parseRecord(value, path)
+  const kind = parseEnum<MoveEffectBattlefieldZoneMutationKind>(
+    ownValue(candidate, 'kind', path),
+    BATTLEFIELD_ZONE_MUTATION_SET,
+    `${path}.kind`,
+    'a supported battlefield-zone mutation',
+  )
+  if (kind === 'consume-terrain') {
+    const input = parseExactRecord(
+      value,
+      BATTLEFIELD_ZONE_CONSUME_TERRAIN_MUTATION_FIELDS,
+      path,
+    )
+    return {
+      kind,
+      geometry: parseHazardGeometry(ownValue(input, 'geometry', path), `${path}.geometry`),
+      includeGlobal: parseBoolean(
+        ownValue(input, 'includeGlobal', path),
+        `${path}.includeGlobal`,
+      ),
+    }
+  }
+  if (kind === 'swap-sides') {
+    const input = parseExactRecord(value, BATTLEFIELD_ZONE_SWAP_MUTATION_FIELDS, path)
+    const counterpartSide = parseEnum<MoveEffectBattlefieldZoneSideReference>(
+      ownValue(input, 'counterpartSide', path),
+      BATTLEFIELD_ZONE_SIDE_REFERENCE_SET,
+      `${path}.counterpartSide`,
+      'recipient-side or other-side',
+    )
+    if (counterpartSide === 'source-side') {
+      fail(
+        'invalid-effect-operation',
+        `${path}.counterpartSide`,
+        'cannot swap the source side with itself.',
+      )
+    }
+    return {
+      kind,
+      counterpartSide: counterpartSide as Exclude<
+        MoveEffectBattlefieldZoneSideReference,
+        'source-side'
+      >,
+      zoneKinds: parseBattlefieldZoneKinds(
+        ownValue(input, 'zoneKinds', path),
+        `${path}.zoneKinds`,
+      ),
+      requiredTags: parseBattlefieldZoneTags(
+        ownValue(input, 'requiredTags', path),
+        `${path}.requiredTags`,
+      ),
+    }
+  }
+
+  const fields = kind === 'transfer-side'
+    ? BATTLEFIELD_ZONE_TRANSFER_MUTATION_FIELDS
+    : kind === 'suppress'
+      ? BATTLEFIELD_ZONE_SUPPRESS_MUTATION_FIELDS
+      : BATTLEFIELD_ZONE_TARGET_MUTATION_FIELDS
+  const input = parseExactRecord(value, fields, path)
+  const target = parseBattlefieldZoneFilter(
+    ownValue(input, 'target', path),
+    `${path}.target`,
+  )
+  if (kind === 'clear-side') {
+    if (target.side === 'any' || target.side === 'neutral') {
+      fail(
+        'invalid-effect-operation',
+        `${path}.target.side`,
+        'clear-side requires source-side, recipient-side, or other-side.',
+      )
+    }
+    return { kind, target }
+  }
+  if (kind === 'transfer-side') {
+    if (target.side === 'any' || target.side === 'neutral') {
+      fail(
+        'invalid-effect-operation',
+        `${path}.target.side`,
+        'transfer-side requires one authoritative non-neutral source side.',
+      )
+    }
+    const destinationSide = parseEnum<MoveEffectBattlefieldZoneSideReference>(
+      ownValue(input, 'destinationSide', path),
+      BATTLEFIELD_ZONE_SIDE_REFERENCE_SET,
+      `${path}.destinationSide`,
+      'source-side, recipient-side, or other-side',
+    )
+    if (destinationSide === target.side) {
+      fail(
+        'invalid-effect-operation',
+        `${path}.destinationSide`,
+        'must differ from the filtered source side.',
+      )
+    }
+    return { kind, target, destinationSide }
+  }
+  if (kind === 'suppress') {
+    if (target.zoneKinds.some(zoneKind => (
+      zoneKind !== 'weather' && zoneKind !== 'terrain' && zoneKind !== 'room'
+    ))) {
+      fail(
+        'invalid-effect-operation',
+        `${path}.target.zoneKinds`,
+        'suppression targets only battlefield-wide Weather, Terrain, or Room zones.',
+      )
+    }
+    return {
+      kind,
+      target,
+      sourceZoneId: parseStableId(
+        ownValue(input, 'sourceZoneId', path),
+        `${path}.sourceZoneId`,
+      ),
+    }
+  }
+  return { kind, target }
+}
+
 const parseFieldPayload = (value: unknown, path: string): MoveFieldEffectPayload => {
   const input = parseRecord(value, path)
   const action = ownValue(input, 'action', path)
@@ -3672,7 +4014,21 @@ const parseFieldPayload = (value: unknown, path: string): MoveFieldEffectPayload
       fieldId: parseStableId(ownValue(input, 'fieldId', path), `${path}.fieldId`),
     }
   }
-  return fail('invalid-effect-operation', `${path}.action`, 'must be apply or remove.')
+  if (action === 'mutate') {
+    assertExactKeys(input, MUTATE_FIELD_FIELDS, path)
+    return {
+      action,
+      mutation: parseBattlefieldZoneMutation(
+        ownValue(input, 'mutation', path),
+        `${path}.mutation`,
+      ),
+    }
+  }
+  return fail(
+    'invalid-effect-operation',
+    `${path}.action`,
+    'must be apply, remove, or mutate.',
+  )
 }
 
 const parseHazardCellSelection = (

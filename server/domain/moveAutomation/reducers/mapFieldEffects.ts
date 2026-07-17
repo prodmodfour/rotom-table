@@ -1,12 +1,18 @@
+import { parseEncounterState } from '#shared/moveAutomation/encounterState'
 import type { MoveFieldEffectOperation } from '#shared/moveAutomation/effects'
 import type { MoveResolutionTraceJsonValue } from '#shared/moveAutomation/trace'
 import type { TabletopMap } from '~/types/map'
+import { deepCloneJson } from '~/utils/serialization'
 import type { AuthoritativeMoveRulesContext } from '../context'
 import {
   applyMapGlobalField,
+  materializeMapGlobalFieldZones,
+  projectGlobalFieldZonesToMapEffects,
   removeMapGlobalFields,
 } from '../fieldMapState'
+import { reduceMoveBattlefieldZoneMutation } from './mapFieldMutations'
 import { failMoveMapOperationReduction } from './mapOperationError'
+import type { MoveHazardGeometryResolution } from './mapOperationTypes'
 
 export interface MoveFieldReduction {
   readonly currentMap: TabletopMap
@@ -30,23 +36,51 @@ const fieldIdForZone = (
 }
 
 /**
- * Reduce a reviewed global-field operation into native encounter state while
- * retaining the legacy map lane only as a renderer/editor projection.
+ * Reduce reviewed global-field applications or bounded battlefield-zone
+ * mutations while retaining legacy field lanes only as renderer projections.
  */
 export const reduceMoveGlobalFields = (input: {
   readonly map: TabletopMap
   readonly operation: MoveFieldEffectOperation
   readonly context: AuthoritativeMoveRulesContext
+  readonly recipientIds: readonly string[]
+  readonly resolutions?: MoveHazardGeometryResolution
 }): MoveFieldReduction => {
   const { operation } = input
-  if (operation.payload.category === 'side') return unsupportedSideField(operation)
-  const kind = operation.payload.category
+  if (operation.payload.action === 'mutate') {
+    const materialized = materializeMapGlobalFieldZones(input.map)
+    const mutation = reduceMoveBattlefieldZoneMutation({
+      previous: materialized,
+      operation,
+      context: input.context,
+      recipientIds: input.recipientIds,
+      resolutions: input.resolutions,
+    })
+    const currentEncounterState = parseEncounterState(mutation.current)
+    const currentFieldEffects = projectGlobalFieldZonesToMapEffects({
+      previous: input.map.fieldEffects,
+      state: currentEncounterState,
+    })
+    return {
+      currentMap: {
+        ...deepCloneJson(input.map),
+        encounterState: deepCloneJson(currentEncounterState),
+        fieldEffects: deepCloneJson(currentFieldEffects),
+      },
+      changed: mutation.changed,
+      details: mutation.details,
+    }
+  }
+
+  const payload = operation.payload
+  if (payload.category === 'side') return unsupportedSideField(operation)
+  const kind = payload.category
   const common = {
     map: input.map,
     kind,
-    fieldId: operation.payload.fieldId,
+    fieldId: payload.fieldId,
   } as const
-  const reduced = operation.payload.action === 'apply'
+  const reduced = payload.action === 'apply'
     ? applyMapGlobalField({
         ...common,
         source: {
@@ -56,19 +90,19 @@ export const reduceMoveGlobalFields = (input: {
           placementId: input.context.actor.placement.id,
         },
         sideId: input.context.actor.placement.sideId ?? null,
-        duration: operation.payload.rounds === null
+        duration: payload.rounds === null
           ? { kind: 'permanent', remaining: null }
-          : { kind: 'rounds', boundary: 'end', remaining: operation.payload.rounds },
+          : { kind: 'rounds', boundary: 'end', remaining: payload.rounds },
         replacementGroup: kind === 'weather'
           ? 'field.weather'
-          : `field.${kind}.${operation.payload.fieldId}`,
+          : `field.${kind}.${payload.fieldId}`,
         replacementScope: kind === 'weather' ? 'category' : 'kind',
-        startsNextRound: kind === 'room' && operation.payload.fieldId === 'trick',
+        startsNextRound: kind === 'room' && payload.fieldId === 'trick',
         sourceLabel: operation.source.id,
       })
     : removeMapGlobalFields({
         map: input.map,
-        matches: zone => zone.kind === kind && fieldIdForZone(zone) === operation.payload.fieldId,
+        matches: zone => zone.kind === kind && fieldIdForZone(zone) === payload.fieldId,
       })
   const transitions = reduced.lifecycle.transitions.map(transition => ({
     zoneId: transition.zoneId,
@@ -83,7 +117,7 @@ export const reduceMoveGlobalFields = (input: {
     details: {
       action: operation.payload.action,
       category: kind,
-      fieldId: operation.payload.fieldId,
+      fieldId: payload.fieldId,
       changed: reduced.lifecycle.changed,
       transitions,
     },

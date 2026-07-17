@@ -492,6 +492,7 @@ const assertSupportedImmediateOperations = (
     'heal',
     'condition',
     'combat-stage',
+    'field',
     'hazard',
     'movement-request',
     'switch-request',

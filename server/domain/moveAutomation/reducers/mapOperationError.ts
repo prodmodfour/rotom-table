@@ -6,6 +6,7 @@ export type MoveMapOperationReductionErrorCode =
   | 'recipient-not-found'
   | 'field-placeholder-unsupported'
   | 'field-placeholder-invalid'
+  | 'field-zone-invalid'
   | 'hazard-geometry-missing'
   | 'hazard-geometry-invalid'
   | 'hazard-ownership-invalid'

@@ -184,6 +184,8 @@ export const reduceMoveMapOperations = (
         map: workingMap,
         operation,
         context: input.context,
+        recipientIds: expectedIds,
+        resolutions: input.hazards,
       })
       if (reduced.changed) {
         workingMap = deepCloneJson(reduced.currentMap)

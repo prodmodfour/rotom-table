@@ -1,4 +1,3 @@
-import { createHash } from 'node:crypto'
 import {
   createEmptyEncounterState,
   parseEncounterState,
@@ -12,19 +11,22 @@ import {
   type EncounterZoneOperationSource,
 } from '#shared/moveAutomation/encounterZones'
 import {
-  compareMoveHazardCellSelectionCells,
   moveHazardCellSelectionCellKey,
 } from '#shared/moveAutomation/hazardCellSelection'
 import type {
   MoveAddHazardEffectPayload,
   MoveEffectHazardOwnershipFilter,
-  MoveEffectHazardZoneKind,
   MoveHazardEffectOperation,
 } from '#shared/moveAutomation/effects'
 import type { MoveResolutionTraceJsonValue } from '#shared/moveAutomation/trace'
 import { sameJsonValue } from '~/utils/serialization'
 import type { AuthoritativeMoveRulesContext } from '../context'
 import { canonicalBattlefieldZoneComponents } from '../battlefieldZoneDefinitions'
+import { battlefieldLayeredZoneId } from '../battlefieldZoneIdentity'
+import {
+  clearBattlefieldZoneSuppressionSources,
+  remapBattlefieldZoneSuppressionSources,
+} from '../battlefieldZoneSuppression'
 import { resolveMoveHazardGeometryCells } from '../hazardGeometry'
 import { failMoveMapOperationReduction } from './mapOperationError'
 import type { MoveHazardGeometryResolution } from './mapOperationTypes'
@@ -117,23 +119,6 @@ const sameCellGeometry = (
   && moveHazardCellSelectionCellKey(zone.geometry.cells[0]!)
     === moveHazardCellSelectionCellKey(cell)
 
-const zoneIdentity = (input: {
-  readonly kind: MoveEffectHazardZoneKind
-  readonly familyId: string
-  readonly sideId: EncounterSideId | null
-  readonly cells: readonly EncounterZoneCell[]
-}): string => {
-  const cells = [...input.cells]
-    .sort(compareMoveHazardCellSelectionCells)
-    .map(moveHazardCellSelectionCellKey)
-    .join('|')
-  const digest = createHash('sha256')
-    .update(`${input.kind}\u0000${input.familyId}\u0000${input.sideId ?? 'neutral'}\u0000${cells}`, 'utf8')
-    .digest('hex')
-    .slice(0, 32)
-  return `zone.${input.kind}.${digest}`
-}
-
 const parseReducedState = (
   operationId: string,
   previous: EncounterState,
@@ -170,7 +155,7 @@ const newZone = (input: {
     effectId: payload.effectId,
   })
   const common = {
-    id: zoneIdentity({
+    id: battlefieldLayeredZoneId({
       kind: payload.zoneKind,
       familyId: payload.familyId,
       sideId,
@@ -344,7 +329,7 @@ const reduceRemove = (input: {
       `Hazard operation ${input.operation.id} is not a remove operation.`,
     )
   }
-  let removedCount = 0
+  const removedZoneIds: string[] = []
   const target = payload.target
   const sourceSide = target.kind === 'matching' && target.ownership === 'source-side'
     ? actorSideId(input.context, input.operation.id)
@@ -369,18 +354,26 @@ const reduceRemove = (input: {
         && (target.familyId === null || zoneFamilyId(zone) === target.familyId)
         && zoneMatchesOwnership(zone, target.ownership, sourceSide, recipientSide)
         && geometryIntersects(zone, geometryCells)
-    if (matches) removedCount += 1
+    if (matches) removedZoneIds.push(zone.id)
     return !matches
   })
-  const current = parseReducedState(input.operation.id, input.previous, zones)
-  const changed = removedCount > 0
+  const cleaned = clearBattlefieldZoneSuppressionSources({
+    zones,
+    removedZoneIds: new Set(removedZoneIds),
+  })
+  const current = parseReducedState(input.operation.id, input.previous, cleaned.zones)
+  const affectedZoneIds = [...removedZoneIds, ...cleaned.clearedZoneIds]
+  const changed = affectedZoneIds.length > 0
   return {
     current,
     changed,
     details: {
       action: 'remove',
       targetKind: target.kind,
-      removedCount,
+      removedZoneIds,
+      suppressionClearedZoneIds: cleaned.clearedZoneIds,
+      affectedZoneIds,
+      removedCount: removedZoneIds.length,
       changed,
     },
   }
@@ -405,10 +398,21 @@ const reduceSwapSides = (input: {
     return {
       current: input.previous,
       changed: false,
-      details: { action: 'swap-sides', swappedCount: 0, changed: false },
+      details: {
+        action: 'swap-sides',
+        transitions: [],
+        affectedZoneIds: [],
+        swappedCount: 0,
+        changed: false,
+      },
     }
   }
-  let swappedCount = 0
+  const transitions: Array<{
+    previousZoneId: string
+    currentZoneId: string
+    previousSideId: EncounterSideId
+    currentSideId: EncounterSideId
+  }> = []
   const zones = input.previous.zones.map((zone): EncounterZone => {
     if (
       (zone.kind !== 'hazard' && zone.kind !== 'pledge')
@@ -417,28 +421,48 @@ const reduceSwapSides = (input: {
       || zone.geometry.kind !== 'cells'
     ) return zone
     const sideId = zone.sideId === sourceSide ? targetSide : sourceSide
-    swappedCount += 1
+    const id = battlefieldLayeredZoneId({
+      kind: zone.kind,
+      familyId: zoneFamilyId(zone),
+      sideId,
+      cells: zone.geometry.cells,
+    })
+    transitions.push({
+      previousZoneId: zone.id,
+      currentZoneId: id,
+      previousSideId: zone.sideId,
+      currentSideId: sideId,
+    })
     return {
       ...zone,
-      id: zoneIdentity({
-        kind: zone.kind,
-        familyId: zoneFamilyId(zone),
-        sideId,
-        cells: zone.geometry.cells,
-      }),
+      id,
       source: operationSource(input.operation, input.context),
       sideId,
     } as LayeredEncounterZone
   })
-  const current = parseReducedState(input.operation.id, input.previous, zones)
+  const remapped = remapBattlefieldZoneSuppressionSources({
+    zones,
+    zoneIdRemap: new Map(transitions.map(transition => [
+      transition.previousZoneId,
+      transition.currentZoneId,
+    ])),
+  })
+  const current = parseReducedState(input.operation.id, input.previous, remapped.zones)
+  const affectedZoneIds = [
+    ...transitions.map(transition => transition.previousZoneId),
+    ...remapped.remappedZoneIds,
+  ]
   return {
     current,
-    changed: swappedCount > 0,
+    changed: affectedZoneIds.length > 0,
     details: {
       action: 'swap-sides',
       zoneKinds: payload.zoneKinds,
-      swappedCount,
-      changed: swappedCount > 0,
+      transitions,
+      suppressionRemappedZoneIds: remapped.remappedZoneIds,
+      affectedZoneIds,
+      swappedCount: transitions.length,
+      changed: affectedZoneIds.length > 0,
     },
   }
 }
