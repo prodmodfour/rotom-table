@@ -2045,7 +2045,7 @@ Status: DONE
 
 ## MA-150 — Define authoritative item references and scopes
 
-Status: TODO
+Status: DONE
 
 **Depends on:** MA-035, existing inventory contracts
 **Commit:** `feat(move-automation): define move item references`
