@@ -9,7 +9,7 @@ Ticket statuses:
 
 The build loop must select the lowest-numbered TODO ticket. Each ticket below maps to one ticket from the supplied planning file; build ticket numbers follow that document's suggested order when present.
 
-Autonomous cycle rules for every ticket: implement only the selected ticket, run `scripts/quality-gate.sh`, update only the selected ticket status, commit with a conventional commit message, and leave the working tree clean. The final ticket (`MA-299`) may also set `AUTOMATION_STATUS: DONE` after all 288 refreshed tickets are complete.
+Autonomous cycle rules for every ticket: implement only the selected ticket, run `scripts/quality-gate.sh`, update only the selected ticket status, commit with a conventional commit message, and leave the working tree clean. The final ticket (`MA-299`) may also set `AUTOMATION_STATUS: DONE` after all 289 refreshed tickets are complete.
 
 ---
 
@@ -50,7 +50,7 @@ When a ticket introduces a new pure module, prefer this layout:
 
 The existing `src/utils/move-automation/` registry remains the v1 compatibility surface until the retirement tickets at the end.
 
-Queue size at this baseline: **288 commits**—182 engine/state/QA tickets, 33 conformance batches for the registered 258, and 73 implementation batches for the missing 518.
+Queue size at this baseline: **289 commits**—183 engine/state/QA tickets, 33 conformance batches for the registered 258, and 73 implementation batches for the missing 518.
 
 ## Decisions already locked
 
@@ -1926,18 +1926,31 @@ Status: DONE
 
 **Done:** Both terrains produce traced effects only for legal grounded recipients.
 
-## MA-141 — Implement Misty and Psychic Terrain
+## MA-141A — Implement Misty Terrain mechanics
 
 Status: TODO
 
-**Depends on:** MA-077, MA-084, MA-108, MA-123, MA-137
-**Commit:** `feat(move-automation): resolve misty and psychic terrain`
+**Depends on:** MA-077, MA-084, MA-123, MA-137
+**Commit:** `feat(move-automation): resolve misty terrain`
 
-**Touch:** terrain, condition, damage, reaction-priority queries, tests.
+**Touch:** terrain, condition, and damage queries plus focused tests.
 
-**Implement:** Add grounded condition protection/damage modification for Misty Terrain and priority/reaction targeting plus damage rules for Psychic Terrain.
+**Implement:** Add Misty Terrain's grounded condition protection and damage modification through authoritative terrain membership queries. Evaluate protection before rolls or condition effects, emit trace reasons for applied and skipped terrain rules, and cover grounded, airborne, and out-of-zone recipients.
 
-**Done:** Terrain changes legality before rolls and does not rely on UI filtering.
+**Done:** Misty Terrain changes authoritative condition legality and damage only for eligible grounded recipients, with no reliance on UI filtering.
+
+## MA-141B — Implement Psychic Terrain mechanics
+
+Status: TODO
+
+**Depends on:** MA-141A, MA-077, MA-108, MA-123, MA-137
+**Commit:** `feat(move-automation): resolve psychic terrain`
+
+**Touch:** terrain, damage, and reaction-priority queries plus focused tests.
+
+**Implement:** Add Psychic Terrain's grounded priority/reaction targeting restrictions and damage rules through authoritative terrain membership queries. Evaluate targeting legality before rolls, trace allowed and prevented outcomes, and cover grounded, airborne, out-of-zone, priority, and reaction branches.
+
+**Done:** Psychic Terrain changes authoritative targeting legality and damage before rolls, with no reliance on UI filtering.
 
 ## MA-142 — Implement Trick Room and Wonder Room
 
