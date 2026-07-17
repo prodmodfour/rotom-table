@@ -2274,7 +2274,7 @@ Status: DONE
 
 ## MA-166 — Prove cross-resource and nested recovery
 
-Status: TODO
+Status: DONE
 
 **Depends on:** MA-154–MA-165
 **Commit:** `test(move-automation): harden item and nested resolutions`

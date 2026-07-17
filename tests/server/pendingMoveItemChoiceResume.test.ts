@@ -1,3 +1,6 @@
+import { mkdtempSync, rmSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import {
   LIVE_PLAY_COMMAND_SCHEMA_VERSION,
@@ -57,13 +60,29 @@ interface Harness {
 }
 
 const openDatabases: RotomDatabase[] = []
+const tempDirectories: string[] = []
 
 afterEach(() => {
   while (openDatabases.length > 0) openDatabases.pop()?.close()
+  while (tempDirectories.length > 0) {
+    rmSync(tempDirectories.pop()!, { recursive: true, force: true })
+  }
 })
 
-const createHarness = (): Harness => {
-  const database = openRotomDatabase({ path: ':memory:', enableWal: false })
+const closeTrackedDatabase = (database: RotomDatabase): void => {
+  database.close()
+  const index = openDatabases.indexOf(database)
+  if (index >= 0) openDatabases.splice(index, 1)
+}
+
+const createHarness = (options: {
+  readonly path?: string
+  readonly seed?: boolean
+} = {}): Harness => {
+  const database = openRotomDatabase({
+    path: options.path ?? ':memory:',
+    enableWal: false,
+  })
   openDatabases.push(database)
   const maps = createSqliteMapRepository<TabletopMap>(database)
   const sheets = createSqliteSheetRepository<Record<string, unknown>>(database)
@@ -78,26 +97,28 @@ const createHarness = (): Harness => {
     readMapInteractionMode: mapSlug => modes.get(mapSlug).interactionMode,
     ...acceptedRealtimeTestHooks([]),
   })
-  const map = createItemChoiceMap()
-  maps.save({ slug: map.slug, document: map, revision: map.revision ?? 0, updatedAt: 100 })
-  const resources = itemChoiceSheets()
-  for (const sheet of resources.pokemonSheets.values()) {
-    sheets.save({
-      kind: 'pokemon',
-      slug: sheet.slug,
-      document: sheet as unknown as Record<string, unknown>,
-      revision: sheet.revision ?? 0,
-      updatedAt: 50,
-    })
-  }
-  for (const sheet of resources.trainerSheets.values()) {
-    sheets.save({
-      kind: 'trainer',
-      slug: sheet.slug,
-      document: sheet as unknown as Record<string, unknown>,
-      revision: sheet.revision ?? 0,
-      updatedAt: 50,
-    })
+  if (options.seed !== false) {
+    const map = createItemChoiceMap()
+    maps.save({ slug: map.slug, document: map, revision: map.revision ?? 0, updatedAt: 100 })
+    const resources = itemChoiceSheets()
+    for (const sheet of resources.pokemonSheets.values()) {
+      sheets.save({
+        kind: 'pokemon',
+        slug: sheet.slug,
+        document: sheet as unknown as Record<string, unknown>,
+        revision: sheet.revision ?? 0,
+        updatedAt: 50,
+      })
+    }
+    for (const sheet of resources.trainerSheets.values()) {
+      sheets.save({
+        kind: 'trainer',
+        slug: sheet.slug,
+        document: sheet as unknown as Record<string, unknown>,
+        revision: sheet.revision ?? 0,
+        updatedAt: 50,
+      })
+    }
   }
   return { database, maps, sheets, groups, ops, pending, realtime, commandExecutor }
 }
@@ -364,6 +385,87 @@ describe('pending durable item-choice resume integration', () => {
     expect(trainerInventory(harness)).toEqual(inventoryBefore)
     expect(harness.pending.getById(declaration.stored.resolutionId)?.resolution.chosenOptions)
       .toMatchObject([{ optionId: 'item.none.reviewed' }])
+  })
+
+  it('recovers an item choice and a lost terminal response across restarts without consuming twice', async () => {
+    const directory = mkdtempSync(join(tmpdir(), 'rotom-item-choice-recovery-'))
+    tempDirectories.push(directory)
+    const databasePath = join(directory, 'campaign.sqlite')
+    const originalHarness = createHarness({ path: databasePath })
+    const declaration = await declare(originalHarness, 'op_itemrestartdecl')
+    const resolutionId = declaration.stored.resolutionId
+    const originalWindow = declaration.stored.resolution.outstandingWindows[0]!
+    const originalOption = originalWindow.options.find(option => (
+      option.itemChoice?.canonicalItemId === 'potion'
+    ))!
+    closeTrackedDatabase(originalHarness.database)
+
+    const reconnectedHarness = createHarness({ path: databasePath, seed: false })
+    const restored = listPendingMoveResponsesUseCase({
+      role: 'gm',
+      mapSlug: 'durable-item-choice-arena',
+    }, {
+      database: reconnectedHarness.database,
+      mapRepository: reconnectedHarness.maps,
+      sheetRepository: reconnectedHarness.sheets,
+      pendingResolutionRepository: reconnectedHarness.pending,
+    })
+    expect(restored.windows).toEqual([
+      expect.objectContaining({
+        resolution: expect.objectContaining({ resolutionId }),
+        window: expect.objectContaining({
+          windowId: originalWindow.windowId,
+          options: expect.arrayContaining([
+            expect.objectContaining({ id: originalOption.id }),
+          ]),
+        }),
+      }),
+    ])
+
+    const pendingMap = reconnectedHarness.maps.getBySlug('durable-item-choice-arena')!
+    const command = chooseCommand({
+      map: pendingMap,
+      resolutionId,
+      windowId: originalWindow.windowId,
+      optionId: originalOption.id,
+      opId: 'op_itemrestartans',
+    })
+    const completed = resume({
+      harness: reconnectedHarness,
+      command,
+      runtimeRegistry: createItemChoiceRuntimeRegistry(),
+    })
+    expect(completed.result).toMatchObject({ ok: true })
+    expect(targetHp(reconnectedHarness)).toBe(55)
+    expect(trainerInventory(reconnectedHarness)?.medicalKit).toEqual([
+      { id: 'private-potion-row', name: 'Potion', qty: 2 },
+      { id: 'private-antidote-row', name: 'Antidote', qty: 1 },
+    ])
+    const committedMap = deepCloneJson(reconnectedHarness.maps.getBySlug(pendingMap.slug))
+    const committedSheets = deepCloneJson(reconnectedHarness.sheets.list())
+    const committedPending = deepCloneJson(reconnectedHarness.pending.getById(resolutionId))
+    const committedRealtimeCursor = reconnectedHarness.realtime.cursorState()
+    closeTrackedDatabase(reconnectedHarness.database)
+
+    // Simulate the accepted response being lost: recovery replays the exact
+    // response operation from durable state after another process restart.
+    const recoveryHarness = createHarness({ path: databasePath, seed: false })
+    const replay = replayMoveResponseCommandUseCase({ role: 'gm', command }, {
+      database: recoveryHarness.database,
+      mapRepository: recoveryHarness.maps,
+      opRepository: recoveryHarness.ops,
+    })
+
+    expect(replay?.result).toEqual(completed.result)
+    expect(recoveryHarness.maps.getBySlug(pendingMap.slug)).toEqual(committedMap)
+    expect(recoveryHarness.sheets.list()).toEqual(committedSheets)
+    expect(recoveryHarness.pending.getById(resolutionId)).toEqual(committedPending)
+    expect(recoveryHarness.realtime.cursorState()).toEqual(committedRealtimeCursor)
+    expect(targetHp(recoveryHarness)).toBe(55)
+    expect(trainerInventory(recoveryHarness)?.medicalKit).toEqual([
+      { id: 'private-potion-row', name: 'Potion', qty: 2 },
+      { id: 'private-antidote-row', name: 'Antidote', qty: 1 },
+    ])
   })
 
   it('terminally conflicts a stale inventory with no deferred damage or item overwrite', async () => {

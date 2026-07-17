@@ -5,6 +5,7 @@ import {
 } from '#shared/livePlayMoveResolution'
 import type { EncounterEffect } from '#shared/moveAutomation/encounterEffects'
 import { createEmptyEncounterState } from '#shared/moveAutomation/encounterState'
+import { parsePendingMoveResolution } from '#shared/moveAutomation/pendingResolution'
 import type { MoveSpec } from '#shared/moveAutomation/spec'
 import {
   buildAuthoritativeMoveRulesContext,
@@ -436,7 +437,7 @@ describe('reviewed nested MoveSpec execution', () => {
     })
   })
 
-  it('returns serial durable target and child branch windows before completing', () => {
+  it('restores serial durable target and child branch windows after reconnect before completing once', () => {
     const childDefinition = validateMoveSpec({
       ...childSpec([]),
       canonicalId: 'Scratch',
@@ -554,10 +555,14 @@ describe('reviewed nested MoveSpec execution', () => {
       kind: 'choice',
       options: first.request.options,
     })
+    const reconnectedTargetResolution = parsePendingMoveResolution(
+      JSON.parse(JSON.stringify(durableTargetWindow.pendingResolution)),
+    )
+    expect(reconnectedTargetResolution).toEqual(durableTargetWindow.pendingResolution)
 
     const targetOptionId = first.request.options[1]!.id
     const resumed = resumeMoveSpec({
-      pendingResolution: durableTargetWindow.pendingResolution,
+      pendingResolution: reconnectedTargetResolution,
       map: {
         ...mapFixture(),
         revision: 9,
@@ -629,6 +634,45 @@ describe('reviewed nested MoveSpec execution', () => {
       kind: 'choice',
       phase: 'hit',
     })
+    const reconnectedBranchResolution = parsePendingMoveResolution({
+      ...JSON.parse(JSON.stringify(durableBranchWindow.pendingResolution)),
+      chosenOptions: [{
+        windowId: 'parent.child-target-window',
+        responseOpId: 'op_nestedtargetanswer',
+        optionId: targetOptionId,
+        chosenBy: { kind: 'gm', id: null },
+        chosenAt: 12_000,
+      }],
+    })
+    const completedAfterReconnect = resumeMoveSpec({
+      pendingResolution: reconnectedBranchResolution,
+      map: {
+        ...mapFixture(),
+        revision: 9,
+        encounterState: {
+          ...createEmptyEncounterState(),
+          pendingResolutionSummaries: [durableBranchWindow.publicSummary],
+        },
+      },
+      pokemonSheets: pokemonSheets(),
+      trainerSheets: new Map<string, TrainerSheet>(),
+      response: {
+        requestId: 'child.branch-window',
+        optionId: 'boost',
+      },
+      now: 12_002,
+      random: createFiniteAuthoritativeMoveRandomStream([]),
+      runtimeRegistry: registry,
+    })
+    if ('kind' in completedAfterReconnect) {
+      throw new Error('Expected the reconnected nested response to complete.')
+    }
+    expect(completedAfterReconnect.transaction.combatStageUpdates).toEqual([
+      expect.objectContaining({ id: 'actor-token', stages: expect.objectContaining({ atk: 2 }) }),
+    ])
+    expect(completedAfterReconnect.auditTrace.events.filter(event => (
+      event.kind === 'operation' && event.operationId === 'child.raise-attack'
+    ))).toHaveLength(1)
 
     const terminal = executeMoveSpec({
       definition: parentDefinition,
@@ -873,6 +917,8 @@ describe('reviewed nested MoveSpec execution', () => {
     })]))
     const selfRegistry = registryFromDefinitions(selfDefinition)
     const selfContext = contextFor({ registry: selfRegistry })
+    const selfMapBefore = structuredClone(selfContext.map)
+    const selfSheetsBefore = structuredClone(selfContext.resolvedSheets)
 
     expect(() => executeMoveSpec({
       definition: selfDefinition,
@@ -883,6 +929,8 @@ describe('reviewed nested MoveSpec execution', () => {
       code: 'nested-spec-already-visited',
     }))
     expect(selfContext.random.snapshot()).toEqual([])
+    expect(selfContext.map).toEqual(selfMapBefore)
+    expect(selfContext.resolvedSheets).toEqual(selfSheetsBefore)
 
     const childDefinition = validateMoveSpec(childSpec([nestedOperation({
       id: 'child.copy-parent',
@@ -897,6 +945,8 @@ describe('reviewed nested MoveSpec execution', () => {
     const parentDefinition = validateMoveSpec(parentSpec([nestedOperation()]))
     const copyRegistry = registryFor(parentDefinition, childDefinition)
     const copyContext = contextFor({ registry: copyRegistry })
+    const copyMapBefore = structuredClone(copyContext.map)
+    const copySheetsBefore = structuredClone(copyContext.resolvedSheets)
 
     expect(() => executeMoveSpec({
       definition: parentDefinition,
@@ -907,6 +957,8 @@ describe('reviewed nested MoveSpec execution', () => {
       code: 'nested-spec-already-visited',
     }))
     expect(copyContext.random.snapshot()).toEqual([])
+    expect(copyContext.map).toEqual(copyMapBefore)
+    expect(copyContext.resolvedSheets).toEqual(copySheetsBefore)
   })
 
   it('stops a unique child chain at the aggregate nesting-depth boundary', () => {

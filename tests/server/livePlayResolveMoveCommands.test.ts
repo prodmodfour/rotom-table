@@ -10,7 +10,9 @@ import { createInProcessMapWriteQueue } from '~~/server/livePlay/mapWriteQueue'
 import { executeLivePlayResolveMoveCommandUseCase, type LivePlayResolveMoveCommandDependencies } from '~~/server/useCases/applyResolveMoveCommand'
 import { acceptedRealtimeTestHooks } from './livePlayAcceptedRealtimeTestUtils'
 import { redBlueEncounterStateFixture } from '../fixtures/moveAutomation/encounterSides'
+import { transformationEncounterEffectFixture } from '../fixtures/moveAutomation/encounterEffects'
 import { createEmptyEncounterState } from '#shared/moveAutomation/encounterState'
+import { parseEncounterEffect } from '#shared/moveAutomation/encounterEffects'
 import {
   ENCOUNTER_EXHAUST_COMMAND_FLAG_ID,
   ENCOUNTER_EXHAUST_NEXT_TURN_FLAG_ID,
@@ -26,8 +28,12 @@ import {
 import {
   MOVE_AUTOMATION_RUNTIME_REGISTRY,
   type MoveAutomationRuntimeRegistry,
+  type MoveSpecV2Runtime,
 } from '~~/server/domain/moveAutomation/registry'
-import { validateMoveSpec } from '~~/server/domain/moveAutomation/validateSpec'
+import {
+  validateMoveSpec,
+  type ValidatedMoveSpecDefinition,
+} from '~~/server/domain/moveAutomation/validateSpec'
 import type { MoveSpecCostDeclaration } from '#shared/moveAutomation/spec'
 import { LIVE_PLAY_COMMAND_SCHEMA_VERSION, LIVE_PLAY_COMMAND_TYPES, LIVE_PLAY_PATCH_TYPES, type LivePlayCommandAccepted, type ResolveMoveLivePlayCommand } from '#shared/livePlayCommands'
 import {
@@ -472,6 +478,32 @@ const withRegisteredScript = async <T>(script: MoveAutomationScript, run: () => 
   }
 }
 
+const runtimeRegistryWithValidatedDefinition = (
+  canonicalId: string,
+  definition: ValidatedMoveSpecDefinition,
+): MoveAutomationRuntimeRegistry => {
+  const selected = MOVE_AUTOMATION_RUNTIME_REGISTRY.resolve(canonicalId)
+  if (selected?.kind !== 'movespec-v2') {
+    throw new Error(`expected native runtime for ${canonicalId}`)
+  }
+  const runtime: MoveSpecV2Runtime = Object.freeze({
+    ...selected,
+    version: definition.spec.version,
+    definitionHash: definition.definitionHash,
+    definition,
+  })
+  return Object.freeze({
+    size: MOVE_AUTOMATION_RUNTIME_REGISTRY.size,
+    handlerRegistry: MOVE_AUTOMATION_RUNTIME_REGISTRY.handlerRegistry,
+    resolve: (candidateId: string) => candidateId === canonicalId
+      ? runtime
+      : MOVE_AUTOMATION_RUNTIME_REGISTRY.resolve(candidateId),
+    entries: () => Object.freeze(MOVE_AUTOMATION_RUNTIME_REGISTRY.entries().map(candidate => (
+      candidate.canonicalId === canonicalId ? runtime : candidate
+    ))),
+  })
+}
+
 const runtimeRegistryWithReviewedCosts = (
   canonicalId: string,
   costs: readonly MoveSpecCostDeclaration[],
@@ -488,21 +520,7 @@ const runtimeRegistryWithReviewedCosts = (
     rulesetVersion: selected.definition.rulesetVersion,
     handlerRegistry: MOVE_AUTOMATION_RUNTIME_REGISTRY.handlerRegistry,
   })
-  const runtime = Object.freeze({
-    ...selected,
-    definitionHash: definition.definitionHash,
-    definition,
-  })
-  return Object.freeze({
-    size: MOVE_AUTOMATION_RUNTIME_REGISTRY.size,
-    handlerRegistry: MOVE_AUTOMATION_RUNTIME_REGISTRY.handlerRegistry,
-    resolve: (candidateId: string) => candidateId === canonicalId
-      ? runtime
-      : MOVE_AUTOMATION_RUNTIME_REGISTRY.resolve(candidateId),
-    entries: () => Object.freeze(MOVE_AUTOMATION_RUNTIME_REGISTRY.entries().map(candidate => (
-      candidate.canonicalId === canonicalId ? runtime : candidate
-    ))),
-  })
+  return runtimeRegistryWithValidatedDefinition(canonicalId, definition)
 }
 
 describe('executeLivePlayResolveMoveCommandUseCase', () => {
@@ -1878,9 +1896,182 @@ describe('executeLivePlayResolveMoveCommandUseCase', () => {
     })
     expect(harness.maps.getBySlug('arena')).toEqual(beforeMap)
     expect(harness.sheets.list()).toEqual(beforeSheets)
-    expect(harness.groupInventories.get('main')?.revision).toBe(3)
+    expect(harness.groupInventories.get('main')).toMatchObject({
+      revision: 3,
+      document: {
+        inventory: {
+          medicalKit: [{ id: 'group-potion', name: 'Potion', qty: 1 }],
+          pokemonItems: [],
+        },
+      },
+    })
     expect(harness.ops.getOpResult('arena', command.opId)).toBeNull()
     expect(harness.events).toEqual([])
+  })
+
+  it('rejects a permanent move-list CAS race without committing the move or duplicating a learned move', async () => {
+    const harness = seedHarness({ actorMoves: [{ name: 'Synthesis' }] })
+    const map = harness.maps.getBySlug('arena')!
+    const targetBefore = deepCloneJson(harness.sheets.getByRef('pokemon', 'target-a'))
+    const definition = validateMoveSpec({
+      schemaVersion: 2,
+      canonicalId: 'Synthesis',
+      version: 166,
+      targeting: {
+        kind: 'self',
+        minTargets: 1,
+        maxTargets: 1,
+        selector: { kind: 'actor' },
+      },
+      preconditions: [],
+      costs: [],
+      phases: [{
+        phase: 'hit',
+        operations: [{
+          id: 'recovery.replace-synthesis',
+          kind: 'permanent-move-list',
+          source: { kind: 'move', id: 'move.synthesis' },
+          recipients: { kind: 'actor' },
+          phase: 'hit',
+          reasonCode: 'recovery.permanent-move-list-cas',
+          payload: {
+            action: 'replace',
+            replacedMoveId: 'Synthesis',
+            moveId: 'Tackle',
+            acquisition: { kind: 'reviewed-rule' },
+          },
+        }],
+      }, {
+        phase: 'usage',
+        operations: [{
+          id: 'synthesis.usage',
+          kind: 'usage',
+          source: { kind: 'move', id: 'move.synthesis' },
+          recipients: { kind: 'actor' },
+          phase: 'usage',
+          reasonCode: 'synthesis.frequency-use',
+          payload: {
+            action: 'spend',
+            resourceId: 'synthesis.frequency-use',
+            amount: 1,
+          },
+        }],
+      }],
+      registeredHandlerId: null,
+      presentation: {
+        displayName: 'Synthesis',
+        vfxKey: null,
+        tags: ['recovery-test'],
+      },
+    })
+    const runtimeRegistry = runtimeRegistryWithValidatedDefinition('Synthesis', definition)
+    const moveIntent = intent({
+      placementId: 'actor-token',
+      moveName: 'Synthesis',
+      selection: { kind: 'self' },
+    })
+    const command = commandFor(map, moveIntent, 'op_movelistcas01')
+    const planner: NonNullable<LivePlayResolveMoveCommandDependencies['planner']> = (input) => {
+      const plan = planAuthoritativeMoveState({ ...input, runtimeRegistry })
+      expect(plan.sheetWrites).toEqual([
+        expect.objectContaining({
+          kind: 'pokemon',
+          slug: 'actor',
+          expectedRevision: 2,
+          changedFields: ['moveUsage', 'movelist'],
+          nextSheet: expect.objectContaining({
+            movelist: [expect.objectContaining({ name: 'Tackle' })],
+          }),
+        }),
+      ])
+      const current = harness.sheets.getByRef('pokemon', 'actor')!
+      harness.sheets.save({
+        kind: current.kind,
+        slug: current.slug,
+        revision: current.revision + 1,
+        updatedAt: current.updatedAt + 1,
+        document: {
+          ...current.sheet,
+          revision: current.revision + 1,
+          updatedAt: current.updatedAt + 1,
+        },
+      })
+      return plan
+    }
+
+    const response = await execute(harness, command, {
+      planner,
+      random: () => { throw new Error('permanent move-list fixture does not use randomness') },
+    })
+
+    expect(response.result).toMatchObject({ ok: false, reason: 'conflict' })
+    expect(harness.maps.getBySlug('arena')).toEqual(map)
+    expect(harness.sheets.getByRef('pokemon', 'actor')).toMatchObject({
+      revision: 3,
+      sheet: { movelist: [{ name: 'Synthesis' }] },
+    })
+    expect(harness.sheets.getByRef('pokemon', 'target-a')).toEqual(targetBefore)
+    expect(harness.ops.getOpResult('arena', command.opId)).toBeNull()
+    expect(harness.events).toEqual([])
+  })
+
+  it('commits transformation cleanup with a knockout exactly once across duplicate delivery', async () => {
+    const baseTransformation = transformationEncounterEffectFixture()
+    const transformation = parseEncounterEffect({
+      ...baseTransformation,
+      id: 'effect.transformation.target-a',
+      source: { ...baseTransformation.source, placementId: 'target-a' },
+      affected: { placementIds: ['target-a'], sideIds: [], cells: [] },
+      payload: { ...baseTransformation.payload, copiedFromPlacementId: 'actor-token' },
+    })
+    const map = mapFixture({
+      encounterState: {
+        ...createEmptyEncounterState(),
+        effects: [transformation],
+      },
+    })
+    const harness = seedHarness({
+      map,
+      actorMoves: [{ name: 'Tackle' }],
+      targetASheet: { combat: { currentHp: 1 } },
+    })
+    const moveIntent = intent({
+      placementId: 'actor-token',
+      moveName: 'Tackle',
+      selection: { kind: 'single-target', targetPlacementId: 'target-a' },
+    })
+    const command = commandFor(map, moveIntent, 'op_transformko01')
+    const response = await execute(harness, command, {
+      random: randomSequence([0.5, 0.5]),
+    })
+    const acceptedResult = accepted(response.result)
+
+    expect(response.move?.transaction.hpUpdates).toEqual([
+      expect.objectContaining({ id: 'target-a' }),
+    ])
+    expect(response.move?.transaction.hpUpdates[0]?.currentHp).toBeLessThanOrEqual(0)
+    expect(response.map?.encounterState?.effects).toEqual([])
+    expect(moveStatePatchPayload(acceptedResult).changes.encounterState).toMatchObject({
+      previous: { effects: [expect.objectContaining({ id: transformation.id })] },
+      current: { effects: [] },
+    })
+    expect(harness.sheets.getByRef('pokemon', 'target-a')?.sheet).toMatchObject({
+      species: 'Snorlax',
+      combat: { currentHp: response.move?.transaction.hpUpdates[0]?.currentHp },
+    })
+    const committedMap = deepCloneJson(harness.maps.getBySlug('arena'))
+    const committedSheets = deepCloneJson(harness.sheets.list())
+    const committedEvents = deepCloneJson(harness.events)
+
+    const duplicate = await execute(harness, command, {
+      planner: () => { throw new Error('duplicate transformation cleanup must not replan') },
+      random: () => { throw new Error('duplicate transformation cleanup must not reroll') },
+    })
+
+    expect(duplicate.result).toEqual(acceptedResult)
+    expect(harness.maps.getBySlug('arena')).toEqual(committedMap)
+    expect(harness.sheets.list()).toEqual(committedSheets)
+    expect(harness.events).toEqual(committedEvents)
   })
 
   it('commits map, sheets, and op result atomically and rolls back on sheet persistence failure', async () => {
