@@ -7,6 +7,7 @@ import {
   type EncounterDamagingMoveHistory,
   type EncounterDeclaredMoveHistory,
   type EncounterHistory,
+  type EncounterMoveUseHistory,
 } from '#shared/moveAutomation/encounterHistory'
 import type { MoveHistoryQuery } from '#shared/moveAutomation/expressions'
 
@@ -17,8 +18,17 @@ export interface EncounterHistoryDamageTotals {
 }
 
 export interface MoveAutomationHistoryResolver {
-  lastDeclaredMove(placementId: string): EncounterDeclaredMoveHistory | null
-  lastCompletedMove(placementId: string): EncounterCompletedMoveHistory | null
+  /** Omit placementId to query encounter-wide authoritative event order. */
+  lastDeclaredMove(placementId?: string): EncounterDeclaredMoveHistory | null
+  previousDeclaredMove(placementId?: string): EncounterDeclaredMoveHistory | null
+  lastCompletedMove(placementId?: string): EncounterCompletedMoveHistory | null
+  previousCompletedMove(placementId?: string): EncounterCompletedMoveHistory | null
+  /** Oldest-to-newest, bounded by the scene-owned move-use ceiling. */
+  declaredMovesThisScene(placementId?: string): readonly EncounterDeclaredMoveHistory[]
+  /** Oldest-to-newest authoritative completion order. */
+  completedMovesThisScene(placementId?: string): readonly EncounterCompletedMoveHistory[]
+  usedMoveThisScene(placementId: string, canonicalId: string): boolean
+  moveUse(resolutionId: string): EncounterMoveUseHistory | null
   lastDamagingMoveReceived(placementId: string): EncounterDamagingMoveHistory | null
   damageBySourceThisTurn(
     sourcePlacementId: string,
@@ -98,6 +108,52 @@ const filteredDamage = (
   predicate: (entry: EncounterDamageBySourceHistory) => boolean,
 ): readonly EncounterDamageBySourceHistory[] => deepFreeze(values.filter(predicate))
 
+const declarationFromUse = (
+  use: EncounterMoveUseHistory,
+): EncounterDeclaredMoveHistory | null => use.declaration === null
+  ? null
+  : {
+      eventId: use.declaration.eventId,
+      sourceOperationId: use.declaration.sourceOperationId,
+      resolutionId: use.resolutionId,
+      canonicalId: use.canonicalId,
+      specVersion: use.specVersion,
+      actorPlacementId: use.actorPlacementId,
+      actionType: use.actionType,
+      origin: use.origin,
+      moveListSource: use.moveListSource,
+      targetPlacementIds: [...use.declaration.targetPlacementIds],
+    }
+
+const completionFromUse = (
+  use: EncounterMoveUseHistory,
+): EncounterCompletedMoveHistory | null => use.completion === null
+  ? null
+  : {
+      eventId: use.completion.eventId,
+      sourceOperationId: use.completion.sourceOperationId,
+      resolutionId: use.resolutionId,
+      canonicalId: use.canonicalId,
+      specVersion: use.specVersion,
+      actorPlacementId: use.actorPlacementId,
+      actionType: use.actionType,
+      origin: use.origin,
+      moveListSource: use.moveListSource,
+      attackedTargetIds: [...use.completion.attackedTargetIds],
+      hitTargetIds: [...use.completion.hitTargetIds],
+      outcome: use.completion.outcome,
+      succeeded: use.completion.succeeded,
+      branches: use.completion.branches.map(branch => ({ ...branch })),
+    }
+
+const latest = <Value>(values: readonly Value[]): Value | null => (
+  values.length === 0 ? null : values[values.length - 1] ?? null
+)
+
+const previous = <Value>(values: readonly Value[]): Value | null => (
+  values.length < 2 ? null : values[values.length - 2] ?? null
+)
+
 /**
  * Snapshot bounded structured history and expose mechanics queries over it.
  * No query consults combat-log text, browser state, or mutable global state.
@@ -106,11 +162,35 @@ export const createMoveAutomationHistoryResolver = (
   historyValue: EncounterHistory,
 ): MoveAutomationHistoryResolver => {
   const history = deepFreeze(parseEncounterHistory(historyValue))
+  const moveUseByResolution = new Map(
+    history.moveUses.map(use => [use.resolutionId, use]),
+  )
+  const retainedUseIds = new Set(moveUseByResolution.keys())
+  const declaredMoves = deepFreeze([
+    // A legacy MA-063 map retains only its final per-placement indexes. Keep
+    // those truthful records before newly ordered MA-158 scene entries.
+    ...history.lastDeclaredMoves.filter(entry => !retainedUseIds.has(entry.resolutionId)),
+    ...history.moveUses.flatMap((use) => {
+      const declaration = declarationFromUse(use)
+      return declaration && use.declaration
+        ? [{ order: use.declaration.order, declaration }]
+        : []
+    }).sort((left, right) => left.order - right.order).map(entry => entry.declaration),
+  ])
+  const completedMoves = deepFreeze([
+    ...history.lastCompletedMoves.filter(entry => !retainedUseIds.has(entry.resolutionId)),
+    ...history.moveUses.flatMap((use) => {
+      const completion = completionFromUse(use)
+      return completion && use.completion
+        ? [{ order: use.completion.order, completion }]
+        : []
+    }).sort((left, right) => left.order - right.order).map(entry => entry.completion),
+  ])
   const lastDeclaredByPlacement = new Map(
-    history.lastDeclaredMoves.map(entry => [entry.actorPlacementId, entry]),
+    declaredMoves.map(entry => [entry.actorPlacementId, entry]),
   )
   const lastCompletedByPlacement = new Map(
-    history.lastCompletedMoves.map(entry => [entry.actorPlacementId, entry]),
+    completedMoves.map(entry => [entry.actorPlacementId, entry]),
   )
   const lastDamageByPlacement = new Map(
     history.lastDamagingMovesReceived.map(entry => [entry.targetPlacementId, entry]),
@@ -152,9 +232,28 @@ export const createMoveAutomationHistoryResolver = (
     `${window} damage received by ${placementId}`,
   )
 
+  const forPlacement = <Value extends { readonly actorPlacementId: string }>(
+    values: readonly Value[],
+    placementId?: string,
+  ): readonly Value[] => placementId === undefined
+    ? values
+    : values.filter(entry => entry.actorPlacementId === placementId)
+
   const resolver: MoveAutomationHistoryResolver = {
-    lastDeclaredMove: placementId => lastDeclaredByPlacement.get(placementId) ?? null,
-    lastCompletedMove: placementId => lastCompletedByPlacement.get(placementId) ?? null,
+    lastDeclaredMove: placementId => latest(forPlacement(declaredMoves, placementId)),
+    previousDeclaredMove: placementId => previous(forPlacement(declaredMoves, placementId)),
+    lastCompletedMove: placementId => latest(forPlacement(completedMoves, placementId)),
+    previousCompletedMove: placementId => previous(forPlacement(completedMoves, placementId)),
+    declaredMovesThisScene: placementId => deepFreeze([
+      ...forPlacement(declaredMoves, placementId),
+    ]),
+    completedMovesThisScene: placementId => deepFreeze([
+      ...forPlacement(completedMoves, placementId),
+    ]),
+    usedMoveThisScene: (placementId, canonicalId) => completedMoves.some(entry => (
+      entry.actorPlacementId === placementId && entry.canonicalId === canonicalId
+    )),
+    moveUse: resolutionId => moveUseByResolution.get(resolutionId) ?? null,
     lastDamagingMoveReceived: placementId => lastDamageByPlacement.get(placementId) ?? null,
     damageBySourceThisTurn: (sourcePlacementId, targetPlacementId) => bySource(
       history.damageBySourceThisTurn,

@@ -29,10 +29,25 @@ const move = (
   resolutionId: string,
   canonicalId: string,
   actorPlacementId: string,
-): EncounterMoveIdentity => ({ resolutionId, canonicalId, actorPlacementId })
+  options: Partial<Pick<
+    EncounterMoveIdentity,
+    'specVersion' | 'actionType' | 'origin' | 'moveListSource'
+  >> = {},
+): EncounterMoveIdentity => ({
+  resolutionId,
+  canonicalId,
+  specVersion: options.specVersion ?? 2,
+  actorPlacementId,
+  actionType: options.actionType ?? 'standard',
+  origin: options.origin ?? { kind: 'direct' },
+  moveListSource: options.moveListSource ?? { kind: 'placement', placementId: actorPlacementId },
+})
 
 const moveEvent = (
-  kind: Extract<EncounterEventKind, 'move-declared' | 'move-damaged' | 'move-ko' | 'move-completed'>,
+  kind: Extract<
+    EncounterEventKind,
+    'move-declared' | 'move-hit' | 'move-damaged' | 'move-ko' | 'move-completed'
+  >,
   eventId: string,
   moveIdentity: EncounterMoveIdentity,
   fields: Record<string, unknown>,
@@ -45,7 +60,12 @@ const moveEvent = (
 
 const historyEvents = (): readonly EncounterEvent[] => {
   const furyOne = move('resolution.fury.1', 'Fury Cutter', 'actor-token')
-  const child = move('resolution.child.1', 'Follow Up', 'helper-token')
+  const child = move('resolution.child.1', 'Follow Up', 'helper-token', {
+    specVersion: 3,
+    actionType: 'free',
+    origin: { kind: 'random', sourceResolutionId: 'resolution.fury.1' },
+    moveListSource: { kind: 'reviewed-pool', poolId: 'pool.follow-up' },
+  })
   const furyTwo = move('resolution.fury.2', 'Fury Cutter', 'actor-token')
   return parseEncounterEvents([
     { ...envelope('scene-start', 'event.scene.start'), sceneId: 'scene.history.1' },
@@ -117,6 +137,12 @@ const historyEvents = (): readonly EncounterEvent[] => {
         attackedTargetIds: ['target-token'],
         hitTargetIds: [],
         outcome: 'miss',
+        succeeded: false,
+        branches: [{
+          selectionId: 'follow-up.outcome',
+          recipientId: 'target-token',
+          branchId: 'follow-up.miss',
+        }],
       },
       'event.child.declared',
     ),
@@ -128,6 +154,12 @@ const historyEvents = (): readonly EncounterEvent[] => {
         attackedTargetIds: ['target-token'],
         hitTargetIds: ['target-token'],
         outcome: 'hit',
+        succeeded: true,
+        branches: [{
+          selectionId: 'fury.outcome',
+          recipientId: 'target-token',
+          branchId: 'fury.hit',
+        }],
       },
       'event.child.completed',
     ),
@@ -145,6 +177,12 @@ const historyEvents = (): readonly EncounterEvent[] => {
         attackedTargetIds: ['target-token'],
         hitTargetIds: [],
         outcome: 'miss',
+        succeeded: false,
+        branches: [{
+          selectionId: 'fury.outcome',
+          recipientId: 'target-token',
+          branchId: 'fury.miss',
+        }],
       },
       'event.fury.2.declared',
     ),
@@ -177,7 +215,50 @@ describe('bounded encounter move history', () => {
     })
     expect(queries.lastCompletedMove('actor-token')).toMatchObject({
       resolutionId: 'resolution.fury.2',
+      canonicalId: 'Fury Cutter',
+      specVersion: 2,
+      actionType: 'standard',
+      origin: { kind: 'direct' },
+      moveListSource: { kind: 'placement', placementId: 'actor-token' },
       outcome: 'miss',
+      succeeded: false,
+      branches: [{
+        selectionId: 'fury.outcome',
+        recipientId: 'target-token',
+        branchId: 'fury.miss',
+      }],
+    })
+    expect(queries.lastCompletedMove()).toMatchObject({
+      resolutionId: 'resolution.fury.2',
+    })
+    expect(queries.previousCompletedMove()).toMatchObject({
+      resolutionId: 'resolution.fury.1',
+    })
+    expect(queries.previousCompletedMove('actor-token')).toMatchObject({
+      resolutionId: 'resolution.fury.1',
+    })
+    expect(queries.previousDeclaredMove('actor-token')).toMatchObject({
+      resolutionId: 'resolution.fury.1',
+    })
+    expect(queries.completedMovesThisScene().map(entry => entry.resolutionId)).toEqual([
+      'resolution.child.1',
+      'resolution.fury.1',
+      'resolution.fury.2',
+    ])
+    expect(queries.declaredMovesThisScene().map(entry => entry.resolutionId)).toEqual([
+      'resolution.fury.1',
+      'resolution.child.1',
+      'resolution.fury.2',
+    ])
+    expect(queries.usedMoveThisScene('actor-token', 'Fury Cutter')).toBe(true)
+    expect(queries.usedMoveThisScene('actor-token', 'Follow Up')).toBe(false)
+    expect(queries.moveUse('resolution.child.1')).toMatchObject({
+      specVersion: 3,
+      actionType: 'free',
+      origin: { kind: 'random', sourceResolutionId: 'resolution.fury.1' },
+      moveListSource: { kind: 'reviewed-pool', poolId: 'pool.follow-up' },
+      declaration: { order: 2 },
+      completion: { order: 1, succeeded: false },
     })
     expect(queries.lastDamagingMoveReceived('target-token')).toMatchObject({
       resolutionId: 'resolution.fury.1',
@@ -229,6 +310,39 @@ describe('bounded encounter move history', () => {
     expect(history.knockouts).toHaveLength(1)
     expect(Object.isFrozen(result.state)).toBe(true)
     expect(Object.isFrozen(history.moveAncestry)).toBe(true)
+    expect(Object.isFrozen(history.moveUses)).toBe(true)
+    expect(Object.isFrozen(queries.completedMovesThisScene())).toBe(true)
+  })
+
+  it('rejects conflicting move identity and completion without declaration', () => {
+    const populated = reduceEncounterLifecycle(
+      createEmptyEncounterState(),
+      historyEvents(),
+    ).state
+    const changedIdentity = move('resolution.fury.2', 'Fury Cutter', 'actor-token', {
+      specVersion: 3,
+    })
+
+    expect(() => reduceEncounterLifecycle(populated, [moveEvent(
+      'move-hit',
+      'event.fury.2.conflicting-hit',
+      changedIdentity,
+      { targetPlacementId: 'target-token', hitIndex: 1 },
+    )])).toThrow('changed canonical identity, version, actor, action, origin, or move-list source')
+
+    const undeclared = move('resolution.undeclared.1', 'Scratch', 'actor-token')
+    expect(() => reduceEncounterLifecycle(createEmptyEncounterState(), [moveEvent(
+      'move-completed',
+      'event.undeclared.completed',
+      undeclared,
+      {
+        attackedTargetIds: [],
+        hitTargetIds: [],
+        outcome: 'no-target',
+        succeeded: true,
+        branches: [],
+      },
+    )])).toThrow('completed before it was declared')
   })
 
   it('resets turn and round windows at authoritative boundaries and scene indexes after handlers', () => {

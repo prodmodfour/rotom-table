@@ -42,6 +42,7 @@ export * from './encounterHistory'
 export * from './encounterResources'
 export * from './encounterZones'
 export * from './groundItems'
+export * from './moveHistoryMetadata'
 
 /**
  * Versioned map-owned state for authoritative encounter mechanics.
@@ -56,7 +57,8 @@ export * from './groundItems'
  * round/scene lifecycle, and MA-143A added immutable Magic Room, Gravity, and
  * side-owned Tailwind query projections, and MA-144 made exact Barrier and
  * Smokescreen geometry authoritative for sight, movement, damage, and Accuracy,
- * and MA-151 added bounded map-owned ground-item state.
+ * MA-151 added bounded map-owned ground-item state, and MA-158 added canonical
+ * scene move-use provenance and completion-order queries.
  * Legacy editor hazards and the field-effect renderer
  * arrays remain compatibility lanes until their migration tickets; server zone
  * queries and accepted field boundaries adapt/mirror them without applying a
@@ -94,7 +96,7 @@ export const ENCOUNTER_STATE_LIMITS = Object.freeze({
   sides: ENCOUNTER_SIDE_LIMITS.count,
   effects: ENCOUNTER_EFFECT_LIMITS.count,
   counters: 0,
-  history: ENCOUNTER_HISTORY_LIMITS.moveAncestryPerScene,
+  history: ENCOUNTER_HISTORY_LIMITS.moveUsesPerScene,
   turnResources: ENCOUNTER_RESOURCE_LIMITS.placementLedgers,
   zones: ENCOUNTER_ZONE_LIMITS.count,
   groundItems: MAP_GROUND_ITEM_LIMITS.count,

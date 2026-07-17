@@ -6,12 +6,20 @@ import {
   parseEncounterHistory,
 } from '#shared/moveAutomation/encounterHistory'
 
+const moveIdentity = () => ({
+  resolutionId: 'resolution.scratch.1',
+  canonicalId: 'Scratch',
+  specVersion: 2,
+  actorPlacementId: 'actor-token',
+  actionType: 'standard' as const,
+  origin: { kind: 'direct' as const },
+  moveListSource: { kind: 'placement' as const, placementId: 'actor-token' },
+})
+
 const declared = () => ({
   eventId: 'event.scratch.declared',
   sourceOperationId: 'op.scratch.1',
-  resolutionId: 'resolution.scratch.1',
-  canonicalId: 'Scratch',
-  actorPlacementId: 'actor-token',
+  ...moveIdentity(),
   targetPlacementIds: ['target-token'],
 })
 
@@ -27,6 +35,12 @@ const populatedHistory = () => ({
     attackedTargetIds: ['target-token'],
     hitTargetIds: ['target-token'],
     outcome: 'hit' as const,
+    succeeded: true,
+    branches: [{
+      selectionId: 'scratch.target-result',
+      recipientId: 'target-token',
+      branchId: 'scratch.hit',
+    }],
   }].map(({ targetPlacementIds: _ignored, ...entry }) => entry),
   lastDamagingMovesReceived: [{
     ...declared(),
@@ -86,6 +100,29 @@ const populatedHistory = () => ({
     parentResolutionId: 'resolution.scratch.1',
     childResolutionIds: [],
   }],
+  moveUses: [{
+    ...moveIdentity(),
+    declaration: {
+      eventId: 'event.scratch.declared',
+      sourceOperationId: 'op.scratch.1',
+      order: 1,
+      targetPlacementIds: ['target-token'],
+    },
+    completion: {
+      eventId: 'event.scratch.completed',
+      sourceOperationId: 'op.scratch.1',
+      order: 1,
+      attackedTargetIds: ['target-token'],
+      hitTargetIds: ['target-token'],
+      outcome: 'hit' as const,
+      succeeded: true,
+      branches: [{
+        selectionId: 'scratch.target-result',
+        recipientId: 'target-token',
+        branchId: 'scratch.hit',
+      }],
+    },
+  }],
   eventMoveLinks: [{
     eventId: 'event.scratch.declared',
     resolutionId: 'resolution.scratch.1',
@@ -113,6 +150,46 @@ describe('encounter history contract', () => {
     expect(parsed.lastDeclaredMoves[0]).not.toBe(source.lastDeclaredMoves[0])
     expect(parsed.moveAncestry[0]?.childResolutionIds)
       .not.toBe(source.moveAncestry[0]?.childResolutionIds)
+  })
+
+  it('normalizes legacy MA-063 indexes without inventing provenance and remains idempotent', () => {
+    const { moveUses: _moveUses, ...legacyEmpty } = createEmptyEncounterHistory()
+    const legacy = {
+      ...legacyEmpty,
+      lastDeclaredMoves: [{
+        eventId: 'event.legacy.declared',
+        sourceOperationId: 'op.legacy.1',
+        resolutionId: 'resolution.legacy.1',
+        canonicalId: 'Scratch',
+        actorPlacementId: 'actor-token',
+        targetPlacementIds: ['target-token'],
+      }],
+      lastCompletedMoves: [{
+        eventId: 'event.legacy.completed',
+        sourceOperationId: 'op.legacy.1',
+        resolutionId: 'resolution.legacy.1',
+        canonicalId: 'Scratch',
+        actorPlacementId: 'actor-token',
+        attackedTargetIds: ['target-token'],
+        hitTargetIds: [],
+        outcome: 'miss',
+      }],
+    }
+
+    const parsed = parseEncounterHistory(legacy)
+
+    expect(parsed.moveUses).toEqual([])
+    expect(parsed.lastDeclaredMoves[0]).toMatchObject({
+      specVersion: null,
+      actionType: null,
+      origin: null,
+      moveListSource: null,
+    })
+    expect(parsed.lastCompletedMoves[0]).toMatchObject({
+      succeeded: null,
+      branches: null,
+    })
+    expect(parseEncounterHistory(JSON.parse(JSON.stringify(parsed)))).toEqual(parsed)
   })
 
   it('rejects partial records, inconsistent windows, duplicates, and broken ancestry', () => {
@@ -148,6 +225,23 @@ describe('encounter history contract', () => {
         resolutionId: 'resolution.unknown',
       }],
     })).toThrow('references unknown resolution resolution.unknown')
+    expect(() => parseEncounterHistory({
+      ...populatedHistory(),
+      lastCompletedMoves: populatedHistory().lastCompletedMoves.map(entry => ({
+        ...entry,
+        specVersion: 3,
+      })),
+    })).toThrow('conflicts with a retained move index')
+    expect(() => parseEncounterHistory({
+      ...populatedHistory(),
+      moveUses: populatedHistory().moveUses.map(entry => ({
+        ...entry,
+        origin: {
+          kind: 'copied',
+          sourceResolutionId: 'resolution.source.1',
+        },
+      })),
+    })).toThrow('a copied move must name its source resolution')
   })
 
   it('enforces per-window and per-scene payload ceilings', () => {
@@ -174,5 +268,18 @@ describe('encounter history contract', () => {
       }],
       eventMoveLinks: [],
     })).toThrow('cannot be its own parent or child')
+
+    const use = populatedHistory().moveUses[0]!
+    expect(() => parseEncounterHistory({
+      ...populatedHistory(),
+      moveAncestry: [],
+      moveUses: Array.from(
+        { length: ENCOUNTER_HISTORY_LIMITS.moveUsesPerScene + 1 },
+        (_, index) => ({ ...use, resolutionId: `resolution.use.${index}` }),
+      ),
+      eventMoveLinks: [],
+    })).toThrow(
+      `moveUses: must contain at most ${ENCOUNTER_HISTORY_LIMITS.moveUsesPerScene} entries`,
+    )
   })
 })

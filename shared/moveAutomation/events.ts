@@ -7,6 +7,13 @@ import {
   isEncounterSideId,
   type EncounterSideId,
 } from './encounterState'
+import {
+  MoveHistoryMetadataValidationError,
+  parseMoveHistoryBranchSelections,
+  parseMoveHistoryIdentity,
+  type MoveHistoryBranchSelection,
+  type MoveHistoryIdentity,
+} from './moveHistoryMetadata'
 import type { MoveReactionTiming } from './reactions'
 
 /**
@@ -17,7 +24,7 @@ import type { MoveReactionTiming } from './reactions'
  * causal parent event. Exact per-kind schemas deliberately provide no generic
  * payload or state-patch escape hatch.
  */
-export const ENCOUNTER_EVENT_SCHEMA_VERSION = 1 as const
+export const ENCOUNTER_EVENT_SCHEMA_VERSION = 2 as const
 
 export const ENCOUNTER_EVENT_KINDS = [
   'scene-start',
@@ -142,11 +149,7 @@ export interface EncounterTurnEvent
   readonly sideId: EncounterSideId | null
 }
 
-export interface EncounterMoveIdentity {
-  readonly resolutionId: string
-  readonly canonicalId: string
-  readonly actorPlacementId: string
-}
+export type EncounterMoveIdentity = MoveHistoryIdentity
 
 export interface EncounterMoveDeclaredEvent
   extends EncounterEventEnvelope<'move-declared'> {
@@ -194,6 +197,10 @@ export interface EncounterMoveCompletedEvent
   readonly attackedTargetIds: readonly string[]
   readonly hitTargetIds: readonly string[]
   readonly outcome: EncounterEventMoveOutcome
+  /** Server-reviewed semantic success; no-target self moves may still succeed. */
+  readonly succeeded: boolean
+  /** Ordered server-selected branch IDs; never client-authored mechanics. */
+  readonly branches: readonly MoveHistoryBranchSelection[]
 }
 
 export interface EncounterEventCell {
@@ -379,6 +386,8 @@ const MOVE_COMPLETED_FIELDS = [
   'attackedTargetIds',
   'hitTargetIds',
   'outcome',
+  'succeeded',
+  'branches',
 ] as const
 const PLACEMENT_CELL_FIELDS = [
   ...COMMON_FIELDS,
@@ -421,7 +430,6 @@ const RESOURCE_FIELDS = [
   'amount',
 ] as const
 
-const MOVE_IDENTITY_FIELDS = ['resolutionId', 'canonicalId', 'actorPlacementId'] as const
 const DAMAGE_FIELDS = [
   'hitPointLoss',
   'temporaryHitPointLoss',
@@ -787,22 +795,42 @@ const parseCommon = <Kind extends EncounterEventKind>(
   }
 }
 
+const translateMoveHistoryMetadataError = (error: unknown): never => {
+  if (error instanceof MoveHistoryMetadataValidationError) {
+    fail(
+      error.code === 'limit-exceeded'
+        ? 'limit-exceeded'
+        : error.code === 'duplicate-id'
+          ? 'duplicate-id'
+          : 'invalid-encounter-event',
+      error.path,
+      error.detail,
+    )
+  }
+  throw error
+}
+
 const parseMoveIdentity = (
   value: unknown,
   path: string,
 ): EncounterMoveIdentity => {
-  const move = parseExactRecord(value, MOVE_IDENTITY_FIELDS, path)
-  return {
-    resolutionId: parseStableId(move.resolutionId, `${path}.resolutionId`),
-    canonicalId: parseBoundedText(
-      move.canonicalId,
-      `${path}.canonicalId`,
-      ENCOUNTER_EVENT_LIMITS.canonicalMoveChars,
-    ),
-    actorPlacementId: parsePlacementId(
-      move.actorPlacementId,
-      `${path}.actorPlacementId`,
-    ),
+  try {
+    return parseMoveHistoryIdentity(value, path)
+  }
+  catch (error) {
+    return translateMoveHistoryMetadataError(error)
+  }
+}
+
+const parseMoveBranches = (
+  value: unknown,
+  path: string,
+): readonly MoveHistoryBranchSelection[] => {
+  try {
+    return parseMoveHistoryBranchSelections(value, path)
+  }
+  catch (error) {
+    return translateMoveHistoryMetadataError(error)
   }
 }
 
@@ -1047,12 +1075,17 @@ const parseDetachedEvent = (value: unknown, path: string): EncounterEvent => {
         `must be ${expectedOutcome} for the attacked and hit target sets.`,
       )
     }
+    if (typeof record.succeeded !== 'boolean') {
+      fail('invalid-encounter-event', `${path}.succeeded`, 'must be a boolean.')
+    }
     return {
       ...parseCommon(record, kind, path),
       move: parseMoveIdentity(record.move, `${path}.move`),
       attackedTargetIds,
       hitTargetIds,
       outcome,
+      succeeded: record.succeeded as boolean,
+      branches: parseMoveBranches(record.branches, `${path}.branches`),
     }
   }
 

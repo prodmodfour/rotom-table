@@ -1,3 +1,16 @@
+import type { EncounterActionType } from './encounterResources'
+import {
+  MOVE_HISTORY_METADATA_LIMITS,
+  MoveHistoryMetadataValidationError,
+  moveHistoryIdentitiesEqual,
+  parseMoveHistoryBranchSelections,
+  parseMoveHistoryIdentity,
+  type MoveHistoryBranchSelection,
+  type MoveHistoryIdentity,
+  type MoveHistoryMoveListSource,
+  type MoveHistoryOrigin,
+} from './moveHistoryMetadata'
+
 /**
  * Bounded map-owned indexes derived only from authoritative encounter events.
  *
@@ -31,10 +44,12 @@ export const ENCOUNTER_HISTORY_LIMITS = Object.freeze({
   switchesPerScene: 512,
   knockoutsPerScene: 512,
   moveAncestryPerScene: 512,
+  moveUsesPerScene: 512,
   eventMoveLinksPerScene: 1_024,
   childMoves: 64,
-  identifierChars: 160,
-  canonicalMoveChars: 160,
+  branchSelections: MOVE_HISTORY_METADATA_LIMITS.branchSelections,
+  identifierChars: MOVE_HISTORY_METADATA_LIMITS.identifierChars,
+  canonicalMoveChars: MOVE_HISTORY_METADATA_LIMITS.canonicalMoveChars,
   round: 1_000_000,
   turn: 1_000_000,
   hitIndex: 100,
@@ -60,7 +75,13 @@ export interface EncounterHistoryMoveRecord {
   readonly sourceOperationId: string
   readonly resolutionId: string
   readonly canonicalId: string
+  /** Null only for a legacy MA-063 record whose provenance predates MA-158. */
+  readonly specVersion: number | null
   readonly actorPlacementId: string
+  /** Null only for a legacy MA-063 record. New authoritative events require it. */
+  readonly actionType: EncounterActionType | null
+  readonly origin: MoveHistoryOrigin | null
+  readonly moveListSource: MoveHistoryMoveListSource | null
 }
 
 export interface EncounterDeclaredMoveHistory extends EncounterHistoryMoveRecord {
@@ -71,6 +92,39 @@ export interface EncounterCompletedMoveHistory extends EncounterHistoryMoveRecor
   readonly attackedTargetIds: readonly string[]
   readonly hitTargetIds: readonly string[]
   readonly outcome: EncounterHistoryMoveOutcome
+  /** Null only when a legacy MA-063 row did not retain semantic success. */
+  readonly succeeded: boolean | null
+  /** Null only when a legacy MA-063 row did not retain branch evidence. */
+  readonly branches: readonly MoveHistoryBranchSelection[] | null
+}
+
+export interface EncounterMoveUseDeclaration {
+  readonly eventId: string
+  readonly sourceOperationId: string
+  /** One-based scene-local authoritative declaration order. */
+  readonly order: number
+  readonly targetPlacementIds: readonly string[]
+}
+
+export interface EncounterMoveUseCompletion {
+  readonly eventId: string
+  readonly sourceOperationId: string
+  /** One-based scene-local authoritative completion order. */
+  readonly order: number
+  readonly attackedTargetIds: readonly string[]
+  readonly hitTargetIds: readonly string[]
+  readonly outcome: EncounterHistoryMoveOutcome
+  readonly succeeded: boolean
+  readonly branches: readonly MoveHistoryBranchSelection[]
+}
+
+/**
+ * One scene-local move resolution. Independent declaration/completion order
+ * values preserve exact event order when a parent resumes after a child.
+ */
+export interface EncounterMoveUseHistory extends MoveHistoryIdentity {
+  readonly declaration: EncounterMoveUseDeclaration | null
+  readonly completion: EncounterMoveUseCompletion | null
 }
 
 export interface EncounterDamagingMoveHistory extends EncounterHistoryMoveRecord {
@@ -145,6 +199,7 @@ export interface EncounterHistory {
   readonly switches: readonly EncounterSwitchHistory[]
   readonly knockouts: readonly EncounterKnockoutHistory[]
   readonly moveAncestry: readonly EncounterMoveAncestryHistory[]
+  readonly moveUses: readonly EncounterMoveUseHistory[]
   readonly eventMoveLinks: readonly EncounterEventMoveLink[]
 }
 
@@ -173,7 +228,7 @@ export class EncounterHistoryValidationError extends Error {
 
 type UnknownRecord = Record<string, unknown>
 
-const HISTORY_FIELDS = [
+const LEGACY_HISTORY_FIELDS = [
   'sceneId',
   'currentRound',
   'currentTurn',
@@ -192,20 +247,46 @@ const HISTORY_FIELDS = [
   'moveAncestry',
   'eventMoveLinks',
 ] as const
+const HISTORY_FIELDS = [...LEGACY_HISTORY_FIELDS, 'moveUses'] as const
 const TURN_FIELDS = ['round', 'turn', 'placementId'] as const
-const MOVE_FIELDS = [
+const LEGACY_MOVE_FIELDS = [
   'eventId',
   'sourceOperationId',
   'resolutionId',
   'canonicalId',
   'actorPlacementId',
 ] as const
+const MOVE_METADATA_FIELDS = [
+  'specVersion',
+  'actionType',
+  'origin',
+  'moveListSource',
+] as const
+const MOVE_FIELDS = [...LEGACY_MOVE_FIELDS, ...MOVE_METADATA_FIELDS] as const
+const LEGACY_DECLARED_MOVE_FIELDS = [...LEGACY_MOVE_FIELDS, 'targetPlacementIds'] as const
 const DECLARED_MOVE_FIELDS = [...MOVE_FIELDS, 'targetPlacementIds'] as const
+const LEGACY_COMPLETED_MOVE_FIELDS = [
+  ...LEGACY_MOVE_FIELDS,
+  'attackedTargetIds',
+  'hitTargetIds',
+  'outcome',
+] as const
 const COMPLETED_MOVE_FIELDS = [
   ...MOVE_FIELDS,
   'attackedTargetIds',
   'hitTargetIds',
   'outcome',
+  'succeeded',
+  'branches',
+] as const
+const LEGACY_DAMAGING_MOVE_FIELDS = [
+  ...LEGACY_MOVE_FIELDS,
+  'targetPlacementId',
+  'hitIndex',
+  'hitPointLoss',
+  'temporaryHitPointLoss',
+  'damageClass',
+  'moveType',
 ] as const
 const DAMAGING_MOVE_FIELDS = [
   ...MOVE_FIELDS,
@@ -237,7 +318,39 @@ const SWITCH_FIELDS = [
   'recalledPlacementId',
   'sentOutPlacementId',
 ] as const
+const LEGACY_KNOCKOUT_FIELDS = [
+  ...LEGACY_MOVE_FIELDS,
+  'targetPlacementId',
+  'hitIndex',
+] as const
 const KNOCKOUT_FIELDS = [...MOVE_FIELDS, 'targetPlacementId', 'hitIndex'] as const
+const MOVE_USE_FIELDS = [
+  'resolutionId',
+  'canonicalId',
+  'specVersion',
+  'actorPlacementId',
+  'actionType',
+  'origin',
+  'moveListSource',
+  'declaration',
+  'completion',
+] as const
+const MOVE_USE_DECLARATION_FIELDS = [
+  'eventId',
+  'sourceOperationId',
+  'order',
+  'targetPlacementIds',
+] as const
+const MOVE_USE_COMPLETION_FIELDS = [
+  'eventId',
+  'sourceOperationId',
+  'order',
+  'attackedTargetIds',
+  'hitTargetIds',
+  'outcome',
+  'succeeded',
+  'branches',
+] as const
 const ANCESTRY_FIELDS = [
   'resolutionId',
   'parentResolutionId',
@@ -301,6 +414,44 @@ const parseExactRecord = (
   const record = parseRecord(value, path)
   assertExactFields(record, fields, path)
   return record
+}
+
+const hasExactFields = (
+  record: UnknownRecord,
+  fields: readonly string[],
+): boolean => {
+  const expected = new Set(fields)
+  return Object.keys(record).length === fields.length
+    && fields.every(field => Object.prototype.hasOwnProperty.call(record, field))
+    && Object.keys(record).every(field => expected.has(field))
+}
+
+const parseCurrentOrLegacyRecord = (
+  value: unknown,
+  currentFields: readonly string[],
+  legacyFields: readonly string[],
+  path: string,
+): { readonly record: UnknownRecord; readonly legacy: boolean } => {
+  const record = parseRecord(value, path)
+  if (hasExactFields(record, currentFields)) return { record, legacy: false }
+  if (hasExactFields(record, legacyFields)) return { record, legacy: true }
+  assertExactFields(record, currentFields, path)
+  return { record, legacy: false }
+}
+
+const translateMetadataError = (error: unknown): never => {
+  if (error instanceof MoveHistoryMetadataValidationError) {
+    fail(
+      error.code === 'limit-exceeded'
+        ? 'limit-exceeded'
+        : error.code === 'duplicate-id'
+          ? 'duplicate-id'
+          : 'invalid-encounter-history',
+      error.path,
+      error.detail,
+    )
+  }
+  throw error
 }
 
 const parseArray = (
@@ -397,6 +548,25 @@ const parseEnum = <Value extends string>(
   return value as Value
 }
 
+const parseBoolean = (value: unknown, path: string): boolean => {
+  if (typeof value !== 'boolean') {
+    return fail('invalid-encounter-history', path, 'must be a boolean.')
+  }
+  return value
+}
+
+const parseBranches = (
+  value: unknown,
+  path: string,
+): readonly MoveHistoryBranchSelection[] => {
+  try {
+    return parseMoveHistoryBranchSelections(value, path)
+  }
+  catch (error) {
+    return translateMetadataError(error)
+  }
+}
+
 const assertUnique = (
   values: readonly string[],
   path: string,
@@ -419,20 +589,58 @@ const parsePlacementIds = (
   return ids
 }
 
+const parseMoveIdentity = (
+  record: UnknownRecord,
+  path: string,
+): MoveHistoryIdentity => {
+  try {
+    return parseMoveHistoryIdentity({
+      resolutionId: record.resolutionId,
+      canonicalId: record.canonicalId,
+      specVersion: record.specVersion,
+      actorPlacementId: record.actorPlacementId,
+      actionType: record.actionType,
+      origin: record.origin,
+      moveListSource: record.moveListSource,
+    }, path)
+  }
+  catch (error) {
+    return translateMetadataError(error)
+  }
+}
+
+const hasLegacyMoveMetadata = (record: UnknownRecord, legacyShape: boolean): boolean => (
+  legacyShape || MOVE_METADATA_FIELDS.every(field => record[field] === null)
+)
+
 const parseMoveCommon = (
   record: UnknownRecord,
   path: string,
-): EncounterHistoryMoveRecord => ({
-  eventId: parseStableId(record.eventId, `${path}.eventId`),
-  sourceOperationId: parseStableId(record.sourceOperationId, `${path}.sourceOperationId`),
-  resolutionId: parseStableId(record.resolutionId, `${path}.resolutionId`),
-  canonicalId: parseBoundedText(
-    record.canonicalId,
-    `${path}.canonicalId`,
-    ENCOUNTER_HISTORY_LIMITS.canonicalMoveChars,
-  ),
-  actorPlacementId: parsePlacementId(record.actorPlacementId, `${path}.actorPlacementId`),
-})
+  legacy: boolean,
+): EncounterHistoryMoveRecord => {
+  const normalizedLegacy = hasLegacyMoveMetadata(record, legacy)
+  const legacyIdentity = {
+    resolutionId: parseStableId(record.resolutionId, `${path}.resolutionId`),
+    canonicalId: parseBoundedText(
+      record.canonicalId,
+      `${path}.canonicalId`,
+      ENCOUNTER_HISTORY_LIMITS.canonicalMoveChars,
+    ),
+    actorPlacementId: parsePlacementId(record.actorPlacementId, `${path}.actorPlacementId`),
+  }
+  const identity = normalizedLegacy ? null : parseMoveIdentity(record, path)
+  return {
+    eventId: parseStableId(record.eventId, `${path}.eventId`),
+    sourceOperationId: parseStableId(record.sourceOperationId, `${path}.sourceOperationId`),
+    resolutionId: identity?.resolutionId ?? legacyIdentity.resolutionId,
+    canonicalId: identity?.canonicalId ?? legacyIdentity.canonicalId,
+    specVersion: identity?.specVersion ?? null,
+    actorPlacementId: identity?.actorPlacementId ?? legacyIdentity.actorPlacementId,
+    actionType: identity?.actionType ?? null,
+    origin: identity?.origin ?? null,
+    moveListSource: identity?.moveListSource ?? null,
+  }
+}
 
 const expectedMoveOutcome = (
   attackedTargetIds: readonly string[],
@@ -448,9 +656,14 @@ const parseDeclaredMove = (
   value: unknown,
   path: string,
 ): EncounterDeclaredMoveHistory => {
-  const record = parseExactRecord(value, DECLARED_MOVE_FIELDS, path)
+  const { record, legacy } = parseCurrentOrLegacyRecord(
+    value,
+    DECLARED_MOVE_FIELDS,
+    LEGACY_DECLARED_MOVE_FIELDS,
+    path,
+  )
   return {
-    ...parseMoveCommon(record, path),
+    ...parseMoveCommon(record, path, legacy),
     targetPlacementIds: parsePlacementIds(
       record.targetPlacementIds,
       `${path}.targetPlacementIds`,
@@ -463,7 +676,12 @@ const parseCompletedMove = (
   value: unknown,
   path: string,
 ): EncounterCompletedMoveHistory => {
-  const record = parseExactRecord(value, COMPLETED_MOVE_FIELDS, path)
+  const { record, legacy } = parseCurrentOrLegacyRecord(
+    value,
+    COMPLETED_MOVE_FIELDS,
+    LEGACY_COMPLETED_MOVE_FIELDS,
+    path,
+  )
   const attackedTargetIds = parsePlacementIds(
     record.attackedTargetIds,
     `${path}.attackedTargetIds`,
@@ -494,10 +712,18 @@ const parseCompletedMove = (
     fail('invalid-encounter-history', `${path}.outcome`, `must be ${expected} for these targets.`)
   }
   return {
-    ...parseMoveCommon(record, path),
+    ...parseMoveCommon(record, path, legacy),
     attackedTargetIds,
     hitTargetIds,
     outcome,
+    // MA-063 did not retain semantic success or branch decisions. Keep them
+    // unknown rather than deriving mechanics from its coarser hit outcome.
+    succeeded: hasLegacyMoveMetadata(record, legacy)
+      ? null
+      : parseBoolean(record.succeeded, `${path}.succeeded`),
+    branches: hasLegacyMoveMetadata(record, legacy)
+      ? null
+      : parseBranches(record.branches, `${path}.branches`),
   }
 }
 
@@ -527,9 +753,14 @@ const parseDamagingMove = (
   value: unknown,
   path: string,
 ): EncounterDamagingMoveHistory => {
-  const record = parseExactRecord(value, DAMAGING_MOVE_FIELDS, path)
+  const { record, legacy } = parseCurrentOrLegacyRecord(
+    value,
+    DAMAGING_MOVE_FIELDS,
+    LEGACY_DAMAGING_MOVE_FIELDS,
+    path,
+  )
   return {
-    ...parseMoveCommon(record, path),
+    ...parseMoveCommon(record, path, legacy),
     targetPlacementId: parsePlacementId(record.targetPlacementId, `${path}.targetPlacementId`),
     hitIndex: parseInteger(
       record.hitIndex,
@@ -622,9 +853,14 @@ const parseSwitch = (value: unknown, path: string): EncounterSwitchHistory => {
 }
 
 const parseKnockout = (value: unknown, path: string): EncounterKnockoutHistory => {
-  const record = parseExactRecord(value, KNOCKOUT_FIELDS, path)
+  const { record, legacy } = parseCurrentOrLegacyRecord(
+    value,
+    KNOCKOUT_FIELDS,
+    LEGACY_KNOCKOUT_FIELDS,
+    path,
+  )
   return {
-    ...parseMoveCommon(record, path),
+    ...parseMoveCommon(record, path, legacy),
     targetPlacementId: parsePlacementId(record.targetPlacementId, `${path}.targetPlacementId`),
     hitIndex: parseNullableInteger(
       record.hitIndex,
@@ -633,6 +869,104 @@ const parseKnockout = (value: unknown, path: string): EncounterKnockoutHistory =
       ENCOUNTER_HISTORY_LIMITS.hitIndex,
     ),
   }
+}
+
+const parseMoveUse = (
+  value: unknown,
+  path: string,
+): EncounterMoveUseHistory => {
+  const record = parseExactRecord(value, MOVE_USE_FIELDS, path)
+  const identity = parseMoveIdentity(record, path)
+  const declaration = record.declaration === null
+    ? null
+    : (() => {
+        const declarationPath = `${path}.declaration`
+        const input = parseExactRecord(
+          record.declaration,
+          MOVE_USE_DECLARATION_FIELDS,
+          declarationPath,
+        )
+        return {
+          eventId: parseStableId(input.eventId, `${declarationPath}.eventId`),
+          sourceOperationId: parseStableId(
+            input.sourceOperationId,
+            `${declarationPath}.sourceOperationId`,
+          ),
+          order: parseInteger(
+            input.order,
+            `${declarationPath}.order`,
+            1,
+            ENCOUNTER_HISTORY_LIMITS.amount,
+          ),
+          targetPlacementIds: parsePlacementIds(
+            input.targetPlacementIds,
+            `${declarationPath}.targetPlacementIds`,
+            ENCOUNTER_HISTORY_LIMITS.targetPlacements,
+          ),
+        }
+      })()
+  const completion = record.completion === null
+    ? null
+    : (() => {
+        const completionPath = `${path}.completion`
+        const input = parseExactRecord(
+          record.completion,
+          MOVE_USE_COMPLETION_FIELDS,
+          completionPath,
+        )
+        const attackedTargetIds = parsePlacementIds(
+          input.attackedTargetIds,
+          `${completionPath}.attackedTargetIds`,
+          ENCOUNTER_HISTORY_LIMITS.targetPlacements,
+        )
+        const hitTargetIds = parsePlacementIds(
+          input.hitTargetIds,
+          `${completionPath}.hitTargetIds`,
+          ENCOUNTER_HISTORY_LIMITS.targetPlacements,
+        )
+        const attacked = new Set(attackedTargetIds)
+        const unknownHit = hitTargetIds.find(id => !attacked.has(id))
+        if (unknownHit !== undefined) {
+          fail(
+            'invalid-encounter-history',
+            `${completionPath}.hitTargetIds`,
+            `contains ${unknownHit}, which is not an attacked target.`,
+          )
+        }
+        const outcome = parseEnum<EncounterHistoryMoveOutcome>(
+          input.outcome,
+          MOVE_OUTCOME_SET,
+          `${completionPath}.outcome`,
+          'no-target, miss, hit, or mixed',
+        )
+        const expected = expectedMoveOutcome(attackedTargetIds, hitTargetIds)
+        if (outcome !== expected) {
+          fail(
+            'invalid-encounter-history',
+            `${completionPath}.outcome`,
+            `must be ${expected} for these targets.`,
+          )
+        }
+        return {
+          eventId: parseStableId(input.eventId, `${completionPath}.eventId`),
+          sourceOperationId: parseStableId(
+            input.sourceOperationId,
+            `${completionPath}.sourceOperationId`,
+          ),
+          order: parseInteger(
+            input.order,
+            `${completionPath}.order`,
+            1,
+            ENCOUNTER_HISTORY_LIMITS.amount,
+          ),
+          attackedTargetIds,
+          hitTargetIds,
+          outcome,
+          succeeded: parseBoolean(input.succeeded, `${completionPath}.succeeded`),
+          branches: parseBranches(input.branches, `${completionPath}.branches`),
+        }
+      })()
+  return { ...identity, declaration, completion }
 }
 
 const parseMoveAncestry = (
@@ -656,6 +990,41 @@ const parseMoveAncestry = (
   }
   return { resolutionId, parentResolutionId, childResolutionIds }
 }
+
+const completeIdentityFromRecord = (
+  record: EncounterHistoryMoveRecord,
+): MoveHistoryIdentity | null => {
+  if (
+    record.specVersion === null
+    || record.actionType === null
+    || record.origin === null
+    || record.moveListSource === null
+  ) return null
+  return {
+    resolutionId: record.resolutionId,
+    canonicalId: record.canonicalId,
+    specVersion: record.specVersion,
+    actorPlacementId: record.actorPlacementId,
+    actionType: record.actionType,
+    origin: record.origin,
+    moveListSource: record.moveListSource,
+  }
+}
+
+const sameStrings = (left: readonly string[], right: readonly string[]): boolean => (
+  left.length === right.length && left.every((value, index) => value === right[index])
+)
+
+const sameBranches = (
+  left: readonly MoveHistoryBranchSelection[],
+  right: readonly MoveHistoryBranchSelection[],
+): boolean => left.length === right.length && left.every((branch, index) => {
+  const candidate = right[index]
+  return candidate !== undefined
+    && candidate.selectionId === branch.selectionId
+    && candidate.recipientId === branch.recipientId
+    && candidate.branchId === branch.branchId
+})
 
 const parseEventMoveLink = (
   value: unknown,
@@ -686,6 +1055,7 @@ export const createEmptyEncounterHistory = (): EncounterHistory => ({
   switches: [],
   knockouts: [],
   moveAncestry: [],
+  moveUses: [],
   eventMoveLinks: [],
 })
 
@@ -701,7 +1071,8 @@ export const parseEncounterHistory = (
 ): EncounterHistory => {
   const history = parseRecord(value, path)
   if (Object.keys(history).length === 0) return createEmptyEncounterHistory()
-  assertExactFields(history, HISTORY_FIELDS, path)
+  const legacyShape = hasExactFields(history, LEGACY_HISTORY_FIELDS)
+  if (!legacyShape) assertExactFields(history, HISTORY_FIELDS, path)
 
   const currentRound = parseNullableInteger(
     history.currentRound,
@@ -805,6 +1176,13 @@ export const parseEncounterHistory = (
     `${path}.moveAncestry`,
     ENCOUNTER_HISTORY_LIMITS.moveAncestryPerScene,
   ).map((entry, index) => parseMoveAncestry(entry, `${path}.moveAncestry[${index}]`))
+  const moveUses = legacyShape
+    ? []
+    : parseArray(
+        history.moveUses,
+        `${path}.moveUses`,
+        ENCOUNTER_HISTORY_LIMITS.moveUsesPerScene,
+      ).map((entry, index) => parseMoveUse(entry, `${path}.moveUses[${index}]`))
   const eventMoveLinks = parseArray(
     history.eventMoveLinks,
     `${path}.eventMoveLinks`,
@@ -826,6 +1204,15 @@ export const parseEncounterHistory = (
   assertUnique(switches.map(entry => entry.eventId), `${path}.switches.eventId`)
   assertUnique(knockouts.map(entry => entry.eventId), `${path}.knockouts.eventId`)
   assertUnique(moveAncestry.map(entry => entry.resolutionId), `${path}.moveAncestry.resolutionId`)
+  assertUnique(moveUses.map(entry => entry.resolutionId), `${path}.moveUses.resolutionId`)
+  const declarationOrders = moveUses.flatMap(use => (
+    use.declaration ? [String(use.declaration.order)] : []
+  ))
+  const completionOrders = moveUses.flatMap(use => (
+    use.completion ? [String(use.completion.order)] : []
+  ))
+  assertUnique(declarationOrders, `${path}.moveUses.declaration.order`)
+  assertUnique(completionOrders, `${path}.moveUses.completion.order`)
   assertUnique(eventMoveLinks.map(entry => entry.eventId), `${path}.eventMoveLinks.eventId`)
 
   const ancestryById = new Map(moveAncestry.map(entry => [entry.resolutionId, entry]))
@@ -849,6 +1236,108 @@ export const parseEncounterHistory = (
           `parent ${parent.resolutionId} does not list child ${relation.resolutionId}.`,
         )
       }
+    }
+  }
+  const moveUseById = new Map(moveUses.map(entry => [entry.resolutionId, entry]))
+  for (const use of moveUses) {
+    if (!ancestryById.has(use.resolutionId)) {
+      fail(
+        'invalid-encounter-history',
+        `${path}.moveUses`,
+        `resolution ${use.resolutionId} has no ancestry record.`,
+      )
+    }
+    if (use.completion !== null && use.declaration === null) {
+      fail(
+        'invalid-encounter-history',
+        `${path}.moveUses`,
+        `resolution ${use.resolutionId} completed without a retained declaration.`,
+      )
+    }
+  }
+  const latestUseDeclarationByActor = new Map<string, EncounterMoveUseHistory>()
+  const latestUseCompletionByActor = new Map<string, EncounterMoveUseHistory>()
+  for (const use of [...moveUses].sort((left, right) => (
+    (left.declaration?.order ?? 0) - (right.declaration?.order ?? 0)
+  ))) {
+    if (use.declaration) latestUseDeclarationByActor.set(use.actorPlacementId, use)
+  }
+  for (const use of [...moveUses].sort((left, right) => (
+    (left.completion?.order ?? 0) - (right.completion?.order ?? 0)
+  ))) {
+    if (use.completion) latestUseCompletionByActor.set(use.actorPlacementId, use)
+  }
+  for (const [actorPlacementId, use] of latestUseDeclarationByActor) {
+    if (!lastDeclaredMoves.some(entry => (
+      entry.actorPlacementId === actorPlacementId && entry.resolutionId === use.resolutionId
+    ))) {
+      fail(
+        'invalid-encounter-history',
+        `${path}.lastDeclaredMoves`,
+        `actor ${actorPlacementId} does not index its latest scene declaration.`,
+      )
+    }
+  }
+  for (const [actorPlacementId, use] of latestUseCompletionByActor) {
+    if (!lastCompletedMoves.some(entry => (
+      entry.actorPlacementId === actorPlacementId && entry.resolutionId === use.resolutionId
+    ))) {
+      fail(
+        'invalid-encounter-history',
+        `${path}.lastCompletedMoves`,
+        `actor ${actorPlacementId} does not index its latest scene completion.`,
+      )
+    }
+  }
+  for (const entry of [
+    ...lastDeclaredMoves,
+    ...lastCompletedMoves,
+    ...lastDamagingMovesReceived,
+    ...knockouts,
+  ]) {
+    const use = moveUseById.get(entry.resolutionId)
+    const identity = completeIdentityFromRecord(entry)
+    if (use && (!identity || !moveHistoryIdentitiesEqual(identity, use))) {
+      fail(
+        'invalid-encounter-history',
+        `${path}.moveUses`,
+        `resolution ${entry.resolutionId} conflicts with a retained move index.`,
+      )
+    }
+  }
+  for (const entry of lastDeclaredMoves) {
+    const use = moveUseById.get(entry.resolutionId)
+    const declaration = use?.declaration
+    if (use && (!declaration || (
+      declaration.eventId !== entry.eventId
+      || declaration.sourceOperationId !== entry.sourceOperationId
+      || !sameStrings(declaration.targetPlacementIds, entry.targetPlacementIds)
+    ))) {
+      fail(
+        'invalid-encounter-history',
+        `${path}.lastDeclaredMoves`,
+        `resolution ${entry.resolutionId} conflicts with its scene move-use declaration.`,
+      )
+    }
+  }
+  for (const entry of lastCompletedMoves) {
+    const use = moveUseById.get(entry.resolutionId)
+    const completion = use?.completion
+    if (use && (!completion || (
+      completion.eventId !== entry.eventId
+      || completion.sourceOperationId !== entry.sourceOperationId
+      || completion.outcome !== entry.outcome
+      || completion.succeeded !== entry.succeeded
+      || !sameStrings(completion.attackedTargetIds, entry.attackedTargetIds)
+      || !sameStrings(completion.hitTargetIds, entry.hitTargetIds)
+      || entry.branches === null
+      || !sameBranches(completion.branches, entry.branches)
+    ))) {
+      fail(
+        'invalid-encounter-history',
+        `${path}.lastCompletedMoves`,
+        `resolution ${entry.resolutionId} conflicts with its scene move-use completion.`,
+      )
     }
   }
   for (const link of eventMoveLinks) {
@@ -878,6 +1367,7 @@ export const parseEncounterHistory = (
     switches,
     knockouts,
     moveAncestry,
+    moveUses,
     eventMoveLinks,
   }
 }

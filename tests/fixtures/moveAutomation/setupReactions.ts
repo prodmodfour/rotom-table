@@ -179,7 +179,14 @@ export const setupDamageEvent = (input: {
   move: {
     resolutionId: input.resolutionId,
     canonicalId: input.canonicalMoveId,
+    specVersion: 2,
     actorPlacementId: input.sourcePlacementId ?? 'attacker',
+    actionType: 'standard',
+    origin: { kind: 'direct' },
+    moveListSource: {
+      kind: 'placement',
+      placementId: input.sourcePlacementId ?? 'attacker',
+    },
   },
   targetPlacementId: input.targetPlacementId ?? 'setup-user',
   hitIndex: 1,
@@ -207,7 +214,14 @@ export const setupHitEvent = (input: {
   move: {
     resolutionId: input.resolutionId,
     canonicalId: input.canonicalMoveId,
+    specVersion: 2,
     actorPlacementId: input.sourcePlacementId ?? 'attacker',
+    actionType: 'standard',
+    origin: { kind: 'direct' },
+    moveListSource: {
+      kind: 'placement',
+      placementId: input.sourcePlacementId ?? 'attacker',
+    },
   },
   targetPlacementId: input.targetPlacementId ?? 'setup-user',
   hitIndex: 1,

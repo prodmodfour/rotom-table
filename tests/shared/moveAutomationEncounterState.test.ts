@@ -67,14 +67,14 @@ describe('move automation encounter state', () => {
       sides: 32,
       effects: ENCOUNTER_EFFECT_LIMITS.count,
       counters: 0,
-      history: ENCOUNTER_HISTORY_LIMITS.moveAncestryPerScene,
+      history: ENCOUNTER_HISTORY_LIMITS.moveUsesPerScene,
       turnResources: ENCOUNTER_RESOURCE_LIMITS.placementLedgers,
       zones: ENCOUNTER_ZONE_LIMITS.count,
       groundItems: MAP_GROUND_ITEM_LIMITS.count,
       pendingResolutionSummaries: 64,
     })
     expect(JSON.stringify(state)).toBe(
-      '{"schemaVersion":1,"sides":{},"effects":[],"counters":{},"history":{"sceneId":null,"currentRound":null,"currentTurn":null,"lastDeclaredMoves":[],"lastCompletedMoves":[],"lastDamagingMovesReceived":[],"damageBySourceThisTurn":[],"damageBySourceThisRound":[],"actedThisTurnPlacementIds":[],"actedThisRoundPlacementIds":[],"consecutiveMoves":[],"switchedPlacementIds":[],"faintedPlacementIds":[],"switches":[],"knockouts":[],"moveAncestry":[],"eventMoveLinks":[]},"turnResources":{},"zones":[],"groundItems":[],"pendingResolutionSummaries":[]}',
+      '{"schemaVersion":1,"sides":{},"effects":[],"counters":{},"history":{"sceneId":null,"currentRound":null,"currentTurn":null,"lastDeclaredMoves":[],"lastCompletedMoves":[],"lastDamagingMovesReceived":[],"damageBySourceThisTurn":[],"damageBySourceThisRound":[],"actedThisTurnPlacementIds":[],"actedThisRoundPlacementIds":[],"consecutiveMoves":[],"switchedPlacementIds":[],"faintedPlacementIds":[],"switches":[],"knockouts":[],"moveAncestry":[],"moveUses":[],"eventMoveLinks":[]},"turnResources":{},"zones":[],"groundItems":[],"pendingResolutionSummaries":[]}',
     )
     expect(parseEncounterState({ ...canonicalEncounterState(), history: {} }).history)
       .toEqual(createEmptyEncounterHistory())

@@ -26,7 +26,11 @@ const common = (
 const moveIdentity = (): Record<string, unknown> => ({
   resolutionId: 'resolution.move.1',
   canonicalId: 'Nature’s Madness',
+  specVersion: 2,
   actorPlacementId: 'actor-token',
+  actionType: 'standard',
+  origin: { kind: 'direct' },
+  moveListSource: { kind: 'placement', placementId: 'actor-token' },
 })
 
 const movementIdentity = (): Record<string, unknown> => ({
@@ -101,6 +105,12 @@ const validEvents = (): Record<string, unknown>[] => [
     attackedTargetIds: ['target-token'],
     hitTargetIds: ['target-token'],
     outcome: 'hit',
+    succeeded: true,
+    branches: [{
+      selectionId: 'nature-madness.outcome',
+      recipientId: 'target-token',
+      branchId: 'nature-madness.hit',
+    }],
   },
   {
     ...common('placement-entering'),
@@ -266,7 +276,10 @@ describe('authoritative encounter events', () => {
     expect(() => parseEncounterEvents([event, structuredClone(event)]))
       .toThrow('encounterEvents[1].eventId: duplicates event.round-start')
     expectEventError({ ...event, kind: 'arbitrary-script' }, 'unknown-event-kind', 'encounterEvent.kind')
-    expectEventError({ ...event, schemaVersion: 2 }, 'unsupported-schema-version', 'encounterEvent.schemaVersion')
+    expectEventError({
+      ...event,
+      schemaVersion: ENCOUNTER_EVENT_SCHEMA_VERSION + 1,
+    }, 'unsupported-schema-version', 'encounterEvent.schemaVersion')
   })
 
   it('provides no generic payload or arbitrary state-patch escape hatch', () => {
@@ -305,6 +318,25 @@ describe('authoritative encounter events', () => {
       hitTargetIds: ['target-a'],
       outcome: 'mixed',
     })).toMatchObject({ outcome: 'mixed' })
+    expect(parseEncounterEvent({
+      ...completed,
+      move: {
+        ...(completed.move as object),
+        origin: { kind: 'copied', sourceResolutionId: 'resolution.source.1' },
+        moveListSource: {
+          kind: 'history',
+          placementId: 'source-token',
+          resolutionId: 'resolution.source.1',
+        },
+      },
+    })).toMatchObject({
+      move: {
+        specVersion: 2,
+        actionType: 'standard',
+        origin: { kind: 'copied', sourceResolutionId: 'resolution.source.1' },
+      },
+      succeeded: true,
+    })
 
     expectEventError({
       ...completed,
@@ -323,6 +355,31 @@ describe('authoritative encounter events', () => {
       hitTargetIds: [],
       outcome: 'miss',
     }, 'duplicate-id', 'encounterEvent.attackedTargetIds')
+    expectEventError({
+      ...completed,
+      succeeded: 'client-decides',
+    }, 'invalid-encounter-event', 'encounterEvent.succeeded')
+    expectEventError({
+      ...completed,
+      branches: [
+        ...(completed.branches as unknown[]),
+        ...(completed.branches as unknown[]),
+      ],
+    }, 'duplicate-id', 'encounterEvent.branches[1]')
+    expectEventError({
+      ...completed,
+      move: {
+        ...(completed.move as object),
+        actionType: 'browser-action',
+      },
+    }, 'invalid-encounter-event', 'encounterEvent.move.actionType')
+    expectEventError({
+      ...completed,
+      move: {
+        ...(completed.move as object),
+        origin: { kind: 'copied', sourceResolutionId: 'resolution.source.1' },
+      },
+    }, 'invalid-encounter-event', 'encounterEvent.move.moveListSource')
 
     const damaged = eventOfKind('move-damaged')
     expectEventError({

@@ -71,7 +71,14 @@ export const counterDamageEvent = (input: {
   move: {
     resolutionId: input.resolutionId,
     canonicalId: input.canonicalMoveId,
+    specVersion: 2,
     actorPlacementId: input.sourcePlacementId ?? 'attacker',
+    actionType: 'standard',
+    origin: { kind: 'direct' },
+    moveListSource: {
+      kind: 'placement',
+      placementId: input.sourcePlacementId ?? 'attacker',
+    },
   },
   targetPlacementId: input.targetPlacementId ?? 'reactor',
   hitIndex: input.hitIndex ?? 1,

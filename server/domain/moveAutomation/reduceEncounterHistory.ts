@@ -11,8 +11,10 @@ import {
   type EncounterHistory,
   type EncounterKnockoutHistory,
   type EncounterMoveAncestryHistory,
+  type EncounterMoveUseHistory,
   type EncounterSwitchHistory,
 } from '#shared/moveAutomation/encounterHistory'
+import { moveHistoryIdentitiesEqual } from '#shared/moveAutomation/moveHistoryMetadata'
 import type {
   EncounterEvent,
   EncounterMoveIdentity,
@@ -24,6 +26,8 @@ export type EncounterHistoryReductionErrorCode =
   | 'history-amount-overflow'
   | 'conflicting-event-link'
   | 'conflicting-move-ancestry'
+  | 'conflicting-move-identity'
+  | 'conflicting-move-lifecycle'
 
 export class EncounterHistoryReductionError extends Error {
   readonly code: EncounterHistoryReductionErrorCode
@@ -125,18 +129,16 @@ const moveRecord = (
       | 'move-ko'
       | 'move-completed'
   }>,
-): {
-  readonly eventId: string
-  readonly sourceOperationId: string
-  readonly resolutionId: string
-  readonly canonicalId: string
-  readonly actorPlacementId: string
-} => ({
+): Omit<EncounterDeclaredMoveHistory, 'targetPlacementIds'> => ({
   eventId: event.eventId,
   sourceOperationId: event.sourceOperationId,
   resolutionId: event.move.resolutionId,
   canonicalId: event.move.canonicalId,
+  specVersion: event.move.specVersion,
   actorPlacementId: event.move.actorPlacementId,
+  actionType: event.move.actionType,
+  origin: event.move.origin,
+  moveListSource: event.move.moveListSource,
 })
 
 const findResolutionForEvent = (
@@ -174,6 +176,74 @@ interface RecordedMoveEvent {
   readonly duplicate: boolean
 }
 
+const moveUseFor = (
+  history: EncounterHistory,
+  resolutionId: string,
+): EncounterMoveUseHistory | null => history.moveUses.find(
+  use => use.resolutionId === resolutionId,
+) ?? null
+
+const assertMoveIdentity = (
+  use: EncounterMoveUseHistory,
+  move: EncounterMoveIdentity,
+): void => {
+  if (moveHistoryIdentitiesEqual(use, move)) return
+  fail(
+    'conflicting-move-identity',
+    `Move resolution ${move.resolutionId} changed canonical identity, version, actor, action, origin, or move-list source.`,
+  )
+}
+
+const recordMoveUseIdentity = (
+  history: EncounterHistory,
+  move: EncounterMoveIdentity,
+): EncounterHistory => {
+  const existing = moveUseFor(history, move.resolutionId)
+  if (existing) {
+    assertMoveIdentity(existing, move)
+    return history
+  }
+  const use: EncounterMoveUseHistory = {
+    ...move,
+    declaration: null,
+    completion: null,
+  }
+  return {
+    ...history,
+    moveUses: appendBounded(
+      history.moveUses,
+      use,
+      ENCOUNTER_HISTORY_LIMITS.moveUsesPerScene,
+      'Scene move-use index',
+    ),
+  }
+}
+
+const replaceMoveUse = (
+  history: EncounterHistory,
+  use: EncounterMoveUseHistory,
+): EncounterHistory => ({
+  ...history,
+  moveUses: upsertBy(
+    history.moveUses,
+    use,
+    candidate => candidate.resolutionId === use.resolutionId,
+    ENCOUNTER_HISTORY_LIMITS.moveUsesPerScene,
+    'Scene move-use index',
+  ),
+})
+
+const nextMoveUseOrder = (
+  history: EncounterHistory,
+  phase: 'declaration' | 'completion',
+): number => safeAddDamage(
+  history.moveUses.reduce((maximum, use) => (
+    Math.max(maximum, use[phase]?.order ?? 0)
+  ), 0),
+  1,
+  `Scene move ${phase} order`,
+)
+
 /** Persist enough event identity to recover parent/child move resolution IDs. */
 const recordMoveEvent = (
   history: EncounterHistory,
@@ -194,18 +264,21 @@ const recordMoveEvent = (
         `Encounter event ${event.eventId} is already linked to resolution ${existingLink.resolutionId}.`,
       )
     }
+    const existingUse = moveUseFor(history, event.move.resolutionId)
+    if (existingUse) assertMoveIdentity(existingUse, event.move)
     return { history, duplicate: true }
   }
 
-  const existingRelation = history.moveAncestry.find(
+  const withIdentity = recordMoveUseIdentity(history, event.move)
+  const existingRelation = withIdentity.moveAncestry.find(
     relation => relation.resolutionId === event.move.resolutionId,
   )
-  const causalResolutionId = findResolutionForEvent(history, event.causalParentEventId)
+  const causalResolutionId = findResolutionForEvent(withIdentity, event.causalParentEventId)
   const parentResolutionId = causalResolutionId === event.move.resolutionId
     ? null
     : causalResolutionId
-  let ancestry = history.moveAncestry
-  let relation = existingRelation ?? relationForMove(history, event.move)
+  let ancestry = withIdentity.moveAncestry
+  let relation = existingRelation ?? relationForMove(withIdentity, event.move)
 
   // Only the first retained event establishes move ancestry. A parent move may
   // resume after its child's completion, so a later causal edge back from that
@@ -237,12 +310,12 @@ const recordMoveEvent = (
   return {
     duplicate: false,
     history: {
-      ...history,
+      ...withIdentity,
       moveAncestry: ancestry,
       // Event links are a lookup cache. Ancestry itself remains scene-bounded;
       // old event anchors may be pruned without deleting parent/child IDs.
       eventMoveLinks: appendRecent(
-        history.eventMoveLinks,
+        withIdentity.eventMoveLinks,
         link,
         ENCOUNTER_HISTORY_LIMITS.eventMoveLinksPerScene,
       ),
@@ -367,14 +440,34 @@ const recordDeclaredMove = (
   history: EncounterHistory,
   event: Extract<EncounterEvent, { readonly kind: 'move-declared' }>,
 ): EncounterHistory => {
+  const use = moveUseFor(history, event.move.resolutionId)
+    ?? fail(
+      'conflicting-move-lifecycle',
+      `Move resolution ${event.move.resolutionId} has no retained move-use identity.`,
+    )
+  if (use.declaration !== null) {
+    fail(
+      'conflicting-move-lifecycle',
+      `Move resolution ${event.move.resolutionId} was declared more than once.`,
+    )
+  }
+  const withUse = replaceMoveUse(history, {
+    ...use,
+    declaration: {
+      eventId: event.eventId,
+      sourceOperationId: event.sourceOperationId,
+      order: nextMoveUseOrder(history, 'declaration'),
+      targetPlacementIds: [...event.targetPlacementIds],
+    },
+  })
   const entry: EncounterDeclaredMoveHistory = {
     ...moveRecord(event),
     targetPlacementIds: [...event.targetPlacementIds],
   }
   const withDeclaration: EncounterHistory = {
-    ...history,
+    ...withUse,
     lastDeclaredMoves: upsertBy(
-      history.lastDeclaredMoves,
+      withUse.lastDeclaredMoves,
       entry,
       candidate => candidate.actorPlacementId === event.move.actorPlacementId,
       ENCOUNTER_HISTORY_LIMITS.placementIndexes,
@@ -388,16 +481,48 @@ const recordCompletedMove = (
   history: EncounterHistory,
   event: Extract<EncounterEvent, { readonly kind: 'move-completed' }>,
 ): EncounterHistory => {
+  const use = moveUseFor(history, event.move.resolutionId)
+    ?? fail(
+      'conflicting-move-lifecycle',
+      `Move resolution ${event.move.resolutionId} has no retained move-use identity.`,
+    )
+  if (use.completion !== null) {
+    fail(
+      'conflicting-move-lifecycle',
+      `Move resolution ${event.move.resolutionId} completed more than once.`,
+    )
+  }
+  if (use.declaration === null) {
+    fail(
+      'conflicting-move-lifecycle',
+      `Move resolution ${event.move.resolutionId} completed before it was declared.`,
+    )
+  }
+  const withUse = replaceMoveUse(history, {
+    ...use,
+    completion: {
+      eventId: event.eventId,
+      sourceOperationId: event.sourceOperationId,
+      order: nextMoveUseOrder(history, 'completion'),
+      attackedTargetIds: [...event.attackedTargetIds],
+      hitTargetIds: [...event.hitTargetIds],
+      outcome: event.outcome,
+      succeeded: event.succeeded,
+      branches: event.branches.map(branch => ({ ...branch })),
+    },
+  })
   const entry: EncounterCompletedMoveHistory = {
     ...moveRecord(event),
     attackedTargetIds: [...event.attackedTargetIds],
     hitTargetIds: [...event.hitTargetIds],
     outcome: event.outcome,
+    succeeded: event.succeeded,
+    branches: event.branches.map(branch => ({ ...branch })),
   }
   const withCompletion: EncounterHistory = {
-    ...history,
+    ...withUse,
     lastCompletedMoves: upsertBy(
-      history.lastCompletedMoves,
+      withUse.lastCompletedMoves,
       entry,
       candidate => candidate.actorPlacementId === event.move.actorPlacementId,
       ENCOUNTER_HISTORY_LIMITS.placementIndexes,

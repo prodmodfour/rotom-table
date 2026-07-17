@@ -177,7 +177,11 @@ const interruptHitEvent = (
   move: {
     resolutionId: 'resolution.setup.interrupt',
     canonicalId,
+    specVersion: 2,
     actorPlacementId: 'other-token',
+    actionType: 'interrupt',
+    origin: { kind: 'direct' },
+    moveListSource: { kind: 'placement', placementId: 'other-token' },
   },
   targetPlacementId,
   hitIndex: 1,
@@ -193,7 +197,11 @@ const koEvent = (targetPlacementId: string) => parseEncounterEvent({
   move: {
     resolutionId: 'resolution.setup.ko',
     canonicalId: 'Scratch',
+    specVersion: 2,
     actorPlacementId: 'other-token',
+    actionType: 'standard',
+    origin: { kind: 'direct' },
+    moveListSource: { kind: 'placement', placementId: 'other-token' },
   },
   targetPlacementId,
   hitIndex: 1,

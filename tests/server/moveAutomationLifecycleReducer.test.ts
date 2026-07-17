@@ -76,30 +76,43 @@ const turnEvent = (
   sideId: null,
 })
 
+const lifecycleMoveIdentity = () => ({
+  resolutionId: 'resolution.lifecycle.test',
+  canonicalId: 'Lifecycle Test',
+  specVersion: 2,
+  actorPlacementId: 'actor-token',
+  actionType: 'standard' as const,
+  origin: { kind: 'direct' as const },
+  moveListSource: { kind: 'placement' as const, placementId: 'actor-token' },
+})
+
 const moveHitEvent = (
   eventId: string,
   parent: string | null = null,
 ): EncounterEvent => parseEncounterEvent({
   ...eventEnvelope('move-hit', eventId, parent),
-  move: {
-    resolutionId: 'resolution.lifecycle.test',
-    canonicalId: 'Lifecycle Test',
-    actorPlacementId: 'actor-token',
-  },
+  move: lifecycleMoveIdentity(),
   targetPlacementId: 'target-token',
   hitIndex: 1,
 })
 
-const moveCompletedEvent = (eventId: string): EncounterEvent => parseEncounterEvent({
-  ...eventEnvelope('move-completed', eventId),
-  move: {
-    resolutionId: 'resolution.lifecycle.test',
-    canonicalId: 'Lifecycle Test',
-    actorPlacementId: 'actor-token',
-  },
+const moveDeclaredEvent = (eventId: string): EncounterEvent => parseEncounterEvent({
+  ...eventEnvelope('move-declared', eventId),
+  move: lifecycleMoveIdentity(),
+  targetPlacementIds: ['target-token'],
+})
+
+const moveCompletedEvent = (
+  eventId: string,
+  parent: string,
+): EncounterEvent => parseEncounterEvent({
+  ...eventEnvelope('move-completed', eventId, parent),
+  move: lifecycleMoveIdentity(),
   attackedTargetIds: ['target-token'],
   hitTargetIds: ['target-token'],
   outcome: 'hit',
+  succeeded: true,
+  branches: [],
 })
 
 const logOperation = (
@@ -377,11 +390,16 @@ describe('pure encounter lifecycle reducer', () => {
 
     const result = reduceEncounterLifecycle(
       stateWithEffects([]),
-      [moveCompletedEvent('event.root'), roundEvent('round-end', 'event.second-root')],
+      [
+        moveDeclaredEvent('event.root.declared'),
+        moveCompletedEvent('event.root', 'event.root.declared'),
+        roundEvent('round-end', 'event.second-root'),
+      ],
       [handler],
     )
 
     expect(result.processedEvents.map(event => event.eventId)).toEqual([
+      'event.root.declared',
       'event.root',
       'event.child.add',
       'event.grandchild.remove',
@@ -403,8 +421,8 @@ describe('pure encounter lifecycle reducer', () => {
     }])
     expect(result.changed).toBe(true)
     expect(result.counters).toMatchObject({
-      initialEventCount: 2,
-      processedEventCount: 4,
+      initialEventCount: 3,
+      processedEventCount: 5,
       emittedEventCount: 2,
       triggerCount: 2,
       maximumDepth: 2,
