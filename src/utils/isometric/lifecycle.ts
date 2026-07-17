@@ -110,6 +110,7 @@ export interface IsometricRendererResourceDisposalOptions<TRenderObject> {
   disposeBuildGhost: CleanupFn
   disposeHazardGhost: CleanupFn
   hazardRenderer: DisposableResourceLike
+  groundItemRenderer: DisposableResourceLike
   fieldEffectRenderer: DisposableResourceLike
   voxelRenderer: DisposableResourceLike
   moveVfxRenderer: DisposableResourceLike
@@ -127,6 +128,7 @@ export const disposeIsometricRendererResources = <TRenderObject>({
   disposeBuildGhost,
   disposeHazardGhost,
   hazardRenderer,
+  groundItemRenderer,
   fieldEffectRenderer,
   voxelRenderer,
   moveVfxRenderer,
@@ -142,6 +144,7 @@ export const disposeIsometricRendererResources = <TRenderObject>({
   disposeBuildGhost()
   disposeHazardGhost()
   hazardRenderer.dispose()
+  groundItemRenderer.dispose()
   fieldEffectRenderer.dispose()
   voxelRenderer.dispose()
   moveVfxRenderer.dispose()

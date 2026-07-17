@@ -103,6 +103,38 @@ describe('load map use case', () => {
     })
   })
 
+  it('round-trips map-ground items through SQLite reloads', () => {
+    const database = db()
+    const maps = createSqliteMapRepository(database)
+    const groundItem = {
+      id: 'ground-item-iron-ball-1',
+      canonicalItemId: 'iron-ball',
+      canonicalItemName: 'Iron Ball',
+      quantity: 2,
+      position: { x: 3, y: 0, z: 4 },
+      sourceResource: {
+        kind: 'group-inventory' as const,
+        slug: 'main',
+        revision: 8,
+      },
+      sourceOperationId: 'op_drop_item_0001' as const,
+      sideId: null,
+      ownerPlacementId: 'former-owner',
+    }
+    maps.saveSetupMap(mapDoc({
+      encounterState: {
+        ...createEmptyEncounterState(),
+        groundItems: [groundItem],
+      },
+    }))
+
+    const loaded = loadMapUseCase({ role: 'gm', slug: 'arena' }, { mapRepository: maps })
+
+    expect(loaded.map.encounterState?.groundItems).toEqual([groundItem])
+    expect(loaded.map.encounterState?.groundItems[0]).not.toBe(groundItem)
+    expect(JSON.parse(JSON.stringify(loaded.map)).encounterState.groundItems).toEqual([groundItem])
+  })
+
   it('rejects unsupported encounter state loaded from SQLite', () => {
     const database = db()
     const maps = createSqliteMapRepository(database)

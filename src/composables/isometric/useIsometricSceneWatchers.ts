@@ -24,6 +24,10 @@ const HAZARD_RENDER_REASONS: readonly RenderInvalidationReason[] = [
   'hazard-preview',
 ]
 
+const GROUND_ITEM_RENDER_REASONS: readonly RenderInvalidationReason[] = [
+  'scene-state',
+]
+
 const FIELD_EFFECT_RENDER_REASONS: readonly RenderInvalidationReason[] = [
   'field-effect',
   'weather',
@@ -73,6 +77,7 @@ export interface IsometricSceneWatcherActions {
   syncVoxelMeshes: () => void
   replayHazardPreview: () => void
   syncHazardMeshes: () => void
+  syncGroundItemMeshes?: () => void
   syncFieldEffectMeshes: () => void
   selectPokemon: (id: string | null) => void
   refreshPokemonStyles: () => void
@@ -99,6 +104,7 @@ export interface IsometricSceneWatcherSources {
   pokemons: WatchSource<unknown>
   terrainVoxelRevision: WatchSource<unknown>
   hazardRevision: WatchSource<unknown>
+  groundItemRevision?: WatchSource<unknown>
   fieldEffectsRevision: WatchSource<unknown>
   selectedId: () => string | null | undefined
   selectedPokemon: () => unknown | null | undefined
@@ -164,6 +170,18 @@ export const useIsometricSceneWatchers = ({ sources, actions }: IsometricSceneWa
       actions.requestRender(HAZARD_RENDER_REASONS)
     },
   )
+
+  if (sources.groundItemRevision && actions.syncGroundItemMeshes) {
+    const syncGroundItemMeshes = actions.syncGroundItemMeshes
+    watch(
+      sources.groundItemRevision,
+      () => {
+        if (!sources.isRendererReady()) return
+        syncGroundItemMeshes()
+        actions.requestRender(GROUND_ITEM_RENDER_REASONS)
+      },
+    )
+  }
 
   watch(
     sources.fieldEffectsRevision,

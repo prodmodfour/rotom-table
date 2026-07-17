@@ -125,6 +125,7 @@ const createMap = (overrides: Partial<TabletopMapV2> = {}): TabletopMapV2 => ({
     history: createEmptyEncounterHistory(),
     turnResources: {},
     zones: [],
+    groundItems: [],
     pendingResolutionSummaries: [],
   },
   metadata: {},

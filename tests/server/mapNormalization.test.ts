@@ -6,6 +6,23 @@ import {
   normalizeMapGroundLevelY,
 } from '../../server/utils/mapNormalization'
 
+const mapGroundItem = (position = { x: 2, y: 0, z: 3 }) => ({
+  id: 'ground-item-iron-ball-1',
+  canonicalItemId: 'iron-ball',
+  canonicalItemName: 'Iron Ball',
+  quantity: 2,
+  position,
+  sourceResource: {
+    kind: 'sheet' as const,
+    sheetKind: 'pokemon' as const,
+    slug: 'partner-pikachu',
+    revision: 7,
+  },
+  sourceOperationId: 'op_drop_item_0001',
+  sideId: 'heroes',
+  ownerPlacementId: 'former-token-hint',
+})
+
 const battlefieldZone = (cell = { x: 2, y: 0, z: 2 }) => ({
   id: 'zone.smoke.1',
   kind: 'smoke',
@@ -192,6 +209,42 @@ describe('map document normalization', () => {
     expect(normalized.encounterState?.effects).not.toBe(encounterState.effects)
     expect(normalized.encounterState?.effects[0]?.payload).not.toBe(encounterState.effects[0]?.payload)
     expect(normalized.encounterState?.counters).not.toBe(encounterState.counters)
+  })
+
+  it('normalizes bounded map-ground items and rejects positions outside map dimensions', () => {
+    const encounterState = {
+      ...createEmptyEncounterState(),
+      sides: { heroes: { id: 'heroes', label: 'Heroes', status: 'active' as const } },
+      groundItems: [mapGroundItem()],
+    }
+    const normalized = normalizeMapDocument({
+      ...validMap(),
+      encounterState,
+    }, { sourceLabel: 'ground-item-map.json' })
+
+    expect(normalized.encounterState?.groundItems).toEqual(encounterState.groundItems)
+    expect(normalized.encounterState?.groundItems).not.toBe(encounterState.groundItems)
+    expect(normalized.encounterState?.groundItems[0]?.position)
+      .not.toBe(encounterState.groundItems[0]?.position)
+    // Ownership is only a stable historical hint, so the placement need not remain on the map.
+    expect(normalized.encounterState?.groundItems[0]?.ownerPlacementId).toBe('former-token-hint')
+
+    expect(() => normalizeMapDocument({
+      ...validMap(),
+      encounterState: {
+        ...encounterState,
+        groundItems: [mapGroundItem({ x: 2, y: 3, z: 3 })],
+      },
+    }, { sourceLabel: 'out-of-bounds-item.json' }))
+      .toThrow('Map out-of-bounds-item.json is invalid: encounterState.groundItems[0].position is outside map bounds')
+    expect(() => normalizeMapDocument({
+      ...validMap(),
+      encounterState: {
+        ...encounterState,
+        groundItems: [{ ...mapGroundItem(), sideId: 'rivals' }],
+      },
+    }, { sourceLabel: 'unknown-item-side.json' }))
+      .toThrow('Map unknown-item-side.json is invalid: encounterState.groundItems[0].sideId: references unknown encounter side rivals')
   })
 
   it('normalizes generalized zones and rejects cells outside map dimensions', () => {

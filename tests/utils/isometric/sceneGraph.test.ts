@@ -19,6 +19,7 @@ describe('isometric scene graph', () => {
       graph.fieldEffectContainer,
       graph.voxelContainer,
       graph.hazardContainer,
+      graph.groundItemContainer,
     ])
   })
 

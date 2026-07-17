@@ -187,7 +187,7 @@ export interface TabletopMapV2 {
   temporaryHitPoints?: MapTemporaryHitPointsState
   /** Per-placement EOT/Scene/Daily move frequency usage for the current map Scene. */
   moveUsage?: MapMoveUsageState
-  /** Versioned server-owned encounter mechanics state, including typed battlefield zones. */
+  /** Versioned server-owned encounter mechanics state, including typed zones and map-ground items. */
   encounterState?: EncounterState
   metadata?: Record<string, unknown>
   createdAt?: number

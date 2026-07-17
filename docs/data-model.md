@@ -15,6 +15,7 @@ A map stores the state the tabletop needs to render and run a scene:
 - player visibility flags
 - shop interface access points that reference authoritative shop table slugs without storing catalog, prices, or stock
 - battlefield hazards such as Spikes, Toxic Spikes, Sticky Web, Stealth Rock, and Fire
+- bounded map-ground item stacks created by authoritative drop, throw, and knock-off operations
 - field effects such as weather, terrain, and rooms
 - light placements
 - initiative round/current-turn state
@@ -57,7 +58,9 @@ The shared party inventory is campaign-level SQLite state in the `group_inventor
 
 ## Move item identities
 
-Move automation addresses item state through the strict shared item-reference contract, never by a display name. A reference identifies one Pokémon held item, trainer equipment slot, trainer inventory row, group inventory row, or map-ground item by a stable item ID and canonical rules ID, together with the exact owning sheet, group-inventory document, or map revision. The reference also states authoritative quantity, singleton/stackable behavior, and equipped/unequipped semantics; incompatible owner, stack, quantity, or equipment combinations reject during parsing. This is the identity boundary for later item-resource loading and mutation planning—it does not itself add ground-item persistence or make browser-provided item data authoritative.
+Move automation addresses item state through the strict shared item-reference contract, never by a display name. A reference identifies one Pokémon held item, trainer equipment slot, trainer inventory row, group inventory row, or map-ground item by a stable item ID and canonical rules ID, together with the exact owning sheet, group-inventory document, or map revision. The reference also states authoritative quantity, singleton/stackable behavior, and equipped/unequipped semantics; incompatible owner, stack, quantity, or equipment combinations reject during parsing.
+
+Map-ground items are persisted in the map's versioned `encounterState.groundItems` collection. Each bounded record stores a stable map-local ID, canonical item ID and name, quantity, integer cell/height, exact source resource revision, source operation ID, and nullable side/previous-placement hints. Those hints are provenance and presentation only: they do not grant control or replace map ownership. Normalization rejects duplicate IDs, malformed or oversized payloads, unknown side hints, and positions outside map bounds. The isometric scene renders a generic selectable marker and exposes only its stable ID through pointer interaction; later item-choice and mutation tickets remain responsible for authorization and state changes.
 
 ## Shop tables
 

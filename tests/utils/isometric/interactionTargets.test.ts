@@ -7,6 +7,7 @@ import {
   createTokenProxyPickTargetCache,
   getMoveGridIntersectionFromPointer,
   pickBuildTargetFromPointer,
+  pickGroundItemIdFromPointer,
   pickHazardTargetFromPointer,
   pickPokemonIdFromPointer,
   setRaycasterFromPointer,
@@ -51,6 +52,40 @@ describe('isometric interaction target picking', () => {
       expect.objectContaining({ x: 0, y: 0 }),
       camera,
     )
+  })
+
+  it('picks stable map-ground item IDs without exposing item mechanics', () => {
+    const marker = new THREE.Mesh()
+    marker.userData.groundItemId = 'ground-item-iron-ball-1'
+    marker.userData.groundItem = { quantity: 2 }
+    const raycaster = makeRaycaster()
+    vi.mocked(raycaster.intersectObjects).mockReturnValue([
+      { object: marker } as unknown as THREE.Intersection,
+    ])
+
+    expect(pickGroundItemIdFromPointer({
+      event,
+      renderer: makeRenderer().renderer,
+      camera,
+      raycaster,
+      targets: [marker],
+    })).toBe('ground-item-iron-ball-1')
+
+    delete marker.userData.groundItemId
+    expect(pickGroundItemIdFromPointer({
+      event,
+      renderer: makeRenderer().renderer,
+      camera,
+      raycaster,
+      targets: [marker],
+    })).toBeNull()
+    expect(pickGroundItemIdFromPointer({
+      event,
+      renderer: null,
+      camera,
+      raycaster,
+      targets: [marker],
+    })).toBeNull()
   })
 
   it('uses pointer event coordinates for build and hazard picking', () => {

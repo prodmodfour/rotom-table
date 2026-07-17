@@ -205,6 +205,24 @@ const STABLE_ITEM_ID_PATTERN = /^[A-Za-z0-9]+(?:[._:/-][A-Za-z0-9]+)*$/
 const CANONICAL_ITEM_ID_PATTERN = /^[a-z0-9]+(?:[._:/-][a-z0-9]+)*$/
 const CONTROL_CHARACTER_PATTERN = /[\u0000-\u001f\u007f]/
 
+export const isMoveItemStableId = (value: unknown): value is string => (
+  typeof value === 'string'
+  && value.length > 0
+  && value.length <= MOVE_ITEM_REFERENCE_LIMITS.itemIdChars
+  && value.trim() === value
+  && !CONTROL_CHARACTER_PATTERN.test(value)
+  && STABLE_ITEM_ID_PATTERN.test(value)
+)
+
+export const isMoveCanonicalItemId = (value: unknown): value is string => (
+  typeof value === 'string'
+  && value.length > 0
+  && value.length <= MOVE_ITEM_REFERENCE_LIMITS.canonicalItemIdChars
+  && value.trim() === value
+  && !CONTROL_CHARACTER_PATTERN.test(value)
+  && CANONICAL_ITEM_ID_PATTERN.test(value)
+)
+
 const fail = (
   code: MoveItemReferenceValidationCode,
   path: string,
@@ -278,15 +296,10 @@ const parseStableId = (
     readonly canonical?: boolean
   },
 ): string => {
-  const pattern = options.canonical ? CANONICAL_ITEM_ID_PATTERN : STABLE_ITEM_ID_PATTERN
-  if (
-    typeof value !== 'string'
-    || value.length === 0
-    || value.length > options.maximumChars
-    || value.trim() !== value
-    || CONTROL_CHARACTER_PATTERN.test(value)
-    || !pattern.test(value)
-  ) {
+  const valid = options.canonical
+    ? isMoveCanonicalItemId(value)
+    : isMoveItemStableId(value)
+  if (typeof value !== 'string' || !valid || value.length > options.maximumChars) {
     return fail(
       'invalid-item-reference',
       path,

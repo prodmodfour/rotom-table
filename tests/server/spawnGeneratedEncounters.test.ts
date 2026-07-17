@@ -51,6 +51,7 @@ const mapFixture = (overrides: Partial<TabletopMap> = {}): TabletopMap => ({
     history: createEmptyEncounterHistory(),
     turnResources: {},
     zones: [],
+    groundItems: [],
     pendingResolutionSummaries: [],
   },
   createdAt: 10,

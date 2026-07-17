@@ -12,6 +12,12 @@ import {
   type EncounterHistory,
 } from './encounterHistory'
 import {
+  MAP_GROUND_ITEM_LIMITS,
+  MapGroundItemValidationError,
+  parseMapGroundItems,
+  type MapGroundItem,
+} from './groundItems'
+import {
   ENCOUNTER_RESOURCE_LIMITS,
   EncounterResourceValidationError,
   createEmptyEncounterTurnResources,
@@ -35,6 +41,7 @@ export * from './encounterEffects'
 export * from './encounterHistory'
 export * from './encounterResources'
 export * from './encounterZones'
+export * from './groundItems'
 
 /**
  * Versioned map-owned state for authoritative encounter mechanics.
@@ -48,7 +55,8 @@ export * from './encounterZones'
  * entry mechanics, MA-137 made global fields zone-owned with authoritative
  * round/scene lifecycle, and MA-143A added immutable Magic Room, Gravity, and
  * side-owned Tailwind query projections, and MA-144 made exact Barrier and
- * Smokescreen geometry authoritative for sight, movement, damage, and Accuracy.
+ * Smokescreen geometry authoritative for sight, movement, damage, and Accuracy,
+ * and MA-151 added bounded map-owned ground-item state.
  * Legacy editor hazards and the field-effect renderer
  * arrays remain compatibility lanes until their migration tickets; server zone
  * queries and accepted field boundaries adapt/mirror them without applying a
@@ -89,6 +97,7 @@ export const ENCOUNTER_STATE_LIMITS = Object.freeze({
   history: ENCOUNTER_HISTORY_LIMITS.moveAncestryPerScene,
   turnResources: ENCOUNTER_RESOURCE_LIMITS.placementLedgers,
   zones: ENCOUNTER_ZONE_LIMITS.count,
+  groundItems: MAP_GROUND_ITEM_LIMITS.count,
   pendingResolutionSummaries: PENDING_MOVE_RESOLUTION_SUMMARY_LIMITS.responseWindows,
 })
 
@@ -102,6 +111,8 @@ export interface EncounterState {
   readonly history: EncounterHistory
   readonly turnResources: EncounterTurnResourceDirectory
   readonly zones: readonly EncounterZone[]
+  /** Map-owned dropped/thrown item stacks with bounded authoritative provenance. */
+  readonly groundItems: readonly MapGroundItem[]
   readonly pendingResolutionSummaries: readonly PendingMoveResolutionPublicSummary[]
 }
 
@@ -134,12 +145,20 @@ const ENCOUNTER_STATE_FIELDS = [
   'history',
   'turnResources',
   'zones',
+  'groundItems',
   'pendingResolutionSummaries',
 ] as const
+
+// MA-151 accepts the preceding schema-v1 shape without groundItems so maps
+// already written during the v1 rollout normalize in memory to an empty list.
+const REQUIRED_ENCOUNTER_STATE_FIELDS = ENCOUNTER_STATE_FIELDS.filter(
+  field => field !== 'groundItems',
+)
 
 const LIST_CONTAINER_KEYS = [
   'effects',
   'zones',
+  'groundItems',
   'pendingResolutionSummaries',
 ] as const satisfies readonly EncounterStateContainerKey[]
 
@@ -170,7 +189,7 @@ const isPlainRecord = (value: unknown): value is UnknownRecord => {
 
 const assertExactFields = (record: UnknownRecord): void => {
   const expected = new Set<string>(ENCOUNTER_STATE_FIELDS)
-  const missing = ENCOUNTER_STATE_FIELDS.filter(key => !Object.prototype.hasOwnProperty.call(record, key))
+  const missing = REQUIRED_ENCOUNTER_STATE_FIELDS.filter(key => !Object.prototype.hasOwnProperty.call(record, key))
   const unknown = Object.keys(record).filter(key => !expected.has(key))
   if (missing.length === 0 && unknown.length === 0) return
 
@@ -389,6 +408,38 @@ const parsePendingResolutionSummaries = (
   return summaries
 }
 
+const parseGroundItemList = (
+  value: unknown,
+  sides: EncounterSideDirectory,
+): readonly MapGroundItem[] => {
+  let groundItems: readonly MapGroundItem[]
+  try {
+    groundItems = parseMapGroundItems(value, 'encounterState.groundItems')
+  }
+  catch (error) {
+    if (error instanceof MapGroundItemValidationError) {
+      fail(
+        error.code === 'limit-exceeded' ? 'limit-exceeded' : 'invalid-encounter-state',
+        error.path,
+        error.detail,
+      )
+    }
+    throw error
+  }
+
+  groundItems.forEach((item, itemIndex) => {
+    if (item.sideId === null) return
+    if (!Object.prototype.hasOwnProperty.call(sides, item.sideId)) {
+      fail(
+        'invalid-encounter-state',
+        `encounterState.groundItems[${itemIndex}].sideId`,
+        `references unknown encounter side ${item.sideId}.`,
+      )
+    }
+  })
+  return groundItems
+}
+
 const parseEncounterZoneList = (
   value: unknown,
   sides: EncounterSideDirectory,
@@ -480,6 +531,7 @@ export const createEmptyEncounterState = (): EncounterState => ({
   history: createEmptyEncounterHistory(),
   turnResources: createEmptyEncounterTurnResources(),
   zones: [],
+  groundItems: [],
   pendingResolutionSummaries: [],
 })
 
@@ -503,7 +555,9 @@ export const parseEncounterState = (value: unknown): EncounterState => {
     )
   }
 
-  for (const key of LIST_CONTAINER_KEYS) assertBoundedList(value[key], key)
+  for (const key of LIST_CONTAINER_KEYS) {
+    assertBoundedList(key === 'groundItems' ? (value[key] ?? []) : value[key], key)
+  }
   for (const key of DIRECTORY_CONTAINER_KEYS) assertEmptyDirectory(value[key], key)
 
   const sides = parseEncounterSideDirectory(value.sides)
@@ -514,6 +568,7 @@ export const parseEncounterState = (value: unknown): EncounterState => {
     history: parseEncounterHistoryState(value.history),
     turnResources: parseEncounterTurnResourceState(value.turnResources),
     zones: parseEncounterZoneList(value.zones, sides),
+    groundItems: parseGroundItemList(value.groundItems ?? [], sides),
     pendingResolutionSummaries: parsePendingResolutionSummaries(
       value.pendingResolutionSummaries,
     ),

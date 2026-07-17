@@ -10,6 +10,7 @@ const makeActions = () => ({
   syncVoxelMeshes: vi.fn(),
   replayHazardPreview: vi.fn(),
   syncHazardMeshes: vi.fn(),
+  syncGroundItemMeshes: vi.fn(),
   syncFieldEffectMeshes: vi.fn(),
   selectPokemon: vi.fn(),
   refreshPokemonStyles: vi.fn(),
@@ -37,6 +38,7 @@ const makeWatcherHarness = () => {
   const pokemons = ref<unknown[]>([])
   const terrainVoxelRevision = ref('terrain:1')
   const hazardRevision = ref('hazard:1')
+  const groundItemRevision = ref('ground-items:1')
   const fieldEffectsRevision = ref('field:1')
   const selectedId = ref<string | null>(null)
   const selectedPokemon = ref<unknown | null>(null)
@@ -62,6 +64,7 @@ const makeWatcherHarness = () => {
         pokemons,
         terrainVoxelRevision,
         hazardRevision,
+        groundItemRevision,
         fieldEffectsRevision,
         selectedId: () => selectedId.value,
         selectedPokemon: () => selectedPokemon.value,
@@ -101,6 +104,7 @@ const makeWatcherHarness = () => {
     activeTurnRound,
     initiativeAutoFocusEnabled,
     hazardRevision,
+    groundItemRevision,
     fieldEffectsRevision,
     layerVisibility,
     hazardSettings,
@@ -415,6 +419,11 @@ describe('useIsometricSceneWatchers', () => {
     await nextTick()
     expect(harness.actions.syncHazardMeshes).toHaveBeenCalledTimes(1)
     expect(harness.actions.requestRender).toHaveBeenLastCalledWith(['hazards', 'hazard-preview'])
+
+    harness.groundItemRevision.value = 'ground-items:2'
+    await nextTick()
+    expect(harness.actions.syncGroundItemMeshes).toHaveBeenCalledTimes(1)
+    expect(harness.actions.requestRender).toHaveBeenLastCalledWith(['scene-state'])
 
     harness.fieldEffectsRevision.value = 'field:2'
     await nextTick()

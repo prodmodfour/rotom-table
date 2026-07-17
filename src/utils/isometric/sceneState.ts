@@ -1,3 +1,4 @@
+import type { MapGroundItem } from '#shared/moveAutomation/groundItems'
 import type { GridDimensions } from '~/types/pokemon'
 import type { LayerVisibility, MapFieldEffects, MapHazardV2, MapVoxelV2 } from '~/types/map'
 import { clampMapGroundLevelY } from '~/utils/mapGroundLevel'
@@ -36,6 +37,26 @@ export const getHazardsRevisionKey = (hazards: readonly MapHazardV2[]): string =
       hazard.z,
       hazard.layer ?? '',
       hazard.owner ?? '',
+    ].join('\u001e'))
+    .join('\u001d')
+
+export const getGroundItemsRevisionKey = (items: readonly MapGroundItem[]): string =>
+  items
+    .map(item => [
+      item.id,
+      item.canonicalItemId,
+      item.canonicalItemName,
+      item.quantity,
+      item.position.x,
+      item.position.y,
+      item.position.z,
+      item.sourceResource.kind,
+      'sheetKind' in item.sourceResource ? item.sourceResource.sheetKind : '',
+      item.sourceResource.slug,
+      item.sourceResource.revision,
+      item.sourceOperationId,
+      item.sideId ?? '',
+      item.ownerPlacementId ?? '',
     ].join('\u001e'))
     .join('\u001d')
 

@@ -9,6 +9,7 @@ export interface IsometricSceneGraph {
   voxelContainer: THREE.Group
   fieldEffectContainer: THREE.Group
   hazardContainer: THREE.Group
+  groundItemContainer: THREE.Group
   clock: THREE.Clock
 }
 
@@ -21,6 +22,7 @@ export const createIsometricSceneGraph = (): IsometricSceneGraph => {
   const voxelContainer = new THREE.Group()
   const fieldEffectContainer = new THREE.Group()
   const hazardContainer = new THREE.Group()
+  const groundItemContainer = new THREE.Group()
   const clock = new THREE.Clock()
 
   scene.add(gridGroup)
@@ -29,6 +31,7 @@ export const createIsometricSceneGraph = (): IsometricSceneGraph => {
   worldGroup.add(fieldEffectContainer)
   worldGroup.add(voxelContainer)
   worldGroup.add(hazardContainer)
+  worldGroup.add(groundItemContainer)
 
   return {
     scene,
@@ -39,6 +42,7 @@ export const createIsometricSceneGraph = (): IsometricSceneGraph => {
     voxelContainer,
     fieldEffectContainer,
     hazardContainer,
+    groundItemContainer,
     clock,
   }
 }

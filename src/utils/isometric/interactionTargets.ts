@@ -327,6 +327,34 @@ export const pickPokemonIdFromPointer = (options: {
   return (hit?.userData.pokemonId as string | undefined) ?? null
 }
 
+/** Pick the stable ID attached by the map-ground item renderer. */
+export const pickGroundItemIdFromPointer = (options: {
+  event: MouseEvent | PointerEvent
+  renderer: THREE.WebGLRenderer | null
+  camera: THREE.Camera | null
+  raycaster: THREE.Raycaster
+  targets: THREE.Object3D[]
+  boundsCache?: RendererPointerBoundsCache
+  scratch?: PointerRaycastScratch
+}): string | null => {
+  if (!setRaycasterFromPointer({
+    coords: options.event,
+    renderer: options.renderer,
+    camera: options.camera,
+    raycaster: options.raycaster,
+    boundsCache: options.boundsCache,
+    scratch: options.scratch,
+  })) return null
+
+  const intersections = intersectObjectsWithScratch(
+    options.raycaster,
+    options.targets,
+    options.scratch,
+  )
+  const id = intersections[0]?.object.userData.groundItemId
+  return typeof id === 'string' && id.length > 0 ? id : null
+}
+
 export const getMoveGridIntersectionFromPointer = (options: {
   event: MouseEvent | PointerEvent
   yLevel: number

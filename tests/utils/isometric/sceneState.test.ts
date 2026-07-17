@@ -1,9 +1,11 @@
 import { describe, expect, it } from 'vitest'
+import type { MapGroundItem } from '#shared/moveAutomation/groundItems'
 import type { LayerVisibility, MapHazardV2, MapVoxelV2 } from '~/types/map'
 import {
   DEFAULT_ISOMETRIC_LAYER_VISIBILITY,
   clampIsometricGroundLevelY,
   getFieldEffectsRevisionKey,
+  getGroundItemsRevisionKey,
   getHazardsRevisionKey,
   getTerrainVoxelsRevisionKey,
   resolveIsometricLayerVisibility,
@@ -45,6 +47,28 @@ describe('isometric scene state helpers', () => {
       terrains: [],
       rooms: [{ kind: 'trick', startsNextRound: true }],
     })).toBe('{"weather":[{"kind":"rainy","rounds":3}],"terrains":[],"rooms":[{"kind":"trick","startsNextRound":true}]}')
+  })
+
+  it('includes every rendered and selectable ground-item field in revision keys', () => {
+    const groundItem: MapGroundItem = {
+      id: 'ground-item-1',
+      canonicalItemId: 'iron-ball',
+      canonicalItemName: 'Iron Ball',
+      quantity: 2,
+      position: { x: 1, y: 0, z: 2 },
+      sourceResource: { kind: 'sheet', sheetKind: 'pokemon', slug: 'pikachu', revision: 4 },
+      sourceOperationId: 'op_drop_item_0001',
+      sideId: 'heroes',
+      ownerPlacementId: 'token-1',
+    }
+
+    const first = getGroundItemsRevisionKey([groundItem])
+    expect(first).toContain('ground-item-1')
+    expect(first).toContain('Iron Ball')
+    expect(getGroundItemsRevisionKey([{ ...groundItem, quantity: 3 }])).not.toBe(first)
+    expect(getGroundItemsRevisionKey([{ ...groundItem, position: { x: 2, y: 0, z: 2 } }]))
+      .not.toBe(first)
+    expect(getGroundItemsRevisionKey([])).toBe('')
   })
 
   it('includes visual hazard and voxel fields in revision keys', () => {

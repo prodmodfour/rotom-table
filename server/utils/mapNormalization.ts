@@ -112,6 +112,18 @@ const normalizeMapEncounterState = (
         }
       })
     })
+    state.groundItems.forEach((item, itemIndex) => {
+      if (
+        item.position.x >= dimensions.x
+        || item.position.y >= dimensions.y
+        || item.position.z >= dimensions.z
+      ) {
+        invalidMapDocument(
+          sourceLabel,
+          `encounterState.groundItems[${itemIndex}].position is outside map bounds`,
+        )
+      }
+    })
     return state
   } catch (error) {
     if (error instanceof EncounterStateValidationError) {

@@ -68,6 +68,7 @@ const makeController = () => {
   let buildTool: BuildTool = 'pencil'
   let hazardTool: BuildTool | undefined = undefined
   let hitId: string | null = 'token-1'
+  let groundItemHitId: string | null = null
   let isClick = true
   const controllableIds = new Set<string>(['token-1'])
   const pointerMoveFrames = createAnimationFrameDriver()
@@ -87,6 +88,8 @@ const makeController = () => {
     canControlPokemon: (id: string | null | undefined) => Boolean(id && controllableIds.has(id)),
     pickPokemonId: vi.fn(() => hitId),
     selectPokemon: vi.fn((id: string | null) => { selectedId = id }),
+    pickGroundItemId: vi.fn(() => groundItemHitId),
+    selectGroundItem: vi.fn(),
     closeContextMenu: vi.fn(),
     openContextMenu: vi.fn(),
     updateHoverFromPointer: vi.fn(),
@@ -120,6 +123,7 @@ const makeController = () => {
       selectedPokemon = id ? { id } : null
     },
     setHitId: (id: string | null) => { hitId = id },
+    setGroundItemHitId: (id: string | null) => { groundItemHitId = id },
     setBuildMode: (active: boolean) => { buildMode = active },
     setHazardMode: (active: boolean) => { hazardMode = active },
     setTargetingMode: (active: boolean) => { targetingMode = active },
@@ -143,6 +147,35 @@ describe('isometric pointer interaction controller', () => {
     setSelected('token-1')
     controller.handlePointerUp(pointerEvent())
     expect(deps.performSelectedMove).toHaveBeenCalledTimes(1)
+  })
+
+  it('selects a rendered ground item only when no controllable token is selected', () => {
+    const {
+      controller,
+      deps,
+      setGroundItemHitId,
+      setHitId,
+      setSelected,
+    } = makeController()
+    setHitId(null)
+    setGroundItemHitId('ground-item-iron-ball-1')
+
+    controller.handlePointerUp(pointerEvent())
+    expect(deps.selectGroundItem).toHaveBeenCalledWith('ground-item-iron-ball-1')
+    expect(deps.selectPokemon).not.toHaveBeenCalled()
+
+    vi.clearAllMocks()
+    setHitId('token-1')
+    controller.handlePointerUp(pointerEvent())
+    expect(deps.selectGroundItem).toHaveBeenCalledWith(null)
+    expect(deps.selectPokemon).toHaveBeenCalledWith('token-1')
+    expect(deps.pickGroundItemId).not.toHaveBeenCalled()
+
+    vi.clearAllMocks()
+    setSelected('token-1')
+    controller.handlePointerUp(pointerEvent())
+    expect(deps.performSelectedMove).toHaveBeenCalledOnce()
+    expect(deps.selectGroundItem).not.toHaveBeenCalled()
   })
 
   it('routes build and hazard clicks to their active tools', () => {
@@ -316,6 +349,7 @@ describe('isometric pointer interaction controller', () => {
     expect(deps.selectPokemon).not.toHaveBeenCalledWith(null)
 
     controller.handleEscape({ key: 'Escape' } as KeyboardEvent)
+    expect(deps.selectGroundItem).toHaveBeenCalledWith(null)
     expect(deps.selectPokemon).toHaveBeenCalledWith(null)
   })
 })

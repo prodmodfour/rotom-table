@@ -81,6 +81,7 @@ const baseMap = (overrides: Partial<TabletopMap> = {}): TabletopMap => ({
     history: createEmptyEncounterHistory(),
     turnResources: {},
     zones: [],
+    groundItems: [],
     pendingResolutionSummaries: [],
   },
   metadata: { owner: 'gm' },

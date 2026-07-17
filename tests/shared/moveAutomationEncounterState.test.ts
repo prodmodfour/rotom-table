@@ -3,6 +3,7 @@ import {
   ENCOUNTER_EFFECT_LIMITS,
   ENCOUNTER_HISTORY_LIMITS,
   ENCOUNTER_RESOURCE_LIMITS,
+  MAP_GROUND_ITEM_LIMITS,
   ENCOUNTER_SIDE_LIMITS,
   ENCOUNTER_STATE_LIMITS,
   ENCOUNTER_STATE_SCHEMA_VERSION,
@@ -23,6 +24,7 @@ const canonicalEncounterState = () => ({
   history: createEmptyEncounterHistory(),
   turnResources: {},
   zones: [],
+  groundItems: [],
   pendingResolutionSummaries: [],
 })
 
@@ -68,10 +70,11 @@ describe('move automation encounter state', () => {
       history: ENCOUNTER_HISTORY_LIMITS.moveAncestryPerScene,
       turnResources: ENCOUNTER_RESOURCE_LIMITS.placementLedgers,
       zones: ENCOUNTER_ZONE_LIMITS.count,
+      groundItems: MAP_GROUND_ITEM_LIMITS.count,
       pendingResolutionSummaries: 64,
     })
     expect(JSON.stringify(state)).toBe(
-      '{"schemaVersion":1,"sides":{},"effects":[],"counters":{},"history":{"sceneId":null,"currentRound":null,"currentTurn":null,"lastDeclaredMoves":[],"lastCompletedMoves":[],"lastDamagingMovesReceived":[],"damageBySourceThisTurn":[],"damageBySourceThisRound":[],"actedThisTurnPlacementIds":[],"actedThisRoundPlacementIds":[],"consecutiveMoves":[],"switchedPlacementIds":[],"faintedPlacementIds":[],"switches":[],"knockouts":[],"moveAncestry":[],"eventMoveLinks":[]},"turnResources":{},"zones":[],"pendingResolutionSummaries":[]}',
+      '{"schemaVersion":1,"sides":{},"effects":[],"counters":{},"history":{"sceneId":null,"currentRound":null,"currentTurn":null,"lastDeclaredMoves":[],"lastCompletedMoves":[],"lastDamagingMovesReceived":[],"damageBySourceThisTurn":[],"damageBySourceThisRound":[],"actedThisTurnPlacementIds":[],"actedThisRoundPlacementIds":[],"consecutiveMoves":[],"switchedPlacementIds":[],"faintedPlacementIds":[],"switches":[],"knockouts":[],"moveAncestry":[],"eventMoveLinks":[]},"turnResources":{},"zones":[],"groundItems":[],"pendingResolutionSummaries":[]}',
     )
     expect(parseEncounterState({ ...canonicalEncounterState(), history: {} }).history)
       .toEqual(createEmptyEncounterHistory())
@@ -120,11 +123,53 @@ describe('move automation encounter state', () => {
     expect(parsed.history).not.toBe((json as { history: unknown }).history)
     expect(parsed.history.lastDeclaredMoves)
       .not.toBe((json as { history: { lastDeclaredMoves: unknown } }).history.lastDeclaredMoves)
+    expect(parsed.groundItems).not.toBe((json as { groundItems: unknown }).groundItems)
 
     const another = createEmptyEncounterState()
     expect(another.effects).not.toBe(state.effects)
     expect(another.turnResources).not.toBe(state.turnResources)
     expect(another.history).not.toBe(state.history)
+    expect(another.groundItems).not.toBe(state.groundItems)
+  })
+
+  it('round-trips bounded ground items and validates optional side hints', () => {
+    const item = {
+      id: 'ground-item-1',
+      canonicalItemId: 'iron-ball',
+      canonicalItemName: 'Iron Ball',
+      quantity: 1,
+      position: { x: 2, y: 0, z: 3 },
+      sourceResource: { kind: 'map' as const, slug: 'arena', revision: 4 },
+      sourceOperationId: 'op_drop_item_0001',
+      sideId: 'allies',
+      ownerPlacementId: 'actor-token',
+    }
+    const source = {
+      ...canonicalEncounterState(),
+      sides: { allies: { id: 'allies', label: 'Allies', status: 'active' } },
+      groundItems: [item],
+    }
+    const parsed = parseEncounterState(source)
+
+    expect(parsed.groundItems).toEqual([item])
+    expect(parsed.groundItems).not.toBe(source.groundItems)
+    expect(parsed.groundItems[0]).not.toBe(item)
+    expect(parsed.groundItems[0]?.position).not.toBe(item.position)
+    expect(() => parseEncounterState({
+      ...source,
+      groundItems: [{ ...item, sideId: 'unknown-side' }],
+    })).toThrow('encounterState.groundItems[0].sideId: references unknown encounter side unknown-side')
+    expect(() => parseEncounterState({
+      ...source,
+      groundItems: [item, { ...item }],
+    })).toThrow('duplicates map-ground item ground-item-1')
+  })
+
+  it('normalizes the preceding schema-v1 shape with no ground-item container', () => {
+    const legacy = canonicalEncounterState() as Record<string, unknown>
+    delete legacy.groundItems
+
+    expect(parseEncounterState(legacy)).toEqual(canonicalEncounterState())
   })
 
   it('round-trips zones and validates every owning or affected side reference', () => {

@@ -170,6 +170,7 @@
         "history",
         "turnResources",
         "zones",
+        "groundItems",
         "pendingResolutionSummaries"
       ],
       "additionalProperties": false,
@@ -189,12 +190,94 @@
           "maxItems": 256,
           "items": { "$ref": "#/$defs/encounterZone" }
         },
+        "groundItems": {
+          "type": "array",
+          "maxItems": 256,
+          "items": { "$ref": "#/$defs/mapGroundItem" }
+        },
         "pendingResolutionSummaries": {
           "type": "array",
           "maxItems": 64,
           "items": { "$ref": "#/$defs/pendingMoveResolutionPublicSummary" }
         }
       }
+    },
+    "mapGroundItem": {
+      "type": "object",
+      "required": [
+        "id",
+        "canonicalItemId",
+        "canonicalItemName",
+        "quantity",
+        "position",
+        "sourceResource",
+        "sourceOperationId",
+        "sideId",
+        "ownerPlacementId"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9]+(?:[._:/-][A-Za-z0-9]+)*$",
+          "maxLength": 200
+        },
+        "canonicalItemId": {
+          "type": "string",
+          "pattern": "^[a-z0-9]+(?:[._:/-][a-z0-9]+)*$",
+          "maxLength": 160
+        },
+        "canonicalItemName": { "type": "string", "minLength": 1, "maxLength": 160 },
+        "quantity": { "type": "integer", "minimum": 1, "maximum": 9007199254740991 },
+        "position": {
+          "type": "object",
+          "required": ["x", "y", "z"],
+          "additionalProperties": false,
+          "properties": {
+            "x": { "type": "integer", "minimum": 0 },
+            "y": { "type": "integer", "minimum": 0 },
+            "z": { "type": "integer", "minimum": 0 }
+          }
+        },
+        "sourceResource": { "$ref": "#/$defs/mapGroundItemSourceResource" },
+        "sourceOperationId": {
+          "type": "string",
+          "pattern": "^op_[A-Za-z0-9_-]{8,96}$"
+        },
+        "sideId": {
+          "anyOf": [{ "$ref": "#/$defs/encounterSideId" }, { "type": "null" }]
+        },
+        "ownerPlacementId": {
+          "type": ["string", "null"],
+          "minLength": 1,
+          "maxLength": 200
+        }
+      }
+    },
+    "mapGroundItemSourceResource": {
+      "oneOf": [
+        {
+          "type": "object",
+          "required": ["kind", "sheetKind", "slug", "revision"],
+          "additionalProperties": false,
+          "properties": {
+            "kind": { "const": "sheet" },
+            "sheetKind": { "enum": ["pokemon", "trainer"] },
+            "slug": { "type": "string", "pattern": "^[a-z0-9-]+$", "maxLength": 160 },
+            "revision": { "type": "integer", "minimum": 0, "maximum": 9007199254740991 }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["kind", "slug", "revision"],
+          "additionalProperties": false,
+          "properties": {
+            "kind": { "enum": ["group-inventory", "map"] },
+            "slug": { "type": "string", "pattern": "^[a-z0-9-]+$", "maxLength": 160 },
+            "revision": { "type": "integer", "minimum": 0, "maximum": 9007199254740991 }
+          }
+        }
+      ]
     },
     "encounterSideId": {
       "type": "string",

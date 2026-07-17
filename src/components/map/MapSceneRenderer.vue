@@ -100,6 +100,7 @@ defineProps<{
 
 const emit = defineEmits<{
   (event: 'select-pokemon', id: string | null): void
+  (event: 'select-ground-item', id: string | null): void
   (event: 'hover-pokemon', id: string | null): void
   (event: 'place-presence-ping', payload: { cell: LivePlayPresenceGridCell }): void
   (event: 'request-gm-attention', payload: { target: LivePlayPresenceAttentionTarget }): void
@@ -156,6 +157,7 @@ defineExpose({ focusPokemon, focusCell })
     :initiative-auto-focus-enabled="initiativeAutoFocusEnabled !== false"
     :voxels="mapVoxels"
     :hazards="mapHazards"
+    :ground-items="map.encounterState?.groundItems ?? []"
     :field-effects="mapFieldEffects"
     :ground-level-y="mapGroundLevelY"
     :layer-visibility="layerVisibility"
@@ -196,6 +198,7 @@ defineExpose({ focusPokemon, focusCell })
     :pending-move-movement-choices="pendingMoveMovementChoices ?? []"
     :pending-move-hazard-cell-selections="pendingMoveHazardCellSelections ?? []"
     @select-pokemon="emit('select-pokemon', $event)"
+    @select-ground-item="emit('select-ground-item', $event)"
     @hover-pokemon="emit('hover-pokemon', $event)"
     @place-presence-ping="emit('place-presence-ping', $event)"
     @request-gm-attention="emit('request-gm-attention', $event)"

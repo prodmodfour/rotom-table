@@ -24,6 +24,8 @@ export interface IsometricPointerInteractionOptions {
   canControlPokemon: (id: string | null | undefined) => boolean
   pickPokemonId: (event: MouseEvent | PointerEvent) => string | null
   selectPokemon: (id: string | null) => void
+  pickGroundItemId?: (event: MouseEvent | PointerEvent) => string | null
+  selectGroundItem?: (id: string | null) => void
   closeContextMenu: () => void
   openContextMenu: (event: MouseEvent, id: string) => void
   updateHoverFromPointer: (event: PointerEvent) => void
@@ -68,6 +70,8 @@ export const createIsometricPointerInteractionController = ({
   canControlPokemon,
   pickPokemonId,
   selectPokemon,
+  pickGroundItemId = () => null,
+  selectGroundItem = () => {},
   closeContextMenu,
   openContextMenu,
   updateHoverFromPointer,
@@ -115,7 +119,10 @@ export const createIsometricPointerInteractionController = ({
 
     if (!selectedId) {
       if (canControlPokemon(hitId)) {
+        selectGroundItem(null)
         selectPokemon(hitId)
+      } else {
+        selectGroundItem(pickGroundItemId(event))
       }
 
       return
@@ -164,6 +171,7 @@ export const createIsometricPointerInteractionController = ({
       return
     }
 
+    selectGroundItem(null)
     openContextMenu(event, hitId)
   }
 
@@ -305,6 +313,7 @@ export const createIsometricPointerInteractionController = ({
       return
     }
 
+    selectGroundItem(null)
     selectPokemon(null)
   }
 

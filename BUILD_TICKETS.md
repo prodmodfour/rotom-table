@@ -2058,7 +2058,7 @@ Status: DONE
 
 ## MA-151 — Add ground-item state to maps
 
-Status: TODO
+Status: DONE
 
 **Depends on:** MA-150, MA-051
 **Commit:** `feat(move-automation): persist ground items on maps`

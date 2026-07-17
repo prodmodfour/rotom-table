@@ -38,6 +38,7 @@ import type {
 } from '~/types/moveAutomation'
 import type { MoveAnimationEvent } from '~/types/moveAnimation'
 import type { BuildTool } from '#shared/mapEditor'
+import type { MapGroundItem } from '#shared/moveAutomation/groundItems'
 import type { MoveHazardCellSelectionCount } from '#shared/moveAutomation/hazardCellSelection'
 import type { LivePlayPresenceAttentionTarget, LivePlayPresenceGridCell } from '#shared/livePlayPresence'
 import type {
@@ -97,6 +98,7 @@ import {
   smartGhostVoxelKeySetsEqual,
 } from '~/utils/isometric/smartTerrainCutaway'
 import { createHazardRenderer } from '~/utils/isometric/hazardRenderer'
+import { createGroundItemRenderer } from '~/utils/isometric/groundItemRenderer'
 import { createFieldEffectRenderer } from '~/utils/isometric/fieldEffectRenderer'
 import { createGridRenderer } from '~/utils/isometric/gridRenderer'
 import {
@@ -106,6 +108,7 @@ import {
   createTokenProxyPickTargetCache,
   getMoveGridIntersectionFromPointer,
   pickBuildTargetFromPointer,
+  pickGroundItemIdFromPointer,
   pickHazardTargetFromPointer,
   pickPokemonIdFromPointer,
 } from '~/utils/isometric/interactionTargets'
@@ -124,6 +127,7 @@ import {
 import {
   clampIsometricGroundLevelY,
   getFieldEffectsRevisionKey,
+  getGroundItemsRevisionKey,
   getHazardsRevisionKey,
   getTerrainVoxelsRevisionKey,
   resolveIsometricLayerVisibility,
@@ -225,6 +229,7 @@ const props = defineProps<{
   initiativeAutoFocusEnabled?: boolean
   voxels: MapVoxelV2[]
   hazards?: MapHazardV2[]
+  groundItems?: readonly MapGroundItem[]
   fieldEffects?: MapFieldEffects
   groundLevelY?: number
   layerVisibility?: LayerVisibility
@@ -268,6 +273,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   (event: 'select-pokemon', id: string | null): void
+  (event: 'select-ground-item', id: string | null): void
   (event: 'hover-pokemon', id: string | null): void
   (event: 'place-presence-ping', payload: { cell: LivePlayPresenceGridCell }): void
   (event: 'request-gm-attention', payload: { target: LivePlayPresenceAttentionTarget }): void
@@ -354,9 +360,11 @@ type PendingHazardCellSelectionOverlay = {
 }
 
 const pendingHazardCellSelectionOverlays = ref<PendingHazardCellSelectionOverlay[]>([])
+const selectedGroundItemId = ref<string | null>(null)
 
 const emitPokemonSelection = (id: string | null) => {
   if (props.moveAutomationTargeting || props.moveAutomationTargetBranchSelection) return
+  if (id) selectGroundItem(null)
   emit('select-pokemon', id)
 }
 
@@ -619,9 +627,14 @@ const conditionCrushOptions = computed(() => conditionsDialog.value
   : [])
 const renderedTerrainVoxels = computed(() => props.voxels)
 const renderedHazards = computed(() => props.hazards ?? [])
+const renderedGroundItems = computed(() => props.groundItems ?? [])
+const selectedGroundItem = computed(() => (
+  renderedGroundItems.value.find(item => item.id === selectedGroundItemId.value) ?? null
+))
 const renderedFieldEffects = computed(() => normalizeMapFieldEffects(props.fieldEffects))
 const fieldEffectsRevision = computed(() => getFieldEffectsRevisionKey(renderedFieldEffects.value))
 const hazardRevision = computed(() => getHazardsRevisionKey(renderedHazards.value))
+const groundItemRevision = computed(() => getGroundItemsRevisionKey(renderedGroundItems.value))
 const terrainVoxelRevision = computed(() => getTerrainVoxelsRevisionKey(renderedTerrainVoxels.value))
 const pokemonPlacementRevision = computed(() => movementPathPlacementRevision(props.pokemons))
 const smartCutawayTokenRevision = computed(() => props.pokemons
@@ -670,6 +683,7 @@ const {
   voxelContainer,
   fieldEffectContainer,
   hazardContainer,
+  groundItemContainer,
   clock,
 } = createIsometricSceneGraph()
 
@@ -677,6 +691,7 @@ const renderObjects = new Map<string, PokemonRenderObject>()
 const tokenGeometryCache = createTokenRenderGeometryCache()
 const voxelRenderer = createVoxelRenderer(voxelContainer)
 const hazardRenderer = createHazardRenderer(hazardContainer)
+const groundItemRenderer = createGroundItemRenderer(groundItemContainer)
 const fieldEffectRenderer = createFieldEffectRenderer(fieldEffectContainer)
 const gridRenderer = createGridRenderer(gridGroup)
 const buildGhostRenderer = createBuildGhostRenderer(previewGroup)
@@ -1332,6 +1347,25 @@ const syncHazardMeshes = () => {
   applyLayerVisibility({ force: true })
 }
 
+function selectGroundItem(id: string | null) {
+  const nextId = id && renderedGroundItems.value.some(item => item.id === id) ? id : null
+  if (selectedGroundItemId.value === nextId) return
+
+  selectedGroundItemId.value = nextId
+  groundItemRenderer.setSelected(nextId)
+  emit('select-ground-item', nextId)
+  requestScheduledSceneFrame('scene-state')
+}
+
+const syncGroundItemMeshes = () => {
+  const selectedId = selectedGroundItemId.value
+  if (selectedId && !renderedGroundItems.value.some(item => item.id === selectedId)) {
+    selectGroundItem(null)
+  }
+  groundItemRenderer.sync(renderedGroundItems.value)
+  groundItemRenderer.setSelected(selectedGroundItemId.value)
+}
+
 const applyLayerVisibility = (options: { force?: boolean } = {}) => {
   if (options.force) {
     layerVisibilityApplicator.invalidate()
@@ -1373,6 +1407,17 @@ const pickPokemonId = (event: MouseEvent | PointerEvent) =>
     boundsCache: rendererBoundsCache,
     scratch: pointerRaycastScratch,
     recordRaycast: recordPointerRaycastForMetricsOverlay,
+  })
+
+const pickGroundItemId = (event: MouseEvent | PointerEvent) =>
+  pickGroundItemIdFromPointer({
+    event,
+    renderer,
+    camera,
+    raycaster,
+    targets: groundItemRenderer.meshes(),
+    boundsCache: rendererBoundsCache,
+    scratch: pointerRaycastScratch,
   })
 
 const moveTargetingCandidateIdSet = () => new Set(props.moveAutomationTargeting?.candidateIds ?? [])
@@ -1848,6 +1893,8 @@ const pointerInteraction = createIsometricPointerInteractionController({
   canControlPokemon,
   pickPokemonId,
   selectPokemon: emitPokemonSelection,
+  pickGroundItemId,
+  selectGroundItem,
   closeContextMenu,
   openContextMenu,
   updateHoverFromPointer,
@@ -2511,6 +2558,7 @@ onMounted(() => {
   syncVoxelMeshes()
   syncFieldEffectMeshes()
   syncHazardMeshes()
+  syncGroundItemMeshes()
   syncPresencePings()
   syncPresenceIntentOverlays()
   ensurePreviewObjects()
@@ -2569,6 +2617,7 @@ onBeforeUnmount(() => {
     disposeBuildGhost,
     disposeHazardGhost,
     hazardRenderer,
+    groundItemRenderer,
     fieldEffectRenderer,
     voxelRenderer,
     moveVfxRenderer,
@@ -2597,6 +2646,7 @@ useIsometricSceneWatchers({
     pokemons: () => renderedPokemons.value,
     terrainVoxelRevision,
     hazardRevision,
+    groundItemRevision,
     fieldEffectsRevision,
     selectedId: () => props.selectedId,
     selectedPokemon: () => selectedPokemon.value,
@@ -2623,6 +2673,7 @@ useIsometricSceneWatchers({
     syncVoxelMeshes,
     replayHazardPreview,
     syncHazardMeshes,
+    syncGroundItemMeshes,
     syncFieldEffectMeshes,
     selectPokemon: emitPokemonSelection,
     refreshPokemonStyles,
@@ -2647,6 +2698,13 @@ useIsometricSceneWatchers({
     requestRender: requestScheduledSceneFrame,
   },
 })
+
+watch(
+  () => props.selectedId,
+  (id) => {
+    if (id) selectGroundItem(null)
+  },
+)
 
 watch(
   () => props.mapDataRevision,
@@ -2683,6 +2741,22 @@ watch(
 <template>
   <div ref="container" class="scene-root">
     <div class="scene-atmosphere" aria-hidden="true" />
+
+    <div
+      v-if="selectedGroundItem"
+      class="ground-item-selection-hud"
+      role="status"
+      aria-live="polite"
+    >
+      <span class="ground-item-selection-hud__marker" aria-hidden="true">◆</span>
+      <span>
+        <strong>{{ selectedGroundItem.canonicalItemName }}</strong>
+        <small v-if="selectedGroundItem.quantity > 1">×{{ selectedGroundItem.quantity }}</small>
+      </span>
+      <button type="button" aria-label="Clear ground item selection" @click.stop="selectGroundItem(null)">
+        ×
+      </button>
+    </div>
 
     <div
       v-if="movementPreviewHud"
@@ -3103,6 +3177,67 @@ watch(
   .scene-atmosphere::before {
     animation: none;
   }
+}
+
+.ground-item-selection-hud {
+  position: absolute;
+  z-index: 11;
+  right: var(--map-overlay-gutter, 0.75rem);
+  bottom: var(--map-overlay-gutter, 0.75rem);
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  min-width: 11rem;
+  max-width: min(88vw, 24rem);
+  padding: 0.55rem 0.62rem;
+  border: 1px solid color-mix(in srgb, #f4c95d 70%, var(--rule-strong));
+  border-radius: 0.8rem;
+  background: color-mix(in srgb, var(--paper) 94%, transparent);
+  box-shadow: 0 14px 34px rgba(0, 0, 0, 0.35);
+  color: var(--ink);
+  pointer-events: auto;
+}
+
+.ground-item-selection-hud__marker {
+  color: #d69b22;
+  font-size: 1.1rem;
+}
+
+.ground-item-selection-hud > span:nth-child(2) {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  gap: 0.35rem;
+  align-items: baseline;
+}
+
+.ground-item-selection-hud strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ground-item-selection-hud small {
+  color: var(--muted);
+  font-weight: 850;
+}
+
+.ground-item-selection-hud button {
+  width: 1.8rem;
+  height: 1.8rem;
+  border: 1px solid var(--rule);
+  border-radius: 999px;
+  background: var(--paper-strong);
+  color: var(--muted);
+  cursor: pointer;
+  font: inherit;
+  font-weight: 900;
+}
+
+.ground-item-selection-hud button:hover,
+.ground-item-selection-hud button:focus-visible {
+  border-color: var(--accent);
+  color: var(--accent);
 }
 
 .movement-preview-hud {

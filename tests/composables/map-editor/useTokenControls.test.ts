@@ -170,6 +170,7 @@ describe('useTokenControls', () => {
       history: createEmptyEncounterHistory(),
       turnResources: {},
       zones: [],
+      groundItems: [],
       pendingResolutionSummaries: [],
     }
     map.placements = [
