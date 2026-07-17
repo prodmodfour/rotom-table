@@ -83,7 +83,10 @@ default:
       '      Send one minimal request and report Dan Codex five-hour/weekly usage.' \
       '' \
       '  just stop' \
-      '      Gracefully stop the active build loop after its current attempt/cycle.'
+      '      Gracefully stop the active build loop after its current attempt/cycle.' \
+      '' \
+      '  just unlock' \
+      '      Remove a stale build-loop lock; refuses while its recorded process is active.'
 
 help:
     @just default
@@ -119,6 +122,10 @@ dan-usage:
 # Request a graceful stop after the active attempt/cycle reaches a safe boundary.
 stop:
     bash scripts/build-loop-stop.sh
+
+# Remove a stale autonomous build-loop lock without interrupting an active loop.
+unlock:
+    bash scripts/build-loop-unlock.sh
 
 # Refresh the autonomous queue and project brief from a ticket planning file.
 refresh ticket_file:

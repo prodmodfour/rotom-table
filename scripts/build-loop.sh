@@ -934,6 +934,7 @@ acquire_lock() {
 
   if ! mkdir "$LOCK_DIR" 2>/dev/null; then
     pp_error "Another build loop appears to be running: $LOCK_DIR"
+    pp_hint "Use 'just stop' for an active loop or 'just unlock' to remove a stale lock."
     exit 1
   fi
 

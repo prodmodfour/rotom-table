@@ -16,6 +16,7 @@ The current queue maps GitHub issues #27-#44 to local tickets in `BUILD_TICKETS.
 - `scripts/build-loop-monitor.sh` — read-only periodic progress interpreter.
 - `scripts/prepare-pi-event-range.mjs` — streaming semantic event projector for bounded read-tool access.
 - `scripts/build-loop-stop.sh` — graceful stop-request command.
+- `scripts/build-loop-unlock.sh` — stale lock cleanup command.
 - `scripts/quality-gate.sh` — Rotom Table validation gate.
 
 ## Run one local cycle
@@ -85,7 +86,15 @@ just stop
 
 A graceful stop does not terminate an active Pi process. The current agent attempt may finish, and a successful cycle still completes its normal commit and push or PR/MR publication. No next cycle starts. If the attempt fails, existing failure checkpoint guardrails finish but the loop exits before ticket-split recovery or another retry. A stop requested during a cycle or retry sleep ends that sleep without starting more work. Repeated `just stop` commands are harmless.
 
-`just follow`, `just monitor`, and `just stop` resolve the same per-repository external state directory as the loop. If the loop was started with `AUTONOMOUS_BUILD_LOOP_STATE_DIR`, pass the same environment variable to those commands.
+If a loop was terminated uncleanly and left its lock behind, remove only that stale lock with:
+
+```bash
+just unlock
+```
+
+`just unlock` preserves all logs and refuses to remove a lock while its recorded process is still active. Use `just stop` for a running loop. Repeating `just unlock` when no lock exists is harmless.
+
+`just follow`, `just monitor`, `just stop`, and `just unlock` resolve the same per-repository external state directory as the loop. If the loop was started with `AUTONOMOUS_BUILD_LOOP_STATE_DIR`, pass the same environment variable to those commands.
 
 ## PR mode
 

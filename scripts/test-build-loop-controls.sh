@@ -57,6 +57,7 @@ create_fixture() {
     cp "$REPO_ROOT/scripts/build-loop.sh" scripts/build-loop.sh
     cp "$REPO_ROOT/scripts/build-loop-follow.sh" scripts/build-loop-follow.sh
     cp "$REPO_ROOT/scripts/build-loop-stop.sh" scripts/build-loop-stop.sh
+    cp "$REPO_ROOT/scripts/build-loop-unlock.sh" scripts/build-loop-unlock.sh
     cp "$REPO_ROOT/scripts/lib/pretty-print.sh" scripts/lib/pretty-print.sh
     cp "$REPO_ROOT/scripts/lib/git-branch.sh" scripts/lib/git-branch.sh
     cp "$REPO_ROOT/scripts/lib/pull-request.sh" scripts/lib/pull-request.sh
@@ -212,6 +213,67 @@ grep -Fq 'Completed graceful-stop fixture cycle.' "$success_state/follow.log" \
 ) > "$tmp_dir/no-active-stop.log" 2>&1
 grep -Fq 'No active build loop was found' "$tmp_dir/no-active-stop.log" \
   || fail "stop command was not idempotent after loop exit"
+
+pp_step "Regression: unlock removes only stale build-loop locks"
+unlock_state="$tmp_dir/unlock-state"
+mkdir -p "$unlock_state"
+printf 'preserved log\n' > "$unlock_state/current.log"
+
+(
+  cd "$success_work"
+  NO_COLOR=1 \
+  AUTONOMOUS_BUILD_LOOP_STATE_DIR="$unlock_state" \
+    bash scripts/build-loop-unlock.sh
+) > "$tmp_dir/no-lock-unlock.log" 2>&1
+grep -Fq 'No build-loop lock was found' "$tmp_dir/no-lock-unlock.log" \
+  || fail "unlock command was not idempotent without a lock"
+
+mkdir -p "$unlock_state/lock"
+printf '%s\n' '999999999' > "$unlock_state/lock/pid"
+(
+  cd "$success_work"
+  NO_COLOR=1 \
+  AUTONOMOUS_BUILD_LOOP_STATE_DIR="$unlock_state" \
+    bash scripts/build-loop-unlock.sh
+) > "$tmp_dir/stale-unlock.log" 2>&1
+
+if [[ -e "$unlock_state/lock" ]]; then
+  fail "unlock command did not remove a stale lock"
+fi
+grep -Fq 'Removed stale build-loop lock.' "$tmp_dir/stale-unlock.log" \
+  || fail "unlock command did not confirm stale lock removal"
+grep -Fq 'preserved log' "$unlock_state/current.log" \
+  || fail "unlock command removed or changed a build-loop log"
+
+mkdir -p "$unlock_state/lock"
+sleep 20 &
+fake_loop_pid=$!
+printf '%s\n' "$fake_loop_pid" > "$unlock_state/lock/pid"
+set +e
+(
+  cd "$success_work"
+  NO_COLOR=1 \
+  AUTONOMOUS_BUILD_LOOP_STATE_DIR="$unlock_state" \
+    bash scripts/build-loop-unlock.sh
+) > "$tmp_dir/active-unlock.log" 2>&1
+active_unlock_status=$?
+set -e
+
+if [[ "$active_unlock_status" -eq 0 ]]; then
+  fail "unlock command accepted an active build-loop lock"
+fi
+if [[ ! -d "$unlock_state/lock" ]]; then
+  fail "unlock command removed an active build-loop lock"
+fi
+grep -Fq "Build loop PID $fake_loop_pid is still active" "$tmp_dir/active-unlock.log" \
+  || fail "unlock command did not explain its active-loop refusal"
+grep -Fq 'just stop' "$tmp_dir/active-unlock.log" \
+  || fail "unlock command did not direct active loops to graceful stop"
+
+kill "$fake_loop_pid" 2>/dev/null || true
+wait "$fake_loop_pid" 2>/dev/null || true
+fake_loop_pid=""
+rm -rf "$unlock_state/lock"
 
 pp_step "Regression: graceful stop prevents a failed attempt from retrying"
 failure_work="$tmp_dir/failure-work"
