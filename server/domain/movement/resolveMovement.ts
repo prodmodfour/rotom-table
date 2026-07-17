@@ -53,6 +53,8 @@ import {
 } from '~/utils/movementCapabilities'
 import { placementToSpawned, type SheetLookup } from '~/utils/placement'
 import { withBattlefieldZoneMovementTerrain } from '../moveAutomation/battlefieldZoneMovementTerrain'
+import { createMoveAutomationGravityResolver } from '../moveAutomation/gravity'
+import { createMoveAutomationRoomResolver } from '../moveAutomation/rooms'
 
 export const AUTHORITATIVE_MOVEMENT_MODES = ['shift', 'pass'] as const
 export type AuthoritativeMovementMode = (typeof AUTHORITATIVE_MOVEMENT_MODES)[number]
@@ -88,6 +90,7 @@ export const AUTHORITATIVE_MOVEMENT_REASON_CODES = [
   'movement-capability-missing',
   'movement-route-blocked',
   'movement-cost-exceeds-limit',
+  'movement-gravity-altitude-limit',
 ] as const
 
 export type AuthoritativeMovementReasonCode = (
@@ -843,6 +846,46 @@ const terrainSnapshot = (terrain: MovementAnchorTerrain): AuthoritativeMovementT
   hoverable: terrain.hoverable,
 })
 
+type MovementGravityResolver = ReturnType<typeof createMoveAutomationGravityResolver>
+
+const gravityResolverForMap = (map: TabletopMap): MovementGravityResolver => (
+  createMoveAutomationGravityResolver({
+    placements: map.placements,
+    rooms: createMoveAutomationRoomResolver(map),
+  })
+)
+
+const projectGravityMovementSnapshots = (
+  snapshots: MovementSnapshotSuccess,
+  gravity: MovementGravityResolver,
+): MovementSnapshotSuccess => {
+  const projectedMover: MovementPlacementSnapshot = {
+    ...snapshots.mover,
+    movementProfile: gravity.projectMovementProfile({
+      placementId: snapshots.mover.id,
+      profile: snapshots.mover.movementProfile,
+    }),
+  }
+  return {
+    ...snapshots,
+    mover: projectedMover,
+    placements: snapshots.placements.map(placement => (
+      placement.id === projectedMover.id ? projectedMover : placement
+    )),
+  }
+}
+
+const gravityMovementForPath = (input: {
+  readonly gravity: MovementGravityResolver
+  readonly placementId: string
+  readonly capabilityKeys: readonly MovementCapabilityKey[]
+  readonly steps: readonly MovementPathStep[]
+}) => input.gravity.movement({
+  placementId: input.placementId,
+  capabilityKeys: input.capabilityKeys,
+  destinationAirHeight: input.steps.at(-1)?.terrain.airHeight ?? 0,
+})
+
 const collidingPlacementIds = (
   anchor: GridAnchor,
   mover: MovementPlacementSnapshot,
@@ -1000,6 +1043,7 @@ const pathFailureMessage = (
 
 interface ResolvePreparedPassMovementInput {
   readonly map: TabletopMap
+  readonly gravity: MovementGravityResolver
   readonly placementId: string
   readonly policy: ResolvedPassAuthoritativeMovementPolicy
   readonly mover: MovementPlacementSnapshot
@@ -1131,6 +1175,28 @@ const resolvePreparedPassMovement = (
         capabilities,
         occupancy,
         collision: reasonCode === 'movement-route-blocked' ? routeCollision() : null,
+      }
+      continue
+    }
+
+    const gravityMovement = gravityMovementForPath({
+      gravity: input.gravity,
+      placementId: input.placementId,
+      capabilityKeys: pathResult.capabilityKeys,
+      steps: pathResult.steps,
+    })
+    if (!gravityMovement.allowed) {
+      failureEvidence = {
+        reasonCode: 'movement-gravity-altitude-limit',
+        message: `Gravity prevents Sky or Levitate movement from ending above ${gravityMovement.maximumAerialEndAltitude ?? 1} metre.`,
+        destination: candidate.position,
+        path: pathResult.path,
+        cost: pathResult.distance,
+        capabilityLimit,
+        effectiveLimit: resolvedEffectiveLimit,
+        capabilities,
+        occupancy,
+        collision: null,
       }
       continue
     }
@@ -1270,20 +1336,22 @@ export const resolveMovement = (input: ResolveMovementInput): AuthoritativeMovem
     })
   }
 
-  const snapshots = buildMovementSnapshots(input.map, input.sheets, placementId)
-  if (!snapshots.ok) {
+  const snapshotResult = buildMovementSnapshots(input.map, input.sheets, placementId)
+  if (!snapshotResult.ok) {
     return failure({
-      reasonCode: snapshots.reasonCode,
-      message: snapshots.message,
+      reasonCode: snapshotResult.reasonCode,
+      message: snapshotResult.message,
       placementId,
       mode,
       policy,
       destination,
-      consultedPlacementIds: snapshots.consultedPlacementIds,
-      sheetReads: snapshots.sheetReads,
+      consultedPlacementIds: snapshotResult.consultedPlacementIds,
+      sheetReads: snapshotResult.sheetReads,
     })
   }
 
+  const gravity = gravityResolverForMap(input.map)
+  const snapshots = projectGravityMovementSnapshots(snapshotResult, gravity)
   const { mover, placements, sheetReads } = snapshots
   const origin = cloneAnchor(mover.position)
   const footprint: AuthoritativeMovementFootprint = {
@@ -1365,6 +1433,7 @@ export const resolveMovement = (input: ResolveMovementInput): AuthoritativeMovem
   if (policy.kind === 'pass') {
     return resolvePreparedPassMovement({
       map: input.map,
+      gravity,
       placementId,
       policy,
       mover,
@@ -1536,6 +1605,33 @@ export const resolveMovement = (input: ResolveMovementInput): AuthoritativeMovem
       occupancy,
       capabilities: pathCapabilities,
       collision: routeCollision(),
+      consultedPlacementIds,
+      sheetReads,
+    })
+  }
+
+  const gravityMovement = gravityMovementForPath({
+    gravity,
+    placementId,
+    capabilityKeys: pathResult.capabilityKeys,
+    steps: pathResult.steps,
+  })
+  if (!gravityMovement.allowed) {
+    return failure({
+      reasonCode: 'movement-gravity-altitude-limit',
+      message: `Gravity prevents Sky or Levitate movement from ending above ${gravityMovement.maximumAerialEndAltitude ?? 1} metre.`,
+      placementId,
+      mode,
+      policy,
+      origin,
+      destination,
+      path,
+      cost: pathResult.distance,
+      capabilityLimit,
+      effectiveLimit: resolvedEffectiveLimit,
+      footprint,
+      occupancy,
+      capabilities: pathCapabilities,
       consultedPlacementIds,
       sheetReads,
     })
@@ -1808,19 +1904,25 @@ export const resolveAuthoritativeDisplacement = (
       distancePolicy,
     })
   }
-  const snapshots = buildMovementSnapshots(input.map, input.sheets, placementId)
-  if (!snapshots.ok) {
+  const snapshotResult = buildMovementSnapshots(input.map, input.sheets, placementId)
+  if (!snapshotResult.ok) {
     return displacementFailure({
-      reasonCode: displacementSnapshotFailureCode(snapshots.reasonCode),
-      message: snapshots.message,
+      reasonCode: displacementSnapshotFailureCode(snapshotResult.reasonCode),
+      message: snapshotResult.message,
       placementId,
       movementMode,
       distancePolicy,
-      consultedPlacementIds: snapshots.consultedPlacementIds,
-      sheetReads: snapshots.sheetReads,
+      consultedPlacementIds: snapshotResult.consultedPlacementIds,
+      sheetReads: snapshotResult.sheetReads,
     })
   }
 
+  // Forced displacement is not a use of Sky/Levitate, but Gravity's grounding
+  // projection still controls zone eligibility along the authoritative path.
+  const snapshots = projectGravityMovementSnapshots(
+    snapshotResult,
+    gravityResolverForMap(input.map),
+  )
   const { mover, placements, sheetReads } = snapshots
   const origin = cloneAnchor(mover.position)
   const consultedPlacementIds = placements.map(placement => placement.id)

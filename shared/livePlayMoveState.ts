@@ -125,7 +125,7 @@ const TOKEN_FACING_DIRECTIONS = new Set<unknown>(['north-east', 'south-east', 's
 const HAZARD_KINDS = new Set<unknown>(['spikes', 'toxic-spikes', 'sticky-web', 'stealth-rock', 'fire'])
 const WEATHER_KINDS = new Set<unknown>(['sunny', 'rainy', 'hail', 'sandstorm'])
 const TERRAIN_KINDS = new Set<unknown>(['electric', 'grassy', 'misty', 'psychic'])
-const ROOM_KINDS = new Set<unknown>(['magic', 'trick', 'wonder'])
+const ROOM_KINDS = new Set<unknown>(['magic', 'trick', 'wonder', 'gravity'])
 const MAP_TRACKED_FREQUENCIES = new Set<unknown>(['eot', 'scene', 'daily'])
 
 const PLACEMENT_FIELDS = new Set(['id', 'sheetKind', 'sheetSlug', 'position', 'sideId', 'initiative', 'facing', 'turned'])

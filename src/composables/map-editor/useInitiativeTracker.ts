@@ -22,7 +22,10 @@ import { sheetItemsInitiativeBonus } from '~/utils/sheetHeldItemEffects'
 import { pokemonHeldItemNames, trainerEquippedItemNames } from '~/utils/sheetItemNames'
 import { pokemonTrainingFeatureInitiativeBonus } from '~/utils/sheets/pokemonTrainingFeatures'
 import { encounterModifiedInitiativeScore } from '~/utils/encounterInitiative'
-import { encounterCalculatedInitiativeDirection } from '~/utils/encounterRooms'
+import {
+  activeEncounterRoomKinds,
+  encounterCalculatedInitiativeDirection,
+} from '~/utils/encounterRooms'
 import {
   getHpBarDisplayMetrics,
   hpBarPercentFromRatio,
@@ -170,13 +173,24 @@ export const useInitiativeTracker = ({
     return resolveTrainerStats(sheet).find((row) => row.key === 'spd')?.total ?? 0
   }
 
+  const itemEffectsSuppressedForKind = (kind: InitiativeKind): boolean => (
+    activeEncounterRoomKinds(map.value ?? {}).has('magic')
+    && (kind === 'pokemon' || kind === 'trainer')
+  )
+
   const initiativeItemBonusForPlacement = (kind: InitiativeKind, sheetSlug: string): number => {
+    const suppressed = itemEffectsSuppressedForKind(kind)
     if (kind === 'pokemon') {
       const sheet = pokemonBySlug.value?.get(sheetSlug)
-      return sheet ? sheetItemsInitiativeBonus(pokemonHeldItemNames(sheet)) : 0
+      return sheet && !suppressed
+        ? sheetItemsInitiativeBonus(pokemonHeldItemNames(sheet))
+        : 0
     }
     const sheet = trainerBySlug.value?.get(sheetSlug)
-    return sheet ? sheetItemsInitiativeBonus(trainerEquippedItemNames(sheet)) : 0
+    return sheet ? sheetItemsInitiativeBonus(trainerEquippedItemNames(
+      sheet,
+      { includeAccessory: !suppressed },
+    )) : 0
   }
 
   const initiativeTrainingBonusForPlacement = (kind: InitiativeKind, sheetSlug: string): number => {
@@ -214,7 +228,9 @@ export const useInitiativeTracker = ({
 
   const initiativeOrderEntryByPlacementId = computed(() => new Map(
     (map.value?.placements ?? []).map((placement) => {
-      const entry = initiativeOrderEntryForPlacement(placement, readInitiativeSheet)
+      const entry = initiativeOrderEntryForPlacement(placement, readInitiativeSheet, {
+        itemEffectsSuppressed: itemEffectsSuppressedForKind(placement.sheetKind),
+      })
       return [placement.id, {
         ...entry,
         initiativeScore: calculatedInitiativeScore(placement, entry.initiativeScore),

@@ -29,9 +29,17 @@ import { placementToSpawned, type SheetLookup } from '~/utils/placement'
 import { deepCloneJson } from '~/utils/serialization'
 import type { RegisteredMoveHandlerRegistry } from './handlers/registry'
 import {
+  createMoveAutomationGravityResolver,
+  type MoveAutomationGravityResolver,
+} from './gravity'
+import {
   createMoveAutomationHistoryResolver,
   type MoveAutomationHistoryResolver,
 } from './history'
+import {
+  createMoveAutomationItemEffectResolver,
+  type MoveAutomationItemEffectResolver,
+} from './itemEffects'
 import {
   createMoveAutomationLineOfSightResolver,
   type MoveAutomationLineOfSightResolver,
@@ -118,7 +126,9 @@ export interface AuthoritativeMoveSheetQueries {
 }
 
 export type AuthoritativeMoveRelationshipQueries = MoveAutomationRelationshipResolver
+export type AuthoritativeMoveGravityQueries = MoveAutomationGravityResolver
 export type AuthoritativeMoveHistoryQueries = MoveAutomationHistoryResolver
+export type AuthoritativeMoveItemEffectQueries = MoveAutomationItemEffectResolver
 export type AuthoritativeMoveResourceQueries = MoveAutomationResourceResolver
 export type AuthoritativeMoveRoomQueries = MoveAutomationRoomResolver
 export type AuthoritativeMoveStatQueries = MoveAutomationStatResolver
@@ -139,7 +149,9 @@ export interface AuthoritativeMoveContextQueries {
   readonly tokens: AuthoritativeMoveTokenQueries
   readonly sheets: AuthoritativeMoveSheetQueries
   readonly relationships: AuthoritativeMoveRelationshipQueries
+  readonly gravity: AuthoritativeMoveGravityQueries
   readonly history: AuthoritativeMoveHistoryQueries
+  readonly itemEffects: AuthoritativeMoveItemEffectQueries
   readonly resources: AuthoritativeMoveResourceQueries
   readonly rooms: AuthoritativeMoveRoomQueries
   readonly stats: AuthoritativeMoveStatQueries
@@ -481,6 +493,7 @@ export const buildAuthoritativeMoveRulesContext = (
     map.encounterState?.turnResources ?? createEmptyEncounterTurnResources(),
   )
   const rooms = createMoveAutomationRoomResolver(map)
+  const gravity = createMoveAutomationGravityResolver({ placements, rooms })
   const weather = createMoveAutomationWeatherResolver(map)
   const { tokens, byId: tokenById } = tokenSnapshots(
     map,
@@ -559,6 +572,11 @@ export const buildAuthoritativeMoveRulesContext = (
     ),
   })
 
+  const itemEffects = createMoveAutomationItemEffectResolver({
+    placements,
+    rooms,
+    recordSheetRead: readSet.recordPlacement,
+  })
   const stats = createMoveAutomationStatResolver({
     placements,
     tokens,
@@ -570,6 +588,10 @@ export const buildAuthoritativeMoveRulesContext = (
     tokens,
     sheets: resolvedSheets,
     history,
+    resolveGrounding: ({ placement, base }) => gravity.grounding({
+      placementId: placement.id,
+      base,
+    }).grounding,
     recordSheetRead: readSet.recordPlacement,
   })
   const lineOfSight = createMoveAutomationLineOfSightResolver({
@@ -633,7 +655,9 @@ export const buildAuthoritativeMoveRulesContext = (
       forPlacement: sheetForPlacement,
     }),
     relationships,
+    gravity,
     history,
+    itemEffects,
     resources,
     rooms,
     stats,

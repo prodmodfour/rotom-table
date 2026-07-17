@@ -64,6 +64,7 @@ import {
   encounterModifiedInitiativeScore,
 } from '~/utils/encounterInitiative'
 import { createMoveAutomationRoomResolver } from '../domain/moveAutomation/rooms'
+import { createMoveAutomationItemEffectResolver } from '../domain/moveAutomation/itemEffects'
 import { advanceMapGlobalFields } from '../domain/moveAutomation/fieldMapState'
 import {
   planInitiativeLifecycle,
@@ -629,9 +630,23 @@ const initiativeOrder = (
     return result
   }
   const placementById = new Map(map.placements.map(placement => [placement.id, placement]))
+  const rooms = createMoveAutomationRoomResolver(map)
+  const itemEffects = createMoveAutomationItemEffectResolver({
+    placements: map.placements,
+    rooms,
+  })
   const calculatedEntries = initiativeOrderEntriesForPlacements(
     map.placements,
     trackedReader,
+    placement => ({
+      itemEffectsSuppressed: itemEffects.resolve({
+        placementId: placement.id,
+        scope: placement.sheetKind === 'pokemon'
+          ? 'pokemon-held'
+          : 'trainer-accessory',
+        timing: 'static',
+      }).suppressed,
+    }),
   ).map((entry) => {
     const placement = placementById.get(entry.id)
     if (!placement) return entry
@@ -649,7 +664,7 @@ const initiativeOrder = (
     orderIds: initiativeOrderIds(
       calculatedEntries,
       manualOrderIds,
-      createMoveAutomationRoomResolver(map).calculatedInitiativeDirection(),
+      rooms.calculatedInitiativeDirection(),
     ),
     sheetReads: deduplicateAuthoritativeMoveSheetReads(reads),
   }

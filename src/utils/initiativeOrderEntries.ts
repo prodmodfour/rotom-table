@@ -87,9 +87,15 @@ const trainerDisplayName = (
   placement: Pick<SheetPlacement, 'sheetSlug'>,
 ): string => rawString(sheet.name) ?? placement.sheetSlug
 
+export interface InitiativeOrderEntryOptions {
+  /** Server-owned Magic Room query result for this placement's relevant item scope. */
+  readonly itemEffectsSuppressed?: boolean
+}
+
 export const pokemonInitiativeOrderEntry = (
   placement: SheetPlacement,
   sheet: CharacterSheet,
+  options: InitiativeOrderEntryOptions = {},
 ): InitiativeOrderEntry => {
   const conditions = pokemonConditions(sheet)
   const abilities = pokemonAbilityNames(sheet)
@@ -101,7 +107,9 @@ export const pokemonInitiativeOrderEntry = (
     { abilities },
   )
   const speed = applyCombatStageToStat(baseSpeed, speedCombatStage)
-  const initiativeItemBonus = sheetItemsInitiativeBonus(pokemonHeldItemNames(sheet))
+  const initiativeItemBonus = options.itemEffectsSuppressed
+    ? 0
+    : sheetItemsInitiativeBonus(pokemonHeldItemNames(sheet))
   const initiativeTrainingBonus = pokemonTrainingFeatureInitiativeBonus(sheet.activeTrainingFeature)
   const baseInitiative = speed + initiativeItemBonus + initiativeTrainingBonus
   const initiative = normalizeInitiativeValue(placement.initiative)
@@ -121,6 +129,7 @@ export const pokemonInitiativeOrderEntry = (
 export const trainerInitiativeOrderEntry = (
   placement: SheetPlacement,
   sheet: TrainerSheet,
+  options: InitiativeOrderEntryOptions = {},
 ): InitiativeOrderEntry => {
   const conditions = trainerConditions(sheet)
   const abilities = trainerAbilityNames(sheet)
@@ -132,7 +141,10 @@ export const trainerInitiativeOrderEntry = (
     { abilities },
   )
   const speed = applyCombatStageToStat(baseSpeed, speedCombatStage)
-  const initiativeItemBonus = sheetItemsInitiativeBonus(trainerEquippedItemNames(sheet))
+  const initiativeItemBonus = sheetItemsInitiativeBonus(trainerEquippedItemNames(
+    sheet,
+    { includeAccessory: !options.itemEffectsSuppressed },
+  ))
   const initiative = normalizeInitiativeValue(placement.initiative)
 
   return {
@@ -150,13 +162,14 @@ export const trainerInitiativeOrderEntry = (
 export const initiativeOrderEntryForPlacement = (
   placement: SheetPlacement,
   readSheet: InitiativeSheetReader,
+  options: InitiativeOrderEntryOptions = {},
 ): InitiativeOrderEntry => {
   try {
     const result = readSheet(placement.sheetKind, placement.sheetSlug)
     if (!result) return fallbackInitiativeOrderEntry(placement)
     return placement.sheetKind === 'pokemon'
-      ? pokemonInitiativeOrderEntry(placement, result.sheet as unknown as CharacterSheet)
-      : trainerInitiativeOrderEntry(placement, result.sheet as unknown as TrainerSheet)
+      ? pokemonInitiativeOrderEntry(placement, result.sheet as unknown as CharacterSheet, options)
+      : trainerInitiativeOrderEntry(placement, result.sheet as unknown as TrainerSheet, options)
   } catch {
     return fallbackInitiativeOrderEntry(placement)
   }
@@ -165,15 +178,21 @@ export const initiativeOrderEntryForPlacement = (
 export const initiativeOrderEntriesForPlacements = (
   placements: readonly SheetPlacement[],
   readSheet: InitiativeSheetReader,
-): InitiativeOrderEntry[] => placements.map((placement) => initiativeOrderEntryForPlacement(placement, readSheet))
+  optionsForPlacement?: (placement: SheetPlacement) => InitiativeOrderEntryOptions,
+): InitiativeOrderEntry[] => placements.map((placement) => initiativeOrderEntryForPlacement(
+  placement,
+  readSheet,
+  optionsForPlacement?.(placement),
+))
 
 export const initiativeOrderIdsForPlacements = (
   placements: readonly SheetPlacement[],
   readSheet: InitiativeSheetReader,
   manualOrderIds?: readonly string[] | null,
   direction: InitiativeOrderDirection = 'highest-first',
+  optionsForPlacement?: (placement: SheetPlacement) => InitiativeOrderEntryOptions,
 ): string[] => initiativeOrderIds(
-  initiativeOrderEntriesForPlacements(placements, readSheet),
+  initiativeOrderEntriesForPlacements(placements, readSheet, optionsForPlacement),
   manualOrderIds,
   direction,
 )

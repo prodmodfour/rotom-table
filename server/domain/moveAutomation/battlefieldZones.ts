@@ -114,7 +114,7 @@ const HAZARD_KIND_SET = new Set<MapHazardKind>([
 ])
 const WEATHER_KIND_SET = new Set(['sunny', 'rainy', 'hail', 'sandstorm'])
 const TERRAIN_KIND_SET = new Set(['electric', 'grassy', 'misty', 'psychic'])
-const ROOM_KIND_SET = new Set(['magic', 'trick', 'wonder'])
+const ROOM_KIND_SET = new Set(['magic', 'trick', 'wonder', 'gravity'])
 const ZONE_KIND_SET = new Set<unknown>(ENCOUNTER_ZONE_KINDS)
 const CONTROL_CHARACTER_PATTERN = /[\u0000-\u001f\u007f]/
 

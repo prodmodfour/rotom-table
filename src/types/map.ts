@@ -59,7 +59,8 @@ export type MapHazardKind = 'spikes' | 'toxic-spikes' | 'sticky-web' | 'stealth-
 
 export type MapWeatherKind = 'sunny' | 'rainy' | 'hail' | 'sandstorm'
 export type MapTerrainKind = 'electric' | 'grassy' | 'misty' | 'psychic'
-export type MapRoomKind = 'magic' | 'trick' | 'wonder'
+/** Psychic Rooms plus Gravity in the legacy/editor global-field compatibility lane. */
+export type MapRoomKind = 'magic' | 'trick' | 'wonder' | 'gravity'
 
 export interface MapWeatherEffect {
   kind: MapWeatherKind

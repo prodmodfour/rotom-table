@@ -15,8 +15,19 @@ export const splitSheetItemNames = (value: string | null | undefined): string[] 
 export const pokemonHeldItemNames = (sheet: CharacterSheet): string[] =>
   splitSheetItemNames(sheet.items?.held)
 
-export const trainerEquippedItemNames = (sheet: TrainerSheet): string[] => {
+export interface TrainerEquippedItemNameOptions {
+  /** Magic Room suppresses only Accessory-slot equipment for Trainers. */
+  readonly includeAccessory?: boolean
+}
+
+export const trainerEquippedItemNames = (
+  sheet: TrainerSheet,
+  options: TrainerEquippedItemNameOptions = {},
+): string[] => {
   const slots = sheet.equipmentSlots
   if (!slots) return []
-  return TRAINER_EQUIPMENT_SLOTS.flatMap((slot) => splitSheetItemNames(slots[slot.key]))
+  const includeAccessory = options.includeAccessory ?? true
+  return TRAINER_EQUIPMENT_SLOTS
+    .filter(slot => includeAccessory || slot.key !== 'accessory')
+    .flatMap((slot) => splitSheetItemNames(slots[slot.key]))
 }

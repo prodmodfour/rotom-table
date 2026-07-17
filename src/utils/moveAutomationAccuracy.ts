@@ -1,3 +1,4 @@
+import { GRAVITY_ACCURACY_ROLL_BONUS } from '#shared/moveAutomation/globalFields'
 import {
   conditionAccuracyModifier,
   conditionAdjustedEvasion,
@@ -210,15 +211,42 @@ export const resolveMoveAutomationTargetEvasion = (
   }
 }
 
-const moveAutomationHeldItemAccuracyBonus = (user: SpawnedPokemon): number =>
-  user.sheetKind === 'pokemon' ? heldItemsAccuracyRollBonus(user.tokenItems) : 0
+export interface MoveAutomationUserAccuracyContext {
+  /** Authoritative server callers set this from the generic item-effect query. */
+  readonly heldItemEffectsSuppressed?: boolean
+  /** Compatibility/browser projection; never accepted as command mechanics. */
+  readonly fieldEffects?: MapFieldEffects | null
+  /** Server-owned additive field result. Overrides compatibility derivation when supplied. */
+  readonly fieldAccuracyBonus?: number
+}
 
-export const moveAutomationUserAccuracy = (user: SpawnedPokemon): number =>
+const moveAutomationHeldItemAccuracyBonus = (
+  user: SpawnedPokemon,
+  context: MoveAutomationUserAccuracyContext,
+): number => {
+  if (user.sheetKind !== 'pokemon') return 0
+  const suppressed = context.heldItemEffectsSuppressed
+    ?? mapFieldEffectsHaveActiveRoom(context.fieldEffects, 'magic')
+  return suppressed ? 0 : heldItemsAccuracyRollBonus(user.tokenItems)
+}
+
+const moveAutomationFieldAccuracyBonus = (
+  context: MoveAutomationUserAccuracyContext,
+): number => context.fieldAccuracyBonus
+  ?? (mapFieldEffectsHaveActiveRoom(context.fieldEffects, 'gravity')
+    ? GRAVITY_ACCURACY_ROLL_BONUS
+    : 0)
+
+export const moveAutomationUserAccuracy = (
+  user: SpawnedPokemon,
+  context: MoveAutomationUserAccuracyContext = {},
+): number =>
   sheetAbilityAdjustedAccuracyStage(user.combatStages?.acc, user.abilityNames)
   + conditionAccuracyModifier(user.conditions, { abilities: user.abilityNames })
-  + moveAutomationHeldItemAccuracyBonus(user)
+  + moveAutomationHeldItemAccuracyBonus(user, context)
   + sheetAbilityAccuracyRollBonus(user.abilityNames)
   + (user.accuracyRollBonus ?? pokemonTrainingFeatureAccuracyRollBonus(user.activeTrainingFeature))
+  + moveAutomationFieldAccuracyBonus(context)
 
 export const moveAutomationHitChanceTone = (percent: number): MoveAutomationHitChanceTone => {
   if (percent < 50) return 'low'
@@ -251,7 +279,9 @@ export const moveAutomationTargetHitChance = (
   target: SpawnedPokemon,
   context: Omit<MoveAutomationEvasionContext, 'attacker'> = {},
 ): MoveAutomationTargetHitChance => {
-  const userAccuracy = moveAutomationUserAccuracy(user)
+  const userAccuracy = moveAutomationUserAccuracy(user, {
+    fieldEffects: context.fieldEffects,
+  })
   const targetEvasion = resolveMoveAutomationTargetEvasion(script, target, {
     ...context,
     attacker: user,

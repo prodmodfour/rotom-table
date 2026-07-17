@@ -475,7 +475,7 @@ const resolveInstantDoubleStrikeMoveAutomation = ({
     attacker: user,
     fieldEffects: fieldEffectsForTarget?.(target) ?? fieldEffects,
   })
-  const userAccuracy = moveAutomationUserAccuracy(user)
+  const userAccuracy = moveAutomationUserAccuracy(user, { fieldEffects })
   const accuracyRolls = [1, 2].map((ordinal) =>
     resolveMoveAutomationAccuracyRoll(script, recordedAccuracyD20({
       script,
@@ -623,7 +623,7 @@ export const resolveInstantMoveAutomation = ({
     attacker: user,
     fieldEffects: fieldEffectsForTarget?.(target) ?? fieldEffects,
   })
-  const userAccuracy = moveAutomationUserAccuracy(user)
+  const userAccuracy = moveAutomationUserAccuracy(user, { fieldEffects })
   const naturalRoll = recordedAccuracyD20({
     script,
     target,
@@ -904,7 +904,7 @@ const resolveInstantTargetGroupMoveAutomation = ({
   script = moveAutomationScriptWithPoisonTouch(script, user)
 
   const targetResolutions: Record<string, MoveAutomationTargetResolutionState> = {}
-  const userAccuracy = moveAutomationUserAccuracy(user)
+  const userAccuracy = moveAutomationUserAccuracy(user, { fieldEffects })
   for (const [targetIndex, target] of targets.entries()) {
     const state = defaultTargetResolutionState(script)
     if (script.requiresAccuracy) {

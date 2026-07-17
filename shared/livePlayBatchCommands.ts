@@ -161,6 +161,7 @@ export const LIVE_PLAY_ROOM_KIND_VALUES = [
   'magic',
   'trick',
   'wonder',
+  'gravity',
 ] as const satisfies readonly MapRoomKind[]
 
 export const LIVE_PLAY_FIELD_EFFECT_KIND_VALUES = [

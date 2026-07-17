@@ -1,5 +1,6 @@
 import type { MoveExpressionStat } from '#shared/moveAutomation/expressions'
 import type { EncounterZoneSource } from '#shared/moveAutomation/encounterZones'
+import type { EncounterSideId } from '#shared/moveAutomation/encounterState'
 import type { InitiativeOrderDirection } from '#shared/initiativeOrder'
 import type {
   MapFieldEffects,
@@ -16,6 +17,8 @@ export interface AuthoritativeRoomInstance {
   readonly kind: MapRoomKind
   readonly zoneId: string
   readonly source: EncounterZoneSource
+  /** Accepted source-side ownership; battlefield mechanics remain field-wide. */
+  readonly sideId: EncounterSideId | null
 }
 
 export interface MoveAutomationRoomResolver {
@@ -57,6 +60,7 @@ const activeRoomInstances = (
       kind: zone.payload.roomId,
       zoneId: zone.id,
       source: zone.source,
+      sideId: zone.sideId,
     })
   }
   return deepFreeze(rooms)

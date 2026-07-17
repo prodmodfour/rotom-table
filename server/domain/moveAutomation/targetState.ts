@@ -87,6 +87,12 @@ export interface CreateMoveAutomationTargetStateResolverInput {
   readonly tokens: readonly SpawnedPokemon[]
   readonly sheets: readonly MoveAutomationTargetStateSheetSnapshot[]
   readonly history: MoveAutomationHistoryResolver
+  /** Active field overlays may narrow grounding without rewriting token or sheet state. */
+  readonly resolveGrounding?: (input: {
+    readonly placement: SheetPlacement
+    readonly token: SpawnedPokemon
+    readonly base: MoveAutomationTargetGrounding
+  }) => MoveAutomationTargetGrounding
   /** Authoritative context read-set seam. Standalone pure queries may omit it. */
   readonly recordSheetRead?: (
     placement: Pick<SheetPlacement, 'sheetKind' | 'sheetSlug'>,
@@ -260,6 +266,7 @@ const targetState = (options: {
   readonly token: SpawnedPokemon
   readonly sheet: MoveAutomationTargetStateSheetSnapshot
   readonly history: MoveAutomationHistoryResolver
+  readonly resolveGrounding?: CreateMoveAutomationTargetStateResolverInput['resolveGrounding']
 }): MoveAutomationTargetState | null => {
   if (
     options.token.sheetKind !== options.placement.sheetKind
@@ -270,7 +277,12 @@ const targetState = (options: {
 
   const conditionIds = normalizedConditionIds(options.token.conditions)
   const typeIds = normalizedTypeIds(options.token.defenderTypes)
-  const grounding = targetGrounding(options.token)
+  const baseGrounding = targetGrounding(options.token)
+  const grounding = options.resolveGrounding?.({
+    placement: options.placement,
+    token: options.token,
+    base: baseGrounding,
+  }) ?? baseGrounding
   const sizeAndWeight = options.placement.sheetKind === 'pokemon'
     ? pokemonSizeAndWeight(options.sheet.sheet as CharacterSheet, options.token)
     : { size: normalizedTargetSize(options.token.size), weightClass: null }
@@ -333,7 +345,13 @@ export const createMoveAutomationTargetStateResolver = (
     states.set(
       placement.id,
       token && sheet
-        ? targetState({ placement, token, sheet, history: input.history })
+        ? targetState({
+            placement,
+            token,
+            sheet,
+            history: input.history,
+            resolveGrounding: input.resolveGrounding,
+          })
         : null,
     )
   }

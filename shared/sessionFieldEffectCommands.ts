@@ -33,7 +33,7 @@ export type SessionFieldEffectCategory = (typeof SESSION_FIELD_EFFECT_CATEGORIES
 
 export const SESSION_WEATHER_KINDS = ['sunny', 'rainy', 'hail', 'sandstorm'] as const
 export const SESSION_TERRAIN_EFFECT_KINDS = ['electric', 'grassy', 'misty', 'psychic'] as const
-export const SESSION_ROOM_KINDS = ['magic', 'trick', 'wonder'] as const
+export const SESSION_ROOM_KINDS = ['magic', 'trick', 'wonder', 'gravity'] as const
 export const SESSION_FIELD_EFFECT_KINDS = [
   ...SESSION_WEATHER_KINDS,
   ...SESSION_TERRAIN_EFFECT_KINDS,

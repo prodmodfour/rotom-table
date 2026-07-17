@@ -109,7 +109,7 @@
       "required": ["kind"],
       "additionalProperties": false,
       "properties": {
-        "kind": { "enum": ["magic", "trick", "wonder"] },
+        "kind": { "enum": ["magic", "trick", "wonder", "gravity"] },
         "rounds": { "type": ["integer", "null"], "minimum": 0 },
         "startsNextRound": { "type": "boolean" },
         "source": { "type": "string" }

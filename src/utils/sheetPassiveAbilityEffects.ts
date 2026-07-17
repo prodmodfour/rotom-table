@@ -31,6 +31,8 @@ export interface SheetPassiveTypeEffectivenessContext {
   ignoreImmunity?: boolean
   /** Reviewed move rules may ignore resistance without suppressing independent immunities. */
   ignoreResistance?: boolean
+  /** Active typed fields may suppress exact passive sources without hiding the ability itself. */
+  ignoredResistanceSources?: readonly string[]
 }
 
 export interface SheetPassiveTypeEffectivenessResult {
@@ -192,7 +194,9 @@ export const resolveSheetPassiveTypeEffectiveness = (
   const sources: string[] = []
 
   if (!context.ignoreResistance) {
+    const ignoredSources = new Set(context.ignoredResistanceSources ?? [])
     for (const source of passiveTypeResistanceSources(attackingType, abilities)) {
+      if (ignoredSources.has(source)) continue
       if (multiplier === 0) break
       const nextMultiplier = resistMultiplierOneStepFurther(multiplier)
       if (!Object.is(nextMultiplier, multiplier)) sources.push(source)

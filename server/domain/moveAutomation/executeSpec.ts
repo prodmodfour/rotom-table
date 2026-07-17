@@ -34,7 +34,6 @@ import {
   type MoveResolutionTraceJsonValue,
 } from '#shared/moveAutomation/trace'
 import {
-  moveAutomationUserAccuracy,
   resolveMoveAutomationTargetEvasion,
 } from '~/utils/moveAutomationAccuracy'
 import {
@@ -50,6 +49,7 @@ import type {
   AuthoritativeMoveRulesContext,
   AuthoritativeMoveSheetRead,
 } from './context'
+import { resolveAuthoritativeMoveUserAccuracy } from './accuracy'
 import {
   executeResolvedMoveChoiceBranch,
   executeServerMoveBranch,
@@ -1923,7 +1923,7 @@ export const executeMoveSpec = (
             }
             const move = getMechanics()
             target = targetTokenForRoll(input.context, recipientId)
-            const userAccuracy = moveAutomationUserAccuracy(input.context.actor.token)
+            const userAccuracy = resolveAuthoritativeMoveUserAccuracy(input.context)
             targetEvasion = resolveMoveAutomationTargetEvasion(
               move.script,
               target,
@@ -1932,11 +1932,7 @@ export const executeMoveSpec = (
                 fieldEffects: input.context.queries.rooms.projectFieldEffects(),
               },
             ).value
-            modifiers = [{
-              sourceId: 'actor-accuracy',
-              reason: 'Actor Accuracy',
-              value: userAccuracy,
-            }]
+            modifiers = userAccuracy.modifiers
           }
 
           const result = input.context.random.roll({
@@ -1962,7 +1958,7 @@ export const executeMoveSpec = (
               getMechanics().script,
               result.naturalResult,
               {
-                userAccuracy: modifiers[0]?.value ?? 0,
+                userAccuracy: modifiers.reduce((total, modifier) => total + modifier.value, 0),
                 targetEvasion,
                 accuracyRule: weatherAccuracy?.rule,
               },

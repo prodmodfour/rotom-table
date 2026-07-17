@@ -24,7 +24,6 @@ import type {
 } from '~/types/moveAutomation'
 import type { SpawnedPokemon } from '~/types/pokemon'
 import {
-  moveAutomationUserAccuracy,
   resolveMoveAutomationTargetEvasion,
 } from '~/utils/moveAutomationAccuracy'
 import { createMoveAutomationHpUpdateAccumulator } from '~/utils/moveAutomationHpUpdates'
@@ -38,6 +37,7 @@ import {
 } from '~/utils/moveAutomationStatusUpdates'
 import { normalizeConditionNames } from '~/utils/statusConditions'
 import type { AuthoritativeMoveRulesContext } from './context'
+import { resolveAuthoritativeMoveUserAccuracy } from './accuracy'
 import type { MoveContextualDamageBaseResolution } from './damageBase'
 import { resolveMoveSpecDamageRollFormula } from './damageRollFormula'
 import {
@@ -467,7 +467,7 @@ const rollAccuracy = (options: {
     ? `.t${options.targetOrdinal}`
     : `.t${options.targetOrdinal}.h${options.hitIndex}`
   const rollId = generatedId(options.operation, accuracy.rollId, suffix)
-  const userAccuracy = moveAutomationUserAccuracy(options.actor)
+  const userAccuracy = resolveAuthoritativeMoveUserAccuracy(options.context)
   const targetEvasion = resolveMoveAutomationTargetEvasion(
     options.script,
     options.target,
@@ -481,17 +481,13 @@ const rollAccuracy = (options: {
     parentEffectId: options.operation.id,
     formula: accuracy.formula,
     reason: `${options.operation.reasonCode} accuracy for ${options.target.id}`,
-    modifiers: [{
-      sourceId: 'actor-accuracy',
-      reason: 'Actor Accuracy',
-      value: userAccuracy,
-    }],
+    modifiers: userAccuracy.modifiers,
   })
   const weatherAccuracy = options.context.queries.weather.accuracy({
     canonicalMoveId: options.script.moveName,
   })
   const result = resolveMoveAutomationAccuracyRoll(options.script, rolled.naturalResult, {
-    userAccuracy,
+    userAccuracy: userAccuracy.value,
     targetEvasion,
     accuracyRule: weatherAccuracy.rule,
   })

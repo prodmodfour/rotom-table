@@ -63,8 +63,14 @@ export const moveAutomationTargetSuppressesGroundsourceImmunity = (
 export const moveAutomationPassiveImmunityKeywordsForTarget = (
   moveKeywords: readonly string[] | null | undefined,
   target: MoveAutomationKeywordImmunityTarget,
+  options: { readonly suppressGroundsourceImmunity?: boolean } = {},
 ): readonly string[] | null | undefined => {
   if (!moveAutomationKeywordsInclude(moveKeywords, GROUNDSOURCE_KEYWORD)) return moveKeywords
-  if (!moveAutomationTargetSuppressesGroundsourceImmunity(target)) return moveKeywords
-  return (moveKeywords ?? []).filter((keyword) => !moveAutomationKeywordsInclude([keyword], GROUNDSOURCE_KEYWORD))
+  if (
+    !options.suppressGroundsourceImmunity
+    && !moveAutomationTargetSuppressesGroundsourceImmunity(target)
+  ) return moveKeywords
+  return (moveKeywords ?? []).filter((keyword) => (
+    !moveAutomationKeywordsInclude([keyword], GROUNDSOURCE_KEYWORD)
+  ))
 }

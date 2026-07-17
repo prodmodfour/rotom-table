@@ -16,7 +16,7 @@ export interface MapEffectDefinition<Kind extends string = string> {
 
 export const MAP_WEATHER_KINDS = ['sunny', 'rainy', 'hail', 'sandstorm'] as const satisfies readonly MapWeatherKind[]
 export const MAP_TERRAIN_KINDS = ['electric', 'grassy', 'misty', 'psychic'] as const satisfies readonly MapTerrainKind[]
-export const MAP_ROOM_KINDS = ['magic', 'trick', 'wonder'] as const satisfies readonly MapRoomKind[]
+export const MAP_ROOM_KINDS = ['magic', 'trick', 'wonder', 'gravity'] as const satisfies readonly MapRoomKind[]
 
 export const MAP_WEATHER_DEFINITIONS = {
   sunny: {
@@ -123,6 +123,15 @@ export const MAP_ROOM_DEFINITIONS = {
     defaultRounds: 5,
     description: 'Each Pokémon’s Defense and Special Defense are switched.',
     rules: 'Each individual Pokémon’s Defense and Special Defense Stats are switched.',
+  },
+  gravity: {
+    kind: 'gravity',
+    label: 'Gravity',
+    shortLabel: 'Gravity',
+    color: '#6f63d9',
+    defaultRounds: 5,
+    description: 'Grounds Pokémon, limits aerial endpoints, and grants +2 Accuracy.',
+    rules: 'Pokémon are grounded; Sky and Levitate cannot end above 1 metre; Flying and Levitate Ground resistance and Groundsource immunity are suppressed; all Accuracy Rolls gain +2.',
   },
 } as const satisfies Record<MapRoomKind, MapEffectDefinition<MapRoomKind>>
 
