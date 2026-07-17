@@ -7,6 +7,7 @@ import {
   type MoveAutomationLineOfSightPlacement,
   type MoveAutomationLineOfSightPolicy,
 } from '~~/server/domain/moveAutomation/lineOfSight'
+import type { MoveAutomationBarrierSightCell } from '~~/server/domain/moveAutomation/barriersAndSmoke'
 import type { MapVoxelV2 } from '~/types/map'
 
 const placement = (
@@ -36,15 +37,34 @@ const voxel = (
   ...overrides,
 })
 
+const barrierCell = (
+  zoneId: string,
+  x: number,
+  y = 1,
+  z = 0,
+): MoveAutomationBarrierSightCell => ({
+  zoneId,
+  source: {
+    kind: 'operation',
+    operationId: `operation.${zoneId}`,
+    moveId: 'barrier',
+    placementId: 'actor',
+  },
+  sideId: 'red',
+  cell: { x, y, z },
+})
+
 const resolve = (options: {
   readonly voxels?: readonly MapVoxelV2[]
   readonly placements?: readonly MoveAutomationLineOfSightPlacement[]
+  readonly barrierCells?: readonly MoveAutomationBarrierSightCell[]
   readonly sourcePlacementId?: string
   readonly targetPlacementId?: string
   readonly policy?: MoveAutomationLineOfSightPolicy
 } = {}) => resolveMoveAutomationLineOfSight({
   voxels: options.voxels ?? [],
   placements: options.placements ?? [placement('actor', 0), placement('target', 4)],
+  barrierCells: options.barrierCells ?? [],
   sourcePlacementId: options.sourcePlacementId ?? 'actor',
   targetPlacementId: options.targetPlacementId ?? 'target',
   policy: options.policy,
@@ -168,6 +188,49 @@ describe('authoritative move line of sight', () => {
       coverVoxelCells: [{ x: 3, y: 0, z: 0 }],
       consultedPlacementIds: ['actor', 'cover-a', 'cover-b', 'target'],
     })
+  })
+
+  it('blocks sight through exact Barrier cells and honors only reviewed exceptions', () => {
+    const barrierCells = [
+      barrierCell('zone.barrier.wall', 2),
+      barrierCell('zone.barrier.wall', 2, 2),
+    ]
+
+    expect(resolve({ barrierCells })).toMatchObject({
+      targetable: false,
+      visibility: 'none',
+      cover: 'blocked',
+      reasonCode: 'line-of-sight-blocked-barrier',
+      blockingZoneIds: ['zone.barrier.wall'],
+    })
+    expect(resolve({
+      barrierCells,
+      policy: { ignoreBlockingTerrain: true },
+    })).toMatchObject({
+      targetable: true,
+      visibility: 'full',
+      cover: 'none',
+      blockingZoneIds: [],
+    })
+  })
+
+  it('treats a partially occluding Barrier as one non-stacking cover penalty', () => {
+    const result = resolve({
+      placements: [
+        placement('actor', 0, 0, 0, { base: 2 }),
+        placement('target', 4, 0),
+      ],
+      barrierCells: [barrierCell('zone.barrier.partial', 2, 0)],
+    })
+
+    expect(result).toMatchObject({
+      targetable: true,
+      visibility: 'full',
+      cover: 'rough-terrain',
+      accuracyModifier: MOVE_AUTOMATION_ROUGH_COVER_ACCURACY_MODIFIER,
+      coverZoneIds: ['zone.barrier.partial'],
+    })
+    expect(result.visibleTargetCells).toEqual([{ x: 4, y: 0, z: 0 }])
   })
 
   it('lets authoritative placement state make a combatant Blocking Terrain', () => {

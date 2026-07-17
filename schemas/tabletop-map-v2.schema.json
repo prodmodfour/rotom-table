@@ -851,7 +851,27 @@
       "type": "object",
       "required": ["barrierId"],
       "additionalProperties": false,
-      "properties": { "barrierId": { "$ref": "#/$defs/encounterEffectStableId" } }
+      "dependentRequired": {
+        "currentHitPoints": ["maximumHitPoints", "damageReduction", "height", "typeIds"],
+        "maximumHitPoints": ["currentHitPoints", "damageReduction", "height", "typeIds"],
+        "damageReduction": ["currentHitPoints", "maximumHitPoints", "height", "typeIds"],
+        "height": ["currentHitPoints", "maximumHitPoints", "damageReduction", "typeIds"],
+        "typeIds": ["currentHitPoints", "maximumHitPoints", "damageReduction", "height"]
+      },
+      "properties": {
+        "barrierId": { "$ref": "#/$defs/encounterEffectStableId" },
+        "currentHitPoints": { "type": "integer", "minimum": 1, "maximum": 1000000 },
+        "maximumHitPoints": { "type": "integer", "minimum": 1, "maximum": 1000000 },
+        "damageReduction": { "type": "integer", "minimum": 0, "maximum": 1000000 },
+        "height": { "type": "integer", "minimum": 1, "maximum": 32 },
+        "typeIds": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 3,
+          "uniqueItems": true,
+          "items": { "type": "string", "pattern": "^[a-z]+(?:-[a-z]+)*$", "maxLength": 160 }
+        }
+      }
     },
     "encounterPledgeZonePayload": {
       "type": "object",

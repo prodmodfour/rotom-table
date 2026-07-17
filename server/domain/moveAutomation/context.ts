@@ -29,6 +29,10 @@ import { placementToSpawned, type SheetLookup } from '~/utils/placement'
 import { deepCloneJson } from '~/utils/serialization'
 import type { RegisteredMoveHandlerRegistry } from './handlers/registry'
 import {
+  createMoveAutomationBarriersAndSmokeResolver,
+  type MoveAutomationBarriersAndSmokeResolver,
+} from './barriersAndSmoke'
+import {
   createMoveAutomationGravityResolver,
   type MoveAutomationGravityResolver,
 } from './gravity'
@@ -130,6 +134,7 @@ export interface AuthoritativeMoveSheetQueries {
 }
 
 export type AuthoritativeMoveRelationshipQueries = MoveAutomationRelationshipResolver
+export type AuthoritativeMoveBarriersAndSmokeQueries = MoveAutomationBarriersAndSmokeResolver
 export type AuthoritativeMoveGlobalFieldQueries = MoveAutomationRemainingGlobalFieldResolver
 export type AuthoritativeMoveGravityQueries = MoveAutomationGravityResolver
 export type AuthoritativeMoveHistoryQueries = MoveAutomationHistoryResolver
@@ -154,6 +159,7 @@ export interface AuthoritativeMoveContextQueries {
   readonly tokens: AuthoritativeMoveTokenQueries
   readonly sheets: AuthoritativeMoveSheetQueries
   readonly relationships: AuthoritativeMoveRelationshipQueries
+  readonly barriersAndSmoke: AuthoritativeMoveBarriersAndSmokeQueries
   readonly globalFields: AuthoritativeMoveGlobalFieldQueries
   readonly gravity: AuthoritativeMoveGravityQueries
   readonly history: AuthoritativeMoveHistoryQueries
@@ -601,14 +607,24 @@ export const buildAuthoritativeMoveRulesContext = (
     }).grounding,
     recordSheetRead: readSet.recordPlacement,
   })
-  const lineOfSight = createMoveAutomationLineOfSightResolver({
-    voxels: map.voxels,
-    placements: tokens.map(token => ({
+  const obscurationPlacements = tokens.map((token) => {
+    const placement = placementById.get(token.id)
+    return {
       id: token.id,
       position: token.position,
       base: token.base,
       clearance: token.clearance,
-    })),
+      ...(placement?.sideId ? { sideId: placement.sideId } : {}),
+    }
+  })
+  const barriersAndSmoke = createMoveAutomationBarriersAndSmokeResolver({
+    map,
+    placements: obscurationPlacements,
+  })
+  const lineOfSight = createMoveAutomationLineOfSightResolver({
+    voxels: map.voxels,
+    placements: obscurationPlacements,
+    barrierCells: barriersAndSmoke.barrierSightCells(),
     recordPlacementRead: (placementId) => {
       const placement = placementById.get(placementId)
       if (placement) readSet.recordPlacement(placement)
@@ -662,6 +678,7 @@ export const buildAuthoritativeMoveRulesContext = (
       forPlacement: sheetForPlacement,
     }),
     relationships,
+    barriersAndSmoke,
     globalFields,
     gravity,
     history,

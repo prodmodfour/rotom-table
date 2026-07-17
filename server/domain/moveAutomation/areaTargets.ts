@@ -1,6 +1,7 @@
 import { MOVE_SPEC_LIMITS } from '#shared/moveAutomation/spec'
 import type { MoveAutomationRelationshipResolver } from './relationships'
 import type { MoveSemiInvulnerableTargetabilityResolver } from './semiInvulnerableTargetability'
+import type { MoveAutomationLineOfSightResolver } from './lineOfSight'
 import type { MoveAutomationTargetStateResolver } from './targetState'
 import {
   evaluateMoveAutomationTargetPredicates,
@@ -17,6 +18,7 @@ export const DEFAULT_MOVE_AUTOMATION_AREA_TARGET_PREDICATE = Object.freeze<MoveA
 
 export type MoveAutomationAreaTargetReasonCode =
   | MoveAutomationTargetPredicateReasonCode
+  | 'target-excluded-line-of-sight'
   | 'requested-friendly-exclusion'
 
 export interface MoveAutomationAreaTargetEvaluation
@@ -42,6 +44,8 @@ export interface ResolveMoveAutomationAreaTargetsInput {
   readonly relationships: MoveAutomationRelationshipResolver
   readonly states?: MoveAutomationTargetStateResolver
   readonly targetability?: MoveSemiInvulnerableTargetabilityResolver
+  /** Optional authoritative Blocking Terrain filter, evaluated after relation/state rules. */
+  readonly lineOfSight?: MoveAutomationLineOfSightResolver
   readonly attackingMoveId?: string
   readonly originatingSetupOperationId?: string | null
   /** Already validated Friendly intent; it may narrow but never widen geometry. */
@@ -152,15 +156,23 @@ const requestedExclusionSet = (
 const freezeEvaluation = (
   evaluation: MoveAutomationTargetPredicateEvaluation,
   requestedExclusions: ReadonlySet<string>,
+  actorPlacementId: string,
+  lineOfSight?: MoveAutomationLineOfSightResolver,
 ): MoveAutomationAreaTargetEvaluation => {
-  const requestedExclusion = evaluation.outcome === 'included'
+  const sightBlocked = evaluation.outcome === 'included'
+    && lineOfSight !== undefined
+    && !lineOfSight.resolve(actorPlacementId, evaluation.targetPlacementId).targetable
+  const requestedExclusion = !sightBlocked
+    && evaluation.outcome === 'included'
     && requestedExclusions.has(evaluation.targetPlacementId)
   return Object.freeze({
     ...evaluation,
-    outcome: requestedExclusion ? 'excluded' as const : evaluation.outcome,
-    reasonCode: requestedExclusion
-      ? 'requested-friendly-exclusion' as const
-      : evaluation.reasonCode,
+    outcome: sightBlocked || requestedExclusion ? 'excluded' as const : evaluation.outcome,
+    reasonCode: sightBlocked
+      ? 'target-excluded-line-of-sight' as const
+      : requestedExclusion
+        ? 'requested-friendly-exclusion' as const
+        : evaluation.reasonCode,
   })
 }
 
@@ -191,7 +203,12 @@ export const resolveMoveAutomationAreaTargets = (
     originatingSetupOperationId: input.originatingSetupOperationId,
   })
   const evaluations = predicateResult.legalTargetEvaluations.map(evaluation => (
-    freezeEvaluation(evaluation, requestedExclusions)
+    freezeEvaluation(
+      evaluation,
+      requestedExclusions,
+      input.actorPlacementId,
+      input.lineOfSight,
+    )
   ))
   const eligibleTargetPlacementIds = evaluations
     .filter(evaluation => evaluation.outcome === 'included')

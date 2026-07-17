@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { createEmptyEncounterState } from '#shared/moveAutomation/encounterState'
+import { parseEncounterZone } from '#shared/moveAutomation/encounterZones'
 import type { CharacterSheet } from '~/types/characterSheet'
 import type { GridAnchor, MapVoxelV2, SheetPlacement, TabletopMap } from '~/types/map'
 import type { MovementCapabilitySpeeds } from '~/types/movement'
@@ -104,6 +105,26 @@ const wall = (x: number, z: number): MapVoxelV2 => ({
   y: 0,
   z,
   materialId: 'airship_wall_bulkhead',
+})
+
+const barrier = (x: number, z: number) => parseEncounterZone({
+  id: `zone.barrier.${x}-${z}`,
+  kind: 'barrier',
+  source: {
+    kind: 'operation',
+    operationId: `operation.barrier.${x}-${z}`,
+    moveId: 'barrier',
+    placementId: 'actor',
+  },
+  sideId: null,
+  geometry: { kind: 'cells', cells: [{ x, y: 0, z }] },
+  layer: 1,
+  duration: { kind: 'scene', remaining: null },
+  stacking: { kind: 'independent', maxLayers: null },
+  hooks: { entry: [], exit: [] },
+  modifiers: { targeting: [], damage: [], movement: [] },
+  tags: ['barrier'],
+  payload: { barrierId: 'barrier' },
 })
 
 describe('authoritative movement oracle', () => {
@@ -541,6 +562,24 @@ describe('authoritative movement oracle', () => {
 
     expect(resolveMovement(input({
       map: map(undefined, { voxels: [wall(1, 0)] }),
+      sheets: walker,
+      destination: { x: 1, y: 0, z: 0 },
+    }))).toMatchObject({
+      ok: false,
+      reasonCode: 'movement-destination-terrain-blocked',
+      collision: {
+        kind: 'terrain',
+        voxelCells: [{ x: 1, y: 0, z: 0 }],
+      },
+    })
+
+    expect(resolveMovement(input({
+      map: map(undefined, {
+        encounterState: {
+          ...createEmptyEncounterState(),
+          zones: [barrier(1, 0)],
+        },
+      }),
       sheets: walker,
       destination: { x: 1, y: 0, z: 0 },
     }))).toMatchObject({

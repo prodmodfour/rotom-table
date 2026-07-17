@@ -73,7 +73,21 @@ export const ENCOUNTER_ZONE_LIMITS = Object.freeze({
   fieldPriorityMagnitude: 1_000_000,
   coordinate: 1_000_000,
   numericMagnitude: 1_000_000,
+  barrierHeight: 32,
+  barrierHitPoints: 1_000_000,
+  barrierTypes: 3,
 })
+
+/** Frozen canonical values for one Barrier move segment. */
+export const ENCOUNTER_BARRIER_CANONICAL_PROFILE = Object.freeze({
+  currentHitPoints: 20,
+  maximumHitPoints: 20,
+  damageReduction: 15,
+  height: 2,
+  typeIds: Object.freeze(['psychic'] as const),
+})
+
+export const ENCOUNTER_SMOKESCREEN_ACCURACY_PENALTY = -3 as const
 
 export type EncounterZoneId = string
 export type EncounterZoneKind = (typeof ENCOUNTER_ZONE_KINDS)[number]
@@ -230,6 +244,15 @@ export interface EncounterSmokeZonePayload {
 
 export interface EncounterBarrierZonePayload {
   readonly barrierId: string
+  /** Current durability for this exact barrier segment. */
+  readonly currentHitPoints: number
+  readonly maximumHitPoints: number
+  /** Subtracted before type effectiveness, matching the canonical damage order. */
+  readonly damageReduction: number
+  /** Vertical occupied cells beginning at the segment's exact geometry cell. */
+  readonly height: number
+  /** Lowercase canonical defender type IDs used only when the segment is damaged. */
+  readonly typeIds: readonly string[]
 }
 
 export interface EncounterPledgeZonePayload extends EncounterLayeredZonePayload {
@@ -393,8 +416,18 @@ const SINGLE_ID_PAYLOAD_FIELDS = Object.freeze({
 } as const)
 const LAYERED_PAYLOAD_FIELDS = ['familyId', 'charges', 'maxCharges'] as const
 const ROOM_PAYLOAD_FIELDS = ['roomId', 'startsNextRound'] as const
+const BARRIER_PAYLOAD_FIELDS = [
+  'barrierId',
+  'currentHitPoints',
+  'maximumHitPoints',
+  'damageReduction',
+  'height',
+  'typeIds',
+] as const
+const LEGACY_BARRIER_PAYLOAD_FIELDS = ['barrierId'] as const
 
 const STABLE_ID_PATTERN = /^[a-z0-9]+(?:[._:/-][a-z0-9]+)*$/
+const BARRIER_TYPE_ID_PATTERN = /^[a-z]+(?:-[a-z]+)*$/
 const SIDE_ID_PATTERN = /^[a-z0-9-]+$/
 const CONTROL_CHARACTER_PATTERN = /[\u0000-\u001f\u007f]/
 const ZONE_KIND_SET = new Set<string>(ENCOUNTER_ZONE_KINDS)
@@ -875,6 +908,88 @@ const parsePayload = (
   }
   if (kind === 'hazard') return parseLayeredPayload(value, 'hazardId', path)
   if (kind === 'pledge') return parseLayeredPayload(value, 'pledgeId', path)
+  if (kind === 'barrier') {
+    const payload = parseRecord(value, path)
+    const legacy = Object.keys(payload).length === 1
+      && Object.prototype.hasOwnProperty.call(payload, 'barrierId')
+    assertExactFields(
+      payload,
+      legacy ? LEGACY_BARRIER_PAYLOAD_FIELDS : BARRIER_PAYLOAD_FIELDS,
+      path,
+    )
+    const barrierId = parseStableId(payload.barrierId, `${path}.barrierId`)
+    if (legacy) {
+      // Pre-MA-144 maps had identity only. Normalize those records to the
+      // canonical Barrier segment without persisting during a read.
+      return {
+        barrierId,
+        currentHitPoints: ENCOUNTER_BARRIER_CANONICAL_PROFILE.currentHitPoints,
+        maximumHitPoints: ENCOUNTER_BARRIER_CANONICAL_PROFILE.maximumHitPoints,
+        damageReduction: ENCOUNTER_BARRIER_CANONICAL_PROFILE.damageReduction,
+        height: ENCOUNTER_BARRIER_CANONICAL_PROFILE.height,
+        typeIds: [...ENCOUNTER_BARRIER_CANONICAL_PROFILE.typeIds],
+      }
+    }
+    const currentHitPoints = parseInteger(
+      payload.currentHitPoints,
+      `${path}.currentHitPoints`,
+      1,
+      ENCOUNTER_ZONE_LIMITS.barrierHitPoints,
+    )
+    const maximumHitPoints = parseInteger(
+      payload.maximumHitPoints,
+      `${path}.maximumHitPoints`,
+      1,
+      ENCOUNTER_ZONE_LIMITS.barrierHitPoints,
+    )
+    if (currentHitPoints > maximumHitPoints) {
+      fail(
+        'invalid-encounter-zone',
+        `${path}.currentHitPoints`,
+        'cannot exceed maximumHitPoints.',
+      )
+    }
+    const typeIds = parseArray(
+      payload.typeIds,
+      `${path}.typeIds`,
+      ENCOUNTER_ZONE_LIMITS.barrierTypes,
+    ).map((typeId, index) => {
+      if (
+        typeof typeId !== 'string'
+        || !BARRIER_TYPE_ID_PATTERN.test(typeId)
+        || typeId.length > ENCOUNTER_ZONE_LIMITS.identifierChars
+      ) {
+        return fail(
+          'invalid-encounter-zone',
+          `${path}.typeIds[${index}]`,
+          'must be a lowercase canonical type ID.',
+        )
+      }
+      return typeId
+    })
+    if (typeIds.length === 0) {
+      fail('invalid-encounter-zone', `${path}.typeIds`, 'must contain at least one type ID.')
+    }
+    assertUnique(typeIds, `${path}.typeIds`)
+    return {
+      barrierId,
+      currentHitPoints,
+      maximumHitPoints,
+      damageReduction: parseInteger(
+        payload.damageReduction,
+        `${path}.damageReduction`,
+        0,
+        ENCOUNTER_ZONE_LIMITS.numericMagnitude,
+      ),
+      height: parseInteger(
+        payload.height,
+        `${path}.height`,
+        1,
+        ENCOUNTER_ZONE_LIMITS.barrierHeight,
+      ),
+      typeIds,
+    }
+  }
   const key = SINGLE_ID_PAYLOAD_FIELDS[kind][0]
   return parseSingleIdPayload(value, key, path) as EncounterZonePayload
 }
@@ -1033,6 +1148,13 @@ export const parseEncounterZone = (
   const layer = parseInteger(zone.layer, `${path}.layer`, 1, ENCOUNTER_ZONE_LIMITS.layer)
   const geometry = parseGeometry(zone.geometry, `${path}.geometry`)
   assertGeometrySupportsKind(kind, geometry, `${path}.geometry`)
+  if (kind === 'barrier' && geometry.kind === 'cells' && geometry.cells.length !== 1) {
+    fail(
+      'invalid-encounter-zone',
+      `${path}.geometry.cells`,
+      'barrier zones represent exactly one independently destructible segment.',
+    )
+  }
   let duration: EncounterZoneDuration
   try {
     duration = parseEncounterEffectDuration(zone.duration, `${path}.duration`)

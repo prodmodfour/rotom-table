@@ -5,6 +5,7 @@ import {
   gridCellsBetweenCellCenters,
 } from '~/utils/gridLineTraversal'
 import { getVoxelMaterialDefinition } from '~/utils/mapMaterials'
+import type { MoveAutomationBarrierSightCell } from './barriersAndSmoke'
 
 /** PTU Core p.231: targeting through Rough Terrain applies one -2 penalty. */
 export const MOVE_AUTOMATION_ROUGH_COVER_ACCURACY_MODIFIER = -2 as const
@@ -36,6 +37,7 @@ export type MoveAutomationLineOfSightReasonCode =
   | 'line-of-sight-blocked-voxel'
   | 'line-of-sight-blocked-placement'
   | 'line-of-sight-blocked-mixed'
+  | 'line-of-sight-blocked-barrier'
   | 'line-of-sight-source-missing'
   | 'line-of-sight-target-missing'
 
@@ -79,9 +81,12 @@ export interface MoveAutomationLineOfSightResult {
   /** Blocking evidence from the least-obstructed representative blocked ray. */
   readonly blockingVoxelCells: readonly GridAnchor[]
   readonly blockingPlacementIds: readonly string[]
+  readonly blockingZoneIds: readonly string[]
   /** Rough Terrain evidence on the selected legal ray only. */
   readonly coverVoxelCells: readonly GridAnchor[]
   readonly coverPlacementIds: readonly string[]
+  /** A partially occluding Barrier grants the same single Rough Terrain penalty. */
+  readonly coverZoneIds: readonly string[]
   /** Placement-backed dimensions that materially participated in the query. */
   readonly consultedPlacementIds: readonly string[]
 }
@@ -89,6 +94,8 @@ export interface MoveAutomationLineOfSightResult {
 export interface CreateMoveAutomationLineOfSightResolverInput {
   readonly voxels: readonly MapVoxelV2[]
   readonly placements: readonly MoveAutomationLineOfSightPlacement[]
+  /** Server-projected exact occupied cells for active destructible Barrier zones. */
+  readonly barrierCells?: readonly MoveAutomationBarrierSightCell[]
   /** Authoritative read-set seam. Standalone pure geometry omits it. */
   readonly recordPlacementRead?: (placementId: string) => void
 }
@@ -141,11 +148,18 @@ type VoxelCell = Readonly<{
   rough: boolean
 }>
 
+type BarrierCell = Readonly<{
+  zoneId: string
+  position: Readonly<GridAnchor>
+}>
+
 type GeometryIndex = Readonly<{
   placementOrder: readonly string[]
+  barrierOrder: readonly string[]
   placementsById: ReadonlyMap<string, PlacementSnapshot>
   placementsByCell: ReadonlyMap<string, readonly PlacementSnapshot[]>
   voxelsByCell: ReadonlyMap<string, VoxelCell>
+  barriersByCell: ReadonlyMap<string, readonly BarrierCell[]>
 }>
 
 interface EvaluatedSightRay {
@@ -156,6 +170,7 @@ interface EvaluatedSightRay {
   readonly accuracyModifier: number
   readonly blockingVoxelCells: readonly GridAnchor[]
   readonly blockingPlacementIds: readonly string[]
+  readonly blockingZoneIds: readonly string[]
   readonly coverVoxelCells: readonly GridAnchor[]
   readonly coverPlacementIds: readonly string[]
 }
@@ -301,8 +316,31 @@ const mergeVoxelCell = (left: VoxelCell, right: VoxelCell): VoxelCell => Object.
   rough: left.rough || right.rough,
 })
 
+const barrierCellSnapshot = (
+  value: MoveAutomationBarrierSightCell,
+  index: number,
+): BarrierCell => {
+  if (
+    !value
+    || !validId(value.zoneId)
+    || !value.cell
+    || !validCoordinate(value.cell.x)
+    || !validCoordinate(value.cell.y)
+    || !validCoordinate(value.cell.z)
+  ) {
+    return fail('invalid-voxel', `Line-of-sight barrier cell ${index} is invalid.`)
+  }
+  return Object.freeze({
+    zoneId: value.zoneId,
+    position: deepFreeze(cloneCell(value.cell)),
+  })
+}
+
 const buildGeometryIndex = (
-  input: Pick<CreateMoveAutomationLineOfSightResolverInput, 'voxels' | 'placements'>,
+  input: Pick<
+    CreateMoveAutomationLineOfSightResolverInput,
+    'voxels' | 'placements' | 'barrierCells'
+  >,
 ): GeometryIndex => {
   if (!Array.isArray(input.voxels)) fail('invalid-voxel', 'Line-of-sight voxels must be an array.')
   if (!Array.isArray(input.placements)) {
@@ -338,13 +376,41 @@ const buildGeometryIndex = (
     voxelsByCell.set(key, existing ? mergeVoxelCell(existing, snapshot) : snapshot)
   }
 
+  if (input.barrierCells !== undefined && !Array.isArray(input.barrierCells)) {
+    fail('invalid-voxel', 'Line-of-sight barrier cells must be an array.')
+  }
+  const barriersByCell = new Map<string, BarrierCell[]>()
+  const barrierOrder: string[] = []
+  const seenBarrierIds = new Set<string>()
+  for (const [index, value] of (input.barrierCells ?? []).entries()) {
+    const barrier = barrierCellSnapshot(value, index)
+    if (!seenBarrierIds.has(barrier.zoneId)) {
+      seenBarrierIds.add(barrier.zoneId)
+      barrierOrder.push(barrier.zoneId)
+    }
+    const key = gridCellKey(barrier.position)
+    const entries = barriersByCell.get(key)
+    if (entries?.some(entry => entry.zoneId === barrier.zoneId)) {
+      fail(
+        'invalid-voxel',
+        `Line-of-sight barrier ${barrier.zoneId} repeats occupied cell ${key}.`,
+      )
+    }
+    if (entries) entries.push(barrier)
+    else barriersByCell.set(key, [barrier])
+  }
+
   return Object.freeze({
     placementOrder: Object.freeze(placementOrder),
+    barrierOrder: Object.freeze(barrierOrder),
     placementsById,
     placementsByCell: new Map(
       [...placementsByCell].map(([key, placements]) => [key, Object.freeze(placements)]),
     ),
     voxelsByCell,
+    barriersByCell: new Map(
+      [...barriersByCell].map(([key, barriers]) => [key, Object.freeze(barriers)]),
+    ),
   })
 }
 
@@ -408,6 +474,7 @@ const evaluateRay = (options: {
   const traversed = gridCellsBetweenCellCenters(options.originCell, options.targetCell)
   const blockingVoxelCells: GridAnchor[] = []
   const blockingPlacementIds = new Set<string>()
+  const blockingZoneIds = new Set<string>()
   const coverVoxelCells: GridAnchor[] = []
   const coverPlacementIds = new Set<string>()
 
@@ -423,9 +490,18 @@ const evaluateRay = (options: {
     ) {
       blockingVoxelCells.push(cloneCell(voxel.position))
     }
+    if (!options.policy.ignoreBlockingTerrain && !insideEndpointFootprint) {
+      for (const barrier of options.index.barriersByCell.get(key) ?? []) {
+        blockingZoneIds.add(barrier.zoneId)
+      }
+    }
 
     for (const placement of options.index.placementsByCell.get(key) ?? []) {
-      if (placement.id === options.source.id || placement.id === options.target.id) continue
+      if (
+        insideEndpointFootprint
+        || placement.id === options.source.id
+        || placement.id === options.target.id
+      ) continue
       options.consultedPlacementIds.add(placement.id)
       if (placement.blocksSight && !options.policy.ignoreBlockingTerrain) {
         blockingPlacementIds.add(placement.id)
@@ -442,7 +518,9 @@ const evaluateRay = (options: {
 
   const uniqueBlockingVoxels = uniqueCells(blockingVoxelCells)
   const uniqueCoverVoxels = uniqueCells(coverVoxelCells)
-  const targetable = uniqueBlockingVoxels.length === 0 && blockingPlacementIds.size === 0
+  const targetable = uniqueBlockingVoxels.length === 0
+    && blockingPlacementIds.size === 0
+    && blockingZoneIds.size === 0
   const hasCover = uniqueCoverVoxels.length > 0 || coverPlacementIds.size > 0
   return {
     originCell: cloneCell(options.originCell),
@@ -454,6 +532,7 @@ const evaluateRay = (options: {
       : 0,
     blockingVoxelCells: uniqueBlockingVoxels,
     blockingPlacementIds: [...blockingPlacementIds],
+    blockingZoneIds: [...blockingZoneIds],
     coverVoxelCells: uniqueCoverVoxels,
     coverPlacementIds: [...coverPlacementIds],
   }
@@ -480,8 +559,10 @@ const blockedRayIsBetter = (
   if (!current) return true
   const candidateBlockerCount = candidate.blockingVoxelCells.length
     + candidate.blockingPlacementIds.length
+    + candidate.blockingZoneIds.length
   const currentBlockerCount = current.blockingVoxelCells.length
     + current.blockingPlacementIds.length
+    + current.blockingZoneIds.length
   if (candidateBlockerCount !== currentBlockerCount) {
     return candidateBlockerCount < currentBlockerCount
   }
@@ -491,12 +572,15 @@ const blockedRayIsBetter = (
 const reasonForBlockedRay = (
   ray: EvaluatedSightRay,
 ): MoveAutomationLineOfSightReasonCode => {
-  if (ray.blockingVoxelCells.length > 0 && ray.blockingPlacementIds.length > 0) {
-    return 'line-of-sight-blocked-mixed'
-  }
-  return ray.blockingPlacementIds.length > 0
-    ? 'line-of-sight-blocked-placement'
-    : 'line-of-sight-blocked-voxel'
+  const blockerKinds = [
+    ray.blockingVoxelCells.length > 0,
+    ray.blockingPlacementIds.length > 0,
+    ray.blockingZoneIds.length > 0,
+  ].filter(Boolean).length
+  if (blockerKinds > 1) return 'line-of-sight-blocked-mixed'
+  if (ray.blockingPlacementIds.length > 0) return 'line-of-sight-blocked-placement'
+  if (ray.blockingZoneIds.length > 0) return 'line-of-sight-blocked-barrier'
+  return 'line-of-sight-blocked-voxel'
 }
 
 const unavailableResult = (options: {
@@ -521,8 +605,10 @@ const unavailableResult = (options: {
   targetFootprintCellCount: 0,
   blockingVoxelCells: [],
   blockingPlacementIds: [],
+  blockingZoneIds: [],
   coverVoxelCells: [],
   coverPlacementIds: [],
+  coverZoneIds: [],
   consultedPlacementIds: [...options.consultedPlacementIds],
 })
 
@@ -530,6 +616,11 @@ const orderedPlacementIds = (
   index: GeometryIndex,
   placementIds: ReadonlySet<string>,
 ): string[] => index.placementOrder.filter(id => placementIds.has(id))
+
+const orderedBarrierIds = (
+  index: GeometryIndex,
+  barrierIds: ReadonlySet<string>,
+): string[] => index.barrierOrder.filter(id => barrierIds.has(id))
 
 const resolveIndexedLineOfSight = (options: {
   readonly index: GeometryIndex
@@ -572,6 +663,7 @@ const resolveIndexedLineOfSight = (options: {
 
   const consultedPlacementIds = new Set([source.id, target.id])
   const visibleTargetCellKeys = new Set<string>()
+  const blockedBarrierIds = new Set<string>()
   let bestVisibleRay: EvaluatedSightRay | null = null
   let bestBlockedRay: EvaluatedSightRay | null = null
 
@@ -591,6 +683,7 @@ const resolveIndexedLineOfSight = (options: {
         if (visibleRayIsBetter(ray, bestVisibleRay)) bestVisibleRay = ray
         continue
       }
+      for (const zoneId of ray.blockingZoneIds) blockedBarrierIds.add(zoneId)
       if (blockedRayIsBetter(ray, bestBlockedRay)) bestBlockedRay = ray
     }
   }
@@ -604,13 +697,17 @@ const resolveIndexedLineOfSight = (options: {
   )
 
   if (bestVisibleRay) {
-    const covered = bestVisibleRay.accuracyModifier !== 0
+    const partialBarrierCover = !policy.ignoreRoughTerrain && blockedBarrierIds.size > 0
+    const covered = bestVisibleRay.accuracyModifier !== 0 || partialBarrierCover
+    const accuracyModifier = covered
+      ? MOVE_AUTOMATION_ROUGH_COVER_ACCURACY_MODIFIER
+      : 0
     return deepFreeze({
       sourcePlacementId: source.id,
       targetPlacementId: target.id,
       policy,
       targetable: true,
-      accuracyModifier: bestVisibleRay.accuracyModifier,
+      accuracyModifier,
       visibility: visibleTargetCells.length === target.cells.length ? 'full' : 'partial',
       cover: covered ? 'rough-terrain' : 'none',
       reasonCode: covered ? 'line-of-sight-rough-cover' : 'line-of-sight-clear',
@@ -622,8 +719,14 @@ const resolveIndexedLineOfSight = (options: {
       blockingPlacementIds: bestBlockedRay
         ? orderedPlacementIds(options.index, new Set(bestBlockedRay.blockingPlacementIds))
         : [],
+      blockingZoneIds: bestBlockedRay
+        ? orderedBarrierIds(options.index, new Set(bestBlockedRay.blockingZoneIds))
+        : [],
       coverVoxelCells: bestVisibleRay.coverVoxelCells.map(cloneCell),
       coverPlacementIds: [...bestVisibleRay.coverPlacementIds],
+      coverZoneIds: partialBarrierCover
+        ? orderedBarrierIds(options.index, blockedBarrierIds)
+        : [],
       consultedPlacementIds: orderedConsultedPlacementIds,
     })
   }
@@ -650,8 +753,13 @@ const resolveIndexedLineOfSight = (options: {
       options.index,
       new Set(blockedRay.blockingPlacementIds),
     ),
+    blockingZoneIds: orderedBarrierIds(
+      options.index,
+      new Set(blockedRay.blockingZoneIds),
+    ),
     coverVoxelCells: [],
     coverPlacementIds: [],
+    coverZoneIds: [],
     consultedPlacementIds: orderedConsultedPlacementIds,
   })
 }
@@ -687,4 +795,5 @@ export const resolveMoveAutomationLineOfSight = (
 ): MoveAutomationLineOfSightResult => createMoveAutomationLineOfSightResolver({
   voxels: input.voxels,
   placements: input.placements,
+  barrierCells: input.barrierCells,
 }).resolve(input.sourcePlacementId, input.targetPlacementId, input.policy)

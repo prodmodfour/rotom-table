@@ -1529,6 +1529,19 @@ export const executeMoveSpec = (
       targetIds = resolvedTargetIds.length <= MOVE_SPEC_LIMITS.targetCount
         ? resolvedTargetIds
         : []
+      for (const targetPlacementId of targetIds) {
+        if (targetPlacementId === input.context.actor.placement.id) continue
+        const sight = input.context.queries.lineOfSight.resolve(
+          input.context.actor.placement.id,
+          targetPlacementId,
+        )
+        if (!sight.targetable) {
+          fail(
+            'authoritative-target-invalid',
+            `Target ${targetPlacementId} is blocked by authoritative line of sight (${sight.reasonCode}).`,
+          )
+        }
+      }
       hitTargetIds = []
       missedTargetIds = []
       const suppliedEvaluations = authoritativeTargetEvaluations(
@@ -1923,7 +1936,9 @@ export const executeMoveSpec = (
             }
             const move = getMechanics()
             target = targetTokenForRoll(input.context, recipientId)
-            const userAccuracy = resolveAuthoritativeMoveUserAccuracy(input.context)
+            const userAccuracy = resolveAuthoritativeMoveUserAccuracy(input.context, {
+              targetPlacementId: recipientId,
+            })
             targetEvasion = resolveMoveAutomationTargetEvasion(
               move.script,
               target,

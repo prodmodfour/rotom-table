@@ -1,8 +1,9 @@
-import type {
-  EncounterZoneHook,
-  EncounterZoneHooks,
-  EncounterZoneKind,
-  EncounterZoneModifiers,
+import {
+  ENCOUNTER_SMOKESCREEN_ACCURACY_PENALTY,
+  type EncounterZoneHook,
+  type EncounterZoneHooks,
+  type EncounterZoneKind,
+  type EncounterZoneModifiers,
 } from '#shared/moveAutomation/encounterZones'
 import {
   parseEncounterEffectDuration,
@@ -421,6 +422,44 @@ export const canonicalBattlefieldZoneComponents = (input: {
   readonly effectId: string
 }): BattlefieldZoneCanonicalComponents => {
   const key = `${input.kind}:${input.effectId}`
+  if (input.kind === 'barrier') {
+    return deepFreeze({
+      hooks: { entry: [], exit: [] },
+      modifiers: {
+        targeting: [{
+          id: 'zone.barrier.line-of-sight',
+          attribute: 'line-of-sight',
+          operation: 'block',
+          value: null,
+          reasonCode: 'zone.barrier.line-of-sight-blocked',
+        }],
+        damage: [],
+        movement: [{
+          id: 'zone.barrier.traversal',
+          attribute: 'traversal',
+          operation: 'block',
+          value: null,
+          reasonCode: 'zone.barrier.traversal-blocked',
+        }],
+      },
+    })
+  }
+  if (key === 'smoke:smokescreen') {
+    return deepFreeze({
+      hooks: { entry: [], exit: [] },
+      modifiers: {
+        targeting: [{
+          id: 'zone.smokescreen.accuracy',
+          attribute: 'accuracy',
+          operation: 'add',
+          value: ENCOUNTER_SMOKESCREEN_ACCURACY_PENALTY,
+          reasonCode: 'zone.smokescreen.accuracy-penalty',
+        }],
+        damage: [],
+        movement: [],
+      },
+    })
+  }
   if (key === 'hazard:spikes') {
     return deepFreeze(slowTerrainComponents(
       'zone.hazard.spikes.entry',

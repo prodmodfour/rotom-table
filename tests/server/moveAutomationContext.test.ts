@@ -3,6 +3,7 @@ import {
   LIVE_PLAY_MOVE_RESOLUTION_SCHEMA_VERSION,
   type ResolveMoveIntent,
 } from '#shared/livePlayMoveResolution'
+import { parseEncounterZone } from '#shared/moveAutomation/encounterZones'
 import {
   AuthoritativeMoveRulesContextError,
   buildAuthoritativeMoveRulesContext,
@@ -80,6 +81,46 @@ const randomSequence = (values: readonly number[]): (() => number) => {
   let index = 0
   return () => values[index++] ?? values.at(-1) ?? 0
 }
+
+const smokeZone = () => parseEncounterZone({
+  id: 'zone.smoke.target',
+  kind: 'smoke',
+  source: {
+    kind: 'operation',
+    operationId: 'operation.smokescreen',
+    moveId: 'smokescreen',
+    placementId: 'ally-token',
+  },
+  sideId: 'red',
+  geometry: { kind: 'cells', cells: [{ x: 1, y: 0, z: 0 }] },
+  layer: 1,
+  duration: { kind: 'scene', remaining: null },
+  stacking: { kind: 'refresh', maxLayers: null },
+  hooks: { entry: [], exit: [] },
+  modifiers: { targeting: [], damage: [], movement: [] },
+  tags: ['smoke'],
+  payload: { smokeId: 'smokescreen' },
+})
+
+const barrierZone = () => parseEncounterZone({
+  id: 'zone.barrier.center',
+  kind: 'barrier',
+  source: {
+    kind: 'operation',
+    operationId: 'operation.barrier',
+    moveId: 'barrier',
+    placementId: 'ally-token',
+  },
+  sideId: 'red',
+  geometry: { kind: 'cells', cells: [{ x: 1, y: 0, z: 0 }] },
+  layer: 1,
+  duration: { kind: 'scene', remaining: null },
+  stacking: { kind: 'independent', maxLayers: null },
+  hooks: { entry: [], exit: [] },
+  modifiers: { targeting: [], damage: [], movement: [] },
+  tags: ['barrier'],
+  payload: { barrierId: 'barrier' },
+})
 
 const globalRoom = (
   kind: 'magic' | 'gravity',
@@ -387,6 +428,60 @@ describe('immutable authoritative move rules context', () => {
     expect(removed.queries.targetStates.resolve('actor-token')).toMatchObject({
       grounding: 'airborne',
     })
+  })
+
+  it('applies target-specific smoke accuracy and Barrier targeting from authoritative zones', () => {
+    const smokeMap = mapFixture()
+    smokeMap.encounterState = {
+      ...redBlueEncounterStateFixture(),
+      zones: [smokeZone()],
+    }
+    const smokeContext = buildContext({ map: smokeMap })
+
+    expect(smokeContext.queries.barriersAndSmoke.smoke()).toEqual([
+      expect.objectContaining({
+        zoneId: 'zone.smoke.target',
+        sideId: 'red',
+        cells: [{ x: 1, y: 0, z: 0 }],
+      }),
+    ])
+    expect(resolveAuthoritativeMoveUserAccuracy(smokeContext, {
+      targetPlacementId: 'target-token',
+    })).toMatchObject({
+      value: -3,
+      sight: {
+        modifierTotal: -3,
+        smoke: {
+          affectingZoneIds: ['zone.smoke.target'],
+          modifiers: [{
+            sourceId: 'zone.smoke.target',
+            reason: 'zone.smokescreen.accuracy-penalty',
+            value: -3,
+          }],
+        },
+      },
+    })
+    const resolved = resolveAuthoritativeMoveFromContext(smokeContext)
+    expect(resolved.rollLedger[0]?.modifiers).toEqual(expect.arrayContaining([
+      expect.objectContaining({ sourceId: 'zone.smoke.target', value: -3 }),
+    ]))
+
+    const barrierMap = mapFixture()
+    barrierMap.placements[1]!.position.x = 3
+    barrierMap.encounterState = {
+      ...redBlueEncounterStateFixture(),
+      zones: [barrierZone()],
+    }
+    const barrierContext = buildContext({ map: barrierMap })
+    expect(barrierContext.queries.lineOfSight.resolve('actor-token', 'target-token'))
+      .toMatchObject({
+        targetable: false,
+        reasonCode: 'line-of-sight-blocked-barrier',
+        blockingZoneIds: ['zone.barrier.center'],
+      })
+    expect(() => resolveAuthoritativeMoveFromContext(barrierContext)).toThrowError(
+      expect.objectContaining({ code: 'target-line-of-sight-blocked' }),
+    )
   })
 
   it('records a deduplicated, immutable sheet read set only through the context seam', () => {

@@ -7,6 +7,10 @@ import {
 import {
   createMoveAutomationRelationshipResolver,
 } from '~~/server/domain/moveAutomation/relationships'
+import {
+  createMoveAutomationLineOfSightResolver,
+  type MoveAutomationLineOfSightResolver,
+} from '~~/server/domain/moveAutomation/lineOfSight'
 import type {
   MoveAutomationTargetState,
   MoveAutomationTargetStateResolver,
@@ -77,12 +81,14 @@ const resolve = (options: {
   readonly exclusions?: readonly string[]
   readonly geometry?: readonly string[]
   readonly states?: MoveAutomationTargetStateResolver
+  readonly lineOfSight?: MoveAutomationLineOfSightResolver
 } = {}) => resolveMoveAutomationAreaTargets({
   actorPlacementId: 'actor',
   geometricallyAffectedPlacementIds: options.geometry ?? ['ally', 'enemy', 'unknown'],
   predicate: predicate(options.relationship ?? 'any', options.statePredicates),
   relationships: relationships(),
   states: options.states,
+  lineOfSight: options.lineOfSight,
   requestedExcludedPlacementIds: options.exclusions,
 })
 
@@ -141,6 +147,40 @@ describe('authoritative area target filtering', () => {
     })
     expect(result.evaluations.some(({ targetPlacementId }) => targetPlacementId === 'outside'))
       .toBe(false)
+  })
+
+  it('excludes geometrically affected recipients behind authoritative Blocking Terrain', () => {
+    const lineOfSight = createMoveAutomationLineOfSightResolver({
+      voxels: [],
+      placements: [
+        { id: 'actor', position: { x: 0, y: 0, z: 0 }, base: 1 },
+        { id: 'ally', position: { x: 1, y: 0, z: 0 }, base: 1 },
+        { id: 'enemy', position: { x: 4, y: 0, z: 0 }, base: 1 },
+        { id: 'unknown', position: { x: 0, y: 0, z: 4 }, base: 1 },
+      ],
+      barrierCells: [{
+        zoneId: 'zone.barrier.area-cover',
+        source: {
+          kind: 'operation',
+          operationId: 'operation.barrier',
+          moveId: 'barrier',
+          placementId: 'actor',
+        },
+        sideId: 'red',
+        cell: { x: 2, y: 0, z: 0 },
+      }],
+    })
+
+    const result = resolve({ lineOfSight })
+
+    expect(result.eligibleTargetPlacementIds).toEqual(['ally', 'unknown'])
+    expect(result.evaluations).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        targetPlacementId: 'enemy',
+        outcome: 'excluded',
+        reasonCode: 'target-excluded-line-of-sight',
+      }),
+    ]))
   })
 
   it('preserves authoritative geometry order and applies Friendly exclusions after predicates', () => {

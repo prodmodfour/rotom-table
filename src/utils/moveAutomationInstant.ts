@@ -1,5 +1,6 @@
 import type {
   MoveAutomationRandomRoller,
+  MoveAutomationRollModifier,
   MoveAutomationRollRequestMetadata,
 } from '#shared/moveAutomation/random'
 import { buildMoveAutomationTransaction } from '~/utils/moveAutomationTransaction'
@@ -57,6 +58,12 @@ export interface InstantMoveAutomationResult {
   feedback: MoveAutomationFeedbackState
 }
 
+/** Server callers derive these from authoritative cover/zone queries. */
+export type MoveAutomationAccuracyModifiersForTarget = (
+  target: SpawnedPokemon,
+  baseUserAccuracy: number,
+) => readonly MoveAutomationRollModifier[]
+
 export interface ResolveInstantAreaMoveAutomationInput {
   script: MoveAutomationScript
   user: SpawnedPokemon
@@ -66,6 +73,7 @@ export interface ResolveInstantAreaMoveAutomationInput {
   fieldEffectsForTarget?: (target: SpawnedPokemon) => MapFieldEffects
   conditionImmunityContext?: MoveAutomationConditionImmunityContext
   accuracyRule?: MoveAutomationAccuracyRule | null
+  accuracyModifiersForTarget?: MoveAutomationAccuracyModifiersForTarget
   random?: () => number
   randomRoller?: MoveAutomationRandomRoller
 }
@@ -81,6 +89,7 @@ export interface ResolveInstantMultiTargetMoveAutomationInput {
   fieldEffectsForTarget?: (target: SpawnedPokemon) => MapFieldEffects
   conditionImmunityContext?: MoveAutomationConditionImmunityContext
   accuracyRule?: MoveAutomationAccuracyRule | null
+  accuracyModifiersForTarget?: MoveAutomationAccuracyModifiersForTarget
   random?: () => number
   randomRoller?: MoveAutomationRandomRoller
 }
@@ -94,6 +103,7 @@ export interface ResolveInstantMoveAutomationInput {
   fieldEffectsForTarget?: (target: SpawnedPokemon) => MapFieldEffects
   conditionImmunityContext?: MoveAutomationConditionImmunityContext
   accuracyRule?: MoveAutomationAccuracyRule | null
+  accuracyModifiersForTarget?: MoveAutomationAccuracyModifiersForTarget
   random?: () => number
   randomRoller?: MoveAutomationRandomRoller
   idFactory?: () => string
@@ -108,6 +118,7 @@ export interface ResolveInstantTargetMoveAutomationInput {
   fieldEffectsForTarget?: (target: SpawnedPokemon) => MapFieldEffects
   conditionImmunityContext?: MoveAutomationConditionImmunityContext
   accuracyRule?: MoveAutomationAccuracyRule | null
+  accuracyModifiersForTarget?: MoveAutomationAccuracyModifiersForTarget
   random?: () => number
   randomRoller?: MoveAutomationRandomRoller
 }
@@ -160,6 +171,7 @@ const recordedAccuracyD20 = (options: {
   readonly script: MoveAutomationScript
   readonly target: SpawnedPokemon
   readonly userAccuracy: number
+  readonly additionalModifiers?: readonly MoveAutomationRollModifier[]
   readonly ordinal?: number
   readonly random?: () => number
   readonly randomRoller?: MoveAutomationRandomRoller
@@ -171,7 +183,15 @@ const recordedAccuracyD20 = (options: {
     ordinal: options.ordinal,
   }),
   formula: { kind: 'dice', count: 1, sides: 20, modifier: 0 },
-  modifiers: [{ sourceId: 'user-accuracy', reason: 'User Accuracy', value: options.userAccuracy }],
+  modifiers: [
+    {
+      sourceId: 'user-accuracy',
+      reason: 'User Accuracy',
+      value: options.userAccuracy - (options.additionalModifiers ?? [])
+        .reduce((total, modifier) => total + modifier.value, 0),
+    },
+    ...(options.additionalModifiers ?? []),
+  ],
 }).naturalResult ?? randomD20(options.random)
 
 const damageRollResultFromTable = (
@@ -467,6 +487,7 @@ const resolveInstantDoubleStrikeMoveAutomation = ({
   fieldEffectsForTarget,
   conditionImmunityContext,
   accuracyRule,
+  accuracyModifiersForTarget,
   random,
   randomRoller,
   idFactory,
@@ -475,12 +496,16 @@ const resolveInstantDoubleStrikeMoveAutomation = ({
     attacker: user,
     fieldEffects: fieldEffectsForTarget?.(target) ?? fieldEffects,
   })
-  const userAccuracy = moveAutomationUserAccuracy(user, { fieldEffects })
+  const baseUserAccuracy = moveAutomationUserAccuracy(user, { fieldEffects })
+  const additionalAccuracyModifiers = accuracyModifiersForTarget?.(target, baseUserAccuracy) ?? []
+  const userAccuracy = baseUserAccuracy + additionalAccuracyModifiers
+    .reduce((total, modifier) => total + modifier.value, 0)
   const accuracyRolls = [1, 2].map((ordinal) =>
     resolveMoveAutomationAccuracyRoll(script, recordedAccuracyD20({
       script,
       target,
       userAccuracy,
+      additionalModifiers: additionalAccuracyModifiers,
       ordinal,
       random,
       randomRoller,
@@ -597,6 +622,7 @@ export const resolveInstantMoveAutomation = ({
   fieldEffectsForTarget,
   conditionImmunityContext,
   accuracyRule,
+  accuracyModifiersForTarget,
   random,
   randomRoller,
   idFactory,
@@ -613,6 +639,7 @@ export const resolveInstantMoveAutomation = ({
       fieldEffectsForTarget,
       conditionImmunityContext,
       accuracyRule,
+      accuracyModifiersForTarget,
       random,
       randomRoller,
       idFactory,
@@ -623,11 +650,15 @@ export const resolveInstantMoveAutomation = ({
     attacker: user,
     fieldEffects: fieldEffectsForTarget?.(target) ?? fieldEffects,
   })
-  const userAccuracy = moveAutomationUserAccuracy(user, { fieldEffects })
+  const baseUserAccuracy = moveAutomationUserAccuracy(user, { fieldEffects })
+  const additionalAccuracyModifiers = accuracyModifiersForTarget?.(target, baseUserAccuracy) ?? []
+  const userAccuracy = baseUserAccuracy + additionalAccuracyModifiers
+    .reduce((total, modifier) => total + modifier.value, 0)
   const naturalRoll = recordedAccuracyD20({
     script,
     target,
     userAccuracy,
+    additionalModifiers: additionalAccuracyModifiers,
     random,
     randomRoller,
   })
@@ -880,6 +911,7 @@ interface ResolveInstantTargetGroupMoveAutomationInput {
   fieldEffectsForTarget?: (target: SpawnedPokemon) => MapFieldEffects
   conditionImmunityContext?: MoveAutomationConditionImmunityContext
   accuracyRule?: MoveAutomationAccuracyRule | null
+  accuracyModifiersForTarget?: MoveAutomationAccuracyModifiersForTarget
   random?: () => number
   randomRoller?: MoveAutomationRandomRoller
 }
@@ -898,16 +930,23 @@ const resolveInstantTargetGroupMoveAutomation = ({
   fieldEffectsForTarget,
   conditionImmunityContext,
   accuracyRule,
+  accuracyModifiersForTarget,
   random,
   randomRoller,
 }: ResolveInstantTargetGroupMoveAutomationInput): InstantTargetGroupMoveAutomationResolution => {
   script = moveAutomationScriptWithPoisonTouch(script, user)
 
   const targetResolutions: Record<string, MoveAutomationTargetResolutionState> = {}
-  const userAccuracy = moveAutomationUserAccuracy(user, { fieldEffects })
+  const baseUserAccuracy = moveAutomationUserAccuracy(user, { fieldEffects })
   for (const [targetIndex, target] of targets.entries()) {
     const state = defaultTargetResolutionState(script)
     if (script.requiresAccuracy) {
+      const additionalAccuracyModifiers = accuracyModifiersForTarget?.(
+        target,
+        baseUserAccuracy,
+      ) ?? []
+      const userAccuracy = baseUserAccuracy + additionalAccuracyModifiers
+        .reduce((total, modifier) => total + modifier.value, 0)
       const targetEvasion = resolveMoveAutomationTargetEvasion(script, target, {
         attacker: user,
         fieldEffects: fieldEffectsForTarget?.(target) ?? fieldEffects,
@@ -916,6 +955,7 @@ const resolveInstantTargetGroupMoveAutomation = ({
         script,
         target,
         userAccuracy,
+        additionalModifiers: additionalAccuracyModifiers,
         ordinal: targetIndex + 1,
         random,
         randomRoller,
@@ -992,6 +1032,7 @@ export const resolveInstantMultiTargetMoveAutomation = ({
   fieldEffectsForTarget,
   conditionImmunityContext,
   accuracyRule,
+  accuracyModifiersForTarget,
   random,
   randomRoller,
 }: ResolveInstantMultiTargetMoveAutomationInput): MoveAutomationTransaction => {
@@ -1005,6 +1046,7 @@ export const resolveInstantMultiTargetMoveAutomation = ({
     fieldEffectsForTarget,
     conditionImmunityContext,
     accuracyRule,
+    accuracyModifiersForTarget,
     random,
     randomRoller,
   })
@@ -1022,6 +1064,7 @@ export const resolveInstantAreaMoveAutomation = ({
   fieldEffectsForTarget,
   conditionImmunityContext,
   accuracyRule,
+  accuracyModifiersForTarget,
   random,
   randomRoller,
 }: ResolveInstantAreaMoveAutomationInput): MoveAutomationTransaction => {
@@ -1034,6 +1077,7 @@ export const resolveInstantAreaMoveAutomation = ({
     fieldEffectsForTarget,
     conditionImmunityContext,
     accuracyRule,
+    accuracyModifiersForTarget,
     random,
     randomRoller,
   })

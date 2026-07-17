@@ -349,7 +349,10 @@ describe('phased MoveSpec interpreter', () => {
       event.kind === 'operation' ? event.operationId : null
     ))).toEqual(['operation.declared', 'operation.targeted', 'operation.completed'])
     expect(result.rollLedger).toEqual([])
-    expect(result.sheetReads).toEqual([])
+    expect(result.sheetReads).toEqual([
+      { kind: 'pokemon', slug: 'actor', revision: 3 },
+      { kind: 'pokemon', slug: 'target', revision: 3 },
+    ])
     expect(context.map).toEqual(mapBefore)
     expect(context.resolvedSheets).toEqual(sheetsBefore)
     expect(Object.isFrozen(result)).toBe(true)

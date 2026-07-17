@@ -220,6 +220,30 @@ const operationTraceEvents = (trace: MoveResolutionAuditTrace) => trace.events.f
 
 const cell = (x: number, z = 0): GridAnchor => ({ x, y: 0, z })
 
+const removableObscurationZone = (
+  kind: 'smoke' | 'barrier',
+  id: string,
+  at: GridAnchor,
+) => parseEncounterZone({
+  id,
+  kind,
+  source: {
+    kind: 'operation',
+    operationId: `operation.seed-${kind}`,
+    moveId: kind === 'smoke' ? 'smokescreen' : 'barrier',
+    placementId: 'actor-token',
+  },
+  sideId: null,
+  geometry: { kind: 'cells', cells: [at] },
+  layer: 1,
+  duration: { kind: 'scene', remaining: null },
+  stacking: { kind: kind === 'smoke' ? 'refresh' : 'independent', maxLayers: null },
+  hooks: { entry: [], exit: [] },
+  modifiers: { targeting: [], damage: [], movement: [] },
+  tags: [kind],
+  payload: kind === 'smoke' ? { smokeId: 'smokescreen' } : { barrierId: 'barrier' },
+})
+
 const hazardZone = (id: string, familyId: string, at: GridAnchor) => parseEncounterZone({
   id,
   kind: 'hazard',
@@ -550,7 +574,11 @@ describe('MoveSpec map, usage, and log reducers', () => {
       fieldEffects: { weather: [{ kind: 'sunny', rounds: 2 }], terrains: [], rooms: [] },
       encounterState: {
         ...createEmptyEncounterState(),
-        zones: [hazardZone('zone.seed.spikes', 'hazard.spikes', cell(3))],
+        zones: [
+          hazardZone('zone.seed.spikes', 'hazard.spikes', cell(3)),
+          removableObscurationZone('barrier', 'zone.seed.barrier', cell(4)),
+          removableObscurationZone('smoke', 'zone.seed.smoke', cell(5)),
+        ],
       },
     })
     const context = buildContext({ map })
@@ -561,6 +589,14 @@ describe('MoveSpec map, usage, and log reducers', () => {
       emission(operation('operation.remove-spikes', 'hazard', {
         action: 'remove',
         target: { kind: 'zone-id', zoneId: 'zone.seed.spikes' },
+      }, 'cleanup')),
+      emission(operation('operation.remove-barrier', 'hazard', {
+        action: 'remove',
+        target: { kind: 'zone-id', zoneId: 'zone.seed.barrier' },
+      }, 'cleanup')),
+      emission(operation('operation.remove-smoke', 'hazard', {
+        action: 'remove',
+        target: { kind: 'zone-id', zoneId: 'zone.seed.smoke' },
       }, 'cleanup')),
       emission(operation('operation.remove-missing', 'hazard', {
         action: 'remove',
@@ -576,11 +612,13 @@ describe('MoveSpec map, usage, and log reducers', () => {
     expect(result.operationResults.map(item => item.outcome)).toEqual([
       'applied',
       'applied',
+      'applied',
+      'applied',
       'no-op',
     ])
     expect(operationTraceEvents(result.trace).map(event => (
       event.kind === 'operation' ? event.outcome : null
-    ))).toEqual(['applied', 'applied', 'no-op'])
+    ))).toEqual(['applied', 'applied', 'applied', 'applied', 'no-op'])
   })
 
   it('fails closed for unresolved geometry, side fields, and forged recipients', () => {

@@ -1739,7 +1739,14 @@ describe('executeLivePlayResolveMoveCommandUseCase', () => {
           rollId: 'legacy-v1.accuracy.2',
           parentEffectId: 'legacy-v1.accuracy',
           naturalResult: 1,
-          finalValue: 1,
+          finalValue: -1,
+          modifiers: expect.arrayContaining([
+            expect.objectContaining({
+              sourceId: 'target-a',
+              reason: 'Rough Terrain cover',
+              value: -2,
+            }),
+          ]),
         }),
       ])
       expect([

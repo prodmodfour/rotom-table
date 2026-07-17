@@ -47,8 +47,9 @@ export * from './encounterZones'
  * move hazards write owned layered zones, and MA-136 registered bounded zone
  * entry mechanics, MA-137 made global fields zone-owned with authoritative
  * round/scene lifecycle, and MA-143A added immutable Magic Room, Gravity, and
- * side-owned Tailwind query projections. Legacy editor hazards and the
- * field-effect renderer
+ * side-owned Tailwind query projections, and MA-144 made exact Barrier and
+ * Smokescreen geometry authoritative for sight, movement, damage, and Accuracy.
+ * Legacy editor hazards and the field-effect renderer
  * arrays remain compatibility lanes until their migration tickets; server zone
  * queries and accepted field boundaries adapt/mirror them without applying a
  * matching native zone twice.

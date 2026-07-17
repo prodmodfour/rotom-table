@@ -1,4 +1,7 @@
-import type { MoveAutomationRollLedgerEntry } from '#shared/moveAutomation/random'
+import type {
+  MoveAutomationRollLedgerEntry,
+  MoveAutomationRollModifier,
+} from '#shared/moveAutomation/random'
 import type { EncounterConditionEffect } from '#shared/moveAutomation/encounterEffects'
 import type { MoveSpecCostDeclaration } from '#shared/moveAutomation/spec'
 import type {
@@ -97,6 +100,9 @@ import {
 import {
   resolveAuthoritativeMoveActionTiming,
 } from './moveAutomation/actionTiming'
+import {
+  resolveAuthoritativeMoveSightAccuracy,
+} from './moveAutomation/accuracy'
 
 export type { AuthoritativeMoveSheetRead } from './moveAutomation/context'
 
@@ -128,6 +134,7 @@ export type AuthoritativeMoveResolutionFailureCode =
   | 'target-token-unresolved'
   | 'target-out-of-range'
   | 'target-semi-invulnerable'
+  | 'target-line-of-sight-blocked'
   | 'duplicate-target-id'
   | 'empty-target-selection'
   | 'too-many-targets'
@@ -1059,6 +1066,33 @@ const resolveNativeSelfMove = (options: {
   }
 }
 
+const assertAuthoritativeTargetLineOfSight = (
+  context: AuthoritativeMoveRulesContext,
+  targetPlacementId: string,
+  moveName: string,
+): void => {
+  const sight = context.queries.lineOfSight.resolve(
+    context.actor.placement.id,
+    targetPlacementId,
+  )
+  if (sight.targetable) return
+  fail(
+    'invalid',
+    'target-line-of-sight-blocked',
+    `Target ${targetPlacementId} is blocked from ${moveName} by authoritative line of sight (${sight.reasonCode}).`,
+  )
+}
+
+const authoritativeTargetAccuracyModifiers = (
+  context: AuthoritativeMoveRulesContext,
+  target: SpawnedPokemon,
+  baseValue: number,
+): readonly MoveAutomationRollModifier[] => resolveAuthoritativeMoveSightAccuracy(
+  context,
+  target.id,
+  baseValue,
+).modifiers
+
 const resolveLegalSingleTarget = (options: {
   readonly context: AuthoritativeMoveRulesContext
   readonly script: MoveAutomationScript
@@ -1091,6 +1125,11 @@ const resolveLegalSingleTarget = (options: {
       `Target ${resolvedTarget.token.id} cannot be targeted by ${options.script.moveName} while ${targetability.state}.`,
     )
   }
+  assertAuthoritativeTargetLineOfSight(
+    options.context,
+    resolvedTarget.token.id,
+    options.script.moveName,
+  )
   const legalTargets = legalSingleTargetTokens({
     script: options.script,
     user: actor,
@@ -1145,6 +1184,9 @@ const resolveSingleTargetMove = (options: {
     accuracyRule: options.context.queries.weather.accuracy({
       canonicalMoveId: options.canonicalMoveName,
     }).rule,
+    accuracyModifiersForTarget: (resolvedTarget: SpawnedPokemon, baseValue: number) => (
+      authoritativeTargetAccuracyModifiers(options.context, resolvedTarget, baseValue)
+    ),
     randomRoller: options.context.random,
   }
 
@@ -1318,6 +1360,11 @@ const resolveTargetCountMove = (options: {
         `Target ${targetId} cannot be targeted by ${options.canonicalMoveName} while ${targetability.state}.`,
       )
     }
+    assertAuthoritativeTargetLineOfSight(
+      options.context,
+      targetId,
+      options.canonicalMoveName,
+    )
     targetabilityById.set(targetId, targetability)
   }
 
@@ -1350,6 +1397,9 @@ const resolveTargetCountMove = (options: {
     accuracyRule: options.context.queries.weather.accuracy({
       canonicalMoveId: options.canonicalMoveName,
     }).rule,
+    accuracyModifiersForTarget: (target: SpawnedPokemon, baseValue: number) => (
+      authoritativeTargetAccuracyModifiers(options.context, target, baseValue)
+    ),
     randomRoller: options.context.random,
   })
   const desiredFacing = desiredFacingTowardNearestTarget(actorPlacement, actor, selectedTargets)
@@ -1405,6 +1455,7 @@ const resolveAreaMove = (options: {
     relationships: options.context.queries.relationships,
     states: options.context.queries.targetStates,
     targetability: options.context.queries.targetability,
+    lineOfSight: options.context.queries.lineOfSight,
     attackingMoveId: options.canonicalMoveName,
     requestedExcludedPlacementIds: excludedTargetIds,
   })
@@ -1423,6 +1474,9 @@ const resolveAreaMove = (options: {
     accuracyRule: options.context.queries.weather.accuracy({
       canonicalMoveId: options.canonicalMoveName,
     }).rule,
+    accuracyModifiersForTarget: (target: SpawnedPokemon, baseValue: number) => (
+      authoritativeTargetAccuracyModifiers(options.context, target, baseValue)
+    ),
     randomRoller: options.context.random,
   })
   const targetExclusionLogLines = areaTargetPolicyLogLines(confirmedScript)
@@ -1552,6 +1606,7 @@ const resolveNativeAreaMove = (options: {
     relationships: options.context.queries.relationships,
     states: options.context.queries.targetStates,
     targetability: options.context.queries.targetability,
+    lineOfSight: options.context.queries.lineOfSight,
     attackingMoveId: options.runtime.canonicalId,
     requestedExcludedPlacementIds: excludedTargetIds,
   })

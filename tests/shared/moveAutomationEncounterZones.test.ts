@@ -114,7 +114,14 @@ const representativeZones = () => [
         reasonCode: 'zone.barrier.traversal',
       }],
     },
-    payload: { barrierId: 'solid-wall' },
+    payload: {
+      barrierId: 'solid-wall',
+      currentHitPoints: 20,
+      maximumHitPoints: 20,
+      damageReduction: 15,
+      height: 2,
+      typeIds: ['psychic'],
+    },
   },
   {
     ...baseZone(),
@@ -228,7 +235,7 @@ describe('move automation encounter zones', () => {
     })).toThrow('legacy namespace is reserved')
   })
 
-  it('normalizes legacy layered payloads and rejects invalid charge state', () => {
+  it('normalizes legacy layered and barrier payloads and rejects invalid durability', () => {
     const legacyHazard = parseEncounterZone({
       ...baseZone(),
       id: 'zone.hazard.legacy-shape',
@@ -250,6 +257,33 @@ describe('move automation encounter zones', () => {
       ...legacyHazard,
       payload: { ...legacyHazard.payload, charges: null, maxCharges: 2 },
     })).toThrow('charges and maxCharges must both be null or both be integers')
+
+    const legacyBarrier = parseEncounterZone({
+      ...baseZone(),
+      id: 'zone.barrier.legacy',
+      kind: 'barrier',
+      geometry: { kind: 'cells', cells: [{ x: 4, y: 0, z: 3 }] },
+      payload: { barrierId: 'barrier' },
+    })
+    expect(legacyBarrier.payload).toEqual({
+      barrierId: 'barrier',
+      currentHitPoints: 20,
+      maximumHitPoints: 20,
+      damageReduction: 15,
+      height: 2,
+      typeIds: ['psychic'],
+    })
+    expect(() => parseEncounterZone({
+      ...legacyBarrier,
+      payload: { ...legacyBarrier.payload, currentHitPoints: 21 },
+    })).toThrow('cannot exceed maximumHitPoints')
+    expect(() => parseEncounterZone({
+      ...legacyBarrier,
+      geometry: {
+        kind: 'cells',
+        cells: [{ x: 4, y: 0, z: 3 }, { x: 5, y: 0, z: 3 }],
+      },
+    })).toThrow('exactly one independently destructible segment')
   })
 
   it('rejects unknown fields, payloads, geometry, duplicate component identities, and invalid layers', () => {

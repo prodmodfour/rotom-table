@@ -1,12 +1,26 @@
 import type { MoveAutomationRollModifier } from '#shared/moveAutomation/random'
 import type { AuthoritativeMoveRulesContext } from './context'
+import type { BattlefieldSmokeAccuracyResolution } from './barriersAndSmoke'
+import type { MoveAutomationLineOfSightResult } from './lineOfSight'
 import { moveAutomationUserAccuracy } from '~/utils/moveAutomationAccuracy'
+
+export interface AuthoritativeMoveSightAccuracyResolution {
+  readonly sourcePlacementId: string
+  readonly targetPlacementId: string
+  readonly baseValue: number
+  readonly value: number
+  readonly modifierTotal: number
+  readonly modifiers: readonly MoveAutomationRollModifier[]
+  readonly lineOfSight: MoveAutomationLineOfSightResult
+  readonly smoke: BattlefieldSmokeAccuracyResolution
+}
 
 export interface AuthoritativeMoveUserAccuracyResolution {
   readonly value: number
   readonly heldItemEffectsSuppressed: boolean
   readonly gravityBonus: number
   readonly modifiers: readonly MoveAutomationRollModifier[]
+  readonly sight: AuthoritativeMoveSightAccuracyResolution | null
 }
 
 const deepFreeze = <Value>(value: Value): Value => {
@@ -17,12 +31,54 @@ const deepFreeze = <Value>(value: Value): Value => {
   return Object.freeze(value)
 }
 
+/** Resolve target-specific Rough Terrain/Barrier cover and Smokescreen modifiers. */
+export const resolveAuthoritativeMoveSightAccuracy = (
+  context: AuthoritativeMoveRulesContext,
+  targetPlacementId: string,
+  baseValue: number,
+): AuthoritativeMoveSightAccuracyResolution => {
+  const sourcePlacementId = context.actor.placement.id
+  const lineOfSight = context.queries.lineOfSight.resolve(
+    sourcePlacementId,
+    targetPlacementId,
+  )
+  const coverModifier: MoveAutomationRollModifier[] = lineOfSight.accuracyModifier === 0
+    ? []
+    : [{
+        sourceId: lineOfSight.coverZoneIds[0]
+          ?? lineOfSight.coverPlacementIds[0]
+          ?? `rough-terrain:${sourcePlacementId}:${targetPlacementId}`,
+        reason: lineOfSight.coverZoneIds.length > 0
+          ? 'Barrier cover'
+          : 'Rough Terrain cover',
+        value: lineOfSight.accuracyModifier,
+      }]
+  const afterCover = baseValue + lineOfSight.accuracyModifier
+  const smoke = context.queries.barriersAndSmoke.accuracy({
+    sourcePlacementId,
+    target: { kind: 'placement', placementId: targetPlacementId },
+    baseValue: afterCover,
+  })
+  const modifiers = [...coverModifier, ...smoke.modifiers]
+  return deepFreeze({
+    sourcePlacementId,
+    targetPlacementId,
+    baseValue,
+    value: smoke.value,
+    modifierTotal: smoke.value - baseValue,
+    modifiers,
+    lineOfSight,
+    smoke,
+  })
+}
+
 /**
- * Compose actor-owned Accuracy with authoritative Magic Room and Gravity
- * queries. Browser field state cannot provide either modifier at this boundary.
+ * Compose actor-owned Accuracy with authoritative Magic Room, Gravity, cover,
+ * and smoke queries. Browser field state cannot provide any modifier here.
  */
 export const resolveAuthoritativeMoveUserAccuracy = (
   context: AuthoritativeMoveRulesContext,
+  options: { readonly targetPlacementId?: string } = {},
 ): AuthoritativeMoveUserAccuracyResolution => {
   const heldItemEffectsSuppressed = context.actor.placement.sheetKind === 'pokemon'
     && context.queries.itemEffects.resolve({
@@ -49,10 +105,16 @@ export const resolveAuthoritativeMoveUserAccuracy = (
       value: gravity.bonus,
     })
   }
+  const baseValue = actorAccuracy + gravity.bonus
+  const sight = options.targetPlacementId
+    ? resolveAuthoritativeMoveSightAccuracy(context, options.targetPlacementId, baseValue)
+    : null
+  modifiers.push(...(sight?.modifiers ?? []))
   return deepFreeze({
-    value: actorAccuracy + gravity.bonus,
+    value: sight?.value ?? baseValue,
     heldItemEffectsSuppressed,
     gravityBonus: gravity.bonus,
     modifiers,
+    sight,
   })
 }
