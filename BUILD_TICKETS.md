@@ -9,7 +9,7 @@ Ticket statuses:
 
 The build loop must select the lowest-numbered TODO ticket. Each ticket below maps to one ticket from the supplied planning file; build ticket numbers follow that document's suggested order when present.
 
-Autonomous cycle rules for every ticket: implement only the selected ticket, run `scripts/quality-gate.sh`, update only the selected ticket status, commit with a conventional commit message, and leave the working tree clean. The final ticket (`MA-299`) may also set `AUTOMATION_STATUS: DONE` after all 290 refreshed tickets are complete.
+Autonomous cycle rules for every ticket: implement only the selected ticket, run `scripts/quality-gate.sh`, update only the selected ticket status, commit with a conventional commit message, and leave the working tree clean. The final ticket (`MA-299`) may also set `AUTOMATION_STATUS: DONE` after all 291 refreshed tickets are complete.
 
 ---
 
@@ -50,7 +50,7 @@ When a ticket introduces a new pure module, prefer this layout:
 
 The existing `src/utils/move-automation/` registry remains the v1 compatibility surface until the retirement tickets at the end.
 
-Queue size at this baseline: **290 commits**—184 engine/state/QA tickets, 33 conformance batches for the registered 258, and 73 implementation batches for the missing 518.
+Queue size at this baseline: **291 commits**—185 engine/state/QA tickets, 33 conformance batches for the registered 258, and 73 implementation batches for the missing 518.
 
 ## Decisions already locked
 
@@ -2121,24 +2121,45 @@ Status: DONE
 
 **Done:** Refresh restores the choice; stale inventory terminates cleanly without item loss.
 
-## MA-156 — Implement shared item mutation operations
+## MA-156A — Interpret item possession and ground mutations
 
 Status: TODO
 
 **Depends on:** MA-153–MA-155
-**Commit:** `feat(move-automation): resolve common item mutations`
+**Commit:** `feat(move-automation): resolve item possession mutations`
 
-**Touch:** item effect interpreter and scenarios.
+**Touch:** bounded item effect operations, item effect interpreter, typed item-plan adapter, and focused primitive scenarios.
 
-**Implement:** Add shared behavior for give, steal, swap, knock to ground, throw, consume, restore, destroy, suppress, and digest/store buff.
+**Implement:**
 
-**Done:** Bestow, Covet/Thief, Switcheroo/Trick, Knock Off, Fling, Recycle, Incinerate, Embargo, Corrosive Gas, and Stuff Cheeks can use typed primitives.
+- Add the shared item-effect interpreter seam for give, steal, swap, knock to ground, and throw. Accept only server-resolved stable item references and emit MA-153 typed writes and traces rather than repository mutations or arbitrary patches.
+- Enforce ownership, equipment, quantity, and destination legality; atomic two-party swaps; deterministic ground destinations; and explicit prevented/no-op outcomes. Reuse durable item choices when more than one legal item or destination exists.
+- Add focused primitive scenarios representing Bestow, Covet/Thief, Switcheroo/Trick, Knock Off, and Fling without registering or promoting catalog moves.
+
+**Done:** The item-mutation clauses of Bestow, Covet/Thief, Switcheroo/Trick, Knock Off, and Fling can use typed primitives; illegal possession or ground transitions produce no writes and leave interpreter inputs unchanged.
+
+## MA-156B — Interpret item lifecycle, suppression, and stored-buff mutations
+
+Status: TODO
+
+**Depends on:** MA-156A
+**Commit:** `feat(move-automation): resolve item lifecycle mutations`
+
+**Touch:** bounded item effect operations, the MA-156A interpreter, typed item/effect plan adapters, and focused primitive scenarios.
+
+**Implement:**
+
+- Extend the shared interpreter with consume, restore, destroy, suppress, and digest/store-buff behavior, using only server-resolved stable item references and typed plans/effects.
+- Preserve quantity and source provenance; restore only a recorded consumed item to a legal destination; make destruction explicit; model suppression without unequipping; and couple digest consumption with its bounded stored buff atomically. Item-dependent expression and equipment-contribution queries remain in MA-157.
+- Add focused primitive scenarios representing Recycle, Incinerate, Embargo, Corrosive Gas, and Stuff Cheeks, plus deterministic rejection/no-partial-plan coverage for illegal lifecycle transitions.
+
+**Done:** Recycle, Incinerate, Embargo, Corrosive Gas, and Stuff Cheeks can use typed primitives, and together MA-156A and MA-156B provide shared typed behavior for every give, steal, swap, knock-to-ground, throw, consume, restore, destroy, suppress, and digest/store-buff mutation from the original ticket.
 
 ## MA-157 — Add item-dependent expressions and suppression
 
 Status: TODO
 
-**Depends on:** MA-074, MA-150, MA-156
+**Depends on:** MA-074, MA-150, MA-156B
 **Commit:** `feat(move-automation): calculate item dependent move rules`
 
 **Touch:** expression context, item query, field/effect overlays, tests.
