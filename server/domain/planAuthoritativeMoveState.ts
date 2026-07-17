@@ -84,6 +84,7 @@ import {
   type MoveAutomationRuntimeRegistry,
 } from './moveAutomation/registry'
 import { cleanupEncounterTransformationsForKnockouts } from './moveAutomation/transformationLifecycle'
+import { cleanupYawnEffectsForKnockouts } from './moveAutomation/yawn'
 import {
   deduplicateAuthoritativeMoveGroupInventoryReads,
   type AuthoritativeMoveGroupInventoryRead,
@@ -1228,11 +1229,16 @@ export const planAuthoritativeMoveStateExecution = (
     applyConditionUpdate(update, placement, sheetAccumulators, input.pokemonSheets, input.trainerSheets)
   }
 
+  const knockedOutPlacementIds = resolution.transaction.hpUpdates
+    .filter(update => update.currentHp <= 0)
+    .map(update => update.id)
   workingMap = cleanupEncounterTransformationsForKnockouts({
     map: workingMap,
-    placementIds: resolution.transaction.hpUpdates
-      .filter(update => update.currentHp <= 0)
-      .map(update => update.id),
+    placementIds: knockedOutPlacementIds,
+  }).map
+  workingMap = cleanupYawnEffectsForKnockouts({
+    map: workingMap,
+    placementIds: knockedOutPlacementIds,
   }).map
 
   workingMap = applyAuthoritativeMovePlacementTransition({

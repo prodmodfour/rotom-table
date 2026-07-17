@@ -52,6 +52,7 @@ import {
   createWeatherLifecycleImmunityQueries,
   createWeatherResidualLifecycleHandler,
 } from './weatherLifecycle'
+import { createYawnLifecycleHandler } from './yawn'
 
 export type InitiativeLifecyclePlanningErrorCode =
   | 'active-placement-missing'
@@ -433,10 +434,12 @@ export const planEncounterLifecycle = (
   const events = parseEncounterEvents(input.events)
   const weatherHandler = createWeatherResidualLifecycleHandler(lifecycleMap)
   const terrainHandler = createGrassyTerrainLifecycleHandler(lifecycleMap)
-  // Registered handlers retain caller order. Built-in weather and terrain work
-  // follows, while field lifecycle transitions remain event-local and last.
+  // Registered handlers retain caller order. Built-in encounter effects run
+  // next, followed by weather and terrain; field transitions remain event-local
+  // and last.
   const handlers = [
     ...(input.handlers ?? []),
+    createYawnLifecycleHandler(),
     ...(weatherHandler ? [weatherHandler] : []),
     ...(terrainHandler ? [terrainHandler] : []),
   ]

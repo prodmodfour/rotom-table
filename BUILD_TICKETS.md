@@ -2293,7 +2293,7 @@ These tickets finish known gaps in already registered moves. They are deliberate
 
 ## MA-170 — Finish Yawn as a delayed condition
 
-Status: TODO
+Status: DONE
 
 **Depends on:** MA-060–MA-062, MA-084
 **Commit:** `feat(move-automation): fully resolve yawn`

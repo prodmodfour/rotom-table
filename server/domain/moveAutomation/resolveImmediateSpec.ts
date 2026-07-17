@@ -575,7 +575,9 @@ const compatibilityLogLines = (options: {
     const roll = resolved
       ? options.rollLedger.find(entry => entry.rollId === resolved.rollId)
       : null
-    lines.push(`${target?.species ?? targetId}: accuracy ${roll?.naturalResult ?? '?'} (${hits.has(targetId) ? 'hit' : 'miss'}).`)
+    lines.push(options.script.requiresAccuracy
+      ? `${target?.species ?? targetId}: accuracy ${roll?.naturalResult ?? '?'} (${hits.has(targetId) ? 'hit' : 'miss'}).`
+      : `${target?.species ?? targetId}: automatic hit.`)
   }
   for (const execution of options.multiHitExecutions) {
     for (const targetResult of execution.resolution.targets) {

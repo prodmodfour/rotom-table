@@ -18,10 +18,12 @@ import {
   type MoveTokenLivePlayCommand,
   type NextInitiativeLivePlayCommand,
   type PreviousInitiativeLivePlayCommand,
+  type ResolveMoveLivePlayCommand,
   type SetSceneLivePlayCommand,
   type UseMoveLivePlayCommand,
 } from '#shared/livePlayCommands'
 import type { AuthRole } from '#shared/auth'
+import type { ResolveMoveIntent } from '#shared/livePlayMoveResolution'
 import {
   PLAYER_PROFILE_SCHEMA_VERSION,
   type PlayerProfile,
@@ -41,11 +43,13 @@ import type { EncounterLifecycleTriggerHandler } from '~~/server/domain/moveAuto
 import { executeLivePlayInitiativeCommandUseCase } from '~~/server/useCases/applyLivePlayInitiativeCommand'
 import { executeLivePlayMapEffectsCommandUseCase } from '~~/server/useCases/applyLivePlayMapEffectsCommand'
 import { executeLivePlaySceneCommandUseCase } from '~~/server/useCases/applyLivePlaySceneCommand'
+import { executeLivePlayResolveMoveCommandUseCase } from '~~/server/useCases/applyResolveMoveCommand'
 import { executeLivePlaySheetCommandUseCase } from '~~/server/useCases/applyLivePlaySheetCommand'
 import { executeLivePlayTerrainCommandUseCase } from '~~/server/useCases/applyLivePlayTerrainCommand'
 import { executeLivePlayUseMoveCommandUseCase } from '~~/server/useCases/applyLivePlayUseMoveCommand'
 import { executeMapTokenLivePlayCommandUseCase } from '~~/server/useCases/applyMapTokenAction'
 import { applyLivePlayPatchesToMap } from '~/utils/livePlayPatches'
+import { buildResolveMoveScopes } from '~/utils/livePlayMoveCommandScopes'
 import type { SheetKind, TabletopMap } from '~/types/map'
 
 export interface LivePlayActorContext {
@@ -308,6 +312,16 @@ export class LivePlayIntegrationHarness {
     }, this.commandDependencies())
   }
 
+  async resolveMove({ actor, command }: LivePlayCommandDispatchOptions<ResolveMoveLivePlayCommand>) {
+    return await executeLivePlayResolveMoveCommandUseCase({
+      role: actor.role,
+      clientId: actor.clientId,
+      playerProfile: actor.playerProfile,
+      command,
+      expectedType: LIVE_PLAY_COMMAND_TYPES.RESOLVE_MOVE,
+    }, this.commandDependencies())
+  }
+
   async nextInitiative({ actor, command }: LivePlayCommandDispatchOptions<NextInitiativeLivePlayCommand>) {
     return await executeLivePlayInitiativeCommandUseCase({
       role: actor.role,
@@ -410,6 +424,31 @@ export class LivePlayIntegrationHarness {
         placementId: input.placementId,
         position: input.position,
       },
+    }
+  }
+
+  resolveMoveCommand(input: {
+    readonly opId: string
+    readonly baseRevision: number
+    readonly intent: ResolveMoveIntent
+    readonly candidateScopePlacementIds?: readonly string[]
+  }): ResolveMoveLivePlayCommand {
+    const map = this.mapRepository.getBySlug('integration-arena')
+    if (!map) throw new Error('integration-arena was not found')
+    const scopes = buildResolveMoveScopes({
+      map,
+      intent: input.intent,
+      candidateScopePlacementIds: input.candidateScopePlacementIds ?? [],
+    })
+    if (!scopes.ok) throw new Error(scopes.message)
+    return {
+      schemaVersion: LIVE_PLAY_COMMAND_SCHEMA_VERSION,
+      opId: input.opId,
+      mapSlug: 'integration-arena',
+      baseRevision: input.baseRevision,
+      type: LIVE_PLAY_COMMAND_TYPES.RESOLVE_MOVE,
+      scopes: scopes.scopes,
+      payload: input.intent,
     }
   }
 

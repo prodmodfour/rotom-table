@@ -15,6 +15,7 @@ import type { AuthoritativeMoveSwitchTransition } from '../resolveAuthoritativeM
 import { resolveEncounterEffectSwitchTransfer } from './effectTransfer'
 import { reduceEncounterLifecycle } from './reduceLifecycle'
 import { createMoveSemiInvulnerableLifecycleHandler } from './semiInvulnerableLifecycle'
+import { createYawnLifecycleHandler } from './yawn'
 
 export type MoveSwitchPlanningErrorCode =
   | 'switch-source-missing'
@@ -181,7 +182,10 @@ export const planAuthoritativeMoveSwitch = (input: {
   const lifecycle = reduceEncounterLifecycle(
     transferState,
     [event],
-    [createMoveSemiInvulnerableLifecycleHandler()],
+    [
+      createMoveSemiInvulnerableLifecycleHandler(),
+      createYawnLifecycleHandler(),
+    ],
   )
   if (lifecycle.operations.length > 0) {
     return fail(

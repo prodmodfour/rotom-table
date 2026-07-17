@@ -27696,44 +27696,82 @@
     {
       "canonicalId": "Yawn",
       "displayName": "Yawn",
-      "baseStatus": "assisted",
+      "baseStatus": "complete",
       "interactionStatus": "unassessed",
       "runtime": {
-        "kind": "legacy-v1",
-        "version": 1,
-        "definitionHash": "e7945f05985b25c0e822ad612453f25aadfc6a49c9660b20b312e0869f470c24",
-        "sourceModule": "src/utils/move-automation/scripts/additionalSingleTarget.ts"
+        "kind": "movespec-v2",
+        "version": 2,
+        "definitionHash": "c1779bbbe5b46a813822b178358985b82aafbb6bf9b39c97b75c071749c9663e",
+        "sourceModule": "server/domain/moveAutomation/specs/yawn.ts"
       },
       "rulesProvenance": {
         "rulesetId": "rotom-table-reference-moves-v1",
         "canonicalizationVersion": 1,
         "sourceDataSha256": "f90491826349afd7d1f2809fd9d74b7acc555f5163b99264205ee369249e9815"
       },
-      "capabilityTags": [],
-      "suggestedCapabilityTags": [],
-      "blockerCodes": [
+      "capabilityTags": [
         "conditions.typed",
         "lifecycle.effects"
       ],
-      "limitations": [
-        {
-          "code": "yawn.marker-only",
-          "summary": "The legacy script adds a Yawn marker but does not schedule the end-of-next-turn Sleep attempt, recheck immunity, or clean up the delayed effect."
-        }
+      "suggestedCapabilityTags": [],
+      "blockerCodes": [],
+      "limitations": [],
+      "manualSteps": [],
+      "scenarioIds": [
+        "yawn.v2-delayed-sleep",
+        "yawn.v2-sleep-immunity",
+        "yawn.v2-switch-cleanup",
+        "yawn.v2-knockout-cleanup",
+        "yawn.v2-scene-cleanup",
+        "yawn.v2-refresh-retry"
       ],
-      "manualSteps": [
-        {
-          "code": "yawn.delayed-sleep",
-          "summary": "At the end of the target’s next turn, recheck Sleep immunity, replace Yawn with Sleep when legal, and remove the Yawn marker in every outcome."
-        }
-      ],
-      "scenarioIds": [],
       "conformanceEvidence": {
-        "requirementTags": [],
-        "scenarios": [],
+        "requirementTags": [
+          "branch.immunity",
+          "mechanic.lifecycle",
+          "recovery.retry"
+        ],
+        "scenarios": [
+          {
+            "scenarioId": "yawn.v2-delayed-sleep",
+            "evidenceClasses": [
+              "lifecycle-trigger"
+            ]
+          },
+          {
+            "scenarioId": "yawn.v2-sleep-immunity",
+            "evidenceClasses": [
+              "immunity"
+            ]
+          },
+          {
+            "scenarioId": "yawn.v2-switch-cleanup",
+            "evidenceClasses": [
+              "lifecycle-cleanup"
+            ]
+          },
+          {
+            "scenarioId": "yawn.v2-knockout-cleanup",
+            "evidenceClasses": [
+              "lifecycle-cleanup"
+            ]
+          },
+          {
+            "scenarioId": "yawn.v2-scene-cleanup",
+            "evidenceClasses": [
+              "lifecycle-cleanup"
+            ]
+          },
+          {
+            "scenarioId": "yawn.v2-refresh-retry",
+            "evidenceClasses": [
+              "retry"
+            ]
+          }
+        ],
         "notApplicable": []
       },
-      "reviewedAt": "2026-07-10",
+      "reviewedAt": "2026-07-17",
       "unsupportedInteractionIds": [],
       "rolloutCohortId": null
     },

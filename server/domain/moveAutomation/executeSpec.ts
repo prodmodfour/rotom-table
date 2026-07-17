@@ -1173,33 +1173,38 @@ interface MoveSpecAuthoritativeMoveMechanics {
   readonly script: MoveAutomationScript
 }
 
-const authoritativeMoveMechanics = (
+const optionalAuthoritativeMoveMechanics = (
   context: AuthoritativeMoveRulesContext,
   canonicalId: string,
   source: 'actor-move' | 'registered-spec',
-): MoveSpecAuthoritativeMoveMechanics => {
+): MoveSpecAuthoritativeMoveMechanics | null => {
   if (source === 'registered-spec') {
     const script = context.queries.rules.reviewedScriptFor(canonicalId)
-    if (!script) {
-      return fail(
-        'move-mechanics-unavailable',
-        `Reviewed child mechanics for ${canonicalId} are not available from the server registry.`,
-      )
-    }
+    if (!script) return null
     context.reads.recordPlacement(context.actor.placement)
     return { script }
   }
 
   const result = context.queries.resolveActorMoveEntry(canonicalId)
-  if (!result.ok || result.entry.canonicalMoveName !== canonicalId) {
-    return fail(
-      'move-mechanics-unavailable',
-      `Authoritative move mechanics for ${canonicalId} are not available to the actor.`,
-    )
-  }
+  if (!result.ok || result.entry.canonicalMoveName !== canonicalId) return null
   context.reads.recordPlacement(context.actor.placement)
   return { script: result.entry.script }
 }
+
+const authoritativeMoveMechanics = (
+  context: AuthoritativeMoveRulesContext,
+  canonicalId: string,
+  source: 'actor-move' | 'registered-spec',
+): MoveSpecAuthoritativeMoveMechanics => optionalAuthoritativeMoveMechanics(
+  context,
+  canonicalId,
+  source,
+) ?? fail(
+  'move-mechanics-unavailable',
+  source === 'registered-spec'
+    ? `Reviewed child mechanics for ${canonicalId} are not available from the server registry.`
+    : `Authoritative move mechanics for ${canonicalId} are not available to the actor.`,
+)
 
 const targetTokenForRoll = (
   context: AuthoritativeMoveRulesContext,
@@ -2195,7 +2200,16 @@ const executeMoveSpecInternal = (
           )
         }
       }
-      hitTargetIds = []
+      const targetMechanics = optionalAuthoritativeMoveMechanics(
+        input.context,
+        spec.canonicalId,
+        executionState.mechanicsSource,
+      )
+      hitTargetIds = spec.targeting.kind !== 'self'
+        && spec.targeting.kind !== 'none'
+        && targetMechanics?.script.requiresAccuracy === false
+        ? targetIds
+        : []
       missedTargetIds = []
       const suppliedEvaluations = authoritativeTargetEvaluations(
         input.context,

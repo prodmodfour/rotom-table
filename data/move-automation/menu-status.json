@@ -10154,25 +10154,12 @@
     {
       "canonicalId": "Yawn",
       "displayName": "Yawn",
-      "baseStatus": "assisted",
+      "baseStatus": "complete",
       "interactionStatus": "unassessed",
-      "runtimeKind": "legacy-v1",
-      "blockerCodes": [
-        "conditions.typed",
-        "lifecycle.effects"
-      ],
-      "limitations": [
-        {
-          "code": "yawn.marker-only",
-          "summary": "The legacy script adds a Yawn marker but does not schedule the end-of-next-turn Sleep attempt, recheck immunity, or clean up the delayed effect."
-        }
-      ],
-      "manualSteps": [
-        {
-          "code": "yawn.delayed-sleep",
-          "summary": "At the end of the target’s next turn, recheck Sleep immunity, replace Yawn with Sleep when legal, and remove the Yawn marker in every outcome."
-        }
-      ]
+      "runtimeKind": "movespec-v2",
+      "blockerCodes": [],
+      "limitations": [],
+      "manualSteps": []
     },
     {
       "canonicalId": "Zap Cannon",

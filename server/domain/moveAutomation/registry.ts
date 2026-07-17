@@ -27,6 +27,7 @@ import { POWER_TRIP_MOVE_SPEC_REGISTRATION } from './specs/powerTrip'
 import { SCRATCH_MOVE_SPEC_REGISTRATION } from './specs/scratch'
 import { SWORDS_DANCE_MOVE_SPEC_REGISTRATION } from './specs/swordsDance'
 import { SYNTHESIS_MOVE_SPEC_REGISTRATION } from './specs/synthesis'
+import { YAWN_MOVE_SPEC_REGISTRATION } from './specs/yawn'
 
 export interface LegacyV1MoveAutomationAdapter extends MoveAutomationRuntimeRegistrationReference {
   readonly kind: 'legacy-v1'
@@ -252,6 +253,7 @@ export const REVIEWED_MOVE_SPEC_V2_REGISTRATIONS: readonly MoveSpecV2Registratio
   SCRATCH_MOVE_SPEC_REGISTRATION,
   SWORDS_DANCE_MOVE_SPEC_REGISTRATION,
   SYNTHESIS_MOVE_SPEC_REGISTRATION,
+  YAWN_MOVE_SPEC_REGISTRATION,
 ])
 
 export const MOVE_AUTOMATION_RUNTIME_REGISTRY = createMoveAutomationRuntimeRegistry({

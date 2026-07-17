@@ -208,12 +208,6 @@ describe('legacy move automation audit metadata', () => {
         manualStepCodes: ['u-turn.switch'],
         summaryTerms: ['recall', 'Trapped'],
       }],
-      ['Yawn', {
-        blockerCodes: ['conditions.typed', 'lifecycle.effects'],
-        limitationCodes: ['yawn.marker-only'],
-        manualStepCodes: ['yawn.delayed-sleep'],
-        summaryTerms: ['next turn', 'Sleep immunity'],
-      }],
     ])
     const manifestById = new Map(manifestJson.moves.map(row => [row.canonicalId, row]))
     const auditById = new Map(
