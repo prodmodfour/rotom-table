@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { PendingMoveResponseWindowView } from '#shared/moveAutomation/responseViews'
-import type { PendingMoveResponseOption } from '#shared/moveAutomation/responseOptions'
+import type { PendingMoveResponsePublicOption } from '#shared/moveAutomation/responseOptions'
 import { ATTACK_OF_OPPORTUNITY_ASSISTANCE_NOTICE } from '~/utils/moveAutomationAssistedFollowUps'
 import {
   pendingMoveResponseWindowKey,
@@ -51,7 +51,11 @@ const actorLabel = (view: PendingMoveResponseWindowView): string => (
 
 const phaseLabel = (phase: string): string => safeLookupLabel(phase)
 const promptLabel = (view: PendingMoveResponseWindowView): string => safeLookupLabel(view.window.promptKey)
-const optionLabel = (option: PendingMoveResponseOption): string => {
+const optionLabel = (option: PendingMoveResponsePublicOption): string => {
+  if (option.itemChoice) {
+    if (option.itemChoice.canonicalItemId === null) return safeLookupLabel(option.labelKey)
+    return `${safeLookupLabel(option.itemChoice.canonicalItemId)} → ${safeLookupLabel(option.itemChoice.destinationLabelKey ?? 'item-destination')}`
+  }
   const selection = option.selection
   if (!selection) return safeLookupLabel(option.labelKey)
   const destination = selection.destination
@@ -69,7 +73,10 @@ const isAttackOfOpportunity = (view: PendingMoveResponseWindowView): boolean => 
 const isHazardCellSelection = (view: PendingMoveResponseWindowView): boolean => (
   view.window.kind === 'choice' && view.window.hazardCellSelection !== undefined
 )
-const panelOptions = (view: PendingMoveResponseWindowView): readonly PendingMoveResponseOption[] => (
+const isItemChoice = (view: PendingMoveResponseWindowView): boolean => (
+  view.window.options.some(option => option.itemChoice !== undefined)
+)
+const panelOptions = (view: PendingMoveResponseWindowView): readonly PendingMoveResponsePublicOption[] => (
   isHazardCellSelection(view) ? [] : view.window.options
 )
 
@@ -171,6 +178,9 @@ const retry = (view: PendingMoveResponseWindowView): void => {
       </p>
       <p v-if="isHazardCellSelection(view)" class="move-response-card__map-choice">
         Select the authorized cells on the battlefield, then confirm the complete set.
+      </p>
+      <p v-else-if="isItemChoice(view)" class="move-response-card__item-choice">
+        Choose a server-verified item and destination. Private inventory locations stay hidden.
       </p>
 
       <div class="move-response-card__actions">
@@ -380,6 +390,7 @@ const retry = (view: PendingMoveResponseWindowView): void => {
 .move-response-card__uncertain,
 .move-response-card__limitation,
 .move-response-card__map-choice,
+.move-response-card__item-choice,
 .move-response-panel__status,
 .move-response-panel__error {
   color: var(--muted);

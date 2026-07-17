@@ -11,7 +11,10 @@ import {
   type LivePlayPatch,
   type ResolveMoveLivePlayCommand,
 } from '#shared/livePlayCommands'
-import type { LivePlayResolvedMoveResult } from '#shared/livePlayMoveResolution'
+import type {
+  LivePlayResolvedMoveResult,
+  ResolveMoveIntent,
+} from '#shared/livePlayMoveResolution'
 import {
   parsePendingMoveResolution,
   type PendingMoveResolution,
@@ -51,6 +54,10 @@ import { createAcceptedMoveCompensationResult } from '../domain/moveAutomation/p
 import { planResumedMoveState } from '../domain/moveAutomation/planResumedMoveState'
 import type { AuthoritativeMoveRandomSource } from '../domain/moveAutomation/random'
 import { ResumeMoveSpecError, resumeMoveSpec } from '../domain/moveAutomation/resumeSpec'
+import {
+  AuthoritativeMoveItemResourceError,
+  type AuthoritativeMoveItemResources,
+} from '../domain/moveAutomation/itemResources'
 import type { MoveAutomationRuntimeRegistry } from '../domain/moveAutomation/registry'
 import { acceptedCommandRealtimeAppendInput } from '../livePlay/acceptedCommandRealtime'
 import { createCanonicalCommandHash } from '../livePlay/commandIdempotency'
@@ -105,6 +112,10 @@ import { UseCaseHttpError } from '../utils/useCaseErrors'
 import { toPersistedMap } from './saveMap'
 import { loadMoveResolutionSheets } from './loadMoveResolutionSheets'
 import {
+  loadMoveItemResources,
+  type ResolveMoveItemResourceRequirementProvider,
+} from './loadMoveItemResources'
+import {
   moveResultFromPlan,
   moveStatePatch,
   sheetPayloadForPersistence,
@@ -141,6 +152,8 @@ export interface ResumePendingMoveResolutionDependencies {
   readonly random?: AuthoritativeMoveRandomSource
   readonly now?: () => number
   readonly maxMoveLogEntries?: number
+  /** Server-reviewed item scope metadata; never populated from a response body. */
+  readonly itemResourceRequirementProvider?: ResolveMoveItemResourceRequirementProvider
   readonly beforeCommit?: () => void
 }
 
@@ -166,6 +179,7 @@ const dependenciesWithDefaults = (input: ResumePendingMoveResolutionDependencies
     random: input.random,
     now: input.now ?? Date.now,
     maxMoveLogEntries: input.maxMoveLogEntries,
+    itemResourceRequirementProvider: input.itemResourceRequirementProvider,
     beforeCommit: input.beforeCommit,
   }
 }
@@ -206,6 +220,61 @@ const loadSheets = (
   sheetRepository: dependencies.sheetRepository,
   durableReads: resolution.readSet,
 })
+
+const pendingMoveItemIntent = (
+  resolution: PendingMoveResolution,
+): ResolveMoveIntent => {
+  const targetIds: string[] = []
+  const seen = new Set<string>()
+  for (const event of resolution.trace.events) {
+    if (event.kind !== 'target' || event.outcome !== 'included' || seen.has(event.targetId)) continue
+    seen.add(event.targetId)
+    targetIds.push(event.targetId)
+  }
+  const selection: ResolveMoveIntent['selection'] = targetIds.length === 0
+    ? { kind: 'self' }
+    : targetIds.length === 1
+      ? { kind: 'single-target', targetPlacementId: targetIds[0]! }
+      : { kind: 'target-count', targetPlacementIds: targetIds }
+  return {
+    schemaVersion: 1,
+    placementId: resolution.actorPlacementId,
+    moveName: resolution.canonicalMoveId,
+    selection,
+  }
+}
+
+const assertPendingItemResourceCoverage = (
+  resolution: PendingMoveResolution,
+  resources: AuthoritativeMoveItemResources,
+): void => {
+  const durableSheets = new Map(resolution.readSet.flatMap(read => (
+    read.kind === 'sheet'
+      ? [[`${read.sheetKind}:${read.slug}`, read.revision] as const]
+      : []
+  )))
+  const durableGroups = new Map(resolution.readSet.flatMap(read => (
+    read.kind === 'group-inventory'
+      ? [[read.slug, read.revision] as const]
+      : []
+  )))
+  for (const read of resources.sheetReads) {
+    if (durableSheets.get(`${read.kind}:${read.slug}`) !== read.revision) {
+      throw new AuthoritativeMoveItemResourceError(
+        'revision-conflict',
+        `Resumed item sheet ${read.kind}/${read.slug} is outside the durable read set.`,
+      )
+    }
+  }
+  for (const read of resources.groupInventoryReads) {
+    if (durableGroups.get(read.slug) !== read.revision) {
+      throw new AuthoritativeMoveItemResourceError(
+        'revision-conflict',
+        `Resumed group inventory ${read.slug} is outside the durable read set.`,
+      )
+    }
+  }
+}
 
 const pendingMapRevision = (resolution: PendingMoveResolution): number => (
   resolution.readSet.find(read => read.kind === 'map')?.revision
@@ -815,6 +884,15 @@ export const resumePendingMoveResolutionUseCase = (
 
     let execution
     try {
+      const itemResources = loadMoveItemResources({
+        map,
+        intent: pendingMoveItemIntent(stored.resolution),
+        pokemonSheets: sheets.pokemonSheets,
+        trainerSheets: sheets.trainerSheets,
+        groupInventoryRepository: dependencies.groupInventoryRepository,
+        requirementProvider: dependencies.itemResourceRequirementProvider,
+      })
+      assertPendingItemResourceCoverage(stored.resolution, itemResources)
       const answeredWindowId = responseWindowId(input.command)
       const answeredWindow = stored.resolution.outstandingWindows.find(
         window => window.windowId === answeredWindowId,
@@ -854,10 +932,14 @@ export const resumePendingMoveResolutionUseCase = (
         now,
         random: dependencies.random,
         runtimeRegistry: dependencies.runtimeRegistry,
+        itemResources,
       })
     }
     catch (error) {
-      if (!(error instanceof ResumeMoveSpecError)) throw error
+      if (
+        !(error instanceof ResumeMoveSpecError)
+        && !(error instanceof AuthoritativeMoveItemResourceError)
+      ) throw error
       return persistConflict({
         request: input,
         stored,

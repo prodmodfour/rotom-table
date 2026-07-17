@@ -33,6 +33,7 @@ import {
   validateAuthoritativeHazardCellSelection,
 } from './hazardCellSelection'
 import type { AuthoritativeMoveRandomSource } from './random'
+import type { AuthoritativeMoveItemResources } from './itemResources'
 import {
   createMoveAutomationReplayRandom,
   MoveAutomationReplayRandomError,
@@ -72,6 +73,8 @@ export interface ResumeMoveSpecInput {
   readonly map: TabletopMap
   readonly pokemonSheets: ReadonlyMap<string, CharacterSheet>
   readonly trainerSheets: ReadonlyMap<string, TrainerSheet>
+  /** Fresh server-loaded item snapshot used to revalidate durable item options. */
+  readonly itemResources?: AuthoritativeMoveItemResources
   readonly response?: MoveSpecResolvedResponse
   readonly hazardCellResponse?: {
     readonly window: MoveHazardCellSelectionWindow
@@ -328,6 +331,7 @@ export const resumeMoveSpec = (
     random: input.random ?? Math.random,
     randomRoller: createMoveAutomationReplayRandom(pending.rollLedger, input.random),
     time: input.now,
+    itemResources: input.itemResources,
     runtimeRegistry: registry,
     legacyScripts: input.legacyScripts,
   })

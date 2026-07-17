@@ -21,6 +21,11 @@ import {
   type PendingMoveDestinationSelection,
 } from '#shared/moveAutomation/responseOptions'
 import { createEmptyEncounterState } from '#shared/moveAutomation/encounterState'
+import {
+  moveItemChoicePresentationForSelection,
+  moveItemChoiceSelectionOptionId,
+  type MoveItemResponseSelection,
+} from '#shared/moveAutomation/itemChoices'
 import type { TabletopMap } from '~/types/map'
 import {
   pendingMoveResponseAuthorizationGrant,
@@ -333,6 +338,85 @@ describe('pending move response query privacy', () => {
     }])
     expect(JSON.stringify(eligible)).not.toContain('ownership')
     expect(JSON.stringify(eligible)).not.toContain('readSet')
+
+    expect(listPendingMoveResponsesUseCase({
+      role: 'player',
+      mapSlug: 'pending-arena',
+      playerProfile: outsiderProfile,
+    }, dependencies).windows).toEqual([])
+  })
+
+  it('restores authorized item choices while redacting private item references and owner revisions', () => {
+    const source = createPendingMoveResolutionFixture({ resolutionId: 'resolution-item-choice' })
+    const itemSelection: MoveItemResponseSelection = {
+      kind: 'move-item',
+      setId: 'items.actor-bag',
+      requirementId: 'items.actor-medical',
+      reference: {
+        schemaVersion: 1,
+        kind: 'trainer-inventory-row',
+        itemId: 'private-potion-row',
+        canonicalItemId: 'potion',
+        owner: {
+          kind: 'sheet',
+          sheetKind: 'trainer',
+          slug: 'private-inventory-owner',
+          revision: 37,
+        },
+        section: 'medicalKit',
+        quantity: 4,
+        stack: 'stackable',
+        equip: 'unequipped',
+      },
+      destination: {
+        id: 'use.actor',
+        kind: 'actor-inventory',
+        labelKey: 'move.item.destination.actor',
+      },
+    }
+    const itemChoice = parsePendingMoveResolution({
+      ...source,
+      outstandingWindows: source.outstandingWindows.map(window => ({
+        ...window,
+        ownership: [{ kind: 'actor', id: null }],
+        options: [{
+          id: moveItemChoiceSelectionOptionId(itemSelection),
+          labelKey: 'move.item.choice',
+          itemChoice: moveItemChoicePresentationForSelection(itemSelection),
+          itemSelection,
+        }],
+      })),
+      publicSummary: {
+        ...source.publicSummary,
+        resolutionId: 'resolution-item-choice',
+      },
+    })
+    const dependencies = {
+      ...accessDependencies(),
+      pendingResolutionRepository: { listByMap: vi.fn(() => [stored(itemChoice)]) },
+    }
+
+    const eligible = listPendingMoveResponsesUseCase({
+      role: 'player',
+      mapSlug: 'pending-arena',
+      playerProfile: attackerProfile,
+    }, dependencies)
+    expect(eligible.windows[0]?.window.options).toEqual([{
+      id: moveItemChoiceSelectionOptionId(itemSelection),
+      labelKey: 'move.item.choice',
+      itemChoice: {
+        canonicalItemId: 'potion',
+        destinationKind: 'actor-inventory',
+        destinationLabelKey: 'move.item.destination.actor',
+      },
+    }])
+    const wire = JSON.stringify(eligible)
+    expect(wire).not.toContain('itemSelection')
+    expect(wire).not.toContain('private-potion-row')
+    expect(wire).not.toContain('private-inventory-owner')
+    expect(wire).not.toContain('medicalKit')
+    expect(wire).not.toContain('quantity')
+    expect(wire).not.toContain('revision')
 
     expect(listPendingMoveResponsesUseCase({
       role: 'player',

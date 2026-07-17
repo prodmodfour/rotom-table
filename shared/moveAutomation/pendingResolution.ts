@@ -25,7 +25,16 @@ import {
   type PendingMoveMovementSelection,
   type PendingMoveMovementSelectionKind,
   type PendingMoveResponseOption,
+  type PendingMoveResponsePublicOption,
 } from './responseOptions'
+import {
+  MoveItemChoiceValidationError,
+  isMatchingMoveItemChoicePresentation,
+  moveItemChoiceSelectionKey,
+  moveItemChoiceSelectionOptionId,
+  parseMoveItemChoicePresentation,
+  parseMoveItemResponseSelection,
+} from './itemChoices'
 
 export {
   MOVE_RESPONSE_OPTION_LIMITS,
@@ -38,6 +47,7 @@ export type {
   PendingMoveMovementSelection,
   PendingMoveMovementSelectionKind,
   PendingMoveResponseOption,
+  PendingMoveResponsePublicOption,
 } from './responseOptions'
 import {
   MoveAutomationRollLedgerValidationError,
@@ -419,6 +429,8 @@ const GROUP_INVENTORY_READ_FIELDS = ['kind', 'slug', 'revision'] as const
 const OWNER_FIELDS = ['kind', 'id'] as const
 const OPTION_FIELDS = ['id', 'labelKey'] as const
 const MOVEMENT_OPTION_FIELDS = [...OPTION_FIELDS, 'selection'] as const
+const PRIVATE_ITEM_OPTION_FIELDS = [...OPTION_FIELDS, 'itemChoice', 'itemSelection'] as const
+const PUBLIC_ITEM_OPTION_FIELDS = [...OPTION_FIELDS, 'itemChoice'] as const
 const MOVEMENT_DESTINATION_SELECTION_FIELDS = ['kind', 'setId', 'destination'] as const
 const MOVEMENT_DIRECTION_SELECTION_FIELDS = [
   'kind',
@@ -1097,15 +1109,58 @@ const parseMovementSelection = (
   return { kind, ...common, direction }
 }
 
+const parseItemOptionFields = (
+  record: UnknownRecord,
+  path: string,
+): Pick<PendingMoveResponseOption, 'itemChoice' | 'itemSelection'> => {
+  try {
+    const itemChoice = parseMoveItemChoicePresentation(record.itemChoice, `${path}.itemChoice`)
+    const itemSelection = parseMoveItemResponseSelection(
+      record.itemSelection,
+      `${path}.itemSelection`,
+    )
+    if (
+      !isMatchingMoveItemChoicePresentation(itemSelection, itemChoice)
+      || moveItemChoiceSelectionOptionId(itemSelection) !== record.id
+    ) {
+      fail(
+        'inconsistent-state',
+        path,
+        'item option identity and presentation must match its private server-owned selection.',
+      )
+    }
+    return { itemChoice, itemSelection }
+  }
+  catch (error) {
+    if (error instanceof PendingMoveResolutionValidationError) throw error
+    if (error instanceof MoveItemChoiceValidationError) {
+      return fail('invalid-pending-resolution', path, error.message)
+    }
+    throw error
+  }
+}
+
 const parseResponseOption = (
   value: unknown,
   path: string,
 ): PendingMoveResponseOption => {
   const candidate = parseRecord(value, path)
   const hasSelection = Object.prototype.hasOwnProperty.call(candidate, 'selection')
+  const hasItemChoice = Object.prototype.hasOwnProperty.call(candidate, 'itemChoice')
+  const hasItemSelection = Object.prototype.hasOwnProperty.call(candidate, 'itemSelection')
+  if (hasSelection && (hasItemChoice || hasItemSelection)) {
+    fail('inconsistent-state', path, 'an option cannot mix movement and item selections.')
+  }
+  if (hasItemChoice !== hasItemSelection) {
+    fail('inconsistent-state', path, 'a private item option requires presentation and selection fields.')
+  }
   const record = parseExactRecord(
     value,
-    hasSelection ? MOVEMENT_OPTION_FIELDS : OPTION_FIELDS,
+    hasSelection
+      ? MOVEMENT_OPTION_FIELDS
+      : hasItemChoice
+        ? PRIVATE_ITEM_OPTION_FIELDS
+        : OPTION_FIELDS,
     path,
   )
   const option: PendingMoveResponseOption = {
@@ -1114,6 +1169,7 @@ const parseResponseOption = (
     ...(hasSelection
       ? { selection: parseMovementSelection(record.selection, `${path}.selection`) }
       : {}),
+    ...(hasItemChoice ? parseItemOptionFields(record, path) : {}),
   }
   if (option.selection && !isCanonicalPendingMoveMovementOption(option)) {
     fail(
@@ -1125,11 +1181,71 @@ const parseResponseOption = (
   return option
 }
 
-/** Strict parser for one authorized presentation option. */
+/** Strict parser for one private durable response option. */
 export const parsePendingMoveResponseOption = (
   value: unknown,
   path = 'pendingMoveResponseOption',
 ): PendingMoveResponseOption => deepFreeze(parseResponseOption(detachedJson(value, path), path))
+
+/** Strictly reject private item identity while parsing an authorized wire option. */
+export const parsePendingMoveResponsePublicOption = (
+  value: unknown,
+  path = 'pendingMoveResponsePublicOption',
+): PendingMoveResponsePublicOption => {
+  const detached = detachedJson(value, path)
+  const candidate = parseRecord(detached, path)
+  if (Object.prototype.hasOwnProperty.call(candidate, 'itemSelection')) {
+    return fail(
+      'invalid-pending-resolution',
+      `${path}.itemSelection`,
+      'private item selections are not allowed in response views.',
+    )
+  }
+  const hasSelection = Object.prototype.hasOwnProperty.call(candidate, 'selection')
+  const hasItemChoice = Object.prototype.hasOwnProperty.call(candidate, 'itemChoice')
+  if (hasSelection && hasItemChoice) {
+    return fail('inconsistent-state', path, 'an option cannot mix movement and item presentation.')
+  }
+  const record = parseExactRecord(
+    detached,
+    hasSelection
+      ? MOVEMENT_OPTION_FIELDS
+      : hasItemChoice
+        ? PUBLIC_ITEM_OPTION_FIELDS
+        : OPTION_FIELDS,
+    path,
+  )
+  const option: PendingMoveResponsePublicOption = {
+    id: parseStableId(record.id, `${path}.id`),
+    labelKey: parseStableId(record.labelKey, `${path}.labelKey`),
+    ...(hasSelection
+      ? { selection: parseMovementSelection(record.selection, `${path}.selection`) }
+      : {}),
+    ...(hasItemChoice
+      ? {
+          itemChoice: (() => {
+            try {
+              return parseMoveItemChoicePresentation(record.itemChoice, `${path}.itemChoice`)
+            }
+            catch (error) {
+              if (error instanceof MoveItemChoiceValidationError) {
+                return fail('invalid-pending-resolution', `${path}.itemChoice`, error.message)
+              }
+              throw error
+            }
+          })(),
+        }
+      : {}),
+  }
+  if (option.selection && !isCanonicalPendingMoveMovementOption(option)) {
+    fail(
+      'invalid-pending-resolution',
+      path,
+      'movement option ID and label must exactly match its server-owned selection.',
+    )
+  }
+  return deepFreeze(option)
+}
 
 const parseOptions = (
   value: unknown,
@@ -1144,11 +1260,19 @@ const parseOptions = (
     fail('invalid-pending-resolution', path, 'must contain at least one option.')
   }
   const movementOptions = options.filter(option => option.selection !== undefined)
+  const itemOptions = options.filter(option => option.itemSelection !== undefined)
   if (movementOptions.length > 0 && movementOptions.length !== options.length) {
     fail(
       'inconsistent-state',
       path,
-      'a movement response window cannot mix movement and generic options.',
+      'a movement response window cannot mix movement and other options.',
+    )
+  }
+  if (itemOptions.length > 0 && itemOptions.length !== options.length) {
+    fail(
+      'inconsistent-state',
+      path,
+      'an item response window cannot mix item and generic options.',
     )
   }
   const movementSetKinds = new Set(movementOptions.map(option => (
@@ -1161,6 +1285,14 @@ const parseOptions = (
       'movement response options must belong to one typed server-owned set.',
     )
   }
+  const itemSetIds = new Set(itemOptions.map(option => option.itemSelection!.setId))
+  if (itemSetIds.size > 1) {
+    fail(
+      'inconsistent-state',
+      path,
+      'item response options must belong to one typed server-owned set.',
+    )
+  }
 
   const seen = new Set<string>()
   const seenSelections = new Set<string>()
@@ -1169,13 +1301,17 @@ const parseOptions = (
       fail('duplicate-id', `${path}[${index}].id`, `duplicates option ${option.id}.`)
     }
     seen.add(option.id)
-    if (!option.selection) continue
-    const selectionKey = pendingMoveMovementSelectionKey(option.selection)
+    const selectionKey = option.selection
+      ? pendingMoveMovementSelectionKey(option.selection)
+      : option.itemSelection
+        ? moveItemChoiceSelectionKey(option.itemSelection)
+        : null
+    if (selectionKey === null) continue
     if (seenSelections.has(selectionKey)) {
       fail(
         'duplicate-id',
-        `${path}[${index}].selection`,
-        `duplicates movement selection ${selectionKey}.`,
+        `${path}[${index}]`,
+        `duplicates server-owned selection ${selectionKey}.`,
       )
     }
     seenSelections.add(selectionKey)
@@ -1525,7 +1661,9 @@ const parseWindow = (value: unknown, path: string): PendingMoveResponseWindow =>
       || optionIds.length !== hazardOptionIds.length
       || optionIds.some((id, index) => id !== hazardOptionIds[index])
       || allowPass !== (minimum === 0)
-      || common.options.some(option => option.selection !== undefined)
+      || common.options.some(option => (
+        option.selection !== undefined || option.itemSelection !== undefined
+      ))
     ) {
       fail(
         'inconsistent-state',

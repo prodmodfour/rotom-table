@@ -36,7 +36,14 @@ const safeWindowView = (input: {
     phase: input.window.phase,
     reasonCode: input.window.reasonCode,
     promptKey: input.window.promptKey,
-    options: Object.freeze(input.window.options.map(option => Object.freeze({ ...option }))),
+    options: Object.freeze(input.window.options.map(option => Object.freeze({
+      id: option.id,
+      labelKey: option.labelKey,
+      ...(option.selection ? { selection: option.selection } : {}),
+      ...(option.itemChoice ? { itemChoice: option.itemChoice } : {}),
+      // itemSelection contains owner identity, resource revisions, quantity,
+      // and stable row IDs. It must never cross this authorization projection.
+    }))),
   }
   const window = input.window.kind === 'reaction'
     ? Object.freeze({

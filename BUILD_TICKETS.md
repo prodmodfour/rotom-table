@@ -2110,7 +2110,7 @@ Status: DONE
 
 ## MA-155 — Add durable item choices
 
-Status: TODO
+Status: DONE
 
 **Depends on:** MA-105, MA-152
 **Commit:** `feat(move-automation): choose legal move items`

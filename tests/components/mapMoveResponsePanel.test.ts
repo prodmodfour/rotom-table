@@ -121,6 +121,47 @@ describe('MapMoveResponsePanel', () => {
     ]])
   })
 
+  it('renders authorized item and destination metadata while submitting only the opaque option ID', async () => {
+    const view: PendingMoveResponseWindowView = {
+      ...choiceWindow(),
+      resolution: {
+        ...choiceWindow().resolution,
+        canonicalMoveId: 'Item Choice',
+        phase: 'after-damage',
+      },
+      window: {
+        ...choiceWindow().window,
+        windowId: 'item-choice.window',
+        phase: 'after-damage',
+        promptKey: 'move.item-choice.choose',
+        options: [{
+          id: 'item.choice.0123456789abcdef',
+          labelKey: 'move.item.choice',
+          itemChoice: {
+            canonicalItemId: 'super-potion',
+            destinationKind: 'target-held',
+            destinationLabelKey: 'move.item.destination.target',
+          },
+        }],
+      },
+    }
+    const wrapper = mount(MapMoveResponsePanel, {
+      props: { windows: [view], eligibleOwnerLabel: 'Actor controller' },
+    })
+
+    expect(wrapper.text()).toContain('Super Potion → Target')
+    expect(wrapper.text()).toContain('server-verified item and destination')
+    expect(wrapper.text()).toContain('Private inventory locations stay hidden')
+    await wrapper.get('[data-option-id="item.choice.0123456789abcdef"]').trigger('click')
+    expect(wrapper.emitted('choose')).toEqual([[
+      {
+        resolutionId: 'resolution-pending-1',
+        windowId: 'item-choice.window',
+        optionId: 'item.choice.0123456789abcdef',
+      },
+    ]])
+  })
+
   it('delegates multi-cell hazard choices to the battlefield overlay', async () => {
     const view: PendingMoveResponseWindowView = {
       ...choiceWindow(),

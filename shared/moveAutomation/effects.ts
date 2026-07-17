@@ -61,6 +61,11 @@ import {
   type MoveReactionTiming,
 } from './reactions'
 import {
+  MoveItemChoiceValidationError,
+  parseMoveItemChoiceDeclaration,
+  type MoveItemChoiceDeclaration,
+} from './itemChoices'
+import {
   MOVE_SPEC_PHASES,
   type MoveSpecPhase,
 } from './spec'
@@ -1428,8 +1433,10 @@ export interface MoveEffectRequestOption {
 export interface MoveChoiceRequestEffectPayload {
   readonly requestId: string
   readonly promptKey: string
+  /** Static options are mutually exclusive with a dynamic item choice. */
   readonly options: readonly MoveEffectRequestOption[]
   readonly allowPass: boolean
+  readonly itemChoice?: MoveItemChoiceDeclaration
 }
 
 export interface MoveReactionRequestEffectPayload {
@@ -1847,6 +1854,7 @@ const HISTORY_FIELDS = ['event', 'detailCode'] as const
 const LOG_FIELDS = ['messageKey', 'arguments'] as const
 const LOG_ARGUMENT_FIELDS = ['key', 'value'] as const
 const REQUEST_FIELDS = ['requestId', 'promptKey', 'options', 'allowPass'] as const
+const ITEM_CHOICE_REQUEST_FIELDS = [...REQUEST_FIELDS, 'itemChoice'] as const
 const REACTION_REQUEST_FIELDS = [
   'requestId',
   'promptKey',
@@ -4681,6 +4689,7 @@ const parseLogPayload = (value: unknown, path: string): MoveLogEffectPayload => 
 const parseRequestOptions = (
   value: unknown,
   path: string,
+  allowEmpty = false,
 ): readonly MoveEffectRequestOption[] => {
   const options = parseBoundedArray(
     value,
@@ -4697,7 +4706,7 @@ const parseRequestOptions = (
       ),
     }
   })
-  if (options.length === 0) {
+  if (!allowEmpty && options.length === 0) {
     fail('invalid-effect-operation', path, 'must contain at least one option.')
   }
   assertUnique(options.map(option => option.id), `${path}.id`)
@@ -4941,12 +4950,44 @@ const parseChoiceRequestPayload = (
   value: unknown,
   path: string,
 ): MoveChoiceRequestEffectPayload => {
-  const input = parseExactRecord(value, REQUEST_FIELDS, path)
+  const candidate = parseRecord(value, path)
+  const hasItemChoice = Object.prototype.hasOwnProperty.call(candidate, 'itemChoice')
+  const input = parseExactRecord(
+    value,
+    hasItemChoice ? ITEM_CHOICE_REQUEST_FIELDS : REQUEST_FIELDS,
+    path,
+  )
+  const options = parseRequestOptions(
+    ownValue(input, 'options', path),
+    `${path}.options`,
+    hasItemChoice,
+  )
+  if (hasItemChoice && options.length > 0) {
+    fail(
+      'invalid-effect-operation',
+      `${path}.options`,
+      'dynamic item choices cannot mix server-derived items with static options.',
+    )
+  }
+  let itemChoice: MoveItemChoiceDeclaration | undefined
+  if (hasItemChoice) {
+    try {
+      itemChoice = parseMoveItemChoiceDeclaration(
+        ownValue(input, 'itemChoice', path),
+        `${path}.itemChoice`,
+      )
+    }
+    catch (error) {
+      if (!(error instanceof MoveItemChoiceValidationError)) throw error
+      return fail('invalid-effect-operation', `${path}.itemChoice`, error.message)
+    }
+  }
   return {
     requestId: parseStableId(ownValue(input, 'requestId', path), `${path}.requestId`),
     promptKey: parseStableId(ownValue(input, 'promptKey', path), `${path}.promptKey`),
-    options: parseRequestOptions(ownValue(input, 'options', path), `${path}.options`),
+    options,
     allowPass: parseBoolean(ownValue(input, 'allowPass', path), `${path}.allowPass`),
+    ...(itemChoice ? { itemChoice } : {}),
   }
 }
 

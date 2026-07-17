@@ -1,9 +1,9 @@
 import {
   PENDING_MOVE_RESOLUTION_LIMITS,
   parsePendingMoveResolutionPublicSummary,
-  parsePendingMoveResponseOption,
+  parsePendingMoveResponsePublicOption,
   type PendingMoveResolutionPublicSummary,
-  type PendingMoveResponseOption,
+  type PendingMoveResponsePublicOption,
 } from './pendingResolution'
 import { isSlug } from '../paths'
 import {
@@ -37,7 +37,7 @@ interface PendingMoveResponseWindowViewBase {
   readonly phase: MoveSpecPhase
   readonly reasonCode: string
   readonly promptKey: string
-  readonly options: readonly PendingMoveResponseOption[]
+  readonly options: readonly PendingMoveResponsePublicOption[]
 }
 
 export type PendingMoveResponseWindowViewWindow =
@@ -159,12 +159,21 @@ const parseWindow = (
     throw new Error(`${path}.priority is invalid.`)
   }
 
-  const options = record.options.map((option, index) => parsePendingMoveResponseOption(
+  const options = record.options.map((option, index) => parsePendingMoveResponsePublicOption(
     option,
     `${path}.options[${index}]`,
   ))
   const optionIds = new Set(options.map(option => option.id))
   if (optionIds.size !== options.length) throw new Error(`${path}.options contains duplicate IDs.`)
+  const movementOptionCount = options.filter(option => option.selection !== undefined).length
+  const itemOptionCount = options.filter(option => option.itemChoice !== undefined).length
+  if (
+    (movementOptionCount > 0 && movementOptionCount !== options.length)
+    || (itemOptionCount > 0 && itemOptionCount !== options.length)
+    || (movementOptionCount > 0 && itemOptionCount > 0)
+  ) {
+    throw new Error(`${path}.options cannot mix generic, movement, and item option families.`)
+  }
 
   const common = {
     windowId: stableId(record.windowId, `${path}.windowId`),

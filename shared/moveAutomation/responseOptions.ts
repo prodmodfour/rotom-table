@@ -1,4 +1,8 @@
 import type { MoveAutomationAreaDirection } from '~/types/moveAutomation'
+import type {
+  MoveItemChoicePresentation,
+  MoveItemResponseSelection,
+} from './itemChoices'
 
 export interface MoveResponseGridAnchor {
   readonly x: number
@@ -45,11 +49,24 @@ export type PendingMoveMovementSelection =
   | PendingMoveDestinationSelection
   | PendingMoveDirectionSelection
 
-/** Presentation lookup plus optional server-issued typed movement intent. */
+/**
+ * Private durable option. Item owner identity and revisions stay in
+ * `itemSelection`; authorized client views receive only `itemChoice`.
+ */
 export interface PendingMoveResponseOption {
   readonly id: string
   readonly labelKey: string
   readonly selection?: PendingMoveMovementSelection
+  readonly itemChoice?: MoveItemChoicePresentation
+  readonly itemSelection?: MoveItemResponseSelection
+}
+
+/** Presentation-safe option shape returned after response-window authorization. */
+export interface PendingMoveResponsePublicOption {
+  readonly id: string
+  readonly labelKey: string
+  readonly selection?: PendingMoveMovementSelection
+  readonly itemChoice?: MoveItemChoicePresentation
 }
 
 const stableNamespaceHash = (value: string): string => {

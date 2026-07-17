@@ -105,6 +105,12 @@ import {
   type AuthoritativeSwitchChoice,
   type AuthoritativeSwitchChoiceSet,
 } from './switchChoices'
+import {
+  enumerateAuthoritativeMoveItemChoices,
+  revalidateAuthoritativeMoveItemChoice,
+  type AuthoritativeMoveItemChoice,
+  type AuthoritativeMoveItemChoiceSet,
+} from './itemChoices'
 import type { ValidatedAuthoritativeHazardCellSelection } from './hazardCellSelection'
 import {
   validateMoveSpec,
@@ -225,6 +231,12 @@ export interface MoveSpecPendingSwitchRequest extends MoveSpecPendingRequestBase
   readonly replacementSetId: string
 }
 
+export interface MoveSpecPendingItemRequest extends MoveSpecPendingRequestBase {
+  readonly kind: 'item-choice'
+  readonly itemSetId: string
+  readonly requirementId: string
+}
+
 export type MoveSpecPendingRequest =
   | MoveSpecPendingChoiceRequest
   | MoveSpecPendingBranchChoiceRequest
@@ -234,6 +246,7 @@ export type MoveSpecPendingRequest =
   | MoveSpecPendingMovementRequest
   | MoveSpecPendingHazardCellRequest
   | MoveSpecPendingSwitchRequest
+  | MoveSpecPendingItemRequest
 
 export interface MoveSpecResolvedMovement {
   readonly operationId: string
@@ -248,6 +261,13 @@ export interface MoveSpecResolvedSwitch {
   readonly optionId: string
   readonly choice: AuthoritativeSwitchChoice
   readonly stateTransferPolicy: MoveEffectSwitchStateTransferPolicy
+}
+
+export interface MoveSpecResolvedItemChoice {
+  readonly operationId: string
+  readonly requestId: string
+  readonly optionId: string
+  readonly choice: AuthoritativeMoveItemChoice
 }
 
 export interface MoveSpecResolvedHazardCells {
@@ -288,6 +308,8 @@ interface MoveSpecExecutionResultBase {
   readonly resolvedMovements: readonly MoveSpecResolvedMovement[]
   /** Fresh roster/send-out result for each answered server-issued replacement. */
   readonly resolvedSwitches: readonly MoveSpecResolvedSwitch[]
+  /** Fresh authoritative item/destination result for each answered item choice. */
+  readonly resolvedItemChoices: readonly MoveSpecResolvedItemChoice[]
   /** Freshly revalidated server-issued hazard cells keyed by operation/cell set. */
   readonly resolvedHazardCells: readonly MoveSpecResolvedHazardCells[]
   readonly hitTargetIds: readonly string[]
@@ -411,6 +433,13 @@ const freezeResolvedSwitches = (
 ): readonly MoveSpecResolvedSwitch[] => Object.freeze(switches.map(switchResult => Object.freeze({
   ...switchResult,
   choice: switchResult.choice,
+})))
+
+const freezeResolvedItemChoices = (
+  choices: readonly MoveSpecResolvedItemChoice[],
+): readonly MoveSpecResolvedItemChoice[] => Object.freeze(choices.map(choice => Object.freeze({
+  ...choice,
+  choice: choice.choice,
 })))
 
 const freezeResolvedHazardCells = (
@@ -933,6 +962,69 @@ const pendingSwitchRequest = (
   allowPass: !operation.payload.required,
 })
 
+const itemChoiceSet = (
+  operation: MoveChoiceRequestEffectOperation,
+  context: AuthoritativeMoveRulesContext,
+): AuthoritativeMoveItemChoiceSet => {
+  const declaration = operation.payload.itemChoice
+    ?? fail(
+      'definition-integrity-mismatch',
+      `Choice operation ${operation.id} has no dynamic item declaration.`,
+    )
+  try {
+    return enumerateAuthoritativeMoveItemChoices({
+      declaration,
+      items: context.queries.items,
+    })
+  }
+  catch (error) {
+    return fail(
+      'move-mechanics-unavailable',
+      `Item choices for ${operation.id} could not be resolved: ${error instanceof Error ? error.message : String(error)}`,
+    )
+  }
+}
+
+const revalidateItemChoice = (
+  operation: MoveChoiceRequestEffectOperation,
+  context: AuthoritativeMoveRulesContext,
+  optionId: string,
+): AuthoritativeMoveItemChoice => {
+  const declaration = operation.payload.itemChoice
+    ?? fail('definition-integrity-mismatch', `Choice operation ${operation.id} has no item declaration.`)
+  try {
+    return revalidateAuthoritativeMoveItemChoice({
+      declaration,
+      items: context.queries.items,
+      optionId,
+    })
+  }
+  catch (error) {
+    return fail(
+      'move-mechanics-unavailable',
+      `Item option ${optionId} failed resume validation: ${error instanceof Error ? error.message : String(error)}`,
+    )
+  }
+}
+
+const pendingItemRequest = (
+  operation: MoveChoiceRequestEffectOperation,
+  recipientIds: readonly string[],
+  set: AuthoritativeMoveItemChoiceSet,
+): MoveSpecPendingItemRequest => Object.freeze({
+  kind: 'item-choice',
+  itemSetId: set.setId,
+  requirementId: set.requirementId,
+  operationId: operation.id,
+  phase: operation.phase,
+  reasonCode: operation.reasonCode,
+  recipientIds: frozenIds(recipientIds),
+  requestId: operation.payload.requestId,
+  promptKey: operation.payload.promptKey,
+  options: Object.freeze(set.choices.map(choice => choice.option)),
+  allowPass: operation.payload.allowPass,
+})
+
 const pendingBranchRequest = (
   operation: MoveBranchEffectOperation,
   recipientIds: readonly string[],
@@ -1085,6 +1177,7 @@ const terminalBase = (
   branchSelections: readonly MoveBranchSelection[],
   resolvedMovements: readonly MoveSpecResolvedMovement[],
   resolvedSwitches: readonly MoveSpecResolvedSwitch[],
+  resolvedItemChoices: readonly MoveSpecResolvedItemChoice[],
   resolvedHazardCells: readonly MoveSpecResolvedHazardCells[],
   selectorState: MoveSpecSelectorState,
 ): MoveSpecExecutionResultBase => ({
@@ -1100,6 +1193,7 @@ const terminalBase = (
   branchSelections: freezeBranchSelections(branchSelections),
   resolvedMovements: freezeResolvedMovements(resolvedMovements),
   resolvedSwitches: freezeResolvedSwitches(resolvedSwitches),
+  resolvedItemChoices: freezeResolvedItemChoices(resolvedItemChoices),
   resolvedHazardCells: freezeResolvedHazardCells(resolvedHazardCells),
   hitTargetIds: frozenIds(selectorState.hitTargetIds),
   missedTargetIds: frozenIds(selectorState.missedTargetIds),
@@ -1416,6 +1510,7 @@ export const executeMoveSpec = (
   const branchSelections: MoveBranchSelection[] = []
   const resolvedMovements: MoveSpecResolvedMovement[] = []
   const resolvedSwitches: MoveSpecResolvedSwitch[] = []
+  const resolvedItemChoices: MoveSpecResolvedItemChoice[] = []
   const resolvedHazardCells: MoveSpecResolvedHazardCells[] = []
   const branchExecutions = new Map<string, ExecutedMoveBranch>()
   const currentSelectorState = (): MoveSpecSelectorState => ({
@@ -1486,6 +1581,7 @@ export const executeMoveSpec = (
               branchSelections,
               resolvedMovements,
               resolvedSwitches,
+              resolvedItemChoices,
               resolvedHazardCells,
               currentSelectorState(),
             ),
@@ -1592,6 +1688,7 @@ export const executeMoveSpec = (
             branchSelections,
             resolvedMovements,
             resolvedSwitches,
+            resolvedItemChoices,
             resolvedHazardCells,
             currentSelectorState(),
           ),
@@ -1757,6 +1854,7 @@ export const executeMoveSpec = (
               branchSelections,
               resolvedMovements,
               resolvedSwitches,
+              resolvedItemChoices,
               resolvedHazardCells,
               currentSelectorState(),
             ),
@@ -1881,6 +1979,7 @@ export const executeMoveSpec = (
             branchSelections,
             resolvedMovements,
             resolvedSwitches,
+            resolvedItemChoices,
             resolvedHazardCells,
             currentSelectorState(),
           ),
@@ -2256,6 +2355,7 @@ export const executeMoveSpec = (
             branchSelections,
             resolvedMovements,
             resolvedSwitches,
+            resolvedItemChoices,
             resolvedHazardCells,
             currentSelectorState(),
           ),
@@ -2350,6 +2450,7 @@ export const executeMoveSpec = (
             branchSelections,
             resolvedMovements,
             resolvedSwitches,
+            resolvedItemChoices,
             resolvedHazardCells,
             currentSelectorState(),
           ),
@@ -2451,6 +2552,110 @@ export const executeMoveSpec = (
             branchSelections,
             resolvedMovements,
             resolvedSwitches,
+            resolvedItemChoices,
+            resolvedHazardCells,
+            currentSelectorState(),
+          ),
+          request,
+        )
+      }
+
+      if (operation.kind === 'choice-request' && operation.payload.itemChoice) {
+        const set = itemChoiceSet(operation, input.context)
+        const request = pendingItemRequest(operation, recipientIds, set)
+        if (request.options.length === 0) {
+          if (!request.allowPass) {
+            return fail(
+              'move-mechanics-unavailable',
+              `Item request ${request.requestId} has no legal authoritative option and cannot pass.`,
+            )
+          }
+          trace = reduceMoveResolutionTrace(trace, {
+            kind: 'operation',
+            phase,
+            operationId: operation.id,
+            operationKind: operation.kind,
+            recipientIds,
+            outcome: 'no-op',
+            reasonCode: operation.reasonCode,
+            input: traceJson(operation.payload),
+            result: { status: 'no-legal-items' },
+          })
+          continue
+        }
+        const response = responseResolver.resolve({
+          requestId: request.requestId,
+          options: request.options,
+          allowPass: request.allowPass,
+        })
+        const selectedChoice = response?.optionId === null || !response
+          ? null
+          : revalidateItemChoice(operation, input.context, response.optionId)
+        if (selectedChoice && response?.optionId) {
+          resolvedItemChoices.push(Object.freeze({
+            operationId: operation.id,
+            requestId: request.requestId,
+            optionId: response.optionId,
+            choice: selectedChoice,
+          }))
+        }
+        trace = reduceMoveResolutionTrace(trace, {
+          kind: 'operation',
+          phase,
+          operationId: operation.id,
+          operationKind: operation.kind,
+          recipientIds,
+          outcome: response ? (selectedChoice ? 'applied' : 'no-op') : 'pending',
+          reasonCode: operation.reasonCode,
+          input: traceJson(operation.payload),
+          result: traceJson(response
+            ? {
+                status: selectedChoice
+                  ? (selectedChoice.reference === null ? 'none-selected' : 'selected')
+                  : 'passed',
+                ...(selectedChoice
+                  ? {
+                      itemSetId: set.setId,
+                      destinationId: selectedChoice.destination?.id ?? null,
+                    }
+                  : {}),
+              }
+            : {
+                requestId: request.requestId,
+                requestKind: request.kind,
+                itemSetId: request.itemSetId,
+                optionCount: request.options.length,
+              }),
+        })
+        trace = reduceMoveResolutionTrace(trace, {
+          kind: 'choice',
+          phase,
+          requestId: request.requestId,
+          requestKind: 'choice',
+          outcome: response
+            ? (selectedChoice ? 'selected' : 'passed')
+            : 'requested',
+          optionId: response?.optionId ?? null,
+          reasonCode: operation.reasonCode,
+        })
+        if (response) continue
+        responseResolver.assertAllConsumed()
+        return materializePendingExecutionResult(
+          terminalBase(
+            input.context,
+            operations,
+            targetIds,
+            trace,
+            input.context.random.snapshot(),
+            resolvedRolls,
+            resolvedDamageTypes,
+            resolvedDamageBases,
+            multiHitExecutions,
+            resolvedChecks,
+            branchSelections,
+            resolvedMovements,
+            resolvedSwitches,
+            resolvedItemChoices,
             resolvedHazardCells,
             currentSelectorState(),
           ),
@@ -2513,6 +2718,7 @@ export const executeMoveSpec = (
             branchSelections,
             resolvedMovements,
             resolvedSwitches,
+            resolvedItemChoices,
             resolvedHazardCells,
             currentSelectorState(),
           ),
@@ -2560,6 +2766,7 @@ export const executeMoveSpec = (
       branchSelections,
       resolvedMovements,
       resolvedSwitches,
+      resolvedItemChoices,
       resolvedHazardCells,
       currentSelectorState(),
     ),
