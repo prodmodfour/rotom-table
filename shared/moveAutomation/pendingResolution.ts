@@ -264,15 +264,60 @@ export interface PendingMoveDeclarationResult extends LivePlayCommandAccepted {
   readonly pendingResolution: PendingMoveResolutionPublicSummary
 }
 
-export interface PendingMoveAttackOfOpportunityContext {
+export interface PendingMoveAttackOfOpportunityContextBase {
   readonly kind: 'attack-of-opportunity'
   readonly triggerReason: 'movement' | 'ranged-attack'
   readonly provokerPlacementId: string
   readonly from: { readonly x: number; readonly y: number; readonly z: number } | null
   readonly to: { readonly x: number; readonly y: number; readonly z: number } | null
   readonly targetPlacementIds: readonly string[]
+}
+
+/** Compatibility shape for already-durable MA-110 post-action prompts. */
+export interface PendingMovePostActionAttackOfOpportunityContext
+  extends PendingMoveAttackOfOpportunityContextBase {
   readonly timingLimitation: 'post-provoking-action'
 }
+
+export interface PendingMoveMovementLifecycleCursor {
+  readonly schemaVersion: 1
+  readonly movementId: string
+  readonly pathHash: string
+  readonly nextEventIndex: number
+}
+
+/** Private server-owned route and progress retained while movement is paused. */
+export interface PendingMoveOpportunityMovementPath {
+  readonly schemaVersion: 1
+  readonly movementId: string
+  readonly sourceOperationId: LivePlayOpId
+  readonly mode: 'shift'
+  readonly policy: 'standard' | 'gm-override'
+  readonly origin: MoveResponseGridAnchor
+  /** The currently validated endpoint; it may be a typed shortened endpoint. */
+  readonly destination: MoveResponseGridAnchor
+  /** Original requested endpoint retained for audit even after shortening. */
+  readonly requestedDestination: MoveResponseGridAnchor
+  /** Origin followed by every deterministic oracle step endpoint. */
+  readonly path: readonly MoveResponseGridAnchor[]
+  /** Zero at origin, then the authoritative cumulative cost for each step. */
+  readonly cumulativeCosts: readonly number[]
+  readonly committedStepCount: number
+  readonly cursor: PendingMoveMovementLifecycleCursor
+  readonly declarationPreviousRevision: number
+  readonly declarationRevision: number
+}
+
+export interface PendingMovePreStepAttackOfOpportunityContext
+  extends PendingMoveAttackOfOpportunityContextBase {
+  readonly triggerReason: 'movement'
+  readonly timing: 'pre-movement-step'
+  readonly movementPath: PendingMoveOpportunityMovementPath
+}
+
+export type PendingMoveAttackOfOpportunityContext =
+  | PendingMovePostActionAttackOfOpportunityContext
+  | PendingMovePreStepAttackOfOpportunityContext
 
 export type PendingMoveResolutionContinuationContext = PendingMoveAttackOfOpportunityContext
 
@@ -423,6 +468,38 @@ const ATTACK_OF_OPPORTUNITY_CONTEXT_FIELDS = [
   'to',
   'targetPlacementIds',
   'timingLimitation',
+] as const
+const PRE_STEP_ATTACK_OF_OPPORTUNITY_CONTEXT_FIELDS = [
+  'kind',
+  'triggerReason',
+  'provokerPlacementId',
+  'from',
+  'to',
+  'targetPlacementIds',
+  'timing',
+  'movementPath',
+] as const
+const OPPORTUNITY_MOVEMENT_PATH_FIELDS = [
+  'schemaVersion',
+  'movementId',
+  'sourceOperationId',
+  'mode',
+  'policy',
+  'origin',
+  'destination',
+  'requestedDestination',
+  'path',
+  'cumulativeCosts',
+  'committedStepCount',
+  'cursor',
+  'declarationPreviousRevision',
+  'declarationRevision',
+] as const
+const MOVEMENT_LIFECYCLE_CURSOR_FIELDS = [
+  'schemaVersion',
+  'movementId',
+  'pathHash',
+  'nextEventIndex',
 ] as const
 const GRID_ANCHOR_FIELDS = ['x', 'y', 'z'] as const
 const PUBLIC_SUMMARY_FIELDS = [
@@ -1107,7 +1184,7 @@ const parseOptions = (
 const parseContinuationGridAnchor = (
   value: unknown,
   path: string,
-): PendingMoveAttackOfOpportunityContext['from'] => {
+): MoveResponseGridAnchor | null => {
   if (value === null) return null
   const record = parseExactRecord(value, GRID_ANCHOR_FIELDS, path)
   return {
@@ -1117,10 +1194,164 @@ const parseContinuationGridAnchor = (
   }
 }
 
+const requiredContinuationGridAnchor = (
+  value: unknown,
+  path: string,
+): MoveResponseGridAnchor => parseContinuationGridAnchor(value, path)
+  ?? fail('invalid-pending-resolution', path, 'must be a bounded grid anchor.')
+
+const sameContinuationAnchor = (
+  left: MoveResponseGridAnchor,
+  right: MoveResponseGridAnchor,
+): boolean => left.x === right.x && left.y === right.y && left.z === right.z
+
+const parseOpportunityMovementPath = (
+  value: unknown,
+  originOpId: LivePlayOpId,
+  from: MoveResponseGridAnchor,
+  to: MoveResponseGridAnchor,
+  path: string,
+): PendingMoveOpportunityMovementPath => {
+  const record = parseExactRecord(value, OPPORTUNITY_MOVEMENT_PATH_FIELDS, path)
+  if (record.schemaVersion !== 1) {
+    fail('unsupported-schema-version', `${path}.schemaVersion`, 'must be 1.')
+  }
+  const movementId = parseStableId(record.movementId, `${path}.movementId`)
+  const sourceOperationId = parseOriginOpId(
+    record.sourceOperationId,
+    `${path}.sourceOperationId`,
+  )
+  if (sourceOperationId !== originOpId) {
+    fail('inconsistent-state', `${path}.sourceOperationId`, 'must match originOpId.')
+  }
+  if (record.mode !== 'shift') {
+    fail('invalid-pending-resolution', `${path}.mode`, 'must be shift.')
+  }
+  if (record.policy !== 'standard' && record.policy !== 'gm-override') {
+    fail('invalid-pending-resolution', `${path}.policy`, 'must be standard or gm-override.')
+  }
+  const origin = requiredContinuationGridAnchor(record.origin, `${path}.origin`)
+  const destination = requiredContinuationGridAnchor(record.destination, `${path}.destination`)
+  const requestedDestination = requiredContinuationGridAnchor(
+    record.requestedDestination,
+    `${path}.requestedDestination`,
+  )
+  const route = parseBoundedArray(record.path, `${path}.path`, 10_001)
+    .map((cell, index) => requiredContinuationGridAnchor(cell, `${path}.path[${index}]`))
+  if (route.length < 2) {
+    fail('inconsistent-state', `${path}.path`, 'must contain an origin and at least one step.')
+  }
+  const cumulativeCosts = parseBoundedArray(
+    record.cumulativeCosts,
+    `${path}.cumulativeCosts`,
+    10_001,
+  ).map((cost, index) => parseInteger(
+    cost,
+    `${path}.cumulativeCosts[${index}]`,
+    0,
+    Number.MAX_SAFE_INTEGER,
+  ))
+  if (cumulativeCosts.length !== route.length || cumulativeCosts[0] !== 0) {
+    fail(
+      'inconsistent-state',
+      `${path}.cumulativeCosts`,
+      'must align with the complete route and start at zero.',
+    )
+  }
+  for (let index = 1; index < cumulativeCosts.length; index += 1) {
+    if (cumulativeCosts[index]! <= cumulativeCosts[index - 1]!) {
+      fail(
+        'inconsistent-state',
+        `${path}.cumulativeCosts[${index}]`,
+        'must increase for every authoritative movement step.',
+      )
+    }
+  }
+  const committedStepCount = parseInteger(
+    record.committedStepCount,
+    `${path}.committedStepCount`,
+    0,
+    route.length - 2,
+  )
+  if (
+    !sameContinuationAnchor(route[0]!, origin)
+    || !sameContinuationAnchor(route.at(-1)!, destination)
+    || !sameContinuationAnchor(route[committedStepCount]!, from)
+    || !sameContinuationAnchor(route[committedStepCount + 1]!, to)
+  ) {
+    fail(
+      'inconsistent-state',
+      path,
+      'route endpoints and committed progress must match the provoking step.',
+    )
+  }
+  const cursorRecord = parseExactRecord(
+    record.cursor,
+    MOVEMENT_LIFECYCLE_CURSOR_FIELDS,
+    `${path}.cursor`,
+  )
+  if (cursorRecord.schemaVersion !== 1) {
+    fail('unsupported-schema-version', `${path}.cursor.schemaVersion`, 'must be 1.')
+  }
+  const cursorMovementId = parseStableId(
+    cursorRecord.movementId,
+    `${path}.cursor.movementId`,
+  )
+  if (cursorMovementId !== movementId) {
+    fail('inconsistent-state', `${path}.cursor.movementId`, 'must match movementId.')
+  }
+  const declarationPreviousRevision = parseInteger(
+    record.declarationPreviousRevision,
+    `${path}.declarationPreviousRevision`,
+    0,
+    Number.MAX_SAFE_INTEGER,
+  )
+  const declarationRevision = parseInteger(
+    record.declarationRevision,
+    `${path}.declarationRevision`,
+    0,
+    Number.MAX_SAFE_INTEGER,
+  )
+  if (declarationRevision !== declarationPreviousRevision + 1) {
+    fail(
+      'inconsistent-state',
+      `${path}.declarationRevision`,
+      'must immediately follow declarationPreviousRevision.',
+    )
+  }
+  return {
+    schemaVersion: 1,
+    movementId,
+    sourceOperationId,
+    mode: 'shift',
+    policy: record.policy,
+    origin,
+    destination,
+    requestedDestination,
+    path: route,
+    cumulativeCosts,
+    committedStepCount,
+    cursor: {
+      schemaVersion: 1,
+      movementId: cursorMovementId,
+      pathHash: parseSha256(cursorRecord.pathHash, `${path}.cursor.pathHash`),
+      nextEventIndex: parseInteger(
+        cursorRecord.nextEventIndex,
+        `${path}.cursor.nextEventIndex`,
+        1,
+        Number.MAX_SAFE_INTEGER,
+      ),
+    },
+    declarationPreviousRevision,
+    declarationRevision,
+  }
+}
+
 const parseContinuationContext = (
   value: unknown,
   continuationKind: PendingMoveResolutionContinuationKind,
   actorPlacementId: string,
+  originOpId: LivePlayOpId,
   path: string,
 ): PendingMoveResolutionContinuationContext | undefined => {
   if (value === undefined) {
@@ -1132,7 +1363,15 @@ const parseContinuationContext = (
   if (continuationKind !== 'attack-of-opportunity') {
     fail('inconsistent-state', path, 'is allowed only for an Attack of Opportunity continuation.')
   }
-  const record = parseExactRecord(value, ATTACK_OF_OPPORTUNITY_CONTEXT_FIELDS, path)
+  const candidate = parseRecord(value, path)
+  const preStep = Object.prototype.hasOwnProperty.call(candidate, 'movementPath')
+  const record = parseExactRecord(
+    value,
+    preStep
+      ? PRE_STEP_ATTACK_OF_OPPORTUNITY_CONTEXT_FIELDS
+      : ATTACK_OF_OPPORTUNITY_CONTEXT_FIELDS,
+    path,
+  )
   if (record.kind !== 'attack-of-opportunity') {
     fail('invalid-pending-resolution', `${path}.kind`, 'must be attack-of-opportunity.')
   }
@@ -1157,6 +1396,39 @@ const parseContinuationContext = (
   if (new Set(targetPlacementIds).size !== targetPlacementIds.length) {
     fail('duplicate-id', `${path}.targetPlacementIds`, 'must not contain duplicate placements.')
   }
+
+  if (preStep) {
+    if (
+      triggerReason !== 'movement'
+      || record.timing !== 'pre-movement-step'
+      || from === null
+      || to === null
+      || targetPlacementIds.length > 0
+    ) {
+      fail(
+        'inconsistent-state',
+        path,
+        'pre-step opportunity attacks require movement anchors and no ranged targets.',
+      )
+    }
+    return {
+      kind: 'attack-of-opportunity',
+      triggerReason: 'movement',
+      provokerPlacementId,
+      from,
+      to,
+      targetPlacementIds: [],
+      timing: 'pre-movement-step',
+      movementPath: parseOpportunityMovementPath(
+        record.movementPath,
+        originOpId,
+        from,
+        to,
+        `${path}.movementPath`,
+      ),
+    }
+  }
+
   if (record.timingLimitation !== 'post-provoking-action') {
     fail(
       'invalid-pending-resolution',
@@ -1896,6 +2168,7 @@ export const parsePendingMoveResolution = (
     record.continuationContext,
     continuationKind,
     actorPlacementId,
+    originOpId,
     `${path}.continuationContext`,
   )
   const canonicalMoveId = parseCanonicalMoveId(

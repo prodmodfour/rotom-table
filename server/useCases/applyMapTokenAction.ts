@@ -12,6 +12,7 @@ import {
   type MoveTokenLivePlayCommand,
   type MoveTokenMovementPolicy,
   type MoveTokenPayload,
+  type LivePlayOpId,
   type SendOutPokemonLivePlayCommand,
   type SendOutPokemonPayload,
   type SpawnTokenLivePlayCommand,
@@ -26,6 +27,11 @@ import {
   parseEncounterState,
   type EncounterState,
 } from '#shared/moveAutomation/encounterState'
+import {
+  createPendingMoveDeclarationResult,
+  type PendingMoveDeclarationResult,
+  type PendingMoveResolution,
+} from '#shared/moveAutomation/pendingResolution'
 import { nextRevision, normalizeRevision } from '#shared/sessionRevisions'
 import type { AuthRole } from '#shared/auth'
 import type { PlayerProfile } from '#shared/playerProfiles'
@@ -36,7 +42,6 @@ import type { SpawnedPokemon } from '~/types/pokemon'
 import type { TokenFacingDirection } from '~/types/tokenFacing'
 import type { TrainerSheet } from '~/types/trainerSheet'
 import { canPlacePokemon } from '~/utils/gridPlacement'
-import { appendMovementLogEntry } from '~/utils/mapMovementLog'
 import {
   isSendOutPositionWithinThrowRange,
   POKEBALL_THROW_RANGE_SQUARES,
@@ -47,7 +52,6 @@ import {
   isTokenFacingDirection,
   tokenFacingForPlacement,
   tokenFacingStoresLegacyTurned,
-  tokenFacingTowardPoint,
 } from '~/utils/tokenFacing'
 import { buildVoxelOccupancy } from '~/utils/voxelOccupancy'
 import { logicalMapResourcePath } from '../utils/runtimeResourcePaths'
@@ -63,7 +67,14 @@ import {
   type AuthoritativeLivePlayCommandExecutor,
 } from '../livePlay/commandExecutor'
 import { createSqliteAuthoritativeLivePlayCommandExecutor } from '../livePlay/sqliteCommandExecutor'
+import { createLivePlayCommandHash, type LivePlayCommandHash } from '../livePlay/opResult'
+import { acceptedCommandRealtimeAppendInput } from '../livePlay/acceptedCommandRealtime'
 import { getRotomDatabase, type RotomDatabase } from '../storage/database'
+import {
+  createSqlitePendingMoveResolutionRepository,
+  type PendingMoveResolutionRepository,
+  type StoredPendingMoveResolution,
+} from '../storage/pendingMoveResolutionRepository'
 import { sqliteMapRepository, type MapRepository } from '../storage/mapRepository'
 import { sqliteSheetRepository, type SheetRepository } from '../storage/sheetRepository'
 import {
@@ -74,8 +85,16 @@ import {
 } from '../domain/movement/resolveMovement'
 import { EncounterResourceReductionError } from '../domain/moveAutomation/reduceEncounterResources'
 import { planAuthoritativeMovementResources } from '../domain/movement/planMovementResources'
+import { applyAuthoritativeMovementMapTransition } from '../domain/movement/applyMovementTransition'
+import {
+  isPreStepMovementAttackOfOpportunity,
+  materializeMovementAttackOfOpportunity,
+  movementAttackOfOpportunityPersistenceIdentity,
+} from '../domain/moveAutomation/attackOfOpportunity'
 import { commitLivePlayMapUpdate } from './livePlayMapPersistence'
 import { toPersistedMap } from './saveMap'
+import { listPlayerProfiles } from '../utils/playerProfileStorage'
+import { playerCharacterSheetKeysForProfiles } from '~/utils/playerCharacterTokens'
 
 export class MapTokenActionUseCaseError extends UseCaseHttpError<400 | 403 | 404 | 409> {}
 
@@ -147,7 +166,12 @@ export interface MapTokenActionDependencies {
   commandExecutor?: Pick<AuthoritativeLivePlayCommandExecutor, 'execute'>
   mapRepository?: Pick<MapRepository, 'getBySlug' | 'applyLivePlayUpdate'>
   sheetRepository?: Pick<SheetRepository<Record<string, unknown>>, 'getByRef'>
-  database?: Pick<RotomDatabase, 'withTransaction'>
+  pendingResolutionRepository?: Pick<
+    PendingMoveResolutionRepository,
+    'getByOrigin' | 'create'
+  >
+  listProfiles?: () => readonly PlayerProfile[]
+  database?: Pick<RotomDatabase, 'withTransaction'> & Partial<Pick<RotomDatabase, 'connection'>>
 }
 
 interface ResolvedMapWriteContext {
@@ -201,6 +225,11 @@ const livePlayMapTokenCommandExecutor = createSqliteAuthoritativeLivePlayCommand
 
 const actionDependencies = (dependencies: MapTokenActionDependencies) => {
   const sheetRepository = dependencies.sheetRepository ?? sqliteSheetRepository
+  const database = dependencies.database ?? getRotomDatabase()
+  const pendingResolutionRepository = dependencies.pendingResolutionRepository
+    ?? ('connection' in database && database.connection
+      ? createSqlitePendingMoveResolutionRepository(database as RotomDatabase)
+      : null)
   return {
     readSheet: dependencies.readSheet
       ?? ((kind: SheetKind, slug: string) => readDefaultSheet(kind, slug, sheetRepository)),
@@ -209,7 +238,9 @@ const actionDependencies = (dependencies: MapTokenActionDependencies) => {
     maxMovementLogEntries: dependencies.maxMovementLogEntries,
     commandExecutor: dependencies.commandExecutor ?? livePlayMapTokenCommandExecutor,
     mapRepository: dependencies.mapRepository ?? sqliteMapRepository,
-    database: dependencies.database ?? getRotomDatabase(),
+    pendingResolutionRepository,
+    listProfiles: dependencies.listProfiles ?? listPlayerProfiles,
+    database,
   }
 }
 
@@ -288,6 +319,7 @@ const authoritativeMovementSheetsForMap = (
 interface ResolvedNormalTokenMovement {
   readonly movement: AuthoritativeMovementSuccess
   readonly encounterState: EncounterState
+  readonly sheets: AuthoritativeMovementSheets
 }
 
 const resolveNormalTokenMovement = (
@@ -304,9 +336,10 @@ const resolveNormalTokenMovement = (
     })
   }
 
+  const sheets = authoritativeMovementSheetsForMap(context.map, readSheet)
   const movement = resolveAuthoritativeMovement({
     map: context.map,
-    sheets: authoritativeMovementSheetsForMap(context.map, readSheet),
+    sheets,
     placementId: payload.placementId,
     mode: 'shift',
     destination: payload.position,
@@ -325,6 +358,7 @@ const resolveNormalTokenMovement = (
       return {
         movement,
         encounterState: resourcePlan.currentEncounterState,
+        sheets,
       }
     }
     catch (error) {
@@ -384,56 +418,21 @@ const applyResolvedMoveTokenToMap = (
   context: ResolvedMapTokenActionContext,
   dependencies: Required<Pick<MapTokenActionDependencies, 'readSheet' | 'now'>> & Pick<MapTokenActionDependencies, 'maxMovementLogEntries'>,
 ): AppliedMapTokenChange => {
-  const movement = resolved.movement
-  const previousEncounterState = parseEncounterState(
-    context.map.encounterState ?? createEmptyEncounterState(),
-  )
-  const currentPosition = context.placement.position
-  const nextPosition = clonePosition(movement.destination)
-  const nextFacing = tokenFacingTowardPoint(
-    currentPosition,
-    nextPosition,
-    tokenFacingForPlacement(context.placement),
-  )
-  const nextPlacement: SheetPlacement = {
-    ...context.placement,
-    position: nextPosition,
-    ...(nextFacing === null
-      ? {}
-      : {
-          facing: nextFacing,
-          turned: tokenFacingStoresLegacyTurned(nextFacing),
-        }),
-  }
-  const placements = context.map.placements.map((placement) => (
-    placement.id === context.placement.id ? nextPlacement : placement
-  ))
-  const timestamp = dependencies.now()
-  const metadata = appendMovementLogEntry(context.map.metadata, {
-    userId: context.placement.id,
+  const transition = applyAuthoritativeMovementMapTransition({
+    map: context.map,
+    placementId: context.placement.id,
+    destination: resolved.movement.destination,
+    distance: resolved.movement.cost,
+    encounterState: resolved.encounterState,
+    timestamp: dependencies.now(),
     userName: sheetDisplayName(context.placement, dependencies.readSheet),
-    from: currentPosition,
-    to: nextPosition,
-    pathLength: movement.cost,
-  }, {
-    now: () => timestamp,
     maxLogEntries: dependencies.maxMovementLogEntries,
   })
-
   return {
-    nextMap: {
-      ...context.map,
-      placements,
-      metadata,
-      encounterState: parseEncounterState(resolved.encounterState),
-      updatedAt: timestamp,
-    },
-    placement: nextPlacement,
-    timestamp,
-    turnResources: {
-      previous: previousEncounterState.turnResources,
-      current: resolved.encounterState.turnResources,
-    },
+    nextMap: transition.nextMap,
+    placement: transition.placement,
+    timestamp: transition.nextMap.updatedAt,
+    turnResources: transition.turnResources,
   }
 }
 
@@ -1128,6 +1127,134 @@ const currentContextForAcceptedResult = async (
   } catch {
     return null
   }
+}
+
+interface SuspendedMovementApplication {
+  readonly pendingResolution: PendingMoveResolution
+  readonly change: AppliedMapTokenChange
+  readonly result: PendingMoveDeclarationResult
+}
+
+const suspendMovementForOpportunityAttack = (input: {
+  readonly command: MoveTokenLivePlayCommand
+  readonly resolved: ResolvedNormalTokenMovement
+  readonly context: ResolvedMapTokenActionContext
+  readonly currentRevision: number
+  readonly dependencies: MapTokenActionDependencySet
+}): SuspendedMovementApplication | null => {
+  if (!input.dependencies.pendingResolutionRepository) return null
+  const commandHash = createLivePlayCommandHash(input.command)
+  const identity = movementAttackOfOpportunityPersistenceIdentity({
+    mapSlug: input.command.mapSlug,
+    originOpId: input.command.opId,
+    commandHash,
+  })
+  const revision = nextRevision(input.currentRevision)
+  const timestamp = input.dependencies.now()
+  const materialized = materializeMovementAttackOfOpportunity({
+    ...identity,
+    originMapSlug: input.command.mapSlug,
+    declarationPreviousRevision: input.currentRevision,
+    continuationMapRevision: revision,
+    createdAt: timestamp,
+    map: input.context.map,
+    movement: input.resolved.movement,
+    pokemonSheets: input.resolved.sheets.pokemon,
+    trainerSheets: input.resolved.sheets.trainer,
+    playerCharacterSheetKeys: playerCharacterSheetKeysForProfiles(
+      input.dependencies.listProfiles(),
+    ),
+  })
+  if (!materialized) return null
+
+  const resources = planAuthoritativeMovementResources({
+    map: input.context.map,
+    movement: input.resolved.movement,
+    sourceOperationId: input.command.opId,
+    distance: materialized.committedCost,
+    spendAction: true,
+  })
+  const transition = applyAuthoritativeMovementMapTransition({
+    map: input.context.map,
+    placementId: input.context.placement.id,
+    destination: materialized.lifecycle.currentPosition,
+    distance: materialized.committedCost,
+    encounterState: resources.currentEncounterState,
+    timestamp,
+    userName: sheetDisplayName(input.context.placement, input.dependencies.readSheet),
+    maxLogEntries: input.dependencies.maxMovementLogEntries,
+  })
+  const encounter = parseEncounterState(
+    transition.nextMap.encounterState ?? createEmptyEncounterState(),
+  )
+  const nextMap: TabletopMap = {
+    ...transition.nextMap,
+    encounterState: parseEncounterState({
+      ...encounter,
+      pendingResolutionSummaries: [
+        ...encounter.pendingResolutionSummaries,
+        materialized.pendingResolution.publicSummary,
+      ],
+    }),
+    revision,
+  }
+  return {
+    pendingResolution: materialized.pendingResolution,
+    change: {
+      nextMap,
+      placement: transition.placement,
+      timestamp,
+      turnResources: transition.turnResources,
+    },
+    result: createPendingMoveDeclarationResult({
+      opId: input.command.opId,
+      mapSlug: input.command.mapSlug,
+      previousRevision: input.currentRevision,
+      revision,
+      pendingResolution: materialized.pendingResolution.publicSummary,
+    }),
+  }
+}
+
+const pendingMovementResultFromStored = (input: {
+  readonly command: MoveTokenLivePlayCommand
+  readonly commandHash: LivePlayCommandHash
+  readonly stored: StoredPendingMoveResolution
+}): PendingMoveDeclarationResult => {
+  if (!isPreStepMovementAttackOfOpportunity(input.stored.resolution)) {
+    throw new MapTokenActionUseCaseError(
+      409,
+      'The movement operation identity belongs to another pending resolution.',
+    )
+  }
+  const expected = movementAttackOfOpportunityPersistenceIdentity({
+    mapSlug: input.command.mapSlug,
+    originOpId: input.command.opId,
+    commandHash: input.commandHash,
+  })
+  const context = input.stored.resolution.continuationContext
+  const payload = expectMoveTokenPayload(input.command.payload)
+  const requestedPolicy = payload.movementPolicy ?? 'standard'
+  if (
+    input.stored.resolutionId !== expected.resolutionId
+    || input.stored.originOpId !== input.command.opId
+    || input.stored.status !== 'pending'
+    || context.provokerPlacementId !== payload.placementId
+    || context.movementPath.policy !== requestedPolicy
+    || !positionsEqual(context.movementPath.requestedDestination, payload.position)
+  ) {
+    throw new MapTokenActionUseCaseError(
+      409,
+      'The movement operation ID already identifies different or terminal durable state.',
+    )
+  }
+  return createPendingMoveDeclarationResult({
+    opId: input.command.opId,
+    mapSlug: input.command.mapSlug,
+    previousRevision: context.movementPath.declarationPreviousRevision,
+    revision: context.movementPath.declarationRevision,
+    pendingResolution: input.stored.resolution.publicSummary,
+  })
 }
 
 export const executeMapTokenLivePlayCommandUseCase = async (

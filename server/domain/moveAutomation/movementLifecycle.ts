@@ -566,8 +566,7 @@ export const runAuthoritativeMovementLifecycle = (
   const operations: MoveEffectOperation[] = []
   const operationIds = new Set<string>()
 
-  for (let index = initialCursor.nextEventIndex; index < events.length; index += 1) {
-    const event = events[index]!
+  const reducePathEvent = (event: EncounterEvent): EncounterLifecycleReductionResult => {
     const reduction = reduceEncounterLifecycle(
       state,
       [event],
@@ -591,9 +590,32 @@ export const runAuthoritativeMovementLifecycle = (
       position = cloneAnchor(event.to)
       completedStepCount = event.movement.step
     }
-
     assertPendingMovementInterrupts(reduction.pendingInterrupts, event)
-    if (reduction.pendingInterrupts.length > 0) {
+    return reduction
+  }
+
+  for (let index = initialCursor.nextEventIndex; index < events.length; index += 1) {
+    const event = events[index]!
+    const pendingInterrupts = [...reducePathEvent(event).pendingInterrupts]
+
+    // Every lost-adjacency fact for one step is a single pre-step checkpoint.
+    // Consume the complete deterministic group before suspending so multiple
+    // eligible defenders share one window set and continuation cannot reopen
+    // later adjacency facts from the same uncommitted step.
+    if (event.kind === 'placement-leaving-adjacency') {
+      while (index + 1 < events.length) {
+        const nextEvent = events[index + 1]!
+        if (
+          nextEvent.kind !== 'placement-leaving-adjacency'
+          || nextEvent.movement.movementId !== event.movement.movementId
+          || nextEvent.movement.step !== event.movement.step
+        ) break
+        index += 1
+        pendingInterrupts.push(...reducePathEvent(nextEvent).pendingInterrupts)
+      }
+    }
+
+    if (pendingInterrupts.length > 0) {
       const cursor = cursorFor(input, index + 1)
       return runResult({
         status: 'pending-interrupt',
@@ -601,7 +623,7 @@ export const runAuthoritativeMovementLifecycle = (
         processedPathEvents,
         reductions,
         operations,
-        pendingInterrupts: [...reduction.pendingInterrupts],
+        pendingInterrupts,
         cursor,
         currentPosition: position,
         completedStepCount,
