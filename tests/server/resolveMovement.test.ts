@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import { createEmptyEncounterState } from '#shared/moveAutomation/encounterState'
 import type { CharacterSheet } from '~/types/characterSheet'
 import type { GridAnchor, MapVoxelV2, SheetPlacement, TabletopMap } from '~/types/map'
 import type { MovementCapabilitySpeeds } from '~/types/movement'
@@ -9,6 +10,10 @@ import {
   type ResolveMovementInput,
   type ResolvePassMovementInput,
 } from '~~/server/domain/movement/resolveMovement'
+import {
+  advanceEncounterGlobalFields,
+  createEncounterGlobalFieldZone,
+} from '~~/server/domain/moveAutomation/fieldLifecycle'
 
 const pokemonSheet = (
   slug: string,
@@ -388,6 +393,79 @@ describe('authoritative movement oracle', () => {
         terrain: expect.objectContaining({ slow: true }),
       }),
     ])
+  })
+
+  it('applies and removes Gravity grounding and aerial endpoint limits through the oracle', () => {
+    const gravity = createEncounterGlobalFieldZone({
+      kind: 'room',
+      fieldId: 'gravity',
+      source: {
+        kind: 'operation',
+        operationId: 'operation.gravity',
+        moveId: 'move.gravity',
+        placementId: 'actor',
+      },
+      sideId: null,
+      duration: { kind: 'rounds', boundary: 'end', remaining: 1 },
+      replacementGroup: 'field.room.gravity',
+    })
+    const activeMap = map(undefined, {
+      encounterState: {
+        ...createEmptyEncounterState(),
+        zones: [gravity],
+      },
+    })
+    const flyer = sheets([
+      pokemonSheet('actor', {
+        capabilities: { overland: 0, sky: 6, levitate: 0 },
+      }),
+    ])
+
+    const allowedLowEndpoint = resolveMovement(input({
+      map: activeMap,
+      sheets: flyer,
+      destination: { x: 0, y: 1, z: 0 },
+    }))
+    expect(allowedLowEndpoint).toMatchObject({
+      ok: true,
+      movementProfile: { state: { grounding: 'grounded' } },
+      capabilities: { used: [{ key: 'sky', speed: 6 }] },
+    })
+
+    expect(resolveMovement(input({
+      map: activeMap,
+      sheets: flyer,
+      destination: { x: 0, y: 2, z: 0 },
+    }))).toMatchObject({
+      ok: false,
+      reasonCode: 'movement-gravity-altitude-limit',
+      destination: { x: 0, y: 2, z: 0 },
+    })
+
+    const expired = advanceEncounterGlobalFields({
+      zones: [gravity],
+      event: { kind: 'round-end' },
+    })
+    expect(expired.transitions).toEqual([
+      expect.objectContaining({ zoneId: gravity.id, kind: 'expired' }),
+    ])
+    const afterExpiry = resolveMovement(input({
+      map: {
+        ...activeMap,
+        encounterState: {
+          ...activeMap.encounterState!,
+          zones: expired.zones,
+        },
+      },
+      sheets: flyer,
+      destination: { x: 0, y: 2, z: 0 },
+    }))
+    expect(afterExpiry).toMatchObject({
+      ok: true,
+      destination: { x: 0, y: 2, z: 0 },
+      movementProfile: { state: { grounding: 'airborne' } },
+      capabilities: { used: [{ key: 'sky', speed: 6 }] },
+    })
   })
 
   it('derives large-footprint occupancy transitions from authoritative sheet geometry', () => {

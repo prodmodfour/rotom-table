@@ -31,6 +31,8 @@ import { createAuthoritativeLivePlayCommandExecutor } from '~~/server/livePlay/c
 import { createInProcessMapWriteQueue } from '~~/server/livePlay/mapWriteQueue'
 import { createInMemoryLivePlayOpStore, type LivePlayOpStore } from '~~/server/livePlay/opStore'
 import type { EncounterLifecycleTriggerHandler } from '~~/server/domain/moveAutomation/reduceLifecycle'
+import { applyEncounterEffectLifecycleEvent } from '~~/server/domain/moveAutomation/effectLifecycle'
+import { createTailwindInitiativeEffect } from '~~/server/domain/moveAutomation/tailwind'
 import {
   SheetRevisionConflictError,
   type PersistedSheet,
@@ -39,7 +41,7 @@ import { executeLivePlayInitiativeCommandUseCase } from '~~/server/useCases/appl
 import { MAPS_ROOT } from '~~/server/utils/mapPaths'
 import { applyLivePlayPatchesToMap } from '~/utils/livePlayPatches'
 import type { ActiveOrderEffect } from '~/utils/activeOrderEffects'
-import type { TabletopMap } from '~/types/map'
+import type { SheetPlacement, TabletopMap } from '~/types/map'
 
 const pokemonInitiativeSheet = (
   slug: string,
@@ -202,6 +204,17 @@ const encounterStateWithEffects = (
   effects: readonly EncounterEffect[],
 ): EncounterState => ({
   ...createEmptyEncounterState(),
+  effects,
+})
+
+const sidedEncounterStateWithEffects = (
+  effects: readonly EncounterEffect[],
+): EncounterState => ({
+  ...createEmptyEncounterState(),
+  sides: {
+    red: { id: 'red', label: 'Red', status: 'active' },
+    blue: { id: 'blue', label: 'Blue', status: 'active' },
+  },
   effects,
 })
 
@@ -1169,6 +1182,105 @@ describe('live-play initiative commands', () => {
     expect(manual.result).toMatchObject({ ok: true })
     expect(manualHarness.storedMap.initiative).toEqual({
       activeId: 'slow-token',
+      round: 1,
+      manualOrderIds,
+    })
+    expect(manualHarness.deps.readSheet).not.toHaveBeenCalled()
+  })
+
+  it('applies active Tailwind only to its owning side and drops it after lifecycle removal', async () => {
+    const tailwind = createTailwindInitiativeEffect({
+      sideId: 'red',
+      source: {
+        operationId: 'operation.tailwind.red',
+        moveId: 'move.tailwind',
+        placementId: 'red-token',
+      },
+      createdRound: 1,
+      createdTurn: 0,
+    })
+    const placements: SheetPlacement[] = [
+      {
+        id: 'red-token',
+        sheetKind: 'pokemon',
+        sheetSlug: 'red',
+        sideId: 'red',
+        position: { x: 1, y: 0, z: 1 },
+        initiative: 10,
+      },
+      {
+        id: 'blue-token',
+        sheetKind: 'pokemon',
+        sheetSlug: 'blue',
+        sideId: 'blue',
+        position: { x: 2, y: 0, z: 1 },
+        initiative: 12,
+      },
+    ]
+    const activeHarness = createHarness(baseMap({
+      placements,
+      initiative: { activeId: 'blue-token', round: 1 },
+      encounterState: sidedEncounterStateWithEffects([tailwind]),
+    }))
+
+    const active = await execute(activeHarness, nextInitiativeCommand({
+      opId: 'op_tailwind_active',
+      payload: {
+        orderIds: ['red-token', 'blue-token'],
+        activeId: 'blue-token',
+        round: 1,
+      },
+    }))
+
+    expect(active.result).toMatchObject({ ok: true })
+    expect(activeHarness.storedMap.initiative).toEqual({
+      activeId: 'red-token',
+      round: 2,
+    })
+
+    const expiredEffects = applyEncounterEffectLifecycleEvent(
+      { effects: [tailwind] },
+      { kind: 'scene-end' },
+    ).effects
+    expect(expiredEffects).toEqual([])
+    const removedHarness = createHarness(baseMap({
+      placements,
+      initiative: { activeId: 'red-token', round: 1 },
+      encounterState: sidedEncounterStateWithEffects(expiredEffects),
+    }))
+    const removed = await execute(removedHarness, nextInitiativeCommand({
+      opId: 'op_tailwind_removed',
+      payload: {
+        orderIds: ['blue-token', 'red-token'],
+        activeId: 'red-token',
+        round: 1,
+      },
+    }))
+
+    expect(removed.result).toMatchObject({ ok: true })
+    expect(removedHarness.storedMap.initiative).toEqual({
+      activeId: 'blue-token',
+      round: 2,
+    })
+
+    const manualOrderIds = ['blue-token', 'red-token']
+    const manualHarness = createHarness(baseMap({
+      placements,
+      initiative: { activeId: 'blue-token', round: 1, manualOrderIds },
+      encounterState: sidedEncounterStateWithEffects([tailwind]),
+    }))
+    const manual = await execute(manualHarness, nextInitiativeCommand({
+      opId: 'op_tailwind_manual',
+      payload: {
+        orderIds: manualOrderIds,
+        activeId: 'blue-token',
+        round: 1,
+      },
+    }))
+
+    expect(manual.result).toMatchObject({ ok: true })
+    expect(manualHarness.storedMap.initiative).toEqual({
+      activeId: 'red-token',
       round: 1,
       manualOrderIds,
     })

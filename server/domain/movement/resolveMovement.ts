@@ -54,7 +54,7 @@ import {
 import { placementToSpawned, type SheetLookup } from '~/utils/placement'
 import { withBattlefieldZoneMovementTerrain } from '../moveAutomation/battlefieldZoneMovementTerrain'
 import { createMoveAutomationGravityResolver } from '../moveAutomation/gravity'
-import { createMoveAutomationRoomResolver } from '../moveAutomation/rooms'
+import { createMoveAutomationRemainingGlobalFieldResolver } from '../moveAutomation/remainingGlobalFields'
 
 export const AUTHORITATIVE_MOVEMENT_MODES = ['shift', 'pass'] as const
 export type AuthoritativeMovementMode = (typeof AUTHORITATIVE_MOVEMENT_MODES)[number]
@@ -851,7 +851,7 @@ type MovementGravityResolver = ReturnType<typeof createMoveAutomationGravityReso
 const gravityResolverForMap = (map: TabletopMap): MovementGravityResolver => (
   createMoveAutomationGravityResolver({
     placements: map.placements,
-    rooms: createMoveAutomationRoomResolver(map),
+    globalFields: createMoveAutomationRemainingGlobalFieldResolver(map),
   })
 )
 

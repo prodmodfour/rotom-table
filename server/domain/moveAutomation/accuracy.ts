@@ -32,6 +32,9 @@ export const resolveAuthoritativeMoveUserAccuracy = (
     }).suppressed
   const actorAccuracy = moveAutomationUserAccuracy(context.actor.token, {
     heldItemEffectsSuppressed,
+    // Gravity is composed below from the authoritative global-field query.
+    // Keep the retained browser/legacy compatibility projection out of v2.
+    fieldAccuracyBonus: 0,
   })
   const gravity = context.queries.gravity.accuracy()
   const modifiers: MoveAutomationRollModifier[] = [{

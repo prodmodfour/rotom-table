@@ -38,11 +38,18 @@ const appliesToPlacement = (
   || effect.affected.cells.some(cell => sameCell(cell, placement.position))
 )
 
+export interface AuthoritativeTailwindInitiativeOverlay {
+  readonly effectId: string
+  readonly initiativeBonus: number
+}
+
 const activeInitiativeModifiers = (
   map: Pick<TabletopMap, 'encounterState'>,
   placement: SheetPlacement,
+  authoritativeTailwind: AuthoritativeTailwindInitiativeOverlay | null | undefined,
 ): readonly EncounterNumericModifierEffect[] => {
   const seenTailwindSides = new Set<EncounterSideId>()
+  const hasAuthoritativeTailwindSelection = authoritativeTailwind !== undefined
   return (map.encounterState?.effects ?? []).filter(
     (effect): effect is EncounterNumericModifierEffect => {
       if (
@@ -53,9 +60,14 @@ const activeInitiativeModifiers = (
         || !appliesToPlacement(effect, placement)
       ) return false
 
-      // Canonical Tailwind never stacks for one side, even if malformed legacy
-      // state retained two independently identified copies.
+      // Authoritative server callers select the one active Tailwind identity
+      // through the global-field query. Browser presentation callers omit the
+      // selector and retain the same canonical non-stacking projection.
       if (isTailwindInitiativeEffect(effect)) {
+        if (
+          hasAuthoritativeTailwindSelection
+          && effect.id !== authoritativeTailwind?.effectId
+        ) return false
         const sideId = effect.affected.sideIds[0]!
         if (seenTailwindSides.has(sideId)) return false
         seenTailwindSides.add(sideId)
@@ -78,8 +90,10 @@ const rounded = (
 const applyModifier = (
   score: number,
   effect: EncounterNumericModifierEffect,
+  authoritativeValue?: number,
 ): number => {
-  const { operation, value, rounding } = effect.payload
+  const { operation, value: effectValue, rounding } = effect.payload
+  const value = authoritativeValue ?? effectValue
   let next: number
   if (operation === 'add') next = score + (value * effect.stacks)
   else if (operation === 'multiply') next = score * (value ** effect.stacks)
@@ -128,14 +142,24 @@ export const resolveEncounterInitiative = (input: {
   readonly map: Pick<TabletopMap, 'encounterState'>
   readonly placement: SheetPlacement
   readonly calculatedScore: number
+  /** Server-selected Tailwind overlay; null explicitly selects no Tailwind. */
+  readonly authoritativeTailwind?: AuthoritativeTailwindInitiativeOverlay | null
 }): EncounterInitiativeResolution => {
   let score = input.calculatedScore
   const contributions: EncounterInitiativeContribution[] = []
-  for (const effect of activeInitiativeModifiers(input.map, input.placement)) {
+  for (const effect of activeInitiativeModifiers(
+    input.map,
+    input.placement,
+    input.authoritativeTailwind,
+  )) {
     const previousScore = score
-    score = applyModifier(score, effect)
     const tailwind = effect.tags.includes(TAILWIND_EFFECT_TAG)
       && isTailwindInitiativeEffect(effect)
+    score = applyModifier(
+      score,
+      effect,
+      tailwind ? input.authoritativeTailwind?.initiativeBonus : undefined,
+    )
     contributions.push({
       effectId: effect.id,
       source: effect.source,

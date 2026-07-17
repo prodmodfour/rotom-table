@@ -24,6 +24,7 @@ import {
 } from '#shared/attackOfOpportunityState'
 import { nextRevision, normalizeRevision } from '#shared/sessionRevisions'
 import { initiativeOrderIds } from '#shared/initiativeOrder'
+import { isEncounterSideId } from '#shared/moveAutomation/encounterState'
 import type { CharacterSheet } from '~/types/characterSheet'
 import type { InitiativeTrackerState, SheetKind, SheetPlacement, TabletopMap } from '~/types/map'
 import type { TrainerSheet } from '~/types/trainerSheet'
@@ -65,6 +66,7 @@ import {
 } from '~/utils/encounterInitiative'
 import { createMoveAutomationRoomResolver } from '../domain/moveAutomation/rooms'
 import { createMoveAutomationItemEffectResolver } from '../domain/moveAutomation/itemEffects'
+import { createMoveAutomationRemainingGlobalFieldResolver } from '../domain/moveAutomation/remainingGlobalFields'
 import { advanceMapGlobalFields } from '../domain/moveAutomation/fieldMapState'
 import {
   planInitiativeLifecycle,
@@ -631,9 +633,10 @@ const initiativeOrder = (
   }
   const placementById = new Map(map.placements.map(placement => [placement.id, placement]))
   const rooms = createMoveAutomationRoomResolver(map)
+  const globalFields = createMoveAutomationRemainingGlobalFieldResolver(map, rooms)
   const itemEffects = createMoveAutomationItemEffectResolver({
     placements: map.placements,
-    rooms,
+    globalFields,
   })
   const calculatedEntries = initiativeOrderEntriesForPlacements(
     map.placements,
@@ -650,12 +653,21 @@ const initiativeOrder = (
   ).map((entry) => {
     const placement = placementById.get(entry.id)
     if (!placement) return entry
+    const tailwind = isEncounterSideId(placement.sideId)
+      ? globalFields.tailwind(placement.sideId)
+      : null
     return {
       ...entry,
       initiativeScore: encounterModifiedInitiativeScore({
         map,
         placement,
         calculatedScore: entry.initiativeScore,
+        authoritativeTailwind: tailwind?.active && tailwind.field
+          ? {
+              effectId: tailwind.field.effectId,
+              initiativeBonus: tailwind.initiativeBonus,
+            }
+          : null,
       }),
     }
   })

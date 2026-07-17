@@ -1,7 +1,3 @@
-import {
-  GRAVITY_ACCURACY_ROLL_BONUS,
-  GRAVITY_MAX_AERIAL_END_ALTITUDE_METERS,
-} from '#shared/moveAutomation/globalFields'
 import type { EncounterSideId } from '#shared/moveAutomation/encounterState'
 import type {
   EffectiveMovementProfile,
@@ -9,7 +5,11 @@ import type {
   MovementGroundingState,
 } from '~/types/movement'
 import type { SheetPlacement } from '~/types/map'
-import type { AuthoritativeRoomInstance, MoveAutomationRoomResolver } from './rooms'
+import type {
+  GravityFieldResolution,
+  MoveAutomationRemainingGlobalFieldResolver,
+} from './remainingGlobalFields'
+import type { AuthoritativeRoomInstance } from './rooms'
 
 export interface GravityFieldIdentity {
   readonly zoneId: string
@@ -94,8 +94,9 @@ const deepFreeze = <Value>(value: Value): Value => {
   return Object.freeze(value)
 }
 
-const identityFor = (room: AuthoritativeRoomInstance | null): GravityFieldIdentity | null => (
-  room
+const identityFor = (field: GravityFieldResolution): GravityFieldIdentity | null => {
+  const room = field.field.active ? field.field.instance : null
+  return room
     ? deepFreeze({
         zoneId: room.zoneId,
         source: room.source,
@@ -103,19 +104,21 @@ const identityFor = (room: AuthoritativeRoomInstance | null): GravityFieldIdenti
         duration: room.duration,
       })
     : null
-)
+}
 
 /**
- * Resolve Gravity from the same active global-field projection as Rooms. Its
- * compatibility storage category is `room`, but every mechanic retains Gravity
- * reason codes and never treats it as Trick/Wonder/Magic Room behavior.
+ * Apply the read-only Gravity overlay selected by the global-field query seam.
+ * Its compatibility storage category is `room`, but consumers never inspect or
+ * mutate that storage and every result retains Gravity-specific evidence.
  */
 export const createMoveAutomationGravityResolver = (input: {
   readonly placements: readonly SheetPlacement[]
-  readonly rooms: MoveAutomationRoomResolver
+  readonly globalFields: MoveAutomationRemainingGlobalFieldResolver
 }): MoveAutomationGravityResolver => {
   const placements = new Map(input.placements.map(placement => [placement.id, placement]))
-  const gravity = identityFor(input.rooms.active().find(room => room.kind === 'gravity') ?? null)
+  const field = input.globalFields.gravity()
+  const gravity = identityFor(field)
+  const overlay = field.overlay
   const affectedPokemon = (placementId: string): SheetPlacement | null => {
     const placement = placements.get(placementId) ?? null
     return placement?.sheetKind === 'pokemon' ? placement : null
@@ -156,7 +159,7 @@ export const createMoveAutomationGravityResolver = (input: {
     grounding,
     accuracy: (): GravityAccuracyResolution => deepFreeze(gravity
       ? {
-          bonus: GRAVITY_ACCURACY_ROLL_BONUS,
+          bonus: overlay.accuracyRollBonus,
           source: gravity,
           reasonCode: 'gravity.accuracy-bonus',
         }
@@ -181,11 +184,13 @@ export const createMoveAutomationGravityResolver = (input: {
       const usesRestrictedCapability = query.capabilityKeys.some(
         capability => capability === 'sky' || capability === 'levitate',
       )
+      const maximumAerialEndAltitude = overlay.maximumAerialEndAltitudeMeters
       const allowed = !usesRestrictedCapability
-        || query.destinationAirHeight <= GRAVITY_MAX_AERIAL_END_ALTITUDE_METERS
+        || maximumAerialEndAltitude === null
+        || query.destinationAirHeight <= maximumAerialEndAltitude
       return deepFreeze({
         allowed,
-        maximumAerialEndAltitude: GRAVITY_MAX_AERIAL_END_ALTITUDE_METERS,
+        maximumAerialEndAltitude,
         source: gravity,
         reasonCode: allowed
           ? 'gravity.aerial-endpoint-allowed'
@@ -200,9 +205,9 @@ export const createMoveAutomationGravityResolver = (input: {
       )
       return deepFreeze({
         applies,
-        neutralizesFlyingResistance: applies,
-        suppressesLevitateResistance: applies,
-        suppressesGroundsourceImmunity: applies,
+        neutralizesFlyingResistance: applies && overlay.neutralizesFlyingGroundResistance,
+        suppressesLevitateResistance: applies && overlay.suppressesLevitateGroundResistance,
+        suppressesGroundsourceImmunity: applies && overlay.suppressesGroundsourceImmunity,
         source: applies ? gravity : null,
         reasonCode: applies
           ? 'gravity.ground-interaction-applied'

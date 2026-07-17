@@ -500,7 +500,7 @@ export const buildAuthoritativeMoveRulesContext = (
   )
   const rooms = createMoveAutomationRoomResolver(map)
   const globalFields = createMoveAutomationRemainingGlobalFieldResolver(map, rooms)
-  const gravity = createMoveAutomationGravityResolver({ placements, rooms })
+  const gravity = createMoveAutomationGravityResolver({ placements, globalFields })
   const weather = createMoveAutomationWeatherResolver(map)
   const { tokens, byId: tokenById } = tokenSnapshots(
     map,
@@ -581,7 +581,7 @@ export const buildAuthoritativeMoveRulesContext = (
 
   const itemEffects = createMoveAutomationItemEffectResolver({
     placements,
-    rooms,
+    globalFields,
     recordSheetRead: readSet.recordPlacement,
   })
   const stats = createMoveAutomationStatResolver({

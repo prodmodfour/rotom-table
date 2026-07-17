@@ -1984,7 +1984,7 @@ Status: DONE
 
 ## MA-143B — Apply Magic Room, Gravity, and Tailwind rules
 
-Status: TODO
+Status: DONE
 
 **Depends on:** MA-143A
 **Commit:** `feat(move-automation): resolve remaining global fields`

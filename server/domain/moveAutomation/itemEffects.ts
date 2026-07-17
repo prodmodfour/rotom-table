@@ -1,11 +1,10 @@
-import {
-  magicRoomSuppressesItemEffect,
-  type MoveAutomationItemEffectScope,
-  type MoveAutomationItemEffectTiming,
+import type {
+  MoveAutomationItemEffectScope,
+  MoveAutomationItemEffectTiming,
 } from '#shared/moveAutomation/globalFields'
 import type { EncounterSideId } from '#shared/moveAutomation/encounterState'
 import type { SheetPlacement } from '~/types/map'
-import type { MoveAutomationRoomResolver } from './rooms'
+import type { MoveAutomationRemainingGlobalFieldResolver } from './remainingGlobalFields'
 
 export type MoveAutomationItemEffectOutcome =
   | 'allowed'
@@ -69,17 +68,23 @@ const scopeApplies = (
  */
 export const createMoveAutomationItemEffectResolver = (input: {
   readonly placements: readonly SheetPlacement[]
-  readonly rooms: MoveAutomationRoomResolver
+  readonly globalFields: MoveAutomationRemainingGlobalFieldResolver
   /** Item contributions consult their backing sheet even when Magic Room suppresses them. */
   readonly recordSheetRead?: (
     placement: Pick<SheetPlacement, 'sheetKind' | 'sheetSlug'>,
   ) => void
 }): MoveAutomationItemEffectResolver => {
   const placements = new Map(input.placements.map(placement => [placement.id, placement]))
-  const magicRoom = input.rooms.active().find(room => room.kind === 'magic') ?? null
 
   return Object.freeze({
     resolve: (query: MoveAutomationItemEffectQuery): MoveAutomationItemEffectResolution => {
+      // The global-field seam owns strict scope/timing validation and the one
+      // active/inactive Magic Room projection used by every item consumer.
+      const magicRoom = input.globalFields.magicRoom({
+        scope: query.scope,
+        timing: query.timing,
+      })
+      const activeField = magicRoom.field.active ? magicRoom.field.instance : null
       const placement = placements.get(query.placementId) ?? null
       if (!placement) {
         return deepFreeze({
@@ -107,21 +112,15 @@ export const createMoveAutomationItemEffectResolver = (input: {
       }
 
       input.recordSheetRead?.(placement)
-      const suppressibleScope = query.scope === 'pokemon-held'
-        || query.scope === 'trainer-accessory'
-      const suppressedByMagicRoomPolicy = magicRoomSuppressesItemEffect(
-        query.scope,
-        query.timing,
-      )
-      if (magicRoom && suppressedByMagicRoomPolicy) {
+      if (magicRoom.suppressed && activeField) {
         return deepFreeze({
           placementId: placement.id,
           scope: query.scope,
           timing: query.timing,
           outcome: 'suppressed',
           suppressed: true,
-          sourceZoneId: magicRoom.zoneId,
-          sourceSideId: magicRoom.sideId,
+          sourceZoneId: activeField.zoneId,
+          sourceSideId: activeField.sideId,
           reasonCode: 'item-effect.magic-room-suppressed',
         })
       }
@@ -132,9 +131,9 @@ export const createMoveAutomationItemEffectResolver = (input: {
         timing: query.timing,
         outcome: 'allowed',
         suppressed: false,
-        sourceZoneId: magicRoom?.zoneId ?? null,
-        sourceSideId: magicRoom?.sideId ?? null,
-        reasonCode: magicRoom && (!suppressibleScope || !suppressedByMagicRoomPolicy)
+        sourceZoneId: activeField?.zoneId ?? null,
+        sourceSideId: activeField?.sideId ?? null,
+        reasonCode: activeField
           ? 'item-effect.magic-room-exempt'
           : 'item-effect.allowed',
       })

@@ -7,6 +7,12 @@ import {
   AuthoritativeMoveRulesContextError,
   buildAuthoritativeMoveRulesContext,
 } from '~~/server/domain/moveAutomation/context'
+import { resolveAuthoritativeMoveUserAccuracy } from '~~/server/domain/moveAutomation/accuracy'
+import {
+  advanceEncounterGlobalFields,
+  createEncounterGlobalFieldZone,
+  removeEncounterGlobalFields,
+} from '~~/server/domain/moveAutomation/fieldLifecycle'
 import { resolveAuthoritativeMoveFromContext } from '~~/server/domain/resolveAuthoritativeMove'
 import { redBlueEncounterStateFixture } from '../fixtures/moveAutomation/encounterSides'
 import type { CharacterSheet } from '~/types/characterSheet'
@@ -74,6 +80,23 @@ const randomSequence = (values: readonly number[]): (() => number) => {
   let index = 0
   return () => values[index++] ?? values.at(-1) ?? 0
 }
+
+const globalRoom = (
+  kind: 'magic' | 'gravity',
+  remaining = 3,
+) => createEncounterGlobalFieldZone({
+  kind: 'room',
+  fieldId: kind,
+  source: {
+    kind: 'operation',
+    operationId: `operation.${kind}`,
+    moveId: `move.${kind}`,
+    placementId: 'actor-token',
+  },
+  sideId: 'red',
+  duration: { kind: 'rounds', boundary: 'end', remaining },
+  replacementGroup: `field.room.${kind}`,
+})
 
 const buildContext = (overrides: {
   readonly map?: TabletopMap
@@ -249,6 +272,120 @@ describe('immutable authoritative move rules context', () => {
       relationship: 'unknown',
       reasonCode: 'relationship-unknown-side',
       matches: true,
+    })
+  })
+
+  it('applies Magic Room and Gravity through read-only item, accuracy, and grounding consumers', () => {
+    const map = mapFixture()
+    const magicRoom = globalRoom('magic', 1)
+    const gravity = globalRoom('gravity')
+    map.encounterState = {
+      ...redBlueEncounterStateFixture(),
+      zones: [magicRoom, gravity],
+    }
+    const actorSheet = pokemonSheet('actor', {
+      capabilities: { sky: 6 },
+      items: { held: 'Luck Incense' },
+    })
+    const pokemonSheets = new Map([
+      ['actor', actorSheet],
+      ['target', pokemonSheet('target', { revision: 5 })],
+      ['ally', pokemonSheet('ally')],
+    ])
+    const beforeMap = structuredClone(map)
+    const beforeActor = structuredClone(actorSheet)
+    const context = buildContext({ map, pokemonSheets })
+
+    expect(context.queries.itemEffects.resolve({
+      placementId: 'actor-token',
+      scope: 'pokemon-held',
+      timing: 'static',
+    })).toMatchObject({
+      outcome: 'suppressed',
+      suppressed: true,
+      sourceSideId: 'red',
+      reasonCode: 'item-effect.magic-room-suppressed',
+    })
+    expect(context.queries.itemEffects.resolve({
+      placementId: 'actor-token',
+      scope: 'pokemon-held',
+      timing: 'activated',
+    })).toMatchObject({
+      outcome: 'allowed',
+      suppressed: false,
+      sourceSideId: 'red',
+      reasonCode: 'item-effect.magic-room-exempt',
+    })
+    expect(resolveAuthoritativeMoveUserAccuracy(context)).toMatchObject({
+      value: 2,
+      heldItemEffectsSuppressed: true,
+      gravityBonus: 2,
+      modifiers: [
+        { sourceId: 'actor-accuracy', value: 0 },
+        { reason: 'Gravity Accuracy', value: 2 },
+      ],
+    })
+    expect(context.queries.targetStates.resolve('actor-token')).toMatchObject({
+      grounding: 'grounded',
+    })
+    expect(context.queries.gravity.active()).toMatchObject({
+      sourceSideId: 'red',
+      duration: { kind: 'rounds', boundary: 'end', remaining: 3 },
+    })
+    expect(context.reads.snapshot()).toEqual([
+      { kind: 'pokemon', slug: 'actor', revision: 3 },
+    ])
+    expect(map).toEqual(beforeMap)
+    expect(actorSheet).toEqual(beforeActor)
+
+    const expired = advanceEncounterGlobalFields({
+      zones: map.encounterState.zones,
+      event: { kind: 'round-end' },
+    })
+    expect(expired.transitions).toEqual(expect.arrayContaining([
+      expect.objectContaining({ zoneId: magicRoom.id, kind: 'expired' }),
+      expect.objectContaining({ zoneId: gravity.id, kind: 'duration-decremented' }),
+    ]))
+    const afterMagicExpiryMap: TabletopMap = {
+      ...map,
+      encounterState: { ...map.encounterState, zones: expired.zones },
+    }
+    const afterMagicExpiry = buildContext({ map: afterMagicExpiryMap, pokemonSheets })
+    expect(afterMagicExpiry.queries.itemEffects.resolve({
+      placementId: 'actor-token',
+      scope: 'pokemon-held',
+      timing: 'static',
+    })).toMatchObject({
+      outcome: 'allowed',
+      suppressed: false,
+      sourceZoneId: null,
+      reasonCode: 'item-effect.allowed',
+    })
+    expect(resolveAuthoritativeMoveUserAccuracy(afterMagicExpiry)).toMatchObject({
+      value: 3,
+      heldItemEffectsSuppressed: false,
+      gravityBonus: 2,
+    })
+
+    const gravityRemoved = removeEncounterGlobalFields({
+      zones: expired.zones,
+      matches: zone => zone.kind === 'room' && zone.payload.roomId === 'gravity',
+    })
+    expect(gravityRemoved.transitions).toEqual([
+      expect.objectContaining({ zoneId: gravity.id, kind: 'removed' }),
+    ])
+    const removedMap: TabletopMap = {
+      ...map,
+      encounterState: { ...map.encounterState, zones: gravityRemoved.zones },
+    }
+    const removed = buildContext({ map: removedMap, pokemonSheets })
+    expect(resolveAuthoritativeMoveUserAccuracy(removed)).toMatchObject({
+      value: 1,
+      heldItemEffectsSuppressed: false,
+      gravityBonus: 0,
+    })
+    expect(removed.queries.targetStates.resolve('actor-token')).toMatchObject({
+      grounding: 'airborne',
     })
   })
 
