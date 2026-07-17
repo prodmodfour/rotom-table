@@ -47,6 +47,10 @@ import {
   reduceMoveCoreTokenEffects,
   type MoveCoreTokenEffectReduction,
 } from './reducers/coreTokenEffects'
+import {
+  isMovePermanentMoveListEmission,
+  reducePermanentMoveListOperations,
+} from './reducers/permanentMoveLists'
 import type {
   MoveConditionAccuracyRollQueries,
   MoveCoreTokenDamageQuery,
@@ -88,6 +92,7 @@ export interface NativeMoveSpecResolutionProjection {
   readonly childExecutions: readonly MoveSpecChildExecution[]
   readonly dynamicRecipients: MoveCoreTokenDynamicRecipientSets
   readonly coreStateChanges: MoveStateChangePlan
+  readonly permanentMoveListStateChanges: MoveStateChangePlan
   readonly itemEffects: InterpretedMoveItemEffects
   readonly resolvedHazardCells: MoveSpecExecutionCompleteResult['resolvedHazardCells']
   readonly trace: MoveResolutionAuditTrace
@@ -630,6 +635,7 @@ const assertSupportedImmediateOperations = (
     'switch-request',
     'nested-move',
     'item',
+    'permanent-move-list',
     'usage',
     'log',
     'choice-request',
@@ -783,6 +789,14 @@ export const reduceCompletedMoveSpec = (
     }),
     trace: execution.trace,
   })
+  const permanentMoveLists = reducePermanentMoveListOperations({
+    context: options.context,
+    operations: uncommittedOperations.filter(isMovePermanentMoveListEmission),
+    dynamicRecipients: initialDynamic,
+    contextForOperation,
+    dynamicRecipientsForOperation,
+    trace: core.trace,
+  })
   const terminalRecipients = damagedAndFaintedRecipients(core.operationResults)
   const damagedSet = new Set([
     ...initialDynamic.damagedTargetIds,
@@ -834,6 +848,7 @@ export const reduceCompletedMoveSpec = (
   const sheetReads = deduplicateAuthoritativeMoveSheetReads([
     ...options.context.reads.snapshot(),
     ...core.sheetReads,
+    ...permanentMoveLists.sheetReads,
   ])
 
   return Object.freeze({
@@ -841,15 +856,16 @@ export const reduceCompletedMoveSpec = (
     transaction: Object.freeze(transaction),
     sheetReads: Object.freeze(sheetReads),
     rollLedger: execution.rollLedger,
-    trace: core.trace,
+    trace: permanentMoveLists.trace,
     native: Object.freeze({
       operations: uncommittedOperations,
       childExecutions: execution.childExecutions,
       dynamicRecipients: Object.freeze(dynamicRecipients),
       coreStateChanges: multiHit?.stateChanges ?? core.stateChanges,
+      permanentMoveListStateChanges: permanentMoveLists.stateChanges,
       itemEffects,
       resolvedHazardCells: execution.resolvedHazardCells,
-      trace: core.trace,
+      trace: permanentMoveLists.trace,
     }),
   })
 }

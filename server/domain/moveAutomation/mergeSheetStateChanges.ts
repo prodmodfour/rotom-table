@@ -2,6 +2,7 @@ import { deepCloneJson, sameJsonValue } from '~/utils/serialization'
 import {
   MOVE_SHEET_STATE_FIELDS,
   RESTORE_PREVIOUS_MOVE_STATE_VALUE,
+  type MoveStateChangeCompensation,
   type MoveStateChangeInput,
 } from './plan'
 
@@ -69,6 +70,15 @@ const mergeDisjointJsonChanges = (
   return merged
 }
 
+const mergedCompensation = (
+  left: MoveStateChangeCompensation,
+  right: MoveStateChangeCompensation,
+): MoveStateChangeCompensation => {
+  if (left.kind === 'unavailable') return deepCloneJson(left)
+  if (right.kind === 'unavailable') return deepCloneJson(right)
+  return RESTORE_PREVIOUS_MOVE_STATE_VALUE
+}
+
 /**
  * Merge independently reduced operations for one physical sheet into one CAS
  * write. Only disjoint typed fields from an identical before-revision may be
@@ -125,7 +135,7 @@ export const mergeDisjointMoveSheetStateChanges = (
         key,
       ) as MoveSheetStateChangeInput['current'],
       changedFields: MOVE_SHEET_STATE_FIELDS.filter(field => changedFieldSet.has(field)),
-      compensation: RESTORE_PREVIOUS_MOVE_STATE_VALUE,
+      compensation: mergedCompensation(existing.compensation, input.compensation),
     }
   }
 

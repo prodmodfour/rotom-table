@@ -2235,7 +2235,7 @@ Status: DONE
 
 ## MA-163 — Add permanent move-list mutations
 
-Status: TODO
+Status: DONE
 
 **Depends on:** MA-039, MA-158
 **Commit:** `feat(move-automation): mutate permanent move lists atomically`

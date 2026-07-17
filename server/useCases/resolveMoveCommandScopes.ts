@@ -39,6 +39,7 @@ const ACTOR_TOKEN_FIELDS = new Set<LivePlayTokenScope['field']>([
 const RELATED_TOKEN_FIELDS = new Set<LivePlayTokenScope['field']>(['hp', 'combatStages', 'conditions'])
 const ACTOR_SHEET_FIELDS = new Set([
   'moveUsage',
+  'movelist',
   'hp',
   'combatStages',
   'conditions',

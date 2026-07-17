@@ -313,6 +313,8 @@ const combinedStateChanges = (options: {
   const replacedSlots = new Set(options.switchMapChanges.map(stateSlotKey))
   const mapInputs = options.mapPlan.changes.map(stripPlanIdentity)
   const itemInputs = options.itemPlan.stateChanges.changes.map(stripPlanIdentity)
+  const permanentMoveListInputs = native.permanentMoveListStateChanges.changes
+    .map(stripPlanIdentity)
   const coreInputs = native.coreStateChanges.changes.map(stripPlanIdentity)
   const mapEncounter = mapInputs.find(input => input.kind === 'encounter-state')
   const itemEncounter = itemInputs.find(input => input.kind === 'encounter-state')
@@ -348,6 +350,7 @@ const combinedStateChanges = (options: {
   ))
   const existingInputs = [
     ...coalescedCoreInputs,
+    ...permanentMoveListInputs,
     ...coalescedItemInputs,
     ...options.placements,
     ...coalescedMapInputs,
@@ -664,6 +667,7 @@ export const planNativeV2MoveState = (options: {
   })
   const existingChanges = [
     ...native.coreStateChanges.changes,
+    ...native.permanentMoveListStateChanges.changes,
     ...itemPlan.stateChanges.changes,
     ...mapReduction.stateChanges.changes,
   ]

@@ -1,3 +1,4 @@
+import type { PermanentMoveListEntryProvenance } from '#shared/moveAutomation/permanentMoveLists'
 import type { CombatStageKey } from '~/types/combatStages'
 import type { SheetMoveUsageState } from '~/types/moveUsage'
 
@@ -37,6 +38,8 @@ export interface CharacterSheetMove {
   effect?: string
   special?: string
   contestStats?: string
+  /** Server-authored origin for a move learned through permanent move automation. */
+  permanentMoveSource?: PermanentMoveListEntryProvenance
 }
 
 export type CharacterSheetAppliedMoveSource = 'tm' | 'tutor'

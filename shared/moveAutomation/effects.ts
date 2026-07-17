@@ -86,6 +86,11 @@ import {
   MOVE_AUTOMATION_AREA_DIRECTIONS,
   type MoveAutomationAreaDirection,
 } from '~/types/moveAutomation'
+import {
+  MovePermanentMoveListValidationError,
+  parseMovePermanentMoveListEffectPayload,
+  type MovePermanentMoveListEffectPayload,
+} from './permanentMoveLists'
 
 /**
  * The closed set of state requests a reviewed MoveSpec or registered handler
@@ -108,6 +113,7 @@ export const MOVE_EFFECT_OPERATION_KINDS = [
   'switch-request',
   'nested-move',
   'item',
+  'permanent-move-list',
   'usage',
   'history',
   'log',
@@ -1591,6 +1597,10 @@ export type MoveMovementRequestEffectOperation = MoveEffectOperationEnvelope<'mo
 export type MoveSwitchRequestEffectOperation = MoveEffectOperationEnvelope<'switch-request', MoveSwitchRequestEffectPayload>
 export type MoveNestedMoveEffectOperation = MoveEffectOperationEnvelope<'nested-move', MoveNestedMoveEffectPayload>
 export type MoveItemEffectOperation = MoveEffectOperationEnvelope<'item', MoveItemEffectPayload>
+export type MovePermanentMoveListEffectOperation = MoveEffectOperationEnvelope<
+  'permanent-move-list',
+  MovePermanentMoveListEffectPayload
+>
 export type MoveUsageEffectOperation = MoveEffectOperationEnvelope<'usage', MoveUsageEffectPayload>
 export type MoveHistoryEffectOperation = MoveEffectOperationEnvelope<'history', MoveHistoryEffectPayload>
 export type MoveLogEffectOperation = MoveEffectOperationEnvelope<'log', MoveLogEffectPayload>
@@ -1614,6 +1624,7 @@ export type MoveEffectOperation =
   | MoveSwitchRequestEffectOperation
   | MoveNestedMoveEffectOperation
   | MoveItemEffectOperation
+  | MovePermanentMoveListEffectOperation
   | MoveUsageEffectOperation
   | MoveHistoryEffectOperation
   | MoveLogEffectOperation
@@ -5860,6 +5871,25 @@ const parseDetachedOperation = (value: unknown, path: string): MoveEffectOperati
       }
       catch (error) {
         if (!(error instanceof MoveItemEffectValidationError)) throw error
+        return fail('invalid-effect-operation', payloadPath, error.message)
+      }
+    case 'permanent-move-list':
+      try {
+        if (common.recipients.kind !== 'actor') {
+          fail(
+            'invalid-effect-operation',
+            `${path}.recipients.kind`,
+            'permanent move-list mutations must address the authoritative actor.',
+          )
+        }
+        return {
+          ...common,
+          kind,
+          payload: parseMovePermanentMoveListEffectPayload(payload, payloadPath),
+        }
+      }
+      catch (error) {
+        if (!(error instanceof MovePermanentMoveListValidationError)) throw error
         return fail('invalid-effect-operation', payloadPath, error.message)
       }
     case 'usage':

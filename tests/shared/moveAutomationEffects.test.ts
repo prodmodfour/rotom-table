@@ -222,6 +222,16 @@ const VALID_PAYLOADS = {
     onUnavailable: 'reject',
     consumptionId: 'consumption.test',
   },
+  'permanent-move-list': {
+    action: 'replace',
+    replacedMoveId: 'Sketch',
+    moveId: 'Tackle',
+    acquisition: {
+      kind: 'encounter-history',
+      sourcePlacementId: 'target-token',
+      sourceResolutionId: 'resolution.target-tackle',
+    },
+  },
   usage: {
     action: 'spend',
     resourceId: 'move.daily-use',
@@ -265,7 +275,13 @@ const validOperation = (
   id: `operation.${kind}`,
   kind,
   source: { kind: 'move', id: 'move.scratch' },
-  recipients: { kind: kind === 'roll' ? 'none' : 'hit-targets' },
+  recipients: {
+    kind: kind === 'roll'
+      ? 'none'
+      : kind === 'permanent-move-list'
+        ? 'actor'
+        : 'hit-targets',
+  },
   phase: kind === 'roll' ? 'accuracy' : 'damage',
   reasonCode: `move.scratch.${kind}`,
   payload: structuredClone(VALID_PAYLOADS[kind]),
@@ -315,6 +331,7 @@ describe('MoveSpec typed effect operations', () => {
       'switch-request',
       'nested-move',
       'item',
+      'permanent-move-list',
       'usage',
       'history',
       'log',
@@ -345,6 +362,46 @@ describe('MoveSpec typed effect operations', () => {
         'payload',
       ])
     })
+  })
+
+  it('strictly parses actor-only permanent add, remove, and history-backed replacement operations', () => {
+    const add = parseMoveEffectOperation(validOperation('permanent-move-list', {
+      payload: {
+        action: 'add',
+        moveId: 'Ember',
+        acquisition: { kind: 'reviewed-rule' },
+      },
+    }))
+    const remove = parseMoveEffectOperation(validOperation('permanent-move-list', {
+      payload: { action: 'remove', moveId: 'Growl' },
+    }))
+    const replace = parseMoveEffectOperation(validOperation('permanent-move-list'))
+
+    expect([add, remove, replace].map(operation => operation.payload)).toEqual([
+      { action: 'add', moveId: 'Ember', acquisition: { kind: 'reviewed-rule' } },
+      { action: 'remove', moveId: 'Growl' },
+      VALID_PAYLOADS['permanent-move-list'],
+    ])
+    expectEffectError(validOperation('permanent-move-list', {
+      recipients: { kind: 'selected-targets' },
+    }), 'invalid-effect-operation', 'operation.recipients.kind')
+    expectEffectError(validOperation('permanent-move-list', {
+      payload: {
+        ...VALID_PAYLOADS['permanent-move-list'],
+        clientMoveName: 'Hacked Move',
+      },
+    }), 'invalid-effect-operation', 'operation.payload')
+    expectEffectError(validOperation('permanent-move-list', {
+      payload: {
+        ...VALID_PAYLOADS['permanent-move-list'],
+        acquisition: {
+          kind: 'encounter-history',
+          sourcePlacementId: 'target-token',
+          sourceResolutionId: 'resolution.target-tackle',
+          roll: 20,
+        },
+      },
+    }), 'invalid-effect-operation', 'operation.payload')
   })
 
   it('parses only server-reviewed nested child identity, actor, source, and targeting policies', () => {

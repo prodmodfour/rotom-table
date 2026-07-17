@@ -44,6 +44,8 @@ A Pokémon sheet models the PTU creature sheet while allowing most fields to rem
 - held items, tutor points, skill background, capabilities, skills, abilities, edges, and movelist entries
 - free-form campaign notes and scene/experience fields
 
+Reviewed move automation can permanently add, remove, or replace a canonical movelist entry through a typed `permanent-move-list` operation. Pokémon retain the canonical six-slot limit; Trainer lists use a bounded storage ceiling while remaining unlimited by ordinary PTU slot rules. A learned row stores non-executable provenance for the causing move, actor, resolution, operation, timestamp, and either its reviewed-rule origin or the exact retained encounter-history move use. History-derived learning is accepted only when that record is the selected source placement's latest completed move. The reducer emits one `movelist` sheet-state change, and disjoint move-usage work merges into the same expected sheet revision; stale sheet or map history revisions reject the whole accepted move. Permanent list writes are currently marked unavailable for generic GM compensation rather than retaining a whole-sheet undo snapshot.
+
 Folders are logical SQLite folder rows plus document `folder` fields, so empty and nested folders survive restarts without filesystem directories.
 
 ## Trainers

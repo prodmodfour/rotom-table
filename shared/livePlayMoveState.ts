@@ -28,6 +28,7 @@ export const LIVE_PLAY_RESOLVE_MOVE_SCOPE_LIMIT = 128 as const
 
 export const LIVE_PLAY_MOVE_SHEET_CHANGED_FIELDS = [
   'moveUsage',
+  'movelist',
   'hp',
   'combatStages',
   'conditions',

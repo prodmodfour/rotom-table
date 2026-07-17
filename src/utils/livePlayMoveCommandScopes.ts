@@ -47,6 +47,7 @@ const TARGET_TOKEN_FIELDS = [
 
 const ACTOR_SHEET_FIELDS = [
   'moveUsage',
+  'movelist',
   'hp',
   'combatStages',
   'conditions',

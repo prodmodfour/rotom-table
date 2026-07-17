@@ -33,6 +33,7 @@ export const MOVE_STATE_CHANGE_KINDS = [
 
 export const MOVE_SHEET_STATE_FIELDS = [
   'moveUsage',
+  'movelist',
   'hp',
   'combatStages',
   'conditions',

@@ -1,3 +1,4 @@
+import type { PermanentMoveListEntryProvenance } from '#shared/moveAutomation/permanentMoveLists'
 import type { CombatStageKey } from '~/types/combatStages'
 import type { SheetMoveUsageState } from '~/types/moveUsage'
 
@@ -192,6 +193,8 @@ export interface TrainerMove {
   /** ``"MH"`` (main hand), ``"OH"`` (off hand), ``"EW"`` (energy weapon),
    *  ``"Adept"`` / ``"Master"``. Used to colour-tag the movelist row. */
   weaponSlot?: 'MH' | 'OH' | 'EW' | 'Adept' | 'Master' | 'Natural'
+  /** Server-authored origin for a move learned through permanent move automation. */
+  permanentMoveSource?: PermanentMoveListEntryProvenance
 }
 
 export interface TrainerAbilityEntry {
