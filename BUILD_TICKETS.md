@@ -2261,7 +2261,7 @@ Status: DONE
 
 ## MA-165 — Add type, form, ability, and capability overlays
 
-Status: TODO
+Status: DONE
 
 **Depends on:** MA-056, MA-078, MA-123
 **Commit:** `feat(move-automation): apply creature rule overlays`
