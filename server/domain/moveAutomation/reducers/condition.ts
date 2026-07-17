@@ -41,9 +41,9 @@ import {
 import { failMoveCoreTokenEffectReduction } from './coreTokenEffectError'
 import type {
   MoveConditionAccuracyRollQueries,
+  MoveConditionImmunityDecision,
   MoveCoreConditionStateSnapshot,
   MoveCoreTokenChangedField,
-  MoveCoreTokenEffectImmunityDecision,
   MoveCoreTokenEffectImmunityQueries,
   MoveCoreTokenEffectRecipient,
   MoveCoreTokenEffectRecipientResult,
@@ -186,6 +186,7 @@ interface ConditionMutationAudit {
     readonly reasonCode: string
     readonly effectIds: readonly string[]
   } | null
+  readonly terrainTrace?: MoveConditionImmunityDecision['terrainTrace']
 }
 
 const auditDetails = (audit: ConditionMutationAudit): MoveResolutionTraceJsonValue => ({
@@ -208,6 +209,9 @@ const auditDetails = (audit: ConditionMutationAudit): MoveResolutionTraceJsonVal
         effectIds: [...audit.firstTurnProtection.effectIds],
       } }
     : {}),
+  ...(audit.terrainTrace && audit.terrainTrace.length > 0
+    ? { terrain: audit.terrainTrace.map(entry => ({ ...entry })) }
+    : {}),
 })
 
 const preventedResult = (options: {
@@ -215,7 +219,7 @@ const preventedResult = (options: {
   readonly recipient: MoveCoreTokenEffectRecipient
   readonly previous: MoveCoreConditionStateSnapshot
   readonly condition: string
-  readonly immunity: MoveCoreTokenEffectImmunityDecision
+  readonly immunity: MoveConditionImmunityDecision
   readonly details: MoveResolutionTraceJsonValue
 }): MoveCoreTokenEffectRecipientResult => ({
   recipientId: options.recipient.placement.id,
@@ -353,6 +357,7 @@ const reduceUnaryCondition = (options: {
     lifecycleTransitions: [],
     saveTiming: condition ? resolvedMoveConditionSaveTiming(condition, operation) : null,
     stackPolicy: operation.payload.stackPolicy.kind,
+    ...(immunity.terrainTrace ? { terrainTrace: immunity.terrainTrace } : {}),
   }
   if (immunity.blockedBy) {
     return preventedResult({
@@ -541,7 +546,10 @@ const transferConditionEffect = (options: {
     encounter,
   }).some(entry => conditionBaseName(entry) === condition)
 
-  const baseDetails = (recipientId: string): MoveResolutionTraceJsonValue => auditDetails({
+  const baseDetails = (
+    recipientId: string,
+    terrainTrace: MoveConditionImmunityDecision['terrainTrace'] = [],
+  ): MoveResolutionTraceJsonValue => auditDetails({
     action: 'transfer',
     condition,
     sourcePlacementId: source.placement.id,
@@ -552,7 +560,10 @@ const transferConditionEffect = (options: {
     lifecycleTransitions: [],
     saveTiming: sourceEffect?.payload.saveTiming ?? conditionSaveAutomationRule(condition)?.timing ?? null,
     stackPolicy: operation.payload.stackPolicy.kind,
-  }) as MoveResolutionTraceJsonValue & { recipientId?: string }
+    ...(recipientId === destination.placement.id && terrainTrace
+      ? { terrainTrace }
+      : {}),
+  })
 
   if (!sourcePersistent && !sourceEffect) {
     return works.map(work => ({
@@ -600,7 +611,7 @@ const transferConditionEffect = (options: {
               ...immunity.consultedPlacementIds.filter(id => id !== source.placement.id),
             ],
           },
-          details: baseDetails(work.recipient.placement.id),
+          details: baseDetails(work.recipient.placement.id, immunity.terrainTrace),
         })
       : {
           recipientId: work.recipient.placement.id,
@@ -617,7 +628,9 @@ const transferConditionEffect = (options: {
 
   let destinationPersistent = destinationWork.previous.conditions
   let destinationEffectId: string | null = null
-  let lifecycleTransitions: readonly string[] = []
+  const lifecycleTransitions: string[] = []
+  let firstTurnProtection: ConditionMutationAudit['firstTurnProtection'] = null
+  let protectionChanged = false
   if (sourcePersistent) {
     const applied = applyPersistentMoveCondition({
       conditions: destinationPersistent,
@@ -630,7 +643,10 @@ const transferConditionEffect = (options: {
         outcome: 'no-op',
         reasonCode: applied.capped ? 'condition-stack-capped' : 'condition-transfer-destination-present',
         blockers: [],
-        details: baseDetails(work.recipient.placement.id),
+        details: baseDetails(
+          work.recipient.placement.id,
+          immunity.terrainTrace,
+        ),
         consultedPlacementIds: work.recipient.placement.id === destination.placement.id
           ? [source.placement.id]
           : [destination.placement.id],
@@ -665,7 +681,10 @@ const transferConditionEffect = (options: {
         outcome: 'no-op',
         reasonCode: 'condition-stack-capped',
         blockers: [],
-        details: baseDetails(work.recipient.placement.id),
+        details: baseDetails(
+          work.recipient.placement.id,
+          immunity.terrainTrace,
+        ),
         consultedPlacementIds: work.recipient.placement.id === destination.placement.id
           ? [source.placement.id]
           : [destination.placement.id],
@@ -675,7 +694,38 @@ const transferConditionEffect = (options: {
       }))
     }
     destinationEffectId = transferred.id
-    lifecycleTransitions = lifecycle.transitions.map(transition => transition.kind)
+    lifecycleTransitions.push(...lifecycle.transitions.map(transition => transition.kind))
+  }
+
+  if (immunity.firstTurnConditionProtection) {
+    const context = options.context
+      ?? failMoveCoreConditionReduction(
+        'invalid-condition-effect-scope',
+        `Condition transfer ${operation.id} cannot store terrain protection without context.`,
+      )
+    const targetEncounter = encounter
+      ?? failMoveCoreConditionReduction(
+        'invalid-condition-effect-scope',
+        `Condition transfer ${operation.id} cannot store terrain protection in this scope.`,
+      )
+    const effects = createMistyProtectedMoveConditionEffects({
+      operation,
+      condition,
+      recipient: destination,
+      context,
+      protection: immunity.firstTurnConditionProtection,
+    })
+    for (const effect of effects) {
+      const lifecycle = targetEncounter.apply(effect)
+      protectionChanged ||= lifecycle.changed
+      lifecycleTransitions.push(...lifecycle.transitions.map(transition => transition.kind))
+    }
+    firstTurnProtection = {
+      terrainKind: immunity.firstTurnConditionProtection.terrainKind,
+      zoneId: immunity.firstTurnConditionProtection.zoneId,
+      reasonCode: immunity.firstTurnConditionProtection.reasonCode,
+      effectIds: effects.map(effect => effect.id),
+    }
   }
 
   const sourceRemovedConditions = sourcePersistent ? [condition] : []
@@ -696,7 +746,7 @@ const transferConditionEffect = (options: {
     const persistentChanged = !sameJsonValue(work.previous.conditions, current.conditions)
     const encounterChanged = isSource
       ? removedSourceEffectIds.length > 0
-      : destinationEffectId !== null
+      : destinationEffectId !== null || protectionChanged
     const changedFields: MoveCoreTokenChangedField[] = [
       ...(persistentChanged ? ['conditions' as const] : []),
       ...(encounterChanged ? ['encounterEffects' as const] : []),
@@ -717,6 +767,10 @@ const transferConditionEffect = (options: {
         lifecycleTransitions: isSource ? [] : lifecycleTransitions,
         saveTiming: sourceEffect?.payload.saveTiming ?? conditionSaveAutomationRule(condition)?.timing ?? null,
         stackPolicy: operation.payload.stackPolicy.kind,
+        ...(isSource ? {} : {
+          firstTurnProtection,
+          ...(immunity.terrainTrace ? { terrainTrace: immunity.terrainTrace } : {}),
+        }),
       }),
       consultedPlacementIds: isSource
         ? [destination.placement.id]

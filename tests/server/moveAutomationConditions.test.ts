@@ -28,7 +28,10 @@ const placement = (id: string, sheetSlug: string, x: number): SheetPlacement => 
   position: { x, y: 0, z: 0 },
 })
 
-const sheet = (slug: string): CharacterSheet => ({
+const sheet = (
+  slug: string,
+  overrides: Partial<CharacterSheet> = {},
+): CharacterSheet => ({
   slug,
   nickname: slug,
   species: slug === 'actor' ? 'Pikachu' : 'Snorlax',
@@ -37,6 +40,7 @@ const sheet = (slug: string): CharacterSheet => ({
   movelist: slug === 'actor' ? [{ name: 'Tackle' }] : [],
   types: ['Normal'],
   combat: { currentHp: 100, conditions: [] },
+  ...overrides,
 })
 
 const map = (): TabletopMap => ({
@@ -209,34 +213,37 @@ describe('native MoveSpec typed conditions', () => {
       sourceModule: 'tests/misty-terrain-condition',
       definition,
     }
-    const terrainMap = map()
-    terrainMap.fieldEffects = {
-      weather: [],
-      terrains: [{ kind: 'misty', scope: 'field' }],
-      rooms: [],
+    const resolve = (targetSheet: CharacterSheet) => {
+      const terrainMap = map()
+      terrainMap.fieldEffects = {
+        weather: [],
+        terrains: [{ kind: 'misty', scope: 'field' }],
+        rooms: [],
+      }
+      const context = buildAuthoritativeMoveRulesContext({
+        map: terrainMap,
+        pokemonSheets: new Map([
+          ['actor', sheet('actor')],
+          ['target', targetSheet],
+        ]),
+        trainerSheets: new Map<string, TrainerSheet>(),
+        intent: intent(),
+        candidatePlacementIds: ['target-token'],
+        selectedPlacementIds: ['target-token'],
+        random: createFiniteAuthoritativeMoveRandomStream([]),
+        time: 10_000,
+      })
+      const entry = context.queries.resolveActorMoveEntry('Tackle')
+      if (!entry.ok) throw new Error(entry.message)
+      return resolveImmediateMoveSpec({
+        context,
+        runtime,
+        entry: entry.entry,
+        authoritativeTargetIds: ['target-token'],
+      })
     }
-    const context = buildAuthoritativeMoveRulesContext({
-      map: terrainMap,
-      pokemonSheets: new Map([
-        ['actor', sheet('actor')],
-        ['target', sheet('target')],
-      ]),
-      trainerSheets: new Map<string, TrainerSheet>(),
-      intent: intent(),
-      candidatePlacementIds: ['target-token'],
-      selectedPlacementIds: ['target-token'],
-      random: createFiniteAuthoritativeMoveRandomStream([]),
-      time: 10_000,
-    })
-    const entry = context.queries.resolveActorMoveEntry('Tackle')
-    if (!entry.ok) throw new Error(entry.message)
 
-    const resolution = resolveImmediateMoveSpec({
-      context,
-      runtime,
-      entry: entry.entry,
-      authoritativeTargetIds: ['target-token'],
-    })
+    const resolution = resolve(sheet('target'))
     const encounterChange = resolution.native.coreStateChanges.changes.find(
       change => change.kind === 'encounter-state',
     )
@@ -284,6 +291,15 @@ describe('native MoveSpec typed conditions', () => {
                 reasonCode: 'terrain.misty.first-turn-status-protection',
                 effectIds: [suppression?.id],
               },
+              terrain: [{
+                interaction: 'condition',
+                terrainKind: 'misty',
+                zoneId: 'legacy.terrain.misty',
+                placementId: 'target-token',
+                outcome: 'applied',
+                reasonCode: 'terrain.misty.first-turn-status-protection',
+                value: 'Burned',
+              }],
             }),
           })],
         }),
@@ -306,6 +322,36 @@ describe('native MoveSpec typed conditions', () => {
       target: { placementId: 'target-token' },
     }).conditions).toEqual(['Burned'])
     expect((sheetChange.current as CharacterSheet).combat?.conditions).toEqual(['Burned'])
+
+    const airborne = resolve(sheet('target', { capabilities: { sky: 6 } }))
+    expect(airborne.transaction.conditionUpdates).toEqual([{
+      id: 'target-token',
+      conditions: ['Burned'],
+    }])
+    const airborneEncounterChange = airborne.native.coreStateChanges.changes.find(
+      change => change.kind === 'encounter-state',
+    )
+    if (airborneEncounterChange?.kind === 'encounter-state') {
+      expect(parseEncounterState(airborneEncounterChange.current).effects).toEqual([])
+    }
+    expect(airborne.trace.events).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        operationId: 'operation.apply-burn',
+        result: expect.objectContaining({
+          recipients: [expect.objectContaining({
+            details: expect.objectContaining({
+              terrain: [expect.objectContaining({
+                interaction: 'condition',
+                terrainKind: 'misty',
+                placementId: 'target-token',
+                outcome: 'not-grounded',
+                reasonCode: 'terrain.misty.not-grounded',
+              })],
+            }),
+          })],
+        }),
+      }),
+    ]))
   })
 
   it('carries persistent and source-linked conditions into the immediate atomic plan', () => {

@@ -289,10 +289,20 @@ describe('authoritative Terrain queries', () => {
       moveType: 'Dragon',
     })).toMatchObject({
       modifiers: [],
-      trace: expect.arrayContaining([expect.objectContaining({
-        terrainKind: 'misty',
-        outcome: 'not-grounded',
-      })]),
+      trace: expect.arrayContaining([
+        expect.objectContaining({
+          terrainKind: 'misty',
+          placementId: 'airborne',
+          outcome: 'not-grounded',
+          reasonCode: 'terrain.misty.not-grounded',
+        }),
+        expect.objectContaining({
+          terrainKind: 'misty',
+          placementId: 'outside',
+          outcome: 'outside-zone',
+          reasonCode: 'terrain.misty.outside-zone',
+        }),
+      ]),
     })
     expect(local.queries.terrain.damage({
       placementId: 'airborne',
@@ -334,7 +344,15 @@ describe('authoritative Terrain queries', () => {
     expect(terrain.condition({ placementId: 'actor', conditionId: 'Vulnerable' }))
       .toEqual({ blockedBy: null, firstTurnProtection: null, trace: [] })
     expect(terrain.condition({ placementId: 'outside', conditionId: 'Burned' }))
-      .toMatchObject({ firstTurnProtection: null })
+      .toMatchObject({
+        firstTurnProtection: null,
+        trace: [expect.objectContaining({
+          terrainKind: 'misty',
+          placementId: 'outside',
+          outcome: 'outside-zone',
+          reasonCode: 'terrain.misty.outside-zone',
+        })],
+      })
     expect(terrain.condition({ placementId: 'airborne', conditionId: 'Burned' }))
       .toMatchObject({
         firstTurnProtection: null,

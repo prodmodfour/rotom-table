@@ -16,6 +16,7 @@ import { conditionBaseName, normalizeConditionName } from '~/utils/statusConditi
 import type { AuthoritativeMoveRulesContext } from '../context'
 import { computeMultiplier } from '~/utils/typeChart'
 import type {
+  MoveConditionImmunityDecision,
   MoveCoreTokenEffectImmunityDecision,
   MoveCoreTokenEffectImmunityQueries,
 } from './coreTokenEffectTypes'
@@ -31,11 +32,21 @@ export interface StandardMoveCoreTokenEffectImmunityOptions {
 const decision = (
   blockedBy: string | null,
   consultedPlacementIds: readonly string[] = [],
-  firstTurnConditionProtection: MoveCoreTokenEffectImmunityDecision['firstTurnConditionProtection'] = null,
 ): MoveCoreTokenEffectImmunityDecision => ({
   blockedBy,
   consultedPlacementIds,
+})
+
+const conditionDecision = (
+  blockedBy: string | null,
+  consultedPlacementIds: readonly string[] = [],
+  firstTurnConditionProtection: MoveConditionImmunityDecision['firstTurnConditionProtection'] = null,
+  terrainTrace: MoveConditionImmunityDecision['terrainTrace'] = [],
+): MoveConditionImmunityDecision => ({
+  blockedBy,
+  consultedPlacementIds,
   ...(firstTurnConditionProtection ? { firstTurnConditionProtection } : {}),
+  ...(terrainTrace && terrainTrace.length > 0 ? { terrainTrace } : {}),
 })
 
 const conditionProviderIds = (
@@ -140,15 +151,17 @@ export const createStandardMoveCoreTokenEffectImmunityQueries = (
         options.moveType,
         conditionContext,
       )
-      if (passiveBlocker) return decision(passiveBlocker, providerIds)
+      if (passiveBlocker) return conditionDecision(passiveBlocker, providerIds)
       if (operation.payload.accuracyRollTrigger && tokenHasShieldDust(recipient.token)) {
-        return decision(SHIELD_DUST_ABILITY_NAME)
+        return conditionDecision(SHIELD_DUST_ABILITY_NAME)
       }
       const terrain = options.context?.queries.terrain.condition({
         placementId: recipient.placement.id,
         conditionId: condition,
       })
-      if (terrain?.blockedBy) return decision(terrain.blockedBy)
+      if (terrain?.blockedBy) {
+        return conditionDecision(terrain.blockedBy, [], null, terrain.trace)
+      }
       const encounter = encounterConditionPrevention({
         condition,
         recipientId: recipient.placement.id,
@@ -159,11 +172,17 @@ export const createStandardMoveCoreTokenEffectImmunityQueries = (
         ...encounter.consultedPlacementIds.filter(id => !providerIds.includes(id)),
       ]
       return encounter.blockedBy
-        ? decision(encounter.blockedBy, consultedPlacementIds)
-        : decision(
+        ? conditionDecision(
+            encounter.blockedBy,
+            consultedPlacementIds,
+            null,
+            terrain?.trace ?? [],
+          )
+        : conditionDecision(
             null,
             consultedPlacementIds,
             terrain?.firstTurnProtection ?? null,
+            terrain?.trace ?? [],
           )
     },
     combatStage: ({ stage, delta, recipient }) => decision(

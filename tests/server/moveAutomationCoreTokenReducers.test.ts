@@ -12,7 +12,10 @@ import {
   type MoveResolutionAuditTrace,
   type MoveResolutionTraceJsonValue,
 } from '#shared/moveAutomation/trace'
-import { createEmptyEncounterState } from '#shared/moveAutomation/encounterState'
+import {
+  createEmptyEncounterState,
+  parseEncounterState,
+} from '#shared/moveAutomation/encounterState'
 import { parseEncounterEffect } from '#shared/moveAutomation/encounterEffects'
 import {
   buildAuthoritativeMoveRulesContext,
@@ -2007,6 +2010,76 @@ describe('MoveSpec core token effect reducers', () => {
       },
     ])
     expect(success.stateChanges.groups.sheets).toHaveLength(2)
+  })
+
+  it('applies Misty first-turn protection when a Status Affliction is transferred', () => {
+    const terrainMap = mapFixture()
+    terrainMap.fieldEffects = {
+      weather: [],
+      terrains: [{ kind: 'misty', scope: 'field' }],
+      rooms: [],
+    }
+    terrainMap.encounterState = createEmptyEncounterState()
+    const context = buildContext(terrainMap, {}, {}, {
+      actor: ['Poisoned'],
+      target: [],
+    })
+    const transferPoison = emission(operation(
+      'operation.transfer-poison-misty',
+      'condition',
+      {
+        action: 'transfer',
+        conditionId: 'poisoned',
+        conditionSource: { kind: 'actor' },
+      },
+      'actor-and-attacked-targets',
+    ), ['actor-token', 'target-token'])
+
+    const result = reduce([transferPoison], 'Normal', context)
+    const encounterChange = result.stateChanges.groups.encounter[0]?.changes[0]
+    if (!encounterChange || encounterChange.kind !== 'encounter-state') {
+      throw new Error('Expected Misty transfer protection in encounter state')
+    }
+    const protection = parseEncounterState(encounterChange.current).effects.find(effect => (
+      effect.kind === 'condition' && effect.payload.action === 'suppress'
+    ))
+
+    expect(result.operationResults[0]?.recipients).toMatchObject([
+      {
+        recipientId: 'actor-token',
+        outcome: 'applied',
+        current: { conditions: [] },
+        changedFields: ['conditions'],
+      },
+      {
+        recipientId: 'target-token',
+        outcome: 'applied',
+        current: { conditions: ['Poisoned'] },
+        changedFields: ['conditions', 'encounterEffects'],
+        details: {
+          firstTurnProtection: {
+            terrainKind: 'misty',
+            zoneId: 'legacy.terrain.misty',
+            reasonCode: 'terrain.misty.first-turn-status-protection',
+            effectIds: [protection?.id],
+          },
+          terrain: [expect.objectContaining({
+            interaction: 'condition',
+            terrainKind: 'misty',
+            placementId: 'target-token',
+            outcome: 'applied',
+            reasonCode: 'terrain.misty.first-turn-status-protection',
+          })],
+        },
+      },
+    ])
+    expect(protection).toMatchObject({
+      id: expect.stringMatching(/^condition-protection\.[0-9a-f]{32}$/),
+      affected: { placementIds: ['target-token'] },
+      duration: { kind: 'turns', subject: 'target', boundary: 'end', remaining: 1 },
+      payload: { conditionId: 'poisoned', action: 'suppress', saveTiming: null },
+    })
+    expect(result.stateChanges.groups.sheets).toHaveLength(2)
   })
 
   it('honors typed side and cell condition prevention from authoritative encounter state', () => {

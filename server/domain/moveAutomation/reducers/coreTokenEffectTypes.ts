@@ -14,6 +14,7 @@ import type {
 } from '#shared/moveAutomation/terrain'
 import type { AuthoritativeMoveResolvedSheet } from '../context'
 import type { MoveSpecEmittedOperation } from '../executeSpec'
+import type { TerrainMechanicsTraceEntry } from '../terrain'
 import type { MoveEffectDynamicRecipientSets } from './effectRecipients'
 import type { CombatStageKey, CombatStageMap } from '~/types/combatStages'
 import type { SheetPlacement } from '~/types/map'
@@ -160,10 +161,17 @@ export interface MoveCombatStageImmunityQueryInput {
 
 export interface MoveCoreTokenEffectImmunityDecision {
   readonly blockedBy: string | null
-  /** Non-immunity protection applied only if this condition mutation succeeds. */
-  readonly firstTurnConditionProtection?: MistyTerrainConditionProtection | null
   /** Indirect placements whose sheet-derived state was inspected by the query. */
   readonly consultedPlacementIds: readonly string[]
+}
+
+/** Condition-only protection and field evidence kept out of HP/stage queries. */
+export interface MoveConditionImmunityDecision
+  extends MoveCoreTokenEffectImmunityDecision {
+  /** Non-immunity protection applied only if this condition mutation succeeds. */
+  readonly firstTurnConditionProtection?: MistyTerrainConditionProtection | null
+  /** Complete authoritative Terrain decision evidence for this recipient. */
+  readonly terrainTrace?: readonly TerrainMechanicsTraceEntry[]
 }
 
 /**
@@ -172,6 +180,6 @@ export interface MoveCoreTokenEffectImmunityDecision {
  */
 export interface MoveCoreTokenEffectImmunityQueries {
   directHp(input: MoveDirectHpImmunityQueryInput): MoveCoreTokenEffectImmunityDecision
-  condition(input: MoveConditionImmunityQueryInput): MoveCoreTokenEffectImmunityDecision
+  condition(input: MoveConditionImmunityQueryInput): MoveConditionImmunityDecision
   combatStage(input: MoveCombatStageImmunityQueryInput): MoveCoreTokenEffectImmunityDecision
 }

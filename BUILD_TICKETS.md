@@ -1928,7 +1928,7 @@ Status: DONE
 
 ## MA-141A — Implement Misty Terrain mechanics
 
-Status: TODO
+Status: DONE
 
 **Depends on:** MA-077, MA-084, MA-123, MA-137
 **Commit:** `feat(move-automation): resolve misty terrain`
