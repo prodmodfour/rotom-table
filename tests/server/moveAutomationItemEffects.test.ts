@@ -10,16 +10,26 @@ import {
   buildAuthoritativeMoveRulesContext,
 } from '~~/server/domain/moveAutomation/context'
 import {
+  applyMoveItemEffectResultsToTrace,
   interpretMoveItemEffects,
+  MoveItemEffectInterpretationError,
   type MoveResolvedItemEffectOperation,
 } from '~~/server/domain/moveAutomation/itemEffectInterpreter'
+import { enumerateAuthoritativeMoveItemChoices } from '~~/server/domain/moveAutomation/itemChoices'
 import {
+  createAuthoritativeMoveItemResourceQueries,
   emptyAuthoritativeMoveItemResources,
   resolveAuthoritativeMoveItemResources,
   type AuthoritativeMoveItemResourceRequirement,
   type AuthoritativeMoveItemResources,
 } from '~~/server/domain/moveAutomation/itemResources'
+import { MoveItemMutationError } from '~~/server/domain/moveAutomation/itemMutationTypes'
 import { planMoveItemMutations } from '~~/server/domain/moveAutomation/planItemMutations'
+import {
+  createMoveResolutionTrace,
+  reduceMoveResolutionTrace,
+} from '~~/server/domain/moveAutomation/trace'
+import type { MoveSpecResolvedItemChoice } from '~~/server/domain/moveAutomation/executeSpec'
 
 const actorId = 'item-actor'
 const firstTargetId = 'item-target-one'
@@ -158,6 +168,7 @@ const interpretAndPlan = (input: {
   readonly sheets: ReadonlyMap<string, CharacterSheet>
   readonly resources: AuthoritativeMoveItemResources
   readonly operations: readonly MoveResolvedItemEffectOperation[]
+  readonly resolvedItemChoices?: readonly MoveSpecResolvedItemChoice[]
 }) => {
   const context = contextFor({
     map: input.map,
@@ -168,7 +179,7 @@ const interpretAndPlan = (input: {
   const interpretation = interpretMoveItemEffects({
     context,
     operations: input.operations,
-    resolvedItemChoices: [],
+    resolvedItemChoices: input.resolvedItemChoices ?? [],
   })
   const plan = planMoveItemMutations({
     map: input.map,
@@ -200,8 +211,44 @@ const selectedPayload = (
   onUnavailable: 'reject',
 })
 
+const emittedItemTrace = (
+  itemOperation: MoveItemEffectOperation,
+  recipientIds: readonly string[],
+) => {
+  let trace = createMoveResolutionTrace({
+    program: {
+      canonicalId: 'Item Possession Primitive',
+      runtimeKind: 'movespec-v2',
+      runtimeVersion: 2,
+      definitionHash: 'a'.repeat(64),
+    },
+    ruleset: {
+      rulesetId: 'ruleset-v1',
+      sourceDataSha256: 'b'.repeat(64),
+    },
+    ancestry: [],
+  })
+  trace = reduceMoveResolutionTrace(trace, {
+    kind: 'phase-transition',
+    from: null,
+    to: 'after-damage',
+    reasonCode: 'after-damage-phase',
+  })
+  return reduceMoveResolutionTrace(trace, {
+    kind: 'operation',
+    phase: 'after-damage',
+    operationId: itemOperation.id,
+    operationKind: 'item',
+    recipientIds,
+    outcome: 'applied',
+    reasonCode: itemOperation.reasonCode,
+    input: { action: itemOperation.payload.action },
+    result: { status: 'emitted' },
+  })
+}
+
 describe('shared authoritative item effect interpreter', () => {
-  it('executes give, steal, and occupied-destination no-op semantics', () => {
+  it('models Bestow and Covet/Thief with typed give, steal, and prevented outcomes', () => {
     const map = mapFixture()
     const giveSheets = sheetsFixture({ actorHeld: 'Leftovers' })
     const giveResources = resourcesFor({
@@ -262,10 +309,94 @@ describe('shared authoritative item effect interpreter', () => {
       operations: [emission(occupiedOperation, [firstTargetId])],
       resolvedItemChoices: [],
     })
-    expect(occupied).toMatchObject({ mutations: [], results: [{ outcome: 'no-op' }] })
+    expect(occupied).toMatchObject({
+      mutations: [],
+      results: [{
+        outcome: 'prevented',
+        outcomeCode: 'destination-occupied',
+      }],
+    })
   })
 
-  it('executes occupied and empty-endpoint swaps without creating item quantity', () => {
+  it('uses a durable server-owned choice when Bestow has multiple legal items and destinations', () => {
+    const map = mapFixture()
+    const sheets = sheetsFixture({ actorHeld: 'Leftovers, Iron Ball' })
+    const resources = resourcesFor({
+      map,
+      sheets,
+      selectedTargetIds: [firstTargetId],
+      requirements: [requirements.actor],
+    })
+    const choices = enumerateAuthoritativeMoveItemChoices({
+      declaration: {
+        setId: 'bestow.items',
+        requirementId: requirements.actor.id,
+        filter: {
+          referenceKinds: ['pokemon-held'],
+          canonicalItemIds: null,
+          minimumQuantity: 1,
+        },
+        destinations: [{
+          id: 'bestow.target',
+          kind: 'target-held',
+          labelKey: 'move.bestow.target',
+        }, {
+          id: 'bestow.ground',
+          kind: 'map-ground',
+          labelKey: 'move.bestow.ground',
+        }],
+        noneOption: null,
+      },
+      items: createAuthoritativeMoveItemResourceQueries(resources),
+    })
+    const selected = choices.choices.find(choice => (
+      choice.reference?.canonicalItemId === 'iron-ball'
+      && choice.destination?.id === 'bestow.target'
+    ))
+    expect(selected).toBeDefined()
+    const resolvedItemChoices: readonly MoveSpecResolvedItemChoice[] = [{
+      operationId: 'bestow.choose-item',
+      requestId: 'bestow.window',
+      optionId: selected!.option.id,
+      choice: selected!,
+    }]
+    const giveOperation = operation({
+      id: 'bestow.give-item',
+      recipients: 'hit-targets',
+      payload: {
+        action: 'give',
+        item: {
+          kind: 'choice',
+          requestId: 'bestow.window',
+          destinationId: 'bestow.target',
+        },
+        quantity: 1,
+        onUnavailable: 'reject',
+      },
+    })
+
+    const planned = interpretAndPlan({
+      map,
+      sheets,
+      resources,
+      operations: [emission(giveOperation, [firstTargetId])],
+      resolvedItemChoices,
+    })
+
+    expect(planned.interpretation.results).toEqual([expect.objectContaining({
+      operationId: 'bestow.give-item',
+      outcome: 'applied',
+      outcomeCode: null,
+      itemCount: 1,
+    })])
+    expect(planned.plan.sheetWrites.find(write => write.slug === 'item-actor-sheet')?.nextSheet)
+      .toMatchObject({ items: { held: 'Leftovers' } })
+    expect(planned.plan.sheetWrites.find(write => write.slug === 'item-target-one-sheet')?.nextSheet)
+      .toMatchObject({ items: { held: 'Iron Ball' } })
+    expect(sheets.get('item-actor-sheet')?.items?.held).toBe('Leftovers, Iron Ball')
+  })
+
+  it('models Switcheroo/Trick as atomic occupied and empty-endpoint swaps', () => {
     const map = mapFixture()
     const bothSheets = sheetsFixture({ actorHeld: 'Leftovers', firstHeld: 'Iron Ball' })
     const bothResources = resourcesFor({
@@ -327,7 +458,7 @@ describe('shared authoritative item effect interpreter', () => {
       .toMatchObject({ items: { held: 'Leftovers' } })
   })
 
-  it('knocks and throws held items to deterministic authoritative ground cells', () => {
+  it('models Knock Off and Fling with deterministic authoritative ground cells', () => {
     const map = mapFixture()
     const knockSheets = sheetsFixture({ firstHeld: 'Iron Ball' })
     const knockResources = resourcesFor({
@@ -373,6 +504,231 @@ describe('shared authoritative item effect interpreter', () => {
       canonicalItemId: 'leftovers',
       position: { x: 2, y: 0, z: 1 },
       ownerPlacementId: actorId,
+    })
+  })
+
+  it('rejects illegal possession and ground transitions without changing inputs or emitting partial writes', () => {
+    const map = mapFixture()
+    const ownerMismatchSheets = sheetsFixture({ firstHeld: 'Iron Ball' })
+    const ownerMismatchResources = resourcesFor({
+      map,
+      sheets: ownerMismatchSheets,
+      selectedTargetIds: [firstTargetId],
+      requirements: [requirements.targets],
+    })
+    const badGive = operation({
+      id: 'item.bad-give-owner',
+      recipients: 'hit-targets',
+      payload: {
+        ...selectedPayload('give', requirements.targets.id),
+        onUnavailable: 'no-op',
+      },
+    })
+    const ownerMismatchSnapshot = {
+      map: structuredClone(map),
+      sheets: structuredClone(ownerMismatchSheets),
+      resources: structuredClone(ownerMismatchResources),
+    }
+
+    expect(() => interpretMoveItemEffects({
+      context: contextFor({
+        map,
+        sheets: ownerMismatchSheets,
+        selectedTargetIds: [firstTargetId],
+        resources: ownerMismatchResources,
+      }),
+      operations: [emission(badGive, [firstTargetId])],
+      resolvedItemChoices: [],
+    })).toThrowError(expect.objectContaining({
+      name: MoveItemEffectInterpretationError.name,
+      code: 'selection-owner-mismatch',
+    }))
+    expect(map).toEqual(ownerMismatchSnapshot.map)
+    expect(ownerMismatchSheets).toEqual(ownerMismatchSnapshot.sheets)
+    expect(ownerMismatchResources).toEqual(ownerMismatchSnapshot.resources)
+
+    const emptySheets = sheetsFixture()
+    const emptyResources = resourcesFor({
+      map,
+      sheets: emptySheets,
+      selectedTargetIds: [firstTargetId],
+      requirements: [requirements.targets],
+    })
+    const noItem = interpretMoveItemEffects({
+      context: contextFor({
+        map,
+        sheets: emptySheets,
+        selectedTargetIds: [firstTargetId],
+        resources: emptyResources,
+      }),
+      operations: [emission(operation({
+        id: 'item.knock-no-item',
+        recipients: 'hit-targets',
+        payload: {
+          ...selectedPayload('knock-to-ground', requirements.targets.id),
+          onUnavailable: 'no-op',
+        },
+      }), [firstTargetId])],
+      resolvedItemChoices: [],
+    })
+    expect(noItem).toMatchObject({
+      mutations: [],
+      results: [{ outcome: 'no-op', outcomeCode: 'selection-unavailable' }],
+    })
+
+    const throwSheets = sheetsFixture({ actorHeld: 'Leftovers' })
+    const throwResources = resourcesFor({
+      map,
+      sheets: throwSheets,
+      selectedTargetIds: [firstTargetId],
+      requirements: [requirements.actor],
+    })
+    const throwInterpretation = interpretMoveItemEffects({
+      context: contextFor({
+        map,
+        sheets: throwSheets,
+        selectedTargetIds: [firstTargetId],
+        resources: throwResources,
+      }),
+      operations: [emission(operation({
+        id: 'item.ground-collision',
+        recipients: 'hit-targets',
+        payload: selectedPayload('throw', requirements.actor.id),
+      }), [firstTargetId])],
+      resolvedItemChoices: [],
+    })
+    const initialThrowPlan = planMoveItemMutations({
+      map,
+      pokemonSheets: throwSheets,
+      trainerSheets: new Map(),
+      groupInventories: new Map(),
+      operations: throwInterpretation.mutations,
+      originOperationId: 'op_itemgroundcollision1',
+      plannedAt: 2_000,
+    })
+    const collidingItem = initialThrowPlan.nextMap.encounterState?.groundItems[0]
+    expect(collidingItem).toBeDefined()
+    const collisionMap: TabletopMap = {
+      ...map,
+      encounterState: {
+        ...map.encounterState!,
+        groundItems: [structuredClone(collidingItem!)],
+      },
+    }
+    const collisionSnapshot = structuredClone(collisionMap)
+    const sheetSnapshot = structuredClone(throwSheets)
+
+    expect(() => planMoveItemMutations({
+      map: collisionMap,
+      pokemonSheets: throwSheets,
+      trainerSheets: new Map(),
+      groupInventories: new Map(),
+      operations: throwInterpretation.mutations,
+      originOperationId: 'op_itemgroundcollision2',
+      plannedAt: 2_001,
+    })).toThrowError(expect.objectContaining({
+      name: MoveItemMutationError.name,
+      code: 'destination-occupied',
+    }))
+    expect(collisionMap).toEqual(collisionSnapshot)
+    expect(throwSheets).toEqual(sheetSnapshot)
+  })
+
+  it('projects applied possession mutations and prevented outcomes into private item traces', () => {
+    const map = mapFixture()
+    const sheets = sheetsFixture({ actorHeld: 'Leftovers' })
+    const resources = resourcesFor({
+      map,
+      sheets,
+      selectedTargetIds: [firstTargetId],
+      requirements: [requirements.actor],
+    })
+    const giveOperation = operation({
+      id: 'item.traced-give',
+      recipients: 'hit-targets',
+      payload: selectedPayload('give', requirements.actor.id),
+    })
+    const interpretation = interpretMoveItemEffects({
+      context: contextFor({
+        map,
+        sheets,
+        selectedTargetIds: [firstTargetId],
+        resources,
+      }),
+      operations: [emission(giveOperation, [firstTargetId])],
+      resolvedItemChoices: [],
+    })
+    const plan = planMoveItemMutations({
+      map,
+      pokemonSheets: sheets,
+      trainerSheets: new Map(),
+      groupInventories: new Map(),
+      operations: interpretation.mutations,
+      originOperationId: 'op_itemtracedgive01',
+      plannedAt: 2_000,
+    })
+    const audited = applyMoveItemEffectResultsToTrace({
+      trace: emittedItemTrace(giveOperation, [firstTargetId]),
+      interpretation,
+      mutationResults: plan.operationResults,
+    })
+
+    expect(audited.events.find(event => event.kind === 'operation')).toMatchObject({
+      kind: 'operation',
+      operationId: 'item.traced-give',
+      outcome: 'applied',
+      result: {
+        status: 'applied',
+        action: 'give',
+        outcomeCode: null,
+        itemCount: 1,
+        mutationCount: 1,
+        quantityEffects: [{ canonicalItemId: 'leftovers', delta: 0 }],
+        resourceScopeCount: 2,
+      },
+    })
+
+    const occupiedSheets = sheetsFixture({ actorHeld: 'Leftovers', firstHeld: 'Iron Ball' })
+    const occupiedResources = resourcesFor({
+      map,
+      sheets: occupiedSheets,
+      selectedTargetIds: [firstTargetId],
+      requirements: [requirements.actor],
+    })
+    const preventedOperation = operation({
+      id: 'item.traced-prevented-give',
+      recipients: 'hit-targets',
+      payload: {
+        ...selectedPayload('give', requirements.actor.id),
+        onUnavailable: 'no-op',
+      },
+    })
+    const preventedInterpretation = interpretMoveItemEffects({
+      context: contextFor({
+        map,
+        sheets: occupiedSheets,
+        selectedTargetIds: [firstTargetId],
+        resources: occupiedResources,
+      }),
+      operations: [emission(preventedOperation, [firstTargetId])],
+      resolvedItemChoices: [],
+    })
+    const preventedTrace = applyMoveItemEffectResultsToTrace({
+      trace: emittedItemTrace(preventedOperation, [firstTargetId]),
+      interpretation: preventedInterpretation,
+      mutationResults: [],
+    })
+    expect(preventedTrace.events.find(event => event.kind === 'operation')).toMatchObject({
+      outcome: 'prevented',
+      result: {
+        status: 'prevented',
+        action: 'give',
+        outcomeCode: 'destination-occupied',
+        itemCount: 0,
+        mutationCount: 0,
+        quantityEffects: [],
+        resourceScopeCount: 0,
+      },
     })
   })
 

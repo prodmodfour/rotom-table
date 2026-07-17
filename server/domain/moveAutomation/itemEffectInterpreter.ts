@@ -59,7 +59,9 @@ export class MoveItemEffectInterpretationError extends Error {
 export interface InterpretedMoveItemEffectResult {
   readonly operationId: string
   readonly action: MoveItemEffectPayload['action']
-  readonly outcome: 'applied' | 'no-op'
+  readonly outcome: 'applied' | 'prevented' | 'no-op'
+  /** Stable private explanation for a prevented/no-op interpretation. */
+  readonly outcomeCode: MoveItemEffectInterpretationErrorCode | null
   readonly mutationIds: readonly string[]
   readonly itemCount: number
   readonly reasonCode: string
@@ -101,12 +103,14 @@ const unavailable = (input: {
   readonly policy: MoveItemEffectUnavailablePolicy
   readonly code: MoveItemEffectInterpretationErrorCode
   readonly message: string
+  readonly outcome?: 'prevented' | 'no-op'
 }): InterpretedMoveItemEffectResult => {
   if (input.policy === 'reject') return fail(input.code, input.message)
   return deepFreeze({
     operationId: input.operation.id,
     action: input.operation.payload.action,
-    outcome: 'no-op' as const,
+    outcome: input.outcome ?? 'no-op',
+    outcomeCode: input.code,
     mutationIds: [],
     itemCount: 0,
     reasonCode: input.operation.reasonCode,
@@ -121,6 +125,7 @@ const applied = (input: {
   operationId: input.operation.id,
   action: input.operation.payload.action,
   outcome: 'applied' as const,
+  outcomeCode: null,
   mutationIds: input.mutations.map(mutation => mutation.id),
   itemCount: input.itemCount,
   reasonCode: input.operation.reasonCode,
@@ -401,6 +406,7 @@ const interpretGiveOrSteal = (input: InterpretOperationInput): OperationInterpre
       policy: payload.onUnavailable,
       code: 'destination-occupied',
       message: `Item operation ${input.operation.id} destination ${destinationPlacement.id} is occupied.`,
+      outcome: 'prevented',
     }), mutations: [] }
   }
   const mutations: MoveItemMutation[] = [{
@@ -457,6 +463,7 @@ const interpretSwap = (input: InterpretOperationInput): OperationInterpretation 
       policy: payload.onUnavailable,
       code: 'destination-occupied',
       message: `Item swap ${input.operation.id} expected ${leftPlacement.id} to have an empty held slot.`,
+      outcome: 'prevented',
     }), mutations: [] }
   }
   if (right.length > 0) {
@@ -469,6 +476,7 @@ const interpretSwap = (input: InterpretOperationInput): OperationInterpretation 
       policy: payload.onUnavailable,
       code: 'destination-occupied',
       message: `Item swap ${input.operation.id} expected ${rightPlacement.id} to have an empty held slot.`,
+      outcome: 'prevented',
     }), mutations: [] }
   }
 
@@ -928,6 +936,7 @@ export const applyMoveItemEffectResultsToTrace = (input: {
       result: {
         status: result.outcome,
         action: result.action,
+        outcomeCode: result.outcomeCode,
         itemCount: result.itemCount,
         mutationCount: result.mutationIds.length,
         quantityEffects: reduced.flatMap(entry => entry.quantityEffects),

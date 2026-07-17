@@ -2123,7 +2123,7 @@ Status: DONE
 
 ## MA-156A — Interpret item possession and ground mutations
 
-Status: TODO
+Status: DONE
 
 **Depends on:** MA-153–MA-155
 **Commit:** `feat(move-automation): resolve item possession mutations`

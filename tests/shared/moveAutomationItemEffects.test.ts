@@ -98,6 +98,25 @@ describe('shared MoveSpec item effects', () => {
     })
   })
 
+  it('accepts only server-resolved possession selections and singleton transfer quantities', () => {
+    expect(() => parseMoveItemEffectPayload({
+      ...payloads.give as object,
+      item: heldReference(),
+    })).toThrowError(expect.objectContaining({
+      name: 'MoveItemEffectValidationError',
+      code: 'invalid-item-effect',
+    } satisfies Partial<MoveItemEffectValidationError>))
+
+    for (const action of ['give', 'steal', 'knock-to-ground', 'throw'] as const) {
+      expect(() => parseMoveItemEffectPayload({
+        ...commonSelected(action),
+        quantity: 2,
+      })).toThrowError(expect.objectContaining({
+        code: 'inconsistent-item-effect',
+      }))
+    }
+  })
+
   it('rejects unknown mechanics and inconsistent restore/suppression shapes', () => {
     expect(() => parseMoveItemEffectPayload({
       ...payloads.give as object,
