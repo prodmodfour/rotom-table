@@ -168,6 +168,24 @@ export const ITEM_CHOICE_SPEC = {
           },
         },
       },
+    }, {
+      id: 'item-choice.consume',
+      kind: 'item',
+      source: { kind: 'move', id: 'move.ember' },
+      recipients: { kind: 'actor' },
+      phase: 'after-damage',
+      reasonCode: 'move.ember.consume-item',
+      payload: {
+        action: 'consume',
+        item: {
+          kind: 'choice',
+          requestId: 'item-choice.window',
+          destinationId: 'use.actor',
+        },
+        quantity: 1,
+        onUnavailable: 'no-op',
+        consumptionId: 'consumption.item-choice-potion',
+      },
     }],
   }, {
     phase: 'usage',

@@ -1,0 +1,589 @@
+import { describe, expect, it } from 'vitest'
+import { createEmptyEncounterState } from '#shared/moveAutomation/encounterState'
+import {
+  parseMoveEffectOperation,
+  type MoveItemEffectOperation,
+} from '#shared/moveAutomation/effects'
+import type { CharacterSheet } from '~/types/characterSheet'
+import type { TabletopMap } from '~/types/map'
+import {
+  buildAuthoritativeMoveRulesContext,
+} from '~~/server/domain/moveAutomation/context'
+import {
+  interpretMoveItemEffects,
+  type MoveResolvedItemEffectOperation,
+} from '~~/server/domain/moveAutomation/itemEffectInterpreter'
+import {
+  emptyAuthoritativeMoveItemResources,
+  resolveAuthoritativeMoveItemResources,
+  type AuthoritativeMoveItemResourceRequirement,
+  type AuthoritativeMoveItemResources,
+} from '~~/server/domain/moveAutomation/itemResources'
+import { planMoveItemMutations } from '~~/server/domain/moveAutomation/planItemMutations'
+
+const actorId = 'item-actor'
+const firstTargetId = 'item-target-one'
+const secondTargetId = 'item-target-two'
+
+const mapFixture = (): TabletopMap => ({
+  schemaVersion: 2,
+  slug: 'item-effect-arena',
+  name: 'Item Effect Arena',
+  revision: 7,
+  dimensions: { x: 8, y: 2, z: 8 },
+  voxels: [],
+  placements: [{
+    id: actorId,
+    sheetKind: 'pokemon',
+    sheetSlug: 'item-actor-sheet',
+    position: { x: 1, y: 0, z: 1 },
+    sideId: 'heroes',
+  }, {
+    id: firstTargetId,
+    sheetKind: 'pokemon',
+    sheetSlug: 'item-target-one-sheet',
+    position: { x: 2, y: 0, z: 1 },
+    sideId: 'foes',
+  }, {
+    id: secondTargetId,
+    sheetKind: 'pokemon',
+    sheetSlug: 'item-target-two-sheet',
+    position: { x: 3, y: 0, z: 1 },
+    sideId: 'foes',
+  }],
+  lights: [],
+  encounterState: {
+    ...createEmptyEncounterState(),
+    sides: {
+      heroes: { id: 'heroes', label: 'Heroes', status: 'active' },
+      foes: { id: 'foes', label: 'Foes', status: 'active' },
+    },
+  },
+})
+
+const sheet = (
+  slug: string,
+  held?: string,
+  revision = 3,
+): CharacterSheet => ({
+  slug,
+  nickname: slug,
+  species: 'Pikachu',
+  level: 20,
+  revision,
+  combat: { currentHp: 50 },
+  movelist: [{ name: 'Scratch' }],
+  ...(held ? { items: { held } } : {}),
+})
+
+const sheetsFixture = (input: {
+  readonly actorHeld?: string
+  readonly firstHeld?: string
+  readonly secondHeld?: string
+} = {}) => new Map<string, CharacterSheet>([
+  ['item-actor-sheet', sheet('item-actor-sheet', input.actorHeld)],
+  ['item-target-one-sheet', sheet('item-target-one-sheet', input.firstHeld)],
+  ['item-target-two-sheet', sheet('item-target-two-sheet', input.secondHeld)],
+])
+
+const requirements = {
+  actor: { id: 'items.actor-equipped', source: { kind: 'actor-equipped' } },
+  targets: { id: 'items.target-equipped', source: { kind: 'selected-target-equipped' } },
+} as const satisfies Record<string, AuthoritativeMoveItemResourceRequirement>
+
+const resourcesFor = (input: {
+  readonly map: TabletopMap
+  readonly sheets: ReadonlyMap<string, CharacterSheet>
+  readonly selectedTargetIds: readonly string[]
+  readonly requirements: readonly AuthoritativeMoveItemResourceRequirement[]
+}): AuthoritativeMoveItemResources => resolveAuthoritativeMoveItemResources({
+  map: input.map,
+  actorPlacementId: actorId,
+  selectedTargetPlacementIds: input.selectedTargetIds,
+  pokemonSheets: input.sheets,
+  trainerSheets: new Map(),
+  groupInventories: new Map(),
+  requirements: input.requirements,
+})
+
+const contextFor = (input: {
+  readonly map: TabletopMap
+  readonly sheets: ReadonlyMap<string, CharacterSheet>
+  readonly selectedTargetIds?: readonly string[]
+  readonly resources?: AuthoritativeMoveItemResources
+}) => buildAuthoritativeMoveRulesContext({
+  map: input.map,
+  pokemonSheets: input.sheets,
+  trainerSheets: new Map(),
+  intent: {
+    schemaVersion: 1,
+    placementId: actorId,
+    moveName: 'Scratch',
+    selection: input.selectedTargetIds?.length === 2
+      ? { kind: 'target-count', targetPlacementIds: [...input.selectedTargetIds] }
+      : input.selectedTargetIds?.length === 1
+        ? { kind: 'single-target', targetPlacementId: input.selectedTargetIds[0]! }
+        : { kind: 'self' },
+  },
+  selectedPlacementIds: input.selectedTargetIds ?? [],
+  random: () => { throw new Error('item effects do not use randomness') },
+  time: 1_000,
+  itemResources: input.resources ?? emptyAuthoritativeMoveItemResources(),
+})
+
+const operation = (input: {
+  readonly id: string
+  readonly recipients: 'actor' | 'hit-targets' | 'actor-and-attacked-targets'
+  readonly payload: Record<string, unknown>
+}): MoveItemEffectOperation => parseMoveEffectOperation({
+  id: input.id,
+  kind: 'item',
+  source: { kind: 'move', id: 'move.scratch' },
+  recipients: { kind: input.recipients },
+  phase: 'after-damage',
+  reasonCode: `move.scratch.${input.id}`,
+  payload: input.payload,
+}) as MoveItemEffectOperation
+
+const emission = (
+  itemOperation: MoveItemEffectOperation,
+  recipientIds: readonly string[],
+): MoveResolvedItemEffectOperation => ({
+  operation: itemOperation,
+  recipientIds,
+})
+
+const interpretAndPlan = (input: {
+  readonly map: TabletopMap
+  readonly sheets: ReadonlyMap<string, CharacterSheet>
+  readonly resources: AuthoritativeMoveItemResources
+  readonly operations: readonly MoveResolvedItemEffectOperation[]
+}) => {
+  const context = contextFor({
+    map: input.map,
+    sheets: input.sheets,
+    selectedTargetIds: [firstTargetId, secondTargetId],
+    resources: input.resources,
+  })
+  const interpretation = interpretMoveItemEffects({
+    context,
+    operations: input.operations,
+    resolvedItemChoices: [],
+  })
+  const plan = planMoveItemMutations({
+    map: input.map,
+    pokemonSheets: input.sheets,
+    trainerSheets: new Map(),
+    groupInventories: input.resources.groupInventories,
+    consumedItems: input.resources.consumedItems,
+    operations: interpretation.mutations,
+    originOperationId: 'op_itemeffectscenario1',
+    plannedAt: 2_000,
+  })
+  return { interpretation, plan }
+}
+
+const requirementSelection = (requirementId: string, cardinality: 'one' | 'all' = 'one') => ({
+  kind: 'requirement',
+  requirementId,
+  cardinality,
+})
+
+const selectedPayload = (
+  action: 'give' | 'steal' | 'knock-to-ground' | 'throw' | 'destroy',
+  requirementId: string,
+  cardinality: 'one' | 'all' = 'one',
+) => ({
+  action,
+  item: requirementSelection(requirementId, cardinality),
+  quantity: 1,
+  onUnavailable: 'reject',
+})
+
+describe('shared authoritative item effect interpreter', () => {
+  it('executes give, steal, and occupied-destination no-op semantics', () => {
+    const map = mapFixture()
+    const giveSheets = sheetsFixture({ actorHeld: 'Leftovers' })
+    const giveResources = resourcesFor({
+      map,
+      sheets: giveSheets,
+      selectedTargetIds: [firstTargetId],
+      requirements: [requirements.actor],
+    })
+    const give = interpretAndPlan({
+      map,
+      sheets: giveSheets,
+      resources: giveResources,
+      operations: [emission(operation({
+        id: 'item.give',
+        recipients: 'hit-targets',
+        payload: selectedPayload('give', requirements.actor.id),
+      }), [firstTargetId])],
+    })
+    expect(give.interpretation.results[0]).toMatchObject({ action: 'give', outcome: 'applied' })
+    expect(give.plan.sheetWrites.find(write => write.slug === 'item-actor-sheet')?.nextSheet)
+      .toMatchObject({ items: {} })
+    expect(give.plan.sheetWrites.find(write => write.slug === 'item-target-one-sheet')?.nextSheet)
+      .toMatchObject({ items: { held: 'Leftovers' } })
+
+    const stealSheets = sheetsFixture({ firstHeld: 'Iron Ball' })
+    const stealResources = resourcesFor({
+      map,
+      sheets: stealSheets,
+      selectedTargetIds: [firstTargetId],
+      requirements: [requirements.targets],
+    })
+    const steal = interpretAndPlan({
+      map,
+      sheets: stealSheets,
+      resources: stealResources,
+      operations: [emission(operation({
+        id: 'item.steal',
+        recipients: 'hit-targets',
+        payload: selectedPayload('steal', requirements.targets.id),
+      }), [firstTargetId])],
+    })
+    expect(steal.plan.sheetWrites.find(write => write.slug === 'item-actor-sheet')?.nextSheet)
+      .toMatchObject({ items: { held: 'Iron Ball' } })
+
+    const occupiedContext = contextFor({
+      map,
+      sheets: sheetsFixture({ actorHeld: 'Leftovers', firstHeld: 'Iron Ball' }),
+      selectedTargetIds: [firstTargetId],
+      resources: stealResources,
+    })
+    const occupiedOperation = operation({
+      id: 'item.steal-no-op',
+      recipients: 'hit-targets',
+      payload: { ...selectedPayload('steal', requirements.targets.id), onUnavailable: 'no-op' },
+    })
+    const occupied = interpretMoveItemEffects({
+      context: occupiedContext,
+      operations: [emission(occupiedOperation, [firstTargetId])],
+      resolvedItemChoices: [],
+    })
+    expect(occupied).toMatchObject({ mutations: [], results: [{ outcome: 'no-op' }] })
+  })
+
+  it('executes occupied and empty-endpoint swaps without creating item quantity', () => {
+    const map = mapFixture()
+    const bothSheets = sheetsFixture({ actorHeld: 'Leftovers', firstHeld: 'Iron Ball' })
+    const bothResources = resourcesFor({
+      map,
+      sheets: bothSheets,
+      selectedTargetIds: [firstTargetId],
+      requirements: [requirements.actor, requirements.targets],
+    })
+    const swap = interpretAndPlan({
+      map,
+      sheets: bothSheets,
+      resources: bothResources,
+      operations: [emission(operation({
+        id: 'item.swap',
+        recipients: 'hit-targets',
+        payload: {
+          action: 'swap',
+          participants: 'actor-and-first-recipient',
+          leftItem: requirementSelection(requirements.actor.id),
+          rightItem: requirementSelection(requirements.targets.id),
+          onUnavailable: 'reject',
+        },
+      }), [firstTargetId])],
+    })
+    expect(swap.plan.operationResults[0]).toMatchObject({
+      kind: 'swap',
+      quantityPolicy: 'conserve',
+    })
+    expect(swap.plan.sheetWrites.find(write => write.slug === 'item-actor-sheet')?.nextSheet)
+      .toMatchObject({ items: { held: 'Iron Ball' } })
+    expect(swap.plan.sheetWrites.find(write => write.slug === 'item-target-one-sheet')?.nextSheet)
+      .toMatchObject({ items: { held: 'Leftovers' } })
+
+    const oneSheets = sheetsFixture({ actorHeld: 'Leftovers' })
+    const oneResources = resourcesFor({
+      map,
+      sheets: oneSheets,
+      selectedTargetIds: [firstTargetId],
+      requirements: [requirements.actor],
+    })
+    const one = interpretAndPlan({
+      map,
+      sheets: oneSheets,
+      resources: oneResources,
+      operations: [emission(operation({
+        id: 'item.swap-empty',
+        recipients: 'hit-targets',
+        payload: {
+          action: 'swap',
+          participants: 'actor-and-first-recipient',
+          leftItem: requirementSelection(requirements.actor.id),
+          rightItem: null,
+          onUnavailable: 'reject',
+        },
+      }), [firstTargetId])],
+    })
+    expect(one.plan.operationResults[0]).toMatchObject({ kind: 'transfer', quantityPolicy: 'conserve' })
+    expect(one.plan.sheetWrites.find(write => write.slug === 'item-target-one-sheet')?.nextSheet)
+      .toMatchObject({ items: { held: 'Leftovers' } })
+  })
+
+  it('knocks and throws held items to deterministic authoritative ground cells', () => {
+    const map = mapFixture()
+    const knockSheets = sheetsFixture({ firstHeld: 'Iron Ball' })
+    const knockResources = resourcesFor({
+      map,
+      sheets: knockSheets,
+      selectedTargetIds: [firstTargetId],
+      requirements: [requirements.targets],
+    })
+    const knocked = interpretAndPlan({
+      map,
+      sheets: knockSheets,
+      resources: knockResources,
+      operations: [emission(operation({
+        id: 'item.knock',
+        recipients: 'hit-targets',
+        payload: selectedPayload('knock-to-ground', requirements.targets.id),
+      }), [firstTargetId])],
+    })
+    expect(knocked.plan.nextMap.encounterState?.groundItems[0]).toMatchObject({
+      canonicalItemId: 'iron-ball',
+      position: { x: 2, y: 0, z: 1 },
+      ownerPlacementId: firstTargetId,
+    })
+
+    const throwSheets = sheetsFixture({ actorHeld: 'Leftovers' })
+    const throwResources = resourcesFor({
+      map,
+      sheets: throwSheets,
+      selectedTargetIds: [firstTargetId],
+      requirements: [requirements.actor],
+    })
+    const thrown = interpretAndPlan({
+      map,
+      sheets: throwSheets,
+      resources: throwResources,
+      operations: [emission(operation({
+        id: 'item.throw',
+        recipients: 'hit-targets',
+        payload: selectedPayload('throw', requirements.actor.id),
+      }), [firstTargetId])],
+    })
+    expect(thrown.plan.nextMap.encounterState?.groundItems[0]).toMatchObject({
+      canonicalItemId: 'leftovers',
+      position: { x: 2, y: 0, z: 1 },
+      ownerPlacementId: actorId,
+    })
+  })
+
+  it('audits consume, effect-only restore, and destroy through typed quantity policies', () => {
+    const map = mapFixture()
+    const consumeSheets = sheetsFixture({ actorHeld: 'Leftovers', firstHeld: 'Iron Ball' })
+    const resources = resourcesFor({
+      map,
+      sheets: consumeSheets,
+      selectedTargetIds: [firstTargetId],
+      requirements: [requirements.actor, requirements.targets],
+    })
+    const consume = operation({
+      id: 'item.consume',
+      recipients: 'actor',
+      payload: {
+        action: 'consume',
+        item: requirementSelection(requirements.actor.id),
+        quantity: 1,
+        consumptionId: 'consumption.leftovers',
+        onUnavailable: 'reject',
+      },
+    })
+    const restore = operation({
+      id: 'item.restore-effect',
+      recipients: 'actor',
+      payload: {
+        action: 'restore',
+        consumptionId: 'consumption.leftovers',
+        mode: 'effect',
+        destination: null,
+        onUnavailable: 'reject',
+      },
+    })
+    const destroy = operation({
+      id: 'item.destroy',
+      recipients: 'hit-targets',
+      payload: selectedPayload('destroy', requirements.targets.id),
+    })
+    const planned = interpretAndPlan({
+      map,
+      sheets: consumeSheets,
+      resources,
+      operations: [
+        emission(consume, [actorId]),
+        emission(restore, [actorId]),
+        emission(destroy, [firstTargetId]),
+      ],
+    })
+
+    expect(planned.plan.operationResults.map(result => ({
+      kind: result.kind,
+      policy: result.quantityPolicy,
+      effects: result.quantityEffects,
+    }))).toEqual([
+      { kind: 'consume', policy: 'consume', effects: [{ canonicalItemId: 'leftovers', delta: -1 }] },
+      { kind: 'reuse-consumed', policy: 'conserve', effects: [{ canonicalItemId: 'leftovers', delta: 0 }] },
+      { kind: 'destroy', policy: 'destroy', effects: [{ canonicalItemId: 'iron-ball', delta: -1 }] },
+    ])
+    expect(planned.plan.availableConsumedItems).toHaveLength(1)
+  })
+
+  it('persists replace-by-source and item-bound suppression as typed encounter effects', () => {
+    const map = mapFixture()
+    const sheets = sheetsFixture({ firstHeld: 'Iron Ball', secondHeld: 'Leftovers' })
+    const allResources = resourcesFor({
+      map,
+      sheets,
+      selectedTargetIds: [firstTargetId, secondTargetId],
+      requirements: [requirements.targets],
+    })
+    const first = operation({
+      id: 'item.embargo-first',
+      recipients: 'hit-targets',
+      payload: {
+        action: 'suppress',
+        item: null,
+        scope: 'all-equipped',
+        blocksUse: true,
+        blocksBenefit: true,
+        effectId: 'embargo.items',
+        duration: { kind: 'scene', remaining: null },
+        replacement: 'replace-by-source',
+        onUnavailable: 'reject',
+      },
+    })
+    const second = operation({
+      id: 'item.embargo-second',
+      recipients: 'hit-targets',
+      payload: {
+        ...first.payload,
+        action: 'suppress',
+      },
+    })
+    const replaced = interpretAndPlan({
+      map,
+      sheets,
+      resources: allResources,
+      operations: [
+        emission(first, [firstTargetId]),
+        emission(second, [secondTargetId]),
+      ],
+    })
+    expect(replaced.plan.nextMap.encounterState?.effects).toHaveLength(1)
+    expect(replaced.plan.nextMap.encounterState?.effects[0]).toMatchObject({
+      kind: 'item-suppression',
+      affected: { placementIds: [secondTargetId] },
+      payload: {
+        familyId: 'embargo.items',
+        scope: 'all-equipped',
+        blocksUse: true,
+        blocksBenefit: true,
+      },
+    })
+
+    const bound = interpretAndPlan({
+      map,
+      sheets,
+      resources: allResources,
+      operations: [emission(operation({
+        id: 'item.corrosive-gas',
+        recipients: 'hit-targets',
+        payload: {
+          action: 'suppress',
+          item: requirementSelection(requirements.targets.id, 'all'),
+          scope: 'selected-items',
+          blocksUse: true,
+          blocksBenefit: false,
+          effectId: 'corrosive-gas.items',
+          duration: { kind: 'scene', remaining: null },
+          replacement: 'independent',
+          onUnavailable: 'no-op',
+        },
+      }), [firstTargetId, secondTargetId])],
+    })
+    const effects = bound.plan.nextMap.encounterState?.effects ?? []
+    expect(effects).toHaveLength(2)
+    expect(effects.every(effect => (
+      effect.kind === 'item-suppression'
+      && effect.payload.scope === 'item-bindings'
+      && effect.payload.itemBindingIds.length === 1
+    ))).toBe(true)
+    expect(JSON.stringify(effects)).not.toContain('item-target-one-sheet')
+  })
+
+  it('stores and digests one authoritative food buff without restoring item quantity', () => {
+    const map = mapFixture()
+    const initialSheets = sheetsFixture({ actorHeld: 'Leftovers' })
+    const resources = resourcesFor({
+      map,
+      sheets: initialSheets,
+      selectedTargetIds: [],
+      requirements: [requirements.actor],
+    })
+    const stored = interpretAndPlan({
+      map,
+      sheets: initialSheets,
+      resources,
+      operations: [emission(operation({
+        id: 'item.store-buff',
+        recipients: 'actor',
+        payload: {
+          action: 'store-buff',
+          item: requirementSelection(requirements.actor.id),
+          quantity: 1,
+          consumptionId: 'consumption.food-buff',
+          onUnavailable: 'reject',
+        },
+      }), [actorId])],
+    })
+    const storedActor = stored.plan.sheetWrites.find(
+      write => write.slug === 'item-actor-sheet',
+    )?.nextSheet as CharacterSheet
+    expect(storedActor.items).toEqual({ digestionFood: 'Leftovers' })
+    expect(stored.plan.operationResults[0]).toMatchObject({
+      kind: 'store-digestion-buff',
+      quantityPolicy: 'consume',
+      quantityEffects: [{ canonicalItemId: 'leftovers', delta: -1 }],
+    })
+
+    const digestSheets = new Map(initialSheets)
+    digestSheets.set('item-actor-sheet', storedActor)
+    const digestContext = contextFor({ map, sheets: digestSheets })
+    const digestOperation = operation({
+      id: 'item.digest-buff',
+      recipients: 'actor',
+      payload: {
+        action: 'digest-buff',
+        canonicalItemIds: ['leftovers'],
+        onUnavailable: 'reject',
+      },
+    })
+    const digestInterpretation = interpretMoveItemEffects({
+      context: digestContext,
+      operations: [emission(digestOperation, [actorId])],
+      resolvedItemChoices: [],
+    })
+    const digested = planMoveItemMutations({
+      map,
+      pokemonSheets: digestSheets,
+      trainerSheets: new Map(),
+      groupInventories: new Map(),
+      operations: digestInterpretation.mutations,
+      originOperationId: 'op_itemeffectdigest01',
+      plannedAt: 3_000,
+    })
+    expect((digested.sheetWrites[0]?.nextSheet as CharacterSheet).items).toEqual({})
+    expect(digested.operationResults[0]).toMatchObject({
+      kind: 'digest-buff',
+      quantityPolicy: 'conserve',
+      quantityEffects: [{ canonicalItemId: 'leftovers', delta: 0 }],
+    })
+  })
+})

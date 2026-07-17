@@ -34,6 +34,7 @@ export const LIVE_PLAY_MOVE_SHEET_CHANGED_FIELDS = [
   'items',
   'inventory',
   'equipmentSlots',
+  'digestion',
 ] as const
 
 export type LivePlayMoveSheetChangedField =

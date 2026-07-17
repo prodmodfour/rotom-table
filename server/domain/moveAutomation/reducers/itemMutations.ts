@@ -3,6 +3,7 @@ import { normalizeRevision } from '#shared/sessionRevisions'
 import {
   createEmptyEncounterState,
   parseEncounterState,
+  type EncounterItemSuppressionEffect,
 } from '#shared/moveAutomation/encounterState'
 import {
   MOVE_ITEM_TRAINER_EQUIPMENT_SLOTS,
@@ -63,7 +64,7 @@ export interface ReduceMoveItemMutationsInput {
   readonly originOperationId: string
 }
 
-type ItemSheetField = 'items' | 'inventory' | 'equipmentSlots'
+type ItemSheetField = 'items' | 'inventory' | 'equipmentSlots' | 'digestion'
 type ItemDocument = CharacterSheet | TrainerSheet
 
 type ResourceTouch = {
@@ -1139,6 +1140,275 @@ const validateConsumedRecord = (
   })
 }
 
+const itemEffectHash = (value: string, seed: number): string => {
+  let hash = seed >>> 0
+  for (let index = 0; index < value.length; index += 1) {
+    hash ^= value.charCodeAt(index)
+    hash = Math.imul(hash, 0x01000193)
+  }
+  return (hash >>> 0).toString(16).padStart(8, '0')
+}
+
+const suppressionInstanceId = (input: {
+  readonly familyId: string
+  readonly sourcePlacementId: string
+  readonly targetPlacementId: string
+  readonly operationId: string
+}): string => {
+  const identity = [
+    input.familyId,
+    input.sourcePlacementId,
+    input.targetPlacementId,
+    input.operationId,
+  ].join('\u0000')
+  return `effect.item.${itemEffectHash(identity, 0x811c9dc5)}${itemEffectHash(identity, 0x9e3779b9)}`
+}
+
+const recordConsumption = (input: {
+  readonly operation: MoveItemMutation
+  readonly consumptionId: unknown
+  readonly source: MoveItemReference
+  readonly canonicalItemId: string
+  readonly quantity: number
+  readonly allConsumptions: Map<string, MoveConsumedItemRecord>
+  readonly availableConsumptions: Map<string, MoveConsumedItemRecord>
+  readonly createdConsumptions: MoveConsumedItemRecord[]
+}): MoveConsumedItemRecord => {
+  const consumptionId = boundedIdentifier(
+    input.consumptionId,
+    `${input.operation.id}.consumptionId`,
+  )
+  if (input.allConsumptions.has(consumptionId)) {
+    fail('duplicate-consumption', `Consumed-item identity ${consumptionId} is duplicated.`)
+  }
+  const record = validateConsumedRecord({
+    consumptionId,
+    sourceOperationId: input.operation.id,
+    source: input.source,
+    canonicalItemId: input.canonicalItemId,
+    quantity: input.quantity,
+  }, `consumption ${consumptionId}`)
+  input.allConsumptions.set(consumptionId, record)
+  input.availableConsumptions.set(consumptionId, record)
+  input.createdConsumptions.push(record)
+  return record
+}
+
+const digestionBuffName = (
+  state: WorkingState,
+  owner: MoveItemOwnerReference,
+  operation: MoveItemMutation,
+): string | null => {
+  assertOwnerRevision(state, owner)
+  if (owner.kind !== 'sheet') {
+    return fail('invalid-destination', `Operation ${operation.id} digestion owner must be a sheet.`)
+  }
+  if (owner.sheetKind === 'pokemon') {
+    const sheet = state.pokemonSheets.get(owner.slug)
+      ?? fail('resource-missing', `Pokémon item sheet ${owner.slug} is unavailable.`)
+    const value = sheet.items?.digestionFood
+    return typeof value === 'string' && value.trim() ? value.trim() : null
+  }
+  const sheet = state.trainerSheets.get(owner.slug)
+    ?? fail('resource-missing', `Trainer item sheet ${owner.slug} is unavailable.`)
+  return typeof sheet.digestion === 'string' && sheet.digestion.trim()
+    ? sheet.digestion.trim()
+    : null
+}
+
+const storeDigestionBuff = (input: {
+  readonly state: WorkingState
+  readonly owner: MoveItemOwnerReference
+  readonly canonicalItemName: string
+  readonly operation: MoveItemMutation
+  readonly operationOrder: number
+}): string => {
+  const { state, owner, operation, operationOrder } = input
+  if (digestionBuffName(state, owner, operation) !== null) {
+    return fail('destination-occupied', `Digestion buff destination ${owner.slug} is occupied.`)
+  }
+  if (owner.kind !== 'sheet') {
+    return fail('invalid-destination', `Operation ${operation.id} digestion owner must be a sheet.`)
+  }
+  if (owner.sheetKind === 'pokemon') {
+    const sheet = state.pokemonSheets.get(owner.slug)
+      ?? fail('resource-missing', `Pokémon item sheet ${owner.slug} is unavailable.`)
+    setPokemonSheet(state, owner.slug, {
+      ...sheet,
+      items: { ...(sheet.items ?? {}), digestionFood: input.canonicalItemName },
+    })
+    return touchResource({
+      state,
+      owner,
+      operation,
+      operationOrder,
+      changedField: 'items',
+    })
+  }
+  const sheet = state.trainerSheets.get(owner.slug)
+    ?? fail('resource-missing', `Trainer item sheet ${owner.slug} is unavailable.`)
+  setTrainerSheet(state, owner.slug, { ...sheet, digestion: input.canonicalItemName })
+  return touchResource({
+    state,
+    owner,
+    operation,
+    operationOrder,
+    changedField: 'digestion',
+  })
+}
+
+const digestStoredBuff = (input: {
+  readonly state: WorkingState
+  readonly owner: MoveItemOwnerReference
+  readonly canonicalItemIds: readonly string[] | null
+  readonly operation: MoveItemMutation
+  readonly operationOrder: number
+}): { readonly canonicalItemId: string; readonly resourceKey: string } => {
+  const name = digestionBuffName(input.state, input.owner, input.operation)
+    ?? fail('item-missing', `Operation ${input.operation.id} found no stored digestion buff.`)
+  const canonical = canonicalItem(name, `${input.operation.id}.digestionBuff`)
+  if (
+    input.canonicalItemIds !== null
+    && !input.canonicalItemIds.includes(canonical.id)
+  ) {
+    fail('item-mismatch', `Stored digestion buff ${canonical.id} is not legal for ${input.operation.id}.`)
+  }
+  const owner = input.owner
+  if (owner.kind !== 'sheet') {
+    return fail('invalid-destination', `Operation ${input.operation.id} digestion owner must be a sheet.`)
+  }
+  if (owner.sheetKind === 'pokemon') {
+    const sheet = input.state.pokemonSheets.get(owner.slug)
+      ?? fail('resource-missing', `Pokémon item sheet ${owner.slug} is unavailable.`)
+    const items = { ...(sheet.items ?? {}) }
+    delete items.digestionFood
+    setPokemonSheet(input.state, owner.slug, { ...sheet, items })
+    return {
+      canonicalItemId: canonical.id,
+      resourceKey: touchResource({
+        state: input.state,
+        owner,
+        operation: input.operation,
+        operationOrder: input.operationOrder,
+        changedField: 'items',
+      }),
+    }
+  }
+  const sheet = input.state.trainerSheets.get(owner.slug)
+    ?? fail('resource-missing', `Trainer item sheet ${owner.slug} is unavailable.`)
+  const next = { ...sheet }
+  delete next.digestion
+  setTrainerSheet(input.state, owner.slug, next)
+  return {
+    canonicalItemId: canonical.id,
+    resourceKey: touchResource({
+      state: input.state,
+      owner,
+      operation: input.operation,
+      operationOrder: input.operationOrder,
+      changedField: 'digestion',
+    }),
+  }
+}
+
+const applyItemSuppression = (input: {
+  readonly state: WorkingState
+  readonly operation: Extract<MoveItemMutation, { readonly kind: 'item-suppress' }>
+  readonly operationOrder: number
+}): string => {
+  const operation = input.operation
+  const encounter = parseEncounterState(
+    input.state.map.encounterState ?? createEmptyEncounterState(),
+  )
+  const targetIds = new Set<string>()
+  for (const target of operation.targets) {
+    boundedIdentifier(target.placementId, `${operation.id}.targets.placementId`)
+    if (targetIds.has(target.placementId)) {
+      fail('invalid-operation', `Item suppression ${operation.id} duplicates target ${target.placementId}.`)
+    }
+    targetIds.add(target.placementId)
+    if (!input.state.map.placements.some(placement => placement.id === target.placementId)) {
+      fail('resource-missing', `Item suppression target ${target.placementId} is unavailable.`)
+    }
+    if (
+      (operation.scope === 'item-bindings') !== (target.itemBindingIds.length > 0)
+      || new Set(target.itemBindingIds).size !== target.itemBindingIds.length
+    ) {
+      fail('invalid-operation', `Item suppression ${operation.id} has inconsistent item bindings.`)
+    }
+    target.itemBindingIds.forEach((bindingId, index) => {
+      boundedIdentifier(bindingId, `${operation.id}.targets.itemBindingIds[${index}]`)
+    })
+  }
+  if (operation.targets.length === 0) {
+    fail('invalid-operation', `Item suppression ${operation.id} requires at least one target.`)
+  }
+  if (!operation.blocksUse && !operation.blocksBenefit) {
+    fail('invalid-operation', `Item suppression ${operation.id} must block use, benefit, or both.`)
+  }
+  const familyId = boundedIdentifier(operation.effectId, `${operation.id}.effectId`)
+  const sourceMoveId = boundedIdentifier(operation.sourceMoveId, `${operation.id}.sourceMoveId`)
+  const sourcePlacementId = boundedIdentifier(
+    operation.sourcePlacementId,
+    `${operation.id}.sourcePlacementId`,
+  )
+  let effects = encounter.effects
+  if (operation.replacement === 'replace-by-source') {
+    effects = effects.filter(effect => !(
+      effect.kind === 'item-suppression'
+      && effect.payload.familyId === familyId
+      && effect.source.placementId === sourcePlacementId
+    ))
+  }
+  const additions: EncounterItemSuppressionEffect[] = operation.targets.map((target) => ({
+    id: suppressionInstanceId({
+      familyId,
+      sourcePlacementId,
+      targetPlacementId: target.placementId,
+      operationId: operation.id,
+    }),
+    kind: 'item-suppression',
+    source: {
+      operationId: operation.id,
+      moveId: sourceMoveId,
+      placementId: sourcePlacementId,
+    },
+    affected: {
+      placementIds: [target.placementId],
+      sideIds: [],
+      cells: [],
+    },
+    createdRound: encounter.history.currentRound ?? 1,
+    createdTurn: encounter.history.currentTurn?.turn ?? 0,
+    duration: operation.duration,
+    stacks: 1,
+    charges: null,
+    stackPolicy: { kind: 'independent-instance', maxStacks: null },
+    chargePolicy: { kind: 'none', amount: null },
+    tags: ['item', 'item-suppression'],
+    payload: {
+      familyId,
+      scope: operation.scope,
+      itemBindingIds: [...target.itemBindingIds],
+      blocksUse: operation.blocksUse,
+      blocksBenefit: operation.blocksBenefit,
+    },
+    dispel: { policy: 'matching-tags', tags: ['item-suppression'] },
+    transferPolicy: 'expire',
+    suppression: { sources: [] },
+  }))
+  input.state.map = {
+    ...input.state.map,
+    encounterState: parseEncounterState({ ...encounter, effects: [...effects, ...additions] }),
+  }
+  return touchResource({
+    state: input.state,
+    owner: { kind: 'map', slug: input.state.map.slug, revision: normalizeRevision(input.state.map.revision) },
+    operation,
+    operationOrder: input.operationOrder,
+  })
+}
+
 const operationBase = (
   operation: MoveItemMutation,
   index: number,
@@ -1223,6 +1493,18 @@ const reduceOperation = (input: {
     }))
     auditedItemIds.push(removedLeft.stack.canonicalItemId, removedRight.stack.canonicalItemId)
   }
+  else if (operation.kind === 'item-suppress') {
+    touchedKeys.add(applyItemSuppression({ state, operation, operationOrder }))
+  }
+  else if (operation.kind === 'reuse-consumed') {
+    consumptionId = boundedIdentifier(operation.consumptionId, `${operation.id}.consumptionId`)
+    const consumed = input.availableConsumptions.get(consumptionId)
+      ?? fail(
+        'consumption-missing',
+        `Reuse operation ${operation.id} cannot resolve available consumption ${consumptionId}.`,
+      )
+    auditedItemIds.push(consumed.canonicalItemId)
+  }
   else if (operation.kind === 'restore-consumed') {
     consumptionId = boundedIdentifier(operation.consumptionId, `${operation.id}.consumptionId`)
     const consumed = input.availableConsumptions.get(consumptionId)
@@ -1255,6 +1537,63 @@ const reduceOperation = (input: {
     quantityPolicy = 'restore-consumed'
     expected.set(canonical.id, consumed.quantity)
     auditedItemIds.push(canonical.id)
+  }
+  else if (operation.kind === 'store-digestion-buff') {
+    const source = parseReference(operation.source, `${operation.id}.source`)
+    const quantity = positiveQuantity(operation.quantity, `${operation.id}.quantity`)
+    if (quantity !== 1) {
+      fail('invalid-quantity', `Store-buff operation ${operation.id} must consume one item.`)
+    }
+    const owner = parseOwner(operation.destination.owner, `${operation.id}.destination.owner`)
+    if (owner.kind !== 'sheet') {
+      fail('invalid-destination', `Store-buff operation ${operation.id} requires a sheet owner.`)
+    }
+    const removed = removeItem({ state, source, quantity, operation, operationOrder })
+    touchedKeys.add(removed.resourceKey)
+    touchedKeys.add(storeDigestionBuff({
+      state,
+      owner,
+      canonicalItemName: removed.stack.canonicalItemName,
+      operation,
+      operationOrder,
+    }))
+    quantityPolicy = 'consume'
+    expected.set(removed.stack.canonicalItemId, -removed.stack.quantity)
+    auditedItemIds.push(removed.stack.canonicalItemId)
+    consumptionId = recordConsumption({
+      operation,
+      consumptionId: operation.consumptionId,
+      source,
+      canonicalItemId: removed.stack.canonicalItemId,
+      quantity: removed.stack.quantity,
+      allConsumptions: input.allConsumptions,
+      availableConsumptions: input.availableConsumptions,
+      createdConsumptions: input.createdConsumptions,
+    }).consumptionId
+  }
+  else if (operation.kind === 'digest-buff') {
+    const owner = parseOwner(operation.owner, `${operation.id}.owner`)
+    const canonicalItemIds = operation.canonicalItemIds === null
+      ? null
+      : operation.canonicalItemIds.map((itemId, index) => {
+          const canonical = canonicalItem(itemId, `${operation.id}.canonicalItemIds[${index}]`)
+          if (canonical.id !== itemId) {
+            fail('item-mismatch', `Digest-buff item ID ${itemId} is not normalized.`)
+          }
+          return canonical.id
+        })
+    if (canonicalItemIds && new Set(canonicalItemIds).size !== canonicalItemIds.length) {
+      fail('invalid-operation', `Digest-buff operation ${operation.id} duplicates an item ID.`)
+    }
+    const digested = digestStoredBuff({
+      state,
+      owner,
+      canonicalItemIds,
+      operation,
+      operationOrder,
+    })
+    touchedKeys.add(digested.resourceKey)
+    auditedItemIds.push(digested.canonicalItemId)
   }
   else {
     const source = parseReference(operation.source, `${operation.id}.source`)
@@ -1346,20 +1685,16 @@ const reduceOperation = (input: {
           : 'decrement'
       expected.set(removed.stack.canonicalItemId, -removed.stack.quantity)
       if (operation.kind === 'consume') {
-        consumptionId = boundedIdentifier(operation.consumptionId, `${operation.id}.consumptionId`)
-        if (input.allConsumptions.has(consumptionId)) {
-          fail('duplicate-consumption', `Consumed-item identity ${consumptionId} is duplicated.`)
-        }
-        const record = validateConsumedRecord({
-          consumptionId,
-          sourceOperationId: operation.id,
+        consumptionId = recordConsumption({
+          operation,
+          consumptionId: operation.consumptionId,
           source,
           canonicalItemId: removed.stack.canonicalItemId,
           quantity: removed.stack.quantity,
-        }, `consumption ${consumptionId}`)
-        input.allConsumptions.set(consumptionId, record)
-        input.availableConsumptions.set(consumptionId, record)
-        input.createdConsumptions.push(record)
+          allConsumptions: input.allConsumptions,
+          availableConsumptions: input.availableConsumptions,
+          createdConsumptions: input.createdConsumptions,
+        }).consumptionId
       }
     }
   }

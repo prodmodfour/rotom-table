@@ -1198,6 +1198,85 @@ describe('authoritative MoveSpec validation and hashing', () => {
     )
   })
 
+  it('binds item mutations only to earlier reviewed item-choice requests', () => {
+    const itemChoice: TestOperation = {
+      id: 'operation.item-choice',
+      kind: 'choice-request',
+      source: { kind: 'move', id: 'move.scratch' },
+      recipients: { kind: 'actor' },
+      phase: 'after-damage',
+      reasonCode: 'move.scratch.choose-item',
+      payload: {
+        requestId: 'choice.item',
+        promptKey: 'move.scratch.choose-item',
+        options: [],
+        allowPass: true,
+        itemChoice: {
+          setId: 'items.actor',
+          requirementId: 'items.actor-held',
+          filter: {
+            referenceKinds: ['pokemon-held'],
+            canonicalItemIds: null,
+            minimumQuantity: 1,
+          },
+          destinations: [{
+            id: 'use.actor',
+            kind: 'actor-held',
+            labelKey: 'move.item.actor',
+          }],
+          noneOption: null,
+        },
+      },
+    }
+    const itemMutation: TestOperation = {
+      id: 'operation.item-consume',
+      kind: 'item',
+      source: { kind: 'move', id: 'move.scratch' },
+      recipients: { kind: 'actor' },
+      phase: 'after-damage',
+      reasonCode: 'move.scratch.consume-item',
+      payload: {
+        action: 'consume',
+        item: {
+          kind: 'choice',
+          requestId: 'choice.item',
+          destinationId: 'use.actor',
+        },
+        quantity: 1,
+        consumptionId: 'consumption.item',
+        onUnavailable: 'no-op',
+      },
+    }
+    const valid = validSpec()
+    valid.phases.splice(2, 0, {
+      phase: 'after-damage',
+      operations: [itemChoice, itemMutation],
+    })
+    expect(validateMoveSpec(valid).spec.phases[2]?.operations.map(operation => operation.kind))
+      .toEqual(['choice-request', 'item'])
+
+    const forward = validSpec()
+    forward.phases.splice(2, 0, {
+      phase: 'after-damage',
+      operations: [itemMutation, itemChoice],
+    })
+    expectDefinitionError(() => validateMoveSpec(forward), 'invalid-reference-order')
+
+    const staticChoice = structuredClone(itemChoice)
+    staticChoice.payload = {
+      requestId: 'choice.item',
+      promptKey: 'move.scratch.choose-item',
+      options: [{ id: 'use.actor', labelKey: 'move.item.actor' }],
+      allowPass: true,
+    }
+    const wrongKind = validSpec()
+    wrongKind.phases.splice(2, 0, {
+      phase: 'after-damage',
+      operations: [staticChoice, itemMutation],
+    })
+    expectDefinitionError(() => validateMoveSpec(wrongKind), 'unknown-reference')
+  })
+
   it('requires local operation and roll references to resolve backward', () => {
     const unknownSource = validSpec()
     unknownSource.phases[1].operations[0].source.id = 'operation.missing'

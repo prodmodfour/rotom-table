@@ -1143,6 +1143,7 @@ export const planAuthoritativeMoveStateExecution = (
       maxMoveLogEntries: input.maxMoveLogEntries,
       runtimeRegistry: input.runtimeRegistry,
       legacyScripts: input.legacyScripts,
+      itemResources: input.itemResources,
       existingSheetReads: sheetReads,
     })
     const finalSheetReads = reobserveAuthoritativeMoveSheetReads(

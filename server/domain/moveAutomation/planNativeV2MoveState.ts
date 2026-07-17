@@ -23,7 +23,15 @@ import {
   type AuthoritativeMoveSheetRead,
 } from './context'
 import { buildAuthoritativeMoveMapChanges } from './mapChanges'
+import {
+  applyMoveItemEffectResultsToTrace,
+} from './itemEffectInterpreter'
+import type {
+  AuthoritativeMoveItemResources,
+} from './itemResources'
+import type { PlannedMoveItemMutations } from './itemMutationTypes'
 import { mergeDisjointMoveSheetStateChanges } from './mergeSheetStateChanges'
+import { planMoveItemMutations } from './planItemMutations'
 import {
   RESTORE_PREVIOUS_MOVE_STATE_VALUE,
   createMoveStateChangePlan,
@@ -290,6 +298,7 @@ const combinedStateChanges = (options: {
   readonly plannedAt: number
   readonly resolution: AuthoritativeMoveResolution
   readonly mapPlan: MoveStateChangePlan
+  readonly itemPlan: PlannedMoveItemMutations
   readonly placements: readonly MoveStateChangeInput[]
   readonly switchMapChanges: readonly MoveStateChangeInput[]
 }): MoveStateChangePlan => {
@@ -300,24 +309,43 @@ const combinedStateChanges = (options: {
   )
   const replacedSlots = new Set(options.switchMapChanges.map(stateSlotKey))
   const mapInputs = options.mapPlan.changes.map(stripPlanIdentity)
-  const coalescedEncounterSlots = new Set(mapInputs
-    .filter(input => input.kind === 'encounter-state')
-    .map(stateSlotKey))
-  const coreInputs = native.coreStateChanges.changes
-    .map(stripPlanIdentity)
-    .filter(input => !coalescedEncounterSlots.has(stateSlotKey(input)))
+  const itemInputs = options.itemPlan.stateChanges.changes.map(stripPlanIdentity)
+  const coreInputs = native.coreStateChanges.changes.map(stripPlanIdentity)
+  const mapEncounter = mapInputs.find(input => input.kind === 'encounter-state')
+  const itemEncounter = itemInputs.find(input => input.kind === 'encounter-state')
+  const coreEncounter = coreInputs.find(input => input.kind === 'encounter-state')
+  const coalescedItemInputs = itemInputs.flatMap((input): MoveStateChangeInput[] => {
+    if (input.kind !== 'encounter-state') return [input]
+    if (mapEncounter) return []
+    return [{
+      ...input,
+      sourceOperationId: coreEncounter ? null : input.sourceOperationId,
+      reasonCode: coreEncounter
+        ? 'core-effects-and-item-state'
+        : input.reasonCode,
+      previous: deepCloneJson(
+        coreEncounter?.previous
+          ?? parseEncounterState(
+            options.previousMap.encounterState ?? createEmptyEncounterState(),
+          ),
+      ),
+    }]
+  })
+  const coalescedCoreInputs = coreInputs.filter(input => !(
+    input.kind === 'encounter-state' && (mapEncounter || itemEncounter)
+  ))
   const coalescedMapInputs = mapInputs.map((input): MoveStateChangeInput => (
-    input.kind === 'encounter-state'
-    && native.coreStateChanges.changes.some(change => change.kind === 'encounter-state')
+    input.kind === 'encounter-state' && (coreEncounter || itemEncounter)
       ? {
           ...input,
           sourceOperationId: null,
-          reasonCode: 'core-effects-and-battlefield-zones',
+          reasonCode: 'core-item-and-battlefield-state',
         }
       : input
   ))
   const existingInputs = [
-    ...coreInputs,
+    ...coalescedCoreInputs,
+    ...coalescedItemInputs,
     ...options.placements,
     ...coalescedMapInputs,
   ].filter(input => !replacedSlots.has(stateSlotKey(input)))
@@ -453,6 +481,7 @@ export const planNativeV2MoveState = (options: {
   readonly maxMoveLogEntries?: number
   readonly runtimeRegistry?: MoveAutomationRuntimeRegistry
   readonly legacyScripts?: ReadonlyMap<string, MoveAutomationScript>
+  readonly itemResources?: AuthoritativeMoveItemResources
   readonly existingSheetReads: readonly AuthoritativeMoveSheetRead[]
 }): PlannedNativeV2MoveState => {
   const native = options.resolution.nativeV2
@@ -481,13 +510,31 @@ export const planNativeV2MoveState = (options: {
     time: options.plannedAt,
     runtimeRegistry: options.runtimeRegistry,
     legacyScripts: options.legacyScripts,
+    itemResources: options.itemResources,
   })
   context.reads.recordPlacement(context.actor.placement)
 
+  const originOperationId = options.operationId ?? 'op_nativeplan0001'
+  const mapWithCoreEffects = applyNativeCoreMapChanges(
+    options.map,
+    native.coreStateChanges,
+  )
+  const itemPlan = planMoveItemMutations({
+    map: mapWithCoreEffects,
+    pokemonSheets: options.pokemonSheets,
+    trainerSheets: options.trainerSheets,
+    groupInventories: options.itemResources?.groupInventories ?? new Map(),
+    operations: native.itemEffects.mutations,
+    consumedItems: options.itemResources?.consumedItems ?? [],
+    originOperationId,
+    plannedAt: options.plannedAt,
+  })
+  const itemTrace = applyMoveItemEffectResultsToTrace({
+    trace: native.trace,
+    interpretation: native.itemEffects,
+    mutationResults: itemPlan.operationResults,
+  })
   const mapOperations = native.operations.filter(isMoveMapOperationEmission)
-  const hasEncounterZoneOperations = mapOperations.some(({ operation }) => (
-    operation.kind === 'field' || operation.kind === 'hazard'
-  ))
   const usageResources = mapOperations.flatMap(({ operation }) => operation.kind === 'usage'
     ? [{
         resourceId: operation.payload.resourceId,
@@ -501,9 +548,7 @@ export const planNativeV2MoveState = (options: {
     : [])
   const mapReduction = reduceMoveMapOperations({
     context,
-    ...(hasEncounterZoneOperations
-      ? { initialMap: applyNativeCoreMapChanges(options.map, native.coreStateChanges) }
-      : {}),
+    initialMap: itemPlan.nextMap,
     operations: mapOperations,
     dynamicRecipients: native.dynamicRecipients,
     usageResources,
@@ -514,7 +559,7 @@ export const planNativeV2MoveState = (options: {
       ])),
     },
     presentation: {
-      operationId: options.operationId ?? 'op_nativeplan0001',
+      operationId: originOperationId,
       move: {
         name: options.resolution.moveName,
         type: options.resolution.script.type,
@@ -541,7 +586,7 @@ export const planNativeV2MoveState = (options: {
     actorName: options.resolution.transaction.userName,
     frequency: options.resolution.frequency,
     logLines: options.resolution.transaction.logLines,
-    trace: native.trace,
+    trace: itemTrace,
     maxLogEntries: options.maxMoveLogEntries,
   })
   const usageProjection = mapReduction.usage[0]
@@ -550,11 +595,8 @@ export const planNativeV2MoveState = (options: {
       `${options.resolution.canonicalMoveName} did not emit its reviewed usage operation.`,
     )
 
-  const mapWithCore = hasEncounterZoneOperations
-    ? mapReduction.nextMap
-    : applyNativeCoreMapChanges(mapReduction.nextMap, native.coreStateChanges)
   const placementTransitionMap = applyAuthoritativeMovePlacementTransition({
-    map: mapWithCore,
+    map: mapReduction.nextMap,
     actorPlacement: actorPlacement(options.map, options.resolution.actorPlacementId),
     movement: options.resolution.movement,
     desiredFacing: options.resolution.desiredFacing,
@@ -583,6 +625,7 @@ export const planNativeV2MoveState = (options: {
   })
   const existingChanges = [
     ...native.coreStateChanges.changes,
+    ...itemPlan.stateChanges.changes,
     ...mapReduction.stateChanges.changes,
   ]
   const switchMapChanges = switchMapStateChanges({
@@ -597,6 +640,7 @@ export const planNativeV2MoveState = (options: {
     plannedAt: options.plannedAt,
     resolution: options.resolution,
     mapPlan: mapReduction.stateChanges,
+    itemPlan,
     placements,
     switchMapChanges,
   })

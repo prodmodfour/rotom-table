@@ -13,6 +13,7 @@ import {
   type MoveEffectOperation,
   type MoveEffectRecipientSelectorKind,
 } from '#shared/moveAutomation/effects'
+import type { MoveItemEffectSelection } from '#shared/moveAutomation/itemEffects'
 import {
   MOVE_RULE_AST_LIMITS,
 } from '#shared/moveAutomation/ast'
@@ -506,6 +507,28 @@ const RECIPIENT_SCOPED_BRANCH_SELECTORS = new Set<string>(
   MOVE_EFFECT_RECIPIENT_SCOPED_BRANCH_SELECTOR_KINDS,
 )
 
+const itemEffectSelections = (
+  operation: Extract<MoveEffectOperation, { readonly kind: 'item' }>,
+): readonly MoveItemEffectSelection[] => {
+  const payload = operation.payload
+  if (payload.action === 'swap') {
+    return [payload.leftItem, payload.rightItem].filter(
+      (selection): selection is MoveItemEffectSelection => selection !== null,
+    )
+  }
+  if (
+    payload.action === 'give'
+    || payload.action === 'steal'
+    || payload.action === 'knock-to-ground'
+    || payload.action === 'throw'
+    || payload.action === 'consume'
+    || payload.action === 'destroy'
+    || payload.action === 'store-buff'
+  ) return [payload.item]
+  if (payload.action === 'suppress' && payload.item) return [payload.item]
+  return []
+}
+
 /**
  * Validate aggregate bounds, identities, and backward references for the exact
  * operation order an interpreter will execute. Handler output is checked with
@@ -527,6 +550,7 @@ export const validateMoveSpecOperationSequence = (
   const rollIndexById = new Map<string, number>()
   const reservedRollIds = new Set<string>()
   const requestIndexById = new Map<string, number>()
+  const itemChoiceRequestIndexById = new Map<string, number>()
   const checkIndexById = new Map<string, number>()
   const branchIndexBySelectionId = new Map<string, number>()
   const branchControllerByOperationId = new Map<string, string>()
@@ -624,6 +648,9 @@ export const validateMoveSpecOperationSequence = (
       || operation.kind === 'reaction-request'
     ) {
       reserveRequestId(operation.payload.requestId, index, `${path}.payload.requestId`)
+      if (operation.kind === 'choice-request' && operation.payload.itemChoice) {
+        itemChoiceRequestIndexById.set(operation.payload.requestId, index)
+      }
     }
     if (operation.kind === 'hazard' && operation.payload.action === 'add' && operation.payload.cellSelection) {
       reserveRequestId(
@@ -999,6 +1026,19 @@ export const validateMoveSpecOperationSequence = (
         operationIndexById,
         'operation ID',
       )
+    }
+    if (operation.kind === 'item') {
+      itemEffectSelections(operation).forEach((selection, selectionIndex) => {
+        if (selection.kind !== 'choice') return
+        const referencePath = `${path}.payload.itemSelections[${selectionIndex}].requestId`
+        assertPriorReference(
+          selection.requestId,
+          index,
+          referencePath,
+          itemChoiceRequestIndexById,
+          'item-choice request ID',
+        )
+      })
     }
     if (operation.kind === 'branch') {
       if (operation.payload.kind === 'check') {

@@ -66,6 +66,11 @@ import {
   type MoveItemChoiceDeclaration,
 } from './itemChoices'
 import {
+  MoveItemEffectValidationError,
+  parseMoveItemEffectPayload,
+  type MoveItemEffectPayload,
+} from './itemEffects'
+import {
   MOVE_SPEC_PHASES,
   type MoveSpecPhase,
 } from './spec'
@@ -93,6 +98,7 @@ export const MOVE_EFFECT_OPERATION_KINDS = [
   'hazard',
   'movement-request',
   'switch-request',
+  'item',
   'usage',
   'history',
   'log',
@@ -1476,6 +1482,7 @@ export type MoveFieldEffectOperation = MoveEffectOperationEnvelope<'field', Move
 export type MoveHazardEffectOperation = MoveEffectOperationEnvelope<'hazard', MoveHazardEffectPayload>
 export type MoveMovementRequestEffectOperation = MoveEffectOperationEnvelope<'movement-request', MoveMovementRequestEffectPayload>
 export type MoveSwitchRequestEffectOperation = MoveEffectOperationEnvelope<'switch-request', MoveSwitchRequestEffectPayload>
+export type MoveItemEffectOperation = MoveEffectOperationEnvelope<'item', MoveItemEffectPayload>
 export type MoveUsageEffectOperation = MoveEffectOperationEnvelope<'usage', MoveUsageEffectPayload>
 export type MoveHistoryEffectOperation = MoveEffectOperationEnvelope<'history', MoveHistoryEffectPayload>
 export type MoveLogEffectOperation = MoveEffectOperationEnvelope<'log', MoveLogEffectPayload>
@@ -1497,6 +1504,7 @@ export type MoveEffectOperation =
   | MoveHazardEffectOperation
   | MoveMovementRequestEffectOperation
   | MoveSwitchRequestEffectOperation
+  | MoveItemEffectOperation
   | MoveUsageEffectOperation
   | MoveHistoryEffectOperation
   | MoveLogEffectOperation
@@ -5548,6 +5556,14 @@ const parseDetachedOperation = (value: unknown, path: string): MoveEffectOperati
       return { ...common, kind, payload: parseMovementRequestPayload(payload, payloadPath) }
     case 'switch-request':
       return { ...common, kind, payload: parseSwitchRequestPayload(payload, payloadPath) }
+    case 'item':
+      try {
+        return { ...common, kind, payload: parseMoveItemEffectPayload(payload, payloadPath) }
+      }
+      catch (error) {
+        if (!(error instanceof MoveItemEffectValidationError)) throw error
+        return fail('invalid-effect-operation', payloadPath, error.message)
+      }
     case 'usage':
       return { ...common, kind, payload: parseUsagePayload(payload, payloadPath) }
     case 'history':

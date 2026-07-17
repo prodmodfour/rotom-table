@@ -51,6 +51,8 @@ const resources = (
   })),
   sheetReads: [{ kind: 'trainer', slug: 'item-choice-owner', revision: 4 }],
   groupInventoryReads: [],
+  groupInventories: new Map(),
+  consumedItems: [],
 })
 
 const declaration = () => ({

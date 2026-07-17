@@ -1,3 +1,4 @@
+import type { EncounterEffectDuration } from '#shared/moveAutomation/encounterEffects'
 import type {
   MoveItemGroupInventoryOwnerReference,
   MoveItemMapOwnerReference,
@@ -26,6 +27,10 @@ export const MOVE_ITEM_MUTATION_KINDS = [
   'consume',
   'destroy',
   'restore-consumed',
+  'reuse-consumed',
+  'item-suppress',
+  'store-digestion-buff',
+  'digest-buff',
   'ground-item-add',
   'ground-item-remove',
 ] as const
@@ -153,6 +158,49 @@ export interface MoveItemRestoreConsumedMutation
   readonly destination: MoveItemDestination
 }
 
+/** Reuse a consumed item's reviewed effect without recreating physical quantity. */
+export interface MoveItemReuseConsumedMutation
+  extends MoveItemMutationBase<'reuse-consumed'> {
+  readonly consumptionId: string
+}
+
+export interface MoveItemSuppressionTarget {
+  readonly placementId: string
+  readonly itemBindingIds: readonly string[]
+}
+
+export interface MoveItemSuppressMutation
+  extends MoveItemMutationBase<'item-suppress'> {
+  readonly effectId: string
+  readonly sourceMoveId: string
+  readonly sourcePlacementId: string
+  readonly targets: readonly MoveItemSuppressionTarget[]
+  readonly scope: 'all-equipped' | 'item-bindings'
+  readonly blocksUse: boolean
+  readonly blocksBenefit: boolean
+  readonly duration: EncounterEffectDuration
+  readonly replacement: 'replace-by-source' | 'independent'
+}
+
+export interface MoveItemDigestionBuffDestination {
+  readonly kind: 'digestion-buff'
+  readonly owner: MoveItemPokemonSheetOwnerReference | MoveItemTrainerSheetOwnerReference
+}
+
+export interface MoveItemStoreDigestionBuffMutation
+  extends MoveItemMutationBase<'store-digestion-buff'> {
+  readonly source: MoveItemReference
+  readonly destination: MoveItemDigestionBuffDestination
+  readonly quantity: 1
+  readonly consumptionId: string
+}
+
+export interface MoveItemDigestBuffMutation
+  extends MoveItemMutationBase<'digest-buff'> {
+  readonly owner: MoveItemPokemonSheetOwnerReference | MoveItemTrainerSheetOwnerReference
+  readonly canonicalItemIds: readonly string[] | null
+}
+
 export interface MoveItemGroundAddMutation
   extends MoveItemMutationBase<'ground-item-add'> {
   readonly source: MoveItemReference
@@ -176,6 +224,10 @@ export type MoveItemMutation =
   | MoveItemConsumeMutation
   | MoveItemDestroyMutation
   | MoveItemRestoreConsumedMutation
+  | MoveItemReuseConsumedMutation
+  | MoveItemSuppressMutation
+  | MoveItemStoreDigestionBuffMutation
+  | MoveItemDigestBuffMutation
   | MoveItemGroundAddMutation
   | MoveItemGroundRemoveMutation
 
@@ -229,7 +281,7 @@ export interface MoveItemSheetResourceReduction {
   readonly current: CharacterSheet | TrainerSheet
   readonly changedFields: readonly Extract<
     MoveSheetStateField,
-    'items' | 'inventory' | 'equipmentSlots'
+    'items' | 'inventory' | 'equipmentSlots' | 'digestion'
   >[]
   readonly operationIds: readonly string[]
   readonly reasonCodes: readonly string[]

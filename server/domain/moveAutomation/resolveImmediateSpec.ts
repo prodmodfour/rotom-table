@@ -23,6 +23,11 @@ import type {
   AuthoritativeMoveSheetRead,
 } from './context'
 import { deduplicateAuthoritativeMoveSheetReads } from './context'
+import {
+  interpretMoveItemEffects,
+  isMoveItemEffectEmission,
+  type InterpretedMoveItemEffects,
+} from './itemEffectInterpreter'
 import type { MoveContextualDamageBaseResolution } from './damageBase'
 import type { MoveDamageTypeResolution } from './damageTypes'
 import { resolveMoveSpecDamageCalculation } from './damageStats'
@@ -75,6 +80,7 @@ export interface NativeMoveSpecResolutionProjection {
   readonly operations: readonly MoveSpecEmittedOperation[]
   readonly dynamicRecipients: MoveCoreTokenDynamicRecipientSets
   readonly coreStateChanges: MoveStateChangePlan
+  readonly itemEffects: InterpretedMoveItemEffects
   readonly resolvedHazardCells: MoveSpecExecutionCompleteResult['resolvedHazardCells']
   readonly trace: MoveResolutionAuditTrace
 }
@@ -496,6 +502,7 @@ const assertSupportedImmediateOperations = (
     'hazard',
     'movement-request',
     'switch-request',
+    'item',
     'usage',
     'log',
     'choice-request',
@@ -577,6 +584,11 @@ export const reduceCompletedMoveSpec = (
   assertSupportedImmediateOperations(uncommittedOperations)
 
   const script = compatibilityScript(options.entry, options.runtime)
+  const itemEffects = interpretMoveItemEffects({
+    context: options.context,
+    operations: uncommittedOperations.filter(isMoveItemEffectEmission),
+    resolvedItemChoices: execution.resolvedItemChoices,
+  })
   // A self target is explicit interpreter evidence, not an attacked-target wire
   // identity. Self-only operations must address the actor selector directly.
   const exposesAttackedTargets = options.runtime.definition.spec.targeting.kind !== 'self'
@@ -685,6 +697,7 @@ export const reduceCompletedMoveSpec = (
       operations: uncommittedOperations,
       dynamicRecipients: Object.freeze(dynamicRecipients),
       coreStateChanges: multiHit?.stateChanges ?? core.stateChanges,
+      itemEffects,
       resolvedHazardCells: execution.resolvedHazardCells,
       trace: core.trace,
     }),

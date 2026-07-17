@@ -8,6 +8,7 @@ import {
 import {
   capabilityEncounterEffectFixture,
   conditionEncounterEffectFixture,
+  itemSuppressionEncounterEffectFixture,
   numericEncounterEffectFixture,
 } from '../fixtures/moveAutomation/encounterEffects'
 
@@ -17,6 +18,7 @@ describe('typed encounter effects', () => {
       conditionEncounterEffectFixture(),
       numericEncounterEffectFixture(),
       capabilityEncounterEffectFixture(),
+      itemSuppressionEncounterEffectFixture(),
     ]
     const parsed = parseEncounterEffects(structuredClone(input))
 
@@ -152,6 +154,25 @@ describe('typed encounter effects', () => {
       ...effect,
       transferPolicy: 'copy-on-any-switch',
     })).toThrow('encounterEffect.transferPolicy: must be retain, expire, or baton-pass')
+  })
+
+  it('retains opaque item suppression bindings and rejects ineffective or inconsistent scope', () => {
+    const effect = itemSuppressionEncounterEffectFixture()
+    expect(parseEncounterEffect(effect).payload).toEqual({
+      familyId: 'embargo.item-suppression',
+      scope: 'all-equipped',
+      itemBindingIds: [],
+      blocksUse: true,
+      blocksBenefit: true,
+    })
+    expect(() => parseEncounterEffect({
+      ...effect,
+      payload: { ...effect.payload, scope: 'item-bindings' },
+    })).toThrow('must be non-empty exactly when scope is item-bindings')
+    expect(() => parseEncounterEffect({
+      ...effect,
+      payload: { ...effect.payload, blocksUse: false, blocksBenefit: false },
+    })).toThrow('must block item use, item benefit, or both')
   })
 
   it('accepts bounded valued capability grants and rejects valued suppressions', () => {

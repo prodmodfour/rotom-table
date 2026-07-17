@@ -38,7 +38,10 @@ import {
   type MoveStateChangePlan,
 } from './plan'
 import type { MoveAutomationRuntimeRegistry } from './registry'
-import type { AuthoritativeMoveGroupInventoryRead } from './itemResources'
+import type {
+  AuthoritativeMoveGroupInventoryRead,
+  AuthoritativeMoveItemResources,
+} from './itemResources'
 
 export interface PlanResumedMoveStateInput {
   readonly pendingResolution: PendingMoveResolution
@@ -52,6 +55,7 @@ export interface PlanResumedMoveStateInput {
   readonly map: TabletopMap
   readonly pokemonSheets: ReadonlyMap<string, CharacterSheet>
   readonly trainerSheets: ReadonlyMap<string, TrainerSheet>
+  readonly itemResources?: AuthoritativeMoveItemResources
   readonly execution: AuthoritativeMoveExecution
   readonly plannedAt: number
   readonly runtimeRegistry?: MoveAutomationRuntimeRegistry
@@ -274,6 +278,7 @@ const planCompletion = (
     operationId: input.responseOpId,
     maxMoveLogEntries: input.maxMoveLogEntries,
     runtimeRegistry: input.runtimeRegistry,
+    itemResources: input.itemResources,
     existingSheetReads: input.execution.sheetReads,
   })
   const planningInput: PlanAuthoritativeMoveStateInput = {

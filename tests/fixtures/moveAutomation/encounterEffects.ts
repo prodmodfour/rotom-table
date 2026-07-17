@@ -1,6 +1,7 @@
 import type {
   EncounterCapabilityEffect,
   EncounterConditionEffect,
+  EncounterItemSuppressionEffect,
   EncounterNumericModifierEffect,
 } from '#shared/moveAutomation/encounterEffects'
 
@@ -73,6 +74,42 @@ export const numericEncounterEffectFixture = (): EncounterNumericModifierEffect 
   suppression: {
     sources: [],
   },
+})
+
+export const itemSuppressionEncounterEffectFixture = (): EncounterItemSuppressionEffect => ({
+  id: 'effect.item.target-token',
+  kind: 'item-suppression',
+  source: {
+    operationId: 'op_effect_item_suppression_01',
+    moveId: 'move.embargo',
+    placementId: 'actor-token',
+  },
+  affected: {
+    placementIds: ['target-token'],
+    sideIds: [],
+    cells: [],
+  },
+  createdRound: 3,
+  createdTurn: 6,
+  duration: { kind: 'scene', remaining: null },
+  stacks: 1,
+  charges: null,
+  stackPolicy: { kind: 'independent-instance', maxStacks: null },
+  chargePolicy: { kind: 'none', amount: null },
+  tags: ['item', 'item-suppression'],
+  payload: {
+    familyId: 'embargo.item-suppression',
+    scope: 'all-equipped',
+    itemBindingIds: [],
+    blocksUse: true,
+    blocksBenefit: true,
+  },
+  dispel: {
+    policy: 'matching-tags',
+    tags: ['item-suppression'],
+  },
+  transferPolicy: 'expire',
+  suppression: { sources: [] },
 })
 
 export const capabilityEncounterEffectFixture = (): EncounterCapabilityEffect => ({

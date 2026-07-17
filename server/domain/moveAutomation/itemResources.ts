@@ -14,7 +14,9 @@ import type { GroupInventoryDocument } from '~/types/groupInventory'
 import type { SheetKind, SheetPlacement, TabletopMap } from '~/types/map'
 import type { InventoryEntry, TrainerSheet } from '~/types/trainerSheet'
 import { splitSheetItemNames } from '~/utils/sheetItemNames'
+import { deepCloneJson } from '~/utils/serialization'
 import { TRAINER_EQUIPMENT_SLOTS } from '~/utils/sheets/trainerInventorySections'
+import type { MoveConsumedItemRecord } from './itemMutationTypes'
 
 export const AUTHORITATIVE_MOVE_ITEM_RESOURCE_LIMITS = Object.freeze({
   requirements: 32,
@@ -102,6 +104,10 @@ export interface AuthoritativeMoveItemResources {
   readonly candidates: readonly AuthoritativeMoveItemCandidate[]
   readonly sheetReads: readonly AuthoritativeMoveItemSheetRead[]
   readonly groupInventoryReads: readonly AuthoritativeMoveGroupInventoryRead[]
+  /** Detached private documents required only by the transactional item planner. */
+  readonly groupInventories: ReadonlyMap<string, GroupInventoryDocument>
+  /** Private consumed-item evidence supplied by reviewed durable history. */
+  readonly consumedItems: readonly MoveConsumedItemRecord[]
 }
 
 export type AuthoritativeMoveItemResourceErrorCode =
@@ -266,6 +272,8 @@ const EMPTY_ITEM_RESOURCES: AuthoritativeMoveItemResources = Object.freeze({
   candidates: Object.freeze([]),
   sheetReads: Object.freeze([]),
   groupInventoryReads: Object.freeze([]),
+  groupInventories: Object.freeze(new Map()),
+  consumedItems: Object.freeze([]),
 })
 
 export const emptyAuthoritativeMoveItemResources = (): AuthoritativeMoveItemResources => (
@@ -564,6 +572,7 @@ export interface ResolveAuthoritativeMoveItemResourcesInput {
   readonly pokemonSheets: ReadonlyMap<string, CharacterSheet>
   readonly trainerSheets: ReadonlyMap<string, TrainerSheet>
   readonly groupInventories: ReadonlyMap<string, GroupInventoryDocument>
+  readonly consumedItems?: readonly MoveConsumedItemRecord[]
   readonly requirements: unknown
 }
 
@@ -577,7 +586,9 @@ export const resolveAuthoritativeMoveItemResources = (
   input: ResolveAuthoritativeMoveItemResourcesInput,
 ): AuthoritativeMoveItemResources => {
   const requirements = parseAuthoritativeMoveItemResourceRequirements(input.requirements)
-  if (requirements.length === 0) return EMPTY_ITEM_RESOURCES
+  if (requirements.length === 0 && (input.consumedItems?.length ?? 0) === 0) {
+    return EMPTY_ITEM_RESOURCES
+  }
 
   const actor = input.map.placements.find(placement => placement.id === input.actorPlacementId)
     ?? fail('resource-missing', `Move actor placement ${input.actorPlacementId} was not found.`)
@@ -654,11 +665,19 @@ export const resolveAuthoritativeMoveItemResources = (
     }
   }
 
+  const consultedGroupSlugs = new Set(groupInventoryReads.map(read => read.slug))
+  const groupInventories = Object.freeze(new Map(
+    [...input.groupInventories]
+      .filter(([slug]) => consultedGroupSlugs.has(slug))
+      .map(([slug, document]) => [slug, deepCloneJson(document)] as const),
+  ))
   return Object.freeze({
     requirements,
     candidates: freezeCandidates(candidates),
     sheetReads: deduplicateSheetReads(sheetReads),
     groupInventoryReads: deduplicateAuthoritativeMoveGroupInventoryReads(groupInventoryReads),
+    groupInventories,
+    consumedItems: Object.freeze(deepCloneJson(input.consumedItems ?? [])),
   })
 }
 

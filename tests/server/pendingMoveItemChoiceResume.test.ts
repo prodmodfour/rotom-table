@@ -286,12 +286,13 @@ describe('pending durable item-choice resume integration', () => {
       optionId: privateOption.id,
       opId: 'op_itemchoiceanswer1',
     })
-    const inventoryBefore = deepCloneJson(trainerInventory(harness))
     const first = resume({ harness, command, runtimeRegistry: declaration.runtimeRegistry })
     expect(first.result).toMatchObject({ ok: true })
     expect(targetHp(harness)).toBe(55)
-    // MA-155 records a legal durable choice; MA-156 owns item mutation semantics.
-    expect(trainerInventory(harness)).toEqual(inventoryBefore)
+    expect(trainerInventory(harness)?.medicalKit).toEqual([
+      { id: 'private-potion-row', name: 'Potion', qty: 2 },
+      { id: 'private-antidote-row', name: 'Antidote', qty: 1 },
+    ])
     expect(harness.pending.getById(declaration.stored.resolutionId)).toMatchObject({
       status: 'committed',
       terminalOpId: command.opId,
@@ -309,7 +310,10 @@ describe('pending durable item-choice resume integration', () => {
     expect(replay?.result).toEqual(first.result)
     expect(targetHp(harness)).toBe(55)
     expect(harness.maps.getBySlug(pendingMap.slug)?.revision).toBe(revision)
-    expect(trainerInventory(harness)).toEqual(inventoryBefore)
+    expect(trainerInventory(harness)?.medicalKit).toEqual([
+      { id: 'private-potion-row', name: 'Potion', qty: 2 },
+      { id: 'private-antidote-row', name: 'Antidote', qty: 1 },
+    ])
   })
 
   it('supports an authorized pass without selecting or losing an item', async () => {

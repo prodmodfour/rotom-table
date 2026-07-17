@@ -883,8 +883,9 @@ export const resumePendingMoveResolutionUseCase = (
     }
 
     let execution
+    let itemResources: AuthoritativeMoveItemResources
     try {
-      const itemResources = loadMoveItemResources({
+      itemResources = loadMoveItemResources({
         map,
         intent: pendingMoveItemIntent(stored.resolution),
         pokemonSheets: sheets.pokemonSheets,
@@ -967,6 +968,7 @@ export const resumePendingMoveResolutionUseCase = (
         chosenBy: input.authorization.chosenBy,
         map,
         ...sheets,
+        itemResources,
         execution,
         plannedAt: now,
         runtimeRegistry: dependencies.runtimeRegistry,

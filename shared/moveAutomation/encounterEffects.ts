@@ -5,6 +5,7 @@ export const ENCOUNTER_EFFECT_KINDS = [
   'condition',
   'numeric-modifier',
   'capability',
+  'item-suppression',
 ] as const
 
 export const ENCOUNTER_EFFECT_DURATION_KINDS = [
@@ -53,6 +54,10 @@ export const ENCOUNTER_EFFECT_NUMERIC_ATTRIBUTES = [
 export const ENCOUNTER_EFFECT_NUMERIC_OPERATIONS = ['add', 'multiply', 'set'] as const
 export const ENCOUNTER_EFFECT_ROUNDING_POLICIES = ['none', 'floor', 'round', 'ceil'] as const
 export const ENCOUNTER_EFFECT_CAPABILITY_ACTIONS = ['grant', 'suppress'] as const
+export const ENCOUNTER_EFFECT_ITEM_SUPPRESSION_SCOPES = [
+  'all-equipped',
+  'item-bindings',
+] as const
 export const ENCOUNTER_EFFECT_DISPEL_POLICIES = ['none', 'matching-tags'] as const
 /**
  * Switch behavior is explicit per durable effect. Retained effects keep their
@@ -95,6 +100,8 @@ export type EncounterEffectNumericAttribute = (typeof ENCOUNTER_EFFECT_NUMERIC_A
 export type EncounterEffectNumericOperation = (typeof ENCOUNTER_EFFECT_NUMERIC_OPERATIONS)[number]
 export type EncounterEffectRoundingPolicy = (typeof ENCOUNTER_EFFECT_ROUNDING_POLICIES)[number]
 export type EncounterEffectCapabilityAction = (typeof ENCOUNTER_EFFECT_CAPABILITY_ACTIONS)[number]
+export type EncounterEffectItemSuppressionScope =
+  (typeof ENCOUNTER_EFFECT_ITEM_SUPPRESSION_SCOPES)[number]
 export type EncounterEffectDispelPolicy = (typeof ENCOUNTER_EFFECT_DISPEL_POLICIES)[number]
 export type EncounterEffectTransferPolicy =
   (typeof ENCOUNTER_EFFECT_TRANSFER_POLICIES)[number]
@@ -207,10 +214,22 @@ export interface EncounterCapabilityEffectPayload {
   readonly value?: number
 }
 
+/** Durable item-use/benefit suppression without exposing private owner identities. */
+export interface EncounterItemSuppressionEffectPayload {
+  /** Stable reviewed family used by replace-by-source item effects. */
+  readonly familyId: string
+  readonly scope: EncounterEffectItemSuppressionScope
+  /** Opaque item bindings are required only for item-bindings scope. */
+  readonly itemBindingIds: readonly string[]
+  readonly blocksUse: boolean
+  readonly blocksBenefit: boolean
+}
+
 export type EncounterEffectPayload =
   | EncounterConditionEffectPayload
   | EncounterNumericModifierEffectPayload
   | EncounterCapabilityEffectPayload
+  | EncounterItemSuppressionEffectPayload
 
 interface EncounterEffectDefinitionEnvelope<
   Kind extends EncounterEffectKind,
@@ -244,11 +263,17 @@ export type EncounterCapabilityEffectDefinition = EncounterEffectDefinitionEnvel
   EncounterCapabilityEffectPayload
 >
 
+export type EncounterItemSuppressionEffectDefinition = EncounterEffectDefinitionEnvelope<
+  'item-suppression',
+  EncounterItemSuppressionEffectPayload
+>
+
 /** Server-owned operations may request only this typed, context-free effect definition. */
 export type EncounterEffectDefinition =
   | EncounterConditionEffectDefinition
   | EncounterNumericModifierEffectDefinition
   | EncounterCapabilityEffectDefinition
+  | EncounterItemSuppressionEffectDefinition
 
 interface EncounterEffectEnvelope<
   Kind extends EncounterEffectKind,
@@ -291,6 +316,11 @@ export type EncounterCapabilityEffect = EncounterEffectEnvelope<
   EncounterCapabilityEffectPayload
 >
 
+export type EncounterItemSuppressionEffect = EncounterEffectEnvelope<
+  'item-suppression',
+  EncounterItemSuppressionEffectPayload
+>
+
 /**
  * Durable encounter effects are a discriminated union. The `kind` selects one
  * exact payload shape; arbitrary metadata objects are never accepted.
@@ -299,6 +329,7 @@ export type EncounterEffect =
   | EncounterConditionEffect
   | EncounterNumericModifierEffect
   | EncounterCapabilityEffect
+  | EncounterItemSuppressionEffect
 
 export type EncounterEffectValidationCode =
   | 'invalid-encounter-effect'
@@ -391,6 +422,13 @@ const LEGACY_CONDITION_PAYLOAD_FIELDS = ['conditionId', 'action'] as const
 const NUMERIC_MODIFIER_PAYLOAD_FIELDS = ['attribute', 'operation', 'value', 'rounding'] as const
 const CAPABILITY_PAYLOAD_FIELDS = ['capabilityId', 'action', 'value'] as const
 const CAPABILITY_PAYLOAD_REQUIRED_FIELDS = ['capabilityId', 'action'] as const
+const ITEM_SUPPRESSION_PAYLOAD_FIELDS = [
+  'familyId',
+  'scope',
+  'itemBindingIds',
+  'blocksUse',
+  'blocksBenefit',
+] as const
 
 const STABLE_ID_PATTERN = /^[a-z0-9]+(?:[._:/-][a-z0-9]+)*$/
 const CONTROL_CHARACTER_PATTERN = /[\u0000-\u001f\u007f]/
@@ -406,6 +444,9 @@ const NUMERIC_ATTRIBUTE_SET = new Set<string>(ENCOUNTER_EFFECT_NUMERIC_ATTRIBUTE
 const NUMERIC_OPERATION_SET = new Set<string>(ENCOUNTER_EFFECT_NUMERIC_OPERATIONS)
 const ROUNDING_POLICY_SET = new Set<string>(ENCOUNTER_EFFECT_ROUNDING_POLICIES)
 const CAPABILITY_ACTION_SET = new Set<string>(ENCOUNTER_EFFECT_CAPABILITY_ACTIONS)
+const ITEM_SUPPRESSION_SCOPE_SET = new Set<string>(
+  ENCOUNTER_EFFECT_ITEM_SUPPRESSION_SCOPES,
+)
 const DISPEL_POLICY_SET = new Set<string>(ENCOUNTER_EFFECT_DISPEL_POLICIES)
 const TRANSFER_POLICY_SET = new Set<string>(ENCOUNTER_EFFECT_TRANSFER_POLICIES)
 
@@ -896,6 +937,46 @@ const parseCapabilityPayload = (
   }
 }
 
+const parseItemSuppressionPayload = (
+  value: unknown,
+  path: string,
+): EncounterItemSuppressionEffectPayload => {
+  const payload = parseExactRecord(value, ITEM_SUPPRESSION_PAYLOAD_FIELDS, path)
+  const scope = parseEnum<EncounterEffectItemSuppressionScope>(
+    payload.scope,
+    ITEM_SUPPRESSION_SCOPE_SET,
+    `${path}.scope`,
+    'all-equipped or item-bindings',
+  )
+  const itemBindingIds = parseStableIdList(
+    payload.itemBindingIds,
+    `${path}.itemBindingIds`,
+    ENCOUNTER_EFFECT_LIMITS.tags,
+  )
+  if ((scope === 'item-bindings') !== (itemBindingIds.length > 0)) {
+    fail(
+      'invalid-encounter-effect',
+      `${path}.itemBindingIds`,
+      'must be non-empty exactly when scope is item-bindings.',
+    )
+  }
+  if (typeof payload.blocksUse !== 'boolean' || typeof payload.blocksBenefit !== 'boolean') {
+    fail('invalid-encounter-effect', path, 'item suppression flags must be booleans.')
+  }
+  const blocksUse = payload.blocksUse as boolean
+  const blocksBenefit = payload.blocksBenefit as boolean
+  if (!blocksUse && !blocksBenefit) {
+    fail('invalid-encounter-effect', path, 'must block item use, item benefit, or both.')
+  }
+  return {
+    familyId: parseStableId(payload.familyId, `${path}.familyId`),
+    scope,
+    itemBindingIds,
+    blocksUse,
+    blocksBenefit,
+  }
+}
+
 type ParsedEncounterEffectDefinitionCommon = Omit<
   EncounterEffectDefinitionEnvelope<EncounterEffectKind, never>,
   'kind' | 'payload'
@@ -1021,6 +1102,12 @@ export const parseEncounterEffectDefinition = (
         kind,
         parseCapabilityPayload(definition.payload, `${path}.payload`),
       )
+    case 'item-suppression':
+      return definitionWithPayload(
+        common,
+        kind,
+        parseItemSuppressionPayload(definition.payload, `${path}.payload`),
+      )
   }
 }
 
@@ -1096,6 +1183,12 @@ export const parseEncounterEffect = (
         common,
         kind,
         parseCapabilityPayload(effect.payload, `${path}.payload`),
+      )
+    case 'item-suppression':
+      return effectWithPayload(
+        common,
+        kind,
+        parseItemSuppressionPayload(effect.payload, `${path}.payload`),
       )
   }
 }

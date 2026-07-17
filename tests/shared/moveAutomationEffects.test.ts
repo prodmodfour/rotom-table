@@ -205,6 +205,17 @@ const VALID_PAYLOADS = {
     initiativePolicy: 'inherit-slot',
     stateTransferPolicy: 'none',
   },
+  item: {
+    action: 'consume',
+    item: {
+      kind: 'requirement',
+      requirementId: 'item.actor-held',
+      cardinality: 'one',
+    },
+    quantity: 1,
+    onUnavailable: 'reject',
+    consumptionId: 'consumption.test',
+  },
   usage: {
     action: 'spend',
     resourceId: 'move.daily-use',
@@ -296,6 +307,7 @@ describe('MoveSpec typed effect operations', () => {
       'hazard',
       'movement-request',
       'switch-request',
+      'item',
       'usage',
       'history',
       'log',
