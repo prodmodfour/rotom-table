@@ -2248,7 +2248,7 @@ Status: DONE
 
 ## MA-164 — Add reversible transformation snapshots
 
-Status: DONE
+Status: TODO
 
 **Depends on:** MA-056, MA-162
 **Commit:** `feat(move-automation): model reversible transformations`
