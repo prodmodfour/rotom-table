@@ -2183,7 +2183,7 @@ Status: DONE
 
 ## MA-159 — Execute reviewed specs as nested child moves
 
-Status: TODO
+Status: DONE
 
 **Depends on:** MA-038, MA-105, MA-158
 **Commit:** `feat(move-automation): execute nested child moves`
