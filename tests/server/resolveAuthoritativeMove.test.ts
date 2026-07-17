@@ -709,6 +709,52 @@ describe('resolveAuthoritativeMove', () => {
     })
   })
 
+  it('applies active Wonder Room to retained-v1 defensive stats but not delayed Rooms', () => {
+    const resolve = (room: 'none' | 'delayed' | 'active') => {
+      const battlefield = mapFixture([
+        placement('actor-token', 'actor', { x: 0, y: 0, z: 0 }),
+        placement('target-token', 'target-a', { x: 1, y: 0, z: 0 }),
+      ])
+      battlefield.fieldEffects = {
+        weather: [],
+        terrains: [],
+        rooms: room === 'none'
+          ? []
+          : [{ kind: 'wonder', rounds: 5, startsNextRound: room === 'delayed' }],
+      }
+      return resolveAuthoritativeMove({
+        map: battlefield,
+        pokemonSheets: sheetMap([{ name: 'Tackle' }], {
+          'target-a': pokemonSheet('target-a', [], {
+            species: 'Snorlax',
+            level: 30,
+            combat: { currentHp: 80 },
+            stats: {
+              def: { added: 0 },
+              sdef: { added: 30 },
+            },
+          }),
+        }),
+        trainerSheets: new Map(),
+        intent: moveIntent({
+          placementId: 'actor-token',
+          moveName: 'Tackle',
+          selection: { kind: 'single-target', targetPlacementId: 'target-token' },
+        }),
+        random: randomSequence([0.99, 0]),
+      })
+    }
+    const hpLoss = (resolution: ReturnType<typeof resolveAuthoritativeMove>): number => (
+      80 - (resolution.transaction.hpUpdates[0]?.currentHp ?? 80)
+    )
+    const baseline = resolve('none')
+    const delayed = resolve('delayed')
+    const active = resolve('active')
+
+    expect(hpLoss(delayed)).toBe(hpLoss(baseline))
+    expect(hpLoss(active)).toBeLessThan(hpLoss(baseline))
+  })
+
   it('applies legacy Electric damage only for a grounded terrain member', () => {
     const resolve = (terrain: boolean, airborne: boolean) => {
       const battlefield = mapFixture([

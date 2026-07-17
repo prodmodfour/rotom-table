@@ -202,6 +202,47 @@ describe('move automation target resolution helpers', () => {
     })).toBe(0)
   })
 
+  it('switches Pokémon defensive stat projections under active Wonder Room without changing tokens', () => {
+    const user = token({ id: 'u', species: 'User', atk: 12, satk: 12 })
+    const target = token({
+      id: 't',
+      species: 'Target',
+      def: 5,
+      sdef: 11,
+      defenderTypes: [],
+      combatStages: { ...stages, def: 1, sdef: -1 },
+    })
+    const trainer = token({
+      id: 'trainer',
+      species: 'Trainer',
+      sheetKind: 'trainer',
+      entityKind: 'trainer',
+      def: 5,
+      sdef: 11,
+      defenderTypes: [],
+    })
+    const targetBefore = structuredClone(target)
+    const roll = {
+      ...defaultTargetResolutionState(script()),
+      hit: true,
+      damageRoll: { formula: 'flat', count: 0, sides: 0, total: 20, rolls: [], mod: 20 },
+    }
+    const room = { weather: [], terrains: [], rooms: [{ kind: 'wonder' as const }] }
+    const physical = script({ type: 'Normal', damageClass: 'Physical' })
+    const special = script({ type: 'Normal', damageClass: 'Special' })
+
+    const clearPhysical = resolveMoveAutomationTargetDamageLoss(physical, user, target, roll)
+    const clearSpecial = resolveMoveAutomationTargetDamageLoss(special, user, target, roll)
+    const wonderedPhysical = resolveMoveAutomationTargetDamageLoss(physical, user, target, roll, room)
+    const wonderedSpecial = resolveMoveAutomationTargetDamageLoss(special, user, target, roll, room)
+
+    expect(wonderedPhysical).toBe(clearSpecial)
+    expect(wonderedSpecial).toBe(clearPhysical)
+    expect(resolveMoveAutomationTargetDamageLoss(physical, user, trainer, roll, room))
+      .toBe(resolveMoveAutomationTargetDamageLoss(physical, user, trainer, roll))
+    expect(target).toEqual(targetBefore)
+  })
+
   it('uses current Combat Stages and condition stage effects for attacking and defending stats', () => {
     const user = token({ id: 'u', species: 'User', atk: 10, combatStages: { ...stages, atk: 2 } })
     const target = token({ id: 't', species: 'Target', def: 10, combatStages: { ...stages, def: -2 }, defenderTypes: [] })

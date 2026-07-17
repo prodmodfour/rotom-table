@@ -1,6 +1,7 @@
 import {
   initiativeOrderIds,
   normalizeInitiativeValue,
+  type InitiativeOrderDirection,
   type InitiativeOrderEntry,
 } from '#shared/initiativeOrder'
 import { applyCombatStageToStat } from '~/utils/combatStageStats'
@@ -170,7 +171,9 @@ export const initiativeOrderIdsForPlacements = (
   placements: readonly SheetPlacement[],
   readSheet: InitiativeSheetReader,
   manualOrderIds?: readonly string[] | null,
+  direction: InitiativeOrderDirection = 'highest-first',
 ): string[] => initiativeOrderIds(
   initiativeOrderEntriesForPlacements(placements, readSheet),
   manualOrderIds,
+  direction,
 )

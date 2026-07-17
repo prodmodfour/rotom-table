@@ -252,10 +252,13 @@ export const resolveMoveSpecDamageCalculation = (
   const authoritativeWeatherFieldEffects = options.context.queries.weather.projectFieldEffects(
     options.fieldEffects ?? options.context.map.fieldEffects,
   )
-  const authoritativeFieldEffects = options.context.queries.terrain.projectFieldEffects(
+  const authoritativeTerrainFieldEffects = options.context.queries.terrain.projectFieldEffects(
     actor.id,
     authoritativeWeatherFieldEffects,
     options.recipient.id,
+  )
+  const authoritativeFieldEffects = options.context.queries.rooms.projectFieldEffects(
+    authoritativeTerrainFieldEffects,
   )
   // Native weather and Terrain modifiers carry exact zone identity and trace
   // reasons. Keep them out of the compatibility lane.

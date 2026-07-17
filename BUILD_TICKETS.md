@@ -1954,7 +1954,7 @@ Status: DONE
 
 ## MA-142 — Implement Trick Room and Wonder Room
 
-Status: TODO
+Status: DONE
 
 **Depends on:** MA-060–MA-064, MA-075, MA-137
 **Commit:** `feat(move-automation): resolve trick and wonder rooms`

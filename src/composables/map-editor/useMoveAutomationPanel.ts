@@ -59,6 +59,7 @@ import {
   parseSingleTargetMoveRangeMeters,
 } from '~/utils/moveAutomationRange'
 import { moveAutomationTargetHitChance } from '~/utils/moveAutomationAccuracy'
+import { activeEncounterRoomKinds } from '~/utils/encounterRooms'
 import { buildMoveAutomationResolveIntent } from '~/utils/moveAutomationResolveIntent'
 import { buildAllVoxelOccupancy } from '~/utils/voxelOccupancy'
 import { getClearanceValue } from '~/utils/gridGeometry'
@@ -533,12 +534,22 @@ export const useMoveAutomationPanel = ({
     script: MoveAutomationScript,
     user: SpawnedPokemon,
     targetIds: readonly string[],
-  ): NonNullable<MoveAutomationTargetingOverlayState['hitChances']> => Object.fromEntries(
-    targetIds.flatMap((targetId) => {
-      const target = findSpawnedPokemon(targetId)
-      return target ? [[targetId, moveAutomationTargetHitChance(script, user, target)]] : []
-    }),
-  )
+  ): NonNullable<MoveAutomationTargetingOverlayState['hitChances']> => {
+    const activeRooms = [...activeEncounterRoomKinds(map.value ?? {})]
+    const fieldEffects: MapFieldEffects = {
+      weather: [],
+      terrains: [],
+      rooms: activeRooms.map(kind => ({ kind })),
+    }
+    return Object.fromEntries(
+      targetIds.flatMap((targetId) => {
+        const target = findSpawnedPokemon(targetId)
+        return target
+          ? [[targetId, moveAutomationTargetHitChance(script, user, target, { fieldEffects })]]
+          : []
+      }),
+    )
+  }
 
   const canToggleAreaTargets = (script: MoveAutomationScript): boolean =>
     script.keywords.some((keyword) => /^Friendly$/i.test(keyword))

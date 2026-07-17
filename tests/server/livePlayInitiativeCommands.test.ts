@@ -1175,6 +1175,97 @@ describe('live-play initiative commands', () => {
     expect(manualHarness.deps.readSheet).not.toHaveBeenCalled()
   })
 
+  it('activates Trick Room before selecting the first calculated turn of its five-round window', async () => {
+    const harness = createHarness(baseMap({
+      initiative: { activeId: 'slow-token', round: 1 },
+      fieldEffects: {
+        weather: [],
+        terrains: [],
+        rooms: [{
+          kind: 'trick',
+          rounds: 5,
+          startsNextRound: true,
+          source: 'Trick Room',
+        }],
+      },
+    }))
+
+    const response = await execute(harness, nextInitiativeCommand({
+      opId: 'op_trickstart1',
+      payload: {
+        orderIds: ['fast-token', 'slow-token'],
+        activeId: 'slow-token',
+        round: 1,
+      },
+    }))
+
+    expect(response.result).toMatchObject({ ok: true })
+    expect(harness.storedMap.initiative).toEqual({ activeId: 'slow-token', round: 2 })
+    expect(harness.storedMap.fieldEffects?.rooms).toEqual([{
+      kind: 'trick',
+      rounds: 5,
+      startsNextRound: false,
+      source: 'Trick Room',
+    }])
+    expect(harness.storedMap.encounterState?.zones).toEqual([
+      expect.objectContaining({
+        kind: 'room',
+        duration: { kind: 'rounds', boundary: 'end', remaining: 5 },
+        payload: { roomId: 'trick', startsNextRound: false },
+      }),
+    ])
+  })
+
+  it('expires Trick Room before selecting the next round calculated order', async () => {
+    const harness = createHarness(baseMap({
+      initiative: { activeId: 'fast-token', round: 5 },
+      fieldEffects: {
+        weather: [],
+        terrains: [],
+        rooms: [{ kind: 'trick', rounds: 1, source: 'Trick Room' }],
+      },
+    }))
+
+    const response = await execute(harness, nextInitiativeCommand({
+      opId: 'op_trickexpire',
+      payload: {
+        orderIds: ['slow-token', 'fast-token'],
+        activeId: 'fast-token',
+        round: 5,
+      },
+    }))
+
+    expect(response.result).toMatchObject({ ok: true })
+    expect(harness.storedMap.initiative).toEqual({ activeId: 'fast-token', round: 6 })
+    expect(harness.storedMap.fieldEffects?.rooms).toEqual([])
+    expect(harness.storedMap.encounterState?.zones).toEqual([])
+  })
+
+  it('keeps a complete manual initiative order authoritative during active Trick Room', async () => {
+    const manualOrderIds = ['fast-token', 'slow-token']
+    const harness = createHarness(baseMap({
+      initiative: { activeId: 'fast-token', round: 1, manualOrderIds },
+      fieldEffects: {
+        weather: [],
+        terrains: [],
+        rooms: [{ kind: 'trick', rounds: 5 }],
+      },
+    }))
+
+    const response = await execute(harness, nextInitiativeCommand({
+      opId: 'op_trickmanual',
+      payload: { orderIds: manualOrderIds, activeId: 'fast-token', round: 1 },
+    }))
+
+    expect(response.result).toMatchObject({ ok: true })
+    expect(harness.storedMap.initiative).toEqual({
+      activeId: 'slow-token',
+      round: 1,
+      manualOrderIds,
+    })
+    expect(harness.deps.readSheet).not.toHaveBeenCalled()
+  })
+
   it('uses condition-adjusted Speed-derived effective order for live-play NEXT_INITIATIVE', async () => {
     const harness = createHarness(baseMap({
       placements: [

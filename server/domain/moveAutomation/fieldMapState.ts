@@ -133,7 +133,9 @@ export const projectGlobalFieldZonesToMapEffects = (input: {
       rooms.push({
         kind: zone.payload.roomId,
         rounds,
-        ...(zone.payload.startsNextRound ? { startsNextRound: true } : {}),
+        ...(zone.payload.roomId === 'trick' || zone.payload.startsNextRound
+          ? { startsNextRound: zone.payload.startsNextRound }
+          : {}),
         ...(source === undefined ? {} : { source }),
       })
     }

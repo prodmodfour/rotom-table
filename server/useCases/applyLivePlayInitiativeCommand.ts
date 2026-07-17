@@ -63,6 +63,8 @@ import {
 import {
   encounterModifiedInitiativeScore,
 } from '~/utils/encounterInitiative'
+import { createMoveAutomationRoomResolver } from '../domain/moveAutomation/rooms'
+import { advanceMapGlobalFields } from '../domain/moveAutomation/fieldMapState'
 import {
   planInitiativeLifecycle,
   type InitiativeLifecyclePlan,
@@ -644,7 +646,11 @@ const initiativeOrder = (
   })
 
   return {
-    orderIds: initiativeOrderIds(calculatedEntries, manualOrderIds),
+    orderIds: initiativeOrderIds(
+      calculatedEntries,
+      manualOrderIds,
+      createMoveAutomationRoomResolver(map).calculatedInitiativeDirection(),
+    ),
     sheetReads: deduplicateAuthoritativeMoveSheetReads(reads),
   }
 }
@@ -758,7 +764,26 @@ const applySetInitiativePayload = (
 
 interface AppliedAdvanceInitiativePayload {
   readonly map: TabletopMap
+  /** Current visible order used to validate the submitted precondition. */
   readonly order: InitiativeOrderPlan
+  /** Orders governing turn-end and turn-start facts when a Room changes at a boundary. */
+  readonly lifecycleOrderIds: {
+    readonly previous: readonly string[]
+    readonly current: readonly string[]
+  }
+}
+
+const mapAtForwardRoundStart = (
+  map: TabletopMap,
+  includeRoundEnd: boolean,
+): TabletopMap => {
+  const afterRoundEnd = includeRoundEnd
+    ? advanceMapGlobalFields({ map, event: { kind: 'round-end' } }).map
+    : map
+  return advanceMapGlobalFields({
+    map: afterRoundEnd,
+    event: { kind: 'round-start' },
+  }).map
 }
 
 const applyAdvanceInitiativePayload = (
@@ -780,11 +805,27 @@ const applyAdvanceInitiativePayload = (
   const currentIndex = previousState.activeId ? order.indexOf(previousState.activeId) : -1
   let nextActiveId: string
   let nextRound = previousState.round
+  let resultingOrderPlan = orderPlan
 
   if (command.type === LIVE_PLAY_COMMAND_TYPES.NEXT_INITIATIVE) {
-    const nextIndex = currentIndex >= 0 && currentIndex < order.length - 1 ? currentIndex + 1 : 0
-    if (currentIndex === order.length - 1) nextRound += 1
-    nextActiveId = order[nextIndex] as string
+    const startsRound = currentIndex < 0
+    const wrapsRound = currentIndex === order.length - 1
+    if (startsRound || wrapsRound) {
+      resultingOrderPlan = initiativeOrder(
+        mapAtForwardRoundStart(context.map, wrapsRound),
+        readSheet,
+        previousState.manualOrderIds,
+      )
+      if (resultingOrderPlan.orderIds.length === 0) {
+        rejectLivePlayCommand('conflict', `Map ${command.mapSlug} has no placements at the next round boundary`, {
+          currentState: initiativeLaneState(context.map),
+        })
+      }
+      if (wrapsRound) nextRound += 1
+      nextActiveId = resultingOrderPlan.orderIds[0] as string
+    } else {
+      nextActiveId = order[currentIndex + 1] as string
+    }
   } else {
     const previousIndex = currentIndex > 0 ? currentIndex - 1 : order.length - 1
     if (currentIndex === 0) nextRound = Math.max(1, nextRound - 1)
@@ -792,7 +833,17 @@ const applyAdvanceInitiativePayload = (
   }
 
   return {
-    order: orderPlan,
+    order: {
+      orderIds: orderPlan.orderIds,
+      sheetReads: deduplicateAuthoritativeMoveSheetReads([
+        ...orderPlan.sheetReads,
+        ...resultingOrderPlan.sheetReads,
+      ]),
+    },
+    lifecycleOrderIds: {
+      previous: [...orderPlan.orderIds],
+      current: [...resultingOrderPlan.orderIds],
+    },
     map: {
       ...context.map,
       initiative: {
@@ -1002,6 +1053,8 @@ const applyInitiativeChange = (
         previous,
         current,
         orderIds: advance!.order.orderIds,
+        previousOrderIds: advance!.lifecycleOrderIds.previous,
+        currentOrderIds: advance!.lifecycleOrderIds.current,
         operationId: command.opId,
         time: timestamp,
         loadSheets: () => lifecycleSheetSnapshots(

@@ -55,6 +55,10 @@ import {
   type MoveAutomationResourceResolver,
 } from './resources'
 import {
+  createMoveAutomationRoomResolver,
+  type MoveAutomationRoomResolver,
+} from './rooms'
+import {
   createMoveSemiInvulnerableTargetabilityResolver,
   type MoveSemiInvulnerableTargetabilityResolver,
 } from './semiInvulnerableTargetability'
@@ -116,6 +120,7 @@ export interface AuthoritativeMoveSheetQueries {
 export type AuthoritativeMoveRelationshipQueries = MoveAutomationRelationshipResolver
 export type AuthoritativeMoveHistoryQueries = MoveAutomationHistoryResolver
 export type AuthoritativeMoveResourceQueries = MoveAutomationResourceResolver
+export type AuthoritativeMoveRoomQueries = MoveAutomationRoomResolver
 export type AuthoritativeMoveStatQueries = MoveAutomationStatResolver
 export type AuthoritativeMoveTargetStateQueries = MoveAutomationTargetStateResolver
 export type AuthoritativeMoveTargetabilityQueries = MoveSemiInvulnerableTargetabilityResolver
@@ -136,6 +141,7 @@ export interface AuthoritativeMoveContextQueries {
   readonly relationships: AuthoritativeMoveRelationshipQueries
   readonly history: AuthoritativeMoveHistoryQueries
   readonly resources: AuthoritativeMoveResourceQueries
+  readonly rooms: AuthoritativeMoveRoomQueries
   readonly stats: AuthoritativeMoveStatQueries
   readonly targetStates: AuthoritativeMoveTargetStateQueries
   readonly targetability: AuthoritativeMoveTargetabilityQueries
@@ -474,6 +480,7 @@ export const buildAuthoritativeMoveRulesContext = (
   const resources = createMoveAutomationResourceResolver(
     map.encounterState?.turnResources ?? createEmptyEncounterTurnResources(),
   )
+  const rooms = createMoveAutomationRoomResolver(map)
   const weather = createMoveAutomationWeatherResolver(map)
   const { tokens, byId: tokenById } = tokenSnapshots(
     map,
@@ -555,6 +562,7 @@ export const buildAuthoritativeMoveRulesContext = (
   const stats = createMoveAutomationStatResolver({
     placements,
     tokens,
+    resolveStatOverlay: (placement, stat) => rooms.statOverlay({ placement, stat }),
     recordSheetRead: readSet.recordPlacement,
   })
   const targetStates = createMoveAutomationTargetStateResolver({
@@ -627,6 +635,7 @@ export const buildAuthoritativeMoveRulesContext = (
     relationships,
     history,
     resources,
+    rooms,
     stats,
     targetStates,
     targetability,

@@ -33,8 +33,24 @@ describe('initiative order', () => {
     expect(initiativeOrderIds(calculatedEntries)).toEqual(['a', 'b', 'c'])
   })
 
+  it('reverses only calculated score order for Trick Room while retaining deterministic ties', () => {
+    const tied = [
+      ...calculatedEntries,
+      entry('d', 10, 'Delta'),
+    ]
+
+    expect(initiativeOrderIds(tied, null, 'lowest-first')).toEqual([
+      'c',
+      'd',
+      'b',
+      'a',
+    ])
+  })
+
   it('overlays manual ids before appending remaining calculated entries', () => {
     expect(initiativeOrderIds(calculatedEntries, ['c', 'a'])).toEqual(['c', 'a', 'b'])
+    expect(initiativeOrderIds(calculatedEntries, ['a', 'b', 'c'], 'lowest-first'))
+      .toEqual(['a', 'b', 'c'])
   })
 
   it('ignores unknown manual ids', () => {

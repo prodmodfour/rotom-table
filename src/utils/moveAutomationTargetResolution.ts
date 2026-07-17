@@ -9,6 +9,7 @@ import {
 } from '~/utils/moveAutomation'
 import { parsePositiveInt } from '~/utils/moveAutomationDialog'
 import { applyInfatuationOffenseModifier, resolveInfatuationDamageEffect } from '~/utils/infatuationDamage'
+import { mapFieldEffectsHaveActiveRoom } from '~/utils/encounterRooms'
 import { resolveMoveAutomationDirectHpLoss } from '~/utils/moveAutomationDirectHpLoss'
 import {
   formatMultiplier,
@@ -239,7 +240,10 @@ export const resolveMoveAutomationTargetDamageBreakdown = (
   const offense = resolvedStats.attackStat?.applyActorOffenseModifiers === false
     ? selectedOffense
     : applyInfatuationOffenseModifier(selectedOffense, infatuation)
-  const defense = resolvedStats.defenseStat?.value ?? (physical
+  const wonderRoomActive = target.sheetKind === 'pokemon'
+    && mapFieldEffectsHaveActiveRoom(fieldEffects, 'wonder')
+  const defaultDefenseUsesPhysicalStat = wonderRoomActive ? !physical : physical
+  const defense = resolvedStats.defenseStat?.value ?? (defaultDefenseUsesPhysicalStat
     ? applyCombatStageToStat(target.def, conditionAdjustedCombatStage(
       target.combatStages.def,
       target.conditions,

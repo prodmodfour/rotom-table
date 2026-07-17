@@ -471,7 +471,10 @@ const rollAccuracy = (options: {
   const targetEvasion = resolveMoveAutomationTargetEvasion(
     options.script,
     options.target,
-    { attacker: options.actor },
+    {
+      attacker: options.actor,
+      fieldEffects: options.context.queries.rooms.projectFieldEffects(),
+    },
   ).value
   const rolled = options.context.random.roll({
     rollId,

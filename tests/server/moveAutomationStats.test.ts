@@ -14,7 +14,7 @@ import {
   createFiniteAuthoritativeMoveRandomStream,
 } from '~~/server/domain/moveAutomation/random'
 import type { CharacterSheet } from '~/types/characterSheet'
-import type { SheetPlacement, TabletopMap } from '~/types/map'
+import type { MapRoomKind, SheetPlacement, TabletopMap } from '~/types/map'
 import type { TrainerSheet } from '~/types/trainerSheet'
 import { applyCombatStageToStat } from '~/utils/combatStageStats'
 
@@ -25,7 +25,7 @@ const placement = (id: string, sheetSlug: string, x: number): SheetPlacement => 
   position: { x, y: 0, z: 0 },
 })
 
-const mapFixture = (): TabletopMap => ({
+const mapFixture = (rooms: readonly MapRoomKind[] = []): TabletopMap => ({
   schemaVersion: 2,
   slug: 'stat-query-arena',
   name: 'Stat Query Arena',
@@ -35,7 +35,11 @@ const mapFixture = (): TabletopMap => ({
   playerVisible: true,
   voxels: [],
   hazards: [],
-  fieldEffects: { weather: [], terrains: [], rooms: [] },
+  fieldEffects: {
+    weather: [],
+    terrains: [],
+    rooms: rooms.map(kind => ({ kind })),
+  },
   placements: [
     placement('actor-token', 'actor', 0),
     placement('target-token', 'target', 1),
@@ -87,8 +91,8 @@ const intent = (): ResolveMoveIntent => ({
   selection: { kind: 'single-target', targetPlacementId: 'target-token' },
 })
 
-const context = () => buildAuthoritativeMoveRulesContext({
-  map: mapFixture(),
+const context = (rooms: readonly MapRoomKind[] = []) => buildAuthoritativeMoveRulesContext({
+  map: mapFixture(rooms),
   pokemonSheets: new Map([
     ['actor', actorSheet()],
     ['target', targetSheet()],
@@ -197,6 +201,51 @@ describe('authoritative move stat queries', () => {
       combatStagePolicy: 'honor',
       stageModifierPolicy: 'honor',
     })).toBeNull()
+  })
+
+  it('maps Wonder Room through a non-destructive Defense and Special Defense overlay', () => {
+    const baseline = context()
+    const wondered = context(['wonder'])
+    const baselineDefense = baseline.queries.stats.resolve('target-token', {
+      stat: 'defense',
+      combatStagePolicy: 'honor',
+      stageModifierPolicy: 'honor',
+    })!
+    const baselineSpecialDefense = baseline.queries.stats.resolve('target-token', {
+      stat: 'special-defense',
+      combatStagePolicy: 'honor',
+      stageModifierPolicy: 'honor',
+    })!
+
+    expect(wondered.queries.stats.resolve('target-token', {
+      stat: 'defense',
+      combatStagePolicy: 'honor',
+      stageModifierPolicy: 'honor',
+    })).toMatchObject({
+      stat: 'defense',
+      sourceStat: 'special-defense',
+      baseValue: baselineSpecialDefense.baseValue,
+      authoredStage: baselineSpecialDefense.authoredStage,
+      value: baselineSpecialDefense.value,
+      overlay: {
+        sourceId: 'legacy.room.wonder',
+        reasonCode: 'room.wonder.defenses-switched',
+      },
+    })
+    expect(wondered.queries.stats.resolve('target-token', {
+      stat: 'special-defense',
+      combatStagePolicy: 'honor',
+      stageModifierPolicy: 'honor',
+    })).toMatchObject({
+      stat: 'special-defense',
+      sourceStat: 'defense',
+      baseValue: baselineDefense.baseValue,
+      authoredStage: baselineDefense.authoredStage,
+      value: baselineDefense.value,
+    })
+    expect(wondered.queries.tokens.get('target-token')).toEqual(
+      baseline.queries.tokens.get('target-token'),
+    )
   })
 
   it('returns positive and negative Combat Stage magnitudes with reviewed modifier policy', () => {

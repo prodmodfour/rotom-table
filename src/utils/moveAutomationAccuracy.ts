@@ -15,12 +15,14 @@ import {
 import { resolveMoveAutomationHitChancePercent } from '~/utils/moveAutomationResolution'
 import { pokemonTrainingFeatureAccuracyRollBonus } from '~/utils/sheets/pokemonTrainingFeatures'
 import type { CombatStatStageKey } from '~/types/combatStages'
+import type { MapFieldEffects } from '~/types/map'
 import type {
   MoveAutomationHitChanceTone,
   MoveAutomationScript,
   MoveAutomationTargetHitChance,
 } from '~/types/moveAutomation'
 import type { SpawnedPokemon } from '~/types/pokemon'
+import { mapFieldEffectsHaveActiveRoom } from '~/utils/encounterRooms'
 
 export type MoveAutomationEvasionKind = 'physical' | 'special' | 'speed'
 
@@ -41,6 +43,8 @@ export interface MoveAutomationEvasionResolution {
 
 export interface MoveAutomationEvasionContext {
   attacker?: Pick<SpawnedPokemon, 'abilityNames'> | null
+  /** Server-projected active fields; retained v1 callers never author this value. */
+  fieldEffects?: MapFieldEffects | null
 }
 
 type MoveAutomationEvasionStatStageKey = Extract<CombatStatStageKey, 'def' | 'sdef' | 'spd'>
@@ -83,17 +87,10 @@ const attackerAdjustedEvasionBonus = (
   return hasKeenEyeAbility(context.attacker?.abilityNames) ? Math.min(0, finiteBonus) : finiteBonus
 }
 
-const evasionKindForStatStageKey = (key: MoveAutomationEvasionStatStageKey): MoveAutomationEvasionKind => {
-  switch (key) {
-    case 'def': return 'physical'
-    case 'sdef': return 'special'
-    case 'spd': return 'speed'
-  }
-}
-
 const evasionForStat = (
   target: SpawnedPokemon,
   key: MoveAutomationEvasionStatStageKey,
+  kind: MoveAutomationEvasionKind,
   stat: number | null | undefined,
   stage: number | null | undefined,
   bonus: number | null | undefined,
@@ -104,27 +101,53 @@ const evasionForStat = (
   conditions: target.conditions,
   abilities: target.abilityNames,
   statStageKey: key,
-  kind: evasionKindForStatStageKey(key),
+  kind,
   applyCombatStages: true,
 }).total
+
+const wonderRoomApplies = (
+  target: SpawnedPokemon,
+  context: MoveAutomationEvasionContext,
+): boolean => target.sheetKind === 'pokemon'
+  && mapFieldEffectsHaveActiveRoom(context.fieldEffects, 'wonder')
 
 const physicalEvasion = (
   target: SpawnedPokemon,
   context: MoveAutomationEvasionContext,
-): MoveAutomationEvasionCandidate => ({
-  kind: 'physical',
-  label: 'Physical Evasion',
-  value: evasionForStat(target, 'def', target.def, target.combatStages.def, attackerAdjustedEvasionBonus(target.evasion?.physical, context)),
-})
+): MoveAutomationEvasionCandidate => {
+  const wondered = wonderRoomApplies(target, context)
+  return {
+    kind: 'physical',
+    label: 'Physical Evasion',
+    value: evasionForStat(
+      target,
+      wondered ? 'sdef' : 'def',
+      'physical',
+      wondered ? target.sdef : target.def,
+      wondered ? target.combatStages.sdef : target.combatStages.def,
+      attackerAdjustedEvasionBonus(target.evasion?.physical, context),
+    ),
+  }
+}
 
 const specialEvasion = (
   target: SpawnedPokemon,
   context: MoveAutomationEvasionContext,
-): MoveAutomationEvasionCandidate => ({
-  kind: 'special',
-  label: 'Special Evasion',
-  value: evasionForStat(target, 'sdef', target.sdef, target.combatStages.sdef, attackerAdjustedEvasionBonus(target.evasion?.special, context)),
-})
+): MoveAutomationEvasionCandidate => {
+  const wondered = wonderRoomApplies(target, context)
+  return {
+    kind: 'special',
+    label: 'Special Evasion',
+    value: evasionForStat(
+      target,
+      wondered ? 'def' : 'sdef',
+      'special',
+      wondered ? target.def : target.sdef,
+      wondered ? target.combatStages.def : target.combatStages.sdef,
+      attackerAdjustedEvasionBonus(target.evasion?.special, context),
+    ),
+  }
+}
 
 const speedEvasion = (
   target: SpawnedPokemon,
@@ -132,7 +155,7 @@ const speedEvasion = (
 ): MoveAutomationEvasionCandidate => ({
   kind: 'speed',
   label: 'Speed Evasion',
-  value: evasionForStat(target, 'spd', target.spd ?? 0, target.combatStages.spd, attackerAdjustedEvasionBonus(target.evasion?.speed, context)),
+  value: evasionForStat(target, 'spd', 'speed', target.spd ?? 0, target.combatStages.spd, attackerAdjustedEvasionBonus(target.evasion?.speed, context)),
 })
 
 export const moveAutomationEvasionCandidates = (
@@ -226,9 +249,13 @@ export const moveAutomationTargetHitChance = (
   script: MoveAutomationScript,
   user: SpawnedPokemon,
   target: SpawnedPokemon,
+  context: Omit<MoveAutomationEvasionContext, 'attacker'> = {},
 ): MoveAutomationTargetHitChance => {
   const userAccuracy = moveAutomationUserAccuracy(user)
-  const targetEvasion = resolveMoveAutomationTargetEvasion(script, target, { attacker: user })
+  const targetEvasion = resolveMoveAutomationTargetEvasion(script, target, {
+    ...context,
+    attacker: user,
+  })
   const percent = resolveMoveAutomationHitChancePercent(script, {
     userAccuracy,
     targetEvasion: targetEvasion.value,

@@ -471,7 +471,10 @@ const resolveInstantDoubleStrikeMoveAutomation = ({
   randomRoller,
   idFactory,
 }: ResolveInstantMoveAutomationInput): InstantMoveAutomationResult => {
-  const targetEvasion = resolveMoveAutomationTargetEvasion(script, target, { attacker: user })
+  const targetEvasion = resolveMoveAutomationTargetEvasion(script, target, {
+    attacker: user,
+    fieldEffects: fieldEffectsForTarget?.(target) ?? fieldEffects,
+  })
   const userAccuracy = moveAutomationUserAccuracy(user)
   const accuracyRolls = [1, 2].map((ordinal) =>
     resolveMoveAutomationAccuracyRoll(script, recordedAccuracyD20({
@@ -616,7 +619,10 @@ export const resolveInstantMoveAutomation = ({
     })
   }
 
-  const targetEvasion = resolveMoveAutomationTargetEvasion(script, target, { attacker: user })
+  const targetEvasion = resolveMoveAutomationTargetEvasion(script, target, {
+    attacker: user,
+    fieldEffects: fieldEffectsForTarget?.(target) ?? fieldEffects,
+  })
   const userAccuracy = moveAutomationUserAccuracy(user)
   const naturalRoll = recordedAccuracyD20({
     script,
@@ -902,7 +908,10 @@ const resolveInstantTargetGroupMoveAutomation = ({
   for (const [targetIndex, target] of targets.entries()) {
     const state = defaultTargetResolutionState(script)
     if (script.requiresAccuracy) {
-      const targetEvasion = resolveMoveAutomationTargetEvasion(script, target, { attacker: user })
+      const targetEvasion = resolveMoveAutomationTargetEvasion(script, target, {
+        attacker: user,
+        fieldEffects: fieldEffectsForTarget?.(target) ?? fieldEffects,
+      })
       const accuracy = resolveMoveAutomationAccuracyRoll(script, recordedAccuracyD20({
         script,
         target,

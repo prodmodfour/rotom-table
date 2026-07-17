@@ -1927,7 +1927,10 @@ export const executeMoveSpec = (
             targetEvasion = resolveMoveAutomationTargetEvasion(
               move.script,
               target,
-              { attacker: input.context.actor.token },
+              {
+                attacker: input.context.actor.token,
+                fieldEffects: input.context.queries.rooms.projectFieldEffects(),
+              },
             ).value
             modifiers = [{
               sourceId: 'actor-accuracy',

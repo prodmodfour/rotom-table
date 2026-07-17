@@ -158,6 +158,30 @@ describe('useInitiativeTracker', () => {
     expect(tracker.sortedInitiativeRows.value.map(row => row.id)).toEqual(['a', 'b'])
   })
 
+  it('shows active Trick Room only in calculated order while manual order remains authoritative', () => {
+    const { map, tracker } = initiativeOrderTrackerFixture([
+      { id: 'fast', initiative: 30 },
+      { id: 'middle', initiative: 20 },
+      { id: 'slow', initiative: 10 },
+    ])
+    map.value!.fieldEffects = {
+      weather: [],
+      terrains: [],
+      rooms: [{ kind: 'trick', rounds: 5, startsNextRound: true }],
+    }
+
+    expect(tracker.sortedInitiativeRows.value.map(row => row.id))
+      .toEqual(['fast', 'middle', 'slow'])
+
+    map.value!.fieldEffects!.rooms = [{ kind: 'trick', rounds: 5 }]
+    expect(tracker.sortedInitiativeRows.value.map(row => row.id))
+      .toEqual(['slow', 'middle', 'fast'])
+
+    tracker.setManualInitiativeOrder(['fast', 'middle', 'slow'])
+    expect(tracker.sortedInitiativeRows.value.map(row => row.id))
+      .toEqual(['fast', 'middle', 'slow'])
+  })
+
   it('uses a deterministic token id tie-breaker when display names and scores match', () => {
     const map = ref<TabletopMap | null>(mapWithPlacements([
       { id: 'b-token', sheetKind: 'pokemon', sheetSlug: 'b-token', position: { x: 0, y: 0, z: 0 }, initiative: 20 },

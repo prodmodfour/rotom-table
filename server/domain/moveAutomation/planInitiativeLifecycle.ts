@@ -127,7 +127,10 @@ export interface PlanInitiativeLifecycleInput
   extends Omit<PlanEncounterLifecycleInput, 'events'> {
   readonly previous: InitiativeLifecycleBoundaryState
   readonly current: InitiativeLifecycleBoundaryState
+  /** Compatibility order when both boundary sides use the same calculation. */
   readonly orderIds: readonly string[]
+  readonly previousOrderIds?: readonly string[]
+  readonly currentOrderIds?: readonly string[]
   readonly operationId: string
 }
 
@@ -241,6 +244,8 @@ export const createInitiativeLifecycleEvents = (input: {
   readonly previous: InitiativeLifecycleBoundaryState
   readonly current: InitiativeLifecycleBoundaryState
   readonly orderIds: readonly string[]
+  readonly previousOrderIds?: readonly string[]
+  readonly currentOrderIds?: readonly string[]
   readonly operationId: string
 }): readonly EncounterEvent[] => {
   if (input.current.activeId === null) return Object.freeze([])
@@ -257,7 +262,7 @@ export const createInitiativeLifecycleEvents = (input: {
       kind: 'turn-end',
       round: input.previous.round,
       placement: placementById(input.map, input.previous.activeId),
-      orderIds: input.orderIds,
+      orderIds: input.previousOrderIds ?? input.orderIds,
       sourceOperationId,
       ordinal: nextOrdinal(),
     }))
@@ -290,7 +295,7 @@ export const createInitiativeLifecycleEvents = (input: {
     kind: 'turn-start',
     round: input.current.round,
     placement: placementById(input.map, input.current.activeId),
-    orderIds: input.orderIds,
+    orderIds: input.currentOrderIds ?? input.orderIds,
     sourceOperationId,
     ordinal: nextOrdinal(),
   }))

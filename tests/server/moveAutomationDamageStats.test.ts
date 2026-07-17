@@ -19,7 +19,13 @@ import {
   createFiniteAuthoritativeMoveRandomStream,
 } from '~~/server/domain/moveAutomation/random'
 import type { CharacterSheet } from '~/types/characterSheet'
-import type { MapTerrainKind, MapWeatherKind, SheetPlacement, TabletopMap } from '~/types/map'
+import type {
+  MapRoomKind,
+  MapTerrainKind,
+  MapWeatherKind,
+  SheetPlacement,
+  TabletopMap,
+} from '~/types/map'
 import type { MoveAutomationScript } from '~/types/moveAutomation'
 import type { TrainerSheet } from '~/types/trainerSheet'
 import {
@@ -36,6 +42,7 @@ const placement = (id: string, sheetSlug: string, x: number): SheetPlacement => 
 const mapFixture = (
   weather: readonly MapWeatherKind[] = [],
   terrains: readonly MapTerrainKind[] = [],
+  rooms: readonly MapRoomKind[] = [],
 ): TabletopMap => ({
   schemaVersion: 2,
   slug: 'damage-stat-arena',
@@ -49,7 +56,7 @@ const mapFixture = (
   fieldEffects: {
     weather: weather.map(kind => ({ kind })),
     terrains: terrains.map(kind => ({ kind, scope: 'field' })),
-    rooms: [],
+    rooms: rooms.map(kind => ({ kind })),
   },
   placements: [
     placement('actor-token', 'actor', 0),
@@ -77,12 +84,13 @@ const pokemonSheet = (
 const context = (options: {
   readonly weather?: readonly MapWeatherKind[]
   readonly terrains?: readonly MapTerrainKind[]
+  readonly rooms?: readonly MapRoomKind[]
   readonly actorAbilities?: readonly string[]
   readonly actorCapabilities?: CharacterSheet['capabilities']
   readonly targetAbilities?: readonly string[]
   readonly targetCapabilities?: CharacterSheet['capabilities']
 } = {}) => buildAuthoritativeMoveRulesContext({
-  map: mapFixture(options.weather, options.terrains),
+  map: mapFixture(options.weather, options.terrains, options.rooms),
   pokemonSheets: new Map([
     ['actor', pokemonSheet('actor', {
       ...(options.actorAbilities
@@ -278,6 +286,49 @@ describe('MoveSpec alternate attack and defense stat selection', () => {
       { kind: 'pokemon', slug: 'actor', revision: 3 },
       { kind: 'pokemon', slug: 'target', revision: 5 },
     ])
+  })
+
+  it('uses Wonder Room for default and explicitly selected defensive stats without rewriting tokens', () => {
+    const baseline = context()
+    const wondered = context({ rooms: ['wonder'] })
+    const targetBefore = structuredClone(wondered.queries.tokens.get('target-token'))
+    const calculate = (
+      rules: ReturnType<typeof context>,
+      damageClass: 'physical' | 'special',
+      defenseStat?: MoveDamageEffectOperation['payload']['defenseStat'],
+    ) => resolveMoveSpecDamageCalculation({
+      context: rules,
+      operation: damageOperation({
+        damageClass,
+        ...(defenseStat ? { defenseStat } : {}),
+      }),
+      script: script(damageClass === 'physical' ? 'Physical' : 'Special'),
+      recipient: rules.queries.tokens.get('target-token')!,
+      resolution: rolledDamage(script(damageClass === 'physical' ? 'Physical' : 'Special')),
+    })
+
+    const baselinePhysical = calculate(baseline, 'physical')
+    const baselineSpecial = calculate(baseline, 'special')
+    const wonderedPhysical = calculate(wondered, 'physical')
+    const wonderedSpecial = calculate(wondered, 'special')
+    const selectedDefense = calculate(
+      wondered,
+      'special',
+      stat('current-target', 'defense'),
+    )
+
+    expect(termAmount(wonderedPhysical.breakdown, 'Def'))
+      .toBe(termAmount(baselineSpecial.breakdown, 'Sp.Def'))
+    expect(termAmount(wonderedSpecial.breakdown, 'Sp.Def'))
+      .toBe(termAmount(baselinePhysical.breakdown, 'Def'))
+    expect(selectedDefense.stats.defenseStat?.value).toBe(
+      baseline.queries.stats.resolve('target-token', {
+        stat: 'special-defense',
+        combatStagePolicy: 'honor',
+        stageModifierPolicy: 'honor',
+      })?.value,
+    )
+    expect(wondered.queries.tokens.get('target-token')).toEqual(targetBefore)
   })
 
   it('records default and contextual contributors through the ordered pipeline', () => {

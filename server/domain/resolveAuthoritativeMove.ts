@@ -381,10 +381,12 @@ const authoritativeConditionImmunityContext = (
 const authoritativeFieldEffectsForActor = (
   context: AuthoritativeMoveRulesContext,
   targetPlacementId?: string,
-) => context.queries.terrain.projectFieldEffects(
-  context.actor.placement.id,
-  context.queries.weather.projectFieldEffects(),
-  targetPlacementId,
+) => context.queries.rooms.projectFieldEffects(
+  context.queries.terrain.projectFieldEffects(
+    context.actor.placement.id,
+    context.queries.weather.projectFieldEffects(),
+    targetPlacementId,
+  ),
 )
 
 const addedConditions = (

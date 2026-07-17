@@ -22,6 +22,7 @@ import { sheetItemsInitiativeBonus } from '~/utils/sheetHeldItemEffects'
 import { pokemonHeldItemNames, trainerEquippedItemNames } from '~/utils/sheetItemNames'
 import { pokemonTrainingFeatureInitiativeBonus } from '~/utils/sheets/pokemonTrainingFeatures'
 import { encounterModifiedInitiativeScore } from '~/utils/encounterInitiative'
+import { encounterCalculatedInitiativeDirection } from '~/utils/encounterRooms'
 import {
   getHpBarDisplayMetrics,
   hpBarPercentFromRatio,
@@ -320,14 +321,20 @@ export const useInitiativeTracker = ({
     initiativeScore: row.initiativeScore,
   })
 
+  const calculatedInitiativeDirection = computed(() => encounterCalculatedInitiativeDirection(
+    map.value ?? {},
+  ))
+
   const sortedInitiativeRows = computed<InitiativeRow[]>(() => orderInitiativeEntries(
     initiativeRows.value.map((row) => ({ ...initiativeOrderEntryForRow(row), row })),
     map.value?.initiative?.manualOrderIds,
+    calculatedInitiativeDirection.value,
   ).map((entry) => entry.row))
 
   const completedManualInitiativeOrderIds = (manualOrderIds: readonly string[]): string[] => orderInitiativeEntries(
     initiativeRows.value.map((row) => ({ ...initiativeOrderEntryForRow(row), row })),
     manualOrderIds,
+    calculatedInitiativeDirection.value,
   ).map((entry) => entry.id)
 
   const manualInitiativeOrderActive = computed(() => Boolean(map.value?.initiative?.manualOrderIds?.length))

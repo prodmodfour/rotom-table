@@ -69,9 +69,20 @@ export interface MoveAutomationCombatStageResolution {
   readonly value: number
 }
 
+export interface MoveAutomationStatOverlay {
+  /** Authoritative stat that supplies the requested value while the overlay is active. */
+  readonly sourceStat: MoveExpressionStat
+  readonly sourceId: string
+  readonly reasonCode: string
+}
+
 export interface MoveAutomationStatResolution {
   readonly placementId: string
+  /** Stat requested by reviewed mechanics. */
   readonly stat: MoveExpressionStat
+  /** Stat that supplied the value after non-destructive encounter overlays. */
+  readonly sourceStat: MoveExpressionStat
+  readonly overlay: MoveAutomationStatOverlay | null
   readonly label: string
   readonly shortLabel: string
   /** Resolved sheet stat before encounter Combat Stages. */
@@ -112,6 +123,11 @@ export interface MoveAutomationStatResolver {
 export interface CreateMoveAutomationStatResolverInput {
   readonly placements: readonly SheetPlacement[]
   readonly tokens: readonly SpawnedPokemon[]
+  /** Server-owned non-destructive field/effect overlay seam. */
+  readonly resolveStatOverlay?: (
+    placement: Pick<SheetPlacement, 'sheetKind'>,
+    stat: MoveExpressionStat,
+  ) => MoveAutomationStatOverlay | null
   /** Authoritative context read-set seam. Standalone pure queries may omit it. */
   readonly recordSheetRead?: (
     placement: Pick<SheetPlacement, 'sheetKind' | 'sheetSlug'>,
@@ -286,6 +302,7 @@ const resolveStat = (
   placementId: string,
   token: MoveAutomationStatTokenSnapshot,
   query: MoveAutomationStatQuery,
+  overlay: MoveAutomationStatOverlay | null,
 ): MoveAutomationStatResolution | null => {
   const combatStagePolicy = query.combatStagePolicy ?? 'ignore'
   const stageModifierPolicy = query.stageModifierPolicy ?? 'ignore'
@@ -294,15 +311,19 @@ const resolveStat = (
     || !COMBAT_STAGE_POLICY_SET.has(combatStagePolicy)
     || !STAGE_MODIFIER_POLICY_SET.has(stageModifierPolicy)
   ) return null
-  const baseValue = finiteStatValue(token, query.stat)
+  const sourceStat = overlay?.sourceStat ?? query.stat
+  if (!EXPRESSION_STAT_SET.has(sourceStat)) return null
+  const baseValue = finiteStatValue(token, sourceStat)
   if (baseValue === null) return null
 
-  const stage = STAGE_KEY_BY_STAT[query.stat]
+  const stage = STAGE_KEY_BY_STAT[sourceStat]
   if (!stage) {
     if (combatStagePolicy !== 'ignore' || stageModifierPolicy !== 'ignore') return null
     return deepFreeze({
       placementId,
       stat: query.stat,
+      sourceStat,
+      overlay,
       label: MOVE_AUTOMATION_STAT_LABELS[query.stat],
       shortLabel: MOVE_AUTOMATION_STAT_SHORT_LABELS[query.stat],
       baseValue,
@@ -321,6 +342,8 @@ const resolveStat = (
   return deepFreeze({
     placementId,
     stat: query.stat as MoveStageAffectedExpressionStat,
+    sourceStat,
+    overlay,
     label: MOVE_AUTOMATION_STAT_LABELS[query.stat],
     shortLabel: MOVE_AUTOMATION_STAT_SHORT_LABELS[query.stat],
     baseValue,
@@ -368,13 +391,23 @@ export const createMoveAutomationStatResolver = (
     return tokens.get(placementId) ?? null
   }
 
+  const overlayFor = (
+    placementId: string,
+    stat: MoveExpressionStat,
+  ): MoveAutomationStatOverlay | null => {
+    const placement = placements.get(placementId)
+    return placement ? input.resolveStatOverlay?.(placement, stat) ?? null : null
+  }
+
   return Object.freeze({
     resolve: (
       placementId: string,
       query: MoveAutomationStatQuery,
     ): MoveAutomationStatResolution | null => {
       const token = tokenFor(placementId)
-      return token ? resolveStat(placementId, token, query) : null
+      return token
+        ? resolveStat(placementId, token, query, overlayFor(placementId, query.stat))
+        : null
     },
     combatStage: (
       placementId: string,

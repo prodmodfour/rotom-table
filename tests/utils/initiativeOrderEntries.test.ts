@@ -46,6 +46,26 @@ describe('initiativeOrderEntries', () => {
     }))).toEqual(['token-zulu', 'token-bravo', 'token-alpha'])
   })
 
+  it('supports lowest-first calculated order without changing authoritative scores', () => {
+    const placements = [
+      placement('token-alpha', 'alpha'),
+      placement('token-bravo', 'bravo'),
+      placement('token-zulu', 'zulu'),
+    ]
+    const sheets = new Map<string, Record<string, unknown>>([
+      ['alpha', pokemonSheet('alpha', 30)],
+      ['bravo', pokemonSheet('bravo', 20)],
+      ['zulu', pokemonSheet('zulu', 10)],
+    ])
+
+    expect(initiativeOrderIdsForPlacements(
+      placements,
+      (_kind, slug) => ({ sheet: sheets.get(slug)! }),
+      null,
+      'lowest-first',
+    )).toEqual(['token-zulu', 'token-bravo', 'token-alpha'])
+  })
+
   it('overlays manual ids onto the calculated placement order', () => {
     const placements = [
       placement('token-alpha', 'alpha'),

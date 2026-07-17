@@ -78,6 +78,47 @@ describe('move automation accuracy helpers', () => {
     })
   })
 
+  it('derives Pokémon physical and special Evasion from Wonder Room stat overlays', () => {
+    const target = token({
+      def: 5,
+      sdef: 15,
+      spd: 0,
+      evasion: { physical: 0, special: 0, speed: 0 },
+      combatStages: { ...stages, def: 1, sdef: -1 },
+    })
+    const trainer = token({
+      sheetKind: 'trainer',
+      entityKind: 'trainer',
+      def: 5,
+      sdef: 15,
+      spd: 0,
+      evasion: { physical: 0, special: 0, speed: 0 },
+    })
+    const fieldEffects = {
+      weather: [],
+      terrains: [],
+      rooms: [{ kind: 'wonder' as const }],
+    }
+
+    const clearPhysical = resolveMoveAutomationTargetEvasion(script('Physical'), target)
+    const clearSpecial = resolveMoveAutomationTargetEvasion(script('Special'), target)
+    const wonderedPhysical = resolveMoveAutomationTargetEvasion(
+      script('Physical'),
+      target,
+      { fieldEffects },
+    )
+    const wonderedSpecial = resolveMoveAutomationTargetEvasion(
+      script('Special'),
+      target,
+      { fieldEffects },
+    )
+
+    expect(wonderedPhysical.value).toBe(clearSpecial.value)
+    expect(wonderedSpecial.value).toBe(clearPhysical.value)
+    expect(resolveMoveAutomationTargetEvasion(script('Physical'), trainer, { fieldEffects }))
+      .toEqual(resolveMoveAutomationTargetEvasion(script('Physical'), trainer))
+  })
+
   it('applies Quick Feet to statused target Speed Evasion', () => {
     expect(resolveMoveAutomationTargetEvasion(script('Special'), token({
       spd: 20,
