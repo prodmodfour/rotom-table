@@ -15,6 +15,9 @@ import type {
   AuthoritativeMoveStatePlan,
   AuthoritativePendingMoveStatePlan,
 } from '../domain/planAuthoritativeMoveState'
+import type {
+  AuthoritativeMoveItemResourceRequirement,
+} from '../domain/moveAutomation/itemResources'
 
 const ALLOWED_MAP_LANES = new Set<LivePlayMapScope['lane']>([
   'metadata',
@@ -62,6 +65,56 @@ const pushScope = (scopes: LivePlayScope[], seen: Set<string>, scope: LivePlaySc
   if (seen.has(key)) return
   seen.add(key)
   scopes.push(scope)
+}
+
+/**
+ * Assert that reviewed item requirements can address only the controlled actor,
+ * explicit targets' equipped state, the current map, or a reviewed shared
+ * group inventory. No requirement shape can inspect an unrelated private bag.
+ */
+export const validateResolveMoveItemResourceScopes = (input: {
+  readonly map: TabletopMap
+  readonly intent: ResolveMoveIntent
+  readonly requirements: readonly AuthoritativeMoveItemResourceRequirement[]
+}): void => {
+  const actor = input.map.placements.find(
+    placement => placement.id === input.intent.placementId,
+  )
+  if (!actor) return
+
+  const selectedTargetIds = input.intent.selection.kind === 'single-target'
+    ? [input.intent.selection.targetPlacementId]
+    : input.intent.selection.kind === 'target-count'
+      ? input.intent.selection.targetPlacementIds
+      : []
+  const placementIds = new Set(input.map.placements.map(placement => placement.id))
+
+  for (const requirement of input.requirements) {
+    if (
+      requirement.source.kind === 'actor-trainer-inventory'
+      && actor.sheetKind !== 'trainer'
+    ) {
+      rejectLivePlayCommand(
+        'invalid',
+        `resolveMove item requirement ${requirement.id} requires a controlled trainer actor`,
+      )
+    }
+    if (requirement.source.kind !== 'selected-target-equipped') continue
+    if (selectedTargetIds.length === 0) {
+      rejectLivePlayCommand(
+        'invalid',
+        `resolveMove item requirement ${requirement.id} requires explicit authoritative targets`,
+      )
+    }
+    for (const placementId of selectedTargetIds) {
+      if (!placementIds.has(placementId)) {
+        rejectLivePlayCommand(
+          'invalid',
+          `resolveMove item requirement ${requirement.id} references missing target ${placementId}`,
+        )
+      }
+    }
+  }
 }
 
 const placementById = (map: TabletopMap): ReadonlyMap<string, SheetPlacement> => {

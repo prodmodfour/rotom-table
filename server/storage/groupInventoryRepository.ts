@@ -60,6 +60,34 @@ export interface ApplyLivePlayGroupInventoryUpdateInput {
   readonly now?: number
 }
 
+export interface GroupInventoryRevisionExpectation {
+  readonly slug: string
+  readonly revision: number
+}
+
+export interface GroupInventoryRevisionMismatch {
+  readonly slug: string
+  readonly expectedRevision: number
+  readonly currentRevision: number | null
+}
+
+export class GroupInventoryRevisionConflictError extends Error {
+  readonly mismatches: readonly GroupInventoryRevisionMismatch[]
+
+  constructor(mismatches: readonly GroupInventoryRevisionMismatch[]) {
+    const details = mismatches.map(mismatch => (
+      `${mismatch.slug} expected revision ${mismatch.expectedRevision}, ${
+        mismatch.currentRevision === null
+          ? 'but it is missing'
+          : `current revision is ${mismatch.currentRevision}`
+      }`
+    )).join('; ')
+    super(`Consulted group inventory revisions changed: ${details}`)
+    this.name = 'GroupInventoryRevisionConflictError'
+    this.mismatches = mismatches.map(mismatch => ({ ...mismatch }))
+  }
+}
+
 export type LivePlayGroupInventoryUpdateResult =
   | {
     readonly status: 'applied'
@@ -76,6 +104,7 @@ export interface GroupInventoryRepository {
   getOrCreate(input?: GetOrCreateGroupInventoryInput): StoredGroupInventoryDocument
   save(input: SaveGroupInventoryDocumentInput): StoredGroupInventoryDocument
   replaceSetupInventory(input: ReplaceSetupInventoryInput): ReplaceSetupInventoryResult
+  assertRevisions(expectations: readonly GroupInventoryRevisionExpectation[]): void
   applyLivePlayUpdate(input: ApplyLivePlayGroupInventoryUpdateInput): LivePlayGroupInventoryUpdateResult
 }
 
@@ -288,6 +317,42 @@ export const createSqliteGroupInventoryRepository = (
       return { stale: false, changed: true, document: nextDocument }
     })
 
+  const assertRevisions = (
+    expectations: readonly GroupInventoryRevisionExpectation[],
+  ): void => {
+    database.withTransaction(() => {
+      const expectedBySlug = new Map<string, GroupInventoryRevisionExpectation>()
+      for (const expectation of expectations) {
+        const slug = defaultedSlug(expectation.slug)
+        const revision = parseStoredRevision(
+          expectation.revision,
+          `expected group inventory ${slug} revision`,
+        )
+        const existing = expectedBySlug.get(slug)
+        if (existing && existing.revision !== revision) {
+          throw new Error(
+            `Group inventory ${slug} has conflicting expected revisions ${existing.revision} and ${revision}`,
+          )
+        }
+        expectedBySlug.set(slug, { slug, revision })
+      }
+
+      const mismatches: GroupInventoryRevisionMismatch[] = []
+      for (const expectation of expectedBySlug.values()) {
+        const current = get(expectation.slug)
+        if (current?.revision === expectation.revision) continue
+        mismatches.push({
+          slug: expectation.slug,
+          expectedRevision: expectation.revision,
+          currentRevision: current?.revision ?? null,
+        })
+      }
+      if (mismatches.length > 0) {
+        throw new GroupInventoryRevisionConflictError(mismatches)
+      }
+    })
+  }
+
   const applyLivePlayUpdate = (input: ApplyLivePlayGroupInventoryUpdateInput): LivePlayGroupInventoryUpdateResult =>
     database.withTransaction(() => {
       const slug = defaultedSlug(input.slug)
@@ -318,6 +383,7 @@ export const createSqliteGroupInventoryRepository = (
     getOrCreate,
     save,
     replaceSetupInventory,
+    assertRevisions,
     applyLivePlayUpdate,
   }
 }
@@ -330,5 +396,6 @@ export const sqliteGroupInventoryRepository: GroupInventoryRepository = {
   getOrCreate: (input) => defaultGroupInventoryRepository().getOrCreate(input),
   save: (input) => defaultGroupInventoryRepository().save(input),
   replaceSetupInventory: (input) => defaultGroupInventoryRepository().replaceSetupInventory(input),
+  assertRevisions: (expectations) => defaultGroupInventoryRepository().assertRevisions(expectations),
   applyLivePlayUpdate: (input) => defaultGroupInventoryRepository().applyLivePlayUpdate(input),
 }

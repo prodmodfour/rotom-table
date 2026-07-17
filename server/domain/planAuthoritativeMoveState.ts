@@ -84,6 +84,11 @@ import {
   type MoveAutomationRuntimeRegistry,
 } from './moveAutomation/registry'
 import {
+  deduplicateAuthoritativeMoveGroupInventoryReads,
+  type AuthoritativeMoveGroupInventoryRead,
+  type AuthoritativeMoveItemResources,
+} from './moveAutomation/itemResources'
+import {
   isMoveUsageTransitionError,
   planMoveUsageTransition,
   type PlannedMoveUsageTransition,
@@ -130,6 +135,8 @@ export interface PlanAuthoritativeMoveStateInput {
   readonly legacyScripts?: ReadonlyMap<string, MoveAutomationScript>
   /** Server-reviewed child/reaction policy; never populated from move intent. */
   readonly resourceCostDeclarations?: readonly MoveSpecCostDeclaration[]
+  /** Exact private item resources loaded by the authoritative use case. */
+  readonly itemResources?: AuthoritativeMoveItemResources
 }
 
 export type AuthoritativeMoveSheetChangedField = MoveSheetStateField
@@ -150,6 +157,7 @@ export interface AuthoritativeMoveStatePlan {
   readonly usage: UseMoveUsageSummary
   readonly previousUsage: UseMoveUsageSummary
   readonly sheetReads: readonly AuthoritativeMoveSheetRead[]
+  readonly groupInventoryReads: readonly AuthoritativeMoveGroupInventoryRead[]
   readonly sheetWrites: readonly AuthoritativeMoveSheetWritePlan[]
   readonly mapChanges: AuthoritativeMoveMapChanges
   /** Ordered, resource-grouped persistence intent for the typed planning path. */
@@ -167,6 +175,7 @@ export interface AuthoritativePendingMoveStatePlan {
   readonly execution: AuthoritativePendingMoveResolution
   readonly suspension: MaterializedMoveSpecSuspension
   readonly sheetReads: readonly AuthoritativeMoveSheetRead[]
+  readonly groupInventoryReads: readonly AuthoritativeMoveGroupInventoryRead[]
   readonly sheetWrites: readonly AuthoritativeMoveSheetWritePlan[]
   readonly mapChanges: AuthoritativeMoveMapChanges
   readonly stateChanges: MoveStateChangePlan<EncounterState>
@@ -895,9 +904,15 @@ const planPendingMoveState = (options: {
       'A suspended move requires a deterministic pending resolution ID.',
     )
   const sheetReads = reobserveAuthoritativeMoveSheetReads(
-    options.execution.sheetReads,
+    [
+      ...options.execution.sheetReads,
+      ...(options.input.itemResources?.sheetReads ?? []),
+    ],
     options.input.pokemonSheets,
     options.input.trainerSheets,
+  )
+  const groupInventoryReads = deduplicateAuthoritativeMoveGroupInventoryReads(
+    options.input.itemResources?.groupInventoryReads ?? [],
   )
   const request = options.execution.execution.request
   const revision = nextRevision(options.previousRevision)
@@ -917,6 +932,7 @@ const planPendingMoveState = (options: {
     actorPlacementId: options.execution.actorPlacementId,
     suspendedAt: options.plannedAt,
     authoritativeSheetReads: sheetReads,
+    authoritativeGroupInventoryReads: groupInventoryReads,
     execution: options.execution.execution,
     continuationMapRevision: revision,
     preWindowPlan,
@@ -990,6 +1006,7 @@ const planPendingMoveState = (options: {
     execution: options.execution,
     suspension,
     sheetReads: cloneJson(sheetReads),
+    groupInventoryReads: cloneJson(groupInventoryReads),
     sheetWrites,
     mapChanges: buildAuthoritativeMoveMapChanges(options.previousMap, nextMap),
     stateChanges,
@@ -1090,6 +1107,7 @@ export const planAuthoritativeMoveStateExecution = (
     runtimeRegistry: input.runtimeRegistry,
     legacyScripts: input.legacyScripts,
     resourceCostDeclarations: input.resourceCostDeclarations,
+    itemResources: input.itemResources,
   })
   if (isAuthoritativePendingMoveResolution(execution)) {
     return planPendingMoveState({
@@ -1103,9 +1121,15 @@ export const planAuthoritativeMoveStateExecution = (
   const resolution = execution
   validateTransactionUser(resolution)
   const sheetReads = reobserveAuthoritativeMoveSheetReads(
-    resolution.sheetReads,
+    [
+      ...resolution.sheetReads,
+      ...(input.itemResources?.sheetReads ?? []),
+    ],
     input.pokemonSheets,
     input.trainerSheets,
+  )
+  const groupInventoryReads = deduplicateAuthoritativeMoveGroupInventoryReads(
+    input.itemResources?.groupInventoryReads ?? [],
   )
 
   if (resolution.nativeV2) {
@@ -1146,6 +1170,7 @@ export const planAuthoritativeMoveStateExecution = (
       previousUsage: cloneUsageSummary(nativePlan.previousUsage),
       usage: cloneUsageSummary(nativePlan.usage),
       sheetReads: cloneJson(finalSheetReads),
+      groupInventoryReads: cloneJson(groupInventoryReads),
       sheetWrites: nativePlan.sheetWrites,
       mapChanges: observedResources.mapChanges,
       stateChanges: observedResources.stateChanges,
@@ -1267,6 +1292,7 @@ export const planAuthoritativeMoveStateExecution = (
     previousUsage: cloneUsageSummary(usageTransition.previousUsage),
     usage: cloneUsageSummary(usageTransition.usage),
     sheetReads: cloneJson(sheetReads),
+    groupInventoryReads: cloneJson(groupInventoryReads),
     sheetWrites,
     mapChanges: observedResources.mapChanges,
     stateChanges: observedResources.stateChanges,

@@ -455,6 +455,7 @@ const executePending = (
     readonly random?: LivePlayResolveMoveCommandDependencies['random']
     readonly allowPass?: boolean
     readonly canonicalMoveId?: string
+    readonly itemResourceRequirementProvider?: LivePlayResolveMoveCommandDependencies['itemResourceRequirementProvider']
   } = {},
 ) => executeLivePlayResolveMoveCommandUseCase({
   role: 'gm',
@@ -466,8 +467,10 @@ const executePending = (
   database: harness.database,
   mapRepository: options.mapRepository ?? harness.maps,
   sheetRepository: options.sheetRepository ?? harness.sheets,
+  groupInventoryRepository: harness.inventories,
   pendingResolutionRepository: options.pendingResolutionRepository ?? harness.pending,
   commandExecutor: harness.commandExecutor,
+  itemResourceRequirementProvider: options.itemResourceRequirementProvider,
   planner: options.planner ?? (input => planAuthoritativeMoveStateExecution({
     ...input,
     runtimeRegistry: pendingRegistry({
@@ -862,6 +865,47 @@ describe('pending move resolution creation', () => {
     expect(harness.sheets.list()).toEqual(beforeSheets)
     expect(harness.ops.getOpRecord('pending-arena', command.opId)).toBeNull()
     expect(harness.database.connection.isTransaction).toBe(false)
+  })
+
+  it('retains consulted group inventory revisions in a durable suspension', async () => {
+    const harness = createHarness()
+    const current = harness.inventories.getOrCreate({ slug: 'main', now: 50 }).document
+    const updated = harness.inventories.applyLivePlayUpdate({
+      slug: 'main',
+      expectedRevision: current.revision,
+      now: 60,
+      nextDocument: {
+        ...current,
+        inventory: {
+          ...current.inventory,
+          medicalKit: [{ id: 'pending-potion', name: 'Potion', qty: 2 }],
+        },
+      },
+    })
+    expect(updated.status).toBe('applied')
+    const map = harness.maps.getBySlug('pending-arena')!
+    const command = commandFor(map, 'op_pendingitems1')
+
+    const response = await executePending(harness, command, {
+      itemResourceRequirementProvider: () => [{
+        id: 'test.pending-group-items',
+        source: {
+          kind: 'group-inventory',
+          slug: 'main',
+          sections: ['medicalKit'],
+        },
+      }],
+    })
+
+    expect(response.result).toMatchObject({ ok: true, pending: true })
+    const stored = harness.pending.getByOrigin('pending-arena', command.opId)
+    expect(stored?.resolution.readSet).toContainEqual({
+      kind: 'group-inventory',
+      slug: 'main',
+      revision: 1,
+    })
+    expect(JSON.stringify(response)).not.toContain('pending-potion')
+    expect(JSON.stringify(response)).not.toContain('potion')
   })
 
   it('rejects an unavailable declaration cost before creating pending state and replays the rejection', async () => {

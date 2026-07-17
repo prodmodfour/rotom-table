@@ -74,6 +74,7 @@ import {
   type AuthoritativeMoveSheetRead,
 } from './moveAutomation/context'
 import type { MoveAutomationRuntimeRegistry, MoveSpecV2Runtime } from './moveAutomation/registry'
+import type { AuthoritativeMoveItemResources } from './moveAutomation/itemResources'
 import {
   resolveMoveSpecOutcome,
   type NativeMoveSpecResolutionProjection,
@@ -187,6 +188,8 @@ export interface ResolveAuthoritativeMoveInput {
   readonly legacyScripts?: ReadonlyMap<string, MoveAutomationScript>
   /** Server-reviewed child/reaction cost policy; never supplied by move intent. */
   readonly resourceCostDeclarations?: readonly MoveSpecCostDeclaration[]
+  /** Private item resources loaded from exact authoritative repository scopes. */
+  readonly itemResources?: AuthoritativeMoveItemResources
 }
 
 export interface AuthoritativeMoveArea {
@@ -1893,6 +1896,7 @@ export const resolveAuthoritativeMoveExecution = (
       idFactory: input.idFactory,
       runtimeRegistry: input.runtimeRegistry,
       legacyScripts: input.legacyScripts,
+      itemResources: input.itemResources,
     })
     return resolveAuthoritativeMoveExecutionFromContext(context, {
       ...(input.resourceCostDeclarations === undefined

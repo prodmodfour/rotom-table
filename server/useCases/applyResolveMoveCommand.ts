@@ -47,6 +47,7 @@ import {
   type PlanAuthoritativeMoveStateInput,
 } from '../domain/planAuthoritativeMoveState'
 import { createMoveStateChangePlan } from '../domain/moveAutomation/plan'
+import { AuthoritativeMoveItemResourceError } from '../domain/moveAutomation/itemResources'
 import { createAcceptedMoveCompensationResult } from '../domain/moveAutomation/planAcceptedMoveCompensation'
 import type { AuthoritativeMoveRandomSource } from '../domain/moveAutomation/random'
 import { summarizeMoveResolutionTrace } from '../domain/moveAutomation/trace'
@@ -71,6 +72,11 @@ import { createLivePlayCommandHash } from '../livePlay/opResult'
 import { livePlaySheetUpdateRealtimeAppendInputs } from '../livePlay/sheetUpdateRealtime'
 import { getRotomDatabase, type RotomDatabase } from '../storage/database'
 import {
+  createSqliteGroupInventoryRepository,
+  GroupInventoryRevisionConflictError,
+  type GroupInventoryRepository,
+} from '../storage/groupInventoryRepository'
+import {
   createSqliteMapRepository,
   type MapRepository,
 } from '../storage/mapRepository'
@@ -86,12 +92,17 @@ import {
   type SheetRepository,
 } from '../storage/sheetRepository'
 import { logicalMapResourcePath, logicalSheetResourcePath } from '../utils/runtimeResourcePaths'
-import { redactSheetUpdatesForPlayer } from '../utils/sheetPrivacy'
+import { accessibleSheetUpdatesForPlayer } from '../utils/sheetPrivacy'
 import { UseCaseHttpError } from '../utils/useCaseErrors'
 import { toPersistedMap } from './saveMap'
 import { loadMoveResolutionSheets } from './loadMoveResolutionSheets'
 import {
+  loadMoveItemResources,
+  type ResolveMoveItemResourceRequirementProvider,
+} from './loadMoveItemResources'
+import {
   validatePendingResolveMoveScopes,
+  validateResolveMoveItemResourceScopes,
   validateResolveMoveScopes,
 } from './resolveMoveCommandScopes'
 
@@ -139,11 +150,16 @@ export interface LivePlayResolveMoveCommandDependencies {
   readonly database?: Pick<RotomDatabase, 'withTransaction'> & Partial<RotomDatabase>
   readonly mapRepository?: Pick<MapRepository<TabletopMap>, 'getBySlug' | 'applyLivePlayUpdate'>
   readonly sheetRepository?: Pick<SheetRepository<Record<string, unknown>>, 'getByRef' | 'assertRevisions' | 'applyLivePlayUpdate'>
+  readonly groupInventoryRepository?: Pick<
+    GroupInventoryRepository,
+    'get' | 'assertRevisions'
+  > & { readonly database?: RotomDatabase }
   readonly pendingResolutionRepository?: Pick<
     PendingMoveResolutionRepository,
     'getByOrigin' | 'create'
   >
   readonly planner?: (input: PlanAuthoritativeMoveStateInput) => AuthoritativeMoveStatePlanningResult
+  readonly itemResourceRequirementProvider?: ResolveMoveItemResourceRequirementProvider
   readonly random?: AuthoritativeMoveRandomSource
   readonly now?: () => number
   readonly idFactory?: () => string
@@ -180,6 +196,16 @@ const actionDependencies = (dependencies: LivePlayResolveMoveCommandDependencies
   const concreteDatabase = database as RotomDatabase
   const mapRepository = dependencies.mapRepository ?? createSqliteMapRepository<TabletopMap>(concreteDatabase)
   const sheetRepository = dependencies.sheetRepository ?? createSqliteSheetRepository<Record<string, unknown>>(concreteDatabase)
+  const groupInventoryRepository = dependencies.groupInventoryRepository
+    ?? createSqliteGroupInventoryRepository(concreteDatabase)
+  if (
+    dependencies.groupInventoryRepository?.database
+    && dependencies.groupInventoryRepository.database !== concreteDatabase
+  ) {
+    throw new Error(
+      'Resolve-move group inventory repository must use the command transaction database',
+    )
+  }
   const pendingResolutionRepository = dependencies.pendingResolutionRepository
     ?? createSqlitePendingMoveResolutionRepository(concreteDatabase)
   const commandExecutor = dependencies.commandExecutor ?? createSqliteAuthoritativeLivePlayCommandExecutor({
@@ -189,9 +215,11 @@ const actionDependencies = (dependencies: LivePlayResolveMoveCommandDependencies
     database,
     mapRepository,
     sheetRepository,
+    groupInventoryRepository,
     pendingResolutionRepository,
     commandExecutor,
     planner: dependencies.planner ?? planAuthoritativeMoveStateExecution,
+    itemResourceRequirementProvider: dependencies.itemResourceRequirementProvider,
     random: dependencies.random,
     now: dependencies.now ?? defaultNow,
     idFactory: dependencies.idFactory,
@@ -309,6 +337,7 @@ const planMoveState = (
   context: ResolvedResolveMoveCommandContext,
   dependencies: DependencySet,
   command: ResolveMoveLivePlayCommand,
+  itemResources: ReturnType<typeof loadMoveItemResources>,
 ): AuthoritativeMoveStatePlanningResult => {
   try {
     return dependencies.planner({
@@ -322,6 +351,7 @@ const planMoveState = (
       operationId: command.opId,
       pendingResolutionId: pendingResolutionIdForCommand(command),
       maxMoveLogEntries: dependencies.maxMoveLogEntries,
+      itemResources,
     })
   } catch (error) {
     if (isAuthoritativeMoveStatePlanningError(error)) {
@@ -494,8 +524,9 @@ const applyResolveMoveCommand = (
   command: ResolveMoveLivePlayCommand,
   context: ResolvedResolveMoveCommandContext,
   dependencies: DependencySet,
+  itemResources: ReturnType<typeof loadMoveItemResources>,
 ): ResolveMoveCommandApplication => {
-  const plan = planMoveState(context, dependencies, command)
+  const plan = planMoveState(context, dependencies, command, itemResources)
   if (isAuthoritativePendingMoveStatePlan(plan)) {
     validatePendingResolveMoveScopes({ command, map: context.map, plan })
     const result = createPendingMoveDeclarationResult({
@@ -585,18 +616,25 @@ export const sheetUpdateFromPersisted = (
   }
 }
 
-const assertConsultedSheetRevisions = (
-  plan: Pick<AuthoritativeMoveStatePlan | AuthoritativePendingMoveStatePlan, 'sheetReads'>,
+const assertConsultedResourceRevisions = (
+  plan: Pick<
+    AuthoritativeMoveStatePlan | AuthoritativePendingMoveStatePlan,
+    'sheetReads' | 'groupInventoryReads'
+  >,
   dependencies: DependencySet,
   currentRevision: number,
 ): void => {
   try {
     dependencies.sheetRepository.assertRevisions(plan.sheetReads)
+    dependencies.groupInventoryRepository.assertRevisions(plan.groupInventoryReads)
   } catch (error) {
-    if (error instanceof SheetRevisionConflictError) {
+    if (
+      error instanceof SheetRevisionConflictError
+      || error instanceof GroupInventoryRevisionConflictError
+    ) {
       rejectLivePlayCommand(
         'conflict',
-        'A sheet consulted while resolving the move changed before commit. Refresh and retry.',
+        'An authoritative item or sheet resource consulted while resolving the move changed before commit. Refresh and retry.',
         { currentRevision },
       )
     }
@@ -655,7 +693,7 @@ const persistPendingMoveDeclaration = (options: {
 } => {
   const { command, plan, dependencies, currentRevision } = options
   assertPendingPersistencePlan({ command, plan, currentRevision })
-  assertConsultedSheetRevisions(plan, dependencies, currentRevision)
+  assertConsultedResourceRevisions(plan, dependencies, currentRevision)
 
   const persisted = toPersistedMap(
     plan.nextMap,
@@ -841,7 +879,39 @@ const applyResolveMoveCommandWithPendingPersistence = (options: {
         )
       }
 
-      const resolved = applyResolveMoveCommand(command, context, dependencies)
+      let itemResources: ReturnType<typeof loadMoveItemResources>
+      try {
+        itemResources = loadMoveItemResources({
+          map: context.map,
+          intent: context.intent,
+          pokemonSheets: context.pokemonSheets,
+          trainerSheets: context.trainerSheets,
+          groupInventoryRepository: dependencies.groupInventoryRepository,
+          requirementProvider: dependencies.itemResourceRequirementProvider,
+        })
+        validateResolveMoveItemResourceScopes({
+          map: context.map,
+          intent: context.intent,
+          requirements: itemResources.requirements,
+        })
+      }
+      catch (error) {
+        if (error instanceof AuthoritativeMoveItemResourceError) {
+          rejectLivePlayCommand(
+            error.code === 'resource-missing' ? 'not-found' : 'invalid',
+            error.message,
+            { currentRevision },
+          )
+        }
+        throw error
+      }
+
+      const resolved = applyResolveMoveCommand(
+        command,
+        context,
+        dependencies,
+        itemResources,
+      )
       if (resolved.kind === 'complete') {
         return {
           application: {
@@ -911,7 +981,8 @@ const applyResolveMoveCommandWithPendingPersistence = (options: {
 const responseFromContext = (
   result: LivePlayCommandResult,
   context: ResolvedResolveMoveCommandContext | null,
-  role: AuthRole,
+  actor: LivePlayResolveMoveCommandActor,
+  linkedTrainerSheets: readonly ServerTokenControlLinkedTrainerSheet[],
   move: LivePlayResolvedMoveResult | undefined = context?.move,
 ): LivePlayResolveMoveCommandResponse => ({
   result,
@@ -919,8 +990,11 @@ const responseFromContext = (
     path: context.relativePath,
     map: context.map,
     ...(context.sheetUpdates?.length ? {
-      sheetUpdates: role === 'player'
-        ? (redactSheetUpdatesForPlayer([...context.sheetUpdates]) ?? [])
+      sheetUpdates: actor.role === 'player'
+        ? (accessibleSheetUpdatesForPlayer([...context.sheetUpdates], {
+            playerProfile: actor.playerProfile,
+            linkedTrainerSheets,
+          }) ?? [])
         : [...context.sheetUpdates],
     } : {}),
   } : {}),
@@ -1080,7 +1154,7 @@ export const executeLivePlayResolveMoveCommandUseCase = async (
           throw new LivePlayResolveMoveCommandUseCaseError(409, 'resolveMove plan revision did not match the command revision context')
         }
 
-        assertConsultedSheetRevisions(plan, deps, currentRevision)
+        assertConsultedResourceRevisions(plan, deps, currentRevision)
 
         const persisted = toPersistedMap(
           plan.nextMap,
@@ -1173,5 +1247,19 @@ export const executeLivePlayResolveMoveCommandUseCase = async (
         ? currentContextForAcceptedResult(accepted, input.role, deps)
         : null)
   const move = committedContext?.move ?? responseContext?.move
-  return responseFromContext(result, responseContext, input.role, move)
+  const responseActor: LivePlayResolveMoveCommandActor = {
+    role: input.role,
+    clientId: input.clientId,
+    playerProfile: input.playerProfile,
+  }
+  const responseLinkedTrainerSheets = committedContext?.linkedTrainerSheets.length
+    ? committedContext.linkedTrainerSheets
+    : linkedTrainerSheetsForActor(responseActor, deps)
+  return responseFromContext(
+    result,
+    responseContext,
+    responseActor,
+    responseLinkedTrainerSheets,
+    move,
+  )
 }

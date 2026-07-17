@@ -6,7 +6,10 @@ import {
   type GroupInventoryDocument,
 } from '~/types/groupInventory'
 import { openRotomDatabase, type RotomDatabase } from '~~/server/storage/database'
-import { createSqliteGroupInventoryRepository } from '~~/server/storage/groupInventoryRepository'
+import {
+  createSqliteGroupInventoryRepository,
+  GroupInventoryRevisionConflictError,
+} from '~~/server/storage/groupInventoryRepository'
 
 const openDatabases: RotomDatabase[] = []
 
@@ -172,6 +175,50 @@ describe('SQLite group inventory repository', () => {
 
     expect(result).toEqual({ stale: true, current })
     expect(repository.get()?.document).toEqual(current)
+  })
+
+  it('asserts a deduplicated authoritative revision read set', () => {
+    const database = openMemoryDatabase()
+    const repository = createSqliteGroupInventoryRepository(database)
+    repository.save({
+      slug: GROUP_INVENTORY_MAIN_SLUG,
+      revision: 4,
+      updatedAt: 400,
+      document: {
+        slug: GROUP_INVENTORY_MAIN_SLUG,
+        revision: 4,
+        updatedAt: 400,
+        money: 10,
+        inventory: emptyInventory(),
+      },
+    })
+
+    expect(() => repository.assertRevisions([
+      { slug: GROUP_INVENTORY_MAIN_SLUG, revision: 4 },
+      { slug: GROUP_INVENTORY_MAIN_SLUG, revision: 4 },
+    ])).not.toThrow()
+    expect(() => repository.assertRevisions([
+      { slug: GROUP_INVENTORY_MAIN_SLUG, revision: 3 },
+      { slug: 'missing', revision: 0 },
+    ])).toThrowError(expect.objectContaining({
+      name: 'GroupInventoryRevisionConflictError',
+      mismatches: [
+        {
+          slug: GROUP_INVENTORY_MAIN_SLUG,
+          expectedRevision: 3,
+          currentRevision: 4,
+        },
+        {
+          slug: 'missing',
+          expectedRevision: 0,
+          currentRevision: null,
+        },
+      ],
+    } satisfies Partial<GroupInventoryRevisionConflictError>))
+    expect(() => repository.assertRevisions([
+      { slug: GROUP_INVENTORY_MAIN_SLUG, revision: 3 },
+      { slug: GROUP_INVENTORY_MAIN_SLUG, revision: 4 },
+    ])).toThrow('conflicting expected revisions')
   })
 
   it('applies live-play updates only when expected revision matches and normalizes payloads', () => {

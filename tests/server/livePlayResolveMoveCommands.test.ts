@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it } from 'vitest'
 import { openRotomDatabase, type RotomDatabase } from '~~/server/storage/database'
 import { createSqliteMapRepository } from '~~/server/storage/mapRepository'
 import { createSqliteSheetRepository } from '~~/server/storage/sheetRepository'
+import { createSqliteGroupInventoryRepository } from '~~/server/storage/groupInventoryRepository'
 import { createSqliteLivePlayOpRepository } from '~~/server/storage/opRepository'
 import { createSqliteMapInteractionModeRepository } from '~~/server/storage/mapInteractionModeRepository'
 import { createAuthoritativeLivePlayCommandExecutor, type AuthoritativeLivePlayCommandExecutor } from '~~/server/livePlay/commandExecutor'
@@ -40,11 +41,13 @@ import type { CharacterSheet, CharacterSheetMove } from '~/types/characterSheet'
 import type { MoveAutomationScript } from '~/types/moveAutomation'
 import type { SheetPlacement, TabletopMap } from '~/types/map'
 import type { TrainerSheet } from '~/types/trainerSheet'
+import { createDefaultGroupInventoryDocument } from '~/types/groupInventory'
 
 interface Harness {
   readonly database: RotomDatabase
   readonly maps: ReturnType<typeof createSqliteMapRepository<TabletopMap>>
   readonly sheets: ReturnType<typeof createSqliteSheetRepository<Record<string, unknown>>>
+  readonly groupInventories: ReturnType<typeof createSqliteGroupInventoryRepository>
   readonly ops: ReturnType<typeof createSqliteLivePlayOpRepository>
   readonly commandExecutor: AuthoritativeLivePlayCommandExecutor
   readonly events: unknown[]
@@ -122,6 +125,7 @@ const seedHarness = (options: {
   openDatabases.push(database)
   const maps = createSqliteMapRepository<TabletopMap>(database)
   const sheets = createSqliteSheetRepository<Record<string, unknown>>(database)
+  const groupInventories = createSqliteGroupInventoryRepository(database)
   const ops = createSqliteLivePlayOpRepository({ database, clock: () => 1_700_000_000_000 })
   const modes = createSqliteMapInteractionModeRepository(database)
   const events: unknown[] = []
@@ -146,7 +150,7 @@ const seedHarness = (options: {
   for (const sheet of [actor, ...targets]) {
     sheets.save({ kind: 'pokemon', slug: sheet.slug, document: sheet as unknown as Record<string, unknown>, revision: sheet.revision ?? 0, updatedAt: (sheet as { readonly updatedAt?: number }).updatedAt ?? 50 })
   }
-  return { database, maps, sheets, ops, commandExecutor, events }
+  return { database, maps, sheets, groupInventories, ops, commandExecutor, events }
 }
 
 const intent = (overrides: Omit<ResolveMoveIntent, 'schemaVersion'>): ResolveMoveIntent => ({
@@ -185,6 +189,7 @@ const execute = (
     readonly now?: () => number
     readonly idFactory?: () => string
     readonly planner?: LivePlayResolveMoveCommandDependencies['planner']
+    readonly itemResourceRequirementProvider?: LivePlayResolveMoveCommandDependencies['itemResourceRequirementProvider']
   } = {},
 ) => executeLivePlayResolveMoveCommandUseCase({
   role: options.role ?? 'gm',
@@ -196,8 +201,10 @@ const execute = (
   database: harness.database,
   mapRepository: harness.maps,
   sheetRepository: harness.sheets,
+  groupInventoryRepository: harness.groupInventories,
   commandExecutor: harness.commandExecutor,
   planner: options.planner,
+  itemResourceRequirementProvider: options.itemResourceRequirementProvider,
   random: options.random ?? randomSequence([0.5, 0]),
   now: options.now ?? (() => 1000),
   idFactory: options.idFactory ?? (() => 'feedback-id'),
@@ -1429,6 +1436,56 @@ describe('executeLivePlayResolveMoveCommandUseCase', () => {
     })
   })
 
+  it('keeps private item candidates and inaccessible target inventories out of player responses', async () => {
+    const harness = seedHarness({
+      actorMoves: [{ name: 'Knock Off' }],
+      targetASheet: {
+        player: false,
+        items: { held: 'Leftovers', itemDescription: 'Private held-item note' },
+      },
+    })
+    const map = harness.maps.getBySlug('arena')!
+    const moveIntent = intent({
+      placementId: 'actor-token',
+      moveName: 'Knock Off',
+      selection: { kind: 'single-target', targetPlacementId: 'target-a' },
+    })
+    let privateCandidates: unknown = null
+    const response = await execute(
+      harness,
+      commandFor(map, moveIntent, 'op_privateitems1'),
+      {
+        role: 'player',
+        profile: playerProfile('actor'),
+        random: randomSequence([0.5, 0]),
+        planner: (input) => {
+          privateCandidates = deepCloneJson(input.itemResources?.candidates ?? [])
+          return planAuthoritativeMoveState(input)
+        },
+      },
+    )
+
+    expect(response.result.ok).toBe(true)
+    expect(privateCandidates).toEqual([
+      expect.objectContaining({
+        requirementId: 'knock-off.target-equipped',
+        reference: expect.objectContaining({
+          kind: 'pokemon-held',
+          canonicalItemId: 'leftovers',
+          owner: expect.objectContaining({ slug: 'target-a', revision: 2 }),
+        }),
+      }),
+    ])
+    expect(response.sheetUpdates ?? []).not.toContainEqual(
+      expect.objectContaining({ slug: 'target-a' }),
+    )
+    expect(JSON.stringify(response)).not.toContain('leftovers')
+    expect(JSON.stringify(response)).not.toContain('Private held-item note')
+    expect(harness.sheets.getByRef('pokemon', 'target-a')?.sheet).toMatchObject({
+      items: { held: 'Leftovers', itemDescription: 'Private held-item note' },
+    })
+  })
+
   it('enforces command type, intent shape, map mode, visibility, token control, and exact base revisions', async () => {
     const harness = seedHarness({ actorMoves: [{ name: 'Tackle' }] })
     const map = harness.maps.getBySlug('arena')!
@@ -1488,6 +1545,92 @@ describe('executeLivePlayResolveMoveCommandUseCase', () => {
     expect(scopes).toContainEqual({ kind: 'token', placementId: 'target-a', field: 'hp' })
     expect(scopes).not.toContainEqual({ kind: 'map', lane: 'hazards' })
     expect(scopes).not.toContainEqual({ kind: 'token', placementId: 'target-b', field: 'hp' })
+  })
+
+  it('conflicts atomically when a consulted group inventory changes after item legality planning', async () => {
+    const harness = seedHarness({ actorMoves: [{ name: 'Tackle' }] })
+    const initialGroup = {
+      ...createDefaultGroupInventoryDocument({ slug: 'main', now: 10 }),
+      revision: 2,
+      inventory: {
+        ...createDefaultGroupInventoryDocument({ slug: 'main', now: 10 }).inventory,
+        medicalKit: [{ id: 'group-potion', name: 'Potion', qty: 2 }],
+      },
+    }
+    harness.groupInventories.save({
+      slug: 'main',
+      revision: initialGroup.revision,
+      updatedAt: initialGroup.updatedAt,
+      document: initialGroup,
+    })
+    const map = harness.maps.getBySlug('arena')!
+    const moveIntent = intent({
+      placementId: 'actor-token',
+      moveName: 'Tackle',
+      selection: { kind: 'single-target', targetPlacementId: 'target-a' },
+    })
+    const command = commandFor(map, moveIntent, 'op_itemreadrace1')
+    const beforeMap = deepCloneJson(harness.maps.getBySlug('arena'))
+    const beforeSheets = deepCloneJson(harness.sheets.list())
+    let observedCandidates: unknown = null
+    const planner: NonNullable<LivePlayResolveMoveCommandDependencies['planner']> = (input) => {
+      observedCandidates = deepCloneJson(input.itemResources?.candidates ?? [])
+      const plan = planAuthoritativeMoveState(input)
+      expect(plan.groupInventoryReads).toEqual([{ slug: 'main', revision: 2 }])
+      const current = harness.groupInventories.get('main')
+      if (!current) throw new Error('expected group inventory before race')
+      harness.groupInventories.save({
+        slug: 'main',
+        revision: 3,
+        updatedAt: 11,
+        document: {
+          ...current.document,
+          revision: 3,
+          updatedAt: 11,
+          inventory: {
+            ...current.document.inventory,
+            medicalKit: [{ id: 'group-potion', name: 'Potion', qty: 1 }],
+          },
+        },
+      })
+      return plan
+    }
+
+    const response = await execute(harness, command, {
+      planner,
+      itemResourceRequirementProvider: () => [{
+        id: 'test.shared-medical-items',
+        source: {
+          kind: 'group-inventory',
+          slug: 'main',
+          sections: ['medicalKit'],
+        },
+      }],
+    })
+
+    expect(observedCandidates).toEqual([
+      expect.objectContaining({
+        requirementId: 'test.shared-medical-items',
+        reference: expect.objectContaining({
+          kind: 'group-inventory-row',
+          itemId: 'group-potion',
+          canonicalItemId: 'potion',
+          quantity: 2,
+          owner: { kind: 'group-inventory', slug: 'main', revision: 2 },
+        }),
+      }),
+    ])
+    expect(response.result).toMatchObject({
+      ok: false,
+      reason: 'conflict',
+      currentRevision: 4,
+      message: expect.stringContaining('item or sheet resource'),
+    })
+    expect(harness.maps.getBySlug('arena')).toEqual(beforeMap)
+    expect(harness.sheets.list()).toEqual(beforeSheets)
+    expect(harness.groupInventories.get('main')?.revision).toBe(3)
+    expect(harness.ops.getOpResult('arena', command.opId)).toBeNull()
+    expect(harness.events).toEqual([])
   })
 
   it('commits map, sheets, and op result atomically and rolls back on sheet persistence failure', async () => {

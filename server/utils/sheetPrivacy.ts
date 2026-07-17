@@ -1,7 +1,12 @@
 import type { SheetKind } from '#shared/sheets'
+import type { PlayerProfile } from '#shared/playerProfiles'
 import type { CharacterSheet } from '~/types/characterSheet'
 import type { TrainerSheet } from '~/types/trainerSheet'
 import { redactPokemonGmFields } from '~/utils/sheets/pokemonGmFields'
+import {
+  playerCanAccessSheet,
+  type PlayerProfileLinkedTrainerSheetSource,
+} from '../policies/playerProfilePolicy'
 
 export type SheetPrivacyDocument = CharacterSheet | TrainerSheet
 
@@ -31,3 +36,28 @@ export const redactSheetUpdateForPlayer = <TUpdate extends SheetUpdateRecord>(up
 export const redactSheetUpdatesForPlayer = <TUpdate extends SheetUpdateRecord>(
   updates: readonly TUpdate[] | undefined,
 ): TUpdate[] | undefined => updates?.map((update) => redactSheetUpdateForPlayer(update))
+
+/**
+ * Filter authoritative sheet responses through the same profile visibility
+ * boundary as direct sheet loads. This prevents a move against a private token
+ * from returning that token's held items or trainer inventory in HTTP data.
+ */
+export const accessibleSheetUpdatesForPlayer = <TUpdate extends SheetUpdateRecord>(
+  updates: readonly TUpdate[] | undefined,
+  input: {
+    readonly playerProfile?: PlayerProfile | null
+    readonly linkedTrainerSheets?: PlayerProfileLinkedTrainerSheetSource
+  },
+): TUpdate[] | undefined => updates?.flatMap((update) => {
+  const slug = typeof update.sheet.slug === 'string' ? update.sheet.slug : ''
+  if (!slug || !playerCanAccessSheet({
+    kind: update.kind,
+    slug,
+    sheet: update.sheet,
+    playerProfile: input.playerProfile,
+    linkedTrainerSheets: input.linkedTrainerSheets,
+  })) {
+    return []
+  }
+  return [redactSheetUpdateForPlayer(update)]
+})

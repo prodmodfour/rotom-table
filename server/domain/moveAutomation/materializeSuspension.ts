@@ -26,6 +26,10 @@ import type { MoveStateChangePlan } from './plan'
 import type { ValidatedMoveSpecDefinition } from './validateSpec'
 import { moveResourceCostsInPhaseWindow } from './planMoveResources'
 import { materializeAuthoritativeHazardCellSelection } from './hazardCellSelection'
+import {
+  deduplicateAuthoritativeMoveGroupInventoryReads,
+  type AuthoritativeMoveGroupInventoryRead,
+} from './itemResources'
 
 export type MoveSpecSuspensionMaterializationErrorCode =
   | 'invalid-continuation-revision'
@@ -66,6 +70,7 @@ export interface MaterializeMoveSpecSuspensionInput {
   readonly actorPlacementId: string
   readonly suspendedAt: number
   readonly authoritativeSheetReads: readonly AuthoritativeMoveSheetRead[]
+  readonly authoritativeGroupInventoryReads?: readonly AuthoritativeMoveGroupInventoryRead[]
   readonly execution: MoveSpecExecutionPendingResult
   /** Map revision visible after the summary and pre-window plan commit together. */
   readonly continuationMapRevision: number
@@ -223,6 +228,9 @@ const continuationReadSet = (
     }
   }
 
+  const groupInventoryReads = deduplicateAuthoritativeMoveGroupInventoryReads(
+    input.authoritativeGroupInventoryReads ?? [],
+  )
   return [
     {
       kind: 'map',
@@ -234,6 +242,11 @@ const continuationReadSet = (
       sheetKind: read.kind,
       slug: read.slug,
       revision: committedSheetRevisions.get(sheetReadKey(read)) ?? read.revision,
+    })),
+    ...groupInventoryReads.map((read): PendingMoveResolutionResourceRead => ({
+      kind: 'group-inventory',
+      slug: read.slug,
+      revision: read.revision,
     })),
   ]
 }

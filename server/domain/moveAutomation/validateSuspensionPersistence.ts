@@ -114,6 +114,20 @@ export const validatePendingMovePersistencePlan = (
     }
   }
 
+  const expectedGroupInventoryReads = new Map(
+    pendingResolution.readSet.flatMap(read => (
+      read.kind === 'group-inventory' ? [[read.slug, read.revision] as const] : []
+    )),
+  )
+  if (expectedGroupInventoryReads.size !== plan.groupInventoryReads.length) {
+    fail('full consulted group inventory read set was not retained.')
+  }
+  for (const read of plan.groupInventoryReads) {
+    if (expectedGroupInventoryReads.get(read.slug) !== read.revision) {
+      fail(`consulted group inventory ${read.slug} has an inconsistent commit revision.`)
+    }
+  }
+
   const mapAfterPreWindowPlan = applyNativeCoreMapChanges(
     plan.previousMap,
     preWindowPlan,

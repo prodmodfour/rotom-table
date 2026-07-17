@@ -942,6 +942,7 @@ describe('phased MoveSpec interpreter', () => {
       actorPlacementId: context.actor.placement.id,
       suspendedAt: context.time,
       authoritativeSheetReads: execution.sheetReads,
+      authoritativeGroupInventoryReads: [{ slug: 'main', revision: 8 }],
       execution,
       continuationMapRevision: 5,
       preWindowPlan: emptyPreWindowPlan,
@@ -960,6 +961,7 @@ describe('phased MoveSpec interpreter', () => {
       readSet: [
         { kind: 'map', slug: 'movespec-arena', revision: 5 },
         { kind: 'sheet', sheetKind: 'pokemon', slug: 'actor', revision: 3 },
+        { kind: 'group-inventory', slug: 'main', revision: 8 },
       ],
       rollLedger: [expect.objectContaining({ rollId: 'roll.accuracy', finalValue: 11 })],
       outstandingWindows: [{

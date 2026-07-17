@@ -45,6 +45,12 @@ import {
   type MoveAutomationItemEffectResolver,
 } from './itemEffects'
 import {
+  createAuthoritativeMoveItemResourceQueries,
+  emptyAuthoritativeMoveItemResources,
+  type AuthoritativeMoveItemResourceQueries,
+  type AuthoritativeMoveItemResources,
+} from './itemResources'
+import {
   createMoveAutomationLineOfSightResolver,
   type MoveAutomationLineOfSightResolver,
 } from './lineOfSight'
@@ -164,6 +170,8 @@ export interface AuthoritativeMoveContextQueries {
   readonly gravity: AuthoritativeMoveGravityQueries
   readonly history: AuthoritativeMoveHistoryQueries
   readonly itemEffects: AuthoritativeMoveItemEffectQueries
+  /** Private normalized item identities; never projected to accepted wire results. */
+  readonly items: AuthoritativeMoveItemResourceQueries
   readonly resources: AuthoritativeMoveResourceQueries
   readonly rooms: AuthoritativeMoveRoomQueries
   readonly stats: AuthoritativeMoveStatQueries
@@ -251,6 +259,8 @@ export interface BuildAuthoritativeMoveRulesContextInput {
   readonly runtimeRegistry?: MoveAutomationRuntimeRegistry
   /** Test/migration seam. Values are snapshotted before any rule executes. */
   readonly legacyScripts?: ReadonlyMap<string, MoveAutomationScript>
+  /** Server-loaded item documents selected by reviewed requirements. */
+  readonly itemResources?: AuthoritativeMoveItemResources
 }
 
 const fail = (
@@ -553,7 +563,12 @@ export const buildAuthoritativeMoveRulesContext = (
   ])
   const ruleset = detachedFrozenJson(input.ruleset ?? MOVE_RULESET_PROVENANCE)
   const random = input.randomRoller ?? createAuthoritativeMoveRandom(input.random)
-  const reads: AuthoritativeMoveSheetRead[] = []
+  const itemResources = input.itemResources ?? emptyAuthoritativeMoveItemResources()
+  const reads: AuthoritativeMoveSheetRead[] = itemResources.sheetReads.map(read => ({
+    kind: read.kind,
+    slug: read.slug,
+    revision: normalizeRevision(read.revision),
+  }))
 
   const sheetForPlacement = (
     placement: Pick<SheetPlacement, 'sheetKind' | 'sheetSlug'>,
@@ -683,6 +698,7 @@ export const buildAuthoritativeMoveRulesContext = (
     gravity,
     history,
     itemEffects,
+    items: createAuthoritativeMoveItemResourceQueries(itemResources),
     resources,
     rooms,
     stats,

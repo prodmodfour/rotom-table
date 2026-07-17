@@ -59,6 +59,10 @@ import { livePlaySheetUpdateRealtimeAppendInputs } from '../livePlay/sheetUpdate
 import type { PendingMoveResponseAuthorizationGrant } from '../policies/pendingMoveResponsePolicy'
 import { canAccessMapForRole } from '../policies/mapPolicy'
 import {
+  playerProfileLinkedTrainerSheetsForTokenControl,
+  type ServerTokenControlLinkedTrainerSheet,
+} from '../policies/playerProfileTokenControlPolicy'
+import {
   defaultPersistedRealtimeEventPublisher,
   defaultPersistedRealtimePublicationFailureReporter,
   publishPersistedRealtimeEventsAfterCommit,
@@ -67,6 +71,7 @@ import {
 import { getRotomDatabase, type RotomDatabase } from '../storage/database'
 import {
   createSqliteGroupInventoryRepository,
+  GroupInventoryRevisionConflictError,
   type GroupInventoryRepository,
 } from '../storage/groupInventoryRepository'
 import {
@@ -95,7 +100,7 @@ import {
   logicalMapResourcePath,
   logicalSheetResourcePath,
 } from '../utils/runtimeResourcePaths'
-import { redactSheetUpdatesForPlayer } from '../utils/sheetPrivacy'
+import { accessibleSheetUpdatesForPlayer } from '../utils/sheetPrivacy'
 import { UseCaseHttpError } from '../utils/useCaseErrors'
 import { toPersistedMap } from './saveMap'
 import { loadMoveResolutionSheets } from './loadMoveResolutionSheets'
@@ -126,7 +131,7 @@ export interface ResumePendingMoveResolutionDependencies {
     SheetRepository<Record<string, unknown>>,
     'getByRef' | 'assertRevisions' | 'applyLivePlayUpdate'
   >
-  readonly groupInventoryRepository?: Pick<GroupInventoryRepository, 'get'>
+  readonly groupInventoryRepository?: Pick<GroupInventoryRepository, 'get' | 'assertRevisions'>
   readonly pendingResolutionRepository?: Pick<PendingMoveResolutionRepository, 'getById' | 'update'>
     & Partial<Pick<PendingMoveResolutionRepository, 'create'>>
   readonly opRepository?: Pick<LivePlayOpRepository, 'getStoredOpRecord' | 'saveCommandResult'>
@@ -213,6 +218,24 @@ const pendingSheetReads = (resolution: PendingMoveResolution) => resolution.read
     : [],
 )
 
+const pendingGroupInventoryReads = (
+  resolution: PendingMoveResolution,
+) => resolution.readSet.flatMap(read => (
+  read.kind === 'group-inventory'
+    ? [{ slug: read.slug, revision: read.revision }]
+    : []
+))
+
+const assertPendingResourceRevisions = (
+  resolution: PendingMoveResolution,
+  dependencies: Dependencies,
+): void => {
+  dependencies.sheetRepository.assertRevisions(pendingSheetReads(resolution))
+  dependencies.groupInventoryRepository.assertRevisions(
+    pendingGroupInventoryReads(resolution),
+  )
+}
+
 const hasCurrentReadSet = (
   input: ResumePendingMoveResolutionInput,
   map: TabletopMap,
@@ -224,18 +247,14 @@ const hasCurrentReadSet = (
     || input.command.baseRevision !== expectedMapRevision
   ) return false
   try {
-    dependencies.sheetRepository.assertRevisions(
-      pendingSheetReads(input.storedResolution.resolution),
-    )
-    for (const read of input.storedResolution.resolution.readSet) {
-      if (read.kind !== 'group-inventory') continue
-      const inventory = dependencies.groupInventoryRepository.get(read.slug)
-      if (!inventory || inventory.revision !== read.revision) return false
-    }
+    assertPendingResourceRevisions(input.storedResolution.resolution, dependencies)
     return true
   }
   catch (error) {
-    if (error instanceof SheetRevisionConflictError) return false
+    if (
+      error instanceof SheetRevisionConflictError
+      || error instanceof GroupInventoryRevisionConflictError
+    ) return false
     throw error
   }
 }
@@ -411,6 +430,8 @@ const wireCommand = (
 
 const responseFromState = (input: {
   readonly role: AuthRole
+  readonly playerProfile?: PlayerProfile | null
+  readonly linkedTrainerSheets?: readonly ServerTokenControlLinkedTrainerSheet[]
   readonly result: LivePlayCommandResult
   readonly map: TabletopMap
   readonly sheetUpdates?: readonly LivePlayResolveMoveCommandSheetUpdate[]
@@ -422,7 +443,10 @@ const responseFromState = (input: {
   ...(input.sheetUpdates?.length
     ? {
         sheetUpdates: input.role === 'player'
-          ? (redactSheetUpdatesForPlayer([...input.sheetUpdates]) ?? [])
+          ? (accessibleSheetUpdatesForPlayer([...input.sheetUpdates], {
+              playerProfile: input.playerProfile,
+              linkedTrainerSheets: input.linkedTrainerSheets,
+            }) ?? [])
           : [...input.sheetUpdates],
       }
     : {}),
@@ -580,6 +604,22 @@ export const resumePendingMoveResolutionUseCase = (
     )
   }
   const dependencies = dependenciesWithDefaults(dependencyInput)
+  const linkedTrainerSheets = playerProfileLinkedTrainerSheetsForTokenControl(
+    input.playerProfile,
+    (slug) => {
+      const trainer = dependencies.sheetRepository.getByRef('trainer', slug)
+      if (!trainer) return null
+      return {
+        slug: trainer.slug,
+        ...(Array.isArray(trainer.sheet.currentTeam)
+          ? { currentTeam: trainer.sheet.currentTeam }
+          : {}),
+        ...(Array.isArray(trainer.sheet.boxedPokemon)
+          ? { boxedPokemon: trainer.sheet.boxedPokemon }
+          : {}),
+      }
+    },
+  )
   const commandHash = moveResponseCommandHash(input.command)
   const replay = existingResponse(input, dependencies, commandHash)
   if (replay) return replay
@@ -633,6 +673,7 @@ export const resumePendingMoveResolutionUseCase = (
         throw error
       }
       dependencies.beforeCommit?.()
+      assertPendingResourceRevisions(stored.resolution, dependencies)
       dependencies.sheetRepository.assertRevisions(plan.sheetReads)
       applyMap(map, plan.nextMap, dependencies)
       const sheetUpdates = applySheets(plan, dependencies)
@@ -698,6 +739,8 @@ export const resumePendingMoveResolutionUseCase = (
       ])
       return responseFromState({
         role: input.role,
+        playerProfile: input.playerProfile,
+        linkedTrainerSheets,
         result,
         map: plan.nextMap,
         sheetUpdates,
@@ -717,6 +760,7 @@ export const resumePendingMoveResolutionUseCase = (
         maxMoveLogEntries: dependencies.maxMoveLogEntries,
       })
       dependencies.beforeCommit?.()
+      assertPendingResourceRevisions(stored.resolution, dependencies)
       dependencies.sheetRepository.assertRevisions(plan.sheetReads)
       applyMap(map, plan.nextMap, dependencies)
       const sheetUpdates = applySheets(plan, dependencies)
@@ -761,6 +805,8 @@ export const resumePendingMoveResolutionUseCase = (
       ])
       return responseFromState({
         role: input.role,
+        playerProfile: input.playerProfile,
+        linkedTrainerSheets,
         result,
         map: plan.nextMap,
         sheetUpdates,
@@ -857,7 +903,9 @@ export const resumePendingMoveResolutionUseCase = (
       throw error
     }
     dependencies.beforeCommit?.()
+    assertPendingResourceRevisions(stored.resolution, dependencies)
     dependencies.sheetRepository.assertRevisions(plan.sheetReads)
+    dependencies.groupInventoryRepository.assertRevisions(plan.groupInventoryReads)
     applyMap(map, plan.nextMap, dependencies)
 
     if (isAuthoritativePendingMoveStatePlan(plan)) {
@@ -966,6 +1014,8 @@ export const resumePendingMoveResolutionUseCase = (
     ])
     return responseFromState({
       role: input.role,
+      playerProfile: input.playerProfile,
+      linkedTrainerSheets,
       result,
       map: plan.nextMap,
       sheetUpdates,

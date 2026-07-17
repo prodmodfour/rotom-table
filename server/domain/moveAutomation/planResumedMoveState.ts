@@ -38,6 +38,7 @@ import {
   type MoveStateChangePlan,
 } from './plan'
 import type { MoveAutomationRuntimeRegistry } from './registry'
+import type { AuthoritativeMoveGroupInventoryRead } from './itemResources'
 
 export interface PlanResumedMoveStateInput {
   readonly pendingResolution: PendingMoveResolution
@@ -60,6 +61,14 @@ export interface PlanResumedMoveStateInput {
 const previousEncounterState = (map: TabletopMap): EncounterState => parseEncounterState(
   map.encounterState ?? createEmptyEncounterState(),
 )
+
+const pendingGroupInventoryReads = (
+  pending: PendingMoveResolution,
+): readonly AuthoritativeMoveGroupInventoryRead[] => pending.readSet.flatMap(read => (
+  read.kind === 'group-inventory'
+    ? [{ slug: read.slug, revision: read.revision }]
+    : []
+))
 
 const declarationPrerequisiteResources = (
   declarationPlan: MoveStateChangePlan | null,
@@ -175,6 +184,7 @@ const planNextWindow = (
     actorPlacementId: input.pendingResolution.actorPlacementId,
     suspendedAt: input.plannedAt,
     authoritativeSheetReads: input.execution.sheetReads,
+    authoritativeGroupInventoryReads: pendingGroupInventoryReads(input.pendingResolution),
     execution: input.execution.execution,
     continuationMapRevision: revision,
     preWindowPlan,
@@ -240,6 +250,7 @@ const planNextWindow = (
       publicSummary: pendingResolution.publicSummary,
     }),
     sheetReads: deepCloneJson(input.execution.sheetReads),
+    groupInventoryReads: deepCloneJson(pendingGroupInventoryReads(input.pendingResolution)),
     sheetWrites: [],
     mapChanges: buildAuthoritativeMoveMapChanges(input.map, nextMap),
     stateChanges,
@@ -320,6 +331,7 @@ const planCompletion = (
     previousUsage: deepCloneJson(native.previousUsage),
     usage: deepCloneJson(native.usage),
     sheetReads: deepCloneJson(native.sheetReads),
+    groupInventoryReads: deepCloneJson(pendingGroupInventoryReads(input.pendingResolution)),
     sheetWrites: deepCloneJson(native.sheetWrites),
     mapChanges: buildAuthoritativeMoveMapChanges(input.map, nextMap),
     stateChanges,

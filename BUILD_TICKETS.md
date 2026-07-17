@@ -2071,7 +2071,7 @@ Status: DONE
 
 ## MA-152 — Load required item resources into resolution
 
-Status: TODO
+Status: DONE
 
 **Depends on:** MA-004, MA-150
 **Commit:** `feat(move-automation): read authoritative item resources`
