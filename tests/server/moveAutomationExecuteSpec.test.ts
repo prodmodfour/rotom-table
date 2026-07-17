@@ -18,6 +18,7 @@ import {
   MoveSpecExecutionError,
   executeMoveSpec,
 } from '~~/server/domain/moveAutomation/executeSpec'
+import { summarizeMoveResolutionTrace } from '~~/server/domain/moveAutomation/trace'
 import {
   MoveSpecSuspensionMaterializationError,
   materializeMoveSpecSuspension,
@@ -551,6 +552,91 @@ describe('phased MoveSpec interpreter', () => {
         roll: expect.objectContaining({ rollId: 'roll.accuracy', finalValue: 11 }),
       }),
     ])
+  })
+
+  it('selects reviewed random operation lists, rerolls invalid entries, and redacts alternatives', () => {
+    const spec = baseSpec()
+    const randomTable: TestOperation = {
+      id: 'operation.random-outcome',
+      kind: 'roll',
+      source: { kind: 'move', id: 'move.interpreter-test' },
+      recipients: { kind: 'none' },
+      phase: 'hit',
+      reasonCode: 'move.interpreter-test.random-outcome',
+      payload: {
+        rollId: 'roll.random-outcome',
+        formula: { kind: 'table', tableId: 'table.tri-attack' },
+        table: {
+          tableId: 'table.tri-attack',
+          distribution: 'equal',
+          entries: [{
+            id: 'private-paralysis-alternative',
+            weight: null,
+            operationIds: ['operation.paralysis'],
+            predicate: { kind: 'constant', value: false },
+          }, {
+            id: 'selected-burn-outcome',
+            weight: null,
+            operationIds: ['operation.burn'],
+            predicate: null,
+          }],
+          maximumRerolls: 1,
+        },
+      },
+    }
+    spec.phases = [{
+      phase: 'hit',
+      operations: [
+        randomTable,
+        logOperation('operation.paralysis', 'hit'),
+        logOperation('operation.burn', 'hit'),
+      ],
+    }]
+    const result = executeMoveSpec({
+      definition: definitionFor(spec),
+      context: buildContext({
+        random: createFiniteAuthoritativeMoveRandomStream([0, 0.99]),
+      }),
+    })
+
+    expect(result.kind).toBe('complete')
+    expect(result.operations.map(emission => emission.operation.id)).toEqual([
+      'operation.random-outcome',
+      'operation.burn',
+    ])
+    expect(result.rollLedger).toMatchObject([
+      {
+        rollId: 'roll.random-outcome',
+        formula: { kind: 'table', tableId: 'table.tri-attack' },
+        finalValue: 1,
+      },
+      {
+        rollId: 'roll.random-outcome.reroll-1',
+        formula: { kind: 'table', tableId: 'table.tri-attack' },
+        finalValue: 2,
+      },
+    ])
+    const randomEvent = result.trace.events.find(event => (
+      event.kind === 'operation' && event.operationId === 'operation.random-outcome'
+    ))
+    expect(randomEvent).toMatchObject({
+      result: {
+        candidateCount: 2,
+        selectedId: 'selected-burn-outcome',
+        attemptCount: 2,
+      },
+    })
+    expect(result.trace.events).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        kind: 'operation',
+        operationId: 'operation.paralysis',
+        outcome: 'prevented',
+        result: expect.objectContaining({ status: 'random-entry-not-selected' }),
+      }),
+    ]))
+    const publicTrace = summarizeMoveResolutionTrace(result.trace)
+    expect(JSON.stringify(publicTrace)).not.toContain('private-paralysis-alternative')
+    expect(JSON.stringify(publicTrace)).not.toContain('selected-burn-outcome')
   })
 
   it('calculates and traces contextual Damage Base once per authoritative target', () => {

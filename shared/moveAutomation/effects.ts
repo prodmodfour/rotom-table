@@ -75,6 +75,14 @@ import {
   type MoveSpecPhase,
 } from './spec'
 import {
+  MOVE_RANDOM_SELECTION_LIMITS,
+  MoveRandomSelectionValidationError,
+  parseMoveRandomMovePoolDefinition,
+  parseMoveRandomTableDefinition,
+  type MoveRandomMovePoolDefinition,
+  type MoveRandomTableDefinition,
+} from './randomTables'
+import {
   MOVE_AUTOMATION_AREA_DIRECTIONS,
   type MoveAutomationAreaDirection,
 } from '~/types/moveAutomation'
@@ -384,7 +392,10 @@ export const MOVE_EFFECT_NESTED_MOVE_ACTOR_KINDS = [
   'sole-recipient',
 ] as const
 /** Child mechanics always come from the server-selected reviewed runtime. */
-export const MOVE_EFFECT_NESTED_MOVE_SOURCE_KINDS = ['registered-spec'] as const
+export const MOVE_EFFECT_NESTED_MOVE_SOURCE_KINDS = [
+  'registered-spec',
+  'random-move-pool',
+] as const
 export const MOVE_EFFECT_NESTED_MOVE_TARGETING_KINDS = [
   'operation-recipients',
   'fresh-choice',
@@ -581,10 +592,21 @@ export type MoveEffectRollFormula =
   | MoveEffectUniformIntegerRollFormula
   | MoveEffectTableRollFormula
 
-export interface MoveRollEffectPayload {
+export interface MoveScalarRollEffectPayload {
   readonly rollId: string
-  readonly formula: MoveEffectRollFormula
+  readonly formula: MoveEffectDiceRollFormula | MoveEffectUniformIntegerRollFormula
 }
+
+export interface MoveTableRollEffectPayload {
+  readonly rollId: string
+  readonly formula: MoveEffectTableRollFormula
+  /** Reviewed equal/weighted outcomes and the later typed operation lists they enable. */
+  readonly table: MoveRandomTableDefinition
+}
+
+export type MoveRollEffectPayload =
+  | MoveScalarRollEffectPayload
+  | MoveTableRollEffectPayload
 
 export type MoveCheckRollFormula = Exclude<
   MoveEffectRollFormula,
@@ -1443,6 +1465,15 @@ export interface MoveNestedMoveRegisteredSpecSource {
   readonly kind: 'registered-spec'
 }
 
+export interface MoveNestedMoveRandomPoolSource {
+  readonly kind: 'random-move-pool'
+  readonly pool: MoveRandomMovePoolDefinition
+}
+
+export type MoveNestedMoveSource =
+  | MoveNestedMoveRegisteredSpecSource
+  | MoveNestedMoveRandomPoolSource
+
 export interface MoveNestedMoveOperationRecipientTargeting {
   readonly kind: 'operation-recipients'
 }
@@ -1459,14 +1490,29 @@ export type MoveNestedMoveTargeting =
   | MoveNestedMoveOperationRecipientTargeting
   | MoveNestedMoveFreshTargetChoice
 
-export interface MoveNestedMoveEffectPayload {
-  readonly canonicalId: string
+interface MoveNestedMoveEffectPayloadBase {
   /** No actor identity is inherited unless this reviewed declaration says so. */
   readonly actor: MoveNestedMoveActor
-  /** Parent move mechanics are never inherited as the child's source. */
-  readonly source: MoveNestedMoveRegisteredSpecSource
   readonly targeting: MoveNestedMoveTargeting
 }
+
+export interface MoveNestedMoveRegisteredSpecPayload
+  extends MoveNestedMoveEffectPayloadBase {
+  readonly canonicalId: string
+  /** Parent move mechanics are never inherited as the child's source. */
+  readonly source: MoveNestedMoveRegisteredSpecSource
+}
+
+export interface MoveNestedMoveRandomPoolPayload
+  extends MoveNestedMoveEffectPayloadBase {
+  /** The child identity comes only from the reviewed server-side pool draw. */
+  readonly canonicalId: null
+  readonly source: MoveNestedMoveRandomPoolSource
+}
+
+export type MoveNestedMoveEffectPayload =
+  | MoveNestedMoveRegisteredSpecPayload
+  | MoveNestedMoveRandomPoolPayload
 
 export interface MoveUsageEffectPayload {
   readonly action: MoveEffectUsageAction
@@ -1607,6 +1653,7 @@ const OPERATION_FIELDS = [
 const SOURCE_FIELDS = ['kind', 'id'] as const
 const RECIPIENTS_FIELDS = ['kind'] as const
 const ROLL_FIELDS = ['rollId', 'formula'] as const
+const TABLE_ROLL_FIELDS = ['rollId', 'formula', 'table'] as const
 const DICE_FORMULA_FIELDS = ['kind', 'count', 'sides', 'modifier'] as const
 const UNIFORM_FORMULA_FIELDS = ['kind', 'minimum', 'maximum'] as const
 const TABLE_FORMULA_FIELDS = ['kind', 'tableId'] as const
@@ -1923,6 +1970,7 @@ const SWITCH_REQUEST_FIELDS = [
 const NESTED_MOVE_FIELDS = ['canonicalId', 'actor', 'source', 'targeting'] as const
 const NESTED_MOVE_ACTOR_FIELDS = ['kind'] as const
 const NESTED_MOVE_SOURCE_FIELDS = ['kind'] as const
+const NESTED_MOVE_RANDOM_POOL_SOURCE_FIELDS = ['kind', 'pool'] as const
 const NESTED_MOVE_RECIPIENT_TARGETING_FIELDS = ['kind'] as const
 const NESTED_MOVE_FRESH_TARGETING_FIELDS = [
   'kind',
@@ -2385,12 +2433,64 @@ const parseRollFormula = (value: unknown, path: string): MoveEffectRollFormula =
   }
 }
 
-const parseRollPayload = (value: unknown, path: string): MoveRollEffectPayload => {
-  const input = parseExactRecord(value, ROLL_FIELDS, path)
-  return {
-    rollId: parseStableId(ownValue(input, 'rollId', path), `${path}.rollId`),
-    formula: parseRollFormula(ownValue(input, 'formula', path), `${path}.formula`),
+const parseRandomSelectionNode = <Value>(
+  parse: () => Value,
+): Value => {
+  try {
+    return parse()
   }
+  catch (error) {
+    if (!(error instanceof MoveRandomSelectionValidationError)) throw error
+    const detailPrefix = `${error.path}: `
+    const detail = error.message.startsWith(detailPrefix)
+      ? error.message.slice(detailPrefix.length)
+      : error.message
+    return fail(
+      error.code === 'limit-exceeded'
+        ? 'limit-exceeded'
+        : error.code === 'not-json'
+          ? 'not-json'
+          : error.code === 'duplicate-id'
+            ? 'duplicate-id'
+            : 'invalid-effect-operation',
+      error.path,
+      detail,
+    )
+  }
+}
+
+const parseRollPayload = (value: unknown, path: string): MoveRollEffectPayload => {
+  const raw = parseRecord(value, path)
+  const formula = parseRollFormula(ownValue(raw, 'formula', path), `${path}.formula`)
+  if (formula.kind !== 'table') {
+    const input = parseExactRecord(raw, ROLL_FIELDS, path)
+    return {
+      rollId: parseStableId(ownValue(input, 'rollId', path), `${path}.rollId`),
+      formula,
+    }
+  }
+
+  const input = parseExactRecord(raw, TABLE_ROLL_FIELDS, path)
+  const rollId = parseStableId(ownValue(input, 'rollId', path), `${path}.rollId`)
+  if (rollId.length > MOVE_RANDOM_SELECTION_LIMITS.rollIdLength) {
+    fail(
+      'limit-exceeded',
+      `${path}.rollId`,
+      `random-table roll IDs must contain at most ${MOVE_RANDOM_SELECTION_LIMITS.rollIdLength} characters.`,
+    )
+  }
+  const table = parseRandomSelectionNode(() => parseMoveRandomTableDefinition(
+    ownValue(input, 'table', path),
+    `${path}.table`,
+  ))
+  if (table.tableId !== formula.tableId) {
+    fail(
+      'invalid-effect-operation',
+      `${path}.table.tableId`,
+      `must match formula table ID ${formula.tableId}.`,
+    )
+  }
+  return { rollId, formula, table }
 }
 
 const parseEffectRuleNode = <Value>(
@@ -4711,10 +4811,13 @@ const parseNestedMovePayload = (
     NESTED_MOVE_ACTOR_FIELDS,
     `${path}.actor`,
   )
-  const sourceInput = parseExactRecord(
-    ownValue(input, 'source', path),
-    NESTED_MOVE_SOURCE_FIELDS,
-    `${path}.source`,
+  const sourceValue = ownValue(input, 'source', path)
+  const sourceRecord = parseRecord(sourceValue, `${path}.source`)
+  const sourceKind = parseEnum<MoveEffectNestedMoveSourceKind>(
+    ownValue(sourceRecord, 'kind', `${path}.source`),
+    NESTED_MOVE_SOURCE_KIND_SET,
+    `${path}.source.kind`,
+    'registered-spec or random-move-pool',
   )
   const targetingValue = ownValue(input, 'targeting', path)
   const targetingInput = parseRecord(targetingValue, `${path}.targeting`)
@@ -4755,28 +4858,51 @@ const parseNestedMovePayload = (
           ),
         }
       })()
-
-  return {
-    canonicalId: parseBoundedText(
-      ownValue(input, 'canonicalId', path),
-      `${path}.canonicalId`,
-      MOVE_EFFECT_OPERATION_LIMITS.identifierLength,
+  const actor: MoveNestedMoveActor = {
+    kind: parseEnum<MoveEffectNestedMoveActorKind>(
+      ownValue(actorInput, 'kind', `${path}.actor`),
+      NESTED_MOVE_ACTOR_KIND_SET,
+      `${path}.actor.kind`,
+      'parent-actor or sole-recipient',
     ),
-    actor: {
-      kind: parseEnum<MoveEffectNestedMoveActorKind>(
-        ownValue(actorInput, 'kind', `${path}.actor`),
-        NESTED_MOVE_ACTOR_KIND_SET,
-        `${path}.actor.kind`,
-        'parent-actor or sole-recipient',
+  }
+  const rawCanonicalId = ownValue(input, 'canonicalId', path)
+
+  if (sourceKind === 'registered-spec') {
+    parseExactRecord(sourceValue, NESTED_MOVE_SOURCE_FIELDS, `${path}.source`)
+    return {
+      canonicalId: parseBoundedText(
+        rawCanonicalId,
+        `${path}.canonicalId`,
+        MOVE_EFFECT_OPERATION_LIMITS.identifierLength,
       ),
-    },
+      actor,
+      source: { kind: 'registered-spec' },
+      targeting,
+    }
+  }
+
+  const source = parseExactRecord(
+    sourceValue,
+    NESTED_MOVE_RANDOM_POOL_SOURCE_FIELDS,
+    `${path}.source`,
+  )
+  if (rawCanonicalId !== null) {
+    fail(
+      'invalid-effect-operation',
+      `${path}.canonicalId`,
+      'must be null when the reviewed random move pool selects the child.',
+    )
+  }
+  return {
+    canonicalId: null,
+    actor,
     source: {
-      kind: parseEnum<MoveEffectNestedMoveSourceKind>(
-        ownValue(sourceInput, 'kind', `${path}.source`),
-        NESTED_MOVE_SOURCE_KIND_SET,
-        `${path}.source.kind`,
-        'registered-spec',
-      ),
+      kind: 'random-move-pool',
+      pool: parseRandomSelectionNode(() => parseMoveRandomMovePoolDefinition(
+        ownValue(source, 'pool', `${path}.source`),
+        `${path}.source.pool`,
+      )),
     },
     targeting,
   }

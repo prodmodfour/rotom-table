@@ -34,6 +34,7 @@ import {
 import {
   reduceCompletedMoveSpec,
 } from '~~/server/domain/moveAutomation/resolveImmediateSpec'
+import { summarizeMoveResolutionTrace } from '~~/server/domain/moveAutomation/trace'
 import { resumeMoveSpec } from '~~/server/domain/moveAutomation/resumeSpec'
 import type {
   MoveAutomationRuntimeRegistry,
@@ -96,8 +97,8 @@ const sheet = (
   combat: { currentHp: 50 },
 })
 
-const pokemonSheets = () => new Map<string, CharacterSheet>([
-  ['actor', sheet('actor', ['Tackle'])],
+const pokemonSheets = (actorMovelist: readonly string[] = ['Tackle']) => new Map<string, CharacterSheet>([
+  ['actor', sheet('actor', actorMovelist)],
   ['target', sheet('target')],
   ['bystander', sheet('bystander')],
 ])
@@ -255,9 +256,10 @@ const contextFor = (options: {
   readonly registry: MoveAutomationRuntimeRegistry
   readonly random?: readonly number[]
   readonly candidatePlacementIds?: readonly string[]
+  readonly actorMovelist?: readonly string[]
 } ) => buildAuthoritativeMoveRulesContext({
   map: mapFixture(),
-  pokemonSheets: pokemonSheets(),
+  pokemonSheets: pokemonSheets(options.actorMovelist),
   trainerSheets: new Map<string, TrainerSheet>(),
   intent: intent(),
   candidatePlacementIds: options.candidatePlacementIds ?? ['target-token'],
@@ -711,6 +713,80 @@ describe('reviewed nested MoveSpec execution', () => {
       }),
       expect.objectContaining({ kind: 'encounter-state' }),
     ]))
+  })
+
+  it('selects a reviewed child from an authoritative move list without exposing alternatives', () => {
+    const childDefinition = validateMoveSpec(childSpec([
+      stage('child.raise-attack'),
+    ]))
+    const pooledOperation = nestedOperation({
+      recipients: { kind: 'none' },
+      payload: {
+        canonicalId: null,
+        actor: { kind: 'parent-actor' },
+        source: {
+          kind: 'random-move-pool',
+          pool: {
+            poolId: 'pool.sleep-talk-canary',
+            rollId: 'roll.sleep-talk-canary',
+            source: { kind: 'authoritative-move-lists', owners: 'actor' },
+            allowCanonicalIds: ['Scratch', 'Swords Dance'],
+            denyCanonicalIds: [],
+            maximumRerolls: 1,
+          },
+        },
+        targeting: { kind: 'operation-recipients' },
+      },
+    })
+    const parentDefinition = validateMoveSpec(parentSpec([pooledOperation]))
+    const registry = registryFor(parentDefinition, childDefinition)
+    const context = contextFor({
+      registry,
+      random: [0, 0.99],
+      actorMovelist: ['Scratch', 'Swords Dance'],
+    })
+
+    const result = executeMoveSpec({
+      definition: parentDefinition,
+      context,
+      authoritativeTargetIds: ['target-token'],
+      resolutionId: 'resolution-parent',
+    })
+
+    expect(result.kind).toBe('complete')
+    expect(result.rollLedger).toMatchObject([
+      {
+        rollId: 'roll.sleep-talk-canary',
+        formula: { kind: 'table', tableId: 'pool.sleep-talk-canary' },
+        finalValue: 1,
+      },
+      {
+        rollId: 'roll.sleep-talk-canary.reroll-1',
+        formula: { kind: 'table', tableId: 'pool.sleep-talk-canary' },
+        finalValue: 2,
+      },
+    ])
+    expect(result.childExecutions).toEqual([
+      expect.objectContaining({ canonicalId: 'Swords Dance', actorPlacementId: 'actor-token' }),
+    ])
+    const poolEvent = result.trace.events.find(event => (
+      event.kind === 'operation' && event.operationId === 'parent.invoke-child'
+    ))
+    expect(poolEvent).toMatchObject({
+      result: {
+        randomSelection: {
+          candidateCount: 2,
+          selectedId: 'Swords Dance',
+          attemptCount: 2,
+        },
+      },
+    })
+    expect(result.sheetReads).toEqual(expect.arrayContaining([
+      { kind: 'pokemon', slug: 'actor', revision: 3 },
+    ]))
+    const publicTrace = summarizeMoveResolutionTrace(result.trace)
+    expect(JSON.stringify(publicTrace)).not.toContain('Scratch')
+    expect(JSON.stringify(publicTrace)).toContain('Swords Dance')
   })
 
   it('rejects Metronome-style self recursion and mutual copy loops before they can recurse', () => {

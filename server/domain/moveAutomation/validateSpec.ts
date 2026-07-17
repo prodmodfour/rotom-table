@@ -25,6 +25,10 @@ import {
   MOVE_RULESET_PROVENANCE,
 } from '#shared/moveAutomation/ruleset'
 import {
+  randomSelectionRollId,
+  type MoveRandomTableEntry,
+} from '#shared/moveAutomation/randomTables'
+import {
   parseMoveSelector,
   type MoveSelector,
 } from '#shared/moveAutomation/selectors'
@@ -554,6 +558,7 @@ export const validateMoveSpecOperationSequence = (
   const checkIndexById = new Map<string, number>()
   const branchIndexBySelectionId = new Map<string, number>()
   const branchControllerByOperationId = new Map<string, string>()
+  const randomControllerByOperationId = new Map<string, string>()
 
   const reserveRollId = (rollId: string, path: string): void => {
     if (reservedRollIds.has(rollId)) {
@@ -569,6 +574,16 @@ export const validateMoveSpecOperationSequence = (
     requestIndexById.set(requestId, index)
   }
 
+  const reserveRandomRollIds = (
+    rollId: string,
+    maximumRerolls: number,
+    path: string,
+  ): void => {
+    for (let attempt = 1; attempt <= maximumRerolls + 1; attempt += 1) {
+      reserveRollId(randomSelectionRollId(rollId, attempt), path)
+    }
+  }
+
   indexed.forEach(({ operation, index, path }) => {
     if (operationIndexById.has(operation.id)) {
       fail('duplicate-id', `${path}.id`, `operation ID ${operation.id} is duplicated.`)
@@ -576,8 +591,24 @@ export const validateMoveSpecOperationSequence = (
     operationIndexById.set(operation.id, index)
 
     if (operation.kind === 'roll') {
-      reserveRollId(operation.payload.rollId, `${path}.payload.rollId`)
+      if (operation.payload.formula.kind === 'table' && 'table' in operation.payload) {
+        reserveRandomRollIds(
+          operation.payload.rollId,
+          operation.payload.table.maximumRerolls,
+          `${path}.payload.rollId`,
+        )
+      }
+      else {
+        reserveRollId(operation.payload.rollId, `${path}.payload.rollId`)
+      }
       rollIndexById.set(operation.payload.rollId, index)
+    }
+    if (operation.kind === 'nested-move' && operation.payload.source.kind === 'random-move-pool') {
+      reserveRandomRollIds(
+        operation.payload.source.pool.rollId,
+        operation.payload.source.pool.maximumRerolls,
+        `${path}.payload.source.pool.rollId`,
+      )
     }
     if (operation.kind === 'multi-hit') {
       if (operation.payload.count.kind !== 'fixed') {
@@ -660,6 +691,62 @@ export const validateMoveSpecOperationSequence = (
       )
     }
   })
+
+  const randomTableEntries = indexed.filter(({ operation }) => (
+    operation.kind === 'roll' && operation.payload.formula.kind === 'table'
+  ))
+  for (const { operation, index, path } of randomTableEntries) {
+    if (
+      operation.kind !== 'roll'
+      || operation.payload.formula.kind !== 'table'
+      || !('table' in operation.payload)
+    ) continue
+    if (operation.recipients.kind !== 'none') {
+      fail(
+        'invalid-definition',
+        `${path}.recipients.kind`,
+        'a reviewed operation table must make one resolution-wide selection.',
+      )
+    }
+    operation.payload.table.entries.forEach((entry: MoveRandomTableEntry, entryIndex) => {
+      entry.operationIds.forEach((operationId, referenceIndex) => {
+        const referencePath = `${path}.payload.table.entries[${entryIndex}].operationIds[${referenceIndex}]`
+        const controlledIndex = operationIndexById.get(operationId) ?? fail(
+          'unknown-reference',
+          referencePath,
+          `random-table operation ID ${operationId} does not resolve.`,
+        )
+        if (controlledIndex <= index) {
+          fail(
+            'invalid-reference-order',
+            referencePath,
+            `random-table operation ID ${operationId} must refer to a later operation.`,
+          )
+        }
+        const controlled = indexed[controlledIndex]?.operation
+        if (
+          !controlled
+          || controlled.kind === 'branch'
+          || (controlled.kind === 'roll' && controlled.payload.formula.kind === 'table')
+        ) {
+          fail(
+            'invalid-definition',
+            referencePath,
+            'a random table cannot control a branch or another random-table operation.',
+          )
+        }
+        const existing = randomControllerByOperationId.get(operationId)
+        if (existing && existing !== operation.id) {
+          fail(
+            'invalid-definition',
+            referencePath,
+            `operation ${operationId} is already controlled by random table ${existing}.`,
+          )
+        }
+        randomControllerByOperationId.set(operationId, operation.id)
+      })
+    })
+  }
 
   const hazardCellChoiceEntries = indexed.filter(({ operation }) => (
     operation.kind === 'hazard'
@@ -1091,11 +1178,15 @@ export const validateMoveSpecOperationSequence = (
             )
           }
           const controlled = indexed[controlledIndex]?.operation
-          if (!controlled || controlled.kind === 'branch') {
+          if (
+            !controlled
+            || controlled.kind === 'branch'
+            || (controlled.kind === 'roll' && controlled.payload.formula.kind === 'table')
+          ) {
             fail(
               'invalid-definition',
               referencePath,
-              'a branch cannot control another branch operation.',
+              'a branch cannot control another branch or random-table controller.',
             )
           }
           if (
@@ -1106,6 +1197,14 @@ export const validateMoveSpecOperationSequence = (
               'invalid-definition',
               referencePath,
               `recipient-scoped branch ${operation.payload.selectionId} can control only target-derived recipient operations.`,
+            )
+          }
+          const randomController = randomControllerByOperationId.get(operationId)
+          if (randomController) {
+            fail(
+              'invalid-definition',
+              referencePath,
+              `operation ${operationId} is already controlled by random table ${randomController}.`,
             )
           }
           const existingController = branchControllerByOperationId.get(operationId)
@@ -1321,11 +1420,18 @@ const normalizeSpec = (input: unknown): ValidatedMoveSpec => {
   const rules = parseRules(spec)
   const phases = parseOperations(spec)
   validateResourceCostCombinations(spec.costs)
-  const branchRuleAstNodes = phases.reduce((total, phase) => total + phase.operations.reduce(
+  const operationRuleAstNodes = phases.reduce((total, phase) => total + phase.operations.reduce(
     (phaseTotal, operation) => phaseTotal + (
       operation.kind === 'branch' && operation.payload.kind === 'predicate'
         ? countTaggedAstNodes(operation.payload.predicate)
-        : 0
+        : operation.kind === 'roll'
+          && operation.payload.formula.kind === 'table'
+          && 'table' in operation.payload
+          ? operation.payload.table.entries.reduce(
+              (entryTotal, entry) => entryTotal + countTaggedAstNodes(entry.predicate),
+              0,
+            )
+          : 0
     ),
     0,
   ), 0)
@@ -1334,7 +1440,7 @@ const normalizeSpec = (input: unknown): ValidatedMoveSpec => {
       (total, precondition) => total + countTaggedAstNodes(precondition.predicate),
       0,
     )
-  if (envelopeRuleAstNodes + branchRuleAstNodes > MOVE_SPEC_DEFINITION_LIMITS.ruleAstNodes) {
+  if (envelopeRuleAstNodes + operationRuleAstNodes > MOVE_SPEC_DEFINITION_LIMITS.ruleAstNodes) {
     fail(
       'limit-exceeded',
       'spec.rules',

@@ -1198,6 +1198,94 @@ describe('authoritative MoveSpec validation and hashing', () => {
     )
   })
 
+  it('validates random-table operation lists and reserves every bounded reroll ID', () => {
+    const randomTable: TestOperation = {
+      id: 'operation.random-table',
+      kind: 'roll',
+      source: { kind: 'move', id: 'move.scratch' },
+      recipients: { kind: 'none' },
+      phase: 'hit',
+      reasonCode: 'move.scratch.random-table',
+      payload: {
+        rollId: 'roll.random-table',
+        formula: { kind: 'table', tableId: 'table.random-effect' },
+        table: {
+          tableId: 'table.random-effect',
+          distribution: 'equal',
+          entries: [{
+            id: 'first',
+            weight: null,
+            operationIds: ['operation.random-log'],
+            predicate: null,
+          }, {
+            id: 'second',
+            weight: null,
+            operationIds: [],
+            predicate: { kind: 'constant', value: true },
+          }],
+          maximumRerolls: 1,
+        },
+      },
+    }
+    const randomLog: TestOperation = {
+      id: 'operation.random-log',
+      kind: 'log',
+      source: { kind: 'operation', id: 'operation.random-table' },
+      recipients: { kind: 'none' },
+      phase: 'cleanup',
+      reasonCode: 'move.scratch.random-log',
+      payload: { messageKey: 'move.scratch.random-log', arguments: [] },
+    }
+    const valid = validSpec()
+    valid.phases = [
+      { phase: 'hit', operations: [randomTable] },
+      { phase: 'cleanup', operations: [randomLog] },
+    ]
+    expect(validateMoveSpec(valid).spec.phases[0]?.operations[0]).toMatchObject({
+      payload: {
+        table: {
+          entries: expect.arrayContaining([
+            expect.objectContaining({ operationIds: ['operation.random-log'] }),
+          ]),
+        },
+      },
+    })
+
+    const unknown = structuredClone(valid)
+    const unknownTable = unknown.phases[0]!.operations[0]!.payload.table as {
+      entries: Array<{ operationIds: string[] }>
+    }
+    unknownTable.entries[0]!.operationIds = ['operation.missing']
+    expectDefinitionError(
+      () => validateMoveSpec(unknown),
+      'unknown-reference',
+      'spec.phases[0].operations[0].payload.table.entries[0].operationIds[0]',
+    )
+
+    const wrongRecipients = structuredClone(valid)
+    wrongRecipients.phases[0]!.operations[0]!.recipients = { kind: 'actor' }
+    expectDefinitionError(
+      () => validateMoveSpec(wrongRecipients),
+      'invalid-definition',
+      'spec.phases[0].operations[0].recipients.kind',
+    )
+
+    const duplicateGeneratedRoll = structuredClone(valid)
+    duplicateGeneratedRoll.phases[1]!.operations.unshift(rollOperation({
+      id: 'operation.colliding-roll',
+      phase: 'cleanup',
+      payload: {
+        rollId: 'roll.random-table.reroll-1',
+        formula: { kind: 'uniform-integer', minimum: 1, maximum: 2 },
+      },
+    }))
+    expectDefinitionError(
+      () => validateMoveSpec(duplicateGeneratedRoll),
+      'duplicate-id',
+      'spec.phases[1].operations[0].payload.rollId',
+    )
+  })
+
   it('binds item mutations only to earlier reviewed item-choice requests', () => {
     const itemChoice: TestOperation = {
       id: 'operation.item-choice',

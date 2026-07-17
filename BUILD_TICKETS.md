@@ -2209,7 +2209,7 @@ Status: DONE
 
 ## MA-161 — Implement generic random tables and move pools
 
-Status: TODO
+Status: DONE
 
 **Depends on:** MA-036, MA-159–MA-160
 **Commit:** `feat(move-automation): resolve reviewed random tables`

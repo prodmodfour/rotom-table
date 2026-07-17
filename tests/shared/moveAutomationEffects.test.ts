@@ -705,10 +705,42 @@ describe('MoveSpec typed effect operations', () => {
       payload: {
         rollId: 'roll.table',
         formula: { kind: 'table', tableId: 'table.five-strike' },
+        table: {
+          tableId: 'table.five-strike',
+          distribution: 'weighted',
+          entries: [{
+            id: 'two-hits',
+            weight: 3,
+            operationIds: ['operation.two-hits'],
+            predicate: null,
+          }, {
+            id: 'five-hits',
+            weight: 1,
+            operationIds: ['operation.five-hits'],
+            predicate: null,
+          }],
+          maximumRerolls: 0,
+        },
       },
     })).payload).toEqual({
       rollId: 'roll.table',
       formula: { kind: 'table', tableId: 'table.five-strike' },
+      table: {
+        tableId: 'table.five-strike',
+        distribution: 'weighted',
+        entries: [{
+          id: 'two-hits',
+          weight: 3,
+          operationIds: ['operation.two-hits'],
+          predicate: null,
+        }, {
+          id: 'five-hits',
+          weight: 1,
+          operationIds: ['operation.five-hits'],
+          predicate: null,
+        }],
+        maximumRerolls: 0,
+      },
     })
     const save = parseMoveEffectOperation(validOperation('check', {
       payload: {

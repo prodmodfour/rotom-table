@@ -11,6 +11,7 @@ import {
   type MoveHazardEffectOperation,
   type MoveMovementRequestEffectOperation,
   type MoveNestedMoveEffectOperation,
+  type MoveNestedMoveRegisteredSpecPayload,
   type MoveReactionRequestEffectOperation,
   type MoveSwitchRequestEffectOperation,
   type MoveEffectSwitchStateTransferPolicy,
@@ -119,6 +120,15 @@ import {
 import type { ValidatedAuthoritativeHazardCellSelection } from './hazardCellSelection'
 import type { MoveSpecV2Runtime } from './registry'
 import {
+  MovePoolResolutionError,
+  resolveAuthoritativeMovePool,
+} from './movePools'
+import {
+  MoveRandomOperationError,
+  resolveMoveRandomTable,
+  type MoveRandomCandidateResolution,
+} from './randomOperations'
+import {
   createNestedMoveExecutionBudget,
   NestedMoveExecutionBudgetError,
   type NestedMoveExecutionBudget,
@@ -135,7 +145,7 @@ import {
 export type MoveSpecExecutionErrorCode =
   | 'definition-integrity-mismatch'
   | 'ruleset-mismatch'
-  | 'random-table-unsupported'
+  | 'random-selection-rejected'
   | 'recipient-limit-exceeded'
   | 'authoritative-target-invalid'
   | 'move-mechanics-unavailable'
@@ -451,6 +461,21 @@ const enforceNestedExecutionBudget = <Result>(operation: () => Result): Result =
   }
 }
 
+const enforceRandomSelection = <Result>(operation: () => Result): Result => {
+  try {
+    return operation()
+  }
+  catch (error) {
+    if (error instanceof MoveRandomOperationError || error instanceof MovePoolResolutionError) {
+      return fail('random-selection-rejected', error.message)
+    }
+    if (error instanceof NestedMoveExecutionBudgetError) {
+      return fail(`nested-${error.code}`, error.message)
+    }
+    throw error
+  }
+}
+
 const frozenIds = (ids: readonly string[]): readonly string[] => Object.freeze([...ids])
 
 const freezeEmittedOperations = (
@@ -566,20 +591,6 @@ const executableDefinition = (
     )
   }
   return validated
-}
-
-/** Fail closed for capability families whose semantics arrive in later tickets. */
-const assertSkeletonExecutable = (
-  operations: readonly MoveEffectOperation[],
-): void => {
-  for (const operation of operations) {
-    if (operation.kind === 'roll' && operation.payload.formula.kind === 'table') {
-      fail(
-        'random-table-unsupported',
-        `Roll ${operation.payload.rollId} refers to a reviewed table that is not available to the skeleton interpreter.`,
-      )
-    }
-  }
 }
 
 const canonicalPlacementIds = (
@@ -1418,9 +1429,6 @@ const executableProgram = (
   handlerRegistry: RegisteredMoveHandlerRegistry,
 ): ExecutableMoveSpecProgram => {
   const staticEntries = staticOperationEntries(definition.spec)
-  assertSkeletonExecutable(
-    staticEntries.map(({ operation }) => operation),
-  )
   const handlerOutput = handlerOutputFor(
     definition,
     context,
@@ -1442,7 +1450,6 @@ const executableProgram = (
   const orderedEntries = MOVE_SPEC_PHASES.flatMap(phase => entriesByPhase.get(phase) ?? [])
   validateMoveSpecOperationSequence(orderedEntries, 'moveSpecExecution.operations')
   const operations = Object.freeze(orderedEntries.map(({ operation }) => operation))
-  assertSkeletonExecutable(operations)
 
   const handlerTraceEntriesByPhase = new Map<
     MoveSpecPhase,
@@ -1481,6 +1488,39 @@ const branchControllerIndex = (
           )
         }
         controllers.set(operationId, operation)
+      }
+    }
+  }
+  return controllers
+}
+
+type MoveRandomTableOperation = MoveRollEffectOperation & {
+  readonly payload: Extract<MoveRollEffectOperation['payload'], {
+    readonly formula: { readonly kind: 'table' }
+  }>
+}
+
+type ExecutedMoveRandomTable = MoveRandomCandidateResolution<
+  MoveRandomTableOperation['payload']['table']['entries'][number]
+>
+
+const randomTableControllerIndex = (
+  operations: readonly MoveEffectOperation[],
+): ReadonlyMap<string, MoveRandomTableOperation> => {
+  const controllers = new Map<string, MoveRandomTableOperation>()
+  for (const operation of operations) {
+    if (operation.kind !== 'roll' || operation.payload.formula.kind !== 'table') continue
+    const tableOperation = operation as MoveRandomTableOperation
+    for (const entry of tableOperation.payload.table.entries) {
+      for (const operationId of entry.operationIds) {
+        const existing = controllers.get(operationId)
+        if (existing && existing.id !== operation.id) {
+          fail(
+            'definition-integrity-mismatch',
+            `Operation ${operationId} has multiple random-table controllers.`,
+          )
+        }
+        controllers.set(operationId, tableOperation)
       }
     }
   }
@@ -1536,6 +1576,30 @@ const gateBranchControlledOperation = (options: {
   }
 }
 
+interface MoveRandomTableOperationGate {
+  readonly execute: boolean
+  readonly tableId: string | null
+  readonly selectedId: string | null
+}
+
+const gateRandomTableControlledOperation = (options: {
+  readonly operationId: string
+  readonly controller: MoveRandomTableOperation | undefined
+  readonly executions: ReadonlyMap<string, ExecutedMoveRandomTable>
+}): MoveRandomTableOperationGate => {
+  if (!options.controller) return { execute: true, tableId: null, selectedId: null }
+  const execution = options.executions.get(options.controller.id)
+    ?? fail(
+      'definition-integrity-mismatch',
+      `Random table ${options.controller.payload.table.tableId} did not resolve before controlled operation ${options.operationId}.`,
+    )
+  return {
+    execute: execution.selected.operationIds.includes(options.operationId),
+    tableId: options.controller.payload.table.tableId,
+    selectedId: execution.selectedId,
+  }
+}
+
 interface MoveSpecExecutionState {
   readonly responseResolver: MoveSpecResponseResolver
   readonly resolutionId: string | null
@@ -1577,9 +1641,24 @@ const nestedTargetLabelKey = (index: number): string => (
   `move.nested-target-option-${index + 1}`
 )
 
+type ResolvedNestedMoveOperation = Omit<MoveNestedMoveEffectOperation, 'payload'> & {
+  readonly payload: MoveNestedMoveRegisteredSpecPayload
+}
+
+interface ResolvedNestedMoveInvocation {
+  readonly operation: ResolvedNestedMoveOperation
+  readonly randomSelection: {
+    readonly candidateCount: number
+    readonly selectedId: string
+    readonly attemptCount: number
+    readonly rollIds: readonly string[]
+  } | null
+  readonly rollLedgerEntries: readonly MoveAutomationRollLedgerEntry[]
+}
+
 const nestedRuntimeFor = (
   context: AuthoritativeMoveRulesContext,
-  operation: MoveNestedMoveEffectOperation,
+  operation: ResolvedNestedMoveOperation,
 ): MoveSpecV2Runtime => {
   const runtime = context.queries.rules.runtimeFor(operation.payload.canonicalId)
   if (
@@ -1595,9 +1674,62 @@ const nestedRuntimeFor = (
   return runtime
 }
 
+const resolveNestedMoveInvocation = (input: {
+  readonly context: AuthoritativeMoveRulesContext
+  readonly operation: MoveNestedMoveEffectOperation
+  readonly recipientIds: readonly string[]
+  readonly budget: NestedMoveExecutionBudget
+}): ResolvedNestedMoveInvocation => {
+  const payload = input.operation.payload
+  const source = payload.source
+  if (source.kind === 'registered-spec') {
+    return Object.freeze({
+      operation: input.operation as ResolvedNestedMoveOperation,
+      randomSelection: null,
+      rollLedgerEntries: Object.freeze([]),
+    })
+  }
+
+  const ledgerStart = input.context.random.snapshot().length
+  const selection = enforceRandomSelection(() => resolveAuthoritativeMovePool({
+    definition: source.pool,
+    context: input.context,
+    recipientIds: input.recipientIds,
+    parentEffectId: input.operation.id,
+    reasonCode: input.operation.reasonCode,
+    budget: input.budget,
+    isCandidateValid: (canonicalId) => {
+      const runtime = input.context.queries.rules.runtimeFor(canonicalId)
+      if (!runtime || runtime.kind !== 'movespec-v2') return false
+      const snapshot = input.budget.snapshot()
+      return !snapshot.visitedCanonicalIds.includes(canonicalId)
+        && !snapshot.bannedCanonicalIds.includes(canonicalId)
+    },
+  }))
+  const operation: ResolvedNestedMoveOperation = Object.freeze({
+    ...input.operation,
+    payload: Object.freeze({
+      canonicalId: selection.selectedId,
+      actor: payload.actor,
+      source: Object.freeze({ kind: 'registered-spec' as const }),
+      targeting: payload.targeting,
+    }),
+  })
+  return Object.freeze({
+    operation,
+    randomSelection: Object.freeze({
+      candidateCount: selection.candidateCount,
+      selectedId: selection.selectedId,
+      attemptCount: selection.attemptCount,
+      rollIds: frozenIds(selection.rollIds),
+    }),
+    rollLedgerEntries: Object.freeze(input.context.random.snapshot().slice(ledgerStart)),
+  })
+}
+
 const nestedActorPlacementId = (
   context: AuthoritativeMoveRulesContext,
-  operation: MoveNestedMoveEffectOperation,
+  operation: ResolvedNestedMoveOperation,
   recipientIds: readonly string[],
 ): string => {
   if (operation.payload.actor.kind === 'parent-actor') {
@@ -1671,7 +1803,7 @@ export const deriveNestedMoveRulesContext = (input: {
 
 const nestedTargetOptions = (input: {
   readonly context: AuthoritativeMoveRulesContext
-  readonly operation: MoveNestedMoveEffectOperation
+  readonly operation: ResolvedNestedMoveOperation
   readonly runtime: MoveSpecV2Runtime
   readonly selectorState: MoveSpecSelectorState
   readonly budget: NestedMoveExecutionBudget
@@ -1727,7 +1859,7 @@ const nestedTargetOptions = (input: {
 }
 
 const nestedTargetRequest = (input: {
-  readonly operation: MoveNestedMoveEffectOperation
+  readonly operation: ResolvedNestedMoveOperation
   readonly actorPlacementId: string
   readonly options: readonly NestedMoveTargetOption[]
 }): MoveSpecPendingNestedTargetRequest => {
@@ -1869,6 +2001,7 @@ const executeMoveSpecInternal = (
     return appendMoveResolutionTrace(current, event)
   }
   const branchControllers = branchControllerIndex(program.operations)
+  const randomTableControllers = randomTableControllerIndex(program.operations)
   const responseResolver = executionState.responseResolver
   const hazardSelections = new Map<string, ValidatedAuthoritativeHazardCellSelection>()
   for (const selection of input.authoritativeHazardCellSelections ?? []) {
@@ -1927,6 +2060,7 @@ const executeMoveSpecInternal = (
   const resolvedHazardCells: MoveSpecResolvedHazardCells[] = []
   const childExecutions: MoveSpecChildExecution[] = []
   const branchExecutions = new Map<string, ExecutedMoveBranch>()
+  const randomTableExecutions = new Map<string, ExecutedMoveRandomTable>()
   const currentSelectorState = (): MoveSpecSelectorState => ({
     targetIds,
     hitTargetIds,
@@ -2139,6 +2273,29 @@ const executeMoveSpecInternal = (
         missedTargetIds,
         damagedTargetIds,
         faintedTargetIds,
+      }
+      const randomTableGate = gateRandomTableControlledOperation({
+        operationId: operation.id,
+        controller: randomTableControllers.get(operation.id),
+        executions: randomTableExecutions,
+      })
+      if (!randomTableGate.execute) {
+        trace = reduceMoveResolutionTrace(trace, {
+          kind: 'operation',
+          phase,
+          operationId: operation.id,
+          operationKind: operation.kind,
+          recipientIds: [],
+          outcome: 'prevented',
+          reasonCode: operation.reasonCode,
+          input: traceJson(operation.payload),
+          result: traceJson({
+            status: 'random-entry-not-selected',
+            tableId: randomTableGate.tableId,
+            selectedId: randomTableGate.selectedId,
+          }),
+        })
+        continue
       }
       const branchGate = gateBranchControlledOperation({
         operationId: operation.id,
@@ -2415,10 +2572,61 @@ const executeMoveSpecInternal = (
 
       if (operation.kind === 'roll') {
         if (operation.payload.formula.kind === 'table') {
-          return fail(
-            'random-table-unsupported',
-            `Roll ${operation.payload.rollId} cannot resolve without a reviewed server table.`,
-          )
+          const tableOperation = operation as MoveRandomTableOperation
+          const selection = enforceRandomSelection(() => resolveMoveRandomTable({
+            definition: tableOperation.payload.table,
+            rollId: tableOperation.payload.rollId,
+            parentEffectId: tableOperation.id,
+            reasonCode: tableOperation.reasonCode,
+            random: input.context.random,
+            isEntryValid: entry => entry.predicate === null || evaluateMovePredicate({
+              predicate: entry.predicate,
+              context: input.context,
+              canonicalMoveId: spec.canonicalId,
+              rootNodeId: `${tableOperation.id}.${entry.id}`,
+              selectorState,
+            }).value,
+            reserveRetry: () => executionState.nestedBudget.reserveRandomRetries(
+              1,
+              `Random operation table ${tableOperation.payload.table.tableId}`,
+            ),
+          }))
+          randomTableExecutions.set(tableOperation.id, selection)
+          for (const rollId of selection.rollIds) {
+            resolvedRolls.push({
+              operationId: tableOperation.id,
+              referenceId: tableOperation.payload.rollId,
+              purpose: 'generic',
+              recipientId: null,
+              rollId,
+            })
+          }
+          trace = reduceMoveResolutionTrace(trace, {
+            kind: 'operation',
+            phase,
+            operationId: tableOperation.id,
+            operationKind: tableOperation.kind,
+            recipientIds,
+            outcome: 'applied',
+            reasonCode: tableOperation.reasonCode,
+            input: traceJson(tableOperation.payload),
+            result: traceJson({
+              candidateCount: selection.candidateCount,
+              selectedId: selection.selectedId,
+              attemptCount: selection.attemptCount,
+            }),
+          })
+          for (const rollId of selection.rollIds) {
+            const roll = input.context.random.snapshot().find(entry => entry.rollId === rollId)
+              ?? fail('definition-integrity-mismatch', `Random-table roll ${rollId} is missing from the ledger.`)
+            trace = reduceMoveResolutionTrace(trace, {
+              kind: 'roll',
+              phase,
+              reasonCode: tableOperation.reasonCode,
+              roll,
+            })
+          }
+          continue
         }
         const purpose = referencedAccuracyRollIds.has(operation.payload.rollId)
           ? 'accuracy' as const
@@ -3094,7 +3302,31 @@ const executeMoveSpecInternal = (
       }
 
       if (operation.kind === 'nested-move') {
-        const runtime = nestedRuntimeFor(input.context, operation)
+        const invocation = resolveNestedMoveInvocation({
+          context: input.context,
+          operation,
+          recipientIds,
+          budget: executionState.nestedBudget,
+        })
+        const nestedOperation = invocation.operation
+        for (const roll of invocation.rollLedgerEntries) {
+          resolvedRolls.push({
+            operationId: operation.id,
+            referenceId: operation.payload.source.kind === 'random-move-pool'
+              ? operation.payload.source.pool.rollId
+              : roll.rollId,
+            purpose: 'generic',
+            recipientId: null,
+            rollId: roll.rollId,
+          })
+          trace = reduceMoveResolutionTrace(trace, {
+            kind: 'roll',
+            phase,
+            reasonCode: operation.reasonCode,
+            roll,
+          })
+        }
+        const runtime = nestedRuntimeFor(input.context, nestedOperation)
         if (runtime.definition.spec.targeting.kind === 'area') {
           return fail(
             'nested-targeting-invalid',
@@ -3108,7 +3340,7 @@ const executeMoveSpecInternal = (
           )
         const actorPlacementId = nestedActorPlacementId(
           input.context,
-          operation,
+          nestedOperation,
           recipientIds,
         )
         const childResolutionId = nestedChildResolutionId({
@@ -3128,26 +3360,50 @@ const executeMoveSpecInternal = (
           parent: input.context,
           actorPlacementId,
           canonicalId: runtime.canonicalId,
-          targetIds: operation.payload.targeting.kind === 'operation-recipients'
+          targetIds: nestedOperation.payload.targeting.kind === 'operation-recipients'
             ? recipientIds
             : [],
           resolutionId: childResolutionId,
           ancestry,
         })
-        let childTargetIds: readonly string[] = operation.payload.targeting.kind === 'operation-recipients'
+        let childTargetIds: readonly string[] = nestedOperation.payload.targeting.kind === 'operation-recipients'
           ? recipientIds
           : []
         let nestedOperationTraced = false
+        if (
+          invocation.randomSelection
+          && nestedOperation.payload.targeting.kind === 'operation-recipients'
+        ) {
+          trace = reduceMoveResolutionTrace(trace, {
+            kind: 'operation',
+            phase,
+            operationId: operation.id,
+            operationKind: operation.kind,
+            recipientIds,
+            outcome: 'applied',
+            reasonCode: operation.reasonCode,
+            input: traceJson(operation.payload),
+            result: traceJson({
+              status: 'child-selected',
+              randomSelection: invocation.randomSelection,
+            }),
+          })
+          nestedOperationTraced = true
+        }
 
-        if (operation.payload.targeting.kind === 'fresh-choice') {
+        if (nestedOperation.payload.targeting.kind === 'fresh-choice') {
           const choices = nestedTargetOptions({
             context: actorContext,
-            operation,
+            operation: nestedOperation,
             runtime,
             selectorState,
             budget: executionState.nestedBudget,
           })
-          const request = nestedTargetRequest({ operation, actorPlacementId, options: choices })
+          const request = nestedTargetRequest({
+            operation: nestedOperation,
+            actorPlacementId,
+            options: choices,
+          })
           const response = responseResolver.resolve({
             requestId: request.requestId,
             options: request.options,
@@ -3163,11 +3419,15 @@ const executeMoveSpecInternal = (
             reasonCode: operation.reasonCode,
             input: traceJson(operation.payload),
             result: traceJson(response
-              ? { status: 'target-selected' }
+              ? {
+                  status: 'target-selected',
+                  randomSelection: invocation.randomSelection,
+                }
               : {
                   requestId: request.requestId,
                   requestKind: request.kind,
                   optionCount: request.options.length,
+                  randomSelection: invocation.randomSelection,
                 }),
           })
           nestedOperationTraced = true
@@ -3388,6 +3648,7 @@ const executeMoveSpecInternal = (
               status: 'child-completed',
               childResolutionId,
               canonicalId: runtime.canonicalId,
+              randomSelection: invocation.randomSelection,
             }),
           })
         }
