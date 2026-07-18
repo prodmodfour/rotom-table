@@ -97,6 +97,10 @@ import {
   type MoveAutomationStatResolver,
 } from './stats'
 import {
+  createSideDamageResistanceResolver,
+  type SideDamageResistanceResolver,
+} from './sideDamageResistance'
+import {
   createMoveAutomationTargetStateResolver,
   type MoveAutomationTargetStateResolver,
 } from './targetState'
@@ -190,6 +194,8 @@ export interface AuthoritativeMoveContextQueries {
   readonly resources: AuthoritativeMoveResourceQueries
   readonly rooms: AuthoritativeMoveRoomQueries
   readonly stats: AuthoritativeMoveStatQueries
+  /** Resolution-local reservations for typed side-owned damage resistance. */
+  readonly sideDamageResistance: SideDamageResistanceResolver
   readonly targetStates: AuthoritativeMoveTargetStateQueries
   readonly targetability: AuthoritativeMoveTargetabilityQueries
   readonly lineOfSight: AuthoritativeMoveLineOfSightQueries
@@ -526,6 +532,11 @@ export const buildAuthoritativeMoveRulesContext = (
   const targetability = createMoveSemiInvulnerableTargetabilityResolver({
     effects: map.encounterState?.effects ?? [],
   })
+  const sideDamageResistance = createSideDamageResistanceResolver({
+    placements,
+    sides: map.encounterState?.sides ?? {},
+    effects: map.encounterState?.effects ?? [],
+  })
   const history = createMoveAutomationHistoryResolver(
     map.encounterState?.history ?? createEmptyEncounterHistory(),
   )
@@ -708,7 +719,13 @@ export const buildAuthoritativeMoveRulesContext = (
     const canonicalMove = findMove(moveName)
     const selectedRuntime = canonicalMove ? runtimes.get(canonicalMove.name) : null
     if (canonicalMove && selectedRuntime?.kind === 'movespec-v2') {
-      return detachedFrozenJson(createMoveAutomationScriptFromMoveData(canonicalMove))
+      const script = createMoveAutomationScriptFromMoveData(canonicalMove)
+      // The reviewed spec is authoritative for intent shape. Canonical range
+      // prose such as Blessing does not itself imply the self declaration that
+      // a native runtime has explicitly reviewed.
+      return detachedFrozenJson(selectedRuntime.definition.spec.targeting.kind === 'self'
+        ? { ...script, targetMode: 'self', targetCount: 1 }
+        : script)
     }
     return legacyScriptFor(moveName)
   }
@@ -747,6 +764,7 @@ export const buildAuthoritativeMoveRulesContext = (
     resources,
     rooms,
     stats,
+    sideDamageResistance,
     targetStates,
     targetability,
     lineOfSight,

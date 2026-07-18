@@ -3,6 +3,7 @@ import {
   parseEncounterState,
   type EncounterState,
 } from '#shared/moveAutomation/encounterState'
+import { parseEncounterEffects } from '#shared/moveAutomation/encounterEffects'
 import { nextRevision } from '#shared/sessionRevisions'
 import type { CombatStageMap } from '~/types/combatStages'
 import type { MapMoveUsageState, SheetMoveUsageState } from '~/types/moveUsage'
@@ -498,14 +499,24 @@ const parseInverse = (
       return fail(`${label}.kind is unsupported.`)
     })()
     try {
-      parseEncounterState({
-        ...createEmptyEncounterState(),
-        [field]: value.expectedCurrent,
-      })
-      parseEncounterState({
-        ...createEmptyEncounterState(),
-        [field]: value.restore,
-      })
+      if (field === 'effects') {
+        // Compensation entries are parsed independently, so the companion
+        // encounter-side operation is not available here. Keep strict effect
+        // shape validation; full side references were validated on the source
+        // state change and are revalidated against the map when correcting.
+        parseEncounterEffects(value.expectedCurrent, `${label}.expectedCurrent`)
+        parseEncounterEffects(value.restore, `${label}.restore`)
+      }
+      else {
+        parseEncounterState({
+          ...createEmptyEncounterState(),
+          [field]: value.expectedCurrent,
+        })
+        parseEncounterState({
+          ...createEmptyEncounterState(),
+          [field]: value.restore,
+        })
+      }
     }
     catch (error) {
       return fail(`${label} contains invalid encounter ${field}: ${error instanceof Error ? error.message : String(error)}`)

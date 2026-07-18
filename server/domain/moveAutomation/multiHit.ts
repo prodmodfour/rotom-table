@@ -150,6 +150,7 @@ export interface MoveMultiHitDamageResolution {
   readonly contextualDamageBase: MoveContextualDamageBaseResolution | null
   readonly criticalHit: MoveSpecDamageCalculation['criticalHit']
   readonly damagePipeline: MoveSpecDamageCalculation['damagePipeline']
+  readonly sideDamageResistance: MoveSpecDamageCalculation['sideDamageResistance']
   readonly result: MoveCoreTokenEffectRecipientResult
 }
 
@@ -735,6 +736,7 @@ const resolutionTrace = (
         critical: strike.damage.criticalHit.critical,
         criticalReasonCode: strike.damage.criticalHit.reasonCode,
         damagePipelineHpLoss: strike.damage.damagePipeline?.hpLoss ?? null,
+        sideDamageResistance: strike.damage.sideDamageResistance,
       },
       knockout: strike.knockout,
       stoppedAfterStrike: strike.stoppedAfterStrike,
@@ -996,6 +998,7 @@ export const executeMoveMultiHitOperation = (options: {
                   damagePipeline: calculation.damagePipeline,
                   terrain: calculation.terrain.trace,
                   weather: calculation.weather.trace,
+                  sideDamageResistance: calculation.sideDamageResistance,
                 } as unknown as MoveResolutionTraceJsonValue,
               }),
             },
@@ -1044,6 +1047,7 @@ export const executeMoveMultiHitOperation = (options: {
             contextualDamageBase: calculation.contextualDamageBase,
             criticalHit: calculation.criticalHit,
             damagePipeline: calculation.damagePipeline,
+            sideDamageResistance: calculation.sideDamageResistance,
             result: damageResult,
           }
         }

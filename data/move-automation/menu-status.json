@@ -6784,26 +6784,12 @@
     {
       "canonicalId": "Reflect",
       "displayName": "Reflect",
-      "baseStatus": "assisted",
+      "baseStatus": "complete",
       "interactionStatus": "unassessed",
-      "runtimeKind": "legacy-v1",
-      "blockerCodes": [
-        "lifecycle.effects",
-        "reactions.durable",
-        "targeting.authoritative"
-      ],
-      "limitations": [
-        {
-          "code": "reflect.token-marker",
-          "summary": "The legacy script stores Reflect as a marker on the user rather than an allied side effect and does not apply or consume its two Physical Damage activations."
-        }
-      ],
-      "manualSteps": [
-        {
-          "code": "reflect.side-activations",
-          "summary": "Track two shared side activations, apply one step of resistance when an affected ally activates Reflect against Physical Damage, and remove it after the second use."
-        }
-      ]
+      "runtimeKind": "movespec-v2",
+      "blockerCodes": [],
+      "limitations": [],
+      "manualSteps": []
     },
     {
       "canonicalId": "Reflect Type",

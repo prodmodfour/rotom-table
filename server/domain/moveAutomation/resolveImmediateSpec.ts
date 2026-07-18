@@ -327,6 +327,7 @@ const createDamageQuery = (options: {
           damagePipeline: calculation.damagePipeline,
           terrain: calculation.terrain.trace,
           weather: calculation.weather.trace,
+          sideDamageResistance: calculation.sideDamageResistance,
         } as unknown as MoveResolutionTraceJsonValue,
       }
     },

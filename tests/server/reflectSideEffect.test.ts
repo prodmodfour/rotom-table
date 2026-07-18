@@ -1,5 +1,4 @@
 import { describe, expect, it } from 'vitest'
-import manifestJson from '../../data/move-automation/manifest.json'
 import {
   LIVE_PLAY_MOVE_RESOLUTION_SCHEMA_VERSION,
   type ResolveMoveIntent,
@@ -149,19 +148,6 @@ const reflectOperation = (): MoveTemporaryEffectOperation => parseMoveEffectOper
 }) as MoveTemporaryEffectOperation
 
 describe('Reflect owned side-effect foundation', () => {
-  it('keeps Reflect assisted on its legacy runtime until damage integration lands', () => {
-    expect(manifestJson.moves.find(row => row.canonicalId === 'Reflect')).toMatchObject({
-      baseStatus: 'assisted',
-      runtime: {
-        kind: 'legacy-v1',
-        version: 1,
-        sourceModule: 'src/utils/move-automation/scripts/self.ts',
-      },
-      blockerCodes: ['lifecycle.effects', 'reactions.durable', 'targeting.authoritative'],
-      scenarioIds: [],
-    })
-  })
-
   it('strictly parses only the bounded physical resistance payload and charge range', () => {
     const effect = reflectEffect()
 

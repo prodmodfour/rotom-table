@@ -2330,7 +2330,7 @@ Status: DONE
 
 ## MA-172B — Apply and certify Reflect damage mitigation
 
-Status: TODO
+Status: DONE
 
 **Depends on:** MA-172A, MA-077
 **Commit:** `feat(move-automation): fully resolve reflect`

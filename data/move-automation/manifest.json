@@ -18613,45 +18613,86 @@
     {
       "canonicalId": "Reflect",
       "displayName": "Reflect",
-      "baseStatus": "assisted",
+      "baseStatus": "complete",
       "interactionStatus": "unassessed",
       "runtime": {
-        "kind": "legacy-v1",
-        "version": 1,
-        "definitionHash": "f406db70a66b9488e74d94ba4582e5cd2795ea27e52431a43ddb4b8ede3c3e92",
-        "sourceModule": "src/utils/move-automation/scripts/self.ts"
+        "kind": "movespec-v2",
+        "version": 2,
+        "definitionHash": "ace2799926aef7982024cc4730ce4564b1d10c71e4b7b435abe766102da30caa",
+        "sourceModule": "server/domain/moveAutomation/specs/reflect.ts"
       },
       "rulesProvenance": {
         "rulesetId": "rotom-table-reference-moves-v1",
         "canonicalizationVersion": 1,
         "sourceDataSha256": "f90491826349afd7d1f2809fd9d74b7acc555f5163b99264205ee369249e9815"
       },
-      "capabilityTags": [],
-      "suggestedCapabilityTags": [],
-      "blockerCodes": [
+      "capabilityTags": [
         "lifecycle.effects",
         "reactions.durable",
         "targeting.authoritative"
       ],
-      "limitations": [
-        {
-          "code": "reflect.token-marker",
-          "summary": "The legacy script stores Reflect as a marker on the user rather than an allied side effect and does not apply or consume its two Physical Damage activations."
-        }
+      "suggestedCapabilityTags": [],
+      "blockerCodes": [],
+      "limitations": [],
+      "manualSteps": [],
+      "scenarioIds": [
+        "reflect.v2-duplicate-replay",
+        "reflect.v2-enemy-unaffected",
+        "reflect.v2-physical-activation",
+        "reflect.v2-scene-expiry",
+        "reflect.v2-side-application",
+        "reflect.v2-special-retain"
       ],
-      "manualSteps": [
-        {
-          "code": "reflect.side-activations",
-          "summary": "Track two shared side activations, apply one step of resistance when an affected ally activates Reflect against Physical Damage, and remove it after the second use."
-        }
-      ],
-      "scenarioIds": [],
       "conformanceEvidence": {
-        "requirementTags": [],
-        "scenarios": [],
+        "requirementTags": [
+          "branch.threshold",
+          "mechanic.lifecycle",
+          "recovery.retry",
+          "target.ally",
+          "target.enemy"
+        ],
+        "scenarios": [
+          {
+            "scenarioId": "reflect.v2-duplicate-replay",
+            "evidenceClasses": [
+              "retry"
+            ]
+          },
+          {
+            "scenarioId": "reflect.v2-enemy-unaffected",
+            "evidenceClasses": [
+              "enemy"
+            ]
+          },
+          {
+            "scenarioId": "reflect.v2-physical-activation",
+            "evidenceClasses": [
+              "lifecycle-trigger",
+              "threshold-pass"
+            ]
+          },
+          {
+            "scenarioId": "reflect.v2-scene-expiry",
+            "evidenceClasses": [
+              "lifecycle-cleanup"
+            ]
+          },
+          {
+            "scenarioId": "reflect.v2-side-application",
+            "evidenceClasses": [
+              "ally"
+            ]
+          },
+          {
+            "scenarioId": "reflect.v2-special-retain",
+            "evidenceClasses": [
+              "threshold-fail"
+            ]
+          }
+        ],
         "notApplicable": []
       },
-      "reviewedAt": "2026-07-10",
+      "reviewedAt": "2026-07-18",
       "unsupportedInteractionIds": [],
       "rolloutCohortId": null
     },
