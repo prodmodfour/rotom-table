@@ -43,6 +43,7 @@ const TARGET_TOKEN_FIELDS = [
   'hp',
   'combatStages',
   'conditions',
+  'position',
 ] as const satisfies readonly LivePlayTokenScope['field'][]
 
 const ACTOR_SHEET_FIELDS = [

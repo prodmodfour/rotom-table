@@ -64,22 +64,14 @@ describe('map token move menu options', () => {
     expect(move.damageFormula).toBe('2d6+8+14')
     expect(move.automation).toMatchObject({
       canonicalId: 'Tackle',
-      baseStatus: 'assisted',
-      baseStatusLabel: 'Assisted',
+      baseStatus: 'complete',
+      baseStatusLabel: 'Complete',
       interactionStatus: 'unassessed',
       interactionStatusLabel: 'Unassessed',
-      runtimeKind: 'legacy-v1',
-      blockerCodes: ['movement.authoritative'],
+      runtimeKind: 'movespec-v2',
+      blockerCodes: [],
     })
-    expect(move.automation.details).toEqual(expect.arrayContaining([
-      expect.objectContaining({
-        kind: 'blocker',
-        code: 'movement.authoritative',
-        summary: 'Movement · Authoritative is planned for Phase 6.',
-      }),
-      expect.objectContaining({ kind: 'limitation', code: 'tackle.push' }),
-      expect.objectContaining({ kind: 'manual-step', code: 'tackle.push' }),
-    ]))
+    expect(move.automation.details).toEqual([])
     expect(move.disabledByAutomation).toBe(false)
   })
 
@@ -127,7 +119,7 @@ describe('map token move menu options', () => {
     expect(moves.find((move) => move.name === 'Tackle')).toMatchObject({
       hasAutomationScript: true,
       disabledByAutomation: false,
-      automation: { baseStatus: 'assisted' },
+      automation: { baseStatus: 'complete' },
     })
     expect(moves.find((move) => move.name === 'Teleport')).toMatchObject({
       hasAutomationScript: false,

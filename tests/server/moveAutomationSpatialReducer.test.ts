@@ -115,7 +115,7 @@ const dynamicRecipients = (overrides: Partial<{
 
 const operation = (options: {
   readonly id?: string
-  readonly recipients?: 'actor' | 'hit-targets'
+  readonly recipients?: 'actor' | 'hit-targets' | 'damaged-targets'
   readonly mode?: 'forced' | 'voluntary'
   readonly distance?: MoveMovementDistance
   readonly displacement?: MoveMovementDisplacement
@@ -280,6 +280,32 @@ describe('MoveSpec spatial effect reducer', () => {
     expect(Object.isFrozen(result)).toBe(true)
     expect(Object.isFrozen(result.movements[0]?.path)).toBe(true)
     expect(Object.isFrozen(result.movements[0]?.distance.trace)).toBe(true)
+  })
+
+  it('rebinds post-reduction damaged recipients and rejects an invalid provisional recipient', () => {
+    const damaged = operation({ recipients: 'damaged-targets' })
+    const result = reduceMoveSpatialEffects({
+      context: buildContext(),
+      operations: [emission(damaged, [])],
+      dynamicRecipients: dynamicRecipients(),
+    })
+
+    expect(result.movements).toEqual([
+      expect.objectContaining({
+        recipientPlacementId: 'target-token',
+        destination: { x: 5, y: 0, z: 2 },
+      }),
+    ])
+    expect(result.operationResults[0]).toMatchObject({
+      recipientIds: ['target-token'],
+      outcome: 'applied',
+    })
+
+    expectSpatialError(() => reduceMoveSpatialEffects({
+      context: buildContext(),
+      operations: [emission(damaged, ['actor-token'])],
+      dynamicRecipients: dynamicRecipients(),
+    }), 'recipient-set-mismatch')
   })
 
   it('derives toward and cardinal vectors while keeping mode and AoO policy independent', () => {

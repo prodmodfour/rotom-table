@@ -19,7 +19,6 @@ import {
   createMoveResolutionTrace,
   reduceMoveResolutionTrace,
 } from '../trace'
-import { TAKE_DOWN_HANDLER_REGISTRATION } from './takeDown'
 
 export const REGISTERED_MOVE_HANDLER_LIMITS = Object.freeze({
   operations: MOVE_EFFECT_OPERATION_LIMITS.operations,
@@ -234,9 +233,7 @@ export const createRegisteredMoveHandlerRegistry = (
 }
 
 /** Add reviewed production handlers here; specs cannot register callbacks themselves. */
-export const REGISTERED_MOVE_HANDLER_REGISTRY = createRegisteredMoveHandlerRegistry([
-  TAKE_DOWN_HANDLER_REGISTRATION,
-])
+export const REGISTERED_MOVE_HANDLER_REGISTRY = createRegisteredMoveHandlerRegistry([])
 
 const strictOutputClone = (value: unknown): UnknownRecord => {
   const detached = JSON.parse(stableJsonStringify(value, {

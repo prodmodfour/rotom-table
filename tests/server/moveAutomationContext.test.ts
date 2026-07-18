@@ -79,12 +79,20 @@ const pokemonSheet = (
   ...overrides,
 })
 
-const intent = (): ResolveMoveIntent => ({
+const intent = (moveName = 'Tackle'): ResolveMoveIntent => ({
   schemaVersion: LIVE_PLAY_MOVE_RESOLUTION_SCHEMA_VERSION,
   placementId: 'actor-token',
-  moveName: 'Tackle',
+  moveName,
   selection: { kind: 'single-target', targetPlacementId: 'target-token' },
 })
+
+const pokemonSheetsForMove = (
+  moveName = 'Tackle',
+): ReadonlyMap<string, CharacterSheet> => new Map([
+  ['actor', pokemonSheet('actor', { movelist: [{ name: moveName }] })],
+  ['target', pokemonSheet('target', { revision: 5 })],
+  ['ally', pokemonSheet('ally')],
+])
 
 const randomSequence = (values: readonly number[]): (() => number) => {
   let index = 0
@@ -155,11 +163,7 @@ const buildContext = (overrides: {
   readonly intent?: ResolveMoveIntent
 } = {}) => buildAuthoritativeMoveRulesContext({
   map: overrides.map ?? mapFixture(),
-  pokemonSheets: overrides.pokemonSheets ?? new Map([
-    ['actor', pokemonSheet('actor')],
-    ['target', pokemonSheet('target', { revision: 5 })],
-    ['ally', pokemonSheet('ally')],
-  ]),
+  pokemonSheets: overrides.pokemonSheets ?? pokemonSheetsForMove(),
   trainerSheets: new Map<string, TrainerSheet>(),
   intent: overrides.intent ?? intent(),
   candidatePlacementIds: ['target-token', 'ally-token'],
@@ -350,13 +354,14 @@ describe('immutable authoritative move rules context', () => {
     expect(Object.isFrozen(context.queries.lineOfSight)).toBe(true)
     expect(context.queries.rules.runtimeFor('Tackle')).toMatchObject({
       canonicalId: 'Tackle',
-      kind: 'legacy-v1',
+      kind: 'movespec-v2',
     })
     expect(context.queries.rules.runtimeFor('tackle')).toBeNull()
-    expect(context.queries.rules.legacyScriptFor('tackle')).toMatchObject({ moveName: 'Tackle' })
+    expect(context.queries.rules.legacyScriptFor('tackle')).toBeNull()
+    expect(context.queries.rules.legacyScriptFor('pound')).toMatchObject({ moveName: 'Pound' })
     expect(context.queries.rules.semanticStatusFor('Tackle')).toMatchObject({
       canonicalId: 'Tackle',
-      baseStatus: 'assisted',
+      baseStatus: 'complete',
     })
   })
 
@@ -716,7 +721,11 @@ describe('immutable authoritative move rules context', () => {
       ...redBlueEncounterStateFixture(),
       zones: [smokeZone()],
     }
-    const smokeContext = buildContext({ map: smokeMap })
+    const smokeContext = buildContext({
+      map: smokeMap,
+      pokemonSheets: pokemonSheetsForMove('Pound'),
+      intent: intent('Pound'),
+    })
 
     expect(smokeContext.queries.barriersAndSmoke.smoke()).toEqual([
       expect.objectContaining({
@@ -752,7 +761,11 @@ describe('immutable authoritative move rules context', () => {
       ...redBlueEncounterStateFixture(),
       zones: [barrierZone()],
     }
-    const barrierContext = buildContext({ map: barrierMap })
+    const barrierContext = buildContext({
+      map: barrierMap,
+      pokemonSheets: pokemonSheetsForMove('Pound'),
+      intent: intent('Pound'),
+    })
     expect(barrierContext.queries.lineOfSight.resolve('actor-token', 'target-token'))
       .toMatchObject({
         targetable: false,
@@ -805,7 +818,7 @@ describe('immutable authoritative move rules context', () => {
 
   it('uses only injected time and randomness after construction and preserves its detached source snapshot', () => {
     const map = mapFixture()
-    const actor = pokemonSheet('actor')
+    const actor = pokemonSheet('actor', { movelist: [{ name: 'Pound' }] })
     const sheets = new Map([
       ['actor', actor],
       ['target', pokemonSheet('target', { revision: 5 })],
@@ -815,14 +828,15 @@ describe('immutable authoritative move rules context', () => {
       map,
       pokemonSheets: sheets,
       random: randomSequence([0.5, 0, 0.25]),
+      intent: intent('Pound'),
     })
 
     map.placements[1]!.position.x = 7
     actor.movelist = []
 
     const scripts = EXPLICIT_MOVE_AUTOMATION_SCRIPTS as Map<string, MoveAutomationScript>
-    const originalScript = scripts.get('Tackle')!
-    scripts.set('Tackle', { ...originalScript, targetMode: 'self' })
+    const originalScript = scripts.get('Pound')!
+    scripts.set('Pound', { ...originalScript, targetMode: 'self' })
     const originalRandom = Math.random
     const originalNow = Date.now
     Math.random = () => { throw new Error('ambient random must not run') }
@@ -842,7 +856,7 @@ describe('immutable authoritative move rules context', () => {
       ])
     }
     finally {
-      scripts.set('Tackle', originalScript)
+      scripts.set('Pound', originalScript)
       Math.random = originalRandom
       Date.now = originalNow
     }

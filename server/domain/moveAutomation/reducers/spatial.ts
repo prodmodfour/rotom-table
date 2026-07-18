@@ -223,6 +223,10 @@ const OPPORTUNITY_ATTACK_POLICY_SET = new Set<string>(
 const DISPLACEMENT_DISTANCE_POLICY_SET = new Set<string>(
   MOVE_EFFECT_MOVEMENT_DISPLACEMENT_DISTANCE_POLICIES,
 )
+const POST_REDUCTION_RECIPIENT_KINDS = new Set([
+  'damaged-targets',
+  'fainted-targets',
+])
 
 const fail = (
   code: MoveSpatialEffectReductionErrorCode,
@@ -740,9 +744,21 @@ export const reduceMoveSpatialEffects = (
       `spatial operation ${operation.id} recipients`,
       recipientFailure,
     )
+    const emittedIdsAreCanonical = moveEffectRecipientIdsEqual(
+      emission.recipientIds,
+      emittedIds,
+    )
+    const emittedIdsMatch = moveEffectRecipientIdsEqual(emittedIds, expectedIds)
+    // Ordinary core effects learn damaged/fainted recipients only during the
+    // authoritative reducer pass. The interpreter may therefore emit only the
+    // terminal IDs it already knows; rebind that reviewed selector to the final
+    // reduced set while rejecting any provisional ID absent from that set.
+    const canRebindPostReductionRecipients = POST_REDUCTION_RECIPIENT_KINDS.has(
+      operation.recipients.kind,
+    ) && emittedIds.every(id => expectedIds.includes(id))
     if (
-      !moveEffectRecipientIdsEqual(emission.recipientIds, emittedIds)
-      || !moveEffectRecipientIdsEqual(emittedIds, expectedIds)
+      !emittedIdsAreCanonical
+      || (!emittedIdsMatch && !canRebindPostReductionRecipients)
     ) {
       fail(
         'recipient-set-mismatch',
@@ -850,10 +866,24 @@ const spatialTraceMovement = (
   mode: movement.mode,
   origin: { ...movement.origin },
   destination: { ...movement.destination },
+  path: movement.path.map(anchor => ({ ...anchor })),
+  requestedDistance: movement.distance.value,
   resolvedDistance: movement.resolvedDistance,
   shortened: movement.shortened,
   shorteningReason: movement.shorteningReason,
   obstruction: movement.obstruction as unknown as MoveResolutionTraceJsonValue,
+  ...('vector' in movement
+    ? {
+        vector: {
+          kind: movement.vector.kind,
+          x: movement.vector.x,
+          y: movement.vector.y,
+          z: movement.vector.z,
+          sourcePlacementId: movement.vector.sourcePlacementId,
+          direction: movement.vector.direction,
+        },
+      }
+    : {}),
 })
 
 /** Replace interpreter placeholders with collision-checked spatial evidence. */

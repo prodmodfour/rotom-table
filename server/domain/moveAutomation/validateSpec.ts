@@ -1180,36 +1180,14 @@ export const validateMoveSpecOperationSequence = (
           const controlled = indexed[controlledIndex]?.operation
           if (
             !controlled
+            || controlled.kind === 'branch'
             || (controlled.kind === 'roll' && controlled.payload.formula.kind === 'table')
           ) {
             fail(
               'invalid-definition',
               referencePath,
-              'a branch cannot control a random-table controller.',
+              'a branch cannot control another branch or random-table controller.',
             )
-          }
-          if (controlled.kind === 'branch') {
-            const controlledCheckId = controlled.payload.kind === 'check'
-              ? controlled.payload.checkId
-              : null
-            const controlledCheckIndex = controlledCheckId === null
-              ? undefined
-              : checkIndexById.get(controlledCheckId)
-            const controlledCheckOperationId = controlledCheckIndex === undefined
-              ? null
-              : indexed[controlledCheckIndex]?.operation.id ?? null
-            if (
-              controlledCheckId === null
-              || controlledCheckOperationId === null
-              || branchControllerByOperationId.get(controlledCheckOperationId)
-                !== operation.payload.selectionId
-            ) {
-              fail(
-                'invalid-definition',
-                referencePath,
-                'a branch may control only the check-result branch paired with a check it also controls.',
-              )
-            }
           }
           if (
             operation.payload.scope === 'recipient'

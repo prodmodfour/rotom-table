@@ -2322,21 +2322,6 @@ const executeMoveSpecInternal = (
         executions: branchExecutions,
       })
       if (!branchGate.execute) {
-        // A skipped branch still resolves its own selection to an empty path so
-        // later operations controlled by that nested branch also skip cleanly.
-        // This is required for optional checked effects: declining the outer
-        // choice must not make the inner check-result branch look unresolved.
-        if (operation.kind === 'branch') {
-          branchExecutions.set(operation.payload.selectionId, Object.freeze({
-            selection: Object.freeze({
-              operationId: operation.id,
-              selectionId: operation.payload.selectionId,
-              scope: operation.payload.scope,
-              decisions: Object.freeze([]),
-            }),
-            decisions: Object.freeze([]),
-          }))
-        }
         trace = reduceMoveResolutionTrace(trace, {
           kind: 'operation',
           phase,

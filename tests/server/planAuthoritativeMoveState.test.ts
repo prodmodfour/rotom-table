@@ -80,7 +80,7 @@ const mixedAreaTemplate: MoveAutomationAreaTemplate = { kind: 'line', size: 3, l
 
 const mistyConditionScript = (): MoveAutomationScript => ({
   kind: 'explicit',
-  moveName: 'Tackle',
+  moveName: 'Pound',
   version: 1,
   targetMode: 'one-target',
   targetCount: 1,
@@ -253,11 +253,11 @@ describe('planAuthoritativeMoveState', () => {
       })
       const plan = planAuthoritativeMoveState({
         map,
-        pokemonSheets: pokemonSheets([{ name: 'Tackle' }]),
+        pokemonSheets: pokemonSheets([{ name: 'Pound' }]),
         trainerSheets: new Map<string, TrainerSheet>(),
         intent: moveIntent({
           placementId: 'actor-token',
-          moveName: 'Tackle',
+          moveName: 'Pound',
           selection: { kind: 'single-target', targetPlacementId: 'target-token' },
         }),
         random: randomSequence([]),
@@ -282,7 +282,7 @@ describe('planAuthoritativeMoveState', () => {
         id: expect.stringMatching(/^condition-protection\.[0-9a-f]{32}$/),
         source: {
           operationId: 'legacy-v1.condition.1',
-          moveId: 'move.tackle',
+          moveId: 'move.pound',
           placementId: 'actor-token',
         },
         affected: { placementIds: ['target-token'] },
@@ -326,7 +326,7 @@ describe('planAuthoritativeMoveState', () => {
         effects: [transformation],
       },
     })
-    const sheets = pokemonSheets([{ name: 'Tackle' }], {
+    const sheets = pokemonSheets([{ name: 'Pound' }], {
       target: pokemonSheet('target', [], {
         nickname: 'Target',
         species: 'Snorlax',
@@ -341,7 +341,7 @@ describe('planAuthoritativeMoveState', () => {
       trainerSheets: new Map<string, TrainerSheet>(),
       intent: moveIntent({
         placementId: 'actor-token',
-        moveName: 'Tackle',
+        moveName: 'Pound',
         selection: { kind: 'single-target', targetPlacementId: 'target-token' },
       }),
       random: randomSequence([0.5, 0.5]),
@@ -423,13 +423,13 @@ describe('planAuthoritativeMoveState', () => {
         byPlacementId: { 'target-token': 5, unaffected: 7 },
       },
     })
-    const sheets = pokemonSheets([{ name: 'Tackle' }])
+    const sheets = pokemonSheets([{ name: 'Pound' }])
 
     const plan = planAuthoritativeMoveState({
       map,
       pokemonSheets: sheets,
       trainerSheets: new Map<string, TrainerSheet>(),
-      intent: moveIntent({ placementId: 'actor-token', moveName: 'Tackle', selection: { kind: 'single-target', targetPlacementId: 'target-token' } }),
+      intent: moveIntent({ placementId: 'actor-token', moveName: 'Pound', selection: { kind: 'single-target', targetPlacementId: 'target-token' } }),
       random: randomSequence([0.5, 0]),
       idFactory: () => 'feedback-id',
       now: () => 1000,
@@ -545,7 +545,7 @@ describe('planAuthoritativeMoveState', () => {
   })
 
   it('rejects conflicting sheet revisions observed while finalizing the plan', () => {
-    const sheets = pokemonSheets([{ name: 'Tackle' }])
+    const sheets = pokemonSheets([{ name: 'Pound' }])
     let randomCalls = 0
 
     try {
@@ -553,7 +553,7 @@ describe('planAuthoritativeMoveState', () => {
         map: mapFixture(),
         pokemonSheets: sheets,
         trainerSheets: new Map<string, TrainerSheet>(),
-        intent: moveIntent({ placementId: 'actor-token', moveName: 'Tackle', selection: { kind: 'single-target', targetPlacementId: 'target-token' } }),
+        intent: moveIntent({ placementId: 'actor-token', moveName: 'Pound', selection: { kind: 'single-target', targetPlacementId: 'target-token' } }),
         random: () => {
           randomCalls += 1
           if (randomCalls === 1) sheets.get('target')!.revision = 9

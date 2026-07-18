@@ -124,6 +124,7 @@ describe('buildResolveMoveScopes', () => {
       'token:target-a:hp',
       'token:target-a:combatStages',
       'token:target-a:conditions',
+      'token:target-a:position',
       'sheet:pokemon:bulbasaur:hp',
       'sheet:pokemon:bulbasaur:combatStages',
       'sheet:pokemon:bulbasaur:conditions',

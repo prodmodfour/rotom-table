@@ -172,12 +172,6 @@ describe('legacy move automation audit metadata', () => {
         manualStepCodes: ['five-strike.per-hit'],
         summaryTerms: ['per-hit', 'early knockout'],
       }],
-      ['Tackle', {
-        blockerCodes: ['movement.authoritative'],
-        limitationCodes: ['tackle.push'],
-        manualStepCodes: ['tackle.push'],
-        summaryTerms: ['2 meters', 'obstruction'],
-      }],
       ['Take Down', {
         blockerCodes: ['conditions.typed', 'expressions.bounded', 'reactions.durable'],
         limitationCodes: ['take-down.trip', 'take-down.reckless'],

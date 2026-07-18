@@ -52,15 +52,14 @@ const sheetBody = (move: TokenMoveMenuOption, mode?: 'average' | 'roll'): string
     .sections.find((section) => section.heading === 'Sheet')?.body ?? ''
 
 describe('map token move tooltips', () => {
-  it('shows semantic base status, interaction status, and structured debt before use', () => {
+  it('shows Tackle as complete with no obsolete displacement debt', () => {
     const automationBody = buildTokenMoveTooltipDetail(moveOption())
       .sections.find((section) => section.heading === 'Automation')?.body ?? ''
 
-    expect(automationBody).toContain('Base automation: Assisted')
+    expect(automationBody).toContain('Base automation: Complete')
     expect(automationBody).toContain('Interaction coverage: Unassessed')
-    expect(automationBody).toContain('Capability blocker [movement.authoritative]')
-    expect(automationBody).toContain('Limitation [tackle.push]')
-    expect(automationBody).toContain('Manual step [tackle.push]')
+    expect(automationBody).not.toContain('movement.authoritative')
+    expect(automationBody).not.toContain('tackle.push')
   })
 
   it('explains temporary and encounter-blocked move-list state', () => {

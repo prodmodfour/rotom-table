@@ -61,7 +61,7 @@ export const TACKLE_MOVE_SPEC = Object.freeze({
         id: 'tackle.push',
         kind: 'movement-request',
         source: { kind: 'operation', id: 'tackle.damage' },
-        recipients: { kind: 'hit-targets' },
+        recipients: { kind: 'damaged-targets' },
         phase: 'movement',
         reasonCode: 'tackle.push-two-meters',
         payload: {

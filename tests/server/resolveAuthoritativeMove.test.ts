@@ -138,7 +138,7 @@ const fakeTargetCountScript = (overrides: Partial<MoveAutomationScript> = {}): M
 
 const priorityScript = (): MoveAutomationScript => ({
   ...fakeTargetCountScript(),
-  moveName: 'Tackle',
+  moveName: 'Pound',
   targetMode: 'one-target',
   targetCount: 1,
   damaging: false,
@@ -166,7 +166,7 @@ const mixedOutcomeAreaScript = (): MoveAutomationScript => ({
 
 const branchSelectionScript = (): MoveAutomationScript => ({
   kind: 'explicit',
-  moveName: 'Tackle',
+  moveName: 'Pound',
   version: 1,
   targetMode: 'one-target',
   targetCount: 1,
@@ -272,11 +272,11 @@ describe('resolveAuthoritativeMove', () => {
       let randomCalls = 0
       const error = expectFailure(() => resolveAuthoritativeMove({
         map,
-        pokemonSheets: sheetMap([{ name: 'Tackle' }]),
+        pokemonSheets: sheetMap([{ name: 'Pound' }]),
         trainerSheets: new Map(),
         intent: moveIntent({
           placementId: 'actor-token',
-          moveName: 'Tackle',
+          moveName: 'Pound',
           selection: { kind: 'single-target', targetPlacementId: 'target-a' },
         }),
         random: () => {
@@ -292,11 +292,11 @@ describe('resolveAuthoritativeMove', () => {
       map.initiative = { activeId: 'actor-token', round: 1 }
       expect(resolveAuthoritativeMove({
         map,
-        pokemonSheets: sheetMap([{ name: 'Tackle' }]),
+        pokemonSheets: sheetMap([{ name: 'Pound' }]),
         trainerSheets: new Map(),
         intent: moveIntent({
           placementId: 'actor-token',
-          moveName: 'Tackle',
+          moveName: 'Pound',
           selection: { kind: 'single-target', targetPlacementId: 'target-a' },
         }),
         random: randomSequence([]),
@@ -317,11 +317,11 @@ describe('resolveAuthoritativeMove', () => {
 
       expectFailure(() => resolveAuthoritativeMove({
         map,
-        pokemonSheets: sheetMap([{ name: 'Tackle' }]),
+        pokemonSheets: sheetMap([{ name: 'Pound' }]),
         trainerSheets: new Map(),
         intent: moveIntent({
           placementId: 'actor-token',
-          moveName: 'Tackle',
+          moveName: 'Pound',
           targetBranchId: 'two-targets',
           selection: {
             kind: 'target-count',
@@ -351,11 +351,11 @@ describe('resolveAuthoritativeMove', () => {
 
       expectFailure(() => resolveAuthoritativeMove({
         map,
-        pokemonSheets: sheetMap([{ name: 'Tackle' }]),
+        pokemonSheets: sheetMap([{ name: 'Pound' }]),
         trainerSheets: new Map(),
         intent: moveIntent({
           placementId: 'actor-token',
-          moveName: 'Tackle',
+          moveName: 'Pound',
           selection: { kind: 'single-target', targetPlacementId: 'target-a' },
         }),
         resourceCostDeclarations: [{
@@ -401,10 +401,10 @@ describe('resolveAuthoritativeMove', () => {
 
   it('resolves in-range single-target moves with authoritative random accuracy, damage and feedback IDs', () => {
     const map = mapFixture()
-    const pokemonSheets = sheetMap([{ name: 'Tackle' }])
+    const pokemonSheets = sheetMap([{ name: 'Pound' }])
     const baseIntent = moveIntent({
       placementId: 'actor-token',
-      moveName: 'Tackle',
+      moveName: 'Pound',
       selection: { kind: 'single-target', targetPlacementId: 'target-a' },
     })
 
@@ -450,7 +450,7 @@ describe('resolveAuthoritativeMove', () => {
         rollId: 'legacy-v1.accuracy.1',
         parentEffectId: 'legacy-v1.accuracy',
         formula: { kind: 'dice', count: 1, sides: 20, modifier: 0 },
-        reason: 'Tackle accuracy against target-a',
+        reason: 'Pound accuracy against target-a',
         naturalResults: [11],
         naturalResult: 11,
         modifiers: [{ sourceId: 'user-accuracy', reason: 'User Accuracy', value: 0 }],
@@ -460,7 +460,7 @@ describe('resolveAuthoritativeMove', () => {
         rollId: 'legacy-v1.damage.1',
         parentEffectId: 'legacy-v1.damage',
         formula: { kind: 'dice', count: 1, sides: 8, modifier: 6 },
-        reason: 'Tackle damage against target-a',
+        reason: 'Pound damage against target-a',
         naturalResults: [1],
         naturalResult: 1,
         modifiers: [],
@@ -478,7 +478,7 @@ describe('resolveAuthoritativeMove', () => {
     expect(lowDamage.auditTrace).toMatchObject({
       schemaVersion: 1,
       program: {
-        canonicalId: 'Tackle',
+        canonicalId: 'Pound',
         runtimeKind: 'legacy-v1',
         runtimeVersion: 1,
         definitionHash: expect.stringMatching(/^[a-f0-9]{64}$/),
@@ -510,7 +510,7 @@ describe('resolveAuthoritativeMove', () => {
 
   it('rejects missing and out-of-range single targets and preserves inputs after failure', () => {
     const map = mapFixture()
-    const pokemonSheets = sheetMap([{ name: 'Tackle' }])
+    const pokemonSheets = sheetMap([{ name: 'Pound' }])
     const trainerSheets = new Map<string, TrainerSheet>()
     const before = snapshotInput(map, pokemonSheets, trainerSheets)
 
@@ -518,14 +518,14 @@ describe('resolveAuthoritativeMove', () => {
       map,
       pokemonSheets,
       trainerSheets,
-      intent: moveIntent({ placementId: 'actor-token', moveName: 'Tackle', selection: { kind: 'single-target', targetPlacementId: 'missing' } }),
+      intent: moveIntent({ placementId: 'actor-token', moveName: 'Pound', selection: { kind: 'single-target', targetPlacementId: 'missing' } }),
     }), 'target-placement-missing')
 
     expectFailure(() => resolveAuthoritativeMove({
       map,
       pokemonSheets,
       trainerSheets,
-      intent: moveIntent({ placementId: 'actor-token', moveName: 'Tackle', selection: { kind: 'single-target', targetPlacementId: 'far-target' } }),
+      intent: moveIntent({ placementId: 'actor-token', moveName: 'Pound', selection: { kind: 'single-target', targetPlacementId: 'far-target' } }),
     }), 'target-out-of-range')
 
     expect(snapshotInput(map, pokemonSheets, trainerSheets)).toBe(before)
@@ -570,37 +570,37 @@ describe('resolveAuthoritativeMove', () => {
 
     expectFailure(() => resolveAuthoritativeMove({
       map: mapFixture(),
-      pokemonSheets: sheetMap([{ name: 'Tackle' }]),
+      pokemonSheets: sheetMap([{ name: 'Pound' }]),
       trainerSheets: new Map(),
-      intent: moveIntent({ placementId: 'actor-token', moveName: 'Tackle', selection: { kind: 'single-target', targetPlacementId: 'actor-token' } }),
+      intent: moveIntent({ placementId: 'actor-token', moveName: 'Pound', selection: { kind: 'single-target', targetPlacementId: 'actor-token' } }),
     }), 'target-out-of-range')
   })
 
   it('handles target branch validation and applies valid branch scripts', async () => {
     await withRegisteredMoveAutomationScript(branchSelectionScript(), () => {
       const map = mapFixture()
-      const pokemonSheets = sheetMap([{ name: 'Tackle' }])
+      const pokemonSheets = sheetMap([{ name: 'Pound' }])
       const trainerSheets = new Map<string, TrainerSheet>()
 
       expectFailure(() => resolveAuthoritativeMove({
         map,
         pokemonSheets,
         trainerSheets,
-        intent: moveIntent({ placementId: 'actor-token', moveName: 'Tackle', selection: { kind: 'single-target', targetPlacementId: 'target-a' } }),
+        intent: moveIntent({ placementId: 'actor-token', moveName: 'Pound', selection: { kind: 'single-target', targetPlacementId: 'target-a' } }),
       }), 'target-branch-required')
 
       expectFailure(() => resolveAuthoritativeMove({
         map,
         pokemonSheets,
         trainerSheets,
-        intent: moveIntent({ placementId: 'actor-token', moveName: 'Tackle', targetBranchId: 'bad', selection: { kind: 'single-target', targetPlacementId: 'target-a' } }),
+        intent: moveIntent({ placementId: 'actor-token', moveName: 'Pound', targetBranchId: 'bad', selection: { kind: 'single-target', targetPlacementId: 'target-a' } }),
       }), 'target-branch-invalid')
 
       const resolution = resolveAuthoritativeMove({
         map,
         pokemonSheets,
         trainerSheets,
-        intent: moveIntent({ placementId: 'actor-token', moveName: 'Tackle', targetBranchId: 'single', selection: { kind: 'single-target', targetPlacementId: 'target-a' } }),
+        intent: moveIntent({ placementId: 'actor-token', moveName: 'Pound', targetBranchId: 'single', selection: { kind: 'single-target', targetPlacementId: 'target-a' } }),
       })
       expect(resolution.targetBranchId).toBe('single')
       expect(resolution.script.range).toBe('Melee, 1 Target')
@@ -608,18 +608,18 @@ describe('resolveAuthoritativeMove', () => {
 
     expectFailure(() => resolveAuthoritativeMove({
       map: mapFixture(),
-      pokemonSheets: sheetMap([{ name: 'Tackle' }]),
+      pokemonSheets: sheetMap([{ name: 'Pound' }]),
       trainerSheets: new Map(),
-      intent: moveIntent({ placementId: 'actor-token', moveName: 'Tackle', targetBranchId: 'unexpected', selection: { kind: 'single-target', targetPlacementId: 'target-a' } }),
+      intent: moveIntent({ placementId: 'actor-token', moveName: 'Pound', targetBranchId: 'unexpected', selection: { kind: 'single-target', targetPlacementId: 'target-a' } }),
     }), 'target-branch-unexpected')
   })
 
   it('rejects selection-kind and script-mode mismatches', async () => {
     expectFailure(() => resolveAuthoritativeMove({
       map: mapFixture(),
-      pokemonSheets: sheetMap([{ name: 'Tackle' }]),
+      pokemonSheets: sheetMap([{ name: 'Pound' }]),
       trainerSheets: new Map(),
-      intent: moveIntent({ placementId: 'actor-token', moveName: 'Tackle', selection: { kind: 'self' } }),
+      intent: moveIntent({ placementId: 'actor-token', moveName: 'Pound', selection: { kind: 'self' } }),
     }), 'selection-kind-mismatch')
 
     await withRegisteredMoveAutomationScript(fakeTargetCountScript(), () => {
@@ -732,7 +732,7 @@ describe('resolveAuthoritativeMove', () => {
       }
       return resolveAuthoritativeMove({
         map: battlefield,
-        pokemonSheets: sheetMap([{ name: 'Tackle' }], {
+        pokemonSheets: sheetMap([{ name: 'Pound' }], {
           'target-a': pokemonSheet('target-a', [], {
             species: 'Snorlax',
             level: 30,
@@ -746,7 +746,7 @@ describe('resolveAuthoritativeMove', () => {
         trainerSheets: new Map(),
         intent: moveIntent({
           placementId: 'actor-token',
-          moveName: 'Tackle',
+          moveName: 'Pound',
           selection: { kind: 'single-target', targetPlacementId: 'target-token' },
         }),
         random: randomSequence([0.99, 0]),
@@ -992,11 +992,11 @@ describe('resolveAuthoritativeMove', () => {
   it('accepts only the exact finite draw stream required by a successful resolution', () => {
     const common = {
       map: mapFixture(),
-      pokemonSheets: sheetMap([{ name: 'Tackle' }]),
+      pokemonSheets: sheetMap([{ name: 'Pound' }]),
       trainerSheets: new Map<string, TrainerSheet>(),
       intent: moveIntent({
         placementId: 'actor-token',
-        moveName: 'Tackle',
+        moveName: 'Pound',
         selection: { kind: 'single-target', targetPlacementId: 'target-a' } as const,
       }),
       idFactory: () => 'finite-feedback',
@@ -1046,7 +1046,7 @@ describe('resolveAuthoritativeMove', () => {
       map: mapFixture(),
       pokemonSheets: new Map(),
       trainerSheets: new Map(),
-      intent: moveIntent({ placementId: 'actor-token', moveName: 'Tackle', selection: { kind: 'single-target', targetPlacementId: 'target-a' } }),
+      intent: moveIntent({ placementId: 'actor-token', moveName: 'Pound', selection: { kind: 'single-target', targetPlacementId: 'target-a' } }),
     }), 'actor-sheet-missing')
 
     expectFailure(() => resolveAuthoritativeMove({
@@ -1054,9 +1054,9 @@ describe('resolveAuthoritativeMove', () => {
         placement('actor-token', 'actor', { x: 0, y: 0, z: 0 }),
         placement('actor-token', 'actor-copy', { x: 1, y: 0, z: 0 }),
       ]),
-      pokemonSheets: sheetMap([{ name: 'Tackle' }]),
+      pokemonSheets: sheetMap([{ name: 'Pound' }]),
       trainerSheets: new Map(),
-      intent: moveIntent({ placementId: 'actor-token', moveName: 'Tackle', selection: { kind: 'single-target', targetPlacementId: 'target-a' } }),
+      intent: moveIntent({ placementId: 'actor-token', moveName: 'Pound', selection: { kind: 'single-target', targetPlacementId: 'target-a' } }),
     }), 'duplicate-placement-id')
   })
 })

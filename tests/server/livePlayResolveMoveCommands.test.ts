@@ -177,7 +177,7 @@ const seedHarness = (options: {
   maps.save({ slug: map.slug, document: map, revision: map.revision ?? 0, updatedAt: map.updatedAt ?? 100 })
   const actor = pokemonSheet(
     'actor',
-    [...(options.actorMoves ?? [{ name: 'Tackle' }])],
+    [...(options.actorMoves ?? [{ name: 'Pound' }])],
     options.actorSheet,
   )
   const targets = [
@@ -417,7 +417,7 @@ const areaScript = (name: string): MoveAutomationScript => ({
 const mixedAreaTemplate = { kind: 'line' as const, size: 2, label: 'Line 2' }
 
 const mistyConditionScript = (): MoveAutomationScript => ({
-  ...areaScript('Tackle'),
+  ...areaScript('Pound'),
   targetMode: 'one-target',
   targetCount: 1,
   range: 'Melee, 1 Target',
@@ -616,9 +616,9 @@ describe('executeLivePlayResolveMoveCommandUseCase', () => {
     expect(selfHarness.maps.getBySlug('arena')).toEqual(committedSelfMap)
     expect(selfHarness.sheets.getByRef('pokemon', 'actor')).toEqual(committedSelfSheet)
 
-    const targetHarness = seedHarness({ actorMoves: [{ name: 'Tackle' }] })
+    const targetHarness = seedHarness({ actorMoves: [{ name: 'Pound' }] })
     const targetMap = targetHarness.maps.getBySlug('arena')!
-    const targetIntent = intent({ placementId: 'actor-token', moveName: 'Tackle', selection: { kind: 'single-target', targetPlacementId: 'target-a' } })
+    const targetIntent = intent({ placementId: 'actor-token', moveName: 'Pound', selection: { kind: 'single-target', targetPlacementId: 'target-a' } })
     const beforeMap = deepCloneJson(targetMap)
     const targetResponse = await execute(targetHarness, commandFor(targetMap, targetIntent, 'op_resolvetarg1'), { random: randomSequence([0.5, 0]) })
 
@@ -632,7 +632,7 @@ describe('executeLivePlayResolveMoveCommandUseCase', () => {
     expect(targetPayload.move.trace).toMatchObject({
       schemaVersion: 1,
       program: {
-        canonicalId: 'Tackle',
+        canonicalId: 'Pound',
         runtimeKind: 'legacy-v1',
         runtimeVersion: 1,
         definitionHash: expect.stringMatching(/^[a-f0-9]{64}$/),
@@ -653,7 +653,7 @@ describe('executeLivePlayResolveMoveCommandUseCase', () => {
     expect(targetPayload.sheets.map((sheet) => `${sheet.kind}:${sheet.slug}`)).toContain('pokemon:target-a')
     expect(targetResponse.map).toEqual(targetHarness.maps.getBySlug('arena'))
     expect((targetResponse.map?.metadata?.moveLog as Array<Record<string, unknown>> | undefined)?.at(-1))
-      .toMatchObject({ operationId: 'op_resolvetarg1', moveName: 'Tackle' })
+      .toMatchObject({ operationId: 'op_resolvetarg1', moveName: 'Pound' })
     expect(targetResponse.sheetUpdates?.[0]?.sheet).toEqual(targetHarness.sheets.getByRef('pokemon', 'target-a')?.sheet)
     expect(targetHarness.events.map((event) => (event as { type?: string }).type)).toEqual(['updated', 'updated', 'live-play-command-accepted'])
 
@@ -677,7 +677,7 @@ describe('executeLivePlayResolveMoveCommandUseCase', () => {
   })
 
   it.each([
-    { moveName: 'Tackle', runtime: 'legacy-v1' },
+    { moveName: 'Pound', runtime: 'legacy-v1' },
     { moveName: 'Swords Dance', runtime: 'movespec-v2' },
   ] as const)('rejects an unavailable $runtime action cost atomically and replays it without replanning', async ({ moveName }) => {
     const seeded = spendEncounterMoveResourceCosts({}, {
@@ -713,7 +713,7 @@ describe('executeLivePlayResolveMoveCommandUseCase', () => {
     const command = commandFor(
       map,
       moveIntent,
-      moveName === 'Tackle' ? 'op_costrejectv1' : 'op_costrejectv2',
+      moveName === 'Pound' ? 'op_costrejectv1' : 'op_costrejectv2',
     )
     const beforeMap = deepCloneJson(harness.maps.getBySlug('arena'))
     const beforeSheets = deepCloneJson(harness.sheets.list())
@@ -737,17 +737,17 @@ describe('executeLivePlayResolveMoveCommandUseCase', () => {
   })
 
   it('applies adapted v1 Priority and Exhaust policies in the accepted move transaction', async () => {
-    const tackle = EXPLICIT_MOVE_AUTOMATION_SCRIPTS.get('Tackle')
-    if (!tackle) throw new Error('expected registered Tackle script')
+    const pound = EXPLICIT_MOVE_AUTOMATION_SCRIPTS.get('Pound')
+    if (!pound) throw new Error('expected registered Pound script')
     await withRegisteredScript({
-      ...tackle,
+      ...pound,
       range: 'Melee, 1 Target, Priority, Exhaust',
     }, async () => {
-      const harness = seedHarness({ actorMoves: [{ name: 'Tackle' }] })
+      const harness = seedHarness({ actorMoves: [{ name: 'Pound' }] })
       const map = harness.maps.getBySlug('arena')!
       const moveIntent = intent({
         placementId: 'actor-token',
-        moveName: 'Tackle',
+        moveName: 'Pound',
         selection: { kind: 'single-target', targetPlacementId: 'target-a' },
       })
       const response = await execute(
@@ -777,10 +777,10 @@ describe('executeLivePlayResolveMoveCommandUseCase', () => {
         },
         encounterState: createEmptyEncounterState(),
       })
-      const harness = seedHarness({ map, actorMoves: [{ name: 'Tackle' }] })
+      const harness = seedHarness({ map, actorMoves: [{ name: 'Pound' }] })
       const moveIntent = intent({
         placementId: 'actor-token',
-        moveName: 'Tackle',
+        moveName: 'Pound',
         selection: { kind: 'single-target', targetPlacementId: 'target-a' },
       })
       const command = commandFor(map, moveIntent, 'op_mistycondition1')
@@ -793,7 +793,7 @@ describe('executeLivePlayResolveMoveCommandUseCase', () => {
       ))
 
       expect(first.move).toMatchObject({
-        canonicalMoveName: 'Tackle',
+        canonicalMoveName: 'Pound',
         transaction: {
           conditionUpdates: [{ id: 'target-a', conditions: ['Burned'] }],
         },
@@ -1599,15 +1599,15 @@ describe('executeLivePlayResolveMoveCommandUseCase', () => {
   })
 
   it('enforces command type, intent shape, map mode, visibility, token control, and exact base revisions', async () => {
-    const harness = seedHarness({ actorMoves: [{ name: 'Tackle' }] })
+    const harness = seedHarness({ actorMoves: [{ name: 'Pound' }] })
     const map = harness.maps.getBySlug('arena')!
-    const moveIntent = intent({ placementId: 'actor-token', moveName: 'Tackle', selection: { kind: 'single-target', targetPlacementId: 'target-a' } })
+    const moveIntent = intent({ placementId: 'actor-token', moveName: 'Pound', selection: { kind: 'single-target', targetPlacementId: 'target-a' } })
 
     const invalidIntent = await execute(harness, {
       ...commandFor(map, moveIntent, 'op_badintent01'),
       payload: {
         placementId: 'actor-token',
-        moveName: 'Tackle',
+        moveName: 'Pound',
         selection: { kind: 'self' },
         rolls: [20],
         resourceCosts: [{ kind: 'no-cost', reasonCode: 'client-forged' }],
@@ -1620,7 +1620,7 @@ describe('executeLivePlayResolveMoveCommandUseCase', () => {
     expect(prepareMode.result).toMatchObject({ ok: false, reason: 'conflict' })
     createSqliteMapInteractionModeRepository(harness.database).set({ slug: 'arena', interactionMode: MAP_INTERACTION_MODES.LIVE_PLAY, updatedAt: 2 })
 
-    const hiddenHarness = seedHarness({ map: mapFixture({ playerVisible: false }), actorMoves: [{ name: 'Tackle' }] })
+    const hiddenHarness = seedHarness({ map: mapFixture({ playerVisible: false }), actorMoves: [{ name: 'Pound' }] })
     const hidden = await execute(hiddenHarness, commandFor(hiddenHarness.maps.getBySlug('arena')!, moveIntent, 'op_hiddenmap01'), { role: 'player', profile: playerProfile('actor') })
     expect(hidden.result).toMatchObject({ ok: false, reason: 'unauthorized' })
 
@@ -1636,9 +1636,9 @@ describe('executeLivePlayResolveMoveCommandUseCase', () => {
   })
 
   it('validates submitted scopes against actual writes and emits actual scopes only', async () => {
-    const harness = seedHarness({ actorMoves: [{ name: 'Tackle' }] })
+    const harness = seedHarness({ actorMoves: [{ name: 'Pound' }] })
     const map = harness.maps.getBySlug('arena')!
-    const moveIntent = intent({ placementId: 'actor-token', moveName: 'Tackle', selection: { kind: 'single-target', targetPlacementId: 'target-a' } })
+    const moveIntent = intent({ placementId: 'actor-token', moveName: 'Pound', selection: { kind: 'single-target', targetPlacementId: 'target-a' } })
     const valid = commandFor(map, moveIntent, 'op_scopevalid1')
 
     const duplicate = await execute(harness, { ...valid, opId: 'op_scopedupe01', scopes: [...valid.scopes, valid.scopes[0]!] })
@@ -1674,7 +1674,7 @@ describe('executeLivePlayResolveMoveCommandUseCase', () => {
   })
 
   it('commits damage, a group inventory item transfer, realtime, and its op result exactly once', async () => {
-    const harness = seedHarness({ actorMoves: [{ name: 'Tackle' }] })
+    const harness = seedHarness({ actorMoves: [{ name: 'Pound' }] })
     const initialGroup = groupInventoryWithPotion()
     harness.groupInventories.save({
       slug: initialGroup.slug,
@@ -1685,7 +1685,7 @@ describe('executeLivePlayResolveMoveCommandUseCase', () => {
     const map = harness.maps.getBySlug('arena')!
     const moveIntent = intent({
       placementId: 'actor-token',
-      moveName: 'Tackle',
+      moveName: 'Pound',
       selection: { kind: 'single-target', targetPlacementId: 'target-a' },
     })
     const missingScopeCommand = commandFor(map, moveIntent, 'op_itemnoscope1')
@@ -1782,7 +1782,7 @@ describe('executeLivePlayResolveMoveCommandUseCase', () => {
   })
 
   it('rolls map and damage writes back when group inventory CAS persistence fails', async () => {
-    const harness = seedHarness({ actorMoves: [{ name: 'Tackle' }] })
+    const harness = seedHarness({ actorMoves: [{ name: 'Pound' }] })
     const initialGroup = groupInventoryWithPotion()
     harness.groupInventories.save({
       slug: initialGroup.slug,
@@ -1793,7 +1793,7 @@ describe('executeLivePlayResolveMoveCommandUseCase', () => {
     const map = harness.maps.getBySlug('arena')!
     const moveIntent = intent({
       placementId: 'actor-token',
-      moveName: 'Tackle',
+      moveName: 'Pound',
       selection: { kind: 'single-target', targetPlacementId: 'target-a' },
     })
     const command = withGroupInventoryScope(
@@ -1824,7 +1824,7 @@ describe('executeLivePlayResolveMoveCommandUseCase', () => {
   })
 
   it('conflicts atomically when a planned group inventory write becomes stale', async () => {
-    const harness = seedHarness({ actorMoves: [{ name: 'Tackle' }] })
+    const harness = seedHarness({ actorMoves: [{ name: 'Pound' }] })
     const initialGroup = groupInventoryWithPotion()
     harness.groupInventories.save({
       slug: 'main',
@@ -1835,7 +1835,7 @@ describe('executeLivePlayResolveMoveCommandUseCase', () => {
     const map = harness.maps.getBySlug('arena')!
     const moveIntent = intent({
       placementId: 'actor-token',
-      moveName: 'Tackle',
+      moveName: 'Pound',
       selection: { kind: 'single-target', targetPlacementId: 'target-a' },
     })
     const command = withGroupInventoryScope(
@@ -1937,7 +1937,7 @@ describe('executeLivePlayResolveMoveCommandUseCase', () => {
           payload: {
             action: 'replace',
             replacedMoveId: 'Synthesis',
-            moveId: 'Tackle',
+            moveId: 'Pound',
             acquisition: { kind: 'reviewed-rule' },
           },
         }],
@@ -1980,7 +1980,7 @@ describe('executeLivePlayResolveMoveCommandUseCase', () => {
           expectedRevision: 2,
           changedFields: ['moveUsage', 'movelist'],
           nextSheet: expect.objectContaining({
-            movelist: [expect.objectContaining({ name: 'Tackle' })],
+            movelist: [expect.objectContaining({ name: 'Pound' })],
           }),
         }),
       ])
@@ -2032,12 +2032,12 @@ describe('executeLivePlayResolveMoveCommandUseCase', () => {
     })
     const harness = seedHarness({
       map,
-      actorMoves: [{ name: 'Tackle' }],
+      actorMoves: [{ name: 'Pound' }],
       targetASheet: { combat: { currentHp: 1 } },
     })
     const moveIntent = intent({
       placementId: 'actor-token',
-      moveName: 'Tackle',
+      moveName: 'Pound',
       selection: { kind: 'single-target', targetPlacementId: 'target-a' },
     })
     const command = commandFor(map, moveIntent, 'op_transformko01')
@@ -2075,16 +2075,16 @@ describe('executeLivePlayResolveMoveCommandUseCase', () => {
   })
 
   it('commits map, sheets, and op result atomically and rolls back on sheet persistence failure', async () => {
-    const harness = seedHarness({ actorMoves: [{ name: 'Tackle' }] })
+    const harness = seedHarness({ actorMoves: [{ name: 'Pound' }] })
     const map = harness.maps.getBySlug('arena')!
-    const moveIntent = intent({ placementId: 'actor-token', moveName: 'Tackle', selection: { kind: 'single-target', targetPlacementId: 'target-a' } })
+    const moveIntent = intent({ placementId: 'actor-token', moveName: 'Pound', selection: { kind: 'single-target', targetPlacementId: 'target-a' } })
     const response = await execute(harness, commandFor(map, moveIntent, 'op_atomicok01'), { random: randomSequence([0.5, 0]) })
     expect(response.result.ok).toBe(true)
     expect(harness.ops.getOpResult('arena', 'op_atomicok01')).toEqual(response.result)
     expect(harness.maps.getBySlug('arena')?.revision).toBe(5)
     expect(harness.sheets.getByRef('pokemon', 'target-a')?.revision).toBe(3)
 
-    const failingHarness = seedHarness({ actorMoves: [{ name: 'Tackle' }] })
+    const failingHarness = seedHarness({ actorMoves: [{ name: 'Pound' }] })
     const failingMap = failingHarness.maps.getBySlug('arena')!
     const failingSheetRepo = {
       ...failingHarness.sheets,

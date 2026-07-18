@@ -18,37 +18,24 @@ export const TACKLE_V2_SEMANTIC_SCENARIOS = Object.freeze([
   { scenarioId: 'tackle.v2-shortened-push', evidenceClasses: ['alternate-branch'] as const },
 ] as const)
 
-export const TAKE_DOWN_V2_SEMANTIC_SCENARIOS = Object.freeze([
-  { scenarioId: 'take-down.v2-critical-hit', evidenceClasses: ['crit'] as const },
-  { scenarioId: 'take-down.v2-immunity', evidenceClasses: ['immunity'] as const },
-  { scenarioId: 'take-down.v2-miss', evidenceClasses: ['miss'] as const },
-  { scenarioId: 'take-down.v2-reckless', evidenceClasses: ['alternate-branch'] as const },
-  { scenarioId: 'take-down.v2-recoil-immunity', evidenceClasses: ['immunity', 'self'] as const },
-  { scenarioId: 'take-down.v2-reconnect-retry', evidenceClasses: ['reconnect', 'retry'] as const },
-  { scenarioId: 'take-down.v2-stale-response-conflict', evidenceClasses: ['multi-resource-conflict'] as const },
-  { scenarioId: 'take-down.v2-trip-failure', evidenceClasses: ['threshold-fail'] as const },
-  { scenarioId: 'take-down.v2-trip-pass', evidenceClasses: ['pass'] as const },
-  { scenarioId: 'take-down.v2-trip-success', evidenceClasses: ['choice', 'hit', 'threshold-pass'] as const },
-] as const)
-
 export type TackleV2SemanticScenarioId =
   (typeof TACKLE_V2_SEMANTIC_SCENARIOS)[number]['scenarioId']
 
 interface TackleDefinition {
   readonly accuracyRandom: number
   readonly hit: boolean
-  readonly critical: boolean
   readonly targetTypes: readonly string[]
   readonly blocker: boolean
+  readonly pushed: boolean
   readonly destinationX: number
 }
 
 const ordinary = (): TackleDefinition => ({
   accuracyRandom: 0.45,
   hit: true,
-  critical: false,
   targetTypes: ['Water'],
   blocker: false,
+  pushed: true,
   destinationX: 4,
 })
 
@@ -56,18 +43,20 @@ const DEFINITIONS: Readonly<Record<TackleV2SemanticScenarioId, TackleDefinition>
   'tackle.v2-critical-hit': {
     ...ordinary(),
     accuracyRandom: 0.999,
-    critical: true,
   },
   'tackle.v2-duplicate-retry': ordinary(),
   'tackle.v2-hit-push': ordinary(),
   'tackle.v2-immunity': {
     ...ordinary(),
     targetTypes: ['Ghost'],
+    pushed: false,
+    destinationX: 2,
   },
   'tackle.v2-miss': {
     ...ordinary(),
     accuracyRandom: 0,
     hit: false,
+    pushed: false,
     destinationX: 2,
   },
   'tackle.v2-shortened-push': {
@@ -160,9 +149,7 @@ const fixture = (definition: TackleDefinition): {
 
 const randomValues = (definition: TackleDefinition): readonly number[] => {
   if (!definition.hit) return [definition.accuracyRandom]
-  return definition.critical
-    ? [definition.accuracyRandom, 0, 0]
-    : [definition.accuracyRandom, 0]
+  return [definition.accuracyRandom, 0]
 }
 
 export const tackleV2SemanticScenario = (
@@ -171,7 +158,6 @@ export const tackleV2SemanticScenario = (
   const definition = DEFINITIONS[scenarioId]
   const input = fixture(definition)
   const hitTargetIds = definition.hit ? ['target-token'] : []
-  const shortened = scenarioId === 'tackle.v2-shortened-push'
   const targetPosition = { x: definition.destinationX, y: 0, z: 1 }
   return {
     scenarioId,
@@ -190,9 +176,7 @@ export const tackleV2SemanticScenario = (
       selectedPlacementIds: ['target-token'],
     },
     command: {
-      candidateScopePlacementIds: input.map.placements
-        .filter(({ id }) => id !== 'actor-token')
-        .map(({ id }) => id),
+      candidateScopePlacementIds: ['target-token'],
     },
     seed: {
       randomValues: randomValues(definition),
@@ -257,14 +241,7 @@ export const tackleV2SemanticScenario = (
             kind: 'operation',
             operationId: 'tackle.push',
             operationKind: 'movement-request',
-            outcome: definition.hit ? 'applied' : 'no-op',
-            result: {
-              status: definition.hit ? 'applied' : 'no-op',
-              details: {
-                movedCount: definition.hit ? 1 : 0,
-                shortenedCount: shortened ? 1 : 0,
-              },
-            },
+            outcome: definition.pushed ? 'applied' : 'no-op',
           }],
         },
       },

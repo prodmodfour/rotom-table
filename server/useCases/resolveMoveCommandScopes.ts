@@ -36,7 +36,12 @@ const ACTOR_TOKEN_FIELDS = new Set<LivePlayTokenScope['field']>([
   'position',
   'facing',
 ])
-const RELATED_TOKEN_FIELDS = new Set<LivePlayTokenScope['field']>(['hp', 'combatStages', 'conditions'])
+const RELATED_TOKEN_FIELDS = new Set<LivePlayTokenScope['field']>([
+  'hp',
+  'combatStages',
+  'conditions',
+  'position',
+])
 const ACTOR_SHEET_FIELDS = new Set([
   'moveUsage',
   'movelist',
@@ -290,10 +295,18 @@ const actorPlacementPair = (plan: AuthoritativeMoveStatePlan): {
   }
 }
 
-const actorPositionChanged = (plan: AuthoritativeMoveStatePlan): boolean => {
-  if (plan.resolution.movement?.kind !== 'pass') return false
-  const placements = actorPlacementPair(plan)
-  return !!placements.previous && !!placements.current && !sameJsonValue(placements.previous.position, placements.current.position)
+const positionChangedPlacementIds = (
+  plan: AuthoritativeMoveStatePlan,
+): readonly string[] => {
+  const previousById = new Map(
+    plan.previousMap.placements.map(placement => [placement.id, placement]),
+  )
+  return plan.nextMap.placements.flatMap((current) => {
+    const previous = previousById.get(current.id)
+    return previous && !sameJsonValue(previous.position, current.position)
+      ? [current.id]
+      : []
+  })
 }
 
 const actorFacingChanged = (plan: AuthoritativeMoveStatePlan): boolean => {
@@ -339,7 +352,9 @@ export const actualResolveMoveWriteScopes = (plan: AuthoritativeMoveStatePlan): 
   }
   if (plan.mapChanges.initiative) pushScope(scopes, seen, mapScope('initiative'))
   if (plan.mapChanges.moveUsage) pushScope(scopes, seen, tokenScope(actorId, 'moveUsage'))
-  if (actorPositionChanged(plan)) pushScope(scopes, seen, tokenScope(actorId, 'position'))
+  for (const placementId of positionChangedPlacementIds(plan)) {
+    pushScope(scopes, seen, tokenScope(placementId, 'position'))
+  }
   if (actorFacingChanged(plan)) pushScope(scopes, seen, tokenScope(actorId, 'facing'))
 
   for (const placementId of temporaryHpChangedPlacementIds(plan)) pushScope(scopes, seen, tokenScope(placementId, 'hp'))
