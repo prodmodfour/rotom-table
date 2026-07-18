@@ -15,6 +15,7 @@ import {
 import {
   runAndAssertMoveAutomationSemanticScenario,
 } from '../fixtures/moveAutomation/scenario'
+import { ABSORB_REG_001_SCENARIOS } from '../fixtures/moveAutomation/registeredBatch001'
 import { planAuthoritativeMoveState } from '~~/server/domain/planAuthoritativeMoveState'
 import {
   createFiniteAuthoritativeMoveRandomStream,
@@ -71,11 +72,11 @@ describe('Absorb native MoveSpec v2', () => {
     expect(absorbRow.runtime).toEqual({
       kind: 'movespec-v2',
       version: 2,
-      definitionHash: 'b616729b13e53d7dbca6cef4f4c4b0deaddb5a1c18f18900c6dd24313428128f',
+      definitionHash: 'c5ae83a53d77a7e7bef30c6990938d51cd834eec699c50e692f5190ceccb359d',
       sourceModule: 'server/domain/moveAutomation/specs/absorb.ts',
     })
     expect(absorbRow.scenarioIds).toEqual(
-      ABSORB_V2_SEMANTIC_SCENARIOS.map(({ scenarioId }) => scenarioId),
+      ABSORB_REG_001_SCENARIOS.map(({ scenarioId }) => scenarioId),
     )
     expect(absorbRow.manualSteps).toEqual([])
     expect(registeredMoveAutomationRuntimeFor('Absorb')).toMatchObject({

@@ -2558,7 +2558,7 @@ For each REG ticket:
 
 ## REG-001 — Certify Absorb through Air Slash
 
-Status: TODO
+Status: DONE
 
 **Baseline-registered moves:** Absorb; Accelerock; Acid; Acid Spray; Acupressure; Aerial Ace; Air Cutter; Air Slash
 

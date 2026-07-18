@@ -32,6 +32,7 @@ import {
   formatMoveAutomationStageSuggestionLogLine,
 } from '~/utils/moveAutomationLogLines'
 import {
+  moveAutomationTargetDamageMultiplier,
   resolveHpSuggestionAmount,
   resolveMoveAutomationTargetDamageBreakdown,
   suggestionIsEnabled,
@@ -231,6 +232,9 @@ export const buildMoveAutomationTransaction = ({
     target: SpawnedPokemon,
   ): { source: string; reason: 'immunity' | 'secondary-effect'; label: string } | null => {
     const moveImmunity = moveAutomationMoveImmunitySource(script, target)
+      ?? (script.damaging && moveAutomationTargetDamageMultiplier(script, target) === 0
+        ? `${script.type} immunity`
+        : null)
     const label = targetSuggestionLabel(kind, index)
     if (moveImmunity && label) return { source: moveImmunity, reason: 'immunity', label }
 

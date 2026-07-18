@@ -4,46 +4,31 @@
     {
       "canonicalId": "Absorb",
       "displayName": "Absorb",
-      "baseStatus": "assisted",
+      "baseStatus": "complete",
       "interactionStatus": "unassessed",
       "runtimeKind": "movespec-v2",
       "blockerCodes": [],
-      "limitations": [
-        {
-          "code": "audit.required",
-          "summary": "Semantic conformance review is required before this native implementation can be marked complete."
-        }
-      ],
+      "limitations": [],
       "manualSteps": []
     },
     {
       "canonicalId": "Accelerock",
       "displayName": "Accelerock",
-      "baseStatus": "assisted",
+      "baseStatus": "complete",
       "interactionStatus": "unassessed",
       "runtimeKind": "legacy-v1",
       "blockerCodes": [],
-      "limitations": [
-        {
-          "code": "audit.required",
-          "summary": "Semantic conformance review is required before this legacy implementation can be marked complete."
-        }
-      ],
+      "limitations": [],
       "manualSteps": []
     },
     {
       "canonicalId": "Acid",
       "displayName": "Acid",
-      "baseStatus": "assisted",
+      "baseStatus": "complete",
       "interactionStatus": "unassessed",
       "runtimeKind": "legacy-v1",
       "blockerCodes": [],
-      "limitations": [
-        {
-          "code": "audit.required",
-          "summary": "Semantic conformance review is required before this legacy implementation can be marked complete."
-        }
-      ],
+      "limitations": [],
       "manualSteps": []
     },
     {
@@ -61,16 +46,11 @@
     {
       "canonicalId": "Acid Spray",
       "displayName": "Acid Spray",
-      "baseStatus": "assisted",
+      "baseStatus": "complete",
       "interactionStatus": "unassessed",
       "runtimeKind": "legacy-v1",
       "blockerCodes": [],
-      "limitations": [
-        {
-          "code": "audit.required",
-          "summary": "Semantic conformance review is required before this legacy implementation can be marked complete."
-        }
-      ],
+      "limitations": [],
       "manualSteps": []
     },
     {
@@ -88,31 +68,21 @@
     {
       "canonicalId": "Acupressure",
       "displayName": "Acupressure",
-      "baseStatus": "assisted",
+      "baseStatus": "complete",
       "interactionStatus": "unassessed",
       "runtimeKind": "legacy-v1",
       "blockerCodes": [],
-      "limitations": [
-        {
-          "code": "audit.required",
-          "summary": "Semantic conformance review is required before this legacy implementation can be marked complete."
-        }
-      ],
+      "limitations": [],
       "manualSteps": []
     },
     {
       "canonicalId": "Aerial Ace",
       "displayName": "Aerial Ace",
-      "baseStatus": "assisted",
+      "baseStatus": "complete",
       "interactionStatus": "unassessed",
       "runtimeKind": "legacy-v1",
       "blockerCodes": [],
-      "limitations": [
-        {
-          "code": "audit.required",
-          "summary": "Semantic conformance review is required before this legacy implementation can be marked complete."
-        }
-      ],
+      "limitations": [],
       "manualSteps": []
     },
     {
@@ -154,31 +124,21 @@
     {
       "canonicalId": "Air Cutter",
       "displayName": "Air Cutter",
-      "baseStatus": "assisted",
+      "baseStatus": "complete",
       "interactionStatus": "unassessed",
       "runtimeKind": "legacy-v1",
       "blockerCodes": [],
-      "limitations": [
-        {
-          "code": "audit.required",
-          "summary": "Semantic conformance review is required before this legacy implementation can be marked complete."
-        }
-      ],
+      "limitations": [],
       "manualSteps": []
     },
     {
       "canonicalId": "Air Slash",
       "displayName": "Air Slash",
-      "baseStatus": "assisted",
+      "baseStatus": "complete",
       "interactionStatus": "unassessed",
       "runtimeKind": "legacy-v1",
       "blockerCodes": [],
-      "limitations": [
-        {
-          "code": "audit.required",
-          "summary": "Semantic conformance review is required before this legacy implementation can be marked complete."
-        }
-      ],
+      "limitations": [],
       "manualSteps": []
     },
     {

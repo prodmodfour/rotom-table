@@ -4,12 +4,12 @@
     {
       "canonicalId": "Absorb",
       "displayName": "Absorb",
-      "baseStatus": "assisted",
+      "baseStatus": "complete",
       "interactionStatus": "unassessed",
       "runtime": {
         "kind": "movespec-v2",
         "version": 2,
-        "definitionHash": "b616729b13e53d7dbca6cef4f4c4b0deaddb5a1c18f18900c6dd24313428128f",
+        "definitionHash": "c5ae83a53d77a7e7bef30c6990938d51cd834eec699c50e692f5190ceccb359d",
         "sourceModule": "server/domain/moveAutomation/specs/absorb.ts"
       },
       "rulesProvenance": {
@@ -17,15 +17,14 @@
         "canonicalizationVersion": 1,
         "sourceDataSha256": "f90491826349afd7d1f2809fd9d74b7acc555f5163b99264205ee369249e9815"
       },
-      "capabilityTags": [],
+      "capabilityTags": [
+        "expressions.bounded",
+        "hp.typed",
+        "targeting.authoritative"
+      ],
       "suggestedCapabilityTags": [],
       "blockerCodes": [],
-      "limitations": [
-        {
-          "code": "audit.required",
-          "summary": "Semantic conformance review is required before this native implementation can be marked complete."
-        }
-      ],
+      "limitations": [],
       "manualSteps": [],
       "scenarioIds": [
         "absorb.v2-critical-hit",
@@ -34,7 +33,8 @@
         "absorb.v2-immunity",
         "absorb.v2-miss",
         "absorb.v2-target-ko",
-        "absorb.v2-temporary-hp"
+        "absorb.v2-temporary-hp",
+        "absorb.v2-multi-resource-conflict"
       ],
       "conformanceEvidence": {
         "requirementTags": [
@@ -43,6 +43,7 @@
           "branch.immunity",
           "mechanic.damage",
           "recovery.retry",
+          "resource.multi",
           "target.self"
         ],
         "scenarios": [
@@ -89,18 +90,24 @@
             "evidenceClasses": [
               "hit"
             ]
+          },
+          {
+            "scenarioId": "absorb.v2-multi-resource-conflict",
+            "evidenceClasses": [
+              "multi-resource-conflict"
+            ]
           }
         ],
         "notApplicable": []
       },
-      "reviewedAt": null,
+      "reviewedAt": "2026-07-18",
       "unsupportedInteractionIds": [],
       "rolloutCohortId": null
     },
     {
       "canonicalId": "Accelerock",
       "displayName": "Accelerock",
-      "baseStatus": "assisted",
+      "baseStatus": "complete",
       "interactionStatus": "unassessed",
       "runtime": {
         "kind": "legacy-v1",
@@ -113,30 +120,84 @@
         "canonicalizationVersion": 1,
         "sourceDataSha256": "f90491826349afd7d1f2809fd9d74b7acc555f5163b99264205ee369249e9815"
       },
-      "capabilityTags": [],
+      "capabilityTags": [
+        "targeting.authoritative"
+      ],
       "suggestedCapabilityTags": [],
       "blockerCodes": [],
-      "limitations": [
-        {
-          "code": "audit.required",
-          "summary": "Semantic conformance review is required before this legacy implementation can be marked complete."
-        }
-      ],
+      "limitations": [],
       "manualSteps": [],
-      "scenarioIds": [],
+      "scenarioIds": [
+        "accelerock.legacy-v1-hit-priority",
+        "accelerock.legacy-v1-miss",
+        "accelerock.legacy-v1-critical-hit",
+        "accelerock.legacy-v1-priority-rejected",
+        "accelerock.legacy-v1-duplicate-replay",
+        "accelerock.legacy-v1-stale-target"
+      ],
       "conformanceEvidence": {
-        "requirementTags": [],
-        "scenarios": [],
-        "notApplicable": []
+        "requirementTags": [
+          "branch.accuracy",
+          "branch.critical-hit",
+          "branch.threshold",
+          "mechanic.damage",
+          "recovery.retry",
+          "resource.multi"
+        ],
+        "scenarios": [
+          {
+            "scenarioId": "accelerock.legacy-v1-hit-priority",
+            "evidenceClasses": [
+              "hit",
+              "threshold-pass"
+            ]
+          },
+          {
+            "scenarioId": "accelerock.legacy-v1-miss",
+            "evidenceClasses": [
+              "miss"
+            ]
+          },
+          {
+            "scenarioId": "accelerock.legacy-v1-critical-hit",
+            "evidenceClasses": [
+              "crit"
+            ]
+          },
+          {
+            "scenarioId": "accelerock.legacy-v1-priority-rejected",
+            "evidenceClasses": [
+              "threshold-fail"
+            ]
+          },
+          {
+            "scenarioId": "accelerock.legacy-v1-duplicate-replay",
+            "evidenceClasses": [
+              "retry"
+            ]
+          },
+          {
+            "scenarioId": "accelerock.legacy-v1-stale-target",
+            "evidenceClasses": [
+              "multi-resource-conflict"
+            ]
+          }
+        ],
+        "notApplicable": [
+          {
+            "evidenceClass": "immunity",
+            "reason": "The frozen type chart has no type immune to Rock damage; broader ability interactions remain separately unassessed."
+          }
+        ]
       },
-      "reviewedAt": null,
+      "reviewedAt": "2026-07-18",
       "unsupportedInteractionIds": [],
       "rolloutCohortId": null
     },
     {
       "canonicalId": "Acid",
       "displayName": "Acid",
-      "baseStatus": "assisted",
+      "baseStatus": "complete",
       "interactionStatus": "unassessed",
       "runtime": {
         "kind": "legacy-v1",
@@ -149,23 +210,78 @@
         "canonicalizationVersion": 1,
         "sourceDataSha256": "f90491826349afd7d1f2809fd9d74b7acc555f5163b99264205ee369249e9815"
       },
-      "capabilityTags": [],
+      "capabilityTags": [
+        "expressions.bounded",
+        "stages.typed",
+        "targeting.authoritative"
+      ],
       "suggestedCapabilityTags": [],
       "blockerCodes": [],
-      "limitations": [
-        {
-          "code": "audit.required",
-          "summary": "Semantic conformance review is required before this legacy implementation can be marked complete."
-        }
-      ],
+      "limitations": [],
       "manualSteps": [],
-      "scenarioIds": [],
+      "scenarioIds": [
+        "acid.legacy-v1-area-mixed",
+        "acid.legacy-v1-threshold-fail",
+        "acid.legacy-v1-critical-hit",
+        "acid.legacy-v1-immunity",
+        "acid.legacy-v1-duplicate-replay",
+        "acid.legacy-v1-stale-target"
+      ],
       "conformanceEvidence": {
-        "requirementTags": [],
-        "scenarios": [],
+        "requirementTags": [
+          "branch.accuracy",
+          "branch.critical-hit",
+          "branch.immunity",
+          "branch.threshold",
+          "mechanic.damage",
+          "recovery.retry",
+          "resource.multi",
+          "target.area"
+        ],
+        "scenarios": [
+          {
+            "scenarioId": "acid.legacy-v1-area-mixed",
+            "evidenceClasses": [
+              "area-mixed-outcomes",
+              "hit",
+              "miss",
+              "threshold-pass"
+            ]
+          },
+          {
+            "scenarioId": "acid.legacy-v1-threshold-fail",
+            "evidenceClasses": [
+              "threshold-fail"
+            ]
+          },
+          {
+            "scenarioId": "acid.legacy-v1-critical-hit",
+            "evidenceClasses": [
+              "crit"
+            ]
+          },
+          {
+            "scenarioId": "acid.legacy-v1-immunity",
+            "evidenceClasses": [
+              "immunity"
+            ]
+          },
+          {
+            "scenarioId": "acid.legacy-v1-duplicate-replay",
+            "evidenceClasses": [
+              "retry"
+            ]
+          },
+          {
+            "scenarioId": "acid.legacy-v1-stale-target",
+            "evidenceClasses": [
+              "multi-resource-conflict"
+            ]
+          }
+        ],
         "notApplicable": []
       },
-      "reviewedAt": null,
+      "reviewedAt": "2026-07-18",
       "unsupportedInteractionIds": [],
       "rolloutCohortId": null
     },
@@ -207,7 +323,7 @@
     {
       "canonicalId": "Acid Spray",
       "displayName": "Acid Spray",
-      "baseStatus": "assisted",
+      "baseStatus": "complete",
       "interactionStatus": "unassessed",
       "runtime": {
         "kind": "legacy-v1",
@@ -220,23 +336,79 @@
         "canonicalizationVersion": 1,
         "sourceDataSha256": "f90491826349afd7d1f2809fd9d74b7acc555f5163b99264205ee369249e9815"
       },
-      "capabilityTags": [],
+      "capabilityTags": [
+        "stages.typed",
+        "targeting.authoritative"
+      ],
       "suggestedCapabilityTags": [],
       "blockerCodes": [],
-      "limitations": [
-        {
-          "code": "audit.required",
-          "summary": "Semantic conformance review is required before this legacy implementation can be marked complete."
-        }
-      ],
+      "limitations": [],
       "manualSteps": [],
-      "scenarioIds": [],
+      "scenarioIds": [
+        "acid-spray.legacy-v1-hit",
+        "acid-spray.legacy-v1-miss",
+        "acid-spray.legacy-v1-critical-hit",
+        "acid-spray.legacy-v1-immunity",
+        "acid-spray.legacy-v1-stage-cap",
+        "acid-spray.legacy-v1-duplicate-replay",
+        "acid-spray.legacy-v1-stale-target"
+      ],
       "conformanceEvidence": {
-        "requirementTags": [],
-        "scenarios": [],
+        "requirementTags": [
+          "branch.accuracy",
+          "branch.critical-hit",
+          "branch.immunity",
+          "mechanic.damage",
+          "recovery.retry",
+          "resource.multi"
+        ],
+        "scenarios": [
+          {
+            "scenarioId": "acid-spray.legacy-v1-hit",
+            "evidenceClasses": [
+              "hit"
+            ]
+          },
+          {
+            "scenarioId": "acid-spray.legacy-v1-miss",
+            "evidenceClasses": [
+              "miss"
+            ]
+          },
+          {
+            "scenarioId": "acid-spray.legacy-v1-critical-hit",
+            "evidenceClasses": [
+              "crit"
+            ]
+          },
+          {
+            "scenarioId": "acid-spray.legacy-v1-immunity",
+            "evidenceClasses": [
+              "immunity"
+            ]
+          },
+          {
+            "scenarioId": "acid-spray.legacy-v1-stage-cap",
+            "evidenceClasses": [
+              "hit"
+            ]
+          },
+          {
+            "scenarioId": "acid-spray.legacy-v1-duplicate-replay",
+            "evidenceClasses": [
+              "retry"
+            ]
+          },
+          {
+            "scenarioId": "acid-spray.legacy-v1-stale-target",
+            "evidenceClasses": [
+              "multi-resource-conflict"
+            ]
+          }
+        ],
         "notApplicable": []
       },
-      "reviewedAt": null,
+      "reviewedAt": "2026-07-18",
       "unsupportedInteractionIds": [],
       "rolloutCohortId": null
     },
@@ -278,7 +450,7 @@
     {
       "canonicalId": "Acupressure",
       "displayName": "Acupressure",
-      "baseStatus": "assisted",
+      "baseStatus": "complete",
       "interactionStatus": "unassessed",
       "runtime": {
         "kind": "legacy-v1",
@@ -291,30 +463,102 @@
         "canonicalizationVersion": 1,
         "sourceDataSha256": "f90491826349afd7d1f2809fd9d74b7acc555f5163b99264205ee369249e9815"
       },
-      "capabilityTags": [],
+      "capabilityTags": [
+        "expressions.bounded",
+        "stages.typed",
+        "targeting.authoritative"
+      ],
       "suggestedCapabilityTags": [],
       "blockerCodes": [],
-      "limitations": [
-        {
-          "code": "audit.required",
-          "summary": "Semantic conformance review is required before this legacy implementation can be marked complete."
-        }
-      ],
+      "limitations": [],
       "manualSteps": [],
-      "scenarioIds": [],
+      "scenarioIds": [
+        "acupressure.legacy-v1-attack-self",
+        "acupressure.legacy-v1-defense-target",
+        "acupressure.legacy-v1-special-attack-target",
+        "acupressure.legacy-v1-special-defense-target",
+        "acupressure.legacy-v1-speed-target",
+        "acupressure.legacy-v1-accuracy-target",
+        "acupressure.legacy-v1-miss",
+        "acupressure.legacy-v1-duplicate-replay",
+        "acupressure.legacy-v1-stale-target"
+      ],
       "conformanceEvidence": {
-        "requirementTags": [],
-        "scenarios": [],
+        "requirementTags": [
+          "branch.accuracy",
+          "branch.alternate",
+          "recovery.retry",
+          "resource.multi",
+          "target.self"
+        ],
+        "scenarios": [
+          {
+            "scenarioId": "acupressure.legacy-v1-attack-self",
+            "evidenceClasses": [
+              "alternate-branch",
+              "hit",
+              "self"
+            ]
+          },
+          {
+            "scenarioId": "acupressure.legacy-v1-defense-target",
+            "evidenceClasses": [
+              "alternate-branch"
+            ]
+          },
+          {
+            "scenarioId": "acupressure.legacy-v1-special-attack-target",
+            "evidenceClasses": [
+              "alternate-branch"
+            ]
+          },
+          {
+            "scenarioId": "acupressure.legacy-v1-special-defense-target",
+            "evidenceClasses": [
+              "alternate-branch"
+            ]
+          },
+          {
+            "scenarioId": "acupressure.legacy-v1-speed-target",
+            "evidenceClasses": [
+              "alternate-branch"
+            ]
+          },
+          {
+            "scenarioId": "acupressure.legacy-v1-accuracy-target",
+            "evidenceClasses": [
+              "alternate-branch"
+            ]
+          },
+          {
+            "scenarioId": "acupressure.legacy-v1-miss",
+            "evidenceClasses": [
+              "miss"
+            ]
+          },
+          {
+            "scenarioId": "acupressure.legacy-v1-duplicate-replay",
+            "evidenceClasses": [
+              "retry"
+            ]
+          },
+          {
+            "scenarioId": "acupressure.legacy-v1-stale-target",
+            "evidenceClasses": [
+              "multi-resource-conflict"
+            ]
+          }
+        ],
         "notApplicable": []
       },
-      "reviewedAt": null,
+      "reviewedAt": "2026-07-18",
       "unsupportedInteractionIds": [],
       "rolloutCohortId": null
     },
     {
       "canonicalId": "Aerial Ace",
       "displayName": "Aerial Ace",
-      "baseStatus": "assisted",
+      "baseStatus": "complete",
       "interactionStatus": "unassessed",
       "runtime": {
         "kind": "legacy-v1",
@@ -327,23 +571,60 @@
         "canonicalizationVersion": 1,
         "sourceDataSha256": "f90491826349afd7d1f2809fd9d74b7acc555f5163b99264205ee369249e9815"
       },
-      "capabilityTags": [],
+      "capabilityTags": [
+        "targeting.authoritative"
+      ],
       "suggestedCapabilityTags": [],
       "blockerCodes": [],
-      "limitations": [
-        {
-          "code": "audit.required",
-          "summary": "Semantic conformance review is required before this legacy implementation can be marked complete."
-        }
-      ],
+      "limitations": [],
       "manualSteps": [],
-      "scenarioIds": [],
+      "scenarioIds": [
+        "aerial-ace.legacy-v1-automatic-hit",
+        "aerial-ace.legacy-v1-duplicate-replay",
+        "aerial-ace.legacy-v1-stale-target"
+      ],
       "conformanceEvidence": {
-        "requirementTags": [],
-        "scenarios": [],
-        "notApplicable": []
+        "requirementTags": [
+          "mechanic.damage",
+          "recovery.retry",
+          "resource.multi"
+        ],
+        "scenarios": [
+          {
+            "scenarioId": "aerial-ace.legacy-v1-automatic-hit",
+            "evidenceClasses": [
+              "hit"
+            ]
+          },
+          {
+            "scenarioId": "aerial-ace.legacy-v1-duplicate-replay",
+            "evidenceClasses": [
+              "retry"
+            ]
+          },
+          {
+            "scenarioId": "aerial-ace.legacy-v1-stale-target",
+            "evidenceClasses": [
+              "multi-resource-conflict"
+            ]
+          }
+        ],
+        "notApplicable": [
+          {
+            "evidenceClass": "miss",
+            "reason": "Aerial Ace has no Accuracy Check and its canonical text says it cannot miss."
+          },
+          {
+            "evidenceClass": "crit",
+            "reason": "Critical hits require an Accuracy Roll in the frozen rules, and Aerial Ace makes no Accuracy Roll."
+          },
+          {
+            "evidenceClass": "immunity",
+            "reason": "The frozen type chart has no type immune to Flying damage; broader ability interactions remain separately unassessed."
+          }
+        ]
       },
-      "reviewedAt": null,
+      "reviewedAt": "2026-07-18",
       "unsupportedInteractionIds": [],
       "rolloutCohortId": null
     },
@@ -455,7 +736,7 @@
     {
       "canonicalId": "Air Cutter",
       "displayName": "Air Cutter",
-      "baseStatus": "assisted",
+      "baseStatus": "complete",
       "interactionStatus": "unassessed",
       "runtime": {
         "kind": "legacy-v1",
@@ -468,30 +749,72 @@
         "canonicalizationVersion": 1,
         "sourceDataSha256": "f90491826349afd7d1f2809fd9d74b7acc555f5163b99264205ee369249e9815"
       },
-      "capabilityTags": [],
+      "capabilityTags": [
+        "expressions.bounded",
+        "targeting.authoritative"
+      ],
       "suggestedCapabilityTags": [],
       "blockerCodes": [],
-      "limitations": [
-        {
-          "code": "audit.required",
-          "summary": "Semantic conformance review is required before this legacy implementation can be marked complete."
-        }
-      ],
+      "limitations": [],
       "manualSteps": [],
-      "scenarioIds": [],
+      "scenarioIds": [
+        "air-cutter.legacy-v1-area-mixed",
+        "air-cutter.legacy-v1-ordinary-hit",
+        "air-cutter.legacy-v1-duplicate-replay",
+        "air-cutter.legacy-v1-stale-target"
+      ],
       "conformanceEvidence": {
-        "requirementTags": [],
-        "scenarios": [],
-        "notApplicable": []
+        "requirementTags": [
+          "branch.accuracy",
+          "branch.critical-hit",
+          "mechanic.damage",
+          "recovery.retry",
+          "resource.multi",
+          "target.area"
+        ],
+        "scenarios": [
+          {
+            "scenarioId": "air-cutter.legacy-v1-area-mixed",
+            "evidenceClasses": [
+              "area-mixed-outcomes",
+              "crit",
+              "miss"
+            ]
+          },
+          {
+            "scenarioId": "air-cutter.legacy-v1-ordinary-hit",
+            "evidenceClasses": [
+              "hit"
+            ]
+          },
+          {
+            "scenarioId": "air-cutter.legacy-v1-duplicate-replay",
+            "evidenceClasses": [
+              "retry"
+            ]
+          },
+          {
+            "scenarioId": "air-cutter.legacy-v1-stale-target",
+            "evidenceClasses": [
+              "multi-resource-conflict"
+            ]
+          }
+        ],
+        "notApplicable": [
+          {
+            "evidenceClass": "immunity",
+            "reason": "The frozen type chart has no type immune to Flying damage; broader ability interactions remain separately unassessed."
+          }
+        ]
       },
-      "reviewedAt": null,
+      "reviewedAt": "2026-07-18",
       "unsupportedInteractionIds": [],
       "rolloutCohortId": null
     },
     {
       "canonicalId": "Air Slash",
       "displayName": "Air Slash",
-      "baseStatus": "assisted",
+      "baseStatus": "complete",
       "interactionStatus": "unassessed",
       "runtime": {
         "kind": "legacy-v1",
@@ -504,23 +827,82 @@
         "canonicalizationVersion": 1,
         "sourceDataSha256": "f90491826349afd7d1f2809fd9d74b7acc555f5163b99264205ee369249e9815"
       },
-      "capabilityTags": [],
+      "capabilityTags": [
+        "conditions.typed",
+        "expressions.bounded",
+        "targeting.authoritative"
+      ],
       "suggestedCapabilityTags": [],
       "blockerCodes": [],
-      "limitations": [
-        {
-          "code": "audit.required",
-          "summary": "Semantic conformance review is required before this legacy implementation can be marked complete."
-        }
-      ],
+      "limitations": [],
       "manualSteps": [],
-      "scenarioIds": [],
+      "scenarioIds": [
+        "air-slash.legacy-v1-threshold-pass",
+        "air-slash.legacy-v1-threshold-fail",
+        "air-slash.legacy-v1-miss",
+        "air-slash.legacy-v1-critical-hit",
+        "air-slash.legacy-v1-secondary-immunity",
+        "air-slash.legacy-v1-duplicate-replay",
+        "air-slash.legacy-v1-stale-target"
+      ],
       "conformanceEvidence": {
-        "requirementTags": [],
-        "scenarios": [],
+        "requirementTags": [
+          "branch.accuracy",
+          "branch.critical-hit",
+          "branch.immunity",
+          "branch.threshold",
+          "mechanic.damage",
+          "recovery.retry",
+          "resource.multi"
+        ],
+        "scenarios": [
+          {
+            "scenarioId": "air-slash.legacy-v1-threshold-pass",
+            "evidenceClasses": [
+              "hit",
+              "threshold-pass"
+            ]
+          },
+          {
+            "scenarioId": "air-slash.legacy-v1-threshold-fail",
+            "evidenceClasses": [
+              "threshold-fail"
+            ]
+          },
+          {
+            "scenarioId": "air-slash.legacy-v1-miss",
+            "evidenceClasses": [
+              "miss"
+            ]
+          },
+          {
+            "scenarioId": "air-slash.legacy-v1-critical-hit",
+            "evidenceClasses": [
+              "crit"
+            ]
+          },
+          {
+            "scenarioId": "air-slash.legacy-v1-secondary-immunity",
+            "evidenceClasses": [
+              "immunity"
+            ]
+          },
+          {
+            "scenarioId": "air-slash.legacy-v1-duplicate-replay",
+            "evidenceClasses": [
+              "retry"
+            ]
+          },
+          {
+            "scenarioId": "air-slash.legacy-v1-stale-target",
+            "evidenceClasses": [
+              "multi-resource-conflict"
+            ]
+          }
+        ],
         "notApplicable": []
       },
-      "reviewedAt": null,
+      "reviewedAt": "2026-07-18",
       "unsupportedInteractionIds": [],
       "rolloutCohortId": null
     },
