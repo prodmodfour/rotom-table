@@ -2410,7 +2410,7 @@ Status: DONE
 
 ## MA-175 — Finish U-Turn switching
 
-Status: TODO
+Status: DONE
 
 **Depends on:** MA-105, MA-130
 **Commit:** `feat(move-automation): fully resolve u turn switching`
