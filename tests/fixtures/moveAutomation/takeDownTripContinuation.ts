@@ -11,9 +11,9 @@ import type { TrainerSheet } from '~/types/trainerSheet'
 export const TAKE_DOWN_TRIP_FIXTURE_VERSION = 1742 as const
 
 /**
- * Test-only continuation program. Its attacked target is supplied by the
- * fixture as an already-authoritative qualifying Take Down hit; the catalog
- * runtime remains legacy until MA-174C wires the fragment after real damage.
+ * Test-only isolated continuation program. Its attacked target is supplied by
+ * the fixture as an already-authoritative qualifying Take Down hit; the
+ * catalog runtime reuses this fragment with its damaged-target projection.
  */
 export const TAKE_DOWN_TRIP_CONTINUATION_FIXTURE_SPEC = Object.freeze({
   schemaVersion: 2,

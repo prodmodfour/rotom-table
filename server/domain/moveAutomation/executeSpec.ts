@@ -2795,6 +2795,7 @@ const executeMoveSpecInternal = (
       if (operation.kind === 'damage') {
         const operationDamageTypes: MoveDamageTypeResolution[] = []
         const operationDamageBases: MoveContextualDamageBaseResolution[] = []
+        const projectedDamagedTargetIds = new Set(damagedTargetIds)
         const rollSummaries: Array<{
           readonly rollId: string
           readonly recipientId: string
@@ -2812,6 +2813,10 @@ const executeMoveSpecInternal = (
           })
           operationDamageTypes.push(resolvedType)
           resolvedDamageTypes.push(resolvedType)
+          // PTU damage that reaches a non-immune hit recipient has a minimum
+          // effective loss. Project that server-owned fact so reviewed
+          // after-damage branches can suspend before reducers commit state.
+          if (resolvedType.finalMultiplier > 0) projectedDamagedTargetIds.add(recipientId)
           const formula = resolveMoveSpecDamageRollFormula({
             context: input.context,
             operation,
@@ -2850,6 +2855,10 @@ const executeMoveSpecInternal = (
             finalValue: result.finalValue,
           })
         }
+        damagedTargetIds = canonicalPlacementIds(
+          input.context,
+          projectedDamagedTargetIds,
+        )
         trace = reduceMoveResolutionTrace(trace, {
           kind: 'operation',
           phase,

@@ -1,9 +1,10 @@
 import type { MoveEffectOperation } from '#shared/moveAutomation/effects'
+import type { MoveSpecEffectOperation } from '#shared/moveAutomation/spec'
 
 /**
  * Server-owned recipient sets that can establish Take Down's optional Trip.
  * A focused continuation fixture may pass an already-qualified attacked set;
- * the catalog integration must narrow this to its authoritative hit/damage set.
+ * the catalog runtime narrows this to its authoritative damaged-target set.
  */
 export type TakeDownTripRecipientKind =
   | 'attacked-targets'
@@ -40,11 +41,12 @@ const TRIP_SKILL_OPTIONS = Object.freeze([
  * Build the bounded MoveSpec operation fragment for Take Down's optional Free
  * Action Trip. The caller supplies only a server-derived qualifying recipient
  * set; responses can select stable option IDs but cannot author skills, dice,
- * modifiers, tie policy, branches, or the Tripped operation.
+ * modifiers, tie policy, branches, or the Tripped operation. The return
+ * intersection bridges MoveSpec's JSON envelope and the exact parsed union.
  */
 export const buildTakeDownTripContinuationOperations = (
   qualifyingRecipients: TakeDownTripRecipientKind,
-) => Object.freeze([
+): readonly (MoveEffectOperation & MoveSpecEffectOperation)[] => Object.freeze([
   {
     id: TAKE_DOWN_TRIP_OPERATION_IDS.offer,
     kind: 'branch',
@@ -156,4 +158,6 @@ export const buildTakeDownTripContinuationOperations = (
       stackPolicy: { kind: 'refresh', maxStacks: null },
     },
   },
-] satisfies readonly MoveEffectOperation[])
+] satisfies readonly MoveEffectOperation[]) as unknown as readonly (
+  MoveEffectOperation & MoveSpecEffectOperation
+)[]

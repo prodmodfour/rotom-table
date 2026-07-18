@@ -859,6 +859,7 @@ describe('explicit move automation scripts', () => {
     expect(takeDown?.conditionSuggestions).toEqual([
       { recipient: 'target', condition: 'Tripped', action: 'add', label: 'Trip Maneuver succeeds', optional: true },
     ])
+    expect(takeDown?.automationNotes).toEqual([])
     expect(isSeamlessSingleTargetMoveScript(takeDown)).toBe(true)
 
     const absorb = explicitScriptForMove('Absorb')
