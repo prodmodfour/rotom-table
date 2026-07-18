@@ -2304,7 +2304,7 @@ Status: DONE
 
 ## MA-171 — Finish Helping Hand as a consumable effect
 
-Status: TODO
+Status: DONE
 
 **Depends on:** MA-057, MA-077
 **Commit:** `feat(move-automation): fully resolve helping hand`
