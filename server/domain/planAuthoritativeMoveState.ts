@@ -85,6 +85,7 @@ import {
 } from './moveAutomation/registry'
 import { cleanupEncounterTransformationsForKnockouts } from './moveAutomation/transformationLifecycle'
 import { cleanupYawnEffectsForKnockouts } from './moveAutomation/yawn'
+import { consumeHelpingHandBonus } from './moveAutomation/helpingHand'
 import {
   deduplicateAuthoritativeMoveGroupInventoryReads,
   type AuthoritativeMoveGroupInventoryRead,
@@ -320,6 +321,9 @@ const cloneResolution = (resolution: AuthoritativeMoveResolution): Authoritative
     : { terrainConditionProtectionEffects: cloneJson(
         resolution.terrainConditionProtectionEffects,
       ) }),
+  ...(resolution.helpingHandBonus === undefined
+    ? {}
+    : { helpingHandBonus: cloneJson(resolution.helpingHandBonus) }),
 })
 
 const cloneUsageSummary = (usage: UseMoveUsageSummary): UseMoveUsageSummary => cloneJson(usage)
@@ -1228,6 +1232,11 @@ export const planAuthoritativeMoveStateExecution = (
     const placement = transactionPlacement(update.id, 'condition', originalPlacementsById, allowedPlacementIds, input.pokemonSheets, input.trainerSheets)
     applyConditionUpdate(update, placement, sheetAccumulators, input.pokemonSheets, input.trainerSheets)
   }
+
+  workingMap = consumeHelpingHandBonus({
+    map: workingMap,
+    resolution: resolution.helpingHandBonus,
+  }).map
 
   const knockedOutPlacementIds = resolution.transaction.hpUpdates
     .filter(update => update.currentHp <= 0)

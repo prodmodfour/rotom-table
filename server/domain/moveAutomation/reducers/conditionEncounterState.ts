@@ -173,9 +173,11 @@ export const createSourceLinkedMoveConditionEffect = (options: {
     createdTurn: boundedTurn(options.context),
     duration: duration.duration,
     stacks: 1,
-    charges: null,
+    charges: duration.charges ?? null,
     stackPolicy: options.operation.payload.stackPolicy,
-    chargePolicy: { kind: 'none', amount: null },
+    chargePolicy: duration.charges === undefined
+      ? { kind: 'none', amount: null }
+      : { kind: 'consume-on-trigger', amount: 1 },
     tags: ['condition'],
     payload: {
       conditionId: conditionLookupKey(options.condition),

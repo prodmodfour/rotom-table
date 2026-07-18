@@ -3,6 +3,11 @@ import type { AuthoritativeMoveRulesContext } from './context'
 import type { BattlefieldSmokeAccuracyResolution } from './barriersAndSmoke'
 import type { MoveAutomationLineOfSightResult } from './lineOfSight'
 import { moveAutomationUserAccuracy } from '~/utils/moveAutomationAccuracy'
+import {
+  HELPING_HAND_ACCURACY_BONUS,
+  activeHelpingHandBonusEffects,
+  withoutHelpingHandCondition,
+} from './helpingHand'
 
 export interface AuthoritativeMoveSightAccuracyResolution {
   readonly sourcePlacementId: string
@@ -86,18 +91,34 @@ export const resolveAuthoritativeMoveUserAccuracy = (
       scope: 'pokemon-held',
       timing: 'static',
     }).suppressed
-  const actorAccuracy = moveAutomationUserAccuracy(context.actor.token, {
-    heldItemEffectsSuppressed,
-    // Gravity is composed below from the authoritative global-field query.
-    // Keep the retained browser/legacy compatibility projection out of v2.
-    fieldAccuracyBonus: 0,
+  const helpingHand = activeHelpingHandBonusEffects({
+    map: context.map,
+    placementId: context.actor.placement.id,
   })
+  const actorAccuracy = moveAutomationUserAccuracy(
+    helpingHand.length > 0
+      ? withoutHelpingHandCondition(context.actor.token)
+      : context.actor.token,
+    {
+      heldItemEffectsSuppressed,
+      // Gravity is composed below from the authoritative global-field query.
+      // Keep the retained browser/legacy compatibility projection out of v2.
+      fieldAccuracyBonus: 0,
+    },
+  )
   const gravity = context.queries.gravity.accuracy()
   const modifiers: MoveAutomationRollModifier[] = [{
     sourceId: 'actor-accuracy',
     reason: 'Actor Accuracy',
     value: actorAccuracy,
   }]
+  if (helpingHand[0]) {
+    modifiers.push({
+      sourceId: helpingHand[0].id,
+      reason: 'Helping Hand Accuracy',
+      value: HELPING_HAND_ACCURACY_BONUS,
+    })
+  }
   if (gravity.bonus !== 0 && gravity.source) {
     modifiers.push({
       sourceId: gravity.source.zoneId,
@@ -105,7 +126,9 @@ export const resolveAuthoritativeMoveUserAccuracy = (
       value: gravity.bonus,
     })
   }
-  const baseValue = actorAccuracy + gravity.bonus
+  const baseValue = actorAccuracy
+    + (helpingHand.length > 0 ? HELPING_HAND_ACCURACY_BONUS : 0)
+    + gravity.bonus
   const sight = options.targetPlacementId
     ? resolveAuthoritativeMoveSightAccuracy(context, options.targetPlacementId, baseValue)
     : null

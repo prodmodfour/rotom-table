@@ -10844,44 +10844,69 @@
     {
       "canonicalId": "Helping Hand",
       "displayName": "Helping Hand",
-      "baseStatus": "assisted",
+      "baseStatus": "complete",
       "interactionStatus": "unassessed",
       "runtime": {
-        "kind": "legacy-v1",
-        "version": 1,
-        "definitionHash": "535f12f2f3048bc2e067a6aa0dddd812f8e0a294e075f694d33644896fb8c518",
-        "sourceModule": "src/utils/move-automation/scripts/additionalSingleTarget.ts"
+        "kind": "movespec-v2",
+        "version": 2,
+        "definitionHash": "1368510ac461137277885785709e3fd75718fc5f581572c4d59931f53b1335be",
+        "sourceModule": "server/domain/moveAutomation/specs/helpingHand.ts"
       },
       "rulesProvenance": {
         "rulesetId": "rotom-table-reference-moves-v1",
         "canonicalizationVersion": 1,
         "sourceDataSha256": "f90491826349afd7d1f2809fd9d74b7acc555f5163b99264205ee369249e9815"
       },
-      "capabilityTags": [],
-      "suggestedCapabilityTags": [],
-      "blockerCodes": [
+      "capabilityTags": [
         "expressions.bounded",
         "lifecycle.effects"
       ],
-      "limitations": [
-        {
-          "code": "helping-hand.marker-only",
-          "summary": "The legacy script adds a marker but does not apply, consume, or expire the target’s next-roll bonuses at authoritative move and round boundaries."
-        }
+      "suggestedCapabilityTags": [],
+      "blockerCodes": [],
+      "limitations": [],
+      "manualSteps": [],
+      "scenarioIds": [
+        "helping-hand.v2-duplicate-replay",
+        "helping-hand.v2-nonqualifying-retain",
+        "helping-hand.v2-qualifying-consume",
+        "helping-hand.v2-round-expiry"
       ],
-      "manualSteps": [
-        {
-          "code": "helping-hand.consume",
-          "summary": "Apply +2 to the target’s next Accuracy Roll this round and +10 to its next Damage Roll this round, then remove the marker after consumption or at round end."
-        }
-      ],
-      "scenarioIds": [],
       "conformanceEvidence": {
-        "requirementTags": [],
-        "scenarios": [],
+        "requirementTags": [
+          "branch.threshold",
+          "mechanic.lifecycle",
+          "recovery.retry"
+        ],
+        "scenarios": [
+          {
+            "scenarioId": "helping-hand.v2-duplicate-replay",
+            "evidenceClasses": [
+              "retry"
+            ]
+          },
+          {
+            "scenarioId": "helping-hand.v2-nonqualifying-retain",
+            "evidenceClasses": [
+              "threshold-fail"
+            ]
+          },
+          {
+            "scenarioId": "helping-hand.v2-qualifying-consume",
+            "evidenceClasses": [
+              "lifecycle-trigger",
+              "threshold-pass"
+            ]
+          },
+          {
+            "scenarioId": "helping-hand.v2-round-expiry",
+            "evidenceClasses": [
+              "lifecycle-cleanup"
+            ]
+          }
+        ],
         "notApplicable": []
       },
-      "reviewedAt": "2026-07-10",
+      "reviewedAt": "2026-07-18",
       "unsupportedInteractionIds": [],
       "rolloutCohortId": null
     },

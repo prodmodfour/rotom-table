@@ -104,6 +104,10 @@ import {
 import {
   resolveAuthoritativeMoveSightAccuracy,
 } from './moveAutomation/accuracy'
+import {
+  attachHelpingHandBonusResolution,
+  type HelpingHandBonusResolution,
+} from './moveAutomation/helpingHand'
 
 export type { AuthoritativeMoveSheetRead } from './moveAutomation/context'
 
@@ -274,6 +278,8 @@ export interface AuthoritativeMoveResolution {
   readonly switchTransition?: AuthoritativeMoveSwitchTransition
   /** Server-only Misty suppression effects planned with legacy sheet conditions. */
   readonly terrainConditionProtectionEffects?: readonly EncounterConditionEffect[]
+  /** Server-only source effect and roll evidence for atomic Helping Hand consumption. */
+  readonly helpingHandBonus?: HelpingHandBonusResolution
   /** Server-only native planning projection; omitted from accepted wire results. */
   readonly nativeV2?: NativeMoveSpecResolutionProjection
 }
@@ -490,7 +496,7 @@ const finalizeResolution = (
     area: resolution.area,
     movement: resolution.movement?.kind === 'pass' ? resolution.movement : undefined,
   })
-  return {
+  return attachHelpingHandBonusResolution(context.map, {
     ...resolution,
     sheetReads: context.reads.snapshot(),
     rollLedger,
@@ -498,7 +504,7 @@ const finalizeResolution = (
     ...(terrainConditionProtectionEffects.length > 0
       ? { terrainConditionProtectionEffects }
       : {}),
-  }
+  })
 }
 
 const resolveSelectedTarget = (
@@ -1815,31 +1821,37 @@ export const resolveAuthoritativeMoveExecutionFromContext = (
     )
   }
   if (selectedRuntime?.kind === 'movespec-v2') {
+    const finalizeNativeExecution = (
+      execution: AuthoritativeMoveExecution,
+    ): AuthoritativeMoveExecution => isAuthoritativePendingMoveResolution(execution)
+      ? execution
+      : attachHelpingHandBonusResolution(context.map, execution)
+
     if (intent.selection.kind === 'self') {
-      return resolveNativeSelfMove({
+      return finalizeNativeExecution(resolveNativeSelfMove({
         context,
         runtime: selectedRuntime,
         entry,
         moveKey: resolvedMoveKey,
-      })
+      }))
     }
     if (intent.selection.kind === 'area') {
-      return resolveNativeAreaMove({
+      return finalizeNativeExecution(resolveNativeAreaMove({
         context,
         runtime: selectedRuntime,
         entry,
         selection: intent.selection,
         moveKey: resolvedMoveKey,
-      })
+      }))
     }
     if (intent.selection.kind === 'single-target') {
-      return resolveNativeSingleTargetMove({
+      return finalizeNativeExecution(resolveNativeSingleTargetMove({
         context,
         runtime: selectedRuntime,
         entry,
         selection: intent.selection,
         moveKey: resolvedMoveKey,
-      })
+      }))
     }
     return fail(
       'invalid',

@@ -531,7 +531,7 @@ describe('resolveAuthoritativeMove', () => {
     expect(snapshotInput(map, pokemonSheets, trainerSheets)).toBe(before)
   })
 
-  it('resolves no-roll single-target moves through the no-roll transaction path', () => {
+  it('resolves no-roll Helping Hand through its native source-linked effect operation', () => {
     const resolution = resolveAuthoritativeMove({
       map: mapFixture(),
       pokemonSheets: sheetMap([{ name: 'Helping Hand' }]),
@@ -542,7 +542,15 @@ describe('resolveAuthoritativeMove', () => {
     })
 
     expect(resolution.feedback).toBeUndefined()
-    expect(resolution.transaction.conditionUpdates).toEqual([{ id: 'target-a', conditions: ['Helping Hand'] }])
+    expect(resolution.rollLedger).toEqual([])
+    expect(resolution.transaction.conditionUpdates).toEqual([])
+    expect(resolution.nativeV2?.operations).toContainEqual(expect.objectContaining({
+      operation: expect.objectContaining({
+        id: 'helping-hand.apply-bonus',
+        kind: 'condition',
+      }),
+      recipientIds: ['target-a'],
+    }))
   })
 
   it('accepts the acting token as a single target only for Self-inclusive range semantics', () => {

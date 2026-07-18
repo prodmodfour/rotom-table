@@ -378,6 +378,7 @@ export const moveResultFromPlan = (plan: AuthoritativeMoveStatePlan): LivePlayRe
     resourceMovement: _resourceMovement,
     switchTransition: _switchTransition,
     terrainConditionProtectionEffects: _terrainConditionProtectionEffects,
+    helpingHandBonus: _helpingHandBonus,
     nativeV2: _nativeV2,
     ...publicResolution
   } = clonedResolution

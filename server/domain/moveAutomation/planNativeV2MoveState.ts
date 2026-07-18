@@ -46,6 +46,7 @@ import { applyAuthoritativeMovePlacementTransition } from './placementTransition
 import { planAuthoritativeMoveSwitch } from './planMoveSwitch'
 import { cleanupEncounterTransformationsForKnockouts } from './transformationLifecycle'
 import { cleanupYawnEffectsForKnockouts } from './yawn'
+import { consumeHelpingHandBonus } from './helpingHand'
 import { planMoveSwitchCombatStageTransfer } from './planSwitchCombatStages'
 import type { MoveAutomationRuntimeRegistry } from './registry'
 import { createMoveSpecOperationContextResolver } from './resolveImmediateSpec'
@@ -527,8 +528,12 @@ export const planNativeV2MoveState = (options: {
     options.map,
     native.coreStateChanges,
   )
-  const mapAfterTransformationCleanup = cleanupEncounterTransformationsForKnockouts({
+  const mapAfterHelpingHand = consumeHelpingHandBonus({
     map: mapWithCoreEffects,
+    resolution: options.resolution.helpingHandBonus,
+  }).map
+  const mapAfterTransformationCleanup = cleanupEncounterTransformationsForKnockouts({
+    map: mapAfterHelpingHand,
     placementIds: native.faintedPlacementIds,
   }).map
   const mapAfterKnockoutCleanup = cleanupYawnEffectsForKnockouts({

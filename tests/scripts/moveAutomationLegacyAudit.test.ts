@@ -154,12 +154,6 @@ describe('legacy move automation audit metadata', () => {
         manualStepCodes: ['five-strike.per-hit'],
         summaryTerms: ['per-hit', 'early knockout'],
       }],
-      ['Helping Hand', {
-        blockerCodes: ['expressions.bounded', 'lifecycle.effects'],
-        limitationCodes: ['helping-hand.marker-only'],
-        manualStepCodes: ['helping-hand.consume'],
-        summaryTerms: ['+2', '+10'],
-      }],
       ['Howl', {
         blockerCodes: ['targeting.authoritative'],
         limitationCodes: ['ally-area.side-required'],

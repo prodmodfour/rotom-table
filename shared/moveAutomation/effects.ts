@@ -1143,6 +1143,8 @@ export interface MoveConditionDurationPolicy {
   /** Stable reviewed base identity; the reducer derives one instance per recipient. */
   readonly effectId: string
   readonly duration: EncounterEffectDuration
+  /** Optional finite trigger charges; each authoritative trigger consumes one. */
+  readonly charges?: number
   /** Explicitly opts a source-linked condition into expiry or Baton Pass transfer. */
   readonly transferPolicy?: EncounterEffectTransferPolicy
 }
@@ -1861,7 +1863,7 @@ const CONDITION_FILTER_FIELDS = ['groups', 'conditionIds', 'excludedConditionIds
 const CONDITION_RANDOM_CHOICE_FIELDS = ['rollId', 'conditionIds'] as const
 const CONDITION_ACCURACY_ROLL_TRIGGER_FIELDS = ['rollId', 'trigger'] as const
 const CONDITION_DURATION_REQUIRED_FIELDS = ['effectId', 'duration'] as const
-const CONDITION_DURATION_OPTIONAL_FIELDS = ['transferPolicy'] as const
+const CONDITION_DURATION_OPTIONAL_FIELDS = ['charges', 'transferPolicy'] as const
 const CONDITION_STACK_POLICY_FIELDS = ['kind', 'maxStacks'] as const
 const COMBAT_STAGE_REQUIRED_FIELDS = ['action', 'stage', 'value'] as const
 const COMBAT_STAGE_OPTIONAL_FIELDS = ['selectedStage', 'stageSource', 'rounding'] as const
@@ -3344,6 +3346,16 @@ const parseConditionDuration = (
         ownValue(input, 'duration', path),
         `${path}.duration`,
       ),
+      ...(input.charges === undefined
+        ? {}
+        : {
+            charges: parseInteger(
+              input.charges,
+              `${path}.charges`,
+              1,
+              ENCOUNTER_EFFECT_LIMITS.charges,
+            ),
+          }),
       ...(input.transferPolicy === undefined
         ? {}
         : {

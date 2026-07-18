@@ -29,7 +29,10 @@ import {
   resolveMoveCriticalHit,
   type MoveCriticalHitResolution,
 } from './criticalHits'
-import type { MoveDamagePipelineResult } from '~/utils/moveAutomationDamagePipeline'
+import type {
+  MoveDamageModifier,
+  MoveDamagePipelineResult,
+} from '~/utils/moveAutomationDamagePipeline'
 import {
   evaluateMoveExpression,
   type MoveRuleEvaluationTraceEntry,
@@ -40,6 +43,11 @@ import {
 } from './stats'
 import type { TerrainDamageResolution } from './terrain'
 import type { WeatherDamageResolution } from './weather'
+import {
+  HELPING_HAND_DAMAGE_BONUS,
+  activeHelpingHandBonusEffects,
+  withoutHelpingHandCondition,
+} from './helpingHand'
 
 export type MoveDamageStatSelectionErrorCode = 'non-numeric-stat-selection'
 
@@ -260,6 +268,22 @@ export const resolveMoveSpecDamageCalculation = (
   const authoritativeFieldEffects = options.context.queries.rooms.projectFieldEffects(
     authoritativeTerrainFieldEffects,
   )
+  const helpingHand = activeHelpingHandBonusEffects({
+    map: options.context.map,
+    placementId: actor.id,
+  })
+  const helpingHandModifiers: readonly MoveDamageModifier[] = helpingHand[0]
+    ? [{
+        id: 'helping-hand.damage-roll',
+        stage: 'pre-type-modifiers',
+        priority: 100,
+        source: { kind: 'encounter-effect', id: helpingHand[0].id },
+        stackingGroup: 'condition-damage-roll',
+        reasonCode: 'helping-hand.damage-roll-bonus',
+        operation: 'add',
+        value: HELPING_HAND_DAMAGE_BONUS,
+      }]
+    : []
   // Native weather and Terrain modifiers carry exact zone identity and trace
   // reasons. Keep them out of the compatibility lane.
   const nonAuthoritativeFieldEffects: MapFieldEffects = {
@@ -269,7 +293,7 @@ export const resolveMoveSpecDamageCalculation = (
   }
   const breakdown = resolveMoveAutomationTargetDamageBreakdown(
     options.script,
-    actor,
+    helpingHand.length > 0 ? withoutHelpingHandCondition(actor) : actor,
     options.recipient,
     { ...options.resolution, crit: criticalHit.critical },
     nonAuthoritativeFieldEffects,
@@ -281,7 +305,11 @@ export const resolveMoveSpecDamageCalculation = (
         moveType: moveType.moveType,
         multiplier: moveType.finalMultiplier,
       },
-      additionalModifiers: [...weather.modifiers, ...terrain.modifiers],
+      additionalModifiers: [
+        ...helpingHandModifiers,
+        ...weather.modifiers,
+        ...terrain.modifiers,
+      ],
     },
   )
   return deepFreeze({

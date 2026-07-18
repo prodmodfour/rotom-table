@@ -3936,25 +3936,12 @@
     {
       "canonicalId": "Helping Hand",
       "displayName": "Helping Hand",
-      "baseStatus": "assisted",
+      "baseStatus": "complete",
       "interactionStatus": "unassessed",
-      "runtimeKind": "legacy-v1",
-      "blockerCodes": [
-        "expressions.bounded",
-        "lifecycle.effects"
-      ],
-      "limitations": [
-        {
-          "code": "helping-hand.marker-only",
-          "summary": "The legacy script adds a marker but does not apply, consume, or expire the target’s next-roll bonuses at authoritative move and round boundaries."
-        }
-      ],
-      "manualSteps": [
-        {
-          "code": "helping-hand.consume",
-          "summary": "Apply +2 to the target’s next Accuracy Roll this round and +10 to its next Damage Roll this round, then remove the marker after consumption or at round end."
-        }
-      ]
+      "runtimeKind": "movespec-v2",
+      "blockerCodes": [],
+      "limitations": [],
+      "manualSteps": []
     },
     {
       "canonicalId": "Hex",

@@ -490,7 +490,7 @@ export const describeSheetConditionEffects = (
     effects.push({
       id: 'helping-hand-bonus',
       label: HELPING_HAND_CONDITION,
-      description: 'Next Accuracy Roll this round gains +2 and next Damage Roll this round gains +10; remove after the bonus is consumed or the round ends.',
+      description: 'Next qualifying attack this round gains +2 on its Accuracy Roll and +10 on its Damage Roll; the bonus is consumed after calculation or at round end.',
     })
   }
 

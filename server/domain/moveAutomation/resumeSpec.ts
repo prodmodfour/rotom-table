@@ -48,6 +48,7 @@ import {
   type MoveSpecResolvedResponse,
 } from './responses'
 import { reduceCompletedMoveSpec } from './resolveImmediateSpec'
+import { attachHelpingHandBonusResolution } from './helpingHand'
 
 export type ResumeMoveSpecErrorCode =
   | 'runtime-unavailable'
@@ -453,7 +454,7 @@ export const resumeMoveSpec = (
     execution,
     alreadyCommittedOperationIds(pending, runtime),
   )
-  const result: AuthoritativeMoveResolution = {
+  const result: AuthoritativeMoveResolution = attachHelpingHandBonusResolution(input.map, {
     actorPlacementId: pending.actorPlacementId,
     moveName: runtime.definition.spec.presentation.displayName,
     canonicalMoveName: entry.canonicalMoveName,
@@ -469,6 +470,6 @@ export const resumeMoveSpec = (
     ...movementProjection,
     ...switchProjection,
     nativeV2: immediate.native,
-  }
+  })
   return Object.freeze(result)
 }

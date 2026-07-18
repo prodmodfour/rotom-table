@@ -1295,6 +1295,7 @@ describe('MoveSpec typed effect operations', () => {
         duration: {
           effectId: 'effect.random-condition',
           duration: { kind: 'turns', subject: 'target', boundary: 'end', remaining: 1 },
+          charges: 2,
           transferPolicy: 'expire',
         },
         saveTiming: 'end-turn',
@@ -1310,6 +1311,7 @@ describe('MoveSpec typed effect operations', () => {
       duration: {
         effectId: 'effect.random-condition',
         duration: { kind: 'turns', subject: 'target', boundary: 'end', remaining: 1 },
+        charges: 2,
         transferPolicy: 'expire',
       },
       saveTiming: 'end-turn',
@@ -1336,6 +1338,16 @@ describe('MoveSpec typed effect operations', () => {
         },
       },
     }), 'invalid-effect-operation', 'operation.payload.duration.transferPolicy')
+    expectEffectError(validOperation('condition', {
+      payload: {
+        ...VALID_PAYLOADS.condition,
+        duration: {
+          effectId: 'effect.invalid-charges',
+          duration: { kind: 'scene', remaining: null },
+          charges: 0,
+        },
+      },
+    }), 'limit-exceeded', 'operation.payload.duration.charges')
   })
 
   it('rejects ambiguous or unbounded typed condition policies', () => {
