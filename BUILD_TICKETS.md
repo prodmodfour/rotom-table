@@ -2441,7 +2441,7 @@ Status: DONE
 
 ## MA-176B — Integrate Knock Off's durable item continuation
 
-Status: DONE
+Status: TODO
 
 **Depends on:** MA-176A
 **Commit:** `feat(move-automation): integrate knock off item continuation`
