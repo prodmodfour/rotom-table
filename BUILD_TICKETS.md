@@ -2618,7 +2618,7 @@ Status: DONE
 
 ## REG-011 — Certify Flatter through Glare
 
-Status: DONE
+Status: TODO
 
 **Baseline-registered moves:** Flatter; Focus Blast; Force Palm; Frustration; Fury Attack; Fury Cutter; Fury Swipes; Glare
 
