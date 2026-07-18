@@ -9,7 +9,7 @@ Ticket statuses:
 
 The build loop must select the lowest-numbered TODO ticket. Each ticket below maps to one ticket from the supplied planning file; build ticket numbers follow that document's suggested order when present.
 
-Autonomous cycle rules for every ticket: implement only the selected ticket, run `scripts/quality-gate.sh`, update only the selected ticket status, commit with a conventional commit message, and leave the working tree clean. The final ticket (`MA-299`) may also set `AUTOMATION_STATUS: DONE` after all 294 refreshed tickets are complete.
+Autonomous cycle rules for every ticket: implement only the selected ticket, run `scripts/quality-gate.sh`, update only the selected ticket status, commit with a conventional commit message, and leave the working tree clean. The final ticket (`MA-299`) may also set `AUTOMATION_STATUS: DONE` after all 295 refreshed tickets are complete.
 
 ---
 
@@ -50,7 +50,7 @@ When a ticket introduces a new pure module, prefer this layout:
 
 The existing `src/utils/move-automation/` registry remains the v1 compatibility surface until the retirement tickets at the end.
 
-Queue size at this baseline: **294 commits**—188 engine/state/QA tickets, 33 conformance batches for the registered 258, and 73 implementation batches for the missing 518.
+Queue size at this baseline: **295 commits**—189 engine/state/QA tickets, 33 conformance batches for the registered 258, and 73 implementation batches for the missing 518.
 
 ## Decisions already locked
 
@@ -2419,16 +2419,45 @@ Status: DONE
 
 **Done:** Attack, usage, switch, effects, and history resolve once as one saga.
 
-## MA-176 — Finish Knock Off inventory mutation
+## MA-176A — Plan Knock Off's authoritative item outcome
 
 Status: TODO
 
 **Depends on:** MA-150–MA-157
+**Commit:** `feat(move-automation): plan knock off item outcome`
+
+**Touch:** the reviewed Knock Off MoveSpec/handler, authoritative item query and choice seams, typed item-plan adapters, and focused domain tests.
+
+**Implement:**
+
+- From immutable authoritative item resources, enumerate only the target's canonical legal held/accessory candidates by stable item reference. Exclude ineligible resources and destinations without trusting client-supplied item identities or mechanics.
+- Gate the item clause behind the qualifying server-resolved hit/damage outcome and encode any canonical damage interaction and ordering. Miss, immunity, no qualifying damage, and no legal item must produce explicit traced outcomes without an item write.
+- Resolve branches that need no human input and materialize a bounded, private, actor-owned durable choice when the canonical outcome requires selection among legal candidates.
+- Convert a resolved candidate into shared typed remove/suppress and ground-item or other canonical-destination changes while preserving quantity and provenance. Keep this seam pure: do not write repositories, select the production runtime, or promote the manifest row.
+
+**Tests:** Cover Pokémon held items, Trainer Accessory items, ineligible equipment, zero/one/multiple legal candidates, hit, miss, critical hit, immunity/no qualifying damage, stable private choice IDs, canonical damage interaction, destination planning, and input immutability.
+
+**Done:** For one authoritative snapshot, Knock Off deterministically returns a traced no-item outcome, one bounded pending choice, or one typed item plan with its damage interaction; no client-authored item reference can enter the result and no resource is mutated.
+
+## MA-176B — Integrate and certify Knock Off inventory mutation
+
+Status: TODO
+
+**Depends on:** MA-176A
 **Commit:** `feat(move-automation): fully resolve knock off`
 
-**Implement:** Query legal held/accessory candidates, choose when necessary, apply any damage interaction, remove/suppress according to canonical rule, and create the ground item or other canonical destination atomically.
+**Touch:** the reviewed Knock Off runtime and registry entry, pending-response/resume orchestration, atomic move/item persistence, semantic scenarios, manifest evidence, and authority documentation.
 
-**Done:** No manual inventory step remains and concurrency cannot duplicate the item.
+**Implement:**
+
+- Invoke the MA-176A outcome only after a qualifying authoritative Knock Off result. Persist any required item choice as an authorized reconnect-safe window, accept only stable option IDs, and revalidate the selected server-owned candidate and complete read set on resume.
+- Apply the canonical damage interaction, usage, remove/suppress operation, and ground item or other canonical destination in one durable saga. Commit all map, sheet, and inventory changes atomically; no ordinary item mutation may commit while a response is pending.
+- Preserve response privacy and make declaration and response delivery idempotent. A stale revision, forged/unauthorized option, unavailable item, repository failure, or concurrent inventory change must roll back every move/item mutation; duplicate delivery must not reroll, spend, remove, or create an item twice.
+- Add semantic evidence for every item and combat branch, remove the manual inventory instruction, select the reviewed runtime, and update Knock Off's manifest runtime/hash/scenarios/status only after all paths pass.
+
+**Tests:** Run itemless, single-candidate, multi-candidate, hit, miss, critical hit, immunity, remove/suppress, canonical destination, reconnect, stale/forged response, atomic failure, concurrent mutation, duplicate declaration, and duplicate response scenarios through the interpreter/planner and accepted-command boundaries.
+
+**Done:** Knock Off's damage and inventory effects resolve exactly once with no manual inventory step; all affected resources commit atomically, reconnect preserves any required choice, and concurrency or duplicate delivery cannot lose or duplicate the item.
 
 ## MA-177 — Finish Fury Cutter chaining
 
