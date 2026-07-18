@@ -89,6 +89,10 @@ export const FAKE_OUT_V2_SEMANTIC_SCENARIOS = Object.freeze([
     scenarioId: 'fake-out.v2-switch-reset',
     evidenceClasses: ['alternate-branch'] as const,
   },
+  {
+    scenarioId: 'fake-out.v2-stale-target',
+    evidenceClasses: ['multi-resource-conflict'] as const,
+  },
 ] as const)
 
 export const OPENING_MOVE_ACTOR_ID = 'actor-token'

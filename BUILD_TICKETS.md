@@ -2606,7 +2606,7 @@ Status: DONE
 
 ## REG-009 — Certify Esper Wing through Feather Dance
 
-Status: TODO
+Status: DONE
 
 **Baseline-registered moves:** Esper Wing; Extrasensory; Extreme Speed; Fairy Wind; Fake Out; Fake Tears; False Surrender; Feather Dance
 
