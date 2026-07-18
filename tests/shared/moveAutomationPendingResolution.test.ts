@@ -275,6 +275,24 @@ describe('pending move resolution contract', () => {
     expect(Object.isFrozen(parsed.outstandingWindows[0]?.options)).toBe(true)
   })
 
+  it('allows an empty option set only for an explicitly passable choice', () => {
+    const passOnly = pendingResolution()
+    passOnly.outstandingWindows[0].options = []
+    expect(parsePendingMoveResolution(passOnly).outstandingWindows[0]).toMatchObject({
+      kind: 'choice',
+      options: [],
+      allowPass: true,
+    })
+
+    const required = pendingResolution()
+    required.outstandingWindows[0].options = []
+    required.outstandingWindows[0].allowPass = false
+    expectPendingError(
+      () => parsePendingMoveResolution(required),
+      'invalid-pending-resolution',
+    )
+  })
+
   it('strictly stores canonical server-issued movement selections without accepting mechanics', () => {
     const movementOption = (selection: PendingMoveMovementSelection) => ({
       id: pendingMoveMovementOptionId(selection),

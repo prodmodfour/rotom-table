@@ -200,7 +200,9 @@ const VALID_PAYLOADS = {
     requestId: 'switch.u-turn',
     replacementSetId: 'switch.u-turn.replacements',
     promptKey: 'move.u-turn.choose-replacement',
+    trigger: 'on-hit',
     required: true,
+    passPolicy: 'stay',
     positionPolicy: 'recalled-position',
     initiativePolicy: 'inherit-slot',
     stateTransferPolicy: 'none',
@@ -1321,7 +1323,27 @@ describe('MoveSpec typed effect operations', () => {
     expect(Object.isFrozen(random.payload.duration?.duration)).toBe(true)
   })
 
-  it('requires a reviewed switch transfer policy and rejects unknown effect transfer data', () => {
+  it('requires reviewed switch trigger, pass, and transfer policies', () => {
+    expectEffectError(validOperation('switch-request', {
+      payload: {
+        ...VALID_PAYLOADS['switch-request'],
+        trigger: 'client-hit-claim',
+      },
+    }), 'invalid-effect-operation', 'operation.payload.trigger')
+    expectEffectError(validOperation('switch-request', {
+      payload: {
+        ...VALID_PAYLOADS['switch-request'],
+        passPolicy: 'recall',
+      },
+    }), 'invalid-effect-operation', 'operation.payload.passPolicy')
+    expectEffectError(validOperation('switch-request', {
+      payload: {
+        ...VALID_PAYLOADS['switch-request'],
+        required: false,
+        passPolicy: 'recall',
+        stateTransferPolicy: 'baton-pass',
+      },
+    }), 'invalid-effect-operation', 'operation.payload.stateTransferPolicy')
     expectEffectError(validOperation('switch-request', {
       payload: {
         ...VALID_PAYLOADS['switch-request'],

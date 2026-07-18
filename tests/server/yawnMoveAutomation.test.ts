@@ -406,6 +406,7 @@ describe('Yawn native MoveSpec and lifecycle automation', () => {
     const targetSwitch = planAuthoritativeMoveSwitch({
       map,
       transition: {
+        kind: 'recall-and-send-out',
         operationId: 'operation.switch-target',
         recalledPlacementId: target.id,
         sentOutPlacement: replacement('target-replacement', target),
@@ -419,6 +420,7 @@ describe('Yawn native MoveSpec and lifecycle automation', () => {
     const sourceSwitch = planAuthoritativeMoveSwitch({
       map,
       transition: {
+        kind: 'recall-and-send-out',
         operationId: 'operation.switch-source',
         recalledPlacementId: source.id,
         sentOutPlacement: replacement('source-replacement', source),

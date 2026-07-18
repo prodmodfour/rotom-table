@@ -26611,44 +26611,129 @@
     {
       "canonicalId": "U-Turn",
       "displayName": "U-Turn",
-      "baseStatus": "assisted",
+      "baseStatus": "complete",
       "interactionStatus": "unassessed",
       "runtime": {
-        "kind": "legacy-v1",
-        "version": 1,
-        "definitionHash": "420cadf6b63e155af5d09704f059db98e244d17669fd48b2d3f5740655e38ffd",
-        "sourceModule": "src/utils/move-automation/scripts/additionalSingleTarget.ts"
+        "kind": "movespec-v2",
+        "version": 2,
+        "definitionHash": "22f97610f7d6f619881dc829f6ba1d7801dfebf95a8dd9abd3622ce64da0ecaf",
+        "sourceModule": "server/domain/moveAutomation/specs/uTurn.ts"
       },
       "rulesProvenance": {
         "rulesetId": "rotom-table-reference-moves-v1",
         "canonicalizationVersion": 1,
         "sourceDataSha256": "f90491826349afd7d1f2809fd9d74b7acc555f5163b99264205ee369249e9815"
       },
-      "capabilityTags": [],
-      "suggestedCapabilityTags": [],
-      "blockerCodes": [
+      "capabilityTags": [
         "movement.authoritative",
-        "reactions.durable"
+        "reactions.durable",
+        "targeting.authoritative"
       ],
-      "limitations": [
-        {
-          "code": "u-turn.damage-only",
-          "summary": "The legacy transaction resolves the hit and damage but does not atomically recall the user, preserve the Trapped exception, or offer a legal replacement."
-        }
+      "suggestedCapabilityTags": [],
+      "blockerCodes": [],
+      "limitations": [],
+      "manualSteps": [],
+      "scenarioIds": [
+        "u-turn.v2-critical-hit",
+        "u-turn.v2-duplicate-retry",
+        "u-turn.v2-hit-switch",
+        "u-turn.v2-miss",
+        "u-turn.v2-no-replacement-recall",
+        "u-turn.v2-pass-recall",
+        "u-turn.v2-reconnect",
+        "u-turn.v2-stale-roster",
+        "u-turn.v2-stuck-rejected",
+        "u-turn.v2-trapped-recall"
       ],
-      "manualSteps": [
-        {
-          "code": "u-turn.switch",
-          "summary": "After a successful hit, recall the user even if Trapped and, when chosen and available, send out a legal replacement while reconciling map and roster state."
-        }
-      ],
-      "scenarioIds": [],
       "conformanceEvidence": {
-        "requirementTags": [],
-        "scenarios": [],
-        "notApplicable": []
+        "requirementTags": [
+          "branch.accuracy",
+          "branch.alternate",
+          "branch.critical-hit",
+          "branch.threshold",
+          "interaction.choice",
+          "mechanic.damage",
+          "recovery.reconnect",
+          "recovery.retry",
+          "resource.multi",
+          "target.self"
+        ],
+        "scenarios": [
+          {
+            "scenarioId": "u-turn.v2-critical-hit",
+            "evidenceClasses": [
+              "crit"
+            ]
+          },
+          {
+            "scenarioId": "u-turn.v2-duplicate-retry",
+            "evidenceClasses": [
+              "retry"
+            ]
+          },
+          {
+            "scenarioId": "u-turn.v2-hit-switch",
+            "evidenceClasses": [
+              "choice",
+              "hit",
+              "self",
+              "threshold-pass"
+            ]
+          },
+          {
+            "scenarioId": "u-turn.v2-miss",
+            "evidenceClasses": [
+              "miss"
+            ]
+          },
+          {
+            "scenarioId": "u-turn.v2-no-replacement-recall",
+            "evidenceClasses": [
+              "alternate-branch",
+              "pass"
+            ]
+          },
+          {
+            "scenarioId": "u-turn.v2-pass-recall",
+            "evidenceClasses": [
+              "alternate-branch",
+              "pass"
+            ]
+          },
+          {
+            "scenarioId": "u-turn.v2-reconnect",
+            "evidenceClasses": [
+              "reconnect"
+            ]
+          },
+          {
+            "scenarioId": "u-turn.v2-stale-roster",
+            "evidenceClasses": [
+              "multi-resource-conflict"
+            ]
+          },
+          {
+            "scenarioId": "u-turn.v2-stuck-rejected",
+            "evidenceClasses": [
+              "alternate-branch",
+              "threshold-fail"
+            ]
+          },
+          {
+            "scenarioId": "u-turn.v2-trapped-recall",
+            "evidenceClasses": [
+              "alternate-branch"
+            ]
+          }
+        ],
+        "notApplicable": [
+          {
+            "evidenceClass": "immunity",
+            "reason": "The frozen U-Turn rule has Bug damage and no directly referenced type, ability, item, field, or effect immunity branch."
+          }
+        ]
       },
-      "reviewedAt": "2026-07-10",
+      "reviewedAt": "2026-07-18",
       "unsupportedInteractionIds": [],
       "rolloutCohortId": null
     },

@@ -391,6 +391,10 @@ export const MOVE_EFFECT_MOVEMENT_DISPLACEMENT_DISTANCE_POLICIES = [
 ] as const
 export const MOVE_EFFECT_SWITCH_POSITION_POLICIES = ['recalled-position'] as const
 export const MOVE_EFFECT_SWITCH_INITIATIVE_POLICIES = ['inherit-slot'] as const
+/** Server-reviewed facts that may make a switch request eligible. */
+export const MOVE_EFFECT_SWITCH_TRIGGERS = ['always', 'on-hit'] as const
+/** A pass either declines the whole switch or performs the mandatory recall only. */
+export const MOVE_EFFECT_SWITCH_PASS_POLICIES = ['stay', 'recall'] as const
 /** Only a reviewed Baton Pass-style switch transfers stages and passable effects. */
 export const MOVE_EFFECT_SWITCH_STATE_TRANSFER_POLICIES = ['none', 'baton-pass'] as const
 
@@ -560,6 +564,10 @@ export type MoveEffectSwitchPositionPolicy =
   (typeof MOVE_EFFECT_SWITCH_POSITION_POLICIES)[number]
 export type MoveEffectSwitchInitiativePolicy =
   (typeof MOVE_EFFECT_SWITCH_INITIATIVE_POLICIES)[number]
+export type MoveEffectSwitchTrigger =
+  (typeof MOVE_EFFECT_SWITCH_TRIGGERS)[number]
+export type MoveEffectSwitchPassPolicy =
+  (typeof MOVE_EFFECT_SWITCH_PASS_POLICIES)[number]
 export type MoveEffectSwitchStateTransferPolicy =
   (typeof MOVE_EFFECT_SWITCH_STATE_TRANSFER_POLICIES)[number]
 export type MoveEffectNestedMoveActorKind =
@@ -1463,8 +1471,12 @@ export interface MoveSwitchRequestEffectPayload {
   readonly requestId: string
   readonly replacementSetId: string
   readonly promptKey: string
-  /** Mandatory switches cannot pass and fail closed when no legal replacement exists. */
+  /** Whether this request always runs or only follows a server-confirmed hit. */
+  readonly trigger: MoveEffectSwitchTrigger
+  /** Mandatory replacement selections cannot pass and fail closed without an option. */
   readonly required: boolean
+  /** A legal pass may retain the actor or perform a mandatory recall without replacement. */
+  readonly passPolicy: MoveEffectSwitchPassPolicy
   readonly positionPolicy: MoveEffectSwitchPositionPolicy
   readonly initiativePolicy: MoveEffectSwitchInitiativePolicy
   /** Server-reviewed state behavior; clients select only a replacement option ID. */
@@ -1991,7 +2003,9 @@ const SWITCH_REQUEST_FIELDS = [
   'requestId',
   'replacementSetId',
   'promptKey',
+  'trigger',
   'required',
+  'passPolicy',
   'positionPolicy',
   'initiativePolicy',
   'stateTransferPolicy',
@@ -2132,6 +2146,8 @@ const MOVEMENT_DISPLACEMENT_DISTANCE_POLICY_SET = new Set<string>(
 )
 const SWITCH_POSITION_POLICY_SET = new Set<string>(MOVE_EFFECT_SWITCH_POSITION_POLICIES)
 const SWITCH_INITIATIVE_POLICY_SET = new Set<string>(MOVE_EFFECT_SWITCH_INITIATIVE_POLICIES)
+const SWITCH_TRIGGER_SET = new Set<string>(MOVE_EFFECT_SWITCH_TRIGGERS)
+const SWITCH_PASS_POLICY_SET = new Set<string>(MOVE_EFFECT_SWITCH_PASS_POLICIES)
 const SWITCH_STATE_TRANSFER_POLICY_SET = new Set<string>(
   MOVE_EFFECT_SWITCH_STATE_TRANSFER_POLICIES,
 )
@@ -4823,14 +4839,26 @@ const parseSwitchRequestPayload = (
   path: string,
 ): MoveSwitchRequestEffectPayload => {
   const input = parseExactRecord(value, SWITCH_REQUEST_FIELDS, path)
-  return {
+  const payload: MoveSwitchRequestEffectPayload = {
     requestId: parseStableId(ownValue(input, 'requestId', path), `${path}.requestId`),
     replacementSetId: parseStableId(
       ownValue(input, 'replacementSetId', path),
       `${path}.replacementSetId`,
     ),
     promptKey: parseStableId(ownValue(input, 'promptKey', path), `${path}.promptKey`),
+    trigger: parseEnum<MoveEffectSwitchTrigger>(
+      ownValue(input, 'trigger', path),
+      SWITCH_TRIGGER_SET,
+      `${path}.trigger`,
+      'always or on-hit',
+    ),
     required: parseBoolean(ownValue(input, 'required', path), `${path}.required`),
+    passPolicy: parseEnum<MoveEffectSwitchPassPolicy>(
+      ownValue(input, 'passPolicy', path),
+      SWITCH_PASS_POLICY_SET,
+      `${path}.passPolicy`,
+      'stay or recall',
+    ),
     positionPolicy: parseEnum<MoveEffectSwitchPositionPolicy>(
       ownValue(input, 'positionPolicy', path),
       SWITCH_POSITION_POLICY_SET,
@@ -4850,6 +4878,21 @@ const parseSwitchRequestPayload = (
       'none or baton-pass',
     ),
   }
+  if (payload.required && payload.passPolicy !== 'stay') {
+    fail(
+      'invalid-effect-operation',
+      `${path}.passPolicy`,
+      'a mandatory replacement request cannot apply pass mechanics.',
+    )
+  }
+  if (payload.passPolicy === 'recall' && payload.stateTransferPolicy !== 'none') {
+    fail(
+      'invalid-effect-operation',
+      `${path}.stateTransferPolicy`,
+      'a recall without replacement cannot transfer state.',
+    )
+  }
+  return payload
 }
 
 const parseNestedMovePayload = (

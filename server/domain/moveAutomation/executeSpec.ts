@@ -313,8 +313,11 @@ export interface MoveSpecResolvedMovement {
 export interface MoveSpecResolvedSwitch {
   readonly operationId: string
   readonly requestId: string
-  readonly optionId: string
-  readonly choice: AuthoritativeSwitchChoice
+  /** Null records a reviewed pass that still recalls the actor. */
+  readonly optionId: string | null
+  /** Null only for a recall-without-replacement result. */
+  readonly choice: AuthoritativeSwitchChoice | null
+  readonly recalledPlacementId: string
   readonly stateTransferPolicy: MoveEffectSwitchStateTransferPolicy
 }
 
@@ -3140,15 +3143,7 @@ const executeMoveSpecInternal = (
       }
 
       if (operation.kind === 'switch-request') {
-        const set = switchChoiceSet(operation, input.context)
-        const request = pendingSwitchRequest(operation, recipientIds, set)
-        if (request.options.length === 0) {
-          if (operation.payload.required) {
-            return fail(
-              'move-mechanics-unavailable',
-              `Switch request ${request.requestId} has no legal authoritative replacement.`,
-            )
-          }
+        if (operation.payload.trigger === 'on-hit' && hitTargetIds.length === 0) {
           trace = reduceMoveResolutionTrace(trace, {
             kind: 'operation',
             phase,
@@ -3158,9 +3153,34 @@ const executeMoveSpecInternal = (
             outcome: 'no-op',
             reasonCode: operation.reasonCode,
             input: traceJson(operation.payload),
-            result: { status: 'no-legal-replacements' },
+            result: { status: 'trigger-not-met', trigger: operation.payload.trigger },
           })
           continue
+        }
+
+        const set = switchChoiceSet(operation, input.context)
+        const request = pendingSwitchRequest(operation, recipientIds, set)
+        if (request.options.length === 0) {
+          if (operation.payload.required) {
+            return fail(
+              'move-mechanics-unavailable',
+              `Switch request ${request.requestId} has no legal authoritative replacement.`,
+            )
+          }
+          if (operation.payload.passPolicy === 'stay') {
+            trace = reduceMoveResolutionTrace(trace, {
+              kind: 'operation',
+              phase,
+              operationId: operation.id,
+              operationKind: operation.kind,
+              recipientIds,
+              outcome: 'no-op',
+              reasonCode: operation.reasonCode,
+              input: traceJson(operation.payload),
+              result: { status: 'no-legal-replacements' },
+            })
+            continue
+          }
         }
         const response = responseResolver.resolve({
           requestId: request.requestId,
@@ -3170,12 +3190,16 @@ const executeMoveSpecInternal = (
         const selectedChoice = response?.optionId === null || !response
           ? null
           : revalidateSwitchChoice(operation, input.context, response.optionId)
-        if (selectedChoice && response?.optionId) {
+        const recallOnly = response?.optionId === null
+          && operation.payload.passPolicy === 'recall'
+        if ((selectedChoice && response?.optionId) || recallOnly) {
           resolvedSwitches.push(Object.freeze({
             operationId: operation.id,
             requestId: request.requestId,
-            optionId: response.optionId,
+            optionId: response?.optionId ?? null,
             choice: selectedChoice,
+            recalledPlacementId: selectedChoice?.recalledPlacementId
+              ?? input.context.actor.placement.id,
             stateTransferPolicy: operation.payload.stateTransferPolicy,
           }))
         }
@@ -3185,19 +3209,21 @@ const executeMoveSpecInternal = (
           operationId: operation.id,
           operationKind: operation.kind,
           recipientIds,
-          outcome: response ? (selectedChoice ? 'applied' : 'no-op') : 'pending',
+          outcome: response ? (selectedChoice || recallOnly ? 'applied' : 'no-op') : 'pending',
           reasonCode: operation.reasonCode,
           input: traceJson(operation.payload),
           result: traceJson(response
             ? {
-                status: selectedChoice ? 'selected' : 'passed',
+                status: selectedChoice ? 'selected' : recallOnly ? 'recall-only' : 'passed',
                 ...(selectedChoice
                   ? {
                       recalledPlacementId: selectedChoice.recalledPlacementId,
                       sentOutPlacementId: selectedChoice.sentOutPlacement.id,
                       replacementSheetSlug: selectedChoice.replacementSheetSlug,
                     }
-                  : {}),
+                  : recallOnly
+                    ? { recalledPlacementId: input.context.actor.placement.id }
+                    : {}),
               }
             : {
                 requestId: request.requestId,

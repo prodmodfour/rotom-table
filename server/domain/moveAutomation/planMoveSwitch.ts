@@ -2,6 +2,7 @@ import { createHash } from 'node:crypto'
 import {
   ENCOUNTER_EVENT_SCHEMA_VERSION,
   parseEncounterEvent,
+  type EncounterRecallEvent,
   type EncounterSwitchEvent,
 } from '#shared/moveAutomation/events'
 import {
@@ -12,7 +13,10 @@ import type { SheetPlacement, TabletopMap } from '~/types/map'
 import { mapWithTemporaryHpForPlacement } from '~/utils/mapTemporaryHitPoints'
 import { deepCloneJson, sameJsonValue } from '~/utils/serialization'
 import type { AuthoritativeMoveSwitchTransition } from '../resolveAuthoritativeMove'
-import { resolveEncounterEffectSwitchTransfer } from './effectTransfer'
+import {
+  resolveEncounterEffectRecall,
+  resolveEncounterEffectSwitchTransfer,
+} from './effectTransfer'
 import { reduceEncounterLifecycle } from './reduceLifecycle'
 import { createMoveSemiInvulnerableLifecycleHandler } from './semiInvulnerableLifecycle'
 import { createVortexLifecycleHandler } from './vortex'
@@ -40,8 +44,8 @@ export interface PlannedMoveSwitch {
   readonly previousMap: TabletopMap
   readonly nextMap: TabletopMap
   readonly recalledPlacement: SheetPlacement
-  readonly sentOutPlacement: SheetPlacement
-  readonly event: EncounterSwitchEvent
+  readonly sentOutPlacement: SheetPlacement | null
+  readonly event: EncounterSwitchEvent | EncounterRecallEvent
   readonly transferredEffectIds: readonly string[]
   readonly expiredEffectIds: readonly string[]
   readonly cleanupEventIds: readonly string[]
@@ -63,11 +67,12 @@ const eventSourceId = (operationId: string): string => (
 const replaceInitiativeSlot = (
   map: TabletopMap,
   recalledPlacementId: string,
-  sentOutPlacementId: string,
+  sentOutPlacementId: string | null,
 ): TabletopMap['initiative'] => {
   if (!map.initiative) return undefined
   if (
-    sentOutPlacementId !== recalledPlacementId
+    sentOutPlacementId !== null
+    && sentOutPlacementId !== recalledPlacementId
     && map.initiative.manualOrderIds?.includes(sentOutPlacementId)
   ) {
     return fail(
@@ -82,31 +87,37 @@ const replaceInitiativeSlot = (
       : {}),
     ...(map.initiative.manualOrderIds
       ? {
-          manualOrderIds: map.initiative.manualOrderIds.map(placementId => (
-            placementId === recalledPlacementId ? sentOutPlacementId : placementId
-          )),
+          manualOrderIds: sentOutPlacementId === null
+            ? map.initiative.manualOrderIds.filter(id => id !== recalledPlacementId)
+            : map.initiative.manualOrderIds.map(placementId => (
+                placementId === recalledPlacementId ? sentOutPlacementId : placementId
+              )),
         }
       : {}),
   }
 }
 
-const assertTransition = (
+const recalledPlacement = (
   map: TabletopMap,
   transition: AuthoritativeMoveSwitchTransition,
-): {
-  readonly recalled: SheetPlacement
-  readonly trainer: SheetPlacement
-} => {
-  const recalledMatches = map.placements.filter(
+): SheetPlacement => {
+  const matches = map.placements.filter(
     placement => placement.id === transition.recalledPlacementId,
   )
-  if (recalledMatches.length !== 1 || recalledMatches[0]?.sheetKind !== 'pokemon') {
+  if (matches.length !== 1 || matches[0]?.sheetKind !== 'pokemon') {
     return fail(
       'switch-source-missing',
       `Switch source ${transition.recalledPlacementId} must resolve to one Pokémon placement.`,
     )
   }
-  const recalled = recalledMatches[0]
+  return matches[0]
+}
+
+const assertReplacementTransition = (
+  map: TabletopMap,
+  transition: Extract<AuthoritativeMoveSwitchTransition, { readonly kind: 'recall-and-send-out' }>,
+  recalled: SheetPlacement,
+): void => {
   const replacement = transition.sentOutPlacement
   if (
     transition.positionPolicy !== 'recalled-position'
@@ -141,41 +152,62 @@ const assertTransition = (
       `Authoritative trainer placement ${transition.trainerPlacementId} is no longer present.`,
     )
   }
-  return { recalled, trainer }
 }
 
 /**
- * Apply one already revalidated switch as a map-local recall/send-out pair.
- * Placement replacement, initiative-slot inheritance, temporary-HP cleanup,
- * history/resources, and source-leave lifecycle cleanup remain one pure plan.
+ * Apply one already revalidated move-driven recall, optionally paired with a
+ * server-issued replacement. Placement/initiative changes, temporary-HP and
+ * source-leave cleanup, history, and resources remain one pure plan.
  */
 export const planAuthoritativeMoveSwitch = (input: {
   readonly map: TabletopMap
   readonly transition: AuthoritativeMoveSwitchTransition
 }): PlannedMoveSwitch => {
   const previousMap = deepCloneJson(input.map)
-  const { recalled } = assertTransition(previousMap, input.transition)
-  const sentOutPlacement = deepCloneJson(input.transition.sentOutPlacement)
+  const recalled = recalledPlacement(previousMap, input.transition)
+  const sentOutPlacement = input.transition.kind === 'recall-and-send-out'
+    ? deepCloneJson(input.transition.sentOutPlacement)
+    : null
+  if (input.transition.kind === 'recall-and-send-out') {
+    assertReplacementTransition(previousMap, input.transition, recalled)
+  }
+
   const sourceOperationId = eventSourceId(input.transition.operationId)
-  const event = parseEncounterEvent({
-    schemaVersion: ENCOUNTER_EVENT_SCHEMA_VERSION,
-    eventId: `${sourceOperationId}.event`,
-    kind: 'switch',
-    sourceOperationId,
-    causalParentEventId: null,
-    reasonCode: 'move.switch.recall-and-send-out',
-    recalledPlacementId: recalled.id,
-    sentOutPlacementId: sentOutPlacement.id,
-  }) as EncounterSwitchEvent
+  const event = input.transition.kind === 'recall-and-send-out'
+    ? parseEncounterEvent({
+        schemaVersion: ENCOUNTER_EVENT_SCHEMA_VERSION,
+        eventId: `${sourceOperationId}.event`,
+        kind: 'switch',
+        sourceOperationId,
+        causalParentEventId: null,
+        reasonCode: 'move.switch.recall-and-send-out',
+        recalledPlacementId: recalled.id,
+        sentOutPlacementId: input.transition.sentOutPlacement.id,
+      }) as EncounterSwitchEvent
+    : parseEncounterEvent({
+        schemaVersion: ENCOUNTER_EVENT_SCHEMA_VERSION,
+        eventId: `${sourceOperationId}.event`,
+        kind: 'recall',
+        sourceOperationId,
+        causalParentEventId: null,
+        reasonCode: 'move.switch.recall-only',
+        placementId: recalled.id,
+        sideId: recalled.sideId ?? null,
+      }) as EncounterRecallEvent
   const previousEncounterState = parseEncounterState(
     previousMap.encounterState ?? createEmptyEncounterState(),
   )
-  const effectTransfer = resolveEncounterEffectSwitchTransfer({
-    effects: previousEncounterState.effects,
-    recalledPlacementId: recalled.id,
-    sentOutPlacementId: sentOutPlacement.id,
-    stateTransferPolicy: input.transition.stateTransferPolicy,
-  })
+  const effectTransfer = sentOutPlacement
+    ? resolveEncounterEffectSwitchTransfer({
+        effects: previousEncounterState.effects,
+        recalledPlacementId: recalled.id,
+        sentOutPlacementId: sentOutPlacement.id,
+        stateTransferPolicy: input.transition.stateTransferPolicy,
+      })
+    : resolveEncounterEffectRecall({
+        effects: previousEncounterState.effects,
+        recalledPlacementId: recalled.id,
+      })
   const transferState = parseEncounterState({
     ...previousEncounterState,
     effects: effectTransfer.effects,
@@ -206,12 +238,13 @@ export const planAuthoritativeMoveSwitch = (input: {
     )
   }
 
-  const sourceIndex = previousMap.placements.findIndex(
-    placement => placement.id === recalled.id,
-  )
-  const placements = previousMap.placements.map((placement, index) => (
-    index === sourceIndex ? sentOutPlacement : deepCloneJson(placement)
-  ))
+  const placements = sentOutPlacement
+    ? previousMap.placements.map(placement => (
+        placement.id === recalled.id ? sentOutPlacement : deepCloneJson(placement)
+      ))
+    : previousMap.placements
+        .filter(placement => placement.id !== recalled.id)
+        .map(placement => deepCloneJson(placement))
   let nextMap = mapWithTemporaryHpForPlacement(previousMap, recalled.id, 0)
   nextMap = {
     ...nextMap,
@@ -221,13 +254,13 @@ export const planAuthoritativeMoveSwitch = (input: {
   const initiative = replaceInitiativeSlot(
     previousMap,
     recalled.id,
-    sentOutPlacement.id,
+    sentOutPlacement?.id ?? null,
   )
   if (initiative === undefined) delete nextMap.initiative
   else nextMap.initiative = initiative
 
   if (sameJsonValue(previousMap.placements, nextMap.placements)) {
-    return fail('switch-replacement-conflict', 'A move-driven switch must change placements.')
+    return fail('switch-replacement-conflict', 'A move-driven recall must change placements.')
   }
   return Object.freeze({
     previousMap,

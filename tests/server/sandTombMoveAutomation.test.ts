@@ -348,6 +348,7 @@ describe('Sand Tomb shared Vortex automation', () => {
     const switched = planAuthoritativeMoveSwitch({
       map: switchMap,
       transition: {
+        kind: 'recall-and-send-out',
         operationId: 'operation.sand-tomb-target-switch',
         recalledPlacementId: target.id,
         sentOutPlacement: replacement,

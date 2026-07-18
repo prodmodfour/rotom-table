@@ -32,6 +32,7 @@ import { SWORDS_DANCE_MOVE_SPEC_REGISTRATION } from './specs/swordsDance'
 import { SYNTHESIS_MOVE_SPEC_REGISTRATION } from './specs/synthesis'
 import { TACKLE_MOVE_SPEC_REGISTRATION } from './specs/tackle'
 import { TAKE_DOWN_MOVE_SPEC_REGISTRATION } from './specs/takeDown'
+import { U_TURN_MOVE_SPEC_REGISTRATION } from './specs/uTurn'
 import { YAWN_MOVE_SPEC_REGISTRATION } from './specs/yawn'
 
 export interface LegacyV1MoveAutomationAdapter extends MoveAutomationRuntimeRegistrationReference {
@@ -263,6 +264,7 @@ export const REVIEWED_MOVE_SPEC_V2_REGISTRATIONS: readonly MoveSpecV2Registratio
   SYNTHESIS_MOVE_SPEC_REGISTRATION,
   TACKLE_MOVE_SPEC_REGISTRATION,
   TAKE_DOWN_MOVE_SPEC_REGISTRATION,
+  U_TURN_MOVE_SPEC_REGISTRATION,
   YAWN_MOVE_SPEC_REGISTRATION,
 ])
 

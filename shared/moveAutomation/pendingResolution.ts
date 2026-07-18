@@ -1256,9 +1256,6 @@ const parseOptions = (
     path,
     PENDING_MOVE_RESOLUTION_LIMITS.optionsPerWindow,
   ).map((entry, index) => parseResponseOption(entry, `${path}[${index}]`))
-  if (options.length === 0) {
-    fail('invalid-pending-resolution', path, 'must contain at least one option.')
-  }
   const movementOptions = options.filter(option => option.selection !== undefined)
   const itemOptions = options.filter(option => option.itemSelection !== undefined)
   if (movementOptions.length > 0 && movementOptions.length !== options.length) {
@@ -1627,6 +1624,13 @@ const parseWindow = (value: unknown, path: string): PendingMoveResponseWindow =>
     options: parseOptions(record.options, `${path}.options`),
   }
   const allowPass = parseBoolean(record.allowPass, `${path}.allowPass`)
+  if (common.options.length === 0 && (kind !== 'choice' || !allowPass)) {
+    fail(
+      'invalid-pending-resolution',
+      `${path}.options`,
+      'may be empty only for an explicitly passable choice window.',
+    )
+  }
 
   if (kind === 'choice') {
     if (record.priority !== null) {

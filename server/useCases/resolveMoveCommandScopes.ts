@@ -348,7 +348,9 @@ export const actualResolveMoveWriteScopes = (plan: AuthoritativeMoveStatePlan): 
   if (plan.resolution.switchTransition && plan.mapChanges.placements) {
     pushScope(scopes, seen, mapScope('placements'))
     pushScope(scopes, seen, tokenScope(plan.resolution.switchTransition.recalledPlacementId, 'delete'))
-    pushScope(scopes, seen, tokenScope(plan.resolution.switchTransition.sentOutPlacement.id, 'sendOut'))
+    if (plan.resolution.switchTransition.kind === 'recall-and-send-out') {
+      pushScope(scopes, seen, tokenScope(plan.resolution.switchTransition.sentOutPlacement.id, 'sendOut'))
+    }
   }
   if (plan.mapChanges.initiative) pushScope(scopes, seen, mapScope('initiative'))
   if (plan.mapChanges.moveUsage) pushScope(scopes, seen, tokenScope(actorId, 'moveUsage'))

@@ -832,7 +832,9 @@ describe('authoritative MoveSpec validation and hashing', () => {
         requestId: 'request.switch-replacement',
         replacementSetId: 'replacements.scratch',
         promptKey: 'move.scratch.choose-replacement',
+        trigger: 'always',
         required: true,
+        passPolicy: 'stay',
         positionPolicy: 'recalled-position',
         initiativePolicy: 'inherit-slot',
         stateTransferPolicy: 'none',
@@ -845,7 +847,12 @@ describe('authoritative MoveSpec validation and hashing', () => {
       .find(operation => operation.id === 'operation.switch-choice')).toMatchObject({
       kind: 'switch-request',
       recipients: { kind: 'actor' },
-      payload: { required: true, initiativePolicy: 'inherit-slot' },
+      payload: {
+        trigger: 'always',
+        required: true,
+        passPolicy: 'stay',
+        initiativePolicy: 'inherit-slot',
+      },
     })
 
     const wrongPhase = structuredClone(valid)

@@ -181,19 +181,26 @@ const placementStateChanges = (options: {
   const switchTransition = options.resolution.switchTransition
   if (switchTransition) {
     const currentActor = options.nextMap.placements.find(placement => placement.id === actorId)
-    const sentOut = options.nextMap.placements.find(
-      placement => placement.id === switchTransition.sentOutPlacement.id,
-    )
-    if (currentActor || !sentOut) {
+    const sentOut = switchTransition.kind === 'recall-and-send-out'
+      ? options.nextMap.placements.find(
+          placement => placement.id === switchTransition.sentOutPlacement.id,
+        )
+      : null
+    if (
+      currentActor
+      || (switchTransition.kind === 'recall-and-send-out' && !sentOut)
+    ) {
       return fail(
         'state-change-conflict',
-        `${options.resolution.canonicalMoveName} did not produce an exact recall/send-out pair.`,
+        `${options.resolution.canonicalMoveName} did not produce its reviewed recall transition.`,
       )
     }
     const common = {
       expectedRevision: normalizeRevision(options.previousMap.revision),
       sourceOperationId: switchTransition.operationId,
-      reasonCode: 'move-switch-recall-and-send-out',
+      reasonCode: switchTransition.kind === 'recall-and-send-out'
+        ? 'move-switch-recall-and-send-out'
+        : 'move-switch-recall-only',
       compensation: unavailableMoveStateCompensation(
         'accepted-switch-placement-may-be-observed',
         'externally-observed',
@@ -211,17 +218,19 @@ const placementStateChanges = (options: {
         previous: deepCloneJson(previousActor),
         current: null,
       },
-      {
-        ...common,
-        kind: 'placement-state',
-        scope: {
-          kind: 'placement',
-          mapSlug: options.previousMap.slug,
-          placementId: sentOut.id,
-        },
-        previous: null,
-        current: deepCloneJson(sentOut),
-      },
+      ...(sentOut
+        ? [{
+            ...common,
+            kind: 'placement-state' as const,
+            scope: {
+              kind: 'placement' as const,
+              mapSlug: options.previousMap.slug,
+              placementId: sentOut.id,
+            },
+            previous: null,
+            current: deepCloneJson(sentOut),
+          }]
+        : []),
     ]
   }
 
@@ -450,7 +459,7 @@ const combinedStateChanges = (options: {
 
   try {
     const transition = options.resolution.switchTransition
-    const mergedInputs = transition
+    const mergedInputs = transition?.kind === 'recall-and-send-out'
       ? planMoveSwitchCombatStageTransfer({
           stateChanges: rawInputs,
           recalledPlacement: actorPlacement(
@@ -492,7 +501,9 @@ const relatedPlacementIds = (
   resolution.actorPlacementId,
   ...resolution.selectedTargetIds,
   ...(resolution.area?.candidateTargetIds ?? []),
-  ...(resolution.switchTransition ? [resolution.switchTransition.sentOutPlacement.id] : []),
+  ...(resolution.switchTransition?.kind === 'recall-and-send-out'
+    ? [resolution.switchTransition.sentOutPlacement.id]
+    : []),
 ])
 
 export const nativeSheetWritesFromStateChanges = (

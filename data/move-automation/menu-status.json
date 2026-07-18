@@ -9572,25 +9572,12 @@
     {
       "canonicalId": "U-Turn",
       "displayName": "U-Turn",
-      "baseStatus": "assisted",
+      "baseStatus": "complete",
       "interactionStatus": "unassessed",
-      "runtimeKind": "legacy-v1",
-      "blockerCodes": [
-        "movement.authoritative",
-        "reactions.durable"
-      ],
-      "limitations": [
-        {
-          "code": "u-turn.damage-only",
-          "summary": "The legacy transaction resolves the hit and damage but does not atomically recall the user, preserve the Trapped exception, or offer a legal replacement."
-        }
-      ],
-      "manualSteps": [
-        {
-          "code": "u-turn.switch",
-          "summary": "After a successful hit, recall the user even if Trapped and, when chosen and available, send out a legal replacement while reconciling map and roster state."
-        }
-      ]
+      "runtimeKind": "movespec-v2",
+      "blockerCodes": [],
+      "limitations": [],
+      "manualSteps": []
     },
     {
       "canonicalId": "Uproar",

@@ -108,6 +108,26 @@ const transferredEffect = (
   }
 }
 
+const removeEffectsById = (
+  effectsValue: readonly EncounterEffect[],
+  effectIds: readonly string[],
+): {
+  readonly effects: readonly EncounterEffect[]
+  readonly transitions: readonly EncounterEffectLifecycleTransition[]
+} => {
+  let effects = parseEncounterEffects(effectsValue, 'effectTransfer.effectsToRemove')
+  const transitions: EncounterEffectLifecycleTransition[] = []
+  for (const effectId of effectIds) {
+    const result = applyEncounterEffectLifecycleEvent(
+      { effects },
+      { kind: 'effect-removed', effectId },
+    )
+    effects = result.effects
+    transitions.push(...result.transitions)
+  }
+  return { effects, transitions }
+}
+
 /**
  * Apply the reviewed switch policy to durable effects before source-leave
  * lifecycle handlers run. Baton Pass keeps one effect ID and replaces every
@@ -147,16 +167,12 @@ export const resolveEncounterEffectSwitchTransfer = (input: {
     return effect
   })
 
-  let effects = parseEncounterEffects(rebound, 'effectTransfer.reboundEffects')
-  const transitions: EncounterEffectLifecycleTransition[] = []
-  for (const effectId of expiredEffectIds) {
-    const result = applyEncounterEffectLifecycleEvent(
-      { effects },
-      { kind: 'effect-removed', effectId },
-    )
-    effects = result.effects
-    transitions.push(...result.transitions)
-  }
+  const removed = removeEffectsById(
+    parseEncounterEffects(rebound, 'effectTransfer.reboundEffects'),
+    expiredEffectIds,
+  )
+  const effects = removed.effects
+  const transitions = removed.transitions
 
   const transferred = new Set(transferredEffectIds)
   if (expiredEffectIds.some(effectId => transferred.has(effectId))) {
@@ -180,5 +196,32 @@ export const resolveEncounterEffectSwitchTransfer = (input: {
     transferredEffectIds,
     expiredEffectIds,
     transitions,
+  })
+}
+
+/**
+ * Apply source-leave transfer policy when a move recalls without sending out a
+ * replacement. Baton Pass-only and explicitly expiring state leaves exactly
+ * once; retained state is still available to typed recall lifecycle handlers.
+ */
+export const resolveEncounterEffectRecall = (input: {
+  readonly effects: readonly EncounterEffect[]
+  readonly recalledPlacementId: string
+}): EncounterEffectSwitchTransferResult => {
+  assertSwitchIdentity(input.recalledPlacementId, 'Recalled placement ID')
+  const original = parseEncounterEffects(input.effects, 'effectRecall.effects')
+  const expiredEffectIds = original.flatMap(effect => (
+    effectReferencesPlacement(effect, input.recalledPlacementId)
+    && (transferPolicy(effect) === 'expire' || transferPolicy(effect) === 'baton-pass')
+      ? [effect.id]
+      : []
+  ))
+  const removed = removeEffectsById(original, expiredEffectIds)
+  return deepFreeze({
+    effects: removed.effects,
+    changed: expiredEffectIds.length > 0,
+    transferredEffectIds: [],
+    expiredEffectIds,
+    transitions: removed.transitions,
   })
 }

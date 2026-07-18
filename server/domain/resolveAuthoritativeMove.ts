@@ -246,10 +246,15 @@ export interface AuthoritativeMoveResourceMovement {
   readonly budget: number
 }
 
-/** Server-only, roster-validated recall/send-out transition selected durably. */
-export interface AuthoritativeMoveSwitchTransition {
+interface AuthoritativeMoveSwitchTransitionBase {
   readonly operationId: string
   readonly recalledPlacementId: string
+}
+
+/** Server-only, roster-validated recall/send-out transition selected durably. */
+export interface AuthoritativeMoveRecallAndSendOutTransition
+  extends AuthoritativeMoveSwitchTransitionBase {
+  readonly kind: 'recall-and-send-out'
   readonly sentOutPlacement: SheetPlacement
   readonly trainerPlacementId: string
   readonly trainerSheetSlug: string
@@ -257,6 +262,17 @@ export interface AuthoritativeMoveSwitchTransition {
   readonly initiativePolicy: 'inherit-slot'
   readonly stateTransferPolicy: 'none' | 'baton-pass'
 }
+
+/** Server-only mandatory recall when the authorized replacement choice passes. */
+export interface AuthoritativeMoveRecallOnlyTransition
+  extends AuthoritativeMoveSwitchTransitionBase {
+  readonly kind: 'recall-only'
+  readonly stateTransferPolicy: 'none'
+}
+
+export type AuthoritativeMoveSwitchTransition =
+  | AuthoritativeMoveRecallAndSendOutTransition
+  | AuthoritativeMoveRecallOnlyTransition
 
 export interface AuthoritativeMoveResolution {
   readonly actorPlacementId: string
