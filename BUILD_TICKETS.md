@@ -9,7 +9,7 @@ Ticket statuses:
 
 The build loop must select the lowest-numbered TODO ticket. Each ticket below maps to one ticket from the supplied planning file; build ticket numbers follow that document's suggested order when present.
 
-Autonomous cycle rules for every ticket: implement only the selected ticket, run `scripts/quality-gate.sh`, update only the selected ticket status, commit with a conventional commit message, and leave the working tree clean. The final ticket (`MA-299`) may also set `AUTOMATION_STATUS: DONE` after all 292 refreshed tickets are complete.
+Autonomous cycle rules for every ticket: implement only the selected ticket, run `scripts/quality-gate.sh`, update only the selected ticket status, commit with a conventional commit message, and leave the working tree clean. The final ticket (`MA-299`) may also set `AUTOMATION_STATUS: DONE` after all 293 refreshed tickets are complete.
 
 ---
 
@@ -50,7 +50,7 @@ When a ticket introduces a new pure module, prefer this layout:
 
 The existing `src/utils/move-automation/` registry remains the v1 compatibility surface until the retirement tickets at the end.
 
-Queue size at this baseline: **292 commits**—186 engine/state/QA tickets, 33 conformance batches for the registered 258, and 73 implementation batches for the missing 518.
+Queue size at this baseline: **293 commits**—187 engine/state/QA tickets, 33 conformance batches for the registered 258, and 73 implementation batches for the missing 518.
 
 ## Decisions already locked
 
@@ -2354,16 +2354,41 @@ Status: DONE
 
 **Done:** Sand Tomb is complete; later Vortex moves reuse this effect rather than copy its logic.
 
-## MA-174 — Finish Tackle and Take Down displacement
+## MA-174A — Finish Tackle forced displacement
 
 Status: TODO
 
-**Depends on:** MA-085, MA-125B, MA-126–MA-127
-**Commit:** `feat(move-automation): resolve tackle family displacement`
+**Depends on:** MA-125B, MA-126–MA-127
+**Commit:** `feat(move-automation): fully resolve tackle displacement`
 
-**Implement:** Encode optional/required opposed checks, legal direction, push distance, collision/shortening, and simultaneous damage/cost ordering for Tackle and Take Down.
+**Touch:** the reviewed Tackle runtime, authoritative spatial planning, semantic scenarios, and manifest evidence.
 
-**Done:** Neither move requires a GM push or opposed-check note.
+**Implement:**
+
+- On a qualifying Tackle hit, derive the mandatory two-meter push directly away from the actor through authoritative footprint geometry. The client may not supply the direction, path, or distance.
+- Route the push through the shared displacement oracle, accepting only the longest legal prefix when bounds, terrain, height, occupancy, or movement capability shortens it. A miss or immunity produces no movement.
+- Keep accuracy, damage, displacement, and usage in deterministic server-owned order and one atomic accepted result. Trace the requested and resolved movement plus any shortening reason.
+- Cover full and shortened pushes, miss, immunity, critical hit, and duplicate delivery through the interpreter/planner and accepted-command boundaries. Remove Tackle's GM-push note and update only its manifest runtime/evidence/status after every path passes.
+
+**Done:** A qualifying Tackle hit applies damage and one deterministic legal push, collision or obstruction shortens it safely, retry cannot move the target twice, and Tackle requires no GM push note.
+
+## MA-174B — Finish Take Down's opposed Trip flow
+
+Status: TODO
+
+**Depends on:** MA-174A, MA-085, MA-105
+**Commit:** `feat(move-automation): fully resolve take down trip`
+
+**Touch:** the reviewed Take Down runtime, durable choice/check orchestration, damage and cost planning, semantic scenarios, and manifest evidence.
+
+**Implement:**
+
+- After a qualifying Take Down hit, offer the canonical optional Free Action Trip through a typed durable choice. Passing ends the branch; accepting exposes only server-authored legal skill options and requires the actor and target responses needed by the opposed check.
+- Own both opposed rolls, modifiers, tie policy, and success/failure branch on the server; apply Tripped only on success. Misses and immunities must not open the Trip flow, and reconnect or stale responses must follow the existing durable-resolution policy.
+- Keep damage, recoil and other directly referenced costs, usage, the optional check, and its condition result in canonical deterministic order within one durable saga. Rejected, stale, or duplicate commands may not partially apply or repeat any part.
+- Cover pass, check success/failure/tie, legal skill choices, hit, miss, critical hit, immunity, cost-prevention branches, reconnect, stale response, and duplicate delivery at the planner and accepted-command boundaries. Remove Take Down's opposed-check note and update only its manifest runtime/evidence/status after every path passes; retain MA-174A Tackle regressions.
+
+**Done:** Take Down's damage, costs, optional opposed Trip, usage, and condition outcome resolve exactly once without GM adjudication, while Tackle retains its fully authoritative push behavior.
 
 ## MA-175 — Finish U-Turn switching
 
