@@ -6,6 +6,7 @@ import {
   type EncounterTurnResourceDirectory,
   type EncounterTurnResourceLedger,
 } from '#shared/moveAutomation/encounterResources'
+import { ENCOUNTER_ACTED_SINCE_ENTRY_FLAG_ID } from './reduceEncounterResources'
 
 export interface MoveAutomationResourceResolver {
   ledger(placementId: string): EncounterTurnResourceLedger | null
@@ -18,6 +19,8 @@ export interface MoveAutomationResourceResolver {
   movementSpent(placementId: string): number
   movementRemaining(placementId: string): number | null
   hasOncePerTurnFlag(placementId: string, flagId: string): boolean
+  /** True after the placement's first accepted action or first turn end. */
+  actedSinceEntry(placementId: string): boolean
   setupExecuteState(placementId: string): EncounterSetupExecuteState | null
 }
 
@@ -111,6 +114,11 @@ export const createMoveAutomationResourceResolver = (
     movementRemaining,
     hasOncePerTurnFlag: (placementId, flagId) => (
       ledger(placementId)?.oncePerTurnFlags.some(flag => flag.id === flagId) ?? false
+    ),
+    actedSinceEntry: placementId => (
+      ledger(placementId)?.oncePerTurnFlags.some(flag => (
+        flag.id === ENCOUNTER_ACTED_SINCE_ENTRY_FLAG_ID
+      )) ?? false
     ),
     setupExecuteState: placementId => ledger(placementId)?.setupExecute ?? null,
   }

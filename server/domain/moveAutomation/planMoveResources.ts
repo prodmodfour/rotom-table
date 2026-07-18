@@ -60,6 +60,8 @@ export interface PlanEncounterMoveResourceCostsInput extends MoveResourceCostPha
   readonly allowLegacyFallback?: boolean
   /** Server-recovered ledger before earlier phases of this same resolution. */
   readonly prerequisiteResources?: EncounterTurnResourceDirectory
+  /** Record opening-action legality in the same atomic encounter-state plan. */
+  readonly markActedSinceEntry?: boolean
 }
 
 export interface MoveResourceCostPhaseWindow {
@@ -84,6 +86,8 @@ export interface PlanMoveResourceCostWindowInput extends MoveResourceCostPhaseWi
   readonly prerequisiteResources?: EncounterTurnResourceDirectory
   /** Temporary v1/pre-cost-v2 observation retained without making it a reviewed cost. */
   readonly compatibilityOncePerTurnFlagId?: string | null
+  /** Record opening-action legality in the same immutable reduction. */
+  readonly markActedSinceEntry?: boolean
 }
 
 export interface PlannedMoveResourceCostWindow {
@@ -288,6 +292,7 @@ export const planMoveResourceCostWindow = (
     actedThisRound: input.actedThisRound,
     prerequisiteResources: input.prerequisiteResources,
     compatibilityOncePerTurnFlagId: input.compatibilityOncePerTurnFlagId,
+    markActedSinceEntry: input.markActedSinceEntry,
   })
   const currentResources = parseEncounterTurnResources(spent.resources)
   return deepFreeze({
@@ -352,6 +357,7 @@ export const planEncounterMoveResourceCosts = (
     minimumPhaseExclusive: input.minimumPhaseExclusive,
     maximumPhaseInclusive: input.maximumPhaseInclusive,
     compatibilityOncePerTurnFlagId,
+    markActedSinceEntry: input.markActedSinceEntry,
   })
   const currentEncounterState = parseEncounterState({
     ...previousEncounterState,
@@ -404,4 +410,5 @@ export const planMoveResourceObservation = (input: {
   maximumPhaseInclusive: input.maximumPhaseInclusive,
   allowLegacyFallback: input.allowLegacyFallback,
   prerequisiteResources: input.prerequisiteResources,
+  markActedSinceEntry: true,
 })

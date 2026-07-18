@@ -850,6 +850,7 @@ export const planPendingMoveResourceCosts = (options: {
       minimumPhaseExclusive: options.minimumPhaseExclusive,
       maximumPhaseInclusive: options.execution.execution.request.phase,
       prerequisiteResources: options.prerequisiteResources,
+      markActedSinceEntry: true,
     })
   }
   catch (error) {

@@ -751,6 +751,35 @@ const historyValue = (
   return boundedScalar(value, nodeId)
 }
 
+const encounterResourceValue = (
+  expression: Extract<MoveExpression, { readonly kind: 'encounter-resource' }>,
+  state: EvaluationState,
+  nodeId: string,
+  depth: number,
+): MoveRuleScalar => {
+  const placementId = selectedSubjectId(
+    expression.subject,
+    state,
+    nodeId,
+    depth + 1,
+  )
+  if (!state.context.queries.placements.get(placementId)) {
+    return fail(
+      'subject-unavailable',
+      `${nodeId}.subject`,
+      `placement ${placementId} is unavailable.`,
+    )
+  }
+  if (expression.query === 'acted-since-entry') {
+    return state.context.queries.resources.actedSinceEntry(placementId)
+  }
+  return fail(
+    'query-value-unavailable',
+    nodeId,
+    `encounter resource query ${String(expression.query)} is unavailable.`,
+  )
+}
+
 const arithmeticResult = (
   operator: MoveArithmeticOperator,
   operands: readonly number[],
@@ -989,6 +1018,9 @@ const evaluateExpressionNode = (
         nodeId,
         depth,
       )
+      break
+    case 'encounter-resource':
+      value = encounterResourceValue(expression, state, nodeId, depth)
       break
     default:
       return fail(

@@ -55,6 +55,7 @@ export const MOVE_EXPRESSION_KINDS = [
   'terrain',
   'item',
   'move-history',
+  'encounter-resource',
 ] as const
 
 export const MOVE_ARITHMETIC_OPERATORS = [
@@ -131,6 +132,11 @@ export const MOVE_HISTORY_QUERIES = [
   'fainted-this-scene',
 ] as const
 
+/** Entry-local action facts retained by the authoritative encounter ledger. */
+export const MOVE_ENCOUNTER_RESOURCE_QUERIES = [
+  'acted-since-entry',
+] as const
+
 export const MOVE_EXPRESSION_LIMITS = MOVE_RULE_AST_LIMITS
 
 export type MoveExpressionKind = (typeof MOVE_EXPRESSION_KINDS)[number]
@@ -151,6 +157,8 @@ export type MoveCombatStageStat = (typeof MOVE_COMBAT_STAGE_STATS)[number]
 export type MoveWeightMetric = (typeof MOVE_WEIGHT_METRICS)[number]
 export type MoveTypeSource = (typeof MOVE_TYPE_SOURCES)[number]
 export type MoveHistoryQuery = (typeof MOVE_HISTORY_QUERIES)[number]
+export type MoveEncounterResourceQuery =
+  (typeof MOVE_ENCOUNTER_RESOURCE_QUERIES)[number]
 export type MoveExpressionConstant = MoveRuleScalar
 
 export interface MoveConstantExpression {
@@ -281,6 +289,12 @@ export interface MoveHistoryExpression {
   readonly query: MoveHistoryQuery
 }
 
+export interface MoveEncounterResourceExpression {
+  readonly kind: 'encounter-resource'
+  readonly subject: MoveSelector
+  readonly query: MoveEncounterResourceQuery
+}
+
 export type MoveExpression =
   | MoveConstantExpression
   | MoveArithmeticExpression
@@ -299,6 +313,7 @@ export type MoveExpression =
   | MoveTerrainExpression
   | MoveItemExpression
   | MoveHistoryExpression
+  | MoveEncounterResourceExpression
 
 export type MoveStatSelectionExpression =
   | (MoveStatExpression & {
@@ -372,6 +387,7 @@ const ITEM_CONTRIBUTION_FIELDS = [
   'timing',
 ] as const
 const HISTORY_FIELDS = ['kind', 'subject', 'query'] as const
+const ENCOUNTER_RESOURCE_FIELDS = ['kind', 'subject', 'query'] as const
 
 const EXPRESSION_KIND_SET = new Set<string>(MOVE_EXPRESSION_KINDS)
 const ARITHMETIC_OPERATOR_SET = new Set<string>(MOVE_ARITHMETIC_OPERATORS)
@@ -391,6 +407,7 @@ const ITEM_RULE_SOURCE_SET = new Set<string>(MOVE_ITEM_RULE_SOURCES)
 const ITEM_RULE_FAMILY_SET = new Set<string>(MOVE_ITEM_RULE_FAMILIES)
 const ITEM_EFFECT_TIMING_SET = new Set<string>(MOVE_AUTOMATION_ITEM_EFFECT_TIMINGS)
 const HISTORY_QUERY_SET = new Set<string>(MOVE_HISTORY_QUERIES)
+const ENCOUNTER_RESOURCE_QUERY_SET = new Set<string>(MOVE_ENCOUNTER_RESOURCE_QUERIES)
 const STABLE_ID_PATTERN = /^[a-z0-9]+(?:[._:/-][a-z0-9]+)*$/
 
 const parseChildExpression = (
@@ -913,6 +930,19 @@ export const parseMoveExpressionNode = (
           HISTORY_QUERY_SET,
           `${path}.query`,
           'a supported move-history query',
+          context,
+        ),
+      }
+    case 'encounter-resource':
+      assertMoveRuleAstExactKeys(input, ENCOUNTER_RESOURCE_FIELDS, path, context)
+      return {
+        kind,
+        subject: parseSubject(input, path, depth, context),
+        query: parseMoveRuleAstEnum<MoveEncounterResourceQuery>(
+          readMoveRuleAstOwnValue(input, 'query', path, context),
+          ENCOUNTER_RESOURCE_QUERY_SET,
+          `${path}.query`,
+          'a supported encounter-resource query',
           context,
         ),
       }

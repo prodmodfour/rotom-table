@@ -92,5 +92,6 @@ export const planAuthoritativeMovementResources = (input: {
       spendDistance: distance > 0,
     }),
     allowLegacyFallback: false,
+    markActedSinceEntry: spendAction && input.movement.policy.kind === 'standard',
   })
 }

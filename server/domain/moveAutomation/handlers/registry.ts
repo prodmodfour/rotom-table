@@ -19,6 +19,7 @@ import {
   createMoveResolutionTrace,
   reduceMoveResolutionTrace,
 } from '../trace'
+import { ASTONISH_MOVE_HANDLER_REGISTRATION } from './astonish'
 import { TAKE_DOWN_MOVE_HANDLER_REGISTRATION } from './takeDown'
 
 export const REGISTERED_MOVE_HANDLER_LIMITS = Object.freeze({
@@ -235,6 +236,7 @@ export const createRegisteredMoveHandlerRegistry = (
 
 /** Add reviewed production handlers here; specs cannot register callbacks themselves. */
 export const REGISTERED_MOVE_HANDLER_REGISTRY = createRegisteredMoveHandlerRegistry([
+  ASTONISH_MOVE_HANDLER_REGISTRATION,
   TAKE_DOWN_MOVE_HANDLER_REGISTRATION,
 ])
 

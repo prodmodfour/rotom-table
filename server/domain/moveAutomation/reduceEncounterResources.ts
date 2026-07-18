@@ -32,6 +32,8 @@ export const ENCOUNTER_ONCE_PER_TURN_RESOURCE_PREFIX = 'once-per-turn.' as const
 export const ENCOUNTER_EXHAUST_NEXT_TURN_FLAG_ID = 'cost.exhaust.next-turn' as const
 export const ENCOUNTER_EXHAUST_COMMAND_FLAG_ID = 'cost.exhaust.command' as const
 export const ENCOUNTER_PRIORITY_ADVANCED_NEXT_TURN_FLAG_ID = 'cost.priority.advanced.next-turn' as const
+/** Persists until the placement leaves, recording that its opening action has passed. */
+export const ENCOUNTER_ACTED_SINCE_ENTRY_FLAG_ID = 'encounter.acted-since-entry' as const
 
 export type EncounterResourceReductionErrorCode =
   | 'unknown-resource'
@@ -102,6 +104,8 @@ export interface SpendEncounterMoveResourceCostsInput {
   readonly prerequisiteResources?: EncounterTurnResourceDirectory
   /** Compatibility observation only; explicit once-per-turn costs enforce themselves. */
   readonly compatibilityOncePerTurnFlagId?: string | null
+  /** Opening-move legality records the accepted action without trusting the client. */
+  readonly markActedSinceEntry?: boolean
 }
 
 export interface EncounterMoveResourceCostSpend {
@@ -515,6 +519,7 @@ export const spendEncounterMoveResourceCosts = (
   if (
     costs.every(declaration => declaration.cost.kind === 'no-cost')
     && compatibilityFlagId === null
+    && input.markActedSinceEntry !== true
   ) {
     return deepFreeze({ resources, spends: noCostSpends })
   }
@@ -742,6 +747,13 @@ export const spendEncounterMoveResourceCosts = (
       resetOn: ['turn-start'],
     })
   }
+  if (input.markActedSinceEntry === true) {
+    ledger = appendCostFlag(ledger, {
+      id: ENCOUNTER_ACTED_SINCE_ENTRY_FLAG_ID,
+      sourceOperationId: input.sourceOperationId,
+      resetOn: ['scene-end', 'recall', 'send-out'],
+    })
+  }
 
   return deepFreeze({
     resources: parseEncounterTurnResources(withLedger(resources, ledger)),
@@ -830,6 +842,18 @@ export const reduceEncounterResourceEvent = (
   else if (event.kind === 'turn-start') resources = setTurnWindow(resources, event)
   else if (event.kind === 'turn-end') {
     resources = resetPlacement(resources, event.placementId, 'turn-end')
+    resources = withLedger(resources, appendCostFlag(
+      ensureLedger(resources, {
+        placementId: event.placementId,
+        round: event.round,
+        turn: event.turn,
+      }),
+      {
+        id: ENCOUNTER_ACTED_SINCE_ENTRY_FLAG_ID,
+        sourceOperationId: event.sourceOperationId,
+        resetOn: ['scene-end', 'recall', 'send-out'],
+      },
+    ))
   }
   else if (event.kind === 'recall') {
     resources = resetPlacement(resources, event.placementId, 'recall')
