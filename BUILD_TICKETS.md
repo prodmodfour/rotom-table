@@ -2564,7 +2564,7 @@ Status: DONE
 
 ## REG-002 — Certify Apple Acid through Aurora Beam
 
-Status: TODO
+Status: DONE
 
 **Baseline-registered moves:** Apple Acid; Aqua Jet; Aqua Tail; Aromatic Mist; Astonish; Attack Order; Aura Sphere; Aurora Beam
 
