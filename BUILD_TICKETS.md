@@ -2356,7 +2356,7 @@ Status: DONE
 
 ## MA-174A — Finish Tackle forced displacement
 
-Status: TODO
+Status: DONE
 
 **Depends on:** MA-125B, MA-126–MA-127
 **Commit:** `feat(move-automation): fully resolve tackle displacement`

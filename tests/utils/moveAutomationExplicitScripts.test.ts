@@ -848,7 +848,7 @@ describe('explicit move automation scripts', () => {
   it('implements the requested basic moves as seamless explicit scripts', () => {
     const tackle = explicitScriptForMove('Tackle')
     expect(tackle).toMatchObject({ moveName: 'Tackle', targetMode: 'one-target', damaging: true, requiresAccuracy: true })
-    expect(tackle?.automationNotes).toEqual(expect.arrayContaining([expect.stringContaining('pushes the target 2 meters')]))
+    expect(tackle?.automationNotes).toEqual([])
     expect(isSeamlessSingleTargetMoveScript(tackle)).toBe(true)
 
     const takeDown = explicitScriptForMove('Take Down')

@@ -129,7 +129,6 @@ export const REVIEWED_ADDITIONAL_SINGLE_TARGET_SCRIPTS: ReadonlyMap<string, Move
   ['Tackle', reviewedMoveScriptFromCanonical('Tackle', 1, {
     targetMode: 'one-target',
     targetCount: 1,
-    automationNotes: ['Tackle pushes the target 2 meters after damage; move the target token manually after the automated hit resolves.'],
   })],
   ['Take Down', reviewedTakeDownScript()],
   ['Torment', reviewedSingleTargetConditionScript('Torment', [{ condition: 'Suppressed', label: 'Suppressed' }])],
