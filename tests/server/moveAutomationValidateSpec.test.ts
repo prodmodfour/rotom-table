@@ -1191,11 +1191,20 @@ describe('authoritative MoveSpec validation and hashing', () => {
         }),
       ],
     })
-    expectDefinitionError(
-      () => validateMoveSpec(nested),
-      'invalid-definition',
-      'spec.phases[1].operations[0].payload.whenTrue.operationIds[0]',
-    )
+    expect(validateMoveSpec(nested).spec.phases[1]?.operations).toMatchObject([
+      {
+        id: 'operation.branch',
+        payload: {
+          whenTrue: { operationIds: ['operation.branch-second'] },
+        },
+      },
+      {
+        id: 'operation.branch-second',
+        payload: {
+          whenTrue: { operationIds: ['operation.damage'] },
+        },
+      },
+    ])
   })
 
   it('validates random-table operation lists and reserves every bounded reroll ID', () => {

@@ -506,50 +506,99 @@ const assertRollBudget = (
   }
 }
 
-const checkRollCandidates = (input: ExecuteMoveCheckOperationInput) => {
+interface MoveCheckRollCandidate {
+  readonly role: MoveCheckParticipantRole
+  readonly roll: MoveCheckRollDefinition
+  readonly owners: readonly string[]
+}
+
+const checkRollCandidates = (
+  input: ExecuteMoveCheckOperationInput,
+): readonly MoveCheckRollCandidate[] => {
   const payload = input.operation.payload
   return payload.kind === 'opposed'
     ? [
         {
-          role: 'actor' as const,
+          role: 'actor',
           roll: payload.actorRoll,
           owners: [input.context.actor.placement.id],
         },
         {
-          role: 'target' as const,
+          role: 'target',
           roll: payload.targetRoll,
           owners: input.recipientIds,
         },
       ]
-    : [{ role: 'target' as const, roll: payload.roll, owners: input.recipientIds }]
+    : [{ role: 'target', roll: payload.roll, owners: input.recipientIds }]
+}
+
+const isLegalChoiceSource = (options: {
+  readonly input: ExecuteMoveCheckOperationInput
+  readonly placementIds: readonly string[]
+  readonly source: MoveCheckResolvedRollSource
+}): boolean => {
+  try {
+    for (const placementId of options.placementIds) {
+      resolvedRollSource(options.input.context, placementId, options.source)
+    }
+    return true
+  }
+  catch (error) {
+    if (
+      error instanceof MoveCheckExecutionError
+      && (error.code === 'check-skill-unavailable' || error.code === 'check-stat-unavailable')
+    ) return false
+    throw error
+  }
+}
+
+const legalChoiceOptions = (
+  input: ExecuteMoveCheckOperationInput,
+  candidate: MoveCheckRollCandidate,
+) => {
+  const source = candidate.roll.source
+  if (source.kind !== 'choice') return []
+  const options = source.options.filter(option => isLegalChoiceSource({
+    input,
+    placementIds: candidate.owners,
+    source: option.source,
+  }))
+  if (options.length === 0) {
+    fail(
+      'check-skill-unavailable',
+      `Check ${input.operation.payload.checkId} has no legal ${candidate.role} roll source.`,
+    )
+  }
+  return options
 }
 
 const pendingSelection = (
   input: ExecuteMoveCheckOperationInput,
 ): MoveCheckPendingSelection | null => {
   const payload = input.operation.payload
-  const unresolved = checkRollCandidates(input).find((candidate) => {
+  for (const candidate of checkRollCandidates(input)) {
     const source = candidate.roll.source
-    if (source.kind !== 'choice') return false
-    return input.responseResolver?.resolve({
+    if (source.kind !== 'choice') continue
+    const response = input.responseResolver?.resolve({
       requestId: source.requestId,
       options: source.options,
       allowPass: false,
-    }) === null || input.responseResolver === undefined
-  })
-  if (!unresolved || unresolved.roll.source.kind !== 'choice') return null
-  return deepFreeze({
-    kind: 'selection',
-    checkId: payload.checkId,
-    role: unresolved.role,
-    requestId: unresolved.roll.source.requestId,
-    promptKey: unresolved.roll.source.promptKey,
-    ownerPlacementIds: [...unresolved.owners],
-    options: unresolved.roll.source.options.map(option => ({
-      id: option.id,
-      labelKey: option.labelKey,
-    })),
-  })
+    }) ?? null
+    if (response !== null) continue
+    return deepFreeze({
+      kind: 'selection',
+      checkId: payload.checkId,
+      role: candidate.role,
+      requestId: source.requestId,
+      promptKey: source.promptKey,
+      ownerPlacementIds: [...candidate.owners],
+      options: legalChoiceOptions(input, candidate).map(option => ({
+        id: option.id,
+        labelKey: option.labelKey,
+      })),
+    })
+  }
+  return null
 }
 
 const resolvedCheckRollSource = (

@@ -2795,7 +2795,6 @@ const executeMoveSpecInternal = (
       if (operation.kind === 'damage') {
         const operationDamageTypes: MoveDamageTypeResolution[] = []
         const operationDamageBases: MoveContextualDamageBaseResolution[] = []
-        const projectedDamagedTargetIds = new Set(damagedTargetIds)
         const rollSummaries: Array<{
           readonly rollId: string
           readonly recipientId: string
@@ -2813,11 +2812,6 @@ const executeMoveSpecInternal = (
           })
           operationDamageTypes.push(resolvedType)
           resolvedDamageTypes.push(resolvedType)
-          // Ordinary PTU damage has a minimum HP loss once it reaches a
-          // non-immune hit recipient. This server-owned projection makes
-          // post-damage choices available without committing reducer state;
-          // the final planner still derives exact effective HP loss.
-          if (resolvedType.finalMultiplier > 0) projectedDamagedTargetIds.add(recipientId)
           const formula = resolveMoveSpecDamageRollFormula({
             context: input.context,
             operation,
@@ -2856,10 +2850,6 @@ const executeMoveSpecInternal = (
             finalValue: result.finalValue,
           })
         }
-        damagedTargetIds = canonicalPlacementIds(
-          input.context,
-          projectedDamagedTargetIds,
-        )
         trace = reduceMoveResolutionTrace(trace, {
           kind: 'operation',
           phase,

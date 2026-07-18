@@ -12,7 +12,6 @@ import {
   normalizeTemporaryHpAmount,
 } from '~/utils/mapTemporaryHitPoints'
 import type { MoveAutomationHpUpdateAccumulator } from '~/utils/moveAutomationHpUpdates'
-import { moveAutomationRecoilImmunitySource } from '~/utils/moveAutomationRecoil'
 import type { AuthoritativeMoveRulesContext } from '../context'
 import {
   evaluateMoveExpression,
@@ -465,27 +464,6 @@ const preventedDirectHpResult = (options: {
   changedFields: [],
 })
 
-const preventedRecoilResult = (options: {
-  readonly recipient: MoveCoreTokenEffectRecipient
-  readonly previous: MoveCoreHpStateSnapshot
-  readonly blockedBy: string
-  readonly calculation: MoveHpCalculationResolution
-}): MoveCoreTokenEffectRecipientResult => ({
-  recipientId: options.recipient.placement.id,
-  outcome: 'prevented',
-  reasonCode: 'recoil-immunity',
-  blockers: [{ subject: 'Recoil', source: options.blockedBy }],
-  details: hpTraceDetails({
-    calculation: options.calculation,
-    previousPoolValue: options.previous.currentHp,
-    appliedPoolValue: options.previous.currentHp,
-  }),
-  consultedPlacementIds: [],
-  previous: options.previous,
-  current: options.previous,
-  changedFields: [],
-})
-
 const directHpImmunity = (options: {
   readonly operation: MoveDirectHpEffectOperation
   readonly recipient: MoveCoreTokenEffectRecipient
@@ -857,19 +835,6 @@ export const reduceDirectHpEffectForRecipient = (options: {
       context: options.context,
       requireNonNegative: operation.payload.mode === 'lose',
       priorOperationResults: options.priorOperationResults,
-    })
-  }
-
-  const recoilImmunity = calculation.kind === 'damage-dealt'
-    && calculation.roundedValue > 0
-    ? moveAutomationRecoilImmunitySource(recipient.token.abilityNames)
-    : null
-  if (recoilImmunity) {
-    return preventedRecoilResult({
-      recipient,
-      previous,
-      blockedBy: recoilImmunity,
-      calculation,
     })
   }
 

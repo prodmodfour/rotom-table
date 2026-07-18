@@ -12,7 +12,7 @@ import {
 import type { CharacterSheet } from '~/types/characterSheet'
 import type { TabletopMap } from '~/types/map'
 import type { TrainerSheet } from '~/types/trainerSheet'
-import { deepCloneJson } from '~/utils/serialization'
+import { deepCloneJson, sameJsonValue } from '~/utils/serialization'
 import {
   attachAbilityFollowUpsToMovePlan,
   observeMovePlanResources,
@@ -109,17 +109,28 @@ const encounterPlan = (input: {
   const existingEncounter = input.existing?.changes.find(
     change => change.kind === 'encounter-state',
   )
+  const nonEncounterChanges = (input.existing?.changes ?? [])
+    .filter(change => change.kind !== 'encounter-state')
+    .map(change => withoutPlanIdentity(change) as MoveStateChangeInput<EncounterState>)
+  const previous = previousEncounterState(input.previousMap)
+
+  // Advancing from one private window to another can leave the bounded public
+  // summary byte-identical (same phase/status/count and same-millisecond clock).
+  // The response still advances the map revision and pending repository record,
+  // but a typed state plan must never invent a no-op encounter mutation.
+  if (sameJsonValue(previous, input.current)) {
+    return createMoveStateChangePlan<EncounterState>(nonEncounterChanges)
+  }
+
   return createMoveStateChangePlan<EncounterState>([
-    ...(input.existing?.changes ?? [])
-      .filter(change => change.kind !== 'encounter-state')
-      .map(change => withoutPlanIdentity(change) as MoveStateChangeInput<EncounterState>),
+    ...nonEncounterChanges,
     {
       kind: 'encounter-state',
       scope: { kind: 'encounter', mapSlug: input.previousMap.slug },
       expectedRevision: normalizeRevision(input.previousMap.revision),
       sourceOperationId: input.sourceOperationId,
       reasonCode: input.reasonCode,
-      previous: deepCloneJson(previousEncounterState(input.previousMap)),
+      previous: deepCloneJson(previous),
       current: deepCloneJson(input.current),
       compensation: existingEncounter?.compensation.kind === 'unavailable'
         ? deepCloneJson(existingEncounter.compensation)

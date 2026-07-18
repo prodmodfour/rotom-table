@@ -152,15 +152,16 @@ const chosenResponses = (
   ...(response ? [response] : []),
 ]
 
-const traceBeforeCurrentWindow = (pending: PendingMoveResolution) => {
-  const outstandingIds = new Set(pending.outstandingWindows.map(window => window.windowId))
+const traceBeforeCurrentOperation = (pending: PendingMoveResolution) => {
   const outstandingOperationIds = new Set(
     pending.outstandingWindows.map(window => window.operationId),
   )
-  return pending.trace.events.filter(event => !(
-    (event.kind === 'choice' && outstandingIds.has(event.requestId))
-    || (event.kind === 'operation' && outstandingOperationIds.has(event.operationId))
+  const operationIndex = pending.trace.events.findIndex(event => (
+    event.kind === 'operation' && outstandingOperationIds.has(event.operationId)
   ))
+  return operationIndex < 0
+    ? pending.trace.events
+    : pending.trace.events.slice(0, operationIndex)
 }
 
 const comparableTraceEvent = (
@@ -191,7 +192,13 @@ const assertDurableExecutionPrefix = (
       'Resumed execution did not reproduce the durable server-owned roll ledger.',
     )
   }
-  const expectedTrace = traceBeforeCurrentWindow(pending).map(comparableTraceEvent)
+  // One check operation may suspend for actor selection, target selection, and
+  // a later resource response. Its operation-local trace is rebuilt as a unit,
+  // so event ordering within that unit can legitimately change when it finally
+  // resolves (for example, rolls precede the selected-choice projections).
+  // Everything before the operation remains a strict prefix; the durable roll
+  // ledger above and chosen-option assertions below protect the rebuilt unit.
+  const expectedTrace = traceBeforeCurrentOperation(pending).map(comparableTraceEvent)
   const actualTrace = execution.trace.events
     .slice(0, expectedTrace.length)
     .map(comparableTraceEvent)
@@ -200,6 +207,23 @@ const assertDurableExecutionPrefix = (
       'trace-prefix-mismatch',
       'Resumed execution did not reproduce the durable decision trace before the response window.',
     )
+  }
+
+  for (const choice of pending.chosenOptions) {
+    if (choice.optionIds !== undefined) continue
+    const expectedOutcome = choice.optionId === null ? 'passed' : 'selected'
+    const reproduced = execution.trace.events.some(event => (
+      event.kind === 'choice'
+      && event.requestId === choice.windowId
+      && event.outcome === expectedOutcome
+      && event.optionId === choice.optionId
+    ))
+    if (!reproduced) {
+      fail(
+        'trace-prefix-mismatch',
+        `Resumed execution did not reproduce durable response ${choice.windowId}.`,
+      )
+    }
   }
 }
 

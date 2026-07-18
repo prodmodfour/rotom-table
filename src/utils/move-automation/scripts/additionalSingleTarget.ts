@@ -71,6 +71,11 @@ const reviewedTakeDownScript = (version = 1): MoveAutomationScript => reviewedMo
     label: 'Trip Maneuver succeeds',
     optional: true,
   }],
+  automationNotes: [
+    'Take Down grants an optional Free Action Trip Maneuver after the hit; automation applies Tripped only if that opposed maneuver succeeds.',
+    'Recoil is calculated from damage dealt after defenses, weakness/resistance, and other mitigation; Rock Head and Magic Guard prevent this recoil HP loss.',
+    'Reckless Damage Base bonuses are not inferred; adjust the move DB before use if that Ability applies.',
+  ],
 })
 
 const reviewedYawnScript = (version = 1): MoveAutomationScript => reviewedSingleTargetConditionScript('Yawn', [

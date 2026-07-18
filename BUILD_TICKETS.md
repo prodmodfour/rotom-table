@@ -2374,7 +2374,7 @@ Status: DONE
 
 ## MA-174B — Build Take Down's durable opposed Trip continuation
 
-Status: TODO
+Status: DONE
 
 **Depends on:** MA-174A, MA-085, MA-105
 **Commit:** `feat(move-automation): build durable opposed trip continuation`
