@@ -305,6 +305,23 @@ describe('map token move menu options', () => {
     })
   })
 
+  it('marks Dash moves unavailable while the actor is Stuck', () => {
+    const moves = buildTokenMoveMenuOptions(token({ conditions: ['Stuck'] }), [
+      { move: { name: 'Crush Claw' }, automatic: false },
+      { move: { name: 'Crunch' }, automatic: false },
+    ])
+
+    expect(moves.find(move => move.name === 'Crush Claw')).toMatchObject({
+      disabledByCondition: true,
+      conditionUseBlock: {
+        condition: 'Stuck',
+        label: 'Stuck',
+        reason: 'Moves with the Dash keyword cannot be used while Stuck.',
+      },
+    })
+    expect(moves.find(move => move.name === 'Crunch')?.disabledByCondition).toBe(false)
+  })
+
   it('does not apply STAB to Struggle auto moves', () => {
     const [move] = buildTokenMoveMenuOptions(token(), [
       { move: { name: 'Struggle' }, automatic: true },

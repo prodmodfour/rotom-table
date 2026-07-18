@@ -23,6 +23,7 @@ import {
   moveAutomationTargetBranches,
 } from '~/utils/moveAutomation'
 import { moveAutomationCanResolveDamageAtRuntime } from '~/utils/moveAutomationDynamicDamage'
+import { moveDashConditionUseBlock } from '~/utils/moveConditionRestrictions'
 import { moveAutomationTargetDamageMultiplier } from '~/utils/moveAutomationTargetResolution'
 import { moveAutomationDamageAppliesOnAccuracyOutcome } from '~/utils/moveAutomationSmite'
 import { moveAutomationStatusDetailsText } from '~/utils/moveAutomationSemanticStatus'
@@ -1934,6 +1935,14 @@ export const resolveAuthoritativeMoveExecutionFromContext = (
       'unsupported-move-script',
       `${entry.canonicalMoveName} did not resolve a retained script.`,
     )
+  const dashBlock = moveDashConditionUseBlock(script.range, context.actor.token.conditions)
+  if (dashBlock) {
+    fail(
+      'unauthorized-state',
+      'move-condition-blocked',
+      `${entry.canonicalMoveName} is blocked by ${dashBlock.label}: ${dashBlock.reason}`,
+    )
+  }
   const common = {
     context,
     script,

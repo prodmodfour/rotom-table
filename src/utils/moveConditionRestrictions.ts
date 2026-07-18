@@ -1,4 +1,5 @@
 import { isStruggleAttackMoveName } from '~/utils/struggleMoves'
+import { splitMoveRangeKeywords } from '~/utils/moveAutomationText'
 import {
   conditionBaseName,
   conditionDisplayName,
@@ -10,6 +11,7 @@ export interface ConditionRestrictedMove {
   name: string
   aliases?: readonly string[] | null
   damageClass?: string | null
+  range?: string | null
 }
 
 export interface MoveConditionUseBlock {
@@ -20,6 +22,7 @@ export interface MoveConditionUseBlock {
 
 const ENRAGED_CONDITION_NAME = 'Rage'
 const DISABLED_CONDITION_NAME = 'Disabled'
+const STUCK_CONDITION_NAME = 'Stuck'
 
 const normalizedDamageClass = (value: string | null | undefined): string =>
   String(value ?? '').trim().toLowerCase()
@@ -41,6 +44,25 @@ export const moveAllowedWhileEnraged = (move: ConditionRestrictedMove): boolean 
   return ['physical', 'special'].includes(normalizedDamageClass(move.damageClass))
 }
 
+const conditionsIncludeStuck = (
+  conditions: readonly string[] | null | undefined,
+): boolean => normalizeConditionNames(conditions)
+  .some(condition => conditionBaseName(condition) === STUCK_CONDITION_NAME)
+
+export const moveDashConditionUseBlock = (
+  range: string | null | undefined,
+  conditions: readonly string[] | null | undefined,
+): MoveConditionUseBlock | null => {
+  const hasDashKeyword = splitMoveRangeKeywords(range ?? '')
+    .some(keyword => /^Dash$/i.test(keyword))
+  if (!hasDashKeyword || !conditionsIncludeStuck(conditions)) return null
+  return {
+    condition: STUCK_CONDITION_NAME,
+    label: STUCK_CONDITION_NAME,
+    reason: 'Moves with the Dash keyword cannot be used while Stuck.',
+  }
+}
+
 export const moveConditionUseBlock = (
   move: ConditionRestrictedMove,
   conditions: readonly string[] | null | undefined,
@@ -52,6 +74,9 @@ export const moveConditionUseBlock = (
       reason: `${move.name} is Disabled and cannot be used.`,
     }
   }
+
+  const dashBlock = moveDashConditionUseBlock(move.range, conditions)
+  if (dashBlock) return dashBlock
 
   if (conditionsIncludeEnraged(conditions) && !moveAllowedWhileEnraged(move)) {
     const label = conditionDisplayName(ENRAGED_CONDITION_NAME)

@@ -2588,7 +2588,7 @@ Status: DONE
 
 ## REG-006 — Certify Cross Poison through Discharge
 
-Status: TODO
+Status: DONE
 
 **Baseline-registered moves:** Cross Poison; Crunch; Crush Claw; Dark Pulse; Dazzling Gleam; Decorate; Disarming Voice; Discharge
 

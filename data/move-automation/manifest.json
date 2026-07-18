@@ -6422,7 +6422,7 @@
     {
       "canonicalId": "Cross Poison",
       "displayName": "Cross Poison",
-      "baseStatus": "assisted",
+      "baseStatus": "complete",
       "interactionStatus": "unassessed",
       "runtime": {
         "kind": "legacy-v1",
@@ -6435,30 +6435,101 @@
         "canonicalizationVersion": 1,
         "sourceDataSha256": "f90491826349afd7d1f2809fd9d74b7acc555f5163b99264205ee369249e9815"
       },
-      "capabilityTags": [],
+      "capabilityTags": [
+        "conditions.typed",
+        "expressions.bounded",
+        "movement.authoritative",
+        "targeting.authoritative"
+      ],
       "suggestedCapabilityTags": [],
       "blockerCodes": [],
-      "limitations": [
-        {
-          "code": "audit.required",
-          "summary": "Semantic conformance review is required before this legacy implementation can be marked complete."
-        }
-      ],
+      "limitations": [],
       "manualSteps": [],
-      "scenarioIds": [],
+      "scenarioIds": [
+        "cross-poison.legacy-v1-pass-mixed-threshold-pass",
+        "cross-poison.legacy-v1-poison-threshold-fail",
+        "cross-poison.legacy-v1-expanded-critical-hit",
+        "cross-poison.legacy-v1-steel-immunity",
+        "cross-poison.legacy-v1-poison-immunity",
+        "cross-poison.legacy-v1-pass-no-targets",
+        "cross-poison.legacy-v1-duplicate-replay",
+        "cross-poison.legacy-v1-stale-target"
+      ],
       "conformanceEvidence": {
-        "requirementTags": [],
-        "scenarios": [],
+        "requirementTags": [
+          "branch.accuracy",
+          "branch.alternate",
+          "branch.critical-hit",
+          "branch.immunity",
+          "branch.threshold",
+          "mechanic.damage",
+          "recovery.retry",
+          "resource.multi",
+          "target.area"
+        ],
+        "scenarios": [
+          {
+            "scenarioId": "cross-poison.legacy-v1-pass-mixed-threshold-pass",
+            "evidenceClasses": [
+              "area-mixed-outcomes",
+              "hit",
+              "miss",
+              "threshold-pass"
+            ]
+          },
+          {
+            "scenarioId": "cross-poison.legacy-v1-poison-threshold-fail",
+            "evidenceClasses": [
+              "threshold-fail"
+            ]
+          },
+          {
+            "scenarioId": "cross-poison.legacy-v1-expanded-critical-hit",
+            "evidenceClasses": [
+              "crit"
+            ]
+          },
+          {
+            "scenarioId": "cross-poison.legacy-v1-steel-immunity",
+            "evidenceClasses": [
+              "immunity"
+            ]
+          },
+          {
+            "scenarioId": "cross-poison.legacy-v1-poison-immunity",
+            "evidenceClasses": [
+              "immunity"
+            ]
+          },
+          {
+            "scenarioId": "cross-poison.legacy-v1-pass-no-targets",
+            "evidenceClasses": [
+              "alternate-branch"
+            ]
+          },
+          {
+            "scenarioId": "cross-poison.legacy-v1-duplicate-replay",
+            "evidenceClasses": [
+              "retry"
+            ]
+          },
+          {
+            "scenarioId": "cross-poison.legacy-v1-stale-target",
+            "evidenceClasses": [
+              "multi-resource-conflict"
+            ]
+          }
+        ],
         "notApplicable": []
       },
-      "reviewedAt": null,
+      "reviewedAt": "2026-07-18",
       "unsupportedInteractionIds": [],
       "rolloutCohortId": null
     },
     {
       "canonicalId": "Crunch",
       "displayName": "Crunch",
-      "baseStatus": "assisted",
+      "baseStatus": "complete",
       "interactionStatus": "unassessed",
       "runtime": {
         "kind": "legacy-v1",
@@ -6471,30 +6542,96 @@
         "canonicalizationVersion": 1,
         "sourceDataSha256": "f90491826349afd7d1f2809fd9d74b7acc555f5163b99264205ee369249e9815"
       },
-      "capabilityTags": [],
+      "capabilityTags": [
+        "expressions.bounded",
+        "stages.typed",
+        "targeting.authoritative"
+      ],
       "suggestedCapabilityTags": [],
       "blockerCodes": [],
-      "limitations": [
-        {
-          "code": "audit.required",
-          "summary": "Semantic conformance review is required before this legacy implementation can be marked complete."
-        }
-      ],
+      "limitations": [],
       "manualSteps": [],
-      "scenarioIds": [],
+      "scenarioIds": [
+        "crunch.legacy-v1-threshold-pass",
+        "crunch.legacy-v1-threshold-fail",
+        "crunch.legacy-v1-miss",
+        "crunch.legacy-v1-critical-hit",
+        "crunch.legacy-v1-secondary-immunity",
+        "crunch.legacy-v1-stage-cap",
+        "crunch.legacy-v1-duplicate-replay",
+        "crunch.legacy-v1-stale-target"
+      ],
       "conformanceEvidence": {
-        "requirementTags": [],
-        "scenarios": [],
+        "requirementTags": [
+          "branch.accuracy",
+          "branch.critical-hit",
+          "branch.immunity",
+          "branch.threshold",
+          "mechanic.damage",
+          "recovery.retry",
+          "resource.multi"
+        ],
+        "scenarios": [
+          {
+            "scenarioId": "crunch.legacy-v1-threshold-pass",
+            "evidenceClasses": [
+              "hit",
+              "threshold-pass"
+            ]
+          },
+          {
+            "scenarioId": "crunch.legacy-v1-threshold-fail",
+            "evidenceClasses": [
+              "threshold-fail"
+            ]
+          },
+          {
+            "scenarioId": "crunch.legacy-v1-miss",
+            "evidenceClasses": [
+              "miss"
+            ]
+          },
+          {
+            "scenarioId": "crunch.legacy-v1-critical-hit",
+            "evidenceClasses": [
+              "crit"
+            ]
+          },
+          {
+            "scenarioId": "crunch.legacy-v1-secondary-immunity",
+            "evidenceClasses": [
+              "immunity"
+            ]
+          },
+          {
+            "scenarioId": "crunch.legacy-v1-stage-cap",
+            "evidenceClasses": [
+              "threshold-pass"
+            ]
+          },
+          {
+            "scenarioId": "crunch.legacy-v1-duplicate-replay",
+            "evidenceClasses": [
+              "retry"
+            ]
+          },
+          {
+            "scenarioId": "crunch.legacy-v1-stale-target",
+            "evidenceClasses": [
+              "multi-resource-conflict"
+            ]
+          }
+        ],
         "notApplicable": []
       },
-      "reviewedAt": null,
+      "reviewedAt": "2026-07-18",
       "unsupportedInteractionIds": [],
       "rolloutCohortId": null
     },
     {
       "canonicalId": "Crush Claw",
       "displayName": "Crush Claw",
-      "baseStatus": "assisted",
+      "baseStatus": "complete",
       "interactionStatus": "unassessed",
       "runtime": {
         "kind": "legacy-v1",
@@ -6507,23 +6644,104 @@
         "canonicalizationVersion": 1,
         "sourceDataSha256": "f90491826349afd7d1f2809fd9d74b7acc555f5163b99264205ee369249e9815"
       },
-      "capabilityTags": [],
+      "capabilityTags": [
+        "conditions.typed",
+        "expressions.bounded",
+        "stages.typed",
+        "targeting.authoritative"
+      ],
       "suggestedCapabilityTags": [],
       "blockerCodes": [],
-      "limitations": [
-        {
-          "code": "audit.required",
-          "summary": "Semantic conformance review is required before this legacy implementation can be marked complete."
-        }
-      ],
+      "limitations": [],
       "manualSteps": [],
-      "scenarioIds": [],
+      "scenarioIds": [
+        "crush-claw.legacy-v1-even-threshold-pass",
+        "crush-claw.legacy-v1-odd-threshold-fail",
+        "crush-claw.legacy-v1-miss",
+        "crush-claw.legacy-v1-critical-hit",
+        "crush-claw.legacy-v1-ghost-immunity",
+        "crush-claw.legacy-v1-secondary-immunity",
+        "crush-claw.legacy-v1-stage-cap",
+        "crush-claw.legacy-v1-stuck-dash-rejected",
+        "crush-claw.legacy-v1-duplicate-replay",
+        "crush-claw.legacy-v1-stale-target"
+      ],
       "conformanceEvidence": {
-        "requirementTags": [],
-        "scenarios": [],
+        "requirementTags": [
+          "branch.accuracy",
+          "branch.critical-hit",
+          "branch.immunity",
+          "branch.threshold",
+          "mechanic.damage",
+          "recovery.retry",
+          "resource.multi"
+        ],
+        "scenarios": [
+          {
+            "scenarioId": "crush-claw.legacy-v1-even-threshold-pass",
+            "evidenceClasses": [
+              "hit",
+              "threshold-pass"
+            ]
+          },
+          {
+            "scenarioId": "crush-claw.legacy-v1-odd-threshold-fail",
+            "evidenceClasses": [
+              "threshold-fail"
+            ]
+          },
+          {
+            "scenarioId": "crush-claw.legacy-v1-miss",
+            "evidenceClasses": [
+              "miss"
+            ]
+          },
+          {
+            "scenarioId": "crush-claw.legacy-v1-critical-hit",
+            "evidenceClasses": [
+              "crit"
+            ]
+          },
+          {
+            "scenarioId": "crush-claw.legacy-v1-ghost-immunity",
+            "evidenceClasses": [
+              "immunity"
+            ]
+          },
+          {
+            "scenarioId": "crush-claw.legacy-v1-secondary-immunity",
+            "evidenceClasses": [
+              "immunity"
+            ]
+          },
+          {
+            "scenarioId": "crush-claw.legacy-v1-stage-cap",
+            "evidenceClasses": [
+              "threshold-pass"
+            ]
+          },
+          {
+            "scenarioId": "crush-claw.legacy-v1-stuck-dash-rejected",
+            "evidenceClasses": [
+              "threshold-fail"
+            ]
+          },
+          {
+            "scenarioId": "crush-claw.legacy-v1-duplicate-replay",
+            "evidenceClasses": [
+              "retry"
+            ]
+          },
+          {
+            "scenarioId": "crush-claw.legacy-v1-stale-target",
+            "evidenceClasses": [
+              "multi-resource-conflict"
+            ]
+          }
+        ],
         "notApplicable": []
       },
-      "reviewedAt": null,
+      "reviewedAt": "2026-07-18",
       "unsupportedInteractionIds": [],
       "rolloutCohortId": null
     },
@@ -6635,7 +6853,7 @@
     {
       "canonicalId": "Dark Pulse",
       "displayName": "Dark Pulse",
-      "baseStatus": "assisted",
+      "baseStatus": "complete",
       "interactionStatus": "unassessed",
       "runtime": {
         "kind": "legacy-v1",
@@ -6648,23 +6866,82 @@
         "canonicalizationVersion": 1,
         "sourceDataSha256": "f90491826349afd7d1f2809fd9d74b7acc555f5163b99264205ee369249e9815"
       },
-      "capabilityTags": [],
+      "capabilityTags": [
+        "conditions.typed",
+        "expressions.bounded",
+        "targeting.authoritative"
+      ],
       "suggestedCapabilityTags": [],
       "blockerCodes": [],
-      "limitations": [
-        {
-          "code": "audit.required",
-          "summary": "Semantic conformance review is required before this legacy implementation can be marked complete."
-        }
-      ],
+      "limitations": [],
       "manualSteps": [],
-      "scenarioIds": [],
+      "scenarioIds": [
+        "dark-pulse.legacy-v1-threshold-pass",
+        "dark-pulse.legacy-v1-threshold-fail",
+        "dark-pulse.legacy-v1-miss",
+        "dark-pulse.legacy-v1-critical-hit",
+        "dark-pulse.legacy-v1-secondary-immunity",
+        "dark-pulse.legacy-v1-duplicate-replay",
+        "dark-pulse.legacy-v1-stale-target"
+      ],
       "conformanceEvidence": {
-        "requirementTags": [],
-        "scenarios": [],
+        "requirementTags": [
+          "branch.accuracy",
+          "branch.critical-hit",
+          "branch.immunity",
+          "branch.threshold",
+          "mechanic.damage",
+          "recovery.retry",
+          "resource.multi"
+        ],
+        "scenarios": [
+          {
+            "scenarioId": "dark-pulse.legacy-v1-threshold-pass",
+            "evidenceClasses": [
+              "hit",
+              "threshold-pass"
+            ]
+          },
+          {
+            "scenarioId": "dark-pulse.legacy-v1-threshold-fail",
+            "evidenceClasses": [
+              "threshold-fail"
+            ]
+          },
+          {
+            "scenarioId": "dark-pulse.legacy-v1-miss",
+            "evidenceClasses": [
+              "miss"
+            ]
+          },
+          {
+            "scenarioId": "dark-pulse.legacy-v1-critical-hit",
+            "evidenceClasses": [
+              "crit"
+            ]
+          },
+          {
+            "scenarioId": "dark-pulse.legacy-v1-secondary-immunity",
+            "evidenceClasses": [
+              "immunity"
+            ]
+          },
+          {
+            "scenarioId": "dark-pulse.legacy-v1-duplicate-replay",
+            "evidenceClasses": [
+              "retry"
+            ]
+          },
+          {
+            "scenarioId": "dark-pulse.legacy-v1-stale-target",
+            "evidenceClasses": [
+              "multi-resource-conflict"
+            ]
+          }
+        ],
         "notApplicable": []
       },
-      "reviewedAt": null,
+      "reviewedAt": "2026-07-18",
       "unsupportedInteractionIds": [],
       "rolloutCohortId": null
     },
@@ -6741,7 +7018,7 @@
     {
       "canonicalId": "Dazzling Gleam",
       "displayName": "Dazzling Gleam",
-      "baseStatus": "assisted",
+      "baseStatus": "complete",
       "interactionStatus": "unassessed",
       "runtime": {
         "kind": "legacy-v1",
@@ -6754,30 +7031,71 @@
         "canonicalizationVersion": 1,
         "sourceDataSha256": "f90491826349afd7d1f2809fd9d74b7acc555f5163b99264205ee369249e9815"
       },
-      "capabilityTags": [],
+      "capabilityTags": [
+        "targeting.authoritative"
+      ],
       "suggestedCapabilityTags": [],
       "blockerCodes": [],
-      "limitations": [
-        {
-          "code": "audit.required",
-          "summary": "Semantic conformance review is required before this legacy implementation can be marked complete."
-        }
-      ],
+      "limitations": [],
       "manualSteps": [],
-      "scenarioIds": [],
+      "scenarioIds": [
+        "dazzling-gleam.legacy-v1-area-mixed",
+        "dazzling-gleam.legacy-v1-critical-hit",
+        "dazzling-gleam.legacy-v1-duplicate-replay",
+        "dazzling-gleam.legacy-v1-stale-target"
+      ],
       "conformanceEvidence": {
-        "requirementTags": [],
-        "scenarios": [],
-        "notApplicable": []
+        "requirementTags": [
+          "branch.accuracy",
+          "branch.critical-hit",
+          "mechanic.damage",
+          "recovery.retry",
+          "resource.multi",
+          "target.area"
+        ],
+        "scenarios": [
+          {
+            "scenarioId": "dazzling-gleam.legacy-v1-area-mixed",
+            "evidenceClasses": [
+              "area-mixed-outcomes",
+              "hit",
+              "miss"
+            ]
+          },
+          {
+            "scenarioId": "dazzling-gleam.legacy-v1-critical-hit",
+            "evidenceClasses": [
+              "crit"
+            ]
+          },
+          {
+            "scenarioId": "dazzling-gleam.legacy-v1-duplicate-replay",
+            "evidenceClasses": [
+              "retry"
+            ]
+          },
+          {
+            "scenarioId": "dazzling-gleam.legacy-v1-stale-target",
+            "evidenceClasses": [
+              "multi-resource-conflict"
+            ]
+          }
+        ],
+        "notApplicable": [
+          {
+            "evidenceClass": "immunity",
+            "reason": "The frozen type chart has no type immune to Fairy damage; broader ability interactions remain separately unassessed."
+          }
+        ]
       },
-      "reviewedAt": null,
+      "reviewedAt": "2026-07-18",
       "unsupportedInteractionIds": [],
       "rolloutCohortId": null
     },
     {
       "canonicalId": "Decorate",
       "displayName": "Decorate",
-      "baseStatus": "assisted",
+      "baseStatus": "complete",
       "interactionStatus": "unassessed",
       "runtime": {
         "kind": "legacy-v1",
@@ -6790,23 +7108,55 @@
         "canonicalizationVersion": 1,
         "sourceDataSha256": "f90491826349afd7d1f2809fd9d74b7acc555f5163b99264205ee369249e9815"
       },
-      "capabilityTags": [],
+      "capabilityTags": [
+        "stages.typed",
+        "targeting.authoritative"
+      ],
       "suggestedCapabilityTags": [],
       "blockerCodes": [],
-      "limitations": [
-        {
-          "code": "audit.required",
-          "summary": "Semantic conformance review is required before this legacy implementation can be marked complete."
-        }
-      ],
+      "limitations": [],
       "manualSteps": [],
-      "scenarioIds": [],
+      "scenarioIds": [
+        "decorate.legacy-v1-stage-boost",
+        "decorate.legacy-v1-stage-cap",
+        "decorate.legacy-v1-duplicate-replay",
+        "decorate.legacy-v1-stale-target"
+      ],
       "conformanceEvidence": {
-        "requirementTags": [],
-        "scenarios": [],
+        "requirementTags": [
+          "branch.threshold",
+          "recovery.retry",
+          "resource.multi"
+        ],
+        "scenarios": [
+          {
+            "scenarioId": "decorate.legacy-v1-stage-boost",
+            "evidenceClasses": [
+              "threshold-pass"
+            ]
+          },
+          {
+            "scenarioId": "decorate.legacy-v1-stage-cap",
+            "evidenceClasses": [
+              "threshold-fail"
+            ]
+          },
+          {
+            "scenarioId": "decorate.legacy-v1-duplicate-replay",
+            "evidenceClasses": [
+              "retry"
+            ]
+          },
+          {
+            "scenarioId": "decorate.legacy-v1-stale-target",
+            "evidenceClasses": [
+              "multi-resource-conflict"
+            ]
+          }
+        ],
         "notApplicable": []
       },
-      "reviewedAt": null,
+      "reviewedAt": "2026-07-18",
       "unsupportedInteractionIds": [],
       "rolloutCohortId": null
     },
@@ -7128,7 +7478,7 @@
     {
       "canonicalId": "Disarming Voice",
       "displayName": "Disarming Voice",
-      "baseStatus": "assisted",
+      "baseStatus": "complete",
       "interactionStatus": "unassessed",
       "runtime": {
         "kind": "legacy-v1",
@@ -7141,30 +7491,75 @@
         "canonicalizationVersion": 1,
         "sourceDataSha256": "f90491826349afd7d1f2809fd9d74b7acc555f5163b99264205ee369249e9815"
       },
-      "capabilityTags": [],
+      "capabilityTags": [
+        "targeting.authoritative"
+      ],
       "suggestedCapabilityTags": [],
       "blockerCodes": [],
-      "limitations": [
-        {
-          "code": "audit.required",
-          "summary": "Semantic conformance review is required before this legacy implementation can be marked complete."
-        }
-      ],
+      "limitations": [],
       "manualSteps": [],
-      "scenarioIds": [],
+      "scenarioIds": [
+        "disarming-voice.legacy-v1-automatic-area-hit",
+        "disarming-voice.legacy-v1-mixed-targetability",
+        "disarming-voice.legacy-v1-duplicate-replay",
+        "disarming-voice.legacy-v1-stale-target"
+      ],
       "conformanceEvidence": {
-        "requirementTags": [],
-        "scenarios": [],
-        "notApplicable": []
+        "requirementTags": [
+          "mechanic.damage",
+          "recovery.retry",
+          "resource.multi",
+          "target.area"
+        ],
+        "scenarios": [
+          {
+            "scenarioId": "disarming-voice.legacy-v1-automatic-area-hit",
+            "evidenceClasses": [
+              "hit"
+            ]
+          },
+          {
+            "scenarioId": "disarming-voice.legacy-v1-mixed-targetability",
+            "evidenceClasses": [
+              "area-mixed-outcomes"
+            ]
+          },
+          {
+            "scenarioId": "disarming-voice.legacy-v1-duplicate-replay",
+            "evidenceClasses": [
+              "retry"
+            ]
+          },
+          {
+            "scenarioId": "disarming-voice.legacy-v1-stale-target",
+            "evidenceClasses": [
+              "multi-resource-conflict"
+            ]
+          }
+        ],
+        "notApplicable": [
+          {
+            "evidenceClass": "miss",
+            "reason": "Disarming Voice has no Accuracy Check and its canonical text says it cannot miss."
+          },
+          {
+            "evidenceClass": "crit",
+            "reason": "Critical hits require an Accuracy Roll in the frozen rules, and Disarming Voice makes no Accuracy Roll."
+          },
+          {
+            "evidenceClass": "immunity",
+            "reason": "The frozen type chart has no type immune to Fairy damage; broader ability interactions remain separately unassessed."
+          }
+        ]
       },
-      "reviewedAt": null,
+      "reviewedAt": "2026-07-18",
       "unsupportedInteractionIds": [],
       "rolloutCohortId": null
     },
     {
       "canonicalId": "Discharge",
       "displayName": "Discharge",
-      "baseStatus": "assisted",
+      "baseStatus": "complete",
       "interactionStatus": "unassessed",
       "runtime": {
         "kind": "legacy-v1",
@@ -7177,23 +7572,92 @@
         "canonicalizationVersion": 1,
         "sourceDataSha256": "f90491826349afd7d1f2809fd9d74b7acc555f5163b99264205ee369249e9815"
       },
-      "capabilityTags": [],
+      "capabilityTags": [
+        "conditions.typed",
+        "expressions.bounded",
+        "targeting.authoritative"
+      ],
       "suggestedCapabilityTags": [],
       "blockerCodes": [],
-      "limitations": [
-        {
-          "code": "audit.required",
-          "summary": "Semantic conformance review is required before this legacy implementation can be marked complete."
-        }
-      ],
+      "limitations": [],
       "manualSteps": [],
-      "scenarioIds": [],
+      "scenarioIds": [
+        "discharge.legacy-v1-area-mixed-threshold-pass",
+        "discharge.legacy-v1-threshold-fail",
+        "discharge.legacy-v1-critical-hit",
+        "discharge.legacy-v1-ground-immunity",
+        "discharge.legacy-v1-paralysis-immunity",
+        "discharge.legacy-v1-secondary-immunity",
+        "discharge.legacy-v1-duplicate-replay",
+        "discharge.legacy-v1-stale-target"
+      ],
       "conformanceEvidence": {
-        "requirementTags": [],
-        "scenarios": [],
+        "requirementTags": [
+          "branch.accuracy",
+          "branch.critical-hit",
+          "branch.immunity",
+          "branch.threshold",
+          "mechanic.damage",
+          "recovery.retry",
+          "resource.multi",
+          "target.area"
+        ],
+        "scenarios": [
+          {
+            "scenarioId": "discharge.legacy-v1-area-mixed-threshold-pass",
+            "evidenceClasses": [
+              "area-mixed-outcomes",
+              "hit",
+              "miss",
+              "threshold-pass"
+            ]
+          },
+          {
+            "scenarioId": "discharge.legacy-v1-threshold-fail",
+            "evidenceClasses": [
+              "threshold-fail"
+            ]
+          },
+          {
+            "scenarioId": "discharge.legacy-v1-critical-hit",
+            "evidenceClasses": [
+              "crit"
+            ]
+          },
+          {
+            "scenarioId": "discharge.legacy-v1-ground-immunity",
+            "evidenceClasses": [
+              "immunity"
+            ]
+          },
+          {
+            "scenarioId": "discharge.legacy-v1-paralysis-immunity",
+            "evidenceClasses": [
+              "immunity"
+            ]
+          },
+          {
+            "scenarioId": "discharge.legacy-v1-secondary-immunity",
+            "evidenceClasses": [
+              "immunity"
+            ]
+          },
+          {
+            "scenarioId": "discharge.legacy-v1-duplicate-replay",
+            "evidenceClasses": [
+              "retry"
+            ]
+          },
+          {
+            "scenarioId": "discharge.legacy-v1-stale-target",
+            "evidenceClasses": [
+              "multi-resource-conflict"
+            ]
+          }
+        ],
         "notApplicable": []
       },
-      "reviewedAt": null,
+      "reviewedAt": "2026-07-18",
       "unsupportedInteractionIds": [],
       "rolloutCohortId": null
     },
@@ -9532,8 +9996,8 @@
       "rolloutCohortId": null
     },
     {
-      "canonicalId": "Fa\u00e7ade",
-      "displayName": "Fa\u00e7ade",
+      "canonicalId": "Façade",
+      "displayName": "Façade",
       "baseStatus": "blocked",
       "interactionStatus": "unassessed",
       "runtime": {
@@ -10909,8 +11373,8 @@
       "rolloutCohortId": null
     },
     {
-      "canonicalId": "Forest\u2019s Curse",
-      "displayName": "Forest\u2019s Curse",
+      "canonicalId": "Forest’s Curse",
+      "displayName": "Forest’s Curse",
       "baseStatus": "blocked",
       "interactionStatus": "unassessed",
       "runtime": {
@@ -14861,8 +15325,8 @@
       "rolloutCohortId": null
     },
     {
-      "canonicalId": "King\u2019s Shield",
-      "displayName": "King\u2019s Shield",
+      "canonicalId": "King’s Shield",
+      "displayName": "King’s Shield",
       "baseStatus": "blocked",
       "interactionStatus": "unassessed",
       "runtime": {
@@ -15046,8 +15510,8 @@
       "rolloutCohortId": null
     },
     {
-      "canonicalId": "Land\u2019s Wrath",
-      "displayName": "Land\u2019s Wrath",
+      "canonicalId": "Land’s Wrath",
+      "displayName": "Land’s Wrath",
       "baseStatus": "assisted",
       "interactionStatus": "unassessed",
       "runtime": {
@@ -17905,8 +18369,8 @@
       "rolloutCohortId": null
     },
     {
-      "canonicalId": "Nature\u2019s Madness",
-      "displayName": "Nature\u2019s Madness",
+      "canonicalId": "Nature’s Madness",
+      "displayName": "Nature’s Madness",
       "baseStatus": "blocked",
       "interactionStatus": "unassessed",
       "runtime": {

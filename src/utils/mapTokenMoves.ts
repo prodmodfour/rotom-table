@@ -342,6 +342,7 @@ const optionForMoveRow = (
   const name = row.reference?.name ?? row.move.name
   const damageClass = fallback(row.reference?.damage_class, row.move.category)
   const frequency = fallback(row.reference?.frequency, row.move.frequency)
+  const range = fallback(row.reference?.range, row.move.range)
   const usage = buildTokenMoveUsageState(token.id, name, frequency, usageContext)
   const automation = moveAutomationSemanticStatusForMenu(name)
   const moveList = moveListMenuState(entry)
@@ -349,6 +350,7 @@ const optionForMoveRow = (
     name,
     aliases: [row.move.name],
     damageClass,
+    range,
   }, token.conditions)
 
   return {
@@ -357,7 +359,7 @@ const optionForMoveRow = (
     damageClass,
     frequency,
     ac: fallback(row.ac, row.reference?.ac, row.move.ac),
-    range: fallback(row.reference?.range, row.move.range),
+    range,
     effect: fallback(row.reference?.effect, row.move.effect),
     special: fallback(row.reference?.special, row.move.special),
     damageBase: row.damageBase,
