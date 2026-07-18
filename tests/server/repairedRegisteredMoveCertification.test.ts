@@ -5,7 +5,6 @@ import {
   COACHING_ALLY_AREA_SCENARIOS,
   HOWL_ALLY_AREA_SCENARIOS,
 } from '../fixtures/moveAutomation/allyAreaLegacyV1'
-import { FURY_CUTTER_V2_SEMANTIC_SCENARIOS } from '../fixtures/moveAutomation/furyCutterV2'
 import { HELPING_HAND_V2_SEMANTIC_SCENARIOS } from '../fixtures/moveAutomation/helpingHandV2'
 import { KNOCK_OFF_V2_SEMANTIC_SCENARIOS } from '../fixtures/moveAutomation/knockOffV2'
 import {
@@ -15,10 +14,11 @@ import {
 import { REFLECT_V2_SEMANTIC_SCENARIOS } from '../fixtures/moveAutomation/reflectV2'
 import { SAND_TOMB_V2_SEMANTIC_SCENARIOS } from '../fixtures/moveAutomation/sandTombV2'
 import {
-  FURY_ATTACK_V2_SEMANTIC_SCENARIOS,
-  FURY_SWIPES_V2_SEMANTIC_SCENARIOS,
-  PIN_MISSILE_V2_SEMANTIC_SCENARIOS,
-} from '../fixtures/moveAutomation/strikeCanariesV2'
+  FURY_ATTACK_REG_011_SCENARIOS,
+  FURY_CUTTER_REG_011_SCENARIOS,
+  FURY_SWIPES_REG_011_SCENARIOS,
+} from '../fixtures/moveAutomation/registeredBatch011'
+import { PIN_MISSILE_V2_SEMANTIC_SCENARIOS } from '../fixtures/moveAutomation/strikeCanariesV2'
 import { TACKLE_V2_SEMANTIC_SCENARIOS } from '../fixtures/moveAutomation/tackleFamilyV2'
 import { TAKE_DOWN_V2_SEMANTIC_SCENARIOS } from '../fixtures/moveAutomation/takeDownV2'
 import { U_TURN_V2_SEMANTIC_SCENARIOS } from '../fixtures/moveAutomation/uTurnV2'
@@ -91,21 +91,21 @@ const REPAIRED_MOVE_CERTIFICATIONS: readonly RepairedMoveCertification[] = Objec
   {
     canonicalId: 'Fury Attack',
     runtimeKind: 'movespec-v2',
-    scenarios: FURY_ATTACK_V2_SEMANTIC_SCENARIOS,
+    scenarios: FURY_ATTACK_REG_011_SCENARIOS,
     executionScenarioIds: allImmediateLayers('fury-attack.v2-one-hit'),
     duplicateReplayScenarioIds: ['fury-attack.v2-five-hit-critical'],
   },
   {
     canonicalId: 'Fury Cutter',
     runtimeKind: 'movespec-v2',
-    scenarios: FURY_CUTTER_V2_SEMANTIC_SCENARIOS,
+    scenarios: FURY_CUTTER_REG_011_SCENARIOS,
     executionScenarioIds: allImmediateLayers('fury-cutter.v2-first-hit'),
     duplicateReplayScenarioIds: ['fury-cutter.v2-duplicate-retry'],
   },
   {
     canonicalId: 'Fury Swipes',
     runtimeKind: 'movespec-v2',
-    scenarios: FURY_SWIPES_V2_SEMANTIC_SCENARIOS,
+    scenarios: FURY_SWIPES_REG_011_SCENARIOS,
     executionScenarioIds: allImmediateLayers('fury-swipes.v2-one-hit'),
     duplicateReplayScenarioIds: ['fury-swipes.v2-five-hit-critical'],
   },

@@ -2592,16 +2592,11 @@
     {
       "canonicalId": "Flatter",
       "displayName": "Flatter",
-      "baseStatus": "assisted",
+      "baseStatus": "complete",
       "interactionStatus": "unassessed",
       "runtimeKind": "legacy-v1",
       "blockerCodes": [],
-      "limitations": [
-        {
-          "code": "audit.required",
-          "summary": "Semantic conformance review is required before this legacy implementation can be marked complete."
-        }
-      ],
+      "limitations": [],
       "manualSteps": []
     },
     {
@@ -2691,16 +2686,11 @@
     {
       "canonicalId": "Focus Blast",
       "displayName": "Focus Blast",
-      "baseStatus": "assisted",
+      "baseStatus": "complete",
       "interactionStatus": "unassessed",
       "runtimeKind": "legacy-v1",
       "blockerCodes": [],
-      "limitations": [
-        {
-          "code": "audit.required",
-          "summary": "Semantic conformance review is required before this legacy implementation can be marked complete."
-        }
-      ],
+      "limitations": [],
       "manualSteps": []
     },
     {
@@ -2742,16 +2732,11 @@
     {
       "canonicalId": "Force Palm",
       "displayName": "Force Palm",
-      "baseStatus": "assisted",
+      "baseStatus": "complete",
       "interactionStatus": "unassessed",
       "runtimeKind": "legacy-v1",
       "blockerCodes": [],
-      "limitations": [
-        {
-          "code": "audit.required",
-          "summary": "Semantic conformance review is required before this legacy implementation can be marked complete."
-        }
-      ],
+      "limitations": [],
       "manualSteps": []
     },
     {
@@ -2853,16 +2838,11 @@
     {
       "canonicalId": "Frustration",
       "displayName": "Frustration",
-      "baseStatus": "assisted",
+      "baseStatus": "complete",
       "interactionStatus": "unassessed",
       "runtimeKind": "legacy-v1",
       "blockerCodes": [],
-      "limitations": [
-        {
-          "code": "audit.required",
-          "summary": "Semantic conformance review is required before this legacy implementation can be marked complete."
-        }
-      ],
+      "limitations": [],
       "manualSteps": []
     },
     {
@@ -3030,16 +3010,11 @@
     {
       "canonicalId": "Glare",
       "displayName": "Glare",
-      "baseStatus": "assisted",
+      "baseStatus": "complete",
       "interactionStatus": "unassessed",
       "runtimeKind": "legacy-v1",
       "blockerCodes": [],
-      "limitations": [
-        {
-          "code": "audit.required",
-          "summary": "Semantic conformance review is required before this legacy implementation can be marked complete."
-        }
-      ],
+      "limitations": [],
       "manualSteps": []
     },
     {

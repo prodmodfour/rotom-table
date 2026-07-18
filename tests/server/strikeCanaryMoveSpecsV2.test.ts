@@ -6,8 +6,6 @@ import type {
 } from '#shared/moveAutomation/trace'
 import {
   allStrikeCanaryV2SemanticScenarios,
-  FURY_ATTACK_V2_SEMANTIC_SCENARIOS,
-  FURY_SWIPES_V2_SEMANTIC_SCENARIOS,
   PIN_MISSILE_V2_SEMANTIC_SCENARIOS,
   strikeCanaryV2MoveDefinition,
   strikeCanaryV2ScenarioDefinition,
@@ -20,6 +18,10 @@ import {
 import {
   DOUBLE_KICK_REG_007_SCENARIOS,
 } from '../fixtures/moveAutomation/registeredBatch007'
+import {
+  FURY_ATTACK_REG_011_SCENARIOS,
+  FURY_SWIPES_REG_011_SCENARIOS,
+} from '../fixtures/moveAutomation/registeredBatch011'
 import {
   registeredMoveAutomationRuntimeFor,
   REVIEWED_MOVE_SPEC_V2_REGISTRATIONS,
@@ -63,13 +65,13 @@ describe('registered Double Strike and Five Strike native MoveSpec v2 family', (
       definitionHash: 'e8bf4e7a91905f9927b6393e5ce174d1adaa72538253e96c9f34315f31674f79',
       sourceModule: 'server/domain/moveAutomation/specs/furyAttack.ts',
       spec: FURY_ATTACK_MOVE_SPEC,
-      scenarios: FURY_ATTACK_V2_SEMANTIC_SCENARIOS,
+      scenarios: FURY_ATTACK_REG_011_SCENARIOS,
     }, {
       canonicalId: 'Fury Swipes' as const,
       definitionHash: '64fbaa4edfe28d03340942b6fa407f04423b13e322a00465a7761220169060a9',
       sourceModule: 'server/domain/moveAutomation/specs/furySwipes.ts',
       spec: FURY_SWIPES_MOVE_SPEC,
-      scenarios: FURY_SWIPES_V2_SEMANTIC_SCENARIOS,
+      scenarios: FURY_SWIPES_REG_011_SCENARIOS,
     }, {
       canonicalId: 'Pin Missile' as const,
       definitionHash: '2b01a38a8551175e51fd0566971fa20ff17f8802ffa1f0cf14a1c7e81c677164',

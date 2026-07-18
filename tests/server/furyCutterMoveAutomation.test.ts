@@ -19,10 +19,10 @@ import {
   FURY_CUTTER_ACTOR_ID,
   FURY_CUTTER_OTHER_TARGET_ID,
   FURY_CUTTER_TARGET_ID,
-  FURY_CUTTER_V2_SEMANTIC_SCENARIOS,
   furyCutterIntent,
   furyCutterV2Fixture,
 } from '../fixtures/moveAutomation/furyCutterV2'
+import { FURY_CUTTER_REG_011_SCENARIOS } from '../fixtures/moveAutomation/registeredBatch011'
 import {
   U_TURN_ACTOR_PLACEMENT_ID,
   U_TURN_TARGET_PLACEMENT_ID,
@@ -200,10 +200,10 @@ describe('Fury Cutter native MoveSpec v2', () => {
       manualSteps: [],
     })
     expect(furyCutterRow.scenarioIds).toEqual(
-      FURY_CUTTER_V2_SEMANTIC_SCENARIOS.map(({ scenarioId }) => scenarioId),
+      FURY_CUTTER_REG_011_SCENARIOS.map(({ scenarioId }) => scenarioId),
     )
     expect(furyCutterRow.conformanceEvidence.scenarios).toEqual(
-      FURY_CUTTER_V2_SEMANTIC_SCENARIOS,
+      FURY_CUTTER_REG_011_SCENARIOS,
     )
     expect(registeredMoveAutomationRuntimeFor('Fury Cutter')).toMatchObject({
       kind: 'movespec-v2',
