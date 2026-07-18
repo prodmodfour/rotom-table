@@ -257,7 +257,14 @@ const responseOwnership = (
 ): PendingMoveResponseWindow['ownership'] => {
   const owners = [] as Array<PendingMoveResponseWindow['ownership'][number]>
   const seen = new Set<string>()
-  for (const placementId of execution.request.recipientIds) {
+  // A MoveSpec branch choice is an intent decision made by the move actor even
+  // when its mechanical scope is one or more hit recipients. Defender-owned
+  // decisions use check/reaction request kinds, whose recipient ownership is
+  // retained below.
+  const ownerPlacementIds = execution.request.kind === 'branch-choice'
+    ? [actorPlacementId]
+    : execution.request.recipientIds
+  for (const placementId of ownerPlacementIds) {
     const owner = placementId === actorPlacementId
       ? { kind: 'actor' as const, id: null }
       : { kind: 'target' as const, id: placementId }

@@ -51,6 +51,13 @@ import {
   isMovePermanentMoveListEmission,
   reducePermanentMoveListOperations,
 } from './reducers/permanentMoveLists'
+import {
+  applyMoveSpatialEffectResultsToTrace,
+  isMoveSpatialEffectEmission,
+  reduceMoveSpatialEffects,
+  type MoveReducedSpatialMovement,
+  type MoveSpatialEffectOperationResult,
+} from './reducers/spatial'
 import type {
   MoveConditionAccuracyRollQueries,
   MoveCoreTokenDamageQuery,
@@ -96,6 +103,9 @@ export interface NativeMoveSpecResolutionProjection {
   readonly coreStateChanges: MoveStateChangePlan
   readonly permanentMoveListStateChanges: MoveStateChangePlan
   readonly itemEffects: InterpretedMoveItemEffects
+  /** Collision-checked forced/voluntary displacements in reviewed operation order. */
+  readonly spatialMovements: readonly MoveReducedSpatialMovement[]
+  readonly spatialOperationResults: readonly MoveSpatialEffectOperationResult[]
   readonly resolvedHazardCells: MoveSpecExecutionCompleteResult['resolvedHazardCells']
   readonly trace: MoveResolutionAuditTrace
 }
@@ -653,20 +663,6 @@ const assertSupportedImmediateOperations = (
       `Immediate MoveSpec operation ${unsupported.operation.kind} is not reducible.`,
     )
   }
-  const unvalidatedSpatialOperation = operations.find(({ operation }) => (
-    operation.kind === 'movement-request'
-    && (
-      operation.payload.displacement !== undefined
-      || operation.payload.mode === 'teleport'
-      || operation.payload.mode === 'swap'
-    )
-  ))
-  if (unvalidatedSpatialOperation) {
-    fail(
-      'unsupported-operation',
-      `Spatial operation ${unvalidatedSpatialOperation.operation.id} has not passed authoritative collision planning.`,
-    )
-  }
 }
 
 export interface ResolveMoveSpecOptions {
@@ -816,6 +812,17 @@ export const reduceCompletedMoveSpec = (
     damagedTargetIds: attackedTargetIds.filter(id => damagedSet.has(id)),
     faintedTargetIds: attackedTargetIds.filter(id => faintedSet.has(id)),
   }
+  const spatialOperations = uncommittedOperations.filter(isMoveSpatialEffectEmission)
+  const spatial = reduceMoveSpatialEffects({
+    context: options.context,
+    operations: spatialOperations,
+    dynamicRecipients,
+  })
+  const trace = applyMoveSpatialEffectResultsToTrace({
+    trace: permanentMoveLists.trace,
+    operations: spatialOperations,
+    results: spatial.operationResults,
+  })
   const transactionTargetIds = dynamicRecipients.attackedTargetIds
   const transactionHitTargetIds = dynamicRecipients.hitTargetIds
   const transaction: MoveAutomationTransaction = {
@@ -854,6 +861,7 @@ export const reduceCompletedMoveSpec = (
     ...options.context.reads.snapshot(),
     ...core.sheetReads,
     ...permanentMoveLists.sheetReads,
+    ...spatial.sheetReads,
   ])
 
   return Object.freeze({
@@ -861,7 +869,7 @@ export const reduceCompletedMoveSpec = (
     transaction: Object.freeze(transaction),
     sheetReads: Object.freeze(sheetReads),
     rollLedger: execution.rollLedger,
-    trace: permanentMoveLists.trace,
+    trace,
     native: Object.freeze({
       operations: uncommittedOperations,
       childExecutions: execution.childExecutions,
@@ -870,8 +878,10 @@ export const reduceCompletedMoveSpec = (
       coreStateChanges: multiHit?.stateChanges ?? core.stateChanges,
       permanentMoveListStateChanges: permanentMoveLists.stateChanges,
       itemEffects,
+      spatialMovements: spatial.movements,
+      spatialOperationResults: spatial.operationResults,
       resolvedHazardCells: execution.resolvedHazardCells,
-      trace: permanentMoveLists.trace,
+      trace,
     }),
   })
 }

@@ -64,6 +64,7 @@ export type NativeMoveSpecPlanErrorCode =
   | 'usage-projection-missing'
   | 'unsupported-core-map-change'
   | 'movement-operation-missing'
+  | 'spatial-movement-conflict'
   | 'state-change-conflict'
 
 export class NativeMoveSpecPlanError extends Error {
@@ -133,13 +134,49 @@ export const applyNativeCoreMapChanges = (
   return next
 }
 
+const sameAnchor = (
+  left: SheetPlacement['position'],
+  right: SheetPlacement['position'],
+): boolean => left.x === right.x && left.y === right.y && left.z === right.z
+
+/** Apply only already oracle-validated spatial endpoints in operation order. */
+export const applyNativeSpatialMovements = (
+  map: TabletopMap,
+  movements: NonNullable<AuthoritativeMoveResolution['nativeV2']>['spatialMovements'],
+): TabletopMap => {
+  const next = deepCloneJson(map)
+  for (const movement of movements) {
+    const index = next.placements.findIndex(placement => (
+      placement.id === movement.recipientPlacementId
+    ))
+    const placement = next.placements[index]
+    if (!placement) {
+      return fail(
+        'spatial-movement-conflict',
+        `Spatial movement ${movement.operationId} references missing placement ${movement.recipientPlacementId}.`,
+      )
+    }
+    if (!sameAnchor(placement.position, movement.origin)) {
+      return fail(
+        'spatial-movement-conflict',
+        `Spatial movement ${movement.operationId} source no longer matches ${movement.recipientPlacementId}.`,
+      )
+    }
+    next.placements[index] = {
+      ...placement,
+      position: deepCloneJson(movement.destination),
+    }
+  }
+  return next
+}
+
 const placementStateChanges = (options: {
   readonly previousMap: TabletopMap
   readonly nextMap: TabletopMap
   readonly resolution: AuthoritativeMoveResolution
 }): readonly MoveStateChangeInput[] => {
   const actorId = options.resolution.actorPlacementId
-  const previous = options.previousMap.placements.find(placement => placement.id === actorId)
+  const previousActor = options.previousMap.placements.find(placement => placement.id === actorId)
     ?? fail('actor-placement-missing', `Actor placement ${actorId} was not found.`)
   const switchTransition = options.resolution.switchTransition
   if (switchTransition) {
@@ -171,7 +208,7 @@ const placementStateChanges = (options: {
           mapSlug: options.previousMap.slug,
           placementId: actorId,
         },
-        previous: deepCloneJson(previous),
+        previous: deepCloneJson(previousActor),
         current: null,
       },
       {
@@ -188,36 +225,82 @@ const placementStateChanges = (options: {
     ]
   }
 
-  const current = options.nextMap.placements.find(placement => placement.id === actorId)
-    ?? fail('actor-placement-missing', `Actor placement ${actorId} disappeared during planning.`)
-  if (sameJsonValue(previous, current)) return []
-
-  const moved = !sameJsonValue(previous.position, current.position)
-  const operation = moved
-    ? options.resolution.nativeV2?.operations.find(({ operation: candidate }) => (
-        candidate.kind === 'movement-request'
-      ))?.operation
+  const native = options.resolution.nativeV2
+    ?? fail('native-projection-missing', 'Native resolution projection is missing.')
+  const currentById = new Map(options.nextMap.placements.map(placement => [placement.id, placement]))
+  const spatialByPlacement = new Map<string, typeof native.spatialMovements[number][]>()
+  for (const movement of native.spatialMovements) {
+    const entries = spatialByPlacement.get(movement.recipientPlacementId) ?? []
+    entries.push(movement)
+    spatialByPlacement.set(movement.recipientPlacementId, entries)
+  }
+  const actorMovementOperation = options.resolution.movement
+    ? native.operations.find(({ operation }) => operation.kind === 'movement-request')?.operation
     : null
-  if (moved && (!operation || operation.kind !== 'movement-request')) {
+  const expectedRevision = normalizeRevision(options.previousMap.revision)
+  const changes: MoveStateChangeInput[] = []
+
+  for (const previous of options.previousMap.placements) {
+    const current = currentById.get(previous.id)
+      ?? fail(
+        'state-change-conflict',
+        `${options.resolution.canonicalMoveName} unexpectedly removed placement ${previous.id}.`,
+      )
+    if (sameJsonValue(previous, current)) continue
+
+    const moved = !sameJsonValue(previous.position, current.position)
+    const spatial = spatialByPlacement.get(previous.id) ?? []
+    const spatialOperationIds = [...new Set(spatial.map(movement => movement.operationId))]
+    let sourceOperationId: string | null = null
+    let reasonCode = 'move-facing'
+
+    if (spatialOperationIds.length > 0) {
+      sourceOperationId = spatialOperationIds.length === 1 ? spatialOperationIds[0]! : null
+      reasonCode = sourceOperationId
+        ? native.operations.find(({ operation }) => operation.id === sourceOperationId)?.operation.reasonCode
+          ?? 'move-spatial-displacement'
+        : 'move-spatial-sequence'
+    }
+    else if (previous.id === actorId && moved) {
+      if (!actorMovementOperation || actorMovementOperation.kind !== 'movement-request') {
+        return fail(
+          'movement-operation-missing',
+          `${options.resolution.canonicalMoveName} changed actor position without a movement operation.`,
+        )
+      }
+      sourceOperationId = actorMovementOperation.id
+      reasonCode = actorMovementOperation.reasonCode
+    }
+    else if (previous.id !== actorId) {
+      return fail(
+        'movement-operation-missing',
+        `${options.resolution.canonicalMoveName} changed placement ${previous.id} without a spatial movement operation.`,
+      )
+    }
+
+    changes.push({
+      kind: 'placement-state',
+      scope: {
+        kind: 'placement',
+        mapSlug: options.previousMap.slug,
+        placementId: previous.id,
+      },
+      expectedRevision,
+      sourceOperationId,
+      reasonCode,
+      previous: deepCloneJson(previous),
+      current: deepCloneJson(current),
+      compensation: RESTORE_PREVIOUS_MOVE_STATE_VALUE,
+    })
+  }
+
+  if (currentById.size !== options.previousMap.placements.length) {
     return fail(
-      'movement-operation-missing',
-      `${options.resolution.canonicalMoveName} changed position without a movement operation.`,
+      'state-change-conflict',
+      `${options.resolution.canonicalMoveName} unexpectedly added a placement without a switch.`,
     )
   }
-  return [{
-    kind: 'placement-state',
-    scope: {
-      kind: 'placement',
-      mapSlug: options.previousMap.slug,
-      placementId: actorId,
-    },
-    expectedRevision: normalizeRevision(options.previousMap.revision),
-    sourceOperationId: operation?.id ?? null,
-    reasonCode: operation?.reasonCode ?? 'move-facing',
-    previous: deepCloneJson(previous),
-    current: deepCloneJson(current),
-    compensation: RESTORE_PREVIOUS_MOVE_STATE_VALUE,
-  }]
+  return changes
 }
 
 const switchMapStateChanges = (options: {
@@ -565,6 +648,10 @@ export const planNativeV2MoveState = (options: {
     interpretation: native.itemEffects,
     mutationResults: itemPlan.operationResults,
   })
+  const mapAfterSpatialMovement = applyNativeSpatialMovements(
+    itemPlan.nextMap,
+    native.spatialMovements,
+  )
   const mapOperations = native.operations.filter(isMoveMapOperationEmission)
   const contextForOperation = createMoveSpecOperationContextResolver({
     root: context,
@@ -610,7 +697,7 @@ export const planNativeV2MoveState = (options: {
   })
   const mapReduction = reduceMoveMapOperations({
     context,
-    initialMap: itemPlan.nextMap,
+    initialMap: mapAfterSpatialMovement,
     operations: mapOperations,
     dynamicRecipients: native.dynamicRecipients,
     contextForOperation,

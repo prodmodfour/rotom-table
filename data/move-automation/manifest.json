@@ -24772,43 +24772,84 @@
     {
       "canonicalId": "Tackle",
       "displayName": "Tackle",
-      "baseStatus": "assisted",
+      "baseStatus": "complete",
       "interactionStatus": "unassessed",
       "runtime": {
-        "kind": "legacy-v1",
-        "version": 1,
-        "definitionHash": "7c8923e8c6a525a31f90d08867dd97ef8eb5f538a0f6e0b37449186e4ad6c61e",
-        "sourceModule": "src/utils/move-automation/scripts/additionalSingleTarget.ts"
+        "kind": "movespec-v2",
+        "version": 2,
+        "definitionHash": "7458a7dda77ab66db9dce470287bff326681d34c1b63f6bfe66d0026e1cba780",
+        "sourceModule": "server/domain/moveAutomation/specs/tackle.ts"
       },
       "rulesProvenance": {
         "rulesetId": "rotom-table-reference-moves-v1",
         "canonicalizationVersion": 1,
         "sourceDataSha256": "f90491826349afd7d1f2809fd9d74b7acc555f5163b99264205ee369249e9815"
       },
-      "capabilityTags": [],
+      "capabilityTags": [
+        "movement.authoritative",
+        "targeting.authoritative"
+      ],
       "suggestedCapabilityTags": [],
-      "blockerCodes": [
-        "movement.authoritative"
+      "blockerCodes": [],
+      "limitations": [],
+      "manualSteps": [],
+      "scenarioIds": [
+        "tackle.v2-critical-hit",
+        "tackle.v2-duplicate-retry",
+        "tackle.v2-hit-push",
+        "tackle.v2-immunity",
+        "tackle.v2-miss",
+        "tackle.v2-shortened-push"
       ],
-      "limitations": [
-        {
-          "code": "tackle.push",
-          "summary": "The legacy transaction resolves damage without deriving or committing the required 2-meter push, collision, obstruction, or shortening result."
-        }
-      ],
-      "manualSteps": [
-        {
-          "code": "tackle.push",
-          "summary": "After a hit, move the target 2 meters directly away through legal cells, shortening or stopping the push for bounds, obstruction, or occupied footprints."
-        }
-      ],
-      "scenarioIds": [],
       "conformanceEvidence": {
-        "requirementTags": [],
-        "scenarios": [],
+        "requirementTags": [
+          "branch.accuracy",
+          "branch.critical-hit",
+          "branch.immunity",
+          "mechanic.damage",
+          "recovery.retry"
+        ],
+        "scenarios": [
+          {
+            "scenarioId": "tackle.v2-critical-hit",
+            "evidenceClasses": [
+              "crit"
+            ]
+          },
+          {
+            "scenarioId": "tackle.v2-duplicate-retry",
+            "evidenceClasses": [
+              "retry"
+            ]
+          },
+          {
+            "scenarioId": "tackle.v2-hit-push",
+            "evidenceClasses": [
+              "hit"
+            ]
+          },
+          {
+            "scenarioId": "tackle.v2-immunity",
+            "evidenceClasses": [
+              "immunity"
+            ]
+          },
+          {
+            "scenarioId": "tackle.v2-miss",
+            "evidenceClasses": [
+              "miss"
+            ]
+          },
+          {
+            "scenarioId": "tackle.v2-shortened-push",
+            "evidenceClasses": [
+              "alternate-branch"
+            ]
+          }
+        ],
         "notApplicable": []
       },
-      "reviewedAt": "2026-07-10",
+      "reviewedAt": "2026-07-18",
       "unsupportedInteractionIds": [],
       "rolloutCohortId": null
     },
@@ -24956,53 +24997,124 @@
     {
       "canonicalId": "Take Down",
       "displayName": "Take Down",
-      "baseStatus": "assisted",
+      "baseStatus": "complete",
       "interactionStatus": "unassessed",
       "runtime": {
-        "kind": "legacy-v1",
-        "version": 1,
-        "definitionHash": "2566e5ac0d4291ec31b71d4c9525604fd297e8e5eb82c74e82c30e40a150801e",
-        "sourceModule": "src/utils/move-automation/scripts/additionalSingleTarget.ts"
+        "kind": "movespec-v2",
+        "version": 2,
+        "definitionHash": "4f157f1b5fe7fb8270c67e2b8d8ca633383394ec3c0217c002b8e5c73fb5e827",
+        "sourceModule": "server/domain/moveAutomation/specs/takeDown.ts"
       },
       "rulesProvenance": {
         "rulesetId": "rotom-table-reference-moves-v1",
         "canonicalizationVersion": 1,
         "sourceDataSha256": "f90491826349afd7d1f2809fd9d74b7acc555f5163b99264205ee369249e9815"
       },
-      "capabilityTags": [],
-      "suggestedCapabilityTags": [],
-      "blockerCodes": [
+      "capabilityTags": [
         "conditions.typed",
-        "expressions.bounded",
-        "reactions.durable"
+        "hp.typed",
+        "reactions.durable",
+        "targeting.authoritative"
       ],
-      "limitations": [
-        {
-          "code": "take-down.trip",
-          "summary": "The legacy result cannot offer and resolve the optional Free Action opposed Trip Maneuver; it can only apply Tripped after an operator supplies the outcome."
-        },
-        {
-          "code": "take-down.reckless",
-          "summary": "Recoil and its Rock Head or Magic Guard immunity are automated, but the Reckless Damage Base interaction is not included in authoritative damage calculation."
-        }
+      "suggestedCapabilityTags": [],
+      "blockerCodes": [],
+      "limitations": [],
+      "manualSteps": [],
+      "scenarioIds": [
+        "take-down.v2-critical-hit",
+        "take-down.v2-immunity",
+        "take-down.v2-miss",
+        "take-down.v2-reckless",
+        "take-down.v2-recoil-immunity",
+        "take-down.v2-reconnect-retry",
+        "take-down.v2-stale-response-conflict",
+        "take-down.v2-trip-failure",
+        "take-down.v2-trip-pass",
+        "take-down.v2-trip-success"
       ],
-      "manualSteps": [
-        {
-          "code": "take-down.trip",
-          "summary": "After a hit, offer the optional Trip Maneuver, resolve its opposed check, and apply Tripped only when that check succeeds."
-        },
-        {
-          "code": "take-down.reckless",
-          "summary": "If the user has Reckless, apply its canonical Damage Base adjustment before resolving Take Down damage."
-        }
-      ],
-      "scenarioIds": [],
       "conformanceEvidence": {
-        "requirementTags": [],
-        "scenarios": [],
+        "requirementTags": [
+          "branch.accuracy",
+          "branch.alternate",
+          "branch.critical-hit",
+          "branch.immunity",
+          "branch.threshold",
+          "interaction.choice",
+          "mechanic.damage",
+          "recovery.reconnect",
+          "recovery.retry",
+          "resource.multi",
+          "target.self"
+        ],
+        "scenarios": [
+          {
+            "scenarioId": "take-down.v2-critical-hit",
+            "evidenceClasses": [
+              "crit"
+            ]
+          },
+          {
+            "scenarioId": "take-down.v2-immunity",
+            "evidenceClasses": [
+              "immunity"
+            ]
+          },
+          {
+            "scenarioId": "take-down.v2-miss",
+            "evidenceClasses": [
+              "miss"
+            ]
+          },
+          {
+            "scenarioId": "take-down.v2-reckless",
+            "evidenceClasses": [
+              "alternate-branch"
+            ]
+          },
+          {
+            "scenarioId": "take-down.v2-recoil-immunity",
+            "evidenceClasses": [
+              "immunity",
+              "self"
+            ]
+          },
+          {
+            "scenarioId": "take-down.v2-reconnect-retry",
+            "evidenceClasses": [
+              "reconnect",
+              "retry"
+            ]
+          },
+          {
+            "scenarioId": "take-down.v2-stale-response-conflict",
+            "evidenceClasses": [
+              "multi-resource-conflict"
+            ]
+          },
+          {
+            "scenarioId": "take-down.v2-trip-failure",
+            "evidenceClasses": [
+              "threshold-fail"
+            ]
+          },
+          {
+            "scenarioId": "take-down.v2-trip-pass",
+            "evidenceClasses": [
+              "pass"
+            ]
+          },
+          {
+            "scenarioId": "take-down.v2-trip-success",
+            "evidenceClasses": [
+              "choice",
+              "hit",
+              "threshold-pass"
+            ]
+          }
+        ],
         "notApplicable": []
       },
-      "reviewedAt": "2026-07-10",
+      "reviewedAt": "2026-07-18",
       "unsupportedInteractionIds": [],
       "rolloutCohortId": null
     },

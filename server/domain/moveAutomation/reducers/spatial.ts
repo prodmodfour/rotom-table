@@ -12,7 +12,11 @@ import {
   type MoveMovementRequestEffectOperation,
   type MoveMovementVector,
 } from '#shared/moveAutomation/effects'
-import type { MoveResolutionTraceJsonValue } from '#shared/moveAutomation/trace'
+import {
+  parseMoveResolutionAuditTrace,
+  type MoveResolutionAuditTrace,
+  type MoveResolutionTraceJsonValue,
+} from '#shared/moveAutomation/trace'
 import {
   MOVE_AUTOMATION_AREA_DIRECTIONS,
   type MoveAutomationAreaDirection,
@@ -95,6 +99,8 @@ export type MoveSpatialEffectReductionErrorCode =
   | 'distance-evaluation-failed'
   | 'full-distance-unavailable'
   | 'movement-validation-failed'
+  | 'trace-operation-mismatch'
+  | 'trace-operation-missing'
   | MoveSpatialRelocationErrorCode
 
 export class MoveSpatialEffectReductionError extends Error {
@@ -835,6 +841,70 @@ export const reduceMoveSpatialEffects = (
     operationResults,
     sheetReads: input.context.reads.snapshot(),
   })
+}
+
+const spatialTraceMovement = (
+  movement: MoveReducedSpatialMovement,
+): MoveResolutionTraceJsonValue => ({
+  recipientPlacementId: movement.recipientPlacementId,
+  mode: movement.mode,
+  origin: { ...movement.origin },
+  destination: { ...movement.destination },
+  resolvedDistance: movement.resolvedDistance,
+  shortened: movement.shortened,
+  shorteningReason: movement.shorteningReason,
+  obstruction: movement.obstruction as unknown as MoveResolutionTraceJsonValue,
+})
+
+/** Replace interpreter placeholders with collision-checked spatial evidence. */
+export const applyMoveSpatialEffectResultsToTrace = (input: {
+  readonly trace: MoveResolutionAuditTrace
+  readonly operations: readonly MoveResolvedSpatialEffectOperation[]
+  readonly results: readonly MoveSpatialEffectOperationResult[]
+}): MoveResolutionAuditTrace => {
+  const operationsById = new Map(input.operations.map(emission => [
+    emission.operation.id,
+    emission.operation,
+  ]))
+  const resultsById = new Map(input.results.map(result => [result.operationId, result]))
+  const matched = new Set<string>()
+  const events = input.trace.events.map((event) => {
+    if (event.kind !== 'operation') return event
+    const result = resultsById.get(event.operationId)
+    if (!result) return event
+    const operation = operationsById.get(event.operationId)
+    if (
+      !operation
+      || event.operationKind !== 'movement-request'
+      || event.phase !== operation.phase
+      || event.reasonCode !== operation.reasonCode
+    ) {
+      return fail(
+        'trace-operation-mismatch',
+        `Trace event for spatial operation ${event.operationId} does not match its reviewed operation.`,
+      )
+    }
+    matched.add(event.operationId)
+    return {
+      ...event,
+      recipientIds: [...result.recipientIds],
+      outcome: result.outcome,
+      result: {
+        status: result.outcome,
+        details: result.details,
+        movements: result.movements.map(spatialTraceMovement),
+      },
+    }
+  })
+  for (const result of input.results) {
+    if (!matched.has(result.operationId)) {
+      fail(
+        'trace-operation-missing',
+        `Trace is missing spatial operation ${result.operationId}.`,
+      )
+    }
+  }
+  return parseMoveResolutionAuditTrace({ ...input.trace, events })
 }
 
 export const isMoveSpatialEffectEmission = (

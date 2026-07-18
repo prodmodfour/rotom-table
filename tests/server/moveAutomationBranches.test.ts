@@ -616,4 +616,80 @@ describe('MoveSpec optional and exclusive branches', () => {
       'operation.optional-effect',
     ])
   })
+
+  it('skips a nested check-result branch when its optional outer choice passes', () => {
+    const checkRoll = (rollId: string) => ({
+      rollId,
+      source: {
+        kind: 'fixed',
+        formula: { kind: 'dice', count: 1, sides: 20, modifier: 0 },
+      },
+      modifiers: [],
+      reroll: { count: 0, keep: 'latest' },
+      resourceReroll: null,
+    })
+    const spec = baseSpec({
+      targeting: {
+        kind: 'single-target',
+        minTargets: 1,
+        maxTargets: 1,
+        selector: { kind: 'selected-targets' },
+      },
+      phases: [{
+        phase: 'hit',
+        operations: [
+          operation('operation.optional-check', 'branch', 'attacked-targets', 'hit', {
+            kind: 'choice',
+            selectionId: 'branch.optional-check',
+            scope: 'recipient',
+            requestId: 'request.optional-check',
+            promptKey: 'move.optional-check',
+            options: [{
+              id: 'option.check',
+              labelKey: 'choice.check',
+              operationIds: ['operation.check', 'operation.check-result'],
+            }],
+            pass: { id: 'option.pass', operationIds: [] },
+          }),
+          operation('operation.check', 'check', 'attacked-targets', 'hit', {
+            kind: 'opposed',
+            checkId: 'check.optional',
+            actorRoll: checkRoll('roll.optional.actor'),
+            targetRoll: checkRoll('roll.optional.target'),
+            tie: { kind: 'failure' },
+            branches: { success: 'branch.success', failure: 'branch.failure' },
+          }),
+          operation('operation.check-result', 'branch', 'attacked-targets', 'hit', {
+            kind: 'check',
+            selectionId: 'branch.check-result',
+            scope: 'recipient',
+            checkId: 'check.optional',
+            branches: {
+              success: { id: 'branch.success', operationIds: ['operation.success-log'] },
+              failure: { id: 'branch.failure', operationIds: [] },
+            },
+          }),
+          operation('operation.success-log', 'log', 'attacked-targets', 'hit', {
+            messageKey: 'move.optional-check.success',
+            arguments: [],
+          }),
+        ],
+      }],
+    })
+    const result = executeMoveSpec({
+      definition: validateMoveSpec(spec),
+      context: buildContext({ selectedPlacementIds: ['enemy-token'], draws: [] }),
+      responses: [{ requestId: 'request.optional-check', optionId: null }],
+    })
+
+    expect(result.kind).toBe('complete')
+    expect(result.rollLedger).toEqual([])
+    expect(result.resolvedChecks).toEqual([])
+    expect(traceOperations(result)).toEqual(expect.arrayContaining([
+      expect.objectContaining({ operationId: 'operation.optional-check', outcome: 'no-op' }),
+      expect.objectContaining({ operationId: 'operation.check', outcome: 'prevented' }),
+      expect.objectContaining({ operationId: 'operation.check-result', outcome: 'prevented' }),
+      expect.objectContaining({ operationId: 'operation.success-log', outcome: 'prevented' }),
+    ]))
+  })
 })

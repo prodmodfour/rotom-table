@@ -8985,24 +8985,12 @@
     {
       "canonicalId": "Tackle",
       "displayName": "Tackle",
-      "baseStatus": "assisted",
+      "baseStatus": "complete",
       "interactionStatus": "unassessed",
-      "runtimeKind": "legacy-v1",
-      "blockerCodes": [
-        "movement.authoritative"
-      ],
-      "limitations": [
-        {
-          "code": "tackle.push",
-          "summary": "The legacy transaction resolves damage without deriving or committing the required 2-meter push, collision, obstruction, or shortening result."
-        }
-      ],
-      "manualSteps": [
-        {
-          "code": "tackle.push",
-          "summary": "After a hit, move the target 2 meters directly away through legal cells, shortening or stopping the push for bounds, obstruction, or occupied footprints."
-        }
-      ]
+      "runtimeKind": "movespec-v2",
+      "blockerCodes": [],
+      "limitations": [],
+      "manualSteps": []
     },
     {
       "canonicalId": "Tail Glow",
@@ -9058,34 +9046,12 @@
     {
       "canonicalId": "Take Down",
       "displayName": "Take Down",
-      "baseStatus": "assisted",
+      "baseStatus": "complete",
       "interactionStatus": "unassessed",
-      "runtimeKind": "legacy-v1",
-      "blockerCodes": [
-        "conditions.typed",
-        "expressions.bounded",
-        "reactions.durable"
-      ],
-      "limitations": [
-        {
-          "code": "take-down.trip",
-          "summary": "The legacy result cannot offer and resolve the optional Free Action opposed Trip Maneuver; it can only apply Tripped after an operator supplies the outcome."
-        },
-        {
-          "code": "take-down.reckless",
-          "summary": "Recoil and its Rock Head or Magic Guard immunity are automated, but the Reckless Damage Base interaction is not included in authoritative damage calculation."
-        }
-      ],
-      "manualSteps": [
-        {
-          "code": "take-down.trip",
-          "summary": "After a hit, offer the optional Trip Maneuver, resolve its opposed check, and apply Tripped only when that check succeeds."
-        },
-        {
-          "code": "take-down.reckless",
-          "summary": "If the user has Reckless, apply its canonical Damage Base adjustment before resolving Take Down damage."
-        }
-      ]
+      "runtimeKind": "movespec-v2",
+      "blockerCodes": [],
+      "limitations": [],
+      "manualSteps": []
     },
     {
       "canonicalId": "Take Heart",
