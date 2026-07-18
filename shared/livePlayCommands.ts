@@ -26,6 +26,7 @@ import type { ResolveMoveIntent } from './livePlayMoveResolution'
 import type { LivePlayMoveStatePatchPayload } from './livePlayMoveState'
 import type { EncounterEventKind } from './moveAutomation/events'
 import type { EncounterState } from './moveAutomation/encounterState'
+import type { MoveAutomationRollLedgerEntry } from './moveAutomation/random'
 import type { LivePlayMoveCorrectionPatchPayload } from './moveAutomation/correctionCommands'
 
 type Brand<TValue, TName extends string> = TValue & { readonly __brand: TName }
@@ -963,6 +964,8 @@ export interface EncounterLifecyclePatchPayload {
   readonly effectTransitions: readonly EncounterLifecycleEffectTransitionSummary[]
   readonly fieldTransitions?: readonly EncounterLifecycleFieldTransitionSummary[]
   readonly operationIds: readonly string[]
+  /** Present when this lifecycle boundary consumed authoritative randomness. */
+  readonly rollLedger?: readonly MoveAutomationRollLedgerEntry[]
   readonly previousEncounterState: EncounterState
   readonly currentEncounterState: EncounterState
   readonly previousTemporaryHitPoints: TabletopMap['temporaryHitPoints'] | null

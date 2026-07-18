@@ -2,6 +2,7 @@ import type {
   EncounterConditionEffect,
   EncounterEffect,
   EncounterEffectCell,
+  EncounterVortexEffect,
 } from '#shared/moveAutomation/encounterEffects'
 import type { EncounterSideId } from '#shared/moveAutomation/encounterState'
 import type { GridAnchor } from '~/types/pokemon'
@@ -32,7 +33,7 @@ export interface EffectiveConditionTarget {
  */
 export interface EffectiveConditionModifier {
   readonly condition: string
-  readonly effect: EncounterConditionEffect
+  readonly effect: EncounterConditionEffect | EncounterVortexEffect
 }
 
 /** A detached effective view; neither durable storage layer is rewritten. */
@@ -92,7 +93,7 @@ const targetOccupiesEffectCell = (
 }
 
 const effectAppliesToTarget = (
-  effect: EncounterConditionEffect,
+  effect: EncounterConditionEffect | EncounterVortexEffect,
   target: EffectiveConditionTarget,
 ): boolean => (
   effect.affected.placementIds.includes(target.placementId)
@@ -103,7 +104,9 @@ const effectAppliesToTarget = (
   || effect.affected.cells.some(cell => targetOccupiesEffectCell(target, cell))
 )
 
-const effectIsActive = (effect: EncounterConditionEffect): boolean => (
+const effectIsActive = (
+  effect: EncounterConditionEffect | EncounterVortexEffect,
+): boolean => (
   effect.suppression.sources.length === 0
   && effect.charges !== 0
 )
@@ -123,15 +126,22 @@ const conditionIdentity = (condition: string): string => (
 const activeApplicableModifiers = (
   effects: readonly EncounterEffect[] | null | undefined,
   target: EffectiveConditionTarget,
-): EffectiveConditionModifier[] => (effects ?? []).flatMap((effect) => {
+): EffectiveConditionModifier[] => (effects ?? []).flatMap<EffectiveConditionModifier>((effect) => {
   if (
-    effect.kind !== 'condition'
+    (effect.kind !== 'condition' && effect.kind !== 'vortex')
     || !effectIsActive(effect)
     || !effectAppliesToTarget(effect, target)
   ) {
     return []
   }
-  return [{ condition: canonicalEffectCondition(effect), effect: deepCloneJson(effect) }]
+  const detached = deepCloneJson(effect)
+  if (detached.kind === 'vortex') {
+    return [
+      { condition: 'Slowed', effect: detached },
+      { condition: 'Trapped', effect: detached },
+    ]
+  }
+  return [{ condition: canonicalEffectCondition(detached), effect: detached }]
 })
 
 const projectConditionNames = (
@@ -140,14 +150,14 @@ const projectConditionNames = (
 ): string[] => {
   const suppressed = new Set(
     modifiers
-      .filter(({ effect }) => effect.payload.action === 'suppress')
+      .filter(({ effect }) => effect.kind === 'condition' && effect.payload.action === 'suppress')
       .map(({ condition }) => conditionIdentity(condition)),
   )
   let conditions = [...sheetConditions]
   const nonStackable = new Set(conditions.map(conditionIdentity))
 
   for (const { condition, effect } of modifiers) {
-    if (effect.payload.action !== 'apply') continue
+    if (effect.kind === 'condition' && effect.payload.action !== 'apply') continue
     const identity = conditionIdentity(condition)
     if (suppressed.has(identity)) continue
 

@@ -95,7 +95,8 @@ const encounterConditionPrevention = (options: {
     },
   })
   const prevention = projection.modifiers.find(({ condition, effect }) => (
-    effect.payload.action === 'prevent'
+    effect.kind === 'condition'
+    && effect.payload.action === 'prevent'
     && (conditionBaseName(condition) ?? condition) === canonical
   ))
   if (!prevention) return { blockedBy: null, consultedPlacementIds: [] }

@@ -399,6 +399,7 @@ const sceneLifecyclePatchPayload = (
     previousFieldEffects: lifecycle.previousFieldEffects,
     currentFieldEffects: lifecycle.currentFieldEffects,
     sheetWrites: lifecycle.sheetWrites,
+    rollLedger: lifecycle.rollLedger,
   }),
   previousMoveUsage: lifecycle.previousMoveUsage === undefined
     ? null

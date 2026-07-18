@@ -19759,43 +19759,117 @@
     {
       "canonicalId": "Sand Tomb",
       "displayName": "Sand Tomb",
-      "baseStatus": "assisted",
+      "baseStatus": "complete",
       "interactionStatus": "unassessed",
       "runtime": {
-        "kind": "legacy-v1",
-        "version": 1,
-        "definitionHash": "88c19c85fa32c01cd253b425dd6ff3f34bd30b96d147e7a46d49c0dc6113f246",
-        "sourceModule": "src/utils/move-automation/scripts/additionalSingleTarget.ts"
+        "kind": "movespec-v2",
+        "version": 2,
+        "definitionHash": "46adb7117166314526e679ab9f8994063a09db12df3d6499a440ccb40348629f",
+        "sourceModule": "server/domain/moveAutomation/specs/sandTomb.ts"
       },
       "rulesProvenance": {
         "rulesetId": "rotom-table-reference-moves-v1",
         "canonicalizationVersion": 1,
         "sourceDataSha256": "f90491826349afd7d1f2809fd9d74b7acc555f5163b99264205ee369249e9815"
       },
-      "capabilityTags": [],
+      "capabilityTags": [
+        "hp.typed",
+        "lifecycle.effects",
+        "targeting.authoritative"
+      ],
       "suggestedCapabilityTags": [],
-      "blockerCodes": [
-        "lifecycle.effects"
+      "blockerCodes": [],
+      "limitations": [],
+      "manualSteps": [],
+      "scenarioIds": [
+        "sand-tomb.v2-attempts-expire",
+        "sand-tomb.v2-critical-hit",
+        "sand-tomb.v2-escape-success",
+        "sand-tomb.v2-hit",
+        "sand-tomb.v2-immunity",
+        "sand-tomb.v2-knockout-cleanup",
+        "sand-tomb.v2-miss",
+        "sand-tomb.v2-replacement-retry",
+        "sand-tomb.v2-scene-cleanup",
+        "sand-tomb.v2-switch-cleanup"
       ],
-      "limitations": [
-        {
-          "code": "sand-tomb.marker-only",
-          "summary": "The legacy script adds Trapped and Slowed markers but does not process Vortex damage, escalating end-turn escape checks, replacement, or cleanup."
-        }
-      ],
-      "manualSteps": [
-        {
-          "code": "sand-tomb.vortex",
-          "summary": "Apply canonical Vortex damage at each target turn end, resolve escape checks at 20, 14, 8, then 2, and remove the Vortex and its markers when it ends."
-        }
-      ],
-      "scenarioIds": [],
       "conformanceEvidence": {
-        "requirementTags": [],
-        "scenarios": [],
+        "requirementTags": [
+          "branch.accuracy",
+          "branch.critical-hit",
+          "branch.immunity",
+          "branch.threshold",
+          "mechanic.damage",
+          "mechanic.lifecycle",
+          "recovery.retry"
+        ],
+        "scenarios": [
+          {
+            "scenarioId": "sand-tomb.v2-attempts-expire",
+            "evidenceClasses": [
+              "lifecycle-cleanup",
+              "threshold-fail"
+            ]
+          },
+          {
+            "scenarioId": "sand-tomb.v2-critical-hit",
+            "evidenceClasses": [
+              "crit"
+            ]
+          },
+          {
+            "scenarioId": "sand-tomb.v2-escape-success",
+            "evidenceClasses": [
+              "lifecycle-trigger",
+              "threshold-pass"
+            ]
+          },
+          {
+            "scenarioId": "sand-tomb.v2-hit",
+            "evidenceClasses": [
+              "hit"
+            ]
+          },
+          {
+            "scenarioId": "sand-tomb.v2-immunity",
+            "evidenceClasses": [
+              "immunity"
+            ]
+          },
+          {
+            "scenarioId": "sand-tomb.v2-knockout-cleanup",
+            "evidenceClasses": [
+              "lifecycle-cleanup"
+            ]
+          },
+          {
+            "scenarioId": "sand-tomb.v2-miss",
+            "evidenceClasses": [
+              "miss"
+            ]
+          },
+          {
+            "scenarioId": "sand-tomb.v2-replacement-retry",
+            "evidenceClasses": [
+              "retry"
+            ]
+          },
+          {
+            "scenarioId": "sand-tomb.v2-scene-cleanup",
+            "evidenceClasses": [
+              "lifecycle-cleanup"
+            ]
+          },
+          {
+            "scenarioId": "sand-tomb.v2-switch-cleanup",
+            "evidenceClasses": [
+              "lifecycle-cleanup"
+            ]
+          }
+        ],
         "notApplicable": []
       },
-      "reviewedAt": "2026-07-10",
+      "reviewedAt": "2026-07-18",
       "unsupportedInteractionIds": [],
       "rolloutCohortId": null
     },

@@ -2345,7 +2345,7 @@ Status: DONE
 
 ## MA-173 — Finish Sand Tomb through the shared Vortex effect
 
-Status: TODO
+Status: DONE
 
 **Depends on:** MA-056–MA-060, MA-080, MA-123
 **Commit:** `feat(move-automation): fully resolve sand tomb vortex`

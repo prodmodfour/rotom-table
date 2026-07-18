@@ -172,12 +172,6 @@ describe('legacy move automation audit metadata', () => {
         manualStepCodes: ['five-strike.per-hit'],
         summaryTerms: ['per-hit', 'early knockout'],
       }],
-      ['Sand Tomb', {
-        blockerCodes: ['lifecycle.effects'],
-        limitationCodes: ['sand-tomb.marker-only'],
-        manualStepCodes: ['sand-tomb.vortex'],
-        summaryTerms: ['Vortex', '20, 14, 8'],
-      }],
       ['Tackle', {
         blockerCodes: ['movement.authoritative'],
         limitationCodes: ['tackle.push'],

@@ -40,6 +40,7 @@ import { createSqliteMapRepository, type MapRepository } from '~~/server/storage
 import { createSqliteRealtimeEventRepository } from '~~/server/storage/realtimeEventRepository'
 import { createSqliteSheetRepository, type PersistedSheet, type SheetRepository } from '~~/server/storage/sheetRepository'
 import type { EncounterLifecycleTriggerHandler } from '~~/server/domain/moveAutomation/reduceLifecycle'
+import type { AuthoritativeMoveRandomSource } from '~~/server/domain/moveAutomation/random'
 import { executeLivePlayInitiativeCommandUseCase } from '~~/server/useCases/applyLivePlayInitiativeCommand'
 import { executeLivePlayMapEffectsCommandUseCase } from '~~/server/useCases/applyLivePlayMapEffectsCommand'
 import { executeLivePlaySceneCommandUseCase } from '~~/server/useCases/applyLivePlaySceneCommand'
@@ -138,6 +139,7 @@ export interface CreateLivePlayIntegrationHarnessOptions {
   readonly map?: TabletopMap
   readonly sheets?: readonly PersistedSheet[]
   readonly lifecycleHandlers?: readonly EncounterLifecycleTriggerHandler[]
+  readonly random?: AuthoritativeMoveRandomSource
 }
 
 export interface LivePlayCommandDispatchOptions<TCommand> {
@@ -156,6 +158,7 @@ export class LivePlayIntegrationHarness {
 
   private readonly clients = new Map<string, LivePlayRealtimeClient>()
   private readonly lifecycleHandlers: readonly EncounterLifecycleTriggerHandler[]
+  private readonly random: AuthoritativeMoveRandomSource | undefined
   private readonly profiles: PlayerProfile[] = []
   private readonly commandExecutor: ReturnType<typeof createAuthoritativeLivePlayCommandExecutor>
   private nowValue = 1_700_000_100_000
@@ -164,6 +167,7 @@ export class LivePlayIntegrationHarness {
   private constructor(options: CreateLivePlayIntegrationHarnessOptions = {}) {
     this.tempRoot = mkdtempSync(join(tmpdir(), 'rotom-live-play-integration-'))
     this.lifecycleHandlers = options.lifecycleHandlers ?? []
+    this.random = options.random
     this.database = openRotomDatabase({ path: join(this.tempRoot, 'campaign.sqlite') })
     this.mapRepository = createSqliteMapRepository<TabletopMap>(this.database)
     this.sheetRepository = createSqliteSheetRepository<Record<string, unknown>>(this.database)
@@ -707,6 +711,7 @@ export class LivePlayIntegrationHarness {
       relativePath: (path: string) => path,
       now: () => this.nextTimestamp(),
       lifecycleHandlers: this.lifecycleHandlers,
+      random: this.random,
       listProfiles: () => [...this.profiles],
     }
   }

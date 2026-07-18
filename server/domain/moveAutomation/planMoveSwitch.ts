@@ -15,6 +15,7 @@ import type { AuthoritativeMoveSwitchTransition } from '../resolveAuthoritativeM
 import { resolveEncounterEffectSwitchTransfer } from './effectTransfer'
 import { reduceEncounterLifecycle } from './reduceLifecycle'
 import { createMoveSemiInvulnerableLifecycleHandler } from './semiInvulnerableLifecycle'
+import { createVortexLifecycleHandler } from './vortex'
 import { createYawnLifecycleHandler } from './yawn'
 
 export type MoveSwitchPlanningErrorCode =
@@ -184,6 +185,7 @@ export const planAuthoritativeMoveSwitch = (input: {
     [event],
     [
       createMoveSemiInvulnerableLifecycleHandler(),
+      createVortexLifecycleHandler(),
       createYawnLifecycleHandler(),
     ],
   )

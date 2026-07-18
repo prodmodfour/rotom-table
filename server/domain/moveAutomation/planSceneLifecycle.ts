@@ -27,6 +27,7 @@ import {
   type EncounterLifecycleSheetSnapshots,
   type EncounterLifecycleSheetWrite,
 } from './planInitiativeLifecycle'
+import type { MoveAutomationRollLedgerEntry } from '#shared/moveAutomation/random'
 import type {
   EncounterLifecycleReductionResult,
   EncounterLifecycleTriggerHandler,
@@ -62,6 +63,7 @@ export interface SceneLifecyclePlan {
   readonly nextMap: TabletopMap
   readonly sheetReads: readonly AuthoritativeMoveSheetRead[]
   readonly sheetWrites: readonly EncounterLifecycleSheetWrite[]
+  readonly rollLedger: readonly MoveAutomationRollLedgerEntry[]
 }
 
 export interface PlanSceneLifecycleInput {
@@ -239,23 +241,25 @@ const assertUniqueLifecycleIds = (
   const eventIds = new Set<string>()
   const operationIds = new Set<string>()
   for (const phase of phases) {
-    for (const event of phase.reduction.processedEvents) {
-      if (eventIds.has(event.eventId)) {
-        fail(
-          'duplicate-event-id',
-          `Scene lifecycle event ${event.eventId} was processed at more than one boundary.`,
-        )
+    for (const reduction of phase.reductions) {
+      for (const event of reduction.processedEvents) {
+        if (eventIds.has(event.eventId)) {
+          fail(
+            'duplicate-event-id',
+            `Scene lifecycle event ${event.eventId} was processed at more than one boundary.`,
+          )
+        }
+        eventIds.add(event.eventId)
       }
-      eventIds.add(event.eventId)
-    }
-    for (const operation of phase.reduction.operations) {
-      if (operationIds.has(operation.id)) {
-        fail(
-          'duplicate-operation-id',
-          `Scene lifecycle operation ${operation.id} was emitted at more than one boundary.`,
-        )
+      for (const operation of reduction.operations) {
+        if (operationIds.has(operation.id)) {
+          fail(
+            'duplicate-operation-id',
+            `Scene lifecycle operation ${operation.id} was emitted at more than one boundary.`,
+          )
+        }
+        operationIds.add(operation.id)
       }
-      operationIds.add(operation.id)
     }
   }
 }
@@ -321,7 +325,8 @@ export const planSceneLifecycle = (
     phases.flatMap(phase => [...phase.sheetReads]),
   )
   const sheetWrites = mergeSheetWrites(phases)
-  const reductions = phases.map(phase => phase.reduction)
+  const reductions = phases.flatMap(phase => [...phase.reductions])
+  const rollLedger = phases.flatMap(phase => [...phase.rollLedger])
   const currentEncounterState = parseEncounterState(
     workingMap.encounterState ?? createEmptyEncounterState(),
   )
@@ -340,5 +345,6 @@ export const planSceneLifecycle = (
     nextMap: workingMap,
     sheetReads: deepCloneJson(sheetReads),
     sheetWrites: deepCloneJson(sheetWrites),
+    rollLedger: deepCloneJson(rollLedger),
   })
 }

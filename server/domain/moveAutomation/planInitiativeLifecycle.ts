@@ -8,6 +8,7 @@ import {
   type EncounterRoundEvent,
   type EncounterTurnEvent,
 } from '#shared/moveAutomation/events'
+import type { MoveAutomationRollLedgerEntry } from '#shared/moveAutomation/random'
 import type {
   MoveCombatStageEffectOperation,
   MoveConditionEffectOperation,
@@ -41,6 +42,7 @@ import {
 } from './reducers/coreTokenEffects'
 import type {
   MoveCoreTokenDynamicRecipientSets,
+  MoveCoreTokenEffectOperationResult,
   MoveResolvedCoreTokenEffectOperation,
 } from './reducers/coreTokenEffectTypes'
 import { createStandardMoveCoreTokenEffectImmunityQueries } from './reducers/immunities'
@@ -52,7 +54,17 @@ import {
   createWeatherLifecycleImmunityQueries,
   createWeatherResidualLifecycleHandler,
 } from './weatherLifecycle'
+import {
+  VORTEX_REASON_CODES,
+  createVortexLifecycleHandler,
+  createVortexLifecycleImmunityQueries,
+  isVortexEffect,
+} from './vortex'
 import { createYawnLifecycleHandler } from './yawn'
+import {
+  createAuthoritativeMoveRandom,
+  type AuthoritativeMoveRandomSource,
+} from './random'
 
 export type InitiativeLifecyclePlanningErrorCode =
   | 'active-placement-missing'
@@ -95,7 +107,10 @@ export type InitiativeLifecycleSheetWrite = EncounterLifecycleSheetWrite
 
 export interface EncounterLifecyclePlan {
   readonly events: readonly EncounterEvent[]
+  /** Primary authoritative boundary reduction, retained for focused callers. */
   readonly reduction: EncounterLifecycleReductionResult
+  /** Primary reduction followed by any typed post-operation cleanup reductions. */
+  readonly reductions: readonly EncounterLifecycleReductionResult[]
   readonly previousEncounterState: EncounterState
   readonly currentEncounterState: EncounterState
   readonly previousTemporaryHitPoints: TabletopMap['temporaryHitPoints']
@@ -105,6 +120,7 @@ export interface EncounterLifecyclePlan {
   readonly nextMap: TabletopMap
   readonly sheetReads: readonly AuthoritativeMoveSheetRead[]
   readonly sheetWrites: readonly EncounterLifecycleSheetWrite[]
+  readonly rollLedger: readonly MoveAutomationRollLedgerEntry[]
 }
 
 /** Backward-compatible initiative name for the shared lifecycle plan shape. */
@@ -122,6 +138,8 @@ export interface PlanEncounterLifecycleInput {
   /** Loaded only when a trigger actually emits a sheet-backed operation. */
   readonly loadSheets: () => EncounterLifecycleSheetSnapshots
   readonly handlers?: readonly EncounterLifecycleTriggerHandler[]
+  /** Injected server entropy; clients cannot supply lifecycle rolls. */
+  readonly random?: AuthoritativeMoveRandomSource
 }
 
 export interface PlanInitiativeLifecycleInput
@@ -398,6 +416,50 @@ const isLifecycleCoreOperation = (
   operation: MoveEffectOperation,
 ): operation is LifecycleCoreOperation => LIFECYCLE_CORE_OPERATION_KINDS.has(operation.kind)
 
+const vortexKnockoutCleanupEvents = (input: {
+  readonly reduction: EncounterLifecycleReductionResult
+  readonly operationResults: readonly MoveCoreTokenEffectOperationResult[]
+}): readonly EncounterEvent[] => {
+  const operations = new Map(input.reduction.operations.map(operation => [operation.id, operation]))
+  const sourceOperationByTarget = new Map<string, string>()
+  for (const result of input.operationResults) {
+    const operation = operations.get(result.operationId)
+    if (
+      !operation
+      || operation.kind !== 'direct-hp'
+      || operation.reasonCode !== VORTEX_REASON_CODES.tick
+    ) continue
+    for (const recipient of result.recipients) {
+      if (
+        recipient.previous.kind === 'hp'
+        && recipient.current.kind === 'hp'
+        && recipient.previous.currentHp > 0
+        && recipient.current.currentHp <= 0
+      ) sourceOperationByTarget.set(recipient.recipientId, operation.id)
+    }
+  }
+  const cleanupEvents = input.reduction.state.effects.flatMap((effect) => {
+    if (!isVortexEffect(effect)) return []
+    const targetPlacementId = effect.affected.placementIds[0]!
+    const sourceOperationId = sourceOperationByTarget.get(targetPlacementId)
+    if (!sourceOperationId) return []
+    const eventId = `event.vortex.ko.${createHash('sha256')
+      .update(`${sourceOperationId}\u0000${effect.id}`)
+      .digest('hex')
+      .slice(0, 32)}`
+    return [{
+      schemaVersion: ENCOUNTER_EVENT_SCHEMA_VERSION,
+      eventId,
+      kind: 'effect-removed' as const,
+      sourceOperationId,
+      causalParentEventId: null,
+      reasonCode: VORTEX_REASON_CODES.targetKnockedOut,
+      effectId: effect.id,
+    }]
+  })
+  return parseEncounterEvents(cleanupEvents, 'vortexKnockoutCleanupEvents')
+}
+
 const sheetWriteFromChange = (input: {
   readonly map: TabletopMap
   readonly change: Extract<MoveStateChange, { readonly kind: 'sheet-state' }>
@@ -439,14 +501,17 @@ export const planEncounterLifecycle = (
   // and last.
   const handlers = [
     ...(input.handlers ?? []),
+    createVortexLifecycleHandler(),
     createYawnLifecycleHandler(),
     ...(weatherHandler ? [weatherHandler] : []),
     ...(terrainHandler ? [terrainHandler] : []),
   ]
+  const random = createAuthoritativeMoveRandom(input.random)
   const reduction = reduceEncounterLifecycle(
     previousEncounterState,
     events,
     handlers,
+    random,
   )
   const effects = effectSources(previousEncounterState, reduction)
   const recipientsByOperationId = new Map<string, readonly string[]>()
@@ -479,6 +544,7 @@ export const planEncounterLifecycle = (
   }
   let sheetReads: readonly AuthoritativeMoveSheetRead[] = []
   let sheetWrites: readonly InitiativeLifecycleSheetWrite[] = []
+  let operationResults: readonly MoveCoreTokenEffectOperationResult[] = []
 
   if (reduction.operations.length > 0 && operationRecipientIds.size > 0) {
     const { pokemonSheets, trainerSheets } = input.loadSheets()
@@ -529,13 +595,17 @@ export const planEncounterLifecycle = (
       context,
       operations: emissions,
       dynamicRecipients: EMPTY_DYNAMIC_RECIPIENTS,
-      immunities: createWeatherLifecycleImmunityQueries({
-        context,
-        fallback: standardImmunities,
+      immunities: createVortexLifecycleImmunityQueries({
+        effects: [...effects.values()],
+        fallback: createWeatherLifecycleImmunityQueries({
+          context,
+          fallback: standardImmunities,
+        }),
       }),
       recipientIdsForOperation: operation => recipientsByOperationId.get(operation.id) ?? [],
     })
     sheetReads = core.sheetReads
+    operationResults = core.operationResults
     const writes: InitiativeLifecycleSheetWrite[] = []
     for (const change of core.stateChanges.changes) {
       if (change.kind === 'map-temporary-hit-points') {
@@ -559,11 +629,22 @@ export const planEncounterLifecycle = (
     sheetWrites = writes
   }
 
+  const cleanupEvents = vortexKnockoutCleanupEvents({ reduction, operationResults })
+  const cleanupReduction = cleanupEvents.length > 0
+    ? reduceEncounterLifecycle(reduction.state, cleanupEvents, [], random)
+    : null
+  const reductions = cleanupReduction ? [reduction, cleanupReduction] : [reduction]
+  const plannedEvents = cleanupReduction ? [...events, ...cleanupEvents] : events
+  const currentEncounterState = cleanupReduction?.state ?? reduction.state
+  if (cleanupReduction) nextMap.encounterState = deepCloneJson(currentEncounterState)
+  const rollLedger = random.complete()
+
   return Object.freeze({
-    events,
+    events: plannedEvents,
     reduction,
+    reductions,
     previousEncounterState,
-    currentEncounterState: reduction.state,
+    currentEncounterState,
     previousTemporaryHitPoints: deepCloneJson(input.map.temporaryHitPoints),
     currentTemporaryHitPoints: deepCloneJson(nextMap.temporaryHitPoints),
     previousFieldEffects,
@@ -571,6 +652,7 @@ export const planEncounterLifecycle = (
     nextMap,
     sheetReads: deepCloneJson(sheetReads),
     sheetWrites: deepCloneJson(sheetWrites),
+    rollLedger: deepCloneJson(rollLedger),
   })
 }
 
@@ -583,4 +665,5 @@ export const planInitiativeLifecycle = (
   time: input.time,
   loadSheets: input.loadSheets,
   handlers: input.handlers,
+  random: input.random,
 })

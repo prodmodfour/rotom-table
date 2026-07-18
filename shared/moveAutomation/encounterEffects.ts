@@ -19,6 +19,7 @@ export const ENCOUNTER_EFFECT_KINDS = [
   'move-list-overlay',
   'creature-rule-overlay',
   'transformation',
+  'vortex',
 ] as const
 
 export const ENCOUNTER_EFFECT_DURATION_KINDS = [
@@ -109,6 +110,7 @@ export const ENCOUNTER_EFFECT_LIMITS = Object.freeze({
   tags: 32,
   suppressionSources: 32,
   moveListMoves: 64,
+  vortexEscapeChecks: 8,
   canonicalMoveChars: 160,
   stacks: 64,
   charges: 10_000,
@@ -293,6 +295,19 @@ export interface EncounterMoveListRestrictEffectPayload {
   readonly canonicalMoveIds: readonly string[]
 }
 
+/**
+ * One target-local Vortex. While active it projects the canonical Slowed and
+ * Trapped conditions; charges identify the remaining end-turn escape checks.
+ */
+export interface EncounterVortexEffectPayload {
+  /** Normalized type of the move that established the Vortex. */
+  readonly sourceType: string
+  /** Percent of full Max HP lost at each affected target turn end. */
+  readonly tickPercent: number
+  /** Ordered save DCs, indexed by attempts already consumed. */
+  readonly escapeDcs: readonly number[]
+}
+
 export type EncounterMoveListOverlayEffectPayload =
   | EncounterMoveListAddEffectPayload
   | EncounterMoveListReplaceEffectPayload
@@ -307,6 +322,7 @@ export type EncounterEffectPayload =
   | EncounterMoveListOverlayEffectPayload
   | EncounterCreatureRuleOverlayEffectPayload
   | EncounterTransformationEffectPayload
+  | EncounterVortexEffectPayload
 
 interface EncounterEffectDefinitionEnvelope<
   Kind extends EncounterEffectKind,
@@ -360,6 +376,11 @@ export type EncounterTransformationEffectDefinition = EncounterEffectDefinitionE
   EncounterTransformationEffectPayload
 >
 
+export type EncounterVortexEffectDefinition = EncounterEffectDefinitionEnvelope<
+  'vortex',
+  EncounterVortexEffectPayload
+>
+
 /** Server-owned operations may request only this typed, context-free effect definition. */
 export type EncounterEffectDefinition =
   | EncounterConditionEffectDefinition
@@ -369,6 +390,7 @@ export type EncounterEffectDefinition =
   | EncounterMoveListOverlayEffectDefinition
   | EncounterCreatureRuleOverlayEffectDefinition
   | EncounterTransformationEffectDefinition
+  | EncounterVortexEffectDefinition
 
 interface EncounterEffectEnvelope<
   Kind extends EncounterEffectKind,
@@ -431,6 +453,11 @@ export type EncounterTransformationEffect = EncounterEffectEnvelope<
   EncounterTransformationEffectPayload
 >
 
+export type EncounterVortexEffect = EncounterEffectEnvelope<
+  'vortex',
+  EncounterVortexEffectPayload
+>
+
 /**
  * Durable encounter effects are a discriminated union. The `kind` selects one
  * exact payload shape; arbitrary metadata objects are never accepted.
@@ -443,6 +470,7 @@ export type EncounterEffect =
   | EncounterMoveListOverlayEffect
   | EncounterCreatureRuleOverlayEffect
   | EncounterTransformationEffect
+  | EncounterVortexEffect
 
 export type EncounterEffectValidationCode =
   | 'invalid-encounter-effect'
@@ -557,6 +585,7 @@ const MOVE_LIST_REPLACE_PAYLOAD_FIELDS = [
   'copiedSpecHash',
 ] as const
 const MOVE_LIST_FILTER_PAYLOAD_FIELDS = ['action', 'canonicalMoveIds'] as const
+const VORTEX_PAYLOAD_FIELDS = ['sourceType', 'tickPercent', 'escapeDcs'] as const
 
 const STABLE_ID_PATTERN = /^[a-z0-9]+(?:[._:/-][a-z0-9]+)*$/
 const SHA_256_PATTERN = /^[a-f0-9]{64}$/
@@ -1252,6 +1281,40 @@ const parseMoveListOverlayPayload = (
   }
 }
 
+const parseVortexPayload = (
+  value: unknown,
+  path: string,
+): EncounterVortexEffectPayload => {
+  const payload = parseExactRecord(value, VORTEX_PAYLOAD_FIELDS, path)
+  const escapeDcs = parseArray(
+    payload.escapeDcs,
+    `${path}.escapeDcs`,
+    ENCOUNTER_EFFECT_LIMITS.vortexEscapeChecks,
+  ).map((entry, index) => parseInteger(
+    entry,
+    `${path}.escapeDcs[${index}]`,
+    1,
+    100,
+  ))
+  if (escapeDcs.length === 0) {
+    fail('invalid-encounter-effect', `${path}.escapeDcs`, 'must contain at least one escape DC.')
+  }
+  for (let index = 1; index < escapeDcs.length; index += 1) {
+    if (escapeDcs[index]! >= escapeDcs[index - 1]!) {
+      fail(
+        'invalid-encounter-effect',
+        `${path}.escapeDcs[${index}]`,
+        'must be lower than the preceding escape DC.',
+      )
+    }
+  }
+  return {
+    sourceType: parseStableId(payload.sourceType, `${path}.sourceType`),
+    tickPercent: parseInteger(payload.tickPercent, `${path}.tickPercent`, 1, 100),
+    escapeDcs,
+  }
+}
+
 const parseCreatureRuleOverlayPayload = (
   value: unknown,
   path: string,
@@ -1295,6 +1358,45 @@ const parseTransformationPayload = (
       )
     }
     throw error
+  }
+}
+
+const assertVortexLifecyclePolicy = (
+  common: ParsedEncounterEffectDefinitionCommon | ParsedEncounterEffectCommon,
+  payload: EncounterVortexEffectPayload,
+  path: string,
+  definition: boolean,
+): void => {
+  const validCharges = definition
+    ? common.charges === payload.escapeDcs.length
+    : common.charges !== null
+      && common.charges >= 1
+      && common.charges <= payload.escapeDcs.length
+  if (
+    common.duration.kind !== 'scene'
+    || common.stacks !== 1
+    || !validCharges
+    || common.stackPolicy.kind !== 'replace'
+    || common.chargePolicy.kind !== 'consume-on-trigger'
+    || common.chargePolicy.amount !== 1
+    || (common.transferPolicy ?? 'retain') !== 'retain'
+  ) {
+    fail(
+      'invalid-encounter-effect',
+      path,
+      'vortexes require scene duration, one stack, one charge per escape DC, replace stacking, single-charge triggers, and retain transfer.',
+    )
+  }
+  if (
+    common.dispel.policy !== 'matching-tags'
+    || !common.dispel.tags.includes('vortex')
+    || !common.tags.includes('vortex')
+  ) {
+    fail(
+      'invalid-encounter-effect',
+      `${path}.dispel`,
+      'vortexes require matching vortex effect and dispel tags.',
+    )
   }
 }
 
@@ -1481,6 +1583,11 @@ export const parseEncounterEffectDefinition = (
       assertTransformationLifecyclePolicy(common, path)
       return definitionWithPayload(common, kind, payload)
     }
+    case 'vortex': {
+      const payload = parseVortexPayload(definition.payload, `${path}.payload`)
+      assertVortexLifecyclePolicy(common, payload, path, true)
+      return definitionWithPayload(common, kind, payload)
+    }
   }
 }
 
@@ -1612,6 +1719,22 @@ export const parseEncounterEffect = (
           'invalid-encounter-effect',
           `${path}.payload.copiedFromPlacementId`,
           'must differ from the transforming source placement.',
+        )
+      }
+      return effectWithPayload(common, kind, payload)
+    }
+    case 'vortex': {
+      const payload = parseVortexPayload(effect.payload, `${path}.payload`)
+      assertVortexLifecyclePolicy(common, payload, path, false)
+      if (
+        common.affected.placementIds.length !== 1
+        || common.affected.sideIds.length > 0
+        || common.affected.cells.length > 0
+      ) {
+        fail(
+          'invalid-encounter-effect',
+          `${path}.affected`,
+          'a vortex must directly affect exactly one placement.',
         )
       }
       return effectWithPayload(common, kind, payload)

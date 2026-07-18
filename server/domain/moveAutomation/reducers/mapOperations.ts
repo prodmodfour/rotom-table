@@ -238,6 +238,7 @@ export const reduceMoveMapOperations = (
         previous: workingMap.encounterState,
         operation,
         recipientIds: expectedIds,
+        faintedRecipientIds: dynamic['fainted-targets'],
       })
       if (reduced.changed) {
         workingMap.encounterState = deepCloneJson(reduced.current)

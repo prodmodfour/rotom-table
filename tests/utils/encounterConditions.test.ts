@@ -138,7 +138,7 @@ describe('effective encounter condition projection', () => {
     expect(projection.conditions).toEqual([])
     expect(projection.modifiers.map(({ condition, effect }) => [
       condition,
-      effect.payload.action,
+      effect.kind === 'condition' ? effect.payload.action : 'apply',
     ])).toEqual([
       ['Burned', 'suppress'],
       ['Poisoned', 'prevent'],

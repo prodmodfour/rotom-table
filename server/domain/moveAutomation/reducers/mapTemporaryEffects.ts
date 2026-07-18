@@ -15,6 +15,11 @@ import {
   applyEncounterEffectLifecycleEvent,
   EncounterEffectLifecycleError,
 } from '../effectLifecycle'
+import {
+  VORTEX_REASON_CODES,
+  createVortexEffect,
+  resolveVortexApplication,
+} from '../vortex'
 import { failMoveMapOperationReduction } from './mapOperationError'
 
 export interface MoveTemporaryEffectReduction {
@@ -48,11 +53,18 @@ const actorSideAffected = (input: {
   }
 }
 
+interface MaterializedTemporaryEffect {
+  readonly effect: EncounterEffect | null
+  readonly reasonCode: string
+  readonly blockedBy: string | null
+}
+
 const materializeEffect = (input: {
   readonly context: AuthoritativeMoveRulesContext
   readonly operation: MoveTemporaryEffectOperation
   readonly recipientIds: readonly string[]
-}): EncounterEffect => {
+  readonly faintedRecipientIds: readonly string[]
+}): MaterializedTemporaryEffect => {
   if (input.operation.payload.action !== 'add') {
     return failMoveMapOperationReduction(
       'temporary-effect-invalid',
@@ -60,17 +72,59 @@ const materializeEffect = (input: {
     )
   }
   if (input.recipientIds.length === 0) {
-    return failMoveMapOperationReduction(
-      'temporary-effect-invalid',
-      `Temporary-effect operation ${input.operation.id} must resolve at least one affected placement.`,
-    )
+    return {
+      effect: null,
+      reasonCode: 'temporary-effect.no-recipients',
+      blockedBy: null,
+    }
   }
   const definition = input.operation.payload.definition
+  if (definition.kind === 'vortex') {
+    if (input.recipientIds.length !== 1) {
+      return failMoveMapOperationReduction(
+        'temporary-effect-invalid',
+        `Vortex operation ${input.operation.id} must address exactly one authoritative placement.`,
+      )
+    }
+    const targetPlacementId = input.recipientIds[0]!
+    if (input.faintedRecipientIds.includes(targetPlacementId)) {
+      return {
+        effect: null,
+        reasonCode: VORTEX_REASON_CODES.targetKnockedOut,
+        blockedBy: 'target knocked out',
+      }
+    }
+    const target = input.context.queries.tokens.get(targetPlacementId)
+    if (!target) {
+      return failMoveMapOperationReduction(
+        'temporary-effect-invalid',
+        `Vortex operation ${input.operation.id} cannot resolve target ${targetPlacementId}.`,
+      )
+    }
+    const decision = resolveVortexApplication({ target, definition })
+    return {
+      effect: decision.applies
+        ? createVortexEffect({
+            definition,
+            operationId: input.operation.id,
+            moveId: input.operation.source.id,
+            sourcePlacementId: input.context.actor.placement.id,
+            targetPlacementId,
+            createdRound: Math.max(1, input.context.map.initiative?.round ?? 1),
+            createdTurn: input.context.map.encounterState?.history.currentTurn?.turn ?? 0,
+          })
+        : null,
+      reasonCode: decision.reasonCode,
+      blockedBy: decision.blockedBy,
+    }
+  }
+
   const actorSide = input.operation.payload.recipientScope === 'actor-side'
     ? actorSideAffected(input)
     : null
   try {
-    return parseEncounterEffect({
+    return {
+      effect: parseEncounterEffect({
       id: actorSide?.effectId ?? input.operation.payload.effectId,
       kind: definition.kind,
       source: {
@@ -97,7 +151,10 @@ const materializeEffect = (input: {
         ? {}
         : { transferPolicy: definition.transferPolicy }),
       suppression: { sources: [] },
-    }, `temporaryEffectOperation.${input.operation.id}.effect`)
+    }, `temporaryEffectOperation.${input.operation.id}.effect`),
+      reasonCode: input.operation.reasonCode,
+      blockedBy: null,
+    }
   }
   catch (error) {
     return failMoveMapOperationReduction(
@@ -114,20 +171,27 @@ export const reduceMoveTemporaryEffect = (input: {
   readonly previous: EncounterState | null | undefined
   readonly operation: MoveTemporaryEffectOperation
   readonly recipientIds: readonly string[]
+  readonly faintedRecipientIds?: readonly string[]
 }): MoveTemporaryEffectReduction => {
   const previous = parseEncounterState(input.previous ?? createEmptyEncounterState())
   try {
-    const incoming = input.operation.payload.action === 'add'
-      ? materializeEffect(input)
+    const materialized = input.operation.payload.action === 'add'
+      ? materializeEffect({
+          ...input,
+          faintedRecipientIds: input.faintedRecipientIds ?? [],
+        })
       : null
-    const transition = incoming
-      ? applyEncounterEffectLifecycleEvent(
-          { effects: previous.effects },
-          {
-            kind: 'effect-applied',
-            effect: incoming,
-          },
-        )
+    const incoming = materialized?.effect ?? null
+    const transition = input.operation.payload.action === 'add'
+      ? incoming
+        ? applyEncounterEffectLifecycleEvent(
+            { effects: previous.effects },
+            {
+              kind: 'effect-applied',
+              effect: incoming,
+            },
+          )
+        : { effects: previous.effects, changed: false, transitions: [] }
       : applyEncounterEffectLifecycleEvent(
           { effects: previous.effects },
           {
@@ -150,6 +214,14 @@ export const reduceMoveTemporaryEffect = (input: {
           ? { recipientScope: input.operation.payload.recipientScope }
           : {}),
         transitionKinds: transition.transitions.map(item => item.kind),
+        ...(materialized !== null
+          && input.operation.payload.action === 'add'
+          && input.operation.payload.definition.kind === 'vortex'
+          ? {
+              reasonCode: materialized.reasonCode,
+              blockedBy: materialized.blockedBy,
+            }
+          : {}),
       },
     }
   }

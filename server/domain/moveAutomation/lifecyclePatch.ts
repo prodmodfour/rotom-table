@@ -3,6 +3,7 @@ import type {
 } from '#shared/livePlayCommands'
 import type { EncounterState } from '#shared/moveAutomation/encounterState'
 import type { EncounterEvent } from '#shared/moveAutomation/events'
+import type { MoveAutomationRollLedgerEntry } from '#shared/moveAutomation/random'
 import type { TabletopMap } from '~/types/map'
 import { deepCloneJson } from '~/utils/serialization'
 import type { EncounterLifecycleSheetWrite } from './planInitiativeLifecycle'
@@ -18,6 +19,7 @@ export interface EncounterLifecyclePatchProjectionInput {
   readonly previousFieldEffects: NonNullable<TabletopMap['fieldEffects']>
   readonly currentFieldEffects: NonNullable<TabletopMap['fieldEffects']>
   readonly sheetWrites: readonly EncounterLifecycleSheetWrite[]
+  readonly rollLedger?: readonly MoveAutomationRollLedgerEntry[]
 }
 
 /** Build the bounded map-patch projection shared by initiative and scene boundaries. */
@@ -48,6 +50,9 @@ export const encounterLifecyclePatchPayload = (
   operationIds: input.reductions.flatMap(reduction => (
     reduction.operations.map(operation => operation.id)
   )),
+  ...(input.rollLedger && input.rollLedger.length > 0
+    ? { rollLedger: deepCloneJson(input.rollLedger) }
+    : {}),
   previousEncounterState: deepCloneJson(input.previousEncounterState),
   currentEncounterState: deepCloneJson(input.currentEncounterState),
   previousTemporaryHitPoints: input.previousTemporaryHitPoints === undefined

@@ -46,6 +46,7 @@ import { applyAuthoritativeMovePlacementTransition } from './placementTransition
 import { planAuthoritativeMoveSwitch } from './planMoveSwitch'
 import { cleanupEncounterTransformationsForKnockouts } from './transformationLifecycle'
 import { cleanupYawnEffectsForKnockouts } from './yawn'
+import { cleanupVortexEffectsForKnockouts } from './vortex'
 import { consumeHelpingHandBonus } from './helpingHand'
 import { consumeSideDamageResistance } from './sideDamageResistance'
 import { planMoveSwitchCombatStageTransfer } from './planSwitchCombatStages'
@@ -541,8 +542,12 @@ export const planNativeV2MoveState = (options: {
     map: mapAfterSideDamageResistance,
     placementIds: native.faintedPlacementIds,
   }).map
-  const mapAfterKnockoutCleanup = cleanupYawnEffectsForKnockouts({
+  const mapAfterYawnCleanup = cleanupYawnEffectsForKnockouts({
     map: mapAfterTransformationCleanup,
+    placementIds: native.faintedPlacementIds,
+  }).map
+  const mapAfterKnockoutCleanup = cleanupVortexEffectsForKnockouts({
+    map: mapAfterYawnCleanup,
     placementIds: native.faintedPlacementIds,
   }).map
   const itemPlan = planMoveItemMutations({

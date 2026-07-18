@@ -19,6 +19,7 @@ import {
   parseEncounterState,
   type EncounterState,
 } from '#shared/moveAutomation/encounterState'
+import type { MoveAutomationRandomRoller } from '#shared/moveAutomation/random'
 import { MOVE_RESOLUTION_TRACE_LIMITS } from '#shared/moveAutomation/trace'
 import {
   applyEncounterEffectLifecycleEvent,
@@ -74,6 +75,8 @@ export interface EncounterLifecycleTriggerContext {
   readonly event: EncounterEvent
   readonly depth: number
   readonly eventSequence: number
+  /** Explicit server-owned randomness; every draw must enter its caller-owned ledger. */
+  readonly random: MoveAutomationRandomRoller
   /** Direct and trigger-consumption transitions already applied for this event. */
   readonly transitions: readonly EncounterEffectLifecycleTransition[]
 }
@@ -244,6 +247,17 @@ type MutableCounters = {
 const STABLE_ID_PATTERN = /^[a-z0-9]+(?:[._:/-][a-z0-9]+)*$/
 const CONTROL_CHARACTER_PATTERN = /[\u0000-\u001f\u007f]/
 const TRIGGER_FIELDS = ['effectId', 'reasonCode', 'operations', 'emittedEvents'] as const
+
+const NO_LIFECYCLE_RANDOM: MoveAutomationRandomRoller = Object.freeze({
+  roll: (): never => fail(
+    'invalid-trigger',
+    'A lifecycle handler requested randomness without an explicit authoritative roller.',
+  ),
+  rollTable: (): never => fail(
+    'invalid-trigger',
+    'A lifecycle handler requested randomness without an explicit authoritative roller.',
+  ),
+})
 
 function fail(
   code: EncounterLifecycleReductionErrorCode,
@@ -427,6 +441,7 @@ export const reduceEncounterLifecycle = (
   stateValue: EncounterState,
   eventValues: readonly EncounterEvent[],
   handlersValue: readonly EncounterLifecycleTriggerHandler[] = [],
+  random: MoveAutomationRandomRoller = NO_LIFECYCLE_RANDOM,
 ): EncounterLifecycleReductionResult => {
   const initialState = deepFreeze(parseEncounterState(stateValue))
   const initialStateJson = JSON.stringify(initialState)
@@ -564,6 +579,7 @@ export const reduceEncounterLifecycle = (
         event,
         depth,
         eventSequence: processedEvents.length,
+        random,
         transitions: [...eventTransitions],
       }) satisfies EncounterLifecycleTriggerContext
       const rawTriggers = handler.resolve(context)

@@ -75,6 +75,7 @@ import {
 } from '../domain/moveAutomation/planInitiativeLifecycle'
 import { encounterLifecyclePatchPayload } from '../domain/moveAutomation/lifecyclePatch'
 import type { EncounterLifecycleTriggerHandler } from '../domain/moveAutomation/reduceLifecycle'
+import type { AuthoritativeMoveRandomSource } from '../domain/moveAutomation/random'
 import { livePlaySheetUpdateRealtimeAppendInputs } from '../livePlay/sheetUpdateRealtime'
 import { toPersistableSheetPayload } from '~/utils/sheets/persistence'
 import { toPersistedMap } from './saveMap'
@@ -156,6 +157,8 @@ export interface LivePlayInitiativeCommandDependencies {
   readonly maxInitiativeLogEntries?: number
   /** Server-owned trigger registry seam; production registrations are never client supplied. */
   readonly lifecycleHandlers?: readonly EncounterLifecycleTriggerHandler[]
+  /** Server-owned entropy seam for lifecycle checks; never parsed from a command. */
+  readonly random?: AuthoritativeMoveRandomSource
 }
 
 interface InitiativeCommitPlan {
@@ -227,6 +230,7 @@ const actionDependencies = (dependencies: LivePlayInitiativeCommandDependencies)
     relativePath: dependencies.relativePath ?? ((path: string) => path),
     maxInitiativeLogEntries: dependencies.maxInitiativeLogEntries,
     lifecycleHandlers: dependencies.lifecycleHandlers ?? [],
+    random: dependencies.random,
   }
 }
 
@@ -1043,6 +1047,7 @@ const applyInitiativeChange = (
     | 'readSheet'
     | 'sheetRepository'
     | 'lifecycleHandlers'
+    | 'random'
   >,
 ): AppliedInitiativeChange => {
   const previous = initiativeLaneState(context.map)
@@ -1092,6 +1097,7 @@ const applyInitiativeChange = (
           dependencies.sheetRepository,
         ),
         handlers: dependencies.lifecycleHandlers,
+        random: dependencies.random,
       })
     : undefined
   const mapWithLifecycle = lifecycle?.nextMap ?? mapWithSideEffects
@@ -1128,7 +1134,7 @@ const lifecyclePatchPayload = (
   lifecycle: InitiativeLifecyclePlan,
 ): InitiativeLifecyclePatchPayload => encounterLifecyclePatchPayload({
   ...lifecycle,
-  reductions: [lifecycle.reduction],
+  reductions: lifecycle.reductions,
 })
 
 const commandPatch = (
