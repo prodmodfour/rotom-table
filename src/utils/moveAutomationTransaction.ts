@@ -46,6 +46,7 @@ import { tokenSheetConditionNames } from '~/utils/sheetConditions'
 import { ELECTRIC_RESISTANT_COAT_CONDITION } from '~/utils/moveAutomationSpecialConditions'
 import { moveAutomationMoveImmunitySource } from '~/utils/moveAutomationMoveImmunity'
 import { moveAutomationRecoilImmunitySource } from '~/utils/moveAutomationRecoil'
+import { moveAutomationIsSmiteMiss } from '~/utils/moveAutomationSmite'
 import type { CombatStageKey } from '~/types/combatStages'
 import type { MapFieldEffects } from '~/types/map'
 import type {
@@ -171,7 +172,15 @@ export const buildMoveAutomationTransaction = ({
       if (damageBreakdown.kind === 'direct') {
         logLines.push(formatMoveAutomationDirectHpLossLogLine(target.species, loss, damageBreakdown.label))
       } else {
-        logLines.push(formatMoveAutomationDamageLogLine(target.species, loss, targetResolutions[target.id]?.crit))
+        const resolution = targetResolutions[target.id]
+        logLines.push(formatMoveAutomationDamageLogLine(
+          target.species,
+          loss,
+          Boolean(resolution?.hit && resolution.crit),
+        ))
+        if (moveAutomationIsSmiteMiss(script, resolution?.hit)) {
+          logLines.push(`${target.species}: Smite miss dealt damage with effectiveness resisted one additional step.`)
+        }
         const breakdownLine = formatMoveAutomationDamageBreakdownLogLine(target.species, damageBreakdown)
         if (breakdownLine) logLines.push(breakdownLine)
       }

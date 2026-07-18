@@ -119,14 +119,14 @@
     {
       "canonicalId": "Bleakwind Storm",
       "sourceModule": "src/utils/move-automation/scripts/area.ts",
-      "version": 1,
-      "definitionHash": "5676fa8fd2e842d40f333741178d1de5f005f07f4b2e4916aab860af2a8ee458"
+      "version": 2,
+      "definitionHash": "7b8054c937dbe57dd5ea906a347deb72e8ec97da707ddd1407db519e554295d9"
     },
     {
       "canonicalId": "Blue Flare",
       "sourceModule": "src/utils/move-automation/scripts/singleTargetAttacks.ts",
-      "version": 1,
-      "definitionHash": "45dfcbf741c1183cea392812939caadd60bbf1a931567857a98e59c211c2a402"
+      "version": 2,
+      "definitionHash": "7078dbb99e60b53d683a22bd7949427147231af6b1cfba820b050ea1bd8f2ac3"
     },
     {
       "canonicalId": "Body Slam",
@@ -137,8 +137,8 @@
     {
       "canonicalId": "Bolt Strike",
       "sourceModule": "src/utils/move-automation/scripts/singleTargetAttacks.ts",
-      "version": 1,
-      "definitionHash": "08efd59d4d2024167e08e59dbc87696b315e68325a7a682ed5f610b5a1758e28"
+      "version": 2,
+      "definitionHash": "d4aca9b79d955f9960d9c8362877f8d85959508f8d9ba478f8f450515a3a0a0e"
     },
     {
       "canonicalId": "Bone Club",

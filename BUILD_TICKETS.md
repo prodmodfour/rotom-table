@@ -2570,7 +2570,7 @@ Status: DONE
 
 ## REG-003 — Certify Baby-Doll Eyes through Bone Club
 
-Status: TODO
+Status: DONE
 
 **Baseline-registered moves:** Baby-Doll Eyes; Bite; Blaze Kick; Bleakwind Storm; Blue Flare; Body Slam; Bolt Strike; Bone Club
 

@@ -404,16 +404,11 @@
     {
       "canonicalId": "Baby-Doll Eyes",
       "displayName": "Baby-Doll Eyes",
-      "baseStatus": "assisted",
+      "baseStatus": "complete",
       "interactionStatus": "unassessed",
       "runtimeKind": "legacy-v1",
       "blockerCodes": [],
-      "limitations": [
-        {
-          "code": "audit.required",
-          "summary": "Semantic conformance review is required before this legacy implementation can be marked complete."
-        }
-      ],
+      "limitations": [],
       "manualSteps": []
     },
     {
@@ -587,16 +582,11 @@
     {
       "canonicalId": "Bite",
       "displayName": "Bite",
-      "baseStatus": "assisted",
+      "baseStatus": "complete",
       "interactionStatus": "unassessed",
       "runtimeKind": "legacy-v1",
       "blockerCodes": [],
-      "limitations": [
-        {
-          "code": "audit.required",
-          "summary": "Semantic conformance review is required before this legacy implementation can be marked complete."
-        }
-      ],
+      "limitations": [],
       "manualSteps": []
     },
     {
@@ -626,31 +616,21 @@
     {
       "canonicalId": "Blaze Kick",
       "displayName": "Blaze Kick",
-      "baseStatus": "assisted",
+      "baseStatus": "complete",
       "interactionStatus": "unassessed",
       "runtimeKind": "legacy-v1",
       "blockerCodes": [],
-      "limitations": [
-        {
-          "code": "audit.required",
-          "summary": "Semantic conformance review is required before this legacy implementation can be marked complete."
-        }
-      ],
+      "limitations": [],
       "manualSteps": []
     },
     {
       "canonicalId": "Bleakwind Storm",
       "displayName": "Bleakwind Storm",
-      "baseStatus": "assisted",
+      "baseStatus": "complete",
       "interactionStatus": "unassessed",
       "runtimeKind": "legacy-v1",
       "blockerCodes": [],
-      "limitations": [
-        {
-          "code": "audit.required",
-          "summary": "Semantic conformance review is required before this legacy implementation can be marked complete."
-        }
-      ],
+      "limitations": [],
       "manualSteps": []
     },
     {
@@ -680,16 +660,11 @@
     {
       "canonicalId": "Blue Flare",
       "displayName": "Blue Flare",
-      "baseStatus": "assisted",
+      "baseStatus": "complete",
       "interactionStatus": "unassessed",
       "runtimeKind": "legacy-v1",
       "blockerCodes": [],
-      "limitations": [
-        {
-          "code": "audit.required",
-          "summary": "Semantic conformance review is required before this legacy implementation can be marked complete."
-        }
-      ],
+      "limitations": [],
       "manualSteps": []
     },
     {
@@ -707,16 +682,11 @@
     {
       "canonicalId": "Body Slam",
       "displayName": "Body Slam",
-      "baseStatus": "assisted",
+      "baseStatus": "complete",
       "interactionStatus": "unassessed",
       "runtimeKind": "legacy-v1",
       "blockerCodes": [],
-      "limitations": [
-        {
-          "code": "audit.required",
-          "summary": "Semantic conformance review is required before this legacy implementation can be marked complete."
-        }
-      ],
+      "limitations": [],
       "manualSteps": []
     },
     {
@@ -734,31 +704,21 @@
     {
       "canonicalId": "Bolt Strike",
       "displayName": "Bolt Strike",
-      "baseStatus": "assisted",
+      "baseStatus": "complete",
       "interactionStatus": "unassessed",
       "runtimeKind": "legacy-v1",
       "blockerCodes": [],
-      "limitations": [
-        {
-          "code": "audit.required",
-          "summary": "Semantic conformance review is required before this legacy implementation can be marked complete."
-        }
-      ],
+      "limitations": [],
       "manualSteps": []
     },
     {
       "canonicalId": "Bone Club",
       "displayName": "Bone Club",
-      "baseStatus": "assisted",
+      "baseStatus": "complete",
       "interactionStatus": "unassessed",
       "runtimeKind": "legacy-v1",
       "blockerCodes": [],
-      "limitations": [
-        {
-          "code": "audit.required",
-          "summary": "Semantic conformance review is required before this legacy implementation can be marked complete."
-        }
-      ],
+      "limitations": [],
       "manualSteps": []
     },
     {

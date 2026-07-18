@@ -18,6 +18,7 @@ import type {
   MoveAutomationTransaction,
 } from '~/types/moveAutomation'
 import type { GridAnchor } from '~/types/map'
+import { moveAutomationIsSmiteMiss } from '~/utils/moveAutomationSmite'
 import {
   createMoveResolutionTrace,
   reduceMoveResolutionTrace,
@@ -157,6 +158,9 @@ export const buildLegacyV1MoveResolutionTrace = (
 
   input.transaction.hpUpdates.forEach((update, index) => {
     const phase: MoveSpecPhase = input.script.damaging ? 'damage' : 'hit'
+    const smiteMiss = input.transaction.attackedTargetIds.includes(update.id)
+      && !hitTargetIds.has(update.id)
+      && moveAutomationIsSmiteMiss(input.script, false)
     queue(phase, {
       kind: 'operation',
       phase,
@@ -164,8 +168,16 @@ export const buildLegacyV1MoveResolutionTrace = (
       operationKind: 'direct-hp',
       recipientIds: [update.id],
       outcome: 'applied',
-      reasonCode: 'legacy-hp-update',
-      input: { updateMode: 'absolute-hp-state' },
+      reasonCode: smiteMiss ? 'legacy-smite-miss-damage' : 'legacy-hp-update',
+      input: {
+        updateMode: 'absolute-hp-state',
+        ...(smiteMiss
+          ? {
+              accuracyOutcome: 'miss',
+              effectivenessPolicy: 'resisted-one-additional-step',
+            }
+          : {}),
+      },
       result: detachedJson(update),
     })
   })

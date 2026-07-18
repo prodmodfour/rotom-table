@@ -119,7 +119,10 @@ const expectedTransactionTraceOperations = (
     operationId: `legacy-v1.hp.${index + 1}`,
     operationKind: 'direct-hp',
     recipientIds: [update.id],
-    reasonCode: 'legacy-hp-update',
+    reasonCode: transaction.attackedTargetIds.includes(update.id)
+      && !transaction.hitTargetIds.includes(update.id)
+      ? 'legacy-smite-miss-damage'
+      : 'legacy-hp-update',
     result: update,
   })),
   ...transaction.conditionUpdates.map((update, index): ExpectedTraceOperation => ({

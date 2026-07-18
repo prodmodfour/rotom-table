@@ -239,7 +239,7 @@ export const REVIEWED_AREA_CONDITION_SCRIPTS: ReadonlyMap<string, MoveAutomation
   ['Bleakwind Storm', reviewedAreaConditionScript('Bleakwind Storm', [
     { condition: 'Flinch', label: 'Flinch on 15+', threshold: '15+' },
     { condition: 'Frozen', label: 'Frozen on 19+', threshold: '19+' },
-  ])],
+  ], 2)],
   ['Heal Bell', reviewedHealBellScript()],
   ['Poison Gas', reviewedAreaConditionScript('Poison Gas', [{ condition: 'Poisoned', label: 'Poisoned' }])],
   ['Raging Fury', reviewedRagingFuryScript()],

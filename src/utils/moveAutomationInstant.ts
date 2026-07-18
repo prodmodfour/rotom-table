@@ -37,6 +37,10 @@ import { moveAutomationSecondaryEffectBlockSource } from '~/utils/moveAutomation
 import { moveAutomationMoveImmunitySource } from '~/utils/moveAutomationMoveImmunity'
 import { moveAutomationScriptWithPoisonTouch } from '~/utils/moveAutomationPoisonTouch'
 import {
+  moveAutomationDamageAppliesOnAccuracyOutcome,
+  moveAutomationEffectivenessForAccuracyOutcome,
+} from '~/utils/moveAutomationSmite'
+import {
   moveAutomationConditionImmunitySource,
   type MoveAutomationConditionImmunityContext,
 } from '~/utils/moveAutomationConditionImmunity'
@@ -469,8 +473,12 @@ const feedbackEffectiveness = (
   target: SpawnedPokemon,
   hit: boolean,
 ): MoveAutomationFeedbackEffectiveness => {
-  if (!hit || !script.damaging || script.directHpLoss) return null
-  const multiplier = moveAutomationTargetDamageMultiplier(script, target)
+  if (!moveAutomationDamageAppliesOnAccuracyOutcome(script, hit) || script.directHpLoss) return null
+  const multiplier = moveAutomationEffectivenessForAccuracyOutcome(
+    script,
+    hit,
+    moveAutomationTargetDamageMultiplier(script, target),
+  )
   if (multiplier > 1) return 'super-effective'
   if (multiplier > 0 && multiplier < 1) return 'resisted'
   return null
@@ -678,7 +686,8 @@ export const resolveInstantMoveAutomation = ({
     targetEvasion: targetEvasion.value,
     accuracyRule,
   })
-  const runtimeDamage = accuracy.hit && script.damaging
+  const damageApplies = moveAutomationDamageAppliesOnAccuracyOutcome(script, accuracy.hit)
+  const runtimeDamage = damageApplies
     ? resolveMoveAutomationRuntimeDamageFormula({
         script,
         user,
@@ -688,14 +697,14 @@ export const resolveInstantMoveAutomation = ({
         rollMetadata: legacyRollMetadata({ script, purpose: 'hit-count', target }),
       })
     : { formula: damageFormula ?? null, note: null }
-  const damageRoll = accuracy.hit && script.damaging && runtimeDamage.formula
+  const damageRoll = damageApplies && runtimeDamage.formula
     ? recordedDamageFormula({ script, target, formula: runtimeDamage.formula, random, randomRoller })
     : null
   const targetResolutions = {
     [target.id]: {
       accuracyRoll: accuracy.accuracyRoll,
       hit: accuracy.hit,
-      crit: accuracy.crit,
+      crit: accuracy.hit && accuracy.crit,
       damageRoll,
       manualHpLoss: '',
       applyDamage: true,
@@ -768,9 +777,9 @@ export const resolveInstantMoveAutomation = ({
       ...addAccuracyToFeedback(accuracy),
       targetEvasionLabel: targetEvasion.label,
       hit: accuracy.hit,
-      crit: accuracy.crit,
+      crit: accuracy.hit && accuracy.crit,
       effectiveness: feedbackEffectiveness(script, target, accuracy.hit),
-      damageResolved: accuracy.hit && script.damaging,
+      damageResolved: damageApplies,
       damageLoss,
       conditions,
     },
@@ -982,9 +991,9 @@ const resolveInstantTargetGroupMoveAutomation = ({
       })
       state.accuracyRoll = accuracy.accuracyRoll
       state.hit = accuracy.hit
-      state.crit = accuracy.crit
+      state.crit = accuracy.hit && accuracy.crit
     }
-    if (script.damaging && state.hit && damageFormula) {
+    if (moveAutomationDamageAppliesOnAccuracyOutcome(script, state.hit) && damageFormula) {
       state.damageRoll = recordedDamageFormula({
         script,
         target,

@@ -24,6 +24,7 @@ import {
 } from '~/utils/moveAutomation'
 import { moveAutomationCanResolveDamageAtRuntime } from '~/utils/moveAutomationDynamicDamage'
 import { moveAutomationTargetDamageMultiplier } from '~/utils/moveAutomationTargetResolution'
+import { moveAutomationDamageAppliesOnAccuracyOutcome } from '~/utils/moveAutomationSmite'
 import { moveAutomationStatusDetailsText } from '~/utils/moveAutomationSemanticStatus'
 import { moveAutomationScriptForConfirmedAreaTemplate } from '~/utils/moveAutomationConfirmedAreaTemplate'
 import {
@@ -552,8 +553,8 @@ const authoritativeLegacyDamageInputsForTarget = (
   if (
     !script.damaging
     || script.directHpLoss !== undefined
-    || !resolution?.hit
-    || !resolution.applyDamage
+    || !moveAutomationDamageAppliesOnAccuracyOutcome(script, resolution?.hit)
+    || !resolution?.applyDamage
     || (script.damageClass !== 'Physical' && script.damageClass !== 'Special')
   ) return {}
   const previousMultiplier = moveAutomationTargetDamageMultiplier(script, target)

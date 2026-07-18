@@ -21,6 +21,11 @@ import { ELECTRIC_RESISTANT_COAT_CONDITION } from '~/utils/moveAutomationSpecial
 import { moveAutomationMoveImmunitySource } from '~/utils/moveAutomationMoveImmunity'
 import { moveAutomationPassiveImmunityKeywordsForTarget } from '~/utils/moveAutomationKeywordImmunity'
 import {
+  moveAutomationDamageAppliesOnAccuracyOutcome,
+  moveAutomationEffectivenessForAccuracyOutcome,
+  moveAutomationIsSmiteMiss,
+} from '~/utils/moveAutomationSmite'
+import {
   resolveMoveDamagePipeline,
   type MoveDamageModifier,
   type MoveDamageModifierSource,
@@ -198,7 +203,9 @@ export const resolveMoveAutomationTargetDamageBreakdown = (
 ): MoveAutomationDamageBreakdown => {
   if (!script?.damaging) return NO_DAMAGE_BREAKDOWN
   const state = resolution ?? defaultTargetResolutionState(script)
-  if (!state.applyDamage || !state.hit) return NO_DAMAGE_BREAKDOWN
+  if (!state.applyDamage || !moveAutomationDamageAppliesOnAccuracyOutcome(script, state.hit)) {
+    return NO_DAMAGE_BREAKDOWN
+  }
   const manual = parsePositiveInt(state.manualHpLoss)
   if (manual != null) return { kind: 'manual', hpLoss: manual, manualHpLoss: manual }
   const directHpLoss = resolveMoveAutomationDirectHpLoss({
@@ -213,11 +220,14 @@ export const resolveMoveAutomationTargetDamageBreakdown = (
   }
   const resolvedStats = resolvedDamage.stats ?? {}
   const baseRollTotal = state.damageRoll?.total ?? 0
-  const criticalDamageBonus = state.criticalBonusDamage != null
-    ? state.criticalBonusDamage
-    : state.crit
-      ? state.damageRoll?.rolls.reduce((sum, roll) => sum + roll, 0) ?? 0
-      : 0
+  const criticalDamageBonus = !state.hit
+    ? 0
+    : state.criticalBonusDamage != null
+      ? state.criticalBonusDamage
+      : state.crit
+        ? state.damageRoll?.rolls.reduce((sum, roll) => sum + roll, 0) ?? 0
+        : 0
+  const criticalApplied = state.hit && (state.crit || criticalDamageBonus !== 0)
   const unmodifiedRaw = baseRollTotal + criticalDamageBonus
   if (unmodifiedRaw <= 0) return NO_DAMAGE_BREAKDOWN
   const infatuation = resolveInfatuationDamageEffect(user.conditions, selectedTargets)
@@ -262,9 +272,15 @@ export const resolveMoveAutomationTargetDamageBreakdown = (
     fieldEffects,
     user.abilityNames,
   )
-  const multiplier = resolvedDamage.typeEffectiveness?.multiplier
+  const baseMultiplier = resolvedDamage.typeEffectiveness?.multiplier
     ?? moveAutomationTargetDamageMultiplier(script, target)
+  const multiplier = moveAutomationEffectivenessForAccuracyOutcome(
+    script,
+    state.hit,
+    baseMultiplier,
+  )
   if (multiplier === 0) return NO_DAMAGE_BREAKDOWN
+  const smiteMiss = moveAutomationIsSmiteMiss(script, state.hit)
 
   const moveSource = { kind: 'move', id: script.moveName } as const
   const modifiers: MoveDamageModifier[] = [{
@@ -336,16 +352,20 @@ export const resolveMoveAutomationTargetDamageBreakdown = (
     })
   }
   modifiers.push({
-    id: 'damage.type-effectiveness',
+    id: smiteMiss ? 'damage.smite-miss-effectiveness' : 'damage.type-effectiveness',
     stage: 'type-effectiveness',
     priority: 0,
-    source: { kind: 'type', id: `${resolvedMoveType}:${target.id}` },
+    source: smiteMiss
+      ? { kind: 'rules', id: 'ptu.smite' }
+      : { kind: 'type', id: `${resolvedMoveType}:${target.id}` },
     stackingGroup: 'type-effectiveness',
-    reasonCode: 'damage.type-effectiveness',
+    reasonCode: smiteMiss
+      ? 'damage.smite-miss-resistance-step'
+      : 'damage.type-effectiveness',
     operation: 'multiply-floor',
     value: multiplier,
   })
-  if (state.crit || criticalDamageBonus !== 0) {
+  if (criticalApplied) {
     modifiers.push({
       id: 'damage.critical-roll',
       stage: 'critical-modifiers',
@@ -418,7 +438,7 @@ export const resolveMoveAutomationTargetDamageBreakdown = (
     multiplierLabel: formatMultiplier(multiplier),
     scaledDamage: pipeline.postModifierDamage,
     minimumDamageApplied: pipeline.minimumDamageApplied,
-    critical: state.crit,
+    critical: criticalApplied,
     pipeline,
   }
 }

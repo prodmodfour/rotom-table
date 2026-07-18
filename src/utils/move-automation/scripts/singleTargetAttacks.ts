@@ -94,6 +94,11 @@ export const STRUGGLE_ATTACK_SCRIPTS: ReadonlyMap<string, MoveAutomationScript> 
   STRUGGLE_ATTACK_MOVE_NAMES.map((name) => [name, reviewedSingleTargetAttackScript(name)]),
 )
 
+const REVIEWED_SMITE_V2_MOVE_NAMES = new Set(['Blue Flare', 'Bolt Strike'])
+
 export const SEAMLESS_SINGLE_TARGET_ATTACK_SCRIPTS: ReadonlyMap<string, MoveAutomationScript> = new Map(
-  SEAMLESS_SINGLE_TARGET_ATTACK_SCRIPT_NAMES.map((name) => [name, reviewedSingleTargetAttackScript(name)]),
+  SEAMLESS_SINGLE_TARGET_ATTACK_SCRIPT_NAMES.map((name) => [
+    name,
+    reviewedSingleTargetAttackScript(name, REVIEWED_SMITE_V2_MOVE_NAMES.has(name) ? 2 : 1),
+  ]),
 )

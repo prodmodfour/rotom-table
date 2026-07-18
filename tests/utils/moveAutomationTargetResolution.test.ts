@@ -83,6 +83,53 @@ describe('move automation target resolution helpers', () => {
     expect(defaultTargetResolutionState(script({ requiresAccuracy: false, damaging: false }))).toMatchObject({ hit: true, applyDamage: false })
   })
 
+  it('resolves Smite miss damage one resistance step lower without a critical bonus', () => {
+    const user = token({ id: 'u', species: 'User', atk: 12 })
+    const target = token({ id: 't', species: 'Target', currentHp: 30, def: 7 })
+    const smite = script({ keywords: ['Smite'], criticalRange: 18 })
+    const missedCriticalRange = {
+      ...defaultTargetResolutionState(smite),
+      hit: false,
+      crit: true,
+      damageRoll: { formula: '2d6+8', count: 2, sides: 6, total: 20, rolls: [6, 6], mod: 8 },
+    }
+
+    const breakdown = resolveMoveAutomationTargetDamageBreakdown(
+      smite,
+      user,
+      target,
+      missedCriticalRange,
+    )
+    expect(breakdown).toMatchObject({
+      kind: 'standard',
+      hpLoss: 12,
+      multiplier: 0.5,
+      critical: false,
+    })
+    expect(breakdown.kind === 'standard' ? breakdown.pipeline : null).toMatchObject({
+      stages: expect.arrayContaining([
+        expect.objectContaining({
+          modifiers: expect.arrayContaining([
+            expect.objectContaining({
+              id: 'damage.smite-miss-effectiveness',
+              source: { kind: 'rules', id: 'ptu.smite' },
+              reasonCode: 'damage.smite-miss-resistance-step',
+              value: 0.5,
+            }),
+          ]),
+        }),
+      ]),
+    })
+    expect(breakdown.kind === 'standard' ? breakdown.terms : [])
+      .not.toContainEqual(expect.objectContaining({ label: 'critical' }))
+    expect(resolveMoveAutomationTargetDamageBreakdown(
+      script(),
+      user,
+      target,
+      missedCriticalRange,
+    )).toEqual({ kind: 'none', hpLoss: 0 })
+  })
+
   it('resolves target damage with manual override, defense, weather, and type immunity', () => {
     const user = token({ id: 'u', species: 'User', atk: 12 })
     const target = token({ id: 't', species: 'Target', currentHp: 30, def: 7, defenderTypes: ['Grass'] })
