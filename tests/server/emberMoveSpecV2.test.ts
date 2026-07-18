@@ -14,6 +14,9 @@ import {
 import {
   runAndAssertMoveAutomationSemanticScenario,
 } from '../fixtures/moveAutomation/scenario'
+import {
+  EMBER_REG_008_SCENARIOS,
+} from '../fixtures/moveAutomation/registeredBatch008'
 import { planAuthoritativeMoveState } from '~~/server/domain/planAuthoritativeMoveState'
 import {
   createFiniteAuthoritativeMoveRandomStream,
@@ -62,11 +65,11 @@ describe('Ember native MoveSpec v2', () => {
     expect(emberRow.runtime).toEqual({
       kind: 'movespec-v2',
       version: 2,
-      definitionHash: '3c94f42831d1b0113ae53576c9ad2c84efb06529beb718b8f6c50c527583266f',
+      definitionHash: '211f6a472df744e943a9dc9bd0582215bb3e06a381ebdf79cb6f975ac2f1fa32',
       sourceModule: 'server/domain/moveAutomation/specs/ember.ts',
     })
     expect(emberRow.scenarioIds).toEqual(
-      EMBER_V2_SEMANTIC_SCENARIOS.map(({ scenarioId }) => scenarioId),
+      EMBER_REG_008_SCENARIOS.map(({ scenarioId }) => scenarioId),
     )
     expect(emberRow.manualSteps).toEqual([])
     expect(registeredMoveAutomationRuntimeFor('Ember')).toMatchObject({

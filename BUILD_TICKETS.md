@@ -2600,7 +2600,7 @@ Status: DONE
 
 ## REG-008 — Certify Drill Run through Energy Ball
 
-Status: TODO
+Status: DONE
 
 **Baseline-registered moves:** Drill Run; Drum Beating; Earth Power; Eerie Impulse; Egg Bomb; Electroweb; Ember; Energy Ball
 
