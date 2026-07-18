@@ -2576,7 +2576,7 @@ Status: DONE
 
 ## REG-004 — Certify Boomburst through Bullet Punch
 
-Status: TODO
+Status: DONE
 
 **Baseline-registered moves:** Boomburst; Branch Poke; Breaking Swipe; Brutal Swing; Bubble; Bubble Beam; Bulldoze; Bullet Punch
 
