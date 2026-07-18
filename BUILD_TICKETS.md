@@ -2612,7 +2612,7 @@ Status: DONE
 
 ## REG-010 — Certify Feint Attack through Flash Cannon
 
-Status: TODO
+Status: DONE
 
 **Baseline-registered moves:** Feint Attack; Fire Blast; Fire Lash; Fire Punch; Flame Wheel; Flamethrower; Flash; Flash Cannon
 
