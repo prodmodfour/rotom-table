@@ -7,8 +7,10 @@ import { deepCloneJson } from '~/utils/serialization'
 import {
   KNOCK_OFF_ACTOR_PLACEMENT_ID,
   KNOCK_OFF_TARGET_PLACEMENT_ID,
+  KNOCK_OFF_V2_SEMANTIC_SCENARIOS,
   KNOCK_OFF_V2_TEST_RUNTIME,
   createKnockOffV2RuntimeRegistry,
+  knockOffImmunityTestDefinition,
   knockOffV2Fixture,
 } from '../fixtures/moveAutomation/knockOffV2'
 import { buildAuthoritativeMoveRulesContext } from '~~/server/domain/moveAutomation/context'
@@ -112,29 +114,6 @@ const executeKnockOff = (options: {
   })
 }
 
-const immuneKnockOffDefinition = (): ValidatedMoveSpecDefinition => {
-  const spec = JSON.parse(JSON.stringify(KNOCK_OFF_MOVE_SPEC)) as {
-    phases: Array<{
-      operations: Array<{
-        id: string
-        kind: string
-        payload: Record<string, unknown>
-      }>
-    }>
-  }
-  const damage = spec.phases.flatMap(({ operations }) => operations)
-    .find(operation => operation.id === 'knock-off.damage')
-  if (!damage || damage.kind !== 'damage') throw new Error('Knock Off damage operation is missing.')
-  damage.payload.typeEffectiveness = {
-    immunity: 'honor',
-    resistance: 'honor',
-    weakness: 'honor',
-    effectivenessOverride: null,
-    defenderTypeOverrides: [{ defenderType: 'normal', relation: 'immune' }],
-  }
-  return validateMoveSpec(spec)
-}
-
 const combat = (
   kind: KnockOffResolvedCombatOutcome['kind'],
   options: { readonly damageDealt?: number; readonly criticalHit?: boolean } = {},
@@ -194,26 +173,37 @@ const planTypedWrites = (
 
 const knockOffManifestRow = manifestJson.moves.find(row => row.canonicalId === 'Knock Off')
 
-describe('Knock Off authoritative item outcome foundation', () => {
-  it('keeps the reviewed v2 draft test-only until terminal persistence certification', () => {
+describe('Knock Off authoritative item outcome', () => {
+  it('selects the complete reviewed v2 runtime and semantic evidence', () => {
     expect(knockOffManifestRow).toMatchObject({
-      baseStatus: 'assisted',
+      baseStatus: 'complete',
       runtime: {
-        kind: 'legacy-v1',
-        version: 1,
-        sourceModule: 'src/utils/move-automation/scripts/additionalSingleTarget.ts',
+        kind: 'movespec-v2',
+        version: 2,
+        definitionHash: 'b73b40a27db5f74dc81aa1825d54eb0c12ca130103155752acf0b92acbf8c06b',
+        sourceModule: 'server/domain/moveAutomation/specs/knockOff.ts',
       },
-      blockerCodes: ['items.authoritative'],
-      limitations: [expect.objectContaining({ code: 'knock-off.inventory' })],
-      manualSteps: [expect.objectContaining({ code: 'knock-off.item-transfer' })],
+      capabilityTags: [
+        'hp.typed',
+        'items.authoritative',
+        'reactions.durable',
+        'targeting.authoritative',
+      ],
+      blockerCodes: [],
+      limitations: [],
+      manualSteps: [],
     })
+    expect(knockOffManifestRow?.scenarioIds).toEqual(
+      KNOCK_OFF_V2_SEMANTIC_SCENARIOS.map(({ scenarioId }) => scenarioId),
+    )
     expect(registeredMoveAutomationRuntimeFor('Knock Off')).toMatchObject({
-      kind: 'legacy-v1',
+      kind: 'movespec-v2',
+      definition: { spec: KNOCK_OFF_MOVE_SPEC },
       definitionHash: knockOffManifestRow?.runtime.definitionHash,
     })
-    expect(REVIEWED_MOVE_SPEC_V2_REGISTRATIONS.some(({ canonicalId }) => (
-      canonicalId === 'Knock Off'
-    ))).toBe(false)
+    expect(REVIEWED_MOVE_SPEC_V2_REGISTRATIONS).toContainEqual(
+      expect.objectContaining({ canonicalId: 'Knock Off' }),
+    )
     expect(knockOffRuntimeRegistry.resolve('Knock Off')).toBe(knockOffRuntime)
 
     const definition = validateMoveSpec(KNOCK_OFF_MOVE_SPEC)
@@ -275,7 +265,7 @@ describe('Knock Off authoritative item outcome foundation', () => {
     const immune = executeKnockOff({
       heldItems: 'Leftovers, Bright Powder',
       randomValues: [0.45, 0, 0],
-      definition: immuneKnockOffDefinition(),
+      definition: knockOffImmunityTestDefinition(),
     })
     expect(immune.kind).toBe('complete')
     expect(immune.hitTargetIds).toEqual([KNOCK_OFF_TARGET_PLACEMENT_ID])

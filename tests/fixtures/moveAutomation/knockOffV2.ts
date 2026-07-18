@@ -16,6 +16,7 @@ import { validateMoveSpec } from '~~/server/domain/moveAutomation/validateSpec'
 
 export const KNOCK_OFF_ACTOR_PLACEMENT_ID = 'knock-off-actor'
 export const KNOCK_OFF_TARGET_PLACEMENT_ID = 'knock-off-target'
+export const KNOCK_OFF_TARGET_TRAINER_SLUG = 'knock-off-target-trainer'
 
 export const KNOCK_OFF_V2_SEMANTIC_SCENARIOS = Object.freeze([
   { scenarioId: 'knock-off.v2-atomic-failure', evidenceClasses: ['multi-resource-conflict'] as const },
@@ -35,6 +36,32 @@ export const KNOCK_OFF_V2_SEMANTIC_SCENARIOS = Object.freeze([
 
 const KNOCK_OFF_V2_TEST_DEFINITION = validateMoveSpec(KNOCK_OFF_MOVE_SPEC)
 
+/** Test-only type override proving that immunity prevents the item clause. */
+export const knockOffImmunityTestDefinition = () => {
+  const spec = JSON.parse(JSON.stringify(KNOCK_OFF_MOVE_SPEC)) as {
+    phases: Array<{
+      operations: Array<{
+        id: string
+        kind: string
+        payload: Record<string, unknown>
+      }>
+    }>
+  }
+  const damage = spec.phases.flatMap(({ operations }) => operations)
+    .find(operation => operation.id === 'knock-off.damage')
+  if (!damage || damage.kind !== 'damage') {
+    throw new Error('Knock Off damage operation is missing.')
+  }
+  damage.payload.typeEffectiveness = {
+    immunity: 'honor',
+    resistance: 'honor',
+    weakness: 'honor',
+    effectivenessOverride: null,
+    defenderTypeOverrides: [{ defenderType: 'normal', relation: 'immune' }],
+  }
+  return validateMoveSpec(spec)
+}
+
 export const KNOCK_OFF_V2_TEST_RUNTIME: MoveSpecV2Runtime = Object.freeze({
   canonicalId: 'Knock Off',
   kind: 'movespec-v2',
@@ -44,7 +71,7 @@ export const KNOCK_OFF_V2_TEST_RUNTIME: MoveSpecV2Runtime = Object.freeze({
   definition: KNOCK_OFF_V2_TEST_DEFINITION,
 })
 
-/** Test-only selection seam; production remains on manifest-selected legacy v1 through MA-176B. */
+/** Isolated registry used by pure tests that substitute reviewed Knock Off definitions. */
 export const createKnockOffV2RuntimeRegistry = (): MoveAutomationRuntimeRegistry => Object.freeze({
   size: 1,
   handlerRegistry: REGISTERED_MOVE_HANDLER_REGISTRY,
@@ -57,6 +84,7 @@ export const createKnockOffV2RuntimeRegistry = (): MoveAutomationRuntimeRegistry
 export interface KnockOffV2FixtureOptions {
   readonly heldItems?: string | null
   readonly mapRevision?: number
+  readonly targetTrainerEquipmentSlots?: TrainerSheet['equipmentSlots']
 }
 
 const placement = (
@@ -114,6 +142,17 @@ export const knockOffV2Fixture = (
       foes: { id: 'foes', label: 'Foes', status: 'active' as const },
     },
   }
+  const targetIsTrainer = options.targetTrainerEquipmentSlots !== undefined
+  const targetPlacement: SheetPlacement = targetIsTrainer
+    ? {
+        ...placement(
+          KNOCK_OFF_TARGET_PLACEMENT_ID,
+          KNOCK_OFF_TARGET_TRAINER_SLUG,
+          2,
+        ),
+        sheetKind: 'trainer',
+      }
+    : placement(KNOCK_OFF_TARGET_PLACEMENT_ID, 'knock-off-target-sheet', 2)
   const map: TabletopMap = {
     schemaVersion: 2,
     slug: 'knock-off-arena',
@@ -127,7 +166,7 @@ export const knockOffV2Fixture = (
     fieldEffects: { weather: [], terrains: [], rooms: [] },
     placements: [
       placement(KNOCK_OFF_ACTOR_PLACEMENT_ID, 'knock-off-actor-sheet', 1),
-      placement(KNOCK_OFF_TARGET_PLACEMENT_ID, 'knock-off-target-sheet', 2),
+      targetPlacement,
     ],
     lights: [],
     initiative: { activeId: KNOCK_OFF_ACTOR_PLACEMENT_ID, round: 1 },
@@ -136,23 +175,48 @@ export const knockOffV2Fixture = (
     createdAt: 1,
     updatedAt: 100,
   }
+  const pokemonSheets = new Map([
+    ['knock-off-actor-sheet', pokemonSheet({
+      slug: 'knock-off-actor-sheet',
+      species: 'Machop',
+      moves: [{ name: 'Knock Off' }],
+    })],
+  ])
+  const trainerSheets = new Map<string, TrainerSheet>()
+  if (targetIsTrainer) {
+    trainerSheets.set(KNOCK_OFF_TARGET_TRAINER_SLUG, {
+      slug: KNOCK_OFF_TARGET_TRAINER_SLUG,
+      name: 'Knock Off Target Trainer',
+      level: 20,
+      revision: 2,
+      currentHp: 100,
+      stats: {
+        hp: { base: 20 },
+        atk: { base: 10 },
+        def: { base: 10 },
+        satk: { base: 10 },
+        sdef: { base: 10 },
+        spd: { base: 10 },
+      },
+      combatStages: { acc: 0 },
+      conditions: [],
+      capabilities: { overland: 6 },
+      equipmentSlots: { ...options.targetTrainerEquipmentSlots },
+    })
+  }
+  else {
+    pokemonSheets.set('knock-off-target-sheet', pokemonSheet({
+      slug: 'knock-off-target-sheet',
+      species: 'Eevee',
+      heldItems: options.heldItems === undefined
+        ? 'Leftovers, Bright Powder'
+        : options.heldItems,
+    }))
+  }
   return {
     map,
-    pokemonSheets: new Map([
-      ['knock-off-actor-sheet', pokemonSheet({
-        slug: 'knock-off-actor-sheet',
-        species: 'Machop',
-        moves: [{ name: 'Knock Off' }],
-      })],
-      ['knock-off-target-sheet', pokemonSheet({
-        slug: 'knock-off-target-sheet',
-        species: 'Eevee',
-        heldItems: options.heldItems === undefined
-          ? 'Leftovers, Bright Powder'
-          : options.heldItems,
-      })],
-    ]),
-    trainerSheets: new Map<string, TrainerSheet>(),
+    pokemonSheets,
+    trainerSheets,
     intent: {
       schemaVersion: LIVE_PLAY_MOVE_RESOLUTION_SCHEMA_VERSION,
       placementId: KNOCK_OFF_ACTOR_PLACEMENT_ID,

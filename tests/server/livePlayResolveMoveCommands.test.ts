@@ -1548,7 +1548,7 @@ describe('executeLivePlayResolveMoveCommandUseCase', () => {
     })
   })
 
-  it('keeps private item candidates and inaccessible target inventories out of player responses', async () => {
+  it('reveals only the accepted ground item while keeping inaccessible target inventory private', async () => {
     const harness = seedHarness({
       actorMoves: [{ name: 'Knock Off' }],
       targetASheet: {
@@ -1591,10 +1591,17 @@ describe('executeLivePlayResolveMoveCommandUseCase', () => {
     expect(response.sheetUpdates ?? []).not.toContainEqual(
       expect.objectContaining({ slug: 'target-a' }),
     )
-    expect(JSON.stringify(response)).not.toContain('leftovers')
+    expect(response.map?.encounterState?.groundItems).toEqual([
+      expect.objectContaining({
+        canonicalItemId: 'leftovers',
+        canonicalItemName: 'Leftovers',
+        sourceOperationId: 'op_privateitems1',
+      }),
+    ])
+    expect(JSON.stringify(response)).toContain('leftovers')
     expect(JSON.stringify(response)).not.toContain('Private held-item note')
     expect(harness.sheets.getByRef('pokemon', 'target-a')?.sheet).toMatchObject({
-      items: { held: 'Leftovers', itemDescription: 'Private held-item note' },
+      items: { itemDescription: 'Private held-item note' },
     })
   })
 

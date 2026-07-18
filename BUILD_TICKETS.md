@@ -2461,7 +2461,7 @@ Status: DONE
 
 ## MA-176C — Commit and certify Knock Off inventory mutation
 
-Status: TODO
+Status: DONE
 
 **Depends on:** MA-176B
 **Commit:** `feat(move-automation): fully resolve knock off`

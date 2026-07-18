@@ -31,6 +31,7 @@ import {
 } from './itemEffectInterpreter'
 import {
   KNOCK_OFF_ITEM_CHOICE_OPERATION,
+  KNOCK_OFF_ITEM_EFFECT_OPERATION,
   KNOCK_OFF_ITEM_REQUEST_ID,
   planKnockOffItemOutcome,
   type KnockOffResolvedCombatOutcome,
@@ -578,7 +579,18 @@ const reduceKnockOffItemOutcome = (input: {
   return {
     itemEffects: outcome.kind === 'item-plan'
       ? outcome.itemEffects
-      : Object.freeze({ mutations: Object.freeze([]), results: Object.freeze([]) }),
+      : Object.freeze({
+          mutations: Object.freeze([]),
+          results: Object.freeze([Object.freeze({
+            operationId: KNOCK_OFF_ITEM_EFFECT_OPERATION.id,
+            action: KNOCK_OFF_ITEM_EFFECT_OPERATION.payload.action,
+            outcome: 'no-op' as const,
+            outcomeCode: 'selection-unavailable' as const,
+            mutationIds: Object.freeze([]),
+            itemCount: 0,
+            reasonCode: KNOCK_OFF_ITEM_EFFECT_OPERATION.reasonCode,
+          })]),
+        }),
     trace: replaceKnockOffChoiceTrace({ trace: input.trace, replacement }),
   }
 }

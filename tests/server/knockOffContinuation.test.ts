@@ -21,13 +21,15 @@ import {
 } from '#shared/playerProfiles'
 import type { CharacterSheet } from '~/types/characterSheet'
 import type { TabletopMap } from '~/types/map'
+import type { TrainerSheet } from '~/types/trainerSheet'
 import { buildResolveMoveScopes } from '~/utils/livePlayMoveCommandScopes'
 import { pokemonHpSnapshot } from '~/utils/sheetSpawn'
 import { deepCloneJson } from '~/utils/serialization'
 import {
   KNOCK_OFF_ACTOR_PLACEMENT_ID,
   KNOCK_OFF_TARGET_PLACEMENT_ID,
-  createKnockOffV2RuntimeRegistry,
+  KNOCK_OFF_TARGET_TRAINER_SLUG,
+  knockOffImmunityTestDefinition,
   knockOffV2Fixture,
 } from '../fixtures/moveAutomation/knockOffV2'
 import {
@@ -42,6 +44,10 @@ import {
   createFiniteAuthoritativeMoveRandomStream,
   type AuthoritativeMoveRandomSource,
 } from '~~/server/domain/moveAutomation/random'
+import {
+  MOVE_AUTOMATION_RUNTIME_REGISTRY,
+  type MoveAutomationRuntimeRegistry,
+} from '~~/server/domain/moveAutomation/registry'
 import {
   ResumeMoveSpecError,
   resumeMoveSpec,
@@ -69,6 +75,7 @@ import {
 import {
   replayMoveResponseCommandUseCase,
   resumePendingMoveResolutionUseCase,
+  type ResumePendingMoveResolutionDependencies,
 } from '~~/server/useCases/resumePendingMoveResolution'
 import { acceptedRealtimeTestHooks } from './livePlayAcceptedRealtimeTestUtils'
 
@@ -82,7 +89,7 @@ interface KnockOffHarness {
   readonly pending: ReturnType<typeof createSqlitePendingMoveResolutionRepository>
   readonly realtime: ReturnType<typeof createSqliteRealtimeEventRepository>
   readonly commandExecutor: ReturnType<typeof createAuthoritativeLivePlayCommandExecutor>
-  readonly runtimeRegistry: ReturnType<typeof createKnockOffV2RuntimeRegistry>
+  readonly runtimeRegistry: MoveAutomationRuntimeRegistry
   readonly random: AuthoritativeMoveRandomSource
   readonly drawCount: () => number
 }
@@ -96,11 +103,16 @@ afterEach(() => {
 const createHarness = (options: {
   readonly heldItems?: string | null
   readonly randomValues?: readonly number[]
+  readonly targetTrainerEquipmentSlots?: TrainerSheet['equipmentSlots']
+  readonly runtimeRegistry?: MoveAutomationRuntimeRegistry
 } = {}): KnockOffHarness => {
   const fixture = knockOffV2Fixture({
     heldItems: options.heldItems === undefined
       ? 'Leftovers, Bright Powder'
       : options.heldItems,
+    ...(options.targetTrainerEquipmentSlots === undefined
+      ? {}
+      : { targetTrainerEquipmentSlots: options.targetTrainerEquipmentSlots }),
   })
   const values = [...(options.randomValues ?? [0.45, 0, 0])]
   let draws = 0
@@ -164,10 +176,34 @@ const createHarness = (options: {
     pending,
     realtime,
     commandExecutor,
-    runtimeRegistry: createKnockOffV2RuntimeRegistry(),
+    runtimeRegistry: options.runtimeRegistry ?? MOVE_AUTOMATION_RUNTIME_REGISTRY,
     random,
     drawCount: () => draws,
   }
+}
+
+const knockOffImmunityRuntimeRegistry = (): MoveAutomationRuntimeRegistry => {
+  const selected = MOVE_AUTOMATION_RUNTIME_REGISTRY.resolve('Knock Off')
+  if (!selected || selected.kind !== 'movespec-v2') {
+    throw new Error('Knock Off native runtime is unavailable.')
+  }
+  const definition = knockOffImmunityTestDefinition()
+  const runtime = Object.freeze({
+    ...selected,
+    definition,
+    definitionHash: definition.definitionHash,
+  })
+  const entries = MOVE_AUTOMATION_RUNTIME_REGISTRY.entries().map(entry => (
+    entry.canonicalId === 'Knock Off' ? runtime : entry
+  ))
+  return Object.freeze({
+    size: MOVE_AUTOMATION_RUNTIME_REGISTRY.size,
+    handlerRegistry: MOVE_AUTOMATION_RUNTIME_REGISTRY.handlerRegistry,
+    resolve: (canonicalId: string) => canonicalId === 'Knock Off'
+      ? runtime
+      : MOVE_AUTOMATION_RUNTIME_REGISTRY.resolve(canonicalId),
+    entries: () => Object.freeze(entries),
+  })
 }
 
 const resolveCommand = (
@@ -268,6 +304,51 @@ const targetHp = (harness: KnockOffHarness): number => pokemonHpSnapshot(
   targetSheet(harness),
 ).currentHp
 
+const targetTrainerSheet = (harness: KnockOffHarness): TrainerSheet => (
+  harness.sheets.getByRef('trainer', KNOCK_OFF_TARGET_TRAINER_SLUG)!
+    .sheet as unknown as TrainerSheet
+)
+
+const knockOffUses = (harness: KnockOffHarness): number => (
+  harness.maps.getBySlug('knock-off-arena')?.moveUsage
+    ?.byPlacementId[KNOCK_OFF_ACTOR_PLACEMENT_ID]?.['knock-off']?.uses
+  ?? 0
+)
+
+const responseInvocation = (
+  harness: KnockOffHarness,
+  command: ChooseMoveResponseCommand,
+  overrides: ResumePendingMoveResolutionDependencies = {},
+) => {
+  const parsed = parsePendingMoveResponseCommand(command, {
+    pendingResolutionRepository: harness.pending,
+  })
+  const invoke = () => resumePendingMoveResolutionUseCase({
+    ...parsed,
+    role: 'gm',
+    playerProfile: null,
+    authorization: {
+      chosenBy: { kind: 'gm', id: null },
+      source: 'gm-authority',
+    },
+    clientId: 'knock-off-response-client',
+  }, {
+    database: harness.database,
+    mapRepository: harness.maps,
+    sheetRepository: harness.sheets,
+    groupInventoryRepository: harness.groups,
+    pendingResolutionRepository: harness.pending,
+    opRepository: harness.ops,
+    realtimeEventRepository: harness.realtime,
+    random: harness.random,
+    runtimeRegistry: harness.runtimeRegistry,
+    now: () => 6_000,
+    publishPersistedRealtimeEvent: vi.fn(),
+    ...overrides,
+  })
+  return { parsed, invoke }
+}
+
 const currentItemResources = (input: {
   readonly harness: KnockOffHarness
   readonly map: TabletopMap
@@ -283,6 +364,222 @@ const currentItemResources = (input: {
 })
 
 describe('Knock Off durable item continuation', () => {
+  it('plans one immediate damage, usage, item-removal, and ground destination envelope', () => {
+    const fixture = knockOffV2Fixture({ heldItems: 'Leftovers' })
+    const resources = resolveAuthoritativeMoveItemResources({
+      map: fixture.map,
+      actorPlacementId: KNOCK_OFF_ACTOR_PLACEMENT_ID,
+      selectedTargetPlacementIds: [KNOCK_OFF_TARGET_PLACEMENT_ID],
+      pokemonSheets: fixture.pokemonSheets,
+      trainerSheets: fixture.trainerSheets,
+      groupInventories: new Map(),
+      requirements: reviewedMoveItemResourceRequirementsFor('Knock Off'),
+    })
+    const plan = planAuthoritativeMoveStateExecution({
+      ...fixture,
+      itemResources: resources,
+      runtimeRegistry: MOVE_AUTOMATION_RUNTIME_REGISTRY,
+      random: createFiniteAuthoritativeMoveRandomStream([0.45, 0, 0]),
+      operationId: 'op_knock_off_immediate_plan',
+      now: () => 5_000,
+    })
+
+    expect(isAuthoritativePendingMoveStatePlan(plan)).toBe(false)
+    if (isAuthoritativePendingMoveStatePlan(plan)) return
+    expect(plan.stateChanges.changes).toContainEqual(expect.objectContaining({
+      kind: 'sheet-state',
+      reasonCode: 'combined-sheet-operations',
+      changedFields: ['hp', 'items'],
+    }))
+    expect(plan.sheetWrites).toEqual([
+      expect.objectContaining({
+        kind: 'pokemon',
+        slug: 'knock-off-target-sheet',
+        expectedRevision: 2,
+        revision: 3,
+        changedFields: ['hp', 'items'],
+        nextSheet: expect.objectContaining({ items: {} }),
+      }),
+    ])
+    expect(plan.nextMap.encounterState?.groundItems).toEqual([
+      expect.objectContaining({
+        canonicalItemId: 'leftovers',
+        sourceOperationId: 'op_knock_off_immediate_plan',
+      }),
+    ])
+    expect(plan.usage.uses).toBe(1)
+  })
+
+  it('commits a sole Held Item with damage and usage exactly once', async () => {
+    const harness = createHarness({ heldItems: 'Leftovers' })
+    const command = resolveCommand(harness, 'op_knock_off_single_item')
+    const first = await invokeDeclaration(harness, command)
+
+    expect(first.result).toMatchObject({ ok: true, previousRevision: 0, revision: 1 })
+    expect(isPendingMoveDeclarationResult(first.result)).toBe(false)
+    expect(targetHp(harness)).toBeLessThan(100)
+    expect(targetSheet(harness).items?.held).toBeUndefined()
+    expect(targetSheet(harness).revision).toBe(3)
+    expect(knockOffUses(harness)).toBe(1)
+    expect(harness.maps.getBySlug(command.mapSlug)?.encounterState?.groundItems).toEqual([
+      expect.objectContaining({
+        canonicalItemId: 'leftovers',
+        canonicalItemName: 'Leftovers',
+        quantity: 1,
+        position: { x: 2, y: 0, z: 1 },
+        sourceResource: {
+          kind: 'sheet',
+          sheetKind: 'pokemon',
+          slug: 'knock-off-target-sheet',
+          revision: 2,
+        },
+        sourceOperationId: command.opId,
+      }),
+    ])
+    expect(harness.ops.getOpResult(command.mapSlug, command.opId)).toEqual(first.result)
+    expect(first.sheetUpdates).toContainEqual(expect.objectContaining({
+      kind: 'pokemon',
+      slug: 'knock-off-target-sheet',
+      sheet: expect.objectContaining({ items: {} }),
+    }))
+
+    const committed = deepCloneJson({
+      map: harness.maps.getBySlug(command.mapSlug),
+      sheets: harness.sheets.list(),
+      operation: harness.ops.getStoredOpRecord(command.mapSlug, command.opId),
+    })
+    const draws = harness.drawCount()
+    const duplicate = await invokeDeclaration(harness, command)
+
+    expect(duplicate.result).toEqual(first.result)
+    expect(harness.drawCount()).toBe(draws)
+    expect({
+      map: harness.maps.getBySlug(command.mapSlug),
+      sheets: harness.sheets.list(),
+      operation: harness.ops.getStoredOpRecord(command.mapSlug, command.opId),
+    }).toEqual(committed)
+  })
+
+  it.each([
+    {
+      branch: 'itemless hit',
+      heldItems: null,
+      randomValues: [0.45, 0, 0],
+      expectedHpLoss: true,
+      expectedHitIds: [KNOCK_OFF_TARGET_PLACEMENT_ID],
+    },
+    {
+      branch: 'miss',
+      heldItems: 'Leftovers',
+      randomValues: [0],
+      expectedHpLoss: false,
+      expectedHitIds: [],
+    },
+  ] as const)(
+    'commits the immediate $branch without an item mutation',
+    async ({ branch, heldItems, randomValues, expectedHpLoss, expectedHitIds }) => {
+      const harness = createHarness({ heldItems, randomValues })
+      const response = await invokeDeclaration(
+        harness,
+        resolveCommand(harness, `op_knock_off_${branch.replace(/[^a-z]/g, '_')}`),
+      )
+
+      expect(response.result).toMatchObject({ ok: true, revision: 1 })
+      expect(isPendingMoveDeclarationResult(response.result)).toBe(false)
+      expect(targetHp(harness) < 100).toBe(expectedHpLoss)
+      expect(response.move?.transaction.hitTargetIds).toEqual(expectedHitIds)
+      expect(response.move?.trace?.events).toContainEqual(expect.objectContaining({
+        kind: 'operation',
+        operationId: 'knock-off.ground-item',
+        outcome: 'no-op',
+      }))
+      expect(harness.maps.getBySlug('knock-off-arena')?.encounterState?.groundItems)
+        .toEqual([])
+      expect(knockOffUses(harness)).toBe(1)
+      expect(harness.pending.listByMap('knock-off-arena')).toEqual([])
+    },
+  )
+
+  it('commits critical damage and the sole item outcome without rerolling', async () => {
+    const harness = createHarness({
+      heldItems: 'Leftovers',
+      randomValues: [0.999, 0, 0],
+    })
+    const response = await invokeDeclaration(
+      harness,
+      resolveCommand(harness, 'op_knock_off_critical'),
+    )
+
+    expect(response.result).toMatchObject({ ok: true })
+    expect(targetHp(harness)).toBeLessThan(100)
+    expect(targetSheet(harness).items?.held).toBeUndefined()
+    expect(response.move?.rollLedger[0]).toMatchObject({ naturalResult: 20 })
+    expect(response.move?.trace?.events).toContainEqual(expect.objectContaining({
+      kind: 'operation',
+      operationId: 'knock-off.damage',
+      outcome: 'applied',
+    }))
+    expect(harness.drawCount()).toBe(3)
+  })
+
+  it('commits only the target Trainer Accessory item and preserves other slots', async () => {
+    const harness = createHarness({
+      targetTrainerEquipmentSlots: {
+        accessory: 'Bright Powder',
+        mainHand: 'Iron Ball',
+        offHand: 'Leftovers',
+      },
+    })
+    const response = await invokeDeclaration(
+      harness,
+      resolveCommand(harness, 'op_knock_off_trainer_accessory'),
+    )
+
+    expect(response.result).toMatchObject({ ok: true })
+    expect(targetTrainerSheet(harness)).toMatchObject({
+      revision: 3,
+      equipmentSlots: {
+        mainHand: 'Iron Ball',
+        offHand: 'Leftovers',
+      },
+    })
+    expect(harness.maps.getBySlug('knock-off-arena')?.encounterState?.groundItems)
+      .toEqual([expect.objectContaining({
+        canonicalItemId: 'bright-powder',
+        sourceResource: {
+          kind: 'sheet',
+          sheetKind: 'trainer',
+          slug: KNOCK_OFF_TARGET_TRAINER_SLUG,
+          revision: 2,
+        },
+      })])
+    expect(knockOffUses(harness)).toBe(1)
+  })
+
+  it('commits an authoritative immunity without damage, usage-side item loss, or a window', async () => {
+    const harness = createHarness({
+      heldItems: 'Leftovers',
+      randomValues: [0.45, 0, 0],
+      runtimeRegistry: knockOffImmunityRuntimeRegistry(),
+    })
+    const response = await invokeDeclaration(
+      harness,
+      resolveCommand(harness, 'op_knock_off_immunity'),
+    )
+
+    expect(response.result).toMatchObject({ ok: true })
+    expect(response.move?.transaction).toMatchObject({
+      hitTargetIds: [KNOCK_OFF_TARGET_PLACEMENT_ID],
+      hpUpdates: [],
+    })
+    expect(targetHp(harness)).toBe(100)
+    expect(targetSheet(harness).items?.held).toBe('Leftovers')
+    expect(harness.maps.getBySlug('knock-off-arena')?.encounterState?.groundItems)
+      .toEqual([])
+    expect(harness.pending.listByMap('knock-off-arena')).toEqual([])
+    expect(knockOffUses(harness)).toBe(1)
+  })
+
   it('persists one actor-owned private window and replays duplicate declarations without deferred work', async () => {
     const harness = createHarness()
     const command = resolveCommand(harness, 'op_knock_off_pending')
@@ -489,6 +786,201 @@ describe('Knock Off durable item continuation', () => {
     expect(harness.maps.getBySlug(command.mapSlug)?.encounterState?.groundItems).toEqual([])
   })
 
+  it('atomically commits a selected item, deferred damage, usage, terminal op, and realtime once', async () => {
+    const harness = createHarness()
+    const declarationCommand = resolveCommand(harness, 'op_knock_off_terminal_declaration')
+    await invokeDeclaration(harness, declarationCommand)
+    const stored = harness.pending.getByOrigin(
+      declarationCommand.mapSlug,
+      declarationCommand.opId,
+    )!
+    const map = harness.maps.getBySlug(declarationCommand.mapSlug)!
+    const window = stored.resolution.outstandingWindows[0]!
+    const selected = window.options.find(option => (
+      option.itemChoice?.canonicalItemId === 'bright-powder'
+    ))!
+    const command = chooseCommand({
+      map,
+      resolutionId: stored.resolutionId,
+      windowId: window.windowId,
+      optionId: selected.id,
+      opId: 'op_knock_off_terminal_response',
+    })
+    const invocation = responseInvocation(harness, command)
+    const accepted = invocation.invoke()
+
+    expect(accepted.result).toMatchObject({ ok: true, previousRevision: 1, revision: 2 })
+    expect(accepted.move?.transaction).toMatchObject({
+      attackedTargetIds: [KNOCK_OFF_TARGET_PLACEMENT_ID],
+      hitTargetIds: [KNOCK_OFF_TARGET_PLACEMENT_ID],
+      hpUpdates: [expect.objectContaining({ id: KNOCK_OFF_TARGET_PLACEMENT_ID })],
+    })
+    expect(targetHp(harness)).toBeLessThan(100)
+    expect(targetSheet(harness)).toMatchObject({
+      revision: 3,
+      items: { held: 'Leftovers' },
+    })
+    expect(knockOffUses(harness)).toBe(1)
+    expect(harness.maps.getBySlug(command.mapSlug)?.encounterState?.groundItems).toEqual([
+      expect.objectContaining({
+        canonicalItemId: 'bright-powder',
+        canonicalItemName: 'Bright Powder',
+        quantity: 1,
+        position: { x: 2, y: 0, z: 1 },
+        sourceResource: {
+          kind: 'sheet',
+          sheetKind: 'pokemon',
+          slug: 'knock-off-target-sheet',
+          revision: 2,
+        },
+        sourceOperationId: command.opId,
+      }),
+    ])
+    expect(harness.pending.getById(stored.resolutionId)).toMatchObject({
+      status: 'committed',
+      terminalOpId: command.opId,
+      resolution: {
+        status: 'committed',
+        chosenOptions: [{
+          windowId: window.windowId,
+          optionId: selected.id,
+          responseOpId: command.opId,
+        }],
+      },
+    })
+    expect(harness.ops.getOpResult(command.mapSlug, command.opId)).toEqual(accepted.result)
+    expect(harness.realtime.cursorState().latestSequence).toBeGreaterThan(0)
+
+    const committed = deepCloneJson({
+      map: harness.maps.getBySlug(command.mapSlug),
+      sheets: harness.sheets.list(),
+      pending: harness.pending.getById(stored.resolutionId),
+      operation: harness.ops.getStoredOpRecord(command.mapSlug, command.opId),
+      realtime: harness.realtime.cursorState(),
+    })
+    const draws = harness.drawCount()
+    const duplicate = invocation.invoke()
+
+    expect(duplicate.result).toEqual(accepted.result)
+    expect(harness.drawCount()).toBe(draws)
+    expect({
+      map: harness.maps.getBySlug(command.mapSlug),
+      sheets: harness.sheets.list(),
+      pending: harness.pending.getById(stored.resolutionId),
+      operation: harness.ops.getStoredOpRecord(command.mapSlug, command.opId),
+      realtime: harness.realtime.cursorState(),
+    }).toEqual(committed)
+  })
+
+  it('rolls back every terminal resource when item-sheet persistence fails after writing', async () => {
+    const harness = createHarness()
+    const declarationCommand = resolveCommand(harness, 'op_knock_off_failure_declaration')
+    await invokeDeclaration(harness, declarationCommand)
+    const stored = harness.pending.getByOrigin(
+      declarationCommand.mapSlug,
+      declarationCommand.opId,
+    )!
+    const map = harness.maps.getBySlug(declarationCommand.mapSlug)!
+    const window = stored.resolution.outstandingWindows[0]!
+    const selected = window.options[0]!
+    const command = chooseCommand({
+      map,
+      resolutionId: stored.resolutionId,
+      windowId: window.windowId,
+      optionId: selected.id,
+      opId: 'op_knock_off_failure_response',
+    })
+    const before = deepCloneJson({
+      map: harness.maps.getBySlug(command.mapSlug),
+      sheets: harness.sheets.list(),
+      pending: harness.pending.getById(stored.resolutionId),
+      realtime: harness.realtime.cursorState(),
+    })
+    const failingSheets = {
+      ...harness.sheets,
+      applyLivePlayUpdate: (
+        input: Parameters<typeof harness.sheets.applyLivePlayUpdate>[0],
+      ) => {
+        const result = harness.sheets.applyLivePlayUpdate(input)
+        if (result === 'applied') throw new Error('injected Knock Off item persistence failure')
+        return result
+      },
+    }
+    const invocation = responseInvocation(harness, command, {
+      sheetRepository: failingSheets,
+    })
+
+    expect(() => invocation.invoke()).toThrow('injected Knock Off item persistence failure')
+    expect({
+      map: harness.maps.getBySlug(command.mapSlug),
+      sheets: harness.sheets.list(),
+      pending: harness.pending.getById(stored.resolutionId),
+      realtime: harness.realtime.cursorState(),
+    }).toEqual(before)
+    expect(harness.ops.getStoredOpRecord(command.mapSlug, command.opId)).toBeNull()
+    expect(targetHp(harness)).toBe(100)
+    expect(targetSheet(harness).items?.held).toBe('Leftovers, Bright Powder')
+    expect(knockOffUses(harness)).toBe(0)
+  })
+
+  it('detects an inventory race inside commit and applies no deferred move work', async () => {
+    const harness = createHarness()
+    const declarationCommand = resolveCommand(harness, 'op_knock_off_race_declaration')
+    await invokeDeclaration(harness, declarationCommand)
+    const stored = harness.pending.getByOrigin(
+      declarationCommand.mapSlug,
+      declarationCommand.opId,
+    )!
+    const map = harness.maps.getBySlug(declarationCommand.mapSlug)!
+    const window = stored.resolution.outstandingWindows[0]!
+    const selected = window.options.find(option => (
+      option.itemChoice?.canonicalItemId === 'bright-powder'
+    ))!
+    const command = chooseCommand({
+      map,
+      resolutionId: stored.resolutionId,
+      windowId: window.windowId,
+      optionId: selected.id,
+      opId: 'op_knock_off_race_response',
+    })
+    let raced = false
+    const invocation = responseInvocation(harness, command, {
+      beforeCommit: () => {
+        if (raced) return
+        raced = true
+        const current = harness.sheets.getByRef('pokemon', 'knock-off-target-sheet')!
+        const changed = deepCloneJson(current.sheet) as unknown as CharacterSheet
+        changed.items = { held: 'Leftovers' }
+        const result = harness.sheets.applyLivePlayUpdate({
+          kind: 'pokemon',
+          slug: current.slug,
+          expectedRevision: current.revision,
+          nextSheet: {
+            ...changed,
+            revision: current.revision + 1,
+            updatedAt: 5_500,
+          } as unknown as Record<string, unknown>,
+        })
+        if (result !== 'applied') throw new Error('Could not inject Knock Off inventory race.')
+      },
+    })
+    const response = invocation.invoke()
+
+    expect(response.result).toMatchObject({ ok: false, reason: 'conflict' })
+    expect(targetHp(harness)).toBe(100)
+    expect(targetSheet(harness)).toMatchObject({
+      revision: 3,
+      items: { held: 'Leftovers' },
+    })
+    expect(knockOffUses(harness)).toBe(0)
+    expect(harness.maps.getBySlug(command.mapSlug)?.encounterState?.groundItems).toEqual([])
+    expect(harness.pending.getById(stored.resolutionId)).toMatchObject({
+      status: 'conflicted',
+      terminalOpId: command.opId,
+    })
+    expect(harness.ops.getOpResult(command.mapSlug, command.opId)).toEqual(response.result)
+  })
+
   it('rejects forged and unauthorized responses before exposing or applying an option', async () => {
     const harness = createHarness()
     const command = resolveCommand(harness, 'op_knock_off_authority')
@@ -635,31 +1127,7 @@ describe('Knock Off durable item continuation', () => {
       optionId: removed.id,
       opId: 'op_knock_off_stale_response',
     })
-    const parsed = parsePendingMoveResponseCommand(responseCommand, {
-      pendingResolutionRepository: harness.pending,
-    })
-    const response = resumePendingMoveResolutionUseCase({
-      ...parsed,
-      role: 'gm',
-      playerProfile: null,
-      authorization: {
-        chosenBy: { kind: 'gm', id: null },
-        source: 'gm-authority',
-      },
-      clientId: 'knock-off-response-client',
-    }, {
-      database: harness.database,
-      mapRepository: harness.maps,
-      sheetRepository: harness.sheets,
-      groupInventoryRepository: harness.groups,
-      pendingResolutionRepository: harness.pending,
-      opRepository: harness.ops,
-      realtimeEventRepository: harness.realtime,
-      random: harness.random,
-      runtimeRegistry: harness.runtimeRegistry,
-      now: () => 6_000,
-      publishPersistedRealtimeEvent: vi.fn(),
-    })
+    const response = responseInvocation(harness, responseCommand).invoke()
 
     expect(response.result).toMatchObject({ ok: false, reason: 'conflict' })
     expect(targetHp(harness)).toBe(100)
