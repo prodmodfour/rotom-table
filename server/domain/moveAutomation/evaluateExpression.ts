@@ -738,10 +738,14 @@ const historyValue = (
       `placement ${placementId} is unavailable.`,
     )
   }
+  const currentTargetPlacementId = state.selectorState.targetIds.length === 1
+    ? state.selectorState.targetIds[0]
+    : undefined
   const value = query === 'consecutive-use-count'
     ? state.context.queries.history.consecutiveUseCount(
         placementId,
         state.canonicalMoveId,
+        currentTargetPlacementId,
       )
     : state.context.queries.history.query(placementId, query)
   return boundedScalar(value, nodeId)

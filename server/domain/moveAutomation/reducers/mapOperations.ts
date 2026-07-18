@@ -1,5 +1,10 @@
+import { createHash } from 'node:crypto'
 import type { MoveLogEffectOperation } from '#shared/moveAutomation/effects'
 import { createLivePlayMovePresentationFromOutcome } from '#shared/livePlayMovePresentation'
+import {
+  createEmptyEncounterState,
+  parseEncounterState,
+} from '#shared/moveAutomation/encounterState'
 import type {
   MoveResolutionAuditTrace,
   MoveResolutionTraceJsonValue,
@@ -42,12 +47,19 @@ import type {
   ReduceMoveMapOperationsInput,
 } from './mapOperationTypes'
 import { createMoveUsageOperationReducer } from './mapUsageEffects'
+import {
+  FURY_CUTTER_CANONICAL_ID,
+  FURY_CUTTER_CHAIN_DETAIL_CODE,
+  reduceFuryCutterChainCompletion,
+  resetFuryCutterChainForDifferentMove,
+} from '../furyCutter'
 
 const MAP_OPERATION_KINDS = new Set<string>([
   'field',
   'hazard',
   'temporary-effect',
   'usage',
+  'history',
   'log',
 ])
 
@@ -140,6 +152,21 @@ export const reduceMoveMapOperations = (
     const entries = laneTouches.get(lane) ?? []
     entries.push(value)
     laneTouches.set(lane, entries)
+  }
+
+  const encounterBeforeMove = parseEncounterState(
+    workingMap.encounterState ?? createEmptyEncounterState(),
+  )
+  const differentMoveReset = resetFuryCutterChainForDifferentMove({
+    history: encounterBeforeMove.history,
+    actorPlacementId: input.context.actor.placement.id,
+    canonicalMoveId: input.presentation.move.name,
+  })
+  if (differentMoveReset.changed) {
+    workingMap.encounterState = parseEncounterState({
+      ...encounterBeforeMove,
+      history: differentMoveReset.history,
+    })
   }
 
   input.operations.forEach((emission, order) => {
@@ -268,6 +295,54 @@ export const reduceMoveMapOperations = (
         recipientIds: expectedIds,
         changed: reduced.changed,
         details: reduced.details,
+      }))
+      return
+    }
+
+    if (operation.kind === 'history') {
+      if (
+        input.presentation.move.name !== FURY_CUTTER_CANONICAL_ID
+        || operation.payload.event !== 'move-completed'
+        || operation.payload.detailCode !== FURY_CUTTER_CHAIN_DETAIL_CODE
+      ) {
+        failMoveMapOperationReduction(
+          'unsupported-operation',
+          `History operation ${operation.id} has no reviewed authoritative state reducer.`,
+        )
+      }
+      const encounter = parseEncounterState(
+        workingMap.encounterState ?? createEmptyEncounterState(),
+      )
+      const resolutionId = input.context.resolutionId
+        ?? `resolution-${createHash('sha256')
+          .update(input.presentation.operationId, 'utf8')
+          .digest('hex')}`
+      const reduced = reduceFuryCutterChainCompletion({
+        history: encounter.history,
+        actorPlacementId: input.context.actor.placement.id,
+        attackedTargetIds: dynamic['attacked-targets'],
+        hitTargetIds: dynamic['hit-targets'],
+        damagedTargetIds: dynamic['damaged-targets'],
+        resolutionId,
+      })
+      if (reduced.changed) {
+        workingMap.encounterState = parseEncounterState({
+          ...encounter,
+          history: reduced.history,
+        })
+        touch('encounterState', operationTouch)
+      }
+      operationResults.push(resultFor({
+        operation,
+        recipientIds: expectedIds,
+        changed: reduced.changed,
+        details: operationDetails({
+          status: reduced.outcome,
+          targetPlacementId: reduced.targetPlacementId,
+          previousTargetPlacementId: reduced.previousTargetPlacementId,
+          previousCount: reduced.previousCount,
+          currentCount: reduced.currentCount,
+        }),
       }))
       return
     }

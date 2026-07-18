@@ -787,6 +787,7 @@ const assertSupportedImmediateOperations = (
     'item',
     'permanent-move-list',
     'usage',
+    'history',
     'log',
     'choice-request',
     'reaction-request',

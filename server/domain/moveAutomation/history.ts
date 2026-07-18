@@ -44,7 +44,11 @@ export interface MoveAutomationHistoryResolver {
   damageReceivedThisRound(placementId: string): EncounterHistoryDamageTotals
   actedThisTurn(placementId: string): boolean
   actedThisRound(placementId: string): boolean
-  consecutiveUseCount(placementId: string, canonicalId?: string): number
+  consecutiveUseCount(
+    placementId: string,
+    canonicalId?: string,
+    targetPlacementId?: string,
+  ): number
   switchedThisScene(placementId: string): boolean
   faintedThisScene(placementId: string): boolean
   parentResolutionId(resolutionId: string): string | null
@@ -287,9 +291,13 @@ export const createMoveAutomationHistoryResolver = (
     ),
     actedThisTurn: placementId => actedThisTurnIds.has(placementId),
     actedThisRound: placementId => actedThisRoundIds.has(placementId),
-    consecutiveUseCount: (placementId, canonicalId) => {
+    consecutiveUseCount: (placementId, canonicalId, targetPlacementId) => {
       const entry = consecutiveByPlacement.get(placementId)
       if (!entry || (canonicalId !== undefined && entry.canonicalId !== canonicalId)) return 0
+      if (
+        targetPlacementId !== undefined
+        && entry.targetPlacementId !== targetPlacementId
+      ) return 0
       return entry.count
     },
     switchedThisScene: placementId => switchedIds.has(placementId),

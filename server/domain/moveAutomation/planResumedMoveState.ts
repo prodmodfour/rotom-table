@@ -287,6 +287,7 @@ const planCompletion = (
     resolution: input.execution,
     plannedAt: input.plannedAt,
     operationId: input.responseOpId,
+    resolutionId: input.pendingResolution.resolutionId,
     maxMoveLogEntries: input.maxMoveLogEntries,
     runtimeRegistry: input.runtimeRegistry,
     itemResources: input.itemResources,

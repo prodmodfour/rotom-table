@@ -87,6 +87,7 @@ import { cleanupEncounterTransformationsForKnockouts } from './moveAutomation/tr
 import { cleanupYawnEffectsForKnockouts } from './moveAutomation/yawn'
 import { consumeHelpingHandBonus } from './moveAutomation/helpingHand'
 import { consumeSideDamageResistance } from './moveAutomation/sideDamageResistance'
+import { resetFuryCutterChainForDifferentMove } from './moveAutomation/furyCutter'
 import {
   deduplicateAuthoritativeMoveGroupInventoryReads,
   type AuthoritativeMoveGroupInventoryRead,
@@ -971,8 +972,14 @@ const planPendingMoveState = (options: {
       `Pending resolution ${resolutionId} is already visible on map ${options.input.map.slug}.`,
     )
   }
+  const furyCutterReset = resetFuryCutterChainForDifferentMove({
+    history: encounterStateAfterPreWindowPlan.history,
+    actorPlacementId: options.execution.actorPlacementId,
+    canonicalMoveId: options.execution.canonicalMoveName,
+  })
   const currentEncounterState = parseEncounterState({
     ...encounterStateAfterPreWindowPlan,
+    history: furyCutterReset.history,
     pendingResolutionSummaries: [
       ...encounterStateAfterPreWindowPlan.pendingResolutionSummaries,
       pendingResolution.publicSummary,
@@ -1151,6 +1158,7 @@ export const planAuthoritativeMoveStateExecution = (
       resolution,
       plannedAt,
       operationId: input.operationId,
+      resolutionId: input.pendingResolutionId,
       maxMoveLogEntries: input.maxMoveLogEntries,
       runtimeRegistry: input.runtimeRegistry,
       legacyScripts: input.legacyScripts,
@@ -1215,6 +1223,20 @@ export const planAuthoritativeMoveStateExecution = (
   const usageTransition = planUsage(input, actorPlacement, actorSheet, resolution, plannedAt)
   const sheetAccumulators = new Map<string, SheetAccumulator>()
   let workingMap = cloneJson(input.map)
+  const encounterBeforeMove = parseEncounterState(
+    workingMap.encounterState ?? createEmptyEncounterState(),
+  )
+  const furyCutterReset = resetFuryCutterChainForDifferentMove({
+    history: encounterBeforeMove.history,
+    actorPlacementId: resolution.actorPlacementId,
+    canonicalMoveId: resolution.canonicalMoveName,
+  })
+  if (furyCutterReset.changed) {
+    workingMap.encounterState = parseEncounterState({
+      ...encounterBeforeMove,
+      history: furyCutterReset.history,
+    })
+  }
 
   if (usageTransition.nextMapMoveUsage !== undefined) {
     workingMap.moveUsage = cloneJson(usageTransition.nextMapMoveUsage)

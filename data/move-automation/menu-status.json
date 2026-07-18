@@ -3312,25 +3312,12 @@
     {
       "canonicalId": "Fury Cutter",
       "displayName": "Fury Cutter",
-      "baseStatus": "assisted",
+      "baseStatus": "complete",
       "interactionStatus": "unassessed",
-      "runtimeKind": "legacy-v1",
-      "blockerCodes": [
-        "expressions.bounded",
-        "history.structured"
-      ],
-      "limitations": [
-        {
-          "code": "fury-cutter.chain",
-          "summary": "The legacy runtime always uses the base Damage Base and does not retain or reset the consecutive successful-use chain for the same target."
-        }
-      ],
-      "manualSteps": [
-        {
-          "code": "fury-cutter.chain",
-          "summary": "Track consecutive successful damaging uses against the same target, set Damage Base to 4, 8, 12, then 16, and reset the chain after a miss, no damage, target or move change, switch, or scene end."
-        }
-      ]
+      "runtimeKind": "movespec-v2",
+      "blockerCodes": [],
+      "limitations": [],
+      "manualSteps": []
     },
     {
       "canonicalId": "Fury Swipes",

@@ -20,6 +20,10 @@ import type {
   EncounterMoveIdentity,
   EncounterTurnEvent,
 } from '#shared/moveAutomation/events'
+import {
+  FURY_CUTTER_CANONICAL_ID,
+  reduceFuryCutterChainCompletion,
+} from './furyCutter'
 
 export type EncounterHistoryReductionErrorCode =
   | 'history-limit-exceeded'
@@ -340,9 +344,31 @@ const markActed = (
   ),
 })
 
+const soleTargetPlacementId = (targetPlacementIds: readonly string[]): string | null => (
+  targetPlacementIds.length === 1 ? targetPlacementIds[0] ?? null : null
+)
+
+const prepareConsecutiveMoveDeclaration = (
+  history: EncounterHistory,
+  move: EncounterMoveIdentity,
+  targetPlacementIds: readonly string[],
+): EncounterHistory => {
+  const existing = history.consecutiveMoves.find(
+    entry => entry.placementId === move.actorPlacementId,
+  )
+  if (!existing || existing.lastResolutionId === move.resolutionId) return history
+  const targetPlacementId = soleTargetPlacementId(targetPlacementIds)
+  if (
+    existing.canonicalId === move.canonicalId
+    && existing.targetPlacementId === targetPlacementId
+  ) return history
+  return resetConsecutiveMoves(history, [move.actorPlacementId])
+}
+
 const recordConsecutiveMove = (
   history: EncounterHistory,
   move: EncounterMoveIdentity,
+  targetPlacementId: string | null,
 ): EncounterHistory => {
   const existing = history.consecutiveMoves.find(
     entry => entry.placementId === move.actorPlacementId,
@@ -352,7 +378,9 @@ const recordConsecutiveMove = (
   const entry: EncounterConsecutiveMoveHistory = {
     placementId: move.actorPlacementId,
     canonicalId: move.canonicalId,
+    targetPlacementId,
     count: existing?.canonicalId === move.canonicalId
+      && existing.targetPlacementId === targetPlacementId
       ? safeAddDamage(existing.count, 1, `Consecutive move count for ${move.actorPlacementId}`)
       : 1,
     lastResolutionId: move.resolutionId,
@@ -374,9 +402,10 @@ const resetConsecutiveMoves = (
   placementIds: readonly string[],
 ): EncounterHistory => {
   const resetIds = new Set(placementIds)
-  const consecutiveMoves = history.consecutiveMoves.filter(
-    entry => !resetIds.has(entry.placementId),
-  )
+  const consecutiveMoves = history.consecutiveMoves.filter(entry => (
+    !resetIds.has(entry.placementId)
+    && (entry.targetPlacementId === null || !resetIds.has(entry.targetPlacementId))
+  ))
   return consecutiveMoves.length === history.consecutiveMoves.length
     ? history
     : { ...history, consecutiveMoves }
@@ -474,7 +503,19 @@ const recordDeclaredMove = (
       'Last declared move index',
     ),
   }
-  return recordConsecutiveMove(markActed(withDeclaration, event.move.actorPlacementId), event.move)
+  const marked = markActed(withDeclaration, event.move.actorPlacementId)
+  if (event.move.canonicalId === FURY_CUTTER_CANONICAL_ID) {
+    return prepareConsecutiveMoveDeclaration(
+      marked,
+      event.move,
+      event.targetPlacementIds,
+    )
+  }
+  return recordConsecutiveMove(
+    marked,
+    event.move,
+    soleTargetPlacementId(event.targetPlacementIds),
+  )
 }
 
 const recordCompletedMove = (
@@ -519,7 +560,7 @@ const recordCompletedMove = (
     succeeded: event.succeeded,
     branches: event.branches.map(branch => ({ ...branch })),
   }
-  const withCompletion: EncounterHistory = {
+  const withCompletion: EncounterHistory = markActed({
     ...withUse,
     lastCompletedMoves: upsertBy(
       withUse.lastCompletedMoves,
@@ -528,8 +569,24 @@ const recordCompletedMove = (
       ENCOUNTER_HISTORY_LIMITS.placementIndexes,
       'Last completed move index',
     ),
+  }, event.move.actorPlacementId)
+  if (event.move.canonicalId === FURY_CUTTER_CANONICAL_ID) {
+    const damagedTargetIds = withCompletion.damageBySourceThisTurn
+      .filter(damage => (
+        damage.resolutionId === event.move.resolutionId
+        && damage.hitPointLoss + damage.temporaryHitPointLoss > 0
+      ))
+      .map(damage => damage.targetPlacementId)
+    return reduceFuryCutterChainCompletion({
+      history: withCompletion,
+      actorPlacementId: event.move.actorPlacementId,
+      attackedTargetIds: event.attackedTargetIds,
+      hitTargetIds: event.hitTargetIds,
+      damagedTargetIds,
+      resolutionId: event.move.resolutionId,
+    }).history
   }
-  return recordConsecutiveMove(markActed(withCompletion, event.move.actorPlacementId), event.move)
+  return withCompletion
 }
 
 const recordDamage = (

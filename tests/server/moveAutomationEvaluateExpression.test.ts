@@ -88,6 +88,7 @@ const mapFixture = (): TabletopMap => ({
       consecutiveMoves: [{
         placementId: 'actor-token',
         canonicalId: 'Tackle',
+        targetPlacementId: 'target-token',
         count: 4,
         lastResolutionId: 'resolution.previous-tackle',
       }],

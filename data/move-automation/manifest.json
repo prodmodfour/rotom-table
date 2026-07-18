@@ -9138,44 +9138,129 @@
     {
       "canonicalId": "Fury Cutter",
       "displayName": "Fury Cutter",
-      "baseStatus": "assisted",
+      "baseStatus": "complete",
       "interactionStatus": "unassessed",
       "runtime": {
-        "kind": "legacy-v1",
-        "version": 1,
-        "definitionHash": "dcf4f4db858da63fce457ff99ec46c394bb314bbccd1e02c3a8946308f5f47cc",
-        "sourceModule": "src/utils/move-automation/scripts/additionalSingleTarget.ts"
+        "kind": "movespec-v2",
+        "version": 2,
+        "definitionHash": "8c2bdd861565cf66620320d978d9adcada9c157274779e50d47d4e401c6393cf",
+        "sourceModule": "server/domain/moveAutomation/specs/furyCutter.ts"
       },
       "rulesProvenance": {
         "rulesetId": "rotom-table-reference-moves-v1",
         "canonicalizationVersion": 1,
         "sourceDataSha256": "f90491826349afd7d1f2809fd9d74b7acc555f5163b99264205ee369249e9815"
       },
-      "capabilityTags": [],
-      "suggestedCapabilityTags": [],
-      "blockerCodes": [
+      "capabilityTags": [
         "expressions.bounded",
-        "history.structured"
+        "history.structured",
+        "targeting.authoritative"
       ],
-      "limitations": [
-        {
-          "code": "fury-cutter.chain",
-          "summary": "The legacy runtime always uses the base Damage Base and does not retain or reset the consecutive successful-use chain for the same target."
-        }
+      "suggestedCapabilityTags": [],
+      "blockerCodes": [],
+      "limitations": [],
+      "manualSteps": [],
+      "scenarioIds": [
+        "fury-cutter.v2-first-hit",
+        "fury-cutter.v2-second-hit",
+        "fury-cutter.v2-capped-hit",
+        "fury-cutter.v2-target-change",
+        "fury-cutter.v2-miss-reset",
+        "fury-cutter.v2-no-damage-reset",
+        "fury-cutter.v2-different-move-reset",
+        "fury-cutter.v2-switch-reset",
+        "fury-cutter.v2-scene-reset",
+        "fury-cutter.v2-critical-hit",
+        "fury-cutter.v2-duplicate-retry"
       ],
-      "manualSteps": [
-        {
-          "code": "fury-cutter.chain",
-          "summary": "Track consecutive successful damaging uses against the same target, set Damage Base to 4, 8, 12, then 16, and reset the chain after a miss, no damage, target or move change, switch, or scene end."
-        }
-      ],
-      "scenarioIds": [],
       "conformanceEvidence": {
-        "requirementTags": [],
-        "scenarios": [],
-        "notApplicable": []
+        "requirementTags": [
+          "branch.accuracy",
+          "branch.alternate",
+          "branch.critical-hit",
+          "branch.threshold",
+          "mechanic.damage",
+          "recovery.retry"
+        ],
+        "scenarios": [
+          {
+            "scenarioId": "fury-cutter.v2-first-hit",
+            "evidenceClasses": [
+              "hit",
+              "threshold-pass"
+            ]
+          },
+          {
+            "scenarioId": "fury-cutter.v2-second-hit",
+            "evidenceClasses": [
+              "alternate-branch"
+            ]
+          },
+          {
+            "scenarioId": "fury-cutter.v2-capped-hit",
+            "evidenceClasses": [
+              "alternate-branch"
+            ]
+          },
+          {
+            "scenarioId": "fury-cutter.v2-target-change",
+            "evidenceClasses": [
+              "alternate-branch"
+            ]
+          },
+          {
+            "scenarioId": "fury-cutter.v2-miss-reset",
+            "evidenceClasses": [
+              "miss",
+              "threshold-fail"
+            ]
+          },
+          {
+            "scenarioId": "fury-cutter.v2-no-damage-reset",
+            "evidenceClasses": [
+              "alternate-branch",
+              "threshold-fail"
+            ]
+          },
+          {
+            "scenarioId": "fury-cutter.v2-different-move-reset",
+            "evidenceClasses": [
+              "alternate-branch"
+            ]
+          },
+          {
+            "scenarioId": "fury-cutter.v2-switch-reset",
+            "evidenceClasses": [
+              "alternate-branch"
+            ]
+          },
+          {
+            "scenarioId": "fury-cutter.v2-scene-reset",
+            "evidenceClasses": [
+              "alternate-branch"
+            ]
+          },
+          {
+            "scenarioId": "fury-cutter.v2-critical-hit",
+            "evidenceClasses": [
+              "crit"
+            ]
+          },
+          {
+            "scenarioId": "fury-cutter.v2-duplicate-retry",
+            "evidenceClasses": [
+              "retry"
+            ]
+          }
+        ],
+        "notApplicable": [
+          {
+            "evidenceClass": "immunity",
+            "reason": "The frozen Fury Cutter rule has ordinary Bug damage and no directly referenced type, ability, item, field, or effect immunity branch; the canonical type chart contains no Bug immunity."
+          }
+        ]
       },
-      "reviewedAt": "2026-07-10",
+      "reviewedAt": "2026-07-18",
       "unsupportedInteractionIds": [],
       "rolloutCohortId": null
     },

@@ -73,6 +73,7 @@ const populatedHistory = () => ({
   consecutiveMoves: [{
     placementId: 'actor-token',
     canonicalId: 'Scratch',
+    targetPlacementId: 'target-token',
     count: 1,
     lastResolutionId: 'resolution.scratch.1',
   }],

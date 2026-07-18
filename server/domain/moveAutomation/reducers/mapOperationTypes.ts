@@ -1,6 +1,7 @@
 import type {
   MoveFieldEffectOperation,
   MoveHazardEffectOperation,
+  MoveHistoryEffectOperation,
   MoveLogEffectOperation,
   MoveTemporaryEffectOperation,
   MoveUsageEffectOperation,
@@ -35,6 +36,7 @@ export type MoveMapEffectOperation =
   | MoveHazardEffectOperation
   | MoveTemporaryEffectOperation
   | MoveUsageEffectOperation
+  | MoveHistoryEffectOperation
   | MoveLogEffectOperation
 
 export interface MoveResolvedMapEffectOperation

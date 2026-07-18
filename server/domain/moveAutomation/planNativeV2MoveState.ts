@@ -583,6 +583,8 @@ export const planNativeV2MoveState = (options: {
   readonly resolution: AuthoritativeMoveResolution
   readonly plannedAt: number
   readonly operationId?: string
+  /** Stable declaration/pending identity retained by history-backed mechanics. */
+  readonly resolutionId?: string
   readonly maxMoveLogEntries?: number
   readonly runtimeRegistry?: MoveAutomationRuntimeRegistry
   readonly legacyScripts?: ReadonlyMap<string, MoveAutomationScript>
@@ -613,6 +615,7 @@ export const planNativeV2MoveState = (options: {
     selectedPlacementIds: options.resolution.selectedTargetIds,
     random: () => 0,
     time: options.plannedAt,
+    resolutionId: options.resolutionId,
     runtimeRegistry: options.runtimeRegistry,
     legacyScripts: options.legacyScripts,
     itemResources: options.itemResources,

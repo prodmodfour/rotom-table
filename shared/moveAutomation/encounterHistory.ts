@@ -149,6 +149,8 @@ export interface EncounterDamageBySourceHistory {
 export interface EncounterConsecutiveMoveHistory {
   readonly placementId: string
   readonly canonicalId: string
+  /** Null only for a legacy MA-063 row that did not retain target identity. */
+  readonly targetPlacementId: string | null
   readonly count: number
   readonly lastResolutionId: string
 }
@@ -305,9 +307,16 @@ const DAMAGE_SOURCE_FIELDS = [
   'hitPointLoss',
   'temporaryHitPointLoss',
 ] as const
+const LEGACY_CONSECUTIVE_MOVE_FIELDS = [
+  'placementId',
+  'canonicalId',
+  'count',
+  'lastResolutionId',
+] as const
 const CONSECUTIVE_MOVE_FIELDS = [
   'placementId',
   'canonicalId',
+  'targetPlacementId',
   'count',
   'lastResolutionId',
 ] as const
@@ -803,7 +812,12 @@ const parseConsecutiveMove = (
   value: unknown,
   path: string,
 ): EncounterConsecutiveMoveHistory => {
-  const record = parseExactRecord(value, CONSECUTIVE_MOVE_FIELDS, path)
+  const { record, legacy } = parseCurrentOrLegacyRecord(
+    value,
+    CONSECUTIVE_MOVE_FIELDS,
+    LEGACY_CONSECUTIVE_MOVE_FIELDS,
+    path,
+  )
   return {
     placementId: parsePlacementId(record.placementId, `${path}.placementId`),
     canonicalId: parseBoundedText(
@@ -811,6 +825,12 @@ const parseConsecutiveMove = (
       `${path}.canonicalId`,
       ENCOUNTER_HISTORY_LIMITS.canonicalMoveChars,
     ),
+    targetPlacementId: legacy
+      ? null
+      : parseNullablePlacementId(
+          record.targetPlacementId,
+          `${path}.targetPlacementId`,
+        ),
     count: parseInteger(record.count, `${path}.count`, 1, ENCOUNTER_HISTORY_LIMITS.amount),
     lastResolutionId: parseStableId(record.lastResolutionId, `${path}.lastResolutionId`),
   }

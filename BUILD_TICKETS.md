@@ -2481,7 +2481,7 @@ Status: DONE
 
 ## MA-177 — Finish Fury Cutter chaining
 
-Status: TODO
+Status: DONE
 
 **Depends on:** MA-063, MA-076
 **Commit:** `feat(move-automation): fully resolve fury cutter chain`
