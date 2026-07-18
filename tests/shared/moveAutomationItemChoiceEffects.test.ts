@@ -16,9 +16,12 @@ const operation = () => ({
     itemChoice: {
       setId: 'item-choice.items',
       requirementId: 'item-choice.actor-bag',
+      owner: 'recipients',
+      emptyPolicy: 'reject',
       filter: {
         referenceKinds: ['trainer-inventory-row'],
         canonicalItemIds: null,
+        trainerEquipmentSlots: null,
         minimumQuantity: 1,
       },
       destinations: [{

@@ -1,10 +1,12 @@
 import {
   MOVE_ITEM_REFERENCE_KINDS,
   MOVE_ITEM_REFERENCE_LIMITS,
+  MOVE_ITEM_TRAINER_EQUIPMENT_SLOTS,
   isMoveCanonicalItemId,
   parseMoveItemReference,
   type MoveItemReference,
   type MoveItemReferenceKind,
+  type MoveItemTrainerEquipmentSlot,
 } from './items'
 
 /** Closed destination categories exposed by durable item-choice declarations. */
@@ -23,11 +25,18 @@ export const MOVE_ITEM_CHOICE_SELECTION_KINDS = [
   'move-item-none',
 ] as const
 
+/** Who may answer a durable item choice; mechanics recipients remain separate. */
+export const MOVE_ITEM_CHOICE_OWNERS = ['recipients', 'actor'] as const
+
+/** Canonical behavior when the reviewed item scope has no legal candidate. */
+export const MOVE_ITEM_CHOICE_EMPTY_POLICIES = ['no-op', 'reject'] as const
+
 export const MOVE_ITEM_CHOICE_LIMITS = Object.freeze({
   identifierChars: 160,
   destinations: 32,
   canonicalItemIds: 256,
   referenceKinds: MOVE_ITEM_REFERENCE_KINDS.length,
+  trainerEquipmentSlots: MOVE_ITEM_TRAINER_EQUIPMENT_SLOTS.length,
   minimumQuantity: Number.MAX_SAFE_INTEGER,
 })
 
@@ -35,6 +44,9 @@ export type MoveItemChoiceDestinationKind =
   (typeof MOVE_ITEM_CHOICE_DESTINATION_KINDS)[number]
 export type MoveItemChoiceSelectionKind =
   (typeof MOVE_ITEM_CHOICE_SELECTION_KINDS)[number]
+export type MoveItemChoiceOwner = (typeof MOVE_ITEM_CHOICE_OWNERS)[number]
+export type MoveItemChoiceEmptyPolicy =
+  (typeof MOVE_ITEM_CHOICE_EMPTY_POLICIES)[number]
 
 /**
  * A reviewed destination branch. The stable ID is later consumed only by a
@@ -50,6 +62,8 @@ export interface MoveItemChoiceFilter {
   readonly referenceKinds: readonly MoveItemReferenceKind[]
   /** Null means every canonical item in the reviewed resource requirement. */
   readonly canonicalItemIds: readonly string[] | null
+  /** Null accepts every reviewed Trainer equipment slot; otherwise narrows it. */
+  readonly trainerEquipmentSlots: readonly MoveItemTrainerEquipmentSlot[] | null
   readonly minimumQuantity: number
 }
 
@@ -62,6 +76,9 @@ export interface MoveItemChoiceNoneOption {
 export interface MoveItemChoiceDeclaration {
   readonly setId: string
   readonly requirementId: string
+  /** Response authority is independent from the item-owning mechanics recipient. */
+  readonly owner: MoveItemChoiceOwner
+  readonly emptyPolicy: MoveItemChoiceEmptyPolicy
   readonly filter: MoveItemChoiceFilter
   readonly destinations: readonly MoveItemChoiceDestinationDeclaration[]
   /** A canonical "choose no item" branch, distinct from declining the window. */
@@ -118,11 +135,18 @@ type UnknownRecord = Record<string, unknown>
 const DECLARATION_FIELDS = [
   'setId',
   'requirementId',
+  'owner',
+  'emptyPolicy',
   'filter',
   'destinations',
   'noneOption',
 ] as const
-const FILTER_FIELDS = ['referenceKinds', 'canonicalItemIds', 'minimumQuantity'] as const
+const FILTER_FIELDS = [
+  'referenceKinds',
+  'canonicalItemIds',
+  'trainerEquipmentSlots',
+  'minimumQuantity',
+] as const
 const DESTINATION_FIELDS = ['id', 'kind', 'labelKey'] as const
 const NONE_OPTION_FIELDS = ['id', 'labelKey'] as const
 const ITEM_SELECTION_FIELDS = [
@@ -142,6 +166,9 @@ const PRESENTATION_FIELDS = [
 const STABLE_ID_PATTERN = /^[a-z0-9]+(?:[._:/-][a-z0-9]+)*$/
 const DESTINATION_KIND_SET = new Set<unknown>(MOVE_ITEM_CHOICE_DESTINATION_KINDS)
 const REFERENCE_KIND_SET = new Set<unknown>(MOVE_ITEM_REFERENCE_KINDS)
+const TRAINER_EQUIPMENT_SLOT_SET = new Set<unknown>(MOVE_ITEM_TRAINER_EQUIPMENT_SLOTS)
+const OWNER_SET = new Set<unknown>(MOVE_ITEM_CHOICE_OWNERS)
+const EMPTY_POLICY_SET = new Set<unknown>(MOVE_ITEM_CHOICE_EMPTY_POLICIES)
 
 const fail = (
   code: MoveItemChoiceValidationCode,
@@ -265,6 +292,41 @@ export const parseMoveItemChoiceDeclaration = (
   })
   unique(referenceKinds, `${path}.filter.referenceKinds`)
 
+  let trainerEquipmentSlots: readonly MoveItemTrainerEquipmentSlot[] | null = null
+  const rawTrainerEquipmentSlots = filterInput.trainerEquipmentSlots
+  if (rawTrainerEquipmentSlots !== null) {
+    if (
+      !Array.isArray(rawTrainerEquipmentSlots)
+      || rawTrainerEquipmentSlots.length === 0
+      || rawTrainerEquipmentSlots.length > MOVE_ITEM_CHOICE_LIMITS.trainerEquipmentSlots
+    ) {
+      fail(
+        'limit-exceeded',
+        `${path}.filter.trainerEquipmentSlots`,
+        'must be null or a non-empty bounded Trainer equipment-slot list.',
+      )
+    }
+    const parsedSlots = (rawTrainerEquipmentSlots as readonly unknown[]).map((slot, index) => {
+      if (!TRAINER_EQUIPMENT_SLOT_SET.has(slot)) {
+        return fail(
+          'invalid-item-choice',
+          `${path}.filter.trainerEquipmentSlots[${index}]`,
+          'must be a supported Trainer equipment slot.',
+        )
+      }
+      return slot as MoveItemTrainerEquipmentSlot
+    })
+    unique(parsedSlots, `${path}.filter.trainerEquipmentSlots`)
+    if (!referenceKinds.includes('trainer-equipment-slot')) {
+      fail(
+        'inconsistent-item-choice',
+        `${path}.filter.trainerEquipmentSlots`,
+        'requires trainer-equipment-slot in referenceKinds.',
+      )
+    }
+    trainerEquipmentSlots = Object.freeze(parsedSlots)
+  }
+
   let canonicalItemIds: readonly string[] | null = null
   const rawCanonicalItemIds = filterInput.canonicalItemIds
   if (rawCanonicalItemIds !== null) {
@@ -319,12 +381,24 @@ export const parseMoveItemChoiceDeclaration = (
     fail('duplicate-id', `${path}.noneOption.id`, 'must not duplicate a destination ID.')
   }
 
+  const owner = input.owner
+  if (!OWNER_SET.has(owner)) {
+    fail('invalid-item-choice', `${path}.owner`, 'must be recipients or actor.')
+  }
+  const emptyPolicy = input.emptyPolicy
+  if (!EMPTY_POLICY_SET.has(emptyPolicy)) {
+    fail('invalid-item-choice', `${path}.emptyPolicy`, 'must be no-op or reject.')
+  }
+
   return Object.freeze({
     setId: stableId(input.setId, `${path}.setId`),
     requirementId: stableId(input.requirementId, `${path}.requirementId`),
+    owner: owner as MoveItemChoiceOwner,
+    emptyPolicy: emptyPolicy as MoveItemChoiceEmptyPolicy,
     filter: Object.freeze({
       referenceKinds: Object.freeze(referenceKinds),
       canonicalItemIds,
+      trainerEquipmentSlots,
       minimumQuantity: Number(filterInput.minimumQuantity),
     }),
     destinations,

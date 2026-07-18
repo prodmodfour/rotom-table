@@ -12578,43 +12578,115 @@
     {
       "canonicalId": "Knock Off",
       "displayName": "Knock Off",
-      "baseStatus": "assisted",
+      "baseStatus": "complete",
       "interactionStatus": "unassessed",
       "runtime": {
-        "kind": "legacy-v1",
-        "version": 1,
-        "definitionHash": "56014db680d280d69beac4bcbc52e7c7fead1858069c02e6be9bf817a98dc72c",
-        "sourceModule": "src/utils/move-automation/scripts/additionalSingleTarget.ts"
+        "kind": "movespec-v2",
+        "version": 2,
+        "definitionHash": "8bd60ebb28eb9b0bea3c79ca537507e349a0be86501de6df6e8d141dcf178c90",
+        "sourceModule": "server/domain/moveAutomation/specs/knockOff.ts"
       },
       "rulesProvenance": {
         "rulesetId": "rotom-table-reference-moves-v1",
         "canonicalizationVersion": 1,
         "sourceDataSha256": "f90491826349afd7d1f2809fd9d74b7acc555f5163b99264205ee369249e9815"
       },
-      "capabilityTags": [],
+      "capabilityTags": [
+        "items.authoritative",
+        "reactions.durable",
+        "targeting.authoritative"
+      ],
       "suggestedCapabilityTags": [],
-      "blockerCodes": [
-        "items.authoritative"
+      "blockerCodes": [],
+      "limitations": [],
+      "manualSteps": [],
+      "scenarioIds": [
+        "knock-off.v2-critical-hit",
+        "knock-off.v2-duplicate-retry",
+        "knock-off.v2-hit-choice",
+        "knock-off.v2-itemless-hit",
+        "knock-off.v2-miss",
+        "knock-off.v2-reconnect",
+        "knock-off.v2-stale-item",
+        "knock-off.v2-trainer-accessory-filter"
       ],
-      "limitations": [
-        {
-          "code": "knock-off.inventory",
-          "summary": "The legacy transaction resolves damage but neither authoritatively selects nor moves a held or accessory-slot item into ground-item state."
-        }
-      ],
-      "manualSteps": [
-        {
-          "code": "knock-off.item-transfer",
-          "summary": "After a hit, choose one legal Held Item or Accessory Slot Item, remove that exact item from the target, and place it on the map ground without duplicating it."
-        }
-      ],
-      "scenarioIds": [],
       "conformanceEvidence": {
-        "requirementTags": [],
-        "scenarios": [],
-        "notApplicable": []
+        "requirementTags": [
+          "branch.accuracy",
+          "branch.alternate",
+          "branch.critical-hit",
+          "branch.threshold",
+          "interaction.choice",
+          "mechanic.damage",
+          "recovery.reconnect",
+          "recovery.retry",
+          "resource.multi"
+        ],
+        "scenarios": [
+          {
+            "scenarioId": "knock-off.v2-critical-hit",
+            "evidenceClasses": [
+              "crit"
+            ]
+          },
+          {
+            "scenarioId": "knock-off.v2-duplicate-retry",
+            "evidenceClasses": [
+              "retry"
+            ]
+          },
+          {
+            "scenarioId": "knock-off.v2-hit-choice",
+            "evidenceClasses": [
+              "choice",
+              "hit",
+              "threshold-pass"
+            ]
+          },
+          {
+            "scenarioId": "knock-off.v2-itemless-hit",
+            "evidenceClasses": [
+              "alternate-branch",
+              "threshold-fail"
+            ]
+          },
+          {
+            "scenarioId": "knock-off.v2-miss",
+            "evidenceClasses": [
+              "miss"
+            ]
+          },
+          {
+            "scenarioId": "knock-off.v2-reconnect",
+            "evidenceClasses": [
+              "reconnect"
+            ]
+          },
+          {
+            "scenarioId": "knock-off.v2-stale-item",
+            "evidenceClasses": [
+              "multi-resource-conflict"
+            ]
+          },
+          {
+            "scenarioId": "knock-off.v2-trainer-accessory-filter",
+            "evidenceClasses": [
+              "alternate-branch"
+            ]
+          }
+        ],
+        "notApplicable": [
+          {
+            "evidenceClass": "immunity",
+            "reason": "The frozen Knock Off rule has Dark damage and no directly referenced type, ability, item, field, or effect immunity branch."
+          },
+          {
+            "evidenceClass": "pass",
+            "reason": "When at least one legal Held or Accessory item exists, the frozen rule requires choosing one and does not permit declining the item effect."
+          }
+        ]
       },
-      "reviewedAt": "2026-07-10",
+      "reviewedAt": "2026-07-18",
       "unsupportedInteractionIds": [],
       "rolloutCohortId": null
     },

@@ -4556,24 +4556,12 @@
     {
       "canonicalId": "Knock Off",
       "displayName": "Knock Off",
-      "baseStatus": "assisted",
+      "baseStatus": "complete",
       "interactionStatus": "unassessed",
-      "runtimeKind": "legacy-v1",
-      "blockerCodes": [
-        "items.authoritative"
-      ],
-      "limitations": [
-        {
-          "code": "knock-off.inventory",
-          "summary": "The legacy transaction resolves damage but neither authoritatively selects nor moves a held or accessory-slot item into ground-item state."
-        }
-      ],
-      "manualSteps": [
-        {
-          "code": "knock-off.item-transfer",
-          "summary": "After a hit, choose one legal Held Item or Accessory Slot Item, remove that exact item from the target, and place it on the map ground without duplicating it."
-        }
-      ]
+      "runtimeKind": "movespec-v2",
+      "blockerCodes": [],
+      "limitations": [],
+      "manualSteps": []
     },
     {
       "canonicalId": "Land’s Wrath",

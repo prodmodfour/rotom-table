@@ -152,9 +152,12 @@ export const ITEM_CHOICE_SPEC = {
         itemChoice: {
           setId: 'item-choice.actor-items',
           requirementId: 'item-choice.actor-medical',
+          owner: 'recipients',
+          emptyPolicy: 'reject',
           filter: {
             referenceKinds: ['trainer-inventory-row'],
             canonicalItemIds: ['potion'],
+            trainerEquipmentSlots: null,
             minimumQuantity: 1,
           },
           destinations: [{

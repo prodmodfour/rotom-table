@@ -160,12 +160,6 @@ describe('legacy move automation audit metadata', () => {
         manualStepCodes: ['ally-area.side-setup'],
         summaryTerms: ['explicit encounter sides', 'Prepare Map'],
       }],
-      ['Knock Off', {
-        blockerCodes: ['items.authoritative'],
-        limitationCodes: ['knock-off.inventory'],
-        manualStepCodes: ['knock-off.item-transfer'],
-        summaryTerms: ['Held Item', 'ground'],
-      }],
       ['Pin Missile', {
         blockerCodes: ['expressions.bounded'],
         limitationCodes: ['five-strike.aggregate'],

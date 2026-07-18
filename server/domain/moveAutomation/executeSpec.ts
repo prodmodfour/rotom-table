@@ -1102,6 +1102,7 @@ const revalidateItemChoice = (
 const pendingItemRequest = (
   operation: MoveChoiceRequestEffectOperation,
   recipientIds: readonly string[],
+  actorPlacementId: string,
   set: AuthoritativeMoveItemChoiceSet,
 ): MoveSpecPendingItemRequest => Object.freeze({
   kind: 'item-choice',
@@ -1110,7 +1111,7 @@ const pendingItemRequest = (
   operationId: operation.id,
   phase: operation.phase,
   reasonCode: operation.reasonCode,
-  recipientIds: frozenIds(recipientIds),
+  recipientIds: frozenIds(set.owner === 'actor' ? [actorPlacementId] : recipientIds),
   requestId: operation.payload.requestId,
   promptKey: operation.payload.promptKey,
   options: Object.freeze(set.choices.map(choice => choice.option)),
@@ -3269,13 +3270,32 @@ const executeMoveSpecInternal = (
       }
 
       if (operation.kind === 'choice-request' && operation.payload.itemChoice) {
+        if (recipientIds.length === 0) {
+          trace = reduceMoveResolutionTrace(trace, {
+            kind: 'operation',
+            phase,
+            operationId: operation.id,
+            operationKind: operation.kind,
+            recipientIds,
+            outcome: 'no-op',
+            reasonCode: operation.reasonCode,
+            input: traceJson(operation.payload),
+            result: { status: 'no-eligible-recipients' },
+          })
+          continue
+        }
         const set = itemChoiceSet(operation, input.context)
-        const request = pendingItemRequest(operation, recipientIds, set)
+        const request = pendingItemRequest(
+          operation,
+          recipientIds,
+          input.context.actor.placement.id,
+          set,
+        )
         if (request.options.length === 0) {
-          if (!request.allowPass) {
+          if (set.emptyPolicy === 'reject') {
             return fail(
               'move-mechanics-unavailable',
-              `Item request ${request.requestId} has no legal authoritative option and cannot pass.`,
+              `Item request ${request.requestId} has no legal authoritative option.`,
             )
           }
           trace = reduceMoveResolutionTrace(trace, {

@@ -336,9 +336,12 @@ describe('shared authoritative item effect interpreter', () => {
       declaration: {
         setId: 'bestow.items',
         requirementId: requirements.actor.id,
+        owner: 'recipients',
+        emptyPolicy: 'reject',
         filter: {
           referenceKinds: ['pokemon-held'],
           canonicalItemIds: null,
+          trainerEquipmentSlots: null,
           minimumQuantity: 1,
         },
         destinations: [{

@@ -40,6 +40,8 @@ export interface AuthoritativeMoveItemChoice {
 export interface AuthoritativeMoveItemChoiceSet {
   readonly setId: string
   readonly requirementId: string
+  readonly owner: MoveItemChoiceDeclaration['owner']
+  readonly emptyPolicy: MoveItemChoiceDeclaration['emptyPolicy']
   readonly choices: readonly AuthoritativeMoveItemChoice[]
 }
 
@@ -84,6 +86,9 @@ const eligibleReferences = (
   const allowedCanonicalIds = declaration.filter.canonicalItemIds === null
     ? null
     : new Set(declaration.filter.canonicalItemIds)
+  const allowedTrainerSlots = declaration.filter.trainerEquipmentSlots === null
+    ? null
+    : new Set(declaration.filter.trainerEquipmentSlots)
   const seen = new Set<string>()
   const result: MoveItemReference[] = []
 
@@ -92,6 +97,11 @@ const eligibleReferences = (
       !allowedKinds.has(reference.kind)
       || reference.quantity < declaration.filter.minimumQuantity
       || (allowedCanonicalIds !== null && !allowedCanonicalIds.has(reference.canonicalItemId))
+      || (
+        reference.kind === 'trainer-equipment-slot'
+        && allowedTrainerSlots !== null
+        && !allowedTrainerSlots.has(reference.slot)
+      )
     ) continue
     const key = referenceKey(reference)
     if (seen.has(key)) {
@@ -199,6 +209,8 @@ export const enumerateAuthoritativeMoveItemChoices = (
   return deepFreeze({
     setId: declaration.setId,
     requirementId: declaration.requirementId,
+    owner: declaration.owner,
+    emptyPolicy: declaration.emptyPolicy,
     choices,
   })
 }

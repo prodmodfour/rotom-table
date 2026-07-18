@@ -1318,9 +1318,12 @@ describe('authoritative MoveSpec validation and hashing', () => {
         itemChoice: {
           setId: 'items.actor',
           requirementId: 'items.actor-held',
+          owner: 'recipients',
+          emptyPolicy: 'reject',
           filter: {
             referenceKinds: ['pokemon-held'],
             canonicalItemIds: null,
+            trainerEquipmentSlots: null,
             minimumQuantity: 1,
           },
           destinations: [{

@@ -58,9 +58,12 @@ const resources = (
 const declaration = () => ({
   setId: 'test.item-set',
   requirementId: 'test.legal-items',
+  owner: 'recipients',
+  emptyPolicy: 'reject',
   filter: {
     referenceKinds: ['trainer-inventory-row'],
     canonicalItemIds: ['potion', 'antidote'],
+    trainerEquipmentSlots: null,
     minimumQuantity: 2,
   },
   destinations: [
@@ -84,6 +87,25 @@ describe('authoritative durable item choices', () => {
     expect(() => parseMoveItemChoiceDeclaration({
       ...declaration(),
       filter: { ...declaration().filter, referenceKinds: ['private-sheet'] },
+    })).toThrowError(expect.objectContaining({ code: 'invalid-item-choice' }))
+    expect(() => parseMoveItemChoiceDeclaration({
+      ...declaration(),
+      owner: 'client',
+    })).toThrowError(expect.objectContaining({ code: 'invalid-item-choice' }))
+    expect(() => parseMoveItemChoiceDeclaration({
+      ...declaration(),
+      filter: {
+        ...declaration().filter,
+        trainerEquipmentSlots: ['accessory'],
+      },
+    })).toThrowError(expect.objectContaining({ code: 'inconsistent-item-choice' }))
+    expect(() => parseMoveItemChoiceDeclaration({
+      ...declaration(),
+      filter: {
+        ...declaration().filter,
+        referenceKinds: ['trainer-equipment-slot'],
+        trainerEquipmentSlots: ['backpack'],
+      },
     })).toThrowError(expect.objectContaining({ code: 'invalid-item-choice' }))
   })
 
