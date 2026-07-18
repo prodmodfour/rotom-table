@@ -9,7 +9,7 @@ Ticket statuses:
 
 The build loop must select the lowest-numbered TODO ticket. Each ticket below maps to one ticket from the supplied planning file; build ticket numbers follow that document's suggested order when present.
 
-Autonomous cycle rules for every ticket: implement only the selected ticket, run `scripts/quality-gate.sh`, update only the selected ticket status, commit with a conventional commit message, and leave the working tree clean. The final ticket (`MA-299`) may also set `AUTOMATION_STATUS: DONE` after all 293 refreshed tickets are complete.
+Autonomous cycle rules for every ticket: implement only the selected ticket, run `scripts/quality-gate.sh`, update only the selected ticket status, commit with a conventional commit message, and leave the working tree clean. The final ticket (`MA-299`) may also set `AUTOMATION_STATUS: DONE` after all 294 refreshed tickets are complete.
 
 ---
 
@@ -50,7 +50,7 @@ When a ticket introduces a new pure module, prefer this layout:
 
 The existing `src/utils/move-automation/` registry remains the v1 compatibility surface until the retirement tickets at the end.
 
-Queue size at this baseline: **293 commits**—187 engine/state/QA tickets, 33 conformance batches for the registered 258, and 73 implementation batches for the missing 518.
+Queue size at this baseline: **294 commits**—188 engine/state/QA tickets, 33 conformance batches for the registered 258, and 73 implementation batches for the missing 518.
 
 ## Decisions already locked
 
@@ -2372,21 +2372,39 @@ Status: DONE
 
 **Done:** A qualifying Tackle hit applies damage and one deterministic legal push, collision or obstruction shortens it safely, retry cannot move the target twice, and Tackle requires no GM push note.
 
-## MA-174B — Finish Take Down's opposed Trip flow
+## MA-174B — Build Take Down's durable opposed Trip continuation
 
 Status: TODO
 
 **Depends on:** MA-174A, MA-085, MA-105
-**Commit:** `feat(move-automation): fully resolve take down trip`
+**Commit:** `feat(move-automation): build durable opposed trip continuation`
 
-**Touch:** the reviewed Take Down runtime, durable choice/check orchestration, damage and cost planning, semantic scenarios, and manifest evidence.
+**Touch:** durable choice/check orchestration, pending-resolution continuation state, and focused domain/resume tests.
 
 **Implement:**
 
-- After a qualifying Take Down hit, offer the canonical optional Free Action Trip through a typed durable choice. Passing ends the branch; accepting exposes only server-authored legal skill options and requires the actor and target responses needed by the opposed check.
-- Own both opposed rolls, modifiers, tie policy, and success/failure branch on the server; apply Tripped only on success. Misses and immunities must not open the Trip flow, and reconnect or stale responses must follow the existing durable-resolution policy.
-- Keep damage, recoil and other directly referenced costs, usage, the optional check, and its condition result in canonical deterministic order within one durable saga. Rejected, stale, or duplicate commands may not partially apply or repeat any part.
-- Cover pass, check success/failure/tie, legal skill choices, hit, miss, critical hit, immunity, cost-prevention branches, reconnect, stale response, and duplicate delivery at the planner and accepted-command boundaries. Remove Take Down's opposed-check note and update only its manifest runtime/evidence/status after every path passes; retain MA-174A Tackle regressions.
+- From an already established qualifying Take Down hit in a focused fixture, materialize the canonical optional Free Action Trip as a typed durable choice. Passing completes the continuation with no Trip; accepting opens only stable server-authored legal skill options for the actor and target, with explicit response ownership and no client-authored roll or modifier data.
+- Preserve the authoritative read set, causal ancestry, completed trace, roll ledger, and selected skill IDs across each suspension and reconnect. Revalidate skill legality and relevant revisions on resume; forged, stale, or unauthorized responses must produce no operation.
+- After both legal skill selections, own both opposed rolls, modifiers, tie policy, and branch selection on the server. Emit a typed Tripped condition operation only on success and trace failure or tie as a no-op.
+- Add focused interpreter/domain/resume tests for pass, legal and forged skill selections, check success/failure/tie, roll-ledger evidence, reconnect listing, stale response, and duplicate response delivery. Keep the reviewed Take Down runtime, damage/recoil/usage planning, manifest row, and catalog status unchanged in this foundation ticket.
+
+**Done:** A fixture-backed qualifying hit can enter and resume one authorized optional Trip continuation, resolve its server-owned opposed check deterministically, and emit Tripped only on success; reconnect, stale, forged, and duplicate responses cannot lose or repeat the continuation.
+
+## MA-174C — Integrate and certify Take Down's opposed Trip flow
+
+Status: TODO
+
+**Depends on:** MA-174B
+**Commit:** `feat(move-automation): fully resolve take down trip`
+
+**Touch:** the reviewed Take Down runtime, damage and cost planning, semantic scenarios, accepted-command integration, and manifest evidence.
+
+**Implement:**
+
+- Invoke the MA-174B continuation only after a qualifying Take Down hit. Misses and immunities must not open the Trip flow, and the runtime may supply only authoritative actor, target, skill, and check context.
+- Keep damage, recoil and other directly referenced costs, usage, the optional check, and its condition result in canonical deterministic order within one durable saga. Commit the terminal pass, success, or failure branch exactly once; rejected, stale, cost-prevented, or duplicate commands may not partially apply or repeat any part.
+- Add semantic scenarios for pass, check success/failure/tie, legal skill choices, hit, miss, critical hit, immunity, and cost-prevention branches. Run them through the planner and accepted-command boundaries, including reconnect, stale-response, duplicate-declaration, and duplicate-response coverage.
+- Remove Take Down's opposed-check note and update only its manifest runtime/evidence/status after every path passes. Retain the MA-174A Tackle interpreter/planner and accepted-command regressions.
 
 **Done:** Take Down's damage, costs, optional opposed Trip, usage, and condition outcome resolve exactly once without GM adjudication, while Tackle retains its fully authoritative push behavior.
 
