@@ -15,7 +15,7 @@ import {
 export const DOUBLE_KICK_V2_SEMANTIC_SCENARIOS = Object.freeze([
   {
     scenarioId: 'double-kick.v2-critical-double-hit',
-    evidenceClasses: ['crit', 'hit', 'retry'] as const,
+    evidenceClasses: ['alternate-branch', 'crit', 'hit', 'retry'] as const,
   },
   {
     scenarioId: 'double-kick.v2-double-miss',
@@ -23,7 +23,7 @@ export const DOUBLE_KICK_V2_SEMANTIC_SCENARIOS = Object.freeze([
   },
   {
     scenarioId: 'double-kick.v2-early-ko',
-    evidenceClasses: [] as const,
+    evidenceClasses: ['alternate-branch'] as const,
   },
   {
     scenarioId: 'double-kick.v2-immunity',
@@ -31,7 +31,7 @@ export const DOUBLE_KICK_V2_SEMANTIC_SCENARIOS = Object.freeze([
   },
   {
     scenarioId: 'double-kick.v2-mixed-hit-miss',
-    evidenceClasses: [] as const,
+    evidenceClasses: ['alternate-branch'] as const,
   },
 ] as const)
 

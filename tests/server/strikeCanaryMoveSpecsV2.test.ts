@@ -6,7 +6,6 @@ import type {
 } from '#shared/moveAutomation/trace'
 import {
   allStrikeCanaryV2SemanticScenarios,
-  DOUBLE_KICK_V2_SEMANTIC_SCENARIOS,
   FURY_ATTACK_V2_SEMANTIC_SCENARIOS,
   FURY_SWIPES_V2_SEMANTIC_SCENARIOS,
   PIN_MISSILE_V2_SEMANTIC_SCENARIOS,
@@ -18,6 +17,9 @@ import {
 import {
   runAndAssertMoveAutomationSemanticScenario,
 } from '../fixtures/moveAutomation/scenario'
+import {
+  DOUBLE_KICK_REG_007_SCENARIOS,
+} from '../fixtures/moveAutomation/registeredBatch007'
 import {
   registeredMoveAutomationRuntimeFor,
   REVIEWED_MOVE_SPEC_V2_REGISTRATIONS,
@@ -52,10 +54,10 @@ describe('registered Double Strike and Five Strike native MoveSpec v2 family', (
   it('selects every reviewed strike definition and links complete semantic evidence', () => {
     const expected = [{
       canonicalId: 'Double Kick' as const,
-      definitionHash: '6deeebee2b386656defd0c033642ec4c8a4cfd9d974e014a21f56d99f6cc4f89',
+      definitionHash: 'cf35c000a7ef3dc5e74582eebd1ddb48162ad53adc6672ee32cb58c07f3f59e9',
       sourceModule: 'server/domain/moveAutomation/specs/doubleKick.ts',
       spec: DOUBLE_KICK_MOVE_SPEC,
-      scenarios: DOUBLE_KICK_V2_SEMANTIC_SCENARIOS,
+      scenarios: DOUBLE_KICK_REG_007_SCENARIOS,
     }, {
       canonicalId: 'Fury Attack' as const,
       definitionHash: 'e8bf4e7a91905f9927b6393e5ce174d1adaa72538253e96c9f34315f31674f79',
@@ -87,19 +89,10 @@ describe('registered Double Strike and Five Strike native MoveSpec v2 family', (
       expect(row.scenarioIds).toEqual(
         definition.scenarios.map(({ scenarioId }) => scenarioId),
       )
-      expect(row.baseStatus).toBe(
-        definition.canonicalId === 'Double Kick' ? 'assisted' : 'complete',
-      )
+      expect(row.baseStatus).toBe('complete')
       expect(row.blockerCodes).toEqual([])
       expect(row.manualSteps).toEqual([])
-      expect(row.limitations).toEqual(
-        definition.canonicalId === 'Double Kick'
-          ? [{
-              code: 'audit.required',
-              summary: 'Semantic conformance review is required before this native implementation can be marked complete.',
-            }]
-          : [],
-      )
+      expect(row.limitations).toEqual([])
       expect(registeredMoveAutomationRuntimeFor(definition.canonicalId)).toMatchObject({
         kind: 'movespec-v2',
         definition: { spec: definition.spec },

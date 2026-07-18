@@ -2594,7 +2594,7 @@ Status: DONE
 
 ## REG-007 — Certify Dizzy Punch through Drill Peck
 
-Status: TODO
+Status: DONE
 
 **Baseline-registered moves:** Dizzy Punch; Double Kick; Dragon Breath; Dragon Claw; Dragon Hammer; Dragon Pulse; Dragon Rage; Drill Peck
 

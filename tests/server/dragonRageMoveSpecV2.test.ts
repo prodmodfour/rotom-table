@@ -14,6 +14,9 @@ import {
 import {
   runAndAssertMoveAutomationSemanticScenario,
 } from '../fixtures/moveAutomation/scenario'
+import {
+  DRAGON_RAGE_REG_007_SCENARIOS,
+} from '../fixtures/moveAutomation/registeredBatch007'
 import { planAuthoritativeMoveState } from '~~/server/domain/planAuthoritativeMoveState'
 import {
   createFiniteAuthoritativeMoveRandomStream,
@@ -72,11 +75,11 @@ describe('Dragon Rage native MoveSpec v2', () => {
     expect(dragonRageRow.runtime).toEqual({
       kind: 'movespec-v2',
       version: 2,
-      definitionHash: '7dbb354c8e126fad212bbb1c9e719cde76c58c4bc832c3ede56cf573fddc60bc',
+      definitionHash: '1b839292759057bb26106409afd5c1230ab28c4eb6fe64f28a77d1fe9c9413f7',
       sourceModule: 'server/domain/moveAutomation/specs/dragonRage.ts',
     })
     expect(dragonRageRow.scenarioIds).toEqual(
-      DRAGON_RAGE_V2_SEMANTIC_SCENARIOS.map(({ scenarioId }) => scenarioId),
+      DRAGON_RAGE_REG_007_SCENARIOS.map(({ scenarioId }) => scenarioId),
     )
     expect(dragonRageRow.manualSteps).toEqual([])
     expect(registeredMoveAutomationRuntimeFor('Dragon Rage')).toMatchObject({

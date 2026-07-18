@@ -38,6 +38,7 @@ const hasReviewedSeamlessSingleTargetScript = (script: MoveAutomationScript): bo
   || REVIEWED_SINGLE_TARGET_STATUS_SCRIPTS.has(script.moveName)
   || REVIEWED_SINGLE_TARGET_STAGE_SCRIPTS.has(script.moveName)
   || REVIEWED_ADDITIONAL_SINGLE_TARGET_SCRIPTS.has(script.moveName)
+  || REVIEWED_MIXED_TARGET_AREA_SCRIPTS.has(script.moveName)
   || (REVIEWED_DIRECT_HP_LOSS_SCRIPTS.has(script.moveName) && Boolean(script.directHpLoss))
 
 export const isSeamlessSingleTargetAttackScript = (
