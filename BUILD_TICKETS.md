@@ -2492,7 +2492,7 @@ Status: DONE
 
 ## MA-178 — Finish the registered Five Strike family
 
-Status: TODO
+Status: DONE
 
 **Depends on:** MA-079
 **Commit:** `feat(move-automation): fully resolve five strike moves`

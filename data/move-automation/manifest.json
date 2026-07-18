@@ -9069,12 +9069,12 @@
     {
       "canonicalId": "Fury Attack",
       "displayName": "Fury Attack",
-      "baseStatus": "assisted",
+      "baseStatus": "complete",
       "interactionStatus": "unassessed",
       "runtime": {
         "kind": "movespec-v2",
         "version": 2,
-        "definitionHash": "b159369dcfed9ec8f6de6b542634eaeb40dcf28f59a93ea64f552458e314e13f",
+        "definitionHash": "e8bf4e7a91905f9927b6393e5ce174d1adaa72538253e96c9f34315f31674f79",
         "sourceModule": "server/domain/moveAutomation/specs/furyAttack.ts"
       },
       "rulesProvenance": {
@@ -9082,26 +9082,28 @@
         "canonicalizationVersion": 1,
         "sourceDataSha256": "f90491826349afd7d1f2809fd9d74b7acc555f5163b99264205ee369249e9815"
       },
-      "capabilityTags": [],
+      "capabilityTags": [
+        "expressions.bounded",
+        "targeting.authoritative"
+      ],
       "suggestedCapabilityTags": [],
       "blockerCodes": [],
-      "limitations": [
-        {
-          "code": "audit.required",
-          "summary": "Semantic conformance review is required before this native implementation can be marked complete."
-        }
-      ],
+      "limitations": [],
       "manualSteps": [],
       "scenarioIds": [
         "fury-attack.v2-early-ko",
         "fury-attack.v2-five-hit-critical",
+        "fury-attack.v2-four-hit",
         "fury-attack.v2-immunity",
         "fury-attack.v2-miss",
-        "fury-attack.v2-one-hit"
+        "fury-attack.v2-one-hit",
+        "fury-attack.v2-three-hit",
+        "fury-attack.v2-two-hit"
       ],
       "conformanceEvidence": {
         "requirementTags": [
           "branch.accuracy",
+          "branch.alternate",
           "branch.critical-hit",
           "branch.immunity",
           "mechanic.damage",
@@ -9109,11 +9111,23 @@
         ],
         "scenarios": [
           {
+            "scenarioId": "fury-attack.v2-early-ko",
+            "evidenceClasses": [
+              "alternate-branch"
+            ]
+          },
+          {
             "scenarioId": "fury-attack.v2-five-hit-critical",
             "evidenceClasses": [
+              "alternate-branch",
               "crit",
-              "hit",
               "retry"
+            ]
+          },
+          {
+            "scenarioId": "fury-attack.v2-four-hit",
+            "evidenceClasses": [
+              "alternate-branch"
             ]
           },
           {
@@ -9127,11 +9141,29 @@
             "evidenceClasses": [
               "miss"
             ]
+          },
+          {
+            "scenarioId": "fury-attack.v2-one-hit",
+            "evidenceClasses": [
+              "hit"
+            ]
+          },
+          {
+            "scenarioId": "fury-attack.v2-three-hit",
+            "evidenceClasses": [
+              "alternate-branch"
+            ]
+          },
+          {
+            "scenarioId": "fury-attack.v2-two-hit",
+            "evidenceClasses": [
+              "alternate-branch"
+            ]
           }
         ],
         "notApplicable": []
       },
-      "reviewedAt": "2026-07-10",
+      "reviewedAt": "2026-07-18",
       "unsupportedInteractionIds": [],
       "rolloutCohortId": null
     },
@@ -9267,43 +9299,101 @@
     {
       "canonicalId": "Fury Swipes",
       "displayName": "Fury Swipes",
-      "baseStatus": "assisted",
+      "baseStatus": "complete",
       "interactionStatus": "unassessed",
       "runtime": {
-        "kind": "legacy-v1",
-        "version": 1,
-        "definitionHash": "932521f11e020244be4863046fc867cad4de10b2e48c330583b60eee7e1897ab",
-        "sourceModule": "src/utils/move-automation/scripts/additionalSingleTarget.ts"
+        "kind": "movespec-v2",
+        "version": 2,
+        "definitionHash": "64fbaa4edfe28d03340942b6fa407f04423b13e322a00465a7761220169060a9",
+        "sourceModule": "server/domain/moveAutomation/specs/furySwipes.ts"
       },
       "rulesProvenance": {
         "rulesetId": "rotom-table-reference-moves-v1",
         "canonicalizationVersion": 1,
         "sourceDataSha256": "f90491826349afd7d1f2809fd9d74b7acc555f5163b99264205ee369249e9815"
       },
-      "capabilityTags": [],
+      "capabilityTags": [
+        "expressions.bounded",
+        "targeting.authoritative"
+      ],
       "suggestedCapabilityTags": [],
-      "blockerCodes": [
-        "expressions.bounded"
+      "blockerCodes": [],
+      "limitations": [],
+      "manualSteps": [],
+      "scenarioIds": [
+        "fury-swipes.v2-early-ko",
+        "fury-swipes.v2-five-hit-critical",
+        "fury-swipes.v2-four-hit",
+        "fury-swipes.v2-immunity",
+        "fury-swipes.v2-miss",
+        "fury-swipes.v2-one-hit",
+        "fury-swipes.v2-three-hit",
+        "fury-swipes.v2-two-hit"
       ],
-      "limitations": [
-        {
-          "code": "five-strike.aggregate",
-          "summary": "The legacy runtime turns one 1d8 strike-count roll into multiplied Damage Base and one aggregate damage result instead of preserving an ordered per-hit resolution."
-        }
-      ],
-      "manualSteps": [
-        {
-          "code": "five-strike.per-hit",
-          "summary": "Resolve the rolled number of strikes in order, including each strike’s critical and effect outcome and early knockout, then correct the aggregate legacy result as needed."
-        }
-      ],
-      "scenarioIds": [],
       "conformanceEvidence": {
-        "requirementTags": [],
-        "scenarios": [],
+        "requirementTags": [
+          "branch.accuracy",
+          "branch.alternate",
+          "branch.critical-hit",
+          "branch.immunity",
+          "mechanic.damage",
+          "recovery.retry"
+        ],
+        "scenarios": [
+          {
+            "scenarioId": "fury-swipes.v2-early-ko",
+            "evidenceClasses": [
+              "alternate-branch"
+            ]
+          },
+          {
+            "scenarioId": "fury-swipes.v2-five-hit-critical",
+            "evidenceClasses": [
+              "alternate-branch",
+              "crit",
+              "retry"
+            ]
+          },
+          {
+            "scenarioId": "fury-swipes.v2-four-hit",
+            "evidenceClasses": [
+              "alternate-branch"
+            ]
+          },
+          {
+            "scenarioId": "fury-swipes.v2-immunity",
+            "evidenceClasses": [
+              "immunity"
+            ]
+          },
+          {
+            "scenarioId": "fury-swipes.v2-miss",
+            "evidenceClasses": [
+              "miss"
+            ]
+          },
+          {
+            "scenarioId": "fury-swipes.v2-one-hit",
+            "evidenceClasses": [
+              "hit"
+            ]
+          },
+          {
+            "scenarioId": "fury-swipes.v2-three-hit",
+            "evidenceClasses": [
+              "alternate-branch"
+            ]
+          },
+          {
+            "scenarioId": "fury-swipes.v2-two-hit",
+            "evidenceClasses": [
+              "alternate-branch"
+            ]
+          }
+        ],
         "notApplicable": []
       },
-      "reviewedAt": "2026-07-10",
+      "reviewedAt": "2026-07-18",
       "unsupportedInteractionIds": [],
       "rolloutCohortId": null
     },
@@ -16732,43 +16822,98 @@
     {
       "canonicalId": "Pin Missile",
       "displayName": "Pin Missile",
-      "baseStatus": "assisted",
+      "baseStatus": "complete",
       "interactionStatus": "unassessed",
       "runtime": {
-        "kind": "legacy-v1",
-        "version": 1,
-        "definitionHash": "617bd0a4edcefee4c3898d88496cb501b5d07e0b5d63017972cdaef8a9e0086f",
-        "sourceModule": "src/utils/move-automation/scripts/additionalSingleTarget.ts"
+        "kind": "movespec-v2",
+        "version": 2,
+        "definitionHash": "2b01a38a8551175e51fd0566971fa20ff17f8802ffa1f0cf14a1c7e81c677164",
+        "sourceModule": "server/domain/moveAutomation/specs/pinMissile.ts"
       },
       "rulesProvenance": {
         "rulesetId": "rotom-table-reference-moves-v1",
         "canonicalizationVersion": 1,
         "sourceDataSha256": "f90491826349afd7d1f2809fd9d74b7acc555f5163b99264205ee369249e9815"
       },
-      "capabilityTags": [],
+      "capabilityTags": [
+        "expressions.bounded",
+        "targeting.authoritative"
+      ],
       "suggestedCapabilityTags": [],
-      "blockerCodes": [
-        "expressions.bounded"
+      "blockerCodes": [],
+      "limitations": [],
+      "manualSteps": [],
+      "scenarioIds": [
+        "pin-missile.v2-early-ko",
+        "pin-missile.v2-five-hit-critical",
+        "pin-missile.v2-four-hit",
+        "pin-missile.v2-miss",
+        "pin-missile.v2-one-hit",
+        "pin-missile.v2-three-hit",
+        "pin-missile.v2-two-hit"
       ],
-      "limitations": [
-        {
-          "code": "five-strike.aggregate",
-          "summary": "The legacy runtime turns one 1d8 strike-count roll into multiplied Damage Base and one aggregate damage result instead of preserving an ordered per-hit resolution."
-        }
-      ],
-      "manualSteps": [
-        {
-          "code": "five-strike.per-hit",
-          "summary": "Resolve the rolled number of strikes in order, including each strike’s critical and effect outcome and early knockout, then correct the aggregate legacy result as needed."
-        }
-      ],
-      "scenarioIds": [],
       "conformanceEvidence": {
-        "requirementTags": [],
-        "scenarios": [],
-        "notApplicable": []
+        "requirementTags": [
+          "branch.accuracy",
+          "branch.alternate",
+          "branch.critical-hit",
+          "mechanic.damage",
+          "recovery.retry"
+        ],
+        "scenarios": [
+          {
+            "scenarioId": "pin-missile.v2-early-ko",
+            "evidenceClasses": [
+              "alternate-branch"
+            ]
+          },
+          {
+            "scenarioId": "pin-missile.v2-five-hit-critical",
+            "evidenceClasses": [
+              "alternate-branch",
+              "crit",
+              "retry"
+            ]
+          },
+          {
+            "scenarioId": "pin-missile.v2-four-hit",
+            "evidenceClasses": [
+              "alternate-branch"
+            ]
+          },
+          {
+            "scenarioId": "pin-missile.v2-miss",
+            "evidenceClasses": [
+              "miss"
+            ]
+          },
+          {
+            "scenarioId": "pin-missile.v2-one-hit",
+            "evidenceClasses": [
+              "hit"
+            ]
+          },
+          {
+            "scenarioId": "pin-missile.v2-three-hit",
+            "evidenceClasses": [
+              "alternate-branch"
+            ]
+          },
+          {
+            "scenarioId": "pin-missile.v2-two-hit",
+            "evidenceClasses": [
+              "alternate-branch"
+            ]
+          }
+        ],
+        "notApplicable": [
+          {
+            "evidenceClass": "immunity",
+            "reason": "The frozen Pin Missile rule has ordinary Bug damage and no directly referenced type, ability, item, field, or effect immunity branch; the canonical type chart contains no Bug immunity."
+          }
+        ]
       },
-      "reviewedAt": "2026-07-10",
+      "reviewedAt": "2026-07-18",
       "unsupportedInteractionIds": [],
       "rolloutCohortId": null
     },

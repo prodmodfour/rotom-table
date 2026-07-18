@@ -142,23 +142,11 @@ describe('legacy move automation audit metadata', () => {
         manualStepCodes: ['fake-out.joining-flinch'],
         summaryTerms: ['joined', 'Priority'],
       }],
-      ['Fury Swipes', {
-        blockerCodes: ['expressions.bounded'],
-        limitationCodes: ['five-strike.aggregate'],
-        manualStepCodes: ['five-strike.per-hit'],
-        summaryTerms: ['per-hit', 'early knockout'],
-      }],
       ['Howl', {
         blockerCodes: ['targeting.authoritative'],
         limitationCodes: ['ally-area.side-required'],
         manualStepCodes: ['ally-area.side-setup'],
         summaryTerms: ['explicit encounter sides', 'Prepare Map'],
-      }],
-      ['Pin Missile', {
-        blockerCodes: ['expressions.bounded'],
-        limitationCodes: ['five-strike.aggregate'],
-        manualStepCodes: ['five-strike.per-hit'],
-        summaryTerms: ['per-hit', 'early knockout'],
       }],
     ])
     const manifestById = new Map(manifestJson.moves.map(row => [row.canonicalId, row]))

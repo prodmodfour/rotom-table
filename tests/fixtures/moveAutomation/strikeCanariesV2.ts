@@ -33,37 +33,61 @@ export const DOUBLE_KICK_V2_SEMANTIC_SCENARIOS = Object.freeze([
 ] as const)
 
 export const FURY_ATTACK_V2_SEMANTIC_SCENARIOS = Object.freeze([
-  {
-    scenarioId: 'fury-attack.v2-early-ko',
-    evidenceClasses: [] as const,
-  },
+  { scenarioId: 'fury-attack.v2-early-ko', evidenceClasses: ['alternate-branch'] as const },
   {
     scenarioId: 'fury-attack.v2-five-hit-critical',
-    evidenceClasses: ['crit', 'hit', 'retry'] as const,
+    evidenceClasses: ['alternate-branch', 'crit', 'retry'] as const,
   },
+  { scenarioId: 'fury-attack.v2-four-hit', evidenceClasses: ['alternate-branch'] as const },
+  { scenarioId: 'fury-attack.v2-immunity', evidenceClasses: ['immunity'] as const },
+  { scenarioId: 'fury-attack.v2-miss', evidenceClasses: ['miss'] as const },
+  { scenarioId: 'fury-attack.v2-one-hit', evidenceClasses: ['hit'] as const },
+  { scenarioId: 'fury-attack.v2-three-hit', evidenceClasses: ['alternate-branch'] as const },
+  { scenarioId: 'fury-attack.v2-two-hit', evidenceClasses: ['alternate-branch'] as const },
+] as const)
+
+export const FURY_SWIPES_V2_SEMANTIC_SCENARIOS = Object.freeze([
+  { scenarioId: 'fury-swipes.v2-early-ko', evidenceClasses: ['alternate-branch'] as const },
   {
-    scenarioId: 'fury-attack.v2-immunity',
-    evidenceClasses: ['immunity'] as const,
+    scenarioId: 'fury-swipes.v2-five-hit-critical',
+    evidenceClasses: ['alternate-branch', 'crit', 'retry'] as const,
   },
+  { scenarioId: 'fury-swipes.v2-four-hit', evidenceClasses: ['alternate-branch'] as const },
+  { scenarioId: 'fury-swipes.v2-immunity', evidenceClasses: ['immunity'] as const },
+  { scenarioId: 'fury-swipes.v2-miss', evidenceClasses: ['miss'] as const },
+  { scenarioId: 'fury-swipes.v2-one-hit', evidenceClasses: ['hit'] as const },
+  { scenarioId: 'fury-swipes.v2-three-hit', evidenceClasses: ['alternate-branch'] as const },
+  { scenarioId: 'fury-swipes.v2-two-hit', evidenceClasses: ['alternate-branch'] as const },
+] as const)
+
+export const PIN_MISSILE_V2_SEMANTIC_SCENARIOS = Object.freeze([
+  { scenarioId: 'pin-missile.v2-early-ko', evidenceClasses: ['alternate-branch'] as const },
   {
-    scenarioId: 'fury-attack.v2-miss',
-    evidenceClasses: ['miss'] as const,
+    scenarioId: 'pin-missile.v2-five-hit-critical',
+    evidenceClasses: ['alternate-branch', 'crit', 'retry'] as const,
   },
-  {
-    scenarioId: 'fury-attack.v2-one-hit',
-    evidenceClasses: [] as const,
-  },
+  { scenarioId: 'pin-missile.v2-four-hit', evidenceClasses: ['alternate-branch'] as const },
+  { scenarioId: 'pin-missile.v2-miss', evidenceClasses: ['miss'] as const },
+  { scenarioId: 'pin-missile.v2-one-hit', evidenceClasses: ['hit'] as const },
+  { scenarioId: 'pin-missile.v2-three-hit', evidenceClasses: ['alternate-branch'] as const },
+  { scenarioId: 'pin-missile.v2-two-hit', evidenceClasses: ['alternate-branch'] as const },
 ] as const)
 
 export const STRIKE_CANARY_V2_SEMANTIC_SCENARIOS = Object.freeze([
   ...DOUBLE_KICK_V2_SEMANTIC_SCENARIOS,
   ...FURY_ATTACK_V2_SEMANTIC_SCENARIOS,
+  ...FURY_SWIPES_V2_SEMANTIC_SCENARIOS,
+  ...PIN_MISSILE_V2_SEMANTIC_SCENARIOS,
 ] as const)
 
 export type StrikeCanaryV2SemanticScenarioId =
   (typeof STRIKE_CANARY_V2_SEMANTIC_SCENARIOS)[number]['scenarioId']
 
-export type StrikeCanaryMoveName = 'Double Kick' | 'Fury Attack'
+export type StrikeCanaryMoveName =
+  | 'Double Kick'
+  | 'Fury Attack'
+  | 'Fury Swipes'
+  | 'Pin Missile'
 
 export interface StrikeCanaryScenarioDefinition {
   readonly operationId: string
@@ -83,10 +107,198 @@ export interface StrikeCanaryScenarioDefinition {
   readonly targetWritten: boolean
 }
 
-const DEFINITIONS: Readonly<Record<
-  StrikeCanaryV2SemanticScenarioId,
-  StrikeCanaryScenarioDefinition
->> = {
+export interface StrikeCanaryMoveDefinition {
+  readonly slug: string
+  readonly actorType: string
+  readonly actorSpecies: string
+  readonly expectedDamageBase: number
+  readonly expectedDamageFormula: Readonly<{
+    kind: 'dice'
+    count: number
+    sides: number
+    modifier: number
+  }>
+  readonly hitCountRollId: string | null
+}
+
+const MOVE_DEFINITIONS: Readonly<Record<
+  StrikeCanaryMoveName,
+  StrikeCanaryMoveDefinition
+>> = Object.freeze({
+  'Double Kick': {
+    slug: 'double-kick',
+    actorType: 'Fighting',
+    actorSpecies: 'Hitmonlee',
+    expectedDamageBase: 5,
+    expectedDamageFormula: { kind: 'dice', count: 1, sides: 8, modifier: 8 },
+    hitCountRollId: null,
+  },
+  'Fury Attack': {
+    slug: 'fury-attack',
+    actorType: 'Normal',
+    actorSpecies: 'Tauros',
+    expectedDamageBase: 4,
+    expectedDamageFormula: { kind: 'dice', count: 1, sides: 8, modifier: 6 },
+    hitCountRollId: 'fury-attack.hit-count-roll',
+  },
+  'Fury Swipes': {
+    slug: 'fury-swipes',
+    actorType: 'Normal',
+    actorSpecies: 'Persian',
+    expectedDamageBase: 5,
+    expectedDamageFormula: { kind: 'dice', count: 1, sides: 8, modifier: 8 },
+    hitCountRollId: 'fury-swipes.hit-count-roll',
+  },
+  'Pin Missile': {
+    slug: 'pin-missile',
+    actorType: 'Bug',
+    actorSpecies: 'Beedrill',
+    expectedDamageBase: 5,
+    expectedDamageFormula: { kind: 'dice', count: 1, sides: 8, modifier: 8 },
+    hitCountRollId: 'pin-missile.hit-count-roll',
+  },
+})
+
+export const strikeCanaryV2MoveDefinition = (
+  moveName: StrikeCanaryMoveName,
+): StrikeCanaryMoveDefinition => MOVE_DEFINITIONS[moveName]
+
+type FiveStrikeMoveName = Exclude<StrikeCanaryMoveName, 'Double Kick'>
+
+interface FiveStrikeScenarioConfig {
+  readonly moveName: FiveStrikeMoveName
+  readonly immunityTypes: readonly string[] | null
+}
+
+const FIVE_STRIKE_COUNT_DRAWS: Readonly<Record<number, number>> = Object.freeze({
+  1: 0,
+  2: 0.2,
+  3: 0.5,
+  4: 0.75,
+  5: 0.999,
+})
+
+const fiveStrikeRollIds = (
+  slug: string,
+  attemptedHits: number,
+): readonly string[] => [
+  `${slug}.accuracy-roll.t1`,
+  `${slug}.hit-count-roll`,
+  ...Array.from({ length: attemptedHits }, (_, index) => [
+    `${slug}.critical-roll.t1.h${index + 1}`,
+    `${slug}.multi-hit.t1.h${index + 1}.roll`,
+  ]).flat(),
+]
+
+const fiveStrikeRandomValues = (
+  plannedHits: number,
+  attemptedHits: number,
+  criticalHitIndexes: readonly number[] = [],
+): readonly number[] => [
+  0.5,
+  FIVE_STRIKE_COUNT_DRAWS[plannedHits] ?? 0,
+  ...Array.from({ length: attemptedHits }, (_, index) => [
+    criticalHitIndexes.includes(index + 1) ? 0.999 : 0,
+    0,
+  ]).flat(),
+]
+
+const fiveStrikeHitDefinition = (
+  config: FiveStrikeScenarioConfig,
+  options: {
+    readonly operationId: string
+    readonly plannedHits: number
+    readonly attemptedHits?: number
+    readonly targetTypes?: readonly string[]
+    readonly targetHp?: number
+    readonly stopReason?: StrikeCanaryScenarioDefinition['stopReason']
+    readonly operationOutcome?: StrikeCanaryScenarioDefinition['operationOutcome']
+    readonly criticalHitIndexes?: readonly number[]
+    readonly targetWritten?: boolean
+  },
+): StrikeCanaryScenarioDefinition => {
+  const { slug } = MOVE_DEFINITIONS[config.moveName]
+  const attemptedHits = options.attemptedHits ?? options.plannedHits
+  const criticalHitIndexes = options.criticalHitIndexes ?? []
+  return {
+    operationId: options.operationId,
+    moveName: config.moveName,
+    multiHitOperationId: `${slug}.multi-hit`,
+    targetTypes: options.targetTypes ?? ['Normal'],
+    targetHp: options.targetHp ?? 500,
+    randomValues: fiveStrikeRandomValues(
+      options.plannedHits,
+      attemptedHits,
+      criticalHitIndexes,
+    ),
+    expectedRollIds: fiveStrikeRollIds(slug, attemptedHits),
+    plannedHitCount: options.plannedHits,
+    attemptedHitCount: attemptedHits,
+    successfulHitCount: attemptedHits,
+    missedHitCount: 0,
+    stopReason: options.stopReason ?? 'completed',
+    operationOutcome: options.operationOutcome ?? 'applied',
+    criticalHitIndexes,
+    targetWritten: options.targetWritten ?? true,
+  }
+}
+
+const fiveStrikeScenarioDefinitions = (
+  config: FiveStrikeScenarioConfig,
+): Readonly<Record<string, StrikeCanaryScenarioDefinition>> => {
+  const { slug } = MOVE_DEFINITIONS[config.moveName]
+  const compact = slug.replaceAll('-', '')
+  const hit = (
+    suffix: string,
+    plannedHits: number,
+    options: Omit<Parameters<typeof fiveStrikeHitDefinition>[1], 'operationId' | 'plannedHits'> = {},
+  ) => fiveStrikeHitDefinition(config, {
+    operationId: `op_${compact}${suffix}1`,
+    plannedHits,
+    ...options,
+  })
+  const definitions: Record<string, StrikeCanaryScenarioDefinition> = {
+    [`${slug}.v2-early-ko`]: hit('earlyko', 5, {
+      attemptedHits: 1,
+      targetHp: 1,
+      stopReason: 'knockout',
+    }),
+    [`${slug}.v2-five-hit-critical`]: hit('fivehit', 5, {
+      criticalHitIndexes: [3],
+    }),
+    [`${slug}.v2-four-hit`]: hit('fourhit', 4),
+    [`${slug}.v2-miss`]: {
+      operationId: `op_${compact}miss001`,
+      moveName: config.moveName,
+      multiHitOperationId: `${slug}.multi-hit`,
+      targetTypes: ['Normal'],
+      targetHp: 500,
+      randomValues: [0],
+      expectedRollIds: [`${slug}.accuracy-roll.t1`],
+      plannedHitCount: null,
+      attemptedHitCount: 0,
+      successfulHitCount: 0,
+      missedHitCount: 0,
+      stopReason: 'accuracy-missed',
+      operationOutcome: 'no-op',
+      criticalHitIndexes: [],
+      targetWritten: false,
+    },
+    [`${slug}.v2-one-hit`]: hit('onehit', 1),
+    [`${slug}.v2-three-hit`]: hit('threehit', 3),
+    [`${slug}.v2-two-hit`]: hit('twohit', 2),
+  }
+  if (config.immunityTypes) {
+    definitions[`${slug}.v2-immunity`] = hit('immune', 1, {
+      targetTypes: config.immunityTypes,
+      operationOutcome: 'prevented',
+      targetWritten: false,
+    })
+  }
+  return Object.freeze(definitions)
+}
+
+const DEFINITIONS: Readonly<Record<string, StrikeCanaryScenarioDefinition>> = {
   'double-kick.v2-critical-double-hit': {
     operationId: 'op_doublekickcritical1',
     moveName: 'Double Kick',
@@ -192,127 +404,18 @@ const DEFINITIONS: Readonly<Record<
     criticalHitIndexes: [],
     targetWritten: true,
   },
-  'fury-attack.v2-early-ko': {
-    operationId: 'op_furyattackearlyko1',
+  ...fiveStrikeScenarioDefinitions({
     moveName: 'Fury Attack',
-    multiHitOperationId: 'fury-attack.multi-hit',
-    targetTypes: ['Normal'],
-    targetHp: 1,
-    randomValues: [0.5, 0.999, 0, 0],
-    expectedRollIds: [
-      'fury-attack.accuracy-roll.t1',
-      'fury-attack.hit-count-roll',
-      'fury-attack.critical-roll.t1.h1',
-      'fury-attack.multi-hit.t1.h1.roll',
-    ],
-    plannedHitCount: 5,
-    attemptedHitCount: 1,
-    successfulHitCount: 1,
-    missedHitCount: 0,
-    stopReason: 'knockout',
-    operationOutcome: 'applied',
-    criticalHitIndexes: [],
-    targetWritten: true,
-  },
-  'fury-attack.v2-five-hit-critical': {
-    operationId: 'op_furyattackfivehit1',
-    moveName: 'Fury Attack',
-    multiHitOperationId: 'fury-attack.multi-hit',
-    targetTypes: ['Normal'],
-    targetHp: 500,
-    randomValues: [
-      0.5,
-      0.999,
-      0, 0,
-      0, 0,
-      0.999, 0,
-      0, 0,
-      0, 0,
-    ],
-    expectedRollIds: [
-      'fury-attack.accuracy-roll.t1',
-      'fury-attack.hit-count-roll',
-      'fury-attack.critical-roll.t1.h1',
-      'fury-attack.multi-hit.t1.h1.roll',
-      'fury-attack.critical-roll.t1.h2',
-      'fury-attack.multi-hit.t1.h2.roll',
-      'fury-attack.critical-roll.t1.h3',
-      'fury-attack.multi-hit.t1.h3.roll',
-      'fury-attack.critical-roll.t1.h4',
-      'fury-attack.multi-hit.t1.h4.roll',
-      'fury-attack.critical-roll.t1.h5',
-      'fury-attack.multi-hit.t1.h5.roll',
-    ],
-    plannedHitCount: 5,
-    attemptedHitCount: 5,
-    successfulHitCount: 5,
-    missedHitCount: 0,
-    stopReason: 'completed',
-    operationOutcome: 'applied',
-    criticalHitIndexes: [3],
-    targetWritten: true,
-  },
-  'fury-attack.v2-immunity': {
-    operationId: 'op_furyattackimmune1',
-    moveName: 'Fury Attack',
-    multiHitOperationId: 'fury-attack.multi-hit',
-    targetTypes: ['Ghost'],
-    targetHp: 500,
-    randomValues: [0.5, 0, 0, 0],
-    expectedRollIds: [
-      'fury-attack.accuracy-roll.t1',
-      'fury-attack.hit-count-roll',
-      'fury-attack.critical-roll.t1.h1',
-      'fury-attack.multi-hit.t1.h1.roll',
-    ],
-    plannedHitCount: 1,
-    attemptedHitCount: 1,
-    successfulHitCount: 1,
-    missedHitCount: 0,
-    stopReason: 'completed',
-    operationOutcome: 'prevented',
-    criticalHitIndexes: [],
-    targetWritten: false,
-  },
-  'fury-attack.v2-miss': {
-    operationId: 'op_furyattackmiss001',
-    moveName: 'Fury Attack',
-    multiHitOperationId: 'fury-attack.multi-hit',
-    targetTypes: ['Normal'],
-    targetHp: 500,
-    randomValues: [0],
-    expectedRollIds: ['fury-attack.accuracy-roll.t1'],
-    plannedHitCount: null,
-    attemptedHitCount: 0,
-    successfulHitCount: 0,
-    missedHitCount: 0,
-    stopReason: 'accuracy-missed',
-    operationOutcome: 'no-op',
-    criticalHitIndexes: [],
-    targetWritten: false,
-  },
-  'fury-attack.v2-one-hit': {
-    operationId: 'op_furyattackonehit1',
-    moveName: 'Fury Attack',
-    multiHitOperationId: 'fury-attack.multi-hit',
-    targetTypes: ['Normal'],
-    targetHp: 500,
-    randomValues: [0.5, 0, 0, 0],
-    expectedRollIds: [
-      'fury-attack.accuracy-roll.t1',
-      'fury-attack.hit-count-roll',
-      'fury-attack.critical-roll.t1.h1',
-      'fury-attack.multi-hit.t1.h1.roll',
-    ],
-    plannedHitCount: 1,
-    attemptedHitCount: 1,
-    successfulHitCount: 1,
-    missedHitCount: 0,
-    stopReason: 'completed',
-    operationOutcome: 'applied',
-    criticalHitIndexes: [],
-    targetWritten: true,
-  },
+    immunityTypes: ['Ghost'],
+  }),
+  ...fiveStrikeScenarioDefinitions({
+    moveName: 'Fury Swipes',
+    immunityTypes: ['Ghost'],
+  }),
+  ...fiveStrikeScenarioDefinitions({
+    moveName: 'Pin Missile',
+    immunityTypes: null,
+  }),
 }
 
 const placement = (id: string, sheetSlug: string, x: number): SheetPlacement => ({
@@ -325,8 +428,8 @@ const placement = (id: string, sheetSlug: string, x: number): SheetPlacement => 
 const actorSheet = (moveName: StrikeCanaryMoveName): CharacterSheet => ({
   slug: 'actor',
   nickname: moveName === 'Double Kick' ? 'Kicker' : 'Striker',
-  species: moveName === 'Double Kick' ? 'Hitmonlee' : 'Tauros',
-  types: [moveName === 'Double Kick' ? 'Fighting' : 'Normal'],
+  species: MOVE_DEFINITIONS[moveName].actorSpecies,
+  types: [MOVE_DEFINITIONS[moveName].actorType],
   level: 20,
   revision: 3,
   movelist: [{ name: moveName }],
@@ -364,10 +467,11 @@ export const strikeCanaryV2Fixture = (
   scenarioId: StrikeCanaryV2SemanticScenarioId,
 ): StrikeCanaryV2ScenarioFixture => {
   const definition = DEFINITIONS[scenarioId]
+  const move = MOVE_DEFINITIONS[definition.moveName]
   return {
     map: {
       schemaVersion: 2,
-      slug: `${definition.moveName === 'Double Kick' ? 'double-kick' : 'fury-attack'}-v2-arena`,
+      slug: `${move.slug}-v2-arena`,
       name: `${definition.moveName} v2 Arena`,
       revision: 7,
       dimensions: { x: 6, y: 3, z: 4 },
@@ -415,7 +519,7 @@ const expectedMap = (
       'actor-token': {
         actions: { standard: { spent: 1 } },
         oncePerTurnFlags: [{
-          id: `move.${definition.moveName === 'Double Kick' ? 'double-kick' : 'fury-attack'}`,
+          id: `move.${MOVE_DEFINITIONS[definition.moveName].slug}`,
           sourceOperationId: definition.operationId,
         }],
       },
@@ -483,17 +587,13 @@ export const strikeCanaryV2SemanticScenario = (
             },
             {
               operation: {
-                id: definition.moveName === 'Double Kick'
-                  ? 'double-kick.usage'
-                  : 'fury-attack.usage',
+                id: `${MOVE_DEFINITIONS[definition.moveName].slug}.usage`,
               },
               recipientIds: ['actor-token'],
             },
             {
               operation: {
-                id: definition.moveName === 'Double Kick'
-                  ? 'double-kick.log-completed'
-                  : 'fury-attack.log-completed',
+                id: `${MOVE_DEFINITIONS[definition.moveName].slug}.log-completed`,
               },
               recipientIds: [],
             },

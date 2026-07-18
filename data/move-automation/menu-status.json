@@ -3297,16 +3297,11 @@
     {
       "canonicalId": "Fury Attack",
       "displayName": "Fury Attack",
-      "baseStatus": "assisted",
+      "baseStatus": "complete",
       "interactionStatus": "unassessed",
       "runtimeKind": "movespec-v2",
       "blockerCodes": [],
-      "limitations": [
-        {
-          "code": "audit.required",
-          "summary": "Semantic conformance review is required before this native implementation can be marked complete."
-        }
-      ],
+      "limitations": [],
       "manualSteps": []
     },
     {
@@ -3322,24 +3317,12 @@
     {
       "canonicalId": "Fury Swipes",
       "displayName": "Fury Swipes",
-      "baseStatus": "assisted",
+      "baseStatus": "complete",
       "interactionStatus": "unassessed",
-      "runtimeKind": "legacy-v1",
-      "blockerCodes": [
-        "expressions.bounded"
-      ],
-      "limitations": [
-        {
-          "code": "five-strike.aggregate",
-          "summary": "The legacy runtime turns one 1d8 strike-count roll into multiplied Damage Base and one aggregate damage result instead of preserving an ordered per-hit resolution."
-        }
-      ],
-      "manualSteps": [
-        {
-          "code": "five-strike.per-hit",
-          "summary": "Resolve the rolled number of strikes in order, including each strike’s critical and effect outcome and early knockout, then correct the aggregate legacy result as needed."
-        }
-      ]
+      "runtimeKind": "movespec-v2",
+      "blockerCodes": [],
+      "limitations": [],
+      "manualSteps": []
     },
     {
       "canonicalId": "Fusion Bolt",
@@ -5987,24 +5970,12 @@
     {
       "canonicalId": "Pin Missile",
       "displayName": "Pin Missile",
-      "baseStatus": "assisted",
+      "baseStatus": "complete",
       "interactionStatus": "unassessed",
-      "runtimeKind": "legacy-v1",
-      "blockerCodes": [
-        "expressions.bounded"
-      ],
-      "limitations": [
-        {
-          "code": "five-strike.aggregate",
-          "summary": "The legacy runtime turns one 1d8 strike-count roll into multiplied Damage Base and one aggregate damage result instead of preserving an ordered per-hit resolution."
-        }
-      ],
-      "manualSteps": [
-        {
-          "code": "five-strike.per-hit",
-          "summary": "Resolve the rolled number of strikes in order, including each strike’s critical and effect outcome and early knockout, then correct the aggregate legacy result as needed."
-        }
-      ]
+      "runtimeKind": "movespec-v2",
+      "blockerCodes": [],
+      "limitations": [],
+      "manualSteps": []
     },
     {
       "canonicalId": "Plasma Fists",

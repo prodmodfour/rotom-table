@@ -8,7 +8,11 @@ import {
   allStrikeCanaryV2SemanticScenarios,
   DOUBLE_KICK_V2_SEMANTIC_SCENARIOS,
   FURY_ATTACK_V2_SEMANTIC_SCENARIOS,
+  FURY_SWIPES_V2_SEMANTIC_SCENARIOS,
+  PIN_MISSILE_V2_SEMANTIC_SCENARIOS,
+  strikeCanaryV2MoveDefinition,
   strikeCanaryV2ScenarioDefinition,
+  type StrikeCanaryMoveName,
   type StrikeCanaryV2SemanticScenarioId,
 } from '../fixtures/moveAutomation/strikeCanariesV2'
 import {
@@ -24,8 +28,14 @@ import {
 import {
   FURY_ATTACK_MOVE_SPEC,
 } from '~~/server/domain/moveAutomation/specs/furyAttack'
+import {
+  FURY_SWIPES_MOVE_SPEC,
+} from '~~/server/domain/moveAutomation/specs/furySwipes'
+import {
+  PIN_MISSILE_MOVE_SPEC,
+} from '~~/server/domain/moveAutomation/specs/pinMissile'
 
-const rowFor = (canonicalId: 'Double Kick' | 'Fury Attack') => (
+const rowFor = (canonicalId: StrikeCanaryMoveName) => (
   manifestJson.moves.find(row => row.canonicalId === canonicalId)!
 )
 
@@ -38,8 +48,8 @@ const operationEvent = (
   ),
 )
 
-describe('Double Kick and Fury Attack native MoveSpec v2 canaries', () => {
-  it('selects both reviewed strike definitions and links their semantic evidence', () => {
+describe('registered Double Strike and Five Strike native MoveSpec v2 family', () => {
+  it('selects every reviewed strike definition and links complete semantic evidence', () => {
     const expected = [{
       canonicalId: 'Double Kick' as const,
       definitionHash: '6deeebee2b386656defd0c033642ec4c8a4cfd9d974e014a21f56d99f6cc4f89',
@@ -48,10 +58,22 @@ describe('Double Kick and Fury Attack native MoveSpec v2 canaries', () => {
       scenarios: DOUBLE_KICK_V2_SEMANTIC_SCENARIOS,
     }, {
       canonicalId: 'Fury Attack' as const,
-      definitionHash: 'b159369dcfed9ec8f6de6b542634eaeb40dcf28f59a93ea64f552458e314e13f',
+      definitionHash: 'e8bf4e7a91905f9927b6393e5ce174d1adaa72538253e96c9f34315f31674f79',
       sourceModule: 'server/domain/moveAutomation/specs/furyAttack.ts',
       spec: FURY_ATTACK_MOVE_SPEC,
       scenarios: FURY_ATTACK_V2_SEMANTIC_SCENARIOS,
+    }, {
+      canonicalId: 'Fury Swipes' as const,
+      definitionHash: '64fbaa4edfe28d03340942b6fa407f04423b13e322a00465a7761220169060a9',
+      sourceModule: 'server/domain/moveAutomation/specs/furySwipes.ts',
+      spec: FURY_SWIPES_MOVE_SPEC,
+      scenarios: FURY_SWIPES_V2_SEMANTIC_SCENARIOS,
+    }, {
+      canonicalId: 'Pin Missile' as const,
+      definitionHash: '2b01a38a8551175e51fd0566971fa20ff17f8802ffa1f0cf14a1c7e81c677164',
+      sourceModule: 'server/domain/moveAutomation/specs/pinMissile.ts',
+      spec: PIN_MISSILE_MOVE_SPEC,
+      scenarios: PIN_MISSILE_V2_SEMANTIC_SCENARIOS,
     }]
 
     for (const definition of expected) {
@@ -65,12 +87,19 @@ describe('Double Kick and Fury Attack native MoveSpec v2 canaries', () => {
       expect(row.scenarioIds).toEqual(
         definition.scenarios.map(({ scenarioId }) => scenarioId),
       )
+      expect(row.baseStatus).toBe(
+        definition.canonicalId === 'Double Kick' ? 'assisted' : 'complete',
+      )
       expect(row.blockerCodes).toEqual([])
       expect(row.manualSteps).toEqual([])
-      expect(row.limitations).toEqual([{
-        code: 'audit.required',
-        summary: 'Semantic conformance review is required before this native implementation can be marked complete.',
-      }])
+      expect(row.limitations).toEqual(
+        definition.canonicalId === 'Double Kick'
+          ? [{
+              code: 'audit.required',
+              summary: 'Semantic conformance review is required before this native implementation can be marked complete.',
+            }]
+          : [],
+      )
       expect(registeredMoveAutomationRuntimeFor(definition.canonicalId)).toMatchObject({
         kind: 'movespec-v2',
         definition: { spec: definition.spec },
@@ -89,24 +118,32 @@ describe('Double Kick and Fury Attack native MoveSpec v2 canaries', () => {
         critical: { kind: 'accuracy' },
       },
     })
-    expect(FURY_ATTACK_MOVE_SPEC.phases[0]?.operations[0]).toMatchObject({
-      kind: 'multi-hit',
-      payload: {
-        count: {
-          kind: 'table',
-          drawFormula: { kind: 'dice', count: 1, sides: 8, modifier: 0 },
-          entries: [
-            { minimum: 1, maximum: 1, hits: 1 },
-            { minimum: 2, maximum: 3, hits: 2 },
-            { minimum: 4, maximum: 6, hits: 3 },
-            { minimum: 7, maximum: 7, hits: 4 },
-            { minimum: 8, maximum: 8, hits: 5 },
-          ],
+    for (const spec of [
+      FURY_ATTACK_MOVE_SPEC,
+      FURY_SWIPES_MOVE_SPEC,
+      PIN_MISSILE_MOVE_SPEC,
+    ]) {
+      expect(spec.phases[0]?.operations[0]).toMatchObject({
+        kind: 'multi-hit',
+        payload: {
+          count: {
+            kind: 'table',
+            scope: 'sequence',
+            drawFormula: { kind: 'dice', count: 1, sides: 8, modifier: 0 },
+            entries: [
+              { minimum: 1, maximum: 1, hits: 1 },
+              { minimum: 2, maximum: 3, hits: 2 },
+              { minimum: 4, maximum: 6, hits: 3 },
+              { minimum: 7, maximum: 7, hits: 4 },
+              { minimum: 8, maximum: 8, hits: 5 },
+            ],
+          },
+          accuracy: { kind: 'once' },
+          critical: { kind: 'per-hit' },
+          effects: [],
         },
-        accuracy: { kind: 'once' },
-        critical: { kind: 'per-hit' },
-      },
-    })
+      })
+    }
   })
 
   it.each(allStrikeCanaryV2SemanticScenarios())(
@@ -176,10 +213,9 @@ describe('Double Kick and Fury Attack native MoveSpec v2 canaries', () => {
         strikeDamage.reduce((total, damage) => total + damage.effectiveHpLost, 0),
       )
       expect(execution.resolution.totalEffectiveHpLost).toBe(target?.totalEffectiveHpLost)
-      const expectedDamageBase = definition.moveName === 'Double Kick' ? 5 : 4
-      const expectedDamageFormula = definition.moveName === 'Double Kick'
-        ? { kind: 'dice', count: 1, sides: 8, modifier: 8 }
-        : { kind: 'dice', count: 1, sides: 8, modifier: 6 }
+      const moveDefinition = strikeCanaryV2MoveDefinition(definition.moveName)
+      const expectedDamageBase = moveDefinition.expectedDamageBase
+      const expectedDamageFormula = moveDefinition.expectedDamageFormula
       expect(strikeDamage.map(damage => damage.damagePipeline?.damageBase)).toEqual(
         Array.from(
           { length: definition.successfulHitCount },
@@ -257,7 +293,7 @@ describe('Double Kick and Fury Attack native MoveSpec v2 canaries', () => {
         expect(execution.resolution.countKind).toBe('table')
         expect(execution.resolution.countScope).toBe('sequence')
         expect(target?.hitCountRollId).toBe(
-          definition.plannedHitCount === null ? null : 'fury-attack.hit-count-roll',
+          definition.plannedHitCount === null ? null : moveDefinition.hitCountRollId,
         )
         expect(target?.strikes.filter(strike => strike.accuracy.hit)
           .every(strike => strike.criticalRollId !== null)).toBe(true)

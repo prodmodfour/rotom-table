@@ -79,6 +79,34 @@ const randomSequence = (values: readonly number[]): (() => number) => {
   return () => values[index++] ?? values[values.length - 1] ?? 0
 }
 
+const fiveStrikeAcceptedCommandCase = (
+  moveName: 'Fury Attack' | 'Fury Swipes' | 'Pin Missile',
+  slug: 'fury-attack' | 'fury-swipes' | 'pin-missile',
+  opId: string,
+) => ({
+  moveName,
+  opId,
+  multiHitOperationId: `${slug}.multi-hit`,
+  randomValues: [
+    0.5,
+    0.999,
+    0, 0,
+    0, 0,
+    0.999, 0,
+    0, 0,
+    0, 0,
+  ],
+  expectedHitCount: 5,
+  expectedRollIds: [
+    `${slug}.accuracy-roll.t1`,
+    `${slug}.hit-count-roll`,
+    ...Array.from({ length: 5 }, (_, index) => [
+      `${slug}.critical-roll.t1.h${index + 1}`,
+      `${slug}.multi-hit.t1.h${index + 1}.roll`,
+    ]).flat(),
+  ],
+} as const)
+
 const placement = (id: string, sheetSlug = id, position = { x: 0, y: 0, z: 0 }): SheetPlacement => ({
   id,
   sheetKind: 'pokemon',
@@ -1211,35 +1239,11 @@ describe('executeLivePlayResolveMoveCommandUseCase', () => {
       'double-kick.accuracy-roll.t1.h2',
       'double-kick.multi-hit.t1.h2.roll',
     ],
-  }, {
-    moveName: 'Fury Attack',
-    opId: 'op_resolvefuryattack1',
-    multiHitOperationId: 'fury-attack.multi-hit',
-    randomValues: [
-      0.5,
-      0.999,
-      0, 0,
-      0, 0,
-      0.999, 0,
-      0, 0,
-      0, 0,
-    ],
-    expectedHitCount: 5,
-    expectedRollIds: [
-      'fury-attack.accuracy-roll.t1',
-      'fury-attack.hit-count-roll',
-      'fury-attack.critical-roll.t1.h1',
-      'fury-attack.multi-hit.t1.h1.roll',
-      'fury-attack.critical-roll.t1.h2',
-      'fury-attack.multi-hit.t1.h2.roll',
-      'fury-attack.critical-roll.t1.h3',
-      'fury-attack.multi-hit.t1.h3.roll',
-      'fury-attack.critical-roll.t1.h4',
-      'fury-attack.multi-hit.t1.h4.roll',
-      'fury-attack.critical-roll.t1.h5',
-      'fury-attack.multi-hit.t1.h5.roll',
-    ],
-  }] as const)(
+  },
+  fiveStrikeAcceptedCommandCase('Fury Attack', 'fury-attack', 'op_resolvefuryattack1'),
+  fiveStrikeAcceptedCommandCase('Fury Swipes', 'fury-swipes', 'op_resolvefuryswipes1'),
+  fiveStrikeAcceptedCommandCase('Pin Missile', 'pin-missile', 'op_resolvepinmissile1'),
+  ] as const)(
     'commits native $moveName strike rolls once across duplicate delivery',
     async ({
       moveName,
