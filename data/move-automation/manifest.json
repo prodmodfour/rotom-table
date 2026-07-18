@@ -4979,7 +4979,7 @@
     {
       "canonicalId": "Charm",
       "displayName": "Charm",
-      "baseStatus": "assisted",
+      "baseStatus": "complete",
       "interactionStatus": "unassessed",
       "runtime": {
         "kind": "legacy-v1",
@@ -4992,23 +4992,62 @@
         "canonicalizationVersion": 1,
         "sourceDataSha256": "f90491826349afd7d1f2809fd9d74b7acc555f5163b99264205ee369249e9815"
       },
-      "capabilityTags": [],
+      "capabilityTags": [
+        "stages.typed",
+        "targeting.authoritative"
+      ],
       "suggestedCapabilityTags": [],
       "blockerCodes": [],
-      "limitations": [
-        {
-          "code": "audit.required",
-          "summary": "Semantic conformance review is required before this legacy implementation can be marked complete."
-        }
-      ],
+      "limitations": [],
       "manualSteps": [],
-      "scenarioIds": [],
+      "scenarioIds": [
+        "charm.legacy-v1-hit",
+        "charm.legacy-v1-miss",
+        "charm.legacy-v1-stage-cap",
+        "charm.legacy-v1-duplicate-replay",
+        "charm.legacy-v1-stale-target"
+      ],
       "conformanceEvidence": {
-        "requirementTags": [],
-        "scenarios": [],
+        "requirementTags": [
+          "branch.accuracy",
+          "recovery.retry",
+          "resource.multi"
+        ],
+        "scenarios": [
+          {
+            "scenarioId": "charm.legacy-v1-hit",
+            "evidenceClasses": [
+              "hit"
+            ]
+          },
+          {
+            "scenarioId": "charm.legacy-v1-miss",
+            "evidenceClasses": [
+              "miss"
+            ]
+          },
+          {
+            "scenarioId": "charm.legacy-v1-stage-cap",
+            "evidenceClasses": [
+              "hit"
+            ]
+          },
+          {
+            "scenarioId": "charm.legacy-v1-duplicate-replay",
+            "evidenceClasses": [
+              "retry"
+            ]
+          },
+          {
+            "scenarioId": "charm.legacy-v1-stale-target",
+            "evidenceClasses": [
+              "multi-resource-conflict"
+            ]
+          }
+        ],
         "notApplicable": []
       },
-      "reviewedAt": null,
+      "reviewedAt": "2026-07-18",
       "unsupportedInteractionIds": [],
       "rolloutCohortId": null
     },
@@ -5465,7 +5504,7 @@
     {
       "canonicalId": "Confide",
       "displayName": "Confide",
-      "baseStatus": "assisted",
+      "baseStatus": "complete",
       "interactionStatus": "unassessed",
       "runtime": {
         "kind": "legacy-v1",
@@ -5478,30 +5517,69 @@
         "canonicalizationVersion": 1,
         "sourceDataSha256": "f90491826349afd7d1f2809fd9d74b7acc555f5163b99264205ee369249e9815"
       },
-      "capabilityTags": [],
+      "capabilityTags": [
+        "stages.typed",
+        "targeting.authoritative"
+      ],
       "suggestedCapabilityTags": [],
       "blockerCodes": [],
-      "limitations": [
-        {
-          "code": "audit.required",
-          "summary": "Semantic conformance review is required before this legacy implementation can be marked complete."
-        }
-      ],
+      "limitations": [],
       "manualSteps": [],
-      "scenarioIds": [],
+      "scenarioIds": [
+        "confide.legacy-v1-hit",
+        "confide.legacy-v1-miss",
+        "confide.legacy-v1-stage-cap",
+        "confide.legacy-v1-duplicate-replay",
+        "confide.legacy-v1-stale-target"
+      ],
       "conformanceEvidence": {
-        "requirementTags": [],
-        "scenarios": [],
+        "requirementTags": [
+          "branch.accuracy",
+          "recovery.retry",
+          "resource.multi"
+        ],
+        "scenarios": [
+          {
+            "scenarioId": "confide.legacy-v1-hit",
+            "evidenceClasses": [
+              "hit"
+            ]
+          },
+          {
+            "scenarioId": "confide.legacy-v1-miss",
+            "evidenceClasses": [
+              "miss"
+            ]
+          },
+          {
+            "scenarioId": "confide.legacy-v1-stage-cap",
+            "evidenceClasses": [
+              "hit"
+            ]
+          },
+          {
+            "scenarioId": "confide.legacy-v1-duplicate-replay",
+            "evidenceClasses": [
+              "retry"
+            ]
+          },
+          {
+            "scenarioId": "confide.legacy-v1-stale-target",
+            "evidenceClasses": [
+              "multi-resource-conflict"
+            ]
+          }
+        ],
         "notApplicable": []
       },
-      "reviewedAt": null,
+      "reviewedAt": "2026-07-18",
       "unsupportedInteractionIds": [],
       "rolloutCohortId": null
     },
     {
       "canonicalId": "Confuse Ray",
       "displayName": "Confuse Ray",
-      "baseStatus": "assisted",
+      "baseStatus": "complete",
       "interactionStatus": "unassessed",
       "runtime": {
         "kind": "legacy-v1",
@@ -5514,30 +5592,69 @@
         "canonicalizationVersion": 1,
         "sourceDataSha256": "f90491826349afd7d1f2809fd9d74b7acc555f5163b99264205ee369249e9815"
       },
-      "capabilityTags": [],
+      "capabilityTags": [
+        "conditions.typed",
+        "targeting.authoritative"
+      ],
       "suggestedCapabilityTags": [],
       "blockerCodes": [],
-      "limitations": [
-        {
-          "code": "audit.required",
-          "summary": "Semantic conformance review is required before this legacy implementation can be marked complete."
-        }
-      ],
+      "limitations": [],
       "manualSteps": [],
-      "scenarioIds": [],
+      "scenarioIds": [
+        "confuse-ray.legacy-v1-hit",
+        "confuse-ray.legacy-v1-miss",
+        "confuse-ray.legacy-v1-already-confused",
+        "confuse-ray.legacy-v1-duplicate-replay",
+        "confuse-ray.legacy-v1-stale-target"
+      ],
       "conformanceEvidence": {
-        "requirementTags": [],
-        "scenarios": [],
+        "requirementTags": [
+          "branch.accuracy",
+          "recovery.retry",
+          "resource.multi"
+        ],
+        "scenarios": [
+          {
+            "scenarioId": "confuse-ray.legacy-v1-hit",
+            "evidenceClasses": [
+              "hit"
+            ]
+          },
+          {
+            "scenarioId": "confuse-ray.legacy-v1-miss",
+            "evidenceClasses": [
+              "miss"
+            ]
+          },
+          {
+            "scenarioId": "confuse-ray.legacy-v1-already-confused",
+            "evidenceClasses": [
+              "hit"
+            ]
+          },
+          {
+            "scenarioId": "confuse-ray.legacy-v1-duplicate-replay",
+            "evidenceClasses": [
+              "retry"
+            ]
+          },
+          {
+            "scenarioId": "confuse-ray.legacy-v1-stale-target",
+            "evidenceClasses": [
+              "multi-resource-conflict"
+            ]
+          }
+        ],
         "notApplicable": []
       },
-      "reviewedAt": null,
+      "reviewedAt": "2026-07-18",
       "unsupportedInteractionIds": [],
       "rolloutCohortId": null
     },
     {
       "canonicalId": "Confusion",
       "displayName": "Confusion",
-      "baseStatus": "assisted",
+      "baseStatus": "complete",
       "interactionStatus": "unassessed",
       "runtime": {
         "kind": "legacy-v1",
@@ -5550,23 +5667,89 @@
         "canonicalizationVersion": 1,
         "sourceDataSha256": "f90491826349afd7d1f2809fd9d74b7acc555f5163b99264205ee369249e9815"
       },
-      "capabilityTags": [],
+      "capabilityTags": [
+        "conditions.typed",
+        "expressions.bounded",
+        "targeting.authoritative"
+      ],
       "suggestedCapabilityTags": [],
       "blockerCodes": [],
-      "limitations": [
-        {
-          "code": "audit.required",
-          "summary": "Semantic conformance review is required before this legacy implementation can be marked complete."
-        }
-      ],
+      "limitations": [],
       "manualSteps": [],
-      "scenarioIds": [],
+      "scenarioIds": [
+        "confusion.legacy-v1-threshold-pass",
+        "confusion.legacy-v1-threshold-fail",
+        "confusion.legacy-v1-miss",
+        "confusion.legacy-v1-critical-hit",
+        "confusion.legacy-v1-psychic-immunity",
+        "confusion.legacy-v1-secondary-immunity",
+        "confusion.legacy-v1-duplicate-replay",
+        "confusion.legacy-v1-stale-target"
+      ],
       "conformanceEvidence": {
-        "requirementTags": [],
-        "scenarios": [],
+        "requirementTags": [
+          "branch.accuracy",
+          "branch.critical-hit",
+          "branch.immunity",
+          "branch.threshold",
+          "mechanic.damage",
+          "recovery.retry",
+          "resource.multi"
+        ],
+        "scenarios": [
+          {
+            "scenarioId": "confusion.legacy-v1-threshold-pass",
+            "evidenceClasses": [
+              "hit",
+              "threshold-pass"
+            ]
+          },
+          {
+            "scenarioId": "confusion.legacy-v1-threshold-fail",
+            "evidenceClasses": [
+              "threshold-fail"
+            ]
+          },
+          {
+            "scenarioId": "confusion.legacy-v1-miss",
+            "evidenceClasses": [
+              "miss"
+            ]
+          },
+          {
+            "scenarioId": "confusion.legacy-v1-critical-hit",
+            "evidenceClasses": [
+              "crit"
+            ]
+          },
+          {
+            "scenarioId": "confusion.legacy-v1-psychic-immunity",
+            "evidenceClasses": [
+              "immunity"
+            ]
+          },
+          {
+            "scenarioId": "confusion.legacy-v1-secondary-immunity",
+            "evidenceClasses": [
+              "immunity"
+            ]
+          },
+          {
+            "scenarioId": "confusion.legacy-v1-duplicate-replay",
+            "evidenceClasses": [
+              "retry"
+            ]
+          },
+          {
+            "scenarioId": "confusion.legacy-v1-stale-target",
+            "evidenceClasses": [
+              "multi-resource-conflict"
+            ]
+          }
+        ],
         "notApplicable": []
       },
-      "reviewedAt": null,
+      "reviewedAt": "2026-07-18",
       "unsupportedInteractionIds": [],
       "rolloutCohortId": null
     },
@@ -5853,7 +6036,7 @@
     {
       "canonicalId": "Cotton Spore",
       "displayName": "Cotton Spore",
-      "baseStatus": "assisted",
+      "baseStatus": "complete",
       "interactionStatus": "unassessed",
       "runtime": {
         "kind": "legacy-v1",
@@ -5866,23 +6049,66 @@
         "canonicalizationVersion": 1,
         "sourceDataSha256": "f90491826349afd7d1f2809fd9d74b7acc555f5163b99264205ee369249e9815"
       },
-      "capabilityTags": [],
+      "capabilityTags": [
+        "stages.typed",
+        "targeting.authoritative"
+      ],
       "suggestedCapabilityTags": [],
       "blockerCodes": [],
-      "limitations": [
-        {
-          "code": "audit.required",
-          "summary": "Semantic conformance review is required before this legacy implementation can be marked complete."
-        }
-      ],
+      "limitations": [],
       "manualSteps": [],
-      "scenarioIds": [],
+      "scenarioIds": [
+        "cotton-spore.legacy-v1-area-mixed",
+        "cotton-spore.legacy-v1-powder-immunity",
+        "cotton-spore.legacy-v1-stage-cap",
+        "cotton-spore.legacy-v1-duplicate-replay",
+        "cotton-spore.legacy-v1-stale-target"
+      ],
       "conformanceEvidence": {
-        "requirementTags": [],
-        "scenarios": [],
+        "requirementTags": [
+          "branch.accuracy",
+          "branch.immunity",
+          "recovery.retry",
+          "resource.multi",
+          "target.area"
+        ],
+        "scenarios": [
+          {
+            "scenarioId": "cotton-spore.legacy-v1-area-mixed",
+            "evidenceClasses": [
+              "area-mixed-outcomes",
+              "hit",
+              "miss"
+            ]
+          },
+          {
+            "scenarioId": "cotton-spore.legacy-v1-powder-immunity",
+            "evidenceClasses": [
+              "immunity"
+            ]
+          },
+          {
+            "scenarioId": "cotton-spore.legacy-v1-stage-cap",
+            "evidenceClasses": [
+              "hit"
+            ]
+          },
+          {
+            "scenarioId": "cotton-spore.legacy-v1-duplicate-replay",
+            "evidenceClasses": [
+              "retry"
+            ]
+          },
+          {
+            "scenarioId": "cotton-spore.legacy-v1-stale-target",
+            "evidenceClasses": [
+              "multi-resource-conflict"
+            ]
+          }
+        ],
         "notApplicable": []
       },
-      "reviewedAt": null,
+      "reviewedAt": "2026-07-18",
       "unsupportedInteractionIds": [],
       "rolloutCohortId": null
     },
@@ -5994,7 +6220,7 @@
     {
       "canonicalId": "Crabhammer",
       "displayName": "Crabhammer",
-      "baseStatus": "assisted",
+      "baseStatus": "complete",
       "interactionStatus": "unassessed",
       "runtime": {
         "kind": "legacy-v1",
@@ -6007,23 +6233,69 @@
         "canonicalizationVersion": 1,
         "sourceDataSha256": "f90491826349afd7d1f2809fd9d74b7acc555f5163b99264205ee369249e9815"
       },
-      "capabilityTags": [],
+      "capabilityTags": [
+        "expressions.bounded",
+        "targeting.authoritative"
+      ],
       "suggestedCapabilityTags": [],
       "blockerCodes": [],
-      "limitations": [
-        {
-          "code": "audit.required",
-          "summary": "Semantic conformance review is required before this legacy implementation can be marked complete."
-        }
-      ],
+      "limitations": [],
       "manualSteps": [],
-      "scenarioIds": [],
+      "scenarioIds": [
+        "crabhammer.legacy-v1-ordinary-hit",
+        "crabhammer.legacy-v1-miss",
+        "crabhammer.legacy-v1-expanded-critical-hit",
+        "crabhammer.legacy-v1-duplicate-replay",
+        "crabhammer.legacy-v1-stale-target"
+      ],
       "conformanceEvidence": {
-        "requirementTags": [],
-        "scenarios": [],
-        "notApplicable": []
+        "requirementTags": [
+          "branch.accuracy",
+          "branch.critical-hit",
+          "mechanic.damage",
+          "recovery.retry",
+          "resource.multi"
+        ],
+        "scenarios": [
+          {
+            "scenarioId": "crabhammer.legacy-v1-ordinary-hit",
+            "evidenceClasses": [
+              "hit"
+            ]
+          },
+          {
+            "scenarioId": "crabhammer.legacy-v1-miss",
+            "evidenceClasses": [
+              "miss"
+            ]
+          },
+          {
+            "scenarioId": "crabhammer.legacy-v1-expanded-critical-hit",
+            "evidenceClasses": [
+              "crit"
+            ]
+          },
+          {
+            "scenarioId": "crabhammer.legacy-v1-duplicate-replay",
+            "evidenceClasses": [
+              "retry"
+            ]
+          },
+          {
+            "scenarioId": "crabhammer.legacy-v1-stale-target",
+            "evidenceClasses": [
+              "multi-resource-conflict"
+            ]
+          }
+        ],
+        "notApplicable": [
+          {
+            "evidenceClass": "immunity",
+            "reason": "The frozen type chart has no type immune to Water damage; broader ability interactions remain separately unassessed."
+          }
+        ]
       },
-      "reviewedAt": null,
+      "reviewedAt": "2026-07-18",
       "unsupportedInteractionIds": [],
       "rolloutCohortId": null
     },
@@ -6065,7 +6337,7 @@
     {
       "canonicalId": "Cross Chop",
       "displayName": "Cross Chop",
-      "baseStatus": "assisted",
+      "baseStatus": "complete",
       "interactionStatus": "unassessed",
       "runtime": {
         "kind": "legacy-v1",
@@ -6078,23 +6350,72 @@
         "canonicalizationVersion": 1,
         "sourceDataSha256": "f90491826349afd7d1f2809fd9d74b7acc555f5163b99264205ee369249e9815"
       },
-      "capabilityTags": [],
+      "capabilityTags": [
+        "expressions.bounded",
+        "targeting.authoritative"
+      ],
       "suggestedCapabilityTags": [],
       "blockerCodes": [],
-      "limitations": [
-        {
-          "code": "audit.required",
-          "summary": "Semantic conformance review is required before this legacy implementation can be marked complete."
-        }
-      ],
+      "limitations": [],
       "manualSteps": [],
-      "scenarioIds": [],
+      "scenarioIds": [
+        "cross-chop.legacy-v1-ordinary-hit",
+        "cross-chop.legacy-v1-miss",
+        "cross-chop.legacy-v1-expanded-critical-hit",
+        "cross-chop.legacy-v1-ghost-immunity",
+        "cross-chop.legacy-v1-duplicate-replay",
+        "cross-chop.legacy-v1-stale-target"
+      ],
       "conformanceEvidence": {
-        "requirementTags": [],
-        "scenarios": [],
+        "requirementTags": [
+          "branch.accuracy",
+          "branch.critical-hit",
+          "branch.immunity",
+          "mechanic.damage",
+          "recovery.retry",
+          "resource.multi"
+        ],
+        "scenarios": [
+          {
+            "scenarioId": "cross-chop.legacy-v1-ordinary-hit",
+            "evidenceClasses": [
+              "hit"
+            ]
+          },
+          {
+            "scenarioId": "cross-chop.legacy-v1-miss",
+            "evidenceClasses": [
+              "miss"
+            ]
+          },
+          {
+            "scenarioId": "cross-chop.legacy-v1-expanded-critical-hit",
+            "evidenceClasses": [
+              "crit"
+            ]
+          },
+          {
+            "scenarioId": "cross-chop.legacy-v1-ghost-immunity",
+            "evidenceClasses": [
+              "immunity"
+            ]
+          },
+          {
+            "scenarioId": "cross-chop.legacy-v1-duplicate-replay",
+            "evidenceClasses": [
+              "retry"
+            ]
+          },
+          {
+            "scenarioId": "cross-chop.legacy-v1-stale-target",
+            "evidenceClasses": [
+              "multi-resource-conflict"
+            ]
+          }
+        ],
         "notApplicable": []
       },
-      "reviewedAt": null,
+      "reviewedAt": "2026-07-18",
       "unsupportedInteractionIds": [],
       "rolloutCohortId": null
     },

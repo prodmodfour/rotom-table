@@ -2582,7 +2582,7 @@ Status: DONE
 
 ## REG-005 — Certify Charm through Cross Chop
 
-Status: TODO
+Status: DONE
 
 **Baseline-registered moves:** Charm; Coaching; Confide; Confuse Ray; Confusion; Cotton Spore; Crabhammer; Cross Chop
 
