@@ -118,13 +118,15 @@ import {
   type AuthoritativeMoveItemChoiceSet,
 } from './itemChoices'
 import {
-  KNOCK_OFF_ITEM_CHOICE_OPERATION,
   KNOCK_OFF_ITEM_EFFECT_OPERATION,
   KNOCK_OFF_ITEM_REQUEST_ID,
-  KnockOffItemOutcomeError,
-  planKnockOffItemOutcome,
   type KnockOffItemOutcome,
 } from './knockOff'
+import {
+  isKnockOffItemChoiceOperation,
+  KnockOffContinuationError,
+  planProjectedKnockOffItemContinuation,
+} from './knockOffContinuation'
 import type { ValidatedAuthoritativeHazardCellSelection } from './hazardCellSelection'
 import type { MoveSpecV2Runtime } from './registry'
 import {
@@ -1126,69 +1128,18 @@ const pendingItemRequest = (
   allowPass: operation.payload.allowPass,
 })
 
-const isKnockOffItemChoice = (
-  canonicalMoveId: string,
-  operation: MoveChoiceRequestEffectOperation,
-): boolean => canonicalMoveId === 'Knock Off'
-  && operation.id === KNOCK_OFF_ITEM_CHOICE_OPERATION.id
-  && operation.payload.requestId === KNOCK_OFF_ITEM_REQUEST_ID
-
-const knockOffCriticalHitProjection = (input: {
-  readonly context: AuthoritativeMoveRulesContext
-  readonly resolvedRolls: readonly MoveSpecResolvedRoll[]
-  readonly recipientId: string
-}): boolean => {
-  const accuracy = input.resolvedRolls.find(roll => (
-    roll.purpose === 'accuracy' && roll.recipientId === input.recipientId
-  ))
-  if (!accuracy) return false
-  return input.context.random.snapshot().find(entry => entry.rollId === accuracy.rollId)
-    ?.naturalResult === 20
-}
-
-/**
- * Invoke the reviewed MA-176A seam only after the interpreter has established
- * one non-immune damaging recipient. The positive value is a projection used
- * only to select automatic versus durable item flow; the reducer later passes
- * the exact effective HP loss back through the same seam before planning writes.
- */
 const projectedKnockOffItemOutcome = (input: {
   readonly context: AuthoritativeMoveRulesContext
   readonly resolvedRolls: readonly MoveSpecResolvedRoll[]
   readonly recipientIds: readonly string[]
   readonly selectedOptionId?: string | null
 }): KnockOffItemOutcome => {
-  if (input.recipientIds.length !== 1) {
-    return fail(
-      'move-mechanics-unavailable',
-      'Knock Off requires exactly one authoritative damaging recipient.',
-    )
-  }
-  const targetPlacementId = input.recipientIds[0]!
   try {
-    return planKnockOffItemOutcome({
-      context: input.context,
-      combat: {
-        kind: 'hit',
-        targetPlacementId,
-        damageDealt: 1,
-        criticalHit: knockOffCriticalHitProjection({
-          context: input.context,
-          resolvedRolls: input.resolvedRolls,
-          recipientId: targetPlacementId,
-        }),
-      },
-      ...(input.selectedOptionId === undefined
-        ? {}
-        : { selectedOptionId: input.selectedOptionId }),
-    })
+    return planProjectedKnockOffItemContinuation(input)
   }
   catch (error) {
-    if (error instanceof KnockOffItemOutcomeError) {
-      return fail(
-        'move-mechanics-unavailable',
-        `Knock Off item outcome could not be resolved: ${error.message}`,
-      )
+    if (error instanceof KnockOffContinuationError) {
+      return fail('move-mechanics-unavailable', error.message)
     }
     throw error
   }
@@ -3382,7 +3333,7 @@ const executeMoveSpecInternal = (
           continue
         }
         const set = itemChoiceSet(operation, input.context)
-        const knockOffOutcome = isKnockOffItemChoice(spec.canonicalId, operation)
+        const knockOffOutcome = isKnockOffItemChoiceOperation(spec.canonicalId, operation)
           ? projectedKnockOffItemOutcome({
               context: input.context,
               resolvedRolls,
@@ -3465,9 +3416,11 @@ const executeMoveSpecInternal = (
             'Knock Off response did not resolve one authoritative item plan.',
           )
         }
-        const selectedChoice = selectedOptionId === null
-          ? null
-          : revalidateItemChoice(operation, input.context, selectedOptionId)
+        const selectedChoice = resolvedKnockOffOutcome?.kind === 'item-plan'
+          ? resolvedKnockOffOutcome.choice
+          : selectedOptionId === null
+            ? null
+            : revalidateItemChoice(operation, input.context, selectedOptionId)
         if (selectedChoice && selectedOptionId) {
           resolvedItemChoices.push(Object.freeze({
             operationId: operation.id,

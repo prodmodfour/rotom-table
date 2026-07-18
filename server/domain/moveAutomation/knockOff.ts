@@ -182,6 +182,8 @@ export interface KnockOffPlannedItemOutcome extends KnockOffItemOutcomeBase {
   readonly kind: 'item-plan'
   readonly selectionMode: 'automatic' | 'durable-response'
   readonly optionId: string
+  /** Exact fresh server-owned choice retained for interpreter continuation. */
+  readonly choice: AuthoritativeMoveItemChoice
   readonly itemEffects: InterpretedMoveItemEffects
 }
 
@@ -494,6 +496,7 @@ const plannedOutcome = (input: {
     kind: 'item-plan',
     selectionMode: selected.mode,
     optionId: selected.choice.option.id,
+    choice: selected.choice,
     damageInteraction: KNOCK_OFF_DAMAGE_INTERACTION,
     itemEffects,
     traceEntries: [

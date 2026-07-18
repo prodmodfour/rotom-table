@@ -6,6 +6,13 @@ import { createEmptyEncounterState } from '#shared/moveAutomation/encounterState
 import type { CharacterSheet } from '~/types/characterSheet'
 import type { SheetPlacement, TabletopMap } from '~/types/map'
 import type { TrainerSheet } from '~/types/trainerSheet'
+import { REGISTERED_MOVE_HANDLER_REGISTRY } from '~~/server/domain/moveAutomation/handlers/registry'
+import type {
+  MoveAutomationRuntimeRegistry,
+  MoveSpecV2Runtime,
+} from '~~/server/domain/moveAutomation/registry'
+import { KNOCK_OFF_MOVE_SPEC } from '~~/server/domain/moveAutomation/specs/knockOff'
+import { validateMoveSpec } from '~~/server/domain/moveAutomation/validateSpec'
 
 export const KNOCK_OFF_ACTOR_PLACEMENT_ID = 'knock-off-actor'
 export const KNOCK_OFF_TARGET_PLACEMENT_ID = 'knock-off-target'
@@ -25,6 +32,27 @@ export const KNOCK_OFF_V2_SEMANTIC_SCENARIOS = Object.freeze([
   { scenarioId: 'knock-off.v2-stale-item', evidenceClasses: ['multi-resource-conflict'] as const },
   { scenarioId: 'knock-off.v2-trainer-accessory', evidenceClasses: ['alternate-branch'] as const },
 ] as const)
+
+const KNOCK_OFF_V2_TEST_DEFINITION = validateMoveSpec(KNOCK_OFF_MOVE_SPEC)
+
+export const KNOCK_OFF_V2_TEST_RUNTIME: MoveSpecV2Runtime = Object.freeze({
+  canonicalId: 'Knock Off',
+  kind: 'movespec-v2',
+  version: KNOCK_OFF_V2_TEST_DEFINITION.spec.version,
+  definitionHash: KNOCK_OFF_V2_TEST_DEFINITION.definitionHash,
+  sourceModule: 'server/domain/moveAutomation/specs/knockOff.ts',
+  definition: KNOCK_OFF_V2_TEST_DEFINITION,
+})
+
+/** Test-only selection seam; production remains on manifest-selected legacy v1 through MA-176B. */
+export const createKnockOffV2RuntimeRegistry = (): MoveAutomationRuntimeRegistry => Object.freeze({
+  size: 1,
+  handlerRegistry: REGISTERED_MOVE_HANDLER_REGISTRY,
+  resolve: (canonicalId: string) => canonicalId === 'Knock Off'
+    ? KNOCK_OFF_V2_TEST_RUNTIME
+    : null,
+  entries: () => Object.freeze([KNOCK_OFF_V2_TEST_RUNTIME]),
+})
 
 export interface KnockOffV2FixtureOptions {
   readonly heldItems?: string | null

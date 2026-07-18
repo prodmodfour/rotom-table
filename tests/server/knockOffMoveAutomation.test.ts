@@ -7,10 +7,12 @@ import { deepCloneJson } from '~/utils/serialization'
 import {
   KNOCK_OFF_ACTOR_PLACEMENT_ID,
   KNOCK_OFF_TARGET_PLACEMENT_ID,
-  KNOCK_OFF_V2_SEMANTIC_SCENARIOS,
+  KNOCK_OFF_V2_TEST_RUNTIME,
+  createKnockOffV2RuntimeRegistry,
   knockOffV2Fixture,
 } from '../fixtures/moveAutomation/knockOffV2'
 import { buildAuthoritativeMoveRulesContext } from '~~/server/domain/moveAutomation/context'
+import { executeMoveSpec } from '~~/server/domain/moveAutomation/executeSpec'
 import {
   KNOCK_OFF_DAMAGE_INTERACTION,
   KNOCK_OFF_ITEM_CHOICE_OPERATION,
@@ -26,12 +28,16 @@ import {
   type AuthoritativeMoveItemResources,
 } from '~~/server/domain/moveAutomation/itemResources'
 import { planMoveItemMutations } from '~~/server/domain/moveAutomation/planItemMutations'
+import { createFiniteAuthoritativeMoveRandomStream } from '~~/server/domain/moveAutomation/random'
 import {
   REVIEWED_MOVE_SPEC_V2_REGISTRATIONS,
   registeredMoveAutomationRuntimeFor,
 } from '~~/server/domain/moveAutomation/registry'
 import { KNOCK_OFF_MOVE_SPEC } from '~~/server/domain/moveAutomation/specs/knockOff'
-import { validateMoveSpec } from '~~/server/domain/moveAutomation/validateSpec'
+import {
+  validateMoveSpec,
+  type ValidatedMoveSpecDefinition,
+} from '~~/server/domain/moveAutomation/validateSpec'
 
 interface KnockOffFixture {
   readonly map: TabletopMap
@@ -69,6 +75,64 @@ const buildContext = (fixture: KnockOffFixture) => {
     itemResources: resources,
   })
   return { context, resources }
+}
+
+const knockOffRuntime = KNOCK_OFF_V2_TEST_RUNTIME
+const knockOffRuntimeRegistry = createKnockOffV2RuntimeRegistry()
+
+const executeKnockOff = (options: {
+  readonly heldItems?: string | null
+  readonly randomValues: readonly number[]
+  readonly responses?: readonly { readonly requestId: string; readonly optionId: string | null }[]
+  readonly definition?: ValidatedMoveSpecDefinition
+}) => {
+  const fixture = pokemonFixture(
+    options.heldItems === undefined ? 'Leftovers, Bright Powder' : options.heldItems,
+  )
+  const resources = itemResources(fixture)
+  const context = buildAuthoritativeMoveRulesContext({
+    map: fixture.map,
+    pokemonSheets: fixture.pokemonSheets,
+    trainerSheets: fixture.trainerSheets,
+    intent: fixture.intent,
+    candidatePlacementIds: [KNOCK_OFF_TARGET_PLACEMENT_ID],
+    selectedPlacementIds: [KNOCK_OFF_TARGET_PLACEMENT_ID],
+    random: createFiniteAuthoritativeMoveRandomStream(options.randomValues),
+    time: 5_000,
+    resolutionId: 'resolution-knock-off-continuation',
+    itemResources: resources,
+    runtimeRegistry: knockOffRuntimeRegistry,
+  })
+  return executeMoveSpec({
+    definition: options.definition ?? knockOffRuntime.definition,
+    context,
+    authoritativeTargetIds: [KNOCK_OFF_TARGET_PLACEMENT_ID],
+    resolutionId: 'resolution-knock-off-continuation',
+    responses: options.responses,
+  })
+}
+
+const immuneKnockOffDefinition = (): ValidatedMoveSpecDefinition => {
+  const spec = JSON.parse(JSON.stringify(KNOCK_OFF_MOVE_SPEC)) as {
+    phases: Array<{
+      operations: Array<{
+        id: string
+        kind: string
+        payload: Record<string, unknown>
+      }>
+    }>
+  }
+  const damage = spec.phases.flatMap(({ operations }) => operations)
+    .find(operation => operation.id === 'knock-off.damage')
+  if (!damage || damage.kind !== 'damage') throw new Error('Knock Off damage operation is missing.')
+  damage.payload.typeEffectiveness = {
+    immunity: 'honor',
+    resistance: 'honor',
+    weakness: 'honor',
+    effectivenessOverride: null,
+    defenderTypeOverrides: [{ defenderType: 'normal', relation: 'immune' }],
+  }
+  return validateMoveSpec(spec)
 }
 
 const combat = (
@@ -131,29 +195,26 @@ const planTypedWrites = (
 const knockOffManifestRow = manifestJson.moves.find(row => row.canonicalId === 'Knock Off')
 
 describe('Knock Off authoritative item outcome foundation', () => {
-  it('selects the complete reviewed v2 runtime and semantic evidence', () => {
+  it('keeps the reviewed v2 draft test-only until terminal persistence certification', () => {
     expect(knockOffManifestRow).toMatchObject({
-      baseStatus: 'complete',
+      baseStatus: 'assisted',
       runtime: {
-        kind: 'movespec-v2',
-        version: 2,
-        definitionHash: '69fb960c479dd2fc639e47c01151ff381301f02d6a26fd5df6b55af9b5eda7ad',
-        sourceModule: 'server/domain/moveAutomation/specs/knockOff.ts',
+        kind: 'legacy-v1',
+        version: 1,
+        sourceModule: 'src/utils/move-automation/scripts/additionalSingleTarget.ts',
       },
-      blockerCodes: [],
-      limitations: [],
-      manualSteps: [],
+      blockerCodes: ['items.authoritative'],
+      limitations: [expect.objectContaining({ code: 'knock-off.inventory' })],
+      manualSteps: [expect.objectContaining({ code: 'knock-off.item-transfer' })],
     })
-    expect(knockOffManifestRow?.scenarioIds).toEqual(
-      KNOCK_OFF_V2_SEMANTIC_SCENARIOS.map(({ scenarioId }) => scenarioId),
-    )
     expect(registeredMoveAutomationRuntimeFor('Knock Off')).toMatchObject({
-      kind: 'movespec-v2',
+      kind: 'legacy-v1',
       definitionHash: knockOffManifestRow?.runtime.definitionHash,
     })
     expect(REVIEWED_MOVE_SPEC_V2_REGISTRATIONS.some(({ canonicalId }) => (
       canonicalId === 'Knock Off'
-    ))).toBe(true)
+    ))).toBe(false)
+    expect(knockOffRuntimeRegistry.resolve('Knock Off')).toBe(knockOffRuntime)
 
     const definition = validateMoveSpec(KNOCK_OFF_MOVE_SPEC)
     const operations = definition.spec.phases.flatMap(block => block.operations)
@@ -189,6 +250,122 @@ describe('Knock Off authoritative item outcome foundation', () => {
         },
       },
     })
+  })
+
+  it('opens item continuation only for an authoritative non-immune damaging hit', () => {
+    const operationTrace = (
+      result: ReturnType<typeof executeMoveSpec>,
+      operationId: string,
+    ) => result.trace.events.find(event => (
+      event.kind === 'operation' && event.operationId === operationId
+    ))
+
+    const miss = executeKnockOff({
+      heldItems: 'Leftovers, Bright Powder',
+      randomValues: [0],
+    })
+    expect(miss.kind).toBe('complete')
+    expect(miss.hitTargetIds).toEqual([])
+    expect(miss.resolvedItemChoices).toEqual([])
+    expect(operationTrace(miss, KNOCK_OFF_ITEM_CHOICE_OPERATION.id)).toMatchObject({
+      outcome: 'no-op',
+      result: { status: 'no-eligible-recipients' },
+    })
+
+    const immune = executeKnockOff({
+      heldItems: 'Leftovers, Bright Powder',
+      randomValues: [0.45, 0, 0],
+      definition: immuneKnockOffDefinition(),
+    })
+    expect(immune.kind).toBe('complete')
+    expect(immune.hitTargetIds).toEqual([KNOCK_OFF_TARGET_PLACEMENT_ID])
+    expect(immune.damagedTargetIds).toEqual([])
+    expect(immune.resolvedItemChoices).toEqual([])
+    expect(operationTrace(immune, KNOCK_OFF_ITEM_CHOICE_OPERATION.id)).toMatchObject({
+      outcome: 'no-op',
+      result: { status: 'no-eligible-recipients' },
+    })
+
+    const itemless = executeKnockOff({ heldItems: null, randomValues: [0.45, 0, 0] })
+    expect(itemless.kind).toBe('complete')
+    expect(itemless.damagedTargetIds).toEqual([KNOCK_OFF_TARGET_PLACEMENT_ID])
+    expect(itemless.resolvedItemChoices).toEqual([])
+    expect(operationTrace(itemless, KNOCK_OFF_ITEM_CHOICE_OPERATION.id)).toMatchObject({
+      outcome: 'no-op',
+      result: {
+        status: 'no-legal-items',
+        reasonCode: 'knock-off.no-legal-item',
+      },
+    })
+    expect(itemless.operations.map(({ operation }) => operation.id))
+      .not.toContain(KNOCK_OFF_ITEM_EFFECT_OPERATION.id)
+
+    const critical = executeKnockOff({
+      heldItems: 'Leftovers, Bright Powder',
+      randomValues: [0.999, 0, 0],
+    })
+    expect(critical.kind).toBe('pending-request')
+    if (critical.kind !== 'pending-request') return
+    expect(critical.request).toMatchObject({
+      kind: 'item-choice',
+      recipientIds: [KNOCK_OFF_ACTOR_PLACEMENT_ID],
+      requestId: 'knock-off.item-window',
+      allowPass: false,
+    })
+    expect(critical.rollLedger[0]).toMatchObject({ naturalResult: 20 })
+    expect(critical.preWindowOperations).toEqual([])
+    expect(critical.deferredContinuation.operations.map(({ operation }) => operation.id)).toEqual([
+      'knock-off.accuracy',
+      'knock-off.damage',
+    ])
+  })
+
+  it('resolves zero, one, and multiple candidates to deterministic interpreter terminals', () => {
+    const zero = executeKnockOff({ heldItems: null, randomValues: [0.45, 0, 0] })
+    expect(zero.kind).toBe('complete')
+    expect(zero.resolvedItemChoices).toEqual([])
+
+    const one = executeKnockOff({ heldItems: 'Leftovers', randomValues: [0.45, 0, 0] })
+    expect(one.kind).toBe('complete')
+    expect(one.resolvedItemChoices).toHaveLength(1)
+    expect(one.resolvedItemChoices[0]).toMatchObject({
+      requestId: 'knock-off.item-window',
+      choice: {
+        reference: { canonicalItemId: 'leftovers' },
+        destination: { kind: 'map-ground' },
+      },
+    })
+    expect(one.operations.map(({ operation }) => operation.id)).toContain(
+      KNOCK_OFF_ITEM_EFFECT_OPERATION.id,
+    )
+
+    const offered = executeKnockOff({
+      heldItems: 'Leftovers, Bright Powder',
+      randomValues: [0.45, 0, 0],
+    })
+    if (offered.kind !== 'pending-request') throw new Error('Expected a Knock Off item window.')
+    const selected = offered.request.options.find(option => (
+      option.itemChoice?.canonicalItemId === 'bright-powder'
+    ))
+    if (!selected) throw new Error('Expected a server-issued Bright Powder option.')
+
+    const resumed = executeKnockOff({
+      heldItems: 'Leftovers, Bright Powder',
+      randomValues: [0.45, 0, 0],
+      responses: [{ requestId: offered.request.requestId, optionId: selected.id }],
+    })
+    expect(resumed.kind).toBe('complete')
+    expect(resumed.resolvedItemChoices).toEqual([
+      expect.objectContaining({
+        optionId: selected.id,
+        choice: expect.objectContaining({
+          option: expect.objectContaining({ id: selected.id }),
+          reference: expect.objectContaining({ canonicalItemId: 'bright-powder' }),
+        }),
+      }),
+    ])
+    expect(resumed.rollLedger).toEqual(offered.rollLedger)
+    expect(Object.isFrozen(resumed.resolvedItemChoices[0]?.choice)).toBe(true)
   })
 
   it('returns explicit traced no-item outcomes for miss, immunity, zero damage, and itemless hits', () => {

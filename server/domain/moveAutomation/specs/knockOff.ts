@@ -6,15 +6,15 @@ import {
 import type { MoveSpecV2Registration } from '../registry'
 
 /**
- * Reviewed native-v2 definition for canonical PTU Knock Off.
+ * Reviewed native-v2 draft for canonical PTU Knock Off.
  *
  * One server-owned accuracy roll gates ordinary Physical Dark damage. A
  * qualifying non-immune damaging hit enumerates only the target's Pokémon Held
- * Items or Trainer Accessory Slot Items. The MA-176A pure outcome seam handles
- * itemless and unambiguous branches immediately, while ambiguous candidates
- * suspend behind a private actor-owned durable choice. The terminal planner
- * removes the exact revalidated item and adds one ground-item record atomically
- * with damage and usage.
+ * Items or Trainer Accessory Slot Items. The pure outcome seam handles itemless
+ * and unambiguous branches immediately, while ambiguous candidates suspend
+ * behind a private actor-owned durable choice. MA-176B uses this definition
+ * only through an explicit test/runtime seam; production selection and atomic
+ * terminal persistence remain deferred to MA-176C.
  */
 export const KNOCK_OFF_MOVE_SPEC = Object.freeze({
   schemaVersion: 2,
