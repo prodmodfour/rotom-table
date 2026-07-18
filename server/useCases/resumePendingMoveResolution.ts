@@ -987,9 +987,28 @@ export const resumePendingMoveResolutionUseCase = (
       throw error
     }
     dependencies.beforeCommit?.()
-    assertPendingResourceRevisions(stored.resolution, dependencies)
-    dependencies.sheetRepository.assertRevisions(plan.sheetReads)
-    dependencies.groupInventoryRepository.assertRevisions(plan.groupInventoryReads)
+    try {
+      assertPendingResourceRevisions(stored.resolution, dependencies)
+      dependencies.sheetRepository.assertRevisions(plan.sheetReads)
+      dependencies.groupInventoryRepository.assertRevisions(plan.groupInventoryReads)
+    }
+    catch (error) {
+      if (
+        error instanceof SheetRevisionConflictError
+        || error instanceof GroupInventoryRevisionConflictError
+      ) {
+        return persistConflict({
+          request: input,
+          stored,
+          map,
+          now,
+          commandHash,
+          dependencies,
+          message: 'Authoritative item or sheet state changed while the move response was being committed.',
+        })
+      }
+      throw error
+    }
     applyMap(map, plan.nextMap, dependencies)
 
     if (isAuthoritativePendingMoveStatePlan(plan)) {

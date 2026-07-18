@@ -10,6 +10,22 @@ import type { TrainerSheet } from '~/types/trainerSheet'
 export const KNOCK_OFF_ACTOR_PLACEMENT_ID = 'knock-off-actor'
 export const KNOCK_OFF_TARGET_PLACEMENT_ID = 'knock-off-target'
 
+export const KNOCK_OFF_V2_SEMANTIC_SCENARIOS = Object.freeze([
+  { scenarioId: 'knock-off.v2-atomic-failure', evidenceClasses: ['multi-resource-conflict'] as const },
+  { scenarioId: 'knock-off.v2-automatic-single-item', evidenceClasses: ['alternate-branch', 'hit'] as const },
+  { scenarioId: 'knock-off.v2-critical-hit', evidenceClasses: ['crit'] as const },
+  { scenarioId: 'knock-off.v2-duplicate-declaration', evidenceClasses: ['retry'] as const },
+  { scenarioId: 'knock-off.v2-duplicate-response', evidenceClasses: ['retry'] as const },
+  { scenarioId: 'knock-off.v2-forged-response', evidenceClasses: ['multi-resource-conflict'] as const },
+  { scenarioId: 'knock-off.v2-hit-choice', evidenceClasses: ['choice', 'hit', 'threshold-pass'] as const },
+  { scenarioId: 'knock-off.v2-immunity', evidenceClasses: ['immunity', 'threshold-fail'] as const },
+  { scenarioId: 'knock-off.v2-itemless-hit', evidenceClasses: ['alternate-branch', 'threshold-fail'] as const },
+  { scenarioId: 'knock-off.v2-miss', evidenceClasses: ['miss'] as const },
+  { scenarioId: 'knock-off.v2-reconnect', evidenceClasses: ['reconnect'] as const },
+  { scenarioId: 'knock-off.v2-stale-item', evidenceClasses: ['multi-resource-conflict'] as const },
+  { scenarioId: 'knock-off.v2-trainer-accessory', evidenceClasses: ['alternate-branch'] as const },
+] as const)
+
 export interface KnockOffV2FixtureOptions {
   readonly heldItems?: string | null
   readonly mapRevision?: number

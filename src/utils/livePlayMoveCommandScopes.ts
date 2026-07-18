@@ -52,12 +52,20 @@ const ACTOR_SHEET_FIELDS = [
   'hp',
   'combatStages',
   'conditions',
+  // Conservative item lanes authorize no mechanics; the server still derives
+  // exact reviewed item requirements and validates actual writes.
+  'items',
+  'inventory',
+  'equipmentSlots',
 ] as const
 
 const TARGET_SHEET_FIELDS = [
   'hp',
   'combatStages',
   'conditions',
+  'items',
+  'inventory',
+  'equipmentSlots',
 ] as const
 
 const placementById = (map: TabletopMap): Map<string, SheetPlacement> => {

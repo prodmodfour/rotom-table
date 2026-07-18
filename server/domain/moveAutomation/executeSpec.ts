@@ -117,6 +117,14 @@ import {
   type AuthoritativeMoveItemChoice,
   type AuthoritativeMoveItemChoiceSet,
 } from './itemChoices'
+import {
+  KNOCK_OFF_ITEM_CHOICE_OPERATION,
+  KNOCK_OFF_ITEM_EFFECT_OPERATION,
+  KNOCK_OFF_ITEM_REQUEST_ID,
+  KnockOffItemOutcomeError,
+  planKnockOffItemOutcome,
+  type KnockOffItemOutcome,
+} from './knockOff'
 import type { ValidatedAuthoritativeHazardCellSelection } from './hazardCellSelection'
 import type { MoveSpecV2Runtime } from './registry'
 import {
@@ -1117,6 +1125,74 @@ const pendingItemRequest = (
   options: Object.freeze(set.choices.map(choice => choice.option)),
   allowPass: operation.payload.allowPass,
 })
+
+const isKnockOffItemChoice = (
+  canonicalMoveId: string,
+  operation: MoveChoiceRequestEffectOperation,
+): boolean => canonicalMoveId === 'Knock Off'
+  && operation.id === KNOCK_OFF_ITEM_CHOICE_OPERATION.id
+  && operation.payload.requestId === KNOCK_OFF_ITEM_REQUEST_ID
+
+const knockOffCriticalHitProjection = (input: {
+  readonly context: AuthoritativeMoveRulesContext
+  readonly resolvedRolls: readonly MoveSpecResolvedRoll[]
+  readonly recipientId: string
+}): boolean => {
+  const accuracy = input.resolvedRolls.find(roll => (
+    roll.purpose === 'accuracy' && roll.recipientId === input.recipientId
+  ))
+  if (!accuracy) return false
+  return input.context.random.snapshot().find(entry => entry.rollId === accuracy.rollId)
+    ?.naturalResult === 20
+}
+
+/**
+ * Invoke the reviewed MA-176A seam only after the interpreter has established
+ * one non-immune damaging recipient. The positive value is a projection used
+ * only to select automatic versus durable item flow; the reducer later passes
+ * the exact effective HP loss back through the same seam before planning writes.
+ */
+const projectedKnockOffItemOutcome = (input: {
+  readonly context: AuthoritativeMoveRulesContext
+  readonly resolvedRolls: readonly MoveSpecResolvedRoll[]
+  readonly recipientIds: readonly string[]
+  readonly selectedOptionId?: string | null
+}): KnockOffItemOutcome => {
+  if (input.recipientIds.length !== 1) {
+    return fail(
+      'move-mechanics-unavailable',
+      'Knock Off requires exactly one authoritative damaging recipient.',
+    )
+  }
+  const targetPlacementId = input.recipientIds[0]!
+  try {
+    return planKnockOffItemOutcome({
+      context: input.context,
+      combat: {
+        kind: 'hit',
+        targetPlacementId,
+        damageDealt: 1,
+        criticalHit: knockOffCriticalHitProjection({
+          context: input.context,
+          resolvedRolls: input.resolvedRolls,
+          recipientId: targetPlacementId,
+        }),
+      },
+      ...(input.selectedOptionId === undefined
+        ? {}
+        : { selectedOptionId: input.selectedOptionId }),
+    })
+  }
+  catch (error) {
+    if (error instanceof KnockOffItemOutcomeError) {
+      return fail(
+        'move-mechanics-unavailable',
+        `Knock Off item outcome could not be resolved: ${error.message}`,
+      )
+    }
+    throw error
+  }
+}
 
 const pendingBranchRequest = (
   operation: MoveBranchEffectOperation,
@@ -2361,6 +2437,27 @@ const executeMoveSpecInternal = (
         continue
       }
       const recipientIds = branchGate.recipientIds
+      if (
+        spec.canonicalId === 'Knock Off'
+        && operation.kind === 'item'
+        && operation.id === KNOCK_OFF_ITEM_EFFECT_OPERATION.id
+        && !resolvedItemChoices.some(choice => (
+          choice.requestId === KNOCK_OFF_ITEM_REQUEST_ID
+        ))
+      ) {
+        trace = reduceMoveResolutionTrace(trace, {
+          kind: 'operation',
+          phase,
+          operationId: operation.id,
+          operationKind: operation.kind,
+          recipientIds,
+          outcome: 'no-op',
+          reasonCode: operation.reasonCode,
+          input: traceJson(operation.payload),
+          result: { status: 'no-qualifying-item-outcome' },
+        })
+        continue
+      }
       operations.push(Object.freeze({
         operation,
         recipientIds: frozenIds(recipientIds),
@@ -3285,12 +3382,38 @@ const executeMoveSpecInternal = (
           continue
         }
         const set = itemChoiceSet(operation, input.context)
-        const request = pendingItemRequest(
-          operation,
-          recipientIds,
-          input.context.actor.placement.id,
-          set,
-        )
+        const knockOffOutcome = isKnockOffItemChoice(spec.canonicalId, operation)
+          ? projectedKnockOffItemOutcome({
+              context: input.context,
+              resolvedRolls,
+              recipientIds,
+            })
+          : null
+        if (knockOffOutcome?.kind === 'no-item') {
+          trace = reduceMoveResolutionTrace(trace, {
+            kind: 'operation',
+            phase,
+            operationId: operation.id,
+            operationKind: operation.kind,
+            recipientIds,
+            outcome: 'no-op',
+            reasonCode: operation.reasonCode,
+            input: traceJson(operation.payload),
+            result: {
+              status: 'no-legal-items',
+              reasonCode: knockOffOutcome.reasonCode,
+            },
+          })
+          continue
+        }
+        const request = knockOffOutcome?.kind === 'pending-choice'
+          ? knockOffOutcome.request
+          : pendingItemRequest(
+              operation,
+              recipientIds,
+              input.context.actor.placement.id,
+              set,
+            )
         if (request.options.length === 0) {
           if (set.emptyPolicy === 'reject') {
             return fail(
@@ -3311,35 +3434,66 @@ const executeMoveSpecInternal = (
           })
           continue
         }
-        const response = responseResolver.resolve({
-          requestId: request.requestId,
-          options: request.options,
-          allowPass: request.allowPass,
-        })
-        const selectedChoice = response?.optionId === null || !response
+        const automaticOptionId = knockOffOutcome?.kind === 'item-plan'
+          && knockOffOutcome.selectionMode === 'automatic'
+          ? knockOffOutcome.optionId
+          : null
+        const response = automaticOptionId === null
+          ? responseResolver.resolve({
+              requestId: request.requestId,
+              options: request.options,
+              allowPass: request.allowPass,
+            })
+          : null
+        const selectedOptionId = automaticOptionId ?? response?.optionId ?? null
+        const resolvedKnockOffOutcome = knockOffOutcome?.kind === 'pending-choice'
+          && selectedOptionId !== null
+          ? projectedKnockOffItemOutcome({
+              context: input.context,
+              resolvedRolls,
+              recipientIds,
+              selectedOptionId,
+            })
+          : knockOffOutcome
+        if (
+          resolvedKnockOffOutcome !== null
+          && resolvedKnockOffOutcome.kind !== 'item-plan'
+          && response
+        ) {
+          return fail(
+            'move-mechanics-unavailable',
+            'Knock Off response did not resolve one authoritative item plan.',
+          )
+        }
+        const selectedChoice = selectedOptionId === null
           ? null
-          : revalidateItemChoice(operation, input.context, response.optionId)
-        if (selectedChoice && response?.optionId) {
+          : revalidateItemChoice(operation, input.context, selectedOptionId)
+        if (selectedChoice && selectedOptionId) {
           resolvedItemChoices.push(Object.freeze({
             operationId: operation.id,
             requestId: request.requestId,
-            optionId: response.optionId,
+            optionId: selectedOptionId,
             choice: selectedChoice,
           }))
         }
+        const resolved = automaticOptionId !== null || response !== null
         trace = reduceMoveResolutionTrace(trace, {
           kind: 'operation',
           phase,
           operationId: operation.id,
           operationKind: operation.kind,
           recipientIds,
-          outcome: response ? (selectedChoice ? 'applied' : 'no-op') : 'pending',
+          outcome: resolved ? (selectedChoice ? 'applied' : 'no-op') : 'pending',
           reasonCode: operation.reasonCode,
           input: traceJson(operation.payload),
-          result: traceJson(response
+          result: traceJson(resolved
             ? {
                 status: selectedChoice
-                  ? (selectedChoice.reference === null ? 'none-selected' : 'selected')
+                  ? selectedChoice.reference === null
+                    ? 'none-selected'
+                    : automaticOptionId !== null
+                      ? 'auto-selected'
+                      : 'selected'
                   : 'passed',
                 ...(selectedChoice
                   ? {
@@ -3360,13 +3514,13 @@ const executeMoveSpecInternal = (
           phase,
           requestId: request.requestId,
           requestKind: 'choice',
-          outcome: response
+          outcome: resolved
             ? (selectedChoice ? 'selected' : 'passed')
             : 'requested',
-          optionId: response?.optionId ?? null,
+          optionId: selectedOptionId,
           reasonCode: operation.reasonCode,
         })
-        if (response) continue
+        if (resolved) continue
         responseResolver.assertAllConsumed()
         return materializePendingExecutionResult(
           terminalBase(

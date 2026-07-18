@@ -11,9 +11,10 @@ import type { MoveSpecV2Registration } from '../registry'
  * One server-owned accuracy roll gates ordinary Physical Dark damage. A
  * qualifying non-immune damaging hit enumerates only the target's Pokémon Held
  * Items or Trainer Accessory Slot Items. The MA-176A pure outcome seam handles
- * itemless, unambiguous, and durable-choice branches without repository writes.
- * This reviewed definition is intentionally not selected by production metadata
- * until MA-176B integrates and certifies the durable saga.
+ * itemless and unambiguous branches immediately, while ambiguous candidates
+ * suspend behind a private actor-owned durable choice. The terminal planner
+ * removes the exact revalidated item and adds one ground-item record atomically
+ * with damage and usage.
  */
 export const KNOCK_OFF_MOVE_SPEC = Object.freeze({
   schemaVersion: 2,

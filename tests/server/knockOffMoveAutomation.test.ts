@@ -7,6 +7,7 @@ import { deepCloneJson } from '~/utils/serialization'
 import {
   KNOCK_OFF_ACTOR_PLACEMENT_ID,
   KNOCK_OFF_TARGET_PLACEMENT_ID,
+  KNOCK_OFF_V2_SEMANTIC_SCENARIOS,
   knockOffV2Fixture,
 } from '../fixtures/moveAutomation/knockOffV2'
 import { buildAuthoritativeMoveRulesContext } from '~~/server/domain/moveAutomation/context'
@@ -130,18 +131,29 @@ const planTypedWrites = (
 const knockOffManifestRow = manifestJson.moves.find(row => row.canonicalId === 'Knock Off')
 
 describe('Knock Off authoritative item outcome foundation', () => {
-  it('keeps production on assisted legacy v1 while validating the reviewed v2 draft', () => {
+  it('selects the complete reviewed v2 runtime and semantic evidence', () => {
     expect(knockOffManifestRow).toMatchObject({
-      baseStatus: 'assisted',
-      runtime: { kind: 'legacy-v1' },
-      blockerCodes: ['items.authoritative'],
+      baseStatus: 'complete',
+      runtime: {
+        kind: 'movespec-v2',
+        version: 2,
+        definitionHash: '69fb960c479dd2fc639e47c01151ff381301f02d6a26fd5df6b55af9b5eda7ad',
+        sourceModule: 'server/domain/moveAutomation/specs/knockOff.ts',
+      },
+      blockerCodes: [],
+      limitations: [],
+      manualSteps: [],
     })
+    expect(knockOffManifestRow?.scenarioIds).toEqual(
+      KNOCK_OFF_V2_SEMANTIC_SCENARIOS.map(({ scenarioId }) => scenarioId),
+    )
     expect(registeredMoveAutomationRuntimeFor('Knock Off')).toMatchObject({
-      kind: 'legacy-v1',
+      kind: 'movespec-v2',
+      definitionHash: knockOffManifestRow?.runtime.definitionHash,
     })
     expect(REVIEWED_MOVE_SPEC_V2_REGISTRATIONS.some(({ canonicalId }) => (
       canonicalId === 'Knock Off'
-    ))).toBe(false)
+    ))).toBe(true)
 
     const definition = validateMoveSpec(KNOCK_OFF_MOVE_SPEC)
     const operations = definition.spec.phases.flatMap(block => block.operations)

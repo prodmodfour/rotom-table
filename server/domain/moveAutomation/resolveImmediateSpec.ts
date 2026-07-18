@@ -1,7 +1,8 @@
-import type {
-  MoveResolutionAuditTrace,
-  MoveResolutionTraceAncestryEntry,
-  MoveResolutionTraceJsonValue,
+import {
+  parseMoveResolutionAuditTrace,
+  type MoveResolutionAuditTrace,
+  type MoveResolutionTraceAncestryEntry,
+  type MoveResolutionTraceJsonValue,
 } from '#shared/moveAutomation/trace'
 import type {
   MoveAutomationCombatStageUpdate,
@@ -28,6 +29,12 @@ import {
   isMoveItemEffectEmission,
   type InterpretedMoveItemEffects,
 } from './itemEffectInterpreter'
+import {
+  KNOCK_OFF_ITEM_CHOICE_OPERATION,
+  KNOCK_OFF_ITEM_REQUEST_ID,
+  planKnockOffItemOutcome,
+  type KnockOffResolvedCombatOutcome,
+} from './knockOff'
 import type { MoveContextualDamageBaseResolution } from './damageBase'
 import type { MoveDamageTypeResolution } from './damageTypes'
 import { resolveMoveSpecDamageCalculation } from './damageStats'
@@ -460,6 +467,122 @@ const nestedRecipientResolver = (input: {
   )
 }
 
+const traceValueRecord = (
+  value: MoveResolutionTraceJsonValue | undefined,
+): Readonly<Record<string, MoveResolutionTraceJsonValue>> | null => (
+  typeof value === 'object' && value !== null && !Array.isArray(value)
+    ? value as Readonly<Record<string, MoveResolutionTraceJsonValue>>
+    : null
+)
+
+const knockOffCriticalHit = (
+  recipient: MoveCoreTokenEffectOperationResult['recipients'][number] | undefined,
+): boolean => {
+  const details = traceValueRecord(recipient?.details)
+  const calculation = traceValueRecord(details?.calculation) ?? details
+  const critical = traceValueRecord(calculation?.criticalHit)
+  return critical?.critical === true
+}
+
+const knockOffEffectiveDamage = (
+  recipient: MoveCoreTokenEffectOperationResult['recipients'][number] | undefined,
+): number => {
+  const details = traceValueRecord(recipient?.details)
+  const reported = details?.effectiveHpLost
+  if (typeof reported === 'number' && Number.isSafeInteger(reported) && reported >= 0) {
+    return reported
+  }
+  if (recipient?.previous.kind !== 'hp' || recipient.current.kind !== 'hp') return 0
+  return Math.max(
+    0,
+    recipient.previous.currentHp
+      + recipient.previous.temporaryHp
+      - recipient.current.currentHp
+      - recipient.current.temporaryHp,
+  )
+}
+
+const knockOffCombatOutcome = (input: {
+  readonly targetPlacementId: string
+  readonly hitTargetIds: readonly string[]
+  readonly missedTargetIds: readonly string[]
+  readonly coreResults: readonly MoveCoreTokenEffectOperationResult[]
+}): KnockOffResolvedCombatOutcome => {
+  if (
+    input.missedTargetIds.includes(input.targetPlacementId)
+    || !input.hitTargetIds.includes(input.targetPlacementId)
+  ) {
+    return { kind: 'miss', targetPlacementId: input.targetPlacementId }
+  }
+  const damage = input.coreResults.find(result => (
+    result.operationId === 'knock-off.damage'
+  ))?.recipients.find(recipient => recipient.recipientId === input.targetPlacementId)
+  if (damage?.outcome === 'prevented' && damage.reasonCode === 'damage-immunity') {
+    return { kind: 'immune', targetPlacementId: input.targetPlacementId }
+  }
+  return {
+    kind: 'hit',
+    targetPlacementId: input.targetPlacementId,
+    damageDealt: knockOffEffectiveDamage(damage),
+    criticalHit: knockOffCriticalHit(damage),
+  }
+}
+
+const replaceKnockOffChoiceTrace = (input: {
+  readonly trace: MoveResolutionAuditTrace
+  readonly replacement: ReturnType<typeof planKnockOffItemOutcome>['traceEntries'][number]
+}): MoveResolutionAuditTrace => parseMoveResolutionAuditTrace({
+  ...input.trace,
+  events: input.trace.events.map(event => (
+    event.kind === 'operation'
+    && event.operationId === KNOCK_OFF_ITEM_CHOICE_OPERATION.id
+      ? { ...input.replacement, sequence: event.sequence }
+      : event
+  )),
+})
+
+const reduceKnockOffItemOutcome = (input: {
+  readonly context: AuthoritativeMoveRulesContext
+  readonly runtime: MoveSpecV2Runtime
+  readonly execution: MoveSpecExecutionCompleteResult
+  readonly coreResults: readonly MoveCoreTokenEffectOperationResult[]
+  readonly trace: MoveResolutionAuditTrace
+  readonly fallback: InterpretedMoveItemEffects
+}): { readonly itemEffects: InterpretedMoveItemEffects; readonly trace: MoveResolutionAuditTrace } => {
+  if (input.runtime.canonicalId !== 'Knock Off') {
+    return { itemEffects: input.fallback, trace: input.trace }
+  }
+  const targetPlacementId = input.execution.targetIds[0]
+    ?? fail('unsupported-operation', 'Knock Off completed without its authoritative target.')
+  const selected = input.execution.resolvedItemChoices.find(choice => (
+    choice.requestId === KNOCK_OFF_ITEM_REQUEST_ID
+  ))
+  const outcome = planKnockOffItemOutcome({
+    context: input.context,
+    combat: knockOffCombatOutcome({
+      targetPlacementId,
+      hitTargetIds: input.execution.hitTargetIds,
+      missedTargetIds: input.execution.missedTargetIds,
+      coreResults: input.coreResults,
+    }),
+    ...(selected ? { selectedOptionId: selected.optionId } : {}),
+  })
+  if (outcome.kind === 'pending-choice') {
+    return fail(
+      'execution-pending',
+      'Knock Off completed without resolving its required durable item choice.',
+    )
+  }
+  const replacement = outcome.traceEntries[0]
+    ?? fail('unsupported-operation', 'Knock Off item outcome omitted its trace evidence.')
+  return {
+    itemEffects: outcome.kind === 'item-plan'
+      ? outcome.itemEffects
+      : Object.freeze({ mutations: Object.freeze([]), results: Object.freeze([]) }),
+    trace: replaceKnockOffChoiceTrace({ trace: input.trace, replacement }),
+  }
+}
+
 const damagedAndFaintedRecipients = (
   results: readonly MoveCoreTokenEffectOperationResult[],
 ): Pick<MoveCoreTokenDynamicRecipientSets, 'damagedTargetIds' | 'faintedTargetIds'> => {
@@ -723,7 +846,7 @@ export const reduceCompletedMoveSpec = (
     root: options.context,
     children: execution.childExecutions,
   })
-  const itemEffects = interpretMoveItemEffects({
+  const interpretedItemEffects = interpretMoveItemEffects({
     context: options.context,
     operations: uncommittedOperations.filter(isMoveItemEffectEmission),
     resolvedItemChoices: execution.resolvedItemChoices,
@@ -790,13 +913,21 @@ export const reduceCompletedMoveSpec = (
     }),
     trace: execution.trace,
   })
+  const knockOffItems = reduceKnockOffItemOutcome({
+    context: options.context,
+    runtime: options.runtime,
+    execution,
+    coreResults: core.operationResults,
+    trace: core.trace,
+    fallback: interpretedItemEffects,
+  })
   const permanentMoveLists = reducePermanentMoveListOperations({
     context: options.context,
     operations: uncommittedOperations.filter(isMovePermanentMoveListEmission),
     dynamicRecipients: initialDynamic,
     contextForOperation,
     dynamicRecipientsForOperation,
-    trace: core.trace,
+    trace: knockOffItems.trace,
   })
   const terminalRecipients = damagedAndFaintedRecipients(core.operationResults)
   const damagedSet = new Set([
@@ -877,7 +1008,7 @@ export const reduceCompletedMoveSpec = (
       faintedPlacementIds: Object.freeze([...faintedSet]),
       coreStateChanges: multiHit?.stateChanges ?? core.stateChanges,
       permanentMoveListStateChanges: permanentMoveLists.stateChanges,
-      itemEffects,
+      itemEffects: knockOffItems.itemEffects,
       spatialMovements: spatial.movements,
       spatialOperationResults: spatial.operationResults,
       resolvedHazardCells: execution.resolvedHazardCells,
