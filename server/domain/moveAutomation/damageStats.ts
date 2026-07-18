@@ -43,7 +43,6 @@ import {
 } from './stats'
 import type { TerrainDamageResolution } from './terrain'
 import type { WeatherDamageResolution } from './weather'
-import type { SideDamageResistanceEvaluation } from './sideDamageResistance'
 import {
   HELPING_HAND_DAMAGE_BONUS,
   activeHelpingHandBonusEffects,
@@ -84,8 +83,6 @@ export interface MoveSpecDamageCalculation {
   readonly terrain: TerrainDamageResolution
   /** Active weather decisions, including immunity prevention, with stable reasons. */
   readonly weather: WeatherDamageResolution
-  /** Side-owned class predicate, effectiveness adjustment, and reserved trigger charge. */
-  readonly sideDamageResistance: SideDamageResistanceEvaluation
   /** Type, contextual DB, then attack/defense nodes appear in deterministic audit order. */
   readonly evaluationTrace: readonly MoveRuleEvaluationTraceEntry[]
 }
@@ -226,12 +223,6 @@ export const resolveMoveSpecDamageCalculation = (
     recipientId: options.recipient.id,
     canonicalMoveId: options.script.moveName,
   })
-  const sideDamageResistance = options.context.queries.sideDamageResistance.resolve({
-    damageOperationId: options.operation.id,
-    targetPlacementId: options.recipient.id,
-    damageClass: options.operation.payload.damageClass,
-    effectivenessMultiplier: moveType.finalMultiplier,
-  })
   const criticalHit = resolveMoveCriticalHit({
     context: options.context,
     operation: options.operation,
@@ -312,7 +303,7 @@ export const resolveMoveSpecDamageCalculation = (
       damageBase,
       typeEffectiveness: {
         moveType: moveType.moveType,
-        multiplier: sideDamageResistance.adjustedMultiplier,
+        multiplier: moveType.finalMultiplier,
       },
       additionalModifiers: [
         ...helpingHandModifiers,
@@ -330,7 +321,6 @@ export const resolveMoveSpecDamageCalculation = (
     damagePipeline: breakdown.kind === 'standard' ? breakdown.pipeline ?? null : null,
     terrain,
     weather,
-    sideDamageResistance,
     evaluationTrace: [
       ...moveType.evaluationTrace,
       ...(contextualDamageBase?.evaluationTrace ?? []),

@@ -23,30 +23,28 @@ export interface MoveTemporaryEffectReduction {
   readonly details: MoveResolutionTraceJsonValue
 }
 
-const sideAffected = (input: {
+const actorSideAffected = (input: {
   readonly context: AuthoritativeMoveRulesContext
   readonly operation: MoveTemporaryEffectOperation
   readonly recipientIds: readonly string[]
-}): { readonly effectId: string; readonly sideIds: readonly EncounterSideId[] } => {
-  const sideIds = [...new Set(input.recipientIds.map((recipientId) => {
-    const sideId = input.context.queries.relationships.resolve(recipientId, recipientId).targetSideId
-    if (!sideId) {
-      return failMoveMapOperationReduction(
-        'temporary-effect-invalid',
-        `Temporary-effect operation ${input.operation.id} requires every recipient to have an explicit encounter side.`,
-      )
-    }
-    return sideId
-  }))]
-  if (sideIds.length !== 1) {
+}): { readonly effectId: string; readonly sideIds: readonly [EncounterSideId] } => {
+  const actorId = input.context.actor.placement.id
+  if (input.recipientIds.length !== 1 || input.recipientIds[0] !== actorId) {
     return failMoveMapOperationReduction(
       'temporary-effect-invalid',
-      `Temporary-effect operation ${input.operation.id} must resolve exactly one authoritative side.`,
+      `Actor-side temporary-effect operation ${input.operation.id} must address only its authoritative actor.`,
+    )
+  }
+  const sideId = input.context.queries.relationships.resolve(actorId, actorId).sourceSideId
+  if (!sideId) {
+    return failMoveMapOperationReduction(
+      'temporary-effect-invalid',
+      `Actor-side temporary-effect operation ${input.operation.id} requires an explicit encounter side.`,
     )
   }
   return {
-    effectId: `${input.operation.payload.effectId}.${sideIds[0]}`,
-    sideIds,
+    effectId: `${input.operation.payload.effectId}.${sideId}`,
+    sideIds: [sideId],
   }
 }
 
@@ -68,12 +66,12 @@ const materializeEffect = (input: {
     )
   }
   const definition = input.operation.payload.definition
-  const side = input.operation.payload.recipientScope === 'side'
-    ? sideAffected(input)
+  const actorSide = input.operation.payload.recipientScope === 'actor-side'
+    ? actorSideAffected(input)
     : null
   try {
     return parseEncounterEffect({
-      id: side?.effectId ?? input.operation.payload.effectId,
+      id: actorSide?.effectId ?? input.operation.payload.effectId,
       kind: definition.kind,
       source: {
         operationId: input.operation.id,
@@ -81,8 +79,8 @@ const materializeEffect = (input: {
         placementId: input.context.actor.placement.id,
       },
       affected: {
-        placementIds: side ? [] : [...input.recipientIds],
-        sideIds: side?.sideIds ?? [],
+        placementIds: actorSide ? [] : [...input.recipientIds],
+        sideIds: actorSide?.sideIds ?? [],
         cells: [],
       },
       createdRound: Math.max(1, input.context.map.initiative?.round ?? 1),
@@ -147,9 +145,10 @@ export const reduceMoveTemporaryEffect = (input: {
       details: {
         action: input.operation.payload.action,
         effectId: incoming?.id ?? input.operation.payload.effectId,
-        recipientScope: input.operation.payload.action === 'add'
-          ? input.operation.payload.recipientScope ?? 'placements'
-          : 'placements',
+        ...(input.operation.payload.action === 'add'
+          && input.operation.payload.recipientScope !== undefined
+          ? { recipientScope: input.operation.payload.recipientScope }
+          : {}),
         transitionKinds: transition.transitions.map(item => item.kind),
       },
     }

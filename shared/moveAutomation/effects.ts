@@ -305,7 +305,7 @@ export const MOVE_EFFECT_COMBAT_STAGES = [
 ] as const
 /** @deprecated Temporary-effect definitions use ENCOUNTER_EFFECT_DURATION_KINDS directly. */
 export const MOVE_EFFECT_DURATION_KINDS = ENCOUNTER_EFFECT_DURATION_KINDS
-export const MOVE_EFFECT_TEMPORARY_RECIPIENT_SCOPES = ['placements', 'side'] as const
+export const MOVE_EFFECT_TEMPORARY_RECIPIENT_SCOPES = ['placements', 'actor-side'] as const
 
 export const MOVE_EFFECT_FIELD_CATEGORIES = [
   'weather',
@@ -1199,7 +1199,7 @@ export interface MoveAddTemporaryEffectPayload {
   readonly effectId: string
   /** Typed mechanics only; the reducer supplies source, recipients, timing, and suppression. */
   readonly definition: EncounterEffectDefinition
-  /** Omitted legacy operations address placements; side scope derives one explicit side server-side. */
+  /** Omitted legacy operations address placements; actor-side is derived authoritatively server-side. */
   readonly recipientScope?: MoveEffectTemporaryRecipientScope
 }
 
@@ -4003,7 +4003,7 @@ const parseTemporaryEffectPayload = (
           input.recipientScope,
           TEMPORARY_RECIPIENT_SCOPE_SET,
           `${path}.recipientScope`,
-          'placements or side',
+          'placements or actor-side',
         )
     return {
       action,

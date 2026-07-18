@@ -35,7 +35,6 @@ import {
   resolveHpSuggestionAmount,
   resolveMoveAutomationTargetDamageBreakdown,
   suggestionIsEnabled,
-  type MoveAutomationResolvedDamageInputs,
   type MoveAutomationSuggestionKind,
   type MoveAutomationTargetResolutionState,
 } from '~/utils/moveAutomationTargetResolution'
@@ -65,18 +64,6 @@ export type MoveAutomationSuggestionRecipientFilter = (
   context: MoveAutomationSuggestionRecipientFilterContext,
 ) => boolean
 
-export interface MoveAutomationDamageInputsContext {
-  readonly script: MoveAutomationScript
-  readonly user: SpawnedPokemon
-  readonly target: SpawnedPokemon
-  readonly resolution: MoveAutomationTargetResolutionState | undefined
-}
-
-/** Server callers may inject already-resolved, fully attributed damage mechanics. */
-export type MoveAutomationDamageInputsForTarget = (
-  context: MoveAutomationDamageInputsContext,
-) => MoveAutomationResolvedDamageInputs
-
 export interface BuildMoveAutomationTransactionInput {
   script: MoveAutomationScript | null
   user: SpawnedPokemon
@@ -93,7 +80,6 @@ export interface BuildMoveAutomationTransactionInput {
   fieldEffects?: MapFieldEffects
   /** Server-owned per-recipient terrain projection for target-sensitive fields. */
   fieldEffectsForTarget?: (target: SpawnedPokemon) => MapFieldEffects
-  damageInputsForTarget?: MoveAutomationDamageInputsForTarget
   conditionImmunityContext?: MoveAutomationConditionImmunityContext
   suggestionRecipientFilter?: MoveAutomationSuggestionRecipientFilter
 }
@@ -129,7 +115,6 @@ export const buildMoveAutomationTransaction = ({
   manualNote,
   fieldEffects,
   fieldEffectsForTarget,
-  damageInputsForTarget,
   conditionImmunityContext,
   suggestionRecipientFilter,
 }: BuildMoveAutomationTransactionInput): MoveAutomationTransaction => {
@@ -151,12 +136,6 @@ export const buildMoveAutomationTransaction = ({
       targetResolutions[target.id],
       fieldEffectsForTarget?.(target) ?? fieldEffects,
       selectedTargets,
-      damageInputsForTarget?.({
-        script,
-        user,
-        target,
-        resolution: targetResolutions[target.id],
-      }),
     )
     const loss = damageBreakdown.hpLoss
     if (loss > 0) {

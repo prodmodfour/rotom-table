@@ -86,7 +86,6 @@ import {
 import { cleanupEncounterTransformationsForKnockouts } from './moveAutomation/transformationLifecycle'
 import { cleanupYawnEffectsForKnockouts } from './moveAutomation/yawn'
 import { consumeHelpingHandBonus } from './moveAutomation/helpingHand'
-import { consumeSideDamageResistance } from './moveAutomation/sideDamageResistance'
 import {
   deduplicateAuthoritativeMoveGroupInventoryReads,
   type AuthoritativeMoveGroupInventoryRead,
@@ -325,9 +324,6 @@ const cloneResolution = (resolution: AuthoritativeMoveResolution): Authoritative
   ...(resolution.helpingHandBonus === undefined
     ? {}
     : { helpingHandBonus: cloneJson(resolution.helpingHandBonus) }),
-  ...(resolution.sideDamageResistance === undefined
-    ? {}
-    : { sideDamageResistance: cloneJson(resolution.sideDamageResistance) }),
 })
 
 const cloneUsageSummary = (usage: UseMoveUsageSummary): UseMoveUsageSummary => cloneJson(usage)
@@ -1240,10 +1236,6 @@ export const planAuthoritativeMoveStateExecution = (
   workingMap = consumeHelpingHandBonus({
     map: workingMap,
     resolution: resolution.helpingHandBonus,
-  }).map
-  workingMap = consumeSideDamageResistance({
-    map: workingMap,
-    resolution: resolution.sideDamageResistance,
   }).map
 
   const knockedOutPlacementIds = resolution.transaction.hpUpdates

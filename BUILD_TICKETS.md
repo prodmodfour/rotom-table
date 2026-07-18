@@ -2315,7 +2315,7 @@ Status: DONE
 
 ## MA-172A — Model Reflect as an owned side effect
 
-Status: TODO
+Status: DONE
 
 **Depends on:** MA-054, MA-056–MA-060
 **Commit:** `feat(move-automation): model reflect side effects`

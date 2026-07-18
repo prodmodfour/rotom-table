@@ -3,10 +3,7 @@ import type {
   MoveAutomationRollModifier,
   MoveAutomationRollRequestMetadata,
 } from '#shared/moveAutomation/random'
-import {
-  buildMoveAutomationTransaction,
-  type MoveAutomationDamageInputsForTarget,
-} from '~/utils/moveAutomationTransaction'
+import { buildMoveAutomationTransaction } from '~/utils/moveAutomationTransaction'
 import {
   defaultTargetResolutionState,
   moveAutomationSuggestionKey,
@@ -74,7 +71,6 @@ export interface ResolveInstantAreaMoveAutomationInput {
   damageFormula?: string | null
   fieldEffects?: MapFieldEffects
   fieldEffectsForTarget?: (target: SpawnedPokemon) => MapFieldEffects
-  damageInputsForTarget?: MoveAutomationDamageInputsForTarget
   conditionImmunityContext?: MoveAutomationConditionImmunityContext
   accuracyRule?: MoveAutomationAccuracyRule | null
   accuracyModifiersForTarget?: MoveAutomationAccuracyModifiersForTarget
@@ -91,7 +87,6 @@ export interface ResolveInstantMultiTargetMoveAutomationInput {
   damageFormula?: string | null
   fieldEffects?: MapFieldEffects
   fieldEffectsForTarget?: (target: SpawnedPokemon) => MapFieldEffects
-  damageInputsForTarget?: MoveAutomationDamageInputsForTarget
   conditionImmunityContext?: MoveAutomationConditionImmunityContext
   accuracyRule?: MoveAutomationAccuracyRule | null
   accuracyModifiersForTarget?: MoveAutomationAccuracyModifiersForTarget
@@ -106,7 +101,6 @@ export interface ResolveInstantMoveAutomationInput {
   damageFormula: string | null | undefined
   fieldEffects?: MapFieldEffects
   fieldEffectsForTarget?: (target: SpawnedPokemon) => MapFieldEffects
-  damageInputsForTarget?: MoveAutomationDamageInputsForTarget
   conditionImmunityContext?: MoveAutomationConditionImmunityContext
   accuracyRule?: MoveAutomationAccuracyRule | null
   accuracyModifiersForTarget?: MoveAutomationAccuracyModifiersForTarget
@@ -122,7 +116,6 @@ export interface ResolveInstantTargetMoveAutomationInput {
   damageFormula?: string | null
   fieldEffects?: MapFieldEffects
   fieldEffectsForTarget?: (target: SpawnedPokemon) => MapFieldEffects
-  damageInputsForTarget?: MoveAutomationDamageInputsForTarget
   conditionImmunityContext?: MoveAutomationConditionImmunityContext
   accuracyRule?: MoveAutomationAccuracyRule | null
   accuracyModifiersForTarget?: MoveAutomationAccuracyModifiersForTarget
@@ -492,7 +485,6 @@ const resolveInstantDoubleStrikeMoveAutomation = ({
   damageFormula,
   fieldEffects,
   fieldEffectsForTarget,
-  damageInputsForTarget,
   conditionImmunityContext,
   accuracyRule,
   accuracyModifiersForTarget,
@@ -587,7 +579,6 @@ const resolveInstantDoubleStrikeMoveAutomation = ({
     manualNote: doubleStrikeNote,
     fieldEffects,
     fieldEffectsForTarget,
-    damageInputsForTarget,
     conditionImmunityContext,
   })
   const targetHpUpdate = transaction.hpUpdates.find((update) => update.id === target.id)
@@ -629,7 +620,6 @@ export const resolveInstantMoveAutomation = ({
   damageFormula,
   fieldEffects,
   fieldEffectsForTarget,
-  damageInputsForTarget,
   conditionImmunityContext,
   accuracyRule,
   accuracyModifiersForTarget,
@@ -647,7 +637,6 @@ export const resolveInstantMoveAutomation = ({
       damageFormula,
       fieldEffects,
       fieldEffectsForTarget,
-      damageInputsForTarget,
       conditionImmunityContext,
       accuracyRule,
       accuracyModifiersForTarget,
@@ -748,7 +737,6 @@ export const resolveInstantMoveAutomation = ({
     manualNote: combineManualNotes(runtimeDamage.note, randomStageNote, blockedConditionNote),
     fieldEffects,
     fieldEffectsForTarget,
-    damageInputsForTarget,
     conditionImmunityContext,
   })
   const targetHpUpdate = transaction.hpUpdates.find((update) => update.id === target.id)
@@ -784,7 +772,6 @@ const buildNoRollTargetTransaction = ({
   damageFormula,
   fieldEffects,
   fieldEffectsForTarget,
-  damageInputsForTarget,
   conditionImmunityContext,
   random,
   randomRoller,
@@ -841,7 +828,6 @@ const buildNoRollTargetTransaction = ({
     manualNote: combineManualNotes(runtimeDamage.note, randomStageNote, conditionApplications.blockedNotes.join(' ')),
     fieldEffects,
     fieldEffectsForTarget,
-    damageInputsForTarget,
     conditionImmunityContext,
     suggestionRecipientFilter: ({ kind, index, recipient, token }) => {
       if (recipient !== 'target') return true
@@ -923,7 +909,6 @@ interface ResolveInstantTargetGroupMoveAutomationInput {
   damageFormula?: string | null
   fieldEffects?: MapFieldEffects
   fieldEffectsForTarget?: (target: SpawnedPokemon) => MapFieldEffects
-  damageInputsForTarget?: MoveAutomationDamageInputsForTarget
   conditionImmunityContext?: MoveAutomationConditionImmunityContext
   accuracyRule?: MoveAutomationAccuracyRule | null
   accuracyModifiersForTarget?: MoveAutomationAccuracyModifiersForTarget
@@ -943,7 +928,6 @@ const resolveInstantTargetGroupMoveAutomation = ({
   damageFormula,
   fieldEffects,
   fieldEffectsForTarget,
-  damageInputsForTarget,
   conditionImmunityContext,
   accuracyRule,
   accuracyModifiersForTarget,
@@ -1022,7 +1006,6 @@ const resolveInstantTargetGroupMoveAutomation = ({
     manualNote: conditionApplications.blockedNotes.join(' '),
     fieldEffects,
     fieldEffectsForTarget,
-    damageInputsForTarget,
     conditionImmunityContext,
     suggestionRecipientFilter: ({ kind, index, recipient, token }) => {
       if (recipient !== 'target') return true
@@ -1047,7 +1030,6 @@ export const resolveInstantMultiTargetMoveAutomation = ({
   damageFormula,
   fieldEffects,
   fieldEffectsForTarget,
-  damageInputsForTarget,
   conditionImmunityContext,
   accuracyRule,
   accuracyModifiersForTarget,
@@ -1062,7 +1044,6 @@ export const resolveInstantMultiTargetMoveAutomation = ({
     damageFormula,
     fieldEffects,
     fieldEffectsForTarget,
-    damageInputsForTarget,
     conditionImmunityContext,
     accuracyRule,
     accuracyModifiersForTarget,
@@ -1081,7 +1062,6 @@ export const resolveInstantAreaMoveAutomation = ({
   damageFormula,
   fieldEffects,
   fieldEffectsForTarget,
-  damageInputsForTarget,
   conditionImmunityContext,
   accuracyRule,
   accuracyModifiersForTarget,
@@ -1095,7 +1075,6 @@ export const resolveInstantAreaMoveAutomation = ({
     damageFormula,
     fieldEffects,
     fieldEffectsForTarget,
-    damageInputsForTarget,
     conditionImmunityContext,
     accuracyRule,
     accuracyModifiersForTarget,

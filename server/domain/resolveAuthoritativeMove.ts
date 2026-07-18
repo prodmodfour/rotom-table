@@ -23,7 +23,6 @@ import {
   moveAutomationTargetBranches,
 } from '~/utils/moveAutomation'
 import { moveAutomationCanResolveDamageAtRuntime } from '~/utils/moveAutomationDynamicDamage'
-import { moveAutomationTargetDamageMultiplier } from '~/utils/moveAutomationTargetResolution'
 import { moveAutomationStatusDetailsText } from '~/utils/moveAutomationSemanticStatus'
 import { moveAutomationScriptForConfirmedAreaTemplate } from '~/utils/moveAutomationConfirmedAreaTemplate'
 import {
@@ -109,10 +108,6 @@ import {
   attachHelpingHandBonusResolution,
   type HelpingHandBonusResolution,
 } from './moveAutomation/helpingHand'
-import {
-  attachSideDamageResistanceResolution,
-  type SideDamageResistanceResolution,
-} from './moveAutomation/sideDamageResistance'
 
 export type { AuthoritativeMoveSheetRead } from './moveAutomation/context'
 
@@ -285,8 +280,6 @@ export interface AuthoritativeMoveResolution {
   readonly terrainConditionProtectionEffects?: readonly EncounterConditionEffect[]
   /** Server-only source effect and roll evidence for atomic Helping Hand consumption. */
   readonly helpingHandBonus?: HelpingHandBonusResolution
-  /** Server-only side resistance decisions and exact effect charges reserved for commit. */
-  readonly sideDamageResistance?: SideDamageResistanceResolution
   /** Server-only native planning projection; omitted from accepted wire results. */
   readonly nativeV2?: NativeMoveSpecResolutionProjection
 }
@@ -462,14 +455,6 @@ const legacyTerrainConditionProtectionEffects = (
   return Object.freeze([...effects.values()])
 }
 
-const attachResolutionDamageEffects = <Resolution extends AuthoritativeMoveResolution>(
-  context: AuthoritativeMoveRulesContext,
-  resolution: Resolution,
-): Resolution => attachSideDamageResistanceResolution(
-  context.queries.sideDamageResistance,
-  attachHelpingHandBonusResolution(context.map, resolution),
-) as Resolution
-
 const finalizeResolution = (
   context: AuthoritativeMoveRulesContext,
   resolution: UnfinalizedAuthoritativeMoveResolution,
@@ -511,7 +496,7 @@ const finalizeResolution = (
     area: resolution.area,
     movement: resolution.movement?.kind === 'pass' ? resolution.movement : undefined,
   })
-  return attachResolutionDamageEffects(context, {
+  return attachHelpingHandBonusResolution(context.map, {
     ...resolution,
     sheetReads: context.reads.snapshot(),
     rollLedger,
@@ -520,39 +505,6 @@ const finalizeResolution = (
       ? { terrainConditionProtectionEffects }
       : {}),
   })
-}
-
-const authoritativeLegacyDamageInputsForTarget = (
-  context: AuthoritativeMoveRulesContext,
-) => ({
-  script,
-  target,
-  resolution,
-}: {
-  readonly script: MoveAutomationScript
-  readonly target: SpawnedPokemon
-  readonly resolution: import('~/utils/moveAutomationTargetResolution').MoveAutomationTargetResolutionState | undefined
-}) => {
-  if (
-    !script.damaging
-    || script.directHpLoss !== undefined
-    || !resolution?.hit
-    || !resolution.applyDamage
-    || (script.damageClass !== 'Physical' && script.damageClass !== 'Special')
-  ) return {}
-  const previousMultiplier = moveAutomationTargetDamageMultiplier(script, target)
-  const resistance = context.queries.sideDamageResistance.resolve({
-    damageOperationId: 'legacy-v1.damage',
-    targetPlacementId: target.id,
-    damageClass: script.damageClass.toLowerCase() as 'physical' | 'special',
-    effectivenessMultiplier: previousMultiplier,
-  })
-  return {
-    typeEffectiveness: {
-      moveType: script.type ?? 'Normal',
-      multiplier: resistance.adjustedMultiplier,
-    },
-  }
 }
 
 const resolveSelectedTarget = (
@@ -1242,7 +1194,6 @@ const resolveSingleTargetMove = (options: {
     target,
     damageFormula: options.damageFormula,
     fieldEffects: authoritativeFieldEffectsForActor(options.context, target.id),
-    damageInputsForTarget: authoritativeLegacyDamageInputsForTarget(options.context),
     conditionImmunityContext: authoritativeConditionImmunityContext(options.context, options.script),
     accuracyRule: options.context.queries.weather.accuracy({
       canonicalMoveId: options.canonicalMoveName,
@@ -1456,7 +1407,6 @@ const resolveTargetCountMove = (options: {
     damageFormula: options.damageFormula,
     fieldEffects: authoritativeFieldEffectsForActor(options.context),
     fieldEffectsForTarget: target => authoritativeFieldEffectsForActor(options.context, target.id),
-    damageInputsForTarget: authoritativeLegacyDamageInputsForTarget(options.context),
     conditionImmunityContext: authoritativeConditionImmunityContext(options.context, options.script),
     accuracyRule: options.context.queries.weather.accuracy({
       canonicalMoveId: options.canonicalMoveName,
@@ -1534,7 +1484,6 @@ const resolveAreaMove = (options: {
     damageFormula: options.damageFormula,
     fieldEffects: authoritativeFieldEffectsForActor(options.context),
     fieldEffectsForTarget: target => authoritativeFieldEffectsForActor(options.context, target.id),
-    damageInputsForTarget: authoritativeLegacyDamageInputsForTarget(options.context),
     conditionImmunityContext: authoritativeConditionImmunityContext(options.context, confirmedScript),
     accuracyRule: options.context.queries.weather.accuracy({
       canonicalMoveId: options.canonicalMoveName,
@@ -1876,7 +1825,7 @@ export const resolveAuthoritativeMoveExecutionFromContext = (
       execution: AuthoritativeMoveExecution,
     ): AuthoritativeMoveExecution => isAuthoritativePendingMoveResolution(execution)
       ? execution
-      : attachResolutionDamageEffects(context, execution)
+      : attachHelpingHandBonusResolution(context.map, execution)
 
     if (intent.selection.kind === 'self') {
       return finalizeNativeExecution(resolveNativeSelfMove({
