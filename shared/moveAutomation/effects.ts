@@ -305,6 +305,7 @@ export const MOVE_EFFECT_COMBAT_STAGES = [
 ] as const
 /** @deprecated Temporary-effect definitions use ENCOUNTER_EFFECT_DURATION_KINDS directly. */
 export const MOVE_EFFECT_DURATION_KINDS = ENCOUNTER_EFFECT_DURATION_KINDS
+export const MOVE_EFFECT_TEMPORARY_RECIPIENT_SCOPES = ['placements', 'side'] as const
 
 export const MOVE_EFFECT_FIELD_CATEGORIES = [
   'weather',
@@ -470,6 +471,8 @@ export type MoveEffectCheckResourceTrigger =
 export type MoveEffectBranchKind = (typeof MOVE_EFFECT_BRANCH_KINDS)[number]
 export type MoveEffectBranchScope = (typeof MOVE_EFFECT_BRANCH_SCOPES)[number]
 export type MoveEffectDamageClass = (typeof MOVE_EFFECT_DAMAGE_CLASSES)[number]
+export type MoveEffectTemporaryRecipientScope =
+  (typeof MOVE_EFFECT_TEMPORARY_RECIPIENT_SCOPES)[number]
 export type MoveEffectDamageBaseStabTiming =
   (typeof MOVE_EFFECT_DAMAGE_BASE_STAB_TIMINGS)[number]
 export type MoveEffectTypeMatchupPolicy =
@@ -1196,6 +1199,8 @@ export interface MoveAddTemporaryEffectPayload {
   readonly effectId: string
   /** Typed mechanics only; the reducer supplies source, recipients, timing, and suppression. */
   readonly definition: EncounterEffectDefinition
+  /** Omitted legacy operations address placements; side scope derives one explicit side server-side. */
+  readonly recipientScope?: MoveEffectTemporaryRecipientScope
 }
 
 export interface MoveRemoveTemporaryEffectPayload {
@@ -1867,7 +1872,8 @@ const CONDITION_DURATION_OPTIONAL_FIELDS = ['charges', 'transferPolicy'] as cons
 const CONDITION_STACK_POLICY_FIELDS = ['kind', 'maxStacks'] as const
 const COMBAT_STAGE_REQUIRED_FIELDS = ['action', 'stage', 'value'] as const
 const COMBAT_STAGE_OPTIONAL_FIELDS = ['selectedStage', 'stageSource', 'rounding'] as const
-const ADD_TEMPORARY_EFFECT_FIELDS = ['action', 'effectId', 'definition'] as const
+const ADD_TEMPORARY_EFFECT_FIELDS = ['action', 'effectId', 'definition', 'recipientScope'] as const
+const LEGACY_ADD_TEMPORARY_EFFECT_FIELDS = ['action', 'effectId', 'definition'] as const
 const REMOVE_TEMPORARY_EFFECT_FIELDS = ['action', 'effectId'] as const
 const APPLY_FIELD_FIELDS = ['action', 'category', 'fieldId', 'rounds'] as const
 const REMOVE_FIELD_FIELDS = ['action', 'category', 'fieldId'] as const
@@ -2014,6 +2020,7 @@ const ARRAY_INDEX_PATTERN = /^(0|[1-9][0-9]*)$/
 const OPERATION_KIND_SET = new Set<string>(MOVE_EFFECT_OPERATION_KINDS)
 const SOURCE_KIND_SET = new Set<string>(MOVE_EFFECT_SOURCE_KINDS)
 const RECIPIENT_KIND_SET = new Set<string>(MOVE_EFFECT_RECIPIENT_SELECTOR_KINDS)
+const TEMPORARY_RECIPIENT_SCOPE_SET = new Set<string>(MOVE_EFFECT_TEMPORARY_RECIPIENT_SCOPES)
 const PHASE_SET = new Set<string>(MOVE_SPEC_PHASES)
 const ROLL_FORMULA_KIND_SET = new Set<string>(MOVE_EFFECT_ROLL_FORMULA_KINDS)
 const CHECK_KIND_SET = new Set<string>(MOVE_EFFECT_CHECK_KINDS)
@@ -2174,10 +2181,11 @@ const assertExactKeys = (
   record: UnknownRecord,
   expectedKeys: readonly string[],
   path: string,
+  requiredKeys: readonly string[] = expectedKeys,
 ): void => {
   const expected = new Set(expectedKeys)
   const actual = Object.getOwnPropertyNames(record)
-  const missing = expectedKeys.filter(key => !Object.prototype.hasOwnProperty.call(record, key))
+  const missing = requiredKeys.filter(key => !Object.prototype.hasOwnProperty.call(record, key))
   const unknown = actual.filter(key => !expected.has(key))
   if (missing.length > 0 || unknown.length > 0) {
     fail(
@@ -3972,7 +3980,7 @@ const parseTemporaryEffectPayload = (
   const input = parseRecord(value, path)
   const action = ownValue(input, 'action', path)
   if (action === 'add') {
-    assertExactKeys(input, ADD_TEMPORARY_EFFECT_FIELDS, path)
+    assertExactKeys(input, ADD_TEMPORARY_EFFECT_FIELDS, path, LEGACY_ADD_TEMPORARY_EFFECT_FIELDS)
     let definition: EncounterEffectDefinition
     try {
       definition = parseEncounterEffectDefinition(
@@ -3989,10 +3997,19 @@ const parseTemporaryEffectPayload = (
       }
       throw error
     }
+    const recipientScope = input.recipientScope === undefined
+      ? undefined
+      : parseEnum<MoveEffectTemporaryRecipientScope>(
+          input.recipientScope,
+          TEMPORARY_RECIPIENT_SCOPE_SET,
+          `${path}.recipientScope`,
+          'placements or side',
+        )
     return {
       action,
       effectId: parseStableId(ownValue(input, 'effectId', path), `${path}.effectId`),
       definition,
+      ...(recipientScope === undefined ? {} : { recipientScope }),
     }
   }
   if (action === 'remove') {

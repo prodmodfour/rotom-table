@@ -64,7 +64,18 @@ export const ENCOUNTER_EFFECT_NUMERIC_ATTRIBUTES = [
   'movement',
 ] as const
 
-export const ENCOUNTER_EFFECT_NUMERIC_OPERATIONS = ['add', 'multiply', 'set'] as const
+export const ENCOUNTER_EFFECT_NUMERIC_OPERATIONS = [
+  'add',
+  'multiply',
+  'set',
+  /** Move type effectiveness one resistance step per positive integer value. */
+  'resist-step',
+] as const
+export const ENCOUNTER_EFFECT_NUMERIC_DAMAGE_CLASSES = [
+  'physical',
+  'special',
+  'any',
+] as const
 export const ENCOUNTER_EFFECT_ROUNDING_POLICIES = ['none', 'floor', 'round', 'ceil'] as const
 export const ENCOUNTER_EFFECT_CAPABILITY_ACTIONS = ['grant', 'suppress'] as const
 export const ENCOUNTER_EFFECT_ITEM_SUPPRESSION_SCOPES = [
@@ -119,6 +130,8 @@ export type EncounterEffectConditionSaveTiming =
   (typeof ENCOUNTER_EFFECT_CONDITION_SAVE_TIMINGS)[number]
 export type EncounterEffectNumericAttribute = (typeof ENCOUNTER_EFFECT_NUMERIC_ATTRIBUTES)[number]
 export type EncounterEffectNumericOperation = (typeof ENCOUNTER_EFFECT_NUMERIC_OPERATIONS)[number]
+export type EncounterEffectNumericDamageClass =
+  (typeof ENCOUNTER_EFFECT_NUMERIC_DAMAGE_CLASSES)[number]
 export type EncounterEffectRoundingPolicy = (typeof ENCOUNTER_EFFECT_ROUNDING_POLICIES)[number]
 export type EncounterEffectCapabilityAction = (typeof ENCOUNTER_EFFECT_CAPABILITY_ACTIONS)[number]
 export type EncounterEffectItemSuppressionScope =
@@ -228,6 +241,8 @@ export interface EncounterNumericModifierEffectPayload {
   readonly operation: EncounterEffectNumericOperation
   readonly value: number
   readonly rounding: EncounterEffectRoundingPolicy
+  /** Required only by typed damage resistance; omitted legacy modifiers remain unconditional. */
+  readonly damageClass?: EncounterEffectNumericDamageClass
 }
 
 export interface EncounterCapabilityEffectPayload {
@@ -517,7 +532,14 @@ const SUPPRESSION_FIELDS = ['sources'] as const
 const SUPPRESSION_SOURCE_FIELDS = ['effectId', 'reasonCode'] as const
 const CONDITION_PAYLOAD_FIELDS = ['conditionId', 'action', 'saveTiming'] as const
 const LEGACY_CONDITION_PAYLOAD_FIELDS = ['conditionId', 'action'] as const
-const NUMERIC_MODIFIER_PAYLOAD_FIELDS = ['attribute', 'operation', 'value', 'rounding'] as const
+const NUMERIC_MODIFIER_PAYLOAD_FIELDS = [
+  'attribute',
+  'operation',
+  'value',
+  'rounding',
+  'damageClass',
+] as const
+const LEGACY_NUMERIC_MODIFIER_PAYLOAD_FIELDS = ['attribute', 'operation', 'value', 'rounding'] as const
 const CAPABILITY_PAYLOAD_FIELDS = ['capabilityId', 'action', 'value'] as const
 const CAPABILITY_PAYLOAD_REQUIRED_FIELDS = ['capabilityId', 'action'] as const
 const ITEM_SUPPRESSION_PAYLOAD_FIELDS = [
@@ -549,6 +571,7 @@ const CONDITION_ACTION_SET = new Set<string>(ENCOUNTER_EFFECT_CONDITION_ACTIONS)
 const CONDITION_SAVE_TIMING_SET = new Set<string>(ENCOUNTER_EFFECT_CONDITION_SAVE_TIMINGS)
 const NUMERIC_ATTRIBUTE_SET = new Set<string>(ENCOUNTER_EFFECT_NUMERIC_ATTRIBUTES)
 const NUMERIC_OPERATION_SET = new Set<string>(ENCOUNTER_EFFECT_NUMERIC_OPERATIONS)
+const NUMERIC_DAMAGE_CLASS_SET = new Set<string>(ENCOUNTER_EFFECT_NUMERIC_DAMAGE_CLASSES)
 const ROUNDING_POLICY_SET = new Set<string>(ENCOUNTER_EFFECT_ROUNDING_POLICIES)
 const CAPABILITY_ACTION_SET = new Set<string>(ENCOUNTER_EFFECT_CAPABILITY_ACTIONS)
 const ITEM_SUPPRESSION_SCOPE_SET = new Set<string>(
@@ -1024,27 +1047,68 @@ const parseNumericModifierPayload = (
   value: unknown,
   path: string,
 ): EncounterNumericModifierEffectPayload => {
-  const payload = parseExactRecord(value, NUMERIC_MODIFIER_PAYLOAD_FIELDS, path)
+  const payload = parseExactRecord(
+    value,
+    NUMERIC_MODIFIER_PAYLOAD_FIELDS,
+    path,
+    LEGACY_NUMERIC_MODIFIER_PAYLOAD_FIELDS,
+  )
+  const attribute = parseEnum<EncounterEffectNumericAttribute>(
+    payload.attribute,
+    NUMERIC_ATTRIBUTE_SET,
+    `${path}.attribute`,
+    'a supported numeric attribute',
+  )
+  const operation = parseEnum<EncounterEffectNumericOperation>(
+    payload.operation,
+    NUMERIC_OPERATION_SET,
+    `${path}.operation`,
+    'add, multiply, set, or resist-step',
+  )
+  const numericValue = parseFiniteNumber(payload.value, `${path}.value`)
+  const rounding = parseEnum<EncounterEffectRoundingPolicy>(
+    payload.rounding,
+    ROUNDING_POLICY_SET,
+    `${path}.rounding`,
+    'none, floor, round, or ceil',
+  )
+  const damageClass = payload.damageClass === undefined
+    ? undefined
+    : parseEnum<EncounterEffectNumericDamageClass>(
+        payload.damageClass,
+        NUMERIC_DAMAGE_CLASS_SET,
+        `${path}.damageClass`,
+        'physical, special, or any',
+      )
+  if (operation === 'resist-step') {
+    if (
+      attribute !== 'damage-reduction'
+      || damageClass === undefined
+      || !Number.isSafeInteger(numericValue)
+      || numericValue < 1
+      || numericValue > 8
+      || rounding !== 'none'
+    ) {
+      fail(
+        'invalid-encounter-effect',
+        path,
+        'resist-step requires damage-reduction, a damage class, 1-8 whole steps, and no rounding.',
+      )
+    }
+  }
+  else if (damageClass !== undefined) {
+    fail(
+      'invalid-encounter-effect',
+      `${path}.damageClass`,
+      'is supported only by resist-step damage reduction.',
+    )
+  }
   return {
-    attribute: parseEnum<EncounterEffectNumericAttribute>(
-      payload.attribute,
-      NUMERIC_ATTRIBUTE_SET,
-      `${path}.attribute`,
-      'a supported numeric attribute',
-    ),
-    operation: parseEnum<EncounterEffectNumericOperation>(
-      payload.operation,
-      NUMERIC_OPERATION_SET,
-      `${path}.operation`,
-      'add, multiply, or set',
-    ),
-    value: parseFiniteNumber(payload.value, `${path}.value`),
-    rounding: parseEnum<EncounterEffectRoundingPolicy>(
-      payload.rounding,
-      ROUNDING_POLICY_SET,
-      `${path}.rounding`,
-      'none, floor, round, or ceil',
-    ),
+    attribute,
+    operation,
+    value: numericValue,
+    rounding,
+    ...(damageClass === undefined ? {} : { damageClass }),
   }
 }
 
