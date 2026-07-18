@@ -187,6 +187,7 @@ export const MOVE_EFFECT_BRANCH_KINDS = [
   'choice',
 ] as const
 export const MOVE_EFFECT_BRANCH_SCOPES = ['resolution', 'recipient'] as const
+export const MOVE_EFFECT_BRANCH_CHOICE_OWNERS = ['recipients', 'actor'] as const
 
 export const MOVE_EFFECT_DAMAGE_CLASSES = ['physical', 'special'] as const
 export const MOVE_EFFECT_DAMAGE_BASE_STAB_TIMINGS = [
@@ -470,6 +471,8 @@ export type MoveEffectCheckResourceTrigger =
   (typeof MOVE_EFFECT_CHECK_RESOURCE_TRIGGERS)[number]
 export type MoveEffectBranchKind = (typeof MOVE_EFFECT_BRANCH_KINDS)[number]
 export type MoveEffectBranchScope = (typeof MOVE_EFFECT_BRANCH_SCOPES)[number]
+export type MoveEffectBranchChoiceOwner =
+  (typeof MOVE_EFFECT_BRANCH_CHOICE_OWNERS)[number]
 export type MoveEffectDamageClass = (typeof MOVE_EFFECT_DAMAGE_CLASSES)[number]
 export type MoveEffectTemporaryRecipientScope =
   (typeof MOVE_EFFECT_TEMPORARY_RECIPIENT_SCOPES)[number]
@@ -786,6 +789,12 @@ export interface MoveChoiceBranchEffectPayload {
   readonly kind: 'choice'
   readonly selectionId: string
   readonly scope: MoveEffectBranchScope
+  /**
+   * Response authority is independent from the branch's mechanics subjects.
+   * `recipients` preserves the default target/subject ownership; `actor` lets
+   * the move user answer an option that is conditional on target recipients.
+   */
+  readonly owner: MoveEffectBranchChoiceOwner
   readonly requestId: string
   readonly promptKey: string
   readonly options: readonly MoveChoiceBranchOption[]
@@ -1730,7 +1739,7 @@ const CHECK_RESULT_BRANCH_FIELDS = [
   'checkId',
   'branches',
 ] as const
-const CHOICE_BRANCH_FIELDS = [
+const CHOICE_BRANCH_REQUIRED_FIELDS = [
   'kind',
   'selectionId',
   'scope',
@@ -1739,6 +1748,7 @@ const CHOICE_BRANCH_FIELDS = [
   'options',
   'pass',
 ] as const
+const CHOICE_BRANCH_FIELDS = [...CHOICE_BRANCH_REQUIRED_FIELDS, 'owner'] as const
 const BRANCH_PATH_FIELDS = ['id', 'operationIds'] as const
 const RELATIONSHIP_BRANCH_PATH_FIELDS = ['self', 'ally', 'enemy', 'unknown'] as const
 const CHOICE_BRANCH_OPTION_FIELDS = ['id', 'labelKey', 'operationIds'] as const
@@ -2032,6 +2042,7 @@ const CHECK_OUTCOME_SET = new Set<string>(MOVE_EFFECT_CHECK_OUTCOMES)
 const CHECK_RESOURCE_TRIGGER_SET = new Set<string>(MOVE_EFFECT_CHECK_RESOURCE_TRIGGERS)
 const BRANCH_KIND_SET = new Set<string>(MOVE_EFFECT_BRANCH_KINDS)
 const BRANCH_SCOPE_SET = new Set<string>(MOVE_EFFECT_BRANCH_SCOPES)
+const BRANCH_CHOICE_OWNER_SET = new Set<string>(MOVE_EFFECT_BRANCH_CHOICE_OWNERS)
 const NESTED_MOVE_ACTOR_KIND_SET = new Set<string>(MOVE_EFFECT_NESTED_MOVE_ACTOR_KINDS)
 const NESTED_MOVE_SOURCE_KIND_SET = new Set<string>(MOVE_EFFECT_NESTED_MOVE_SOURCE_KINDS)
 const NESTED_MOVE_TARGETING_KIND_SET = new Set<string>(MOVE_EFFECT_NESTED_MOVE_TARGETING_KINDS)
@@ -5204,7 +5215,7 @@ const parseChoiceBranchPayload = (
   input: UnknownRecord,
   path: string,
 ): MoveChoiceBranchEffectPayload => {
-  assertExactKeys(input, CHOICE_BRANCH_FIELDS, path)
+  assertExactKeys(input, CHOICE_BRANCH_FIELDS, path, CHOICE_BRANCH_REQUIRED_FIELDS)
   const optionsPath = `${path}.options`
   const options = parseBoundedArray(
     ownValue(input, 'options', path),
@@ -5253,6 +5264,14 @@ const parseChoiceBranchPayload = (
       `${path}.scope`,
       'resolution or recipient',
     ),
+    owner: Object.prototype.hasOwnProperty.call(input, 'owner')
+      ? parseEnum<MoveEffectBranchChoiceOwner>(
+          ownValue(input, 'owner', path),
+          BRANCH_CHOICE_OWNER_SET,
+          `${path}.owner`,
+          'recipients or actor',
+        )
+      : 'recipients',
     requestId: parseStableId(ownValue(input, 'requestId', path), `${path}.requestId`),
     promptKey: parseStableId(ownValue(input, 'promptKey', path), `${path}.promptKey`),
     options,

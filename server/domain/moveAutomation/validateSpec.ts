@@ -1180,13 +1180,12 @@ export const validateMoveSpecOperationSequence = (
           const controlled = indexed[controlledIndex]?.operation
           if (
             !controlled
-            || controlled.kind === 'branch'
             || (controlled.kind === 'roll' && controlled.payload.formula.kind === 'table')
           ) {
             fail(
               'invalid-definition',
               referencePath,
-              'a branch cannot control another branch or random-table controller.',
+              'a branch cannot control a random-table controller.',
             )
           }
           if (

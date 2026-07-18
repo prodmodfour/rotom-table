@@ -2055,6 +2055,7 @@ describe('MoveSpec typed effect operations', () => {
       kind: 'choice',
       selectionId: 'branch.choose-stat',
       scope: 'recipient',
+      owner: 'recipients',
       requestId: 'request.choose-stat',
       promptKey: 'move.choose-stat',
       options: [

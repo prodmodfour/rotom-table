@@ -24998,53 +24998,170 @@
     {
       "canonicalId": "Take Down",
       "displayName": "Take Down",
-      "baseStatus": "assisted",
+      "baseStatus": "complete",
       "interactionStatus": "unassessed",
       "runtime": {
-        "kind": "legacy-v1",
-        "version": 1,
-        "definitionHash": "2566e5ac0d4291ec31b71d4c9525604fd297e8e5eb82c74e82c30e40a150801e",
-        "sourceModule": "src/utils/move-automation/scripts/additionalSingleTarget.ts"
+        "kind": "movespec-v2",
+        "version": 2,
+        "definitionHash": "8823eed10de8477a553498d302a57f01a558920020ad12a66d250e83a56829a2",
+        "sourceModule": "server/domain/moveAutomation/specs/takeDown.ts"
       },
       "rulesProvenance": {
         "rulesetId": "rotom-table-reference-moves-v1",
         "canonicalizationVersion": 1,
         "sourceDataSha256": "f90491826349afd7d1f2809fd9d74b7acc555f5163b99264205ee369249e9815"
       },
-      "capabilityTags": [],
-      "suggestedCapabilityTags": [],
-      "blockerCodes": [
+      "capabilityTags": [
         "conditions.typed",
         "expressions.bounded",
-        "reactions.durable"
+        "hp.typed",
+        "reactions.durable",
+        "targeting.authoritative"
       ],
-      "limitations": [
-        {
-          "code": "take-down.trip",
-          "summary": "The legacy result cannot offer and resolve the optional Free Action opposed Trip Maneuver; it can only apply Tripped after an operator supplies the outcome."
-        },
-        {
-          "code": "take-down.reckless",
-          "summary": "Recoil and its Rock Head or Magic Guard immunity are automated, but the Reckless Damage Base interaction is not included in authoritative damage calculation."
-        }
+      "suggestedCapabilityTags": [],
+      "blockerCodes": [],
+      "limitations": [],
+      "manualSteps": [],
+      "scenarioIds": [
+        "take-down.v2-action-cost-rejected",
+        "take-down.v2-check-failure",
+        "take-down.v2-check-success",
+        "take-down.v2-check-tie",
+        "take-down.v2-critical-hit",
+        "take-down.v2-duplicate-retry",
+        "take-down.v2-immunity",
+        "take-down.v2-legal-skill-choices",
+        "take-down.v2-magic-guard-recoil-immunity",
+        "take-down.v2-miss",
+        "take-down.v2-pass",
+        "take-down.v2-reckless",
+        "take-down.v2-reconnect",
+        "take-down.v2-rock-head-recoil-immunity",
+        "take-down.v2-stale-response",
+        "take-down.v2-stuck-rejected"
       ],
-      "manualSteps": [
-        {
-          "code": "take-down.trip",
-          "summary": "After a hit, offer the optional Trip Maneuver, resolve its opposed check, and apply Tripped only when that check succeeds."
-        },
-        {
-          "code": "take-down.reckless",
-          "summary": "If the user has Reckless, apply its canonical Damage Base adjustment before resolving Take Down damage."
-        }
-      ],
-      "scenarioIds": [],
       "conformanceEvidence": {
-        "requirementTags": [],
-        "scenarios": [],
+        "requirementTags": [
+          "branch.accuracy",
+          "branch.alternate",
+          "branch.critical-hit",
+          "branch.immunity",
+          "branch.threshold",
+          "interaction.choice",
+          "mechanic.damage",
+          "recovery.reconnect",
+          "recovery.retry",
+          "resource.multi",
+          "target.self"
+        ],
+        "scenarios": [
+          {
+            "scenarioId": "take-down.v2-action-cost-rejected",
+            "evidenceClasses": [
+              "alternate-branch"
+            ]
+          },
+          {
+            "scenarioId": "take-down.v2-check-failure",
+            "evidenceClasses": [
+              "choice",
+              "threshold-fail"
+            ]
+          },
+          {
+            "scenarioId": "take-down.v2-check-success",
+            "evidenceClasses": [
+              "choice",
+              "hit",
+              "threshold-pass"
+            ]
+          },
+          {
+            "scenarioId": "take-down.v2-check-tie",
+            "evidenceClasses": [
+              "alternate-branch",
+              "threshold-fail"
+            ]
+          },
+          {
+            "scenarioId": "take-down.v2-critical-hit",
+            "evidenceClasses": [
+              "crit"
+            ]
+          },
+          {
+            "scenarioId": "take-down.v2-duplicate-retry",
+            "evidenceClasses": [
+              "retry"
+            ]
+          },
+          {
+            "scenarioId": "take-down.v2-immunity",
+            "evidenceClasses": [
+              "immunity"
+            ]
+          },
+          {
+            "scenarioId": "take-down.v2-legal-skill-choices",
+            "evidenceClasses": [
+              "choice"
+            ]
+          },
+          {
+            "scenarioId": "take-down.v2-magic-guard-recoil-immunity",
+            "evidenceClasses": [
+              "immunity",
+              "self"
+            ]
+          },
+          {
+            "scenarioId": "take-down.v2-miss",
+            "evidenceClasses": [
+              "miss"
+            ]
+          },
+          {
+            "scenarioId": "take-down.v2-pass",
+            "evidenceClasses": [
+              "hit",
+              "pass"
+            ]
+          },
+          {
+            "scenarioId": "take-down.v2-reckless",
+            "evidenceClasses": [
+              "alternate-branch"
+            ]
+          },
+          {
+            "scenarioId": "take-down.v2-reconnect",
+            "evidenceClasses": [
+              "reconnect"
+            ]
+          },
+          {
+            "scenarioId": "take-down.v2-rock-head-recoil-immunity",
+            "evidenceClasses": [
+              "immunity",
+              "self"
+            ]
+          },
+          {
+            "scenarioId": "take-down.v2-stale-response",
+            "evidenceClasses": [
+              "multi-resource-conflict"
+            ]
+          },
+          {
+            "scenarioId": "take-down.v2-stuck-rejected",
+            "evidenceClasses": [
+              "alternate-branch"
+            ]
+          }
+        ],
         "notApplicable": []
       },
-      "reviewedAt": "2026-07-10",
+      "reviewedAt": "2026-07-18",
       "unsupportedInteractionIds": [],
       "rolloutCohortId": null
     },

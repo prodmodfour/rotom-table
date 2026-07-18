@@ -1117,6 +1117,7 @@ const pendingItemRequest = (
 const pendingBranchRequest = (
   operation: MoveBranchEffectOperation,
   recipientIds: readonly string[],
+  actorPlacementId: string,
 ): MoveSpecPendingBranchChoiceRequest => {
   if (operation.payload.kind !== 'choice') {
     return fail(
@@ -1129,7 +1130,9 @@ const pendingBranchRequest = (
     operationId: operation.id,
     phase: operation.phase,
     reasonCode: operation.reasonCode,
-    recipientIds: frozenIds(recipientIds),
+    recipientIds: frozenIds(
+      operation.payload.owner === 'actor' ? [actorPlacementId] : recipientIds,
+    ),
     requestId: operation.payload.requestId,
     promptKey: operation.payload.promptKey,
     options: Object.freeze(operation.payload.options.map(option => Object.freeze({
@@ -2322,6 +2325,21 @@ const executeMoveSpecInternal = (
         executions: branchExecutions,
       })
       if (!branchGate.execute) {
+        // A branch may itself be controlled by an earlier reviewed branch.
+        // Materialize an empty execution when its parent path is not selected
+        // so descendants remain deterministically gated instead of observing
+        // a missing controller.
+        if (operation.kind === 'branch') {
+          branchExecutions.set(operation.payload.selectionId, Object.freeze({
+            selection: Object.freeze({
+              operationId: operation.id,
+              selectionId: operation.payload.selectionId,
+              scope: operation.payload.scope,
+              decisions: Object.freeze([]),
+            }),
+            decisions: Object.freeze([]),
+          }))
+        }
         trace = reduceMoveResolutionTrace(trace, {
           kind: 'operation',
           phase,
@@ -2372,7 +2390,11 @@ const executeMoveSpecInternal = (
             })
             continue
           }
-          const request = pendingBranchRequest(operation, recipientIds)
+          const request = pendingBranchRequest(
+            operation,
+            recipientIds,
+            input.context.actor.placement.id,
+          )
           const response = responseResolver.resolve({
             requestId: request.requestId,
             options: request.options,
@@ -2773,6 +2795,7 @@ const executeMoveSpecInternal = (
       if (operation.kind === 'damage') {
         const operationDamageTypes: MoveDamageTypeResolution[] = []
         const operationDamageBases: MoveContextualDamageBaseResolution[] = []
+        const projectedDamagedTargetIds = new Set(damagedTargetIds)
         const rollSummaries: Array<{
           readonly rollId: string
           readonly recipientId: string
@@ -2790,6 +2813,11 @@ const executeMoveSpecInternal = (
           })
           operationDamageTypes.push(resolvedType)
           resolvedDamageTypes.push(resolvedType)
+          // Ordinary PTU damage has a minimum HP loss once it reaches a
+          // non-immune hit recipient. This server-owned projection makes
+          // post-damage choices available without committing reducer state;
+          // the final planner still derives exact effective HP loss.
+          if (resolvedType.finalMultiplier > 0) projectedDamagedTargetIds.add(recipientId)
           const formula = resolveMoveSpecDamageRollFormula({
             context: input.context,
             operation,
@@ -2828,6 +2856,10 @@ const executeMoveSpecInternal = (
             finalValue: result.finalValue,
           })
         }
+        damagedTargetIds = canonicalPlacementIds(
+          input.context,
+          projectedDamagedTargetIds,
+        )
         trace = reduceMoveResolutionTrace(trace, {
           kind: 'operation',
           phase,
