@@ -2525,7 +2525,7 @@ Status: DONE
 
 ## MA-181 — Certify the repaired registered-script canaries
 
-Status: TODO
+Status: DONE
 
 **Depends on:** MA-170–MA-180
 **Commit:** `test(move-automation): certify repaired registered scripts`

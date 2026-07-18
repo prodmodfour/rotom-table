@@ -8,17 +8,50 @@ import type { SheetPlacement, TabletopMap } from '~/types/map'
 import type { TrainerSheet } from '~/types/trainerSheet'
 
 export const FURY_CUTTER_V2_SEMANTIC_SCENARIOS = Object.freeze([
-  { scenarioId: 'fury-cutter.v2-first-hit' },
-  { scenarioId: 'fury-cutter.v2-second-hit' },
-  { scenarioId: 'fury-cutter.v2-capped-hit' },
-  { scenarioId: 'fury-cutter.v2-target-change' },
-  { scenarioId: 'fury-cutter.v2-miss-reset' },
-  { scenarioId: 'fury-cutter.v2-no-damage-reset' },
-  { scenarioId: 'fury-cutter.v2-different-move-reset' },
-  { scenarioId: 'fury-cutter.v2-switch-reset' },
-  { scenarioId: 'fury-cutter.v2-scene-reset' },
-  { scenarioId: 'fury-cutter.v2-critical-hit' },
-  { scenarioId: 'fury-cutter.v2-duplicate-retry' },
+  {
+    scenarioId: 'fury-cutter.v2-first-hit',
+    evidenceClasses: ['hit', 'threshold-pass'] as const,
+  },
+  {
+    scenarioId: 'fury-cutter.v2-second-hit',
+    evidenceClasses: ['alternate-branch'] as const,
+  },
+  {
+    scenarioId: 'fury-cutter.v2-capped-hit',
+    evidenceClasses: ['alternate-branch'] as const,
+  },
+  {
+    scenarioId: 'fury-cutter.v2-target-change',
+    evidenceClasses: ['alternate-branch'] as const,
+  },
+  {
+    scenarioId: 'fury-cutter.v2-miss-reset',
+    evidenceClasses: ['miss', 'threshold-fail'] as const,
+  },
+  {
+    scenarioId: 'fury-cutter.v2-no-damage-reset',
+    evidenceClasses: ['alternate-branch', 'threshold-fail'] as const,
+  },
+  {
+    scenarioId: 'fury-cutter.v2-different-move-reset',
+    evidenceClasses: ['alternate-branch'] as const,
+  },
+  {
+    scenarioId: 'fury-cutter.v2-switch-reset',
+    evidenceClasses: ['alternate-branch'] as const,
+  },
+  {
+    scenarioId: 'fury-cutter.v2-scene-reset',
+    evidenceClasses: ['alternate-branch'] as const,
+  },
+  {
+    scenarioId: 'fury-cutter.v2-critical-hit',
+    evidenceClasses: ['crit'] as const,
+  },
+  {
+    scenarioId: 'fury-cutter.v2-duplicate-retry',
+    evidenceClasses: ['retry'] as const,
+  },
 ] as const)
 
 export type FuryCutterV2SemanticScenarioId =

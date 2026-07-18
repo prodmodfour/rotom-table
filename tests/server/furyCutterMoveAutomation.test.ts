@@ -202,6 +202,9 @@ describe('Fury Cutter native MoveSpec v2', () => {
     expect(furyCutterRow.scenarioIds).toEqual(
       FURY_CUTTER_V2_SEMANTIC_SCENARIOS.map(({ scenarioId }) => scenarioId),
     )
+    expect(furyCutterRow.conformanceEvidence.scenarios).toEqual(
+      FURY_CUTTER_V2_SEMANTIC_SCENARIOS,
+    )
     expect(registeredMoveAutomationRuntimeFor('Fury Cutter')).toMatchObject({
       kind: 'movespec-v2',
       definition: { spec: FURY_CUTTER_MOVE_SPEC },
