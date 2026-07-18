@@ -9,7 +9,7 @@ Ticket statuses:
 
 The build loop must select the lowest-numbered TODO ticket. Each ticket below maps to one ticket from the supplied planning file; build ticket numbers follow that document's suggested order when present.
 
-Autonomous cycle rules for every ticket: implement only the selected ticket, run `scripts/quality-gate.sh`, update only the selected ticket status, commit with a conventional commit message, and leave the working tree clean. The final ticket (`MA-299`) may also set `AUTOMATION_STATUS: DONE` after all 297 refreshed tickets are complete.
+Autonomous cycle rules for every ticket: implement only the selected ticket, run `scripts/quality-gate.sh`, update only the selected ticket status, commit with a conventional commit message, and leave the working tree clean. The final ticket (`MA-299`) may also set `AUTOMATION_STATUS: DONE` after all 296 refreshed tickets are complete.
 
 ---
 
@@ -50,7 +50,7 @@ When a ticket introduces a new pure module, prefer this layout:
 
 The existing `src/utils/move-automation/` registry remains the v1 compatibility surface until the retirement tickets at the end.
 
-Queue size at this baseline: **297 commits**—191 engine/state/QA tickets, 33 conformance batches for the registered 258, and 73 implementation batches for the missing 518.
+Queue size at this baseline: **296 commits**—190 engine/state/QA tickets, 33 conformance batches for the registered 258, and 73 implementation batches for the missing 518.
 
 ## Decisions already locked
 
@@ -2501,45 +2501,16 @@ Status: DONE
 
 **Done:** No five-strike automation note asks the operator to finish hits manually.
 
-## MA-179A — Finish Astonish timing and automatic Flinch
+## MA-179 — Finish Astonish and Fake Out timing/legality
 
 Status: TODO
 
-**Depends on:** MA-063, MA-084, MA-108
-**Commit:** `feat(move-automation): fully resolve astonish timing`
+**Depends on:** MA-063–MA-064, MA-084, MA-108
+**Commit:** `feat(move-automation): enforce opening move legality`
 
-**Touch:** the reviewed Astonish runtime, structured scene history/effects, durable response integration where target awareness requires an authorized determination, and focused semantic scenarios.
+**Implement:** Express their first-turn/target-state/timing preconditions and Flinch application through history/resources and authoritative condition rules.
 
-**Implement:**
-
-- Preserve Astonish's ordinary 15+ Flinch branch using the existing server-owned accuracy result and apply it only to a qualifying hit.
-- Encode the once-per-scene automatic Flinch branch for a target that was unaware of the user. Derive any server-known eligibility from authoritative state and represent any remaining awareness determination as a typed, authorized, reconnect-safe response rather than client-authored mechanics or an operator note.
-- Consume the authoritative once-per-scene marker only when the automatic branch resolves, clear it through scene lifecycle, and apply Flinch through the authoritative condition rules. Miss, immunity, an aware target, an already-consumed branch, and condition immunity must produce stable traced outcomes without partial mutation.
-- Keep Fake Out's runtime and manifest row unchanged in this ticket.
-
-**Tests:** Cover natural threshold pass/fail, aware and unaware branches, once-per-scene consumption, miss, critical hit, damage immunity, condition immunity, reconnect, and duplicate declaration/response delivery at the interpreter/planner and accepted-command boundaries as applicable.
-
-**Done:** Astonish's natural and unaware-target Flinch branches resolve authoritatively exactly once, every ineligible branch has a stable reason, and no operator adjudication remains for Astonish.
-
-## MA-179B — Finish Fake Out joining-encounter legality
-
-Status: TODO
-
-**Depends on:** MA-063–MA-064, MA-084, MA-108, MA-179A
-**Commit:** `feat(move-automation): enforce fake out opening legality`
-
-**Touch:** authoritative entry/switch history and resource queries, the reviewed Fake Out runtime, Priority and condition planning, and focused semantic scenarios.
-
-**Implement:**
-
-- Record and query whether the actor has joined the encounter and acted during its current entry, using authoritative history/resources that reset correctly after switching out and rejoining without relying on token ownership or browser state.
-- Allow Fake Out's Priority and Flinch clause only through the eligible joining-the-encounter branch. Outside that branch, preserve any canonically legal non-Priority use while rejecting an illegal Priority/Flinch branch with a stable reason before rolls, costs, or effects.
-- Apply Flinch only after a qualifying authoritative hit and through the authoritative target-state and condition rules. Miss, immunity, an ineligible entry, and condition immunity must not retain Flinch.
-- Remove the timing operator instruction and update Fake Out's reviewed runtime/evidence only after the legal and illegal branches pass end to end.
-
-**Tests:** Cover first action after joining, already acted, switch-out/rejoin reset, legal non-Priority use, illegal Priority use, hit, miss, critical hit, damage immunity, condition immunity, stale state, and duplicate command delivery through interpreter/planner and accepted-command boundaries.
-
-**Done:** Fake Out's joining, Priority, target-state, and Flinch rules are server-enforced; illegal use rejects with a stable reason, legal use needs no operator adjudication, and retry cannot grant Priority or apply Flinch twice.
+**Done:** Illegal use rejects with a stable reason and legal use needs no operator adjudication.
 
 ## MA-180 — Finish registered ally-area moves
 
@@ -2556,7 +2527,7 @@ Status: TODO
 
 Status: TODO
 
-**Depends on:** MA-170–MA-178, MA-179A, MA-179B, MA-180
+**Depends on:** MA-170–MA-180
 **Commit:** `test(move-automation): certify repaired registered scripts`
 
 **Implement:** Add/finish semantic manifest scenarios for each repaired script, assert empty blockers/manual steps, and run them through interpreter, planner, accepted command, duplicate replay, and relevant reconnect paths.
