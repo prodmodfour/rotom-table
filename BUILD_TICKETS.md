@@ -9,7 +9,7 @@ Ticket statuses:
 
 The build loop must select the lowest-numbered TODO ticket. Each ticket below maps to one ticket from the supplied planning file; build ticket numbers follow that document's suggested order when present.
 
-Autonomous cycle rules for every ticket: implement only the selected ticket, run `scripts/quality-gate.sh`, update only the selected ticket status, commit with a conventional commit message, and leave the working tree clean. The final ticket (`MA-299`) may also set `AUTOMATION_STATUS: DONE` after all 295 refreshed tickets are complete.
+Autonomous cycle rules for every ticket: implement only the selected ticket, run `scripts/quality-gate.sh`, update only the selected ticket status, commit with a conventional commit message, and leave the working tree clean. The final ticket (`MA-299`) may also set `AUTOMATION_STATUS: DONE` after all 296 refreshed tickets are complete.
 
 ---
 
@@ -50,7 +50,7 @@ When a ticket introduces a new pure module, prefer this layout:
 
 The existing `src/utils/move-automation/` registry remains the v1 compatibility surface until the retirement tickets at the end.
 
-Queue size at this baseline: **295 commits**—189 engine/state/QA tickets, 33 conformance batches for the registered 258, and 73 implementation batches for the missing 518.
+Queue size at this baseline: **296 commits**—190 engine/state/QA tickets, 33 conformance batches for the registered 258, and 73 implementation batches for the missing 518.
 
 ## Decisions already locked
 
@@ -2439,25 +2439,45 @@ Status: DONE
 
 **Done:** For one authoritative snapshot, Knock Off deterministically returns a traced no-item outcome, one bounded pending choice, or one typed item plan with its damage interaction; no client-authored item reference can enter the result and no resource is mutated.
 
-## MA-176B — Integrate and certify Knock Off inventory mutation
+## MA-176B — Integrate Knock Off's durable item continuation
 
 Status: TODO
 
 **Depends on:** MA-176A
-**Commit:** `feat(move-automation): fully resolve knock off`
+**Commit:** `feat(move-automation): integrate knock off item continuation`
 
-**Touch:** the reviewed Knock Off runtime and registry entry, pending-response/resume orchestration, atomic move/item persistence, semantic scenarios, manifest evidence, and authority documentation.
+**Touch:** the reviewed Knock Off runtime seam, pending-response/resume orchestration, private response views, and focused interpreter/domain/resume tests.
 
 **Implement:**
 
-- Invoke the MA-176A outcome only after a qualifying authoritative Knock Off result. Persist any required item choice as an authorized reconnect-safe window, accept only stable option IDs, and revalidate the selected server-owned candidate and complete read set on resume.
-- Apply the canonical damage interaction, usage, remove/suppress operation, and ground item or other canonical destination in one durable saga. Commit all map, sheet, and inventory changes atomically; no ordinary item mutation may commit while a response is pending.
-- Preserve response privacy and make declaration and response delivery idempotent. A stale revision, forged/unauthorized option, unavailable item, repository failure, or concurrent inventory change must roll back every move/item mutation; duplicate delivery must not reroll, spend, remove, or create an item twice.
-- Add semantic evidence for every item and combat branch, remove the manual inventory instruction, select the reviewed runtime, and update Knock Off's manifest runtime/hash/scenarios/status only after all paths pass.
+- Invoke the MA-176A outcome only after a qualifying authoritative Knock Off hit/damage result. Itemless, miss, immunity, and other non-qualifying branches must finish without opening an item window or producing an item write.
+- For multiple legal candidates, materialize the MA-176A choice as one actor-owned, privacy-safe, reconnect-safe pending window. Persist only stable server-authored option IDs and the authoritative candidate/read-set data needed for continuation; no ordinary damage, usage, or item mutation may commit while the response is pending.
+- On resume, accept only a stable option ID, authorize the responder, and revalidate the selected server-owned candidate plus the complete read set. A forged, unauthorized, stale, or unavailable selection must produce no operation.
+- Resume zero-, one-, and multiple-candidate branches to one deterministic typed terminal move/item plan carrying the canonical damage interaction, usage, remove/suppress operation, and ground-item or other canonical destination. Preserve declaration and response idempotency without selecting the production runtime or promoting the manifest row.
 
-**Tests:** Run itemless, single-candidate, multi-candidate, hit, miss, critical hit, immunity, remove/suppress, canonical destination, reconnect, stale/forged response, atomic failure, concurrent mutation, duplicate declaration, and duplicate response scenarios through the interpreter/planner and accepted-command boundaries.
+**Tests:** Cover itemless, single-candidate, multi-candidate, hit, miss, critical hit, immunity, reconnect/listing, private response views, stale/forged/unauthorized responses, unavailable items, duplicate declaration, and duplicate response through the interpreter, pending, and resume boundaries.
 
-**Done:** Knock Off's damage and inventory effects resolve exactly once with no manual inventory step; all affected resources commit atomically, reconnect preserves any required choice, and concurrency or duplicate delivery cannot lose or duplicate the item.
+**Done:** Knock Off can suspend and reconnect around one authorized server-owned item choice, then resume exactly once to a revalidated typed terminal plan; invalid or duplicate responses cannot reopen the window, reroll, spend, mutate resources, or select a client-authored item.
+
+## MA-176C — Commit and certify Knock Off inventory mutation
+
+Status: TODO
+
+**Depends on:** MA-176B
+**Commit:** `feat(move-automation): fully resolve knock off`
+
+**Touch:** atomic move/item persistence, the reviewed Knock Off registry entry, accepted-command integration, semantic scenarios, manifest evidence, and authority documentation.
+
+**Implement:**
+
+- Consume the immediate or resumed MA-176B terminal plan and apply the canonical damage interaction, usage, remove/suppress operation, and ground item or other canonical destination as one durable saga. Commit all map, sheet, and inventory changes atomically.
+- Revalidate the map, complete sheet/item read set, selected item availability, and every affected resource revision inside the commit transaction. A stale revision, repository failure, or concurrent inventory change must roll back every move effect, item mutation, operation result, and realtime record.
+- Publish and store the accepted terminal result only from the durable outcome. Exact duplicate declarations and responses must return the stored pending or terminal result without rerolling, spending, removing, suppressing, or creating an item twice.
+- Add semantic evidence for every combat and item branch, remove the manual inventory instruction, select the reviewed runtime, document the server-owned choice and atomic persistence boundary, and update Knock Off's manifest runtime/hash/scenarios/status only after all paths pass.
+
+**Tests:** Run itemless, single-candidate, multi-candidate, hit, miss, critical hit, immunity, remove/suppress, canonical destination, reconnect, stale/forged response, atomic repository failure, concurrent mutation, duplicate declaration, and duplicate response scenarios through the planner and accepted-command boundaries, retaining the MA-176B interpreter/resume coverage.
+
+**Done:** Knock Off's damage and inventory effects resolve exactly once with no manual inventory step; all affected resources commit atomically, reconnect preserves any required choice, and failure, concurrency, or duplicate delivery cannot lose or duplicate the item.
 
 ## MA-177 — Finish Fury Cutter chaining
 
