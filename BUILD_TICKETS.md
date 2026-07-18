@@ -2514,7 +2514,7 @@ Status: DONE
 
 ## MA-180 — Finish registered ally-area moves
 
-Status: TODO
+Status: DONE
 
 **Depends on:** MA-055, MA-073B
 **Commit:** `feat(move-automation): complete ally area scripts`

@@ -313,24 +313,12 @@
     {
       "canonicalId": "Aromatic Mist",
       "displayName": "Aromatic Mist",
-      "baseStatus": "assisted",
+      "baseStatus": "complete",
       "interactionStatus": "unassessed",
       "runtimeKind": "legacy-v1",
-      "blockerCodes": [
-        "targeting.authoritative"
-      ],
-      "limitations": [
-        {
-          "code": "ally-area.side-required",
-          "summary": "Ally-only target effects are filtered by explicit encounter sides. Unaffiliated users or recipients cannot be classified and are skipped with an assisted diagnostic."
-        }
-      ],
-      "manualSteps": [
-        {
-          "code": "ally-area.side-setup",
-          "summary": "Assign the user and intended allied recipients to the same encounter side in Prepare Map before resolving when their allegiance is unknown."
-        }
-      ]
+      "blockerCodes": [],
+      "limitations": [],
+      "manualSteps": []
     },
     {
       "canonicalId": "Assist",
@@ -1305,24 +1293,12 @@
     {
       "canonicalId": "Coaching",
       "displayName": "Coaching",
-      "baseStatus": "assisted",
+      "baseStatus": "complete",
       "interactionStatus": "unassessed",
       "runtimeKind": "legacy-v1",
-      "blockerCodes": [
-        "targeting.authoritative"
-      ],
-      "limitations": [
-        {
-          "code": "ally-area.side-required",
-          "summary": "Ally-only target effects are filtered by explicit encounter sides. Unaffiliated users or recipients cannot be classified and are skipped with an assisted diagnostic."
-        }
-      ],
-      "manualSteps": [
-        {
-          "code": "ally-area.side-setup",
-          "summary": "Assign the user and intended allied recipients to the same encounter side in Prepare Map before resolving when their allegiance is unknown."
-        }
-      ]
+      "blockerCodes": [],
+      "limitations": [],
+      "manualSteps": []
     },
     {
       "canonicalId": "Coil",
@@ -4005,24 +3981,12 @@
     {
       "canonicalId": "Howl",
       "displayName": "Howl",
-      "baseStatus": "assisted",
+      "baseStatus": "complete",
       "interactionStatus": "unassessed",
       "runtimeKind": "legacy-v1",
-      "blockerCodes": [
-        "targeting.authoritative"
-      ],
-      "limitations": [
-        {
-          "code": "ally-area.side-required",
-          "summary": "Ally-only target effects are filtered by explicit encounter sides. Unaffiliated users or recipients cannot be classified and are skipped with an assisted diagnostic."
-        }
-      ],
-      "manualSteps": [
-        {
-          "code": "ally-area.side-setup",
-          "summary": "Assign the user and intended allied recipients to the same encounter side in Prepare Map before resolving when their allegiance is unknown."
-        }
-      ]
+      "blockerCodes": [],
+      "limitations": [],
+      "manualSteps": []
     },
     {
       "canonicalId": "Hurricane",

@@ -10,6 +10,10 @@ import { createInProcessMapWriteQueue } from '~~/server/livePlay/mapWriteQueue'
 import { executeLivePlayResolveMoveCommandUseCase, type LivePlayResolveMoveCommandDependencies } from '~~/server/useCases/applyResolveMoveCommand'
 import { acceptedRealtimeTestHooks } from './livePlayAcceptedRealtimeTestUtils'
 import { redBlueEncounterStateFixture } from '../fixtures/moveAutomation/encounterSides'
+import {
+  ALLY_AREA_SCENARIOS_BY_MOVE,
+  type RegisteredAllyAreaMoveName,
+} from '../fixtures/moveAutomation/allyAreaLegacyV1'
 import { transformationEncounterEffectFixture } from '../fixtures/moveAutomation/encounterEffects'
 import { createEmptyEncounterState } from '#shared/moveAutomation/encounterState'
 import { parseEncounterEffect } from '#shared/moveAutomation/encounterEffects'
@@ -416,6 +420,14 @@ const playerProfile = (linkedSlug: string): PlayerProfile => ({
 
 const areaTemplate = { kind: 'burst' as const, size: 1, label: 'Burst 1' }
 const passTemplate = { kind: 'pass' as const, size: 4, label: 'Pass 4' }
+
+const ALLY_AREA_COMMAND_CASES = (Object.keys(ALLY_AREA_SCENARIOS_BY_MOVE) as RegisteredAllyAreaMoveName[])
+  .map((moveName) => ({
+    moveName,
+    mixedScenarioId: ALLY_AREA_SCENARIOS_BY_MOVE[moveName][0].scenarioId,
+    duplicateScenarioId: ALLY_AREA_SCENARIOS_BY_MOVE[moveName][1].scenarioId,
+    staleScenarioId: ALLY_AREA_SCENARIOS_BY_MOVE[moveName][2].scenarioId,
+  }))
 
 const areaScript = (name: string): MoveAutomationScript => ({
   kind: 'explicit',
@@ -1516,12 +1528,167 @@ describe('executeLivePlayResolveMoveCommandUseCase', () => {
       expect(payload.move.trace).toMatchObject({ truncated: false })
       expect(serialized).not.toContain('target-b')
       expect(serialized).not.toContain('target-excluded-not-ally')
-      expect(payload.move.transaction.logLines).toContainEqual(
-        'Assisted ally targeting: Howl checks explicit encounter sides; unknown allegiance is not eligible. Review side assignments in Prepare Map.',
+      expect(payload.move.transaction.logLines).toContain(
+        'Howl: ally-only area recipients are derived from explicit encounter sides; enemy and unaffiliated placements are ineligible.',
       )
+      expect(payload.move.transaction.logLines.join('\n')).not.toMatch(/assisted ally targeting|prepare map/i)
       expect(JSON.stringify(response)).not.toContain('target-excluded-not-ally')
     })
   })
+
+  it.each(ALLY_AREA_COMMAND_CASES)(
+    '$mixedScenarioId and $duplicateScenarioId apply only server-derived allies exactly once',
+    async ({ moveName, mixedScenarioId, duplicateScenarioId }) => {
+      const map = mapFixture({
+        placements: [
+          { ...placement('actor-token', 'actor', { x: 2, y: 0, z: 2 }), sideId: 'red' },
+          { ...placement('target-a', 'target-a', { x: 3, y: 0, z: 2 }), sideId: 'red' },
+          { ...placement('target-b', 'target-b', { x: 2, y: 0, z: 1 }), sideId: 'blue' },
+          placement('target-c', 'target-c', { x: 1, y: 0, z: 2 }),
+        ],
+        encounterState: redBlueEncounterStateFixture(),
+      })
+      const harness = seedHarness({
+        map,
+        actorMoves: [{ name: moveName }],
+        extraSheets: [pokemonSheet('target-c')],
+      })
+      const storedMap = harness.maps.getBySlug('arena')!
+      const moveIntent = intent({
+        placementId: 'actor-token',
+        moveName,
+        selection: {
+          kind: 'area',
+          areaTemplateId: moveAutomationAreaTemplateId(areaTemplate),
+        },
+      })
+      const command = commandFor(
+        storedMap,
+        moveIntent,
+        `op_${moveName.toLowerCase().replace(/[^a-z]+/g, '')}_allyarea`,
+        ['target-a', 'target-b', 'target-c'],
+      )
+      const response = await execute(harness, command, {
+        random: () => { throw new Error(`${moveName} must not draw RNG`) },
+      })
+      const acceptedResult = accepted(response.result)
+      const payload = moveStatePatchPayload(acceptedResult)
+      const persistedStage = (slug: string, stage: 'atk' | 'def' | 'sdef'): number => {
+        const persisted = harness.sheets.getByRef('pokemon', slug)?.sheet as CharacterSheet | undefined
+        return persisted?.stats?.[stage]?.stage ?? 0
+      }
+      const expectedActorAttack = moveName === 'Howl' || moveName === 'Coaching' ? 1 : 0
+      const expectedActorDefense = moveName === 'Coaching' ? 1 : 0
+      const expectedAllySpecialDefense = moveName === 'Aromatic Mist' ? 1 : 0
+      const expectedAllyAttack = moveName === 'Howl' || moveName === 'Coaching' ? 1 : 0
+      const expectedAllyDefense = moveName === 'Coaching' ? 1 : 0
+
+      expect([mixedScenarioId, duplicateScenarioId]).toEqual([
+        ALLY_AREA_SCENARIOS_BY_MOVE[moveName][0].scenarioId,
+        ALLY_AREA_SCENARIOS_BY_MOVE[moveName][1].scenarioId,
+      ])
+      expect(payload.move.selectedTargetIds).toEqual(['target-a'])
+      expect(payload.move.area?.candidateTargetIds).toEqual(['target-a'])
+      expect(payload.move.transaction.attackedTargetIds).toEqual(['target-a'])
+      expect(payload.move.transaction.hitTargetIds).toEqual(['target-a'])
+      expect(JSON.stringify(payload.move)).not.toContain('target-b')
+      expect(JSON.stringify(payload.move)).not.toContain('target-c')
+      expect(payload.move.transaction.logLines).toContain(
+        `${moveName}: ally-only area recipients are derived from explicit encounter sides; enemy and unaffiliated placements are ineligible.`,
+      )
+      expect(payload.move.transaction.logLines.join('\n')).not.toMatch(/assisted|prepare map|manual/i)
+      expect(persistedStage('actor', 'atk')).toBe(expectedActorAttack)
+      expect(persistedStage('actor', 'def')).toBe(expectedActorDefense)
+      expect(persistedStage('target-a', 'atk')).toBe(expectedAllyAttack)
+      expect(persistedStage('target-a', 'def')).toBe(expectedAllyDefense)
+      expect(persistedStage('target-a', 'sdef')).toBe(expectedAllySpecialDefense)
+      for (const excludedSlug of ['target-b', 'target-c']) {
+        expect(persistedStage(excludedSlug, 'atk')).toBe(0)
+        expect(persistedStage(excludedSlug, 'def')).toBe(0)
+        expect(persistedStage(excludedSlug, 'sdef')).toBe(0)
+      }
+
+      const committedMap = deepCloneJson(harness.maps.getBySlug('arena'))
+      const committedSheets = deepCloneJson(harness.sheets.list())
+      const committedEvents = deepCloneJson(harness.events)
+      const duplicate = await execute(harness, command, {
+        random: () => { throw new Error(`duplicate ${moveName} must not draw RNG`) },
+        planner: () => { throw new Error(`duplicate ${moveName} must not replan`) },
+      })
+
+      expect(duplicate.result).toEqual(acceptedResult)
+      expect(duplicate.move).toEqual(response.move)
+      expect(harness.maps.getBySlug('arena')).toEqual(committedMap)
+      expect(harness.sheets.list()).toEqual(committedSheets)
+      expect(harness.events).toEqual(committedEvents)
+    },
+  )
+
+  it.each(ALLY_AREA_COMMAND_CASES)(
+    '$staleScenarioId rejects a stale rule-excluded candidate without partial effects',
+    async ({ moveName, staleScenarioId }) => {
+      const map = mapFixture({
+        placements: [
+          { ...placement('actor-token', 'actor', { x: 2, y: 0, z: 2 }), sideId: 'red' },
+          { ...placement('target-a', 'target-a', { x: 3, y: 0, z: 2 }), sideId: 'red' },
+          { ...placement('target-b', 'target-b', { x: 2, y: 0, z: 1 }), sideId: 'blue' },
+          placement('target-c', 'target-c', { x: 1, y: 0, z: 2 }),
+        ],
+        encounterState: redBlueEncounterStateFixture(),
+      })
+      const harness = seedHarness({
+        map,
+        actorMoves: [{ name: moveName }],
+        extraSheets: [pokemonSheet('target-c')],
+      })
+      const storedMap = harness.maps.getBySlug('arena')!
+      const moveIntent = intent({
+        placementId: 'actor-token',
+        moveName,
+        selection: {
+          kind: 'area',
+          areaTemplateId: moveAutomationAreaTemplateId(areaTemplate),
+        },
+      })
+      const opId = `op_${moveName.toLowerCase().replace(/[^a-z]+/g, '')}_stalearea`
+      const race = raceConsultedSheetAfterPlanning(harness, 'target-b', (plan) => {
+        expect(staleScenarioId).toBe(ALLY_AREA_SCENARIOS_BY_MOVE[moveName][2].scenarioId)
+        expect(plan.resolution.selectedTargetIds).toEqual(['target-a'])
+        expect(plan.resolution.area?.targetEvaluations).toContainEqual(expect.objectContaining({
+          targetPlacementId: 'target-b',
+          outcome: 'excluded',
+          reasonCode: 'target-excluded-not-ally',
+        }))
+        expect(plan.sheetReads).toEqual(expect.arrayContaining([
+          expect.objectContaining({ kind: 'pokemon', slug: 'target-b' }),
+          expect.objectContaining({ kind: 'pokemon', slug: 'target-c' }),
+        ]))
+      })
+      const response = await execute(
+        harness,
+        commandFor(
+          storedMap,
+          moveIntent,
+          opId,
+          ['target-a', 'target-b', 'target-c'],
+        ),
+        {
+          planner: race.planner,
+          random: () => { throw new Error(`${moveName} must not draw RNG`) },
+        },
+      )
+
+      expect(response.result).toMatchObject({
+        ok: false,
+        reason: 'conflict',
+        message: expect.stringContaining('consulted while resolving the move changed'),
+      })
+      expect(harness.maps.getBySlug('arena')).toEqual(storedMap)
+      expect(harness.sheets.list()).toEqual(race.sheetsAfterRace())
+      expect(harness.ops.getOpResult('arena', opId)).toBeNull()
+      expect(harness.events).toEqual([])
+    },
+  )
 
   it('retains legal Friendly exclusions for the authorized command requester', async () => {
     await withRegisteredScript({

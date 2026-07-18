@@ -1,4 +1,6 @@
 import { describe, expect, it } from 'vitest'
+import manifestJson from '../../data/move-automation/manifest.json'
+import { moves } from '../../data/ptuReference'
 import { LIVE_PLAY_MOVE_RESOLUTION_SCHEMA_VERSION, type ResolveMoveIntent } from '#shared/livePlayMoveResolution'
 import {
   AuthoritativeMoveResolutionError,
@@ -7,6 +9,10 @@ import {
 import { EXPLICIT_MOVE_AUTOMATION_SCRIPTS } from '~/utils/moveAutomation'
 import { moveAutomationAreaTemplateId } from '~/utils/moveAutomationAreaTemplates'
 import { redBlueEncounterStateFixture } from '../fixtures/moveAutomation/encounterSides'
+import {
+  ALLY_AREA_SCENARIOS_BY_MOVE,
+  type RegisteredAllyAreaMoveName,
+} from '../fixtures/moveAutomation/allyAreaLegacyV1'
 import {
   REGISTERED_MOVE_HANDLER_REGISTRY,
 } from '~~/server/domain/moveAutomation/handlers/registry'
@@ -291,6 +297,53 @@ const nativeAreaCases = [
 ] as const
 
 describe('resolveAuthoritativeMove area selections', () => {
+  it('links every audited registered ally-area script to complete reviewed evidence', () => {
+    const reviewedMoveNames = Object.keys(ALLY_AREA_SCENARIOS_BY_MOVE)
+      .sort() as RegisteredAllyAreaMoveName[]
+    const auditedMoveNames = moves
+      .filter((move) => {
+        const script = EXPLICIT_MOVE_AUTOMATION_SCRIPTS.get(move.name)
+        return Boolean(
+          script?.areaTemplates?.length
+          && /\ball(?:y|ies|ied)\b/i.test(move.effect ?? ''),
+        )
+      })
+      .map(move => move.name)
+      .sort()
+    const declaredMoveNames = [...EXPLICIT_MOVE_AUTOMATION_SCRIPTS.values()]
+      .filter(script => script.areaTargetRelationship === 'ally')
+      .map(script => script.moveName)
+      .sort()
+
+    expect(auditedMoveNames).toEqual(reviewedMoveNames)
+    expect(declaredMoveNames).toEqual(reviewedMoveNames)
+
+    for (const moveName of reviewedMoveNames) {
+      const script = EXPLICIT_MOVE_AUTOMATION_SCRIPTS.get(moveName)
+      const manifestRow = manifestJson.moves.find(row => row.canonicalId === moveName)
+      const scenarios = ALLY_AREA_SCENARIOS_BY_MOVE[moveName]
+
+      expect(script, moveName).toMatchObject({
+        version: 3,
+        areaTargetRelationship: 'ally',
+      })
+      expect(script?.automationNotes.join(' '), moveName)
+        .not.toMatch(/assisted|assign .* side|filter .*all(?:y|ies)|manual/i)
+      expect(manifestRow, moveName).toMatchObject({
+        baseStatus: 'complete',
+        runtime: { kind: 'legacy-v1', version: 3 },
+        capabilityTags: ['stages.typed', 'targeting.authoritative'],
+        blockerCodes: [],
+        limitations: [],
+        manualSteps: [],
+      })
+      expect(manifestRow?.scenarioIds).toEqual(
+        scenarios.map(({ scenarioId }) => scenarioId),
+      )
+      expect(manifestRow?.conformanceEvidence.scenarios).toEqual(scenarios)
+    }
+  })
+
   it('resolves Burst and Cardinally Adjacent cells and deterministic authoritative targets', async () => {
     await withRegisteredMoveAutomationScript(areaScript('Disarming Voice', [burstTemplate]), () => {
       const resolution = resolveAuthoritativeMove({
@@ -783,7 +836,7 @@ describe('resolveAuthoritativeMove area selections', () => {
     })
 
     expect(resolution.script).toMatchObject({
-      version: 2,
+      version: 3,
       areaTargetRelationship: 'ally',
     })
     expect(resolution.area?.candidateTargetIds).toEqual(['target-a', 'target-b', 'target-c'])
@@ -813,9 +866,10 @@ describe('resolveAuthoritativeMove area selections', () => {
     expect(resolution.transaction.combatStageUpdates).toEqual(expectedUpdates)
     expect(resolution.transaction.combatStageUpdates.map(update => update.id)).not.toContain('target-b')
     expect(resolution.transaction.combatStageUpdates.map(update => update.id)).not.toContain('target-c')
-    expect(resolution.transaction.logLines).toContainEqual(
-      `Assisted ally targeting: ${moveName} checks explicit encounter sides; unknown allegiance is not eligible. Review side assignments in Prepare Map.`,
+    expect(resolution.transaction.logLines).toContain(
+      `${moveName}: ally-only area recipients are derived from explicit encounter sides; enemy and unaffiliated placements are ineligible.`,
     )
+    expect(resolution.transaction.logLines.join('\n')).not.toMatch(/assisted ally targeting|prepare map/i)
     expect(resolution.transaction.logLines.join('\n')).not.toContain('target-b')
     expect(resolution.transaction.logLines.join('\n')).not.toContain('target-c')
     expect(resolution.transaction.logLines.join('\n')).not.toContain('relationship-enemy')

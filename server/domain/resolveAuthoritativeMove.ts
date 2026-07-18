@@ -695,7 +695,7 @@ const areaTargetPolicyLogLines = (
   script: MoveAutomationScript,
 ): string[] => script.areaTargetRelationship === 'ally'
   ? [
-      `Assisted ally targeting: ${script.moveName} checks explicit encounter sides; unknown allegiance is not eligible. Review side assignments in Prepare Map.`,
+      `${script.moveName}: ally-only area recipients are derived from explicit encounter sides; enemy and unaffiliated placements are ineligible.`,
     ]
   : []
 
@@ -1560,9 +1560,9 @@ const resolveAreaMove = (options: {
     ),
     randomRoller: options.context.random,
   })
-  const targetExclusionLogLines = areaTargetPolicyLogLines(confirmedScript)
-  const targetFilteredTransaction = targetExclusionLogLines.length
-    ? moveAutomationTransactionWithAppendedLogLines(baseTransaction, targetExclusionLogLines)
+  const targetPolicyLogLines = areaTargetPolicyLogLines(confirmedScript)
+  const targetFilteredTransaction = targetPolicyLogLines.length
+    ? moveAutomationTransactionWithAppendedLogLines(baseTransaction, targetPolicyLogLines)
     : baseTransaction
   const transaction = placement.movement?.kind === 'pass'
     ? moveAutomationTransactionWithAppendedLogLines(

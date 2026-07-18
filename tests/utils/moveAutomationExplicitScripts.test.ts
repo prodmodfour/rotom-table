@@ -679,7 +679,7 @@ describe('explicit move automation scripts', () => {
     expect(aromaticMist).toMatchObject({
       kind: 'explicit',
       moveName: 'Aromatic Mist',
-      version: 2,
+      version: 3,
       targetMode: 'multi-target',
       targetCount: null,
       damaging: false,
@@ -700,17 +700,14 @@ describe('explicit move automation scripts', () => {
     expect(aromaticMist?.hpSuggestions).toEqual([])
     expect(aromaticMist?.fieldSuggestions).toEqual([])
     expect(aromaticMist?.hazardSuggestions).toEqual([])
-    expect(aromaticMist?.automationNotes).toEqual([
-      'Ally-only Burst recipients are filtered from explicit encounter sides; enemies and unaffiliated tokens never receive the target effect.',
-      'Assign the user and intended allies to the same side in Prepare Map before resolving; unknown allegiance is skipped and logged as an assisted omission.',
-    ])
+    expect(aromaticMist?.automationNotes).toEqual([])
     expect(isSeamlessAreaConfirmationScript(aromaticMist)).toBe(true)
 
     const coaching = explicitScriptForMove('Coaching')
     expect(coaching).toMatchObject({
       kind: 'explicit',
       moveName: 'Coaching',
-      version: 2,
+      version: 3,
       targetMode: 'multi-target',
       targetCount: null,
       damaging: false,
@@ -736,8 +733,6 @@ describe('explicit move automation scripts', () => {
     expect(coaching?.hazardSuggestions).toEqual([])
     expect(coaching?.automationNotes).toEqual([
       'Burst 1 is shown as an area overlay; the user also receives the Attack and Defense boosts even though the user token is not a selectable target.',
-      'Ally-only Burst recipients are filtered from explicit encounter sides; enemies and unaffiliated tokens never receive the target effect.',
-      'Assign the user and intended allies to the same side in Prepare Map before resolving; unknown allegiance is skipped and logged as an assisted omission.',
     ])
     expect(isSeamlessAreaConfirmationScript(coaching)).toBe(true)
 
@@ -928,7 +923,7 @@ describe('explicit move automation scripts', () => {
     const howl = explicitScriptForMove('Howl')
     expect(howl).toMatchObject({
       moveName: 'Howl',
-      version: 2,
+      version: 3,
       targetMode: 'multi-target',
       requiresAccuracy: false,
       damaging: false,

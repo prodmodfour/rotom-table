@@ -111,63 +111,36 @@ describe('legacy move automation audit metadata', () => {
     })
   })
 
-  it('records precise debt for known partials while retaining the generic audit remainder', () => {
-    const expectedKnownDebt = new Map<string, {
-      blockerCodes: readonly string[]
-      limitationCodes: readonly string[]
-      manualStepCodes: readonly string[]
-      summaryTerms: readonly string[]
-    }>([
-      ['Aromatic Mist', {
-        blockerCodes: ['targeting.authoritative'],
-        limitationCodes: ['ally-area.side-required'],
-        manualStepCodes: ['ally-area.side-setup'],
-        summaryTerms: ['explicit encounter sides', 'Prepare Map'],
-      }],
-      ['Coaching', {
-        blockerCodes: ['targeting.authoritative'],
-        limitationCodes: ['ally-area.side-required'],
-        manualStepCodes: ['ally-area.side-setup'],
-        summaryTerms: ['explicit encounter sides', 'Prepare Map'],
-      }],
-      ['Howl', {
-        blockerCodes: ['targeting.authoritative'],
-        limitationCodes: ['ally-area.side-required'],
-        manualStepCodes: ['ally-area.side-setup'],
-        summaryTerms: ['explicit encounter sides', 'Prepare Map'],
-      }],
+  it('keeps completed ally-area scripts free of manual debt while retaining the generic audit remainder', () => {
+    const completedAllyAreaIds = new Set([
+      'Aromatic Mist',
+      'Coaching',
+      'Howl',
     ])
     const manifestById = new Map(manifestJson.moves.map(row => [row.canonicalId, row]))
     const auditById = new Map(
       buildLegacyMoveAutomationAudit().entries.map(entry => [entry.canonicalId, entry]),
     )
 
-    for (const [canonicalId, expected] of expectedKnownDebt) {
+    for (const canonicalId of completedAllyAreaIds) {
       const row = manifestById.get(canonicalId)
-      expect(row, canonicalId).toBeDefined()
-      expect(auditById.get(canonicalId)?.automationNotes.length, canonicalId).toBeGreaterThan(0)
-      expect(row).toMatchObject({
-        baseStatus: 'assisted',
-        runtime: { kind: 'legacy-v1' },
-        blockerCodes: expected.blockerCodes,
+      const audit = auditById.get(canonicalId)
+      expect(row, canonicalId).toMatchObject({
+        baseStatus: 'complete',
+        runtime: { kind: 'legacy-v1', version: 3 },
+        capabilityTags: ['stages.typed', 'targeting.authoritative'],
+        blockerCodes: [],
+        limitations: [],
+        manualSteps: [],
         reviewedAt: expect.stringMatching(/^\d{4}-\d{2}-\d{2}$/),
       })
-      expect(row?.limitations.map(({ code }) => code)).toEqual(expected.limitationCodes)
-      expect(row?.manualSteps.map(({ code }) => code)).toEqual(expected.manualStepCodes)
-
-      const debtSummary = [...(row?.limitations ?? []), ...(row?.manualSteps ?? [])]
-        .map(({ summary }) => summary)
-        .join(' ')
-      expect(debtSummary).not.toContain('Semantic conformance review is required')
-      for (const term of expected.summaryTerms) expect(debtSummary, canonicalId).toContain(term)
+      expect(audit, canonicalId).toBeDefined()
+      expect(audit?.automationNotes.join(' '), canonicalId)
+        .not.toMatch(/assisted|assign .* side|filter .*all(?:y|ies)|manual/i)
     }
 
     for (const row of manifestJson.moves) {
-      if (
-        row.runtime.kind !== 'legacy-v1'
-        || row.baseStatus !== 'assisted'
-        || expectedKnownDebt.has(row.canonicalId)
-      ) continue
+      if (row.runtime.kind !== 'legacy-v1' || row.baseStatus !== 'assisted') continue
 
       expect(row.blockerCodes, row.canonicalId).toEqual([])
       expect(row.limitations, row.canonicalId).toEqual([{

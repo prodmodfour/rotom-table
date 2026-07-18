@@ -880,12 +880,12 @@
     {
       "canonicalId": "Aromatic Mist",
       "displayName": "Aromatic Mist",
-      "baseStatus": "assisted",
+      "baseStatus": "complete",
       "interactionStatus": "unassessed",
       "runtime": {
         "kind": "legacy-v1",
-        "version": 2,
-        "definitionHash": "e6ce888776934a842e3ced6bb02972894949d66ec178438a7e6d31858ef53638",
+        "version": 3,
+        "definitionHash": "38f1c3256d81168a06dc191a6a9c68a6d37338aecb6afc7dc7619d24e545e7ef",
         "sourceModule": "src/utils/move-automation/scripts/area.ts"
       },
       "rulesProvenance": {
@@ -893,30 +893,50 @@
         "canonicalizationVersion": 1,
         "sourceDataSha256": "f90491826349afd7d1f2809fd9d74b7acc555f5163b99264205ee369249e9815"
       },
-      "capabilityTags": [],
-      "suggestedCapabilityTags": [],
-      "blockerCodes": [
+      "capabilityTags": [
+        "stages.typed",
         "targeting.authoritative"
       ],
-      "limitations": [
-        {
-          "code": "ally-area.side-required",
-          "summary": "Ally-only target effects are filtered by explicit encounter sides. Unaffiliated users or recipients cannot be classified and are skipped with an assisted diagnostic."
-        }
+      "suggestedCapabilityTags": [],
+      "blockerCodes": [],
+      "limitations": [],
+      "manualSteps": [],
+      "scenarioIds": [
+        "aromatic-mist.legacy-v1-mixed-sides",
+        "aromatic-mist.legacy-v1-duplicate-replay",
+        "aromatic-mist.legacy-v1-stale-excluded-candidate"
       ],
-      "manualSteps": [
-        {
-          "code": "ally-area.side-setup",
-          "summary": "Assign the user and intended allied recipients to the same encounter side in Prepare Map before resolving when their allegiance is unknown."
-        }
-      ],
-      "scenarioIds": [],
       "conformanceEvidence": {
-        "requirementTags": [],
-        "scenarios": [],
+        "requirementTags": [
+          "recovery.retry",
+          "resource.multi",
+          "target.ally",
+          "target.area"
+        ],
+        "scenarios": [
+          {
+            "scenarioId": "aromatic-mist.legacy-v1-mixed-sides",
+            "evidenceClasses": [
+              "ally",
+              "area-mixed-outcomes"
+            ]
+          },
+          {
+            "scenarioId": "aromatic-mist.legacy-v1-duplicate-replay",
+            "evidenceClasses": [
+              "retry"
+            ]
+          },
+          {
+            "scenarioId": "aromatic-mist.legacy-v1-stale-excluded-candidate",
+            "evidenceClasses": [
+              "multi-resource-conflict"
+            ]
+          }
+        ],
         "notApplicable": []
       },
-      "reviewedAt": "2026-07-10",
+      "reviewedAt": "2026-07-18",
       "unsupportedInteractionIds": [],
       "rolloutCohortId": null
     },
@@ -3699,12 +3719,12 @@
     {
       "canonicalId": "Coaching",
       "displayName": "Coaching",
-      "baseStatus": "assisted",
+      "baseStatus": "complete",
       "interactionStatus": "unassessed",
       "runtime": {
         "kind": "legacy-v1",
-        "version": 2,
-        "definitionHash": "ada2a128a6cf3635c4b4105bb501e3f4b961ed092e5689b171f520340d8eaec8",
+        "version": 3,
+        "definitionHash": "b2a1e1c6b8869b156a2f3a648e95e70a884c59192391515ff3bd2a7fc8cc218e",
         "sourceModule": "src/utils/move-automation/scripts/area.ts"
       },
       "rulesProvenance": {
@@ -3712,30 +3732,52 @@
         "canonicalizationVersion": 1,
         "sourceDataSha256": "f90491826349afd7d1f2809fd9d74b7acc555f5163b99264205ee369249e9815"
       },
-      "capabilityTags": [],
-      "suggestedCapabilityTags": [],
-      "blockerCodes": [
+      "capabilityTags": [
+        "stages.typed",
         "targeting.authoritative"
       ],
-      "limitations": [
-        {
-          "code": "ally-area.side-required",
-          "summary": "Ally-only target effects are filtered by explicit encounter sides. Unaffiliated users or recipients cannot be classified and are skipped with an assisted diagnostic."
-        }
+      "suggestedCapabilityTags": [],
+      "blockerCodes": [],
+      "limitations": [],
+      "manualSteps": [],
+      "scenarioIds": [
+        "coaching.legacy-v1-mixed-sides",
+        "coaching.legacy-v1-duplicate-replay",
+        "coaching.legacy-v1-stale-excluded-candidate"
       ],
-      "manualSteps": [
-        {
-          "code": "ally-area.side-setup",
-          "summary": "Assign the user and intended allied recipients to the same encounter side in Prepare Map before resolving when their allegiance is unknown."
-        }
-      ],
-      "scenarioIds": [],
       "conformanceEvidence": {
-        "requirementTags": [],
-        "scenarios": [],
+        "requirementTags": [
+          "recovery.retry",
+          "resource.multi",
+          "target.ally",
+          "target.area",
+          "target.self"
+        ],
+        "scenarios": [
+          {
+            "scenarioId": "coaching.legacy-v1-mixed-sides",
+            "evidenceClasses": [
+              "ally",
+              "area-mixed-outcomes",
+              "self"
+            ]
+          },
+          {
+            "scenarioId": "coaching.legacy-v1-duplicate-replay",
+            "evidenceClasses": [
+              "retry"
+            ]
+          },
+          {
+            "scenarioId": "coaching.legacy-v1-stale-excluded-candidate",
+            "evidenceClasses": [
+              "multi-resource-conflict"
+            ]
+          }
+        ],
         "notApplicable": []
       },
-      "reviewedAt": "2026-07-10",
+      "reviewedAt": "2026-07-18",
       "unsupportedInteractionIds": [],
       "rolloutCohortId": null
     },
@@ -11554,12 +11596,12 @@
     {
       "canonicalId": "Howl",
       "displayName": "Howl",
-      "baseStatus": "assisted",
+      "baseStatus": "complete",
       "interactionStatus": "unassessed",
       "runtime": {
         "kind": "legacy-v1",
-        "version": 2,
-        "definitionHash": "b627d6d073cba78148dc2e84472d295773becdf370534f0c3eac7118085448a3",
+        "version": 3,
+        "definitionHash": "63136c9daf8f0e738692e4d577891d34b29fd5cf620d1608312cca9288c97a88",
         "sourceModule": "src/utils/move-automation/scripts/area.ts"
       },
       "rulesProvenance": {
@@ -11567,30 +11609,52 @@
         "canonicalizationVersion": 1,
         "sourceDataSha256": "f90491826349afd7d1f2809fd9d74b7acc555f5163b99264205ee369249e9815"
       },
-      "capabilityTags": [],
-      "suggestedCapabilityTags": [],
-      "blockerCodes": [
+      "capabilityTags": [
+        "stages.typed",
         "targeting.authoritative"
       ],
-      "limitations": [
-        {
-          "code": "ally-area.side-required",
-          "summary": "Ally-only target effects are filtered by explicit encounter sides. Unaffiliated users or recipients cannot be classified and are skipped with an assisted diagnostic."
-        }
+      "suggestedCapabilityTags": [],
+      "blockerCodes": [],
+      "limitations": [],
+      "manualSteps": [],
+      "scenarioIds": [
+        "howl.legacy-v1-mixed-sides",
+        "howl.legacy-v1-duplicate-replay",
+        "howl.legacy-v1-stale-excluded-candidate"
       ],
-      "manualSteps": [
-        {
-          "code": "ally-area.side-setup",
-          "summary": "Assign the user and intended allied recipients to the same encounter side in Prepare Map before resolving when their allegiance is unknown."
-        }
-      ],
-      "scenarioIds": [],
       "conformanceEvidence": {
-        "requirementTags": [],
-        "scenarios": [],
+        "requirementTags": [
+          "recovery.retry",
+          "resource.multi",
+          "target.ally",
+          "target.area",
+          "target.self"
+        ],
+        "scenarios": [
+          {
+            "scenarioId": "howl.legacy-v1-mixed-sides",
+            "evidenceClasses": [
+              "ally",
+              "area-mixed-outcomes",
+              "self"
+            ]
+          },
+          {
+            "scenarioId": "howl.legacy-v1-duplicate-replay",
+            "evidenceClasses": [
+              "retry"
+            ]
+          },
+          {
+            "scenarioId": "howl.legacy-v1-stale-excluded-candidate",
+            "evidenceClasses": [
+              "multi-resource-conflict"
+            ]
+          }
+        ],
         "notApplicable": []
       },
-      "reviewedAt": "2026-07-10",
+      "reviewedAt": "2026-07-18",
       "unsupportedInteractionIds": [],
       "rolloutCohortId": null
     },
