@@ -1426,6 +1426,7 @@ describe('pending move resolution creation', () => {
       oncePerTurnFlags: [
         { id: 'cost.exhaust.command' },
         { id: 'cost.exhaust.next-turn' },
+        { id: 'encounter.acted-since-entry' },
       ],
     })
     const committedMap = deepCloneJson(harness.maps.getBySlug('pending-arena'))
@@ -1746,7 +1747,7 @@ describe('pending move resolution creation', () => {
         standard: { spent: 1 },
         swift: { spent: 1 },
       },
-      oncePerTurnFlags: [],
+      oncePerTurnFlags: [{ id: 'encounter.acted-since-entry' }],
     })
     const storedAfterFirst = harness.pending.getById(resolutionId)
     expect(storedAfterFirst).toMatchObject({
@@ -1797,6 +1798,7 @@ describe('pending move resolution creation', () => {
       oncePerTurnFlags: [
         { id: 'cost.exhaust.command' },
         { id: 'cost.exhaust.next-turn' },
+        { id: 'encounter.acted-since-entry' },
       ],
     })
     expect(harness.pending.getById(resolutionId)).toMatchObject({

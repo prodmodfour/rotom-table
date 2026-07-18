@@ -993,43 +993,131 @@
     {
       "canonicalId": "Astonish",
       "displayName": "Astonish",
-      "baseStatus": "assisted",
+      "baseStatus": "complete",
       "interactionStatus": "unassessed",
       "runtime": {
-        "kind": "legacy-v1",
-        "version": 1,
-        "definitionHash": "1ba178fb44d5799f34b89bfd280cd017ae356a86e2ecb53fbe3d034d2ae5bfcd",
-        "sourceModule": "src/utils/move-automation/scripts/singleTargetConditions.ts"
+        "kind": "movespec-v2",
+        "version": 2,
+        "definitionHash": "549776f9a5efaa06a28deef9b41bfc95813d2c44a1cd4de537d3f0c1fb33c793",
+        "sourceModule": "server/domain/moveAutomation/specs/astonish.ts"
       },
       "rulesProvenance": {
         "rulesetId": "rotom-table-reference-moves-v1",
         "canonicalizationVersion": 1,
         "sourceDataSha256": "f90491826349afd7d1f2809fd9d74b7acc555f5163b99264205ee369249e9815"
       },
-      "capabilityTags": [],
+      "capabilityTags": [
+        "conditions.typed",
+        "history.structured",
+        "lifecycle.effects",
+        "reactions.durable",
+        "targeting.authoritative"
+      ],
       "suggestedCapabilityTags": [],
-      "blockerCodes": [
-        "history.structured"
+      "blockerCodes": [],
+      "limitations": [],
+      "manualSteps": [],
+      "scenarioIds": [
+        "astonish.v2-aware-answer",
+        "astonish.v2-critical-hit",
+        "astonish.v2-immunity",
+        "astonish.v2-miss",
+        "astonish.v2-once-per-scene",
+        "astonish.v2-reconnect-retry",
+        "astonish.v2-scene-reset",
+        "astonish.v2-stale-response",
+        "astonish.v2-threshold-pass",
+        "astonish.v2-unaware-automatic-flinch"
       ],
-      "limitations": [
-        {
-          "code": "astonish.timing",
-          "summary": "The legacy script handles the 15+ Flinch threshold but does not track the once-per-scene automatic Flinch branch or whether the target was unaware."
-        }
-      ],
-      "manualSteps": [
-        {
-          "code": "astonish.unaware-flinch",
-          "summary": "Track the once-per-scene unaware-target branch and apply Flinch after a hit when that branch is eligible even if the natural roll was below 15."
-        }
-      ],
-      "scenarioIds": [],
       "conformanceEvidence": {
-        "requirementTags": [],
-        "scenarios": [],
-        "notApplicable": []
+        "requirementTags": [
+          "branch.accuracy",
+          "branch.alternate",
+          "branch.critical-hit",
+          "branch.immunity",
+          "branch.threshold",
+          "interaction.choice",
+          "mechanic.damage",
+          "mechanic.lifecycle",
+          "recovery.reconnect",
+          "recovery.retry",
+          "resource.multi"
+        ],
+        "scenarios": [
+          {
+            "scenarioId": "astonish.v2-aware-answer",
+            "evidenceClasses": [
+              "choice",
+              "threshold-fail"
+            ]
+          },
+          {
+            "scenarioId": "astonish.v2-critical-hit",
+            "evidenceClasses": [
+              "crit"
+            ]
+          },
+          {
+            "scenarioId": "astonish.v2-immunity",
+            "evidenceClasses": [
+              "immunity"
+            ]
+          },
+          {
+            "scenarioId": "astonish.v2-miss",
+            "evidenceClasses": [
+              "miss"
+            ]
+          },
+          {
+            "scenarioId": "astonish.v2-once-per-scene",
+            "evidenceClasses": [
+              "alternate-branch",
+              "lifecycle-trigger"
+            ]
+          },
+          {
+            "scenarioId": "astonish.v2-reconnect-retry",
+            "evidenceClasses": [
+              "reconnect",
+              "retry"
+            ]
+          },
+          {
+            "scenarioId": "astonish.v2-scene-reset",
+            "evidenceClasses": [
+              "lifecycle-cleanup"
+            ]
+          },
+          {
+            "scenarioId": "astonish.v2-stale-response",
+            "evidenceClasses": [
+              "multi-resource-conflict"
+            ]
+          },
+          {
+            "scenarioId": "astonish.v2-threshold-pass",
+            "evidenceClasses": [
+              "hit",
+              "threshold-pass"
+            ]
+          },
+          {
+            "scenarioId": "astonish.v2-unaware-automatic-flinch",
+            "evidenceClasses": [
+              "alternate-branch",
+              "choice"
+            ]
+          }
+        ],
+        "notApplicable": [
+          {
+            "evidenceClass": "pass",
+            "reason": "Astonish requires the authorized target or GM to answer the factual aware/unaware prompt; the canonical branch has no decline outcome."
+          }
+        ]
       },
-      "reviewedAt": "2026-07-10",
+      "reviewedAt": "2026-07-18",
       "unsupportedInteractionIds": [],
       "rolloutCohortId": null
     },
@@ -7260,44 +7348,105 @@
     {
       "canonicalId": "Fake Out",
       "displayName": "Fake Out",
-      "baseStatus": "assisted",
+      "baseStatus": "complete",
       "interactionStatus": "unassessed",
       "runtime": {
-        "kind": "legacy-v1",
-        "version": 1,
-        "definitionHash": "3ecbef29d94a8cbcbb0ad2d42544585cbc8f94e9d33ed2e8fd6b1b69f34b59eb",
-        "sourceModule": "src/utils/move-automation/scripts/additionalSingleTarget.ts"
+        "kind": "movespec-v2",
+        "version": 2,
+        "definitionHash": "a7adcdf05768206616cae8810c13502db950cf41bdc9474fbe6f94ba81db0d66",
+        "sourceModule": "server/domain/moveAutomation/specs/fakeOut.ts"
       },
       "rulesProvenance": {
         "rulesetId": "rotom-table-reference-moves-v1",
         "canonicalizationVersion": 1,
         "sourceDataSha256": "f90491826349afd7d1f2809fd9d74b7acc555f5163b99264205ee369249e9815"
       },
-      "capabilityTags": [],
-      "suggestedCapabilityTags": [],
-      "blockerCodes": [
+      "capabilityTags": [
+        "conditions.typed",
+        "expressions.bounded",
         "history.structured",
-        "reactions.durable"
+        "reactions.durable",
+        "targeting.authoritative"
       ],
-      "limitations": [
-        {
-          "code": "fake-out.timing",
-          "summary": "The legacy script applies Flinch on every hit without validating that the user just joined the encounter or that the Priority branch is legal."
-        }
+      "suggestedCapabilityTags": [],
+      "blockerCodes": [],
+      "limitations": [],
+      "manualSteps": [],
+      "scenarioIds": [
+        "fake-out.v2-critical-hit",
+        "fake-out.v2-duplicate-retry",
+        "fake-out.v2-immunity",
+        "fake-out.v2-joining-hit",
+        "fake-out.v2-miss",
+        "fake-out.v2-not-joining-rejected",
+        "fake-out.v2-priority-rejected",
+        "fake-out.v2-switch-reset"
       ],
-      "manualSteps": [
-        {
-          "code": "fake-out.joining-flinch",
-          "summary": "Track join and switch history; use Priority and retain the applied Flinch only when Fake Out is used through its eligible joining-the-encounter branch."
-        }
-      ],
-      "scenarioIds": [],
       "conformanceEvidence": {
-        "requirementTags": [],
-        "scenarios": [],
+        "requirementTags": [
+          "branch.accuracy",
+          "branch.alternate",
+          "branch.critical-hit",
+          "branch.immunity",
+          "branch.threshold",
+          "mechanic.damage",
+          "recovery.retry"
+        ],
+        "scenarios": [
+          {
+            "scenarioId": "fake-out.v2-critical-hit",
+            "evidenceClasses": [
+              "crit"
+            ]
+          },
+          {
+            "scenarioId": "fake-out.v2-duplicate-retry",
+            "evidenceClasses": [
+              "retry"
+            ]
+          },
+          {
+            "scenarioId": "fake-out.v2-immunity",
+            "evidenceClasses": [
+              "immunity"
+            ]
+          },
+          {
+            "scenarioId": "fake-out.v2-joining-hit",
+            "evidenceClasses": [
+              "hit",
+              "threshold-pass"
+            ]
+          },
+          {
+            "scenarioId": "fake-out.v2-miss",
+            "evidenceClasses": [
+              "miss"
+            ]
+          },
+          {
+            "scenarioId": "fake-out.v2-not-joining-rejected",
+            "evidenceClasses": [
+              "threshold-fail"
+            ]
+          },
+          {
+            "scenarioId": "fake-out.v2-priority-rejected",
+            "evidenceClasses": [
+              "alternate-branch",
+              "threshold-fail"
+            ]
+          },
+          {
+            "scenarioId": "fake-out.v2-switch-reset",
+            "evidenceClasses": [
+              "alternate-branch"
+            ]
+          }
+        ],
         "notApplicable": []
       },
-      "reviewedAt": "2026-07-10",
+      "reviewedAt": "2026-07-18",
       "unsupportedInteractionIds": [],
       "rolloutCohortId": null
     },

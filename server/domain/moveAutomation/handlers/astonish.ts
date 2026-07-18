@@ -9,6 +9,7 @@ export const ASTONISH_HANDLER_ID = 'astonish.unaware-flinch' as const
 export const ASTONISH_UNAWARE_MARKER_CAPABILITY_ID =
   'astonish-unaware-flinch-used' as const
 export const ASTONISH_UNAWARE_REQUEST_ID = 'astonish.target-awareness' as const
+export const ASTONISH_AWARE_OPTION_ID = 'target-aware' as const
 export const ASTONISH_UNAWARE_OPTION_ID = 'target-unaware' as const
 
 const ASTONISH_ACCURACY_ROLL_ID = 'astonish.accuracy-roll' as const
@@ -112,6 +113,10 @@ const runAstonishHandler = (context: RegisteredMoveHandlerContext) => {
         requestId: ASTONISH_UNAWARE_REQUEST_ID,
         promptKey: 'move.astonish.confirm-target-awareness',
         options: [{
+          id: ASTONISH_AWARE_OPTION_ID,
+          labelKey: 'move.astonish.target-was-aware',
+          operationIds: [ASTONISH_ORDINARY_FLINCH_OPERATION_ID],
+        }, {
           id: ASTONISH_UNAWARE_OPTION_ID,
           labelKey: 'move.astonish.target-was-unaware',
           operationIds: [
@@ -119,10 +124,7 @@ const runAstonishHandler = (context: RegisteredMoveHandlerContext) => {
             ASTONISH_MARKER_OPERATION_ID,
           ],
         }],
-        pass: {
-          id: 'astonish.target-aware',
-          operationIds: [ASTONISH_ORDINARY_FLINCH_OPERATION_ID],
-        },
+        pass: null,
       },
     },
     ordinaryFlinchOperation(ASTONISH_BRANCH_OPERATION_ID),
@@ -185,6 +187,6 @@ const runAstonishHandler = (context: RegisteredMoveHandlerContext) => {
 export const ASTONISH_MOVE_HANDLER_REGISTRATION: RegisteredMoveHandlerRegistration =
   Object.freeze({
     id: ASTONISH_HANDLER_ID,
-    version: 1,
+    version: 2,
     run: runAstonishHandler,
   })

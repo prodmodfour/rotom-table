@@ -107,7 +107,10 @@ describe('Scratch native MoveSpec v2', () => {
     expect(native.nextMap.encounterState?.turnResources['actor-token']).toMatchObject({
       actions: { standard: { spent: 1 } },
       movement: { spent: 3 },
-      oncePerTurnFlags: [{ id: 'move.scratch', sourceOperationId: 'op_scratchv2test' }],
+      oncePerTurnFlags: [
+        { id: 'encounter.acted-since-entry', sourceOperationId: 'op_scratchv2test' },
+        { id: 'move.scratch', sourceOperationId: 'op_scratchv2test' },
+      ],
     })
     expect(native.nextMap.metadata?.moveLog).toEqual([
       expect.objectContaining({

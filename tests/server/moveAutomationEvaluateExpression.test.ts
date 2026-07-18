@@ -5,6 +5,7 @@ import {
 } from '#shared/livePlayMoveResolution'
 import { MOVE_RULE_AST_LIMITS } from '#shared/moveAutomation/ast'
 import { createEmptyEncounterHistory } from '#shared/moveAutomation/encounterHistory'
+import { createEncounterTurnResourceLedger } from '#shared/moveAutomation/encounterResources'
 import { createEmptyEncounterState } from '#shared/moveAutomation/encounterState'
 import {
   parseMoveExpression,
@@ -26,6 +27,9 @@ import {
 import {
   createFiniteAuthoritativeMoveRandomStream,
 } from '~~/server/domain/moveAutomation/random'
+import {
+  ENCOUNTER_ACTED_SINCE_ENTRY_FLAG_ID,
+} from '~~/server/domain/moveAutomation/reduceEncounterResources'
 import type { CharacterSheet } from '~/types/characterSheet'
 import type { SheetPlacement, TabletopMap } from '~/types/map'
 import type { TrainerSheet } from '~/types/trainerSheet'
@@ -462,6 +466,55 @@ describe('bounded authoritative move expression evaluator', () => {
       { kind: 'pokemon', slug: 'actor', revision: 3 },
       { kind: 'pokemon', slug: 'target', revision: 5 },
     ])
+  })
+
+  it('queries the server-owned opening-action resource without accepting client state', () => {
+    const openingAction = expression({
+      kind: 'encounter-resource',
+      subject: { kind: 'actor' },
+      query: 'acted-since-entry',
+    })
+    expect(evaluateMoveExpression({
+      expression: openingAction,
+      context: buildContext(),
+    }).value).toBe(false)
+
+    const map = mapFixture()
+    const ledger = createEncounterTurnResourceLedger({
+      placementId: 'actor-token',
+      round: 1,
+      turn: 0,
+    })
+    const actedContext = buildContext({
+      map: {
+        ...map,
+        encounterState: {
+          ...map.encounterState!,
+          turnResources: {
+            'actor-token': {
+              ...ledger,
+              oncePerTurnFlags: [{
+                id: ENCOUNTER_ACTED_SINCE_ENTRY_FLAG_ID,
+                sourceOperationId: 'operation.opening-action.test',
+                resetOn: ['scene-end', 'recall', 'send-out'],
+              }],
+            },
+          },
+        },
+      },
+    })
+    const result = evaluateMoveExpression({
+      expression: openingAction,
+      context: actedContext,
+      rootNodeId: 'fake-out.opening-action',
+    })
+    expect(result.value).toBe(true)
+    expect(result.trace.at(-1)).toEqual({
+      nodeType: 'expression',
+      nodeId: 'fake-out.opening-action',
+      expressionKind: 'encounter-resource',
+      value: true,
+    })
   })
 
   it('traces comparisons and every reviewed boolean branch by deterministic node ID', () => {

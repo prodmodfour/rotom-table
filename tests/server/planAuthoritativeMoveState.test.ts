@@ -186,7 +186,10 @@ describe('planAuthoritativeMoveState', () => {
       actions: { standard: { spent: 1 } },
       reaction: { available: true },
       movement: { spent: 0 },
-      oncePerTurnFlags: [{ id: 'move.swords-dance' }],
+      oncePerTurnFlags: [
+        { id: 'encounter.acted-since-entry' },
+        { id: 'move.swords-dance' },
+      ],
     })
     expect(plan.stateChanges.changes.map(change => change.kind)).toEqual([
       'sheet-state',
@@ -686,7 +689,10 @@ describe('planAuthoritativeMoveState Pass movement', () => {
       expect(plan.nextMap.encounterState?.turnResources['actor-token']).toMatchObject({
         actions: { standard: { spent: 1 } },
         movement: { spent: 3 },
-        oncePerTurnFlags: [{ id: 'move.aqua-tail' }],
+        oncePerTurnFlags: [
+          { id: 'encounter.acted-since-entry' },
+          { id: 'move.aqua-tail' },
+        ],
       })
       const expectedLine = passDestinationLogLine({ species: 'Actor' } as never, plan.resolution.movement!.destination)
       const lines = moveLog(plan.nextMap)?.[0]?.lines ?? []

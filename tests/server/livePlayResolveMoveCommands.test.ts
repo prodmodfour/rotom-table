@@ -575,7 +575,10 @@ describe('executeLivePlayResolveMoveCommandUseCase', () => {
       .toMatchObject({ operationId: selfCommand.opId, moveName: 'Swords Dance' })
     expect(selfPayload.changes.encounterState?.current.turnResources['actor-token']).toMatchObject({
       actions: { standard: { spent: 1 } },
-      oncePerTurnFlags: [{ id: 'move.swords-dance', sourceOperationId: 'op_resolveself01' }],
+      oncePerTurnFlags: [
+        { id: 'encounter.acted-since-entry', sourceOperationId: 'op_resolveself01' },
+        { id: 'move.swords-dance', sourceOperationId: 'op_resolveself01' },
+      ],
     })
     expect(selfResponse.sheetUpdates?.[0]).toMatchObject({
       kind: 'pokemon',
@@ -845,7 +848,7 @@ describe('executeLivePlayResolveMoveCommandUseCase', () => {
     })
   })
 
-  it('honors a server-reviewed immediate no-cost exception without mutating the resource ledger', async () => {
+  it('honors an immediate no-cost exception while recording the accepted opening action', async () => {
     const harness = seedHarness({ actorMoves: [{ name: 'Swords Dance' }] })
     const map = harness.maps.getBySlug('arena')!
     const moveIntent = intent({
@@ -871,7 +874,14 @@ describe('executeLivePlayResolveMoveCommandUseCase', () => {
     const response = await execute(harness, command, { planner })
     const acceptedResult = accepted(response.result)
 
-    expect(response.map?.encounterState?.turnResources ?? {}).toEqual({})
+    expect(response.map?.encounterState?.turnResources['actor-token']).toMatchObject({
+      actions: { standard: { spent: 0 } },
+      oncePerTurnFlags: [{
+        id: 'encounter.acted-since-entry',
+        sourceOperationId: 'op_nocostnative1',
+        resetOn: ['scene-end', 'recall', 'send-out'],
+      }],
+    })
     expect(response.sheetUpdates?.[0]).toMatchObject({
       kind: 'pokemon',
       slug: 'actor',
@@ -1457,7 +1467,10 @@ describe('executeLivePlayResolveMoveCommandUseCase', () => {
           shift: { spent: 1 },
         },
         movement: { budget: 7, spent: 4 },
-        oncePerTurnFlags: [{ id: 'move.scratch', sourceOperationId: 'op_resolvepass1' }],
+        oncePerTurnFlags: [
+          { id: 'encounter.acted-since-entry', sourceOperationId: 'op_resolvepass1' },
+          { id: 'move.scratch', sourceOperationId: 'op_resolvepass1' },
+        ],
       })
 
       const committedMap = deepCloneJson(harness.maps.getBySlug('arena'))

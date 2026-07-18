@@ -7,7 +7,10 @@ import type { CharacterSheet } from '~/types/characterSheet'
 import type { SheetPlacement, TabletopMap } from '~/types/map'
 import type { TrainerSheet } from '~/types/trainerSheet'
 import { MOVE_AUTOMATION_RUNTIME_REGISTRY } from '~~/server/domain/moveAutomation/registry'
-import type { MoveAutomationSemanticScenario } from './scenario'
+import {
+  expectedActedSinceEntryFlag,
+  type MoveAutomationSemanticScenario,
+} from './scenario'
 
 export const DOUBLE_KICK_V2_SEMANTIC_SCENARIOS = Object.freeze([
   {
@@ -518,10 +521,13 @@ const expectedMap = (
     turnResources: {
       'actor-token': {
         actions: { standard: { spent: 1 } },
-        oncePerTurnFlags: [{
-          id: `move.${MOVE_DEFINITIONS[definition.moveName].slug}`,
-          sourceOperationId: definition.operationId,
-        }],
+        oncePerTurnFlags: [
+          expectedActedSinceEntryFlag(definition.operationId),
+          {
+            id: `move.${MOVE_DEFINITIONS[definition.moveName].slug}`,
+            sourceOperationId: definition.operationId,
+          },
+        ],
       },
     },
   },

@@ -55,6 +55,14 @@ import {
 } from '~~/server/useCases/applyResolveMoveCommand'
 import { acceptedRealtimeTestHooks } from '../../server/livePlayAcceptedRealtimeTestUtils'
 
+export const expectedActedSinceEntryFlag = (
+  sourceOperationId: string,
+) => ({
+  id: 'encounter.acted-since-entry',
+  sourceOperationId,
+  resetOn: ['scene-end', 'recall', 'send-out'] as const,
+})
+
 export interface MoveAutomationSemanticScenarioChoice {
   readonly requestId: string
   readonly optionId: string | null

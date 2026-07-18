@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import {
   MOVE_ARITHMETIC_OPERATORS,
   MOVE_EXPRESSION_KINDS,
+  MOVE_ENCOUNTER_RESOURCE_QUERIES,
   MOVE_EXPRESSION_LIMITS,
   MOVE_HISTORY_QUERIES,
   MoveExpressionValidationError,
@@ -57,6 +58,7 @@ describe('MoveSpec rules expression AST', () => {
       'terrain',
       'item',
       'move-history',
+      'encounter-resource',
     ])
     expect(MOVE_ARITHMETIC_OPERATORS).toEqual([
       'add',
@@ -408,7 +410,7 @@ describe('MoveSpec rules expression AST', () => {
     )
   })
 
-  it('parses only the closed move-history query set', () => {
+  it('parses only the closed move-history and encounter-resource query sets', () => {
     for (const query of MOVE_HISTORY_QUERIES) {
       expect(parseMoveExpression({
         kind: 'move-history',
@@ -416,11 +418,27 @@ describe('MoveSpec rules expression AST', () => {
         query,
       })).toEqual({ kind: 'move-history', subject: { kind: 'actor' }, query })
     }
+    for (const query of MOVE_ENCOUNTER_RESOURCE_QUERIES) {
+      expect(parseMoveExpression({
+        kind: 'encounter-resource',
+        subject: { kind: 'actor' },
+        query,
+      })).toEqual({ kind: 'encounter-resource', subject: { kind: 'actor' }, query })
+    }
     expectExpressionError(
       {
         kind: 'move-history',
         subject: { kind: 'actor' },
         query: 'parse-log-text',
+      },
+      'invalid-expression',
+      'expression.query',
+    )
+    expectExpressionError(
+      {
+        kind: 'encounter-resource',
+        subject: { kind: 'actor' },
+        query: 'client-action-state',
       },
       'invalid-expression',
       'expression.query',

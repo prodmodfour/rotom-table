@@ -7,7 +7,10 @@ import type { CharacterSheet } from '~/types/characterSheet'
 import type { MapWeatherKind, SheetPlacement, TabletopMap } from '~/types/map'
 import type { TrainerSheet } from '~/types/trainerSheet'
 import { MOVE_AUTOMATION_RUNTIME_REGISTRY } from '~~/server/domain/moveAutomation/registry'
-import type { MoveAutomationSemanticScenario } from './scenario'
+import {
+  expectedActedSinceEntryFlag,
+  type MoveAutomationSemanticScenario,
+} from './scenario'
 
 export const SYNTHESIS_V2_SEMANTIC_SCENARIOS = Object.freeze([
   {
@@ -195,10 +198,13 @@ const expectedMap = (operationId: string) => ({
     turnResources: {
       'actor-token': {
         actions: { standard: { spent: 1 } },
-        oncePerTurnFlags: [{
-          id: 'move.synthesis',
-          sourceOperationId: operationId,
-        }],
+        oncePerTurnFlags: [
+          expectedActedSinceEntryFlag(operationId),
+          {
+            id: 'move.synthesis',
+            sourceOperationId: operationId,
+          },
+        ],
       },
     },
   },

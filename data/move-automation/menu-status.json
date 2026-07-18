@@ -359,24 +359,12 @@
     {
       "canonicalId": "Astonish",
       "displayName": "Astonish",
-      "baseStatus": "assisted",
+      "baseStatus": "complete",
       "interactionStatus": "unassessed",
-      "runtimeKind": "legacy-v1",
-      "blockerCodes": [
-        "history.structured"
-      ],
-      "limitations": [
-        {
-          "code": "astonish.timing",
-          "summary": "The legacy script handles the 15+ Flinch threshold but does not track the once-per-scene automatic Flinch branch or whether the target was unaware."
-        }
-      ],
-      "manualSteps": [
-        {
-          "code": "astonish.unaware-flinch",
-          "summary": "Track the once-per-scene unaware-target branch and apply Flinch after a hit when that branch is eligible even if the natural roll was below 15."
-        }
-      ]
+      "runtimeKind": "movespec-v2",
+      "blockerCodes": [],
+      "limitations": [],
+      "manualSteps": []
     },
     {
       "canonicalId": "Astral Barrage",
@@ -2629,25 +2617,12 @@
     {
       "canonicalId": "Fake Out",
       "displayName": "Fake Out",
-      "baseStatus": "assisted",
+      "baseStatus": "complete",
       "interactionStatus": "unassessed",
-      "runtimeKind": "legacy-v1",
-      "blockerCodes": [
-        "history.structured",
-        "reactions.durable"
-      ],
-      "limitations": [
-        {
-          "code": "fake-out.timing",
-          "summary": "The legacy script applies Flinch on every hit without validating that the user just joined the encounter or that the Priority branch is legal."
-        }
-      ],
-      "manualSteps": [
-        {
-          "code": "fake-out.joining-flinch",
-          "summary": "Track join and switch history; use Priority and retain the applied Flinch only when Fake Out is used through its eligible joining-the-encounter branch."
-        }
-      ]
+      "runtimeKind": "movespec-v2",
+      "blockerCodes": [],
+      "limitations": [],
+      "manualSteps": []
     },
     {
       "canonicalId": "Fake Tears",

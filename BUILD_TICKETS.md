@@ -2503,7 +2503,7 @@ Status: DONE
 
 ## MA-179 — Finish Astonish and Fake Out timing/legality
 
-Status: TODO
+Status: DONE
 
 **Depends on:** MA-063–MA-064, MA-084, MA-108
 **Commit:** `feat(move-automation): enforce opening move legality`

@@ -9,6 +9,7 @@ import {
 import { createEmptyEncounterState } from '#shared/moveAutomation/encounterState'
 import type { MoveSpecCostDeclaration } from '#shared/moveAutomation/spec'
 import {
+  ENCOUNTER_ACTED_SINCE_ENTRY_FLAG_ID,
   ENCOUNTER_EXHAUST_COMMAND_FLAG_ID,
   ENCOUNTER_EXHAUST_NEXT_TURN_FLAG_ID,
   ENCOUNTER_PRIORITY_ADVANCED_NEXT_TURN_FLAG_ID,
@@ -305,6 +306,53 @@ describe('authoritative encounter action resources', () => {
     const resetQueries = createMoveAutomationResourceResolver(nextTurn.state.turnResources)
     expect(resetQueries.hasOncePerTurnFlag('actor-token', 'feature.test-once')).toBe(false)
     expect(resetQueries.movementSpent('actor-token')).toBe(0)
+  })
+
+  it('tracks opening-action eligibility until an authoritative leave or scene boundary', () => {
+    const marked = spend({}, [], { markActedSinceEntry: true })
+    const markedAgain = spend(marked.resources, [], { markActedSinceEntry: true })
+    const queries = createMoveAutomationResourceResolver(markedAgain.resources)
+
+    expect(queries.actedSinceEntry('actor-token')).toBe(true)
+    expect(queries.actedSinceEntry('untracked-token')).toBe(false)
+    expect(queries.hasOncePerTurnFlag(
+      'actor-token',
+      ENCOUNTER_ACTED_SINCE_ENTRY_FLAG_ID,
+    )).toBe(true)
+    expect(queries.ledger('actor-token')?.oncePerTurnFlags.filter(
+      flag => flag.id === ENCOUNTER_ACTED_SINCE_ENTRY_FLAG_ID,
+    )).toHaveLength(1)
+
+    const nextTurn = reduceEncounterLifecycle({
+      ...createEmptyEncounterState(),
+      turnResources: marked.resources,
+    }, [turnStart(2, 5)])
+    expect(createMoveAutomationResourceResolver(nextTurn.state.turnResources)
+      .actedSinceEntry('actor-token')).toBe(true)
+
+    const recalled = reduceEncounterLifecycle(nextTurn.state, [event(
+      'recall',
+      'event.opening.recall',
+      { placementId: 'actor-token', sideId: 'heroes' },
+    )])
+    expect(createMoveAutomationResourceResolver(recalled.state.turnResources)
+      .actedSinceEntry('actor-token')).toBe(false)
+
+    const turnEnded = reduceEncounterLifecycle(createEmptyEncounterState(), [event(
+      'turn-end',
+      'event.opening.turn-end',
+      { round: 2, turn: 5, placementId: 'actor-token', sideId: 'heroes' },
+    )])
+    expect(createMoveAutomationResourceResolver(turnEnded.state.turnResources)
+      .actedSinceEntry('actor-token')).toBe(true)
+
+    const sentOut = reduceEncounterLifecycle(turnEnded.state, [event(
+      'send-out',
+      'event.opening.send-out',
+      { placementId: 'actor-token', sideId: 'heroes' },
+    )])
+    expect(createMoveAutomationResourceResolver(sentOut.state.turnResources)
+      .actedSinceEntry('actor-token')).toBe(false)
   })
 
   it('schedules Exhaust and advanced Priority forfeits at the next authoritative turn', () => {

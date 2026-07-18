@@ -7,7 +7,10 @@ import type { CharacterSheet } from '~/types/characterSheet'
 import type { SheetPlacement, TabletopMap } from '~/types/map'
 import type { TrainerSheet } from '~/types/trainerSheet'
 import { MOVE_AUTOMATION_RUNTIME_REGISTRY } from '~~/server/domain/moveAutomation/registry'
-import type { MoveAutomationSemanticScenario } from './scenario'
+import {
+  expectedActedSinceEntryFlag,
+  type MoveAutomationSemanticScenario,
+} from './scenario'
 
 export const SCRATCH_V2_PASS_HIT_SCENARIO = Object.freeze({
   scenarioId: 'scratch.v2-pass-hit',
@@ -137,10 +140,13 @@ const expectedCommittedMap = () => ({
       'actor-token': {
         actions: { standard: { spent: 1 } },
         movement: { spent: 3 },
-        oncePerTurnFlags: [{
-          id: 'move.scratch',
-          sourceOperationId: 'op_semanticscratch1',
-        }],
+        oncePerTurnFlags: [
+          expectedActedSinceEntryFlag('op_semanticscratch1'),
+          {
+            id: 'move.scratch',
+            sourceOperationId: 'op_semanticscratch1',
+          },
+        ],
       },
     },
   },

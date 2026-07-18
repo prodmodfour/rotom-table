@@ -166,6 +166,33 @@ describe('authoritative move resource cost planning', () => {
     expect(resources.hasOncePerTurnFlag('actor-token', 'cost.exhaust.command')).toBe(true)
   })
 
+  it('records the accepted opening action atomically and idempotently across phase windows', () => {
+    const declaration = planMoveResourceCostWindow(planningInput({
+      declarations: [cost('cost.priority', 'declare', {
+        kind: 'priority', mode: 'standard',
+      })],
+      movementDistance: 0,
+      movementBudget: null,
+      maximumPhaseInclusive: 'declare',
+      markActedSinceEntry: true,
+    }))
+    const replayedMarker = planMoveResourceCostWindow(planningInput({
+      resources: declaration.currentResources,
+      declarations: [],
+      movementDistance: 0,
+      movementBudget: null,
+      markActedSinceEntry: true,
+    }))
+
+    expect(createMoveAutomationResourceResolver(declaration.currentResources)
+      .actedSinceEntry('actor-token')).toBe(true)
+    expect(createMoveAutomationResourceResolver(replayedMarker.currentResources)
+      .actedSinceEntry('actor-token')).toBe(true)
+    expect(replayedMarker.currentResources['actor-token']?.oncePerTurnFlags.filter(
+      flag => flag.id === 'encounter.acted-since-entry',
+    )).toHaveLength(1)
+  })
+
   it('records an explicit no-cost outcome without creating a ledger mutation', () => {
     const plan = planMoveResourceCostWindow(planningInput({
       declarations: [cost('cost.waived', 'declare', {

@@ -19,12 +19,14 @@ import {
   type ValidatedMoveSpecDefinition,
 } from './validateSpec'
 import { ABSORB_MOVE_SPEC_REGISTRATION } from './specs/absorb'
+import { ASTONISH_MOVE_SPEC_REGISTRATION } from './specs/astonish'
 import { DOUBLE_KICK_MOVE_SPEC_REGISTRATION } from './specs/doubleKick'
 import { DRAGON_RAGE_MOVE_SPEC_REGISTRATION } from './specs/dragonRage'
 import { EMBER_MOVE_SPEC_REGISTRATION } from './specs/ember'
 import { FURY_ATTACK_MOVE_SPEC_REGISTRATION } from './specs/furyAttack'
 import { FURY_CUTTER_MOVE_SPEC_REGISTRATION } from './specs/furyCutter'
 import { FURY_SWIPES_MOVE_SPEC_REGISTRATION } from './specs/furySwipes'
+import { FAKE_OUT_MOVE_SPEC_REGISTRATION } from './specs/fakeOut'
 import { HELPING_HAND_MOVE_SPEC_REGISTRATION } from './specs/helpingHand'
 import { KNOCK_OFF_MOVE_SPEC_REGISTRATION } from './specs/knockOff'
 import { PIN_MISSILE_MOVE_SPEC_REGISTRATION } from './specs/pinMissile'
@@ -255,12 +257,14 @@ export const createMoveAutomationRuntimeRegistry = (
 /** Native v2 definitions are added here only after their manifest metadata is reviewed. */
 export const REVIEWED_MOVE_SPEC_V2_REGISTRATIONS: readonly MoveSpecV2Registration[] = Object.freeze([
   ABSORB_MOVE_SPEC_REGISTRATION,
+  ASTONISH_MOVE_SPEC_REGISTRATION,
   DOUBLE_KICK_MOVE_SPEC_REGISTRATION,
   DRAGON_RAGE_MOVE_SPEC_REGISTRATION,
   EMBER_MOVE_SPEC_REGISTRATION,
   FURY_ATTACK_MOVE_SPEC_REGISTRATION,
   FURY_CUTTER_MOVE_SPEC_REGISTRATION,
   FURY_SWIPES_MOVE_SPEC_REGISTRATION,
+  FAKE_OUT_MOVE_SPEC_REGISTRATION,
   HELPING_HAND_MOVE_SPEC_REGISTRATION,
   KNOCK_OFF_MOVE_SPEC_REGISTRATION,
   PIN_MISSILE_MOVE_SPEC_REGISTRATION,
