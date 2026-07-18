@@ -2421,7 +2421,7 @@ Status: DONE
 
 ## MA-176A — Plan Knock Off's authoritative item outcome
 
-Status: TODO
+Status: DONE
 
 **Depends on:** MA-150–MA-157
 **Commit:** `feat(move-automation): plan knock off item outcome`

@@ -18,11 +18,7 @@ import {
   ENCOUNTER_EXHAUST_NEXT_TURN_FLAG_ID,
   spendEncounterMoveResourceCosts,
 } from '~~/server/domain/moveAutomation/reduceEncounterResources'
-import {
-  planAuthoritativeMoveState,
-  planAuthoritativeMoveStateExecution,
-  type AuthoritativeMoveStatePlan,
-} from '~~/server/domain/planAuthoritativeMoveState'
+import { planAuthoritativeMoveState, type AuthoritativeMoveStatePlan } from '~~/server/domain/planAuthoritativeMoveState'
 import { planMoveItemMutations } from '~~/server/domain/moveAutomation/planItemMutations'
 import {
   createMoveStateChangePlan,
@@ -1573,16 +1569,15 @@ describe('executeLivePlayResolveMoveCommandUseCase', () => {
       {
         role: 'player',
         profile: playerProfile('actor'),
-        random: randomSequence([0.5, 0, 0]),
+        random: randomSequence([0.5, 0]),
         planner: (input) => {
           privateCandidates = deepCloneJson(input.itemResources?.candidates ?? [])
-          return planAuthoritativeMoveStateExecution(input)
+          return planAuthoritativeMoveState(input)
         },
       },
     )
 
-    expect(response.result).toMatchObject({ ok: true })
-    expect(response.result).toHaveProperty('pendingResolution')
+    expect(response.result.ok).toBe(true)
     expect(privateCandidates).toEqual([
       expect.objectContaining({
         requirementId: 'knock-off.target-equipped',

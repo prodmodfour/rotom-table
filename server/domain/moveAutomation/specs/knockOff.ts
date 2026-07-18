@@ -1,4 +1,8 @@
-import type { MoveSpec } from '#shared/moveAutomation/spec'
+import type { MoveSpec, MoveSpecEffectOperation } from '#shared/moveAutomation/spec'
+import {
+  KNOCK_OFF_ITEM_CHOICE_OPERATION,
+  KNOCK_OFF_ITEM_EFFECT_OPERATION,
+} from '../knockOff'
 import type { MoveSpecV2Registration } from '../registry'
 
 /**
@@ -6,10 +10,10 @@ import type { MoveSpecV2Registration } from '../registry'
  *
  * One server-owned accuracy roll gates ordinary Physical Dark damage. A
  * qualifying non-immune damaging hit enumerates only the target's Pokémon Held
- * Items or Trainer Accessory Slot Items. An itemless target completes without a
- * window; otherwise the actor chooses one private server-issued item identity,
- * and the terminal continuation removes that exact item and creates one ground
- * item at the target's authoritative cell.
+ * Items or Trainer Accessory Slot Items. The MA-176A pure outcome seam handles
+ * itemless, unambiguous, and durable-choice branches without repository writes.
+ * This reviewed definition is intentionally not selected by production metadata
+ * until MA-176B integrates and certifies the durable saga.
  */
 export const KNOCK_OFF_MOVE_SPEC = Object.freeze({
   schemaVersion: 2,
@@ -60,56 +64,8 @@ export const KNOCK_OFF_MOVE_SPEC = Object.freeze({
     {
       phase: 'after-damage',
       operations: [
-        {
-          id: 'knock-off.choose-item',
-          kind: 'choice-request',
-          source: { kind: 'operation', id: 'knock-off.damage' },
-          recipients: { kind: 'damaged-targets' },
-          phase: 'after-damage',
-          reasonCode: 'knock-off.choose-target-item',
-          payload: {
-            requestId: 'knock-off.item-window',
-            promptKey: 'move.knock-off.choose-item',
-            options: [],
-            allowPass: false,
-            itemChoice: {
-              setId: 'knock-off.target-items',
-              requirementId: 'knock-off.target-equipped',
-              owner: 'actor',
-              emptyPolicy: 'no-op',
-              filter: {
-                referenceKinds: ['pokemon-held', 'trainer-equipment-slot'],
-                canonicalItemIds: null,
-                trainerEquipmentSlots: ['accessory'],
-                minimumQuantity: 1,
-              },
-              destinations: [{
-                id: 'knock-off.to-ground',
-                kind: 'map-ground',
-                labelKey: 'move.item.destination.map-ground',
-              }],
-              noneOption: null,
-            },
-          },
-        },
-        {
-          id: 'knock-off.ground-item',
-          kind: 'item',
-          source: { kind: 'operation', id: 'knock-off.choose-item' },
-          recipients: { kind: 'damaged-targets' },
-          phase: 'after-damage',
-          reasonCode: 'knock-off.move-item-to-ground',
-          payload: {
-            action: 'knock-to-ground',
-            item: {
-              kind: 'choice',
-              requestId: 'knock-off.item-window',
-              destinationId: 'knock-off.to-ground',
-            },
-            quantity: 1,
-            onUnavailable: 'no-op',
-          },
-        },
+        KNOCK_OFF_ITEM_CHOICE_OPERATION as unknown as MoveSpecEffectOperation,
+        KNOCK_OFF_ITEM_EFFECT_OPERATION as unknown as MoveSpecEffectOperation,
       ],
     },
     {
