@@ -9,7 +9,7 @@ Ticket statuses:
 
 The build loop must select the lowest-numbered TODO ticket. Each ticket below maps to one ticket from the supplied planning file; build ticket numbers follow that document's suggested order when present.
 
-Autonomous cycle rules for every ticket: implement only the selected ticket, run `scripts/quality-gate.sh`, update only the selected ticket status, commit with a conventional commit message, and leave the working tree clean. The final ticket (`MA-299`) may also set `AUTOMATION_STATUS: DONE` after all 291 refreshed tickets are complete.
+Autonomous cycle rules for every ticket: implement only the selected ticket, run `scripts/quality-gate.sh`, update only the selected ticket status, commit with a conventional commit message, and leave the working tree clean. The final ticket (`MA-299`) may also set `AUTOMATION_STATUS: DONE` after all 292 refreshed tickets are complete.
 
 ---
 
@@ -50,7 +50,7 @@ When a ticket introduces a new pure module, prefer this layout:
 
 The existing `src/utils/move-automation/` registry remains the v1 compatibility surface until the retirement tickets at the end.
 
-Queue size at this baseline: **291 commits**—185 engine/state/QA tickets, 33 conformance batches for the registered 258, and 73 implementation batches for the missing 518.
+Queue size at this baseline: **292 commits**—186 engine/state/QA tickets, 33 conformance batches for the registered 258, and 73 implementation batches for the missing 518.
 
 ## Decisions already locked
 
@@ -2313,16 +2313,35 @@ Status: DONE
 
 **Done:** Reconnect and duplicate move resolution cannot consume the bonus twice.
 
-## MA-172 — Finish Reflect as a side effect
+## MA-172A — Model Reflect as an owned side effect
 
 Status: TODO
 
-**Depends on:** MA-054, MA-056–MA-060, MA-077
+**Depends on:** MA-054, MA-056–MA-060
+**Commit:** `feat(move-automation): model reflect side effects`
+
+**Implement:**
+
+- Define a bounded typed Reflect side-effect payload and pure creation/lifecycle helpers carrying its source, explicit owning side, canonical duration/charges, and physical-damage predicate.
+- Resolve ownership only from the actor's explicit side; unknown allegiance must fail closed.
+- Add focused parser, reducer, and lifecycle tests for ownership, replacement/refresh, charge bounds, and automatic expiry. Do not alter damage calculations or promote Reflect's manifest row yet.
+
+**Done:** Reflect can be represented and lifecycle-reduced as one deterministic owned side effect that expires automatically, while the damage pipeline remains unchanged.
+
+## MA-172B — Apply and certify Reflect damage mitigation
+
+Status: TODO
+
+**Depends on:** MA-172A, MA-077
 **Commit:** `feat(move-automation): fully resolve reflect`
 
-**Implement:** Replace manual tracking with an owned side effect containing canonical duration/charges and physical-damage predicate. Integrate activation/consumption with the damage trace.
+**Implement:**
 
-**Done:** Reflect applies only to allies, expires automatically, and has no operator note.
+- Make the reviewed Reflect runtime create the MA-172A side effect instead of relying on manual tracking.
+- Query that effect during authoritative physical-damage calculation, apply it only to eligible allies of the owning side, consume canonical charges when required, and record activation, consumption, and skipped outcomes in the damage trace.
+- Cover qualifying physical damage, non-physical and otherwise ineligible damage, enemy and unknown-side targets, automatic expiry, and duplicate command replay. Remove the operator note and update Reflect's manifest evidence/status only after these paths pass.
+
+**Done:** Reflect applies only to eligible allies, activation and consumption are visible in the damage trace, it expires automatically, duplicate delivery cannot consume it twice, and no operator note remains.
 
 ## MA-173 — Finish Sand Tomb through the shared Vortex effect
 
