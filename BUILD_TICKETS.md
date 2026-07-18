@@ -2392,7 +2392,7 @@ Status: DONE
 
 ## MA-174C — Integrate and certify Take Down's opposed Trip flow
 
-Status: DONE
+Status: TODO
 
 **Depends on:** MA-174B
 **Commit:** `feat(move-automation): fully resolve take down trip`
