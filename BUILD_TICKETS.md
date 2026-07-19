@@ -2630,7 +2630,7 @@ Status: DONE
 
 ## REG-013 — Certify Helping Hand through Ice Punch
 
-Status: TODO
+Status: DONE
 
 **Baseline-registered moves:** Helping Hand; Hone Claws; Horn Attack; Howl; Hyper Fang; Hypnosis; Ice Beam; Ice Punch
 

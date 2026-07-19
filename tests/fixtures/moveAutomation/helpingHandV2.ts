@@ -9,11 +9,19 @@ export const HELPING_HAND_V2_SEMANTIC_SCENARIOS = Object.freeze([
     evidenceClasses: ['threshold-fail'] as const,
   },
   {
+    scenarioId: 'helping-hand.v2-priority-rejected',
+    evidenceClasses: ['threshold-fail'] as const,
+  },
+  {
     scenarioId: 'helping-hand.v2-qualifying-consume',
     evidenceClasses: ['lifecycle-trigger', 'threshold-pass'] as const,
   },
   {
     scenarioId: 'helping-hand.v2-round-expiry',
     evidenceClasses: ['lifecycle-cleanup'] as const,
+  },
+  {
+    scenarioId: 'helping-hand.v2-stale-target',
+    evidenceClasses: ['multi-resource-conflict'] as const,
   },
 ] as const)

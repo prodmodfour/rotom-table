@@ -46,7 +46,10 @@ import { tokenSheetConditionNames } from '~/utils/sheetConditions'
 import { ELECTRIC_RESISTANT_COAT_CONDITION } from '~/utils/moveAutomationSpecialConditions'
 import { moveAutomationMoveImmunitySource } from '~/utils/moveAutomationMoveImmunity'
 import { moveAutomationRecoilImmunitySource } from '~/utils/moveAutomationRecoil'
-import { moveAutomationIsSmiteMiss } from '~/utils/moveAutomationSmite'
+import {
+  moveAutomationDamageAppliesOnAccuracyOutcome,
+  moveAutomationIsSmiteMiss,
+} from '~/utils/moveAutomationSmite'
 import type { CombatStageKey } from '~/types/combatStages'
 import type { MapFieldEffects } from '~/types/map'
 import type {
@@ -161,6 +164,18 @@ export const buildMoveAutomationTransaction = ({
       }),
     )
     const loss = damageBreakdown.hpLoss
+    const accuracyHit = !script.requiresAccuracy || targetResolutions[target.id]?.hit === true
+    const damageImmunitySource = moveAutomationMoveImmunitySource(script, target)
+      ?? (moveAutomationTargetDamageMultiplier(script, target) === 0
+        ? `${script.type} immunity`
+        : null)
+    if (
+      loss === 0
+      && damageImmunitySource
+      && moveAutomationDamageAppliesOnAccuracyOutcome(script, accuracyHit)
+    ) {
+      logLines.push(`${target.species}: ${script.moveName} dealt no damage: immune (${damageImmunitySource}).`)
+    }
     if (loss > 0) {
       const lossResult = hpAccumulator.applyLossWithInjuryAutomation(
         target,
