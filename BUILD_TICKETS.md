@@ -2702,7 +2702,7 @@ Status: DONE
 
 ## REG-025 — Certify Shadow Punch through Sludge Bomb
 
-Status: TODO
+Status: DONE
 
 **Baseline-registered moves:** Shadow Punch; Shadow Sneak; Shock Wave; Signal Beam; Slash; Sleep Powder; Sludge; Sludge Bomb
 
