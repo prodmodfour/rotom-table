@@ -5054,37 +5054,124 @@
     {
       "canonicalId": "Chatter",
       "displayName": "Chatter",
-      "baseStatus": "blocked",
+      "baseStatus": "complete",
       "interactionStatus": "unassessed",
       "runtime": {
-        "kind": "unimplemented",
-        "version": null,
-        "definitionHash": null,
-        "sourceModule": null
+        "kind": "movespec-v2",
+        "version": 2,
+        "definitionHash": "5554e429bbc798c905b1948d661f144463a375f267e6ab9ab0d087075cf607cf",
+        "sourceModule": "server/domain/moveAutomation/specs/secondaryConditions203.ts"
       },
       "rulesProvenance": {
         "rulesetId": "rotom-table-reference-moves-v1",
         "canonicalizationVersion": 1,
         "sourceDataSha256": "f90491826349afd7d1f2809fd9d74b7acc555f5163b99264205ee369249e9815"
       },
-      "capabilityTags": [],
-      "suggestedCapabilityTags": [
-        "single-target-secondary-condition"
+      "capabilityTags": [
+        "conditions.typed",
+        "expressions.bounded",
+        "reactions.durable",
+        "targeting.authoritative"
       ],
-      "blockerCodes": [
-        "runtime.unimplemented"
-      ],
+      "suggestedCapabilityTags": [],
+      "blockerCodes": [],
       "limitations": [],
       "manualSteps": [],
-      "scenarioIds": [],
+      "scenarioIds": [
+        "chatter.v2-confusion-threshold-pass",
+        "chatter.v2-confusion-threshold-fail",
+        "chatter.v2-miss",
+        "chatter.v2-critical-hit",
+        "chatter.v2-soundproof-immunity",
+        "chatter.v2-own-tempo-immunity",
+        "chatter.v2-drown-out-cancel",
+        "chatter.v2-drown-out-pass",
+        "chatter.v2-duplicate-replay",
+        "chatter.v2-stale-target"
+      ],
       "conformanceEvidence": {
-        "requirementTags": [],
-        "scenarios": [],
+        "requirementTags": [
+          "branch.accuracy",
+          "branch.alternate",
+          "branch.critical-hit",
+          "branch.immunity",
+          "branch.threshold",
+          "interaction.choice",
+          "mechanic.damage",
+          "recovery.reconnect",
+          "recovery.retry",
+          "resource.multi"
+        ],
+        "scenarios": [
+          {
+            "scenarioId": "chatter.v2-confusion-threshold-pass",
+            "evidenceClasses": [
+              "hit",
+              "threshold-pass"
+            ]
+          },
+          {
+            "scenarioId": "chatter.v2-confusion-threshold-fail",
+            "evidenceClasses": [
+              "threshold-fail"
+            ]
+          },
+          {
+            "scenarioId": "chatter.v2-miss",
+            "evidenceClasses": [
+              "miss"
+            ]
+          },
+          {
+            "scenarioId": "chatter.v2-critical-hit",
+            "evidenceClasses": [
+              "crit"
+            ]
+          },
+          {
+            "scenarioId": "chatter.v2-soundproof-immunity",
+            "evidenceClasses": [
+              "immunity"
+            ]
+          },
+          {
+            "scenarioId": "chatter.v2-own-tempo-immunity",
+            "evidenceClasses": [
+              "immunity"
+            ]
+          },
+          {
+            "scenarioId": "chatter.v2-drown-out-cancel",
+            "evidenceClasses": [
+              "alternate-branch",
+              "choice",
+              "reconnect"
+            ]
+          },
+          {
+            "scenarioId": "chatter.v2-drown-out-pass",
+            "evidenceClasses": [
+              "pass"
+            ]
+          },
+          {
+            "scenarioId": "chatter.v2-duplicate-replay",
+            "evidenceClasses": [
+              "retry"
+            ]
+          },
+          {
+            "scenarioId": "chatter.v2-stale-target",
+            "evidenceClasses": [
+              "multi-resource-conflict"
+            ]
+          }
+        ],
         "notApplicable": []
       },
-      "reviewedAt": null,
+      "reviewedAt": "2026-07-19",
       "unsupportedInteractionIds": [],
-      "rolloutCohortId": null
+      "rolloutCohortId": "ma-203"
     },
     {
       "canonicalId": "Chip Away",
@@ -9308,37 +9395,102 @@
     {
       "canonicalId": "Dynamic Punch",
       "displayName": "Dynamic Punch",
-      "baseStatus": "blocked",
+      "baseStatus": "complete",
       "interactionStatus": "unassessed",
       "runtime": {
-        "kind": "unimplemented",
-        "version": null,
-        "definitionHash": null,
-        "sourceModule": null
+        "kind": "movespec-v2",
+        "version": 2,
+        "definitionHash": "a610b50696c4cf6ac4b6689dfeccd50626d32f45b3d0362fa9ec86fc70c849a8",
+        "sourceModule": "server/domain/moveAutomation/specs/secondaryConditions203.ts"
       },
       "rulesProvenance": {
         "rulesetId": "rotom-table-reference-moves-v1",
         "canonicalizationVersion": 1,
         "sourceDataSha256": "f90491826349afd7d1f2809fd9d74b7acc555f5163b99264205ee369249e9815"
       },
-      "capabilityTags": [],
-      "suggestedCapabilityTags": [
-        "single-target-secondary-condition"
+      "capabilityTags": [
+        "conditions.typed",
+        "targeting.authoritative"
       ],
-      "blockerCodes": [
-        "runtime.unimplemented"
-      ],
+      "suggestedCapabilityTags": [],
+      "blockerCodes": [],
       "limitations": [],
       "manualSteps": [],
-      "scenarioIds": [],
+      "scenarioIds": [
+        "dynamic-punch.v2-confusion-hit",
+        "dynamic-punch.v2-flanked-evasion-ignored",
+        "dynamic-punch.v2-unflanked-miss",
+        "dynamic-punch.v2-critical-hit",
+        "dynamic-punch.v2-ghost-immunity",
+        "dynamic-punch.v2-own-tempo-immunity",
+        "dynamic-punch.v2-duplicate-replay",
+        "dynamic-punch.v2-stale-target"
+      ],
       "conformanceEvidence": {
-        "requirementTags": [],
-        "scenarios": [],
+        "requirementTags": [
+          "branch.accuracy",
+          "branch.alternate",
+          "branch.critical-hit",
+          "branch.immunity",
+          "mechanic.damage",
+          "recovery.retry",
+          "resource.multi"
+        ],
+        "scenarios": [
+          {
+            "scenarioId": "dynamic-punch.v2-confusion-hit",
+            "evidenceClasses": [
+              "hit"
+            ]
+          },
+          {
+            "scenarioId": "dynamic-punch.v2-flanked-evasion-ignored",
+            "evidenceClasses": [
+              "alternate-branch"
+            ]
+          },
+          {
+            "scenarioId": "dynamic-punch.v2-unflanked-miss",
+            "evidenceClasses": [
+              "miss"
+            ]
+          },
+          {
+            "scenarioId": "dynamic-punch.v2-critical-hit",
+            "evidenceClasses": [
+              "crit"
+            ]
+          },
+          {
+            "scenarioId": "dynamic-punch.v2-ghost-immunity",
+            "evidenceClasses": [
+              "immunity"
+            ]
+          },
+          {
+            "scenarioId": "dynamic-punch.v2-own-tempo-immunity",
+            "evidenceClasses": [
+              "immunity"
+            ]
+          },
+          {
+            "scenarioId": "dynamic-punch.v2-duplicate-replay",
+            "evidenceClasses": [
+              "retry"
+            ]
+          },
+          {
+            "scenarioId": "dynamic-punch.v2-stale-target",
+            "evidenceClasses": [
+              "multi-resource-conflict"
+            ]
+          }
+        ],
         "notApplicable": []
       },
-      "reviewedAt": null,
+      "reviewedAt": "2026-07-19",
       "unsupportedInteractionIds": [],
-      "rolloutCohortId": null
+      "rolloutCohortId": "ma-203"
     },
     {
       "canonicalId": "Earth Power",
@@ -11429,37 +11581,105 @@
     {
       "canonicalId": "Fiery Wrath",
       "displayName": "Fiery Wrath",
-      "baseStatus": "blocked",
+      "baseStatus": "complete",
       "interactionStatus": "unassessed",
       "runtime": {
-        "kind": "unimplemented",
-        "version": null,
-        "definitionHash": null,
-        "sourceModule": null
+        "kind": "movespec-v2",
+        "version": 2,
+        "definitionHash": "e97b568901e14fcd3899b77e2f1acdac2b6e2be9f5a46b05cf4fbffc073ce276",
+        "sourceModule": "server/domain/moveAutomation/specs/secondaryConditions203.ts"
       },
       "rulesProvenance": {
         "rulesetId": "rotom-table-reference-moves-v1",
         "canonicalizationVersion": 1,
         "sourceDataSha256": "f90491826349afd7d1f2809fd9d74b7acc555f5163b99264205ee369249e9815"
       },
-      "capabilityTags": [],
-      "suggestedCapabilityTags": [
-        "single-target-secondary-condition"
+      "capabilityTags": [
+        "conditions.typed",
+        "expressions.bounded",
+        "targeting.authoritative"
       ],
-      "blockerCodes": [
-        "runtime.unimplemented"
-      ],
+      "suggestedCapabilityTags": [],
+      "blockerCodes": [],
       "limitations": [],
       "manualSteps": [],
-      "scenarioIds": [],
+      "scenarioIds": [
+        "fiery-wrath.v2-dark-flinch-threshold-pass",
+        "fiery-wrath.v2-flinch-threshold-fail",
+        "fiery-wrath.v2-miss",
+        "fiery-wrath.v2-critical-hit",
+        "fiery-wrath.v2-fire-type-scene-branch",
+        "fiery-wrath.v2-inner-focus-immunity",
+        "fiery-wrath.v2-duplicate-replay",
+        "fiery-wrath.v2-stale-target"
+      ],
       "conformanceEvidence": {
-        "requirementTags": [],
-        "scenarios": [],
+        "requirementTags": [
+          "branch.accuracy",
+          "branch.alternate",
+          "branch.critical-hit",
+          "branch.immunity",
+          "branch.threshold",
+          "mechanic.damage",
+          "recovery.retry",
+          "resource.multi"
+        ],
+        "scenarios": [
+          {
+            "scenarioId": "fiery-wrath.v2-dark-flinch-threshold-pass",
+            "evidenceClasses": [
+              "hit",
+              "threshold-pass"
+            ]
+          },
+          {
+            "scenarioId": "fiery-wrath.v2-flinch-threshold-fail",
+            "evidenceClasses": [
+              "threshold-fail"
+            ]
+          },
+          {
+            "scenarioId": "fiery-wrath.v2-miss",
+            "evidenceClasses": [
+              "miss"
+            ]
+          },
+          {
+            "scenarioId": "fiery-wrath.v2-critical-hit",
+            "evidenceClasses": [
+              "crit"
+            ]
+          },
+          {
+            "scenarioId": "fiery-wrath.v2-fire-type-scene-branch",
+            "evidenceClasses": [
+              "alternate-branch"
+            ]
+          },
+          {
+            "scenarioId": "fiery-wrath.v2-inner-focus-immunity",
+            "evidenceClasses": [
+              "immunity"
+            ]
+          },
+          {
+            "scenarioId": "fiery-wrath.v2-duplicate-replay",
+            "evidenceClasses": [
+              "retry"
+            ]
+          },
+          {
+            "scenarioId": "fiery-wrath.v2-stale-target",
+            "evidenceClasses": [
+              "multi-resource-conflict"
+            ]
+          }
+        ],
         "notApplicable": []
       },
-      "reviewedAt": null,
+      "reviewedAt": "2026-07-19",
       "unsupportedInteractionIds": [],
-      "rolloutCohortId": null
+      "rolloutCohortId": "ma-203"
     },
     {
       "canonicalId": "Final Gambit",
@@ -11610,37 +11830,112 @@
     {
       "canonicalId": "Fire Fang",
       "displayName": "Fire Fang",
-      "baseStatus": "blocked",
+      "baseStatus": "complete",
       "interactionStatus": "unassessed",
       "runtime": {
-        "kind": "unimplemented",
-        "version": null,
-        "definitionHash": null,
-        "sourceModule": null
+        "kind": "movespec-v2",
+        "version": 2,
+        "definitionHash": "5b7715a529f2a530a919ff30669dac627973cf022405144e079badb5cdd776b2",
+        "sourceModule": "server/domain/moveAutomation/specs/secondaryConditions203.ts"
       },
       "rulesProvenance": {
         "rulesetId": "rotom-table-reference-moves-v1",
         "canonicalizationVersion": 1,
         "sourceDataSha256": "f90491826349afd7d1f2809fd9d74b7acc555f5163b99264205ee369249e9815"
       },
-      "capabilityTags": [],
-      "suggestedCapabilityTags": [
-        "single-target-secondary-condition"
+      "capabilityTags": [
+        "conditions.typed",
+        "expressions.bounded",
+        "targeting.authoritative"
       ],
-      "blockerCodes": [
-        "runtime.unimplemented"
-      ],
+      "suggestedCapabilityTags": [],
+      "blockerCodes": [],
       "limitations": [],
       "manualSteps": [],
-      "scenarioIds": [],
+      "scenarioIds": [
+        "fire-fang.v2-burn-coin-branch",
+        "fire-fang.v2-flinch-coin-branch",
+        "fire-fang.v2-threshold-fail",
+        "fire-fang.v2-natural-twenty-both",
+        "fire-fang.v2-miss",
+        "fire-fang.v2-fire-type-burn-immunity",
+        "fire-fang.v2-inner-focus-immunity",
+        "fire-fang.v2-duplicate-replay",
+        "fire-fang.v2-stale-target"
+      ],
       "conformanceEvidence": {
-        "requirementTags": [],
-        "scenarios": [],
+        "requirementTags": [
+          "branch.accuracy",
+          "branch.alternate",
+          "branch.critical-hit",
+          "branch.immunity",
+          "branch.threshold",
+          "mechanic.damage",
+          "recovery.retry",
+          "resource.multi"
+        ],
+        "scenarios": [
+          {
+            "scenarioId": "fire-fang.v2-burn-coin-branch",
+            "evidenceClasses": [
+              "hit",
+              "threshold-pass"
+            ]
+          },
+          {
+            "scenarioId": "fire-fang.v2-flinch-coin-branch",
+            "evidenceClasses": [
+              "alternate-branch"
+            ]
+          },
+          {
+            "scenarioId": "fire-fang.v2-threshold-fail",
+            "evidenceClasses": [
+              "threshold-fail"
+            ]
+          },
+          {
+            "scenarioId": "fire-fang.v2-natural-twenty-both",
+            "evidenceClasses": [
+              "crit"
+            ]
+          },
+          {
+            "scenarioId": "fire-fang.v2-miss",
+            "evidenceClasses": [
+              "miss"
+            ]
+          },
+          {
+            "scenarioId": "fire-fang.v2-fire-type-burn-immunity",
+            "evidenceClasses": [
+              "immunity"
+            ]
+          },
+          {
+            "scenarioId": "fire-fang.v2-inner-focus-immunity",
+            "evidenceClasses": [
+              "immunity"
+            ]
+          },
+          {
+            "scenarioId": "fire-fang.v2-duplicate-replay",
+            "evidenceClasses": [
+              "retry"
+            ]
+          },
+          {
+            "scenarioId": "fire-fang.v2-stale-target",
+            "evidenceClasses": [
+              "multi-resource-conflict"
+            ]
+          }
+        ],
         "notApplicable": []
       },
-      "reviewedAt": null,
+      "reviewedAt": "2026-07-19",
       "unsupportedInteractionIds": [],
-      "rolloutCohortId": null
+      "rolloutCohortId": "ma-203"
     },
     {
       "canonicalId": "Fire Lash",
@@ -13355,72 +13650,203 @@
     {
       "canonicalId": "Freeze-Dry",
       "displayName": "Freeze-Dry",
-      "baseStatus": "blocked",
+      "baseStatus": "complete",
       "interactionStatus": "unassessed",
       "runtime": {
-        "kind": "unimplemented",
-        "version": null,
-        "definitionHash": null,
-        "sourceModule": null
+        "kind": "movespec-v2",
+        "version": 2,
+        "definitionHash": "f180d14b2089be7da994aa4bb90771d05657a011def6119106f600ef3c6e075a",
+        "sourceModule": "server/domain/moveAutomation/specs/secondaryConditions203.ts"
       },
       "rulesProvenance": {
         "rulesetId": "rotom-table-reference-moves-v1",
         "canonicalizationVersion": 1,
         "sourceDataSha256": "f90491826349afd7d1f2809fd9d74b7acc555f5163b99264205ee369249e9815"
       },
-      "capabilityTags": [],
-      "suggestedCapabilityTags": [
-        "single-target-secondary-condition"
+      "capabilityTags": [
+        "expressions.bounded",
+        "targeting.authoritative"
       ],
-      "blockerCodes": [
-        "runtime.unimplemented"
-      ],
+      "suggestedCapabilityTags": [],
+      "blockerCodes": [],
       "limitations": [],
       "manualSteps": [],
-      "scenarioIds": [],
+      "scenarioIds": [
+        "freeze-dry.v2-water-weakness-override",
+        "freeze-dry.v2-neutral-hit",
+        "freeze-dry.v2-miss",
+        "freeze-dry.v2-critical-hit",
+        "freeze-dry.v2-duplicate-replay",
+        "freeze-dry.v2-stale-target"
+      ],
       "conformanceEvidence": {
-        "requirementTags": [],
-        "scenarios": [],
-        "notApplicable": []
+        "requirementTags": [
+          "branch.accuracy",
+          "branch.alternate",
+          "branch.critical-hit",
+          "mechanic.damage",
+          "recovery.retry",
+          "resource.multi"
+        ],
+        "scenarios": [
+          {
+            "scenarioId": "freeze-dry.v2-water-weakness-override",
+            "evidenceClasses": [
+              "alternate-branch",
+              "hit"
+            ]
+          },
+          {
+            "scenarioId": "freeze-dry.v2-neutral-hit",
+            "evidenceClasses": [
+              "hit"
+            ]
+          },
+          {
+            "scenarioId": "freeze-dry.v2-miss",
+            "evidenceClasses": [
+              "miss"
+            ]
+          },
+          {
+            "scenarioId": "freeze-dry.v2-critical-hit",
+            "evidenceClasses": [
+              "crit"
+            ]
+          },
+          {
+            "scenarioId": "freeze-dry.v2-duplicate-replay",
+            "evidenceClasses": [
+              "retry"
+            ]
+          },
+          {
+            "scenarioId": "freeze-dry.v2-stale-target",
+            "evidenceClasses": [
+              "multi-resource-conflict"
+            ]
+          }
+        ],
+        "notApplicable": [
+          {
+            "evidenceClass": "immunity",
+            "reason": "The frozen type chart has no type immune to Ice damage; broader ability interactions remain separately unassessed."
+          }
+        ]
       },
-      "reviewedAt": null,
+      "reviewedAt": "2026-07-19",
       "unsupportedInteractionIds": [],
-      "rolloutCohortId": null
+      "rolloutCohortId": "ma-203"
     },
     {
       "canonicalId": "Freezing Glare",
       "displayName": "Freezing Glare",
-      "baseStatus": "blocked",
+      "baseStatus": "complete",
       "interactionStatus": "unassessed",
       "runtime": {
-        "kind": "unimplemented",
-        "version": null,
-        "definitionHash": null,
-        "sourceModule": null
+        "kind": "movespec-v2",
+        "version": 2,
+        "definitionHash": "7c72957ad3ee883860787ed77fe4cf99f1848dbdc30deaefb2f0d15b78e9ce44",
+        "sourceModule": "server/domain/moveAutomation/specs/secondaryConditions203.ts"
       },
       "rulesProvenance": {
         "rulesetId": "rotom-table-reference-moves-v1",
         "canonicalizationVersion": 1,
         "sourceDataSha256": "f90491826349afd7d1f2809fd9d74b7acc555f5163b99264205ee369249e9815"
       },
-      "capabilityTags": [],
-      "suggestedCapabilityTags": [
-        "single-target-secondary-condition"
+      "capabilityTags": [
+        "conditions.typed",
+        "expressions.bounded",
+        "targeting.authoritative"
       ],
-      "blockerCodes": [
-        "runtime.unimplemented"
-      ],
+      "suggestedCapabilityTags": [],
+      "blockerCodes": [],
       "limitations": [],
       "manualSteps": [],
-      "scenarioIds": [],
+      "scenarioIds": [
+        "freezing-glare.v2-psychic-freeze-threshold-pass",
+        "freezing-glare.v2-freeze-threshold-fail",
+        "freezing-glare.v2-miss",
+        "freezing-glare.v2-critical-hit",
+        "freezing-glare.v2-ice-type-scene-branch",
+        "freezing-glare.v2-dark-immunity",
+        "freezing-glare.v2-ice-type-freeze-immunity",
+        "freezing-glare.v2-duplicate-replay",
+        "freezing-glare.v2-stale-target"
+      ],
       "conformanceEvidence": {
-        "requirementTags": [],
-        "scenarios": [],
+        "requirementTags": [
+          "branch.accuracy",
+          "branch.alternate",
+          "branch.critical-hit",
+          "branch.immunity",
+          "branch.threshold",
+          "mechanic.damage",
+          "recovery.retry",
+          "resource.multi"
+        ],
+        "scenarios": [
+          {
+            "scenarioId": "freezing-glare.v2-psychic-freeze-threshold-pass",
+            "evidenceClasses": [
+              "hit",
+              "threshold-pass"
+            ]
+          },
+          {
+            "scenarioId": "freezing-glare.v2-freeze-threshold-fail",
+            "evidenceClasses": [
+              "threshold-fail"
+            ]
+          },
+          {
+            "scenarioId": "freezing-glare.v2-miss",
+            "evidenceClasses": [
+              "miss"
+            ]
+          },
+          {
+            "scenarioId": "freezing-glare.v2-critical-hit",
+            "evidenceClasses": [
+              "crit"
+            ]
+          },
+          {
+            "scenarioId": "freezing-glare.v2-ice-type-scene-branch",
+            "evidenceClasses": [
+              "alternate-branch"
+            ]
+          },
+          {
+            "scenarioId": "freezing-glare.v2-dark-immunity",
+            "evidenceClasses": [
+              "immunity"
+            ]
+          },
+          {
+            "scenarioId": "freezing-glare.v2-ice-type-freeze-immunity",
+            "evidenceClasses": [
+              "immunity"
+            ]
+          },
+          {
+            "scenarioId": "freezing-glare.v2-duplicate-replay",
+            "evidenceClasses": [
+              "retry"
+            ]
+          },
+          {
+            "scenarioId": "freezing-glare.v2-stale-target",
+            "evidenceClasses": [
+              "multi-resource-conflict"
+            ]
+          }
+        ],
         "notApplicable": []
       },
-      "reviewedAt": null,
+      "reviewedAt": "2026-07-19",
       "unsupportedInteractionIds": [],
-      "rolloutCohortId": null
+      "rolloutCohortId": "ma-203"
     },
     {
       "canonicalId": "Frenzy Plant",
@@ -17272,37 +17698,112 @@
     {
       "canonicalId": "Ice Fang",
       "displayName": "Ice Fang",
-      "baseStatus": "blocked",
+      "baseStatus": "complete",
       "interactionStatus": "unassessed",
       "runtime": {
-        "kind": "unimplemented",
-        "version": null,
-        "definitionHash": null,
-        "sourceModule": null
+        "kind": "movespec-v2",
+        "version": 2,
+        "definitionHash": "038fb935cb5937cf67922c63429977cf42a9c1758fcb79de09adf7caa1089b10",
+        "sourceModule": "server/domain/moveAutomation/specs/secondaryConditions203.ts"
       },
       "rulesProvenance": {
         "rulesetId": "rotom-table-reference-moves-v1",
         "canonicalizationVersion": 1,
         "sourceDataSha256": "f90491826349afd7d1f2809fd9d74b7acc555f5163b99264205ee369249e9815"
       },
-      "capabilityTags": [],
-      "suggestedCapabilityTags": [
-        "single-target-secondary-condition"
+      "capabilityTags": [
+        "conditions.typed",
+        "expressions.bounded",
+        "targeting.authoritative"
       ],
-      "blockerCodes": [
-        "runtime.unimplemented"
-      ],
+      "suggestedCapabilityTags": [],
+      "blockerCodes": [],
       "limitations": [],
       "manualSteps": [],
-      "scenarioIds": [],
+      "scenarioIds": [
+        "ice-fang.v2-freeze-coin-branch",
+        "ice-fang.v2-flinch-coin-branch",
+        "ice-fang.v2-threshold-fail",
+        "ice-fang.v2-natural-twenty-both",
+        "ice-fang.v2-miss",
+        "ice-fang.v2-ice-type-freeze-immunity",
+        "ice-fang.v2-inner-focus-immunity",
+        "ice-fang.v2-duplicate-replay",
+        "ice-fang.v2-stale-target"
+      ],
       "conformanceEvidence": {
-        "requirementTags": [],
-        "scenarios": [],
+        "requirementTags": [
+          "branch.accuracy",
+          "branch.alternate",
+          "branch.critical-hit",
+          "branch.immunity",
+          "branch.threshold",
+          "mechanic.damage",
+          "recovery.retry",
+          "resource.multi"
+        ],
+        "scenarios": [
+          {
+            "scenarioId": "ice-fang.v2-freeze-coin-branch",
+            "evidenceClasses": [
+              "hit",
+              "threshold-pass"
+            ]
+          },
+          {
+            "scenarioId": "ice-fang.v2-flinch-coin-branch",
+            "evidenceClasses": [
+              "alternate-branch"
+            ]
+          },
+          {
+            "scenarioId": "ice-fang.v2-threshold-fail",
+            "evidenceClasses": [
+              "threshold-fail"
+            ]
+          },
+          {
+            "scenarioId": "ice-fang.v2-natural-twenty-both",
+            "evidenceClasses": [
+              "crit"
+            ]
+          },
+          {
+            "scenarioId": "ice-fang.v2-miss",
+            "evidenceClasses": [
+              "miss"
+            ]
+          },
+          {
+            "scenarioId": "ice-fang.v2-ice-type-freeze-immunity",
+            "evidenceClasses": [
+              "immunity"
+            ]
+          },
+          {
+            "scenarioId": "ice-fang.v2-inner-focus-immunity",
+            "evidenceClasses": [
+              "immunity"
+            ]
+          },
+          {
+            "scenarioId": "ice-fang.v2-duplicate-replay",
+            "evidenceClasses": [
+              "retry"
+            ]
+          },
+          {
+            "scenarioId": "ice-fang.v2-stale-target",
+            "evidenceClasses": [
+              "multi-resource-conflict"
+            ]
+          }
+        ],
         "notApplicable": []
       },
-      "reviewedAt": null,
+      "reviewedAt": "2026-07-19",
       "unsupportedInteractionIds": [],
-      "rolloutCohortId": null
+      "rolloutCohortId": "ma-203"
     },
     {
       "canonicalId": "Ice Hammer",
@@ -31448,37 +31949,125 @@
     {
       "canonicalId": "Shell Side Arm",
       "displayName": "Shell Side Arm",
-      "baseStatus": "blocked",
+      "baseStatus": "complete",
       "interactionStatus": "unassessed",
       "runtime": {
-        "kind": "unimplemented",
-        "version": null,
-        "definitionHash": null,
-        "sourceModule": null
+        "kind": "movespec-v2",
+        "version": 2,
+        "definitionHash": "12aa680b3f465981420428fe762e1ddc75814f186e52ef9a04585ff0b0040f23",
+        "sourceModule": "server/domain/moveAutomation/specs/secondaryConditions203.ts"
       },
       "rulesProvenance": {
         "rulesetId": "rotom-table-reference-moves-v1",
         "canonicalizationVersion": 1,
         "sourceDataSha256": "f90491826349afd7d1f2809fd9d74b7acc555f5163b99264205ee369249e9815"
       },
-      "capabilityTags": [],
-      "suggestedCapabilityTags": [
-        "single-target-secondary-condition"
+      "capabilityTags": [
+        "conditions.typed",
+        "expressions.bounded",
+        "targeting.authoritative"
       ],
-      "blockerCodes": [
-        "runtime.unimplemented"
-      ],
+      "suggestedCapabilityTags": [],
+      "blockerCodes": [],
       "limitations": [],
       "manualSteps": [],
-      "scenarioIds": [],
+      "scenarioIds": [
+        "shell-side-arm.v2-special-class-higher-offense",
+        "shell-side-arm.v2-physical-class-lower-defense",
+        "shell-side-arm.v2-defense-tie-stays-special",
+        "shell-side-arm.v2-poison-threshold-pass",
+        "shell-side-arm.v2-poison-threshold-fail",
+        "shell-side-arm.v2-miss",
+        "shell-side-arm.v2-critical-hit",
+        "shell-side-arm.v2-steel-immunity",
+        "shell-side-arm.v2-poison-condition-immunity",
+        "shell-side-arm.v2-duplicate-replay",
+        "shell-side-arm.v2-stale-target"
+      ],
       "conformanceEvidence": {
-        "requirementTags": [],
-        "scenarios": [],
+        "requirementTags": [
+          "branch.accuracy",
+          "branch.alternate",
+          "branch.critical-hit",
+          "branch.immunity",
+          "branch.threshold",
+          "mechanic.damage",
+          "recovery.retry",
+          "resource.multi"
+        ],
+        "scenarios": [
+          {
+            "scenarioId": "shell-side-arm.v2-special-class-higher-offense",
+            "evidenceClasses": [
+              "hit"
+            ]
+          },
+          {
+            "scenarioId": "shell-side-arm.v2-physical-class-lower-defense",
+            "evidenceClasses": [
+              "alternate-branch"
+            ]
+          },
+          {
+            "scenarioId": "shell-side-arm.v2-defense-tie-stays-special",
+            "evidenceClasses": [
+              "alternate-branch"
+            ]
+          },
+          {
+            "scenarioId": "shell-side-arm.v2-poison-threshold-pass",
+            "evidenceClasses": [
+              "threshold-pass"
+            ]
+          },
+          {
+            "scenarioId": "shell-side-arm.v2-poison-threshold-fail",
+            "evidenceClasses": [
+              "threshold-fail"
+            ]
+          },
+          {
+            "scenarioId": "shell-side-arm.v2-miss",
+            "evidenceClasses": [
+              "miss"
+            ]
+          },
+          {
+            "scenarioId": "shell-side-arm.v2-critical-hit",
+            "evidenceClasses": [
+              "crit"
+            ]
+          },
+          {
+            "scenarioId": "shell-side-arm.v2-steel-immunity",
+            "evidenceClasses": [
+              "immunity"
+            ]
+          },
+          {
+            "scenarioId": "shell-side-arm.v2-poison-condition-immunity",
+            "evidenceClasses": [
+              "immunity"
+            ]
+          },
+          {
+            "scenarioId": "shell-side-arm.v2-duplicate-replay",
+            "evidenceClasses": [
+              "retry"
+            ]
+          },
+          {
+            "scenarioId": "shell-side-arm.v2-stale-target",
+            "evidenceClasses": [
+              "multi-resource-conflict"
+            ]
+          }
+        ],
         "notApplicable": []
       },
-      "reviewedAt": null,
+      "reviewedAt": "2026-07-19",
       "unsupportedInteractionIds": [],
-      "rolloutCohortId": null
+      "rolloutCohortId": "ma-203"
     },
     {
       "canonicalId": "Shell Smash",

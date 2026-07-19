@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import manifestJson from '../../data/move-automation/manifest.json'
 import { moves } from '../../data/ptuReference'
+import { nativeMoveAutomationPresentationScriptForMove } from '~/utils/move-automation/nativePresentation'
 import {
   EXPLICIT_MOVE_AUTOMATION_SCRIPTS,
   ExplicitMoveAutomationRegistryValidationError,
@@ -159,9 +160,15 @@ describe('explicit move automation scripts', () => {
     expect(isSeamlessSingleTargetMoveScript(script)).toBe(true)
   })
 
-  it('keeps Chatter unautomated until Drown Out reaction support exists', () => {
+  it('keeps Chatter out of v1 while exposing its complete native Drown Out flow', () => {
     expect(explicitScriptForMove('Chatter')).toBeNull()
     expect(moveAutomationCoverage.missing).toContain('Chatter')
+    expect(nativeMoveAutomationPresentationScriptForMove('Chatter')).toMatchObject({
+      moveName: 'Chatter',
+      targetMode: 'one-target',
+      targetCount: 1,
+      automationNotes: [],
+    })
     expect(moveAutomationCoverage.missing).not.toContain('Spore')
     expect(moveAutomationCoverage.missing).not.toContain('Earth Power')
   })

@@ -11,7 +11,11 @@ import type {
   MoveEffectOperation,
   MoveRollEffectOperation,
 } from '#shared/moveAutomation/effects'
-import type { MoveSpec, MoveSpecTargetingDeclaration } from '#shared/moveAutomation/spec'
+import type {
+  MoveSpec,
+  MoveSpecEffectOperation,
+  MoveSpecTargetingDeclaration,
+} from '#shared/moveAutomation/spec'
 import { SECONDARY_CONDITIONS_203_HANDLER_ID } from '../handlers/secondaryConditions203'
 import type { MoveSpecV2Registration } from '../registry'
 
@@ -157,7 +161,7 @@ const fangCoinOperations = (
     id: `${slug}.secondary-coin`,
     kind: 'roll',
     source: { kind: 'operation', id: `${slug}.damage` },
-    recipients: { kind: 'hit-targets' },
+    recipients: { kind: 'none' },
     phase: 'after-damage',
     reasonCode: `${slug}.secondary-coin`,
     payload: {
@@ -178,6 +182,10 @@ const fangCoinOperations = (
           predicate: null,
         }],
         maximumRerolls: 0,
+      },
+      accuracyRollTrigger: {
+        rollId: `${slug}.accuracy-roll`,
+        trigger: { kind: 'natural-rolls', values: [18, 19] },
       },
     },
   }
@@ -214,6 +222,10 @@ const fangCoinOperations = (
   ]
 }
 
+const specOperations = (
+  operations: readonly MoveEffectOperation[],
+): readonly MoveSpecEffectOperation[] => operations as unknown as readonly MoveSpecEffectOperation[]
+
 const reviewedSpec = (input: {
   readonly canonicalId: string
   readonly slug: string
@@ -233,18 +245,24 @@ const reviewedSpec = (input: {
     cost: { kind: 'action-resource' as const, resource: 'standard' as const, amount: 1 },
   }],
   phases: [
-    { phase: 'accuracy' as const, operations: [accuracyOperation({
+    { phase: 'accuracy' as const, operations: specOperations([accuracyOperation({
       slug: input.slug,
       evasionRule: input.canonicalId === 'Dynamic Punch',
-    })] },
+    })]) },
     ...(['Fiery Wrath', 'Freezing Glare'].includes(input.canonicalId)
       ? []
-      : [{ phase: 'damage' as const, operations: input.operations.filter(operation => operation.phase === 'damage') }]),
+      : [{
+          phase: 'damage' as const,
+          operations: specOperations(input.operations.filter(operation => operation.phase === 'damage')),
+        }]),
     ...(input.operations.some(operation => operation.phase === 'after-damage')
-      ? [{ phase: 'after-damage' as const, operations: input.operations.filter(operation => operation.phase === 'after-damage') }]
+      ? [{
+          phase: 'after-damage' as const,
+          operations: specOperations(input.operations.filter(operation => operation.phase === 'after-damage')),
+        }]
       : []),
-    { phase: 'usage' as const, operations: [usageOperation(input.slug)] },
-    { phase: 'cleanup' as const, operations: [logOperation(input.slug)] },
+    { phase: 'usage' as const, operations: specOperations([usageOperation(input.slug)]) },
+    { phase: 'cleanup' as const, operations: specOperations([logOperation(input.slug)]) },
   ],
   registeredHandlerId: input.handler ? SECONDARY_CONDITIONS_203_HANDLER_ID : null,
   presentation: {

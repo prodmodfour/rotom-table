@@ -7,6 +7,8 @@ import { normalizeConditionName } from '~/utils/statusConditions'
 import type { SpawnedPokemon } from '~/types/pokemon'
 
 const IMMUNITY_ABILITY_NAME = 'Immunity'
+const INNER_FOCUS_ABILITY_NAME = 'Inner Focus'
+const OWN_TEMPO_ABILITY_NAME = 'Own Tempo'
 export const PASTEL_VEIL_ABILITY_NAME = 'Pastel Veil'
 const WATER_VEIL_ABILITY_NAME = 'Water Veil'
 export const SWEET_VEIL_RANGE_METERS = 3
@@ -137,6 +139,12 @@ export const moveAutomationConditionImmunitySource = (
   }
   if (canonical === 'Blindness' && hasAbility(target, KEEN_EYE_ABILITY_NAME)) return KEEN_EYE_ABILITY_NAME
 
+  if (canonical === 'Confused' && hasAbility(target, OWN_TEMPO_ABILITY_NAME)) {
+    return OWN_TEMPO_ABILITY_NAME
+  }
+  if (canonical === 'Flinch' && hasAbility(target, INNER_FOCUS_ABILITY_NAME)) {
+    return INNER_FOCUS_ABILITY_NAME
+  }
   if (canonical === 'Paralysis' && hasType(target, 'Electric')) return 'Electric type'
   if (canonical === 'Frozen' && hasType(target, 'Ice')) return 'Ice type'
   if (canonical === 'Poisoned' || canonical === 'Badly Poisoned') {

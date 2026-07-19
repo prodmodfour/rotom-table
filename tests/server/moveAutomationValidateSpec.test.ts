@@ -1594,6 +1594,91 @@ describe('authoritative MoveSpec validation and hashing', () => {
     )
   })
 
+  it('binds resolution-wide secondary tables to one earlier damage accuracy d20', () => {
+    const triggeredTableSpec = (): TestSpec => {
+      const spec = validSpec()
+      spec.phases[0]!.operations[0]!.recipients = { kind: 'attacked-targets' }
+      spec.phases.splice(2, 0, {
+        phase: 'after-damage',
+        operations: [{
+          id: 'operation.secondary-table',
+          kind: 'roll',
+          source: { kind: 'operation', id: 'operation.damage' },
+          recipients: { kind: 'none' },
+          phase: 'after-damage',
+          reasonCode: 'move.scratch.secondary-table',
+          payload: {
+            rollId: 'roll.secondary-table',
+            formula: { kind: 'table', tableId: 'table.secondary' },
+            table: {
+              tableId: 'table.secondary',
+              distribution: 'equal',
+              entries: [{
+                id: 'effect',
+                weight: null,
+                operationIds: ['operation.secondary-log'],
+                predicate: null,
+              }],
+              maximumRerolls: 0,
+            },
+            accuracyRollTrigger: {
+              rollId: 'roll.accuracy',
+              trigger: { kind: 'natural-rolls', values: [18, 19] },
+            },
+          },
+        }, {
+          id: 'operation.secondary-log',
+          kind: 'log',
+          source: { kind: 'operation', id: 'operation.secondary-table' },
+          recipients: { kind: 'none' },
+          phase: 'after-damage',
+          reasonCode: 'move.scratch.secondary-effect',
+          payload: { messageKey: 'move.scratch.secondary-effect', arguments: [] },
+        }],
+      })
+      return spec
+    }
+
+    expect(validateMoveSpec(triggeredTableSpec()).spec.phases[2]?.operations[0])
+      .toMatchObject({
+        kind: 'roll',
+        payload: {
+          accuracyRollTrigger: {
+            rollId: 'roll.accuracy',
+            trigger: { kind: 'natural-rolls', values: [18, 19] },
+          },
+        },
+      })
+
+    const unknown = triggeredTableSpec()
+    unknown.phases[2]!.operations[0]!.payload.accuracyRollTrigger = {
+      rollId: 'roll.missing',
+      trigger: { kind: 'range', minimum: 18 },
+    }
+    expectDefinitionError(
+      () => validateMoveSpec(unknown),
+      'unknown-reference',
+      'spec.phases[2].operations[0].payload.accuracyRollTrigger.rollId',
+    )
+
+    const notDamageLinked = triggeredTableSpec()
+    notDamageLinked.phases[1]!.operations[0]!.payload.accuracyRollId = null
+    expectDefinitionError(
+      () => validateMoveSpec(notDamageLinked),
+      'invalid-definition',
+      'spec.phases[2].operations[0].payload.accuracyRollTrigger.rollId',
+    )
+
+    const ambiguousRecipients = triggeredTableSpec()
+    ambiguousRecipients.targeting.kind = 'multi-target'
+    ambiguousRecipients.targeting.maxTargets = 2
+    expectDefinitionError(
+      () => validateMoveSpec(ambiguousRecipients),
+      'invalid-definition',
+      'spec.targeting.maxTargets',
+    )
+  })
+
   it('requires damage-linked HP and damage-timed costs to reference earlier damage', () => {
     const drainOperation = (damageOperationId: string): TestOperation => ({
       id: 'operation.drain',

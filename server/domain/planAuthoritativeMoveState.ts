@@ -74,6 +74,7 @@ import {
   type MoveStateChangePlan,
 } from './moveAutomation/plan'
 import {
+  moveResourceCostsInPhaseWindow,
   planEncounterMoveResourceCosts,
   planMoveResourceObservation,
 } from './moveAutomation/planMoveResources'
@@ -834,6 +835,10 @@ export const planPendingMoveResourceCosts = (options: {
     options.input.map,
     options.existingPlan,
   )
+  const dueCosts = moveResourceCostsInPhaseWindow(reviewedCosts, {
+    minimumPhaseExclusive: options.minimumPhaseExclusive,
+    maximumPhaseInclusive: options.execution.execution.request.phase,
+  })
   let observation: ReturnType<typeof planEncounterMoveResourceCosts>
   try {
     observation = planEncounterMoveResourceCosts({
@@ -851,7 +856,10 @@ export const planPendingMoveResourceCosts = (options: {
       minimumPhaseExclusive: options.minimumPhaseExclusive,
       maximumPhaseInclusive: options.execution.execution.request.phase,
       prerequisiteResources: options.prerequisiteResources,
-      markActedSinceEntry: true,
+      // A declaration-phase reaction may suspend before the move's pay phase.
+      // Opening that window alone cannot spend an action or mark the actor as
+      // having acted; the resumed phase window owns those state transitions.
+      markActedSinceEntry: dueCosts.length > 0,
     })
   }
   catch (error) {

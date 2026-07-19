@@ -1645,8 +1645,16 @@ const gateRandomTableControlledOperation = (options: {
   readonly operationId: string
   readonly controller: MoveRandomTableOperation | undefined
   readonly executions: ReadonlyMap<string, ExecutedMoveRandomTable>
+  readonly skippedControllerIds: ReadonlySet<string>
 }): MoveRandomTableOperationGate => {
   if (!options.controller) return { execute: true, tableId: null, selectedId: null }
+  if (options.skippedControllerIds.has(options.controller.id)) {
+    return {
+      execute: false,
+      tableId: options.controller.payload.table.tableId,
+      selectedId: null,
+    }
+  }
   const execution = options.executions.get(options.controller.id)
     ?? fail(
       'definition-integrity-mismatch',
@@ -2127,6 +2135,7 @@ const executeMoveSpecInternal = (
   const responseOwnerIdsByRequestOperation = new Map<string, readonly string[]>()
   let moveCancelledByReaction = false
   const randomTableExecutions = new Map<string, ExecutedMoveRandomTable>()
+  const skippedRandomTableOperationIds = new Set<string>()
   const currentSelectorState = (): MoveSpecSelectorState => ({
     targetIds,
     hitTargetIds,
@@ -2383,6 +2392,7 @@ const executeMoveSpecInternal = (
         operationId: operation.id,
         controller: randomTableControllers.get(operation.id),
         executions: randomTableExecutions,
+        skippedControllerIds: skippedRandomTableOperationIds,
       })
       if (!randomTableGate.execute) {
         trace = reduceMoveResolutionTrace(trace, {
@@ -2454,6 +2464,52 @@ const executeMoveSpecInternal = (
           result: { status: 'reaction-not-selected' },
         })
         continue
+      }
+      if (
+        operation.kind === 'roll'
+        && operation.payload.formula.kind === 'table'
+        && 'table' in operation.payload
+        && operation.payload.accuracyRollTrigger
+      ) {
+        const trigger = operation.payload.accuracyRollTrigger
+        const referenced = resolvedRolls.filter(roll => (
+          roll.referenceId === trigger.rollId && roll.purpose === 'accuracy'
+        ))
+        if (referenced.length !== 1) {
+          return fail(
+            'definition-integrity-mismatch',
+            `Accuracy-triggered operation table ${operation.id} requires exactly one prior authoritative accuracy result.`,
+          )
+        }
+        const ledger = input.context.random.snapshot().find(entry => (
+          entry.rollId === referenced[0]!.rollId
+        )) ?? fail(
+          'definition-integrity-mismatch',
+          `Accuracy-triggered operation table ${operation.id} cannot find roll ${referenced[0]!.rollId}.`,
+        )
+        const matched = trigger.trigger.kind === 'range'
+          ? ledger.naturalResult >= trigger.trigger.minimum
+          : trigger.trigger.values.includes(ledger.naturalResult)
+        if (!matched) {
+          skippedRandomTableOperationIds.add(operation.id)
+          trace = reduceMoveResolutionTrace(trace, {
+            kind: 'operation',
+            phase,
+            operationId: operation.id,
+            operationKind: operation.kind,
+            recipientIds,
+            outcome: 'no-op',
+            reasonCode: operation.reasonCode,
+            input: traceJson(operation.payload),
+            result: traceJson({
+              status: 'accuracy-roll-trigger-not-met',
+              requestedRollId: trigger.rollId,
+              resolvedRollId: ledger.rollId,
+              naturalResult: ledger.naturalResult,
+            }),
+          })
+          continue
+        }
       }
       if (
         spec.canonicalId === 'Knock Off'
@@ -4072,6 +4128,20 @@ const executeMoveSpecInternal = (
           reasonCode: operation.reasonCode,
         })
         if (response) continue
+        // A declare/pre-target window suspends before the normal target phase.
+        // Preserve server-resolved intent IDs in private audit evidence so a
+        // durable resume reconstructs and freshly validates the same targets.
+        if (MOVE_SPEC_PHASES.indexOf(phase) < MOVE_SPEC_PHASES.indexOf('target')) {
+          for (const placement of input.context.selectedPlacements) {
+            trace = reduceMoveResolutionTrace(trace, {
+              kind: 'target',
+              phase,
+              targetId: placement.id,
+              outcome: 'included',
+              reasonCode: 'pre-target-intent-preserved',
+            })
+          }
+        }
         responseResolver.assertAllConsumed()
         return materializePendingExecutionResult(
           terminalBase(

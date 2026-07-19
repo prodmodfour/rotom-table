@@ -338,6 +338,7 @@ const createDamageQuery = (options: {
         consultedPlacementIds: [],
         details: {
           moveType: calculation.moveType,
+          damageClass: calculation.damageClass,
           criticalHit: calculation.criticalHit,
           contextualDamageBase: calculation.contextualDamageBase
             ? {

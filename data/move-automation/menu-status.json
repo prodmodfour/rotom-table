@@ -1030,12 +1030,10 @@
     {
       "canonicalId": "Chatter",
       "displayName": "Chatter",
-      "baseStatus": "blocked",
+      "baseStatus": "complete",
       "interactionStatus": "unassessed",
-      "runtimeKind": "unimplemented",
-      "blockerCodes": [
-        "runtime.unimplemented"
-      ],
+      "runtimeKind": "movespec-v2",
+      "blockerCodes": [],
       "limitations": [],
       "manualSteps": []
     },
@@ -1962,12 +1960,10 @@
     {
       "canonicalId": "Dynamic Punch",
       "displayName": "Dynamic Punch",
-      "baseStatus": "blocked",
+      "baseStatus": "complete",
       "interactionStatus": "unassessed",
-      "runtimeKind": "unimplemented",
-      "blockerCodes": [
-        "runtime.unimplemented"
-      ],
+      "runtimeKind": "movespec-v2",
+      "blockerCodes": [],
       "limitations": [],
       "manualSteps": []
     },
@@ -2376,12 +2372,10 @@
     {
       "canonicalId": "Fiery Wrath",
       "displayName": "Fiery Wrath",
-      "baseStatus": "blocked",
+      "baseStatus": "complete",
       "interactionStatus": "unassessed",
-      "runtimeKind": "unimplemented",
-      "blockerCodes": [
-        "runtime.unimplemented"
-      ],
+      "runtimeKind": "movespec-v2",
+      "blockerCodes": [],
       "limitations": [],
       "manualSteps": []
     },
@@ -2410,12 +2404,10 @@
     {
       "canonicalId": "Fire Fang",
       "displayName": "Fire Fang",
-      "baseStatus": "blocked",
+      "baseStatus": "complete",
       "interactionStatus": "unassessed",
-      "runtimeKind": "unimplemented",
-      "blockerCodes": [
-        "runtime.unimplemented"
-      ],
+      "runtimeKind": "movespec-v2",
+      "blockerCodes": [],
       "limitations": [],
       "manualSteps": []
     },
@@ -2788,24 +2780,20 @@
     {
       "canonicalId": "Freeze-Dry",
       "displayName": "Freeze-Dry",
-      "baseStatus": "blocked",
+      "baseStatus": "complete",
       "interactionStatus": "unassessed",
-      "runtimeKind": "unimplemented",
-      "blockerCodes": [
-        "runtime.unimplemented"
-      ],
+      "runtimeKind": "movespec-v2",
+      "blockerCodes": [],
       "limitations": [],
       "manualSteps": []
     },
     {
       "canonicalId": "Freezing Glare",
       "displayName": "Freezing Glare",
-      "baseStatus": "blocked",
+      "baseStatus": "complete",
       "interactionStatus": "unassessed",
-      "runtimeKind": "unimplemented",
-      "blockerCodes": [
-        "runtime.unimplemented"
-      ],
+      "runtimeKind": "movespec-v2",
+      "blockerCodes": [],
       "limitations": [],
       "manualSteps": []
     },
@@ -3670,12 +3658,10 @@
     {
       "canonicalId": "Ice Fang",
       "displayName": "Ice Fang",
-      "baseStatus": "blocked",
+      "baseStatus": "complete",
       "interactionStatus": "unassessed",
-      "runtimeKind": "unimplemented",
-      "blockerCodes": [
-        "runtime.unimplemented"
-      ],
+      "runtimeKind": "movespec-v2",
+      "blockerCodes": [],
       "limitations": [],
       "manualSteps": []
     },
@@ -6488,12 +6474,10 @@
     {
       "canonicalId": "Shell Side Arm",
       "displayName": "Shell Side Arm",
-      "baseStatus": "blocked",
+      "baseStatus": "complete",
       "interactionStatus": "unassessed",
-      "runtimeKind": "unimplemented",
-      "blockerCodes": [
-        "runtime.unimplemented"
-      ],
+      "runtimeKind": "movespec-v2",
+      "blockerCodes": [],
       "limitations": [],
       "manualSteps": []
     },

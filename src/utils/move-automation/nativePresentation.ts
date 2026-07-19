@@ -111,7 +111,10 @@ export const nativeMoveAutomationPresentationScriptForMove = (
     return null
   }
   const override = NATIVE_PRESENTATION_OVERRIDES.get(canonical.name)
-  return cloneScript(override ?? createMoveAutomationScriptFromMoveData(canonical))
+  const presentation = override ?? createMoveAutomationScriptFromMoveData(canonical)
+  return cloneScript(status.baseStatus === 'complete'
+    ? { ...presentation, automationNotes: [] }
+    : presentation)
 }
 
 export const hasNativeMoveAutomationPresentation = (

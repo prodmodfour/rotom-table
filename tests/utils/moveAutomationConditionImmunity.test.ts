@@ -47,6 +47,23 @@ describe('move automation condition immunity', () => {
     expect(moveAutomationConditionImmunitySource('Total Blindness', token({ abilityNames: ['Keen Eye'] }))).toBeNull()
   })
 
+  it('blocks Confusion with Own Tempo and Flinch with Inner Focus', () => {
+    expect(moveAutomationConditionImmunitySource(
+      'Confused',
+      token({ abilityNames: ['Own Tempo'] }),
+    )).toBe('Own Tempo')
+    expect(moveAutomationConditionImmunitySource(
+      'Confusion',
+      token({ abilityNames: ['own-tempo'] }),
+    )).toBe('Own Tempo')
+    expect(moveAutomationConditionImmunitySource(
+      'Flinch',
+      token({ abilityNames: ['Inner Focus'] }),
+    )).toBe('Inner Focus')
+    expect(moveAutomationConditionImmunitySource('Confused', token())).toBeNull()
+    expect(moveAutomationConditionImmunitySource('Flinch', token())).toBeNull()
+  })
+
   it('accepts only distinct, in-range allied Sweet Veil providers', () => {
     const target = token({ position: { x: 0, y: 0, z: 0 } })
     const nearbyProvider = token({

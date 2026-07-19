@@ -366,6 +366,130 @@ describe('MoveSpec typed effect operations', () => {
     })
   })
 
+  it('strictly parses MA-203 flanking, compared-class, and cancelling-reaction data', () => {
+    const comparedDamageClass = {
+      kind: 'compare-stats',
+      operator: 'less-than',
+      left: {
+        kind: 'stat',
+        subject: { kind: 'current-target' },
+        stat: 'defense',
+        combatStagePolicy: 'honor',
+        stageModifierPolicy: 'honor',
+      },
+      right: {
+        kind: 'stat',
+        subject: { kind: 'current-target' },
+        stat: 'special-defense',
+        combatStagePolicy: 'honor',
+        stageModifierPolicy: 'honor',
+      },
+      whenTrue: 'physical',
+      whenFalse: 'special',
+    }
+    const flankingRoll = parseMoveEffectOperation(validOperation('roll', {
+      recipients: { kind: 'attacked-targets' },
+      payload: {
+        ...VALID_PAYLOADS.roll,
+        evasionRule: {
+          kind: 'ignore-when-flanked',
+          sourceId: 'dynamic-punch.flanked-target',
+          reasonCode: 'dynamic-punch.ignore-flanked-evasion',
+        },
+      },
+    }))
+    const thresholdTable = parseMoveEffectOperation(validOperation('roll', {
+      recipients: { kind: 'none' },
+      phase: 'after-damage',
+      payload: {
+        rollId: 'fang.secondary-coin-roll',
+        formula: { kind: 'table', tableId: 'fang.secondary-coin-table' },
+        table: {
+          tableId: 'fang.secondary-coin-table',
+          distribution: 'equal',
+          entries: [
+            { id: 'burn', weight: null, operationIds: ['fang.burn'], predicate: null },
+            { id: 'flinch', weight: null, operationIds: ['fang.flinch'], predicate: null },
+          ],
+          maximumRerolls: 0,
+        },
+        accuracyRollTrigger: {
+          rollId: 'roll.accuracy',
+          trigger: { kind: 'natural-rolls', values: [18, 19] },
+        },
+      },
+    }))
+    const comparedDamage = parseMoveEffectOperation(validOperation('damage', {
+      payload: {
+        ...VALID_PAYLOADS.damage,
+        damageClass: comparedDamageClass,
+      },
+    }))
+    const cancellation = parseMoveEffectOperation(validOperation('reaction-request', {
+      recipients: { kind: 'none' },
+      phase: 'declare',
+      payload: {
+        ...VALID_PAYLOADS['reaction-request'],
+        timing: 'declare',
+        ownerPlacementIds: ['target-token'],
+        cancellation: { kind: 'cancel-move', retainTriggeringUsage: true },
+      },
+    }))
+
+    expect(flankingRoll).toMatchObject({
+      payload: { evasionRule: { kind: 'ignore-when-flanked' } },
+    })
+    expect(thresholdTable).toMatchObject({
+      payload: {
+        accuracyRollTrigger: {
+          rollId: 'roll.accuracy',
+          trigger: { kind: 'natural-rolls', values: [18, 19] },
+        },
+      },
+    })
+    expect(comparedDamage).toMatchObject({
+      payload: {
+        damageClass: {
+          kind: 'compare-stats',
+          operator: 'less-than',
+          whenTrue: 'physical',
+          whenFalse: 'special',
+        },
+      },
+    })
+    expect(cancellation).toMatchObject({
+      payload: {
+        ownerPlacementIds: ['target-token'],
+        cancellation: { kind: 'cancel-move', retainTriggeringUsage: true },
+      },
+    })
+
+    expectEffectError(validOperation('damage', {
+      payload: {
+        ...VALID_PAYLOADS.damage,
+        damageClass: { ...comparedDamageClass, operator: 'greater-than' },
+      },
+    }), 'invalid-effect-operation', 'operation.payload.damageClass.operator')
+    expectEffectError(validOperation('reaction-request', {
+      recipients: { kind: 'none' },
+      phase: 'declare',
+      payload: {
+        ...VALID_PAYLOADS['reaction-request'],
+        timing: 'declare',
+        ownerPlacementIds: ['target-token', 'target-token'],
+      },
+    }), 'duplicate-id', 'operation.payload.ownerPlacementIds')
+    expectEffectError(validOperation('reaction-request', {
+      recipients: { kind: 'none' },
+      phase: 'declare',
+      payload: {
+        ...VALID_PAYLOADS['reaction-request'],
+        timing: 'declare',
+        cancellation: { kind: 'cancel-move', retainTriggeringUsage: false },
+      },
+    }), 'invalid-effect-operation', 'operation.payload.cancellation.retainTriggeringUsage')
+  })
+
   it('strictly parses actor-only permanent add, remove, and history-backed replacement operations', () => {
     const add = parseMoveEffectOperation(validOperation('permanent-move-list', {
       payload: {

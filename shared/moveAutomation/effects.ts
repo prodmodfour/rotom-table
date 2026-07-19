@@ -648,6 +648,8 @@ export interface MoveTableRollEffectPayload {
   readonly formula: MoveEffectTableRollFormula
   /** Reviewed equal/weighted outcomes and the later typed operation lists they enable. */
   readonly table: MoveRandomTableDefinition
+  /** Optional prior natural accuracy result that decides whether this table is rolled at all. */
+  readonly accuracyRollTrigger?: MoveConditionAccuracyRollTrigger
 }
 
 export type MoveRollEffectPayload =
@@ -1758,6 +1760,7 @@ const RECIPIENTS_FIELDS = ['kind'] as const
 const ROLL_FIELDS = ['rollId', 'formula'] as const
 const SCALAR_ROLL_OPTIONAL_FIELDS = ['accuracyRule', 'evasionRule'] as const
 const TABLE_ROLL_FIELDS = ['rollId', 'formula', 'table'] as const
+const TABLE_ROLL_OPTIONAL_FIELDS = ['accuracyRollTrigger'] as const
 const CONDITIONAL_ACCURACY_RULE_FIELDS = ['kind', 'predicate', 'sourceId', 'reasonCode'] as const
 const CONDITIONAL_EVASION_RULE_FIELDS = ['kind', 'sourceId', 'reasonCode'] as const
 const DICE_FORMULA_FIELDS = ['kind', 'count', 'sides', 'modifier'] as const
@@ -2677,7 +2680,12 @@ const parseRollPayload = (value: unknown, path: string): MoveRollEffectPayload =
     }
   }
 
-  const input = parseExactRecord(raw, TABLE_ROLL_FIELDS, path)
+  const input = parseRecordWithOptionalFields(
+    raw,
+    TABLE_ROLL_FIELDS,
+    TABLE_ROLL_OPTIONAL_FIELDS,
+    path,
+  )
   const rollId = parseStableId(ownValue(input, 'rollId', path), `${path}.rollId`)
   if (rollId.length > MOVE_RANDOM_SELECTION_LIMITS.rollIdLength) {
     fail(
@@ -2697,7 +2705,23 @@ const parseRollPayload = (value: unknown, path: string): MoveRollEffectPayload =
       `must match formula table ID ${formula.tableId}.`,
     )
   }
-  return { rollId, formula, table }
+  const hasAccuracyRollTrigger = Object.prototype.hasOwnProperty.call(
+    input,
+    'accuracyRollTrigger',
+  )
+  return {
+    rollId,
+    formula,
+    table,
+    ...(hasAccuracyRollTrigger
+      ? {
+          accuracyRollTrigger: parseAccuracyRollTrigger(
+            ownValue(input, 'accuracyRollTrigger', path),
+            `${path}.accuracyRollTrigger`,
+          ),
+        }
+      : {}),
+  }
 }
 
 const parseEffectRuleNode = <Value>(
@@ -3541,7 +3565,7 @@ const parseConditionRandomChoice = (
   }
 }
 
-const parseConditionAccuracyRollTrigger = (
+const parseAccuracyRollTrigger = (
   value: unknown,
   path: string,
 ): MoveConditionAccuracyRollTrigger => {
@@ -3554,7 +3578,7 @@ const parseConditionAccuracyRollTrigger = (
     return fail(
       'invalid-effect-operation',
       `${path}.trigger.kind`,
-      'must be range or natural-rolls for an accuracy-triggered condition.',
+      'must be range or natural-rolls for an accuracy-triggered effect.',
     )
   }
   return {
@@ -3677,7 +3701,7 @@ const parseConditionPayload = (value: unknown, path: string): MoveConditionEffec
     'accuracyRollTrigger',
   )
   const accuracyRollTrigger = hasAccuracyRollTrigger
-    ? parseConditionAccuracyRollTrigger(
+    ? parseAccuracyRollTrigger(
         ownValue(input, 'accuracyRollTrigger', path),
         `${path}.accuracyRollTrigger`,
       )

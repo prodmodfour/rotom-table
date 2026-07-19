@@ -1049,6 +1049,7 @@ export const validateMoveSpecOperationSequence = (
     readonly path: string
     readonly effectRecipientKind: MoveEffectRecipientSelectorKind
     readonly label: string
+    readonly allowResolutionWideTable?: boolean
   }): void => {
     assertPriorReference(
       options.rollId,
@@ -1081,7 +1082,10 @@ export const validateMoveSpecOperationSequence = (
     }
     if (
       referenced.recipients.kind !== 'attacked-targets'
-      || options.effectRecipientKind !== 'hit-targets'
+      || (
+        options.effectRecipientKind !== 'hit-targets'
+        && !(options.allowResolutionWideTable && options.effectRecipientKind === 'none')
+      )
     ) {
       fail(
         'invalid-definition',
@@ -1359,15 +1363,26 @@ export const validateMoveSpecOperationSequence = (
         )
       }
     }
-    if (operation.kind === 'condition' && operation.payload.accuracyRollTrigger) {
+    const accuracyRollTrigger = operation.kind === 'condition'
+      ? operation.payload.accuracyRollTrigger
+      : operation.kind === 'roll'
+        && operation.payload.formula.kind === 'table'
+        && 'table' in operation.payload
+        ? operation.payload.accuracyRollTrigger
+        : undefined
+    if (accuracyRollTrigger) {
       const referencePath = `${path}.payload.accuracyRollTrigger.rollId`
-      const rollId = operation.payload.accuracyRollTrigger.rollId
+      const rollId = accuracyRollTrigger.rollId
+      const resolutionWideTable = operation.kind === 'roll'
       assertPriorAccuracyRollReference({
         rollId,
         currentIndex: index,
         path: referencePath,
         effectRecipientKind: operation.recipients.kind,
-        label: 'an accuracy-triggered condition',
+        label: resolutionWideTable
+          ? 'an accuracy-triggered operation table'
+          : 'an accuracy-triggered condition',
+        allowResolutionWideTable: resolutionWideTable,
       })
       const linkedDamage = indexed.find(entry => (
         entry.index < index
@@ -1488,6 +1503,19 @@ const normalizeSpec = (input: unknown): ValidatedMoveSpec => {
   const rules = parseRules(spec)
   const phases = parseOperations(spec)
   validateResourceCostCombinations(spec.costs)
+  const hasAccuracyTriggeredOperationTable = phases.some(phase => phase.operations.some(operation => (
+    operation.kind === 'roll'
+    && operation.payload.formula.kind === 'table'
+    && 'table' in operation.payload
+    && operation.payload.accuracyRollTrigger !== undefined
+  )))
+  if (hasAccuracyTriggeredOperationTable && rules.targeting.maxTargets !== 1) {
+    fail(
+      'invalid-definition',
+      'spec.targeting.maxTargets',
+      'an accuracy-triggered resolution-wide operation table requires exactly one target.',
+    )
+  }
   const operationRuleAstNodes = phases.reduce((total, phase) => total + phase.operations.reduce(
     (phaseTotal, operation) => phaseTotal + (
       operation.kind === 'branch' && operation.payload.kind === 'predicate'

@@ -2809,7 +2809,7 @@ Status: DONE
 
 ## MA-203 — Implement Chatter through Shell Side Arm
 
-Status: TODO
+Status: DONE
 
 **Moves:** Chatter; Dynamic Punch; Fiery Wrath; Fire Fang; Freeze-Dry; Freezing Glare; Ice Fang; Shell Side Arm
 
