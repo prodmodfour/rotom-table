@@ -2738,7 +2738,7 @@ Status: DONE
 
 ## REG-031 — Certify Thunder Shock through Vine Whip
 
-Status: TODO
+Status: DONE
 
 **Baseline-registered moves:** Thunder Shock; Thunderbolt; Tickle; Torment; U-Turn; Vacuum Wave; Vice Grip; Vine Whip
 
