@@ -288,16 +288,30 @@ describe('move automation semantic coverage checker', () => {
       expect(first.status, `${first.stdout}\n${first.stderr}`).toBe(0)
       expect(second.stdout).toBe(first.stdout)
       const groups = JSON.parse(first.stdout).planning.groups
-      expect(groups.cohort).toEqual([
-        { cohortId: 'reg-024', count: 1, moves: ['Scratch'] },
-        {
+      const cohortIds = [...new Set(manifest.moves.flatMap(move => (
+        typeof move.rolloutCohortId === 'string' ? [move.rolloutCohortId] : []
+      )))].sort()
+      const expectedCohorts: Array<{
+        cohortId: string | null
+        count: number
+        moves: string[]
+      }> = cohortIds.map((cohortId) => {
+        const moves = manifest.moves
+          .filter(move => move.rolloutCohortId === cohortId)
+          .map(move => move.canonicalId as string)
+        return { cohortId, count: moves.length, moves }
+      })
+      const unassignedCohortMoves = manifest.moves
+        .filter(move => move.rolloutCohortId === null)
+        .map(move => move.canonicalId)
+      if (unassignedCohortMoves.length > 0) {
+        expectedCohorts.push({
           cohortId: null,
-          count: manifestMoveCount - 1,
-          moves: manifest.moves
-            .filter(move => move.canonicalId !== 'Scratch')
-            .map(move => move.canonicalId),
-        },
-      ])
+          count: unassignedCohortMoves.length,
+          moves: unassignedCohortMoves,
+        })
+      }
+      expect(groups.cohort).toEqual(expectedCohorts)
       expect(groups.capabilityBlocker.find(
         ({ blockerCode }: { blockerCode: string }) => blockerCode === 'targeting.authoritative',
       )).toMatchObject({ moves: expect.arrayContaining(['Scratch']) })

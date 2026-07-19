@@ -2785,7 +2785,7 @@ Each MA-200–MA-272 ticket is one commit.
 
 ## MA-200 — Implement Hyper Beam
 
-Status: TODO
+Status: DONE
 
 **Moves:** Hyper Beam
 

@@ -248,6 +248,9 @@ const createDamageQuery = (options: {
   readonly rollLedger: ImmediateMoveSpecResolution['rollLedger']
   readonly resolvedDamageTypes: readonly MoveDamageTypeResolution[]
   readonly resolvedDamageBases: readonly MoveContextualDamageBaseResolution[]
+  readonly dynamicRecipientsForOperation: (
+    operation: string | { readonly id: string },
+  ) => MoveCoreTokenDynamicRecipientSets
 }): MoveCoreTokenDamageQuery => {
   return {
     resolve: ({ operation, recipient }: MoveDamageResolutionQueryInput) => {
@@ -281,9 +284,19 @@ const createDamageQuery = (options: {
             recipient.placement.id,
           )
         : null
+      const script = options.scriptForOperation(operation.id)
+      const dynamicRecipients = options.dynamicRecipientsForOperation(operation)
+      const accuracyWasResolved = dynamicRecipients.hitTargetIds.includes(recipient.placement.id)
+        || dynamicRecipients.missedTargetIds.includes(recipient.placement.id)
       const state: MoveAutomationTargetResolutionState = {
         accuracyRoll: accuracyEntry ? String(accuracyEntry.naturalResult) : '',
-        hit: true,
+        // A reviewed Smite damage operation addresses attacked targets so a
+        // known miss can retain damage while remaining absent from hit identity.
+        // Compatibility reductions without an accuracy projection keep their
+        // prior hit assumption rather than becoming an implicit miss.
+        hit: !script.requiresAccuracy
+          || !accuracyWasResolved
+          || dynamicRecipients.hitTargetIds.includes(recipient.placement.id),
         crit: false,
         damageRoll: damageRollResult(damageEntry),
         manualHpLoss: '',
@@ -308,7 +321,7 @@ const createDamageQuery = (options: {
       const calculation = resolveMoveSpecDamageCalculation({
         context,
         operation,
-        script: options.scriptForOperation(operation.id),
+        script,
         recipient: recipient.token,
         resolution: state,
         fieldEffects: context.queries.weather.projectFieldEffects(),
@@ -915,6 +928,7 @@ export const reduceCompletedMoveSpec = (
           rollLedger: execution.rollLedger,
           resolvedDamageTypes: execution.resolvedDamageTypes,
           resolvedDamageBases: execution.resolvedDamageBases,
+          dynamicRecipientsForOperation,
         })
       : undefined,
     conditionAccuracyRolls: createConditionAccuracyRollQueries({

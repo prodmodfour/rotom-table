@@ -93,10 +93,9 @@ const manifestSelectingScratchV2 = (): {
 
 describe('authoritative move automation dual-runtime registry', () => {
   it('selects every implemented manifest runtime while retaining exact v1 definitions', () => {
-    expect(MOVE_AUTOMATION_RUNTIME_REGISTRY.size).toBe(EXPLICIT_MOVE_AUTOMATION_SCRIPTS.size)
-    expect(MOVE_AUTOMATION_RUNTIME_REGISTRY.entries()).toHaveLength(
-      EXPLICIT_MOVE_AUTOMATION_SCRIPTS.size,
-    )
+    const implementedRows = manifestJson.moves.filter(row => row.runtime.kind !== 'unimplemented')
+    expect(MOVE_AUTOMATION_RUNTIME_REGISTRY.size).toBe(implementedRows.length)
+    expect(MOVE_AUTOMATION_RUNTIME_REGISTRY.entries()).toHaveLength(implementedRows.length)
 
     for (const row of manifestJson.moves) {
       const selected = registeredMoveAutomationRuntimeFor(row.canonicalId)
