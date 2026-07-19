@@ -713,6 +713,7 @@ const combatStageUpdatesFromResults = (
 const compatibilityLogLines = (options: {
   readonly context: AuthoritativeMoveRulesContext
   readonly script: MoveAutomationScript
+  readonly trace: MoveResolutionAuditTrace
   readonly targetIds: readonly string[]
   readonly hitTargetIds: readonly string[]
   readonly executionRolls: readonly MoveSpecResolvedRoll[]
@@ -724,6 +725,16 @@ const compatibilityLogLines = (options: {
     `${options.context.actor.token.species} used ${options.script.moveName}.`,
     `MoveSpec v${options.script.version} used.`,
   ]
+  const cancelled = options.trace.events.some((event) => {
+    if (event.kind !== 'operation' || event.operationKind !== 'reaction-request') return false
+    const input = traceValueRecord(event.input)
+    const cancellation = traceValueRecord(input?.cancellation)
+    return event.outcome === 'applied' && cancellation?.kind === 'cancel-move'
+  })
+  if (cancelled) {
+    lines.push(`${options.script.moveName} was cancelled before its accuracy check.`)
+    return lines
+  }
   const hits = new Set(options.hitTargetIds)
   const multiHitTargetIds = new Set(
     options.multiHitExecutions.flatMap(execution => execution.recipientIds),
@@ -872,7 +883,17 @@ export const reduceCompletedMoveSpec = (
   ))
   assertSupportedImmediateOperations(uncommittedOperations)
 
-  const script = compatibilityScript(options.entry, options.runtime)
+  const compatibility = compatibilityScript(options.entry, options.runtime)
+  const childOperationIds = new Set(
+    execution.childExecutions.flatMap(child => child.operationIds),
+  )
+  const rootDamageTypes = execution.resolvedDamageTypes.filter(resolution => (
+    !childOperationIds.has(resolution.operationId)
+  ))
+  const resolvedTypes = [...new Set(rootDamageTypes.map(resolution => resolution.moveType))]
+  const script: MoveAutomationScript = resolvedTypes.length === 1
+    ? { ...compatibility, type: resolvedTypes[0]! }
+    : compatibility
   const contextForOperation = createMoveSpecOperationContextResolver({
     root: options.context,
     children: execution.childExecutions,
@@ -1016,6 +1037,7 @@ export const reduceCompletedMoveSpec = (
     logLines: compatibilityLogLines({
       context: options.context,
       script,
+      trace,
       targetIds: transactionTargetIds,
       hitTargetIds: transactionHitTargetIds,
       executionRolls: execution.resolvedRolls,

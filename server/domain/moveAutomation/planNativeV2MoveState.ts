@@ -674,10 +674,19 @@ export const planNativeV2MoveState = (options: {
   const usageResources = mapOperations.flatMap((emission) => {
     const { operation } = emission
     if (operation.kind !== 'usage') return []
+    const responseOwnerPlacementId = operation.recipients.kind === 'response-owner'
+      ? emission.recipientIds.length === 1
+        ? emission.recipientIds[0]!
+        : fail(
+            'state-change-conflict',
+            `Reaction usage operation ${operation.id} must resolve exactly one response owner.`,
+          )
+      : null
     if (operation.payload.resource) {
       return [{
         resourceId: operation.payload.resourceId,
-        placementId: contextForOperation(operation).actor.placement.id,
+        placementId: responseOwnerPlacementId
+          ?? contextForOperation(operation).actor.placement.id,
         move: {
           moveName: operation.payload.resource.moveName,
           moveKey: operation.payload.resource.moveKey,

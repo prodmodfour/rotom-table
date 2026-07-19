@@ -610,7 +610,11 @@ export const validateMoveSpecOperationSequence = (
     operationIndexById.set(operation.id, index)
 
     if (operation.kind === 'roll') {
-      if ('accuracyRule' in operation.payload && operation.payload.accuracyRule) {
+      const hasAccuracyRule = 'accuracyRule' in operation.payload
+        && operation.payload.accuracyRule
+      const hasEvasionRule = 'evasionRule' in operation.payload
+        && operation.payload.evasionRule
+      if (hasAccuracyRule || hasEvasionRule) {
         const formula = operation.payload.formula
         if (
           operation.phase !== 'accuracy'
@@ -622,8 +626,8 @@ export const validateMoveSpecOperationSequence = (
         ) {
           fail(
             'invalid-definition',
-            `${path}.payload.accuracyRule`,
-            'conditional automatic-hit rules require an attacked-target accuracy-phase 1d20 roll.',
+            `${path}.payload.${hasAccuracyRule ? 'accuracyRule' : 'evasionRule'}`,
+            'conditional accuracy rules require an attacked-target accuracy-phase 1d20 roll.',
           )
         }
       }
@@ -1141,6 +1145,35 @@ export const validateMoveSpecOperationSequence = (
   }
 
   indexed.forEach(({ operation, index, path }) => {
+    if (operation.recipients.kind === 'response-owner') {
+      if (operation.kind !== 'usage') {
+        fail(
+          'invalid-definition',
+          `${path}.recipients.kind`,
+          'response-owner recipients are supported only for reviewed reaction usage.',
+        )
+      }
+      const sourceOperationId = operation.source.kind === 'operation'
+        ? operation.source.id
+        : null
+      const sourceIndex = sourceOperationId === null
+        ? undefined
+        : operationIndexById.get(sourceOperationId)
+      const source = sourceIndex === undefined ? undefined : indexed[sourceIndex]?.operation
+      if (
+        sourceIndex === undefined
+        || sourceIndex >= index
+        || source?.kind !== 'reaction-request'
+        || source.payload.cancellation?.kind !== 'cancel-move'
+      ) {
+        fail(
+          'invalid-definition',
+          `${path}.source`,
+          'response-owner usage must reference an earlier move-cancelling reaction request.',
+        )
+      }
+    }
+
     if (operation.source.kind === 'operation') {
       assertPriorReference(
         operation.source.id,

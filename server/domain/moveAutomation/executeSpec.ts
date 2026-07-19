@@ -68,6 +68,7 @@ import {
   type MoveCheckResolution,
 } from './checks'
 import type { MoveContextualDamageBaseResolution } from './damageBase'
+import { resolveMoveDamageClass } from './damageStats'
 import { resolveMoveSpecDamageRollFormula } from './damageRollFormula'
 import { resolveMoveEffectCompoundRecipientIds } from './effectRecipientQueries'
 import {
@@ -457,6 +458,8 @@ interface MoveSpecSelectorState {
   readonly missedTargetIds: readonly string[]
   readonly damagedTargetIds: readonly string[]
   readonly faintedTargetIds: readonly string[]
+  /** Owner selected by a server-authored move-cancelling reaction response. */
+  readonly responseOwnerIds?: readonly string[]
 }
 
 const fail = (
@@ -771,6 +774,9 @@ const effectRecipientIds = (
     case 'actor':
     case 'source-placement':
       ids = [context.actor.placement.id]
+      break
+    case 'response-owner':
+      ids = state.responseOwnerIds ?? []
       break
     case 'selected-targets':
       ids = context.selectedPlacements.map(({ id }) => id)
@@ -2118,6 +2124,8 @@ const executeMoveSpecInternal = (
   const resolvedHazardCells: MoveSpecResolvedHazardCells[] = []
   const childExecutions: MoveSpecChildExecution[] = []
   const branchExecutions = new Map<string, ExecutedMoveBranch>()
+  const responseOwnerIdsByRequestOperation = new Map<string, readonly string[]>()
+  let moveCancelledByReaction = false
   const randomTableExecutions = new Map<string, ExecutedMoveRandomTable>()
   const currentSelectorState = (): MoveSpecSelectorState => ({
     targetIds,
@@ -2125,6 +2133,7 @@ const executeMoveSpecInternal = (
     missedTargetIds,
     damagedTargetIds,
     faintedTargetIds,
+    responseOwnerIds: [],
   })
   const referencedAccuracyRollIds = accuracyReferenceIds(program.operations)
   let mechanics: MoveSpecAuthoritativeMoveMechanics | null = null
@@ -2341,6 +2350,35 @@ const executeMoveSpecInternal = (
         damagedTargetIds,
         faintedTargetIds,
       }
+      if (
+        moveCancelledByReaction
+        && operation.kind !== 'usage'
+        && operation.kind !== 'log'
+      ) {
+        trace = reduceMoveResolutionTrace(trace, {
+          kind: 'operation',
+          phase,
+          operationId: operation.id,
+          operationKind: operation.kind,
+          recipientIds: [],
+          outcome: 'prevented',
+          reasonCode: operation.reasonCode,
+          input: traceJson(operation.payload),
+          result: { status: 'move-cancelled-by-reaction' },
+        })
+        continue
+      }
+      const resolveOperationRecipientIds = (): readonly string[] => {
+        if (operation.kind === 'reaction-request' && operation.payload.ownerPlacementIds) {
+          return canonicalPlacementIds(input.context, operation.payload.ownerPlacementIds)
+        }
+        if (operation.recipients.kind === 'response-owner') {
+          return operation.source.kind === 'operation'
+            ? responseOwnerIdsByRequestOperation.get(operation.source.id) ?? []
+            : []
+        }
+        return effectRecipientIds(input.context, selectorState, operation.recipients.kind)
+      }
       const randomTableGate = gateRandomTableControlledOperation({
         operationId: operation.id,
         controller: randomTableControllers.get(operation.id),
@@ -2366,11 +2404,7 @@ const executeMoveSpecInternal = (
       }
       const branchGate = gateBranchControlledOperation({
         operationId: operation.id,
-        resolveRecipientIds: () => effectRecipientIds(
-          input.context,
-          selectorState,
-          operation.recipients.kind,
-        ),
+        resolveRecipientIds: resolveOperationRecipientIds,
         controller: branchControllers.get(operation.id),
         executions: branchExecutions,
       })
@@ -2407,6 +2441,20 @@ const executeMoveSpecInternal = (
         continue
       }
       const recipientIds = branchGate.recipientIds
+      if (operation.recipients.kind === 'response-owner' && recipientIds.length === 0) {
+        trace = reduceMoveResolutionTrace(trace, {
+          kind: 'operation',
+          phase,
+          operationId: operation.id,
+          operationKind: operation.kind,
+          recipientIds: [],
+          outcome: 'no-op',
+          reasonCode: operation.reasonCode,
+          input: traceJson(operation.payload),
+          result: { status: 'reaction-not-selected' },
+        })
+        continue
+      }
       if (
         spec.canonicalId === 'Knock Off'
         && operation.kind === 'item'
@@ -2776,17 +2824,60 @@ const executeMoveSpecInternal = (
             }
             const move = getMechanics()
             target = targetTokenForRoll(input.context, recipientId)
+            const linkedDamage = program.operations.find((candidate): candidate is MoveDamageEffectOperation => (
+              candidate.kind === 'damage'
+              && candidate.payload.accuracyRollId === operation.payload.rollId
+            ))
+            const damageClass = linkedDamage
+              ? resolveMoveDamageClass({
+                  context: input.context,
+                  operation: linkedDamage,
+                  recipientId,
+                }).damageClass
+              : null
+            const moveScriptForAccuracy: MoveAutomationScript = damageClass
+              ? {
+                  ...move.script,
+                  damageClass: damageClass === 'physical' ? 'Physical' : 'Special',
+                }
+              : move.script
             const userAccuracy = resolveAuthoritativeMoveUserAccuracy(input.context, {
               targetPlacementId: recipientId,
             })
-            targetEvasion = resolveMoveAutomationTargetEvasion(
-              move.script,
-              target,
-              {
-                attacker: input.context.actor.token,
-                fieldEffects: input.context.queries.rooms.projectFieldEffects(),
-              },
-            ).value
+            const evasionRule = 'evasionRule' in operation.payload
+              ? operation.payload.evasionRule
+              : undefined
+            const flanking = evasionRule
+              ? input.context.queries.flanking.resolve(recipientId)
+              : null
+            if (evasionRule && flanking) {
+              trace = reduceMoveResolutionTrace(trace, {
+                kind: 'predicate',
+                phase,
+                predicateId: `${operation.id}.evasion-rule.${recipientId}`,
+                outcome: flanking.flanked,
+                reasonCode: flanking.flanked
+                  ? evasionRule.reasonCode
+                  : flanking.reasonCode,
+                input: traceJson({
+                  sourceId: evasionRule.sourceId,
+                  requiredAdjacentSquares: flanking.requiredAdjacentSquares,
+                  adjacentFoeIds: flanking.adjacentFoeIds,
+                  qualifyingFoeIds: flanking.qualifyingFoeIds,
+                  contributions: flanking.contributions,
+                }),
+              })
+            }
+            targetEvasion = flanking?.flanked
+              ? 0
+              : resolveMoveAutomationTargetEvasion(
+                  moveScriptForAccuracy,
+                  target,
+                  {
+                    attacker: input.context.actor.token,
+                    fieldEffects: input.context.queries.rooms.projectFieldEffects(),
+                  },
+                ).value
             modifiers = userAccuracy.modifiers
           }
 
@@ -2898,6 +2989,7 @@ const executeMoveSpecInternal = (
 
       if (operation.kind === 'damage') {
         const operationDamageTypes: MoveDamageTypeResolution[] = []
+        const operationDamageClasses: ReturnType<typeof resolveMoveDamageClass>[] = []
         const operationDamageBases: MoveContextualDamageBaseResolution[] = []
         const projectedDamagedTargetIds = new Set(damagedTargetIds)
         const rollSummaries: Array<{
@@ -2908,6 +3000,12 @@ const executeMoveSpecInternal = (
         }> = []
         for (const [index, recipientId] of recipientIds.entries()) {
           targetTokenForRoll(input.context, recipientId)
+          const resolvedClass = resolveMoveDamageClass({
+            context: input.context,
+            operation,
+            recipientId,
+          })
+          operationDamageClasses.push(resolvedClass)
           const resolvedType = resolveMoveDamageType({
             context: input.context,
             operation,
@@ -2975,6 +3073,7 @@ const executeMoveSpecInternal = (
           result: traceJson({
             status: 'emitted',
             damageTypes: operationDamageTypes,
+            damageClasses: operationDamageClasses,
             contextualDamageBases: operationDamageBases,
             damageRolls: rollSummaries,
           }),
@@ -3927,6 +4026,24 @@ const executeMoveSpecInternal = (
           options: request.options,
           allowPass: request.allowPass,
         })
+        if (response && operation.kind === 'reaction-request' && operation.payload.cancellation) {
+          if (response.optionId === null) {
+            responseOwnerIdsByRequestOperation.set(operation.id, Object.freeze([]))
+          }
+          else {
+            if (recipientIds.length !== 1) {
+              return fail(
+                'definition-integrity-mismatch',
+                `Move-cancelling reaction ${operation.id} must have exactly one authoritative owner.`,
+              )
+            }
+            responseOwnerIdsByRequestOperation.set(
+              operation.id,
+              Object.freeze([recipientIds[0]!]),
+            )
+            moveCancelledByReaction = true
+          }
+        }
         trace = reduceMoveResolutionTrace(trace, {
           kind: 'operation',
           phase,

@@ -144,6 +144,8 @@ export const MOVE_EFFECT_RECIPIENT_SELECTOR_KINDS = [
   'fainted-targets',
   'area-targets',
   'source-placement',
+  /** Server-selected owner of one answered durable reaction window. */
+  'response-owner',
   'actor-and-attacked-targets',
   'cardinally-adjacent-to-hit-targets',
 ] as const
@@ -190,6 +192,8 @@ export const MOVE_EFFECT_BRANCH_SCOPES = ['resolution', 'recipient'] as const
 export const MOVE_EFFECT_BRANCH_CHOICE_OWNERS = ['recipients', 'actor'] as const
 
 export const MOVE_EFFECT_DAMAGE_CLASSES = ['physical', 'special'] as const
+export const MOVE_DAMAGE_CLASS_SELECTION_KINDS = ['compare-stats'] as const
+export const MOVE_DAMAGE_CLASS_COMPARISON_OPERATORS = ['less-than'] as const
 export const MOVE_EFFECT_DAMAGE_BASE_STAB_TIMINGS = [
   'none',
   'before-bounds',
@@ -478,6 +482,10 @@ export type MoveEffectBranchScope = (typeof MOVE_EFFECT_BRANCH_SCOPES)[number]
 export type MoveEffectBranchChoiceOwner =
   (typeof MOVE_EFFECT_BRANCH_CHOICE_OWNERS)[number]
 export type MoveEffectDamageClass = (typeof MOVE_EFFECT_DAMAGE_CLASSES)[number]
+export type MoveDamageClassSelectionKind =
+  (typeof MOVE_DAMAGE_CLASS_SELECTION_KINDS)[number]
+export type MoveDamageClassComparisonOperator =
+  (typeof MOVE_DAMAGE_CLASS_COMPARISON_OPERATORS)[number]
 export type MoveEffectTemporaryRecipientScope =
   (typeof MOVE_EFFECT_TEMPORARY_RECIPIENT_SCOPES)[number]
 export type MoveEffectDamageBaseStabTiming =
@@ -619,11 +627,20 @@ export interface MoveConditionalAutomaticHitRule {
   readonly reasonCode: string
 }
 
+/** Server geometry may suppress Evasion without changing the move's base AC. */
+export interface MoveConditionalEvasionRule {
+  readonly kind: 'ignore-when-flanked'
+  readonly sourceId: string
+  readonly reasonCode: string
+}
+
 export interface MoveScalarRollEffectPayload {
   readonly rollId: string
   readonly formula: MoveEffectDiceRollFormula | MoveEffectUniformIntegerRollFormula
   /** Optional reviewed predicate that promotes an accuracy d20 to automatic hit. */
   readonly accuracyRule?: MoveConditionalAutomaticHitRule
+  /** Optional authoritative positional rule that changes only target Evasion. */
+  readonly evasionRule?: MoveConditionalEvasionRule
 }
 
 export interface MoveTableRollEffectPayload {
@@ -859,6 +876,21 @@ export type MoveDamageBase = number | MoveContextualDamageBase
 /** Static canonical type ID or a bounded scalar expression resolved once per recipient. */
 export type MoveDamageType = string | MoveExpression
 
+/**
+ * Select Physical or Special by comparing two authoritative stat expressions.
+ * Equality follows `whenFalse`, which makes tie policy explicit in reviewed data.
+ */
+export interface MoveComparedDamageClassSelection {
+  readonly kind: 'compare-stats'
+  readonly operator: MoveDamageClassComparisonOperator
+  readonly left: MoveStatSelectionExpression
+  readonly right: MoveStatSelectionExpression
+  readonly whenTrue: MoveEffectDamageClass
+  readonly whenFalse: MoveEffectDamageClass
+}
+
+export type MoveDamageClass = MoveEffectDamageClass | MoveComparedDamageClassSelection
+
 export interface MoveDamageDefenderTypeOverride {
   readonly defenderType: string
   readonly relation: MoveEffectTypeRelation
@@ -912,7 +944,7 @@ export interface MoveCriticalHitPolicy {
 }
 
 export interface MoveDamageEffectPayload {
-  readonly damageClass: MoveEffectDamageClass
+  readonly damageClass: MoveDamageClass
   /** A number preserves fixed v2 definitions; contextual rules use the bounded expression form. */
   readonly damageBase: MoveDamageBase
   readonly moveType: MoveDamageType
@@ -1605,6 +1637,12 @@ export interface MoveChoiceRequestEffectPayload {
   readonly itemChoice?: MoveItemChoiceDeclaration
 }
 
+export interface MoveReactionCancellationPolicy {
+  readonly kind: 'cancel-move'
+  /** A failed triggering move still spends its reviewed usage and action costs. */
+  readonly retainTriggeringUsage: true
+}
+
 export interface MoveReactionRequestEffectPayload {
   readonly requestId: string
   readonly promptKey: string
@@ -1613,6 +1651,13 @@ export interface MoveReactionRequestEffectPayload {
   readonly allowPass: true
   readonly timing: MoveReactionTiming
   readonly priority: number
+  /**
+   * Server handlers may materialize concrete placement owners from an immutable
+   * snapshot. Static specs leave this absent and use the operation selector.
+   */
+  readonly ownerPlacementIds?: readonly string[]
+  /** Selecting an option cancels later mechanics while retaining usage/costs. */
+  readonly cancellation?: MoveReactionCancellationPolicy
 }
 
 export interface MoveEffectOperationEnvelope<
@@ -1711,9 +1756,10 @@ const OPERATION_FIELDS = [
 const SOURCE_FIELDS = ['kind', 'id'] as const
 const RECIPIENTS_FIELDS = ['kind'] as const
 const ROLL_FIELDS = ['rollId', 'formula'] as const
-const SCALAR_ROLL_OPTIONAL_FIELDS = ['accuracyRule'] as const
+const SCALAR_ROLL_OPTIONAL_FIELDS = ['accuracyRule', 'evasionRule'] as const
 const TABLE_ROLL_FIELDS = ['rollId', 'formula', 'table'] as const
 const CONDITIONAL_ACCURACY_RULE_FIELDS = ['kind', 'predicate', 'sourceId', 'reasonCode'] as const
+const CONDITIONAL_EVASION_RULE_FIELDS = ['kind', 'sourceId', 'reasonCode'] as const
 const DICE_FORMULA_FIELDS = ['kind', 'count', 'sides', 'modifier'] as const
 const UNIFORM_FORMULA_FIELDS = ['kind', 'minimum', 'maximum'] as const
 const TABLE_FORMULA_FIELDS = ['kind', 'tableId'] as const
@@ -1791,6 +1837,14 @@ const DAMAGE_REQUIRED_FIELDS = [
   'moveType',
   'accuracyRollId',
   'criticalRollId',
+] as const
+const DAMAGE_CLASS_SELECTION_FIELDS = [
+  'kind',
+  'operator',
+  'left',
+  'right',
+  'whenTrue',
+  'whenFalse',
 ] as const
 const DAMAGE_OPTIONAL_FIELDS = [
   'typeEffectiveness',
@@ -2051,7 +2105,7 @@ const LOG_FIELDS = ['messageKey', 'arguments'] as const
 const LOG_ARGUMENT_FIELDS = ['key', 'value'] as const
 const REQUEST_FIELDS = ['requestId', 'promptKey', 'options', 'allowPass'] as const
 const ITEM_CHOICE_REQUEST_FIELDS = [...REQUEST_FIELDS, 'itemChoice'] as const
-const REACTION_REQUEST_FIELDS = [
+const REACTION_REQUEST_REQUIRED_FIELDS = [
   'requestId',
   'promptKey',
   'options',
@@ -2059,6 +2113,11 @@ const REACTION_REQUEST_FIELDS = [
   'timing',
   'priority',
 ] as const
+const REACTION_REQUEST_OPTIONAL_FIELDS = [
+  'ownerPlacementIds',
+  'cancellation',
+] as const
+const REACTION_CANCELLATION_FIELDS = ['kind', 'retainTriggeringUsage'] as const
 const REQUEST_OPTION_FIELDS = ['id', 'labelKey'] as const
 
 const STABLE_ID_PATTERN = /^[a-z0-9]+(?:[._:/-][a-z0-9]+)*$/
@@ -2565,6 +2624,25 @@ const parseConditionalAccuracyRule = (
   }
 }
 
+const parseConditionalEvasionRule = (
+  value: unknown,
+  path: string,
+): MoveConditionalEvasionRule => {
+  const input = parseExactRecord(value, CONDITIONAL_EVASION_RULE_FIELDS, path)
+  if (ownValue(input, 'kind', path) !== 'ignore-when-flanked') {
+    fail(
+      'invalid-effect-operation',
+      `${path}.kind`,
+      'must be ignore-when-flanked.',
+    )
+  }
+  return {
+    kind: 'ignore-when-flanked',
+    sourceId: parseStableId(ownValue(input, 'sourceId', path), `${path}.sourceId`),
+    reasonCode: parseStableId(ownValue(input, 'reasonCode', path), `${path}.reasonCode`),
+  }
+}
+
 const parseRollPayload = (value: unknown, path: string): MoveRollEffectPayload => {
   const raw = parseRecord(value, path)
   const formula = parseRollFormula(ownValue(raw, 'formula', path), `${path}.formula`)
@@ -2576,6 +2654,7 @@ const parseRollPayload = (value: unknown, path: string): MoveRollEffectPayload =
       path,
     )
     const hasAccuracyRule = Object.prototype.hasOwnProperty.call(input, 'accuracyRule')
+    const hasEvasionRule = Object.prototype.hasOwnProperty.call(input, 'evasionRule')
     return {
       rollId: parseStableId(ownValue(input, 'rollId', path), `${path}.rollId`),
       formula,
@@ -2584,6 +2663,14 @@ const parseRollPayload = (value: unknown, path: string): MoveRollEffectPayload =
             accuracyRule: parseConditionalAccuracyRule(
               ownValue(input, 'accuracyRule', path),
               `${path}.accuracyRule`,
+            ),
+          }
+        : {}),
+      ...(hasEvasionRule
+        ? {
+            evasionRule: parseConditionalEvasionRule(
+              ownValue(input, 'evasionRule', path),
+              `${path}.evasionRule`,
             ),
           }
         : {}),
@@ -2839,6 +2926,54 @@ const parseCriticalHitPolicy = (
   }
 }
 
+const parseDamageClass = (
+  value: unknown,
+  path: string,
+): MoveDamageClass => {
+  if (typeof value === 'string') {
+    return parseEnum<MoveEffectDamageClass>(
+      value,
+      DAMAGE_CLASS_SET,
+      path,
+      'physical or special',
+    )
+  }
+  const input = parseExactRecord(value, DAMAGE_CLASS_SELECTION_FIELDS, path)
+  if (ownValue(input, 'kind', path) !== 'compare-stats') {
+    fail('invalid-effect-operation', `${path}.kind`, 'must be compare-stats.')
+  }
+  if (ownValue(input, 'operator', path) !== 'less-than') {
+    fail('invalid-effect-operation', `${path}.operator`, 'must be less-than.')
+  }
+  const whenTrue = parseEnum<MoveEffectDamageClass>(
+    ownValue(input, 'whenTrue', path),
+    DAMAGE_CLASS_SET,
+    `${path}.whenTrue`,
+    'physical or special',
+  )
+  const whenFalse = parseEnum<MoveEffectDamageClass>(
+    ownValue(input, 'whenFalse', path),
+    DAMAGE_CLASS_SET,
+    `${path}.whenFalse`,
+    'physical or special',
+  )
+  if (whenTrue === whenFalse) {
+    fail(
+      'invalid-effect-operation',
+      path,
+      'a damage-class comparison must select distinct outcomes.',
+    )
+  }
+  return {
+    kind: 'compare-stats',
+    operator: 'less-than',
+    left: parseDamageStatSelection(ownValue(input, 'left', path), `${path}.left`),
+    right: parseDamageStatSelection(ownValue(input, 'right', path), `${path}.right`),
+    whenTrue,
+    whenFalse,
+  }
+}
+
 const parseDamagePayload = (value: unknown, path: string): MoveDamageEffectPayload => {
   const input = parseRecordWithOptionalFields(
     value,
@@ -2851,11 +2986,9 @@ const parseDamagePayload = (value: unknown, path: string): MoveDamageEffectPaylo
   const hasAttackStat = Object.prototype.hasOwnProperty.call(input, 'attackStat')
   const hasDefenseStat = Object.prototype.hasOwnProperty.call(input, 'defenseStat')
   return {
-    damageClass: parseEnum<MoveEffectDamageClass>(
+    damageClass: parseDamageClass(
       ownValue(input, 'damageClass', path),
-      DAMAGE_CLASS_SET,
       `${path}.damageClass`,
-      'physical or special',
     ),
     damageBase: parseDamageBase(
       ownValue(input, 'damageBase', path),
@@ -5497,7 +5630,12 @@ const parseReactionRequestPayload = (
   value: unknown,
   path: string,
 ): MoveReactionRequestEffectPayload => {
-  const input = parseExactRecord(value, REACTION_REQUEST_FIELDS, path)
+  const input = parseRecordWithOptionalFields(
+    value,
+    REACTION_REQUEST_REQUIRED_FIELDS,
+    REACTION_REQUEST_OPTIONAL_FIELDS,
+    path,
+  )
   const allowPass = parseBoolean(ownValue(input, 'allowPass', path), `${path}.allowPass`)
   if (!allowPass) {
     fail(
@@ -5514,6 +5652,44 @@ const parseReactionRequestPayload = (
         `${path}.timing`,
         'must be a canonical move reaction timing.',
       )
+  const hasOwners = Object.prototype.hasOwnProperty.call(input, 'ownerPlacementIds')
+  const ownerPlacementIds = hasOwners
+    ? parseBoundedArray(
+        ownValue(input, 'ownerPlacementIds', path),
+        `${path}.ownerPlacementIds`,
+        MOVE_EFFECT_OPERATION_LIMITS.requestOptions,
+      ).map((value, index) => parseBoundedText(
+        value,
+        `${path}.ownerPlacementIds[${index}]`,
+        MOVE_EFFECT_OPERATION_LIMITS.identifierLength,
+      ))
+    : undefined
+  if (ownerPlacementIds && ownerPlacementIds.length === 0) {
+    fail('invalid-effect-operation', `${path}.ownerPlacementIds`, 'must not be empty.')
+  }
+  if (ownerPlacementIds && new Set(ownerPlacementIds).size !== ownerPlacementIds.length) {
+    fail('duplicate-id', `${path}.ownerPlacementIds`, 'must not contain duplicates.')
+  }
+  const hasCancellation = Object.prototype.hasOwnProperty.call(input, 'cancellation')
+  let cancellation: MoveReactionCancellationPolicy | undefined
+  if (hasCancellation) {
+    const candidate = parseExactRecord(
+      ownValue(input, 'cancellation', path),
+      REACTION_CANCELLATION_FIELDS,
+      `${path}.cancellation`,
+    )
+    if (ownValue(candidate, 'kind', `${path}.cancellation`) !== 'cancel-move') {
+      fail('invalid-effect-operation', `${path}.cancellation.kind`, 'must be cancel-move.')
+    }
+    if (ownValue(candidate, 'retainTriggeringUsage', `${path}.cancellation`) !== true) {
+      fail(
+        'invalid-effect-operation',
+        `${path}.cancellation.retainTriggeringUsage`,
+        'must be true for a failed triggering move.',
+      )
+    }
+    cancellation = { kind: 'cancel-move', retainTriggeringUsage: true }
+  }
   return {
     requestId: parseStableId(ownValue(input, 'requestId', path), `${path}.requestId`),
     promptKey: parseStableId(ownValue(input, 'promptKey', path), `${path}.promptKey`),
@@ -5526,6 +5702,8 @@ const parseReactionRequestPayload = (
       -MOVE_EFFECT_OPERATION_LIMITS.reactionPriorityMagnitude,
       MOVE_EFFECT_OPERATION_LIMITS.reactionPriorityMagnitude,
     ),
+    ...(ownerPlacementIds ? { ownerPlacementIds } : {}),
+    ...(cancellation ? { cancellation } : {}),
   }
 }
 

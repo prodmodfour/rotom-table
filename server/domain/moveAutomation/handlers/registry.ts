@@ -21,6 +21,7 @@ import {
 } from '../trace'
 import { ASTONISH_MOVE_HANDLER_REGISTRATION } from './astonish'
 import { DARK_VOID_MOVE_HANDLER_REGISTRATION } from './darkVoid'
+import { SECONDARY_CONDITIONS_203_HANDLER_REGISTRATION } from './secondaryConditions203'
 import { TAKE_DOWN_MOVE_HANDLER_REGISTRATION } from './takeDown'
 
 export const REGISTERED_MOVE_HANDLER_LIMITS = Object.freeze({
@@ -239,6 +240,7 @@ export const createRegisteredMoveHandlerRegistry = (
 export const REGISTERED_MOVE_HANDLER_REGISTRY = createRegisteredMoveHandlerRegistry([
   ASTONISH_MOVE_HANDLER_REGISTRATION,
   DARK_VOID_MOVE_HANDLER_REGISTRATION,
+  SECONDARY_CONDITIONS_203_HANDLER_REGISTRATION,
   TAKE_DOWN_MOVE_HANDLER_REGISTRATION,
 ])
 

@@ -1,5 +1,7 @@
 import type {
+  MoveComparedDamageClassSelection,
   MoveDamageEffectOperation,
+  MoveEffectDamageClass,
 } from '#shared/moveAutomation/effects'
 import type {
   MoveStatSelectionExpression,
@@ -73,7 +75,20 @@ export interface MoveDamageStatSelectionResolution
   readonly trace: readonly MoveRuleEvaluationTraceEntry[]
 }
 
+export interface MoveDamageClassResolution {
+  readonly damageClass: MoveEffectDamageClass
+  readonly source: 'static' | 'stat-comparison'
+  readonly comparison: {
+    readonly operator: 'less-than'
+    readonly left: number
+    readonly right: number
+    readonly matched: boolean
+  } | null
+  readonly trace: readonly MoveRuleEvaluationTraceEntry[]
+}
+
 export interface MoveSpecDamageCalculation {
+  readonly damageClass: MoveDamageClassResolution
   readonly breakdown: MoveAutomationDamageBreakdown
   readonly stats: MoveDamageStatSelectionResolution
   readonly moveType: MoveDamageTypeResolution
@@ -165,6 +180,61 @@ const evaluateStatSelection = (options: {
   }
 }
 
+const evaluateDamageClassStat = (options: {
+  readonly expression: MoveStatSelectionExpression
+  readonly context: AuthoritativeMoveRulesContext
+  readonly operation: MoveDamageEffectOperation
+  readonly recipientId: string
+  readonly side: 'left' | 'right'
+}): { readonly value: number; readonly trace: readonly MoveRuleEvaluationTraceEntry[] } => {
+  const result = evaluateMoveExpression({
+    expression: options.expression,
+    context: options.context,
+    selectorState: selectorStateFor(options.recipientId),
+    rootNodeId: `${options.operation.id}.damageClass.${options.side}.${options.recipientId}`,
+  })
+  if (typeof result.value !== 'number' || !Number.isFinite(result.value)) {
+    throw new MoveDamageStatSelectionError(
+      'non-numeric-stat-selection',
+      options.operation.id,
+      `${options.operation.id} damageClass ${options.side} did not resolve to a finite number.`,
+    )
+  }
+  return { value: result.value, trace: result.trace }
+}
+
+/** Resolve one static or stat-compared damage class for an authoritative recipient. */
+export const resolveMoveDamageClass = (options: {
+  readonly context: AuthoritativeMoveRulesContext
+  readonly operation: MoveDamageEffectOperation
+  readonly recipientId: string
+}): MoveDamageClassResolution => {
+  const selection = options.operation.payload.damageClass
+  if (typeof selection === 'string') {
+    return deepFreeze({
+      damageClass: selection,
+      source: 'static' as const,
+      comparison: null,
+      trace: [],
+    })
+  }
+  const compared = selection as MoveComparedDamageClassSelection
+  const left = evaluateDamageClassStat({ ...options, expression: compared.left, side: 'left' })
+  const right = evaluateDamageClassStat({ ...options, expression: compared.right, side: 'right' })
+  const matched = left.value < right.value
+  return deepFreeze({
+    damageClass: matched ? compared.whenTrue : compared.whenFalse,
+    source: 'stat-comparison' as const,
+    comparison: {
+      operator: compared.operator,
+      left: left.value,
+      right: right.value,
+      matched,
+    },
+    trace: [...left.trace, ...right.trace],
+  })
+}
+
 /** Resolve optional reviewed attack/defense expressions for one damage recipient. */
 export const resolveMoveDamageStatSelections = (options: {
   readonly context: AuthoritativeMoveRulesContext
@@ -226,10 +296,15 @@ export const resolveMoveSpecDamageCalculation = (
     recipientId: options.recipient.id,
     canonicalMoveId: options.script.moveName,
   })
+  const damageClass = resolveMoveDamageClass({
+    context: options.context,
+    operation: options.operation,
+    recipientId: options.recipient.id,
+  })
   const sideDamageResistance = options.context.queries.sideDamageResistance.resolve({
     damageOperationId: options.operation.id,
     targetPlacementId: options.recipient.id,
-    damageClass: options.operation.payload.damageClass,
+    damageClass: damageClass.damageClass,
     effectivenessMultiplier: moveType.finalMultiplier,
   })
   const criticalHit = resolveMoveCriticalHit({
@@ -300,8 +375,12 @@ export const resolveMoveSpecDamageCalculation = (
     weather: [],
     terrains: [],
   }
+  const resolvedScript: MoveAutomationScript = {
+    ...options.script,
+    damageClass: damageClass.damageClass === 'physical' ? 'Physical' : 'Special',
+  }
   const breakdown = resolveMoveAutomationTargetDamageBreakdown(
-    options.script,
+    resolvedScript,
     helpingHand.length > 0 ? withoutHelpingHandCondition(actor) : actor,
     options.recipient,
     { ...options.resolution, crit: criticalHit.critical },
@@ -323,6 +402,7 @@ export const resolveMoveSpecDamageCalculation = (
   )
   return deepFreeze({
     breakdown,
+    damageClass,
     stats,
     moveType,
     criticalHit,
@@ -334,6 +414,7 @@ export const resolveMoveSpecDamageCalculation = (
     evaluationTrace: [
       ...moveType.evaluationTrace,
       ...(contextualDamageBase?.evaluationTrace ?? []),
+      ...damageClass.trace,
       ...stats.trace,
     ],
   })

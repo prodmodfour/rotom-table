@@ -193,6 +193,7 @@ export const reduceMoveMapOperations = (
       failMoveMapOperationReduction,
     )
     const expectedIds = emission.childResolutionId
+      || operation.recipients.kind === 'response-owner'
       ? emittedIds
       : expectedMoveEffectRecipientIds(
           input.context,

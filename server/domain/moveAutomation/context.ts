@@ -39,6 +39,10 @@ import {
   type MoveAutomationGravityResolver,
 } from './gravity'
 import {
+  createMoveAutomationFlankingResolver,
+  type MoveAutomationFlankingResolver,
+} from './flanking'
+import {
   createMoveAutomationCreatureRuleResolver,
   type MoveAutomationCreatureRuleResolver,
 } from './creatureRules'
@@ -157,6 +161,7 @@ export type AuthoritativeMoveRelationshipQueries = MoveAutomationRelationshipRes
 export type AuthoritativeMoveBarriersAndSmokeQueries = MoveAutomationBarriersAndSmokeResolver
 export type AuthoritativeMoveGlobalFieldQueries = MoveAutomationRemainingGlobalFieldResolver
 export type AuthoritativeMoveGravityQueries = MoveAutomationGravityResolver
+export type AuthoritativeMoveFlankingQueries = MoveAutomationFlankingResolver
 export type AuthoritativeMoveCreatureRuleQueries = MoveAutomationCreatureRuleResolver
 export type AuthoritativeMoveHistoryQueries = MoveAutomationHistoryResolver
 export type AuthoritativeMoveItemEffectQueries = MoveAutomationItemEffectResolver
@@ -186,6 +191,7 @@ export interface AuthoritativeMoveContextQueries {
   readonly barriersAndSmoke: AuthoritativeMoveBarriersAndSmokeQueries
   readonly globalFields: AuthoritativeMoveGlobalFieldQueries
   readonly gravity: AuthoritativeMoveGravityQueries
+  readonly flanking: AuthoritativeMoveFlankingQueries
   readonly creatureRules: AuthoritativeMoveCreatureRuleQueries
   readonly history: AuthoritativeMoveHistoryQueries
   readonly itemEffects: AuthoritativeMoveItemEffectQueries
@@ -671,6 +677,12 @@ export const buildAuthoritativeMoveRulesContext = (
     }).grounding,
     recordSheetRead: readSet.recordPlacement,
   })
+  const flanking = createMoveAutomationFlankingResolver({
+    placements,
+    tokens,
+    relationships,
+    recordSheetRead: readSet.recordPlacement,
+  })
   const obscurationPlacements = tokens.map((token) => {
     const placement = placementById.get(token.id)
     return {
@@ -762,6 +774,7 @@ export const buildAuthoritativeMoveRulesContext = (
     barriersAndSmoke,
     globalFields,
     gravity,
+    flanking,
     creatureRules,
     history,
     itemEffects,
