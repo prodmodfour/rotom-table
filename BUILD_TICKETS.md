@@ -2660,7 +2660,7 @@ Status: DONE
 
 ## REG-018 — Certify Night Daze through Peck
 
-Status: TODO
+Status: DONE
 
 **Baseline-registered moves:** Night Daze; Night Slash; Noble Roar; Nuzzle; Octazooka; Origin Pulse; Overdrive; Peck
 
