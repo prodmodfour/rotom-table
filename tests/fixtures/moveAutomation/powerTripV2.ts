@@ -16,15 +16,15 @@ import {
 export const POWER_TRIP_V2_SEMANTIC_SCENARIOS = Object.freeze([
   {
     scenarioId: 'power-trip.v2-capped-stages',
-    evidenceClasses: ['retry'] as const,
+    evidenceClasses: ['alternate-branch'] as const,
   },
   {
     scenarioId: 'power-trip.v2-mixed-stages',
-    evidenceClasses: [] as const,
+    evidenceClasses: ['alternate-branch'] as const,
   },
   {
     scenarioId: 'power-trip.v2-zero-stages',
-    evidenceClasses: [] as const,
+    evidenceClasses: ['hit'] as const,
   },
 ] as const)
 

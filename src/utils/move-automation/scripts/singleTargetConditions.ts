@@ -19,6 +19,7 @@ export const REVIEWED_SINGLE_TARGET_CONDITION_SCRIPTS: ReadonlyMap<string, MoveA
   ['Mountain Gale', reviewedSingleTargetConditionScript('Mountain Gale', [{ condition: 'Flinch', label: 'Flinch on 15+', threshold: '15+' }])],
   ['Nuzzle', reviewedSingleTargetConditionScript('Nuzzle', [{ condition: 'Paralysis', label: 'Paralysis' }])],
   ['Poison Fang', reviewedSingleTargetConditionScript('Poison Fang', [{ condition: 'Badly Poisoned', label: 'Badly Poisoned on 17+', threshold: '17+' }])],
+  ['Poison Sting', reviewedSingleTargetConditionScript('Poison Sting', [{ condition: 'Poisoned', label: 'Poisoned on 17+', threshold: '17+' }], 2)],
   ['Poison Tail', reviewedSingleTargetConditionScript('Poison Tail', [{ condition: 'Poisoned', label: 'Poisoned on 19+', threshold: '19+' }])],
   ['Psybeam', reviewedSingleTargetConditionScript('Psybeam', [{ condition: 'Confused', label: 'Confused on 19+', threshold: '19+' }])],
   ['Rock Climb', reviewedSingleTargetConditionScript('Rock Climb', [{ condition: 'Confused', label: 'Confused on 17+', threshold: '17+' }])],

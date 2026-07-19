@@ -25169,43 +25169,116 @@
     {
       "canonicalId": "Poison Sting",
       "displayName": "Poison Sting",
-      "baseStatus": "assisted",
+      "baseStatus": "complete",
       "interactionStatus": "unassessed",
       "runtime": {
         "kind": "legacy-v1",
-        "version": 1,
-        "definitionHash": "fe0612c8d35958c5b7eee1d41b49a63b34b6500f4edbb04e33ca20fb90425165",
-        "sourceModule": "src/utils/move-automation/scripts/singleTargetAttacks.ts"
+        "version": 2,
+        "definitionHash": "e3b560100bf55e2b3e724882a82480dd395ac39bf939e936a0e7b876d84d8f1f",
+        "sourceModule": "src/utils/move-automation/scripts/singleTargetConditions.ts"
       },
       "rulesProvenance": {
         "rulesetId": "rotom-table-reference-moves-v1",
         "canonicalizationVersion": 1,
         "sourceDataSha256": "f90491826349afd7d1f2809fd9d74b7acc555f5163b99264205ee369249e9815"
       },
-      "capabilityTags": [],
+      "capabilityTags": [
+        "conditions.typed",
+        "expressions.bounded",
+        "targeting.authoritative"
+      ],
       "suggestedCapabilityTags": [],
       "blockerCodes": [],
-      "limitations": [
-        {
-          "code": "audit.required",
-          "summary": "Semantic conformance review is required before this legacy implementation can be marked complete."
-        }
-      ],
+      "limitations": [],
       "manualSteps": [],
-      "scenarioIds": [],
+      "scenarioIds": [
+        "poison-sting.legacy-v1-poison-threshold-pass",
+        "poison-sting.legacy-v1-poison-threshold-fail",
+        "poison-sting.legacy-v1-miss",
+        "poison-sting.legacy-v1-critical-hit",
+        "poison-sting.legacy-v1-steel-immunity",
+        "poison-sting.legacy-v1-poison-immunity",
+        "poison-sting.legacy-v1-secondary-immunity",
+        "poison-sting.legacy-v1-duplicate-replay",
+        "poison-sting.legacy-v1-stale-target"
+      ],
       "conformanceEvidence": {
-        "requirementTags": [],
-        "scenarios": [],
+        "requirementTags": [
+          "branch.accuracy",
+          "branch.critical-hit",
+          "branch.immunity",
+          "branch.threshold",
+          "mechanic.damage",
+          "recovery.retry",
+          "resource.multi"
+        ],
+        "scenarios": [
+          {
+            "scenarioId": "poison-sting.legacy-v1-poison-threshold-pass",
+            "evidenceClasses": [
+              "hit",
+              "threshold-pass"
+            ]
+          },
+          {
+            "scenarioId": "poison-sting.legacy-v1-poison-threshold-fail",
+            "evidenceClasses": [
+              "threshold-fail"
+            ]
+          },
+          {
+            "scenarioId": "poison-sting.legacy-v1-miss",
+            "evidenceClasses": [
+              "miss"
+            ]
+          },
+          {
+            "scenarioId": "poison-sting.legacy-v1-critical-hit",
+            "evidenceClasses": [
+              "crit"
+            ]
+          },
+          {
+            "scenarioId": "poison-sting.legacy-v1-steel-immunity",
+            "evidenceClasses": [
+              "immunity"
+            ]
+          },
+          {
+            "scenarioId": "poison-sting.legacy-v1-poison-immunity",
+            "evidenceClasses": [
+              "immunity"
+            ]
+          },
+          {
+            "scenarioId": "poison-sting.legacy-v1-secondary-immunity",
+            "evidenceClasses": [
+              "immunity"
+            ]
+          },
+          {
+            "scenarioId": "poison-sting.legacy-v1-duplicate-replay",
+            "evidenceClasses": [
+              "retry"
+            ]
+          },
+          {
+            "scenarioId": "poison-sting.legacy-v1-stale-target",
+            "evidenceClasses": [
+              "multi-resource-conflict"
+            ]
+          }
+        ],
         "notApplicable": []
       },
-      "reviewedAt": null,
+      "reviewedAt": "2026-07-19",
       "unsupportedInteractionIds": [],
       "rolloutCohortId": null
     },
     {
       "canonicalId": "Poison Tail",
       "displayName": "Poison Tail",
-      "baseStatus": "assisted",
+      "baseStatus": "complete",
       "interactionStatus": "unassessed",
       "runtime": {
         "kind": "legacy-v1",
@@ -25218,23 +25291,98 @@
         "canonicalizationVersion": 1,
         "sourceDataSha256": "f90491826349afd7d1f2809fd9d74b7acc555f5163b99264205ee369249e9815"
       },
-      "capabilityTags": [],
+      "capabilityTags": [
+        "conditions.typed",
+        "expressions.bounded",
+        "targeting.authoritative"
+      ],
       "suggestedCapabilityTags": [],
       "blockerCodes": [],
-      "limitations": [
-        {
-          "code": "audit.required",
-          "summary": "Semantic conformance review is required before this legacy implementation can be marked complete."
-        }
-      ],
+      "limitations": [],
       "manualSteps": [],
-      "scenarioIds": [],
+      "scenarioIds": [
+        "poison-tail.legacy-v1-poison-threshold-pass",
+        "poison-tail.legacy-v1-poison-threshold-fail",
+        "poison-tail.legacy-v1-miss",
+        "poison-tail.legacy-v1-expanded-critical-hit",
+        "poison-tail.legacy-v1-steel-immunity",
+        "poison-tail.legacy-v1-poison-immunity",
+        "poison-tail.legacy-v1-secondary-immunity",
+        "poison-tail.legacy-v1-duplicate-replay",
+        "poison-tail.legacy-v1-stale-target"
+      ],
       "conformanceEvidence": {
-        "requirementTags": [],
-        "scenarios": [],
+        "requirementTags": [
+          "branch.accuracy",
+          "branch.alternate",
+          "branch.critical-hit",
+          "branch.immunity",
+          "branch.threshold",
+          "mechanic.damage",
+          "recovery.retry",
+          "resource.multi"
+        ],
+        "scenarios": [
+          {
+            "scenarioId": "poison-tail.legacy-v1-poison-threshold-pass",
+            "evidenceClasses": [
+              "hit",
+              "threshold-pass"
+            ]
+          },
+          {
+            "scenarioId": "poison-tail.legacy-v1-poison-threshold-fail",
+            "evidenceClasses": [
+              "threshold-fail"
+            ]
+          },
+          {
+            "scenarioId": "poison-tail.legacy-v1-miss",
+            "evidenceClasses": [
+              "miss"
+            ]
+          },
+          {
+            "scenarioId": "poison-tail.legacy-v1-expanded-critical-hit",
+            "evidenceClasses": [
+              "alternate-branch",
+              "crit"
+            ]
+          },
+          {
+            "scenarioId": "poison-tail.legacy-v1-steel-immunity",
+            "evidenceClasses": [
+              "immunity"
+            ]
+          },
+          {
+            "scenarioId": "poison-tail.legacy-v1-poison-immunity",
+            "evidenceClasses": [
+              "immunity"
+            ]
+          },
+          {
+            "scenarioId": "poison-tail.legacy-v1-secondary-immunity",
+            "evidenceClasses": [
+              "immunity"
+            ]
+          },
+          {
+            "scenarioId": "poison-tail.legacy-v1-duplicate-replay",
+            "evidenceClasses": [
+              "retry"
+            ]
+          },
+          {
+            "scenarioId": "poison-tail.legacy-v1-stale-target",
+            "evidenceClasses": [
+              "multi-resource-conflict"
+            ]
+          }
+        ],
         "notApplicable": []
       },
-      "reviewedAt": null,
+      "reviewedAt": "2026-07-19",
       "unsupportedInteractionIds": [],
       "rolloutCohortId": null
     },
@@ -25311,7 +25459,7 @@
     {
       "canonicalId": "Pound",
       "displayName": "Pound",
-      "baseStatus": "assisted",
+      "baseStatus": "complete",
       "interactionStatus": "unassessed",
       "runtime": {
         "kind": "legacy-v1",
@@ -25324,23 +25472,71 @@
         "canonicalizationVersion": 1,
         "sourceDataSha256": "f90491826349afd7d1f2809fd9d74b7acc555f5163b99264205ee369249e9815"
       },
-      "capabilityTags": [],
+      "capabilityTags": [
+        "targeting.authoritative"
+      ],
       "suggestedCapabilityTags": [],
       "blockerCodes": [],
-      "limitations": [
-        {
-          "code": "audit.required",
-          "summary": "Semantic conformance review is required before this legacy implementation can be marked complete."
-        }
-      ],
+      "limitations": [],
       "manualSteps": [],
-      "scenarioIds": [],
+      "scenarioIds": [
+        "pound.legacy-v1-ordinary-hit",
+        "pound.legacy-v1-miss",
+        "pound.legacy-v1-critical-hit",
+        "pound.legacy-v1-ghost-immunity",
+        "pound.legacy-v1-duplicate-replay",
+        "pound.legacy-v1-stale-target"
+      ],
       "conformanceEvidence": {
-        "requirementTags": [],
-        "scenarios": [],
+        "requirementTags": [
+          "branch.accuracy",
+          "branch.critical-hit",
+          "branch.immunity",
+          "mechanic.damage",
+          "recovery.retry",
+          "resource.multi"
+        ],
+        "scenarios": [
+          {
+            "scenarioId": "pound.legacy-v1-ordinary-hit",
+            "evidenceClasses": [
+              "hit"
+            ]
+          },
+          {
+            "scenarioId": "pound.legacy-v1-miss",
+            "evidenceClasses": [
+              "miss"
+            ]
+          },
+          {
+            "scenarioId": "pound.legacy-v1-critical-hit",
+            "evidenceClasses": [
+              "crit"
+            ]
+          },
+          {
+            "scenarioId": "pound.legacy-v1-ghost-immunity",
+            "evidenceClasses": [
+              "immunity"
+            ]
+          },
+          {
+            "scenarioId": "pound.legacy-v1-duplicate-replay",
+            "evidenceClasses": [
+              "retry"
+            ]
+          },
+          {
+            "scenarioId": "pound.legacy-v1-stale-target",
+            "evidenceClasses": [
+              "multi-resource-conflict"
+            ]
+          }
+        ],
         "notApplicable": []
       },
-      "reviewedAt": null,
+      "reviewedAt": "2026-07-19",
       "unsupportedInteractionIds": [],
       "rolloutCohortId": null
     },
@@ -25382,12 +25578,12 @@
     {
       "canonicalId": "Powder Snow",
       "displayName": "Powder Snow",
-      "baseStatus": "assisted",
+      "baseStatus": "complete",
       "interactionStatus": "unassessed",
       "runtime": {
         "kind": "legacy-v1",
-        "version": 1,
-        "definitionHash": "db11764ccf9d07eec57bdd682aa45d8cd24330d12515f9f4338884a78b72b6a8",
+        "version": 2,
+        "definitionHash": "5a27407c05af0280d40e341384245926fe78758575e9409934b3af1afb234359",
         "sourceModule": "src/utils/move-automation/scripts/area.ts"
       },
       "rulesProvenance": {
@@ -25395,30 +25591,92 @@
         "canonicalizationVersion": 1,
         "sourceDataSha256": "f90491826349afd7d1f2809fd9d74b7acc555f5163b99264205ee369249e9815"
       },
-      "capabilityTags": [],
+      "capabilityTags": [
+        "conditions.typed",
+        "expressions.bounded",
+        "targeting.authoritative"
+      ],
       "suggestedCapabilityTags": [],
       "blockerCodes": [],
-      "limitations": [
-        {
-          "code": "audit.required",
-          "summary": "Semantic conformance review is required before this legacy implementation can be marked complete."
-        }
-      ],
+      "limitations": [],
       "manualSteps": [],
-      "scenarioIds": [],
+      "scenarioIds": [
+        "powder-snow.legacy-v1-line-mixed-freeze-threshold",
+        "powder-snow.legacy-v1-freeze-threshold-fail",
+        "powder-snow.legacy-v1-critical-hit",
+        "powder-snow.legacy-v1-freeze-immunity",
+        "powder-snow.legacy-v1-secondary-immunity",
+        "powder-snow.legacy-v1-duplicate-replay",
+        "powder-snow.legacy-v1-stale-target"
+      ],
       "conformanceEvidence": {
-        "requirementTags": [],
-        "scenarios": [],
+        "requirementTags": [
+          "branch.accuracy",
+          "branch.critical-hit",
+          "branch.immunity",
+          "branch.threshold",
+          "mechanic.damage",
+          "recovery.retry",
+          "resource.multi",
+          "target.area"
+        ],
+        "scenarios": [
+          {
+            "scenarioId": "powder-snow.legacy-v1-line-mixed-freeze-threshold",
+            "evidenceClasses": [
+              "area-mixed-outcomes",
+              "hit",
+              "miss",
+              "threshold-pass"
+            ]
+          },
+          {
+            "scenarioId": "powder-snow.legacy-v1-freeze-threshold-fail",
+            "evidenceClasses": [
+              "threshold-fail"
+            ]
+          },
+          {
+            "scenarioId": "powder-snow.legacy-v1-critical-hit",
+            "evidenceClasses": [
+              "crit"
+            ]
+          },
+          {
+            "scenarioId": "powder-snow.legacy-v1-freeze-immunity",
+            "evidenceClasses": [
+              "immunity"
+            ]
+          },
+          {
+            "scenarioId": "powder-snow.legacy-v1-secondary-immunity",
+            "evidenceClasses": [
+              "immunity"
+            ]
+          },
+          {
+            "scenarioId": "powder-snow.legacy-v1-duplicate-replay",
+            "evidenceClasses": [
+              "retry"
+            ]
+          },
+          {
+            "scenarioId": "powder-snow.legacy-v1-stale-target",
+            "evidenceClasses": [
+              "multi-resource-conflict"
+            ]
+          }
+        ],
         "notApplicable": []
       },
-      "reviewedAt": null,
+      "reviewedAt": "2026-07-19",
       "unsupportedInteractionIds": [],
       "rolloutCohortId": null
     },
     {
       "canonicalId": "Power Gem",
       "displayName": "Power Gem",
-      "baseStatus": "assisted",
+      "baseStatus": "complete",
       "interactionStatus": "unassessed",
       "runtime": {
         "kind": "legacy-v1",
@@ -25431,23 +25689,68 @@
         "canonicalizationVersion": 1,
         "sourceDataSha256": "f90491826349afd7d1f2809fd9d74b7acc555f5163b99264205ee369249e9815"
       },
-      "capabilityTags": [],
+      "capabilityTags": [
+        "targeting.authoritative"
+      ],
       "suggestedCapabilityTags": [],
       "blockerCodes": [],
-      "limitations": [
-        {
-          "code": "audit.required",
-          "summary": "Semantic conformance review is required before this legacy implementation can be marked complete."
-        }
-      ],
+      "limitations": [],
       "manualSteps": [],
-      "scenarioIds": [],
+      "scenarioIds": [
+        "power-gem.legacy-v1-ordinary-hit",
+        "power-gem.legacy-v1-miss",
+        "power-gem.legacy-v1-critical-hit",
+        "power-gem.legacy-v1-duplicate-replay",
+        "power-gem.legacy-v1-stale-target"
+      ],
       "conformanceEvidence": {
-        "requirementTags": [],
-        "scenarios": [],
-        "notApplicable": []
+        "requirementTags": [
+          "branch.accuracy",
+          "branch.critical-hit",
+          "mechanic.damage",
+          "recovery.retry",
+          "resource.multi"
+        ],
+        "scenarios": [
+          {
+            "scenarioId": "power-gem.legacy-v1-ordinary-hit",
+            "evidenceClasses": [
+              "hit"
+            ]
+          },
+          {
+            "scenarioId": "power-gem.legacy-v1-miss",
+            "evidenceClasses": [
+              "miss"
+            ]
+          },
+          {
+            "scenarioId": "power-gem.legacy-v1-critical-hit",
+            "evidenceClasses": [
+              "crit"
+            ]
+          },
+          {
+            "scenarioId": "power-gem.legacy-v1-duplicate-replay",
+            "evidenceClasses": [
+              "retry"
+            ]
+          },
+          {
+            "scenarioId": "power-gem.legacy-v1-stale-target",
+            "evidenceClasses": [
+              "multi-resource-conflict"
+            ]
+          }
+        ],
+        "notApplicable": [
+          {
+            "evidenceClass": "immunity",
+            "reason": "The frozen type chart has no type immune to Rock damage; broader ability interactions remain separately unassessed."
+          }
+        ]
       },
-      "reviewedAt": null,
+      "reviewedAt": "2026-07-19",
       "unsupportedInteractionIds": [],
       "rolloutCohortId": null
     },
@@ -25594,12 +25897,12 @@
     {
       "canonicalId": "Power Trip",
       "displayName": "Power Trip",
-      "baseStatus": "assisted",
+      "baseStatus": "complete",
       "interactionStatus": "unassessed",
       "runtime": {
         "kind": "movespec-v2",
         "version": 2,
-        "definitionHash": "7dedaadc10bffd93abb92c9281410eff4fcde3bc9ffd5c08f56cc5b11a40273c",
+        "definitionHash": "e539fb4f6cefb84ea910a14428b08cde55776b443ea356e5e21a31a8f7df318b",
         "sourceModule": "server/domain/moveAutomation/specs/powerTrip.ts"
       },
       "rulesProvenance": {
@@ -25607,43 +25910,92 @@
         "canonicalizationVersion": 1,
         "sourceDataSha256": "f90491826349afd7d1f2809fd9d74b7acc555f5163b99264205ee369249e9815"
       },
-      "capabilityTags": [],
+      "capabilityTags": [
+        "expressions.bounded",
+        "stages.typed",
+        "targeting.authoritative"
+      ],
       "suggestedCapabilityTags": [],
       "blockerCodes": [],
-      "limitations": [
-        {
-          "code": "audit.required",
-          "summary": "Semantic conformance review is required before this native implementation can be marked complete."
-        }
-      ],
+      "limitations": [],
       "manualSteps": [],
       "scenarioIds": [
         "power-trip.v2-capped-stages",
         "power-trip.v2-mixed-stages",
-        "power-trip.v2-zero-stages"
+        "power-trip.v2-zero-stages",
+        "power-trip.v2-miss",
+        "power-trip.v2-critical-hit",
+        "power-trip.v2-duplicate-replay",
+        "power-trip.v2-stale-target"
       ],
       "conformanceEvidence": {
         "requirementTags": [
-          "recovery.retry"
+          "branch.accuracy",
+          "branch.alternate",
+          "branch.critical-hit",
+          "mechanic.damage",
+          "recovery.retry",
+          "resource.multi"
         ],
         "scenarios": [
           {
             "scenarioId": "power-trip.v2-capped-stages",
             "evidenceClasses": [
+              "alternate-branch"
+            ]
+          },
+          {
+            "scenarioId": "power-trip.v2-mixed-stages",
+            "evidenceClasses": [
+              "alternate-branch"
+            ]
+          },
+          {
+            "scenarioId": "power-trip.v2-zero-stages",
+            "evidenceClasses": [
+              "hit"
+            ]
+          },
+          {
+            "scenarioId": "power-trip.v2-miss",
+            "evidenceClasses": [
+              "miss"
+            ]
+          },
+          {
+            "scenarioId": "power-trip.v2-critical-hit",
+            "evidenceClasses": [
+              "crit"
+            ]
+          },
+          {
+            "scenarioId": "power-trip.v2-duplicate-replay",
+            "evidenceClasses": [
               "retry"
+            ]
+          },
+          {
+            "scenarioId": "power-trip.v2-stale-target",
+            "evidenceClasses": [
+              "multi-resource-conflict"
             ]
           }
         ],
-        "notApplicable": []
+        "notApplicable": [
+          {
+            "evidenceClass": "immunity",
+            "reason": "The frozen type chart has no type immune to Dark damage; broader ability interactions remain separately unassessed."
+          }
+        ]
       },
-      "reviewedAt": null,
+      "reviewedAt": "2026-07-19",
       "unsupportedInteractionIds": [],
       "rolloutCohortId": null
     },
     {
       "canonicalId": "Power Whip",
       "displayName": "Power Whip",
-      "baseStatus": "assisted",
+      "baseStatus": "complete",
       "interactionStatus": "unassessed",
       "runtime": {
         "kind": "legacy-v1",
@@ -25656,23 +26008,74 @@
         "canonicalizationVersion": 1,
         "sourceDataSha256": "f90491826349afd7d1f2809fd9d74b7acc555f5163b99264205ee369249e9815"
       },
-      "capabilityTags": [],
+      "capabilityTags": [
+        "expressions.bounded",
+        "targeting.authoritative"
+      ],
       "suggestedCapabilityTags": [],
       "blockerCodes": [],
-      "limitations": [
-        {
-          "code": "audit.required",
-          "summary": "Semantic conformance review is required before this legacy implementation can be marked complete."
-        }
-      ],
+      "limitations": [],
       "manualSteps": [],
-      "scenarioIds": [],
+      "scenarioIds": [
+        "power-whip.legacy-v1-ordinary-hit",
+        "power-whip.legacy-v1-smite-miss",
+        "power-whip.legacy-v1-critical-hit",
+        "power-whip.legacy-v1-sap-sipper-immunity",
+        "power-whip.legacy-v1-duplicate-replay",
+        "power-whip.legacy-v1-stale-target"
+      ],
       "conformanceEvidence": {
-        "requirementTags": [],
-        "scenarios": [],
+        "requirementTags": [
+          "branch.accuracy",
+          "branch.alternate",
+          "branch.critical-hit",
+          "branch.immunity",
+          "mechanic.damage",
+          "recovery.retry",
+          "resource.multi"
+        ],
+        "scenarios": [
+          {
+            "scenarioId": "power-whip.legacy-v1-ordinary-hit",
+            "evidenceClasses": [
+              "hit"
+            ]
+          },
+          {
+            "scenarioId": "power-whip.legacy-v1-smite-miss",
+            "evidenceClasses": [
+              "alternate-branch",
+              "miss"
+            ]
+          },
+          {
+            "scenarioId": "power-whip.legacy-v1-critical-hit",
+            "evidenceClasses": [
+              "crit"
+            ]
+          },
+          {
+            "scenarioId": "power-whip.legacy-v1-sap-sipper-immunity",
+            "evidenceClasses": [
+              "immunity"
+            ]
+          },
+          {
+            "scenarioId": "power-whip.legacy-v1-duplicate-replay",
+            "evidenceClasses": [
+              "retry"
+            ]
+          },
+          {
+            "scenarioId": "power-whip.legacy-v1-stale-target",
+            "evidenceClasses": [
+              "multi-resource-conflict"
+            ]
+          }
+        ],
         "notApplicable": []
       },
-      "reviewedAt": null,
+      "reviewedAt": "2026-07-19",
       "unsupportedInteractionIds": [],
       "rolloutCohortId": null
     },
@@ -25714,7 +26117,7 @@
     {
       "canonicalId": "Precipice Blades",
       "displayName": "Precipice Blades",
-      "baseStatus": "assisted",
+      "baseStatus": "complete",
       "interactionStatus": "unassessed",
       "runtime": {
         "kind": "legacy-v1",
@@ -25727,23 +26130,67 @@
         "canonicalizationVersion": 1,
         "sourceDataSha256": "f90491826349afd7d1f2809fd9d74b7acc555f5163b99264205ee369249e9815"
       },
-      "capabilityTags": [],
+      "capabilityTags": [
+        "expressions.bounded",
+        "targeting.authoritative"
+      ],
       "suggestedCapabilityTags": [],
       "blockerCodes": [],
-      "limitations": [
-        {
-          "code": "audit.required",
-          "summary": "Semantic conformance review is required before this legacy implementation can be marked complete."
-        }
-      ],
+      "limitations": [],
       "manualSteps": [],
-      "scenarioIds": [],
+      "scenarioIds": [
+        "precipice-blades.legacy-v1-area-smite-mixed",
+        "precipice-blades.legacy-v1-critical-hit",
+        "precipice-blades.legacy-v1-duplicate-replay",
+        "precipice-blades.legacy-v1-stale-target"
+      ],
       "conformanceEvidence": {
-        "requirementTags": [],
-        "scenarios": [],
-        "notApplicable": []
+        "requirementTags": [
+          "branch.accuracy",
+          "branch.alternate",
+          "branch.critical-hit",
+          "mechanic.damage",
+          "recovery.retry",
+          "resource.multi",
+          "target.area"
+        ],
+        "scenarios": [
+          {
+            "scenarioId": "precipice-blades.legacy-v1-area-smite-mixed",
+            "evidenceClasses": [
+              "alternate-branch",
+              "area-mixed-outcomes",
+              "hit",
+              "miss"
+            ]
+          },
+          {
+            "scenarioId": "precipice-blades.legacy-v1-critical-hit",
+            "evidenceClasses": [
+              "crit"
+            ]
+          },
+          {
+            "scenarioId": "precipice-blades.legacy-v1-duplicate-replay",
+            "evidenceClasses": [
+              "retry"
+            ]
+          },
+          {
+            "scenarioId": "precipice-blades.legacy-v1-stale-target",
+            "evidenceClasses": [
+              "multi-resource-conflict"
+            ]
+          }
+        ],
+        "notApplicable": [
+          {
+            "evidenceClass": "immunity",
+            "reason": "In the frozen PTU type chart Flying resists rather than ignores Ground damage; broader ability interactions remain separately unassessed."
+          }
+        ]
       },
-      "reviewedAt": null,
+      "reviewedAt": "2026-07-19",
       "unsupportedInteractionIds": [],
       "rolloutCohortId": null
     },

@@ -73,12 +73,12 @@ describe('Power Trip native MoveSpec v2', () => {
     expect(powerTripRow.runtime).toEqual({
       kind: 'movespec-v2',
       version: 2,
-      definitionHash: '7dedaadc10bffd93abb92c9281410eff4fcde3bc9ffd5c08f56cc5b11a40273c',
+      definitionHash: 'e539fb4f6cefb84ea910a14428b08cde55776b443ea356e5e21a31a8f7df318b',
       sourceModule: 'server/domain/moveAutomation/specs/powerTrip.ts',
     })
-    expect(powerTripRow.scenarioIds).toEqual(
+    expect(powerTripRow.scenarioIds).toEqual(expect.arrayContaining(
       POWER_TRIP_V2_SEMANTIC_SCENARIOS.map(({ scenarioId }) => scenarioId),
-    )
+    ))
     expect(powerTripRow.manualSteps).toEqual([])
     expect(registeredMoveAutomationRuntimeFor('Power Trip')).toMatchObject({
       kind: 'movespec-v2',

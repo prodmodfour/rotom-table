@@ -916,9 +916,9 @@
     },
     {
       "canonicalId": "Poison Sting",
-      "sourceModule": "src/utils/move-automation/scripts/singleTargetAttacks.ts",
-      "version": 1,
-      "definitionHash": "fe0612c8d35958c5b7eee1d41b49a63b34b6500f4edbb04e33ca20fb90425165"
+      "sourceModule": "src/utils/move-automation/scripts/singleTargetConditions.ts",
+      "version": 2,
+      "definitionHash": "e3b560100bf55e2b3e724882a82480dd395ac39bf939e936a0e7b876d84d8f1f"
     },
     {
       "canonicalId": "Poison Tail",
@@ -935,8 +935,8 @@
     {
       "canonicalId": "Powder Snow",
       "sourceModule": "src/utils/move-automation/scripts/area.ts",
-      "version": 1,
-      "definitionHash": "db11764ccf9d07eec57bdd682aa45d8cd24330d12515f9f4338884a78b72b6a8"
+      "version": 2,
+      "definitionHash": "5a27407c05af0280d40e341384245926fe78758575e9409934b3af1afb234359"
     },
     {
       "canonicalId": "Power Gem",

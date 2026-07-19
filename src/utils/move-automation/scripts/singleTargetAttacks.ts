@@ -56,7 +56,6 @@ export const SEAMLESS_SINGLE_TARGET_ATTACK_SCRIPT_NAMES = [
   'Needle Arm',
   'Peck',
   'Poison Jab',
-  'Poison Sting',
   'Pound',
   'Power Gem',
   'Power Whip',
