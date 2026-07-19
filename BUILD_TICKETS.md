@@ -2726,7 +2726,7 @@ Status: DONE
 
 ## REG-029 — Certify Struggle (Zapper Special) through Swords Dance
 
-Status: TODO
+Status: DONE
 
 **Baseline-registered moves:** Struggle (Zapper Special); Struggle Bug; Stun Spore; Supersonic; Swagger; Sweet Scent; Swift; Swords Dance
 

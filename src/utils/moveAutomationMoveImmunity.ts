@@ -7,7 +7,7 @@ import type { MoveAutomationScript } from '~/types/moveAutomation'
 import type { SpawnedPokemon } from '~/types/pokemon'
 
 export const moveAutomationMoveImmunitySource = (
-  script: MoveAutomationScript,
+  script: Pick<MoveAutomationScript, 'keywords'>,
   target: SpawnedPokemon,
 ): string | null => moveAutomationPowderImmunitySource(script, target)
   ?? getPassiveMoveImmunitySource(

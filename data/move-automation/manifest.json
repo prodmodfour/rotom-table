@@ -36339,7 +36339,7 @@
     {
       "canonicalId": "Struggle (Zapper Special)",
       "displayName": "Struggle (Zapper Special)",
-      "baseStatus": "assisted",
+      "baseStatus": "complete",
       "interactionStatus": "unassessed",
       "runtime": {
         "kind": "legacy-v1",
@@ -36352,30 +36352,96 @@
         "canonicalizationVersion": 1,
         "sourceDataSha256": "f90491826349afd7d1f2809fd9d74b7acc555f5163b99264205ee369249e9815"
       },
-      "capabilityTags": [],
+      "capabilityTags": [
+        "expressions.bounded",
+        "targeting.authoritative"
+      ],
       "suggestedCapabilityTags": [],
       "blockerCodes": [],
-      "limitations": [
-        {
-          "code": "audit.required",
-          "summary": "Semantic conformance review is required before this legacy implementation can be marked complete."
-        }
-      ],
+      "limitations": [],
       "manualSteps": [],
-      "scenarioIds": [],
+      "scenarioIds": [
+        "struggle-zapper-special.legacy-v1-novice-no-stab-hit",
+        "struggle-zapper-special.legacy-v1-expert-combat-branch",
+        "struggle-zapper-special.legacy-v1-miss",
+        "struggle-zapper-special.legacy-v1-critical-hit",
+        "struggle-zapper-special.legacy-v1-ground-immunity",
+        "struggle-zapper-special.legacy-v1-capability-required",
+        "struggle-zapper-special.legacy-v1-duplicate-replay",
+        "struggle-zapper-special.legacy-v1-stale-target"
+      ],
       "conformanceEvidence": {
-        "requirementTags": [],
-        "scenarios": [],
+        "requirementTags": [
+          "branch.accuracy",
+          "branch.alternate",
+          "branch.critical-hit",
+          "branch.immunity",
+          "branch.threshold",
+          "mechanic.damage",
+          "recovery.retry",
+          "resource.multi"
+        ],
+        "scenarios": [
+          {
+            "scenarioId": "struggle-zapper-special.legacy-v1-novice-no-stab-hit",
+            "evidenceClasses": [
+              "hit",
+              "threshold-pass"
+            ]
+          },
+          {
+            "scenarioId": "struggle-zapper-special.legacy-v1-expert-combat-branch",
+            "evidenceClasses": [
+              "alternate-branch"
+            ]
+          },
+          {
+            "scenarioId": "struggle-zapper-special.legacy-v1-miss",
+            "evidenceClasses": [
+              "miss"
+            ]
+          },
+          {
+            "scenarioId": "struggle-zapper-special.legacy-v1-critical-hit",
+            "evidenceClasses": [
+              "crit"
+            ]
+          },
+          {
+            "scenarioId": "struggle-zapper-special.legacy-v1-ground-immunity",
+            "evidenceClasses": [
+              "immunity"
+            ]
+          },
+          {
+            "scenarioId": "struggle-zapper-special.legacy-v1-capability-required",
+            "evidenceClasses": [
+              "threshold-fail"
+            ]
+          },
+          {
+            "scenarioId": "struggle-zapper-special.legacy-v1-duplicate-replay",
+            "evidenceClasses": [
+              "retry"
+            ]
+          },
+          {
+            "scenarioId": "struggle-zapper-special.legacy-v1-stale-target",
+            "evidenceClasses": [
+              "multi-resource-conflict"
+            ]
+          }
+        ],
         "notApplicable": []
       },
-      "reviewedAt": null,
+      "reviewedAt": "2026-07-19",
       "unsupportedInteractionIds": [],
       "rolloutCohortId": null
     },
     {
       "canonicalId": "Struggle Bug",
       "displayName": "Struggle Bug",
-      "baseStatus": "assisted",
+      "baseStatus": "complete",
       "interactionStatus": "unassessed",
       "runtime": {
         "kind": "legacy-v1",
@@ -36388,23 +36454,74 @@
         "canonicalizationVersion": 1,
         "sourceDataSha256": "f90491826349afd7d1f2809fd9d74b7acc555f5163b99264205ee369249e9815"
       },
-      "capabilityTags": [],
+      "capabilityTags": [
+        "stages.typed",
+        "targeting.authoritative"
+      ],
       "suggestedCapabilityTags": [],
       "blockerCodes": [],
-      "limitations": [
-        {
-          "code": "audit.required",
-          "summary": "Semantic conformance review is required before this legacy implementation can be marked complete."
-        }
-      ],
+      "limitations": [],
       "manualSteps": [],
-      "scenarioIds": [],
+      "scenarioIds": [
+        "struggle-bug.legacy-v1-cone-mixed",
+        "struggle-bug.legacy-v1-critical-hit",
+        "struggle-bug.legacy-v1-stage-cap",
+        "struggle-bug.legacy-v1-duplicate-replay",
+        "struggle-bug.legacy-v1-stale-target"
+      ],
       "conformanceEvidence": {
-        "requirementTags": [],
-        "scenarios": [],
-        "notApplicable": []
+        "requirementTags": [
+          "branch.accuracy",
+          "branch.critical-hit",
+          "branch.threshold",
+          "mechanic.damage",
+          "recovery.retry",
+          "resource.multi",
+          "target.area"
+        ],
+        "scenarios": [
+          {
+            "scenarioId": "struggle-bug.legacy-v1-cone-mixed",
+            "evidenceClasses": [
+              "area-mixed-outcomes",
+              "hit",
+              "miss",
+              "threshold-pass"
+            ]
+          },
+          {
+            "scenarioId": "struggle-bug.legacy-v1-critical-hit",
+            "evidenceClasses": [
+              "crit"
+            ]
+          },
+          {
+            "scenarioId": "struggle-bug.legacy-v1-stage-cap",
+            "evidenceClasses": [
+              "threshold-fail"
+            ]
+          },
+          {
+            "scenarioId": "struggle-bug.legacy-v1-duplicate-replay",
+            "evidenceClasses": [
+              "retry"
+            ]
+          },
+          {
+            "scenarioId": "struggle-bug.legacy-v1-stale-target",
+            "evidenceClasses": [
+              "multi-resource-conflict"
+            ]
+          }
+        ],
+        "notApplicable": [
+          {
+            "evidenceClass": "immunity",
+            "reason": "The frozen type chart has no type immune to Bug damage; broader ability interactions remain separately unassessed."
+          }
+        ]
       },
-      "reviewedAt": null,
+      "reviewedAt": "2026-07-19",
       "unsupportedInteractionIds": [],
       "rolloutCohortId": null
     },
@@ -36446,7 +36563,7 @@
     {
       "canonicalId": "Stun Spore",
       "displayName": "Stun Spore",
-      "baseStatus": "assisted",
+      "baseStatus": "complete",
       "interactionStatus": "unassessed",
       "runtime": {
         "kind": "legacy-v1",
@@ -36459,23 +36576,70 @@
         "canonicalizationVersion": 1,
         "sourceDataSha256": "f90491826349afd7d1f2809fd9d74b7acc555f5163b99264205ee369249e9815"
       },
-      "capabilityTags": [],
+      "capabilityTags": [
+        "conditions.typed",
+        "targeting.authoritative"
+      ],
       "suggestedCapabilityTags": [],
       "blockerCodes": [],
-      "limitations": [
-        {
-          "code": "audit.required",
-          "summary": "Semantic conformance review is required before this legacy implementation can be marked complete."
-        }
-      ],
+      "limitations": [],
       "manualSteps": [],
-      "scenarioIds": [],
+      "scenarioIds": [
+        "stun-spore.legacy-v1-paralysis-hit",
+        "stun-spore.legacy-v1-miss",
+        "stun-spore.legacy-v1-powder-immunity",
+        "stun-spore.legacy-v1-electric-immunity",
+        "stun-spore.legacy-v1-duplicate-replay",
+        "stun-spore.legacy-v1-stale-target"
+      ],
       "conformanceEvidence": {
-        "requirementTags": [],
-        "scenarios": [],
+        "requirementTags": [
+          "branch.accuracy",
+          "branch.immunity",
+          "recovery.retry",
+          "resource.multi"
+        ],
+        "scenarios": [
+          {
+            "scenarioId": "stun-spore.legacy-v1-paralysis-hit",
+            "evidenceClasses": [
+              "hit"
+            ]
+          },
+          {
+            "scenarioId": "stun-spore.legacy-v1-miss",
+            "evidenceClasses": [
+              "miss"
+            ]
+          },
+          {
+            "scenarioId": "stun-spore.legacy-v1-powder-immunity",
+            "evidenceClasses": [
+              "immunity"
+            ]
+          },
+          {
+            "scenarioId": "stun-spore.legacy-v1-electric-immunity",
+            "evidenceClasses": [
+              "immunity"
+            ]
+          },
+          {
+            "scenarioId": "stun-spore.legacy-v1-duplicate-replay",
+            "evidenceClasses": [
+              "retry"
+            ]
+          },
+          {
+            "scenarioId": "stun-spore.legacy-v1-stale-target",
+            "evidenceClasses": [
+              "multi-resource-conflict"
+            ]
+          }
+        ],
         "notApplicable": []
       },
-      "reviewedAt": null,
+      "reviewedAt": "2026-07-19",
       "unsupportedInteractionIds": [],
       "rolloutCohortId": null
     },
@@ -36727,36 +36891,100 @@
     {
       "canonicalId": "Supersonic",
       "displayName": "Supersonic",
-      "baseStatus": "assisted",
+      "baseStatus": "complete",
       "interactionStatus": "unassessed",
       "runtime": {
-        "kind": "legacy-v1",
-        "version": 1,
-        "definitionHash": "3674e3c2c888102e0613c38ad678e6507d3769335f8eeb41d564cba47f19a98f",
-        "sourceModule": "src/utils/move-automation/scripts/additionalSingleTarget.ts"
+        "kind": "movespec-v2",
+        "version": 2,
+        "definitionHash": "2219ccaf848a2f3271bbe3fc099e0d97e438e03fff93960eebf8ab222a8536d2",
+        "sourceModule": "server/domain/moveAutomation/specs/supersonic.ts"
       },
       "rulesProvenance": {
         "rulesetId": "rotom-table-reference-moves-v1",
         "canonicalizationVersion": 1,
         "sourceDataSha256": "f90491826349afd7d1f2809fd9d74b7acc555f5163b99264205ee369249e9815"
       },
-      "capabilityTags": [],
+      "capabilityTags": [
+        "conditions.typed",
+        "lifecycle.effects",
+        "targeting.authoritative"
+      ],
       "suggestedCapabilityTags": [],
       "blockerCodes": [],
-      "limitations": [
-        {
-          "code": "audit.required",
-          "summary": "Semantic conformance review is required before this legacy implementation can be marked complete."
-        }
-      ],
+      "limitations": [],
       "manualSteps": [],
-      "scenarioIds": [],
+      "scenarioIds": [
+        "supersonic.v2-confusion-hit",
+        "supersonic.v2-miss-penalty",
+        "supersonic.v2-soundproof-hit-immunity",
+        "supersonic.v2-soundproof-miss-immunity",
+        "supersonic.v2-penalty-next-accuracy",
+        "supersonic.v2-source-turn-expiry",
+        "supersonic.v2-duplicate-replay",
+        "supersonic.v2-stale-target"
+      ],
       "conformanceEvidence": {
-        "requirementTags": [],
-        "scenarios": [],
+        "requirementTags": [
+          "branch.accuracy",
+          "branch.immunity",
+          "mechanic.lifecycle",
+          "recovery.retry",
+          "resource.multi"
+        ],
+        "scenarios": [
+          {
+            "scenarioId": "supersonic.v2-confusion-hit",
+            "evidenceClasses": [
+              "hit"
+            ]
+          },
+          {
+            "scenarioId": "supersonic.v2-miss-penalty",
+            "evidenceClasses": [
+              "lifecycle-trigger",
+              "miss"
+            ]
+          },
+          {
+            "scenarioId": "supersonic.v2-soundproof-hit-immunity",
+            "evidenceClasses": [
+              "immunity"
+            ]
+          },
+          {
+            "scenarioId": "supersonic.v2-soundproof-miss-immunity",
+            "evidenceClasses": [
+              "immunity"
+            ]
+          },
+          {
+            "scenarioId": "supersonic.v2-penalty-next-accuracy",
+            "evidenceClasses": [
+              "lifecycle-trigger"
+            ]
+          },
+          {
+            "scenarioId": "supersonic.v2-source-turn-expiry",
+            "evidenceClasses": [
+              "lifecycle-cleanup"
+            ]
+          },
+          {
+            "scenarioId": "supersonic.v2-duplicate-replay",
+            "evidenceClasses": [
+              "retry"
+            ]
+          },
+          {
+            "scenarioId": "supersonic.v2-stale-target",
+            "evidenceClasses": [
+              "multi-resource-conflict"
+            ]
+          }
+        ],
         "notApplicable": []
       },
-      "reviewedAt": null,
+      "reviewedAt": "2026-07-19",
       "unsupportedInteractionIds": [],
       "rolloutCohortId": null
     },
@@ -36833,7 +37061,7 @@
     {
       "canonicalId": "Swagger",
       "displayName": "Swagger",
-      "baseStatus": "assisted",
+      "baseStatus": "complete",
       "interactionStatus": "unassessed",
       "runtime": {
         "kind": "legacy-v1",
@@ -36846,23 +37074,65 @@
         "canonicalizationVersion": 1,
         "sourceDataSha256": "f90491826349afd7d1f2809fd9d74b7acc555f5163b99264205ee369249e9815"
       },
-      "capabilityTags": [],
+      "capabilityTags": [
+        "conditions.typed",
+        "stages.typed",
+        "targeting.authoritative"
+      ],
       "suggestedCapabilityTags": [],
       "blockerCodes": [],
-      "limitations": [
-        {
-          "code": "audit.required",
-          "summary": "Semantic conformance review is required before this legacy implementation can be marked complete."
-        }
-      ],
+      "limitations": [],
       "manualSteps": [],
-      "scenarioIds": [],
+      "scenarioIds": [
+        "swagger.legacy-v1-stage-and-confusion",
+        "swagger.legacy-v1-miss",
+        "swagger.legacy-v1-stage-cap",
+        "swagger.legacy-v1-duplicate-replay",
+        "swagger.legacy-v1-stale-target"
+      ],
       "conformanceEvidence": {
-        "requirementTags": [],
-        "scenarios": [],
+        "requirementTags": [
+          "branch.accuracy",
+          "branch.threshold",
+          "recovery.retry",
+          "resource.multi"
+        ],
+        "scenarios": [
+          {
+            "scenarioId": "swagger.legacy-v1-stage-and-confusion",
+            "evidenceClasses": [
+              "hit",
+              "threshold-pass"
+            ]
+          },
+          {
+            "scenarioId": "swagger.legacy-v1-miss",
+            "evidenceClasses": [
+              "miss"
+            ]
+          },
+          {
+            "scenarioId": "swagger.legacy-v1-stage-cap",
+            "evidenceClasses": [
+              "threshold-fail"
+            ]
+          },
+          {
+            "scenarioId": "swagger.legacy-v1-duplicate-replay",
+            "evidenceClasses": [
+              "retry"
+            ]
+          },
+          {
+            "scenarioId": "swagger.legacy-v1-stale-target",
+            "evidenceClasses": [
+              "multi-resource-conflict"
+            ]
+          }
+        ],
         "notApplicable": []
       },
-      "reviewedAt": null,
+      "reviewedAt": "2026-07-19",
       "unsupportedInteractionIds": [],
       "rolloutCohortId": null
     },
@@ -36939,43 +37209,97 @@
     {
       "canonicalId": "Sweet Scent",
       "displayName": "Sweet Scent",
-      "baseStatus": "assisted",
+      "baseStatus": "complete",
       "interactionStatus": "unassessed",
       "runtime": {
-        "kind": "legacy-v1",
-        "version": 1,
-        "definitionHash": "71a9a8c6963f6442b36f785190d9855ae04dbfe21139e415f4da893d78f4b6fc",
-        "sourceModule": "src/utils/move-automation/scripts/area.ts"
+        "kind": "movespec-v2",
+        "version": 2,
+        "definitionHash": "be1ab814cb03fe9a7ca372f56c3d57793e81f5275e0b3d1f9c4cb8e9f09287e9",
+        "sourceModule": "server/domain/moveAutomation/specs/sweetScent.ts"
       },
       "rulesProvenance": {
         "rulesetId": "rotom-table-reference-moves-v1",
         "canonicalizationVersion": 1,
         "sourceDataSha256": "f90491826349afd7d1f2809fd9d74b7acc555f5163b99264205ee369249e9815"
       },
-      "capabilityTags": [],
+      "capabilityTags": [
+        "conditions.typed",
+        "lifecycle.effects",
+        "targeting.authoritative"
+      ],
       "suggestedCapabilityTags": [],
       "blockerCodes": [],
-      "limitations": [
-        {
-          "code": "audit.required",
-          "summary": "Semantic conformance review is required before this legacy implementation can be marked complete."
-        }
-      ],
+      "limitations": [],
       "manualSteps": [],
-      "scenarioIds": [],
+      "scenarioIds": [
+        "sweet-scent.v2-burst-mixed",
+        "sweet-scent.v2-friendly-exclusion",
+        "sweet-scent.v2-evasion-floor",
+        "sweet-scent.v2-scene-cleanup",
+        "sweet-scent.v2-duplicate-replay",
+        "sweet-scent.v2-stale-target"
+      ],
       "conformanceEvidence": {
-        "requirementTags": [],
-        "scenarios": [],
+        "requirementTags": [
+          "branch.accuracy",
+          "branch.threshold",
+          "mechanic.lifecycle",
+          "recovery.retry",
+          "resource.multi",
+          "target.area"
+        ],
+        "scenarios": [
+          {
+            "scenarioId": "sweet-scent.v2-burst-mixed",
+            "evidenceClasses": [
+              "area-mixed-outcomes",
+              "hit",
+              "lifecycle-trigger",
+              "miss",
+              "threshold-pass"
+            ]
+          },
+          {
+            "scenarioId": "sweet-scent.v2-friendly-exclusion",
+            "evidenceClasses": [
+              "area-mixed-outcomes"
+            ]
+          },
+          {
+            "scenarioId": "sweet-scent.v2-evasion-floor",
+            "evidenceClasses": [
+              "threshold-fail"
+            ]
+          },
+          {
+            "scenarioId": "sweet-scent.v2-scene-cleanup",
+            "evidenceClasses": [
+              "lifecycle-cleanup"
+            ]
+          },
+          {
+            "scenarioId": "sweet-scent.v2-duplicate-replay",
+            "evidenceClasses": [
+              "retry"
+            ]
+          },
+          {
+            "scenarioId": "sweet-scent.v2-stale-target",
+            "evidenceClasses": [
+              "multi-resource-conflict"
+            ]
+          }
+        ],
         "notApplicable": []
       },
-      "reviewedAt": null,
+      "reviewedAt": "2026-07-19",
       "unsupportedInteractionIds": [],
       "rolloutCohortId": null
     },
     {
       "canonicalId": "Swift",
       "displayName": "Swift",
-      "baseStatus": "assisted",
+      "baseStatus": "complete",
       "interactionStatus": "unassessed",
       "runtime": {
         "kind": "legacy-v1",
@@ -36988,23 +37312,65 @@
         "canonicalizationVersion": 1,
         "sourceDataSha256": "f90491826349afd7d1f2809fd9d74b7acc555f5163b99264205ee369249e9815"
       },
-      "capabilityTags": [],
+      "capabilityTags": [
+        "targeting.authoritative"
+      ],
       "suggestedCapabilityTags": [],
       "blockerCodes": [],
-      "limitations": [
-        {
-          "code": "audit.required",
-          "summary": "Semantic conformance review is required before this legacy implementation can be marked complete."
-        }
-      ],
+      "limitations": [],
       "manualSteps": [],
-      "scenarioIds": [],
+      "scenarioIds": [
+        "swift.legacy-v1-automatic-area-hit",
+        "swift.legacy-v1-ghost-immunity",
+        "swift.legacy-v1-duplicate-replay",
+        "swift.legacy-v1-stale-target"
+      ],
       "conformanceEvidence": {
-        "requirementTags": [],
-        "scenarios": [],
-        "notApplicable": []
+        "requirementTags": [
+          "mechanic.damage",
+          "recovery.retry",
+          "resource.multi",
+          "target.area"
+        ],
+        "scenarios": [
+          {
+            "scenarioId": "swift.legacy-v1-automatic-area-hit",
+            "evidenceClasses": [
+              "area-mixed-outcomes",
+              "hit"
+            ]
+          },
+          {
+            "scenarioId": "swift.legacy-v1-ghost-immunity",
+            "evidenceClasses": [
+              "immunity"
+            ]
+          },
+          {
+            "scenarioId": "swift.legacy-v1-duplicate-replay",
+            "evidenceClasses": [
+              "retry"
+            ]
+          },
+          {
+            "scenarioId": "swift.legacy-v1-stale-target",
+            "evidenceClasses": [
+              "multi-resource-conflict"
+            ]
+          }
+        ],
+        "notApplicable": [
+          {
+            "evidenceClass": "miss",
+            "reason": "Swift has no Accuracy Check and its canonical text says it cannot miss."
+          },
+          {
+            "evidenceClass": "crit",
+            "reason": "Critical hits require an Accuracy Roll in the frozen rules, and Swift makes no Accuracy Roll."
+          }
+        ]
       },
-      "reviewedAt": null,
+      "reviewedAt": "2026-07-19",
       "unsupportedInteractionIds": [],
       "rolloutCohortId": null
     },
@@ -37046,12 +37412,12 @@
     {
       "canonicalId": "Swords Dance",
       "displayName": "Swords Dance",
-      "baseStatus": "assisted",
+      "baseStatus": "complete",
       "interactionStatus": "unassessed",
       "runtime": {
         "kind": "movespec-v2",
         "version": 2,
-        "definitionHash": "13e08b63cd5ca691be81797b54d5c55616a5de2f3a28b25f1bd7084b8b31ac5c",
+        "definitionHash": "79b94a629ea140e1b489edbc05ad2a5144965d276bf236c91fbddf2a4853c212",
         "sourceModule": "server/domain/moveAutomation/specs/swordsDance.ts"
       },
       "rulesProvenance": {
@@ -37059,50 +37425,60 @@
         "canonicalizationVersion": 1,
         "sourceDataSha256": "f90491826349afd7d1f2809fd9d74b7acc555f5163b99264205ee369249e9815"
       },
-      "capabilityTags": [],
+      "capabilityTags": [
+        "stages.typed",
+        "targeting.authoritative"
+      ],
       "suggestedCapabilityTags": [],
       "blockerCodes": [],
-      "limitations": [
-        {
-          "code": "audit.required",
-          "summary": "Semantic conformance review is required before this native implementation can be marked complete."
-        }
-      ],
+      "limitations": [],
       "manualSteps": [],
       "scenarioIds": [
         "swords-dance.v2-already-capped",
         "swords-dance.v2-capped-increase",
-        "swords-dance.v2-full-increase"
+        "swords-dance.v2-full-increase",
+        "swords-dance.v2-stale-actor"
       ],
       "conformanceEvidence": {
         "requirementTags": [
+          "branch.threshold",
           "recovery.retry",
+          "resource.multi",
           "target.self"
         ],
         "scenarios": [
           {
             "scenarioId": "swords-dance.v2-already-capped",
             "evidenceClasses": [
-              "self"
+              "self",
+              "threshold-fail"
             ]
           },
           {
             "scenarioId": "swords-dance.v2-capped-increase",
             "evidenceClasses": [
-              "self"
+              "self",
+              "threshold-pass"
             ]
           },
           {
             "scenarioId": "swords-dance.v2-full-increase",
             "evidenceClasses": [
               "retry",
-              "self"
+              "self",
+              "threshold-pass"
+            ]
+          },
+          {
+            "scenarioId": "swords-dance.v2-stale-actor",
+            "evidenceClasses": [
+              "multi-resource-conflict"
             ]
           }
         ],
         "notApplicable": []
       },
-      "reviewedAt": null,
+      "reviewedAt": "2026-07-19",
       "unsupportedInteractionIds": [],
       "rolloutCohortId": null
     },

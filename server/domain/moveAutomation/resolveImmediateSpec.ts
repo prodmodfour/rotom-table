@@ -409,11 +409,13 @@ const createOperationAwareImmunityQueries = (input: {
   const scriptFor = operationMechanicsResolver(input)
   const queries = new Map<string, MoveCoreTokenEffectImmunityQueries>()
   const forOperation = (operationId: string): MoveCoreTokenEffectImmunityQueries => {
-    const moveType = scriptFor(operationId).type ?? null
+    const moveScript = scriptFor(operationId)
+    const moveType = moveScript.type ?? null
     let query = queries.get(operationId)
     if (!query) {
       query = createStandardMoveCoreTokenEffectImmunityQueries({
         moveType,
+        moveScript,
         context: input.contextForOperation(operationId),
       })
       queries.set(operationId, query)

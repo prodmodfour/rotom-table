@@ -69,16 +69,17 @@ const operationEvent = (
 )
 
 describe('Swords Dance native MoveSpec v2', () => {
-  it('selects the reviewed self-stage definition and links its cap scenarios', () => {
+  it('selects the reviewed self-stage definition and links its cap and recovery scenarios', () => {
     expect(swordsDanceRow.runtime).toEqual({
       kind: 'movespec-v2',
       version: 2,
-      definitionHash: '13e08b63cd5ca691be81797b54d5c55616a5de2f3a28b25f1bd7084b8b31ac5c',
+      definitionHash: '79b94a629ea140e1b489edbc05ad2a5144965d276bf236c91fbddf2a4853c212',
       sourceModule: 'server/domain/moveAutomation/specs/swordsDance.ts',
     })
-    expect(swordsDanceRow.scenarioIds).toEqual(
+    expect(swordsDanceRow.scenarioIds).toEqual(expect.arrayContaining(
       SWORDS_DANCE_V2_SEMANTIC_SCENARIOS.map(({ scenarioId }) => scenarioId),
-    )
+    ))
+    expect(swordsDanceRow.scenarioIds).toContain('swords-dance.v2-stale-actor')
     expect(swordsDanceRow.manualSteps).toEqual([])
     expect(registeredMoveAutomationRuntimeFor('Swords Dance')).toMatchObject({
       kind: 'movespec-v2',

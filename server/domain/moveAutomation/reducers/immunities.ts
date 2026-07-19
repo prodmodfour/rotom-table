@@ -7,6 +7,7 @@ import {
   moveAutomationConditionImmunitySource,
   type MoveAutomationConditionImmunityContext,
 } from '~/utils/moveAutomationConditionImmunity'
+import { moveAutomationMoveImmunitySource } from '~/utils/moveAutomationMoveImmunity'
 import {
   computeSheetAbilityAwareMultiplier,
   getPassiveTypeEffectivenessSource,
@@ -15,15 +16,19 @@ import { projectEffectiveConditions } from '~/utils/encounterConditions'
 import { conditionBaseName, normalizeConditionName } from '~/utils/statusConditions'
 import type { AuthoritativeMoveRulesContext } from '../context'
 import { computeMultiplier } from '~/utils/typeChart'
+import type { MoveAutomationScript } from '~/types/moveAutomation'
 import type {
   MoveConditionImmunityDecision,
   MoveCoreTokenEffectImmunityDecision,
   MoveCoreTokenEffectImmunityQueries,
+  MoveCoreTokenEffectRecipient,
 } from './coreTokenEffectTypes'
 
 export interface StandardMoveCoreTokenEffectImmunityOptions {
   /** Null is allowed for typeless effects; type-immunity-enabled HP loss then fails closed. */
   readonly moveType: string | null
+  /** Reviewed move keywords used for whole-move immunity such as Powder and Sonic. */
+  readonly moveScript?: Pick<MoveAutomationScript, 'keywords'>
   readonly conditionContext?: MoveAutomationConditionImmunityContext
   /** Enables side-relationship and typed placement/side/cell prevention queries. */
   readonly context?: AuthoritativeMoveRulesContext
@@ -119,8 +124,15 @@ export const createStandardMoveCoreTokenEffectImmunityQueries = (
 ): MoveCoreTokenEffectImmunityQueries => {
   const conditionContext = options.conditionContext
     ?? authoritativeConditionContext(options.context)
+  const moveImmunity = (recipient: MoveCoreTokenEffectRecipient): string | null => (
+    options.moveScript
+      ? moveAutomationMoveImmunitySource(options.moveScript, recipient.token)
+      : null
+  )
   return {
     directHp: ({ recipient }) => {
+      const wholeMoveBlocker = moveImmunity(recipient)
+      if (wholeMoveBlocker) return decision(wholeMoveBlocker)
       if (!options.moveType) return decision('unresolved move type')
       const target = recipient.token
       const baseMultiplier = computeMultiplier(options.moveType, target.defenderTypes)
@@ -141,6 +153,8 @@ export const createStandardMoveCoreTokenEffectImmunityQueries = (
       ) ?? `${options.moveType} immunity`)
     },
     condition: ({ operation, condition, recipient }) => {
+      const wholeMoveBlocker = moveImmunity(recipient)
+      if (wholeMoveBlocker) return conditionDecision(wholeMoveBlocker)
       const providerIds = conditionProviderIds(
         condition,
         recipient.placement.id,
@@ -187,7 +201,7 @@ export const createStandardMoveCoreTokenEffectImmunityQueries = (
           )
     },
     combatStage: ({ stage, delta, recipient }) => decision(
-      moveAutomationCombatStageBlockSource({
+      moveImmunity(recipient) ?? moveAutomationCombatStageBlockSource({
         target: recipient.token,
         key: stage,
         delta,
