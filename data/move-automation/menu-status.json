@@ -8780,31 +8780,21 @@
     {
       "canonicalId": "Zen Headbutt",
       "displayName": "Zen Headbutt",
-      "baseStatus": "assisted",
+      "baseStatus": "complete",
       "interactionStatus": "unassessed",
       "runtimeKind": "legacy-v1",
       "blockerCodes": [],
-      "limitations": [
-        {
-          "code": "audit.required",
-          "summary": "Semantic conformance review is required before this legacy implementation can be marked complete."
-        }
-      ],
+      "limitations": [],
       "manualSteps": []
     },
     {
       "canonicalId": "Zing Zap",
       "displayName": "Zing Zap",
-      "baseStatus": "assisted",
+      "baseStatus": "complete",
       "interactionStatus": "unassessed",
       "runtimeKind": "legacy-v1",
       "blockerCodes": [],
-      "limitations": [
-        {
-          "code": "audit.required",
-          "summary": "Semantic conformance review is required before this legacy implementation can be marked complete."
-        }
-      ],
+      "limitations": [],
       "manualSteps": []
     }
   ]

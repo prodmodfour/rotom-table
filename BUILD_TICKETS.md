@@ -2750,7 +2750,7 @@ Status: DONE
 
 ## REG-033 — Certify Zen Headbutt through Zing Zap
 
-Status: TODO
+Status: DONE
 
 **Baseline-registered moves:** Zen Headbutt; Zing Zap
 

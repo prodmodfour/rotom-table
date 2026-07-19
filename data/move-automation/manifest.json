@@ -42028,7 +42028,7 @@
     {
       "canonicalId": "Zen Headbutt",
       "displayName": "Zen Headbutt",
-      "baseStatus": "assisted",
+      "baseStatus": "complete",
       "interactionStatus": "unassessed",
       "runtime": {
         "kind": "legacy-v1",
@@ -42041,30 +42041,103 @@
         "canonicalizationVersion": 1,
         "sourceDataSha256": "f90491826349afd7d1f2809fd9d74b7acc555f5163b99264205ee369249e9815"
       },
-      "capabilityTags": [],
+      "capabilityTags": [
+        "conditions.typed",
+        "expressions.bounded",
+        "targeting.authoritative"
+      ],
       "suggestedCapabilityTags": [],
       "blockerCodes": [],
-      "limitations": [
-        {
-          "code": "audit.required",
-          "summary": "Semantic conformance review is required before this legacy implementation can be marked complete."
-        }
-      ],
+      "limitations": [],
       "manualSteps": [],
-      "scenarioIds": [],
+      "scenarioIds": [
+        "zen-headbutt.legacy-v1-flinch-threshold-pass",
+        "zen-headbutt.legacy-v1-flinch-threshold-fail",
+        "zen-headbutt.legacy-v1-miss",
+        "zen-headbutt.legacy-v1-critical-hit",
+        "zen-headbutt.legacy-v1-dark-immunity",
+        "zen-headbutt.legacy-v1-secondary-immunity",
+        "zen-headbutt.legacy-v1-stuck-dash-rejected",
+        "zen-headbutt.legacy-v1-duplicate-replay",
+        "zen-headbutt.legacy-v1-stale-target"
+      ],
       "conformanceEvidence": {
-        "requirementTags": [],
-        "scenarios": [],
+        "requirementTags": [
+          "branch.accuracy",
+          "branch.critical-hit",
+          "branch.immunity",
+          "branch.threshold",
+          "mechanic.damage",
+          "recovery.retry",
+          "resource.multi"
+        ],
+        "scenarios": [
+          {
+            "scenarioId": "zen-headbutt.legacy-v1-flinch-threshold-pass",
+            "evidenceClasses": [
+              "hit",
+              "threshold-pass"
+            ]
+          },
+          {
+            "scenarioId": "zen-headbutt.legacy-v1-flinch-threshold-fail",
+            "evidenceClasses": [
+              "threshold-fail"
+            ]
+          },
+          {
+            "scenarioId": "zen-headbutt.legacy-v1-miss",
+            "evidenceClasses": [
+              "miss"
+            ]
+          },
+          {
+            "scenarioId": "zen-headbutt.legacy-v1-critical-hit",
+            "evidenceClasses": [
+              "crit"
+            ]
+          },
+          {
+            "scenarioId": "zen-headbutt.legacy-v1-dark-immunity",
+            "evidenceClasses": [
+              "immunity"
+            ]
+          },
+          {
+            "scenarioId": "zen-headbutt.legacy-v1-secondary-immunity",
+            "evidenceClasses": [
+              "immunity"
+            ]
+          },
+          {
+            "scenarioId": "zen-headbutt.legacy-v1-stuck-dash-rejected",
+            "evidenceClasses": [
+              "threshold-fail"
+            ]
+          },
+          {
+            "scenarioId": "zen-headbutt.legacy-v1-duplicate-replay",
+            "evidenceClasses": [
+              "retry"
+            ]
+          },
+          {
+            "scenarioId": "zen-headbutt.legacy-v1-stale-target",
+            "evidenceClasses": [
+              "multi-resource-conflict"
+            ]
+          }
+        ],
         "notApplicable": []
       },
-      "reviewedAt": null,
+      "reviewedAt": "2026-07-19",
       "unsupportedInteractionIds": [],
       "rolloutCohortId": null
     },
     {
       "canonicalId": "Zing Zap",
       "displayName": "Zing Zap",
-      "baseStatus": "assisted",
+      "baseStatus": "complete",
       "interactionStatus": "unassessed",
       "runtime": {
         "kind": "legacy-v1",
@@ -42077,23 +42150,89 @@
         "canonicalizationVersion": 1,
         "sourceDataSha256": "f90491826349afd7d1f2809fd9d74b7acc555f5163b99264205ee369249e9815"
       },
-      "capabilityTags": [],
+      "capabilityTags": [
+        "conditions.typed",
+        "expressions.bounded",
+        "targeting.authoritative"
+      ],
       "suggestedCapabilityTags": [],
       "blockerCodes": [],
-      "limitations": [
-        {
-          "code": "audit.required",
-          "summary": "Semantic conformance review is required before this legacy implementation can be marked complete."
-        }
-      ],
+      "limitations": [],
       "manualSteps": [],
-      "scenarioIds": [],
+      "scenarioIds": [
+        "zing-zap.legacy-v1-flinch-threshold-pass",
+        "zing-zap.legacy-v1-flinch-threshold-fail",
+        "zing-zap.legacy-v1-miss",
+        "zing-zap.legacy-v1-critical-hit",
+        "zing-zap.legacy-v1-ground-immunity",
+        "zing-zap.legacy-v1-secondary-immunity",
+        "zing-zap.legacy-v1-duplicate-replay",
+        "zing-zap.legacy-v1-stale-target"
+      ],
       "conformanceEvidence": {
-        "requirementTags": [],
-        "scenarios": [],
+        "requirementTags": [
+          "branch.accuracy",
+          "branch.critical-hit",
+          "branch.immunity",
+          "branch.threshold",
+          "mechanic.damage",
+          "recovery.retry",
+          "resource.multi"
+        ],
+        "scenarios": [
+          {
+            "scenarioId": "zing-zap.legacy-v1-flinch-threshold-pass",
+            "evidenceClasses": [
+              "hit",
+              "threshold-pass"
+            ]
+          },
+          {
+            "scenarioId": "zing-zap.legacy-v1-flinch-threshold-fail",
+            "evidenceClasses": [
+              "threshold-fail"
+            ]
+          },
+          {
+            "scenarioId": "zing-zap.legacy-v1-miss",
+            "evidenceClasses": [
+              "miss"
+            ]
+          },
+          {
+            "scenarioId": "zing-zap.legacy-v1-critical-hit",
+            "evidenceClasses": [
+              "crit"
+            ]
+          },
+          {
+            "scenarioId": "zing-zap.legacy-v1-ground-immunity",
+            "evidenceClasses": [
+              "immunity"
+            ]
+          },
+          {
+            "scenarioId": "zing-zap.legacy-v1-secondary-immunity",
+            "evidenceClasses": [
+              "immunity"
+            ]
+          },
+          {
+            "scenarioId": "zing-zap.legacy-v1-duplicate-replay",
+            "evidenceClasses": [
+              "retry"
+            ]
+          },
+          {
+            "scenarioId": "zing-zap.legacy-v1-stale-target",
+            "evidenceClasses": [
+              "multi-resource-conflict"
+            ]
+          }
+        ],
         "notApplicable": []
       },
-      "reviewedAt": null,
+      "reviewedAt": "2026-07-19",
       "unsupportedInteractionIds": [],
       "rolloutCohortId": null
     }
