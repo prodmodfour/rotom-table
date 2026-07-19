@@ -2648,7 +2648,7 @@ Status: DONE
 
 ## REG-016 — Certify Luster Purge through Mist Ball
 
-Status: TODO
+Status: DONE
 
 **Baseline-registered moves:** Luster Purge; Mach Punch; Magical Leaf; Magnet Bomb; Mega Punch; Metal Sound; Mirror Shot; Mist Ball
 
