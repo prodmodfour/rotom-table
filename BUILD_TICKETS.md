@@ -2672,7 +2672,7 @@ Status: DONE
 
 ## REG-020 — Certify Poison Sting through Precipice Blades
 
-Status: DONE
+Status: TODO
 
 **Baseline-registered moves:** Poison Sting; Poison Tail; Pound; Powder Snow; Power Gem; Power Trip; Power Whip; Precipice Blades
 
