@@ -2654,7 +2654,7 @@ Status: DONE
 
 ## REG-017 — Certify Moonblast through Needle Arm
 
-Status: TODO
+Status: DONE
 
 **Baseline-registered moves:** Moonblast; Mountain Gale; Mud Bomb; Mud Shot; Mud Sport; Mud-Slap; Mystical Fire; Needle Arm
 

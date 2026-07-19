@@ -370,7 +370,62 @@ describe('move automation transaction helpers', () => {
 
     expect(transaction.hpUpdates).toEqual([{ id: 't', currentHp: 28 }])
     expect(transaction.conditionUpdates).toEqual([{ id: 't', conditions: [] }])
-    expect(transaction.logLines).toContain('Coated: Electric-Resistant Coat removed after Electric damage.')
+    expect(transaction.logLines).toContain('Coated: Electric-Resistant Coat removed after a damaging Electric-Type move hit.')
+  })
+
+  it('removes Mud Sport Coat after an Electric hit even when type immunity prevents damage', () => {
+    const s = explicitScriptForMove('Thunder Shock')!
+    const target = token({
+      id: 't',
+      species: 'Grounded',
+      currentHp: 40,
+      maxHp: 40,
+      defenderTypes: ['Ground'],
+      conditions: ['Electric-Resistant Coat'],
+    })
+    const transaction = automationTransaction(s, {
+      targets: [target],
+      targetResolutions: {
+        t: {
+          ...defaultTargetResolutionState(s),
+          accuracyRoll: '10',
+          hit: true,
+          damageRoll: { formula: 'flat', count: 0, sides: 0, total: 20, rolls: [], mod: 20 },
+        },
+      },
+    })
+
+    expect(transaction.hitTargetIds).toEqual(['t'])
+    expect(transaction.hpUpdates).toEqual([])
+    expect(transaction.conditionUpdates).toEqual([{ id: 't', conditions: [] }])
+    expect(transaction.logLines).toContain('Grounded: Electric-Resistant Coat removed after a damaging Electric-Type move hit.')
+  })
+
+  it('retains Mud Sport Coat when an Electric Smite move deals damage on a miss', () => {
+    const s = explicitScriptForMove('Bolt Strike')!
+    const target = token({
+      id: 't',
+      species: 'Missed',
+      currentHp: 40,
+      maxHp: 40,
+      conditions: ['Electric-Resistant Coat'],
+    })
+    const transaction = automationTransaction(s, {
+      targets: [target],
+      targetResolutions: {
+        t: {
+          ...defaultTargetResolutionState(s),
+          accuracyRoll: '1',
+          hit: false,
+          damageRoll: { formula: 'flat', count: 0, sides: 0, total: 20, rolls: [], mod: 20 },
+        },
+      },
+    })
+
+    expect(transaction.hitTargetIds).toEqual([])
+    expect(transaction.hpUpdates).toHaveLength(1)
+    expect(transaction.conditionUpdates).toEqual([])
+    expect(transaction.logLines).toContain('Missed: Smite miss dealt damage with effectiveness resisted one additional step.')
   })
 
   it('adds Injury updates and log lines when automated damage crosses injury thresholds', () => {

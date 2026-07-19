@@ -355,7 +355,8 @@ export const buildMoveAutomationTransaction = ({
   })
   if (script.type === 'Electric' && script.damaging) {
     for (const target of selectedTargets) {
-      if ((damageLossByTargetId.get(target.id) ?? 0) <= 0) continue
+      const accuracyHit = !script.requiresAccuracy || targetResolutions[target.id]?.hit === true
+      if (!accuracyHit) continue
       const hasCoat = normalizeConditionNames(target.conditions)
         .some((condition) => (conditionBaseName(condition) ?? condition) === ELECTRIC_RESISTANT_COAT_CONDITION)
       if (!hasCoat) continue
@@ -365,7 +366,7 @@ export const buildMoveAutomationTransaction = ({
         action: 'remove',
         label: 'Electric-Resistant Coat consumed',
       })
-      logLines.push(`${target.species}: Electric-Resistant Coat removed after Electric damage.`)
+      logLines.push(`${target.species}: Electric-Resistant Coat removed after a damaging Electric-Type move hit.`)
     }
   }
   conditionAccumulator.merge(user, manualUserConditions)
