@@ -2636,7 +2636,7 @@ Status: DONE
 
 ## REG-014 — Certify Ice Shard through Land’s Wrath
 
-Status: TODO
+Status: DONE
 
 **Baseline-registered moves:** Ice Shard; Icicle Crash; Icy Wind; Iron Head; Iron Tail; Karate Chop; Knock Off; Land’s Wrath
 

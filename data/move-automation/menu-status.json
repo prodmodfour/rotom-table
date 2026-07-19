@@ -3708,31 +3708,21 @@
     {
       "canonicalId": "Ice Shard",
       "displayName": "Ice Shard",
-      "baseStatus": "assisted",
+      "baseStatus": "complete",
       "interactionStatus": "unassessed",
       "runtimeKind": "legacy-v1",
       "blockerCodes": [],
-      "limitations": [
-        {
-          "code": "audit.required",
-          "summary": "Semantic conformance review is required before this legacy implementation can be marked complete."
-        }
-      ],
+      "limitations": [],
       "manualSteps": []
     },
     {
       "canonicalId": "Icicle Crash",
       "displayName": "Icicle Crash",
-      "baseStatus": "assisted",
+      "baseStatus": "complete",
       "interactionStatus": "unassessed",
       "runtimeKind": "legacy-v1",
       "blockerCodes": [],
-      "limitations": [
-        {
-          "code": "audit.required",
-          "summary": "Semantic conformance review is required before this legacy implementation can be marked complete."
-        }
-      ],
+      "limitations": [],
       "manualSteps": []
     },
     {
@@ -3750,16 +3740,11 @@
     {
       "canonicalId": "Icy Wind",
       "displayName": "Icy Wind",
-      "baseStatus": "assisted",
+      "baseStatus": "complete",
       "interactionStatus": "unassessed",
       "runtimeKind": "legacy-v1",
       "blockerCodes": [],
-      "limitations": [
-        {
-          "code": "audit.required",
-          "summary": "Semantic conformance review is required before this legacy implementation can be marked complete."
-        }
-      ],
+      "limitations": [],
       "manualSteps": []
     },
     {
@@ -3873,31 +3858,21 @@
     {
       "canonicalId": "Iron Head",
       "displayName": "Iron Head",
-      "baseStatus": "assisted",
+      "baseStatus": "complete",
       "interactionStatus": "unassessed",
       "runtimeKind": "legacy-v1",
       "blockerCodes": [],
-      "limitations": [
-        {
-          "code": "audit.required",
-          "summary": "Semantic conformance review is required before this legacy implementation can be marked complete."
-        }
-      ],
+      "limitations": [],
       "manualSteps": []
     },
     {
       "canonicalId": "Iron Tail",
       "displayName": "Iron Tail",
-      "baseStatus": "assisted",
+      "baseStatus": "complete",
       "interactionStatus": "unassessed",
       "runtimeKind": "legacy-v1",
       "blockerCodes": [],
-      "limitations": [
-        {
-          "code": "audit.required",
-          "summary": "Semantic conformance review is required before this legacy implementation can be marked complete."
-        }
-      ],
+      "limitations": [],
       "manualSteps": []
     },
     {
@@ -3951,16 +3926,11 @@
     {
       "canonicalId": "Karate Chop",
       "displayName": "Karate Chop",
-      "baseStatus": "assisted",
+      "baseStatus": "complete",
       "interactionStatus": "unassessed",
       "runtimeKind": "legacy-v1",
       "blockerCodes": [],
-      "limitations": [
-        {
-          "code": "audit.required",
-          "summary": "Semantic conformance review is required before this legacy implementation can be marked complete."
-        }
-      ],
+      "limitations": [],
       "manualSteps": []
     },
     {
@@ -4000,16 +3970,11 @@
     {
       "canonicalId": "Land’s Wrath",
       "displayName": "Land’s Wrath",
-      "baseStatus": "assisted",
+      "baseStatus": "complete",
       "interactionStatus": "unassessed",
       "runtimeKind": "legacy-v1",
       "blockerCodes": [],
-      "limitations": [
-        {
-          "code": "audit.required",
-          "summary": "Semantic conformance review is required before this legacy implementation can be marked complete."
-        }
-      ],
+      "limitations": [],
       "manualSteps": []
     },
     {

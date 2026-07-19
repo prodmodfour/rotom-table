@@ -17342,7 +17342,7 @@
     {
       "canonicalId": "Ice Shard",
       "displayName": "Ice Shard",
-      "baseStatus": "assisted",
+      "baseStatus": "complete",
       "interactionStatus": "unassessed",
       "runtime": {
         "kind": "legacy-v1",
@@ -17355,30 +17355,84 @@
         "canonicalizationVersion": 1,
         "sourceDataSha256": "f90491826349afd7d1f2809fd9d74b7acc555f5163b99264205ee369249e9815"
       },
-      "capabilityTags": [],
+      "capabilityTags": [
+        "targeting.authoritative"
+      ],
       "suggestedCapabilityTags": [],
       "blockerCodes": [],
-      "limitations": [
-        {
-          "code": "audit.required",
-          "summary": "Semantic conformance review is required before this legacy implementation can be marked complete."
-        }
-      ],
+      "limitations": [],
       "manualSteps": [],
-      "scenarioIds": [],
+      "scenarioIds": [
+        "ice-shard.legacy-v1-hit-priority",
+        "ice-shard.legacy-v1-miss",
+        "ice-shard.legacy-v1-critical-hit",
+        "ice-shard.legacy-v1-priority-rejected",
+        "ice-shard.legacy-v1-duplicate-replay",
+        "ice-shard.legacy-v1-stale-target"
+      ],
       "conformanceEvidence": {
-        "requirementTags": [],
-        "scenarios": [],
-        "notApplicable": []
+        "requirementTags": [
+          "branch.accuracy",
+          "branch.critical-hit",
+          "branch.threshold",
+          "mechanic.damage",
+          "recovery.retry",
+          "resource.multi"
+        ],
+        "scenarios": [
+          {
+            "scenarioId": "ice-shard.legacy-v1-hit-priority",
+            "evidenceClasses": [
+              "hit",
+              "threshold-pass"
+            ]
+          },
+          {
+            "scenarioId": "ice-shard.legacy-v1-miss",
+            "evidenceClasses": [
+              "miss"
+            ]
+          },
+          {
+            "scenarioId": "ice-shard.legacy-v1-critical-hit",
+            "evidenceClasses": [
+              "crit"
+            ]
+          },
+          {
+            "scenarioId": "ice-shard.legacy-v1-priority-rejected",
+            "evidenceClasses": [
+              "threshold-fail"
+            ]
+          },
+          {
+            "scenarioId": "ice-shard.legacy-v1-duplicate-replay",
+            "evidenceClasses": [
+              "retry"
+            ]
+          },
+          {
+            "scenarioId": "ice-shard.legacy-v1-stale-target",
+            "evidenceClasses": [
+              "multi-resource-conflict"
+            ]
+          }
+        ],
+        "notApplicable": [
+          {
+            "evidenceClass": "immunity",
+            "reason": "The frozen type chart has no type immune to Ice damage; broader ability interactions remain separately unassessed."
+          }
+        ]
       },
-      "reviewedAt": null,
+      "reviewedAt": "2026-07-19",
       "unsupportedInteractionIds": [],
       "rolloutCohortId": null
     },
     {
       "canonicalId": "Icicle Crash",
       "displayName": "Icicle Crash",
-      "baseStatus": "assisted",
+      "baseStatus": "complete",
       "interactionStatus": "unassessed",
       "runtime": {
         "kind": "legacy-v1",
@@ -17391,23 +17445,82 @@
         "canonicalizationVersion": 1,
         "sourceDataSha256": "f90491826349afd7d1f2809fd9d74b7acc555f5163b99264205ee369249e9815"
       },
-      "capabilityTags": [],
+      "capabilityTags": [
+        "conditions.typed",
+        "expressions.bounded",
+        "targeting.authoritative"
+      ],
       "suggestedCapabilityTags": [],
       "blockerCodes": [],
-      "limitations": [
-        {
-          "code": "audit.required",
-          "summary": "Semantic conformance review is required before this legacy implementation can be marked complete."
-        }
-      ],
+      "limitations": [],
       "manualSteps": [],
-      "scenarioIds": [],
+      "scenarioIds": [
+        "icicle-crash.legacy-v1-flinch-threshold-pass",
+        "icicle-crash.legacy-v1-flinch-threshold-fail",
+        "icicle-crash.legacy-v1-miss",
+        "icicle-crash.legacy-v1-critical-hit",
+        "icicle-crash.legacy-v1-secondary-immunity",
+        "icicle-crash.legacy-v1-duplicate-replay",
+        "icicle-crash.legacy-v1-stale-target"
+      ],
       "conformanceEvidence": {
-        "requirementTags": [],
-        "scenarios": [],
+        "requirementTags": [
+          "branch.accuracy",
+          "branch.critical-hit",
+          "branch.immunity",
+          "branch.threshold",
+          "mechanic.damage",
+          "recovery.retry",
+          "resource.multi"
+        ],
+        "scenarios": [
+          {
+            "scenarioId": "icicle-crash.legacy-v1-flinch-threshold-pass",
+            "evidenceClasses": [
+              "hit",
+              "threshold-pass"
+            ]
+          },
+          {
+            "scenarioId": "icicle-crash.legacy-v1-flinch-threshold-fail",
+            "evidenceClasses": [
+              "threshold-fail"
+            ]
+          },
+          {
+            "scenarioId": "icicle-crash.legacy-v1-miss",
+            "evidenceClasses": [
+              "miss"
+            ]
+          },
+          {
+            "scenarioId": "icicle-crash.legacy-v1-critical-hit",
+            "evidenceClasses": [
+              "crit"
+            ]
+          },
+          {
+            "scenarioId": "icicle-crash.legacy-v1-secondary-immunity",
+            "evidenceClasses": [
+              "immunity"
+            ]
+          },
+          {
+            "scenarioId": "icicle-crash.legacy-v1-duplicate-replay",
+            "evidenceClasses": [
+              "retry"
+            ]
+          },
+          {
+            "scenarioId": "icicle-crash.legacy-v1-stale-target",
+            "evidenceClasses": [
+              "multi-resource-conflict"
+            ]
+          }
+        ],
         "notApplicable": []
       },
-      "reviewedAt": null,
+      "reviewedAt": "2026-07-19",
       "unsupportedInteractionIds": [],
       "rolloutCohortId": null
     },
@@ -17449,7 +17562,7 @@
     {
       "canonicalId": "Icy Wind",
       "displayName": "Icy Wind",
-      "baseStatus": "assisted",
+      "baseStatus": "complete",
       "interactionStatus": "unassessed",
       "runtime": {
         "kind": "legacy-v1",
@@ -17462,23 +17575,72 @@
         "canonicalizationVersion": 1,
         "sourceDataSha256": "f90491826349afd7d1f2809fd9d74b7acc555f5163b99264205ee369249e9815"
       },
-      "capabilityTags": [],
+      "capabilityTags": [
+        "stages.typed",
+        "targeting.authoritative"
+      ],
       "suggestedCapabilityTags": [],
       "blockerCodes": [],
-      "limitations": [
-        {
-          "code": "audit.required",
-          "summary": "Semantic conformance review is required before this legacy implementation can be marked complete."
-        }
-      ],
+      "limitations": [],
       "manualSteps": [],
-      "scenarioIds": [],
+      "scenarioIds": [
+        "icy-wind.legacy-v1-area-mixed",
+        "icy-wind.legacy-v1-critical-hit",
+        "icy-wind.legacy-v1-stage-cap",
+        "icy-wind.legacy-v1-duplicate-replay",
+        "icy-wind.legacy-v1-stale-target"
+      ],
       "conformanceEvidence": {
-        "requirementTags": [],
-        "scenarios": [],
-        "notApplicable": []
+        "requirementTags": [
+          "branch.accuracy",
+          "branch.critical-hit",
+          "mechanic.damage",
+          "recovery.retry",
+          "resource.multi",
+          "target.area"
+        ],
+        "scenarios": [
+          {
+            "scenarioId": "icy-wind.legacy-v1-area-mixed",
+            "evidenceClasses": [
+              "area-mixed-outcomes",
+              "hit",
+              "miss"
+            ]
+          },
+          {
+            "scenarioId": "icy-wind.legacy-v1-critical-hit",
+            "evidenceClasses": [
+              "crit"
+            ]
+          },
+          {
+            "scenarioId": "icy-wind.legacy-v1-stage-cap",
+            "evidenceClasses": [
+              "hit"
+            ]
+          },
+          {
+            "scenarioId": "icy-wind.legacy-v1-duplicate-replay",
+            "evidenceClasses": [
+              "retry"
+            ]
+          },
+          {
+            "scenarioId": "icy-wind.legacy-v1-stale-target",
+            "evidenceClasses": [
+              "multi-resource-conflict"
+            ]
+          }
+        ],
+        "notApplicable": [
+          {
+            "evidenceClass": "immunity",
+            "reason": "The frozen type chart has no type immune to Ice damage; broader ability interactions remain separately unassessed."
+          }
+        ]
       },
-      "reviewedAt": null,
+      "reviewedAt": "2026-07-19",
       "unsupportedInteractionIds": [],
       "rolloutCohortId": null
     },
@@ -17800,7 +17962,7 @@
     {
       "canonicalId": "Iron Head",
       "displayName": "Iron Head",
-      "baseStatus": "assisted",
+      "baseStatus": "complete",
       "interactionStatus": "unassessed",
       "runtime": {
         "kind": "legacy-v1",
@@ -17813,30 +17975,96 @@
         "canonicalizationVersion": 1,
         "sourceDataSha256": "f90491826349afd7d1f2809fd9d74b7acc555f5163b99264205ee369249e9815"
       },
-      "capabilityTags": [],
+      "capabilityTags": [
+        "conditions.typed",
+        "expressions.bounded",
+        "targeting.authoritative"
+      ],
       "suggestedCapabilityTags": [],
       "blockerCodes": [],
-      "limitations": [
-        {
-          "code": "audit.required",
-          "summary": "Semantic conformance review is required before this legacy implementation can be marked complete."
-        }
-      ],
+      "limitations": [],
       "manualSteps": [],
-      "scenarioIds": [],
+      "scenarioIds": [
+        "iron-head.legacy-v1-flinch-threshold-pass",
+        "iron-head.legacy-v1-flinch-threshold-fail",
+        "iron-head.legacy-v1-miss",
+        "iron-head.legacy-v1-critical-hit",
+        "iron-head.legacy-v1-secondary-immunity",
+        "iron-head.legacy-v1-stuck-dash-rejected",
+        "iron-head.legacy-v1-duplicate-replay",
+        "iron-head.legacy-v1-stale-target"
+      ],
       "conformanceEvidence": {
-        "requirementTags": [],
-        "scenarios": [],
+        "requirementTags": [
+          "branch.accuracy",
+          "branch.critical-hit",
+          "branch.immunity",
+          "branch.threshold",
+          "mechanic.damage",
+          "recovery.retry",
+          "resource.multi"
+        ],
+        "scenarios": [
+          {
+            "scenarioId": "iron-head.legacy-v1-flinch-threshold-pass",
+            "evidenceClasses": [
+              "hit",
+              "threshold-pass"
+            ]
+          },
+          {
+            "scenarioId": "iron-head.legacy-v1-flinch-threshold-fail",
+            "evidenceClasses": [
+              "threshold-fail"
+            ]
+          },
+          {
+            "scenarioId": "iron-head.legacy-v1-miss",
+            "evidenceClasses": [
+              "miss"
+            ]
+          },
+          {
+            "scenarioId": "iron-head.legacy-v1-critical-hit",
+            "evidenceClasses": [
+              "crit"
+            ]
+          },
+          {
+            "scenarioId": "iron-head.legacy-v1-secondary-immunity",
+            "evidenceClasses": [
+              "immunity"
+            ]
+          },
+          {
+            "scenarioId": "iron-head.legacy-v1-stuck-dash-rejected",
+            "evidenceClasses": [
+              "threshold-fail"
+            ]
+          },
+          {
+            "scenarioId": "iron-head.legacy-v1-duplicate-replay",
+            "evidenceClasses": [
+              "retry"
+            ]
+          },
+          {
+            "scenarioId": "iron-head.legacy-v1-stale-target",
+            "evidenceClasses": [
+              "multi-resource-conflict"
+            ]
+          }
+        ],
         "notApplicable": []
       },
-      "reviewedAt": null,
+      "reviewedAt": "2026-07-19",
       "unsupportedInteractionIds": [],
       "rolloutCohortId": null
     },
     {
       "canonicalId": "Iron Tail",
       "displayName": "Iron Tail",
-      "baseStatus": "assisted",
+      "baseStatus": "complete",
       "interactionStatus": "unassessed",
       "runtime": {
         "kind": "legacy-v1",
@@ -17849,23 +18077,91 @@
         "canonicalizationVersion": 1,
         "sourceDataSha256": "f90491826349afd7d1f2809fd9d74b7acc555f5163b99264205ee369249e9815"
       },
-      "capabilityTags": [],
+      "capabilityTags": [
+        "expressions.bounded",
+        "stages.typed",
+        "targeting.authoritative"
+      ],
       "suggestedCapabilityTags": [],
       "blockerCodes": [],
-      "limitations": [
-        {
-          "code": "audit.required",
-          "summary": "Semantic conformance review is required before this legacy implementation can be marked complete."
-        }
-      ],
+      "limitations": [],
       "manualSteps": [],
-      "scenarioIds": [],
+      "scenarioIds": [
+        "iron-tail.legacy-v1-defense-threshold-pass",
+        "iron-tail.legacy-v1-defense-threshold-fail",
+        "iron-tail.legacy-v1-smite-miss",
+        "iron-tail.legacy-v1-critical-hit",
+        "iron-tail.legacy-v1-secondary-immunity",
+        "iron-tail.legacy-v1-stage-cap",
+        "iron-tail.legacy-v1-duplicate-replay",
+        "iron-tail.legacy-v1-stale-target"
+      ],
       "conformanceEvidence": {
-        "requirementTags": [],
-        "scenarios": [],
+        "requirementTags": [
+          "branch.accuracy",
+          "branch.alternate",
+          "branch.critical-hit",
+          "branch.immunity",
+          "branch.threshold",
+          "mechanic.damage",
+          "recovery.retry",
+          "resource.multi"
+        ],
+        "scenarios": [
+          {
+            "scenarioId": "iron-tail.legacy-v1-defense-threshold-pass",
+            "evidenceClasses": [
+              "hit",
+              "threshold-pass"
+            ]
+          },
+          {
+            "scenarioId": "iron-tail.legacy-v1-defense-threshold-fail",
+            "evidenceClasses": [
+              "threshold-fail"
+            ]
+          },
+          {
+            "scenarioId": "iron-tail.legacy-v1-smite-miss",
+            "evidenceClasses": [
+              "alternate-branch",
+              "miss"
+            ]
+          },
+          {
+            "scenarioId": "iron-tail.legacy-v1-critical-hit",
+            "evidenceClasses": [
+              "crit"
+            ]
+          },
+          {
+            "scenarioId": "iron-tail.legacy-v1-secondary-immunity",
+            "evidenceClasses": [
+              "immunity"
+            ]
+          },
+          {
+            "scenarioId": "iron-tail.legacy-v1-stage-cap",
+            "evidenceClasses": [
+              "hit"
+            ]
+          },
+          {
+            "scenarioId": "iron-tail.legacy-v1-duplicate-replay",
+            "evidenceClasses": [
+              "retry"
+            ]
+          },
+          {
+            "scenarioId": "iron-tail.legacy-v1-stale-target",
+            "evidenceClasses": [
+              "multi-resource-conflict"
+            ]
+          }
+        ],
         "notApplicable": []
       },
-      "reviewedAt": null,
+      "reviewedAt": "2026-07-19",
       "unsupportedInteractionIds": [],
       "rolloutCohortId": null
     },
@@ -18012,7 +18308,7 @@
     {
       "canonicalId": "Karate Chop",
       "displayName": "Karate Chop",
-      "baseStatus": "assisted",
+      "baseStatus": "complete",
       "interactionStatus": "unassessed",
       "runtime": {
         "kind": "legacy-v1",
@@ -18025,23 +18321,72 @@
         "canonicalizationVersion": 1,
         "sourceDataSha256": "f90491826349afd7d1f2809fd9d74b7acc555f5163b99264205ee369249e9815"
       },
-      "capabilityTags": [],
+      "capabilityTags": [
+        "expressions.bounded",
+        "targeting.authoritative"
+      ],
       "suggestedCapabilityTags": [],
       "blockerCodes": [],
-      "limitations": [
-        {
-          "code": "audit.required",
-          "summary": "Semantic conformance review is required before this legacy implementation can be marked complete."
-        }
-      ],
+      "limitations": [],
       "manualSteps": [],
-      "scenarioIds": [],
+      "scenarioIds": [
+        "karate-chop.legacy-v1-ordinary-hit",
+        "karate-chop.legacy-v1-miss",
+        "karate-chop.legacy-v1-expanded-critical-hit",
+        "karate-chop.legacy-v1-ghost-immunity",
+        "karate-chop.legacy-v1-duplicate-replay",
+        "karate-chop.legacy-v1-stale-target"
+      ],
       "conformanceEvidence": {
-        "requirementTags": [],
-        "scenarios": [],
+        "requirementTags": [
+          "branch.accuracy",
+          "branch.critical-hit",
+          "branch.immunity",
+          "mechanic.damage",
+          "recovery.retry",
+          "resource.multi"
+        ],
+        "scenarios": [
+          {
+            "scenarioId": "karate-chop.legacy-v1-ordinary-hit",
+            "evidenceClasses": [
+              "hit"
+            ]
+          },
+          {
+            "scenarioId": "karate-chop.legacy-v1-miss",
+            "evidenceClasses": [
+              "miss"
+            ]
+          },
+          {
+            "scenarioId": "karate-chop.legacy-v1-expanded-critical-hit",
+            "evidenceClasses": [
+              "crit"
+            ]
+          },
+          {
+            "scenarioId": "karate-chop.legacy-v1-ghost-immunity",
+            "evidenceClasses": [
+              "immunity"
+            ]
+          },
+          {
+            "scenarioId": "karate-chop.legacy-v1-duplicate-replay",
+            "evidenceClasses": [
+              "retry"
+            ]
+          },
+          {
+            "scenarioId": "karate-chop.legacy-v1-stale-target",
+            "evidenceClasses": [
+              "multi-resource-conflict"
+            ]
+          }
+        ],
         "notApplicable": []
       },
-      "reviewedAt": null,
+      "reviewedAt": "2026-07-19",
       "unsupportedInteractionIds": [],
       "rolloutCohortId": null
     },
@@ -18268,7 +18613,7 @@
     {
       "canonicalId": "Land’s Wrath",
       "displayName": "Land’s Wrath",
-      "baseStatus": "assisted",
+      "baseStatus": "complete",
       "interactionStatus": "unassessed",
       "runtime": {
         "kind": "legacy-v1",
@@ -18281,23 +18626,80 @@
         "canonicalizationVersion": 1,
         "sourceDataSha256": "f90491826349afd7d1f2809fd9d74b7acc555f5163b99264205ee369249e9815"
       },
-      "capabilityTags": [],
+      "capabilityTags": [
+        "targeting.authoritative"
+      ],
       "suggestedCapabilityTags": [],
       "blockerCodes": [],
-      "limitations": [
-        {
-          "code": "audit.required",
-          "summary": "Semantic conformance review is required before this legacy implementation can be marked complete."
-        }
-      ],
+      "limitations": [],
       "manualSteps": [],
-      "scenarioIds": [],
+      "scenarioIds": [
+        "lands-wrath.legacy-v1-friendly-area-mixed",
+        "lands-wrath.legacy-v1-critical-hit",
+        "lands-wrath.legacy-v1-groundsource-immunity",
+        "lands-wrath.legacy-v1-grounded-suppression",
+        "lands-wrath.legacy-v1-duplicate-replay",
+        "lands-wrath.legacy-v1-stale-target"
+      ],
       "conformanceEvidence": {
-        "requirementTags": [],
-        "scenarios": [],
+        "requirementTags": [
+          "branch.accuracy",
+          "branch.alternate",
+          "branch.critical-hit",
+          "branch.immunity",
+          "branch.threshold",
+          "mechanic.damage",
+          "recovery.retry",
+          "resource.multi",
+          "target.area"
+        ],
+        "scenarios": [
+          {
+            "scenarioId": "lands-wrath.legacy-v1-friendly-area-mixed",
+            "evidenceClasses": [
+              "alternate-branch",
+              "area-mixed-outcomes",
+              "hit",
+              "miss"
+            ]
+          },
+          {
+            "scenarioId": "lands-wrath.legacy-v1-critical-hit",
+            "evidenceClasses": [
+              "crit"
+            ]
+          },
+          {
+            "scenarioId": "lands-wrath.legacy-v1-groundsource-immunity",
+            "evidenceClasses": [
+              "immunity",
+              "threshold-fail"
+            ]
+          },
+          {
+            "scenarioId": "lands-wrath.legacy-v1-grounded-suppression",
+            "evidenceClasses": [
+              "alternate-branch",
+              "hit",
+              "threshold-pass"
+            ]
+          },
+          {
+            "scenarioId": "lands-wrath.legacy-v1-duplicate-replay",
+            "evidenceClasses": [
+              "retry"
+            ]
+          },
+          {
+            "scenarioId": "lands-wrath.legacy-v1-stale-target",
+            "evidenceClasses": [
+              "multi-resource-conflict"
+            ]
+          }
+        ],
         "notApplicable": []
       },
-      "reviewedAt": null,
+      "reviewedAt": "2026-07-19",
       "unsupportedInteractionIds": [],
       "rolloutCohortId": null
     },
