@@ -2642,7 +2642,7 @@ Status: DONE
 
 ## REG-015 — Certify Lava Plume through Low Sweep
 
-Status: DONE
+Status: TODO
 
 **Baseline-registered moves:** Lava Plume; Leaf Blade; Leafage; Leer; Lick; Liquidation; Lovely Kiss; Low Sweep
 
