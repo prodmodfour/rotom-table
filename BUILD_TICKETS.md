@@ -2690,7 +2690,7 @@ Status: DONE
 
 ## REG-023 — Certify Sacred Fire through Scorching Sands
 
-Status: TODO
+Status: DONE
 
 **Baseline-registered moves:** Sacred Fire; Sacred Sword; Sand Attack; Sand Tomb; Sandstorm Sear; Scald; Scary Face; Scorching Sands
 

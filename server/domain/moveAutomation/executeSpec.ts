@@ -1294,6 +1294,16 @@ const accuracyReferenceIds = (
   operations: readonly MoveEffectOperation[],
 ): ReadonlySet<string> => new Set(
   operations.flatMap((operation) => {
+    // Accuracy-only Status moves have no damage operation to reference their
+    // d20. The reviewed accuracy phase and attacked-target recipient selector
+    // are therefore also an explicit bounded accuracy declaration.
+    if (
+      operation.kind === 'roll'
+      && operation.phase === 'accuracy'
+      && operation.recipients.kind === 'attacked-targets'
+    ) {
+      return [operation.payload.rollId]
+    }
     if (operation.kind === 'damage' && operation.payload.accuracyRollId !== null) {
       return [operation.payload.accuracyRollId]
     }
