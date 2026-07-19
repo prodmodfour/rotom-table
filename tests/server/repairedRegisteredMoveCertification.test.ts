@@ -18,7 +18,7 @@ import {
   FURY_CUTTER_REG_011_SCENARIOS,
   FURY_SWIPES_REG_011_SCENARIOS,
 } from '../fixtures/moveAutomation/registeredBatch011'
-import { PIN_MISSILE_V2_SEMANTIC_SCENARIOS } from '../fixtures/moveAutomation/strikeCanariesV2'
+import { PIN_MISSILE_REG_019_SCENARIOS } from '../fixtures/moveAutomation/registeredBatch019'
 import { TACKLE_V2_SEMANTIC_SCENARIOS } from '../fixtures/moveAutomation/tackleFamilyV2'
 import { TAKE_DOWN_V2_SEMANTIC_SCENARIOS } from '../fixtures/moveAutomation/takeDownV2'
 import { U_TURN_V2_SEMANTIC_SCENARIOS } from '../fixtures/moveAutomation/uTurnV2'
@@ -137,7 +137,7 @@ const REPAIRED_MOVE_CERTIFICATIONS: readonly RepairedMoveCertification[] = Objec
   {
     canonicalId: 'Pin Missile',
     runtimeKind: 'movespec-v2',
-    scenarios: PIN_MISSILE_V2_SEMANTIC_SCENARIOS,
+    scenarios: PIN_MISSILE_REG_019_SCENARIOS,
     executionScenarioIds: allImmediateLayers('pin-missile.v2-one-hit'),
     duplicateReplayScenarioIds: ['pin-missile.v2-five-hit-critical'],
   },

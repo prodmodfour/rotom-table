@@ -2666,7 +2666,7 @@ Status: DONE
 
 ## REG-019 — Certify Petal Blizzard through Poison Powder
 
-Status: TODO
+Status: DONE
 
 **Baseline-registered moves:** Petal Blizzard; Pin Missile; Play Nice; Play Rough; Poison Fang; Poison Gas; Poison Jab; Poison Powder
 

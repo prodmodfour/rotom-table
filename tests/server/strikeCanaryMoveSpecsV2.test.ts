@@ -6,7 +6,6 @@ import type {
 } from '#shared/moveAutomation/trace'
 import {
   allStrikeCanaryV2SemanticScenarios,
-  PIN_MISSILE_V2_SEMANTIC_SCENARIOS,
   strikeCanaryV2MoveDefinition,
   strikeCanaryV2ScenarioDefinition,
   type StrikeCanaryMoveName,
@@ -22,6 +21,7 @@ import {
   FURY_ATTACK_REG_011_SCENARIOS,
   FURY_SWIPES_REG_011_SCENARIOS,
 } from '../fixtures/moveAutomation/registeredBatch011'
+import { PIN_MISSILE_REG_019_SCENARIOS } from '../fixtures/moveAutomation/registeredBatch019'
 import {
   registeredMoveAutomationRuntimeFor,
   REVIEWED_MOVE_SPEC_V2_REGISTRATIONS,
@@ -77,7 +77,7 @@ describe('registered Double Strike and Five Strike native MoveSpec v2 family', (
       definitionHash: '2b01a38a8551175e51fd0566971fa20ff17f8802ffa1f0cf14a1c7e81c677164',
       sourceModule: 'server/domain/moveAutomation/specs/pinMissile.ts',
       spec: PIN_MISSILE_MOVE_SPEC,
-      scenarios: PIN_MISSILE_V2_SEMANTIC_SCENARIOS,
+      scenarios: PIN_MISSILE_REG_019_SCENARIOS,
     }]
 
     for (const definition of expected) {
