@@ -2744,7 +2744,7 @@ Status: DONE
 
 ## REG-032 — Certify Water Gun through Yawn
 
-Status: TODO
+Status: DONE
 
 **Baseline-registered moves:** Water Gun; Water Pulse; Waterfall; Wildbolt Storm; Will-O-Wisp; Wing Attack; X-Scissor; Yawn
 

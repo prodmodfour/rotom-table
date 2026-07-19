@@ -20,9 +20,9 @@ import {
 } from '../fixtures/moveAutomation/registeredBatch011'
 import { PIN_MISSILE_REG_019_SCENARIOS } from '../fixtures/moveAutomation/registeredBatch019'
 import { TACKLE_REG_030_SCENARIOS } from '../fixtures/moveAutomation/registeredBatch030'
+import { YAWN_REG_032_SCENARIOS } from '../fixtures/moveAutomation/registeredBatch032'
 import { TAKE_DOWN_V2_SEMANTIC_SCENARIOS } from '../fixtures/moveAutomation/takeDownV2'
 import { U_TURN_V2_SEMANTIC_SCENARIOS } from '../fixtures/moveAutomation/uTurnV2'
-import { YAWN_V2_SEMANTIC_SCENARIOS } from '../fixtures/moveAutomation/yawnV2'
 import { registeredMoveAutomationRuntimeFor } from '~~/server/domain/moveAutomation/registry'
 
 type RepairedRuntimeKind = 'legacy-v1' | 'movespec-v2'
@@ -181,7 +181,7 @@ const REPAIRED_MOVE_CERTIFICATIONS: readonly RepairedMoveCertification[] = Objec
   {
     canonicalId: 'Yawn',
     runtimeKind: 'movespec-v2',
-    scenarios: YAWN_V2_SEMANTIC_SCENARIOS,
+    scenarios: YAWN_REG_032_SCENARIOS,
     executionScenarioIds: allImmediateLayers('yawn.v2-delayed-sleep'),
     duplicateReplayScenarioIds: ['yawn.v2-refresh-retry'],
   },

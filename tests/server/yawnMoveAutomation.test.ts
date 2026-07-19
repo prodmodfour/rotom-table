@@ -10,10 +10,8 @@ import {
 } from '#shared/moveAutomation/encounterEffects'
 import { createEmptyEncounterState } from '#shared/moveAutomation/encounterState'
 import { dragonRageV2Fixture } from '../fixtures/moveAutomation/dragonRageV2'
-import {
-  allYawnV2SemanticScenarios,
-  YAWN_V2_SEMANTIC_SCENARIOS,
-} from '../fixtures/moveAutomation/yawnV2'
+import { YAWN_REG_032_SCENARIOS } from '../fixtures/moveAutomation/registeredBatch032'
+import { allYawnV2SemanticScenarios } from '../fixtures/moveAutomation/yawnV2'
 import {
   runAndAssertMoveAutomationSemanticScenario,
 } from '../fixtures/moveAutomation/scenario'
@@ -279,9 +277,9 @@ describe('Yawn native MoveSpec and lifecycle automation', () => {
       manualSteps: [],
     })
     expect(yawnRow.scenarioIds).toEqual(
-      YAWN_V2_SEMANTIC_SCENARIOS.map(({ scenarioId }) => scenarioId),
+      YAWN_REG_032_SCENARIOS.map(({ scenarioId }) => scenarioId),
     )
-    expect(yawnRow.conformanceEvidence.scenarios).toEqual(YAWN_V2_SEMANTIC_SCENARIOS)
+    expect(yawnRow.conformanceEvidence.scenarios).toEqual(YAWN_REG_032_SCENARIOS)
     expect(registeredMoveAutomationRuntimeFor('Yawn')).toMatchObject({
       kind: 'movespec-v2',
       definition: { spec: YAWN_MOVE_SPEC },
