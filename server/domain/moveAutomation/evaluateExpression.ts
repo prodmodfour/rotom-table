@@ -556,6 +556,31 @@ const conditionValue = (
   return targetState.conditionIds.includes(expression.conditionId)
 }
 
+const capabilityValue = (
+  expression: Extract<MoveExpression, { readonly kind: 'capability' }>,
+  state: EvaluationState,
+  nodeId: string,
+  depth: number,
+): boolean => {
+  const placementId = selectedSubjectId(
+    expression.subject,
+    state,
+    nodeId,
+    depth + 1,
+  )
+  if (!state.context.queries.placements.get(placementId)) {
+    return fail(
+      'subject-unavailable',
+      `${nodeId}.subject`,
+      `placement ${placementId} has no authoritative capability projection.`,
+    )
+  }
+  return state.context.queries.creatureRules.hasCapability(
+    placementId,
+    expression.capabilityId,
+  )
+}
+
 const combatStageValue = (
   expression: Extract<MoveExpression, { readonly kind: 'combat-stage' }>,
   state: EvaluationState,
@@ -972,6 +997,9 @@ const evaluateExpressionNode = (
     }
     case 'condition':
       value = conditionValue(expression, state, nodeId, depth)
+      break
+    case 'capability':
+      value = capabilityValue(expression, state, nodeId, depth)
       break
     case 'combat-stage':
       value = combatStageValue(expression, state, nodeId, depth)

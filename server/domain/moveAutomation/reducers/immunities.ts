@@ -230,8 +230,16 @@ export const createStandardMoveCoreTokenEffectImmunityQueries = (
             terrain?.trace ?? [],
           )
     },
-    combatStage: ({ stage, delta, recipient }) => decision(
-      moveImmunity(recipient) ?? moveAutomationCombatStageBlockSource({
+    combatStage: ({ operation, stage, delta, recipient }) => decision(
+      moveImmunity(recipient)
+      ?? (
+        operation.payload.trigger?.kind === 'accuracy-roll'
+        && operation.recipients.kind !== 'actor'
+        && tokenHasShieldDust(recipient.token)
+          ? SHIELD_DUST_ABILITY_NAME
+          : null
+      )
+      ?? moveAutomationCombatStageBlockSource({
         target: recipient.token,
         key: stage,
         delta,

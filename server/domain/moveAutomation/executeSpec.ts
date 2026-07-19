@@ -1159,6 +1159,10 @@ const pendingBranchRequest = (
   operation: MoveBranchEffectOperation,
   recipientIds: readonly string[],
   actorPlacementId: string,
+  options: readonly PendingMoveResponseOption[] = operation.payload.kind === 'choice'
+    ? operation.payload.options.map(option => ({ id: option.id, labelKey: option.labelKey }))
+    : [],
+  requestId?: string,
 ): MoveSpecPendingBranchChoiceRequest => {
   if (operation.payload.kind !== 'choice') {
     return fail(
@@ -1174,15 +1178,74 @@ const pendingBranchRequest = (
     recipientIds: frozenIds(
       operation.payload.owner === 'actor' ? [actorPlacementId] : recipientIds,
     ),
-    requestId: operation.payload.requestId,
+    requestId: requestId ?? operation.payload.requestId,
     promptKey: operation.payload.promptKey,
-    options: Object.freeze(operation.payload.options.map(option => Object.freeze({
-      id: option.id,
-      labelKey: option.labelKey,
-    }))),
+    options: Object.freeze(options.map(option => Object.freeze({ ...option }))),
     allowPass: operation.payload.pass !== null,
     selectionId: operation.payload.selectionId,
     scope: operation.payload.scope,
+  })
+}
+
+interface MoveChoiceOptionEligibility {
+  readonly option: Extract<MoveBranchEffectOperation['payload'], {
+    readonly kind: 'choice'
+  }>['options'][number]
+  readonly eligible: boolean
+  readonly evaluationTrace: readonly MoveResolutionTraceJsonValue[]
+}
+
+const scopedBranchChoiceRequestId = (
+  requestId: string,
+  recipientId: string,
+  recipientCount: number,
+): string => {
+  if (recipientCount === 1) return requestId
+  const scoped = `${requestId}.${createHash('sha256')
+    .update(recipientId, 'utf8')
+    .digest('hex')
+    .slice(0, 16)}`
+  if (scoped.length > MOVE_SPEC_LIMITS.identifierLength) {
+    return fail(
+      'definition-integrity-mismatch',
+      `Recipient-scoped branch request ID ${scoped} exceeds ${MOVE_SPEC_LIMITS.identifierLength} characters.`,
+    )
+  }
+  return scoped
+}
+
+const eligibleMoveChoiceOptions = (input: {
+  readonly operation: MoveBranchEffectOperation
+  readonly context: AuthoritativeMoveRulesContext
+  readonly selectorState: MoveSpecSelectorState
+  readonly canonicalMoveId: string
+  readonly recipientId: string | null
+}): readonly MoveChoiceOptionEligibility[] => {
+  if (input.operation.payload.kind !== 'choice') {
+    return fail(
+      'definition-integrity-mismatch',
+      `Branch ${input.operation.id} is not a choice branch.`,
+    )
+  }
+  const scopedSelectorState = input.recipientId === null
+    ? input.selectorState
+    : { ...input.selectorState, targetIds: [input.recipientId] }
+  return input.operation.payload.options.map((option): MoveChoiceOptionEligibility => {
+    if (!option.predicate) {
+      return { option, eligible: true, evaluationTrace: [] }
+    }
+    const evaluation = evaluateMovePredicate({
+      predicate: option.predicate,
+      context: input.context,
+      selectorState: scopedSelectorState,
+      canonicalMoveId: input.canonicalMoveId,
+      rootNodeId: `${input.operation.payload.selectionId}.${option.id}`,
+    })
+    return {
+      option,
+      eligible: evaluation.value,
+      evaluationTrace: evaluation.trace as unknown as readonly MoveResolutionTraceJsonValue[],
+    }
   })
 }
 
@@ -2565,94 +2628,173 @@ const executeMoveSpecInternal = (
             })
             continue
           }
-          const request = pendingBranchRequest(
-            operation,
-            recipientIds,
-            input.context.actor.placement.id,
-          )
-          const response = responseResolver.resolve({
-            requestId: request.requestId,
-            options: request.options,
-            allowPass: request.allowPass,
-          })
-          if (response) {
-            const execution = executeResolvedMoveChoiceBranch({
+
+          const subjects: readonly (string | null)[] = operation.payload.scope === 'resolution'
+            ? [null]
+            : recipientIds
+          const decisions: ExecutedMoveBranch['decisions'][number][] = []
+          for (const subject of subjects) {
+            const eligibility = eligibleMoveChoiceOptions({
               operation,
-              recipientIds,
-              optionId: response.optionId,
+              context: input.context,
+              selectorState,
+              canonicalMoveId: spec.canonicalId,
+              recipientId: subject,
             })
-            branchSelections.push(execution.selection)
-            branchExecutions.set(operation.payload.selectionId, execution)
-            trace = reduceMoveResolutionTrace(trace, {
-              kind: 'operation',
-              phase,
-              operationId: operation.id,
-              operationKind: operation.kind,
-              recipientIds,
-              outcome: response.optionId === null ? 'no-op' : 'applied',
-              reasonCode: operation.reasonCode,
-              input: traceJson(operation.payload),
-              result: traceJson({ selection: execution.selection }),
+            for (const candidate of eligibility) {
+              if (!candidate.option.predicate) continue
+              trace = reduceMoveResolutionTrace(trace, {
+                kind: 'predicate',
+                phase,
+                predicateId: `${operation.payload.selectionId}.${candidate.option.id}`,
+                outcome: candidate.eligible,
+                reasonCode: candidate.eligible
+                  ? 'branch-choice-option-eligible'
+                  : 'branch-choice-option-ineligible',
+                input: traceJson({
+                  recipientId: subject,
+                  evaluationTrace: candidate.evaluationTrace,
+                }),
+              })
+            }
+            const available = eligibility
+              .filter(candidate => candidate.eligible)
+              .map(candidate => candidate.option)
+            if (available.length === 0 && operation.payload.pass === null) {
+              return fail(
+                'definition-integrity-mismatch',
+                `Choice branch ${operation.payload.selectionId} has no eligible option for ${subject ?? 'the resolution'}.`,
+              )
+            }
+
+            let optionId: string | null
+            let requestId: string | null = null
+            if (available.length === 0) {
+              optionId = null
+            }
+            else if (available.length === 1) {
+              optionId = available[0]!.id
+            }
+            else {
+              const ownerRecipientIds = subject === null ? recipientIds : [subject]
+              requestId = scopedBranchChoiceRequestId(
+                operation.payload.requestId,
+                subject ?? input.context.actor.placement.id,
+                subjects.length,
+              )
+              const request = pendingBranchRequest(
+                operation,
+                ownerRecipientIds,
+                input.context.actor.placement.id,
+                available.map(option => ({ id: option.id, labelKey: option.labelKey })),
+                requestId,
+              )
+              const response = responseResolver.resolve({
+                requestId: request.requestId,
+                options: request.options,
+                allowPass: request.allowPass,
+              })
+              if (!response) {
+                trace = reduceMoveResolutionTrace(trace, {
+                  kind: 'operation',
+                  phase,
+                  operationId: operation.id,
+                  operationKind: operation.kind,
+                  recipientIds,
+                  outcome: 'pending',
+                  reasonCode: operation.reasonCode,
+                  input: traceJson(operation.payload),
+                  result: traceJson({
+                    requestId: request.requestId,
+                    requestKind: request.kind,
+                    selectionId: request.selectionId,
+                    scope: request.scope,
+                    completedDecisionCount: decisions.length,
+                  }),
+                })
+                trace = reduceMoveResolutionTrace(trace, {
+                  kind: 'choice',
+                  phase,
+                  requestId: request.requestId,
+                  requestKind: 'choice',
+                  outcome: 'requested',
+                  optionId: null,
+                  reasonCode: operation.reasonCode,
+                })
+                responseResolver.assertAllConsumed()
+                return materializePendingExecutionResult(
+                  terminalBase(
+                    input.context,
+                    operations,
+                    targetIds,
+                    trace,
+                    input.context.random.snapshot(),
+                    resolvedRolls,
+                    resolvedDamageTypes,
+                    resolvedDamageBases,
+                    multiHitExecutions,
+                    resolvedChecks,
+                    branchSelections,
+                    resolvedMovements,
+                    resolvedSwitches,
+                    resolvedItemChoices,
+                    resolvedHazardCells,
+                    childExecutions,
+                    currentSelectorState(),
+                  ),
+                  request,
+                )
+              }
+              optionId = response.optionId
+              trace = reduceMoveResolutionTrace(trace, {
+                kind: 'choice',
+                phase,
+                requestId,
+                requestKind: 'choice',
+                outcome: optionId === null ? 'passed' : 'selected',
+                optionId,
+                reasonCode: operation.reasonCode,
+              })
+            }
+
+            const selected = executeResolvedMoveChoiceBranch({
+              operation,
+              recipientIds: subject === null ? recipientIds : [subject],
+              optionId,
             })
-            trace = reduceMoveResolutionTrace(trace, {
-              kind: 'choice',
-              phase,
-              requestId: request.requestId,
-              requestKind: 'choice',
-              outcome: response.optionId === null ? 'passed' : 'selected',
-              optionId: response.optionId,
-              reasonCode: operation.reasonCode,
-            })
-            continue
+            decisions.push(...selected.decisions)
           }
+
+          const selection = Object.freeze<MoveBranchSelection>({
+            operationId: operation.id,
+            selectionId: operation.payload.selectionId,
+            scope: operation.payload.scope,
+            decisions: Object.freeze(decisions.map(decision => Object.freeze({
+              recipientId: decision.recipientId,
+              branchId: decision.branchId,
+              reasonCode: decision.reasonCode,
+            }))),
+          })
+          const execution = Object.freeze<ExecutedMoveBranch>({
+            selection,
+            decisions: Object.freeze(decisions),
+          })
+          branchSelections.push(selection)
+          branchExecutions.set(operation.payload.selectionId, execution)
           trace = reduceMoveResolutionTrace(trace, {
             kind: 'operation',
             phase,
             operationId: operation.id,
             operationKind: operation.kind,
             recipientIds,
-            outcome: 'pending',
+            outcome: decisions.some(decision => decision.operationIds.length > 0)
+              ? 'applied'
+              : 'no-op',
             reasonCode: operation.reasonCode,
             input: traceJson(operation.payload),
-            result: traceJson({
-              requestId: request.requestId,
-              requestKind: request.kind,
-              selectionId: request.selectionId,
-              scope: request.scope,
-            }),
+            result: traceJson({ selection }),
           })
-          trace = reduceMoveResolutionTrace(trace, {
-            kind: 'choice',
-            phase,
-            requestId: request.requestId,
-            requestKind: 'choice',
-            outcome: 'requested',
-            optionId: null,
-            reasonCode: operation.reasonCode,
-          })
-          responseResolver.assertAllConsumed()
-          return materializePendingExecutionResult(
-            terminalBase(
-              input.context,
-              operations,
-              targetIds,
-              trace,
-              input.context.random.snapshot(),
-              resolvedRolls,
-              resolvedDamageTypes,
-              resolvedDamageBases,
-              multiHitExecutions,
-              resolvedChecks,
-              branchSelections,
-              resolvedMovements,
-              resolvedSwitches,
-              resolvedItemChoices,
-              resolvedHazardCells,
-              childExecutions,
-              currentSelectorState(),
-            ),
-            request,
-          )
+          continue
         }
 
         const execution = executeServerMoveBranch({

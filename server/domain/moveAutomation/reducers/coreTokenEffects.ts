@@ -47,6 +47,7 @@ import {
   reduceRedistributionDirectHpEffectForRecipients,
 } from './hp'
 import type {
+  MoveCombatStageAccuracyRollQueries,
   MoveConditionAccuracyRollQueries,
   MoveCoreTokenDamageQuery,
   MoveCoreTokenDynamicRecipientSets,
@@ -79,6 +80,8 @@ export interface ReduceMoveCoreTokenOperationStateInput {
   readonly damage?: MoveCoreTokenDamageQuery
   /** Required only by a condition with an explicit accuracy-roll trigger. */
   readonly conditionAccuracyRolls?: MoveConditionAccuracyRollQueries
+  /** Required only by a combat-stage operation with an accuracy-roll trigger. */
+  readonly combatStageAccuracyRolls?: MoveCombatStageAccuracyRollQueries
   readonly immunities: MoveCoreTokenEffectImmunityQueries
   /** Child operations retain their explicitly selected actor/source context. */
   readonly contextForOperation?: (
@@ -362,6 +365,10 @@ export const reduceMoveCoreTokenOperationState = (
         }),
         accumulator: stageAccumulator,
         immunities: input.immunities,
+        ...(input.combatStageAccuracyRolls
+          ? { accuracyRolls: input.combatStageAccuracyRolls }
+          : {}),
+        priorOperationResults: operationResults,
       })
     }
     else if (
@@ -448,6 +455,9 @@ export const reduceMoveCoreTokenEffects = (
     ...(input.conditionAccuracyRolls === undefined
       ? {}
       : { conditionAccuracyRolls: input.conditionAccuracyRolls }),
+    ...(input.combatStageAccuracyRolls === undefined
+      ? {}
+      : { combatStageAccuracyRolls: input.combatStageAccuracyRolls }),
     immunities: input.immunities,
     ...(input.contextForOperation === undefined
       ? {}

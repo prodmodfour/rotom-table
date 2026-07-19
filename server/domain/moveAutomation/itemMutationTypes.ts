@@ -199,6 +199,9 @@ export interface MoveItemDigestBuffMutation
   extends MoveItemMutationBase<'digest-buff'> {
   readonly owner: MoveItemPokemonSheetOwnerReference | MoveItemTrainerSheetOwnerReference
   readonly canonicalItemIds: readonly string[] | null
+  /** Reviewed provenance for the scene-local trade marker committed with the item use. */
+  readonly sourceMoveId: string
+  readonly sourcePlacementId: string
 }
 
 export interface MoveItemGroundAddMutation

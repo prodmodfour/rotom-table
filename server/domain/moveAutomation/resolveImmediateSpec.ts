@@ -68,6 +68,7 @@ import {
   type MoveSpatialEffectOperationResult,
 } from './reducers/spatial'
 import type {
+  MoveCombatStageAccuracyRollQueries,
   MoveConditionAccuracyRollQueries,
   MoveCoreTokenDamageQuery,
   MoveCoreTokenDynamicRecipientSets,
@@ -237,6 +238,54 @@ const createConditionAccuracyRollQueries = (options: {
       rollId: resolved.rollId,
       naturalResult: ledger.naturalResult,
     }
+  },
+})
+
+const createCombatStageAccuracyRollQueries = (options: {
+  readonly resolvedRolls: readonly MoveSpecResolvedRoll[]
+  readonly rollLedger: ImmediateMoveSpecResolution['rollLedger']
+}): MoveCombatStageAccuracyRollQueries => ({
+  resolve: ({ operation, recipient }) => {
+    const trigger = operation.payload.trigger
+    if (!trigger || trigger.kind !== 'accuracy-roll') {
+      return fail(
+        'condition-roll-missing',
+        `Combat-stage operation ${operation.id} has no accuracy-roll trigger.`,
+      )
+    }
+    const resolved = options.resolvedRolls.filter(roll => (
+      roll.purpose === 'accuracy'
+      && roll.referenceId === trigger.rollId
+      && (
+        trigger.scope === 'resolution'
+        || roll.recipientId === recipient.placement.id
+      )
+      && roll.recipientId !== null
+    ))
+    return resolved.map((roll) => {
+      const ledger = options.rollLedger.find(entry => entry.rollId === roll.rollId)
+        ?? fail('condition-roll-missing', `Roll ledger entry ${roll.rollId} is missing.`)
+      if (
+        ledger.formula.kind !== 'dice'
+        || ledger.formula.count !== 1
+        || ledger.formula.sides !== 20
+        || ledger.formula.modifier !== 0
+        || !Number.isSafeInteger(ledger.naturalResult)
+        || ledger.naturalResult < 1
+        || ledger.naturalResult > 20
+        || roll.recipientId === null
+      ) {
+        return fail(
+          'condition-roll-invalid',
+          `Accuracy roll ${roll.rollId} is not a recipient-owned unmodified natural d20.`,
+        )
+      }
+      return {
+        rollId: roll.rollId,
+        recipientId: roll.recipientId,
+        naturalResult: ledger.naturalResult,
+      }
+    })
   },
 })
 
@@ -961,6 +1010,10 @@ export const reduceCompletedMoveSpec = (
         })
       : undefined,
     conditionAccuracyRolls: createConditionAccuracyRollQueries({
+      resolvedRolls: execution.resolvedRolls,
+      rollLedger: execution.rollLedger,
+    }),
+    combatStageAccuracyRolls: createCombatStageAccuracyRollQueries({
       resolvedRolls: execution.resolvedRolls,
       rollLedger: execution.rollLedger,
     }),

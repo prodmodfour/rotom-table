@@ -1,9 +1,14 @@
 import type { EffectiveEncounterCreatureRules } from '#shared/moveAutomation/creatureRuleOverlays'
+import type { EncounterEffect } from '#shared/moveAutomation/encounterEffects'
 import { pokemonTypeId } from '#shared/pokemonTypes'
 import type { SheetPlacement } from '~/types/map'
 import type { MovementGroundingState } from '~/types/movement'
 import type { SpawnedPokemon } from '~/types/pokemon'
 import { encounterCreatureRuleProfileForToken } from '~/utils/encounterCreatureRules'
+import {
+  DIGESTION_BUFF_TRADED_CAPABILITY_ID,
+  hasSheetBoundCapabilityEffect,
+} from './digestionBuffTrade'
 
 export type MoveAutomationCreatureSonicReasonCode =
   | 'creature.sonic-available'
@@ -72,6 +77,8 @@ const indexUnique = <Value>(input: {
 export const createMoveAutomationCreatureRuleResolver = (input: {
   readonly placements: readonly SheetPlacement[]
   readonly tokens: readonly SpawnedPokemon[]
+  /** Scene-bound sheet markers remain queryable after placement replacement. */
+  readonly effects?: readonly EncounterEffect[]
   /** Global fields may override final grounding without rewriting effect/token state. */
   readonly resolveGrounding?: (input: {
     readonly placement: SheetPlacement
@@ -145,7 +152,15 @@ export const createMoveAutomationCreatureRuleResolver = (input: {
     },
     hasCapability: (placementId: string, capabilityId: string): boolean => {
       const profile = resolve(placementId)
-      return Boolean(profile?.capabilityIds.includes(capabilityId))
+      if (profile?.capabilityIds.includes(capabilityId)) return true
+      const placement = placements.get(placementId)
+      return capabilityId === DIGESTION_BUFF_TRADED_CAPABILITY_ID
+        && placement !== undefined
+        && hasSheetBoundCapabilityEffect({
+          effects: input.effects ?? [],
+          placement,
+          capabilityId,
+        })
     },
     sonicUse: (placementId: string): MoveAutomationCreatureSonicResolution => {
       const profile = resolve(placementId)

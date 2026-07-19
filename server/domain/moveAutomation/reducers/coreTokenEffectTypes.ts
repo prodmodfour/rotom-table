@@ -152,6 +152,22 @@ export interface MoveConditionAccuracyRollQueries {
   resolve(input: MoveConditionAccuracyRollQueryInput): MoveConditionAccuracyRollResolution
 }
 
+export interface MoveCombatStageAccuracyRollResolution {
+  readonly rollId: string
+  readonly recipientId: string
+  readonly naturalResult: number
+}
+
+export interface MoveCombatStageAccuracyRollQueryInput {
+  readonly operation: MoveCombatStageEffectOperation
+  readonly recipient: MoveCoreTokenEffectRecipient
+}
+
+/** Resolve only already-recorded accuracy rolls; stage reducers never draw randomness. */
+export interface MoveCombatStageAccuracyRollQueries {
+  resolve(input: MoveCombatStageAccuracyRollQueryInput): readonly MoveCombatStageAccuracyRollResolution[]
+}
+
 export interface MoveCombatStageImmunityQueryInput {
   readonly operation: MoveCombatStageEffectOperation
   readonly stage: CombatStageKey

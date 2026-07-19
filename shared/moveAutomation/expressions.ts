@@ -47,6 +47,7 @@ export const MOVE_EXPRESSION_KINDS = [
   'stat',
   'hp-ratio',
   'condition',
+  'capability',
   'combat-stage',
   'combat-stage-total',
   'weight',
@@ -226,6 +227,13 @@ export interface MoveConditionExpression {
   readonly conditionId: string
 }
 
+/** Boolean membership in the authoritative effective capability projection. */
+export interface MoveCapabilityExpression {
+  readonly kind: 'capability'
+  readonly subject: MoveSelector
+  readonly capabilityId: string
+}
+
 export interface MoveCombatStageExpression {
   readonly kind: 'combat-stage'
   readonly subject: MoveSelector
@@ -305,6 +313,7 @@ export type MoveExpression =
   | MoveStatExpression
   | MoveHpRatioExpression
   | MoveConditionExpression
+  | MoveCapabilityExpression
   | MoveCombatStageExpression
   | MoveCombatStageTotalExpression
   | MoveWeightExpression
@@ -360,6 +369,7 @@ const STAT_POLICY_FIELDS = [
 ] as const
 const HP_RATIO_FIELDS = ['kind', 'subject', 'ratio'] as const
 const CONDITION_FIELDS = ['kind', 'subject', 'conditionId'] as const
+const CAPABILITY_FIELDS = ['kind', 'subject', 'capabilityId'] as const
 const COMBAT_STAGE_FIELDS = ['kind', 'subject', 'stage'] as const
 const COMBAT_STAGE_MODIFIER_FIELDS = [
   'kind',
@@ -821,6 +831,27 @@ export const parseMoveExpressionNode = (
         kind,
         subject: parseSubject(input, path, depth, context),
         conditionId,
+      }
+    }
+    case 'capability': {
+      assertMoveRuleAstExactKeys(input, CAPABILITY_FIELDS, path, context)
+      const capabilityId = parseMoveRuleAstString(
+        readMoveRuleAstOwnValue(input, 'capabilityId', path, context),
+        `${path}.capabilityId`,
+        context,
+      )
+      if (!STABLE_ID_PATTERN.test(capabilityId)) {
+        failMoveRuleAst(
+          context,
+          context.invalidCode,
+          `${path}.capabilityId`,
+          'must be a lowercase stable capability identifier.',
+        )
+      }
+      return {
+        kind,
+        subject: parseSubject(input, path, depth, context),
+        capabilityId,
       }
     }
     case 'combat-stage': {

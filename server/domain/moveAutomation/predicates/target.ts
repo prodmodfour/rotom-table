@@ -405,6 +405,7 @@ const evaluateAuthoritativeCandidate = (options: {
     const stateEvaluation = evaluateMoveAutomationTargetStatePredicates(
       options.predicate.statePredicates,
       options.states?.resolve(options.targetPlacementId) ?? null,
+      options.states?.resolve(options.actorPlacementId) ?? null,
     )
     if (stateEvaluation.reasonCode !== 'target-state-included') {
       return freezeEvaluation(

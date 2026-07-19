@@ -866,6 +866,8 @@ const interpretDigestBuff = (input: InterpretOperationInput): OperationInterpret
     reasonCode: input.operation.reasonCode,
     owner: destination.owner,
     canonicalItemIds: payload.canonicalItemIds,
+    sourceMoveId: input.operation.source.id,
+    sourcePlacementId: actor.id,
   }]
   return { result: applied({ operation: input.operation, mutations, itemCount: 1 }), mutations }
 }

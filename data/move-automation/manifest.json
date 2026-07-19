@@ -631,37 +631,82 @@
     {
       "canonicalId": "Aeroblast",
       "displayName": "Aeroblast",
-      "baseStatus": "blocked",
+      "baseStatus": "complete",
       "interactionStatus": "unassessed",
       "runtime": {
-        "kind": "unimplemented",
-        "version": null,
-        "definitionHash": null,
-        "sourceModule": null
+        "kind": "movespec-v2",
+        "version": 2,
+        "definitionHash": "9792eba1b9ecde931c4a42b260dc2617d574fa733c54c3b78e5c76fcdd3b5a95",
+        "sourceModule": "server/domain/moveAutomation/specs/areaEffects206.ts"
       },
       "rulesProvenance": {
         "rulesetId": "rotom-table-reference-moves-v1",
         "canonicalizationVersion": 1,
         "sourceDataSha256": "f90491826349afd7d1f2809fd9d74b7acc555f5163b99264205ee369249e9815"
       },
-      "capabilityTags": [],
-      "suggestedCapabilityTags": [
-        "area-condition-or-stage"
+      "capabilityTags": [
+        "targeting.authoritative"
       ],
-      "blockerCodes": [
-        "runtime.unimplemented"
-      ],
+      "suggestedCapabilityTags": [],
+      "blockerCodes": [],
       "limitations": [],
       "manualSteps": [],
-      "scenarioIds": [],
+      "scenarioIds": [
+        "aeroblast.v2-even-critical-area-mixed",
+        "aeroblast.v2-odd-noncritical",
+        "aeroblast.v2-duplicate-replay",
+        "aeroblast.v2-stale-target"
+      ],
       "conformanceEvidence": {
-        "requirementTags": [],
-        "scenarios": [],
-        "notApplicable": []
+        "requirementTags": [
+          "branch.accuracy",
+          "branch.critical-hit",
+          "branch.threshold",
+          "mechanic.damage",
+          "recovery.retry",
+          "resource.multi",
+          "target.area"
+        ],
+        "scenarios": [
+          {
+            "scenarioId": "aeroblast.v2-even-critical-area-mixed",
+            "evidenceClasses": [
+              "area-mixed-outcomes",
+              "crit",
+              "hit",
+              "miss",
+              "threshold-pass"
+            ]
+          },
+          {
+            "scenarioId": "aeroblast.v2-odd-noncritical",
+            "evidenceClasses": [
+              "threshold-fail"
+            ]
+          },
+          {
+            "scenarioId": "aeroblast.v2-duplicate-replay",
+            "evidenceClasses": [
+              "retry"
+            ]
+          },
+          {
+            "scenarioId": "aeroblast.v2-stale-target",
+            "evidenceClasses": [
+              "multi-resource-conflict"
+            ]
+          }
+        ],
+        "notApplicable": [
+          {
+            "evidenceClass": "immunity",
+            "reason": "The frozen type chart and reviewed Aeroblast base rules contain no Flying-damage immunity branch; broader ability interactions remain separately unassessed."
+          }
+        ]
       },
-      "reviewedAt": null,
+      "reviewedAt": "2026-07-19",
       "unsupportedInteractionIds": [],
-      "rolloutCohortId": null
+      "rolloutCohortId": "ma-206"
     },
     {
       "canonicalId": "After You",
@@ -1383,37 +1428,89 @@
     {
       "canonicalId": "Aromatherapy",
       "displayName": "Aromatherapy",
-      "baseStatus": "blocked",
+      "baseStatus": "complete",
       "interactionStatus": "unassessed",
       "runtime": {
-        "kind": "unimplemented",
-        "version": null,
-        "definitionHash": null,
-        "sourceModule": null
+        "kind": "movespec-v2",
+        "version": 2,
+        "definitionHash": "7e36d7dbf2bb37589ce1349d2b9cdb285ee3017ef3f0c22bbe9140449c67043d",
+        "sourceModule": "server/domain/moveAutomation/specs/areaEffects206.ts"
       },
       "rulesProvenance": {
         "rulesetId": "rotom-table-reference-moves-v1",
         "canonicalizationVersion": 1,
         "sourceDataSha256": "f90491826349afd7d1f2809fd9d74b7acc555f5163b99264205ee369249e9815"
       },
-      "capabilityTags": [],
-      "suggestedCapabilityTags": [
-        "area-condition-or-stage"
+      "capabilityTags": [
+        "conditions.typed",
+        "reactions.durable",
+        "targeting.authoritative"
       ],
-      "blockerCodes": [
-        "runtime.unimplemented"
-      ],
+      "suggestedCapabilityTags": [],
+      "blockerCodes": [],
       "limitations": [],
       "manualSteps": [],
-      "scenarioIds": [],
+      "scenarioIds": [
+        "aromatherapy.v2-ally-filter-and-single-cleanse",
+        "aromatherapy.v2-durable-per-ally-choice",
+        "aromatherapy.v2-healthy-ally-no-op",
+        "aromatherapy.v2-duplicate-replay",
+        "aromatherapy.v2-stale-ally"
+      ],
       "conformanceEvidence": {
-        "requirementTags": [],
-        "scenarios": [],
-        "notApplicable": []
+        "requirementTags": [
+          "branch.alternate",
+          "interaction.choice",
+          "recovery.reconnect",
+          "recovery.retry",
+          "resource.multi",
+          "target.ally",
+          "target.area"
+        ],
+        "scenarios": [
+          {
+            "scenarioId": "aromatherapy.v2-ally-filter-and-single-cleanse",
+            "evidenceClasses": [
+              "ally",
+              "area-mixed-outcomes"
+            ]
+          },
+          {
+            "scenarioId": "aromatherapy.v2-durable-per-ally-choice",
+            "evidenceClasses": [
+              "choice",
+              "reconnect"
+            ]
+          },
+          {
+            "scenarioId": "aromatherapy.v2-healthy-ally-no-op",
+            "evidenceClasses": [
+              "alternate-branch"
+            ]
+          },
+          {
+            "scenarioId": "aromatherapy.v2-duplicate-replay",
+            "evidenceClasses": [
+              "retry"
+            ]
+          },
+          {
+            "scenarioId": "aromatherapy.v2-stale-ally",
+            "evidenceClasses": [
+              "multi-resource-conflict"
+            ]
+          }
+        ],
+        "notApplicable": [
+          {
+            "evidenceClass": "pass",
+            "reason": "Aromatherapy requires each eligible afflicted ally to choose one status condition; passing is not a canonical option, while healthy allies resolve automatically as a traced no-op."
+          }
+        ]
       },
-      "reviewedAt": null,
+      "reviewedAt": "2026-07-19",
       "unsupportedInteractionIds": [],
-      "rolloutCohortId": null
+      "rolloutCohortId": "ma-206"
     },
     {
       "canonicalId": "Aromatic Mist",
@@ -2551,37 +2648,94 @@
     {
       "canonicalId": "Belch",
       "displayName": "Belch",
-      "baseStatus": "blocked",
+      "baseStatus": "complete",
       "interactionStatus": "unassessed",
       "runtime": {
-        "kind": "unimplemented",
-        "version": null,
-        "definitionHash": null,
-        "sourceModule": null
+        "kind": "movespec-v2",
+        "version": 2,
+        "definitionHash": "dd8a9d32fee5d79ea5430cbe8aa5e2fe96d5ea6d9f2c6bdd141d60c6e10c1abd",
+        "sourceModule": "server/domain/moveAutomation/specs/areaEffects206.ts"
       },
       "rulesProvenance": {
         "rulesetId": "rotom-table-reference-moves-v1",
         "canonicalizationVersion": 1,
         "sourceDataSha256": "f90491826349afd7d1f2809fd9d74b7acc555f5163b99264205ee369249e9815"
       },
-      "capabilityTags": [],
-      "suggestedCapabilityTags": [
-        "area-condition-or-stage"
+      "capabilityTags": [
+        "expressions.bounded",
+        "items.authoritative",
+        "lifecycle.effects",
+        "targeting.authoritative"
       ],
-      "blockerCodes": [
-        "runtime.unimplemented"
-      ],
+      "suggestedCapabilityTags": [],
+      "blockerCodes": [],
       "limitations": [],
       "manualSteps": [],
-      "scenarioIds": [],
+      "scenarioIds": [
+        "belch.v2-digestion-precondition-reject",
+        "belch.v2-traded-buff-area-mixed",
+        "belch.v2-critical-hit",
+        "belch.v2-steel-immunity",
+        "belch.v2-duplicate-replay",
+        "belch.v2-stale-target"
+      ],
       "conformanceEvidence": {
-        "requirementTags": [],
-        "scenarios": [],
+        "requirementTags": [
+          "branch.accuracy",
+          "branch.critical-hit",
+          "branch.immunity",
+          "branch.threshold",
+          "mechanic.damage",
+          "recovery.retry",
+          "resource.multi",
+          "target.area"
+        ],
+        "scenarios": [
+          {
+            "scenarioId": "belch.v2-digestion-precondition-reject",
+            "evidenceClasses": [
+              "threshold-fail"
+            ]
+          },
+          {
+            "scenarioId": "belch.v2-traded-buff-area-mixed",
+            "evidenceClasses": [
+              "area-mixed-outcomes",
+              "hit",
+              "miss",
+              "threshold-pass"
+            ]
+          },
+          {
+            "scenarioId": "belch.v2-critical-hit",
+            "evidenceClasses": [
+              "crit"
+            ]
+          },
+          {
+            "scenarioId": "belch.v2-steel-immunity",
+            "evidenceClasses": [
+              "immunity"
+            ]
+          },
+          {
+            "scenarioId": "belch.v2-duplicate-replay",
+            "evidenceClasses": [
+              "retry"
+            ]
+          },
+          {
+            "scenarioId": "belch.v2-stale-target",
+            "evidenceClasses": [
+              "multi-resource-conflict"
+            ]
+          }
+        ],
         "notApplicable": []
       },
-      "reviewedAt": null,
+      "reviewedAt": "2026-07-19",
       "unsupportedInteractionIds": [],
-      "rolloutCohortId": null
+      "rolloutCohortId": "ma-206"
     },
     {
       "canonicalId": "Belly Drum",
@@ -4466,37 +4620,100 @@
     {
       "canonicalId": "Bug Buzz",
       "displayName": "Bug Buzz",
-      "baseStatus": "blocked",
+      "baseStatus": "complete",
       "interactionStatus": "unassessed",
       "runtime": {
-        "kind": "unimplemented",
-        "version": null,
-        "definitionHash": null,
-        "sourceModule": null
+        "kind": "movespec-v2",
+        "version": 2,
+        "definitionHash": "74585f50ffcafec208f74c2b807d20309ca52da000ac25534f958dcd75a90406",
+        "sourceModule": "server/domain/moveAutomation/specs/areaEffects206.ts"
       },
       "rulesProvenance": {
         "rulesetId": "rotom-table-reference-moves-v1",
         "canonicalizationVersion": 1,
         "sourceDataSha256": "f90491826349afd7d1f2809fd9d74b7acc555f5163b99264205ee369249e9815"
       },
-      "capabilityTags": [],
-      "suggestedCapabilityTags": [
-        "area-condition-or-stage"
+      "capabilityTags": [
+        "stages.typed",
+        "targeting.authoritative"
       ],
-      "blockerCodes": [
-        "runtime.unimplemented"
-      ],
+      "suggestedCapabilityTags": [],
+      "blockerCodes": [],
       "limitations": [],
       "manualSteps": [],
-      "scenarioIds": [],
+      "scenarioIds": [
+        "bug-buzz.v2-cone-mixed-threshold",
+        "bug-buzz.v2-close-blast-form",
+        "bug-buzz.v2-stage-threshold-fail",
+        "bug-buzz.v2-critical-hit",
+        "bug-buzz.v2-soundproof-and-shield-dust",
+        "bug-buzz.v2-duplicate-replay",
+        "bug-buzz.v2-stale-target"
+      ],
       "conformanceEvidence": {
-        "requirementTags": [],
-        "scenarios": [],
+        "requirementTags": [
+          "branch.accuracy",
+          "branch.alternate",
+          "branch.critical-hit",
+          "branch.immunity",
+          "branch.threshold",
+          "mechanic.damage",
+          "recovery.retry",
+          "resource.multi",
+          "target.area"
+        ],
+        "scenarios": [
+          {
+            "scenarioId": "bug-buzz.v2-cone-mixed-threshold",
+            "evidenceClasses": [
+              "area-mixed-outcomes",
+              "hit",
+              "miss",
+              "threshold-pass"
+            ]
+          },
+          {
+            "scenarioId": "bug-buzz.v2-close-blast-form",
+            "evidenceClasses": [
+              "alternate-branch"
+            ]
+          },
+          {
+            "scenarioId": "bug-buzz.v2-stage-threshold-fail",
+            "evidenceClasses": [
+              "threshold-fail"
+            ]
+          },
+          {
+            "scenarioId": "bug-buzz.v2-critical-hit",
+            "evidenceClasses": [
+              "crit"
+            ]
+          },
+          {
+            "scenarioId": "bug-buzz.v2-soundproof-and-shield-dust",
+            "evidenceClasses": [
+              "immunity"
+            ]
+          },
+          {
+            "scenarioId": "bug-buzz.v2-duplicate-replay",
+            "evidenceClasses": [
+              "retry"
+            ]
+          },
+          {
+            "scenarioId": "bug-buzz.v2-stale-target",
+            "evidenceClasses": [
+              "multi-resource-conflict"
+            ]
+          }
+        ],
         "notApplicable": []
       },
-      "reviewedAt": null,
+      "reviewedAt": "2026-07-19",
       "unsupportedInteractionIds": [],
-      "rolloutCohortId": null
+      "rolloutCohortId": "ma-206"
     },
     {
       "canonicalId": "Bulk Up",
@@ -4886,37 +5103,97 @@
     {
       "canonicalId": "Captivate",
       "displayName": "Captivate",
-      "baseStatus": "blocked",
+      "baseStatus": "complete",
       "interactionStatus": "unassessed",
       "runtime": {
-        "kind": "unimplemented",
-        "version": null,
-        "definitionHash": null,
-        "sourceModule": null
+        "kind": "movespec-v2",
+        "version": 2,
+        "definitionHash": "0076c79adcbfdbbf0eda109dbad390cf413bb05c054818aa6de1a3ac5398966e",
+        "sourceModule": "server/domain/moveAutomation/specs/areaEffects206.ts"
       },
       "rulesProvenance": {
         "rulesetId": "rotom-table-reference-moves-v1",
         "canonicalizationVersion": 1,
         "sourceDataSha256": "f90491826349afd7d1f2809fd9d74b7acc555f5163b99264205ee369249e9815"
       },
-      "capabilityTags": [],
-      "suggestedCapabilityTags": [
-        "area-condition-or-stage"
+      "capabilityTags": [
+        "stages.typed",
+        "targeting.authoritative"
       ],
-      "blockerCodes": [
-        "runtime.unimplemented"
-      ],
+      "suggestedCapabilityTags": [],
+      "blockerCodes": [],
       "limitations": [],
       "manualSteps": [],
-      "scenarioIds": [],
+      "scenarioIds": [
+        "captivate.v2-opposite-gender-area-filter",
+        "captivate.v2-same-and-genderless-excluded",
+        "captivate.v2-miss",
+        "captivate.v2-friendly-exclusion",
+        "captivate.v2-stage-immunity",
+        "captivate.v2-duplicate-replay",
+        "captivate.v2-stale-target"
+      ],
       "conformanceEvidence": {
-        "requirementTags": [],
-        "scenarios": [],
+        "requirementTags": [
+          "branch.accuracy",
+          "branch.alternate",
+          "branch.immunity",
+          "branch.threshold",
+          "recovery.retry",
+          "resource.multi",
+          "target.area"
+        ],
+        "scenarios": [
+          {
+            "scenarioId": "captivate.v2-opposite-gender-area-filter",
+            "evidenceClasses": [
+              "area-mixed-outcomes",
+              "hit",
+              "threshold-pass"
+            ]
+          },
+          {
+            "scenarioId": "captivate.v2-same-and-genderless-excluded",
+            "evidenceClasses": [
+              "threshold-fail"
+            ]
+          },
+          {
+            "scenarioId": "captivate.v2-miss",
+            "evidenceClasses": [
+              "miss"
+            ]
+          },
+          {
+            "scenarioId": "captivate.v2-friendly-exclusion",
+            "evidenceClasses": [
+              "alternate-branch"
+            ]
+          },
+          {
+            "scenarioId": "captivate.v2-stage-immunity",
+            "evidenceClasses": [
+              "immunity"
+            ]
+          },
+          {
+            "scenarioId": "captivate.v2-duplicate-replay",
+            "evidenceClasses": [
+              "retry"
+            ]
+          },
+          {
+            "scenarioId": "captivate.v2-stale-target",
+            "evidenceClasses": [
+              "multi-resource-conflict"
+            ]
+          }
+        ],
         "notApplicable": []
       },
-      "reviewedAt": null,
+      "reviewedAt": "2026-07-19",
       "unsupportedInteractionIds": [],
-      "rolloutCohortId": null
+      "rolloutCohortId": "ma-206"
     },
     {
       "canonicalId": "Ceaseless Edge",
@@ -7523,37 +7800,89 @@
     {
       "canonicalId": "Diamond Storm",
       "displayName": "Diamond Storm",
-      "baseStatus": "blocked",
+      "baseStatus": "complete",
       "interactionStatus": "unassessed",
       "runtime": {
-        "kind": "unimplemented",
-        "version": null,
-        "definitionHash": null,
-        "sourceModule": null
+        "kind": "movespec-v2",
+        "version": 2,
+        "definitionHash": "556a1449f8fdbc75a90e45a1d6d28a37c17bda934a9f296302f07b0d8495e3a4",
+        "sourceModule": "server/domain/moveAutomation/specs/areaEffects206.ts"
       },
       "rulesProvenance": {
         "rulesetId": "rotom-table-reference-moves-v1",
         "canonicalizationVersion": 1,
         "sourceDataSha256": "f90491826349afd7d1f2809fd9d74b7acc555f5163b99264205ee369249e9815"
       },
-      "capabilityTags": [],
-      "suggestedCapabilityTags": [
-        "area-condition-or-stage"
+      "capabilityTags": [
+        "stages.typed",
+        "targeting.authoritative"
       ],
-      "blockerCodes": [
-        "runtime.unimplemented"
-      ],
+      "suggestedCapabilityTags": [],
+      "blockerCodes": [],
       "limitations": [],
       "manualSteps": [],
-      "scenarioIds": [],
+      "scenarioIds": [
+        "diamond-storm.v2-even-rolls-stack-defense",
+        "diamond-storm.v2-odd-roll-no-stage",
+        "diamond-storm.v2-critical-hit",
+        "diamond-storm.v2-duplicate-replay",
+        "diamond-storm.v2-stale-target"
+      ],
       "conformanceEvidence": {
-        "requirementTags": [],
-        "scenarios": [],
-        "notApplicable": []
+        "requirementTags": [
+          "branch.accuracy",
+          "branch.critical-hit",
+          "branch.threshold",
+          "mechanic.damage",
+          "recovery.retry",
+          "resource.multi",
+          "target.area"
+        ],
+        "scenarios": [
+          {
+            "scenarioId": "diamond-storm.v2-even-rolls-stack-defense",
+            "evidenceClasses": [
+              "area-mixed-outcomes",
+              "hit",
+              "miss",
+              "threshold-pass"
+            ]
+          },
+          {
+            "scenarioId": "diamond-storm.v2-odd-roll-no-stage",
+            "evidenceClasses": [
+              "threshold-fail"
+            ]
+          },
+          {
+            "scenarioId": "diamond-storm.v2-critical-hit",
+            "evidenceClasses": [
+              "crit"
+            ]
+          },
+          {
+            "scenarioId": "diamond-storm.v2-duplicate-replay",
+            "evidenceClasses": [
+              "retry"
+            ]
+          },
+          {
+            "scenarioId": "diamond-storm.v2-stale-target",
+            "evidenceClasses": [
+              "multi-resource-conflict"
+            ]
+          }
+        ],
+        "notApplicable": [
+          {
+            "evidenceClass": "immunity",
+            "reason": "The frozen type chart and reviewed Diamond Storm base rules contain no Rock-damage immunity branch; broader ability interactions remain separately unassessed."
+          }
+        ]
       },
-      "reviewedAt": null,
+      "reviewedAt": "2026-07-19",
       "unsupportedInteractionIds": [],
-      "rolloutCohortId": null
+      "rolloutCohortId": "ma-206"
     },
     {
       "canonicalId": "Dig",
@@ -8285,37 +8614,86 @@
     {
       "canonicalId": "Draco Meteor",
       "displayName": "Draco Meteor",
-      "baseStatus": "blocked",
+      "baseStatus": "complete",
       "interactionStatus": "unassessed",
       "runtime": {
-        "kind": "unimplemented",
-        "version": null,
-        "definitionHash": null,
-        "sourceModule": null
+        "kind": "movespec-v2",
+        "version": 2,
+        "definitionHash": "8d2bafa8596d5666c3ee98b95d60259f2e0250c723e427bffa52d30c845c5e8a",
+        "sourceModule": "server/domain/moveAutomation/specs/areaEffects206.ts"
       },
       "rulesProvenance": {
         "rulesetId": "rotom-table-reference-moves-v1",
         "canonicalizationVersion": 1,
         "sourceDataSha256": "f90491826349afd7d1f2809fd9d74b7acc555f5163b99264205ee369249e9815"
       },
-      "capabilityTags": [],
-      "suggestedCapabilityTags": [
-        "area-condition-or-stage"
+      "capabilityTags": [
+        "stages.typed",
+        "targeting.authoritative"
       ],
-      "blockerCodes": [
-        "runtime.unimplemented"
-      ],
+      "suggestedCapabilityTags": [],
+      "blockerCodes": [],
       "limitations": [],
       "manualSteps": [],
-      "scenarioIds": [],
+      "scenarioIds": [
+        "draco-meteor.v2-area-smite-and-self-drop",
+        "draco-meteor.v2-all-immune-no-self-drop",
+        "draco-meteor.v2-critical-hit",
+        "draco-meteor.v2-duplicate-replay",
+        "draco-meteor.v2-stale-target"
+      ],
       "conformanceEvidence": {
-        "requirementTags": [],
-        "scenarios": [],
+        "requirementTags": [
+          "branch.accuracy",
+          "branch.critical-hit",
+          "branch.immunity",
+          "branch.threshold",
+          "mechanic.damage",
+          "recovery.retry",
+          "resource.multi",
+          "target.area"
+        ],
+        "scenarios": [
+          {
+            "scenarioId": "draco-meteor.v2-area-smite-and-self-drop",
+            "evidenceClasses": [
+              "area-mixed-outcomes",
+              "hit",
+              "miss",
+              "threshold-pass"
+            ]
+          },
+          {
+            "scenarioId": "draco-meteor.v2-all-immune-no-self-drop",
+            "evidenceClasses": [
+              "immunity",
+              "threshold-fail"
+            ]
+          },
+          {
+            "scenarioId": "draco-meteor.v2-critical-hit",
+            "evidenceClasses": [
+              "crit"
+            ]
+          },
+          {
+            "scenarioId": "draco-meteor.v2-duplicate-replay",
+            "evidenceClasses": [
+              "retry"
+            ]
+          },
+          {
+            "scenarioId": "draco-meteor.v2-stale-target",
+            "evidenceClasses": [
+              "multi-resource-conflict"
+            ]
+          }
+        ],
         "notApplicable": []
       },
-      "reviewedAt": null,
+      "reviewedAt": "2026-07-19",
       "unsupportedInteractionIds": [],
-      "rolloutCohortId": null
+      "rolloutCohortId": "ma-206"
     },
     {
       "canonicalId": "Dragon Ascent",
@@ -13034,37 +13412,89 @@
     {
       "canonicalId": "Fleur Cannon",
       "displayName": "Fleur Cannon",
-      "baseStatus": "blocked",
+      "baseStatus": "complete",
       "interactionStatus": "unassessed",
       "runtime": {
-        "kind": "unimplemented",
-        "version": null,
-        "definitionHash": null,
-        "sourceModule": null
+        "kind": "movespec-v2",
+        "version": 2,
+        "definitionHash": "a3d32c5dad0ad2770360a4273b949ae19d2187250fc5df6e069bda4e309fc8c1",
+        "sourceModule": "server/domain/moveAutomation/specs/areaEffects206.ts"
       },
       "rulesProvenance": {
         "rulesetId": "rotom-table-reference-moves-v1",
         "canonicalizationVersion": 1,
         "sourceDataSha256": "f90491826349afd7d1f2809fd9d74b7acc555f5163b99264205ee369249e9815"
       },
-      "capabilityTags": [],
-      "suggestedCapabilityTags": [
-        "area-condition-or-stage"
+      "capabilityTags": [
+        "stages.typed",
+        "targeting.authoritative"
       ],
-      "blockerCodes": [
-        "runtime.unimplemented"
-      ],
+      "suggestedCapabilityTags": [],
+      "blockerCodes": [],
       "limitations": [],
       "manualSteps": [],
-      "scenarioIds": [],
+      "scenarioIds": [
+        "fleur-cannon.v2-line-smite-and-self-drop",
+        "fleur-cannon.v2-empty-line-no-self-drop",
+        "fleur-cannon.v2-critical-hit",
+        "fleur-cannon.v2-duplicate-replay",
+        "fleur-cannon.v2-stale-target"
+      ],
       "conformanceEvidence": {
-        "requirementTags": [],
-        "scenarios": [],
-        "notApplicable": []
+        "requirementTags": [
+          "branch.accuracy",
+          "branch.critical-hit",
+          "branch.threshold",
+          "mechanic.damage",
+          "recovery.retry",
+          "resource.multi",
+          "target.area"
+        ],
+        "scenarios": [
+          {
+            "scenarioId": "fleur-cannon.v2-line-smite-and-self-drop",
+            "evidenceClasses": [
+              "area-mixed-outcomes",
+              "hit",
+              "miss",
+              "threshold-pass"
+            ]
+          },
+          {
+            "scenarioId": "fleur-cannon.v2-empty-line-no-self-drop",
+            "evidenceClasses": [
+              "threshold-fail"
+            ]
+          },
+          {
+            "scenarioId": "fleur-cannon.v2-critical-hit",
+            "evidenceClasses": [
+              "crit"
+            ]
+          },
+          {
+            "scenarioId": "fleur-cannon.v2-duplicate-replay",
+            "evidenceClasses": [
+              "retry"
+            ]
+          },
+          {
+            "scenarioId": "fleur-cannon.v2-stale-target",
+            "evidenceClasses": [
+              "multi-resource-conflict"
+            ]
+          }
+        ],
+        "notApplicable": [
+          {
+            "evidenceClass": "immunity",
+            "reason": "The frozen type chart and reviewed Fleur Cannon base rules contain no Fairy-damage immunity branch; broader ability interactions remain separately unassessed."
+          }
+        ]
       },
-      "reviewedAt": null,
+      "reviewedAt": "2026-07-19",
       "unsupportedInteractionIds": [],
-      "rolloutCohortId": null
+      "rolloutCohortId": "ma-206"
     },
     {
       "canonicalId": "Fling",

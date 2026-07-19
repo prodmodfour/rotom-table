@@ -654,6 +654,7 @@ export const buildAuthoritativeMoveRulesContext = (
   const creatureRules = createMoveAutomationCreatureRuleResolver({
     placements,
     tokens,
+    effects: map.encounterState?.effects ?? [],
     resolveGrounding: ({ placement, base }) => gravity.grounding({
       placementId: placement.id,
       base,

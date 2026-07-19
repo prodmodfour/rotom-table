@@ -203,6 +203,7 @@ describe('authoritative target state queries', () => {
       immunityTagIds: ['groundsource', 'powder', 'sonic'],
       size: 'huge',
       weightClass: 5,
+      gender: 'unknown',
       sheetKind: 'pokemon',
       itemIds: ['luck-incense', 'potion'],
     })

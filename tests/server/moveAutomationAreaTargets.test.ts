@@ -61,6 +61,7 @@ const targetState = (
   immunityTagIds: [],
   size: 'medium',
   weightClass: 2,
+  gender: 'unknown',
   sheetKind: 'pokemon',
   itemIds: [],
 })

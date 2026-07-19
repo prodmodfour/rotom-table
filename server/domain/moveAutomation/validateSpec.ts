@@ -1049,7 +1049,7 @@ export const validateMoveSpecOperationSequence = (
     readonly path: string
     readonly effectRecipientKind: MoveEffectRecipientSelectorKind
     readonly label: string
-    readonly allowResolutionWideTable?: boolean
+    readonly allowResolutionWide?: boolean
   }): void => {
     assertPriorReference(
       options.rollId,
@@ -1084,7 +1084,13 @@ export const validateMoveSpecOperationSequence = (
       referenced.recipients.kind !== 'attacked-targets'
       || (
         options.effectRecipientKind !== 'hit-targets'
-        && !(options.allowResolutionWideTable && options.effectRecipientKind === 'none')
+        && !(
+          options.allowResolutionWide
+          && (
+            options.effectRecipientKind === 'none'
+            || options.effectRecipientKind === 'actor'
+          )
+        )
       )
     ) {
       fail(
@@ -1365,24 +1371,34 @@ export const validateMoveSpecOperationSequence = (
     }
     const accuracyRollTrigger = operation.kind === 'condition'
       ? operation.payload.accuracyRollTrigger
-      : operation.kind === 'roll'
-        && operation.payload.formula.kind === 'table'
-        && 'table' in operation.payload
-        ? operation.payload.accuracyRollTrigger
-        : undefined
+      : operation.kind === 'combat-stage'
+        && operation.payload.trigger?.kind === 'accuracy-roll'
+        ? operation.payload.trigger
+        : operation.kind === 'roll'
+          && operation.payload.formula.kind === 'table'
+          && 'table' in operation.payload
+          ? operation.payload.accuracyRollTrigger
+          : undefined
     if (accuracyRollTrigger) {
       const referencePath = `${path}.payload.accuracyRollTrigger.rollId`
       const rollId = accuracyRollTrigger.rollId
-      const resolutionWideTable = operation.kind === 'roll'
+      const resolutionWide = operation.kind === 'roll'
+        || (
+          operation.kind === 'combat-stage'
+          && operation.payload.trigger?.kind === 'accuracy-roll'
+          && operation.payload.trigger.scope === 'resolution'
+        )
       assertPriorAccuracyRollReference({
         rollId,
         currentIndex: index,
         path: referencePath,
         effectRecipientKind: operation.recipients.kind,
-        label: resolutionWideTable
+        label: operation.kind === 'roll'
           ? 'an accuracy-triggered operation table'
-          : 'an accuracy-triggered condition',
-        allowResolutionWideTable: resolutionWideTable,
+          : operation.kind === 'combat-stage'
+            ? 'an accuracy-triggered combat-stage operation'
+            : 'an accuracy-triggered condition',
+        allowResolutionWide: resolutionWide,
       })
       const linkedDamage = indexed.find(entry => (
         entry.index < index
@@ -1394,6 +1410,65 @@ export const validateMoveSpecOperationSequence = (
           'invalid-definition',
           referencePath,
           `roll ${rollId} must be the accuracy roll of an earlier damage operation.`,
+        )
+      }
+      if (operation.kind === 'combat-stage') {
+        const stageTrigger = operation.payload.trigger!
+        if (
+          stageTrigger.kind !== 'accuracy-roll'
+          || (
+            stageTrigger.scope === 'recipient'
+            && operation.recipients.kind !== 'hit-targets'
+          )
+          || (
+            stageTrigger.scope === 'resolution'
+            && operation.recipients.kind !== 'actor'
+          )
+          || (
+            stageTrigger.application === 'per-match'
+            && stageTrigger.scope !== 'resolution'
+          )
+        ) {
+          fail(
+            'invalid-definition',
+            `${path}.payload.trigger`,
+            'recipient accuracy triggers require hit-targets; resolution triggers require actor and own per-match aggregation.',
+          )
+        }
+      }
+    }
+    if (
+      operation.kind === 'combat-stage'
+      && operation.payload.trigger?.kind === 'operation-outcome'
+    ) {
+      const trigger = operation.payload.trigger
+      const referencePath = `${path}.payload.trigger.operationId`
+      assertPriorReference(
+        trigger.operationId,
+        index,
+        referencePath,
+        operationIndexById,
+        'operation ID',
+      )
+      const prior = indexed[operationIndexById.get(trigger.operationId)!]?.operation
+      if (!prior || ![
+        'damage',
+        'direct-hp',
+        'heal',
+        'condition',
+        'combat-stage',
+      ].includes(prior.kind)) {
+        fail(
+          'invalid-definition',
+          referencePath,
+          `${trigger.operationId} must identify an earlier reducible state operation.`,
+        )
+      }
+      if (operation.recipients.kind !== 'actor') {
+        fail(
+          'invalid-definition',
+          `${path}.recipients.kind`,
+          'operation-outcome stage triggers currently support only actor recipients.',
         )
       }
     }
@@ -1527,7 +1602,12 @@ const normalizeSpec = (input: unknown): ValidatedMoveSpec => {
               (entryTotal, entry) => entryTotal + countTaggedAstNodes(entry.predicate),
               0,
             )
-          : 0
+          : operation.kind === 'branch' && operation.payload.kind === 'choice'
+            ? operation.payload.options.reduce(
+                (optionTotal, option) => optionTotal + countTaggedAstNodes(option.predicate),
+                0,
+              )
+            : 0
     ),
     0,
   ), 0)

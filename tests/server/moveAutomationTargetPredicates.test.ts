@@ -263,6 +263,7 @@ const targetState = (
   sheetKind: 'pokemon',
   itemIds: [],
   ...overrides,
+  gender: overrides.gender ?? 'unknown',
 })
 
 const TARGET_STATES = new Map<string, MoveAutomationTargetState>([

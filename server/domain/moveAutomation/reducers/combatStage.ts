@@ -14,9 +14,11 @@ import type { MoveAutomationCombatStageUpdateAccumulator } from '~/utils/moveAut
 import type { CombatStageKey, CombatStageMap } from '~/types/combatStages'
 import { failMoveCoreTokenEffectReduction } from './coreTokenEffectError'
 import type {
+  MoveCombatStageAccuracyRollQueries,
   MoveCoreCombatStageStateSnapshot,
   MoveCoreTokenEffectBlocker,
   MoveCoreTokenEffectImmunityQueries,
+  MoveCoreTokenEffectOperationResult,
   MoveCoreTokenEffectRecipient,
   MoveCoreTokenEffectRecipientResult,
 } from './coreTokenEffectTypes'
@@ -37,6 +39,16 @@ interface CombatStageChangeAudit {
   } | null
 }
 
+interface CombatStageTriggerAudit {
+  readonly kind: 'accuracy-roll' | 'operation-outcome'
+  readonly matched: boolean
+  readonly applicationCount: number
+  readonly rollId: string | null
+  readonly naturalResults: readonly number[]
+  readonly operationId: string | null
+  readonly operationOutcome: string | null
+}
+
 interface CombatStageRecipientWork {
   readonly recipient: MoveCoreTokenEffectRecipient
   readonly previous: MoveCoreCombatStageStateSnapshot
@@ -44,6 +56,7 @@ interface CombatStageRecipientWork {
   readonly blockers: MoveCoreTokenEffectBlocker[]
   readonly consultedPlacementIds: Set<string>
   readonly changes: CombatStageChangeAudit[]
+  trigger: CombatStageTriggerAudit | null
   redistributionPrevented: boolean
 }
 
@@ -98,6 +111,7 @@ const createWork = (
     blockers: [],
     consultedPlacementIds: new Set<string>(),
     changes: [],
+    trigger: null,
     redistributionPrevented: false,
   }
 }
@@ -246,12 +260,91 @@ const applyCoupledRequests = (
   }
 }
 
+const naturalRollMatches = (
+  trigger: Extract<NonNullable<MoveCombatStageEffectOperation['payload']['trigger']>, {
+    readonly kind: 'accuracy-roll'
+  }>['trigger'],
+  naturalResult: number,
+): boolean => trigger.kind === 'range'
+  ? naturalResult >= trigger.minimum
+  : trigger.values.includes(naturalResult)
+
+const resolveCombatStageTrigger = (options: {
+  readonly operation: MoveCombatStageEffectOperation
+  readonly work: CombatStageRecipientWork
+  readonly accuracyRolls?: MoveCombatStageAccuracyRollQueries
+  readonly priorOperationResults: readonly MoveCoreTokenEffectOperationResult[]
+}): CombatStageTriggerAudit | null => {
+  const trigger = options.operation.payload.trigger
+  if (!trigger) return null
+  if (trigger.kind === 'operation-outcome') {
+    const prior = options.priorOperationResults.find(result => (
+      result.operationId === trigger.operationId
+    )) ?? failMoveCoreTokenEffectReduction(
+      'invalid-stage-source',
+      `Combat-stage operation ${options.operation.id} cannot find prior operation ${trigger.operationId}.`,
+    )
+    const matched = prior.outcome === trigger.outcome
+    return {
+      kind: trigger.kind,
+      matched,
+      applicationCount: matched ? 1 : 0,
+      rollId: null,
+      naturalResults: [],
+      operationId: prior.operationId,
+      operationOutcome: prior.outcome,
+    }
+  }
+
+  const queries = options.accuracyRolls
+    ?? failMoveCoreTokenEffectReduction(
+      'invalid-stage-source',
+      `Combat-stage operation ${options.operation.id} has no authoritative accuracy-roll query.`,
+    )
+  const rolls = queries.resolve({
+    operation: options.operation,
+    recipient: options.work.recipient,
+  })
+  if (trigger.scope === 'recipient' && rolls.length !== 1) {
+    return failMoveCoreTokenEffectReduction(
+      'invalid-stage-source',
+      `Combat-stage operation ${options.operation.id} requires exactly one recipient accuracy roll.`,
+    )
+  }
+  for (const roll of rolls) {
+    if (
+      !Number.isSafeInteger(roll.naturalResult)
+      || roll.naturalResult < 1
+      || roll.naturalResult > 20
+    ) {
+      return failMoveCoreTokenEffectReduction(
+        'invalid-stage-source',
+        `Combat-stage operation ${options.operation.id} resolved invalid natural d20 result ${roll.naturalResult}.`,
+      )
+    }
+  }
+  const matching = rolls.filter(roll => naturalRollMatches(trigger.trigger, roll.naturalResult))
+  const applicationCount = trigger.application === 'per-match'
+    ? matching.length
+    : matching.length > 0 ? 1 : 0
+  return {
+    kind: trigger.kind,
+    matched: applicationCount > 0,
+    applicationCount,
+    rollId: trigger.rollId,
+    naturalResults: rolls.map(roll => roll.naturalResult),
+    operationId: null,
+    operationOutcome: null,
+  }
+}
+
 const unaryRequestedValue = (
   operation: MoveCombatStageEffectOperation,
   current: number,
+  applicationCount = 1,
 ): number => {
   switch (operation.payload.action) {
-    case 'modify': return current + (operation.payload.value ?? 0)
+    case 'modify': return current + (operation.payload.value ?? 0) * applicationCount
     case 'set': return operation.payload.value ?? current
     case 'reset': return 0
     case 'invert': return -current
@@ -270,15 +363,29 @@ const applyUnaryOperation = (options: {
   readonly works: readonly CombatStageRecipientWork[]
   readonly stages: readonly CombatStageKey[]
   readonly immunities: MoveCoreTokenEffectImmunityQueries
+  readonly accuracyRolls?: MoveCombatStageAccuracyRollQueries
+  readonly priorOperationResults: readonly MoveCoreTokenEffectOperationResult[]
 }): void => {
   for (const work of options.works) {
+    const trigger = resolveCombatStageTrigger({
+      operation: options.operation,
+      work,
+      ...(options.accuracyRolls ? { accuracyRolls: options.accuracyRolls } : {}),
+      priorOperationResults: options.priorOperationResults,
+    })
+    work.trigger = trigger
+    if (trigger && !trigger.matched) continue
     for (const stage of options.stages) {
       applyIndependentRequest(
         options.operation,
         request(
           work,
           stage,
-          unaryRequestedValue(options.operation, work.previous.stages[stage]),
+          unaryRequestedValue(
+            options.operation,
+            work.previous.stages[stage],
+            trigger?.applicationCount ?? 1,
+          ),
         ),
         options.immunities,
       )
@@ -383,6 +490,15 @@ const combatStageDetails = (
 ): MoveResolutionTraceJsonValue => ({
   action: operation.payload.action,
   sourcePlacementId,
+  trigger: work.trigger ? {
+    kind: work.trigger.kind,
+    matched: work.trigger.matched,
+    applicationCount: work.trigger.applicationCount,
+    rollId: work.trigger.rollId,
+    naturalResults: [...work.trigger.naturalResults],
+    operationId: work.trigger.operationId,
+    operationOutcome: work.trigger.operationOutcome,
+  } : null,
   changes: work.changes.map(change => ({
     stage: change.stage,
     previous: change.previous,
@@ -420,9 +536,11 @@ const finalizeWork = (options: {
       outcome: prevented ? 'prevented' : 'no-op',
       reasonCode: prevented
         ? 'combat-stage-immunity'
-        : work.redistributionPrevented
-          ? 'combat-stage-redistribution-prevented'
-          : 'combat-stage-unchanged',
+        : work.trigger && !work.trigger.matched
+          ? 'combat-stage-trigger-not-met'
+          : work.redistributionPrevented
+            ? 'combat-stage-redistribution-prevented'
+            : 'combat-stage-unchanged',
       blockers: work.blockers,
       details,
       consultedPlacementIds: [...work.consultedPlacementIds],
@@ -452,6 +570,8 @@ export const reduceCombatStageEffect = (options: {
   readonly sourceRecipient?: MoveCoreTokenEffectRecipient
   readonly accumulator: MoveAutomationCombatStageUpdateAccumulator
   readonly immunities: MoveCoreTokenEffectImmunityQueries
+  readonly accuracyRolls?: MoveCombatStageAccuracyRollQueries
+  readonly priorOperationResults?: readonly MoveCoreTokenEffectOperationResult[]
 }): readonly MoveCoreTokenEffectRecipientResult[] => {
   const { operation, recipients, accumulator } = options
   const works = recipients.map(recipient => createWork(accumulator, recipient))
@@ -489,6 +609,8 @@ export const reduceCombatStageEffect = (options: {
       works,
       stages,
       immunities: options.immunities,
+      ...(options.accuracyRolls ? { accuracyRolls: options.accuracyRolls } : {}),
+      priorOperationResults: options.priorOperationResults ?? [],
     })
   }
 

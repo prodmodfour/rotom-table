@@ -53,6 +53,7 @@ import {
   MOVE_ITEM_MUTATION_LIMITS,
   MoveItemMutationError,
 } from '../itemMutationTypes'
+import { recordDigestionBuffTrade } from '../digestionBuffTrade'
 
 export interface ReduceMoveItemMutationsInput {
   readonly map: TabletopMap
@@ -1587,6 +1588,30 @@ const reduceOperation = (input: {
     if (canonicalItemIds && new Set(canonicalItemIds).size !== canonicalItemIds.length) {
       fail('invalid-operation', `Digest-buff operation ${operation.id} duplicates an item ID.`)
     }
+    const sourceMoveId = boundedIdentifier(
+      operation.sourceMoveId,
+      `${operation.id}.sourceMoveId`,
+    )
+    const sourcePlacementId = boundedIdentifier(
+      operation.sourcePlacementId,
+      `${operation.id}.sourcePlacementId`,
+    )
+    const sourcePlacement = state.map.placements.find(placement => (
+      placement.id === sourcePlacementId
+    )) ?? fail(
+      'resource-missing',
+      `Digest-buff source placement ${sourcePlacementId} is unavailable.`,
+    )
+    if (
+      owner.kind !== 'sheet'
+      || sourcePlacement.sheetKind !== owner.sheetKind
+      || sourcePlacement.sheetSlug !== owner.slug
+    ) {
+      fail(
+        'invalid-operation',
+        `Digest-buff source placement ${sourcePlacementId} does not own ${owner.kind === 'sheet' ? `${owner.sheetKind}/${owner.slug}` : 'the selected sheet'}.`,
+      )
+    }
     const digested = digestStoredBuff({
       state,
       owner,
@@ -1595,6 +1620,23 @@ const reduceOperation = (input: {
       operationOrder,
     })
     touchedKeys.add(digested.resourceKey)
+    state.map = recordDigestionBuffTrade({
+      map: state.map,
+      placement: sourcePlacement,
+      operationId: operation.id,
+      moveId: sourceMoveId,
+    })
+    const mapOwner = {
+      kind: 'map' as const,
+      slug: state.map.slug,
+      revision: normalizeRevision(state.previousMap.revision),
+    }
+    touchedKeys.add(touchResource({
+      state,
+      owner: mapOwner,
+      operation,
+      operationOrder,
+    }))
     auditedItemIds.push(digested.canonicalItemId)
   }
   else {

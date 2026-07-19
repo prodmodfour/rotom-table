@@ -21,6 +21,7 @@ export const MOVE_AUTOMATION_TARGET_STATE_PREDICATE_KINDS = [
   'immunity-tag',
   'size',
   'weight-class',
+  'opposite-gender',
   'sheet-kind',
   'required-item',
 ] as const
@@ -107,6 +108,10 @@ export interface MoveAutomationTargetWeightClassPredicate {
   readonly maximum: number
 }
 
+export interface MoveAutomationTargetOppositeGenderPredicate {
+  readonly kind: 'opposite-gender'
+}
+
 export interface MoveAutomationTargetSheetKindPredicate {
   readonly kind: 'sheet-kind'
   readonly sheetKinds: readonly SheetKind[]
@@ -129,6 +134,7 @@ export type MoveAutomationTargetStatePredicate =
   | MoveAutomationTargetImmunityTagPredicate
   | MoveAutomationTargetSizePredicate
   | MoveAutomationTargetWeightClassPredicate
+  | MoveAutomationTargetOppositeGenderPredicate
   | MoveAutomationTargetSheetKindPredicate
   | MoveAutomationTargetRequiredItemPredicate
 
@@ -147,6 +153,7 @@ export type MoveAutomationTargetStatePredicateReasonCode =
   | 'target-excluded-immunity-tag'
   | 'target-excluded-size'
   | 'target-excluded-weight-class'
+  | 'target-excluded-gender'
   | 'target-excluded-sheet-kind'
   | 'target-excluded-required-item'
 
@@ -444,6 +451,10 @@ const parsePredicate = (
       maximum: Number(predicate.maximum),
     })
   }
+  if (kind === 'opposite-gender') {
+    assertExactFields(predicate, ['kind'], path)
+    return Object.freeze({ kind })
+  }
   if (kind === 'sheet-kind') {
     assertExactFields(predicate, ['kind', 'sheetKinds'], path)
     return Object.freeze({
@@ -505,6 +516,7 @@ const setMatches = (
 const evaluatePredicate = (
   state: MoveAutomationTargetState,
   predicate: MoveAutomationTargetStatePredicate,
+  actorState: MoveAutomationTargetState | null,
 ): MoveAutomationTargetStatePredicateReasonCode => {
   if (predicate.kind === 'vitality') {
     if (state.vitality === predicate.value) return 'target-state-included'
@@ -564,6 +576,15 @@ const evaluatePredicate = (
       ? 'target-state-included'
       : 'target-excluded-weight-class'
   }
+  if (predicate.kind === 'opposite-gender') {
+    const actorGender = actorState?.gender ?? 'unknown'
+    return (
+      (actorGender === 'male' && state.gender === 'female')
+      || (actorGender === 'female' && state.gender === 'male')
+    )
+      ? 'target-state-included'
+      : 'target-excluded-gender'
+  }
   if (predicate.kind === 'sheet-kind') {
     return predicate.sheetKinds.includes(state.sheetKind)
       ? 'target-state-included'
@@ -578,6 +599,7 @@ const evaluatePredicate = (
 export const evaluateMoveAutomationTargetStatePredicates = (
   predicates: readonly MoveAutomationTargetStatePredicate[],
   state: MoveAutomationTargetState | null,
+  actorState: MoveAutomationTargetState | null = null,
 ): MoveAutomationTargetStatePredicateResult => {
   if (state === null) {
     return Object.freeze({
@@ -588,7 +610,7 @@ export const evaluateMoveAutomationTargetStatePredicates = (
   }
 
   const evaluations = predicates.map((predicate): MoveAutomationTargetStatePredicateEvaluation => {
-    const reasonCode = evaluatePredicate(state, predicate)
+    const reasonCode = evaluatePredicate(state, predicate, actorState)
     return Object.freeze({
       predicate,
       outcome: reasonCode === 'target-state-included' ? 'included' : 'excluded',

@@ -822,6 +822,8 @@ export interface MoveCheckResultBranchEffectPayload {
 
 export interface MoveChoiceBranchOption extends MoveEffectBranchPath {
   readonly labelKey: string
+  /** Optional server-evaluated eligibility rule for this recipient's durable option set. */
+  readonly predicate?: MovePredicate
 }
 
 export interface MoveChoiceBranchEffectPayload {
@@ -1253,6 +1255,49 @@ export interface MoveConditionEffectPayload {
   readonly stackPolicy: EncounterEffectStackPolicy
 }
 
+export const MOVE_COMBAT_STAGE_ACCURACY_TRIGGER_SCOPES = [
+  'recipient',
+  'resolution',
+] as const
+
+export const MOVE_COMBAT_STAGE_ACCURACY_TRIGGER_APPLICATIONS = [
+  'once',
+  'per-match',
+] as const
+
+export const MOVE_COMBAT_STAGE_OPERATION_TRIGGER_OUTCOMES = [
+  'applied',
+] as const
+
+export type MoveCombatStageAccuracyTriggerScope =
+  (typeof MOVE_COMBAT_STAGE_ACCURACY_TRIGGER_SCOPES)[number]
+export type MoveCombatStageAccuracyTriggerApplication =
+  (typeof MOVE_COMBAT_STAGE_ACCURACY_TRIGGER_APPLICATIONS)[number]
+export type MoveCombatStageOperationTriggerOutcome =
+  (typeof MOVE_COMBAT_STAGE_OPERATION_TRIGGER_OUTCOMES)[number]
+
+/** A stage mutation gated by authoritative d20 evidence already present in the roll ledger. */
+export interface MoveCombatStageAccuracyRollTrigger {
+  readonly kind: 'accuracy-roll'
+  readonly rollId: string
+  readonly trigger: MoveConditionNaturalRollTrigger
+  /** Recipient resolves one matching target roll; resolution considers every attacked target roll. */
+  readonly scope: MoveCombatStageAccuracyTriggerScope
+  /** Per-match multiplies a reviewed modify delta by the number of qualifying rolls. */
+  readonly application: MoveCombatStageAccuracyTriggerApplication
+}
+
+/** A stage mutation gated by the reduced outcome of one earlier typed operation. */
+export interface MoveCombatStageOperationOutcomeTrigger {
+  readonly kind: 'operation-outcome'
+  readonly operationId: string
+  readonly outcome: MoveCombatStageOperationTriggerOutcome
+}
+
+export type MoveCombatStageTrigger =
+  | MoveCombatStageAccuracyRollTrigger
+  | MoveCombatStageOperationOutcomeTrigger
+
 export interface MoveCombatStageEffectPayload {
   readonly action: MoveEffectCombatStageAction
   readonly stage: MoveEffectCombatStage
@@ -1264,6 +1309,8 @@ export interface MoveCombatStageEffectPayload {
   readonly stageSource: MoveSelector | null
   /** Required only when averaging stages with split. */
   readonly rounding: MoveEffectRoundingPolicy | null
+  /** Optional bounded gate evaluated without drawing randomness or trusting client state. */
+  readonly trigger?: MoveCombatStageTrigger
 }
 
 /** @deprecated Temporary-effect definitions use EncounterEffectDuration. */
@@ -1849,7 +1896,7 @@ const CHOICE_BRANCH_REQUIRED_FIELDS = [
 const CHOICE_BRANCH_FIELDS = [...CHOICE_BRANCH_REQUIRED_FIELDS, 'owner'] as const
 const BRANCH_PATH_FIELDS = ['id', 'operationIds'] as const
 const RELATIONSHIP_BRANCH_PATH_FIELDS = ['self', 'ally', 'enemy', 'unknown'] as const
-const CHOICE_BRANCH_OPTION_FIELDS = ['id', 'labelKey', 'operationIds'] as const
+const CHOICE_BRANCH_OPTION_REQUIRED_FIELDS = ['id', 'labelKey', 'operationIds'] as const
 const DAMAGE_REQUIRED_FIELDS = [
   'damageClass',
   'damageBase',
@@ -1996,7 +2043,19 @@ const CONDITION_DURATION_REQUIRED_FIELDS = ['effectId', 'duration'] as const
 const CONDITION_DURATION_OPTIONAL_FIELDS = ['charges', 'transferPolicy'] as const
 const CONDITION_STACK_POLICY_FIELDS = ['kind', 'maxStacks'] as const
 const COMBAT_STAGE_REQUIRED_FIELDS = ['action', 'stage', 'value'] as const
-const COMBAT_STAGE_OPTIONAL_FIELDS = ['selectedStage', 'stageSource', 'rounding'] as const
+const COMBAT_STAGE_OPTIONAL_FIELDS = ['selectedStage', 'stageSource', 'rounding', 'trigger'] as const
+const COMBAT_STAGE_ACCURACY_TRIGGER_FIELDS = [
+  'kind',
+  'rollId',
+  'trigger',
+  'scope',
+  'application',
+] as const
+const COMBAT_STAGE_OPERATION_TRIGGER_FIELDS = [
+  'kind',
+  'operationId',
+  'outcome',
+] as const
 const ADD_TEMPORARY_EFFECT_FIELDS = ['action', 'effectId', 'definition', 'recipientScope'] as const
 const LEGACY_ADD_TEMPORARY_EFFECT_FIELDS = ['action', 'effectId', 'definition'] as const
 const REMOVE_TEMPORARY_EFFECT_FIELDS = ['action', 'effectId'] as const
@@ -2211,6 +2270,15 @@ const CONDITION_SAVE_TIMING_SET = new Set<string>(MOVE_EFFECT_CONDITION_SAVE_TIM
 const COMBAT_STAGE_ACTION_SET = new Set<string>(MOVE_EFFECT_COMBAT_STAGE_ACTIONS)
 const COMBAT_STAT_STAGE_SET = new Set<string>(MOVE_EFFECT_COMBAT_STAT_STAGES)
 const COMBAT_STAGE_SET = new Set<string>(MOVE_EFFECT_COMBAT_STAGES)
+const COMBAT_STAGE_ACCURACY_TRIGGER_SCOPE_SET = new Set<string>(
+  MOVE_COMBAT_STAGE_ACCURACY_TRIGGER_SCOPES,
+)
+const COMBAT_STAGE_ACCURACY_TRIGGER_APPLICATION_SET = new Set<string>(
+  MOVE_COMBAT_STAGE_ACCURACY_TRIGGER_APPLICATIONS,
+)
+const COMBAT_STAGE_OPERATION_TRIGGER_OUTCOME_SET = new Set<string>(
+  MOVE_COMBAT_STAGE_OPERATION_TRIGGER_OUTCOMES,
+)
 const FIELD_CATEGORY_SET = new Set<string>(MOVE_EFFECT_FIELD_CATEGORIES)
 const BATTLEFIELD_ZONE_KIND_SET = new Set<string>(MOVE_EFFECT_BATTLEFIELD_ZONE_KINDS)
 const BATTLEFIELD_ZONE_SOURCE_FILTER_SET = new Set<string>(
@@ -3906,6 +3974,58 @@ const parseConditionPayload = (value: unknown, path: string): MoveConditionEffec
   }
 }
 
+const parseCombatStageTrigger = (
+  value: unknown,
+  path: string,
+): MoveCombatStageTrigger => {
+  const input = parseRecord(value, path)
+  const kind = ownValue(input, 'kind', path)
+  if (kind === 'accuracy-roll') {
+    assertExactKeys(input, COMBAT_STAGE_ACCURACY_TRIGGER_FIELDS, path)
+    const parsed = parseAccuracyRollTrigger({
+      rollId: ownValue(input, 'rollId', path),
+      trigger: ownValue(input, 'trigger', path),
+    }, path)
+    return {
+      kind,
+      ...parsed,
+      scope: parseEnum<MoveCombatStageAccuracyTriggerScope>(
+        ownValue(input, 'scope', path),
+        COMBAT_STAGE_ACCURACY_TRIGGER_SCOPE_SET,
+        `${path}.scope`,
+        'recipient or resolution',
+      ),
+      application: parseEnum<MoveCombatStageAccuracyTriggerApplication>(
+        ownValue(input, 'application', path),
+        COMBAT_STAGE_ACCURACY_TRIGGER_APPLICATION_SET,
+        `${path}.application`,
+        'once or per-match',
+      ),
+    }
+  }
+  if (kind === 'operation-outcome') {
+    assertExactKeys(input, COMBAT_STAGE_OPERATION_TRIGGER_FIELDS, path)
+    return {
+      kind,
+      operationId: parseStableId(
+        ownValue(input, 'operationId', path),
+        `${path}.operationId`,
+      ),
+      outcome: parseEnum<MoveCombatStageOperationTriggerOutcome>(
+        ownValue(input, 'outcome', path),
+        COMBAT_STAGE_OPERATION_TRIGGER_OUTCOME_SET,
+        `${path}.outcome`,
+        'applied',
+      ),
+    }
+  }
+  return fail(
+    'invalid-effect-operation',
+    `${path}.kind`,
+    'must be accuracy-roll or operation-outcome.',
+  )
+}
+
 const parseCombatStagePayload = (
   value: unknown,
   path: string,
@@ -3958,6 +4078,9 @@ const parseCombatStagePayload = (
         `${path}.rounding`,
         'floor, round, or ceil',
       )
+  const trigger = Object.prototype.hasOwnProperty.call(input, 'trigger')
+    ? parseCombatStageTrigger(ownValue(input, 'trigger', path), `${path}.trigger`)
+    : undefined
 
   if ((action === 'modify' || action === 'set') !== (stageValue !== null)) {
     fail(
@@ -3987,8 +4110,30 @@ const parseCombatStagePayload = (
       'must be present for split and null for every other action.',
     )
   }
+  if (trigger && action !== 'modify') {
+    fail(
+      'invalid-effect-operation',
+      `${path}.trigger`,
+      'is supported only for cap-aware modify operations.',
+    )
+  }
+  if (trigger?.kind === 'accuracy-roll' && trigger.application === 'per-match' && stageValue === 0) {
+    fail(
+      'invalid-effect-operation',
+      `${path}.trigger.application`,
+      'per-match requires a non-zero reviewed stage delta.',
+    )
+  }
 
-  return { action, stage, selectedStage, value: stageValue, stageSource, rounding }
+  return {
+    action,
+    stage,
+    selectedStage,
+    value: stageValue,
+    stageSource,
+    rounding,
+    ...(trigger ? { trigger } : {}),
+  }
 }
 
 const parseMultiHitDrawFormula = (
@@ -5600,7 +5745,12 @@ const parseChoiceBranchPayload = (
     MOVE_EFFECT_OPERATION_LIMITS.requestOptions,
   ).map((option, index): MoveChoiceBranchOption => {
     const optionPath = `${optionsPath}[${index}]`
-    const entry = parseExactRecord(option, CHOICE_BRANCH_OPTION_FIELDS, optionPath)
+    const entry = parseRecordWithOptionalFields(
+      option,
+      CHOICE_BRANCH_OPTION_REQUIRED_FIELDS,
+      ['predicate'],
+      optionPath,
+    )
     return {
       id: parseStableId(ownValue(entry, 'id', optionPath), `${optionPath}.id`),
       labelKey: parseStableId(
@@ -5612,6 +5762,12 @@ const parseChoiceBranchPayload = (
         `${optionPath}.operationIds`,
         1,
       ),
+      ...(Object.prototype.hasOwnProperty.call(entry, 'predicate')
+        ? { predicate: parseEffectPredicate(
+            ownValue(entry, 'predicate', optionPath),
+            `${optionPath}.predicate`,
+          ) }
+        : {}),
     }
   })
   const pass = ownValue(input, 'pass', path) === null

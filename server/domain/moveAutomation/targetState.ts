@@ -35,6 +35,13 @@ export const MOVE_AUTOMATION_TARGET_SIZES = [
   'gigantic',
 ] as const
 
+export const MOVE_AUTOMATION_TARGET_GENDERS = [
+  'male',
+  'female',
+  'genderless',
+  'unknown',
+] as const
+
 /** Keyword immunities currently derivable from authoritative token state. */
 export const MOVE_AUTOMATION_TARGET_IMMUNITY_TAG_IDS = [
   'groundsource',
@@ -48,6 +55,8 @@ export type MoveAutomationTargetGrounding =
   (typeof MOVE_AUTOMATION_TARGET_GROUNDING_STATES)[number]
 export type MoveAutomationTargetSize =
   (typeof MOVE_AUTOMATION_TARGET_SIZES)[number]
+export type MoveAutomationTargetGender =
+  (typeof MOVE_AUTOMATION_TARGET_GENDERS)[number]
 
 /** Positive values mean the first subject is that many canonical categories larger. */
 export const moveAutomationSizeCategoryDifference = (
@@ -78,6 +87,8 @@ export interface MoveAutomationTargetState {
   readonly immunityTagIds: readonly string[]
   readonly size: MoveAutomationTargetSize | null
   readonly weightClass: number | null
+  /** Canonical sheet-owned gender used only by reviewed gender predicates. */
+  readonly gender: MoveAutomationTargetGender
   readonly sheetKind: SheetKind
   /** Canonical item slugs for currently held/equipped target items. */
   readonly itemIds: readonly string[]
@@ -214,6 +225,15 @@ const normalizedTargetSize = (value: unknown): MoveAutomationTargetSize | null =
     : null
 }
 
+const normalizedGender = (value: unknown): MoveAutomationTargetGender => {
+  if (typeof value !== 'string') return 'unknown'
+  const normalized = value.trim().toLowerCase()
+  if (normalized === 'male' || normalized === 'female' || normalized === 'genderless') {
+    return normalized
+  }
+  return 'unknown'
+}
+
 const normalizedWeightClass = (value: unknown): number | null => {
   const parsed = typeof value === 'number'
     ? value
@@ -317,6 +337,9 @@ const targetState = (options: {
     typeIds,
     immunityTagIds: targetImmunityTagIds(options.token, typeIds, grounding),
     ...sizeAndWeight,
+    gender: options.placement.sheetKind === 'pokemon'
+      ? normalizedGender((options.sheet.sheet as CharacterSheet).gender)
+      : 'unknown',
     sheetKind: options.placement.sheetKind,
     itemIds: normalizedItemIds(options.token.tokenItems),
   })
