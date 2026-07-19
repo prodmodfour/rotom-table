@@ -12,10 +12,11 @@ import type { MoveAutomationSemanticScenario } from './scenario'
 export const TACKLE_V2_SEMANTIC_SCENARIOS = Object.freeze([
   { scenarioId: 'tackle.v2-critical-hit', evidenceClasses: ['crit'] as const },
   { scenarioId: 'tackle.v2-duplicate-retry', evidenceClasses: ['retry'] as const },
-  { scenarioId: 'tackle.v2-hit-push', evidenceClasses: ['hit'] as const },
+  { scenarioId: 'tackle.v2-hit-push', evidenceClasses: ['hit', 'threshold-pass'] as const },
   { scenarioId: 'tackle.v2-immunity', evidenceClasses: ['immunity'] as const },
   { scenarioId: 'tackle.v2-miss', evidenceClasses: ['miss'] as const },
   { scenarioId: 'tackle.v2-shortened-push', evidenceClasses: ['alternate-branch'] as const },
+  { scenarioId: 'tackle.v2-stuck-rejected', evidenceClasses: ['alternate-branch', 'threshold-fail'] as const },
 ] as const)
 
 export type TackleV2SemanticScenarioId =
@@ -28,6 +29,8 @@ interface TackleDefinition {
   readonly blocker: boolean
   readonly pushed: boolean
   readonly destinationX: number
+  readonly actorConditions: readonly string[]
+  readonly rejected: boolean
 }
 
 const ordinary = (): TackleDefinition => ({
@@ -37,6 +40,8 @@ const ordinary = (): TackleDefinition => ({
   blocker: false,
   pushed: true,
   destinationX: 4,
+  actorConditions: [],
+  rejected: false,
 })
 
 const DEFINITIONS: Readonly<Record<TackleV2SemanticScenarioId, TackleDefinition>> = {
@@ -64,6 +69,15 @@ const DEFINITIONS: Readonly<Record<TackleV2SemanticScenarioId, TackleDefinition>
     blocker: true,
     destinationX: 3,
   },
+  'tackle.v2-stuck-rejected': {
+    ...ordinary(),
+    accuracyRandom: 0,
+    hit: false,
+    pushed: false,
+    destinationX: 2,
+    actorConditions: ['Stuck'],
+    rejected: true,
+  },
 }
 
 const placement = (id: string, sheetSlug: string, x: number): SheetPlacement => ({
@@ -78,6 +92,7 @@ const pokemonSheet = (options: {
   readonly slug: string
   readonly types: readonly string[]
   readonly moves?: CharacterSheet['movelist']
+  readonly conditions?: readonly string[]
 }): CharacterSheet => ({
   slug: options.slug,
   nickname: options.slug,
@@ -96,7 +111,7 @@ const pokemonSheet = (options: {
     spd: { added: 5, stage: 0 },
   },
   combatStages: { acc: 0 },
-  combat: { currentHp: 100, injuries: 0, conditions: [] },
+  combat: { currentHp: 100, injuries: 0, conditions: [...(options.conditions ?? [])] },
 })
 
 const fixture = (definition: TackleDefinition): {
@@ -131,7 +146,12 @@ const fixture = (definition: TackleDefinition): {
       updatedAt: 100,
     },
     pokemonSheets: new Map([
-      ['actor', pokemonSheet({ slug: 'actor', types: ['Fighting'], moves: [{ name: 'Tackle' }] })],
+      ['actor', pokemonSheet({
+        slug: 'actor',
+        types: ['Fighting'],
+        moves: [{ name: 'Tackle' }],
+        conditions: definition.actorConditions,
+      })],
       ['target', pokemonSheet({ slug: 'target', types: definition.targetTypes })],
       ...(definition.blocker
         ? [['blocker', pokemonSheet({ slug: 'blocker', types: ['Normal'] })] as const]
@@ -148,6 +168,7 @@ const fixture = (definition: TackleDefinition): {
 }
 
 const randomValues = (definition: TackleDefinition): readonly number[] => {
+  if (definition.rejected) return []
   if (!definition.hit) return [definition.accuracyRandom]
   return [definition.accuracyRandom, 0]
 }
@@ -183,69 +204,94 @@ export const tackleV2SemanticScenario = (
       now: 5_000,
       idPrefix: scenarioId,
     },
-    expected: {
-      interpreter: {
-        result: {
-          kind: 'complete',
-          targetIds: ['target-token'],
-          hitTargetIds,
-          missedTargetIds: definition.hit ? [] : ['target-token'],
-        },
-      },
-      plan: {
-        result: {
-          previousRevision: 7,
-          revision: 8,
-          nextMap: {
-            placements: [
-              { id: 'actor-token' },
-              { id: 'target-token', position: targetPosition },
-              ...(definition.blocker ? [{ id: 'blocker-token', position: { x: 4, y: 0, z: 1 } }] : []),
-            ],
-          },
-          resolution: {
-            transaction: {
-              attackedTargetIds: ['target-token'],
-              hitTargetIds,
+    expected: definition.rejected
+      ? {
+          interpreter: {
+            rejection: {
+              source: 'result',
+              code: 'precondition-failed',
+              reasonCode: 'tackle.dash-blocked-by-stuck',
             },
           },
-        },
-      },
-      command: {
-        result: {
-          result: { ok: true, previousRevision: 7, revision: 8 },
-          map: {
-            placements: [
-              { id: 'actor-token' },
-              { id: 'target-token', position: targetPosition },
-              ...(definition.blocker ? [{ id: 'blocker-token' }] : []),
-            ],
-          },
-          move: {
-            canonicalMoveName: 'Tackle',
-            transaction: {
-              attackedTargetIds: ['target-token'],
-              hitTargetIds,
+          plan: {
+            rejection: {
+              source: 'error',
+              name: 'ImmediateMoveSpecResolutionError',
+              code: 'execution-rejected',
+              messageIncludes: 'tackle.dash-blocked-by-stuck',
             },
           },
-        },
-      },
-      trace: {
-        interpreter: {
+          command: {
+            rejection: {
+              source: 'result',
+              reason: 'invalid',
+              messageIncludes: 'tackle.dash-blocked-by-stuck',
+            },
+          },
+        }
+      : {
+          interpreter: {
+            result: {
+              kind: 'complete',
+              targetIds: ['target-token'],
+              hitTargetIds,
+              missedTargetIds: definition.hit ? [] : ['target-token'],
+            },
+          },
+          plan: {
+            result: {
+              previousRevision: 7,
+              revision: 8,
+              nextMap: {
+                placements: [
+                  { id: 'actor-token' },
+                  { id: 'target-token', position: targetPosition },
+                  ...(definition.blocker ? [{ id: 'blocker-token', position: { x: 4, y: 0, z: 1 } }] : []),
+                ],
+              },
+              resolution: {
+                transaction: {
+                  attackedTargetIds: ['target-token'],
+                  hitTargetIds,
+                },
+              },
+            },
+          },
+          command: {
+            result: {
+              result: { ok: true, previousRevision: 7, revision: 8 },
+              map: {
+                placements: [
+                  { id: 'actor-token' },
+                  { id: 'target-token', position: targetPosition },
+                  ...(definition.blocker ? [{ id: 'blocker-token' }] : []),
+                ],
+              },
+              move: {
+                canonicalMoveName: 'Tackle',
+                transaction: {
+                  attackedTargetIds: ['target-token'],
+                  hitTargetIds,
+                },
+              },
+            },
+          },
           trace: {
-            program: { canonicalId: 'Tackle', runtimeKind: 'movespec-v2', runtimeVersion: 2 },
+            interpreter: {
+              trace: {
+                program: { canonicalId: 'Tackle', runtimeKind: 'movespec-v2', runtimeVersion: 2 },
+              },
+            },
+            plan: {
+              events: [{
+                kind: 'operation',
+                operationId: 'tackle.push',
+                operationKind: 'movement-request',
+                outcome: definition.pushed ? 'applied' : 'no-op',
+              }],
+            },
           },
         },
-        plan: {
-          events: [{
-            kind: 'operation',
-            operationId: 'tackle.push',
-            operationKind: 'movement-request',
-            outcome: definition.pushed ? 'applied' : 'no-op',
-          }],
-        },
-      },
-    },
   }
 }
 

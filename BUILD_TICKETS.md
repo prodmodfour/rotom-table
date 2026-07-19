@@ -2732,7 +2732,7 @@ Status: DONE
 
 ## REG-030 — Certify Synthesis through Thunder Punch
 
-Status: TODO
+Status: DONE
 
 **Baseline-registered moves:** Synthesis; Tackle; Tail Whip; Take Down; Taunt; Tearful Look; Teeter Dance; Thunder Punch
 

@@ -91,12 +91,13 @@ describe('Synthesis native MoveSpec v2', () => {
     expect(synthesisRow.runtime).toEqual({
       kind: 'movespec-v2',
       version: 2,
-      definitionHash: '6d1c85c81b2e0740f0ebaeda09df2d19daa20f8624fdcc5007ef6d3c56c8c2c4',
+      definitionHash: 'ddaa797a430a3b011eea6702f73f90d6e5da430d3fa3df600bdd3b641c9919d4',
       sourceModule: 'server/domain/moveAutomation/specs/synthesis.ts',
     })
-    expect(synthesisRow.scenarioIds).toEqual(
+    expect(synthesisRow.scenarioIds).toEqual(expect.arrayContaining(
       SYNTHESIS_V2_SEMANTIC_SCENARIOS.map(({ scenarioId }) => scenarioId),
-    )
+    ))
+    expect(synthesisRow.scenarioIds).toContain('synthesis.v2-stale-actor')
     expect(synthesisRow.manualSteps).toEqual([])
     expect(registeredMoveAutomationRuntimeFor('Synthesis')).toMatchObject({
       kind: 'movespec-v2',

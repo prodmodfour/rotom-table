@@ -19,7 +19,23 @@ export const TACKLE_MOVE_SPEC = Object.freeze({
     maxTargets: 1,
     selector: { kind: 'selected-targets' },
   },
-  preconditions: [],
+  preconditions: [{
+    id: 'tackle.dash-not-stuck',
+    predicate: {
+      kind: 'not',
+      predicate: {
+        kind: 'comparison',
+        operator: 'equal',
+        left: {
+          kind: 'condition',
+          subject: { kind: 'actor' },
+          conditionId: 'stuck',
+        },
+        right: { kind: 'constant', value: true },
+      },
+    },
+    failureReasonCode: 'tackle.dash-blocked-by-stuck',
+  }],
   costs: [],
   phases: [
     {

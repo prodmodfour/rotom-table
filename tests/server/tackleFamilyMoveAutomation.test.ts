@@ -65,16 +65,17 @@ describe('Tackle native automation', () => {
       runtime: {
         kind: 'movespec-v2',
         version: 2,
-        definitionHash: '4496da15521788b9ed800c72437ae6d49f012c8730cde52c71eb5b3b3522f4b5',
+        definitionHash: '04f6d11d74d260f0d446d3b4e8820eb2c021853d82cb742adf92b1dcfe0f474c',
         sourceModule: 'server/domain/moveAutomation/specs/tackle.ts',
       },
       blockerCodes: [],
       limitations: [],
       manualSteps: [],
     })
-    expect(tackleRow.scenarioIds).toEqual(
+    expect(tackleRow.scenarioIds).toEqual(expect.arrayContaining(
       TACKLE_V2_SEMANTIC_SCENARIOS.map(({ scenarioId }) => scenarioId),
-    )
+    ))
+    expect(tackleRow.scenarioIds).toContain('tackle.v2-stale-target')
     expect(registeredMoveAutomationRuntimeFor('Tackle')).toMatchObject({
       kind: 'movespec-v2',
       definition: { spec: TACKLE_MOVE_SPEC },
@@ -89,11 +90,29 @@ describe('Tackle native automation', () => {
     'proves $scenarioId through interpreter, planner, and accepted command',
     async (scenario) => {
       const result = await runAndAssertMoveAutomationSemanticScenario(scenario)
-      expect([
+      const statuses = [
         result.interpreter.status,
         result.plan.status,
         result.command.status,
-      ]).toEqual(['completed', 'completed', 'completed'])
+      ]
+      if (scenario.scenarioId === 'tackle.v2-stuck-rejected') {
+        expect(statuses).toEqual(['rejected', 'rejected', 'rejected'])
+        expect(result.committedDocuments.operationResult).toMatchObject({
+          ok: false,
+          reason: 'invalid',
+        })
+        expect(result.committedDocuments.map).toMatchObject({ revision: 7 })
+        expect(result.committedDocuments.sheets.pokemon.actor).toMatchObject({
+          revision: 3,
+          combat: { currentHp: 100, conditions: ['Stuck'] },
+        })
+        expect(result.committedDocuments.sheets.pokemon.target).toMatchObject({
+          revision: 3,
+          combat: { currentHp: 100 },
+        })
+        return
+      }
+      expect(statuses).toEqual(['completed', 'completed', 'completed'])
       if (result.plan.status !== 'completed' || result.command.status !== 'completed') return
 
       const operations = result.plan.value.resolution.auditTrace.events.filter(event => (

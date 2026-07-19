@@ -37520,12 +37520,12 @@
     {
       "canonicalId": "Synthesis",
       "displayName": "Synthesis",
-      "baseStatus": "assisted",
+      "baseStatus": "complete",
       "interactionStatus": "unassessed",
       "runtime": {
         "kind": "movespec-v2",
         "version": 2,
-        "definitionHash": "6d1c85c81b2e0740f0ebaeda09df2d19daa20f8624fdcc5007ef6d3c56c8c2c4",
+        "definitionHash": "ddaa797a430a3b011eea6702f73f90d6e5da430d3fa3df600bdd3b641c9919d4",
         "sourceModule": "server/domain/moveAutomation/specs/synthesis.ts"
       },
       "rulesProvenance": {
@@ -37533,15 +37533,14 @@
         "canonicalizationVersion": 1,
         "sourceDataSha256": "f90491826349afd7d1f2809fd9d74b7acc555f5163b99264205ee369249e9815"
       },
-      "capabilityTags": [],
+      "capabilityTags": [
+        "expressions.bounded",
+        "hp.typed",
+        "targeting.authoritative"
+      ],
       "suggestedCapabilityTags": [],
       "blockerCodes": [],
-      "limitations": [
-        {
-          "code": "audit.required",
-          "summary": "Semantic conformance review is required before this native implementation can be marked complete."
-        }
-      ],
+      "limitations": [],
       "manualSteps": [],
       "scenarioIds": [
         "synthesis.v2-full-hp",
@@ -37549,12 +37548,14 @@
         "synthesis.v2-normal",
         "synthesis.v2-rain",
         "synthesis.v2-sandstorm",
-        "synthesis.v2-sunny"
+        "synthesis.v2-sunny",
+        "synthesis.v2-stale-actor"
       ],
       "conformanceEvidence": {
         "requirementTags": [
           "branch.alternate",
           "recovery.retry",
+          "resource.multi",
           "target.self"
         ],
         "scenarios": [
@@ -37599,11 +37600,17 @@
               "retry",
               "self"
             ]
+          },
+          {
+            "scenarioId": "synthesis.v2-stale-actor",
+            "evidenceClasses": [
+              "multi-resource-conflict"
+            ]
           }
         ],
         "notApplicable": []
       },
-      "reviewedAt": null,
+      "reviewedAt": "2026-07-19",
       "unsupportedInteractionIds": [],
       "rolloutCohortId": null
     },
@@ -37615,7 +37622,7 @@
       "runtime": {
         "kind": "movespec-v2",
         "version": 2,
-        "definitionHash": "4496da15521788b9ed800c72437ae6d49f012c8730cde52c71eb5b3b3522f4b5",
+        "definitionHash": "04f6d11d74d260f0d446d3b4e8820eb2c021853d82cb742adf92b1dcfe0f474c",
         "sourceModule": "server/domain/moveAutomation/specs/tackle.ts"
       },
       "rulesProvenance": {
@@ -37624,6 +37631,7 @@
         "sourceDataSha256": "f90491826349afd7d1f2809fd9d74b7acc555f5163b99264205ee369249e9815"
       },
       "capabilityTags": [
+        "conditions.typed",
         "movement.authoritative",
         "targeting.authoritative"
       ],
@@ -37637,7 +37645,9 @@
         "tackle.v2-hit-push",
         "tackle.v2-immunity",
         "tackle.v2-miss",
-        "tackle.v2-shortened-push"
+        "tackle.v2-shortened-push",
+        "tackle.v2-stuck-rejected",
+        "tackle.v2-stale-target"
       ],
       "conformanceEvidence": {
         "requirementTags": [
@@ -37645,8 +37655,10 @@
           "branch.alternate",
           "branch.critical-hit",
           "branch.immunity",
+          "branch.threshold",
           "mechanic.damage",
-          "recovery.retry"
+          "recovery.retry",
+          "resource.multi"
         ],
         "scenarios": [
           {
@@ -37664,7 +37676,8 @@
           {
             "scenarioId": "tackle.v2-hit-push",
             "evidenceClasses": [
-              "hit"
+              "hit",
+              "threshold-pass"
             ]
           },
           {
@@ -37684,11 +37697,24 @@
             "evidenceClasses": [
               "alternate-branch"
             ]
+          },
+          {
+            "scenarioId": "tackle.v2-stuck-rejected",
+            "evidenceClasses": [
+              "alternate-branch",
+              "threshold-fail"
+            ]
+          },
+          {
+            "scenarioId": "tackle.v2-stale-target",
+            "evidenceClasses": [
+              "multi-resource-conflict"
+            ]
           }
         ],
         "notApplicable": []
       },
-      "reviewedAt": "2026-07-18",
+      "reviewedAt": "2026-07-19",
       "unsupportedInteractionIds": [],
       "rolloutCohortId": null
     },
@@ -37765,7 +37791,7 @@
     {
       "canonicalId": "Tail Whip",
       "displayName": "Tail Whip",
-      "baseStatus": "assisted",
+      "baseStatus": "complete",
       "interactionStatus": "unassessed",
       "runtime": {
         "kind": "legacy-v1",
@@ -37778,23 +37804,60 @@
         "canonicalizationVersion": 1,
         "sourceDataSha256": "f90491826349afd7d1f2809fd9d74b7acc555f5163b99264205ee369249e9815"
       },
-      "capabilityTags": [],
+      "capabilityTags": [
+        "stages.typed",
+        "targeting.authoritative"
+      ],
       "suggestedCapabilityTags": [],
       "blockerCodes": [],
-      "limitations": [
-        {
-          "code": "audit.required",
-          "summary": "Semantic conformance review is required before this legacy implementation can be marked complete."
-        }
-      ],
+      "limitations": [],
       "manualSteps": [],
-      "scenarioIds": [],
+      "scenarioIds": [
+        "tail-whip.legacy-v1-friendly-area-mixed",
+        "tail-whip.legacy-v1-stage-cap",
+        "tail-whip.legacy-v1-duplicate-replay",
+        "tail-whip.legacy-v1-stale-target"
+      ],
       "conformanceEvidence": {
-        "requirementTags": [],
-        "scenarios": [],
+        "requirementTags": [
+          "branch.accuracy",
+          "branch.alternate",
+          "recovery.retry",
+          "resource.multi",
+          "target.area"
+        ],
+        "scenarios": [
+          {
+            "scenarioId": "tail-whip.legacy-v1-friendly-area-mixed",
+            "evidenceClasses": [
+              "alternate-branch",
+              "area-mixed-outcomes",
+              "hit",
+              "miss"
+            ]
+          },
+          {
+            "scenarioId": "tail-whip.legacy-v1-stage-cap",
+            "evidenceClasses": [
+              "hit"
+            ]
+          },
+          {
+            "scenarioId": "tail-whip.legacy-v1-duplicate-replay",
+            "evidenceClasses": [
+              "retry"
+            ]
+          },
+          {
+            "scenarioId": "tail-whip.legacy-v1-stale-target",
+            "evidenceClasses": [
+              "multi-resource-conflict"
+            ]
+          }
+        ],
         "notApplicable": []
       },
-      "reviewedAt": null,
+      "reviewedAt": "2026-07-19",
       "unsupportedInteractionIds": [],
       "rolloutCohortId": null
     },
@@ -38076,7 +38139,7 @@
     {
       "canonicalId": "Taunt",
       "displayName": "Taunt",
-      "baseStatus": "assisted",
+      "baseStatus": "complete",
       "interactionStatus": "unassessed",
       "runtime": {
         "kind": "legacy-v1",
@@ -38089,30 +38152,62 @@
         "canonicalizationVersion": 1,
         "sourceDataSha256": "f90491826349afd7d1f2809fd9d74b7acc555f5163b99264205ee369249e9815"
       },
-      "capabilityTags": [],
+      "capabilityTags": [
+        "conditions.typed",
+        "targeting.authoritative"
+      ],
       "suggestedCapabilityTags": [],
       "blockerCodes": [],
-      "limitations": [
-        {
-          "code": "audit.required",
-          "summary": "Semantic conformance review is required before this legacy implementation can be marked complete."
-        }
-      ],
+      "limitations": [],
       "manualSteps": [],
-      "scenarioIds": [],
+      "scenarioIds": [
+        "taunt.legacy-v1-enrage-hit",
+        "taunt.legacy-v1-miss",
+        "taunt.legacy-v1-duplicate-replay",
+        "taunt.legacy-v1-stale-target"
+      ],
       "conformanceEvidence": {
-        "requirementTags": [],
-        "scenarios": [],
+        "requirementTags": [
+          "branch.accuracy",
+          "recovery.retry",
+          "resource.multi"
+        ],
+        "scenarios": [
+          {
+            "scenarioId": "taunt.legacy-v1-enrage-hit",
+            "evidenceClasses": [
+              "hit"
+            ]
+          },
+          {
+            "scenarioId": "taunt.legacy-v1-miss",
+            "evidenceClasses": [
+              "miss"
+            ]
+          },
+          {
+            "scenarioId": "taunt.legacy-v1-duplicate-replay",
+            "evidenceClasses": [
+              "retry"
+            ]
+          },
+          {
+            "scenarioId": "taunt.legacy-v1-stale-target",
+            "evidenceClasses": [
+              "multi-resource-conflict"
+            ]
+          }
+        ],
         "notApplicable": []
       },
-      "reviewedAt": null,
+      "reviewedAt": "2026-07-19",
       "unsupportedInteractionIds": [],
       "rolloutCohortId": null
     },
     {
       "canonicalId": "Tearful Look",
       "displayName": "Tearful Look",
-      "baseStatus": "assisted",
+      "baseStatus": "complete",
       "interactionStatus": "unassessed",
       "runtime": {
         "kind": "legacy-v1",
@@ -38125,23 +38220,60 @@
         "canonicalizationVersion": 1,
         "sourceDataSha256": "f90491826349afd7d1f2809fd9d74b7acc555f5163b99264205ee369249e9815"
       },
-      "capabilityTags": [],
+      "capabilityTags": [
+        "stages.typed",
+        "targeting.authoritative"
+      ],
       "suggestedCapabilityTags": [],
       "blockerCodes": [],
-      "limitations": [
-        {
-          "code": "audit.required",
-          "summary": "Semantic conformance review is required before this legacy implementation can be marked complete."
-        }
-      ],
+      "limitations": [],
       "manualSteps": [],
-      "scenarioIds": [],
+      "scenarioIds": [
+        "tearful-look.legacy-v1-friendly-area-mixed",
+        "tearful-look.legacy-v1-stage-cap",
+        "tearful-look.legacy-v1-duplicate-replay",
+        "tearful-look.legacy-v1-stale-target"
+      ],
       "conformanceEvidence": {
-        "requirementTags": [],
-        "scenarios": [],
+        "requirementTags": [
+          "branch.accuracy",
+          "branch.alternate",
+          "recovery.retry",
+          "resource.multi",
+          "target.area"
+        ],
+        "scenarios": [
+          {
+            "scenarioId": "tearful-look.legacy-v1-friendly-area-mixed",
+            "evidenceClasses": [
+              "alternate-branch",
+              "area-mixed-outcomes",
+              "hit",
+              "miss"
+            ]
+          },
+          {
+            "scenarioId": "tearful-look.legacy-v1-stage-cap",
+            "evidenceClasses": [
+              "hit"
+            ]
+          },
+          {
+            "scenarioId": "tearful-look.legacy-v1-duplicate-replay",
+            "evidenceClasses": [
+              "retry"
+            ]
+          },
+          {
+            "scenarioId": "tearful-look.legacy-v1-stale-target",
+            "evidenceClasses": [
+              "multi-resource-conflict"
+            ]
+          }
+        ],
         "notApplicable": []
       },
-      "reviewedAt": null,
+      "reviewedAt": "2026-07-19",
       "unsupportedInteractionIds": [],
       "rolloutCohortId": null
     },
@@ -38218,7 +38350,7 @@
     {
       "canonicalId": "Teeter Dance",
       "displayName": "Teeter Dance",
-      "baseStatus": "assisted",
+      "baseStatus": "complete",
       "interactionStatus": "unassessed",
       "runtime": {
         "kind": "legacy-v1",
@@ -38231,23 +38363,51 @@
         "canonicalizationVersion": 1,
         "sourceDataSha256": "f90491826349afd7d1f2809fd9d74b7acc555f5163b99264205ee369249e9815"
       },
-      "capabilityTags": [],
+      "capabilityTags": [
+        "conditions.typed",
+        "targeting.authoritative"
+      ],
       "suggestedCapabilityTags": [],
       "blockerCodes": [],
-      "limitations": [
-        {
-          "code": "audit.required",
-          "summary": "Semantic conformance review is required before this legacy implementation can be marked complete."
-        }
-      ],
+      "limitations": [],
       "manualSteps": [],
-      "scenarioIds": [],
+      "scenarioIds": [
+        "teeter-dance.legacy-v1-burst-mixed",
+        "teeter-dance.legacy-v1-duplicate-replay",
+        "teeter-dance.legacy-v1-stale-target"
+      ],
       "conformanceEvidence": {
-        "requirementTags": [],
-        "scenarios": [],
+        "requirementTags": [
+          "branch.accuracy",
+          "recovery.retry",
+          "resource.multi",
+          "target.area"
+        ],
+        "scenarios": [
+          {
+            "scenarioId": "teeter-dance.legacy-v1-burst-mixed",
+            "evidenceClasses": [
+              "area-mixed-outcomes",
+              "hit",
+              "miss"
+            ]
+          },
+          {
+            "scenarioId": "teeter-dance.legacy-v1-duplicate-replay",
+            "evidenceClasses": [
+              "retry"
+            ]
+          },
+          {
+            "scenarioId": "teeter-dance.legacy-v1-stale-target",
+            "evidenceClasses": [
+              "multi-resource-conflict"
+            ]
+          }
+        ],
         "notApplicable": []
       },
-      "reviewedAt": null,
+      "reviewedAt": "2026-07-19",
       "unsupportedInteractionIds": [],
       "rolloutCohortId": null
     },
@@ -38639,7 +38799,7 @@
     {
       "canonicalId": "Thunder Punch",
       "displayName": "Thunder Punch",
-      "baseStatus": "assisted",
+      "baseStatus": "complete",
       "interactionStatus": "unassessed",
       "runtime": {
         "kind": "legacy-v1",
@@ -38652,23 +38812,96 @@
         "canonicalizationVersion": 1,
         "sourceDataSha256": "f90491826349afd7d1f2809fd9d74b7acc555f5163b99264205ee369249e9815"
       },
-      "capabilityTags": [],
+      "capabilityTags": [
+        "conditions.typed",
+        "expressions.bounded",
+        "targeting.authoritative"
+      ],
       "suggestedCapabilityTags": [],
       "blockerCodes": [],
-      "limitations": [
-        {
-          "code": "audit.required",
-          "summary": "Semantic conformance review is required before this legacy implementation can be marked complete."
-        }
-      ],
+      "limitations": [],
       "manualSteps": [],
-      "scenarioIds": [],
+      "scenarioIds": [
+        "thunder-punch.legacy-v1-paralysis-threshold-pass",
+        "thunder-punch.legacy-v1-paralysis-threshold-fail",
+        "thunder-punch.legacy-v1-miss",
+        "thunder-punch.legacy-v1-critical-hit",
+        "thunder-punch.legacy-v1-ground-immunity",
+        "thunder-punch.legacy-v1-paralysis-immunity",
+        "thunder-punch.legacy-v1-secondary-immunity",
+        "thunder-punch.legacy-v1-duplicate-replay",
+        "thunder-punch.legacy-v1-stale-target"
+      ],
       "conformanceEvidence": {
-        "requirementTags": [],
-        "scenarios": [],
+        "requirementTags": [
+          "branch.accuracy",
+          "branch.critical-hit",
+          "branch.immunity",
+          "branch.threshold",
+          "mechanic.damage",
+          "recovery.retry",
+          "resource.multi"
+        ],
+        "scenarios": [
+          {
+            "scenarioId": "thunder-punch.legacy-v1-paralysis-threshold-pass",
+            "evidenceClasses": [
+              "hit",
+              "threshold-pass"
+            ]
+          },
+          {
+            "scenarioId": "thunder-punch.legacy-v1-paralysis-threshold-fail",
+            "evidenceClasses": [
+              "threshold-fail"
+            ]
+          },
+          {
+            "scenarioId": "thunder-punch.legacy-v1-miss",
+            "evidenceClasses": [
+              "miss"
+            ]
+          },
+          {
+            "scenarioId": "thunder-punch.legacy-v1-critical-hit",
+            "evidenceClasses": [
+              "crit"
+            ]
+          },
+          {
+            "scenarioId": "thunder-punch.legacy-v1-ground-immunity",
+            "evidenceClasses": [
+              "immunity"
+            ]
+          },
+          {
+            "scenarioId": "thunder-punch.legacy-v1-paralysis-immunity",
+            "evidenceClasses": [
+              "immunity"
+            ]
+          },
+          {
+            "scenarioId": "thunder-punch.legacy-v1-secondary-immunity",
+            "evidenceClasses": [
+              "immunity"
+            ]
+          },
+          {
+            "scenarioId": "thunder-punch.legacy-v1-duplicate-replay",
+            "evidenceClasses": [
+              "retry"
+            ]
+          },
+          {
+            "scenarioId": "thunder-punch.legacy-v1-stale-target",
+            "evidenceClasses": [
+              "multi-resource-conflict"
+            ]
+          }
+        ],
         "notApplicable": []
       },
-      "reviewedAt": null,
+      "reviewedAt": "2026-07-19",
       "unsupportedInteractionIds": [],
       "rolloutCohortId": null
     },
