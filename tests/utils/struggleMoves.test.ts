@@ -1,6 +1,11 @@
 import { describe, expect, it } from 'vitest'
 import { findMove } from '~~/data/ptuReference'
-import { makeAutomaticStruggleMoves, struggleMoveNamesForCapabilities } from '~/utils/struggleMoves'
+import {
+  makeAutomaticStruggleMoves,
+  requiredStruggleCapabilityForMoveName,
+  struggleAttackIsAvailableForCapabilities,
+  struggleMoveNamesForCapabilities,
+} from '~/utils/struggleMoves'
 
 describe('struggleMoves', () => {
   it('adds physical and special entries for every Special-Attack-capable Struggle modifier', () => {
@@ -29,6 +34,16 @@ describe('struggleMoves', () => {
       'Struggle (Zapper Physical)',
       'Struggle (Zapper Special)',
     ])
+  })
+
+  it('requires each typed Struggle variant capability while leaving base Struggle available', () => {
+    expect(requiredStruggleCapabilityForMoveName('Struggle')).toBeNull()
+    expect(requiredStruggleCapabilityForMoveName('Struggle (Firestarter Physical)')).toBe('Firestarter')
+    expect(requiredStruggleCapabilityForMoveName('Struggle (Materialiser Special)')).toBe('Materializer')
+    expect(struggleAttackIsAvailableForCapabilities('Struggle', [])).toBe(true)
+    expect(struggleAttackIsAvailableForCapabilities('Struggle (Fountain Special)', [])).toBe(false)
+    expect(struggleAttackIsAvailableForCapabilities('Struggle (Fountain Special)', ['Fountain'])).toBe(true)
+    expect(struggleAttackIsAvailableForCapabilities('Struggle (Materializer Physical)', ['Materialiser'])).toBe(true)
   })
 
   it('treats legacy unsuffixed Struggle variants as their special entries when skipping duplicates', () => {

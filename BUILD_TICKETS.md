@@ -2714,7 +2714,7 @@ Status: DONE
 
 ## REG-027 — Certify Stone Edge through Struggle (Freezer Physical)
 
-Status: TODO
+Status: DONE
 
 **Baseline-registered moves:** Stone Edge; Strange Steam; Struggle; Struggle (Firestarter Physical); Struggle (Firestarter Special); Struggle (Fountain Physical); Struggle (Fountain Special); Struggle (Freezer Physical)
 

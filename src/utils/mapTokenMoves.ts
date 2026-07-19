@@ -9,7 +9,10 @@ import {
 import { explicitScriptForMove } from '~/utils/moveAutomation'
 import { resolvePokemonOtherCapabilities } from '~/utils/sheets/pokemonCapabilities'
 import { resolveMoveGrantedCapabilities } from '~/utils/sheets/pokemonMoveGrantedCapabilities'
-import { makeAutomaticStruggleMoves } from '~/utils/struggleMoves'
+import {
+  makeAutomaticStruggleMoves,
+  struggleAttackIsAvailableForCapabilities,
+} from '~/utils/struggleMoves'
 import { deriveTrainerAutomaticMoves } from '~/utils/sheets/trainerCombatDerivations'
 import { makeMoveLookupRows, type MoveLookupRow } from '~/utils/sheetMoveLookup'
 import { isPokemonLoyaltyDamageBaseMove } from '~/utils/sheets/pokemonLoyalty'
@@ -130,21 +133,35 @@ const trainerStruggleCapabilities = (sheet: TrainerSheet): string[] => [
   ...(sheet.capabilities?.other ?? []),
 ]
 
-export const pokemonMoveEntriesForSheet = (sheet: CharacterSheet): TokenSheetMoveEntry[] => [
-  ...makeAutomaticStruggleMoves(pokemonStruggleCapabilities(sheet), sheet.movelist)
-    .map((move) => ({ move, automatic: true })),
-  ...(sheet.movelist ?? []).map((move) => ({ move, automatic: false })),
-]
+const struggleEligibleMoves = <Move extends Pick<TokenSheetMove, 'name'>>(
+  moves: readonly Move[] | undefined,
+  capabilities: readonly string[],
+): Move[] => (moves ?? []).filter(move => (
+  struggleAttackIsAvailableForCapabilities(move.name, capabilities)
+))
+
+export const pokemonMoveEntriesForSheet = (sheet: CharacterSheet): TokenSheetMoveEntry[] => {
+  const capabilities = pokemonStruggleCapabilities(sheet)
+  const movelist = struggleEligibleMoves(sheet.movelist, capabilities)
+  return [
+    ...makeAutomaticStruggleMoves(capabilities, movelist)
+      .map((move) => ({ move, automatic: true })),
+    ...movelist.map((move) => ({ move, automatic: false })),
+  ]
+}
 
 export const trainerMoveEntriesForSheet = (sheet: TrainerSheet): TokenSheetMoveEntry[] => {
+  const capabilities = trainerStruggleCapabilities(sheet)
   const automaticTrainerMoves = deriveTrainerAutomaticMoves(sheet)
+    .filter(move => struggleAttackIsAvailableForCapabilities(move.entry.name, capabilities))
+  const movelist = struggleEligibleMoves(sheet.movelist, capabilities)
   return [
     ...makeAutomaticStruggleMoves<TrainerMove>(
-      trainerStruggleCapabilities(sheet),
-      [...automaticTrainerMoves.map((move) => move.entry), ...(sheet.movelist ?? [])],
+      capabilities,
+      [...automaticTrainerMoves.map((move) => move.entry), ...movelist],
     ).map((move) => ({ move, automatic: true })),
     ...automaticTrainerMoves.map((move) => ({ move: move.entry, automatic: true })),
-    ...(sheet.movelist ?? []).map((move) => ({ move, automatic: false })),
+    ...movelist.map((move) => ({ move, automatic: false })),
   ]
 }
 

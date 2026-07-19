@@ -403,6 +403,36 @@ describe('map token move menu options', () => {
     ]))
   })
 
+  it('filters manually stored Struggle variants whose capability is absent', () => {
+    const pokemonEntries = pokemonMoveEntriesForSheet({
+      slug: 'abra',
+      nickname: 'Abra',
+      species: 'Abra',
+      level: 1,
+      movelist: [
+        { name: 'Struggle (Fountain Physical)' },
+        { name: 'Tackle' },
+      ],
+      capabilities: { other: [] },
+    })
+    expect(pokemonEntries).not.toContainEqual({
+      move: { name: 'Struggle (Fountain Physical)' },
+      automatic: false,
+    })
+    expect(pokemonEntries).toContainEqual({ move: { name: 'Tackle' }, automatic: false })
+
+    const trainerEntries = trainerMoveEntriesForSheet({
+      slug: 'trainer',
+      name: 'Trainer',
+      level: 1,
+      movelist: [{ name: 'Struggle (Freezer Special)' }],
+      capabilities: { other: [] },
+    })
+    expect(trainerEntries).toEqual([
+      { move: { name: 'Struggle' }, automatic: true },
+    ])
+  })
+
   it('auto-adds both physical and special Guster Struggle entries', () => {
     const entries = trainerMoveEntriesForSheet({
       slug: 'trainer',

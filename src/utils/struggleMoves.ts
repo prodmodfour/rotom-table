@@ -98,15 +98,40 @@ const normalizeMoveKey = (raw: string): string => {
   return LEGACY_SPECIAL_STRUGGLE_MOVE_KEYS[key] ?? key
 }
 
+const struggleCapabilityVariantForMoveName = (
+  moveName: string,
+): StruggleCapabilityVariant | null => {
+  const moveKey = normalizeMoveKey(moveName)
+  return STRUGGLE_CAPABILITY_VARIANTS.find(variant => (
+    variant.moveNames.some(candidate => normalizeMoveKey(candidate) === moveKey)
+  )) ?? null
+}
+
+export const requiredStruggleCapabilityForMoveName = (
+  moveName: string,
+): string | null => struggleCapabilityVariantForMoveName(moveName)?.capability ?? null
+
+export const struggleAttackIsAvailableForCapabilities = (
+  moveName: string,
+  capabilities: readonly string[] | undefined,
+): boolean => {
+  const variant = struggleCapabilityVariantForMoveName(moveName)
+  if (!variant) return true
+  const capabilityKeys = new Set((capabilities ?? []).map(normalizeCapabilityKey).filter(Boolean))
+  return [variant.capability, ...(variant.aliases ?? [])]
+    .map(normalizeCapabilityKey)
+    .some(key => capabilityKeys.has(key))
+}
+
 export const struggleMoveNamesForCapabilities = (
   capabilities: readonly string[] | undefined,
 ): string[] => {
-  const capabilityKeys = new Set((capabilities ?? []).map(normalizeCapabilityKey).filter(Boolean))
   const moveNames = [BASE_STRUGGLE_MOVE_NAME]
 
   for (const variant of STRUGGLE_CAPABILITY_VARIANTS) {
-    const keys = [variant.capability, ...(variant.aliases ?? [])].map(normalizeCapabilityKey)
-    if (keys.some((key) => capabilityKeys.has(key))) moveNames.push(...variant.moveNames)
+    if (struggleAttackIsAvailableForCapabilities(variant.moveNames[0] ?? '', capabilities)) {
+      moveNames.push(...variant.moveNames)
+    }
   }
 
   return moveNames
