@@ -16,6 +16,10 @@ import {
   buildAuthoritativeMoveRulesContext,
 } from '~~/server/domain/moveAutomation/context'
 import {
+  DIGESTION_BUFF_TRADED_CAPABILITY_ID,
+  recordDigestionBuffTrade,
+} from '~~/server/domain/moveAutomation/digestionBuffTrade'
+import {
   MOVE_EXPRESSION_EVALUATION_LIMITS,
   MoveExpressionEvaluationError,
   evaluateMoveExpression,
@@ -193,6 +197,35 @@ describe('bounded authoritative move expression evaluator', () => {
         evaluateMoveExpression({ expression: add, context }),
       )
     }
+  })
+
+  it('queries scene-local authoritative capability markers without client state', () => {
+    const map = mapFixture()
+    const marked = recordDigestionBuffTrade({
+      map,
+      placement: map.placements[0]!,
+      operationId: 'item.trade-digestion-buff',
+      moveId: 'item.snack',
+    })
+    const context = buildContext({ map: marked })
+
+    expect(evaluateMoveExpression({
+      expression: expression({
+        kind: 'capability',
+        subject: { kind: 'actor' },
+        capabilityId: DIGESTION_BUFF_TRADED_CAPABILITY_ID,
+      }),
+      context,
+    }).value).toBe(true)
+    expect(evaluateMoveExpression({
+      expression: expression({
+        kind: 'capability',
+        subject: { kind: 'current-target' },
+        capabilityId: DIGESTION_BUFF_TRADED_CAPABILITY_ID,
+      }),
+      context,
+      selectorState: selectorState(),
+    }).value).toBe(false)
   })
 
   it('applies an explicit root-only integer rounding policy', () => {

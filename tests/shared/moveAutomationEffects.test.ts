@@ -1747,6 +1747,39 @@ describe('MoveSpec typed effect operations', () => {
       stageSource: null,
       rounding: null,
     })
+
+    const accuracyTriggered = parseMoveEffectOperation(validOperation('combat-stage', {
+      payload: {
+        action: 'modify',
+        stage: 'sdef',
+        value: -1,
+        trigger: {
+          kind: 'accuracy-roll',
+          rollId: 'roll.accuracy',
+          trigger: { kind: 'range', minimum: 19 },
+          scope: 'recipient',
+          application: 'once',
+        },
+      },
+    }))
+    const outcomeTriggered = parseMoveEffectOperation(validOperation('combat-stage', {
+      payload: {
+        action: 'modify',
+        stage: 'satk',
+        value: -2,
+        trigger: {
+          kind: 'operation-outcome',
+          operationId: 'operation.damage',
+          outcome: 'applied',
+        },
+      },
+    }))
+    expect(accuracyTriggered.payload).toMatchObject({
+      trigger: { kind: 'accuracy-roll', rollId: 'roll.accuracy' },
+    })
+    expect(outcomeTriggered.payload).toMatchObject({
+      trigger: { kind: 'operation-outcome', operationId: 'operation.damage' },
+    })
   })
 
   it('parses every standalone HP calculation and explicit set, copy, split, swap, and full mode', () => {
@@ -2259,6 +2292,16 @@ describe('MoveSpec typed effect operations', () => {
             id: 'option.attack',
             labelKey: 'stat.attack',
             operationIds: ['operation.raise-attack'],
+            predicate: {
+              kind: 'comparison',
+              operator: 'equal',
+              left: {
+                kind: 'condition',
+                subject: { kind: 'current-target' },
+                conditionId: 'burned',
+              },
+              right: { kind: 'constant', value: true },
+            },
           },
           {
             id: 'option.defense',
@@ -2281,6 +2324,16 @@ describe('MoveSpec typed effect operations', () => {
           id: 'option.attack',
           labelKey: 'stat.attack',
           operationIds: ['operation.raise-attack'],
+          predicate: {
+            kind: 'comparison',
+            operator: 'equal',
+            left: {
+              kind: 'condition',
+              subject: { kind: 'current-target' },
+              conditionId: 'burned',
+            },
+            right: { kind: 'constant', value: true },
+          },
         },
         {
           id: 'option.defense',
@@ -2597,6 +2650,22 @@ describe('MoveSpec typed effect operations', () => {
       }),
       'invalid-effect-operation',
       'operation.payload.value',
+    )
+    expectEffectError(
+      validOperation('combat-stage', {
+        payload: {
+          action: 'reset',
+          stage: 'all',
+          value: null,
+          trigger: {
+            kind: 'operation-outcome',
+            operationId: 'operation.damage',
+            outcome: 'applied',
+          },
+        },
+      }),
+      'invalid-effect-operation',
+      'operation.payload.trigger',
     )
     expectEffectError(
       validOperation('combat-stage', {

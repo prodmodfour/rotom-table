@@ -1334,7 +1334,7 @@ describe('MoveSpec core token effect reducers', () => {
     const result = reduceMoveCoreTokenEffects({
       context,
       operations: [full, areaTemporaryHp],
-      dynamicRecipients: dynamicRecipients(),
+      dynamicRecipients: dynamicRecipients(['target-token', 'bystander-token']),
       immunities: createStandardMoveCoreTokenEffectImmunityQueries({ moveType: 'Normal' }),
       trace: traceFor([full, areaTemporaryHp]),
     })
@@ -1368,7 +1368,7 @@ describe('MoveSpec core token effect reducers', () => {
     const unavailable = reduceMoveCoreTokenEffects({
       context: noSceneContext,
       operations: [areaTemporaryHp],
-      dynamicRecipients: dynamicRecipients(),
+      dynamicRecipients: dynamicRecipients(['target-token', 'bystander-token']),
       immunities: createStandardMoveCoreTokenEffectImmunityQueries({ moveType: 'Normal' }),
       trace: traceFor([areaTemporaryHp]),
     })
@@ -1380,6 +1380,46 @@ describe('MoveSpec core token effect reducers', () => {
       ],
     })
     expect(unavailable.stateChanges.changes).toEqual([])
+  })
+
+  it('accepts only interpreter-authorized ordered subsets for recipient-scoped branches', () => {
+    const operationDefinition = operation(
+      'operation.recipient-branch-heal',
+      'heal',
+      healPayload({ calculation: { kind: 'fixed', value: 3 } }),
+      'area-targets',
+    )
+    const selected = emission(operationDefinition, ['target-token'])
+    const common = {
+      context: buildContext(mapFixture(), { target: 20, bystander: 20 }),
+      dynamicRecipients: dynamicRecipients(['target-token', 'bystander-token']),
+      immunities: createStandardMoveCoreTokenEffectImmunityQueries({ moveType: 'Normal' }),
+    }
+
+    expect(() => reduceMoveCoreTokenEffects({
+      ...common,
+      operations: [selected],
+      trace: traceFor([selected]),
+    })).toThrowError(expect.objectContaining({ code: 'recipient-set-mismatch' }))
+
+    const reduced = reduceMoveCoreTokenEffects({
+      ...common,
+      operations: [selected],
+      branchControlledOperationIds: new Set([operationDefinition.id]),
+      trace: traceFor([selected]),
+    })
+    expect(reduced.operationResults).toMatchObject([{
+      recipientIds: ['target-token'],
+      recipients: [{ recipientId: 'target-token', outcome: 'applied' }],
+    }])
+
+    const widened = emission(operationDefinition, ['actor-token'])
+    expect(() => reduceMoveCoreTokenEffects({
+      ...common,
+      operations: [widened],
+      branchControlledOperationIds: new Set([operationDefinition.id]),
+      trace: traceFor([widened]),
+    })).toThrowError(expect.objectContaining({ code: 'recipient-set-mismatch' }))
   })
 
   it('applies HP-marker Injuries only after direct HP resolution and never Massive Damage', () => {

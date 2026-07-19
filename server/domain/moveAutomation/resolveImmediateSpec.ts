@@ -1,3 +1,4 @@
+import { moveEffectBranchPaths } from '#shared/moveAutomation/effects'
 import {
   parseMoveResolutionAuditTrace,
   type MoveResolutionAuditTrace,
@@ -513,6 +514,14 @@ const createMoveSpecOperationDynamicRecipientsResolver = (input: {
   )
 }
 
+const branchControlledOperationIds = (
+  operations: readonly MoveSpecEmittedOperation[],
+): ReadonlySet<string> => new Set(operations.flatMap(({ operation }) => (
+  operation.kind === 'branch' && operation.payload.scope === 'recipient'
+    ? moveEffectBranchPaths(operation.payload).flatMap(path => path.operationIds)
+    : []
+)))
+
 const nestedRecipientResolver = (input: {
   readonly context: AuthoritativeMoveRulesContext
   readonly operations: readonly MoveSpecEmittedOperation[]
@@ -998,6 +1007,7 @@ export const reduceCompletedMoveSpec = (
     ...(nestedRecipients ? { recipientIdsForOperation: nestedRecipients } : {}),
     contextForOperation,
     dynamicRecipientsForOperation,
+    branchControlledOperationIds: branchControlledOperationIds(uncommittedOperations),
     damage: coreOperations.some(({ operation }) => operation.kind === 'damage')
       ? createDamageQuery({
           contextForOperation,
@@ -1181,6 +1191,7 @@ const reducePreWindowPlan = (options: {
     ...(nestedRecipients ? { recipientIdsForOperation: nestedRecipients } : {}),
     contextForOperation,
     dynamicRecipientsForOperation,
+    branchControlledOperationIds: branchControlledOperationIds(preWindowOperations),
     immunities: createOperationAwareImmunityQueries({
       root: options.resolve.entry.script,
       children: options.execution.childExecutions,

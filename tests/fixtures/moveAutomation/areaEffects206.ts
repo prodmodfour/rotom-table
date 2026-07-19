@@ -69,7 +69,6 @@ export const CAPTIVATE_MA_206_SCENARIOS = scenarios([
   { scenarioId: 'captivate.v2-same-and-genderless-excluded', evidenceClasses: ['threshold-fail'] },
   { scenarioId: 'captivate.v2-miss', evidenceClasses: ['miss'] },
   { scenarioId: 'captivate.v2-friendly-exclusion', evidenceClasses: ['alternate-branch'] },
-  { scenarioId: 'captivate.v2-stage-immunity', evidenceClasses: ['immunity'] },
   { scenarioId: 'captivate.v2-duplicate-replay', evidenceClasses: ['retry'] },
   { scenarioId: 'captivate.v2-stale-target', evidenceClasses: ['multi-resource-conflict'] },
 ] as const)

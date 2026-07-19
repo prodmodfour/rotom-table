@@ -2629,6 +2629,103 @@ const executeMoveSpecInternal = (
             continue
           }
 
+          // Existing choices intentionally make one shared decision for every
+          // recipient. Recipient-specific sequencing is enabled only when the
+          // reviewed options declare server-evaluated eligibility predicates.
+          // This preserves established optional/check continuations while
+          // allowing moves such as Aromatherapy to expose only each ally's
+          // current legal condition choices.
+          if (!operation.payload.options.some(option => option.predicate)) {
+            const request = pendingBranchRequest(
+              operation,
+              recipientIds,
+              input.context.actor.placement.id,
+            )
+            const response = responseResolver.resolve({
+              requestId: request.requestId,
+              options: request.options,
+              allowPass: request.allowPass,
+            })
+            if (response) {
+              const execution = executeResolvedMoveChoiceBranch({
+                operation,
+                recipientIds,
+                optionId: response.optionId,
+              })
+              branchSelections.push(execution.selection)
+              branchExecutions.set(operation.payload.selectionId, execution)
+              trace = reduceMoveResolutionTrace(trace, {
+                kind: 'operation',
+                phase,
+                operationId: operation.id,
+                operationKind: operation.kind,
+                recipientIds,
+                outcome: response.optionId === null ? 'no-op' : 'applied',
+                reasonCode: operation.reasonCode,
+                input: traceJson(operation.payload),
+                result: traceJson({ selection: execution.selection }),
+              })
+              trace = reduceMoveResolutionTrace(trace, {
+                kind: 'choice',
+                phase,
+                requestId: request.requestId,
+                requestKind: 'choice',
+                outcome: response.optionId === null ? 'passed' : 'selected',
+                optionId: response.optionId,
+                reasonCode: operation.reasonCode,
+              })
+              continue
+            }
+            trace = reduceMoveResolutionTrace(trace, {
+              kind: 'operation',
+              phase,
+              operationId: operation.id,
+              operationKind: operation.kind,
+              recipientIds,
+              outcome: 'pending',
+              reasonCode: operation.reasonCode,
+              input: traceJson(operation.payload),
+              result: traceJson({
+                requestId: request.requestId,
+                requestKind: request.kind,
+                selectionId: request.selectionId,
+                scope: request.scope,
+              }),
+            })
+            trace = reduceMoveResolutionTrace(trace, {
+              kind: 'choice',
+              phase,
+              requestId: request.requestId,
+              requestKind: 'choice',
+              outcome: 'requested',
+              optionId: null,
+              reasonCode: operation.reasonCode,
+            })
+            responseResolver.assertAllConsumed()
+            return materializePendingExecutionResult(
+              terminalBase(
+                input.context,
+                operations,
+                targetIds,
+                trace,
+                input.context.random.snapshot(),
+                resolvedRolls,
+                resolvedDamageTypes,
+                resolvedDamageBases,
+                multiHitExecutions,
+                resolvedChecks,
+                branchSelections,
+                resolvedMovements,
+                resolvedSwitches,
+                resolvedItemChoices,
+                resolvedHazardCells,
+                childExecutions,
+                currentSelectorState(),
+              ),
+              request,
+            )
+          }
+
           const subjects: readonly (string | null)[] = operation.payload.scope === 'resolution'
             ? [null]
             : recipientIds
@@ -2672,7 +2769,7 @@ const executeMoveSpecInternal = (
             if (available.length === 0) {
               optionId = null
             }
-            else if (available.length === 1) {
+            else if (available.length === 1 && operation.payload.pass === null) {
               optionId = available[0]!.id
             }
             else {

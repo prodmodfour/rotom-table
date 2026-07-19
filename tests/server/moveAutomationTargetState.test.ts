@@ -158,6 +158,7 @@ const resolverInput = (): CreateMoveAutomationTargetStateResolverInput => {
         kind: 'pokemon',
         slug: 'target',
         sheet: pokemonSheet('target', {
+          gender: 'Female',
           capabilities: { size: 'Huge', weight: 5, sky: 6 },
         }),
       },
@@ -203,7 +204,7 @@ describe('authoritative target state queries', () => {
       immunityTagIds: ['groundsource', 'powder', 'sonic'],
       size: 'huge',
       weightClass: 5,
-      gender: 'unknown',
+      gender: 'female',
       sheetKind: 'pokemon',
       itemIds: ['luck-incense', 'potion'],
     })

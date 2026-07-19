@@ -1062,6 +1062,16 @@ describe('shared authoritative item effect interpreter', () => {
       quantityPolicy: 'conserve',
       quantityEffects: [{ canonicalItemId: 'candy-bar', delta: 0 }],
     })
+    expect(digested.nextMap.encounterState?.effects).toMatchObject([{
+      kind: 'capability',
+      duration: { kind: 'scene', remaining: null },
+      affected: { placementIds: [actorId] },
+      payload: {
+        capabilityId: 'digestion-buff-traded-this-scene',
+        action: 'grant',
+      },
+      tags: expect.arrayContaining(['digestion-buff-trade']),
+    }])
     expect(storedActor.items?.digestionFood).toBe('Candy Bar')
   })
 

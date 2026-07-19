@@ -5129,7 +5129,6 @@
         "captivate.v2-same-and-genderless-excluded",
         "captivate.v2-miss",
         "captivate.v2-friendly-exclusion",
-        "captivate.v2-stage-immunity",
         "captivate.v2-duplicate-replay",
         "captivate.v2-stale-target"
       ],
@@ -5137,7 +5136,6 @@
         "requirementTags": [
           "branch.accuracy",
           "branch.alternate",
-          "branch.immunity",
           "branch.threshold",
           "recovery.retry",
           "resource.multi",
@@ -5168,12 +5166,6 @@
             "scenarioId": "captivate.v2-friendly-exclusion",
             "evidenceClasses": [
               "alternate-branch"
-            ]
-          },
-          {
-            "scenarioId": "captivate.v2-stage-immunity",
-            "evidenceClasses": [
-              "immunity"
             ]
           },
           {

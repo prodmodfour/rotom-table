@@ -2833,7 +2833,7 @@ Status: DONE
 
 ## MA-206 — Implement Aeroblast through Fleur Cannon
 
-Status: TODO
+Status: DONE
 
 **Moves:** Aeroblast; Aromatherapy; Belch; Bug Buzz; Captivate; Diamond Storm; Draco Meteor; Fleur Cannon
 

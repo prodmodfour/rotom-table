@@ -402,10 +402,15 @@ const evaluateAuthoritativeCandidate = (options: {
     }
   }
   if (options.predicate.statePredicates) {
+    const requiresActorState = options.predicate.statePredicates.some(
+      predicate => predicate.kind === 'opposite-gender',
+    )
     const stateEvaluation = evaluateMoveAutomationTargetStatePredicates(
       options.predicate.statePredicates,
       options.states?.resolve(options.targetPlacementId) ?? null,
-      options.states?.resolve(options.actorPlacementId) ?? null,
+      requiresActorState
+        ? options.states?.resolve(options.actorPlacementId) ?? null
+        : null,
     )
     if (stateEvaluation.reasonCode !== 'target-state-included') {
       return freezeEvaluation(

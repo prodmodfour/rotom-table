@@ -142,12 +142,10 @@ export const expectedMoveEffectRecipientIds = (
     )
   }
   if (kind === 'area-targets') {
-    return canonicalMoveEffectPlacementIds(
-      context,
-      context.candidatePlacements.map(({ id }) => id),
-      'area targets',
-      fail,
-    )
+    // Geometry, reviewed predicates, and explicit Friendly exclusions have
+    // already produced the interpreter-owned attacked set. The broader scope
+    // candidates must never be reintroduced during reduction.
+    return dynamic['attacked-targets']
   }
   return fail('invalid-recipient-set', `Recipient selector ${kind} is unsupported.`)
 }

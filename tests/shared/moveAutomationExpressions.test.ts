@@ -50,6 +50,7 @@ describe('MoveSpec rules expression AST', () => {
       'stat',
       'hp-ratio',
       'condition',
+      'capability',
       'combat-stage',
       'combat-stage-total',
       'weight',
@@ -198,6 +199,15 @@ describe('MoveSpec rules expression AST', () => {
       conditionId: 'badly-poisoned',
     })
     expect(parseMoveExpression({
+      kind: 'capability',
+      subject: { kind: 'actor' },
+      capabilityId: 'digestion-buff-traded-this-scene',
+    })).toEqual({
+      kind: 'capability',
+      subject: { kind: 'actor' },
+      capabilityId: 'digestion-buff-traded-this-scene',
+    })
+    expect(parseMoveExpression({
       kind: 'combat-stage',
       subject: { kind: 'actor' },
       stage: 'satk',
@@ -267,6 +277,11 @@ describe('MoveSpec rules expression AST', () => {
       { kind: 'condition', subject: target(), conditionId: 'Client Status' },
       'invalid-expression',
       'expression.conditionId',
+    )
+    expectExpressionError(
+      { kind: 'capability', subject: { kind: 'actor' }, capabilityId: 'Client Capability' },
+      'invalid-expression',
+      'expression.capabilityId',
     )
     expectExpressionError(
       { kind: 'type', of: 'move', subject: target() },

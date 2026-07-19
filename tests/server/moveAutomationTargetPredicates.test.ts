@@ -273,6 +273,7 @@ const TARGET_STATES = new Map<string, MoveAutomationTargetState>([
     typeIds: ['electric'],
     size: 'small',
     weightClass: 1,
+    gender: 'male',
     itemIds: ['light-ball'],
   })],
   ['ally', targetState('ally', {
@@ -285,6 +286,7 @@ const TARGET_STATES = new Map<string, MoveAutomationTargetState>([
     immunityTagIds: ['groundsource', 'powder'],
     size: 'large',
     weightClass: 4,
+    gender: 'female',
     itemIds: ['sitrus-berry'],
   })],
   ['enemy', targetState('enemy', {
@@ -333,6 +335,7 @@ describe('authoritative target state predicates', () => {
       ],
       ['size', { kind: 'size', sizes: ['large'] }, ['ally']],
       ['weight class', { kind: 'weight-class', minimum: 3, maximum: 5 }, ['ally']],
+      ['opposite gender', { kind: 'opposite-gender' }, ['ally']],
       ['sheet kind', { kind: 'sheet-kind', sheetKinds: ['trainer'] }, ['enemy']],
       [
         'required item',
@@ -409,6 +412,24 @@ describe('authoritative target state predicates', () => {
     expect(enemyOnly.legalTargetPlacementIds).toEqual(['enemy'])
     expect(exclusionReason(enemyOnly, 'ally')).toBe('target-excluded-not-enemy')
     expect(stateReads).toEqual(['enemy'])
+  })
+
+  it('consults actor gender only for the reviewed opposite-gender predicate', () => {
+    const stateReads: string[] = []
+    const result = evaluate({
+      predicate: withState({ kind: 'opposite-gender' }),
+      stateResolver: {
+        resolve: (targetPlacementId) => {
+          stateReads.push(targetPlacementId)
+          return TARGET_STATES.get(targetPlacementId) ?? null
+        },
+      },
+    })
+
+    expect(result.legalTargetPlacementIds).toEqual(['ally'])
+    expect(exclusionReason(result, 'enemy')).toBe('target-excluded-gender')
+    expect(exclusionReason(result, 'unaffiliated')).toBe('target-excluded-gender')
+    expect(stateReads.filter(id => id === 'actor')).toHaveLength(5)
   })
 
   it('fails unavailable target facts closed and requires the server-owned query seam', () => {

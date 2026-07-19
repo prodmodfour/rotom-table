@@ -97,6 +97,12 @@ export interface ReduceMoveCoreTokenOperationStateInput {
   readonly recipientIdsForOperation?: (
     operation: MoveResolvedCoreTokenEffectOperation['operation'],
   ) => readonly string[]
+  /**
+   * Operations selected by a reviewed recipient-scoped branch may address an
+   * ordered subset of their declared selector. IDs still come from the
+   * interpreter and may never widen or reorder the authoritative set.
+   */
+  readonly branchControlledOperationIds?: ReadonlySet<string>
 }
 
 export interface ReduceMoveCoreTokenEffectsInput
@@ -125,6 +131,17 @@ const deepFreeze = <Value>(value: Value): Value => {
     deepFreeze((value as Record<string, unknown>)[key])
   }
   return Object.freeze(value)
+}
+
+const orderedRecipientSubset = (
+  subset: readonly string[],
+  complete: readonly string[],
+): boolean => {
+  let subsetIndex = 0
+  for (const recipientId of complete) {
+    if (recipientId === subset[subsetIndex]) subsetIndex += 1
+  }
+  return subsetIndex === subset.length
 }
 
 const aggregateOutcome = (
@@ -296,19 +313,24 @@ export const reduceMoveCoreTokenOperationState = (
 
     const expectedIds = input.recipientIdsForOperation
       ? canonicalMoveCoreTokenPlacementIds(
-          input.context,
+          operationContext,
           input.recipientIdsForOperation(operation),
           `operation ${operation.id} authoritative recipients`,
         )
-      : expectedMoveCoreTokenRecipientIds(input.context, operation, dynamic)
+      : expectedMoveCoreTokenRecipientIds(operationContext, operation, operationDynamic)
     const emittedIds = canonicalMoveCoreTokenPlacementIds(
-      input.context,
+      operationContext,
       emission.recipientIds,
       `operation ${operation.id} recipients`,
     )
+    const branchControlled = input.branchControlledOperationIds?.has(operation.id) === true
     if (
       !moveCoreTokenRecipientIdsEqual(emission.recipientIds, emittedIds)
-      || !moveCoreTokenRecipientIdsEqual(emittedIds, expectedIds)
+      || (
+        branchControlled
+          ? !orderedRecipientSubset(emittedIds, expectedIds)
+          : !moveCoreTokenRecipientIdsEqual(emittedIds, expectedIds)
+      )
     ) {
       failMoveCoreTokenEffectReduction(
         'recipient-set-mismatch',
@@ -316,7 +338,7 @@ export const reduceMoveCoreTokenOperationState = (
       )
     }
 
-    const recipients = expectedIds.map((recipientId) => {
+    const recipients = emittedIds.map((recipientId) => {
       const recipient = recipientsById.get(recipientId)
         ?? resolveMoveCoreTokenRecipient(input.context, recipientId)
       recipientsById.set(recipientId, recipient)
@@ -417,7 +439,7 @@ export const reduceMoveCoreTokenOperationState = (
       operationKind: operation.kind,
       phase: operation.phase,
       reasonCode: operation.reasonCode,
-      recipientIds: [...expectedIds],
+      recipientIds: [...emittedIds],
       outcome: aggregateOutcome(recipientResults),
       recipients: recipientResults,
     })
@@ -468,6 +490,9 @@ export const reduceMoveCoreTokenEffects = (
     ...(input.recipientIdsForOperation === undefined
       ? {}
       : { recipientIdsForOperation: input.recipientIdsForOperation }),
+    ...(input.branchControlledOperationIds === undefined
+      ? {}
+      : { branchControlledOperationIds: input.branchControlledOperationIds }),
   })
   return Object.freeze({
     ...reduction,
