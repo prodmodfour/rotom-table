@@ -1241,8 +1241,8 @@
     {
       "canonicalId": "Spore",
       "sourceModule": "src/utils/move-automation/scripts/singleTargetStatus.ts",
-      "version": 1,
-      "definitionHash": "fc5eb9044f03a7fdabc47443cfde1df0c5713d5890228e1824a501f3aa7fd516"
+      "version": 2,
+      "definitionHash": "1d2b8f687a53faf335d22aa66a378d50bb7044ba02866a53fdec2d68412f34ca"
     },
     {
       "canonicalId": "Steam Eruption",

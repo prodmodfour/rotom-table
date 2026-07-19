@@ -2708,7 +2708,7 @@ Status: DONE
 
 ## REG-026 — Certify Sludge Wave through Steam Eruption
 
-Status: TODO
+Status: DONE
 
 **Baseline-registered moves:** Sludge Wave; Smart Strike; Smog; Snarl; Spark; Spirit Break; Spore; Steam Eruption
 

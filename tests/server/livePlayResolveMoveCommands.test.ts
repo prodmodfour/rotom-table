@@ -2365,10 +2365,12 @@ describe('executeLivePlayResolveMoveCommandUseCase', () => {
     })
     const immuneOpId = 'op_readimmune1'
     const immuneRace = raceConsultedSheetAfterPlanning(immuneHarness, 'immune', (plan) => {
-      expect(plan.resolution.feedback?.conditions).toContainEqual(expect.objectContaining({
-        condition: 'Sleep',
-        applied: false,
-        blockedBy: 'Sweet Veil',
+      expect(plan.resolution.feedback).toBeUndefined()
+      expect(plan.resolution.auditTrace.events).toContainEqual(expect.objectContaining({
+        kind: 'operation',
+        operationKind: 'condition',
+        outcome: 'prevented',
+        result: expect.objectContaining({ blockedBy: 'Sweet Veil' }),
       }))
       expect(plan.resolution.transaction.conditionUpdates).toEqual([])
     })
@@ -2405,7 +2407,7 @@ describe('executeLivePlayResolveMoveCommandUseCase', () => {
     const planner: NonNullable<LivePlayResolveMoveCommandDependencies['planner']> = (input) => {
       const plan = planAuthoritativeMoveState(input)
       expect(plan.sheetReads).not.toContainEqual(expect.objectContaining({ slug: 'aura' }))
-      expect(plan.resolution.feedback?.conditions).toContainEqual({ condition: 'Sleep', applied: true })
+      expect(plan.resolution.feedback).toBeUndefined()
       expect(plan.resolution.transaction.conditionUpdates).toEqual([{ id: 'target-a', conditions: ['Sleep'] }])
 
       const aura = harness.sheets.getByRef('pokemon', 'aura')!

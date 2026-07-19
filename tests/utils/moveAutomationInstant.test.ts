@@ -6,6 +6,7 @@ import {
   resolveInstantAreaMoveAutomation,
   resolveInstantMoveAutomation,
   resolveInstantMultiTargetMoveAutomation,
+  resolveInstantNoRollTargetMoveAutomation,
   resolveInstantSelfMoveAutomation,
   resolveInstantTargetMoveAutomation,
 } from '~/utils/moveAutomationInstant'
@@ -215,6 +216,34 @@ describe('instant move automation', () => {
 
     expect(result.feedback.conditions).toEqual([{ condition: 'Sleep', applied: false, blockedBy: 'Sweet Veil (Aromatisse)' }])
     expect(result.transaction.conditionUpdates).toEqual([])
+  })
+
+  it('records no-roll condition immunity without drawing synthetic accuracy RNG', () => {
+    const script = explicitScriptForMove('Spore')!
+    const user = token({ id: 'u', species: 'Foongus' })
+    const target = token({ id: 't', species: 'Grassmon', defenderTypes: ['Grass'] })
+    const snapshot = structuredClone({ script, user, target })
+
+    const result = resolveInstantNoRollTargetMoveAutomation({
+      script,
+      user,
+      target,
+      damageFormula: null,
+      random: () => { throw new Error('automatic Spore must not draw RNG') },
+    })
+
+    expect(result.transaction).toMatchObject({
+      attackedTargetIds: ['t'],
+      hitTargetIds: ['t'],
+      conditionUpdates: [],
+    })
+    expect(result.conditionOutcomes).toEqual([{
+      targetId: 't',
+      condition: 'Sleep',
+      applied: false,
+      blockedBy: 'Grass type (Powder)',
+    }])
+    expect({ script, user, target }).toEqual(snapshot)
   })
 
   it('resolves Psywave through the same instant single-target flow as Ember', () => {

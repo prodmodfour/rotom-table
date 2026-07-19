@@ -120,6 +120,10 @@ export interface MoveAutomationFeedbackCondition {
   blockedBy?: string
 }
 
+export interface MoveAutomationTargetConditionOutcome extends MoveAutomationFeedbackCondition {
+  readonly targetId: string
+}
+
 export type MoveAutomationFeedbackPhase = 'rolling' | 'hit-roll' | 'outcome' | 'effectiveness' | 'damage'
 export type MoveAutomationFeedbackEffectiveness = 'super-effective' | 'resisted' | null
 

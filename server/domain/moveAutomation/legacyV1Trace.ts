@@ -15,6 +15,7 @@ import type {
 import type {
   MoveAutomationFeedbackState,
   MoveAutomationScript,
+  MoveAutomationTargetConditionOutcome,
   MoveAutomationTransaction,
 } from '~/types/moveAutomation'
 import type { GridAnchor } from '~/types/map'
@@ -41,6 +42,7 @@ export interface BuildLegacyV1MoveResolutionTraceInput {
   readonly rollLedger: readonly MoveAutomationRollLedgerEntry[]
   readonly terrainConditionProtectionEffects?: readonly EncounterConditionEffect[]
   readonly feedback?: MoveAutomationFeedbackState
+  readonly conditionOutcomes?: readonly MoveAutomationTargetConditionOutcome[]
   readonly area?: {
     readonly targetEvaluations: readonly {
       readonly targetPlacementId: string
@@ -263,6 +265,23 @@ export const buildLegacyV1MoveResolutionTrace = (
       operationId: `legacy-v1.prevented-condition.${index + 1}`,
       operationKind: 'condition',
       recipientIds: [input.feedback!.targetId],
+      outcome: 'prevented',
+      reasonCode: 'condition-prevented',
+      input: { condition: condition.condition },
+      result: {
+        applied: false,
+        ...(condition.blockedBy ? { blockedBy: condition.blockedBy } : {}),
+      },
+    })
+  })
+  input.conditionOutcomes?.forEach((condition, index) => {
+    if (condition.applied) return
+    queue(effectPhase, {
+      kind: 'operation',
+      phase: effectPhase,
+      operationId: `legacy-v1.prevented-automatic-condition.${index + 1}`,
+      operationKind: 'condition',
+      recipientIds: [condition.targetId],
       outcome: 'prevented',
       reasonCode: 'condition-prevented',
       input: { condition: condition.condition },

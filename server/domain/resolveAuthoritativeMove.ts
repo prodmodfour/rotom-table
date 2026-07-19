@@ -39,8 +39,8 @@ import {
   resolveInstantAreaMoveAutomation,
   resolveInstantMoveAutomation,
   resolveInstantMultiTargetMoveAutomation,
+  resolveInstantNoRollTargetMoveAutomation,
   resolveInstantSelfMoveAutomation,
-  resolveInstantTargetMoveAutomation,
 } from '~/utils/moveAutomationInstant'
 import {
   moveAutomationTargetsInRange,
@@ -58,6 +58,7 @@ import type {
   MoveAutomationAreaTemplate,
   MoveAutomationFeedbackState,
   MoveAutomationScript,
+  MoveAutomationTargetConditionOutcome,
   MoveAutomationTransaction,
 } from '~/types/moveAutomation'
 import type { SpawnedPokemon } from '~/types/pokemon'
@@ -341,7 +342,10 @@ export const isAuthoritativePendingMoveResolution = (
 type UnfinalizedAuthoritativeMoveResolution = Omit<
   AuthoritativeMoveResolution,
   'sheetReads' | 'rollLedger' | 'auditTrace'
->
+> & {
+  /** Private structured evidence consumed while building the legacy audit trace. */
+  readonly conditionOutcomes?: readonly MoveAutomationTargetConditionOutcome[]
+}
 
 const fail = (
   reason: AuthoritativeMoveResolutionFailureReason,
@@ -526,11 +530,14 @@ const finalizeResolution = (
     rollLedger,
     terrainConditionProtectionEffects,
     feedback: resolution.feedback,
+    conditionOutcomes: resolution.conditionOutcomes,
     area: resolution.area,
     movement: resolution.movement?.kind === 'pass' ? resolution.movement : undefined,
   })
+  const { conditionOutcomes: privateConditionOutcomes, ...durableResolution } = resolution
+  void privateConditionOutcomes
   return attachResolutionDamageEffects(context, {
-    ...resolution,
+    ...durableResolution,
     sheetReads: context.reads.snapshot(),
     rollLedger,
     auditTrace,
@@ -1272,7 +1279,7 @@ const resolveSingleTargetMove = (options: {
   }
 
   if (!options.script.requiresAccuracy) {
-    const transaction = resolveInstantTargetMoveAutomation(common)
+    const result = resolveInstantNoRollTargetMoveAutomation(common)
     return {
       actorPlacementId: actorPlacement.id,
       moveName: options.script.moveName,
@@ -1283,7 +1290,8 @@ const resolveSingleTargetMove = (options: {
       ...(options.targetBranchId ? { targetBranchId: options.targetBranchId } : {}),
       selectedTargetIds: [target.id],
       script: options.script,
-      transaction,
+      transaction: result.transaction,
+      conditionOutcomes: result.conditionOutcomes,
       ...(desiredFacing ? { desiredFacing } : {}),
     }
   }

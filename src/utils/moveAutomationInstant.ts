@@ -57,6 +57,7 @@ import type {
   MoveAutomationFeedbackEffectiveness,
   MoveAutomationFeedbackState,
   MoveAutomationScript,
+  MoveAutomationTargetConditionOutcome,
   MoveAutomationTransaction,
 } from '~/types/moveAutomation'
 import type { SpawnedPokemon } from '~/types/pokemon'
@@ -64,6 +65,12 @@ import type { SpawnedPokemon } from '~/types/pokemon'
 export interface InstantMoveAutomationResult {
   transaction: MoveAutomationTransaction
   feedback: MoveAutomationFeedbackState
+}
+
+export interface InstantNoRollTargetMoveAutomationResult {
+  readonly transaction: MoveAutomationTransaction
+  /** Structured server audit evidence for automatic condition outcomes. */
+  readonly conditionOutcomes: readonly MoveAutomationTargetConditionOutcome[]
 }
 
 /** Server callers derive these from authoritative cover/zone queries. */
@@ -373,16 +380,20 @@ const resolveTargetGroupConditionApplications = (
   filteredSuggestionIndexes: Set<number>
   targetIdsBySuggestion: Map<number, Set<string>>
   blockedNotes: string[]
+  conditionOutcomes: MoveAutomationTargetConditionOutcome[]
 } => {
   const filteredSuggestionIndexes = new Set<number>()
   const targetIdsBySuggestion = new Map<number, Set<string>>()
   const blockedNotes: string[] = []
+  const conditionOutcomes: MoveAutomationTargetConditionOutcome[] = []
 
   script.conditionSuggestions.forEach((suggestion, index) => {
     const canAutoEnable = !suggestion.optional || Boolean(suggestion.threshold)
     if (isTargetConditionAddition(suggestion) && canAutoEnable) filteredSuggestionIndexes.add(index)
   })
-  if (!filteredSuggestionIndexes.size) return { filteredSuggestionIndexes, targetIdsBySuggestion, blockedNotes }
+  if (!filteredSuggestionIndexes.size) {
+    return { filteredSuggestionIndexes, targetIdsBySuggestion, blockedNotes, conditionOutcomes }
+  }
 
   for (const target of targets) {
     const resolution = targetResolutions[target.id]
@@ -408,6 +419,12 @@ const resolveTargetGroupConditionApplications = (
           conditionImmunityContext,
         )
         ?? moveAutomationSecondaryEffectBlockSource({ script, target, threshold: suggestion.threshold })
+      conditionOutcomes.push({
+        targetId: target.id,
+        condition,
+        applied: blockedBy === null,
+        ...(blockedBy ? { blockedBy } : {}),
+      })
       if (blockedBy) {
         blockedNotes.push(`${condition} did not apply to ${target.species}: immune (${blockedBy}).`)
         return
@@ -416,7 +433,7 @@ const resolveTargetGroupConditionApplications = (
     })
   }
 
-  return { filteredSuggestionIndexes, targetIdsBySuggestion, blockedNotes }
+  return { filteredSuggestionIndexes, targetIdsBySuggestion, blockedNotes, conditionOutcomes }
 }
 
 const isTargetStageThresholdSuggestion = (
@@ -798,7 +815,7 @@ export const resolveInstantMoveAutomation = ({
   }
 }
 
-const buildNoRollTargetTransaction = ({
+export const resolveInstantNoRollTargetMoveAutomation = ({
   script,
   user,
   target,
@@ -809,7 +826,7 @@ const buildNoRollTargetTransaction = ({
   conditionImmunityContext,
   random,
   randomRoller,
-}: ResolveInstantTargetMoveAutomationInput): MoveAutomationTransaction => {
+}: ResolveInstantTargetMoveAutomationInput): InstantNoRollTargetMoveAutomationResult => {
   script = moveAutomationScriptWithPoisonTouch(script, user)
 
   const state = defaultTargetResolutionState(script)
@@ -847,7 +864,7 @@ const buildNoRollTargetTransaction = ({
     if (targetIds.size) enabledSuggestions[moveAutomationSuggestionKey(script, 'condition', index)] = true
   })
 
-  return buildMoveAutomationTransaction({
+  const transaction = buildMoveAutomationTransaction({
     script,
     user,
     selectedTargets: [target],
@@ -872,10 +889,14 @@ const buildNoRollTargetTransaction = ({
       return true
     },
   })
+  return {
+    transaction,
+    conditionOutcomes: conditionApplications.conditionOutcomes,
+  }
 }
 
 export const resolveInstantTargetMoveAutomation = (input: ResolveInstantTargetMoveAutomationInput): MoveAutomationTransaction =>
-  buildNoRollTargetTransaction(input)
+  resolveInstantNoRollTargetMoveAutomation(input).transaction
 
 export const resolveInstantSelfMoveAutomation = ({
   script,

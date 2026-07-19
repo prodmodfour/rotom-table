@@ -19,9 +19,9 @@ export const REVIEWED_SINGLE_TARGET_STATUS_SCRIPT_NAMES = [
 
 const reviewedSingleTargetStatusFamilyScript = (name: string): MoveAutomationScript => {
   if (name === 'Spore') {
-    return reviewedSingleTargetConditionScript('Spore', [{ condition: 'Sleep', label: 'Sleep' }], 1, {
+    return reviewedSingleTargetConditionScript('Spore', [{ condition: 'Sleep', label: 'Sleep' }], 2, {
       damageBase: null,
-      requiresAccuracy: true,
+      requiresAccuracy: false,
     })
   }
   return reviewedSingleTargetStatusScript(name)

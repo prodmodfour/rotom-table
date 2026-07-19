@@ -117,7 +117,7 @@ describe('explicit move automation scripts', () => {
       targetMode: 'one-target',
       targetCount: 1,
       damaging: false,
-      requiresAccuracy: true,
+      requiresAccuracy: false,
       damageBase: null,
       damageClass: 'Status',
       type: 'Grass',

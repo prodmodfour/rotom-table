@@ -869,11 +869,7 @@ describe('resolveAuthoritativeMove', () => {
       idFactory: () => 'spore-terrain-feedback',
     })
 
-    expect(resolution.feedback?.conditions).toContainEqual({
-      condition: 'Sleep',
-      applied: false,
-      blockedBy: 'Electric Terrain (legacy.terrain.electric)',
-    })
+    expect(resolution.feedback).toBeUndefined()
     expect(resolution.transaction.conditionUpdates).toEqual([])
     expect(resolution.auditTrace.events).toEqual(expect.arrayContaining([
       expect.objectContaining({
@@ -911,11 +907,7 @@ describe('resolveAuthoritativeMove', () => {
       idFactory: () => 'spore-feedback',
     })
 
-    expect(resolution.feedback?.conditions).toContainEqual({
-      condition: 'Sleep',
-      applied: false,
-      blockedBy: 'Sweet Veil (aura)',
-    })
+    expect(resolution.feedback).toBeUndefined()
     expect(resolution.transaction.conditionUpdates).toEqual([])
     expect(resolution.auditTrace.events).toEqual(expect.arrayContaining([
       expect.objectContaining({
@@ -960,10 +952,7 @@ describe('resolveAuthoritativeMove', () => {
       idFactory: () => 'spore-feedback',
     })
 
-    expect(resolution.feedback?.conditions).toContainEqual({
-      condition: 'Sleep',
-      applied: true,
-    })
+    expect(resolution.feedback).toBeUndefined()
     expect(resolution.transaction.conditionUpdates).toEqual([
       { id: 'target-token', conditions: ['Sleep'] },
     ])
