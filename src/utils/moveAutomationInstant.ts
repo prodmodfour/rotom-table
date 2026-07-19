@@ -40,6 +40,7 @@ import {
   moveAutomationDamageAppliesOnAccuracyOutcome,
   moveAutomationEffectivenessForAccuracyOutcome,
 } from '~/utils/moveAutomationSmite'
+import { moveAutomationHasSpiritSurgeKeyword } from '~/utils/moveAutomationSpiritSurge'
 import {
   moveAutomationConditionImmunitySource,
   type MoveAutomationConditionImmunityContext,
@@ -296,11 +297,12 @@ const targetConditionSuggestionApplies = (
   suggestion: MoveAutomationScript['conditionSuggestions'][number],
   hit: boolean,
   requiresAccuracy = true,
+  effectsApplyOnMiss = false,
 ): boolean => {
   const applyWhen = suggestion.applyWhen ?? 'hit'
   if (applyWhen === 'always') return true
   if (applyWhen === 'miss') return requiresAccuracy && !hit
-  return hit
+  return hit || effectsApplyOnMiss
 }
 
 const buildConditionFeedback = (options: {
@@ -318,7 +320,12 @@ const buildConditionFeedback = (options: {
     const suggestionKey = moveAutomationSuggestionKey(options.script, 'condition', index)
     options.enabledSuggestions[suggestionKey] = false
     if (!targetThresholdMatches(suggestion.threshold, options.naturalRoll)) return
-    if (!targetConditionSuggestionApplies(suggestion, options.hit, options.script.requiresAccuracy)) return
+    if (!targetConditionSuggestionApplies(
+      suggestion,
+      options.hit,
+      options.script.requiresAccuracy,
+      moveAutomationHasSpiritSurgeKeyword(options.script),
+    )) return
 
     if (suggestion.optional && !suggestion.threshold) return
 
@@ -384,7 +391,12 @@ const resolveTargetGroupConditionApplications = (
 
     script.conditionSuggestions.forEach((suggestion, index) => {
       if (!filteredSuggestionIndexes.has(index)) return
-      if (!targetConditionSuggestionApplies(suggestion, resolution.hit, script.requiresAccuracy)) return
+      if (!targetConditionSuggestionApplies(
+        suggestion,
+        resolution.hit,
+        script.requiresAccuracy,
+        moveAutomationHasSpiritSurgeKeyword(script),
+      )) return
       if (!targetThresholdMatches(suggestion.threshold, naturalRoll)) return
 
       const condition = normalizeConditionName(suggestion.condition) ?? suggestion.condition

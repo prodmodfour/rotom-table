@@ -2678,7 +2678,7 @@ Status: DONE
 
 ## REG-021 — Certify Psybeam through Razor Shell
 
-Status: TODO
+Status: DONE
 
 **Baseline-registered moves:** Psybeam; Psycho Cut; Psywave; Pyro Ball; Quick Attack; Raging Fury; Razor Leaf; Razor Shell
 

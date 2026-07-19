@@ -50,6 +50,7 @@ import {
   moveAutomationDamageAppliesOnAccuracyOutcome,
   moveAutomationIsSmiteMiss,
 } from '~/utils/moveAutomationSmite'
+import { moveAutomationHasSpiritSurgeKeyword } from '~/utils/moveAutomationSpiritSurge'
 import type { CombatStageKey } from '~/types/combatStages'
 import type { MapFieldEffects } from '~/types/map'
 import type {
@@ -208,7 +209,7 @@ export const buildMoveAutomationTransaction = ({
   const hitTargetIds = selectedTargets
     .filter((target) => !script.requiresAccuracy || targetResolutions[target.id]?.hit === true)
     .map((target) => target.id)
-  const targetEffectsApplyOnMiss = script.keywords.some((keyword) => /^Spirit Surge$/i.test(keyword))
+  const targetEffectsApplyOnMiss = moveAutomationHasSpiritSurgeKeyword(script)
   const targetWasHit = (target: SpawnedPokemon): boolean =>
     !script.requiresAccuracy || targetEffectsApplyOnMiss || targetResolutions[target.id]?.hit === true
   const targetMatchesSuggestionTiming = (
