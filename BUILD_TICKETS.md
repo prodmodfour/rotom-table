@@ -2841,7 +2841,7 @@ Status: DONE
 
 ## MA-207 — Implement Gear Up through Leaf Tornado
 
-Status: DONE
+Status: TODO
 
 **Moves:** Gear Up; Glaciate; Haze; Heart Swap; Hyper Voice; Hyperspace Fury; Leaf Storm; Leaf Tornado
 
