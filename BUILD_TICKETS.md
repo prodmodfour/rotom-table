@@ -2624,7 +2624,7 @@ Status: DONE
 
 ## REG-012 — Certify Grass Whistle through Heat Wave
 
-Status: TODO
+Status: DONE
 
 **Baseline-registered moves:** Grass Whistle; Grav Apple; Growl; Gunk Shot; Headbutt; Heal Bell; Heart Stamp; Heat Wave
 

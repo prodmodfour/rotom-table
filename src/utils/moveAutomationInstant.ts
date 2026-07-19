@@ -1028,7 +1028,7 @@ const resolveInstantTargetGroupMoveAutomation = ({
     manualUserStageDeltas: emptyStageDeltas(),
     manualTargetStageDeltas: emptyStageDeltas(),
     hazardCells: [],
-    manualNote: conditionApplications.blockedNotes.join(' '),
+    manualNote: '',
     fieldEffects,
     fieldEffectsForTarget,
     damageInputsForTarget,
@@ -1044,6 +1044,7 @@ const resolveInstantTargetGroupMoveAutomation = ({
       return true
     },
   })
+  transaction.logLines.push(...conditionApplications.blockedNotes)
 
   return { transaction, targetResolutions }
 }

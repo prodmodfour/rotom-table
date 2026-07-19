@@ -227,10 +227,7 @@ export const buildMoveAutomationTransaction = ({
     kind: MoveAutomationSuggestionKind,
     index: number,
   ): string | null => {
-    if (kind === 'condition') {
-      const suggestion = script.conditionSuggestions[index]
-      return suggestion && suggestion.action !== 'remove' && suggestion.action !== 'clear' ? suggestion.label : null
-    }
+    if (kind === 'condition') return script.conditionSuggestions[index]?.label ?? null
     if (kind === 'stage') return script.stageSuggestions[index]?.label ?? null
     if (kind === 'hp') return script.hpSuggestions[index]?.label ?? null
     return null
