@@ -2684,7 +2684,7 @@ Status: DONE
 
 ## REG-022 — Certify Reflect through Rolling Kick
 
-Status: TODO
+Status: DONE
 
 **Baseline-registered moves:** Reflect; Return; Rock Climb; Rock Slide; Rock Smash; Rock Throw; Rock Tomb; Rolling Kick
 
