@@ -193,6 +193,8 @@ export const MOVE_EFFECT_BRANCH_CHOICE_OWNERS = ['recipients', 'actor'] as const
 
 export const MOVE_EFFECT_DAMAGE_CLASSES = ['physical', 'special'] as const
 export const MOVE_DAMAGE_CLASS_SELECTION_KINDS = ['compare-stats'] as const
+/** Static reviewed additions that enter the damage roll before type effectiveness. */
+export const MOVE_EFFECT_PRE_TYPE_DAMAGE_MODIFIER_PRIORITY_MAGNITUDE = 100_000 as const
 export const MOVE_DAMAGE_CLASS_COMPARISON_OPERATORS = ['less-than'] as const
 export const MOVE_EFFECT_DAMAGE_BASE_STAB_TIMINGS = [
   'none',
@@ -449,6 +451,7 @@ export const MOVE_EFFECT_OPERATION_LIMITS = Object.freeze({
   battlefieldZoneKinds: MOVE_EFFECT_BATTLEFIELD_ZONE_KINDS.length,
   battlefieldZoneTags: 32,
   typeOverrides: 18,
+  preTypeDamageModifiers: 16,
   criticalNaturalRolls: 20,
   multiHitStrikes: 10,
   multiHitTableEntries: 32,
@@ -945,6 +948,17 @@ export interface MoveCriticalHitPolicy {
   readonly prevention: MoveEffectCriticalPreventionPolicy
 }
 
+export interface MovePreTypeDamageModifier {
+  /** Stable identity in the ordered damage-pipeline trace. */
+  readonly id: string
+  /** Lower priorities apply first alongside other authoritative pre-type contributions. */
+  readonly priority: number
+  readonly stackingGroup: string
+  readonly reasonCode: string
+  /** A bounded static amount; contextual eligibility is resolved server-side before emission. */
+  readonly value: number
+}
+
 export interface MoveDamageEffectPayload {
   readonly damageClass: MoveDamageClass
   /** A number preserves fixed v2 definitions; contextual rules use the bounded expression form. */
@@ -960,6 +974,8 @@ export interface MoveDamageEffectPayload {
   readonly attackStat?: MoveStatSelectionExpression
   /** Omission uses the damage class's normal target Defense/Special Defense selection. */
   readonly defenseStat?: MoveStatSelectionExpression
+  /** Reviewed additive damage-roll contributions applied before type effectiveness. */
+  readonly preTypeDamageModifiers?: readonly MovePreTypeDamageModifier[]
 }
 
 export interface MoveMultiHitFixedCount {
@@ -1854,6 +1870,14 @@ const DAMAGE_OPTIONAL_FIELDS = [
   'criticalHit',
   'attackStat',
   'defenseStat',
+  'preTypeDamageModifiers',
+] as const
+const PRE_TYPE_DAMAGE_MODIFIER_FIELDS = [
+  'id',
+  'priority',
+  'stackingGroup',
+  'reasonCode',
+  'value',
 ] as const
 const MULTI_HIT_FIELDS = ['count', 'accuracy', 'critical', 'damage', 'effects'] as const
 const MULTI_HIT_FIXED_COUNT_FIELDS = ['kind', 'hits'] as const
@@ -2998,6 +3022,40 @@ const parseDamageClass = (
   }
 }
 
+const parsePreTypeDamageModifiers = (
+  value: unknown,
+  path: string,
+): readonly MovePreTypeDamageModifier[] => {
+  const modifiers = parseBoundedArray(
+    value,
+    path,
+    MOVE_EFFECT_OPERATION_LIMITS.preTypeDamageModifiers,
+  ).map((modifier, index): MovePreTypeDamageModifier => {
+    const modifierPath = `${path}[${index}]`
+    const input = parseExactRecord(modifier, PRE_TYPE_DAMAGE_MODIFIER_FIELDS, modifierPath)
+    return {
+      id: parseStableId(ownValue(input, 'id', modifierPath), `${modifierPath}.id`),
+      priority: parseInteger(
+        ownValue(input, 'priority', modifierPath),
+        `${modifierPath}.priority`,
+        -MOVE_EFFECT_PRE_TYPE_DAMAGE_MODIFIER_PRIORITY_MAGNITUDE,
+        MOVE_EFFECT_PRE_TYPE_DAMAGE_MODIFIER_PRIORITY_MAGNITUDE,
+      ),
+      stackingGroup: parseStableId(
+        ownValue(input, 'stackingGroup', modifierPath),
+        `${modifierPath}.stackingGroup`,
+      ),
+      reasonCode: parseStableId(
+        ownValue(input, 'reasonCode', modifierPath),
+        `${modifierPath}.reasonCode`,
+      ),
+      value: parseFiniteNumber(ownValue(input, 'value', modifierPath), `${modifierPath}.value`),
+    }
+  })
+  assertUnique(modifiers.map(modifier => modifier.id), `${path}.id`)
+  return modifiers
+}
+
 const parseDamagePayload = (value: unknown, path: string): MoveDamageEffectPayload => {
   const input = parseRecordWithOptionalFields(
     value,
@@ -3009,6 +3067,10 @@ const parseDamagePayload = (value: unknown, path: string): MoveDamageEffectPaylo
   const hasCriticalHit = Object.prototype.hasOwnProperty.call(input, 'criticalHit')
   const hasAttackStat = Object.prototype.hasOwnProperty.call(input, 'attackStat')
   const hasDefenseStat = Object.prototype.hasOwnProperty.call(input, 'defenseStat')
+  const hasPreTypeDamageModifiers = Object.prototype.hasOwnProperty.call(
+    input,
+    'preTypeDamageModifiers',
+  )
   return {
     damageClass: parseDamageClass(
       ownValue(input, 'damageClass', path),
@@ -3049,6 +3111,12 @@ const parseDamagePayload = (value: unknown, path: string): MoveDamageEffectPaylo
       defenseStat: parseDamageStatSelection(
         ownValue(input, 'defenseStat', path),
         `${path}.defenseStat`,
+      ),
+    } : {}),
+    ...(hasPreTypeDamageModifiers ? {
+      preTypeDamageModifiers: parsePreTypeDamageModifiers(
+        ownValue(input, 'preTypeDamageModifiers', path),
+        `${path}.preTypeDamageModifiers`,
       ),
     } : {}),
   }

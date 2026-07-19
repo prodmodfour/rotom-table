@@ -7,6 +7,7 @@ import { createMoveAutomationHistoryResolver } from '~~/server/domain/moveAutoma
 import {
   MoveAutomationTargetStateQueryError,
   createMoveAutomationTargetStateResolver,
+  moveAutomationSizeCategoryDifference,
   type CreateMoveAutomationTargetStateResolverInput,
 } from '~~/server/domain/moveAutomation/targetState'
 import type { CharacterSheet } from '~/types/characterSheet'
@@ -170,6 +171,15 @@ const resolverInput = (): CreateMoveAutomationTargetStateResolverInput => {
 }
 
 describe('authoritative target state queries', () => {
+  it('compares canonical mechanical size categories without display-size fallbacks', () => {
+    expect(moveAutomationSizeCategoryDifference('gigantic', 'small')).toBe(4)
+    expect(moveAutomationSizeCategoryDifference('large', 'medium')).toBe(1)
+    expect(moveAutomationSizeCategoryDifference('medium', 'medium')).toBe(0)
+    expect(moveAutomationSizeCategoryDifference('small', 'large')).toBe(-2)
+    expect(moveAutomationSizeCategoryDifference(null, 'small')).toBeNull()
+    expect(moveAutomationSizeCategoryDifference('huge', null)).toBeNull()
+  })
+
   it('derives vitality, movement state, history, conditions, types, tags, size, weight, kind, and items', () => {
     const consulted: string[] = []
     const input = resolverInput()

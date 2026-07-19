@@ -366,6 +366,78 @@ describe('MoveSpec typed effect operations', () => {
     })
   })
 
+  it('strictly parses MA-204 reviewed pre-type damage modifiers', () => {
+    const operation = parseMoveEffectOperation(validOperation('damage', {
+      payload: {
+        ...VALID_PAYLOADS.damage,
+        preTypeDamageModifiers: [{
+          id: 'damage.stomp.smaller-target-bonus',
+          priority: 210,
+          stackingGroup: 'stomp.smaller-target-bonus',
+          reasonCode: 'stomp.smaller-target-additional-damage',
+          value: 10,
+        }],
+      },
+    }))
+
+    expect(operation.kind === 'damage' && operation.payload.preTypeDamageModifiers)
+      .toEqual([{
+        id: 'damage.stomp.smaller-target-bonus',
+        priority: 210,
+        stackingGroup: 'stomp.smaller-target-bonus',
+        reasonCode: 'stomp.smaller-target-additional-damage',
+        value: 10,
+      }])
+    expectDeeplyFrozen(operation)
+
+    expectEffectError(validOperation('damage', {
+      payload: {
+        ...VALID_PAYLOADS.damage,
+        preTypeDamageModifiers: [
+          {
+            id: 'damage.stomp.bonus',
+            priority: 0,
+            stackingGroup: 'stomp.bonus',
+            reasonCode: 'stomp.bonus',
+            value: 10,
+          },
+          {
+            id: 'damage.stomp.bonus',
+            priority: 1,
+            stackingGroup: 'stomp.other',
+            reasonCode: 'stomp.other',
+            value: 5,
+          },
+        ],
+      },
+    }), 'duplicate-id', 'operation.payload.preTypeDamageModifiers.id')
+    expectEffectError(validOperation('damage', {
+      payload: {
+        ...VALID_PAYLOADS.damage,
+        preTypeDamageModifiers: [{
+          id: 'damage.stomp.bonus',
+          priority: 100_001,
+          stackingGroup: 'stomp.bonus',
+          reasonCode: 'stomp.bonus',
+          value: 10,
+        }],
+      },
+    }), 'limit-exceeded', 'operation.payload.preTypeDamageModifiers[0].priority')
+    expectEffectError(validOperation('damage', {
+      payload: {
+        ...VALID_PAYLOADS.damage,
+        preTypeDamageModifiers: [{
+          id: 'damage.stomp.bonus',
+          priority: 0,
+          stackingGroup: 'stomp.bonus',
+          reasonCode: 'stomp.bonus',
+          value: 10,
+          clientPredicate: { actorSize: 'large' },
+        }],
+      },
+    }), 'invalid-effect-operation', 'operation.payload.preTypeDamageModifiers[0]')
+  })
+
   it('strictly parses MA-203 flanking, compared-class, and cancelling-reaction data', () => {
     const comparedDamageClass = {
       kind: 'compare-stats',

@@ -7236,12 +7236,10 @@
     {
       "canonicalId": "Stomp",
       "displayName": "Stomp",
-      "baseStatus": "blocked",
+      "baseStatus": "complete",
       "interactionStatus": "unassessed",
-      "runtimeKind": "unimplemented",
-      "blockerCodes": [
-        "runtime.unimplemented"
-      ],
+      "runtimeKind": "movespec-v2",
+      "blockerCodes": [],
       "limitations": [],
       "manualSteps": []
     },
@@ -8014,12 +8012,10 @@
     {
       "canonicalId": "Thunder Fang",
       "displayName": "Thunder Fang",
-      "baseStatus": "blocked",
+      "baseStatus": "complete",
       "interactionStatus": "unassessed",
-      "runtimeKind": "unimplemented",
-      "blockerCodes": [
-        "runtime.unimplemented"
-      ],
+      "runtimeKind": "movespec-v2",
+      "blockerCodes": [],
       "limitations": [],
       "manualSteps": []
     },

@@ -4,20 +4,16 @@ import {
   FREEZING_GLARE_ICE_BRANCH_ID,
   FREEZING_GLARE_PSYCHIC_BRANCH_ID,
 } from '#shared/moveAutomation/canonicalMoveBranches'
-import type {
-  MoveConditionEffectOperation,
-  MoveDamageClass,
-  MoveDamageEffectOperation,
-  MoveEffectOperation,
-  MoveRollEffectOperation,
-} from '#shared/moveAutomation/effects'
-import type {
-  MoveSpec,
-  MoveSpecEffectOperation,
-  MoveSpecTargetingDeclaration,
-} from '#shared/moveAutomation/spec'
+import type { MoveEffectOperation } from '#shared/moveAutomation/effects'
+import type { MoveSpec, MoveSpecTargetingDeclaration } from '#shared/moveAutomation/spec'
 import { SECONDARY_CONDITIONS_203_HANDLER_ID } from '../handlers/secondaryConditions203'
 import type { MoveSpecV2Registration } from '../registry'
+import {
+  createAccuracyTriggeredConditionOperation,
+  createFangSecondaryOperations,
+  createReviewedSingleTargetDamageSpec,
+  createStandardMoveDamageOperation,
+} from '../standardDamageOperations'
 
 const singleTarget = (): MoveSpecTargetingDeclaration => ({
   kind: 'single-target',
@@ -37,194 +33,9 @@ const alternateSingleTarget = (
   }],
 })
 
-const accuracyOperation = (input: {
-  readonly slug: string
-  readonly evasionRule?: boolean
-}): MoveRollEffectOperation => ({
-  id: `${input.slug}.accuracy`,
-  kind: 'roll',
-  source: { kind: 'move', id: `move.${input.slug}` },
-  recipients: { kind: 'attacked-targets' },
-  phase: 'accuracy',
-  reasonCode: `${input.slug}.accuracy-check`,
-  payload: {
-    rollId: `${input.slug}.accuracy-roll`,
-    formula: { kind: 'dice', count: 1, sides: 20, modifier: 0 },
-    ...(input.evasionRule
-      ? {
-          evasionRule: {
-            kind: 'ignore-when-flanked' as const,
-            sourceId: 'dynamic-punch.flanked-target',
-            reasonCode: 'dynamic-punch.ignore-flanked-evasion',
-          },
-        }
-      : {}),
-  },
-})
-
-const damageOperation = (input: {
-  readonly slug: string
-  readonly damageBase: number
-  readonly damageClass: MoveDamageClass
-  readonly moveType: string
-  readonly typeEffectiveness?: MoveDamageEffectOperation['payload']['typeEffectiveness']
-  readonly attackStat?: MoveDamageEffectOperation['payload']['attackStat']
-}): MoveDamageEffectOperation => ({
-  id: `${input.slug}.damage`,
-  kind: 'damage',
-  source: { kind: 'operation', id: `${input.slug}.accuracy` },
-  recipients: { kind: 'hit-targets' },
-  phase: 'damage',
-  reasonCode: `${input.slug}.damage`,
-  payload: {
-    damageClass: input.damageClass,
-    damageBase: input.damageBase,
-    moveType: input.moveType,
-    accuracyRollId: `${input.slug}.accuracy-roll`,
-    criticalRollId: `${input.slug}.accuracy-roll`,
-    ...(input.typeEffectiveness ? { typeEffectiveness: input.typeEffectiveness } : {}),
-    ...(input.attackStat ? { attackStat: input.attackStat } : {}),
-  },
-})
-
-const conditionOperation = (input: {
-  readonly slug: string
-  readonly id: string
-  readonly conditionId: string
-  readonly trigger?: { readonly kind: 'range'; readonly minimum: number }
-    | { readonly kind: 'natural-rolls'; readonly values: readonly number[] }
-  readonly sourceOperationId?: string
-}): MoveConditionEffectOperation => ({
-  id: `${input.slug}.${input.id}`,
-  kind: 'condition',
-  source: {
-    kind: 'operation',
-    id: input.sourceOperationId ?? `${input.slug}.damage`,
-  },
-  recipients: { kind: 'hit-targets' },
-  phase: 'after-damage',
-  reasonCode: `${input.slug}.${input.id}`,
-  payload: {
-    action: 'apply',
-    conditionId: input.conditionId,
-    conditionSource: null,
-    filter: null,
-    randomChoice: null,
-    ...(input.trigger
-      ? {
-          accuracyRollTrigger: {
-            rollId: `${input.slug}.accuracy-roll`,
-            trigger: input.trigger,
-          },
-        }
-      : {}),
-    applyTypeImmunity: true,
-    duration: null,
-    saveTiming: 'canonical',
-    stackPolicy: input.conditionId === 'flinch'
-      ? { kind: 'add-stack', maxStacks: 64 }
-      : { kind: 'refresh', maxStacks: null },
-  },
-})
-
-const usageOperation = (slug: string): MoveEffectOperation => ({
-  id: `${slug}.usage`,
-  kind: 'usage',
-  source: { kind: 'move', id: `move.${slug}` },
-  recipients: { kind: 'actor' },
-  phase: 'usage',
-  reasonCode: `${slug}.frequency-use`,
-  payload: {
-    action: 'spend',
-    resourceId: `${slug}.frequency-use`,
-    amount: 1,
-  },
-})
-
-const logOperation = (slug: string): MoveEffectOperation => ({
-  id: `${slug}.log-completed`,
-  kind: 'log',
-  source: { kind: 'move', id: `move.${slug}` },
-  recipients: { kind: 'none' },
-  phase: 'cleanup',
-  reasonCode: `${slug}.completed`,
-  payload: { messageKey: `move.${slug}.completed`, arguments: [] },
-})
-
-const fangCoinOperations = (
-  slug: 'fire-fang' | 'ice-fang',
-  typedCondition: 'burned' | 'frozen',
-): readonly MoveEffectOperation[] => {
-  const typedOperationId = `${slug}.coin-${typedCondition}`
-  const flinchOperationId = `${slug}.coin-flinch`
-  const coin: MoveRollEffectOperation = {
-    id: `${slug}.secondary-coin`,
-    kind: 'roll',
-    source: { kind: 'operation', id: `${slug}.damage` },
-    recipients: { kind: 'none' },
-    phase: 'after-damage',
-    reasonCode: `${slug}.secondary-coin`,
-    payload: {
-      rollId: `${slug}.secondary-coin-roll`,
-      formula: { kind: 'table', tableId: `${slug}.secondary-coin-table` },
-      table: {
-        tableId: `${slug}.secondary-coin-table`,
-        distribution: 'equal',
-        entries: [{
-          id: typedCondition,
-          weight: null,
-          operationIds: [typedOperationId],
-          predicate: null,
-        }, {
-          id: 'flinch',
-          weight: null,
-          operationIds: [flinchOperationId],
-          predicate: null,
-        }],
-        maximumRerolls: 0,
-      },
-      accuracyRollTrigger: {
-        rollId: `${slug}.accuracy-roll`,
-        trigger: { kind: 'natural-rolls', values: [18, 19] },
-      },
-    },
-  }
-  const coinTrigger = { kind: 'natural-rolls' as const, values: [18, 19] }
-  const exactTwenty = { kind: 'natural-rolls' as const, values: [20] }
-  return [
-    coin,
-    conditionOperation({
-      slug,
-      id: `coin-${typedCondition}`,
-      conditionId: typedCondition,
-      trigger: coinTrigger,
-      sourceOperationId: coin.id,
-    }),
-    conditionOperation({
-      slug,
-      id: 'coin-flinch',
-      conditionId: 'flinch',
-      trigger: coinTrigger,
-      sourceOperationId: coin.id,
-    }),
-    conditionOperation({
-      slug,
-      id: `natural-20-${typedCondition}`,
-      conditionId: typedCondition,
-      trigger: exactTwenty,
-    }),
-    conditionOperation({
-      slug,
-      id: 'natural-20-flinch',
-      conditionId: 'flinch',
-      trigger: exactTwenty,
-    }),
-  ]
-}
-
-const specOperations = (
-  operations: readonly MoveEffectOperation[],
-): readonly MoveSpecEffectOperation[] => operations as unknown as readonly MoveSpecEffectOperation[]
+const damageOperation = createStandardMoveDamageOperation
+const conditionOperation = createAccuracyTriggeredConditionOperation
+const fangCoinOperations = createFangSecondaryOperations
 
 const reviewedSpec = (input: {
   readonly canonicalId: string
@@ -233,43 +44,22 @@ const reviewedSpec = (input: {
   readonly operations: readonly MoveEffectOperation[]
   readonly handler?: boolean
   readonly tags: readonly string[]
-}): MoveSpec => Object.freeze({
-  schemaVersion: 2,
+}): MoveSpec => createReviewedSingleTargetDamageSpec({
   canonicalId: input.canonicalId,
-  version: 2,
-  targeting: input.targeting ?? singleTarget(),
-  preconditions: [],
-  costs: [{
-    id: `${input.slug}.cost.standard-action`,
-    phase: 'pay' as const,
-    cost: { kind: 'action-resource' as const, resource: 'standard' as const, amount: 1 },
-  }],
-  phases: [
-    { phase: 'accuracy' as const, operations: specOperations([accuracyOperation({
-      slug: input.slug,
-      evasionRule: input.canonicalId === 'Dynamic Punch',
-    })]) },
-    ...(['Fiery Wrath', 'Freezing Glare'].includes(input.canonicalId)
-      ? []
-      : [{
-          phase: 'damage' as const,
-          operations: specOperations(input.operations.filter(operation => operation.phase === 'damage')),
-        }]),
-    ...(input.operations.some(operation => operation.phase === 'after-damage')
-      ? [{
-          phase: 'after-damage' as const,
-          operations: specOperations(input.operations.filter(operation => operation.phase === 'after-damage')),
-        }]
-      : []),
-    { phase: 'usage' as const, operations: specOperations([usageOperation(input.slug)]) },
-    { phase: 'cleanup' as const, operations: specOperations([logOperation(input.slug)]) },
-  ],
+  slug: input.slug,
+  ...(input.targeting ? { targeting: input.targeting } : {}),
+  operations: input.operations,
   registeredHandlerId: input.handler ? SECONDARY_CONDITIONS_203_HANDLER_ID : null,
-  presentation: {
-    displayName: input.canonicalId,
-    vfxKey: `move.${input.slug}`,
-    tags: [...input.tags],
-  },
+  ...(input.canonicalId === 'Dynamic Punch'
+    ? {
+        evasionRule: {
+          kind: 'ignore-when-flanked' as const,
+          sourceId: 'dynamic-punch.flanked-target',
+          reasonCode: 'dynamic-punch.ignore-flanked-evasion',
+        },
+      }
+    : {}),
+  tags: input.tags,
 })
 
 export const CHATTER_MOVE_SPEC = reviewedSpec({

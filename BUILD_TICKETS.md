@@ -2817,7 +2817,7 @@ Status: DONE
 
 ## MA-204 — Implement Stomp through Thunder Fang
 
-Status: TODO
+Status: DONE
 
 **Moves:** Stomp; Thunder Fang
 

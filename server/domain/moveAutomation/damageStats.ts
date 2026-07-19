@@ -105,6 +105,20 @@ export interface MoveSpecDamageCalculation {
   readonly evaluationTrace: readonly MoveRuleEvaluationTraceEntry[]
 }
 
+const reviewedPreTypeDamageModifiers = (
+  operation: MoveDamageEffectOperation,
+): readonly MoveDamageModifier[] => (operation.payload.preTypeDamageModifiers ?? []).map(
+  modifier => ({
+    ...modifier,
+    stage: 'pre-type-modifiers' as const,
+    source: {
+      kind: operation.source.kind,
+      id: operation.source.id,
+    },
+    operation: 'add' as const,
+  }),
+)
+
 const deepFreeze = <Value>(value: Value): Value => {
   if (typeof value !== 'object' || value === null || Object.isFrozen(value)) return value
   for (const key of Object.getOwnPropertyNames(value)) {
@@ -394,6 +408,7 @@ export const resolveMoveSpecDamageCalculation = (
         multiplier: sideDamageResistance.adjustedMultiplier,
       },
       additionalModifiers: [
+        ...reviewedPreTypeDamageModifiers(options.operation),
         ...helpingHandModifiers,
         ...weather.modifiers,
         ...terrain.modifiers,

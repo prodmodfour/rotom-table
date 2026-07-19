@@ -49,6 +49,16 @@ export type MoveAutomationTargetGrounding =
 export type MoveAutomationTargetSize =
   (typeof MOVE_AUTOMATION_TARGET_SIZES)[number]
 
+/** Positive values mean the first subject is that many canonical categories larger. */
+export const moveAutomationSizeCategoryDifference = (
+  first: MoveAutomationTargetSize | null,
+  second: MoveAutomationTargetSize | null,
+): number | null => {
+  if (first === null || second === null) return null
+  return MOVE_AUTOMATION_TARGET_SIZES.indexOf(first)
+    - MOVE_AUTOMATION_TARGET_SIZES.indexOf(second)
+}
+
 export interface MoveAutomationTargetState {
   readonly targetPlacementId: string
   readonly vitality: MoveAutomationTargetVitality
