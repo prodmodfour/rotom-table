@@ -36,11 +36,13 @@ const relationships = () => createMoveAutomationRelationshipResolver({
 const predicate = (
   relationship: MoveAutomationTargetPredicateDeclaration['relationship'],
   statePredicates?: MoveAutomationTargetPredicateDeclaration['statePredicates'],
+  areaGeometry?: MoveAutomationTargetPredicateDeclaration['areaGeometry'],
 ): MoveAutomationTargetPredicateDeclaration => ({
   relationship,
   willingness: 'any',
   excludeActor: true,
   ...(statePredicates ? { statePredicates } : {}),
+  ...(areaGeometry ? { areaGeometry } : {}),
 })
 
 const targetState = (
@@ -83,14 +85,21 @@ const resolve = (options: {
   readonly geometry?: readonly string[]
   readonly states?: MoveAutomationTargetStateResolver
   readonly lineOfSight?: MoveAutomationLineOfSightResolver
+  readonly areaGeometry?: MoveAutomationTargetPredicateDeclaration['areaGeometry']
+  readonly central?: readonly string[]
 } = {}) => resolveMoveAutomationAreaTargets({
   actorPlacementId: 'actor',
   geometricallyAffectedPlacementIds: options.geometry ?? ['ally', 'enemy', 'unknown'],
-  predicate: predicate(options.relationship ?? 'any', options.statePredicates),
+  predicate: predicate(
+    options.relationship ?? 'any',
+    options.statePredicates,
+    options.areaGeometry,
+  ),
   relationships: relationships(),
   states: options.states,
   lineOfSight: options.lineOfSight,
   requestedExcludedPlacementIds: options.exclusions,
+  centralCellAffectedPlacementIds: options.central,
 })
 
 describe('authoritative area target filtering', () => {
@@ -182,6 +191,45 @@ describe('authoritative area target filtering', () => {
         reasonCode: 'target-excluded-line-of-sight',
       }),
     ]))
+  })
+
+  it('excludes only reviewed Small and Medium footprints in the authoritative center cell', () => {
+    const reads: string[] = []
+    const states = new Map([
+      ['ally', { ...targetState('ally'), size: 'small' as const }],
+      ['enemy', { ...targetState('enemy'), size: 'large' as const }],
+      ['unknown', { ...targetState('unknown'), size: 'medium' as const }],
+    ])
+    const result = resolve({
+      states: stateResolver(reads, states),
+      areaGeometry: {
+        kind: 'exclude-center-by-size',
+        sizes: ['small', 'medium'],
+      },
+      central: ['ally', 'enemy'],
+    })
+
+    expect(result.eligibleTargetPlacementIds).toEqual(['enemy', 'unknown'])
+    expect(result.evaluations).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        targetPlacementId: 'ally',
+        outcome: 'excluded',
+        reasonCode: 'target-excluded-area-center-size',
+      }),
+      expect.objectContaining({ targetPlacementId: 'enemy', outcome: 'included' }),
+      expect.objectContaining({ targetPlacementId: 'unknown', outcome: 'included' }),
+    ]))
+    expect(reads).toEqual(['ally', 'enemy'])
+
+    expect(() => resolve({
+      states: stateResolver([], states),
+      areaGeometry: { kind: 'exclude-center-by-size', sizes: ['small'] },
+    })).toThrowError(expect.objectContaining({ code: 'area-center-unavailable' }))
+    expect(() => resolve({
+      states: stateResolver([], states),
+      areaGeometry: { kind: 'exclude-center-by-size', sizes: ['small'] },
+      central: ['outside'],
+    })).toThrowError(expect.objectContaining({ code: 'invalid-area-center-candidates' }))
   })
 
   it('preserves authoritative geometry order and applies Friendly exclusions after predicates', () => {

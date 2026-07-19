@@ -85,6 +85,18 @@ export const isSeamlessSelfMoveScript = (
     && !script.requiresAccuracy,
 )
 
+/** Native Field moves use self intent only as a no-target declaration envelope. */
+export const isSeamlessFieldMoveScript = (
+  script: MoveAutomationScript | null | undefined,
+): boolean => Boolean(
+  script
+    && script.kind === 'explicit'
+    && hasNativeMoveAutomationPresentation(script.moveName)
+    && script.targetMode === 'field'
+    && script.targetCount === null
+    && !script.requiresAccuracy,
+)
+
 export const isSeamlessAreaConfirmationScript = (
   script: MoveAutomationScript | null | undefined,
 ): script is MoveAutomationScript => Boolean(

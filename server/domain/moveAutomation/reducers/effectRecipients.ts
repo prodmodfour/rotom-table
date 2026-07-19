@@ -147,5 +147,8 @@ export const expectedMoveEffectRecipientIds = (
     // candidates must never be reintroduced during reduction.
     return dynamic['attacked-targets']
   }
+  if (kind === 'all-placements') {
+    return context.queries.placements.all().map(({ id }) => id)
+  }
   return fail('invalid-recipient-set', `Recipient selector ${kind} is unsupported.`)
 }

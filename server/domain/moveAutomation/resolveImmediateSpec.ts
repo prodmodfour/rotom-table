@@ -894,6 +894,8 @@ export interface ResolveMoveSpecOptions {
   readonly authoritativeTargetIds: readonly string[]
   readonly targetBranchId?: string | null
   readonly authoritativeTargetEvaluations?: readonly MoveSpecAuthoritativeTargetEvaluation[]
+  /** Complete server-derived geometry for reviewed area-relative movement. */
+  readonly authoritativeAreaCells?: readonly { readonly x: number; readonly y: number; readonly z: number }[]
   readonly ancestry?: readonly MoveResolutionTraceAncestryEntry[]
 }
 
@@ -1069,6 +1071,9 @@ export const reduceCompletedMoveSpec = (
     context: options.context,
     operations: spatialOperations,
     dynamicRecipients,
+    ...(options.authoritativeAreaCells
+      ? { authoritativeAreaCells: options.authoritativeAreaCells }
+      : {}),
   })
   const trace = applyMoveSpatialEffectResultsToTrace({
     trace: permanentMoveLists.trace,

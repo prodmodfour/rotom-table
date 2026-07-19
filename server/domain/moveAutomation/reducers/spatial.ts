@@ -206,6 +206,8 @@ export interface ReduceMoveSpatialEffectsInput {
   readonly chosenDirections?: MoveSpatialChosenDirectionResolver
   readonly destinations?: MoveSpatialDestinationResolver
   readonly willingness?: MoveSpatialWillingnessResolver
+  /** Complete server-derived move area used only by reviewed area-exit distances. */
+  readonly authoritativeAreaCells?: readonly GridAnchor[]
 }
 
 interface SpatialFootprint {
@@ -522,10 +524,76 @@ const assertStaticDistance = (value: number, operationId: string): number => {
   return value
 }
 
+const areaCellKey = (cell: GridAnchor): string => `${cell.x},${cell.y},${cell.z}`
+
+const resolveAreaExitDistance = (input: {
+  readonly operationId: string
+  readonly maximum: number
+  readonly recipient: SpatialFootprint
+  readonly vector: MoveSpatialVectorResolution
+  readonly areaCells?: readonly GridAnchor[]
+}): MoveSpatialDistanceResolution => {
+  if (!input.areaCells || input.areaCells.length === 0) {
+    return fail(
+      'distance-evaluation-failed',
+      `Spatial operation ${input.operationId} requires a non-empty authoritative move area.`,
+    )
+  }
+  const area = new Set<string>()
+  for (const cell of input.areaCells) {
+    if (
+      !Number.isSafeInteger(cell.x)
+      || !Number.isSafeInteger(cell.y)
+      || !Number.isSafeInteger(cell.z)
+    ) {
+      return fail(
+        'distance-evaluation-failed',
+        `Spatial operation ${input.operationId} received malformed authoritative area geometry.`,
+      )
+    }
+    area.add(areaCellKey(cell))
+  }
+  const intersectsAtDistance = (distance: number): boolean => {
+    const origin = {
+      x: input.recipient.position.x + input.vector.x * distance,
+      y: input.recipient.position.y + input.vector.y * distance,
+      z: input.recipient.position.z + input.vector.z * distance,
+    }
+    for (let x = origin.x; x < origin.x + input.recipient.base; x += 1) {
+      for (let y = origin.y; y < origin.y + input.recipient.clearance; y += 1) {
+        for (let z = origin.z; z < origin.z + input.recipient.base; z += 1) {
+          if (area.has(areaCellKey({ x, y, z }))) return true
+        }
+      }
+    }
+    return false
+  }
+  for (let distance = 0; distance <= input.maximum; distance += 1) {
+    if (intersectsAtDistance(distance)) continue
+    return {
+      rawValue: distance,
+      value: distance,
+      minimum: 0,
+      maximum: input.maximum,
+      rounding: null,
+      trace: [],
+    }
+  }
+  return fail(
+    'distance-evaluation-failed',
+    `Spatial operation ${input.operationId} cannot leave its authoritative area within ${input.maximum} meters.`,
+  )
+}
+
 const resolveSpatialDistance = (input: {
   readonly context: AuthoritativeMoveRulesContext
   readonly operation: MoveReducibleSpatialEffectOperation
   readonly selectorState: MoveRuleSelectorState
+  readonly areaExit?: {
+    readonly recipient: SpatialFootprint
+    readonly vector: MoveSpatialVectorResolution
+    readonly cells?: readonly GridAnchor[]
+  }
 }): MoveSpatialDistanceResolution => {
   const declaration = input.operation.payload.distance
   if (typeof declaration === 'number') {
@@ -538,6 +606,21 @@ const resolveSpatialDistance = (input: {
       rounding: null,
       trace: [],
     }
+  }
+  if (declaration.kind === 'area-exit') {
+    if (!input.areaExit) {
+      return fail(
+        'distance-evaluation-failed',
+        `Spatial operation ${input.operation.id} requires displacement geometry for its area-exit distance.`,
+      )
+    }
+    return resolveAreaExitDistance({
+      operationId: input.operation.id,
+      maximum: declaration.maximum,
+      recipient: input.areaExit.recipient,
+      vector: input.areaExit.vector,
+      areaCells: input.areaExit.cells,
+    })
   }
 
   let evaluated: ReturnType<typeof evaluateMoveExpression>
@@ -628,6 +711,7 @@ const resolveDisplacementMovement = (input: {
   readonly positions: ReadonlyMap<string, GridAnchor>
   readonly movementSheets: AuthoritativeMovementSheets
   readonly chosenDirections?: MoveSpatialChosenDirectionResolver
+  readonly authoritativeAreaCells?: readonly GridAnchor[]
 }): MoveSpatialMovement => {
   const recipient = spatialFootprint(
     input.context,
@@ -648,6 +732,11 @@ const resolveDisplacementMovement = (input: {
     context: input.context,
     operation: input.operation,
     selectorState,
+    areaExit: {
+      recipient,
+      vector,
+      cells: input.authoritativeAreaCells,
+    },
   })
   const distancePolicy = input.operation.payload.displacement.distancePolicy
   const movement = resolveAuthoritativeDisplacement({
@@ -777,6 +866,7 @@ export const reduceMoveSpatialEffects = (
           positions,
           movementSheets,
           chosenDirections: input.chosenDirections,
+          authoritativeAreaCells: input.authoritativeAreaCells,
         })
         resolved.push(movement)
         positions.set(recipientId, cloneAnchor(movement.destination))

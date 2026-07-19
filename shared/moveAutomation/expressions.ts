@@ -48,6 +48,7 @@ export const MOVE_EXPRESSION_KINDS = [
   'hp-ratio',
   'condition',
   'capability',
+  'grounding',
   'combat-stage',
   'combat-stage-total',
   'weight',
@@ -234,6 +235,12 @@ export interface MoveCapabilityExpression {
   readonly capabilityId: string
 }
 
+/** Authoritative movement-state grounding for recipient-scoped rule branches. */
+export interface MoveGroundingExpression {
+  readonly kind: 'grounding'
+  readonly subject: MoveSelector
+}
+
 export interface MoveCombatStageExpression {
   readonly kind: 'combat-stage'
   readonly subject: MoveSelector
@@ -314,6 +321,7 @@ export type MoveExpression =
   | MoveHpRatioExpression
   | MoveConditionExpression
   | MoveCapabilityExpression
+  | MoveGroundingExpression
   | MoveCombatStageExpression
   | MoveCombatStageTotalExpression
   | MoveWeightExpression
@@ -370,6 +378,7 @@ const STAT_POLICY_FIELDS = [
 const HP_RATIO_FIELDS = ['kind', 'subject', 'ratio'] as const
 const CONDITION_FIELDS = ['kind', 'subject', 'conditionId'] as const
 const CAPABILITY_FIELDS = ['kind', 'subject', 'capabilityId'] as const
+const GROUNDING_FIELDS = ['kind', 'subject'] as const
 const COMBAT_STAGE_FIELDS = ['kind', 'subject', 'stage'] as const
 const COMBAT_STAGE_MODIFIER_FIELDS = [
   'kind',
@@ -854,6 +863,12 @@ export const parseMoveExpressionNode = (
         capabilityId,
       }
     }
+    case 'grounding':
+      assertMoveRuleAstExactKeys(input, GROUNDING_FIELDS, path, context)
+      return {
+        kind,
+        subject: parseSubject(input, path, depth, context),
+      }
     case 'combat-stage': {
       const hasStageModifierPolicy = Object.prototype.hasOwnProperty.call(
         input,

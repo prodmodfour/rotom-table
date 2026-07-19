@@ -85,6 +85,23 @@ describe('buildResolveMoveScopes', () => {
     expect(keys(result.scopes)).not.toContain('map:placements')
   })
 
+  it('can conservatively scope a no-target field declaration to every server-validated placement', () => {
+    const result = buildResolveMoveScopes({
+      map: mapFixture(),
+      intent: intent({ kind: 'self' }, { moveName: 'Haze' }),
+      candidateScopePlacementIds: ['bystander', 'target-b', 'target-a'],
+    })
+
+    expect(result.ok).toBe(true)
+    if (!result.ok) return
+    expect(result.scopePlacementIds).toEqual(['actor', 'target-a', 'target-b', 'bystander'])
+    expectScopes(result.scopes, [
+      'token:target-a:combatStages',
+      'token:target-b:combatStages',
+      'token:bystander:combatStages',
+    ])
+  })
+
   it('adds only explicit reviewed group inventory scopes and validates their identities', () => {
     const result = buildResolveMoveScopes({
       map: mapFixture(),

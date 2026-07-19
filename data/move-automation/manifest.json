@@ -15114,37 +15114,73 @@
     {
       "canonicalId": "Gear Up",
       "displayName": "Gear Up",
-      "baseStatus": "blocked",
+      "baseStatus": "complete",
       "interactionStatus": "unassessed",
       "runtime": {
-        "kind": "unimplemented",
-        "version": null,
-        "definitionHash": null,
-        "sourceModule": null
+        "kind": "movespec-v2",
+        "version": 2,
+        "definitionHash": "c732b531553ce9afba778a57cd8768d114e275d33814b1aa05874652f4a9e4e3",
+        "sourceModule": "server/domain/moveAutomation/specs/areaStages207.ts"
       },
       "rulesProvenance": {
         "rulesetId": "rotom-table-reference-moves-v1",
         "canonicalizationVersion": 1,
         "sourceDataSha256": "f90491826349afd7d1f2809fd9d74b7acc555f5163b99264205ee369249e9815"
       },
-      "capabilityTags": [],
-      "suggestedCapabilityTags": [
-        "area-condition-or-stage"
+      "capabilityTags": [
+        "stages.typed",
+        "targeting.authoritative"
       ],
-      "blockerCodes": [
-        "runtime.unimplemented"
-      ],
+      "suggestedCapabilityTags": [],
+      "blockerCodes": [],
       "limitations": [],
       "manualSteps": [],
-      "scenarioIds": [],
+      "scenarioIds": [
+        "gear-up.v2-steel-type-area-filter",
+        "gear-up.v2-stage-cap-no-op",
+        "gear-up.v2-duplicate-replay",
+        "gear-up.v2-stale-target"
+      ],
       "conformanceEvidence": {
-        "requirementTags": [],
-        "scenarios": [],
+        "requirementTags": [
+          "branch.threshold",
+          "recovery.retry",
+          "resource.multi",
+          "target.area"
+        ],
+        "scenarios": [
+          {
+            "scenarioId": "gear-up.v2-steel-type-area-filter",
+            "evidenceClasses": [
+              "area-mixed-outcomes",
+              "threshold-fail",
+              "threshold-pass"
+            ]
+          },
+          {
+            "scenarioId": "gear-up.v2-stage-cap-no-op",
+            "evidenceClasses": [
+              "threshold-fail"
+            ]
+          },
+          {
+            "scenarioId": "gear-up.v2-duplicate-replay",
+            "evidenceClasses": [
+              "retry"
+            ]
+          },
+          {
+            "scenarioId": "gear-up.v2-stale-target",
+            "evidenceClasses": [
+              "multi-resource-conflict"
+            ]
+          }
+        ],
         "notApplicable": []
       },
-      "reviewedAt": null,
+      "reviewedAt": "2026-07-19",
       "unsupportedInteractionIds": [],
-      "rolloutCohortId": null
+      "rolloutCohortId": "ma-207"
     },
     {
       "canonicalId": "Geomancy",
@@ -15289,37 +15325,94 @@
     {
       "canonicalId": "Glaciate",
       "displayName": "Glaciate",
-      "baseStatus": "blocked",
+      "baseStatus": "complete",
       "interactionStatus": "unassessed",
       "runtime": {
-        "kind": "unimplemented",
-        "version": null,
-        "definitionHash": null,
-        "sourceModule": null
+        "kind": "movespec-v2",
+        "version": 2,
+        "definitionHash": "b0137e0d717a0459168de4054da136044f1589a32f4a815ff81180516098d386",
+        "sourceModule": "server/domain/moveAutomation/specs/areaStages207.ts"
       },
       "rulesProvenance": {
         "rulesetId": "rotom-table-reference-moves-v1",
         "canonicalizationVersion": 1,
         "sourceDataSha256": "f90491826349afd7d1f2809fd9d74b7acc555f5163b99264205ee369249e9815"
       },
-      "capabilityTags": [],
-      "suggestedCapabilityTags": [
-        "area-condition-or-stage"
+      "capabilityTags": [
+        "conditions.typed",
+        "expressions.bounded",
+        "stages.typed",
+        "targeting.authoritative"
       ],
-      "blockerCodes": [
-        "runtime.unimplemented"
-      ],
+      "suggestedCapabilityTags": [],
+      "blockerCodes": [],
       "limitations": [],
       "manualSteps": [],
-      "scenarioIds": [],
+      "scenarioIds": [
+        "glaciate.v2-grounded-even-area-mixed",
+        "glaciate.v2-airborne-or-odd-no-slow",
+        "glaciate.v2-critical-hit",
+        "glaciate.v2-condition-immunity",
+        "glaciate.v2-duplicate-replay",
+        "glaciate.v2-stale-target"
+      ],
       "conformanceEvidence": {
-        "requirementTags": [],
-        "scenarios": [],
+        "requirementTags": [
+          "branch.accuracy",
+          "branch.critical-hit",
+          "branch.immunity",
+          "branch.threshold",
+          "mechanic.damage",
+          "recovery.retry",
+          "resource.multi",
+          "target.area"
+        ],
+        "scenarios": [
+          {
+            "scenarioId": "glaciate.v2-grounded-even-area-mixed",
+            "evidenceClasses": [
+              "area-mixed-outcomes",
+              "hit",
+              "miss",
+              "threshold-pass"
+            ]
+          },
+          {
+            "scenarioId": "glaciate.v2-airborne-or-odd-no-slow",
+            "evidenceClasses": [
+              "threshold-fail"
+            ]
+          },
+          {
+            "scenarioId": "glaciate.v2-critical-hit",
+            "evidenceClasses": [
+              "crit"
+            ]
+          },
+          {
+            "scenarioId": "glaciate.v2-condition-immunity",
+            "evidenceClasses": [
+              "immunity"
+            ]
+          },
+          {
+            "scenarioId": "glaciate.v2-duplicate-replay",
+            "evidenceClasses": [
+              "retry"
+            ]
+          },
+          {
+            "scenarioId": "glaciate.v2-stale-target",
+            "evidenceClasses": [
+              "multi-resource-conflict"
+            ]
+          }
+        ],
         "notApplicable": []
       },
-      "reviewedAt": null,
+      "reviewedAt": "2026-07-19",
       "unsupportedInteractionIds": [],
-      "rolloutCohortId": null
+      "rolloutCohortId": "ma-207"
     },
     {
       "canonicalId": "Glare",
@@ -16292,37 +16385,63 @@
     {
       "canonicalId": "Haze",
       "displayName": "Haze",
-      "baseStatus": "blocked",
+      "baseStatus": "complete",
       "interactionStatus": "unassessed",
       "runtime": {
-        "kind": "unimplemented",
-        "version": null,
-        "definitionHash": null,
-        "sourceModule": null
+        "kind": "movespec-v2",
+        "version": 2,
+        "definitionHash": "f66741b0dcca373601ddf0b116f1ddef6f62035fbbded56ce5a1c834e0bc3f24",
+        "sourceModule": "server/domain/moveAutomation/specs/areaStages207.ts"
       },
       "rulesProvenance": {
         "rulesetId": "rotom-table-reference-moves-v1",
         "canonicalizationVersion": 1,
         "sourceDataSha256": "f90491826349afd7d1f2809fd9d74b7acc555f5163b99264205ee369249e9815"
       },
-      "capabilityTags": [],
-      "suggestedCapabilityTags": [
-        "area-condition-or-stage"
+      "capabilityTags": [
+        "stages.typed",
+        "targeting.authoritative"
       ],
-      "blockerCodes": [
-        "runtime.unimplemented"
-      ],
+      "suggestedCapabilityTags": [],
+      "blockerCodes": [],
       "limitations": [],
       "manualSteps": [],
-      "scenarioIds": [],
+      "scenarioIds": [
+        "haze.v2-field-wide-stage-reset",
+        "haze.v2-duplicate-replay",
+        "haze.v2-stale-encounter-sheet"
+      ],
       "conformanceEvidence": {
-        "requirementTags": [],
-        "scenarios": [],
+        "requirementTags": [
+          "recovery.retry",
+          "resource.multi",
+          "target.self"
+        ],
+        "scenarios": [
+          {
+            "scenarioId": "haze.v2-field-wide-stage-reset",
+            "evidenceClasses": [
+              "self"
+            ]
+          },
+          {
+            "scenarioId": "haze.v2-duplicate-replay",
+            "evidenceClasses": [
+              "retry"
+            ]
+          },
+          {
+            "scenarioId": "haze.v2-stale-encounter-sheet",
+            "evidenceClasses": [
+              "multi-resource-conflict"
+            ]
+          }
+        ],
         "notApplicable": []
       },
-      "reviewedAt": null,
+      "reviewedAt": "2026-07-19",
       "unsupportedInteractionIds": [],
-      "rolloutCohortId": null
+      "rolloutCohortId": "ma-207"
     },
     {
       "canonicalId": "Head Charge",
@@ -16845,37 +16964,70 @@
     {
       "canonicalId": "Heart Swap",
       "displayName": "Heart Swap",
-      "baseStatus": "blocked",
+      "baseStatus": "complete",
       "interactionStatus": "unassessed",
       "runtime": {
-        "kind": "unimplemented",
-        "version": null,
-        "definitionHash": null,
-        "sourceModule": null
+        "kind": "movespec-v2",
+        "version": 2,
+        "definitionHash": "a017c7e828908aa30a91d66e956f00aadddffc93a72f59959aa3bc8d80a3f112",
+        "sourceModule": "server/domain/moveAutomation/specs/areaStages207.ts"
       },
       "rulesProvenance": {
         "rulesetId": "rotom-table-reference-moves-v1",
         "canonicalizationVersion": 1,
         "sourceDataSha256": "f90491826349afd7d1f2809fd9d74b7acc555f5163b99264205ee369249e9815"
       },
-      "capabilityTags": [],
-      "suggestedCapabilityTags": [
-        "area-condition-or-stage"
+      "capabilityTags": [
+        "stages.typed",
+        "targeting.authoritative"
       ],
-      "blockerCodes": [
-        "runtime.unimplemented"
-      ],
+      "suggestedCapabilityTags": [],
+      "blockerCodes": [],
       "limitations": [],
       "manualSteps": [],
-      "scenarioIds": [],
+      "scenarioIds": [
+        "heart-swap.v2-two-target-all-stage-swap",
+        "heart-swap.v2-identical-stage-no-op",
+        "heart-swap.v2-duplicate-replay",
+        "heart-swap.v2-stale-target"
+      ],
       "conformanceEvidence": {
-        "requirementTags": [],
-        "scenarios": [],
+        "requirementTags": [
+          "branch.threshold",
+          "recovery.retry",
+          "resource.multi"
+        ],
+        "scenarios": [
+          {
+            "scenarioId": "heart-swap.v2-two-target-all-stage-swap",
+            "evidenceClasses": [
+              "threshold-pass"
+            ]
+          },
+          {
+            "scenarioId": "heart-swap.v2-identical-stage-no-op",
+            "evidenceClasses": [
+              "threshold-fail"
+            ]
+          },
+          {
+            "scenarioId": "heart-swap.v2-duplicate-replay",
+            "evidenceClasses": [
+              "retry"
+            ]
+          },
+          {
+            "scenarioId": "heart-swap.v2-stale-target",
+            "evidenceClasses": [
+              "multi-resource-conflict"
+            ]
+          }
+        ],
         "notApplicable": []
       },
-      "reviewedAt": null,
+      "reviewedAt": "2026-07-19",
       "unsupportedInteractionIds": [],
-      "rolloutCohortId": null
+      "rolloutCohortId": "ma-207"
     },
     {
       "canonicalId": "Heat Crash",
@@ -17950,72 +18102,186 @@
     {
       "canonicalId": "Hyper Voice",
       "displayName": "Hyper Voice",
-      "baseStatus": "blocked",
+      "baseStatus": "complete",
       "interactionStatus": "unassessed",
       "runtime": {
-        "kind": "unimplemented",
-        "version": null,
-        "definitionHash": null,
-        "sourceModule": null
+        "kind": "movespec-v2",
+        "version": 2,
+        "definitionHash": "41b79b17b8d8841200adce1f3f2c7b330de8821496fbc789d4510ad66bb64215",
+        "sourceModule": "server/domain/moveAutomation/specs/areaStages207.ts"
       },
       "rulesProvenance": {
         "rulesetId": "rotom-table-reference-moves-v1",
         "canonicalizationVersion": 1,
         "sourceDataSha256": "f90491826349afd7d1f2809fd9d74b7acc555f5163b99264205ee369249e9815"
       },
-      "capabilityTags": [],
-      "suggestedCapabilityTags": [
-        "area-condition-or-stage"
+      "capabilityTags": [
+        "movement.authoritative",
+        "targeting.authoritative"
       ],
-      "blockerCodes": [
-        "runtime.unimplemented"
-      ],
+      "suggestedCapabilityTags": [],
+      "blockerCodes": [],
       "limitations": [],
       "manualSteps": [],
-      "scenarioIds": [],
+      "scenarioIds": [
+        "hyper-voice.v2-smite-and-area-exit-push",
+        "hyper-voice.v2-critical-hit",
+        "hyper-voice.v2-ghost-immunity",
+        "hyper-voice.v2-obstructed-shortened-push",
+        "hyper-voice.v2-duplicate-replay",
+        "hyper-voice.v2-stale-target"
+      ],
       "conformanceEvidence": {
-        "requirementTags": [],
-        "scenarios": [],
+        "requirementTags": [
+          "branch.accuracy",
+          "branch.alternate",
+          "branch.critical-hit",
+          "branch.immunity",
+          "branch.threshold",
+          "mechanic.damage",
+          "recovery.retry",
+          "resource.multi",
+          "target.area"
+        ],
+        "scenarios": [
+          {
+            "scenarioId": "hyper-voice.v2-smite-and-area-exit-push",
+            "evidenceClasses": [
+              "alternate-branch",
+              "area-mixed-outcomes",
+              "hit",
+              "miss",
+              "threshold-pass"
+            ]
+          },
+          {
+            "scenarioId": "hyper-voice.v2-critical-hit",
+            "evidenceClasses": [
+              "crit"
+            ]
+          },
+          {
+            "scenarioId": "hyper-voice.v2-ghost-immunity",
+            "evidenceClasses": [
+              "immunity"
+            ]
+          },
+          {
+            "scenarioId": "hyper-voice.v2-obstructed-shortened-push",
+            "evidenceClasses": [
+              "threshold-fail"
+            ]
+          },
+          {
+            "scenarioId": "hyper-voice.v2-duplicate-replay",
+            "evidenceClasses": [
+              "retry"
+            ]
+          },
+          {
+            "scenarioId": "hyper-voice.v2-stale-target",
+            "evidenceClasses": [
+              "multi-resource-conflict"
+            ]
+          }
+        ],
         "notApplicable": []
       },
-      "reviewedAt": null,
+      "reviewedAt": "2026-07-19",
       "unsupportedInteractionIds": [],
-      "rolloutCohortId": null
+      "rolloutCohortId": "ma-207"
     },
     {
       "canonicalId": "Hyperspace Fury",
       "displayName": "Hyperspace Fury",
-      "baseStatus": "blocked",
+      "baseStatus": "complete",
       "interactionStatus": "unassessed",
       "runtime": {
-        "kind": "unimplemented",
-        "version": null,
-        "definitionHash": null,
-        "sourceModule": null
+        "kind": "movespec-v2",
+        "version": 2,
+        "definitionHash": "9d6a05b5f148e6b3da3002a0b8e567f0a35a0c0dc87fac2a6dd71ff6a0494c93",
+        "sourceModule": "server/domain/moveAutomation/specs/areaStages207.ts"
       },
       "rulesProvenance": {
         "rulesetId": "rotom-table-reference-moves-v1",
         "canonicalizationVersion": 1,
         "sourceDataSha256": "f90491826349afd7d1f2809fd9d74b7acc555f5163b99264205ee369249e9815"
       },
-      "capabilityTags": [],
-      "suggestedCapabilityTags": [
-        "area-condition-or-stage"
+      "capabilityTags": [
+        "reactions.durable",
+        "stages.typed",
+        "targeting.authoritative"
       ],
-      "blockerCodes": [
-        "runtime.unimplemented"
-      ],
+      "suggestedCapabilityTags": [],
+      "blockerCodes": [],
       "limitations": [],
       "manualSteps": [],
-      "scenarioIds": [],
+      "scenarioIds": [
+        "hyperspace-fury.v2-area-self-drop-no-interrupt",
+        "hyperspace-fury.v2-empty-area-no-drop",
+        "hyperspace-fury.v2-critical-hit",
+        "hyperspace-fury.v2-duplicate-replay",
+        "hyperspace-fury.v2-stale-target"
+      ],
       "conformanceEvidence": {
-        "requirementTags": [],
-        "scenarios": [],
-        "notApplicable": []
+        "requirementTags": [
+          "branch.accuracy",
+          "branch.alternate",
+          "branch.critical-hit",
+          "branch.threshold",
+          "mechanic.damage",
+          "recovery.retry",
+          "resource.multi",
+          "target.area",
+          "target.self"
+        ],
+        "scenarios": [
+          {
+            "scenarioId": "hyperspace-fury.v2-area-self-drop-no-interrupt",
+            "evidenceClasses": [
+              "alternate-branch",
+              "area-mixed-outcomes",
+              "hit",
+              "miss",
+              "self",
+              "threshold-pass"
+            ]
+          },
+          {
+            "scenarioId": "hyperspace-fury.v2-empty-area-no-drop",
+            "evidenceClasses": [
+              "threshold-fail"
+            ]
+          },
+          {
+            "scenarioId": "hyperspace-fury.v2-critical-hit",
+            "evidenceClasses": [
+              "crit"
+            ]
+          },
+          {
+            "scenarioId": "hyperspace-fury.v2-duplicate-replay",
+            "evidenceClasses": [
+              "retry"
+            ]
+          },
+          {
+            "scenarioId": "hyperspace-fury.v2-stale-target",
+            "evidenceClasses": [
+              "multi-resource-conflict"
+            ]
+          }
+        ],
+        "notApplicable": [
+          {
+            "evidenceClass": "immunity",
+            "reason": "The frozen type chart and reviewed Hyperspace Fury base rules contain no Dark-damage immunity branch; broader ability interactions remain separately unassessed."
+          }
+        ]
       },
-      "reviewedAt": null,
+      "reviewedAt": "2026-07-19",
       "unsupportedInteractionIds": [],
-      "rolloutCohortId": null
+      "rolloutCohortId": "ma-207"
     },
     {
       "canonicalId": "Hyperspace Hole",
@@ -20214,72 +20480,180 @@
     {
       "canonicalId": "Leaf Storm",
       "displayName": "Leaf Storm",
-      "baseStatus": "blocked",
+      "baseStatus": "complete",
       "interactionStatus": "unassessed",
       "runtime": {
-        "kind": "unimplemented",
-        "version": null,
-        "definitionHash": null,
-        "sourceModule": null
+        "kind": "movespec-v2",
+        "version": 2,
+        "definitionHash": "d73aa3ec1d62988ed1aa1fdeb539394f6d93b89f18adc2e5b889de3c0fa8df37",
+        "sourceModule": "server/domain/moveAutomation/specs/areaStages207.ts"
       },
       "rulesProvenance": {
         "rulesetId": "rotom-table-reference-moves-v1",
         "canonicalizationVersion": 1,
         "sourceDataSha256": "f90491826349afd7d1f2809fd9d74b7acc555f5163b99264205ee369249e9815"
       },
-      "capabilityTags": [],
-      "suggestedCapabilityTags": [
-        "area-condition-or-stage"
+      "capabilityTags": [
+        "stages.typed",
+        "targeting.authoritative"
       ],
-      "blockerCodes": [
-        "runtime.unimplemented"
-      ],
+      "suggestedCapabilityTags": [],
+      "blockerCodes": [],
       "limitations": [],
       "manualSteps": [],
-      "scenarioIds": [],
+      "scenarioIds": [
+        "leaf-storm.v2-smite-and-self-drop",
+        "leaf-storm.v2-sap-sipper-no-drop",
+        "leaf-storm.v2-critical-hit",
+        "leaf-storm.v2-duplicate-replay",
+        "leaf-storm.v2-stale-target"
+      ],
       "conformanceEvidence": {
-        "requirementTags": [],
-        "scenarios": [],
+        "requirementTags": [
+          "branch.accuracy",
+          "branch.critical-hit",
+          "branch.immunity",
+          "branch.threshold",
+          "mechanic.damage",
+          "recovery.retry",
+          "resource.multi",
+          "target.area",
+          "target.self"
+        ],
+        "scenarios": [
+          {
+            "scenarioId": "leaf-storm.v2-smite-and-self-drop",
+            "evidenceClasses": [
+              "area-mixed-outcomes",
+              "hit",
+              "miss",
+              "self",
+              "threshold-pass"
+            ]
+          },
+          {
+            "scenarioId": "leaf-storm.v2-sap-sipper-no-drop",
+            "evidenceClasses": [
+              "immunity",
+              "threshold-fail"
+            ]
+          },
+          {
+            "scenarioId": "leaf-storm.v2-critical-hit",
+            "evidenceClasses": [
+              "crit"
+            ]
+          },
+          {
+            "scenarioId": "leaf-storm.v2-duplicate-replay",
+            "evidenceClasses": [
+              "retry"
+            ]
+          },
+          {
+            "scenarioId": "leaf-storm.v2-stale-target",
+            "evidenceClasses": [
+              "multi-resource-conflict"
+            ]
+          }
+        ],
         "notApplicable": []
       },
-      "reviewedAt": null,
+      "reviewedAt": "2026-07-19",
       "unsupportedInteractionIds": [],
-      "rolloutCohortId": null
+      "rolloutCohortId": "ma-207"
     },
     {
       "canonicalId": "Leaf Tornado",
       "displayName": "Leaf Tornado",
-      "baseStatus": "blocked",
+      "baseStatus": "complete",
       "interactionStatus": "unassessed",
       "runtime": {
-        "kind": "unimplemented",
-        "version": null,
-        "definitionHash": null,
-        "sourceModule": null
+        "kind": "movespec-v2",
+        "version": 2,
+        "definitionHash": "cd04b6518938cb3829a42fd893fa6b85e59d2038d6fc70c8c69118a71911be00",
+        "sourceModule": "server/domain/moveAutomation/specs/areaStages207.ts"
       },
       "rulesProvenance": {
         "rulesetId": "rotom-table-reference-moves-v1",
         "canonicalizationVersion": 1,
         "sourceDataSha256": "f90491826349afd7d1f2809fd9d74b7acc555f5163b99264205ee369249e9815"
       },
-      "capabilityTags": [],
-      "suggestedCapabilityTags": [
-        "area-condition-or-stage"
+      "capabilityTags": [
+        "stages.typed",
+        "targeting.authoritative"
       ],
-      "blockerCodes": [
-        "runtime.unimplemented"
-      ],
+      "suggestedCapabilityTags": [],
+      "blockerCodes": [],
       "limitations": [],
       "manualSteps": [],
-      "scenarioIds": [],
+      "scenarioIds": [
+        "leaf-tornado.v2-center-size-and-threshold-filter",
+        "leaf-tornado.v2-miss-or-low-roll",
+        "leaf-tornado.v2-critical-hit",
+        "leaf-tornado.v2-sap-sipper-immunity",
+        "leaf-tornado.v2-duplicate-replay",
+        "leaf-tornado.v2-stale-target"
+      ],
       "conformanceEvidence": {
-        "requirementTags": [],
-        "scenarios": [],
+        "requirementTags": [
+          "branch.accuracy",
+          "branch.alternate",
+          "branch.critical-hit",
+          "branch.immunity",
+          "branch.threshold",
+          "mechanic.damage",
+          "recovery.retry",
+          "resource.multi",
+          "target.area"
+        ],
+        "scenarios": [
+          {
+            "scenarioId": "leaf-tornado.v2-center-size-and-threshold-filter",
+            "evidenceClasses": [
+              "alternate-branch",
+              "area-mixed-outcomes",
+              "hit",
+              "threshold-pass"
+            ]
+          },
+          {
+            "scenarioId": "leaf-tornado.v2-miss-or-low-roll",
+            "evidenceClasses": [
+              "miss",
+              "threshold-fail"
+            ]
+          },
+          {
+            "scenarioId": "leaf-tornado.v2-critical-hit",
+            "evidenceClasses": [
+              "crit"
+            ]
+          },
+          {
+            "scenarioId": "leaf-tornado.v2-sap-sipper-immunity",
+            "evidenceClasses": [
+              "immunity"
+            ]
+          },
+          {
+            "scenarioId": "leaf-tornado.v2-duplicate-replay",
+            "evidenceClasses": [
+              "retry"
+            ]
+          },
+          {
+            "scenarioId": "leaf-tornado.v2-stale-target",
+            "evidenceClasses": [
+              "multi-resource-conflict"
+            ]
+          }
+        ],
         "notApplicable": []
       },
-      "reviewedAt": null,
+      "reviewedAt": "2026-07-19",
       "unsupportedInteractionIds": [],
-      "rolloutCohortId": null
+      "rolloutCohortId": "ma-207"
     },
     {
       "canonicalId": "Leafage",

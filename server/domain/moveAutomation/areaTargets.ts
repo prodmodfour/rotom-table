@@ -19,6 +19,7 @@ export const DEFAULT_MOVE_AUTOMATION_AREA_TARGET_PREDICATE = Object.freeze<MoveA
 export type MoveAutomationAreaTargetReasonCode =
   | MoveAutomationTargetPredicateReasonCode
   | 'target-excluded-line-of-sight'
+  | 'target-excluded-area-center-size'
   | 'requested-friendly-exclusion'
 
 export interface MoveAutomationAreaTargetEvaluation
@@ -50,6 +51,8 @@ export interface ResolveMoveAutomationAreaTargetsInput {
   readonly originatingSetupOperationId?: string | null
   /** Already validated Friendly intent; it may narrow but never widen geometry. */
   readonly requestedExcludedPlacementIds?: readonly string[]
+  /** Footprints intersecting the authoritative Ranged Blast center cell, in map order. */
+  readonly centralCellAffectedPlacementIds?: readonly string[]
 }
 
 export type MoveAutomationAreaTargetErrorCode =
@@ -60,6 +63,8 @@ export type MoveAutomationAreaTargetErrorCode =
   | 'duplicate-requested-exclusion'
   | 'requested-exclusion-outside-geometry'
   | 'too-many-requested-exclusions'
+  | 'area-center-unavailable'
+  | 'invalid-area-center-candidates'
 
 export class MoveAutomationAreaTargetError extends Error {
   readonly code: MoveAutomationAreaTargetErrorCode
@@ -153,26 +158,74 @@ const requestedExclusionSet = (
   return exclusions
 }
 
+const centralCellCandidateSet = (
+  input: ResolveMoveAutomationAreaTargetsInput,
+  geometry: readonly string[],
+): ReadonlySet<string> => {
+  if (!input.predicate.areaGeometry) return new Set()
+  if (input.centralCellAffectedPlacementIds === undefined) {
+    return fail(
+      'area-center-unavailable',
+      'The reviewed area geometry predicate requires an authoritative center cell.',
+    )
+  }
+  const central = geometricCandidates(input.centralCellAffectedPlacementIds)
+  const geometrySet = new Set(geometry)
+  if (central.some(id => !geometrySet.has(id))) {
+    return fail(
+      'invalid-area-center-candidates',
+      'Area center candidates must be a subset of complete authoritative geometry.',
+    )
+  }
+  return new Set(central)
+}
+
 const freezeEvaluation = (
   evaluation: MoveAutomationTargetPredicateEvaluation,
   requestedExclusions: ReadonlySet<string>,
-  actorPlacementId: string,
-  lineOfSight?: MoveAutomationLineOfSightResolver,
+  centralCellCandidates: ReadonlySet<string>,
+  input: ResolveMoveAutomationAreaTargetsInput,
 ): MoveAutomationAreaTargetEvaluation => {
   const sightBlocked = evaluation.outcome === 'included'
-    && lineOfSight !== undefined
-    && !lineOfSight.resolve(actorPlacementId, evaluation.targetPlacementId).targetable
+    && input.lineOfSight !== undefined
+    && !input.lineOfSight.resolve(
+      input.actorPlacementId,
+      evaluation.targetPlacementId,
+    ).targetable
+  const areaGeometry = input.predicate.areaGeometry
+  const targetState = areaGeometry
+    && evaluation.outcome === 'included'
+    && centralCellCandidates.has(evaluation.targetPlacementId)
+    ? input.states?.resolve(evaluation.targetPlacementId) ?? null
+    : null
+  const centerSizeExcluded = !sightBlocked
+    && targetState !== null
+    && targetState.size !== null
+    && areaGeometry?.sizes.includes(targetState.size) === true
+  const centerStateUnavailable = !sightBlocked
+    && areaGeometry !== undefined
+    && evaluation.outcome === 'included'
+    && centralCellCandidates.has(evaluation.targetPlacementId)
+    && (targetState === null || targetState.size === null)
   const requestedExclusion = !sightBlocked
+    && !centerSizeExcluded
+    && !centerStateUnavailable
     && evaluation.outcome === 'included'
     && requestedExclusions.has(evaluation.targetPlacementId)
   return Object.freeze({
     ...evaluation,
-    outcome: sightBlocked || requestedExclusion ? 'excluded' as const : evaluation.outcome,
+    outcome: sightBlocked || centerSizeExcluded || centerStateUnavailable || requestedExclusion
+      ? 'excluded' as const
+      : evaluation.outcome,
     reasonCode: sightBlocked
       ? 'target-excluded-line-of-sight' as const
-      : requestedExclusion
-        ? 'requested-friendly-exclusion' as const
-        : evaluation.reasonCode,
+      : centerSizeExcluded
+        ? 'target-excluded-area-center-size' as const
+        : centerStateUnavailable
+          ? 'target-excluded-state-unavailable' as const
+          : requestedExclusion
+            ? 'requested-friendly-exclusion' as const
+            : evaluation.reasonCode,
   })
 }
 
@@ -191,6 +244,13 @@ export const resolveMoveAutomationAreaTargets = (
     input.requestedExcludedPlacementIds ?? [],
     geometry,
   )
+  if (input.predicate.areaGeometry && !input.states) {
+    return fail(
+      'invalid-area-center-candidates',
+      'Area center size predicates require authoritative target-state queries.',
+    )
+  }
+  const centralCellCandidates = centralCellCandidateSet(input, geometry)
   const predicateResult = evaluateMoveAutomationTargetPredicates({
     actorPlacementId: input.actorPlacementId,
     authoritativeCandidatePlacementIds: geometry,
@@ -206,8 +266,8 @@ export const resolveMoveAutomationAreaTargets = (
     freezeEvaluation(
       evaluation,
       requestedExclusions,
-      input.actorPlacementId,
-      input.lineOfSight,
+      centralCellCandidates,
+      input,
     )
   ))
   const eligibleTargetPlacementIds = evaluations

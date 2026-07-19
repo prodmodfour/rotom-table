@@ -233,6 +233,12 @@ export const createStandardMoveCoreTokenEffectImmunityQueries = (
     combatStage: ({ operation, stage, delta, recipient }) => decision(
       moveImmunity(recipient)
       ?? (
+        operation.payload.applyTypeImmunity
+        && operation.recipients.kind !== 'actor'
+          ? typedAttackImmunity(recipient, 'defending')
+          : null
+      )
+      ?? (
         operation.payload.trigger?.kind === 'accuracy-roll'
         && operation.recipients.kind !== 'actor'
         && tokenHasShieldDust(recipient.token)

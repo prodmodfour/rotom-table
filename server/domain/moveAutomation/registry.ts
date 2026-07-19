@@ -20,6 +20,7 @@ import {
 } from './validateSpec'
 import { ABSORB_MOVE_SPEC_REGISTRATION } from './specs/absorb'
 import { AREA_EFFECTS_206_MOVE_SPEC_REGISTRATIONS } from './specs/areaEffects206'
+import { AREA_STAGES_207_MOVE_SPEC_REGISTRATIONS } from './specs/areaStages207'
 import { ASTONISH_MOVE_SPEC_REGISTRATION } from './specs/astonish'
 import { DARK_VOID_MOVE_SPEC_REGISTRATION } from './specs/darkVoid'
 import { DOUBLE_KICK_MOVE_SPEC_REGISTRATION } from './specs/doubleKick'
@@ -270,6 +271,7 @@ export const createMoveAutomationRuntimeRegistry = (
 export const REVIEWED_MOVE_SPEC_V2_REGISTRATIONS: readonly MoveSpecV2Registration[] = Object.freeze([
   ABSORB_MOVE_SPEC_REGISTRATION,
   ...AREA_EFFECTS_206_MOVE_SPEC_REGISTRATIONS,
+  ...AREA_STAGES_207_MOVE_SPEC_REGISTRATIONS,
   ASTONISH_MOVE_SPEC_REGISTRATION,
   DARK_VOID_MOVE_SPEC_REGISTRATION,
   DOUBLE_KICK_MOVE_SPEC_REGISTRATION,

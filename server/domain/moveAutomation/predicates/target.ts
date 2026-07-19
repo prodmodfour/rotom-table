@@ -13,6 +13,10 @@ import {
   type MoveAutomationTargetStatePredicate,
   type MoveAutomationTargetStatePredicateReasonCode,
 } from './targetState'
+import {
+  MOVE_AUTOMATION_TARGET_SIZES,
+  type MoveAutomationTargetSize,
+} from '../targetState'
 
 export const MOVE_AUTOMATION_TARGET_RELATIONSHIP_PREDICATES = [
   'self',
@@ -47,7 +51,15 @@ export type MoveAutomationTargetWillingness =
   | MoveAutomationTargetWillingnessDeclarationValue
   | 'undeclared'
 
-/** Reviewed identity and relationship rules for one target set. */
+export interface MoveAutomationAreaCenterSizeExclusion {
+  readonly kind: 'exclude-center-by-size'
+  /** Recipients with one of these sizes cannot be hit while intersecting the center cell. */
+  readonly sizes: readonly MoveAutomationTargetSize[]
+}
+
+export type MoveAutomationAreaGeometryPredicate = MoveAutomationAreaCenterSizeExclusion
+
+/** Reviewed identity, relationship, state, and optional area-relative rules. */
 export interface MoveAutomationTargetPredicateDeclaration {
   readonly relationship: MoveAutomationTargetRelationshipPredicate
   readonly willingness: MoveAutomationTargetWillingnessPredicate
@@ -55,6 +67,8 @@ export interface MoveAutomationTargetPredicateDeclaration {
   readonly excludeActor: boolean
   /** Optional all-of authoritative target-state constraints, evaluated before mechanics. */
   readonly statePredicates?: readonly MoveAutomationTargetStatePredicate[]
+  /** Evaluated only by the geometry-first area-target seam. */
+  readonly areaGeometry?: MoveAutomationAreaGeometryPredicate
 }
 
 /**
@@ -154,6 +168,7 @@ const WILLINGNESS_PREDICATE_SET = new Set<string>(
 const WILLINGNESS_DECLARATION_SET = new Set<string>(
   MOVE_AUTOMATION_TARGET_WILLINGNESS_DECLARATIONS,
 )
+const TARGET_SIZE_SET = new Set<string>(MOVE_AUTOMATION_TARGET_SIZES)
 
 const fail = (
   code: MoveAutomationTargetPredicateErrorCode,
@@ -165,6 +180,33 @@ const fail = (
 const validPlacementId = (value: unknown): value is string => (
   typeof value === 'string' && value.length > 0 && value.trim() === value
 )
+
+const parseAreaGeometryPredicate = (
+  value: unknown,
+): MoveAutomationAreaGeometryPredicate => {
+  if (typeof value !== 'object' || value === null || Array.isArray(value)) {
+    return fail('invalid-target-predicate', 'Area geometry predicate must be an object.')
+  }
+  const input = value as Partial<MoveAutomationAreaCenterSizeExclusion>
+  if (
+    input.kind !== 'exclude-center-by-size'
+    || !Array.isArray(input.sizes)
+    || input.sizes.length === 0
+    || input.sizes.length > MOVE_AUTOMATION_TARGET_SIZES.length
+    || input.sizes.some(size => typeof size !== 'string' || !TARGET_SIZE_SET.has(size))
+    || new Set(input.sizes).size !== input.sizes.length
+    || Object.keys(input).some(key => key !== 'kind' && key !== 'sizes')
+  ) {
+    return fail(
+      'invalid-target-predicate',
+      'Area geometry predicate must declare exclude-center-by-size with distinct canonical sizes.',
+    )
+  }
+  return Object.freeze({
+    kind: input.kind,
+    sizes: Object.freeze([...input.sizes] as MoveAutomationTargetSize[]),
+  })
+}
 
 /** Strictly parse, detach, and freeze one reviewed target declaration. */
 export const parseMoveAutomationTargetPredicateDeclaration = (
@@ -190,6 +232,7 @@ export const parseMoveAutomationTargetPredicateDeclaration = (
       'willingness',
       'excludeActor',
       'statePredicates',
+      'areaGeometry',
     ].includes(key))
   ) {
     return fail(
@@ -198,6 +241,7 @@ export const parseMoveAutomationTargetPredicateDeclaration = (
     )
   }
   const hasStatePredicates = Object.prototype.hasOwnProperty.call(predicate, 'statePredicates')
+  const hasAreaGeometry = Object.prototype.hasOwnProperty.call(predicate, 'areaGeometry')
   return Object.freeze({
     relationship: predicate.relationship!,
     willingness: predicate.willingness!,
@@ -208,6 +252,9 @@ export const parseMoveAutomationTargetPredicateDeclaration = (
             predicate.statePredicates,
           ),
         }
+      : {}),
+    ...(hasAreaGeometry
+      ? { areaGeometry: parseAreaGeometryPredicate(predicate.areaGeometry) }
       : {}),
   })
 }

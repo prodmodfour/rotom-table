@@ -13,6 +13,7 @@ import {
 import {
   buildMoveAutomationScriptFromMoveData,
   isSeamlessAreaConfirmationScript,
+  isSeamlessFieldMoveScript,
   isSeamlessSelfMoveScript,
   isSeamlessSingleTargetMoveScript,
   isSeamlessTargetCountMoveScript,
@@ -1403,7 +1404,11 @@ export const useMoveAutomationPanel = ({
       return true
     }
 
-    if (isSeamlessSelfMoveScript(script) || script.targetMode === 'hazard') {
+    if (
+      isSeamlessSelfMoveScript(script)
+      || isSeamlessFieldMoveScript(script)
+      || script.targetMode === 'hazard'
+    ) {
       clearMoveAutomationFeedback()
       activeMoveTargetBranchSelection.value = null
       activeMoveTargeting.value = null
@@ -1607,7 +1612,14 @@ export const useMoveAutomationPanel = ({
       moveName: request.moveName,
       targetBranchId: request.targetBranchId,
     })
-    return built
+    return {
+      ...built,
+      ...(request.script.targetMode === 'field' && map.value
+        ? {
+            candidateScopePlacementIds: map.value.placements.map(({ id }) => id),
+          }
+        : {}),
+    }
   }
 
   const buildSingleTargetAuthoritativeDispatchRequest = (

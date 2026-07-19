@@ -214,7 +214,11 @@ export const buildResolveMoveScopes = ({
     }
   }
 
-  if (intent.selection.kind !== 'area' && candidateResult.ids.length > 0) {
+  if (
+    intent.selection.kind !== 'area'
+    && intent.selection.kind !== 'self'
+    && candidateResult.ids.length > 0
+  ) {
     const allowed = new Set<string>([intent.placementId, ...explicitTargetIds])
     const unrelated = candidateResult.ids.find((candidateId) => !allowed.has(candidateId))
     if (unrelated) {

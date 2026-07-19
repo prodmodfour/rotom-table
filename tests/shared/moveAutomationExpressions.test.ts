@@ -51,6 +51,7 @@ describe('MoveSpec rules expression AST', () => {
       'hp-ratio',
       'condition',
       'capability',
+      'grounding',
       'combat-stage',
       'combat-stage-total',
       'weight',
@@ -161,7 +162,17 @@ describe('MoveSpec rules expression AST', () => {
     )
   })
 
-  it('parses selected stats, HP ratios, stages, weight, type, and fields', () => {
+  it('parses selected stats, HP ratios, grounding, stages, weight, type, and fields', () => {
+    expect(parseMoveExpression({
+      kind: 'grounding',
+      subject: target(),
+    })).toEqual({ kind: 'grounding', subject: target() })
+    expectExpressionError(
+      { kind: 'grounding', subject: target(), clientGrounded: true },
+      'invalid-expression',
+      'expression',
+    )
+
     expect(parseMoveExpression({
       kind: 'stat',
       subject: target(),

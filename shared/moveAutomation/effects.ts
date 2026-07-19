@@ -143,6 +143,8 @@ export const MOVE_EFFECT_RECIPIENT_SELECTOR_KINDS = [
   'damaged-targets',
   'fainted-targets',
   'area-targets',
+  /** Every authoritative map placement in deterministic map order. */
+  'all-placements',
   'source-placement',
   /** Server-selected owner of one answered durable reaction window. */
   'response-owner',
@@ -1309,6 +1311,8 @@ export interface MoveCombatStageEffectPayload {
   readonly stageSource: MoveSelector | null
   /** Required only when averaging stages with split. */
   readonly rounding: MoveEffectRoundingPolicy | null
+  /** Honor complete typed-attack immunity before changing a non-actor recipient. */
+  readonly applyTypeImmunity?: boolean
   /** Optional bounded gate evaluated without drawing randomness or trusting client state. */
   readonly trigger?: MoveCombatStageTrigger
 }
@@ -1531,7 +1535,16 @@ export interface MoveContextualMovementDistance {
   readonly rounding: MoveEffectRoundingPolicy
 }
 
-export type MoveMovementDistance = number | MoveContextualMovementDistance
+/** Shortest server-derived displacement that leaves the resolved move area. */
+export interface MoveAreaExitMovementDistance {
+  readonly kind: 'area-exit'
+  readonly maximum: number
+}
+
+export type MoveMovementDistance =
+  | number
+  | MoveContextualMovementDistance
+  | MoveAreaExitMovementDistance
 
 export interface MoveRelativeMovementVector {
   readonly kind: 'away' | 'toward'
@@ -2043,7 +2056,13 @@ const CONDITION_DURATION_REQUIRED_FIELDS = ['effectId', 'duration'] as const
 const CONDITION_DURATION_OPTIONAL_FIELDS = ['charges', 'transferPolicy'] as const
 const CONDITION_STACK_POLICY_FIELDS = ['kind', 'maxStacks'] as const
 const COMBAT_STAGE_REQUIRED_FIELDS = ['action', 'stage', 'value'] as const
-const COMBAT_STAGE_OPTIONAL_FIELDS = ['selectedStage', 'stageSource', 'rounding', 'trigger'] as const
+const COMBAT_STAGE_OPTIONAL_FIELDS = [
+  'selectedStage',
+  'stageSource',
+  'rounding',
+  'applyTypeImmunity',
+  'trigger',
+] as const
 const COMBAT_STAGE_ACCURACY_TRIGGER_FIELDS = [
   'kind',
   'rollId',
@@ -2153,6 +2172,7 @@ const CONTEXTUAL_MOVEMENT_DISTANCE_FIELDS = [
   'maximum',
   'rounding',
 ] as const
+const AREA_EXIT_MOVEMENT_DISTANCE_FIELDS = ['kind', 'maximum'] as const
 const RELATIVE_MOVEMENT_VECTOR_FIELDS = ['kind', 'source'] as const
 const CHOSEN_MOVEMENT_VECTOR_FIELDS = ['kind', 'directionSetId'] as const
 const CARDINAL_MOVEMENT_VECTOR_FIELDS = ['kind', 'direction'] as const
@@ -4078,6 +4098,16 @@ const parseCombatStagePayload = (
         `${path}.rounding`,
         'floor, round, or ceil',
       )
+  const hasApplyTypeImmunity = Object.prototype.hasOwnProperty.call(
+    input,
+    'applyTypeImmunity',
+  )
+  const applyTypeImmunity = hasApplyTypeImmunity
+    ? parseBoolean(
+        ownValue(input, 'applyTypeImmunity', path),
+        `${path}.applyTypeImmunity`,
+      )
+    : undefined
   const trigger = Object.prototype.hasOwnProperty.call(input, 'trigger')
     ? parseCombatStageTrigger(ownValue(input, 'trigger', path), `${path}.trigger`)
     : undefined
@@ -4132,6 +4162,7 @@ const parseCombatStagePayload = (
     value: stageValue,
     stageSource,
     rounding,
+    ...(hasApplyTypeImmunity ? { applyTypeImmunity } : {}),
     ...(trigger ? { trigger } : {}),
   }
 }
@@ -5095,10 +5126,23 @@ const parseMovementChoice = (
 const parseContextualMovementDistance = (
   value: unknown,
   path: string,
-): MoveContextualMovementDistance => {
+): MoveContextualMovementDistance | MoveAreaExitMovementDistance => {
+  const candidate = parseRecord(value, path)
+  if (ownValue(candidate, 'kind', path) === 'area-exit') {
+    const input = parseExactRecord(value, AREA_EXIT_MOVEMENT_DISTANCE_FIELDS, path)
+    return {
+      kind: 'area-exit',
+      maximum: parseInteger(
+        ownValue(input, 'maximum', path),
+        `${path}.maximum`,
+        1,
+        MOVE_EFFECT_OPERATION_LIMITS.movementDisplacementDistance,
+      ),
+    }
+  }
   const input = parseExactRecord(value, CONTEXTUAL_MOVEMENT_DISTANCE_FIELDS, path)
   if (ownValue(input, 'kind', path) !== 'expression') {
-    return fail('invalid-effect-operation', `${path}.kind`, 'must be expression.')
+    return fail('invalid-effect-operation', `${path}.kind`, 'must be expression or area-exit.')
   }
   const minimum = parseInteger(
     ownValue(input, 'minimum', path),

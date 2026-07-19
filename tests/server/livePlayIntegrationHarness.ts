@@ -44,7 +44,10 @@ import type { AuthoritativeMoveRandomSource } from '~~/server/domain/moveAutomat
 import { executeLivePlayInitiativeCommandUseCase } from '~~/server/useCases/applyLivePlayInitiativeCommand'
 import { executeLivePlayMapEffectsCommandUseCase } from '~~/server/useCases/applyLivePlayMapEffectsCommand'
 import { executeLivePlaySceneCommandUseCase } from '~~/server/useCases/applyLivePlaySceneCommand'
-import { executeLivePlayResolveMoveCommandUseCase } from '~~/server/useCases/applyResolveMoveCommand'
+import {
+  executeLivePlayResolveMoveCommandUseCase,
+  type LivePlayResolveMoveCommandDependencies,
+} from '~~/server/useCases/applyResolveMoveCommand'
 import { executeLivePlaySheetCommandUseCase } from '~~/server/useCases/applyLivePlaySheetCommand'
 import { executeLivePlayTerrainCommandUseCase } from '~~/server/useCases/applyLivePlayTerrainCommand'
 import { executeLivePlayUseMoveCommandUseCase } from '~~/server/useCases/applyLivePlayUseMoveCommand'
@@ -317,13 +320,26 @@ export class LivePlayIntegrationHarness {
   }
 
   async resolveMove({ actor, command }: LivePlayCommandDispatchOptions<ResolveMoveLivePlayCommand>) {
+    return await this.resolveMoveWithPlanner({ actor, command })
+  }
+
+  async resolveMoveWithPlanner({
+    actor,
+    command,
+    planner,
+  }: LivePlayCommandDispatchOptions<ResolveMoveLivePlayCommand> & {
+    readonly planner?: LivePlayResolveMoveCommandDependencies['planner']
+  }) {
     return await executeLivePlayResolveMoveCommandUseCase({
       role: actor.role,
       clientId: actor.clientId,
       playerProfile: actor.playerProfile,
       command,
       expectedType: LIVE_PLAY_COMMAND_TYPES.RESOLVE_MOVE,
-    }, this.commandDependencies())
+    }, {
+      ...this.commandDependencies(),
+      ...(planner ? { planner } : {}),
+    })
   }
 
   async nextInitiative({ actor, command }: LivePlayCommandDispatchOptions<NextInitiativeLivePlayCommand>) {

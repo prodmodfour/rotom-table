@@ -581,6 +581,29 @@ const capabilityValue = (
   )
 }
 
+const groundingValue = (
+  expression: Extract<MoveExpression, { readonly kind: 'grounding' }>,
+  state: EvaluationState,
+  nodeId: string,
+  depth: number,
+): 'grounded' | 'airborne' => {
+  const placementId = selectedSubjectId(
+    expression.subject,
+    state,
+    nodeId,
+    depth + 1,
+  )
+  const targetState = state.context.queries.targetStates.resolve(placementId)
+  if (!targetState) {
+    return fail(
+      'subject-unavailable',
+      `${nodeId}.subject`,
+      `placement ${placementId} has no authoritative grounding projection.`,
+    )
+  }
+  return targetState.grounding
+}
+
 const combatStageValue = (
   expression: Extract<MoveExpression, { readonly kind: 'combat-stage' }>,
   state: EvaluationState,
@@ -1000,6 +1023,9 @@ const evaluateExpressionNode = (
       break
     case 'capability':
       value = capabilityValue(expression, state, nodeId, depth)
+      break
+    case 'grounding':
+      value = groundingValue(expression, state, nodeId, depth)
       break
     case 'combat-stage':
       value = combatStageValue(expression, state, nodeId, depth)

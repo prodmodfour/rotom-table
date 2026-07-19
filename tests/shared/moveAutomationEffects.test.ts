@@ -806,6 +806,40 @@ describe('MoveSpec typed effect operations', () => {
     })
     expectDeeplyFrozen(contextual)
 
+    const areaExit = parseMoveEffectOperation(validOperation('movement-request', {
+      recipients: { kind: 'damaged-targets' },
+      phase: 'movement',
+      payload: {
+        requestId: 'movement.leave-resolved-area',
+        mode: 'forced',
+        distance: { kind: 'area-exit', maximum: 16 },
+        destinationSetId: null,
+        displacement: {
+          vector: { kind: 'away', source: { kind: 'actor' } },
+          distancePolicy: 'up-to-distance',
+          opportunityAttacks: 'ignore',
+        },
+      },
+    }))
+    expect(areaExit.payload).toMatchObject({
+      distance: { kind: 'area-exit', maximum: 16 },
+    })
+    expectDeeplyFrozen(areaExit)
+    expectEffectError(validOperation('movement-request', {
+      phase: 'movement',
+      payload: {
+        requestId: 'movement.bad-area-exit',
+        mode: 'forced',
+        distance: { kind: 'area-exit', maximum: 0 },
+        destinationSetId: null,
+        displacement: {
+          vector: { kind: 'away', source: { kind: 'actor' } },
+          distancePolicy: 'up-to-distance',
+          opportunityAttacks: 'ignore',
+        },
+      },
+    }), 'limit-exceeded', 'operation.payload.distance.maximum')
+
     for (const vector of [
       { kind: 'toward', source: { kind: 'actor' } },
       { kind: 'chosen', directionSetId: 'directions.psychic' },
@@ -1746,6 +1780,18 @@ describe('MoveSpec typed effect operations', () => {
       value: 2,
       stageSource: null,
       rounding: null,
+    })
+
+    const typeAware = parseMoveEffectOperation(validOperation('combat-stage', {
+      recipients: { kind: 'all-placements' },
+      payload: {
+        ...VALID_PAYLOADS['combat-stage'],
+        applyTypeImmunity: true,
+      },
+    }))
+    expect(typeAware).toMatchObject({
+      recipients: { kind: 'all-placements' },
+      payload: { applyTypeImmunity: true },
     })
 
     const accuracyTriggered = parseMoveEffectOperation(validOperation('combat-stage', {

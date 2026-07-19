@@ -2902,12 +2902,10 @@
     {
       "canonicalId": "Gear Up",
       "displayName": "Gear Up",
-      "baseStatus": "blocked",
+      "baseStatus": "complete",
       "interactionStatus": "unassessed",
-      "runtimeKind": "unimplemented",
-      "blockerCodes": [
-        "runtime.unimplemented"
-      ],
+      "runtimeKind": "movespec-v2",
+      "blockerCodes": [],
       "limitations": [],
       "manualSteps": []
     },
@@ -2962,12 +2960,10 @@
     {
       "canonicalId": "Glaciate",
       "displayName": "Glaciate",
-      "baseStatus": "blocked",
+      "baseStatus": "complete",
       "interactionStatus": "unassessed",
-      "runtimeKind": "unimplemented",
-      "blockerCodes": [
-        "runtime.unimplemented"
-      ],
+      "runtimeKind": "movespec-v2",
+      "blockerCodes": [],
       "limitations": [],
       "manualSteps": []
     },
@@ -3204,12 +3200,10 @@
     {
       "canonicalId": "Haze",
       "displayName": "Haze",
-      "baseStatus": "blocked",
+      "baseStatus": "complete",
       "interactionStatus": "unassessed",
-      "runtimeKind": "unimplemented",
-      "blockerCodes": [
-        "runtime.unimplemented"
-      ],
+      "runtimeKind": "movespec-v2",
+      "blockerCodes": [],
       "limitations": [],
       "manualSteps": []
     },
@@ -3330,12 +3324,10 @@
     {
       "canonicalId": "Heart Swap",
       "displayName": "Heart Swap",
-      "baseStatus": "blocked",
+      "baseStatus": "complete",
       "interactionStatus": "unassessed",
-      "runtimeKind": "unimplemented",
-      "blockerCodes": [
-        "runtime.unimplemented"
-      ],
+      "runtimeKind": "movespec-v2",
+      "blockerCodes": [],
       "limitations": [],
       "manualSteps": []
     },
@@ -3554,24 +3546,20 @@
     {
       "canonicalId": "Hyper Voice",
       "displayName": "Hyper Voice",
-      "baseStatus": "blocked",
+      "baseStatus": "complete",
       "interactionStatus": "unassessed",
-      "runtimeKind": "unimplemented",
-      "blockerCodes": [
-        "runtime.unimplemented"
-      ],
+      "runtimeKind": "movespec-v2",
+      "blockerCodes": [],
       "limitations": [],
       "manualSteps": []
     },
     {
       "canonicalId": "Hyperspace Fury",
       "displayName": "Hyperspace Fury",
-      "baseStatus": "blocked",
+      "baseStatus": "complete",
       "interactionStatus": "unassessed",
-      "runtimeKind": "unimplemented",
-      "blockerCodes": [
-        "runtime.unimplemented"
-      ],
+      "runtimeKind": "movespec-v2",
+      "blockerCodes": [],
       "limitations": [],
       "manualSteps": []
     },
@@ -3994,24 +3982,20 @@
     {
       "canonicalId": "Leaf Storm",
       "displayName": "Leaf Storm",
-      "baseStatus": "blocked",
+      "baseStatus": "complete",
       "interactionStatus": "unassessed",
-      "runtimeKind": "unimplemented",
-      "blockerCodes": [
-        "runtime.unimplemented"
-      ],
+      "runtimeKind": "movespec-v2",
+      "blockerCodes": [],
       "limitations": [],
       "manualSteps": []
     },
     {
       "canonicalId": "Leaf Tornado",
       "displayName": "Leaf Tornado",
-      "baseStatus": "blocked",
+      "baseStatus": "complete",
       "interactionStatus": "unassessed",
-      "runtimeKind": "unimplemented",
-      "blockerCodes": [
-        "runtime.unimplemented"
-      ],
+      "runtimeKind": "movespec-v2",
+      "blockerCodes": [],
       "limitations": [],
       "manualSteps": []
     },

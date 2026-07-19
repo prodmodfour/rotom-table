@@ -15,6 +15,7 @@ import { moveUsageKey } from '~/utils/moveUsage'
 import type { ResolvedCanonicalMoveEntry } from '~/utils/authoritativeMoveEntries'
 import {
   isSeamlessAreaConfirmationScript,
+  isSeamlessFieldMoveScript,
   isSeamlessSelfMoveScript,
   isSeamlessSingleTargetMoveScript,
   isSeamlessTargetCountMoveScript,
@@ -1100,11 +1101,15 @@ const resolveNativeSelfMove = (options: {
   }
   const hazardPlacementMove = options.entry.script.targetMode === 'hazard'
     && options.entry.script.hazardSuggestions.length > 0
-  if (!isSeamlessSelfMoveScript(options.entry.script) && !hazardPlacementMove) {
+  if (
+    !isSeamlessSelfMoveScript(options.entry.script)
+    && !isSeamlessFieldMoveScript(options.entry.script)
+    && !hazardPlacementMove
+  ) {
     fail(
       'invalid',
       'selection-kind-mismatch',
-      `${options.runtime.canonicalId} is not a seamless self or hazard-placement move.`,
+      `${options.runtime.canonicalId} is not a seamless self, field, or hazard-placement move.`,
     )
   }
 
@@ -1571,7 +1576,8 @@ const resolveNativeTargetCountMove = (options: {
   if (
     targeting?.kind !== 'multi-target'
     || targeting.selector?.kind !== 'selected-targets'
-    || targeting.minTargets !== 1
+    || targeting.minTargets < 1
+    || targeting.minTargets > targeting.maxTargets
     || targeting.maxTargets !== options.entry.script.targetCount
   ) {
     return fail(
@@ -1818,6 +1824,14 @@ const resolveNativeAreaMove = (options: {
     lineOfSight: options.context.queries.lineOfSight,
     attackingMoveId: options.runtime.canonicalId,
     requestedExcludedPlacementIds: excludedTargetIds,
+    ...(placement.aimCell
+      ? {
+          centralCellAffectedPlacementIds: tokensInMoveAutomationArea({
+            cells: [placement.aimCell],
+            tokens: placement.candidateTargets,
+          }).map(({ id }) => id),
+        }
+      : {}),
   })
   const eligibleTargetIds = new Set(areaTargets.eligibleTargetPlacementIds)
   const selectedTargets = placement.candidateTargets.filter(target => eligibleTargetIds.has(target.id))
@@ -1829,6 +1843,7 @@ const resolveNativeAreaMove = (options: {
     targetBranchId: options.context.intent.targetBranchId,
     authoritativeTargetIds: selectedTargetIds,
     authoritativeTargetEvaluations: areaTargets.evaluations,
+    authoritativeAreaCells: placement.cells,
     ancestry: options.context.ancestry,
   })
   if (outcome.kind === 'pending') {

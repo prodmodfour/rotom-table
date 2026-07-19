@@ -790,6 +790,9 @@ const effectRecipientIds = (
       // rule-excluded or explicitly excluded placements.
       ids = state.targetIds
       break
+    case 'all-placements':
+      ids = context.queries.placements.all().map(({ id }) => id)
+      break
     case 'hit-targets':
       ids = state.hitTargetIds
       break
