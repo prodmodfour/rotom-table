@@ -64,7 +64,6 @@ export const SEAMLESS_SINGLE_TARGET_ATTACK_SCRIPT_NAMES = [
   'Quick Attack',
   'Return',
   'Rock Throw',
-  'Rolling Kick',
   'Sacred Sword',
   'Scald',
   'Scorching Sands',

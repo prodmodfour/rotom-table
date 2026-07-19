@@ -1014,7 +1014,7 @@
       "canonicalId": "Reflect",
       "sourceModule": "src/utils/move-automation/scripts/self.ts",
       "version": 1,
-      "definitionHash": "f406db70a66b9488e74d94ba4582e5cd2795ea27e52431a43ddb4b8ede3c3e92"
+      "definitionHash": "f967813ca8bcc0f92e1ffa6de2aebf440e8ac693754b24bcfaf648ba67d91232"
     },
     {
       "canonicalId": "Return",
@@ -1054,7 +1054,7 @@
     },
     {
       "canonicalId": "Rolling Kick",
-      "sourceModule": "src/utils/move-automation/scripts/singleTargetAttacks.ts",
+      "sourceModule": "src/utils/move-automation/scripts/singleTargetConditions.ts",
       "version": 1,
       "definitionHash": "468a31932af57287a935f80bb98f99c498f1feb554041867cb14650a1e2d24f8"
     },

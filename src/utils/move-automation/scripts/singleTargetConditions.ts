@@ -23,6 +23,7 @@ export const REVIEWED_SINGLE_TARGET_CONDITION_SCRIPTS: ReadonlyMap<string, MoveA
   ['Poison Tail', reviewedSingleTargetConditionScript('Poison Tail', [{ condition: 'Poisoned', label: 'Poisoned on 19+', threshold: '19+' }])],
   ['Psybeam', reviewedSingleTargetConditionScript('Psybeam', [{ condition: 'Confused', label: 'Confused on 19+', threshold: '19+' }])],
   ['Rock Climb', reviewedSingleTargetConditionScript('Rock Climb', [{ condition: 'Confused', label: 'Confused on 17+', threshold: '17+' }])],
+  ['Rolling Kick', reviewedSingleTargetConditionScript('Rolling Kick', [{ condition: 'Flinch', label: 'Flinch on 15+', threshold: '15+' }])],
   ['Sacred Fire', reviewedSingleTargetConditionScript('Sacred Fire', [{ condition: 'Burned', label: 'Burned on even roll', threshold: 'even roll' }])],
   ['Sand Attack', reviewedSingleTargetConditionScript('Sand Attack', [{ condition: 'Blindness', label: 'Blindness' }])],
   ['Signal Beam', reviewedSingleTargetConditionScript('Signal Beam', [{ condition: 'Confused', label: 'Confused on 19+', threshold: '19+' }])],

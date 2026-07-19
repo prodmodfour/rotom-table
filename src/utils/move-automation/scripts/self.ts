@@ -38,8 +38,7 @@ const reviewedReflectScript = (version = 1): MoveAutomationScript => reviewedMov
     label: 'Reflect Blessing (2 activations)',
   }],
   automationNotes: [
-    'Reflect creates a team Blessing shared by allies; this marker tracks the side’s 2 activations on the user token.',
-    'Remove the marker after both activations are spent, or move it manually if your table tracks side effects elsewhere.',
+    'The selected native v2 runtime stores Reflect as a side-owned two-charge Blessing in authoritative encounter state.',
   ],
 })
 
