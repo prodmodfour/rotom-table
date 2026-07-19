@@ -8,6 +8,8 @@ import { moveAutomationKeywordsInclude } from '~/utils/moveAutomationKeywordImmu
 export const LEVITATE_ABILITY_NAME = 'Levitate'
 export const FLASH_FIRE_ABILITY_NAME = 'Flash Fire'
 export const SAP_SIPPER_ABILITY_NAME = 'Sap Sipper'
+export const VOLT_ABSORB_ABILITY_NAME = 'Volt Absorb'
+export const MOTOR_DRIVE_ABILITY_NAME = 'Motor Drive'
 export const TOLERANCE_ABILITY_NAME = 'Tolerance'
 export const SOUNDPROOF_ABILITY_NAME = 'Soundproof'
 export const MUD_DWELLER_ABILITY_NAME = 'Mud Dweller'
@@ -51,6 +53,14 @@ export const hasFlashFireAbility = (
 export const hasSapSipperAbility = (
   abilities: readonly SheetAbilityNameSource[] | null | undefined,
 ): boolean => sheetHasCanonicalAbility(abilities, SAP_SIPPER_ABILITY_NAME)
+
+export const hasVoltAbsorbAbility = (
+  abilities: readonly SheetAbilityNameSource[] | null | undefined,
+): boolean => sheetHasCanonicalAbility(abilities, VOLT_ABSORB_ABILITY_NAME)
+
+export const hasMotorDriveAbility = (
+  abilities: readonly SheetAbilityNameSource[] | null | undefined,
+): boolean => sheetHasCanonicalAbility(abilities, MOTOR_DRIVE_ABILITY_NAME)
 
 export const hasToleranceAbility = (
   abilities: readonly SheetAbilityNameSource[] | null | undefined,
@@ -152,7 +162,7 @@ export const getPassiveFireImmunitySource = (
   abilities: readonly SheetAbilityNameSource[] | null | undefined,
 ): string | null => hasFlashFireAbility(abilities) ? FLASH_FIRE_ABILITY_NAME : null
 
-const getPassiveTypedAttackImmunitySource = (
+export const getPassiveTypedAttackImmunitySource = (
   attackingType: string,
   abilities: readonly SheetAbilityNameSource[] | null | undefined,
 ): string | null => {
@@ -161,6 +171,10 @@ const getPassiveTypedAttackImmunitySource = (
   }
   if (attackingType === 'Grass' && hasSapSipperAbility(abilities)) {
     return SAP_SIPPER_ABILITY_NAME
+  }
+  if (attackingType === 'Electric') {
+    if (hasVoltAbsorbAbility(abilities)) return VOLT_ABSORB_ABILITY_NAME
+    if (hasMotorDriveAbility(abilities)) return MOTOR_DRIVE_ABILITY_NAME
   }
   return null
 }

@@ -31,7 +31,8 @@ const positiveNumericRangeKeyword = (keywords: readonly string[]): number | null
 }
 
 const keywordsIncludeMeleeRange = (keywords: readonly string[]): boolean =>
-  keywords.some((keyword) => /^Melee$/i.test(keyword))
+  // Canonical PTU source also writes target count compactly as `Melee 1`.
+  keywords.some((keyword) => /^Melee(?:\s+\d+)?$/i.test(keyword))
 
 export const parseSingleTargetMoveRangeMeters = (
   range: string | null | undefined,

@@ -612,9 +612,18 @@ export type MoveEffectRollFormula =
   | MoveEffectUniformIntegerRollFormula
   | MoveEffectTableRollFormula
 
+export interface MoveConditionalAutomaticHitRule {
+  readonly kind: 'automatic-hit-when'
+  readonly predicate: MovePredicate
+  readonly sourceId: string
+  readonly reasonCode: string
+}
+
 export interface MoveScalarRollEffectPayload {
   readonly rollId: string
   readonly formula: MoveEffectDiceRollFormula | MoveEffectUniformIntegerRollFormula
+  /** Optional reviewed predicate that promotes an accuracy d20 to automatic hit. */
+  readonly accuracyRule?: MoveConditionalAutomaticHitRule
 }
 
 export interface MoveTableRollEffectPayload {
@@ -1186,6 +1195,8 @@ export interface MoveConditionEffectPayload {
   readonly randomChoice: MoveConditionRandomChoice | null
   /** Optional reviewed natural-roll gate for an accuracy-triggered secondary effect. */
   readonly accuracyRollTrigger?: MoveConditionAccuracyRollTrigger
+  /** Honor complete typed-attack immunity before applying this condition. */
+  readonly applyTypeImmunity?: boolean
   /** Non-null stores an application as a source-linked encounter effect. */
   readonly duration: MoveConditionDurationPolicy | null
   readonly saveTiming: MoveEffectConditionSaveTiming
@@ -1548,10 +1559,18 @@ export type MoveNestedMoveEffectPayload =
   | MoveNestedMoveRegisteredSpecPayload
   | MoveNestedMoveRandomPoolPayload
 
+export interface MoveUsageResourceIdentity {
+  readonly moveName: string
+  readonly moveKey: string
+  readonly frequency: string
+}
+
 export interface MoveUsageEffectPayload {
   readonly action: MoveEffectUsageAction
   readonly resourceId: string
   readonly amount: number
+  /** Supplemental reviewed frequency resource distinct from the declared move. */
+  readonly resource?: MoveUsageResourceIdentity
 }
 
 export interface MoveHistoryEffectPayload {
@@ -1692,7 +1711,9 @@ const OPERATION_FIELDS = [
 const SOURCE_FIELDS = ['kind', 'id'] as const
 const RECIPIENTS_FIELDS = ['kind'] as const
 const ROLL_FIELDS = ['rollId', 'formula'] as const
+const SCALAR_ROLL_OPTIONAL_FIELDS = ['accuracyRule'] as const
 const TABLE_ROLL_FIELDS = ['rollId', 'formula', 'table'] as const
+const CONDITIONAL_ACCURACY_RULE_FIELDS = ['kind', 'predicate', 'sourceId', 'reasonCode'] as const
 const DICE_FORMULA_FIELDS = ['kind', 'count', 'sides', 'modifier'] as const
 const UNIFORM_FORMULA_FIELDS = ['kind', 'minimum', 'maximum'] as const
 const TABLE_FORMULA_FIELDS = ['kind', 'tableId'] as const
@@ -1882,6 +1903,7 @@ const CONDITION_OPTIONAL_FIELDS = [
   'filter',
   'randomChoice',
   'accuracyRollTrigger',
+  'applyTypeImmunity',
   'duration',
   'saveTiming',
   'stackPolicy',
@@ -2021,7 +2043,9 @@ const NESTED_MOVE_FRESH_TARGETING_FIELDS = [
   'promptKey',
   'selector',
 ] as const
-const USAGE_FIELDS = ['action', 'resourceId', 'amount'] as const
+const USAGE_REQUIRED_FIELDS = ['action', 'resourceId', 'amount'] as const
+const USAGE_OPTIONAL_FIELDS = ['resource'] as const
+const USAGE_RESOURCE_FIELDS = ['moveName', 'moveKey', 'frequency'] as const
 const HISTORY_FIELDS = ['event', 'detailCode'] as const
 const LOG_FIELDS = ['messageKey', 'arguments'] as const
 const LOG_ARGUMENT_FIELDS = ['key', 'value'] as const
@@ -2507,14 +2531,62 @@ const parseRandomSelectionNode = <Value>(
   }
 }
 
+const parseConditionalAccuracyRule = (
+  value: unknown,
+  path: string,
+): MoveConditionalAutomaticHitRule => {
+  const input = parseExactRecord(value, CONDITIONAL_ACCURACY_RULE_FIELDS, path)
+  if (ownValue(input, 'kind', path) !== 'automatic-hit-when') {
+    fail(
+      'invalid-effect-operation',
+      `${path}.kind`,
+      'must be automatic-hit-when.',
+    )
+  }
+  let predicate: MovePredicate
+  try {
+    predicate = parseMovePredicate(ownValue(input, 'predicate', path), `${path}.predicate`)
+  }
+  catch (error) {
+    if (error instanceof MovePredicateValidationError) {
+      return fail(
+        error.code === 'limit-exceeded' ? 'limit-exceeded' : 'invalid-effect-operation',
+        error.path,
+        error.message.slice(error.path.length + 2),
+      )
+    }
+    throw error
+  }
+  return {
+    kind: 'automatic-hit-when',
+    predicate,
+    sourceId: parseStableId(ownValue(input, 'sourceId', path), `${path}.sourceId`),
+    reasonCode: parseStableId(ownValue(input, 'reasonCode', path), `${path}.reasonCode`),
+  }
+}
+
 const parseRollPayload = (value: unknown, path: string): MoveRollEffectPayload => {
   const raw = parseRecord(value, path)
   const formula = parseRollFormula(ownValue(raw, 'formula', path), `${path}.formula`)
   if (formula.kind !== 'table') {
-    const input = parseExactRecord(raw, ROLL_FIELDS, path)
+    const input = parseRecordWithOptionalFields(
+      raw,
+      ROLL_FIELDS,
+      SCALAR_ROLL_OPTIONAL_FIELDS,
+      path,
+    )
+    const hasAccuracyRule = Object.prototype.hasOwnProperty.call(input, 'accuracyRule')
     return {
       rollId: parseStableId(ownValue(input, 'rollId', path), `${path}.rollId`),
       formula,
+      ...(hasAccuracyRule
+        ? {
+            accuracyRule: parseConditionalAccuracyRule(
+              ownValue(input, 'accuracyRule', path),
+              `${path}.accuracyRule`,
+            ),
+          }
+        : {}),
     }
   }
 
@@ -3477,6 +3549,13 @@ const parseConditionPayload = (value: unknown, path: string): MoveConditionEffec
         `${path}.accuracyRollTrigger`,
       )
     : undefined
+  const hasApplyTypeImmunity = Object.prototype.hasOwnProperty.call(
+    input,
+    'applyTypeImmunity',
+  )
+  const applyTypeImmunity = hasApplyTypeImmunity
+    ? parseBoolean(ownValue(input, 'applyTypeImmunity', path), `${path}.applyTypeImmunity`)
+    : undefined
   const rawDuration = Object.prototype.hasOwnProperty.call(input, 'duration')
     ? ownValue(input, 'duration', path)
     : null
@@ -3595,6 +3674,7 @@ const parseConditionPayload = (value: unknown, path: string): MoveConditionEffec
     filter,
     randomChoice,
     ...(accuracyRollTrigger ? { accuracyRollTrigger } : {}),
+    ...(hasApplyTypeImmunity ? { applyTypeImmunity } : {}),
     duration,
     saveTiming,
     stackPolicy,
@@ -5003,7 +5083,16 @@ const parseNestedMovePayload = (
 }
 
 const parseUsagePayload = (value: unknown, path: string): MoveUsageEffectPayload => {
-  const input = parseExactRecord(value, USAGE_FIELDS, path)
+  const input = parseRecordWithOptionalFields(
+    value,
+    USAGE_REQUIRED_FIELDS,
+    USAGE_OPTIONAL_FIELDS,
+    path,
+  )
+  const hasResource = Object.prototype.hasOwnProperty.call(input, 'resource')
+  const resource = hasResource
+    ? parseExactRecord(ownValue(input, 'resource', path), USAGE_RESOURCE_FIELDS, `${path}.resource`)
+    : null
   return {
     action: parseEnum<MoveEffectUsageAction>(
       ownValue(input, 'action', path),
@@ -5018,6 +5107,26 @@ const parseUsagePayload = (value: unknown, path: string): MoveUsageEffectPayload
       0,
       MOVE_EFFECT_OPERATION_LIMITS.numericMagnitude,
     ),
+    ...(resource
+      ? {
+          resource: {
+            moveName: parseBoundedText(
+              ownValue(resource, 'moveName', `${path}.resource`),
+              `${path}.resource.moveName`,
+              MOVE_EFFECT_OPERATION_LIMITS.textLength,
+            ),
+            moveKey: parseStableId(
+              ownValue(resource, 'moveKey', `${path}.resource`),
+              `${path}.resource.moveKey`,
+            ),
+            frequency: parseBoundedText(
+              ownValue(resource, 'frequency', `${path}.resource`),
+              `${path}.resource.frequency`,
+              MOVE_EFFECT_OPERATION_LIMITS.textLength,
+            ),
+          },
+        }
+      : {}),
   }
 }
 

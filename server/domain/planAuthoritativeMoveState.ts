@@ -87,6 +87,7 @@ import { cleanupEncounterTransformationsForKnockouts } from './moveAutomation/tr
 import { cleanupYawnEffectsForKnockouts } from './moveAutomation/yawn'
 import { consumeHelpingHandBonus } from './moveAutomation/helpingHand'
 import { consumeSideDamageResistance } from './moveAutomation/sideDamageResistance'
+import { MoveMapOperationReductionError } from './moveAutomation/reducers/mapOperations'
 import { resetFuryCutterChainForDifferentMove } from './moveAutomation/furyCutter'
 import {
   deduplicateAuthoritativeMoveGroupInventoryReads,
@@ -1152,20 +1153,33 @@ export const planAuthoritativeMoveStateExecution = (
   )
 
   if (resolution.nativeV2) {
-    const nativePlan = planNativeV2MoveState({
-      map: input.map,
-      pokemonSheets: input.pokemonSheets,
-      trainerSheets: input.trainerSheets,
-      resolution,
-      plannedAt,
-      operationId: input.operationId,
-      resolutionId: input.pendingResolutionId,
-      maxMoveLogEntries: input.maxMoveLogEntries,
-      runtimeRegistry: input.runtimeRegistry,
-      legacyScripts: input.legacyScripts,
-      itemResources: input.itemResources,
-      existingSheetReads: sheetReads,
-    })
+    let nativePlan
+    try {
+      nativePlan = planNativeV2MoveState({
+        map: input.map,
+        pokemonSheets: input.pokemonSheets,
+        trainerSheets: input.trainerSheets,
+        resolution,
+        plannedAt,
+        operationId: input.operationId,
+        resolutionId: input.pendingResolutionId,
+        maxMoveLogEntries: input.maxMoveLogEntries,
+        runtimeRegistry: input.runtimeRegistry,
+        legacyScripts: input.legacyScripts,
+        itemResources: input.itemResources,
+        existingSheetReads: sheetReads,
+      })
+    }
+    catch (error) {
+      if (
+        error instanceof MoveMapOperationReductionError
+        && error.code === 'usage-transition-failed'
+        && isMoveUsageTransitionError(error.cause)
+      ) {
+        fail('conflict', 'move-usage-unavailable', error.message, error)
+      }
+      throw error
+    }
     const finalSheetReads = reobserveAuthoritativeMoveSheetReads(
       nativePlan.sheetReads,
       input.pokemonSheets,

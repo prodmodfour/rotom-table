@@ -60,7 +60,7 @@ export type MoveSpecPredicate = MoveSpecJsonObject
 export type MoveSpecCost = MoveResourceCost
 export type MoveSpecEffectOperation = MoveSpecJsonObject
 
-export interface MoveSpecTargetingDeclaration {
+export interface MoveSpecTargetingRule {
   readonly kind: MoveSpecTargetingKind
   /** Number of placement IDs selected by intent, not the number ultimately affected. */
   readonly minTargets: number
@@ -68,6 +68,16 @@ export interface MoveSpecTargetingDeclaration {
   readonly selector: MoveSpecSelector | null
   /** Optional server-evaluated relation/state declaration for geometric area candidates. */
   readonly predicate?: MoveSpecPredicate | null
+}
+
+export interface MoveSpecTargetingBranch extends MoveSpecTargetingRule {
+  /** Stable ID submitted by intent; all mechanics remain in this reviewed rule. */
+  readonly id: string
+}
+
+export interface MoveSpecTargetingDeclaration extends MoveSpecTargetingRule {
+  /** Alternate range/target forms; the first branch must match this declaration. */
+  readonly branches?: readonly MoveSpecTargetingBranch[]
 }
 
 export interface MoveSpecPrecondition {
@@ -112,6 +122,7 @@ export const MOVE_SPEC_LIMITS = Object.freeze({
   identifierLength: 160,
   displayNameLength: 160,
   targetCount: 32,
+  targetingBranches: 16,
   preconditions: 64,
   costs: 32,
   phaseBlocks: MOVE_SPEC_PHASES.length,
@@ -162,7 +173,9 @@ const ROOT_FIELDS = [
   'presentation',
 ] as const
 const TARGETING_REQUIRED_FIELDS = ['kind', 'minTargets', 'maxTargets', 'selector'] as const
-const TARGETING_OPTIONAL_FIELDS = ['predicate'] as const
+const TARGETING_OPTIONAL_FIELDS = ['predicate', 'branches'] as const
+const TARGETING_BRANCH_REQUIRED_FIELDS = ['id', 'kind', 'minTargets', 'maxTargets', 'selector'] as const
+const TARGETING_BRANCH_OPTIONAL_FIELDS = ['predicate'] as const
 const PRECONDITION_FIELDS = ['id', 'predicate', 'failureReasonCode'] as const
 const COST_FIELDS = ['id', 'phase', 'cost'] as const
 const PHASE_BLOCK_FIELDS = ['phase', 'operations'] as const
@@ -410,10 +423,10 @@ const assertUnique = (values: readonly string[], path: string): void => {
   }
 }
 
-const parseTargeting = (value: unknown): MoveSpecTargetingDeclaration => {
-  const path = 'spec.targeting'
-  const input = parseRecord(value, path)
-  assertExactKeys(input, TARGETING_REQUIRED_FIELDS, path, TARGETING_OPTIONAL_FIELDS)
+const parseTargetingRule = (
+  input: UnknownRecord,
+  path: string,
+): MoveSpecTargetingRule => {
   if (typeof input.kind !== 'string' || !TARGETING_KIND_SET.has(input.kind)) {
     fail('invalid-spec', `${path}.kind`, 'must be a supported targeting kind.')
   }
@@ -446,6 +459,46 @@ const parseTargeting = (value: unknown): MoveSpecTargetingDeclaration => {
         }
       : {}),
   }
+}
+
+const parseTargeting = (value: unknown): MoveSpecTargetingDeclaration => {
+  const path = 'spec.targeting'
+  const input = parseRecord(value, path)
+  assertExactKeys(input, TARGETING_REQUIRED_FIELDS, path, TARGETING_OPTIONAL_FIELDS)
+  const rule = parseTargetingRule(input, path)
+  if (!Object.prototype.hasOwnProperty.call(input, 'branches')) return rule
+
+  const branches = parseBoundedArray(
+    input.branches,
+    `${path}.branches`,
+    MOVE_SPEC_LIMITS.targetingBranches,
+  ).map((entry, index): MoveSpecTargetingBranch => {
+    const branchPath = `${path}.branches[${index}]`
+    const branchInput = parseRecord(entry, branchPath)
+    assertExactKeys(
+      branchInput,
+      TARGETING_BRANCH_REQUIRED_FIELDS,
+      branchPath,
+      TARGETING_BRANCH_OPTIONAL_FIELDS,
+    )
+    return {
+      id: parseStableId(branchInput.id, `${branchPath}.id`),
+      ...parseTargetingRule(branchInput, branchPath),
+    }
+  })
+  if (branches.length < 2) {
+    fail('invalid-spec', `${path}.branches`, 'must contain at least two alternate targeting forms.')
+  }
+  assertUnique(branches.map(({ id }) => id), `${path}.branches.id`)
+  const { id: _firstId, ...firstRule } = branches[0]!
+  if (JSON.stringify(firstRule) !== JSON.stringify(rule)) {
+    fail(
+      'invalid-spec',
+      `${path}.branches[0]`,
+      'must exactly match the canonical root targeting declaration.',
+    )
+  }
+  return { ...rule, branches }
 }
 
 const parsePreconditions = (value: unknown): readonly MoveSpecPrecondition[] => {

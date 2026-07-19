@@ -78,6 +78,7 @@ import {
   type AuthoritativeMoveSheetRead,
 } from './moveAutomation/context'
 import type { MoveAutomationRuntimeRegistry, MoveSpecV2Runtime } from './moveAutomation/registry'
+import { resolveMoveSpecTargetingRule } from './moveAutomation/targetingBranches'
 import type { AuthoritativeMoveItemResources } from './moveAutomation/itemResources'
 import {
   resolveMoveSpecOutcome,
@@ -1086,18 +1087,15 @@ const resolveNativeSelfMove = (options: {
   readonly entry: ResolvedCanonicalMoveEntry
   readonly moveKey: string
 }): AuthoritativeMoveExecution => {
-  if (options.runtime.definition.spec.targeting.kind !== 'self') {
+  const targeting = resolveMoveSpecTargetingRule(
+    options.runtime.definition.spec,
+    options.context.intent.targetBranchId,
+  )
+  if (targeting?.kind !== 'self') {
     return fail(
       'invalid',
       'selection-kind-mismatch',
       `${options.runtime.canonicalId} does not accept a self selection.`,
-    )
-  }
-  if (options.context.intent.targetBranchId) {
-    fail(
-      'invalid',
-      'target-branch-unexpected',
-      `${options.runtime.canonicalId} does not accept a target branch.`,
     )
   }
   const hazardPlacementMove = options.entry.script.targetMode === 'hazard'
@@ -1114,6 +1112,7 @@ const resolveNativeSelfMove = (options: {
     context: options.context,
     runtime: options.runtime,
     entry: options.entry,
+    targetBranchId: options.context.intent.targetBranchId,
     authoritativeTargetIds: [],
     ancestry: options.context.ancestry,
   })
@@ -1143,6 +1142,9 @@ const resolveNativeSelfMove = (options: {
     moveKey: options.moveKey,
     frequency: options.entry.frequency,
     damageFormula: options.entry.damageFormula,
+    ...(options.context.intent.targetBranchId
+      ? { targetBranchId: options.context.intent.targetBranchId }
+      : {}),
     selectedTargetIds: [],
     sheetReads: immediate.sheetReads,
     rollLedger: immediate.rollLedger,
@@ -1323,18 +1325,15 @@ const resolveNativeSingleTargetMove = (options: {
   readonly selection: Extract<ResolveMoveSelection, { kind: 'single-target' }>
   readonly moveKey: string
 }): AuthoritativeMoveExecution => {
-  if (options.runtime.definition.spec.targeting.kind !== 'single-target') {
+  const targeting = resolveMoveSpecTargetingRule(
+    options.runtime.definition.spec,
+    options.context.intent.targetBranchId,
+  )
+  if (targeting?.kind !== 'single-target') {
     return fail(
       'invalid',
       'selection-kind-mismatch',
       `${options.runtime.canonicalId} does not accept a single-target selection.`,
-    )
-  }
-  if (options.context.intent.targetBranchId) {
-    fail(
-      'invalid',
-      'target-branch-unexpected',
-      `${options.runtime.canonicalId} does not accept a target branch.`,
     )
   }
   if (
@@ -1357,6 +1356,7 @@ const resolveNativeSingleTargetMove = (options: {
     context: options.context,
     runtime: options.runtime,
     entry: options.entry,
+    targetBranchId: options.context.intent.targetBranchId,
     authoritativeTargetIds: [target.id],
     ancestry: options.context.ancestry,
   })
@@ -1386,6 +1386,9 @@ const resolveNativeSingleTargetMove = (options: {
     moveKey: options.moveKey,
     frequency: options.entry.frequency,
     damageFormula: options.entry.damageFormula,
+    ...(options.context.intent.targetBranchId
+      ? { targetBranchId: options.context.intent.targetBranchId }
+      : {}),
     selectedTargetIds: [target.id],
     sheetReads: immediate.sheetReads,
     rollLedger: immediate.rollLedger,
@@ -1630,24 +1633,21 @@ const resolveNativeAreaMove = (options: {
   readonly selection: Extract<ResolveMoveSelection, { kind: 'area' }>
   readonly moveKey: string
 }): AuthoritativeMoveExecution => {
-  if (options.runtime.definition.spec.targeting.kind !== 'area') {
+  const targeting = resolveMoveSpecTargetingRule(
+    options.runtime.definition.spec,
+    options.context.intent.targetBranchId,
+  )
+  if (targeting?.kind !== 'area') {
     return fail(
       'invalid',
       'selection-kind-mismatch',
       `${options.runtime.canonicalId} does not accept an area selection.`,
     )
   }
-  if (options.context.intent.targetBranchId) {
-    fail(
-      'invalid',
-      'target-branch-unexpected',
-      `${options.runtime.canonicalId} does not accept a target branch.`,
-    )
-  }
 
   const { placement: actorPlacement, token: actor } = options.context.actor
   const template = selectedAreaTemplate(options.entry.script, options.selection.areaTemplateId)
-  const selector = options.runtime.definition.spec.targeting.selector
+  const selector = targeting.selector
   if (
     selector !== null
     && selector.kind !== 'area-targets'
@@ -1692,8 +1692,7 @@ const resolveNativeAreaMove = (options: {
   const areaTargets = resolveAuthoritativeAreaTargets({
     actorPlacementId: actorPlacement.id,
     geometricallyAffectedPlacementIds: candidateTargetIds,
-    predicate: options.runtime.definition.spec.targeting.predicate
-      ?? DEFAULT_MOVE_AUTOMATION_AREA_TARGET_PREDICATE,
+    predicate: targeting.predicate ?? DEFAULT_MOVE_AUTOMATION_AREA_TARGET_PREDICATE,
     relationships: options.context.queries.relationships,
     states: options.context.queries.targetStates,
     targetability: options.context.queries.targetability,
@@ -1708,6 +1707,7 @@ const resolveNativeAreaMove = (options: {
     context: options.context,
     runtime: options.runtime,
     entry: options.entry,
+    targetBranchId: options.context.intent.targetBranchId,
     authoritativeTargetIds: selectedTargetIds,
     authoritativeTargetEvaluations: areaTargets.evaluations,
     ancestry: options.context.ancestry,
@@ -1761,6 +1761,9 @@ const resolveNativeAreaMove = (options: {
     moveKey: options.moveKey,
     frequency: options.entry.frequency,
     damageFormula: options.entry.damageFormula,
+    ...(options.context.intent.targetBranchId
+      ? { targetBranchId: options.context.intent.targetBranchId }
+      : {}),
     selectedTargetIds,
     sheetReads: immediate.sheetReads,
     rollLedger: immediate.rollLedger,

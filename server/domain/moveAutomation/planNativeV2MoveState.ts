@@ -674,6 +674,17 @@ export const planNativeV2MoveState = (options: {
   const usageResources = mapOperations.flatMap((emission) => {
     const { operation } = emission
     if (operation.kind !== 'usage') return []
+    if (operation.payload.resource) {
+      return [{
+        resourceId: operation.payload.resourceId,
+        placementId: contextForOperation(operation).actor.placement.id,
+        move: {
+          moveName: operation.payload.resource.moveName,
+          moveKey: operation.payload.resource.moveKey,
+          frequency: operation.payload.resource.frequency,
+        },
+      }]
+    }
     if (!emission.childResolutionId) {
       return [{
         resourceId: operation.payload.resourceId,
@@ -754,7 +765,9 @@ export const planNativeV2MoveState = (options: {
     maxLogEntries: options.maxMoveLogEntries,
   })
   const rootUsageOperationId = mapOperations.find(emission => (
-    emission.operation.kind === 'usage' && !emission.childResolutionId
+    emission.operation.kind === 'usage'
+    && emission.operation.payload.resource === undefined
+    && !emission.childResolutionId
   ))?.operation.id
   const usageProjection = mapReduction.usage.find(projection => (
     projection.operationId === rootUsageOperationId

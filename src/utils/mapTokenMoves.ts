@@ -7,6 +7,7 @@ import {
   type EncounterMoveListProjectionEntry,
 } from '#shared/moveAutomation/moveListOverlays'
 import { explicitScriptForMove } from '~/utils/moveAutomation'
+import { nativeMoveAutomationPresentationScriptForMove } from '~/utils/move-automation/nativePresentation'
 import { resolvePokemonOtherCapabilities } from '~/utils/sheets/pokemonCapabilities'
 import { resolveMoveGrantedCapabilities } from '~/utils/sheets/pokemonMoveGrantedCapabilities'
 import {
@@ -220,7 +221,12 @@ const fallback = <T>(...values: T[]): NonNullable<T> | null => {
 const moveHasAutomationScript = (row: MoveLookupRow<TokenSheetMove>): boolean => {
   const moveName = row.reference?.name ?? row.move.name
   if (isPokemonLoyaltyDamageBaseMove(moveName) && row.damageBase == null) return false
-  return Boolean(explicitScriptForMove(moveName) ?? explicitScriptForMove(row.move.name))
+  return Boolean(
+    explicitScriptForMove(moveName)
+    ?? explicitScriptForMove(row.move.name)
+    ?? nativeMoveAutomationPresentationScriptForMove(moveName)
+    ?? nativeMoveAutomationPresentationScriptForMove(row.move.name),
+  )
 }
 
 const usageLimitTitle = (

@@ -20,6 +20,7 @@ import { REVIEWED_SINGLE_TARGET_CONDITION_SCRIPTS } from '~/utils/move-automatio
 import { REVIEWED_SINGLE_TARGET_STAGE_SCRIPTS } from '~/utils/move-automation/scripts/singleTargetStages'
 import { REVIEWED_SINGLE_TARGET_STATUS_SCRIPTS } from '~/utils/move-automation/scripts/singleTargetStatus'
 import type { MoveAutomationScript } from '~/types/moveAutomation'
+import { hasNativeMoveAutomationPresentation } from '~/utils/move-automation/nativePresentation'
 
 const SEAMLESS_AREA_CONFIRMATION_SCRIPTS: ReadonlyMap<string, MoveAutomationScript> = new Map([
   ...REVIEWED_TARGET_STAGE_AREA_SCRIPTS,
@@ -39,6 +40,7 @@ const hasReviewedSeamlessSingleTargetScript = (script: MoveAutomationScript): bo
   || REVIEWED_SINGLE_TARGET_STAGE_SCRIPTS.has(script.moveName)
   || REVIEWED_ADDITIONAL_SINGLE_TARGET_SCRIPTS.has(script.moveName)
   || REVIEWED_MIXED_TARGET_AREA_SCRIPTS.has(script.moveName)
+  || hasNativeMoveAutomationPresentation(script.moveName)
   || (REVIEWED_DIRECT_HP_LOSS_SCRIPTS.has(script.moveName) && Boolean(script.directHpLoss))
 
 export const isSeamlessSingleTargetAttackScript = (
@@ -74,7 +76,10 @@ export const isSeamlessSelfMoveScript = (
 ): boolean => Boolean(
   script
     && script.kind === 'explicit'
-    && REVIEWED_SELF_SCRIPTS.has(script.moveName)
+    && (
+      REVIEWED_SELF_SCRIPTS.has(script.moveName)
+      || hasNativeMoveAutomationPresentation(script.moveName)
+    )
     && script.targetMode === 'self'
     && script.targetCount === 1
     && !script.requiresAccuracy,
@@ -85,7 +90,10 @@ export const isSeamlessAreaConfirmationScript = (
 ): script is MoveAutomationScript => Boolean(
   script
     && script.kind === 'explicit'
-    && SEAMLESS_AREA_CONFIRMATION_SCRIPTS.has(script.moveName)
+    && (
+      SEAMLESS_AREA_CONFIRMATION_SCRIPTS.has(script.moveName)
+      || hasNativeMoveAutomationPresentation(script.moveName)
+    )
     && script.targetMode === 'multi-target'
     && script.areaTemplates?.length,
 )

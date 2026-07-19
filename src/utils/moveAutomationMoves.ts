@@ -4,6 +4,7 @@ import {
   sheetMoveToMoveLike,
   type MoveAutomationMoveLike,
 } from '~/utils/moveAutomation'
+import { nativeMoveAutomationPresentationScriptForMove } from '~/utils/move-automation/nativePresentation'
 import { hasSameTypeAttackBonus } from '~/utils/sheetMoveLookup'
 import {
   isStruggleAttackMoveName,
@@ -134,12 +135,13 @@ export const buildMoveAutomationMoveEntries = (
     if (isPokemonLoyaltyDamageBaseMove(baseMove.name) && baseMove.damage_base == null) return []
 
     const { move, hasStab } = moveLikeWithSameTypeAttackBonus(baseMove, options.stabTypes)
-    const explicitScript = options.scriptForMove
+    const reviewedScript = options.scriptForMove
       ? options.scriptForMove(move.name)
       : explicitScriptForMove(move.name)
-    if (!explicitScript) return []
+        ?? nativeMoveAutomationPresentationScriptForMove(move.name)
+    if (!reviewedScript) return []
 
-    const damageScript = scriptWithBaseMoveDamage(explicitScript, baseMove)
+    const damageScript = scriptWithBaseMoveDamage(reviewedScript, baseMove)
     const dynamicExplicitScript = Boolean(damageScript.dynamicDamageBase)
     const baseScript = hasStab && damageScript.damageBase != null
       ? dynamicExplicitScript

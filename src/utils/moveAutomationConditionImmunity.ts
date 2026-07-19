@@ -7,9 +7,10 @@ import { normalizeConditionName } from '~/utils/statusConditions'
 import type { SpawnedPokemon } from '~/types/pokemon'
 
 const IMMUNITY_ABILITY_NAME = 'Immunity'
-const PASTEL_VEIL_ABILITY_NAME = 'Pastel Veil'
+export const PASTEL_VEIL_ABILITY_NAME = 'Pastel Veil'
 const WATER_VEIL_ABILITY_NAME = 'Water Veil'
 export const SWEET_VEIL_RANGE_METERS = 3
+export const PASTEL_VEIL_RANGE_METERS = 3
 
 export type MoveAutomationAllyQuery = (
   provider: Pick<SpawnedPokemon, 'id'>,
@@ -32,7 +33,7 @@ interface MoveAutomationConditionImmunityWithoutSweetVeilProviders {
 }
 
 interface MoveAutomationConditionImmunityWithSweetVeilProviders {
-  /** Candidate tokens only; `isAlly` must authorize each cross-token provider. */
+  /** Sweet/Pastel Veil candidates; `isAlly` authorizes each cross-token provider. */
   readonly sweetVeilProviderCandidates: readonly SpawnedPokemon[]
   readonly isAlly: MoveAutomationAllyQuery
 }
@@ -51,14 +52,26 @@ const hasAbility = (target: Pick<SpawnedPokemon, 'abilityNames'>, ability: strin
 export const tokenHasSweetVeil = (token: Pick<SpawnedPokemon, 'abilityNames'>): boolean =>
   hasAbility(token, SWEET_VEIL_ABILITY_NAME)
 
+export const tokenHasPastelVeil = (token: Pick<SpawnedPokemon, 'abilityNames'>): boolean =>
+  hasAbility(token, PASTEL_VEIL_ABILITY_NAME)
+
 export const isEligibleSweetVeilProvider = (
   provider: SpawnedPokemon,
   target: SpawnedPokemon,
   isAlly: MoveAutomationAllyQuery,
 ): boolean => provider.id !== target.id
+  && tokenHasSweetVeil(provider)
   && tokenGridDistance(provider, target) <= SWEET_VEIL_RANGE_METERS
   && isAlly(provider, target)
-  && tokenHasSweetVeil(provider)
+
+export const isEligiblePastelVeilProvider = (
+  provider: SpawnedPokemon,
+  target: SpawnedPokemon,
+  isAlly: MoveAutomationAllyQuery,
+): boolean => provider.id !== target.id
+  && tokenHasPastelVeil(provider)
+  && tokenGridDistance(provider, target) <= PASTEL_VEIL_RANGE_METERS
+  && isAlly(provider, target)
 
 const sweetVeilProviderForTarget = (
   target: SpawnedPokemon,
@@ -71,6 +84,17 @@ const sweetVeilProviderForTarget = (
   return providers.find(provider => isEligibleSweetVeilProvider(provider, target, isAlly)) ?? null
 }
 
+const pastelVeilProviderForTarget = (
+  target: SpawnedPokemon,
+  context: MoveAutomationConditionImmunityContext,
+): SpawnedPokemon | null => {
+  if (tokenHasPastelVeil(target)) return target
+  const providers = context.sweetVeilProviderCandidates
+  const isAlly = context.isAlly
+  if (!providers || !isAlly) return null
+  return providers.find(provider => isEligiblePastelVeilProvider(provider, target, isAlly)) ?? null
+}
+
 const sweetVeilSource = (
   target: SpawnedPokemon,
   context: MoveAutomationConditionImmunityContext,
@@ -80,6 +104,17 @@ const sweetVeilSource = (
   return provider.id === target.id
     ? SWEET_VEIL_ABILITY_NAME
     : `${SWEET_VEIL_ABILITY_NAME} (${provider.species})`
+}
+
+const pastelVeilSource = (
+  target: SpawnedPokemon,
+  context: MoveAutomationConditionImmunityContext,
+): string | null => {
+  const provider = pastelVeilProviderForTarget(target, context)
+  if (!provider) return null
+  return provider.id === target.id
+    ? PASTEL_VEIL_ABILITY_NAME
+    : `${PASTEL_VEIL_ABILITY_NAME} (${provider.species})`
 }
 
 export const moveAutomationConditionImmunitySource = (
@@ -107,7 +142,8 @@ export const moveAutomationConditionImmunitySource = (
   if (canonical === 'Poisoned' || canonical === 'Badly Poisoned') {
     if (hasType(target, 'Poison') || hasType(target, 'Steel')) return hasType(target, 'Poison') ? 'Poison type' : 'Steel type'
     if (hasAbility(target, IMMUNITY_ABILITY_NAME)) return IMMUNITY_ABILITY_NAME
-    if (hasAbility(target, PASTEL_VEIL_ABILITY_NAME)) return PASTEL_VEIL_ABILITY_NAME
+    const pastelVeil = pastelVeilSource(target, context)
+    if (pastelVeil) return pastelVeil
   }
   if ((canonical === 'Stuck' || canonical === 'Trapped') && hasType(target, 'Ghost')) return 'Ghost type'
 

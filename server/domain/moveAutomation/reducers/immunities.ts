@@ -4,9 +4,12 @@ import {
 } from '~/utils/moveAutomationAbilityProtection'
 import { SHIELD_DUST_ABILITY_NAME } from '~/utils/abilityAutomation'
 import {
+  PASTEL_VEIL_RANGE_METERS,
+  SWEET_VEIL_RANGE_METERS,
   moveAutomationConditionImmunitySource,
   type MoveAutomationConditionImmunityContext,
 } from '~/utils/moveAutomationConditionImmunity'
+import { tokenGridDistance } from '~/utils/moveAutomationRange'
 import { moveAutomationMoveImmunitySource } from '~/utils/moveAutomationMoveImmunity'
 import {
   computeSheetAbilityAwareMultiplier,
@@ -56,13 +59,24 @@ const conditionDecision = (
 
 const conditionProviderIds = (
   condition: string,
-  recipientId: string,
+  recipient: MoveCoreTokenEffectRecipient,
   context: MoveAutomationConditionImmunityContext | undefined,
-): readonly string[] => condition === 'Sleep'
-  ? (context?.sweetVeilProviderCandidates ?? [])
-      .map(provider => provider.id)
-      .filter(id => id !== recipientId)
-  : []
+): readonly string[] => {
+  const candidates = context?.sweetVeilProviderCandidates
+  const isAlly = context?.isAlly
+  if (!candidates || !isAlly) return []
+  const range = condition === 'Sleep'
+    ? SWEET_VEIL_RANGE_METERS
+    : condition === 'Poisoned' || condition === 'Badly Poisoned'
+      ? PASTEL_VEIL_RANGE_METERS
+      : null
+  if (range === null) return []
+  return candidates
+    .filter(provider => provider.id !== recipient.placement.id
+      && tokenGridDistance(provider, recipient.token) <= range
+      && isAlly(provider, recipient.token))
+    .map(provider => provider.id)
+}
 
 const authoritativeConditionContext = (
   context: AuthoritativeMoveRulesContext | undefined,
@@ -129,35 +143,51 @@ export const createStandardMoveCoreTokenEffectImmunityQueries = (
       ? moveAutomationMoveImmunitySource(options.moveScript, recipient.token)
       : null
   )
+  const typedAttackImmunity = (
+    recipient: MoveCoreTokenEffectRecipient,
+    typeSource: 'attacking' | 'defending',
+  ): string | null => {
+    if (!options.moveType) return 'unresolved move type'
+    const target = recipient.token
+    const baseMultiplier = computeMultiplier(options.moveType, target.defenderTypes)
+    const multiplier = computeSheetAbilityAwareMultiplier(
+      options.moveType,
+      target.defenderTypes,
+      target.abilityNames,
+      target.defenderCapabilities,
+      { baseMultiplier },
+    )
+    if (multiplier !== 0) return null
+    if (baseMultiplier === 0) {
+      if (typeSource === 'attacking') return `${options.moveType} type`
+      const defenderType = target.defenderTypes.find(type => (
+        computeMultiplier(options.moveType!, [type]) === 0
+      ))
+      return `${defenderType ?? options.moveType} type`
+    }
+    return getPassiveTypeEffectivenessSource(
+      options.moveType,
+      target.abilityNames,
+      target.defenderCapabilities,
+      { baseMultiplier },
+    ) ?? `${options.moveType} immunity`
+  }
   return {
     directHp: ({ recipient }) => {
       const wholeMoveBlocker = moveImmunity(recipient)
       if (wholeMoveBlocker) return decision(wholeMoveBlocker)
-      if (!options.moveType) return decision('unresolved move type')
-      const target = recipient.token
-      const baseMultiplier = computeMultiplier(options.moveType, target.defenderTypes)
-      const multiplier = computeSheetAbilityAwareMultiplier(
-        options.moveType,
-        target.defenderTypes,
-        target.abilityNames,
-        target.defenderCapabilities,
-        { baseMultiplier },
-      )
-      if (multiplier !== 0) return decision(null)
-      if (baseMultiplier === 0) return decision(`${options.moveType} type`)
-      return decision(getPassiveTypeEffectivenessSource(
-        options.moveType,
-        target.abilityNames,
-        target.defenderCapabilities,
-        { baseMultiplier },
-      ) ?? `${options.moveType} immunity`)
+      return decision(typedAttackImmunity(recipient, 'attacking'))
     },
     condition: ({ operation, condition, recipient }) => {
       const wholeMoveBlocker = moveImmunity(recipient)
       if (wholeMoveBlocker) return conditionDecision(wholeMoveBlocker)
+      if (operation.payload.applyTypeImmunity) {
+        const typedBlocker = typedAttackImmunity(recipient, 'defending')
+        if (typedBlocker) return conditionDecision(typedBlocker)
+      }
       const providerIds = conditionProviderIds(
         condition,
-        recipient.placement.id,
+        recipient,
         conditionContext,
       )
       const passiveBlocker = moveAutomationConditionImmunitySource(

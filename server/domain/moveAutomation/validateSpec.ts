@@ -45,6 +45,7 @@ import {
   type MoveSpecPhase,
   type MoveSpecPresentationMetadata,
   type MoveSpecTargetingKind,
+  type MoveSpecTargetingRule,
 } from '#shared/moveAutomation/spec'
 import {
   REGISTERED_MOVE_HANDLER_REGISTRY,
@@ -75,12 +76,20 @@ export interface MoveSpecRulesetVersion {
   readonly sourceDataSha256: string
 }
 
-export interface ValidatedMoveSpecTargetingDeclaration {
+export interface ValidatedMoveSpecTargetingRule {
   readonly kind: MoveSpecTargetingKind
   readonly minTargets: number
   readonly maxTargets: number
   readonly selector: MoveSelector | null
   readonly predicate?: MoveAutomationTargetPredicateDeclaration | null
+}
+
+export interface ValidatedMoveSpecTargetingBranch extends ValidatedMoveSpecTargetingRule {
+  readonly id: string
+}
+
+export interface ValidatedMoveSpecTargetingDeclaration extends ValidatedMoveSpecTargetingRule {
+  readonly branches?: readonly ValidatedMoveSpecTargetingBranch[]
 }
 
 export interface ValidatedMoveSpecPrecondition {
@@ -377,29 +386,48 @@ const countTaggedAstNodes = (value: unknown): number => {
   return total
 }
 
+const parseTargetingRule = (
+  rule: MoveSpecTargetingRule,
+  path: string,
+): ValidatedMoveSpecTargetingRule => {
+  const selector = rule.selector === null
+    ? null
+    : parseMoveSelector(rule.selector, `${path}.selector`)
+  const hasTargetPredicate = Object.prototype.hasOwnProperty.call(rule, 'predicate')
+  if (hasTargetPredicate && rule.kind !== 'area') {
+    fail(
+      'invalid-definition',
+      `${path}.predicate`,
+      'target predicates are supported only for geometric area targeting.',
+    )
+  }
+  const targetPredicate = rule.predicate === null
+    ? null
+    : rule.predicate === undefined
+      ? undefined
+      : parseMoveAutomationTargetPredicateDeclaration(rule.predicate)
+  return {
+    kind: rule.kind,
+    minTargets: rule.minTargets,
+    maxTargets: rule.maxTargets,
+    selector,
+    ...(hasTargetPredicate ? { predicate: targetPredicate ?? null } : {}),
+  }
+}
+
 const parseRules = (spec: MoveSpec): Pick<
   ValidatedMoveSpec,
   'targeting' | 'preconditions'
 > => {
-  const selector = spec.targeting.selector === null
-    ? null
-    : parseMoveSelector(spec.targeting.selector, 'spec.targeting.selector')
-  const hasTargetPredicate = Object.prototype.hasOwnProperty.call(
-    spec.targeting,
-    'predicate',
-  )
-  if (hasTargetPredicate && spec.targeting.kind !== 'area') {
-    fail(
-      'invalid-definition',
-      'spec.targeting.predicate',
-      'target predicates are supported only for geometric area targeting.',
-    )
+  const targetingRule = parseTargetingRule(spec.targeting, 'spec.targeting')
+  const branches = spec.targeting.branches?.map((branch, index) => ({
+    id: branch.id,
+    ...parseTargetingRule(branch, `spec.targeting.branches[${index}]`),
+  }))
+  const targeting: ValidatedMoveSpecTargetingDeclaration = {
+    ...targetingRule,
+    ...(branches ? { branches } : {}),
   }
-  const targetPredicate = spec.targeting.predicate === null
-    ? null
-    : spec.targeting.predicate === undefined
-      ? undefined
-      : parseMoveAutomationTargetPredicateDeclaration(spec.targeting.predicate)
   const preconditions = spec.preconditions.map((precondition, index) => ({
     ...precondition,
     predicate: parseMovePredicate(
@@ -407,7 +435,7 @@ const parseRules = (spec: MoveSpec): Pick<
       `spec.preconditions[${index}].predicate`,
     ),
   }))
-  const ruleAstNodes = countTaggedAstNodes(selector)
+  const ruleAstNodes = countTaggedAstNodes(targeting)
     + preconditions.reduce(
       (total, precondition) => total + countTaggedAstNodes(precondition.predicate),
       0,
@@ -420,16 +448,7 @@ const parseRules = (spec: MoveSpec): Pick<
     )
   }
 
-  return {
-    targeting: {
-      kind: spec.targeting.kind,
-      minTargets: spec.targeting.minTargets,
-      maxTargets: spec.targeting.maxTargets,
-      selector,
-      ...(hasTargetPredicate ? { predicate: targetPredicate ?? null } : {}),
-    },
-    preconditions,
-  }
+  return { targeting, preconditions }
 }
 
 const parseOperations = (
@@ -591,6 +610,23 @@ export const validateMoveSpecOperationSequence = (
     operationIndexById.set(operation.id, index)
 
     if (operation.kind === 'roll') {
+      if ('accuracyRule' in operation.payload && operation.payload.accuracyRule) {
+        const formula = operation.payload.formula
+        if (
+          operation.phase !== 'accuracy'
+          || operation.recipients.kind !== 'attacked-targets'
+          || formula.kind !== 'dice'
+          || formula.count !== 1
+          || formula.sides !== 20
+          || formula.modifier !== 0
+        ) {
+          fail(
+            'invalid-definition',
+            `${path}.payload.accuracyRule`,
+            'conditional automatic-hit rules require an attacked-target accuracy-phase 1d20 roll.',
+          )
+        }
+      }
       if (operation.payload.formula.kind === 'table' && 'table' in operation.payload) {
         reserveRandomRollIds(
           operation.payload.rollId,

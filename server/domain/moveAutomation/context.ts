@@ -25,6 +25,8 @@ import {
   type MoveAutomationSemanticStatus,
 } from '~/utils/moveAutomationSemanticStatus'
 import { createMoveAutomationScriptFromMoveData } from '~/utils/moveAutomationDerived'
+import { nativeMoveAutomationPresentationScriptForMove } from '~/utils/move-automation/nativePresentation'
+import { moveAutomationScriptForTargetBranch } from '~/utils/moveAutomationTargetBranches'
 import { placementToSpawned, type SheetLookup } from '~/utils/placement'
 import { deepCloneJson } from '~/utils/serialization'
 import type { RegisteredMoveHandlerRegistry } from './handlers/registry'
@@ -719,13 +721,17 @@ export const buildAuthoritativeMoveRulesContext = (
     const canonicalMove = findMove(moveName)
     const selectedRuntime = canonicalMove ? runtimes.get(canonicalMove.name) : null
     if (canonicalMove && selectedRuntime?.kind === 'movespec-v2') {
-      const script = createMoveAutomationScriptFromMoveData(canonicalMove)
+      const presentation = nativeMoveAutomationPresentationScriptForMove(canonicalMove.name)
+      const script = presentation ?? createMoveAutomationScriptFromMoveData(canonicalMove)
+      const selectedBranch = intent.targetBranchId
+        ? moveAutomationScriptForTargetBranch(script, intent.targetBranchId)
+        : null
       // The reviewed spec is authoritative for intent shape. Canonical range
       // prose such as Blessing does not itself imply the self declaration that
       // a native runtime has explicitly reviewed.
       return detachedFrozenJson(selectedRuntime.definition.spec.targeting.kind === 'self'
         ? { ...script, targetMode: 'self', targetCount: 1 }
-        : script)
+        : selectedBranch ?? script)
     }
     return legacyScriptFor(moveName)
   }

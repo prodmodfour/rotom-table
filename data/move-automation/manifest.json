@@ -6948,37 +6948,88 @@
     {
       "canonicalId": "Dark Void",
       "displayName": "Dark Void",
-      "baseStatus": "blocked",
+      "baseStatus": "complete",
       "interactionStatus": "unassessed",
       "runtime": {
-        "kind": "unimplemented",
-        "version": null,
-        "definitionHash": null,
-        "sourceModule": null
+        "kind": "movespec-v2",
+        "version": 2,
+        "sourceModule": "server/domain/moveAutomation/specs/darkVoid.ts",
+        "definitionHash": "1b47ef0d4cfde5995042a9b5725f36999b15db017cac11c4adae8c8d1887f770"
       },
       "rulesProvenance": {
         "rulesetId": "rotom-table-reference-moves-v1",
         "canonicalizationVersion": 1,
         "sourceDataSha256": "f90491826349afd7d1f2809fd9d74b7acc555f5163b99264205ee369249e9815"
       },
-      "capabilityTags": [],
-      "suggestedCapabilityTags": [
-        "single-target-status"
+      "capabilityTags": [
+        "conditions.typed",
+        "targeting.authoritative"
       ],
-      "blockerCodes": [
-        "runtime.unimplemented"
-      ],
+      "suggestedCapabilityTags": [],
+      "blockerCodes": [],
       "limitations": [],
       "manualSteps": [],
-      "scenarioIds": [],
+      "scenarioIds": [
+        "ma201-dark-void-single-hit",
+        "ma201-dark-void-single-miss",
+        "ma201-dark-void-sweet-veil-immunity",
+        "ma201-dark-void-burst-mixed-friendly",
+        "ma201-dark-void-retry",
+        "ma201-dark-void-stale-resource"
+      ],
       "conformanceEvidence": {
-        "requirementTags": [],
-        "scenarios": [],
+        "requirementTags": [
+          "branch.accuracy",
+          "branch.alternate",
+          "branch.immunity",
+          "recovery.retry",
+          "resource.multi",
+          "target.area"
+        ],
+        "scenarios": [
+          {
+            "scenarioId": "ma201-dark-void-single-hit",
+            "evidenceClasses": [
+              "hit"
+            ]
+          },
+          {
+            "scenarioId": "ma201-dark-void-single-miss",
+            "evidenceClasses": [
+              "miss"
+            ]
+          },
+          {
+            "scenarioId": "ma201-dark-void-sweet-veil-immunity",
+            "evidenceClasses": [
+              "immunity"
+            ]
+          },
+          {
+            "scenarioId": "ma201-dark-void-burst-mixed-friendly",
+            "evidenceClasses": [
+              "alternate-branch",
+              "area-mixed-outcomes"
+            ]
+          },
+          {
+            "scenarioId": "ma201-dark-void-retry",
+            "evidenceClasses": [
+              "retry"
+            ]
+          },
+          {
+            "scenarioId": "ma201-dark-void-stale-resource",
+            "evidenceClasses": [
+              "multi-resource-conflict"
+            ]
+          }
+        ],
         "notApplicable": []
       },
-      "reviewedAt": null,
+      "reviewedAt": "2026-07-19",
       "unsupportedInteractionIds": [],
-      "rolloutCohortId": null
+      "rolloutCohortId": "ma-201"
     },
     {
       "canonicalId": "Darkest Lariat",
@@ -39068,37 +39119,78 @@
     {
       "canonicalId": "Thunder Wave",
       "displayName": "Thunder Wave",
-      "baseStatus": "blocked",
+      "baseStatus": "complete",
       "interactionStatus": "unassessed",
       "runtime": {
-        "kind": "unimplemented",
-        "version": null,
-        "definitionHash": null,
-        "sourceModule": null
+        "kind": "movespec-v2",
+        "version": 2,
+        "sourceModule": "server/domain/moveAutomation/specs/thunderWave.ts",
+        "definitionHash": "ebbb0416acf7508958c375cd1fa89f318b51a253f6e15264682171fa95a05b74"
       },
       "rulesProvenance": {
         "rulesetId": "rotom-table-reference-moves-v1",
         "canonicalizationVersion": 1,
         "sourceDataSha256": "f90491826349afd7d1f2809fd9d74b7acc555f5163b99264205ee369249e9815"
       },
-      "capabilityTags": [],
-      "suggestedCapabilityTags": [
-        "single-target-status"
+      "capabilityTags": [
+        "conditions.typed",
+        "targeting.authoritative"
       ],
-      "blockerCodes": [
-        "runtime.unimplemented"
-      ],
+      "suggestedCapabilityTags": [],
+      "blockerCodes": [],
       "limitations": [],
       "manualSteps": [],
-      "scenarioIds": [],
+      "scenarioIds": [
+        "ma201-thunder-wave-hit",
+        "ma201-thunder-wave-miss",
+        "ma201-thunder-wave-typed-immunity",
+        "ma201-thunder-wave-retry",
+        "ma201-thunder-wave-stale-resource"
+      ],
       "conformanceEvidence": {
-        "requirementTags": [],
-        "scenarios": [],
+        "requirementTags": [
+          "branch.accuracy",
+          "branch.immunity",
+          "recovery.retry",
+          "resource.multi"
+        ],
+        "scenarios": [
+          {
+            "scenarioId": "ma201-thunder-wave-hit",
+            "evidenceClasses": [
+              "hit"
+            ]
+          },
+          {
+            "scenarioId": "ma201-thunder-wave-miss",
+            "evidenceClasses": [
+              "miss"
+            ]
+          },
+          {
+            "scenarioId": "ma201-thunder-wave-typed-immunity",
+            "evidenceClasses": [
+              "immunity"
+            ]
+          },
+          {
+            "scenarioId": "ma201-thunder-wave-retry",
+            "evidenceClasses": [
+              "retry"
+            ]
+          },
+          {
+            "scenarioId": "ma201-thunder-wave-stale-resource",
+            "evidenceClasses": [
+              "multi-resource-conflict"
+            ]
+          }
+        ],
         "notApplicable": []
       },
-      "reviewedAt": null,
+      "reviewedAt": "2026-07-19",
       "unsupportedInteractionIds": [],
-      "rolloutCohortId": null
+      "rolloutCohortId": "ma-201"
     },
     {
       "canonicalId": "Thunderbolt",
@@ -39425,37 +39517,87 @@
     {
       "canonicalId": "Toxic",
       "displayName": "Toxic",
-      "baseStatus": "blocked",
+      "baseStatus": "complete",
       "interactionStatus": "unassessed",
       "runtime": {
-        "kind": "unimplemented",
-        "version": null,
-        "definitionHash": null,
-        "sourceModule": null
+        "kind": "movespec-v2",
+        "version": 2,
+        "sourceModule": "server/domain/moveAutomation/specs/toxic.ts",
+        "definitionHash": "613acbdf95d6423b628c2e931f071dd8ba5d1222640b5f3982f1c41aba582988"
       },
       "rulesProvenance": {
         "rulesetId": "rotom-table-reference-moves-v1",
         "canonicalizationVersion": 1,
         "sourceDataSha256": "f90491826349afd7d1f2809fd9d74b7acc555f5163b99264205ee369249e9815"
       },
-      "capabilityTags": [],
-      "suggestedCapabilityTags": [
-        "single-target-status"
+      "capabilityTags": [
+        "conditions.typed",
+        "expressions.bounded",
+        "targeting.authoritative"
       ],
-      "blockerCodes": [
-        "runtime.unimplemented"
-      ],
+      "suggestedCapabilityTags": [],
+      "blockerCodes": [],
       "limitations": [],
       "manualSteps": [],
-      "scenarioIds": [],
+      "scenarioIds": [
+        "ma201-toxic-hit",
+        "ma201-toxic-miss",
+        "ma201-toxic-poison-user-automatic-hit",
+        "ma201-toxic-poison-immunity",
+        "ma201-toxic-retry",
+        "ma201-toxic-stale-resource"
+      ],
       "conformanceEvidence": {
-        "requirementTags": [],
-        "scenarios": [],
+        "requirementTags": [
+          "branch.accuracy",
+          "branch.alternate",
+          "branch.immunity",
+          "recovery.retry",
+          "resource.multi"
+        ],
+        "scenarios": [
+          {
+            "scenarioId": "ma201-toxic-hit",
+            "evidenceClasses": [
+              "hit"
+            ]
+          },
+          {
+            "scenarioId": "ma201-toxic-miss",
+            "evidenceClasses": [
+              "miss"
+            ]
+          },
+          {
+            "scenarioId": "ma201-toxic-poison-user-automatic-hit",
+            "evidenceClasses": [
+              "alternate-branch"
+            ]
+          },
+          {
+            "scenarioId": "ma201-toxic-poison-immunity",
+            "evidenceClasses": [
+              "immunity"
+            ]
+          },
+          {
+            "scenarioId": "ma201-toxic-retry",
+            "evidenceClasses": [
+              "retry"
+            ]
+          },
+          {
+            "scenarioId": "ma201-toxic-stale-resource",
+            "evidenceClasses": [
+              "multi-resource-conflict"
+            ]
+          }
+        ],
         "notApplicable": []
       },
-      "reviewedAt": null,
+      "reviewedAt": "2026-07-19",
       "unsupportedInteractionIds": [],
-      "rolloutCohortId": null
+      "rolloutCohortId": "ma-201"
     },
     {
       "canonicalId": "Toxic Spikes",

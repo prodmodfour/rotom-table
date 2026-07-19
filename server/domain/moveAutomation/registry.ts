@@ -20,6 +20,7 @@ import {
 } from './validateSpec'
 import { ABSORB_MOVE_SPEC_REGISTRATION } from './specs/absorb'
 import { ASTONISH_MOVE_SPEC_REGISTRATION } from './specs/astonish'
+import { DARK_VOID_MOVE_SPEC_REGISTRATION } from './specs/darkVoid'
 import { DOUBLE_KICK_MOVE_SPEC_REGISTRATION } from './specs/doubleKick'
 import { DRAGON_RAGE_MOVE_SPEC_REGISTRATION } from './specs/dragonRage'
 import { EMBER_MOVE_SPEC_REGISTRATION } from './specs/ember'
@@ -42,6 +43,8 @@ import { SWEET_SCENT_MOVE_SPEC_REGISTRATION } from './specs/sweetScent'
 import { SYNTHESIS_MOVE_SPEC_REGISTRATION } from './specs/synthesis'
 import { TACKLE_MOVE_SPEC_REGISTRATION } from './specs/tackle'
 import { TAKE_DOWN_MOVE_SPEC_REGISTRATION } from './specs/takeDown'
+import { THUNDER_WAVE_MOVE_SPEC_REGISTRATION } from './specs/thunderWave'
+import { TOXIC_MOVE_SPEC_REGISTRATION } from './specs/toxic'
 import { U_TURN_MOVE_SPEC_REGISTRATION } from './specs/uTurn'
 import { YAWN_MOVE_SPEC_REGISTRATION } from './specs/yawn'
 
@@ -262,6 +265,7 @@ export const createMoveAutomationRuntimeRegistry = (
 export const REVIEWED_MOVE_SPEC_V2_REGISTRATIONS: readonly MoveSpecV2Registration[] = Object.freeze([
   ABSORB_MOVE_SPEC_REGISTRATION,
   ASTONISH_MOVE_SPEC_REGISTRATION,
+  DARK_VOID_MOVE_SPEC_REGISTRATION,
   DOUBLE_KICK_MOVE_SPEC_REGISTRATION,
   DRAGON_RAGE_MOVE_SPEC_REGISTRATION,
   EMBER_MOVE_SPEC_REGISTRATION,
@@ -284,6 +288,8 @@ export const REVIEWED_MOVE_SPEC_V2_REGISTRATIONS: readonly MoveSpecV2Registratio
   SYNTHESIS_MOVE_SPEC_REGISTRATION,
   TACKLE_MOVE_SPEC_REGISTRATION,
   TAKE_DOWN_MOVE_SPEC_REGISTRATION,
+  THUNDER_WAVE_MOVE_SPEC_REGISTRATION,
+  TOXIC_MOVE_SPEC_REGISTRATION,
   U_TURN_MOVE_SPEC_REGISTRATION,
   YAWN_MOVE_SPEC_REGISTRATION,
 ])

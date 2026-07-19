@@ -1452,12 +1452,10 @@
     {
       "canonicalId": "Dark Void",
       "displayName": "Dark Void",
-      "baseStatus": "blocked",
+      "baseStatus": "complete",
       "interactionStatus": "unassessed",
-      "runtimeKind": "unimplemented",
-      "blockerCodes": [
-        "runtime.unimplemented"
-      ],
+      "runtimeKind": "movespec-v2",
+      "blockerCodes": [],
       "limitations": [],
       "manualSteps": []
     },
@@ -8064,12 +8062,10 @@
     {
       "canonicalId": "Thunder Wave",
       "displayName": "Thunder Wave",
-      "baseStatus": "blocked",
+      "baseStatus": "complete",
       "interactionStatus": "unassessed",
-      "runtimeKind": "unimplemented",
-      "blockerCodes": [
-        "runtime.unimplemented"
-      ],
+      "runtimeKind": "movespec-v2",
+      "blockerCodes": [],
       "limitations": [],
       "manualSteps": []
     },
@@ -8130,12 +8126,10 @@
     {
       "canonicalId": "Toxic",
       "displayName": "Toxic",
-      "baseStatus": "blocked",
+      "baseStatus": "complete",
       "interactionStatus": "unassessed",
-      "runtimeKind": "unimplemented",
-      "blockerCodes": [
-        "runtime.unimplemented"
-      ],
+      "runtimeKind": "movespec-v2",
+      "blockerCodes": [],
       "limitations": [],
       "manualSteps": []
     },

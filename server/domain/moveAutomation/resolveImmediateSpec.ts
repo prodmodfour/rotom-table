@@ -50,6 +50,7 @@ import {
   type MoveSpecResolvedRoll,
 } from './executeSpec'
 import type { MoveSpecV2Runtime } from './registry'
+import { resolveMoveSpecTargetingRule } from './targetingBranches'
 import {
   isMoveCoreTokenEffectEmission,
   reduceMoveCoreTokenEffects,
@@ -821,6 +822,7 @@ export interface ResolveMoveSpecOptions {
   readonly runtime: MoveSpecV2Runtime
   readonly entry: ResolvedCanonicalMoveEntry
   readonly authoritativeTargetIds: readonly string[]
+  readonly targetBranchId?: string | null
   readonly authoritativeTargetEvaluations?: readonly MoveSpecAuthoritativeTargetEvaluation[]
   readonly ancestry?: readonly MoveResolutionTraceAncestryEntry[]
 }
@@ -843,6 +845,7 @@ const executeReviewedMoveSpec = (
   const execution = executeMoveSpec({
     definition: options.runtime.definition,
     context: options.context,
+    targetBranchId: options.targetBranchId,
     authoritativeTargetIds: options.authoritativeTargetIds,
     authoritativeTargetEvaluations: options.authoritativeTargetEvaluations,
     ancestry: options.ancestry,
@@ -882,7 +885,11 @@ export const reduceCompletedMoveSpec = (
   })
   // A self target is explicit interpreter evidence, not an attacked-target wire
   // identity. Self-only operations must address the actor selector directly.
-  const exposesAttackedTargets = options.runtime.definition.spec.targeting.kind !== 'self'
+  const targeting = resolveMoveSpecTargetingRule(
+    options.runtime.definition.spec,
+    options.targetBranchId,
+  ) ?? fail('execution-rejected', 'The selected MoveSpec targeting branch is unavailable.')
+  const exposesAttackedTargets = targeting.kind !== 'self'
   const attackedTargetIds = exposesAttackedTargets ? [...execution.targetIds] : []
   const initialDynamic: MoveCoreTokenDynamicRecipientSets = {
     attackedTargetIds,

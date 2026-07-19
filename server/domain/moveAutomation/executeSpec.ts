@@ -150,7 +150,9 @@ import {
   validateMoveSpecOperationSequence,
   type ValidatedMoveSpec,
   type ValidatedMoveSpecDefinition,
+  type ValidatedMoveSpecTargetingRule,
 } from './validateSpec'
+import { resolveMoveSpecTargetingRule } from './targetingBranches'
 
 export type MoveSpecExecutionErrorCode =
   | 'definition-integrity-mismatch'
@@ -432,6 +434,8 @@ export interface ExecuteMoveSpecInput {
   readonly context: AuthoritativeMoveRulesContext
   /** Server-derived geometry recipients; this field never comes from move intent. */
   readonly authoritativeTargetIds?: readonly string[]
+  /** Reviewed alternate targeting declaration selected by the move intent. */
+  readonly targetBranchId?: string | null
   /** Complete server-only area-filter evidence in geometric candidate order. */
   readonly authoritativeTargetEvaluations?: readonly MoveSpecAuthoritativeTargetEvaluation[]
   readonly ancestry?: readonly MoveResolutionTraceAncestryEntry[]
@@ -655,12 +659,12 @@ const validatedAuthoritativeTargetIds = (
 
 const targetIdsForSpec = (
   context: AuthoritativeMoveRulesContext,
-  spec: ValidatedMoveSpec,
+  targeting: ValidatedMoveSpecTargetingRule,
   authoritativeTargetIds?: readonly string[],
 ): readonly string[] => {
-  if (spec.targeting.kind === 'none') return []
-  if (spec.targeting.kind === 'self') return [context.actor.placement.id]
-  if (spec.targeting.kind === 'area' && authoritativeTargetIds === undefined) {
+  if (targeting.kind === 'none') return []
+  if (targeting.kind === 'self') return [context.actor.placement.id]
+  if (targeting.kind === 'area' && authoritativeTargetIds === undefined) {
     return fail(
       'authoritative-target-invalid',
       'Geometric area targeting requires server-derived eligible target IDs.',
@@ -669,11 +673,11 @@ const targetIdsForSpec = (
   if (authoritativeTargetIds !== undefined) {
     return validatedAuthoritativeTargetIds(context, authoritativeTargetIds)
   }
-  if (spec.targeting.selector) {
+  if (targeting.selector) {
     return evaluateMoveSelector({
       context,
       selectorState: emptySelectorState(),
-      selector: spec.targeting.selector,
+      selector: targeting.selector,
     })
   }
   return canonicalPlacementIds(
@@ -738,11 +742,11 @@ const authoritativeTargetEvaluations = (
 
 const consideredTargetIds = (
   context: AuthoritativeMoveRulesContext,
-  spec: ValidatedMoveSpec,
+  targeting: ValidatedMoveSpecTargetingRule,
   targetIds: readonly string[],
 ): readonly string[] => {
-  if (spec.targeting.kind === 'none') return []
-  if (spec.targeting.kind === 'self') return [context.actor.placement.id]
+  if (targeting.kind === 'none') return []
+  if (targeting.kind === 'self') return [context.actor.placement.id]
   return canonicalPlacementIds(context, [
     ...context.selectedPlacements.map(({ id }) => id),
     ...targetIds,
@@ -2029,6 +2033,11 @@ const executeMoveSpecInternal = (
   const handlerRegistry = input.handlerRegistry ?? REGISTERED_MOVE_HANDLER_REGISTRY
   const definition = executableDefinition(input, handlerRegistry)
   const { spec } = definition
+  const targeting = resolveMoveSpecTargetingRule(spec, input.targetBranchId)
+    ?? fail(
+      'authoritative-target-invalid',
+      `MoveSpec ${spec.canonicalId} requires one reviewed targeting branch ID.`,
+    )
   enforceNestedExecutionBudget(() => executionState.nestedBudget.enterSpec(
     spec.canonicalId,
     executionState.nestedDepth,
@@ -2069,10 +2078,10 @@ const executeMoveSpecInternal = (
   for (const declaration of spec.costs) activePhases.add(declaration.phase)
   if (spec.preconditions.length > 0) activePhases.add('precondition')
   if (
-    spec.targeting.kind !== 'none'
-    || spec.targeting.selector !== null
-    || spec.targeting.minTargets > 0
-    || spec.targeting.maxTargets > 0
+    targeting.kind !== 'none'
+    || targeting.selector !== null
+    || targeting.minTargets > 0
+    || targeting.maxTargets > 0
   ) {
     activePhases.add('target')
   }
@@ -2203,7 +2212,7 @@ const executeMoveSpecInternal = (
     if (phase === 'target') {
       if (
         input.authoritativeTargetEvaluations !== undefined
-        && spec.targeting.kind !== 'area'
+        && targeting.kind !== 'area'
       ) {
         fail(
           'authoritative-target-invalid',
@@ -2211,7 +2220,7 @@ const executeMoveSpecInternal = (
         )
       }
       if (
-        spec.targeting.kind === 'area'
+        targeting.kind === 'area'
         && input.authoritativeTargetEvaluations === undefined
       ) {
         fail(
@@ -2221,7 +2230,7 @@ const executeMoveSpecInternal = (
       }
       const resolvedTargetIds = targetIdsForSpec(
         input.context,
-        spec,
+        targeting,
         input.authoritativeTargetIds,
       )
       enforceNestedExecutionBudget(() => executionState.nestedBudget.reserveTargets(
@@ -2249,8 +2258,8 @@ const executeMoveSpecInternal = (
         spec.canonicalId,
         executionState.mechanicsSource,
       )
-      hitTargetIds = spec.targeting.kind !== 'self'
-        && spec.targeting.kind !== 'none'
+      hitTargetIds = targeting.kind !== 'self'
+        && targeting.kind !== 'none'
         && targetMechanics?.script.requiresAccuracy === false
         ? targetIds
         : []
@@ -2263,7 +2272,7 @@ const executeMoveSpecInternal = (
       const targetIdSet = new Set(targetIds)
       const evaluations = suppliedEvaluations ?? consideredTargetIds(
         input.context,
-        spec,
+        targeting,
         targetIds,
       ).map((targetPlacementId): MoveSpecAuthoritativeTargetEvaluation => {
         const included = targetIdSet.has(targetPlacementId)
@@ -2284,8 +2293,8 @@ const executeMoveSpecInternal = (
       }
 
       if (
-        resolvedTargetIds.length < spec.targeting.minTargets
-        || resolvedTargetIds.length > spec.targeting.maxTargets
+        resolvedTargetIds.length < targeting.minTargets
+        || resolvedTargetIds.length > targeting.maxTargets
       ) {
         return Object.freeze({
           kind: 'rejected',
@@ -2313,8 +2322,8 @@ const executeMoveSpecInternal = (
             reasonCode: 'target-count-out-of-range',
             preconditionId: null,
             actualTargetCount: resolvedTargetIds.length,
-            minimumTargetCount: spec.targeting.minTargets,
-            maximumTargetCount: spec.targeting.maxTargets,
+            minimumTargetCount: targeting.minTargets,
+            maximumTargetCount: targeting.maxTargets,
           }),
         })
       }
@@ -2800,13 +2809,46 @@ const executeMoveSpecInternal = (
           })
           let resolvedAccuracyRule: MoveAutomationAccuracyRule | null = null
           if (purpose === 'accuracy' && recipientId !== null && target) {
+            const conditionalRule = 'accuracyRule' in operation.payload
+              ? operation.payload.accuracyRule
+              : undefined
+            const conditionalEvaluation = conditionalRule
+              ? evaluateMovePredicate({
+                  predicate: conditionalRule.predicate,
+                  context: input.context,
+                  canonicalMoveId: spec.canonicalId,
+                  rootNodeId: `${operation.id}.accuracy-rule.${recipientId}`,
+                  selectorState: {
+                    ...selectorState,
+                    targetIds: [recipientId],
+                  },
+                })
+              : null
+            if (conditionalRule && conditionalEvaluation) {
+              trace = reduceMoveResolutionTrace(trace, {
+                kind: 'predicate',
+                phase,
+                predicateId: `${operation.id}.accuracy-rule.${recipientId}`,
+                outcome: conditionalEvaluation.value,
+                reasonCode: conditionalRule.reasonCode,
+                input: traceJson({ evaluationTrace: conditionalEvaluation.trace }),
+              })
+            }
+            const reviewedAccuracyRule: MoveAutomationAccuracyRule | null = conditionalRule
+              && conditionalEvaluation?.value
+              ? {
+                  kind: 'automatic-hit',
+                  sourceId: conditionalRule.sourceId,
+                  reasonCode: conditionalRule.reasonCode,
+                }
+              : weatherAccuracy?.rule ?? null
             const accuracy = resolveMoveAutomationAccuracyRoll(
               getMechanics().script,
               result.naturalResult,
               {
                 userAccuracy: modifiers.reduce((total, modifier) => total + modifier.value, 0),
                 targetEvasion,
-                accuracyRule: weatherAccuracy?.rule,
+                accuracyRule: reviewedAccuracyRule,
               },
             )
             resolvedAccuracyRule = accuracy.accuracyRule ?? null
