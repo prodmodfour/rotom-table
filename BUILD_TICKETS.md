@@ -2825,7 +2825,7 @@ Status: DONE
 
 ## MA-205 — Implement Blast Burn through Prismatic Laser
 
-Status: TODO
+Status: DONE
 
 **Moves:** Blast Burn; Eternabeam; Frenzy Plant; Hydro Cannon; Meteor Assault; Prismatic Laser
 

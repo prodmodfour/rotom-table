@@ -2856,37 +2856,84 @@
     {
       "canonicalId": "Blast Burn",
       "displayName": "Blast Burn",
-      "baseStatus": "blocked",
+      "baseStatus": "complete",
       "interactionStatus": "unassessed",
       "runtime": {
-        "kind": "unimplemented",
-        "version": null,
-        "definitionHash": null,
-        "sourceModule": null
+        "kind": "movespec-v2",
+        "version": 2,
+        "definitionHash": "9126f6ac09c1e39fdf4333538319d35b730c993edd1610e76fcc507108eed3c0",
+        "sourceModule": "server/domain/moveAutomation/specs/exhaustAreaDamage205.ts"
       },
       "rulesProvenance": {
         "rulesetId": "rotom-table-reference-moves-v1",
         "canonicalizationVersion": 1,
         "sourceDataSha256": "f90491826349afd7d1f2809fd9d74b7acc555f5163b99264205ee369249e9815"
       },
-      "capabilityTags": [],
-      "suggestedCapabilityTags": [
-        "plain-area-damage"
+      "capabilityTags": [
+        "targeting.authoritative"
       ],
-      "blockerCodes": [
-        "runtime.unimplemented"
-      ],
+      "suggestedCapabilityTags": [],
+      "blockerCodes": [],
       "limitations": [],
       "manualSteps": [],
-      "scenarioIds": [],
+      "scenarioIds": [
+        "blast-burn.v2-area-mixed-smite",
+        "blast-burn.v2-critical-hit",
+        "blast-burn.v2-flash-fire-immunity",
+        "blast-burn.v2-duplicate-replay",
+        "blast-burn.v2-stale-target"
+      ],
       "conformanceEvidence": {
-        "requirementTags": [],
-        "scenarios": [],
+        "requirementTags": [
+          "branch.accuracy",
+          "branch.alternate",
+          "branch.critical-hit",
+          "branch.immunity",
+          "mechanic.damage",
+          "recovery.retry",
+          "resource.multi",
+          "target.area"
+        ],
+        "scenarios": [
+          {
+            "scenarioId": "blast-burn.v2-area-mixed-smite",
+            "evidenceClasses": [
+              "alternate-branch",
+              "area-mixed-outcomes",
+              "hit",
+              "miss"
+            ]
+          },
+          {
+            "scenarioId": "blast-burn.v2-critical-hit",
+            "evidenceClasses": [
+              "crit"
+            ]
+          },
+          {
+            "scenarioId": "blast-burn.v2-flash-fire-immunity",
+            "evidenceClasses": [
+              "immunity"
+            ]
+          },
+          {
+            "scenarioId": "blast-burn.v2-duplicate-replay",
+            "evidenceClasses": [
+              "retry"
+            ]
+          },
+          {
+            "scenarioId": "blast-burn.v2-stale-target",
+            "evidenceClasses": [
+              "multi-resource-conflict"
+            ]
+          }
+        ],
         "notApplicable": []
       },
-      "reviewedAt": null,
+      "reviewedAt": "2026-07-19",
       "unsupportedInteractionIds": [],
-      "rolloutCohortId": null
+      "rolloutCohortId": "ma-205"
     },
     {
       "canonicalId": "Blaze Kick",
@@ -10575,37 +10622,84 @@
     {
       "canonicalId": "Eternabeam",
       "displayName": "Eternabeam",
-      "baseStatus": "blocked",
+      "baseStatus": "complete",
       "interactionStatus": "unassessed",
       "runtime": {
-        "kind": "unimplemented",
-        "version": null,
-        "definitionHash": null,
-        "sourceModule": null
+        "kind": "movespec-v2",
+        "version": 2,
+        "definitionHash": "be492d27e89b1999f9210faf98a44a37155957d51e56e1948c2e7fbaf9d426d2",
+        "sourceModule": "server/domain/moveAutomation/specs/exhaustAreaDamage205.ts"
       },
       "rulesProvenance": {
         "rulesetId": "rotom-table-reference-moves-v1",
         "canonicalizationVersion": 1,
         "sourceDataSha256": "f90491826349afd7d1f2809fd9d74b7acc555f5163b99264205ee369249e9815"
       },
-      "capabilityTags": [],
-      "suggestedCapabilityTags": [
-        "plain-area-damage"
+      "capabilityTags": [
+        "targeting.authoritative"
       ],
-      "blockerCodes": [
-        "runtime.unimplemented"
-      ],
+      "suggestedCapabilityTags": [],
+      "blockerCodes": [],
       "limitations": [],
       "manualSteps": [],
-      "scenarioIds": [],
+      "scenarioIds": [
+        "eternabeam.v2-area-mixed-smite",
+        "eternabeam.v2-critical-hit",
+        "eternabeam.v2-fairy-immunity",
+        "eternabeam.v2-duplicate-replay",
+        "eternabeam.v2-stale-target"
+      ],
       "conformanceEvidence": {
-        "requirementTags": [],
-        "scenarios": [],
+        "requirementTags": [
+          "branch.accuracy",
+          "branch.alternate",
+          "branch.critical-hit",
+          "branch.immunity",
+          "mechanic.damage",
+          "recovery.retry",
+          "resource.multi",
+          "target.area"
+        ],
+        "scenarios": [
+          {
+            "scenarioId": "eternabeam.v2-area-mixed-smite",
+            "evidenceClasses": [
+              "alternate-branch",
+              "area-mixed-outcomes",
+              "hit",
+              "miss"
+            ]
+          },
+          {
+            "scenarioId": "eternabeam.v2-critical-hit",
+            "evidenceClasses": [
+              "crit"
+            ]
+          },
+          {
+            "scenarioId": "eternabeam.v2-fairy-immunity",
+            "evidenceClasses": [
+              "immunity"
+            ]
+          },
+          {
+            "scenarioId": "eternabeam.v2-duplicate-replay",
+            "evidenceClasses": [
+              "retry"
+            ]
+          },
+          {
+            "scenarioId": "eternabeam.v2-stale-target",
+            "evidenceClasses": [
+              "multi-resource-conflict"
+            ]
+          }
+        ],
         "notApplicable": []
       },
-      "reviewedAt": null,
+      "reviewedAt": "2026-07-19",
       "unsupportedInteractionIds": [],
-      "rolloutCohortId": null
+      "rolloutCohortId": "ma-205"
     },
     {
       "canonicalId": "Expanding Force",
@@ -13851,37 +13945,82 @@
     {
       "canonicalId": "Frenzy Plant",
       "displayName": "Frenzy Plant",
-      "baseStatus": "blocked",
+      "baseStatus": "complete",
       "interactionStatus": "unassessed",
       "runtime": {
-        "kind": "unimplemented",
-        "version": null,
-        "definitionHash": null,
-        "sourceModule": null
+        "kind": "movespec-v2",
+        "version": 2,
+        "definitionHash": "95a88f0be4b896f6404b4eddea3fbbf0819c65d5cf22643d678d16daeb7061b5",
+        "sourceModule": "server/domain/moveAutomation/specs/exhaustAreaDamage205.ts"
       },
       "rulesProvenance": {
         "rulesetId": "rotom-table-reference-moves-v1",
         "canonicalizationVersion": 1,
         "sourceDataSha256": "f90491826349afd7d1f2809fd9d74b7acc555f5163b99264205ee369249e9815"
       },
-      "capabilityTags": [],
-      "suggestedCapabilityTags": [
-        "plain-area-damage"
+      "capabilityTags": [
+        "targeting.authoritative"
       ],
-      "blockerCodes": [
-        "runtime.unimplemented"
-      ],
+      "suggestedCapabilityTags": [],
+      "blockerCodes": [],
       "limitations": [],
       "manualSteps": [],
-      "scenarioIds": [],
+      "scenarioIds": [
+        "frenzy-plant.v2-multi-target-mixed-smite",
+        "frenzy-plant.v2-critical-hit",
+        "frenzy-plant.v2-sap-sipper-immunity",
+        "frenzy-plant.v2-duplicate-replay",
+        "frenzy-plant.v2-stale-target"
+      ],
       "conformanceEvidence": {
-        "requirementTags": [],
-        "scenarios": [],
+        "requirementTags": [
+          "branch.accuracy",
+          "branch.alternate",
+          "branch.critical-hit",
+          "branch.immunity",
+          "mechanic.damage",
+          "recovery.retry",
+          "resource.multi"
+        ],
+        "scenarios": [
+          {
+            "scenarioId": "frenzy-plant.v2-multi-target-mixed-smite",
+            "evidenceClasses": [
+              "alternate-branch",
+              "hit",
+              "miss"
+            ]
+          },
+          {
+            "scenarioId": "frenzy-plant.v2-critical-hit",
+            "evidenceClasses": [
+              "crit"
+            ]
+          },
+          {
+            "scenarioId": "frenzy-plant.v2-sap-sipper-immunity",
+            "evidenceClasses": [
+              "immunity"
+            ]
+          },
+          {
+            "scenarioId": "frenzy-plant.v2-duplicate-replay",
+            "evidenceClasses": [
+              "retry"
+            ]
+          },
+          {
+            "scenarioId": "frenzy-plant.v2-stale-target",
+            "evidenceClasses": [
+              "multi-resource-conflict"
+            ]
+          }
+        ],
         "notApplicable": []
       },
-      "reviewedAt": null,
+      "reviewedAt": "2026-07-19",
       "unsupportedInteractionIds": [],
-      "rolloutCohortId": null
+      "rolloutCohortId": "ma-205"
     },
     {
       "canonicalId": "Frost Breath",
@@ -17087,37 +17226,81 @@
     {
       "canonicalId": "Hydro Cannon",
       "displayName": "Hydro Cannon",
-      "baseStatus": "blocked",
+      "baseStatus": "complete",
       "interactionStatus": "unassessed",
       "runtime": {
-        "kind": "unimplemented",
-        "version": null,
-        "definitionHash": null,
-        "sourceModule": null
+        "kind": "movespec-v2",
+        "version": 2,
+        "definitionHash": "96587836e19ce2ccab9724b76e78b19fb3ef05d4fcbdea531360a48e87d1f8f0",
+        "sourceModule": "server/domain/moveAutomation/specs/exhaustAreaDamage205.ts"
       },
       "rulesProvenance": {
         "rulesetId": "rotom-table-reference-moves-v1",
         "canonicalizationVersion": 1,
         "sourceDataSha256": "f90491826349afd7d1f2809fd9d74b7acc555f5163b99264205ee369249e9815"
       },
-      "capabilityTags": [],
-      "suggestedCapabilityTags": [
-        "plain-area-damage"
+      "capabilityTags": [
+        "targeting.authoritative"
       ],
-      "blockerCodes": [
-        "runtime.unimplemented"
-      ],
+      "suggestedCapabilityTags": [],
+      "blockerCodes": [],
       "limitations": [],
       "manualSteps": [],
-      "scenarioIds": [],
+      "scenarioIds": [
+        "hydro-cannon.v2-area-mixed-smite",
+        "hydro-cannon.v2-critical-hit",
+        "hydro-cannon.v2-duplicate-replay",
+        "hydro-cannon.v2-stale-target"
+      ],
       "conformanceEvidence": {
-        "requirementTags": [],
-        "scenarios": [],
-        "notApplicable": []
+        "requirementTags": [
+          "branch.accuracy",
+          "branch.alternate",
+          "branch.critical-hit",
+          "mechanic.damage",
+          "recovery.retry",
+          "resource.multi",
+          "target.area"
+        ],
+        "scenarios": [
+          {
+            "scenarioId": "hydro-cannon.v2-area-mixed-smite",
+            "evidenceClasses": [
+              "alternate-branch",
+              "area-mixed-outcomes",
+              "hit",
+              "miss"
+            ]
+          },
+          {
+            "scenarioId": "hydro-cannon.v2-critical-hit",
+            "evidenceClasses": [
+              "crit"
+            ]
+          },
+          {
+            "scenarioId": "hydro-cannon.v2-duplicate-replay",
+            "evidenceClasses": [
+              "retry"
+            ]
+          },
+          {
+            "scenarioId": "hydro-cannon.v2-stale-target",
+            "evidenceClasses": [
+              "multi-resource-conflict"
+            ]
+          }
+        ],
+        "notApplicable": [
+          {
+            "evidenceClass": "immunity",
+            "reason": "The frozen type chart has no type immune to Water damage; broader ability interactions remain separately unassessed."
+          }
+        ]
       },
-      "reviewedAt": null,
+      "reviewedAt": "2026-07-19",
       "unsupportedInteractionIds": [],
-      "rolloutCohortId": null
+      "rolloutCohortId": "ma-205"
     },
     {
       "canonicalId": "Hydro Pump",
@@ -21711,37 +21894,84 @@
     {
       "canonicalId": "Meteor Assault",
       "displayName": "Meteor Assault",
-      "baseStatus": "blocked",
+      "baseStatus": "complete",
       "interactionStatus": "unassessed",
       "runtime": {
-        "kind": "unimplemented",
-        "version": null,
-        "definitionHash": null,
-        "sourceModule": null
+        "kind": "movespec-v2",
+        "version": 2,
+        "definitionHash": "71dca4d567dbafc45b3dd102366035a1281f6982b985c3d23f42077ba99e89b0",
+        "sourceModule": "server/domain/moveAutomation/specs/exhaustAreaDamage205.ts"
       },
       "rulesProvenance": {
         "rulesetId": "rotom-table-reference-moves-v1",
         "canonicalizationVersion": 1,
         "sourceDataSha256": "f90491826349afd7d1f2809fd9d74b7acc555f5163b99264205ee369249e9815"
       },
-      "capabilityTags": [],
-      "suggestedCapabilityTags": [
-        "plain-area-damage"
+      "capabilityTags": [
+        "targeting.authoritative"
       ],
-      "blockerCodes": [
-        "runtime.unimplemented"
-      ],
+      "suggestedCapabilityTags": [],
+      "blockerCodes": [],
       "limitations": [],
       "manualSteps": [],
-      "scenarioIds": [],
+      "scenarioIds": [
+        "meteor-assault.v2-area-mixed-smite",
+        "meteor-assault.v2-critical-hit",
+        "meteor-assault.v2-ghost-immunity",
+        "meteor-assault.v2-duplicate-replay",
+        "meteor-assault.v2-stale-target"
+      ],
       "conformanceEvidence": {
-        "requirementTags": [],
-        "scenarios": [],
+        "requirementTags": [
+          "branch.accuracy",
+          "branch.alternate",
+          "branch.critical-hit",
+          "branch.immunity",
+          "mechanic.damage",
+          "recovery.retry",
+          "resource.multi",
+          "target.area"
+        ],
+        "scenarios": [
+          {
+            "scenarioId": "meteor-assault.v2-area-mixed-smite",
+            "evidenceClasses": [
+              "alternate-branch",
+              "area-mixed-outcomes",
+              "hit",
+              "miss"
+            ]
+          },
+          {
+            "scenarioId": "meteor-assault.v2-critical-hit",
+            "evidenceClasses": [
+              "crit"
+            ]
+          },
+          {
+            "scenarioId": "meteor-assault.v2-ghost-immunity",
+            "evidenceClasses": [
+              "immunity"
+            ]
+          },
+          {
+            "scenarioId": "meteor-assault.v2-duplicate-replay",
+            "evidenceClasses": [
+              "retry"
+            ]
+          },
+          {
+            "scenarioId": "meteor-assault.v2-stale-target",
+            "evidenceClasses": [
+              "multi-resource-conflict"
+            ]
+          }
+        ],
         "notApplicable": []
       },
-      "reviewedAt": null,
+      "reviewedAt": "2026-07-19",
       "unsupportedInteractionIds": [],
-      "rolloutCohortId": null
+      "rolloutCohortId": "ma-205"
     },
     {
       "canonicalId": "Meteor Beam",
@@ -26835,37 +27065,84 @@
     {
       "canonicalId": "Prismatic Laser",
       "displayName": "Prismatic Laser",
-      "baseStatus": "blocked",
+      "baseStatus": "complete",
       "interactionStatus": "unassessed",
       "runtime": {
-        "kind": "unimplemented",
-        "version": null,
-        "definitionHash": null,
-        "sourceModule": null
+        "kind": "movespec-v2",
+        "version": 2,
+        "definitionHash": "9bf07d2b2397059daf9b88266c9cdb86b649e66a5e151d72fba406bede02d5d9",
+        "sourceModule": "server/domain/moveAutomation/specs/exhaustAreaDamage205.ts"
       },
       "rulesProvenance": {
         "rulesetId": "rotom-table-reference-moves-v1",
         "canonicalizationVersion": 1,
         "sourceDataSha256": "f90491826349afd7d1f2809fd9d74b7acc555f5163b99264205ee369249e9815"
       },
-      "capabilityTags": [],
-      "suggestedCapabilityTags": [
-        "plain-area-damage"
+      "capabilityTags": [
+        "targeting.authoritative"
       ],
-      "blockerCodes": [
-        "runtime.unimplemented"
-      ],
+      "suggestedCapabilityTags": [],
+      "blockerCodes": [],
       "limitations": [],
       "manualSteps": [],
-      "scenarioIds": [],
+      "scenarioIds": [
+        "prismatic-laser.v2-area-mixed-smite",
+        "prismatic-laser.v2-critical-hit",
+        "prismatic-laser.v2-dark-immunity",
+        "prismatic-laser.v2-duplicate-replay",
+        "prismatic-laser.v2-stale-target"
+      ],
       "conformanceEvidence": {
-        "requirementTags": [],
-        "scenarios": [],
+        "requirementTags": [
+          "branch.accuracy",
+          "branch.alternate",
+          "branch.critical-hit",
+          "branch.immunity",
+          "mechanic.damage",
+          "recovery.retry",
+          "resource.multi",
+          "target.area"
+        ],
+        "scenarios": [
+          {
+            "scenarioId": "prismatic-laser.v2-area-mixed-smite",
+            "evidenceClasses": [
+              "alternate-branch",
+              "area-mixed-outcomes",
+              "hit",
+              "miss"
+            ]
+          },
+          {
+            "scenarioId": "prismatic-laser.v2-critical-hit",
+            "evidenceClasses": [
+              "crit"
+            ]
+          },
+          {
+            "scenarioId": "prismatic-laser.v2-dark-immunity",
+            "evidenceClasses": [
+              "immunity"
+            ]
+          },
+          {
+            "scenarioId": "prismatic-laser.v2-duplicate-replay",
+            "evidenceClasses": [
+              "retry"
+            ]
+          },
+          {
+            "scenarioId": "prismatic-laser.v2-stale-target",
+            "evidenceClasses": [
+              "multi-resource-conflict"
+            ]
+          }
+        ],
         "notApplicable": []
       },
-      "reviewedAt": null,
+      "reviewedAt": "2026-07-19",
       "unsupportedInteractionIds": [],
-      "rolloutCohortId": null
+      "rolloutCohortId": "ma-205"
     },
     {
       "canonicalId": "Protect",

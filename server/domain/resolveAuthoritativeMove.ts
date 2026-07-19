@@ -1400,40 +1400,62 @@ const resolveNativeSingleTargetMove = (options: {
   }
 }
 
-const resolveTargetCountMove = (options: {
+interface LegalTargetCountMove {
+  readonly actorPlacement: SheetPlacement
+  readonly actor: SpawnedPokemon
+  readonly selectedTargets: readonly SpawnedPokemon[]
+  readonly selectedTargetIds: readonly string[]
+  readonly desiredFacing: TokenFacingDirection | undefined
+}
+
+/** Validate direct multi-target intent once for both retained and native runtimes. */
+const resolveLegalTargetCountMove = (options: {
   readonly context: AuthoritativeMoveRulesContext
   readonly script: MoveAutomationScript
   readonly selection: Extract<ResolveMoveSelection, { kind: 'target-count' }>
-  readonly frequency: string | null
-  readonly damageFormula: string | null
   readonly canonicalMoveName: string
-  readonly moveKey: string
-  readonly targetBranchId?: string
-}): UnfinalizedAuthoritativeMoveResolution => {
+}): LegalTargetCountMove => {
   const { placement: actorPlacement, token: actor } = options.context.actor
   const moveName = options.script.moveName
   if (!isSeamlessTargetCountMoveScript(options.script)) {
-    fail('invalid', 'selection-kind-mismatch', `${moveName} is not a seamless target-count move.`)
+    fail(
+      'invalid',
+      'selection-kind-mismatch',
+      `${moveName} is not a seamless target-count move.`,
+    )
   }
-  assertResolvableDamage(options.script, options.damageFormula)
 
   const submittedTargetIds = options.selection.targetPlacementIds
-  if (submittedTargetIds.length === 0) fail('invalid', 'empty-target-selection', 'At least one target is required.')
+  if (submittedTargetIds.length === 0) {
+    fail('invalid', 'empty-target-selection', 'At least one target is required.')
+  }
   if (submittedTargetIds.length > LIVE_PLAY_MOVE_RESOLUTION_MAX_TARGET_IDS) {
-    fail('invalid', 'too-many-targets', `At most ${LIVE_PLAY_MOVE_RESOLUTION_MAX_TARGET_IDS} targets may be submitted.`)
+    fail(
+      'invalid',
+      'too-many-targets',
+      `At most ${LIVE_PLAY_MOVE_RESOLUTION_MAX_TARGET_IDS} targets may be submitted.`,
+    )
   }
   assertNoDuplicateTargetIds(submittedTargetIds)
 
-  const maxTargetCount = typeof options.script.targetCount === 'number' && Number.isFinite(options.script.targetCount)
+  const maxTargetCount = typeof options.script.targetCount === 'number'
+    && Number.isFinite(options.script.targetCount)
     ? Math.floor(options.script.targetCount)
     : 0
   if (submittedTargetIds.length > maxTargetCount) {
-    fail('invalid', 'too-many-targets', `${options.script.moveName} can target at most ${maxTargetCount} targets.`)
+    fail(
+      'invalid',
+      'too-many-targets',
+      `${options.script.moveName} can target at most ${maxTargetCount} targets.`,
+    )
   }
 
   const rangeMeters = parseExplicitMultiTargetMoveRangeMeters(options.script.range)
-    ?? fail('unsupported', 'unsupported-range', `${options.script.moveName} has an unsupported target-count range.`)
-
+    ?? fail(
+      'unsupported',
+      'unsupported-range',
+      `${options.script.moveName} has an unsupported target-count range.`,
+    )
   const targetabilityById = new Map<string, ReturnType<
     AuthoritativeMoveRulesContext['queries']['targetability']['resolve']
   >>()
@@ -1465,23 +1487,47 @@ const resolveTargetCountMove = (options: {
     tokens: options.context.queries.tokens.all(),
     rangeMeters,
   })
-  const legalTargetIds = new Set(legalTargets.map((target) => target.id))
+  const legalTargetIds = new Set(legalTargets.map(target => target.id))
   for (const targetId of submittedTargetIds) {
     if (
       !legalTargetIds.has(targetId)
       && targetabilityById.get(targetId)?.exception?.ignoresRange !== true
     ) {
-      fail('invalid', 'target-out-of-range', `Target ${targetId} is outside ${options.script.moveName}'s authoritative range.`)
+      fail(
+        'invalid',
+        'target-out-of-range',
+        `Target ${targetId} is outside ${options.script.moveName}'s authoritative range.`,
+      )
     }
   }
 
   const submittedTargetSet = new Set(submittedTargetIds)
-  const selectedTargets = legalTargets.filter((target) => submittedTargetSet.has(target.id))
-  const selectedTargetIds = selectedTargets.map((target) => target.id)
+  const selectedTargets = legalTargets.filter(target => submittedTargetSet.has(target.id))
+  return {
+    actorPlacement,
+    actor,
+    selectedTargets,
+    selectedTargetIds: selectedTargets.map(target => target.id),
+    desiredFacing: desiredFacingTowardNearestTarget(actorPlacement, actor, selectedTargets),
+  }
+}
+
+const resolveTargetCountMove = (options: {
+  readonly context: AuthoritativeMoveRulesContext
+  readonly script: MoveAutomationScript
+  readonly selection: Extract<ResolveMoveSelection, { kind: 'target-count' }>
+  readonly frequency: string | null
+  readonly damageFormula: string | null
+  readonly canonicalMoveName: string
+  readonly moveKey: string
+  readonly targetBranchId?: string
+}): UnfinalizedAuthoritativeMoveResolution => {
+  assertResolvableDamage(options.script, options.damageFormula)
+  const legal = resolveLegalTargetCountMove(options)
   const transaction = resolveInstantMultiTargetMoveAutomation({
     script: options.script,
-    user: actor,
-    selectedTargets,
+    user: legal.actor,
+    selectedTargets: legal.selectedTargets,
     damageFormula: options.damageFormula,
     fieldEffects: authoritativeFieldEffectsForActor(options.context),
     fieldEffectsForTarget: target => authoritativeFieldEffectsForActor(options.context, target.id),
@@ -1495,20 +1541,93 @@ const resolveTargetCountMove = (options: {
     ),
     randomRoller: options.context.random,
   })
-  const desiredFacing = desiredFacingTowardNearestTarget(actorPlacement, actor, selectedTargets)
 
   return {
-    actorPlacementId: actorPlacement.id,
+    actorPlacementId: legal.actorPlacement.id,
     moveName: options.script.moveName,
     canonicalMoveName: options.canonicalMoveName,
     moveKey: options.moveKey,
     frequency: options.frequency,
     damageFormula: options.damageFormula,
     ...(options.targetBranchId ? { targetBranchId: options.targetBranchId } : {}),
-    selectedTargetIds,
+    selectedTargetIds: legal.selectedTargetIds,
     script: options.script,
     transaction,
-    ...(desiredFacing ? { desiredFacing } : {}),
+    ...(legal.desiredFacing ? { desiredFacing: legal.desiredFacing } : {}),
+  }
+}
+
+const resolveNativeTargetCountMove = (options: {
+  readonly context: AuthoritativeMoveRulesContext
+  readonly runtime: MoveSpecV2Runtime
+  readonly entry: ResolvedCanonicalMoveEntry
+  readonly selection: Extract<ResolveMoveSelection, { kind: 'target-count' }>
+  readonly moveKey: string
+}): AuthoritativeMoveExecution => {
+  const targeting = resolveMoveSpecTargetingRule(
+    options.runtime.definition.spec,
+    options.context.intent.targetBranchId,
+  )
+  if (
+    targeting?.kind !== 'multi-target'
+    || targeting.selector?.kind !== 'selected-targets'
+    || targeting.minTargets !== 1
+    || targeting.maxTargets !== options.entry.script.targetCount
+  ) {
+    return fail(
+      'invalid',
+      'selection-kind-mismatch',
+      `${options.runtime.canonicalId} has no matching reviewed direct multi-target declaration.`,
+    )
+  }
+
+  const legal = resolveLegalTargetCountMove({
+    context: options.context,
+    script: options.entry.script,
+    selection: options.selection,
+    canonicalMoveName: options.entry.canonicalMoveName,
+  })
+  const outcome = resolveMoveSpecOutcome({
+    context: options.context,
+    runtime: options.runtime,
+    entry: options.entry,
+    targetBranchId: options.context.intent.targetBranchId,
+    authoritativeTargetIds: legal.selectedTargetIds,
+    ancestry: options.context.ancestry,
+  })
+  if (outcome.kind === 'pending') {
+    return {
+      kind: 'pending',
+      actorPlacementId: legal.actorPlacement.id,
+      moveName: options.runtime.definition.spec.presentation.displayName,
+      canonicalMoveName: options.entry.canonicalMoveName,
+      moveKey: options.moveKey,
+      frequency: options.entry.frequency,
+      damageFormula: options.entry.damageFormula,
+      resourceRange: options.entry.script.range,
+      selectedTargetIds: legal.selectedTargetIds,
+      sheetReads: outcome.sheetReads,
+      runtime: options.runtime,
+      execution: outcome.execution,
+      preWindowPlan: outcome.preWindowPlan,
+    }
+  }
+  const immediate = outcome.resolution
+  return {
+    actorPlacementId: legal.actorPlacement.id,
+    moveName: options.runtime.definition.spec.presentation.displayName,
+    canonicalMoveName: options.entry.canonicalMoveName,
+    moveKey: options.moveKey,
+    frequency: options.entry.frequency,
+    damageFormula: options.entry.damageFormula,
+    selectedTargetIds: legal.selectedTargetIds,
+    sheetReads: immediate.sheetReads,
+    rollLedger: immediate.rollLedger,
+    auditTrace: immediate.trace,
+    script: immediate.script,
+    transaction: immediate.transaction,
+    ...(legal.desiredFacing ? { desiredFacing: legal.desiredFacing } : {}),
+    nativeV2: immediate.native,
   }
 }
 
@@ -1901,6 +2020,7 @@ export const resolveAuthoritativeMoveExecutionFromContext = (
     )
   }
   if (selectedRuntime?.kind === 'movespec-v2') {
+    const nativeSelectionKind = intent.selection.kind
     const finalizeNativeExecution = (
       execution: AuthoritativeMoveExecution,
     ): AuthoritativeMoveExecution => isAuthoritativePendingMoveResolution(execution)
@@ -1933,10 +2053,19 @@ export const resolveAuthoritativeMoveExecutionFromContext = (
         moveKey: resolvedMoveKey,
       }))
     }
+    if (intent.selection.kind === 'target-count') {
+      return finalizeNativeExecution(resolveNativeTargetCountMove({
+        context,
+        runtime: selectedRuntime,
+        entry,
+        selection: intent.selection,
+        moveKey: resolvedMoveKey,
+      }))
+    }
     return fail(
       'invalid',
       'selection-kind-mismatch',
-      `${entry.canonicalMoveName} does not accept a ${intent.selection.kind} selection.`,
+      `${entry.canonicalMoveName} does not accept a ${nativeSelectionKind} selection.`,
     )
   }
 
