@@ -8104,12 +8104,10 @@
     {
       "canonicalId": "Topsy-Turvy",
       "displayName": "Topsy-Turvy",
-      "baseStatus": "blocked",
+      "baseStatus": "complete",
       "interactionStatus": "unassessed",
-      "runtimeKind": "unimplemented",
-      "blockerCodes": [
-        "runtime.unimplemented"
-      ],
+      "runtimeKind": "movespec-v2",
+      "blockerCodes": [],
       "limitations": [],
       "manualSteps": []
     },

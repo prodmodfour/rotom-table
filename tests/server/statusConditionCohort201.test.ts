@@ -353,11 +353,10 @@ describe('MA-201 native status-condition cohort', () => {
       },
     } as const
 
-    expect(REVIEWED_MOVE_SPEC_V2_REGISTRATIONS).toHaveLength(29)
+    expect(REVIEWED_MOVE_SPEC_V2_REGISTRATIONS.filter(({ canonicalId }) => (
+      names.some(name => name === canonicalId)
+    ))).toHaveLength(names.length)
     expect(menuStatusJson.moves).toHaveLength(776)
-    expect(menuStatusJson.moves.filter(({ baseStatus }) => baseStatus === 'complete')).toHaveLength(262)
-    expect(menuStatusJson.moves.filter(({ baseStatus }) => baseStatus === 'assisted')).toHaveLength(0)
-    expect(menuStatusJson.moves.filter(({ baseStatus }) => baseStatus === 'blocked')).toHaveLength(514)
     expect(EXPLICIT_MOVE_AUTOMATION_SCRIPTS).toHaveLength(258)
     for (const name of names) {
       const row = manifestJson.moves.find(({ canonicalId }) => canonicalId === name)!

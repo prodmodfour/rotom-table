@@ -39414,37 +39414,79 @@
     {
       "canonicalId": "Topsy-Turvy",
       "displayName": "Topsy-Turvy",
-      "baseStatus": "blocked",
+      "baseStatus": "complete",
       "interactionStatus": "unassessed",
       "runtime": {
-        "kind": "unimplemented",
-        "version": null,
-        "definitionHash": null,
-        "sourceModule": null
+        "kind": "movespec-v2",
+        "version": 2,
+        "definitionHash": "7e5f4d8bf55e2b6355d5ee8522ce4a790bd905d072f3c729058cde8d85d963d3",
+        "sourceModule": "server/domain/moveAutomation/specs/topsyTurvy.ts"
       },
       "rulesProvenance": {
         "rulesetId": "rotom-table-reference-moves-v1",
         "canonicalizationVersion": 1,
         "sourceDataSha256": "f90491826349afd7d1f2809fd9d74b7acc555f5163b99264205ee369249e9815"
       },
-      "capabilityTags": [],
-      "suggestedCapabilityTags": [
-        "single-target-stage"
+      "capabilityTags": [
+        "stages.typed",
+        "targeting.authoritative"
       ],
-      "blockerCodes": [
-        "runtime.unimplemented"
-      ],
+      "suggestedCapabilityTags": [],
+      "blockerCodes": [],
       "limitations": [],
       "manualSteps": [],
-      "scenarioIds": [],
+      "scenarioIds": [
+        "topsy-turvy.v2-mixed-inversion",
+        "topsy-turvy.v2-zero-stage-no-op",
+        "topsy-turvy.v2-miss",
+        "topsy-turvy.v2-duplicate-replay",
+        "topsy-turvy.v2-stale-target"
+      ],
       "conformanceEvidence": {
-        "requirementTags": [],
-        "scenarios": [],
+        "requirementTags": [
+          "branch.accuracy",
+          "branch.threshold",
+          "recovery.retry",
+          "resource.multi"
+        ],
+        "scenarios": [
+          {
+            "scenarioId": "topsy-turvy.v2-mixed-inversion",
+            "evidenceClasses": [
+              "hit",
+              "threshold-pass"
+            ]
+          },
+          {
+            "scenarioId": "topsy-turvy.v2-zero-stage-no-op",
+            "evidenceClasses": [
+              "threshold-fail"
+            ]
+          },
+          {
+            "scenarioId": "topsy-turvy.v2-miss",
+            "evidenceClasses": [
+              "miss"
+            ]
+          },
+          {
+            "scenarioId": "topsy-turvy.v2-duplicate-replay",
+            "evidenceClasses": [
+              "retry"
+            ]
+          },
+          {
+            "scenarioId": "topsy-turvy.v2-stale-target",
+            "evidenceClasses": [
+              "multi-resource-conflict"
+            ]
+          }
+        ],
         "notApplicable": []
       },
-      "reviewedAt": null,
+      "reviewedAt": "2026-07-19",
       "unsupportedInteractionIds": [],
-      "rolloutCohortId": null
+      "rolloutCohortId": "ma-202"
     },
     {
       "canonicalId": "Torment",
