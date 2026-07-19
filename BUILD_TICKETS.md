@@ -2720,7 +2720,7 @@ Status: DONE
 
 ## REG-028 — Certify Struggle (Freezer Special) through Struggle (Zapper Physical)
 
-Status: TODO
+Status: DONE
 
 **Baseline-registered moves:** Struggle (Freezer Special); Struggle (Guster Physical); Struggle (Guster Special); Struggle (Materializer Physical); Struggle (Materializer Special); Struggle (Telekinetic Physical); Struggle (Telekinetic Special); Struggle (Zapper Physical)
 
