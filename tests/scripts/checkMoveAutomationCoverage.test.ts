@@ -250,6 +250,7 @@ describe('move automation semantic coverage checker', () => {
       const scratch = manifest.moves.find(({ canonicalId }) => canonicalId === 'Scratch')
       expect(scratch).toBeDefined()
       Object.assign(scratch!, {
+        baseStatus: 'assisted',
         blockerCodes: ['targeting.authoritative'],
         rolloutCohortId: 'reg-024',
         scenarioIds: ['scratch.progress.hit'],

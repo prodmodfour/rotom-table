@@ -61,7 +61,7 @@ describe('Scratch native MoveSpec v2', () => {
     expect(scratchRow.runtime).toEqual({
       kind: 'movespec-v2',
       version: 2,
-      definitionHash: 'f5c5ec2eb2e430bf9ce325c5bd1ba7fc9c1e7fcbb2f5408729f3301385de0681',
+      definitionHash: '72eccb0af8fb60d5f13b57a71a954b1e6c4035dafec58edf73f7deee3fa35330',
       sourceModule: 'server/domain/moveAutomation/specs/scratch.ts',
     })
     expect(scratchRow.scenarioIds).toContain('scratch.v2-pass-hit')

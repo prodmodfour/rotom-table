@@ -2696,7 +2696,7 @@ Status: DONE
 
 ## REG-024 — Certify Scratch through Shadow Claw
 
-Status: TODO
+Status: DONE
 
 **Baseline-registered moves:** Scratch; Screech; Searing Shot; Seed Bomb; Seed Flare; Shadow Ball; Shadow Bone; Shadow Claw
 
