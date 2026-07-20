@@ -485,6 +485,7 @@ const recordDeclaredMove = (
     declaration: {
       eventId: event.eventId,
       sourceOperationId: event.sourceOperationId,
+      round: history.currentRound,
       order: nextMoveUseOrder(history, 'declaration'),
       targetPlacementIds: [...event.targetPlacementIds],
     },
@@ -544,6 +545,7 @@ const recordCompletedMove = (
     completion: {
       eventId: event.eventId,
       sourceOperationId: event.sourceOperationId,
+      round: history.currentRound,
       order: nextMoveUseOrder(history, 'completion'),
       attackedTargetIds: [...event.attackedTargetIds],
       hitTargetIds: [...event.hitTargetIds],
@@ -595,6 +597,7 @@ const recordDamage = (
 ): EncounterHistory => {
   const entry: EncounterDamagingMoveHistory = {
     ...moveRecord(event),
+    round: history.currentRound,
     targetPlacementId: event.targetPlacementId,
     hitIndex: event.hitIndex,
     hitPointLoss: event.damage.hitPointLoss,
@@ -631,6 +634,7 @@ const recordKnockout = (
   if (history.knockouts.some(entry => entry.eventId === event.eventId)) return history
   const entry: EncounterKnockoutHistory = {
     ...moveRecord(event),
+    round: history.currentRound,
     targetPlacementId: event.targetPlacementId,
     hitIndex: event.hitIndex,
   }

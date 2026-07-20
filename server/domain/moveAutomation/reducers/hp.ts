@@ -1055,6 +1055,31 @@ export const reduceHealEffectForRecipient = (options: {
 }): MoveCoreTokenEffectRecipientResult => {
   const { operation, recipient, accumulator } = options
   const previous = hpSnapshot(accumulator, recipient)
+  const outcomeTrigger = operation.payload.operationOutcomeTrigger
+  if (outcomeTrigger) {
+    const prior = options.priorOperationResults.find(result => (
+      result.operationId === outcomeTrigger.operationId
+    )) ?? failMoveCoreTokenEffectReduction(
+      'invalid-hp-source',
+      `Heal operation ${operation.id} cannot find prior operation ${outcomeTrigger.operationId}.`,
+    )
+    if (prior.outcome !== outcomeTrigger.outcome) {
+      return noOpHpResult(
+        recipient,
+        previous,
+        'heal-operation-trigger-not-met',
+        [],
+        hpTraceDetails({
+          operationOutcomeTrigger: {
+            operationId: prior.operationId,
+            expectedOutcome: outcomeTrigger.outcome,
+            actualOutcome: prior.outcome,
+            matched: false,
+          },
+        }),
+      )
+    }
+  }
   if (operation.payload.pool === 'temporary-hit-points' && !options.temporaryHpAvailable) {
     return noOpHpResult(recipient, previous, 'temporary-hp-scene-unavailable')
   }
@@ -1122,6 +1147,14 @@ export const reduceHealEffectForRecipient = (options: {
     requestedPoolValue,
     boundedPoolValue,
     appliedPoolValue: poolValue(current, operation.payload.pool),
+    ...(outcomeTrigger ? {
+      operationOutcomeTrigger: {
+        operationId: outcomeTrigger.operationId,
+        expectedOutcome: outcomeTrigger.outcome,
+        actualOutcome: outcomeTrigger.outcome,
+        matched: true,
+      },
+    } : {}),
     injury: {
       policy: operation.payload.injury,
       injuryDelta: 0,

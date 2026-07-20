@@ -358,7 +358,12 @@ describe('immutable authoritative move rules context', () => {
     })
     expect(context.queries.rules.runtimeFor('tackle')).toBeNull()
     expect(context.queries.rules.legacyScriptFor('tackle')).toBeNull()
-    expect(context.queries.rules.legacyScriptFor('pound')).toMatchObject({ moveName: 'Pound' })
+    expect(context.queries.rules.legacyScriptFor('pound')).toBeNull()
+    expect(context.queries.rules.runtimeFor('Pound')).toMatchObject({
+      canonicalId: 'Pound',
+      kind: 'movespec-v2',
+    })
+    expect(context.queries.rules.reviewedScriptFor('Pound')).toMatchObject({ moveName: 'Pound' })
     expect(context.queries.rules.semanticStatusFor('Tackle')).toMatchObject({
       canonicalId: 'Tackle',
       baseStatus: 'complete',
@@ -845,10 +850,10 @@ describe('immutable authoritative move rules context', () => {
       const resolution = resolveAuthoritativeMoveFromContext(context)
       expect(resolution.transaction.attackedTargetIds).toEqual(['target-token'])
       expect(resolution.transaction.hitTargetIds).toEqual(['target-token'])
-      expect(resolution.feedback?.id).toMatch(/^move-resolution-1234-[0-9a-f]{8}-1$/)
+      expect(resolution.feedback).toBeUndefined()
       expect(resolution.rollLedger.map((roll) => roll.rollId)).toEqual([
-        'legacy-v1.accuracy.1',
-        'legacy-v1.damage.1',
+        'pound.accuracy-roll.1',
+        'pound.damage.roll.1',
       ])
       expect(resolution.sheetReads).toEqual([
         { kind: 'pokemon', slug: 'actor', revision: 3 },

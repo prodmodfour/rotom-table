@@ -2,6 +2,8 @@
 
 Run this checklist after the normal [Private VPS deployment smoke checklist](private-vps-deployment-smoke-checklist.md) when a private trusted-table host is expected to support live play from multiple browsers. Use disposable campaign data or table-approved smoke tokens. Do not record real hostnames, access tokens, player details, screenshots, logs, campaign JSON, SQLite databases, or backup archives in the app repository.
 
+For move-specific pending, restart, correction, backup/export, and privacy recovery, run [Move automation operator recovery and manual QA](move-automation-manual-qa.md) as an extension of this checklist. Keep animation review separate.
+
 `/api/health` only proves that the built Nitro process can answer a simple no-secret request. It is not live-play readiness: the checks below verify the outer access gate, `/api/events` SSE stream, command routes, revision/conflict behavior, reconnect reconciliation, and SQLite persistence together.
 
 ## Preconditions

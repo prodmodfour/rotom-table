@@ -105,7 +105,9 @@ export const nativeMoveAutomationPresentationScriptForMove = (
   moveName: string,
 ): MoveAutomationScript | null => {
   const canonical = findMove(moveName)
-  if (!canonical) return null
+  if (!canonical || canonical.damage_class === 'Static' || canonical.frequency === 'Static') {
+    return null
+  }
   const status = findMoveAutomationSemanticStatus(canonical.name)
   if (!status || status.runtimeKind !== 'movespec-v2' || status.baseStatus === 'blocked') {
     return null

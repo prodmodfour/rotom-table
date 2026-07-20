@@ -1961,15 +1961,61 @@ def validate_semantic_coverage(
         interaction_counts[row["interactionStatus"]] += 1
         runtime_counts[row["runtime"]["kind"]] += 1
 
-    issues: tuple[MoveAutomationValidationError, ...] = ()
-    if require_complete and base_counts["complete"] != len(canonical_moves):
-        issues = (MoveAutomationValidationError(
-            "completion-required",
-            "manifest.moves",
-            f"expected {len(canonical_moves)} complete moves; found "
-            f"{base_counts['complete']} complete, {base_counts['assisted']} assisted, "
-            f"and {base_counts['blocked']} blocked.",
-        ),)
+    strict_issues: list[MoveAutomationValidationError] = []
+    if require_complete:
+        if len(canonical_moves) != 776 or len(rows) != 776:
+            strict_issues.append(MoveAutomationValidationError(
+                "canonical-count-required",
+                "manifest.moves",
+                f"strict completion requires exactly 776 canonical rows; found "
+                f"{len(canonical_moves)} catalog moves and {len(rows)} manifest rows.",
+            ))
+        if base_counts["complete"] != len(canonical_moves):
+            strict_issues.append(MoveAutomationValidationError(
+                "completion-required",
+                "manifest.moves",
+                f"expected {len(canonical_moves)} complete moves; found "
+                f"{base_counts['complete']} complete, {base_counts['assisted']} assisted, "
+                f"and {base_counts['blocked']} blocked.",
+            ))
+        if runtime_counts["movespec-v2"] != len(canonical_moves):
+            strict_issues.append(MoveAutomationValidationError(
+                "authoritative-runtime-required",
+                "manifest.moves.runtime",
+                "strict completion requires one MoveSpec v2 runtime for every canonical move; "
+                f"found {runtime_counts['movespec-v2']} v2, "
+                f"{runtime_counts['legacy-v1']} legacy, and "
+                f"{runtime_counts['unimplemented']} unimplemented.",
+            ))
+        if linked_runtime_count != len(canonical_moves):
+            strict_issues.append(MoveAutomationValidationError(
+                "runtime-link-required",
+                "manifest.moves",
+                f"strict completion requires {len(canonical_moves)} linked runtimes; "
+                f"found {linked_runtime_count}.",
+            ))
+        non_implemented_capabilities = sorted({
+            capability
+            for row in rows
+            for capability in row["capabilityTags"]
+            if capability_by_code[capability]["implementationStatus"] != "implemented"
+        })
+        if non_implemented_capabilities:
+            strict_issues.append(MoveAutomationValidationError(
+                "implemented-capability-required",
+                "manifest.moves.capabilityTags",
+                "strict completion references capabilities not marked implemented: "
+                + ", ".join(non_implemented_capabilities) + ".",
+            ))
+        suggested_debt = [row["canonicalId"] for row in rows if row["suggestedCapabilityTags"]]
+        if suggested_debt:
+            strict_issues.append(MoveAutomationValidationError(
+                "suggested-capability-debt",
+                "manifest.moves.suggestedCapabilityTags",
+                "strict completion cannot retain suggested capability debt for: "
+                + ", ".join(suggested_debt) + ".",
+            ))
+    issues = tuple(strict_issues)
 
     return SemanticCoverageReport(
         ruleset_id=ruleset["rulesetId"],

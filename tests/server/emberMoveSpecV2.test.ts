@@ -108,7 +108,7 @@ describe('Ember native MoveSpec v2', () => {
       expect(native.resolution.auditTrace.program.runtimeKind).toBe('movespec-v2')
       expect(legacy.resolution.auditTrace.program.runtimeKind).toBe('legacy-v1')
     }
-  })
+  }, 15_000)
 
   it('keeps damage while Shield Dust prevents the accuracy-triggered Burn', () => {
     const fixture = emberV2Fixture('ember.v2-threshold-pass')

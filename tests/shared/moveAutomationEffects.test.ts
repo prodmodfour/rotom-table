@@ -1551,6 +1551,21 @@ describe('MoveSpec typed effect operations', () => {
     })
     if (random.kind !== 'condition') throw new Error('Expected condition operation')
     expect(Object.isFrozen(random.payload.duration?.duration)).toBe(true)
+
+    const outcomeTriggered = parseMoveEffectOperation(validOperation('condition', {
+      payload: {
+        ...VALID_PAYLOADS.condition,
+        operationOutcomeTrigger: {
+          operationId: 'operation.damage',
+          outcome: 'applied',
+        },
+      },
+    }))
+    expect(outcomeTriggered.kind === 'condition'
+      && outcomeTriggered.payload.operationOutcomeTrigger).toEqual({
+      operationId: 'operation.damage',
+      outcome: 'applied',
+    })
   })
 
   it('requires reviewed switch trigger, pass, and transfer policies', () => {

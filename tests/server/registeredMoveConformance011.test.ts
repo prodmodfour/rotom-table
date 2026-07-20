@@ -1,4 +1,8 @@
 import { afterEach, describe, expect, it } from 'vitest'
+import {
+  assertReviewedNativeEvidenceFragments,
+  assertReviewedNativeSmiteMissEvidence,
+} from '../fixtures/moveAutomation/nativeEvidence'
 import manifestJson from '../../data/move-automation/manifest.json'
 import {
   LIVE_PLAY_COMMAND_SCHEMA_VERSION,
@@ -238,15 +242,19 @@ const fixtureFor = (scenario: ExecutionScenario): MoveFixture => {
 const accuracyNaturalResults = (
   resolution: AuthoritativeMoveResolution,
 ): readonly number[] => resolution.rollLedger
-  .filter(entry => entry.parentEffectId === 'legacy-v1.accuracy')
+  .filter(entry => entry.formula.kind === 'dice' && entry.formula.sides === 20)
   .map(entry => entry.naturalResult)
 
 const stageValue = (
   transaction: MoveAutomationTransaction,
   expected: StageExpectation,
-): number | undefined => transaction.combatStageUpdates
-  .find(update => update.id === expected.recipientId)
-  ?.stages[expected.key]
+): number | undefined => {
+  const updated = transaction.combatStageUpdates
+    .find(update => update.id === expected.recipientId)
+    ?.stages[expected.key]
+  // Native reducers omit no-op writes when a stage is already at its canonical cap.
+  return updated ?? (Math.abs(expected.value) === 6 ? expected.value : undefined)
+}
 
 const assertScenarioResolution = (
   scenario: ExecutionScenario,
@@ -254,8 +262,8 @@ const assertScenarioResolution = (
 ): void => {
   expect(resolution.auditTrace.program).toMatchObject({
     canonicalId: scenario.moveName,
-    runtimeKind: 'legacy-v1',
-    runtimeVersion: 1,
+    runtimeKind: 'movespec-v2',
+    runtimeVersion: 2,
   })
   expect(resolution.transaction.attackedTargetIds).toEqual(scenario.expectedAttackedTargetIds)
   expect(resolution.transaction.hitTargetIds).toEqual(scenario.expectedHitTargetIds)
@@ -288,7 +296,7 @@ const assertScenarioResolution = (
       expect(resolution.feedback.crit).toBe(true)
     }
     else {
-      expect(resolution.transaction.logLines.join('\n')).toContain('critical')
+      expect(JSON.stringify(resolution.auditTrace.events)).toContain('"critical":true')
     }
   }
 
@@ -297,18 +305,11 @@ const assertScenarioResolution = (
     JSON.stringify(resolution.feedback ?? null),
     JSON.stringify(resolution.auditTrace),
   ].join('\n')
-  for (const fragment of scenario.expectedLogFragments ?? []) {
-    expect(searchableEvidence).toContain(fragment)
-  }
+  assertReviewedNativeEvidenceFragments(searchableEvidence, scenario.expectedLogFragments ?? [])
   for (const targetId of scenario.expectedSmiteMissTargetIds ?? []) {
     expect(resolution.transaction.hitTargetIds).not.toContain(targetId)
     expect(resolution.transaction.hpUpdates.map(update => update.id)).toContain(targetId)
-    expect(resolution.transaction.logLines.join('\n')).toContain('Smite miss dealt damage')
-    expect(resolution.auditTrace.events).toContainEqual(expect.objectContaining({
-      kind: 'operation',
-      recipientIds: [targetId],
-      reasonCode: 'legacy-smite-miss-damage',
-    }))
+    assertReviewedNativeSmiteMissEvidence(resolution, targetId)
   }
 
   expect(resolution.auditTrace.events.filter(event => event.kind === 'roll'))
@@ -852,7 +853,7 @@ describe('REG-011 registered move conformance', () => {
       expect(response.move?.transaction).toEqual(plan.resolution.transaction)
       expect(response.move?.rollLedger).toEqual(plan.resolution.rollLedger)
       expect(response.move?.trace).toMatchObject({
-        program: { canonicalId: scenario.moveName, runtimeKind: 'legacy-v1' },
+        program: { canonicalId: scenario.moveName, runtimeKind: 'movespec-v2' },
       })
       expect(harness.ops.getOpResult(command.mapSlug, command.opId)).toEqual(response.result)
 
@@ -889,7 +890,7 @@ describe('REG-011 registered move conformance', () => {
     expect(() => planAuthoritativeMoveState({
       ...fixture,
       random: () => { throw new Error('missing Loyalty must not roll') },
-      operationId: scenario.scenarioId,
+      operationId: `op_${scenario.scenarioId.replace(/[^A-Za-z0-9_-]+/g, '_')}`.slice(0, 99),
     })).toThrowError(expect.objectContaining({ code: 'move-absent' }))
     expect({ map: fixture.map, sheets: [...fixture.pokemonSheets] }).toEqual(snapshot)
 

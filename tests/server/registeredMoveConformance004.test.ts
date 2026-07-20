@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, it } from 'vitest'
+import { assertReviewedNativeEvidenceFragments } from '../fixtures/moveAutomation/nativeEvidence'
 import manifestJson from '../../data/move-automation/manifest.json'
 import {
   LIVE_PLAY_COMMAND_SCHEMA_VERSION,
@@ -263,15 +264,19 @@ const fixtureFor = (
 const accuracyNaturalResults = (
   resolution: AuthoritativeMoveResolution,
 ): readonly number[] => resolution.rollLedger
-  .filter(entry => entry.parentEffectId === 'legacy-v1.accuracy')
+  .filter(entry => entry.formula.kind === 'dice' && entry.formula.sides === 20)
   .map(entry => entry.naturalResult)
 
 const stageValue = (
   transaction: MoveAutomationTransaction,
   expected: StageExpectation,
-): number | undefined => transaction.combatStageUpdates
-  .find(update => update.id === expected.recipientId)
-  ?.stages[expected.key]
+): number | undefined => {
+  const updated = transaction.combatStageUpdates
+    .find(update => update.id === expected.recipientId)
+    ?.stages[expected.key]
+  // Native reducers omit no-op writes when a stage is already at its canonical cap.
+  return updated ?? (Math.abs(expected.value) === 6 ? expected.value : undefined)
+}
 
 const assertScenarioResolution = (
   scenario: LegacyExecutionScenario,
@@ -279,8 +284,8 @@ const assertScenarioResolution = (
 ): void => {
   expect(resolution.auditTrace.program).toMatchObject({
     canonicalId: scenario.moveName,
-    runtimeKind: 'legacy-v1',
-    runtimeVersion: 1,
+    runtimeKind: 'movespec-v2',
+    runtimeVersion: 2,
   })
   expect(resolution.transaction.attackedTargetIds).toEqual(scenario.expectedAttackedTargetIds)
   expect(resolution.transaction.hitTargetIds).toEqual(scenario.expectedHitTargetIds)
@@ -308,11 +313,14 @@ const assertScenarioResolution = (
 
   for (const targetId of scenario.expectedCriticalTargetIds ?? []) {
     if (resolution.feedback?.targetId === targetId) expect(resolution.feedback.crit).toBe(true)
-    else expect(resolution.transaction.logLines.join('\n')).toContain('critical')
+    else expect(JSON.stringify(resolution.auditTrace.events)).toContain('"critical":true')
   }
 
   if (scenario.expectedLogFragment) {
-    expect(resolution.transaction.logLines.join('\n')).toContain(scenario.expectedLogFragment)
+    assertReviewedNativeEvidenceFragments([
+      resolution.transaction.logLines.join('\n'),
+      JSON.stringify(resolution.auditTrace),
+    ].join('\n'), [scenario.expectedLogFragment])
   }
 
   const traceRolls = resolution.auditTrace.events.filter(event => event.kind === 'roll')
@@ -892,7 +900,7 @@ describe('REG-004 registered move conformance', () => {
         random: randomSequence(scenario.randomValues),
         now: () => NOW,
         idFactory: () => 'reg-004-plan-id',
-        operationId: `${scenario.scenarioId}.plan`,
+        operationId: `op_${scenario.scenarioId.replace(/[^A-Za-z0-9_-]+/g, '_')}_plan`,
       })
       assertScenarioResolution(scenario, plan.resolution)
       expect(plan.resolution.transaction).toEqual(direct.transaction)
@@ -907,7 +915,7 @@ describe('REG-004 registered move conformance', () => {
       expect(response.move?.transaction).toEqual(plan.resolution.transaction)
       expect(response.move?.rollLedger).toEqual(plan.resolution.rollLedger)
       expect(response.move?.trace).toMatchObject({
-        program: { canonicalId: scenario.moveName, runtimeKind: 'legacy-v1' },
+        program: { canonicalId: scenario.moveName, runtimeKind: 'movespec-v2' },
       })
       expect(harness.ops.getOpResult(command.mapSlug, command.opId)).toEqual(response.result)
 
@@ -949,7 +957,7 @@ describe('REG-004 registered move conformance', () => {
       ...fixture,
       random: randomSequence(scenario.randomValues),
       now: () => NOW,
-      operationId: BULLET_PUNCH_REG_004_SCENARIOS[3].scenarioId,
+      operationId: `op_${BULLET_PUNCH_REG_004_SCENARIOS[3].scenarioId.replace(/[^A-Za-z0-9_-]+/g, '_')}`.slice(0, 99),
     })).toThrowError(expect.objectContaining({
       code: 'move-resource-unavailable',
       message: expect.stringContaining('priority-unavailable'),

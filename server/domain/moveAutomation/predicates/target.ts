@@ -450,7 +450,8 @@ const evaluateAuthoritativeCandidate = (options: {
   }
   if (options.predicate.statePredicates) {
     const requiresActorState = options.predicate.statePredicates.some(
-      predicate => predicate.kind === 'opposite-gender',
+      predicate => predicate.kind === 'opposite-gender'
+        || predicate.kind === 'shares-type-with-actor',
     )
     const stateEvaluation = evaluateMoveAutomationTargetStatePredicates(
       options.predicate.statePredicates,

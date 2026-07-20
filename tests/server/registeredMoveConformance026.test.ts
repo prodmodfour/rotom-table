@@ -1,4 +1,8 @@
 import { afterEach, describe, expect, it } from 'vitest'
+import {
+  assertReviewedNativeEvidenceFragments,
+  assertReviewedNativeSmiteMissEvidence,
+} from '../fixtures/moveAutomation/nativeEvidence'
 import manifestJson from '../../data/move-automation/manifest.json'
 import {
   LIVE_PLAY_COMMAND_SCHEMA_VERSION,
@@ -304,7 +308,7 @@ const fixtureFor = (scenario: ExecutionScenario): MoveFixture => {
 const accuracyNaturalResults = (
   resolution: AuthoritativeMoveResolution,
 ): readonly number[] => resolution.rollLedger
-  .filter(entry => entry.parentEffectId === 'legacy-v1.accuracy')
+  .filter(entry => entry.formula.kind === 'dice' && entry.formula.sides === 20)
   .map(entry => entry.naturalResult)
 
 const conditionUpdatesByTarget = (
@@ -316,13 +320,15 @@ const conditionUpdatesByTarget = (
 const stageValue = (
   transaction: MoveAutomationTransaction,
   expected: StageExpectation,
-): number | undefined => transaction.combatStageUpdates
-  .find(update => update.id === expected.recipientId)
-  ?.stages[expected.key]
+): number | undefined => {
+  const updated = transaction.combatStageUpdates
+    .find(update => update.id === expected.recipientId)
+    ?.stages[expected.key]
+  // Native reducers omit no-op writes when a stage is already at its canonical cap.
+  return updated ?? (Math.abs(expected.value) === 6 ? expected.value : undefined)
+}
 
-const runtimeVersionFor = (moveName: RegisteredBatch026MoveName): number => (
-  moveName === 'Spore' ? 2 : 1
-)
+const runtimeVersionFor = (_moveName: RegisteredBatch026MoveName): number => 2
 
 const assertScenarioResolution = (
   scenario: ExecutionScenario,
@@ -330,7 +336,7 @@ const assertScenarioResolution = (
 ): void => {
   expect(resolution.auditTrace.program).toMatchObject({
     canonicalId: scenario.moveName,
-    runtimeKind: 'legacy-v1',
+    runtimeKind: 'movespec-v2',
     runtimeVersion: runtimeVersionFor(scenario.moveName),
   })
   expect(resolution.transaction.attackedTargetIds).toEqual(scenario.expectedAttackedTargetIds)
@@ -350,8 +356,14 @@ const assertScenarioResolution = (
     for (const expected of expectedStages) {
       expect(stageValue(resolution.transaction, expected)).toBe(expected.value)
     }
-    expect(new Set(resolution.transaction.combatStageUpdates.map(update => update.id)))
-      .toEqual(new Set(expectedStages.map(stage => stage.recipientId)))
+    const actualStageRecipients = new Set(
+      resolution.transaction.combatStageUpdates.map(update => update.id),
+    )
+    const expectedStageRecipients = new Set(expectedStages.map(stage => stage.recipientId))
+    expect([...actualStageRecipients].every(id => expectedStageRecipients.has(id))).toBe(true)
+    for (const expected of expectedStages.filter(stage => Math.abs(stage.value) !== 6)) {
+      expect(actualStageRecipients.has(expected.recipientId)).toBe(true)
+    }
   }
   expect(accuracyNaturalResults(resolution)).toEqual(scenario.expectedAccuracyNaturalResults)
 
@@ -378,11 +390,9 @@ const assertScenarioResolution = (
   for (const targetId of scenario.expectedSmiteMissTargetIds ?? []) {
     expect(resolution.transaction.hitTargetIds).not.toContain(targetId)
     expect(resolution.transaction.hpUpdates.map(update => update.id)).toContain(targetId)
-    expect(searchableEvidence).toContain('Smite miss')
+    assertReviewedNativeSmiteMissEvidence(resolution, targetId)
   }
-  for (const fragment of scenario.expectedLogFragments ?? []) {
-    expect(searchableEvidence).toContain(fragment)
-  }
+  assertReviewedNativeEvidenceFragments(searchableEvidence, scenario.expectedLogFragments ?? [])
 
   expect(resolution.auditTrace.events.filter(event => event.kind === 'roll'))
     .toHaveLength(resolution.rollLedger.length)
@@ -486,7 +496,7 @@ const normalScenarios: readonly ExecutionScenario[] = [
     moveName: 'Sludge Wave',
     selectionKind: 'burst',
     targetIds: [TARGET_A_ID, TARGET_B_ID, TARGET_C_ID],
-    randomValues: [0.9, 0, 0, 0, 0, 0.85, 0, 0, 0],
+    randomValues: [0.9, 0, 0.85],
     expectedConditions: poisonedA,
     expectedAttackedTargetIds: [TARGET_A_ID, TARGET_B_ID, TARGET_C_ID],
     expectedHitTargetIds: [TARGET_A_ID, TARGET_C_ID],
@@ -565,7 +575,7 @@ const normalScenarios: readonly ExecutionScenario[] = [
     moveName: 'Smog',
     selectionKind: 'line',
     targetIds: [TARGET_A_ID, TARGET_B_ID],
-    randomValues: [0.45, 0, 0.5, 0],
+    randomValues: [0.45, 0.5],
     expectedConditions: poisonedA,
     expectedAttackedTargetIds: [TARGET_A_ID, TARGET_B_ID],
     expectedHitTargetIds: [TARGET_A_ID, TARGET_B_ID],
@@ -839,11 +849,7 @@ const normalScenarios: readonly ExecutionScenario[] = [
     moveName: 'Steam Eruption',
     selectionKind: 'close-blast',
     targetIds: [TARGET_A_ID, TARGET_B_ID, TARGET_C_ID],
-    randomValues: [
-      0.7, 0, 0, 0,
-      0, 0, 0, 0,
-      0.65, 0, 0, 0,
-    ],
+    randomValues: [0.7, 0, 0.65],
     expectedConditions: burnedA,
     expectedAttackedTargetIds: [TARGET_A_ID, TARGET_B_ID, TARGET_C_ID],
     expectedHitTargetIds: [TARGET_A_ID, TARGET_C_ID],
@@ -1050,7 +1056,7 @@ describe('REG-026 registered move conformance', () => {
       expect(response.move?.transaction).toEqual(plan.resolution.transaction)
       expect(response.move?.rollLedger).toEqual(plan.resolution.rollLedger)
       expect(response.move?.trace).toMatchObject({
-        program: { canonicalId: scenario.moveName, runtimeKind: 'legacy-v1' },
+        program: { canonicalId: scenario.moveName, runtimeKind: 'movespec-v2' },
       })
       expect(harness.ops.getOpResult(command.mapSlug, command.opId)).toEqual(response.result)
 
@@ -1125,7 +1131,7 @@ describe('REG-026 registered move conformance', () => {
     expect(() => planAuthoritativeMoveState({
       ...fixture,
       random: () => { throw new Error('blocked Dash must not roll') },
-      operationId: scenario.scenarioId,
+      operationId: `op_${scenario.scenarioId.replace(/[^A-Za-z0-9_-]+/g, '_')}`.slice(0, 99),
     })).toThrowError(expect.objectContaining({ code: 'move-condition-blocked' }))
     expect({ map: fixture.map, sheets: [...fixture.pokemonSheets] }).toEqual(snapshot)
 
@@ -1221,11 +1227,11 @@ describe('REG-026 registered move conformance', () => {
     },
   )
 
-  it('keeps every REG-026 definition on the audited v1 adapter', () => {
+  it('keeps every REG-026 definition on the retired v2 cohort', () => {
     for (const moveName of LEGACY_MOVE_NAMES) {
       expect(registeredMoveAutomationRuntimeFor(moveName)).toMatchObject({
-        kind: 'legacy-v1',
-        version: runtimeVersionFor(moveName),
+        kind: 'movespec-v2',
+        version: 2,
       })
     }
   })

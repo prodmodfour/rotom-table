@@ -45,6 +45,7 @@ const populatedHistory = () => ({
   lastDamagingMovesReceived: [{
     ...declared(),
     eventId: 'event.scratch.damage',
+    round: null,
     targetPlacementId: 'target-token',
     hitIndex: 1,
     hitPointLoss: 8,
@@ -89,6 +90,7 @@ const populatedHistory = () => ({
   knockouts: [{
     ...declared(),
     eventId: 'event.scratch.ko',
+    round: null,
     targetPlacementId: 'target-token',
     hitIndex: 1,
   }].map(({ targetPlacementIds: _ignored, ...entry }) => entry),
@@ -107,12 +109,14 @@ const populatedHistory = () => ({
       eventId: 'event.scratch.declared',
       sourceOperationId: 'op.scratch.1',
       order: 1,
+      round: null,
       targetPlacementIds: ['target-token'],
     },
     completion: {
       eventId: 'event.scratch.completed',
       sourceOperationId: 'op.scratch.1',
       order: 1,
+      round: null,
       attackedTargetIds: ['target-token'],
       hitTargetIds: ['target-token'],
       outcome: 'hit' as const,

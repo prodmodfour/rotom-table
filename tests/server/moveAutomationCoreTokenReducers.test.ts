@@ -2180,6 +2180,58 @@ describe('MoveSpec core token effect reducers', () => {
     }
   })
 
+  it('gates actor conditions on the applied outcome of an earlier typed operation', () => {
+    const stage = emission(operation('operation.raise-target', 'combat-stage', {
+      ...combatStagePayload(),
+    }))
+    const condition = emission(operation(
+      'operation.actor-rage',
+      'condition',
+      {
+        action: 'apply',
+        conditionId: 'rage',
+        conditionSource: null,
+        filter: null,
+        randomChoice: null,
+        operationOutcomeTrigger: {
+          operationId: 'operation.raise-target',
+          outcome: 'applied',
+        },
+        duration: null,
+        saveTiming: 'canonical',
+        stackPolicy: { kind: 'refresh', maxStacks: null },
+      },
+      'actor',
+      'after-damage',
+    ), ['actor-token'])
+
+    const applied = reduce([stage, condition], 'Normal', buildContext())
+    expect(applied.operationResults[1]).toMatchObject({
+      operationId: 'operation.actor-rage',
+      outcome: 'applied',
+    })
+    expect(applied.operationResults[1]?.recipients[0]?.details).toMatchObject({
+      operationOutcomeTrigger: {
+        operationId: 'operation.raise-target',
+        expectedOutcome: 'applied',
+        actualOutcome: 'applied',
+        matched: true,
+      },
+    })
+
+    const capped = reduce(
+      [stage, condition],
+      'Normal',
+      buildContext(mapFixture(), {}, { target: { atk: 6 } }),
+    )
+    expect(capped.operationResults[0]).toMatchObject({ outcome: 'no-op' })
+    expect(capped.operationResults[1]).toMatchObject({ outcome: 'no-op' })
+    expect(capped.operationResults[1]?.recipients[0]).toMatchObject({
+      reasonCode: 'condition-operation-trigger-not-met',
+      changedFields: [],
+    })
+  })
+
   it('preserves condition/stage immunity and cap no-ops in the audit trace', () => {
     const operations = [
       emission(operation('operation.burn-again', 'condition', {

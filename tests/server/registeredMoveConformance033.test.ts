@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, it } from 'vitest'
+import { assertReviewedNativeEvidenceFragments } from '../fixtures/moveAutomation/nativeEvidence'
 import manifestJson from '../../data/move-automation/manifest.json'
 import {
   LIVE_PLAY_COMMAND_SCHEMA_VERSION,
@@ -204,7 +205,7 @@ const fixtureFor = (scenario: ExecutionScenario): MoveFixture => {
 const accuracyNaturalResults = (
   resolution: AuthoritativeMoveResolution,
 ): readonly number[] => resolution.rollLedger
-  .filter(entry => entry.parentEffectId === 'legacy-v1.accuracy')
+  .filter(entry => entry.formula.kind === 'dice' && entry.formula.sides === 20)
   .map(entry => entry.naturalResult)
 
 const targetConditions = (
@@ -218,8 +219,8 @@ const assertScenarioResolution = (
 ): void => {
   expect(resolution.auditTrace.program).toMatchObject({
     canonicalId: scenario.moveName,
-    runtimeKind: 'legacy-v1',
-    runtimeVersion: 1,
+    runtimeKind: 'movespec-v2',
+    runtimeVersion: 2,
   })
   expect(resolution.transaction.attackedTargetIds).toEqual([TARGET_ID])
   expect(resolution.transaction.hitTargetIds).toEqual(scenario.expectedHit ? [TARGET_ID] : [])
@@ -236,10 +237,10 @@ const assertScenarioResolution = (
     JSON.stringify(resolution.auditTrace),
   ].join('\n')
   if (scenario.expectedCritical) {
-    expect(resolution.feedback?.crit).toBe(true)
+    expect(JSON.stringify(resolution.auditTrace.events)).toContain('"critical":true')
     expect(searchable.toLowerCase()).toContain('critical')
   }
-  for (const fragment of scenario.expectedLogFragments ?? []) expect(searchable).toContain(fragment)
+  assertReviewedNativeEvidenceFragments(searchable, scenario.expectedLogFragments ?? [])
 
   expect(resolution.auditTrace.events.filter(event => event.kind === 'roll'))
     .toHaveLength(resolution.rollLedger.length)
@@ -532,7 +533,7 @@ describe('REG-033 registered move conformance', () => {
       expect(response.move?.transaction).toEqual(plan.resolution.transaction)
       expect(response.move?.rollLedger).toEqual(plan.resolution.rollLedger)
       expect(response.move?.trace).toMatchObject({
-        program: { canonicalId: scenario.moveName, runtimeKind: 'legacy-v1' },
+        program: { canonicalId: scenario.moveName, runtimeKind: 'movespec-v2' },
       })
       expect(harness.ops.getOpResult(command.mapSlug, command.opId)).toEqual(response.result)
       const persistedMap = harness.maps.getBySlug(command.mapSlug)
@@ -576,7 +577,7 @@ describe('REG-033 registered move conformance', () => {
     expect(() => planAuthoritativeMoveState({
       ...fixture,
       random: () => { throw new Error('blocked Dash must not roll') },
-      operationId: scenario.scenarioId,
+      operationId: `op_${scenario.scenarioId.replace(/[^A-Za-z0-9_-]+/g, '_')}`.slice(0, 99),
     })).toThrowError(expect.objectContaining({ code: 'move-condition-blocked' }))
     expect({ map: fixture.map, sheets: [...fixture.pokemonSheets] }).toEqual(snapshot)
 
@@ -671,11 +672,11 @@ describe('REG-033 registered move conformance', () => {
     },
   )
 
-  it('keeps both reviewed programs on the legacy compatibility runtime', () => {
+  it('keeps both reviewed programs on the retired v2 compatibility cohort', () => {
     for (const moveName of REG_033_MOVE_NAMES) {
       expect(registeredMoveAutomationRuntimeFor(moveName)).toMatchObject({
-        kind: 'legacy-v1',
-        version: 1,
+        kind: 'movespec-v2',
+        version: 2,
       })
     }
   })

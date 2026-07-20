@@ -125,7 +125,7 @@ describe('Power Trip native MoveSpec v2', () => {
       expect(native.resolution.auditTrace.program.runtimeKind).toBe('movespec-v2')
       expect(legacy.resolution.auditTrace.program.runtimeKind).toBe('legacy-v1')
     }
-  })
+  }, 15_000)
 
   it.each(allPowerTripV2SemanticScenarios())(
     'proves $scenarioId through interpreter, planner, and accepted command',

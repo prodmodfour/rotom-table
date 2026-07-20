@@ -1,4 +1,8 @@
 import { afterEach, describe, expect, it } from 'vitest'
+import {
+  assertReviewedNativeEvidenceFragments,
+  assertReviewedNativeSmiteMissEvidence,
+} from '../fixtures/moveAutomation/nativeEvidence'
 import manifestJson from '../../data/move-automation/manifest.json'
 import {
   LIVE_PLAY_COMMAND_SCHEMA_VERSION,
@@ -254,19 +258,15 @@ const fixtureFor = (scenario: ExecutionScenario): MoveFixture => {
 }
 
 const runtimeKindFor = (
-  moveName: RegisteredBatch020MoveName,
-): 'legacy-v1' | 'movespec-v2' => moveName === 'Power Trip' ? 'movespec-v2' : 'legacy-v1'
+  _moveName: RegisteredBatch020MoveName,
+): 'movespec-v2' => 'movespec-v2'
 
-const runtimeVersionFor = (moveName: RegisteredBatch020MoveName): number => {
-  if (moveName === 'Poison Sting' || moveName === 'Powder Snow' || moveName === 'Power Trip') return 2
-  return 1
-}
+const runtimeVersionFor = (_moveName: RegisteredBatch020MoveName): number => 2
 
 const accuracyNaturalResults = (
   resolution: AuthoritativeMoveResolution,
 ): readonly number[] => resolution.rollLedger
-  .filter(entry => entry.parentEffectId === 'legacy-v1.accuracy'
-    || entry.rollId.startsWith('power-trip.accuracy-roll'))
+  .filter(entry => entry.formula.kind === 'dice' && entry.formula.sides === 20)
   .map(entry => entry.naturalResult)
 
 const conditionUpdatesByTarget = (
@@ -318,11 +318,9 @@ const assertScenarioResolution = (
   for (const targetId of scenario.expectedSmiteMissTargetIds ?? []) {
     expect(resolution.transaction.hitTargetIds).not.toContain(targetId)
     expect(resolution.transaction.hpUpdates.map(update => update.id)).toContain(targetId)
-    expect(searchableEvidence).toContain('Smite miss dealt damage')
+    assertReviewedNativeSmiteMissEvidence(resolution, targetId)
   }
-  for (const fragment of scenario.expectedLogFragments ?? []) {
-    expect(searchableEvidence).toContain(fragment)
-  }
+  assertReviewedNativeEvidenceFragments(searchableEvidence, scenario.expectedLogFragments ?? [])
 
   expect(resolution.auditTrace.events.filter(event => event.kind === 'roll'))
     .toHaveLength(resolution.rollLedger.length)

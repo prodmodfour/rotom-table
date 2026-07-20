@@ -4,6 +4,7 @@ import { tmpdir } from 'node:os'
 import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { afterEach, describe, expect, it } from 'vitest'
+import { createEmptyEncounterState } from '#shared/moveAutomation/encounterState'
 import { openRotomDatabase, type RotomDatabase } from '~~/server/storage/database'
 import { createSqliteGroupInventoryRepository } from '~~/server/storage/groupInventoryRepository'
 import { createSqliteMapRepository } from '~~/server/storage/mapRepository'
@@ -56,7 +57,10 @@ const emptyGroupInventory = (): GroupInventoryDocument['inventory'] => Object.fr
   GROUP_INVENTORY_SECTION_KEYS.map((section) => [section, []]),
 ) as unknown as GroupInventoryDocument['inventory']
 
-const seedCampaignDatabase = (campaignRoot: string): void => {
+const seedCampaignDatabase = (
+  campaignRoot: string,
+  mapOverrides: Partial<TabletopMap> = {},
+): void => {
   const database = openRotomDatabase({ path: join(campaignRoot, 'rotom-table.sqlite') })
   openDatabases.push(database)
   const maps = createSqliteMapRepository<TabletopMap>(database)
@@ -66,7 +70,7 @@ const seedCampaignDatabase = (campaignRoot: string): void => {
   const shops = createSqliteShopTableRepository(database)
 
   maps.createFolder('empty/nested')
-  maps.saveSetupMap(mapDocument())
+  maps.saveSetupMap(mapDocument(mapOverrides))
   sheets.createFolder('pokemon', 'bench/empty')
   sheets.saveSetupSheet('pokemon', 'pika', {
     slug: 'pika',
@@ -214,6 +218,60 @@ describe('SQLite JSON export script', () => {
     })
     expect(existsSync(join(output, 'realtime_events.json'))).toBe(false)
     expect(readFileSync(join(output, 'data/maps/region/one/arena.json'), 'utf8')).not.toContain('event-log-only')
+  })
+
+  it('terminally abandons pending resolutions with explicit audit evidence', () => {
+    const root = makeTempRoot()
+    const campaignRoot = join(root, 'campaign')
+    seedCampaignDatabase(campaignRoot, {
+      encounterState: {
+        ...createEmptyEncounterState(),
+        pendingResolutionSummaries: [{
+          schemaVersion: 1,
+          resolutionId: 'resolution-export-test',
+          actorPlacementId: 'actor-token',
+          canonicalMoveId: 'Protect',
+          phase: 'pre-hit',
+          status: 'pending',
+          outstandingWindowCount: 1,
+          createdAt: 1_700_000_000_100,
+          updatedAt: 1_700_000_000_200,
+        }],
+      },
+    })
+    const output = join(root, 'export')
+
+    const result = runExport(campaignRoot, output)
+    expect(result.status, result.stderr || result.stdout).toBe(0)
+    expect(result.stdout).toContain('Pending resolutions terminally abandoned: 1')
+    expect(readJson(join(output, 'data/maps/region/one/arena.json'))).toMatchObject({
+      encounterState: { pendingResolutionSummaries: [] },
+    })
+    expect(readJson(join(output, 'data/move-automation-abandoned-pending-resolutions.json'))).toEqual({
+      schemaVersion: 1,
+      policy: 'terminally-abandoned-on-json-export',
+      resolutions: [{
+        resolutionId: 'resolution-export-test',
+        mapSlug: 'arena',
+        previousStatus: 'pending',
+        updatedAt: 1_700_000_000_200,
+      }],
+    })
+  })
+
+  it('rejects unsupported future encounter-state schema versions during export', () => {
+    const root = makeTempRoot()
+    const campaignRoot = join(root, 'campaign')
+    seedCampaignDatabase(campaignRoot)
+    const database = openRotomDatabase({ path: join(campaignRoot, 'rotom-table.sqlite') })
+    const document = mapDocument({ encounterState: { ...createEmptyEncounterState(), schemaVersion: 2 } as never })
+    database.connection.prepare('UPDATE maps SET document_json = ? WHERE slug = ?')
+      .run(JSON.stringify(document), 'arena')
+    database.close()
+
+    const result = runExport(campaignRoot, join(root, 'export'))
+    expect(result.status).toBe(1)
+    expect(result.stderr).toContain('encounterState schemaVersion 2 is unsupported')
   })
 
   it('refuses surprising overwrites unless --force is passed', () => {

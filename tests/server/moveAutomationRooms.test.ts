@@ -126,6 +126,25 @@ describe('authoritative Room mechanics', () => {
     expect(rooms.projectFieldEffects().rooms).toEqual([])
   })
 
+  it('rejects conflicting dual-read room state instead of silently preferring a lane', () => {
+    const map = mapFixture({
+      fieldEffects: {
+        weather: [],
+        terrains: [],
+        rooms: [{ kind: 'wonder', rounds: 2 }],
+      },
+      encounterState: {
+        ...createEmptyEncounterState(),
+        zones: [nativeRoom({ id: 'wonder', remaining: 5 })],
+      },
+    })
+
+    expect(() => materializeMapGlobalFieldZones(map)).toThrowError(expect.objectContaining({
+      name: 'EncounterStateMigrationConflictError',
+      code: 'conflicting-dual-representation',
+    }))
+  })
+
   it('activates Trick Room at the next round start, retains five full rounds, then expires once', () => {
     const delayed = mapFixture({
       fieldEffects: {

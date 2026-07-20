@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { LIVE_PLAY_MOVE_RESOLUTION_SCHEMA_VERSION, type ResolveMoveIntent } from '#shared/livePlayMoveResolution'
 import {
   AuthoritativeMoveResolutionError,
-  resolveAuthoritativeMove,
+  resolveAuthoritativeMove as resolveAuthoritativeMoveProduction,
 } from '../../server/domain/resolveAuthoritativeMove'
 import { EXPLICIT_MOVE_AUTOMATION_SCRIPTS } from '~/utils/moveAutomation'
 import { moveAutomationAreaTemplateId } from '~/utils/moveAutomationAreaTemplates'
@@ -11,6 +11,23 @@ import type { CharacterSheet, CharacterSheetMove } from '~/types/characterSheet'
 import type { SheetPlacement, TabletopMap } from '~/types/map'
 import type { MoveAutomationAreaTemplate, MoveAutomationScript } from '~/types/moveAutomation'
 import type { TrainerSheet } from '~/types/trainerSheet'
+import { REGISTERED_MOVE_HANDLER_REGISTRY } from '~~/server/domain/moveAutomation/handlers/registry'
+import type { MoveAutomationRuntimeRegistry } from '~~/server/domain/moveAutomation/registry'
+
+const LEGACY_ONLY_RUNTIME_REGISTRY: MoveAutomationRuntimeRegistry = Object.freeze({
+  size: 0,
+  handlerRegistry: REGISTERED_MOVE_HANDLER_REGISTRY,
+  resolve: () => null,
+  entries: () => Object.freeze([]),
+})
+
+let injectedRuntimeRegistry: MoveAutomationRuntimeRegistry | null = null
+const resolveAuthoritativeMove = (
+  options: Parameters<typeof resolveAuthoritativeMoveProduction>[0],
+) => resolveAuthoritativeMoveProduction({
+  ...options,
+  ...(injectedRuntimeRegistry ? { runtimeRegistry: injectedRuntimeRegistry } : {}),
+})
 
 const passTemplate: MoveAutomationAreaTemplate = { kind: 'pass', size: 4, label: 'Pass 4' }
 const passTemplateId = moveAutomationAreaTemplateId(passTemplate)
@@ -122,10 +139,13 @@ const passScript = (overrides: Partial<MoveAutomationScript> = {}): MoveAutomati
 const withRegisteredScratchScript = async <T>(script: MoveAutomationScript, run: () => T | Promise<T>): Promise<T> => {
   const scripts = EXPLICIT_MOVE_AUTOMATION_SCRIPTS as Map<string, MoveAutomationScript>
   const previous = scripts.get(script.moveName)
+  const previousRegistry = injectedRuntimeRegistry
   scripts.set(script.moveName, script)
+  injectedRuntimeRegistry = LEGACY_ONLY_RUNTIME_REGISTRY
   try {
     return await run()
   } finally {
+    injectedRuntimeRegistry = previousRegistry
     if (previous) scripts.set(script.moveName, previous)
     else scripts.delete(script.moveName)
   }

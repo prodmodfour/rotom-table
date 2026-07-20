@@ -324,6 +324,7 @@ describe('Final Wave C full-system live-play chaos hardening', () => {
     })
     await vi.waitFor(() => expect(capturedHttpBody).not.toBeNull())
     await vi.waitFor(() => expect(tab.currentMap?.revision).toBe(1))
+    await vi.waitFor(() => expect(tab.pendingOutboxOpIds).toEqual([]))
     rejectHttp(new Error('response lost'))
     const lostHttpResult = await lostHttp
     expect(lostHttpResult).toMatchObject({ dispatched: true, recoveredByRealtime: true })
@@ -755,8 +756,10 @@ describe('Final Wave C full-system live-play chaos hardening', () => {
     const sseFirst = tab.commands.moveToken({ placementId: 'token-alpha', position: { x: 4, y: 0, z: 4 } })
     await vi.waitFor(() => expect(heldSseFirst.bodies).toHaveLength(1))
     await vi.waitFor(() => expect(tab.currentMap?.revision).toBe(1))
-    expect(tab.pendingPredictionOpIds).toEqual([])
-    expect(tab.pendingOutboxOpIds).toEqual([])
+    await vi.waitFor(() => {
+      expect(tab.pendingPredictionOpIds).toEqual([])
+      expect(tab.pendingOutboxOpIds).toEqual([])
+    })
     expect(moveTokenPosition(tab.currentMap, 'token-alpha')).toEqual({ x: 4, y: 0, z: 4 })
 
     heldSseFirst.gate.resolve()

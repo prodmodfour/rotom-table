@@ -11,6 +11,9 @@ This directory collects presentation and reviewer documentation for Rotom Table.
 - [Campaign repositories](campaign-repositories.md) — using `ROTOM_CAMPAIGN_ROOT` to keep private campaign JSON and campaign reference override diffs in a separate Git repository.
 - [Player profiles and linked character control](player-profiles.md) — normal player login/profile selection, GM profile management, linked sheet editing, player-visible map control, and reference browsing.
 - [Live play authority](live-play-authority.md) — normal `/maps/<slug>` profile-play command direction, setup/edit versus live-play boundaries, revision/idempotency glossary, and the rule forbidding browser-owned whole-map autosave for live gameplay.
+- [Move automation contributor guide](move-automation.md) — MoveSpec authoring, evidence, runtime selection, and strict completion checks.
+- [Move automation release acceptance](move-automation-release-acceptance.md) — recorded 776-move automated, production-like browser, privacy, recovery, and runtime-retirement acceptance.
+- [Move automation operator recovery and manual QA](move-automation-manual-qa.md) — private live-play canary, uncertainty, restart, backup, and privacy runbook.
 - [Local development](local-development.md) — setup commands, checks, optional `just` recipes, and local filesystem behaviour.
 - [Autonomous build loop](autonomous-build.md) — ticket-driven Pi build loop for issues #27-#44 and its quality gate.
 - [Private VPS hosting scope](private-vps-hosting.md) — initial private trusted-table VPS boundary, non-goals, and links to filesystem/security docs.

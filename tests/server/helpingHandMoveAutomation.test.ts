@@ -250,7 +250,7 @@ describe('Helping Hand native consumable bonus', () => {
     expect(effect.charges).toBe(1)
   })
 
-  it('applies and consumes through the retained v1 compatibility runtime', () => {
+  it('applies and consumes through the retired move’s native runtime', () => {
     const fixture = emberV2Fixture('ember.v2-threshold-fail')
     const actor = fixture.pokemonSheets.get('actor')!
     const legacyFixture = {
@@ -277,11 +277,11 @@ describe('Helping Hand native consumable bonus', () => {
       operationId: 'op_helping_hand_legacy_baseline',
     })
 
-    expect(aided.resolution.auditTrace.program.runtimeKind).toBe('legacy-v1')
+    expect(aided.resolution.auditTrace.program.runtimeKind).toBe('movespec-v2')
     expect(targetCurrentHp(baseline) - targetCurrentHp(aided)).toBe(HELPING_HAND_DAMAGE_BONUS)
     expect(aided.resolution.rollLedger[0]?.modifiers).toContainEqual({
-      sourceId: 'user-accuracy',
-      reason: 'User Accuracy',
+      sourceId: 'condition.helping-hand.actor-token',
+      reason: 'Helping Hand Accuracy',
       value: HELPING_HAND_ACCURACY_BONUS,
     })
     expect(aided.resolution.helpingHandBonus).toMatchObject({

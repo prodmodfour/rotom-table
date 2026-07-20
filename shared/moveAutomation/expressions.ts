@@ -52,6 +52,7 @@ export const MOVE_EXPRESSION_KINDS = [
   'combat-stage',
   'combat-stage-total',
   'weight',
+  'distance',
   'type',
   'weather',
   'terrain',
@@ -129,6 +130,8 @@ export const MOVE_HISTORY_QUERIES = [
   'consecutive-use-count',
   'damage-dealt-this-turn',
   'damage-received-this-turn',
+  'damage-dealt-this-round',
+  'damage-received-this-round',
   'acted-this-turn',
   'switched-this-scene',
   'fainted-this-scene',
@@ -263,6 +266,12 @@ export interface MoveWeightExpression {
   readonly metric: MoveWeightMetric
 }
 
+export interface MoveDistanceExpression {
+  readonly kind: 'distance'
+  readonly from: MoveSelector
+  readonly to: MoveSelector
+}
+
 export interface MoveTypeExpression {
   readonly kind: 'type'
   /** Move type uses null; primary/secondary type requires an authoritative subject. */
@@ -325,6 +334,7 @@ export type MoveExpression =
   | MoveCombatStageExpression
   | MoveCombatStageTotalExpression
   | MoveWeightExpression
+  | MoveDistanceExpression
   | MoveTypeExpression
   | MoveWeatherExpression
   | MoveTerrainExpression
@@ -393,6 +403,7 @@ const COMBAT_STAGE_TOTAL_FIELDS = [
   'stageModifierPolicy',
 ] as const
 const WEIGHT_FIELDS = ['kind', 'subject', 'metric'] as const
+const DISTANCE_FIELDS = ['kind', 'from', 'to'] as const
 const TYPE_FIELDS = ['kind', 'of', 'subject'] as const
 const FIELD_QUERY_FIELDS = ['kind'] as const
 const ITEM_POSSESSION_FIELDS = ['kind', 'subject', 'query'] as const
@@ -931,6 +942,23 @@ export const parseMoveExpressionNode = (
           WEIGHT_METRIC_SET,
           `${path}.metric`,
           'a supported weight metric',
+          context,
+        ),
+      }
+    case 'distance':
+      assertMoveRuleAstExactKeys(input, DISTANCE_FIELDS, path, context)
+      return {
+        kind,
+        from: parseMoveSelectorNode(
+          readMoveRuleAstOwnValue(input, 'from', path, context),
+          `${path}.from`,
+          depth + 1,
+          context,
+        ),
+        to: parseMoveSelectorNode(
+          readMoveRuleAstOwnValue(input, 'to', path, context),
+          `${path}.to`,
+          depth + 1,
           context,
         ),
       }

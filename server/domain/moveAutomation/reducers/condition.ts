@@ -45,6 +45,7 @@ import type {
   MoveCoreConditionStateSnapshot,
   MoveCoreTokenChangedField,
   MoveCoreTokenEffectImmunityQueries,
+  MoveCoreTokenEffectOperationResult,
   MoveCoreTokenEffectRecipient,
   MoveCoreTokenEffectRecipientResult,
 } from './coreTokenEffectTypes'
@@ -168,12 +169,40 @@ const randomChoiceForRecipient = (options: {
   }
 }
 
+interface ConditionOperationOutcomeTriggerAudit {
+  readonly operationId: string
+  readonly expectedOutcome: 'applied'
+  readonly actualOutcome: MoveCoreTokenEffectOperationResult['outcome']
+  readonly matched: boolean
+}
+
+const operationOutcomeTrigger = (options: {
+  readonly operation: MoveConditionEffectOperation
+  readonly priorOperationResults: readonly MoveCoreTokenEffectOperationResult[]
+}): ConditionOperationOutcomeTriggerAudit | null => {
+  const trigger = options.operation.payload.operationOutcomeTrigger
+  if (!trigger) return null
+  const prior = options.priorOperationResults.find(result => (
+    result.operationId === trigger.operationId
+  )) ?? failMoveCoreConditionReduction(
+    'invalid-condition-operation-trigger',
+    `Condition operation ${options.operation.id} cannot find prior operation ${trigger.operationId}.`,
+  )
+  return {
+    operationId: prior.operationId,
+    expectedOutcome: trigger.outcome,
+    actualOutcome: prior.outcome,
+    matched: prior.outcome === trigger.outcome,
+  }
+}
+
 interface ConditionMutationAudit {
   readonly action: MoveConditionEffectOperation['payload']['action']
   readonly condition: string | null
   readonly sourcePlacementId: string | null
   readonly randomRollId: string | null
   readonly accuracyRollTrigger?: ConditionAccuracyRollTriggerAudit
+  readonly operationOutcomeTrigger?: ConditionOperationOutcomeTriggerAudit
   readonly removedConditions: readonly string[]
   readonly removedEffectIds: readonly string[]
   readonly appliedEffectId: string | null
@@ -196,6 +225,9 @@ const auditDetails = (audit: ConditionMutationAudit): MoveResolutionTraceJsonVal
   randomRollId: audit.randomRollId,
   ...(audit.accuracyRollTrigger
     ? { accuracyRollTrigger: { ...audit.accuracyRollTrigger } }
+    : {}),
+  ...(audit.operationOutcomeTrigger
+    ? { operationOutcomeTrigger: { ...audit.operationOutcomeTrigger } }
     : {}),
   removedConditions: [...audit.removedConditions],
   removedEffectIds: [...audit.removedEffectIds],
@@ -254,6 +286,7 @@ const reduceUnaryCondition = (options: {
   readonly immunities: MoveCoreTokenEffectImmunityQueries
   readonly accuracyRolls: MoveConditionAccuracyRollQueries | undefined
   readonly context: AuthoritativeMoveRulesContext | undefined
+  readonly priorOperationResults: readonly MoveCoreTokenEffectOperationResult[]
 }): MoveCoreTokenEffectRecipientResult => {
   const { operation, recipient, accumulator, encounter } = options
   const previous = conditionSnapshot(accumulator, recipient)
@@ -274,6 +307,10 @@ const reduceUnaryCondition = (options: {
     recipient,
     accuracyRolls: options.accuracyRolls,
   })
+  const outcomeTrigger = operationOutcomeTrigger({
+    operation,
+    priorOperationResults: options.priorOperationResults,
+  })
   const filter = operation.payload.action === 'remove'
     ? {
         groups: [],
@@ -290,6 +327,32 @@ const reduceUnaryCondition = (options: {
     || operation.payload.action === 'replace'
     || operation.payload.action === 'random-choice'
 
+  if (outcomeTrigger && !outcomeTrigger.matched) {
+    return {
+      recipientId: recipient.placement.id,
+      outcome: 'no-op',
+      reasonCode: 'condition-operation-trigger-not-met',
+      blockers: [],
+      details: auditDetails({
+        action: operation.payload.action,
+        condition,
+        sourcePlacementId: null,
+        randomRollId: random?.rollId ?? null,
+        operationOutcomeTrigger: outcomeTrigger,
+        removedConditions: [],
+        removedEffectIds: [],
+        appliedEffectId: null,
+        lifecycleTransitions: [],
+        saveTiming: condition ? resolvedMoveConditionSaveTiming(condition, operation) : null,
+        stackPolicy: operation.payload.stackPolicy.kind,
+      }),
+      consultedPlacementIds: [],
+      previous,
+      current: previous,
+      changedFields: [],
+    }
+  }
+
   if (accuracyRollTrigger && !accuracyRollTrigger.matched) {
     return {
       recipientId: recipient.placement.id,
@@ -302,6 +365,7 @@ const reduceUnaryCondition = (options: {
         sourcePlacementId: null,
         randomRollId: random?.rollId ?? null,
         accuracyRollTrigger,
+        ...(outcomeTrigger ? { operationOutcomeTrigger: outcomeTrigger } : {}),
         removedConditions: [],
         removedEffectIds: [],
         appliedEffectId: null,
@@ -342,8 +406,15 @@ const reduceUnaryCondition = (options: {
     }
   }
 
-  const immunity = applies
-    ? options.immunities.condition({ operation, condition: condition!, recipient })
+  const checksWholeMoveImmunity = applies
+    || operation.payload.action === 'remove'
+    || operation.payload.action === 'clear'
+  const immunity = checksWholeMoveImmunity
+    ? options.immunities.condition({
+        operation,
+        condition: condition ?? 'Condition',
+        recipient,
+      })
     : { blockedBy: null, consultedPlacementIds: [] }
   const baseAudit: ConditionMutationAudit = {
     action: operation.payload.action,
@@ -351,6 +422,7 @@ const reduceUnaryCondition = (options: {
     sourcePlacementId: null,
     randomRollId: random?.rollId ?? null,
     ...(accuracyRollTrigger ? { accuracyRollTrigger } : {}),
+    ...(outcomeTrigger ? { operationOutcomeTrigger: outcomeTrigger } : {}),
     removedConditions: [],
     removedEffectIds: [],
     appliedEffectId: null,
@@ -795,6 +867,7 @@ export const reduceConditionEffect = (options: {
   readonly immunities: MoveCoreTokenEffectImmunityQueries
   readonly accuracyRolls?: MoveConditionAccuracyRollQueries
   readonly context?: AuthoritativeMoveRulesContext
+  readonly priorOperationResults?: readonly MoveCoreTokenEffectOperationResult[]
 }): readonly MoveCoreTokenEffectRecipientResult[] => {
   if (options.operation.payload.action === 'transfer') {
     return transferConditionEffect({
@@ -816,6 +889,7 @@ export const reduceConditionEffect = (options: {
     immunities: options.immunities,
     accuracyRolls: options.accuracyRolls,
     context: options.context,
+    priorOperationResults: options.priorOperationResults ?? [],
   }))
 }
 
@@ -847,5 +921,6 @@ export const reduceConditionEffectForRecipient = (options: {
     immunities: options.immunities,
     ...(options.accuracyRolls ? { accuracyRolls: options.accuracyRolls } : {}),
     ...(options.context ? { context: options.context } : {}),
+    priorOperationResults: [],
   })[0]!
 }

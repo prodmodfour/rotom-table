@@ -10,7 +10,7 @@ const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), '../..')
 const qualityGatePath = join(repoRoot, 'scripts/quality-gate.sh')
 
 describe('quality gate move automation validation', () => {
-  it('runs the non-strict checker before typecheck, tests, and build', () => {
+  it('runs strict semantic and budget checks before typecheck, tests, and build', () => {
     const directory = mkdtempSync(join(tmpdir(), 'rotom-quality-gate-'))
     try {
       const binDirectory = join(directory, 'bin')
@@ -43,6 +43,8 @@ describe('quality gate move automation validation', () => {
       expect(invocations).toEqual([
         'ci',
         'run check:move-automation',
+        'run check:move-automation-complete',
+        'run check:move-automation-budgets',
         'run check:move-automation-menu-status',
         'run check:move-automation-legacy-links',
         'run lint --if-present',
@@ -50,19 +52,24 @@ describe('quality gate move automation validation', () => {
         'test --if-present',
         'run build --if-present',
       ])
-      expect(invocations).not.toContain('run check:move-automation-complete')
     }
     finally {
       rmSync(directory, { recursive: true, force: true })
     }
   })
 
-  it('keeps non-strict and strict checks as explicit package commands', () => {
+  it('keeps non-strict, strict, and budget checks as explicit package commands', () => {
     expect(packageJson.scripts['check:move-automation']).toBe(
       'python3 scripts/check_move_automation_coverage.py',
     )
-    expect(packageJson.scripts['check:move-automation-complete']).toBe(
+    expect(packageJson.scripts['check:move-automation-complete']).toContain(
       'python3 scripts/check_move_automation_coverage.py --require-complete',
+    )
+    expect(packageJson.scripts['check:move-automation-complete']).toContain(
+      'moveAutomationCanonicalCompletionAudit.test.ts',
+    )
+    expect(packageJson.scripts['check:move-automation-budgets']).toContain(
+      'moveAutomationPerformanceBudgets.test.ts',
     )
     expect(packageJson.scripts['check:move-automation-menu-status']).toContain('--check')
     expect(packageJson.scripts['check:move-automation-legacy-links']).toContain('--check')

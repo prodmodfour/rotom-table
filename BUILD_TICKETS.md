@@ -1,6 +1,6 @@
 # BUILD_TICKETS.md
 
-AUTOMATION_STATUS: TODO
+AUTOMATION_STATUS: DONE
 
 Ticket statuses:
 
@@ -2841,7 +2841,7 @@ Status: DONE
 
 ## MA-207 — Implement Gear Up through Leaf Tornado
 
-Status: TODO
+Status: DONE
 
 **Moves:** Gear Up; Glaciate; Haze; Heart Swap; Hyper Voice; Hyperspace Fury; Leaf Storm; Leaf Tornado
 
@@ -2849,7 +2849,7 @@ Status: TODO
 
 ## MA-208 — Implement Magnetic Flux through Psycho Boost
 
-Status: TODO
+Status: DONE
 
 **Moves:** Magnetic Flux; Meteor Beam; Moongeist Beam; Outrage; Overheat; Petal Dance; Photon Geyser; Psycho Boost
 
@@ -2857,7 +2857,7 @@ Status: TODO
 
 ## MA-209 — Implement Rototiller through Teatime
 
-Status: TODO
+Status: DONE
 
 **Moves:** Rototiller; Snore; Sparkling Aria; Springtide Storm; String Shot; Sunsteel Strike; Synchronoise; Teatime
 
@@ -2865,7 +2865,7 @@ Status: TODO
 
 ## MA-210 — Implement Thrash through Venom Drench
 
-Status: TODO
+Status: DONE
 
 **Moves:** Thrash; Uproar; Venom Drench
 
@@ -2878,7 +2878,7 @@ Status: TODO
 
 ## MA-211 — Implement Belly Drum through Dragon Energy
 
-Status: TODO
+Status: DONE
 
 **Moves:** Belly Drum; Bind; Brine; Chloroblast; Clamp; Clangorous Soul; Crush Grip; Dragon Energy
 
@@ -2886,7 +2886,7 @@ Status: TODO
 
 ## MA-212 — Implement Drain Punch through Heal Pulse
 
-Status: TODO
+Status: DONE
 
 **Moves:** Drain Punch; Draining Kiss; Dream Eater; Eruption; Explosion; Giga Drain; Heal Order; Heal Pulse
 
@@ -2894,7 +2894,7 @@ Status: TODO
 
 ## MA-213 — Implement Hold Hands through Milk Drink
 
-Status: TODO
+Status: DONE
 
 **Moves:** Hold Hands; Jungle Healing; Leech Life; Life Dew; Light of Ruin; Mega Drain; Metal Burst; Milk Drink
 
@@ -2902,7 +2902,7 @@ Status: TODO
 
 ## MA-214 — Implement Mind Blown through Relic Song
 
-Status: TODO
+Status: DONE
 
 **Moves:** Mind Blown; Mystical Power; Oblivion Wing; Parabolic Charge; Pollen Puff; Purify; Recover; Relic Song
 
@@ -2910,7 +2910,7 @@ Status: TODO
 
 ## MA-215 — Implement Self-Destruct through Water Spout
 
-Status: TODO
+Status: DONE
 
 **Moves:** Self-Destruct; Slack Off; Soft-Boiled; Steel Beam; Strength Sap; Submission; Toxic Thread; Water Spout
 
@@ -2918,7 +2918,7 @@ Status: TODO
 
 ## MA-216 — Implement Wave Crash through Wring Out
 
-Status: TODO
+Status: DONE
 
 **Moves:** Wave Crash; Wrap; Wring Out
 
@@ -2926,7 +2926,7 @@ Status: TODO
 
 ## MA-217 — Implement Final Gambit through Super Fang
 
-Status: TODO
+Status: DONE
 
 **Moves:** Final Gambit; Flame Burst; Nature’s Madness; Night Shade; Pain Split; Seismic Toss; Super Fang
 
@@ -2939,7 +2939,7 @@ Status: TODO
 
 ## MA-218 — Implement Arm Thrust through Bolt Beak
 
-Status: TODO
+Status: DONE
 
 **Moves:** Arm Thrust; Autotomize; Barb Barrage; Barrage; Behemoth Bash; Behemoth Blade; Body Press; Bolt Beak
 
@@ -2947,7 +2947,7 @@ Status: TODO
 
 ## MA-219 — Implement Bone Rush through Dragon Darts
 
-Status: TODO
+Status: DONE
 
 **Moves:** Bone Rush; Bonemerang; Bullet Seed; Comet Punch; Double Hit; Double Iron Bash; Double Slap; Dragon Darts
 
@@ -2955,7 +2955,7 @@ Status: TODO
 
 ## MA-220 — Implement Dual Chop through Flail
 
-Status: TODO
+Status: DONE
 
 **Moves:** Dual Chop; Dual Wingbeat; Dynamax Cannon; Echoed Voice; Electro Ball; Façade; Fishious Rend; Flail
 
@@ -2963,7 +2963,7 @@ Status: TODO
 
 ## MA-221 — Implement Fusion Bolt through Ice Ball
 
-Status: TODO
+Status: DONE
 
 **Moves:** Fusion Bolt; Fusion Flare; Gear Grind; Grass Knot; Gyro Ball; Heavy Slam; Hex; Ice Ball
 
@@ -2971,7 +2971,7 @@ Status: TODO
 
 ## MA-222 — Implement Icicle Spear through Revelation Dance
 
-Status: TODO
+Status: DONE
 
 **Moves:** Icicle Spear; Infernal Parade; Judgment; Low Kick; Payback; Punishment; Retaliate; Revelation Dance
 
@@ -2979,7 +2979,7 @@ Status: TODO
 
 ## MA-223 — Implement Reversal through Stomping Tantrum
 
-Status: TODO
+Status: DONE
 
 **Moves:** Reversal; Rock Blast; Round; Scale Shot; Secret Power; Smelling Salts; Spike Cannon; Stomping Tantrum
 
@@ -2987,7 +2987,7 @@ Status: TODO
 
 ## MA-224 — Implement Stored Power through Wake-Up Slap
 
-Status: TODO
+Status: DONE
 
 **Moves:** Stored Power; Tail Slap; Triple Axel; Triple Kick; Trump Card; Twineedle; Venoshock; Wake-Up Slap
 
@@ -2995,7 +2995,7 @@ Status: TODO
 
 ## MA-225 — Implement Water Shuriken
 
-Status: TODO
+Status: DONE
 
 **Moves:** Water Shuriken
 
@@ -3008,7 +3008,7 @@ Status: TODO
 
 ## MA-226 — Implement Acid Armor through Floral Healing
 
-Status: TODO
+Status: DONE
 
 **Moves:** Acid Armor; Aurora Veil; Blizzard; Camouflage; Court Change; Defog; Electric Terrain; Floral Healing
 
@@ -3016,7 +3016,7 @@ Status: TODO
 
 ## MA-227 — Implement Geomancy through Ion Deluge
 
-Status: TODO
+Status: DONE
 
 **Moves:** Geomancy; Grassy Glide; Grassy Terrain; Gravity; Hail; Hurricane; Inferno; Ion Deluge
 
@@ -3024,7 +3024,7 @@ Status: TODO
 
 ## MA-228 — Implement Magic Room through Shore Up
 
-Status: TODO
+Status: DONE
 
 **Moves:** Magic Room; Misty Explosion; Misty Terrain; Moonlight; Morning Sun; Rain Dance; Sandstorm; Shore Up
 
@@ -3032,7 +3032,7 @@ Status: TODO
 
 ## MA-229 — Implement Smokescreen through Thunder
 
-Status: TODO
+Status: DONE
 
 **Moves:** Smokescreen; Solar Beam; Solar Blade; Steel Roller; Sunny Day; Tailwind; Terrain Pulse; Thunder
 
@@ -3040,7 +3040,7 @@ Status: TODO
 
 ## MA-230 — Implement Trick Room through Zap Cannon
 
-Status: TODO
+Status: DONE
 
 **Moves:** Trick Room; Weather Ball; Wonder Room; Zap Cannon
 
@@ -3048,7 +3048,7 @@ Status: TODO
 
 ## MA-231 — Implement Barrier through Stone Axe
 
-Status: TODO
+Status: DONE
 
 **Moves:** Barrier; Ceaseless Edge; Fire Pledge; Grass Pledge; Spikes; Stealth Rock; Sticky Web; Stone Axe
 
@@ -3056,7 +3056,7 @@ Status: TODO
 
 ## MA-232 — Implement Toxic Spikes through Water Pledge
 
-Status: TODO
+Status: DONE
 
 **Moves:** Toxic Spikes; Water Pledge
 
@@ -3069,7 +3069,7 @@ Status: TODO
 
 ## MA-233 — Implement Anchor Shot through Clear Smog
 
-Status: TODO
+Status: DONE
 
 **Moves:** Anchor Shot; Aqua Ring; Astral Barrage; Bitter Malice; Block; Burn Up; Charge; Clear Smog
 
@@ -3077,7 +3077,7 @@ Status: TODO
 
 ## MA-234 — Implement Conversion through Electrify
 
-Status: TODO
+Status: DONE
 
 **Moves:** Conversion; Conversion2; Core Enforcer; Curse; Destiny Bond; Doom Desire; Double Team; Electrify
 
@@ -3085,7 +3085,7 @@ Status: TODO
 
 ## MA-235 — Implement Fire Spin through Healing Wish
 
-Status: TODO
+Status: DONE
 
 **Moves:** Fire Spin; Forest’s Curse; Future Sight; Gastro Acid; Glacial Lance; Guard Split; Headlong Rush; Healing Wish
 
@@ -3093,7 +3093,7 @@ Status: TODO
 
 ## MA-236 — Implement High Horsepower through Lunar Blessing
 
-Status: TODO
+Status: DONE
 
 **Moves:** High Horsepower; Infestation; Laser Focus; Lash Out; Leech Seed; Light Screen; Lucky Chant; Lunar Blessing
 
@@ -3101,7 +3101,7 @@ Status: TODO
 
 ## MA-237 — Implement Lunar Dance through Octolock
 
-Status: TODO
+Status: DONE
 
 **Moves:** Lunar Dance; Lunge; Magma Storm; Mean Look; Mind Reader; Mist; Nightmare; Octolock
 
@@ -3109,7 +3109,7 @@ Status: TODO
 
 ## MA-238 — Implement Perish Song through Roost
 
-Status: TODO
+Status: DONE
 
 **Moves:** Perish Song; Power Split; Psyshield Bash; Psyshock; Psystrike; Rage; Rest; Roost
 
@@ -3117,7 +3117,7 @@ Status: TODO
 
 ## MA-239 — Implement Safeguard through Spit Up
 
-Status: TODO
+Status: DONE
 
 **Moves:** Safeguard; Secret Sword; Sing; Snap Trap; Sonic Boom; Spider Web; Spirit Shackle; Spit Up
 
@@ -3125,7 +3125,7 @@ Status: TODO
 
 ## MA-240 — Implement Spotlight through Thunder Cage
 
-Status: TODO
+Status: DONE
 
 **Moves:** Spotlight; Stockpile; Substitute; Swallow; Sweet Kiss; Tar Shot; Thousand Waves; Thunder Cage
 
@@ -3133,7 +3133,7 @@ Status: TODO
 
 ## MA-241 — Implement Trop Kick through Wish
 
-Status: TODO
+Status: DONE
 
 **Moves:** Trop Kick; Victory Dance; Water Sport; Whirlpool; Wish
 
@@ -3146,7 +3146,7 @@ Status: TODO
 
 ## MA-242 — Implement Avalanche through Defense Curl
 
-Status: TODO
+Status: DONE
 
 **Moves:** Avalanche; Baton Pass; Bounce; Brave Bird; Circle Throw; Close Combat; Cut; Defense Curl
 
@@ -3154,7 +3154,7 @@ Status: TODO
 
 ## MA-243 — Implement Dig through Endeavor
 
-Status: TODO
+Status: DONE
 
 **Moves:** Dig; Dive; Double-Edge; Dragon Ascent; Dragon Rush; Dragon Tail; Earthquake; Endeavor
 
@@ -3162,7 +3162,7 @@ Status: TODO
 
 ## MA-244 — Implement Fairy Lock through Flying Press
 
-Status: TODO
+Status: DONE
 
 **Moves:** Fairy Lock; False Swipe; First Impression; Flame Charge; Flare Blitz; Flip Turn; Fly; Flying Press
 
@@ -3170,7 +3170,7 @@ Status: TODO
 
 ## MA-245 — Implement Focus Energy through Heat Crash
 
-Status: TODO
+Status: DONE
 
 **Moves:** Focus Energy; Freeze Shock; Giga Impact; Gust; Head Charge; Head Smash; Heal Block; Heat Crash
 
@@ -3178,7 +3178,7 @@ Status: TODO
 
 ## MA-246 — Implement Horn Leech through Mega Kick
 
-Status: TODO
+Status: DONE
 
 **Moves:** Horn Leech; Hydro Pump; Hyperspace Hole; Ice Burn; Imprison; Ingrain; Lock-On; Mega Kick
 
@@ -3186,7 +3186,7 @@ Status: TODO
 
 ## MA-247 — Implement Megahorn through Psycho Shift
 
-Status: TODO
+Status: DONE
 
 **Moves:** Megahorn; Meteor Mash; Muddy Water; No Retreat; Parting Shot; Power Shift; Psychic; Psycho Shift
 
@@ -3194,7 +3194,7 @@ Status: TODO
 
 ## MA-248 — Implement Rapid Spin through Shift Gear
 
-Status: TODO
+Status: DONE
 
 **Moves:** Rapid Spin; Razor Wind; Revenge; Roar; Roar of Time; Rock Wrecker; Rollout; Shift Gear
 
@@ -3202,7 +3202,7 @@ Status: TODO
 
 ## MA-249 — Implement Skitter Smack through Steel Wing
 
-Status: TODO
+Status: DONE
 
 **Moves:** Skitter Smack; Skull Bash; Sky Attack; Sky Drop; Slam; Splash; Steamroller; Steel Wing
 
@@ -3210,7 +3210,7 @@ Status: TODO
 
 ## MA-250 — Implement Strength through Volt Tackle
 
-Status: TODO
+Status: DONE
 
 **Moves:** Strength; Superpower; Surf; Surging Strikes; Triple Arrows; Twister; Volt Switch; Volt Tackle
 
@@ -3218,7 +3218,7 @@ Status: TODO
 
 ## MA-251 — Implement Whirlwind through Wood Hammer
 
-Status: TODO
+Status: DONE
 
 **Moves:** Whirlwind; Wicked Blow; Wild Charge; Wood Hammer
 
@@ -3231,7 +3231,7 @@ Status: TODO
 
 ## MA-252 — Implement Acrobatics through Multi-Attack
 
-Status: TODO
+Status: DONE
 
 **Moves:** Acrobatics; Bestow; Corrosive Gas; Covet; Embargo; Fling; Incinerate; Multi-Attack
 
@@ -3239,7 +3239,7 @@ Status: TODO
 
 ## MA-253 — Implement Natural Gift through Stuff Cheeks
 
-Status: TODO
+Status: DONE
 
 **Moves:** Natural Gift; Pay Day; Pluck; Poltergeist; Power Trick; Recycle; Spectral Thief; Stuff Cheeks
 
@@ -3247,7 +3247,7 @@ Status: TODO
 
 ## MA-254 — Implement Switcheroo through Trick-or-Treat
 
-Status: TODO
+Status: DONE
 
 **Moves:** Switcheroo; Techno Blast; Thief; Trick; Trick-or-Treat
 
@@ -3260,7 +3260,7 @@ Status: TODO
 
 ## MA-255 — Implement Assist through Guillotine
 
-Status: TODO
+Status: DONE
 
 **Moves:** Assist; Charge Beam; Copycat; Dire Claw; Eerie Spell; Encore; Fissure; Guillotine
 
@@ -3268,7 +3268,7 @@ Status: TODO
 
 ## MA-256 — Implement Hidden Power through Present
 
-Status: TODO
+Status: DONE
 
 **Moves:** Hidden Power; Horn Drill; Last Resort; Magnitude; Mimic; Mirror Move; Nature Power; Present
 
@@ -3276,7 +3276,7 @@ Status: TODO
 
 ## MA-257 — Implement Role Play through Tri Attack
 
-Status: TODO
+Status: DONE
 
 **Moves:** Role Play; Sheer Cold; Sketch; Skill Swap; Sleep Talk; Telekinesis; Transform; Tri Attack
 
@@ -3289,7 +3289,7 @@ Status: TODO
 
 ## MA-258 — Implement Ally Switch through Counter
 
-Status: TODO
+Status: DONE
 
 **Moves:** Ally Switch; Assurance; Baneful Bunker; Beak Blast; Beat Up; Bide; Burning Jealousy; Counter
 
@@ -3297,7 +3297,7 @@ Status: TODO
 
 ## MA-259 — Implement Crafty Shield through Focus Punch
 
-Status: TODO
+Status: DONE
 
 **Moves:** Crafty Shield; Detect; Disable; Endure; Expanding Force; Feint; Flower Shield; Focus Punch
 
@@ -3305,7 +3305,7 @@ Status: TODO
 
 ## MA-260 — Implement Follow Me through Magic Coat
 
-Status: TODO
+Status: DONE
 
 **Moves:** Follow Me; Grudge; High Jump Kick; Instruct; Jump Kick; Kinesis; King’s Shield; Magic Coat
 
@@ -3313,7 +3313,7 @@ Status: TODO
 
 ## MA-261 — Implement Mat Block through Powder
 
-Status: TODO
+Status: DONE
 
 **Moves:** Mat Block; Me First; Memento; Metronome; Mirror Coat; Obstruct; Phantom Force; Powder
 
@@ -3321,7 +3321,7 @@ Status: TODO
 
 ## MA-262 — Implement Protect through Shell Trap
 
-Status: TODO
+Status: DONE
 
 **Moves:** Protect; Psychic Terrain; Pursuit; Quick Guard; Rage Powder; Rising Voltage; Shadow Force; Shell Trap
 
@@ -3329,7 +3329,7 @@ Status: TODO
 
 ## MA-263 — Implement Sky Uppercut through Wide Guard
 
-Status: TODO
+Status: DONE
 
 **Moves:** Sky Uppercut; Snatch; Spiky Shield; Spite; Sucker Punch; Teleport; Vital Throw; Wide Guard
 
@@ -3342,7 +3342,7 @@ Status: TODO
 
 ## MA-264 — Implement After You through Bug Bite
 
-Status: TODO
+Status: DONE
 
 **Moves:** After You; Agility; Amnesia; Ancient Power; Attract; Aura Wheel; Brick Break; Bug Bite
 
@@ -3350,7 +3350,7 @@ Status: TODO
 
 ## MA-265 — Implement Bulk Up through Cotton Guard
 
-Status: TODO
+Status: DONE
 
 **Moves:** Bulk Up; Calm Mind; Chip Away; Clanging Scales; Coil; Constrict; Cosmic Power; Cotton Guard
 
@@ -3358,7 +3358,7 @@ Status: TODO
 
 ## MA-266 — Implement Darkest Lariat through Foul Play
 
-Status: TODO
+Status: DONE
 
 **Moves:** Darkest Lariat; Defend Order; Dragon Dance; Entrainment; Fell Stinger; Fiery Dance; Foresight; Foul Play
 
@@ -3366,7 +3366,7 @@ Status: TODO
 
 ## MA-267 — Implement Frost Breath through Jaw Lock
 
-Status: TODO
+Status: DONE
 
 **Moves:** Frost Breath; Growth; Guard Swap; Hammer Arm; Harden; Ice Hammer; Iron Defense; Jaw Lock
 
@@ -3374,7 +3374,7 @@ Status: TODO
 
 ## MA-268 — Implement Magic Powder through Odor Sleuth
 
-Status: TODO
+Status: DONE
 
 **Moves:** Magic Powder; Magnet Rise; Meditate; Metal Claw; Minimize; Miracle Eye; Nasty Plot; Odor Sleuth
 
@@ -3382,7 +3382,7 @@ Status: TODO
 
 ## MA-269 — Implement Ominous Wind through Quiver Dance
 
-Status: TODO
+Status: DONE
 
 **Moves:** Ominous Wind; Plasma Fists; Power Swap; Power-Up Punch; Psych Up; Psychic Fangs; Quash; Quiver Dance
 
@@ -3390,7 +3390,7 @@ Status: TODO
 
 ## MA-270 — Implement Reflect Type through Simple Beam
 
-Status: TODO
+Status: DONE
 
 **Moves:** Reflect Type; Refresh; Rock Polish; Sharpen; Shell Smash; Shelter; Silver Wind; Simple Beam
 
@@ -3398,7 +3398,7 @@ Status: TODO
 
 ## MA-271 — Implement Smack Down through Take Heart
 
-Status: TODO
+Status: DONE
 
 **Moves:** Smack Down; Snipe Shot; Soak; Spacial Rend; Speed Swap; Storm Throw; Tail Glow; Take Heart
 
@@ -3406,7 +3406,7 @@ Status: TODO
 
 ## MA-272 — Implement Thousand Arrows through Worry Seed
 
-Status: TODO
+Status: DONE
 
 **Moves:** Thousand Arrows; Throat Chop; Thunderous Kick; V-Create; Withdraw; Work Up; Worry Seed
 
@@ -3419,7 +3419,7 @@ Status: TODO
 
 ## MA-280 — Carry encounter state through snapshots and patches
 
-Status: TODO
+Status: DONE
 
 **Depends on:** MA-050–MA-051
 **Commit:** `feat(move-automation): synchronize encounter state`
@@ -3432,7 +3432,7 @@ Status: TODO
 
 ## MA-281 — Add dual-read/single-write state migration
 
-Status: TODO
+Status: DONE
 
 **Depends on:** MA-133, MA-280
 **Commit:** `feat(move-automation): migrate legacy combat state lazily`
@@ -3445,7 +3445,7 @@ Status: TODO
 
 ## MA-282 — Preserve automation state through import/export and backup
 
-Status: TODO
+Status: DONE
 
 **Depends on:** MA-101, MA-281
 **Commit:** `feat(move-automation): round trip encounter automation state`
@@ -3458,7 +3458,7 @@ Status: TODO
 
 ## MA-283 — Make response commands outbox-safe
 
-Status: TODO
+Status: DONE
 
 **Depends on:** MA-102–MA-107
 **Commit:** `feat(move-automation): recover pending response commands`
@@ -3471,7 +3471,7 @@ Status: TODO
 
 ## MA-284 — Reconcile prompts after replay gaps and snapshots
 
-Status: TODO
+Status: DONE
 
 **Depends on:** MA-280, MA-283
 **Commit:** `feat(move-automation): reconcile durable move prompts`
@@ -3484,7 +3484,7 @@ Status: TODO
 
 ## MA-285 — Prove idempotency across HTTP, realtime, and status
 
-Status: TODO
+Status: DONE
 
 **Depends on:** MA-283–MA-284
 **Commit:** `test(move-automation): prove terminal delivery idempotency`
@@ -3497,7 +3497,7 @@ Status: TODO
 
 ## MA-286 — Add deterministic multi-client chaos scenarios
 
-Status: TODO
+Status: DONE
 
 **Depends on:** MA-114, MA-166, MA-285
 **Commit:** `test(move-automation): add multiplayer chaos coverage`
@@ -3510,7 +3510,7 @@ Status: TODO
 
 ## MA-287 — Verify restart, authorization, and privacy
 
-Status: TODO
+Status: DONE
 
 **Depends on:** MA-282, MA-284
 **Commit:** `test(move-automation): verify restart and prompt privacy`
@@ -3523,7 +3523,7 @@ Status: TODO
 
 ## MA-288 — Add development shadow planning for migrations
 
-Status: TODO
+Status: DONE
 
 **Depends on:** MA-034, MA-042–MA-044
 **Commit:** `feat(move-automation): compare legacy and v2 plans in shadow mode`
@@ -3536,7 +3536,7 @@ Status: TODO
 
 ## MA-289 — Extend safe command observability
 
-Status: TODO
+Status: DONE
 
 **Depends on:** MA-037, MA-105
 **Commit:** `feat(move-automation): trace resolution lifecycle latency`
@@ -3549,7 +3549,7 @@ Status: TODO
 
 ## MA-290 — Add move diagnostics to the latency debug panel
 
-Status: TODO
+Status: DONE
 
 **Depends on:** MA-289
 **Commit:** `feat(move-automation): show move resolution diagnostics`
@@ -3562,7 +3562,7 @@ Status: TODO
 
 ## MA-291 — Enforce performance and payload budgets
 
-Status: TODO
+Status: DONE
 
 **Depends on:** MA-286, MA-289
 **Commit:** `test(move-automation): enforce engine performance budgets`
@@ -3575,7 +3575,7 @@ Status: TODO
 
 ## MA-292 — Update architecture and data-model documentation
 
-Status: TODO
+Status: DONE
 
 **Depends on:** MA-281, MA-284
 **Commit:** `docs(move-automation): document authoritative engine state`
@@ -3588,7 +3588,7 @@ Status: TODO
 
 ## MA-293 — Add the move-authoring contributor guide
 
-Status: TODO
+Status: DONE
 
 **Depends on:** MA-087, MA-292
 **Commit:** `docs(move-automation): add contributor runbook`
@@ -3601,7 +3601,7 @@ Status: TODO
 
 ## MA-294 — Add operator recovery and manual QA runbooks
 
-Status: TODO
+Status: DONE
 
 **Depends on:** MA-287, MA-290
 **Commit:** `docs(move-automation): add operator recovery runbook`
@@ -3614,7 +3614,7 @@ Status: TODO
 
 ## MA-295 — Audit all 776 completion contracts
 
-Status: TODO
+Status: DONE
 
 **Depends on:** REG-001–REG-033, MA-200–MA-272, MA-287
 **Commit:** `test(move-automation): audit canonical completion evidence`
@@ -3627,7 +3627,7 @@ Status: TODO
 
 ## MA-296 — Prove semantic 776/776 integrity
 
-Status: TODO
+Status: DONE
 
 **Depends on:** MA-295
 **Commit:** `test(move-automation): require canonical semantic completeness`
@@ -3640,7 +3640,7 @@ Status: TODO
 
 ## MA-297 — Enable the strict completion gate
 
-Status: TODO
+Status: DONE
 
 **Depends on:** MA-296
 **Commit:** `ci(move-automation): require all moves complete`
@@ -3653,7 +3653,7 @@ Status: TODO
 
 ## MA-298 — Run final multiplayer, migration, and release acceptance
 
-Status: TODO
+Status: DONE
 
 **Depends on:** MA-297
 **Commit:** `test(move-automation): complete release acceptance`
@@ -3666,7 +3666,7 @@ Status: TODO
 
 ## MA-299 — Retire v1 only after an observation window
 
-Status: TODO
+Status: DONE
 
 **Depends on:** a successful deployed release after MA-298, not merely a green branch
 **Commit:** `refactor(move-automation): retire legacy automation runtime`
@@ -3697,7 +3697,7 @@ npm run build
 bash scripts/quality-gate.sh
 ```
 
-Do not run `check:move-automation-complete` as a required gate until MA-297. It is expected to fail while the queue is in progress.
+`check:move-automation-complete` is required by the canonical quality gate after MA-297 and must remain green.
 
 ## When a ticket reveals missing rules machinery
 

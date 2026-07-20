@@ -843,15 +843,34 @@ const interpretDigestBuff = (input: InterpretOperationInput): OperationInterpret
   if (payload.action !== 'digest-buff') {
     return fail('unsupported-operation', `Operation ${input.operation.id} is not digest-buff.`)
   }
-  const actor = input.context.actor.placement
-  const storedItemId = storedDigestionBuffId(input.context, actor)
-  if (
-    storedItemId === null
-    || (
-      payload.canonicalItemIds !== null
-      && !payload.canonicalItemIds.includes(storedItemId)
-    )
-  ) {
+  const source = input.context.actor.placement
+  const recipientIds = input.recipientIds.length > 0
+    ? input.recipientIds
+    : [source.id]
+  const mutations: MoveItemMutation[] = []
+  for (const recipientId of recipientIds) {
+    const recipient = input.context.queries.placements.get(recipientId)
+    if (!recipient) continue
+    const storedItemId = storedDigestionBuffId(input.context, recipient)
+    if (
+      storedItemId === null
+      || (
+        payload.canonicalItemIds !== null
+        && !payload.canonicalItemIds.includes(storedItemId)
+      )
+    ) continue
+    const destination = digestionDestination(input.context, recipient)
+    mutations.push({
+      id: mutationId(input.operation.id, mutations.length),
+      kind: 'digest-buff',
+      reasonCode: input.operation.reasonCode,
+      owner: destination.owner,
+      canonicalItemIds: payload.canonicalItemIds,
+      sourceMoveId: input.operation.source.id,
+      sourcePlacementId: source.id,
+    })
+  }
+  if (mutations.length === 0) {
     return { result: unavailable({
       operation: input.operation,
       policy: payload.onUnavailable,
@@ -859,17 +878,10 @@ const interpretDigestBuff = (input: InterpretOperationInput): OperationInterpret
       message: `Item operation ${input.operation.id} has no eligible stored digestion buff.`,
     }), mutations: [] }
   }
-  const destination = digestionDestination(input.context, actor)
-  const mutations: MoveItemMutation[] = [{
-    id: mutationId(input.operation.id, 0),
-    kind: 'digest-buff',
-    reasonCode: input.operation.reasonCode,
-    owner: destination.owner,
-    canonicalItemIds: payload.canonicalItemIds,
-    sourceMoveId: input.operation.source.id,
-    sourcePlacementId: actor.id,
-  }]
-  return { result: applied({ operation: input.operation, mutations, itemCount: 1 }), mutations }
+  return {
+    result: applied({ operation: input.operation, mutations, itemCount: mutations.length }),
+    mutations,
+  }
 }
 
 interface InterpretOperationInput {

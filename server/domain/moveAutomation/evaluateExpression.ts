@@ -21,6 +21,7 @@ import type {
   MoveSelectorLeafKind,
 } from '#shared/moveAutomation/selectors'
 import type { SpawnedPokemon } from '~/types/pokemon'
+import { tokenGridDistance } from '~/utils/moveAutomationRange'
 import type { AuthoritativeMoveRulesContext } from './context'
 
 /**
@@ -710,6 +711,17 @@ const subjectType = (
   return token.defenderTypes[index]?.trim().toLowerCase() || null
 }
 
+const distanceValue = (
+  expression: Extract<MoveExpression, { readonly kind: 'distance' }>,
+  state: EvaluationState,
+  nodeId: string,
+  depth: number,
+): number => {
+  const from = subjectToken(expression.from, state, `${nodeId}.from`, depth + 1)
+  const to = subjectToken(expression.to, state, `${nodeId}.to`, depth + 1)
+  return boundedNumber(tokenGridDistance(from, to), nodeId)
+}
+
 const weightValue = (
   selector: MoveSelector,
   metric: MoveWeightMetric,
@@ -1041,6 +1053,9 @@ const evaluateExpressionNode = (
         nodeId,
         depth,
       )
+      break
+    case 'distance':
+      value = distanceValue(expression, state, nodeId, depth)
       break
     case 'type':
       value = subjectType(expression, state, nodeId, depth)

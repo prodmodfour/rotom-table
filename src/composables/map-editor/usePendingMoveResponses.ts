@@ -103,6 +103,8 @@ export interface UsePendingMoveResponsesOptions {
   readonly authRole: ReadonlyValueRef<AuthRole | null | undefined>
   readonly playerProfileId?: ReadonlyValueRef<PlayerProfileId | null | undefined>
   readonly mapRevision: ReadonlyValueRef<number | null | undefined>
+  /** Latest authoritative snapshot; public summaries reconcile zombie prompts immediately. */
+  readonly map?: ReadonlyValueRef<TabletopMap | null | undefined>
   readonly enabled?: ReadonlyValueRef<boolean>
   readonly applyPersistedMap?: (map: TabletopMap) => void
   readonly applySheetUpdate?: (update: PendingMoveResponseSheetUpdate) => void
@@ -293,6 +295,26 @@ export const usePendingMoveResponses = (
 
   const enabled = (): boolean => options.enabled?.value !== false
 
+  const activeSummaryResolutionIds = (): ReadonlySet<string> | null => {
+    const map = options.map?.value
+    if (!map?.encounterState) return null
+    return new Set(map.encounterState.pendingResolutionSummaries
+      .filter(summary => (
+        (summary.status === 'pending' || summary.status === 'resuming')
+        && summary.outstandingWindowCount > 0
+      ))
+      .map(summary => summary.resolutionId))
+  }
+
+  const reconcileWindowsWithSnapshot = (
+    candidates: readonly PendingMoveResponseWindowView[],
+  ): readonly PendingMoveResponseWindowView[] => {
+    const activeIds = activeSummaryResolutionIds()
+    return activeIds === null
+      ? candidates
+      : candidates.filter(view => activeIds.has(view.resolution.resolutionId))
+  }
+
   const currentAuthContext = (): LivePlayCommandOutboxAuthContext | null => {
     const role = options.authRole.value
     if (!isAuthRole(role)) return null
@@ -352,7 +374,7 @@ export const usePendingMoveResponses = (
       const parsed = parsePendingMoveResponseWindowList(rawList)
       if (parsed.mapSlug !== options.slug) throw new Error('Pending move responses belong to another map.')
       if (sequence !== refreshSequence) return windows.value
-      windows.value = parsed.windows
+      windows.value = reconcileWindowsWithSnapshot(parsed.windows)
       responseOutboxEntries.value = entries
       loadStatus.value = 'idle'
       loadError.value = null
@@ -726,8 +748,14 @@ export const usePendingMoveResponses = (
         options.playerProfileId?.value ?? null,
         options.mapRevision.value ?? null,
         options.enabled?.value ?? true,
+        options.map?.value?.encounterState?.pendingResolutionSummaries
+          .map(summary => `${summary.resolutionId}:${summary.status}:${summary.outstandingWindowCount}:${summary.updatedAt}`)
+          .join('|') ?? null,
       ] as const,
       () => {
+        // Snapshot adoption closes obsolete windows synchronously; the
+        // authorized endpoint then reopens only currently eligible windows.
+        windows.value = reconcileWindowsWithSnapshot(windows.value)
         if (mounted && options.autoLoad !== false) void refresh()
       },
     )

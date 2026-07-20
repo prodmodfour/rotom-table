@@ -1,7 +1,8 @@
-import { ref } from 'vue'
+import { ref, type Ref } from 'vue'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { IDBFactory as FakeIDBFactory } from 'fake-indexeddb'
 import type { AuthRole } from '#shared/auth'
+import { createEmptyEncounterState } from '#shared/moveAutomation/encounterState'
 import {
   MOVE_RESPONSE_COMMAND_TYPES,
 } from '#shared/moveAutomation/responseCommands'
@@ -185,6 +186,7 @@ const createHarness = (options: {
   readonly applyPersistedMap?: (map: TabletopMap) => void
   readonly applySheetUpdate?: (update: { kind: 'pokemon' | 'trainer'; slug: string; sheet: Record<string, unknown> }) => void
   readonly leaseOwner?: string
+  readonly map?: Ref<TabletopMap | null>
 } = {}) => {
   const outbox = options.outbox ?? createOutbox()
   const actions = usePendingMoveResponses({
@@ -192,6 +194,7 @@ const createHarness = (options: {
     authRole: ref<AuthRole>(options.role ?? 'player'),
     playerProfileId: ref(profileId),
     mapRevision: ref(12),
+    map: options.map,
     enabled: ref(true),
     outbox,
     leaseOwner: options.leaseOwner ?? 'pending-response-test-owner',
@@ -207,6 +210,36 @@ beforeEach(() => {
 })
 
 describe('usePendingMoveResponses', () => {
+  it('adopts snapshot summaries to dismiss obsolete prompts and reopen current windows', async () => {
+    const map = ref<TabletopMap | null>({
+      ...mapDocument(12),
+      encounterState: createEmptyEncounterState(),
+    })
+    const { actions } = createHarness({ map })
+    apiMocks.getJson.mockResolvedValue(responseList())
+
+    await actions.refresh()
+    expect(actions.windows.value).toEqual([])
+    await expect(actions.choose({
+      resolutionId: 'resolution-pending-1',
+      windowId: 'window.branch',
+      optionId: 'option.attack',
+    })).resolves.toMatchObject({
+      dispatched: false,
+      message: 'This move response window is no longer available.',
+    })
+
+    map.value = {
+      ...map.value!,
+      encounterState: {
+        ...createEmptyEncounterState(),
+        pendingResolutionSummaries: [responseWindow().resolution as never],
+      },
+    }
+    await actions.refresh()
+    expect(actions.windows.value).toHaveLength(1)
+  })
+
   it('projects only server-issued movement selections into durable map-overlay references', () => {
     const source = responseWindow()
     source.window.options = [

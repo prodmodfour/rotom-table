@@ -2009,6 +2009,32 @@ export const resolveAuthoritativeMoveExecutionFromContext = (
     fail('invalid', 'move-usage-key-invalid', `${entry.canonicalMoveName} did not produce a valid move usage key.`)
   }
   const selectedRuntime = context.queries.rules.runtimeFor(entry.canonicalMoveName)
+  const retiredLegacyRuntime = selectedRuntime?.kind === 'movespec-v2'
+    && selectedRuntime.definition.spec.presentation.tags.includes('legacy-retirement')
+  if (retiredLegacyRuntime && entry.script.targetBranches?.length && !intent.targetBranchId) {
+    fail(
+      'invalid',
+      'target-branch-required',
+      `${entry.canonicalMoveName} requires a reviewed target branch.`,
+    )
+  }
+  if (retiredLegacyRuntime && intent.targetBranchId) {
+    const branches = entry.script.targetBranches ?? []
+    if (branches.length === 0) {
+      fail(
+        'invalid',
+        'target-branch-unexpected',
+        `${entry.canonicalMoveName} does not accept a target branch.`,
+      )
+    }
+    if (!branches.some(branch => branch.id === intent.targetBranchId)) {
+      fail(
+        'invalid',
+        'target-branch-invalid',
+        `Unknown target branch ${intent.targetBranchId} for ${entry.canonicalMoveName}.`,
+      )
+    }
+  }
   const legacySelection = selectedRuntime?.kind === 'movespec-v2'
     ? null
     : resolveCanonicalScript({
@@ -2023,6 +2049,16 @@ export const resolveAuthoritativeMoveExecutionFromContext = (
     range: legacySelection?.script.range ?? entry.script.range,
     ...(reviewedCosts && reviewedCosts.length > 0 ? { reviewedCosts } : {}),
   })
+  const dashBlock = retiredLegacyRuntime
+    ? moveDashConditionUseBlock(entry.script.range, context.actor.token.conditions)
+    : null
+  if (dashBlock) {
+    fail(
+      'unauthorized-state',
+      'move-condition-blocked',
+      `${entry.canonicalMoveName} is blocked by ${dashBlock.label}: ${dashBlock.reason}`,
+    )
+  }
   const terrainAction = context.queries.terrain.action({
     placementId: actorPlacement.id,
     timing: actionTiming,
@@ -2090,14 +2126,6 @@ export const resolveAuthoritativeMoveExecutionFromContext = (
       'unsupported-move-script',
       `${entry.canonicalMoveName} did not resolve a retained script.`,
     )
-  const dashBlock = moveDashConditionUseBlock(script.range, context.actor.token.conditions)
-  if (dashBlock) {
-    fail(
-      'unauthorized-state',
-      'move-condition-blocked',
-      `${entry.canonicalMoveName} is blocked by ${dashBlock.label}: ${dashBlock.reason}`,
-    )
-  }
   const common = {
     context,
     script,

@@ -959,6 +959,7 @@ const pendingMoveResponses = usePendingMoveResponses({
   authRole: role,
   playerProfileId: computed(() => (isPlayer.value ? selectedProfileId.value : null)),
   mapRevision,
+  map,
   enabled: computed(() => (
     canViewMap.value
     && !mapInPrepareMode.value

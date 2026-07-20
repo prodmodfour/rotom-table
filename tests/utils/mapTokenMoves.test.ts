@@ -108,7 +108,7 @@ describe('map token move menu options', () => {
     expect(move.special).toBe('Grants Firestarter')
   })
 
-  it('shows blocked canonical and custom moves without treating registry presence as status', () => {
+  it('shows completed canonical moves and keeps unknown custom moves blocked', () => {
     const moves = buildTokenMoveMenuOptions(token(), [
       { move: { name: 'Tackle' }, automatic: false },
       { move: { name: 'Teleport' }, automatic: false },
@@ -122,17 +122,13 @@ describe('map token move menu options', () => {
       automation: { baseStatus: 'complete' },
     })
     expect(moves.find((move) => move.name === 'Teleport')).toMatchObject({
-      hasAutomationScript: false,
-      disabledByAutomation: true,
+      hasAutomationScript: true,
+      disabledByAutomation: false,
       automation: {
         canonicalId: 'Teleport',
-        baseStatus: 'blocked',
-        blockerCodes: ['runtime.unimplemented'],
+        baseStatus: 'complete',
+        blockerCodes: [],
       },
-    })
-    expect(moves.find((move) => move.name === 'Teleport')?.automation.details[0]).toMatchObject({
-      code: 'runtime.unimplemented',
-      summary: 'Runtime · Unimplemented is planned for Phase 2.',
     })
     expect(moves.find((move) => move.name === 'Custom Beam')).toMatchObject({
       hasAutomationScript: false,

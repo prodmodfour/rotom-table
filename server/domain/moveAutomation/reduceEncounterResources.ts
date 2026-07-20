@@ -294,6 +294,15 @@ const setTurnWindow = (
     || flag.id === ENCOUNTER_PRIORITY_ADVANCED_NEXT_TURN_FLAG_ID
   ))
   let ledger = resetLedger(previous, 'turn-start')
+  if (ledger.setupExecute?.status === 'setting-up') {
+    ledger = {
+      ...ledger,
+      setupExecute: {
+        ...ledger.setupExecute,
+        status: 'ready-to-execute',
+      },
+    }
+  }
   if (forfeitsNextTurn) {
     ledger = spendAction(spendAction(ledger, 'standard', 1), 'shift', 1)
   }
@@ -656,7 +665,13 @@ export const spendEncounterMoveResourceCosts = (
 
     if (cost.kind === 'setup-execute') {
       const setup = ledger.setupExecute
-      if (cost.step === 'set-up') {
+      const step = cost.step === 'auto'
+        ? setup?.canonicalMoveId === input.canonicalMoveId
+          && setup.status === 'ready-to-execute'
+          ? 'execute'
+          : 'set-up'
+        : cost.step
+      if (step === 'set-up') {
         if (setup !== null) {
           fail(
             'setup-state-conflict',

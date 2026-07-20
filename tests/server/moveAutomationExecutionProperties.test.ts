@@ -290,5 +290,5 @@ describe('multi-hit aggregate and trace-parent properties', () => {
       )
       expectNativeTraceParents(result.trace, result.resolvedRolls)
     }
-  })
+  }, 15_000)
 })

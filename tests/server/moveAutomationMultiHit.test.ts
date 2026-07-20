@@ -304,6 +304,49 @@ describe('native MoveSpec multi-hit sequences', () => {
     expect(Object.isFrozen(sequence.resolution.targets[0]!.strikes)).toBe(true)
   })
 
+  it('gates bounded follow-up effects by the natural per-hit accuracy result', () => {
+    const thresholdOperation = multiHitOperation({
+      count: { kind: 'fixed', hits: 1 },
+      accuracy: {
+        kind: 'per-hit',
+        rollId: 'roll.threshold-accuracy',
+        formula: { kind: 'dice', count: 1, sides: 20, modifier: 0 },
+        stopOnMiss: false,
+      },
+      critical: { kind: 'accuracy' },
+      damage,
+      effects: [{
+        id: 'effect.threshold-burn',
+        timing: 'after-each',
+        trigger: 'hit',
+        naturalAccuracyMinimum: 17,
+        recipient: 'target',
+        kind: 'condition',
+        reasonCode: 'move.tackle.threshold-burn',
+        payload: {
+          action: 'apply',
+          conditionId: 'burned',
+          conditionSource: null,
+          filter: null,
+          randomChoice: null,
+          duration: null,
+          saveTiming: 'canonical',
+          stackPolicy: { kind: 'refresh', maxStacks: null },
+        },
+      }],
+    })
+
+    const below = execute({ operation: thresholdOperation, randomValues: [0.5, 0] })
+    expect(below.multiHitExecutions[0]?.conditionUpdates).toEqual([])
+    expect(below.multiHitExecutions[0]?.resolution.targets[0]?.strikes[0]?.afterEach)
+      .toMatchObject({ effects: [], skippedEffectIds: ['effect.threshold-burn'] })
+
+    const above = execute({ operation: thresholdOperation, randomValues: [0.9, 0] })
+    expect(above.multiHitExecutions[0]?.conditionUpdates).toEqual([
+      { id: 'target-token', conditions: ['Burned'] },
+    ])
+  })
+
   it('supports direct hit-count rolls and independent per-hit critical rolls', () => {
     const operation = multiHitOperation({
       count: {

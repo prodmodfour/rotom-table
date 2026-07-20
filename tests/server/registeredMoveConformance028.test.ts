@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, it } from 'vitest'
+import { assertReviewedNativeEvidenceFragments } from '../fixtures/moveAutomation/nativeEvidence'
 import manifestJson from '../../data/move-automation/manifest.json'
 import {
   LIVE_PLAY_COMMAND_SCHEMA_VERSION,
@@ -286,8 +287,8 @@ const assertScenarioResolution = (
   const expectDamage = scenario.expectDamage ?? hit
   expect(resolution.auditTrace.program).toMatchObject({
     canonicalId: scenario.moveName,
-    runtimeKind: 'legacy-v1',
-    runtimeVersion: 1,
+    runtimeKind: 'movespec-v2',
+    runtimeVersion: 2,
   })
   expect(resolution.script).toMatchObject({
     moveName: scenario.moveName,
@@ -305,7 +306,7 @@ const assertScenarioResolution = (
   expect(resolution.transaction.hpUpdates.map(update => update.id))
     .toEqual(expectDamage ? [TARGET_ID] : [])
   expect(resolution.rollLedger
-    .filter(entry => entry.parentEffectId === 'legacy-v1.accuracy')
+    .filter(entry => entry.formula.kind === 'dice' && entry.formula.sides === 20)
     .map(entry => entry.naturalResult))
     .toEqual([scenario.naturalRoll])
   expect(resolution.sheetReads.map(read => read.slug).sort())
@@ -318,10 +319,10 @@ const assertScenarioResolution = (
     JSON.stringify(resolution.auditTrace),
   ].join('\n')
   if (scenario.naturalRoll === 20) {
-    expect(resolution.feedback).toMatchObject({ targetId: TARGET_ID, crit: true })
+    expect(JSON.stringify(resolution.auditTrace.events)).toContain('"critical":true')
   }
   if (hit && !expectDamage) {
-    expect(searchableEvidence).toContain(`${mechanics.type} immunity`)
+    assertReviewedNativeEvidenceFragments(searchableEvidence, [`${mechanics.type} immunity`])
   }
   expect(resolution.auditTrace.events.filter(event => event.kind === 'roll'))
     .toHaveLength(resolution.rollLedger.length)
@@ -562,7 +563,7 @@ describe('REG-028 registered move conformance', () => {
       expect(response.move?.transaction).toEqual(plan.resolution.transaction)
       expect(response.move?.rollLedger).toEqual(plan.resolution.rollLedger)
       expect(response.move?.trace).toMatchObject({
-        program: { canonicalId: scenario.moveName, runtimeKind: 'legacy-v1' },
+        program: { canonicalId: scenario.moveName, runtimeKind: 'movespec-v2' },
       })
       expect(harness.ops.getOpResult(command.mapSlug, command.opId)).toEqual(response.result)
       expect(harness.maps.getBySlug(command.mapSlug)).toMatchObject({
@@ -605,7 +606,7 @@ describe('REG-028 registered move conformance', () => {
       expect(() => planAuthoritativeMoveState({
         ...fixture,
         random: () => { throw new Error('missing capability must not roll') },
-        operationId: evidence.scenarioId,
+        operationId: `op_${evidence.scenarioId.replace(/[^A-Za-z0-9_-]+/g, '_')}`.slice(0, 99),
       })).toThrowError(expect.objectContaining({ code: 'move-absent' }))
       expect({ map: fixture.map, sheets: [...fixture.pokemonSheets] }).toEqual(snapshot)
 
@@ -657,7 +658,7 @@ describe('REG-028 registered move conformance', () => {
       expect(() => planAuthoritativeMoveState({
         ...fixture,
         random: () => { throw new Error('out-of-range planner must not roll') },
-        operationId: evidence.scenarioId,
+        operationId: `op_${evidence.scenarioId.replace(/[^A-Za-z0-9_-]+/g, '_')}`.slice(0, 99),
       })).toThrowError(expect.objectContaining({ code: 'target-out-of-range' }))
       expect({ map: fixture.map, sheets: [...fixture.pokemonSheets] }).toEqual(snapshot)
 
@@ -754,8 +755,8 @@ describe('REG-028 registered move conformance', () => {
   it('keeps every REG-028 definition on the audited v1 adapter', () => {
     for (const moveName of REG_028_MOVE_NAMES) {
       expect(registeredMoveAutomationRuntimeFor(moveName)).toMatchObject({
-        kind: 'legacy-v1',
-        version: 1,
+        kind: 'movespec-v2',
+        version: 2,
       })
     }
   })

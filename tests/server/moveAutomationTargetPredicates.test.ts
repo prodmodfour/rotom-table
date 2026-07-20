@@ -257,6 +257,7 @@ const targetState = (
   damagedThisRound: false,
   conditionIds: [],
   typeIds: [],
+  capabilityIds: [],
   immunityTagIds: [],
   size: 'medium',
   weightClass: 2,
@@ -270,7 +271,7 @@ const TARGET_STATES = new Map<string, MoveAutomationTargetState>([
   ['actor', targetState('actor', {
     actedThisTurn: true,
     actedThisRound: true,
-    typeIds: ['electric'],
+    typeIds: ['electric', 'grass'],
     size: 'small',
     weightClass: 1,
     gender: 'male',
@@ -283,6 +284,7 @@ const TARGET_STATES = new Map<string, MoveAutomationTargetState>([
     damagedThisRound: true,
     conditionIds: ['burned'],
     typeIds: ['grass', 'flying'],
+    capabilityIds: ['capability.magnetic'],
     immunityTagIds: ['groundsource', 'powder'],
     size: 'large',
     weightClass: 4,
@@ -328,6 +330,16 @@ describe('authoritative target state predicates', () => {
       ['damaged', { kind: 'damaged', window: 'round', value: true }, ['ally', 'enemy']],
       ['condition', { kind: 'condition', conditionIds: ['burned'], match: 'any' }, ['ally']],
       ['type', { kind: 'type', typeIds: ['grass', 'flying'], match: 'all' }, ['ally']],
+      ['shares type', { kind: 'shares-type-with-actor' }, ['actor', 'ally']],
+      [
+        'type or capability',
+        {
+          kind: 'type-or-capability',
+          typeIds: ['electric'],
+          capabilityIds: ['capability.magnetic'],
+        },
+        ['actor', 'ally'],
+      ],
       [
         'immunity tag',
         { kind: 'immunity-tag', immunityTagIds: ['groundsource', 'powder'], match: 'all' },
@@ -414,7 +426,7 @@ describe('authoritative target state predicates', () => {
     expect(stateReads).toEqual(['enemy'])
   })
 
-  it('consults actor gender only for the reviewed opposite-gender predicate', () => {
+  it('consults actor state only for reviewed cross-subject predicates', () => {
     const stateReads: string[] = []
     const result = evaluate({
       predicate: withState({ kind: 'opposite-gender' }),

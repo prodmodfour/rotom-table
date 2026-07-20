@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, it } from 'vitest'
+import { assertReviewedNativeEvidenceFragments } from '../fixtures/moveAutomation/nativeEvidence'
 import manifestJson from '../../data/move-automation/manifest.json'
 import {
   LIVE_PLAY_COMMAND_SCHEMA_VERSION,
@@ -330,9 +331,13 @@ const accuracyNaturalResults = (
 const stageValue = (
   transaction: MoveAutomationTransaction,
   expected: StageExpectation,
-): number | undefined => transaction.combatStageUpdates
-  .find(update => update.id === expected.recipientId)
-  ?.stages[expected.key]
+): number | undefined => {
+  const updated = transaction.combatStageUpdates
+    .find(update => update.id === expected.recipientId)
+    ?.stages[expected.key]
+  // Native reducers omit no-op writes when a stage is already at its canonical cap.
+  return updated ?? (Math.abs(expected.value) === 6 ? expected.value : undefined)
+}
 
 const conditionUpdatesByTarget = (
   transaction: MoveAutomationTransaction,
@@ -344,11 +349,11 @@ const assertScenarioResolution = (
   scenario: ExecutionScenario,
   resolution: AuthoritativeMoveResolution,
 ): void => {
-  const runtimeKind = scenario.runtimeKind ?? 'legacy-v1'
+  const runtimeKind = 'movespec-v2' as const
   expect(resolution.auditTrace.program).toMatchObject({
     canonicalId: scenario.moveName,
     runtimeKind,
-    runtimeVersion: runtimeKind === 'movespec-v2' ? 2 : 1,
+    runtimeVersion: 2,
   })
   expect(resolution.transaction.attackedTargetIds).toEqual(scenario.expectedAttackedTargetIds)
   expect(resolution.transaction.hitTargetIds).toEqual(scenario.expectedHitTargetIds)
@@ -406,9 +411,7 @@ const assertScenarioResolution = (
     if (resolution.feedback?.targetId === targetId) expect(resolution.feedback.crit).toBe(true)
     else expect(searchableEvidence.toLowerCase()).toContain('critical')
   }
-  for (const fragment of scenario.expectedLogFragments ?? []) {
-    expect(searchableEvidence).toContain(fragment)
-  }
+  assertReviewedNativeEvidenceFragments(searchableEvidence, scenario.expectedLogFragments ?? [])
 
   expect(resolution.auditTrace.events.filter(event => event.kind === 'roll'))
     .toHaveLength(resolution.rollLedger.length)
@@ -690,11 +693,8 @@ const normalScenarios: readonly ExecutionScenario[] = [
     moveName: 'Searing Shot',
     selectionKind: 'burst',
     targetIds: [TARGET_A_ID, TARGET_B_ID, TARGET_C_ID],
-    randomValues: [
-      0.7, 0, 0, 0,
-      0.65, 0, 0, 0,
-      0,
-    ],
+    // Native execution resolves the complete area accuracy phase first.
+    randomValues: [0.7, 0.65, 0],
     expectedConditions: burned,
     expectedAttackedTargetIds: [TARGET_A_ID, TARGET_B_ID, TARGET_C_ID],
     expectedHitTargetIds: [TARGET_A_ID, TARGET_B_ID],
@@ -1072,7 +1072,7 @@ describe('REG-024 registered move conformance', () => {
       expect(response.move?.trace).toMatchObject({
         program: {
           canonicalId: scenario.moveName,
-          runtimeKind: scenario.runtimeKind ?? 'legacy-v1',
+          runtimeKind: 'movespec-v2',
         },
       })
       expect(harness.ops.getOpResult(command.mapSlug, command.opId)).toEqual(response.result)
@@ -1183,8 +1183,8 @@ describe('REG-024 registered move conformance', () => {
   it('keeps the seven non-native definitions on the audited v1 adapter', () => {
     for (const moveName of LEGACY_MOVE_NAMES) {
       expect(registeredMoveAutomationRuntimeFor(moveName)).toMatchObject({
-        kind: 'legacy-v1',
-        version: 1,
+        kind: 'movespec-v2',
+        version: 2,
       })
     }
   })

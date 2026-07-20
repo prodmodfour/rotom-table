@@ -1,5 +1,9 @@
 # Performance guardrails
 
+## Move automation engine budgets
+
+Move planning rejects pathological work before persistence. The canonical ceilings live in `shared/moveAutomation/performanceBudgets.ts` and are checked by `npm run check:move-automation-budgets`: 128 operations per resolution, 32 declaration targets, 10 multi-hit strikes, reaction depth 8, 256 active effects, 256 zones, 512 response options, 128 retained diagnostic events, 256 KiB command bodies, and 1 MiB realtime records. The guard test also exercises maximum bounded operation parsing, trace retention, and payload serialization under a generous CI wall-time budget. Raise a ceiling only with a reviewed rules need, parser/property coverage, payload review, and before/after benchmark evidence.
+
 Rotom Table performance work must preserve the same visible map state and table functionality. Map rendering performance work optimizes duplicate work, scheduling, caching, and allocation patterns; it must not claim wins by degrading renderer quality or hiding features.
 
 ## Hard no-quality-loss rules

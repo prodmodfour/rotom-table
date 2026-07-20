@@ -76,6 +76,8 @@ if have npm; then
 
   pp_section "Move automation metadata"
   run_cmd npm run check:move-automation
+  run_cmd npm run check:move-automation-complete
+  run_cmd npm run check:move-automation-budgets
   run_cmd npm run check:move-automation-menu-status
   run_cmd npm run check:move-automation-legacy-links
 

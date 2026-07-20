@@ -39,6 +39,7 @@ describe('reviewed move resource cost contract', () => {
       parseMoveResourceCost({ kind: 'exhaust', timing: 'next-turn', forfeitCommand: true }),
       parseMoveResourceCost({ kind: 'setup-execute', step: 'set-up' }),
       parseMoveResourceCost({ kind: 'setup-execute', step: 'execute' }),
+      parseMoveResourceCost({ kind: 'setup-execute', step: 'auto' }),
       parseMoveResourceCost({ kind: 'priority', mode: 'standard' }),
       parseMoveResourceCost({ kind: 'priority', mode: 'limited' }),
       parseMoveResourceCost({ kind: 'priority', mode: 'advanced' }),

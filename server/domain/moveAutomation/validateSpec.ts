@@ -469,12 +469,16 @@ const parseOperations = (
       return parsed
     }),
   }))
-  validateMoveSpecOperationSequence(phases.flatMap((phaseBlock, phaseIndex) => (
-    phaseBlock.operations.map((operation, operationIndex) => ({
-      operation,
-      path: `spec.phases[${phaseIndex}].operations[${operationIndex}]`,
-    }))
-  )))
+  validateMoveSpecOperationSequence(
+    phases.flatMap((phaseBlock, phaseIndex) => (
+      phaseBlock.operations.map((operation, operationIndex) => ({
+        operation,
+        path: `spec.phases[${phaseIndex}].operations[${operationIndex}]`,
+      }))
+    )),
+    'spec.phases',
+    { allowAttackedTargetAccuracyEffects: spec.presentation.tags.includes('natural-effect-range') },
+  )
   return phases
 }
 
@@ -560,6 +564,7 @@ const itemEffectSelections = (
 export const validateMoveSpecOperationSequence = (
   entries: readonly MoveSpecOperationSequenceEntry[],
   aggregatePath = 'spec.phases',
+  options: { readonly allowAttackedTargetAccuracyEffects?: boolean } = {},
 ): void => {
   if (entries.length > MOVE_SPEC_DEFINITION_LIMITS.operations) {
     fail(
@@ -999,14 +1004,14 @@ export const validateMoveSpecOperationSequence = (
   }
 
   const multiHitEntries = indexed.filter(({ operation }) => operation.kind === 'multi-hit')
-  if (multiHitEntries.length > 1) {
+  if (multiHitEntries.length > 3) {
     fail(
       'invalid-definition',
-      multiHitEntries[1]!.path,
-      'an immediate MoveSpec may contain at most one multi-hit operation.',
+      multiHitEntries[3]!.path,
+      'an immediate MoveSpec may contain at most three bounded multi-hit alternatives.',
     )
   }
-  if (multiHitEntries.length === 1) {
+  if (multiHitEntries.length >= 1) {
     const overlapping = indexed.find(({ operation }) => (
       operation.kind === 'damage'
       || operation.kind === 'direct-hp'
@@ -1050,6 +1055,8 @@ export const validateMoveSpecOperationSequence = (
     readonly effectRecipientKind: MoveEffectRecipientSelectorKind
     readonly label: string
     readonly allowResolutionWide?: boolean
+    /** PTU Effect Range may resolve from a natural accuracy roll even when modifiers make the attack miss. */
+    readonly allowAttackedTargets?: boolean
   }): void => {
     assertPriorReference(
       options.rollId,
@@ -1084,6 +1091,7 @@ export const validateMoveSpecOperationSequence = (
       referenced.recipients.kind !== 'attacked-targets'
       || (
         options.effectRecipientKind !== 'hit-targets'
+        && !(options.allowAttackedTargets && options.effectRecipientKind === 'attacked-targets')
         && !(
           options.allowResolutionWide
           && (
@@ -1096,7 +1104,7 @@ export const validateMoveSpecOperationSequence = (
       fail(
         'invalid-definition',
         options.path,
-        `${options.label} must narrow an attacked-targets roll to hit-targets.`,
+        `${options.label} must use hit-targets, an explicitly reviewed attacked-target Effect Range, or a resolution-wide selector.`,
       )
     }
   }
@@ -1399,6 +1407,8 @@ export const validateMoveSpecOperationSequence = (
             ? 'an accuracy-triggered combat-stage operation'
             : 'an accuracy-triggered condition',
         allowResolutionWide: resolutionWide,
+        allowAttackedTargets: Boolean(options.allowAttackedTargetAccuracyEffects)
+          && (operation.kind === 'condition' || operation.kind === 'combat-stage'),
       })
       const linkedDamage = indexed.find(entry => (
         entry.index < index
@@ -1419,6 +1429,10 @@ export const validateMoveSpecOperationSequence = (
           || (
             stageTrigger.scope === 'recipient'
             && operation.recipients.kind !== 'hit-targets'
+            && !(
+              options.allowAttackedTargetAccuracyEffects
+              && operation.recipients.kind === 'attacked-targets'
+            )
           )
           || (
             stageTrigger.scope === 'resolution'
@@ -1435,6 +1449,41 @@ export const validateMoveSpecOperationSequence = (
             'recipient accuracy triggers require hit-targets; resolution triggers require actor and own per-match aggregation.',
           )
         }
+      }
+    }
+    if (
+      (operation.kind === 'condition' || operation.kind === 'heal')
+      && operation.payload.operationOutcomeTrigger
+    ) {
+      const trigger = operation.payload.operationOutcomeTrigger
+      const referencePath = `${path}.payload.operationOutcomeTrigger.operationId`
+      assertPriorReference(
+        trigger.operationId,
+        index,
+        referencePath,
+        operationIndexById,
+        'operation ID',
+      )
+      const prior = indexed[operationIndexById.get(trigger.operationId)!]?.operation
+      if (!prior || ![
+        'damage',
+        'direct-hp',
+        'heal',
+        'condition',
+        'combat-stage',
+      ].includes(prior.kind)) {
+        fail(
+          'invalid-definition',
+          referencePath,
+          `${trigger.operationId} must identify an earlier reducible state operation.`,
+        )
+      }
+      if (operation.recipients.kind !== 'actor') {
+        fail(
+          'invalid-definition',
+          `${path}.recipients.kind`,
+          'operation-outcome condition/heal triggers currently support only actor recipients.',
+        )
       }
     }
     if (

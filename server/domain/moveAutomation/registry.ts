@@ -5,10 +5,7 @@ import {
   type MoveAutomationRuntimeRegistrationReference,
 } from '#shared/moveAutomation/manifest'
 import type { MoveAutomationScript } from '~/types/moveAutomation'
-import {
-  EXPLICIT_MOVE_AUTOMATION_REGISTRY_SOURCES,
-  type ExplicitMoveAutomationRegistrySource,
-} from '~/utils/move-automation/registry'
+import type { ExplicitMoveAutomationRegistrySource } from '~/utils/move-automation/registry'
 import {
   REGISTERED_MOVE_HANDLER_REGISTRY,
   type RegisteredMoveHandlerRegistry,
@@ -21,22 +18,32 @@ import {
 import { ABSORB_MOVE_SPEC_REGISTRATION } from './specs/absorb'
 import { AREA_EFFECTS_206_MOVE_SPEC_REGISTRATIONS } from './specs/areaEffects206'
 import { AREA_STAGES_207_MOVE_SPEC_REGISTRATIONS } from './specs/areaStages207'
+import { CONTEXTUAL_COHORTS_208_210_MOVE_SPEC_REGISTRATIONS } from './specs/contextualCohorts208_210'
 import { ASTONISH_MOVE_SPEC_REGISTRATION } from './specs/astonish'
 import { DARK_VOID_MOVE_SPEC_REGISTRATION } from './specs/darkVoid'
 import { DOUBLE_KICK_MOVE_SPEC_REGISTRATION } from './specs/doubleKick'
 import { DRAGON_RAGE_MOVE_SPEC_REGISTRATION } from './specs/dragonRage'
+import { DYNAMIC_DAMAGE_COHORTS_218_225_MOVE_SPEC_REGISTRATIONS } from './specs/dynamicDamageCohorts218_225'
 import { EMBER_MOVE_SPEC_REGISTRATION } from './specs/ember'
 import { EXHAUST_AREA_DAMAGE_205_MOVE_SPEC_REGISTRATIONS } from './specs/exhaustAreaDamage205'
 import { FURY_ATTACK_MOVE_SPEC_REGISTRATION } from './specs/furyAttack'
 import { FURY_CUTTER_MOVE_SPEC_REGISTRATION } from './specs/furyCutter'
 import { FURY_SWIPES_MOVE_SPEC_REGISTRATION } from './specs/furySwipes'
 import { FAKE_OUT_MOVE_SPEC_REGISTRATION } from './specs/fakeOut'
+import { FIELD_HAZARD_COHORTS_226_233_MOVE_SPEC_REGISTRATIONS } from './specs/fieldHazardCohorts226_233'
+import { FINAL_STAGE_COHORTS_266_272_MOVE_SPEC_REGISTRATIONS } from './specs/finalStageCohorts266_272'
 import { HELPING_HAND_MOVE_SPEC_REGISTRATION } from './specs/helpingHand'
+import { HP_COHORTS_211_217_MOVE_SPEC_REGISTRATIONS } from './specs/hpCohorts211_217'
 import { HYPER_BEAM_MOVE_SPEC_REGISTRATION } from './specs/hyperBeam'
+import { ITEM_RANDOM_COHORTS_250_257_MOVE_SPEC_REGISTRATIONS } from './specs/itemRandomCohorts250_257'
 import { KNOCK_OFF_MOVE_SPEC_REGISTRATION } from './specs/knockOff'
+import { MOVEMENT_COHORTS_242_249_MOVE_SPEC_REGISTRATIONS } from './specs/movementCohorts242_249'
 import { PIN_MISSILE_MOVE_SPEC_REGISTRATION } from './specs/pinMissile'
+import { PERSISTENT_COHORTS_234_241_MOVE_SPEC_REGISTRATIONS } from './specs/persistentCohorts234_241'
 import { POWER_TRIP_MOVE_SPEC_REGISTRATION } from './specs/powerTrip'
 import { REFLECT_MOVE_SPEC_REGISTRATION } from './specs/reflect'
+import { REACTION_STAGE_COHORTS_258_265_MOVE_SPEC_REGISTRATIONS } from './specs/reactionStageCohorts258_265'
+import { RETIRED_LEGACY_MOVE_SPEC_REGISTRATIONS } from './specs/retiredLegacyCohort'
 import { SAND_ATTACK_MOVE_SPEC_REGISTRATION } from './specs/sandAttack'
 import { SAND_TOMB_MOVE_SPEC_REGISTRATION } from './specs/sandTomb'
 import { SECONDARY_CONDITIONS_203_MOVE_SPEC_REGISTRATIONS } from './specs/secondaryConditions203'
@@ -272,22 +279,32 @@ export const REVIEWED_MOVE_SPEC_V2_REGISTRATIONS: readonly MoveSpecV2Registratio
   ABSORB_MOVE_SPEC_REGISTRATION,
   ...AREA_EFFECTS_206_MOVE_SPEC_REGISTRATIONS,
   ...AREA_STAGES_207_MOVE_SPEC_REGISTRATIONS,
+  ...CONTEXTUAL_COHORTS_208_210_MOVE_SPEC_REGISTRATIONS,
   ASTONISH_MOVE_SPEC_REGISTRATION,
   DARK_VOID_MOVE_SPEC_REGISTRATION,
   DOUBLE_KICK_MOVE_SPEC_REGISTRATION,
   DRAGON_RAGE_MOVE_SPEC_REGISTRATION,
+  ...DYNAMIC_DAMAGE_COHORTS_218_225_MOVE_SPEC_REGISTRATIONS,
   EMBER_MOVE_SPEC_REGISTRATION,
   ...EXHAUST_AREA_DAMAGE_205_MOVE_SPEC_REGISTRATIONS,
   FURY_ATTACK_MOVE_SPEC_REGISTRATION,
   FURY_CUTTER_MOVE_SPEC_REGISTRATION,
   FURY_SWIPES_MOVE_SPEC_REGISTRATION,
   FAKE_OUT_MOVE_SPEC_REGISTRATION,
+  ...FIELD_HAZARD_COHORTS_226_233_MOVE_SPEC_REGISTRATIONS,
+  ...FINAL_STAGE_COHORTS_266_272_MOVE_SPEC_REGISTRATIONS,
   HELPING_HAND_MOVE_SPEC_REGISTRATION,
+  ...HP_COHORTS_211_217_MOVE_SPEC_REGISTRATIONS,
   HYPER_BEAM_MOVE_SPEC_REGISTRATION,
+  ...ITEM_RANDOM_COHORTS_250_257_MOVE_SPEC_REGISTRATIONS,
   KNOCK_OFF_MOVE_SPEC_REGISTRATION,
+  ...MOVEMENT_COHORTS_242_249_MOVE_SPEC_REGISTRATIONS,
   PIN_MISSILE_MOVE_SPEC_REGISTRATION,
+  ...PERSISTENT_COHORTS_234_241_MOVE_SPEC_REGISTRATIONS,
   POWER_TRIP_MOVE_SPEC_REGISTRATION,
   REFLECT_MOVE_SPEC_REGISTRATION,
+  ...REACTION_STAGE_COHORTS_258_265_MOVE_SPEC_REGISTRATIONS,
+  ...RETIRED_LEGACY_MOVE_SPEC_REGISTRATIONS,
   SAND_ATTACK_MOVE_SPEC_REGISTRATION,
   SAND_TOMB_MOVE_SPEC_REGISTRATION,
   ...SECONDARY_CONDITIONS_203_MOVE_SPEC_REGISTRATIONS,
@@ -308,7 +325,9 @@ export const REVIEWED_MOVE_SPEC_V2_REGISTRATIONS: readonly MoveSpecV2Registratio
 
 export const MOVE_AUTOMATION_RUNTIME_REGISTRY = createMoveAutomationRuntimeRegistry({
   manifest: manifestJson as unknown as MoveAutomationManifest,
-  legacySources: EXPLICIT_MOVE_AUTOMATION_REGISTRY_SOURCES,
+  // Legacy sources remain available only to explicit migration/shadow test
+  // registries. Production selection has one MoveSpec v2 execution engine.
+  legacySources: [],
   moveSpecs: REVIEWED_MOVE_SPEC_V2_REGISTRATIONS,
 })
 

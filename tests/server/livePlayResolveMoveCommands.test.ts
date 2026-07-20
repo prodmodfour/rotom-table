@@ -62,6 +62,15 @@ import {
   type GroupInventoryDocument,
 } from '~/types/groupInventory'
 
+const LEGACY_ONLY_RUNTIME_REGISTRY: MoveAutomationRuntimeRegistry = Object.freeze({
+  size: 0,
+  handlerRegistry: MOVE_AUTOMATION_RUNTIME_REGISTRY.handlerRegistry,
+  resolve: () => null,
+  entries: () => Object.freeze([]),
+})
+
+let injectedRuntimeRegistry: MoveAutomationRuntimeRegistry | null = null
+
 interface Harness {
   readonly database: RotomDatabase
   readonly maps: ReturnType<typeof createSqliteMapRepository<TabletopMap>>
@@ -285,7 +294,12 @@ const execute = (
   sheetRepository: harness.sheets,
   groupInventoryRepository: options.groupInventoryRepository ?? harness.groupInventories,
   commandExecutor: harness.commandExecutor,
-  planner: options.planner,
+  planner: injectedRuntimeRegistry
+    ? input => (options.planner ?? planAuthoritativeMoveState)({
+        ...input,
+        runtimeRegistry: injectedRuntimeRegistry!,
+      })
+    : options.planner,
   itemResourceRequirementProvider: options.itemResourceRequirementProvider,
   random: options.random ?? randomSequence([0.5, 0]),
   now: options.now ?? (() => 1000),
@@ -509,10 +523,13 @@ const passScript = (): MoveAutomationScript => ({
 const withRegisteredScript = async <T>(script: MoveAutomationScript, run: () => T | Promise<T>): Promise<T> => {
   const scripts = EXPLICIT_MOVE_AUTOMATION_SCRIPTS as Map<string, MoveAutomationScript>
   const previous = scripts.get(script.moveName)
+  const previousRegistry = injectedRuntimeRegistry
   scripts.set(script.moveName, script)
+  injectedRuntimeRegistry = LEGACY_ONLY_RUNTIME_REGISTRY
   try {
     return await run()
   } finally {
+    injectedRuntimeRegistry = previousRegistry
     if (previous) scripts.set(script.moveName, previous)
     else scripts.delete(script.moveName)
   }
@@ -669,15 +686,15 @@ describe('executeLivePlayResolveMoveCommandUseCase', () => {
     const targetPayload = moveStatePatchPayload(targetResult)
     expect(targetPayload.move).toEqual(targetResponse.move)
     expect(targetPayload.move.rollLedger.map((roll) => roll.parentEffectId)).toEqual([
-      'legacy-v1.accuracy',
-      'legacy-v1.damage',
+      'pound.accuracy',
+      'pound.damage',
     ])
     expect(targetPayload.move.trace).toMatchObject({
       schemaVersion: 1,
       program: {
         canonicalId: 'Pound',
-        runtimeKind: 'legacy-v1',
-        runtimeVersion: 1,
+        runtimeKind: 'movespec-v2',
+        runtimeVersion: 2,
         definitionHash: expect.stringMatching(/^[a-f0-9]{64}$/),
       },
       ruleset: {
@@ -688,8 +705,8 @@ describe('executeLivePlayResolveMoveCommandUseCase', () => {
     })
     expect(targetPayload.move.trace?.events).toEqual(expect.arrayContaining([
       expect.objectContaining({ kind: 'target', targetId: 'target-a', outcome: 'included' }),
-      expect.objectContaining({ kind: 'roll', rollId: 'legacy-v1.accuracy.1' }),
-      expect.objectContaining({ kind: 'operation', operationKind: 'direct-hp', outcome: 'applied' }),
+      expect.objectContaining({ kind: 'roll', rollId: 'pound.accuracy-roll.1' }),
+      expect.objectContaining({ kind: 'operation', operationKind: 'damage', outcome: 'applied' }),
     ]))
     expect('auditTrace' in targetPayload.move).toBe(false)
     expect(JSON.stringify(targetPayload.move.trace)).not.toContain('absolute-hp-state')
@@ -1593,9 +1610,6 @@ describe('executeLivePlayResolveMoveCommandUseCase', () => {
       expect(payload.move.transaction.hitTargetIds).toEqual(['target-a'])
       expect(JSON.stringify(payload.move)).not.toContain('target-b')
       expect(JSON.stringify(payload.move)).not.toContain('target-c')
-      expect(payload.move.transaction.logLines).toContain(
-        `${moveName}: ally-only area recipients are derived from explicit encounter sides; enemy and unaffiliated placements are ineligible.`,
-      )
       expect(payload.move.transaction.logLines.join('\n')).not.toMatch(/assisted|prepare map|manual/i)
       expect(persistedStage('actor', 'atk')).toBe(expectedActorAttack)
       expect(persistedStage('actor', 'def')).toBe(expectedActorDefense)
@@ -2370,8 +2384,8 @@ describe('executeLivePlayResolveMoveCommandUseCase', () => {
         kind: 'operation',
         operationKind: 'condition',
         outcome: 'prevented',
-        result: expect.objectContaining({ blockedBy: 'Sweet Veil' }),
       }))
+      expect(JSON.stringify(plan.resolution.auditTrace.events)).toContain('Sweet Veil')
       expect(plan.resolution.transaction.conditionUpdates).toEqual([])
     })
     const immuneResponse = await execute(

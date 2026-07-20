@@ -368,6 +368,7 @@ export const reduceMoveCoreTokenOperationState = (
           ? { accuracyRolls: input.conditionAccuracyRolls }
           : {}),
         context: operationContext,
+        priorOperationResults: operationResults,
       })
     }
     else if (operation.kind === 'combat-stage') {

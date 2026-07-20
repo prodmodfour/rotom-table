@@ -18,6 +18,8 @@ export const MOVE_AUTOMATION_TARGET_STATE_PREDICATE_KINDS = [
   'damaged',
   'condition',
   'type',
+  'shares-type-with-actor',
+  'type-or-capability',
   'immunity-tag',
   'size',
   'weight-class',
@@ -90,6 +92,16 @@ export interface MoveAutomationTargetTypePredicate {
   readonly match: MoveAutomationTargetSetMatchPolicy
 }
 
+export interface MoveAutomationTargetSharesTypeWithActorPredicate {
+  readonly kind: 'shares-type-with-actor'
+}
+
+export interface MoveAutomationTargetTypeOrCapabilityPredicate {
+  readonly kind: 'type-or-capability'
+  readonly typeIds: readonly string[]
+  readonly capabilityIds: readonly string[]
+}
+
 export interface MoveAutomationTargetImmunityTagPredicate {
   readonly kind: 'immunity-tag'
   readonly immunityTagIds: readonly string[]
@@ -131,6 +143,8 @@ export type MoveAutomationTargetStatePredicate =
   | MoveAutomationTargetDamagedPredicate
   | MoveAutomationTargetConditionPredicate
   | MoveAutomationTargetTypePredicate
+  | MoveAutomationTargetSharesTypeWithActorPredicate
+  | MoveAutomationTargetTypeOrCapabilityPredicate
   | MoveAutomationTargetImmunityTagPredicate
   | MoveAutomationTargetSizePredicate
   | MoveAutomationTargetWeightClassPredicate
@@ -408,6 +422,26 @@ const parsePredicate = (
       match: parseSetMatch(predicate.match, `${path}.match`),
     })
   }
+  if (kind === 'shares-type-with-actor') {
+    assertExactFields(predicate, ['kind'], path)
+    return Object.freeze({ kind })
+  }
+  if (kind === 'type-or-capability') {
+    assertExactFields(predicate, ['kind', 'typeIds', 'capabilityIds'], path)
+    return Object.freeze({
+      kind,
+      typeIds: parseEnumList(
+        predicate.typeIds,
+        TYPE_ID_SET,
+        `${path}.typeIds`,
+        'a canonical lowercase Pokémon type ID',
+      ),
+      capabilityIds: parseStableIdList(
+        predicate.capabilityIds,
+        `${path}.capabilityIds`,
+      ),
+    })
+  }
   if (kind === 'immunity-tag') {
     assertExactFields(predicate, ['kind', 'immunityTagIds', 'match'], path)
     return Object.freeze({
@@ -556,6 +590,20 @@ const evaluatePredicate = (
   }
   if (predicate.kind === 'type') {
     return setMatches(state.typeIds, predicate.typeIds, predicate.match)
+      ? 'target-state-included'
+      : 'target-excluded-type'
+  }
+  if (predicate.kind === 'shares-type-with-actor') {
+    return actorState !== null
+      && state.typeIds.some(typeId => actorState.typeIds.includes(typeId))
+      ? 'target-state-included'
+      : 'target-excluded-type'
+  }
+  if (predicate.kind === 'type-or-capability') {
+    return state.typeIds.some(typeId => predicate.typeIds.includes(typeId))
+      || (state.capabilityIds ?? []).some(capabilityId => (
+        predicate.capabilityIds.includes(capabilityId)
+      ))
       ? 'target-state-included'
       : 'target-excluded-type'
   }

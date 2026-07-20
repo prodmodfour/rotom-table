@@ -1573,7 +1573,14 @@ const executableProgram = (
     if (entries.length > 0) entriesByPhase.set(phase, [...entries])
   }
   const orderedEntries = MOVE_SPEC_PHASES.flatMap(phase => entriesByPhase.get(phase) ?? [])
-  validateMoveSpecOperationSequence(orderedEntries, 'moveSpecExecution.operations')
+  validateMoveSpecOperationSequence(
+    orderedEntries,
+    'moveSpecExecution.operations',
+    {
+      allowAttackedTargetAccuracyEffects:
+        definition.spec.presentation.tags.includes('natural-effect-range'),
+    },
+  )
   const operations = Object.freeze(orderedEntries.map(({ operation }) => operation))
 
   const handlerTraceEntriesByPhase = new Map<
@@ -3145,28 +3152,29 @@ const executeMoveSpecInternal = (
             const evasionRule = 'evasionRule' in operation.payload
               ? operation.payload.evasionRule
               : undefined
-            const flanking = evasionRule
+            const ignoreEvasionAlways = evasionRule?.kind === 'ignore-always'
+            const flanking = evasionRule?.kind === 'ignore-when-flanked'
               ? input.context.queries.flanking.resolve(recipientId)
               : null
-            if (evasionRule && flanking) {
+            if (evasionRule && (flanking || ignoreEvasionAlways)) {
               trace = reduceMoveResolutionTrace(trace, {
                 kind: 'predicate',
                 phase,
                 predicateId: `${operation.id}.evasion-rule.${recipientId}`,
-                outcome: flanking.flanked,
-                reasonCode: flanking.flanked
+                outcome: ignoreEvasionAlways || Boolean(flanking?.flanked),
+                reasonCode: ignoreEvasionAlways || flanking?.flanked
                   ? evasionRule.reasonCode
-                  : flanking.reasonCode,
+                  : flanking?.reasonCode ?? evasionRule.reasonCode,
                 input: traceJson({
                   sourceId: evasionRule.sourceId,
-                  requiredAdjacentSquares: flanking.requiredAdjacentSquares,
-                  adjacentFoeIds: flanking.adjacentFoeIds,
-                  qualifyingFoeIds: flanking.qualifyingFoeIds,
-                  contributions: flanking.contributions,
+                  requiredAdjacentSquares: flanking?.requiredAdjacentSquares ?? 0,
+                  adjacentFoeIds: flanking?.adjacentFoeIds ?? [],
+                  qualifyingFoeIds: flanking?.qualifyingFoeIds ?? [],
+                  contributions: flanking?.contributions ?? [],
                 }),
               })
             }
-            targetEvasion = flanking?.flanked
+            targetEvasion = ignoreEvasionAlways || flanking?.flanked
               ? 0
               : resolveMoveAutomationTargetEvasion(
                   moveScriptForAccuracy,

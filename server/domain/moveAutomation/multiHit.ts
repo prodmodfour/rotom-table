@@ -3,7 +3,6 @@ import {
   type MoveCombatStageEffectOperation,
   type MoveConditionEffectOperation,
   type MoveDamageEffectOperation,
-  type MoveEffectMultiHitEffectTrigger,
   type MoveMultiHitCount,
   type MoveMultiHitEffectOperation,
   type MoveMultiHitEffectTemplate,
@@ -223,6 +222,7 @@ interface TriggerState {
   readonly hit: boolean
   readonly damaged: boolean
   readonly knockout: boolean
+  readonly accuracyNaturalResults: readonly number[]
 }
 
 interface CountResolution {
@@ -553,12 +553,18 @@ const rollCritical = (options: {
 }
 
 const effectMatches = (
-  trigger: MoveEffectMultiHitEffectTrigger,
+  effect: MoveMultiHitEffectTemplate,
   state: TriggerState,
-): boolean => trigger === 'always'
-  || (trigger === 'hit' && state.hit)
-  || (trigger === 'damage' && state.damaged)
-  || (trigger === 'knockout' && state.knockout)
+): boolean => {
+  const outcomeMatches = effect.trigger === 'always'
+    || (effect.trigger === 'hit' && state.hit)
+    || (effect.trigger === 'damage' && state.damaged)
+    || (effect.trigger === 'knockout' && state.knockout)
+  return outcomeMatches && (
+    effect.naturalAccuracyMinimum === undefined
+    || state.accuracyNaturalResults.some(value => value >= effect.naturalAccuracyMinimum!)
+  )
+}
 
 const operationForEffect = (
   parent: MoveMultiHitEffectOperation,
@@ -599,7 +605,7 @@ const triggerEffects = (options: {
   options.recipientsById.set(actor.placement.id, actor)
 
   for (const effect of effects) {
-    if (!effectMatches(effect.trigger, options.trigger)) {
+    if (!effectMatches(effect, options.trigger)) {
       skippedEffectIds.push(effect.id)
       continue
     }
@@ -1059,6 +1065,9 @@ export const executeMoveMultiHitOperation = (options: {
           hit: accuracy.result.hit,
           damaged: (damage?.effectiveHpLost ?? 0) > 0,
           knockout,
+          accuracyNaturalResults: accuracy.result.naturalResult === null
+            ? []
+            : [accuracy.result.naturalResult],
         }
         const afterEach = triggerEffects({
           context,
@@ -1154,6 +1163,9 @@ export const executeMoveMultiHitOperation = (options: {
         hit: targetResult.successfulHitCount > 0,
         damaged: targetResult.totalEffectiveHpLost > 0,
         knockout: targetResult.stopReason === 'knockout',
+        accuracyNaturalResults: targetResult.strikes.flatMap(strike => (
+          strike.accuracy.naturalResult === null ? [] : [strike.accuracy.naturalResult]
+        )),
       },
       hp,
       conditions,
@@ -1187,6 +1199,11 @@ export const executeMoveMultiHitOperation = (options: {
       hit: completedTargetResults.some(result => result.successfulHitCount > 0),
       damaged: completedTargetResults.some(result => result.totalEffectiveHpLost > 0),
       knockout: completedTargetResults.some(result => result.stopReason === 'knockout'),
+      accuracyNaturalResults: completedTargetResults.flatMap(result => (
+        result.strikes.flatMap(strike => (
+          strike.accuracy.naturalResult === null ? [] : [strike.accuracy.naturalResult]
+        ))
+      )),
     },
     hp,
     conditions,

@@ -13,9 +13,15 @@ import {
 import { moveAutomationTargetSuppressesGroundsourceImmunity } from '~/utils/moveAutomationKeywordImmunity'
 import { normalizeMoveAutomationSpecialConditionName } from '~/utils/moveAutomationSpecialConditions'
 import { conditionLookupKey } from '~/utils/statusConditions'
+import { encounterCreatureRuleProfileForToken } from '~/utils/encounterCreatureRules'
 import { resolveCapabilities } from '~/utils/sheets/pokemonDerived'
 import { POKEMON_TYPES } from '~/utils/typeChart'
 import type { MoveAutomationHistoryResolver } from './history'
+import {
+  parseEncounterEffects,
+  type EncounterEffect,
+  type EncounterNumericModifierEffect,
+} from '#shared/moveAutomation/encounterEffects'
 
 export const MOVE_AUTOMATION_TARGET_VITALITIES = [
   'conscious',
@@ -83,6 +89,8 @@ export interface MoveAutomationTargetState {
   readonly conditionIds: readonly string[]
   /** Canonical lowercase Pokémon type IDs. Trainers normally have none. */
   readonly typeIds: readonly string[]
+  /** Stable effective capability IDs, including encounter overlays. */
+  readonly capabilityIds?: readonly string[]
   /** Stable server-derived immunity tags; never supplied by move intent. */
   readonly immunityTagIds: readonly string[]
   readonly size: MoveAutomationTargetSize | null
@@ -110,6 +118,7 @@ export interface CreateMoveAutomationTargetStateResolverInput {
   readonly tokens: readonly SpawnedPokemon[]
   readonly sheets: readonly MoveAutomationTargetStateSheetSnapshot[]
   readonly history: MoveAutomationHistoryResolver
+  readonly effects?: readonly EncounterEffect[] | null
   /** Active field overlays may narrow grounding without rewriting token or sheet state. */
   readonly resolveGrounding?: (input: {
     readonly placement: SheetPlacement
@@ -243,9 +252,38 @@ const normalizedWeightClass = (value: unknown): number | null => {
   return Number.isSafeInteger(parsed) && parsed > 0 ? parsed : null
 }
 
+const activeWeightClassEffects = (
+  effects: readonly EncounterEffect[],
+  placementId: string,
+): readonly EncounterNumericModifierEffect[] => effects.filter(
+  (effect): effect is EncounterNumericModifierEffect => (
+    effect.kind === 'numeric-modifier'
+    && effect.payload.attribute === 'weight-class'
+    && (effect.duration.remaining === null || effect.duration.remaining > 0)
+    && effect.affected.placementIds.includes(placementId)
+  ),
+)
+
+const effectiveWeightClass = (
+  base: number | null,
+  effects: readonly EncounterEffect[],
+  placementId: string,
+): number | null => {
+  if (base === null) return null
+  let value = base
+  for (const effect of activeWeightClassEffects(effects, placementId)) {
+    if (effect.payload.operation === 'set') value = effect.payload.value
+    else if (effect.payload.operation === 'add') value += effect.payload.value * effect.stacks
+    else if (effect.payload.operation === 'multiply') value *= effect.payload.value ** effect.stacks
+  }
+  return Math.max(1, Math.floor(value))
+}
+
 const pokemonSizeAndWeight = (
   sheet: CharacterSheet,
   token: SpawnedPokemon,
+  placementId: string,
+  effects: readonly EncounterEffect[],
 ): Pick<MoveAutomationTargetState, 'size' | 'weightClass'> => {
   const rows = resolveCapabilities(sheet).rows
   return {
@@ -255,9 +293,13 @@ const pokemonSizeAndWeight = (
       ?? rows.find(row => row.label === 'Size')?.value
       ?? token.size,
     ),
-    weightClass: normalizedWeightClass(
-      token.weightClass
-      ?? rows.find(row => row.label === 'Weight')?.value,
+    weightClass: effectiveWeightClass(
+      normalizedWeightClass(
+        token.weightClass
+        ?? rows.find(row => row.label === 'Weight')?.value,
+      ),
+      effects,
+      placementId,
     ),
   }
 }
@@ -300,6 +342,7 @@ const targetState = (options: {
   readonly token: SpawnedPokemon
   readonly sheet: MoveAutomationTargetStateSheetSnapshot
   readonly history: MoveAutomationHistoryResolver
+  readonly effects: readonly EncounterEffect[]
   readonly resolveGrounding?: CreateMoveAutomationTargetStateResolverInput['resolveGrounding']
 }): MoveAutomationTargetState | null => {
   if (
@@ -318,7 +361,12 @@ const targetState = (options: {
     base: baseGrounding,
   }) ?? baseGrounding
   const sizeAndWeight = options.placement.sheetKind === 'pokemon'
-    ? pokemonSizeAndWeight(options.sheet.sheet as CharacterSheet, options.token)
+    ? pokemonSizeAndWeight(
+        options.sheet.sheet as CharacterSheet,
+        options.token,
+        options.placement.id,
+        options.effects,
+      )
     : { size: normalizedTargetSize(options.token.size), weightClass: null }
 
   return deepFreeze({
@@ -335,6 +383,7 @@ const targetState = (options: {
     damagedThisRound: options.history.damageReceivedThisRound(options.placement.id).totalLoss > 0,
     conditionIds,
     typeIds,
+    capabilityIds: encounterCreatureRuleProfileForToken(options.token).capabilityIds,
     immunityTagIds: targetImmunityTagIds(options.token, typeIds, grounding),
     ...sizeAndWeight,
     gender: options.placement.sheetKind === 'pokemon'
@@ -353,6 +402,7 @@ const targetState = (options: {
 export const createMoveAutomationTargetStateResolver = (
   input: CreateMoveAutomationTargetStateResolverInput,
 ): MoveAutomationTargetStateResolver => {
+  const effects = parseEncounterEffects(input.effects ?? [], 'targetState.effects')
   const placements = indexedByUniqueId(
     input.placements,
     placement => placement.id,
@@ -387,6 +437,7 @@ export const createMoveAutomationTargetStateResolver = (
             token,
             sheet,
             history: input.history,
+            effects,
             resolveGrounding: input.resolveGrounding,
           })
         : null,

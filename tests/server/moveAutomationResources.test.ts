@@ -418,6 +418,13 @@ describe('authoritative encounter action resources', () => {
       kind: 'setup-execute', step: 'set-up',
     }, 'schedule')])).toThrowError(expect.objectContaining({ code: 'setup-state-conflict' }))
 
+    const readiedByTurn = reduceEncounterLifecycle({
+      ...createEmptyEncounterState(),
+      turnResources: setup.resources,
+    }, [turnStart(2, 5)]).state.turnResources
+    expect(createMoveAutomationResourceResolver(readiedByTurn)
+      .setupExecuteState('actor-token')).toMatchObject({ status: 'ready-to-execute' })
+
     const settingUp = setup.resources['actor-token']!
     const ready = {
       ...setup.resources,
@@ -435,6 +442,17 @@ describe('authoritative encounter action resources', () => {
       kind: 'setup-execute', step: 'execute',
     }, 'declare')])
     expect(createMoveAutomationResourceResolver(executed.resources)
+      .setupExecuteState('actor-token')).toBeNull()
+
+    const autoSetup = spend({}, [cost('cost.setup-auto', {
+      kind: 'setup-execute', step: 'auto',
+    }, 'declare')])
+    expect(createMoveAutomationResourceResolver(autoSetup.resources)
+      .setupExecuteState('actor-token')).toMatchObject({ status: 'setting-up' })
+    const autoExecute = spend(ready, [cost('cost.execute-auto', {
+      kind: 'setup-execute', step: 'auto',
+    }, 'declare')])
+    expect(createMoveAutomationResourceResolver(autoExecute.resources)
       .setupExecuteState('actor-token')).toBeNull()
 
     const waivedInput = {}

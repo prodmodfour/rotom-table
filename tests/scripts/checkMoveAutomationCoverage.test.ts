@@ -6,6 +6,7 @@ import { fileURLToPath } from 'node:url'
 import { describe, expect, it } from 'vitest'
 import capabilitiesJson from '../../data/move-automation/capabilities.json'
 import manifestJson from '../../data/move-automation/manifest.json'
+import legacyFingerprintsJson from '../../data/move-automation/legacy-v1-fingerprints.json'
 import scenarioRequirementsJson from '../../data/move-automation/scenario-requirements.json'
 import { EXPLICIT_MOVE_AUTOMATION_SCRIPTS } from '../../src/utils/move-automation/registry'
 
@@ -233,7 +234,7 @@ describe('move automation semantic coverage checker', () => {
           semanticStatus: expectedSemanticStatusGroups,
           capabilityBlocker: expectedCapabilityBlockerGroups,
           cohort: expectedCohortGroups,
-          missingTestEvidence: [{
+          missingTestEvidence: currentRequirementsUnassignedMoves.length === 0 ? [] : [{
             count: currentRequirementsUnassignedMoves.length,
             evidenceCode: 'requirements-unassigned',
             moves: currentRequirementsUnassignedMoves,
@@ -322,12 +323,12 @@ describe('move automation semantic coverage checker', () => {
         ))
         .map(move => move.canonicalId)
       expect(groups.missingTestEvidence).toEqual([
-        {
+        ...(unassignedMoves.length === 0 ? [] : [{
           count: unassignedMoves.length,
           evidenceCode: 'requirements-unassigned',
           moves: unassignedMoves,
           summary: 'Reviewed scenario requirement tags have not been assigned.',
-        },
+        }]),
         {
           count: 1,
           evidenceCode: 'immunity',
@@ -360,6 +361,64 @@ describe('move automation semantic coverage checker', () => {
     }
   })
 
+  it('strict completion rejects a legacy runtime after retirement', () => {
+    withTemporaryDirectory((directory) => {
+      const manifest = mutableManifest()
+      const fingerprint = legacyFingerprintsJson.entries[0]!
+      const row = manifest.moves.find(move => move.canonicalId === fingerprint.canonicalId)!
+      row.runtime = {
+        kind: 'legacy-v1',
+        version: fingerprint.version,
+        definitionHash: fingerprint.definitionHash,
+        sourceModule: fingerprint.sourceModule,
+      }
+      const result = runChecker(
+        '--require-complete',
+        '--manifest', writeManifest(directory, manifest),
+        '--json',
+      )
+      expect(result.status).toBe(1)
+      expect(JSON.parse(result.stdout)).toMatchObject({
+        valid: false,
+        issues: [{ code: 'authoritative-runtime-required' }],
+      })
+    })
+  })
+
+  it('strict completion rejects planned capability references and suggested debt', () => {
+    withTemporaryDirectory((directory) => {
+      const capabilities = mutableCapabilities()
+      const referenced = manifestJson.moves[0]!.capabilityTags[0]!
+      capabilities.capabilities.find(capability => capability.code === referenced)!.implementationStatus = 'planned'
+      const planned = runChecker(
+        '--require-complete',
+        '--capabilities', writeCapabilities(directory, capabilities),
+        '--json',
+      )
+      expect(planned.status).toBe(1)
+      expect(JSON.parse(planned.stdout)).toMatchObject({
+        valid: false,
+        issues: [{ code: 'implemented-capability-required' }],
+      })
+
+      const manifest = mutableManifest()
+      const suggested = capabilitiesJson.capabilities
+        .map(capability => capability.code)
+        .find(code => !manifest.moves[0]!.capabilityTags.includes(code))!
+      manifest.moves[0]!.suggestedCapabilityTags = [suggested]
+      const debt = runChecker(
+        '--require-complete',
+        '--manifest', writeManifest(directory, manifest),
+        '--json',
+      )
+      expect(debt.status).toBe(1)
+      expect(JSON.parse(debt.stdout)).toMatchObject({
+        valid: false,
+        issues: [{ code: 'suggested-capability-debt' }],
+      })
+    })
+  })
+
   it('rejects incomplete catalog membership and provenance drift', () => {
     withTemporaryDirectory((directory) => {
       const missingRow = mutableManifest()
@@ -387,9 +446,9 @@ describe('move automation semantic coverage checker', () => {
   it('resolves manifest blockers and capability dependencies through the typed catalog', () => {
     withTemporaryDirectory((directory) => {
       const manifest = mutableManifest()
-      const blockedMove = manifest.moves.find(({ baseStatus }) => baseStatus === 'blocked')
-      expect(blockedMove).toBeDefined()
-      blockedMove!.blockerCodes = ['runtime.unknown']
+      const blockedMove = manifest.moves[0]!
+      blockedMove.baseStatus = 'blocked'
+      blockedMove.blockerCodes = ['runtime.unknown']
 
       const blockerResult = runChecker(
         '--manifest', writeManifest(directory, manifest),
@@ -519,11 +578,16 @@ describe('move automation semantic coverage checker', () => {
       })
 
       const staleFingerprint = mutableManifest()
-      const staleLegacyRuntime = staleFingerprint.moves.find(({ runtime }) => (
-        runtime.kind === 'legacy-v1'
-      ))
-      expect(staleLegacyRuntime).toBeDefined()
-      staleLegacyRuntime!.runtime.definitionHash = 'a'.repeat(64)
+      const fingerprint = legacyFingerprintsJson.entries[0]!
+      const staleLegacyRuntime = staleFingerprint.moves.find(({ canonicalId }) => (
+        canonicalId === fingerprint.canonicalId
+      ))!
+      staleLegacyRuntime.runtime = {
+        kind: 'legacy-v1',
+        version: fingerprint.version,
+        definitionHash: 'a'.repeat(64),
+        sourceModule: fingerprint.sourceModule,
+      }
       const driftResult = runChecker(
         '--manifest', writeManifest(directory, staleFingerprint), '--json',
       )

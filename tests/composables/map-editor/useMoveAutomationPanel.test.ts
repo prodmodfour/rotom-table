@@ -296,7 +296,7 @@ const targetCountPanel = (options: {
 }
 
 describe('useMoveAutomationPanel', () => {
-  it('does not open the removed wizard for unautomated moves', () => {
+  it('exposes completed no-target native moves without opening the removed wizard', () => {
     const map = ref(mapFixture())
     const pokemonSheet = {
       slug: 'bolt',
@@ -326,13 +326,13 @@ describe('useMoveAutomationPanel', () => {
     expect(panel.moveAutomationTargeting.value).toBeNull()
     expect(panel.tokenMoveOptionsById.value['user-token'].map((move) => move.name)).toEqual(['Struggle', 'Teleport'])
     expect(panel.tokenMoveOptionsById.value['user-token'].find((move) => move.name === 'Teleport')).toMatchObject({
-      hasAutomationScript: false,
-      disabledByAutomation: true,
-      automation: { baseStatus: 'blocked', blockerCodes: ['runtime.unimplemented'] },
+      hasAutomationScript: true,
+      disabledByAutomation: false,
+      automation: { baseStatus: 'complete', blockerCodes: [] },
     })
   })
 
-  it('does not let registry presence promote a manifest-blocked move', async () => {
+  it('keeps manifest completion authoritative when a compatibility script is present', async () => {
     const teleportScript: MoveAutomationScript = {
       ...branchSelectionScript(),
       moveName: 'Teleport',
@@ -348,14 +348,17 @@ describe('useMoveAutomationPanel', () => {
 
       expect(teleport).toMatchObject({
         hasAutomationScript: true,
-        disabledByAutomation: true,
-        automation: { baseStatus: 'blocked' },
+        disabledByAutomation: false,
+        automation: { baseStatus: 'complete' },
       })
 
       panel.openMoveAutomation({ id: 'user-token', moveName: 'Teleport' })
 
       expect(panel.moveAutomationTargetBranchSelection.value).toBeNull()
-      expect(panel.moveAutomationTargeting.value).toBeNull()
+      expect(panel.moveAutomationTargeting.value).toMatchObject({
+        userId: 'user-token',
+        moveName: 'Teleport',
+      })
     })
   })
 

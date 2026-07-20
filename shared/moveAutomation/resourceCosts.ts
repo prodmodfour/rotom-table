@@ -29,6 +29,8 @@ export const MOVE_PRIORITY_COST_MODES = [
 export const MOVE_SETUP_EXECUTE_COST_STEPS = [
   'set-up',
   'execute',
+  /** Resolve the step from the actor's authoritative setup ledger. */
+  'auto',
 ] as const
 
 export const MOVE_RESOURCE_COST_LIMITS = Object.freeze({
@@ -298,7 +300,7 @@ export const parseMoveResourceCost = (
   if (kind === 'setup-execute') {
     assertExactFields(cost, SETUP_EXECUTE_FIELDS, path)
     if (typeof cost.step !== 'string' || !SETUP_STEP_SET.has(cost.step)) {
-      fail('invalid-resource-cost', `${path}.step`, 'must be set-up or execute.')
+      fail('invalid-resource-cost', `${path}.step`, 'must be set-up, execute, or auto.')
     }
     return Object.freeze({ kind, step: cost.step as MoveSetupExecuteCostStep })
   }

@@ -55,6 +55,7 @@ describe('MoveSpec rules expression AST', () => {
       'combat-stage',
       'combat-stage-total',
       'weight',
+      'distance',
       'type',
       'weather',
       'terrain',

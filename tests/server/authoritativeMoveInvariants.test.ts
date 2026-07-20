@@ -363,8 +363,8 @@ describe('authoritative move invariants', () => {
         kind: 'operation',
         operationKind: 'condition',
         outcome: 'prevented',
-        result: expect.objectContaining({ blockedBy: expect.stringContaining('Sweet Veil') }),
       }))
+      expect(JSON.stringify(plan.resolution.auditTrace.events)).toContain('Sweet Veil')
 
       const aura = harness.sheets.getByRef('pokemon', 'aura')!
       harness.sheets.save({

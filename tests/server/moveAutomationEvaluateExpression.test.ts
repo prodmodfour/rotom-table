@@ -456,6 +456,15 @@ describe('bounded authoritative move expression evaluator', () => {
       selectorState: state,
     }).value).toBe(6)
     expect(evaluateMoveExpression({
+      expression: expression({
+        kind: 'distance',
+        from: { kind: 'actor' },
+        to: { kind: 'current-target' },
+      }),
+      context,
+      selectorState: state,
+    }).value).toBe(1)
+    expect(evaluateMoveExpression({
       expression: expression({ kind: 'type', of: 'move', subject: null }),
       context,
       canonicalMoveId: 'Tackle',

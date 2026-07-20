@@ -12,6 +12,10 @@ Rotom Table is best reviewed as a private trusted-table product-style applicatio
 6. **Server persistence** — inspect `server/api/`, `server/useCases/`, `server/utils/*Storage.ts`, and `shared/` helpers.
 7. **Tests** — skim `tests/server/`, `tests/composables/`, `tests/shared/`, and `tests/utils/` for behaviour-focused coverage.
 
+## Move automation review checklist
+
+For a MoveSpec change, review the canonical rule and every branch rather than only the happy-path test. Confirm that targeting and relationships are server-derived; costs occur in the correct phase; type and passive immunity policies are separate; operation sources precede consumers; durable choices expose only stable opaque IDs; all consulted resources enter the read set; resume/replay reuses rolls and spends; and the final map/sheet/external-resource plan commits atomically. Verify the manifest runtime hash and provenance against the registered definition, capability tags against the implemented catalog, and conformance evidence against executable assertions. A complete row must have no blocker, limitation, manual step, hidden interaction exclusion, or prose-only behavior. See [Move automation contributor guide](move-automation.md).
+
 ## Key routes/pages
 
 | Route | Why it matters |

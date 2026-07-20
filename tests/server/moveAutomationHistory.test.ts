@@ -252,17 +252,21 @@ describe('bounded encounter move history', () => {
     ])
     expect(queries.usedMoveThisScene('actor-token', 'Fury Cutter')).toBe(true)
     expect(queries.usedMoveThisScene('actor-token', 'Follow Up')).toBe(false)
+    expect(queries.completedMoveCount('Fury Cutter', 2)).toBe(2)
+    expect(queries.completedMoveCount('Fury Cutter', 2, 'actor-token')).toBe(2)
+    expect(queries.completedMoveCount('Fury Cutter', 1)).toBe(0)
     expect(queries.moveUse('resolution.child.1')).toMatchObject({
       specVersion: 3,
       actionType: 'free',
       origin: { kind: 'random', sourceResolutionId: 'resolution.fury.1' },
       moveListSource: { kind: 'reviewed-pool', poolId: 'pool.follow-up' },
-      declaration: { order: 2 },
-      completion: { order: 1, succeeded: false },
+      declaration: { order: 2, round: 2 },
+      completion: { order: 1, round: 2, succeeded: false },
     })
     expect(queries.lastDamagingMoveReceived('target-token')).toMatchObject({
       resolutionId: 'resolution.fury.1',
       canonicalId: 'Fury Cutter',
+      round: 2,
       hitIndex: 2,
       hitPointLoss: 5,
       temporaryHitPointLoss: 0,
@@ -292,6 +296,10 @@ describe('bounded encounter move history', () => {
     expect(queries.switchedThisScene('target-token')).toBe(true)
     expect(queries.switchedThisScene('replacement-token')).toBe(true)
     expect(queries.faintedThisScene('target-token')).toBe(true)
+    expect(queries.knockoutsSinceRound(2)).toEqual([
+      expect.objectContaining({ targetPlacementId: 'target-token', round: 2 }),
+    ])
+    expect(queries.knockoutsSinceRound(3)).toEqual([])
     expect(queries.parentResolutionId('resolution.child.1')).toBe('resolution.fury.1')
     expect(queries.childResolutionIds('resolution.fury.1')).toEqual(['resolution.child.1'])
 

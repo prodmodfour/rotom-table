@@ -369,7 +369,7 @@ describe('Reflect authoritative side mitigation', () => {
     )
   })
 
-  it('mitigates one retained-v1 physical hit and leaves one shared charge', () => {
+  it('mitigates one retired move’s native physical hit and leaves one shared charge', () => {
     const active = reflectEffect()
     const aided = planDamage({
       moveName: 'Aerial Ace',
@@ -387,11 +387,11 @@ describe('Reflect authoritative side mitigation', () => {
       operationId: 'op_reflect_legacy_baseline',
     })
 
-    expect(aided.resolution.auditTrace.program.runtimeKind).toBe('legacy-v1')
+    expect(aided.resolution.auditTrace.program.runtimeKind).toBe('movespec-v2')
     expect(targetCurrentHp(aided)).toBeGreaterThan(targetCurrentHp(baseline))
     expect(aided.resolution.sideDamageResistance?.activations).toEqual([
       expect.objectContaining({
-        damageOperationId: 'legacy-v1.damage',
+        damageOperationId: 'aerial-ace.damage',
         targetSideId: 'allies',
         previousMultiplier: 1,
         adjustedMultiplier: 0.5,

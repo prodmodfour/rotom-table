@@ -672,6 +672,7 @@ export const buildAuthoritativeMoveRulesContext = (
     tokens,
     sheets: resolvedSheets,
     history,
+    effects: map.encounterState?.effects ?? [],
     resolveGrounding: ({ placement, base }) => gravity.grounding({
       placementId: placement.id,
       base,
@@ -734,7 +735,13 @@ export const buildAuthoritativeMoveRulesContext = (
     const canonicalMove = findMove(moveName)
     const selectedRuntime = canonicalMove ? runtimes.get(canonicalMove.name) : null
     if (canonicalMove && selectedRuntime?.kind === 'movespec-v2') {
-      const presentation = nativeMoveAutomationPresentationScriptForMove(canonicalMove.name)
+      const isRetiredLegacyPresentation = selectedRuntime.definition.spec.presentation.tags
+        .includes('legacy-retirement')
+      const retainedPresentation = isRetiredLegacyPresentation
+        ? legacyScripts.get(canonicalMove.name) ?? null
+        : null
+      const presentation = retainedPresentation
+        ?? nativeMoveAutomationPresentationScriptForMove(canonicalMove.name)
       const script = presentation ?? createMoveAutomationScriptFromMoveData(canonicalMove)
       const selectedBranch = intent.targetBranchId
         ? moveAutomationScriptForTargetBranch(script, intent.targetBranchId)

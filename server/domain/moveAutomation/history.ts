@@ -7,6 +7,7 @@ import {
   type EncounterDamagingMoveHistory,
   type EncounterDeclaredMoveHistory,
   type EncounterHistory,
+  type EncounterKnockoutHistory,
   type EncounterMoveUseHistory,
 } from '#shared/moveAutomation/encounterHistory'
 import type { MoveHistoryQuery } from '#shared/moveAutomation/expressions'
@@ -29,6 +30,12 @@ export interface MoveAutomationHistoryResolver {
   completedMovesThisScene(placementId?: string): readonly EncounterCompletedMoveHistory[]
   usedMoveThisScene(placementId: string, canonicalId: string): boolean
   moveUse(resolutionId: string): EncounterMoveUseHistory | null
+  /** Count successful or failed completed uses in one authoritative round window. */
+  completedMoveCount(
+    canonicalId: string,
+    round: number,
+    actorPlacementId?: string,
+  ): number
   lastDamagingMoveReceived(placementId: string): EncounterDamagingMoveHistory | null
   damageBySourceThisTurn(
     sourcePlacementId: string,
@@ -51,6 +58,8 @@ export interface MoveAutomationHistoryResolver {
   ): number
   switchedThisScene(placementId: string): boolean
   faintedThisScene(placementId: string): boolean
+  /** Oldest-to-newest retained knockouts at or after an authoritative round. */
+  knockoutsSinceRound(minimumRound: number): readonly EncounterKnockoutHistory[]
   parentResolutionId(resolutionId: string): string | null
   childResolutionIds(resolutionId: string): readonly string[]
   /** Evaluate the closed MoveExpression history query set from structured state. */
@@ -258,6 +267,11 @@ export const createMoveAutomationHistoryResolver = (
       entry.actorPlacementId === placementId && entry.canonicalId === canonicalId
     )),
     moveUse: resolutionId => moveUseByResolution.get(resolutionId) ?? null,
+    completedMoveCount: (canonicalId, round, actorPlacementId) => history.moveUses.filter(use => (
+      use.canonicalId === canonicalId
+      && use.completion?.round === round
+      && (actorPlacementId === undefined || use.actorPlacementId === actorPlacementId)
+    )).length,
     lastDamagingMoveReceived: placementId => lastDamageByPlacement.get(placementId) ?? null,
     damageBySourceThisTurn: (sourcePlacementId, targetPlacementId) => bySource(
       history.damageBySourceThisTurn,
@@ -302,6 +316,9 @@ export const createMoveAutomationHistoryResolver = (
     },
     switchedThisScene: placementId => switchedIds.has(placementId),
     faintedThisScene: placementId => faintedIds.has(placementId),
+    knockoutsSinceRound: minimumRound => deepFreeze(history.knockouts.filter(entry => (
+      entry.round !== null && entry.round !== undefined && entry.round >= minimumRound
+    ))),
     parentResolutionId: resolutionId => (
       ancestryByResolution.get(resolutionId)?.parentResolutionId ?? null
     ),
@@ -326,6 +343,12 @@ export const createMoveAutomationHistoryResolver = (
       }
       if (query === 'damage-received-this-turn') {
         return received(history.damageBySourceThisTurn, placementId, 'Turn').totalLoss
+      }
+      if (query === 'damage-dealt-this-round') {
+        return dealt(history.damageBySourceThisRound, placementId, 'Round').totalLoss
+      }
+      if (query === 'damage-received-this-round') {
+        return received(history.damageBySourceThisRound, placementId, 'Round').totalLoss
       }
       if (query === 'acted-this-turn') return actedThisTurnIds.has(placementId)
       if (query === 'switched-this-scene') return switchedIds.has(placementId)

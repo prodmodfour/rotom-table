@@ -301,7 +301,8 @@ export const resolveMoveDamageType = (options: {
             options.script.keywords,
             target,
           ),
-          ignoreImmunity: policy.immunity === 'ignore',
+          ignoreImmunity: policy.immunity === 'ignore'
+            || policy.passiveImmunity === 'ignore',
           ignoreResistance: policy.resistance === 'ignore',
         },
       )

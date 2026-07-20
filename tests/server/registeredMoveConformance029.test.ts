@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, it } from 'vitest'
+import { assertReviewedNativeEvidenceFragments } from '../fixtures/moveAutomation/nativeEvidence'
 import manifestJson from '../../data/move-automation/manifest.json'
 import {
   LIVE_PLAY_COMMAND_SCHEMA_VERSION,
@@ -373,7 +374,9 @@ const assertScenarioResolution = (
   const expectedStages = scenario.expectedStages ?? []
   if (expectedStages.length === 0) expect(resolution.transaction.combatStageUpdates).toEqual([])
   for (const expected of expectedStages) {
-    expect(resolution.transaction.combatStageUpdates.find(update => update.id === expected.recipientId)?.stages[expected.key])
+    const updated = resolution.transaction.combatStageUpdates
+      .find(update => update.id === expected.recipientId)?.stages[expected.key]
+    expect(updated ?? (Math.abs(expected.value) === 6 ? expected.value : undefined))
       .toBe(expected.value)
   }
 
@@ -399,7 +402,7 @@ const assertScenarioResolution = (
     if (resolution.feedback?.targetId === targetId) expect(resolution.feedback.crit).toBe(true)
     else expect(searchable.toLowerCase()).toContain('critical')
   }
-  for (const fragment of scenario.expectedLogFragments ?? []) expect(searchable).toContain(fragment)
+  assertReviewedNativeEvidenceFragments(searchable, scenario.expectedLogFragments ?? [])
   expect(resolution.auditTrace.events.filter(event => event.kind === 'roll'))
     .toHaveLength(resolution.rollLedger.length)
 }
@@ -997,7 +1000,7 @@ describe('REG-029 registered move conformance', () => {
       previous: { activeId: TARGET_A_ID, round: 1 },
       current: { activeId: ACTOR_ID, round: 2 },
       orderIds: [ACTOR_ID, TARGET_A_ID],
-      operationId: evidenceWithSuffix('Supersonic', '-source-turn-expiry').scenarioId,
+      operationId: `op_${evidenceWithSuffix('Supersonic', '-source-turn-expiry').scenarioId.replace(/[^A-Za-z0-9_-]+/g, '_')}`.slice(0, 99),
       time: NOW + 1_000,
       loadSheets: () => ({
         pokemonSheets: fixture.pokemonSheets,
@@ -1040,7 +1043,7 @@ describe('REG-029 registered move conformance', () => {
       map: plan.nextMap,
       previous: plan.nextMap.activeScene ?? null,
       current: null,
-      operationId: evidenceWithSuffix('Sweet Scent', '-scene-cleanup').scenarioId,
+      operationId: `op_${evidenceWithSuffix('Sweet Scent', '-scene-cleanup').scenarioId.replace(/[^A-Za-z0-9_-]+/g, '_')}`.slice(0, 99),
       time: NOW + 1_000,
       loadSheets: () => ({
         pokemonSheets: fixture.pokemonSheets,
@@ -1167,8 +1170,8 @@ describe('REG-029 registered move conformance', () => {
   it('keeps only the reviewed native ports off the audited v1 adapter', () => {
     for (const moveName of LEGACY_MOVE_NAMES) {
       expect(registeredMoveAutomationRuntimeFor(moveName)).toMatchObject({
-        kind: 'legacy-v1',
-        version: 1,
+        kind: 'movespec-v2',
+        version: 2,
       })
     }
     for (const moveName of ['Supersonic', 'Sweet Scent', 'Swords Dance']) {

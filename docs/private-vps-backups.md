@@ -21,6 +21,8 @@ For the documented VPS layout, the app runs from `/srv/rotom-table/app`, campaig
 
 After the SQLite authority migration, maps, Pokémon/trainer sheets, group inventory, and shop tables load from SQLite at runtime. Keep backing up residual JSON campaign files only as explicit maintenance/export/interchange artifacts. Player profiles, encounter tables, campaign reference overrides, and other non-map/sheet/group-inventory/shop campaign material may still live as JSON. Do not treat residual map/sheet/group-inventory/shop JSON as runtime fallback state.
 
+A consistent SQLite backup is the only resumable backup for active move-response windows because private `pending_move_resolutions` rows are not map JSON. Maintenance JSON export retains encounter effects/resources/zones/history but terminally abandons pending prompts, clears their public summaries, and writes `data/move-automation-abandoned-pending-resolutions.json` as audit evidence. Never restore a map with a pending public summary unless the matching private repository row is present.
+
 ## Backup timing and SQLite safety
 
 Create a backup at two normal points:

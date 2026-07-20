@@ -1,3 +1,5 @@
+import { MOVE_AUTOMATION_ENGINE_BUDGETS } from '#shared/moveAutomation/performanceBudgets'
+
 export const LIVE_PLAY_COMMAND_TRACE_EVENT_TYPES = {
   BUILT: 'built',
   PREDICTED: 'predicted',
@@ -11,6 +13,14 @@ export const LIVE_PLAY_COMMAND_TRACE_EVENT_TYPES = {
   REJECTED: 'rejected',
   ROLLED_BACK: 'rolled-back',
   UNCERTAIN: 'uncertain',
+  PLANNED: 'planned',
+  WAITING_FOR_RESPONSE: 'waiting-for-response',
+  RESUMED: 'resumed',
+  COMMITTED: 'committed',
+  LIFECYCLE_APPLIED: 'lifecycle-applied',
+  CONFLICT: 'conflict',
+  RECOVERED: 'recovered',
+  RECONCILED: 'reconciled',
 } as const
 
 export type LivePlayCommandTraceEventType = typeof LIVE_PLAY_COMMAND_TRACE_EVENT_TYPES[
@@ -27,6 +37,9 @@ export interface LivePlayCommandTraceMetadata {
   readonly commandType?: string
   readonly baseRevision?: number
   readonly resourceSummary?: string
+  readonly runtimeKind?: 'legacy-v1' | 'movespec-v2'
+  readonly runtimeVersion?: number
+  readonly definitionHash?: string
 }
 
 export interface LivePlayCommandTraceEvent {
@@ -56,6 +69,9 @@ interface MutableLivePlayCommandTrace {
   commandType?: string
   baseRevision?: number
   resourceSummary?: string
+  runtimeKind?: 'legacy-v1' | 'movespec-v2'
+  runtimeVersion?: number
+  definitionHash?: string
   events: LivePlayCommandTraceEvent[]
 }
 
@@ -66,6 +82,28 @@ export interface LivePlayCommandTracer {
 }
 
 const DEFAULT_MAX_TRACE_COUNT = 100
+const DEFAULT_MAX_EVENTS_PER_TRACE = MOVE_AUTOMATION_ENGINE_BUDGETS.traceEventsPerOperation
+const SAFE_DETAIL_KEYS = new Set([
+  'applied',
+  'outcome',
+  'origin',
+  'reason',
+  'reasonCode',
+  'revision',
+  'operationCount',
+  'targetCount',
+  'resourceCount',
+  'retryCount',
+  'reconcileCount',
+  'durationMs',
+  'planDurationMs',
+  'responseWaitMs',
+  'resumeDurationMs',
+  'commitDurationMs',
+  'lifecycleDurationMs',
+])
+const SHA256_PATTERN = /^[a-f0-9]{64}$/
+const RUNTIME_KINDS = new Set(['legacy-v1', 'movespec-v2'])
 
 const restartsPendingTrace = (event: LivePlayCommandTraceEventType): boolean => (
   event === LIVE_PLAY_COMMAND_TRACE_EVENT_TYPES.BUILT
@@ -82,6 +120,7 @@ const traceStatus = (events: readonly LivePlayCommandTraceEvent[]): LivePlayComm
     else if (event.type === LIVE_PLAY_COMMAND_TRACE_EVENT_TYPES.REJECTED) status = 'rejected'
     else if (event.type === LIVE_PLAY_COMMAND_TRACE_EVENT_TYPES.UNCERTAIN) status = 'uncertain'
     else if (event.type === LIVE_PLAY_COMMAND_TRACE_EVENT_TYPES.ROLLED_BACK) status = 'rolled-back'
+    else if (event.type === LIVE_PLAY_COMMAND_TRACE_EVENT_TYPES.CONFLICT) status = 'rejected'
     else if (status === 'rolled-back' && restartsPendingTrace(event.type)) status = 'pending'
   }
   return status
@@ -99,8 +138,12 @@ const sanitizeDetail = (
 ): LivePlayCommandTraceEventDetail | undefined => {
   if (!detail) return undefined
   const entries = Object.entries(detail).filter((entry): entry is [string, LivePlayCommandTraceDetailValue] => (
-    isTraceDetailValue(entry[1])
-  ))
+    SAFE_DETAIL_KEYS.has(entry[0])
+    && isTraceDetailValue(entry[1])
+  )).map(([key, value]) => [
+    key,
+    typeof value === 'string' ? value.slice(0, 160) : value,
+  ] as const)
   return entries.length === 0 ? undefined : Object.fromEntries(entries)
 }
 
@@ -119,6 +162,9 @@ const snapshotTrace = (trace: MutableLivePlayCommandTrace): LivePlayCommandTrace
     ...(trace.commandType === undefined ? {} : { commandType: trace.commandType }),
     ...(trace.baseRevision === undefined ? {} : { baseRevision: trace.baseRevision }),
     ...(trace.resourceSummary === undefined ? {} : { resourceSummary: trace.resourceSummary }),
+    ...(trace.runtimeKind === undefined ? {} : { runtimeKind: trace.runtimeKind }),
+    ...(trace.runtimeVersion === undefined ? {} : { runtimeVersion: trace.runtimeVersion }),
+    ...(trace.definitionHash === undefined ? {} : { definitionHash: trace.definitionHash }),
     status: traceStatus(events),
     firstSequence: first?.sequence ?? 0,
     lastSequence: last?.sequence ?? 0,
@@ -133,9 +179,11 @@ const isNonEmptyString = (value: string): boolean => value.trim().length > 0
 export const createLivePlayCommandTracer = (options: {
   readonly now?: () => number
   readonly maxTraces?: number
+  readonly maxEventsPerTrace?: number
 } = {}): LivePlayCommandTracer => {
   const now = options.now ?? (() => Date.now())
   const maxTraces = Math.max(1, Math.floor(options.maxTraces ?? DEFAULT_MAX_TRACE_COUNT))
+  const maxEventsPerTrace = Math.max(1, Math.floor(options.maxEventsPerTrace ?? DEFAULT_MAX_EVENTS_PER_TRACE))
   const traces = new Map<string, MutableLivePlayCommandTrace>()
   let sequence = 0
 
@@ -161,6 +209,15 @@ export const createLivePlayCommandTracer = (options: {
     if (input.resourceSummary !== undefined && isNonEmptyString(input.resourceSummary)) {
       trace.resourceSummary = input.resourceSummary.slice(0, 160)
     }
+    if (input.runtimeKind !== undefined && RUNTIME_KINDS.has(input.runtimeKind)) {
+      trace.runtimeKind = input.runtimeKind
+    }
+    if (input.runtimeVersion !== undefined && Number.isSafeInteger(input.runtimeVersion) && input.runtimeVersion > 0) {
+      trace.runtimeVersion = input.runtimeVersion
+    }
+    if (input.definitionHash !== undefined && SHA256_PATTERN.test(input.definitionHash)) {
+      trace.definitionHash = input.definitionHash
+    }
   }
 
   const record = (input: LivePlayCommandTraceRecordInput): LivePlayCommandTraceSnapshot | null => {
@@ -176,6 +233,9 @@ export const createLivePlayCommandTracer = (options: {
       timestamp: now(),
       ...(detail === undefined ? {} : { detail }),
     })
+    if (trace.events.length > maxEventsPerTrace) {
+      trace.events.splice(0, trace.events.length - maxEventsPerTrace)
+    }
     traces.set(input.opId, trace)
     pruneOldTraces()
     return snapshotTrace(trace)

@@ -91,9 +91,16 @@ describe('legacy move automation implementation fingerprints', () => {
       .toEqual(manifestJson)
 
     const staleManifest = structuredClone(manifestJson)
-    const selectedLegacyRow = staleManifest.moves.find(row => row.runtime.kind === 'legacy-v1')
-    expect(selectedLegacyRow).toBeDefined()
-    selectedLegacyRow!.runtime.definitionHash = '0'.repeat(64)
+    const legacy = committedFingerprints.entries[0]!
+    const selectedLegacyRow = staleManifest.moves.find(row => (
+      row.canonicalId === legacy.canonicalId
+    ))!
+    selectedLegacyRow.runtime = {
+      kind: 'legacy-v1',
+      version: legacy.version,
+      definitionHash: '0'.repeat(64),
+      sourceModule: legacy.sourceModule,
+    }
     expect(() => assertLegacyMoveAutomationManifestLinksCurrent(
       staleManifest,
       committedFingerprints,

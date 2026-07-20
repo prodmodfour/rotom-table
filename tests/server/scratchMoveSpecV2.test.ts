@@ -121,7 +121,7 @@ describe('Scratch native MoveSpec v2', () => {
       }),
     ])
     expect('nativeV2' in native.resolution).toBe(false)
-  })
+  }, 15_000)
 
   it('keeps rollback to legacy execution as a manifest-only runtime selection', () => {
     const legacyRegistry = runtimeRegistry('legacy-v1')

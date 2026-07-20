@@ -181,6 +181,11 @@ export const createStandardMoveCoreTokenEffectImmunityQueries = (
     condition: ({ operation, condition, recipient }) => {
       const wholeMoveBlocker = moveImmunity(recipient)
       if (wholeMoveBlocker) return conditionDecision(wholeMoveBlocker)
+      // Cleanses are still blocked by whole-move immunities such as Soundproof,
+      // but a target's immunity to the ailment itself must never block removal.
+      if (operation.payload.action === 'remove' || operation.payload.action === 'clear') {
+        return conditionDecision(null)
+      }
       if (operation.payload.applyTypeImmunity) {
         const typedBlocker = typedAttackImmunity(recipient, 'defending')
         if (typedBlocker) return conditionDecision(typedBlocker)

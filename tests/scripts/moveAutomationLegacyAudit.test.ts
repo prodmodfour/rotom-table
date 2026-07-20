@@ -127,7 +127,7 @@ describe('legacy move automation audit metadata', () => {
       const audit = auditById.get(canonicalId)
       expect(row, canonicalId).toMatchObject({
         baseStatus: 'complete',
-        runtime: { kind: 'legacy-v1', version: 3 },
+        runtime: { kind: 'movespec-v2', version: 2 },
         capabilityTags: ['stages.typed', 'targeting.authoritative'],
         blockerCodes: [],
         limitations: [],

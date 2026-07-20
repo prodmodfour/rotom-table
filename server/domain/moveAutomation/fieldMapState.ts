@@ -59,6 +59,60 @@ const durationRounds = (duration: EncounterZoneDuration): number | null => (
   duration.kind === 'rounds' ? duration.remaining : null
 )
 
+export class EncounterStateMigrationConflictError extends Error {
+  readonly code = 'conflicting-dual-representation' as const
+
+  constructor(message: string) {
+    super(message)
+    this.name = 'EncounterStateMigrationConflictError'
+  }
+}
+
+/**
+ * During the compatibility window a legacy field lane may mirror a canonical
+ * encounter zone. Shared identities must agree; silently preferring either
+ * representation could double-apply or change duration after a restart.
+ */
+export const assertCompatibleLegacyGlobalFields = (
+  map: Pick<TabletopMap, 'fieldEffects' | 'encounterState'>,
+): void => {
+  const state = parseEncounterState(map.encounterState ?? createEmptyEncounterState())
+  const legacy = cloneMapFieldEffects(map.fieldEffects)
+  for (const zone of state.zones) {
+    if (!isEncounterGlobalFieldZone(zone)) continue
+    const expectedRounds = durationRounds(zone.duration)
+    if (zone.kind === 'weather') {
+      const row = legacy.weather.find(effect => effect.kind === zone.payload.weatherId)
+      if (row && row.rounds !== expectedRounds) {
+        throw new EncounterStateMigrationConflictError(
+          `Weather ${zone.payload.weatherId} has conflicting legacy (${row.rounds ?? 'scene'}) and encounter (${expectedRounds ?? 'scene'}) durations.`,
+        )
+      }
+      continue
+    }
+    if (zone.kind === 'terrain') {
+      const row = legacy.terrains.find(effect => (
+        effect.scope !== 'area' && effect.kind === zone.payload.terrainId
+      ))
+      if (row && row.rounds !== expectedRounds) {
+        throw new EncounterStateMigrationConflictError(
+          `Terrain ${zone.payload.terrainId} has conflicting legacy (${row.rounds ?? 'scene'}) and encounter (${expectedRounds ?? 'scene'}) durations.`,
+        )
+      }
+      continue
+    }
+    const row = legacy.rooms.find(effect => effect.kind === zone.payload.roomId)
+    if (row && (
+      row.rounds !== expectedRounds
+      || Boolean(row.startsNextRound) !== Boolean(zone.payload.startsNextRound)
+    )) {
+      throw new EncounterStateMigrationConflictError(
+        `Room ${zone.payload.roomId} has conflicting legacy and encounter representations.`,
+      )
+    }
+  }
+}
+
 const sourceLabels = (
   effects: MapFieldEffects | null | undefined,
 ): ReadonlyMap<string, string> => {
@@ -148,6 +202,7 @@ export const projectGlobalFieldZonesToMapEffects = (input: {
 export const materializeMapGlobalFieldZones = (
   map: Pick<TabletopMap, 'dimensions' | 'hazards' | 'fieldEffects' | 'encounterState'>,
 ): EncounterState => {
+  assertCompatibleLegacyGlobalFields(map)
   const previous = parseEncounterState(map.encounterState ?? createEmptyEncounterState())
   const nativeIdentities = new Set(
     previous.zones.filter(isEncounterGlobalFieldZone).map(zoneIdentity),

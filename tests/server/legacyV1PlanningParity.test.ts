@@ -6,6 +6,7 @@ import {
   type ResolveMoveIntent,
 } from '#shared/livePlayMoveResolution'
 import type { MoveAutomationManifest } from '#shared/moveAutomation/manifest'
+import { hashLegacyMoveAutomationDefinition } from '../../scripts/move_automation_definition_hash'
 import { adaptV1Transaction } from '~~/server/domain/moveAutomation/adaptV1Transaction'
 import { buildLegacyV1MoveResolutionTrace } from '~~/server/domain/moveAutomation/legacyV1Trace'
 import {
@@ -35,21 +36,31 @@ import {
   type LegacyV1PlanningParityResult,
 } from '../fixtures/moveAutomation/legacyV1PlanningParity'
 
-const legacyRuntimeRegistryFor = (canonicalId: string) => {
+const legacyRuntimeRegistryFor = (
+  canonicalId: string,
+  overrideScript?: MoveAutomationScript,
+) => {
   const manifest = structuredClone(manifestJson) as unknown as MoveAutomationManifest
   const row = manifest.moves.find(move => move.canonicalId === canonicalId)!
   const legacy = legacyFingerprintsJson.entries.find(
     entry => entry.canonicalId === canonicalId,
   )!
+  const sourceModule = overrideScript
+    ? 'tests/server/legacyV1PlanningParity.test.ts'
+    : legacy.sourceModule
   ;(row as { runtime: unknown }).runtime = {
     kind: 'legacy-v1',
-    version: legacy.version,
-    definitionHash: legacy.definitionHash,
-    sourceModule: legacy.sourceModule,
+    version: overrideScript?.version ?? legacy.version,
+    definitionHash: overrideScript
+      ? hashLegacyMoveAutomationDefinition(overrideScript)
+      : legacy.definitionHash,
+    sourceModule,
   }
   return createMoveAutomationRuntimeRegistry({
     manifest,
-    legacySources: EXPLICIT_MOVE_AUTOMATION_REGISTRY_SOURCES,
+    legacySources: overrideScript
+      ? [{ sourceModule, scripts: new Map([[canonicalId, overrideScript]]) }]
+      : EXPLICIT_MOVE_AUTOMATION_REGISTRY_SOURCES,
     moveSpecs: REVIEWED_MOVE_SPEC_V2_REGISTRATIONS,
   })
 }
@@ -284,6 +295,7 @@ const PLANNING_SCENARIOS: readonly PlanningParityScenario[] = [
         selection: { kind: 'single-target', targetPlacementId: 'target-token' },
       }),
       randomValues: [0.5, 0],
+      runtimeRegistry: legacyRuntimeRegistryFor('Pound'),
     }),
     verify: ({ adaptedPlan }) => {
       expect(adaptedPlan.resolution.transaction).toMatchObject({
@@ -311,6 +323,7 @@ const PLANNING_SCENARIOS: readonly PlanningParityScenario[] = [
         selection: { kind: 'single-target', targetPlacementId: 'target-token' },
       }),
       randomValues: [0],
+      runtimeRegistry: legacyRuntimeRegistryFor('Pound'),
     }),
     verify: ({ adaptedPlan }) => {
       expect(adaptedPlan.resolution.transaction).toMatchObject({
@@ -345,6 +358,7 @@ const PLANNING_SCENARIOS: readonly PlanningParityScenario[] = [
         },
       }),
       randomValues: [0.5, 0, 0.5],
+      runtimeRegistry: legacyRuntimeRegistryFor('Swift', mixedAreaScript()),
     })),
     verify: ({ adaptedPlan }) => {
       expect(adaptedPlan.resolution.transaction).toMatchObject({
@@ -379,6 +393,7 @@ const PLANNING_SCENARIOS: readonly PlanningParityScenario[] = [
         },
       }),
       randomValues: [0.5, 0, 0],
+      runtimeRegistry: legacyRuntimeRegistryFor('Aqua Tail', passScript()),
     })),
     verify: ({ adaptedPlan }) => {
       expect(adaptedPlan.resolution.movement).toMatchObject({

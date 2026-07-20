@@ -294,6 +294,24 @@ describe('MoveSpec type-effectiveness and critical-hit overrides', () => {
       script: script({ type: 'Fire' }),
       recipientId: 'target-token',
     })
+    const passiveOnly = resolveMoveDamageType({
+      context: rules,
+      operation: damageOperation({
+        moveType: 'fire',
+        typeEffectiveness: canonicalTypePolicy({ passiveImmunity: 'ignore' }),
+      }),
+      script: script({ type: 'Fire' }),
+      recipientId: 'target-token',
+    })
+    const chartImmunity = resolveMoveDamageType({
+      context: context({ targetTypes: ['Ghost'], targetAbilities: ['Flash Fire'] }),
+      operation: damageOperation({
+        moveType: 'normal',
+        typeEffectiveness: canonicalTypePolicy({ passiveImmunity: 'ignore' }),
+      }),
+      script: script(),
+      recipientId: 'target-token',
+    })
     const overridden = resolveMoveDamageType({
       context: rules,
       operation: damageOperation({
@@ -310,6 +328,8 @@ describe('MoveSpec type-effectiveness and critical-hit overrides', () => {
 
     expect(honored).toMatchObject({ finalMultiplier: 0, immunitySource: 'Flash Fire' })
     expect(ignored).toMatchObject({ baseMultiplier: 1.5, finalMultiplier: 1.5 })
+    expect(passiveOnly).toMatchObject({ baseMultiplier: 1.5, finalMultiplier: 1.5 })
+    expect(chartImmunity).toMatchObject({ finalMultiplier: 0, immunitySource: 'Ghost type' })
     expect(overridden).toMatchObject({ baseMultiplier: 1, finalMultiplier: 2 })
   })
 

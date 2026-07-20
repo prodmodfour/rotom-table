@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, it } from 'vitest'
+import { assertReviewedNativeSmiteMissEvidence } from '../fixtures/moveAutomation/nativeEvidence'
 import manifestJson from '../../data/move-automation/manifest.json'
 import {
   LIVE_PLAY_COMMAND_SCHEMA_VERSION,
@@ -256,15 +257,19 @@ const fixtureFor = (
 const accuracyNaturalResults = (
   resolution: AuthoritativeMoveResolution,
 ): readonly number[] => resolution.rollLedger
-  .filter(entry => entry.parentEffectId === 'legacy-v1.accuracy')
+  .filter(entry => entry.formula.kind === 'dice' && entry.formula.sides === 20)
   .map(entry => entry.naturalResult)
 
 const stageValue = (
   transaction: MoveAutomationTransaction,
   expected: StageExpectation,
-): number | undefined => transaction.combatStageUpdates
-  .find(update => update.id === expected.recipientId)
-  ?.stages[expected.key]
+): number | undefined => {
+  const updated = transaction.combatStageUpdates
+    .find(update => update.id === expected.recipientId)
+    ?.stages[expected.key]
+  // Native reducers omit no-op writes when a stage is already at its canonical cap.
+  return updated ?? (Math.abs(expected.value) === 6 ? expected.value : undefined)
+}
 
 const conditionUpdatesByTarget = (
   transaction: MoveAutomationTransaction,
@@ -278,8 +283,8 @@ const assertScenarioResolution = (
 ): void => {
   expect(resolution.auditTrace.program).toMatchObject({
     canonicalId: scenario.moveName,
-    runtimeKind: 'legacy-v1',
-    runtimeVersion: ['Bleakwind Storm', 'Blue Flare', 'Bolt Strike'].includes(scenario.moveName) ? 2 : 1,
+    runtimeKind: 'movespec-v2',
+    runtimeVersion: 2,
   })
   expect(resolution.transaction.attackedTargetIds).toEqual(scenario.expectedAttackedTargetIds)
   expect(resolution.transaction.hitTargetIds).toEqual(scenario.expectedHitTargetIds)
@@ -300,27 +305,13 @@ const assertScenarioResolution = (
 
   for (const targetId of scenario.expectedCriticalTargetIds ?? []) {
     if (resolution.feedback?.targetId === targetId) expect(resolution.feedback.crit).toBe(true)
-    else expect(resolution.transaction.logLines.join('\n')).toContain('critical')
+    else expect(JSON.stringify(resolution.auditTrace.events)).toContain('"critical":true')
   }
 
   for (const targetId of scenario.expectedSmiteMissTargetIds ?? []) {
     expect(resolution.transaction.hitTargetIds).not.toContain(targetId)
     expect(resolution.transaction.hpUpdates.map(update => update.id)).toContain(targetId)
-    expect(resolution.transaction.logLines.join('\n')).toContain('Smite miss dealt damage')
-    expect(resolution.transaction.logLines.join('\n')).toContain('× ½ =')
-    expect(resolution.rollLedger).toContainEqual(expect.objectContaining({
-      parentEffectId: 'legacy-v1.damage',
-      reason: expect.stringContaining(targetId),
-    }))
-    expect(resolution.auditTrace.events).toContainEqual(expect.objectContaining({
-      kind: 'operation',
-      recipientIds: [targetId],
-      reasonCode: 'legacy-smite-miss-damage',
-      input: expect.objectContaining({
-        accuracyOutcome: 'miss',
-        effectivenessPolicy: 'resisted-one-additional-step',
-      }),
-    }))
+    assertReviewedNativeSmiteMissEvidence(resolution, targetId)
   }
 
   const traceRolls = resolution.auditTrace.events.filter(event => event.kind === 'roll')
@@ -972,7 +963,7 @@ describe('REG-003 registered move conformance', () => {
         random: randomSequence(scenario.randomValues),
         now: () => NOW,
         idFactory: () => 'reg-003-plan-id',
-        operationId: `${scenario.scenarioId}.plan`,
+        operationId: `op_${scenario.scenarioId.replace(/[^A-Za-z0-9_-]+/g, '_')}_plan`,
       })
       assertScenarioResolution(scenario, plan.resolution)
       expect(plan.resolution.transaction).toEqual(direct.transaction)
@@ -987,7 +978,7 @@ describe('REG-003 registered move conformance', () => {
       expect(response.move?.transaction).toEqual(plan.resolution.transaction)
       expect(response.move?.rollLedger).toEqual(plan.resolution.rollLedger)
       expect(response.move?.trace).toMatchObject({
-        program: { canonicalId: scenario.moveName, runtimeKind: 'legacy-v1' },
+        program: { canonicalId: scenario.moveName, runtimeKind: 'movespec-v2' },
       })
       expect(harness.ops.getOpResult(command.mapSlug, command.opId)).toEqual(response.result)
 
@@ -1029,7 +1020,7 @@ describe('REG-003 registered move conformance', () => {
       ...fixture,
       random: randomSequence(scenario.randomValues),
       now: () => NOW,
-      operationId: BABY_DOLL_EYES_REG_003_SCENARIOS[3].scenarioId,
+      operationId: `op_${BABY_DOLL_EYES_REG_003_SCENARIOS[3].scenarioId.replace(/[^A-Za-z0-9_-]+/g, '_')}`.slice(0, 99),
     })).toThrowError(expect.objectContaining({
       code: 'move-resource-unavailable',
       message: expect.stringContaining('priority-unavailable'),

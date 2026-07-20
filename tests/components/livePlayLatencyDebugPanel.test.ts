@@ -15,7 +15,8 @@ const event = (
   type: LivePlayCommandTraceEvent['type'],
   sequence: number,
   timestamp: number,
-): LivePlayCommandTraceEvent => ({ type, sequence, timestamp })
+  detail?: LivePlayCommandTraceEvent['detail'],
+): LivePlayCommandTraceEvent => ({ type, sequence, timestamp, ...(detail ? { detail } : {}) })
 
 const trace = (overrides: Partial<LivePlayCommandTraceSnapshot> & Pick<LivePlayCommandTraceSnapshot, 'opId' | 'events'>): LivePlayCommandTraceSnapshot => {
   const { opId, events, ...rest } = overrides
@@ -91,6 +92,41 @@ describe('LivePlayLatencyDebugPanel', () => {
     expect(wrapper.text()).toContain('Total')
     expect(wrapper.text()).toContain('160 ms')
     expect(wrapper.text()).not.toContain('moveToken')
+  })
+
+  it('shows move plan, response, commit, runtime, recovery, and terminal diagnostics', () => {
+    const moveTrace = trace({
+      opId: 'op_move_diagnostics_87654321',
+      commandType: 'resolveMove',
+      runtimeKind: 'movespec-v2',
+      runtimeVersion: 2,
+      status: 'confirmed',
+      events: [
+        event(LIVE_PLAY_COMMAND_TRACE_EVENT_TYPES.BUILT, 1, 1_000),
+        event(LIVE_PLAY_COMMAND_TRACE_EVENT_TYPES.PLANNED, 2, 1_025, { planDurationMs: 25 }),
+        event(LIVE_PLAY_COMMAND_TRACE_EVENT_TYPES.WAITING_FOR_RESPONSE, 3, 1_030),
+        event(LIVE_PLAY_COMMAND_TRACE_EVENT_TYPES.RECOVERED, 4, 1_080, { retryCount: 1 }),
+        event(LIVE_PLAY_COMMAND_TRACE_EVENT_TYPES.RECONCILED, 5, 1_100),
+        event(LIVE_PLAY_COMMAND_TRACE_EVENT_TYPES.RESUMED, 6, 1_130),
+        event(LIVE_PLAY_COMMAND_TRACE_EVENT_TYPES.COMMITTED, 7, 1_150, { outcome: 'accepted' }),
+        event(LIVE_PLAY_COMMAND_TRACE_EVENT_TYPES.LIFECYCLE_APPLIED, 8, 1_155),
+      ],
+    })
+    const wrapper = mount(LivePlayLatencyDebugPanel, {
+      props: { traces: { [moveTrace.opId]: moveTrace } },
+    })
+    const text = wrapper.text()
+    expect(text).toContain('movespec-v2 v2')
+    expect(text).toContain('Plan')
+    expect(text).toContain('25 ms')
+    expect(text).toContain('Response wait')
+    expect(text).toContain('100 ms')
+    expect(text).toContain('Resume → commit')
+    expect(text).toContain('20 ms')
+    expect(text).toContain('Lifecycle')
+    expect(text).toContain('5 ms')
+    expect(text).toContain('1 retry · 1 reconcile')
+    expect(text).toContain('accepted')
   })
 
   it('does not render command payloads, profile IDs, sheet payloads, or full operation IDs', () => {

@@ -4,7 +4,7 @@ import { moves } from '../../data/ptuReference'
 import { LIVE_PLAY_MOVE_RESOLUTION_SCHEMA_VERSION, type ResolveMoveIntent } from '#shared/livePlayMoveResolution'
 import {
   AuthoritativeMoveResolutionError,
-  resolveAuthoritativeMove,
+  resolveAuthoritativeMove as resolveAuthoritativeMoveProduction,
 } from '../../server/domain/resolveAuthoritativeMove'
 import { EXPLICIT_MOVE_AUTOMATION_SCRIPTS } from '~/utils/moveAutomation'
 import { moveAutomationAreaTemplateId } from '~/utils/moveAutomationAreaTemplates'
@@ -148,13 +148,18 @@ const areaScript = (
   ...overrides,
 })
 
+let injectedRuntimeRegistry: MoveAutomationRuntimeRegistry | null = null
+
 const withRegisteredMoveAutomationScript = async <T>(script: MoveAutomationScript, run: () => T | Promise<T>): Promise<T> => {
   const scripts = EXPLICIT_MOVE_AUTOMATION_SCRIPTS as Map<string, MoveAutomationScript>
   const previous = scripts.get(script.moveName)
+  const previousRegistry = injectedRuntimeRegistry
   scripts.set(script.moveName, script)
+  injectedRuntimeRegistry = LEGACY_ONLY_RUNTIME_REGISTRY
   try {
     return await run()
   } finally {
+    injectedRuntimeRegistry = previousRegistry
     if (previous) scripts.set(script.moveName, previous)
     else scripts.delete(script.moveName)
   }
@@ -239,6 +244,13 @@ const LEGACY_ONLY_RUNTIME_REGISTRY: MoveAutomationRuntimeRegistry = Object.freez
   handlerRegistry: REGISTERED_MOVE_HANDLER_REGISTRY,
   resolve: () => null,
   entries: () => Object.freeze([]),
+})
+
+const resolveAuthoritativeMove = (
+  options: Parameters<typeof resolveAuthoritativeMoveProduction>[0],
+) => resolveAuthoritativeMoveProduction({
+  ...options,
+  ...(injectedRuntimeRegistry ? { runtimeRegistry: injectedRuntimeRegistry } : {}),
 })
 
 const templateId = (template: MoveAutomationAreaTemplate): string => moveAutomationAreaTemplateId(template)
@@ -331,7 +343,7 @@ describe('resolveAuthoritativeMove area selections', () => {
         .not.toMatch(/assisted|assign .* side|filter .*all(?:y|ies)|manual/i)
       expect(manifestRow, moveName).toMatchObject({
         baseStatus: 'complete',
-        runtime: { kind: 'legacy-v1', version: 3 },
+        runtime: { kind: 'movespec-v2', version: 2 },
         capabilityTags: ['stages.typed', 'targeting.authoritative'],
         blockerCodes: [],
         limitations: [],
@@ -836,7 +848,7 @@ describe('resolveAuthoritativeMove area selections', () => {
     })
 
     expect(resolution.script).toMatchObject({
-      version: 3,
+      version: 2,
       areaTargetRelationship: 'ally',
     })
     expect(resolution.area?.candidateTargetIds).toEqual(['target-a', 'target-b', 'target-c'])
@@ -866,9 +878,6 @@ describe('resolveAuthoritativeMove area selections', () => {
     expect(resolution.transaction.combatStageUpdates).toEqual(expectedUpdates)
     expect(resolution.transaction.combatStageUpdates.map(update => update.id)).not.toContain('target-b')
     expect(resolution.transaction.combatStageUpdates.map(update => update.id)).not.toContain('target-c')
-    expect(resolution.transaction.logLines).toContain(
-      `${moveName}: ally-only area recipients are derived from explicit encounter sides; enemy and unaffiliated placements are ineligible.`,
-    )
     expect(resolution.transaction.logLines.join('\n')).not.toMatch(/assisted ally targeting|prepare map/i)
     expect(resolution.transaction.logLines.join('\n')).not.toContain('target-b')
     expect(resolution.transaction.logLines.join('\n')).not.toContain('target-c')

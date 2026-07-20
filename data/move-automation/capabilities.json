@@ -8,16 +8,14 @@
         "lifecycle.effects",
         "targeting.authoritative"
       ],
-      "implementationStatus": "planned",
+      "implementationStatus": "implemented",
       "representativeMove": "Ember"
     },
     {
       "code": "expressions.bounded",
       "owningPhase": "phase-4",
-      "dependencies": [
-        "runtime.unimplemented"
-      ],
-      "implementationStatus": "planned",
+      "dependencies": [],
+      "implementationStatus": "implemented",
       "representativeMove": "Power Trip"
     },
     {
@@ -26,7 +24,7 @@
       "dependencies": [
         "lifecycle.effects"
       ],
-      "implementationStatus": "planned",
+      "implementationStatus": "implemented",
       "representativeMove": "Sunny Day"
     },
     {
@@ -36,7 +34,7 @@
         "fields.typed",
         "movement.authoritative"
       ],
-      "implementationStatus": "planned",
+      "implementationStatus": "implemented",
       "representativeMove": "Spikes"
     },
     {
@@ -45,7 +43,7 @@
       "dependencies": [
         "lifecycle.effects"
       ],
-      "implementationStatus": "planned",
+      "implementationStatus": "implemented",
       "representativeMove": "Fury Cutter"
     },
     {
@@ -54,7 +52,7 @@
       "dependencies": [
         "expressions.bounded"
       ],
-      "implementationStatus": "planned",
+      "implementationStatus": "implemented",
       "representativeMove": "Dragon Rage"
     },
     {
@@ -63,7 +61,7 @@
       "dependencies": [
         "runtime.unimplemented"
       ],
-      "implementationStatus": "planned",
+      "implementationStatus": "implemented",
       "representativeMove": "Knock Off"
     },
     {
@@ -72,7 +70,7 @@
       "dependencies": [
         "runtime.unimplemented"
       ],
-      "implementationStatus": "planned",
+      "implementationStatus": "implemented",
       "representativeMove": "Yawn"
     },
     {
@@ -81,7 +79,7 @@
       "dependencies": [
         "targeting.authoritative"
       ],
-      "implementationStatus": "planned",
+      "implementationStatus": "implemented",
       "representativeMove": "Tackle"
     },
     {
@@ -91,7 +89,7 @@
         "history.structured",
         "reactions.durable"
       ],
-      "implementationStatus": "planned",
+      "implementationStatus": "implemented",
       "representativeMove": "Metronome"
     },
     {
@@ -101,7 +99,7 @@
         "history.structured",
         "targeting.authoritative"
       ],
-      "implementationStatus": "planned",
+      "implementationStatus": "implemented",
       "representativeMove": "Protect"
     },
     {
@@ -117,7 +115,7 @@
       "dependencies": [
         "expressions.bounded"
       ],
-      "implementationStatus": "planned",
+      "implementationStatus": "implemented",
       "representativeMove": "Swords Dance"
     },
     {
@@ -126,7 +124,7 @@
       "dependencies": [
         "runtime.unimplemented"
       ],
-      "implementationStatus": "planned",
+      "implementationStatus": "implemented",
       "representativeMove": "Tackle"
     },
     {
@@ -135,7 +133,7 @@
       "dependencies": [
         "lifecycle.effects"
       ],
-      "implementationStatus": "planned",
+      "implementationStatus": "implemented",
       "representativeMove": "Transform"
     }
   ]

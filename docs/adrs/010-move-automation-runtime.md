@@ -60,6 +60,8 @@ Before registration, the server fills syntax-only defaults, puts phases and set-
 
 The server keeps legacy-v1 adapters and MoveSpec-v2 definitions in separate duplicate-checked registration sets. Both generations may coexist for migration and shadow comparison, but the semantic manifest selects exactly one reviewed version, definition hash, and source module for live resolution. Runtime lookup accepts only canonical move identity; client-submitted runtime kinds, specs, versions, or hashes are forbidden authority fields.
 
+Current retirement state: every canonical manifest row selects MoveSpec v2 and the production registry is constructed without legacy execution sources. Legacy definitions and fingerprints remain reachable only through explicit test/migration registries for the documented backup-compatibility window; they cannot be selected by a production command or write old-format state.
+
 The interpreter:
 
 - receives one immutable authoritative rules context;

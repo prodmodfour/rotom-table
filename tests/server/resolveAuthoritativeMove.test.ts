@@ -3,7 +3,7 @@ import { LIVE_PLAY_MOVE_RESOLUTION_SCHEMA_VERSION, type ResolveMoveIntent } from
 import {
   AuthoritativeMoveResolutionError,
   deduplicateAuthoritativeMoveSheetReads,
-  resolveAuthoritativeMove,
+  resolveAuthoritativeMove as resolveAuthoritativeMoveProduction,
 } from '../../server/domain/resolveAuthoritativeMove'
 import {
   AuthoritativeMoveRandomError,
@@ -16,6 +16,23 @@ import type { CharacterSheet, CharacterSheetMove } from '~/types/characterSheet'
 import type { SheetPlacement, TabletopMap } from '~/types/map'
 import type { MoveAutomationAreaTemplate, MoveAutomationScript } from '~/types/moveAutomation'
 import type { TrainerSheet } from '~/types/trainerSheet'
+import { REGISTERED_MOVE_HANDLER_REGISTRY } from '~~/server/domain/moveAutomation/handlers/registry'
+import type { MoveAutomationRuntimeRegistry } from '~~/server/domain/moveAutomation/registry'
+
+const LEGACY_ONLY_RUNTIME_REGISTRY: MoveAutomationRuntimeRegistry = Object.freeze({
+  size: 0,
+  handlerRegistry: REGISTERED_MOVE_HANDLER_REGISTRY,
+  resolve: () => null,
+  entries: () => Object.freeze([]),
+})
+
+let injectedRuntimeRegistry: MoveAutomationRuntimeRegistry | null = null
+const resolveAuthoritativeMove = (
+  options: Parameters<typeof resolveAuthoritativeMoveProduction>[0],
+) => resolveAuthoritativeMoveProduction({
+  ...options,
+  ...(injectedRuntimeRegistry ? { runtimeRegistry: injectedRuntimeRegistry } : {}),
+})
 
 const moveIntent = (overrides: Omit<ResolveMoveIntent, 'schemaVersion'>): ResolveMoveIntent => ({
   schemaVersion: LIVE_PLAY_MOVE_RESOLUTION_SCHEMA_VERSION,
@@ -207,13 +224,20 @@ const priorityBranchSelectionScript = (): MoveAutomationScript => {
   }
 }
 
-const withRegisteredMoveAutomationScript = async <T>(script: MoveAutomationScript, run: () => T | Promise<T>): Promise<T> => {
+const withRegisteredMoveAutomationScript = async <T>(
+  script: MoveAutomationScript,
+  run: () => T | Promise<T>,
+  useLegacyRuntime = true,
+): Promise<T> => {
   const scripts = EXPLICIT_MOVE_AUTOMATION_SCRIPTS as Map<string, MoveAutomationScript>
   const previous = scripts.get(script.moveName)
+  const previousRegistry = injectedRuntimeRegistry
   scripts.set(script.moveName, script)
+  injectedRuntimeRegistry = useLegacyRuntime ? LEGACY_ONLY_RUNTIME_REGISTRY : previousRegistry
   try {
     return await run()
   } finally {
+    injectedRuntimeRegistry = previousRegistry
     if (previous) scripts.set(script.moveName, previous)
     else scripts.delete(script.moveName)
   }
@@ -372,7 +396,7 @@ describe('resolveAuthoritativeMove', () => {
     },
   )
 
-  it('independently rejects a manifest-blocked move even if a legacy script is registered', async () => {
+  it('keeps manifest-selected targeting authoritative when a legacy script is also registered', async () => {
     const teleportScript = fakeTargetCountScript({
       moveName: 'Teleport',
       targetMode: 'one-target',
@@ -392,11 +416,11 @@ describe('resolveAuthoritativeMove', () => {
           selection: { kind: 'single-target', targetPlacementId: 'target-a' },
         }),
         random: randomSequence([0.5]),
-      }), 'move-automation-blocked')
+      }), 'selection-kind-mismatch')
 
-      expect(error.reason).toBe('unsupported')
-      expect(error.message).toContain('Runtime · Unimplemented is planned for Phase 2')
-    })
+      expect(error.reason).toBe('invalid')
+      expect(error.message).toContain('does not accept a single-target selection')
+    }, false)
   })
 
   it('resolves in-range single-target moves with authoritative random accuracy, damage and feedback IDs', () => {
@@ -444,33 +468,27 @@ describe('resolveAuthoritativeMove', () => {
     ])
     expect(structuredClone(miss.transaction)).toMatchObject({ attackedTargetIds: ['target-a'], hitTargetIds: [] })
     expect(JSON.parse(JSON.stringify(miss.transaction))).toMatchObject({ attackedTargetIds: ['target-a'], hitTargetIds: [] })
-    expect(lowDamage.feedback).toMatchObject({ id: 'feedback-id', naturalRoll: 11, targetId: 'target-a' })
+    expect(lowDamage.feedback).toBeUndefined()
     expect(lowDamage.rollLedger).toEqual([
-      {
-        rollId: 'legacy-v1.accuracy.1',
-        parentEffectId: 'legacy-v1.accuracy',
+      expect.objectContaining({
+        rollId: 'pound.accuracy-roll.1',
+        parentEffectId: 'pound.accuracy',
         formula: { kind: 'dice', count: 1, sides: 20, modifier: 0 },
-        reason: 'Pound accuracy against target-a',
-        naturalResults: [11],
         naturalResult: 11,
-        modifiers: [{ sourceId: 'user-accuracy', reason: 'User Accuracy', value: 0 }],
         finalValue: 11,
-      },
-      {
-        rollId: 'legacy-v1.damage.1',
-        parentEffectId: 'legacy-v1.damage',
+      }),
+      expect.objectContaining({
+        rollId: 'pound.damage.roll.1',
+        parentEffectId: 'pound.damage',
         formula: { kind: 'dice', count: 1, sides: 8, modifier: 6 },
-        reason: 'Pound damage against target-a',
-        naturalResults: [1],
         naturalResult: 1,
-        modifiers: [],
         finalValue: 7,
-      },
+      }),
     ])
     expect(miss.rollLedger).toEqual([
       expect.objectContaining({
-        rollId: 'legacy-v1.accuracy.1',
-        parentEffectId: 'legacy-v1.accuracy',
+        rollId: 'pound.accuracy-roll.1',
+        parentEffectId: 'pound.accuracy',
         naturalResult: 1,
         finalValue: 1,
       }),
@@ -479,8 +497,8 @@ describe('resolveAuthoritativeMove', () => {
       schemaVersion: 1,
       program: {
         canonicalId: 'Pound',
-        runtimeKind: 'legacy-v1',
-        runtimeVersion: 1,
+        runtimeKind: 'movespec-v2',
+        runtimeVersion: 2,
         definitionHash: expect.stringMatching(/^[a-f0-9]{64}$/),
       },
       ruleset: {
@@ -490,19 +508,21 @@ describe('resolveAuthoritativeMove', () => {
     })
     expect(lowDamage.auditTrace.events).toEqual(expect.arrayContaining([
       expect.objectContaining({ kind: 'target', targetId: 'target-a', outcome: 'included' }),
-      expect.objectContaining({ kind: 'predicate', predicateId: 'legacy-v1.accuracy.1', outcome: true }),
-      expect.objectContaining({ kind: 'roll', roll: expect.objectContaining({ rollId: 'legacy-v1.accuracy.1' }) }),
+      expect.objectContaining({ kind: 'roll', roll: expect.objectContaining({ rollId: 'pound.accuracy-roll.1' }) }),
       expect.objectContaining({
         kind: 'operation',
-        operationKind: 'direct-hp',
+        operationKind: 'damage',
         recipientIds: ['target-a'],
         outcome: 'applied',
-        result: expect.objectContaining({ id: 'target-a' }),
       }),
     ]))
     expect(miss.auditTrace.events).toEqual(expect.arrayContaining([
-      expect.objectContaining({ kind: 'predicate', predicateId: 'legacy-v1.accuracy.1', outcome: false }),
-      expect.objectContaining({ kind: 'phase-transition', to: 'miss' }),
+      expect.objectContaining({
+        kind: 'operation',
+        operationId: 'pound.damage',
+        recipientIds: [],
+        outcome: 'no-op',
+      }),
     ]))
     expect(lowDamage.desiredFacing).toBe('south-east')
     expect(highDamage.transaction.hpUpdates).not.toEqual(lowDamage.transaction.hpUpdates)
@@ -565,7 +585,7 @@ describe('resolveAuthoritativeMove', () => {
     expect(selfTarget.selectedTargetIds).toEqual(['actor-token'])
     expect(selfTarget.rollLedger.map((roll) => roll.formula)).toEqual([
       { kind: 'dice', count: 1, sides: 20, modifier: 0 },
-      { kind: 'table', tableId: 'legacy-v1.random-stage-suggestion' },
+      { kind: 'table', tableId: 'acupressure.random-stage-table' },
     ])
 
     expectFailure(() => resolveAuthoritativeMove({
@@ -843,7 +863,7 @@ describe('resolveAuthoritativeMove', () => {
     expect(hpLoss(airborne) - hpLoss(baseline)).toBe(10)
   })
 
-  it('prevents legacy Sleep automation for a grounded Electric Terrain member', () => {
+  it('prevents native Sleep automation for a grounded Electric Terrain member', () => {
     const terrainMap = mapFixture([
       placement('actor-token', 'actor', { x: 0, y: 0, z: 0 }, 'red'),
       placement('target-token', 'target-a', { x: 1, y: 0, z: 0 }, 'blue'),
@@ -877,10 +897,16 @@ describe('resolveAuthoritativeMove', () => {
         operationKind: 'condition',
         recipientIds: ['target-token'],
         outcome: 'prevented',
-        result: {
-          applied: false,
-          blockedBy: 'Electric Terrain (legacy.terrain.electric)',
-        },
+        result: expect.objectContaining({
+          status: 'prevented',
+          recipients: expect.arrayContaining([
+            expect.objectContaining({
+              recipientId: 'target-token',
+              outcome: 'prevented',
+              blockers: [{ subject: 'Sleep', source: 'Electric Terrain (legacy.terrain.electric)' }],
+            }),
+          ]),
+        }),
       }),
     ]))
   })
@@ -915,9 +941,18 @@ describe('resolveAuthoritativeMove', () => {
         operationKind: 'condition',
         recipientIds: ['target-token'],
         outcome: 'prevented',
-        reasonCode: 'condition-prevented',
-        input: { condition: 'Sleep' },
-        result: { applied: false, blockedBy: 'Sweet Veil (aura)' },
+        reasonCode: 'spore.condition-1',
+        input: expect.objectContaining({ conditionId: 'sleep' }),
+        result: expect.objectContaining({
+          status: 'prevented',
+          recipients: expect.arrayContaining([
+            expect.objectContaining({
+              recipientId: 'target-token',
+              outcome: 'prevented',
+              blockers: [{ subject: 'Sleep', source: 'Sweet Veil (aura)' }],
+            }),
+          ]),
+        }),
       }),
     ]))
     expect(resolution.sheetReads).toEqual([

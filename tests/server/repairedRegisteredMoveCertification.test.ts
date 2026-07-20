@@ -61,7 +61,7 @@ const allImmediateLayers = (
 const REPAIRED_MOVE_CERTIFICATIONS: readonly RepairedMoveCertification[] = Object.freeze([
   {
     canonicalId: 'Aromatic Mist',
-    runtimeKind: 'legacy-v1',
+    runtimeKind: 'movespec-v2',
     scenarios: AROMATIC_MIST_ALLY_AREA_SCENARIOS,
     executionScenarioIds: allImmediateLayers('aromatic-mist.legacy-v1-mixed-sides'),
     duplicateReplayScenarioIds: ['aromatic-mist.legacy-v1-duplicate-replay'],
@@ -76,7 +76,7 @@ const REPAIRED_MOVE_CERTIFICATIONS: readonly RepairedMoveCertification[] = Objec
   },
   {
     canonicalId: 'Coaching',
-    runtimeKind: 'legacy-v1',
+    runtimeKind: 'movespec-v2',
     scenarios: COACHING_ALLY_AREA_SCENARIOS,
     executionScenarioIds: allImmediateLayers('coaching.legacy-v1-mixed-sides'),
     duplicateReplayScenarioIds: ['coaching.legacy-v1-duplicate-replay'],
@@ -118,7 +118,7 @@ const REPAIRED_MOVE_CERTIFICATIONS: readonly RepairedMoveCertification[] = Objec
   },
   {
     canonicalId: 'Howl',
-    runtimeKind: 'legacy-v1',
+    runtimeKind: 'movespec-v2',
     scenarios: HOWL_ALLY_AREA_SCENARIOS,
     executionScenarioIds: allImmediateLayers('howl.legacy-v1-mixed-sides'),
     duplicateReplayScenarioIds: ['howl.legacy-v1-duplicate-replay'],

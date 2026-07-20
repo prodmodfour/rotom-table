@@ -101,6 +101,8 @@ export interface EncounterCompletedMoveHistory extends EncounterHistoryMoveRecor
 export interface EncounterMoveUseDeclaration {
   readonly eventId: string
   readonly sourceOperationId: string
+  /** Authoritative encounter round, null outside initiative or in migrated history. */
+  readonly round?: number | null
   /** One-based scene-local authoritative declaration order. */
   readonly order: number
   readonly targetPlacementIds: readonly string[]
@@ -109,6 +111,8 @@ export interface EncounterMoveUseDeclaration {
 export interface EncounterMoveUseCompletion {
   readonly eventId: string
   readonly sourceOperationId: string
+  /** Authoritative encounter round, null outside initiative or in migrated history. */
+  readonly round?: number | null
   /** One-based scene-local authoritative completion order. */
   readonly order: number
   readonly attackedTargetIds: readonly string[]
@@ -128,6 +132,7 @@ export interface EncounterMoveUseHistory extends MoveHistoryIdentity {
 }
 
 export interface EncounterDamagingMoveHistory extends EncounterHistoryMoveRecord {
+  readonly round?: number | null
   readonly targetPlacementId: string
   readonly hitIndex: number
   readonly hitPointLoss: number
@@ -165,6 +170,7 @@ export interface EncounterSwitchHistory {
 }
 
 export interface EncounterKnockoutHistory extends EncounterHistoryMoveRecord {
+  readonly round?: number | null
   readonly targetPlacementId: string
   readonly hitIndex: number | null
 }
@@ -425,6 +431,25 @@ const parseExactRecord = (
   return record
 }
 
+const parseRecordWithOptionalRound = (
+  value: unknown,
+  fields: readonly string[],
+  path: string,
+): UnknownRecord => {
+  const record = parseRecord(value, path)
+  const expected = new Set([...fields, 'round'])
+  const missing = fields.filter(field => !Object.prototype.hasOwnProperty.call(record, field))
+  const unknown = Object.keys(record).filter(field => !expected.has(field))
+  if (missing.length > 0 || unknown.length > 0) {
+    fail(
+      'invalid-encounter-history',
+      path,
+      `must contain the supported fields${missing.length ? `; missing ${missing.join(', ')}` : ''}${unknown.length ? `; unknown ${unknown.join(', ')}` : ''}.`,
+    )
+  }
+  return record
+}
+
 const hasExactFields = (
   record: UnknownRecord,
   fields: readonly string[],
@@ -445,6 +470,22 @@ const parseCurrentOrLegacyRecord = (
   if (hasExactFields(record, currentFields)) return { record, legacy: false }
   if (hasExactFields(record, legacyFields)) return { record, legacy: true }
   assertExactFields(record, currentFields, path)
+  return { record, legacy: false }
+}
+
+const parseCurrentOrLegacyRecordWithOptionalRound = (
+  value: unknown,
+  currentFields: readonly string[],
+  legacyFields: readonly string[],
+  path: string,
+): { readonly record: UnknownRecord; readonly legacy: boolean } => {
+  const record = parseRecord(value, path)
+  const withoutRound = Object.fromEntries(
+    Object.entries(record).filter(([key]) => key !== 'round'),
+  )
+  if (hasExactFields(withoutRound, currentFields)) return { record, legacy: false }
+  if (hasExactFields(withoutRound, legacyFields)) return { record, legacy: true }
+  assertExactFields(withoutRound, currentFields, path)
   return { record, legacy: false }
 }
 
@@ -762,7 +803,7 @@ const parseDamagingMove = (
   value: unknown,
   path: string,
 ): EncounterDamagingMoveHistory => {
-  const { record, legacy } = parseCurrentOrLegacyRecord(
+  const { record, legacy } = parseCurrentOrLegacyRecordWithOptionalRound(
     value,
     DAMAGING_MOVE_FIELDS,
     LEGACY_DAMAGING_MOVE_FIELDS,
@@ -770,6 +811,9 @@ const parseDamagingMove = (
   )
   return {
     ...parseMoveCommon(record, path, legacy),
+    round: Object.prototype.hasOwnProperty.call(record, 'round')
+      ? parseNullableInteger(record.round, `${path}.round`, 1, ENCOUNTER_HISTORY_LIMITS.round)
+      : null,
     targetPlacementId: parsePlacementId(record.targetPlacementId, `${path}.targetPlacementId`),
     hitIndex: parseInteger(
       record.hitIndex,
@@ -873,7 +917,7 @@ const parseSwitch = (value: unknown, path: string): EncounterSwitchHistory => {
 }
 
 const parseKnockout = (value: unknown, path: string): EncounterKnockoutHistory => {
-  const { record, legacy } = parseCurrentOrLegacyRecord(
+  const { record, legacy } = parseCurrentOrLegacyRecordWithOptionalRound(
     value,
     KNOCKOUT_FIELDS,
     LEGACY_KNOCKOUT_FIELDS,
@@ -881,6 +925,9 @@ const parseKnockout = (value: unknown, path: string): EncounterKnockoutHistory =
   )
   return {
     ...parseMoveCommon(record, path, legacy),
+    round: Object.prototype.hasOwnProperty.call(record, 'round')
+      ? parseNullableInteger(record.round, `${path}.round`, 1, ENCOUNTER_HISTORY_LIMITS.round)
+      : null,
     targetPlacementId: parsePlacementId(record.targetPlacementId, `${path}.targetPlacementId`),
     hitIndex: parseNullableInteger(
       record.hitIndex,
@@ -901,7 +948,7 @@ const parseMoveUse = (
     ? null
     : (() => {
         const declarationPath = `${path}.declaration`
-        const input = parseExactRecord(
+        const input = parseRecordWithOptionalRound(
           record.declaration,
           MOVE_USE_DECLARATION_FIELDS,
           declarationPath,
@@ -912,6 +959,14 @@ const parseMoveUse = (
             input.sourceOperationId,
             `${declarationPath}.sourceOperationId`,
           ),
+          round: Object.prototype.hasOwnProperty.call(input, 'round')
+            ? parseNullableInteger(
+                input.round,
+                `${declarationPath}.round`,
+                1,
+                ENCOUNTER_HISTORY_LIMITS.round,
+              )
+            : null,
           order: parseInteger(
             input.order,
             `${declarationPath}.order`,
@@ -929,7 +984,7 @@ const parseMoveUse = (
     ? null
     : (() => {
         const completionPath = `${path}.completion`
-        const input = parseExactRecord(
+        const input = parseRecordWithOptionalRound(
           record.completion,
           MOVE_USE_COMPLETION_FIELDS,
           completionPath,
@@ -973,6 +1028,14 @@ const parseMoveUse = (
             input.sourceOperationId,
             `${completionPath}.sourceOperationId`,
           ),
+          round: Object.prototype.hasOwnProperty.call(input, 'round')
+            ? parseNullableInteger(
+                input.round,
+                `${completionPath}.round`,
+                1,
+                ENCOUNTER_HISTORY_LIMITS.round,
+              )
+            : null,
           order: parseInteger(
             input.order,
             `${completionPath}.order`,

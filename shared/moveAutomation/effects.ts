@@ -161,6 +161,7 @@ export const MOVE_EFFECT_RECIPIENT_SCOPED_BRANCH_SELECTOR_KINDS = [
   'damaged-targets',
   'fainted-targets',
   'area-targets',
+  'all-placements',
 ] as const satisfies readonly MoveEffectRecipientSelectorKind[]
 
 export const MOVE_EFFECT_ROLL_FORMULA_KINDS = [
@@ -634,7 +635,8 @@ export interface MoveConditionalAutomaticHitRule {
 
 /** Server geometry may suppress Evasion without changing the move's base AC. */
 export interface MoveConditionalEvasionRule {
-  readonly kind: 'ignore-when-flanked'
+  /** `ignore-always` is emitted only after a registered handler proves a contextual rule. */
+  readonly kind: 'ignore-when-flanked' | 'ignore-always'
   readonly sourceId: string
   readonly reasonCode: string
 }
@@ -906,10 +908,16 @@ export interface MoveDamageDefenderTypeOverride {
 }
 
 export interface MoveDamageTypeEffectivenessPolicy {
-  /** Ignore removes an immunity contribution; it does not force the final result to neutral. */
+  /** Ignore removes a type-chart immunity contribution; it does not force neutrality. */
   readonly immunity: MoveEffectTypeMatchupPolicy
   readonly resistance: MoveEffectTypeMatchupPolicy
   readonly weakness: MoveEffectTypeMatchupPolicy
+  /**
+   * Independently ignore passive ability/capability immunity while retaining
+   * canonical type-chart immunity (for Sunsteel Strike/Moongeist Beam family).
+   * Omission preserves the default `honor` policy.
+   */
+  readonly passiveImmunity?: MoveEffectTypeMatchupPolicy
   /** Exact final multiplier after immunity policy; null uses the reviewed matchup calculation. */
   readonly effectivenessOverride: number | null
   /** Per-defender-type relation replacements, such as Freeze-Dry treating Water as weak. */
@@ -1062,6 +1070,8 @@ export interface MoveMultiHitConditionEffectTemplate {
   readonly id: string
   readonly timing: MoveEffectMultiHitEffectTiming
   readonly trigger: MoveEffectMultiHitEffectTrigger
+  /** Optional inclusive natural-accuracy threshold evaluated against this strike/sequence. */
+  readonly naturalAccuracyMinimum?: number
   readonly recipient: MoveEffectMultiHitEffectRecipient
   readonly kind: 'condition'
   readonly reasonCode: string
@@ -1072,6 +1082,7 @@ export interface MoveMultiHitCombatStageEffectTemplate {
   readonly id: string
   readonly timing: MoveEffectMultiHitEffectTiming
   readonly trigger: MoveEffectMultiHitEffectTrigger
+  readonly naturalAccuracyMinimum?: number
   readonly recipient: MoveEffectMultiHitEffectRecipient
   readonly kind: 'combat-stage'
   readonly reasonCode: string
@@ -1195,6 +1206,8 @@ export interface MoveHealEffectPayload {
   readonly calculation: MoveHpCalculation | null
   readonly bounds: MoveHpFinalBounds
   readonly rounding: MoveEffectRoundingPolicy
+  /** Apply only when an earlier typed state operation actually applied. */
+  readonly operationOutcomeTrigger?: MoveConditionOperationOutcomeTrigger
   /** Healing and temporary HP always ignore HP markers and Massive Damage. */
   readonly injury: MoveHpInjuryPolicy
 }
@@ -1232,6 +1245,11 @@ export interface MoveConditionDurationPolicy {
   readonly transferPolicy?: EncounterEffectTransferPolicy
 }
 
+export interface MoveConditionOperationOutcomeTrigger {
+  readonly operationId: string
+  readonly outcome: MoveCombatStageOperationOutcomeTrigger['outcome']
+}
+
 export interface MoveConditionEffectPayload {
   readonly action: MoveEffectConditionAction
   /** Applied/removed/transferred/replacement condition; null for clear/random-choice. */
@@ -1249,6 +1267,8 @@ export interface MoveConditionEffectPayload {
   readonly randomChoice: MoveConditionRandomChoice | null
   /** Optional reviewed natural-roll gate for an accuracy-triggered secondary effect. */
   readonly accuracyRollTrigger?: MoveConditionAccuracyRollTrigger
+  /** Apply only when an earlier typed state operation actually applied. */
+  readonly operationOutcomeTrigger?: MoveConditionOperationOutcomeTrigger
   /** Honor complete typed-attack immunity before applying this condition. */
   readonly applyTypeImmunity?: boolean
   /** Non-null stores an application as a source-linked encounter effect. */
@@ -1968,7 +1988,7 @@ const MULTI_HIT_PER_HIT_ACCURACY_FIELDS = [
 ] as const
 const MULTI_HIT_CRITICAL_KIND_FIELDS = ['kind'] as const
 const MULTI_HIT_PER_HIT_CRITICAL_FIELDS = ['kind', 'rollId', 'formula'] as const
-const MULTI_HIT_EFFECT_FIELDS = [
+const MULTI_HIT_EFFECT_REQUIRED_FIELDS = [
   'id',
   'timing',
   'trigger',
@@ -1977,6 +1997,7 @@ const MULTI_HIT_EFFECT_FIELDS = [
   'reasonCode',
   'payload',
 ] as const
+const MULTI_HIT_EFFECT_OPTIONAL_FIELDS = ['naturalAccuracyMinimum'] as const
 const CONTEXTUAL_DAMAGE_BASE_FIELDS = [
   'kind',
   'expression',
@@ -1985,13 +2006,14 @@ const CONTEXTUAL_DAMAGE_BASE_FIELDS = [
   'rounding',
   'stabTiming',
 ] as const
-const TYPE_EFFECTIVENESS_FIELDS = [
+const TYPE_EFFECTIVENESS_REQUIRED_FIELDS = [
   'immunity',
   'resistance',
   'weakness',
   'effectivenessOverride',
   'defenderTypeOverrides',
 ] as const
+const TYPE_EFFECTIVENESS_OPTIONAL_FIELDS = ['passiveImmunity'] as const
 const DEFENDER_TYPE_OVERRIDE_FIELDS = ['defenderType', 'relation'] as const
 const CRITICAL_HIT_FIELDS = ['trigger', 'prevention'] as const
 const CRITICAL_TRIGGER_KIND_FIELDS = ['kind'] as const
@@ -2009,7 +2031,7 @@ const DIRECT_HP_REQUIRED_FIELDS = [
   'injury',
 ] as const
 const DIRECT_HP_OPTIONAL_FIELDS = ['accuracyRollId'] as const
-const HEAL_FIELDS = [
+const HEAL_REQUIRED_FIELDS = [
   'mode',
   'pool',
   'calculation',
@@ -2017,6 +2039,7 @@ const HEAL_FIELDS = [
   'rounding',
   'injury',
 ] as const
+const HEAL_OPTIONAL_FIELDS = ['operationOutcomeTrigger'] as const
 const HP_FIXED_CALCULATION_FIELDS = ['kind', 'value'] as const
 const HP_PERCENT_CALCULATION_FIELDS = ['kind', 'percent'] as const
 const HP_FORMULA_CALCULATION_FIELDS = ['kind', 'expression'] as const
@@ -2044,6 +2067,7 @@ const CONDITION_OPTIONAL_FIELDS = [
   'filter',
   'randomChoice',
   'accuracyRollTrigger',
+  'operationOutcomeTrigger',
   'applyTypeImmunity',
   'duration',
   'saveTiming',
@@ -2052,6 +2076,7 @@ const CONDITION_OPTIONAL_FIELDS = [
 const CONDITION_FILTER_FIELDS = ['groups', 'conditionIds', 'excludedConditionIds'] as const
 const CONDITION_RANDOM_CHOICE_FIELDS = ['rollId', 'conditionIds'] as const
 const CONDITION_ACCURACY_ROLL_TRIGGER_FIELDS = ['rollId', 'trigger'] as const
+const CONDITION_OPERATION_OUTCOME_TRIGGER_FIELDS = ['operationId', 'outcome'] as const
 const CONDITION_DURATION_REQUIRED_FIELDS = ['effectId', 'duration'] as const
 const CONDITION_DURATION_OPTIONAL_FIELDS = ['charges', 'transferPolicy'] as const
 const CONDITION_STACK_POLICY_FIELDS = ['kind', 'maxStacks'] as const
@@ -2744,15 +2769,16 @@ const parseConditionalEvasionRule = (
   path: string,
 ): MoveConditionalEvasionRule => {
   const input = parseExactRecord(value, CONDITIONAL_EVASION_RULE_FIELDS, path)
-  if (ownValue(input, 'kind', path) !== 'ignore-when-flanked') {
+  const kind = ownValue(input, 'kind', path) as string
+  if (kind !== 'ignore-when-flanked' && kind !== 'ignore-always') {
     fail(
       'invalid-effect-operation',
       `${path}.kind`,
-      'must be ignore-when-flanked.',
+      'must be ignore-when-flanked or ignore-always.',
     )
   }
   return {
-    kind: 'ignore-when-flanked',
+    kind: kind as MoveConditionalEvasionRule['kind'],
     sourceId: parseStableId(ownValue(input, 'sourceId', path), `${path}.sourceId`),
     reasonCode: parseStableId(ownValue(input, 'reasonCode', path), `${path}.reasonCode`),
   }
@@ -2945,7 +2971,13 @@ const parseTypeEffectivenessPolicy = (
   value: unknown,
   path: string,
 ): MoveDamageTypeEffectivenessPolicy => {
-  const input = parseExactRecord(value, TYPE_EFFECTIVENESS_FIELDS, path)
+  const input = parseRecordWithOptionalFields(
+    value,
+    TYPE_EFFECTIVENESS_REQUIRED_FIELDS,
+    TYPE_EFFECTIVENESS_OPTIONAL_FIELDS,
+    path,
+  )
+  const hasPassiveImmunity = Object.prototype.hasOwnProperty.call(input, 'passiveImmunity')
   const overridesPath = `${path}.defenderTypeOverrides`
   const defenderTypeOverrides = parseBoundedArray(
     ownValue(input, 'defenderTypeOverrides', path),
@@ -2997,6 +3029,14 @@ const parseTypeEffectivenessPolicy = (
       `${path}.weakness`,
       'honor or ignore',
     ),
+    ...(hasPassiveImmunity ? {
+      passiveImmunity: parseEnum<MoveEffectTypeMatchupPolicy>(
+        ownValue(input, 'passiveImmunity', path),
+        TYPE_MATCHUP_POLICY_SET,
+        `${path}.passiveImmunity`,
+        'honor or ignore',
+      ),
+    } : {}),
     effectivenessOverride: ownValue(input, 'effectivenessOverride', path) === null
       ? null
       : parseFiniteNumber(
@@ -3568,7 +3608,38 @@ const parseDirectHpPayload = (value: unknown, path: string): MoveDirectHpEffectP
 }
 
 const parseHealPayload = (value: unknown, path: string): MoveHealEffectPayload => {
-  const input = parseExactRecord(value, HEAL_FIELDS, path)
+  const input = parseRecordWithOptionalFields(
+    value,
+    HEAL_REQUIRED_FIELDS,
+    HEAL_OPTIONAL_FIELDS,
+    path,
+  )
+  const hasOperationOutcomeTrigger = Object.prototype.hasOwnProperty.call(
+    input,
+    'operationOutcomeTrigger',
+  )
+  const operationOutcomeTrigger = hasOperationOutcomeTrigger
+    ? (() => {
+        const triggerPath = `${path}.operationOutcomeTrigger`
+        const trigger = parseExactRecord(
+          ownValue(input, 'operationOutcomeTrigger', path),
+          CONDITION_OPERATION_OUTCOME_TRIGGER_FIELDS,
+          triggerPath,
+        )
+        return {
+          operationId: parseStableId(
+            ownValue(trigger, 'operationId', triggerPath),
+            `${triggerPath}.operationId`,
+          ),
+          outcome: parseEnum<MoveCombatStageOperationTriggerOutcome>(
+            ownValue(trigger, 'outcome', triggerPath),
+            COMBAT_STAGE_OPERATION_TRIGGER_OUTCOME_SET,
+            `${triggerPath}.outcome`,
+            'applied',
+          ),
+        }
+      })()
+    : undefined
   const mode = parseEnum<MoveEffectHealMode>(
     ownValue(input, 'mode', path),
     HEAL_MODE_SET,
@@ -3646,6 +3717,7 @@ const parseHealPayload = (value: unknown, path: string): MoveHealEffectPayload =
       `${path}.rounding`,
       'floor, round, or ceil',
     ),
+    ...(operationOutcomeTrigger ? { operationOutcomeTrigger } : {}),
     injury,
   }
 }
@@ -3862,6 +3934,32 @@ const parseConditionPayload = (value: unknown, path: string): MoveConditionEffec
         `${path}.accuracyRollTrigger`,
       )
     : undefined
+  const hasOperationOutcomeTrigger = Object.prototype.hasOwnProperty.call(
+    input,
+    'operationOutcomeTrigger',
+  )
+  const operationOutcomeTrigger = hasOperationOutcomeTrigger
+    ? (() => {
+        const triggerPath = `${path}.operationOutcomeTrigger`
+        const trigger = parseExactRecord(
+          ownValue(input, 'operationOutcomeTrigger', path),
+          CONDITION_OPERATION_OUTCOME_TRIGGER_FIELDS,
+          triggerPath,
+        )
+        return {
+          operationId: parseStableId(
+            ownValue(trigger, 'operationId', triggerPath),
+            `${triggerPath}.operationId`,
+          ),
+          outcome: parseEnum<MoveCombatStageOperationTriggerOutcome>(
+            ownValue(trigger, 'outcome', triggerPath),
+            COMBAT_STAGE_OPERATION_TRIGGER_OUTCOME_SET,
+            `${triggerPath}.outcome`,
+            'applied',
+          ),
+        }
+      })()
+    : undefined
   const hasApplyTypeImmunity = Object.prototype.hasOwnProperty.call(
     input,
     'applyTypeImmunity',
@@ -3940,6 +4038,13 @@ const parseConditionPayload = (value: unknown, path: string): MoveConditionEffec
       'is supported only when applying a condition.',
     )
   }
+  if (operationOutcomeTrigger && !['apply', 'replace', 'random-choice'].includes(action)) {
+    fail(
+      'invalid-effect-operation',
+      `${path}.operationOutcomeTrigger`,
+      'is supported only when applying a condition.',
+    )
+  }
   if (duration !== null && !['apply', 'replace', 'random-choice'].includes(action)) {
     fail(
       'invalid-effect-operation',
@@ -3987,6 +4092,7 @@ const parseConditionPayload = (value: unknown, path: string): MoveConditionEffec
     filter,
     randomChoice,
     ...(accuracyRollTrigger ? { accuracyRollTrigger } : {}),
+    ...(operationOutcomeTrigger ? { operationOutcomeTrigger } : {}),
     ...(hasApplyTypeImmunity ? { applyTypeImmunity } : {}),
     duration,
     saveTiming,
@@ -4386,7 +4492,12 @@ const parseMultiHitEffects = (
     MOVE_EFFECT_OPERATION_LIMITS.multiHitEffects,
   ).map((effect, index): MoveMultiHitEffectTemplate => {
     const effectPath = `${path}[${index}]`
-    const input = parseExactRecord(effect, MULTI_HIT_EFFECT_FIELDS, effectPath)
+    const input = parseRecordWithOptionalFields(
+      effect,
+      MULTI_HIT_EFFECT_REQUIRED_FIELDS,
+      MULTI_HIT_EFFECT_OPTIONAL_FIELDS,
+      effectPath,
+    )
     const common = {
       id: parseStableId(ownValue(input, 'id', effectPath), `${effectPath}.id`),
       timing: parseEnum<MoveEffectMultiHitEffectTiming>(
@@ -4401,6 +4512,16 @@ const parseMultiHitEffects = (
         `${effectPath}.trigger`,
         'always, hit, damage, or knockout',
       ),
+      ...(Object.prototype.hasOwnProperty.call(input, 'naturalAccuracyMinimum')
+        ? {
+            naturalAccuracyMinimum: parseInteger(
+              ownValue(input, 'naturalAccuracyMinimum', effectPath),
+              `${effectPath}.naturalAccuracyMinimum`,
+              1,
+              20,
+            ),
+          }
+        : {}),
       recipient: parseEnum<MoveEffectMultiHitEffectRecipient>(
         ownValue(input, 'recipient', effectPath),
         MULTI_HIT_EFFECT_RECIPIENT_SET,

@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import { parseEncounterEffect } from '#shared/moveAutomation/encounterEffects'
 import {
   createEmptyEncounterHistory,
   type EncounterHistory,
@@ -201,6 +202,7 @@ describe('authoritative target state queries', () => {
       damagedThisRound: true,
       conditionIds: ['burned'],
       typeIds: ['grass', 'flying'],
+      capabilityIds: [],
       immunityTagIds: ['groundsource', 'powder', 'sonic'],
       size: 'huge',
       weightClass: 5,
@@ -234,6 +236,37 @@ describe('authoritative target state queries', () => {
       'pokemon:zero-hp',
       'trainer:trainer',
     ])
+  })
+
+  it('projects active authoritative Weight Class modifiers into target facts', () => {
+    const input = resolverInput()
+    const effect = parseEncounterEffect({
+      id: 'effect.autotomize-weight',
+      kind: 'numeric-modifier',
+      source: {
+        operationId: 'autotomize.weight-class',
+        moveId: 'move.autotomize',
+        placementId: 'target',
+      },
+      affected: { placementIds: ['target'], sideIds: [], cells: [] },
+      createdRound: 1,
+      createdTurn: 0,
+      duration: { kind: 'scene', remaining: null },
+      stacks: 1,
+      charges: null,
+      stackPolicy: { kind: 'replace', maxStacks: null },
+      chargePolicy: { kind: 'none', amount: null },
+      tags: ['autotomize', 'weight-class'],
+      payload: { attribute: 'weight-class', operation: 'set', value: 3, rounding: 'floor' },
+      dispel: { policy: 'matching-tags', tags: ['autotomize'] },
+      suppression: { sources: [] },
+      transferPolicy: 'expire',
+    })
+    const resolver = createMoveAutomationTargetStateResolver({
+      ...input,
+      effects: [effect],
+    })
+    expect(resolver.resolve('target')?.weightClass).toBe(3)
   })
 
   it('snapshots and freezes target facts before rule evaluation', () => {

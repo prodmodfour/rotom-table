@@ -28,11 +28,13 @@ npm test
 npm run build
 ```
 
-The canonical quality gate runs non-strict move-automation metadata and scenario validation before typechecking, tests, and the build:
+The canonical quality gate runs both metadata validation and the strict 776/776 semantic/runtime evidence audit, plus engine budget checks, before typechecking, tests, and the build:
 
 ```bash
 bash scripts/quality-gate.sh
 ```
+
+Move authors must follow [`docs/move-automation.md`](docs/move-automation.md). It covers the spec/handler boundary, capability contracts, branch evidence, hashes, status promotion, recovery invariants, and common validation failures.
 
 Run the same non-strict validation directly while developing move automation:
 
@@ -78,10 +80,11 @@ npm run --silent audit:move-automation-legacy -- --json
 
 The audit lists each registered move's source module, v1 version, deterministic definition hash, script shape, targeting and suggestion fields, automation notes, and inferred capability hints. The hints are non-authoritative planning aids; this report never decides semantic completion or promotes manifest status.
 
-The strict completion check is available separately, but is not part of the quality gate until the canonical move catalog is complete:
+The strict completion and bounded-engine checks are also available directly:
 
 ```bash
 npm run check:move-automation-complete
+npm run check:move-automation-budgets
 ```
 
 For move VFX work, copy the PR checklist from `docs/move-animations.md#copyable-pr-checklist-for-move-vfx-changes` into the PR description and run the focused tests/manual QA listed there when they apply.

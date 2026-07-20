@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, it } from 'vitest'
+import { assertReviewedNativeEvidenceFragments } from '../fixtures/moveAutomation/nativeEvidence'
 import manifestJson from '../../data/move-automation/manifest.json'
 import {
   LIVE_PLAY_COMMAND_SCHEMA_VERSION,
@@ -265,7 +266,7 @@ const fixtureFor = (scenario: ExecutionScenario): MoveFixture => {
 const accuracyNaturalResults = (
   resolution: AuthoritativeMoveResolution,
 ): readonly number[] => resolution.rollLedger
-  .filter(entry => entry.parentEffectId === 'legacy-v1.accuracy')
+  .filter(entry => entry.formula.kind === 'dice' && entry.formula.sides === 20)
   .map(entry => entry.naturalResult)
 
 const conditionUpdatesByTarget = (
@@ -280,8 +281,8 @@ const assertScenarioResolution = (
 ): void => {
   expect(resolution.auditTrace.program).toMatchObject({
     canonicalId: scenario.moveName,
-    runtimeKind: 'legacy-v1',
-    runtimeVersion: 1,
+    runtimeKind: 'movespec-v2',
+    runtimeVersion: 2,
   })
   expect(resolution.transaction.attackedTargetIds).toEqual(scenario.expectedAttackedTargetIds)
   expect(resolution.transaction.hitTargetIds).toEqual(scenario.expectedHitTargetIds)
@@ -327,9 +328,7 @@ const assertScenarioResolution = (
     if (resolution.feedback?.targetId === targetId) expect(resolution.feedback.crit).toBe(true)
     else expect(searchableEvidence.toLowerCase()).toContain('critical')
   }
-  for (const fragment of scenario.expectedLogFragments ?? []) {
-    expect(searchableEvidence).toContain(fragment)
-  }
+  assertReviewedNativeEvidenceFragments(searchableEvidence, scenario.expectedLogFragments ?? [])
 
   expect(resolution.auditTrace.events.filter(event => event.kind === 'roll'))
     .toHaveLength(resolution.rollLedger.length)
@@ -900,7 +899,7 @@ describe('REG-025 registered move conformance', () => {
       expect(response.move?.transaction).toEqual(plan.resolution.transaction)
       expect(response.move?.rollLedger).toEqual(plan.resolution.rollLedger)
       expect(response.move?.trace).toMatchObject({
-        program: { canonicalId: scenario.moveName, runtimeKind: 'legacy-v1' },
+        program: { canonicalId: scenario.moveName, runtimeKind: 'movespec-v2' },
       })
       expect(harness.ops.getOpResult(command.mapSlug, command.opId)).toEqual(response.result)
 
@@ -943,7 +942,7 @@ describe('REG-025 registered move conformance', () => {
       ...fixture,
       random: randomSequence(scenario.randomValues),
       now: () => NOW,
-      operationId: scenario.scenarioId,
+      operationId: `op_${scenario.scenarioId.replace(/[^A-Za-z0-9_-]+/g, '_')}`.slice(0, 99),
     })).toThrowError(expect.objectContaining({
       code: 'move-resource-unavailable',
       message: expect.stringContaining('priority-unavailable'),
@@ -1048,8 +1047,8 @@ describe('REG-025 registered move conformance', () => {
   it('keeps every REG-025 definition on the audited v1 adapter', () => {
     for (const moveName of LEGACY_MOVE_NAMES) {
       expect(registeredMoveAutomationRuntimeFor(moveName)).toMatchObject({
-        kind: 'legacy-v1',
-        version: 1,
+        kind: 'movespec-v2',
+        version: 2,
       })
     }
   })

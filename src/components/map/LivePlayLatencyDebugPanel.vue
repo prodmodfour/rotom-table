@@ -27,6 +27,14 @@ interface LivePlayLatencyDebugRow {
   readonly httpToAdopt: string
   readonly sseToAdopt: string
   readonly totalPending: string
+  readonly planTime: string
+  readonly responseWait: string
+  readonly resumeCommit: string
+  readonly lifecycleTime: string
+  readonly runtime: string
+  readonly recovery: string
+  readonly terminalOutcome: string
+  readonly reasonCode: string
 }
 
 interface LivePlayPresenceMetricRow {
@@ -64,6 +72,30 @@ const firstEventTimestamp = (
 ): number | null => (
   trace.events.find((event) => event.type === eventType)?.timestamp ?? null
 )
+
+const detailNumber = (
+  trace: LivePlayCommandTraceSnapshot,
+  key: string,
+): number | null => {
+  for (const event of trace.events) {
+    const value = event.detail?.[key]
+    if (typeof value === 'number' && Number.isFinite(value) && value >= 0) return value
+  }
+  return null
+}
+
+const lastDetailText = (
+  trace: LivePlayCommandTraceSnapshot,
+  keys: readonly string[],
+): string | null => {
+  for (const event of [...trace.events].reverse()) {
+    for (const key of keys) {
+      const value = event.detail?.[key]
+      if (typeof value === 'string' && value.length > 0) return value
+    }
+  }
+  return null
+}
 
 const elapsedLabel = (milliseconds: number): string => {
   if (milliseconds < 1_000) return `${milliseconds} ms`
@@ -107,6 +139,15 @@ const rowForTrace = (trace: LivePlayCommandTraceSnapshot): LivePlayLatencyDebugR
   const httpAt = firstEventTimestamp(trace, LIVE_PLAY_COMMAND_TRACE_EVENT_TYPES.HTTP_TERMINAL)
   const sseAt = firstEventTimestamp(trace, LIVE_PLAY_COMMAND_TRACE_EVENT_TYPES.SSE_TERMINAL)
   const adoptedAt = firstEventTimestamp(trace, LIVE_PLAY_COMMAND_TRACE_EVENT_TYPES.PATCH_ADOPTED)
+  const plannedAt = firstEventTimestamp(trace, LIVE_PLAY_COMMAND_TRACE_EVENT_TYPES.PLANNED)
+  const waitingAt = firstEventTimestamp(trace, LIVE_PLAY_COMMAND_TRACE_EVENT_TYPES.WAITING_FOR_RESPONSE)
+  const resumedAt = firstEventTimestamp(trace, LIVE_PLAY_COMMAND_TRACE_EVENT_TYPES.RESUMED)
+  const committedAt = firstEventTimestamp(trace, LIVE_PLAY_COMMAND_TRACE_EVENT_TYPES.COMMITTED)
+  const lifecycleAt = firstEventTimestamp(trace, LIVE_PLAY_COMMAND_TRACE_EVENT_TYPES.LIFECYCLE_APPLIED)
+  const builtAt = firstEventTimestamp(trace, LIVE_PLAY_COMMAND_TRACE_EVENT_TYPES.BUILT)
+  const retryCount = trace.events.filter(event => event.type === LIVE_PLAY_COMMAND_TRACE_EVENT_TYPES.RECOVERED).length
+  const reconcileCount = trace.events.filter(event => event.type === LIVE_PLAY_COMMAND_TRACE_EVENT_TYPES.RECONCILED).length
+  const explicitPlanMs = detailNumber(trace, 'planDurationMs')
 
   return {
     trace,
@@ -119,6 +160,16 @@ const rowForTrace = (trace: LivePlayCommandTraceSnapshot): LivePlayLatencyDebugR
     httpToAdopt: durationLabel(httpAt, adoptedAt),
     sseToAdopt: durationLabel(sseAt, adoptedAt),
     totalPending: durationLabel(trace.startedAt || null, traceEndTimestamp(trace)),
+    planTime: explicitPlanMs === null ? durationLabel(builtAt, plannedAt) : elapsedLabel(explicitPlanMs),
+    responseWait: durationLabel(waitingAt, resumedAt ?? committedAt),
+    resumeCommit: durationLabel(resumedAt, committedAt),
+    lifecycleTime: durationLabel(committedAt, lifecycleAt),
+    runtime: trace.runtimeKind
+      ? `${trace.runtimeKind} v${trace.runtimeVersion ?? '?'}`
+      : 'runtime unavailable',
+    recovery: `${retryCount} retry · ${reconcileCount} reconcile`,
+    terminalOutcome: lastDetailText(trace, ['outcome']) ?? statusLabel(trace.status),
+    reasonCode: lastDetailText(trace, ['reasonCode', 'reason']) ?? '—',
   }
 }
 
@@ -296,6 +347,38 @@ const presenceMetricRows = computed<readonly LivePlayPresenceMetricRow[]>(() => 
           <div>
             <dt>Total</dt>
             <dd>{{ row.totalPending }}</dd>
+          </div>
+          <div>
+            <dt>Plan</dt>
+            <dd>{{ row.planTime }}</dd>
+          </div>
+          <div>
+            <dt>Response wait</dt>
+            <dd>{{ row.responseWait }}</dd>
+          </div>
+          <div>
+            <dt>Resume → commit</dt>
+            <dd>{{ row.resumeCommit }}</dd>
+          </div>
+          <div>
+            <dt>Lifecycle</dt>
+            <dd>{{ row.lifecycleTime }}</dd>
+          </div>
+          <div>
+            <dt>Runtime</dt>
+            <dd>{{ row.runtime }}</dd>
+          </div>
+          <div>
+            <dt>Recovery</dt>
+            <dd>{{ row.recovery }}</dd>
+          </div>
+          <div>
+            <dt>Outcome</dt>
+            <dd>{{ row.terminalOutcome }}</dd>
+          </div>
+          <div>
+            <dt>Reason</dt>
+            <dd>{{ row.reasonCode }}</dd>
           </div>
         </dl>
       </li>

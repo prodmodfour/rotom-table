@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { LIVE_PLAY_MOVE_RESOLUTION_SCHEMA_VERSION, type ResolveMoveIntent } from '#shared/livePlayMoveResolution'
 import { parseEncounterEffect } from '#shared/moveAutomation/encounterEffects'
 import { createEmptyEncounterState } from '#shared/moveAutomation/encounterState'
-import { planAuthoritativeMoveState } from '../../server/domain/planAuthoritativeMoveState'
+import { planAuthoritativeMoveState as planAuthoritativeMoveStateProduction } from '../../server/domain/planAuthoritativeMoveState'
 import { AuthoritativeMoveResolutionError } from '../../server/domain/resolveAuthoritativeMove'
 import { EXPLICIT_MOVE_AUTOMATION_SCRIPTS } from '~/utils/moveAutomation'
 import { moveAutomationAreaTemplateId } from '~/utils/moveAutomationAreaTemplates'
@@ -12,6 +12,23 @@ import type { GridAnchor, SheetPlacement, TabletopMap } from '~/types/map'
 import type { MoveAutomationAreaTemplate, MoveAutomationScript } from '~/types/moveAutomation'
 import type { TrainerSheet } from '~/types/trainerSheet'
 import { transformationEncounterEffectFixture } from '../fixtures/moveAutomation/encounterEffects'
+import { REGISTERED_MOVE_HANDLER_REGISTRY } from '~~/server/domain/moveAutomation/handlers/registry'
+import type { MoveAutomationRuntimeRegistry } from '~~/server/domain/moveAutomation/registry'
+
+const LEGACY_ONLY_RUNTIME_REGISTRY: MoveAutomationRuntimeRegistry = Object.freeze({
+  size: 0,
+  handlerRegistry: REGISTERED_MOVE_HANDLER_REGISTRY,
+  resolve: () => null,
+  entries: () => Object.freeze([]),
+})
+
+let injectedRuntimeRegistry: MoveAutomationRuntimeRegistry | null = null
+const planAuthoritativeMoveState = (
+  options: Parameters<typeof planAuthoritativeMoveStateProduction>[0],
+) => planAuthoritativeMoveStateProduction({
+  ...options,
+  ...(injectedRuntimeRegistry ? { runtimeRegistry: injectedRuntimeRegistry } : {}),
+})
 
 const moveIntent = (overrides: Omit<ResolveMoveIntent, 'schemaVersion'>): ResolveMoveIntent => ({
   schemaVersion: LIVE_PLAY_MOVE_RESOLUTION_SCHEMA_VERSION,
@@ -134,10 +151,13 @@ const mixedOutcomeAreaScript = (): MoveAutomationScript => ({
 const withRegisteredMoveAutomationScript = async <T>(script: MoveAutomationScript, run: () => T | Promise<T>): Promise<T> => {
   const scripts = EXPLICIT_MOVE_AUTOMATION_SCRIPTS as Map<string, MoveAutomationScript>
   const previous = scripts.get(script.moveName)
+  const previousRegistry = injectedRuntimeRegistry
   scripts.set(script.moveName, script)
+  injectedRuntimeRegistry = LEGACY_ONLY_RUNTIME_REGISTRY
   try {
     return await run()
   } finally {
+    injectedRuntimeRegistry = previousRegistry
     if (previous) scripts.set(script.moveName, previous)
     else scripts.delete(script.moveName)
   }
@@ -448,14 +468,14 @@ describe('planAuthoritativeMoveState', () => {
       naturalResult: roll.naturalResult,
       finalValue: roll.finalValue,
     }))).toEqual([
-      { rollId: 'legacy-v1.accuracy.1', parentEffectId: 'legacy-v1.accuracy', naturalResult: 11, finalValue: 11 },
-      { rollId: 'legacy-v1.damage.1', parentEffectId: 'legacy-v1.damage', naturalResult: 1, finalValue: 7 },
+      { rollId: 'pound.accuracy-roll.1', parentEffectId: 'pound.accuracy', naturalResult: 11, finalValue: 11 },
+      { rollId: 'pound.damage.roll.1', parentEffectId: 'pound.damage', naturalResult: 1, finalValue: 7 },
     ])
     expect(structuredClone(plan.resolution).rollLedger).toEqual(plan.resolution.rollLedger)
     expect(structuredClone(plan.resolution).auditTrace).toEqual(plan.resolution.auditTrace)
     expect(plan.resolution.auditTrace.events).toEqual(expect.arrayContaining([
-      expect.objectContaining({ kind: 'roll', roll: expect.objectContaining({ rollId: 'legacy-v1.accuracy.1' }) }),
-      expect.objectContaining({ kind: 'operation', operationKind: 'direct-hp', recipientIds: ['target-token'] }),
+      expect.objectContaining({ kind: 'roll', roll: expect.objectContaining({ rollId: 'pound.accuracy-roll.1' }) }),
+      expect.objectContaining({ kind: 'operation', operationKind: 'damage', recipientIds: ['target-token'] }),
     ]))
     expect(plan.sheetWrites).toHaveLength(1)
     expect(plan.sheetWrites[0]?.slug).toBe('target')
@@ -466,12 +486,12 @@ describe('planAuthoritativeMoveState', () => {
     expect(plan.mapChanges.temporaryHitPoints?.current?.byPlacementId.unaffected).toBe(7)
     expect(plan.mapChanges.placements?.current.find((item) => item.id === 'actor-token')?.facing).toBe('south-east')
     expect(plan.stateChanges.changes.find(change => change.kind === 'map-temporary-hit-points')).toMatchObject({
-      sourceOperationId: 'legacy-v1.hp.1',
-      reasonCode: 'legacy-hp-update',
+      sourceOperationId: 'pound.damage',
+      reasonCode: 'pound.damage',
     })
     expect(plan.stateChanges.groups.sheets[0]?.changes[0]).toMatchObject({
-      sourceOperationId: 'legacy-v1.hp.1',
-      reasonCode: 'legacy-hp-update',
+      sourceOperationId: 'pound.damage',
+      reasonCode: 'pound.damage',
     })
   })
 

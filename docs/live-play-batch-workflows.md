@@ -156,12 +156,13 @@ Manual operator smoke coverage lives in [Private VPS live-play smoke checklist](
   - related primitives/fallbacks: `POST /api/maps/use-move`, `/api/maps/tokens/modify-hp`, `/api/maps/tokens/modify-combat-stages`, `/api/maps/tokens/modify-conditions`, `/api/maps/field-effects/set`, `/api/maps/hazards/place`, and `/api/maps/tokens/move`.
   - ability/maneuver/order actions use `POST /api/maps/tokens/use-ability`, `/api/maps/tokens/use-maneuver`, and `/api/maps/tokens/use-order`.
 - **Current command type:** primary `resolveMove`; primitives remain available for direct non-move workflows.
-- **Current command scopes:** resolve-move scopes include actor action/move usage, actor and target token/sheet HP/combat/condition fields, map metadata, map hazards, and map field effects, bounded by `LIVE_PLAY_RESOLVE_MOVE_SCOPE_LIMIT`.
+- **Current command scopes:** resolve-move scopes include actor action/resources/move usage, every consulted actor and target token/sheet field, encounter state, metadata, hazards/fields/zones, and explicitly reviewed external item/group-inventory resources, bounded by `LIVE_PLAY_RESOLVE_MOVE_SCOPE_LIMIT`. The server compares this declared conflict set with the complete planner read/write set before commit.
 - **Authority scope:** GM or selected player profile must control the acting token; server validates map visibility, selected profile links, move intent, base revision, exact revision requirement, and deterministic result application.
 - **Likely batch conflict scopes:** already broad enough for the command's possible side effects. Do not replace with a generic list-of-commands batch.
-- **Current accepted patch shape:** accepted move results may include token, sheet, map hazard/field-effect, metadata, movement, and move-state patches plus presentation data for the move result.
+- **Current accepted patch shape:** accepted move results may include token, sheet, exact previous/current encounter state, map hazard/field-effect, metadata, movement, and move-state patches plus presentation data for the move result. One ordered typed state-change plan is committed atomically; the patch is a client projection, not a second mechanics program.
 - **Local prediction safety:** complex move side effects are not locally predicted as authoritative state. Presentation VFX/feedback is transient and separate from command authority.
-- **Sprint 4 decision:** not worth batching. `resolveMove` is already the authoritative transaction for move automation. Reaction prompts that send one or a few targeted sheet commands can be revisited later if they become a clear repeated workflow.
+- **Pending saga:** a reviewed choice/reaction suspends the same transaction model into `pending_move_resolutions`; declaration costs through the reached phase and a public map summary commit together. Choose/react/pass/force-resolve/cancel commands carry only stable IDs, are durably outboxed, revalidate the full read set, and resume into one terminal transaction. They must never be represented as a generic command batch.
+- **Sprint 4 decision:** not worth batching. `resolveMove` already is the authoritative move transaction. Durable response commands are an explicit saga protocol rather than targeted sheet-command loops.
 
 ## Why Sprint 4 starts with hazards, field effects, terrain, and hazard cells
 

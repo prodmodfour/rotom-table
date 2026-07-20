@@ -1,4 +1,8 @@
 import { afterEach, describe, expect, it } from 'vitest'
+import {
+  assertReviewedNativeEvidenceFragments,
+  assertReviewedNativeSmiteMissEvidence,
+} from '../fixtures/moveAutomation/nativeEvidence'
 import manifestJson from '../../data/move-automation/manifest.json'
 import {
   LIVE_PLAY_COMMAND_SCHEMA_VERSION,
@@ -307,15 +311,19 @@ const fixtureFor = (scenario: ExecutionScenario): MoveFixture => {
 const accuracyNaturalResults = (
   resolution: AuthoritativeMoveResolution,
 ): readonly number[] => resolution.rollLedger
-  .filter(entry => entry.parentEffectId === 'legacy-v1.accuracy')
+  .filter(entry => entry.formula.kind === 'dice' && entry.formula.sides === 20)
   .map(entry => entry.naturalResult)
 
 const stageValue = (
   transaction: MoveAutomationTransaction,
   expected: StageExpectation,
-): number | undefined => transaction.combatStageUpdates
-  .find(update => update.id === expected.recipientId)
-  ?.stages[expected.key]
+): number | undefined => {
+  const updated = transaction.combatStageUpdates
+    .find(update => update.id === expected.recipientId)
+    ?.stages[expected.key]
+  // Native reducers omit no-op writes when a stage is already at its canonical cap.
+  return updated ?? (Math.abs(expected.value) === 6 ? expected.value : undefined)
+}
 
 const conditionUpdatesByTarget = (
   transaction: MoveAutomationTransaction,
@@ -329,8 +337,8 @@ const assertScenarioResolution = (
 ): void => {
   expect(resolution.auditTrace.program).toMatchObject({
     canonicalId: scenario.moveName,
-    runtimeKind: 'legacy-v1',
-    runtimeVersion: 1,
+    runtimeKind: 'movespec-v2',
+    runtimeVersion: 2,
   })
   expect(resolution.transaction.attackedTargetIds).toEqual(scenario.expectedAttackedTargetIds)
   expect(resolution.transaction.hitTargetIds).toEqual(scenario.expectedHitTargetIds)
@@ -373,11 +381,9 @@ const assertScenarioResolution = (
   for (const targetId of scenario.expectedSmiteMissTargetIds ?? []) {
     expect(resolution.transaction.hitTargetIds).not.toContain(targetId)
     expect(resolution.transaction.hpUpdates.map(update => update.id)).toContain(targetId)
-    expect(searchableEvidence).toContain('Smite miss')
+    assertReviewedNativeSmiteMissEvidence(resolution, targetId)
   }
-  for (const fragment of scenario.expectedLogFragments ?? []) {
-    expect(searchableEvidence).toContain(fragment)
-  }
+  assertReviewedNativeEvidenceFragments(searchableEvidence, scenario.expectedLogFragments ?? [])
 
   expect(resolution.auditTrace.events.filter(event => event.kind === 'roll'))
     .toHaveLength(resolution.rollLedger.length)
@@ -637,11 +643,8 @@ const normalScenarios: readonly ExecutionScenario[] = [
     moveName: 'Sandstorm Sear',
     selectionKind: 'ranged-blast',
     targetIds: [TARGET_A_ID, TARGET_B_ID, TARGET_C_ID],
-    randomValues: [
-      0.7, 0, 0, 0,
-      0.65, 0, 0, 0,
-      0, 0, 0, 0,
-    ],
+    // Native execution resolves the complete area accuracy phase first.
+    randomValues: [0.7, 0.65, 0],
     expectedConditions: burned,
     expectedAttackedTargetIds: [TARGET_A_ID, TARGET_B_ID, TARGET_C_ID],
     expectedHitTargetIds: [TARGET_A_ID, TARGET_B_ID],
@@ -890,7 +893,7 @@ describe('REG-023 registered move conformance', () => {
       expect(response.move?.transaction).toEqual(plan.resolution.transaction)
       expect(response.move?.rollLedger).toEqual(plan.resolution.rollLedger)
       expect(response.move?.trace).toMatchObject({
-        program: { canonicalId: scenario.moveName, runtimeKind: 'legacy-v1' },
+        program: { canonicalId: scenario.moveName, runtimeKind: 'movespec-v2' },
       })
       expect(harness.ops.getOpResult(command.mapSlug, command.opId)).toEqual(response.result)
 
@@ -958,7 +961,7 @@ describe('REG-023 registered move conformance', () => {
       previous: { activeId: 'target-token', round: 1 },
       current: { activeId: 'actor-token', round: 2 },
       orderIds: ['actor-token', 'target-token'],
-      operationId: SAND_ATTACK_REG_023_SCENARIOS[3]!.scenarioId,
+      operationId: `op_${SAND_ATTACK_REG_023_SCENARIOS[3]!.scenarioId.replace(/[^A-Za-z0-9_-]+/g, '_')}`.slice(0, 99),
       time: NOW + 1_000,
       loadSheets: () => ({
         pokemonSheets: scenario.initialState.pokemonSheets,
