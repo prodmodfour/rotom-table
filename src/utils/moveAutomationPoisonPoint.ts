@@ -1,4 +1,4 @@
-import { POISON_POINT_ABILITY_NAME } from '~/utils/abilityAutomation'
+import { POISON_POINT_ABILITY_NAME } from '#shared/abilityAutomation/legacyNames'
 import { moveAutomationConditionImmunitySource } from '~/utils/moveAutomationConditionImmunity'
 import { sheetHasCanonicalAbility } from '~/utils/sheetAbilities'
 import {

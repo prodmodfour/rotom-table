@@ -1,0 +1,65 @@
+{
+  "schemaVersion": 1,
+  "rulesetId": "rotom-table-reference-abilities-v1",
+  "sourceData": {
+    "path": "data/reference/abilities.json",
+    "role": "immediate-rules-data-authority",
+    "sha256": "767c3e2ae45471c26ad97a07552c4b0417ed0e207827af8a59da3a73e81f4362"
+  },
+  "canonicalization": {
+    "version": 1,
+    "identity": "source-key",
+    "ordering": "canonical-id-code-point",
+    "expectedAbilityCount": 483,
+    "knownSourceGaps": {
+      "missingFrequency": [],
+      "missingEffect": []
+    }
+  },
+  "sourceHierarchy": {
+    "policy": "immediate-cache-with-documented-upstream-priority",
+    "orderedInputs": [
+      {
+        "id": "legends-arceus-reference",
+        "kind": "checked-in-markdown",
+        "location": "books/markdown/arceus_references.md"
+      },
+      {
+        "id": "sword-shield-reference",
+        "kind": "checked-in-markdown",
+        "location": "books/markdown/swsh_-_armor_crown_references.md"
+      },
+      {
+        "id": "sun-moon-reference",
+        "kind": "checked-in-markdown",
+        "location": "books/markdown/sumo_references.md"
+      },
+      {
+        "id": "errata-3-reference",
+        "kind": "checked-in-markdown",
+        "location": "books/markdown/errata-3.md"
+      },
+      {
+        "id": "errata-2-reference",
+        "kind": "checked-in-markdown",
+        "location": "books/markdown/errata-2.md"
+      },
+      {
+        "id": "ptu-1.05-core-reference",
+        "kind": "checked-in-markdown",
+        "location": "books/markdown/core/10-indices-and-reference.md"
+      },
+      {
+        "id": "community-sheet-fill",
+        "kind": "documented-external-fill",
+        "location": "scripts/fetch_abilities.py"
+      }
+    ]
+  },
+  "homebrewNamespaces": {
+    "policy": "separate-explicit-namespace",
+    "canonicalNamespace": "canonical",
+    "homebrewPrefix": "homebrew:",
+    "includeInCanonicalCatalog": false
+  }
+}

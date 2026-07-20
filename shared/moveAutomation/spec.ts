@@ -1,4 +1,10 @@
 import {
+  cloneStrictJson,
+  deepFreezeStrictJson,
+  type StrictJsonObject,
+  type StrictJsonValue,
+} from '../automation/strictJson'
+import {
   MoveResourceCostValidationError,
   parseMoveResourceCost,
   type MoveResourceCost,
@@ -38,17 +44,8 @@ export const MOVE_SPEC_TARGETING_KINDS = [
 export type MoveSpecPhase = (typeof MOVE_SPEC_PHASES)[number]
 export type MoveSpecTargetingKind = (typeof MOVE_SPEC_TARGETING_KINDS)[number]
 
-export type MoveSpecJsonValue =
-  | null
-  | boolean
-  | number
-  | string
-  | readonly MoveSpecJsonValue[]
-  | MoveSpecJsonObject
-
-export type MoveSpecJsonObject = {
-  readonly [key: string]: MoveSpecJsonValue
-}
+export type MoveSpecJsonValue = StrictJsonValue
+export type MoveSpecJsonObject = StrictJsonObject
 
 /**
  * Syntax-only JSON extension points. Their bounded tagged unions are owned by
@@ -156,10 +153,6 @@ export class MoveSpecValidationError extends Error {
 }
 
 type UnknownRecord = Record<string, unknown>
-type JsonCloneState = {
-  readonly ancestors: WeakSet<object>
-  nodes: number
-}
 
 const ROOT_FIELDS = [
   'schemaVersion',
@@ -185,7 +178,6 @@ const PHASE_INDEX = new Map<string, number>(MOVE_SPEC_PHASES.map((phase, index) 
 const TARGETING_KIND_SET = new Set<string>(MOVE_SPEC_TARGETING_KINDS)
 const STABLE_ID_PATTERN = /^[a-z0-9]+(?:[._:/-][a-z0-9]+)*$/
 const CONTROL_CHARACTER_PATTERN = /[\u0000-\u001f\u007f]/
-const ARRAY_INDEX_PATTERN = /^(0|[1-9][0-9]*)$/
 
 const fail = (code: MoveSpecValidationCode, path: string, message: string): never => {
   throw new MoveSpecValidationError(code, path, message)
@@ -197,131 +189,26 @@ const isPlainRecord = (value: unknown): value is UnknownRecord => {
   return prototype === Object.prototype || prototype === null
 }
 
-const propertyPath = (path: string, key: string): string => `${path}.${key}`
+const clonePlainJson = (value: unknown, path: string): MoveSpecJsonValue => cloneStrictJson(
+  value,
+  path,
+  {
+    limits: {
+      depth: MOVE_SPEC_LIMITS.jsonDepth,
+      nodes: MOVE_SPEC_LIMITS.jsonNodes,
+      objectFields: MOVE_SPEC_LIMITS.jsonObjectFields,
+      arrayEntries: MOVE_SPEC_LIMITS.jsonArrayEntries,
+      stringLength: MOVE_SPEC_LIMITS.jsonStringLength,
+      objectKeyLength: MOVE_SPEC_LIMITS.identifierLength,
+    },
+    rootLabel: 'spec data',
+    valueLabel: 'MoveSpecs',
+    failNotJson: (failurePath, detail) => fail('not-json', failurePath, detail),
+    failLimit: (failurePath, detail) => fail('limit-exceeded', failurePath, detail),
+  },
+)
 
-const countJsonNode = (state: JsonCloneState, path: string): void => {
-  state.nodes += 1
-  if (state.nodes > MOVE_SPEC_LIMITS.jsonNodes) {
-    fail('limit-exceeded', path, `spec data must contain at most ${MOVE_SPEC_LIMITS.jsonNodes} JSON nodes.`)
-  }
-}
-
-/**
- * Detach untrusted input without invoking getters or toJSON methods. This is
- * deliberately stricter than JSON.stringify so callbacks, class instances,
- * sparse arrays, hidden fields, and lossy values cannot enter a MoveSpec.
- */
-const clonePlainJson = (
-  value: unknown,
-  path: string,
-  depth: number,
-  state: JsonCloneState,
-): MoveSpecJsonValue => {
-  countJsonNode(state, path)
-  if (depth > MOVE_SPEC_LIMITS.jsonDepth) {
-    fail('limit-exceeded', path, `spec data must be at most ${MOVE_SPEC_LIMITS.jsonDepth} levels deep.`)
-  }
-
-  if (value === null || typeof value === 'boolean') return value
-  if (typeof value === 'string') {
-    if (value.length > MOVE_SPEC_LIMITS.jsonStringLength) {
-      fail('limit-exceeded', path, `must contain at most ${MOVE_SPEC_LIMITS.jsonStringLength} characters.`)
-    }
-    return value
-  }
-  if (typeof value === 'number') {
-    if (!Number.isFinite(value)) fail('not-json', path, 'non-finite numbers are not JSON values.')
-    return value
-  }
-  if (
-    value === undefined
-    || typeof value === 'bigint'
-    || typeof value === 'function'
-    || typeof value === 'symbol'
-  ) {
-    return fail('not-json', path, `${typeof value} values are not allowed in MoveSpecs.`)
-  }
-
-  if (Array.isArray(value)) {
-    if (state.ancestors.has(value)) fail('not-json', path, 'circular references are not allowed.')
-    if (value.length > MOVE_SPEC_LIMITS.jsonArrayEntries) {
-      fail('limit-exceeded', path, `must contain at most ${MOVE_SPEC_LIMITS.jsonArrayEntries} entries.`)
-    }
-    if (Object.getOwnPropertySymbols(value).length > 0) {
-      fail('not-json', path, 'symbol properties are not allowed.')
-    }
-    for (const key of Object.getOwnPropertyNames(value)) {
-      if (key === 'length') continue
-      const index = Number(key)
-      if (!ARRAY_INDEX_PATTERN.test(key) || !Number.isSafeInteger(index) || index >= value.length) {
-        fail('not-json', propertyPath(path, key), 'arrays cannot contain named properties.')
-      }
-      const descriptor = Object.getOwnPropertyDescriptor(value, key)
-      if (!descriptor || !descriptor.enumerable || !('value' in descriptor)) {
-        fail('not-json', `${path}[${key}]`, 'array entries must be enumerable data properties.')
-      }
-    }
-
-    state.ancestors.add(value)
-    const clone: MoveSpecJsonValue[] = []
-    for (let index = 0; index < value.length; index += 1) {
-      if (!Object.prototype.hasOwnProperty.call(value, index)) {
-        fail('not-json', `${path}[${index}]`, 'sparse arrays are not allowed.')
-      }
-      clone.push(clonePlainJson(value[index], `${path}[${index}]`, depth + 1, state))
-    }
-    state.ancestors.delete(value)
-    return clone
-  }
-
-  if (!isPlainRecord(value)) {
-    return fail('not-json', path, 'only plain JSON objects are allowed.')
-  }
-  if (state.ancestors.has(value)) fail('not-json', path, 'circular references are not allowed.')
-  if (Object.getOwnPropertySymbols(value).length > 0) {
-    fail('not-json', path, 'symbol properties are not allowed.')
-  }
-
-  const keys = Object.getOwnPropertyNames(value)
-  if (keys.length > MOVE_SPEC_LIMITS.jsonObjectFields) {
-    fail('limit-exceeded', path, `must contain at most ${MOVE_SPEC_LIMITS.jsonObjectFields} fields.`)
-  }
-
-  state.ancestors.add(value)
-  const clone: Record<string, MoveSpecJsonValue> = {}
-  for (const key of keys) {
-    const keyPath = propertyPath(path, key)
-    if (
-      key.length === 0
-      || key.length > MOVE_SPEC_LIMITS.identifierLength
-      || CONTROL_CHARACTER_PATTERN.test(key)
-    ) {
-      fail('not-json', keyPath, 'object keys must be non-empty, bounded, and free of control characters.')
-    }
-    const descriptor = Object.getOwnPropertyDescriptor(value, key)
-      ?? fail('not-json', keyPath, 'object fields must have property descriptors.')
-    if (!descriptor.enumerable || !('value' in descriptor)) {
-      fail('not-json', keyPath, 'object fields must be enumerable data properties.')
-    }
-    const descriptorValue = (descriptor as PropertyDescriptor & { value: unknown }).value
-    Object.defineProperty(clone, key, {
-      value: clonePlainJson(descriptorValue, keyPath, depth + 1, state),
-      enumerable: true,
-      configurable: true,
-      writable: true,
-    })
-  }
-  state.ancestors.delete(value)
-  return clone
-}
-
-const deepFreeze = <Value>(value: Value): Value => {
-  if (typeof value !== 'object' || value === null || Object.isFrozen(value)) return value
-  for (const key of Object.getOwnPropertyNames(value)) {
-    deepFreeze((value as Record<string, unknown>)[key])
-  }
-  return Object.freeze(value)
-}
+const deepFreeze = deepFreezeStrictJson
 
 const parseRecord = (value: unknown, path: string): UnknownRecord => {
   if (!isPlainRecord(value)) return fail('invalid-spec', path, 'must be an object.')
@@ -562,10 +449,7 @@ export const parseMoveSpecCostDeclarations = (
   value: unknown,
   path = 'moveSpecCosts',
 ): readonly MoveSpecCostDeclaration[] => {
-  const detached = clonePlainJson(value, path, 0, {
-    ancestors: new WeakSet<object>(),
-    nodes: 0,
-  })
+  const detached = clonePlainJson(value, path)
   return deepFreeze(parseCosts(detached, path))
 }
 
@@ -625,10 +509,7 @@ const parsePresentation = (value: unknown): MoveSpecPresentationMetadata => {
  * tagged nodes before a spec can be registered or executed.
  */
 export const parseMoveSpec = (value: unknown): MoveSpec => {
-  const detached = clonePlainJson(value, 'spec', 0, {
-    ancestors: new WeakSet<object>(),
-    nodes: 0,
-  })
+  const detached = clonePlainJson(value, 'spec')
   const root = parseRecord(detached, 'spec')
   assertExactKeys(root, ROOT_FIELDS, 'spec')
   if (root.schemaVersion !== MOVE_SPEC_SCHEMA_VERSION) {

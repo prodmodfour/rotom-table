@@ -1,7 +1,5 @@
-import {
-  CELEBRATE_ABILITY_NAME,
-  resolveMapAbilityAutomationTransaction,
-} from '~/utils/abilityAutomation'
+import { CELEBRATE_ABILITY_NAME } from '#shared/abilityAutomation/legacyNames'
+import { resolveMapAbilityAutomationTransaction } from '~/utils/abilityAutomationLegacyCompatibility'
 import { sheetHasCanonicalAbility } from '~/utils/sheetAbilities'
 import type { AbilityAutomationTransaction } from '~/types/abilityAutomation'
 import type { MoveAutomationCelebratePrompt } from '~/types/moveAutomation'

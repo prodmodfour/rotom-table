@@ -12,6 +12,7 @@
   },
   "Ball Fetch": {
     "name": "Ball Fetch",
+    "frequency": "Scene – Free Action, Reaction",
     "trigger": "A Pokémon is Released onto the battlefield",
     "effect": "The user may move up to their speed as a Free Action. They must end this movement closer to the triggering Pokémon."
   },
@@ -199,8 +200,10 @@
   },
   "Klutz": {
     "name": "Klutz",
+    "frequency": "Scene – Free Action",
     "trigger": "The user hits with a Melee Attack",
-    "effect": "Choose one of the target’s Held Items or Accessory Slot Items. It is knocked to the ground."
+    "effect": "Choose one of the target’s Held Items or Accessory Slot Items. It is knocked to the ground.",
+    "bonus": "The Pokémon ignores the effects of all held Items in its possession. The user may drop Held Items At-Will as a Free Action during their turn, even if they have Status Afflictions that prevent them from taking actions."
   },
   "Minus": {
     "name": "Minus",
@@ -216,7 +219,9 @@
   },
   "Anchored": {
     "name": "Anchored",
-    "effect": "Dhelmise has an Anchor token on the field, which occupies one square as if it is Medium sized but is otherwise ignored for cover and targeting. Dhelmise cannot move or be moved more than 3 meters away from its Anchor, willingly or otherwise. The Anchor token itself cannot be pushed, pulled, or moved against Dhelmise's will in any way. Dhelmise may shift their Anchor Token as a Swift Action, moving it to any open space within 3 meters of itself."
+    "frequency": "Static",
+    "effect": "Dhelmise has an Anchor token on the field, which occupies one square as if it is Medium sized but is otherwise ignored for cover and targeting. Dhelmise cannot move or be moved more than 3 meters away from its Anchor, willingly or otherwise. The Anchor token itself cannot be pushed, pulled, or moved against Dhelmise's will in any way. Dhelmise may shift their Anchor Token as a Swift Action, moving it to any open space within 3 meters of itself.",
+    "bonus": "When the user Shifts the Anchor, it may immediately afterwards originate a damaging attack from its Anchor if it has the appropriate action available, giving that attack the following properties: the attack's range changes to \"Melee, 1 Target\", the attack deals +2d6 damage, and the attack's Class changes to Physical if it wasn't already."
   },
   "Battery": {
     "name": "Battery",
@@ -391,7 +396,8 @@
   },
   "Receiver": {
     "name": "Receiver",
-    "effect": "Each effect below may be used once per scene when triggered: •"
+    "frequency": "Special – Free Action",
+    "effect": "Each effect below may be used once per scene when triggered: • When an ally faints, the user selects one of their Abilities. The user gains that Ability until the end of the encounter. • When the user faints, they may grant use of one of their Basic Abilities to an ally on the field for the rest of the encounter."
   },
   "Schooling": {
     "name": "Schooling",
@@ -1148,7 +1154,8 @@
   "Transporter": {
     "name": "Transporter",
     "frequency": "Daily x3 – Free Action",
-    "trigger": "You Teleport"
+    "trigger": "You Teleport",
+    "effect": "Choose One Effect: Connection – Teleport. You activate Teleporter as if your Teleporter value were three times its normal value; or you may take one willing adjacent Pokémon or Trainer along with you as you teleport so long as you are touching them when you activate Transporter. You may expend two uses of Transporter at once to choose both effects."
   },
   "Turboblaze": {
     "name": "Turboblaze",
@@ -1843,6 +1850,7 @@
   },
   "Illusion": {
     "name": "Illusion",
+    "frequency": "Special",
     "effect": "As a Standard Action, the user may mark an object, Pokémon, or Trainer. The user may have a number of targets marked equal to their Focus Rank; to mark a new target, an old mark must be forfeited. Once per round as a Free Action, the user may use illusory powers to make itself look exactly like a marked target. This may be done as the user is being released from a Poké Ball. This change is aesthetic and does not affect typing or Moves. The illusion allows the user to vaguely mimic sounds made by its marked target, but it is not capable of intelligible speech. Whenever the user is hit by a damaging Move, the Illusion is destroyed. The user may also dismiss the Illusion as a Free Action."
   },
   "Immunity": {
@@ -1995,6 +2003,7 @@
   },
   "Multitype": {
     "name": "Multitype",
+    "frequency": "At-Will – Free Action",
     "effect": "The user changes its Elemental Type to any of the Elemental Types. Multitype cannot be copied or disabled."
   },
   "Natural Cure": {

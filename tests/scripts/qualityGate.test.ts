@@ -9,7 +9,7 @@ import packageJson from '../../package.json'
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), '../..')
 const qualityGatePath = join(repoRoot, 'scripts/quality-gate.sh')
 
-describe('quality gate move automation validation', () => {
+describe('quality gate automation validation', () => {
   it('runs strict semantic and budget checks before typecheck, tests, and build', () => {
     const directory = mkdtempSync(join(tmpdir(), 'rotom-quality-gate-'))
     try {
@@ -42,6 +42,9 @@ describe('quality gate move automation validation', () => {
       const invocations = readFileSync(invocationLog, 'utf8').trim().split('\n')
       expect(invocations).toEqual([
         'ci',
+        'run check:ability-automation',
+        'run check:ability-automation-budgets',
+        'run check:ability-automation-plan',
         'run check:move-automation',
         'run check:move-automation-complete',
         'run check:move-automation-budgets',
@@ -58,7 +61,20 @@ describe('quality gate move automation validation', () => {
     }
   })
 
-  it('keeps non-strict, strict, and budget checks as explicit package commands', () => {
+  it('keeps non-strict, strict, link, budget, and plan checks as explicit package commands', () => {
+    expect(packageJson.scripts['check:ability-automation']).toContain(
+      'scripts/check_ability_automation.ts',
+    )
+    expect(packageJson.scripts['check:ability-automation-complete']).toContain(
+      '--require-complete --check-plan',
+    )
+    expect(packageJson.scripts['check:ability-automation-links']).toContain(
+      'scripts/check_ability_automation.ts',
+    )
+    expect(packageJson.scripts['check:ability-automation-budgets']).toContain(
+      'abilityAutomationMetadataBudgets.test.ts',
+    )
+    expect(packageJson.scripts['check:ability-automation-plan']).toContain('--check-plan')
     expect(packageJson.scripts['check:move-automation']).toBe(
       'python3 scripts/check_move_automation_coverage.py',
     )

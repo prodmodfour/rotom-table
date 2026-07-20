@@ -12,6 +12,7 @@ This directory collects presentation and reviewer documentation for Rotom Table.
 - [Player profiles and linked character control](player-profiles.md) — normal player login/profile selection, GM profile management, linked sheet editing, player-visible map control, and reference browsing.
 - [Live play authority](live-play-authority.md) — normal `/maps/<slug>` profile-play command direction, setup/edit versus live-play boundaries, revision/idempotency glossary, and the rule forbidding browser-owned whole-map autosave for live gameplay.
 - [Move automation contributor guide](move-automation.md) — MoveSpec authoring, evidence, runtime selection, and strict completion checks.
+- [Ability automation contributor guide](ability-automation.md) — 483-ability implementation ledger, AbilitySpec modes, event subscriptions, frequency state, evidence, and migration checks.
 - [Move automation release acceptance](move-automation-release-acceptance.md) — recorded 776-move automated, production-like browser, privacy, recovery, and runtime-retirement acceptance.
 - [Move automation operator recovery and manual QA](move-automation-manual-qa.md) — private live-play canary, uncertainty, restart, backup, and privacy runbook.
 - [Local development](local-development.md) — setup commands, checks, optional `just` recipes, and local filesystem behaviour.
@@ -27,6 +28,7 @@ This directory collects presentation and reviewer documentation for Rotom Table.
 - [Archived legacy live-session documents](archive/live-session/README.md) — obsolete/maintenance-only `/sessions` lobby, socket, roadmap, storage, and runbook notes. Normal multiplayer architecture is documented in [Live play authority](live-play-authority.md).
 - [ADR 009: Server-authoritative profile play](adrs/009-server-authoritative-profile-play.md) — decision record for normal `/maps/<slug>` live play using persistent profiles, commands, revisions, idempotency, patches, and database-backed authority instead of browser-owned whole-map autosave.
 - [ADR 010: Authoritative move-automation runtime](adrs/010-move-automation-runtime.md) — decision record for semantic completion, server authority, versioned MoveSpecs and bounded handlers, state ownership, durable reactions, ruleset scope, and mechanics-independent VFX.
+- [ADR 011: Authoritative ability-automation runtime](adrs/011-authoritative-ability-automation-runtime.md) — decision record for AbilitySpec modes, typed event routing, effective abilities, frequency resources, durable triggers, privacy, and migration.
 - [Isometric render scheduler architecture](render-scheduler-architecture.md) — dirty rendering flow, active animation sources, and how to add future invalidation reasons.
 - [Performance benchmark scenarios](performance-benchmark-scenarios.md) — empty, typical campaign, and stress map scenarios plus before/after PR metrics to record.
 - [Performance benchmark fixtures](performance-benchmark-fixtures.md) — local fixture generator and manual checklist for reproducing benchmark maps without private campaign data.

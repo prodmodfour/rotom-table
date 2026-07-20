@@ -1,4 +1,4 @@
-import { SWEET_VEIL_ABILITY_NAME } from '~/utils/abilityAutomation'
+import { SWEET_VEIL_ABILITY_NAME } from '#shared/abilityAutomation/legacyNames'
 import { tokenGridDistance } from '~/utils/moveAutomationRange'
 import { KEEN_EYE_ABILITY_NAME } from '~/utils/sheetAbilityCombatModifiers'
 import { sheetHasCanonicalAbility } from '~/utils/sheetAbilities'

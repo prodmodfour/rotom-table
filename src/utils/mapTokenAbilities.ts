@@ -3,7 +3,7 @@ import { deriveTrainerAutomaticAbilities } from '~/utils/sheets/trainerCombatDer
 import {
   getAbilityAutomation,
   type AbilityAutomationDefinition,
-} from '~/utils/abilityAutomation'
+} from '~/utils/abilityAutomationLegacyCompatibility'
 import { isSheetAbilityActivated } from '~/utils/sheetAbilityActivation'
 import type { CharacterSheet, CharacterSheetAbility } from '~/types/characterSheet'
 import type { SheetPlacement } from '~/types/map'

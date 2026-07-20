@@ -1,0 +1,314 @@
+{
+  "schemaVersion": 1,
+  "defaultDecision": "deny",
+  "threats": [
+    {
+      "id": "copied-ability-disclosure",
+      "assetIds": ["ability.effective-identity", "projection.copy-provenance"],
+      "controlIds": ["authority-derived-effective-projection", "copy-snapshot-provenance-private", "terminal-outcome-redaction", "unauthenticated-deny"]
+    },
+    {
+      "id": "hidden-ability-disclosure",
+      "assetIds": ["ability.base-identity", "ability.effective-identity", "ability.runtime-identity", "pending.public-summary"],
+      "controlIds": ["authority-only-source", "public-summary-allowlist", "terminal-outcome-redaction", "unauthenticated-deny"]
+    },
+    {
+      "id": "private-option-disclosure",
+      "assetIds": ["response.authorized-prompt", "response.effect-program", "response.legal-options"],
+      "controlIds": ["authorization-before-window-projection", "opaque-option-identifiers", "private-pending-state", "unauthenticated-deny"]
+    },
+    {
+      "id": "responder-ownership-disclosure",
+      "assetIds": ["response.authorized-prompt", "response.owner-principals"],
+      "controlIds": ["authorization-before-window-projection", "private-pending-state", "public-summary-allowlist", "unauthenticated-deny"]
+    },
+    {
+      "id": "roll-and-state-disclosure",
+      "assetIds": ["audit.private-trace", "response.effect-program", "roll.private-ledger", "sheet.private-state"],
+      "controlIds": ["gm-access-audited", "private-pending-state", "roll-ledger-private", "sheet-readset-private", "unauthenticated-deny"]
+    },
+    {
+      "id": "suppression-state-disclosure",
+      "assetIds": ["ability.effective-identity", "projection.suppression-state"],
+      "controlIds": ["authority-derived-effective-projection", "suppression-before-routing", "terminal-outcome-redaction", "unauthenticated-deny"]
+    },
+    {
+      "id": "telemetry-log-disclosure",
+      "assetIds": ["log.private-audit", "log.public-combat", "observability.metrics"],
+      "controlIds": ["gm-access-audited", "public-log-allowlist", "telemetry-label-allowlist", "unauthenticated-deny"]
+    },
+    {
+      "id": "trigger-eligibility-oracle",
+      "assetIds": ["pending.public-summary", "trigger.denial-reason", "trigger.eligibility"],
+      "controlIds": ["authorization-before-window-projection", "causal-idempotency", "generic-denial-reasons", "public-summary-allowlist", "suppression-before-routing", "unauthenticated-deny"]
+    }
+  ],
+  "assets": [
+    {
+      "id": "ability.base-identity",
+      "sensitivity": "secret",
+      "threatIds": ["hidden-ability-disclosure"],
+      "disclosures": {
+        "server-authority": "full",
+        "authorized-gm": "authorized-projection",
+        "source-controller": "authorized-projection",
+        "eligible-responder": "none",
+        "map-participant": "none",
+        "authorized-operator": "none",
+        "unauthenticated": "none"
+      }
+    },
+    {
+      "id": "ability.effective-identity",
+      "sensitivity": "secret",
+      "threatIds": ["copied-ability-disclosure", "hidden-ability-disclosure", "suppression-state-disclosure"],
+      "disclosures": {
+        "server-authority": "full",
+        "authorized-gm": "authorized-projection",
+        "source-controller": "authorized-projection",
+        "eligible-responder": "none",
+        "map-participant": "none",
+        "authorized-operator": "none",
+        "unauthenticated": "none"
+      }
+    },
+    {
+      "id": "ability.runtime-identity",
+      "sensitivity": "secret",
+      "threatIds": ["hidden-ability-disclosure"],
+      "disclosures": {
+        "server-authority": "full",
+        "authorized-gm": "authorized-projection",
+        "source-controller": "none",
+        "eligible-responder": "none",
+        "map-participant": "none",
+        "authorized-operator": "aggregate-only",
+        "unauthenticated": "none"
+      }
+    },
+    {
+      "id": "audit.private-trace",
+      "sensitivity": "secret",
+      "threatIds": ["roll-and-state-disclosure"],
+      "disclosures": {
+        "server-authority": "full",
+        "authorized-gm": "authorized-projection",
+        "source-controller": "none",
+        "eligible-responder": "none",
+        "map-participant": "none",
+        "authorized-operator": "aggregate-only",
+        "unauthenticated": "none"
+      }
+    },
+    {
+      "id": "log.private-audit",
+      "sensitivity": "secret",
+      "threatIds": ["telemetry-log-disclosure"],
+      "disclosures": {
+        "server-authority": "full",
+        "authorized-gm": "authorized-projection",
+        "source-controller": "none",
+        "eligible-responder": "none",
+        "map-participant": "none",
+        "authorized-operator": "aggregate-only",
+        "unauthenticated": "none"
+      }
+    },
+    {
+      "id": "log.public-combat",
+      "sensitivity": "public",
+      "threatIds": ["telemetry-log-disclosure"],
+      "disclosures": {
+        "server-authority": "full",
+        "authorized-gm": "public-summary",
+        "source-controller": "public-summary",
+        "eligible-responder": "public-summary",
+        "map-participant": "public-summary",
+        "authorized-operator": "aggregate-only",
+        "unauthenticated": "none"
+      }
+    },
+    {
+      "id": "observability.metrics",
+      "sensitivity": "aggregate",
+      "threatIds": ["telemetry-log-disclosure"],
+      "disclosures": {
+        "server-authority": "full",
+        "authorized-gm": "aggregate-only",
+        "source-controller": "none",
+        "eligible-responder": "none",
+        "map-participant": "none",
+        "authorized-operator": "aggregate-only",
+        "unauthenticated": "none"
+      }
+    },
+    {
+      "id": "outcome.public-effect",
+      "sensitivity": "public",
+      "threatIds": [],
+      "disclosures": {
+        "server-authority": "full",
+        "authorized-gm": "public-summary",
+        "source-controller": "public-summary",
+        "eligible-responder": "public-summary",
+        "map-participant": "public-summary",
+        "authorized-operator": "aggregate-only",
+        "unauthenticated": "none"
+      }
+    },
+    {
+      "id": "pending.public-summary",
+      "sensitivity": "restricted",
+      "threatIds": ["hidden-ability-disclosure", "trigger-eligibility-oracle"],
+      "disclosures": {
+        "server-authority": "full",
+        "authorized-gm": "public-summary",
+        "source-controller": "public-summary",
+        "eligible-responder": "public-summary",
+        "map-participant": "existence-only",
+        "authorized-operator": "aggregate-only",
+        "unauthenticated": "none"
+      }
+    },
+    {
+      "id": "projection.copy-provenance",
+      "sensitivity": "secret",
+      "threatIds": ["copied-ability-disclosure"],
+      "disclosures": {
+        "server-authority": "full",
+        "authorized-gm": "authorized-projection",
+        "source-controller": "authorized-projection",
+        "eligible-responder": "none",
+        "map-participant": "none",
+        "authorized-operator": "none",
+        "unauthenticated": "none"
+      }
+    },
+    {
+      "id": "projection.suppression-state",
+      "sensitivity": "secret",
+      "threatIds": ["suppression-state-disclosure"],
+      "disclosures": {
+        "server-authority": "full",
+        "authorized-gm": "authorized-projection",
+        "source-controller": "authorized-projection",
+        "eligible-responder": "none",
+        "map-participant": "none",
+        "authorized-operator": "none",
+        "unauthenticated": "none"
+      }
+    },
+    {
+      "id": "response.authorized-prompt",
+      "sensitivity": "restricted",
+      "threatIds": ["private-option-disclosure", "responder-ownership-disclosure"],
+      "disclosures": {
+        "server-authority": "full",
+        "authorized-gm": "authorized-projection",
+        "source-controller": "none",
+        "eligible-responder": "authorized-projection",
+        "map-participant": "none",
+        "authorized-operator": "none",
+        "unauthenticated": "none"
+      }
+    },
+    {
+      "id": "response.effect-program",
+      "sensitivity": "secret",
+      "threatIds": ["private-option-disclosure", "roll-and-state-disclosure"],
+      "disclosures": {
+        "server-authority": "full",
+        "authorized-gm": "none",
+        "source-controller": "none",
+        "eligible-responder": "none",
+        "map-participant": "none",
+        "authorized-operator": "none",
+        "unauthenticated": "none"
+      }
+    },
+    {
+      "id": "response.legal-options",
+      "sensitivity": "restricted",
+      "threatIds": ["private-option-disclosure"],
+      "disclosures": {
+        "server-authority": "full",
+        "authorized-gm": "authorized-projection",
+        "source-controller": "none",
+        "eligible-responder": "authorized-projection",
+        "map-participant": "none",
+        "authorized-operator": "none",
+        "unauthenticated": "none"
+      }
+    },
+    {
+      "id": "response.owner-principals",
+      "sensitivity": "secret",
+      "threatIds": ["responder-ownership-disclosure"],
+      "disclosures": {
+        "server-authority": "full",
+        "authorized-gm": "authorized-projection",
+        "source-controller": "none",
+        "eligible-responder": "authorized-projection",
+        "map-participant": "none",
+        "authorized-operator": "none",
+        "unauthenticated": "none"
+      }
+    },
+    {
+      "id": "roll.private-ledger",
+      "sensitivity": "secret",
+      "threatIds": ["roll-and-state-disclosure"],
+      "disclosures": {
+        "server-authority": "full",
+        "authorized-gm": "none",
+        "source-controller": "none",
+        "eligible-responder": "none",
+        "map-participant": "none",
+        "authorized-operator": "aggregate-only",
+        "unauthenticated": "none"
+      }
+    },
+    {
+      "id": "sheet.private-state",
+      "sensitivity": "secret",
+      "threatIds": ["roll-and-state-disclosure"],
+      "disclosures": {
+        "server-authority": "full",
+        "authorized-gm": "authorized-projection",
+        "source-controller": "authorized-projection",
+        "eligible-responder": "none",
+        "map-participant": "none",
+        "authorized-operator": "none",
+        "unauthenticated": "none"
+      }
+    },
+    {
+      "id": "trigger.denial-reason",
+      "sensitivity": "restricted",
+      "threatIds": ["trigger-eligibility-oracle"],
+      "disclosures": {
+        "server-authority": "full",
+        "authorized-gm": "authorized-projection",
+        "source-controller": "public-summary",
+        "eligible-responder": "public-summary",
+        "map-participant": "none",
+        "authorized-operator": "aggregate-only",
+        "unauthenticated": "none"
+      }
+    },
+    {
+      "id": "trigger.eligibility",
+      "sensitivity": "secret",
+      "threatIds": ["trigger-eligibility-oracle"],
+      "disclosures": {
+        "server-authority": "full",
+        "authorized-gm": "authorized-projection",
+        "source-controller": "none",
+        "eligible-responder": "existence-only",
+        "map-participant": "none",
+        "authorized-operator": "aggregate-only",
+        "unauthenticated": "none"
+      }
+    }
+  ]
+}

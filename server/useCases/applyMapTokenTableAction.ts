@@ -32,7 +32,10 @@ import {
   type AnyLiveSheet,
 } from '~/utils/sheetMutations'
 import { pokemonHpSnapshot, trainerHpSnapshot } from '~/utils/sheetSpawn'
-import { getMapAbilityAutomation, resolveMapAbilityAutomationTransaction } from '~/utils/abilityAutomation'
+import {
+  getLegacyMapAbilityAutomation as getMapAbilityAutomation,
+  resolveLegacyMapAbilityAutomationTransaction as resolveMapAbilityAutomationTransaction,
+} from '../domain/abilityAutomation/legacyCompatibility'
 import { appendAbilityAutomationLogEntry } from '~/utils/abilityAutomationLog'
 import { appendActiveOrderEffect, createActiveOrderEffect } from '~/utils/activeOrderEffects'
 import { appendManeuverLogEntry, buildManeuverUseLogLines } from '~/utils/maneuverLog'

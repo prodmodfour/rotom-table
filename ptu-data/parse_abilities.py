@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Parse PTU 1.05 abilities from the indices-and-reference chapter into a JSON cache."""
 
+import hashlib
 import json
 import os
 import re
@@ -21,6 +22,10 @@ SOURCE_FILES = [
     os.path.join(MARKDOWN_DIR, "core", "10-indices-and-reference.md"),  # PTU 1.05 core (base)
 ]
 CACHE_DIR = os.path.join(os.path.dirname(__file__), "data")
+REPO_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+ADJUDICATION_PATH = os.path.join(
+    REPO_ROOT, "data", "ability-automation", "source-adjudications.json"
+)
 
 # Manual name fix-ups for known casing inconsistencies in source material.
 NAME_FIXUPS = {
@@ -90,6 +95,45 @@ def _parse_blocks(text: str) -> dict[str, dict]:
     return abilities
 
 
+def _apply_source_adjudications(abilities: dict[str, dict]) -> None:
+    """Apply reviewed fixes for known PDF column/parser losses.
+
+    Each fix is tied to exact checked-in source bytes. This keeps parser output
+    reproducible without treating a heuristic or an unreviewed manual value as
+    rules authority.
+    """
+    with open(ADJUDICATION_PATH, "r", encoding="utf-8") as f:
+        document = json.load(f)
+
+    if document.get("schemaVersion") != 1 or not isinstance(document.get("adjudications"), list):
+        raise ValueError("ability source adjudications must use schemaVersion 1")
+
+    allowed_fields = {"frequency", "trigger", "effect", "bonus"}
+    for entry in document["adjudications"]:
+        name = entry["canonicalId"]
+        if name not in abilities:
+            raise ValueError(f"adjudicated ability {name!r} is absent from parsed sources")
+        source_path = os.path.join(REPO_ROOT, entry["sourcePath"])
+        with open(source_path, "rb") as f:
+            source_bytes = f.read()
+        actual_hash = hashlib.sha256(source_bytes).hexdigest()
+        if actual_hash != entry["sourceDataSha256"]:
+            raise ValueError(
+                f"adjudication source hash changed for {name}: "
+                f"expected {entry['sourceDataSha256']}, received {actual_hash}"
+            )
+        source_text = source_bytes.decode("utf-8")
+        if entry["sourceSection"] not in source_text:
+            raise ValueError(f"adjudication source section is absent for {name}")
+
+        fields = entry["fields"]
+        if not isinstance(fields, dict) or not fields or not set(fields).issubset(allowed_fields):
+            raise ValueError(f"adjudication fields are invalid for {name}")
+        if any(not isinstance(value, str) or not value.strip() for value in fields.values()):
+            raise ValueError(f"adjudication values are invalid for {name}")
+        abilities[name].update(fields)
+
+
 def parse_abilities(verbose: bool = False) -> dict[str, dict]:
     """Parse abilities from all source files in priority order (first wins)."""
     abilities: dict[str, dict] = {}
@@ -114,6 +158,7 @@ def parse_abilities(verbose: bool = False) -> dict[str, dict]:
                     print(f"  [shadowed] {name}: kept {provenance[name]}, dropped {label}")
         print(f"  {label}: +{added} new, {shadowed} shadowed by higher-priority source")
 
+    _apply_source_adjudications(abilities)
     return abilities
 
 

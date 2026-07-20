@@ -1,4 +1,5 @@
 import rulesetJson from '../../data/move-automation/ruleset.json'
+import { computeRulesetSourceSha256 } from '../ruleset/sourceHash'
 
 export const MOVE_RULESET_SCHEMA_VERSION = 1 as const
 export const MOVE_CANONICALIZATION_VERSION = 1 as const
@@ -325,19 +326,11 @@ export const parseMoveRulesetProvenance = (value: unknown): MoveRulesetProvenanc
 
 export const MOVE_RULESET_PROVENANCE = parseMoveRulesetProvenance(rulesetJson)
 
-const sourceBytes = (sourceData: string | Uint8Array): Uint8Array<ArrayBuffer> => {
-  if (typeof sourceData === 'string') return new TextEncoder().encode(sourceData)
-  const copy = new Uint8Array(new ArrayBuffer(sourceData.byteLength))
-  copy.set(sourceData)
-  return copy
-}
-
 export const sha256Hex = async (sourceData: string | Uint8Array): Promise<string> => {
   if (!globalThis.crypto?.subtle) {
     fail('invalid-catalog', 'SHA-256 is unavailable in this runtime.')
   }
-  const digest = await globalThis.crypto.subtle.digest('SHA-256', sourceBytes(sourceData))
-  return Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, '0')).join('')
+  return computeRulesetSourceSha256(sourceData)
 }
 
 const decodeSource = (sourceData: string | Uint8Array): string => {

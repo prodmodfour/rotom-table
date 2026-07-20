@@ -1,4 +1,4 @@
-import { POISON_TOUCH_ABILITY_NAME } from '~/utils/abilityAutomation'
+import { POISON_TOUCH_ABILITY_NAME } from '#shared/abilityAutomation/legacyNames'
 import { sheetHasCanonicalAbility } from '~/utils/sheetAbilities'
 import { conditionBaseName } from '~/utils/statusConditions'
 import type { MoveAutomationConditionSuggestion, MoveAutomationScript } from '~/types/moveAutomation'

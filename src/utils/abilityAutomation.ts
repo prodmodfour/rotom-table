@@ -1,3 +1,15 @@
+import {
+  CELEBRATE_ABILITY_NAME,
+  CUTE_CHARM_ABILITY_NAME,
+  HEALER_ABILITY_NAME,
+  INTIMIDATE_ABILITY_NAME,
+  LEAF_GUARD_ABILITY_NAME,
+  MOXIE_ABILITY_NAME,
+  POISON_POINT_ABILITY_NAME,
+  POISON_TOUCH_ABILITY_NAME,
+  SHIELD_DUST_ABILITY_NAME,
+  SWEET_VEIL_ABILITY_NAME,
+} from '#shared/abilityAutomation/legacyNames'
 import { normalizeCombatStages } from '~/utils/combatStages'
 import {
   conditionBaseName,
@@ -19,16 +31,18 @@ import type { AbilityAutomationCategory, AbilityAutomationTransaction } from '~/
 import type { MapFieldEffects } from '~/types/map'
 import type { SpawnedPokemon } from '~/types/pokemon'
 
-export const CELEBRATE_ABILITY_NAME = 'Celebrate'
-export const CUTE_CHARM_ABILITY_NAME = 'Cute Charm'
-export const HEALER_ABILITY_NAME = 'Healer'
-export const INTIMIDATE_ABILITY_NAME = 'Intimidate'
-export const LEAF_GUARD_ABILITY_NAME = 'Leaf Guard'
-export const MOXIE_ABILITY_NAME = 'Moxie'
-export const POISON_POINT_ABILITY_NAME = 'Poison Point'
-export const POISON_TOUCH_ABILITY_NAME = 'Poison Touch'
-export const SHIELD_DUST_ABILITY_NAME = 'Shield Dust'
-export const SWEET_VEIL_ABILITY_NAME = 'Sweet Veil'
+export {
+  CELEBRATE_ABILITY_NAME,
+  CUTE_CHARM_ABILITY_NAME,
+  HEALER_ABILITY_NAME,
+  INTIMIDATE_ABILITY_NAME,
+  LEAF_GUARD_ABILITY_NAME,
+  MOXIE_ABILITY_NAME,
+  POISON_POINT_ABILITY_NAME,
+  POISON_TOUCH_ABILITY_NAME,
+  SHIELD_DUST_ABILITY_NAME,
+  SWEET_VEIL_ABILITY_NAME,
+} from '#shared/abilityAutomation/legacyNames'
 
 export interface SheetAbilityAutomationDefinition {
   readonly name: string

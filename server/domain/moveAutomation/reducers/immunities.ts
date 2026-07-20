@@ -2,7 +2,7 @@ import {
   moveAutomationCombatStageBlockSource,
   tokenHasShieldDust,
 } from '~/utils/moveAutomationAbilityProtection'
-import { SHIELD_DUST_ABILITY_NAME } from '~/utils/abilityAutomation'
+import { SHIELD_DUST_ABILITY_NAME } from '#shared/abilityAutomation/legacyNames'
 import {
   PASTEL_VEIL_RANGE_METERS,
   SWEET_VEIL_RANGE_METERS,

@@ -1,0 +1,78 @@
+{
+  "schemaVersion": 1,
+  "adjudications": [
+    {
+      "canonicalId": "Anchored",
+      "sourcePath": "books/markdown/sumo_references.md",
+      "sourceSection": "Ability: Anchored",
+      "sourceDataSha256": "592001dee213738438e3b7a8973637134cf5f54b49f10f3a0f4012d0e319ddc8",
+      "fields": {
+        "frequency": "Static",
+        "bonus": "When the user Shifts the Anchor, it may immediately afterwards originate a damaging attack from its Anchor if it has the appropriate action available, giving that attack the following properties: the attack's range changes to \"Melee, 1 Target\", the attack deals +2d6 damage, and the attack's Class changes to Physical if it wasn't already."
+      },
+      "reason": "The two-column source places the frequency and Bonus paragraph after an intervening capability column, outside the parser's initial ability block."
+    },
+    {
+      "canonicalId": "Ball Fetch",
+      "sourcePath": "books/markdown/swsh_-_armor_crown_references.md",
+      "sourceSection": "Ability: Ball Fetch",
+      "sourceDataSha256": "784d7f4a725539ce34519df0cdc7e7a0efa1a6cce386abd1aaa53ef832c4d228",
+      "fields": {
+        "frequency": "Scene – Free Action, Reaction"
+      },
+      "reason": "The two-column source inserts the As One capability text between the ability heading and its frequency line."
+    },
+    {
+      "canonicalId": "Illusion",
+      "sourcePath": "books/markdown/core/10-indices-and-reference.md",
+      "sourceSection": "Ability: Illusion",
+      "sourceDataSha256": "4cc7c5b9fd50e8e6a69aa0e6a1631e627f8c5fd2b7adc67cbbb22cd21c1e0d45",
+      "fields": {
+        "frequency": "Special"
+      },
+      "reason": "Special is a canonical frequency label but was absent from the parser's frequency recognizer."
+    },
+    {
+      "canonicalId": "Klutz",
+      "sourcePath": "books/markdown/swsh_-_armor_crown_references.md",
+      "sourceSection": "Ability: Klutz",
+      "sourceDataSha256": "784d7f4a725539ce34519df0cdc7e7a0efa1a6cce386abd1aaa53ef832c4d228",
+      "fields": {
+        "frequency": "Scene – Free Action",
+        "bonus": "The Pokémon ignores the effects of all held Items in its possession. The user may drop Held Items At-Will as a Free Action during their turn, even if they have Status Afflictions that prevent them from taking actions."
+      },
+      "reason": "The current supplement replaces the older Static core form, but a two-column note separates its heading from the updated frequency and Bonus paragraph."
+    },
+    {
+      "canonicalId": "Multitype",
+      "sourcePath": "books/markdown/core/10-indices-and-reference.md",
+      "sourceSection": "Ability: Multitype",
+      "sourceDataSha256": "4cc7c5b9fd50e8e6a69aa0e6a1631e627f8c5fd2b7adc67cbbb22cd21c1e0d45",
+      "fields": {
+        "frequency": "At-Will – Free Action"
+      },
+      "reason": "The source spells the rate as At Will; it is normalized to the catalog's canonical At-Will spelling."
+    },
+    {
+      "canonicalId": "Receiver",
+      "sourcePath": "books/markdown/sumo_references.md",
+      "sourceSection": "Ability: Receiver",
+      "sourceDataSha256": "592001dee213738438e3b7a8973637134cf5f54b49f10f3a0f4012d0e319ddc8",
+      "fields": {
+        "frequency": "Special – Free Action",
+        "effect": "Each effect below may be used once per scene when triggered: • When an ally faints, the user selects one of their Abilities. The user gains that Ability until the end of the encounter. • When the user faints, they may grant use of one of their Basic Abilities to an ally on the field for the rest of the encounter."
+      },
+      "reason": "The PDF bullet layout caused the parser to retain only the introductory Effect line and discard both triggered branches."
+    },
+    {
+      "canonicalId": "Transporter",
+      "sourcePath": "books/markdown/errata-3.md",
+      "sourceSection": "Ability: Transporter",
+      "sourceDataSha256": "d589c68c0b12c18de4df30b5e37351297b324d7f7fa4a8cda63cda5c7ff154b8",
+      "fields": {
+        "effect": "Choose One Effect: Connection – Teleport. You activate Teleporter as if your Teleporter value were three times its normal value; or you may take one willing adjacent Pokémon or Trainer along with you as you teleport so long as you are touching them when you activate Transporter. You may expend two uses of Transporter at once to choose both effects."
+      },
+      "reason": "Choose One Effect is canonical effect text and must be retained as a complete branch rather than omitted for lacking an Effect label."
+    }
+  ]
+}

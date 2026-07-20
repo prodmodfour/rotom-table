@@ -2,12 +2,18 @@ import { execFileSync } from 'node:child_process'
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
+import adjudicationsJson from '../../data/ability-automation/source-adjudications.json'
 
 type AbilityRecord = {
+  frequency?: string
   trigger?: string
+  effect?: string
+  bonus?: string
 }
 
-const parserAbilityNames = ['Chilling Neigh', 'Quick Draw', 'Thunder Boost']
+const triggerFixtureNames = ['Chilling Neigh', 'Quick Draw', 'Thunder Boost']
+const adjudicatedNames = adjudicationsJson.adjudications.map(entry => entry.canonicalId)
+const parserAbilityNames = [...triggerFixtureNames, ...adjudicatedNames]
 const runtimeAbilityNames = [...parserAbilityNames, 'Perish Body']
 
 const parseAbilities = (): Record<string, AbilityRecord> => {
@@ -49,6 +55,15 @@ const expectMultilineTriggers = (abilities: Record<string, AbilityRecord>) => {
 describe('PTU ability parser triggers', () => {
   it('keeps continuation lines in trigger fields', () => {
     expectMultilineTriggers(parseAbilities())
+  })
+
+  it('reapplies reviewed source adjudications after heuristic parsing', () => {
+    const abilities = parseAbilities()
+    for (const entry of adjudicationsJson.adjudications) {
+      for (const [field, value] of Object.entries(entry.fields)) {
+        expect(abilities[entry.canonicalId]?.[field as keyof AbilityRecord], `${entry.canonicalId}.${field}`).toBe(value)
+      }
+    }
   })
 })
 

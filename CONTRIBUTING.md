@@ -28,13 +28,24 @@ npm test
 npm run build
 ```
 
-The canonical quality gate runs both metadata validation and the strict 776/776 semantic/runtime evidence audit, plus engine budget checks, before typechecking, tests, and the build:
+The canonical quality gate runs ability metadata/plan/budget validation and both Move metadata validation and the strict 776/776 Move semantic/runtime evidence audit before typechecking, tests, and the build:
 
 ```bash
 bash scripts/quality-gate.sh
 ```
 
 Move authors must follow [`docs/move-automation.md`](docs/move-automation.md). It covers the spec/handler boundary, capability contracts, branch evidence, hashes, status promotion, recovery invariants, and common validation failures.
+
+Ability authors must follow [`docs/ability-automation.md`](docs/ability-automation.md), [ADR 011](docs/adrs/011-authoritative-ability-automation-runtime.md), and the ordered [`ABILITY_AUTOMATION_PLAN.md`](ABILITY_AUTOMATION_PLAN.md). During the migration, run:
+
+```bash
+npm run check:ability-automation
+npm run check:ability-automation-links
+npm run check:ability-automation-plan
+npm run check:ability-automation-budgets
+```
+
+`npm run check:ability-automation-complete` intentionally remains red until all 483 canonical abilities have reviewed AbilitySpec runtimes and executable evidence. Existing helper or menu coverage does not promote a manifest row.
 
 Run the same non-strict validation directly while developing move automation:
 

@@ -48,9 +48,9 @@ import type { CombatStageMap } from '~/types/combatStages'
 import type { SpawnedPokemon } from '~/types/pokemon'
 import type { TrainerSheet } from '~/types/trainerSheet'
 import {
-  getMapAbilityAutomation,
-  resolveMapAbilityAutomationTransaction,
-} from '~/utils/abilityAutomation'
+  getLegacyMapAbilityAutomation as getMapAbilityAutomation,
+  resolveLegacyMapAbilityAutomationTransaction as resolveMapAbilityAutomationTransaction,
+} from '../domain/abilityAutomation/legacyCompatibility'
 import { appendAbilityAutomationLogEntry } from '~/utils/abilityAutomationLog'
 import {
   appendActiveOrderEffect,

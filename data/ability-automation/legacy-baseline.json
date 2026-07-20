@@ -1,0 +1,287 @@
+{
+  "schemaVersion": 1,
+  "capturedAt": "2026-07-09",
+  "canonicalSourceSha256": "767c3e2ae45471c26ad97a07552c4b0417ed0e207827af8a59da3a73e81f4362",
+  "entries": [
+    {
+      "canonicalId": "Battle Armor",
+      "fragments": [
+        { "category": "critical-immunity", "sourceModule": "server/domain/moveAutomation/criticalHits.ts", "behaviorCodes": ["critical.prevent"] }
+      ]
+    },
+    {
+      "canonicalId": "Celebrate",
+      "fragments": [
+        { "category": "active-transaction", "sourceModule": "src/utils/abilityAutomation.ts", "behaviorCodes": ["movement.disengage-reminder"] },
+        { "category": "move-follow-up", "sourceModule": "server/domain/moveAutomation/abilityFollowUpSpecs.ts", "behaviorCodes": ["move-hit.optional-follow-up"] }
+      ]
+    },
+    {
+      "canonicalId": "Compound Eyes",
+      "fragments": [
+        { "category": "passive-provider", "sourceModule": "src/utils/sheetAbilityCombatModifiers.ts", "behaviorCodes": ["accuracy.roll-bonus"] }
+      ]
+    },
+    {
+      "canonicalId": "Cute Charm",
+      "fragments": [
+        { "category": "move-follow-up", "sourceModule": "server/domain/moveAutomation/abilityFollowUpSpecs.ts", "behaviorCodes": ["melee-attack.optional-infatuation"] }
+      ]
+    },
+    {
+      "canonicalId": "Desert Weather",
+      "fragments": [
+        { "category": "weather-immunity", "sourceModule": "server/domain/moveAutomation/weatherLifecycle.ts", "behaviorCodes": ["sandstorm.hp-loss-immunity"] }
+      ]
+    },
+    {
+      "canonicalId": "Drown Out",
+      "fragments": [
+        { "category": "reaction-definition", "sourceModule": "server/domain/moveAutomation/setupReactionDefinitions.ts", "behaviorCodes": ["sonic-move.cancel"] }
+      ]
+    },
+    {
+      "canonicalId": "Flash Fire",
+      "fragments": [
+        { "category": "condition-immunity", "sourceModule": "src/utils/moveAutomationConditionImmunity.ts", "behaviorCodes": ["fire-source.burn-immunity"] },
+        { "category": "passive-provider", "sourceModule": "src/utils/sheetPassiveAbilityEffects.ts", "behaviorCodes": ["fire.attack-immunity"] }
+      ]
+    },
+    {
+      "canonicalId": "Healer",
+      "fragments": [
+        { "category": "active-transaction", "sourceModule": "src/utils/abilityAutomation.ts", "behaviorCodes": ["target.status-cure-all"] }
+      ]
+    },
+    {
+      "canonicalId": "Ice Face",
+      "fragments": [
+        { "category": "weather-immunity", "sourceModule": "server/domain/moveAutomation/weatherLifecycle.ts", "behaviorCodes": ["hail.hp-loss-immunity"] }
+      ]
+    },
+    {
+      "canonicalId": "Illuminate",
+      "fragments": [
+        { "category": "passive-provider", "sourceModule": "src/utils/sheetAbilityCombatModifiers.ts", "behaviorCodes": ["incoming-attack.accuracy-penalty"] }
+      ]
+    },
+    {
+      "canonicalId": "Immunity",
+      "fragments": [
+        { "category": "condition-immunity", "sourceModule": "src/utils/moveAutomationConditionImmunity.ts", "behaviorCodes": ["poison.immunity"] }
+      ]
+    },
+    {
+      "canonicalId": "Inner Focus",
+      "fragments": [
+        { "category": "condition-immunity", "sourceModule": "src/utils/moveAutomationConditionImmunity.ts", "behaviorCodes": ["flinch.immunity"] }
+      ]
+    },
+    {
+      "canonicalId": "Insomnia",
+      "fragments": [
+        { "category": "ability-overlay", "sourceModule": "server/domain/moveAutomation/handlers/finalStage266_272.ts", "behaviorCodes": ["move.worry-seed-grant"] }
+      ]
+    },
+    {
+      "canonicalId": "Intimidate",
+      "fragments": [
+        { "category": "active-transaction", "sourceModule": "src/utils/abilityAutomation.ts", "behaviorCodes": ["target.attack-stage-minus-one"] }
+      ]
+    },
+    {
+      "canonicalId": "Keen Eye",
+      "fragments": [
+        { "category": "condition-immunity", "sourceModule": "src/utils/moveAutomationConditionImmunity.ts", "behaviorCodes": ["blindness.immunity"] },
+        { "category": "passive-provider", "sourceModule": "src/utils/sheetAbilityCombatModifiers.ts", "behaviorCodes": ["accuracy.negative-stage-ignore", "illuminate.penalty-ignore"] }
+      ]
+    },
+    {
+      "canonicalId": "Leaf Guard",
+      "fragments": [
+        { "category": "active-transaction", "sourceModule": "src/utils/abilityAutomation.ts", "behaviorCodes": ["self.status-cure-one", "sunny.frequency-reminder"] }
+      ]
+    },
+    {
+      "canonicalId": "Levitate",
+      "fragments": [
+        { "category": "ability-overlay", "sourceModule": "server/domain/moveAutomation/handlers/itemRandom250_257.ts", "behaviorCodes": ["move.telekinesis-grant"] },
+        { "category": "passive-provider", "sourceModule": "src/utils/sheetPassiveAbilityEffects.ts", "behaviorCodes": ["ground.resistance", "movement.levitate-speed"] }
+      ]
+    },
+    {
+      "canonicalId": "Magic Guard",
+      "fragments": [
+        { "category": "recoil-immunity", "sourceModule": "src/utils/moveAutomationRecoil.ts", "behaviorCodes": ["recoil.hp-loss-immunity"] },
+        { "category": "weather-immunity", "sourceModule": "server/domain/moveAutomation/weatherLifecycle.ts", "behaviorCodes": ["weather.hp-loss-immunity"] },
+        { "category": "weather-immunity", "sourceModule": "server/domain/moveAutomation/vortex.ts", "behaviorCodes": ["vortex.hp-loss-immunity"] }
+      ]
+    },
+    {
+      "canonicalId": "Motor Drive",
+      "fragments": [
+        { "category": "passive-provider", "sourceModule": "src/utils/sheetPassiveAbilityEffects.ts", "behaviorCodes": ["electric.attack-immunity"] }
+      ]
+    },
+    {
+      "canonicalId": "Moxie",
+      "fragments": [
+        { "category": "active-transaction", "sourceModule": "src/utils/abilityAutomation.ts", "behaviorCodes": ["self.attack-stage-plus-one"] },
+        { "category": "move-follow-up", "sourceModule": "server/domain/moveAutomation/abilityFollowUpSpecs.ts", "behaviorCodes": ["move-ko.optional-attack-stage"] }
+      ]
+    },
+    {
+      "canonicalId": "Mud Dweller",
+      "fragments": [
+        { "category": "passive-provider", "sourceModule": "src/utils/sheetPassiveAbilityEffects.ts", "behaviorCodes": ["ground.resistance", "water.resistance"] }
+      ]
+    },
+    {
+      "canonicalId": "No Guard",
+      "fragments": [
+        { "category": "passive-provider", "sourceModule": "src/utils/sheetAbilityCombatModifiers.ts", "behaviorCodes": ["accuracy.outgoing-bonus", "accuracy.incoming-bonus"] }
+      ]
+    },
+    {
+      "canonicalId": "Overcoat",
+      "fragments": [
+        { "category": "weather-immunity", "sourceModule": "server/domain/moveAutomation/weatherLifecycle.ts", "behaviorCodes": ["weather.hp-loss-immunity"] }
+      ]
+    },
+    {
+      "canonicalId": "Own Tempo",
+      "fragments": [
+        { "category": "condition-immunity", "sourceModule": "src/utils/moveAutomationConditionImmunity.ts", "behaviorCodes": ["confusion.immunity"] }
+      ]
+    },
+    {
+      "canonicalId": "Pastel Veil",
+      "fragments": [
+        { "category": "condition-immunity", "sourceModule": "src/utils/moveAutomationConditionImmunity.ts", "behaviorCodes": ["ally.poison-immunity", "self.poison-immunity"] }
+      ]
+    },
+    {
+      "canonicalId": "Permafrost",
+      "fragments": [
+        { "category": "weather-immunity", "sourceModule": "server/domain/moveAutomation/vortex.ts", "behaviorCodes": ["vortex.hp-loss-immunity"] },
+        { "category": "weather-immunity", "sourceModule": "server/domain/moveAutomation/weatherLifecycle.ts", "behaviorCodes": ["weather.hp-loss-immunity"] }
+      ]
+    },
+    {
+      "canonicalId": "Poison Point",
+      "fragments": [
+        { "category": "move-follow-up", "sourceModule": "server/domain/moveAutomation/abilityFollowUpSpecs.ts", "behaviorCodes": ["melee-hit.optional-poison"] }
+      ]
+    },
+    {
+      "canonicalId": "Poison Touch",
+      "fragments": [
+        { "category": "move-script-rewrite", "sourceModule": "src/utils/moveAutomationPoisonTouch.ts", "behaviorCodes": ["damaging-hit.poison-effect-range"] }
+      ]
+    },
+    {
+      "canonicalId": "Quick Feet",
+      "fragments": [
+        { "category": "derived-sheet", "sourceModule": "src/utils/sheetConditionEffects.ts", "behaviorCodes": ["status.speed-stage-plus-two", "paralysis.initiative-ignore"] }
+      ]
+    },
+    {
+      "canonicalId": "Reckless",
+      "fragments": [
+        { "category": "move-interaction", "sourceModule": "server/domain/moveAutomation/handlers/takeDown.ts", "behaviorCodes": ["take-down.damage-base-plus-three"] }
+      ]
+    },
+    {
+      "canonicalId": "Rock Head",
+      "fragments": [
+        { "category": "recoil-immunity", "sourceModule": "src/utils/moveAutomationRecoil.ts", "behaviorCodes": ["recoil.hp-loss-immunity"] }
+      ]
+    },
+    {
+      "canonicalId": "Sand Force",
+      "fragments": [
+        { "category": "passive-provider", "sourceModule": "server/domain/moveAutomation/weather.ts", "behaviorCodes": ["sandstorm.damage-bonus"] }
+      ]
+    },
+    {
+      "canonicalId": "Sand Veil",
+      "fragments": [
+        { "category": "sheet-toggle", "sourceModule": "src/utils/sheetAbilityActivation.ts", "behaviorCodes": ["evasion.manual-weather-toggle"] },
+        { "category": "weather-immunity", "sourceModule": "server/domain/moveAutomation/weatherLifecycle.ts", "behaviorCodes": ["adjacent-ally.sandstorm-immunity", "sandstorm.hp-loss-immunity"] }
+      ]
+    },
+    {
+      "canonicalId": "Sap Sipper",
+      "fragments": [
+        { "category": "passive-provider", "sourceModule": "src/utils/sheetPassiveAbilityEffects.ts", "behaviorCodes": ["grass.attack-immunity"] }
+      ]
+    },
+    {
+      "canonicalId": "Shell Armor",
+      "fragments": [
+        { "category": "critical-immunity", "sourceModule": "server/domain/moveAutomation/criticalHits.ts", "behaviorCodes": ["critical.prevent"] }
+      ]
+    },
+    {
+      "canonicalId": "Shield Dust",
+      "fragments": [
+        { "category": "passive-provider", "sourceModule": "server/domain/moveAutomation/reducers/immunities.ts", "behaviorCodes": ["accuracy-triggered-secondary.prevent"] }
+      ]
+    },
+    {
+      "canonicalId": "Simple",
+      "fragments": [
+        { "category": "ability-overlay", "sourceModule": "server/domain/moveAutomation/handlers/finalStage266_272.ts", "behaviorCodes": ["move.simple-beam-grant"] }
+      ]
+    },
+    {
+      "canonicalId": "Snow Cloak",
+      "fragments": [
+        { "category": "sheet-toggle", "sourceModule": "src/utils/sheetAbilityActivation.ts", "behaviorCodes": ["evasion.manual-weather-toggle"] },
+        { "category": "weather-immunity", "sourceModule": "server/domain/moveAutomation/weatherLifecycle.ts", "behaviorCodes": ["adjacent-ally.hail-immunity", "hail.hp-loss-immunity"] }
+      ]
+    },
+    {
+      "canonicalId": "Snow Warning",
+      "fragments": [
+        { "category": "weather-immunity", "sourceModule": "server/domain/moveAutomation/weatherLifecycle.ts", "behaviorCodes": ["hail.hp-loss-immunity"] }
+      ]
+    },
+    {
+      "canonicalId": "Soundproof",
+      "fragments": [
+        { "category": "passive-provider", "sourceModule": "src/utils/sheetPassiveAbilityEffects.ts", "behaviorCodes": ["sonic.move-immunity"] }
+      ]
+    },
+    {
+      "canonicalId": "Sweet Veil",
+      "fragments": [
+        { "category": "condition-immunity", "sourceModule": "src/utils/moveAutomationConditionImmunity.ts", "behaviorCodes": ["ally.sleep-immunity", "self.sleep-immunity"] }
+      ]
+    },
+    {
+      "canonicalId": "Tolerance",
+      "fragments": [
+        { "category": "passive-provider", "sourceModule": "src/utils/sheetPassiveAbilityEffects.ts", "behaviorCodes": ["resisted-type.extra-resistance"] }
+      ]
+    },
+    {
+      "canonicalId": "Volt Absorb",
+      "fragments": [
+        { "category": "passive-provider", "sourceModule": "src/utils/sheetPassiveAbilityEffects.ts", "behaviorCodes": ["electric.attack-immunity"] }
+      ]
+    },
+    {
+      "canonicalId": "Water Veil",
+      "fragments": [
+        { "category": "condition-immunity", "sourceModule": "src/utils/moveAutomationConditionImmunity.ts", "behaviorCodes": ["burn.immunity"] }
+      ]
+    },
+    {
+      "canonicalId": "Weird Power",
+      "fragments": [
+        { "category": "derived-sheet", "sourceModule": "src/utils/sheetMoveAttackStats.ts", "behaviorCodes": ["lower-offense.add-higher-offense"] }
+      ]
+    }
+  ]
+}

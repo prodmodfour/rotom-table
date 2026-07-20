@@ -1,4 +1,4 @@
-import { SHIELD_DUST_ABILITY_NAME } from '~/utils/abilityAutomation'
+import { SHIELD_DUST_ABILITY_NAME } from '#shared/abilityAutomation/legacyNames'
 import { KEEN_EYE_ABILITY_NAME } from '~/utils/sheetAbilityCombatModifiers'
 import { sheetHasCanonicalAbility, type SheetAbilityNameSource } from '~/utils/sheetAbilities'
 import type { CombatStageKey } from '~/types/combatStages'

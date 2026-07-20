@@ -9,7 +9,7 @@ import {
   getMapAbilityAutomation,
   mapAbilityTargetCandidates,
   resolveMapAbilityAutomationTransaction,
-} from '~/utils/abilityAutomation'
+} from '~/utils/abilityAutomationLegacyCompatibility'
 import {
   DEFAULT_ABILITY_AUTOMATION_LOG_ENTRIES,
   appendAbilityAutomationLogEntry,

@@ -1,4 +1,4 @@
-import { CUTE_CHARM_ABILITY_NAME } from '~/utils/abilityAutomation'
+import { CUTE_CHARM_ABILITY_NAME } from '#shared/abilityAutomation/legacyNames'
 import { sheetHasCanonicalAbility } from '~/utils/sheetAbilities'
 import {
   conditionBaseName,
