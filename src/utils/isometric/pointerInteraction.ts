@@ -21,6 +21,7 @@ export interface IsometricPointerInteractionOptions {
   getBuildTool: () => BuildTool
   getHazardMode: () => boolean | undefined
   getHazardTool: () => BuildTool | undefined
+  getMovementIntentLocked?: () => boolean
   canControlPokemon: (id: string | null | undefined) => boolean
   pickPokemonId: (event: MouseEvent | PointerEvent) => string | null
   selectPokemon: (id: string | null) => void
@@ -67,6 +68,7 @@ export const createIsometricPointerInteractionController = ({
   getBuildTool,
   getHazardMode,
   getHazardTool,
+  getMovementIntentLocked = () => false,
   canControlPokemon,
   pickPokemonId,
   selectPokemon,
@@ -103,6 +105,7 @@ export const createIsometricPointerInteractionController = ({
 
   const handleLeftClick = (event: PointerEvent) => {
     closeContextMenu()
+    if (getMovementIntentLocked()) return
 
     if (getPlacementModeActive()) {
       performPlacement()
@@ -139,6 +142,10 @@ export const createIsometricPointerInteractionController = ({
   const handleRightClick = (event: MouseEvent) => {
     event.preventDefault()
     flushPointerMove()
+    if (getMovementIntentLocked()) {
+      closeContextMenu()
+      return
+    }
 
     if (getPlacementModeActive()) {
       cancelPlacement()
@@ -301,6 +308,7 @@ export const createIsometricPointerInteractionController = ({
     }
 
     cancelPointerMove()
+    if (getMovementIntentLocked()) return
 
     if (closeTopmostOverlay()) return
     if (getPlacementModeActive()) {

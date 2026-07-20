@@ -74,6 +74,7 @@ import { useManeuverActionPanel } from '~/composables/map-editor/useManeuverActi
 import { useOrderActionPanel } from '~/composables/map-editor/useOrderActionPanel'
 import { usePokeballCapturePanel } from '~/composables/map-editor/usePokeballCapturePanel'
 import { LIVE_PLAY_COMMAND_TYPES, LIVE_PLAY_PATCH_TYPES } from '#shared/livePlayCommands'
+import { isPendingMoveDeclarationResult } from '#shared/moveAutomation/pendingResolution'
 import { MAP_INTERACTION_MODES, type MapInteractionMode } from '#shared/mapInteractionMode'
 import {
   LIVE_PLAY_PRESENCE_MAX_INTENT_AREA_CELLS,
@@ -102,7 +103,6 @@ import {
   applyPokeballCaptureOutcomeToTrainerSheet,
   type PokeballCaptureOutcomeEvent,
 } from '~/utils/pokeballCapture'
-import { isSameAnchor } from '~/utils/gridGeometry'
 import { normalizeMapSceneName, MAP_SCENE_NAME_MAX_LENGTH } from '~/utils/mapSceneState'
 import { setTemporaryHpForPlacement } from '~/utils/mapTemporaryHitPoints'
 import { createLivePlayTokenCorrectionNoticeController } from '~/utils/livePlayTokenCorrectionNotice'
@@ -128,6 +128,7 @@ import {
 import type { GridAnchor, MapRoomKind, MapTerrainKind, MapWeatherKind } from '~/types/map'
 import type { MoveAutomationTargetingOverlayState } from '~/types/moveAutomation'
 import type { MoveVfxKind } from '~/types/moveAnimation'
+import type { LivePlayMovementIntent } from '~/types/livePlayUi'
 import type { TrainerSheet } from '~/types/trainerSheet'
 
 definePageMeta({
@@ -552,6 +553,7 @@ const livePlayCommands = useLivePlayCommands({
   livePlayCommandBlockedMessage,
   newCommandBlocked: livePlayRecoveryNewCommandBlocked,
   newCommandBlockedMessage: livePlayRecoveryNewCommandBlockedMessage,
+  predictMoveToken: false,
   applyPersistedMap,
   applySheetUpdate: applyLivePlaySheetUpdate,
   requestReconciliation: () => livePlayStateMachine.reconcile(reconcileLivePlayState),
@@ -1279,15 +1281,6 @@ const newPendingTokenPredictionForPlacement = (
   )) ?? null
 )
 
-const newPendingMovePredictionForPlacement = (
-  previousOpIds: ReadonlySet<string>,
-  placementId: string,
-): LivePlayLocalPrediction | null => newPendingTokenPredictionForPlacement(
-  previousOpIds,
-  placementId,
-  LIVE_PLAY_COMMAND_TYPES.MOVE_TOKEN,
-)
-
 const newPendingTurnPredictionForPlacement = (
   previousOpIds: ReadonlySet<string>,
   placementId: string,
@@ -1306,46 +1299,103 @@ const newPendingConditionsPredictionForPlacement = (
   LIVE_PLAY_COMMAND_TYPES.MODIFY_CONDITIONS,
 )
 
+const livePlayMovementIntent = ref<LivePlayMovementIntent | null>(null)
+let livePlayMovementIntentGeneration = 0
+
+const movementIntentPath = (
+  payload: TokenMovementCommitPayload,
+  previousPosition: GridAnchor | null,
+): readonly GridAnchor[] => {
+  if (payload.path && payload.path.length >= 2) {
+    return payload.path.map(anchor => ({ ...anchor }))
+  }
+  return previousPosition
+    ? [{ ...previousPosition }, { ...payload.position }]
+    : [{ ...payload.position }]
+}
+
+const finishLivePlayMovementIntentAfterRender = async (
+  generation: number,
+  placementId: string,
+): Promise<void> => {
+  // Let the child renderer consume the accepted route/checkpoint while the
+  // intent still opts that token out of reconciliation snapping.
+  await nextTick()
+  if (generation !== livePlayMovementIntentGeneration) return
+  livePlayMovementIntent.value = null
+  if (selectedId.value === placementId) clearSelection()
+}
+
 const movePokemon = (payload: TokenMovementCommitPayload) => {
   const from = spawnedPokemon.value.find((pokemon) => pokemon.id === payload.id)?.position
     ?? placementById(payload.id)?.position
   const previousPosition = from ? { ...from } : null
 
-  if (!canControlPlacement(payload.id)) return
+  if (!canControlPlacement(payload.id) || livePlayMovementIntent.value) return
   if (isSetupEditMode()) {
     movePlacementForSetupEdit(payload)
     return
   }
-  const pendingPredictionOpIdsBeforeMove = new Set(Object.keys(livePlayCommands.pendingPredictions.value))
+
+  const generation = ++livePlayMovementIntentGeneration
+  const intent: LivePlayMovementIntent = {
+    placementId: payload.id,
+    destination: { ...payload.position },
+    path: movementIntentPath(payload, previousPosition),
+    status: 'submitting',
+  }
+  livePlayMovementIntent.value = intent
+
   const dispatch = livePlayCommands.moveToken({
     placementId: payload.id,
     position: payload.position,
     pathLength: previewState.value.pathLength,
     ...(isGm.value && !previewState.value.reachable ? { movementPolicy: 'gm-override' as const } : {}),
   })
-  const predictedMove = newPendingMovePredictionForPlacement(pendingPredictionOpIdsBeforeMove, payload.id)
-  if (predictedMove) {
-    rememberLivePlayPredictedToken(predictedMove, livePlayTokenLabel(payload.id))
-    clearSelection()
-  }
 
   void dispatch.then(async (result) => {
+    if (generation !== livePlayMovementIntentGeneration) return
     if (!result.dispatched) {
-      if (result.opId) forgetLivePlayPredictedToken(result.opId)
+      livePlayMovementIntent.value = null
       return
     }
-    if (result.opId) forgetLivePlayPredictedToken(result.opId)
-    const moveWasPredicted = predictedMove !== null
-    if (!moveWasPredicted) clearSelection()
-    const currentPosition = placementById(payload.id)?.position
-    if (!previousPosition || !currentPosition || isSameAnchor(previousPosition, currentPosition)) return
-    await Promise.resolve(attackOfOpportunityTriggers?.provokeMovementAttackOfOpportunity({
-      provokerId: payload.id,
-      from: previousPosition,
-      to: { ...currentPosition },
-    }))
+
+    if (isPendingMoveDeclarationResult(result.response)) {
+      livePlayMovementIntent.value = {
+        ...intent,
+        status: 'awaiting-reaction',
+        resolutionId: result.response.pendingResolution.resolutionId,
+      }
+      return
+    }
+
+    await finishLivePlayMovementIntentAfterRender(generation, payload.id)
   })
 }
+
+watch(
+  () => [
+    livePlayMovementIntent.value?.resolutionId ?? null,
+    map.value?.encounterState?.pendingResolutionSummaries
+      .map(summary => `${summary.resolutionId}:${summary.status}`)
+      .join('|') ?? '',
+  ] as const,
+  ([resolutionId]) => {
+    if (!resolutionId) return
+    const stillActive = map.value?.encounterState?.pendingResolutionSummaries.some(summary => (
+      summary.resolutionId === resolutionId
+      && (summary.status === 'pending' || summary.status === 'resuming')
+    )) === true
+    if (stillActive) return
+
+    const intent = livePlayMovementIntent.value
+    if (!intent || intent.resolutionId !== resolutionId) return
+    void finishLivePlayMovementIntentAfterRender(
+      livePlayMovementIntentGeneration,
+      intent.placementId,
+    )
+  },
+)
 
 const hazardCount = computed(() => mapHazards.value.length)
 const {
@@ -2654,6 +2704,7 @@ useMapDimensionReconciliation({
         :live-play-correction-motion-token-ids="livePlayCorrectionMotionTokenIds"
         :live-play-snap-correction-token-ids="transientLivePlaySnapCorrectionTokenIds"
         :live-play-remote-accepted-token-ids="livePlayRemoteAcceptedMotionTokenIds"
+        :live-play-movement-intent="livePlayMovementIntent"
         :remote-token-attention="remoteTokenAttention"
         :presence-pings="mapPresencePings"
         :presence-intent-overlays="remotePresenceIntentOverlays"

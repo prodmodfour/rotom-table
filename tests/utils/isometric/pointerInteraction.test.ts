@@ -65,6 +65,7 @@ const makeController = () => {
   let buildMode = false
   let hazardMode = false
   let targetingMode = false
+  let movementIntentLocked = false
   let buildTool: BuildTool = 'pencil'
   let hazardTool: BuildTool | undefined = undefined
   let hitId: string | null = 'token-1'
@@ -85,6 +86,7 @@ const makeController = () => {
     getBuildTool: () => buildTool,
     getHazardMode: () => hazardMode,
     getHazardTool: () => hazardTool,
+    getMovementIntentLocked: () => movementIntentLocked,
     canControlPokemon: (id: string | null | undefined) => Boolean(id && controllableIds.has(id)),
     pickPokemonId: vi.fn(() => hitId),
     selectPokemon: vi.fn((id: string | null) => { selectedId = id }),
@@ -127,6 +129,7 @@ const makeController = () => {
     setBuildMode: (active: boolean) => { buildMode = active },
     setHazardMode: (active: boolean) => { hazardMode = active },
     setTargetingMode: (active: boolean) => { targetingMode = active },
+    setMovementIntentLocked: (locked: boolean) => { movementIntentLocked = locked },
     setBuildTool: (tool: BuildTool) => { buildTool = tool },
     setHazardTool: (tool: BuildTool | undefined) => { hazardTool = tool },
     setClick: (next: boolean) => { isClick = next },
@@ -147,6 +150,21 @@ describe('isometric pointer interaction controller', () => {
     setSelected('token-1')
     controller.handlePointerUp(pointerEvent())
     expect(deps.performSelectedMove).toHaveBeenCalledTimes(1)
+  })
+
+  it('keeps selection and context fixed while a committed movement intent is pending', () => {
+    const { controller, deps, setMovementIntentLocked, setSelected } = makeController()
+    setSelected('token-1')
+    setMovementIntentLocked(true)
+
+    controller.handlePointerUp(pointerEvent())
+    controller.handleRightClick(mouseEvent())
+    controller.handleEscape({ key: 'Escape' } as KeyboardEvent)
+
+    expect(deps.performSelectedMove).not.toHaveBeenCalled()
+    expect(deps.openContextMenu).not.toHaveBeenCalled()
+    expect(deps.selectPokemon).not.toHaveBeenCalled()
+    expect(deps.closeContextMenu).toHaveBeenCalled()
   })
 
   it('selects a rendered ground item only when no controllable token is selected', () => {

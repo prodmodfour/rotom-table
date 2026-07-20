@@ -3,6 +3,7 @@ import { computed, ref } from 'vue'
 import MapSceneRenderer from '~/components/map/MapSceneRenderer.vue'
 import MapSceneStatus from '~/components/map/MapSceneStatus.vue'
 import MapMoveResponsePanel from '~/components/map/MapMoveResponsePanel.vue'
+import MapAttackOfOpportunityOverlay from '~/components/map/MapAttackOfOpportunityOverlay.vue'
 import MapMoveCorrectionPanel from '~/components/map/MapMoveCorrectionPanel.vue'
 import MoveVfxDebugPanel from '~/components/map/MoveVfxDebugPanel.vue'
 import InitiativeInfoBar from '~/components/map/InitiativeInfoBar.vue'
@@ -52,7 +53,11 @@ import type {
   PendingMoveResponseReference,
   PendingMoveResponseWindowState,
 } from '~/composables/map-editor/usePendingMoveResponses'
-import type { LivePlayTokenCorrectionNotice } from '~/types/livePlayUi'
+import type { LivePlayMovementIntent, LivePlayTokenCorrectionNotice } from '~/types/livePlayUi'
+import {
+  ATTACK_OF_OPPORTUNITY_CANONICAL_ID,
+  isAttackOfOpportunityResponseWindow,
+} from '~/utils/pendingMoveResponsePresentation'
 import { buildCombatLogMessages } from '~/utils/combatLog'
 import type { PreviewState } from '~/utils/gridPreview'
 import type { MapTokenRemoteAttention } from '~/utils/mapPresenceTokenAttention'
@@ -143,6 +148,7 @@ const props = defineProps<{
   presenceServerTimeOffsetMs?: number
   canRequestGmAttention?: boolean
   livePlayTokenCorrectionNotice?: LivePlayTokenCorrectionNotice | null
+  livePlayMovementIntent?: LivePlayMovementIntent | null
 }>()
 
 const emit = defineEmits<{
@@ -212,6 +218,31 @@ const combatLogMessages = computed(() =>
     scene: props.activeScene ?? null,
   }),
 )
+const pendingAttackOfOpportunityWindows = computed(() => (
+  (props.pendingMoveResponseWindows ?? []).filter(isAttackOfOpportunityResponseWindow)
+))
+const pendingAttackOfOpportunitySummaries = computed(() => {
+  const summaries = props.map?.encounterState?.pendingResolutionSummaries.filter(summary => (
+    summary.canonicalMoveId === ATTACK_OF_OPPORTUNITY_CANONICAL_ID
+    && (summary.status === 'pending' || summary.status === 'resuming')
+  )) ?? []
+  const byId = new Map(summaries.map(summary => [summary.resolutionId, summary]))
+  for (const view of pendingAttackOfOpportunityWindows.value) {
+    if (!byId.has(view.resolution.resolutionId)) {
+      byId.set(view.resolution.resolutionId, view.resolution)
+    }
+  }
+  return [...byId.values()]
+})
+const standardPendingMoveResponseWindows = computed(() => (
+  (props.pendingMoveResponseWindows ?? []).filter(view => !isAttackOfOpportunityResponseWindow(view))
+))
+const attackOfOpportunityActorPlacementIds = computed(() => (
+  [...new Set(pendingAttackOfOpportunitySummaries.value
+    .filter(summary => summary.phase === 'movement')
+    .map(summary => summary.actorPlacementId))]
+))
+
 const livePlayStateLabel = computed(() => {
   switch (props.livePlayState) {
     case 'saving-command':
@@ -300,6 +331,8 @@ defineExpose({ focusPokemon, focusCell })
         :live-play-correction-motion-token-ids="livePlayCorrectionMotionTokenIds ?? []"
         :live-play-snap-correction-token-ids="livePlaySnapCorrectionTokenIds ?? []"
         :live-play-remote-accepted-token-ids="livePlayRemoteAcceptedTokenIds ?? []"
+        :live-play-movement-intent="props.livePlayMovementIntent ?? null"
+        :attack-of-opportunity-actor-ids="attackOfOpportunityActorPlacementIds"
         :map-data-revision="mapDataRevision ?? 0"
         :remote-token-attention="remoteTokenAttention ?? []"
         :presence-pings="presencePings ?? []"
@@ -462,13 +495,31 @@ defineExpose({ focusPokemon, focusCell })
         @clear="emit('clear-move-vfx')"
       />
 
-      <MapMoveResponsePanel
-        :windows="props.pendingMoveResponseWindows ?? []"
+      <MapAttackOfOpportunityOverlay
+        :summaries="pendingAttackOfOpportunitySummaries"
+        :windows="pendingAttackOfOpportunityWindows"
         :state-by-window="props.pendingMoveResponseStateByWindow ?? {}"
         :actor-labels="props.pendingMoveResponseActorLabels ?? {}"
         :eligible-owner-label="props.pendingMoveResponseOwnerLabel ?? 'Eligible participant'"
         :loading="props.pendingMoveResponsesLoading === true"
         :error="props.pendingMoveResponsesError ?? null"
+        :can-manage="props.canManagePendingMoveResponses === true"
+        @choose="emit('choose-pending-move-response', $event)"
+        @pass="emit('pass-pending-move-response', $event)"
+        @force-pass="emit('force-pass-pending-move-response', $event)"
+        @cancel="emit('cancel-pending-move-resolution', $event)"
+        @retry="emit('retry-pending-move-response', $event)"
+        @refresh="emit('refresh-pending-move-responses')"
+        @focus-actor="focusPokemon($event)"
+      />
+
+      <MapMoveResponsePanel
+        :windows="standardPendingMoveResponseWindows"
+        :state-by-window="props.pendingMoveResponseStateByWindow ?? {}"
+        :actor-labels="props.pendingMoveResponseActorLabels ?? {}"
+        :eligible-owner-label="props.pendingMoveResponseOwnerLabel ?? 'Eligible participant'"
+        :loading="props.pendingMoveResponsesLoading === true && pendingAttackOfOpportunitySummaries.length === 0"
+        :error="pendingAttackOfOpportunitySummaries.length === 0 ? props.pendingMoveResponsesError ?? null : null"
         :can-manage="props.canManagePendingMoveResponses === true"
         @choose="emit('choose-pending-move-response', $event)"
         @pass="emit('pass-pending-move-response', $event)"

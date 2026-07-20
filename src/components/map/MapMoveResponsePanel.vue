@@ -1,7 +1,10 @@
 <script setup lang="ts">
 import type { PendingMoveResponseWindowView } from '#shared/moveAutomation/responseViews'
 import type { PendingMoveResponsePublicOption } from '#shared/moveAutomation/responseOptions'
-import { ATTACK_OF_OPPORTUNITY_ASSISTANCE_NOTICE } from '~/utils/moveAutomationAssistedFollowUps'
+import {
+  pendingMoveResponseLookupLabel,
+  pendingMoveResponseOptionLabel,
+} from '~/utils/pendingMoveResponsePresentation'
 import {
   pendingMoveResponseWindowKey,
   type PendingMoveResponseOptionReference,
@@ -37,38 +40,15 @@ const stateFor = (view: PendingMoveResponseWindowView): PendingMoveResponseWindo
   props.stateByWindow?.[pendingMoveResponseWindowKey(referenceFor(view))] ?? { status: 'pending' }
 )
 
-const safeLookupLabel = (key: string): string => {
-  const leaf = key.split('.').at(-1) ?? key
-  const words = leaf.replace(/[-_]+/g, ' ').trim()
-  return words.length > 0
-    ? words.replace(/\b\w/g, character => character.toUpperCase())
-    : key
-}
-
 const actorLabel = (view: PendingMoveResponseWindowView): string => (
   props.actorLabels?.[view.resolution.actorPlacementId] ?? 'Visible acting token'
 )
 
-const phaseLabel = (phase: string): string => safeLookupLabel(phase)
-const promptLabel = (view: PendingMoveResponseWindowView): string => safeLookupLabel(view.window.promptKey)
-const optionLabel = (option: PendingMoveResponsePublicOption): string => {
-  if (option.itemChoice) {
-    if (option.itemChoice.canonicalItemId === null) return safeLookupLabel(option.labelKey)
-    return `${safeLookupLabel(option.itemChoice.canonicalItemId)} → ${safeLookupLabel(option.itemChoice.destinationLabelKey ?? 'item-destination')}`
-  }
-  const selection = option.selection
-  if (!selection) return safeLookupLabel(option.labelKey)
-  const destination = selection.destination
-  if (selection.kind === 'movement-direction') {
-    return `${safeLookupLabel(selection.direction)} → (${destination.x}, ${destination.y}, ${destination.z})`
-  }
-  return `Cell (${destination.x}, ${destination.y}, ${destination.z})`
-}
+const phaseLabel = (phase: string): string => pendingMoveResponseLookupLabel(phase)
+const promptLabel = (view: PendingMoveResponseWindowView): string => pendingMoveResponseLookupLabel(view.window.promptKey)
+const optionLabel = (option: PendingMoveResponsePublicOption): string => pendingMoveResponseOptionLabel(option)
 const responseKindLabel = (view: PendingMoveResponseWindowView): string => (
   view.window.kind === 'reaction' ? 'Durable reaction' : 'Durable choice'
-)
-const isAttackOfOpportunity = (view: PendingMoveResponseWindowView): boolean => (
-  view.window.reasonCode.startsWith('maneuver.attack-of-opportunity.')
 )
 const isHazardCellSelection = (view: PendingMoveResponseWindowView): boolean => (
   view.window.kind === 'choice' && view.window.hazardCellSelection !== undefined
@@ -173,9 +153,6 @@ const retry = (view: PendingMoveResponseWindowView): void => {
       </dl>
 
       <p class="move-response-card__prompt">{{ promptLabel(view) }}</p>
-      <p v-if="isAttackOfOpportunity(view)" class="move-response-card__limitation">
-        {{ ATTACK_OF_OPPORTUNITY_ASSISTANCE_NOTICE }}
-      </p>
       <p v-if="isHazardCellSelection(view)" class="move-response-card__map-choice">
         Select the authorized cells on the battlefield, then confirm the complete set.
       </p>
@@ -388,7 +365,6 @@ const retry = (view: PendingMoveResponseWindowView): void => {
 
 .move-response-card__notice,
 .move-response-card__uncertain,
-.move-response-card__limitation,
 .move-response-card__map-choice,
 .move-response-card__item-choice,
 .move-response-panel__status,
@@ -399,8 +375,7 @@ const retry = (view: PendingMoveResponseWindowView): void => {
 }
 
 .move-response-panel__error,
-.move-response-card__uncertain,
-.move-response-card__limitation {
+.move-response-card__uncertain {
   color: #efad2f;
 }
 

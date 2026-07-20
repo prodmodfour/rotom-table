@@ -64,6 +64,7 @@ const makeController = () => {
   const getMapVoxels = vi.fn(() => voxels)
   const getMapVoxelsRevision = vi.fn(() => terrainRevision.value)
   const getPokemonPlacementRevision = vi.fn(() => placementRevision.value)
+  const movementLocked = { value: false }
 
   const controller = createIsometricTokenMovementInteractionController({
     getSelectedPokemon,
@@ -76,6 +77,7 @@ const makeController = () => {
     getGroundLevelY: () => 0,
     getCamera: () => null,
     getMoveGridIntersection,
+    movementLocked: () => movementLocked.value,
     previewRenderer: renderer,
     emitPreviewChange,
     movePokemon,
@@ -94,6 +96,7 @@ const makeController = () => {
     voxels,
     terrainRevision,
     placementRevision,
+    movementLocked,
     renderer,
     emitPreviewChange,
     movePokemon,
@@ -473,6 +476,23 @@ describe('isometric token movement interaction', () => {
     expect(controller.canPlacePreview()).toBe(true)
     expect(controller.performSelectedMove()).toBe(true)
     expect(movePokemon).toHaveBeenCalledWith({ id: 'token-a', position: { x: 2, y: 0, z: 2 } })
+  })
+
+  it('keeps a committed intent preview fixed while authoritative movement is pending', () => {
+    const { controller, movementLocked, renderer, movePokemon, getMoveGridIntersection } = makeController()
+    controller.updatePreviewAtAnchor({ x: 2, y: 0, z: 2 })
+    movementLocked.value = true
+    renderer.update.mockClear()
+    getMoveGridIntersection.mockClear()
+
+    controller.updatePreviewFromPointer(pointer)
+
+    expect(getMoveGridIntersection).not.toHaveBeenCalled()
+    expect(renderer.update).not.toHaveBeenCalled()
+    expect(controller.preview().position).toEqual({ x: 2, y: 0, z: 2 })
+    expect(controller.performSelectedMove()).toBe(false)
+    expect(controller.stepPreviewElevation(-1)).toBe(false)
+    expect(movePokemon).not.toHaveBeenCalled()
   })
 
   it('steps preview elevation within map bounds for aerial movement', () => {

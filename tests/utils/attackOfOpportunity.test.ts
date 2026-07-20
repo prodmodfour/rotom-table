@@ -7,7 +7,6 @@ import {
   tokensAreAdjacent,
   useAttackOfOpportunityTriggers,
 } from '~/utils/attackOfOpportunity'
-import { ATTACK_OF_OPPORTUNITY_ASSISTANCE_NOTICE } from '~/utils/moveAutomationAssistedFollowUps'
 import type { SpawnedPokemon } from '~/types/pokemon'
 import { moveAutomationSemanticStatusForMenu } from '~/utils/moveAutomationSemanticStatus'
 import type { TokenMoveMenuOption } from '~/utils/mapTokenMoves'
@@ -85,12 +84,6 @@ const moveOption = (name: string, overrides: Partial<TokenMoveMenuOption> = {}):
 })
 
 describe('attack of opportunity helpers', () => {
-  it('labels the remaining post-action timing limitation without denying durable recovery', () => {
-    expect(ATTACK_OF_OPPORTUNITY_ASSISTANCE_NOTICE).toContain('durable, reconnect-safe')
-    expect(ATTACK_OF_OPPORTUNITY_ASSISTANCE_NOTICE).toContain('after the provoking action')
-    expect(ATTACK_OF_OPPORTUNITY_ASSISTANCE_NOTICE).toContain('timing remains assisted')
-  })
-
   it('uses PTU footprint adjacency, including diagonals and larger bases', () => {
     expect(tokensAreAdjacent(token('left', 0, 0), token('right', 1, 1))).toBe(true)
     expect(tokensAreAdjacent(token('left', 0, 0), token('far', 2, 0))).toBe(false)

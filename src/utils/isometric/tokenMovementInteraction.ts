@@ -55,6 +55,8 @@ export interface TokenMovementInteractionDependencies {
   getGroundLevelY: () => number
   getCamera: () => THREE.Camera | null
   getMoveGridIntersection: (event: TokenMovementPointerEvent, yLevel: number) => Pick<GridAnchor, 'x' | 'z'> | null
+  /** Keep a committed route visible while its authoritative response is pending. */
+  movementLocked?: () => boolean
   previewRenderer: TokenMovementPreviewRenderer
   emitPreviewChange: (preview: PreviewState) => void
   movePokemon: (payload: TokenMovementCommitPayload) => void
@@ -220,6 +222,7 @@ export const createIsometricTokenMovementInteractionController = (
   }
 
   const updatePreviewFromPointer = (event: TokenMovementPointerEvent) => {
+    if (dependencies.movementLocked?.()) return
     const selected = dependencies.getSelectedPokemon()
     if (!selected) {
       clearPreviewVisuals()
@@ -244,6 +247,7 @@ export const createIsometricTokenMovementInteractionController = (
   }
 
   const stepPreviewElevation = (deltaY: number) => {
+    if (dependencies.movementLocked?.()) return false
     const selected = dependencies.getSelectedPokemon()
     if (!selected) return false
 
@@ -260,6 +264,7 @@ export const createIsometricTokenMovementInteractionController = (
   }
 
   const performSelectedMove = () => {
+    if (dependencies.movementLocked?.()) return false
     const selected = dependencies.getSelectedPokemon()
     if (!selected || !activePreview.position || !activePreviewCanPlace) return false
 

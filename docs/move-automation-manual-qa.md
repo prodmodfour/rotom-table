@@ -38,6 +38,8 @@ For each, check the GM and eligible player see one terminal presentation, the in
 
 A pending summary on the map is public; private options come only from the authorized response endpoint. The eligible responder may choose/pass. A GM may use the supported force-resolve or cancel control. Do not submit an option copied from another user or old window.
 
+For a movement Attack of Opportunity, confirm the solid token never travels to the final destination and then reverses. It should retain an immediate translucent route intent, advance only to the authoritative pre-step checkpoint, show the red checkpoint marker, and present the eligible responder with the prominent reaction card. The mover/ineligible viewer gets only the neutral waiting state and no attack options. Pass should continue forward along the remaining route; an attack that cancels or changes movement should remove the stale route instead of replaying it.
+
 ### Uncertain delivery
 
 If the client lost HTTP after sending, leave the durable outbox entry intact. Let live SSE, replay, or operation-status recovery resolve it. **Retry** resends the exact stored body and `opId`. To choose something different, wait for authoritative status and submit a new authorized response operation; never mutate an existing outbox body.

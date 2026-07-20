@@ -34,7 +34,7 @@ live-play/setup edit changes map placements
    - updates setup/edit placement state directly, or
    - sends `livePlayCommands.moveToken()` in Run Live Play.
 
-In Run Live Play, `useLivePlayCommands()` journals the command in the durable outbox, creates an `opId`, and tries to build a local prediction. A valid move prediction mutates `map.value.placements` immediately via `applyLivePlayPredictionToMap()`, including predicted position and facing. That mutation changes `spawnedPokemon`, which is the current renderer entry point for local predicted movement.
+In Run Live Play, movement uses an immediate renderer-owned intent instead of mutating the solid token to its requested destination. The selected token keeps its translucent destination ghost and route while `useLivePlayCommands()` journals and sends the command with move-token prediction disabled for the map page. An ordinary acceptance then moves the solid token along the accepted route. If the server opens a pre-step Attack of Opportunity, only the committed route prefix animates to the authoritative checkpoint; the remaining suffix stays outlined until the durable response resumes or cancels it.
 
 ### Render-object sync
 
@@ -103,24 +103,22 @@ After center interpolation, `applyPokemonRenderObjectPosition()` applies `curren
 
 All of the following paths eventually enter the renderer as ordinary `pokemons` prop changes. The renderer does not currently know which path caused the new `targetCenter`.
 
-### Local predicted movement
+### Local movement intent and authoritative confirmation
 
-- `movePokemon()` records the pending prediction-op set, dispatches `livePlayCommands.moveToken()`, and then checks whether a new move prediction appeared.
-- `useLivePlayCommands.trackLocalPrediction()` builds a move prediction and calls `applyLivePlayPredictionToMap()` immediately.
-- The predicted placement updates `spawnedPokemon` and then `targetCenter`.
-- The token is also marked pending through `livePlayPendingTokenIds`, which changes tactical cage styling and now classifies the placement track as `local-prediction` when the predicted position reaches the grid.
-
-### Local authoritative confirmation
-
-Accepted HTTP responses or accepted SSE acknowledgements call `adoptAcceptedLivePlayResponse()`, which applies authoritative patches or a map fallback. Patch adoption hooks temporarily roll back pending predictions before applying accepted patches, then remove or reapply predictions as needed. Accepted realtime callbacks now include adoption metadata that distinguishes local authoritative confirmations from remote accepted movement by client id and pending prediction `opId`. The grid does not start a new track when the matching authoritative confirmation lands at the same `targetCenter`, so the in-flight local prediction continues instead of stuttering.
+- `movePokemon()` captures the selected preview route as `LivePlayMovementIntent` before dispatching `livePlayCommands.moveToken()`.
+- The intent locks that preview against pointer changes and leaves the solid map placement untouched while transport is pending.
+- Accepted HTTP responses or accepted SSE acknowledgements apply authoritative patches or a map fallback. The retained preview path is consumed only when placement advances.
+- A complete acceptance animates the whole route. A suspended acceptance splits it into the committed prefix and remaining suffix, so resumed movement starts at the checkpoint and never animates backward.
+- Full-map fallback adoption normally snaps as reconciliation, but the one token owning the active movement intent is explicitly allowed to consume its accepted route before the intent clears on the next render tick.
+- Turn, condition, and other supported command predictions remain independent; the `useLivePlayCommands()` prediction option defaults to compatibility behavior outside the map page.
 
 ### Remote accepted movement
 
 `useEditableMap.handleAcceptedLivePlayCommandEvent()` receives accepted live-play SSE events, validates revision continuity, runs prediction adoption hooks, and applies `applyLivePlayPatchesToMap()`. A remote `token.position` patch updates the map placement and therefore the grid's `pokemons` prop. The map page marks successfully applied remote accepted movement IDs for one render tick, and the grid classifies those placement tracks as `remote-accepted`. Stale duplicate terminal events are still acknowledged for recovery bookkeeping but are reported as unapplied, so they do not restart token motion.
 
-### Rejected predictions and correction notices
+### Rejected intent and predicted-command corrections
 
-Rejected terminal command responses call `markOperationFailed()`, which rolls back the local prediction through `rollbackLivePlayPredictionFromMap()`. The page shows the existing non-modal correction notice for simple predicted token corrections and passes both styling IDs and transient motion-policy IDs into the grid. Visible movement rollbacks that are safe to explain as a local correction use the `server-correction` motion reason, which resolves to a brief capped duration and a very short reduced-motion duration. Stale-revision rollbacks and reconciliation cleanup use a transient snap policy instead, because an authoritative snapshot is about to replace the local prediction context.
+A rejected movement command clears the renderer-owned intent and leaves the already-authoritative solid token in place, so there is no movement rollback. Predictions retained for other command types still use the existing correction path: rejected terminal responses call `markOperationFailed()`, roll back through `rollbackLivePlayPredictionFromMap()`, and use correction or reconciliation presentation policy as appropriate.
 
 ### Coalesced same-token movement
 
@@ -136,7 +134,7 @@ Realtime gaps, replay validation failures, profile changes, or explicit reconcil
 - **Generic exponential slow tail:** movement uses damping toward a target and finishes only when the epsilon threshold is reached; it has no planned end time.
 - **No explicit duration:** movement speed is not derived from grid distance, command type, correction reason, or user preference.
 - **Limited path context:** local committed movement can now reuse the current preview path, but remote accepted movement, corrections, and reconciliation snapshots still arrive as placement-only updates and fall back to direct motion unless a later source supplies safe path context.
-- **Correction semantics are now narrow:** simple rejected move predictions use a `server-correction` duration policy, while stale/reconciliation updates snap. Accepted confirmations and remote accepted movement now have source classification, but later reduced-motion/performance work still needs to apply ordinary movement settings consistently.
+- **Movement interruption presentation is explicit:** local movement retains an intent ghost and a route split at authoritative reaction checkpoints. Rejected movement clears the intent without moving the solid token backward; unrelated predicted-command correction behavior remains narrow.
 - **Reduced-motion and performance policy is now explicit:** token placement motion reuses the existing move-animation reduced-motion signal. Ordinary moves shorten to a brief state change, correction moves shorten further, reconciliation still snaps, and a simultaneous-track cap snaps overflow movement so a large batch cannot keep unbounded token animation work alive.
 - **Limited replacement source context:** rapid same-token moves now replace active tracks from the sampled in-flight center, and placement-motion reasons cover local prediction, remote accepted movement, server correction, reconciliation, and setup/edit. Path context is still local-preview only, so remote accepted movement usually falls back to direct interpolation.
 - **HUD and overlays follow the sampled center but are not track-aware:** HP bars, elevation badges, shadows, cages, proxies, targeting affordances, presence overlays, and camera focus currently read `currentCenter` or `targetCenter` according to existing helpers, without a single explicit motion sample contract.

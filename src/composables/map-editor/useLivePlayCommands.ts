@@ -280,6 +280,8 @@ export interface UseLivePlayCommandsOptions {
   livePlayCommandBlockedMessage?: ReadonlyValueRef<string | null | undefined>
   newCommandBlocked?: ReadonlyValueRef<boolean>
   newCommandBlockedMessage?: ReadonlyValueRef<string | null | undefined>
+  /** Use a renderer-owned intent route instead of mutating solid token state before acceptance. */
+  predictMoveToken?: boolean
   applyPersistedMap?: (map: TabletopMap) => void
   applySheetUpdate?: (update: LivePlayCommandSheetUpdate) => void
   requestReconciliation?: (reason: LivePlayCommandReconciliationRequest) => void | Promise<void>
@@ -1298,6 +1300,10 @@ export const useLivePlayCommands = (
   }
 
   const trackLocalPrediction = (command: LivePlayPendingCommand): void => {
+    if (
+      command.commandType === LIVE_PLAY_COMMAND_TYPES.MOVE_TOKEN
+      && options.predictMoveToken === false
+    ) return
     if (localPredictionRecords.value[command.opId]) return
     const prediction = buildLivePlayPrediction({
       map: options.map?.value,

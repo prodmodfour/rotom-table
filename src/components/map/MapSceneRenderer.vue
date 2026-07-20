@@ -35,6 +35,7 @@ import type { MapPresenceIntentOverlay } from '~/utils/mapPresenceIntentOverlays
 import type { IsometricPresencePing } from '~/utils/isometric/pingRenderer'
 import type { TokenMovementCommitPayload } from '~/utils/isometric/tokenMovementInteraction'
 import type { TokenMotionDebugMetrics } from '~/utils/isometric/tokenMotionDebugMetrics'
+import type { LivePlayMovementIntent } from '~/types/livePlayUi'
 import type {
   PendingMoveHazardCellResponseReference,
   PendingMoveHazardCellSelectionReference,
@@ -83,6 +84,8 @@ defineProps<{
   livePlayCorrectionMotionTokenIds?: string[]
   livePlaySnapCorrectionTokenIds?: string[]
   livePlayRemoteAcceptedTokenIds?: string[]
+  livePlayMovementIntent?: LivePlayMovementIntent | null
+  attackOfOpportunityActorIds?: readonly string[]
   mapDataRevision?: number
   remoteTokenAttention?: readonly MapTokenRemoteAttention[]
   presencePings?: readonly IsometricPresencePing[]
@@ -184,6 +187,8 @@ defineExpose({ focusPokemon, focusCell })
     :live-play-correction-motion-token-ids="livePlayCorrectionMotionTokenIds ?? []"
     :live-play-snap-correction-token-ids="livePlaySnapCorrectionTokenIds ?? []"
     :live-play-remote-accepted-token-ids="livePlayRemoteAcceptedTokenIds ?? []"
+    :live-play-movement-intent="livePlayMovementIntent ?? null"
+    :attack-of-opportunity-actor-ids="attackOfOpportunityActorIds ?? []"
     :map-data-revision="mapDataRevision ?? 0"
     :remote-token-attention="remoteTokenAttention ?? []"
     :presence-pings="presencePings ?? []"

@@ -2,6 +2,7 @@
 import { computed, onBeforeUnmount, onMounted, ref, shallowRef, watch } from 'vue'
 import * as THREE from 'three'
 import RenderMetricsOverlay from '~/components/isometric/RenderMetricsOverlay.vue'
+import AttackOfOpportunityAttentionOverlay from '~/components/isometric/AttackOfOpportunityAttentionOverlay.vue'
 import PendingMoveMovementOverlay from '~/components/isometric/PendingMoveMovementOverlay.vue'
 import PendingMoveHazardCellOverlay from '~/components/isometric/PendingMoveHazardCellOverlay.vue'
 import TokenActionDialogs from '~/components/isometric/TokenActionDialogs.vue'
@@ -19,6 +20,7 @@ import type {
   VoxelMaterial,
 } from '~/types/map'
 import type { PreviewState } from '~/utils/gridPreview'
+import type { LivePlayMovementIntent } from '~/types/livePlayUi'
 import { getPokemonCenter, isSameAnchor } from '~/utils/gridGeometry'
 import { buildAllVoxelOccupancy } from '~/utils/voxelOccupancy'
 import { buildMapOccupancy } from '~/utils/mapOccupancy'
@@ -139,6 +141,11 @@ import {
 import { createIsometricTokenSendOutInteractionController } from '~/utils/isometric/tokenSendOutInteraction'
 import { movementPathPlacementRevision } from '~/utils/mapMovementPathCache'
 import {
+  advancePendingTokenMovementPath,
+  createPendingTokenMovementPath,
+  type PendingTokenMovementPath,
+} from '~/utils/isometric/pendingTokenMovementPath'
+import {
   applyPokemonRenderObjectPosition,
   createPokemonRenderObject,
   disposePokemonRenderObject,
@@ -256,6 +263,8 @@ const props = defineProps<{
   livePlayCorrectionMotionTokenIds?: string[]
   livePlaySnapCorrectionTokenIds?: string[]
   livePlayRemoteAcceptedTokenIds?: string[]
+  livePlayMovementIntent?: LivePlayMovementIntent | null
+  attackOfOpportunityActorIds?: readonly string[]
   mapDataRevision?: number
   remoteTokenAttention?: readonly MapTokenRemoteAttention[]
   presencePings?: readonly IsometricPresencePing[]
@@ -333,6 +342,14 @@ type TargetReticleButton = {
 
 const targetReticleButtons = ref<TargetReticleButton[]>([])
 
+type AttackOfOpportunityAttentionMarker = {
+  readonly id: string
+  readonly left: number
+  readonly top: number
+}
+
+const attackOfOpportunityAttentionMarkers = ref<AttackOfOpportunityAttentionMarker[]>([])
+
 type PendingMovementChoiceButton = {
   readonly reference: PendingMoveResponseOptionReference
   readonly actorPlacementId: string
@@ -374,6 +391,7 @@ const livePlayCorrectionTokenIdSet = computed(() => new Set(props.livePlayCorrec
 const livePlayCorrectionMotionTokenIdSet = computed(() => new Set(props.livePlayCorrectionMotionTokenIds ?? []))
 const livePlaySnapCorrectionTokenIdSet = computed(() => new Set(props.livePlaySnapCorrectionTokenIds ?? []))
 const livePlayRemoteAcceptedTokenIdSet = computed(() => new Set(props.livePlayRemoteAcceptedTokenIds ?? []))
+const attackOfOpportunityActorIdSet = computed(() => new Set(props.attackOfOpportunityActorIds ?? []))
 const remoteTokenAttentionByTokenId = computed(() => new Map(
   (props.remoteTokenAttention ?? []).map((attention) => [attention.tokenId, attention]),
 ))
@@ -534,45 +552,25 @@ const emitMovementPreviewChange = (preview: PreviewState) => {
   emit('preview-change', preview)
 }
 
-const pendingTokenMovementPaths = new Map<
-  string,
-  { destination: GridAnchor; path: readonly GridAnchor[] }
->()
-
-const cloneGridAnchor = (anchor: GridAnchor): GridAnchor => ({
-  x: anchor.x,
-  y: anchor.y,
-  z: anchor.z,
-})
-
-const cloneGridAnchorPath = (
-  path: readonly GridAnchor[] | undefined,
-): GridAnchor[] | undefined => (
-  path && path.length >= 2 ? path.map(cloneGridAnchor) : undefined
-)
+const pendingTokenMovementPaths = new Map<string, PendingTokenMovementPath>()
 
 const rememberPendingTokenMovementPath = (payload: TokenMovementCommitPayload) => {
-  const path = cloneGridAnchorPath(payload.path)
-  const finalPathAnchor = path?.[path.length - 1]
-  if (!path || !finalPathAnchor || !isSameAnchor(finalPathAnchor, payload.position)) {
-    pendingTokenMovementPaths.delete(payload.id)
-    return
-  }
-
-  pendingTokenMovementPaths.set(payload.id, {
-    destination: cloneGridAnchor(payload.position),
-    path,
+  const pending = createPendingTokenMovementPath({
+    destination: payload.position,
+    path: payload.path,
   })
+  if (pending) pendingTokenMovementPaths.set(payload.id, pending)
+  else pendingTokenMovementPaths.delete(payload.id)
 }
 
-const consumePendingTokenMovementPath = (pokemon: SpawnedPokemon): GridAnchor[] | undefined => {
-  const pendingPath = pendingTokenMovementPaths.get(pokemon.id)
-  if (!pendingPath) return undefined
+const consumePendingTokenMovementPath = (pokemon: SpawnedPokemon): readonly GridAnchor[] | undefined => {
+  const pending = pendingTokenMovementPaths.get(pokemon.id)
+  if (!pending) return undefined
 
-  pendingTokenMovementPaths.delete(pokemon.id)
-  if (!isSameAnchor(pendingPath.destination, pokemon.position)) return undefined
-
-  return cloneGridAnchorPath(pendingPath.path)
+  const advanced = advancePendingTokenMovementPath(pending, pokemon.position)
+  if (advanced.remaining) pendingTokenMovementPaths.set(pokemon.id, advanced.remaining)
+  else pendingTokenMovementPaths.delete(pokemon.id)
+  return advanced.animationPath
 }
 
 let lastPlacementMotionMapDataRevision = props.mapDataRevision ?? 0
@@ -582,7 +580,10 @@ const consumeMapDataRevisionPlacementSnap = (): boolean => {
   if (nextRevision === lastPlacementMotionMapDataRevision) return false
 
   lastPlacementMotionMapDataRevision = nextRevision
-  pendingTokenMovementPaths.clear()
+  const preservedPlacementId = props.livePlayMovementIntent?.placementId
+  for (const placementId of pendingTokenMovementPaths.keys()) {
+    if (placementId !== preservedPlacementId) pendingTokenMovementPaths.delete(placementId)
+  }
   return true
 }
 
@@ -615,6 +616,9 @@ const movementPreviewHud = computed(() => {
     limit: preview.movementLimit,
     capabilityLabel: preview.movementCapabilityLabel ?? 'Movement',
     failureReason: preview.movementFailureReason,
+    intentStatus: props.livePlayMovementIntent?.placementId === selectedPokemon.value?.id
+      ? props.livePlayMovementIntent.status
+      : null,
   }
 })
 const conditionMoveOptions = computed(() => conditionsDialog.value
@@ -1185,7 +1189,8 @@ const syncPokemonObjects = () => {
         activePlacementMotionTrackCount - (hadActivePlacementMotionTrack ? 1 : 0),
       )
       const snapCorrection = livePlaySnapCorrectionTokenIdSet.value.has(pokemon.id)
-      const motionMode = snapshotSnap || snapCorrection ? 'snap' : 'animate'
+      const preservesCommittedMovementIntent = props.livePlayMovementIntent?.placementId === pokemon.id
+      const motionMode = (snapshotSnap && !preservesCommittedMovementIntent) || snapCorrection ? 'snap' : 'animate'
       const reason: TokenMotionTrackReason = motionMode === 'snap'
         ? 'reconciliation'
         : placementMotionReasonForPokemon(pokemon)
@@ -1774,6 +1779,7 @@ const movementInteraction = createIsometricTokenMovementInteractionController({
   getGroundLevelY: normalizedGroundLevelY,
   getCamera: () => camera,
   getMoveGridIntersection,
+  movementLocked: () => props.livePlayMovementIntent?.placementId === selectedPokemon.value?.id,
   previewRenderer: tokenMovePreviewRenderer,
   emitPreviewChange: emitMovementPreviewChange,
   movePokemon: (payload) => {
@@ -1787,6 +1793,25 @@ const movementInteraction = createIsometricTokenMovementInteractionController({
 const ensurePreviewObjects = movementInteraction.ensurePreviewObjects
 const clearPreviewVisuals = movementInteraction.clearPreviewVisuals
 const updatePreviewFromPointer = movementInteraction.updatePreviewFromPointer
+
+watch(
+  () => props.livePlayMovementIntent,
+  (intent) => {
+    if (!intent) return
+    if (!pendingTokenMovementPaths.has(intent.placementId)) {
+      const pending = createPendingTokenMovementPath({
+        destination: intent.destination,
+        path: intent.path,
+      })
+      if (pending) pendingTokenMovementPaths.set(intent.placementId, pending)
+    }
+    if (selectedPokemon.value?.id === intent.placementId) {
+      movementInteraction.updatePreviewAtAnchor(intent.destination, { force: true })
+      requestScheduledSceneFrame('movement-preview')
+    }
+  },
+  { deep: true, immediate: true },
+)
 
 const sendOutInteraction = createIsometricTokenSendOutInteractionController({
   getActiveRequest: () => activeSendOutRequest.value,
@@ -1890,6 +1915,7 @@ const pointerInteraction = createIsometricPointerInteractionController({
   getBuildTool: () => props.buildTool,
   getHazardMode: () => props.hazardMode,
   getHazardTool: () => props.hazardTool,
+  getMovementIntentLocked: () => props.livePlayMovementIntent !== null && props.livePlayMovementIntent !== undefined,
   canControlPokemon,
   pickPokemonId,
   selectPokemon: emitPokemonSelection,
@@ -2211,6 +2237,15 @@ watch(
   { deep: true },
 )
 
+watch(
+  () => props.attackOfOpportunityActorIds,
+  () => {
+    if (!renderer) return
+    if (syncAttackOfOpportunityAttentionMarkers()) requestScheduledSceneFrame('scene-state')
+  },
+  { deep: true },
+)
+
 const sameMoveTargetHitChance = (
   a: MoveAutomationTargetHitChance | undefined,
   b: MoveAutomationTargetHitChance | undefined,
@@ -2271,6 +2306,26 @@ const syncTargetReticleButtons = (options: {
     return true
   }
   return false
+}
+
+const syncAttackOfOpportunityAttentionMarkers = (): boolean => {
+  const next = [...attackOfOpportunityActorIdSet.value].flatMap(
+    (id): AttackOfOpportunityAttentionMarker[] => {
+      const renderObject = renderObjects.get(id)
+      const point = renderObject ? worldPointToContainerPoint(moveTargetReticleCenter(renderObject)) : null
+      return point ? [{ id, left: point.x, top: point.y }] : []
+    },
+  )
+  const current = attackOfOpportunityAttentionMarkers.value
+  const unchanged = next.length === current.length && next.every((entry, index) => {
+    const old = current[index]
+    return old?.id === entry.id
+      && Math.abs(old.left - entry.left) < 0.5
+      && Math.abs(old.top - entry.top) < 0.5
+  })
+  if (unchanged) return false
+  attackOfOpportunityAttentionMarkers.value = next
+  return true
 }
 
 const syncPendingMovementChoiceButtons = (): boolean => {
@@ -2400,6 +2455,7 @@ const updateMoveAutomationOverlays = (): boolean => {
     showsReticle: showSingleTargetReticles || showTargetCountReticles,
     selectedIds: showTargetCountReticles || showAreaToggleButtons ? selectedIds : null,
   })
+  cssUiChanged = syncAttackOfOpportunityAttentionMarkers() || cssUiChanged
   cssUiChanged = syncPendingMovementChoiceButtons() || cssUiChanged
   cssUiChanged = syncPendingHazardCellSelectionOverlays() || cssUiChanged
   moveAreaTemplateRenderer.update({
@@ -2764,7 +2820,7 @@ watch(
       :class="{ 'is-unreachable': !movementPreviewHud.reachable }"
       aria-live="polite"
     >
-      <strong>Movement</strong>
+      <strong>{{ movementPreviewHud.intentStatus ? 'Movement intent' : 'Movement' }}</strong>
       <span>
         {{ movementPreviewHud.distance }}m
         <template v-if="movementPreviewHud.limit != null">
@@ -2772,7 +2828,13 @@ watch(
         </template>
         · {{ movementPreviewHud.capabilityLabel }}
       </span>
-      <small v-if="movementPreviewHud.failureReason">
+      <small v-if="movementPreviewHud.intentStatus === 'submitting'">
+        Checking the route for reactions…
+      </small>
+      <small v-else-if="movementPreviewHud.intentStatus === 'awaiting-reaction'">
+        Paused at the authoritative checkpoint; the outlined route is still intended.
+      </small>
+      <small v-else-if="movementPreviewHud.failureReason">
         {{ movementPreviewHud.failureReason }}
       </small>
     </div>
@@ -2946,6 +3008,8 @@ watch(
       enabled
       :metrics="renderMetricsOverlaySnapshot"
     />
+
+    <AttackOfOpportunityAttentionOverlay :markers="attackOfOpportunityAttentionMarkers" />
 
     <div v-if="targetReticleButtons.length" class="move-targeting-click-layer" @contextmenu.prevent>
       <button

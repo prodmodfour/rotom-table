@@ -1026,6 +1026,55 @@ describe('useLivePlayCommands', () => {
     expect(actions.pendingPredictions.value).toEqual({})
   })
 
+  it('can keep solid token placement authoritative while a renderer owns movement intent', async () => {
+    const map = ref(mapFixture())
+    const postGate = deferred<void>()
+    apiMocks.postJson.mockImplementation(async (_request: string, body: unknown) => {
+      await postGate.promise
+      const command = commandRecord(body)
+      return {
+        ok: true,
+        opId: command.opId,
+        mapSlug: command.mapSlug,
+        previousRevision: 4,
+        revision: 5,
+        patches: [{
+          schemaVersion: LIVE_PLAY_COMMAND_SCHEMA_VERSION,
+          type: LIVE_PLAY_PATCH_TYPES.TOKEN_POSITION,
+          mapSlug: 'arena-map',
+          revision: 5,
+          scopes: [{ kind: 'token', placementId: 'token-pikachu', field: 'position' }],
+          payload: {
+            placementId: 'token-pikachu',
+            position: { x: 3, y: 0, z: 2 },
+            facing: 'south-east',
+            turned: false,
+          },
+        }],
+      }
+    })
+
+    const actions = useTestLivePlayCommands({
+      slug: 'arena-map',
+      map,
+      mapRevision: ref(4),
+      predictMoveToken: false,
+    })
+    const dispatch = actions.moveToken({
+      placementId: 'token-pikachu',
+      position: { x: 3, y: 0, z: 2 },
+    })
+
+    expect(actions.pendingCommandCount.value).toBe(1)
+    expect(actions.pendingPredictionCount.value).toBe(0)
+    expect(tokenPosition(map.value)).toEqual({ x: 1, y: 0, z: 1 })
+
+    postGate.resolve()
+    await expect(dispatch).resolves.toMatchObject({ dispatched: true })
+    expect(tokenPosition(map.value)).toEqual({ x: 3, y: 0, z: 2 })
+    expect(actions.pendingPredictionCount.value).toBe(0)
+  })
+
   it('adds and confirms local turn predictions around accepted authoritative patches', async () => {
     const map = ref(mapFixture())
     const postGate = deferred<void>()

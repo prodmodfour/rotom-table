@@ -10,7 +10,7 @@ const repoRoot = resolve(testDir, '../..')
 const readSource = (relativePath: string): string => readFileSync(resolve(repoRoot, relativePath), 'utf8')
 
 describe('map page route authority', () => {
-  it('wires clicked live-play movement through local prediction feedback', () => {
+  it('wires clicked live-play movement through authoritative intent feedback', () => {
     const mapPage = readSource('src/pages/maps/[slug].vue')
 
     expect(mapPage).toContain('const livePlayTrackedTokenPredictions = ref<Readonly<Record<string, TrackedLivePlayTokenPrediction>>>({})')
@@ -30,12 +30,13 @@ describe('map page route authority', () => {
     expect(mapPage).toContain('markLivePlayCorrectionMotionTokens([predictedToken.placementId])')
     expect(mapPage).toContain('livePlayStateMachine.clearCommandError()')
     expect(mapPage).toContain('return playerProfileTokenControlModel.value.notice')
-    expect(mapPage).toContain('const pendingPredictionOpIdsBeforeMove = new Set(Object.keys(livePlayCommands.pendingPredictions.value))')
-    expect(mapPage).toContain('const predictedMove = newPendingMovePredictionForPlacement(pendingPredictionOpIdsBeforeMove, payload.id)')
-    expect(mapPage).toContain('if (predictedMove) {\n    rememberLivePlayPredictedToken(predictedMove, livePlayTokenLabel(payload.id))\n    clearSelection()\n  }')
-    expect(mapPage).toContain('const moveWasPredicted = predictedMove !== null\n    if (!moveWasPredicted) clearSelection()')
-    expect(mapPage).toContain('if (!result.dispatched) {\n      if (result.opId) forgetLivePlayPredictedToken(result.opId)\n      return\n    }')
-    expect(mapPage).toContain('await Promise.resolve(attackOfOpportunityTriggers?.provokeMovementAttackOfOpportunity({')
+    expect(mapPage).toContain('predictMoveToken: false')
+    expect(mapPage).toContain('const livePlayMovementIntent = ref<LivePlayMovementIntent | null>(null)')
+    expect(mapPage).toContain("status: 'submitting'")
+    expect(mapPage).toContain('isPendingMoveDeclarationResult(result.response)')
+    expect(mapPage).toContain("status: 'awaiting-reaction'")
+    expect(mapPage).toContain('finishLivePlayMovementIntentAfterRender')
+    expect(mapPage).not.toContain('attackOfOpportunityTriggers?.provokeMovementAttackOfOpportunity')
   })
 
   it('wires clicked live-play facing through local prediction feedback', () => {
@@ -418,6 +419,31 @@ describe('map page route authority', () => {
     const mapAccess = readSource('src/composables/map-editor/useMapAccess.ts')
     expect(mapAccess).not.toContain('sessionModeEnabled')
     expect(mapAccess).not.toContain('hasAuthoritativeSessionState')
+  })
+
+  it('presents opportunity-attack movement as intent, checkpoint, and a prominent reaction', () => {
+    const mapPage = readSource('src/pages/maps/[slug].vue')
+    const scenePanel = readSource('src/components/map/MapScenePanel.vue')
+    const sceneRenderer = readSource('src/components/map/MapSceneRenderer.vue')
+    const isometricGrid = readSource('src/components/IsometricGrid.client.vue')
+    const attentionOverlay = readSource('src/components/isometric/AttackOfOpportunityAttentionOverlay.vue')
+    const responsePanel = readSource('src/components/map/MapMoveResponsePanel.vue')
+
+    expect(mapPage).toContain('predictMoveToken: false')
+    expect(mapPage).toContain("status: 'submitting'")
+    expect(mapPage).toContain('isPendingMoveDeclarationResult(result.response)')
+    expect(mapPage).toContain("status: 'awaiting-reaction'")
+    expect(mapPage).toContain(':live-play-movement-intent="livePlayMovementIntent"')
+    expect(scenePanel).toContain('<MapAttackOfOpportunityOverlay')
+    expect(scenePanel).toContain(':windows="standardPendingMoveResponseWindows"')
+    expect(scenePanel).toContain(':attack-of-opportunity-actor-ids="attackOfOpportunityActorPlacementIds"')
+    expect(sceneRenderer).toContain(':live-play-movement-intent="livePlayMovementIntent ?? null"')
+    expect(isometricGrid).toContain('advancePendingTokenMovementPath')
+    expect(isometricGrid).toContain('preservesCommittedMovementIntent')
+    expect(isometricGrid).toContain('<AttackOfOpportunityAttentionOverlay :markers="attackOfOpportunityAttentionMarkers" />')
+    expect(attentionOverlay).toContain('class="aoo-attention-marker"')
+    expect(responsePanel).not.toContain('ATTACK_OF_OPPORTUNITY_ASSISTANCE_NOTICE')
+    expect(mapPage).not.toContain('moveAutomationAssistedFollowUps')
   })
 
   it('wires GM-only move operation details to ID-only correction commands', () => {

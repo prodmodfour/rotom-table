@@ -11,6 +11,7 @@ import {
   type PendingMoveResolutionResourceRead,
   type PendingMoveResponseOwner,
 } from '#shared/moveAutomation/pendingResolution'
+import { ATTACK_OF_OPPORTUNITY_CANONICAL_ID } from '#shared/moveAutomation/attackOfOpportunity'
 import { MOVE_RULESET_PROVENANCE } from '#shared/moveAutomation/ruleset'
 import type { MoveResolutionTraceAncestryEntry } from '#shared/moveAutomation/trace'
 import type { MoveReactionRequestEffectOperation } from '#shared/moveAutomation/effects'
@@ -74,7 +75,7 @@ import {
 } from '../movement/applyMovementTransition'
 
 export const ATTACK_OF_OPPORTUNITY_PROGRAM_VERSION = 2 as const
-export const ATTACK_OF_OPPORTUNITY_CANONICAL_ID = 'Attack of Opportunity' as const
+export { ATTACK_OF_OPPORTUNITY_CANONICAL_ID } from '#shared/moveAutomation/attackOfOpportunity'
 
 const ATTACK_OF_OPPORTUNITY_DEFINITION = Object.freeze({
   version: ATTACK_OF_OPPORTUNITY_PROGRAM_VERSION,
