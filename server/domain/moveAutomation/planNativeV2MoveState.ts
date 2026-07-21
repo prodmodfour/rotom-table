@@ -67,6 +67,7 @@ import { aa062BoneLordReadyStateIds } from '../abilityAutomation/mechanics/aa062
 import { recordAa065CudChewConsumptions } from '../abilityAutomation/mechanics/aa065ItemIntegration'
 import { applyAa061BallFetchSendOutTriggers } from '../abilityAutomation/mechanics/aa061PresenceIntegration'
 import { applyAa065CuriousMedicineSendOutTrigger } from '../abilityAutomation/mechanics/aa065PresenceIntegration'
+import { recordAa066DeadlyPoisonTriggers } from '../abilityAutomation/mechanics/aa066ConditionIntegration'
 import { planEncounterMoveResourceCosts } from './planMoveResources'
 
 export type NativeMoveSpecPlanErrorCode =
@@ -656,6 +657,8 @@ const applyTriggeredAbilityPayments = (input: {
     ['ability.cursed-body.optional-disable', 'Cursed Body'],
     ['ability.cute-charm.optional-infatuation', 'Cute Charm'],
     ['ability.cute-tears.optional-stage-loss', 'Cute Tears'],
+    ['ability.dancer.optional-copy', 'Dancer'],
+    ['ability.danger-syrup.optional-sweet-scent', 'Danger Syrup'],
   ] as const)
   const selections = input.traces.flatMap(trace => trace.events).filter(event => (
     event.kind === 'operation'
@@ -716,7 +719,7 @@ const applyTriggeredAbilityPayments = (input: {
     if (existingByOperation && existingByOperation !== existing) {
       fail('state-change-conflict', `${canonicalId} response operation already paid another resource.`)
     }
-    const limit = canonicalId === 'Bodyguard' ? 2 : 1
+    const limit = canonicalId === 'Bodyguard' || canonicalId === 'Dancer' ? 2 : 1
     if (!existingByOperation && (existing?.spent ?? 0) >= limit) {
       fail('state-change-conflict', `${canonicalId} has no Scene uses remaining.`)
     }
@@ -860,8 +863,16 @@ export const planNativeV2MoveState = (options: {
     traces: [native.trace],
     resolutionId: context.resolutionId ?? originOperationId,
   })
-  const mapAfterTransformationCleanup = cleanupEncounterTransformationsForKnockouts({
+  const mapAfterDeadlyPoisonTriggers = recordAa066DeadlyPoisonTriggers({
     map: mapAfterTriggeredAbilityPayments,
+    context,
+    coreStateChanges: native.coreStateChanges,
+    operations: native.operations,
+    childExecutions: native.childExecutions,
+    operationId: originOperationId,
+  })
+  const mapAfterTransformationCleanup = cleanupEncounterTransformationsForKnockouts({
+    map: mapAfterDeadlyPoisonTriggers,
     placementIds: native.faintedPlacementIds,
   }).map
   const mapAfterYawnCleanup = cleanupYawnEffectsForKnockouts({
@@ -949,6 +960,12 @@ export const planNativeV2MoveState = (options: {
       `Usage operation ${operation.id} lost its reviewed child execution identity.`,
     )
     const move = findMove(child.canonicalId)
+    const parentOperation = native.operations.find(emitted => (
+      emitted.operation.id === child.parentOperationId
+    ))?.operation
+    const abilityGrantedUse = parentOperation?.id.startsWith('ability.dancer.copy.') === true
+      || parentOperation?.id.startsWith('ability.danger-syrup.sweet-scent.') === true
+      || parentOperation?.id.startsWith('ability.combo-striker.struggle.') === true
     const childMoveKey = moveUsageKey(child.canonicalId)
     if (!move || !childMoveKey) {
       return fail(
@@ -962,7 +979,7 @@ export const planNativeV2MoveState = (options: {
       move: {
         moveName: child.canonicalId,
         moveKey: childMoveKey,
-        frequency: move.frequency ?? null,
+        frequency: abilityGrantedUse ? 'At-Will' : move.frequency ?? null,
       },
     }]
   })

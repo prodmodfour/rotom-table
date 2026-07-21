@@ -17,6 +17,7 @@ import {
   aa064ContraryRequestedValue,
   type Aa064StageAbilityQueries,
 } from '../../abilityAutomation/mechanics/aa064StageIntegration'
+import { aa066ApplyDefiant } from '../../abilityAutomation/mechanics/aa066StageIntegration'
 import { failMoveCoreTokenEffectReduction } from './coreTokenEffectError'
 import type {
   MoveCombatStageAccuracyRollQueries,
@@ -64,6 +65,7 @@ interface CombatStageRecipientWork {
   trigger: CombatStageTriggerAudit | null
   redistributionPrevented: boolean
   competitiveDelta: number
+  defiantDelta: number
   readonly sourceOwnerId: string | null
   readonly abilityRules?: Aa064StageAbilityQueries
 }
@@ -126,6 +128,7 @@ const createWork = (
     trigger: null,
     redistributionPrevented: false,
     competitiveDelta: 0,
+    defiantDelta: 0,
     sourceOwnerId: options.sourceOwnerId,
     ...(options.abilityRules ? { abilityRules: options.abilityRules } : {}),
   }
@@ -521,6 +524,7 @@ const combatStageDetails = (
     operationOutcome: work.trigger.operationOutcome,
   } : null,
   competitiveDelta: work.competitiveDelta,
+  defiantDelta: work.defiantDelta,
   changes: work.changes.map(change => ({
     stage: change.stage,
     previous: change.previous,
@@ -542,6 +546,10 @@ const finalizeWork = (options: {
   readonly sourcePlacementId: string | null
 }): MoveCoreTokenEffectRecipientResult => {
   const { operation, work, accumulator } = options
+  // Capture the authored lowering before Competitive can offset the same stage;
+  // both abilities independently trigger from the original stage operation.
+  const externallyLoweredForDefiant = work.sourceOwnerId !== work.recipient.placement.id
+    && COMBAT_STAGE_KEYS.some(stage => work.next[stage] < work.previous.stages[stage])
   const competitive = aa064ApplyCompetitive({
     recipientId: work.recipient.placement.id,
     sourceOwnerId: work.sourceOwnerId,
@@ -552,6 +560,17 @@ const finalizeWork = (options: {
   if (competitive.appliedDelta !== 0) {
     for (const stage of COMBAT_STAGE_KEYS) work.next[stage] = competitive.stages[stage]
     work.competitiveDelta = competitive.appliedDelta
+  }
+  const defiant = aa066ApplyDefiant({
+    recipientId: work.recipient.placement.id,
+    sourceOwnerId: work.sourceOwnerId,
+    externallyLowered: externallyLoweredForDefiant,
+    next: work.next,
+    abilities: work.abilityRules,
+  })
+  if (defiant.appliedDelta !== 0) {
+    for (const stage of COMBAT_STAGE_KEYS) work.next[stage] = defiant.stages[stage]
+    work.defiantDelta = defiant.appliedDelta
   }
   const changed = COMBAT_STAGE_KEYS.some(stage => (
     work.next[stage] !== work.previous.stages[stage]

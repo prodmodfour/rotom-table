@@ -46,6 +46,8 @@ export interface MoveAutomationEvasionContext {
   attacker?: Pick<SpawnedPokemon, 'abilityNames'> | null
   /** Server-projected active fields; retained v1 callers never author this value. */
   fieldEffects?: MapFieldEffects | null
+  /** Exact effective Dauntless Shield projection; presentation callers may omit it. */
+  dauntlessShieldActive?: boolean
 }
 
 type MoveAutomationEvasionStatStageKey = Extract<CombatStatStageKey, 'def' | 'sdef' | 'spd'>
@@ -117,15 +119,22 @@ const physicalEvasion = (
   context: MoveAutomationEvasionContext,
 ): MoveAutomationEvasionCandidate => {
   const wondered = wonderRoomApplies(target, context)
+  const stageKey = wondered ? 'sdef' : 'def'
+  const authoredStage = wondered ? target.combatStages.sdef : target.combatStages.def
+  const dauntlessShieldActive = context.dauntlessShieldActive
+    ?? target.abilityNames?.includes('Dauntless Shield')
+  const stage = stageKey === 'def' && dauntlessShieldActive
+    ? Math.min(6, authoredStage + 1)
+    : authoredStage
   return {
     kind: 'physical',
     label: 'Physical Evasion',
     value: evasionForStat(
       target,
-      wondered ? 'sdef' : 'def',
+      stageKey,
       'physical',
       wondered ? target.sdef : target.def,
-      wondered ? target.combatStages.sdef : target.combatStages.def,
+      stage,
       attackerAdjustedEvasionBonus(target.evasion?.physical, context),
     ),
   }

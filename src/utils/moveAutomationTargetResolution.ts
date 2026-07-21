@@ -188,6 +188,8 @@ export interface MoveAutomationResolvedDamageInputs {
     readonly moveType: string
     readonly multiplier: number
   }
+  /** Exact effective passive projection for defensive stage providers. */
+  readonly dauntlessShieldActive?: boolean
   /** Future server-owned queries may contribute only fully attributed modifiers. */
   readonly additionalModifiers?: readonly MoveDamageModifier[]
 }
@@ -255,7 +257,10 @@ export const resolveMoveAutomationTargetDamageBreakdown = (
   const defaultDefenseUsesPhysicalStat = wonderRoomActive ? !physical : physical
   const defense = resolvedStats.defenseStat?.value ?? (defaultDefenseUsesPhysicalStat
     ? applyCombatStageToStat(target.def, conditionAdjustedCombatStage(
-      target.combatStages.def,
+      (resolvedDamage.dauntlessShieldActive
+        ?? target.abilityNames?.includes('Dauntless Shield'))
+        ? Math.min(6, target.combatStages.def + 1)
+        : target.combatStages.def,
       target.conditions,
       'def',
       { abilities: target.abilityNames },

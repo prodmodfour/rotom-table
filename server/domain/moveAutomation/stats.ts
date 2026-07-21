@@ -19,6 +19,7 @@ import {
   normalizeCombatStages,
 } from '~/utils/combatStages'
 import { conditionAdjustedCombatStages } from '~/utils/sheetConditionEffects'
+import { aa066EffectiveCombatStages } from '../abilityAutomation/mechanics/aa066StageIntegration'
 
 export const MOVE_AUTOMATION_STAT_LABELS = Object.freeze({
   attack: 'Attack',
@@ -128,6 +129,8 @@ export interface CreateMoveAutomationStatResolverInput {
     placement: Pick<SheetPlacement, 'sheetKind'>,
     stat: MoveExpressionStat,
   ) => MoveAutomationStatOverlay | null
+  /** Effective-ability seam; production contexts exclude suppressed or stale runtimes. */
+  readonly hasEffectiveAbility?: (placementId: string, canonicalId: string) => boolean
   /** Authoritative context read-set seam. Standalone pure queries may omit it. */
   readonly recordSheetRead?: (
     placement: Pick<SheetPlacement, 'sheetKind' | 'sheetSlug'>,
@@ -174,6 +177,7 @@ interface MoveAutomationStatTokenSnapshot {
   readonly combatStages: SpawnedPokemon['combatStages']
   readonly conditions: readonly string[]
   readonly abilityNames: readonly string[]
+  readonly dauntlessShieldActive: boolean
 }
 
 const fail = (
@@ -212,6 +216,7 @@ const finiteOrNull = (value: unknown): number | null => (
 
 const statTokenSnapshot = (
   token: SpawnedPokemon,
+  dauntlessShieldActive: boolean,
 ): MoveAutomationStatTokenSnapshot => deepFreeze({
   id: token.id,
   attack: token.atk,
@@ -225,6 +230,7 @@ const statTokenSnapshot = (
   combatStages: normalizeCombatStages(token.combatStages),
   conditions: [...token.conditions],
   abilityNames: [...(token.abilityNames ?? [])],
+  dauntlessShieldActive,
 })
 
 const finiteStatValue = (
@@ -252,14 +258,20 @@ interface MoveAutomationStageSnapshots {
 
 const stageSnapshots = (
   token: MoveAutomationStatTokenSnapshot,
-): MoveAutomationStageSnapshots => ({
-  authored: normalizeCombatStages(token.combatStages),
-  modified: conditionAdjustedCombatStages(
-    token.combatStages,
-    token.conditions,
-    { abilities: token.abilityNames },
-  ),
-})
+): MoveAutomationStageSnapshots => {
+  const authored = aa066EffectiveCombatStages({
+    stages: normalizeCombatStages(token.combatStages),
+    abilityNames: token.dauntlessShieldActive ? ['Dauntless Shield'] : [],
+  })
+  return {
+    authored,
+    modified: conditionAdjustedCombatStages(
+      authored,
+      token.conditions,
+      { abilities: token.abilityNames },
+    ),
+  }
+}
 
 const resolveCombatStageFromSnapshots = (
   snapshots: MoveAutomationStageSnapshots,
@@ -371,7 +383,12 @@ export const createMoveAutomationStatResolver = (
     'Stat-query placement',
   )
   const tokens = indexedByUniqueId(
-    input.tokens.map(statTokenSnapshot),
+    input.tokens.map(token => statTokenSnapshot(
+      token,
+      input.hasEffectiveAbility?.(token.id, 'Dauntless Shield')
+        ?? token.abilityNames?.includes('Dauntless Shield')
+        ?? false,
+    )),
     token => token.id,
     'duplicate-token-id',
     'Stat-query token',

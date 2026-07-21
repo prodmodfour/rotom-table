@@ -58,6 +58,7 @@ import { aa062BoneLordEmpowersMove, aa062MoveOverlayOperations } from '../abilit
 import { aa063MoveOverlayOperations } from '../abilityAutomation/mechanics/aa063MoveIntegration'
 import { aa064MoveOverlayOperations } from '../abilityAutomation/mechanics/aa064MoveIntegration'
 import { aa065MoveOverlayOperations } from '../abilityAutomation/mechanics/aa065MoveIntegration'
+import { aa066MoveOverlayOperations } from '../abilityAutomation/mechanics/aa066MoveIntegration'
 
 export type ResumeMoveSpecErrorCode =
   | 'runtime-unavailable'
@@ -398,6 +399,10 @@ export const resumeMoveSpec = (
           authoritativeTargetIds,
         }),
         ...aa065MoveOverlayOperations({
+          context, script: entry.script, moveSourceId,
+          authoritativeTargetIds,
+        }),
+        ...aa066MoveOverlayOperations({
           context, script: entry.script, moveSourceId,
           authoritativeTargetIds,
         }),

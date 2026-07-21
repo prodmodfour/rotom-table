@@ -52,6 +52,11 @@ import type { SpawnedPokemon } from '~/types/pokemon'
 import type { CharacterSheet } from '~/types/characterSheet'
 import { resistMultiplierOneStepFurther } from '~/utils/typeChart'
 import { ptuGridDistanceBetweenFootprints } from '~/utils/ptuGridDistance'
+import {
+  buildMoveAutomationAreaTemplateCells,
+  tokensInMoveAutomationArea,
+} from '~/utils/moveAutomationAreaTemplates'
+import { buildAllVoxelOccupancy } from '~/utils/voxelOccupancy'
 import type { TrainerSheet } from '~/types/trainerSheet'
 import type { GridAnchor } from '~/types/map'
 import type {
@@ -59,6 +64,7 @@ import type {
   AuthoritativeMoveSheetRead,
 } from './context'
 import { resolveAuthoritativeMoveUserAccuracy } from './accuracy'
+import { resolveMoveAutomationAreaTargets } from './areaTargets'
 import {
   executeResolvedMoveChoiceBranch,
   executeServerMoveBranch,
@@ -103,10 +109,16 @@ import { orderMoveReactionOperationEntries } from './reactionOrder'
 import { aa062BoneLordEmpowersMove } from '../abilityAutomation/mechanics/aa062MoveIntegration'
 import { aa064MoveOverlayOperations } from '../abilityAutomation/mechanics/aa064MoveIntegration'
 import { aa065MoveOverlayOperations } from '../abilityAutomation/mechanics/aa065MoveIntegration'
+import { aa066MoveOverlayOperations } from '../abilityAutomation/mechanics/aa066MoveIntegration'
 import {
   aa065CovertEvasionBonus,
   aa065DampCancelsMove,
+  primeAa065MoveRandomness,
 } from '../abilityAutomation/mechanics/aa065StaticIntegration'
+import {
+  aa066DazzlingBlocksInterruptMovesAgainst,
+  aa066DecoyEvasionBonus,
+} from '../abilityAutomation/mechanics/aa066StaticIntegration'
 import {
   createMoveSpecResponseResolver,
   type MoveSpecResolvedResponse,
@@ -142,6 +154,7 @@ import {
 } from './knockOffContinuation'
 import { primeAa060MoveRandomness } from '../abilityAutomation/mechanics/aa060MoveIntegration'
 import { aa061BeamCannonMinimum, primeAa061MoveRandomness } from '../abilityAutomation/mechanics/aa061MoveIntegration'
+import { primeAa066MoveRandomness } from '../abilityAutomation/mechanics/aa066StaticIntegration'
 import type { ValidatedAuthoritativeHazardCellSelection } from './hazardCellSelection'
 import type { MoveSpecV2Runtime } from './registry'
 import {
@@ -216,10 +229,15 @@ export interface MoveSpecChildExecution {
   readonly definitionHash: string
   readonly operationIds: readonly string[]
   readonly targetIds: readonly string[]
+  readonly rootTargetIds: readonly string[]
   readonly hitTargetIds: readonly string[]
+  readonly rootHitTargetIds: readonly string[]
   readonly missedTargetIds: readonly string[]
+  readonly rootMissedTargetIds: readonly string[]
   readonly damagedTargetIds: readonly string[]
+  readonly rootDamagedTargetIds: readonly string[]
   readonly faintedTargetIds: readonly string[]
+  readonly rootFaintedTargetIds: readonly string[]
   readonly mechanics: MoveAutomationScript
   readonly trace: MoveResolutionAuditTrace
 }
@@ -375,7 +393,14 @@ export interface MoveSpecExecutionRejection {
 
 interface MoveSpecExecutionResultBase {
   readonly operations: readonly MoveSpecEmittedOperation[]
+  /** Aggregate root and descendant recipients retained for audit/presentation. */
   readonly targetIds: readonly string[]
+  /** Root-only recipient sets used by root operation reducers. */
+  readonly rootTargetIds: readonly string[]
+  readonly rootHitTargetIds: readonly string[]
+  readonly rootMissedTargetIds: readonly string[]
+  readonly rootDamagedTargetIds: readonly string[]
+  readonly rootFaintedTargetIds: readonly string[]
   readonly sheetReads: readonly AuthoritativeMoveSheetRead[]
   readonly rollLedger: readonly MoveAutomationRollLedgerEntry[]
   readonly resolvedRolls: readonly MoveSpecResolvedRoll[]
@@ -456,6 +481,8 @@ export interface ExecuteMoveSpecInput {
   readonly ancestry?: readonly MoveResolutionTraceAncestryEntry[]
   /** Stable server-owned root identity; required when a nested operation is reached. */
   readonly resolutionId?: string
+  /** Internal-only namespace for one reviewed repeated Dancer/Danger Syrup child definition. */
+  readonly reviewedIdentityNamespace?: string
   /** Authorized durable responses, resolved only against reviewed request IDs/options. */
   readonly responses?: readonly MoveSpecResolvedResponse[]
   /** Server-derived effective-ability overlays; never accepted from an intent or response command. */
@@ -532,10 +559,15 @@ const freezeChildExecutions = (
   ...execution,
   operationIds: frozenIds(execution.operationIds),
   targetIds: frozenIds(execution.targetIds),
+  rootTargetIds: frozenIds(execution.rootTargetIds),
   hitTargetIds: frozenIds(execution.hitTargetIds),
+  rootHitTargetIds: frozenIds(execution.rootHitTargetIds),
   missedTargetIds: frozenIds(execution.missedTargetIds),
+  rootMissedTargetIds: frozenIds(execution.rootMissedTargetIds),
   damagedTargetIds: frozenIds(execution.damagedTargetIds),
+  rootDamagedTargetIds: frozenIds(execution.rootDamagedTargetIds),
   faintedTargetIds: frozenIds(execution.faintedTargetIds),
+  rootFaintedTargetIds: frozenIds(execution.rootFaintedTargetIds),
 })))
 
 const freezeResolvedRolls = (
@@ -627,6 +659,21 @@ const executableDefinition = (
       'ruleset-mismatch',
       `MoveSpec ${validated.spec.canonicalId} was not reviewed for the authoritative rules context.`,
     )
+  }
+  if (input.reviewedIdentityNamespace) {
+    const parent = input.context.ancestry.at(-1)
+    if (input.reviewedIdentityNamespace !== input.resolutionId
+      || parent?.canonicalId !== validated.spec.canonicalId
+      || ![
+        'ability.dancer.copy.',
+        'ability.danger-syrup.sweet-scent.',
+      ].some(prefix => parent.parentOperationId?.startsWith(prefix) === true)) {
+      fail(
+        'definition-integrity-mismatch',
+        'Repeated MoveSpec identity namespacing is authorized only for exact Dancer or Danger Syrup child ancestry.',
+      )
+    }
+    return namespaceRepeatedNestedDefinition(validated, input.reviewedIdentityNamespace)
   }
   return validated
 }
@@ -1426,9 +1473,22 @@ const terminalBase = (
   resolvedHazardCells: readonly MoveSpecResolvedHazardCells[],
   childExecutions: readonly MoveSpecChildExecution[],
   selectorState: MoveSpecSelectorState,
-): MoveSpecExecutionResultBase => ({
+): MoveSpecExecutionResultBase => {
+  const aggregate = (
+    root: readonly string[],
+    select: (child: MoveSpecChildExecution) => readonly string[],
+  ): readonly string[] => canonicalPlacementIds(context, [
+    ...root,
+    ...childExecutions.flatMap(child => select(child)),
+  ])
+  return {
   operations: freezeEmittedOperations(operations),
-  targetIds: frozenIds(targetIds),
+  targetIds: frozenIds(aggregate(targetIds, child => child.targetIds)),
+  rootTargetIds: frozenIds(targetIds),
+  rootHitTargetIds: frozenIds(selectorState.hitTargetIds),
+  rootMissedTargetIds: frozenIds(selectorState.missedTargetIds),
+  rootDamagedTargetIds: frozenIds(selectorState.damagedTargetIds),
+  rootFaintedTargetIds: frozenIds(selectorState.faintedTargetIds),
   sheetReads: context.reads.snapshot(),
   rollLedger,
   resolvedRolls: freezeResolvedRolls(resolvedRolls),
@@ -1442,12 +1502,13 @@ const terminalBase = (
   resolvedItemChoices: freezeResolvedItemChoices(resolvedItemChoices),
   resolvedHazardCells: freezeResolvedHazardCells(resolvedHazardCells),
   childExecutions: freezeChildExecutions(childExecutions),
-  hitTargetIds: frozenIds(selectorState.hitTargetIds),
-  missedTargetIds: frozenIds(selectorState.missedTargetIds),
-  damagedTargetIds: frozenIds(selectorState.damagedTargetIds),
-  faintedTargetIds: frozenIds(selectorState.faintedTargetIds),
+  hitTargetIds: frozenIds(aggregate(selectorState.hitTargetIds, child => child.hitTargetIds)),
+  missedTargetIds: frozenIds(aggregate(selectorState.missedTargetIds, child => child.missedTargetIds)),
+  damagedTargetIds: frozenIds(aggregate(selectorState.damagedTargetIds, child => child.damagedTargetIds)),
+  faintedTargetIds: frozenIds(aggregate(selectorState.faintedTargetIds, child => child.faintedTargetIds)),
   trace,
-})
+  }
+}
 
 interface MoveSpecSuspendedOperationPartition {
   readonly preWindowOperations: readonly MoveSpecEmittedOperation[]
@@ -1851,6 +1912,8 @@ interface MoveSpecExecutionState {
   readonly nestedBudget: NestedMoveExecutionBudget
   readonly nestedDepth: number
   readonly root: boolean
+  /** Exact server-generated Dancer/Danger Syrup seam; all other repeated specs remain rejected. */
+  readonly allowReviewedSpecRepeat: boolean
 }
 
 interface NestedMoveTargetOption {
@@ -2040,6 +2103,102 @@ export const deriveNestedMoveRulesContext = (input: {
     selectedPlacements: Object.freeze([...selectedPlacements]),
     ancestry: Object.freeze(input.ancestry.map(entry => Object.freeze({ ...entry }))),
     queries,
+  })
+}
+
+const nestedDefinitionNamespace = (resolutionId: string): string => `nested.${createHash('sha256')
+  .update(resolutionId)
+  .digest('hex')
+  .slice(0, 24)}`
+
+const NESTED_DEFINITION_IDENTITY_KEYS = new Set([
+  'id', 'rollId', 'effectId', 'requestId', 'selectionId', 'resourceId',
+  'destinationSetId', 'itemSetId', 'tableId', 'checkId', 'zoneId', 'entityId',
+])
+
+/** Namespace interpreter-owned identities when a reviewed Ability child repeats the root spec. */
+const namespaceRepeatedNestedDefinition = (
+  definition: ValidatedMoveSpecDefinition,
+  resolutionId: string,
+): ValidatedMoveSpecDefinition => {
+  const identities = new Set<string>()
+  const collect = (value: unknown): void => {
+    if (Array.isArray(value)) {
+      for (const entry of value) collect(entry)
+      return
+    }
+    if (!value || typeof value !== 'object') return
+    for (const [key, entry] of Object.entries(value)) {
+      if (NESTED_DEFINITION_IDENTITY_KEYS.has(key) && typeof entry === 'string') identities.add(entry)
+      collect(entry)
+    }
+  }
+  collect(definition.spec.phases)
+  const namespace = nestedDefinitionNamespace(resolutionId)
+  const replacements = new Map([...identities].map(id => [id, `${namespace}.${id}`]))
+  const rewrite = (value: unknown): unknown => {
+    if (typeof value === 'string') return replacements.get(value) ?? value
+    if (Array.isArray(value)) return value.map(rewrite)
+    if (!value || typeof value !== 'object') return value
+    return Object.fromEntries(Object.entries(value).map(([key, entry]) => [key, rewrite(entry)]))
+  }
+  return Object.freeze({
+    ...definition,
+    spec: Object.freeze({
+      ...definition.spec,
+      phases: rewrite(definition.spec.phases) as ValidatedMoveSpec['phases'],
+    }),
+  })
+}
+
+const centeredNestedAreaTargeting = (input: {
+  readonly context: AuthoritativeMoveRulesContext
+  readonly runtime: MoveSpecV2Runtime
+  readonly script: MoveAutomationScript
+}): {
+  readonly targetIds: readonly string[]
+  readonly evaluations: readonly MoveSpecAuthoritativeTargetEvaluation[]
+} | null => {
+  const targeting = input.runtime.definition.spec.targeting
+  if (targeting.kind !== 'area') return null
+  const templates = input.script.areaTemplates?.filter(template => (
+    template.kind === 'burst' || template.kind === 'cardinally-adjacent'
+  )) ?? []
+  if (templates.length !== 1 || templates.length !== (input.script.areaTemplates?.length ?? 0)) {
+    return fail(
+      'nested-targeting-invalid',
+      `Nested area spec ${input.runtime.canonicalId} requires unsupported directional or aimed geometry.`,
+    )
+  }
+  const cells = buildMoveAutomationAreaTemplateCells({
+    template: templates[0]!,
+    user: input.context.actor.token,
+    bounds: input.context.map.dimensions,
+    blockedCells: buildAllVoxelOccupancy(input.context.map.voxels),
+  })
+  const geometricIds = tokensInMoveAutomationArea({
+    cells,
+    tokens: input.context.queries.tokens.all(),
+    excludeIds: [input.context.actor.placement.id],
+  }).map(token => token.id)
+  const resolved = resolveMoveAutomationAreaTargets({
+    actorPlacementId: input.context.actor.placement.id,
+    geometricallyAffectedPlacementIds: geometricIds,
+    predicate: targeting.predicate ?? {
+      relationship: 'any', willingness: 'any', excludeActor: true,
+    },
+    relationships: input.context.queries.relationships,
+    states: input.context.queries.targetStates,
+    targetability: input.context.queries.targetability,
+    attackingMoveId: input.runtime.canonicalId,
+  })
+  return Object.freeze({
+    targetIds: canonicalPlacementIds(input.context, resolved.eligibleTargetPlacementIds),
+    evaluations: Object.freeze(resolved.evaluations.map(evaluation => Object.freeze({
+      targetPlacementId: evaluation.targetPlacementId,
+      outcome: evaluation.outcome,
+      reasonCode: evaluation.reasonCode,
+    }))),
   })
 }
 
@@ -2237,6 +2396,7 @@ const executeMoveSpecInternal = (
     spec.canonicalId,
     executionState.nestedDepth,
     executionState.root,
+    executionState.allowReviewedSpecRepeat,
   ))
   const program = executableProgram(
     definition,
@@ -2599,7 +2759,23 @@ const executeMoveSpecInternal = (
       }
       const resolveOperationRecipientIds = (): readonly string[] => {
         if (operation.kind === 'reaction-request' && operation.payload.ownerPlacementIds) {
+          const interruptChild = program.operations.some(candidate => (
+            candidate.kind === 'nested-move'
+            && candidate.source.kind === 'operation'
+            && candidate.source.id === operation.id
+            && typeof candidate.payload.canonicalId === 'string'
+            && /\bInterrupt\b/i.test(
+              input.context.queries.rules.reviewedScriptFor(candidate.payload.canonicalId)?.range ?? '',
+            )
+          ))
+          if (interruptChild && aa066DazzlingBlocksInterruptMovesAgainst({
+            context: input.context,
+            actionSourcePlacementId: input.context.actor.placement.id,
+          })) return []
           const owners = canonicalPlacementIds(input.context, operation.payload.ownerPlacementIds)
+          if (operation.reasonCode === 'ability.danger-syrup.optional-sweet-scent') {
+            return owners.filter(ownerId => hitTargetIds.includes(ownerId))
+          }
           const aa065TargetPrefixes = new Map<string, string>([
             ['ability.corrosive-toxins.optional-bypass', 'ability.corrosive-toxins.target:'],
             ['ability.cruelty.optional-purchases', 'ability.cruelty.target:'],
@@ -2799,7 +2975,16 @@ const executeMoveSpecInternal = (
           }
           return owners
         }
-        return effectRecipientIds(input.context, selectorState, operation.recipients.kind)
+        const resolved = effectRecipientIds(input.context, selectorState, operation.recipients.kind)
+        if (operation.reasonCode === 'ability.danger-syrup.blind-on-hit') {
+          return resolved.filter(recipientId => (
+            input.context.queries.relationships.resolve(
+              input.context.actor.placement.id,
+              recipientId,
+            ).relationship === 'enemy'
+          ))
+        }
+        return resolved
       }
       const randomTableGate = gateRandomTableControlledOperation({
         operationId: operation.id,
@@ -3533,8 +3718,14 @@ const executeMoveSpecInternal = (
                   {
                     attacker: input.context.actor.token,
                     fieldEffects: input.context.queries.rooms.projectFieldEffects(),
+                    dauntlessShieldActive: input.context.queries.abilities.has(
+                      recipientId,
+                      'Dauntless Shield',
+                    ),
                   },
-                ).value + aa065CovertEvasionBonus({ context: input.context, placementId: recipientId })
+                ).value
+                  + aa065CovertEvasionBonus({ context: input.context, placementId: recipientId })
+                  + aa066DecoyEvasionBonus({ map: input.context.map, placementId: recipientId })
             if (blurApplies) targetEvasion = Math.floor(targetEvasion / 2)
             modifiers = userAccuracy.modifiers
           }
@@ -3759,9 +3950,12 @@ const executeMoveSpecInternal = (
             context: input.context,
             script: getMechanics().script,
             damageOperationIds: [operation.id],
+            damageRecipientId: recipientId,
           }
           primeAa060MoveRandomness(abilityRandomInput)
           primeAa061MoveRandomness(abilityRandomInput)
+          primeAa065MoveRandomness(abilityRandomInput)
+          primeAa066MoveRandomness(abilityRandomInput)
           const recipient = input.context.queries.tokens.get(recipientId)
             ?? fail('definition-integrity-mismatch', `Damage recipient ${recipientId} disappeared.`)
           const calculation = resolveMoveSpecDamageCalculation({
@@ -4431,12 +4625,6 @@ const executeMoveSpecInternal = (
           })
         }
         const runtime = nestedRuntimeFor(input.context, nestedOperation)
-        if (runtime.definition.spec.targeting.kind === 'area') {
-          return fail(
-            'nested-targeting-invalid',
-            `Nested operation ${operation.id} cannot reuse parent geometry for an area child.`,
-          )
-        }
         const parentResolutionId = executionState.resolutionId
           ?? fail(
             'nested-resolution-id-missing',
@@ -4460,19 +4648,34 @@ const executeMoveSpecInternal = (
           parentDefinitionHash: definition.definitionHash,
           parentOperationId: operation.id,
         })
+        const areaChild = runtime.definition.spec.targeting.kind === 'area'
+        const targetlessChild = runtime.definition.spec.targeting.kind === 'field'
+          || runtime.definition.spec.targeting.kind === 'none'
         const actorContext = deriveNestedMoveRulesContext({
           parent: input.context,
           actorPlacementId,
           canonicalId: runtime.canonicalId,
-          targetIds: nestedOperation.payload.targeting.kind === 'operation-recipients'
-            ? recipientIds
-            : [],
+          targetIds: !areaChild && !targetlessChild
+            && nestedOperation.payload.targeting.kind === 'operation-recipients'
+              ? recipientIds
+              : [],
           resolutionId: childResolutionId,
           ancestry,
         })
-        let childTargetIds: readonly string[] = nestedOperation.payload.targeting.kind === 'operation-recipients'
-          ? recipientIds
-          : []
+        const actorMechanics = authoritativeMoveMechanics(
+          actorContext,
+          runtime.canonicalId,
+          'registered-spec',
+        ).script
+        const centeredArea = centeredNestedAreaTargeting({
+          context: actorContext,
+          runtime,
+          script: actorMechanics,
+        })
+        let childTargetIds: readonly string[] = targetlessChild
+          ? []
+          : centeredArea?.targetIds
+            ?? (nestedOperation.payload.targeting.kind === 'operation-recipients' ? recipientIds : [])
         let nestedOperationTraced = false
         if (
           invocation.randomSelection
@@ -4495,7 +4698,9 @@ const executeMoveSpecInternal = (
           nestedOperationTraced = true
         }
 
-        if (nestedOperation.payload.targeting.kind === 'fresh-choice') {
+        if (!targetlessChild
+          && centeredArea === null
+          && nestedOperation.payload.targeting.kind === 'fresh-choice') {
           const choices = nestedTargetOptions({
             context: actorContext,
             operation: nestedOperation,
@@ -4586,11 +4791,7 @@ const executeMoveSpecInternal = (
           resolutionId: childResolutionId,
           ancestry,
         })
-        const childMechanics = authoritativeMoveMechanics(
-          childContext,
-          runtime.canonicalId,
-          'registered-spec',
-        ).script
+        const childMechanics = actorMechanics
         trace = reduceMoveResolutionTrace(trace, {
           kind: 'child-move',
           phase,
@@ -4602,6 +4803,12 @@ const executeMoveSpecInternal = (
           outcome: 'started',
           reasonCode: 'nested-child-started',
         })
+        const reviewedSpecRepeat = runtime.canonicalId === spec.canonicalId
+          && (
+            (operation.id.startsWith('ability.dancer.copy.') && operation.reasonCode === 'dancer')
+            || (operation.id.startsWith('ability.danger-syrup.sweet-scent.')
+              && operation.reasonCode === 'danger-syrup')
+          )
         const childMoveSourceId = runtime.definition.spec.phases
           .flatMap(block => block.operations)
           .find(candidate => candidate.source.kind === 'move')?.source.id
@@ -4610,6 +4817,8 @@ const executeMoveSpecInternal = (
           definition: runtime.definition,
           context: childContext,
           authoritativeTargetIds: childTargetIds,
+          ...(reviewedSpecRepeat ? { reviewedIdentityNamespace: childResolutionId } : {}),
+          ...(centeredArea ? { authoritativeTargetEvaluations: centeredArea.evaluations } : {}),
           serverAbilityOverlayOperations: [
             ...aa064MoveOverlayOperations({
               context: childContext,
@@ -4618,6 +4827,12 @@ const executeMoveSpecInternal = (
               authoritativeTargetIds: childTargetIds,
             }),
             ...aa065MoveOverlayOperations({
+              context: childContext,
+              script: childMechanics,
+              moveSourceId: childMoveSourceId,
+              authoritativeTargetIds: childTargetIds,
+            }),
+            ...aa066MoveOverlayOperations({
               context: childContext,
               script: childMechanics,
               moveSourceId: childMoveSourceId,
@@ -4636,6 +4851,7 @@ const executeMoveSpecInternal = (
           nestedBudget: executionState.nestedBudget,
           nestedDepth: executionState.nestedDepth + 1,
           root: false,
+          allowReviewedSpecRepeat: reviewedSpecRepeat,
         })
         if (child.kind === 'rejected') {
           return fail(
@@ -4669,7 +4885,7 @@ const executeMoveSpecInternal = (
         const conflictingChildOperation = child.operations.find(({ operation: emitted }) => (
           existingOperationIds.has(emitted.id)
         ))
-        if (conflictingChildOperation) {
+        if (conflictingChildOperation && !reviewedSpecRepeat) {
           return fail(
             'nested-operation-id-conflict',
             `Nested child ${runtime.canonicalId} reused operation ID ${conflictingChildOperation.operation.id}.`,
@@ -4691,10 +4907,15 @@ const executeMoveSpecInternal = (
           definitionHash: runtime.definitionHash,
           operationIds: frozenIds(directChildOperationIds),
           targetIds: frozenIds(child.targetIds),
+          rootTargetIds: frozenIds(child.rootTargetIds),
           hitTargetIds: frozenIds(child.hitTargetIds),
+          rootHitTargetIds: frozenIds(child.rootHitTargetIds),
           missedTargetIds: frozenIds(child.missedTargetIds),
+          rootMissedTargetIds: frozenIds(child.rootMissedTargetIds),
           damagedTargetIds: frozenIds(child.damagedTargetIds),
+          rootDamagedTargetIds: frozenIds(child.rootDamagedTargetIds),
           faintedTargetIds: frozenIds(child.faintedTargetIds),
+          rootFaintedTargetIds: frozenIds(child.rootFaintedTargetIds),
           mechanics: childMechanics,
           trace: child.trace,
         }), ...child.childExecutions)
@@ -4708,20 +4929,9 @@ const executeMoveSpecInternal = (
         resolvedSwitches.push(...child.resolvedSwitches)
         resolvedItemChoices.push(...child.resolvedItemChoices)
         resolvedHazardCells.push(...child.resolvedHazardCells)
-        targetIds = canonicalPlacementIds(input.context, [...targetIds, ...child.targetIds])
-        hitTargetIds = canonicalPlacementIds(input.context, [...hitTargetIds, ...child.hitTargetIds])
-        missedTargetIds = canonicalPlacementIds(input.context, [
-          ...missedTargetIds,
-          ...child.missedTargetIds,
-        ])
-        damagedTargetIds = canonicalPlacementIds(input.context, [
-          ...damagedTargetIds,
-          ...child.damagedTargetIds,
-        ])
-        faintedTargetIds = canonicalPlacementIds(input.context, [
-          ...faintedTargetIds,
-          ...child.faintedTargetIds,
-        ])
+        // Child recipient facts stay scoped to childExecutions. Merging them into
+        // the parent selector sets would make root hit-target operations address
+        // unrelated child-area recipients during core reduction.
         trace = appendNestedTrace(
           trace,
           child.trace,
@@ -4997,6 +5207,8 @@ const executeMoveSpecInternal = (
     }
     primeAa060MoveRandomness(abilityRandomInput)
     primeAa061MoveRandomness(abilityRandomInput)
+    primeAa065MoveRandomness(abilityRandomInput)
+    primeAa066MoveRandomness(abilityRandomInput)
   }
   return Object.freeze({
     kind: 'complete',
@@ -5037,5 +5249,6 @@ export const executeMoveSpec = (
     nestedBudget,
     nestedDepth: 0,
     root: true,
+    allowReviewedSpecRepeat: false,
   })
 }

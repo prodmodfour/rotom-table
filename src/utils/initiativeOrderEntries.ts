@@ -92,6 +92,8 @@ export interface InitiativeOrderEntryOptions {
   readonly itemEffectsSuppressed?: boolean
   /** Exact authoritative static multiplier; defaults to one for presentation-only callers. */
   readonly initiativeMultiplier?: 1 | 2
+  /** Exact authoritative post-multiplier Ability/effect offset. */
+  readonly initiativeOffset?: number
 }
 
 export const pokemonInitiativeOrderEntry = (
@@ -124,7 +126,7 @@ export const pokemonInitiativeOrderEntry = (
       initiative ?? baseInitiative,
       conditions,
       { abilities },
-    ) * (options.initiativeMultiplier ?? 1),
+    ) * (options.initiativeMultiplier ?? 1) + (options.initiativeOffset ?? 0),
   }
 }
 
@@ -157,7 +159,7 @@ export const trainerInitiativeOrderEntry = (
       initiative ?? (speed + initiativeItemBonus),
       conditions,
       { abilities },
-    ),
+    ) + (options.initiativeOffset ?? 0),
   }
 }
 

@@ -59,6 +59,10 @@ import { expireActiveOrderEffectsForInitiativeAdvanceWithResult } from '~/utils/
 import { deepCloneJson, sameJsonValue } from '~/utils/serialization'
 import { aa063ChlorophyllInitiativeMultiplier } from '../domain/abilityAutomation/mechanics/aa063InitiativeIntegration'
 import {
+  aa066DazzlingInitiativePenalty,
+  aa066DefeatistInitiativeBonus,
+} from '../domain/abilityAutomation/mechanics/aa066StaticIntegration'
+import {
   deduplicateAuthoritativeMoveSheetReads,
   type AuthoritativeMoveSheetRead,
 } from '../domain/moveAutomation/context'
@@ -666,6 +670,10 @@ const initiativeOrder = (
             map, placement, sheet: resolved.sheet as unknown as CharacterSheet,
           }),
         } : {}),
+        initiativeOffset: aa066DazzlingInitiativePenalty({ map, placementId: placement.id })
+          + (resolved ? aa066DefeatistInitiativeBonus({
+              map, placement, sheet: resolved.sheet as unknown as CharacterSheet,
+            }) : 0),
       }
     },
   ).map((entry) => {

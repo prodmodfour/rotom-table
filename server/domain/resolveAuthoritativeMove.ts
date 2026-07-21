@@ -119,6 +119,7 @@ import {
   type SideDamageResistanceResolution,
 } from './moveAutomation/sideDamageResistance'
 import { aa060MovePriorityOverride, hasAa060MoveMark, hasPendingAa060AnchoredAttack } from './abilityAutomation/mechanics/aa060MoveIntegration'
+import { aa066DazzlingBlocksPriorityMove } from './abilityAutomation/mechanics/aa066StaticIntegration'
 import { hasAa061AquaBulletMark, hasPendingAa061AquaBulletAttack } from './abilityAutomation/mechanics/aa061MoveIntegration'
 import { aa062BoneLordEmpowersMove, hasPendingAa062BoneLordMove } from './abilityAutomation/mechanics/aa062MoveIntegration'
 import { aa063RangedMove } from './abilityAutomation/mechanics/aa063MoveIntegration'
@@ -2112,6 +2113,16 @@ export const resolveAuthoritativeMoveExecutionFromContext = (
         range: legacySelection?.script.range ?? entry.script.range,
         ...(reviewedCosts && reviewedCosts.length > 0 ? { reviewedCosts } : {}),
       })
+  if (actionTiming === 'priority' && aa066DazzlingBlocksPriorityMove({
+    map: context.map,
+    placementId: actorPlacement.id,
+  })) {
+    fail(
+      'unauthorized-state',
+      'move-condition-blocked',
+      `${entry.canonicalMoveName} is blocked from using Priority by Dazzling.`,
+    )
+  }
   const dashBlock = retiredLegacyRuntime
     ? moveDashConditionUseBlock(entry.script.range, context.actor.token.conditions)
     : null

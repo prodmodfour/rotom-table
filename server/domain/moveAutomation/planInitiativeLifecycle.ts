@@ -79,6 +79,10 @@ import {
   advanceAa065CorrosiveToxinsResidualCounters,
   createAa065CorrosiveToxinsLifecycleHandler,
 } from '../abilityAutomation/mechanics/aa065ConditionLifecycle'
+import {
+  aa066DeepSleepLifecycleRecipientIds,
+  createAa066DeepSleepLifecycleHandler,
+} from '../abilityAutomation/mechanics/aa066LifecycleIntegration'
 
 export type InitiativeLifecyclePlanningErrorCode =
   | 'active-placement-missing'
@@ -553,6 +557,35 @@ const reconcileAnchoredEntities = (input: {
   return encounter
 }
 
+const effectiveAbilityPlacementIds = (input: {
+  readonly map: TabletopMap
+  readonly state: EncounterState
+  readonly snapshots: EncounterLifecycleSheetSnapshots
+  readonly canonicalId: string
+}): readonly string[] => {
+  const runtime = registeredAbilityAutomationRuntimeFor(input.canonicalId)
+  if (!runtime) return Object.freeze([])
+  return Object.freeze(input.map.placements.flatMap(placement => {
+    const sheet = placement.sheetKind === 'pokemon'
+      ? input.snapshots.pokemonSheets.get(placement.sheetSlug)
+      : input.snapshots.trainerSheets.get(placement.sheetSlug)
+    if (!sheet) return []
+    const effective = projectAuthoritativeEffectiveAbilities({
+      baseAbilities: resolveSheetAbilityInstances(sheet.abilities),
+      target: {
+        placementId: placement.id,
+        ...(placement.sideId ? { sideId: placement.sideId } : {}),
+        position: placement.position,
+      },
+      effects: input.state.effects,
+      transformationSnapshots: input.state.abilityTransformations,
+    }).some(ability => ability.effective
+      && ability.canonicalId === input.canonicalId
+      && (ability.definitionHash === null || ability.definitionHash === runtime.definitionHash))
+    return effective ? [placement.id] : []
+  }))
+}
+
 /** Plan effect expiry and currently reducible due token operations for one event batch. */
 export const planEncounterLifecycle = (
   input: PlanEncounterLifecycleInput,
@@ -564,6 +597,18 @@ export const planEncounterLifecycle = (
     encounterState: deepCloneJson(previousEncounterState),
   }
   const events = parseEncounterEvents(input.events)
+  let loadedSheets: EncounterLifecycleSheetSnapshots | null = null
+  const loadSheets = (): EncounterLifecycleSheetSnapshots => (
+    loadedSheets ??= input.loadSheets()
+  )
+  const deepSleepPlacementIds = events.some(event => event.kind === 'turn-end')
+    ? effectiveAbilityPlacementIds({
+        map: lifecycleMap,
+        state: previousEncounterState,
+        snapshots: loadSheets(),
+        canonicalId: 'Deep Sleep',
+      })
+    : Object.freeze([])
   const weatherHandler = createWeatherResidualLifecycleHandler(lifecycleMap)
   const terrainHandler = createGrassyTerrainLifecycleHandler(lifecycleMap)
   const corrosiveToxinsHandler = createAa065CorrosiveToxinsLifecycleHandler(lifecycleMap)
@@ -574,6 +619,9 @@ export const planEncounterLifecycle = (
     ...(input.handlers ?? []),
     createVortexLifecycleHandler(),
     createYawnLifecycleHandler(),
+    ...(deepSleepPlacementIds.length > 0
+      ? [createAa066DeepSleepLifecycleHandler(deepSleepPlacementIds)]
+      : []),
     ...(corrosiveToxinsHandler ? [corrosiveToxinsHandler] : []),
     ...(weatherHandler ? [weatherHandler] : []),
     ...(terrainHandler ? [terrainHandler] : []),
@@ -619,7 +667,7 @@ export const planEncounterLifecycle = (
   let operationResults: readonly MoveCoreTokenEffectOperationResult[] = []
 
   if (reduction.operations.length > 0 && operationRecipientIds.size > 0) {
-    const { pokemonSheets, trainerSheets } = input.loadSheets()
+    const { pokemonSheets, trainerSheets } = loadSheets()
     const actorId = lifecycleMap.placements.find(placement => (
       operationRecipientIds.has(placement.id)
       && (placement.sheetKind === 'pokemon'
@@ -652,10 +700,15 @@ export const planEncounterLifecycle = (
         operation,
         candidateRecipientIds: recipientsByOperationId.get(operation.id) ?? [],
       })
-      recipientsByOperationId.set(operation.id, terrainLifecycleRecipientIds({
+      const abilityRecipients = aa066DeepSleepLifecycleRecipientIds({
         context,
         operation,
         candidateRecipientIds: conditionRecipients,
+      })
+      recipientsByOperationId.set(operation.id, terrainLifecycleRecipientIds({
+        context,
+        operation,
+        candidateRecipientIds: abilityRecipients,
       }))
     }
     const emissions: MoveResolvedCoreTokenEffectOperation[] = reduction.operations.map(
@@ -746,7 +799,7 @@ export const planEncounterLifecycle = (
     state: currentEncounterState,
     map: nextMap,
     events: plannedEvents,
-    loadSheets: input.loadSheets,
+    loadSheets,
   })
   nextMap.encounterState = deepCloneJson(currentEncounterState)
   const rollLedger = random.complete()

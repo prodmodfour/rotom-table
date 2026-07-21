@@ -2,7 +2,7 @@
 
 `PLAN_STATUS: IN_PROGRESS`
 
-`CURRENT_TICKET: AA-066`
+`CURRENT_TICKET: AA-067`
 
 ## Goal
 
@@ -96,14 +96,14 @@ Ability automation should reuse MoveSpec v2 selectors, expressions, operations, 
 
 ## Progress snapshot
 
-- Plan tickets: **65 DONE / 110 total**
+- Plan tickets: **66 DONE / 110 total**
 - Canonical inventory: **483**
-- Semantically complete: **72**
+- Semantically complete: **84**
 - Assisted: **0**
-- Blocked/unimplemented: **411**
+- Blocked/unimplemented: **399**
 - Interaction status: **483 unassessed**
 - Legacy baseline: **45 abilities with 55 partial fragments; 438 with no reviewed legacy fragment**
-- Production runtime: **72 exact manifest-selected AbilitySpec v1 runtimes**; retained legacy paths remain explicit compatibility only
+- Production runtime: **84 exact manifest-selected AbilitySpec v1 runtimes**; retained legacy paths remain explicit compatibility only
 
 ## Tickets
 
@@ -251,9 +251,9 @@ Each cohort must review every named ability against canonical text, implement al
   - Cluster Mind; Color Change; Color Theory; Comatose; Combo Striker; Competitive; Compound Eyes; Confidence; Conqueror; Contrary; Copy Master; Corrosion
 - [x] **AA-065 — Corrosive Toxins through Damp** — `DONE`
   - Corrosive Toxins; Cotton Down; Courage; Covert; Cruelty; Crush Trap; Cud Chew; Curious Medicine; Cursed Body; Cute Charm; Cute Tears; Damp
-- [ ] **AA-066 — Dancer through Defiant** — `TODO`
+- [x] **AA-066 — Dancer through Defiant** — `DONE`
   - Dancer; Danger Syrup; Dark Art; Dark Aura; Dauntless Shield; Daze; Dazzling; Deadly Poison; Decoy; Deep Sleep; Defeatist; Defiant
-- [ ] **AA-067 — Defy Death through Download** — `TODO`
+- [ ] **AA-067 — Defy Death through Download** — `IN_PROGRESS`
   - Defy Death; Delayed Reaction; Delivery Bird; Desert Weather; Designer; Diamond Defense; Dig Away; Dire Spore; Discipline; Disguise; Dodge; Download
 - [ ] **AA-068 — Dragon’s Maw through Electric Surge** — `TODO`
   - Dragon’s Maw; Dream Smoke; Dreamspinner; Drizzle; Drought; Drown Out; Dry Skin; Dust Cloud; Early Bird; Effect Spore; Eggscellence; Electric Surge

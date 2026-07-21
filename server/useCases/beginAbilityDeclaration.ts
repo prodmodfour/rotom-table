@@ -125,10 +125,24 @@ const declarationsFor = (context: ReturnType<typeof buildAuthoritativeAbilityCon
                 : []
             )))
           : null
+        const deadlyPoisonTargets = context.runtime.canonicalId === 'Deadly Poison' && modeId === 'upgrade'
+          ? new Set((context.map.encounterState?.abilityOwnedState?.entries ?? []).flatMap(entry => (
+              entry.ownerPlacementId === context.actor.placement.id
+              && context.actor.effectiveAbilities.some(ability => ability.effective
+                && ability.canonicalId === 'Deadly Poison'
+                && ability.instanceId === entry.sourceAbilityInstanceId)
+              && entry.canonicalId === 'Deadly Poison'
+              && entry.payload.kind === 'mark'
+              && entry.payload.markId.startsWith('aa066.deadly-poison.poisoned:')
+                ? entry.targetPlacementIds
+                : []
+            )))
+          : null
         options = resolved.legalTargetPlacementIds
           .filter(id => selectedBySelector === null || selectedBySelector.has(id))
           .filter(id => ballFetchTargets === null || ballFetchTargets.has(id))
           .filter(id => crushTrapTargets === null || crushTrapTargets.has(id))
+          .filter(id => deadlyPoisonTargets === null || deadlyPoisonTargets.has(id))
           .map((placementId, index) => option(declaration.id, index, declaration.kind, { kind: 'token', placementId }))
       }
       else if (declaration.kind === 'side') options = Object.values(context.sides)

@@ -55,7 +55,12 @@ export interface NestedMoveExecutionBudgetSnapshot {
 
 export interface NestedMoveExecutionBudget {
   /** Register one spec before its handler, phases, targets, or random work run. */
-  enterSpec(canonicalId: string, depth: number, allowBannedRoot?: boolean): void
+  enterSpec(
+    canonicalId: string,
+    depth: number,
+    allowBannedRoot?: boolean,
+    allowReviewedRepeat?: boolean,
+  ): void
   /** Reserve the complete reviewed program, including branch-controlled operations. */
   reserveOperations(count: number, source: string): void
   /** Reserve authoritative target/candidate evaluations performed by this resolution. */
@@ -168,7 +173,12 @@ export const createNestedMoveExecutionBudget = (
   let randomRetries = 0
 
   return Object.freeze({
-    enterSpec: (rawCanonicalId: string, depth: number, allowBannedRoot = false): void => {
+    enterSpec: (
+      rawCanonicalId: string,
+      depth: number,
+      allowBannedRoot = false,
+      allowReviewedRepeat = false,
+    ): void => {
       const id = canonicalId(rawCanonicalId, 'Nested spec')
       if (!Number.isSafeInteger(depth) || depth < 0) {
         fail('invalid-budget-request', 'Nested spec depth must be a non-negative safe integer.')
@@ -183,6 +193,7 @@ export const createNestedMoveExecutionBudget = (
         fail('spec-banned', `Nested spec ${id} is forbidden by the reviewed execution policy.`)
       }
       if (visitedCanonicalIds.has(id)) {
+        if (allowReviewedRepeat) return
         fail('spec-already-visited', `Nested spec ${id} was already visited by this resolution.`)
       }
       if (visitedCanonicalIds.size >= NESTED_MOVE_EXECUTION_LIMITS.visitedSpecs) {

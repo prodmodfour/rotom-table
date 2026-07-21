@@ -58,6 +58,16 @@ import {
 import { resolveMoveCoreTokenRecipient } from './reducers/coreTokenRecipients'
 import { reduceDamageEffectForRecipient } from './reducers/hp'
 import { createStandardMoveCoreTokenEffectImmunityQueries } from './reducers/immunities'
+import { primeAa060MoveRandomness } from '../abilityAutomation/mechanics/aa060MoveIntegration'
+import { primeAa061MoveRandomness } from '../abilityAutomation/mechanics/aa061MoveIntegration'
+import {
+  aa065CovertEvasionBonus,
+  primeAa065MoveRandomness,
+} from '../abilityAutomation/mechanics/aa065StaticIntegration'
+import {
+  aa066DecoyEvasionBonus,
+  primeAa066MoveRandomness,
+} from '../abilityAutomation/mechanics/aa066StaticIntegration'
 import type {
   MoveCoreTokenEffectRecipient,
   MoveCoreTokenEffectRecipientResult,
@@ -478,8 +488,14 @@ const rollAccuracy = (options: {
     {
       attacker: options.actor,
       fieldEffects: options.context.queries.rooms.projectFieldEffects(),
+      dauntlessShieldActive: options.context.queries.abilities.has(
+        options.target.id,
+        'Dauntless Shield',
+      ),
     },
   ).value
+    + aa065CovertEvasionBonus({ context: options.context, placementId: options.target.id })
+    + aa066DecoyEvasionBonus({ map: options.context.map, placementId: options.target.id })
   const rolled = options.context.random.roll({
     rollId,
     parentEffectId: options.operation.id,
@@ -953,6 +969,16 @@ export const executeMoveMultiHitOperation = (options: {
             conditions,
             stages,
           })
+          const abilityRandomInput = {
+            context,
+            script: options.script,
+            damageOperationIds: [damageOperation.id],
+            damageRecipientId: recipientId,
+          }
+          primeAa060MoveRandomness(abilityRandomInput)
+          primeAa061MoveRandomness(abilityRandomInput)
+          primeAa065MoveRandomness(abilityRandomInput)
+          primeAa066MoveRandomness(abilityRandomInput)
           const calculation = resolveMoveSpecDamageCalculation({
             context,
             operation: damageOperation,

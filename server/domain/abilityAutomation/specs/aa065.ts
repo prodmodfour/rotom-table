@@ -154,7 +154,8 @@ export const CUTE_TEARS_ABILITY_SPEC = triggeredSpec({
 
 export const DAMP_ABILITY_SPEC = staticSpec('Damp', 'aa065.damp', {
   radius: 10, preventedMoveIds: ['Self-Destruct', 'Explosion'], preventedAbilityId: 'Aftermath',
-}, ['area', 'prevention', 'static'])
+  bonusMoveType: 'water', bonusDice: { count: 1, sides: 10 },
+}, ['area', 'damage', 'prevention', 'random', 'static'])
 
 export const AA065_ABILITY_SPECS = Object.freeze([
   CORROSIVE_TOXINS_ABILITY_SPEC, COTTON_DOWN_ABILITY_SPEC, COURAGE_ABILITY_SPEC,

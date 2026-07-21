@@ -5143,7 +5143,7 @@
       "runtime": {
         "kind": "abilityspec-v1",
         "version": 1,
-        "definitionHash": "4ad62a641ce593f88602aa4ece384145b93565060d8d76e1d2b77bfc74bc595d",
+        "definitionHash": "442486ff9bb4d6925ba3cc28dcb9041fc918809d6ff63c2ef93db6d6be75a28d",
         "sourceModule": "server/domain/abilityAutomation/specs/aa065.ts"
       },
       "rulesProvenance": {
@@ -5154,6 +5154,7 @@
       "capabilityTags": [
         "abilities.effective-projection",
         "context.authoritative",
+        "damage.modifiers",
         "effects.typed",
         "expressions.bounded",
         "geometry.authoritative",
@@ -5161,6 +5162,7 @@
         "mode.static",
         "passives.aggregation",
         "planning.atomic",
+        "randomness.ledger",
         "runtime.abilityspec-v1",
         "targeting.authoritative",
         "trace.structured"
@@ -5174,21 +5176,40 @@
       ],
       "conformanceEvidence": {
         "requirementTags": [
+          "branch.random",
           "branch.threshold",
-          "mode.static"
+          "mechanic.damage",
+          "mode.static",
+          "recovery.retry"
         ],
         "scenarios": [
           {
             "scenarioId": "aa065.damp.reviewed",
             "evidenceClasses": [
+              "hit",
               "passive-applied",
               "passive-suppressed",
+              "random-branch",
+              "retry",
               "threshold-fail",
               "threshold-pass"
             ]
           }
         ],
-        "notApplicable": []
+        "notApplicable": [
+          {
+            "evidenceClass": "miss",
+            "reason": "Damp adds its Water bonus only to a resolved damage roll; a miss has no damage roll to modify."
+          },
+          {
+            "evidenceClass": "crit",
+            "reason": "Damp adds a separate recorded die without changing critical-hit selection or ordering."
+          },
+          {
+            "evidenceClass": "immunity",
+            "reason": "Damp does not override immunity; its Water bonus cannot create loss against an immune target."
+          }
+        ]
       },
       "reviewedAt": "2026-07-21",
       "unsupportedInteractionIds": [],
@@ -5197,420 +5218,959 @@
     {
       "canonicalId": "Dancer",
       "displayName": "Dancer",
-      "baseStatus": "blocked",
+      "baseStatus": "complete",
       "interactionStatus": "unassessed",
       "runtime": {
-        "kind": "unimplemented",
-        "version": null,
-        "definitionHash": null,
-        "sourceModule": null
+        "kind": "abilityspec-v1",
+        "version": 1,
+        "definitionHash": "6d9336c7f9db8b263768858ee16027831b038e38129c34cc55b5b87dcda1cc49",
+        "sourceModule": "server/domain/abilityAutomation/specs/aa066.ts"
       },
       "rulesProvenance": {
         "rulesetId": "rotom-table-reference-abilities-v1",
         "canonicalizationVersion": 1,
         "sourceDataSha256": "767c3e2ae45471c26ad97a07552c4b0417ed0e207827af8a59da3a73e81f4362"
       },
-      "capabilityTags": [],
+      "capabilityTags": [
+        "abilities.effective-projection",
+        "actions.authoritative",
+        "choices.durable",
+        "context.authoritative",
+        "effects.typed",
+        "events.move",
+        "events.nested",
+        "events.routing",
+        "events.typed",
+        "expressions.bounded",
+        "frequency.scene",
+        "geometry.authoritative",
+        "intent.typed",
+        "lifecycle.effects",
+        "mode.triggered",
+        "moves.nested",
+        "planning.atomic",
+        "randomness.ledger",
+        "reactions.durable",
+        "recovery.durable",
+        "runtime.abilityspec-v1",
+        "targeting.authoritative",
+        "trace.structured"
+      ],
       "suggestedCapabilityTags": [
         "mode.triggered"
       ],
-      "blockerCodes": [
-        "runtime.unimplemented"
-      ],
+      "blockerCodes": [],
       "limitations": [],
       "manualSteps": [],
-      "scenarioIds": [],
+      "scenarioIds": [
+        "aa066.dancer.reviewed"
+      ],
       "conformanceEvidence": {
-        "requirementTags": [],
-        "scenarios": [],
+        "requirementTags": [
+          "branch.choice",
+          "branch.threshold",
+          "event.nested",
+          "mechanic.interrupt",
+          "mechanic.usage",
+          "mode.triggered",
+          "recovery.reconnect",
+          "recovery.retry",
+          "target.self"
+        ],
+        "scenarios": [
+          {
+            "scenarioId": "aa066.dancer.reviewed",
+            "evidenceClasses": [
+              "choice",
+              "interrupt-priority",
+              "nested-cycle-bounded",
+              "pass",
+              "reconnect",
+              "retry",
+              "self",
+              "threshold-fail",
+              "threshold-pass",
+              "trigger-eligible",
+              "trigger-ineligible",
+              "usage-exhausted",
+              "usage-reset",
+              "usage-spent"
+            ]
+          }
+        ],
         "notApplicable": []
       },
-      "reviewedAt": null,
+      "reviewedAt": "2026-07-21",
       "unsupportedInteractionIds": [],
       "rolloutCohortId": "aa-066"
     },
     {
       "canonicalId": "Danger Syrup",
       "displayName": "Danger Syrup",
-      "baseStatus": "blocked",
+      "baseStatus": "complete",
       "interactionStatus": "unassessed",
       "runtime": {
-        "kind": "unimplemented",
-        "version": null,
-        "definitionHash": null,
-        "sourceModule": null
+        "kind": "abilityspec-v1",
+        "version": 1,
+        "definitionHash": "c05e89615fe20564b51b58a90e5048b3eaeabe48379df975356ad803a8601463",
+        "sourceModule": "server/domain/abilityAutomation/specs/aa066.ts"
       },
       "rulesProvenance": {
         "rulesetId": "rotom-table-reference-abilities-v1",
         "canonicalizationVersion": 1,
         "sourceDataSha256": "767c3e2ae45471c26ad97a07552c4b0417ed0e207827af8a59da3a73e81f4362"
       },
-      "capabilityTags": [],
+      "capabilityTags": [
+        "abilities.effective-projection",
+        "actions.authoritative",
+        "choices.durable",
+        "conditions.typed",
+        "context.authoritative",
+        "effects.typed",
+        "events.move",
+        "events.nested",
+        "events.routing",
+        "events.typed",
+        "expressions.bounded",
+        "frequency.scene",
+        "intent.typed",
+        "lifecycle.effects",
+        "mode.triggered",
+        "moves.nested",
+        "planning.atomic",
+        "randomness.ledger",
+        "reactions.durable",
+        "recovery.durable",
+        "relationships.providers",
+        "runtime.abilityspec-v1",
+        "targeting.authoritative",
+        "trace.structured"
+      ],
       "suggestedCapabilityTags": [
         "mode.triggered"
       ],
-      "blockerCodes": [
-        "runtime.unimplemented"
-      ],
+      "blockerCodes": [],
       "limitations": [],
       "manualSteps": [],
-      "scenarioIds": [],
+      "scenarioIds": [
+        "aa066.danger-syrup.reviewed"
+      ],
       "conformanceEvidence": {
-        "requirementTags": [],
-        "scenarios": [],
+        "requirementTags": [
+          "branch.choice",
+          "event.nested",
+          "mechanic.condition",
+          "mechanic.interrupt",
+          "mechanic.lifecycle",
+          "mechanic.usage",
+          "mode.triggered",
+          "recovery.reconnect",
+          "recovery.retry",
+          "target.enemy"
+        ],
+        "scenarios": [
+          {
+            "scenarioId": "aa066.danger-syrup.reviewed",
+            "evidenceClasses": [
+              "choice",
+              "condition-applied",
+              "condition-prevented",
+              "enemy",
+              "interrupt-priority",
+              "lifecycle-cleanup",
+              "lifecycle-trigger",
+              "nested-cycle-bounded",
+              "pass",
+              "reconnect",
+              "retry",
+              "trigger-eligible",
+              "trigger-ineligible",
+              "usage-exhausted",
+              "usage-reset",
+              "usage-spent"
+            ]
+          }
+        ],
         "notApplicable": []
       },
-      "reviewedAt": null,
+      "reviewedAt": "2026-07-21",
       "unsupportedInteractionIds": [],
       "rolloutCohortId": "aa-066"
     },
     {
       "canonicalId": "Dark Art",
       "displayName": "Dark Art",
-      "baseStatus": "blocked",
+      "baseStatus": "complete",
       "interactionStatus": "unassessed",
       "runtime": {
-        "kind": "unimplemented",
-        "version": null,
-        "definitionHash": null,
-        "sourceModule": null
+        "kind": "abilityspec-v1",
+        "version": 1,
+        "definitionHash": "2081bc578780f623ce39beaac9a4913dc39062f97a560bf8a7fa7d66ddbb7b75",
+        "sourceModule": "server/domain/abilityAutomation/specs/aa066.ts"
       },
       "rulesProvenance": {
         "rulesetId": "rotom-table-reference-abilities-v1",
         "canonicalizationVersion": 1,
         "sourceDataSha256": "767c3e2ae45471c26ad97a07552c4b0417ed0e207827af8a59da3a73e81f4362"
       },
-      "capabilityTags": [],
+      "capabilityTags": [
+        "abilities.effective-projection",
+        "context.authoritative",
+        "damage.modifiers",
+        "effects.typed",
+        "expressions.bounded",
+        "hp.typed",
+        "mode.static",
+        "passives.aggregation",
+        "planning.atomic",
+        "runtime.abilityspec-v1",
+        "trace.structured"
+      ],
       "suggestedCapabilityTags": [
         "mode.static"
       ],
-      "blockerCodes": [
-        "runtime.unimplemented"
-      ],
+      "blockerCodes": [],
       "limitations": [],
       "manualSteps": [],
-      "scenarioIds": [],
+      "scenarioIds": [
+        "aa066.dark-art.reviewed"
+      ],
       "conformanceEvidence": {
-        "requirementTags": [],
-        "scenarios": [],
-        "notApplicable": []
+        "requirementTags": [
+          "branch.threshold",
+          "mechanic.damage",
+          "mode.static"
+        ],
+        "scenarios": [
+          {
+            "scenarioId": "aa066.dark-art.reviewed",
+            "evidenceClasses": [
+              "hit",
+              "passive-applied",
+              "passive-suppressed",
+              "threshold-fail",
+              "threshold-pass"
+            ]
+          }
+        ],
+        "notApplicable": [
+          {
+            "evidenceClass": "miss",
+            "reason": "Dark Art changes only a resolved Dark-type damage roll; a miss has no damage roll to modify."
+          },
+          {
+            "evidenceClass": "crit",
+            "reason": "Dark Art adds a flat roll modifier and does not alter critical-hit selection or ordering."
+          },
+          {
+            "evidenceClass": "immunity",
+            "reason": "Dark Art does not override immunity and contributes no loss when the target is immune."
+          }
+        ]
       },
-      "reviewedAt": null,
+      "reviewedAt": "2026-07-21",
       "unsupportedInteractionIds": [],
       "rolloutCohortId": "aa-066"
     },
     {
       "canonicalId": "Dark Aura",
       "displayName": "Dark Aura",
-      "baseStatus": "blocked",
+      "baseStatus": "complete",
       "interactionStatus": "unassessed",
       "runtime": {
-        "kind": "unimplemented",
-        "version": null,
-        "definitionHash": null,
-        "sourceModule": null
+        "kind": "abilityspec-v1",
+        "version": 1,
+        "definitionHash": "f900cd51b547d51b3fd7b5386ed74735c0754182b0e1139f6fc3549b7d9ad8bc",
+        "sourceModule": "server/domain/abilityAutomation/specs/aa066.ts"
       },
       "rulesProvenance": {
         "rulesetId": "rotom-table-reference-abilities-v1",
         "canonicalizationVersion": 1,
         "sourceDataSha256": "767c3e2ae45471c26ad97a07552c4b0417ed0e207827af8a59da3a73e81f4362"
       },
-      "capabilityTags": [],
+      "capabilityTags": [
+        "abilities.effective-projection",
+        "context.authoritative",
+        "damage.modifiers",
+        "effects.typed",
+        "expressions.bounded",
+        "mode.static",
+        "passives.aggregation",
+        "planning.atomic",
+        "relationships.providers",
+        "runtime.abilityspec-v1",
+        "targeting.authoritative",
+        "trace.structured"
+      ],
       "suggestedCapabilityTags": [
         "mode.static"
       ],
-      "blockerCodes": [
-        "runtime.unimplemented"
-      ],
+      "blockerCodes": [],
       "limitations": [],
       "manualSteps": [],
-      "scenarioIds": [],
+      "scenarioIds": [
+        "aa066.dark-aura.reviewed"
+      ],
       "conformanceEvidence": {
-        "requirementTags": [],
-        "scenarios": [],
-        "notApplicable": []
+        "requirementTags": [
+          "branch.alternate",
+          "mechanic.damage",
+          "mode.static",
+          "target.ally"
+        ],
+        "scenarios": [
+          {
+            "scenarioId": "aa066.dark-aura.reviewed",
+            "evidenceClasses": [
+              "ally",
+              "alternate-branch",
+              "hit",
+              "passive-applied",
+              "passive-suppressed"
+            ]
+          }
+        ],
+        "notApplicable": [
+          {
+            "evidenceClass": "miss",
+            "reason": "Dark Aura changes only Damage Base for a resolved damage roll; a miss has no damage roll."
+          },
+          {
+            "evidenceClass": "crit",
+            "reason": "Dark Aura changes Damage Base before rolling and does not alter critical-hit selection."
+          },
+          {
+            "evidenceClass": "immunity",
+            "reason": "Dark Aura does not override type immunity; an immune recipient still takes no damage."
+          }
+        ]
       },
-      "reviewedAt": null,
+      "reviewedAt": "2026-07-21",
       "unsupportedInteractionIds": [],
       "rolloutCohortId": "aa-066"
     },
     {
       "canonicalId": "Dauntless Shield",
       "displayName": "Dauntless Shield",
-      "baseStatus": "blocked",
+      "baseStatus": "complete",
       "interactionStatus": "unassessed",
       "runtime": {
-        "kind": "unimplemented",
-        "version": null,
-        "definitionHash": null,
-        "sourceModule": null
+        "kind": "abilityspec-v1",
+        "version": 1,
+        "definitionHash": "d49c55915353a340254c7fe77f8ac885c12b70d3df286eaf2341173cbc31a478",
+        "sourceModule": "server/domain/abilityAutomation/specs/aa066.ts"
       },
       "rulesProvenance": {
         "rulesetId": "rotom-table-reference-abilities-v1",
         "canonicalizationVersion": 1,
         "sourceDataSha256": "767c3e2ae45471c26ad97a07552c4b0417ed0e207827af8a59da3a73e81f4362"
       },
-      "capabilityTags": [],
+      "capabilityTags": [
+        "abilities.effective-projection",
+        "context.authoritative",
+        "effects.typed",
+        "expressions.bounded",
+        "mode.static",
+        "passives.aggregation",
+        "planning.atomic",
+        "runtime.abilityspec-v1",
+        "stages.typed",
+        "trace.structured"
+      ],
       "suggestedCapabilityTags": [
         "mode.static"
       ],
-      "blockerCodes": [
-        "runtime.unimplemented"
-      ],
+      "blockerCodes": [],
       "limitations": [],
       "manualSteps": [],
-      "scenarioIds": [],
+      "scenarioIds": [
+        "aa066.dauntless-shield.reviewed"
+      ],
       "conformanceEvidence": {
-        "requirementTags": [],
-        "scenarios": [],
+        "requirementTags": [
+          "mechanic.stage",
+          "mode.static",
+          "state.cap"
+        ],
+        "scenarios": [
+          {
+            "scenarioId": "aa066.dauntless-shield.reviewed",
+            "evidenceClasses": [
+              "cap-applied",
+              "cap-noop",
+              "passive-applied",
+              "passive-suppressed",
+              "stage-applied",
+              "stage-prevented"
+            ]
+          }
+        ],
         "notApplicable": []
       },
-      "reviewedAt": null,
+      "reviewedAt": "2026-07-21",
       "unsupportedInteractionIds": [],
       "rolloutCohortId": "aa-066"
     },
     {
       "canonicalId": "Daze",
       "displayName": "Daze",
-      "baseStatus": "blocked",
+      "baseStatus": "complete",
       "interactionStatus": "unassessed",
       "runtime": {
-        "kind": "unimplemented",
-        "version": null,
-        "definitionHash": null,
-        "sourceModule": null
+        "kind": "abilityspec-v1",
+        "version": 1,
+        "definitionHash": "94f7eb71c4d4c1b96ccceb4aa0f6afe282e29cd8f6be940d2bff677bde3c1051",
+        "sourceModule": "server/domain/abilityAutomation/specs/aa066.ts"
       },
       "rulesProvenance": {
         "rulesetId": "rotom-table-reference-abilities-v1",
         "canonicalizationVersion": 1,
         "sourceDataSha256": "767c3e2ae45471c26ad97a07552c4b0417ed0e207827af8a59da3a73e81f4362"
       },
-      "capabilityTags": [],
+      "capabilityTags": [
+        "abilities.effective-projection",
+        "actions.authoritative",
+        "choices.durable",
+        "conditions.typed",
+        "context.authoritative",
+        "effects.typed",
+        "events.typed",
+        "expressions.bounded",
+        "frequency.scene",
+        "geometry.authoritative",
+        "intent.typed",
+        "lifecycle.effects",
+        "mode.activated",
+        "passives.aggregation",
+        "planning.atomic",
+        "randomness.checks",
+        "randomness.ledger",
+        "recovery.durable",
+        "runtime.abilityspec-v1",
+        "targeting.authoritative",
+        "trace.structured"
+      ],
       "suggestedCapabilityTags": [
         "mode.activated"
       ],
-      "blockerCodes": [
-        "runtime.unimplemented"
-      ],
+      "blockerCodes": [],
       "limitations": [],
       "manualSteps": [],
-      "scenarioIds": [],
+      "scenarioIds": [
+        "aa066.daze.reviewed"
+      ],
       "conformanceEvidence": {
-        "requirementTags": [],
-        "scenarios": [],
+        "requirementTags": [
+          "branch.random",
+          "branch.threshold",
+          "mechanic.condition",
+          "mechanic.usage",
+          "mode.activated",
+          "recovery.retry",
+          "resource.multi"
+        ],
+        "scenarios": [
+          {
+            "scenarioId": "aa066.daze.reviewed",
+            "evidenceClasses": [
+              "active-accepted",
+              "active-rejected",
+              "condition-applied",
+              "condition-prevented",
+              "multi-resource-conflict",
+              "random-branch",
+              "retry",
+              "threshold-fail",
+              "threshold-pass",
+              "usage-exhausted",
+              "usage-reset",
+              "usage-spent"
+            ]
+          }
+        ],
         "notApplicable": []
       },
-      "reviewedAt": null,
+      "reviewedAt": "2026-07-21",
       "unsupportedInteractionIds": [],
       "rolloutCohortId": "aa-066"
     },
     {
       "canonicalId": "Dazzling",
       "displayName": "Dazzling",
-      "baseStatus": "blocked",
+      "baseStatus": "complete",
       "interactionStatus": "unassessed",
       "runtime": {
-        "kind": "unimplemented",
-        "version": null,
-        "definitionHash": null,
-        "sourceModule": null
+        "kind": "abilityspec-v1",
+        "version": 1,
+        "definitionHash": "79be7a78872278e76d41ba191ed9aa8b1446f01cc8c4659c679fd5e1a004f468",
+        "sourceModule": "server/domain/abilityAutomation/specs/aa066.ts"
       },
       "rulesProvenance": {
         "rulesetId": "rotom-table-reference-abilities-v1",
         "canonicalizationVersion": 1,
         "sourceDataSha256": "767c3e2ae45471c26ad97a07552c4b0417ed0e207827af8a59da3a73e81f4362"
       },
-      "capabilityTags": [],
+      "capabilityTags": [
+        "abilities.effective-projection",
+        "actions.authoritative",
+        "context.authoritative",
+        "effects.typed",
+        "events.typed",
+        "expressions.bounded",
+        "frequency.scene",
+        "geometry.authoritative",
+        "intent.typed",
+        "lifecycle.effects",
+        "mode.activated",
+        "mode.static",
+        "passives.aggregation",
+        "planning.atomic",
+        "relationships.providers",
+        "runtime.abilityspec-v1",
+        "stages.typed",
+        "targeting.authoritative",
+        "trace.structured"
+      ],
       "suggestedCapabilityTags": [
         "mode.activated"
       ],
-      "blockerCodes": [
-        "runtime.unimplemented"
-      ],
+      "blockerCodes": [],
       "limitations": [],
       "manualSteps": [],
-      "scenarioIds": [],
+      "scenarioIds": [
+        "aa066.dazzling.reviewed"
+      ],
       "conformanceEvidence": {
-        "requirementTags": [],
-        "scenarios": [],
-        "notApplicable": []
+        "requirementTags": [
+          "mechanic.interrupt",
+          "mechanic.lifecycle",
+          "mechanic.stage",
+          "mechanic.usage",
+          "mode.activated",
+          "mode.static",
+          "recovery.retry",
+          "target.enemy"
+        ],
+        "scenarios": [
+          {
+            "scenarioId": "aa066.dazzling.reviewed",
+            "evidenceClasses": [
+              "active-accepted",
+              "active-rejected",
+              "enemy",
+              "interrupt-priority",
+              "lifecycle-cleanup",
+              "lifecycle-trigger",
+              "passive-applied",
+              "passive-suppressed",
+              "retry",
+              "stage-applied",
+              "stage-prevented",
+              "usage-exhausted",
+              "usage-reset",
+              "usage-spent"
+            ]
+          }
+        ],
+        "notApplicable": [
+          {
+            "evidenceClass": "pass",
+            "reason": "Dazzling does not open an optional response window; its Interrupt/Priority rule is an automatic restriction once applicable."
+          }
+        ]
       },
-      "reviewedAt": null,
+      "reviewedAt": "2026-07-21",
       "unsupportedInteractionIds": [],
       "rolloutCohortId": "aa-066"
     },
     {
       "canonicalId": "Deadly Poison",
       "displayName": "Deadly Poison",
-      "baseStatus": "blocked",
+      "baseStatus": "complete",
       "interactionStatus": "unassessed",
       "runtime": {
-        "kind": "unimplemented",
-        "version": null,
-        "definitionHash": null,
-        "sourceModule": null
+        "kind": "abilityspec-v1",
+        "version": 1,
+        "definitionHash": "347ad43fbf3b68510eb2ef7f9ae435cd2be0eb6db58671a2aabbce62e2b22198",
+        "sourceModule": "server/domain/abilityAutomation/specs/aa066.ts"
       },
       "rulesProvenance": {
         "rulesetId": "rotom-table-reference-abilities-v1",
         "canonicalizationVersion": 1,
         "sourceDataSha256": "767c3e2ae45471c26ad97a07552c4b0417ed0e207827af8a59da3a73e81f4362"
       },
-      "capabilityTags": [],
+      "capabilityTags": [
+        "abilities.effective-projection",
+        "actions.authoritative",
+        "choices.durable",
+        "conditions.typed",
+        "context.authoritative",
+        "effects.typed",
+        "events.routing",
+        "events.stages-conditions",
+        "events.typed",
+        "expressions.bounded",
+        "frequency.daily",
+        "intent.typed",
+        "lifecycle.effects",
+        "mode.activated",
+        "mode.triggered",
+        "planning.atomic",
+        "recovery.durable",
+        "runtime.abilityspec-v1",
+        "state.marks-counters",
+        "targeting.authoritative",
+        "trace.structured"
+      ],
       "suggestedCapabilityTags": [
         "mode.triggered"
       ],
-      "blockerCodes": [
-        "runtime.unimplemented"
-      ],
+      "blockerCodes": [],
       "limitations": [],
       "manualSteps": [],
-      "scenarioIds": [],
+      "scenarioIds": [
+        "aa066.deadly-poison.reviewed"
+      ],
       "conformanceEvidence": {
-        "requirementTags": [],
-        "scenarios": [],
+        "requirementTags": [
+          "mechanic.condition",
+          "mechanic.lifecycle",
+          "mechanic.usage",
+          "mode.activated",
+          "mode.triggered",
+          "recovery.retry",
+          "resource.multi"
+        ],
+        "scenarios": [
+          {
+            "scenarioId": "aa066.deadly-poison.reviewed",
+            "evidenceClasses": [
+              "active-accepted",
+              "active-rejected",
+              "condition-applied",
+              "condition-prevented",
+              "lifecycle-cleanup",
+              "lifecycle-trigger",
+              "multi-resource-conflict",
+              "retry",
+              "trigger-eligible",
+              "trigger-ineligible",
+              "usage-exhausted",
+              "usage-reset",
+              "usage-spent"
+            ]
+          }
+        ],
         "notApplicable": []
       },
-      "reviewedAt": null,
+      "reviewedAt": "2026-07-21",
       "unsupportedInteractionIds": [],
       "rolloutCohortId": "aa-066"
     },
     {
       "canonicalId": "Decoy",
       "displayName": "Decoy",
-      "baseStatus": "blocked",
+      "baseStatus": "complete",
       "interactionStatus": "unassessed",
       "runtime": {
-        "kind": "unimplemented",
-        "version": null,
-        "definitionHash": null,
-        "sourceModule": null
+        "kind": "abilityspec-v1",
+        "version": 1,
+        "definitionHash": "51e9a42856d48ed0cb0ccc7430d19c41cea7c56134638c3f345a8f287e147137",
+        "sourceModule": "server/domain/abilityAutomation/specs/aa066.ts"
       },
       "rulesProvenance": {
         "rulesetId": "rotom-table-reference-abilities-v1",
         "canonicalizationVersion": 1,
         "sourceDataSha256": "767c3e2ae45471c26ad97a07552c4b0417ed0e207827af8a59da3a73e81f4362"
       },
-      "capabilityTags": [],
+      "capabilityTags": [
+        "abilities.effective-projection",
+        "actions.authoritative",
+        "context.authoritative",
+        "effects.typed",
+        "events.typed",
+        "expressions.bounded",
+        "frequency.scene",
+        "intent.typed",
+        "lifecycle.effects",
+        "mode.activated",
+        "planning.atomic",
+        "runtime.abilityspec-v1",
+        "stages.typed",
+        "targeting.authoritative",
+        "trace.structured"
+      ],
       "suggestedCapabilityTags": [
         "mode.activated"
       ],
-      "blockerCodes": [
-        "runtime.unimplemented"
-      ],
+      "blockerCodes": [],
       "limitations": [],
       "manualSteps": [],
-      "scenarioIds": [],
+      "scenarioIds": [
+        "aa066.decoy.reviewed"
+      ],
       "conformanceEvidence": {
-        "requirementTags": [],
-        "scenarios": [],
-        "notApplicable": []
+        "requirementTags": [
+          "mechanic.interrupt",
+          "mechanic.lifecycle",
+          "mechanic.stage",
+          "mechanic.usage",
+          "mode.activated",
+          "recovery.retry",
+          "target.self"
+        ],
+        "scenarios": [
+          {
+            "scenarioId": "aa066.decoy.reviewed",
+            "evidenceClasses": [
+              "active-accepted",
+              "active-rejected",
+              "interrupt-priority",
+              "lifecycle-cleanup",
+              "lifecycle-trigger",
+              "retry",
+              "self",
+              "stage-applied",
+              "stage-prevented",
+              "usage-exhausted",
+              "usage-reset",
+              "usage-spent"
+            ]
+          }
+        ],
+        "notApplicable": [
+          {
+            "evidenceClass": "pass",
+            "reason": "Decoy does not open an optional response window; its Interrupt/Priority rule is an automatic restriction once applicable."
+          }
+        ]
       },
-      "reviewedAt": null,
+      "reviewedAt": "2026-07-21",
       "unsupportedInteractionIds": [],
       "rolloutCohortId": "aa-066"
     },
     {
       "canonicalId": "Deep Sleep",
       "displayName": "Deep Sleep",
-      "baseStatus": "blocked",
+      "baseStatus": "complete",
       "interactionStatus": "unassessed",
       "runtime": {
-        "kind": "unimplemented",
-        "version": null,
-        "definitionHash": null,
-        "sourceModule": null
+        "kind": "abilityspec-v1",
+        "version": 1,
+        "definitionHash": "54452b79d22b3bf19dc42a2367a52df33d079e1253b80a7cdf600384f479dbee",
+        "sourceModule": "server/domain/abilityAutomation/specs/aa066.ts"
       },
       "rulesProvenance": {
         "rulesetId": "rotom-table-reference-abilities-v1",
         "canonicalizationVersion": 1,
         "sourceDataSha256": "767c3e2ae45471c26ad97a07552c4b0417ed0e207827af8a59da3a73e81f4362"
       },
-      "capabilityTags": [],
+      "capabilityTags": [
+        "abilities.effective-projection",
+        "conditions.typed",
+        "context.authoritative",
+        "effects.typed",
+        "events.typed",
+        "expressions.bounded",
+        "hp.typed",
+        "lifecycle.effects",
+        "mode.static",
+        "passives.aggregation",
+        "planning.atomic",
+        "runtime.abilityspec-v1",
+        "targeting.authoritative",
+        "trace.structured"
+      ],
       "suggestedCapabilityTags": [
         "mode.static"
       ],
-      "blockerCodes": [
-        "runtime.unimplemented"
-      ],
+      "blockerCodes": [],
       "limitations": [],
       "manualSteps": [],
-      "scenarioIds": [],
+      "scenarioIds": [
+        "aa066.deep-sleep.reviewed"
+      ],
       "conformanceEvidence": {
-        "requirementTags": [],
-        "scenarios": [],
-        "notApplicable": []
+        "requirementTags": [
+          "branch.threshold",
+          "mechanic.hp",
+          "mechanic.lifecycle",
+          "mode.static",
+          "recovery.retry",
+          "target.self"
+        ],
+        "scenarios": [
+          {
+            "scenarioId": "aa066.deep-sleep.reviewed",
+            "evidenceClasses": [
+              "hp-applied",
+              "hp-prevented",
+              "lifecycle-trigger",
+              "passive-applied",
+              "passive-suppressed",
+              "retry",
+              "self",
+              "threshold-fail",
+              "threshold-pass"
+            ]
+          }
+        ],
+        "notApplicable": [
+          {
+            "evidenceClass": "lifecycle-cleanup",
+            "reason": "Deep Sleep owns no persistent effect to clean up; eligibility is freshly re-evaluated at each authoritative turn end."
+          }
+        ]
       },
-      "reviewedAt": null,
+      "reviewedAt": "2026-07-21",
       "unsupportedInteractionIds": [],
       "rolloutCohortId": "aa-066"
     },
     {
       "canonicalId": "Defeatist",
       "displayName": "Defeatist",
-      "baseStatus": "blocked",
+      "baseStatus": "complete",
       "interactionStatus": "unassessed",
       "runtime": {
-        "kind": "unimplemented",
-        "version": null,
-        "definitionHash": null,
-        "sourceModule": null
+        "kind": "abilityspec-v1",
+        "version": 1,
+        "definitionHash": "9f3920d36f12a84979a0be52b72fd0c3f827c913b4faadca117af7fe90839361",
+        "sourceModule": "server/domain/abilityAutomation/specs/aa066.ts"
       },
       "rulesProvenance": {
         "rulesetId": "rotom-table-reference-abilities-v1",
         "canonicalizationVersion": 1,
         "sourceDataSha256": "767c3e2ae45471c26ad97a07552c4b0417ed0e207827af8a59da3a73e81f4362"
       },
-      "capabilityTags": [],
+      "capabilityTags": [
+        "abilities.effective-projection",
+        "context.authoritative",
+        "damage.modifiers",
+        "effects.typed",
+        "expressions.bounded",
+        "hp.typed",
+        "mode.static",
+        "passives.aggregation",
+        "planning.atomic",
+        "randomness.ledger",
+        "runtime.abilityspec-v1",
+        "stages.typed",
+        "trace.structured"
+      ],
       "suggestedCapabilityTags": [
         "mode.static"
       ],
-      "blockerCodes": [
-        "runtime.unimplemented"
-      ],
+      "blockerCodes": [],
       "limitations": [],
       "manualSteps": [],
-      "scenarioIds": [],
+      "scenarioIds": [
+        "aa066.defeatist.reviewed"
+      ],
       "conformanceEvidence": {
-        "requirementTags": [],
-        "scenarios": [],
-        "notApplicable": []
+        "requirementTags": [
+          "branch.random",
+          "branch.threshold",
+          "mechanic.damage",
+          "mechanic.stage",
+          "mode.static"
+        ],
+        "scenarios": [
+          {
+            "scenarioId": "aa066.defeatist.reviewed",
+            "evidenceClasses": [
+              "hit",
+              "passive-applied",
+              "passive-suppressed",
+              "random-branch",
+              "retry",
+              "stage-applied",
+              "stage-prevented",
+              "threshold-fail",
+              "threshold-pass"
+            ]
+          }
+        ],
+        "notApplicable": [
+          {
+            "evidenceClass": "miss",
+            "reason": "Defeatist changes only an existing damage roll; a miss has no damage roll to modify."
+          },
+          {
+            "evidenceClass": "crit",
+            "reason": "Defeatist modifies the damage roll without changing critical-hit selection or ordering."
+          },
+          {
+            "evidenceClass": "immunity",
+            "reason": "Defeatist does not override immunity and cannot create damage against an immune target."
+          }
+        ]
       },
-      "reviewedAt": null,
+      "reviewedAt": "2026-07-21",
       "unsupportedInteractionIds": [],
       "rolloutCohortId": "aa-066"
     },
     {
       "canonicalId": "Defiant",
       "displayName": "Defiant",
-      "baseStatus": "blocked",
+      "baseStatus": "complete",
       "interactionStatus": "unassessed",
       "runtime": {
-        "kind": "unimplemented",
-        "version": null,
-        "definitionHash": null,
-        "sourceModule": null
+        "kind": "abilityspec-v1",
+        "version": 1,
+        "definitionHash": "eb2fdfbb701dbea18961e2931488729fa93bdbfacb49ded8393167d17e3acd88",
+        "sourceModule": "server/domain/abilityAutomation/specs/aa066.ts"
       },
       "rulesProvenance": {
         "rulesetId": "rotom-table-reference-abilities-v1",
         "canonicalizationVersion": 1,
         "sourceDataSha256": "767c3e2ae45471c26ad97a07552c4b0417ed0e207827af8a59da3a73e81f4362"
       },
-      "capabilityTags": [],
+      "capabilityTags": [
+        "abilities.effective-projection",
+        "context.authoritative",
+        "effects.typed",
+        "expressions.bounded",
+        "mode.static",
+        "passives.aggregation",
+        "planning.atomic",
+        "runtime.abilityspec-v1",
+        "stages.typed",
+        "trace.structured"
+      ],
       "suggestedCapabilityTags": [
         "mode.static"
       ],
-      "blockerCodes": [
-        "runtime.unimplemented"
-      ],
+      "blockerCodes": [],
       "limitations": [],
       "manualSteps": [],
-      "scenarioIds": [],
+      "scenarioIds": [
+        "aa066.defiant.reviewed"
+      ],
       "conformanceEvidence": {
-        "requirementTags": [],
-        "scenarios": [],
+        "requirementTags": [
+          "branch.threshold",
+          "mechanic.stage",
+          "mode.static",
+          "state.cap"
+        ],
+        "scenarios": [
+          {
+            "scenarioId": "aa066.defiant.reviewed",
+            "evidenceClasses": [
+              "cap-applied",
+              "cap-noop",
+              "passive-applied",
+              "passive-suppressed",
+              "stage-applied",
+              "stage-prevented",
+              "threshold-fail",
+              "threshold-pass"
+            ]
+          }
+        ],
         "notApplicable": []
       },
-      "reviewedAt": null,
+      "reviewedAt": "2026-07-21",
       "unsupportedInteractionIds": [],
       "rolloutCohortId": "aa-066"
     },

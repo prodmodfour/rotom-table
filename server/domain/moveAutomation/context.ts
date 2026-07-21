@@ -579,6 +579,7 @@ export const buildAuthoritativeMoveRulesContext = (
       ['Copy Master', 'Copycat'],
       ['Corrosive Toxins', 'Toxic'],
       ['Crush Trap', 'Wrap'],
+      ['Danger Syrup', 'Sweet Scent'],
     ] as const
     const existingMoveNames = new Set((rawActorSheet.movelist ?? []).map(move => move.name))
     const grantedMoves = connectionMoves.flatMap(([canonicalId, moveName]) => (
@@ -829,6 +830,7 @@ export const buildAuthoritativeMoveRulesContext = (
   const stats = createMoveAutomationStatResolver({
     placements,
     tokens,
+    hasEffectiveAbility: abilityQueries.has,
     resolveStatOverlay: (placement, stat) => rooms.statOverlay({ placement, stat }),
     recordSheetRead: readSet.recordPlacement,
   })

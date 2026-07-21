@@ -54,7 +54,11 @@ import {
 import { hasAa060MoveMark, resolveAa060MoveDamageIntegration } from '../abilityAutomation/mechanics/aa060MoveIntegration'
 import { aa061MoveDamageModifiers } from '../abilityAutomation/mechanics/aa061MoveIntegration'
 import { aa062MoveDamageModifiers } from '../abilityAutomation/mechanics/aa062MoveIntegration'
-import { aa065CourageDamageModifiers } from '../abilityAutomation/mechanics/aa065StaticIntegration'
+import {
+  aa065CourageDamageModifiers,
+  aa065DampDamageModifiers,
+} from '../abilityAutomation/mechanics/aa065StaticIntegration'
+import { aa066MoveDamageModifiers } from '../abilityAutomation/mechanics/aa066StaticIntegration'
 
 export type MoveDamageStatSelectionErrorCode = 'non-numeric-stat-selection'
 
@@ -361,6 +365,20 @@ export const resolveMoveSpecDamageCalculation = (
     actor,
     recipient: options.recipient,
   })
+  const dampModifiers = aa065DampDamageModifiers({
+    context: options.context,
+    operation: options.operation,
+    actor,
+    recipient: options.recipient,
+    moveType: moveType.moveType,
+  })
+  const aa066Modifiers = aa066MoveDamageModifiers({
+    context: options.context,
+    operation: options.operation,
+    actor,
+    recipient: options.recipient,
+    moveType: moveType.moveType,
+  })
   const sideDamageResistance = options.context.queries.sideDamageResistance.resolve({
     damageOperationId: options.operation.id,
     targetPlacementId: options.recipient.id,
@@ -452,12 +470,18 @@ export const resolveMoveSpecDamageCalculation = (
         moveType: moveType.moveType,
         multiplier: sideDamageResistance.adjustedMultiplier,
       },
+      dauntlessShieldActive: options.context.queries.abilities.has(
+        options.recipient.id,
+        'Dauntless Shield',
+      ),
       additionalModifiers: [
         ...reviewedPreTypeDamageModifiers(options.operation),
         ...aa060.modifiers,
         ...aa061Modifiers,
         ...aa062Modifiers,
         ...aa065Modifiers,
+        ...dampModifiers,
+        ...aa066Modifiers,
         ...helpingHandModifiers,
         ...weather.modifiers,
         ...terrain.modifiers,

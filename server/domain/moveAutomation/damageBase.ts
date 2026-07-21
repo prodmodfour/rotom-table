@@ -51,6 +51,8 @@ export interface MoveContextualDamageBaseResolution {
   readonly minimum: number
   readonly maximum: number
   readonly boundedValue: number
+  /** Reviewed Ability/provider bonus applied after the move's own expression, STAB, and bounds. */
+  readonly postBoundsBonus: number
   readonly finalDamageBase: number
   /** Post-order values for every evaluated expression node. */
   readonly evaluationTrace: readonly MoveRuleEvaluationTraceEntry[]
@@ -108,6 +110,7 @@ export const resolveContextualMoveDamageBase = (options: {
   readonly recipientId: string
   readonly hasStab: boolean
   readonly canonicalMoveId?: string
+  readonly postBoundsBonus?: number
 }): MoveContextualDamageBaseResolution => {
   const { operation, recipientId } = options
   const damageBase = operation.payload.damageBase
@@ -148,9 +151,10 @@ export const resolveContextualMoveDamageBase = (options: {
     damageBase.minimum,
     damageBase.maximum,
   )
+  const postBoundsBonus = options.postBoundsBonus ?? 0
   const finalDamageBase = boundedValue + (
     damageBase.stabTiming === 'after-bounds' ? stabBonus : 0
-  )
+  ) + postBoundsBonus
   if (
     !Number.isSafeInteger(finalDamageBase)
     || finalDamageBase < 0
@@ -176,6 +180,7 @@ export const resolveContextualMoveDamageBase = (options: {
     minimum: damageBase.minimum,
     maximum: damageBase.maximum,
     boundedValue,
+    postBoundsBonus,
     finalDamageBase,
     evaluationTrace: [...evaluation.trace],
   })

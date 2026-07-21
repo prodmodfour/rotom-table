@@ -35,6 +35,11 @@ export const AA065_ABILITY_MECHANIC_IDS = [
   'aa065.cruelty', 'aa065.crush-trap', 'aa065.cud-chew', 'aa065.curious-medicine',
   'aa065.cursed-body', 'aa065.cute-charm', 'aa065.cute-tears', 'aa065.damp',
 ] as const
+export const AA066_ABILITY_MECHANIC_IDS = [
+  'aa066.dancer', 'aa066.danger-syrup', 'aa066.dark-art', 'aa066.dark-aura',
+  'aa066.dauntless-shield', 'aa066.daze', 'aa066.dazzling', 'aa066.deadly-poison',
+  'aa066.decoy', 'aa066.deep-sleep', 'aa066.defeatist', 'aa066.defiant',
+] as const
 export type Aa060AbilityMechanicId = (typeof AA060_ABILITY_MECHANIC_IDS)[number]
 export type AbilityMechanicId = Aa060AbilityMechanicId
   | (typeof AA061_ABILITY_MECHANIC_IDS)[number]
@@ -42,6 +47,7 @@ export type AbilityMechanicId = Aa060AbilityMechanicId
   | (typeof AA063_ABILITY_MECHANIC_IDS)[number]
   | (typeof AA064_ABILITY_MECHANIC_IDS)[number]
   | (typeof AA065_ABILITY_MECHANIC_IDS)[number]
+  | (typeof AA066_ABILITY_MECHANIC_IDS)[number]
 export interface AbilityMechanicOperation extends AbilitySpecJsonObject {
   readonly kind: typeof ABILITY_MECHANIC_OPERATION_KIND
   readonly id: string
@@ -131,12 +137,25 @@ const CONFIG_FIELDS: Readonly<Record<AbilityMechanicId, readonly string[]>> = {
   'aa065.cursed-body': ['action', 'frequency', 'damagingOnly', 'condition'],
   'aa065.cute-charm': ['action', 'frequency', 'relationship', 'requiredRange', 'requiredGenderRelation', 'condition'],
   'aa065.cute-tears': ['action', 'frequency', 'damagingOnly', 'stageDelta', 'statSource'],
-  'aa065.damp': ['radius', 'preventedMoveIds', 'preventedAbilityId'],
+  'aa065.damp': ['radius', 'preventedMoveIds', 'preventedAbilityId', 'bonusMoveType', 'bonusDice'],
+  'aa066.dancer': ['action', 'frequency', 'radius', 'moveClass', 'danceMoveIds', 'immediateUse'],
+  'aa066.danger-syrup': ['connectionMoveId', 'action', 'frequency', 'trigger', 'ignoreMoveFrequency', 'blindOnHit', 'blindDuration'],
+  'aa066.dark-art': ['moveType', 'lastChanceThreshold', 'damageBonus'],
+  'aa066.dark-aura': ['moveType', 'damageBaseBonus', 'relationships'],
+  'aa066.dauntless-shield': ['stat', 'defaultStageBonus'],
+  'aa066.daze': ['action', 'frequency', 'accuracyCheck', 'range', 'condition'],
+  'aa066.dazzling': ['action', 'frequency', 'target', 'initiativePenalty', 'preventPriorityMoves', 'preventInterruptMovesAgainstUser'],
+  'aa066.deadly-poison': ['action', 'frequency', 'triggerCondition', 'replacementCondition'],
+  'aa066.decoy': ['action', 'frequency', 'nestedMoveId', 'evasionBonus', 'duration'],
+  'aa066.deep-sleep': ['requiredCondition', 'healing', 'timing'],
+  'aa066.defeatist': ['threshold', 'highHpBonusDice', 'lowHpDamagePenalty', 'lowHpInitiativeBonus'],
+  'aa066.defiant': ['trigger', 'excludedSources', 'resultingStage', 'resultingDelta'],
 }
 const MECHANIC_SET = new Set<string>([
   ...AA060_ABILITY_MECHANIC_IDS, ...AA061_ABILITY_MECHANIC_IDS,
   ...AA062_ABILITY_MECHANIC_IDS, ...AA063_ABILITY_MECHANIC_IDS,
   ...AA064_ABILITY_MECHANIC_IDS, ...AA065_ABILITY_MECHANIC_IDS,
+  ...AA066_ABILITY_MECHANIC_IDS,
 ])
 const ID = /^[a-z0-9]+(?:[._:/-][a-z0-9]+)*$/
 const fail = (code: AbilityMechanicValidationError['code'], path: string, detail: string): never => { throw new AbilityMechanicValidationError(code, path, detail) }
@@ -557,9 +576,84 @@ const parseConfig = (mechanicId: AbilityMechanicId, value: unknown, path: string
       damagingOnly: bool(config.damagingOnly, `${path}.damagingOnly`), stageDelta: integer(config.stageDelta, `${path}.stageDelta`, -2, -2),
       statSource: oneOf(config.statSource, ['triggering-move-attack-stat'], `${path}.statSource`),
     }
-    case 'aa065.damp': return {
-      radius: integer(config.radius, `${path}.radius`, 10, 10), preventedMoveIds: stringArray(config.preventedMoveIds, ['Self-Destruct', 'Explosion'], `${path}.preventedMoveIds`),
-      preventedAbilityId: oneOf(config.preventedAbilityId, ['Aftermath'], `${path}.preventedAbilityId`),
+    case 'aa065.damp': {
+      const bonusDice = record(config.bonusDice, `${path}.bonusDice`)
+      exact(bonusDice, ['count', 'sides'], `${path}.bonusDice`)
+      return {
+        radius: integer(config.radius, `${path}.radius`, 10, 10), preventedMoveIds: stringArray(config.preventedMoveIds, ['Self-Destruct', 'Explosion'], `${path}.preventedMoveIds`),
+        preventedAbilityId: oneOf(config.preventedAbilityId, ['Aftermath'], `${path}.preventedAbilityId`),
+        bonusMoveType: oneOf(config.bonusMoveType, ['water'], `${path}.bonusMoveType`),
+        bonusDice: {
+          count: integer(bonusDice.count, `${path}.bonusDice.count`, 1, 1),
+          sides: integer(bonusDice.sides, `${path}.bonusDice.sides`, 10, 10),
+        },
+      }
+    }
+    case 'aa066.dancer': return {
+      action: oneOf(config.action, ['free'], `${path}.action`), frequency: oneOf(config.frequency, ['scene-x2'], `${path}.frequency`),
+      radius: integer(config.radius, `${path}.radius`, 10, 10), moveClass: oneOf(config.moveClass, ['status'], `${path}.moveClass`),
+      danceMoveIds: stringArray(config.danceMoveIds, ['Victory Dance', 'Quiver Dance', 'Dragon Dance', 'Feather Dance', 'Swords Dance', 'Teeter Dance', 'Lunar Dance', 'Rain Dance'], `${path}.danceMoveIds`),
+      immediateUse: bool(config.immediateUse, `${path}.immediateUse`),
+    }
+    case 'aa066.danger-syrup': return {
+      connectionMoveId: oneOf(config.connectionMoveId, ['Sweet Scent'], `${path}.connectionMoveId`),
+      action: oneOf(config.action, ['free'], `${path}.action`), frequency: oneOf(config.frequency, ['scene'], `${path}.frequency`),
+      trigger: oneOf(config.trigger, ['hit-by-attack'], `${path}.trigger`), ignoreMoveFrequency: bool(config.ignoreMoveFrequency, `${path}.ignoreMoveFrequency`),
+      blindOnHit: bool(config.blindOnHit, `${path}.blindOnHit`), blindDuration: oneOf(config.blindDuration, ['one-full-round'], `${path}.blindDuration`),
+    }
+    case 'aa066.dark-art': return {
+      moveType: oneOf(config.moveType, ['dark'], `${path}.moveType`), lastChanceThreshold: exactNumber(config.lastChanceThreshold, 1 / 3, `${path}.lastChanceThreshold`),
+      damageBonus: integer(config.damageBonus, `${path}.damageBonus`, 5, 5),
+    }
+    case 'aa066.dark-aura': return {
+      moveType: oneOf(config.moveType, ['dark'], `${path}.moveType`), damageBaseBonus: integer(config.damageBaseBonus, `${path}.damageBaseBonus`, 1, 1),
+      relationships: stringArray(config.relationships, ['self', 'ally'], `${path}.relationships`),
+    }
+    case 'aa066.dauntless-shield': return {
+      stat: oneOf(config.stat, ['defense'], `${path}.stat`), defaultStageBonus: integer(config.defaultStageBonus, `${path}.defaultStageBonus`, 1, 1),
+    }
+    case 'aa066.daze': return {
+      action: oneOf(config.action, ['standard'], `${path}.action`), frequency: oneOf(config.frequency, ['scene'], `${path}.frequency`),
+      accuracyCheck: integer(config.accuracyCheck, `${path}.accuracyCheck`, 4, 4), range: integer(config.range, `${path}.range`, 6, 6),
+      condition: oneOf(config.condition, ['sleep'], `${path}.condition`),
+    }
+    case 'aa066.dazzling': return {
+      action: oneOf(config.action, ['swift'], `${path}.action`), frequency: oneOf(config.frequency, ['scene-x2'], `${path}.frequency`),
+      target: oneOf(config.target, ['adjacent-foe'], `${path}.target`), initiativePenalty: integer(config.initiativePenalty, `${path}.initiativePenalty`, -10, -10),
+      preventPriorityMoves: bool(config.preventPriorityMoves, `${path}.preventPriorityMoves`),
+      preventInterruptMovesAgainstUser: bool(config.preventInterruptMovesAgainstUser, `${path}.preventInterruptMovesAgainstUser`),
+    }
+    case 'aa066.deadly-poison': return {
+      action: oneOf(config.action, ['free'], `${path}.action`), frequency: oneOf(config.frequency, ['daily'], `${path}.frequency`),
+      triggerCondition: oneOf(config.triggerCondition, ['poisoned'], `${path}.triggerCondition`),
+      replacementCondition: oneOf(config.replacementCondition, ['badly-poisoned'], `${path}.replacementCondition`),
+    }
+    case 'aa066.decoy': return {
+      action: oneOf(config.action, ['full'], `${path}.action`), frequency: oneOf(config.frequency, ['scene'], `${path}.frequency`),
+      nestedMoveId: oneOf(config.nestedMoveId, ['Follow Me'], `${path}.nestedMoveId`), evasionBonus: integer(config.evasionBonus, `${path}.evasionBonus`, 2, 2),
+      duration: oneOf(config.duration, ['end-of-next-turn'], `${path}.duration`),
+    }
+    case 'aa066.deep-sleep': return {
+      requiredCondition: oneOf(config.requiredCondition, ['sleep'], `${path}.requiredCondition`), healing: oneOf(config.healing, ['tick'], `${path}.healing`),
+      timing: oneOf(config.timing, ['turn-end'], `${path}.timing`),
+    }
+    case 'aa066.defeatist': {
+      const threshold = record(config.threshold, `${path}.threshold`)
+      exact(threshold, ['numerator', 'denominator'], `${path}.threshold`)
+      const dice = record(config.highHpBonusDice, `${path}.highHpBonusDice`)
+      exact(dice, ['count', 'sides'], `${path}.highHpBonusDice`)
+      return {
+        threshold: { numerator: integer(threshold.numerator, `${path}.threshold.numerator`, 1, 1), denominator: integer(threshold.denominator, `${path}.threshold.denominator`, 2, 2) },
+        highHpBonusDice: { count: integer(dice.count, `${path}.highHpBonusDice.count`, 2, 2), sides: integer(dice.sides, `${path}.highHpBonusDice.sides`, 6, 6) },
+        lowHpDamagePenalty: integer(config.lowHpDamagePenalty, `${path}.lowHpDamagePenalty`, -5, -5),
+        lowHpInitiativeBonus: integer(config.lowHpInitiativeBonus, `${path}.lowHpInitiativeBonus`, 10, 10),
+      }
+    }
+    case 'aa066.defiant': return {
+      trigger: oneOf(config.trigger, ['combat-stage-lowered'], `${path}.trigger`),
+      excludedSources: stringArray(config.excludedSources, ['own-move', 'own-ability'], `${path}.excludedSources`),
+      resultingStage: oneOf(config.resultingStage, ['attack'], `${path}.resultingStage`),
+      resultingDelta: integer(config.resultingDelta, `${path}.resultingDelta`, 2, 2),
     }
   }
 }

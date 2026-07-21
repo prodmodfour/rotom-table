@@ -121,9 +121,11 @@ describe('ability automation semantic manifest', () => {
         'Compound Eyes', 'Confidence', 'Conqueror', 'Contrary', 'Copy Master', 'Corrosion',
         'Corrosive Toxins', 'Cotton Down', 'Courage', 'Covert', 'Cruelty', 'Crush Trap',
         'Cud Chew', 'Curious Medicine', 'Cursed Body', 'Cute Charm', 'Cute Tears', 'Damp',
+        'Dancer', 'Danger Syrup', 'Dark Art', 'Dark Aura', 'Dauntless Shield', 'Daze',
+        'Dazzling', 'Deadly Poison', 'Decoy', 'Deep Sleep', 'Defeatist', 'Defiant',
       ])
-    expect(manifest.abilities.filter(ability => ability.baseStatus === 'blocked')).toHaveLength(411)
-    expect(manifest.abilities.filter(ability => ability.runtime.kind === 'unimplemented')).toHaveLength(411)
+    expect(manifest.abilities.filter(ability => ability.baseStatus === 'blocked')).toHaveLength(399)
+    expect(manifest.abilities.filter(ability => ability.runtime.kind === 'unimplemented')).toHaveLength(399)
   })
 
   it('keeps bootstrap mode hints non-authoritative and maps every row to its plan cohort', () => {
@@ -148,6 +150,7 @@ describe('ability automation semantic manifest', () => {
     expect(manifest.abilities[36]).toMatchObject({ canonicalId: 'Brimstone', rolloutCohortId: 'aa-063' })
     expect(manifest.abilities[48]).toMatchObject({ canonicalId: 'Cluster Mind', rolloutCohortId: 'aa-064' })
     expect(manifest.abilities[60]).toMatchObject({ canonicalId: 'Corrosive Toxins', rolloutCohortId: 'aa-065' })
+    expect(manifest.abilities[72]).toMatchObject({ canonicalId: 'Dancer', rolloutCohortId: 'aa-066' })
     expect(manifest.abilities.at(-1)).toMatchObject({ canonicalId: 'Zen Snowed', rolloutCohortId: 'aa-100' })
     expect(manifest.abilities.filter(ability => ability.baseStatus === 'complete')
       .every(ability => ability.capabilityTags.includes('runtime.abilityspec-v1'))).toBe(true)

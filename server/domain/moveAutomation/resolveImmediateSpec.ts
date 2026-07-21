@@ -91,6 +91,7 @@ import { aa062BoneLordEmpowersMove, aa062MoveOverlayOperations } from '../abilit
 import { aa063MoveOverlayOperations } from '../abilityAutomation/mechanics/aa063MoveIntegration'
 import { aa064MoveOverlayOperations } from '../abilityAutomation/mechanics/aa064MoveIntegration'
 import { aa065MoveOverlayOperations } from '../abilityAutomation/mechanics/aa065MoveIntegration'
+import { aa066MoveOverlayOperations } from '../abilityAutomation/mechanics/aa066MoveIntegration'
 
 export type ImmediateMoveSpecResolutionErrorCode =
   | 'execution-rejected'
@@ -510,11 +511,11 @@ const createMoveSpecOperationDynamicRecipientsResolver = (input: {
   const childDynamic = new Map<string, MoveCoreTokenDynamicRecipientSets>()
   for (const child of input.children) {
     const dynamic: MoveCoreTokenDynamicRecipientSets = {
-      attackedTargetIds: child.targetIds,
-      hitTargetIds: child.hitTargetIds,
-      missedTargetIds: child.missedTargetIds,
-      damagedTargetIds: child.damagedTargetIds,
-      faintedTargetIds: child.faintedTargetIds,
+      attackedTargetIds: child.rootTargetIds,
+      hitTargetIds: child.rootHitTargetIds,
+      missedTargetIds: child.rootMissedTargetIds,
+      damagedTargetIds: child.rootDamagedTargetIds,
+      faintedTargetIds: child.rootFaintedTargetIds,
     }
     for (const operationId of child.operationIds) childDynamic.set(operationId, dynamic)
   }
@@ -941,6 +942,7 @@ const executeReviewedMoveSpec = (
     ...aa063MoveOverlayOperations(overlayInput),
     ...aa064MoveOverlayOperations(overlayInput),
     ...aa065MoveOverlayOperations(overlayInput),
+    ...aa066MoveOverlayOperations(overlayInput),
   ]
   const boneLordLine = script.moveName === 'Bonemerang'
     && aa062BoneLordEmpowersMove(options.context, 'Bonemerang')
@@ -1107,13 +1109,13 @@ export const reduceCompletedMoveSpec = (
     options.targetBranchId,
   ) ?? fail('execution-rejected', 'The selected MoveSpec targeting branch is unavailable.')
   const exposesAttackedTargets = targeting.kind !== 'self'
-  const attackedTargetIds = exposesAttackedTargets ? [...execution.targetIds] : []
+  const attackedTargetIds = exposesAttackedTargets ? [...execution.rootTargetIds] : []
   const initialDynamic: MoveCoreTokenDynamicRecipientSets = {
     attackedTargetIds,
-    hitTargetIds: exposesAttackedTargets ? [...execution.hitTargetIds] : [],
-    missedTargetIds: exposesAttackedTargets ? [...execution.missedTargetIds] : [],
-    damagedTargetIds: exposesAttackedTargets ? [...execution.damagedTargetIds] : [],
-    faintedTargetIds: exposesAttackedTargets ? [...execution.faintedTargetIds] : [],
+    hitTargetIds: exposesAttackedTargets ? [...execution.rootHitTargetIds] : [],
+    missedTargetIds: exposesAttackedTargets ? [...execution.rootMissedTargetIds] : [],
+    damagedTargetIds: exposesAttackedTargets ? [...execution.rootDamagedTargetIds] : [],
+    faintedTargetIds: exposesAttackedTargets ? [...execution.rootFaintedTargetIds] : [],
   }
 
   const coreOperations = uncommittedOperations.filter(isMoveCoreTokenEffectEmission)

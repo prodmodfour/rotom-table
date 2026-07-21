@@ -2,7 +2,7 @@ import type { CombatStageKey, CombatStageMap } from '~/types/combatStages'
 import { clampCombatStage } from '~/utils/combatStages'
 
 export interface Aa064StageAbilityQueries {
-  readonly has: (placementId: string, canonicalId: 'Competitive' | 'Contrary') => boolean
+  readonly has: (placementId: string, canonicalId: 'Competitive' | 'Contrary' | 'Defiant') => boolean
 }
 
 /** Contrary transforms the uncapped requested delta before normal stage bounds apply. */

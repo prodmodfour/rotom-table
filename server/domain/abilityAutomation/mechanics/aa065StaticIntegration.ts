@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto'
 import pokedexData from '~~/data/reference/pokedex.json'
 import type { MoveDamageEffectOperation } from '#shared/moveAutomation/effects'
 import type { EncounterCapabilityEffect } from '#shared/moveAutomation/encounterEffects'
@@ -111,26 +112,75 @@ export const aa065CourageDamageModifiers = (input: {
 }): readonly MoveDamageModifier[] => {
   const modifiers: MoveDamageModifier[] = []
   const actorMaximum = Math.max(1, input.actor.fullMaxHp ?? input.actor.maxHp)
-  if (input.actor.currentHp * 3 <= actorMaximum
-    && input.context.queries.abilities.has(input.actor.id, 'Courage')) {
+  const actorCourage = input.context.queries.abilities.activeForPlacement(input.actor.id)
+    .find(ability => ability.canonicalId === 'Courage')
+  if (input.actor.currentHp * 3 <= actorMaximum && actorCourage) {
     modifiers.push({
       id: `ability.courage.damage.${input.operation.id}.${input.recipient.id}`,
       stage: 'pre-type-modifiers', priority: 35,
-      source: { kind: 'ability', id: input.actor.id }, stackingGroup: 'aa065-courage-damage',
+      source: { kind: 'ability', id: actorCourage.instanceId }, stackingGroup: 'aa065-courage-damage',
       reasonCode: 'ability.courage.low-hp-damage-bonus', operation: 'add', value: 5,
     })
   }
   const recipientMaximum = Math.max(1, input.recipient.fullMaxHp ?? input.recipient.maxHp)
-  if (input.recipient.currentHp * 3 <= recipientMaximum
-    && input.context.queries.abilities.has(input.recipient.id, 'Courage')) {
+  const recipientCourage = input.context.queries.abilities.activeForPlacement(input.recipient.id)
+    .find(ability => ability.canonicalId === 'Courage')
+  if (input.recipient.currentHp * 3 <= recipientMaximum && recipientCourage) {
     modifiers.push({
       id: `ability.courage.reduction.${input.operation.id}.${input.recipient.id}`,
       stage: 'post-damage-modifiers', priority: 35,
-      source: { kind: 'ability', id: input.recipient.id }, stackingGroup: 'aa065-courage-reduction',
+      source: { kind: 'ability', id: recipientCourage.instanceId }, stackingGroup: 'aa065-courage-reduction',
       reasonCode: 'ability.courage.low-hp-damage-reduction', operation: 'subtract', value: 5,
     })
   }
   return Object.freeze(modifiers)
+}
+
+const dampRollId = (operationId: string, recipientId: string): string => (
+  `ability.damp.${createHash('sha256')
+    .update(`${operationId}\u0000${recipientId}`)
+    .digest('hex')
+    .slice(0, 32)}`
+)
+
+/** Roll Damp's supplemental Water die once for each authoritative damage roll. */
+export const primeAa065MoveRandomness = (input: {
+  readonly context: AuthoritativeMoveRulesContext
+  readonly script: MoveAutomationScript
+  readonly damageOperationIds: readonly string[]
+  readonly damageRecipientId?: string
+}): void => {
+  if (!input.damageRecipientId
+    || input.script.type.trim().toLowerCase() !== 'water'
+    || !input.context.queries.abilities.has(input.context.actor.placement.id, 'Damp')) return
+  for (const operationId of input.damageOperationIds) {
+    const rollId = dampRollId(operationId, input.damageRecipientId)
+    if (input.context.random.snapshot().some(entry => entry.rollId === rollId)) continue
+    input.context.random.roll({
+      rollId, parentEffectId: operationId, reason: 'ability.damp.water-damage-bonus',
+      formula: { kind: 'dice', count: 1, sides: 10, modifier: 0 },
+    })
+  }
+}
+
+export const aa065DampDamageModifiers = (input: {
+  readonly context: AuthoritativeMoveRulesContext
+  readonly operation: MoveDamageEffectOperation
+  readonly actor: SpawnedPokemon
+  readonly recipient: SpawnedPokemon
+  readonly moveType: string
+}): readonly MoveDamageModifier[] => {
+  const damp = input.context.queries.abilities.activeForPlacement(input.actor.id)
+    .find(ability => ability.canonicalId === 'Damp')
+  if (!damp || input.moveType.trim().toLowerCase() !== 'water') return Object.freeze([])
+  const value = input.context.random.snapshot()
+    .find(entry => entry.rollId === dampRollId(input.operation.id, input.recipient.id))?.finalValue ?? 0
+  return Object.freeze([{
+    id: `ability.damp.damage.${input.operation.id}.${input.recipient.id}`,
+    stage: 'pre-type-modifiers', priority: 35,
+    source: { kind: 'ability', id: damp.instanceId }, stackingGroup: 'aa065-damp-water',
+    reasonCode: 'ability.damp.water-damage-bonus', operation: 'add', value,
+  }])
 }
 
 /** Resolve the nearest effective Damp provider without revealing its identity to clients. */
