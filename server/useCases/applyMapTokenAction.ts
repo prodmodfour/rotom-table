@@ -1,5 +1,6 @@
 import { UseCaseHttpError } from '../utils/useCaseErrors'
 import { applyAa061BallFetchSendOutTriggers } from '../domain/abilityAutomation/mechanics/aa061PresenceIntegration'
+import { applyAa065CuriousMedicineSendOutTrigger } from '../domain/abilityAutomation/mechanics/aa065PresenceIntegration'
 import {
   LIVE_PLAY_COMMAND_TYPES,
   LIVE_PLAY_PATCH_TYPES,
@@ -687,13 +688,22 @@ const applySendOutPokemonToMap = (
     ...context.map,
     placements: [...context.map.placements, resolved.placement],
   }
+  const readPokemonSheet = (slug: string): CharacterSheet | null => (
+    dependencies.readSheet('pokemon', slug)?.sheet as unknown as CharacterSheet ?? null
+  )
+  const withBallFetch = applyAa061BallFetchSendOutTriggers({
+    mapBefore: context.map,
+    mapAfter: placedMap,
+    releasedPlacementId: resolved.placement.id,
+    operationId,
+    readPokemonSheet,
+  })
   return {
-    nextMap: applyAa061BallFetchSendOutTriggers({
-      mapBefore: context.map,
-      mapAfter: placedMap,
+    nextMap: applyAa065CuriousMedicineSendOutTrigger({
+      mapAfter: withBallFetch,
       releasedPlacementId: resolved.placement.id,
       operationId,
-      readPokemonSheet: slug => dependencies.readSheet('pokemon', slug)?.sheet as unknown as CharacterSheet ?? null,
+      readPokemonSheet,
     }),
     placement: resolved.placement,
   }

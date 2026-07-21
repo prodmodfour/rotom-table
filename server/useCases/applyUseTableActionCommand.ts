@@ -53,6 +53,8 @@ import {
   resolveLegacyMapAbilityAutomationTransaction as resolveMapAbilityAutomationTransaction,
   type LegacyTokenAbilityMenuOption,
 } from '../domain/abilityAutomation/legacyCompatibility'
+import { applyAa065CrushTrapGrappleTrigger } from '../domain/abilityAutomation/mechanics/aa065ManeuverIntegration'
+import { cleanupAa065CrueltyHealingBlockForBreather } from '../domain/abilityAutomation/mechanics/aa065StaticIntegration'
 import { appendAbilityAutomationLogEntry } from '~/utils/abilityAutomationLog'
 import {
   appendActiveOrderEffect,
@@ -83,7 +85,12 @@ import {
   applyConditionsToSheet,
   type AnyLiveSheet,
 } from '~/utils/sheetMutations'
-import { pokemonHpSnapshot, trainerHpSnapshot } from '~/utils/sheetSpawn'
+import {
+  catalogEntryForPokemonSheet,
+  catalogEntryForTrainerSheet,
+  pokemonHpSnapshot,
+  trainerHpSnapshot,
+} from '~/utils/sheetSpawn'
 import { assertSessionHostEnabled, type SessionHostRuntimeEnv } from '../utils/sessionHosting'
 import {
   sessionOperationTracker,
@@ -322,7 +329,7 @@ type ResolvedUseTableActionTarget = {
 
 type ResolvedActionToken = Pick<
   SpawnedPokemon,
-  'id' | 'species' | 'position' | 'sheetKind' | 'sheetSlug' | 'combatStages' | 'conditions'
+  'id' | 'species' | 'position' | 'base' | 'clearance' | 'sheetKind' | 'sheetSlug' | 'combatStages' | 'conditions'
 >
 
 type SheetCacheEntry = {
@@ -879,10 +886,13 @@ const tokenFromPlacement = (
   if (placement.sheetKind === 'pokemon') {
     const sheet = entry.sheet as CharacterSheet
     const snapshot = pokemonHpSnapshot(sheet)
+    const footprint = catalogEntryForPokemonSheet(sheet)
     return {
       id: placement.id,
       species: sheetDisplayName('pokemon', sheet),
       position: placement.position,
+      base: footprint?.base ?? 1,
+      clearance: footprint?.clearance ?? 1,
       sheetKind: placement.sheetKind,
       sheetSlug: placement.sheetSlug,
       combatStages: snapshot.combatStages,
@@ -892,10 +902,13 @@ const tokenFromPlacement = (
 
   const sheet = entry.sheet as TrainerSheet
   const snapshot = trainerHpSnapshot(sheet)
+  const footprint = catalogEntryForTrainerSheet(sheet)
   return {
     id: placement.id,
     species: sheetDisplayName('trainer', sheet),
     position: placement.position,
+    base: footprint?.base ?? 1,
+    clearance: footprint?.clearance ?? 1,
     sheetKind: placement.sheetKind,
     sheetSlug: placement.sheetSlug,
     combatStages: snapshot.combatStages,
@@ -1106,10 +1119,27 @@ const useManeuverPlan = (
     now: () => Date.parse(processedAt),
   })
 
+  const mapWithMetadata = { ...target.mapState.document, metadata }
+  const mapAfterBreather = maneuver.name === 'Take a Breather'
+    ? cleanupAa065CrueltyHealingBlockForBreather({
+        map: mapWithMetadata,
+        placementId: target.placement.id,
+      })
+    : mapWithMetadata
+  const mapWithAbilityTrigger = maneuver.name === 'Grapple' && targetToken
+    ? applyAa065CrushTrapGrappleTrigger({
+        map: mapAfterBreather,
+        actorPlacement: target.placement,
+        actorToken: user,
+        actorSheet: userSheet.sheet as CharacterSheet,
+        targetToken,
+        operationId: command.opId,
+      })
+    : mapAfterBreather
   return {
     ok: true,
     plan: {
-      mapDocument: touchedMapDocument({ ...target.mapState.document, metadata }, processedAt),
+      mapDocument: touchedMapDocument(mapWithAbilityTrigger, processedAt),
       eventType: USE_MANEUVER_PATCH_EVENT_TYPE,
       eventPayload: {
         tokenId: target.placement.id,

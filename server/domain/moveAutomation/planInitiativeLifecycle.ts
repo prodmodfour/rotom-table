@@ -74,6 +74,11 @@ import { registeredAbilityAutomationRuntimeFor } from '../abilityAutomation/regi
 import { projectAuthoritativeEffectiveAbilities } from '../abilityAutomation/effectiveAbilities'
 import { resolveSheetAbilityInstances } from '../abilityAutomation/instanceParameters'
 import { aa060AnchoredEntityCreateCommand } from '../abilityAutomation/mechanics/aa060Activated'
+import {
+  aa065CorrosiveToxinsLifecycleRecipientIds,
+  advanceAa065CorrosiveToxinsResidualCounters,
+  createAa065CorrosiveToxinsLifecycleHandler,
+} from '../abilityAutomation/mechanics/aa065ConditionLifecycle'
 
 export type InitiativeLifecyclePlanningErrorCode =
   | 'active-placement-missing'
@@ -561,6 +566,7 @@ export const planEncounterLifecycle = (
   const events = parseEncounterEvents(input.events)
   const weatherHandler = createWeatherResidualLifecycleHandler(lifecycleMap)
   const terrainHandler = createGrassyTerrainLifecycleHandler(lifecycleMap)
+  const corrosiveToxinsHandler = createAa065CorrosiveToxinsLifecycleHandler(lifecycleMap)
   // Registered handlers retain caller order. Built-in encounter effects run
   // next, followed by weather and terrain; field transitions remain event-local
   // and last.
@@ -568,6 +574,7 @@ export const planEncounterLifecycle = (
     ...(input.handlers ?? []),
     createVortexLifecycleHandler(),
     createYawnLifecycleHandler(),
+    ...(corrosiveToxinsHandler ? [corrosiveToxinsHandler] : []),
     ...(weatherHandler ? [weatherHandler] : []),
     ...(terrainHandler ? [terrainHandler] : []),
   ]
@@ -640,10 +647,15 @@ export const planEncounterLifecycle = (
       time: input.time,
     })
     for (const operation of reduction.operations) {
-      recipientsByOperationId.set(operation.id, terrainLifecycleRecipientIds({
+      const conditionRecipients = aa065CorrosiveToxinsLifecycleRecipientIds({
         context,
         operation,
         candidateRecipientIds: recipientsByOperationId.get(operation.id) ?? [],
+      })
+      recipientsByOperationId.set(operation.id, terrainLifecycleRecipientIds({
+        context,
+        operation,
+        candidateRecipientIds: conditionRecipients,
       }))
     }
     const emissions: MoveResolvedCoreTokenEffectOperation[] = reduction.operations.map(
@@ -725,6 +737,11 @@ export const planEncounterLifecycle = (
       abilityEntities: entities,
     }, abilityEvent).encounter
   }
+  currentEncounterState = advanceAa065CorrosiveToxinsResidualCounters({
+    state: currentEncounterState,
+    operations: reduction.operations,
+    results: operationResults,
+  })
   currentEncounterState = reconcileAnchoredEntities({
     state: currentEncounterState,
     map: nextMap,

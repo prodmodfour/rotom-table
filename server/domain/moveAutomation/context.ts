@@ -577,6 +577,8 @@ export const buildAuthoritativeMoveRulesContext = (
       ['Bone Lord', 'Bonemerang'],
       ['Chemical Romance', 'Sweet Scent'],
       ['Copy Master', 'Copycat'],
+      ['Corrosive Toxins', 'Toxic'],
+      ['Crush Trap', 'Wrap'],
     ] as const
     const existingMoveNames = new Set((rawActorSheet.movelist ?? []).map(move => move.name))
     const grantedMoves = connectionMoves.flatMap(([canonicalId, moveName]) => (

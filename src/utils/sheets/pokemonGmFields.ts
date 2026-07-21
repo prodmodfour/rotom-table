@@ -1,6 +1,7 @@
 import type { CharacterSheet, CharacterSheetGm } from '~/types/characterSheet'
 
 export const POKEMON_GM_FIELD = 'gm'
+export const POKEMON_SERVER_PRIVATE_FIELD = 'serverPrivate'
 
 const isRecord = (value: unknown): value is Record<string, unknown> => (
   typeof value === 'object' && value !== null && !Array.isArray(value)
@@ -26,9 +27,10 @@ export const normalizePokemonGmSection = (sheet: CharacterSheet): void => {
 }
 
 export const redactPokemonGmFields = <TSheet extends Record<string, unknown>>(sheet: TSheet): TSheet => {
-  if (!hasOwn(sheet, POKEMON_GM_FIELD)) return sheet
+  if (!hasOwn(sheet, POKEMON_GM_FIELD) && !hasOwn(sheet, POKEMON_SERVER_PRIVATE_FIELD)) return sheet
   const redacted = { ...sheet }
   delete redacted[POKEMON_GM_FIELD]
+  delete redacted[POKEMON_SERVER_PRIVATE_FIELD]
   return redacted as TSheet
 }
 
@@ -39,5 +41,18 @@ export const preservePokemonGmFieldsForPlayerSave = <TSheet extends Record<strin
   const preserved: Record<string, unknown> = { ...candidate }
   if (hasOwn(current, POKEMON_GM_FIELD)) preserved[POKEMON_GM_FIELD] = current[POKEMON_GM_FIELD]
   else delete preserved[POKEMON_GM_FIELD]
+  return preserved as TSheet
+}
+
+/** A sheet editor cannot create, replace, or delete server-owned mechanic evidence. */
+export const preservePokemonServerPrivateFieldsForSave = <TSheet extends Record<string, unknown>>(
+  candidate: TSheet,
+  current: Record<string, unknown>,
+): TSheet => {
+  const preserved: Record<string, unknown> = { ...candidate }
+  if (hasOwn(current, POKEMON_SERVER_PRIVATE_FIELD)) {
+    preserved[POKEMON_SERVER_PRIVATE_FIELD] = current[POKEMON_SERVER_PRIVATE_FIELD]
+  }
+  else delete preserved[POKEMON_SERVER_PRIVATE_FIELD]
   return preserved as TSheet
 }

@@ -305,6 +305,10 @@ const REVIEWED_REQUIREMENTS = new Map<string, readonly AuthoritativeMoveItemReso
     id: 'knock-off.target-equipped',
     source: { kind: 'selected-target-equipped' },
   }])],
+  ['Natural Gift', parseAuthoritativeMoveItemResourceRequirements([{
+    id: 'natural-gift.berry',
+    source: { kind: 'actor-equipped' },
+  }])],
 ])
 
 export const reviewedMoveItemResourceRequirementsFor = (

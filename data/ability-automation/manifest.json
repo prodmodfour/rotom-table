@@ -4238,420 +4238,959 @@
     {
       "canonicalId": "Corrosive Toxins",
       "displayName": "Corrosive Toxins",
-      "baseStatus": "blocked",
+      "baseStatus": "complete",
       "interactionStatus": "unassessed",
       "runtime": {
-        "kind": "unimplemented",
-        "version": null,
-        "definitionHash": null,
-        "sourceModule": null
+        "kind": "abilityspec-v1",
+        "version": 1,
+        "definitionHash": "5186015665840e37282b59e1a9b132c8b745be89be2fb483f2c8d4f5cc3edab5",
+        "sourceModule": "server/domain/abilityAutomation/specs/aa065.ts"
       },
       "rulesProvenance": {
         "rulesetId": "rotom-table-reference-abilities-v1",
         "canonicalizationVersion": 1,
         "sourceDataSha256": "767c3e2ae45471c26ad97a07552c4b0417ed0e207827af8a59da3a73e81f4362"
       },
-      "capabilityTags": [],
-      "suggestedCapabilityTags": [
-        "mode.activated"
+      "capabilityTags": [
+        "abilities.effective-projection",
+        "actions.authoritative",
+        "choices.durable",
+        "conditions.typed",
+        "context.authoritative",
+        "effects.typed",
+        "events.move",
+        "events.routing",
+        "events.typed",
+        "expressions.bounded",
+        "frequency.scene",
+        "immunity.providers",
+        "intent.typed",
+        "lifecycle.effects",
+        "mode.triggered",
+        "passives.aggregation",
+        "planning.atomic",
+        "reactions.durable",
+        "recovery.durable",
+        "runtime.abilityspec-v1",
+        "targeting.authoritative",
+        "trace.structured"
       ],
-      "blockerCodes": [
-        "runtime.unimplemented"
-      ],
+      "suggestedCapabilityTags": [],
+      "blockerCodes": [],
       "limitations": [],
       "manualSteps": [],
-      "scenarioIds": [],
+      "scenarioIds": [
+        "aa065.corrosive-toxins.reviewed"
+      ],
       "conformanceEvidence": {
-        "requirementTags": [],
-        "scenarios": [],
+        "requirementTags": [
+          "branch.choice",
+          "branch.immunity",
+          "mechanic.condition",
+          "mechanic.interrupt",
+          "mechanic.usage",
+          "mode.triggered",
+          "recovery.reconnect",
+          "recovery.retry"
+        ],
+        "scenarios": [
+          {
+            "scenarioId": "aa065.corrosive-toxins.reviewed",
+            "evidenceClasses": [
+              "choice",
+              "condition-applied",
+              "condition-prevented",
+              "hit",
+              "immunity",
+              "interrupt-priority",
+              "miss",
+              "pass",
+              "reconnect",
+              "retry",
+              "trigger-eligible",
+              "trigger-ineligible",
+              "usage-exhausted",
+              "usage-reset",
+              "usage-spent"
+            ]
+          }
+        ],
         "notApplicable": []
       },
-      "reviewedAt": null,
+      "reviewedAt": "2026-07-21",
       "unsupportedInteractionIds": [],
       "rolloutCohortId": "aa-065"
     },
     {
       "canonicalId": "Cotton Down",
       "displayName": "Cotton Down",
-      "baseStatus": "blocked",
+      "baseStatus": "complete",
       "interactionStatus": "unassessed",
       "runtime": {
-        "kind": "unimplemented",
-        "version": null,
-        "definitionHash": null,
-        "sourceModule": null
+        "kind": "abilityspec-v1",
+        "version": 1,
+        "definitionHash": "15815a840ca42779df8c2ffa35a8b19eca8ade815c7843e1ec36c8aea9106412",
+        "sourceModule": "server/domain/abilityAutomation/specs/aa065.ts"
       },
       "rulesProvenance": {
         "rulesetId": "rotom-table-reference-abilities-v1",
         "canonicalizationVersion": 1,
         "sourceDataSha256": "767c3e2ae45471c26ad97a07552c4b0417ed0e207827af8a59da3a73e81f4362"
       },
-      "capabilityTags": [],
-      "suggestedCapabilityTags": [
-        "mode.triggered"
+      "capabilityTags": [
+        "abilities.effective-projection",
+        "actions.authoritative",
+        "choices.durable",
+        "conditions.typed",
+        "context.authoritative",
+        "effects.typed",
+        "events.move",
+        "events.routing",
+        "events.typed",
+        "expressions.bounded",
+        "frequency.scene",
+        "geometry.authoritative",
+        "intent.typed",
+        "lifecycle.effects",
+        "mode.triggered",
+        "planning.atomic",
+        "reactions.durable",
+        "recovery.durable",
+        "runtime.abilityspec-v1",
+        "stages.typed",
+        "targeting.authoritative",
+        "trace.structured"
       ],
-      "blockerCodes": [
-        "runtime.unimplemented"
-      ],
+      "suggestedCapabilityTags": [],
+      "blockerCodes": [],
       "limitations": [],
       "manualSteps": [],
-      "scenarioIds": [],
+      "scenarioIds": [
+        "aa065.cotton-down.reviewed"
+      ],
       "conformanceEvidence": {
-        "requirementTags": [],
-        "scenarios": [],
+        "requirementTags": [
+          "branch.choice",
+          "mechanic.condition",
+          "mechanic.interrupt",
+          "mechanic.stage",
+          "mechanic.usage",
+          "mode.triggered",
+          "recovery.reconnect",
+          "recovery.retry",
+          "target.area"
+        ],
+        "scenarios": [
+          {
+            "scenarioId": "aa065.cotton-down.reviewed",
+            "evidenceClasses": [
+              "area-mixed-outcomes",
+              "choice",
+              "condition-applied",
+              "condition-prevented",
+              "hit",
+              "interrupt-priority",
+              "miss",
+              "pass",
+              "reconnect",
+              "retry",
+              "stage-applied",
+              "stage-prevented",
+              "trigger-eligible",
+              "trigger-ineligible",
+              "usage-exhausted",
+              "usage-reset",
+              "usage-spent"
+            ]
+          }
+        ],
         "notApplicable": []
       },
-      "reviewedAt": null,
+      "reviewedAt": "2026-07-21",
       "unsupportedInteractionIds": [],
       "rolloutCohortId": "aa-065"
     },
     {
       "canonicalId": "Courage",
       "displayName": "Courage",
-      "baseStatus": "blocked",
+      "baseStatus": "complete",
       "interactionStatus": "unassessed",
       "runtime": {
-        "kind": "unimplemented",
-        "version": null,
-        "definitionHash": null,
-        "sourceModule": null
+        "kind": "abilityspec-v1",
+        "version": 1,
+        "definitionHash": "a0b338cd14433fad2ffbf4eb611465411d35a7a80e738a9bf69ba53da8227c31",
+        "sourceModule": "server/domain/abilityAutomation/specs/aa065.ts"
       },
       "rulesProvenance": {
         "rulesetId": "rotom-table-reference-abilities-v1",
         "canonicalizationVersion": 1,
         "sourceDataSha256": "767c3e2ae45471c26ad97a07552c4b0417ed0e207827af8a59da3a73e81f4362"
       },
-      "capabilityTags": [],
-      "suggestedCapabilityTags": [
-        "mode.static"
+      "capabilityTags": [
+        "abilities.effective-projection",
+        "context.authoritative",
+        "damage.modifiers",
+        "effects.typed",
+        "expressions.bounded",
+        "hp.typed",
+        "mode.static",
+        "passives.aggregation",
+        "planning.atomic",
+        "runtime.abilityspec-v1",
+        "trace.structured"
       ],
-      "blockerCodes": [
-        "runtime.unimplemented"
-      ],
+      "suggestedCapabilityTags": [],
+      "blockerCodes": [],
       "limitations": [],
       "manualSteps": [],
-      "scenarioIds": [],
+      "scenarioIds": [
+        "aa065.courage.reviewed"
+      ],
       "conformanceEvidence": {
-        "requirementTags": [],
-        "scenarios": [],
-        "notApplicable": []
+        "requirementTags": [
+          "branch.threshold",
+          "mechanic.damage",
+          "mode.static"
+        ],
+        "scenarios": [
+          {
+            "scenarioId": "aa065.courage.reviewed",
+            "evidenceClasses": [
+              "hit",
+              "passive-applied",
+              "passive-suppressed",
+              "threshold-fail",
+              "threshold-pass"
+            ]
+          }
+        ],
+        "notApplicable": [
+          {
+            "evidenceClass": "miss",
+            "reason": "Courage changes only a resolved damage roll; a miss has no damage roll to modify."
+          },
+          {
+            "evidenceClass": "crit",
+            "reason": "Courage does not alter critical-hit selection or ordering."
+          },
+          {
+            "evidenceClass": "immunity",
+            "reason": "Courage does not override immunity; its bonus and reduction are omitted when no damage resolves."
+          }
+        ]
       },
-      "reviewedAt": null,
+      "reviewedAt": "2026-07-21",
       "unsupportedInteractionIds": [],
       "rolloutCohortId": "aa-065"
     },
     {
       "canonicalId": "Covert",
       "displayName": "Covert",
-      "baseStatus": "blocked",
+      "baseStatus": "complete",
       "interactionStatus": "unassessed",
       "runtime": {
-        "kind": "unimplemented",
-        "version": null,
-        "definitionHash": null,
-        "sourceModule": null
+        "kind": "abilityspec-v1",
+        "version": 1,
+        "definitionHash": "1d8c35116002c7daef6233609ca24169fd77a701ee604fe185580a400ff4512f",
+        "sourceModule": "server/domain/abilityAutomation/specs/aa065.ts"
       },
       "rulesProvenance": {
         "rulesetId": "rotom-table-reference-abilities-v1",
         "canonicalizationVersion": 1,
         "sourceDataSha256": "767c3e2ae45471c26ad97a07552c4b0417ed0e207827af8a59da3a73e81f4362"
       },
-      "capabilityTags": [],
-      "suggestedCapabilityTags": [
-        "mode.static"
+      "capabilityTags": [
+        "abilities.effective-projection",
+        "context.authoritative",
+        "effects.typed",
+        "events.typed",
+        "expressions.bounded",
+        "fields.typed",
+        "geometry.authoritative",
+        "lifecycle.effects",
+        "mode.static",
+        "passives.aggregation",
+        "planning.atomic",
+        "runtime.abilityspec-v1",
+        "targeting.authoritative",
+        "trace.structured"
       ],
-      "blockerCodes": [
-        "runtime.unimplemented"
-      ],
+      "suggestedCapabilityTags": [],
+      "blockerCodes": [],
       "limitations": [],
       "manualSteps": [],
-      "scenarioIds": [],
+      "scenarioIds": [
+        "aa065.covert.reviewed"
+      ],
       "conformanceEvidence": {
-        "requirementTags": [],
-        "scenarios": [],
+        "requirementTags": [
+          "branch.threshold",
+          "mode.static"
+        ],
+        "scenarios": [
+          {
+            "scenarioId": "aa065.covert.reviewed",
+            "evidenceClasses": [
+              "passive-applied",
+              "passive-suppressed",
+              "threshold-fail",
+              "threshold-pass"
+            ]
+          }
+        ],
         "notApplicable": []
       },
-      "reviewedAt": null,
+      "reviewedAt": "2026-07-21",
       "unsupportedInteractionIds": [],
       "rolloutCohortId": "aa-065"
     },
     {
       "canonicalId": "Cruelty",
       "displayName": "Cruelty",
-      "baseStatus": "blocked",
+      "baseStatus": "complete",
       "interactionStatus": "unassessed",
       "runtime": {
-        "kind": "unimplemented",
-        "version": null,
-        "definitionHash": null,
-        "sourceModule": null
+        "kind": "abilityspec-v1",
+        "version": 1,
+        "definitionHash": "6d15791ea55166ab93bd9ef44677d20cb3f522b0e968edcc1b74fc3ffaf2d2aa",
+        "sourceModule": "server/domain/abilityAutomation/specs/aa065.ts"
       },
       "rulesProvenance": {
         "rulesetId": "rotom-table-reference-abilities-v1",
         "canonicalizationVersion": 1,
         "sourceDataSha256": "767c3e2ae45471c26ad97a07552c4b0417ed0e207827af8a59da3a73e81f4362"
       },
-      "capabilityTags": [],
-      "suggestedCapabilityTags": [
-        "mode.triggered"
+      "capabilityTags": [
+        "abilities.effective-projection",
+        "actions.authoritative",
+        "choices.durable",
+        "conditions.typed",
+        "context.authoritative",
+        "effects.typed",
+        "events.damage",
+        "events.move",
+        "events.routing",
+        "events.typed",
+        "expressions.bounded",
+        "frequency.scene",
+        "hp.typed",
+        "intent.typed",
+        "lifecycle.effects",
+        "mode.triggered",
+        "planning.atomic",
+        "reactions.durable",
+        "recovery.durable",
+        "relationships.providers",
+        "runtime.abilityspec-v1",
+        "targeting.authoritative",
+        "trace.structured"
       ],
-      "blockerCodes": [
-        "runtime.unimplemented"
-      ],
+      "suggestedCapabilityTags": [],
+      "blockerCodes": [],
       "limitations": [],
       "manualSteps": [],
-      "scenarioIds": [],
+      "scenarioIds": [
+        "aa065.cruelty.reviewed"
+      ],
       "conformanceEvidence": {
-        "requirementTags": [],
-        "scenarios": [],
+        "requirementTags": [
+          "branch.choice",
+          "mechanic.condition",
+          "mechanic.hp",
+          "mechanic.interrupt",
+          "mechanic.lifecycle",
+          "mechanic.usage",
+          "mode.triggered",
+          "recovery.reconnect",
+          "recovery.retry",
+          "target.enemy"
+        ],
+        "scenarios": [
+          {
+            "scenarioId": "aa065.cruelty.reviewed",
+            "evidenceClasses": [
+              "choice",
+              "condition-applied",
+              "condition-prevented",
+              "enemy",
+              "hit",
+              "hp-applied",
+              "hp-prevented",
+              "interrupt-priority",
+              "lifecycle-cleanup",
+              "lifecycle-trigger",
+              "miss",
+              "pass",
+              "reconnect",
+              "retry",
+              "trigger-eligible",
+              "trigger-ineligible",
+              "usage-exhausted",
+              "usage-reset",
+              "usage-spent"
+            ]
+          }
+        ],
         "notApplicable": []
       },
-      "reviewedAt": null,
+      "reviewedAt": "2026-07-21",
       "unsupportedInteractionIds": [],
       "rolloutCohortId": "aa-065"
     },
     {
       "canonicalId": "Crush Trap",
       "displayName": "Crush Trap",
-      "baseStatus": "blocked",
+      "baseStatus": "complete",
       "interactionStatus": "unassessed",
       "runtime": {
-        "kind": "unimplemented",
-        "version": null,
-        "definitionHash": null,
-        "sourceModule": null
+        "kind": "abilityspec-v1",
+        "version": 1,
+        "definitionHash": "579a7cec89aef4c04665c9750d54d9db5855afa4bae48deaa93152a6eb4e61cc",
+        "sourceModule": "server/domain/abilityAutomation/specs/aa065.ts"
       },
       "rulesProvenance": {
         "rulesetId": "rotom-table-reference-abilities-v1",
         "canonicalizationVersion": 1,
         "sourceDataSha256": "767c3e2ae45471c26ad97a07552c4b0417ed0e207827af8a59da3a73e81f4362"
       },
-      "capabilityTags": [],
-      "suggestedCapabilityTags": [
-        "mode.triggered"
+      "capabilityTags": [
+        "abilities.effective-projection",
+        "actions.authoritative",
+        "choices.durable",
+        "context.authoritative",
+        "damage.modifiers",
+        "effects.typed",
+        "events.encounter",
+        "events.move",
+        "events.routing",
+        "events.typed",
+        "expressions.bounded",
+        "frequency.scene",
+        "intent.typed",
+        "lifecycle.effects",
+        "mode.activated",
+        "mode.triggered",
+        "planning.atomic",
+        "reactions.durable",
+        "recovery.durable",
+        "runtime.abilityspec-v1",
+        "state.marks-counters",
+        "targeting.authoritative",
+        "trace.structured"
       ],
-      "blockerCodes": [
-        "runtime.unimplemented"
-      ],
+      "suggestedCapabilityTags": [],
+      "blockerCodes": [],
       "limitations": [],
       "manualSteps": [],
-      "scenarioIds": [],
+      "scenarioIds": [
+        "aa065.crush-trap.reviewed"
+      ],
       "conformanceEvidence": {
-        "requirementTags": [],
-        "scenarios": [],
-        "notApplicable": []
+        "requirementTags": [
+          "branch.choice",
+          "mechanic.damage",
+          "mechanic.interrupt",
+          "mechanic.lifecycle",
+          "mechanic.usage",
+          "mode.activated",
+          "mode.triggered",
+          "recovery.reconnect",
+          "recovery.retry"
+        ],
+        "scenarios": [
+          {
+            "scenarioId": "aa065.crush-trap.reviewed",
+            "evidenceClasses": [
+              "active-accepted",
+              "active-rejected",
+              "choice",
+              "crit",
+              "hit",
+              "immunity",
+              "interrupt-priority",
+              "lifecycle-cleanup",
+              "lifecycle-trigger",
+              "pass",
+              "reconnect",
+              "retry",
+              "trigger-eligible",
+              "trigger-ineligible",
+              "usage-exhausted",
+              "usage-reset",
+              "usage-spent"
+            ]
+          }
+        ],
+        "notApplicable": [
+          {
+            "evidenceClass": "miss",
+            "reason": "Crush Trap explicitly has no Accuracy Roll and therefore its accepted automatic Struggle damage cannot miss."
+          }
+        ]
       },
-      "reviewedAt": null,
+      "reviewedAt": "2026-07-21",
       "unsupportedInteractionIds": [],
       "rolloutCohortId": "aa-065"
     },
     {
       "canonicalId": "Cud Chew",
       "displayName": "Cud Chew",
-      "baseStatus": "blocked",
+      "baseStatus": "complete",
       "interactionStatus": "unassessed",
       "runtime": {
-        "kind": "unimplemented",
-        "version": null,
-        "definitionHash": null,
-        "sourceModule": null
+        "kind": "abilityspec-v1",
+        "version": 1,
+        "definitionHash": "4c111ca6ae4b599e0cc2ef931238a049ba230479cfa30bcbbab172da34077290",
+        "sourceModule": "server/domain/abilityAutomation/specs/aa065.ts"
       },
       "rulesProvenance": {
         "rulesetId": "rotom-table-reference-abilities-v1",
         "canonicalizationVersion": 1,
         "sourceDataSha256": "767c3e2ae45471c26ad97a07552c4b0417ed0e207827af8a59da3a73e81f4362"
       },
-      "capabilityTags": [],
-      "suggestedCapabilityTags": [
-        "mode.activated"
+      "capabilityTags": [
+        "abilities.effective-projection",
+        "actions.authoritative",
+        "choices.durable",
+        "context.authoritative",
+        "effects.typed",
+        "events.typed",
+        "expressions.bounded",
+        "frequency.scene",
+        "intent.typed",
+        "items.authoritative",
+        "lifecycle.effects",
+        "mode.activated",
+        "planning.atomic",
+        "recovery.durable",
+        "runtime.abilityspec-v1",
+        "state.marks-counters",
+        "targeting.authoritative",
+        "trace.structured"
       ],
-      "blockerCodes": [
-        "runtime.unimplemented"
-      ],
+      "suggestedCapabilityTags": [],
+      "blockerCodes": [],
       "limitations": [],
       "manualSteps": [],
-      "scenarioIds": [],
+      "scenarioIds": [
+        "aa065.cud-chew.reviewed"
+      ],
       "conformanceEvidence": {
-        "requirementTags": [],
-        "scenarios": [],
+        "requirementTags": [
+          "mechanic.item",
+          "mechanic.usage",
+          "mode.activated",
+          "recovery.retry"
+        ],
+        "scenarios": [
+          {
+            "scenarioId": "aa065.cud-chew.reviewed",
+            "evidenceClasses": [
+              "active-accepted",
+              "active-rejected",
+              "item-applied",
+              "item-unavailable",
+              "retry",
+              "usage-exhausted",
+              "usage-reset",
+              "usage-spent"
+            ]
+          }
+        ],
         "notApplicable": []
       },
-      "reviewedAt": null,
+      "reviewedAt": "2026-07-21",
       "unsupportedInteractionIds": [],
       "rolloutCohortId": "aa-065"
     },
     {
       "canonicalId": "Curious Medicine",
       "displayName": "Curious Medicine",
-      "baseStatus": "blocked",
+      "baseStatus": "complete",
       "interactionStatus": "unassessed",
       "runtime": {
-        "kind": "unimplemented",
-        "version": null,
-        "definitionHash": null,
-        "sourceModule": null
+        "kind": "abilityspec-v1",
+        "version": 1,
+        "definitionHash": "db6e072946ed6decd6c6bcb881be85697ab09e186e919a1adab3f9517ca92361",
+        "sourceModule": "server/domain/abilityAutomation/specs/aa065.ts"
       },
       "rulesProvenance": {
         "rulesetId": "rotom-table-reference-abilities-v1",
         "canonicalizationVersion": 1,
         "sourceDataSha256": "767c3e2ae45471c26ad97a07552c4b0417ed0e207827af8a59da3a73e81f4362"
       },
-      "capabilityTags": [],
-      "suggestedCapabilityTags": [
-        "mode.activated"
+      "capabilityTags": [
+        "abilities.effective-projection",
+        "actions.authoritative",
+        "choices.durable",
+        "context.authoritative",
+        "effects.typed",
+        "events.encounter",
+        "events.typed",
+        "expressions.bounded",
+        "frequency.scene",
+        "geometry.authoritative",
+        "intent.typed",
+        "lifecycle.effects",
+        "mode.activated",
+        "planning.atomic",
+        "recovery.durable",
+        "relationships.providers",
+        "runtime.abilityspec-v1",
+        "stages.typed",
+        "state.marks-counters",
+        "targeting.authoritative",
+        "trace.structured"
       ],
-      "blockerCodes": [
-        "runtime.unimplemented"
-      ],
+      "suggestedCapabilityTags": [],
+      "blockerCodes": [],
       "limitations": [],
       "manualSteps": [],
-      "scenarioIds": [],
+      "scenarioIds": [
+        "aa065.curious-medicine.reviewed"
+      ],
       "conformanceEvidence": {
-        "requirementTags": [],
-        "scenarios": [],
+        "requirementTags": [
+          "branch.alternate",
+          "mechanic.stage",
+          "mechanic.usage",
+          "mode.activated",
+          "recovery.retry",
+          "target.ally",
+          "target.area"
+        ],
+        "scenarios": [
+          {
+            "scenarioId": "aa065.curious-medicine.reviewed",
+            "evidenceClasses": [
+              "active-accepted",
+              "active-rejected",
+              "ally",
+              "alternate-branch",
+              "area-mixed-outcomes",
+              "retry",
+              "stage-applied",
+              "stage-prevented",
+              "usage-exhausted",
+              "usage-reset",
+              "usage-spent"
+            ]
+          }
+        ],
         "notApplicable": []
       },
-      "reviewedAt": null,
+      "reviewedAt": "2026-07-21",
       "unsupportedInteractionIds": [],
       "rolloutCohortId": "aa-065"
     },
     {
       "canonicalId": "Cursed Body",
       "displayName": "Cursed Body",
-      "baseStatus": "blocked",
+      "baseStatus": "complete",
       "interactionStatus": "unassessed",
       "runtime": {
-        "kind": "unimplemented",
-        "version": null,
-        "definitionHash": null,
-        "sourceModule": null
+        "kind": "abilityspec-v1",
+        "version": 1,
+        "definitionHash": "1c3b693791855b7e2ddae16de060e7041bda387accf9fb1ce0820408e671df4a",
+        "sourceModule": "server/domain/abilityAutomation/specs/aa065.ts"
       },
       "rulesProvenance": {
         "rulesetId": "rotom-table-reference-abilities-v1",
         "canonicalizationVersion": 1,
         "sourceDataSha256": "767c3e2ae45471c26ad97a07552c4b0417ed0e207827af8a59da3a73e81f4362"
       },
-      "capabilityTags": [],
-      "suggestedCapabilityTags": [
-        "mode.triggered"
+      "capabilityTags": [
+        "abilities.effective-projection",
+        "actions.authoritative",
+        "choices.durable",
+        "conditions.typed",
+        "context.authoritative",
+        "effects.typed",
+        "events.move",
+        "events.routing",
+        "events.typed",
+        "expressions.bounded",
+        "frequency.scene",
+        "intent.typed",
+        "lifecycle.effects",
+        "mode.triggered",
+        "planning.atomic",
+        "reactions.durable",
+        "recovery.durable",
+        "runtime.abilityspec-v1",
+        "targeting.authoritative",
+        "trace.structured"
       ],
-      "blockerCodes": [
-        "runtime.unimplemented"
-      ],
+      "suggestedCapabilityTags": [],
+      "blockerCodes": [],
       "limitations": [],
       "manualSteps": [],
-      "scenarioIds": [],
+      "scenarioIds": [
+        "aa065.cursed-body.reviewed"
+      ],
       "conformanceEvidence": {
-        "requirementTags": [],
-        "scenarios": [],
+        "requirementTags": [
+          "branch.choice",
+          "mechanic.condition",
+          "mechanic.interrupt",
+          "mechanic.usage",
+          "mode.triggered",
+          "recovery.reconnect",
+          "recovery.retry"
+        ],
+        "scenarios": [
+          {
+            "scenarioId": "aa065.cursed-body.reviewed",
+            "evidenceClasses": [
+              "choice",
+              "condition-applied",
+              "condition-prevented",
+              "hit",
+              "interrupt-priority",
+              "miss",
+              "pass",
+              "reconnect",
+              "retry",
+              "trigger-eligible",
+              "trigger-ineligible",
+              "usage-exhausted",
+              "usage-reset",
+              "usage-spent"
+            ]
+          }
+        ],
         "notApplicable": []
       },
-      "reviewedAt": null,
+      "reviewedAt": "2026-07-21",
       "unsupportedInteractionIds": [],
       "rolloutCohortId": "aa-065"
     },
     {
       "canonicalId": "Cute Charm",
       "displayName": "Cute Charm",
-      "baseStatus": "blocked",
+      "baseStatus": "complete",
       "interactionStatus": "unassessed",
       "runtime": {
-        "kind": "unimplemented",
-        "version": null,
-        "definitionHash": null,
-        "sourceModule": null
+        "kind": "abilityspec-v1",
+        "version": 1,
+        "definitionHash": "4b2c5cd56de7b431eb932afff41913a5ce6f722327bee78e72b3250e5544198c",
+        "sourceModule": "server/domain/abilityAutomation/specs/aa065.ts"
       },
       "rulesProvenance": {
         "rulesetId": "rotom-table-reference-abilities-v1",
         "canonicalizationVersion": 1,
         "sourceDataSha256": "767c3e2ae45471c26ad97a07552c4b0417ed0e207827af8a59da3a73e81f4362"
       },
-      "capabilityTags": [],
-      "suggestedCapabilityTags": [
-        "mode.triggered"
+      "capabilityTags": [
+        "abilities.effective-projection",
+        "actions.authoritative",
+        "choices.durable",
+        "conditions.typed",
+        "context.authoritative",
+        "effects.typed",
+        "events.move",
+        "events.routing",
+        "events.typed",
+        "expressions.bounded",
+        "frequency.scene",
+        "intent.typed",
+        "lifecycle.effects",
+        "mode.triggered",
+        "planning.atomic",
+        "reactions.durable",
+        "recovery.durable",
+        "relationships.providers",
+        "runtime.abilityspec-v1",
+        "targeting.authoritative",
+        "trace.structured"
       ],
-      "blockerCodes": [
-        "runtime.unimplemented"
-      ],
+      "suggestedCapabilityTags": [],
+      "blockerCodes": [],
       "limitations": [],
       "manualSteps": [],
-      "scenarioIds": [],
+      "scenarioIds": [
+        "aa065.cute-charm.reviewed"
+      ],
       "conformanceEvidence": {
-        "requirementTags": [],
-        "scenarios": [],
+        "requirementTags": [
+          "branch.choice",
+          "mechanic.condition",
+          "mechanic.interrupt",
+          "mechanic.usage",
+          "mode.triggered",
+          "recovery.reconnect",
+          "recovery.retry",
+          "target.enemy"
+        ],
+        "scenarios": [
+          {
+            "scenarioId": "aa065.cute-charm.reviewed",
+            "evidenceClasses": [
+              "choice",
+              "condition-applied",
+              "condition-prevented",
+              "enemy",
+              "hit",
+              "interrupt-priority",
+              "miss",
+              "pass",
+              "reconnect",
+              "retry",
+              "trigger-eligible",
+              "trigger-ineligible",
+              "usage-exhausted",
+              "usage-reset",
+              "usage-spent"
+            ]
+          }
+        ],
         "notApplicable": []
       },
-      "reviewedAt": null,
+      "reviewedAt": "2026-07-21",
       "unsupportedInteractionIds": [],
       "rolloutCohortId": "aa-065"
     },
     {
       "canonicalId": "Cute Tears",
       "displayName": "Cute Tears",
-      "baseStatus": "blocked",
+      "baseStatus": "complete",
       "interactionStatus": "unassessed",
       "runtime": {
-        "kind": "unimplemented",
-        "version": null,
-        "definitionHash": null,
-        "sourceModule": null
+        "kind": "abilityspec-v1",
+        "version": 1,
+        "definitionHash": "5e0f22b1a1afd74ed11641601ff4dc6d1c21bcd9cb14a73277e3b56c22e296c3",
+        "sourceModule": "server/domain/abilityAutomation/specs/aa065.ts"
       },
       "rulesProvenance": {
         "rulesetId": "rotom-table-reference-abilities-v1",
         "canonicalizationVersion": 1,
         "sourceDataSha256": "767c3e2ae45471c26ad97a07552c4b0417ed0e207827af8a59da3a73e81f4362"
       },
-      "capabilityTags": [],
-      "suggestedCapabilityTags": [
-        "mode.triggered"
+      "capabilityTags": [
+        "abilities.effective-projection",
+        "actions.authoritative",
+        "choices.durable",
+        "context.authoritative",
+        "effects.typed",
+        "events.move",
+        "events.routing",
+        "events.typed",
+        "expressions.bounded",
+        "frequency.scene",
+        "intent.typed",
+        "lifecycle.effects",
+        "mode.triggered",
+        "planning.atomic",
+        "reactions.durable",
+        "recovery.durable",
+        "relationships.providers",
+        "runtime.abilityspec-v1",
+        "stages.typed",
+        "targeting.authoritative",
+        "trace.structured"
       ],
-      "blockerCodes": [
-        "runtime.unimplemented"
-      ],
+      "suggestedCapabilityTags": [],
+      "blockerCodes": [],
       "limitations": [],
       "manualSteps": [],
-      "scenarioIds": [],
+      "scenarioIds": [
+        "aa065.cute-tears.reviewed"
+      ],
       "conformanceEvidence": {
-        "requirementTags": [],
-        "scenarios": [],
+        "requirementTags": [
+          "branch.choice",
+          "mechanic.interrupt",
+          "mechanic.stage",
+          "mechanic.usage",
+          "mode.triggered",
+          "recovery.reconnect",
+          "recovery.retry",
+          "target.enemy"
+        ],
+        "scenarios": [
+          {
+            "scenarioId": "aa065.cute-tears.reviewed",
+            "evidenceClasses": [
+              "choice",
+              "enemy",
+              "hit",
+              "interrupt-priority",
+              "miss",
+              "pass",
+              "reconnect",
+              "retry",
+              "stage-applied",
+              "stage-prevented",
+              "trigger-eligible",
+              "trigger-ineligible",
+              "usage-exhausted",
+              "usage-reset",
+              "usage-spent"
+            ]
+          }
+        ],
         "notApplicable": []
       },
-      "reviewedAt": null,
+      "reviewedAt": "2026-07-21",
       "unsupportedInteractionIds": [],
       "rolloutCohortId": "aa-065"
     },
     {
       "canonicalId": "Damp",
       "displayName": "Damp",
-      "baseStatus": "blocked",
+      "baseStatus": "complete",
       "interactionStatus": "unassessed",
       "runtime": {
-        "kind": "unimplemented",
-        "version": null,
-        "definitionHash": null,
-        "sourceModule": null
+        "kind": "abilityspec-v1",
+        "version": 1,
+        "definitionHash": "4ad62a641ce593f88602aa4ece384145b93565060d8d76e1d2b77bfc74bc595d",
+        "sourceModule": "server/domain/abilityAutomation/specs/aa065.ts"
       },
       "rulesProvenance": {
         "rulesetId": "rotom-table-reference-abilities-v1",
         "canonicalizationVersion": 1,
         "sourceDataSha256": "767c3e2ae45471c26ad97a07552c4b0417ed0e207827af8a59da3a73e81f4362"
       },
-      "capabilityTags": [],
-      "suggestedCapabilityTags": [
-        "mode.static"
+      "capabilityTags": [
+        "abilities.effective-projection",
+        "context.authoritative",
+        "effects.typed",
+        "expressions.bounded",
+        "geometry.authoritative",
+        "immunity.providers",
+        "mode.static",
+        "passives.aggregation",
+        "planning.atomic",
+        "runtime.abilityspec-v1",
+        "targeting.authoritative",
+        "trace.structured"
       ],
-      "blockerCodes": [
-        "runtime.unimplemented"
-      ],
+      "suggestedCapabilityTags": [],
+      "blockerCodes": [],
       "limitations": [],
       "manualSteps": [],
-      "scenarioIds": [],
+      "scenarioIds": [
+        "aa065.damp.reviewed"
+      ],
       "conformanceEvidence": {
-        "requirementTags": [],
-        "scenarios": [],
+        "requirementTags": [
+          "branch.threshold",
+          "mode.static"
+        ],
+        "scenarios": [
+          {
+            "scenarioId": "aa065.damp.reviewed",
+            "evidenceClasses": [
+              "passive-applied",
+              "passive-suppressed",
+              "threshold-fail",
+              "threshold-pass"
+            ]
+          }
+        ],
         "notApplicable": []
       },
-      "reviewedAt": null,
+      "reviewedAt": "2026-07-21",
       "unsupportedInteractionIds": [],
       "rolloutCohortId": "aa-065"
     },

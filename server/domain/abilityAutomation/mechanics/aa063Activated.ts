@@ -19,6 +19,7 @@ import { planEncounterMoveResourceCosts } from '../../moveAutomation/planMoveRes
 import type { AuthoritativeAbilityContext } from '../context'
 import { planAbilityFrequencyPayment } from '../usage'
 import { AA063_CLAY_CANNONS_CAPABILITY_ID } from './aa063MoveIntegration'
+import { authoritativeAbilityHealingBlocked } from '../healingPrevention'
 
 const CHERRY_POWER_FREQUENCY: AbilityFrequencyDeclaration = Object.freeze({
   raw: 'Daily – Swift Action', actionText: 'Swift Action', kind: 'daily', uses: 1, exceptionId: null,
@@ -112,7 +113,12 @@ const cherryPowerExecution = (input: {
         scene: { ...currentBase.scene },
         byPlacementId: {
           ...currentBase.byPlacementId,
-          [input.context.actor.placement.id]: Math.max(15, currentBase.byPlacementId[input.context.actor.placement.id] ?? 0),
+          [input.context.actor.placement.id]: authoritativeAbilityHealingBlocked({
+            map: input.context.map,
+            placementId: input.context.actor.placement.id,
+          })
+            ? currentBase.byPlacementId[input.context.actor.placement.id] ?? 0
+            : Math.max(15, currentBase.byPlacementId[input.context.actor.placement.id] ?? 0),
         },
       },
       compensation: RESTORE_PREVIOUS_MOVE_STATE_VALUE,

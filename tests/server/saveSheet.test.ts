@@ -243,6 +243,7 @@ describe('save sheet use case', () => {
       player: true,
       revision: 1,
       gm: { notes: 'secret capture twist' },
+      serverPrivate: { abilityItemEvidence: [{ stateId: 'state-1', canonicalItemId: 'cheri-berry' }] },
     }))
 
     const result = saveSheetUseCase({
@@ -251,14 +252,20 @@ describe('save sheet use case', () => {
       kind: 'pokemon',
       slug: 'pika',
       expectedRevision: 1,
-      sheet: { slug: 'pika', nickname: 'Pika Prime', species: 'Pikachu', level: 5, gm: { notes: 'player should not write this' } },
+      sheet: {
+        slug: 'pika', nickname: 'Pika Prime', species: 'Pikachu', level: 5,
+        gm: { notes: 'player should not write this' },
+        serverPrivate: { abilityItemEvidence: [{ stateId: 'forged', canonicalItemId: 'potion' }] },
+      },
     }, { database, sheetRepository: sheets, realtimeEventRepository: realtime })
 
     expect(result.sheet).toMatchObject({ slug: 'pika', nickname: 'Pika Prime', revision: 2 })
     expect(result.sheet).not.toHaveProperty('gm')
+    expect(result.sheet).not.toHaveProperty('serverPrivate')
     expect(sheets.getByRef('pokemon', 'pika')?.sheet).toMatchObject({
       nickname: 'Pika Prime',
       gm: { notes: 'secret capture twist' },
+      serverPrivate: { abilityItemEvidence: [{ stateId: 'state-1', canonicalItemId: 'cheri-berry' }] },
       revision: 2,
     })
   })

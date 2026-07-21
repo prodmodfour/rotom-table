@@ -77,6 +77,7 @@ import {
   reduceMoveMapOperations,
 } from './reducers/mapOperations'
 import { createMoveResolutionTrace, reduceMoveResolutionTrace } from './trace'
+import { ABILITY_AUTOMATION_RUNTIME_REGISTRY } from '../abilityAutomation/registry'
 
 export interface AbilityFollowUpCandidate {
   readonly kind: AbilityFollowUpKind
@@ -209,8 +210,16 @@ export const detectAbilityFollowUps = (input: {
     candidates.push({ kind: 'spite', ownerPlacementId: prompt.defenderId })
   }
 
+  const nativeCanonicalIdByKind = new Map<AbilityFollowUpKind, string>([
+    ['celebrate', 'Celebrate'],
+    ['cute-charm', 'Cute Charm'],
+  ])
   const seen = new Set<string>()
   return Object.freeze(candidates.filter((candidate) => {
+    const nativeCanonicalId = nativeCanonicalIdByKind.get(candidate.kind)
+    if (input.resolution.nativeV2
+      && nativeCanonicalId
+      && ABILITY_AUTOMATION_RUNTIME_REGISTRY.resolve(nativeCanonicalId)) return false
     const key = `${candidate.kind}:${candidate.ownerPlacementId}`
     if (seen.has(key)) return false
     seen.add(key)

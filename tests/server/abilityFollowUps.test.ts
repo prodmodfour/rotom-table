@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest'
 import { createEmptyEncounterState } from '#shared/moveAutomation/encounterState'
-import { activePendingMoveResponseWindows } from '#shared/moveAutomation/pendingResolution'
+import {
+  activePendingMoveResponseWindows,
+  type PendingMoveReactionResponseWindow,
+} from '#shared/moveAutomation/pendingResolution'
 import { resolveAuthoritativeMove } from '~~/server/domain/resolveAuthoritativeMove'
 import {
   materializeAbilityFollowUps,
@@ -94,6 +97,27 @@ const sheets = (actorAbilities: readonly string[] = ['Celebrate']) => ({
   trainerSheets: new Map(),
 })
 
+const reviewedLegacyWindow = (
+  kind: 'celebrate' | 'cute-charm' | 'poison-point' | 'spite',
+  ownership: readonly ({ readonly kind: 'actor'; readonly id: null } | { readonly kind: 'placement'; readonly id: string })[],
+): PendingMoveReactionResponseWindow => {
+  const spec = abilityFollowUpSpecForKind(kind)
+  return {
+    windowId: `ability-follow-up.${kind}.legacy-test`,
+    operationId: `ability-follow-up.${kind}.legacy-test.request`,
+    kind: 'reaction' as const,
+    phase: 'cleanup' as const,
+    reasonCode: spec.reasonCode,
+    promptKey: spec.promptKey,
+    ownership,
+    options: [{ id: spec.optionId, labelKey: spec.optionLabelKey }],
+    allowPass: true,
+    timing: 'cleanup' as const,
+    priority: spec.priority,
+    depth: 0,
+  }
+}
+
 const materializedFollowUps = () => {
   const map = mapFixture()
   const documents = sheets()
@@ -130,14 +154,10 @@ describe('durable ability follow-ups', () => {
 
     expect(pending.continuationKind).toBe('ability-follow-ups')
     expect(pending.outstandingWindows.map(window => window.reasonCode)).toEqual([
-      'ability.celebrate.follow-up',
-      'ability.cute-charm.follow-up',
       'ability.poison-point.follow-up',
       'move.spite.follow-up',
     ])
     expect(pending.outstandingWindows.map(window => window.ownership)).toEqual([
-      [{ kind: 'actor', id: null }],
-      [{ kind: 'placement', id: 'target-token' }],
       [{ kind: 'placement', id: 'target-token' }],
       [{ kind: 'placement', id: 'target-token' }],
     ])
@@ -147,7 +167,7 @@ describe('durable ability follow-ups', () => {
       && window.allowPass
     ))).toBe(true)
     expect(activePendingMoveResponseWindows(pending).map(window => window.reasonCode)).toEqual([
-      'ability.celebrate.follow-up',
+      'ability.poison-point.follow-up',
     ])
     expect(pending.trace.program.runtimeKind).toBe('ability-follow-ups')
   })
@@ -171,7 +191,12 @@ describe('durable ability follow-ups', () => {
     const operationKinds = (kind: 'celebrate' | 'cute-charm' | 'poison-point' | 'spite') => {
       const spec = abilityFollowUpSpecForKind(kind)
       return buildAbilityFollowUpEffectOperations({
-        window: byReason.get(spec.reasonCode)!,
+        window: byReason.get(spec.reasonCode) ?? reviewedLegacyWindow(
+          kind,
+          kind === 'celebrate'
+            ? [{ kind: 'actor', id: null }]
+            : [{ kind: 'placement', id: 'target-token' }],
+        ),
         optionId: spec.optionId,
         canonicalMoveId: 'Tackle',
         context,
@@ -235,11 +260,20 @@ describe('durable ability follow-ups', () => {
         pendingResolutionSummaries: [pending.publicSummary],
       },
     }
-    const window = pending.outstandingWindows.find(candidate => (
-      candidate.reasonCode === 'ability.cute-charm.follow-up'
-    ))!
+    const window = reviewedLegacyWindow('cute-charm', [{ kind: 'placement', id: 'target-token' }])
+    const priorityBlocked = {
+      ...pending,
+      outstandingWindows: [
+        reviewedLegacyWindow('celebrate', [{ kind: 'actor', id: null }]),
+        window,
+      ],
+      publicSummary: {
+        ...pending.publicSummary,
+        outstandingWindowCount: 2,
+      },
+    }
     expect(() => planAbilityFollowUpResponse({
-      pendingResolution: pending,
+      pendingResolution: priorityBlocked,
       responseOpId: 'op_outoforder001',
       responseWindowId: window.windowId,
       responseOptionId: window.options[0]!.id,

@@ -38,6 +38,8 @@ import {
   resolveLegacyMapAbilityAutomationTransaction as resolveMapAbilityAutomationTransaction,
   type LegacyTokenAbilityMenuOption,
 } from '../domain/abilityAutomation/legacyCompatibility'
+import { applyAa065CrushTrapGrappleTrigger } from '../domain/abilityAutomation/mechanics/aa065ManeuverIntegration'
+import { cleanupAa065CrueltyHealingBlockForBreather } from '../domain/abilityAutomation/mechanics/aa065StaticIntegration'
 import { appendAbilityAutomationLogEntry } from '~/utils/abilityAutomationLog'
 import { appendActiveOrderEffect, createActiveOrderEffect } from '~/utils/activeOrderEffects'
 import { appendManeuverLogEntry, buildManeuverUseLogLines } from '~/utils/maneuverLog'
@@ -566,12 +568,29 @@ const applyManeuverCommand = (
     maneuverName: maneuver.name,
     lines: buildManeuverUseLogLines(actor as SpawnedPokemon, maneuver, { target: target as SpawnedPokemon | null }),
   }, { now: dependencies.now })
+  const withMetadata = { ...context.map, metadata }
+  const afterBreather = maneuver.name === 'Take a Breather'
+    ? cleanupAa065CrueltyHealingBlockForBreather({
+        map: withMetadata,
+        placementId: context.actorPlacement.id,
+      })
+    : withMetadata
+  const withAbilityTrigger = maneuver.name === 'Grapple' && target
+    ? applyAa065CrushTrapGrappleTrigger({
+        map: afterBreather,
+        actorPlacement: context.actorPlacement,
+        actorToken: actor as SpawnedPokemon,
+        actorSheet: context.actorSheet.sheet as unknown as CharacterSheet,
+        targetToken: target as SpawnedPokemon,
+        operationId: command.opId,
+      })
+    : afterBreather
   const revision = nextRevision(currentRevision)
   const updatedAt = dependencies.now()
 
   return {
     ...context,
-    map: { ...context.map, metadata, revision, updatedAt },
+    map: { ...withAbilityTrigger, revision, updatedAt },
     action: {
       type: 'maneuver',
       placementId: context.actorPlacement.id,

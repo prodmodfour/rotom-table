@@ -152,6 +152,18 @@ export interface CharacterSheetGm {
   notes?: string
 }
 
+/** Server-authored evidence that must never be accepted from or projected to a client. */
+export interface CharacterSheetServerPrivate {
+  abilityItemEvidence?: Array<{
+    stateId: string
+    canonicalItemId: string
+    consumptionId: string
+    sourceOperationId: string
+    sceneName: string
+    sceneStartedAt: number
+  }>
+}
+
 export interface CharacterSheetCapabilities {
   overland?: number
   sky?: number
@@ -189,6 +201,8 @@ export interface CharacterSheetSkills {
 export interface CharacterSheet {
   /** Server-owned document revision used for command conflict control. */
   revision?: number
+  /** Durable server-only mechanic evidence; stripped from every player projection and preserved across sheet saves. */
+  serverPrivate?: CharacterSheetServerPrivate
   /** URL slug for the sheet's subpage (``/sheets/<slug>``). */
   slug: string
   /** Logical SQLite library folder label for grouping on the sheets index. */

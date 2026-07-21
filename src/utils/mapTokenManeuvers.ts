@@ -70,8 +70,24 @@ const addDedupedOption = (
   target.set(key, option)
 }
 
-export const referenceManeuverOptions = (): TokenManeuverMenuOption[] =>
-  maneuvers.map(optionFromReference)
+const TAKE_A_BREATHER_OPTION: TokenManeuverMenuOption = Object.freeze({
+  name: 'Take a Breather',
+  category: 'Other Action in Combat',
+  action: 'Full Action',
+  ac: null,
+  maneuverClass: 'Status',
+  range: 'Self',
+  trigger: null,
+  effect: 'Shift as far away from enemies as possible, reset Combat Stages, lose Temporary Hit Points, and clear the reviewed conditions described by the core action.',
+  special: null,
+  source: 'reference',
+  sourceLabel: 'Core Action',
+})
+
+export const referenceManeuverOptions = (): TokenManeuverMenuOption[] => [
+  ...maneuvers.map(optionFromReference),
+  TAKE_A_BREATHER_OPTION,
+]
 
 export const trainerManeuverOptionsForSheet = (sheet: TrainerSheet | null | undefined): TokenManeuverMenuOption[] => {
   const optionsBySlug = new Map<string, TokenManeuverMenuOption>()

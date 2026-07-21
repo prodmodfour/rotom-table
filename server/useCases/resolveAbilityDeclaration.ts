@@ -31,6 +31,7 @@ import { executeAa061ActivatedMechanic } from '../domain/abilityAutomation/mecha
 import { executeAa062ActivatedMechanic } from '../domain/abilityAutomation/mechanics/aa062Activated'
 import { executeAa063ActivatedMechanic } from '../domain/abilityAutomation/mechanics/aa063Activated'
 import { executeAa064ActivatedMechanic } from '../domain/abilityAutomation/mechanics/aa064Activated'
+import { executeAa065ActivatedMechanic } from '../domain/abilityAutomation/mechanics/aa065Activated'
 import { createAa063AbilityCombatStageImmunities } from '../domain/abilityAutomation/mechanics/aa063DefenseIntegration'
 import { applyNativeCoreMapChanges } from '../domain/moveAutomation/planNativeV2MoveState'
 import { createMoveStateChangePlan, type MoveStateChangePlan } from '../domain/moveAutomation/plan'
@@ -192,19 +193,31 @@ export const resolveAbilityDeclarationUseCase = (
                 operationId: intent.intentId,
                 abilityInstanceId: intent.abilityInstanceId,
               })
-            : executeAa064ActivatedMechanic({
-                context,
-                operation: mechanicOperation,
-                operationId: intent.intentId,
-                abilityInstanceId: intent.abilityInstanceId,
-                choices: resolved.choices,
-              })
+            : mechanicOperation.mechanicId.startsWith('aa064.')
+              ? executeAa064ActivatedMechanic({
+                  context,
+                  operation: mechanicOperation,
+                  operationId: intent.intentId,
+                  abilityInstanceId: intent.abilityInstanceId,
+                  choices: resolved.choices,
+                })
+              : executeAa065ActivatedMechanic({
+                  context,
+                  operation: mechanicOperation,
+                  operationId: intent.intentId,
+                  abilityInstanceId: intent.abilityInstanceId,
+                  choices: resolved.choices,
+                })
     const resolvedExecution = execution
       ?? fail(422, 'Ability runtime requires an execution adapter that is not registered for direct declaration resolution.')
     resolutionPlan = resolvedExecution.plan
     acceptedOutcome = resolutionPlan.changes.length > 0 ? 'applied' : 'no-op'
     trace = appendAbilityTraceEvents(trace, [
       { kind: 'phase-transition', reasonCode: `phase.${selected.phase}`, from: null, to: selected.phase },
+      ...context.random.snapshot().map(roll => ({
+        kind: 'roll' as const, phase: selected.phase,
+        reasonCode: `${roll.rollId}.resolved`, roll,
+      })),
       {
         kind: 'operation', phase: selected.phase, reasonCode: `ability.${mechanicOperation.mechanicId}`,
         operationId: mechanicOperation.id, operationKind: mechanicOperation.kind,

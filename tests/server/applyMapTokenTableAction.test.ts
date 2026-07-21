@@ -9,6 +9,8 @@ import { openRotomDatabase, type RotomDatabase } from '../../server/storage/data
 import { createSqliteLivePlayOpRepository } from '../../server/storage/opRepository'
 import { createSqliteMapRepository } from '../../server/storage/mapRepository'
 import { createSqliteSheetRepository } from '../../server/storage/sheetRepository'
+import { createEmptyEncounterState } from '../../shared/moveAutomation/encounterState'
+import { capabilityEncounterEffectFixture } from '../fixtures/moveAutomation/encounterEffects'
 import { executeLivePlayTableActionCommandUseCase } from '../../server/useCases/applyMapTokenTableAction'
 import {
   LIVE_PLAY_COMMAND_SCHEMA_VERSION,
@@ -166,6 +168,37 @@ afterEach(() => {
 })
 
 describe('live-play map token table action commands', () => {
+  it('ends a Cruelty healing block through the accepted Take a Breather production path', async () => {
+    const encounter = createEmptyEncounterState()
+    const map = baseMap({
+      encounterState: {
+        ...encounter,
+        effects: [{
+          ...capabilityEncounterEffectFixture(),
+          id: 'ability.cruelty.healing-block.actor',
+          affected: { placementIds: ['actor'], sideIds: [], cells: [] },
+          duration: { kind: 'scene', remaining: null },
+          payload: { capabilityId: 'aa065.cruelty.healing-blocked', action: 'grant' },
+          tags: ['ability', 'aa065', 'cruelty', 'healing-blocked'],
+          transferPolicy: 'expire',
+        }],
+      },
+    })
+    const { deps, mapRepository } = createDeps({ map, now: 1110 })
+    const response = await executeLivePlayTableActionCommandUseCase({
+      role: 'player',
+      playerProfile: playerProfile([{ sheetKind: 'pokemon', sheetSlug: 'sandile' }]),
+      command: command(
+        LIVE_PLAY_COMMAND_TYPES.USE_MANEUVER,
+        'op_takebreather1',
+        { placementId: 'actor', maneuverName: 'Take a Breather' },
+        [tokenActionScope('actor'), metadataScope],
+      ),
+    }, deps)
+    expect(response.result).toMatchObject({ ok: true, opId: 'op_takebreather1' })
+    expect(mapRepository.getBySlug('arena')?.encounterState?.effects).toEqual([])
+  })
+
   it('persists linked player maneuver usage through SQLite and publishes an accepted patch', async () => {
     const { deps, mapRepository, events } = createDeps({ now: 1111 })
     const request = command(

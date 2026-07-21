@@ -91,6 +91,10 @@ export interface ReduceMoveCoreTokenOperationStateInput {
   readonly dynamicRecipientsForOperation?: (
     operation: MoveResolvedCoreTokenEffectOperation['operation'],
   ) => MoveCoreTokenDynamicRecipientSets
+  /** Server-owned source owner for response-emitted Ability operations. */
+  readonly sourceOwnerIdForOperation?: (
+    operation: MoveResolvedCoreTokenEffectOperation['operation'],
+  ) => string | null
   /**
    * Optional server-owned recipient query for non-MoveSpec orchestration such
    * as lifecycle facts. Emitted IDs must still match this canonical result.
@@ -375,27 +379,30 @@ export const reduceMoveCoreTokenOperationState = (
       })
     }
     else if (operation.kind === 'combat-stage') {
+      const sourceRecipient = authoritativeSourceRecipient({
+        selector: operation.payload.stageSource,
+        operationId: operation.id,
+        label: 'Combat-stage',
+        errorCode: 'invalid-stage-source',
+        context: operationContext,
+        dynamic: operationDynamic,
+        recipientsById,
+        sheetReads,
+        sheetReadsByKey,
+      })
       recipientResults = reduceCombatStageEffect({
         operation,
         recipients,
-        sourceRecipient: authoritativeSourceRecipient({
-          selector: operation.payload.stageSource,
-          operationId: operation.id,
-          label: 'Combat-stage',
-          errorCode: 'invalid-stage-source',
-          context: operationContext,
-          dynamic: operationDynamic,
-          recipientsById,
-          sheetReads,
-          sheetReadsByKey,
-        }),
+        sourceRecipient,
         accumulator: stageAccumulator,
         immunities: input.immunities,
         ...(input.combatStageAccuracyRolls
           ? { accuracyRolls: input.combatStageAccuracyRolls }
           : {}),
         priorOperationResults: operationResults,
-        sourceOwnerId: operationContext.actor.placement.id,
+        sourceOwnerId: input.sourceOwnerIdForOperation?.(operation)
+          ?? sourceRecipient?.placement.id
+          ?? operationContext.actor.placement.id,
         abilityRules: {
           has: (placementId, canonicalId) => operationContext.queries.abilities.has(placementId, canonicalId),
         },

@@ -47,6 +47,7 @@ import {
   type MoveAutomationAccuracyRule,
 } from '~/utils/moveAutomationResolution'
 import type { MoveAutomationScript } from '~/types/moveAutomation'
+import { createMoveAutomationHpUpdateAccumulator } from '~/utils/moveAutomationHpUpdates'
 import type { SpawnedPokemon } from '~/types/pokemon'
 import type { CharacterSheet } from '~/types/characterSheet'
 import { resistMultiplierOneStepFurther } from '~/utils/typeChart'
@@ -101,6 +102,11 @@ import {
 import { orderMoveReactionOperationEntries } from './reactionOrder'
 import { aa062BoneLordEmpowersMove } from '../abilityAutomation/mechanics/aa062MoveIntegration'
 import { aa064MoveOverlayOperations } from '../abilityAutomation/mechanics/aa064MoveIntegration'
+import { aa065MoveOverlayOperations } from '../abilityAutomation/mechanics/aa065MoveIntegration'
+import {
+  aa065CovertEvasionBonus,
+  aa065DampCancelsMove,
+} from '../abilityAutomation/mechanics/aa065StaticIntegration'
 import {
   createMoveSpecResponseResolver,
   type MoveSpecResolvedResponse,
@@ -2329,6 +2335,8 @@ const executeMoveSpecInternal = (
   let aquaBoostSelected = false
   const criticalHitTargetIds = new Set<string>()
   const projectedRemainingHpByTarget = new Map<string, number>()
+  const projectedHp = createMoveAutomationHpUpdateAccumulator()
+  const projectedInjuriesByTarget = new Map<string, number>()
   let moveCancelledByReaction = false
   const randomTableExecutions = new Map<string, ExecutedMoveRandomTable>()
   const skippedRandomTableOperationIds = new Set<string>()
@@ -2349,6 +2357,15 @@ const executeMoveSpecInternal = (
       executionState.mechanicsSource,
     )
   )
+  const dampCancelled = ['Self-Destruct', 'Explosion'].includes(spec.canonicalId)
+    && aa065DampCancelsMove({
+      context: input.context,
+      script: { moveName: spec.canonicalId },
+    })
+  if (dampCancelled) {
+    moveCancelledByReaction = true
+    activePhases.add('precondition')
+  }
 
   for (const phase of MOVE_SPEC_PHASES) {
     if (!activePhases.has(phase)) continue
@@ -2361,6 +2378,13 @@ const executeMoveSpecInternal = (
     activePhase = phase
 
     if (phase === 'precondition') {
+      if (dampCancelled) {
+        trace = reduceMoveResolutionTrace(trace, {
+          kind: 'predicate', phase, predicateId: 'ability.damp.prevent-explosion',
+          outcome: true, reasonCode: 'ability.damp.effects-fail',
+          input: { subjectPlacementId: input.context.actor.placement.id },
+        })
+      }
       for (const precondition of spec.preconditions) {
         const evaluation = evaluateMovePredicate({
           predicate: precondition.predicate,
@@ -2576,6 +2600,25 @@ const executeMoveSpecInternal = (
       const resolveOperationRecipientIds = (): readonly string[] => {
         if (operation.kind === 'reaction-request' && operation.payload.ownerPlacementIds) {
           const owners = canonicalPlacementIds(input.context, operation.payload.ownerPlacementIds)
+          const aa065TargetPrefixes = new Map<string, string>([
+            ['ability.corrosive-toxins.optional-bypass', 'ability.corrosive-toxins.target:'],
+            ['ability.cruelty.optional-purchases', 'ability.cruelty.target:'],
+            ['ability.cotton-down.optional-burst', 'ability.cotton-down.center:'],
+            ['ability.cursed-body.optional-disable', 'ability.cursed-body.target:'],
+            ['ability.cute-charm.optional-infatuation', 'ability.cute-charm.target:'],
+            ['ability.cute-tears.optional-stage-loss', 'ability.cute-tears.target:'],
+          ])
+          const aa065Prefix = aa065TargetPrefixes.get(operation.reasonCode)
+          if (aa065Prefix) {
+            const targetId = operation.source.kind === 'lifecycle-event'
+              && operation.source.id.startsWith(aa065Prefix)
+              ? operation.source.id.slice(aa065Prefix.length)
+              : null
+            const eligibleIds = operation.reasonCode === 'ability.cute-charm.optional-infatuation'
+              ? targetIds
+              : hitTargetIds
+            return targetId && eligibleIds.includes(targetId) ? owners : []
+          }
           if (operation.reasonCode === 'ability.bully.optional-effects') {
             const targetId = operation.source.kind === 'lifecycle-event'
               && operation.source.id.startsWith('ability.bully.target:')
@@ -2664,6 +2707,45 @@ const executeMoveSpecInternal = (
           const owners = responseOwnerIdsByRequestOperation.get(operation.source.id) ?? []
           const request = reactionRequestsByOperationId.get(operation.source.id)
             ?? choiceRequestsByOperationId.get(operation.source.id)
+          if (request && owners.length === 1 && request.source.kind === 'lifecycle-event') {
+            const aa065Prefixes = new Map<string, string>([
+              ['ability.corrosive-toxins.optional-bypass', 'ability.corrosive-toxins.target:'],
+              ['ability.cruelty.optional-purchases', 'ability.cruelty.target:'],
+              ['ability.cotton-down.optional-burst', 'ability.cotton-down.center:'],
+              ['ability.cursed-body.optional-disable', 'ability.cursed-body.target:'],
+              ['ability.cute-charm.optional-infatuation', 'ability.cute-charm.target:'],
+              ['ability.cute-tears.optional-stage-loss', 'ability.cute-tears.target:'],
+            ])
+            const prefix = aa065Prefixes.get(request.reasonCode)
+            if (prefix && request.source.id.startsWith(prefix)) {
+              const targetId = request.source.id.slice(prefix.length)
+              if (!input.context.queries.placements.get(targetId)) return []
+              if (request.reasonCode === 'ability.cruelty.optional-purchases') {
+                const selected = selectedResponseOptionByRequestOperation.get(operation.source.id)
+                const match = selected?.match(/^ability\.cruelty\.hp-(\d+)\.slow-([01])\.block-([01])$/)
+                if (!match) return []
+                if (operation.reasonCode.startsWith('ability.cruelty.lose-hp-')
+                  && operation.reasonCode !== `ability.cruelty.lose-hp-${Number(match[1])}`) return []
+                if (operation.reasonCode === 'ability.cruelty.slowed' && match[2] !== '1') return []
+                if (operation.reasonCode === 'ability.cruelty.healing-blocked' && match[3] !== '1') return []
+              }
+              if (request.reasonCode === 'ability.cotton-down.optional-burst') {
+                const center = input.context.queries.tokens.get(targetId)
+                if (!center) return []
+                return canonicalPlacementIds(input.context, input.context.queries.placements.all().flatMap((placement) => {
+                  const token = input.context.queries.tokens.get(placement.id)
+                  return token?.entityKind === 'pokemon'
+                    && ptuGridDistanceBetweenFootprints(center, token) <= 1 ? [placement.id] : []
+                }))
+              }
+              if (request.reasonCode === 'ability.cursed-body.optional-disable'
+                || request.reasonCode === 'ability.cute-charm.optional-infatuation'
+                || request.reasonCode === 'ability.cute-tears.optional-stage-loss') {
+                return [input.context.actor.placement.id]
+              }
+              return [targetId]
+            }
+          }
           if (request?.reasonCode === 'ability.bully.optional-effects'
             && owners.length === 1
             && request.source.kind === 'lifecycle-event'
@@ -3452,7 +3534,7 @@ const executeMoveSpecInternal = (
                     attacker: input.context.actor.token,
                     fieldEffects: input.context.queries.rooms.projectFieldEffects(),
                   },
-                ).value
+                ).value + aa065CovertEvasionBonus({ context: input.context, placementId: recipientId })
             if (blurApplies) targetEvasion = Math.floor(targetEvasion / 2)
             modifiers = userAccuracy.modifiers
           }
@@ -3711,6 +3793,8 @@ const executeMoveSpecInternal = (
             naturalCriticalRoll,
             ...(formula.contextualDamageBase ? { contextualDamageBase: formula.contextualDamageBase } : {}),
           })
+          projectedHp.applyLossWithInjuryAutomation(recipient, calculation.breakdown.hpLoss, 'damage')
+          projectedInjuriesByTarget.set(recipientId, projectedHp.getInjuries(recipient))
           const previousRemaining = projectedRemainingHpByTarget.get(recipientId)
             ?? recipient.currentHp + (recipient.temporaryHp ?? 0)
           const remaining = Math.max(0, previousRemaining - calculation.breakdown.hpLoss)
@@ -3785,6 +3869,9 @@ const executeMoveSpecInternal = (
           ...faintedTargetIds,
           ...execution.faintedTargetIds,
         ])
+        for (const update of execution.hpUpdates) {
+          if (update.injuries !== undefined) projectedInjuriesByTarget.set(update.id, update.injuries)
+        }
         trace = reduceMoveResolutionTrace(trace, {
           kind: 'operation',
           phase,
@@ -4523,12 +4610,20 @@ const executeMoveSpecInternal = (
           definition: runtime.definition,
           context: childContext,
           authoritativeTargetIds: childTargetIds,
-          serverAbilityOverlayOperations: aa064MoveOverlayOperations({
-            context: childContext,
-            script: childMechanics,
-            moveSourceId: childMoveSourceId,
-            authoritativeTargetIds: childTargetIds,
-          }),
+          serverAbilityOverlayOperations: [
+            ...aa064MoveOverlayOperations({
+              context: childContext,
+              script: childMechanics,
+              moveSourceId: childMoveSourceId,
+              authoritativeTargetIds: childTargetIds,
+            }),
+            ...aa065MoveOverlayOperations({
+              context: childContext,
+              script: childMechanics,
+              moveSourceId: childMoveSourceId,
+              authoritativeTargetIds: childTargetIds,
+            }),
+          ],
           ancestry,
           resolutionId: childResolutionId,
           handlerRegistry: childContext.handlerRegistry,
@@ -4703,8 +4798,33 @@ const executeMoveSpecInternal = (
           })
           continue
         }
+        let requestOperation = operation
+        if (operation.kind === 'reaction-request'
+          && operation.reasonCode === 'ability.cruelty.optional-purchases') {
+          const prefix = 'ability.cruelty.target:'
+          const targetId = operation.source.kind === 'lifecycle-event'
+            && operation.source.id.startsWith(prefix)
+            ? operation.source.id.slice(prefix.length)
+            : null
+          const token = targetId ? input.context.queries.tokens.get(targetId) : null
+          const budget = token
+            ? Math.min(10, (projectedInjuriesByTarget.get(token.id) ?? token.injuries ?? 0) + 1)
+            : 0
+          const options = operation.payload.options.filter((option) => {
+            const match = option.id.match(/^ability\.cruelty\.hp-(\d+)\.slow-([01])\.block-([01])$/)
+            return match !== null
+              && Number(match[1]) + Number(match[2]) + Number(match[3]) * 2 <= budget
+          })
+          if (options.length === 0) {
+            return fail('definition-integrity-mismatch', 'Cruelty has no legal purchase for its granted Injury.')
+          }
+          requestOperation = {
+            ...operation,
+            payload: { ...operation.payload, options },
+          }
+        }
         const request = pendingRequest(
-          operation,
+          requestOperation,
           recipientIds,
           input.ancestry?.length ?? 0,
         )

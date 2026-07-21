@@ -14,6 +14,7 @@ import {
 import type { MoveAutomationHpUpdateAccumulator } from '~/utils/moveAutomationHpUpdates'
 import { moveAutomationRecoilImmunitySource } from '~/utils/moveAutomationRecoil'
 import type { AuthoritativeMoveRulesContext } from '../context'
+import { authoritativeAbilityHealingBlocked } from '../../abilityAutomation/healingPrevention'
 import {
   evaluateMoveExpression,
   evaluateMoveSelector,
@@ -810,7 +811,8 @@ export const reduceDirectHpEffectForRecipient = (options: {
     )
   }
   const previous = hpSnapshot(accumulator, recipient)
-  if (operation.reasonCode === 'ability.bully.add-injury') {
+  if (operation.reasonCode === 'ability.bully.add-injury'
+    || operation.reasonCode === 'ability.cruelty.add-injury') {
     accumulator.addInjuries(recipient.token, 1)
     const current = hpSnapshot(accumulator, recipient)
     return {
@@ -901,6 +903,10 @@ export const reduceDirectHpEffectForRecipient = (options: {
   const requestedPoolValue = operation.payload.mode === 'lose'
     ? previousPoolValue - calculation.roundedValue
     : calculation.roundedValue
+  if (requestedPoolValue > previousPoolValue
+    && authoritativeAbilityHealingBlocked({ map: options.context.map, placementId: recipient.placement.id })) {
+    return noOpHpResult(recipient, previous, 'ability-cruelty-healing-blocked')
+  }
   return applyDirectPoolValue({
     operation,
     recipient,
@@ -1067,6 +1073,9 @@ export const reduceHealEffectForRecipient = (options: {
 }): MoveCoreTokenEffectRecipientResult => {
   const { operation, recipient, accumulator } = options
   const previous = hpSnapshot(accumulator, recipient)
+  if (authoritativeAbilityHealingBlocked({ map: options.context.map, placementId: recipient.placement.id })) {
+    return noOpHpResult(recipient, previous, 'ability-cruelty-healing-blocked')
+  }
   const outcomeTrigger = operation.payload.operationOutcomeTrigger
   if (outcomeTrigger) {
     const prior = options.priorOperationResults.find(result => (

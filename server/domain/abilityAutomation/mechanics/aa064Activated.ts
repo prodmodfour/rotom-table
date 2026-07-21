@@ -24,6 +24,7 @@ import { planEncounterMoveResourceCosts } from '../../moveAutomation/planMoveRes
 import type { AuthoritativeAbilityContext } from '../context'
 import { planAbilityFrequencyPayment } from '../usage'
 import { aa064ApplyCompetitive, aa064ContraryRequestedValue } from './aa064StageIntegration'
+import { authoritativeAbilityHealingBlocked } from '../healingPrevention'
 
 const CONFIDENCE_FREQUENCY: AbilityFrequencyDeclaration = Object.freeze({
   raw: 'Scene – Standard Action', actionText: 'Standard Action', kind: 'scene', uses: 1, exceptionId: null,
@@ -116,10 +117,15 @@ const comatoseExecution = (input: {
     previous,
     [...new Set([...(input.context.actor.token.sheetConditions ?? []), 'Sleep'])],
   )
-  const healedHp = Math.min(
-    input.context.actor.token.maxHp,
-    input.context.actor.token.currentHp + computeTickValue(input.context.actor.token.maxHp),
-  )
+  const healedHp = authoritativeAbilityHealingBlocked({
+    map: input.context.map,
+    placementId: input.context.actor.placement.id,
+  })
+    ? input.context.actor.token.currentHp
+    : Math.min(
+        input.context.actor.token.maxHp,
+        input.context.actor.token.currentHp + computeTickValue(input.context.actor.token.maxHp),
+      )
   const current = applyHpToSheet(input.context.actor.sheet.kind, withSleep, healedHp)
   const changes: MoveStateChangeInput[] = []
   if (action.changed) changes.push(encounterChange({

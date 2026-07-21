@@ -30,12 +30,18 @@ export const AA064_ABILITY_MECHANIC_IDS = [
   'aa064.combo-striker', 'aa064.competitive', 'aa064.compound-eyes', 'aa064.confidence',
   'aa064.conqueror', 'aa064.contrary', 'aa064.copy-master', 'aa064.corrosion',
 ] as const
+export const AA065_ABILITY_MECHANIC_IDS = [
+  'aa065.corrosive-toxins', 'aa065.cotton-down', 'aa065.courage', 'aa065.covert',
+  'aa065.cruelty', 'aa065.crush-trap', 'aa065.cud-chew', 'aa065.curious-medicine',
+  'aa065.cursed-body', 'aa065.cute-charm', 'aa065.cute-tears', 'aa065.damp',
+] as const
 export type Aa060AbilityMechanicId = (typeof AA060_ABILITY_MECHANIC_IDS)[number]
 export type AbilityMechanicId = Aa060AbilityMechanicId
   | (typeof AA061_ABILITY_MECHANIC_IDS)[number]
   | (typeof AA062_ABILITY_MECHANIC_IDS)[number]
   | (typeof AA063_ABILITY_MECHANIC_IDS)[number]
   | (typeof AA064_ABILITY_MECHANIC_IDS)[number]
+  | (typeof AA065_ABILITY_MECHANIC_IDS)[number]
 export interface AbilityMechanicOperation extends AbilitySpecJsonObject {
   readonly kind: typeof ABILITY_MECHANIC_OPERATION_KIND
   readonly id: string
@@ -114,11 +120,23 @@ const CONFIG_FIELDS: Readonly<Record<AbilityMechanicId, readonly string[]>> = {
   'aa064.contrary': ['invertCombatStageChanges'],
   'aa064.copy-master': ['connectionMoveId', 'triggeringMoveIds', 'resultingStageDelta', 'selectedCombatStat'],
   'aa064.corrosion': ['attackType', 'resistanceStepsIgnored', 'immunityMultiplier', 'poisonTypeImmunityBypass'],
+  'aa065.corrosive-toxins': ['connectionMoveId', 'action', 'frequency', 'condition', 'bypassConditionImmunity', 'bypassBlessings', 'bypassHpLossPrevention'],
+  'aa065.cotton-down': ['action', 'frequency', 'burstSize', 'speedStageDelta', 'condition', 'duration'],
+  'aa065.courage': ['hpThreshold', 'damageBonus', 'damageReduction'],
+  'aa065.covert': ['evasionBonus', 'terrainSource'],
+  'aa065.cruelty': ['action', 'frequency', 'grantedInjuries', 'hpLossPerPurchase', 'slowCost', 'healingBlockCost', 'healingBlockDuration'],
+  'aa065.crush-trap': ['connectionMoveId', 'action', 'frequency', 'triggeringManeuverId', 'damageSource', 'automaticHit', 'criticalHit', 'effectRanges'],
+  'aa065.cud-chew': ['action', 'frequency', 'consumptionPeriod', 'restoreItem'],
+  'aa065.curious-medicine': ['action', 'frequency', 'radius', 'relationship', 'resetCombatStages', 'entryReactionAction'],
+  'aa065.cursed-body': ['action', 'frequency', 'damagingOnly', 'condition'],
+  'aa065.cute-charm': ['action', 'frequency', 'relationship', 'requiredRange', 'requiredGenderRelation', 'condition'],
+  'aa065.cute-tears': ['action', 'frequency', 'damagingOnly', 'stageDelta', 'statSource'],
+  'aa065.damp': ['radius', 'preventedMoveIds', 'preventedAbilityId'],
 }
 const MECHANIC_SET = new Set<string>([
   ...AA060_ABILITY_MECHANIC_IDS, ...AA061_ABILITY_MECHANIC_IDS,
   ...AA062_ABILITY_MECHANIC_IDS, ...AA063_ABILITY_MECHANIC_IDS,
-  ...AA064_ABILITY_MECHANIC_IDS,
+  ...AA064_ABILITY_MECHANIC_IDS, ...AA065_ABILITY_MECHANIC_IDS,
 ])
 const ID = /^[a-z0-9]+(?:[._:/-][a-z0-9]+)*$/
 const fail = (code: AbilityMechanicValidationError['code'], path: string, detail: string): never => { throw new AbilityMechanicValidationError(code, path, detail) }
@@ -479,6 +497,69 @@ const parseConfig = (mechanicId: AbilityMechanicId, value: unknown, path: string
       resistanceStepsIgnored: integer(config.resistanceStepsIgnored, `${path}.resistanceStepsIgnored`, 1, 1),
       immunityMultiplier: exactNumber(config.immunityMultiplier, 0.25, `${path}.immunityMultiplier`),
       poisonTypeImmunityBypass: stringArray(config.poisonTypeImmunityBypass, ['poison', 'steel'], `${path}.poisonTypeImmunityBypass`),
+    }
+    case 'aa065.corrosive-toxins': return {
+      connectionMoveId: oneOf(config.connectionMoveId, ['Toxic'], `${path}.connectionMoveId`),
+      action: oneOf(config.action, ['free'], `${path}.action`), frequency: oneOf(config.frequency, ['scene'], `${path}.frequency`),
+      condition: oneOf(config.condition, ['badly-poisoned'], `${path}.condition`),
+      bypassConditionImmunity: bool(config.bypassConditionImmunity, `${path}.bypassConditionImmunity`),
+      bypassBlessings: bool(config.bypassBlessings, `${path}.bypassBlessings`),
+      bypassHpLossPrevention: bool(config.bypassHpLossPrevention, `${path}.bypassHpLossPrevention`),
+    }
+    case 'aa065.cotton-down': return {
+      action: oneOf(config.action, ['free'], `${path}.action`), frequency: oneOf(config.frequency, ['scene'], `${path}.frequency`),
+      burstSize: integer(config.burstSize, `${path}.burstSize`, 1, 1), speedStageDelta: integer(config.speedStageDelta, `${path}.speedStageDelta`, -1, -1),
+      condition: oneOf(config.condition, ['slowed'], `${path}.condition`), duration: oneOf(config.duration, ['one-full-round'], `${path}.duration`),
+    }
+    case 'aa065.courage': {
+      const threshold = record(config.hpThreshold, `${path}.hpThreshold`)
+      exact(threshold, ['numerator', 'denominator'], `${path}.hpThreshold`)
+      return {
+        hpThreshold: { numerator: integer(threshold.numerator, `${path}.hpThreshold.numerator`, 1, 1), denominator: integer(threshold.denominator, `${path}.hpThreshold.denominator`, 3, 3) },
+        damageBonus: integer(config.damageBonus, `${path}.damageBonus`, 5, 5), damageReduction: integer(config.damageReduction, `${path}.damageReduction`, 5, 5),
+      }
+    }
+    case 'aa065.covert': return {
+      evasionBonus: integer(config.evasionBonus, `${path}.evasionBonus`, 2, 2), terrainSource: oneOf(config.terrainSource, ['natural-habitat'], `${path}.terrainSource`),
+    }
+    case 'aa065.cruelty': return {
+      action: oneOf(config.action, ['swift'], `${path}.action`), frequency: oneOf(config.frequency, ['scene'], `${path}.frequency`),
+      grantedInjuries: integer(config.grantedInjuries, `${path}.grantedInjuries`, 1, 1), hpLossPerPurchase: integer(config.hpLossPerPurchase, `${path}.hpLossPerPurchase`, 2, 2),
+      slowCost: integer(config.slowCost, `${path}.slowCost`, 1, 1), healingBlockCost: integer(config.healingBlockCost, `${path}.healingBlockCost`, 2, 2),
+      healingBlockDuration: oneOf(config.healingBlockDuration, ['encounter-until-switch-or-breather'], `${path}.healingBlockDuration`),
+    }
+    case 'aa065.crush-trap': return {
+      connectionMoveId: oneOf(config.connectionMoveId, ['Wrap'], `${path}.connectionMoveId`), action: oneOf(config.action, ['free'], `${path}.action`),
+      frequency: oneOf(config.frequency, ['scene'], `${path}.frequency`), triggeringManeuverId: oneOf(config.triggeringManeuverId, ['Grapple'], `${path}.triggeringManeuverId`),
+      damageSource: oneOf(config.damageSource, ['Struggle'], `${path}.damageSource`), automaticHit: bool(config.automaticHit, `${path}.automaticHit`),
+      criticalHit: oneOf(config.criticalHit, ['never'], `${path}.criticalHit`), effectRanges: oneOf(config.effectRanges, ['never'], `${path}.effectRanges`),
+    }
+    case 'aa065.cud-chew': return {
+      action: oneOf(config.action, ['swift'], `${path}.action`), frequency: oneOf(config.frequency, ['scene'], `${path}.frequency`),
+      consumptionPeriod: oneOf(config.consumptionPeriod, ['current-encounter'], `${path}.consumptionPeriod`), restoreItem: bool(config.restoreItem, `${path}.restoreItem`),
+    }
+    case 'aa065.curious-medicine': return {
+      action: oneOf(config.action, ['swift'], `${path}.action`), frequency: oneOf(config.frequency, ['scene'], `${path}.frequency`),
+      radius: integer(config.radius, `${path}.radius`, 2, 2), relationship: oneOf(config.relationship, ['ally'], `${path}.relationship`),
+      resetCombatStages: bool(config.resetCombatStages, `${path}.resetCombatStages`), entryReactionAction: oneOf(config.entryReactionAction, ['free'], `${path}.entryReactionAction`),
+    }
+    case 'aa065.cursed-body': return {
+      action: oneOf(config.action, ['free'], `${path}.action`), frequency: oneOf(config.frequency, ['scene'], `${path}.frequency`),
+      damagingOnly: bool(config.damagingOnly, `${path}.damagingOnly`), condition: oneOf(config.condition, ['disabled'], `${path}.condition`),
+    }
+    case 'aa065.cute-charm': return {
+      action: oneOf(config.action, ['free'], `${path}.action`), frequency: oneOf(config.frequency, ['scene'], `${path}.frequency`),
+      relationship: oneOf(config.relationship, ['enemy'], `${path}.relationship`), requiredRange: oneOf(config.requiredRange, ['melee'], `${path}.requiredRange`),
+      requiredGenderRelation: oneOf(config.requiredGenderRelation, ['opposite'], `${path}.requiredGenderRelation`), condition: oneOf(config.condition, ['infatuated'], `${path}.condition`),
+    }
+    case 'aa065.cute-tears': return {
+      action: oneOf(config.action, ['free'], `${path}.action`), frequency: oneOf(config.frequency, ['scene'], `${path}.frequency`),
+      damagingOnly: bool(config.damagingOnly, `${path}.damagingOnly`), stageDelta: integer(config.stageDelta, `${path}.stageDelta`, -2, -2),
+      statSource: oneOf(config.statSource, ['triggering-move-attack-stat'], `${path}.statSource`),
+    }
+    case 'aa065.damp': return {
+      radius: integer(config.radius, `${path}.radius`, 10, 10), preventedMoveIds: stringArray(config.preventedMoveIds, ['Self-Destruct', 'Explosion'], `${path}.preventedMoveIds`),
+      preventedAbilityId: oneOf(config.preventedAbilityId, ['Aftermath'], `${path}.preventedAbilityId`),
     }
   }
 }

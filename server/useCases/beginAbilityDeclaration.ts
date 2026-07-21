@@ -112,9 +112,23 @@ const declarationsFor = (context: ReturnType<typeof buildAuthoritativeAbilityCon
               : []
             )))
           : null
+        const crushTrapTargets = context.runtime.canonicalId === 'Crush Trap' && modeId === 'crush'
+          ? new Set((context.map.encounterState?.abilityOwnedState?.entries ?? []).flatMap(entry => (
+              entry.ownerPlacementId === context.actor.placement.id
+              && context.actor.effectiveAbilities.some(ability => ability.effective
+                && ability.canonicalId === 'Crush Trap'
+                && ability.instanceId === entry.sourceAbilityInstanceId)
+              && entry.canonicalId === 'Crush Trap'
+              && entry.payload.kind === 'mark'
+              && entry.payload.markId.startsWith('aa065.crush-trap.grapple:')
+                ? entry.targetPlacementIds
+                : []
+            )))
+          : null
         options = resolved.legalTargetPlacementIds
           .filter(id => selectedBySelector === null || selectedBySelector.has(id))
           .filter(id => ballFetchTargets === null || ballFetchTargets.has(id))
+          .filter(id => crushTrapTargets === null || crushTrapTargets.has(id))
           .map((placementId, index) => option(declaration.id, index, declaration.kind, { kind: 'token', placementId }))
       }
       else if (declaration.kind === 'side') options = Object.values(context.sides)
@@ -173,15 +187,27 @@ const declarationsFor = (context: ReturnType<typeof buildAuthoritativeAbilityCon
           kind: 'ability', canonicalAbilityId: ability.canonicalId, abilityInstanceId: ability.instanceId,
         }))
       }
-      else if (declaration.kind === 'item') options = context.queries.items.requirements()
-        .flatMap(requirement => context.queries.items.referencesForRequirement(requirement.id))
-        .map((reference, index) => option(declaration.id, index, declaration.kind, {
-          kind: 'item',
-          itemId: reference.itemId,
-          itemResourceId: reference.owner.kind === 'sheet'
-            ? `sheet:${reference.owner.sheetKind}:${reference.owner.slug}`
-            : `${reference.owner.kind}:${reference.owner.slug}`,
-        }))
+      else if (declaration.kind === 'item') options = context.runtime.canonicalId === 'Cud Chew'
+        ? (context.map.encounterState?.abilityOwnedState?.entries ?? [])
+            .filter(entry => entry.ownerPlacementId === context.actor.placement.id
+              && context.actor.effectiveAbilities.some(ability => ability.effective
+                && ability.canonicalId === 'Cud Chew'
+                && ability.instanceId === entry.sourceAbilityInstanceId)
+              && entry.canonicalId === 'Cud Chew'
+              && entry.payload.kind === 'mark'
+              && entry.payload.markId.startsWith('aa065.cud-chew.consumed:'))
+            .map((entry, index) => option(declaration.id, index, declaration.kind, {
+              kind: 'item', itemId: entry.stateId, itemResourceId: `ability-owned:${entry.stateId}`,
+            }))
+        : context.queries.items.requirements()
+            .flatMap(requirement => context.queries.items.referencesForRequirement(requirement.id))
+            .map((reference, index) => option(declaration.id, index, declaration.kind, {
+              kind: 'item',
+              itemId: reference.itemId,
+              itemResourceId: reference.owner.kind === 'sheet'
+                ? `sheet:${reference.owner.sheetKind}:${reference.owner.slug}`
+                : `${reference.owner.kind}:${reference.owner.slug}`,
+            }))
       else if (declaration.kind === 'cell') {
         const cells = []
         for (let y = 0; y < context.map.dimensions.y; y += 1) for (let z = 0; z < context.map.dimensions.z; z += 1) for (let x = 0; x < context.map.dimensions.x; x += 1) {

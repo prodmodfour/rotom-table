@@ -61,6 +61,7 @@ import {
 } from '../utils/sessionStore'
 import { readRuntimeSheet } from '../utils/sqliteSheetRuntimeHelpers'
 import { UseCaseHttpError } from '../utils/useCaseErrors'
+import { applyAa065CuriousMedicineSendOutTrigger } from '../domain/abilityAutomation/mechanics/aa065PresenceIntegration'
 
 export class ApplySendOutPokemonCommandUseCaseError<
   TStatusCode extends number = number,
@@ -976,11 +977,19 @@ export const applySendOutPokemonCommandUseCase = (
     return rejectionOutcome(envelope, record, record.state, destinationRejection)
   }
 
-  const nextDocument = sentOutMapDocument(
+  const sentOutDocument = sentOutMapDocument(
     targetResult.target.mapState.document,
     targetResult.target.placement,
     processedAt,
   )
+  const nextDocument = applyAa065CuriousMedicineSendOutTrigger({
+    mapAfter: sentOutDocument,
+    releasedPlacementId: targetResult.target.placement.id,
+    operationId: envelope.opId,
+    readPokemonSheet: slug => slug === targetResult.target.placement.sheetSlug
+      ? ownershipResult.sheets.pokemonSheet
+      : null,
+  })
   const applied = applyAcceptedSessionCommandEffect({
     state: record.state,
     command: commandValidation.command,

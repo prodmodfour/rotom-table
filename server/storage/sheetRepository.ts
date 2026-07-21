@@ -3,7 +3,10 @@ import { nextRevision, normalizeRevision } from '#shared/sessionRevisions'
 import { isSheetKind, SHEET_KINDS, type SheetKind } from '#shared/sheets'
 import { sameJsonValue } from '~/utils/serialization'
 import { stripDerivedSheetRuntimeFields } from '~/utils/sheets/persistence'
-import { preservePokemonGmFieldsForPlayerSave } from '~/utils/sheets/pokemonGmFields'
+import {
+  preservePokemonGmFieldsForPlayerSave,
+  preservePokemonServerPrivateFieldsForSave,
+} from '~/utils/sheets/pokemonGmFields'
 import { stripLegacyTrainerSheetSkillRanks } from '~/utils/sheets/trainerSkillEntries'
 import { getRotomDatabase, type RotomDatabase } from './database'
 import {
@@ -546,8 +549,13 @@ export const createSqliteSheetRepository = <TDocument = unknown>(
     if (current.revision !== expectedRevision) throw new Error(`${kind} sheet ${slug} is stale; expected revision ${expectedRevision}, current revision ${current.revision}`)
 
     const currentSheet = current.sheet
-    const inputSheet = input.preservePokemonGmFields && kind === 'pokemon'
-      ? preservePokemonGmFieldsForPlayerSave(input.sheet, currentSheet)
+    const inputSheet = kind === 'pokemon'
+      ? preservePokemonServerPrivateFieldsForSave(
+          input.preservePokemonGmFields
+            ? preservePokemonGmFieldsForPlayerSave(input.sheet, currentSheet)
+            : input.sheet,
+          currentSheet,
+        )
       : input.sheet
     const sourceWithServerFields = {
       ...inputSheet,

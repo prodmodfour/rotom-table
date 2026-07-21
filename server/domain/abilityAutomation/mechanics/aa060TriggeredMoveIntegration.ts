@@ -2,6 +2,7 @@ import { createHash } from 'node:crypto'
 import type { MoveCombatStageEffectOperation, MoveDirectHpEffectOperation, MoveEffectOperation, MoveReactionRequestEffectOperation } from '#shared/moveAutomation/effects'
 import type { MoveAutomationScript } from '~/types/moveAutomation'
 import type { AuthoritativeMoveRulesContext } from '../../moveAutomation/context'
+import { aa065DampPrevents } from './aa065StaticIntegration'
 
 const operationSuffix = (...parts: readonly string[]): string => createHash('sha256')
   .update(parts.join('\u0000')).digest('hex').slice(0, 24)
@@ -82,7 +83,8 @@ export const aa060TriggeredMoveOverlayOperations = (input: {
       })
     }
     const aftermath = abilities.find(candidate => candidate.canonicalId === 'Aftermath')
-    if (aftermath && targetId !== input.context.actor.placement.id) {
+    if (aftermath && targetId !== input.context.actor.placement.id
+      && !aa065DampPrevents({ context: input.context, subjectPlacementId: targetId })) {
       const suffix = operationSuffix(
         input.context.resolutionId ?? input.script.moveName,
         targetId,

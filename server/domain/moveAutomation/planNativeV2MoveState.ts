@@ -64,6 +64,9 @@ import { aa060MoveMarkId } from '../abilityAutomation/mechanics/aa060MoveIntegra
 import { Aa060AnchoredMovementError, assertAa060AnchoredDestination } from '../abilityAutomation/mechanics/aa060'
 import { aa061AquaBulletStateIdsForMove, aa061BatteryStateIdsForMove } from '../abilityAutomation/mechanics/aa061MoveIntegration'
 import { aa062BoneLordReadyStateIds } from '../abilityAutomation/mechanics/aa062MoveIntegration'
+import { recordAa065CudChewConsumptions } from '../abilityAutomation/mechanics/aa065ItemIntegration'
+import { applyAa061BallFetchSendOutTriggers } from '../abilityAutomation/mechanics/aa061PresenceIntegration'
+import { applyAa065CuriousMedicineSendOutTrigger } from '../abilityAutomation/mechanics/aa065PresenceIntegration'
 import { planEncounterMoveResourceCosts } from './planMoveResources'
 
 export type NativeMoveSpecPlanErrorCode =
@@ -646,6 +649,13 @@ const applyTriggeredAbilityPayments = (input: {
     ['ability.color-change.optional-type', 'Color Change'],
     ['ability.combo-striker.optional-struggle', 'Combo Striker'],
     ['ability.conqueror.optional-stages', 'Conqueror'],
+    ['ability.corrosive-toxins.optional-bypass', 'Corrosive Toxins'],
+    ['ability.cotton-down.optional-burst', 'Cotton Down'],
+    ['ability.cruelty.optional-purchases', 'Cruelty'],
+    ['ability.crush-trap.optional-struggle', 'Crush Trap'],
+    ['ability.cursed-body.optional-disable', 'Cursed Body'],
+    ['ability.cute-charm.optional-infatuation', 'Cute Charm'],
+    ['ability.cute-tears.optional-stage-loss', 'Cute Tears'],
   ] as const)
   const selections = input.traces.flatMap(trace => trace.events).filter(event => (
     event.kind === 'operation'
@@ -663,13 +673,15 @@ const applyTriggeredAbilityPayments = (input: {
       ?? fail('state-change-conflict', `Selected ${canonicalId} response lost its effective runtime.`)
     const actionResources = canonicalId === 'Celebrate'
       ? (['swift', 'free'] as const)
-      : (['free'] as const)
+      : canonicalId === 'Cruelty'
+        ? (['swift'] as const)
+        : (['free'] as const)
     const action = planEncounterMoveResourceCosts({
       map,
       placementId: ownerId,
       canonicalMoveId: `ability:${canonicalId}`,
       moveKey: `ability:${canonicalId.toLowerCase().replaceAll(' ', '-')}`,
-      range: canonicalId === 'Celebrate' ? 'Swift Action' : 'Free Action',
+      range: canonicalId === 'Celebrate' || canonicalId === 'Cruelty' ? 'Swift Action' : 'Free Action',
       resolutionId: input.resolutionId,
       sourceOperationId: `${selection.operationId}:action`,
       movement: null,
@@ -860,7 +872,7 @@ export const planNativeV2MoveState = (options: {
     map: mapAfterYawnCleanup,
     placementIds: native.faintedPlacementIds,
   }).map
-  const itemPlan = planMoveItemMutations({
+  const baseItemPlan = planMoveItemMutations({
     map: mapAfterKnockoutCleanup,
     pokemonSheets: options.pokemonSheets,
     trainerSheets: options.trainerSheets,
@@ -870,13 +882,25 @@ export const planNativeV2MoveState = (options: {
     originOperationId,
     plannedAt: options.plannedAt,
   })
+  const cudChewHistory = recordAa065CudChewConsumptions({
+    map: baseItemPlan.nextMap,
+    context,
+    consumedItems: baseItemPlan.consumedItems,
+    itemStateChanges: baseItemPlan.stateChanges,
+    operationId: originOperationId,
+  })
+  const itemPlan = {
+    ...baseItemPlan,
+    nextMap: cudChewHistory.map,
+    stateChanges: cudChewHistory.itemStateChanges,
+  }
   const itemTrace = applyMoveItemEffectResultsToTrace({
     trace: native.trace,
     interpretation: native.itemEffects,
     mutationResults: itemPlan.operationResults,
   })
   const mapAfterSpatialMovement = applyNativeSpatialMovements(
-    itemPlan.nextMap,
+    cudChewHistory.map,
     native.spatialMovements,
   )
   const mapOperations = native.operations.filter(isMoveMapOperationEmission)
@@ -1010,12 +1034,31 @@ export const planNativeV2MoveState = (options: {
       `${code}: ${message}`,
     ),
   })
-  const switchedMap = options.resolution.switchTransition
+  const switchedBaseMap = options.resolution.switchTransition
     ? planAuthoritativeMoveSwitch({
         map: placementTransitionMap,
         transition: options.resolution.switchTransition,
       }).nextMap
     : placementTransitionMap
+  const switchedMap = options.resolution.switchTransition?.kind === 'recall-and-send-out'
+    ? (() => {
+        const transition = options.resolution.switchTransition
+        const readPokemonSheet = (slug: string): CharacterSheet | null => options.pokemonSheets.get(slug) ?? null
+        const withBallFetch = applyAa061BallFetchSendOutTriggers({
+          mapBefore: placementTransitionMap,
+          mapAfter: switchedBaseMap,
+          releasedPlacementId: transition.sentOutPlacement.id,
+          operationId: transition.operationId,
+          readPokemonSheet,
+        })
+        return applyAa065CuriousMedicineSendOutTrigger({
+          mapAfter: withBallFetch,
+          releasedPlacementId: transition.sentOutPlacement.id,
+          operationId: transition.operationId,
+          readPokemonSheet,
+        })
+      })()
+    : switchedBaseMap
   const nextMap: TabletopMap = {
     ...switchedMap,
     revision: mapReduction.revision,

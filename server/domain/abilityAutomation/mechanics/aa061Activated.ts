@@ -18,6 +18,7 @@ import { planAbilityMovement } from '../movement'
 import { aa061AquaBulletMarkId, aa061AuraBreakMarkId } from './aa061MoveIntegration'
 import { findMove } from '~~/data/ptuReference'
 import { aa061BallFetchReleaseMarkId } from './aa061PresenceIntegration'
+import { authoritativeAbilityHealingBlocked } from '../healingPrevention'
 
 const ARENA_TRAP_FREQUENCY: AbilityFrequencyDeclaration = Object.freeze({
   raw: 'Scene – Free Action', actionText: 'Free Action', kind: 'scene', uses: 1, exceptionId: null,
@@ -388,7 +389,10 @@ const badDreamsExecution = (input: {
     const current = applyHpToSheet(participant.sheet.kind, previous, currentHp)
     mutations.set(participant.placement.id, { participant, previous, current })
   }
-  if (anyLoss) {
+  if (anyLoss && !authoritativeAbilityHealingBlocked({
+    map: input.context.map,
+    placementId: input.context.actor.placement.id,
+  })) {
     const activeScene = input.context.map.activeScene
       ?? fail('Bad Dreams requires an active Scene for temporary Hit Points.')
     const previousTemporary = input.context.map.temporaryHitPoints

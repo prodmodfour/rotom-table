@@ -90,6 +90,7 @@ import { aa061TriggeredMoveOverlayOperations } from '../abilityAutomation/mechan
 import { aa062BoneLordEmpowersMove, aa062MoveOverlayOperations } from '../abilityAutomation/mechanics/aa062MoveIntegration'
 import { aa063MoveOverlayOperations } from '../abilityAutomation/mechanics/aa063MoveIntegration'
 import { aa064MoveOverlayOperations } from '../abilityAutomation/mechanics/aa064MoveIntegration'
+import { aa065MoveOverlayOperations } from '../abilityAutomation/mechanics/aa065MoveIntegration'
 
 export type ImmediateMoveSpecResolutionErrorCode =
   | 'execution-rejected'
@@ -939,6 +940,7 @@ const executeReviewedMoveSpec = (
     ...aa062MoveOverlayOperations(overlayInput),
     ...aa063MoveOverlayOperations(overlayInput),
     ...aa064MoveOverlayOperations(overlayInput),
+    ...aa065MoveOverlayOperations(overlayInput),
   ]
   const boneLordLine = script.moveName === 'Bonemerang'
     && aa062BoneLordEmpowersMove(options.context, 'Bonemerang')
@@ -1055,6 +1057,12 @@ export const reduceCompletedMoveSpec = (
   })
   const uncommittedOperations = [...authoredOperations, ...abilityOperations]
   assertSupportedImmediateOperations(uncommittedOperations)
+  const responseOwnerByOperationId = new Map(uncommittedOperations.flatMap(emission => (
+    (emission.operation.kind === 'reaction-request' || emission.operation.kind === 'choice-request')
+    && emission.recipientIds.length === 1
+      ? [[emission.operation.id, emission.recipientIds[0]!] as const]
+      : []
+  )))
   let reductionTrace = execution.trace
   for (const emission of abilityOperations) {
     reductionTrace = reduceMoveResolutionTrace(reductionTrace, {
@@ -1066,10 +1074,26 @@ export const reduceCompletedMoveSpec = (
       result: { status: 'emitted' },
     })
   }
-  const contextForOperation = createMoveSpecOperationContextResolver({
+  const baseContextForOperation = createMoveSpecOperationContextResolver({
     root: options.context,
     children: execution.childExecutions,
   })
+  const contextForOperation: typeof baseContextForOperation = (operation) => {
+    const context = baseContextForOperation(operation)
+    const sourced = typeof operation === 'string'
+      ? null
+      : operation as { readonly source?: { readonly kind?: unknown; readonly id?: unknown } }
+    const ownerId = sourced?.source?.kind === 'operation' && typeof sourced.source.id === 'string'
+      ? responseOwnerByOperationId.get(sourced.source.id)
+      : undefined
+    if (!ownerId || ownerId === context.actor.placement.id) return context
+    const placement = context.queries.placements.get(ownerId)
+    const token = context.queries.tokens.get(ownerId)
+    const sheet = placement ? context.queries.sheets.forPlacement(placement) : null
+    return placement && token && sheet
+      ? Object.freeze({ ...context, actor: Object.freeze({ placement, token, sheet }) })
+      : context
+  }
   const interpretedItemEffects = interpretMoveItemEffects({
     context: options.context,
     operations: uncommittedOperations.filter(isMoveItemEffectEmission),
@@ -1120,6 +1144,9 @@ export const reduceCompletedMoveSpec = (
     ...(nestedRecipients ? { recipientIdsForOperation: nestedRecipients } : {}),
     contextForOperation,
     dynamicRecipientsForOperation,
+    sourceOwnerIdForOperation: operation => operation.source.kind === 'operation'
+      ? responseOwnerByOperationId.get(operation.source.id) ?? null
+      : null,
     branchControlledOperationIds: branchControlledOperationIds(uncommittedOperations),
     damage: coreOperations.some(({ operation }) => operation.kind === 'damage')
       ? createDamageQuery({
