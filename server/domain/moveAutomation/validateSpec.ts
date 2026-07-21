@@ -1180,12 +1180,12 @@ export const validateMoveSpecOperationSequence = (
       if (
         sourceIndex === undefined
         || sourceIndex >= index
-        || source?.kind !== 'reaction-request'
+        || (source?.kind !== 'reaction-request' && source?.kind !== 'choice-request')
       ) {
         fail(
           'invalid-definition',
           `${path}.source`,
-          'response-owner effects must reference an earlier reviewed reaction request.',
+          'response-owner effects must reference an earlier reviewed response request.',
         )
       }
     }

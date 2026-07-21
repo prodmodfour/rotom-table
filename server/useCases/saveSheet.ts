@@ -23,6 +23,7 @@ import {
 import { logicalSheetResourcePath } from '../utils/runtimeResourcePaths'
 import { redactSheetRecordForPlayer } from '../utils/sheetPrivacy'
 import { setupSheetSaveRealtimeAppendInputs } from '../realtime/setupDocumentRealtime'
+import { acquireServerRolledAbilityParameters } from '../domain/abilityAutomation/parameterAcquisition'
 import {
   defaultPersistedSetupSaveRealtimeEventPublisher,
   defaultSetupSaveRealtimePublicationFailureReporter,
@@ -62,6 +63,7 @@ export interface SaveSheetDependencies {
   isPlayerAccessible?: (kind: SheetKind, slug: string) => boolean
   listTrainerSheets?: () => Iterable<PlayerProfileLinkedTrainerSheet>
   now?: () => number
+  randomInt?: (maximumExclusive: number) => number
 }
 
 export interface SaveSheetResult {
@@ -156,7 +158,6 @@ export const saveSheetUseCase = (
 
   const current = sheetRepository.getByRef(input.kind, input.slug)
   if (!current) throw new SaveSheetUseCaseError(404, `Sheet ${input.slug}.json not found`)
-
   const isPlayerAccessible = dependencies.isPlayerAccessible
     ?? ((kind: SheetKind, slug: string) => sheetRepository.getByRef(kind, slug)?.sheet.player === true)
   const listTrainerSheets = dependencies.listTrainerSheets
@@ -188,8 +189,18 @@ export const saveSheetUseCase = (
     )
   }
 
+  const authoritativeInput: SaveSheetInput = {
+    ...input,
+    sheet: acquireServerRolledAbilityParameters({
+      kind: input.kind, slug: input.slug, currentRevision: current.revision,
+      currentSheet: current.sheet,
+      requestedSheet: input.sheet,
+      ...(dependencies.randomInt ? { randomInt: dependencies.randomInt } : {}),
+    }),
+  }
+
   const transactionResult = database.withTransaction(() => {
-    const saved = replaceSheetOrThrow(sheetRepository, input, now())
+    const saved = replaceSheetOrThrow(sheetRepository, authoritativeInput, now())
     if (!saved) throw new SaveSheetUseCaseError(404, `Sheet ${input.slug}.json not found`)
 
     const authoritativeSheet = readAuthoritativeSheetOrThrow(sheetRepository, input.kind, input.slug, saved.sheet)

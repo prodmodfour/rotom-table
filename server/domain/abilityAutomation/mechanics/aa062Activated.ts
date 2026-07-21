@@ -25,6 +25,7 @@ import type { AuthoritativeAbilityContext } from '../context'
 import { planAbilityFrequencyPayment } from '../usage'
 import { planAbilityOwnedStateCommand } from '../ownedState'
 import { aa062BoneLordReadyMarkId, aa062BoneLordUsedMarkId } from './aa062MoveIntegration'
+import { aa064ContraryRequestedValue } from './aa064StageIntegration'
 
 const BEAUTIFUL_FREQUENCY: AbilityFrequencyDeclaration = Object.freeze({
   raw: 'Scene – Standard Action', actionText: 'Standard Action', kind: 'scene', uses: 1, exceptionId: null,
@@ -147,7 +148,14 @@ const beautifulExecution = (input: {
   else if (input.modeId === 'battle') {
     const actorSheet = deepCloneJson(input.context.actor.sheet.sheet) as AnyLiveSheet
     const actorStages = stagesFor(input.context, input.context.actor.placement.id)
-    actorStages.satk = Math.min(6, actorStages.satk + 1)
+    actorStages.satk = Math.max(-6, Math.min(6, aa064ContraryRequestedValue({
+      recipientId: input.context.actor.placement.id,
+      current: actorStages.satk,
+      unboundedRequested: actorStages.satk + 1,
+      abilities: {
+        has: (placementId, canonicalId) => input.context.queries.effectiveAbilities.has(placementId, canonicalId),
+      },
+    })))
     const actorCurrent = applyCombatStagesToSheet(input.context.actor.sheet.kind, actorSheet, actorStages)
     changes.push(sheetChange({
       context: input.context, operationId: `${input.operationId}:special-attack`,

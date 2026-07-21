@@ -20,6 +20,7 @@ import { conditionBaseName, normalizeConditionName } from '~/utils/statusConditi
 import type { AuthoritativeMoveRulesContext } from '../context'
 import { computeMultiplier } from '~/utils/typeChart'
 import type { MoveAutomationScript } from '~/types/moveAutomation'
+import { aa064CorrosionCanPoison } from '../../abilityAutomation/mechanics/aa064MoveIntegration'
 import type {
   MoveConditionImmunityDecision,
   MoveCoreTokenEffectImmunityDecision,
@@ -211,7 +212,10 @@ export const createStandardMoveCoreTokenEffectImmunityQueries = (
       if (operation.payload.action === 'remove' || operation.payload.action === 'clear') {
         return conditionDecision(null)
       }
-      if (operation.payload.applyTypeImmunity) {
+      const corrosionBypass = aa064CorrosionCanPoison({
+        context: options.context, condition, recipientTypes: recipient.token.defenderTypes,
+      })
+      if (operation.payload.applyTypeImmunity && !corrosionBypass) {
         const typedBlocker = typedAttackImmunity(recipient, 'defending')
         if (typedBlocker) return conditionDecision(typedBlocker)
       }
@@ -226,7 +230,14 @@ export const createStandardMoveCoreTokenEffectImmunityQueries = (
       )
       const passiveBlocker = moveAutomationConditionImmunitySource(
         condition,
-        recipient.token,
+        corrosionBypass
+          ? {
+              ...recipient.token,
+              defenderTypes: recipient.token.defenderTypes.filter(type => (
+                !['poison', 'steel'].includes(type.trim().toLowerCase())
+              )),
+            }
+          : recipient.token,
         options.moveType,
         conditionContext,
       )

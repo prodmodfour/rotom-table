@@ -395,6 +395,10 @@ export const reduceMoveCoreTokenOperationState = (
           ? { accuracyRolls: input.combatStageAccuracyRolls }
           : {}),
         priorOperationResults: operationResults,
+        sourceOwnerId: operationContext.actor.placement.id,
+        abilityRules: {
+          has: (placementId, canonicalId) => operationContext.queries.abilities.has(placementId, canonicalId),
+        },
       })
     }
     else if (

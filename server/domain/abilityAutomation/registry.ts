@@ -20,6 +20,7 @@ import { AA060_ABILITY_SPEC_REGISTRATIONS } from './specs/aa060'
 import { AA061_ABILITY_SPEC_REGISTRATIONS } from './specs/aa061'
 import { AA062_ABILITY_SPEC_REGISTRATIONS } from './specs/aa062'
 import { AA063_ABILITY_SPEC_REGISTRATIONS } from './specs/aa063'
+import { AA064_ABILITY_SPEC_REGISTRATIONS } from './specs/aa064'
 
 export interface AbilitySpecV1Registration {
   readonly canonicalId: string
@@ -183,6 +184,7 @@ export const REVIEWED_ABILITY_SPEC_V1_REGISTRATIONS: readonly AbilitySpecV1Regis
   ...AA061_ABILITY_SPEC_REGISTRATIONS,
   ...AA062_ABILITY_SPEC_REGISTRATIONS,
   ...AA063_ABILITY_SPEC_REGISTRATIONS,
+  ...AA064_ABILITY_SPEC_REGISTRATIONS,
 ])
 
 export const ABILITY_AUTOMATION_RUNTIME_REGISTRY = createAbilityAutomationRuntimeRegistry({

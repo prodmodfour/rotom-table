@@ -12,6 +12,11 @@ import {
 } from '~/utils/combatStages'
 import type { MoveAutomationCombatStageUpdateAccumulator } from '~/utils/moveAutomationStatusUpdates'
 import type { CombatStageKey, CombatStageMap } from '~/types/combatStages'
+import {
+  aa064ApplyCompetitive,
+  aa064ContraryRequestedValue,
+  type Aa064StageAbilityQueries,
+} from '../../abilityAutomation/mechanics/aa064StageIntegration'
 import { failMoveCoreTokenEffectReduction } from './coreTokenEffectError'
 import type {
   MoveCombatStageAccuracyRollQueries,
@@ -58,6 +63,9 @@ interface CombatStageRecipientWork {
   readonly changes: CombatStageChangeAudit[]
   trigger: CombatStageTriggerAudit | null
   redistributionPrevented: boolean
+  competitiveDelta: number
+  readonly sourceOwnerId: string | null
+  readonly abilityRules?: Aa064StageAbilityQueries
 }
 
 interface CombatStageRequest {
@@ -102,6 +110,10 @@ const operationStages = (
 const createWork = (
   accumulator: MoveAutomationCombatStageUpdateAccumulator,
   recipient: MoveCoreTokenEffectRecipient,
+  options: {
+    readonly sourceOwnerId: string | null
+    readonly abilityRules?: Aa064StageAbilityQueries
+  },
 ): CombatStageRecipientWork => {
   const previous = combatStageSnapshot(accumulator, recipient)
   return {
@@ -113,6 +125,9 @@ const createWork = (
     changes: [],
     trigger: null,
     redistributionPrevented: false,
+    competitiveDelta: 0,
+    sourceOwnerId: options.sourceOwnerId,
+    ...(options.abilityRules ? { abilityRules: options.abilityRules } : {}),
   }
 }
 
@@ -125,9 +140,15 @@ const rounded = (value: number, policy: MoveEffectRoundingPolicy): number => {
 const request = (
   work: CombatStageRecipientWork,
   stage: CombatStageKey,
-  unboundedRequested: number,
+  originalUnboundedRequested: number,
 ): CombatStageRequest => {
   const previous = work.previous.stages[stage]
+  const unboundedRequested = aa064ContraryRequestedValue({
+    recipientId: work.recipient.placement.id,
+    current: previous,
+    unboundedRequested: originalUnboundedRequested,
+    abilities: work.abilityRules,
+  })
   const requested = clampCombatStage(unboundedRequested)
   return {
     work,
@@ -499,6 +520,7 @@ const combatStageDetails = (
     operationId: work.trigger.operationId,
     operationOutcome: work.trigger.operationOutcome,
   } : null,
+  competitiveDelta: work.competitiveDelta,
   changes: work.changes.map(change => ({
     stage: change.stage,
     previous: change.previous,
@@ -520,6 +542,17 @@ const finalizeWork = (options: {
   readonly sourcePlacementId: string | null
 }): MoveCoreTokenEffectRecipientResult => {
   const { operation, work, accumulator } = options
+  const competitive = aa064ApplyCompetitive({
+    recipientId: work.recipient.placement.id,
+    sourceOwnerId: work.sourceOwnerId,
+    previous: work.previous.stages,
+    next: work.next,
+    abilities: work.abilityRules,
+  })
+  if (competitive.appliedDelta !== 0) {
+    for (const stage of COMBAT_STAGE_KEYS) work.next[stage] = competitive.stages[stage]
+    work.competitiveDelta = competitive.appliedDelta
+  }
   const changed = COMBAT_STAGE_KEYS.some(stage => (
     work.next[stage] !== work.previous.stages[stage]
   ))
@@ -572,9 +605,15 @@ export const reduceCombatStageEffect = (options: {
   readonly immunities: MoveCoreTokenEffectImmunityQueries
   readonly accuracyRolls?: MoveCombatStageAccuracyRollQueries
   readonly priorOperationResults?: readonly MoveCoreTokenEffectOperationResult[]
+  /** Owner of the Move/Ability that authored this operation; null is an external system source. */
+  readonly sourceOwnerId?: string | null
+  readonly abilityRules?: Aa064StageAbilityQueries
 }): readonly MoveCoreTokenEffectRecipientResult[] => {
   const { operation, recipients, accumulator } = options
-  const works = recipients.map(recipient => createWork(accumulator, recipient))
+  const works = recipients.map(recipient => createWork(accumulator, recipient, {
+    sourceOwnerId: options.sourceOwnerId ?? null,
+    ...(options.abilityRules ? { abilityRules: options.abilityRules } : {}),
+  }))
   const stages = operationStages(operation)
   const action = operation.payload.action
 

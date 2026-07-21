@@ -161,11 +161,15 @@ const contextFixture = (options: {
   readonly actorMoves?: readonly string[]
   readonly encounterState?: ReturnType<typeof historyState>
   readonly resolutionId?: string | null
+  readonly actorAbility?: string
 } = {}): AuthoritativeMoveRulesContext => {
   const context = buildAuthoritativeMoveRulesContext({
     map: mapFixture(options.encounterState),
     pokemonSheets: new Map<string, CharacterSheet>([
-      ['actor', pokemonSheet('actor', options.actorMoves ?? ['Sketch', 'Growl'])],
+      ['actor', {
+        ...pokemonSheet('actor', options.actorMoves ?? ['Sketch', 'Growl']),
+        ...(options.actorAbility ? { abilities: [{ name: options.actorAbility }] } : {}),
+      }],
       ['target', pokemonSheet('target', ['Tackle'])],
     ]),
     trainerSheets: new Map<string, TrainerSheet>(),
@@ -446,6 +450,31 @@ describe('permanent move-list mutations', () => {
         ],
       },
     })
+  })
+
+  it('allows exactly two additional permanent slots from manifest-selected Cluster Mind', () => {
+    const context = contextFixture({
+      actorMoves: ['Sketch', 'Growl', 'Ember', 'Tackle', 'Scratch', 'Pound'],
+      actorAbility: 'Cluster Mind',
+    })
+    const additions = [
+      moveListOperation('sketch.add-bite-cluster', {
+        action: 'add', moveId: 'Bite', acquisition: { kind: 'reviewed-rule' },
+      }),
+      moveListOperation('sketch.add-quick-attack-cluster', {
+        action: 'add', moveId: 'Quick Attack', acquisition: { kind: 'reviewed-rule' },
+      }),
+    ]
+    const result = reduce(context, additions)
+    const current = result.stateChanges.changes[0]?.current as CharacterSheet
+    expect(current.movelist).toHaveLength(8)
+    const full = contextFixture({
+      actorMoves: ['Sketch', 'Growl', 'Ember', 'Tackle', 'Scratch', 'Pound', 'Bite', 'Quick Attack'],
+      actorAbility: 'Cluster Mind',
+    })
+    expectReductionError(() => reduce(full, [moveListOperation('sketch.add-water-gun-cluster', {
+      action: 'add', moveId: 'Water Gun', acquisition: { kind: 'reviewed-rule' },
+    })]), 'move-list-full')
   })
 
   it('rejects full slots, duplicates, missing replacements, and stale history without mutation', () => {

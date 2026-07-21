@@ -8,6 +8,10 @@ import {
   type AbilityDeclarationOption,
 } from '#shared/abilityAutomation/declarationIntent'
 import { POKEMON_TYPE_IDS } from '#shared/pokemonTypes'
+import {
+  ABILITY_STAT_OPTIONS_PREDICATE_KIND,
+  parseAbilityStatOptionsPredicate,
+} from '#shared/abilityAutomation/statTargeting'
 import { stableJsonStringify } from '#shared/automation/stableJson'
 import {
   parseBeginAbilityClientDeclarationCommand,
@@ -122,8 +126,14 @@ const declarationsFor = (context: ReturnType<typeof buildAuthoritativeAbilityCon
         .map((directionId, index) => option(declaration.id, index, declaration.kind, { kind: 'direction', directionId }))
       else if (declaration.kind === 'type') options = POKEMON_TYPE_IDS
         .map((typeId, index) => option(declaration.id, index, declaration.kind, { kind: 'type', typeId }))
-      else if (declaration.kind === 'stat') options = ABILITY_DECLARATION_STAT_IDS
-        .map((statId, index) => option(declaration.id, index, declaration.kind, { kind: 'stat', statId }))
+      else if (declaration.kind === 'stat') {
+        const statIds = declaration.predicate?.kind === ABILITY_STAT_OPTIONS_PREDICATE_KIND
+          ? parseAbilityStatOptionsPredicate(declaration.predicate).statIds
+          : ABILITY_DECLARATION_STAT_IDS
+        options = statIds.map((statId, index) => option(
+          declaration.id, index, declaration.kind, { kind: 'stat', statId },
+        ))
+      }
       else if (declaration.kind === 'move') {
         const moveNames = (context.actor.sheet.sheet.movelist ?? [])
           .flatMap(move => typeof move.name === 'string' && move.name.trim() ? [move.name.trim()] : [])

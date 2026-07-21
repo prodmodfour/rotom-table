@@ -117,9 +117,11 @@ describe('ability automation semantic manifest', () => {
         'Blessed Touch', 'Blow Away', 'Blur', 'Bodyguard', 'Bone Lord', 'Bone Wielder',
         'Brimstone', 'Bulletproof', 'Bully', 'Cave Crasher', 'Celebrate', 'Chemical Romance',
         'Cherry Power', 'Chilling Neigh', 'Chlorophyll', 'Clay Cannons', 'Clear Body', 'Cloud Nine',
+        'Cluster Mind', 'Color Change', 'Color Theory', 'Comatose', 'Combo Striker', 'Competitive',
+        'Compound Eyes', 'Confidence', 'Conqueror', 'Contrary', 'Copy Master', 'Corrosion',
       ])
-    expect(manifest.abilities.filter(ability => ability.baseStatus === 'blocked')).toHaveLength(435)
-    expect(manifest.abilities.filter(ability => ability.runtime.kind === 'unimplemented')).toHaveLength(435)
+    expect(manifest.abilities.filter(ability => ability.baseStatus === 'blocked')).toHaveLength(423)
+    expect(manifest.abilities.filter(ability => ability.runtime.kind === 'unimplemented')).toHaveLength(423)
   })
 
   it('keeps bootstrap mode hints non-authoritative and maps every row to its plan cohort', () => {
@@ -142,6 +144,7 @@ describe('ability automation semantic manifest', () => {
     expect(manifest.abilities[12]).toMatchObject({ canonicalId: 'Aqua Boost', rolloutCohortId: 'aa-061' })
     expect(manifest.abilities[24]).toMatchObject({ canonicalId: 'Beautiful', rolloutCohortId: 'aa-062' })
     expect(manifest.abilities[36]).toMatchObject({ canonicalId: 'Brimstone', rolloutCohortId: 'aa-063' })
+    expect(manifest.abilities[48]).toMatchObject({ canonicalId: 'Cluster Mind', rolloutCohortId: 'aa-064' })
     expect(manifest.abilities.at(-1)).toMatchObject({ canonicalId: 'Zen Snowed', rolloutCohortId: 'aa-100' })
     expect(manifest.abilities.filter(ability => ability.baseStatus === 'complete')
       .every(ability => ability.capabilityTags.includes('runtime.abilityspec-v1'))).toBe(true)

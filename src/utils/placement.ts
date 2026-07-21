@@ -266,7 +266,7 @@ export const placementToSpawned = (
       placement,
       token: transformedToken,
       effects: map?.encounterState?.effects,
-    }))
+    }), sheet)
   }
   const sheet = sheets.trainer.get(placement.sheetSlug)
   if (!sheet) return null
@@ -331,7 +331,7 @@ export const placementToSpawned = (
     placement,
     token: baseToken,
     effects: map?.encounterState?.effects,
-  }))
+  }), sheet)
 }
 
 export const placementsToSpawned = (

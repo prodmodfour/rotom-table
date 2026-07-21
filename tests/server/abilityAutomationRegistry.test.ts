@@ -230,7 +230,7 @@ describe('ability automation production runtime registry', () => {
   })
 
   it('ships only exact evidence-backed production selections', () => {
-    expect(ABILITY_AUTOMATION_RUNTIME_REGISTRY.size).toBe(48)
+    expect(ABILITY_AUTOMATION_RUNTIME_REGISTRY.size).toBe(60)
     expect(ABILITY_AUTOMATION_RUNTIME_REGISTRY.entries().map(runtime => runtime.canonicalId))
       .toEqual([
         'Abominable', 'Absorb Force', 'Accelerate', 'Adaptability', 'Aerilate', 'Aftermath',
@@ -241,6 +241,8 @@ describe('ability automation production runtime registry', () => {
         'Blessed Touch', 'Blow Away', 'Blur', 'Bodyguard', 'Bone Lord', 'Bone Wielder',
         'Brimstone', 'Bulletproof', 'Bully', 'Cave Crasher', 'Celebrate', 'Chemical Romance',
         'Cherry Power', 'Chilling Neigh', 'Chlorophyll', 'Clay Cannons', 'Clear Body', 'Cloud Nine',
+        'Cluster Mind', 'Color Change', 'Color Theory', 'Comatose', 'Combo Striker', 'Competitive',
+        'Compound Eyes', 'Confidence', 'Conqueror', 'Contrary', 'Copy Master', 'Corrosion',
       ])
     expect(registeredAbilityAutomationRuntimeFor('Adaptability')).toMatchObject({
       kind: 'abilityspec-v1', version: 1,

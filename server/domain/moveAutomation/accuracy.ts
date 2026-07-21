@@ -97,10 +97,15 @@ export const resolveAuthoritativeMoveUserAccuracy = (
     map: context.map,
     placementId: context.actor.placement.id,
   })
+  const compoundEyesActive = context.queries.abilities.has(context.actor.placement.id, 'Compound Eyes')
+  const actorToken = helpingHand.length > 0
+    ? withoutHelpingHandCondition(context.actor.token)
+    : context.actor.token
   const actorAccuracy = moveAutomationUserAccuracy(
-    helpingHand.length > 0
-      ? withoutHelpingHandCondition(context.actor.token)
-      : context.actor.token,
+    {
+      ...actorToken,
+      abilityNames: actorToken.abilityNames?.filter(name => name !== 'Compound Eyes'),
+    },
     {
       heldItemEffectsSuppressed,
       // Gravity is composed below from the authoritative global-field query.
@@ -109,11 +114,19 @@ export const resolveAuthoritativeMoveUserAccuracy = (
     },
   )
   const gravity = context.queries.gravity.accuracy()
+  const compoundEyesBonus = compoundEyesActive ? 3 : 0
   const modifiers: MoveAutomationRollModifier[] = [{
     sourceId: 'actor-accuracy',
     reason: 'Actor Accuracy',
     value: actorAccuracy,
   }]
+  if (compoundEyesBonus !== 0) {
+    modifiers.push({
+      sourceId: 'ability.compound-eyes',
+      reason: 'Compound Eyes Accuracy',
+      value: compoundEyesBonus,
+    })
+  }
   if (helpingHand[0]) {
     modifiers.push({
       sourceId: helpingHand[0].id,
@@ -137,6 +150,7 @@ export const resolveAuthoritativeMoveUserAccuracy = (
     })
   }
   const baseValue = actorAccuracy
+    + compoundEyesBonus
     + (helpingHand.length > 0 ? HELPING_HAND_ACCURACY_BONUS : 0)
     + aa060Bonus
     + gravity.bonus

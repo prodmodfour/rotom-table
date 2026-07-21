@@ -25,11 +25,17 @@ export const AA063_ABILITY_MECHANIC_IDS = [
   'aa063.chilling-neigh', 'aa063.chlorophyll', 'aa063.clay-cannons',
   'aa063.clear-body', 'aa063.cloud-nine',
 ] as const
+export const AA064_ABILITY_MECHANIC_IDS = [
+  'aa064.cluster-mind', 'aa064.color-change', 'aa064.color-theory', 'aa064.comatose',
+  'aa064.combo-striker', 'aa064.competitive', 'aa064.compound-eyes', 'aa064.confidence',
+  'aa064.conqueror', 'aa064.contrary', 'aa064.copy-master', 'aa064.corrosion',
+] as const
 export type Aa060AbilityMechanicId = (typeof AA060_ABILITY_MECHANIC_IDS)[number]
 export type AbilityMechanicId = Aa060AbilityMechanicId
   | (typeof AA061_ABILITY_MECHANIC_IDS)[number]
   | (typeof AA062_ABILITY_MECHANIC_IDS)[number]
   | (typeof AA063_ABILITY_MECHANIC_IDS)[number]
+  | (typeof AA064_ABILITY_MECHANIC_IDS)[number]
 export interface AbilityMechanicOperation extends AbilitySpecJsonObject {
   readonly kind: typeof ABILITY_MECHANIC_OPERATION_KIND
   readonly id: string
@@ -96,10 +102,23 @@ const CONFIG_FIELDS: Readonly<Record<AbilityMechanicId, readonly string[]>> = {
   'aa063.clay-cannons': ['action', 'frequency', 'duration', 'rangedMovesOnly', 'virtualOriginRadius', 'chooseOriginPerMove'],
   'aa063.clear-body': ['preventCombatStageLoweringFrom', 'statusAfflictionStageChangesAllowed'],
   'aa063.cloud-nine': ['action', 'frequency', 'weatherResult', 'removeAllWeatherZones'],
+  'aa064.cluster-mind': ['movePoolSlots'],
+  'aa064.color-change': ['action', 'frequency', 'typeSource', 'duration'],
+  'aa064.color-theory': ['parameterId', 'acquisition', 'dieSides', 'pureBonus', 'mixedBonus', 'statByColor'],
+  'aa064.comatose': ['action', 'frequency', 'condition', 'healing'],
+  'aa064.combo-striker': ['action', 'frequency', 'damagingOnly', 'naturalAccuracyResults', 'followUpMoveId', 'recursive'],
+  'aa064.competitive': ['trigger', 'excludedSources', 'resultingStage', 'resultingDelta'],
+  'aa064.compound-eyes': ['accuracyRollBonus'],
+  'aa064.confidence': ['action', 'frequency', 'relationship', 'radius', 'stageDelta'],
+  'aa064.conqueror': ['action', 'frequency', 'damagingOnly', 'damageClasses', 'faintedRelationship', 'stageDeltas'],
+  'aa064.contrary': ['invertCombatStageChanges'],
+  'aa064.copy-master': ['connectionMoveId', 'triggeringMoveIds', 'resultingStageDelta', 'selectedCombatStat'],
+  'aa064.corrosion': ['attackType', 'resistanceStepsIgnored', 'immunityMultiplier', 'poisonTypeImmunityBypass'],
 }
 const MECHANIC_SET = new Set<string>([
   ...AA060_ABILITY_MECHANIC_IDS, ...AA061_ABILITY_MECHANIC_IDS,
   ...AA062_ABILITY_MECHANIC_IDS, ...AA063_ABILITY_MECHANIC_IDS,
+  ...AA064_ABILITY_MECHANIC_IDS,
 ])
 const ID = /^[a-z0-9]+(?:[._:/-][a-z0-9]+)*$/
 const fail = (code: AbilityMechanicValidationError['code'], path: string, detail: string): never => { throw new AbilityMechanicValidationError(code, path, detail) }
@@ -130,6 +149,11 @@ const oneOf = <T extends string>(value: unknown, values: readonly T[], path: str
   typeof value === 'string' && values.includes(value as T) ? value as T : fail('invalid-mechanic', path, 'is unsupported.')
 )
 const stringArray = (value: unknown, expected: readonly string[], path: string): readonly string[] => {
+  if (!Array.isArray(value) || value.length !== expected.length
+    || value.some((entry, index) => entry !== expected[index])) fail('invalid-mechanic', path, 'must match the reviewed canonical values.')
+  return Object.freeze([...expected])
+}
+const integerArray = (value: unknown, expected: readonly number[], path: string): readonly number[] => {
   if (!Array.isArray(value) || value.length !== expected.length
     || value.some((entry, index) => entry !== expected[index])) fail('invalid-mechanic', path, 'must match the reviewed canonical values.')
   return Object.freeze([...expected])
@@ -375,6 +399,86 @@ const parseConfig = (mechanicId: AbilityMechanicId, value: unknown, path: string
     case 'aa063.cloud-nine': return {
       action: oneOf(config.action, ['free'], `${path}.action`), frequency: oneOf(config.frequency, ['scene'], `${path}.frequency`),
       weatherResult: oneOf(config.weatherResult, ['normal'], `${path}.weatherResult`), removeAllWeatherZones: bool(config.removeAllWeatherZones, `${path}.removeAllWeatherZones`),
+    }
+    case 'aa064.cluster-mind': return {
+      movePoolSlots: integer(config.movePoolSlots, `${path}.movePoolSlots`, 2, 2),
+    }
+    case 'aa064.color-change': return {
+      action: oneOf(config.action, ['free'], `${path}.action`), frequency: oneOf(config.frequency, ['at-will'], `${path}.frequency`),
+      typeSource: oneOf(config.typeSource, ['triggering-move'], `${path}.typeSource`), duration: oneOf(config.duration, ['scene'], `${path}.duration`),
+    }
+    case 'aa064.color-theory': {
+      const stats = record(config.statByColor, `${path}.statByColor`)
+      const expected: Readonly<Record<string, readonly string[]>> = {
+        red: ['attack'], 'red-orange': ['attack', 'defense'], orange: ['defense'],
+        'yellow-orange': ['defense', 'special-attack'], yellow: ['special-attack'],
+        'yellow-green': ['special-attack', 'special-defense'], green: ['special-defense'],
+        'blue-green': ['special-defense', 'speed'], blue: ['speed'],
+        'blue-violet': ['speed', 'hp'], violet: ['hp'], 'red-violet': ['hp', 'attack'],
+      }
+      exact(stats, Object.keys(expected), `${path}.statByColor`)
+      const statByColor = Object.fromEntries(Object.entries(expected).map(([color, values]) => [
+        color, stringArray(stats[color], values, `${path}.statByColor.${color}`),
+      ]))
+      return {
+        parameterId: oneOf(config.parameterId, ['color'], `${path}.parameterId`),
+        acquisition: oneOf(config.acquisition, ['server-roll'], `${path}.acquisition`),
+        dieSides: integer(config.dieSides, `${path}.dieSides`, 12, 12), pureBonus: integer(config.pureBonus, `${path}.pureBonus`, 6, 6),
+        mixedBonus: integer(config.mixedBonus, `${path}.mixedBonus`, 3, 3), statByColor,
+      }
+    }
+    case 'aa064.comatose': return {
+      action: oneOf(config.action, ['move'], `${path}.action`), frequency: oneOf(config.frequency, ['at-will'], `${path}.frequency`),
+      condition: oneOf(config.condition, ['asleep'], `${path}.condition`), healing: oneOf(config.healing, ['tick'], `${path}.healing`),
+    }
+    case 'aa064.combo-striker': return {
+      action: oneOf(config.action, ['free'], `${path}.action`), frequency: oneOf(config.frequency, ['at-will'], `${path}.frequency`),
+      damagingOnly: bool(config.damagingOnly, `${path}.damagingOnly`), naturalAccuracyResults: integerArray(config.naturalAccuracyResults, [1, 10, 11], `${path}.naturalAccuracyResults`),
+      followUpMoveId: oneOf(config.followUpMoveId, ['Struggle'], `${path}.followUpMoveId`), recursive: bool(config.recursive, `${path}.recursive`),
+    }
+    case 'aa064.competitive': return {
+      trigger: oneOf(config.trigger, ['combat-stage-lowered'], `${path}.trigger`),
+      excludedSources: stringArray(config.excludedSources, ['own-move', 'own-ability'], `${path}.excludedSources`),
+      resultingStage: oneOf(config.resultingStage, ['special-attack'], `${path}.resultingStage`),
+      resultingDelta: integer(config.resultingDelta, `${path}.resultingDelta`, 2, 2),
+    }
+    case 'aa064.compound-eyes': return {
+      accuracyRollBonus: integer(config.accuracyRollBonus, `${path}.accuracyRollBonus`, 3, 3),
+    }
+    case 'aa064.confidence': return {
+      action: oneOf(config.action, ['standard'], `${path}.action`), frequency: oneOf(config.frequency, ['scene'], `${path}.frequency`),
+      relationship: oneOf(config.relationship, ['ally'], `${path}.relationship`), radius: integer(config.radius, `${path}.radius`, 5, 5),
+      stageDelta: integer(config.stageDelta, `${path}.stageDelta`, 1, 1),
+    }
+    case 'aa064.conqueror': {
+      const stages = record(config.stageDeltas, `${path}.stageDeltas`)
+      exact(stages, ['attack', 'special-attack', 'speed'], `${path}.stageDeltas`)
+      return {
+        action: oneOf(config.action, ['free'], `${path}.action`), frequency: oneOf(config.frequency, ['scene'], `${path}.frequency`),
+        damagingOnly: bool(config.damagingOnly, `${path}.damagingOnly`),
+        damageClasses: stringArray(config.damageClasses, ['physical', 'special'], `${path}.damageClasses`),
+        faintedRelationship: oneOf(config.faintedRelationship, ['enemy'], `${path}.faintedRelationship`),
+        stageDeltas: {
+          attack: integer(stages.attack, `${path}.stageDeltas.attack`, 1, 1),
+          'special-attack': integer(stages['special-attack'], `${path}.stageDeltas.special-attack`, 1, 1),
+          speed: integer(stages.speed, `${path}.stageDeltas.speed`, 1, 1),
+        },
+      }
+    }
+    case 'aa064.contrary': return {
+      invertCombatStageChanges: bool(config.invertCombatStageChanges, `${path}.invertCombatStageChanges`),
+    }
+    case 'aa064.copy-master': return {
+      connectionMoveId: oneOf(config.connectionMoveId, ['Copycat'], `${path}.connectionMoveId`),
+      triggeringMoveIds: stringArray(config.triggeringMoveIds, ['Copycat', 'Mimic'], `${path}.triggeringMoveIds`),
+      resultingStageDelta: integer(config.resultingStageDelta, `${path}.resultingStageDelta`, 1, 1),
+      selectedCombatStat: bool(config.selectedCombatStat, `${path}.selectedCombatStat`),
+    }
+    case 'aa064.corrosion': return {
+      attackType: oneOf(config.attackType, ['poison'], `${path}.attackType`),
+      resistanceStepsIgnored: integer(config.resistanceStepsIgnored, `${path}.resistanceStepsIgnored`, 1, 1),
+      immunityMultiplier: exactNumber(config.immunityMultiplier, 0.25, `${path}.immunityMultiplier`),
+      poisonTypeImmunityBypass: stringArray(config.poisonTypeImmunityBypass, ['poison', 'steel'], `${path}.poisonTypeImmunityBypass`),
     }
   }
 }

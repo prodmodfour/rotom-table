@@ -148,14 +148,18 @@ const canonicalMoveIdForRow = (row: SheetMove): string | null => {
   return findMove(row.name)?.name ?? null
 }
 
-const moveListFor = (sheet: MoveSheet, kind: SheetKind): readonly SheetMove[] => {
+const moveListFor = (
+  sheet: MoveSheet,
+  kind: SheetKind,
+  pokemonMaximum: number = PERMANENT_MOVE_LIST_LIMITS.pokemonSlots,
+): readonly SheetMove[] => {
   const value = sheet.movelist
   if (value === undefined) return []
   if (!Array.isArray(value)) {
     return fail('invalid-move-list', `${kind} sheet ${sheet.slug} movelist must be an array.`)
   }
   const maximum = kind === 'pokemon'
-    ? PERMANENT_MOVE_LIST_LIMITS.pokemonSlots
+    ? pokemonMaximum
     : PERMANENT_MOVE_LIST_LIMITS.trainerEntries
   if (value.length > maximum) {
     return fail(
@@ -357,7 +361,13 @@ const applyOperationToSheet = (options: {
       context: options.context,
     })
   }
-  const rows = [...moveListFor(options.working.current, options.working.kind)]
+  const pokemonMaximum = PERMANENT_MOVE_LIST_LIMITS.pokemonSlots + (
+    options.working.kind === 'pokemon'
+    && options.context.queries.abilities.has(options.placement.id, 'Cluster Mind')
+      ? 2
+      : 0
+  )
+  const rows = [...moveListFor(options.working.current, options.working.kind, pokemonMaximum)]
   const sheetLabel = `${options.working.kind} sheet ${options.working.slug}`
 
   if (payload.action === 'add') {
@@ -368,7 +378,7 @@ const applyOperationToSheet = (options: {
       )
     }
     const maximum = options.working.kind === 'pokemon'
-      ? PERMANENT_MOVE_LIST_LIMITS.pokemonSlots
+      ? pokemonMaximum
       : PERMANENT_MOVE_LIST_LIMITS.trainerEntries
     if (rows.length >= maximum) {
       return fail(

@@ -15,6 +15,10 @@ import {
   parseAbilityTargetingPredicate,
 } from '#shared/abilityAutomation/targeting'
 import {
+  ABILITY_STAT_OPTIONS_PREDICATE_KIND,
+  parseAbilityStatOptionsPredicate,
+} from '#shared/abilityAutomation/statTargeting'
+import {
   ABILITY_ITEM_EVENT_PREDICATE_KIND,
   parseAbilityItemEventPredicate,
 } from '#shared/abilityAutomation/itemEventPredicates'
@@ -91,6 +95,13 @@ const abilityCheckOperation: RegisteredAbilitySpecExtension = {
   kind: ABILITY_CHECK_OPERATION_KIND,
   version: 1,
   parse: (value, path) => parseAbilityCheckDefinition(value, path),
+}
+
+const abilityStatOptionsPredicate: RegisteredAbilitySpecExtension = {
+  family: 'predicate',
+  kind: ABILITY_STAT_OPTIONS_PREDICATE_KIND,
+  version: 1,
+  parse: (value, path) => parseAbilityStatOptionsPredicate(value, path),
 }
 
 const abilityTargetingPredicate: RegisteredAbilitySpecExtension = {
@@ -206,6 +217,7 @@ export const ABILITY_SPEC_SHARED_KERNEL_EXTENSION_REGISTRY = createAbilitySpecEx
   lifecycleEventPredicate,
   itemEventPredicate,
   fieldEventPredicate,
+  abilityStatOptionsPredicate,
   abilityTargetingPredicate,
   abilityCheckOperation,
   abilityMechanic,

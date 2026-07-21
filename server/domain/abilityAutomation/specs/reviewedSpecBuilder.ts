@@ -83,13 +83,14 @@ export const reviewedTriggeredAbilitySpec = (input: {
   checkpoint: string
   predicate: Record<string, unknown>
   tags: string[]
+  oncePerCausalChain?: boolean
 }) => reviewedAbilitySpec({
   canonicalId: input.canonicalId,
   modes: [{ id: 'trigger', kind: 'triggered' }],
   subscriptions: [{
     id: 'trigger.subscription', modeId: 'trigger', eventKind: input.eventKind,
     checkpoint: input.checkpoint, response: 'optional', priority: 0,
-    oncePerCausalChain: true, predicate: input.predicate,
+    oncePerCausalChain: input.oncePerCausalChain ?? true, predicate: input.predicate,
   }],
   targeting: noAbilityTarget('trigger'),
   phases: [{

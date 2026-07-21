@@ -100,6 +100,7 @@ import {
 } from './trace'
 import { orderMoveReactionOperationEntries } from './reactionOrder'
 import { aa062BoneLordEmpowersMove } from '../abilityAutomation/mechanics/aa062MoveIntegration'
+import { aa064MoveOverlayOperations } from '../abilityAutomation/mechanics/aa064MoveIntegration'
 import {
   createMoveSpecResponseResolver,
   type MoveSpecResolvedResponse,
@@ -2132,6 +2133,7 @@ const projectNestedEmission = (input: {
 const projectNestedRequest = (
   request: MoveSpecPendingRequest,
   invocationPhase: MoveSpecPhase,
+  parentAncestryDepth: number,
 ): MoveSpecPendingRequest => {
   if (
     request.kind === 'reaction'
@@ -2142,7 +2144,11 @@ const projectNestedRequest = (
       `Nested reaction ${request.requestId} must be invoked from its reviewed ${moveReactionTimingDefinition(request.timing).phase} phase.`,
     )
   }
-  return Object.freeze({ ...request, phase: invocationPhase })
+  return Object.freeze({
+    ...request,
+    phase: invocationPhase,
+    ...(request.kind === 'reaction' ? { depth: parentAncestryDepth } : {}),
+  })
 }
 
 const appendNestedTrace = (
@@ -2251,7 +2257,12 @@ const executeMoveSpecInternal = (
   const reactionRequestsByOperationId = new Map(program.operations
     .filter((operation): operation is MoveReactionRequestEffectOperation => operation.kind === 'reaction-request')
     .map(operation => [operation.id, operation]))
-  const reactionRequestOperationIds = new Set(reactionRequestsByOperationId.keys())
+  const choiceRequestsByOperationId = new Map(program.operations
+    .filter((operation): operation is MoveChoiceRequestEffectOperation => operation.kind === 'choice-request')
+    .map(operation => [operation.id, operation]))
+  const responseRequestOperationIds = new Set([
+    ...reactionRequestsByOperationId.keys(), ...choiceRequestsByOperationId.keys(),
+  ])
   const responseResolver = executionState.responseResolver
   const hazardSelections = new Map<string, ValidatedAuthoritativeHazardCellSelection>()
   for (const selection of input.authoritativeHazardCellSelections ?? []) {
@@ -2581,11 +2592,35 @@ const executeMoveSpecInternal = (
             ))
             return hitEnemy ? owners : []
           }
-          if (operation.reasonCode === 'ability.chilling-neigh.optional-boost') {
+          if (operation.reasonCode === 'ability.chilling-neigh.optional-boost'
+            || operation.reasonCode === 'ability.conqueror.optional-stages') {
+            const alreadyHandledByChild = operation.reasonCode === 'ability.conqueror.optional-stages'
+              && childExecutions.some(child => child.trace.events.some(event => (
+                event.kind === 'operation'
+                && event.reasonCode === operation.reasonCode
+                && event.recipientIds.includes(owners[0]!)
+              )))
+            if (alreadyHandledByChild) return []
             const defeatedFoe = faintedTargetIds.some(targetId => (
               input.context.queries.relationships.resolve(owners[0]!, targetId).relationship === 'enemy'
             ))
             return defeatedFoe ? owners : []
+          }
+          if (operation.reasonCode === 'ability.color-change.optional-type') {
+            return owners.filter(ownerId => hitTargetIds.includes(ownerId)
+              && !childExecutions.some(child => child.trace.events.some(event => (
+                event.kind === 'operation'
+                && event.reasonCode === operation.reasonCode
+                && event.recipientIds.includes(ownerId)
+              ))))
+          }
+          if (operation.reasonCode === 'ability.combo-striker.optional-struggle') {
+            const ledger = new Map(input.context.random.snapshot().map(roll => [roll.rollId, roll]))
+            const triggered = resolvedRolls.some(roll => (
+              roll.purpose === 'accuracy'
+              && [1, 10, 11].includes(ledger.get(roll.rollId)?.naturalResult ?? 0)
+            ))
+            return triggered ? owners : []
           }
           if (operation.reasonCode === 'ability.bodyguard.optional-redirection') {
             const protectedTargetId = operation.source.kind === 'lifecycle-event'
@@ -2620,7 +2655,7 @@ const executeMoveSpecInternal = (
             : owners
         }
         if (operation.source.kind === 'operation'
-          && reactionRequestOperationIds.has(operation.source.id)
+          && reactionRequestsByOperationId.has(operation.source.id)
           && (responseOwnerIdsByRequestOperation.get(operation.source.id)?.length ?? 0) === 0) {
           return []
         }
@@ -2628,6 +2663,7 @@ const executeMoveSpecInternal = (
           if (operation.source.kind !== 'operation') return []
           const owners = responseOwnerIdsByRequestOperation.get(operation.source.id) ?? []
           const request = reactionRequestsByOperationId.get(operation.source.id)
+            ?? choiceRequestsByOperationId.get(operation.source.id)
           if (request?.reasonCode === 'ability.bully.optional-effects'
             && owners.length === 1
             && request.source.kind === 'lifecycle-event'
@@ -2655,10 +2691,17 @@ const executeMoveSpecInternal = (
               ? canonicalPlacementIds(input.context, [owners[0]!, protectedTargetId])
               : []
           }
-          if (request?.reasonCode === 'ability.beast-boost.optional-stage') {
+          if (request?.reasonCode === 'ability.beast-boost.optional-stage'
+            || request?.reasonCode === 'ability.copy-master.choose-stage') {
             const selectedOption = selectedResponseOptionByRequestOperation.get(operation.source.id)
-            const expectedOption = operation.reasonCode.startsWith('ability.beast-boost.raise-')
-              ? `ability.beast-boost.${operation.reasonCode.slice('ability.beast-boost.raise-'.length)}`
+            const prefix = request.reasonCode === 'ability.beast-boost.optional-stage'
+              ? 'ability.beast-boost.raise-'
+              : 'ability.copy-master.raise-'
+            const optionPrefix = request.reasonCode === 'ability.beast-boost.optional-stage'
+              ? 'ability.beast-boost.'
+              : 'ability.copy-master.'
+            const expectedOption = operation.reasonCode.startsWith(prefix)
+              ? `${optionPrefix}${operation.reasonCode.slice(prefix.length)}`
               : null
             if (selectedOption === undefined || selectedOption === null || selectedOption !== expectedOption) return []
           }
@@ -2742,7 +2785,7 @@ const executeMoveSpecInternal = (
       if (recipientIds.length === 0 && (
         operation.recipients.kind === 'response-owner'
         || (operation.source.kind === 'operation'
-          && reactionRequestOperationIds.has(operation.source.id))
+          && responseRequestOperationIds.has(operation.source.id))
       )) {
         trace = reduceMoveResolutionTrace(trace, {
           kind: 'operation',
@@ -4472,10 +4515,20 @@ const executeMoveSpecInternal = (
           outcome: 'started',
           reasonCode: 'nested-child-started',
         })
+        const childMoveSourceId = runtime.definition.spec.phases
+          .flatMap(block => block.operations)
+          .find(candidate => candidate.source.kind === 'move')?.source.id
+          ?? `move.${runtime.canonicalId}`
         const child = executeMoveSpecInternal({
           definition: runtime.definition,
           context: childContext,
           authoritativeTargetIds: childTargetIds,
+          serverAbilityOverlayOperations: aa064MoveOverlayOperations({
+            context: childContext,
+            script: childMechanics,
+            moveSourceId: childMoveSourceId,
+            authoritativeTargetIds: childTargetIds,
+          }),
           ancestry,
           resolutionId: childResolutionId,
           handlerRegistry: childContext.handlerRegistry,
@@ -4582,7 +4635,7 @@ const executeMoveSpecInternal = (
         )
 
         if (child.kind === 'pending-request') {
-          const request = projectNestedRequest(child.request, phase)
+          const request = projectNestedRequest(child.request, phase, trace.ancestry.length)
           responseResolver.assertAllConsumed()
           return materializePendingExecutionResult(
             terminalBase(
@@ -4660,7 +4713,7 @@ const executeMoveSpecInternal = (
           options: request.options,
           allowPass: request.allowPass,
         })
-        if (response && operation.kind === 'reaction-request') {
+        if (response) {
           selectedResponseOptionByRequestOperation.set(operation.id, response.optionId)
           if (response.optionId === null) {
             responseOwnerIdsByRequestOperation.set(operation.id, Object.freeze([]))
@@ -4669,7 +4722,7 @@ const executeMoveSpecInternal = (
             if (recipientIds.length !== 1) {
               return fail(
                 'definition-integrity-mismatch',
-                `Reaction ${operation.id} must have exactly one authoritative owner.`,
+                `Response request ${operation.id} must have exactly one authoritative owner.`,
               )
             }
             responseOwnerIdsByRequestOperation.set(
@@ -4720,7 +4773,7 @@ const executeMoveSpecInternal = (
               }
             }
             if (operation.reasonCode === 'ability.aqua-boost.optional-damage') aquaBoostSelected = true
-            if (operation.payload.cancellation) moveCancelledByReaction = true
+            if (operation.kind === 'reaction-request' && operation.payload.cancellation) moveCancelledByReaction = true
           }
         }
         trace = reduceMoveResolutionTrace(trace, {

@@ -108,6 +108,38 @@ describe('save sheet use case', () => {
     expect(published).toEqual(result.realtimeEvents)
   })
 
+  it('server-rolls Color Theory acquisition and ignores client-authored parameter mechanics', () => {
+    const database = db()
+    const sheets = createSqliteSheetRepository<Record<string, unknown>>(database)
+    const realtime = createSqliteRealtimeEventRepository({ database })
+    sheets.saveSetupSheet('pokemon', 'pika', pokemonSheet())
+
+    const result = saveSheetUseCase({
+      role: 'gm', interactionMode: MAP_INTERACTION_MODES.SETUP_EDIT,
+      kind: 'pokemon', slug: 'pika', expectedRevision: 4,
+      sheet: {
+        slug: 'pika', nickname: 'Pika', species: 'Pikachu', level: 5,
+        abilities: [{
+          name: 'Color Theory',
+          automation: {
+            schemaVersion: 1, instanceId: 'client:forged', canonicalId: 'Color Theory', definitionVersion: 1,
+            selections: [{ parameterId: 'color', optionIds: ['red'] }],
+          },
+        }],
+      },
+    }, {
+      database, sheetRepository: sheets, realtimeEventRepository: realtime,
+      now: () => 201, randomInt: () => 9,
+    })
+
+    const automation = (result.sheet.abilities as Array<Record<string, any>>)[0]?.automation
+    expect(automation).toMatchObject({
+      canonicalId: 'Color Theory', definitionVersion: 1,
+      selections: [{ parameterId: 'color', optionIds: ['blue-violet'] }],
+    })
+    expect(automation.instanceId).not.toBe('client:forged')
+  })
+
   it('commits a changed trainer sheet with the same durable event shape', () => {
     const database = db()
     const sheets = createSqliteSheetRepository<Record<string, unknown>>(database)

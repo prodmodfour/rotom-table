@@ -307,6 +307,10 @@ export const reduceAbilitySharedCombatStageEffects = (input: {
       immunities: input.immunities ?? ALLOW_ALL_IMMUNITIES,
       ...(input.accuracyRolls ? { accuracyRolls: input.accuracyRolls } : {}),
       priorOperationResults: moveResults,
+      sourceOwnerId: input.context.actor.placement.id,
+      abilityRules: {
+        has: (placementId, canonicalId) => input.context.queries.effectiveAbilities.has(placementId, canonicalId),
+      },
     })
     recipientResults.forEach(result => recordMoveCoreTokenEffectTouches(
       touches,

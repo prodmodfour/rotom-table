@@ -627,10 +627,10 @@ const abilityUsageEntryKey = (entry: Pick<AbilityUsageEntry, 'ownerId' | 'abilit
   `${entry.ownerId}\u0000${entry.abilityInstanceId}\u0000${entry.canonicalId}\u0000${entry.clauseId}`
 )
 
-const applyAa060TriggeredPayments = (input: {
+const applyTriggeredAbilityPayments = (input: {
   readonly map: TabletopMap
   readonly context: ReturnType<typeof buildAuthoritativeMoveRulesContext>
-  readonly trace: MoveResolutionAuditTrace
+  readonly traces: readonly MoveResolutionAuditTrace[]
   readonly resolutionId: string
 }): TabletopMap => {
   const canonicalIdByReason = new Map([
@@ -643,8 +643,11 @@ const applyAa060TriggeredPayments = (input: {
     ['ability.bully.optional-effects', 'Bully'],
     ['ability.celebrate.optional-disengage', 'Celebrate'],
     ['ability.chilling-neigh.optional-boost', 'Chilling Neigh'],
+    ['ability.color-change.optional-type', 'Color Change'],
+    ['ability.combo-striker.optional-struggle', 'Combo Striker'],
+    ['ability.conqueror.optional-stages', 'Conqueror'],
   ] as const)
-  const selections = input.trace.events.filter(event => (
+  const selections = input.traces.flatMap(trace => trace.events).filter(event => (
     event.kind === 'operation'
     && canonicalIdByReason.has(event.reasonCode as 'ability.absorb-force.optional-resistance')
     && event.outcome === 'applied'
@@ -679,7 +682,10 @@ const applyAa060TriggeredPayments = (input: {
       maximumPhaseInclusive: 'pay',
     })
     map = action.nextMap
-    if (['Anger Point', 'Aqua Boost', 'Beast Boost', 'Celebrate', 'Chilling Neigh'].includes(canonicalId)) continue
+    if ([
+      'Anger Point', 'Aqua Boost', 'Beast Boost', 'Celebrate', 'Chilling Neigh',
+      'Color Change', 'Combo Striker',
+    ].includes(canonicalId)) continue
     const encounter = parseEncounterState(map.encounterState ?? createEmptyEncounterState())
     const sceneId = encounter.history.sceneId
       ?? fail('state-change-conflict', `${canonicalId} requires an active scene usage period.`)
@@ -835,10 +841,11 @@ export const planNativeV2MoveState = (options: {
       ...aa062BoneLordReadyStateIds(context, options.resolution.canonicalMoveName),
     ],
   })
-  const mapAfterTriggeredAbilityPayments = applyAa060TriggeredPayments({
+  const mapAfterTriggeredAbilityPayments = applyTriggeredAbilityPayments({
     map: mapAfterAbilityMarkConsumption,
     context,
-    trace: native.trace,
+    // Nested child events are ancestry-projected into the root trace exactly once.
+    traces: [native.trace],
     resolutionId: context.resolutionId ?? originOperationId,
   })
   const mapAfterTransformationCleanup = cleanupEncounterTransformationsForKnockouts({

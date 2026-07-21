@@ -26,6 +26,7 @@ import {
 import { hasAa060MoveMark } from '../abilityAutomation/mechanics/aa060MoveIntegration'
 import { aa062HasBoneWielderImmunityOverride } from '../abilityAutomation/mechanics/aa062MoveIntegration'
 import { aa063MoveResistance } from '../abilityAutomation/mechanics/aa063MoveIntegration'
+import { aa064CorrosionMultiplier } from '../abilityAutomation/mechanics/aa064MoveIntegration'
 
 export type MoveDamageTypeResolutionErrorCode =
   | 'move-type-unavailable'
@@ -347,13 +348,20 @@ export const resolveMoveDamageType = (options: {
     ? `${chartImmunity.defenderType} type`
     : powderImmunity ?? passiveImmunity
   const effectivenessOverride = policy.effectivenessOverride
-  const finalMultiplier = honoredImmunitySource
+  const unmodifiedFinalMultiplier = honoredImmunitySource
     ? 0
     : effectivenessOverride ?? passiveMultiplier
-  const immunitySource = honoredImmunitySource
-    ?? (finalMultiplier === 0 && effectivenessOverride === 0
-      ? 'effectiveness override'
-      : null)
+  const corrosion = aa064CorrosionMultiplier({
+    context: options.context, moveType: moveType.type, multiplier: unmodifiedFinalMultiplier,
+  })
+  const finalMultiplier = corrosion.multiplier
+  if (corrosion.applied) passiveSources.push('Corrosion')
+  const immunitySource = corrosion.applied
+    ? null
+    : honoredImmunitySource
+      ?? (finalMultiplier === 0 && effectivenessOverride === 0
+        ? 'effectiveness override'
+        : null)
   const hasStab = options.context.actor.token.sheetKind === 'pokemon'
     && options.context.actor.token.defenderTypes.some(type => canonicalType(type) === moveType.type)
 

@@ -30,6 +30,7 @@ import { executeAa060ActivatedMechanic } from '../domain/abilityAutomation/mecha
 import { executeAa061ActivatedMechanic } from '../domain/abilityAutomation/mechanics/aa061Activated'
 import { executeAa062ActivatedMechanic } from '../domain/abilityAutomation/mechanics/aa062Activated'
 import { executeAa063ActivatedMechanic } from '../domain/abilityAutomation/mechanics/aa063Activated'
+import { executeAa064ActivatedMechanic } from '../domain/abilityAutomation/mechanics/aa064Activated'
 import { createAa063AbilityCombatStageImmunities } from '../domain/abilityAutomation/mechanics/aa063DefenseIntegration'
 import { applyNativeCoreMapChanges } from '../domain/moveAutomation/planNativeV2MoveState'
 import { createMoveStateChangePlan, type MoveStateChangePlan } from '../domain/moveAutomation/plan'
@@ -184,12 +185,20 @@ export const resolveAbilityDeclarationUseCase = (
               abilityInstanceId: intent.abilityInstanceId,
               choices: resolved.choices,
             })
-          : executeAa063ActivatedMechanic({
-              context,
-              operation: mechanicOperation,
-              operationId: intent.intentId,
-              abilityInstanceId: intent.abilityInstanceId,
-            })
+          : mechanicOperation.mechanicId.startsWith('aa063.')
+            ? executeAa063ActivatedMechanic({
+                context,
+                operation: mechanicOperation,
+                operationId: intent.intentId,
+                abilityInstanceId: intent.abilityInstanceId,
+              })
+            : executeAa064ActivatedMechanic({
+                context,
+                operation: mechanicOperation,
+                operationId: intent.intentId,
+                abilityInstanceId: intent.abilityInstanceId,
+                choices: resolved.choices,
+              })
     const resolvedExecution = execution
       ?? fail(422, 'Ability runtime requires an execution adapter that is not registered for direct declaration resolution.')
     resolutionPlan = resolvedExecution.plan
