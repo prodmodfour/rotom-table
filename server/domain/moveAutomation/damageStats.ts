@@ -51,6 +51,9 @@ import {
   activeHelpingHandBonusEffects,
   withoutHelpingHandCondition,
 } from './helpingHand'
+import { hasAa060MoveMark, resolveAa060MoveDamageIntegration } from '../abilityAutomation/mechanics/aa060MoveIntegration'
+import { aa061MoveDamageModifiers } from '../abilityAutomation/mechanics/aa061MoveIntegration'
+import { aa062MoveDamageModifiers } from '../abilityAutomation/mechanics/aa062MoveIntegration'
 
 export type MoveDamageStatSelectionErrorCode = 'non-numeric-stat-selection'
 
@@ -77,7 +80,7 @@ export interface MoveDamageStatSelectionResolution
 
 export interface MoveDamageClassResolution {
   readonly damageClass: MoveEffectDamageClass
-  readonly source: 'static' | 'stat-comparison'
+  readonly source: 'static' | 'stat-comparison' | 'ability'
   readonly comparison: {
     readonly operator: 'less-than'
     readonly left: number
@@ -223,6 +226,12 @@ export const resolveMoveDamageClass = (options: {
   readonly operation: MoveDamageEffectOperation
   readonly recipientId: string
 }): MoveDamageClassResolution => {
+  if (hasAa060MoveMark(options.context, 'Anchored', options.context.intent.moveName)) {
+    return deepFreeze({
+      damageClass: 'physical', source: 'ability' as const,
+      comparison: null, trace: [],
+    })
+  }
   const selection = options.operation.payload.damageClass
   if (typeof selection === 'string') {
     return deepFreeze({
@@ -255,6 +264,9 @@ export const resolveMoveDamageStatSelections = (options: {
   readonly operation: MoveDamageEffectOperation
   readonly recipientId: string
 }): MoveDamageStatSelectionResolution => {
+  if (hasAa060MoveMark(options.context, 'Anchored', options.context.intent.moveName)) {
+    return deepFreeze({ trace: [] })
+  }
   const attack = options.operation.payload.attackStat
     ? evaluateStatSelection({
         ...options,
@@ -303,7 +315,7 @@ export interface ResolveMoveSpecDamageCalculationInput {
 export const resolveMoveSpecDamageCalculation = (
   options: ResolveMoveSpecDamageCalculationInput,
 ): MoveSpecDamageCalculation => {
-  const moveType = options.resolvedMoveType ?? resolveMoveDamageType({
+  const baseMoveType = options.resolvedMoveType ?? resolveMoveDamageType({
     context: options.context,
     operation: options.operation,
     script: options.script,
@@ -314,6 +326,33 @@ export const resolveMoveSpecDamageCalculation = (
     context: options.context,
     operation: options.operation,
     recipientId: options.recipient.id,
+  })
+  const actor = options.actor ?? options.context.actor.token
+  const aa060 = resolveAa060MoveDamageIntegration({
+    context: options.context,
+    operation: options.operation,
+    script: options.script,
+    actor,
+    recipient: options.recipient,
+    damageClass,
+    moveType: baseMoveType,
+  })
+  const moveType = aa060.moveType
+  const aa061Modifiers = aa061MoveDamageModifiers({
+    context: options.context,
+    operation: options.operation,
+    script: options.script,
+    actor,
+    recipient: options.recipient,
+    moveTypeSources: moveType.passiveSources,
+  })
+  const aa062Modifiers = aa062MoveDamageModifiers({
+    context: options.context,
+    operation: options.operation,
+    script: options.script,
+    actor,
+    recipient: options.recipient,
+    moveType: moveType.moveType,
   })
   const sideDamageResistance = options.context.queries.sideDamageResistance.resolve({
     damageOperationId: options.operation.id,
@@ -340,7 +379,6 @@ export const resolveMoveSpecDamageCalculation = (
       ? options.operation.payload.damageBase
         + (moveType.hasStab ? MOVE_CONTEXTUAL_DAMAGE_BASE_STAB_BONUS : 0)
       : options.script.damageBase)
-  const actor = options.actor ?? options.context.actor.token
   const terrain = options.context.queries.terrain.damage({
     placementId: actor.id,
     targetPlacementId: options.recipient.id,
@@ -409,6 +447,9 @@ export const resolveMoveSpecDamageCalculation = (
       },
       additionalModifiers: [
         ...reviewedPreTypeDamageModifiers(options.operation),
+        ...aa060.modifiers,
+        ...aa061Modifiers,
+        ...aa062Modifiers,
         ...helpingHandModifiers,
         ...weather.modifiers,
         ...terrain.modifiers,

@@ -91,6 +91,31 @@ const authoritativeConditionContext = (
     }
   : undefined
 
+const aromaVeilPrevention = (options: {
+  readonly condition: string
+  readonly recipient: MoveCoreTokenEffectRecipient
+  readonly context: AuthoritativeMoveRulesContext | undefined
+}): { readonly blockedBy: string | null; readonly consultedPlacementIds: readonly string[] } => {
+  const context = options.context
+  if (!context) return { blockedBy: null, consultedPlacementIds: [] }
+  const canonical = normalizeConditionName(options.condition) ?? options.condition
+  if (!['Confused', 'Rage', 'Enraged', 'Suppressed'].includes(canonical)) {
+    return { blockedBy: null, consultedPlacementIds: [] }
+  }
+  const provider = context.queries.placements.all().find(placement => {
+    const token = context.queries.tokens.get(placement.id)
+    return token
+      && context.queries.abilities.has(placement.id, 'Aroma Veil')
+      && tokenGridDistance(token, options.recipient.token) <= 1
+  })
+  return provider
+    ? {
+        blockedBy: 'Aroma Veil',
+        consultedPlacementIds: provider.id === options.recipient.placement.id ? [] : [provider.id],
+      }
+    : { blockedBy: null, consultedPlacementIds: [] }
+}
+
 const encounterConditionPrevention = (options: {
   readonly condition: string
   readonly recipientId: string
@@ -190,6 +215,10 @@ export const createStandardMoveCoreTokenEffectImmunityQueries = (
         const typedBlocker = typedAttackImmunity(recipient, 'defending')
         if (typedBlocker) return conditionDecision(typedBlocker)
       }
+      const aromaVeil = aromaVeilPrevention({ condition, recipient, context: options.context })
+      if (aromaVeil.blockedBy) {
+        return conditionDecision(aromaVeil.blockedBy, aromaVeil.consultedPlacementIds)
+      }
       const providerIds = conditionProviderIds(
         condition,
         recipient,
@@ -248,6 +277,23 @@ export const createStandardMoveCoreTokenEffectImmunityQueries = (
         && operation.recipients.kind !== 'actor'
         && tokenHasShieldDust(recipient.token)
           ? SHIELD_DUST_ABILITY_NAME
+          : null
+      )
+      ?? (
+        delta < 0
+        && options.context?.queries.abilities.has(recipient.placement.id, 'Clear Body')
+        && options.context.queries.relationships.resolve(
+          options.context.actor.placement.id,
+          recipient.placement.id,
+        ).relationship === 'enemy'
+          ? 'Clear Body'
+          : null
+      )
+      ?? (
+        stage === 'def'
+        && delta < 0
+        && options.context?.queries.abilities.has(recipient.placement.id, 'Big Pecks')
+          ? 'Big Pecks'
           : null
       )
       ?? moveAutomationCombatStageBlockSource({

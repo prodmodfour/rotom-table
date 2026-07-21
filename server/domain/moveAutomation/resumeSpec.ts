@@ -52,6 +52,10 @@ import {
   projectResolvedMoveSwitchTransition,
   ResolvedMoveSwitchProjectionError,
 } from './projectResolvedSwitch'
+import { aa060TriggeredMoveOverlayOperations } from '../abilityAutomation/mechanics/aa060TriggeredMoveIntegration'
+import { aa061TriggeredMoveOverlayOperations } from '../abilityAutomation/mechanics/aa061TriggeredMoveIntegration'
+import { aa062BoneLordEmpowersMove, aa062MoveOverlayOperations } from '../abilityAutomation/mechanics/aa062MoveIntegration'
+import { aa063MoveOverlayOperations } from '../abilityAutomation/mechanics/aa063MoveIntegration'
 
 export type ResumeMoveSpecErrorCode =
   | 'runtime-unavailable'
@@ -322,6 +326,7 @@ export const resumeMoveSpec = (
       schemaVersion: 1,
       placementId: pending.actorPlacementId,
       moveName: pending.canonicalMoveId,
+      ...(pending.virtualOriginCell ? { originCell: { ...pending.virtualOriginCell } } : {}),
       selection: { kind: 'self' },
     },
     candidatePlacementIds: evidence.evaluations.map(evaluation => evaluation.targetPlacementId),
@@ -364,8 +369,29 @@ export const resumeMoveSpec = (
         'The hazard-cell response belongs to another durable move resolution.',
       )
     }
+    const moveSourceId = runtime.definition.spec.phases
+      .flatMap(phase => phase.operations)
+      .find(operation => operation.source.kind === 'move')?.source.id
+      ?? `move.${runtime.canonicalId}`
     execution = executeMoveSpec({
       definition: runtime.definition,
+      ...(entry.script.moveName === 'Bonemerang' && aa062BoneLordEmpowersMove(context, 'Bonemerang') ? {
+        serverAbilityTargetingOverride: {
+          kind: 'area' as const, minTargets: 0, maxTargets: 32,
+          selector: { kind: 'area-targets' as const },
+          predicate: { relationship: 'any' as const, willingness: 'any' as const, excludeActor: true },
+        },
+      } : {}),
+      serverAbilityOverlayOperations: [
+        ...aa060TriggeredMoveOverlayOperations({
+          context, script: entry.script, moveSourceId, authoritativeTargetIds,
+        }),
+        ...aa061TriggeredMoveOverlayOperations({
+          context, script: entry.script, moveSourceId, authoritativeTargetIds,
+        }),
+        ...aa062MoveOverlayOperations({ context, script: entry.script, moveSourceId }),
+        ...aa063MoveOverlayOperations({ context, script: entry.script, moveSourceId }),
+      ],
       context,
       authoritativeTargetIds,
       ...(targetingKind === 'area'

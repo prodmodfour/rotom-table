@@ -3,6 +3,7 @@ import { computed, nextTick, onBeforeUnmount, onMounted, ref, shallowRef, watch,
 import FieldEffectsMenuModal from '~/components/map/FieldEffectsMenuModal.vue'
 import InitiativeMenuModal from '~/components/map/InitiativeMenuModal.vue'
 import MapAdminPanel from '~/components/map/MapAdminPanel.vue'
+import MapAbilityAutomationPanel from '~/components/map/MapAbilityAutomationPanel.vue'
 import LivePlayCommandRecoveryPanel from '~/components/map/LivePlayCommandRecoveryPanel.vue'
 import LivePlayLatencyDebugPanel from '~/components/map/LivePlayLatencyDebugPanel.vue'
 import MapEditorLayout from '~/components/map/MapEditorLayout.vue'
@@ -58,6 +59,7 @@ import { useMapEncounterSides } from '~/composables/map-editor/useMapEncounterSi
 import { useMapShopInterfaces } from '~/composables/map-editor/useMapShopInterfaces'
 import { useMapTokenNavigation } from '~/composables/map-editor/useMapTokenNavigation'
 import { useAbilityAutomationPanel } from '~/composables/map-editor/useAbilityAutomationPanel'
+import { useAbilityAutomationGateway } from '~/composables/map-editor/useAbilityAutomationGateway'
 import { useMoveAnimationQueue } from '~/composables/map-editor/useMoveAnimationQueue'
 import { useActionSplashSettings } from '~/composables/useActionSplashSettings'
 import { useInitiativeAutoFocusSettings } from '~/composables/useInitiativeAutoFocusSettings'
@@ -74,6 +76,10 @@ import { useManeuverActionPanel } from '~/composables/map-editor/useManeuverActi
 import { useOrderActionPanel } from '~/composables/map-editor/useOrderActionPanel'
 import { usePokeballCapturePanel } from '~/composables/map-editor/usePokeballCapturePanel'
 import { LIVE_PLAY_COMMAND_TYPES, LIVE_PLAY_PATCH_TYPES } from '#shared/livePlayCommands'
+import {
+  emptyAbilityClientCapabilityBundle,
+  type AbilityClientCapabilityBundle,
+} from '#shared/abilityAutomation/clientCapabilities'
 import { isPendingMoveDeclarationResult } from '#shared/moveAutomation/pendingResolution'
 import { MAP_INTERACTION_MODES, type MapInteractionMode } from '#shared/mapInteractionMode'
 import {
@@ -120,6 +126,7 @@ import {
 import type { LivePlayPatchAdoptionContext } from '~/utils/livePlayPatchAdoption'
 import { routeSlugParam } from '~/utils/routeParams'
 import type { CharacterSheet } from '~/types/characterSheet'
+import type { TokenAbilityUseReference } from '~/utils/mapTokenAbilities'
 import type { TokenMovementCommitPayload } from '~/utils/isometric/tokenMovementInteraction'
 import {
   createEmptyTokenMotionDebugMetrics,
@@ -185,6 +192,9 @@ const liveSheetAccessScopeKey = computed(() => buildLiveSheetAccessScopeKey({
   profileId: isPlayer.value ? selectedProfileId.value : null,
 }))
 
+const abilityClientCapabilities = ref<AbilityClientCapabilityBundle>(
+  emptyAbilityClientCapabilityBundle(slug, 0),
+)
 let requestLiveTableSnapshot: (reason?: string) => Promise<void> = async () => {
   throw new Error('Live table snapshot synchroniser is not initialised.')
 }
@@ -378,6 +388,9 @@ const liveTableSnapshotSync = useLiveTableSnapshotSync({
   sheetCache: liveSheets,
   applyMap: applyPersistedMap,
   applyInteractionMode: applyAuthoritativeMapInteractionMode,
+  applyAbilityCapabilities: (capabilities) => {
+    abilityClientCapabilities.value = capabilities
+  },
 })
 requestLiveTableSnapshot = liveTableSnapshotSync.requestSnapshot
 
@@ -2158,10 +2171,23 @@ attackOfOpportunityTriggers = useAttackOfOpportunityTriggers({
 })
 
 
+const abilityAutomationGateway = useAbilityAutomationGateway({
+  playerProfileId: selectedProfileId,
+  player: isPlayer,
+  reconcileAfterAccepted: () => requestLiveTableSnapshot('Reconciling accepted ability result.'),
+})
+
 const {
   abilityAutomationTargeting,
+  abilityDeclarationPanel,
+  activeAbilityModeSelection,
+  abilityInvocationStatus,
   tokenAbilityOptionsById,
   openAbilityAutomation,
+  selectAbilityMode,
+  selectAbilityDeclarationOption,
+  submitAbilityDeclaration,
+  retryAbilityDeclaration,
   cancelAbilityAutomationTargeting,
   selectAbilityAutomationTarget,
 } = useAbilityAutomationPanel({
@@ -2169,14 +2195,10 @@ const {
   spawnedPokemon,
   pokemonBySlug,
   trainerBySlug,
+  capabilities: abilityClientCapabilities,
   canControlPlacement,
-  modifyCombatStages: modifyCombatStagesFromScene,
-  modifyConditions: modifyConditionsFromScene,
-  modifyAbilityActivation,
-  dispatchAbilityUse: tableActionDispatchers.dispatchAbilityUse,
-  onBeforeNonImmediateAction: event => (
-    showActionSplash({ userId: event.userId, actionName: event.abilityName })
-  ),
+  beginDeclaration: abilityAutomationGateway.beginDeclaration,
+  resolveDeclaration: abilityAutomationGateway.resolveDeclaration,
 })
 
 const {
@@ -2499,7 +2521,7 @@ const useManeuverFromContext = (payload: { id: string; maneuverName?: string | n
   void useManeuver(payload)
 }
 
-const openAbilityAutomationFromContext = (payload: { id: string; abilityName?: string | null }) => {
+const openAbilityAutomationFromContext = (payload: { id: string } & TokenAbilityUseReference) => {
   if (moveAutomationDispatchInFlight()) return
   cancelMoveAutomationTargeting()
   cancelPokeballCaptureTargeting()
@@ -2791,6 +2813,17 @@ useMapDimensionReconciliation({
         @apply-move-correction="applyMoveCorrection"
         @refresh-move-correction="refreshMoveCorrection"
         @close-move-correction="gmMoveCorrections.close()"
+      />
+
+      <MapAbilityAutomationPanel
+        :mode-selection="activeAbilityModeSelection"
+        :declaration="abilityDeclarationPanel"
+        :status="abilityInvocationStatus"
+        @select-mode="selectAbilityMode"
+        @toggle-option="selectAbilityDeclarationOption"
+        @submit="submitAbilityDeclaration"
+        @retry="retryAbilityDeclaration"
+        @cancel="cancelAbilityAutomationTargeting"
       />
 
       <MapPresencePanel

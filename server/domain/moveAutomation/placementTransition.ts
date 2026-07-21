@@ -6,6 +6,7 @@ import {
   tokenFacingStoresLegacyTurned,
 } from '~/utils/tokenFacing'
 import { deepCloneJson } from '~/utils/serialization'
+import { Aa060AnchoredMovementError, assertAa060AnchoredDestination } from '../abilityAutomation/mechanics/aa060'
 
 export interface ImmediatePassPlacementTransition {
   readonly kind: 'pass'
@@ -108,6 +109,19 @@ export const applyAuthoritativeMovePlacementTransition = (options: {
       )
     }
     const destination = options.movement.destination
+    try {
+      assertAa060AnchoredDestination({
+        map: options.map,
+        placementId: options.actorPlacement.id,
+        destination,
+      })
+    }
+    catch (error) {
+      if (error instanceof Aa060AnchoredMovementError) {
+        return options.fail('ability-anchored-destination', error.message)
+      }
+      throw error
+    }
     const moved = setActorPlacement(
       options.map,
       options.actorPlacement.id,

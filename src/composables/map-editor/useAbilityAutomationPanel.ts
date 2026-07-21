@@ -1,321 +1,333 @@
 import { computed, ref, type ComputedRef, type Ref } from 'vue'
 import {
+  ABILITY_CLIENT_COMMAND_SCHEMA_VERSION,
+  parseAbilityClientDeclarationOffer,
+  type AbilityClientDeclarationOffer,
+  type BeginAbilityClientDeclarationCommand,
+} from '#shared/abilityAutomation/clientCommands'
+import type { AbilityClientCapabilityBundle, AbilityClientModeCapability } from '#shared/abilityAutomation/clientCapabilities'
+import {
+  ABILITY_DECLARATION_SCHEMA_VERSION,
+  parseAbilityDeclarationIntent,
+  type AbilityDeclarationIntent,
+} from '#shared/abilityAutomation/declarationIntent'
+import {
+  parseAbilityResolutionPublicResult,
+  type AbilityResolutionPublicResult,
+} from '#shared/abilityAutomation/results'
+import {
   abilityEntriesForPlacement,
   buildTokenAbilityMenuOptions,
   type TokenAbilityMenuOption,
+  type TokenAbilityUseReference,
   type TokenSheetAbility,
 } from '~/utils/mapTokenAbilities'
-import {
-  getMapAbilityAutomation,
-  mapAbilityTargetCandidates,
-  resolveMapAbilityAutomationTransaction,
-} from '~/utils/abilityAutomationLegacyCompatibility'
-import {
-  DEFAULT_ABILITY_AUTOMATION_LOG_ENTRIES,
-  appendAbilityAutomationLogEntry,
-} from '~/utils/abilityAutomationLog'
 import type { CharacterSheet } from '~/types/characterSheet'
 import type { TabletopMap } from '~/types/map'
-import type {
-  AbilityAutomationTransaction,
-  AbilitySheetActivationUpdate,
-} from '~/types/abilityAutomation'
-import type {
-  MoveAutomationCombatStageUpdate,
-  MoveAutomationConditionUpdate,
-  MoveAutomationTargetingOverlayState,
-} from '~/types/moveAutomation'
+import type { MoveAutomationTargetingOverlayState } from '~/types/moveAutomation'
 import type { SpawnedPokemon } from '~/types/pokemon'
+import { isPlainJsonObject } from '#shared/automation/strictJson'
 import type { TrainerSheet } from '~/types/trainerSheet'
-
-export { appendAbilityAutomationLogEntry } from '~/utils/abilityAutomationLog'
-
-interface SheetUpdateOptions {
-  allowAnyTarget?: boolean
-}
 
 type SheetMapRef<T> = Ref<Map<string, T> | undefined>
 type MaybePromise<T> = T | Promise<T>
-type ActionDispatchResult = boolean | undefined
 
-type SheetUpdateHandler<TUpdate> = (
-  update: TUpdate,
-  options?: SheetUpdateOptions,
-) => MaybePromise<void>
+export interface AbilityModeSelectionState {
+  readonly placementId: string
+  readonly abilityInstanceId: string
+  readonly canonicalId: string
+  readonly displayName: string
+  readonly modes: readonly AbilityClientModeCapability[]
+}
+export interface AbilityDeclarationPanelState {
+  readonly offer: AbilityClientDeclarationOffer
+  readonly selectedOptionIds: Readonly<Record<string, readonly string[]>>
+}
+export type AbilityInvocationStatus =
+  | { readonly kind: 'idle' }
+  | { readonly kind: 'loading-offer'; readonly requestId: string }
+  | { readonly kind: 'selecting' }
+  | { readonly kind: 'submitting'; readonly intentId: string }
+  | { readonly kind: 'pending'; readonly result: AbilityResolutionPublicResult; readonly controllerPresentationKey?: string | null }
+  | { readonly kind: 'accepted'; readonly result: AbilityResolutionPublicResult; readonly controllerPresentationKey?: string | null }
+  | { readonly kind: 'uncertain'; readonly message: string; readonly intentId: string }
+  | { readonly kind: 'error'; readonly message: string }
 
 export interface UseAbilityAutomationPanelOptions {
-  map: Ref<TabletopMap | null>
-  spawnedPokemon: ComputedRef<SpawnedPokemon[]>
-  pokemonBySlug: SheetMapRef<CharacterSheet>
-  trainerBySlug: SheetMapRef<TrainerSheet>
-  canControlPlacement: (id: string) => boolean
-  modifyCombatStages: SheetUpdateHandler<MoveAutomationCombatStageUpdate>
-  modifyConditions: SheetUpdateHandler<MoveAutomationConditionUpdate>
-  modifyAbilityActivation: SheetUpdateHandler<AbilitySheetActivationUpdate>
-  onBeforeNonImmediateAction?: (event: { userId: string; abilityName: string }) => MaybePromise<unknown>
-  dispatchAbilityUse?: (event: { userId: string; abilityName: string; targetTokenId?: string }) => MaybePromise<ActionDispatchResult>
-  now?: () => number
-  maxLogEntries?: number
+  readonly map: Ref<TabletopMap | null>
+  readonly spawnedPokemon: ComputedRef<SpawnedPokemon[]>
+  readonly pokemonBySlug: SheetMapRef<CharacterSheet>
+  readonly trainerBySlug: SheetMapRef<TrainerSheet>
+  readonly capabilities: Ref<AbilityClientCapabilityBundle>
+  readonly canControlPlacement: (id: string) => boolean
+  readonly beginDeclaration: (command: BeginAbilityClientDeclarationCommand) => MaybePromise<unknown>
+  readonly resolveDeclaration: (intent: AbilityDeclarationIntent) => MaybePromise<unknown>
+  readonly idFactory?: () => string
 }
 
-interface ActiveAbilityTargetingRequest {
-  userId: string
-  abilityName: string
-  rangeLabel: string
-  rangeMeters: number
+const defaultId = (): string => `ability:${globalThis.crypto?.randomUUID?.() ?? `${Date.now()}-${Math.random().toString(16).slice(2)}`}`
+const errorMessage = (error: unknown): string => error instanceof Error && error.message
+  ? error.message
+  : 'Ability command failed.'
+const parseResolutionResponse = (value: unknown): {
+  readonly result: AbilityResolutionPublicResult
+  readonly controllerPresentationKey: string | null
+} => {
+  if (isPlainJsonObject(value) && value.schemaVersion === 1 && Object.prototype.hasOwnProperty.call(value, 'result')) {
+    const key = value.controllerPresentationKey
+    if (key !== null && typeof key !== 'string') throw new Error('Ability controller presentation is invalid.')
+    return { result: parseAbilityResolutionPublicResult(value.result), controllerPresentationKey: key as string | null }
+  }
+  return { result: parseAbilityResolutionPublicResult(value), controllerPresentationKey: null }
 }
 
-export const useAbilityAutomationPanel = ({
-  map,
-  spawnedPokemon,
-  pokemonBySlug,
-  trainerBySlug,
-  canControlPlacement,
-  modifyCombatStages,
-  modifyConditions,
-  modifyAbilityActivation,
-  onBeforeNonImmediateAction,
-  dispatchAbilityUse,
-  now,
-  maxLogEntries = DEFAULT_ABILITY_AUTOMATION_LOG_ENTRIES,
-}: UseAbilityAutomationPanelOptions) => {
-  const activeAbilityTargeting = ref<ActiveAbilityTargetingRequest | null>(null)
+/**
+ * Native client boundary. It consumes only server-issued capabilities/offers,
+ * submits stable IDs, and never executes ability mechanics or legacy mutations.
+ */
+export const useAbilityAutomationPanel = (options: UseAbilityAutomationPanelOptions) => {
+  const activeModeSelection = ref<AbilityModeSelectionState | null>(null)
+  const activeOffer = ref<AbilityClientDeclarationOffer | null>(null)
+  const selectedOptionIds = ref<Readonly<Record<string, readonly string[]>>>({})
+  const invocationStatus = ref<AbilityInvocationStatus>({ kind: 'idle' })
+  const lastIntent = ref<AbilityDeclarationIntent | null>(null)
+  const idFactory = options.idFactory ?? defaultId
 
   const sheetLookup = () => ({
-    pokemon: pokemonBySlug.value,
-    trainer: trainerBySlug.value,
+    pokemon: options.pokemonBySlug.value,
+    trainer: options.trainerBySlug.value,
   })
-
   const abilityEntriesForId = (id: string | null | undefined): TokenSheetAbility[] => {
-    if (!map.value || !id) return []
+    if (!options.map.value || !id) return []
     return abilityEntriesForPlacement(
-      map.value.placements.find((item) => item.id === id),
+      options.map.value.placements.find(item => item.id === id),
       sheetLookup(),
     )
   }
-
-  const findSpawnedPokemon = (id: string | null | undefined): SpawnedPokemon | null =>
-    id ? spawnedPokemon.value.find((pokemon) => pokemon.id === id) ?? null : null
-
+  const currentCapabilityPlacement = (id: string) => {
+    const map = options.map.value
+    const bundle = options.capabilities.value
+    if (!map || bundle.mapSlug !== map.slug || bundle.mapRevision !== (map.revision ?? 0)) return null
+    return bundle.placements.find(entry => entry.placementId === id) ?? null
+  }
   const tokenAbilityOptionsById = computed(() => {
-    const out: Record<string, TokenAbilityMenuOption[]> = {}
-    if (!map.value) return out
-    for (const token of spawnedPokemon.value) {
-      out[token.id] = buildTokenAbilityMenuOptions(abilityEntriesForId(token.id))
+    const output: Record<string, TokenAbilityMenuOption[]> = {}
+    if (!options.map.value) return output
+    for (const token of options.spawnedPokemon.value) {
+      output[token.id] = buildTokenAbilityMenuOptions(
+        abilityEntriesForId(token.id),
+        currentCapabilityPlacement(token.id)?.abilities ?? [],
+      )
     }
-    return out
+    return output
   })
-
-  const abilityOptionForUse = (
-    id: string,
-    abilityName: string,
-  ): TokenAbilityMenuOption | null => {
-    const normalizedAbilityName = abilityName.trim().toLowerCase()
-    if (!normalizedAbilityName) return null
-    return tokenAbilityOptionsById.value[id]?.find((option) =>
-      option.name.toLowerCase() === normalizedAbilityName,
-    ) ?? null
-  }
-
-  const abilityAutomationTargeting = computed<MoveAutomationTargetingOverlayState | null>(() => {
-    const request = activeAbilityTargeting.value
-    const user = findSpawnedPokemon(request?.userId)
-    if (!request || !user || !canControlPlacement(request.userId)) return null
-    const candidates = mapAbilityTargetCandidates(user, spawnedPokemon.value, request.abilityName)
-    return {
-      userId: request.userId,
-      moveName: request.abilityName,
-      rangeLabel: request.rangeLabel,
-      rangeMeters: request.rangeMeters,
-      candidateIds: candidates.map((candidate) => candidate.id),
-    }
-  })
-
-  const appendAbilityAutomationLog = (transaction: AbilityAutomationTransaction) => {
-    if (!map.value) return
-    map.value.metadata = appendAbilityAutomationLogEntry(map.value.metadata, transaction, {
-      now,
-      maxLogEntries,
-    })
-  }
-
-  const isPromiseLike = (value: unknown): value is PromiseLike<unknown> => (
-    value !== null
-    && (typeof value === 'object' || typeof value === 'function')
-    && typeof (value as { then?: unknown }).then === 'function'
+  const optionForUse = (placementId: string, reference: TokenAbilityUseReference): TokenAbilityMenuOption | null => (
+    tokenAbilityOptionsById.value[placementId]?.find(option => (
+      option.instanceId === reference.abilityInstanceId
+      && option.canonicalId === reference.canonicalId
+    )) ?? null
   )
+  const clearSelection = (): void => {
+    activeModeSelection.value = null
+    activeOffer.value = null
+    selectedOptionIds.value = {}
+  }
+  const selectedFor = (declarationId: string): readonly string[] => selectedOptionIds.value[declarationId] ?? []
+  const selectionIsValid = (offer: AbilityClientDeclarationOffer): boolean => offer.declarations.every(declaration => {
+    const selected = selectedFor(declaration.declarationId)
+    const issued = new Set(declaration.options.map(option => option.optionId))
+    return selected.length >= declaration.minSelections
+      && selected.length <= declaration.maxSelections
+      && new Set(selected).size === selected.length
+      && selected.every(optionId => issued.has(optionId))
+  })
+  const abilityAutomationTargeting = computed<MoveAutomationTargetingOverlayState | null>(() => {
+    const offer = activeOffer.value
+    if (!offer || !options.canControlPlacement(offer.actorPlacementId)) return null
+    const unresolved = offer.declarations.filter(declaration => (
+      declaration.kind === 'token'
+      && selectedFor(declaration.declarationId).length < declaration.minSelections
+    ))
+    if (unresolved.length !== 1 || offer.declarations.some(declaration => (
+      declaration.kind !== 'token'
+      && selectedFor(declaration.declarationId).length < declaration.minSelections
+    ))) return null
+    const declaration = unresolved[0]!
+    return {
+      userId: offer.actorPlacementId,
+      moveName: offer.canonicalId,
+      rangeLabel: 'server-authorized targets',
+      rangeMeters: Number.POSITIVE_INFINITY,
+      candidateIds: declaration.options.flatMap(option => option.hint.kind === 'placement'
+        ? [option.hint.placementId]
+        : []),
+    }
+  })
+  const abilityDeclarationPanel = computed<AbilityDeclarationPanelState | null>(() => activeOffer.value
+    ? { offer: activeOffer.value, selectedOptionIds: selectedOptionIds.value }
+    : null)
 
-  const notifyAbilityAction = (event: { userId: string; abilityName: string }): MaybePromise<unknown> =>
-    onBeforeNonImmediateAction?.(event)
-
-  const resolveAbilityDispatch = async (
-    event: { userId: string; abilityName: string; targetTokenId?: string },
-  ): Promise<ActionDispatchResult> => {
+  const buildIntent = (offer: AbilityClientDeclarationOffer): AbilityDeclarationIntent => parseAbilityDeclarationIntent({
+    schemaVersion: ABILITY_DECLARATION_SCHEMA_VERSION,
+    intentId: idFactory(),
+    offerId: offer.offerId,
+    offerSha256: offer.offerSha256,
+    mapSlug: offer.mapSlug,
+    baseRevision: offer.mapRevision,
+    actorPlacementId: offer.actorPlacementId,
+    abilityInstanceId: offer.abilityInstanceId,
+    canonicalId: offer.canonicalId,
+    modeId: offer.modeId,
+    selections: offer.declarations.map(declaration => ({
+      declarationId: declaration.declarationId,
+      kind: declaration.kind,
+      optionIds: [...selectedFor(declaration.declarationId)],
+    })),
+  })
+  const submitIntent = async (intent: AbilityDeclarationIntent): Promise<boolean> => {
+    lastIntent.value = intent
+    invocationStatus.value = { kind: 'submitting', intentId: intent.intentId }
     try {
-      const result = dispatchAbilityUse?.(event)
-      return isPromiseLike(result) ? await result : result
-    } catch {
+      const response = parseResolutionResponse(await options.resolveDeclaration(intent))
+      invocationStatus.value = response.result.kind === 'pending'
+        ? { kind: 'pending', result: response.result, controllerPresentationKey: response.controllerPresentationKey }
+        : { kind: 'accepted', result: response.result, controllerPresentationKey: response.controllerPresentationKey }
+      clearSelection()
+      return true
+    }
+    catch (error) {
+      invocationStatus.value = { kind: 'uncertain', message: errorMessage(error), intentId: intent.intentId }
       return false
     }
   }
-
-  const applyAbilityAutomationTransaction = async (
-    transaction: AbilityAutomationTransaction,
-    options: { skipActionNotification?: boolean } = {},
-  ): Promise<boolean> => {
-    if (!map.value || !canControlPlacement(transaction.userId)) return false
-    if (!options.skipActionNotification) {
-      const notification = notifyAbilityAction({ userId: transaction.userId, abilityName: transaction.abilityName })
-      if (isPromiseLike(notification)) await notification
-      if (!map.value || !canControlPlacement(transaction.userId)) return false
-    }
-    for (const update of transaction.combatStageUpdates) {
-      await modifyCombatStages(update, { allowAnyTarget: true })
-    }
-    for (const update of transaction.conditionUpdates) {
-      await modifyConditions(update, { allowAnyTarget: true })
-    }
-    appendAbilityAutomationLog(transaction)
-    return true
+  const submitAbilityDeclaration = async (): Promise<boolean> => {
+    const offer = activeOffer.value
+    if (!offer || !selectionIsValid(offer)) return false
+    return submitIntent(buildIntent(offer))
   }
-
-  const activateSheetAbility = async (
-    user: SpawnedPokemon,
-    option: TokenAbilityMenuOption,
-  ): Promise<boolean> => {
-    const notification = notifyAbilityAction({ userId: user.id, abilityName: option.name })
-    if (isPromiseLike(notification)) await notification
-    if (!map.value || !canControlPlacement(user.id)) return false
-
-    const dispatchResult = await resolveAbilityDispatch({ userId: user.id, abilityName: option.name })
-    if (dispatchResult !== undefined) return dispatchResult
-
-    await modifyAbilityActivation({
-      id: user.id,
-      abilityName: option.name,
-      activated: true,
-    })
-    appendAbilityAutomationLog({
-      userId: user.id,
-      userName: user.species,
-      abilityName: option.name,
-      category: 'sheet',
-      combatStageUpdates: [],
-      conditionUpdates: [],
-      logLines: [`${user.species} activated ${option.name}.`],
-    })
-    return true
-  }
-
-  const applySelfMapAbility = async (
-    user: SpawnedPokemon,
-    option: TokenAbilityMenuOption,
-  ): Promise<boolean> => {
-    let actionNotified = false
-    if (dispatchAbilityUse) {
-      const notification = notifyAbilityAction({ userId: user.id, abilityName: option.name })
-      if (isPromiseLike(notification)) await notification
-      actionNotified = true
-      if (!map.value || !canControlPlacement(user.id)) return false
-
-      const dispatchResult = await resolveAbilityDispatch({ userId: user.id, abilityName: option.name })
-      if (dispatchResult !== undefined) return dispatchResult
-    }
-
-    const transaction = resolveMapAbilityAutomationTransaction({
-      abilityName: option.name,
-      user,
-      fieldEffects: map.value?.fieldEffects,
-    })
-    return transaction
-      ? applyAbilityAutomationTransaction(transaction, { skipActionNotification: actionNotified })
-      : false
-  }
-
-  const beginMapAbilityTargeting = (
-    user: SpawnedPokemon,
-    option: TokenAbilityMenuOption,
-  ) => {
-    const mapAutomation = getMapAbilityAutomation(option.name)
-    if (!mapAutomation) return
-    activeAbilityTargeting.value = {
-      userId: user.id,
-      abilityName: mapAutomation.name,
-      rangeLabel: mapAutomation.rangeLabel,
-      rangeMeters: mapAutomation.rangeMeters,
-    }
-  }
-
-  const openAbilityAutomation = async (input: string | { id: string; abilityName?: string | null }): Promise<boolean> => {
-    const id = typeof input === 'string' ? input : input.id
-    if (!canControlPlacement(id)) return false
-    const abilityName = typeof input === 'string' ? null : input.abilityName?.trim() || null
-    if (!abilityName) return false
-
-    const user = findSpawnedPokemon(id)
-    const option = abilityOptionForUse(id, abilityName)
-    if (!user || !option?.automation) return false
-
-    activeAbilityTargeting.value = null
-    if (option.automation.category === 'passive') return false
-    if (option.automation.category === 'sheet') {
-      return option.activated ? false : activateSheetAbility(user, option)
-    }
-
-    const mapAutomation = getMapAbilityAutomation(option.name)
-    if (mapAutomation?.targetMode === 'self') return applySelfMapAbility(user, option)
-
-    beginMapAbilityTargeting(user, option)
-    return true
-  }
-
-  const cancelAbilityAutomationTargeting = () => {
-    activeAbilityTargeting.value = null
-  }
-
-  const selectAbilityAutomationTarget = async (targetId: string): Promise<boolean> => {
-    const request = activeAbilityTargeting.value
-    const overlay = abilityAutomationTargeting.value
-    if (!request || !overlay?.candidateIds.includes(targetId)) return false
-
-    const user = findSpawnedPokemon(request.userId)
-    const target = findSpawnedPokemon(targetId)
-    if (!user || !target) return false
-
-    let actionNotified = false
-    if (dispatchAbilityUse) {
-      const notification = notifyAbilityAction({ userId: user.id, abilityName: request.abilityName })
-      if (isPromiseLike(notification)) await notification
-      actionNotified = true
-      if (!map.value || !canControlPlacement(user.id)) return false
-
-      const dispatchResult = await resolveAbilityDispatch({ userId: user.id, abilityName: request.abilityName, targetTokenId: target.id })
-      if (dispatchResult !== undefined) {
-        if (dispatchResult) activeAbilityTargeting.value = null
-        return dispatchResult
+  const autoSelect = (offer: AbilityClientDeclarationOffer): Readonly<Record<string, readonly string[]>> => Object.freeze(
+    Object.fromEntries(offer.declarations.map(declaration => {
+      const options = declaration.options
+      const ids = (declaration.kind === 'self' || declaration.kind === 'none')
+        && declaration.minSelections === declaration.maxSelections
+        && declaration.maxSelections === options.length
+        ? options.map(option => option.optionId)
+        : declaration.minSelections === 0
+          ? []
+          : declaration.kind === 'self' && options.length === 1 && declaration.minSelections === 1
+            ? [options[0]!.optionId]
+            : []
+      return [declaration.declarationId, Object.freeze(ids)]
+    })),
+  )
+  const beginMode = async (selection: AbilityModeSelectionState, mode: AbilityClientModeCapability): Promise<boolean> => {
+    const map = options.map.value
+    if (!map || !options.canControlPlacement(selection.placementId) || !mode.invocable) return false
+    const capabilityRevision = options.capabilities.value.mapRevision
+    if (capabilityRevision !== (map.revision ?? 0)) return false
+    const request = {
+      schemaVersion: ABILITY_CLIENT_COMMAND_SCHEMA_VERSION,
+      requestId: idFactory(),
+      mapSlug: map.slug,
+      baseRevision: capabilityRevision,
+      actorPlacementId: selection.placementId,
+      abilityInstanceId: selection.abilityInstanceId,
+      canonicalId: selection.canonicalId,
+      modeId: mode.modeId,
+    } satisfies BeginAbilityClientDeclarationCommand
+    invocationStatus.value = { kind: 'loading-offer', requestId: request.requestId }
+    try {
+      const offer = parseAbilityClientDeclarationOffer(await options.beginDeclaration(request))
+      if (offer.mapSlug !== request.mapSlug || offer.mapRevision !== request.baseRevision
+        || offer.actorPlacementId !== request.actorPlacementId
+        || offer.abilityInstanceId !== request.abilityInstanceId
+        || offer.canonicalId !== request.canonicalId || offer.modeId !== request.modeId) {
+        throw new Error('Ability declaration offer does not match the requested capability.')
       }
+      activeModeSelection.value = null
+      activeOffer.value = offer
+      selectedOptionIds.value = autoSelect(offer)
+      invocationStatus.value = { kind: 'selecting' }
+      return selectionIsValid(offer) ? submitAbilityDeclaration() : true
     }
-
-    const transaction = resolveMapAbilityAutomationTransaction({
-      abilityName: request.abilityName,
-      user,
-      target,
-      fieldEffects: map.value?.fieldEffects,
-    })
-    if (!transaction) return false
-
-    const applied = await applyAbilityAutomationTransaction(transaction, { skipActionNotification: actionNotified })
-    if (applied) activeAbilityTargeting.value = null
-    return applied
+    catch (error) {
+      clearSelection()
+      invocationStatus.value = { kind: 'error', message: errorMessage(error) }
+      return false
+    }
+  }
+  const openAbilityAutomation = async (input: { id: string } & TokenAbilityUseReference): Promise<boolean> => {
+    if (!options.canControlPlacement(input.id)) return false
+    const option = optionForUse(input.id, input)
+    const capability = option?.capability
+    if (!option || !capability || capability.status !== 'ready') return false
+    clearSelection()
+    const modes = capability.modes.filter(mode => mode.invocable)
+    if (modes.length === 0) return false
+    const selection = {
+      placementId: input.id,
+      abilityInstanceId: capability.instanceId,
+      canonicalId: capability.canonicalId,
+      displayName: capability.displayName,
+      modes,
+    }
+    if (modes.length > 1) {
+      activeModeSelection.value = selection
+      invocationStatus.value = { kind: 'selecting' }
+      return true
+    }
+    return beginMode(selection, modes[0]!)
+  }
+  const selectAbilityMode = async (modeId: string): Promise<boolean> => {
+    const selection = activeModeSelection.value
+    const mode = selection?.modes.find(candidate => candidate.modeId === modeId)
+    return selection && mode ? beginMode(selection, mode) : false
+  }
+  const selectAbilityDeclarationOption = (declarationId: string, optionId: string): boolean => {
+    const offer = activeOffer.value
+    const declaration = offer?.declarations.find(entry => entry.declarationId === declarationId)
+    if (!declaration || !declaration.options.some(option => option.optionId === optionId)) return false
+    const current = [...selectedFor(declarationId)]
+    const index = current.indexOf(optionId)
+    if (index >= 0) current.splice(index, 1)
+    else {
+      if (declaration.maxSelections === 1) current.splice(0, current.length, optionId)
+      else if (current.length < declaration.maxSelections) current.push(optionId)
+      else return false
+    }
+    selectedOptionIds.value = Object.freeze({ ...selectedOptionIds.value, [declarationId]: Object.freeze(current) })
+    return true
+  }
+  const selectAbilityAutomationTarget = async (targetId: string): Promise<boolean> => {
+    const overlay = abilityAutomationTargeting.value
+    const offer = activeOffer.value
+    if (!offer || !overlay?.candidateIds.includes(targetId)) return false
+    const declaration = offer.declarations.find(entry => entry.kind === 'token'
+      && entry.options.some(option => option.hint.kind === 'placement' && option.hint.placementId === targetId))
+    const option = declaration?.options.find(entry => entry.hint.kind === 'placement' && entry.hint.placementId === targetId)
+    if (!declaration || !option || !selectAbilityDeclarationOption(declaration.declarationId, option.optionId)) return false
+    return selectionIsValid(offer) ? submitAbilityDeclaration() : true
+  }
+  const retryAbilityDeclaration = async (): Promise<boolean> => lastIntent.value
+    ? submitIntent(lastIntent.value)
+    : false
+  const cancelAbilityAutomationTargeting = (): void => {
+    clearSelection()
+    invocationStatus.value = { kind: 'idle' }
   }
 
   return {
     abilityAutomationTargeting,
+    abilityDeclarationPanel,
+    activeAbilityModeSelection: computed(() => activeModeSelection.value),
+    abilityInvocationStatus: computed(() => invocationStatus.value),
     tokenAbilityOptionsById,
     openAbilityAutomation,
+    selectAbilityMode,
+    selectAbilityDeclarationOption,
+    submitAbilityDeclaration,
+    retryAbilityDeclaration,
     cancelAbilityAutomationTargeting,
     selectAbilityAutomationTarget,
-    appendAbilityAutomationLog,
-    applyAbilityAutomationTransaction,
   }
 }

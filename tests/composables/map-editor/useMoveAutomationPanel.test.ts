@@ -296,6 +296,61 @@ const targetCountPanel = (options: {
 }
 
 describe('useMoveAutomationPanel', () => {
+  it('collects a Clay Cannons origin before targeting and sends only that server-validated intent cell', async () => {
+    const baseMap = mapFixture()
+    const encounter = createEmptyEncounterState()
+    const map = ref<TabletopMap>({
+      ...baseMap,
+      dimensions: { x: 8, y: 2, z: 5 },
+      placements: [
+        { id: 'user-token', sheetKind: 'pokemon', sheetSlug: 'bolt', position: { x: 0, y: 0, z: 0 } },
+        { id: 'target-token', sheetKind: 'pokemon', sheetSlug: 'target', position: { x: 6, y: 0, z: 0 } },
+      ],
+      encounterState: {
+        ...encounter,
+        effects: [{
+          id: 'ability.clay-cannons.user-token', kind: 'capability',
+          source: { operationId: 'intent:clay-cannons', moveId: 'ability.clay-cannons', placementId: 'user-token' },
+          affected: { placementIds: ['user-token'], sideIds: [], cells: [] },
+          createdRound: 1, createdTurn: 0, duration: { kind: 'rounds', boundary: 'end', remaining: 1 },
+          stacks: 1, charges: null, stackPolicy: { kind: 'refresh', maxStacks: null },
+          chargePolicy: { kind: 'none', amount: null }, tags: ['ability', 'clay-cannons'],
+          payload: { capabilityId: 'aa063.clay-cannons.virtual-origin', action: 'grant' },
+          dispel: { policy: 'none', tags: [] }, transferPolicy: 'expire', suppression: { sources: [] },
+        }],
+      },
+    })
+    const pokemonSheet = {
+      slug: 'bolt', nickname: 'Bolt', species: 'Squirtle', level: 5, movelist: [{ name: 'Water Gun' }],
+    } as CharacterSheet
+    const dispatched = vi.fn(async () => ({ accepted: false as const }))
+    const panel = useMoveAutomationPanel({
+      map,
+      spawnedPokemon: computed(() => [
+        spawned({ id: 'user-token', sheetSlug: 'bolt', position: { x: 0, y: 0, z: 0 } }),
+        spawned({ id: 'target-token', sheetSlug: 'target', position: { x: 6, y: 0, z: 0 } }),
+      ]),
+      pokemonBySlug: ref(new Map([[pokemonSheet.slug, pokemonSheet]])),
+      trainerBySlug: ref(new Map<string, TrainerSheet>()),
+      canEditMap: computed(() => false), canControlPlacement: id => id === 'user-token',
+      modifyHp: () => undefined, modifyCombatStages: () => undefined, modifyConditions: () => undefined,
+      applyMoveFieldEffect: () => undefined, placeHazard: () => undefined,
+      dispatchAuthoritativeMove: dispatched,
+    })
+
+    panel.openMoveAutomation({ id: 'user-token', moveName: 'Water Gun' })
+    expect(panel.moveAutomationTargeting.value).toMatchObject({
+      mode: 'area-confirmation', areaAimMode: 'free', areaAimRangeMeters: 2,
+      targetPrompt: 'Choose the virtual origin for this Ranged Move.',
+    })
+    panel.aimMoveAutomationArea({ x: 2, y: 0, z: 0 })
+    await panel.selectMoveAutomationTarget('user-token')
+    expect(panel.moveAutomationTargeting.value?.candidateIds).toContain('target-token')
+    await panel.selectMoveAutomationTarget('target-token')
+    expect(dispatched).toHaveBeenCalledWith(expect.objectContaining({
+      intent: expect.objectContaining({ originCell: { x: 2, y: 0, z: 0 } }),
+    }))
+  })
   it('exposes completed no-target native moves without opening the removed wizard', () => {
     const map = ref(mapFixture())
     const pokemonSheet = {

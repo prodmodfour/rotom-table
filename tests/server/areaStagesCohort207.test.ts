@@ -582,9 +582,7 @@ describe('MA-207 ally filters, stage transforms, self costs, and area outcomes',
       naturalResults: [16],
     }), 'op_ma207_glaciate_immunity')
     expect(immune.resolution.transaction.hpUpdates).toHaveLength(1)
-    expect(stageUpdate(immune, 'protected')).toMatchObject({
-      stages: expect.objectContaining({ spd: 1 }),
-    })
+    expect(stageUpdate(immune, 'protected')).toBeUndefined()
     expect(immune.resolution.transaction.conditionUpdates).toEqual([])
     expect(operationRecipient(immune, 'glaciate.slowed', 'protected'))
       .toMatchObject({ outcome: 'prevented', reasonCode: 'condition-immunity' })

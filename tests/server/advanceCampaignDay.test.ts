@@ -23,6 +23,17 @@ const changedPokemon = (revision = 1) => ({
   level: 5,
   combat: { currentHp: 1, injuries: 2, injuriesHealedToday: 2, conditions: ['Burned'] },
   moveUsage: { daily: { thunderbolt: { moveName: 'Thunderbolt', uses: 1 } } },
+  abilityUsage: {
+    schemaVersion: 1, dayKey: 'campaign-day:previous',
+    entries: [{
+      ownerId: 'pika', abilityInstanceId: 'base:pika:blessed-touch', canonicalId: 'Blessed Touch',
+      clauseId: 'base', limit: 2, spent: 1, operationIds: ['op:blessed-touch'],
+    }],
+  },
+  berryStorage: {
+    schemaVersion: 1,
+    entries: [{ id: 'berry:oran', canonicalItemId: 'oran-berry', canonicalItemName: 'Oran Berry', quantity: 1, lastTradedSceneId: null }],
+  },
   revision,
 })
 
@@ -67,6 +78,10 @@ describe('advanceCampaignDayUseCase', () => {
 
     expect(result).toMatchObject({ ok: true, totalSheets: 3, updatedSheets: 2, pokemonUpdated: 1, trainerUpdated: 1 })
     expect(sheets.getByRef('pokemon', 'pika')?.revision).toBe(2)
+    expect(sheets.getByRef('pokemon', 'pika')?.sheet).toMatchObject({
+      abilityUsage: { schemaVersion: 1, dayKey: 'campaign-day:500', entries: [] },
+    })
+    expect(sheets.getByRef('pokemon', 'pika')?.sheet).not.toHaveProperty('berryStorage')
     expect(sheets.getByRef('trainer', 'brock')?.revision).toBe(4)
     expect(sheets.getByRef('pokemon', 'calm')?.revision).toBe(7)
     expect(result.paths).toEqual(['data/sheets/pika.json', 'data/trainers/brock.json'])

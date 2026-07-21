@@ -7,41 +7,35 @@ import type { CharacterSheet } from '~/types/characterSheet'
 import type { TrainerSheet } from '~/types/trainerSheet'
 
 describe('map token ability menu options', () => {
-  it('resolves Pokémon sheet abilities with sheet and map automation categories', () => {
-    const options = buildTokenAbilityMenuOptions([
+  it('default-denies sheet entries and merges only matching server capabilities', () => {
+    const entries = [
       { name: 'Sand Veil', activated: true },
-      { name: 'Snow Cloak' },
-      { name: 'Healer' },
-      { name: 'Intimidate' },
-      { name: 'Leaf Guard' },
-      { name: 'Moxie' },
-      { name: 'Compound Eyes' },
-      { name: 'Cute Charm' },
-      { name: 'Poison Point' },
-      { name: 'Poison Touch' },
-      { name: 'Quick Feet' },
-      { name: 'No Guard' },
-      { name: 'Shield Dust' },
-      { name: 'Sweet Veil' },
       { name: 'Run Away' },
+    ]
+    expect(buildTokenAbilityMenuOptions(entries)).toMatchObject([
+      { name: 'Sand Veil', capability: null, activated: true },
+      { name: 'Run Away', capability: null, activated: false },
     ])
 
-    expect(options).toMatchObject([
-      { name: 'Sand Veil', automation: { category: 'sheet', label: 'Sheet' }, activated: true },
-      { name: 'Snow Cloak', automation: { category: 'sheet', label: 'Sheet' }, activated: false },
-      { name: 'Healer', automation: { category: 'map', label: 'Map' }, activated: false },
-      { name: 'Intimidate', automation: { category: 'map', label: 'Map' }, activated: false },
-      { name: 'Leaf Guard', automation: { category: 'map', label: 'Self' }, activated: false },
-      { name: 'Moxie', automation: { category: 'map', label: 'Assisted' }, activated: false },
-      { name: 'Compound Eyes', automation: { category: 'passive', label: 'Auto' }, activated: false },
-      { name: 'Cute Charm', automation: { category: 'passive', label: 'Assisted' }, activated: false },
-      { name: 'Poison Point', automation: { category: 'passive', label: 'Assisted' }, activated: false },
-      { name: 'Poison Touch', automation: { category: 'passive', label: 'Auto' }, activated: false },
-      { name: 'Quick Feet', automation: { category: 'passive', label: 'Auto' }, activated: false },
-      { name: 'No Guard', automation: { category: 'passive', label: 'Auto' }, activated: false },
-      { name: 'Shield Dust', automation: { category: 'passive', label: 'Auto' }, activated: false },
-      { name: 'Sweet Veil', automation: { category: 'passive', label: 'Auto' }, activated: false },
-      { name: 'Run Away', automation: null, activated: false },
+    const ready = {
+      instanceId: 'base:token:0', canonicalId: 'Sand Veil', displayName: 'Sand Veil',
+      effective: true, baseStatus: 'complete', interactionStatus: 'unassessed',
+      status: 'ready', statusBadgeKey: 'ability.status.ready', unavailableReasonCode: null,
+      modes: [{ modeId: 'activate', kind: 'activated', invocable: true, targeting: [] }],
+    } as const
+    const transformed = {
+      ...ready,
+      instanceId: 'transformed:effect:0',
+      canonicalId: 'Snow Cloak',
+      displayName: 'Snow Cloak',
+      status: 'passive',
+      statusBadgeKey: 'ability.status.passive',
+      modes: [{ modeId: 'static', kind: 'static', invocable: false, targeting: [] }],
+    } as const
+    expect(buildTokenAbilityMenuOptions(entries, [ready, transformed])).toMatchObject([
+      { name: 'Sand Veil', instanceId: 'base:token:0', capability: { status: 'ready' } },
+      { name: 'Run Away', capability: null },
+      { name: 'Snow Cloak', instanceId: 'transformed:effect:0', capability: { status: 'passive' } },
     ])
   })
 

@@ -808,7 +808,12 @@ export const reduceMoveSpatialEffects = (
   const movementSheets = movementSheetsForContext(input.context)
   const terrainIndex = buildMapMovementTerrainIndex(input.context.map.voxels)
 
-  for (const emission of input.operations) {
+  const orderedOperations = [...input.operations].sort((left, right) => {
+    const leftBodyguard = left.operation.reasonCode === 'ability.bodyguard.swap' ? 0 : 1
+    const rightBodyguard = right.operation.reasonCode === 'ability.bodyguard.swap' ? 0 : 1
+    return leftBodyguard - rightBodyguard
+  })
+  for (const emission of orderedOperations) {
     const { operation } = emission
     const operationId = operation.id
     if (isDisplacementOperation(operation)) assertDisplacementOperation(operation)
@@ -821,18 +826,20 @@ export const reduceMoveSpatialEffects = (
     }
     operationIds.add(operation.id)
 
-    const expectedIds = expectedMoveEffectRecipientIds(
-      input.context,
-      operation,
-      dynamic,
-      recipientFailure,
-    )
     const emittedIds = canonicalMoveEffectPlacementIds(
       input.context,
       emission.recipientIds,
       `spatial operation ${operation.id} recipients`,
       recipientFailure,
     )
+    const expectedIds = operation.recipients.kind === 'response-owner'
+      ? emittedIds
+      : expectedMoveEffectRecipientIds(
+          input.context,
+          operation,
+          dynamic,
+          recipientFailure,
+        )
     const emittedIdsAreCanonical = moveEffectRecipientIdsEqual(
       emission.recipientIds,
       emittedIds,

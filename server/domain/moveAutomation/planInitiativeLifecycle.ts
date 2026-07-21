@@ -16,7 +16,7 @@ import type {
   MoveEffectOperation,
   MoveHealEffectOperation,
 } from '#shared/moveAutomation/effects'
-import type { EncounterState } from '#shared/moveAutomation/encounterState'
+import { parseEncounterState, type EncounterState } from '#shared/moveAutomation/encounterState'
 import { normalizeRevision } from '#shared/sessionRevisions'
 import type { CharacterSheet } from '~/types/characterSheet'
 import type { SheetKind, SheetPlacement, TabletopMap } from '~/types/map'
@@ -65,6 +65,15 @@ import {
   createAuthoritativeMoveRandom,
   type AuthoritativeMoveRandomSource,
 } from './random'
+import { createEmptyAbilityOwnedState } from '#shared/abilityAutomation/ownedState'
+import { reduceAbilityOwnedStateLifecycle } from '../abilityAutomation/ownedState'
+import { reduceAbilityEffectLifecycleEncounter, type AbilityEffectLifecycleEvent } from '../abilityAutomation/effectLifecycle'
+import { createEmptyAbilityEntityState } from '#shared/abilityAutomation/entities'
+import { recoverAbilityEntities, reduceAbilityEntityCommand, reduceAbilityEntityLifecycle } from '../abilityAutomation/entities'
+import { registeredAbilityAutomationRuntimeFor } from '../abilityAutomation/registry'
+import { projectAuthoritativeEffectiveAbilities } from '../abilityAutomation/effectiveAbilities'
+import { resolveSheetAbilityInstances } from '../abilityAutomation/instanceParameters'
+import { aa060AnchoredEntityCreateCommand } from '../abilityAutomation/mechanics/aa060Activated'
 
 export type InitiativeLifecyclePlanningErrorCode =
   | 'active-placement-missing'
@@ -483,6 +492,62 @@ const sheetWriteFromChange = (input: {
   ),
 })
 
+const reconcileAnchoredEntities = (input: {
+  readonly state: EncounterState
+  readonly map: TabletopMap
+  readonly events: readonly EncounterEvent[]
+  readonly loadSheets: () => EncounterLifecycleSheetSnapshots
+}): EncounterState => {
+  if (!registeredAbilityAutomationRuntimeFor('Anchored')) return input.state
+  const snapshots = input.loadSheets()
+  const activeByPlacement = new Map<string, ReturnType<typeof projectAuthoritativeEffectiveAbilities>>()
+  for (const placement of input.map.placements) {
+    const sheet = placement.sheetKind === 'pokemon'
+      ? snapshots.pokemonSheets.get(placement.sheetSlug)
+      : snapshots.trainerSheets.get(placement.sheetSlug)
+    const projected = projectAuthoritativeEffectiveAbilities({
+      baseAbilities: resolveSheetAbilityInstances(sheet?.abilities),
+      target: {
+        placementId: placement.id,
+        ...(placement.sideId ? { sideId: placement.sideId } : {}),
+        position: placement.position,
+      },
+      effects: input.state.effects,
+      transformationSnapshots: input.state.abilityTransformations,
+    })
+    activeByPlacement.set(placement.id, projected)
+  }
+  let encounter = recoverAbilityEntities({
+    encounter: input.state,
+    presentPlacementIds: input.map.placements.map(placement => placement.id),
+    activeAbilityInstanceIdsByPlacement: new Map([...activeByPlacement].map(([placementId, abilities]) => [
+      placementId,
+      abilities.filter(ability => ability.effective).map(ability => ability.instanceId),
+    ])),
+  })
+  let entityState = encounter.abilityEntities ?? createEmptyAbilityEntityState()
+  const eventId = input.events.at(-1)?.eventId ?? 'event.ability-anchor-recovery'
+  for (const placement of input.map.placements) {
+    const anchored = (activeByPlacement.get(placement.id) ?? []).filter(ability => (
+      ability.effective && ability.canonicalId === 'Anchored'
+    ))
+    for (const ability of anchored) {
+      const entityId = `${ability.instanceId}:anchor`
+      if (entityState.entries.some(entity => entity.entityId === entityId)) continue
+      const operationHash = createHash('sha256')
+        .update(`${eventId}\u0000${placement.id}\u0000${ability.instanceId}`)
+        .digest('hex').slice(0, 24)
+      entityState = reduceAbilityEntityCommand(entityState, aa060AnchoredEntityCreateCommand({
+        placement,
+        abilityInstanceId: ability.instanceId,
+        operationId: `ability-anchor-setup.${operationHash}`,
+      })).state
+    }
+  }
+  encounter = parseEncounterState({ ...encounter, abilityEntities: entityState })
+  return encounter
+}
+
 /** Plan effect expiry and currently reducible due token operations for one event batch. */
 export const planEncounterLifecycle = (
   input: PlanEncounterLifecycleInput,
@@ -635,8 +700,38 @@ export const planEncounterLifecycle = (
     : null
   const reductions = cleanupReduction ? [reduction, cleanupReduction] : [reduction]
   const plannedEvents = cleanupReduction ? [...events, ...cleanupEvents] : events
-  const currentEncounterState = cleanupReduction?.state ?? reduction.state
-  if (cleanupReduction) nextMap.encounterState = deepCloneJson(currentEncounterState)
+  let currentEncounterState = cleanupReduction?.state ?? reduction.state
+  for (const event of plannedEvents) {
+    let abilityEvent: AbilityEffectLifecycleEvent | null = null
+    if (event.kind === 'turn-start' || event.kind === 'turn-end') {
+      abilityEvent = { kind: 'turn-boundary', placementId: event.placementId, boundary: event.kind === 'turn-start' ? 'start' : 'end' }
+    }
+    else if (event.kind === 'round-start' || event.kind === 'round-end') {
+      abilityEvent = { kind: 'round-boundary', boundary: event.kind === 'round-start' ? 'start' : 'end' }
+    }
+    else if (event.kind === 'scene-end') abilityEvent = { kind: 'scene-end' }
+    if (!abilityEvent) continue
+    const owned = reduceAbilityOwnedStateLifecycle(
+      currentEncounterState.abilityOwnedState ?? createEmptyAbilityOwnedState(),
+      abilityEvent,
+    )
+    const entities = reduceAbilityEntityLifecycle(
+      currentEncounterState.abilityEntities ?? createEmptyAbilityEntityState(),
+      abilityEvent,
+    )
+    currentEncounterState = reduceAbilityEffectLifecycleEncounter({
+      ...currentEncounterState,
+      abilityOwnedState: owned,
+      abilityEntities: entities,
+    }, abilityEvent).encounter
+  }
+  currentEncounterState = reconcileAnchoredEntities({
+    state: currentEncounterState,
+    map: nextMap,
+    events: plannedEvents,
+    loadSheets: input.loadSheets,
+  })
+  nextMap.encounterState = deepCloneJson(currentEncounterState)
   const rollLedger = random.complete()
 
   return Object.freeze({

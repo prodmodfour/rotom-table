@@ -1,6 +1,10 @@
 import { computed, ref, type ComputedRef, type Ref } from 'vue'
 import type { AuthRole } from '#shared/auth'
 import {
+  parseAbilityClientCapabilityBundle,
+  type AbilityClientCapabilityBundle,
+} from '#shared/abilityAutomation/clientCapabilities'
+import {
   LIVE_TABLE_SNAPSHOT_SCHEMA_VERSION,
   type LiveTableSnapshot,
 } from '#shared/liveTableSnapshot'
@@ -49,6 +53,7 @@ export interface UseLiveTableSnapshotSyncOptions {
   readonly sheetCache: LiveTableSnapshotSheetCacheController
   readonly applyMap: (map: TabletopMap) => void
   readonly applyInteractionMode: (state: ApplyAuthoritativeMapInteractionModeInput) => void
+  readonly applyAbilityCapabilities?: (capabilities: AbilityClientCapabilityBundle) => void
 }
 
 export interface UseLiveTableSnapshotSyncReturn {
@@ -115,6 +120,10 @@ const validateSnapshot = (snapshot: LiveTableSnapshot, slug: string): void => {
   }
   validateRevisionedSheetDocuments(snapshot.pokemonSheets, 'Live table snapshot Pokémon sheets')
   validateRevisionedSheetDocuments(snapshot.trainerSheets, 'Live table snapshot trainer sheets')
+  const capabilities = parseAbilityClientCapabilityBundle(snapshot.abilityCapabilities)
+  if (capabilities.mapSlug !== slug || capabilities.mapRevision !== snapshot.mapRevision) {
+    throw new Error('Live table snapshot ability capabilities do not match its map revision.')
+  }
 }
 
 const sameAccessContext = (
@@ -185,6 +194,7 @@ export const useLiveTableSnapshotSync = (
       interactionMode: snapshot.interactionMode,
       updatedAt: snapshot.interactionModeUpdatedAt,
     })
+    options.applyAbilityCapabilities?.(parseAbilityClientCapabilityBundle(snapshot.abilityCapabilities))
     options.applyMap({
       ...snapshot.map,
       revision: snapshot.mapRevision,

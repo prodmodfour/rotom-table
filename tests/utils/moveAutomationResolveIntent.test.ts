@@ -21,6 +21,19 @@ describe('buildMoveAutomationResolveIntent', () => {
     expect(JSON.stringify(result.intent)).not.toContain('target')
   })
 
+  it('detaches an optional server-validated virtual origin without adding mechanics', () => {
+    const originCell = { x: 2, y: 0, z: 3 }
+    const result = buildMoveAutomationResolveIntent({
+      kind: 'single-target', actorPlacementId: 'actor', moveName: 'Water Gun',
+      originCell, targetPlacementId: 'target-a',
+    })
+    originCell.x = 99
+    expect(result.intent).toMatchObject({
+      originCell: { x: 2, y: 0, z: 3 },
+      selection: { kind: 'single-target', targetPlacementId: 'target-a' },
+    })
+  })
+
   it('builds single-target intents with only the selected target id', () => {
     const result = buildMoveAutomationResolveIntent({
       kind: 'single-target',

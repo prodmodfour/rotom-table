@@ -1,0 +1,59 @@
+{
+  "schemaVersion": 1,
+  "sourceDataSha256": "767c3e2ae45471c26ad97a07552c4b0417ed0e207827af8a59da3a73e81f4362",
+  "entries": [
+    {
+      "canonicalId": "Comatose",
+      "rawActionText": "Move Action",
+      "exceptionId": "comatose-move-action-source-term",
+      "variants": [
+        { "id": "use", "cost": "special", "timing": "normal", "availabilityPool": null }
+      ]
+    },
+    {
+      "canonicalId": "Illusion",
+      "rawActionText": null,
+      "exceptionId": "illusion-mixed-actions",
+      "variants": [
+        { "id": "mark-target", "cost": "standard", "timing": "normal", "availabilityPool": null },
+        { "id": "assume-illusion", "cost": "free", "timing": "normal", "availabilityPool": null },
+        { "id": "dismiss-illusion", "cost": "free", "timing": "normal", "availabilityPool": null }
+      ]
+    },
+    {
+      "canonicalId": "Memory Wipe",
+      "rawActionText": "Special",
+      "exceptionId": "memory-wipe-action-branches",
+      "variants": [
+        { "id": "disable-last-move", "cost": "swift", "timing": "normal", "availabilityPool": null },
+        { "id": "flinch-and-paralyze", "cost": "standard", "timing": "normal", "availabilityPool": null },
+        { "id": "erase-memory", "cost": "extended", "timing": "normal", "availabilityPool": null }
+      ]
+    },
+    {
+      "canonicalId": "Sap Sipper",
+      "rawActionText": null,
+      "exceptionId": "sap-sipper-implicit-hit-trigger",
+      "variants": [
+        { "id": "grass-hit", "cost": "none", "timing": "triggered", "availabilityPool": null }
+      ]
+    },
+    {
+      "canonicalId": "Strange Tempo",
+      "rawActionText": "Special",
+      "exceptionId": "strange-tempo-action-branches",
+      "variants": [
+        { "id": "ignore-confusion-roll", "cost": "free", "timing": "normal", "availabilityPool": null },
+        { "id": "cure-and-raise-stage", "cost": "standard", "timing": "normal", "availabilityPool": null }
+      ]
+    },
+    {
+      "canonicalId": "Vicious",
+      "rawActionText": "Special",
+      "exceptionId": "vicious-linked-move-trigger",
+      "variants": [
+        { "id": "after-hone-claws", "cost": "none", "timing": "triggered", "availabilityPool": null }
+      ]
+    }
+  ]
+}

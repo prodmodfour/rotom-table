@@ -849,7 +849,10 @@ export const validateMoveSpecOperationSequence = (
         'a durable movement choice must execute in the movement phase.',
       )
     }
-    if (operation.recipients.kind !== 'actor') {
+    const isCelebrateResponseMovement = operation.reasonCode === 'ability.celebrate.disengage'
+      && operation.recipients.kind === 'response-owner'
+      && operation.source.kind === 'operation'
+    if (operation.recipients.kind !== 'actor' && !isCelebrateResponseMovement) {
       fail(
         'invalid-definition',
         `${path}.recipients`,
@@ -988,10 +991,13 @@ export const validateMoveSpecOperationSequence = (
         'a teleport must address the actor and reference one server-owned destination set.',
       )
     }
+    const isBodyguardResponseSwap = operation.reasonCode === 'ability.bodyguard.swap'
+      && operation.recipients.kind === 'response-owner'
+      && operation.source.kind === 'operation'
     if (
       mode === 'swap'
       && (
-        operation.recipients.kind !== 'actor-and-attacked-targets'
+        (!isBodyguardResponseSwap && operation.recipients.kind !== 'actor-and-attacked-targets')
         || operation.payload.destinationSetId !== null
       )
     ) {
@@ -1164,13 +1170,6 @@ export const validateMoveSpecOperationSequence = (
 
   indexed.forEach(({ operation, index, path }) => {
     if (operation.recipients.kind === 'response-owner') {
-      if (operation.kind !== 'usage') {
-        fail(
-          'invalid-definition',
-          `${path}.recipients.kind`,
-          'response-owner recipients are supported only for reviewed reaction usage.',
-        )
-      }
       const sourceOperationId = operation.source.kind === 'operation'
         ? operation.source.id
         : null
@@ -1182,12 +1181,11 @@ export const validateMoveSpecOperationSequence = (
         sourceIndex === undefined
         || sourceIndex >= index
         || source?.kind !== 'reaction-request'
-        || source.payload.cancellation?.kind !== 'cancel-move'
       ) {
         fail(
           'invalid-definition',
           `${path}.source`,
-          'response-owner usage must reference an earlier move-cancelling reaction request.',
+          'response-owner effects must reference an earlier reviewed reaction request.',
         )
       }
     }

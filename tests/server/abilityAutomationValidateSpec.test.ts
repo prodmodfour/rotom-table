@@ -212,6 +212,40 @@ describe('AbilitySpec definition validation and hashing', () => {
     )
   })
 
+  it('accepts only closed ability event kinds and checkpoints for subscriptions', () => {
+    const triggered = {
+      ...validSpec(),
+      modes: [{ id: 'mode-activated', kind: 'triggered' }],
+      subscriptions: [{
+        id: 'subscription-action',
+        modeId: 'mode-activated',
+        eventKind: 'action',
+        checkpoint: 'after-commit',
+        response: 'optional',
+        priority: 1,
+        oncePerCausalChain: false,
+        predicate: null,
+      }],
+    }
+    expect(validateAbilitySpec(triggered, validOptions()).spec.subscriptions).toHaveLength(1)
+
+    const unknownEvent = structuredClone(triggered)
+    unknownEvent.subscriptions[0]!.eventKind = 'creature.fainted'
+    expectDefinitionError(
+      () => validateAbilitySpec(unknownEvent, validOptions()),
+      'invalid-definition',
+      'abilitySpec.subscriptions.subscription-action.eventKind',
+    )
+
+    const unknownCheckpoint = structuredClone(triggered)
+    unknownCheckpoint.subscriptions[0]!.checkpoint = 'after-client-animation'
+    expectDefinitionError(
+      () => validateAbilitySpec(unknownCheckpoint, validOptions()),
+      'invalid-definition',
+      'abilitySpec.subscriptions.subscription-action.checkpoint',
+    )
+  })
+
   it('enforces mode, targeting, cost-phase, phase-order, canonical identity, and handler invariants', () => {
     const triggered = validSpec()
     triggered.modes[0]!.kind = 'triggered'

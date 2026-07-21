@@ -33,6 +33,10 @@ import type {
 } from '~/types/trainerSheet'
 import { splitSheetItemNames } from '~/utils/sheetItemNames'
 import { deepCloneJson, sameJsonValue } from '~/utils/serialization'
+import { createEmptyAbilityDailyUsageLedger, parseAbilityDailyUsageLedger } from '#shared/abilityAutomation/resources'
+import { projectAuthoritativeEffectiveAbilities } from '../../abilityAutomation/effectiveAbilities'
+import { resolveSheetAbilityInstances } from '../../abilityAutomation/instanceParameters'
+import { ABILITY_AUTOMATION_RUNTIME_REGISTRY } from '../../abilityAutomation/registry'
 import type {
   MoveConsumedItemRecord,
   MoveItemDestination,
@@ -67,7 +71,7 @@ export interface ReduceMoveItemMutationsInput {
   readonly originOperationId: string
 }
 
-type ItemSheetField = 'items' | 'inventory' | 'equipmentSlots' | 'digestion'
+type ItemSheetField = 'items' | 'inventory' | 'equipmentSlots' | 'digestion' | 'abilityUsage' | 'berryStorage'
 type ItemDocument = CharacterSheet | TrainerSheet
 
 type ResourceTouch = {
@@ -473,6 +477,85 @@ const setTrainerSheet = (
   sheet: TrainerSheet,
 ): void => {
   state.trainerSheets.set(slug, sheet)
+}
+
+const storeBerryStorageBuffs = (input: {
+  readonly state: WorkingState
+  readonly owner: MoveItemOwnerReference
+  readonly canonicalItemId: string
+  readonly canonicalItemName: string
+  readonly operation: MoveItemMutation
+  readonly operationOrder: number
+}): string | null => {
+  if (input.owner.kind !== 'sheet' || input.owner.sheetKind !== 'pokemon'
+    || !/\bBerry$/i.test(input.canonicalItemName)) return null
+  const runtime = ABILITY_AUTOMATION_RUNTIME_REGISTRY.resolve('Berry Storage')
+  const sheet = input.state.pokemonSheets.get(input.owner.slug)
+  const placement = input.state.map.placements.find(candidate => (
+    candidate.sheetKind === 'pokemon' && candidate.sheetSlug === input.owner.slug
+  ))
+  if (!runtime || !sheet || !placement) return null
+  const ability = projectAuthoritativeEffectiveAbilities({
+    baseAbilities: resolveSheetAbilityInstances(sheet.abilities),
+    target: {
+      placementId: placement.id,
+      ...(placement.sideId ? { sideId: placement.sideId } : {}),
+      position: placement.position,
+    },
+    effects: input.state.map.encounterState?.effects ?? [],
+    transformationSnapshots: input.state.map.encounterState?.abilityTransformations,
+  }).find(candidate => candidate.effective && candidate.canonicalId === 'Berry Storage'
+    && (candidate.definitionHash === null || candidate.definitionHash === runtime.definitionHash))
+  if (!ability) return null
+  const ledger = parseAbilityDailyUsageLedger(sheet.abilityUsage ?? createEmptyAbilityDailyUsageLedger())
+  const dayKey = ledger.dayKey ?? 'campaign-day:initial'
+  const lastingAbilityId = ability.sourceKind === 'base' ? 'base:Berry Storage' : ability.instanceId
+  const ownerId = `sheet:pokemon:${sheet.slug}`
+  const usage = ledger.entries.find(entry => entry.ownerId === ownerId
+    && entry.abilityInstanceId === lastingAbilityId
+    && entry.canonicalId === 'Berry Storage'
+    && entry.clauseId === 'base')
+  if ((usage?.spent ?? 0) >= 1) return null
+  const usageEntry = {
+    ownerId, abilityInstanceId: lastingAbilityId, canonicalId: 'Berry Storage', clauseId: 'base',
+    limit: 1, spent: 1, operationIds: [...(usage?.operationIds ?? []), input.operation.id],
+  }
+  const abilityUsage = parseAbilityDailyUsageLedger({
+    schemaVersion: 1, dayKey,
+    entries: usage
+      ? ledger.entries.map(entry => entry === usage ? usageEntry : entry)
+      : [...ledger.entries, usageEntry],
+  })
+  const storage = sheet.berryStorage ?? { schemaVersion: 1 as const, entries: [] }
+  const existing = storage.entries.find(entry => entry.canonicalItemId === input.canonicalItemId)
+  const storageEntry = existing
+    ? { ...existing, quantity: existing.quantity + 3 }
+    : {
+        id: `${ability.instanceId}:berry-storage:${input.operation.id}`,
+        canonicalItemId: input.canonicalItemId,
+        canonicalItemName: input.canonicalItemName,
+        quantity: 3,
+        lastTradedSceneId: null,
+      }
+  setPokemonSheet(input.state, sheet.slug, {
+    ...sheet,
+    abilityUsage,
+    berryStorage: {
+      schemaVersion: 1,
+      entries: existing
+        ? storage.entries.map(entry => entry === existing ? storageEntry : entry)
+        : [...storage.entries, storageEntry],
+    },
+  })
+  const resourceKey = touchResource({
+    state: input.state, owner: input.owner, operation: input.operation,
+    operationOrder: input.operationOrder, changedField: 'abilityUsage',
+  })
+  touchResource({
+    state: input.state, owner: input.owner, operation: input.operation,
+    operationOrder: input.operationOrder, changedField: 'berryStorage',
+  })
+  return resourceKey
 }
 
 const removeItem = (input: {
@@ -1267,51 +1350,72 @@ const digestStoredBuff = (input: {
   readonly operation: MoveItemMutation
   readonly operationOrder: number
 }): { readonly canonicalItemId: string; readonly resourceKey: string } => {
-  const name = digestionBuffName(input.state, input.owner, input.operation)
-    ?? fail('item-missing', `Operation ${input.operation.id} found no stored digestion buff.`)
-  const canonical = canonicalItem(name, `${input.operation.id}.digestionBuff`)
-  if (
-    input.canonicalItemIds !== null
-    && !input.canonicalItemIds.includes(canonical.id)
-  ) {
-    fail('item-mismatch', `Stored digestion buff ${canonical.id} is not legal for ${input.operation.id}.`)
-  }
   const owner = input.owner
   if (owner.kind !== 'sheet') {
     return fail('invalid-destination', `Operation ${input.operation.id} digestion owner must be a sheet.`)
   }
-  if (owner.sheetKind === 'pokemon') {
-    const sheet = input.state.pokemonSheets.get(owner.slug)
-      ?? fail('resource-missing', `Pokémon item sheet ${owner.slug} is unavailable.`)
-    const items = { ...(sheet.items ?? {}) }
-    delete items.digestionFood
-    setPokemonSheet(input.state, owner.slug, { ...sheet, items })
+  const name = digestionBuffName(input.state, owner, input.operation)
+  const canonical = name ? canonicalItem(name, `${input.operation.id}.digestionBuff`) : null
+  const normalAllowed = canonical !== null
+    && (input.canonicalItemIds === null || input.canonicalItemIds.includes(canonical.id))
+  if (normalAllowed && canonical) {
+    if (owner.sheetKind === 'pokemon') {
+      const sheet = input.state.pokemonSheets.get(owner.slug)
+        ?? fail('resource-missing', `Pokémon item sheet ${owner.slug} is unavailable.`)
+      const items = { ...(sheet.items ?? {}) }
+      delete items.digestionFood
+      setPokemonSheet(input.state, owner.slug, { ...sheet, items })
+      return {
+        canonicalItemId: canonical.id,
+        resourceKey: touchResource({
+          state: input.state, owner, operation: input.operation,
+          operationOrder: input.operationOrder, changedField: 'items',
+        }),
+      }
+    }
+    const sheet = input.state.trainerSheets.get(owner.slug)
+      ?? fail('resource-missing', `Trainer item sheet ${owner.slug} is unavailable.`)
+    const next = { ...sheet }
+    delete next.digestion
+    setTrainerSheet(input.state, owner.slug, next)
     return {
       canonicalItemId: canonical.id,
       resourceKey: touchResource({
-        state: input.state,
-        owner,
-        operation: input.operation,
-        operationOrder: input.operationOrder,
-        changedField: 'items',
+        state: input.state, owner, operation: input.operation,
+        operationOrder: input.operationOrder, changedField: 'digestion',
       }),
     }
   }
-  const sheet = input.state.trainerSheets.get(owner.slug)
-    ?? fail('resource-missing', `Trainer item sheet ${owner.slug} is unavailable.`)
-  const next = { ...sheet }
-  delete next.digestion
-  setTrainerSheet(input.state, owner.slug, next)
-  return {
-    canonicalItemId: canonical.id,
-    resourceKey: touchResource({
-      state: input.state,
-      owner,
-      operation: input.operation,
-      operationOrder: input.operationOrder,
-      changedField: 'digestion',
-    }),
+  if (owner.sheetKind === 'pokemon') {
+    const sheet = input.state.pokemonSheets.get(owner.slug)
+      ?? fail('resource-missing', `Pokémon item sheet ${owner.slug} is unavailable.`)
+    const sceneId = input.state.map.encounterState?.history.sceneId
+      ?? fail('item-missing', `Operation ${input.operation.id} requires an active Scene for Berry Storage.`)
+    const stored = sheet.berryStorage?.entries.find(entry => entry.quantity > 0
+      && entry.lastTradedSceneId !== sceneId
+      && (input.canonicalItemIds === null || input.canonicalItemIds.includes(entry.canonicalItemId)))
+    if (stored) {
+      const nextEntry = { ...stored, quantity: stored.quantity - 1, lastTradedSceneId: sceneId }
+      setPokemonSheet(input.state, owner.slug, {
+        ...sheet,
+        berryStorage: {
+          schemaVersion: 1,
+          entries: sheet.berryStorage!.entries.map(entry => entry === stored ? nextEntry : entry),
+        },
+      })
+      return {
+        canonicalItemId: stored.canonicalItemId,
+        resourceKey: touchResource({
+          state: input.state, owner, operation: input.operation,
+          operationOrder: input.operationOrder, changedField: 'berryStorage',
+        }),
+      }
+    }
   }
+  if (canonical && input.canonicalItemIds !== null && !input.canonicalItemIds.includes(canonical.id)) {
+    fail('item-mismatch', `Stored digestion buff ${canonical.id} is not legal for ${input.operation.id}.`)
+  }
+  return fail('item-missing', `Operation ${input.operation.id} found no eligible stored digestion buff.`)
 }
 
 const applyItemSuppression = (input: {
@@ -1553,7 +1657,14 @@ const reduceOperation = (input: {
     }
     const removed = removeItem({ state, source, quantity, operation, operationOrder })
     touchedKeys.add(removed.resourceKey)
-    touchedKeys.add(storeDigestionBuff({
+    const berryStorageKey = storeBerryStorageBuffs({
+      state, owner,
+      canonicalItemId: removed.stack.canonicalItemId,
+      canonicalItemName: removed.stack.canonicalItemName,
+      operation, operationOrder,
+    })
+    if (berryStorageKey) touchedKeys.add(berryStorageKey)
+    else touchedKeys.add(storeDigestionBuff({
       state,
       owner,
       canonicalItemName: removed.stack.canonicalItemName,
@@ -1729,6 +1840,13 @@ const reduceOperation = (input: {
           : 'decrement'
       expected.set(removed.stack.canonicalItemId, -removed.stack.quantity)
       if (operation.kind === 'consume') {
+        const berryStorageKey = storeBerryStorageBuffs({
+          state, owner: source.owner,
+          canonicalItemId: removed.stack.canonicalItemId,
+          canonicalItemName: removed.stack.canonicalItemName,
+          operation, operationOrder,
+        })
+        if (berryStorageKey) touchedKeys.add(berryStorageKey)
         consumptionId = recordConsumption({
           operation,
           consumptionId: operation.consumptionId,

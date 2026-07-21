@@ -284,7 +284,7 @@ export interface MoveItemSheetResourceReduction {
   readonly current: CharacterSheet | TrainerSheet
   readonly changedFields: readonly Extract<
     MoveSheetStateField,
-    'items' | 'inventory' | 'equipmentSlots' | 'digestion'
+    'items' | 'inventory' | 'equipmentSlots' | 'digestion' | 'abilityUsage' | 'berryStorage'
   >[]
   readonly operationIds: readonly string[]
   readonly reasonCodes: readonly string[]

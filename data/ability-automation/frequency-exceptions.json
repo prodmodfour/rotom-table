@@ -1,0 +1,25 @@
+{
+  "schemaVersion": 1,
+  "sourceDataSha256": "767c3e2ae45471c26ad97a07552c4b0417ed0e207827af8a59da3a73e81f4362",
+  "entries": [
+    {
+      "canonicalId": "Illusion",
+      "rawFrequency": "Special",
+      "exceptionId": "illusion-marks-and-round-mode",
+      "clauses": [
+        { "id": "mark-target", "period": "at-will", "uses": null },
+        { "id": "assume-illusion", "period": "round", "uses": 1 },
+        { "id": "dismiss-illusion", "period": "at-will", "uses": null }
+      ]
+    },
+    {
+      "canonicalId": "Receiver",
+      "rawFrequency": "Special – Free Action",
+      "exceptionId": "receiver-separate-scene-clauses",
+      "clauses": [
+        { "id": "ally-faints-copy", "period": "scene", "uses": 1 },
+        { "id": "user-faints-grant", "period": "scene", "uses": 1 }
+      ]
+    }
+  ]
+}

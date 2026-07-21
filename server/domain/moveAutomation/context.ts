@@ -116,8 +116,20 @@ import {
 } from './terrain'
 import {
   createMoveAutomationWeatherResolver,
+  suppressMoveAutomationWeatherResolver,
   type MoveAutomationWeatherResolver,
 } from './weather'
+import {
+  ABILITY_AUTOMATION_RUNTIME_REGISTRY,
+  type AbilityAutomationRuntimeRegistry,
+  type AbilitySpecV1Runtime,
+} from '../abilityAutomation/registry'
+import { projectAuthoritativeEffectiveAbilities } from '../abilityAutomation/effectiveAbilities'
+import { ptuGridDistanceBetweenFootprints } from '~/utils/ptuGridDistance'
+import { aa060MoveMarkId } from '../abilityAutomation/mechanics/aa060MoveIntegration'
+import { aa062BoneLordEmpowersMoveState } from '../abilityAutomation/mechanics/aa062MoveIntegration'
+import { AA063_CLAY_CANNONS_CAPABILITY_ID } from '../abilityAutomation/mechanics/aa063MoveIntegration'
+import { resolveSheetAbilityInstances } from '../abilityAutomation/instanceParameters'
 
 export interface AuthoritativeMoveSheetRead {
   readonly kind: SheetKind
@@ -174,6 +186,15 @@ export type AuthoritativeMoveTargetabilityQueries = MoveSemiInvulnerableTargetab
 export type AuthoritativeMoveLineOfSightQueries = MoveAutomationLineOfSightResolver
 export type AuthoritativeMoveTerrainQueries = MoveAutomationTerrainResolver
 export type AuthoritativeMoveWeatherQueries = MoveAutomationWeatherResolver
+export interface AuthoritativeMoveEffectiveAbility {
+  readonly instanceId: string
+  readonly canonicalId: string
+  readonly runtime: AbilitySpecV1Runtime
+}
+export interface AuthoritativeMoveAbilityQueries {
+  activeForPlacement(placementId: string): readonly AuthoritativeMoveEffectiveAbility[]
+  has(placementId: string, canonicalId: string): boolean
+}
 
 export interface AuthoritativeMoveRuleQueries {
   runtimeFor(canonicalId: string): RegisteredMoveAutomationRuntime | null
@@ -209,6 +230,8 @@ export interface AuthoritativeMoveContextQueries {
   readonly lineOfSight: AuthoritativeMoveLineOfSightQueries
   readonly terrain: AuthoritativeMoveTerrainQueries
   readonly weather: AuthoritativeMoveWeatherQueries
+  /** Exact effective, manifest-selected ability runtimes; sheet text alone never grants mechanics. */
+  readonly abilities: AuthoritativeMoveAbilityQueries
   readonly rules: AuthoritativeMoveRuleQueries
   resolveActorMoveEntry(moveName: string): CanonicalMoveEntryResult
 }
@@ -258,6 +281,7 @@ export type AuthoritativeMoveRulesContextErrorCode =
   | 'duplicate-candidate-id'
   | 'duplicate-selected-id'
   | 'sheet-read-revision-conflict'
+  | 'invalid-virtual-origin'
 
 export class AuthoritativeMoveRulesContextError extends Error {
   readonly code: AuthoritativeMoveRulesContextErrorCode
@@ -289,6 +313,7 @@ export interface BuildAuthoritativeMoveRulesContextInput {
   readonly idFactory?: () => string
   readonly ruleset?: MoveRulesetProvenance
   readonly runtimeRegistry?: MoveAutomationRuntimeRegistry
+  readonly abilityRuntimeRegistry?: AbilityAutomationRuntimeRegistry
   /** Test/migration seam. Values are snapshotted before any rule executes. */
   readonly legacyScripts?: ReadonlyMap<string, MoveAutomationScript>
   /** Server-loaded item documents selected by reviewed requirements. */
@@ -528,8 +553,49 @@ export const buildAuthoritativeMoveRulesContext = (
 ): AuthoritativeMoveRulesContext => {
   const map = detachedFrozenJson(input.map)
   const intent = detachedFrozenJson(input.intent)
+  const abilityRuntimeRegistry = input.abilityRuntimeRegistry ?? ABILITY_AUTOMATION_RUNTIME_REGISTRY
+  let pokemonSheetInput = input.pokemonSheets
+  const rawActorPlacement = map.placements.find(placement => placement.id === intent.placementId)
+  const rawActorSheet = rawActorPlacement?.sheetKind === 'pokemon'
+    ? input.pokemonSheets.get(rawActorPlacement.sheetSlug)
+    : null
+  if (rawActorPlacement && rawActorSheet) {
+    const effective = projectAuthoritativeEffectiveAbilities({
+      baseAbilities: resolveSheetAbilityInstances(rawActorSheet.abilities),
+      target: {
+        placementId: rawActorPlacement.id,
+        ...(rawActorPlacement.sideId ? { sideId: rawActorPlacement.sideId } : {}),
+        position: rawActorPlacement.position,
+      },
+      effects: map.encounterState?.effects ?? [],
+      transformationSnapshots: map.encounterState?.abilityTransformations,
+    })
+    const connectionMoves = [
+      ['Aqua Bullet', 'Aqua Jet'],
+      ['Big Swallow', 'Stockpile'],
+      ['Blow Away', 'Whirlwind'],
+      ['Bone Lord', 'Bonemerang'],
+      ['Chemical Romance', 'Sweet Scent'],
+    ] as const
+    const existingMoveNames = new Set((rawActorSheet.movelist ?? []).map(move => move.name))
+    const grantedMoves = connectionMoves.flatMap(([canonicalId, moveName]) => (
+      abilityRuntimeRegistry.resolve(canonicalId)
+      && effective.some(ability => ability.effective && ability.canonicalId === canonicalId)
+      && !existingMoveNames.has(moveName)
+        ? [{ name: moveName }]
+        : []
+    ))
+    if (grantedMoves.length > 0) {
+      const augmentedPokemonSheets = new Map(input.pokemonSheets)
+      augmentedPokemonSheets.set(rawActorPlacement.sheetSlug, {
+        ...rawActorSheet,
+        movelist: [...(rawActorSheet.movelist ?? []), ...grantedMoves],
+      })
+      pokemonSheetInput = augmentedPokemonSheets
+    }
+  }
   const { sheets: resolvedSheets, lookup: sheetLookup, byRef: sheetByRef } = resolvedSheetSnapshots(
-    input.pokemonSheets,
+    pokemonSheetInput,
     input.trainerSheets,
   )
   const { placements, byId: placementById } = placementSnapshots(map)
@@ -554,13 +620,109 @@ export const buildAuthoritativeMoveRulesContext = (
   const rooms = createMoveAutomationRoomResolver(map)
   const globalFields = createMoveAutomationRemainingGlobalFieldResolver(map, rooms)
   const gravity = createMoveAutomationGravityResolver({ placements, globalFields })
-  const weather = createMoveAutomationWeatherResolver(map)
-  const { tokens, byId: tokenById } = tokenSnapshots(
+  const baseWeather = createMoveAutomationWeatherResolver(map)
+  const effectiveAbilitiesByPlacement = new Map<string, readonly AuthoritativeMoveEffectiveAbility[]>()
+  for (const placement of placements) {
+    const sheet = sheetByRef.get(sheetReadKey({ kind: placement.sheetKind, slug: placement.sheetSlug }))
+    const projected = projectAuthoritativeEffectiveAbilities({
+      baseAbilities: resolveSheetAbilityInstances(sheet?.sheet.abilities),
+      target: {
+        placementId: placement.id,
+        ...(placement.sideId ? { sideId: placement.sideId } : {}),
+        position: placement.position,
+      },
+      effects: map.encounterState?.effects ?? [],
+      transformationSnapshots: map.encounterState?.abilityTransformations,
+    })
+    effectiveAbilitiesByPlacement.set(placement.id, Object.freeze(projected.flatMap((ability) => {
+      if (!ability.effective) return []
+      const runtime = abilityRuntimeRegistry.resolve(ability.canonicalId)
+      if (!runtime || (ability.definitionHash !== null && ability.definitionHash !== runtime.definitionHash)) return []
+      return [Object.freeze({ instanceId: ability.instanceId, canonicalId: ability.canonicalId, runtime })]
+    })))
+  }
+  const abilityQueries: AuthoritativeMoveAbilityQueries = Object.freeze({
+    activeForPlacement: (placementId: string) => effectiveAbilitiesByPlacement.get(placementId) ?? Object.freeze([]),
+    has: (placementId: string, canonicalId: string) => (effectiveAbilitiesByPlacement.get(placementId) ?? [])
+      .some(ability => ability.canonicalId === canonicalId),
+  })
+  const effectivePositionOverrides = new Map(input.tokenPositionOverrides ?? [])
+  const anchoredAbility = effectiveAbilitiesByPlacement.get(intent.placementId)
+    ?.find(ability => ability.canonicalId === 'Anchored')
+  const anchoredMark = anchoredAbility
+    ? map.encounterState?.abilityOwnedState?.entries.find(entry => (
+        entry.ownerPlacementId === intent.placementId
+        && entry.sourceAbilityInstanceId === anchoredAbility.instanceId
+        && entry.canonicalId === 'Anchored'
+        && entry.payload.kind === 'mark'
+        && entry.payload.markId === aa060MoveMarkId('Anchored', intent.moveName)
+      ))
+    : null
+  const anchoredEntity = anchoredMark && anchoredAbility
+    ? map.encounterState?.abilityEntities?.entries.find(entry => (
+        entry.ownerPlacementId === intent.placementId
+        && entry.sourceAbilityInstanceId === anchoredAbility.instanceId
+        && entry.payload.kind === 'anchor'
+        && entry.payload.anchorKind === 'aa060.anchored'
+      ))
+    : null
+  if (anchoredEntity) effectivePositionOverrides.set(intent.placementId, anchoredEntity.position)
+  if (intent.originCell) {
+    const clayCannonsActive = effectiveAbilitiesByPlacement.get(intent.placementId)
+      ?.some(ability => ability.canonicalId === 'Clay Cannons') === true
+      && (map.encounterState?.effects ?? []).some(effect => (
+        effect.kind === 'capability'
+        && effect.payload.action === 'grant'
+        && effect.payload.capabilityId === AA063_CLAY_CANNONS_CAPABILITY_ID
+        && effect.affected.placementIds.includes(intent.placementId)
+        && effect.suppression.sources.length === 0
+      ))
+    const origin = intent.originCell
+    const source = tokenSnapshots(map, placements, sheetLookup, new Map()).tokens
+      .find(token => token.id === intent.placementId)
+    const inBounds = origin.x >= 0 && origin.x < map.dimensions.x
+      && origin.y >= 0 && origin.y < map.dimensions.y
+      && origin.z >= 0 && origin.z < map.dimensions.z
+    const inRange = source
+      ? ptuGridDistanceBetweenFootprints(source, { position: origin, base: 1, clearance: 1 }) <= 2
+      : false
+    if (!clayCannonsActive || !inBounds || !inRange) {
+      fail('invalid-virtual-origin', 'The requested move origin is not authorized by active Clay Cannons geometry.')
+    }
+    effectivePositionOverrides.set(intent.placementId, origin)
+  }
+  const baseTokens = tokenSnapshots(
     map,
     placements,
     sheetLookup,
-    input.tokenPositionOverrides,
-  )
+    effectivePositionOverrides,
+  ).tokens
+  const arenaTrapMarks = (map.encounterState?.abilityOwnedState?.entries ?? []).filter(entry => (
+    entry.canonicalId === 'Arena Trap'
+    && entry.payload.kind === 'mark'
+    && entry.payload.markId === 'aa061.arena-trap.active'
+    && effectiveAbilitiesByPlacement.get(entry.ownerPlacementId)?.some(ability => (
+      ability.instanceId === entry.sourceAbilityInstanceId && ability.canonicalId === 'Arena Trap'
+    ))
+  ))
+  const tokens = deepFreeze(baseTokens.map((token) => {
+    const trapped = arenaTrapMarks.some((mark) => {
+      const source = baseTokens.find(candidate => candidate.id === mark.ownerPlacementId)
+      if (!source
+        || relationships.resolve(source.id, token.id).relationship !== 'enemy'
+        || ptuGridDistanceBetweenFootprints(source, token) > 5) return false
+      const flying = token.defenderTypes.some(type => type.trim().toLowerCase() === 'flying')
+      const speeds = token.movementCapabilities ?? {}
+      return !flying
+        && (speeds.levitate ?? 0) < 4
+        && (speeds.sky ?? 0) < 4
+        && (speeds.burrow ?? 0) < 4
+    })
+    return trapped
+      ? detachedFrozenJson({ ...token, conditions: [...new Set([...token.conditions, 'Slowed', 'Trapped'])] })
+      : token
+  }))
+  const tokenById = new Map(tokens.map(token => [token.id, token]))
 
   const actorPlacement = placementById.get(intent.placementId)
     ?? fail('actor-placement-missing', `Actor placement ${intent.placementId} was not found.`)
@@ -714,6 +876,16 @@ export const buildAuthoritativeMoveRulesContext = (
     tokens,
     targetStates,
   })
+  const airLockActive = (map.encounterState?.abilityOwnedState?.entries ?? []).some(entry => (
+    entry.canonicalId === 'Air Lock'
+    && entry.payload.kind === 'mark'
+    && entry.payload.markId === `aa060.air-lock.active:${map.initiative?.round ?? 0}`
+    && abilityQueries.activeForPlacement(entry.ownerPlacementId)
+      .some(ability => ability.instanceId === entry.sourceAbilityInstanceId && ability.canonicalId === 'Air Lock')
+  ))
+  const weather = airLockActive
+    ? suppressMoveAutomationWeatherResolver(baseWeather, 'ability.air-lock.weather-suppressed')
+    : baseWeather
 
   const legacyScriptFor = (moveName: string): MoveAutomationScript | null => {
     const script = legacyScripts.get(moveName)
@@ -797,14 +969,15 @@ export const buildAuthoritativeMoveRulesContext = (
     lineOfSight,
     terrain,
     weather,
+    abilities: abilityQueries,
     rules: Object.freeze({
       runtimeFor: (canonicalId: string) => runtimes.get(canonicalId) ?? null,
       legacyScriptFor,
       reviewedScriptFor,
       semanticStatusFor: (moveName: string) => semanticStatuses.get(normalizedMoveName(moveName)) ?? null,
     }),
-    resolveActorMoveEntry: (moveName: string): CanonicalMoveEntryResult => detachedFrozenJson(
-      resolveCanonicalMoveEntryForPlacement({
+    resolveActorMoveEntry: (moveName: string): CanonicalMoveEntryResult => {
+      const resolved = resolveCanonicalMoveEntryForPlacement({
         placement: actorPlacement,
         token: actorToken,
         sheets: sheetLookup,
@@ -821,8 +994,28 @@ export const buildAuthoritativeMoveRulesContext = (
           const canonicalMove = findMove(moveName)
           return canonicalMove ? runtimes.get(canonicalMove.name)?.definitionHash ?? null : null
         },
-      }),
-    ),
+      })
+      if (!resolved.ok || resolved.entry.canonicalMoveName !== 'Bonemerang'
+        || !aa062BoneLordEmpowersMoveState({
+          map,
+          actorPlacementId: actorPlacement.id,
+          activeAbilityInstanceIds: abilityQueries.activeForPlacement(actorPlacement.id)
+            .filter(ability => ability.canonicalId === 'Bone Lord').map(ability => ability.instanceId),
+          moveName: 'Bonemerang',
+        })) return detachedFrozenJson(resolved)
+      return detachedFrozenJson({
+        ...resolved,
+        entry: {
+          ...resolved.entry,
+          script: {
+            ...resolved.entry.script,
+            targetMode: 'multi-target', targetCount: null, range: 'Line 6',
+            keywords: resolved.entry.script.keywords.filter(keyword => keyword !== 'Double Strike'),
+            areaTemplates: [{ kind: 'line', size: 6, label: 'Line 6' }],
+          },
+        },
+      })
+    },
   })
 
   const context: AuthoritativeMoveRulesContext = {

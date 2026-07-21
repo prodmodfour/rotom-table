@@ -18,6 +18,7 @@ import {
   type EncounterTurnResourceDirectory,
 } from '#shared/moveAutomation/encounterState'
 import type { TabletopMap } from '~/types/map'
+import { mapHasAa061AquaBulletPrepaidMove } from '../abilityAutomation/mechanics/aa061MoveIntegration'
 import type { AuthoritativeMoveResolution } from '../resolveAuthoritativeMove'
 import { deepCloneJson, sameJsonValue } from '~/utils/serialization'
 import {
@@ -396,7 +397,14 @@ export const planMoveResourceObservation = (input: {
   readonly maximumPhaseInclusive?: MoveSpecPhase | null
   readonly allowLegacyFallback?: boolean
   readonly prerequisiteResources?: EncounterTurnResourceDirectory
-}): PlannedMoveResourceObservation => planEncounterMoveResourceCosts({
+  readonly actionPrepaid?: boolean
+}): PlannedMoveResourceObservation => {
+  const prepaid = input.actionPrepaid ?? mapHasAa061AquaBulletPrepaidMove({
+    map: input.map,
+    actorPlacementId: input.resolution.actorPlacementId,
+    moveName: input.resolution.canonicalMoveName,
+  })
+  return planEncounterMoveResourceCosts({
   map: input.map,
   placementId: input.resolution.actorPlacementId,
   canonicalMoveId: input.resolution.canonicalMoveName,
@@ -405,10 +413,11 @@ export const planMoveResourceObservation = (input: {
   resolutionId: input.resolutionId ?? input.sourceOperationId,
   sourceOperationId: input.sourceOperationId,
   movement: input.resolution.resourceMovement ?? null,
-  reviewedCosts: input.reviewedCosts,
+  reviewedCosts: prepaid ? [] : input.reviewedCosts,
   minimumPhaseExclusive: input.minimumPhaseExclusive,
   maximumPhaseInclusive: input.maximumPhaseInclusive,
-  allowLegacyFallback: input.allowLegacyFallback,
+  allowLegacyFallback: prepaid ? false : input.allowLegacyFallback,
   prerequisiteResources: input.prerequisiteResources,
-  markActedSinceEntry: true,
-})
+  markActedSinceEntry: !prepaid,
+  })
+}

@@ -2,6 +2,7 @@ import { computed, nextTick, ref, type Ref } from 'vue'
 import type { CombatStageMap } from '~/types/combatStages'
 import type { MoveAutomationHpUpdate } from '~/types/moveAutomation'
 import type { SpawnedPokemon } from '~/types/pokemon'
+import type { TokenAbilityUseReference } from '~/utils/mapTokenAbilities'
 import { normalizeConditionNames } from '~/utils/statusConditions'
 import {
   createTokenContextMenuState,
@@ -88,7 +89,7 @@ export interface TokenActionControllerEmitters {
   grantExperience: (payload: { id: string; amount: number }) => void
   useMove: (payload: { id: string; moveName?: string | null }) => void
   useManeuver?: (payload: { id: string; maneuverName?: string | null }) => void
-  useAbility: (payload: { id: string; abilityName?: string | null }) => void
+  useAbility: (payload: { id: string } & TokenAbilityUseReference) => void
   useOrder?: (payload: { id: string; orderName?: string | null }) => void
   sendOutPokemon?: (payload: { trainerId: string; pokemonSlug: string }) => void
   throwPokeball?: (payload: { id: string; pokeballName: string }) => void
@@ -406,11 +407,11 @@ export const useTokenActionController = <TContainer extends BoundsProvider>(
     closeContextMenu()
   }
 
-  const handleContextUseAbility = (abilityName?: string | null) => {
+  const handleContextUseAbility = (ability: TokenAbilityUseReference) => {
     const id = controllableContextId()
     if (!id) return
 
-    options.emit.useAbility({ id, abilityName })
+    options.emit.useAbility({ id, ...ability })
     closeContextMenu()
   }
 

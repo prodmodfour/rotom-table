@@ -105,7 +105,7 @@ const isResidualWeather = (
  * handler runs last, and global-field duration advancement follows all handlers.
  */
 export const createWeatherResidualLifecycleHandler = (
-  map: Pick<TabletopMap, 'dimensions' | 'hazards' | 'fieldEffects' | 'encounterState'>,
+  map: Pick<TabletopMap, 'placements' | 'initiative' | 'dimensions' | 'hazards' | 'fieldEffects' | 'encounterState'>,
 ): EncounterLifecycleTriggerHandler | null => {
   const weather = createMoveAutomationWeatherResolver(map).active().filter(isResidualWeather)
   if (weather.length === 0) return null

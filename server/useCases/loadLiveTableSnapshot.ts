@@ -14,6 +14,7 @@ import { sqlitePlayerVisibleMapSheetAccessKeys } from '../utils/mapSheetAccess'
 import type { PlayerSessionAccessGrant } from '../utils/sessionPlayerAccess'
 import { authorizeSheetList, playerSheetAccessContextFromKeys } from './authorizeSheetList'
 import { listRepositorySheets, type ListSheetsRepository } from './listSheets'
+import { buildAbilityClientCapabilityBundle } from '../domain/abilityAutomation/clientCapabilities'
 import { loadMapUseCase, normalizeLoadMapSlug } from './loadMap'
 
 export interface LoadLiveTableSnapshotInput {
@@ -91,6 +92,14 @@ export const loadLiveTableSnapshotUseCase = (
       interactionModeUpdatedAt: mode.updatedAt,
       pokemonSheets: authorizedSheets.pokemonSheets,
       trainerSheets: authorizedSheets.trainerSheets,
+      abilityCapabilities: buildAbilityClientCapabilityBundle({
+        role: input.role,
+        playerProfile: input.playerProfile,
+        map,
+        mapRevision: revision,
+        pokemonSheets: authorizedSheets.pokemonSheets,
+        trainerSheets: authorizedSheets.trainerSheets,
+      }),
     }
   })
 }

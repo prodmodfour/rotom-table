@@ -20,6 +20,7 @@ import type { MoveAutomationAccuracyRule } from '~/utils/moveAutomationResolutio
 import { isMapWeatherKind } from '~/utils/mapFieldEffectDefinitions'
 import { sheetHasCanonicalAbility } from '~/utils/sheetAbilities'
 import { queryBattlefieldZones } from './battlefieldZones'
+import { registeredAbilityAutomationRuntimeFor } from '../abilityAutomation/registry'
 
 export type WeatherChargeMove = 'Solar Beam' | 'Solar Blade'
 /** @deprecated Use WeatherChargeMove. */
@@ -517,15 +518,36 @@ const resolveCharge = (
   })
 }
 
+const airLockMarkerIsActive = (
+  map: Pick<TabletopMap, 'placements' | 'initiative' | 'encounterState'>,
+): boolean => {
+  if (!registeredAbilityAutomationRuntimeFor('Air Lock')) return false
+  const round = map.initiative?.round ?? 0
+  return (map.encounterState?.abilityOwnedState?.entries ?? []).some(entry => {
+    if (entry.canonicalId !== 'Air Lock'
+      || entry.payload.kind !== 'mark'
+      || entry.payload.markId !== `aa060.air-lock.active:${round}`
+      || !map.placements.some(placement => placement.id === entry.ownerPlacementId)) return false
+    const suppressed = (map.encounterState?.effects ?? []).some(effect => (
+      effect.kind === 'creature-rule-overlay'
+      && effect.payload.domain === 'ability'
+      && effect.payload.action === 'suppress'
+      && effect.affected.placementIds.includes(entry.ownerPlacementId)
+      && (effect.payload.suppressionScope === 'all' || effect.payload.values.includes('Air Lock'))
+    ))
+    return !suppressed
+  })
+}
+
 /**
  * Build one immutable query over active typed/legacy Weather. Suppressed native
  * fields shadow their compatibility row but contribute no mechanics.
  */
 export const createMoveAutomationWeatherResolver = (
-  map: Pick<TabletopMap, 'dimensions' | 'hazards' | 'fieldEffects' | 'encounterState'>,
+  map: Pick<TabletopMap, 'placements' | 'initiative' | 'dimensions' | 'hazards' | 'fieldEffects' | 'encounterState'>,
 ): MoveAutomationWeatherResolver => {
   const active = activeWeatherInstances(map)
-  return Object.freeze({
+  const base = Object.freeze({
     active: () => active,
     projectFieldEffects: (base: MapFieldEffects | null = map.fieldEffects ?? null) => {
       const projected = cloneMapFieldEffects(base)
@@ -549,5 +571,30 @@ export const createMoveAutomationWeatherResolver = (
     charge: (input: {
       readonly canonicalMoveId: WeatherChargeMove
     }) => resolveCharge(active, input.canonicalMoveId),
+  })
+  return airLockMarkerIsActive(map)
+    ? suppressMoveAutomationWeatherResolver(base, 'ability.air-lock.weather-suppressed')
+    : base
+}
+
+/** Preserve weather state while a reviewed ability temporarily suppresses all weather mechanics. */
+export const suppressMoveAutomationWeatherResolver = (
+  _base: MoveAutomationWeatherResolver,
+  reasonCode: string,
+): MoveAutomationWeatherResolver => {
+  const trace = (interaction: WeatherMechanicsInteraction, value: number | string | boolean | null): readonly WeatherMechanicsTraceEntry[] => deepFreeze([{
+    interaction, weatherKind: null, zoneId: null, outcome: 'prevented', reasonCode, value,
+  }])
+  return Object.freeze({
+    active: () => Object.freeze([]),
+    projectFieldEffects: (fieldEffects?: MapFieldEffects | null) => {
+      const projected = cloneMapFieldEffects(fieldEffects)
+      projected.weather = []
+      return deepFreeze(projected)
+    },
+    damage: () => deepFreeze({ modifiers: [], trace: trace('damage', 0) }),
+    accuracy: () => deepFreeze({ rule: null, trace: trace('accuracy', false) }),
+    healing: () => deepFreeze({ handled: false, percent: null, trace: trace('healing', false) }),
+    charge: () => deepFreeze({ handled: false, setup: 'required' as const, damageBaseOverride: null, trace: trace('charge', false) }),
   })
 }

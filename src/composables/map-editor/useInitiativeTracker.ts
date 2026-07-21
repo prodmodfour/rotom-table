@@ -22,6 +22,7 @@ import { sheetItemsInitiativeBonus } from '~/utils/sheetHeldItemEffects'
 import { pokemonHeldItemNames, trainerEquippedItemNames } from '~/utils/sheetItemNames'
 import { pokemonTrainingFeatureInitiativeBonus } from '~/utils/sheets/pokemonTrainingFeatures'
 import { encounterModifiedInitiativeScore } from '~/utils/encounterInitiative'
+import { nativeChlorophyllInitiativeMultiplier } from '~/utils/nativeAbilityTokenStats'
 import {
   activeEncounterRoomKinds,
   encounterCalculatedInitiativeDirection,
@@ -228,8 +229,12 @@ export const useInitiativeTracker = ({
 
   const initiativeOrderEntryByPlacementId = computed(() => new Map(
     (map.value?.placements ?? []).map((placement) => {
+      const token = spawnedPokemon.value.find(candidate => candidate.id === placement.id)
       const entry = initiativeOrderEntryForPlacement(placement, readInitiativeSheet, {
         itemEffectsSuppressed: itemEffectsSuppressedForKind(placement.sheetKind),
+        ...(token && map.value ? {
+          initiativeMultiplier: nativeChlorophyllInitiativeMultiplier(token, map.value),
+        } : {}),
       })
       return [placement.id, {
         ...entry,

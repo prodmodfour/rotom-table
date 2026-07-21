@@ -57,6 +57,14 @@ import {
   reduceMoveMapOperations,
 } from './reducers/mapOperations'
 import type { UseMoveUsageSummary } from '../planMoveUsageTransition'
+import { createEmptyAbilityOwnedState } from '#shared/abilityAutomation/ownedState'
+import { parseAbilitySceneUsageLedger, type AbilityUsageEntry } from '#shared/abilityAutomation/resources'
+import { reduceAbilityOwnedStateCommand } from '../abilityAutomation/ownedState'
+import { aa060MoveMarkId } from '../abilityAutomation/mechanics/aa060MoveIntegration'
+import { Aa060AnchoredMovementError, assertAa060AnchoredDestination } from '../abilityAutomation/mechanics/aa060'
+import { aa061AquaBulletStateIdsForMove, aa061BatteryStateIdsForMove } from '../abilityAutomation/mechanics/aa061MoveIntegration'
+import { aa062BoneLordReadyStateIds } from '../abilityAutomation/mechanics/aa062MoveIntegration'
+import { planEncounterMoveResourceCosts } from './planMoveResources'
 
 export type NativeMoveSpecPlanErrorCode =
   | 'native-projection-missing'
@@ -124,7 +132,34 @@ export const applyNativeCoreMapChanges = (
       else next.initiative = deepCloneJson(change.current)
       continue
     }
-    if (change.scope.kind === 'map' || change.scope.kind === 'placement') {
+    if (change.kind === 'map-field-effects') {
+      next.fieldEffects = deepCloneJson(change.current)
+      continue
+    }
+    if (change.kind === 'map-hazards') {
+      next.hazards = deepCloneJson([...change.current])
+      continue
+    }
+    if (change.kind === 'map-move-usage') {
+      if (change.current === undefined) delete next.moveUsage
+      else next.moveUsage = deepCloneJson(change.current)
+      continue
+    }
+    if (change.kind === 'placement-state') {
+      const index = next.placements.findIndex(placement => placement.id === change.scope.placementId)
+      if (change.current === null) {
+        if (index >= 0) next.placements.splice(index, 1)
+      }
+      else if (index >= 0) next.placements[index] = deepCloneJson(change.current)
+      else next.placements.push(deepCloneJson(change.current))
+      continue
+    }
+    if (change.kind === 'map-metadata') {
+      if (change.current === undefined) delete next.metadata
+      else next.metadata = deepCloneJson(change.current)
+      continue
+    }
+    if ((change.scope as { readonly kind: string }).kind === 'map') {
       return fail(
         'unsupported-core-map-change',
         `Native core reduction unexpectedly emitted ${change.kind}.`,
@@ -161,6 +196,19 @@ export const applyNativeSpatialMovements = (
         'spatial-movement-conflict',
         `Spatial movement ${movement.operationId} source no longer matches ${movement.recipientPlacementId}.`,
       )
+    }
+    try {
+      assertAa060AnchoredDestination({
+        map: next,
+        placementId: movement.recipientPlacementId,
+        destination: movement.destination,
+      })
+    }
+    catch (error) {
+      if (error instanceof Aa060AnchoredMovementError) {
+        return fail('spatial-movement-conflict', error.message)
+      }
+      throw error
     }
     next.placements[index] = {
       ...placement,
@@ -575,6 +623,147 @@ const actorPlacement = (
 ): SheetPlacement => map.placements.find(placement => placement.id === actorId)
   ?? fail('actor-placement-missing', `Actor placement ${actorId} was not found.`)
 
+const abilityUsageEntryKey = (entry: Pick<AbilityUsageEntry, 'ownerId' | 'abilityInstanceId' | 'canonicalId' | 'clauseId'>): string => (
+  `${entry.ownerId}\u0000${entry.abilityInstanceId}\u0000${entry.canonicalId}\u0000${entry.clauseId}`
+)
+
+const applyAa060TriggeredPayments = (input: {
+  readonly map: TabletopMap
+  readonly context: ReturnType<typeof buildAuthoritativeMoveRulesContext>
+  readonly trace: MoveResolutionAuditTrace
+  readonly resolutionId: string
+}): TabletopMap => {
+  const canonicalIdByReason = new Map([
+    ['ability.absorb-force.optional-resistance', 'Absorb Force'],
+    ['ability.aftermath.optional-hp-loss', 'Aftermath'],
+    ['ability.anger-point.optional-attack-stage', 'Anger Point'],
+    ['ability.aqua-boost.optional-damage', 'Aqua Boost'],
+    ['ability.beast-boost.optional-stage', 'Beast Boost'],
+    ['ability.bodyguard.optional-redirection', 'Bodyguard'],
+    ['ability.bully.optional-effects', 'Bully'],
+    ['ability.celebrate.optional-disengage', 'Celebrate'],
+    ['ability.chilling-neigh.optional-boost', 'Chilling Neigh'],
+  ] as const)
+  const selections = input.trace.events.filter(event => (
+    event.kind === 'operation'
+    && canonicalIdByReason.has(event.reasonCode as 'ability.absorb-force.optional-resistance')
+    && event.outcome === 'applied'
+    && event.recipientIds.length === 1
+  ))
+  let map = input.map
+  for (const selection of selections) {
+    if (selection.kind !== 'operation') continue
+    const ownerId = selection.recipientIds[0]!
+    const canonicalId = canonicalIdByReason.get(selection.reasonCode as 'ability.absorb-force.optional-resistance')!
+    const ability = input.context.queries.abilities.activeForPlacement(ownerId)
+      .find(candidate => candidate.canonicalId === canonicalId)
+      ?? fail('state-change-conflict', `Selected ${canonicalId} response lost its effective runtime.`)
+    const actionResources = canonicalId === 'Celebrate'
+      ? (['swift', 'free'] as const)
+      : (['free'] as const)
+    const action = planEncounterMoveResourceCosts({
+      map,
+      placementId: ownerId,
+      canonicalMoveId: `ability:${canonicalId}`,
+      moveKey: `ability:${canonicalId.toLowerCase().replaceAll(' ', '-')}`,
+      range: canonicalId === 'Celebrate' ? 'Swift Action' : 'Free Action',
+      resolutionId: input.resolutionId,
+      sourceOperationId: `${selection.operationId}:action`,
+      movement: null,
+      reviewedCosts: actionResources.map(resource => ({
+        id: `ability.action.${resource}`, phase: 'pay' as const,
+        cost: { kind: 'action-resource' as const, resource, amount: 1 },
+      })),
+      allowLegacyFallback: false,
+      minimumPhaseExclusive: null,
+      maximumPhaseInclusive: 'pay',
+    })
+    map = action.nextMap
+    if (['Anger Point', 'Aqua Boost', 'Beast Boost', 'Celebrate', 'Chilling Neigh'].includes(canonicalId)) continue
+    const encounter = parseEncounterState(map.encounterState ?? createEmptyEncounterState())
+    const sceneId = encounter.history.sceneId
+      ?? fail('state-change-conflict', `${canonicalId} requires an active scene usage period.`)
+    const previous = parseAbilitySceneUsageLedger(encounter.abilityUsage)
+    if (previous.sceneId !== null && previous.sceneId !== sceneId) {
+      fail('state-change-conflict', `${canonicalId} usage ledger belongs to another scene.`)
+    }
+    const identity = {
+      ownerId,
+      abilityInstanceId: ability.instanceId,
+      canonicalId,
+      clauseId: 'base',
+    }
+    const existingByOperation = previous.entries.find(entry => entry.operationIds.includes(selection.operationId))
+    const existing = previous.entries.find(entry => abilityUsageEntryKey(entry) === abilityUsageEntryKey(identity))
+    if (existingByOperation && existingByOperation !== existing) {
+      fail('state-change-conflict', `${canonicalId} response operation already paid another resource.`)
+    }
+    const limit = canonicalId === 'Bodyguard' ? 2 : 1
+    if (!existingByOperation && (existing?.spent ?? 0) >= limit) {
+      fail('state-change-conflict', `${canonicalId} has no Scene uses remaining.`)
+    }
+    const nextEntry: AbilityUsageEntry = existingByOperation
+      ? existingByOperation
+      : {
+          ...identity,
+          limit,
+          spent: (existing?.spent ?? 0) + 1,
+          operationIds: [...(existing?.operationIds ?? []), selection.operationId],
+        }
+    const entries = existing
+      ? previous.entries.map(entry => entry === existing ? nextEntry : entry)
+      : [...previous.entries, nextEntry]
+    map = {
+      ...map,
+      encounterState: parseEncounterState({
+        ...encounter,
+        abilityUsage: {
+          schemaVersion: 1,
+          sceneId,
+          entries,
+        },
+      }),
+    }
+  }
+  return map
+}
+
+const consumeAa060MoveMarks = (input: {
+  readonly map: TabletopMap
+  readonly actorPlacementId: string
+  readonly moveName: string
+  readonly operationId: string
+  readonly additionalStateIds?: readonly string[]
+}): TabletopMap => {
+  const encounter = parseEncounterState(input.map.encounterState ?? createEmptyEncounterState())
+  let ownedState = encounter.abilityOwnedState ?? createEmptyAbilityOwnedState()
+  const expectedMarkIds = new Set([
+    aa060MoveMarkId('Accelerate', input.moveName),
+    aa060MoveMarkId('Aerilate', input.moveName),
+    aa060MoveMarkId('Ambush', input.moveName),
+    aa060MoveMarkId('Anchored', input.moveName),
+  ])
+  const additionalStateIds = new Set(input.additionalStateIds ?? [])
+  const consumed = ownedState.entries.filter(entry => (
+    additionalStateIds.has(entry.stateId)
+    || (
+      entry.ownerPlacementId === input.actorPlacementId
+      && entry.payload.kind === 'mark'
+      && expectedMarkIds.has(entry.payload.markId)
+    )
+  ))
+  for (const [index, entry] of consumed.entries()) {
+    ownedState = reduceAbilityOwnedStateCommand(ownedState, {
+      operationId: `${input.operationId}:ability-mark:${index}`,
+      kind: 'remove', stateId: entry.stateId, expectedVersion: entry.version,
+    }).state
+  }
+  return consumed.length === 0 ? input.map : {
+    ...input.map,
+    encounterState: parseEncounterState({ ...encounter, abilityOwnedState: ownedState }),
+  }
+}
+
 /** Reduce native map operations and compose one atomic immediate state plan. */
 export const planNativeV2MoveState = (options: {
   readonly map: TabletopMap
@@ -635,8 +824,25 @@ export const planNativeV2MoveState = (options: {
     map: mapAfterHelpingHand,
     resolution: options.resolution.sideDamageResistance,
   }).map
-  const mapAfterTransformationCleanup = cleanupEncounterTransformationsForKnockouts({
+  const mapAfterAbilityMarkConsumption = consumeAa060MoveMarks({
     map: mapAfterSideDamageResistance,
+    actorPlacementId: options.resolution.actorPlacementId,
+    moveName: options.resolution.canonicalMoveName,
+    operationId: originOperationId,
+    additionalStateIds: [
+      ...aa061BatteryStateIdsForMove(context, options.resolution.script),
+      ...aa061AquaBulletStateIdsForMove(context, options.resolution.canonicalMoveName),
+      ...aa062BoneLordReadyStateIds(context, options.resolution.canonicalMoveName),
+    ],
+  })
+  const mapAfterTriggeredAbilityPayments = applyAa060TriggeredPayments({
+    map: mapAfterAbilityMarkConsumption,
+    context,
+    trace: native.trace,
+    resolutionId: context.resolutionId ?? originOperationId,
+  })
+  const mapAfterTransformationCleanup = cleanupEncounterTransformationsForKnockouts({
+    map: mapAfterTriggeredAbilityPayments,
     placementIds: native.faintedPlacementIds,
   }).map
   const mapAfterYawnCleanup = cleanupYawnEffectsForKnockouts({

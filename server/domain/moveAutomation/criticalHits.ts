@@ -5,7 +5,6 @@ import type {
 } from '#shared/moveAutomation/effects'
 import type { AuthoritativeMoveRulesContext } from './context'
 import type { MoveAutomationScript } from '~/types/moveAutomation'
-import { sheetHasCanonicalAbility } from '~/utils/sheetAbilities'
 
 export const CRITICAL_HIT_PREVENTING_ABILITIES = Object.freeze([
   'Battle Armor',
@@ -95,16 +94,17 @@ const criticalCandidate = (
 }
 
 const preventingAbility = (
-  abilities: readonly string[] | null | undefined,
+  context: AuthoritativeMoveRulesContext,
+  placementId: string,
 ): string | null => CRITICAL_HIT_PREVENTING_ABILITIES.find(ability => (
-  sheetHasCanonicalAbility(abilities, ability)
+  context.queries.abilities.has(placementId, ability)
 )) ?? null
 
 /** Resolve one target's critical trigger from a natural server roll and target prevention state. */
 export const resolveMoveCriticalHit = (options: {
   readonly context: AuthoritativeMoveRulesContext
   readonly operation: MoveDamageEffectOperation
-  readonly script: Pick<MoveAutomationScript, 'damaging' | 'directHpLoss' | 'criticalRange'>
+  readonly script: Pick<MoveAutomationScript, 'damaging' | 'directHpLoss' | 'criticalRange' | 'targetMode' | 'range'>
   readonly recipientId: string
   readonly naturalRoll: number | null
   /** Compatibility fallback for direct kernel callers that do not expose the natural roll. */
@@ -136,9 +136,15 @@ export const resolveMoveCriticalHit = (options: {
   options.context.reads.recordPlacement(placement)
 
   const authoredPolicy = options.operation.payload.criticalHit
-  const trigger = authoredPolicy?.trigger.kind === 'standard'
+  const baseTrigger = authoredPolicy?.trigger.kind === 'standard'
     ? canonicalTrigger(options.script)
     : authoredPolicy?.trigger ?? canonicalTrigger(options.script)
+  const beamCannon = options.context.queries.abilities.has(options.context.actor.placement.id, 'Beam Cannon')
+    && options.script.targetMode === 'one-target'
+    && !options.script.range.toLowerCase().includes('melee')
+  const trigger: MoveCriticalHitTrigger = beamCannon && baseTrigger.kind === 'range'
+    ? { ...baseTrigger, minimum: Math.max(1, baseTrigger.minimum - 3) }
+    : baseTrigger
   const candidate = criticalCandidate(
     trigger,
     options.naturalRoll,
@@ -146,7 +152,7 @@ export const resolveMoveCriticalHit = (options: {
   )
   const preventionPolicy = authoredPolicy?.prevention ?? 'honor'
   const preventedBy = candidate && preventionPolicy === 'honor'
-    ? preventingAbility(target.abilityNames)
+    ? preventingAbility(options.context, options.recipientId)
     : null
   const critical = candidate && preventedBy === null
 

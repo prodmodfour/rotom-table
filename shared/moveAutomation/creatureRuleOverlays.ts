@@ -142,7 +142,7 @@ const targetOccupiesEffectCell = (
     && effectCell.z < target.position.z + base
 }
 
-const effectAppliesToTarget = (
+export const encounterCreatureRuleEffectAppliesToTarget = (
   effect: EncounterCreatureRuleOverlayEffect | EncounterCapabilityEffect,
   target: EncounterCreatureRuleTarget,
 ): boolean => (
@@ -151,7 +151,7 @@ const effectAppliesToTarget = (
   || effect.affected.cells.some(cell => targetOccupiesEffectCell(target, cell))
 )
 
-const effectIsActive = (
+export const encounterCreatureRuleEffectIsActive = (
   effect: EncounterCreatureRuleOverlayEffect | EncounterCapabilityEffect | EncounterTransformationEffect,
 ): boolean => effect.suppression.sources.length === 0 && effect.charges !== 0
 
@@ -330,7 +330,7 @@ const activeTransformation = (
   (effect): effect is EncounterTransformationEffect => (
     effect.kind === 'transformation'
     && effect.affected.placementIds[0] === placementId
-    && effectIsActive(effect)
+    && encounterCreatureRuleEffectIsActive(effect)
   ),
 ) ?? null
 
@@ -340,8 +340,8 @@ const activeApplicableEffects = (
 ): readonly (EncounterCreatureRuleOverlayEffect | EncounterCapabilityEffect)[] => effects.filter(
   (effect): effect is EncounterCreatureRuleOverlayEffect | EncounterCapabilityEffect => (
     (effect.kind === 'creature-rule-overlay' || effect.kind === 'capability')
-    && effectIsActive(effect)
-    && effectAppliesToTarget(effect, target)
+    && encounterCreatureRuleEffectIsActive(effect)
+    && encounterCreatureRuleEffectAppliesToTarget(effect, target)
   ),
 )
 

@@ -90,6 +90,8 @@ const trainerDisplayName = (
 export interface InitiativeOrderEntryOptions {
   /** Server-owned Magic Room query result for this placement's relevant item scope. */
   readonly itemEffectsSuppressed?: boolean
+  /** Exact authoritative static multiplier; defaults to one for presentation-only callers. */
+  readonly initiativeMultiplier?: 1 | 2
 }
 
 export const pokemonInitiativeOrderEntry = (
@@ -122,7 +124,7 @@ export const pokemonInitiativeOrderEntry = (
       initiative ?? baseInitiative,
       conditions,
       { abilities },
-    ),
+    ) * (options.initiativeMultiplier ?? 1),
   }
 }
 

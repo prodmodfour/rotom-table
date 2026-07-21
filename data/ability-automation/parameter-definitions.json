@@ -1,0 +1,83 @@
+{
+  "schemaVersion": 1,
+  "sourceDataSha256": "767c3e2ae45471c26ad97a07552c4b0417ed0e207827af8a59da3a73e81f4362",
+  "entries": [
+    {
+      "canonicalId": "Color Theory",
+      "definitionVersion": 1,
+      "sourceField": "effect",
+      "sourcePhrase": "Upon gaining this ability at Birth, the user rolls 1d12 to determine the color",
+      "parameters": [
+        {
+          "id": "color",
+          "acquisition": "server-roll",
+          "minSelections": 1,
+          "maxSelections": 1,
+          "optionIds": [
+            "red",
+            "red-orange",
+            "orange",
+            "yellow-orange",
+            "yellow",
+            "yellow-green",
+            "green",
+            "blue-green",
+            "blue",
+            "blue-violet",
+            "violet",
+            "red-violet"
+          ]
+        }
+      ]
+    },
+    {
+      "canonicalId": "Serpent’s Mark",
+      "definitionVersion": 1,
+      "sourceField": "effect",
+      "sourcePhrase": "To determine its pattern, roll 1d6 upon evolution or upon generation.",
+      "parameters": [
+        {
+          "id": "pattern",
+          "acquisition": "inherited-or-server-roll",
+          "minSelections": 1,
+          "maxSelections": 1,
+          "optionIds": ["attack", "crush", "fear", "life", "speed", "stealth"]
+        }
+      ]
+    },
+    {
+      "canonicalId": "Type Strategist",
+      "definitionVersion": 1,
+      "sourceField": "effect",
+      "sourcePhrase": "the Type associated with Type Strategist",
+      "parameters": [
+        {
+          "id": "type",
+          "acquisition": "sheet-choice",
+          "minSelections": 1,
+          "maxSelections": 1,
+          "optionIds": [
+            "bug",
+            "dark",
+            "dragon",
+            "electric",
+            "fairy",
+            "fighting",
+            "fire",
+            "flying",
+            "ghost",
+            "grass",
+            "ground",
+            "ice",
+            "normal",
+            "poison",
+            "psychic",
+            "rock",
+            "steel",
+            "water"
+          ]
+        }
+      ]
+    }
+  ]
+}

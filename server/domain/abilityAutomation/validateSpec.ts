@@ -5,6 +5,10 @@ import {
   ABILITY_AUTOMATION_CAPABILITY_LIMITS,
 } from '#shared/abilityAutomation/capabilities'
 import {
+  ABILITY_ENCOUNTER_EVENT_KINDS,
+  ABILITY_EVENT_CHECKPOINTS,
+} from '#shared/abilityAutomation/events'
+import {
   ABILITY_RULESET_PROVENANCE,
 } from '#shared/abilityAutomation/ruleset'
 import {
@@ -29,12 +33,13 @@ import {
   isPlainJsonObject,
 } from '#shared/automation/strictJson'
 import { stableJsonStringify } from '#shared/automation/stableJson'
-import {
-  EMPTY_ABILITY_SPEC_EXTENSION_REGISTRY,
-  type AbilitySpecExtensionFamily,
-  type AbilitySpecExtensionReference,
-  type AbilitySpecExtensionRegistry,
+import { REGISTERED_ABILITY_HANDLER_REGISTRY } from './handlers/registry'
+import type {
+  AbilitySpecExtensionFamily,
+  AbilitySpecExtensionReference,
+  AbilitySpecExtensionRegistry,
 } from './extensionRegistry'
+import { ABILITY_SPEC_SHARED_KERNEL_EXTENSION_REGISTRY } from './sharedKernelExtensions'
 
 export const ABILITY_SPEC_DEFINITION_HASH_VERSION = 1 as const
 
@@ -145,10 +150,6 @@ const DEFAULT_CANONICAL_IDS = new Set(Object.keys(abilityCatalogJson))
 const DEFAULT_CAPABILITIES = new Map<string, readonly string[]>(
   capabilityCatalogJson.capabilities.map(capability => [capability.code, capability.dependencies]),
 )
-const EMPTY_HANDLER_REGISTRY: AbilitySpecHandlerReferenceRegistry = Object.freeze({
-  resolve: () => null,
-})
-
 export const DEFAULT_ABILITY_SPEC_RULESET_VERSION: AbilitySpecRulesetVersion = Object.freeze({
   rulesetId: ABILITY_RULESET_PROVENANCE.rulesetId,
   canonicalizationVersion: ABILITY_RULESET_PROVENANCE.canonicalization.version,
@@ -318,6 +319,7 @@ const parseExtension = (
   value: AbilitySpecJsonObject,
   path: string,
   state: ExtensionValidationState,
+  phase: AbilitySpecPhase | null = null,
 ): AbilitySpecJsonObject => {
   const kind = value.kind
   if (typeof kind !== 'string' || !STABLE_ID_PATTERN.test(kind)) {
@@ -329,7 +331,7 @@ const parseExtension = (
   }
   let parsed: AbilitySpecJsonObject
   try {
-    parsed = cloneExtensionOutput(extension.parse(value, path), path)
+    parsed = cloneExtensionOutput(extension.parse(value, path, { family, phase }), path)
   }
   catch (error) {
     if (error instanceof AbilitySpecDefinitionValidationError) throw error
@@ -347,6 +349,9 @@ const parseExtension = (
   return deepFreezeStrictJson(parsed)
 }
 
+const ABILITY_EVENT_KIND_SET = new Set<string>(ABILITY_ENCOUNTER_EVENT_KINDS)
+const ABILITY_EVENT_CHECKPOINT_SET = new Set<string>(ABILITY_EVENT_CHECKPOINTS)
+
 const validateModes = (
   modes: readonly AbilitySpecModeDeclaration[],
   subscriptions: readonly AbilitySpecSubscription[],
@@ -356,6 +361,20 @@ const validateModes = (
 ): void => {
   const modesById = new Map(modes.map(mode => [mode.id, mode]))
   for (const subscription of subscriptions) {
+    if (!ABILITY_EVENT_KIND_SET.has(subscription.eventKind)) {
+      fail(
+        'invalid-definition',
+        `abilitySpec.subscriptions.${subscription.id}.eventKind`,
+        'must use a closed ability encounter-event kind.',
+      )
+    }
+    if (!ABILITY_EVENT_CHECKPOINT_SET.has(subscription.checkpoint)) {
+      fail(
+        'invalid-definition',
+        `abilitySpec.subscriptions.${subscription.id}.checkpoint`,
+        'must use a closed ability event checkpoint.',
+      )
+    }
     if (modesById.get(subscription.modeId)?.kind !== 'triggered') {
       fail(
         'invalid-mode',
@@ -488,6 +507,7 @@ const normalizeSpec = (
       operation,
       `abilitySpec.phases[${phaseIndex}].operations[${operationIndex}]`,
       state,
+      phase.phase,
     )),
   }))
 
@@ -516,12 +536,12 @@ export const validateAbilitySpec = (
   input: unknown,
   options: ValidateAbilitySpecOptions = {},
 ): ValidatedAbilitySpecDefinition => {
-  const handlerRegistry = options.handlerRegistry ?? EMPTY_HANDLER_REGISTRY
+  const handlerRegistry = options.handlerRegistry ?? REGISTERED_ABILITY_HANDLER_REGISTRY
   const envelope = parseAbilitySpecEnvelope(input)
   const registeredHandler = normalizeHandlerReference(envelope.registeredHandlerId, handlerRegistry)
   const normalized = normalizeSpec(
     envelope,
-    options.extensionRegistry ?? EMPTY_ABILITY_SPEC_EXTENSION_REGISTRY,
+    options.extensionRegistry ?? ABILITY_SPEC_SHARED_KERNEL_EXTENSION_REGISTRY,
     options.knownCanonicalIds ?? DEFAULT_CANONICAL_IDS,
     registeredHandler !== null,
   )

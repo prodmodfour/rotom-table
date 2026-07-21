@@ -6,6 +6,7 @@ interface MoveAutomationResolveIntentBaseInput {
   readonly actorPlacementId: string
   readonly moveName: string
   readonly targetBranchId?: string | null
+  readonly originCell?: GridAnchor
 }
 
 export interface BuildSelfMoveAutomationResolveIntentInput extends MoveAutomationResolveIntentBaseInput {
@@ -81,6 +82,7 @@ const baseIntentFields = (input: MoveAutomationResolveIntentBaseInput) => ({
   placementId: input.actorPlacementId.trim(),
   moveName: input.moveName.trim(),
   ...(nonEmptyTrimmed(input.targetBranchId) ? { targetBranchId: nonEmptyTrimmed(input.targetBranchId) } : {}),
+  ...(input.originCell ? { originCell: cloneGridAnchor(input.originCell) } : {}),
 })
 
 const areaCandidateScopePlacementIds = (

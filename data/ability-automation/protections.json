@@ -1,0 +1,34 @@
+{
+  "schemaVersion": 1,
+  "sourceDataSha256": "767c3e2ae45471c26ad97a07552c4b0417ed0e207827af8a59da3a73e81f4362",
+  "entries": [
+    {
+      "canonicalId": "Huge Power / Pure Power",
+      "copyable": true,
+      "disableable": false,
+      "transferable": true,
+      "sourcePhrase": "This Ability cannot be disabled in any way."
+    },
+    {
+      "canonicalId": "Multitype",
+      "copyable": false,
+      "disableable": false,
+      "transferable": true,
+      "sourcePhrase": "Multitype cannot be copied or disabled."
+    },
+    {
+      "canonicalId": "Sorcery",
+      "copyable": true,
+      "disableable": false,
+      "transferable": true,
+      "sourcePhrase": "This Ability cannot be disabled in any way."
+    },
+    {
+      "canonicalId": "Splendorous Rider",
+      "copyable": false,
+      "disableable": true,
+      "transferable": false,
+      "sourcePhrase": "This Ability may not be copied or transferred."
+    }
+  ]
+}

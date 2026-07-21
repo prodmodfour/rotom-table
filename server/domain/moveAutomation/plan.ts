@@ -41,6 +41,10 @@ export const MOVE_SHEET_STATE_FIELDS = [
   'inventory',
   'equipmentSlots',
   'digestion',
+  /** Shared sheet field used by authoritative Daily ability resources. */
+  'abilityUsage',
+  /** Extended-Rest-bound Berry Storage digestion buffs. */
+  'berryStorage',
 ] as const
 
 export type MoveStateChangeKind = (typeof MOVE_STATE_CHANGE_KINDS)[number]
@@ -49,6 +53,16 @@ export type MoveExternalResourceKind = 'group-inventory'
 
 export interface VersionedMoveEncounterState {
   readonly schemaVersion: number
+  /** Optional shared slot reserved for authoritative ability scene resources. */
+  readonly abilityUsage?: unknown
+  /** Optional shared slot reserved for authoritative ability timing resources. */
+  readonly abilityTiming?: unknown
+  /** Optional shared slot reserved for authoritative ability effect lifecycles. */
+  readonly abilityEffectLifecycle?: unknown
+  /** Optional shared slot for marks, counters, tokens, modes, and forms. */
+  readonly abilityOwnedState?: unknown
+  /** Optional replay receipts for accepted ability-trigger event derivation. */
+  readonly abilityEventReceipts?: unknown
 }
 
 export interface MoveMapStateChangeScope {

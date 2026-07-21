@@ -799,6 +799,35 @@ describe('live-play map token commands', () => {
     ]))
   })
 
+  it('materializes a durable Ball Fetch trigger from an authoritative send-out', async () => {
+    const harness = createHarness()
+    harness.deps.readSheet.mockImplementation((kind: string, slug: string) => ({
+      sheet: kind === 'pokemon'
+        ? {
+            slug, nickname: slug, species: slug === 'eevee' ? 'Eevee' : 'Pikachu', level: 10, revision: 1,
+            capabilities: { overland: 6 },
+            abilities: slug === 'pikachu' ? [{ name: 'Ball Fetch' }] : [],
+          }
+        : {
+            slug, name: 'Boss', level: 10, revision: 1,
+            currentTeam: ['eevee'], capabilities: { overland: 5 },
+          },
+    }))
+
+    await executeMapTokenLivePlayCommandUseCase({
+      role: 'player', command: sendOutCommand(), clientId: 'player-client',
+      playerProfile: playerProfile([{ sheetKind: 'trainer', sheetSlug: 'giovanni' }]),
+      expectedType: LIVE_PLAY_COMMAND_TYPES.SEND_OUT_POKEMON,
+    }, harness.deps)
+
+    expect(harness.storedMap.encounterState?.abilityOwnedState?.entries).toContainEqual(expect.objectContaining({
+      ownerPlacementId: 'linked-token',
+      canonicalId: 'Ball Fetch',
+      targetPlacementIds: ['sent-out-eevee'],
+      lifecycle: { kind: 'target-presence', targetPolicy: 'any-target-leaves' },
+    }))
+  })
+
   it('returns the stored result for duplicate spawn opIds without adding or publishing the placement twice', async () => {
     const harness = createHarness()
     const command = spawnCommand({ opId: 'op_dupspawn001' })

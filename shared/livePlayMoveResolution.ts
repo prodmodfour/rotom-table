@@ -60,6 +60,8 @@ export interface ResolveMoveIntent {
   readonly placementId: string
   readonly moveName: string
   readonly targetBranchId?: string
+  /** Optional server-validated virtual origin enabled only by reviewed effects such as Clay Cannons. */
+  readonly originCell?: GridAnchor
   readonly selection: ResolveMoveSelection
 }
 
@@ -173,7 +175,7 @@ export type ParseResolveMoveIntentResult = ParseResolveMoveIntentSuccess | Parse
 
 type UnknownRecord = Record<string, unknown>
 
-const TOP_LEVEL_FIELDS = new Set(['schemaVersion', 'placementId', 'moveName', 'targetBranchId', 'selection'])
+const TOP_LEVEL_FIELDS = new Set(['schemaVersion', 'placementId', 'moveName', 'targetBranchId', 'originCell', 'selection'])
 const SELF_SELECTION_FIELDS = new Set(['kind'])
 const SINGLE_TARGET_SELECTION_FIELDS = new Set(['kind', 'targetPlacementId'])
 const TARGET_COUNT_SELECTION_FIELDS = new Set(['kind', 'targetPlacementIds'])
@@ -544,6 +546,9 @@ export const parseResolveMoveIntent = (value: unknown): ParseResolveMoveIntentRe
   const targetBranchId = hasOwn(value, 'targetBranchId')
     ? parseBoundedText(value.targetBranchId, 'targetBranchId', issues)
     : null
+  const originCell = hasOwn(value, 'originCell')
+    ? parseAimCell(value.originCell, 'originCell', issues)
+    : null
   const selection = parseSelection(value.selection, issues)
 
   if (issues.length > 0 || !placementId || !moveName || !selection) {
@@ -557,6 +562,7 @@ export const parseResolveMoveIntent = (value: unknown): ParseResolveMoveIntentRe
       placementId,
       moveName,
       ...(targetBranchId ? { targetBranchId } : {}),
+      ...(originCell ? { originCell: { ...originCell } } : {}),
       selection,
     },
     issues: [],

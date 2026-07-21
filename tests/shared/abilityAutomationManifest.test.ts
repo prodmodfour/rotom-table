@@ -99,7 +99,7 @@ const expectManifestError = (
 }
 
 describe('ability automation semantic manifest', () => {
-  it('loads exactly one blocked row per canonical ability in canonical order', () => {
+  it('loads exactly one truthfully promoted or blocked row per canonical ability in canonical order', () => {
     const manifest = parseAbilityAutomationManifest(manifestJson, catalog)
     const canonicalIds = catalog.abilities.map(ability => ability.canonicalId)
 
@@ -107,28 +107,46 @@ describe('ability automation semantic manifest', () => {
     expect(manifest.abilities).toHaveLength(483)
     expect(manifest.abilities.map(ability => ability.canonicalId)).toEqual(canonicalIds)
     expect(new Set(manifest.abilities.map(ability => ability.canonicalId)).size).toBe(483)
-    expect(manifest.abilities.every(ability => ability.baseStatus === 'blocked')).toBe(true)
-    expect(manifest.abilities.every(ability => ability.runtime.kind === 'unimplemented')).toBe(true)
+    expect(manifest.abilities.filter(ability => ability.baseStatus === 'complete').map(ability => ability.canonicalId))
+      .toEqual([
+        'Abominable', 'Absorb Force', 'Accelerate', 'Adaptability', 'Aerilate', 'Aftermath',
+        'Air Lock', 'Ambush', 'Analytic', 'Anchored', 'Anger Point', 'Anticipation',
+        'Aqua Boost', 'Aqua Bullet', 'Arena Trap', 'Aroma Veil', 'Aura Break', 'Aura Storm',
+        'Bad Dreams', 'Ball Fetch', 'Battery', 'Battle Armor', 'Beam Cannon', 'Beast Boost',
+        'Beautiful', 'Berry Storage', 'Berserk', 'Big Pecks', 'Big Swallow', 'Blaze',
+        'Blessed Touch', 'Blow Away', 'Blur', 'Bodyguard', 'Bone Lord', 'Bone Wielder',
+        'Brimstone', 'Bulletproof', 'Bully', 'Cave Crasher', 'Celebrate', 'Chemical Romance',
+        'Cherry Power', 'Chilling Neigh', 'Chlorophyll', 'Clay Cannons', 'Clear Body', 'Cloud Nine',
+      ])
+    expect(manifest.abilities.filter(ability => ability.baseStatus === 'blocked')).toHaveLength(435)
+    expect(manifest.abilities.filter(ability => ability.runtime.kind === 'unimplemented')).toHaveLength(435)
   })
 
   it('keeps bootstrap mode hints non-authoritative and maps every row to its plan cohort', () => {
     const manifest = parseAbilityAutomationManifest(manifestJson, catalog)
     const counts = manifest.abilities.reduce<Record<string, number>>((result, ability) => {
-      const hint = ability.suggestedCapabilityTags[0]!
+      const hint = ability.suggestedCapabilityTags[0]
+        ?? ['mode.static', 'mode.triggered', 'mode.activated']
+          .find(tag => ability.capabilityTags.includes(tag))!
       result[hint] = (result[hint] ?? 0) + 1
       return result
     }, {})
 
     expect(counts).toEqual({
-      'mode.static': 243,
-      'mode.triggered': 120,
+      'mode.static': 244,
+      'mode.triggered': 119,
       'mode.activated': 120,
     })
     expect(manifest.abilities[0]).toMatchObject({ canonicalId: 'Abominable', rolloutCohortId: 'aa-060' })
     expect(manifest.abilities[11]).toMatchObject({ canonicalId: 'Anticipation', rolloutCohortId: 'aa-060' })
     expect(manifest.abilities[12]).toMatchObject({ canonicalId: 'Aqua Boost', rolloutCohortId: 'aa-061' })
+    expect(manifest.abilities[24]).toMatchObject({ canonicalId: 'Beautiful', rolloutCohortId: 'aa-062' })
+    expect(manifest.abilities[36]).toMatchObject({ canonicalId: 'Brimstone', rolloutCohortId: 'aa-063' })
     expect(manifest.abilities.at(-1)).toMatchObject({ canonicalId: 'Zen Snowed', rolloutCohortId: 'aa-100' })
-    expect(manifest.abilities.every(ability => ability.capabilityTags.length === 0)).toBe(true)
+    expect(manifest.abilities.filter(ability => ability.baseStatus === 'complete')
+      .every(ability => ability.capabilityTags.includes('runtime.abilityspec-v1'))).toBe(true)
+    expect(manifest.abilities.filter(ability => ability.baseStatus === 'blocked')
+      .every(ability => ability.capabilityTags.length === 0)).toBe(true)
   })
 
   it('accepts a debt-free reviewed AbilitySpec row with executable evidence', () => {

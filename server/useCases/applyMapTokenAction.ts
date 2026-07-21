@@ -1,4 +1,5 @@
 import { UseCaseHttpError } from '../utils/useCaseErrors'
+import { applyAa061BallFetchSendOutTriggers } from '../domain/abilityAutomation/mechanics/aa061PresenceIntegration'
 import {
   LIVE_PLAY_COMMAND_TYPES,
   LIVE_PLAY_PATCH_TYPES,
@@ -679,13 +680,21 @@ const applySendOutPokemonToMap = (
   payload: SendOutPokemonPayload,
   context: ResolvedMapWriteContext,
   dependencies: Pick<MapTokenActionDependencySet, 'readSheet'>,
+  operationId: string,
 ): AppliedMapTokenChange => {
   const resolved = resolveSendOutPokemonMapContext(payload, context, dependencies)
+  const placedMap = {
+    ...context.map,
+    placements: [...context.map.placements, resolved.placement],
+  }
   return {
-    nextMap: {
-      ...context.map,
-      placements: [...context.map.placements, resolved.placement],
-    },
+    nextMap: applyAa061BallFetchSendOutTriggers({
+      mapBefore: context.map,
+      mapAfter: placedMap,
+      releasedPlacementId: resolved.placement.id,
+      operationId,
+      readPokemonSheet: slug => dependencies.readSheet('pokemon', slug)?.sheet as unknown as CharacterSheet ?? null,
+    }),
     placement: resolved.placement,
   }
 }
@@ -1432,7 +1441,7 @@ export const executeMapTokenLivePlayCommandUseCase = async (
       } else if (command.type === LIVE_PLAY_COMMAND_TYPES.SPAWN_TOKEN) {
         change = applySpawnTokenToMap(expectSpawnTokenPayload(command.payload), map)
       } else if (command.type === LIVE_PLAY_COMMAND_TYPES.SEND_OUT_POKEMON) {
-        change = applySendOutPokemonToMap(expectSendOutPokemonPayload(command.payload), map, deps)
+        change = applySendOutPokemonToMap(expectSendOutPokemonPayload(command.payload), map, deps, command.opId)
       } else {
         change = applyDeleteTokenToMap(expectDeleteTokenPayload(command.payload), map)
       }

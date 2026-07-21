@@ -168,9 +168,9 @@ export const cloneStrictJson = (
 }, options)
 
 export const deepFreezeStrictJson = <Value>(value: Value): Value => {
-  if (typeof value !== 'object' || value === null || Object.isFrozen(value)) return value
+  if (typeof value !== 'object' || value === null) return value
   for (const key of Object.getOwnPropertyNames(value)) {
     deepFreezeStrictJson((value as Record<string, unknown>)[key])
   }
-  return Object.freeze(value)
+  return Object.isFrozen(value) ? value : Object.freeze(value)
 }

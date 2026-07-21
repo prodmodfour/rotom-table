@@ -48,8 +48,10 @@ import type { CombatStageMap } from '~/types/combatStages'
 import type { SpawnedPokemon } from '~/types/pokemon'
 import type { TrainerSheet } from '~/types/trainerSheet'
 import {
+  buildLegacyTokenAbilityMenuOptions,
   getLegacyMapAbilityAutomation as getMapAbilityAutomation,
   resolveLegacyMapAbilityAutomationTransaction as resolveMapAbilityAutomationTransaction,
+  type LegacyTokenAbilityMenuOption,
 } from '../domain/abilityAutomation/legacyCompatibility'
 import { appendAbilityAutomationLogEntry } from '~/utils/abilityAutomationLog'
 import {
@@ -57,11 +59,7 @@ import {
   createActiveOrderEffect,
   type ActiveOrderEffect,
 } from '~/utils/activeOrderEffects'
-import {
-  abilityEntriesForPlacement,
-  buildTokenAbilityMenuOptions,
-  type TokenAbilityMenuOption,
-} from '~/utils/mapTokenAbilities'
+import { abilityEntriesForPlacement } from '~/utils/mapTokenAbilities'
 import {
   referenceManeuverOptions,
   trainerManeuverOptionsForSheet,
@@ -1012,9 +1010,9 @@ const resolveAbilityOption = (
   placement: SheetPlacement,
   sheetMaps: { readonly pokemon: Map<string, CharacterSheet>; readonly trainer: Map<string, TrainerSheet> },
   requestedName: string,
-): TokenAbilityMenuOption | null => {
+): LegacyTokenAbilityMenuOption | null => {
   const entries = abilityEntriesForPlacement(placement, sheetMaps)
-  const options = buildTokenAbilityMenuOptions(entries)
+  const options = buildLegacyTokenAbilityMenuOptions(entries)
   return options.find((option) => optionMatchesName(option.name, requestedName)) ?? null
 }
 

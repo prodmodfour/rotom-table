@@ -261,7 +261,11 @@ export const moveAutomationFeedbackVfxTiming = (feedback: MoveAutomationFeedback
     : MOVE_AUTOMATION_VFX_ROLL_FEEDBACK_OFFSETS_MS.impact,
 })
 
-interface ActiveSelfMoveRequest {
+interface VirtualOriginRequestFields {
+  originCell?: GridAnchor
+}
+
+interface ActiveSelfMoveRequest extends VirtualOriginRequestFields {
   kind: 'self'
   userId: string
   moveName: string
@@ -271,7 +275,7 @@ interface ActiveSelfMoveRequest {
   targetBranchId?: string
 }
 
-interface ActiveSingleTargetingRequest {
+interface ActiveSingleTargetingRequest extends VirtualOriginRequestFields {
   kind: 'single-target'
   userId: string
   moveName: string
@@ -282,7 +286,7 @@ interface ActiveSingleTargetingRequest {
   targetBranchId?: string
 }
 
-interface ActiveTargetCountRequest {
+interface ActiveTargetCountRequest extends VirtualOriginRequestFields {
   kind: 'target-count'
   userId: string
   moveName: string
@@ -295,7 +299,7 @@ interface ActiveTargetCountRequest {
   targetBranchId?: string
 }
 
-interface ActiveAreaConfirmationRequest {
+interface ActiveAreaConfirmationRequest extends VirtualOriginRequestFields {
   kind: 'area-confirmation'
   userId: string
   moveName: string
@@ -321,7 +325,18 @@ interface ActiveAreaConfirmationRequest {
   passDestination?: GridAnchor
 }
 
-type ActiveMoveTargetingRequest = ActiveSingleTargetingRequest | ActiveTargetCountRequest | ActiveAreaConfirmationRequest
+interface ActiveVirtualOriginRequest {
+  kind: 'virtual-origin'
+  userId: string
+  moveName: string
+  script: MoveAutomationScript
+  damageFormula: string | null
+  frequency: string | null
+  targetBranchId?: string
+  originCell: GridAnchor
+}
+
+type ActiveMoveTargetingRequest = ActiveSingleTargetingRequest | ActiveTargetCountRequest | ActiveAreaConfirmationRequest | ActiveVirtualOriginRequest
 
 interface ActiveTargetBranchSelectionRequest {
   userId: string
@@ -713,6 +728,20 @@ export const useMoveAutomationPanel = ({
     const user = findSpawnedPokemon(request?.userId)
     if (!request || !user || !canControlPlacement(request.userId)) return null
 
+    if (request.kind === 'virtual-origin') {
+      return {
+        userId: request.userId,
+        moveName: request.moveName,
+        mode: 'area-confirmation',
+        rangeLabel: 'Clay Cannons origin (2m)',
+        rangeMeters: 2,
+        targetPrompt: 'Choose the virtual origin for this Ranged Move.',
+        candidateIds: [], hitChances: {}, areaCells: [request.originCell], affectedIds: [],
+        canToggleTargets: false, areaAimMode: 'free', areaAimCenter: request.originCell,
+        areaAimRangeMeters: 2,
+      }
+    }
+
     if (request.kind === 'area-confirmation') {
       return {
         userId: request.userId,
@@ -740,7 +769,8 @@ export const useMoveAutomationPanel = ({
     }
 
     if (request.kind === 'target-count') {
-      const candidateIds = targetCountCandidateIds(request, user)
+      const targetingUser = request.originCell ? { ...user, position: { ...request.originCell } } : user
+      const candidateIds = targetCountCandidateIds(request, targetingUser)
       const selectedTargetIds = selectedTargetCountIds(request, candidateIds)
       const plural = request.maxTargetCount === 1 ? 'target' : 'targets'
       return {
@@ -759,8 +789,9 @@ export const useMoveAutomationPanel = ({
       }
     }
 
+    const targetingUser = request.originCell ? { ...user, position: { ...request.originCell } } : user
     const candidates = moveAutomationTargetsInRange({
-      user,
+      user: targetingUser,
       tokens: spawnedPokemon.value,
       rangeMeters: request.rangeMeters,
     })
@@ -1008,7 +1039,7 @@ export const useMoveAutomationPanel = ({
     request: ActiveMoveTargetingRequest,
     targetIds: readonly string[],
   ): MaybePromise<unknown> => {
-    if (request.kind === 'area-confirmation') return undefined
+    if (request.kind === 'area-confirmation' || request.kind === 'virtual-origin') return undefined
     if (request.rangeMeters <= MELEE_MOVE_RANGE_METERS) return undefined
     return onRangedAttackOfOpportunity?.({
       provokerId: request.userId,
@@ -1382,6 +1413,55 @@ export const useMoveAutomationPanel = ({
     return true
   }
 
+  const clayCannonsOriginAvailable = (userId: string, script: MoveAutomationScript): boolean => {
+    const ranged = script.targetMode !== 'self'
+      && !script.range.toLowerCase().includes('melee')
+      && !['self', 'field'].includes(script.range.trim().toLowerCase())
+    return ranged && (map.value?.encounterState?.effects ?? []).some(effect => (
+      effect.kind === 'capability'
+      && effect.payload.action === 'grant'
+      && effect.payload.capabilityId === 'aa063.clay-cannons.virtual-origin'
+      && effect.affected.placementIds.includes(userId)
+      && effect.suppression.sources.length === 0
+    ))
+  }
+
+  const beginClayCannonsOriginSelection = (
+    user: SpawnedPokemon,
+    script: MoveAutomationScript,
+    damageFormula: string | null,
+    frequency: string | null,
+    targetBranchId?: string,
+  ): boolean => {
+    if (!clayCannonsOriginAvailable(user.id, script)) return false
+    clearMoveAutomationFeedback()
+    activeMoveTargetBranchSelection.value = null
+    activeMoveTargeting.value = {
+      kind: 'virtual-origin', userId: user.id, moveName: script.moveName,
+      script, damageFormula, frequency, originCell: { ...user.position },
+      ...(targetBranchId ? { targetBranchId } : {}),
+    }
+    return true
+  }
+
+  const continueAfterClayCannonsOrigin = (request: ActiveVirtualOriginRequest): boolean => {
+    const user = findSpawnedPokemon(request.userId)
+    if (!user) return false
+    const virtualUser = { ...user, position: { ...request.originCell } }
+    const mode = targetBranchSelectionModeForScript(request.script)
+    const started = mode === 'target'
+      ? beginSingleTargetingForScript(virtualUser, request.script, request.damageFormula, request.frequency, request.targetBranchId)
+      : mode === 'target-count'
+        ? beginTargetCountTargetingForScript(virtualUser, request.script, request.damageFormula, request.frequency, request.targetBranchId)
+        : mode === 'area-confirmation'
+          ? beginAreaConfirmationForScript(virtualUser, request.script, request.damageFormula, request.frequency, request.targetBranchId)
+          : false
+    if (started && activeMoveTargeting.value && activeMoveTargeting.value.kind !== 'virtual-origin') {
+      activeMoveTargeting.value = { ...activeMoveTargeting.value, originCell: { ...request.originCell } }
+    }
+    return started
+  }
+
   const beginSeamlessMoveTargeting = (id: string, moveName: string | null | undefined): boolean => {
     const trimmedMoveName = moveName?.trim()
     if (!trimmedMoveName) return false
@@ -1403,6 +1483,10 @@ export const useMoveAutomationPanel = ({
       }
       return true
     }
+
+    if (beginClayCannonsOriginSelection(
+      user, script, script.damaging ? rollFormulaForEntry(entry) : null, frequencyForEntry(entry),
+    )) return true
 
     if (
       isSeamlessSelfMoveScript(script)
@@ -1611,6 +1695,7 @@ export const useMoveAutomationPanel = ({
       actorPlacementId: request.userId,
       moveName: request.moveName,
       targetBranchId: request.targetBranchId,
+      originCell: request.originCell,
     })
     return {
       ...built,
@@ -1631,6 +1716,7 @@ export const useMoveAutomationPanel = ({
       actorPlacementId: request.userId,
       moveName: request.moveName,
       targetBranchId: request.targetBranchId,
+      originCell: request.originCell,
       targetPlacementId: targetId,
     })
     return built
@@ -1645,6 +1731,7 @@ export const useMoveAutomationPanel = ({
       actorPlacementId: request.userId,
       moveName: request.moveName,
       targetBranchId: request.targetBranchId,
+      originCell: request.originCell,
       targetPlacementIds: selectedTargetIds,
     })
     return built
@@ -1657,6 +1744,7 @@ export const useMoveAutomationPanel = ({
       actorPlacementId: request.userId,
       moveName: request.moveName,
       targetBranchId: request.targetBranchId,
+      originCell: request.originCell,
       areaTemplateId: request.areaTemplateId,
       excludedTargetPlacementIds: request.excludedTargetIds,
       candidateTargetPlacementIds: request.targetIds,
@@ -1782,8 +1870,11 @@ export const useMoveAutomationPanel = ({
       return { ok: false, message: `Pre-move token snapshot was missing: ${missing.join(', ')}.` }
     }
 
-    const user = snapshotToken(snapshot, move.actorPlacementId)
-    if (!user) return { ok: false, message: `Pre-move actor ${move.actorPlacementId} was not available for presentation.` }
+    const snapshotUser = snapshotToken(snapshot, move.actorPlacementId)
+    if (!snapshotUser) return { ok: false, message: `Pre-move actor ${move.actorPlacementId} was not available for presentation.` }
+    const user = intent.originCell
+      ? { ...snapshotUser, position: { ...intent.originCell } }
+      : snapshotUser
 
     try {
       if (intent.selection.kind === 'self') {
@@ -2189,6 +2280,9 @@ export const useMoveAutomationPanel = ({
     const script = branch ? moveAutomationScriptForTargetBranch(request.baseScript, branch) : null
     if (!user || !branch || !script) return
     if (unsupportedTargetBranchReason(script, user, request.damageFormula)) return
+    if (beginClayCannonsOriginSelection(
+      user, script, request.damageFormula, request.frequency, branch.id,
+    )) return
 
     const mode = targetBranchSelectionModeForScript(script)
     if (mode === 'target') {
@@ -2402,6 +2496,10 @@ export const useMoveAutomationPanel = ({
   const aimMoveAutomationArea = (aimCell: GridAnchor) => {
     if (moveDispatchPending.value) return
     const request = activeMoveTargeting.value
+    if (request?.kind === 'virtual-origin') {
+      activeMoveTargeting.value = { ...request, originCell: { ...aimCell } }
+      return
+    }
     if (request?.kind !== 'area-confirmation') return
     const user = findSpawnedPokemon(request.userId)
     const template = selectedAreaTemplateForRequest(request)
@@ -2428,7 +2526,8 @@ export const useMoveAutomationPanel = ({
     if (!canContinueMoveAutomationForUser(request.userId)) return
     const user = findSpawnedPokemon(request.userId)
     if (!user) return
-    const selectedTargetIds = selectedTargetCountIds(request, targetCountCandidateIds(request, user))
+    const targetingUser = request.originCell ? { ...user, position: { ...request.originCell } } : user
+    const selectedTargetIds = selectedTargetCountIds(request, targetCountCandidateIds(request, targetingUser))
     if (!selectedTargetIds.length) return
 
     if (dispatchAuthoritativeMove) {
@@ -2553,6 +2652,10 @@ export const useMoveAutomationPanel = ({
     const overlay = moveAutomationTargeting.value
     if (!request) return
 
+    if (request.kind === 'virtual-origin') {
+      continueAfterClayCannonsOrigin(request)
+      return
+    }
     if (request.kind === 'area-confirmation') {
       if (!overlay) return
       if (canToggleAreaTargets(request.script) && request.targetIds.includes(targetId)) {

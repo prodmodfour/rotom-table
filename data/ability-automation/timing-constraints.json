@@ -1,0 +1,26 @@
+{
+  "schemaVersion": 1,
+  "sourceDataSha256": "767c3e2ae45471c26ad97a07552c4b0417ed0e207827af8a59da3a73e81f4362",
+  "entries": [
+    {
+      "canonicalId": "Harvest",
+      "constraintId": "berry-trade-per-turn",
+      "kind": "turn",
+      "limit": 1,
+      "cooldownUnit": null,
+      "cooldownDelay": null,
+      "sourceField": "effect",
+      "sourcePhrase": "The user may trade in a Digestion Buff up to once per turn during an encounter"
+    },
+    {
+      "canonicalId": "Illusion",
+      "constraintId": "assume-guise-per-round",
+      "kind": "round",
+      "limit": 1,
+      "cooldownUnit": null,
+      "cooldownDelay": null,
+      "sourceField": "effect",
+      "sourcePhrase": "Once per round as a Free Action"
+    }
+  ]
+}

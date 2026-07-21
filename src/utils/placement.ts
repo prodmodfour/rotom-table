@@ -28,6 +28,7 @@ import { projectEncounterCreatureRuleToken } from '~/utils/encounterCreatureRule
 import { projectEffectiveMovement } from '~/utils/encounterMovement'
 import { projectEncounterTransformationToken } from '~/utils/encounterTransformations'
 import { resolvePokemonRuleCapabilityProjection } from '~/utils/pokemonRuleCapabilities'
+import { projectNativeAbilityTokenStats } from '~/utils/nativeAbilityTokenStats'
 import {
   pokemonSheetConditionNames,
   trainerSheetConditionNames,
@@ -261,11 +262,11 @@ export const placementToSpawned = (
       token: baseToken,
       effects: map?.encounterState?.effects,
     })
-    return projectEncounterCreatureRuleToken({
+    return projectNativeAbilityTokenStats(projectEncounterCreatureRuleToken({
       placement,
       token: transformedToken,
       effects: map?.encounterState?.effects,
-    })
+    }))
   }
   const sheet = sheets.trainer.get(placement.sheetSlug)
   if (!sheet) return null
@@ -326,11 +327,11 @@ export const placementToSpawned = (
     conditions: hp.conditions,
     tokenItems: trainerEquippedItemNames(sheet),
   }
-  return projectEncounterCreatureRuleToken({
+  return projectNativeAbilityTokenStats(projectEncounterCreatureRuleToken({
     placement,
     token: baseToken,
     effects: map?.encounterState?.effects,
-  })
+  }))
 }
 
 export const placementsToSpawned = (

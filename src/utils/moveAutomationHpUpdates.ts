@@ -30,6 +30,7 @@ export interface MoveAutomationHpUpdateAccumulator {
   getMaxHp(token: SpawnedPokemon): number
   set(token: SpawnedPokemon, currentHp: number): void
   setTemporaryHp(token: SpawnedPokemon, temporaryHp: number): void
+  addInjuries(token: SpawnedPokemon, amount: number): void
   setWithInjuryAutomation(
     token: SpawnedPokemon,
     currentHp: number,
@@ -90,6 +91,11 @@ export const createMoveAutomationHpUpdateAccumulator = (): MoveAutomationHpUpdat
     setTemporaryHp: (token, temporaryHp) => {
       const entry = ensureEntry(token)
       entry.temporaryHp = normalizeTemporaryHpAmount(temporaryHp)
+    },
+    addInjuries: (token, amount) => {
+      const entry = ensureEntry(token)
+      entry.injuries = normalizeInjuryCount(entry.injuries + Math.max(0, Math.floor(amount)))
+      setEntryHp(entry, entry.currentHp)
     },
     setWithInjuryAutomation: (token, currentHp, source) => {
       const entry = ensureEntry(token)

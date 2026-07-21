@@ -240,6 +240,14 @@ const expectPendingError = (
 }
 
 describe('pending move resolution contract', () => {
+  it('retains a detached bounded virtual origin across durable move windows', () => {
+    const source = pendingResolution()
+    source.virtualOriginCell = { x: 2, y: 0, z: 3 }
+    const parsed = parsePendingMoveResolution(source)
+    source.virtualOriginCell.x = 99
+    expect(parsed.virtualOriginCell).toEqual({ x: 2, y: 0, z: 3 })
+    expect(Object.isFrozen(parsed.virtualOriginCell)).toBe(true)
+  })
   it('strictly parses, canonicalizes, detaches, and freezes suspended authority state', () => {
     const source = pendingResolution()
     const parsed = parsePendingMoveResolution(source)

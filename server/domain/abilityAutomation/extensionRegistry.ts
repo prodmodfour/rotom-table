@@ -1,4 +1,7 @@
-import type { AbilitySpecJsonObject } from '#shared/abilityAutomation/spec'
+import type {
+  AbilitySpecJsonObject,
+  AbilitySpecPhase,
+} from '#shared/abilityAutomation/spec'
 
 export const ABILITY_SPEC_EXTENSION_FAMILIES = [
   'selector',
@@ -15,9 +18,19 @@ export interface AbilitySpecExtensionReference {
   readonly version: number
 }
 
+export interface AbilitySpecExtensionParseContext {
+  readonly family: AbilitySpecExtensionFamily
+  /** Present only for an operation authored in one AbilitySpec phase block. */
+  readonly phase: AbilitySpecPhase | null
+}
+
 export interface RegisteredAbilitySpecExtension extends AbilitySpecExtensionReference {
   /** Pure strict parser supplied by reviewed server code, never by spec data. */
-  readonly parse: (value: AbilitySpecJsonObject, path: string) => AbilitySpecJsonObject
+  readonly parse: (
+    value: AbilitySpecJsonObject,
+    path: string,
+    context: AbilitySpecExtensionParseContext,
+  ) => AbilitySpecJsonObject
 }
 
 export interface AbilitySpecExtensionRegistry {

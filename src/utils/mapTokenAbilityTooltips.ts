@@ -1,3 +1,4 @@
+import type { AbilityClientCapabilityStatus } from '#shared/abilityAutomation/clientCapabilities'
 import type { TokenAbilityMenuOption } from '~/utils/mapTokenAbilities'
 import type { RefTooltipDetail, RefTooltipMeta, RefTooltipSection } from '~/utils/refLinks'
 
@@ -13,20 +14,35 @@ const addMeta = (
   meta.push({ label, value })
 }
 
-const buildSheetLines = (ability: TokenAbilityMenuOption): string[] => {
-  const lines: string[] = []
-  if (ability.automation) lines.push(`Automation: ${ability.automation.label}`)
-  if (ability.automation?.category === 'sheet') {
-    lines.push(`Status: ${ability.activated ? 'Active' : 'Inactive'}`)
+export const abilityCapabilityStatusLabel = (
+  status: AbilityClientCapabilityStatus | null | undefined,
+): string => {
+  switch (status) {
+    case 'ready': return 'Ready'
+    case 'passive': return 'Passive'
+    case 'blocked': return 'Blocked'
+    case 'suppressed': return 'Suppressed'
+    case 'parameters-required': return 'Setup required'
+    case 'runtime-drift': return 'Runtime mismatch'
+    default: return 'Unavailable'
   }
-  if (!ability.automation) lines.push('Automation: Not yet automated')
+}
+
+const buildSheetLines = (ability: TokenAbilityMenuOption): string[] => {
+  const capability = ability.capability
+  const lines = [`Automation: ${abilityCapabilityStatusLabel(capability?.status)}`]
+  if (capability) {
+    lines.push(`Interaction coverage: ${capability.interactionStatus}`)
+    if (capability.unavailableReasonCode) lines.push(`Reason: ${capability.unavailableReasonCode}`)
+  }
+  if (ability.activated) lines.push('Sheet toggle: Active')
   return lines
 }
 
 const buildTooltipSections = (ability: TokenAbilityMenuOption): RefTooltipSection[] => {
   const sheetLines = buildSheetLines(ability)
   return [
-    ...(sheetLines.length ? [{ heading: 'Sheet', body: sheetLines.join('\n') }] : []),
+    { heading: 'Automation', body: sheetLines.join('\n') },
     ...(ability.trigger ? [{ heading: 'Trigger', body: ability.trigger }] : []),
     ...(ability.effect ? [{ heading: 'Effect', body: ability.effect }] : []),
     ...(ability.bonus ? [{ heading: 'Bonus', body: ability.bonus }] : []),
@@ -36,7 +52,7 @@ const buildTooltipSections = (ability: TokenAbilityMenuOption): RefTooltipSectio
 export const buildTokenAbilityTooltipDetail = (ability: TokenAbilityMenuOption): RefTooltipDetail => {
   const meta: RefTooltipMeta[] = []
   addMeta(meta, 'Freq', ability.frequency)
-  addMeta(meta, 'Use', ability.automation?.label ?? null)
+  addMeta(meta, 'Use', abilityCapabilityStatusLabel(ability.capability?.status))
 
   return {
     kind: 'ability',

@@ -810,6 +810,16 @@ export const reduceDirectHpEffectForRecipient = (options: {
     )
   }
   const previous = hpSnapshot(accumulator, recipient)
+  if (operation.reasonCode === 'ability.bully.add-injury') {
+    accumulator.addInjuries(recipient.token, 1)
+    const current = hpSnapshot(accumulator, recipient)
+    return {
+      recipientId: recipient.placement.id,
+      outcome: 'applied', reasonCode: operation.reasonCode, blockers: [],
+      consultedPlacementIds: [], previous, current,
+      changedFields: changedHpFields(previous, current),
+    }
+  }
   const costTrigger = resolveHpCostTrigger(options)
   if (!costTrigger.applies) {
     return noOpHpResult(
@@ -862,7 +872,9 @@ export const reduceDirectHpEffectForRecipient = (options: {
 
   const recoilImmunity = calculation.kind === 'damage-dealt'
     && calculation.roundedValue > 0
-    ? moveAutomationRecoilImmunitySource(recipient.token.abilityNames)
+    ? options.context.queries.abilities.has(recipient.placement.id, 'Abominable')
+      ? 'Abominable'
+      : moveAutomationRecoilImmunitySource(recipient.token.abilityNames)
     : null
   if (recoilImmunity) {
     return preventedRecoilResult({

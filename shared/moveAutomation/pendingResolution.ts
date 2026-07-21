@@ -341,6 +341,7 @@ export interface PendingMoveResolution {
   readonly originMapSlug: string
   readonly originOpId: LivePlayOpId
   readonly actorPlacementId: string
+  readonly virtualOriginCell?: MoveResponseGridAnchor
   readonly canonicalMoveId: string
   readonly specVersion: number
   readonly specHash: string
@@ -422,7 +423,7 @@ const ROOT_REQUIRED_FIELDS = [
   'updatedAt',
   'publicSummary',
 ] as const
-const ROOT_OPTIONAL_FIELDS = ['continuationKind', 'continuationContext'] as const
+const ROOT_OPTIONAL_FIELDS = ['continuationKind', 'continuationContext', 'virtualOriginCell'] as const
 const MAP_READ_FIELDS = ['kind', 'slug', 'revision'] as const
 const SHEET_READ_FIELDS = ['kind', 'sheetKind', 'slug', 'revision'] as const
 const GROUP_INVENTORY_READ_FIELDS = ['kind', 'slug', 'revision'] as const
@@ -2315,6 +2316,9 @@ export const parsePendingMoveResolution = (
     originOpId,
     `${path}.continuationContext`,
   )
+  const virtualOriginCell = Object.prototype.hasOwnProperty.call(record, 'virtualOriginCell')
+    ? requiredContinuationGridAnchor(record.virtualOriginCell, `${path}.virtualOriginCell`)
+    : null
   const canonicalMoveId = parseCanonicalMoveId(
     record.canonicalMoveId,
     `${path}.canonicalMoveId`,
@@ -2405,6 +2409,7 @@ export const parsePendingMoveResolution = (
     originMapSlug,
     originOpId,
     actorPlacementId,
+    ...(virtualOriginCell ? { virtualOriginCell } : {}),
     canonicalMoveId,
     specVersion,
     specHash,

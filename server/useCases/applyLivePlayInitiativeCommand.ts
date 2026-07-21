@@ -57,6 +57,7 @@ import {
 } from '~/utils/initiativeOrderEntries'
 import { expireActiveOrderEffectsForInitiativeAdvanceWithResult } from '~/utils/activeOrderEffects'
 import { deepCloneJson, sameJsonValue } from '~/utils/serialization'
+import { aa063ChlorophyllInitiativeMultiplier } from '../domain/abilityAutomation/mechanics/aa063InitiativeIntegration'
 import {
   deduplicateAuthoritativeMoveSheetReads,
   type AuthoritativeMoveSheetRead,
@@ -648,15 +649,25 @@ const initiativeOrder = (
   const calculatedEntries = initiativeOrderEntriesForPlacements(
     map.placements,
     trackedReader,
-    placement => ({
-      itemEffectsSuppressed: itemEffects.resolve({
-        placementId: placement.id,
-        scope: placement.sheetKind === 'pokemon'
-          ? 'pokemon-held'
-          : 'trainer-accessory',
-        timing: 'static',
-      }).suppressed,
-    }),
+    placement => {
+      const resolved = placement.sheetKind === 'pokemon'
+        ? trackedReader('pokemon', placement.sheetSlug)
+        : null
+      return {
+        itemEffectsSuppressed: itemEffects.resolve({
+          placementId: placement.id,
+          scope: placement.sheetKind === 'pokemon'
+            ? 'pokemon-held'
+            : 'trainer-accessory',
+          timing: 'static',
+        }).suppressed,
+        ...(resolved ? {
+          initiativeMultiplier: aa063ChlorophyllInitiativeMultiplier({
+            map, placement, sheet: resolved.sheet as unknown as CharacterSheet,
+          }),
+        } : {}),
+      }
+    },
   ).map((entry) => {
     const placement = placementById.get(entry.id)
     if (!placement) return entry

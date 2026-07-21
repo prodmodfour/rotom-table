@@ -63,6 +63,7 @@ export interface AbilitySpecSubscription {
   readonly checkpoint: string
   readonly response: AbilitySpecTriggerResponse
   readonly priority: number
+  readonly oncePerCausalChain: boolean
   readonly predicate: AbilitySpecPredicate | null
 }
 
@@ -185,6 +186,7 @@ const SUBSCRIPTION_FIELDS = [
   'checkpoint',
   'response',
   'priority',
+  'oncePerCausalChain',
   'predicate',
 ] as const
 const TARGETING_FIELDS = [
@@ -349,6 +351,9 @@ const parseSubscriptions = (
           `${entryPath}.response`,
         ),
         priority: Number(input.priority),
+        oncePerCausalChain: typeof input.oncePerCausalChain === 'boolean'
+          ? input.oncePerCausalChain
+          : fail('invalid-spec', `${entryPath}.oncePerCausalChain`, 'must be boolean.'),
         predicate: input.predicate === null
           ? null
           : dataObject(input.predicate, `${entryPath}.predicate`),

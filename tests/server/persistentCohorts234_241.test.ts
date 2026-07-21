@@ -43,6 +43,7 @@ const context = {
       lastCompletedMove: () => null,
     },
     rules: { legacyScriptFor: () => null },
+    abilities: { has: () => false },
     relationships: { resolve: () => ({ relationship: 'ally' }) },
   },
 }

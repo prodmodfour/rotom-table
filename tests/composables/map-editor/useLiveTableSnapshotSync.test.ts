@@ -1,6 +1,8 @@
 import { computed, ref } from 'vue'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { MAP_INTERACTION_MODES } from '#shared/mapInteractionMode'
+import { emptyAbilityClientCapabilityBundle } from '#shared/abilityAutomation/clientCapabilities'
+import { LIVE_TABLE_SNAPSHOT_SCHEMA_VERSION } from '#shared/liveTableSnapshot'
 import { useLiveTableSnapshotSync } from '~/composables/map-editor/useLiveTableSnapshotSync'
 import { teardownLiveSheets, useLiveSheets } from '~/composables/useLiveSheets'
 import { MAP_API_PATHS } from '~/utils/apiRoutes'
@@ -36,16 +38,20 @@ const mapFixture = (overrides: Partial<TabletopMap> = {}): TabletopMap => ({
   ...overrides,
 })
 
-const snapshotFixture = (overrides: Record<string, unknown> = {}) => ({
-  schemaVersion: 1,
-  map: mapFixture(),
-  mapRevision: 1,
-  interactionMode: MAP_INTERACTION_MODES.LIVE_PLAY,
-  interactionModeUpdatedAt: 500,
-  pokemonSheets: [{ slug: 'pikachu', nickname: 'Pikachu', revision: 1 }],
-  trainerSheets: [{ slug: 'ash', name: 'Ash', revision: 1 }],
-  ...overrides,
-})
+const snapshotFixture = (overrides: Record<string, unknown> = {}) => {
+  const mapRevision = typeof overrides.mapRevision === 'number' ? overrides.mapRevision : 1
+  return {
+    schemaVersion: LIVE_TABLE_SNAPSHOT_SCHEMA_VERSION,
+    map: mapFixture(),
+    mapRevision,
+    interactionMode: MAP_INTERACTION_MODES.LIVE_PLAY,
+    interactionModeUpdatedAt: 500,
+    pokemonSheets: [{ slug: 'pikachu', nickname: 'Pikachu', revision: 1 }],
+    trainerSheets: [{ slug: 'ash', name: 'Ash', revision: 1 }],
+    abilityCapabilities: emptyAbilityClientCapabilityBundle('arena-map', mapRevision),
+    ...overrides,
+  }
+}
 
 const flushPromises = async () => {
   await Promise.resolve()

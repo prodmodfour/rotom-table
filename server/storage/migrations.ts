@@ -1,6 +1,6 @@
 import type { DatabaseSync } from 'node:sqlite'
 
-export const LATEST_STORAGE_SCHEMA_VERSION = 12
+export const LATEST_STORAGE_SCHEMA_VERSION = 14
 
 export interface StorageMigration {
   readonly version: number
@@ -205,6 +205,46 @@ const addMoveCorrectionAncestry = (connection: DatabaseSync): void => {
   `)
 }
 
+const createAbilityDeclarationOfferTable = (connection: DatabaseSync): void => {
+  connection.exec(`
+    CREATE TABLE IF NOT EXISTS ability_declaration_offers (
+      offer_id TEXT PRIMARY KEY,
+      request_id TEXT NOT NULL UNIQUE,
+      request_sha256 TEXT NOT NULL,
+      map_slug TEXT NOT NULL,
+      map_revision INTEGER NOT NULL CHECK (map_revision >= 0),
+      actor_placement_id TEXT NOT NULL,
+      offer_json TEXT NOT NULL,
+      created_at INTEGER NOT NULL CHECK (created_at >= 0),
+      expires_at INTEGER NOT NULL CHECK (expires_at > created_at),
+      consumed_intent_sha256 TEXT,
+      consumed_at INTEGER,
+      CHECK ((consumed_intent_sha256 IS NULL) = (consumed_at IS NULL))
+    );
+
+    CREATE INDEX IF NOT EXISTS ability_declaration_offers_map_expiry_idx
+      ON ability_declaration_offers (map_slug, expires_at, offer_id);
+  `)
+}
+
+const createAbilityResolutionOperationTable = (connection: DatabaseSync): void => {
+  connection.exec(`
+    CREATE TABLE IF NOT EXISTS ability_resolution_ops (
+      intent_id TEXT PRIMARY KEY,
+      intent_sha256 TEXT NOT NULL,
+      map_slug TEXT NOT NULL,
+      intent_json TEXT NOT NULL,
+      result_json TEXT NOT NULL,
+      audit_json TEXT NOT NULL,
+      result_revision INTEGER NOT NULL CHECK (result_revision >= 0),
+      created_at INTEGER NOT NULL CHECK (created_at >= 0)
+    );
+
+    CREATE INDEX IF NOT EXISTS ability_resolution_ops_map_revision_idx
+      ON ability_resolution_ops (map_slug, result_revision, intent_id);
+  `)
+}
+
 export const STORAGE_MIGRATIONS: readonly StorageMigration[] = [
   {
     version: 1,
@@ -265,6 +305,16 @@ export const STORAGE_MIGRATIONS: readonly StorageMigration[] = [
     version: 12,
     name: 'link audited GM move corrections to accepted moves',
     up: addMoveCorrectionAncestry,
+  },
+  {
+    version: 13,
+    name: 'store private ability declaration offers',
+    up: createAbilityDeclarationOfferTable,
+  },
+  {
+    version: 14,
+    name: 'store accepted ability resolution operations and private audits',
+    up: createAbilityResolutionOperationTable,
   },
 ]
 

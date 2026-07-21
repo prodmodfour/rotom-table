@@ -1,4 +1,52 @@
 import {
+  AbilityEventReceiptValidationError,
+  createEmptyAbilityEventReceiptState,
+  parseAbilityEventReceiptState,
+  type AbilityEventReceiptState,
+} from '../abilityAutomation/eventReceipts'
+import {
+  AbilityTransformationValidationError,
+  createEmptyAbilityTransformationState,
+  parseAbilityTransformationState,
+  type AbilityTransformationState,
+} from '../abilityAutomation/transformations'
+import {
+  AbilityEntityValidationError,
+  createEmptyAbilityEntityState,
+  parseAbilityEntityState,
+  type AbilityEntityState,
+} from '../abilityAutomation/entities'
+import {
+  AbilityReactionAvailabilityValidationError,
+  createEmptyAbilityReactionAvailabilityLedger,
+  parseAbilityReactionAvailabilityLedger,
+  type AbilityReactionAvailabilityLedger,
+} from '../abilityAutomation/reactionResources'
+import {
+  AbilityOwnedStateValidationError,
+  createEmptyAbilityOwnedState,
+  parseAbilityOwnedState,
+  type AbilityOwnedState,
+} from '../abilityAutomation/ownedState'
+import {
+  AbilityEffectLifecycleValidationError,
+  createEmptyAbilityEffectLifecycleState,
+  parseAbilityEffectLifecycleState,
+  type AbilityEffectLifecycleState,
+} from '../abilityAutomation/durations'
+import {
+  AbilityTimingValidationError,
+  createEmptyAbilityTimingLedger,
+  parseAbilityTimingLedger,
+  type AbilityTimingLedger,
+} from '../abilityAutomation/timingResources'
+import {
+  AbilityUsageLedgerValidationError,
+  createEmptyAbilitySceneUsageLedger,
+  parseAbilitySceneUsageLedger,
+  type AbilitySceneUsageLedger,
+} from '../abilityAutomation/resources'
+import {
   ENCOUNTER_EFFECT_LIMITS,
   EncounterEffectValidationError,
   parseEncounterEffects,
@@ -114,6 +162,14 @@ export interface EncounterState {
   readonly counters: EmptyEncounterStateDirectory
   readonly history: EncounterHistory
   readonly turnResources: EncounterTurnResourceDirectory
+  readonly abilityUsage?: AbilitySceneUsageLedger
+  readonly abilityTiming?: AbilityTimingLedger
+  readonly abilityEffectLifecycle?: AbilityEffectLifecycleState
+  readonly abilityOwnedState?: AbilityOwnedState
+  readonly abilityEventReceipts?: AbilityEventReceiptState
+  readonly abilityReactionAvailability?: AbilityReactionAvailabilityLedger
+  readonly abilityEntities?: AbilityEntityState
+  readonly abilityTransformations?: AbilityTransformationState
   readonly zones: readonly EncounterZone[]
   /** Map-owned dropped/thrown item stacks with bounded authoritative provenance. */
   readonly groundItems: readonly MapGroundItem[]
@@ -148,6 +204,14 @@ const ENCOUNTER_STATE_FIELDS = [
   'counters',
   'history',
   'turnResources',
+  'abilityUsage',
+  'abilityTiming',
+  'abilityEffectLifecycle',
+  'abilityOwnedState',
+  'abilityEventReceipts',
+  'abilityReactionAvailability',
+  'abilityEntities',
+  'abilityTransformations',
   'zones',
   'groundItems',
   'pendingResolutionSummaries',
@@ -156,7 +220,15 @@ const ENCOUNTER_STATE_FIELDS = [
 // MA-151 accepts the preceding schema-v1 shape without groundItems so maps
 // already written during the v1 rollout normalize in memory to an empty list.
 const REQUIRED_ENCOUNTER_STATE_FIELDS = ENCOUNTER_STATE_FIELDS.filter(
-  field => field !== 'groundItems',
+  field => field !== 'groundItems'
+    && field !== 'abilityUsage'
+    && field !== 'abilityTiming'
+    && field !== 'abilityEffectLifecycle'
+    && field !== 'abilityOwnedState'
+    && field !== 'abilityEventReceipts'
+    && field !== 'abilityReactionAvailability'
+    && field !== 'abilityEntities'
+    && field !== 'abilityTransformations',
 )
 
 const LIST_CONTAINER_KEYS = [
@@ -366,6 +438,139 @@ const parseEncounterTurnResourceState = (
   }
 }
 
+const parseAbilityUsageState = (value: unknown): AbilitySceneUsageLedger => {
+  try {
+    return parseAbilitySceneUsageLedger(value, 'encounterState.abilityUsage')
+  }
+  catch (error) {
+    if (error instanceof AbilityUsageLedgerValidationError) {
+      fail(
+        error.code === 'limit-exceeded' ? 'limit-exceeded' : 'invalid-encounter-state',
+        error.path,
+        error.message.slice(error.path.length + 2),
+      )
+    }
+    throw error
+  }
+}
+
+const parseAbilityTimingState = (value: unknown): AbilityTimingLedger => {
+  try {
+    return parseAbilityTimingLedger(value, 'encounterState.abilityTiming')
+  }
+  catch (error) {
+    if (error instanceof AbilityTimingValidationError) {
+      fail(
+        error.code === 'limit-exceeded' ? 'limit-exceeded' : 'invalid-encounter-state',
+        error.path,
+        error.message.slice(error.path.length + 2),
+      )
+    }
+    throw error
+  }
+}
+
+const parseAbilityEffectLifecycle = (value: unknown): AbilityEffectLifecycleState => {
+  try {
+    return parseAbilityEffectLifecycleState(value, 'encounterState.abilityEffectLifecycle')
+  }
+  catch (error) {
+    if (error instanceof AbilityEffectLifecycleValidationError) {
+      fail(
+        error.code === 'limit-exceeded' ? 'limit-exceeded' : 'invalid-encounter-state',
+        error.path,
+        error.message.slice(error.path.length + 2),
+      )
+    }
+    throw error
+  }
+}
+
+const parseAbilityOwnedEncounterState = (value: unknown): AbilityOwnedState => {
+  try {
+    return parseAbilityOwnedState(value, 'encounterState.abilityOwnedState')
+  }
+  catch (error) {
+    if (error instanceof AbilityOwnedStateValidationError) {
+      fail(
+        error.code === 'limit-exceeded' ? 'limit-exceeded' : 'invalid-encounter-state',
+        error.path,
+        error.message.slice(error.path.length + 2),
+      )
+    }
+    throw error
+  }
+}
+
+const parseAbilityEventReceipts = (value: unknown): AbilityEventReceiptState => {
+  try {
+    return parseAbilityEventReceiptState(value, 'encounterState.abilityEventReceipts')
+  }
+  catch (error) {
+    if (error instanceof AbilityEventReceiptValidationError) {
+      fail(
+        error.code === 'limit-exceeded' ? 'limit-exceeded' : 'invalid-encounter-state',
+        error.path,
+        error.message.slice(error.path.length + 2),
+      )
+    }
+    throw error
+  }
+}
+
+const parseAbilityReactionAvailability = (
+  value: unknown,
+): AbilityReactionAvailabilityLedger => {
+  try {
+    return parseAbilityReactionAvailabilityLedger(
+      value,
+      'encounterState.abilityReactionAvailability',
+    )
+  }
+  catch (error) {
+    if (error instanceof AbilityReactionAvailabilityValidationError) {
+      fail(
+        error.code === 'limit-exceeded' ? 'limit-exceeded' : 'invalid-encounter-state',
+        error.path,
+        error.message.slice(error.path.length + 2),
+      )
+    }
+    throw error
+  }
+}
+
+const parseAbilityEntities = (value: unknown): AbilityEntityState => {
+  try {
+    return parseAbilityEntityState(value, 'encounterState.abilityEntities')
+  }
+  catch (error) {
+    if (error instanceof AbilityEntityValidationError) {
+      fail(
+        error.code === 'limit-exceeded' ? 'limit-exceeded' : 'invalid-encounter-state',
+        error.path,
+        error.message.slice(error.path.length + 2),
+      )
+    }
+    throw error
+  }
+}
+
+const parseAbilityTransformations = (value: unknown): AbilityTransformationState => {
+  try {
+    return parseAbilityTransformationState(value, 'encounterState.abilityTransformations')
+  }
+  catch (error) {
+    if (error instanceof AbilityTransformationValidationError) {
+      fail(
+        error.code === 'limit-exceeded' ? 'limit-exceeded' : 'invalid-encounter-state',
+        error.path,
+        error.message.slice(error.path.length + 2),
+      )
+    }
+    throw error
+  }
+}
+
 const parsePendingResolutionSummaries = (
   value: unknown,
 ): readonly PendingMoveResolutionPublicSummary[] => {
@@ -534,6 +739,14 @@ export const createEmptyEncounterState = (): EncounterState => ({
   counters: {},
   history: createEmptyEncounterHistory(),
   turnResources: createEmptyEncounterTurnResources(),
+  abilityUsage: createEmptyAbilitySceneUsageLedger(),
+  abilityTiming: createEmptyAbilityTimingLedger(),
+  abilityEffectLifecycle: createEmptyAbilityEffectLifecycleState(),
+  abilityOwnedState: createEmptyAbilityOwnedState(),
+  abilityEventReceipts: createEmptyAbilityEventReceiptState(),
+  abilityReactionAvailability: createEmptyAbilityReactionAvailabilityLedger(),
+  abilityEntities: createEmptyAbilityEntityState(),
+  abilityTransformations: createEmptyAbilityTransformationState(),
   zones: [],
   groundItems: [],
   pendingResolutionSummaries: [],
@@ -571,6 +784,30 @@ export const parseEncounterState = (value: unknown): EncounterState => {
     effects: parseEncounterEffectList(value.effects, sides),
     history: parseEncounterHistoryState(value.history),
     turnResources: parseEncounterTurnResourceState(value.turnResources),
+    abilityUsage: parseAbilityUsageState(
+      value.abilityUsage ?? createEmptyAbilitySceneUsageLedger(),
+    ),
+    abilityTiming: parseAbilityTimingState(
+      value.abilityTiming ?? createEmptyAbilityTimingLedger(),
+    ),
+    abilityEffectLifecycle: parseAbilityEffectLifecycle(
+      value.abilityEffectLifecycle ?? createEmptyAbilityEffectLifecycleState(),
+    ),
+    abilityOwnedState: parseAbilityOwnedEncounterState(
+      value.abilityOwnedState ?? createEmptyAbilityOwnedState(),
+    ),
+    abilityEventReceipts: parseAbilityEventReceipts(
+      value.abilityEventReceipts ?? createEmptyAbilityEventReceiptState(),
+    ),
+    abilityReactionAvailability: parseAbilityReactionAvailability(
+      value.abilityReactionAvailability ?? createEmptyAbilityReactionAvailabilityLedger(),
+    ),
+    abilityEntities: parseAbilityEntities(
+      value.abilityEntities ?? createEmptyAbilityEntityState(),
+    ),
+    abilityTransformations: parseAbilityTransformations(
+      value.abilityTransformations ?? createEmptyAbilityTransformationState(),
+    ),
     zones: parseEncounterZoneList(value.zones, sides),
     groundItems: parseGroundItemList(value.groundItems ?? [], sides),
     pendingResolutionSummaries: parsePendingResolutionSummaries(

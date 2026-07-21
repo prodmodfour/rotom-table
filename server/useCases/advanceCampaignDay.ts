@@ -121,6 +121,16 @@ const planSheet = <TSheet extends { slug: string }>(
   const candidate = deepCloneJson(originalSheet) as TSheet & Record<string, unknown>
   const beforeJson = stablePersistableSheetJson(originalSheet)
   const summary = applyNextDay(candidate as TSheet)
+  if (Object.hasOwn(candidate, 'abilityUsage')) {
+    ;(candidate as Record<string, unknown>).abilityUsage = {
+      schemaVersion: 1,
+      dayKey: `campaign-day:${timestamp}`,
+      entries: [],
+    }
+  }
+  if (kind === 'pokemon' && Object.hasOwn(candidate, 'berryStorage')) {
+    delete (candidate as Record<string, unknown>).berryStorage
+  }
   const afterJson = stablePersistableSheetJson(candidate)
   const changed = beforeJson !== afterJson
   const plannedNextRevision = nextRevision(stored.revision)

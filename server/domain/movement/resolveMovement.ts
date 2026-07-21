@@ -39,6 +39,7 @@ import {
   ptuGridDistanceBetweenFootprints,
   ptuGridVectorDistance,
 } from '~/utils/ptuGridDistance'
+import { conditionAdjustedMovementCapability } from '~/utils/sheetConditionEffects'
 import {
   buildMapMovementTerrainIndex,
   movementTerrainForAnchor,
@@ -294,6 +295,59 @@ export interface AuthoritativeDisplacementFailure {
 export type AuthoritativeDisplacementResult =
   | AuthoritativeDisplacementSuccess
   | AuthoritativeDisplacementFailure
+
+export const AUTHORITATIVE_RELOCATION_MODES = ['teleport', 'swap'] as const
+export type AuthoritativeRelocationMode = (typeof AUTHORITATIVE_RELOCATION_MODES)[number]
+
+/** Server-only endpoint relocation. Route cells and movement speeds are intentionally irrelevant. */
+export interface ResolveAuthoritativeRelocationInput extends ResolveMovementInputBase {
+  readonly mode: AuthoritativeRelocationMode
+  readonly destination: GridAnchor
+  /** A swap counterpart may occupy this endpoint until the atomic commit. */
+  readonly ignoredPlacementIds?: readonly string[]
+}
+
+export interface AuthoritativeRelocationSuccess {
+  readonly ok: true
+  readonly reasonCode: 'relocation-legal'
+  readonly placementId: string
+  readonly mode: AuthoritativeRelocationMode
+  readonly origin: GridAnchor
+  readonly destination: GridAnchor
+  readonly distance: number
+  readonly path: readonly GridAnchor[]
+  readonly triggeringSteps: readonly AuthoritativeMovementTriggeringStep[]
+  readonly consultedPlacementIds: readonly string[]
+  readonly sheetReads: readonly AuthoritativeMovementSheetRead[]
+}
+
+export interface AuthoritativeRelocationFailure {
+  readonly ok: false
+  readonly reasonCode:
+    | 'relocation-mode-unsupported'
+    | 'relocation-destination-invalid'
+    | 'relocation-map-invalid'
+    | 'relocation-placement-missing'
+    | 'relocation-placement-duplicate'
+    | 'relocation-placement-unresolved'
+    | 'relocation-footprint-invalid'
+    | 'relocation-origin-out-of-bounds'
+    | 'relocation-origin-collision'
+    | 'relocation-destination-out-of-bounds'
+    | 'relocation-destination-occupied'
+  readonly message: string
+  readonly placementId: string
+  readonly mode: string
+  readonly origin: GridAnchor | null
+  readonly destination: GridAnchor | null
+  readonly collision: AuthoritativeMovementCollision | null
+  readonly consultedPlacementIds: readonly string[]
+  readonly sheetReads: readonly AuthoritativeMovementSheetRead[]
+}
+
+export type AuthoritativeRelocationResult =
+  | AuthoritativeRelocationSuccess
+  | AuthoritativeRelocationFailure
 
 export interface AuthoritativeMovementSheetRead {
   readonly kind: SheetKind
@@ -788,6 +842,33 @@ const buildMovementSnapshots = (
       },
       movementProfile: token.movementProfile,
     })
+  }
+
+  const arenaTrapMarks = (map.encounterState?.abilityOwnedState?.entries ?? []).filter(entry => (
+    entry.canonicalId === 'Arena Trap'
+    && entry.payload.kind === 'mark'
+    && entry.payload.markId === 'aa061.arena-trap.active'
+  ))
+  for (const [index, target] of placements.entries()) {
+    const trapped = arenaTrapMarks.some((mark) => {
+      const source = placements.find(candidate => candidate.id === mark.ownerPlacementId)
+      if (!source || !source.sideId || !target.sideId || source.sideId === target.sideId
+        || ptuGridDistanceBetweenFootprints(source, target) > 5) return false
+      return !target.typeIds.includes('flying')
+        && (target.movementCapabilities.levitate ?? 0) < 4
+        && (target.movementCapabilities.sky ?? 0) < 4
+        && (target.movementCapabilities.burrow ?? 0) < 4
+    })
+    if (!trapped) continue
+    const movementCapabilities = Object.fromEntries(Object.entries(target.movementCapabilities).map(([key, value]) => [
+      key,
+      conditionAdjustedMovementCapability(key, value, ['Slowed']),
+    ])) as MovementCapabilitySpeeds
+    placements[index] = {
+      ...target,
+      movementCapabilities,
+      movementProfile: { ...target.movementProfile, speeds: movementCapabilities },
+    }
   }
 
   const movers = placements.filter(placement => placement.id === placementId)
@@ -2104,6 +2185,156 @@ export const resolveAuthoritativeDisplacement = (
     distancePolicy: distancePolicy as AuthoritativeDisplacementDistancePolicy,
     ...cloneDisplacementPartial(partial),
     triggeringSteps,
+    consultedPlacementIds: [...consultedPlacementIds],
+    sheetReads: sheetReads.map(read => ({ ...read })),
+  })
+}
+
+const relocationSnapshotFailureCode = (
+  reasonCode: MovementSnapshotFailure['reasonCode'],
+): AuthoritativeRelocationFailure['reasonCode'] => {
+  if (reasonCode === 'movement-placement-missing') return 'relocation-placement-missing'
+  if (reasonCode === 'movement-placement-duplicate') return 'relocation-placement-duplicate'
+  if (reasonCode === 'movement-placement-unresolved') return 'relocation-placement-unresolved'
+  if (reasonCode === 'movement-footprint-invalid') return 'relocation-footprint-invalid'
+  return 'relocation-map-invalid'
+}
+
+const relocationFailure = (input: {
+  readonly reasonCode: AuthoritativeRelocationFailure['reasonCode']
+  readonly message: string
+  readonly placementId: string
+  readonly mode: string
+  readonly origin?: GridAnchor | null
+  readonly destination?: GridAnchor | null
+  readonly collision?: AuthoritativeMovementCollision | null
+  readonly consultedPlacementIds?: readonly string[]
+  readonly sheetReads?: readonly AuthoritativeMovementSheetRead[]
+}): AuthoritativeRelocationFailure => deepFreeze({
+  ok: false,
+  reasonCode: input.reasonCode,
+  message: input.message,
+  placementId: input.placementId,
+  mode: input.mode,
+  origin: input.origin ? cloneAnchor(input.origin) : null,
+  destination: input.destination ? cloneAnchor(input.destination) : null,
+  collision: input.collision ?? null,
+  consultedPlacementIds: [...(input.consultedPlacementIds ?? [])],
+  sheetReads: (input.sheetReads ?? []).map(read => ({ ...read })),
+})
+
+/**
+ * Resolve one instantaneous teleport or one side of an atomic swap. The same
+ * authoritative footprint, map bounds, placement occupancy, terrain voxels,
+ * gravity projection, and sheet read set used by ordinary movement are reused,
+ * while route traversal and speed are deliberately not consulted.
+ */
+export const resolveAuthoritativeRelocation = (
+  input: ResolveAuthoritativeRelocationInput,
+): AuthoritativeRelocationResult => {
+  const raw = input as ResolveAuthoritativeRelocationInput & Record<string, unknown>
+  const placementId = typeof raw.placementId === 'string' ? raw.placementId : String(raw.placementId)
+  const mode = typeof raw.mode === 'string' ? raw.mode : String(raw.mode)
+  if (mode !== 'teleport' && mode !== 'swap') {
+    return relocationFailure({
+      reasonCode: 'relocation-mode-unsupported', message: `Relocation mode ${mode} is unsupported.`,
+      placementId, mode,
+    })
+  }
+  if (!validAnchor(raw.destination)) {
+    return relocationFailure({
+      reasonCode: 'relocation-destination-invalid', message: 'Relocation destination must be a bounded safe-integer anchor.',
+      placementId, mode,
+    })
+  }
+  const invalidMap = validateMapGeometry(input.map)
+  if (invalidMap) {
+    return relocationFailure({ reasonCode: 'relocation-map-invalid', message: invalidMap, placementId, mode })
+  }
+  const snapshotsResult = buildMovementSnapshots(input.map, input.sheets, placementId)
+  if (!snapshotsResult.ok) {
+    return relocationFailure({
+      reasonCode: relocationSnapshotFailureCode(snapshotsResult.reasonCode),
+      message: snapshotsResult.message, placementId, mode,
+      consultedPlacementIds: snapshotsResult.consultedPlacementIds,
+      sheetReads: snapshotsResult.sheetReads,
+    })
+  }
+  const snapshots = projectGravityMovementSnapshots(
+    snapshotsResult,
+    gravityResolverForMap(input.map),
+  )
+  const { mover, sheetReads } = snapshots
+  const origin = cloneAnchor(mover.position)
+  const destination = cloneAnchor(raw.destination)
+  const consultedPlacementIds = snapshots.placements.map(placement => placement.id)
+  const ignored = new Set(input.ignoredPlacementIds ?? [])
+  if (ignored.has(placementId) || [...ignored].some(id => !consultedPlacementIds.includes(id))) {
+    return relocationFailure({
+      reasonCode: 'relocation-destination-invalid',
+      message: 'Relocation ignored-placement identities must name other authoritative placements.',
+      placementId, mode, origin, destination, consultedPlacementIds, sheetReads,
+    })
+  }
+  const terrainIndex = withBattlefieldZoneMovementTerrain({
+    map: input.map,
+    terrain: buildMapMovementTerrainIndex(input.map.voxels),
+    subject: {
+      placementId: mover.id, sideId: mover.sideId,
+      grounding: mover.movementProfile.state.grounding, typeIds: mover.typeIds,
+    },
+  })
+  const groundLevelY = input.map.groundLevelY ?? 0
+  if (!isAnchorWithinBounds(origin, mover, input.map.dimensions)) {
+    return relocationFailure({
+      reasonCode: 'relocation-origin-out-of-bounds', message: 'Relocation origin is outside map bounds.',
+      placementId, mode, origin, destination, consultedPlacementIds, sheetReads,
+    })
+  }
+  const originCollision = collisionAt(origin, mover, snapshots.placements, terrainIndex, groundLevelY)
+  if (originCollision) {
+    return relocationFailure({
+      reasonCode: 'relocation-origin-collision', message: 'Relocation origin intersects authoritative occupancy.',
+      placementId, mode, origin, destination, collision: originCollision, consultedPlacementIds, sheetReads,
+    })
+  }
+  if (!isAnchorWithinBounds(destination, mover, input.map.dimensions)) {
+    return relocationFailure({
+      reasonCode: 'relocation-destination-out-of-bounds', message: 'Relocation destination is outside map bounds.',
+      placementId, mode, origin, destination, collision: boundsCollision(destination), consultedPlacementIds, sheetReads,
+    })
+  }
+  const collision = collisionAt(
+    destination,
+    mover,
+    snapshots.placements.filter(placement => !ignored.has(placement.id)),
+    terrainIndex,
+    groundLevelY,
+  )
+  if (collision) {
+    return relocationFailure({
+      reasonCode: 'relocation-destination-occupied', message: 'Relocation destination intersects authoritative occupancy.',
+      placementId, mode, origin, destination, collision, consultedPlacementIds, sheetReads,
+    })
+  }
+  const distance = ptuGridDistanceBetweenFootprints(mover, { ...mover, position: destination })
+  const same = sameAnchor(origin, destination)
+  const terrain = displacementTerrain({ anchor: destination, mover, terrainIndex, groundLevelY })
+  const step: MovementPathStep | null = same ? null : {
+    index: 1, from: origin, to: destination, cost: distance, cumulativeCost: distance,
+    diagonal: origin.x !== destination.x && origin.z !== destination.z,
+    slow: false, capabilityKeys: [], terrain,
+  }
+  return deepFreeze({
+    ok: true,
+    reasonCode: 'relocation-legal',
+    placementId,
+    mode: mode as AuthoritativeRelocationMode,
+    origin,
+    destination,
+    distance,
+    path: same ? [origin] : [origin, destination],
+    triggeringSteps: step ? [triggeringStep(step, mover, snapshots.placements, 1)] : [],
     consultedPlacementIds: [...consultedPlacementIds],
     sheetReads: sheetReads.map(read => ({ ...read })),
   })

@@ -1,4 +1,5 @@
-import { moveEffectBranchPaths } from '#shared/moveAutomation/effects'
+import { createHash } from 'node:crypto'
+import { moveEffectBranchPaths, type MoveConditionEffectOperation, type MoveTemporaryEffectOperation } from '#shared/moveAutomation/effects'
 import {
   parseMoveResolutionAuditTrace,
   type MoveResolutionAuditTrace,
@@ -82,6 +83,12 @@ import {
   expectedMoveCoreTokenRecipientIds,
   resolveMoveCoreTokenDynamicRecipients,
 } from './reducers/coreTokenRecipients'
+import { reduceMoveResolutionTrace } from './trace'
+import { aa060MoveMarkId, hasAa060MoveMark } from '../abilityAutomation/mechanics/aa060MoveIntegration'
+import { aa060TriggeredMoveOverlayOperations } from '../abilityAutomation/mechanics/aa060TriggeredMoveIntegration'
+import { aa061TriggeredMoveOverlayOperations } from '../abilityAutomation/mechanics/aa061TriggeredMoveIntegration'
+import { aa062BoneLordEmpowersMove, aa062MoveOverlayOperations } from '../abilityAutomation/mechanics/aa062MoveIntegration'
+import { aa063MoveOverlayOperations } from '../abilityAutomation/mechanics/aa063MoveIntegration'
 
 export type ImmediateMoveSpecResolutionErrorCode =
   | 'execution-rejected'
@@ -914,7 +921,34 @@ export type MoveSpecResolutionOutcome =
 const executeReviewedMoveSpec = (
   options: ResolveMoveSpecOptions,
 ): MoveSpecExecutionCompleteResult | MoveSpecExecutionPendingResult => {
+  const script = compatibilityScript(options.entry, options.runtime)
+  const moveSourceId = options.runtime.definition.spec.phases
+    .flatMap(phase => phase.operations)
+    .find(operation => operation.source.kind === 'move')?.source.id
+    ?? `move.${options.runtime.canonicalId}`
+  const overlayInput = {
+    context: options.context,
+    script,
+    moveSourceId,
+    authoritativeTargetIds: options.authoritativeTargetIds,
+  }
+  const abilityOverlays = [
+    ...aa060TriggeredMoveOverlayOperations(overlayInput),
+    ...aa061TriggeredMoveOverlayOperations(overlayInput),
+    ...aa062MoveOverlayOperations(overlayInput),
+    ...aa063MoveOverlayOperations(overlayInput),
+  ]
+  const boneLordLine = script.moveName === 'Bonemerang'
+    && aa062BoneLordEmpowersMove(options.context, 'Bonemerang')
   const execution = executeMoveSpec({
+    serverAbilityOverlayOperations: abilityOverlays,
+    ...(boneLordLine ? {
+      serverAbilityTargetingOverride: {
+        kind: 'area' as const, minTargets: 0, maxTargets: 32,
+        selector: { kind: 'area-targets' as const },
+        predicate: { relationship: 'any' as const, willingness: 'any' as const, excludeActor: true },
+      },
+    } : {}),
     definition: options.runtime.definition,
     context: options.context,
     targetBranchId: options.targetBranchId,
@@ -933,16 +967,72 @@ const executeReviewedMoveSpec = (
   return execution
 }
 
+const aa060AmbushOperations = (input: {
+  readonly context: AuthoritativeMoveRulesContext
+  readonly script: MoveAutomationScript
+  readonly execution: MoveSpecExecutionCompleteResult
+  readonly authored: readonly MoveSpecEmittedOperation[]
+}): readonly MoveSpecEmittedOperation[] => {
+  if (!hasAa060MoveMark(input.context, 'Ambush', input.script.moveName)
+    || input.execution.hitTargetIds.length === 0) return []
+  const damageSourceId = input.authored.find(emission => emission.operation.kind === 'damage')?.operation.id
+  if (!damageSourceId) return []
+  const mark = input.context.map.encounterState?.abilityOwnedState?.entries.find(entry => (
+    entry.ownerPlacementId === input.context.actor.placement.id
+    && entry.canonicalId === 'Ambush'
+    && entry.payload.kind === 'mark'
+    && entry.payload.markId === aa060MoveMarkId('Ambush', input.script.moveName)
+  ))
+  if (!mark) return []
+  const suffix = createHash('sha256')
+    .update(`${input.context.resolutionId ?? input.script.moveName}\u0000${mark.stateId}`)
+    .digest('hex').slice(0, 24)
+  const condition: MoveConditionEffectOperation = {
+    id: `ability.ambush.flinch.${suffix}`, kind: 'condition',
+    source: { kind: 'operation', id: damageSourceId }, recipients: { kind: 'hit-targets' },
+    phase: 'cleanup', reasonCode: 'ability.ambush.flinched',
+    payload: {
+      action: 'apply', conditionId: 'flinched', conditionSource: null,
+      filter: null, randomChoice: null,
+      duration: {
+        effectId: `ability.ambush.flinch.${suffix}`,
+        duration: { kind: 'turns', subject: 'target', boundary: 'end', remaining: 1 },
+        transferPolicy: 'expire',
+      },
+      saveTiming: 'canonical', stackPolicy: { kind: 'refresh', maxStacks: null },
+    },
+  }
+  const accuracy: MoveTemporaryEffectOperation = {
+    id: `ability.ambush.accuracy.${suffix}`, kind: 'temporary-effect',
+    source: { kind: 'operation', id: damageSourceId }, recipients: { kind: 'hit-targets' },
+    phase: 'cleanup', reasonCode: 'ability.ambush.accuracy-penalty',
+    payload: {
+      action: 'add', effectId: `ability.ambush.accuracy.${suffix}`, recipientScope: 'placements',
+      definition: {
+        kind: 'numeric-modifier', duration: { kind: 'rounds', boundary: 'end', remaining: 1 },
+        stacks: 1, charges: null, stackPolicy: { kind: 'refresh', maxStacks: null },
+        chargePolicy: { kind: 'none', amount: null }, tags: ['aa060', 'ambush', 'accuracy-penalty'],
+        payload: { attribute: 'accuracy', operation: 'add', value: -2, rounding: 'none' },
+        dispel: { policy: 'matching-tags', tags: ['aa060', 'ambush'] }, transferPolicy: 'expire',
+      },
+    },
+  }
+  return Object.freeze([
+    { operation: condition, recipientIds: Object.freeze([...input.execution.hitTargetIds]) },
+    { operation: accuracy, recipientIds: Object.freeze([...input.execution.hitTargetIds]) },
+  ])
+}
+
 /** Reduce one already completed interpreter result into the immediate planner projection. */
 export const reduceCompletedMoveSpec = (
   options: ResolveMoveSpecOptions,
   execution: MoveSpecExecutionCompleteResult,
   alreadyCommittedOperationIds: ReadonlySet<string> = new Set(),
 ): ImmediateMoveSpecResolution => {
-  const uncommittedOperations = execution.operations.filter(({ operation }) => (
+  const authoredOperations = execution.operations.filter(({ operation }) => (
     !alreadyCommittedOperationIds.has(operation.id)
   ))
-  assertSupportedImmediateOperations(uncommittedOperations)
+  assertSupportedImmediateOperations(authoredOperations)
 
   const compatibility = compatibilityScript(options.entry, options.runtime)
   const childOperationIds = new Set(
@@ -955,6 +1045,25 @@ export const reduceCompletedMoveSpec = (
   const script: MoveAutomationScript = resolvedTypes.length === 1
     ? { ...compatibility, type: resolvedTypes[0]! }
     : compatibility
+  const abilityOperations = aa060AmbushOperations({
+    context: options.context,
+    script,
+    execution,
+    authored: authoredOperations,
+  })
+  const uncommittedOperations = [...authoredOperations, ...abilityOperations]
+  assertSupportedImmediateOperations(uncommittedOperations)
+  let reductionTrace = execution.trace
+  for (const emission of abilityOperations) {
+    reductionTrace = reduceMoveResolutionTrace(reductionTrace, {
+      kind: 'operation', phase: emission.operation.phase,
+      operationId: emission.operation.id, operationKind: emission.operation.kind,
+      recipientIds: emission.recipientIds, outcome: 'applied',
+      reasonCode: emission.operation.reasonCode,
+      input: emission.operation.payload as unknown as import('#shared/moveAutomation/trace').MoveResolutionTraceJsonValue,
+      result: { status: 'emitted' },
+    })
+  }
   const contextForOperation = createMoveSpecOperationContextResolver({
     root: options.context,
     children: execution.childExecutions,
@@ -1034,7 +1143,7 @@ export const reduceCompletedMoveSpec = (
       children: execution.childExecutions,
       contextForOperation,
     }),
-    trace: execution.trace,
+    trace: reductionTrace,
   })
   const knockOffItems = reduceKnockOffItemOutcome({
     context: options.context,

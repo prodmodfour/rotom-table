@@ -21,6 +21,8 @@ Privacy is default-deny. Viewer privileges are additive, but each asset is proje
 - Public combat logs use an allowlist independent of private audit records. Observability exposes bounded aggregate labels and counts, not ability names, principals, option IDs, rolls, sheets, or traces.
 - Unauthenticated access receives none of these assets. GM projections are authorized and auditable; operational access is aggregate-only.
 
+`shared/abilityAutomation/results.ts` enforces this split at the wire boundary. Public accepted results contain only operation/resolution/map identities, one revision transition, terminal outcome, and a generic presentation key. Public pending results add only phase, timestamps, and outstanding-window count—never ability, actor, responder, option, roll, trace, or read identity. Authorized views add bounded ability identity and operation counts or one opaque response window. `server/domain/abilityAutomation/results.ts` performs role/responder authorization and strips private recipient IDs, effect operation IDs, principal lists, state plans, reads, rolls, and traces before strict parsing.
+
 The closed policy and reciprocal threat/asset links are enforced by `shared/abilityAutomation/privacy.ts` and `data/ability-automation/privacy-matrix.json`.
 
 Important locations:
@@ -86,6 +88,10 @@ Presentation keys never authorize disclosure and handlers never expand the envel
 
 The SHA-256 definition material includes hash-format version, ability ruleset ID, canonicalization version, canonical source-data hash, dependency-closed capability IDs, used extension parser versions, registered handler identity/version, and the normalized spec. A change to rules provenance or reviewed executable code therefore requires an intentional manifest hash update.
 
+`server/domain/abilityAutomation/registry.ts` is the only production AbilitySpec lookup. Registration code is duplicate-checked but does not make an ability executable: lookup succeeds only when the canonical manifest row is complete and its `abilityspec-v1` version, definition hash, and source module exactly match the evaluated registration. Missing or mismatched selected registrations fail startup/checking; blocked rows resolve to `null` even if migration code exists. Clients never select runtime metadata.
+
+`server/domain/abilityAutomation/context.ts` detaches the map, sheets, actor, source, selected targets, sides, encounter effects/history, effective-ability projection, private item scope, runtime capabilities, and rules provenance before eligibility runs. Participant and private-item revisions enter one deduplicated read set; every later sheet/effective-ability/group-inventory query records its consulted revision. Conflicting reads fail closed. All reachable data and query facades are frozen, while private lookup maps remain inaccessible. A separate adapter projects only the closed handler snapshot and five read-recording pure queries.
+
 ## Choose the correct runtime mode
 
 An ability can own more than one mode.
@@ -112,9 +118,71 @@ Mandatory deterministic triggers can resolve immediately. Optional triggers, Int
 
 Model each clause. A Bonus paragraph may be Static while the primary effect is activated or triggered. Do not flatten one clause into a log note or hide it in presentation metadata.
 
+## Frequency declarations
+
+`shared/abilityAutomation/frequency.ts` parses all 483 source strings without inferring action economy. `Static` and `At-Will` have no spend count; `Scene`/`Daily` default to one and preserve explicit `xN`; the action/timing suffix is retained verbatim for the action parser. The two `Special` abilities require source-hash-bound entries in `data/ability-automation/frequency-exceptions.json`: Illusion has separate at-will mark/dismiss and once-per-round guise clauses, while Receiver has two independently once-per-scene clauses. Unreviewed Special text, At-Will counts, invalid bounds, stale source text, and unused exception rows fail closed.
+
+`shared/abilityAutomation/actionEconomy.ts` then models no-cost passive/triggered behavior and Standard, Shift, Swift, Free, Full, Extended, and Special costs with Normal, Priority, Interrupt, or Reaction timing. Every Interrupt and Reaction consumes the same `interrupt-reaction` availability pool regardless of its base action cost. Six source-hash-bound rows in `action-exceptions.json` enumerate Comatose, Illusion, Memory Wipe, Sap Sipper, Strange Tempo, and Vicious rather than guessing from `Move Action`, `Special`, or missing suffixes. Action variants are stable reviewed branch IDs.
+
+`shared/abilityAutomation/resources.ts` stores Scene usage in the map encounter envelope and Daily usage on the lasting Pokémon/trainer sheet. Each bounded entry is keyed by its authoritative owner (scene placement or lasting sheet), stable effective-ability identity (base abilities normalize independently of placement), canonical ability, and reviewed frequency clause; retained operation IDs make retries idempotent and cannot be reused across resources. `server/domain/abilityAutomation/usage.ts` plans revision-checked payments without mutation, refuses stale scene/day lifecycle keys or exhausted uses, and can merge a fresh payment with disjoint effects into one atomic state change. Only explicit authoritative scene/day transition helpers clear a ledger. At-Will actions produce no resource write.
+
+`shared/abilityAutomation/timingResources.ts` adds monotonic round/turn windows, bounded delayed-reavailability records, and scene-long receipts to encounter state. Receipts retain the original spend or ready sequence, so a retry remains exact even after its old window reset. `server/domain/abilityAutomation/timing.ts` plans once-per-window and cooldown payments, rejects cursor regression and cross-resource operation reuse, resets Scene and timing state together, and strictly reconciles persisted state after restart/reconnect. `timing-constraints.json` source-binds the two explicit canonical limits—Harvest once per turn and Illusion once per round—rather than scanning effect prose at runtime. Generic cooldown support is closed and bounded for reviewed future definitions; no canonical cooldown is asserted by this catalog.
+
+`server/domain/abilityAutomation/effectiveAbilities.ts` projects canonical abilities in one deterministic precedence order: sheet base, transformation snapshot, encounter-ordered grant/copy/replace/swap layers, then the union of listed/all suppressions. Replaced entries remain in the private authoritative projection with explicit reason codes while only active entries satisfy eligibility. Inactive, nonapplicable, and noncanonical labels cannot become native abilities. `protections.json` source-binds the four exceptional policies for Huge Power / Pure Power, Multitype, Sorcery, and Splendorous Rider; protected copy/transform/swap attempts fail closed and protected abilities ignore disabling. The immutable context derives this projection from server-owned sheets and encounter effects by default; its recovery override has a strict closed shape.
+
+`shared/abilityAutomation/passiveProviders.ts` defines the closed passive vocabulary for stat, damage, accuracy, evasion, immunity, movement, side, and field domains. Attributes and stacking groups are explicit stable IDs; operations are bounded numeric transforms or grant/deny facts. Groups must agree on `stack`, `highest`, `lowest`, `priority`, `union`, or `exclusive` policy, with deterministic priority and code-point identity tie-breaks. Numeric application remains ordered and bounded. `server/domain/abilityAutomation/passiveProviders.ts` authorizes every provider against an active effective-ability instance before aggregation, so suppressed, spoofed, and absent sources cannot contribute.
+
+`shared/abilityAutomation/parameters.ts` defines lasting sheet-owned ability instance IDs and ordered canonical option IDs; display labels never carry mechanics. `parameter-definitions.json` source-binds Color Theory's server-rolled color, Serpent’s Mark's inherited/server-rolled pattern, and Type Strategist's sheet choice. Definitions and instance data are versioned, bounded, detached, and exact-shape validated. Missing required data leaves the effective ability inactive with `ability.parameters.missing`; legacy names such as `Type Strategist (Fire)` are not parsed. Unparameterized legacy rows retain an explicit compatibility instance until saved with stable instance data.
+
+`shared/abilityAutomation/durations.ts` owns bounded lifecycle links from an ability instance to its effect payload. The closed duration kinds are source/target turn, round, scene, source presence, source ability, target presence, weather, terrain, and exact until-triggered. `server/domain/abilityAutomation/effectLifecycle.ts` reduces typed authoritative boundary/snapshot events, decrements counters, and removes expired payload effects plus lifecycle ownership in one encounter revision. Restart recovery reconciles presence, active ability instances, weather, and terrain deterministically. Explicit scene transition expires all encounter-local ability lifecycles before resetting Scene and timing resources.
+
+`shared/abilityAutomation/ownedState.ts` stores marks, bounded counters, token pools, modes, and forms in one strict encounter-owned envelope. Every entry has an optimistic version, source ability/owner linkage, linked targets, lifecycle policy, and create/last-operation ancestry. `server/domain/abilityAutomation/ownedState.ts` validates closed commands, hashes their exact JSON, retains scene receipts, rejects conflicting retries and stale versions, authorizes the active source ability and targets, and plans one revision-checked encounter update. Presence, source-ability, target, scene, and restart cleanup are deterministic. The immutable context and pure handler port expose read-only bounded queries; normal scene transition clears this state atomically with other ability resources.
+
+`server/domain/abilityAutomation/recovery.ts` exports a strict private recovery bundle containing the complete encounter envelope, lasting Daily ledgers, and pending private results with trace, roll ledger, response window, responder principals, and opaque JSON continuation cursor. A deterministic SHA-256 detects backup corruption; it is not a substitute for storage access control or encryption. Import verifies ruleset, map revision, trace/roll identity, and exact runtime version/hash/module before reconciling timing, presence, source ability, weather, terrain, and owned state. Reconnect callers retain the private result and must use the existing authorization projector; raw bundles must never be sent to table clients. Normal SQLite map/sheet JSON export preserves these fields because they are part of the canonical documents.
+
+`shared/abilityAutomation/events.ts` is the closed private event grammar consumed by ability routing. It carries only accepted server facts in seven families: action, HP, condition, combat stage, item, field, and lifecycle. Each payload has exact fields and outcome arithmetic/invariants; batches require unique IDs plus monotonic sequence, map revision, and captured time. Target and tag order remains semantic. These events may contain private HP, ownership, or ability-instance facts and are never public realtime DTOs. Later routing tickets may extend the versioned vocabulary with reviewed move/damage details rather than accepting arbitrary event metadata.
+
+`server/domain/abilityAutomation/subscriptionRouter.ts` matches only validated event kinds and closed checkpoints against subscriptions from exact manifest-selected runtimes. It walks current effective ability instances in stable placement/canonical/instance order, rejects definition drift, evaluates only version-matched registered predicate semantics, and sorts routes by priority then code-point identity. Missing or throwing predicate evaluators fail closed. Routing results and diagnostics are private eligibility data, not responder/public projections.
+
+The `move` event family records canonical move identity and definition hash, declaration/use checkpoint, canonical elemental type, Physical/Special/Status class, normalized range bounds/kind, an explicit closed keyword set, reviewed semantic branch IDs, and separate declared/attacked/hit/missed/critical target identities. Target subset and terminal-outcome invariants fail closed. `ability-move-fact` is a version-matched AbilitySpec predicate over timing, type, class, any/all keywords, user relation, and owner target outcome; both its parser and evaluator are registered in production. Move facts must come from accepted server resolution data—never range/effect prose or browser labels.
+
+The `strike` family separates accuracy and damage checkpoints per strike. It binds move/runtime operation, strike index/count, attacker/defender, melee/ranged/area context, contact, directness, type/class, critical and effectiveness facts, and exact rolled/post-defense/reduction/prevention/temporary-HP/HP loss arithmetic. Impossible critical, immune, contact, and prevention combinations fail closed. `ability-strike-fact` filters these private packets by owner role, strike position, outcome, contact, critical, effectiveness, prevention, and minimum actual loss; its versioned parser/evaluator are production-registered.
+
+The `hp` family is emitted from accepted reducer outcomes and records current/max/full HP, temporary HP, requested/applied amount, Injuries, the derived half-full-HP Massive Damage threshold, Injury application, faint/revive transition, source operation, and stable application identity. Arithmetic and transition flags are recomputed during parsing. `ability-hp-fact` filters subject/actor role, change kind, fainting, Massive Damage, Injury/temporary-HP direction, thresholds, and actual applied amount. `abilityEventReceipts` persists event/application hashes in encounter state; exact retries emit no second event while changed reuse fails closed, and scene transition clears the bounded receipt ledger.
+
+Condition events distinguish apply/remove/save/cure/reset/transfer attempts from applied, prevented, no-op, succeeded, failed, and transferred outcomes. They retain before/after presence, exact save roll, transfer counterpart, source placement/ability/effect/operation, prevention reasons, and application identity. Combat Stage and raw stat events retain requested versus applied deltas, bounds, cap/prevention/reset/transfer outcome, layer, and source provenance with validated arithmetic. `ability-condition-fact` and `ability-value-change-fact` provide versioned source/owner/outcome/direction filters; their parser/evaluator pairs are production-registered. Their application IDs use the same replay receipt boundary as HP events.
+
+Movement events are emitted at authoritative `pre-step` and accepted `post-step` checkpoints. Each packet binds the immutable origin-first path, exact step, cumulative/total distance, voluntary/forced/teleport/swap mode, before/after grounding, canonical adjacency and terrain snapshots, and ordered entered/exited zone facts with hazard/terrain/zone source provenance. Path cells, final distance, source identities, and self-adjacency are validated. `ability-movement-fact` filters owner-relative mover/source/adjacency, checkpoint, mode, first/final step, grounding transition, terrain transition, zone kind/direction, and minimum step distance. Movement application receipts make each checkpoint retry-safe.
+
+Presence events distinguish send-out, recall, and atomic switch facts with outgoing/incoming placement and cell identities, side, initiative revision, and accepted application identity. Initiative events preserve ordered before/after lists, active placements, affected placement, round/turn clocks, and consecutive resource revisions for roll/insert/remove/reorder/delay/advance/reset changes; membership, order, and clock claims are cross-validated. Scene, round, turn, presence, and effective-ability lifecycle facts remain the reset source for lifecycle reducers. Production-registered `ability-presence-fact`, `ability-initiative-fact`, and `ability-lifecycle-fact` predicates route these events by owner relation, position/clock transition, boundary, and ordinal. The subscription router then orders simultaneous sources by priority, canonical ability, placement, instance, and subscription IDs.
+
+Item packets cover inventory and held-item add/remove/use/consume/equip/unequip/transfer/drop/pickup/trade outcomes. They retain stable item-resource identity, requested/applied quantity, before/after owner and slot, consecutive resource revisions, source ability/operation, prevention, and application identity; partial, prevented, and no-op claims are validated independently. Field packets cover weather, terrain, room, and hazard application/refresh/removal/expiry with zone identity, before/after presence, layer, duration, field revision, source, prevention, and retry identity. `ability-item-fact` and `ability-field-fact` are production-registered filters over resource, owner/source, outcome, quantity, presence, and layer.
+
+Every subscription now declares whether it is guarded once per causal chain. The trigger-chain coordinator consumes the shared event/trigger/depth budgets, orders simultaneous routes by priority and stable source identity, executes child events depth-first, preserves exact runtime version/hash/module ancestry, and permits pass only for optional triggers. It suppresses an ancestor route cycle and a repeated once-per-chain guard with distinct terminal reason codes; event identities cannot repeat. All pending and terminal trigger facts are exposed only as detached, deeply frozen private snapshots.
+
+Activated declarations use short-lived, map-revision-bound server offers. A private offer enumerates reviewed token, self, side, area, field, cell, direction, type, stat, move, ability, item, and branch options with exact mechanical references, runtime identity, and SHA-256 integrity. The client intent echoes only offer identity/hash and ordered stable option IDs. Resolution rechecks lifetime, revision, actor/ability/mode/runtime identity, declaration order, cardinality, and option membership before recovering private mechanics. Controller projection strips placement, cell, move, ability, and item references and exposes only option IDs and presentation keys.
+
+An optional trigger suspends as a strict private `PendingAbilityResolution`. The durable record binds the causal trigger and reviewed runtime, passable response owners, legal option/operation IDs, complete map/sheet/inventory read set, audit trace, exact roll ledger, timestamps, request hash, and a versioned AbilitySpec phase/operation cursor with prior choices. Persistence revalidates every post-reservation revision inside the store transaction. Exact operation retries return the same record; changed reuse and duplicate resolution IDs fail closed. No arbitrary continuation patch or callback field is accepted.
+
+Interrupt and Reaction variants arbitrate at an exact event checkpoint. Interrupt windows are before-checkpoint and Reactions after-checkpoint; within each timing, priority then canonical ability, owner, instance, subscription, and window IDs determine order. Both action kinds spend the same owner-wide `interrupt-reaction` encounter ledger once per authoritative round. The spend is atomic and receipt-backed, resets only on monotonic round/scene transitions, and survives recovery. Pass closes only the current optional window, spends nothing, and resumes at the next deterministic priority. Checkpoint information tables are disclosure maxima, never authorization grants.
+
+A durable pending saga wraps each private pending resolution with an optimistic version and causal audit receipts. It supports owner selection/pass/cancel, GM force-pass and read-validated recovery, system expiry/conflict/commit, and exact command retry. Selection alone enters `resuming`; a separate system commit makes it terminal. Expiry cannot run before the stored deadline, mandatory administrative actions require their exact role, stale versions/CAS writes conflict, and no command can mutate a terminal saga. Every receipt binds the original chain, trigger, and event and is replay-validated against its action/status transition.
+
+Response projection is authorization-first and surface-specific. Eligible HTTP responders receive only opaque option IDs and presentation keys; hidden ability/source/target, other owners, operations, reads, rolls, traces, and causal IDs are omitted. GM views may include ability and owner identity only through an audited callback, while effect programs and rolls remain withheld. Source acknowledgements are generic, map/SSE state exposes only an aggregate pending count, and public combat logs/replay use a terminal outcome allowlist with no mechanic identities. Ineligible and malformed viewers receive one generic denial. Legacy pending-result projection also redacts ability identity from non-GM responders.
+
+`ability-targeting` is the closed targeting policy for direct, footprint-adjacent, and area ability choices. The server resolver combines reviewed self/ally/enemy/same-side rules, authorized willingness declarations, complete-footprint PTU distance, cardinal face adjacency, injected server visibility, voxel/placement/Barrier line of sight, and Burst/Close Blast/Cone/Line/Ranged Blast geometry. Requested placement IDs can only narrow the server candidate set. Free-aim centers and directions come from hash-bound offer options, map bounds are applied, and every excluded requested/geometry candidate receives private reason evidence.
+
+`ability-check` defines bounded check, save, and opposed-contest dice, modifiers, threshold comparison, reroll trigger/selection, and reviewed reroll source budgets. The server random stream owns every draw and charges the causal roll budget. Attempts have stable IDs and exact parent-roll/source ancestry; replace/highest/lowest selection never reorders attempts. Submitted reroll source IDs must come from reviewed, hash-bound choices, source-use and total limits are enforced, and success/failure triggers fail closed. Condition/save events can reference the selected roll while the complete private ledger remains in trace/recovery state.
+
 ## Reuse specs, operations, and handlers correctly
 
 Prefer declarative AbilitySpec data when subscriptions, targeting, predicates, costs, and operations fit closed schemas. Reuse MoveSpec selectors, expressions, effect operations, reducers, encounter effects, and planners only when semantics match exactly.
+
+The current adapter is `server/domain/abilityAutomation/sharedKernelExtensions.ts` plus `effectKernel.ts`. It registers the shared selector and predicate/expression grammars and an ability-native `shared-effect` wrapper. The wrapper retains `{ kind: "ability", id }` provenance and the enclosing AbilitySpec phase; a temporary parser-only phase/source translation is never returned, traced, or persisted. Move-only usage/history mutations are rejected. Recipient sets resolve from the ability context in authoritative map order, and compatible Combat Stage effects use the same cap-aware reducer and revisioned state-plan builder. Unsupported geometry or operation families fail closed until their owning machinery ticket adapts them; they are never approximated through a synthetic move intent.
+
+`server/domain/abilityAutomation/statePlan.ts` joins that typed state plan with the complete deduplicated context read set, exact runtime identity, private trace, and exact roll ledger. Every map/sheet/group-inventory write must have a matching read at the same expected revision, and every authoritative roll must occur exactly once in the trace. The commit API enters one store-supplied physical transaction, checks every consulted resource—including read-only resources—before any write, applies all typed map/encounter/sheet/inventory changes, and stores trace/roll evidence in that same transaction. A stale or missing read raises a conflict before state or audit is applied.
+
+`shared/abilityAutomation/performanceBudgets.ts` and `server/domain/abilityAutomation/executionBudget.ts` bound each causal chain before allocation grows: per-event fan-out and triggers, total events/triggers, nested depth and child executions, operations, per-operation and total recipients, rolls, choices, and trace events. Child executions share parent counters. The context wraps its random ledger and shared-effect planner with the same budget; later routers/windows consume the event/trigger/choice counters. Negative, fractional, over-canonical, or exhausted budgets fail closed, and synthetic maximum checks have a CI wall-time guard.
 
 Add a reusable typed primitive when multiple abilities need a missing concept. A primitive owns parsing, limits, pure evaluation/reduction, trace behavior, state ownership, and tests.
 
@@ -127,9 +195,17 @@ Use a registered handler only for bounded contextual calculation that cannot rea
 
 Never use a handler to bypass a missing reusable primitive or execute canonical prose.
 
+`server/domain/abilityAutomation/handlers/registry.ts` is the handler boundary. Registrations contain exactly stable ID, positive version, and synchronous function; production starts empty. Execution supplies only a detached frozen identity/event snapshot and five closed pure query methods. It supplies no repository, persistence API, clock, ID generator, network client, random source, or generic query escape hatch. Query implementations own read recording and every structured result is detached, bounded, and frozen before the handler sees it.
+
+A handler may return only canonically ordered `{ phase, operation }` entries accepted by a registered closed operation parser plus bounded scalar predicate/target/calculation trace evidence. Output is strict JSON and is detached, limit-checked, and frozen. Version mismatch, thrown calculation, malformed query results, unknown operation kinds, phase reversal, callbacks, and oversized output fail closed without exposing thrown private detail. Reviewed handler modules are statically checked for ambient I/O, time, and randomness APIs.
+
 ## Event and reaction rules
 
 Events are server-internal facts emitted after accepted reducers/use cases establish them. Every event has a stable ID, source operation, optional causal parent, reason code, exact kind, and bounded payload.
+
+`shared/abilityAutomation/trace.ts` owns the private immutable audit trace. It is pinned to resolution ID, canonical ability/mode, AbilitySpec version/hash/source module, ruleset/source hash, and contiguous causal ancestry. Strict sequenced events cover phase transitions, effective/suppressed eligibility, subscription matching, private choices, roll-ledger entries, operations, prevention, lifecycle, and child abilities. Events cannot occur outside the active phase, phases cannot repeat or move backward, roll IDs cannot repeat, and direct-child depth must match ancestry. Persisted traces are validated by deterministic replay of these invariants.
+
+Ability randomness uses `server/domain/abilityAutomation/random.ts`, an ability-owned facade over the shared bounded entropy kernel. The server supplies entropy, every request has a stable parent effect and optional stable roll ID, exact draws/modifiers/results are frozen in the private ledger, and finite test streams fail on missing or unused draws. `AuthoritativeAbilityContext` owns the random ledger and ancestry; clients never submit either.
 
 When adding a subscription:
 
@@ -152,6 +228,176 @@ A pass declines only the current optional window. It does not consume a Reaction
 - Full suspended state belongs to pending-resolution storage; map state receives only a bounded public summary.
 
 Action and frequency payment must be planned, revision-checked, and committed with the effect or explicitly reviewed pre-window state. Exact retries reuse the original operation/result. Reset behavior is driven by accepted game events, not wall-clock timers or component lifecycle.
+
+## Ability-created encounter entities
+
+Abilities that create anchors, decoys, objects, or subordinate creatures use the versioned
+`abilityEntities` encounter document. These entities are encounter facts, not Pokémon or trainer
+sheets: they have stable entity IDs, explicit controller/side data, map footprint and occupancy,
+targetability, movement policy, optional bounded HP/DR, source ability provenance, typed duration,
+and a closed kind-specific payload. The strict JSON parser rejects unknown fields, malformed
+cross-field combinations, duplicate IDs, unordered tags, and unbounded documents.
+
+Entity commands are optimistic and receipt-backed. Create, move, damage, control-transfer, and
+remove operations bind an operation ID to the complete command hash; exact retries return the
+recorded outcome while changed reuse fails closed. Authoritative planning verifies the active source
+ability, owner/controller, map bounds, movement range, and blocking-footprint collisions before
+emitting one revisioned encounter-state plan. Entity targeting is explicit, and entity lifecycle is
+advanced by the same turn, round, scene, presence, source-ability, field, and trigger events used by
+ability effects. Scene end therefore removes these temporary non-sheet entities and preserves no
+orphaned sheet data.
+
+## Ability movement and displacement
+
+Ability movement never accepts a browser-authored path, distance, collision result, or checkpoint
+decision. A closed server command selects only reviewed shift, straight displacement, teleport, or
+atomic swap mechanics. Normal and forced movement reuse the authoritative movement oracle and its
+terrain, footprint, capability, distance, and occupancy facts. Teleports reuse the same endpoint
+oracle while deliberately skipping route traversal; swaps validate both endpoint relocations and
+the final pair of footprints before producing one map revision plan.
+
+Every resolved path is converted to ordered movement lifecycle facts before placement state can be
+committed. If a pre-step Interrupt/Reaction opens, planning returns a pending checkpoint with no
+committable relocation; the durable response saga owns continuation. Up-to displacement truncates
+at the first obstruction, while full-distance displacement fails closed. Active anchor entities may
+explicitly prevent voluntary, forced, teleport, or swap movement, and blocking ability-created
+entities participate in route and endpoint validation. Successful plans atomically replace typed
+placement state, lifecycle encounter state when changed, and the bounded movement audit log.
+
+## Forms, disguise, illusion, copy, and transformation
+
+Volatile forms use immutable `abilityTransformations` snapshots rather than rewriting a sheet. A
+snapshot binds its source ability and operation, affected placement, typed duration, mechanical
+projection, and presentation projection. Copy and full-transformation snapshots also capture the
+source placement/revision and hash the complete copy base together with the copied mechanics.
+There is intentionally no update command: changed source sheets cannot retroactively alter copied
+abilities, moves, types, footprint, weight, or capability tags. Removal and lifecycle expiry are the
+only post-creation transitions, and exact command retries are receipt-backed.
+
+Disguise and illusion snapshots are required to have mechanically neutral projections. Presentation
+is split into a public masked identity and optional private truth with an explicit owner/GM reveal
+policy. The default public view contains no mechanic, source placement, source ability, canonical
+ability, or private-presentation fields. Effective-ability projection consumes only hash-validated
+mechanical snapshots in encounter order; copied instance IDs, definition hashes, source identity,
+and parameter selections stay frozen even if the source later changes. Source presence, source
+ability, target presence, field duration, scene cleanup, and recovery use the common lifecycle
+machinery.
+
+## Combat providers
+
+Damage, Damage Base, move type, STAB, Accuracy, and critical changes use closed combat-provider
+records. Every provider names an active effective ability instance, source placement, actor/target
+subject relation, reviewed move/type/class/keyword/STAB predicate, stacking group/policy, priority,
+and one typed effect. Unknown fields and operations, contradictory predicates, unsafe values,
+duplicate IDs, incompatible stacking, and inactive sources fail closed.
+
+Resolution order is semantic: move type, STAB, Damage Base, staged damage, Accuracy, then critical.
+A type replacement therefore changes type-based STAB and can satisfy later predicates. Standard
+STAB is applied before DB providers. Damage modifiers retain pre-type, post-type, and final stage
+order; target effectiveness is recomputed from authoritative target types after type providers.
+Accuracy distinguishes a numeric modifier from automatic hit, and critical providers consume the
+separate natural critical roll rather than conflating it with Accuracy ancestry. Every applied,
+shadowed, out-of-scope, or predicate-false provider produces a deterministic private trace entry.
+
+Immunity, resistance, vulnerability, protection, and bypass use a separate closed defense-provider
+grammar. Defensive effects match reviewed move ID, type, keyword, damage class, or effect category
+and carry an explicit protection tag. Bypass never means “ignore abilities” implicitly: it must name
+both the exact defense kind and protection tag. Resolution applies bypass first, then protection,
+immunity, resistance, and vulnerability. PTU effectiveness adjustments remain ordered additive
+steps; type-chart immunity is retained unless a separate reviewed core policy handles it. A
+condition or movement protection does not masquerade as damage immunity, and every bypassed or
+shadowed provider remains visible in the private audit trace. Server wrappers authorize each source
+against effective ability instances and recompute the base multiplier from authoritative target
+types rather than accepting it from a client.
+
+HP providers consume authoritative current/max HP, temporary HP, and Injury pools. Their fixed order
+is prevention, damage reduction, temporary-HP absorption, HP loss/floor, target Injury, drain and
+healing modifiers, recoil, then source Injury. Direct HP loss explicitly bypasses DR; temporary HP
+absorption or bypass is also explicit. Drain and recoil declare both their arithmetic basis and an
+`on-hit`, `on-damage`, or `always` trigger, so immunity and zero-damage outcomes cannot accidentally
+fire a side effect. Healing is capped by max HP, temporary HP uses non-stacking highest-result
+semantics, fraction arithmetic floors deterministically, and Injury triggers distinguish always,
+faint, and Massive Damage. Provider traces retain attempted/applied deltas and every suppression or
+stacking decision; server wrappers discard supplied pool copies and rebuild them from authoritative
+tokens and sheets.
+
+Stat providers reuse the authorized passive-provider envelope and placement scopes. Resolution
+modifies raw Attack, Special Attack, Defense, Special Defense, Speed, and HP first; applies integer,
+clamped Combat Stages next; then derives final stats, capped Physical/Special/Speed Evasion, and
+Initiative from effective Speed. Movement providers apply before Speed-CS movement adjustment,
+while Teleporter is explicitly not altered by that adjustment. Movement traits use grant/deny union
+semantics. Numeric groups retain stack/highest/lowest/priority/exclusive behavior and deterministic
+provider order. The server adapter rebuilds all bases, stages, Evasion bonuses, movement speeds, and
+traits from the authoritative token and rejects inactive provider instances.
+
+Condition providers use stable condition IDs and an explicit apply/cure/transfer fact. Their order is
+prevention and eligible server-owned saves, reflection, the base mutation, linked add/remove cures,
+then transfers. Save providers embed strict check definitions; the server enumerates only eligible
+stacking winners before consuming entropy, retains exact roll/reroll ancestry, and rejects supplied
+results for unrequested saves. Reflection declares whether the original target retains the condition,
+and transfer always records both endpoints. Condition sets are deduplicated and canonically ordered,
+while every prevention, failed/passed save, cure, reflection, no-op, and transfer is traced. The
+server adapter reconstructs effective conditions from authoritative tokens and authorizes all source
+ability instances before any roll or mutation plan can proceed.
+
+Move providers project a sheet movelist through replacement, grant, typed mutation, Connection,
+disable, and nested-use phases. Every sheet/granted/replacement/nested move carries an exact
+production MoveSpec v2 version, definition hash, and source module; legacy runtimes and stale hashes
+fail closed. Mutations can alter reviewed type, DB, AC, class, frequency, range, and keyword fields
+without replacing runtime identity, and retain ordered provider provenance. Replacement precedes
+grant and mutation, while disable is final, so no later phase silently re-enables a move.
+
+Nested-use providers create declarations only; they do not execute a move inside projection. The
+server re-resolves the exact move runtime, applies explicit target and cost policy, checks the
+provider-local maximum depth, and consumes the shared causal child budget before move orchestration
+can run. Missing move-instance targets are traced as no-ops, duplicate grants/replacements reject,
+and priority/exclusive conflicts fail closed.
+
+Item providers reuse the shared authoritative item-reference, choice, interpreter, mutation, and
+transaction planner. Ability records contain no item display-name mechanics: reviewed requirements
+load exact held, target, inventory, group-inventory, or map-ground references and revisions.
+Give/steal/swap, drop/throw, consume/destroy/restore, suppression, Berry/food storage and digestion,
+and the explicit ground-item `pickup` action compile into the same bounded physical mutation union.
+Pickup requires one authoritative map-ground reference and an empty held-item destination; it cannot
+be forged by sending an item ID. All consulted sheet/map/group revisions commit atomically, consumed
+item identities remain private, and provider/source/owner/recipient authorization occurs before
+interpretation. Ability operation IDs are deterministically adapted to the live-play mutation
+identity boundary without losing provider provenance.
+
+Field providers wrap only validated shared `field`, `hazard`, and typed temporary-effect operations,
+with source-bound provider IDs and explicit selected recipients. The server reuses global
+weather/Terrain/room replacement, layered hazard/pledge geometry, battlefield-zone mutation, and
+Vortex lifecycle reducers. Hazard cells come only from server-resolved bounded cell sets or reviewed
+blast/line geometry; providers cannot carry browser coordinates. Global zones remain authoritative
+and legacy field arrays are renderer projections. Weather replacement, Terrain consumption,
+room timing, ownership/side transfer, suppression, cleanup, Vortex immunity/escape state, and zone
+stacking therefore retain existing deterministic semantics. All changed encounter and field lanes
+join one map revision plan, and inactive sources or unselected recipients fail before reduction.
+
+The live ability menu is a controller-only projection embedded atomically in live-table snapshot
+schema v2. Each row is bound to the map revision, effective ability instance, semantic-manifest
+status, exact selected runtime, mode kind, and public targeting cardinality. Sheet text can add
+presentation but cannot make a row invocable. Static and triggered modes remain non-invocable;
+blocked, assisted, suppressed, parameter-incomplete, and runtime-drift rows stay visible with
+accessible status badges. Activated rows first request a private, hash-bound declaration offer.
+Only opaque option IDs plus controller-safe placement/cell/type/etc. hints cross the client boundary;
+the submitted intent contains stable IDs, never predicates, relationships, ranges, item ownership,
+or mechanics. Exact intent retries retain object identity in the client and are idempotent in the
+server operation store. Accepted results use the redacted result contract and force an authoritative
+snapshot reconciliation. Private offers and accepted audits are stored in dedicated SQLite tables;
+changed request/intent reuse, stale revisions, inactive instances, and unauthorized actors fail
+closed. The first direct execution adapter accepts only reviewed handler-free, precondition-free,
+cost-free shared Combat Stage operations; every other operation shape remains explicitly rejected
+until its closed adapter is wired rather than falling back to legacy client mutations.
+
+Relationship providers derive ally/enemy/self membership, same-side sets, bounded auras, and
+cardinal/all adjacency from authoritative placement sides and footprints. Interception creates an
+owned optional response offer and never changes the target before acceptance. Optional redirection
+also remains an offer; simultaneous mandatory redirects select one deterministic priority winner
+and retain shadow evidence. Move type/keyword/area predicates, range, LOS, protected relation, and
+actor distance are explicit provider data rather than inferred prose. Public projections expose no
+offer or provider identity; responders see only offers they own, while GM recovery may inspect all.
+The resulting offers feed the existing durable reaction arbitration and shared availability layers.
 
 ## Author and promote one ability
 

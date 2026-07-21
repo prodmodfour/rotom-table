@@ -79,6 +79,7 @@ import {
   planMoveResourceObservation,
 } from './moveAutomation/planMoveResources'
 import { EncounterResourceReductionError } from './moveAutomation/reduceEncounterResources'
+import { mapHasAa061AquaBulletPrepaidMove } from './abilityAutomation/mechanics/aa061MoveIntegration'
 import type { AuthoritativeMoveRandomSource } from './moveAutomation/random'
 import {
   MOVE_AUTOMATION_RUNTIME_REGISTRY,
@@ -331,6 +332,9 @@ const cloneResolution = (resolution: AuthoritativeMoveResolution): Authoritative
   ...(resolution.sideDamageResistance === undefined
     ? {}
     : { sideDamageResistance: cloneJson(resolution.sideDamageResistance) }),
+  ...(resolution.abilityPriorityOverride === undefined
+    ? {}
+    : { abilityPriorityOverride: resolution.abilityPriorityOverride }),
 })
 
 const cloneUsageSummary = (usage: UseMoveUsageSummary): UseMoveUsageSummary => cloneJson(usage)
@@ -692,19 +696,34 @@ const withoutPlanIdentity = (
   return input as MoveStateChangeInput
 }
 
+const withAbilityPriorityCost = (
+  costs: readonly MoveSpecCostDeclaration[] | undefined,
+  abilityPriorityOverride: boolean | undefined,
+): readonly MoveSpecCostDeclaration[] | undefined => {
+  if (!abilityPriorityOverride || costs?.some(declaration => declaration.cost.kind === 'priority')) return costs
+  return Object.freeze([
+    ...(costs ?? []),
+    { id: 'ability.accelerate.priority', phase: 'declare', cost: { kind: 'priority', mode: 'standard' } } as const,
+  ])
+}
+
 const reviewedMoveResourceCosts = (
   input: Pick<
     PlanAuthoritativeMoveStateInput,
     'runtimeRegistry' | 'resourceCostDeclarations'
   >,
   canonicalMoveId: string,
-) => {
+  abilityPriorityOverride?: boolean,
+): readonly MoveSpecCostDeclaration[] | undefined => {
   if (input.resourceCostDeclarations !== undefined) {
-    return input.resourceCostDeclarations
+    return withAbilityPriorityCost(input.resourceCostDeclarations, abilityPriorityOverride)
   }
   const runtime = (input.runtimeRegistry ?? MOVE_AUTOMATION_RUNTIME_REGISTRY)
     .resolve(canonicalMoveId)
-  return runtime?.kind === 'movespec-v2' ? runtime.definition.spec.costs : undefined
+  return withAbilityPriorityCost(
+    runtime?.kind === 'movespec-v2' ? runtime.definition.spec.costs : undefined,
+    abilityPriorityOverride,
+  )
 }
 
 const resourcePlanningFailure = (
@@ -755,11 +774,17 @@ export const observeMovePlanResources = (input: {
       reviewedCosts: reviewedMoveResourceCosts(
         input.planningInput,
         input.resolution.canonicalMoveName,
+        input.resolution.abilityPriorityOverride,
       ),
       minimumPhaseExclusive: input.minimumCostPhaseExclusive,
       maximumPhaseInclusive: input.maximumCostPhaseInclusive,
       allowLegacyFallback: input.allowLegacyCostFallback,
       prerequisiteResources: input.prerequisiteResources,
+      actionPrepaid: mapHasAa061AquaBulletPrepaidMove({
+        map: input.planningInput.map,
+        actorPlacementId: input.resolution.actorPlacementId,
+        moveName: input.resolution.canonicalMoveName,
+      }),
     })
   }
   catch (error) {
@@ -828,7 +853,15 @@ export const planPendingMoveResourceCosts = (options: {
   readonly minimumPhaseExclusive?: import('#shared/moveAutomation/spec').MoveSpecPhase | null
   readonly prerequisiteResources?: EncounterTurnResourceDirectory
 }): MoveStateChangePlan => {
-  const reviewedCosts = options.execution.runtime.definition.spec.costs
+  if (mapHasAa061AquaBulletPrepaidMove({
+    map: options.input.map,
+    actorPlacementId: options.execution.actorPlacementId,
+    moveName: options.execution.canonicalMoveName,
+  })) return options.existingPlan
+  const reviewedCosts = withAbilityPriorityCost(
+    options.execution.runtime.definition.spec.costs,
+    options.execution.abilityPriorityOverride,
+  ) ?? []
   if (reviewedCosts.length === 0) return options.existingPlan
 
   const mapAfterExistingPlan = applyNativeCoreMapChanges(
@@ -951,6 +984,7 @@ const planPendingMoveState = (options: {
     originMapRevision: options.previousRevision,
     authoritativeMap: options.input.map,
     actorPlacementId: options.execution.actorPlacementId,
+    ...(options.input.intent.originCell ? { virtualOriginCell: options.input.intent.originCell } : {}),
     suspendedAt: options.plannedAt,
     authoritativeSheetReads: sheetReads,
     authoritativeGroupInventoryReads: groupInventoryReads,

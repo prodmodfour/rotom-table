@@ -1,3 +1,5 @@
+import type { AbilityInstanceData } from '#shared/abilityAutomation/parameters'
+import type { AbilityDailyUsageLedger } from '#shared/abilityAutomation/resources'
 import type { PermanentMoveListEntryProvenance } from '#shared/moveAutomation/permanentMoveLists'
 import type { CombatStageKey } from '~/types/combatStages'
 import type { SheetMoveUsageState } from '~/types/moveUsage'
@@ -56,6 +58,8 @@ export interface CharacterSheetAbility {
   effect?: string
   /** True when an ability's sheet-level toggle is active (for example, Sand Veil in a Sandstorm or Snow Cloak in Hail). */
   activated?: boolean
+  /** Stable canonical instance identity and reviewed parameter choices. */
+  automation?: AbilityInstanceData
 }
 
 export interface CharacterSheetEdge {
@@ -251,6 +255,19 @@ export interface CharacterSheet {
   appliedMoves?: CharacterSheetAppliedMove[]
   /** Persistent Daily move frequency usage. EOT/Scene and per-Scene Daily locks are map-scoped. */
   moveUsage?: SheetMoveUsageState
+  /** Lasting server-owned Daily ability usage for the current campaign day. */
+  abilityUsage?: AbilityDailyUsageLedger
+  /** Extended-Rest-bound Berry Storage digestion buffs. */
+  berryStorage?: {
+    schemaVersion: 1
+    entries: Array<{
+      id: string
+      canonicalItemId: string
+      canonicalItemName: string
+      quantity: number
+      lastTradedSceneId: string | null
+    }>
+  }
 
   /** Override capabilities. Defaults pull from species. */
   capabilities?: CharacterSheetCapabilities

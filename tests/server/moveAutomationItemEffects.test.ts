@@ -1075,6 +1075,63 @@ describe('shared authoritative item effect interpreter', () => {
     expect(storedActor.items?.digestionFood).toBe('Candy Bar')
   })
 
+  it('stores three scene-traded Berry Storage buffs outside normal digestion limits', () => {
+    const map = {
+      ...mapFixture(),
+      encounterState: {
+        ...mapFixture().encounterState!,
+        history: { ...mapFixture().encounterState!.history, sceneId: 'scene:berry-storage' },
+      },
+    }
+    const initialSheets = sheetsFixture({ actorHeld: 'Oran Berry' })
+    const actor = initialSheets.get('item-actor-sheet')!
+    actor.abilities = [{
+      name: 'Berry Storage', automation: {
+        schemaVersion: 1, instanceId: 'base:berry-storage', canonicalId: 'Berry Storage',
+        definitionVersion: null, selections: [],
+      },
+    }]
+    const resources = resourcesFor({ map, sheets: initialSheets, selectedTargetIds: [], requirements: [requirements.actor] })
+    const stored = interpretAndPlan({
+      map, sheets: initialSheets, resources,
+      operations: [emission(operation({
+        id: 'item.berry-storage', recipients: 'actor', payload: {
+          action: 'store-buff', item: requirementSelection(requirements.actor.id), quantity: 1,
+          consumptionId: 'consumption.berry-storage', onUnavailable: 'reject',
+        },
+      }), [actorId])],
+    })
+    const storedActor = stored.plan.sheetWrites.find(write => write.slug === 'item-actor-sheet')?.nextSheet as CharacterSheet
+    expect(storedActor.items?.digestionFood).toBeUndefined()
+    expect(storedActor.berryStorage?.entries).toEqual([expect.objectContaining({
+      canonicalItemId: 'oran-berry', quantity: 3, lastTradedSceneId: null,
+    })])
+    expect(storedActor.abilityUsage?.entries[0]).toMatchObject({ canonicalId: 'Berry Storage', spent: 1, limit: 1 })
+
+    const digestSheets = new Map(initialSheets)
+    digestSheets.set('item-actor-sheet', storedActor)
+    const digestOperation = operation({
+      id: 'item.berry-storage-digest', recipients: 'actor', payload: {
+        action: 'digest-buff', canonicalItemIds: ['oran-berry'], onUnavailable: 'reject',
+      },
+    })
+    const interpretation = interpretMoveItemEffects({
+      context: contextFor({ map, sheets: digestSheets }),
+      operations: [emission(digestOperation, [actorId])], resolvedItemChoices: [],
+    })
+    const digested = planMoveItemMutations({
+      map, pokemonSheets: digestSheets, trainerSheets: new Map(), groupInventories: new Map(),
+      operations: interpretation.mutations, originOperationId: 'op_berry_storage_digest', plannedAt: 3_000,
+    })
+    const digestedActor = digested.sheetWrites[0]?.nextSheet as CharacterSheet
+    expect(digestedActor.berryStorage?.entries[0]).toMatchObject({ quantity: 2, lastTradedSceneId: 'scene:berry-storage' })
+    const currentSheets = new Map(digestSheets).set('item-actor-sheet', digestedActor)
+    expect(() => interpretMoveItemEffects({
+      context: contextFor({ map: digested.nextMap, sheets: currentSheets }),
+      operations: [emission(digestOperation, [actorId])], resolvedItemChoices: [],
+    })).toThrow(/no eligible stored digestion buff/i)
+  })
+
   it('rejects illegal lifecycle transitions deterministically without a partial plan', () => {
     const map = mapFixture()
     const emptySheets = sheetsFixture()

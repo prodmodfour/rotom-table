@@ -400,7 +400,10 @@ const stockpileFamily = (context: RegisteredMoveHandlerContext): readonly MoveEf
     markerEffect({ slug: 'stockpile', id: 'count', recipients: 'actor', duration: { kind: 'scene', remaining: null }, charges: 3 }),
     ...standardTerminalOperations('stockpile'),
   ]
-  const count = stockpileCount(context)
+  const baseCount = stockpileCount(context)
+  const count = context.queries.abilities.has(context.actor.placement.id, 'Big Swallow')
+    ? Math.min(3, baseCount + 1)
+    : baseCount
   if (name === 'Spit Up') {
     if (count < 1) throw new Error('Spit Up requires an authoritative Stockpiled count.')
     return [...basicAttack(name, { db: count * 8, cls: 'special', type: 'normal' }), ...standardTerminalOperations('spit-up')]

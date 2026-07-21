@@ -950,7 +950,7 @@ describe('Take Down planner and accepted durable saga', () => {
     },
   )
 
-  it.each(['Rock Head', 'Magic Guard'] as const)(
+  it.each(['Rock Head', 'Magic Guard', 'Abominable'] as const)(
     'prevents recoil with %s while retaining target damage',
     async (ability) => {
       const harness = createHarness({

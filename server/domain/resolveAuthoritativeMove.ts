@@ -118,6 +118,10 @@ import {
   attachSideDamageResistanceResolution,
   type SideDamageResistanceResolution,
 } from './moveAutomation/sideDamageResistance'
+import { aa060MovePriorityOverride, hasAa060MoveMark, hasPendingAa060AnchoredAttack } from './abilityAutomation/mechanics/aa060MoveIntegration'
+import { hasAa061AquaBulletMark, hasPendingAa061AquaBulletAttack } from './abilityAutomation/mechanics/aa061MoveIntegration'
+import { aa062BoneLordEmpowersMove, hasPendingAa062BoneLordMove } from './abilityAutomation/mechanics/aa062MoveIntegration'
+import { aa063RangedMove } from './abilityAutomation/mechanics/aa063MoveIntegration'
 
 export type { AuthoritativeMoveSheetRead } from './moveAutomation/context'
 
@@ -172,6 +176,7 @@ export type AuthoritativeMoveResolutionFailureCode =
   | 'unsupported-move-script'
   | 'move-response-required'
   | 'sheet-read-revision-conflict'
+  | 'virtual-origin-invalid'
 
 export class AuthoritativeMoveResolutionError extends Error {
   readonly reason: AuthoritativeMoveResolutionFailureReason
@@ -308,6 +313,8 @@ export interface AuthoritativeMoveResolution {
   readonly helpingHandBonus?: HelpingHandBonusResolution
   /** Server-only side resistance decisions and exact effect charges reserved for commit. */
   readonly sideDamageResistance?: SideDamageResistanceResolution
+  /** Server-owned ability timing overlay consumed by the resource planner. */
+  readonly abilityPriorityOverride?: boolean
   /** Server-only native planning projection; omitted from accepted wire results. */
   readonly nativeV2?: NativeMoveSpecResolutionProjection
 }
@@ -329,6 +336,7 @@ export interface AuthoritativePendingMoveResolution {
   readonly runtime: MoveSpecV2Runtime
   readonly execution: PendingMoveSpecResolution['execution']
   readonly preWindowPlan: PendingMoveSpecResolution['preWindowPlan']
+  readonly abilityPriorityOverride?: boolean
 }
 
 export type AuthoritativeMoveExecution =
@@ -1330,21 +1338,28 @@ const resolveNativeSingleTargetMove = (options: {
   readonly selection: Extract<ResolveMoveSelection, { kind: 'single-target' }>
   readonly moveKey: string
 }): AuthoritativeMoveExecution => {
+  const anchoredAttack = hasAa060MoveMark(
+    options.context,
+    'Anchored',
+    options.entry.canonicalMoveName,
+  )
+  const boneLordLine = options.entry.canonicalMoveName === 'Bonemerang'
+    && aa062BoneLordEmpowersMove(options.context, 'Bonemerang')
   const targeting = resolveMoveSpecTargetingRule(
     options.runtime.definition.spec,
     options.context.intent.targetBranchId,
   )
-  if (targeting?.kind !== 'single-target') {
+  if (boneLordLine || (!anchoredAttack && targeting?.kind !== 'single-target')) {
     return fail(
       'invalid',
       'selection-kind-mismatch',
       `${options.runtime.canonicalId} does not accept a single-target selection.`,
     )
   }
-  if (
+  if (!anchoredAttack && (
     options.entry.script.targetMode !== 'one-target'
     || options.entry.script.targetCount !== 1
-  ) {
+  )) {
     fail(
       'invalid',
       'selection-kind-mismatch',
@@ -1352,15 +1367,26 @@ const resolveNativeSingleTargetMove = (options: {
     )
   }
 
+  const effectiveEntry: ResolvedCanonicalMoveEntry = anchoredAttack
+    ? {
+        ...options.entry,
+        script: {
+          ...options.entry.script,
+          targetMode: 'one-target', targetCount: 1,
+          range: 'Melee, 1 Target', damageClass: 'Physical', damaging: true,
+          areaTemplates: [],
+        },
+      }
+    : options.entry
   const { actorPlacement, target, desiredFacing } = resolveLegalSingleTarget({
     context: options.context,
-    script: options.entry.script,
+    script: effectiveEntry.script,
     targetPlacementId: options.selection.targetPlacementId,
   })
   const outcome = resolveMoveSpecOutcome({
     context: options.context,
     runtime: options.runtime,
-    entry: options.entry,
+    entry: effectiveEntry,
     targetBranchId: options.context.intent.targetBranchId,
     authoritativeTargetIds: [target.id],
     ancestry: options.context.ancestry,
@@ -1762,7 +1788,9 @@ const resolveNativeAreaMove = (options: {
     options.runtime.definition.spec,
     options.context.intent.targetBranchId,
   )
-  if (targeting?.kind !== 'area') {
+  const boneLordLine = options.entry.canonicalMoveName === 'Bonemerang'
+    && aa062BoneLordEmpowersMove(options.context, 'Bonemerang')
+  if (targeting?.kind !== 'area' && !boneLordLine) {
     return fail(
       'invalid',
       'selection-kind-mismatch',
@@ -1772,7 +1800,7 @@ const resolveNativeAreaMove = (options: {
 
   const { placement: actorPlacement, token: actor } = options.context.actor
   const template = selectedAreaTemplate(options.entry.script, options.selection.areaTemplateId)
-  const selector = targeting.selector
+  const selector = boneLordLine ? { kind: 'area-targets' as const } : targeting!.selector
   if (
     selector !== null
     && selector.kind !== 'area-targets'
@@ -1817,7 +1845,9 @@ const resolveNativeAreaMove = (options: {
   const areaTargets = resolveAuthoritativeAreaTargets({
     actorPlacementId: actorPlacement.id,
     geometricallyAffectedPlacementIds: candidateTargetIds,
-    predicate: targeting.predicate ?? DEFAULT_MOVE_AUTOMATION_AREA_TARGET_PREDICATE,
+    predicate: boneLordLine
+      ? DEFAULT_MOVE_AUTOMATION_AREA_TARGET_PREDICATE
+      : targeting!.predicate ?? DEFAULT_MOVE_AUTOMATION_AREA_TARGET_PREDICATE,
     relationships: options.context.queries.relationships,
     states: options.context.queries.targetStates,
     targetability: options.context.queries.targetability,
@@ -1942,6 +1972,9 @@ const failFromContextError = (error: AuthoritativeMoveRulesContextError): never 
   if (error.code === 'sheet-read-revision-conflict') {
     return fail('conflict', 'sheet-read-revision-conflict', error.message)
   }
+  if (error.code === 'invalid-virtual-origin') {
+    return fail('unauthorized-state', 'virtual-origin-invalid', error.message)
+  }
   return fail('conflict', 'duplicate-placement-id', error.message)
 }
 
@@ -1984,6 +2017,33 @@ export const resolveAuthoritativeMoveExecutionFromContext = (
   const entry = moveEntryResult.ok
     ? moveEntryResult.entry
     : fail('not-found', 'move-absent', 'Move entry resolution failed.')
+  if (intent.originCell && !aa063RangedMove(entry.script)) {
+    fail('invalid', 'virtual-origin-invalid', 'Clay Cannons can originate only Ranged Moves from a virtual square.')
+  }
+  if (hasPendingAa060AnchoredAttack(context)
+    && !hasAa060MoveMark(context, 'Anchored', entry.canonicalMoveName)) {
+    fail(
+      'unauthorized-state',
+      'move-creature-rule-blocked',
+      'Anchored has an immediate attack continuation for another selected move.',
+    )
+  }
+  if (hasPendingAa061AquaBulletAttack(context)
+    && !hasAa061AquaBulletMark(context, entry.canonicalMoveName)) {
+    fail(
+      'unauthorized-state',
+      'move-creature-rule-blocked',
+      'Aqua Bullet has an immediate attack continuation for another selected move.',
+    )
+  }
+  if (hasPendingAa062BoneLordMove(context)
+    && !aa062BoneLordEmpowersMove(context, entry.canonicalMoveName)) {
+    fail(
+      'unauthorized-state',
+      'move-creature-rule-blocked',
+      'Bone Lord has an immediate empowered continuation for another selected move.',
+    )
+  }
   const actionAvailability = context.queries.targetability.resolveAction({
     actorPlacementId: actorPlacement.id,
     moveCanonicalId: entry.canonicalMoveName,
@@ -2045,10 +2105,13 @@ export const resolveAuthoritativeMoveExecutionFromContext = (
     ?? (selectedRuntime?.kind === 'movespec-v2'
       ? selectedRuntime.definition.spec.costs
       : undefined)
-  const actionTiming = resolveAuthoritativeMoveActionTiming({
-    range: legacySelection?.script.range ?? entry.script.range,
-    ...(reviewedCosts && reviewedCosts.length > 0 ? { reviewedCosts } : {}),
-  })
+  const abilityPriorityOverride = aa060MovePriorityOverride(context, entry.script)
+  const actionTiming = abilityPriorityOverride
+    ? 'priority'
+    : resolveAuthoritativeMoveActionTiming({
+        range: legacySelection?.script.range ?? entry.script.range,
+        ...(reviewedCosts && reviewedCosts.length > 0 ? { reviewedCosts } : {}),
+      })
   const dashBlock = retiredLegacyRuntime
     ? moveDashConditionUseBlock(entry.script.range, context.actor.token.conditions)
     : null
@@ -2075,8 +2138,10 @@ export const resolveAuthoritativeMoveExecutionFromContext = (
     const finalizeNativeExecution = (
       execution: AuthoritativeMoveExecution,
     ): AuthoritativeMoveExecution => isAuthoritativePendingMoveResolution(execution)
-      ? execution
-      : attachResolutionDamageEffects(context, execution)
+      ? abilityPriorityOverride ? Object.freeze({ ...execution, abilityPriorityOverride: true }) : execution
+      : attachResolutionDamageEffects(context, abilityPriorityOverride
+          ? { ...execution, abilityPriorityOverride: true }
+          : execution)
 
     if (intent.selection.kind === 'self') {
       return finalizeNativeExecution(resolveNativeSelfMove({

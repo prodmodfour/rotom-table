@@ -1,5 +1,5 @@
 import type { MoveResolutionAuditTrace } from '#shared/moveAutomation/trace'
-import { deepCloneJson } from '~/utils/serialization'
+import { deepCloneJson, sameJsonValue } from '~/utils/serialization'
 import { createMoveAutomationHpUpdateAccumulator } from '~/utils/moveAutomationHpUpdates'
 import {
   createMoveAutomationCombatStageUpdateAccumulator,
@@ -12,6 +12,7 @@ import {
 } from '../context'
 import type { MoveSpecEmittedOperation } from '../executeSpec'
 import type { MoveStateChangePlan } from '../plan'
+import { applyAa062BerserkCoreTriggers } from '../../abilityAutomation/mechanics/aa062TriggeredIntegration'
 import {
   reduceCombatStageEffect,
   reduceCombatStageEffectForRecipient,
@@ -311,18 +312,20 @@ export const reduceMoveCoreTokenOperationState = (
     }
     operationIds.add(operation.id)
 
-    const expectedIds = input.recipientIdsForOperation
-      ? canonicalMoveCoreTokenPlacementIds(
-          operationContext,
-          input.recipientIdsForOperation(operation),
-          `operation ${operation.id} authoritative recipients`,
-        )
-      : expectedMoveCoreTokenRecipientIds(operationContext, operation, operationDynamic)
     const emittedIds = canonicalMoveCoreTokenPlacementIds(
       operationContext,
       emission.recipientIds,
       `operation ${operation.id} recipients`,
     )
+    const expectedIds = operation.recipients.kind === 'response-owner'
+      ? emittedIds
+      : input.recipientIdsForOperation
+        ? canonicalMoveCoreTokenPlacementIds(
+            operationContext,
+            input.recipientIdsForOperation(operation),
+            `operation ${operation.id} authoritative recipients`,
+          )
+        : expectedMoveCoreTokenRecipientIds(operationContext, operation, operationDynamic)
     const branchControlled = input.branchControlledOperationIds?.has(operation.id) === true
     if (
       !moveCoreTokenRecipientIdsEqual(emission.recipientIds, emittedIds)
@@ -446,15 +449,27 @@ export const reduceMoveCoreTokenOperationState = (
     })
   })
 
+  const hpUpdates = hpAccumulator.toUpdates()
+  const conditionUpdates = conditionAccumulator.toUpdates()
+  const berserk = applyAa062BerserkCoreTriggers({
+    context: input.context,
+    hpUpdates,
+    conditionUpdates,
+    stageAccumulator,
+    encounterState: conditionEncounterAccumulator.current(),
+  })
+  const encounterStateUpdate = sameJsonValue(conditionEncounterAccumulator.previous, berserk.encounterState)
+    ? null
+    : { previous: conditionEncounterAccumulator.previous, current: berserk.encounterState }
   const frozenResults = deepFreeze(deepCloneJson(operationResults))
   const stateChanges = buildMoveCoreTokenStateChanges({
     context: input.context,
     recipientsById,
     touches,
-    hpUpdates: hpAccumulator.toUpdates(),
-    conditionUpdates: conditionAccumulator.toUpdates(),
+    hpUpdates,
+    conditionUpdates,
     stageUpdates: stageAccumulator.toUpdates(),
-    encounterStateUpdate: conditionEncounterAccumulator.update(),
+    encounterStateUpdate,
   })
   return Object.freeze({
     stateChanges,

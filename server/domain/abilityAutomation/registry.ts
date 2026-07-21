@@ -4,10 +4,9 @@ import {
   type AbilityAutomationManifest,
   type AbilityAutomationRuntimeRegistrationReference,
 } from '#shared/abilityAutomation/manifest'
-import {
-  EMPTY_ABILITY_SPEC_EXTENSION_REGISTRY,
-  type AbilitySpecExtensionRegistry,
-} from './extensionRegistry'
+import type { AbilitySpecExtensionRegistry } from './extensionRegistry'
+import { ABILITY_SPEC_SHARED_KERNEL_EXTENSION_REGISTRY } from './sharedKernelExtensions'
+import { REGISTERED_ABILITY_HANDLER_REGISTRY } from './handlers/registry'
 import {
   selectNativeAbilityRuntime,
   type NativeAbilityRuntimeRegistration,
@@ -17,6 +16,10 @@ import {
   type AbilitySpecHandlerReferenceRegistry,
   type ValidatedAbilitySpecDefinition,
 } from './validateSpec'
+import { AA060_ABILITY_SPEC_REGISTRATIONS } from './specs/aa060'
+import { AA061_ABILITY_SPEC_REGISTRATIONS } from './specs/aa061'
+import { AA062_ABILITY_SPEC_REGISTRATIONS } from './specs/aa062'
+import { AA063_ABILITY_SPEC_REGISTRATIONS } from './specs/aa063'
 
 export interface AbilitySpecV1Registration {
   readonly canonicalId: string
@@ -33,6 +36,7 @@ export interface AbilitySpecV1Runtime
 export interface AbilityAutomationRuntimeRegistry {
   readonly size: number
   readonly extensionRegistry: AbilitySpecExtensionRegistry
+  readonly handlerRegistry: AbilitySpecHandlerReferenceRegistry
   /** Resolve only an exact manifest-selected native runtime. */
   readonly resolve: (canonicalId: string) => AbilitySpecV1Runtime | null
   readonly entries: () => readonly AbilitySpecV1Runtime[]
@@ -103,7 +107,8 @@ export const createAbilityAutomationRuntimeRegistry = (
   options: CreateAbilityAutomationRuntimeRegistryOptions,
 ): AbilityAutomationRuntimeRegistry => {
   validateManifestSelectionModes(options.manifest)
-  const extensionRegistry = options.extensionRegistry ?? EMPTY_ABILITY_SPEC_EXTENSION_REGISTRY
+  const extensionRegistry = options.extensionRegistry ?? ABILITY_SPEC_SHARED_KERNEL_EXTENSION_REGISTRY
+  const handlerRegistry = options.handlerRegistry ?? REGISTERED_ABILITY_HANDLER_REGISTRY
   const manifestByCanonicalId = new Map(
     options.manifest.abilities.map(record => [record.canonicalId, record]),
   )
@@ -129,7 +134,7 @@ export const createAbilityAutomationRuntimeRegistry = (
       capabilityIds: manifestRecord.capabilityTags,
       rulesetVersion: manifestRecord.rulesProvenance,
       extensionRegistry,
-      ...(options.handlerRegistry ? { handlerRegistry: options.handlerRegistry } : {}),
+      handlerRegistry,
     })
     if (definition.spec.canonicalId !== registration.canonicalId) {
       return fail(
@@ -166,13 +171,19 @@ export const createAbilityAutomationRuntimeRegistry = (
   return Object.freeze({
     size: selected.size,
     extensionRegistry,
+    handlerRegistry,
     resolve: (canonicalId: string) => selected.get(canonicalId) ?? null,
     entries: () => Object.freeze([...selected.values()]),
   })
 }
 
 /** Native definitions are added only with reviewed matching manifest metadata. */
-export const REVIEWED_ABILITY_SPEC_V1_REGISTRATIONS: readonly AbilitySpecV1Registration[] = Object.freeze([])
+export const REVIEWED_ABILITY_SPEC_V1_REGISTRATIONS: readonly AbilitySpecV1Registration[] = Object.freeze([
+  ...AA060_ABILITY_SPEC_REGISTRATIONS,
+  ...AA061_ABILITY_SPEC_REGISTRATIONS,
+  ...AA062_ABILITY_SPEC_REGISTRATIONS,
+  ...AA063_ABILITY_SPEC_REGISTRATIONS,
+])
 
 export const ABILITY_AUTOMATION_RUNTIME_REGISTRY = createAbilityAutomationRuntimeRegistry({
   manifest: manifestJson as unknown as AbilityAutomationManifest,

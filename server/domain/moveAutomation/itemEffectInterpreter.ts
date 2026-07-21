@@ -334,8 +334,17 @@ const storedDigestionBuffId = (
   const value = placement.sheetKind === 'pokemon'
     ? (resolved.sheet as CharacterSheet).items?.digestionFood
     : (resolved.sheet as TrainerSheet).digestion
-  if (typeof value !== 'string' || !value.trim()) return null
-  return resolveMoveAutomationItemRuleIdentity(value.trim())?.canonicalItemId ?? null
+  if (typeof value === 'string' && value.trim()) {
+    return resolveMoveAutomationItemRuleIdentity(value.trim())?.canonicalItemId ?? null
+  }
+  if (placement.sheetKind === 'pokemon') {
+    const sceneId = context.map.encounterState?.history.sceneId ?? null
+    const stored = (resolved.sheet as CharacterSheet).berryStorage?.entries.find(entry => (
+      entry.quantity > 0 && sceneId !== null && entry.lastTradedSceneId !== sceneId
+    ))
+    return stored?.canonicalItemId ?? null
+  }
+  return null
 }
 
 const sourceOwnerPlacement = (input: {
@@ -416,6 +425,46 @@ const interpretGiveOrSteal = (input: InterpretOperationInput): OperationInterpre
     reasonCode: input.operation.reasonCode,
     source: references[0]!,
     destination: heldDestination(input.context, destinationPlacement),
+    quantity: payload.quantity,
+  }]
+  return { result: applied({ operation: input.operation, mutations, itemCount: 1 }), mutations }
+}
+
+const interpretPickup = (input: InterpretOperationInput): OperationInterpretation => {
+  const payload = input.operation.payload
+  if (payload.action !== 'pickup') {
+    return fail('unsupported-operation', `Operation ${input.operation.id} is not pickup.`)
+  }
+  const references = resolveSelection({
+    selection: payload.item,
+    context: input.context,
+    choices: input.choices,
+    operation: input.operation,
+  })
+  if (!references || references.length !== 1 || references[0]?.kind !== 'map-ground-item') {
+    return { result: unavailable({
+      operation: input.operation,
+      policy: payload.onUnavailable,
+      code: 'selection-unavailable',
+      message: `Item pickup ${input.operation.id} requires exactly one map-ground item.`,
+    }), mutations: [] }
+  }
+  const destination = input.context.actor.placement
+  if (heldItemCount(input.context, destination) > 0) {
+    return { result: unavailable({
+      operation: input.operation,
+      policy: payload.onUnavailable,
+      code: 'destination-occupied',
+      message: `Item pickup ${input.operation.id} destination ${destination.id} is occupied.`,
+      outcome: 'prevented',
+    }), mutations: [] }
+  }
+  const mutations: MoveItemMutation[] = [{
+    id: mutationId(input.operation.id, 0),
+    kind: 'ground-item-remove',
+    reasonCode: input.operation.reasonCode,
+    source: references[0],
+    destination: heldDestination(input.context, destination),
     quantity: payload.quantity,
   }]
   return { result: applied({ operation: input.operation, mutations, itemCount: 1 }), mutations }
@@ -899,6 +948,7 @@ interface OperationInterpretation {
 const interpretOperation = (input: InterpretOperationInput): OperationInterpretation => {
   const action = input.operation.payload.action
   if (action === 'give' || action === 'steal') return interpretGiveOrSteal(input)
+  if (action === 'pickup') return interpretPickup(input)
   if (action === 'swap') return interpretSwap(input)
   if (action === 'knock-to-ground' || action === 'throw') return interpretGrounding(input)
   if (action === 'consume' || action === 'destroy' || action === 'store-buff') {

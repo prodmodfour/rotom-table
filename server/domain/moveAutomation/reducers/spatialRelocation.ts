@@ -225,7 +225,9 @@ export const assertMoveSpatialRelocationOperation = (
       payload.mode === 'swap'
       && (
         payload.destinationSetId !== null
-        || operation.recipients.kind !== 'actor-and-attacked-targets'
+        || (operation.recipients.kind !== 'actor-and-attacked-targets'
+          && !(operation.reasonCode === 'ability.bodyguard.swap'
+            && operation.recipients.kind === 'response-owner'))
       )
     )
   ) {
@@ -557,12 +559,30 @@ const resolveSwapMovements = (
     readonly operation: MoveSpatialSwapEffectOperation
   },
 ): readonly MoveSpatialRelocationMovement[] => {
-  const actorId = input.context.actor.placement.id
+  const bodyguardSwap = input.operation.reasonCode === 'ability.bodyguard.swap'
+    && input.operation.recipients.kind === 'response-owner'
+  const bodyguardTargetMarker = '.target.'
+  const markerIndex = input.operation.payload.requestId.indexOf(bodyguardTargetMarker)
+  let bodyguardTargetId: string | null = null
+  if (bodyguardSwap && markerIndex >= 0) {
+    try {
+      bodyguardTargetId = decodeURIComponent(input.operation.payload.requestId.slice(
+        markerIndex + bodyguardTargetMarker.length,
+      ))
+    }
+    catch {
+      input.fail('invalid-relocation', `Bodyguard swap ${input.operation.id} has an invalid protected target.`)
+    }
+  }
+  const actorId = bodyguardSwap
+    ? input.recipientIds.find(id => id !== bodyguardTargetId) ?? input.context.actor.placement.id
+    : input.context.actor.placement.id
   const targetIds = input.recipientIds.filter(id => id !== actorId)
   if (
     input.recipientIds.length !== 2
     || !input.recipientIds.includes(actorId)
     || targetIds.length !== 1
+    || (bodyguardSwap && targetIds[0] !== bodyguardTargetId)
   ) {
     input.fail(
       'relocation-relationship-invalid',
@@ -577,11 +597,13 @@ const resolveSwapMovements = (
       `Swap operation ${input.operation.id} requires an explicit allied target; ${targetId} is ${relationship.relationship}.`,
     )
   }
-  resolveSwapWillingness({
-    ...input,
-    actorPlacementId: actorId,
-    targetPlacementId: targetId,
-  })
+  if (!bodyguardSwap) {
+    resolveSwapWillingness({
+      ...input,
+      actorPlacementId: actorId,
+      targetPlacementId: targetId,
+    })
+  }
   validateRelocationFootprints(input, input.positions, input.recipientIds, 'source')
   const actor = input.resolveFootprint(actorId, 'recipient', input.positions)
   const target = input.resolveFootprint(targetId, 'recipient', input.positions)
@@ -589,7 +611,7 @@ const resolveSwapMovements = (
   if (footprintRange(actor, target) > distance.value) {
     input.fail(
       'relocation-range-exceeded',
-      `Swap operation ${input.operation.id} target exceeds its reviewed range ${distance.value}.`,
+      `Swap operation ${input.operation.id} target exceeds its reviewed range ${distance.value} (${actorId}@${actor.position.x},${actor.position.y},${actor.position.z}; ${targetId}@${target.position.x},${target.position.y},${target.position.z}; distance ${footprintRange(actor, target)}).`,
     )
   }
 

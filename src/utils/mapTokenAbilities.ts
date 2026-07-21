@@ -1,9 +1,6 @@
+import type { AbilityClientCapability } from '#shared/abilityAutomation/clientCapabilities'
 import { lookupAbilityReference } from '~/utils/sheetAbilityLookup'
 import { deriveTrainerAutomaticAbilities } from '~/utils/sheets/trainerCombatDerivations'
-import {
-  getAbilityAutomation,
-  type AbilityAutomationDefinition,
-} from '~/utils/abilityAutomationLegacyCompatibility'
 import { isSheetAbilityActivated } from '~/utils/sheetAbilityActivation'
 import type { CharacterSheet, CharacterSheetAbility } from '~/types/characterSheet'
 import type { SheetPlacement } from '~/types/map'
@@ -13,13 +10,20 @@ import type { TrainerAbilityEntry, TrainerSheet } from '~/types/trainerSheet'
 export type TokenSheetAbility = CharacterSheetAbility | TrainerAbilityEntry
 
 export interface TokenAbilityMenuOption {
-  name: string
-  frequency: string | null
-  trigger: string | null
-  effect: string | null
-  bonus: string | null
-  automation: AbilityAutomationDefinition | null
-  activated: boolean
+  readonly instanceId: string | null
+  readonly canonicalId: string
+  readonly name: string
+  readonly frequency: string | null
+  readonly trigger: string | null
+  readonly effect: string | null
+  readonly bonus: string | null
+  /** Server-issued, revision-bound capability; absent means default-deny. */
+  readonly capability: AbilityClientCapability | null
+  readonly activated: boolean
+}
+export interface TokenAbilityUseReference {
+  readonly abilityInstanceId: string
+  readonly canonicalId: string
 }
 
 export interface MapTokenAbilitySheetLookup {
@@ -58,17 +62,58 @@ export const abilityEntriesForPlacement = (
 
 const optionForAbility = (
   ability: TokenSheetAbility,
+  capability: AbilityClientCapability | null,
   reference: PtuAbility | null = lookupAbilityReference(ability),
 ): TokenAbilityMenuOption => ({
-  name: reference?.name ?? ability.name,
+  instanceId: capability?.instanceId ?? ability.automation?.instanceId ?? null,
+  canonicalId: capability?.canonicalId ?? ability.automation?.canonicalId ?? reference?.name ?? ability.name,
+  name: capability?.displayName ?? reference?.name ?? ability.name,
   frequency: fallback(reference?.frequency, ability.frequency),
   trigger: fallback(reference?.trigger, ability.trigger),
   effect: fallback(reference?.effect, ability.effect),
   bonus: fallback(reference?.bonus),
-  automation: getAbilityAutomation(ability),
+  capability,
   activated: isSheetAbilityActivated(ability),
 })
 
+/**
+ * Merge sheet presentation with server capabilities. The sheet cannot make an
+ * ability invocable; unmatched entries remain visible with a blocked badge.
+ */
 export const buildTokenAbilityMenuOptions = (
   entries: readonly TokenSheetAbility[],
-): TokenAbilityMenuOption[] => entries.map((ability) => optionForAbility(ability))
+  capabilities: readonly AbilityClientCapability[] = [],
+): TokenAbilityMenuOption[] => {
+  const unused = new Set(capabilities.map(capability => capability.instanceId))
+  const options = entries.map((ability) => {
+    const reference = lookupAbilityReference(ability)
+    const canonicalId = ability.automation?.canonicalId ?? reference?.name ?? ability.name
+    const capability = capabilities.find(candidate => (
+      unused.has(candidate.instanceId)
+      && (candidate.instanceId === ability.automation?.instanceId || candidate.canonicalId === canonicalId)
+    )) ?? null
+    if (capability) unused.delete(capability.instanceId)
+    return optionForAbility(ability, capability, reference)
+  })
+  for (const capability of capabilities) {
+    if (!unused.has(capability.instanceId)) continue
+    options.push({
+      instanceId: capability.instanceId,
+      canonicalId: capability.canonicalId,
+      name: capability.displayName,
+      frequency: null,
+      trigger: null,
+      effect: null,
+      bonus: null,
+      capability,
+      activated: false,
+    })
+  }
+  return options
+}
+
+export const tokenAbilityUseReference = (
+  ability: TokenAbilityMenuOption,
+): TokenAbilityUseReference | null => ability.capability?.status === 'ready' && ability.instanceId
+  ? Object.freeze({ abilityInstanceId: ability.instanceId, canonicalId: ability.canonicalId })
+  : null

@@ -67,7 +67,7 @@ describe('ability automation capability catalog', () => {
       'planning.atomic',
     ]))
     for (const capability of catalog.capabilities) {
-      expect(capability.implementationStatus).toBe('planned')
+      expect(capability.implementationStatus).toBe('implemented')
       expect(capability.dependencies.every(dependency => knownCodes.has(dependency))).toBe(true)
       expect(canonicalCatalog.abilities.some(ability => (
         ability.canonicalId === capability.representativeAbility

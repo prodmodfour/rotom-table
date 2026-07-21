@@ -216,8 +216,10 @@ const projectRecipientSheet = (options: {
   }
 }
 
-export interface BuildMoveCoreTokenStateChangesInput {
-  readonly context: AuthoritativeMoveRulesContext
+export interface BuildCoreTokenStateChangesInput {
+  readonly map: TabletopMap
+  readonly placements: readonly SheetPlacement[]
+  readonly time: number
   readonly recipientsById: ReadonlyMap<string, MoveCoreTokenEffectRecipient>
   readonly touches: MoveCoreTokenEffectTouches
   readonly hpUpdates: readonly MoveAutomationHpUpdate[]
@@ -229,16 +231,16 @@ export interface BuildMoveCoreTokenStateChangesInput {
   } | null
 }
 
-/** Aggregate ordered reducer output into one typed replacement per physical resource. */
-export const buildMoveCoreTokenStateChanges = (
-  options: BuildMoveCoreTokenStateChangesInput,
+/** Aggregate ordered shared-kernel output into one typed replacement per physical resource. */
+export const buildCoreTokenStateChanges = (
+  options: BuildCoreTokenStateChangesInput,
 ): MoveStateChangePlan => {
-  const { context, touches } = options
+  const { map, placements, time, touches } = options
   const hpById = new Map(options.hpUpdates.map(update => [update.id, update]))
   const conditionsById = new Map(options.conditionUpdates.map(update => [update.id, update]))
   const stagesById = new Map(options.stageUpdates.map(update => [update.id, update]))
   const placementOrder = new Map(
-    context.queries.placements.all().map((placement, index) => [placement.id, index]),
+    placements.map((placement, index) => [placement.id, index]),
   )
   const touchedPlacementIds = [...touches.keys()].sort((left, right) => {
     const leftTouches = [...(touches.get(left)?.values() ?? [])].flat()
@@ -330,7 +332,7 @@ export const buildMoveCoreTokenStateChanges = (
         current: {
           ...projection.currentBeforeRevision,
           revision: nextRevision(projection.expectedRevision),
-          updatedAt: context.time,
+          updatedAt: time,
         } as unknown as MoveSheetDocument,
         changedFields,
         compensation: RESTORE_PREVIOUS_MOVE_STATE_VALUE,
@@ -346,11 +348,11 @@ export const buildMoveCoreTokenStateChanges = (
     ordered.push({
       firstOperationOrder: firstTouchOrder(encounterTouches),
       scopeOrder: 0,
-      tieKey: context.map.slug,
+      tieKey: map.slug,
       input: {
         kind: 'encounter-state',
-        scope: { kind: 'encounter', mapSlug: context.map.slug },
-        expectedRevision: normalizeRevision(context.map.revision),
+        scope: { kind: 'encounter', mapSlug: map.slug },
+        expectedRevision: normalizeRevision(map.revision),
         sourceOperationId: source.sourceOperationId,
         reasonCode: source.reasonCode,
         previous: deepCloneJson(options.encounterStateUpdate.previous),
@@ -360,7 +362,7 @@ export const buildMoveCoreTokenStateChanges = (
     })
   }
 
-  let nextMap: TabletopMap = deepCloneJson(context.map)
+  let nextMap: TabletopMap = deepCloneJson(map)
   const temporaryHpTouches: MoveCoreTokenEffectTouch[] = []
   let firstTemporaryHpOrder = Number.MAX_SAFE_INTEGER
   for (const placementId of touchedPlacementIds) {
@@ -380,19 +382,19 @@ export const buildMoveCoreTokenStateChanges = (
     nextMap = mapWithTemporaryHpForPlacement(nextMap, placementId, currentAmount)
   }
 
-  if (!sameJsonValue(context.map.temporaryHitPoints, nextMap.temporaryHitPoints)) {
+  if (!sameJsonValue(map.temporaryHitPoints, nextMap.temporaryHitPoints)) {
     const source = provenance(temporaryHpTouches)
     ordered.push({
       firstOperationOrder: firstTemporaryHpOrder,
       scopeOrder: 0,
-      tieKey: context.map.slug,
+      tieKey: map.slug,
       input: {
         kind: 'map-temporary-hit-points',
-        scope: { kind: 'map', mapSlug: context.map.slug },
-        expectedRevision: normalizeRevision(context.map.revision),
+        scope: { kind: 'map', mapSlug: map.slug },
+        expectedRevision: normalizeRevision(map.revision),
         sourceOperationId: source.sourceOperationId,
         reasonCode: source.reasonCode,
-        previous: deepCloneJson(context.map.temporaryHitPoints),
+        previous: deepCloneJson(map.temporaryHitPoints),
         current: deepCloneJson(nextMap.temporaryHitPoints),
         compensation: RESTORE_PREVIOUS_MOVE_STATE_VALUE,
       },
@@ -406,3 +408,18 @@ export const buildMoveCoreTokenStateChanges = (
   ))
   return createMoveStateChangePlan(ordered.map(({ input }) => input))
 }
+
+export interface BuildMoveCoreTokenStateChangesInput
+  extends Omit<BuildCoreTokenStateChangesInput, 'map' | 'placements' | 'time'> {
+  readonly context: AuthoritativeMoveRulesContext
+}
+
+/** Move-domain adapter retained for existing callers. */
+export const buildMoveCoreTokenStateChanges = (
+  options: BuildMoveCoreTokenStateChangesInput,
+): MoveStateChangePlan => buildCoreTokenStateChanges({
+  ...options,
+  map: options.context.map,
+  placements: options.context.queries.placements.all(),
+  time: options.context.time,
+})

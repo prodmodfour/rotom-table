@@ -11,6 +11,7 @@ import {
 /** Closed high-level item behaviors available to reviewed MoveSpecs. */
 export const MOVE_ITEM_EFFECT_ACTIONS = [
   'give',
+  'pickup',
   'steal',
   'swap',
   'knock-to-ground',
@@ -95,6 +96,7 @@ interface MoveItemSelectedEffectPayloadBase<Action extends MoveItemEffectAction>
 }
 
 export type MoveItemGiveEffectPayload = MoveItemSelectedEffectPayloadBase<'give'>
+export type MoveItemPickupEffectPayload = MoveItemSelectedEffectPayloadBase<'pickup'>
 export type MoveItemStealEffectPayload = MoveItemSelectedEffectPayloadBase<'steal'>
 export type MoveItemKnockToGroundEffectPayload =
   MoveItemSelectedEffectPayloadBase<'knock-to-ground'>
@@ -151,6 +153,7 @@ export interface MoveItemDigestBuffEffectPayload {
 
 export type MoveItemEffectPayload =
   | MoveItemGiveEffectPayload
+  | MoveItemPickupEffectPayload
   | MoveItemStealEffectPayload
   | MoveItemSwapEffectPayload
   | MoveItemKnockToGroundEffectPayload
@@ -371,6 +374,7 @@ const nullableSelection = (
 
 const selectedPayload = <Action extends
   | 'give'
+  | 'pickup'
   | 'steal'
   | 'knock-to-ground'
   | 'throw'
@@ -386,7 +390,7 @@ const selectedPayload = <Action extends
     fail(
       'inconsistent-item-effect',
       `${path}.quantity`,
-      `${action} operates on one equipped singleton item.`,
+      `${action} operates on one singleton item.`,
     )
   }
   return {
@@ -437,6 +441,7 @@ export const parseMoveItemEffectPayload = (
 
   if (
     action === 'give'
+    || action === 'pickup'
     || action === 'steal'
     || action === 'knock-to-ground'
     || action === 'throw'

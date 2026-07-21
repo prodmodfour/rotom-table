@@ -11,6 +11,7 @@ import {
   tokenFacingTowardPoint,
 } from '~/utils/tokenFacing'
 import { deepCloneJson } from '~/utils/serialization'
+import { assertAa060AnchoredDestination } from '../abilityAutomation/mechanics/aa060'
 
 export interface AuthoritativeMovementMapTransition {
   readonly nextMap: TabletopMap
@@ -49,6 +50,11 @@ export const applyAuthoritativeMovementMapTransition = (input: {
   }
   const placement = input.map.placements.find(candidate => candidate.id === input.placementId)
   if (!placement) throw new Error(`Movement placement ${input.placementId} is missing.`)
+  assertAa060AnchoredDestination({
+    map: input.map,
+    placementId: input.placementId,
+    destination: input.destination,
+  })
 
   const previousEncounterState = parseEncounterState(
     input.map.encounterState ?? createEmptyEncounterState(),

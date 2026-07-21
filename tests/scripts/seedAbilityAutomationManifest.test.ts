@@ -34,7 +34,7 @@ const withTemporaryManifest = (test: (manifestPath: string) => void): void => {
 }
 
 describe('ability automation semantic manifest seed script', () => {
-  it('generates byte-stable data matching the tracked bootstrap manifest', () => {
+  it('generates a byte-stable fresh bootstrap independently of the promoted tracked manifest', () => {
     withTemporaryManifest((manifestPath) => {
       const secondPath = join(dirname(manifestPath), 'second.json')
       const first = runSeed(manifestPath)
@@ -43,7 +43,7 @@ describe('ability automation semantic manifest seed script', () => {
       expect(independent.status, `${independent.stdout}\n${independent.stderr}`).toBe(0)
       const firstBytes = readFileSync(manifestPath)
       expect(readFileSync(secondPath)).toEqual(firstBytes)
-      expect(firstBytes).toEqual(readFileSync(join(repoRoot, 'data/ability-automation/manifest.json')))
+      expect(firstBytes).not.toEqual(readFileSync(join(repoRoot, 'data/ability-automation/manifest.json')))
 
       const rerun = runSeed(manifestPath)
       expect(rerun.status, `${rerun.stdout}\n${rerun.stderr}`).toBe(0)

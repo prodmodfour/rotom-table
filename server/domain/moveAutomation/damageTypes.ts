@@ -23,6 +23,9 @@ import {
   singleTypeMultiplier,
   type PokemonType,
 } from '~/utils/typeChart'
+import { hasAa060MoveMark } from '../abilityAutomation/mechanics/aa060MoveIntegration'
+import { aa062HasBoneWielderImmunityOverride } from '../abilityAutomation/mechanics/aa062MoveIntegration'
+import { aa063MoveResistance } from '../abilityAutomation/mechanics/aa063MoveIntegration'
 
 export type MoveDamageTypeResolutionErrorCode =
   | 'move-type-unavailable'
@@ -61,7 +64,7 @@ export interface MoveDamageTypeResolution {
   readonly operationId: string
   readonly recipientId: string
   readonly moveType: PokemonType
-  readonly moveTypeSource: 'static' | 'expression'
+  readonly moveTypeSource: 'static' | 'expression' | 'ability'
   readonly defenderTypes: readonly PokemonType[]
   readonly defenderTypeEvaluations: readonly MoveDamageDefenderTypeEvaluation[]
   readonly policy: MoveDamageTypeEffectivenessPolicy
@@ -236,11 +239,20 @@ export const resolveMoveDamageType = (options: {
   options.context.reads.recordPlacement(options.context.actor.placement)
   options.context.reads.recordPlacement(placement)
 
-  const moveType = resolvedMoveType({
+  const resolvedType = resolvedMoveType({
     ...options,
     canonicalMoveId: options.canonicalMoveId ?? options.script.moveName,
   })
-  const policy = policySnapshot(options.operation)
+  const aerilate = resolvedType.type === 'Normal'
+    && hasAa060MoveMark(options.context, 'Aerilate', options.script.moveName)
+  const moveType = aerilate
+    ? { type: 'Flying' as const, source: 'ability' as const, trace: resolvedType.trace }
+    : resolvedType
+  const declaredPolicy = policySnapshot(options.operation)
+  const boneWielder = aa062HasBoneWielderImmunityOverride(options.context, options.script)
+  const policy = boneWielder
+    ? { ...declaredPolicy, immunity: 'ignore' as const, passiveImmunity: 'ignore' as const }
+    : declaredPolicy
   const overrides = new Map<PokemonType, MoveEffectTypeRelation>()
   for (const override of policy.defenderTypeOverrides) {
     const defenderType = requiredCanonicalType(
@@ -316,6 +328,16 @@ export const resolveMoveDamageType = (options: {
   ) {
     passiveMultiplier = resistMultiplierOneStepFurther(passiveMultiplier)
     passiveSources.push(ELECTRIC_RESISTANT_COAT_CONDITION)
+  }
+  if (policy.resistance === 'honor' && passiveMultiplier > 0) {
+    const resistance = aa063MoveResistance({
+      context: options.context, script: options.script,
+      recipientId: options.recipientId, moveType: moveType.type,
+    })
+    for (let step = 0; step < resistance.steps; step += 1) {
+      passiveMultiplier = resistMultiplierOneStepFurther(passiveMultiplier)
+    }
+    passiveSources.push(...resistance.sources)
   }
 
   const passiveImmunity = passiveMultiplier === 0 && baseMultiplier !== 0

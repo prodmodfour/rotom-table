@@ -229,9 +229,22 @@ describe('ability automation production runtime registry', () => {
     }))
   })
 
-  it('ships with no production runtime selected while every canonical row is unimplemented', () => {
-    expect(ABILITY_AUTOMATION_RUNTIME_REGISTRY.size).toBe(0)
-    expect(ABILITY_AUTOMATION_RUNTIME_REGISTRY.entries()).toEqual([])
+  it('ships only exact evidence-backed production selections', () => {
+    expect(ABILITY_AUTOMATION_RUNTIME_REGISTRY.size).toBe(48)
+    expect(ABILITY_AUTOMATION_RUNTIME_REGISTRY.entries().map(runtime => runtime.canonicalId))
+      .toEqual([
+        'Abominable', 'Absorb Force', 'Accelerate', 'Adaptability', 'Aerilate', 'Aftermath',
+        'Air Lock', 'Ambush', 'Analytic', 'Anchored', 'Anger Point', 'Anticipation',
+        'Aqua Boost', 'Aqua Bullet', 'Arena Trap', 'Aroma Veil', 'Aura Break', 'Aura Storm',
+        'Bad Dreams', 'Ball Fetch', 'Battery', 'Battle Armor', 'Beam Cannon', 'Beast Boost',
+        'Beautiful', 'Berry Storage', 'Berserk', 'Big Pecks', 'Big Swallow', 'Blaze',
+        'Blessed Touch', 'Blow Away', 'Blur', 'Bodyguard', 'Bone Lord', 'Bone Wielder',
+        'Brimstone', 'Bulletproof', 'Bully', 'Cave Crasher', 'Celebrate', 'Chemical Romance',
+        'Cherry Power', 'Chilling Neigh', 'Chlorophyll', 'Clay Cannons', 'Clear Body', 'Cloud Nine',
+      ])
+    expect(registeredAbilityAutomationRuntimeFor('Adaptability')).toMatchObject({
+      kind: 'abilityspec-v1', version: 1,
+    })
     expect(registeredAbilityAutomationRuntimeFor('Healer')).toBeNull()
     expect(registeredAbilityAutomationRuntimeFor('Unknown')).toBeNull()
   })

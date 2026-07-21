@@ -2,7 +2,7 @@
 
 `PLAN_STATUS: IN_PROGRESS`
 
-`CURRENT_TICKET: AA-012`
+`CURRENT_TICKET: AA-064`
 
 ## Goal
 
@@ -96,14 +96,14 @@ Ability automation should reuse MoveSpec v2 selectors, expressions, operations, 
 
 ## Progress snapshot
 
-- Plan tickets: **11 DONE / 110 total**
+- Plan tickets: **63 DONE / 110 total**
 - Canonical inventory: **483**
-- Semantically complete: **0**
+- Semantically complete: **48**
 - Assisted: **0**
-- Blocked/unimplemented: **483**
+- Blocked/unimplemented: **435**
 - Interaction status: **483 unassessed**
 - Legacy baseline: **45 abilities with 55 partial fragments; 438 with no reviewed legacy fragment**
-- Production runtime: existing partial legacy ability paths; no authoritative AbilitySpec registry yet
+- Production runtime: **48 exact manifest-selected AbilitySpec v1 runtimes**; retained legacy paths remain explicit compatibility only
 
 ## Tickets
 
@@ -135,119 +135,119 @@ Ability automation should reuse MoveSpec v2 selectors, expressions, operations, 
   - Add immutable JSON-only identity, mode, subscriptions, targeting, preconditions, costs, phases, operations, handler identity, and presentation metadata with aggregate limits.
 - [x] **AA-011 — Add AbilitySpec normalization, validation, and definition hashing** — `DONE`
   - Canonicalize only set-like data, preserve mechanic order, validate closed extensions, and bind hashes to ability rules provenance.
-- [ ] **AA-012 — Add manifest-selected production registry** — `IN_PROGRESS`
+- [x] **AA-012 — Add manifest-selected production registry** — `DONE`
   - Duplicate-check registrations and permit production lookup only through canonical manifest-selected runtime metadata.
-- [ ] **AA-013 — Add bounded pure ability-handler registry** — `TODO`
+- [x] **AA-013 — Add bounded pure ability-handler registry** — `DONE`
   - Restrict handlers to frozen context/query interfaces and strictly parsed operations/trace entries without I/O, ambient time, or ambient randomness.
-- [ ] **AA-014 — Build immutable authoritative ability context** — `TODO`
+- [x] **AA-014 — Build immutable authoritative ability context** — `DONE`
   - Resolve actor, source, targets, sides, map, sheets, effective abilities, encounter effects, items, capabilities, history, and private read-set queries.
-- [ ] **AA-015 — Adapt the shared typed effect kernel for abilities** — `TODO`
+- [x] **AA-015 — Adapt the shared typed effect kernel for abilities** — `DONE`
   - Reuse compatible selectors, predicates, expressions, operations, reducers, and state planning without pretending every ability is a move.
-- [ ] **AA-016 — Add ability trace, roll ledger, and causal ancestry** — `TODO`
+- [x] **AA-016 — Add ability trace, roll ledger, and causal ancestry** — `DONE`
   - Trace eligibility, suppression, subscriptions, choices, rolls, operations, prevention, lifecycle, nested causes, and reviewed runtime identity.
-- [ ] **AA-017 — Add ability state-plan/read-set integration** — `TODO`
+- [x] **AA-017 — Add ability state-plan/read-set integration** — `DONE`
   - Produce typed map/sheet/inventory/encounter plans and validate all consulted revisions in the same atomic commit boundary.
-- [ ] **AA-018 — Add nested execution and performance budgets** — `TODO`
+- [x] **AA-018 — Add nested execution and performance budgets** — `DONE`
   - Bound event fan-out, trigger count, nesting depth, operations, recipients, rolls, choices, and trace size.
-- [ ] **AA-019 — Define strict accepted and pending ability results** — `TODO`
+- [x] **AA-019 — Define strict accepted and pending ability results** — `DONE`
   - Separate private mechanics from bounded public summaries and generic authorized presentation.
 
 ### Phase 3 — Frequency, actions, effective abilities, and lifecycle state
 
-- [ ] **AA-020 — Parse and model canonical ability frequencies** — `TODO`
+- [x] **AA-020 — Parse and model canonical ability frequencies** — `DONE`
   - Support Static, At-Will, Scene/Scene xN, Daily/Daily xN, and explicit exceptional frequency clauses as reviewed data.
-- [ ] **AA-021 — Model ability action economy** — `TODO`
+- [x] **AA-021 — Model ability action economy** — `DONE`
   - Support Standard, Shift, Swift, Free, Full, Extended, Special, Priority, Interrupt, and Reaction costs and shared Interrupt/Reaction availability.
-- [ ] **AA-022 — Add authoritative scene/daily usage ledgers** — `TODO`
+- [x] **AA-022 — Add authoritative scene/daily usage ledgers** — `DONE`
   - Own temporary scene usage in encounter state and lasting Daily usage on the sheet, with atomic payment and exact retry behavior.
-- [ ] **AA-023 — Add round/turn/cooldown limits and resets** — `TODO`
+- [x] **AA-023 — Add round/turn/cooldown limits and resets** — `DONE`
   - Support once-per-round/turn clauses, delayed reavailability, scene transitions, and encounter recovery.
-- [ ] **AA-024 — Add effective-ability projection and suppression semantics** — `TODO`
+- [x] **AA-024 — Add effective-ability projection and suppression semantics** — `DONE`
   - Resolve base, granted, copied, replaced, transformed, suppressed, and uncopyable/undisableable abilities in deterministic order.
-- [ ] **AA-025 — Add passive provider aggregation and stacking policy** — `TODO`
+- [x] **AA-025 — Add passive provider aggregation and stacking policy** — `DONE`
   - Define stable priority/stacking groups for stat, damage, accuracy, evasion, immunity, movement, and side/field providers.
-- [ ] **AA-026 — Add parameterized ability-instance data** — `TODO`
+- [x] **AA-026 — Add parameterized ability-instance data** — `DONE`
   - Represent sheet-authored choices and canonical parameters with validated stable identities rather than parsing display names during resolution.
-- [ ] **AA-027 — Add game-event duration lifecycle for ability effects** — `TODO`
+- [x] **AA-027 — Add game-event duration lifecycle for ability effects** — `DONE`
   - Support turn, round, scene, source-presence, source-ability, target-presence, weather, terrain, and until-triggered durations.
-- [ ] **AA-028 — Add marks, counters, tokens, modes, and forms** — `TODO`
+- [x] **AA-028 — Add marks, counters, tokens, modes, and forms** — `DONE`
   - Model ability-owned encounter state with bounded identities, source linkage, lifecycle cleanup, and replay-safe updates.
-- [ ] **AA-029 — Add restart/reconnect/export/recovery semantics** — `TODO`
+- [x] **AA-029 — Add restart/reconnect/export/recovery semantics** — `DONE`
   - Preserve usages, effects, pending windows, modes, and causal state across process restart and supported backup formats.
 
 ### Phase 4 — Typed event subscriptions and trigger routing
 
-- [ ] **AA-030 — Expand the closed encounter-event vocabulary for abilities** — `TODO`
+- [x] **AA-030 — Expand the closed encounter-event vocabulary for abilities** — `DONE`
   - Add only typed facts needed for ability triggers, including action, HP, condition, stage, item, field, and lifecycle outcomes.
-- [ ] **AA-031 — Add deterministic event subscription and eligibility routing** — `TODO`
+- [x] **AA-031 — Add deterministic event subscription and eligibility routing** — `DONE`
   - Match reviewed subscriptions against accepted events and current effective abilities without scanning prose or trusting clients.
-- [ ] **AA-032 — Cover move declaration/use/type/class/keyword events** — `TODO`
+- [x] **AA-032 — Cover move declaration/use/type/class/keyword events** — `DONE`
   - Expose authoritative move identity, type, class, range, keywords, targets, and semantic branches at reviewed checkpoints.
-- [ ] **AA-033 — Cover hit/miss/critical/damage/contact events** — `TODO`
+- [x] **AA-033 — Cover hit/miss/critical/damage/contact events** — `DONE`
   - Preserve strike index, melee/ranged/contact context, actual losses, effectiveness, prevention, and attacker/defender identities.
-- [ ] **AA-034 — Cover HP, temporary HP, injury, massive-damage, and faint events** — `TODO`
+- [x] **AA-034 — Cover HP, temporary HP, injury, massive-damage, and faint events** — `DONE`
   - Emit typed before/after facts from accepted reducers and prevent derived-event duplication on replay.
-- [ ] **AA-035 — Cover Combat Stage, stat, condition, save, and cure events** — `TODO`
+- [x] **AA-035 — Cover Combat Stage, stat, condition, save, and cure events** — `DONE`
   - Distinguish attempted, applied, capped, prevented, reset, transferred, and source-specific outcomes.
-- [ ] **AA-036 — Cover movement, adjacency, terrain, hazard, and zone events** — `TODO`
+- [x] **AA-036 — Cover movement, adjacency, terrain, hazard, and zone events** — `DONE`
   - Route pre-step and post-step facts with authoritative paths, distances, cells, forced movement, grounding, and source zones.
-- [ ] **AA-037 — Cover send-out, recall, switch, initiative, turn, round, and scene events** — `TODO`
+- [x] **AA-037 — Cover send-out, recall, switch, initiative, turn, round, and scene events** — `DONE`
   - Integrate triggers with existing lifecycle reducers and deterministic source ordering.
-- [ ] **AA-038 — Cover weather, terrain, room, item, inventory, and held-item events** — `TODO`
+- [x] **AA-038 — Cover weather, terrain, room, item, inventory, and held-item events** — `DONE`
   - Emit typed add/remove/use/consume/drop/transfer facts with source/resource revisions.
-- [ ] **AA-039 — Add nested trigger ordering, cycle prevention, and causal budgets** — `TODO`
+- [x] **AA-039 — Add nested trigger ordering, cycle prevention, and causal budgets** — `DONE`
   - Define priority, simultaneous triggers, child events, once-per-causal-chain guards, recursion bounds, and deterministic pass behavior.
 
 ### Phase 5 — Intent, choices, reactions, geometry, and exceptional entities
 
-- [ ] **AA-040 — Extend ability declaration intent and targeting envelopes** — `TODO`
+- [x] **AA-040 — Extend ability declaration intent and targeting envelopes** — `DONE`
   - Support reviewed token, self, side, area, cell, direction, type, stat, move, ability, item, and branch choices through stable IDs.
-- [ ] **AA-041 — Add durable optional-trigger windows** — `TODO`
+- [x] **AA-041 — Add durable optional-trigger windows** — `DONE`
   - Persist trigger identity, legal options, ownership, read set, trace, rolls, and deterministic resume state.
-- [ ] **AA-042 — Add Interrupt/Reaction timing and priority arbitration** — `TODO`
+- [x] **AA-042 — Add Interrupt/Reaction timing and priority arbitration** — `DONE`
   - Order competing windows at exact authoritative checkpoints and share availability correctly.
-- [ ] **AA-043 — Add pass, force-pass, cancellation, expiry, and GM recovery** — `TODO`
+- [x] **AA-043 — Add pass, force-pass, cancellation, expiry, and GM recovery** — `DONE`
   - Make every terminal path typed, idempotent, causal, authorized, and auditable.
-- [ ] **AA-044 — Add authorized response views and redaction** — `TODO`
+- [x] **AA-044 — Add authorized response views and redaction** — `DONE`
   - Prevent hidden ability, source, target, responder, option, sheet, and roll leakage in HTTP/SSE/replay/log surfaces.
-- [ ] **AA-045 — Complete ability targeting relationships, range, and geometry** — `TODO`
+- [x] **AA-045 — Complete ability targeting relationships, range, and geometry** — `DONE`
   - Reuse authoritative side, willingness, visibility, line, burst, cone, cardinal footprint, adjacency, and map-range queries.
-- [ ] **AA-046 — Complete ability randomness, checks, saves, and rerolls** — `TODO`
+- [x] **AA-046 — Complete ability randomness, checks, saves, and rerolls** — `DONE`
   - Use stable roll IDs, reviewed formulas/tables, exact draw accounting, typed source choices, and replay-safe ledgers.
-- [ ] **AA-047 — Add ability-created anchors, decoys, objects, and subordinate tokens** — `TODO`
+- [x] **AA-047 — Add ability-created anchors, decoys, objects, and subordinate tokens** — `DONE`
   - Define bounded non-sheet entities, occupancy/targetability, control, source linkage, movement, and cleanup.
-- [ ] **AA-048 — Add ability movement and displacement planning** — `TODO`
+- [x] **AA-048 — Add ability movement and displacement planning** — `DONE`
   - Use the authoritative movement oracle for optional/forced movement, teleports, swaps, anchors, and interruption checkpoints.
-- [ ] **AA-049 — Add form, disguise, illusion, copy, and transformation snapshots** — `TODO`
+- [x] **AA-049 — Add form, disguise, illusion, copy, and transformation snapshots** — `DONE`
   - Separate aesthetic/private presentation from mechanical projections and preserve immutable copy bases.
 
 ### Phase 6 — Reusable mechanical providers and user-facing integration
 
-- [ ] **AA-050 — Complete damage, Damage Base, type, STAB, Accuracy, and critical providers** — `TODO`
-- [ ] **AA-051 — Complete immunity, resistance, vulnerability, protection, and bypass providers** — `TODO`
-- [ ] **AA-052 — Complete HP, temporary HP, drain, recoil, injury, and damage-reduction providers** — `TODO`
-- [ ] **AA-053 — Complete stat, Combat Stage, evasion, initiative, and movement-speed providers** — `TODO`
-- [ ] **AA-054 — Complete condition, save, cure, prevention, reflection, and transfer providers** — `TODO`
-- [ ] **AA-055 — Complete move mutation, grant, connection, disable, replacement, and nested-use providers** — `TODO`
-- [ ] **AA-056 — Complete held-item, inventory, berry/food, pickup, drop, steal, and consume providers** — `TODO`
-- [ ] **AA-057 — Complete weather, terrain, room, hazard, vortex, zone, and battlefield providers** — `TODO`
-- [ ] **AA-058 — Complete ally, enemy, aura, side, adjacency, interception, and redirection providers** — `TODO`
-- [ ] **AA-059 — Replace the legacy ability UI/command boundary** — `TODO`
+- [x] **AA-050 — Complete damage, Damage Base, type, STAB, Accuracy, and critical providers** — `DONE`
+- [x] **AA-051 — Complete immunity, resistance, vulnerability, protection, and bypass providers** — `DONE`
+- [x] **AA-052 — Complete HP, temporary HP, drain, recoil, injury, and damage-reduction providers** — `DONE`
+- [x] **AA-053 — Complete stat, Combat Stage, evasion, initiative, and movement-speed providers** — `DONE`
+- [x] **AA-054 — Complete condition, save, cure, prevention, reflection, and transfer providers** — `DONE`
+- [x] **AA-055 — Complete move mutation, grant, connection, disable, replacement, and nested-use providers** — `DONE`
+- [x] **AA-056 — Complete held-item, inventory, berry/food, pickup, drop, steal, and consume providers** — `DONE`
+- [x] **AA-057 — Complete weather, terrain, room, hazard, vortex, zone, and battlefield providers** — `DONE`
+- [x] **AA-058 — Complete ally, enemy, aura, side, adjacency, interception, and redirection providers** — `DONE`
+- [x] **AA-059 — Replace the legacy ability UI/command boundary** — `DONE`
   - Drive menus, targeting, pending prompts, recovery, accepted results, and status badges from manifest-selected server capabilities; preserve passive non-invocation and accessibility.
 
 ### Phase 7 — Canonical ability cohorts
 
 Each cohort must review every named ability against canonical text, implement all required branches using existing machinery or narrowly add reusable machinery, register a reviewed runtime, add executable conformance evidence, and promote only genuinely complete rows.
 
-- [ ] **AA-060 — Abominable through Anticipation** — `TODO`
+- [x] **AA-060 — Abominable through Anticipation** — `DONE`
   - Abominable; Absorb Force; Accelerate; Adaptability; Aerilate; Aftermath; Air Lock; Ambush; Analytic; Anchored; Anger Point; Anticipation
-- [ ] **AA-061 — Aqua Boost through Beast Boost** — `TODO`
+- [x] **AA-061 — Aqua Boost through Beast Boost** — `DONE`
   - Aqua Boost; Aqua Bullet; Arena Trap; Aroma Veil; Aura Break; Aura Storm; Bad Dreams; Ball Fetch; Battery; Battle Armor; Beam Cannon; Beast Boost
-- [ ] **AA-062 — Beautiful through Bone Wielder** — `TODO`
+- [x] **AA-062 — Beautiful through Bone Wielder** — `DONE`
   - Beautiful; Berry Storage; Berserk; Big Pecks; Big Swallow; Blaze; Blessed Touch; Blow Away; Blur; Bodyguard; Bone Lord; Bone Wielder
-- [ ] **AA-063 — Brimstone through Cloud Nine** — `TODO`
+- [x] **AA-063 — Brimstone through Cloud Nine** — `DONE`
   - Brimstone; Bulletproof; Bully; Cave Crasher; Celebrate; Chemical Romance; Cherry Power; Chilling Neigh; Chlorophyll; Clay Cannons; Clear Body; Cloud Nine
-- [ ] **AA-064 — Cluster Mind through Corrosion** — `TODO`
+- [ ] **AA-064 — Cluster Mind through Corrosion** — `IN_PROGRESS`
   - Cluster Mind; Color Change; Color Theory; Comatose; Combo Striker; Competitive; Compound Eyes; Confidence; Conqueror; Contrary; Copy Master; Corrosion
 - [ ] **AA-065 — Corrosive Toxins through Damp** — `TODO`
   - Corrosive Toxins; Cotton Down; Courage; Covert; Cruelty; Crush Trap; Cud Chew; Curious Medicine; Cursed Body; Cute Charm; Cute Tears; Damp

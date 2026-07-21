@@ -1,13 +1,26 @@
 import { existsSync, readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
+import actionExceptionsJson from '../data/ability-automation/action-exceptions.json'
 import capabilityCatalogJson from '../data/ability-automation/capabilities.json'
+import frequencyExceptionsJson from '../data/ability-automation/frequency-exceptions.json'
 import legacyBaselineJson from '../data/ability-automation/legacy-baseline.json'
 import manifestJson from '../data/ability-automation/manifest.json'
+import parameterDefinitionsJson from '../data/ability-automation/parameter-definitions.json'
 import privacyMatrixJson from '../data/ability-automation/privacy-matrix.json'
+import protectionsJson from '../data/ability-automation/protections.json'
 import scenarioRequirementsJson from '../data/ability-automation/scenario-requirements.json'
+import timingConstraintsJson from '../data/ability-automation/timing-constraints.json'
+import {
+  parseAbilityActionExceptionCatalog,
+  parseCanonicalAbilityActions,
+} from '#shared/abilityAutomation/actionEconomy'
 import {
   parseAbilityAutomationCapabilityCatalog,
 } from '#shared/abilityAutomation/capabilities'
+import {
+  parseAbilityFrequencyExceptionCatalog,
+  parseCanonicalAbilityFrequencies,
+} from '#shared/abilityAutomation/frequency'
 import {
   parseAbilityAutomationLegacyBaseline,
 } from '#shared/abilityAutomation/legacyBaseline'
@@ -15,6 +28,10 @@ import {
   parseAbilityAutomationManifest,
 } from '#shared/abilityAutomation/manifest'
 import { parseAbilityAutomationPrivacyMatrix } from '#shared/abilityAutomation/privacy'
+import { parseAbilityParameterDefinitionCatalog } from '#shared/abilityAutomation/parameters'
+import { parseAbilityProtectionCatalog } from '#shared/abilityAutomation/protections'
+import { parseAbilityTimingConstraintCatalog } from '#shared/abilityAutomation/timingConstraints'
+import { assertAbilityAutomationEngineBudgets } from '#shared/abilityAutomation/performanceBudgets'
 import {
   loadCanonicalAbilityCatalog,
 } from '#shared/abilityAutomation/ruleset'
@@ -39,6 +56,21 @@ interface AbilityAutomationCheckSummary {
   readonly blocked: number
   readonly unimplemented: number
   readonly registeredRuntimes: number
+  readonly frequencies: {
+    readonly static: number
+    readonly atWill: number
+    readonly scene: number
+    readonly daily: number
+    readonly exceptional: number
+  }
+  readonly actionVariants: {
+    readonly total: number
+    readonly interruptReaction: number
+    readonly priority: number
+  }
+  readonly timingConstraints: number
+  readonly abilityProtections: number
+  readonly parameterizedAbilities: number
   readonly interactions: {
     readonly unassessed: number
     readonly partial: number
@@ -187,10 +219,31 @@ export const checkAbilityAutomationRepository = async (options: {
   readonly requireComplete?: boolean
   readonly checkPlan?: boolean
 } = {}): Promise<AbilityAutomationCheckSummary> => {
+  assertAbilityAutomationEngineBudgets()
   const catalog = await loadCanonicalAbilityCatalog(readFileSync(ABILITIES_PATH))
   if (catalog.abilities.length !== EXPECTED_ABILITY_COUNT) {
     fail(`Expected ${EXPECTED_ABILITY_COUNT} canonical abilities; found ${catalog.abilities.length}.`)
   }
+  const frequencyExceptions = parseAbilityFrequencyExceptionCatalog(
+    frequencyExceptionsJson,
+    catalog,
+  )
+  const frequencyByAbility = parseCanonicalAbilityFrequencies(catalog, frequencyExceptions)
+  const frequencies = [...frequencyByAbility.values()]
+  const actionExceptions = parseAbilityActionExceptionCatalog(
+    actionExceptionsJson,
+    catalog,
+    frequencyByAbility,
+  )
+  const actionVariants = [
+    ...parseCanonicalAbilityActions(catalog, frequencyByAbility, actionExceptions).values(),
+  ].flatMap(action => action.variants)
+  const timingConstraints = parseAbilityTimingConstraintCatalog(timingConstraintsJson, catalog)
+  const protections = parseAbilityProtectionCatalog(protectionsJson, catalog)
+  const parameterDefinitions = parseAbilityParameterDefinitionCatalog(
+    parameterDefinitionsJson,
+    catalog,
+  )
   const canonicalIds = catalog.abilities.map(ability => ability.canonicalId)
   if (new Set(canonicalIds).size !== EXPECTED_ABILITY_COUNT) fail('Canonical abilities must be unique.')
   if (canonicalIds.some((identity, index) => identity !== [...canonicalIds].sort(compareCodePoints)[index])) {
@@ -276,6 +329,23 @@ export const checkAbilityAutomationRepository = async (options: {
     blocked,
     unimplemented,
     registeredRuntimes: ABILITY_AUTOMATION_RUNTIME_REGISTRY.size,
+    frequencies: {
+      static: frequencies.filter(value => value.kind === 'static').length,
+      atWill: frequencies.filter(value => value.kind === 'at-will').length,
+      scene: frequencies.filter(value => value.kind === 'scene').length,
+      daily: frequencies.filter(value => value.kind === 'daily').length,
+      exceptional: frequencies.filter(value => value.kind === 'exceptional').length,
+    },
+    actionVariants: {
+      total: actionVariants.length,
+      interruptReaction: actionVariants.filter(variant => (
+        variant.availabilityPool === 'interrupt-reaction'
+      )).length,
+      priority: actionVariants.filter(variant => variant.timing === 'priority').length,
+    },
+    timingConstraints: timingConstraints.entries.length,
+    abilityProtections: protections.entries.length,
+    parameterizedAbilities: parameterDefinitions.entries.length,
     interactions,
     capabilities,
     evidenceClasses: scenarioCatalog.evidenceClasses.length,

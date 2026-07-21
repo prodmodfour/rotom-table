@@ -67,6 +67,7 @@ import { logicalMapResourcePath } from '../utils/runtimeResourcePaths'
 import { redactSheetUpdatesForPlayer } from '../utils/sheetPrivacy'
 import { UseCaseHttpError } from '../utils/useCaseErrors'
 import { toPersistedMap } from './saveMap'
+import { resolveAa062BerserkDirectTrigger } from '../domain/abilityAutomation/mechanics/aa062TriggeredIntegration'
 
 export class LivePlaySheetCommandUseCaseError extends UseCaseHttpError<400 | 403 | 404 | 409> {}
 
@@ -520,7 +521,7 @@ const applyModifyHp = (
   const payload = expectModifyHpPayload(command.payload)
   const original = context.sheet.sheet as unknown as AnyLiveSheet
   const previous = hpSnapshotForSheet(context.placement.sheetKind, original)
-  const updated = applyHpToSheet(context.placement.sheetKind, original, payload.currentHp, payload.injuries)
+  let updated = applyHpToSheet(context.placement.sheetKind, original, payload.currentHp, payload.injuries)
   const current = hpSnapshotForSheet(context.placement.sheetKind, updated)
   const sheetChanged = previous.currentHp !== current.currentHp || previous.injuries !== current.injuries
 
@@ -537,10 +538,26 @@ const applyModifyHp = (
   const mapWithTemporaryHp = requestedTemporaryHp === undefined
     ? context.map
     : mapWithTemporaryHpForPlacement(context.map, context.placement.id, requestedTemporaryHp)
+  const berserk = resolveAa062BerserkDirectTrigger({
+    map: mapWithTemporaryHp,
+    placement: context.placement,
+    sheet: original,
+    previousHp: previous.currentHp,
+    currentHp: current.currentHp,
+    maximumHp: previous.fullMaxHp,
+    previousConditions: conditionsSnapshotForSheet(context.placement.sheetKind, original),
+    currentConditions: conditionsSnapshotForSheet(context.placement.sheetKind, updated),
+    operationId: command.opId,
+  })
+  if (berserk.triggered) {
+    const stages = combatStagesSnapshotForSheet(context.placement.sheetKind, updated)
+    stages.satk = Math.min(6, stages.satk + 1)
+    updated = applyCombatStagesToSheet(context.placement.sheetKind, updated, stages)
+  }
   const nextSheet = sheetChanged ? sheetPayloadForPersistence(updated, context.sheet.slug, updatedAt) : undefined
   return {
     ...context,
-    map: { ...mapWithTemporaryHp, revision, updatedAt },
+    map: { ...berserk.map, revision, updatedAt },
     ...(nextSheet ? { nextSheet } : {}),
     ...(sheetChanged ? {
       sheetUpdate: {
@@ -592,15 +609,32 @@ const applyModifyConditions = (
   const original = context.sheet.sheet as unknown as AnyLiveSheet
   const previous = conditionsSnapshotForSheet(context.placement.sheetKind, original)
   const nextConditions = conditionsAfterAction(previous, payload)
-  const updated = applyConditionsToSheet(context.placement.sheetKind, original, nextConditions)
+  let updated = applyConditionsToSheet(context.placement.sheetKind, original, nextConditions)
   const current = conditionsSnapshotForSheet(context.placement.sheetKind, updated)
   if (sameStringArray(previous, current)) return null
 
+  const hp = hpSnapshotForSheet(context.placement.sheetKind, original)
+  const berserk = resolveAa062BerserkDirectTrigger({
+    map: context.map,
+    placement: context.placement,
+    sheet: original,
+    previousHp: hp.currentHp,
+    currentHp: hp.currentHp,
+    maximumHp: hp.fullMaxHp,
+    previousConditions: previous,
+    currentConditions: current,
+    operationId: command.opId,
+  })
+  if (berserk.triggered) {
+    const stages = combatStagesSnapshotForSheet(context.placement.sheetKind, updated)
+    stages.satk = Math.min(6, stages.satk + 1)
+    updated = applyCombatStagesToSheet(context.placement.sheetKind, updated, stages)
+  }
   const nextSheetRevision = nextRevision(context.sheet.revision)
   const revision = nextRevision(currentRevision)
   return {
     ...context,
-    map: { ...context.map, revision, updatedAt },
+    map: { ...berserk.map, revision, updatedAt },
     nextSheet: sheetPayloadForPersistence(updated, context.sheet.slug, updatedAt),
     sheetUpdate: {
       kind: context.sheet.kind,

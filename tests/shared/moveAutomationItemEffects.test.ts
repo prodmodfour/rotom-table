@@ -29,6 +29,7 @@ const commonSelected = (action: MoveItemEffectAction) => ({
 
 const payloads: Record<MoveItemEffectAction, unknown> = {
   give: commonSelected('give'),
+  pickup: commonSelected('pickup'),
   steal: commonSelected('steal'),
   swap: {
     action: 'swap',
@@ -107,7 +108,7 @@ describe('shared MoveSpec item effects', () => {
       code: 'invalid-item-effect',
     } satisfies Partial<MoveItemEffectValidationError>))
 
-    for (const action of ['give', 'steal', 'knock-to-ground', 'throw'] as const) {
+    for (const action of ['give', 'pickup', 'steal', 'knock-to-ground', 'throw'] as const) {
       expect(() => parseMoveItemEffectPayload({
         ...commonSelected(action),
         quantity: 2,

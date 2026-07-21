@@ -1,6 +1,7 @@
 import type { EventHandler, EventHandlerRequest, H3Event } from 'h3'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { MAP_INTERACTION_MODES } from '#shared/mapInteractionMode'
+import { emptyAbilityClientCapabilityBundle } from '#shared/abilityAutomation/clientCapabilities'
 import { LIVE_TABLE_SNAPSHOT_SCHEMA_VERSION } from '#shared/liveTableSnapshot'
 import {
   PLAYER_PROFILE_SCHEMA_VERSION,
@@ -100,6 +101,7 @@ describe('map live-state API route', () => {
       interactionModeUpdatedAt: 99,
       pokemonSheets: [{ slug: 'pika', nickname: 'Pika', species: 'Pikachu', level: 5, revision: 8 }],
       trainerSheets: [],
+      abilityCapabilities: emptyAbilityClientCapabilityBundle('arena', 4),
     }
     mocks.resolvePlayerProfileForPolicy.mockReturnValue(selectedProfile)
     mocks.getPlayerSessionAccessGrant.mockReturnValue(sessionAccess)
@@ -129,6 +131,7 @@ describe('map live-state API route', () => {
       interactionModeUpdatedAt: 44,
       pokemonSheets: [],
       trainerSheets: [],
+      abilityCapabilities: emptyAbilityClientCapabilityBundle('arena', 4),
     }
     mocks.loadLiveTableSnapshotUseCase.mockReturnValue(response)
 

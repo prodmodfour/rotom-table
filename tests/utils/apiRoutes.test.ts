@@ -74,6 +74,8 @@ describe('API route constants', () => {
       interactionMode: '/api/maps/interaction-mode',
       useMove: '/api/maps/use-move',
       resolveMove: '/api/maps/tokens/resolve-move',
+      beginAbilityDeclaration: '/api/maps/abilities/declarations',
+      resolveAbilityDeclaration: '/api/maps/abilities/resolve',
       moveCorrectionDetails: '/api/maps/move-corrections/details',
       applyMoveCorrection: '/api/maps/move-corrections/apply',
       pendingMoveResponses: '/api/maps/move-responses/pending',

@@ -1,3 +1,5 @@
+import type { AbilityInstanceData } from '#shared/abilityAutomation/parameters'
+import type { AbilityDailyUsageLedger } from '#shared/abilityAutomation/resources'
 import type { PermanentMoveListEntryProvenance } from '#shared/moveAutomation/permanentMoveLists'
 import type { CombatStageKey } from '~/types/combatStages'
 import type { SheetMoveUsageState } from '~/types/moveUsage'
@@ -204,6 +206,8 @@ export interface TrainerAbilityEntry {
   effect?: string
   /** True when a sheet-level ability toggle is active. Mostly used by Pokémon sheets, but kept here for shared ability automation. */
   activated?: boolean
+  /** Stable canonical instance identity and reviewed parameter choices. */
+  automation?: AbilityInstanceData
 }
 
 export interface TrainerManeuver {
@@ -313,6 +317,8 @@ export interface TrainerSheet {
   movelist?: TrainerMove[]
   /** Persistent Daily move frequency usage. EOT/Scene and per-Scene Daily locks are map-scoped. */
   moveUsage?: SheetMoveUsageState
+  /** Lasting server-owned Daily ability usage for the current campaign day. */
+  abilityUsage?: AbilityDailyUsageLedger
   abilities?: TrainerAbilityEntry[]
   maneuvers?: TrainerManeuver[]
   /** Pokémon Training & Orders that the trainer can apply to their team. */

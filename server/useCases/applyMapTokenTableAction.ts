@@ -21,7 +21,7 @@ import type { CombatStageMap } from '~/types/combatStages'
 import type { SpawnedPokemon } from '~/types/pokemon'
 import type { TrainerSheet } from '~/types/trainerSheet'
 import type { AbilityAutomationCategory } from '~/types/abilityAutomation'
-import { abilityEntriesForPlacement, buildTokenAbilityMenuOptions, type TokenAbilityMenuOption } from '~/utils/mapTokenAbilities'
+import { abilityEntriesForPlacement } from '~/utils/mapTokenAbilities'
 import { referenceManeuverOptions, trainerManeuverOptionsForSheet, type TokenManeuverMenuOption } from '~/utils/mapTokenManeuvers'
 import { trainerOrderOptionsForSheet, type TokenOrderMenuOption } from '~/utils/mapTokenOrders'
 import {
@@ -33,8 +33,10 @@ import {
 } from '~/utils/sheetMutations'
 import { pokemonHpSnapshot, trainerHpSnapshot } from '~/utils/sheetSpawn'
 import {
+  buildLegacyTokenAbilityMenuOptions,
   getLegacyMapAbilityAutomation as getMapAbilityAutomation,
   resolveLegacyMapAbilityAutomationTransaction as resolveMapAbilityAutomationTransaction,
+  type LegacyTokenAbilityMenuOption,
 } from '../domain/abilityAutomation/legacyCompatibility'
 import { appendAbilityAutomationLogEntry } from '~/utils/abilityAutomationLog'
 import { appendActiveOrderEffect, createActiveOrderEffect } from '~/utils/activeOrderEffects'
@@ -464,11 +466,11 @@ const resolveAbilityOption = (
   placement: SheetPlacement,
   sheet: PersistedSheet,
   requestedName: string,
-): TokenAbilityMenuOption | null => {
+): LegacyTokenAbilityMenuOption | null => {
   const sheets = placement.sheetKind === 'pokemon'
     ? { pokemon: new Map([[placement.sheetSlug, sheet.sheet as unknown as CharacterSheet]]) }
     : { trainer: new Map([[placement.sheetSlug, sheet.sheet as unknown as TrainerSheet]]) }
-  const options = buildTokenAbilityMenuOptions(abilityEntriesForPlacement(placement, sheets))
+  const options = buildLegacyTokenAbilityMenuOptions(abilityEntriesForPlacement(placement, sheets))
   return options.find((option) => optionMatchesName(option.name, requestedName)) ?? null
 }
 

@@ -8,6 +8,8 @@ import {
   activeHelpingHandBonusEffects,
   withoutHelpingHandCondition,
 } from './helpingHand'
+import type { MoveAutomationScript } from '~/types/moveAutomation'
+import { aa060MoveAccuracyBonus } from '../abilityAutomation/mechanics/aa060MoveIntegration'
 
 export interface AuthoritativeMoveSightAccuracyResolution {
   readonly sourcePlacementId: string
@@ -83,7 +85,7 @@ export const resolveAuthoritativeMoveSightAccuracy = (
  */
 export const resolveAuthoritativeMoveUserAccuracy = (
   context: AuthoritativeMoveRulesContext,
-  options: { readonly targetPlacementId?: string } = {},
+  options: { readonly targetPlacementId?: string; readonly script?: MoveAutomationScript } = {},
 ): AuthoritativeMoveUserAccuracyResolution => {
   const heldItemEffectsSuppressed = context.actor.placement.sheetKind === 'pokemon'
     && context.queries.itemEffects.resolve({
@@ -119,6 +121,14 @@ export const resolveAuthoritativeMoveUserAccuracy = (
       value: HELPING_HAND_ACCURACY_BONUS,
     })
   }
+  const aa060Bonus = options.script ? aa060MoveAccuracyBonus(context, options.script) : 0
+  if (aa060Bonus !== 0) {
+    modifiers.push({
+      sourceId: 'ability.accelerate',
+      reason: 'Accelerate Accuracy',
+      value: aa060Bonus,
+    })
+  }
   if (gravity.bonus !== 0 && gravity.source) {
     modifiers.push({
       sourceId: gravity.source.zoneId,
@@ -128,6 +138,7 @@ export const resolveAuthoritativeMoveUserAccuracy = (
   }
   const baseValue = actorAccuracy
     + (helpingHand.length > 0 ? HELPING_HAND_ACCURACY_BONUS : 0)
+    + aa060Bonus
     + gravity.bonus
   const sight = options.targetPlacementId
     ? resolveAuthoritativeMoveSightAccuracy(context, options.targetPlacementId, baseValue)

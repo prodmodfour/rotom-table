@@ -29,7 +29,7 @@ export const ROTOM_DB_PATH_ENV = 'ROTOM_DB_PATH'
 export const DEFAULT_ROTOM_DB_FILENAME = 'rotom-table.sqlite'
 export const DEFAULT_MIGRATION_BACKUP_DIRNAME = 'backups'
 export const SQLITE_MIGRATION_BACKUP_PREFIX = 'rotom-sqlite-migration-'
-export const STORAGE_SCHEMA_VERSION = 12
+export const STORAGE_SCHEMA_VERSION = 14
 
 const scriptPath = fileURLToPath(import.meta.url)
 const appRoot = resolve(dirname(scriptPath), '..')
@@ -809,6 +809,46 @@ const applyStorageMigrations = (connection) => {
           ON live_play_ops (map_slug, correction_origin_op_id, created_at);
       `)
       setUserVersion(connection, 12)
+    }
+    if (fromVersion < 13) {
+      connection.exec(`
+        CREATE TABLE IF NOT EXISTS ability_declaration_offers (
+          offer_id TEXT PRIMARY KEY,
+          request_id TEXT NOT NULL UNIQUE,
+          request_sha256 TEXT NOT NULL,
+          map_slug TEXT NOT NULL,
+          map_revision INTEGER NOT NULL CHECK (map_revision >= 0),
+          actor_placement_id TEXT NOT NULL,
+          offer_json TEXT NOT NULL,
+          created_at INTEGER NOT NULL CHECK (created_at >= 0),
+          expires_at INTEGER NOT NULL CHECK (expires_at > created_at),
+          consumed_intent_sha256 TEXT,
+          consumed_at INTEGER,
+          CHECK ((consumed_intent_sha256 IS NULL) = (consumed_at IS NULL))
+        );
+
+        CREATE INDEX IF NOT EXISTS ability_declaration_offers_map_expiry_idx
+          ON ability_declaration_offers (map_slug, expires_at, offer_id);
+      `)
+      setUserVersion(connection, 13)
+    }
+    if (fromVersion < 14) {
+      connection.exec(`
+        CREATE TABLE IF NOT EXISTS ability_resolution_ops (
+          intent_id TEXT PRIMARY KEY,
+          intent_sha256 TEXT NOT NULL,
+          map_slug TEXT NOT NULL,
+          intent_json TEXT NOT NULL,
+          result_json TEXT NOT NULL,
+          audit_json TEXT NOT NULL,
+          result_revision INTEGER NOT NULL CHECK (result_revision >= 0),
+          created_at INTEGER NOT NULL CHECK (created_at >= 0)
+        );
+
+        CREATE INDEX IF NOT EXISTS ability_resolution_ops_map_revision_idx
+          ON ability_resolution_ops (map_slug, result_revision, intent_id);
+      `)
+      setUserVersion(connection, 14)
     }
     connection.exec('COMMIT')
   } catch (error) {

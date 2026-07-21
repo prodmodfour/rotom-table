@@ -115,6 +115,8 @@ describe('SQLite storage foundation', () => {
     expect(database.journalMode?.toLowerCase()).toBe('wal')
     expect(getStorageSchemaVersion(database.connection)).toBe(LATEST_STORAGE_SCHEMA_VERSION)
     expect(tableNames(database)).toEqual([
+      'ability_declaration_offers',
+      'ability_resolution_ops',
       'group_inventories',
       'live_play_ops',
       'map_folders',
@@ -133,6 +135,8 @@ describe('SQLite storage foundation', () => {
     openDatabases.push(reopened)
     expect(getStorageSchemaVersion(reopened.connection)).toBe(LATEST_STORAGE_SCHEMA_VERSION)
     expect(tableNames(reopened)).toEqual([
+      'ability_declaration_offers',
+      'ability_resolution_ops',
       'group_inventories',
       'live_play_ops',
       'map_folders',

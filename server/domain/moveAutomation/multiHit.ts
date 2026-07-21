@@ -470,6 +470,7 @@ const rollAccuracy = (options: {
   const rollId = generatedId(options.operation, accuracy.rollId, suffix)
   const userAccuracy = resolveAuthoritativeMoveUserAccuracy(options.context, {
     targetPlacementId: options.target.id,
+    script: options.script,
   })
   const targetEvasion = resolveMoveAutomationTargetEvasion(
     options.script,

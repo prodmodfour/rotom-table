@@ -22,6 +22,7 @@ const validSpec = () => ({
       checkpoint: 'after-commit',
       response: 'optional',
       priority: 10,
+      oncePerCausalChain: true,
       predicate: { kind: 'source-caused-event' },
     },
   ],
@@ -102,6 +103,7 @@ describe('AbilitySpec v1 envelope', () => {
       checkpoint: 'after-commit',
       response: 'optional',
       priority: 10,
+      oncePerCausalChain: true,
     })
     expect(parsed.targeting[0]).toMatchObject({ kind: 'self', minSelections: 0, maxSelections: 0 })
     expect(parsed.costs[0]?.phase).toBe('pay')

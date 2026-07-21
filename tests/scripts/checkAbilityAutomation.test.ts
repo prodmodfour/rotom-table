@@ -25,7 +25,22 @@ describe('ability automation repository checker', () => {
       assisted: manifestJson.abilities.filter(ability => ability.baseStatus === 'assisted').length,
       blocked: manifestJson.abilities.filter(ability => ability.baseStatus === 'blocked').length,
       unimplemented: manifestJson.abilities.filter(ability => ability.runtime.kind === 'unimplemented').length,
-      registeredRuntimes: 0,
+      registeredRuntimes: manifestJson.abilities.filter(ability => ability.runtime.kind === 'abilityspec-v1').length,
+      frequencies: {
+        static: 243,
+        atWill: 56,
+        scene: 151,
+        daily: 31,
+        exceptional: 2,
+      },
+      actionVariants: {
+        total: 488,
+        interruptReaction: 17,
+        priority: 2,
+      },
+      timingConstraints: 2,
+      abilityProtections: 4,
+      parameterizedAbilities: 3,
       capabilities: {
         planned: capabilitiesJson.capabilities.filter(capability => capability.implementationStatus === 'planned').length,
         implemented: capabilitiesJson.capabilities.filter(capability => capability.implementationStatus === 'implemented').length,

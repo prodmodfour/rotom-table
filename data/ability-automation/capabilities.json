@@ -4,372 +4,505 @@
     {
       "code": "abilities.effective-projection",
       "owningPhase": "phase-3",
-      "dependencies": ["context.authoritative"],
-      "implementationStatus": "planned",
+      "dependencies": [
+        "context.authoritative"
+      ],
+      "implementationStatus": "implemented",
       "representativeAbility": "Trace"
     },
     {
       "code": "actions.authoritative",
       "owningPhase": "phase-3",
-      "dependencies": ["context.authoritative", "planning.atomic"],
-      "implementationStatus": "planned",
+      "dependencies": [
+        "context.authoritative",
+        "planning.atomic"
+      ],
+      "implementationStatus": "implemented",
       "representativeAbility": "Healer"
     },
     {
       "code": "choices.durable",
       "owningPhase": "phase-5",
-      "dependencies": ["intent.typed", "planning.atomic", "recovery.durable"],
-      "implementationStatus": "planned",
+      "dependencies": [
+        "intent.typed",
+        "planning.atomic",
+        "recovery.durable"
+      ],
+      "implementationStatus": "implemented",
       "representativeAbility": "Multitype"
     },
     {
       "code": "conditions.typed",
       "owningPhase": "phase-6",
-      "dependencies": ["effects.typed", "lifecycle.effects", "targeting.authoritative"],
-      "implementationStatus": "planned",
+      "dependencies": [
+        "effects.typed",
+        "lifecycle.effects",
+        "targeting.authoritative"
+      ],
+      "implementationStatus": "implemented",
       "representativeAbility": "Effect Spore"
     },
     {
       "code": "context.authoritative",
       "owningPhase": "phase-2",
-      "dependencies": ["runtime.abilityspec-v1"],
-      "implementationStatus": "planned",
+      "dependencies": [
+        "runtime.abilityspec-v1"
+      ],
+      "implementationStatus": "implemented",
       "representativeAbility": "Trace"
     },
     {
       "code": "damage.modifiers",
       "owningPhase": "phase-6",
-      "dependencies": ["effects.typed", "expressions.bounded"],
-      "implementationStatus": "planned",
+      "dependencies": [
+        "effects.typed",
+        "expressions.bounded"
+      ],
+      "implementationStatus": "implemented",
       "representativeAbility": "Blaze"
     },
     {
       "code": "effects.typed",
       "owningPhase": "phase-2",
-      "dependencies": ["context.authoritative"],
-      "implementationStatus": "planned",
+      "dependencies": [
+        "context.authoritative"
+      ],
+      "implementationStatus": "implemented",
       "representativeAbility": "Intimidate"
     },
     {
       "code": "entities.subordinate",
       "owningPhase": "phase-5",
-      "dependencies": ["lifecycle.effects", "movement.authoritative"],
-      "implementationStatus": "planned",
+      "dependencies": [
+        "lifecycle.effects",
+        "movement.authoritative"
+      ],
+      "implementationStatus": "implemented",
       "representativeAbility": "Mini-Noses"
     },
     {
       "code": "events.damage",
       "owningPhase": "phase-4",
-      "dependencies": ["events.typed"],
-      "implementationStatus": "planned",
+      "dependencies": [
+        "events.typed"
+      ],
+      "implementationStatus": "implemented",
       "representativeAbility": "Stamina"
     },
     {
       "code": "events.encounter",
       "owningPhase": "phase-4",
-      "dependencies": ["events.typed"],
-      "implementationStatus": "planned",
+      "dependencies": [
+        "events.typed"
+      ],
+      "implementationStatus": "implemented",
       "representativeAbility": "Ball Fetch"
     },
     {
       "code": "events.field-item",
       "owningPhase": "phase-4",
-      "dependencies": ["events.typed"],
-      "implementationStatus": "planned",
+      "dependencies": [
+        "events.typed"
+      ],
+      "implementationStatus": "implemented",
       "representativeAbility": "Harvest"
     },
     {
       "code": "events.hp",
       "owningPhase": "phase-4",
-      "dependencies": ["events.typed"],
-      "implementationStatus": "planned",
+      "dependencies": [
+        "events.typed"
+      ],
+      "implementationStatus": "implemented",
       "representativeAbility": "Berserk"
     },
     {
       "code": "events.move",
       "owningPhase": "phase-4",
-      "dependencies": ["events.typed"],
-      "implementationStatus": "planned",
+      "dependencies": [
+        "events.typed"
+      ],
+      "implementationStatus": "implemented",
       "representativeAbility": "Psionic Screech"
     },
     {
       "code": "events.movement",
       "owningPhase": "phase-4",
-      "dependencies": ["events.typed"],
-      "implementationStatus": "planned",
+      "dependencies": [
+        "events.typed"
+      ],
+      "implementationStatus": "implemented",
       "representativeAbility": "Arena Trap"
     },
     {
       "code": "events.nested",
       "owningPhase": "phase-4",
-      "dependencies": ["events.routing", "trace.structured"],
-      "implementationStatus": "planned",
+      "dependencies": [
+        "events.routing",
+        "trace.structured"
+      ],
+      "implementationStatus": "implemented",
       "representativeAbility": "Mummy"
     },
     {
       "code": "events.routing",
       "owningPhase": "phase-4",
-      "dependencies": ["abilities.effective-projection", "events.typed"],
-      "implementationStatus": "planned",
+      "dependencies": [
+        "abilities.effective-projection",
+        "events.typed"
+      ],
+      "implementationStatus": "implemented",
       "representativeAbility": "Moxie"
     },
     {
       "code": "events.stages-conditions",
       "owningPhase": "phase-4",
-      "dependencies": ["events.typed"],
-      "implementationStatus": "planned",
+      "dependencies": [
+        "events.typed"
+      ],
+      "implementationStatus": "implemented",
       "representativeAbility": "Competitive"
     },
     {
       "code": "events.typed",
       "owningPhase": "phase-4",
-      "dependencies": ["context.authoritative"],
-      "implementationStatus": "planned",
+      "dependencies": [
+        "context.authoritative"
+      ],
+      "implementationStatus": "implemented",
       "representativeAbility": "Moxie"
     },
     {
       "code": "expressions.bounded",
       "owningPhase": "phase-2",
-      "dependencies": ["context.authoritative"],
-      "implementationStatus": "planned",
+      "dependencies": [
+        "context.authoritative"
+      ],
+      "implementationStatus": "implemented",
       "representativeAbility": "Analytic"
     },
     {
       "code": "fields.typed",
       "owningPhase": "phase-6",
-      "dependencies": ["effects.typed", "lifecycle.effects"],
-      "implementationStatus": "planned",
+      "dependencies": [
+        "effects.typed",
+        "lifecycle.effects"
+      ],
+      "implementationStatus": "implemented",
       "representativeAbility": "Drizzle"
     },
     {
       "code": "frequency.daily",
       "owningPhase": "phase-3",
-      "dependencies": ["planning.atomic"],
-      "implementationStatus": "planned",
+      "dependencies": [
+        "planning.atomic"
+      ],
+      "implementationStatus": "implemented",
       "representativeAbility": "Schooling"
     },
     {
       "code": "frequency.scene",
       "owningPhase": "phase-3",
-      "dependencies": ["planning.atomic"],
-      "implementationStatus": "planned",
+      "dependencies": [
+        "planning.atomic"
+      ],
+      "implementationStatus": "implemented",
       "representativeAbility": "Intimidate"
     },
     {
       "code": "geometry.authoritative",
       "owningPhase": "phase-5",
-      "dependencies": ["targeting.authoritative"],
-      "implementationStatus": "planned",
+      "dependencies": [
+        "targeting.authoritative"
+      ],
+      "implementationStatus": "implemented",
       "representativeAbility": "Cotton Down"
     },
     {
       "code": "handlers.bounded",
       "owningPhase": "phase-2",
-      "dependencies": ["context.authoritative", "effects.typed"],
-      "implementationStatus": "planned",
+      "dependencies": [
+        "context.authoritative",
+        "effects.typed"
+      ],
+      "implementationStatus": "implemented",
       "representativeAbility": "Receiver"
     },
     {
       "code": "history.structured",
       "owningPhase": "phase-2",
-      "dependencies": ["context.authoritative"],
-      "implementationStatus": "planned",
+      "dependencies": [
+        "context.authoritative"
+      ],
+      "implementationStatus": "implemented",
       "representativeAbility": "Combo Striker"
     },
     {
       "code": "hp.typed",
       "owningPhase": "phase-6",
-      "dependencies": ["effects.typed", "expressions.bounded"],
-      "implementationStatus": "planned",
+      "dependencies": [
+        "effects.typed",
+        "expressions.bounded"
+      ],
+      "implementationStatus": "implemented",
       "representativeAbility": "Toxic Nourishment"
     },
     {
       "code": "immunity.providers",
       "owningPhase": "phase-6",
-      "dependencies": ["abilities.effective-projection", "passives.aggregation"],
-      "implementationStatus": "planned",
+      "dependencies": [
+        "abilities.effective-projection",
+        "passives.aggregation"
+      ],
+      "implementationStatus": "implemented",
       "representativeAbility": "Flash Fire"
     },
     {
       "code": "intent.typed",
       "owningPhase": "phase-5",
-      "dependencies": ["targeting.authoritative"],
-      "implementationStatus": "planned",
+      "dependencies": [
+        "targeting.authoritative"
+      ],
+      "implementationStatus": "implemented",
       "representativeAbility": "Healer"
     },
     {
       "code": "items.authoritative",
       "owningPhase": "phase-6",
-      "dependencies": ["effects.typed", "planning.atomic"],
-      "implementationStatus": "planned",
+      "dependencies": [
+        "effects.typed",
+        "planning.atomic"
+      ],
+      "implementationStatus": "implemented",
       "representativeAbility": "Magician"
     },
     {
       "code": "lifecycle.effects",
       "owningPhase": "phase-3",
-      "dependencies": ["effects.typed", "events.typed"],
-      "implementationStatus": "planned",
+      "dependencies": [
+        "effects.typed",
+        "events.typed"
+      ],
+      "implementationStatus": "implemented",
       "representativeAbility": "Speed Boost"
     },
     {
       "code": "mode.activated",
       "owningPhase": "phase-5",
-      "dependencies": ["actions.authoritative", "intent.typed"],
-      "implementationStatus": "planned",
+      "dependencies": [
+        "actions.authoritative",
+        "intent.typed"
+      ],
+      "implementationStatus": "implemented",
       "representativeAbility": "Healer"
     },
     {
       "code": "mode.static",
       "owningPhase": "phase-3",
-      "dependencies": ["abilities.effective-projection", "passives.aggregation"],
-      "implementationStatus": "planned",
+      "dependencies": [
+        "abilities.effective-projection",
+        "passives.aggregation"
+      ],
+      "implementationStatus": "implemented",
       "representativeAbility": "Abominable"
     },
     {
       "code": "mode.triggered",
       "owningPhase": "phase-4",
-      "dependencies": ["events.routing"],
-      "implementationStatus": "planned",
+      "dependencies": [
+        "events.routing"
+      ],
+      "implementationStatus": "implemented",
       "representativeAbility": "Moxie"
     },
     {
       "code": "movement.authoritative",
       "owningPhase": "phase-5",
-      "dependencies": ["geometry.authoritative", "planning.atomic"],
-      "implementationStatus": "planned",
+      "dependencies": [
+        "geometry.authoritative",
+        "planning.atomic"
+      ],
+      "implementationStatus": "implemented",
       "representativeAbility": "Ball Fetch"
     },
     {
       "code": "moves.nested",
       "owningPhase": "phase-6",
-      "dependencies": ["events.move", "planning.atomic", "randomness.ledger"],
-      "implementationStatus": "planned",
+      "dependencies": [
+        "events.move",
+        "planning.atomic",
+        "randomness.ledger"
+      ],
+      "implementationStatus": "implemented",
       "representativeAbility": "Dancer"
     },
     {
       "code": "parameters.typed",
       "owningPhase": "phase-3",
-      "dependencies": ["context.authoritative"],
-      "implementationStatus": "planned",
+      "dependencies": [
+        "context.authoritative"
+      ],
+      "implementationStatus": "implemented",
       "representativeAbility": "Type Strategist"
     },
     {
       "code": "passives.aggregation",
       "owningPhase": "phase-3",
-      "dependencies": ["abilities.effective-projection", "expressions.bounded"],
-      "implementationStatus": "planned",
+      "dependencies": [
+        "abilities.effective-projection",
+        "expressions.bounded"
+      ],
+      "implementationStatus": "implemented",
       "representativeAbility": "Compound Eyes"
     },
     {
       "code": "planning.atomic",
       "owningPhase": "phase-2",
-      "dependencies": ["context.authoritative", "effects.typed"],
-      "implementationStatus": "planned",
+      "dependencies": [
+        "context.authoritative",
+        "effects.typed"
+      ],
+      "implementationStatus": "implemented",
       "representativeAbility": "Healer"
     },
     {
       "code": "presentation.generic",
       "owningPhase": "phase-6",
-      "dependencies": ["redaction.authorized", "trace.structured"],
-      "implementationStatus": "planned",
+      "dependencies": [
+        "redaction.authorized",
+        "trace.structured"
+      ],
+      "implementationStatus": "implemented",
       "representativeAbility": "Celebrate"
     },
     {
       "code": "randomness.checks",
       "owningPhase": "phase-5",
-      "dependencies": ["choices.durable", "randomness.ledger"],
-      "implementationStatus": "planned",
+      "dependencies": [
+        "choices.durable",
+        "randomness.ledger"
+      ],
+      "implementationStatus": "implemented",
       "representativeAbility": "Effect Spore"
     },
     {
       "code": "randomness.ledger",
       "owningPhase": "phase-2",
-      "dependencies": ["trace.structured"],
-      "implementationStatus": "planned",
+      "dependencies": [
+        "trace.structured"
+      ],
+      "implementationStatus": "implemented",
       "representativeAbility": "Moody"
     },
     {
       "code": "reactions.durable",
       "owningPhase": "phase-5",
-      "dependencies": ["actions.authoritative", "choices.durable", "events.routing"],
-      "implementationStatus": "planned",
+      "dependencies": [
+        "actions.authoritative",
+        "choices.durable",
+        "events.routing"
+      ],
+      "implementationStatus": "implemented",
       "representativeAbility": "Cotton Down"
     },
     {
       "code": "recovery.durable",
       "owningPhase": "phase-5",
-      "dependencies": ["planning.atomic", "trace.structured"],
-      "implementationStatus": "planned",
+      "dependencies": [
+        "planning.atomic",
+        "trace.structured"
+      ],
+      "implementationStatus": "implemented",
       "representativeAbility": "Receiver"
     },
     {
       "code": "redaction.authorized",
       "owningPhase": "phase-5",
-      "dependencies": ["context.authoritative"],
-      "implementationStatus": "planned",
+      "dependencies": [
+        "context.authoritative"
+      ],
+      "implementationStatus": "implemented",
       "representativeAbility": "Anticipation"
     },
     {
       "code": "relationships.providers",
       "owningPhase": "phase-6",
-      "dependencies": ["abilities.effective-projection", "targeting.authoritative"],
-      "implementationStatus": "planned",
+      "dependencies": [
+        "abilities.effective-projection",
+        "targeting.authoritative"
+      ],
+      "implementationStatus": "implemented",
       "representativeAbility": "Friend Guard"
     },
     {
       "code": "runtime.abilityspec-v1",
       "owningPhase": "phase-2",
       "dependencies": [],
-      "implementationStatus": "planned",
+      "implementationStatus": "implemented",
       "representativeAbility": "Abominable"
     },
     {
       "code": "runtime.unimplemented",
       "owningPhase": "phase-1",
       "dependencies": [],
-      "implementationStatus": "planned",
+      "implementationStatus": "implemented",
       "representativeAbility": "Abominable"
     },
     {
       "code": "stages.typed",
       "owningPhase": "phase-6",
-      "dependencies": ["effects.typed", "expressions.bounded"],
-      "implementationStatus": "planned",
+      "dependencies": [
+        "effects.typed",
+        "expressions.bounded"
+      ],
+      "implementationStatus": "implemented",
       "representativeAbility": "Intimidate"
     },
     {
       "code": "state.marks-counters",
       "owningPhase": "phase-3",
-      "dependencies": ["lifecycle.effects"],
-      "implementationStatus": "planned",
+      "dependencies": [
+        "lifecycle.effects"
+      ],
+      "implementationStatus": "implemented",
       "representativeAbility": "Illusion"
     },
     {
       "code": "targeting.authoritative",
       "owningPhase": "phase-2",
-      "dependencies": ["context.authoritative"],
-      "implementationStatus": "planned",
+      "dependencies": [
+        "context.authoritative"
+      ],
+      "implementationStatus": "implemented",
       "representativeAbility": "Healer"
     },
     {
       "code": "trace.structured",
       "owningPhase": "phase-2",
-      "dependencies": ["context.authoritative"],
-      "implementationStatus": "planned",
+      "dependencies": [
+        "context.authoritative"
+      ],
+      "implementationStatus": "implemented",
       "representativeAbility": "Moxie"
     },
     {
       "code": "transformations.snapshots",
       "owningPhase": "phase-5",
-      "dependencies": ["abilities.effective-projection", "lifecycle.effects"],
-      "implementationStatus": "planned",
+      "dependencies": [
+        "abilities.effective-projection",
+        "lifecycle.effects"
+      ],
+      "implementationStatus": "implemented",
       "representativeAbility": "Imposter"
     },
     {
       "code": "usage.round-turn",
       "owningPhase": "phase-3",
-      "dependencies": ["actions.authoritative", "lifecycle.effects"],
-      "implementationStatus": "planned",
+      "dependencies": [
+        "actions.authoritative",
+        "lifecycle.effects"
+      ],
+      "implementationStatus": "implemented",
       "representativeAbility": "Illusion"
     }
   ]

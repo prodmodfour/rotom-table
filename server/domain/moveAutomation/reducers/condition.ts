@@ -16,6 +16,7 @@ import {
 import { sameJsonValue } from '~/utils/serialization'
 import { sheetConditionNames } from '~/utils/sheetConditions'
 import type { AuthoritativeMoveRulesContext } from '../context'
+import { aa061BeamCannonMinimum } from '../../abilityAutomation/mechanics/aa061MoveIntegration'
 import {
   createMistyProtectedMoveConditionEffects,
   createMoveConditionEncounterStateAccumulator,
@@ -90,6 +91,7 @@ const accuracyRollTriggerForRecipient = (options: {
   readonly operation: MoveConditionEffectOperation
   readonly recipient: MoveCoreTokenEffectRecipient
   readonly accuracyRolls: MoveConditionAccuracyRollQueries | undefined
+  readonly context: AuthoritativeMoveRulesContext | undefined
 }): ConditionAccuracyRollTriggerAudit | null => {
   const trigger = options.operation.payload.accuracyRollTrigger
   if (!trigger) return null
@@ -113,7 +115,9 @@ const accuracyRollTriggerForRecipient = (options: {
     )
   }
   const matched = trigger.trigger.kind === 'range'
-    ? roll.naturalResult >= trigger.trigger.minimum
+    ? roll.naturalResult >= (options.context
+        ? aa061BeamCannonMinimum(options.context, trigger.trigger.minimum)
+        : trigger.trigger.minimum)
     : trigger.trigger.values.includes(roll.naturalResult)
   return {
     requestedRollId: trigger.rollId,
@@ -302,10 +306,50 @@ const reduceUnaryCondition = (options: {
     : canonicalCondition === 'Infatuation' && operation.payload.conditionDetail
       ? formatInfatuationCondition(operation.payload.conditionDetail)
       : canonicalCondition
+  if (operation.reasonCode === 'ability.chemical-romance.infatuated-male-target'
+    && recipient.token.gender?.trim().toLowerCase() !== 'male') {
+    return {
+      recipientId: recipient.placement.id,
+      outcome: 'no-op', reasonCode: 'ability.chemical-romance.target-not-male', blockers: [],
+      details: auditDetails({
+        action: operation.payload.action, condition, sourcePlacementId: null,
+        randomRollId: null, removedConditions: [], removedEffectIds: [], appliedEffectId: null,
+        lifecycleTransitions: [], saveTiming: condition ? resolvedMoveConditionSaveTiming(condition, operation) : null,
+        stackPolicy: operation.payload.stackPolicy.kind,
+      }),
+      consultedPlacementIds: [], previous, current: previous, changedFields: [],
+    }
+  }
+  if (operation.reasonCode === 'ability.brimstone.complete-statuses') {
+    const original = new Set((recipient.token.conditions ?? []).map(conditionLookupKey))
+    const current = new Set(previous.conditions.map(conditionLookupKey))
+    const newlyInflicted = ['Burned', 'Poisoned', 'Badly Poisoned'].some(candidate => (
+      current.has(conditionLookupKey(candidate)) && !original.has(conditionLookupKey(candidate))
+    ))
+    if (!newlyInflicted || (
+      canonicalCondition === 'Poisoned'
+      && current.has(conditionLookupKey('Badly Poisoned'))
+    )) {
+      return {
+        recipientId: recipient.placement.id,
+        outcome: 'no-op',
+        reasonCode: newlyInflicted ? 'ability.brimstone.poison-already-satisfied' : 'ability.brimstone.trigger-not-met',
+        blockers: [],
+        details: auditDetails({
+          action: operation.payload.action, condition, sourcePlacementId: null,
+          randomRollId: null, removedConditions: [], removedEffectIds: [], appliedEffectId: null,
+          lifecycleTransitions: [], saveTiming: condition ? resolvedMoveConditionSaveTiming(condition, operation) : null,
+          stackPolicy: operation.payload.stackPolicy.kind,
+        }),
+        consultedPlacementIds: [], previous, current: previous, changedFields: [],
+      }
+    }
+  }
   const accuracyRollTrigger = accuracyRollTriggerForRecipient({
     operation,
     recipient,
     accuracyRolls: options.accuracyRolls,
+    context: options.context,
   })
   const outcomeTrigger = operationOutcomeTrigger({
     operation,

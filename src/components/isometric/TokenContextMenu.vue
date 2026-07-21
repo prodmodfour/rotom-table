@@ -3,8 +3,15 @@ import { computed, ref, useId, watch, type ComputedRef } from 'vue'
 import ReferenceTooltip from '~/components/reference/ReferenceTooltip.vue'
 import { useAnchoredTooltip } from '~/composables/reference/useAnchoredTooltip'
 import type { TokenContextMenuState } from '~/utils/isometric/contextMenu'
-import type { TokenAbilityMenuOption } from '~/utils/mapTokenAbilities'
-import { buildTokenAbilityTooltipDetail } from '~/utils/mapTokenAbilityTooltips'
+import {
+  tokenAbilityUseReference,
+  type TokenAbilityMenuOption,
+  type TokenAbilityUseReference,
+} from '~/utils/mapTokenAbilities'
+import {
+  abilityCapabilityStatusLabel,
+  buildTokenAbilityTooltipDetail,
+} from '~/utils/mapTokenAbilityTooltips'
 import type { TokenMoveMenuOption } from '~/utils/mapTokenMoves'
 import { moveAutomationStatusDetailsText } from '~/utils/moveAutomationSemanticStatus'
 import { useDamageDisplayMode } from '~/composables/useDamageDisplayMode'
@@ -41,7 +48,7 @@ const emit = defineEmits<{
   (event: 'grant-experience'): void
   (event: 'use-move', moveName?: string | null): void
   (event: 'use-maneuver', maneuverName?: string | null): void
-  (event: 'use-ability', abilityName?: string | null): void
+  (event: 'use-ability', ability: TokenAbilityUseReference): void
   (event: 'use-order', orderName?: string | null): void
   (event: 'send-out-pokemon', pokemonSlug: string): void
   (event: 'throw-pokeball', pokeballName: string): void
@@ -83,7 +90,12 @@ const moveDamageBadge = (move: TokenMoveMenuOption): string | null => {
 }
 
 const abilityCanBeUsed = (ability: TokenAbilityMenuOption): boolean =>
-  ability.automation != null && ability.automation.category !== 'passive'
+  ability.capability?.status === 'ready'
+
+const useAbility = (ability: TokenAbilityMenuOption): void => {
+  const reference = tokenAbilityUseReference(ability)
+  if (reference) emit('use-ability', reference)
+}
 
 const moveCanBeUsed = (move: TokenMoveMenuOption): boolean =>
   !move.disabledByAutomation
@@ -654,7 +666,7 @@ watch(orders, (nextOrders) => {
           <div class="action-submenu__list" role="menu" aria-label="Abilities">
             <button
               v-for="ability in abilities"
-              :key="ability.name"
+              :key="ability.instanceId ?? ability.name"
               type="button"
               class="action-submenu__item"
               :class="{
@@ -668,14 +680,17 @@ watch(orders, (nextOrders) => {
               @pointerleave="hideAbilityTooltip"
               @focus="showAbilityTooltip(ability.name, $event)"
               @blur="hideAbilityTooltip"
-              @click.stop="abilityCanBeUsed(ability) && emit('use-ability', ability.name)"
+              @click.stop="useAbility(ability)"
             >
               <span class="action-submenu__name">{{ ability.name }}</span>
               <span class="action-submenu__badges">
-                <span v-if="!ability.automation" class="action-submenu__badge action-submenu__badge--disabled">
-                  Not Implemented
+                <span
+                  class="action-submenu__badge"
+                  :class="ability.capability?.status === 'ready' ? 'action-submenu__badge--active' : 'action-submenu__badge--disabled'"
+                >
+                  {{ abilityCapabilityStatusLabel(ability.capability?.status) }}
                 </span>
-                <span v-if="ability.activated" class="action-submenu__badge action-submenu__badge--active">Active</span>
+                <span v-if="ability.activated" class="action-submenu__badge action-submenu__badge--active">Sheet active</span>
               </span>
             </button>
 
