@@ -62,6 +62,8 @@ export interface ResolveCanonicalMoveEntryInput {
   readonly moveName: string
   readonly usageContext?: TokenMoveUsageContext
   readonly encounterEffects?: readonly EncounterEffect[]
+  /** Exact effective Ability names used to project reviewed Connection moves. */
+  readonly abilityConnectionNames?: readonly string[]
   /** Server resolution injects the immutable runtime selected for this snapshot. */
   readonly scriptForMove?: (moveName: string) => MoveAutomationScript | null
   /** Required by server contexts to reject stale temporary copies after runtime drift. */
@@ -157,6 +159,7 @@ export const resolveCanonicalMoveEntryForPlacement = ({
   moveName,
   usageContext = {},
   encounterEffects,
+  abilityConnectionNames,
   scriptForMove,
   definitionHashForMove,
   frequencyForMove,
@@ -169,7 +172,10 @@ export const resolveCanonicalMoveEntryForPlacement = ({
   }
 
   const normalizedMoveName = normalizeMoveName(moveName)
-  const sourceEntries = moveEntriesForPlacement(placement, sheets, { encounterEffects })
+  const sourceEntries = moveEntriesForPlacement(placement, sheets, {
+    encounterEffects,
+    ...(abilityConnectionNames ? { abilityConnectionNames } : {}),
+  })
   const entry = buildResolvedMoveEntries(sourceEntries, token, scriptForMove)
     .find((candidate) => moveEntryMatchesName(candidate, normalizedMoveName)) ?? null
 

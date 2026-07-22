@@ -206,6 +206,8 @@ export interface ReduceMoveSpatialEffectsInput {
   readonly chosenDirections?: MoveSpatialChosenDirectionResolver
   readonly destinations?: MoveSpatialDestinationResolver
   readonly willingness?: MoveSpatialWillingnessResolver
+  /** Server-reviewed branches may narrow an operation's otherwise valid recipient set. */
+  readonly branchControlledOperationIds?: ReadonlySet<string>
   /** Complete server-derived move area used only by reviewed area-exit distances. */
   readonly authoritativeAreaCells?: readonly GridAnchor[]
 }
@@ -845,6 +847,9 @@ export const reduceMoveSpatialEffects = (
       emittedIds,
     )
     const emittedIdsMatch = moveEffectRecipientIdsEqual(emittedIds, expectedIds)
+    const branchControlled = input.branchControlledOperationIds?.has(operation.id) === true
+    const branchControlledSubset = branchControlled
+      && emittedIds.every(id => expectedIds.includes(id))
     // Ordinary core effects learn damaged/fainted recipients only during the
     // authoritative reducer pass. The interpreter may therefore emit only the
     // terminal IDs it already knows; rebind that reviewed selector to the final
@@ -854,7 +859,7 @@ export const reduceMoveSpatialEffects = (
     ) && emittedIds.every(id => expectedIds.includes(id))
     if (
       !emittedIdsAreCanonical
-      || (!emittedIdsMatch && !canRebindPostReductionRecipients)
+      || (!emittedIdsMatch && !canRebindPostReductionRecipients && !branchControlledSubset)
     ) {
       fail(
         'recipient-set-mismatch',
@@ -862,9 +867,10 @@ export const reduceMoveSpatialEffects = (
       )
     }
 
+    const recipientIds = branchControlled ? emittedIds : expectedIds
     if (isDisplacementOperation(operation)) {
       const resolved: MoveSpatialMovement[] = []
-      for (const recipientId of expectedIds) {
+      for (const recipientId of recipientIds) {
         const movement = resolveDisplacementMovement({
           context: input.context,
           operation,
@@ -881,7 +887,7 @@ export const reduceMoveSpatialEffects = (
       movements.push(...resolved)
       operationResults.push({
         operationId: operation.id,
-        recipientIds: [...expectedIds],
+        recipientIds: [...recipientIds],
         outcome: resolved.some(movement => movement.resolvedDistance > 0)
           ? 'applied'
           : 'no-op',
@@ -904,7 +910,7 @@ export const reduceMoveSpatialEffects = (
     const resolved = resolveMoveSpatialRelocation({
       context: input.context,
       operation,
-      recipientIds: expectedIds,
+      recipientIds,
       positions,
       terrainIndex,
       destinations: input.destinations,
@@ -929,7 +935,7 @@ export const reduceMoveSpatialEffects = (
     movements.push(...resolved)
     operationResults.push({
       operationId: operation.id,
-      recipientIds: [...expectedIds],
+      recipientIds: [...recipientIds],
       outcome: resolved.some(movement => movement.resolvedDistance > 0)
         ? 'applied'
         : 'no-op',

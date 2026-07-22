@@ -125,10 +125,12 @@ describe('ability automation semantic manifest', () => {
         'Dazzling', 'Deadly Poison', 'Decoy', 'Deep Sleep', 'Defeatist', 'Defiant',
         'Defy Death', 'Delayed Reaction', 'Delivery Bird', 'Desert Weather', 'Designer',
         'Diamond Defense', 'Dig Away', 'Dire Spore', 'Discipline', 'Disguise', 'Dodge',
-        'Download',
+        'Download', 'Dragon’s Maw', 'Dream Smoke', 'Dreamspinner', 'Drizzle', 'Drought',
+        'Drown Out', 'Dry Skin', 'Dust Cloud', 'Early Bird', 'Effect Spore', 'Eggscellence',
+        'Electric Surge',
       ])
-    expect(manifest.abilities.filter(ability => ability.baseStatus === 'blocked')).toHaveLength(387)
-    expect(manifest.abilities.filter(ability => ability.runtime.kind === 'unimplemented')).toHaveLength(387)
+    expect(manifest.abilities.filter(ability => ability.baseStatus === 'blocked')).toHaveLength(375)
+    expect(manifest.abilities.filter(ability => ability.runtime.kind === 'unimplemented')).toHaveLength(375)
   })
 
   it('keeps bootstrap mode hints non-authoritative and maps every row to its plan cohort', () => {

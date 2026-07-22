@@ -62,6 +62,7 @@ import {
   aa066DazzlingInitiativePenalty,
   aa066DefeatistInitiativeBonus,
 } from '../domain/abilityAutomation/mechanics/aa066StaticIntegration'
+import { aa068EarlyBirdInitiativeActive } from '../domain/abilityAutomation/mechanics/aa068StaticIntegration'
 import {
   deduplicateAuthoritativeMoveSheetReads,
   type AuthoritativeMoveSheetRead,
@@ -654,9 +655,7 @@ const initiativeOrder = (
     map.placements,
     trackedReader,
     placement => {
-      const resolved = placement.sheetKind === 'pokemon'
-        ? trackedReader('pokemon', placement.sheetSlug)
-        : null
+      const resolved = trackedReader(placement.sheetKind, placement.sheetSlug)
       return {
         itemEffectsSuppressed: itemEffects.resolve({
           placementId: placement.id,
@@ -665,13 +664,18 @@ const initiativeOrder = (
             : 'trainer-accessory',
           timing: 'static',
         }).suppressed,
-        ...(resolved ? {
+        ...(resolved && placement.sheetKind === 'pokemon' ? {
           initiativeMultiplier: aa063ChlorophyllInitiativeMultiplier({
             map, placement, sheet: resolved.sheet as unknown as CharacterSheet,
           }),
         } : {}),
+        earlyBirdSpeedBonus: resolved ? aa068EarlyBirdInitiativeActive({
+          map,
+          placement,
+          sheet: resolved.sheet as unknown as CharacterSheet | TrainerSheet,
+        }) : false,
         initiativeOffset: aa066DazzlingInitiativePenalty({ map, placementId: placement.id })
-          + (resolved ? aa066DefeatistInitiativeBonus({
+          + (resolved && placement.sheetKind === 'pokemon' ? aa066DefeatistInitiativeBonus({
               map, placement, sheet: resolved.sheet as unknown as CharacterSheet,
             }) : 0),
       }

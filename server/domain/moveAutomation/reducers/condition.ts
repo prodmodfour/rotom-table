@@ -143,12 +143,6 @@ const randomChoiceForRecipient = (options: {
       `Condition operation ${options.operation.id} has no authoritative random ledger.`,
     )
   const canonicalChoices = choice.conditionIds.map(canonicalMoveCondition)
-  if (new Set(canonicalChoices).size !== canonicalChoices.length) {
-    return failMoveCoreConditionReduction(
-      'invalid-condition-random-choice',
-      `Condition operation ${options.operation.id} contains duplicate canonical choices.`,
-    )
-  }
   const scopedRollId = `${choice.rollId}.${options.recipientIndex + 1}`
   const ledger = context.random.snapshot()
   const roll = ledger.find(entry => entry.rollId === scopedRollId)

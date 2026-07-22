@@ -93,6 +93,12 @@ import { aa064MoveOverlayOperations } from '../abilityAutomation/mechanics/aa064
 import { aa065MoveOverlayOperations } from '../abilityAutomation/mechanics/aa065MoveIntegration'
 import { aa066MoveOverlayOperations } from '../abilityAutomation/mechanics/aa066MoveIntegration'
 import { aa067MoveOverlayOperations } from '../abilityAutomation/mechanics/aa067MoveIntegration'
+import { aa068MoveOverlayOperations } from '../abilityAutomation/mechanics/aa068MoveIntegration'
+import {
+  AA068_DUST_CLOUD_TARGETING_OVERRIDE,
+  aa068DrySkinCancelsRecipientEffect,
+  aa068DustCloudBurstEnabled,
+} from '../abilityAutomation/mechanics/aa068StaticIntegration'
 
 export type ImmediateMoveSpecResolutionErrorCode =
   | 'execution-rejected'
@@ -945,17 +951,25 @@ const executeReviewedMoveSpec = (
     ...aa065MoveOverlayOperations(overlayInput),
     ...aa066MoveOverlayOperations(overlayInput),
     ...aa067MoveOverlayOperations(overlayInput),
+    ...aa068MoveOverlayOperations(overlayInput),
   ]
   const boneLordLine = script.moveName === 'Bonemerang'
     && aa062BoneLordEmpowersMove(options.context, 'Bonemerang')
+  const dustCloudBurst = aa068DustCloudBurstEnabled({
+    context: options.context,
+    script,
+    targetBranchId: options.targetBranchId,
+  })
   const execution = executeMoveSpec({
     serverAbilityOverlayOperations: abilityOverlays,
-    ...(boneLordLine ? {
-      serverAbilityTargetingOverride: {
-        kind: 'area' as const, minTargets: 0, maxTargets: 32,
-        selector: { kind: 'area-targets' as const },
-        predicate: { relationship: 'any' as const, willingness: 'any' as const, excludeActor: true },
-      },
+    ...(boneLordLine || dustCloudBurst ? {
+      serverAbilityTargetingOverride: dustCloudBurst
+        ? AA068_DUST_CLOUD_TARGETING_OVERRIDE
+        : {
+            kind: 'area' as const, minTargets: 0, maxTargets: 32,
+            selector: { kind: 'area-targets' as const },
+            predicate: { relationship: 'any' as const, willingness: 'any' as const, excludeActor: true },
+          },
     } : {}),
     definition: options.runtime.definition,
     context: options.context,
@@ -1106,10 +1120,17 @@ export const reduceCompletedMoveSpec = (
   })
   // A self target is explicit interpreter evidence, not an attacked-target wire
   // identity. Self-only operations must address the actor selector directly.
-  const targeting = resolveMoveSpecTargetingRule(
-    options.runtime.definition.spec,
-    options.targetBranchId,
-  ) ?? fail('execution-rejected', 'The selected MoveSpec targeting branch is unavailable.')
+  const dustCloudBurst = aa068DustCloudBurstEnabled({
+    context: options.context,
+    script,
+    targetBranchId: options.targetBranchId,
+  })
+  const targeting = dustCloudBurst
+    ? AA068_DUST_CLOUD_TARGETING_OVERRIDE
+    : resolveMoveSpecTargetingRule(
+        options.runtime.definition.spec,
+        options.targetBranchId,
+      ) ?? fail('execution-rejected', 'The selected MoveSpec targeting branch is unavailable.')
   const exposesAttackedTargets = targeting.kind !== 'self'
   const attackedTargetIds = exposesAttackedTargets ? [...execution.rootTargetIds] : []
   const initialDynamic: MoveCoreTokenDynamicRecipientSets = {
@@ -1125,6 +1146,22 @@ export const reduceCompletedMoveSpec = (
     root: script,
     children: execution.childExecutions,
   })
+  const recipientControlledOperationIds = new Set(
+    branchControlledOperationIds(uncommittedOperations),
+  )
+  for (const { operation } of uncommittedOperations) {
+    const operationContext = contextForOperation(operation)
+    const operationScript = scriptForOperation(operation.id)
+    if (operationContext.queries.placements.all().some(placement => (
+      aa068DrySkinCancelsRecipientEffect({
+        context: operationContext,
+        script: operationScript,
+        recipientId: placement.id,
+        operationReasonCode: operation.reasonCode,
+        operationKind: operation.kind,
+      })
+    ))) recipientControlledOperationIds.add(operation.id)
+  }
   const multiHit = execution.multiHitExecutions[0] ?? null
   if (execution.multiHitExecutions.length > 1 || (multiHit && coreOperations.length > 0)) {
     return fail(
@@ -1151,7 +1188,7 @@ export const reduceCompletedMoveSpec = (
     sourceOwnerIdForOperation: operation => operation.source.kind === 'operation'
       ? responseOwnerByOperationId.get(operation.source.id) ?? null
       : null,
-    branchControlledOperationIds: branchControlledOperationIds(uncommittedOperations),
+    branchControlledOperationIds: recipientControlledOperationIds,
     damage: coreOperations.some(({ operation }) => operation.kind === 'damage')
       ? createDamageQuery({
           contextForOperation,
@@ -1213,6 +1250,7 @@ export const reduceCompletedMoveSpec = (
     context: options.context,
     operations: spatialOperations,
     dynamicRecipients,
+    branchControlledOperationIds: recipientControlledOperationIds,
     ...(options.authoritativeAreaCells
       ? { authoritativeAreaCells: options.authoritativeAreaCells }
       : {}),

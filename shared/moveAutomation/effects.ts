@@ -1222,6 +1222,7 @@ export interface MoveConditionCleanseFilter {
 export interface MoveConditionRandomChoice {
   /** Earlier server-owned roll whose final value is a one-based choice index. */
   readonly rollId: string
+  /** One condition per roll face; repeated IDs encode canonical weighted bands. */
   readonly conditionIds: readonly string[]
 }
 
@@ -1269,6 +1270,8 @@ export interface MoveConditionEffectPayload {
   readonly accuracyRollTrigger?: MoveConditionAccuracyRollTrigger
   /** Apply only when an earlier typed state operation actually applied. */
   readonly operationOutcomeTrigger?: MoveConditionOperationOutcomeTrigger
+  /** Honor whole-Move immunity before applying this condition; defaults to true. */
+  readonly applyMoveImmunity?: boolean
   /** Honor complete typed-attack immunity before applying this condition. */
   readonly applyTypeImmunity?: boolean
   /** Non-null stores an application as a source-linked encounter effect. */
@@ -2068,6 +2071,7 @@ const CONDITION_OPTIONAL_FIELDS = [
   'randomChoice',
   'accuracyRollTrigger',
   'operationOutcomeTrigger',
+  'applyMoveImmunity',
   'applyTypeImmunity',
   'duration',
   'saveTiming',
@@ -3727,13 +3731,14 @@ const parseConditionIdList = (
   path: string,
   maximum: number,
   minimum = 0,
+  requireUnique = true,
 ): readonly string[] => {
   const ids = parseBoundedArray(value, path, maximum)
     .map((entry, index) => parseStableId(entry, `${path}[${index}]`))
   if (ids.length < minimum) {
     fail('invalid-effect-operation', path, `must contain at least ${minimum} entries.`)
   }
-  assertUnique(ids, path)
+  if (requireUnique) assertUnique(ids, path)
   return ids
 }
 
@@ -3789,6 +3794,7 @@ const parseConditionRandomChoice = (
       `${path}.conditionIds`,
       MOVE_EFFECT_OPERATION_LIMITS.conditionRandomChoices,
       2,
+      false,
     ),
   }
 }
@@ -3960,6 +3966,13 @@ const parseConditionPayload = (value: unknown, path: string): MoveConditionEffec
         }
       })()
     : undefined
+  const hasApplyMoveImmunity = Object.prototype.hasOwnProperty.call(
+    input,
+    'applyMoveImmunity',
+  )
+  const applyMoveImmunity = hasApplyMoveImmunity
+    ? parseBoolean(ownValue(input, 'applyMoveImmunity', path), `${path}.applyMoveImmunity`)
+    : undefined
   const hasApplyTypeImmunity = Object.prototype.hasOwnProperty.call(
     input,
     'applyTypeImmunity',
@@ -4045,6 +4058,13 @@ const parseConditionPayload = (value: unknown, path: string): MoveConditionEffec
       'is supported only when applying a condition.',
     )
   }
+  if (hasApplyMoveImmunity && !['apply', 'replace', 'random-choice'].includes(action)) {
+    fail(
+      'invalid-effect-operation',
+      `${path}.applyMoveImmunity`,
+      'is supported only when applying a condition.',
+    )
+  }
   if (duration !== null && !['apply', 'replace', 'random-choice'].includes(action)) {
     fail(
       'invalid-effect-operation',
@@ -4093,6 +4113,7 @@ const parseConditionPayload = (value: unknown, path: string): MoveConditionEffec
     randomChoice,
     ...(accuracyRollTrigger ? { accuracyRollTrigger } : {}),
     ...(operationOutcomeTrigger ? { operationOutcomeTrigger } : {}),
+    ...(hasApplyMoveImmunity ? { applyMoveImmunity } : {}),
     ...(hasApplyTypeImmunity ? { applyTypeImmunity } : {}),
     duration,
     saveTiming,

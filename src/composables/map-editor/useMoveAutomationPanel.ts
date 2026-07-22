@@ -22,6 +22,7 @@ import {
   moveAutomationTargetBranches,
 } from '~/utils/moveAutomation'
 import { moveAutomationCanResolveDamageAtRuntime } from '~/utils/moveAutomationDynamicDamage'
+import { moveAutomationDustCloudScript } from '~/utils/moveAutomationDustCloud'
 import { findMoveAutomationSemanticStatus } from '~/utils/moveAutomationSemanticStatus'
 import { moveAutomationScriptForConfirmedAreaTemplate } from '~/utils/moveAutomationConfirmedAreaTemplate'
 import { passDestinationLogLine } from '~/utils/moveAutomationPass'
@@ -1468,7 +1469,7 @@ export const useMoveAutomationPanel = ({
     const user = findSpawnedPokemon(id)
     const entry = moveAutomationEntryForUse(id, trimmedMoveName)
     if (!user || !entry) return false
-    const script: MoveAutomationScript = entry.script
+    const script = moveAutomationDustCloudScript({ script: entry.script, user })
 
     if (moveAutomationHasMultipleTargetBranches(script)) {
       clearMoveAutomationFeedback()

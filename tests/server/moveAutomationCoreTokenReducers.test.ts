@@ -1854,7 +1854,7 @@ describe('MoveSpec core token effect reducers', () => {
     expect(operationTraceOutcomes(result.trace)).toEqual(['applied', 'applied', 'applied'])
   })
 
-  it('selects random conditions only from an earlier server-owned roll ledger entry', () => {
+  it('selects weighted random-condition faces only from an earlier server-owned roll ledger entry', () => {
     const context = buildContext(mapFixture(), {}, {}, { target: [] })
     context.random.roll({
       rollId: 'roll.random-condition',
@@ -1867,7 +1867,7 @@ describe('MoveSpec core token effect reducers', () => {
       conditionId: null,
       randomChoice: {
         rollId: 'roll.random-condition',
-        conditionIds: ['burned', 'confused', 'poisoned'],
+        conditionIds: ['burned', 'confused', 'confused'],
       },
     }))
 

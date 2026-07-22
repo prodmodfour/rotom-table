@@ -1,7 +1,7 @@
 import { conditionSaveDc } from './conditionAutomation'
 
 export const START_TURN_MODAL_METADATA_KEY = 'startTurnModal' as const
-export const START_TURN_MODAL_STATE_SCHEMA_VERSION = 2 as const
+export const START_TURN_MODAL_STATE_SCHEMA_VERSION = 3 as const
 
 export interface StartTurnModalTurnRef {
   readonly activeId: string
@@ -19,7 +19,11 @@ export interface StartTurnModalConditionResolution extends StartTurnModalTurnRef
   readonly condition: string
   readonly occurrence: number
   readonly resolution: StartTurnModalConditionResolutionAction
+  /** Natural authoritative d20 result. */
   readonly roll: number | null
+  /** Server-owned condition-specific modifier applied to the natural roll. */
+  readonly modifier: number | null
+  readonly finalValue: number | null
   readonly dc: number | null
   readonly success: boolean | null
   readonly resolvedAt?: number
@@ -50,6 +54,7 @@ export interface ApplyStartTurnModalStateUpdateOptions {
   readonly dismissedAt?: number
   readonly resolvedAt?: number
   readonly conditionRoll?: number
+  readonly conditionRollModifier?: number
 }
 
 type UnknownRecord = Record<string, unknown>
@@ -88,6 +93,12 @@ const normalizeD20Roll = (value: unknown): number | null => (
 
 const normalizePositiveInteger = (value: unknown): number | null => (
   typeof value === 'number' && Number.isSafeInteger(value) && value > 0 ? value : null
+)
+
+const normalizeRollModifier = (value: unknown): number | null => (
+  typeof value === 'number' && Number.isSafeInteger(value) && value >= -20 && value <= 20
+    ? value
+    : null
 )
 
 const normalizeBooleanOrNull = (value: unknown): boolean | null => (
@@ -139,16 +150,26 @@ export const normalizeStartTurnModalConditionResolution = (
 
   const roll = value.resolution === 'roll' ? normalizeD20Roll(value.roll) : null
   if (value.resolution === 'roll' && roll === null) return null
+  const modifier = value.resolution === 'roll'
+    ? (value.modifier === null || value.modifier === undefined ? 0 : normalizeRollModifier(value.modifier))
+    : null
+  if (value.resolution === 'roll' && modifier === null) return null
+  const finalValue = roll === null || modifier === null ? null : roll + modifier
+  if (value.resolution === 'roll'
+    && value.finalValue !== null && value.finalValue !== undefined
+    && value.finalValue !== finalValue) return null
   const dc = value.resolution === 'roll'
     ? (value.dc === null || value.dc === undefined ? null : normalizePositiveInteger(value.dc))
     : null
   if (value.resolution === 'roll' && value.dc !== null && value.dc !== undefined && dc === null) return null
+  const expectedSuccess = finalValue !== null && dc !== null ? finalValue >= dc : null
   const success = value.resolution === 'roll'
     ? (value.success === null || value.success === undefined
-        ? (roll !== null && dc !== null ? roll >= dc : null)
+        ? expectedSuccess
         : normalizeBooleanOrNull(value.success))
     : null
-  if (value.resolution === 'roll' && value.success !== null && value.success !== undefined && success === null) return null
+  if (value.resolution === 'roll' && value.success !== null && value.success !== undefined
+    && (success === null || success !== expectedSuccess)) return null
 
   return {
     activeId,
@@ -157,6 +178,8 @@ export const normalizeStartTurnModalConditionResolution = (
     occurrence,
     resolution: value.resolution,
     roll,
+    modifier,
+    finalValue,
     dc,
     success,
     ...(normalizeTimestamp(value.resolvedAt) === undefined ? {} : { resolvedAt: normalizeTimestamp(value.resolvedAt) }),
@@ -261,6 +284,10 @@ const applyConditionResolutionUpdate = (
   const roll = payload.resolution === 'roll'
     ? (normalizeD20Roll(options.conditionRoll) ?? randomD20())
     : null
+  const modifier = payload.resolution === 'roll'
+    ? (normalizeRollModifier(options.conditionRollModifier) ?? 0)
+    : null
+  const finalValue = roll === null || modifier === null ? null : roll + modifier
   const dc = payload.resolution === 'roll' ? startTurnModalConditionSaveDc(payload.condition) : null
   const nextResolution: StartTurnModalConditionResolution = {
     activeId: payload.activeId,
@@ -269,8 +296,10 @@ const applyConditionResolutionUpdate = (
     occurrence: payload.occurrence,
     resolution: payload.resolution,
     roll,
+    modifier,
+    finalValue,
     dc,
-    success: roll !== null && dc !== null ? roll >= dc : null,
+    success: finalValue !== null && dc !== null ? finalValue >= dc : null,
     ...(options.resolvedAt === undefined ? {} : { resolvedAt: options.resolvedAt }),
   }
 

@@ -129,6 +129,11 @@ import { ptuGridDistanceBetweenFootprints } from '~/utils/ptuGridDistance'
 import { aa060MoveMarkId } from '../abilityAutomation/mechanics/aa060MoveIntegration'
 import { aa062BoneLordEmpowersMoveState } from '../abilityAutomation/mechanics/aa062MoveIntegration'
 import { aa067DiamondDefenseMoveFrequency } from '../abilityAutomation/mechanics/aa067StaticIntegration'
+import {
+  AA068_DUST_CLOUD_BURST_BRANCH_ID,
+  aa068DustCloudPresentationScript,
+  aa068DustCloudSelectedScript,
+} from '../abilityAutomation/mechanics/aa068StaticIntegration'
 import { AA063_CLAY_CANNONS_CAPABILITY_ID } from '../abilityAutomation/mechanics/aa063MoveIntegration'
 import { resolveSheetAbilityInstances } from '../abilityAutomation/instanceParameters'
 
@@ -555,52 +560,8 @@ export const buildAuthoritativeMoveRulesContext = (
   const map = detachedFrozenJson(input.map)
   const intent = detachedFrozenJson(input.intent)
   const abilityRuntimeRegistry = input.abilityRuntimeRegistry ?? ABILITY_AUTOMATION_RUNTIME_REGISTRY
-  let pokemonSheetInput = input.pokemonSheets
-  const rawActorPlacement = map.placements.find(placement => placement.id === intent.placementId)
-  const rawActorSheet = rawActorPlacement?.sheetKind === 'pokemon'
-    ? input.pokemonSheets.get(rawActorPlacement.sheetSlug)
-    : null
-  if (rawActorPlacement && rawActorSheet) {
-    const effective = projectAuthoritativeEffectiveAbilities({
-      baseAbilities: resolveSheetAbilityInstances(rawActorSheet.abilities),
-      target: {
-        placementId: rawActorPlacement.id,
-        ...(rawActorPlacement.sideId ? { sideId: rawActorPlacement.sideId } : {}),
-        position: rawActorPlacement.position,
-      },
-      effects: map.encounterState?.effects ?? [],
-      transformationSnapshots: map.encounterState?.abilityTransformations,
-    })
-    const connectionMoves = [
-      ['Aqua Bullet', 'Aqua Jet'],
-      ['Big Swallow', 'Stockpile'],
-      ['Blow Away', 'Whirlwind'],
-      ['Bone Lord', 'Bonemerang'],
-      ['Chemical Romance', 'Sweet Scent'],
-      ['Copy Master', 'Copycat'],
-      ['Corrosive Toxins', 'Toxic'],
-      ['Crush Trap', 'Wrap'],
-      ['Danger Syrup', 'Sweet Scent'],
-    ] as const
-    const existingMoveNames = new Set((rawActorSheet.movelist ?? []).map(move => move.name))
-    const grantedMoves = connectionMoves.flatMap(([canonicalId, moveName]) => (
-      abilityRuntimeRegistry.resolve(canonicalId)
-      && effective.some(ability => ability.effective && ability.canonicalId === canonicalId)
-      && !existingMoveNames.has(moveName)
-        ? [{ name: moveName }]
-        : []
-    ))
-    if (grantedMoves.length > 0) {
-      const augmentedPokemonSheets = new Map(input.pokemonSheets)
-      augmentedPokemonSheets.set(rawActorPlacement.sheetSlug, {
-        ...rawActorSheet,
-        movelist: [...(rawActorSheet.movelist ?? []), ...grantedMoves],
-      })
-      pokemonSheetInput = augmentedPokemonSheets
-    }
-  }
   const { sheets: resolvedSheets, lookup: sheetLookup, byRef: sheetByRef } = resolvedSheetSnapshots(
-    pokemonSheetInput,
+    input.pokemonSheets,
     input.trainerSheets,
   )
   const { placements, byId: placementById } = placementSnapshots(map)
@@ -920,10 +881,21 @@ export const buildAuthoritativeMoveRulesContext = (
         : null
       const presentation = retainedPresentation
         ?? nativeMoveAutomationPresentationScriptForMove(canonicalMove.name)
-      const script = presentation ?? createMoveAutomationScriptFromMoveData(canonicalMove)
-      const selectedBranch = intent.targetBranchId
-        ? moveAutomationScriptForTargetBranch(script, intent.targetBranchId)
-        : null
+      const baseScript = presentation ?? createMoveAutomationScriptFromMoveData(canonicalMove)
+      const dustCloudActive = abilityQueries.has(actorPlacement.id, 'Dust Cloud')
+      const script = aa068DustCloudPresentationScript({
+        script: baseScript,
+        active: dustCloudActive,
+      })
+      const selectedBranch = intent.targetBranchId === AA068_DUST_CLOUD_BURST_BRANCH_ID
+        ? aa068DustCloudSelectedScript({
+            script,
+            active: dustCloudActive,
+            targetBranchId: intent.targetBranchId,
+          })
+        : intent.targetBranchId
+          ? moveAutomationScriptForTargetBranch(script, intent.targetBranchId)
+          : null
       // The reviewed spec is authoritative for intent shape. Canonical range
       // prose such as Blessing does not itself imply the self declaration that
       // a native runtime has explicitly reviewed.
@@ -996,6 +968,8 @@ export const buildAuthoritativeMoveRulesContext = (
           currentRound: map.initiative?.round ?? null,
         },
         encounterEffects: map.encounterState?.effects ?? [],
+        abilityConnectionNames: abilityQueries.activeForPlacement(actorPlacement.id)
+          .map(ability => ability.canonicalId),
         definitionHashForMove: (moveName: string): string | null => {
           const canonicalMove = findMove(moveName)
           return canonicalMove ? runtimes.get(canonicalMove.name)?.definitionHash ?? null : null

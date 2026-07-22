@@ -18,7 +18,9 @@ import {
   type StartTurnModalStateUpdatePayload,
   type StartTurnModalTurnRef,
 } from '#shared/startTurnModalState'
+import type { CharacterSheet } from '~/types/characterSheet'
 import type { TabletopMap } from '~/types/map'
+import type { TrainerSheet } from '~/types/trainerSheet'
 import {
   rejectLivePlayCommand,
   type AuthoritativeLivePlayCommandExecutor,
@@ -27,6 +29,12 @@ import { createSqliteAuthoritativeLivePlayCommandExecutor } from '../livePlay/sq
 import { canAccessMapForRole } from '../policies/mapPolicy'
 import { getRotomDatabase, type RotomDatabase } from '../storage/database'
 import { sqliteMapRepository, type MapRepository } from '../storage/mapRepository'
+import {
+  sqliteSheetRepository,
+  type SheetRepository,
+  type SheetRevisionExpectation,
+} from '../storage/sheetRepository'
+import { aa068EarlyBirdSleepSaveBonus } from '../domain/abilityAutomation/mechanics/aa068StaticIntegration'
 import { logicalMapResourcePath } from '../utils/runtimeResourcePaths'
 import { UseCaseHttpError } from '../utils/useCaseErrors'
 import { commitLivePlayMapUpdate } from './livePlayMapPersistence'
@@ -57,6 +65,7 @@ export interface StartTurnModalLivePlayCommandResponse {
 export interface StartTurnModalCommandDependencies {
   readonly commandExecutor?: Pick<AuthoritativeLivePlayCommandExecutor, 'execute'>
   readonly mapRepository?: Pick<MapRepository, 'getBySlug' | 'applyLivePlayUpdate'>
+  readonly sheetRepository?: Pick<SheetRepository, 'getByRef' | 'assertRevisions'>
   readonly database?: Pick<RotomDatabase, 'withTransaction'>
   readonly now?: () => number
   readonly rollD20?: () => number
@@ -68,6 +77,8 @@ interface ResolvedStartTurnModalContext {
   readonly relativePath: string
   readonly map: TabletopMap
   readonly payload: StartTurnModalStateUpdatePayload
+  readonly conditionRollModifier: number
+  readonly sheetRevisionExpectation: SheetRevisionExpectation | null
 }
 
 type StartTurnModalDependencySet = ReturnType<typeof actionDependencies>
@@ -77,6 +88,7 @@ const livePlayStartTurnModalCommandExecutor = createSqliteAuthoritativeLivePlayC
 const actionDependencies = (dependencies: StartTurnModalCommandDependencies) => ({
   commandExecutor: dependencies.commandExecutor ?? livePlayStartTurnModalCommandExecutor,
   mapRepository: dependencies.mapRepository ?? sqliteMapRepository,
+  sheetRepository: dependencies.sheetRepository ?? sqliteSheetRepository,
   database: dependencies.database ?? getRotomDatabase(),
   now: dependencies.now ?? Date.now,
   rollD20: dependencies.rollD20 ?? (() => Math.floor(Math.random() * 20) + 1),
@@ -142,12 +154,40 @@ const resolveContext = async (
   if (!canAccessMapForRole(role, map)) throw new StartTurnModalCommandUseCaseError(403, 'You do not have access to this map')
 
   const payload = expectStartTurnModalPayload(command.payload)
+  const needsConditionRollSheet = payload.action === 'resolveCondition'
+    && payload.resolution === 'roll'
+  const activePlacement = needsConditionRollSheet
+    ? map.placements.find(placement => placement.id === payload.activeId) ?? null
+    : null
+  if (needsConditionRollSheet && !activePlacement) {
+    throw new StartTurnModalCommandUseCaseError(404, 'The active placement no longer exists')
+  }
+  const storedSheet = activePlacement
+    ? dependencies.sheetRepository.getByRef(activePlacement.sheetKind, activePlacement.sheetSlug)
+    : null
+  if (activePlacement && !storedSheet) {
+    throw new StartTurnModalCommandUseCaseError(404, 'The active placement sheet no longer exists')
+  }
+  const conditionRollModifier = storedSheet && activePlacement && payload.action === 'resolveCondition'
+    ? aa068EarlyBirdSleepSaveBonus({
+        map,
+        placement: activePlacement,
+        sheet: storedSheet.sheet as unknown as CharacterSheet | TrainerSheet,
+        condition: payload.condition,
+      })
+    : 0
   const mapPath = mapPathForDocument(map)
   return {
     mapPath,
     relativePath: dependencies.relativePath(mapPath),
     map,
     payload,
+    conditionRollModifier,
+    sheetRevisionExpectation: storedSheet ? {
+      kind: storedSheet.kind,
+      slug: storedSheet.slug,
+      revision: storedSheet.revision,
+    } : null,
   }
 }
 
@@ -180,7 +220,10 @@ const applyStartTurnModalCommand = (
   const next = applyStartTurnModalStateUpdate(previous, context.payload, {
     dismissedAt: timestamp,
     resolvedAt: timestamp,
-    ...(conditionRoll === undefined ? {} : { conditionRoll }),
+    ...(conditionRoll === undefined ? {} : {
+      conditionRoll,
+      conditionRollModifier: context.conditionRollModifier,
+    }),
   })
   return {
     ...context,
@@ -243,6 +286,8 @@ const currentContextForAcceptedResult = async (
         activeId: activeTurn?.activeId ?? 'unknown',
         round: activeTurn?.round ?? 1,
       },
+      conditionRollModifier: 0,
+      sheetRevisionExpectation: null,
     }
   } catch {
     return null
@@ -295,6 +340,9 @@ export const executeStartTurnModalLivePlayCommandUseCase = async (
       throw new Error('live-play start-of-turn modal commands must persist through the accepted-result commit hook')
     },
     commit: ({ actor, command, currentRevision, nextMap, result, saveOpResult }) => {
+      if (nextMap.sheetRevisionExpectation) {
+        deps.sheetRepository.assertRevisions([nextMap.sheetRevisionExpectation])
+      }
       const persisted = toPersistedMap(nextMap.map, nextMap.map.folder ?? '', nextMap.map.updatedAt ?? deps.now(), { revision: result.revision })
       const authoritativeMap = commitLivePlayMapUpdate({
         database: deps.database,

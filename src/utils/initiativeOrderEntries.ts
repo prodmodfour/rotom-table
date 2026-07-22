@@ -94,6 +94,8 @@ export interface InitiativeOrderEntryOptions {
   readonly initiativeMultiplier?: 1 | 2
   /** Exact authoritative post-multiplier Ability/effect offset. */
   readonly initiativeOffset?: number
+  /** Effective Early Bird adds one half of the same staged Speed used by Initiative. */
+  readonly earlyBirdSpeedBonus?: boolean
 }
 
 export const pokemonInitiativeOrderEntry = (
@@ -126,7 +128,9 @@ export const pokemonInitiativeOrderEntry = (
       initiative ?? baseInitiative,
       conditions,
       { abilities },
-    ) * (options.initiativeMultiplier ?? 1) + (options.initiativeOffset ?? 0),
+    ) * (options.initiativeMultiplier ?? 1)
+      + (options.earlyBirdSpeedBonus ? Math.floor(speed / 2) : 0)
+      + (options.initiativeOffset ?? 0),
   }
 }
 
@@ -159,7 +163,8 @@ export const trainerInitiativeOrderEntry = (
       initiative ?? (speed + initiativeItemBonus),
       conditions,
       { abilities },
-    ) + (options.initiativeOffset ?? 0),
+    ) + (options.earlyBirdSpeedBonus ? Math.floor(speed / 2) : 0)
+      + (options.initiativeOffset ?? 0),
   }
 }
 

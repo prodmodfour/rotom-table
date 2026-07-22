@@ -2,7 +2,7 @@
 
 `PLAN_STATUS: IN_PROGRESS`
 
-`CURRENT_TICKET: AA-068`
+`CURRENT_TICKET: AA-069`
 
 ## Goal
 
@@ -96,14 +96,14 @@ Ability automation should reuse MoveSpec v2 selectors, expressions, operations, 
 
 ## Progress snapshot
 
-- Plan tickets: **67 DONE / 110 total**
+- Plan tickets: **68 DONE / 110 total**
 - Canonical inventory: **483**
-- Semantically complete: **96**
+- Semantically complete: **108**
 - Assisted: **0**
-- Blocked/unimplemented: **387**
+- Blocked/unimplemented: **375**
 - Interaction status: **483 unassessed**
 - Legacy baseline: **45 abilities with 55 partial fragments; 438 with no reviewed legacy fragment**
-- Production runtime: **96 exact manifest-selected AbilitySpec v1 runtimes**; retained legacy paths remain explicit compatibility only
+- Production runtime: **108 exact manifest-selected AbilitySpec v1 runtimes**; retained legacy paths remain explicit compatibility only
 
 ## Tickets
 
@@ -255,9 +255,9 @@ Each cohort must review every named ability against canonical text, implement al
   - Dancer; Danger Syrup; Dark Art; Dark Aura; Dauntless Shield; Daze; Dazzling; Deadly Poison; Decoy; Deep Sleep; Defeatist; Defiant
 - [x] **AA-067 — Defy Death through Download** — `DONE`
   - Defy Death; Delayed Reaction; Delivery Bird; Desert Weather; Designer; Diamond Defense; Dig Away; Dire Spore; Discipline; Disguise; Dodge; Download
-- [ ] **AA-068 — Dragon’s Maw through Electric Surge** — `IN_PROGRESS`
+- [x] **AA-068 — Dragon’s Maw through Electric Surge** — `DONE`
   - Dragon’s Maw; Dream Smoke; Dreamspinner; Drizzle; Drought; Drown Out; Dry Skin; Dust Cloud; Early Bird; Effect Spore; Eggscellence; Electric Surge
-- [ ] **AA-069 — Electrodash through Filter** — `TODO`
+- [ ] **AA-069 — Electrodash through Filter** — `IN_PROGRESS`
   - Electrodash; Emergency Exit; Empower; Enduring Rage; Enfeebling Lips; Exploit; Fabulous Trim; Fade Away; Fairy Aura; Fashion Designer; Fiery Crash; Filter
 - [ ] **AA-070 — Flame Body through Flying Fly Trap** — `TODO`
   - Flame Body; Flame Tongue; Flare Boost; Flash Fire; Flavorful Aroma; Flower Gift; Flower Power; Flower Veil; Fluffy; Fluffy Charge; Flutter; Flying Fly Trap
@@ -357,3 +357,7 @@ Each cohort must review every named ability against canonical text, implement al
 - **2026-07-21 — Reuse durable item choices for Delivery Bird.** A second held-item slot is effective-ability gated, and an otherwise ambiguous single-item Move operation opens an owner-authorized item window instead of accepting client item mechanics.
 - **2026-07-21 — Apply Diamond Defense before both availability and hazard damage.** Stealth Rock resolves as Scene x2 before usage gating, and source-owned hazards calculate one Tick with the more effective authoritative Rock/Fairy profile.
 - **2026-07-21 — Model defensive misses as dynamic recipient cancellation.** Disguise, Dodge, and Dig Away remove only the reviewed recipient from later hit effects while retaining triggering costs; Disguise and Dig Away additionally suppress that attack’s target-owned effects.
+- **2026-07-22 — Generalize Drown Out across Sonic Moves.** One effective-ability-gated declaration Interrupt now cancels every foe Sonic Move while retaining the triggering action cost; Chatter no longer owns a bespoke cancellation path.
+- **2026-07-22 — Keep AA-068 type and condition effects semantically ordered.** Dragon’s Maw applies its final effectiveness step after ordinary modifiers, Dry Skin separates Water immunity from hit-triggered healing, and Dream Smoke/Effect Spore conditions resolve independently of the triggering Move’s type immunity.
+- **2026-07-22 — Revalidate and persist Dust Cloud targeting authority.** Burst 1 is a presentation choice only until the server confirms an effective Dust Cloud and Powder Move; the reviewed branch ID is retained in bounded pending state for deterministic continuation replay.
+- **2026-07-22 — Encode Effect Spore as authoritative weighted die faces.** Repeated canonical condition IDs are accepted only for bounded random-choice face tables, preserving exact d6 bands without client-authored outcomes.

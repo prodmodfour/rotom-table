@@ -2,6 +2,7 @@ import type { AbilitySpecJsonObject } from './spec'
 import { cloneStrictJson, deepFreezeStrictJson, isPlainJsonObject } from '../automation/strictJson'
 
 export const ABILITY_MECHANIC_OPERATION_KIND = 'ability-mechanic' as const
+export const AA068_DUST_CLOUD_BURST_BRANCH_ID = 'ability.dust-cloud.burst-1' as const
 export const AA060_ABILITY_MECHANIC_IDS = [
   'aa060.abominable', 'aa060.absorb-force', 'aa060.accelerate', 'aa060.adaptability',
   'aa060.aerilate', 'aa060.aftermath', 'aa060.air-lock', 'aa060.ambush',
@@ -46,6 +47,12 @@ export const AA067_ABILITY_MECHANIC_IDS = [
   'aa067.dig-away', 'aa067.dire-spore', 'aa067.discipline', 'aa067.disguise',
   'aa067.dodge', 'aa067.download',
 ] as const
+export const AA068_ABILITY_MECHANIC_IDS = [
+  'aa068.dragons-maw', 'aa068.dream-smoke', 'aa068.dreamspinner', 'aa068.drizzle',
+  'aa068.drought', 'aa068.drown-out', 'aa068.dry-skin', 'aa068.dust-cloud',
+  'aa068.early-bird', 'aa068.effect-spore', 'aa068.eggscellence',
+  'aa068.electric-surge',
+] as const
 export type Aa060AbilityMechanicId = (typeof AA060_ABILITY_MECHANIC_IDS)[number]
 export type AbilityMechanicId = Aa060AbilityMechanicId
   | (typeof AA061_ABILITY_MECHANIC_IDS)[number]
@@ -55,6 +62,7 @@ export type AbilityMechanicId = Aa060AbilityMechanicId
   | (typeof AA065_ABILITY_MECHANIC_IDS)[number]
   | (typeof AA066_ABILITY_MECHANIC_IDS)[number]
   | (typeof AA067_ABILITY_MECHANIC_IDS)[number]
+  | (typeof AA068_ABILITY_MECHANIC_IDS)[number]
 export interface AbilityMechanicOperation extends AbilitySpecJsonObject {
   readonly kind: typeof ABILITY_MECHANIC_OPERATION_KIND
   readonly id: string
@@ -169,12 +177,25 @@ const CONFIG_FIELDS: Readonly<Record<AbilityMechanicId, readonly string[]>> = {
   'aa067.disguise': ['action', 'frequency', 'trigger', 'avoidAttack', 'stageDelta', 'selectedStat'],
   'aa067.dodge': ['action', 'frequency', 'trigger', 'avoidAttack'],
   'aa067.download': ['action', 'frequency', 'target', 'lowerDefenseStage', 'lowerSpecialDefenseStage', 'tieStage'],
+  'aa068.dragons-maw': ['action', 'frequency', 'trigger', 'moveType', 'target', 'vulnerabilitySteps', 'immuneBaselineResistanceSteps'],
+  'aa068.dream-smoke': ['action', 'frequency', 'trigger', 'requiredRange', 'condition'],
+  'aa068.dreamspinner': ['action', 'frequency', 'radius', 'relationship', 'requiredCondition', 'foeHpLoss', 'temporaryHpGain'],
+  'aa068.drizzle': ['action', 'frequency', 'weather', 'durationRounds'],
+  'aa068.drought': ['action', 'frequency', 'weather', 'durationRounds'],
+  'aa068.drown-out': ['action', 'frequency', 'trigger', 'keyword', 'cancelMove', 'retainTriggeringUsage'],
+  'aa068.dry-skin': ['fireHitHpLoss', 'sunnyTurnEndHpLoss', 'waterMoveImmunity', 'waterHitHealing', 'rainyTurnEndHealing'],
+  'aa068.dust-cloud': ['connectionMoveId', 'keyword', 'alternateRange'],
+  'aa068.early-bird': ['initiativeSpeedNumerator', 'initiativeSpeedDenominator', 'sleepSaveBonus'],
+  'aa068.effect-spore': ['action', 'frequency', 'trigger', 'requiredRange', 'rollSides', 'conditions'],
+  'aa068.eggscellence': ['connectionMoveId', 'affectedMoveIds', 'grantStab', 'requiredUserType', 'accuracyThreshold', 'effectivenessSteps'],
+  'aa068.electric-surge': ['action', 'frequency', 'terrain', 'durationRounds'],
 }
 const MECHANIC_SET = new Set<string>([
   ...AA060_ABILITY_MECHANIC_IDS, ...AA061_ABILITY_MECHANIC_IDS,
   ...AA062_ABILITY_MECHANIC_IDS, ...AA063_ABILITY_MECHANIC_IDS,
   ...AA064_ABILITY_MECHANIC_IDS, ...AA065_ABILITY_MECHANIC_IDS,
   ...AA066_ABILITY_MECHANIC_IDS, ...AA067_ABILITY_MECHANIC_IDS,
+  ...AA068_ABILITY_MECHANIC_IDS,
 ])
 const ID = /^[a-z0-9]+(?:[._:/-][a-z0-9]+)*$/
 const fail = (code: AbilityMechanicValidationError['code'], path: string, detail: string): never => { throw new AbilityMechanicValidationError(code, path, detail) }
@@ -738,6 +759,66 @@ const parseConfig = (mechanicId: AbilityMechanicId, value: unknown, path: string
       lowerDefenseStage: oneOf(config.lowerDefenseStage, ['attack'], `${path}.lowerDefenseStage`),
       lowerSpecialDefenseStage: oneOf(config.lowerSpecialDefenseStage, ['special-attack'], `${path}.lowerSpecialDefenseStage`),
       tieStage: oneOf(config.tieStage, ['chosen-non-hp-stat'], `${path}.tieStage`),
+    }
+    case 'aa068.dragons-maw': return {
+      action: oneOf(config.action, ['free'], `${path}.action`), frequency: oneOf(config.frequency, ['scene-x2'], `${path}.frequency`),
+      trigger: oneOf(config.trigger, ['damaging-dragon-hit'], `${path}.trigger`), moveType: oneOf(config.moveType, ['dragon'], `${path}.moveType`),
+      target: oneOf(config.target, ['one-hit-target'], `${path}.target`), vulnerabilitySteps: integer(config.vulnerabilitySteps, `${path}.vulnerabilitySteps`, 1, 1),
+      immuneBaselineResistanceSteps: integer(config.immuneBaselineResistanceSteps, `${path}.immuneBaselineResistanceSteps`, 2, 2),
+    }
+    case 'aa068.dream-smoke': return {
+      action: oneOf(config.action, ['free'], `${path}.action`), frequency: oneOf(config.frequency, ['scene'], `${path}.frequency`),
+      trigger: oneOf(config.trigger, ['hit-by-melee-attack'], `${path}.trigger`), requiredRange: oneOf(config.requiredRange, ['melee'], `${path}.requiredRange`),
+      condition: oneOf(config.condition, ['asleep'], `${path}.condition`),
+    }
+    case 'aa068.dreamspinner': return {
+      action: oneOf(config.action, ['swift'], `${path}.action`), frequency: oneOf(config.frequency, ['scene-x3'], `${path}.frequency`),
+      radius: integer(config.radius, `${path}.radius`, 3, 3), relationship: oneOf(config.relationship, ['enemy'], `${path}.relationship`),
+      requiredCondition: oneOf(config.requiredCondition, ['asleep'], `${path}.requiredCondition`), foeHpLoss: oneOf(config.foeHpLoss, ['tick'], `${path}.foeHpLoss`),
+      temporaryHpGain: oneOf(config.temporaryHpGain, ['tick'], `${path}.temporaryHpGain`),
+    }
+    case 'aa068.drizzle': return {
+      action: oneOf(config.action, ['swift'], `${path}.action`), frequency: oneOf(config.frequency, ['scene-x3'], `${path}.frequency`),
+      weather: oneOf(config.weather, ['rainy'], `${path}.weather`), durationRounds: integer(config.durationRounds, `${path}.durationRounds`, 1, 1),
+    }
+    case 'aa068.drought': return {
+      action: oneOf(config.action, ['swift'], `${path}.action`), frequency: oneOf(config.frequency, ['scene-x3'], `${path}.frequency`),
+      weather: oneOf(config.weather, ['sunny'], `${path}.weather`), durationRounds: integer(config.durationRounds, `${path}.durationRounds`, 1, 1),
+    }
+    case 'aa068.drown-out': return {
+      action: oneOf(config.action, ['free'], `${path}.action`), frequency: oneOf(config.frequency, ['scene-x2'], `${path}.frequency`),
+      trigger: oneOf(config.trigger, ['foe-uses-sonic-move'], `${path}.trigger`), keyword: oneOf(config.keyword, ['sonic'], `${path}.keyword`),
+      cancelMove: bool(config.cancelMove, `${path}.cancelMove`), retainTriggeringUsage: bool(config.retainTriggeringUsage, `${path}.retainTriggeringUsage`),
+    }
+    case 'aa068.dry-skin': return {
+      fireHitHpLoss: oneOf(config.fireHitHpLoss, ['tick'], `${path}.fireHitHpLoss`), sunnyTurnEndHpLoss: oneOf(config.sunnyTurnEndHpLoss, ['tick'], `${path}.sunnyTurnEndHpLoss`),
+      waterMoveImmunity: bool(config.waterMoveImmunity, `${path}.waterMoveImmunity`), waterHitHealing: oneOf(config.waterHitHealing, ['tick'], `${path}.waterHitHealing`),
+      rainyTurnEndHealing: oneOf(config.rainyTurnEndHealing, ['tick'], `${path}.rainyTurnEndHealing`),
+    }
+    case 'aa068.dust-cloud': return {
+      connectionMoveId: oneOf(config.connectionMoveId, ['Poison Powder'], `${path}.connectionMoveId`), keyword: oneOf(config.keyword, ['powder'], `${path}.keyword`),
+      alternateRange: oneOf(config.alternateRange, ['burst-1'], `${path}.alternateRange`),
+    }
+    case 'aa068.early-bird': return {
+      initiativeSpeedNumerator: integer(config.initiativeSpeedNumerator, `${path}.initiativeSpeedNumerator`, 1, 1),
+      initiativeSpeedDenominator: integer(config.initiativeSpeedDenominator, `${path}.initiativeSpeedDenominator`, 2, 2),
+      sleepSaveBonus: integer(config.sleepSaveBonus, `${path}.sleepSaveBonus`, 3, 3),
+    }
+    case 'aa068.effect-spore': return {
+      action: oneOf(config.action, ['free'], `${path}.action`), frequency: oneOf(config.frequency, ['scene'], `${path}.frequency`),
+      trigger: oneOf(config.trigger, ['hit-by-melee-attack'], `${path}.trigger`), requiredRange: oneOf(config.requiredRange, ['melee'], `${path}.requiredRange`),
+      rollSides: integer(config.rollSides, `${path}.rollSides`, 6, 6),
+      conditions: stringArray(config.conditions, ['poisoned', 'poisoned', 'paralyzed', 'paralyzed', 'asleep', 'asleep'], `${path}.conditions`),
+    }
+    case 'aa068.eggscellence': return {
+      connectionMoveId: oneOf(config.connectionMoveId, ['Barrage'], `${path}.connectionMoveId`),
+      affectedMoveIds: stringArray(config.affectedMoveIds, ['Barrage', 'Egg Bomb'], `${path}.affectedMoveIds`),
+      grantStab: bool(config.grantStab, `${path}.grantStab`), requiredUserType: oneOf(config.requiredUserType, ['normal'], `${path}.requiredUserType`),
+      accuracyThreshold: integer(config.accuracyThreshold, `${path}.accuracyThreshold`, 16, 16), effectivenessSteps: integer(config.effectivenessSteps, `${path}.effectivenessSteps`, 1, 1),
+    }
+    case 'aa068.electric-surge': return {
+      action: oneOf(config.action, ['swift'], `${path}.action`), frequency: oneOf(config.frequency, ['scene-x3'], `${path}.frequency`),
+      terrain: oneOf(config.terrain, ['electric'], `${path}.terrain`), durationRounds: integer(config.durationRounds, `${path}.durationRounds`, 1, 1),
     }
   }
 }

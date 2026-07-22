@@ -985,6 +985,9 @@ const planPendingMoveState = (options: {
     authoritativeMap: options.input.map,
     actorPlacementId: options.execution.actorPlacementId,
     ...(options.input.intent.originCell ? { virtualOriginCell: options.input.intent.originCell } : {}),
+    ...(options.input.intent.targetBranchId
+      ? { targetBranchId: options.input.intent.targetBranchId }
+      : {}),
     suspendedAt: options.plannedAt,
     authoritativeSheetReads: sheetReads,
     authoritativeGroupInventoryReads: groupInventoryReads,

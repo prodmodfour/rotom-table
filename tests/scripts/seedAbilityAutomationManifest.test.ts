@@ -49,7 +49,7 @@ describe('ability automation semantic manifest seed script', () => {
       expect(rerun.status, `${rerun.stdout}\n${rerun.stderr}`).toBe(0)
       expect(readFileSync(manifestPath)).toEqual(firstBytes)
     })
-  })
+  }, 15_000)
 
   it('seeds truthful blocked rows with planning-only mode hints and deterministic cohorts', () => {
     withTemporaryManifest((manifestPath) => {

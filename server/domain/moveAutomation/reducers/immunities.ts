@@ -209,7 +209,9 @@ export const createStandardMoveCoreTokenEffectImmunityQueries = (
         && normalizeConditionName(condition) === 'Badly Poisoned'
         && options.context?.queries.abilities.has(options.context.actor.placement.id, 'Corrosive Toxins')
       if (corrosiveToxinsBypass) return conditionDecision(null)
-      const wholeMoveBlocker = moveImmunity(recipient)
+      const wholeMoveBlocker = operation.payload.applyMoveImmunity === false
+        ? null
+        : moveImmunity(recipient)
       if (wholeMoveBlocker) return conditionDecision(wholeMoveBlocker)
       // Cleanses are still blocked by whole-move immunities such as Soundproof,
       // but a target's immunity to the ailment itself must never block removal.

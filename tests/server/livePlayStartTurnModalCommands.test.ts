@@ -12,6 +12,7 @@ import { createInMemoryLivePlayOpStore } from '~~/server/livePlay/opStore'
 import { acceptedRealtimeTestHooks } from './livePlayAcceptedRealtimeTestUtils'
 import { executeStartTurnModalLivePlayCommandUseCase } from '~~/server/useCases/applyStartTurnModalCommand'
 import { MAPS_ROOT } from '~~/server/utils/mapPaths'
+import type { CharacterSheet } from '~/types/characterSheet'
 import type { TabletopMap } from '~/types/map'
 
 const baseMap = (overrides: Partial<TabletopMap> = {}): TabletopMap => ({
@@ -54,7 +55,24 @@ const dismissCommand = (
   ...overrides,
 })
 
-const createHarness = (initialMap: TabletopMap = baseMap()) => {
+const earlyBirdSheet = (enabled: boolean): CharacterSheet => ({
+  slug: 'pikachu', nickname: 'Pikachu', species: 'Pikachu', level: 20, revision: 3, types: ['Electric'],
+  abilities: enabled ? [{
+    name: 'Early Bird',
+    automation: {
+      schemaVersion: 1, instanceId: 'base:early-bird', canonicalId: 'Early Bird',
+      definitionVersion: null, selections: [],
+    },
+  }] : [],
+  movelist: [],
+  stats: {
+    hp: { added: 20 }, atk: { added: 20 }, def: { added: 20 },
+    satk: { added: 20 }, sdef: { added: 20 }, spd: { added: 20 },
+  },
+  combat: { currentHp: 100, conditions: ['Sleep'] },
+})
+
+const createHarness = (initialMap: TabletopMap = baseMap(), hasEarlyBird = false) => {
   let storedMap = initialMap
   const published: unknown[] = []
   const executor = createAuthoritativeLivePlayCommandExecutor({
@@ -73,9 +91,21 @@ const createHarness = (initialMap: TabletopMap = baseMap()) => {
       return 'applied' as const
     }),
   }
+  const sheetRevision = 3
+  const sheetRepository = {
+    getByRef: vi.fn((kind: string, slug: string) => kind === 'pokemon' && slug === 'pikachu'
+      ? {
+          kind: 'pokemon' as const, slug: 'pikachu',
+          sheet: earlyBirdSheet(hasEarlyBird) as unknown as Record<string, unknown>,
+          revision: sheetRevision, updatedAt: 100,
+        }
+      : null),
+    assertRevisions: vi.fn(),
+  }
   const deps = {
     commandExecutor: executor,
     mapRepository,
+    sheetRepository,
     database: { withTransaction: <T>(work: () => T) => work() },
     relativePath: vi.fn((filePath: string) => filePath.replace(`${MAPS_ROOT}/`, 'data/maps/')),
     now: vi.fn(() => 2_000),
@@ -128,7 +158,7 @@ describe('live-play start-of-turn modal commands', () => {
         current: {
           encounterName: 'Rooftop Ambush',
           startTurnModal: {
-            schemaVersion: 2,
+            schemaVersion: 3,
             dismissedTurn: {
               activeId: 'token-pikachu',
               round: 2,
@@ -142,6 +172,8 @@ describe('live-play start-of-turn modal commands', () => {
     expect(harness.published).toEqual([
       expect.objectContaining({ channel: 'map:arena', type: 'live-play-command-accepted', opId: 'op_turnmodal1', revision: 5 }),
     ])
+    expect(harness.deps.sheetRepository.getByRef).not.toHaveBeenCalled()
+    expect(harness.deps.sheetRepository.assertRevisions).not.toHaveBeenCalled()
   })
 
   it('records condition roll results through the authoritative executor', async () => {
@@ -167,9 +199,14 @@ describe('live-play start-of-turn modal commands', () => {
       occurrence: 0,
       resolution: 'roll',
       roll: 14,
+      modifier: 0,
+      finalValue: 14,
       dc: 11,
       success: true,
       resolvedAt: 2_000,
+    }])
+    expect(harness.deps.sheetRepository.assertRevisions).toHaveBeenCalledWith([{
+      kind: 'pokemon', slug: 'pikachu', revision: 3,
     }])
     expect(acceptedPatches(response)[0]).toMatchObject({
       type: LIVE_PLAY_PATCH_TYPES.MAP_METADATA,
@@ -186,6 +223,25 @@ describe('live-play start-of-turn modal commands', () => {
         },
       },
     })
+  })
+
+  it('applies Early Bird as an authoritative +3 modifier only to Sleep saves', async () => {
+    const harness = createHarness(baseMap(), true)
+
+    const response = await execute(harness, dismissCommand({
+      opId: 'op_turnmodal_early_bird',
+      payload: {
+        action: 'resolveCondition', activeId: 'token-pikachu', round: 2,
+        condition: 'Sleep', occurrence: 0, resolution: 'roll',
+      },
+    }))
+
+    expect(response.result).toMatchObject({ ok: true })
+    expect(readStartTurnModalState(harness.storedMap.metadata).conditionResolutions[0])
+      .toMatchObject({ roll: 14, modifier: 3, finalValue: 17, success: true })
+    expect(harness.deps.sheetRepository.assertRevisions).toHaveBeenCalledWith([{
+      kind: 'pokemon', slug: 'pikachu', revision: 3,
+    }])
   })
 
   it('rejects player dismissals', async () => {

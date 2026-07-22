@@ -24,7 +24,7 @@ describe('startTurnModalState', () => {
     expect(metadata).toMatchObject({
       other: true,
       startTurnModal: {
-        schemaVersion: 2,
+        schemaVersion: 3,
         dismissedTurn: {
           activeId: 'token-pikachu',
           round: 2,
@@ -55,6 +55,8 @@ describe('startTurnModalState', () => {
       occurrence: 0,
       resolution: 'roll',
       roll: 12,
+      modifier: 0,
+      finalValue: 12,
       dc: 11,
       success: true,
       resolvedAt: 100,
@@ -101,6 +103,21 @@ describe('startTurnModalState', () => {
       resolution: 'remove',
       resolvedAt: 102,
     })])
+  })
+
+  it('rejects inconsistent retained save arithmetic', () => {
+    const state = readStartTurnModalState({
+      startTurnModal: {
+        schemaVersion: 3,
+        dismissedTurn: null,
+        conditionResolutions: [{
+          activeId: 'token-pikachu', round: 2, condition: 'Sleep', occurrence: 0,
+          resolution: 'roll', roll: 8, modifier: 3, finalValue: 10, dc: 16,
+          success: true,
+        }],
+      },
+    })
+    expect(state.conditionResolutions).toEqual([])
   })
 
   it('normalizes update payloads', () => {

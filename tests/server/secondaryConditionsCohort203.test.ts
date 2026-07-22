@@ -11,6 +11,7 @@ import {
   type ResolveMoveIntent,
 } from '#shared/livePlayMoveResolution'
 import { createEmptyEncounterState } from '#shared/moveAutomation/encounterState'
+import { createEncounterTurnResourceLedger } from '#shared/moveAutomation/encounterResources'
 import { isPendingMoveDeclarationResult } from '#shared/moveAutomation/pendingResolution'
 import {
   MOVE_RESPONSE_COMMAND_SCHEMA_VERSION,
@@ -217,6 +218,11 @@ const fixture = (options: FixtureOptions): CohortFixture => {
     activeScene: { name: 'MA-203 scene', startedAt: 100 },
     encounterState: {
       ...encounter,
+      history: { ...encounter.history, sceneId: 'ma203-scene' },
+      turnResources: Object.fromEntries(placements.map(current => [
+        current.id,
+        createEncounterTurnResourceLedger({ placementId: current.id, round: 1 }),
+      ])),
       sides: {
         heroes: { id: 'heroes', label: 'Heroes', status: 'active' },
         foes: { id: 'foes', label: 'Foes', status: 'active' },
@@ -627,7 +633,9 @@ describe('MA-203 secondary-condition and alternate-damage cohort', () => {
     expect(storedConditions(harness)).toEqual([])
     expect(harness.sheets.getByRef('pokemon', 'target')?.sheet)
       .toMatchObject({ combat: { currentHp: 500 } })
-    const committedUsage = JSON.stringify(harness.maps.getBySlug(input.map.slug)?.moveUsage)
+    const committedUsage = JSON.stringify(
+      harness.maps.getBySlug(input.map.slug)?.encounterState?.abilityUsage,
+    )
     expect(committedUsage).toContain('Drown Out')
     expect(harness.maps.getBySlug(input.map.slug)?.encounterState
       ?.turnResources[ACTOR_ID]?.actions.standard.spent).toBe(1)

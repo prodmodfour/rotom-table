@@ -248,6 +248,20 @@ describe('pending move resolution contract', () => {
     expect(parsed.virtualOriginCell).toEqual({ x: 2, y: 0, z: 3 })
     expect(Object.isFrozen(parsed.virtualOriginCell)).toBe(true)
   })
+  it('retains only a bounded stable server-reviewed targeting branch for replay', () => {
+    const source = pendingResolution()
+    source.targetBranchId = 'ability.dust-cloud.burst-1'
+    expect(parsePendingMoveResolution(source).targetBranchId)
+      .toBe('ability.dust-cloud.burst-1')
+
+    source.targetBranchId = '../unreviewed branch'
+    const error = expectPendingError(
+      () => parsePendingMoveResolution(source),
+      'invalid-pending-resolution',
+    )
+    expect(error.path).toBe('pendingResolution.targetBranchId')
+  })
+
   it('strictly parses, canonicalizes, detaches, and freezes suspended authority state', () => {
     const source = pendingResolution()
     const parsed = parsePendingMoveResolution(source)

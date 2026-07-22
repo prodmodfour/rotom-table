@@ -1,4 +1,3 @@
-import { createHash } from 'node:crypto'
 import {
   FIERY_WRATH_DARK_BRANCH_ID,
   FIERY_WRATH_FIRE_BRANCH_ID,
@@ -9,135 +8,15 @@ import type {
   MoveConditionEffectOperation,
   MoveDamageEffectOperation,
   MoveEffectOperation,
-  MoveReactionRequestEffectOperation,
   MoveUsageEffectOperation,
 } from '#shared/moveAutomation/effects'
-import {
-  isMoveUsageTransitionError,
-  planMoveUsageTransition,
-} from '../../planMoveUsageTransition'
 import type {
   RegisteredMoveHandlerContext,
   RegisteredMoveHandlerRegistration,
 } from './registry'
-import { MOVE_SONIC_CANCELLATION_PRIORITY } from '../setupReactionDefinitions'
 
 export const SECONDARY_CONDITIONS_203_HANDLER_ID =
   'ma203.secondary-condition-outliers' as const
-
-const DROWN_OUT_MOVE_KEY = 'drown-out' as const
-const DROWN_OUT_FREQUENCY = 'Scene x2' as const
-
-const stablePlacementSuffix = (placementId: string): string => createHash('sha256')
-  .update(placementId, 'utf8')
-  .digest('hex')
-  .slice(0, 16)
-
-const normalizedAbility = (value: string): string => value.trim().toLowerCase()
-
-const drownOutAvailable = (
-  context: RegisteredMoveHandlerContext,
-  placementId: string,
-): boolean => {
-  const placement = context.queries.placements.get(placementId)
-  const sheet = placement ? context.queries.sheets.forPlacement(placement) : null
-  if (!placement || !sheet) return false
-  try {
-    planMoveUsageTransition({
-      map: context.map,
-      sheetMoveUsage: sheet.sheet.moveUsage,
-      placementId,
-      move: {
-        moveName: 'Drown Out',
-        moveKey: DROWN_OUT_MOVE_KEY,
-        frequency: DROWN_OUT_FREQUENCY,
-      },
-      usedAt: context.map.updatedAt,
-      change: { action: 'spend', amount: 1 },
-    })
-    return true
-  }
-  catch (error) {
-    if (isMoveUsageTransitionError(error)) return false
-    throw error
-  }
-}
-
-const drownOutHolderIds = (
-  context: RegisteredMoveHandlerContext,
-): readonly string[] => {
-  const actorId = context.actor.placement.id
-  const tokenById = new Map(context.queries.tokens.all().map(token => [token.id, token]))
-  const holders: string[] = []
-  // Absence is a mechanics decision: record every placed sheet whose current
-  // ability projection was inspected, not only positive providers.
-  for (const placement of context.queries.placements.all()) {
-    context.reads.recordPlacement(placement)
-    if (placement.id === actorId) continue
-    const token = tokenById.get(placement.id)
-    if (!token?.abilityNames?.some(name => normalizedAbility(name) === 'drown out')) continue
-    if (context.queries.relationships.resolve(placement.id, actorId).relationship !== 'enemy') {
-      continue
-    }
-    if (drownOutAvailable(context, placement.id)) holders.push(placement.id)
-  }
-  return Object.freeze(holders)
-}
-
-const drownOutOperations = (
-  context: RegisteredMoveHandlerContext,
-): readonly MoveEffectOperation[] => {
-  const holders = drownOutHolderIds(context)
-  const requests: MoveReactionRequestEffectOperation[] = []
-  const usage: MoveUsageEffectOperation[] = []
-  for (const placementId of holders) {
-    const suffix = stablePlacementSuffix(placementId)
-    const requestOperationId = `chatter.drown-out-request.${suffix}`
-    requests.push({
-      id: requestOperationId,
-      kind: 'reaction-request',
-      source: { kind: 'move', id: 'move.chatter' },
-      recipients: { kind: 'none' },
-      phase: 'declare',
-      reasonCode: 'drown-out.cancellation-window',
-      payload: {
-        requestId: `drown-out.cancellation-request.${suffix}`,
-        promptKey: 'ability.drown-out.reaction-response',
-        options: [{
-          id: 'ability.drown-out.use',
-          labelKey: 'ability.drown-out.cancel-sonic-move',
-        }],
-        allowPass: true,
-        timing: 'declare',
-        priority: MOVE_SONIC_CANCELLATION_PRIORITY,
-        ownerPlacementIds: [placementId],
-        cancellation: {
-          kind: 'cancel-move',
-          retainTriggeringUsage: true,
-        },
-      },
-    })
-    usage.push({
-      id: `chatter.drown-out-usage.${suffix}`,
-      kind: 'usage',
-      source: { kind: 'operation', id: requestOperationId },
-      recipients: { kind: 'response-owner' },
-      phase: 'usage',
-      reasonCode: 'drown-out.frequency-use',
-      payload: {
-        action: 'spend',
-        resourceId: `drown-out.frequency-use.${suffix}`,
-        amount: 1,
-        resource: {
-          moveName: 'Drown Out',
-          moveKey: DROWN_OUT_MOVE_KEY,
-          frequency: DROWN_OUT_FREQUENCY,
-        },
-      },
-    })
-  }
-  return Object.freeze([...requests, ...usage])
-}
 
 const conditionOperation = (input: {
   readonly id: string
@@ -235,18 +114,15 @@ const alternateTypeOperations = (
 
 const runSecondaryConditions203Handler = (context: RegisteredMoveHandlerContext) => {
   if (context.intent.moveName === 'Chatter') {
-    const operations = drownOutOperations(context)
     return {
-      operations,
+      operations: [],
       traceEntries: [{
         kind: 'predicate' as const,
         phase: 'declare' as const,
-        predicateId: 'chatter.drown-out-available',
-        outcome: operations.length > 0,
-        reasonCode: operations.length > 0
-          ? 'chatter.drown-out-window-required'
-          : 'chatter.no-drown-out-holder',
-        input: { requestCount: operations.length / 2 },
+        predicateId: 'chatter.drown-out-ability-runtime',
+        outcome: true,
+        reasonCode: 'chatter.drown-out-delegated-to-ability-runtime',
+        input: { requestCount: 0 },
       }],
     }
   }
@@ -272,6 +148,6 @@ const runSecondaryConditions203Handler = (context: RegisteredMoveHandlerContext)
 export const SECONDARY_CONDITIONS_203_HANDLER_REGISTRATION: RegisteredMoveHandlerRegistration =
   Object.freeze({
     id: SECONDARY_CONDITIONS_203_HANDLER_ID,
-    version: 1,
+    version: 2,
     run: runSecondaryConditions203Handler,
   })

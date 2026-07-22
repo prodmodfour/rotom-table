@@ -123,6 +123,10 @@ import { aa066DazzlingBlocksPriorityMove } from './abilityAutomation/mechanics/a
 import { hasAa061AquaBulletMark, hasPendingAa061AquaBulletAttack } from './abilityAutomation/mechanics/aa061MoveIntegration'
 import { aa062BoneLordEmpowersMove, hasPendingAa062BoneLordMove } from './abilityAutomation/mechanics/aa062MoveIntegration'
 import { aa063RangedMove } from './abilityAutomation/mechanics/aa063MoveIntegration'
+import {
+  AA068_DUST_CLOUD_TARGETING_OVERRIDE,
+  aa068DustCloudBurstEnabled,
+} from './abilityAutomation/mechanics/aa068StaticIntegration'
 
 export type { AuthoritativeMoveSheetRead } from './moveAutomation/context'
 
@@ -1791,7 +1795,12 @@ const resolveNativeAreaMove = (options: {
   )
   const boneLordLine = options.entry.canonicalMoveName === 'Bonemerang'
     && aa062BoneLordEmpowersMove(options.context, 'Bonemerang')
-  if (targeting?.kind !== 'area' && !boneLordLine) {
+  const dustCloudBurst = aa068DustCloudBurstEnabled({
+    context: options.context,
+    script: options.entry.script,
+    targetBranchId: options.context.intent.targetBranchId,
+  })
+  if (targeting?.kind !== 'area' && !boneLordLine && !dustCloudBurst) {
     return fail(
       'invalid',
       'selection-kind-mismatch',
@@ -1801,7 +1810,8 @@ const resolveNativeAreaMove = (options: {
 
   const { placement: actorPlacement, token: actor } = options.context.actor
   const template = selectedAreaTemplate(options.entry.script, options.selection.areaTemplateId)
-  const selector = boneLordLine ? { kind: 'area-targets' as const } : targeting!.selector
+  const effectiveTargeting = dustCloudBurst ? AA068_DUST_CLOUD_TARGETING_OVERRIDE : targeting!
+  const selector = boneLordLine ? { kind: 'area-targets' as const } : effectiveTargeting.selector
   if (
     selector !== null
     && selector.kind !== 'area-targets'
@@ -1848,7 +1858,7 @@ const resolveNativeAreaMove = (options: {
     geometricallyAffectedPlacementIds: candidateTargetIds,
     predicate: boneLordLine
       ? DEFAULT_MOVE_AUTOMATION_AREA_TARGET_PREDICATE
-      : targeting!.predicate ?? DEFAULT_MOVE_AUTOMATION_AREA_TARGET_PREDICATE,
+      : effectiveTargeting.predicate ?? DEFAULT_MOVE_AUTOMATION_AREA_TARGET_PREDICATE,
     relationships: options.context.queries.relationships,
     states: options.context.queries.targetStates,
     targetability: options.context.queries.targetability,

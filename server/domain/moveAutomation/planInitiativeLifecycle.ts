@@ -88,6 +88,10 @@ import {
   createAa067LifecycleHandler,
 } from '../abilityAutomation/mechanics/aa067LifecycleIntegration'
 import { createMoveAutomationWeatherResolver } from './weather'
+import {
+  aa068DrySkinLifecycleRecipientIds,
+  createAa068DrySkinLifecycleHandler,
+} from '../abilityAutomation/mechanics/aa068LifecycleIntegration'
 
 export type InitiativeLifecyclePlanningErrorCode =
   | 'active-placement-missing'
@@ -614,14 +618,24 @@ export const planEncounterLifecycle = (
         canonicalId: 'Deep Sleep',
       })
     : Object.freeze([])
-  const rainy = createMoveAutomationWeatherResolver(lifecycleMap).active()
-    .some(weather => weather.kind === 'rainy')
+  const activeWeather = createMoveAutomationWeatherResolver(lifecycleMap).active()
+  const rainy = activeWeather.some(weather => weather.kind === 'rainy')
   const desertWeatherPlacementIds = rainy && events.some(event => event.kind === 'turn-end')
     ? effectiveAbilityPlacementIds({
         map: lifecycleMap,
         state: previousEncounterState,
         snapshots: loadSheets(),
         canonicalId: 'Desert Weather',
+      })
+    : Object.freeze([])
+  const drySkinWeather = activeWeather
+    .some(weather => weather.kind === 'sunny' || weather.kind === 'rainy')
+  const drySkinPlacementIds = drySkinWeather && events.some(event => event.kind === 'turn-end')
+    ? effectiveAbilityPlacementIds({
+        map: lifecycleMap,
+        state: previousEncounterState,
+        snapshots: loadSheets(),
+        canonicalId: 'Dry Skin',
       })
     : Object.freeze([])
   const hasDelayedReactionDebt = previousEncounterState.effects.some(effect => (
@@ -647,6 +661,9 @@ export const planEncounterLifecycle = (
       ? [createAa066DeepSleepLifecycleHandler(deepSleepPlacementIds)]
       : []),
     ...(aa067Handler ? [aa067Handler] : []),
+    ...(drySkinPlacementIds.length > 0
+      ? [createAa068DrySkinLifecycleHandler({ map: lifecycleMap, drySkinPlacementIds })]
+      : []),
     ...(corrosiveToxinsHandler ? [corrosiveToxinsHandler] : []),
     ...(weatherHandler ? [weatherHandler] : []),
     ...(terrainHandler ? [terrainHandler] : []),
@@ -735,10 +752,15 @@ export const planEncounterLifecycle = (
         operation,
         candidateRecipientIds: abilityRecipients,
       })
-      recipientsByOperationId.set(operation.id, terrainLifecycleRecipientIds({
+      const aa068Recipients = aa068DrySkinLifecycleRecipientIds({
         context,
         operation,
         candidateRecipientIds: aa067Recipients,
+      })
+      recipientsByOperationId.set(operation.id, terrainLifecycleRecipientIds({
+        context,
+        operation,
+        candidateRecipientIds: aa068Recipients,
       }))
     }
     const emissions: MoveResolvedCoreTokenEffectOperation[] = reduction.operations.map(

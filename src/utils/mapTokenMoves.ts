@@ -1,6 +1,7 @@
 import { getPokedexEntry } from '~~/data/characterSheets'
 import { findMove } from '~~/data/ptuReference'
 import type { EncounterEffect } from '#shared/moveAutomation/encounterEffects'
+import { reviewedAbilityConnectionMoveNames } from '#shared/abilityAutomation/connections'
 import {
   projectEncounterMoveList,
   type EncounterMoveListBlockReason,
@@ -32,6 +33,7 @@ import {
   type MoveFrequencyKind,
 } from '~/utils/moveUsage'
 import type { CharacterSheet, CharacterSheetMove } from '~/types/characterSheet'
+import { sheetAbilityNames } from '~/utils/sheetAbilities'
 import type { MapMoveUsageState, SheetMoveUsageState } from '~/types/moveUsage'
 import type { SheetPlacement } from '~/types/map'
 import type { SpawnedPokemon } from '~/types/pokemon'
@@ -141,12 +143,20 @@ const struggleEligibleMoves = <Move extends Pick<TokenSheetMove, 'name'>>(
   struggleAttackIsAvailableForCapabilities(move.name, capabilities)
 ))
 
-export const pokemonMoveEntriesForSheet = (sheet: CharacterSheet): TokenSheetMoveEntry[] => {
+export const pokemonMoveEntriesForSheet = (
+  sheet: CharacterSheet,
+  abilityConnectionNames: readonly string[] = sheetAbilityNames(sheet.abilities),
+): TokenSheetMoveEntry[] => {
   const capabilities = pokemonStruggleCapabilities(sheet)
   const movelist = struggleEligibleMoves(sheet.movelist, capabilities)
+  const connectionMoves = reviewedAbilityConnectionMoveNames(
+    abilityConnectionNames,
+    movelist.map(move => move.name),
+  )
   return [
     ...makeAutomaticStruggleMoves(capabilities, movelist)
       .map((move) => ({ move, automatic: true })),
+    ...connectionMoves.map(name => ({ move: { name }, automatic: true })),
     ...movelist.map((move) => ({ move, automatic: false })),
   ]
 }
@@ -168,6 +178,8 @@ export const trainerMoveEntriesForSheet = (sheet: TrainerSheet): TokenSheetMoveE
 
 export interface MoveEntriesForPlacementOptions {
   readonly encounterEffects?: readonly EncounterEffect[]
+  /** Exact effective Ability names when a server authority has already projected suppression. */
+  readonly abilityConnectionNames?: readonly string[]
 }
 
 const canonicalMoveIdForEntry = (entry: TokenSheetMoveEntry): string => {
@@ -202,7 +214,7 @@ export const moveEntriesForPlacement = (
   const entries = placement.sheetKind === 'pokemon'
     ? (() => {
         const sheet = sheets.pokemon?.get(placement.sheetSlug)
-        return sheet ? pokemonMoveEntriesForSheet(sheet) : []
+        return sheet ? pokemonMoveEntriesForSheet(sheet, options.abilityConnectionNames) : []
       })()
     : (() => {
         const sheet = sheets.trainer?.get(placement.sheetSlug)

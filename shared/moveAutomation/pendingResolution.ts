@@ -342,6 +342,8 @@ export interface PendingMoveResolution {
   readonly originOpId: LivePlayOpId
   readonly actorPlacementId: string
   readonly virtualOriginCell?: MoveResponseGridAnchor
+  /** Server-validated targeting branch retained for deterministic continuation replay. */
+  readonly targetBranchId?: string
   readonly canonicalMoveId: string
   readonly specVersion: number
   readonly specHash: string
@@ -423,7 +425,9 @@ const ROOT_REQUIRED_FIELDS = [
   'updatedAt',
   'publicSummary',
 ] as const
-const ROOT_OPTIONAL_FIELDS = ['continuationKind', 'continuationContext', 'virtualOriginCell'] as const
+const ROOT_OPTIONAL_FIELDS = [
+  'continuationKind', 'continuationContext', 'virtualOriginCell', 'targetBranchId',
+] as const
 const MAP_READ_FIELDS = ['kind', 'slug', 'revision'] as const
 const SHEET_READ_FIELDS = ['kind', 'sheetKind', 'slug', 'revision'] as const
 const GROUP_INVENTORY_READ_FIELDS = ['kind', 'slug', 'revision'] as const
@@ -2319,6 +2323,20 @@ export const parsePendingMoveResolution = (
   const virtualOriginCell = Object.prototype.hasOwnProperty.call(record, 'virtualOriginCell')
     ? requiredContinuationGridAnchor(record.virtualOriginCell, `${path}.virtualOriginCell`)
     : null
+  const targetBranchId = Object.prototype.hasOwnProperty.call(record, 'targetBranchId')
+    ? parseBoundedText(
+        record.targetBranchId,
+        `${path}.targetBranchId`,
+        PENDING_MOVE_RESOLUTION_LIMITS.identifierChars,
+      )
+    : null
+  if (targetBranchId !== null && !STABLE_ID_PATTERN.test(targetBranchId)) {
+    fail(
+      'invalid-pending-resolution',
+      `${path}.targetBranchId`,
+      'must be a stable targeting-branch ID.',
+    )
+  }
   const canonicalMoveId = parseCanonicalMoveId(
     record.canonicalMoveId,
     `${path}.canonicalMoveId`,
@@ -2410,6 +2428,7 @@ export const parsePendingMoveResolution = (
     originOpId,
     actorPlacementId,
     ...(virtualOriginCell ? { virtualOriginCell } : {}),
+    ...(targetBranchId ? { targetBranchId } : {}),
     canonicalMoveId,
     specVersion,
     specHash,

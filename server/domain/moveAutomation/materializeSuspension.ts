@@ -69,6 +69,7 @@ export interface MaterializeMoveSpecSuspensionInput {
   readonly authoritativeMap?: TabletopMap
   readonly actorPlacementId: string
   readonly virtualOriginCell?: GridAnchor
+  readonly targetBranchId?: string
   readonly suspendedAt: number
   readonly authoritativeSheetReads: readonly AuthoritativeMoveSheetRead[]
   readonly authoritativeGroupInventoryReads?: readonly AuthoritativeMoveGroupInventoryRead[]
@@ -398,6 +399,7 @@ export const materializeMoveSpecSuspension = (
     originOpId: input.originOpId,
     actorPlacementId: input.actorPlacementId,
     ...(input.virtualOriginCell ? { virtualOriginCell: { ...input.virtualOriginCell } } : {}),
+    ...(input.targetBranchId ? { targetBranchId: input.targetBranchId } : {}),
     canonicalMoveId: input.definition.spec.canonicalId,
     specVersion: input.definition.spec.version,
     specHash: input.definition.definitionHash,

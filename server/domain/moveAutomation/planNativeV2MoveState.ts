@@ -679,12 +679,21 @@ const applyTriggeredAbilityPayments = (input: {
     ['ability.dig-away.optional-avoid', 'Dig Away'],
     ['ability.disguise.optional-avoid', 'Disguise'],
     ['ability.dodge.optional-avoid', 'Dodge'],
+    ['ability.dragons-maw.optional-vulnerability', 'Dragon’s Maw'],
+    ['ability.dream-smoke.optional-sleep', 'Dream Smoke'],
+    ['ability.drown-out.optional-cancel', 'Drown Out'],
+    ['ability.effect-spore.optional-condition', 'Effect Spore'],
   ])
   const noFrequency = new Set([
     'Anger Point', 'Aqua Boost', 'Beast Boost', 'Celebrate', 'Chilling Neigh',
     'Color Change', 'Combo Striker',
   ])
   const daily = new Set(['Dig Away', 'Disguise', 'Dodge'])
+  const triggeringMoveByOperationId = new Map(input.traces.flatMap(trace => (
+    trace.events.flatMap(event => event.kind === 'operation'
+      ? [[event.operationId, trace.program.canonicalId] as const]
+      : [])
+  )))
   const selections = input.traces.flatMap(trace => trace.events).filter(event => (
     event.kind === 'operation'
     && canonicalIdByReason.has(event.reasonCode)
@@ -731,6 +740,37 @@ const applyTriggeredAbilityPayments = (input: {
       maximumPhaseInclusive: 'pay',
     })
     map = action.nextMap
+    if (canonicalId === 'Drown Out') {
+      const triggeringMoveName = triggeringMoveByOperationId.get(selection.operationId)
+        ?? fail('state-change-conflict', 'Drown Out lost the triggering Move trace identity.')
+      const runtime = input.context.queries.rules.runtimeFor(triggeringMoveName)
+        ?? fail('state-change-conflict', 'Drown Out could not recover the triggering Move runtime.')
+      const script = input.context.queries.rules.reviewedScriptFor(triggeringMoveName)
+        ?? fail('state-change-conflict', 'Drown Out could not recover the triggering Move resource definition.')
+      const reviewedCosts = runtime.kind === 'movespec-v2' ? runtime.definition.spec.costs : []
+      if (!reviewedCosts.some(cost => cost.cost.kind === 'action-resource')) {
+        const triggeringMoveKey = moveUsageKey(triggeringMoveName)
+          ?? fail('state-change-conflict', 'Drown Out could not derive the triggering Move resource key.')
+        map = planEncounterMoveResourceCosts({
+          map,
+          placementId: input.context.actor.placement.id,
+          canonicalMoveId: triggeringMoveName,
+          moveKey: triggeringMoveKey,
+          range: script.range,
+          resolutionId: input.resolutionId,
+          sourceOperationId: `${selection.operationId}:triggering-action`,
+          movement: null,
+          reviewedCosts: [{
+            id: 'ability.drown-out.triggering-standard',
+            phase: 'pay',
+            cost: { kind: 'action-resource', resource: 'standard', amount: 1 },
+          }],
+          allowLegacyFallback: false,
+          minimumPhaseExclusive: null,
+          maximumPhaseInclusive: 'pay',
+        }).nextMap
+      }
+    }
     if (noFrequency.has(canonicalId)) continue
 
     if (daily.has(canonicalId)) {
@@ -798,7 +838,9 @@ const applyTriggeredAbilityPayments = (input: {
     if (existingByOperation && existingByOperation !== existing) {
       fail('state-change-conflict', `${canonicalId} response operation already paid another resource.`)
     }
-    const limit = canonicalId === 'Bodyguard' || canonicalId === 'Dancer' ? 2 : 1
+    const limit = ['Bodyguard', 'Dancer', 'Dragon’s Maw', 'Drown Out'].includes(canonicalId)
+      ? 2
+      : 1
     if (!existingByOperation && (existing?.spent ?? 0) >= limit) {
       fail('state-change-conflict', `${canonicalId} has no Scene uses remaining.`)
     }

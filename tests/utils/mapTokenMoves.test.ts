@@ -50,6 +50,18 @@ const token = (overrides: Partial<SpawnedPokemon> = {}): SpawnedPokemon => ({
 })
 
 describe('map token move menu options', () => {
+  it('projects reviewed Ability Connection moves as automatic live-play menu entries', () => {
+    const entries = pokemonMoveEntriesForSheet({
+      slug: 'connections', species: 'Exeggcute', level: 20,
+      abilities: [{ name: 'Dust Cloud' }, { name: 'Eggscellence' }],
+      movelist: [{ name: 'Tackle' }],
+    } as CharacterSheet)
+
+    expect(entries).toContainEqual({ move: { name: 'Poison Powder' }, automatic: true })
+    expect(entries).toContainEqual({ move: { name: 'Barrage' }, automatic: true })
+    expect(entries).toContainEqual({ move: { name: 'Tackle' }, automatic: false })
+  })
+
   it('uses adjusted DB and current combat-stage adjusted attack stats', () => {
     const [move] = buildTokenMoveMenuOptions(token(), [
       { move: { name: 'Tackle' }, automatic: false },

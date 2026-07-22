@@ -119,6 +119,17 @@ import {
 import { AA067_DELAYED_REACTION_TYPE_SOURCE } from '../abilityAutomation/mechanics/aa067StaticIntegration'
 import { applyAa067DeliveryBirdItemChoiceEntries } from '../abilityAutomation/mechanics/aa067ItemIntegration'
 import {
+  aa068MoveOverlayOperations,
+  aa068TargetBoundOperationTargetId,
+} from '../abilityAutomation/mechanics/aa068MoveIntegration'
+import {
+  AA068_DRAGONS_MAW_REASON,
+  AA068_DREAM_SMOKE_REASON,
+  AA068_EFFECT_SPORE_REASON,
+  aa068DamageTypeOverlay,
+  aa068DrySkinCancelsRecipientEffect,
+} from '../abilityAutomation/mechanics/aa068StaticIntegration'
+import {
   aa065CovertEvasionBonus,
   aa065DampCancelsMove,
   primeAa065MoveRandomness,
@@ -2504,6 +2515,8 @@ const executeMoveSpecInternal = (
   const selectedAbsorbForceOwnerIds = new Set<string>()
   const selectedBodyguardOwnerIds = new Set<string>()
   const selectedDelayedReactionOwnerIds = new Set<string>()
+  const selectedDragonsMawTargetIds = new Set<string>()
+  const selectedAa068PostHitOwnerIds = new Set<string>()
   const cancelledEffectTargetIds = new Set<string>()
   let bodyguardSelected = false
   let aquaBoostSelected = false
@@ -2795,6 +2808,17 @@ const executeMoveSpecInternal = (
             || AA067_AVOIDANCE_REASONS.has(operation.reasonCode)) {
             return owners.filter(ownerId => hitTargetIds.includes(ownerId))
           }
+          if (operation.reasonCode === AA068_DRAGONS_MAW_REASON) {
+            const targetId = aa068TargetBoundOperationTargetId(operation)
+            return targetId && hitTargetIds.includes(targetId)
+              && selectedDragonsMawTargetIds.size === 0 ? owners : []
+          }
+          if (operation.reasonCode === AA068_DREAM_SMOKE_REASON
+            || operation.reasonCode === AA068_EFFECT_SPORE_REASON) {
+            const targetId = aa068TargetBoundOperationTargetId(operation)
+            return targetId && hitTargetIds.includes(targetId)
+              && !selectedAa068PostHitOwnerIds.has(targetId) ? owners : []
+          }
           const aa065TargetPrefixes = new Map<string, string>([
             ['ability.corrosive-toxins.optional-bypass', 'ability.corrosive-toxins.target:'],
             ['ability.cruelty.optional-purchases', 'ability.cruelty.target:'],
@@ -2941,6 +2965,11 @@ const executeMoveSpecInternal = (
               return [targetId]
             }
           }
+          if ((request?.reasonCode === AA068_DREAM_SMOKE_REASON
+            || request?.reasonCode === AA068_EFFECT_SPORE_REASON)
+            && owners.length === 1) {
+            return [input.context.actor.placement.id]
+          }
           if (request?.reasonCode === 'ability.bully.optional-effects'
             && owners.length === 1
             && request.source.kind === 'lifecycle-event'
@@ -3001,8 +3030,20 @@ const executeMoveSpecInternal = (
           }
           return owners
         }
+        const targetBoundId = aa068TargetBoundOperationTargetId(operation)
         const resolved = effectRecipientIds(input.context, selectorState, operation.recipients.kind)
-        const uncancelled = resolved.filter(recipientId => !cancelledEffectTargetIds.has(recipientId))
+          .filter(recipientId => targetBoundId === null || recipientId === targetBoundId)
+        const uncancelled = resolved.filter(recipientId => {
+          if (cancelledEffectTargetIds.has(recipientId)) return false
+          if (!input.context.queries.abilities.has(recipientId, 'Dry Skin')) return true
+          return !aa068DrySkinCancelsRecipientEffect({
+            context: input.context,
+            script: getMechanics().script,
+            recipientId,
+            operationReasonCode: operation.reasonCode,
+            operationKind: operation.kind,
+          })
+        })
         if (operation.reasonCode === 'ability.danger-syrup.blind-on-hit') {
           return uncancelled.filter(recipientId => (
             input.context.queries.relationships.resolve(
@@ -3882,6 +3923,12 @@ const executeMoveSpecInternal = (
             recipientId,
           })
           operationDamageClasses.push(resolvedClass)
+          const accuracyRoll = [...resolvedRolls].reverse().find(roll => (
+            roll.purpose === 'accuracy' && roll.recipientId === recipientId
+          ))
+          const naturalCriticalRoll = accuracyRoll
+            ? input.context.random.snapshot().find(entry => entry.rollId === accuracyRoll.rollId)?.naturalResult ?? null
+            : null
           const baseResolvedType = resolveMoveDamageType({
             context: input.context,
             operation,
@@ -3926,17 +3973,19 @@ const executeMoveSpecInternal = (
                 passiveSources: [...bodyguardType.passiveSources, AA067_DELAYED_REACTION_TYPE_SOURCE],
               }
             : bodyguardType
-          const resolvedType: MoveDamageTypeResolution = aquaBoostSelected
+          const preAa068Type: MoveDamageTypeResolution = aquaBoostSelected
             ? { ...delayedType, passiveSources: [...delayedType.passiveSources, 'Aqua Boost'] }
             : delayedType
+          const resolvedType = aa068DamageTypeOverlay({
+            context: input.context,
+            script: getMechanics().script,
+            recipientId,
+            resolved: preAa068Type,
+            naturalAccuracyRoll: naturalCriticalRoll,
+            dragonsMawSelected: selectedDragonsMawTargetIds.has(recipientId),
+          })
           operationDamageTypes.push(resolvedType)
           resolvedDamageTypes.push(resolvedType)
-          const accuracyRoll = [...resolvedRolls].reverse().find(roll => (
-            roll.purpose === 'accuracy' && roll.recipientId === recipientId
-          ))
-          const naturalCriticalRoll = accuracyRoll
-            ? input.context.random.snapshot().find(entry => entry.rollId === accuracyRoll.rollId)?.naturalResult ?? null
-            : null
           if (resolvedType.finalMultiplier > 0 && resolveMoveCriticalHit({
             context: input.context,
             operation,
@@ -4879,6 +4928,12 @@ const executeMoveSpecInternal = (
               moveSourceId: childMoveSourceId,
               authoritativeTargetIds: childTargetIds,
             }),
+            ...aa068MoveOverlayOperations({
+              context: childContext,
+              script: childMechanics,
+              moveSourceId: childMoveSourceId,
+              authoritativeTargetIds: childTargetIds,
+            }),
           ],
           ancestry,
           resolutionId: childResolutionId,
@@ -5105,6 +5160,23 @@ const executeMoveSpecInternal = (
             }
             if (operation.reasonCode === AA067_DELAYED_REACTION_REASON) {
               selectedDelayedReactionOwnerIds.add(recipientIds[0]!)
+            }
+            if (operation.reasonCode === AA068_DRAGONS_MAW_REASON) {
+              const targetId = aa068TargetBoundOperationTargetId(operation)
+              if (!targetId || !hitTargetIds.includes(targetId)
+                || selectedDragonsMawTargetIds.size > 0) {
+                return fail('definition-integrity-mismatch', `Dragon’s Maw reaction ${operation.id} lost its hit target.`)
+              }
+              selectedDragonsMawTargetIds.add(targetId)
+            }
+            if (operation.reasonCode === AA068_DREAM_SMOKE_REASON
+              || operation.reasonCode === AA068_EFFECT_SPORE_REASON) {
+              const ownerId = recipientIds[0]!
+              if (!hitTargetIds.includes(ownerId)
+                || selectedAa068PostHitOwnerIds.has(ownerId)) {
+                return fail('definition-integrity-mismatch', `AA-068 reaction ${operation.id} lost its hit owner.`)
+              }
+              selectedAa068PostHitOwnerIds.add(ownerId)
             }
             if (AA067_AVOIDANCE_REASONS.has(operation.reasonCode)) {
               const ownerId = recipientIds[0]!

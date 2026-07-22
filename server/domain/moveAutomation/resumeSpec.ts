@@ -60,6 +60,13 @@ import { aa064MoveOverlayOperations } from '../abilityAutomation/mechanics/aa064
 import { aa065MoveOverlayOperations } from '../abilityAutomation/mechanics/aa065MoveIntegration'
 import { aa066MoveOverlayOperations } from '../abilityAutomation/mechanics/aa066MoveIntegration'
 import { aa067MoveOverlayOperations } from '../abilityAutomation/mechanics/aa067MoveIntegration'
+import { aa068MoveOverlayOperations } from '../abilityAutomation/mechanics/aa068MoveIntegration'
+import {
+  AA068_DUST_CLOUD_TARGETING_OVERRIDE,
+  aa068DustCloudBurstEnabled,
+} from '../abilityAutomation/mechanics/aa068StaticIntegration'
+import { AA068_DUST_CLOUD_BURST_BRANCH_ID } from '#shared/abilityAutomation/mechanics'
+import { resolveMoveSpecTargetingRule } from './targetingBranches'
 
 export type ResumeMoveSpecErrorCode =
   | 'runtime-unavailable'
@@ -318,7 +325,14 @@ export const resumeMoveSpec = (
   const registry = input.runtimeRegistry ?? MOVE_AUTOMATION_RUNTIME_REGISTRY
   const runtime = runtimeForPending(pending, registry)
   const evidence = targetEvidence(pending)
-  const targetingKind = runtime.definition.spec.targeting.kind
+  const dustCloudBranch = pending.targetBranchId === AA068_DUST_CLOUD_BURST_BRANCH_ID
+  const reviewedTargeting = pending.targetBranchId && !dustCloudBranch
+    ? resolveMoveSpecTargetingRule(runtime.definition.spec, pending.targetBranchId)
+    : runtime.definition.spec.targeting
+  if (!reviewedTargeting) {
+    return fail('execution-rejected', 'The suspended targeting branch is no longer reviewed.')
+  }
+  const targetingKind = dustCloudBranch ? 'area' : reviewedTargeting.kind
   const authoritativeTargetIds = targetingKind === 'self'
     ? []
     : evidence.includedIds
@@ -331,6 +345,7 @@ export const resumeMoveSpec = (
       placementId: pending.actorPlacementId,
       moveName: pending.canonicalMoveId,
       ...(pending.virtualOriginCell ? { originCell: { ...pending.virtualOriginCell } } : {}),
+      ...(pending.targetBranchId ? { targetBranchId: pending.targetBranchId } : {}),
       selection: { kind: 'self' },
     },
     candidatePlacementIds: evidence.evaluations.map(evaluation => evaluation.targetPlacementId),
@@ -349,6 +364,16 @@ export const resumeMoveSpec = (
     return fail('move-entry-unavailable', entryResult.message)
   }
   const entry = entryResult.entry
+  const serverAbilityTargetingOverride = aa068DustCloudBurstEnabled({
+    context,
+    script: entry.script,
+    targetBranchId: pending.targetBranchId,
+  })
+    ? AA068_DUST_CLOUD_TARGETING_OVERRIDE
+    : null
+  if (dustCloudBranch && !serverAbilityTargetingOverride) {
+    return fail('execution-rejected', 'Dust Cloud targeting is no longer effective or Powder-eligible.')
+  }
   let execution: ReturnType<typeof executeMoveSpec>
   try {
     if ((input.response === undefined) === (input.hazardCellResponse === undefined)) {
@@ -379,13 +404,21 @@ export const resumeMoveSpec = (
       ?? `move.${runtime.canonicalId}`
     execution = executeMoveSpec({
       definition: runtime.definition,
-      ...(entry.script.moveName === 'Bonemerang' && aa062BoneLordEmpowersMove(context, 'Bonemerang') ? {
-        serverAbilityTargetingOverride: {
-          kind: 'area' as const, minTargets: 0, maxTargets: 32,
-          selector: { kind: 'area-targets' as const },
-          predicate: { relationship: 'any' as const, willingness: 'any' as const, excludeActor: true },
-        },
-      } : {}),
+      ...(serverAbilityTargetingOverride
+        ? { serverAbilityTargetingOverride }
+        : entry.script.moveName === 'Bonemerang' && aa062BoneLordEmpowersMove(context, 'Bonemerang')
+          ? {
+              serverAbilityTargetingOverride: {
+                kind: 'area' as const, minTargets: 0, maxTargets: 32,
+                selector: { kind: 'area-targets' as const },
+                predicate: {
+                  relationship: 'any' as const,
+                  willingness: 'any' as const,
+                  excludeActor: true,
+                },
+              },
+            }
+          : {}),
       serverAbilityOverlayOperations: [
         ...aa060TriggeredMoveOverlayOperations({
           context, script: entry.script, moveSourceId, authoritativeTargetIds,
@@ -408,6 +441,10 @@ export const resumeMoveSpec = (
           authoritativeTargetIds,
         }),
         ...aa067MoveOverlayOperations({
+          context, script: entry.script, moveSourceId,
+          authoritativeTargetIds,
+        }),
+        ...aa068MoveOverlayOperations({
           context, script: entry.script, moveSourceId,
           authoritativeTargetIds,
         }),
@@ -496,6 +533,7 @@ export const resumeMoveSpec = (
       context,
       runtime,
       entry,
+      ...(pending.targetBranchId ? { targetBranchId: pending.targetBranchId } : {}),
       authoritativeTargetIds,
       ...(targetingKind === 'area'
         ? { authoritativeTargetEvaluations: evidence.evaluations }

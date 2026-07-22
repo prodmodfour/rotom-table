@@ -34,6 +34,7 @@ import { executeAa064ActivatedMechanic } from '../domain/abilityAutomation/mecha
 import { executeAa065ActivatedMechanic } from '../domain/abilityAutomation/mechanics/aa065Activated'
 import { executeAa066ActivatedMechanic } from '../domain/abilityAutomation/mechanics/aa066Activated'
 import { executeAa067ActivatedMechanic } from '../domain/abilityAutomation/mechanics/aa067Activated'
+import { executeAa068ActivatedMechanic } from '../domain/abilityAutomation/mechanics/aa068Activated'
 import { createAa063AbilityCombatStageImmunities } from '../domain/abilityAutomation/mechanics/aa063DefenseIntegration'
 import { applyNativeCoreMapChanges } from '../domain/moveAutomation/planNativeV2MoveState'
 import { createMoveStateChangePlan, type MoveStateChangePlan } from '../domain/moveAutomation/plan'
@@ -219,13 +220,20 @@ export const resolveAbilityDeclarationUseCase = (
                       abilityInstanceId: intent.abilityInstanceId,
                       choices: resolved.choices,
                     })
-                  : executeAa067ActivatedMechanic({
-                      context,
-                      operation: mechanicOperation,
-                      operationId: intent.intentId,
-                      abilityInstanceId: intent.abilityInstanceId,
-                      choices: resolved.choices,
-                    })
+                  : mechanicOperation.mechanicId.startsWith('aa067.')
+                    ? executeAa067ActivatedMechanic({
+                        context,
+                        operation: mechanicOperation,
+                        operationId: intent.intentId,
+                        abilityInstanceId: intent.abilityInstanceId,
+                        choices: resolved.choices,
+                      })
+                    : executeAa068ActivatedMechanic({
+                        context,
+                        operation: mechanicOperation,
+                        operationId: intent.intentId,
+                        abilityInstanceId: intent.abilityInstanceId,
+                      })
     const resolvedExecution = execution
       ?? fail(422, 'Ability runtime requires an execution adapter that is not registered for direct declaration resolution.')
     resolutionPlan = resolvedExecution.plan

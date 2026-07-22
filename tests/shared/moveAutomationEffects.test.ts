@@ -1552,6 +1552,26 @@ describe('MoveSpec typed effect operations', () => {
     if (random.kind !== 'condition') throw new Error('Expected condition operation')
     expect(Object.isFrozen(random.payload.duration?.duration)).toBe(true)
 
+    const weighted = parseMoveEffectOperation(validOperation('condition', {
+      payload: {
+        ...VALID_PAYLOADS.condition,
+        action: 'random-choice',
+        conditionId: null,
+        randomChoice: {
+          rollId: 'roll.weighted-condition',
+          conditionIds: ['poisoned', 'poisoned', 'paralysis', 'paralysis', 'sleep', 'sleep'],
+        },
+        applyMoveImmunity: false,
+      },
+    }))
+    expect(weighted.kind === 'condition' && weighted.payload).toMatchObject({
+      action: 'random-choice',
+      applyMoveImmunity: false,
+      randomChoice: {
+        conditionIds: ['poisoned', 'poisoned', 'paralysis', 'paralysis', 'sleep', 'sleep'],
+      },
+    })
+
     const outcomeTriggered = parseMoveEffectOperation(validOperation('condition', {
       payload: {
         ...VALID_PAYLOADS.condition,
@@ -1633,6 +1653,18 @@ describe('MoveSpec typed effect operations', () => {
         randomChoice: { rollId: 'roll.condition', conditionIds: ['burned'] },
       },
     }), 'invalid-effect-operation', 'operation.payload.randomChoice.conditionIds')
+    expectEffectError(validOperation('condition', {
+      payload: {
+        ...VALID_PAYLOADS.condition,
+        action: 'clear',
+        conditionId: null,
+        filter: {
+          groups: [],
+          conditionIds: ['burned', 'burned'],
+          excludedConditionIds: [],
+        },
+      },
+    }), 'duplicate-id', 'operation.payload.filter.conditionIds')
     expectEffectError(validOperation('condition', {
       payload: {
         ...VALID_PAYLOADS.condition,

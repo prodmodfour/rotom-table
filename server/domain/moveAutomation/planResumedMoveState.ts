@@ -180,6 +180,9 @@ const planNextWindow = (
       ...(input.pendingResolution.virtualOriginCell
         ? { originCell: { ...input.pendingResolution.virtualOriginCell } }
         : {}),
+      ...(input.pendingResolution.targetBranchId
+        ? { targetBranchId: input.pendingResolution.targetBranchId }
+        : {}),
       selection: { kind: 'self' },
     },
     operationId: input.responseOpId,
@@ -202,6 +205,9 @@ const planNextWindow = (
     actorPlacementId: input.pendingResolution.actorPlacementId,
     ...(input.pendingResolution.virtualOriginCell
       ? { virtualOriginCell: input.pendingResolution.virtualOriginCell }
+      : {}),
+    ...(input.pendingResolution.targetBranchId
+      ? { targetBranchId: input.pendingResolution.targetBranchId }
       : {}),
     suspendedAt: input.plannedAt,
     authoritativeSheetReads: input.execution.sheetReads,
@@ -309,6 +315,9 @@ const planCompletion = (
       moveName: input.pendingResolution.canonicalMoveId,
       ...(input.pendingResolution.virtualOriginCell
         ? { originCell: { ...input.pendingResolution.virtualOriginCell } }
+        : {}),
+      ...(input.pendingResolution.targetBranchId
+        ? { targetBranchId: input.pendingResolution.targetBranchId }
         : {}),
       selection: { kind: 'self' },
     },

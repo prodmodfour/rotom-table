@@ -78,7 +78,7 @@ describe('useStartTurnModal', () => {
     map.value = {
       ...map.value,
       metadata: writeStartTurnModalState(map.value.metadata, applyStartTurnModalStateUpdate(
-        { schemaVersion: 2, dismissedTurn: null, conditionResolutions: [] },
+        { schemaVersion: 3, dismissedTurn: null, conditionResolutions: [] },
         { action: 'dismiss', activeId: 'token-pikachu', round: 2 },
       )),
     }
