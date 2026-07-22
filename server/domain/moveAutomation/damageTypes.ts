@@ -27,6 +27,7 @@ import { hasAa060MoveMark } from '../abilityAutomation/mechanics/aa060MoveIntegr
 import { aa062HasBoneWielderImmunityOverride } from '../abilityAutomation/mechanics/aa062MoveIntegration'
 import { aa063MoveResistance } from '../abilityAutomation/mechanics/aa063MoveIntegration'
 import { aa064CorrosionMultiplier } from '../abilityAutomation/mechanics/aa064MoveIntegration'
+import { aa067MoveResistance } from '../abilityAutomation/mechanics/aa067StaticIntegration'
 
 export type MoveDamageTypeResolutionErrorCode =
   | 'move-type-unavailable'
@@ -339,6 +340,14 @@ export const resolveMoveDamageType = (options: {
       passiveMultiplier = resistMultiplierOneStepFurther(passiveMultiplier)
     }
     passiveSources.push(...resistance.sources)
+    const aa067 = aa067MoveResistance({
+      context: options.context,
+      recipientId: options.recipientId,
+      moveType: moveType.type,
+      multiplier: passiveMultiplier,
+    })
+    passiveMultiplier = aa067.multiplier
+    passiveSources.push(...aa067.sources)
   }
 
   const passiveImmunity = passiveMultiplier === 0 && baseMultiplier !== 0

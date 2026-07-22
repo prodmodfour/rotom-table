@@ -1,4 +1,4 @@
-import { normalizeRevision } from '#shared/sessionRevisions'
+import { nextRevision, normalizeRevision } from '#shared/sessionRevisions'
 import {
   createEmptyEncounterState,
   parseEncounterState,
@@ -58,7 +58,12 @@ import {
 } from './reducers/mapOperations'
 import type { UseMoveUsageSummary } from '../planMoveUsageTransition'
 import { createEmptyAbilityOwnedState } from '#shared/abilityAutomation/ownedState'
-import { parseAbilitySceneUsageLedger, type AbilityUsageEntry } from '#shared/abilityAutomation/resources'
+import {
+  createEmptyAbilityDailyUsageLedger,
+  parseAbilityDailyUsageLedger,
+  parseAbilitySceneUsageLedger,
+  type AbilityUsageEntry,
+} from '#shared/abilityAutomation/resources'
 import { reduceAbilityOwnedStateCommand } from '../abilityAutomation/ownedState'
 import { aa060MoveMarkId } from '../abilityAutomation/mechanics/aa060MoveIntegration'
 import { Aa060AnchoredMovementError, assertAa060AnchoredDestination } from '../abilityAutomation/mechanics/aa060'
@@ -68,6 +73,9 @@ import { recordAa065CudChewConsumptions } from '../abilityAutomation/mechanics/a
 import { applyAa061BallFetchSendOutTriggers } from '../abilityAutomation/mechanics/aa061PresenceIntegration'
 import { applyAa065CuriousMedicineSendOutTrigger } from '../abilityAutomation/mechanics/aa065PresenceIntegration'
 import { recordAa066DeadlyPoisonTriggers } from '../abilityAutomation/mechanics/aa066ConditionIntegration'
+import { resolveSheetAbilityInstances } from '../abilityAutomation/instanceParameters'
+import { applyAa067DelayedReactionDebts } from '../abilityAutomation/mechanics/aa067LifecycleIntegration'
+import { aa067DiamondDefenseMoveFrequency } from '../abilityAutomation/mechanics/aa067StaticIntegration'
 import { planEncounterMoveResourceCosts } from './planMoveResources'
 
 export type NativeMoveSpecPlanErrorCode =
@@ -451,6 +459,7 @@ const combinedStateChanges = (options: {
   readonly resolution: AuthoritativeMoveResolution
   readonly mapPlan: MoveStateChangePlan
   readonly itemPlan: PlannedMoveItemMutations
+  readonly triggeredAbilityPlan: MoveStateChangePlan
   readonly placements: readonly MoveStateChangeInput[]
   readonly switchMapChanges: readonly MoveStateChangeInput[]
 }): MoveStateChangePlan => {
@@ -462,6 +471,7 @@ const combinedStateChanges = (options: {
   const replacedSlots = new Set(options.switchMapChanges.map(stateSlotKey))
   const mapInputs = options.mapPlan.changes.map(stripPlanIdentity)
   const itemInputs = options.itemPlan.stateChanges.changes.map(stripPlanIdentity)
+  const triggeredAbilityInputs = options.triggeredAbilityPlan.changes.map(stripPlanIdentity)
   const permanentMoveListInputs = native.permanentMoveListStateChanges.changes
     .map(stripPlanIdentity)
   const coreInputs = native.coreStateChanges.changes.map(stripPlanIdentity)
@@ -500,6 +510,7 @@ const combinedStateChanges = (options: {
   const existingInputs = [
     ...coalescedCoreInputs,
     ...permanentMoveListInputs,
+    ...triggeredAbilityInputs,
     ...coalescedItemInputs,
     ...options.placements,
     ...coalescedMapInputs,
@@ -631,13 +642,18 @@ const abilityUsageEntryKey = (entry: Pick<AbilityUsageEntry, 'ownerId' | 'abilit
   `${entry.ownerId}\u0000${entry.abilityInstanceId}\u0000${entry.canonicalId}\u0000${entry.clauseId}`
 )
 
+interface TriggeredAbilityPaymentResult {
+  readonly map: TabletopMap
+  readonly sheetStateChanges: MoveStateChangePlan
+}
+
 const applyTriggeredAbilityPayments = (input: {
   readonly map: TabletopMap
   readonly context: ReturnType<typeof buildAuthoritativeMoveRulesContext>
   readonly traces: readonly MoveResolutionAuditTrace[]
   readonly resolutionId: string
-}): TabletopMap => {
-  const canonicalIdByReason = new Map([
+}): TriggeredAbilityPaymentResult => {
+  const canonicalIdByReason = new Map<string, string>([
     ['ability.absorb-force.optional-resistance', 'Absorb Force'],
     ['ability.aftermath.optional-hp-loss', 'Aftermath'],
     ['ability.anger-point.optional-attack-stage', 'Anger Point'],
@@ -659,18 +675,34 @@ const applyTriggeredAbilityPayments = (input: {
     ['ability.cute-tears.optional-stage-loss', 'Cute Tears'],
     ['ability.dancer.optional-copy', 'Dancer'],
     ['ability.danger-syrup.optional-sweet-scent', 'Danger Syrup'],
-  ] as const)
+    ['ability.delayed-reaction.optional-half', 'Delayed Reaction'],
+    ['ability.dig-away.optional-avoid', 'Dig Away'],
+    ['ability.disguise.optional-avoid', 'Disguise'],
+    ['ability.dodge.optional-avoid', 'Dodge'],
+  ])
+  const noFrequency = new Set([
+    'Anger Point', 'Aqua Boost', 'Beast Boost', 'Celebrate', 'Chilling Neigh',
+    'Color Change', 'Combo Striker',
+  ])
+  const daily = new Set(['Dig Away', 'Disguise', 'Dodge'])
   const selections = input.traces.flatMap(trace => trace.events).filter(event => (
     event.kind === 'operation'
-    && canonicalIdByReason.has(event.reasonCode as 'ability.absorb-force.optional-resistance')
+    && canonicalIdByReason.has(event.reasonCode)
     && event.outcome === 'applied'
     && event.recipientIds.length === 1
   ))
+  interface DailySheetWork {
+    readonly placement: SheetPlacement
+    readonly previous: CharacterSheet | TrainerSheet
+    current: CharacterSheet | TrainerSheet
+    readonly sourceOperationId: string
+  }
+  const dailySheets = new Map<string, DailySheetWork>()
   let map = input.map
   for (const selection of selections) {
     if (selection.kind !== 'operation') continue
     const ownerId = selection.recipientIds[0]!
-    const canonicalId = canonicalIdByReason.get(selection.reasonCode as 'ability.absorb-force.optional-resistance')!
+    const canonicalId = canonicalIdByReason.get(selection.reasonCode)!
     const ability = input.context.queries.abilities.activeForPlacement(ownerId)
       .find(candidate => candidate.canonicalId === canonicalId)
       ?? fail('state-change-conflict', `Selected ${canonicalId} response lost its effective runtime.`)
@@ -678,7 +710,9 @@ const applyTriggeredAbilityPayments = (input: {
       ? (['swift', 'free'] as const)
       : canonicalId === 'Cruelty'
         ? (['swift'] as const)
-        : (['free'] as const)
+        : canonicalId === 'Dig Away'
+          ? (['free', 'standard'] as const)
+          : (['free'] as const)
     const action = planEncounterMoveResourceCosts({
       map,
       placementId: ownerId,
@@ -697,10 +731,60 @@ const applyTriggeredAbilityPayments = (input: {
       maximumPhaseInclusive: 'pay',
     })
     map = action.nextMap
-    if ([
-      'Anger Point', 'Aqua Boost', 'Beast Boost', 'Celebrate', 'Chilling Neigh',
-      'Color Change', 'Combo Striker',
-    ].includes(canonicalId)) continue
+    if (noFrequency.has(canonicalId)) continue
+
+    if (daily.has(canonicalId)) {
+      const placement = input.context.queries.placements.get(ownerId)
+        ?? fail('state-change-conflict', `${canonicalId} response owner disappeared.`)
+      const resolved = input.context.queries.sheets.forPlacement(placement)
+        ?? fail('state-change-conflict', `${canonicalId} response sheet disappeared.`)
+      const key = `${placement.sheetKind}:${placement.sheetSlug}`
+      const work = dailySheets.get(key) ?? {
+        placement,
+        previous: deepCloneJson(resolved.sheet),
+        current: deepCloneJson(resolved.sheet),
+        sourceOperationId: selection.operationId,
+      }
+      const baseInstance = resolveSheetAbilityInstances(work.current.abilities).find(candidate => (
+        candidate.instanceId === ability.instanceId && candidate.canonicalId === canonicalId
+      ))
+      const previous = parseAbilityDailyUsageLedger(
+        work.current.abilityUsage ?? createEmptyAbilityDailyUsageLedger(),
+      )
+      const identity = {
+        ownerId: `sheet:${placement.sheetKind}:${placement.sheetSlug}`,
+        abilityInstanceId: baseInstance ? `base:${canonicalId}` : ability.instanceId,
+        canonicalId,
+        clauseId: 'base',
+      }
+      const existingByOperation = previous.entries.find(entry => entry.operationIds.includes(selection.operationId))
+      const existing = previous.entries.find(entry => abilityUsageEntryKey(entry) === abilityUsageEntryKey(identity))
+      if (existingByOperation && existingByOperation !== existing) {
+        fail('state-change-conflict', `${canonicalId} response operation already paid another daily resource.`)
+      }
+      if (!existingByOperation && (existing?.spent ?? 0) >= 1) {
+        fail('state-change-conflict', `${canonicalId} has no Daily uses remaining.`)
+      }
+      const nextEntry: AbilityUsageEntry = existingByOperation
+        ? existingByOperation
+        : {
+            ...identity, limit: 1, spent: 1,
+            operationIds: [...(existing?.operationIds ?? []), selection.operationId],
+          }
+      work.current = {
+        ...work.current,
+        abilityUsage: parseAbilityDailyUsageLedger({
+          schemaVersion: 1,
+          dayKey: previous.dayKey ?? 'campaign-day:initial',
+          entries: existing
+            ? previous.entries.map(entry => entry === existing ? nextEntry : entry)
+            : [...previous.entries, nextEntry],
+        }),
+      }
+      dailySheets.set(key, work)
+      continue
+    }
+
     const encounter = parseEncounterState(map.encounterState ?? createEmptyEncounterState())
     const sceneId = encounter.history.sceneId
       ?? fail('state-change-conflict', `${canonicalId} requires an active scene usage period.`)
@@ -708,12 +792,7 @@ const applyTriggeredAbilityPayments = (input: {
     if (previous.sceneId !== null && previous.sceneId !== sceneId) {
       fail('state-change-conflict', `${canonicalId} usage ledger belongs to another scene.`)
     }
-    const identity = {
-      ownerId,
-      abilityInstanceId: ability.instanceId,
-      canonicalId,
-      clauseId: 'base',
-    }
+    const identity = { ownerId, abilityInstanceId: ability.instanceId, canonicalId, clauseId: 'base' }
     const existingByOperation = previous.entries.find(entry => entry.operationIds.includes(selection.operationId))
     const existing = previous.entries.find(entry => abilityUsageEntryKey(entry) === abilityUsageEntryKey(identity))
     if (existingByOperation && existingByOperation !== existing) {
@@ -726,27 +805,44 @@ const applyTriggeredAbilityPayments = (input: {
     const nextEntry: AbilityUsageEntry = existingByOperation
       ? existingByOperation
       : {
-          ...identity,
-          limit,
-          spent: (existing?.spent ?? 0) + 1,
+          ...identity, limit, spent: (existing?.spent ?? 0) + 1,
           operationIds: [...(existing?.operationIds ?? []), selection.operationId],
         }
-    const entries = existing
-      ? previous.entries.map(entry => entry === existing ? nextEntry : entry)
-      : [...previous.entries, nextEntry]
     map = {
       ...map,
       encounterState: parseEncounterState({
         ...encounter,
         abilityUsage: {
-          schemaVersion: 1,
-          sceneId,
-          entries,
+          schemaVersion: 1, sceneId,
+          entries: existing
+            ? previous.entries.map(entry => entry === existing ? nextEntry : entry)
+            : [...previous.entries, nextEntry],
         },
       }),
     }
   }
-  return map
+  const sheetStateChanges = createMoveStateChangePlan([...dailySheets.values()].map(work => {
+    const current = {
+      ...deepCloneJson(work.current),
+      revision: nextRevision(normalizeRevision(work.previous.revision)),
+    }
+    return {
+      kind: 'sheet-state' as const,
+      scope: {
+        kind: 'sheet' as const,
+        sheetKind: work.placement.sheetKind,
+        sheetSlug: work.placement.sheetSlug,
+      },
+      expectedRevision: normalizeRevision(work.previous.revision),
+      sourceOperationId: work.sourceOperationId,
+      reasonCode: 'ability-triggered-daily-frequency-spent',
+      previous: deepCloneJson(work.previous),
+      current,
+      changedFields: ['abilityUsage'] as const,
+      compensation: RESTORE_PREVIOUS_MOVE_STATE_VALUE,
+    }
+  }))
+  return Object.freeze({ map, sheetStateChanges })
 }
 
 const consumeAa060MoveMarks = (input: {
@@ -856,15 +952,21 @@ export const planNativeV2MoveState = (options: {
       ...aa062BoneLordReadyStateIds(context, options.resolution.canonicalMoveName),
     ],
   })
-  const mapAfterTriggeredAbilityPayments = applyTriggeredAbilityPayments({
+  const triggeredAbilityPayments = applyTriggeredAbilityPayments({
     map: mapAfterAbilityMarkConsumption,
     context,
     // Nested child events are ancestry-projected into the root trace exactly once.
     traces: [native.trace],
     resolutionId: context.resolutionId ?? originOperationId,
   })
+  const mapAfterDelayedReactionDebts = applyAa067DelayedReactionDebts({
+    map: triggeredAbilityPayments.map,
+    context,
+    trace: native.trace,
+    operationId: originOperationId,
+  })
   const mapAfterDeadlyPoisonTriggers = recordAa066DeadlyPoisonTriggers({
-    map: mapAfterTriggeredAbilityPayments,
+    map: mapAfterDelayedReactionDebts,
     context,
     coreStateChanges: native.coreStateChanges,
     operations: native.operations,
@@ -919,6 +1021,11 @@ export const planNativeV2MoveState = (options: {
     root: context,
     children: native.childExecutions,
   })
+  const effectiveRootFrequency = aa067DiamondDefenseMoveFrequency({
+    context,
+    script: { moveName: options.resolution.canonicalMoveName },
+    frequency: options.resolution.frequency,
+  })
   const usageResources = mapOperations.flatMap((emission) => {
     const { operation } = emission
     if (operation.kind !== 'usage') return []
@@ -949,7 +1056,7 @@ export const planNativeV2MoveState = (options: {
         move: {
           moveName: options.resolution.canonicalMoveName,
           moveKey: options.resolution.moveKey,
-          frequency: options.resolution.frequency,
+          frequency: effectiveRootFrequency,
         },
       }]
     }
@@ -979,7 +1086,13 @@ export const planNativeV2MoveState = (options: {
       move: {
         moveName: child.canonicalId,
         moveKey: childMoveKey,
-        frequency: abilityGrantedUse ? 'At-Will' : move.frequency ?? null,
+        frequency: abilityGrantedUse
+          ? 'At-Will'
+          : aa067DiamondDefenseMoveFrequency({
+              context: contextForOperation(operation),
+              script: { moveName: child.canonicalId },
+              frequency: move.frequency ?? null,
+            }),
       },
     }]
   })
@@ -1022,7 +1135,7 @@ export const planNativeV2MoveState = (options: {
       } : {}),
     },
     actorName: options.resolution.transaction.userName,
-    frequency: options.resolution.frequency,
+    frequency: effectiveRootFrequency,
     logLines: options.resolution.transaction.logLines,
     trace: itemTrace,
     maxLogEntries: options.maxMoveLogEntries,
@@ -1089,6 +1202,7 @@ export const planNativeV2MoveState = (options: {
   const existingChanges = [
     ...native.coreStateChanges.changes,
     ...native.permanentMoveListStateChanges.changes,
+    ...triggeredAbilityPayments.sheetStateChanges.changes,
     ...itemPlan.stateChanges.changes,
     ...mapReduction.stateChanges.changes,
   ]
@@ -1105,6 +1219,7 @@ export const planNativeV2MoveState = (options: {
     resolution: options.resolution,
     mapPlan: mapReduction.stateChanges,
     itemPlan,
+    triggeredAbilityPlan: triggeredAbilityPayments.sheetStateChanges,
     placements,
     switchMapChanges,
   })

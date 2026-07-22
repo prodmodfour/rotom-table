@@ -2,7 +2,7 @@
 
 `PLAN_STATUS: IN_PROGRESS`
 
-`CURRENT_TICKET: AA-067`
+`CURRENT_TICKET: AA-068`
 
 ## Goal
 
@@ -96,14 +96,14 @@ Ability automation should reuse MoveSpec v2 selectors, expressions, operations, 
 
 ## Progress snapshot
 
-- Plan tickets: **66 DONE / 110 total**
+- Plan tickets: **67 DONE / 110 total**
 - Canonical inventory: **483**
-- Semantically complete: **84**
+- Semantically complete: **96**
 - Assisted: **0**
-- Blocked/unimplemented: **399**
+- Blocked/unimplemented: **387**
 - Interaction status: **483 unassessed**
 - Legacy baseline: **45 abilities with 55 partial fragments; 438 with no reviewed legacy fragment**
-- Production runtime: **84 exact manifest-selected AbilitySpec v1 runtimes**; retained legacy paths remain explicit compatibility only
+- Production runtime: **96 exact manifest-selected AbilitySpec v1 runtimes**; retained legacy paths remain explicit compatibility only
 
 ## Tickets
 
@@ -253,9 +253,9 @@ Each cohort must review every named ability against canonical text, implement al
   - Corrosive Toxins; Cotton Down; Courage; Covert; Cruelty; Crush Trap; Cud Chew; Curious Medicine; Cursed Body; Cute Charm; Cute Tears; Damp
 - [x] **AA-066 — Dancer through Defiant** — `DONE`
   - Dancer; Danger Syrup; Dark Art; Dark Aura; Dauntless Shield; Daze; Dazzling; Deadly Poison; Decoy; Deep Sleep; Defeatist; Defiant
-- [ ] **AA-067 — Defy Death through Download** — `IN_PROGRESS`
+- [x] **AA-067 — Defy Death through Download** — `DONE`
   - Defy Death; Delayed Reaction; Delivery Bird; Desert Weather; Designer; Diamond Defense; Dig Away; Dire Spore; Discipline; Disguise; Dodge; Download
-- [ ] **AA-068 — Dragon’s Maw through Electric Surge** — `TODO`
+- [ ] **AA-068 — Dragon’s Maw through Electric Surge** — `IN_PROGRESS`
   - Dragon’s Maw; Dream Smoke; Dreamspinner; Drizzle; Drought; Drown Out; Dry Skin; Dust Cloud; Early Bird; Effect Spore; Eggscellence; Electric Surge
 - [ ] **AA-069 — Electrodash through Filter** — `TODO`
   - Electrodash; Emergency Exit; Empower; Enduring Rage; Enfeebling Lips; Exploit; Fabulous Trim; Fade Away; Fairy Aura; Fashion Designer; Fiery Crash; Filter
@@ -353,3 +353,7 @@ Each cohort must review every named ability against canonical text, implement al
 - **2026-07-09 — Separate base completion from interaction certification.** Every ability's own directly required clauses belong to base completion; broad ecosystem combinations are tracked independently and explicitly.
 - **2026-07-09 — Resolve checked-in source gaps before cohort promotion.** Missing frequency/effect data cannot be guessed by production code or hidden as manual debt on a complete row.
 - **2026-07-09 — Bind parser adjudications to exact checked-in source bytes.** PDF column-order losses are repaired through reviewed field overrides with source paths, section anchors, and SHA-256 digests; the parser fails if those sources drift.
+- **2026-07-21 — Persist Delayed Reaction as exact direct-HP debt.** Halving occurs after canonical minimum damage, odd remainders are retained in bounded encounter effects, and lifecycle settlement bypasses later damage modifiers at the owner’s next turn end.
+- **2026-07-21 — Reuse durable item choices for Delivery Bird.** A second held-item slot is effective-ability gated, and an otherwise ambiguous single-item Move operation opens an owner-authorized item window instead of accepting client item mechanics.
+- **2026-07-21 — Apply Diamond Defense before both availability and hazard damage.** Stealth Rock resolves as Scene x2 before usage gating, and source-owned hazards calculate one Tick with the more effective authoritative Rock/Fairy profile.
+- **2026-07-21 — Model defensive misses as dynamic recipient cancellation.** Disguise, Dodge, and Dig Away remove only the reviewed recipient from later hit effects while retaining triggering costs; Disguise and Dig Away additionally suppress that attack’s target-owned effects.

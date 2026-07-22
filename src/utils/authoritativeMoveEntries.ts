@@ -66,6 +66,8 @@ export interface ResolveCanonicalMoveEntryInput {
   readonly scriptForMove?: (moveName: string) => MoveAutomationScript | null
   /** Required by server contexts to reject stale temporary copies after runtime drift. */
   readonly definitionHashForMove?: (moveName: string) => string | null
+  /** Server-owned effective ability/provider overlay applied before usage availability. */
+  readonly frequencyForMove?: (canonicalMoveName: string, frequency: string | null) => string | null
 }
 
 const cloneJson = <T>(value: T): T => {
@@ -157,6 +159,7 @@ export const resolveCanonicalMoveEntryForPlacement = ({
   encounterEffects,
   scriptForMove,
   definitionHashForMove,
+  frequencyForMove,
 }: ResolveCanonicalMoveEntryInput): CanonicalMoveEntryResult => {
   if (!placement) {
     return { ok: false, reason: 'missing-placement', message: 'Actor placement is missing.' }
@@ -178,7 +181,11 @@ export const resolveCanonicalMoveEntryForPlacement = ({
     }
   }
 
-  const moveListProjection = entry.sourceEntry.moveListProjection
+  const effectiveEntry: ResolvedCanonicalMoveEntry = frequencyForMove
+    ? { ...entry, frequency: frequencyForMove(entry.canonicalMoveName, entry.frequency) }
+    : entry
+
+  const moveListProjection = effectiveEntry.sourceEntry.moveListProjection
   if (moveListProjection?.available === false) {
     const label = moveListProjection.blockReason === 'move-list-disabled'
       ? 'disabled by an encounter effect'
@@ -190,9 +197,9 @@ export const resolveCanonicalMoveEntryForPlacement = ({
     }
   }
 
-  if (entry.copiedSpecHash !== null && definitionHashForMove) {
-    const selectedDefinitionHash = definitionHashForMove(entry.canonicalMoveName)
-    if (selectedDefinitionHash !== entry.copiedSpecHash) {
+  if (effectiveEntry.copiedSpecHash !== null && definitionHashForMove) {
+    const selectedDefinitionHash = definitionHashForMove(effectiveEntry.canonicalMoveName)
+    if (selectedDefinitionHash !== effectiveEntry.copiedSpecHash) {
       return {
         ok: false,
         reason: 'copied-spec-mismatch',
@@ -225,8 +232,8 @@ export const resolveCanonicalMoveEntryForPlacement = ({
 
   const usage = buildTokenMoveUsageState(
     token.id,
-    entry.move.name,
-    entry.frequency,
+    effectiveEntry.move.name,
+    effectiveEntry.frequency,
     usageContext,
   )
   if (usage?.available === false) {
@@ -241,7 +248,7 @@ export const resolveCanonicalMoveEntryForPlacement = ({
   return {
     ok: true,
     entry: {
-      ...entry,
+      ...effectiveEntry,
       conditionUseBlock,
       usage,
     },

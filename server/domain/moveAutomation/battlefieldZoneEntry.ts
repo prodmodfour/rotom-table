@@ -475,7 +475,19 @@ export const materializeBattlefieldZoneEntryLifecycle = (input: {
 
   for (const candidate of events) {
     if (candidate.kind !== 'placement-entering') continue
-    const zones = queryBattlefieldZones(input.map, { kind: 'cell', cell: candidate.cell })
+    const exactZones = queryBattlefieldZones(input.map, { kind: 'cell', cell: candidate.cell })
+    const nearbyStealthRockZones = queryBattlefieldZones(input.map, { kind: 'all' }, { kinds: ['hazard'] })
+      .filter(zone => 'hazardId' in zone.payload
+        && zone.payload.hazardId === 'stealth-rock'
+        && zone.geometry.kind === 'cells'
+        && zone.geometry.cells.some(cell => Math.max(
+          Math.abs(cell.x - candidate.cell.x),
+          Math.abs(cell.y - candidate.cell.y),
+          Math.abs(cell.z - candidate.cell.z),
+        ) <= 2))
+    const zones = [...new Map(
+      [...exactZones, ...nearbyStealthRockZones].map(zone => [zone.id, zone]),
+    ).values()]
     for (const zone of zones) {
       for (const hook of effectiveEntryHooks(zone)) {
         const definition = definitionForHook(hook, registry)

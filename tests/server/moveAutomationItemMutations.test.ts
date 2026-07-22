@@ -612,6 +612,68 @@ describe('typed move item mutation plans', () => {
     })
   })
 
+  it('allows exactly a second held item for an effective Delivery Bird owner', () => {
+    const map = {
+      ...mapFixture(),
+      placements: [{
+        id: 'delivery-bird', sheetKind: 'pokemon' as const, sheetSlug: 'delivery-bird',
+        sideId: 'heroes', position: { x: 1, y: 0, z: 1 },
+      }],
+    }
+    const pokemon: CharacterSheet = {
+      ...pokemonSheet('delivery-bird', 3, 'Leftovers'),
+      abilities: [{
+        name: 'Delivery Bird',
+        automation: {
+          schemaVersion: 1, instanceId: 'base:delivery-bird', canonicalId: 'Delivery Bird',
+          definitionVersion: null, selections: [],
+        },
+      }],
+    }
+    const group = groupInventory({
+      ...emptyInventory(),
+      equipment: [{ id: 'group-iron-ball', name: 'Iron Ball' }],
+    })
+    const operation = {
+      id: 'item.delivery-bird.second', kind: 'equip' as const, reasonCode: 'item.equip',
+      source: groupRowReference({
+        itemId: 'group-iron-ball', canonicalItemId: 'iron-ball', section: 'equipment', quantity: 1,
+      }),
+      destination: { kind: 'pokemon-held' as const, owner: pokemonOwner('delivery-bird', 3) },
+      quantity: 1 as const,
+    }
+    const planned = planMoveItemMutations({
+      ...basePlanInput(), map,
+      pokemonSheets: new Map([[pokemon.slug, pokemon]]),
+      groupInventories: new Map([[group.slug, group]]),
+      operations: [operation],
+    })
+    const withTwo = planned.sheetWrites.find(write => write.slug === pokemon.slug)?.nextSheet as CharacterSheet
+    expect(withTwo.items?.held).toBe('Leftovers, Iron Ball')
+    const chooseSecond = planMoveItemMutations({
+      ...basePlanInput(), map: planned.nextMap,
+      pokemonSheets: new Map([[withTwo.slug, withTwo]]),
+      operations: [{
+        id: 'item.delivery-bird.choose-second', kind: 'destroy', reasonCode: 'item.destroy',
+        source: {
+          schemaVersion: 1, kind: 'pokemon-held', itemId: 'held:2', canonicalItemId: 'iron-ball',
+          owner: pokemonOwner(withTwo.slug, withTwo.revision ?? 4),
+          quantity: 1, stack: 'singleton', equip: 'pokemon-held',
+        },
+        quantity: 1,
+      }],
+    })
+    expect((chooseSecond.sheetWrites.find(write => write.slug === pokemon.slug)?.nextSheet as CharacterSheet)
+      .items?.held).toBe('Leftovers')
+
+    expectItemError(() => planMoveItemMutations({
+      ...basePlanInput(), map,
+      pokemonSheets: new Map([[pokemon.slug, { ...pokemon, abilities: [] }]]),
+      groupInventories: new Map([[group.slug, group]]),
+      operations: [operation],
+    }), 'destination-occupied')
+  })
+
   it('fails closed on stale identity, overdraw, occupied destinations, forged restore, and invalid ground cells', () => {
     const map = mapFixture()
     const pokemon = pokemonSheet('occupied', 3, 'Leftovers')

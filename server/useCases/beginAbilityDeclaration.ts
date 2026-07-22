@@ -9,6 +9,10 @@ import {
 } from '#shared/abilityAutomation/declarationIntent'
 import { POKEMON_TYPE_IDS } from '#shared/pokemonTypes'
 import {
+  createEmptyAbilityDailyUsageLedger,
+  parseAbilityDailyUsageLedger,
+} from '#shared/abilityAutomation/resources'
+import {
   ABILITY_STAT_OPTIONS_PREDICATE_KIND,
   parseAbilityStatOptionsPredicate,
 } from '#shared/abilityAutomation/statTargeting'
@@ -80,7 +84,10 @@ const fields = (map: Parameters<typeof buildAuthoritativeAbilityContext>[0]['map
     ...(effects?.rooms ?? []).map(entry => `room:${entry.kind}`),
   ].filter((id): id is string => typeof id === 'string' && id.length > 0))]
 }
-const declarationsFor = (context: ReturnType<typeof buildAuthoritativeAbilityContext>): readonly AbilityDeclarationOfferTargeting[] => {
+const declarationsFor = (
+  context: ReturnType<typeof buildAuthoritativeAbilityContext>,
+  abilityInstanceId: string,
+): readonly AbilityDeclarationOfferTargeting[] => {
   const modeId = context.request.modeId
   return context.runtime.definition.spec.targeting
     .filter(declaration => declaration.modeId === modeId)
@@ -222,6 +229,30 @@ const declarationsFor = (context: ReturnType<typeof buildAuthoritativeAbilityCon
                 ? `sheet:${reference.owner.sheetKind}:${reference.owner.slug}`
                 : `${reference.owner.kind}:${reference.owner.slug}`,
             }))
+      else if (declaration.kind === 'branch') {
+        if (context.runtime.canonicalId !== 'Defy Death' || modeId !== 'activate') {
+          fail(422, `Ability branch declaration ${declaration.id} requires a reviewed declaration adapter.`)
+        }
+        const ability = context.actor.effectiveAbilities.find(candidate => (
+          candidate.effective
+          && candidate.canonicalId === 'Defy Death'
+          && candidate.instanceId === abilityInstanceId
+        )) ?? fail(409, 'Defy Death is no longer effective.')
+        const ledger = parseAbilityDailyUsageLedger(
+          context.actor.sheet.sheet.abilityUsage ?? createEmptyAbilityDailyUsageLedger(),
+        )
+        const lastingAbilityId = ability.sourceKind === 'base' ? 'base:Defy Death' : ability.instanceId
+        const usage = ledger.entries.find(entry => (
+          entry.ownerId === `sheet:${context.actor.sheet.kind}:${context.actor.sheet.slug}`
+          && entry.abilityInstanceId === lastingAbilityId
+          && entry.canonicalId === 'Defy Death'
+          && entry.clauseId === 'injuries'
+        ))
+        const maximum = Math.min(3, context.actor.token.injuries ?? 0, Math.max(0, 3 - (usage?.spent ?? 0)))
+        options = Array.from({ length: maximum }, (_, index) => option(
+          declaration.id, index, declaration.kind, { kind: 'branch', branchId: `remove-${index + 1}` },
+        ))
+      }
       else if (declaration.kind === 'cell') {
         const cells = []
         for (let y = 0; y < context.map.dimensions.y; y += 1) for (let z = 0; z < context.map.dimensions.z; z += 1) for (let x = 0; x < context.map.dimensions.x; x += 1) {
@@ -309,7 +340,7 @@ export const beginAbilityDeclarationUseCase = (
       actorPlacementId: command.actorPlacementId,
       abilityInstanceId: command.abilityInstanceId,
       modeId: command.modeId,
-      declarations: declarationsFor(context),
+      declarations: declarationsFor(context, command.abilityInstanceId),
     },
   })
   offerRepository.insert({ requestId: command.requestId, requestSha256, offer })

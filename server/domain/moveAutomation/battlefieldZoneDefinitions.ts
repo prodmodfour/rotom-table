@@ -353,6 +353,21 @@ export const DEFAULT_BATTLEFIELD_ZONE_ENTRY_DEFINITIONS = deepFreeze([
     ],
   },
   {
+    handlerId: 'zone.hazard.stealth-rock.entry',
+    targetPolicy: 'enemy',
+    grounding: 'any',
+    immuneTypeIds: [],
+    absorbingTypeIds: [],
+    removeOnAbsorb: false,
+    removeOnTrigger: false,
+    effects: [{
+      ...ALL_LAYERS,
+      kind: 'direct-hp',
+      amount: { kind: 'tick' },
+      reasonCode: 'zone.hazard.stealth-rock.tick',
+    }],
+  },
+  {
     handlerId: 'zone.hazard.fire.entry',
     targetPolicy: 'any',
     grounding: 'any',
@@ -477,6 +492,12 @@ export const canonicalBattlefieldZoneComponents = (input: {
       'zone.hazard.sticky-web.entry',
       'zone.hazard.sticky-web.slow-terrain',
     ))
+  }
+  if (key === 'hazard:stealth-rock') {
+    return deepFreeze({
+      ...emptyComponents(),
+      hooks: { entry: [entryHook('zone.hazard.stealth-rock.entry')], exit: [] },
+    })
   }
   if (key === 'hazard:fire') {
     return deepFreeze({

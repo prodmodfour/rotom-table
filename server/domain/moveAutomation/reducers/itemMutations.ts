@@ -58,6 +58,7 @@ import {
   MoveItemMutationError,
 } from '../itemMutationTypes'
 import { recordDigestionBuffTrade } from '../digestionBuffTrade'
+import { aa067PokemonHeldItemCapacity } from '../../abilityAutomation/mechanics/aa067ItemIntegration'
 
 export interface ReduceMoveItemMutationsInput {
   readonly map: TabletopMap
@@ -939,12 +940,17 @@ const addEquippedItem = (input: {
   if (destination.kind === 'pokemon-held') {
     const sheet = state.pokemonSheets.get(destination.owner.slug)
       ?? fail('resource-missing', `Pokémon item sheet ${destination.owner.slug} is unavailable.`)
-    if (splitSheetItemNames(sheet.items?.held).length > 0) {
-      fail('destination-occupied', `Pokémon ${destination.owner.slug} already holds an item.`)
+    const heldItems = splitSheetItemNames(sheet.items?.held)
+    const capacity = aa067PokemonHeldItemCapacity({ map: state.map, sheet })
+    if (heldItems.length >= capacity) {
+      fail(
+        'destination-occupied',
+        `Pokémon ${destination.owner.slug} already holds its maximum of ${capacity} item${capacity === 1 ? '' : 's'}.`,
+      )
     }
     setPokemonSheet(state, destination.owner.slug, {
       ...sheet,
-      items: { ...(sheet.items ?? {}), held: stack.canonicalItemName },
+      items: { ...(sheet.items ?? {}), held: [...heldItems, stack.canonicalItemName].join(', ') },
     })
     return touchResource({
       state,

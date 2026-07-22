@@ -51,6 +51,11 @@ import {
   createMoveAutomationHistoryResolver,
   type MoveAutomationHistoryResolver,
 } from '../moveAutomation/history'
+import { createMoveAutomationRoomResolver } from '../moveAutomation/rooms'
+import {
+  createMoveAutomationStatResolver,
+  type MoveAutomationStatResolver,
+} from '../moveAutomation/stats'
 import {
   emptyAuthoritativeMoveItemResources,
   type AuthoritativeMoveItemCandidate,
@@ -243,6 +248,7 @@ export interface AuthoritativeAbilityContextQueries {
   readonly entities: AuthoritativeAbilityEntityQueries
   readonly transformations: AuthoritativeAbilityTransformationQueries
   readonly history: MoveAutomationHistoryResolver
+  readonly stats: MoveAutomationStatResolver
 }
 
 /** Complete detached server-owned facts consumed by ability planning. */
@@ -716,6 +722,27 @@ export const buildAuthoritativeAbilityContext = (
     map.encounterState?.history ?? createEmptyEncounterHistory(),
   )
   const history = createMoveAutomationHistoryResolver(encounterHistory)
+  const effectiveAbilityIsActive = (placementId: string, canonicalId: string): boolean => (
+    (effectiveByPlacement.get(placementId) ?? []).some(ability => (
+      ability.effective && ability.canonicalId === canonicalId
+    ))
+  )
+  const hasEffectiveAbility = (placementId: string, canonicalId: string): boolean => {
+    const placement = placementsById.get(placementId)
+    if (placement) readSet.recordPlacement(placement)
+    return effectiveAbilityIsActive(placementId, canonicalId)
+  }
+  const rooms = createMoveAutomationRoomResolver(map)
+  const stats = createMoveAutomationStatResolver({
+    placements,
+    tokens,
+    hasEffectiveAbility: effectiveAbilityIsActive,
+    resolveStatOverlay: (placement, stat) => rooms.statOverlay({ placement, stat }),
+    recordSheetRead: (placement) => {
+      const sheet = sheetForPlacement(placement)
+      if (sheet) readSet.recordSheet(sheet)
+    },
+  })
   const sides = detachedFrozen(map.encounterState?.sides ?? {})
   const capabilityIds = Object.freeze([...runtime.definition.capabilityIds])
   const capabilitySet = new Set(capabilityIds)
@@ -764,13 +791,7 @@ export const buildAuthoritativeAbilityContext = (
           (effectiveByPlacement.get(placementId) ?? []).filter(ability => ability.effective),
         )
       },
-      has: (placementId: string, canonicalId: string) => {
-        const placement = placementsById.get(placementId)
-        if (placement) readSet.recordPlacement(placement)
-        return (effectiveByPlacement.get(placementId) ?? []).some(ability => (
-          ability.effective && ability.canonicalId === canonicalId
-        ))
-      },
+      has: hasEffectiveAbility,
     }),
     relationships: Object.freeze({
       sideId: (placementId: string) => placementsById.get(placementId)?.sideId ?? null,
@@ -865,6 +886,7 @@ export const buildAuthoritativeAbilityContext = (
       },
     }),
     history,
+    stats,
   })
 
   return Object.freeze({

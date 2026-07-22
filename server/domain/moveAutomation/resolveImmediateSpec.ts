@@ -92,6 +92,7 @@ import { aa063MoveOverlayOperations } from '../abilityAutomation/mechanics/aa063
 import { aa064MoveOverlayOperations } from '../abilityAutomation/mechanics/aa064MoveIntegration'
 import { aa065MoveOverlayOperations } from '../abilityAutomation/mechanics/aa065MoveIntegration'
 import { aa066MoveOverlayOperations } from '../abilityAutomation/mechanics/aa066MoveIntegration'
+import { aa067MoveOverlayOperations } from '../abilityAutomation/mechanics/aa067MoveIntegration'
 
 export type ImmediateMoveSpecResolutionErrorCode =
   | 'execution-rejected'
@@ -943,6 +944,7 @@ const executeReviewedMoveSpec = (
     ...aa064MoveOverlayOperations(overlayInput),
     ...aa065MoveOverlayOperations(overlayInput),
     ...aa066MoveOverlayOperations(overlayInput),
+    ...aa067MoveOverlayOperations(overlayInput),
   ]
   const boneLordLine = script.moveName === 'Bonemerang'
     && aa062BoneLordEmpowersMove(options.context, 'Bonemerang')

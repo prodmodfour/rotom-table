@@ -40,6 +40,12 @@ export const AA066_ABILITY_MECHANIC_IDS = [
   'aa066.dauntless-shield', 'aa066.daze', 'aa066.dazzling', 'aa066.deadly-poison',
   'aa066.decoy', 'aa066.deep-sleep', 'aa066.defeatist', 'aa066.defiant',
 ] as const
+export const AA067_ABILITY_MECHANIC_IDS = [
+  'aa067.defy-death', 'aa067.delayed-reaction', 'aa067.delivery-bird',
+  'aa067.desert-weather', 'aa067.designer', 'aa067.diamond-defense',
+  'aa067.dig-away', 'aa067.dire-spore', 'aa067.discipline', 'aa067.disguise',
+  'aa067.dodge', 'aa067.download',
+] as const
 export type Aa060AbilityMechanicId = (typeof AA060_ABILITY_MECHANIC_IDS)[number]
 export type AbilityMechanicId = Aa060AbilityMechanicId
   | (typeof AA061_ABILITY_MECHANIC_IDS)[number]
@@ -48,6 +54,7 @@ export type AbilityMechanicId = Aa060AbilityMechanicId
   | (typeof AA064_ABILITY_MECHANIC_IDS)[number]
   | (typeof AA065_ABILITY_MECHANIC_IDS)[number]
   | (typeof AA066_ABILITY_MECHANIC_IDS)[number]
+  | (typeof AA067_ABILITY_MECHANIC_IDS)[number]
 export interface AbilityMechanicOperation extends AbilitySpecJsonObject {
   readonly kind: typeof ABILITY_MECHANIC_OPERATION_KIND
   readonly id: string
@@ -150,12 +157,24 @@ const CONFIG_FIELDS: Readonly<Record<AbilityMechanicId, readonly string[]>> = {
   'aa066.deep-sleep': ['requiredCondition', 'healing', 'timing'],
   'aa066.defeatist': ['threshold', 'highHpBonusDice', 'lowHpDamagePenalty', 'lowHpInitiativeBonus'],
   'aa066.defiant': ['trigger', 'excludedSources', 'resultingStage', 'resultingDelta'],
+  'aa067.defy-death': ['action', 'maximumInjuriesPerUse', 'dailyInjuryLimit', 'healingPerInjury', 'ignoreNormalDailyInjuryLimit'],
+  'aa067.delayed-reaction': ['action', 'frequency', 'trigger', 'immediateDamageFraction', 'deferredDamageTiming', 'deferredDamageKind'],
+  'aa067.delivery-bird': ['heldItemCapacity', 'chooseAffectedItem'],
+  'aa067.desert-weather': ['sandstormImmunity', 'sunnyFireResistanceSteps', 'rainyTurnEndTemporaryHealing'],
+  'aa067.designer': ['action', 'selectedTypeCount', 'resistanceSteps', 'maximumSuits', 'replacementPolicy'],
+  'aa067.diamond-defense': ['connectionMoveId', 'moveFrequency', 'damageTypeOptions', 'selectionPolicy'],
+  'aa067.dig-away': ['action', 'frequency', 'connectionMoveId', 'trigger', 'avoidAttack', 'consumeMoveFrequency', 'requireDiggableTerrain'],
+  'aa067.dire-spore': ['connectionMoveId', 'trigger', 'condition'],
+  'aa067.discipline': ['action', 'frequency', 'trigger', 'curedConditions'],
+  'aa067.disguise': ['action', 'frequency', 'trigger', 'avoidAttack', 'stageDelta', 'selectedStat'],
+  'aa067.dodge': ['action', 'frequency', 'trigger', 'avoidAttack'],
+  'aa067.download': ['action', 'frequency', 'target', 'lowerDefenseStage', 'lowerSpecialDefenseStage', 'tieStage'],
 }
 const MECHANIC_SET = new Set<string>([
   ...AA060_ABILITY_MECHANIC_IDS, ...AA061_ABILITY_MECHANIC_IDS,
   ...AA062_ABILITY_MECHANIC_IDS, ...AA063_ABILITY_MECHANIC_IDS,
   ...AA064_ABILITY_MECHANIC_IDS, ...AA065_ABILITY_MECHANIC_IDS,
-  ...AA066_ABILITY_MECHANIC_IDS,
+  ...AA066_ABILITY_MECHANIC_IDS, ...AA067_ABILITY_MECHANIC_IDS,
 ])
 const ID = /^[a-z0-9]+(?:[._:/-][a-z0-9]+)*$/
 const fail = (code: AbilityMechanicValidationError['code'], path: string, detail: string): never => { throw new AbilityMechanicValidationError(code, path, detail) }
@@ -654,6 +673,71 @@ const parseConfig = (mechanicId: AbilityMechanicId, value: unknown, path: string
       excludedSources: stringArray(config.excludedSources, ['own-move', 'own-ability'], `${path}.excludedSources`),
       resultingStage: oneOf(config.resultingStage, ['attack'], `${path}.resultingStage`),
       resultingDelta: integer(config.resultingDelta, `${path}.resultingDelta`, 2, 2),
+    }
+    case 'aa067.defy-death': return {
+      action: oneOf(config.action, ['swift'], `${path}.action`),
+      maximumInjuriesPerUse: integer(config.maximumInjuriesPerUse, `${path}.maximumInjuriesPerUse`, 3, 3),
+      dailyInjuryLimit: integer(config.dailyInjuryLimit, `${path}.dailyInjuryLimit`, 3, 3),
+      healingPerInjury: oneOf(config.healingPerInjury, ['tick'], `${path}.healingPerInjury`),
+      ignoreNormalDailyInjuryLimit: bool(config.ignoreNormalDailyInjuryLimit, `${path}.ignoreNormalDailyInjuryLimit`),
+    }
+    case 'aa067.delayed-reaction': return {
+      action: oneOf(config.action, ['free'], `${path}.action`), frequency: oneOf(config.frequency, ['scene'], `${path}.frequency`),
+      trigger: oneOf(config.trigger, ['hit-by-direct-damaging-attack'], `${path}.trigger`),
+      immediateDamageFraction: exactNumber(config.immediateDamageFraction, 0.5, `${path}.immediateDamageFraction`),
+      deferredDamageTiming: oneOf(config.deferredDamageTiming, ['end-of-next-turn'], `${path}.deferredDamageTiming`),
+      deferredDamageKind: oneOf(config.deferredDamageKind, ['hp-loss'], `${path}.deferredDamageKind`),
+    }
+    case 'aa067.delivery-bird': return {
+      heldItemCapacity: integer(config.heldItemCapacity, `${path}.heldItemCapacity`, 2, 2),
+      chooseAffectedItem: bool(config.chooseAffectedItem, `${path}.chooseAffectedItem`),
+    }
+    case 'aa067.desert-weather': return {
+      sandstormImmunity: bool(config.sandstormImmunity, `${path}.sandstormImmunity`),
+      sunnyFireResistanceSteps: integer(config.sunnyFireResistanceSteps, `${path}.sunnyFireResistanceSteps`, 1, 1),
+      rainyTurnEndTemporaryHealing: oneOf(config.rainyTurnEndTemporaryHealing, ['tick'], `${path}.rainyTurnEndTemporaryHealing`),
+    }
+    case 'aa067.designer': return {
+      action: oneOf(config.action, ['extended'], `${path}.action`), selectedTypeCount: integer(config.selectedTypeCount, `${path}.selectedTypeCount`, 2, 2),
+      resistanceSteps: integer(config.resistanceSteps, `${path}.resistanceSteps`, 1, 1), maximumSuits: integer(config.maximumSuits, `${path}.maximumSuits`, 1, 1),
+      replacementPolicy: oneOf(config.replacementPolicy, ['destroy-old'], `${path}.replacementPolicy`),
+    }
+    case 'aa067.diamond-defense': return {
+      connectionMoveId: oneOf(config.connectionMoveId, ['Stealth Rock'], `${path}.connectionMoveId`),
+      moveFrequency: oneOf(config.moveFrequency, ['scene-x2'], `${path}.moveFrequency`),
+      damageTypeOptions: stringArray(config.damageTypeOptions, ['rock', 'fairy'], `${path}.damageTypeOptions`),
+      selectionPolicy: oneOf(config.selectionPolicy, ['most-effective'], `${path}.selectionPolicy`),
+    }
+    case 'aa067.dig-away': return {
+      action: oneOf(config.action, ['free'], `${path}.action`), frequency: oneOf(config.frequency, ['daily'], `${path}.frequency`),
+      connectionMoveId: oneOf(config.connectionMoveId, ['Dig'], `${path}.connectionMoveId`), trigger: oneOf(config.trigger, ['hit-by-move'], `${path}.trigger`),
+      avoidAttack: bool(config.avoidAttack, `${path}.avoidAttack`), consumeMoveFrequency: bool(config.consumeMoveFrequency, `${path}.consumeMoveFrequency`),
+      requireDiggableTerrain: bool(config.requireDiggableTerrain, `${path}.requireDiggableTerrain`),
+    }
+    case 'aa067.dire-spore': return {
+      connectionMoveId: oneOf(config.connectionMoveId, ['Spore'], `${path}.connectionMoveId`),
+      trigger: oneOf(config.trigger, ['spore-hit'], `${path}.trigger`), condition: oneOf(config.condition, ['poisoned'], `${path}.condition`),
+    }
+    case 'aa067.discipline': return {
+      action: oneOf(config.action, ['free'], `${path}.action`), frequency: oneOf(config.frequency, ['scene'], `${path}.frequency`),
+      trigger: oneOf(config.trigger, ['gains-initiative'], `${path}.trigger`),
+      curedConditions: stringArray(config.curedConditions, ['confused', 'enraged', 'infatuated', 'flinched'], `${path}.curedConditions`),
+    }
+    case 'aa067.disguise': return {
+      action: oneOf(config.action, ['free'], `${path}.action`), frequency: oneOf(config.frequency, ['daily'], `${path}.frequency`),
+      trigger: oneOf(config.trigger, ['hit-by-damaging-move'], `${path}.trigger`), avoidAttack: bool(config.avoidAttack, `${path}.avoidAttack`),
+      stageDelta: integer(config.stageDelta, `${path}.stageDelta`, 1, 1), selectedStat: bool(config.selectedStat, `${path}.selectedStat`),
+    }
+    case 'aa067.dodge': return {
+      action: oneOf(config.action, ['free'], `${path}.action`), frequency: oneOf(config.frequency, ['daily'], `${path}.frequency`),
+      trigger: oneOf(config.trigger, ['hit-by-damaging-move'], `${path}.trigger`), avoidAttack: bool(config.avoidAttack, `${path}.avoidAttack`),
+    }
+    case 'aa067.download': return {
+      action: oneOf(config.action, ['swift'], `${path}.action`), frequency: oneOf(config.frequency, ['scene'], `${path}.frequency`),
+      target: oneOf(config.target, ['trainer-or-pokemon'], `${path}.target`),
+      lowerDefenseStage: oneOf(config.lowerDefenseStage, ['attack'], `${path}.lowerDefenseStage`),
+      lowerSpecialDefenseStage: oneOf(config.lowerSpecialDefenseStage, ['special-attack'], `${path}.lowerSpecialDefenseStage`),
+      tieStage: oneOf(config.tieStage, ['chosen-non-hp-stat'], `${path}.tieStage`),
     }
   }
 }

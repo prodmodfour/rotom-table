@@ -194,6 +194,10 @@ export const resolveWeatherResidualImmunity = (input: {
       consultedPlacementIds: [],
     }
   }
+  if (input.weatherKind === 'sandstorm'
+    && input.context.queries.abilities.has(input.recipient.placement.id, 'Desert Weather')) {
+    return { blockedBy: 'Desert Weather', consultedPlacementIds: [] }
+  }
 
   const directAbility = firstAbility(input.recipient.token.abilityNames, [
     ...UNIVERSAL_WEATHER_IMMUNITY_ABILITIES,

@@ -128,6 +128,7 @@ import { projectAuthoritativeEffectiveAbilities } from '../abilityAutomation/eff
 import { ptuGridDistanceBetweenFootprints } from '~/utils/ptuGridDistance'
 import { aa060MoveMarkId } from '../abilityAutomation/mechanics/aa060MoveIntegration'
 import { aa062BoneLordEmpowersMoveState } from '../abilityAutomation/mechanics/aa062MoveIntegration'
+import { aa067DiamondDefenseMoveFrequency } from '../abilityAutomation/mechanics/aa067StaticIntegration'
 import { AA063_CLAY_CANNONS_CAPABILITY_ID } from '../abilityAutomation/mechanics/aa063MoveIntegration'
 import { resolveSheetAbilityInstances } from '../abilityAutomation/instanceParameters'
 
@@ -999,6 +1000,14 @@ export const buildAuthoritativeMoveRulesContext = (
           const canonicalMove = findMove(moveName)
           return canonicalMove ? runtimes.get(canonicalMove.name)?.definitionHash ?? null : null
         },
+        frequencyForMove: (canonicalMoveName, frequency) => aa067DiamondDefenseMoveFrequency({
+          context: {
+            actor: { placement: { id: actorPlacement.id } },
+            queries: { abilities: abilityQueries },
+          },
+          script: { moveName: canonicalMoveName },
+          frequency,
+        }),
       })
       if (!resolved.ok || resolved.entry.canonicalMoveName !== 'Bonemerang'
         || !aa062BoneLordEmpowersMoveState({

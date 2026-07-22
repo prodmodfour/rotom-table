@@ -111,6 +111,14 @@ import { aa064MoveOverlayOperations } from '../abilityAutomation/mechanics/aa064
 import { aa065MoveOverlayOperations } from '../abilityAutomation/mechanics/aa065MoveIntegration'
 import { aa066MoveOverlayOperations } from '../abilityAutomation/mechanics/aa066MoveIntegration'
 import {
+  AA067_AVOIDANCE_REASONS,
+  AA067_DELAYED_REACTION_REASON,
+  AA067_DISGUISE_REASON,
+  aa067MoveOverlayOperations,
+} from '../abilityAutomation/mechanics/aa067MoveIntegration'
+import { AA067_DELAYED_REACTION_TYPE_SOURCE } from '../abilityAutomation/mechanics/aa067StaticIntegration'
+import { applyAa067DeliveryBirdItemChoiceEntries } from '../abilityAutomation/mechanics/aa067ItemIntegration'
+import {
   aa065CovertEvasionBonus,
   aa065DampCancelsMove,
   primeAa065MoveRandomness,
@@ -667,6 +675,7 @@ const executableDefinition = (
       || ![
         'ability.dancer.copy.',
         'ability.danger-syrup.sweet-scent.',
+        'ability.dig-away.dig.',
       ].some(prefix => parent.parentOperationId?.startsWith(prefix) === true)) {
       fail(
         'definition-integrity-mismatch',
@@ -1720,13 +1729,16 @@ const executableProgram = (
     operation: parseMoveEffectOperation(operation, `serverAbilityOverlayOperations[${index}]`),
     path: `serverAbilityOverlayOperations[${index}]`,
   }))
-  const reviewedEntries = applyBoneLordOperationEntries(
+  const reviewedEntries = applyAa067DeliveryBirdItemChoiceEntries(
     context,
-    applyBlurAccuracyEntries(context, [
-      ...staticEntries,
-      ...handlerEntries,
-      ...abilityEntries,
-    ]),
+    applyBoneLordOperationEntries(
+      context,
+      applyBlurAccuracyEntries(context, [
+        ...staticEntries,
+        ...handlerEntries,
+        ...abilityEntries,
+      ]),
+    ),
   )
   const entriesByPhase = new Map<MoveSpecPhase, ExecutableMoveSpecOperationEntry[]>()
   for (const phase of MOVE_SPEC_PHASES) {
@@ -2491,6 +2503,8 @@ const executeMoveSpecInternal = (
   const selectedResponseOptionByRequestOperation = new Map<string, string | null>()
   const selectedAbsorbForceOwnerIds = new Set<string>()
   const selectedBodyguardOwnerIds = new Set<string>()
+  const selectedDelayedReactionOwnerIds = new Set<string>()
+  const cancelledEffectTargetIds = new Set<string>()
   let bodyguardSelected = false
   let aquaBoostSelected = false
   const criticalHitTargetIds = new Set<string>()
@@ -2759,21 +2773,26 @@ const executeMoveSpecInternal = (
       }
       const resolveOperationRecipientIds = (): readonly string[] => {
         if (operation.kind === 'reaction-request' && operation.payload.ownerPlacementIds) {
-          const interruptChild = program.operations.some(candidate => (
-            candidate.kind === 'nested-move'
-            && candidate.source.kind === 'operation'
-            && candidate.source.id === operation.id
-            && typeof candidate.payload.canonicalId === 'string'
-            && /\bInterrupt\b/i.test(
-              input.context.queries.rules.reviewedScriptFor(candidate.payload.canonicalId)?.range ?? '',
-            )
-          ))
+          const interruptChild = operation.reasonCode === 'ability.dig-away.optional-avoid'
+            || program.operations.some(candidate => (
+              candidate.kind === 'nested-move'
+              && candidate.source.kind === 'operation'
+              && candidate.source.id === operation.id
+              && typeof candidate.payload.canonicalId === 'string'
+              && /\bInterrupt\b/i.test(
+                input.context.queries.rules.reviewedScriptFor(candidate.payload.canonicalId)?.range ?? '',
+              )
+            ))
           if (interruptChild && aa066DazzlingBlocksInterruptMovesAgainst({
             context: input.context,
             actionSourcePlacementId: input.context.actor.placement.id,
           })) return []
           const owners = canonicalPlacementIds(input.context, operation.payload.ownerPlacementIds)
           if (operation.reasonCode === 'ability.danger-syrup.optional-sweet-scent') {
+            return owners.filter(ownerId => hitTargetIds.includes(ownerId))
+          }
+          if (operation.reasonCode === AA067_DELAYED_REACTION_REASON
+            || AA067_AVOIDANCE_REASONS.has(operation.reasonCode)) {
             return owners.filter(ownerId => hitTargetIds.includes(ownerId))
           }
           const aa065TargetPrefixes = new Map<string, string>([
@@ -2949,6 +2968,13 @@ const executeMoveSpecInternal = (
               ? canonicalPlacementIds(input.context, [owners[0]!, protectedTargetId])
               : []
           }
+          if (request?.reasonCode === AA067_DISGUISE_REASON) {
+            const selectedOption = selectedResponseOptionByRequestOperation.get(operation.source.id)
+            const expectedOption = operation.reasonCode.startsWith('ability.disguise.raise-')
+              ? `ability.disguise.${operation.reasonCode.slice('ability.disguise.raise-'.length)}`
+              : null
+            if (selectedOption === undefined || selectedOption === null || selectedOption !== expectedOption) return []
+          }
           if (request?.reasonCode === 'ability.beast-boost.optional-stage'
             || request?.reasonCode === 'ability.copy-master.choose-stage') {
             const selectedOption = selectedResponseOptionByRequestOperation.get(operation.source.id)
@@ -2976,15 +3002,16 @@ const executeMoveSpecInternal = (
           return owners
         }
         const resolved = effectRecipientIds(input.context, selectorState, operation.recipients.kind)
+        const uncancelled = resolved.filter(recipientId => !cancelledEffectTargetIds.has(recipientId))
         if (operation.reasonCode === 'ability.danger-syrup.blind-on-hit') {
-          return resolved.filter(recipientId => (
+          return uncancelled.filter(recipientId => (
             input.context.queries.relationships.resolve(
               input.context.actor.placement.id,
               recipientId,
             ).relationship === 'enemy'
           ))
         }
-        return resolved
+        return uncancelled
       }
       const randomTableGate = gateRandomTableControlledOperation({
         operationId: operation.id,
@@ -3893,9 +3920,15 @@ const executeMoveSpecInternal = (
                       : 'neutral',
               }
             : absorbForceType
-          const resolvedType: MoveDamageTypeResolution = aquaBoostSelected
-            ? { ...bodyguardType, passiveSources: [...bodyguardType.passiveSources, 'Aqua Boost'] }
+          const delayedType: MoveDamageTypeResolution = selectedDelayedReactionOwnerIds.has(recipientId)
+            ? {
+                ...bodyguardType,
+                passiveSources: [...bodyguardType.passiveSources, AA067_DELAYED_REACTION_TYPE_SOURCE],
+              }
             : bodyguardType
+          const resolvedType: MoveDamageTypeResolution = aquaBoostSelected
+            ? { ...delayedType, passiveSources: [...delayedType.passiveSources, 'Aqua Boost'] }
+            : delayedType
           operationDamageTypes.push(resolvedType)
           resolvedDamageTypes.push(resolvedType)
           const accuracyRoll = [...resolvedRolls].reverse().find(roll => (
@@ -4808,6 +4841,8 @@ const executeMoveSpecInternal = (
             (operation.id.startsWith('ability.dancer.copy.') && operation.reasonCode === 'dancer')
             || (operation.id.startsWith('ability.danger-syrup.sweet-scent.')
               && operation.reasonCode === 'danger-syrup')
+            || (operation.id.startsWith('ability.dig-away.dig.')
+              && operation.reasonCode === 'dig-away')
           )
         const childMoveSourceId = runtime.definition.spec.phases
           .flatMap(block => block.operations)
@@ -4833,6 +4868,12 @@ const executeMoveSpecInternal = (
               authoritativeTargetIds: childTargetIds,
             }),
             ...aa066MoveOverlayOperations({
+              context: childContext,
+              script: childMechanics,
+              moveSourceId: childMoveSourceId,
+              authoritativeTargetIds: childTargetIds,
+            }),
+            ...aa067MoveOverlayOperations({
               context: childContext,
               script: childMechanics,
               moveSourceId: childMoveSourceId,
@@ -5061,6 +5102,23 @@ const executeMoveSpecInternal = (
             )
             if (operation.reasonCode === 'ability.absorb-force.optional-resistance') {
               selectedAbsorbForceOwnerIds.add(recipientIds[0]!)
+            }
+            if (operation.reasonCode === AA067_DELAYED_REACTION_REASON) {
+              selectedDelayedReactionOwnerIds.add(recipientIds[0]!)
+            }
+            if (AA067_AVOIDANCE_REASONS.has(operation.reasonCode)) {
+              const ownerId = recipientIds[0]!
+              if (!hitTargetIds.includes(ownerId)) {
+                return fail('definition-integrity-mismatch', `Avoidance reaction ${operation.id} lost its hit target.`)
+              }
+              hitTargetIds = hitTargetIds.filter(id => id !== ownerId)
+              missedTargetIds = canonicalPlacementIds(input.context, [...missedTargetIds, ownerId])
+              damagedTargetIds = damagedTargetIds.filter(id => id !== ownerId)
+              faintedTargetIds = faintedTargetIds.filter(id => id !== ownerId)
+              if (operation.reasonCode === AA067_DISGUISE_REASON
+                || operation.reasonCode === 'ability.dig-away.optional-avoid') {
+                cancelledEffectTargetIds.add(ownerId)
+              }
             }
             if (operation.reasonCode === 'ability.bodyguard.optional-redirection') {
               const protectedTargetId = operation.source.kind === 'lifecycle-event'

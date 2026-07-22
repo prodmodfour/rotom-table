@@ -253,6 +253,49 @@ describe('battlefield zone movement entry effects', () => {
     expect(result.currentEncounterState.zones).toHaveLength(1)
   })
 
+  it('triggers Stealth Rock within 2m and lets effective Diamond Defense select Fairy damage', () => {
+    const sourceSheet: CharacterSheet = {
+      ...sheet(),
+      slug: 'source', nickname: 'Source', types: ['Rock'],
+      abilities: [{
+        name: 'Diamond Defense',
+        automation: {
+          schemaVersion: 1, instanceId: 'base:diamond-defense', canonicalId: 'Diamond Defense',
+          definitionVersion: null, selections: [],
+        },
+      }],
+    }
+    const moverSheet = sheet(['Fighting'])
+    const map = mapFixture({
+      zones: [zone({ effectId: 'stealth-rock', cells: [{ x: 3, y: 0, z: 0 }] })],
+    })
+    map.placements = [
+      ...map.placements,
+      { id: 'source', sheetKind: 'pokemon', sheetSlug: 'source', sideId: 'red', position: { x: 4, y: 0, z: 0 } },
+    ]
+    const pokemonSheets = new Map([
+      ['mover', moverSheet],
+      ['source', sourceSheet],
+    ])
+    const resolved = resolveMovement({
+      map,
+      sheets: { pokemon: pokemonSheets, trainer: new Map() },
+      placementId: 'mover', mode: 'shift', destination: { x: 2, y: 0, z: 0 },
+    })
+    if (!resolved.ok) throw new Error(`Expected legal movement: ${resolved.message}`)
+    const planned = planBattlefieldZoneMovement({
+      map, pokemonSheets, trainerSheets: new Map(),
+      movement: lifecycleInput(resolved), time: 5_000,
+    })
+    expect(planned.operations).toContainEqual(expect.objectContaining({
+      kind: 'direct-hp', reasonCode: 'zone.hazard.stealth-rock.tick.fairy',
+      payload: expect.objectContaining({
+        calculation: { kind: 'fixed', value: expect.any(Number) },
+      }),
+    }))
+    expect(planned.decisions.filter(decision => decision.outcome === 'triggered')).toHaveLength(1)
+  })
+
   it('fails enemy mechanics closed for source-side, unknown-side, and airborne movers', () => {
     const resolved = movement(mapFixture())
     const cases = [

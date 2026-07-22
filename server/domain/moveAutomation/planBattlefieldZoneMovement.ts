@@ -1,4 +1,5 @@
 import { normalizeRevision } from '#shared/sessionRevisions'
+import { parseMoveEffectOperation } from '#shared/moveAutomation/effects'
 import type {
   MoveCombatStageEffectOperation,
   MoveConditionEffectOperation,
@@ -14,6 +15,10 @@ import type { CharacterSheet } from '~/types/characterSheet'
 import type { TabletopMap } from '~/types/map'
 import type { TrainerSheet } from '~/types/trainerSheet'
 import { deepCloneJson, sameJsonValue } from '~/utils/serialization'
+import {
+  computePokemonHealingVitals,
+  computeTrainerHealingVitals,
+} from '~/utils/sheets/healing'
 import {
   materializeBattlefieldZoneEntryLifecycle,
   type BattlefieldZoneEntryDecision,
@@ -45,6 +50,8 @@ import type {
 } from './reducers/coreTokenEffectTypes'
 import { createStandardMoveCoreTokenEffectImmunityQueries } from './reducers/immunities'
 import { reduceMoveHazardZones } from './reducers/mapHazardEffects'
+import { queryBattlefieldZones } from './battlefieldZones'
+import { aa067StealthRockDamageProfile } from '../abilityAutomation/mechanics/aa067StaticIntegration'
 
 export type BattlefieldZoneMovementPlanningErrorCode =
   | 'subject-state-unavailable'
@@ -253,8 +260,36 @@ export const planBattlefieldZoneMovement = (
     )
   }
 
+  const zoneIdByOperationId = new Map(materialized.decisions.flatMap(decision => (
+    decision.operationIds.map(operationId => [operationId, decision.zoneId] as const)
+  )))
+  const zonesById = new Map(queryBattlefieldZones(input.map, { kind: 'all' }).map(zone => [zone.id, zone]))
   const operations: Array<ZoneCoreOperation | MoveHazardEffectOperation> = []
-  for (const operation of lifecycle.operations) {
+  for (const rawOperation of lifecycle.operations) {
+    let operation = rawOperation
+    if (operation.kind === 'direct-hp' && operation.reasonCode === 'zone.hazard.stealth-rock.tick') {
+      const zone = zonesById.get(zoneIdByOperationId.get(operation.id) ?? '')
+      const profile = aa067StealthRockDamageProfile({
+        context: initialContext,
+        sourcePlacementId: zone?.source.kind === 'operation' ? zone.source.placementId : null,
+        defenderTypeIds: targetState.typeIds,
+      })
+      const vitals = initialContext.actor.sheet.kind === 'pokemon'
+        ? computePokemonHealingVitals(initialContext.actor.sheet.sheet as CharacterSheet)
+        : computeTrainerHealingVitals(initialContext.actor.sheet.sheet as TrainerSheet)
+      const tick = Math.max(1, Math.floor(vitals.fullMaxHp / 10))
+      operation = parseMoveEffectOperation({
+        ...operation,
+        reasonCode: `zone.hazard.stealth-rock.tick.${profile.type.toLowerCase()}`,
+        payload: {
+          ...operation.payload,
+          calculation: {
+            kind: 'fixed',
+            value: profile.multiplier === 0 ? 0 : Math.max(1, Math.floor(tick * profile.multiplier)),
+          },
+        },
+      }, `battlefieldZone.stealthRock.${profile.type}`)
+    }
     if (coreOperation(operation as PlannedBattlefieldZoneMovement['operations'][number])) {
       operations.push(operation as ZoneCoreOperation)
     }
