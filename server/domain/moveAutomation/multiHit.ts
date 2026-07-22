@@ -68,6 +68,8 @@ import {
   aa066DecoyEvasionBonus,
   primeAa066MoveRandomness,
 } from '../abilityAutomation/mechanics/aa066StaticIntegration'
+import { aa070FluffyDamageTypeOverlay } from '../abilityAutomation/mechanics/aa070StaticIntegration'
+import { applyEncounterNumericModifiers } from './encounterNumericModifiers'
 import type {
   MoveCoreTokenEffectRecipient,
   MoveCoreTokenEffectRecipientResult,
@@ -482,7 +484,7 @@ const rollAccuracy = (options: {
     targetPlacementId: options.target.id,
     script: options.script,
   })
-  const targetEvasion = resolveMoveAutomationTargetEvasion(
+  const baseTargetEvasion = resolveMoveAutomationTargetEvasion(
     options.script,
     options.target,
     {
@@ -496,6 +498,12 @@ const rollAccuracy = (options: {
   ).value
     + aa065CovertEvasionBonus({ context: options.context, placementId: options.target.id })
     + aa066DecoyEvasionBonus({ map: options.context.map, placementId: options.target.id })
+  const targetEvasion = applyEncounterNumericModifiers({
+    map: options.context.map,
+    placementId: options.target.id,
+    attribute: 'evasion',
+    baseValue: baseTargetEvasion,
+  }).value
   const rolled = options.context.random.roll({
     rollId,
     parentEffectId: options.operation.id,
@@ -756,6 +764,7 @@ const resolutionTrace = (
         targetHpAfter: strike.damage.targetHpAfter,
         targetTemporaryHpAfter: strike.damage.targetTemporaryHpAfter,
         moveType: strike.damage.moveType.moveType,
+        moveTypeResolution: strike.damage.moveType,
         critical: strike.damage.criticalHit.critical,
         criticalReasonCode: strike.damage.criticalHit.reasonCode,
         damagePipelineHpLoss: strike.damage.damagePipeline?.hpLoss ?? null,
@@ -914,12 +923,18 @@ export const executeMoveMultiHitOperation = (options: {
             resolvedRolls,
           })
           const damageOperation = damageOperationForStrike(operation, targetOrdinal, hitIndex)
-          const resolvedType = resolveMoveDamageType({
+          const baseResolvedType = resolveMoveDamageType({
             context,
             operation: damageOperation,
             script: options.script,
             recipientId,
             canonicalMoveId: options.canonicalMoveId,
+          })
+          const resolvedType = aa070FluffyDamageTypeOverlay({
+            context,
+            script: options.script,
+            recipientId,
+            resolved: baseResolvedType,
           })
           const formula = resolveMoveSpecDamageRollFormula({
             context,

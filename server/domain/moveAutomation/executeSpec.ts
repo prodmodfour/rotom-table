@@ -118,6 +118,7 @@ import {
 } from '../abilityAutomation/mechanics/aa067MoveIntegration'
 import { AA067_DELAYED_REACTION_TYPE_SOURCE } from '../abilityAutomation/mechanics/aa067StaticIntegration'
 import { applyAa067DeliveryBirdItemChoiceEntries } from '../abilityAutomation/mechanics/aa067ItemIntegration'
+import { applyEncounterNumericModifiers } from './encounterNumericModifiers'
 import {
   aa069DamageBaseBonus,
   aa069DamageBaseSources,
@@ -134,6 +135,17 @@ import {
   AA069_FIERY_CRASH_REASON,
   aa069MoveOverlayOperations,
 } from '../abilityAutomation/mechanics/aa069MoveIntegration'
+import {
+  AA070_FLAME_TONGUE_REASON,
+  AA070_FLASH_FIRE_REASON,
+  AA070_FLAVORFUL_AROMA_REASON,
+  AA070_FLOWER_POWER_REASON,
+  aa070MoveOverlayOperations,
+} from '../abilityAutomation/mechanics/aa070MoveIntegration'
+import {
+  aa070FlowerPowerDamageOperation,
+  aa070FluffyDamageTypeOverlay,
+} from '../abilityAutomation/mechanics/aa070StaticIntegration'
 import {
   AA068_DRAGONS_MAW_REASON,
   AA068_DREAM_SMOKE_REASON,
@@ -2528,7 +2540,10 @@ const executeMoveSpecInternal = (
     reasonCode: string,
     moveSourceId: string | null,
   ): string | null | undefined => {
-    const entries = [...reactionRequestsByOperationId.entries()].reverse()
+    const entries = [
+      ...reactionRequestsByOperationId.entries(),
+      ...choiceRequestsByOperationId.entries(),
+    ].reverse()
     const match = entries.find(([requestOperationId, request]) => (
       request.reasonCode === reasonCode
       && (moveSourceId === null
@@ -2933,7 +2948,9 @@ const executeMoveSpecInternal = (
           if (operation.reasonCode === 'ability.aqua-boost.optional-damage') {
             return !aquaBoostSelected && hitTargetIds.length > 0 ? owners : []
           }
-          if (operation.reasonCode === AA069_ENFEEBLING_LIPS_REASON) {
+          if (operation.reasonCode === AA069_ENFEEBLING_LIPS_REASON
+            || operation.reasonCode === AA070_FLAME_TONGUE_REASON
+            || operation.reasonCode === AA070_FLAVORFUL_AROMA_REASON) {
             return hitTargetIds.length > 0 ? owners : []
           }
           if (operation.reasonCode === 'ability.beast-boost.optional-stage') {
@@ -2976,6 +2993,14 @@ const executeMoveSpecInternal = (
           if (request?.reasonCode === AA069_FIERY_CRASH_REASON
             && operation.reasonCode === 'ability.fiery-crash.burn'
             && selectedOption !== 'ability.fiery-crash.fire-type') return []
+          if (request?.reasonCode === AA070_FLASH_FIRE_REASON) {
+            const expected = operation.reasonCode === 'ability.flash-fire.raise-attack'
+              ? 'ability.flash-fire.attack'
+              : operation.reasonCode === 'ability.flash-fire.raise-special-attack'
+                ? 'ability.flash-fire.special-attack'
+                : null
+            if (!expected || selectedOption !== expected) return []
+          }
         }
         if (operation.recipients.kind === 'response-owner') {
           if (operation.source.kind !== 'operation') return []
@@ -3108,6 +3133,25 @@ const executeMoveSpecInternal = (
           return uncancelled.filter(recipientId => resolvedDamageTypes.some(resolved => (
             resolved.recipientId === recipientId && resolved.finalMultiplier > 0
           )))
+        }
+        if (operation.reasonCode === 'ability.flame-body.burn-attacker') {
+          return uncancelled.filter(recipientId => recipientId === input.context.actor.placement.id)
+        }
+        if (operation.reasonCode.startsWith('ability.flame-tongue.')) {
+          return uncancelled.filter(recipientId => (
+            input.context.queries.relationships.resolve(
+              input.context.actor.placement.id,
+              recipientId,
+            ).relationship === 'enemy'
+          ))
+        }
+        if (operation.reasonCode.startsWith('ability.flavorful-aroma.')) {
+          return uncancelled.filter(recipientId => (
+            input.context.queries.relationships.resolve(
+              input.context.actor.placement.id,
+              recipientId,
+            ).relationship === 'ally'
+          ))
         }
         if (operation.reasonCode === 'ability.danger-syrup.blind-on-hit') {
           return uncancelled.filter(recipientId => (
@@ -3271,13 +3315,19 @@ const executeMoveSpecInternal = (
         reasonCode,
         operation.source.kind === 'move' ? operation.source.id : null,
       )
+      const aa070Operation = operation.kind === 'damage' || operation.kind === 'multi-hit'
+        ? aa070FlowerPowerDamageOperation({
+            operation,
+            responseOptionForReason: reviewedResponseOptionForReason,
+          })
+        : operation
       const fieryCrashOption = operation.kind === 'damage'
         && input.context.queries.abilities.has(input.context.actor.placement.id, 'Fiery Crash')
         ? reviewedResponseOptionForReason(AA069_FIERY_CRASH_REASON)
         : undefined
-      const fairyDamageCandidate = operation.kind === 'damage'
-        && ((typeof operation.payload.moveType === 'string'
-          && operation.payload.moveType.trim().toLowerCase() === 'fairy')
+      const fairyDamageCandidate = aa070Operation.kind === 'damage'
+        && ((typeof aa070Operation.payload.moveType === 'string'
+          && aa070Operation.payload.moveType.trim().toLowerCase() === 'fairy')
           || getMechanics().script.type.trim().toLowerCase() === 'fairy')
       const aa069DamageBaseRelevant = operation.kind === 'damage'
         && (fieryCrashOption === 'ability.fiery-crash.damage-base-plus-2'
@@ -3290,7 +3340,7 @@ const executeMoveSpecInternal = (
         && aa069DamageBaseRelevant
         ? (() => {
             const typed = aa069FieryCrashMoveType({
-              operation,
+              operation: aa070Operation.kind === 'damage' ? aa070Operation : operation,
               responseOptionForReason: reviewedResponseOptionForReason,
             })
             const resolved = resolveMoveDamageType({
@@ -3310,7 +3360,7 @@ const executeMoveSpecInternal = (
               ? { ...typed, payload: { ...typed.payload, damageBase: typed.payload.damageBase + bonus } }
               : typed
           })()
-        : operation
+        : aa070Operation
       operations.push(Object.freeze({
         operation: emittedOperation,
         recipientIds: frozenIds(recipientIds),
@@ -3903,6 +3953,12 @@ const executeMoveSpecInternal = (
                 ).value
                   + aa065CovertEvasionBonus({ context: input.context, placementId: recipientId })
                   + aa066DecoyEvasionBonus({ map: input.context.map, placementId: recipientId })
+            targetEvasion = applyEncounterNumericModifiers({
+              map: input.context.map,
+              placementId: recipientId,
+              attribute: 'evasion',
+              baseValue: targetEvasion,
+            }).value
             if (blurApplies) targetEvasion = Math.floor(targetEvasion / 2)
             modifiers = userAccuracy.modifiers
           }
@@ -4099,11 +4155,17 @@ const executeMoveSpecInternal = (
           const preAa068Type: MoveDamageTypeResolution = aquaBoostSelected
             ? { ...delayedType, passiveSources: [...delayedType.passiveSources, 'Aqua Boost'] }
             : delayedType
-          const resolvedType = aa068DamageTypeOverlay({
+          const aa070ResolvedType = aa070FluffyDamageTypeOverlay({
             context: input.context,
             script: getMechanics().script,
             recipientId,
             resolved: preAa068Type,
+          })
+          const resolvedType = aa068DamageTypeOverlay({
+            context: input.context,
+            script: getMechanics().script,
+            recipientId,
+            resolved: aa070ResolvedType,
             naturalAccuracyRoll: naturalCriticalRoll,
             dragonsMawSelected: selectedDragonsMawTargetIds.has(recipientId),
           })
@@ -4252,9 +4314,12 @@ const executeMoveSpecInternal = (
       }
 
       if (operation.kind === 'multi-hit') {
+        const reviewedMultiHitOperation = emittedOperation.kind === 'multi-hit'
+          ? emittedOperation
+          : operation
         const execution = executeMoveMultiHitOperation({
           context: input.context,
-          operation,
+          operation: reviewedMultiHitOperation,
           script: getMechanics().script,
           canonicalMoveId: spec.canonicalId,
           recipientIds,
@@ -4288,7 +4353,7 @@ const executeMoveSpecInternal = (
           recipientIds,
           outcome: execution.outcome,
           reasonCode: operation.reasonCode,
-          input: traceJson(operation.payload),
+          input: traceJson(reviewedMultiHitOperation.payload),
           result: execution.traceResult,
         })
         for (const roll of execution.rollLedgerEntries) {
@@ -5083,6 +5148,12 @@ const executeMoveSpecInternal = (
               moveSourceId: childMoveSourceId,
               authoritativeTargetIds: childTargetIds,
             }),
+            ...aa070MoveOverlayOperations({
+              context: childContext,
+              script: childMechanics,
+              moveSourceId: childMoveSourceId,
+              authoritativeTargetIds: childTargetIds,
+            }),
           ],
           ancestry,
           resolutionId: childResolutionId,
@@ -5312,6 +5383,21 @@ const executeMoveSpecInternal = (
               mechanics = Object.freeze({
                 ...currentMechanics,
                 script: Object.freeze({ ...currentMechanics.script, type: 'Fire' }),
+              })
+            }
+            if (operation.reasonCode === AA070_FLOWER_POWER_REASON) {
+              const damageClass = response.optionId === 'ability.flower-power.physical'
+                ? 'Physical'
+                : response.optionId === 'ability.flower-power.special'
+                  ? 'Special'
+                  : null
+              if (!damageClass) {
+                return fail('definition-integrity-mismatch', 'Flower Power received an invalid damage-class choice.')
+              }
+              const currentMechanics = getMechanics()
+              mechanics = Object.freeze({
+                ...currentMechanics,
+                script: Object.freeze({ ...currentMechanics.script, damageClass }),
               })
             }
             if (operation.reasonCode === 'ability.absorb-force.optional-resistance') {

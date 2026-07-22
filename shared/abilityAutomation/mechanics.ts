@@ -59,6 +59,12 @@ export const AA069_ABILITY_MECHANIC_IDS = [
   'aa069.fabulous-trim', 'aa069.fade-away', 'aa069.fairy-aura',
   'aa069.fashion-designer', 'aa069.fiery-crash', 'aa069.filter',
 ] as const
+export const AA070_ABILITY_MECHANIC_IDS = [
+  'aa070.flame-body', 'aa070.flame-tongue', 'aa070.flare-boost',
+  'aa070.flash-fire', 'aa070.flavorful-aroma', 'aa070.flower-gift',
+  'aa070.flower-power', 'aa070.flower-veil', 'aa070.fluffy',
+  'aa070.fluffy-charge', 'aa070.flutter', 'aa070.flying-fly-trap',
+] as const
 export type Aa060AbilityMechanicId = (typeof AA060_ABILITY_MECHANIC_IDS)[number]
 export type AbilityMechanicId = Aa060AbilityMechanicId
   | (typeof AA061_ABILITY_MECHANIC_IDS)[number]
@@ -70,6 +76,7 @@ export type AbilityMechanicId = Aa060AbilityMechanicId
   | (typeof AA067_ABILITY_MECHANIC_IDS)[number]
   | (typeof AA068_ABILITY_MECHANIC_IDS)[number]
   | (typeof AA069_ABILITY_MECHANIC_IDS)[number]
+  | (typeof AA070_ABILITY_MECHANIC_IDS)[number]
 export interface AbilityMechanicOperation extends AbilitySpecJsonObject {
   readonly kind: typeof ABILITY_MECHANIC_OPERATION_KIND
   readonly id: string
@@ -208,6 +215,18 @@ const CONFIG_FIELDS: Readonly<Record<AbilityMechanicId, readonly string[]>> = {
   'aa069.fashion-designer': ['action', 'frequency', 'craftQuantity', 'itemIds'],
   'aa069.fiery-crash': ['keyword', 'choices', 'fireBurnThreshold', 'existingBurnRangeBonus'],
   'aa069.filter': ['trigger', 'damageReduction'],
+  'aa070.flame-body': ['action', 'frequency', 'trigger', 'sourceRelation', 'condition'],
+  'aa070.flame-tongue': ['action', 'frequency', 'connectionMoveId', 'trigger', 'injuryDelta', 'condition'],
+  'aa070.flare-boost': ['action', 'frequency', 'requiredCondition', 'attackStages', 'specialAttackStages'],
+  'aa070.flash-fire': ['immuneMoveType', 'preventDamage', 'preventEffects', 'onHitStatChoices', 'stageDelta'],
+  'aa070.flavorful-aroma': ['action', 'frequency', 'connectionMoveId', 'trigger', 'affectedRelationship', 'accuracyBonus', 'damageBonus', 'durationRounds'],
+  'aa070.flower-gift': ['action', 'frequency', 'eligibility', 'statSelections', 'selfStageDelta', 'nearbyStageDelta', 'radius'],
+  'aa070.flower-power': ['moveType', 'moveFilter', 'damageClassChoices'],
+  'aa070.flower-veil': ['protectedType', 'radius', 'protectUserRegardlessOfType', 'preventCombatStageLowering'],
+  'aa070.fluffy': ['meleeResistanceSteps', 'fireResistanceSteps', 'damagingOnly'],
+  'aa070.fluffy-charge': ['connectionMoveId', 'trigger', 'defenseStages'],
+  'aa070.flutter': ['action', 'frequency', 'evasionBonus', 'duration', 'cannotBeFlanked'],
+  'aa070.flying-fly-trap': ['damageImmuneMoveTypes', 'effectsRemain'],
 }
 const MECHANIC_SET = new Set<string>([
   ...AA060_ABILITY_MECHANIC_IDS, ...AA061_ABILITY_MECHANIC_IDS,
@@ -215,6 +234,7 @@ const MECHANIC_SET = new Set<string>([
   ...AA064_ABILITY_MECHANIC_IDS, ...AA065_ABILITY_MECHANIC_IDS,
   ...AA066_ABILITY_MECHANIC_IDS, ...AA067_ABILITY_MECHANIC_IDS,
   ...AA068_ABILITY_MECHANIC_IDS, ...AA069_ABILITY_MECHANIC_IDS,
+  ...AA070_ABILITY_MECHANIC_IDS,
 ])
 const ID = /^[a-z0-9]+(?:[._:/-][a-z0-9]+)*$/
 const fail = (code: AbilityMechanicValidationError['code'], path: string, detail: string): never => { throw new AbilityMechanicValidationError(code, path, detail) }
@@ -891,6 +911,63 @@ const parseConfig = (mechanicId: AbilityMechanicId, value: unknown, path: string
     }
     case 'aa069.filter': return {
       trigger: oneOf(config.trigger, ['super-effective-damage'], `${path}.trigger`), damageReduction: integer(config.damageReduction, `${path}.damageReduction`, 5, 5),
+    }
+    case 'aa070.flame-body': return {
+      action: oneOf(config.action, ['free'], `${path}.action`), frequency: oneOf(config.frequency, ['scene'], `${path}.frequency`),
+      trigger: oneOf(config.trigger, ['hit-by-melee-attack'], `${path}.trigger`), sourceRelation: oneOf(config.sourceRelation, ['enemy'], `${path}.sourceRelation`),
+      condition: oneOf(config.condition, ['burned'], `${path}.condition`),
+    }
+    case 'aa070.flame-tongue': return {
+      action: oneOf(config.action, ['free'], `${path}.action`), frequency: oneOf(config.frequency, ['scene'], `${path}.frequency`),
+      connectionMoveId: oneOf(config.connectionMoveId, ['Lick'], `${path}.connectionMoveId`), trigger: oneOf(config.trigger, ['lick-hit-foe'], `${path}.trigger`),
+      injuryDelta: integer(config.injuryDelta, `${path}.injuryDelta`, 1, 1), condition: oneOf(config.condition, ['burned'], `${path}.condition`),
+    }
+    case 'aa070.flare-boost': return {
+      action: oneOf(config.action, ['swift'], `${path}.action`), frequency: oneOf(config.frequency, ['scene'], `${path}.frequency`),
+      requiredCondition: oneOf(config.requiredCondition, ['burned'], `${path}.requiredCondition`), attackStages: integer(config.attackStages, `${path}.attackStages`, 3, 3),
+      specialAttackStages: integer(config.specialAttackStages, `${path}.specialAttackStages`, 3, 3),
+    }
+    case 'aa070.flash-fire': return {
+      immuneMoveType: oneOf(config.immuneMoveType, ['fire'], `${path}.immuneMoveType`), preventDamage: bool(config.preventDamage, `${path}.preventDamage`),
+      preventEffects: bool(config.preventEffects, `${path}.preventEffects`), onHitStatChoices: stringArray(config.onHitStatChoices, ['attack', 'special-attack'], `${path}.onHitStatChoices`),
+      stageDelta: integer(config.stageDelta, `${path}.stageDelta`, 1, 1),
+    }
+    case 'aa070.flavorful-aroma': return {
+      action: oneOf(config.action, ['free'], `${path}.action`), frequency: oneOf(config.frequency, ['at-will'], `${path}.frequency`),
+      connectionMoveId: oneOf(config.connectionMoveId, ['Aromatic Mist'], `${path}.connectionMoveId`), trigger: oneOf(config.trigger, ['aromatic-mist-use'], `${path}.trigger`),
+      affectedRelationship: oneOf(config.affectedRelationship, ['ally'], `${path}.affectedRelationship`), accuracyBonus: integer(config.accuracyBonus, `${path}.accuracyBonus`, 1, 1),
+      damageBonus: integer(config.damageBonus, `${path}.damageBonus`, 5, 5), durationRounds: integer(config.durationRounds, `${path}.durationRounds`, 1, 1),
+    }
+    case 'aa070.flower-gift': return {
+      action: oneOf(config.action, ['swift'], `${path}.action`), frequency: oneOf(config.frequency, ['scene'], `${path}.frequency`),
+      eligibility: stringArray(config.eligibility, ['sunny-weather', 'below-half-hp'], `${path}.eligibility`), statSelections: integer(config.statSelections, `${path}.statSelections`, 2, 2),
+      selfStageDelta: integer(config.selfStageDelta, `${path}.selfStageDelta`, 2, 2), nearbyStageDelta: integer(config.nearbyStageDelta, `${path}.nearbyStageDelta`, 1, 1),
+      radius: integer(config.radius, `${path}.radius`, 2, 2),
+    }
+    case 'aa070.flower-power': return {
+      moveType: oneOf(config.moveType, ['grass'], `${path}.moveType`), moveFilter: oneOf(config.moveFilter, ['damaging'], `${path}.moveFilter`),
+      damageClassChoices: stringArray(config.damageClassChoices, ['physical', 'special'], `${path}.damageClassChoices`),
+    }
+    case 'aa070.flower-veil': return {
+      protectedType: oneOf(config.protectedType, ['grass'], `${path}.protectedType`), radius: integer(config.radius, `${path}.radius`, 5, 5),
+      protectUserRegardlessOfType: bool(config.protectUserRegardlessOfType, `${path}.protectUserRegardlessOfType`),
+      preventCombatStageLowering: bool(config.preventCombatStageLowering, `${path}.preventCombatStageLowering`),
+    }
+    case 'aa070.fluffy': return {
+      meleeResistanceSteps: integer(config.meleeResistanceSteps, `${path}.meleeResistanceSteps`, 1, 1), fireResistanceSteps: integer(config.fireResistanceSteps, `${path}.fireResistanceSteps`, -1, -1),
+      damagingOnly: bool(config.damagingOnly, `${path}.damagingOnly`),
+    }
+    case 'aa070.fluffy-charge': return {
+      connectionMoveId: oneOf(config.connectionMoveId, ['Charge'], `${path}.connectionMoveId`), trigger: oneOf(config.trigger, ['charge-use'], `${path}.trigger`),
+      defenseStages: integer(config.defenseStages, `${path}.defenseStages`, 1, 1),
+    }
+    case 'aa070.flutter': return {
+      action: oneOf(config.action, ['shift'], `${path}.action`), frequency: oneOf(config.frequency, ['at-will'], `${path}.frequency`),
+      evasionBonus: integer(config.evasionBonus, `${path}.evasionBonus`, 3, 3), duration: oneOf(config.duration, ['through-next-turn-end'], `${path}.duration`),
+      cannotBeFlanked: bool(config.cannotBeFlanked, `${path}.cannotBeFlanked`),
+    }
+    case 'aa070.flying-fly-trap': return {
+      damageImmuneMoveTypes: stringArray(config.damageImmuneMoveTypes, ['ground', 'bug'], `${path}.damageImmuneMoveTypes`), effectsRemain: bool(config.effectsRemain, `${path}.effectsRemain`),
     }
   }
 }

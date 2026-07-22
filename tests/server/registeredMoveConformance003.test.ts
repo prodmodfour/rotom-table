@@ -131,12 +131,15 @@ const placement = (
 const stageMap = (
   stage: StageExpectation | undefined,
   recipientId: string,
+  flashFireCap = false,
 ): {
   readonly stats: NonNullable<CharacterSheet['stats']>
   readonly combatStages: NonNullable<CharacterSheet['combatStages']>
 } => {
   const valueFor = (key: Exclude<CombatStageKey, 'acc'>): number => (
-    stage?.recipientId === recipientId && stage.key === key ? stage.value : 0
+    flashFireCap && (key === 'atk' || key === 'satk')
+      ? 6
+      : stage?.recipientId === recipientId && stage.key === key ? stage.value : 0
   )
   return {
     stats: {
@@ -169,7 +172,11 @@ const pokemonSheet = (options: {
   types: [...(options.types ?? ['Normal'])],
   abilities: (options.abilities ?? []).map(name => ({ name })),
   movelist: [...(options.moves ?? [])],
-  ...stageMap(options.initialStage, options.placementId),
+  ...stageMap(
+    options.initialStage,
+    options.placementId,
+    options.abilities?.includes('Flash Fire') === true,
+  ),
   combat: { currentHp: 500, conditions: [] },
 })
 

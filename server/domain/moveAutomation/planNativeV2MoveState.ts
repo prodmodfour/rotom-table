@@ -692,10 +692,13 @@ const applyTriggeredAbilityPayments = (input: {
     ['ability.effect-spore.optional-condition', 'Effect Spore'],
     ['ability.emergency-exit.optional-switch', 'Emergency Exit'],
     ['ability.fade-away.optional-avoid', 'Fade Away'],
+    ['ability.flame-body.optional-burn', 'Flame Body'],
+    ['ability.flame-tongue.optional-injury-burn', 'Flame Tongue'],
+    ['ability.flavorful-aroma.optional-buff', 'Flavorful Aroma'],
   ])
   const noFrequency = new Set([
     'Anger Point', 'Aqua Boost', 'Beast Boost', 'Celebrate', 'Chilling Neigh',
-    'Color Change', 'Combo Striker',
+    'Color Change', 'Combo Striker', 'Flavorful Aroma',
   ])
   const daily = new Set(['Dig Away', 'Disguise', 'Dodge'])
   const triggeringMoveByOperationId = new Map(input.traces.flatMap(trace => (

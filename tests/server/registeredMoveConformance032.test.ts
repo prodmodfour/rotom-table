@@ -165,9 +165,15 @@ const pokemonSheet = (options: {
   movelist: [...(options.moves ?? [])],
   stats: {
     hp: { added: 500 },
-    atk: { added: options.actor ? 50 : 5, stage: 0 },
+    atk: {
+      added: options.actor ? 50 : 5,
+      stage: options.profile?.abilities?.includes('Flash Fire') ? 6 : 0,
+    },
     def: { added: 5, stage: 0 },
-    satk: { added: options.actor ? 50 : 5, stage: 0 },
+    satk: {
+      added: options.actor ? 50 : 5,
+      stage: options.profile?.abilities?.includes('Flash Fire') ? 6 : 0,
+    },
     sdef: { added: 5, stage: 0 },
     spd: { added: 5, stage: 0 },
   },

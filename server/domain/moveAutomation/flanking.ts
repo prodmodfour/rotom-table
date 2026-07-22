@@ -13,6 +13,7 @@ export type MoveAutomationFlankingReasonCode =
   | 'target-not-flanked'
   | 'target-flanking-state-unavailable'
   | 'target-flanking-search-limit'
+  | 'target-cannot-be-flanked'
 
 export interface MoveAutomationFlankingContribution {
   readonly placementId: string
@@ -37,6 +38,7 @@ export interface CreateMoveAutomationFlankingResolverInput {
   readonly placements: readonly SheetPlacement[]
   readonly tokens: readonly SpawnedPokemon[]
   readonly relationships: MoveAutomationRelationshipResolver
+  readonly cannotBeFlankedPlacementIds?: ReadonlySet<string>
   readonly recordSheetRead?: (
     placement: Pick<SheetPlacement, 'sheetKind' | 'sheetSlug'>,
   ) => void
@@ -170,6 +172,20 @@ export const createMoveAutomationFlankingResolver = (
         })
         cache.set(targetPlacementId, unavailable)
         return unavailable
+      }
+
+      if (input.cannotBeFlankedPlacementIds?.has(targetPlacementId)) {
+        const prevented = deepFreeze({
+          targetPlacementId,
+          flanked: false,
+          requiredAdjacentSquares: null,
+          adjacentFoeIds: [],
+          qualifyingFoeIds: [],
+          contributions: [],
+          reasonCode: 'target-cannot-be-flanked' as const,
+        })
+        cache.set(targetPlacementId, prevented)
+        return prevented
       }
 
       // A negative result consults every placed token: a newly changed size,

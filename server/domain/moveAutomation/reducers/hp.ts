@@ -15,6 +15,7 @@ import type { MoveAutomationHpUpdateAccumulator } from '~/utils/moveAutomationHp
 import { moveAutomationRecoilImmunitySource } from '~/utils/moveAutomationRecoil'
 import type { AuthoritativeMoveRulesContext } from '../context'
 import { authoritativeAbilityHealingBlocked } from '../../abilityAutomation/healingPrevention'
+import { aa070FlyingFlyTrapPreventsDirectHp } from '../../abilityAutomation/mechanics/aa070StaticIntegration'
 import {
   evaluateMoveExpression,
   evaluateMoveSelector,
@@ -491,12 +492,20 @@ const directHpImmunity = (options: {
   readonly operation: MoveDirectHpEffectOperation
   readonly recipient: MoveCoreTokenEffectRecipient
   readonly immunities: MoveCoreTokenEffectImmunityQueries
-}): MoveCoreTokenEffectImmunityDecision => options.operation.payload.applyTypeImmunity
-  ? options.immunities.directHp({
-      operation: options.operation,
-      recipient: options.recipient,
-    })
-  : { blockedBy: null, consultedPlacementIds: [] }
+  readonly context?: AuthoritativeMoveRulesContext
+}): MoveCoreTokenEffectImmunityDecision => {
+  if (options.context && aa070FlyingFlyTrapPreventsDirectHp({
+    context: options.context,
+    operation: options.operation,
+    recipientId: options.recipient.placement.id,
+  })) return { blockedBy: 'Flying Fly Trap', consultedPlacementIds: [] }
+  return options.operation.payload.applyTypeImmunity
+    ? options.immunities.directHp({
+        operation: options.operation,
+        recipient: options.recipient,
+      })
+    : { blockedBy: null, consultedPlacementIds: [] }
+}
 
 interface MoveHpCostTriggerDecision {
   readonly applies: boolean
@@ -812,7 +821,8 @@ export const reduceDirectHpEffectForRecipient = (options: {
   }
   const previous = hpSnapshot(accumulator, recipient)
   if (operation.reasonCode === 'ability.bully.add-injury'
-    || operation.reasonCode === 'ability.cruelty.add-injury') {
+    || operation.reasonCode === 'ability.cruelty.add-injury'
+    || operation.reasonCode === 'ability.flame-tongue.add-injury') {
     accumulator.addInjuries(recipient.token, 1)
     const current = hpSnapshot(accumulator, recipient)
     return {

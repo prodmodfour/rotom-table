@@ -9030,420 +9030,940 @@
     {
       "canonicalId": "Flame Body",
       "displayName": "Flame Body",
-      "baseStatus": "blocked",
+      "baseStatus": "complete",
       "interactionStatus": "unassessed",
       "runtime": {
-        "kind": "unimplemented",
-        "version": null,
-        "definitionHash": null,
-        "sourceModule": null
+        "kind": "abilityspec-v1",
+        "version": 1,
+        "definitionHash": "63de31b313e9f905ee4848bce270c21c84b7deb7d424608b870290dfd61638dd",
+        "sourceModule": "server/domain/abilityAutomation/specs/aa070.ts"
       },
       "rulesProvenance": {
         "rulesetId": "rotom-table-reference-abilities-v1",
         "canonicalizationVersion": 1,
         "sourceDataSha256": "767c3e2ae45471c26ad97a07552c4b0417ed0e207827af8a59da3a73e81f4362"
       },
-      "capabilityTags": [],
+      "capabilityTags": [
+        "abilities.effective-projection",
+        "actions.authoritative",
+        "choices.durable",
+        "conditions.typed",
+        "context.authoritative",
+        "effects.typed",
+        "events.move",
+        "events.routing",
+        "events.typed",
+        "expressions.bounded",
+        "frequency.scene",
+        "intent.typed",
+        "lifecycle.effects",
+        "mode.triggered",
+        "planning.atomic",
+        "reactions.durable",
+        "recovery.durable",
+        "relationships.providers",
+        "runtime.abilityspec-v1",
+        "targeting.authoritative",
+        "trace.structured"
+      ],
       "suggestedCapabilityTags": [
         "mode.triggered"
       ],
-      "blockerCodes": [
-        "runtime.unimplemented"
-      ],
+      "blockerCodes": [],
       "limitations": [],
       "manualSteps": [],
-      "scenarioIds": [],
+      "scenarioIds": [
+        "aa070.flame-body.reviewed"
+      ],
       "conformanceEvidence": {
-        "requirementTags": [],
-        "scenarios": [],
+        "requirementTags": [
+          "branch.choice",
+          "mechanic.condition",
+          "mechanic.interrupt",
+          "mechanic.usage",
+          "mode.triggered",
+          "recovery.reconnect",
+          "recovery.retry",
+          "resource.multi",
+          "target.enemy"
+        ],
+        "scenarios": [
+          {
+            "scenarioId": "aa070.flame-body.reviewed",
+            "evidenceClasses": [
+              "choice",
+              "condition-applied",
+              "condition-prevented",
+              "enemy",
+              "hit",
+              "interrupt-priority",
+              "miss",
+              "multi-resource-conflict",
+              "pass",
+              "reconnect",
+              "retry",
+              "trigger-eligible",
+              "trigger-ineligible",
+              "usage-exhausted",
+              "usage-reset",
+              "usage-spent"
+            ]
+          }
+        ],
         "notApplicable": []
       },
-      "reviewedAt": null,
+      "reviewedAt": "2026-07-22",
       "unsupportedInteractionIds": [],
       "rolloutCohortId": "aa-070"
     },
     {
       "canonicalId": "Flame Tongue",
       "displayName": "Flame Tongue",
-      "baseStatus": "blocked",
+      "baseStatus": "complete",
       "interactionStatus": "unassessed",
       "runtime": {
-        "kind": "unimplemented",
-        "version": null,
-        "definitionHash": null,
-        "sourceModule": null
+        "kind": "abilityspec-v1",
+        "version": 1,
+        "definitionHash": "4f7da68e88522440cd5426ef5128cb45085f3a7ead6fdc5c112c46dc595b02f9",
+        "sourceModule": "server/domain/abilityAutomation/specs/aa070.ts"
       },
       "rulesProvenance": {
         "rulesetId": "rotom-table-reference-abilities-v1",
         "canonicalizationVersion": 1,
         "sourceDataSha256": "767c3e2ae45471c26ad97a07552c4b0417ed0e207827af8a59da3a73e81f4362"
       },
-      "capabilityTags": [],
+      "capabilityTags": [
+        "abilities.effective-projection",
+        "actions.authoritative",
+        "choices.durable",
+        "conditions.typed",
+        "context.authoritative",
+        "effects.typed",
+        "events.damage",
+        "events.move",
+        "events.routing",
+        "events.typed",
+        "expressions.bounded",
+        "frequency.scene",
+        "hp.typed",
+        "intent.typed",
+        "lifecycle.effects",
+        "mode.triggered",
+        "planning.atomic",
+        "reactions.durable",
+        "recovery.durable",
+        "relationships.providers",
+        "runtime.abilityspec-v1",
+        "targeting.authoritative",
+        "trace.structured"
+      ],
       "suggestedCapabilityTags": [
         "mode.triggered"
       ],
-      "blockerCodes": [
-        "runtime.unimplemented"
-      ],
+      "blockerCodes": [],
       "limitations": [],
       "manualSteps": [],
-      "scenarioIds": [],
+      "scenarioIds": [
+        "aa070.flame-tongue.reviewed"
+      ],
       "conformanceEvidence": {
-        "requirementTags": [],
-        "scenarios": [],
+        "requirementTags": [
+          "branch.choice",
+          "mechanic.condition",
+          "mechanic.hp",
+          "mechanic.interrupt",
+          "mechanic.usage",
+          "mode.triggered",
+          "recovery.reconnect",
+          "recovery.retry",
+          "resource.multi",
+          "target.enemy"
+        ],
+        "scenarios": [
+          {
+            "scenarioId": "aa070.flame-tongue.reviewed",
+            "evidenceClasses": [
+              "choice",
+              "condition-applied",
+              "condition-prevented",
+              "enemy",
+              "hit",
+              "hp-applied",
+              "hp-prevented",
+              "interrupt-priority",
+              "miss",
+              "multi-resource-conflict",
+              "pass",
+              "reconnect",
+              "retry",
+              "trigger-eligible",
+              "trigger-ineligible",
+              "usage-exhausted",
+              "usage-reset",
+              "usage-spent"
+            ]
+          }
+        ],
         "notApplicable": []
       },
-      "reviewedAt": null,
+      "reviewedAt": "2026-07-22",
       "unsupportedInteractionIds": [],
       "rolloutCohortId": "aa-070"
     },
     {
       "canonicalId": "Flare Boost",
       "displayName": "Flare Boost",
-      "baseStatus": "blocked",
+      "baseStatus": "complete",
       "interactionStatus": "unassessed",
       "runtime": {
-        "kind": "unimplemented",
-        "version": null,
-        "definitionHash": null,
-        "sourceModule": null
+        "kind": "abilityspec-v1",
+        "version": 1,
+        "definitionHash": "fc60e040e162e25a7e06dfb6252e87264fbf0eac4683230d3451accb0c908c46",
+        "sourceModule": "server/domain/abilityAutomation/specs/aa070.ts"
       },
       "rulesProvenance": {
         "rulesetId": "rotom-table-reference-abilities-v1",
         "canonicalizationVersion": 1,
         "sourceDataSha256": "767c3e2ae45471c26ad97a07552c4b0417ed0e207827af8a59da3a73e81f4362"
       },
-      "capabilityTags": [],
+      "capabilityTags": [
+        "abilities.effective-projection",
+        "actions.authoritative",
+        "conditions.typed",
+        "context.authoritative",
+        "effects.typed",
+        "events.typed",
+        "expressions.bounded",
+        "frequency.scene",
+        "intent.typed",
+        "lifecycle.effects",
+        "mode.activated",
+        "planning.atomic",
+        "runtime.abilityspec-v1",
+        "stages.typed",
+        "targeting.authoritative",
+        "trace.structured"
+      ],
       "suggestedCapabilityTags": [
         "mode.activated"
       ],
-      "blockerCodes": [
-        "runtime.unimplemented"
-      ],
+      "blockerCodes": [],
       "limitations": [],
       "manualSteps": [],
-      "scenarioIds": [],
+      "scenarioIds": [
+        "aa070.flare-boost.reviewed"
+      ],
       "conformanceEvidence": {
-        "requirementTags": [],
-        "scenarios": [],
+        "requirementTags": [
+          "branch.threshold",
+          "mechanic.stage",
+          "mechanic.usage",
+          "mode.activated",
+          "recovery.retry",
+          "resource.multi",
+          "target.self"
+        ],
+        "scenarios": [
+          {
+            "scenarioId": "aa070.flare-boost.reviewed",
+            "evidenceClasses": [
+              "active-accepted",
+              "active-rejected",
+              "multi-resource-conflict",
+              "retry",
+              "self",
+              "stage-applied",
+              "stage-prevented",
+              "threshold-fail",
+              "threshold-pass",
+              "usage-exhausted",
+              "usage-reset",
+              "usage-spent"
+            ]
+          }
+        ],
         "notApplicable": []
       },
-      "reviewedAt": null,
+      "reviewedAt": "2026-07-22",
       "unsupportedInteractionIds": [],
       "rolloutCohortId": "aa-070"
     },
     {
       "canonicalId": "Flash Fire",
       "displayName": "Flash Fire",
-      "baseStatus": "blocked",
+      "baseStatus": "complete",
       "interactionStatus": "unassessed",
       "runtime": {
-        "kind": "unimplemented",
-        "version": null,
-        "definitionHash": null,
-        "sourceModule": null
+        "kind": "abilityspec-v1",
+        "version": 1,
+        "definitionHash": "9e3d3ab73d1bf5b368f59792c49932de159cd50e9bd7245400d67bc0fea7cd33",
+        "sourceModule": "server/domain/abilityAutomation/specs/aa070.ts"
       },
       "rulesProvenance": {
         "rulesetId": "rotom-table-reference-abilities-v1",
         "canonicalizationVersion": 1,
         "sourceDataSha256": "767c3e2ae45471c26ad97a07552c4b0417ed0e207827af8a59da3a73e81f4362"
       },
-      "capabilityTags": [],
+      "capabilityTags": [
+        "abilities.effective-projection",
+        "actions.authoritative",
+        "choices.durable",
+        "context.authoritative",
+        "effects.typed",
+        "events.move",
+        "events.routing",
+        "events.typed",
+        "expressions.bounded",
+        "immunity.providers",
+        "intent.typed",
+        "mode.static",
+        "passives.aggregation",
+        "planning.atomic",
+        "reactions.durable",
+        "recovery.durable",
+        "runtime.abilityspec-v1",
+        "stages.typed",
+        "targeting.authoritative",
+        "trace.structured"
+      ],
       "suggestedCapabilityTags": [
         "mode.static"
       ],
-      "blockerCodes": [
-        "runtime.unimplemented"
-      ],
+      "blockerCodes": [],
       "limitations": [],
       "manualSteps": [],
-      "scenarioIds": [],
+      "scenarioIds": [
+        "aa070.flash-fire.reviewed"
+      ],
       "conformanceEvidence": {
-        "requirementTags": [],
-        "scenarios": [],
+        "requirementTags": [
+          "branch.choice",
+          "branch.immunity",
+          "mechanic.stage",
+          "mode.static",
+          "recovery.reconnect",
+          "recovery.retry",
+          "target.self"
+        ],
+        "scenarios": [
+          {
+            "scenarioId": "aa070.flash-fire.reviewed",
+            "evidenceClasses": [
+              "choice",
+              "immunity",
+              "pass",
+              "passive-applied",
+              "passive-suppressed",
+              "reconnect",
+              "retry",
+              "self",
+              "stage-applied",
+              "stage-prevented"
+            ]
+          }
+        ],
         "notApplicable": []
       },
-      "reviewedAt": null,
+      "reviewedAt": "2026-07-22",
       "unsupportedInteractionIds": [],
       "rolloutCohortId": "aa-070"
     },
     {
       "canonicalId": "Flavorful Aroma",
       "displayName": "Flavorful Aroma",
-      "baseStatus": "blocked",
+      "baseStatus": "complete",
       "interactionStatus": "unassessed",
       "runtime": {
-        "kind": "unimplemented",
-        "version": null,
-        "definitionHash": null,
-        "sourceModule": null
+        "kind": "abilityspec-v1",
+        "version": 1,
+        "definitionHash": "9bc7e53ab705f9c40e4f8793fe8c67a7a758840765dc49437609e3976ea9c228",
+        "sourceModule": "server/domain/abilityAutomation/specs/aa070.ts"
       },
       "rulesProvenance": {
         "rulesetId": "rotom-table-reference-abilities-v1",
         "canonicalizationVersion": 1,
         "sourceDataSha256": "767c3e2ae45471c26ad97a07552c4b0417ed0e207827af8a59da3a73e81f4362"
       },
-      "capabilityTags": [],
+      "capabilityTags": [
+        "abilities.effective-projection",
+        "actions.authoritative",
+        "choices.durable",
+        "context.authoritative",
+        "damage.modifiers",
+        "effects.typed",
+        "events.move",
+        "events.routing",
+        "events.typed",
+        "expressions.bounded",
+        "intent.typed",
+        "lifecycle.effects",
+        "mode.triggered",
+        "planning.atomic",
+        "reactions.durable",
+        "recovery.durable",
+        "relationships.providers",
+        "runtime.abilityspec-v1",
+        "stages.typed",
+        "targeting.authoritative",
+        "trace.structured"
+      ],
       "suggestedCapabilityTags": [
         "mode.triggered"
       ],
-      "blockerCodes": [
-        "runtime.unimplemented"
-      ],
+      "blockerCodes": [],
       "limitations": [],
       "manualSteps": [],
-      "scenarioIds": [],
+      "scenarioIds": [
+        "aa070.flavorful-aroma.reviewed"
+      ],
       "conformanceEvidence": {
-        "requirementTags": [],
-        "scenarios": [],
+        "requirementTags": [
+          "branch.choice",
+          "mechanic.damage",
+          "mechanic.interrupt",
+          "mechanic.lifecycle",
+          "mechanic.stage",
+          "mode.triggered",
+          "recovery.reconnect",
+          "recovery.retry",
+          "resource.multi",
+          "target.ally"
+        ],
+        "scenarios": [
+          {
+            "scenarioId": "aa070.flavorful-aroma.reviewed",
+            "evidenceClasses": [
+              "ally",
+              "choice",
+              "crit",
+              "hit",
+              "immunity",
+              "interrupt-priority",
+              "lifecycle-cleanup",
+              "lifecycle-trigger",
+              "miss",
+              "multi-resource-conflict",
+              "pass",
+              "reconnect",
+              "retry",
+              "stage-applied",
+              "stage-prevented",
+              "trigger-eligible",
+              "trigger-ineligible"
+            ]
+          }
+        ],
         "notApplicable": []
       },
-      "reviewedAt": null,
+      "reviewedAt": "2026-07-22",
       "unsupportedInteractionIds": [],
       "rolloutCohortId": "aa-070"
     },
     {
       "canonicalId": "Flower Gift",
       "displayName": "Flower Gift",
-      "baseStatus": "blocked",
+      "baseStatus": "complete",
       "interactionStatus": "unassessed",
       "runtime": {
-        "kind": "unimplemented",
-        "version": null,
-        "definitionHash": null,
-        "sourceModule": null
+        "kind": "abilityspec-v1",
+        "version": 1,
+        "definitionHash": "5984220b224bb84e15b473467dfab1d4f0dff1675608eda495c25fb9823d1a1e",
+        "sourceModule": "server/domain/abilityAutomation/specs/aa070.ts"
       },
       "rulesProvenance": {
         "rulesetId": "rotom-table-reference-abilities-v1",
         "canonicalizationVersion": 1,
         "sourceDataSha256": "767c3e2ae45471c26ad97a07552c4b0417ed0e207827af8a59da3a73e81f4362"
       },
-      "capabilityTags": [],
+      "capabilityTags": [
+        "abilities.effective-projection",
+        "actions.authoritative",
+        "choices.durable",
+        "context.authoritative",
+        "effects.typed",
+        "events.typed",
+        "expressions.bounded",
+        "frequency.scene",
+        "geometry.authoritative",
+        "intent.typed",
+        "mode.activated",
+        "planning.atomic",
+        "recovery.durable",
+        "runtime.abilityspec-v1",
+        "stages.typed",
+        "targeting.authoritative",
+        "trace.structured"
+      ],
       "suggestedCapabilityTags": [
         "mode.activated"
       ],
-      "blockerCodes": [
-        "runtime.unimplemented"
-      ],
+      "blockerCodes": [],
       "limitations": [],
       "manualSteps": [],
-      "scenarioIds": [],
+      "scenarioIds": [
+        "aa070.flower-gift.reviewed"
+      ],
       "conformanceEvidence": {
-        "requirementTags": [],
-        "scenarios": [],
+        "requirementTags": [
+          "branch.choice",
+          "branch.threshold",
+          "mechanic.stage",
+          "mechanic.usage",
+          "mode.activated",
+          "recovery.retry",
+          "resource.multi",
+          "state.cap",
+          "target.area",
+          "target.self"
+        ],
+        "scenarios": [
+          {
+            "scenarioId": "aa070.flower-gift.reviewed",
+            "evidenceClasses": [
+              "active-accepted",
+              "active-rejected",
+              "area-mixed-outcomes",
+              "cap-applied",
+              "cap-noop",
+              "choice",
+              "multi-resource-conflict",
+              "pass",
+              "retry",
+              "self",
+              "stage-applied",
+              "stage-prevented",
+              "threshold-fail",
+              "threshold-pass",
+              "usage-exhausted",
+              "usage-reset",
+              "usage-spent"
+            ]
+          }
+        ],
         "notApplicable": []
       },
-      "reviewedAt": null,
+      "reviewedAt": "2026-07-22",
       "unsupportedInteractionIds": [],
       "rolloutCohortId": "aa-070"
     },
     {
       "canonicalId": "Flower Power",
       "displayName": "Flower Power",
-      "baseStatus": "blocked",
+      "baseStatus": "complete",
       "interactionStatus": "unassessed",
       "runtime": {
-        "kind": "unimplemented",
-        "version": null,
-        "definitionHash": null,
-        "sourceModule": null
+        "kind": "abilityspec-v1",
+        "version": 1,
+        "definitionHash": "a35d08bb6eb13f1662445140514d45604b6d2c180e46049ff0862154318601bd",
+        "sourceModule": "server/domain/abilityAutomation/specs/aa070.ts"
       },
       "rulesProvenance": {
         "rulesetId": "rotom-table-reference-abilities-v1",
         "canonicalizationVersion": 1,
         "sourceDataSha256": "767c3e2ae45471c26ad97a07552c4b0417ed0e207827af8a59da3a73e81f4362"
       },
-      "capabilityTags": [],
+      "capabilityTags": [
+        "abilities.effective-projection",
+        "actions.authoritative",
+        "choices.durable",
+        "context.authoritative",
+        "damage.modifiers",
+        "effects.typed",
+        "events.move",
+        "events.routing",
+        "events.typed",
+        "expressions.bounded",
+        "intent.typed",
+        "mode.static",
+        "passives.aggregation",
+        "planning.atomic",
+        "reactions.durable",
+        "recovery.durable",
+        "runtime.abilityspec-v1",
+        "targeting.authoritative",
+        "trace.structured"
+      ],
       "suggestedCapabilityTags": [
         "mode.static"
       ],
-      "blockerCodes": [
-        "runtime.unimplemented"
-      ],
+      "blockerCodes": [],
       "limitations": [],
       "manualSteps": [],
-      "scenarioIds": [],
+      "scenarioIds": [
+        "aa070.flower-power.reviewed"
+      ],
       "conformanceEvidence": {
-        "requirementTags": [],
-        "scenarios": [],
+        "requirementTags": [
+          "branch.choice",
+          "branch.threshold",
+          "mechanic.damage",
+          "mode.static",
+          "recovery.reconnect",
+          "recovery.retry"
+        ],
+        "scenarios": [
+          {
+            "scenarioId": "aa070.flower-power.reviewed",
+            "evidenceClasses": [
+              "choice",
+              "crit",
+              "hit",
+              "immunity",
+              "miss",
+              "pass",
+              "passive-applied",
+              "passive-suppressed",
+              "reconnect",
+              "retry",
+              "threshold-fail",
+              "threshold-pass"
+            ]
+          }
+        ],
         "notApplicable": []
       },
-      "reviewedAt": null,
+      "reviewedAt": "2026-07-22",
       "unsupportedInteractionIds": [],
       "rolloutCohortId": "aa-070"
     },
     {
       "canonicalId": "Flower Veil",
       "displayName": "Flower Veil",
-      "baseStatus": "blocked",
+      "baseStatus": "complete",
       "interactionStatus": "unassessed",
       "runtime": {
-        "kind": "unimplemented",
-        "version": null,
-        "definitionHash": null,
-        "sourceModule": null
+        "kind": "abilityspec-v1",
+        "version": 1,
+        "definitionHash": "d2847ef3b4cd4024d7a50c9f96d9dd2a694d3a7524b7658a9d952f5b71ecb460",
+        "sourceModule": "server/domain/abilityAutomation/specs/aa070.ts"
       },
       "rulesProvenance": {
         "rulesetId": "rotom-table-reference-abilities-v1",
         "canonicalizationVersion": 1,
         "sourceDataSha256": "767c3e2ae45471c26ad97a07552c4b0417ed0e207827af8a59da3a73e81f4362"
       },
-      "capabilityTags": [],
+      "capabilityTags": [
+        "abilities.effective-projection",
+        "context.authoritative",
+        "effects.typed",
+        "expressions.bounded",
+        "geometry.authoritative",
+        "immunity.providers",
+        "mode.static",
+        "passives.aggregation",
+        "relationships.providers",
+        "runtime.abilityspec-v1",
+        "stages.typed",
+        "targeting.authoritative",
+        "trace.structured"
+      ],
       "suggestedCapabilityTags": [
         "mode.static"
       ],
-      "blockerCodes": [
-        "runtime.unimplemented"
-      ],
+      "blockerCodes": [],
       "limitations": [],
       "manualSteps": [],
-      "scenarioIds": [],
+      "scenarioIds": [
+        "aa070.flower-veil.reviewed"
+      ],
       "conformanceEvidence": {
-        "requirementTags": [],
-        "scenarios": [],
+        "requirementTags": [
+          "branch.immunity",
+          "mechanic.stage",
+          "mode.static",
+          "recovery.retry",
+          "target.area"
+        ],
+        "scenarios": [
+          {
+            "scenarioId": "aa070.flower-veil.reviewed",
+            "evidenceClasses": [
+              "area-mixed-outcomes",
+              "immunity",
+              "passive-applied",
+              "passive-suppressed",
+              "retry",
+              "stage-applied",
+              "stage-prevented"
+            ]
+          }
+        ],
         "notApplicable": []
       },
-      "reviewedAt": null,
+      "reviewedAt": "2026-07-22",
       "unsupportedInteractionIds": [],
       "rolloutCohortId": "aa-070"
     },
     {
       "canonicalId": "Fluffy",
       "displayName": "Fluffy",
-      "baseStatus": "blocked",
+      "baseStatus": "complete",
       "interactionStatus": "unassessed",
       "runtime": {
-        "kind": "unimplemented",
-        "version": null,
-        "definitionHash": null,
-        "sourceModule": null
+        "kind": "abilityspec-v1",
+        "version": 1,
+        "definitionHash": "6d0ebb992d20badae94ee542dbaad1e7508f9d26844894a24c43c5d7f855fdc6",
+        "sourceModule": "server/domain/abilityAutomation/specs/aa070.ts"
       },
       "rulesProvenance": {
         "rulesetId": "rotom-table-reference-abilities-v1",
         "canonicalizationVersion": 1,
         "sourceDataSha256": "767c3e2ae45471c26ad97a07552c4b0417ed0e207827af8a59da3a73e81f4362"
       },
-      "capabilityTags": [],
+      "capabilityTags": [
+        "abilities.effective-projection",
+        "context.authoritative",
+        "damage.modifiers",
+        "effects.typed",
+        "expressions.bounded",
+        "hp.typed",
+        "mode.static",
+        "passives.aggregation",
+        "runtime.abilityspec-v1",
+        "trace.structured"
+      ],
       "suggestedCapabilityTags": [
         "mode.static"
       ],
-      "blockerCodes": [
-        "runtime.unimplemented"
-      ],
+      "blockerCodes": [],
       "limitations": [],
       "manualSteps": [],
-      "scenarioIds": [],
+      "scenarioIds": [
+        "aa070.fluffy.reviewed"
+      ],
       "conformanceEvidence": {
-        "requirementTags": [],
-        "scenarios": [],
+        "requirementTags": [
+          "branch.threshold",
+          "mechanic.damage",
+          "mode.static",
+          "recovery.retry",
+          "target.self"
+        ],
+        "scenarios": [
+          {
+            "scenarioId": "aa070.fluffy.reviewed",
+            "evidenceClasses": [
+              "crit",
+              "hit",
+              "immunity",
+              "miss",
+              "passive-applied",
+              "passive-suppressed",
+              "retry",
+              "self",
+              "threshold-fail",
+              "threshold-pass"
+            ]
+          }
+        ],
         "notApplicable": []
       },
-      "reviewedAt": null,
+      "reviewedAt": "2026-07-22",
       "unsupportedInteractionIds": [],
       "rolloutCohortId": "aa-070"
     },
     {
       "canonicalId": "Fluffy Charge",
       "displayName": "Fluffy Charge",
-      "baseStatus": "blocked",
+      "baseStatus": "complete",
       "interactionStatus": "unassessed",
       "runtime": {
-        "kind": "unimplemented",
-        "version": null,
-        "definitionHash": null,
-        "sourceModule": null
+        "kind": "abilityspec-v1",
+        "version": 1,
+        "definitionHash": "fe4ad3196ed0b7fb0243c58d8ecb271185d9f46c035b9efe6df4163cdfaafec2",
+        "sourceModule": "server/domain/abilityAutomation/specs/aa070.ts"
       },
       "rulesProvenance": {
         "rulesetId": "rotom-table-reference-abilities-v1",
         "canonicalizationVersion": 1,
         "sourceDataSha256": "767c3e2ae45471c26ad97a07552c4b0417ed0e207827af8a59da3a73e81f4362"
       },
-      "capabilityTags": [],
+      "capabilityTags": [
+        "abilities.effective-projection",
+        "context.authoritative",
+        "effects.typed",
+        "events.move",
+        "events.typed",
+        "expressions.bounded",
+        "mode.static",
+        "passives.aggregation",
+        "planning.atomic",
+        "runtime.abilityspec-v1",
+        "stages.typed",
+        "trace.structured"
+      ],
       "suggestedCapabilityTags": [
         "mode.static"
       ],
-      "blockerCodes": [
-        "runtime.unimplemented"
-      ],
+      "blockerCodes": [],
       "limitations": [],
       "manualSteps": [],
-      "scenarioIds": [],
+      "scenarioIds": [
+        "aa070.fluffy-charge.reviewed"
+      ],
       "conformanceEvidence": {
-        "requirementTags": [],
-        "scenarios": [],
+        "requirementTags": [
+          "mechanic.stage",
+          "mode.static",
+          "recovery.retry",
+          "target.self"
+        ],
+        "scenarios": [
+          {
+            "scenarioId": "aa070.fluffy-charge.reviewed",
+            "evidenceClasses": [
+              "passive-applied",
+              "passive-suppressed",
+              "retry",
+              "self",
+              "stage-applied",
+              "stage-prevented"
+            ]
+          }
+        ],
         "notApplicable": []
       },
-      "reviewedAt": null,
+      "reviewedAt": "2026-07-22",
       "unsupportedInteractionIds": [],
       "rolloutCohortId": "aa-070"
     },
     {
       "canonicalId": "Flutter",
       "displayName": "Flutter",
-      "baseStatus": "blocked",
+      "baseStatus": "complete",
       "interactionStatus": "unassessed",
       "runtime": {
-        "kind": "unimplemented",
-        "version": null,
-        "definitionHash": null,
-        "sourceModule": null
+        "kind": "abilityspec-v1",
+        "version": 1,
+        "definitionHash": "bccc8a2ca7174968926d79e10fdca0a90c70672eee05150818761ed53bca32a2",
+        "sourceModule": "server/domain/abilityAutomation/specs/aa070.ts"
       },
       "rulesProvenance": {
         "rulesetId": "rotom-table-reference-abilities-v1",
         "canonicalizationVersion": 1,
         "sourceDataSha256": "767c3e2ae45471c26ad97a07552c4b0417ed0e207827af8a59da3a73e81f4362"
       },
-      "capabilityTags": [],
+      "capabilityTags": [
+        "abilities.effective-projection",
+        "actions.authoritative",
+        "context.authoritative",
+        "effects.typed",
+        "events.typed",
+        "expressions.bounded",
+        "geometry.authoritative",
+        "intent.typed",
+        "lifecycle.effects",
+        "mode.activated",
+        "planning.atomic",
+        "runtime.abilityspec-v1",
+        "stages.typed",
+        "targeting.authoritative",
+        "trace.structured"
+      ],
       "suggestedCapabilityTags": [
         "mode.activated"
       ],
-      "blockerCodes": [
-        "runtime.unimplemented"
-      ],
+      "blockerCodes": [],
       "limitations": [],
       "manualSteps": [],
-      "scenarioIds": [],
+      "scenarioIds": [
+        "aa070.flutter.reviewed"
+      ],
       "conformanceEvidence": {
-        "requirementTags": [],
-        "scenarios": [],
+        "requirementTags": [
+          "mechanic.lifecycle",
+          "mechanic.stage",
+          "mode.activated",
+          "recovery.retry",
+          "resource.multi",
+          "target.self"
+        ],
+        "scenarios": [
+          {
+            "scenarioId": "aa070.flutter.reviewed",
+            "evidenceClasses": [
+              "active-accepted",
+              "active-rejected",
+              "lifecycle-cleanup",
+              "lifecycle-trigger",
+              "multi-resource-conflict",
+              "retry",
+              "self",
+              "stage-applied",
+              "stage-prevented"
+            ]
+          }
+        ],
         "notApplicable": []
       },
-      "reviewedAt": null,
+      "reviewedAt": "2026-07-22",
       "unsupportedInteractionIds": [],
       "rolloutCohortId": "aa-070"
     },
     {
       "canonicalId": "Flying Fly Trap",
       "displayName": "Flying Fly Trap",
-      "baseStatus": "blocked",
+      "baseStatus": "complete",
       "interactionStatus": "unassessed",
       "runtime": {
-        "kind": "unimplemented",
-        "version": null,
-        "definitionHash": null,
-        "sourceModule": null
+        "kind": "abilityspec-v1",
+        "version": 1,
+        "definitionHash": "9f4f9844cc7c8a4e18ce898ccbb1f53544fabeac49a7b9978967766f36a0a541",
+        "sourceModule": "server/domain/abilityAutomation/specs/aa070.ts"
       },
       "rulesProvenance": {
         "rulesetId": "rotom-table-reference-abilities-v1",
         "canonicalizationVersion": 1,
         "sourceDataSha256": "767c3e2ae45471c26ad97a07552c4b0417ed0e207827af8a59da3a73e81f4362"
       },
-      "capabilityTags": [],
+      "capabilityTags": [
+        "abilities.effective-projection",
+        "context.authoritative",
+        "damage.modifiers",
+        "effects.typed",
+        "expressions.bounded",
+        "hp.typed",
+        "immunity.providers",
+        "mode.static",
+        "passives.aggregation",
+        "runtime.abilityspec-v1",
+        "trace.structured"
+      ],
       "suggestedCapabilityTags": [
         "mode.static"
       ],
-      "blockerCodes": [
-        "runtime.unimplemented"
-      ],
+      "blockerCodes": [],
       "limitations": [],
       "manualSteps": [],
-      "scenarioIds": [],
+      "scenarioIds": [
+        "aa070.flying-fly-trap.reviewed"
+      ],
       "conformanceEvidence": {
-        "requirementTags": [],
-        "scenarios": [],
+        "requirementTags": [
+          "branch.immunity",
+          "mechanic.damage",
+          "mode.static",
+          "recovery.retry",
+          "target.self"
+        ],
+        "scenarios": [
+          {
+            "scenarioId": "aa070.flying-fly-trap.reviewed",
+            "evidenceClasses": [
+              "crit",
+              "hit",
+              "immunity",
+              "miss",
+              "passive-applied",
+              "passive-suppressed",
+              "retry",
+              "self"
+            ]
+          }
+        ],
         "notApplicable": []
       },
-      "reviewedAt": null,
+      "reviewedAt": "2026-07-22",
       "unsupportedInteractionIds": [],
       "rolloutCohortId": "aa-070"
     },

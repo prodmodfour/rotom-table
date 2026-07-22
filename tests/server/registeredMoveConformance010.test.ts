@@ -180,7 +180,13 @@ const pokemonSheet = (options: {
   abilities: (options.abilities ?? []).map(name => ({ name })),
   capabilities: { overland: 6 },
   movelist: [...(options.moves ?? [])],
-  ...stageMap(options.initialStages, options.placementId),
+  ...stageMap(options.abilities?.includes('Flash Fire')
+    ? [
+        ...(options.initialStages ?? []),
+        { recipientId: options.placementId, key: 'atk', value: 6 },
+        { recipientId: options.placementId, key: 'satk', value: 6 },
+      ]
+    : options.initialStages, options.placementId),
   combat: { currentHp: 500, conditions: [...(options.conditions ?? [])] },
 })
 

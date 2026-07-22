@@ -9,6 +9,7 @@ import {
 } from '#shared/moveAutomation/ruleset'
 import { findMove } from '~~/data/ptuReference'
 import type { CharacterSheet } from '~/types/characterSheet'
+import { AA070_FLUTTER_NO_FLANK_CAPABILITY } from '#shared/abilityAutomation/aa070'
 import type { GridAnchor, SheetKind, SheetPlacement, TabletopMap } from '~/types/map'
 import type { MoveAutomationScript } from '~/types/moveAutomation'
 import type { SpawnedPokemon } from '~/types/pokemon'
@@ -808,10 +809,19 @@ export const buildAuthoritativeMoveRulesContext = (
     }).grounding,
     recordSheetRead: readSet.recordPlacement,
   })
+  const cannotBeFlankedPlacementIds = new Set((map.encounterState?.effects ?? []).flatMap(effect => (
+    effect.kind === 'capability'
+    && effect.payload.action === 'grant'
+    && effect.payload.capabilityId === AA070_FLUTTER_NO_FLANK_CAPABILITY
+    && (effect.duration.remaining === null || effect.duration.remaining > 0)
+      ? effect.affected.placementIds
+      : []
+  )))
   const flanking = createMoveAutomationFlankingResolver({
     placements,
     tokens,
     relationships,
+    cannotBeFlankedPlacementIds,
     recordSheetRead: readSet.recordPlacement,
   })
   const obscurationPlacements = tokens.map((token) => {

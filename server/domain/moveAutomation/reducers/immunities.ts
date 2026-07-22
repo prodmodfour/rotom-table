@@ -281,43 +281,54 @@ export const createStandardMoveCoreTokenEffectImmunityQueries = (
             terrain?.trace ?? [],
           )
     },
-    combatStage: ({ operation, stage, delta, recipient }) => decision(
-      moveImmunity(recipient)
-      ?? (
-        operation.payload.applyTypeImmunity
-        && operation.recipients.kind !== 'actor'
-          ? typedAttackImmunity(recipient, 'defending')
-          : null
-      )
-      ?? (
-        operation.payload.trigger?.kind === 'accuracy-roll'
-        && operation.recipients.kind !== 'actor'
-        && tokenHasShieldDust(recipient.token)
-          ? SHIELD_DUST_ABILITY_NAME
-          : null
-      )
-      ?? (
-        delta < 0
-        && options.context?.queries.abilities.has(recipient.placement.id, 'Clear Body')
-        && options.context.queries.relationships.resolve(
-          options.context.actor.placement.id,
-          recipient.placement.id,
-        ).relationship === 'enemy'
-          ? 'Clear Body'
-          : null
-      )
-      ?? (
-        stage === 'def'
-        && delta < 0
-        && options.context?.queries.abilities.has(recipient.placement.id, 'Big Pecks')
-          ? 'Big Pecks'
-          : null
-      )
-      ?? moveAutomationCombatStageBlockSource({
-        target: recipient.token,
-        key: stage,
-        delta,
-      }),
-    ),
+    combatStage: ({ operation, stage, delta, recipient }) => {
+      const ordinaryBlocker = moveImmunity(recipient)
+        ?? (
+          operation.payload.applyTypeImmunity
+          && operation.recipients.kind !== 'actor'
+            ? typedAttackImmunity(recipient, 'defending')
+            : null
+        )
+        ?? (
+          operation.payload.trigger?.kind === 'accuracy-roll'
+          && operation.recipients.kind !== 'actor'
+          && tokenHasShieldDust(recipient.token)
+            ? SHIELD_DUST_ABILITY_NAME
+            : null
+        )
+        ?? (
+          delta < 0
+          && options.context?.queries.abilities.has(recipient.placement.id, 'Clear Body')
+          && options.context.queries.relationships.resolve(
+            options.context.actor.placement.id,
+            recipient.placement.id,
+          ).relationship === 'enemy'
+            ? 'Clear Body'
+            : null
+        )
+        ?? (
+          stage === 'def'
+          && delta < 0
+          && options.context?.queries.abilities.has(recipient.placement.id, 'Big Pecks')
+            ? 'Big Pecks'
+            : null
+        )
+        ?? moveAutomationCombatStageBlockSource({
+          target: recipient.token,
+          key: stage,
+          delta,
+        })
+      if (ordinaryBlocker || delta >= 0) return decision(ordinaryBlocker)
+      const flowerVeilProviders = options.context?.queries.placements.all().flatMap((placement) => {
+        if (!options.context?.queries.abilities.has(placement.id, 'Flower Veil')) return []
+        const token = options.context.queries.tokens.get(placement.id)
+        return token && tokenGridDistance(token, recipient.token) <= 5 ? [placement.id] : []
+      }) ?? []
+      const protectedRecipient = flowerVeilProviders.includes(recipient.placement.id)
+        || recipient.token.defenderTypes.some(type => type.trim().toLowerCase() === 'grass')
+      return protectedRecipient && flowerVeilProviders.length > 0
+        ? decision('Flower Veil', flowerVeilProviders)
+        : decision(null)
+    },
   }
 }

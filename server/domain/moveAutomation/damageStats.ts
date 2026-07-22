@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto'
 import type {
   MoveComparedDamageClassSelection,
   MoveDamageEffectOperation,
@@ -60,6 +61,8 @@ import {
 } from '../abilityAutomation/mechanics/aa065StaticIntegration'
 import { aa066MoveDamageModifiers } from '../abilityAutomation/mechanics/aa066StaticIntegration'
 import { aa067MoveDamageModifiers } from '../abilityAutomation/mechanics/aa067StaticIntegration'
+import { encounterNumericModifierEffects } from './encounterNumericModifiers'
+import { aa070DamageModifiers } from '../abilityAutomation/mechanics/aa070StaticIntegration'
 import { aa069DamageModifiers } from '../abilityAutomation/mechanics/aa069StaticIntegration'
 
 export type MoveDamageStatSelectionErrorCode = 'non-numeric-stat-selection'
@@ -443,6 +446,40 @@ export const resolveMoveSpecDamageCalculation = (
   const authoritativeFieldEffects = options.context.queries.rooms.projectFieldEffects(
     authoritativeTerrainFieldEffects,
   )
+  const aa070Modifiers = aa070DamageModifiers({
+    context: options.context,
+    operation: options.operation,
+    recipient: options.recipient,
+    moveType: moveType.moveType,
+  })
+  const encounterDamageModifiers: readonly MoveDamageModifier[] = encounterNumericModifierEffects({
+    map: options.context.map,
+    placementId: actor.id,
+    attribute: 'damage',
+  }).flatMap((effect, index): readonly MoveDamageModifier[] => {
+    if (!['add', 'multiply', 'set'].includes(effect.payload.operation)) return []
+    const operation: 'add' | 'multiply' | 'multiply-floor' | 'set' =
+      effect.payload.operation === 'multiply' && effect.payload.rounding === 'floor'
+        ? 'multiply-floor'
+        : effect.payload.operation as 'add' | 'multiply' | 'set'
+    const effectHash = createHash('sha256').update(effect.id).digest('hex').slice(0, 24)
+    return [{
+      id: `encounter.damage.${effectHash}`,
+      stage: 'pre-type-modifiers',
+      priority: 60 + index,
+      source: { kind: 'encounter-effect', id: effect.id },
+      stackingGroup: `encounter-damage:${effectHash}`,
+      reasonCode: effect.tags.includes('flavorful-aroma')
+        ? 'ability.flavorful-aroma.damage-bonus'
+        : 'encounter.damage-modifier',
+      operation,
+      value: effect.payload.operation === 'multiply'
+        ? effect.payload.value ** Math.max(1, effect.stacks)
+        : effect.payload.operation === 'add'
+          ? effect.payload.value * Math.max(1, effect.stacks)
+          : effect.payload.value,
+    }]
+  })
   const helpingHand = activeHelpingHandBonusEffects({
     map: options.context.map,
     placementId: actor.id,
@@ -498,6 +535,8 @@ export const resolveMoveSpecDamageCalculation = (
         ...aa066Modifiers,
         ...aa067Modifiers,
         ...aa069Modifiers,
+        ...aa070Modifiers,
+        ...encounterDamageModifiers,
         ...helpingHandModifiers,
         ...weather.modifiers,
         ...terrain.modifiers,

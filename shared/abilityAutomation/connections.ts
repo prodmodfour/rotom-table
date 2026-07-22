@@ -12,6 +12,9 @@ const REVIEWED_CONNECTIONS = [
   ['Dust Cloud', 'Poison Powder'],
   ['Eggscellence', 'Barrage'],
   ['Enfeebling Lips', 'Lovely Kiss'],
+  ['Flame Tongue', 'Lick'],
+  ['Flavorful Aroma', 'Aromatic Mist'],
+  ['Fluffy Charge', 'Charge'],
 ] as const
 
 export const REVIEWED_ABILITY_CONNECTION_MOVES = Object.freeze(

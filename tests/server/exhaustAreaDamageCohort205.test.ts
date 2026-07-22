@@ -210,9 +210,15 @@ const pokemonSheet = (options: {
   abilities: (options.abilities ?? []).map(name => ({ name })),
   stats: {
     hp: { added: 500 },
-    atk: { added: 20, stage: 0 },
+    atk: {
+      added: 20,
+      stage: options.abilities?.includes('Flash Fire') ? 6 : 0,
+    },
     def: { added: 10, stage: 0 },
-    satk: { added: 20, stage: 0 },
+    satk: {
+      added: 20,
+      stage: options.abilities?.includes('Flash Fire') ? 6 : 0,
+    },
     sdef: { added: 10, stage: 0 },
     spd: { added: 10, stage: 0 },
   },

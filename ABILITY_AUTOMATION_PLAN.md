@@ -2,7 +2,7 @@
 
 `PLAN_STATUS: IN_PROGRESS`
 
-`CURRENT_TICKET: AA-070`
+`CURRENT_TICKET: AA-071`
 
 ## Goal
 
@@ -96,14 +96,14 @@ Ability automation should reuse MoveSpec v2 selectors, expressions, operations, 
 
 ## Progress snapshot
 
-- Plan tickets: **69 DONE / 110 total**
+- Plan tickets: **70 DONE / 110 total**
 - Canonical inventory: **483**
-- Semantically complete: **120**
+- Semantically complete: **132**
 - Assisted: **0**
-- Blocked/unimplemented: **363**
+- Blocked/unimplemented: **351**
 - Interaction status: **483 unassessed**
 - Legacy baseline: **45 abilities with 55 partial fragments; 438 with no reviewed legacy fragment**
-- Production runtime: **120 exact manifest-selected AbilitySpec v1 runtimes**; retained legacy paths remain explicit compatibility only
+- Production runtime: **132 exact manifest-selected AbilitySpec v1 runtimes**; retained legacy paths remain explicit compatibility only
 
 ## Tickets
 
@@ -259,7 +259,7 @@ Each cohort must review every named ability against canonical text, implement al
   - Dragon’s Maw; Dream Smoke; Dreamspinner; Drizzle; Drought; Drown Out; Dry Skin; Dust Cloud; Early Bird; Effect Spore; Eggscellence; Electric Surge
 - [x] **AA-069 — Electrodash through Filter** — `DONE`
   - Electrodash; Emergency Exit; Empower; Enduring Rage; Enfeebling Lips; Exploit; Fabulous Trim; Fade Away; Fairy Aura; Fashion Designer; Fiery Crash; Filter
-- [ ] **AA-070 — Flame Body through Flying Fly Trap** — `TODO`
+- [x] **AA-070 — Flame Body through Flying Fly Trap** — `DONE`
   - Flame Body; Flame Tongue; Flare Boost; Flash Fire; Flavorful Aroma; Flower Gift; Flower Power; Flower Veil; Fluffy; Fluffy Charge; Flutter; Flying Fly Trap
 - [ ] **AA-071 — Focus through Full Metal Body** — `TODO`
   - Focus; Forecast; Forest Lord; Forewarn; Fox Fire; Freezing Point; Friend Guard; Frighten; Frisk; Frostbite; Full Guard; Full Metal Body
