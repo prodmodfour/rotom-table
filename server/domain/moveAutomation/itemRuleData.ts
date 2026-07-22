@@ -149,6 +149,15 @@ const TYPE_DISPLAY_NAME = new Map(
   POKEMON_TYPES.map(type => [type.toLowerCase() as Lowercase<PokemonType>, type]),
 )
 
+/** Fashion Designer creates canonical-equivalent items under distinct crafted names. */
+const FASHION_DESIGNER_ITEM_ALIASES = new Map<string, string>([
+  ['lucky-leaf', 'Grass Type Booster'],
+  ['tasty-reeds', 'Bug Type Booster'],
+  ['dew-cup', 'Occa Berry'],
+  ['thorn-mantle', 'Coba Berry'],
+  ['chewy-cluster', 'Leftovers'],
+])
+
 const DRIVE_BY_SLUG = new Map<string, {
   readonly canonicalItemId: string
   readonly canonicalItemName: string
@@ -175,6 +184,21 @@ const referenceCategoriesFor = (itemName: string): readonly string[] => Object.f
 const typedFamilyIdentity = (
   slug: string,
 ): MoveAutomationItemRuleIdentity | null => {
+  const boosterMatch = slug.match(/^([a-z]+)-type-booster$/)
+  if (boosterMatch) {
+    const type = TYPE_BY_SLUG.get(boosterMatch[1]!)
+    if (type) {
+      return Object.freeze({
+        canonicalItemId: `${type}-type-booster`,
+        canonicalItemName: `${titleForType(type)} Type Booster`,
+        family: 'other' as const,
+        moveType: type,
+        naturalGiftDamageBase: null,
+        referenceCategories: referenceCategoriesFor(`${titleForType(type)} Type Booster`),
+      })
+    }
+  }
+
   const plateMatch = slug.match(/^([a-z]+)-(?:type-)?plate$/)
   if (plateMatch) {
     const type = TYPE_BY_SLUG.get(plateMatch[1]!)
@@ -239,6 +263,19 @@ export const resolveMoveAutomationItemRuleIdentity = (
   const trimmed = value.trim()
   if (!trimmed || trimmed.length > MOVE_ITEM_REFERENCE_LIMITS.canonicalItemIdChars) return null
   const slug = toSlug(trimmed)
+
+  const craftedAlias = FASHION_DESIGNER_ITEM_ALIASES.get(slug)
+  if (craftedAlias) return resolveMoveAutomationItemRuleIdentity(craftedAlias)
+  if (slug === 'decorative-twine') {
+    return Object.freeze({
+      canonicalItemId: 'decorative-twine',
+      canonicalItemName: 'Decorative Twine',
+      family: 'other' as const,
+      moveType: null,
+      naturalGiftDamageBase: null,
+      referenceCategories: Object.freeze(['Held Item']),
+    })
+  }
 
   const berryRule = BERRY_BY_SLUG.get(slug)
   if (berryRule) {

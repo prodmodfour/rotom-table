@@ -1,10 +1,13 @@
 import type { MoveSpecCostDeclaration } from '#shared/moveAutomation/spec'
+import { AA069_FADE_AWAY_SHIFT_MARK } from '#shared/abilityAutomation/aa069'
+import { parseEncounterState } from '#shared/moveAutomation/encounterState'
 import type { TabletopMap } from '~/types/map'
 import {
   planEncounterMoveResourceCosts,
   type PlannedMoveResourceObservation,
 } from '../moveAutomation/planMoveResources'
 import type { AuthoritativeMovementSuccess } from './resolveMovement'
+import { reduceAbilityOwnedStateCommand } from '../abilityAutomation/ownedState'
 
 /** Reviewed normal-movement policy; browser payloads cannot replace these costs. */
 const STANDARD_MOVEMENT_RESOURCE_COSTS: readonly MoveSpecCostDeclaration[] = Object.freeze([
@@ -75,12 +78,28 @@ export const planAuthoritativeMovementResources = (input: {
     throw new Error('Authoritative movement segment distance must be within the resolved path cost.')
   }
   const spendAction = input.spendAction ?? true
-  return planEncounterMoveResourceCosts({
+  const fadeAwayOwnedShift = spendAction && input.movement.policy.kind === 'standard'
+    ? input.map.encounterState?.abilityOwnedState?.entries.find(entry => (
+        entry.ownerPlacementId === input.movement.placementId
+        && entry.canonicalId === 'Fade Away'
+        && entry.payload.kind === 'mark'
+        && entry.payload.markId === AA069_FADE_AWAY_SHIFT_MARK
+      )) ?? null
+    : null
+  const fadeAwayEffectShift = spendAction && input.movement.policy.kind === 'standard'
+    ? input.map.encounterState?.effects.find(effect => (
+        effect.kind === 'capability'
+        && effect.payload.capabilityId === AA069_FADE_AWAY_SHIFT_MARK
+        && effect.affected.placementIds.includes(input.movement.placementId)
+      )) ?? null
+    : null
+  const fadeAwayShift = fadeAwayOwnedShift ?? fadeAwayEffectShift
+  const planned = planEncounterMoveResourceCosts({
     map: input.map,
     placementId: input.movement.placementId,
     canonicalMoveId: 'Shift Movement',
     moveKey: 'shift-movement',
-    range: 'Shift Action',
+    range: fadeAwayShift ? 'Fade Away Free Shift' : 'Shift Action',
     resolutionId: input.sourceOperationId,
     sourceOperationId: input.sourceOperationId,
     movement: {
@@ -88,10 +107,33 @@ export const planAuthoritativeMovementResources = (input: {
       budget: input.movement.capabilityLimit,
     },
     reviewedCosts: costsForMovement(input.movement, {
-      spendAction,
+      spendAction: spendAction && !fadeAwayShift,
       spendDistance: distance > 0,
     }),
     allowLegacyFallback: false,
-    markActedSinceEntry: spendAction && input.movement.policy.kind === 'standard',
+    markActedSinceEntry: spendAction && !fadeAwayShift && input.movement.policy.kind === 'standard',
+  })
+  if (!fadeAwayShift) return planned
+  const abilityOwnedState = fadeAwayOwnedShift
+    ? reduceAbilityOwnedStateCommand(planned.currentEncounterState.abilityOwnedState, {
+        operationId: `${input.sourceOperationId}:fade-away-shift`,
+        kind: 'remove',
+        stateId: fadeAwayOwnedShift.stateId,
+        expectedVersion: fadeAwayOwnedShift.version,
+      }).state
+    : planned.currentEncounterState.abilityOwnedState
+  const effects = fadeAwayEffectShift
+    ? planned.currentEncounterState.effects.filter(effect => effect.id !== fadeAwayEffectShift.id)
+    : planned.currentEncounterState.effects
+  const currentEncounterState = parseEncounterState({
+    ...planned.currentEncounterState,
+    abilityOwnedState,
+    effects,
+  })
+  return Object.freeze({
+    ...planned,
+    currentEncounterState,
+    nextMap: { ...planned.nextMap, encounterState: currentEncounterState },
+    changed: true,
   })
 }

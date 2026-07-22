@@ -41,6 +41,7 @@ export const MOVE_SHEET_STATE_FIELDS = [
   'inventory',
   'equipmentSlots',
   'digestion',
+  'abilities',
   /** Shared sheet field used by authoritative Daily ability resources. */
   'abilityUsage',
   /** Extended-Rest-bound Berry Storage digestion buffs. */

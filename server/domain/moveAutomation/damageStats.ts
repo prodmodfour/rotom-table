@@ -60,6 +60,7 @@ import {
 } from '../abilityAutomation/mechanics/aa065StaticIntegration'
 import { aa066MoveDamageModifiers } from '../abilityAutomation/mechanics/aa066StaticIntegration'
 import { aa067MoveDamageModifiers } from '../abilityAutomation/mechanics/aa067StaticIntegration'
+import { aa069DamageModifiers } from '../abilityAutomation/mechanics/aa069StaticIntegration'
 
 export type MoveDamageStatSelectionErrorCode = 'non-numeric-stat-selection'
 
@@ -385,6 +386,13 @@ export const resolveMoveSpecDamageCalculation = (
     recipient: options.recipient,
     moveTypeSources: moveType.passiveSources,
   })
+  const aa069Modifiers = aa069DamageModifiers({
+    context: options.context,
+    operation: options.operation,
+    actor,
+    recipient: options.recipient,
+    effectivenessMultiplier: moveType.finalMultiplier,
+  })
   const sideDamageResistance = options.context.queries.sideDamageResistance.resolve({
     damageOperationId: options.operation.id,
     targetPlacementId: options.recipient.id,
@@ -409,7 +417,7 @@ export const resolveMoveSpecDamageCalculation = (
     ?? (typeof options.operation.payload.damageBase === 'number'
       ? options.operation.payload.damageBase
         + (moveType.hasStab ? MOVE_CONTEXTUAL_DAMAGE_BASE_STAB_BONUS : 0)
-      : options.script.damageBase)
+      : options.script.damageBase ?? 0)
   const terrain = options.context.queries.terrain.damage({
     placementId: actor.id,
     targetPlacementId: options.recipient.id,
@@ -489,6 +497,7 @@ export const resolveMoveSpecDamageCalculation = (
         ...dampModifiers,
         ...aa066Modifiers,
         ...aa067Modifiers,
+        ...aa069Modifiers,
         ...helpingHandModifiers,
         ...weather.modifiers,
         ...terrain.modifiers,

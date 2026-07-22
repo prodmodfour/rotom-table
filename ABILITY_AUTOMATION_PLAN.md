@@ -2,7 +2,7 @@
 
 `PLAN_STATUS: IN_PROGRESS`
 
-`CURRENT_TICKET: AA-069`
+`CURRENT_TICKET: AA-070`
 
 ## Goal
 
@@ -96,14 +96,14 @@ Ability automation should reuse MoveSpec v2 selectors, expressions, operations, 
 
 ## Progress snapshot
 
-- Plan tickets: **68 DONE / 110 total**
+- Plan tickets: **69 DONE / 110 total**
 - Canonical inventory: **483**
-- Semantically complete: **108**
+- Semantically complete: **120**
 - Assisted: **0**
-- Blocked/unimplemented: **375**
+- Blocked/unimplemented: **363**
 - Interaction status: **483 unassessed**
 - Legacy baseline: **45 abilities with 55 partial fragments; 438 with no reviewed legacy fragment**
-- Production runtime: **108 exact manifest-selected AbilitySpec v1 runtimes**; retained legacy paths remain explicit compatibility only
+- Production runtime: **120 exact manifest-selected AbilitySpec v1 runtimes**; retained legacy paths remain explicit compatibility only
 
 ## Tickets
 
@@ -257,7 +257,7 @@ Each cohort must review every named ability against canonical text, implement al
   - Defy Death; Delayed Reaction; Delivery Bird; Desert Weather; Designer; Diamond Defense; Dig Away; Dire Spore; Discipline; Disguise; Dodge; Download
 - [x] **AA-068 — Dragon’s Maw through Electric Surge** — `DONE`
   - Dragon’s Maw; Dream Smoke; Dreamspinner; Drizzle; Drought; Drown Out; Dry Skin; Dust Cloud; Early Bird; Effect Spore; Eggscellence; Electric Surge
-- [ ] **AA-069 — Electrodash through Filter** — `IN_PROGRESS`
+- [x] **AA-069 — Electrodash through Filter** — `DONE`
   - Electrodash; Emergency Exit; Empower; Enduring Rage; Enfeebling Lips; Exploit; Fabulous Trim; Fade Away; Fairy Aura; Fashion Designer; Fiery Crash; Filter
 - [ ] **AA-070 — Flame Body through Flying Fly Trap** — `TODO`
   - Flame Body; Flame Tongue; Flare Boost; Flash Fire; Flavorful Aroma; Flower Gift; Flower Power; Flower Veil; Fluffy; Fluffy Charge; Flutter; Flying Fly Trap

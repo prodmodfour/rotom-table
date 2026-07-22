@@ -11,6 +11,7 @@ const REVIEWED_CONNECTIONS = [
   ['Danger Syrup', 'Sweet Scent'],
   ['Dust Cloud', 'Poison Powder'],
   ['Eggscellence', 'Barrage'],
+  ['Enfeebling Lips', 'Lovely Kiss'],
 ] as const
 
 export const REVIEWED_ABILITY_CONNECTION_MOVES = Object.freeze(

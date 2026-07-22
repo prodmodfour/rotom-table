@@ -38,6 +38,7 @@ export const LIVE_PLAY_MOVE_SHEET_CHANGED_FIELDS = [
   'digestion',
   'abilityUsage',
   'berryStorage',
+  'abilities',
 ] as const
 
 export type LivePlayMoveSheetChangedField =

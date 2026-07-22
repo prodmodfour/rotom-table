@@ -35,6 +35,7 @@ import {
   type SheetRevisionExpectation,
 } from '../storage/sheetRepository'
 import { aa068EarlyBirdSleepSaveBonus } from '../domain/abilityAutomation/mechanics/aa068StaticIntegration'
+import { aa069EnduringRagePreventsSave } from '../domain/abilityAutomation/mechanics/aa069StaticIntegration'
 import { logicalMapResourcePath } from '../utils/runtimeResourcePaths'
 import { UseCaseHttpError } from '../utils/useCaseErrors'
 import { commitLivePlayMapUpdate } from './livePlayMapPersistence'
@@ -167,6 +168,16 @@ const resolveContext = async (
     : null
   if (activePlacement && !storedSheet) {
     throw new StartTurnModalCommandUseCaseError(404, 'The active placement sheet no longer exists')
+  }
+  if (storedSheet && activePlacement && payload.action === 'resolveCondition'
+    && payload.resolution === 'roll'
+    && aa069EnduringRagePreventsSave({
+      map,
+      placement: activePlacement,
+      sheet: storedSheet.sheet as unknown as CharacterSheet | TrainerSheet,
+      condition: payload.condition,
+    })) {
+    throw new StartTurnModalCommandUseCaseError(409, 'Enduring Rage prevents Save Checks to cure Enraged.')
   }
   const conditionRollModifier = storedSheet && activePlacement && payload.action === 'resolveCondition'
     ? aa068EarlyBirdSleepSaveBonus({

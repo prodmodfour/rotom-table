@@ -236,18 +236,25 @@ const placementStateChanges = (options: {
   readonly resolution: AuthoritativeMoveResolution
 }): readonly MoveStateChangeInput[] => {
   const actorId = options.resolution.actorPlacementId
-  const previousActor = options.previousMap.placements.find(placement => placement.id === actorId)
-    ?? fail('actor-placement-missing', `Actor placement ${actorId} was not found.`)
+  if (!options.previousMap.placements.some(placement => placement.id === actorId)) {
+    fail('actor-placement-missing', `Actor placement ${actorId} was not found.`)
+  }
   const switchTransition = options.resolution.switchTransition
   if (switchTransition) {
-    const currentActor = options.nextMap.placements.find(placement => placement.id === actorId)
+    const recalledPlacementId = switchTransition.recalledPlacementId
+    const previousRecalled = options.previousMap.placements.find(
+      placement => placement.id === recalledPlacementId,
+    ) ?? fail('state-change-conflict', `Recalled placement ${recalledPlacementId} disappeared.`)
+    const currentRecalled = options.nextMap.placements.find(
+      placement => placement.id === recalledPlacementId,
+    )
     const sentOut = switchTransition.kind === 'recall-and-send-out'
       ? options.nextMap.placements.find(
           placement => placement.id === switchTransition.sentOutPlacement.id,
         )
       : null
     if (
-      currentActor
+      currentRecalled
       || (switchTransition.kind === 'recall-and-send-out' && !sentOut)
     ) {
       return fail(
@@ -273,9 +280,9 @@ const placementStateChanges = (options: {
         scope: {
           kind: 'placement',
           mapSlug: options.previousMap.slug,
-          placementId: actorId,
+          placementId: recalledPlacementId,
         },
-        previous: deepCloneJson(previousActor),
+        previous: deepCloneJson(previousRecalled),
         current: null,
       },
       ...(sentOut
@@ -683,6 +690,8 @@ const applyTriggeredAbilityPayments = (input: {
     ['ability.dream-smoke.optional-sleep', 'Dream Smoke'],
     ['ability.drown-out.optional-cancel', 'Drown Out'],
     ['ability.effect-spore.optional-condition', 'Effect Spore'],
+    ['ability.emergency-exit.optional-switch', 'Emergency Exit'],
+    ['ability.fade-away.optional-avoid', 'Fade Away'],
   ])
   const noFrequency = new Set([
     'Anger Point', 'Aqua Boost', 'Beast Boost', 'Celebrate', 'Chilling Neigh',
@@ -721,13 +730,19 @@ const applyTriggeredAbilityPayments = (input: {
         ? (['swift'] as const)
         : canonicalId === 'Dig Away'
           ? (['free', 'standard'] as const)
-          : (['free'] as const)
+          : canonicalId === 'Fade Away'
+            ? (['standard'] as const)
+            : (['free'] as const)
     const action = planEncounterMoveResourceCosts({
       map,
       placementId: ownerId,
       canonicalMoveId: `ability:${canonicalId}`,
       moveKey: `ability:${canonicalId.toLowerCase().replaceAll(' ', '-')}`,
-      range: canonicalId === 'Celebrate' || canonicalId === 'Cruelty' ? 'Swift Action' : 'Free Action',
+      range: canonicalId === 'Celebrate' || canonicalId === 'Cruelty'
+        ? 'Swift Action'
+        : canonicalId === 'Fade Away'
+          ? 'Standard Action'
+          : 'Free Action',
       resolutionId: input.resolutionId,
       sourceOperationId: `${selection.operationId}:action`,
       movement: null,

@@ -898,11 +898,17 @@ export const validateMoveSpecOperationSequence = (
         'a durable switch request must execute in the movement phase.',
       )
     }
-    if (operation.recipients.kind !== 'actor') {
+    const reviewedEmergencyExitTargetSwitch = operation.reasonCode === 'ability.emergency-exit.switch'
+      && operation.recipients.kind === 'response-owner'
+      && operation.source.kind === 'operation'
+      && indexed.some(entry => entry.operation.id === operation.source.id
+        && entry.operation.kind === 'reaction-request'
+        && entry.operation.reasonCode === 'ability.emergency-exit.optional-switch')
+    if (operation.recipients.kind !== 'actor' && !reviewedEmergencyExitTargetSwitch) {
       fail(
         'invalid-definition',
         `${path}.recipients`,
-        'a durable switch request must belong to the authoritative actor.',
+        'a durable switch request must belong to the authoritative actor or reviewed Emergency Exit owner.',
       )
     }
   }

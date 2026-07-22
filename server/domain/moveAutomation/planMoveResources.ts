@@ -1,3 +1,5 @@
+import { createHash } from 'node:crypto'
+import { AA069_EMPOWER_MOVE_MARK_PREFIX } from '#shared/abilityAutomation/aa069'
 import {
   MoveResourceCostValidationError,
   validateMoveResourceCostCombination,
@@ -19,6 +21,7 @@ import {
 } from '#shared/moveAutomation/encounterState'
 import type { TabletopMap } from '~/types/map'
 import { mapHasAa061AquaBulletPrepaidMove } from '../abilityAutomation/mechanics/aa061MoveIntegration'
+import { reduceAbilityOwnedStateCommand } from '../abilityAutomation/ownedState'
 import type { AuthoritativeMoveResolution } from '../resolveAuthoritativeMove'
 import { deepCloneJson, sameJsonValue } from '~/utils/serialization'
 import {
@@ -321,7 +324,7 @@ export const planEncounterMoveResourceCosts = (
   const allowLegacyFallback = input.allowLegacyFallback ?? true
   const movementDistance = input.movement?.distance ?? 0
   const movementBudget = input.movement?.budget ?? null
-  const declarations = useReviewed
+  const baseDeclarations = useReviewed
     ? reviewed
     : allowLegacyFallback
       ? adaptLegacyMoveResourceCosts({
@@ -334,6 +337,22 @@ export const planEncounterMoveResourceCosts = (
           ),
         })
       : []
+  const empowerMarkId = `${AA069_EMPOWER_MOVE_MARK_PREFIX}${createHash('sha256').update(input.canonicalMoveId).digest('hex').slice(0, 24)}`
+  const empowerMark = (previousEncounterState.abilityOwnedState?.entries ?? []).find(entry => (
+    entry.ownerPlacementId === input.placementId
+    && entry.canonicalId === 'Empower'
+    && entry.payload.kind === 'mark'
+    && entry.payload.markId === empowerMarkId
+  )) ?? null
+  const declarations = empowerMark
+    ? baseDeclarations.map(declaration => declaration.cost.kind === 'action-resource'
+      ? {
+          ...declaration,
+          id: 'ability.empower.free-action',
+          cost: { kind: 'action-resource' as const, resource: 'free' as const, amount: 1 as const },
+        }
+      : declaration)
+    : baseDeclarations
   const selectedCosts = moveResourceCostsInPhaseWindow(declarations, input)
   const compatibilityOncePerTurnFlagId = !useReviewed
     && allowLegacyFallback
@@ -360,9 +379,19 @@ export const planEncounterMoveResourceCosts = (
     compatibilityOncePerTurnFlagId,
     markActedSinceEntry: input.markActedSinceEntry,
   })
+  let abilityOwnedState = previousEncounterState.abilityOwnedState
+  if (empowerMark && planned.costs.some(cost => cost.id === 'ability.empower.free-action')) {
+    abilityOwnedState = reduceAbilityOwnedStateCommand(abilityOwnedState, {
+      operationId: `${input.sourceOperationId}:empower-free-action`,
+      kind: 'remove',
+      stateId: empowerMark.stateId,
+      expectedVersion: empowerMark.version,
+    }).state
+  }
   const currentEncounterState = parseEncounterState({
     ...previousEncounterState,
     turnResources: planned.currentResources,
+    abilityOwnedState,
   })
   const changed = !sameJsonValue(previousEncounterState, currentEncounterState)
 

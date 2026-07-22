@@ -31,6 +31,31 @@
       ]
     },
     {
+      "canonicalId": "Fabulous Trim",
+      "definitionVersion": 1,
+      "sourceField": "effect",
+      "sourcePhrase": "Furfrou’s Ability depends on its current hairstyle",
+      "parameters": [
+        {
+          "id": "trim",
+          "acquisition": "sheet-choice",
+          "minSelections": 0,
+          "maxSelections": 1,
+          "optionIds": [
+            "star",
+            "diamond",
+            "heart",
+            "pharaoh",
+            "kabuki",
+            "la-reine",
+            "matron",
+            "dandy",
+            "debutante"
+          ]
+        }
+      ]
+    },
+    {
       "canonicalId": "Serpent’s Mark",
       "definitionVersion": 1,
       "sourceField": "effect",

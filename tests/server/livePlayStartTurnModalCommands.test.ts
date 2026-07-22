@@ -55,15 +55,27 @@ const dismissCommand = (
   ...overrides,
 })
 
-const earlyBirdSheet = (enabled: boolean): CharacterSheet => ({
+const conditionAbilitySheet = (
+  hasEarlyBird: boolean,
+  hasEnduringRage = false,
+): CharacterSheet => ({
   slug: 'pikachu', nickname: 'Pikachu', species: 'Pikachu', level: 20, revision: 3, types: ['Electric'],
-  abilities: enabled ? [{
-    name: 'Early Bird',
-    automation: {
-      schemaVersion: 1, instanceId: 'base:early-bird', canonicalId: 'Early Bird',
-      definitionVersion: null, selections: [],
-    },
-  }] : [],
+  abilities: [
+    ...(hasEarlyBird ? [{
+      name: 'Early Bird',
+      automation: {
+        schemaVersion: 1 as const, instanceId: 'base:early-bird', canonicalId: 'Early Bird',
+        definitionVersion: null, selections: [],
+      },
+    }] : []),
+    ...(hasEnduringRage ? [{
+      name: 'Enduring Rage',
+      automation: {
+        schemaVersion: 1 as const, instanceId: 'base:enduring-rage', canonicalId: 'Enduring Rage',
+        definitionVersion: null, selections: [],
+      },
+    }] : []),
+  ],
   movelist: [],
   stats: {
     hp: { added: 20 }, atk: { added: 20 }, def: { added: 20 },
@@ -72,7 +84,11 @@ const earlyBirdSheet = (enabled: boolean): CharacterSheet => ({
   combat: { currentHp: 100, conditions: ['Sleep'] },
 })
 
-const createHarness = (initialMap: TabletopMap = baseMap(), hasEarlyBird = false) => {
+const createHarness = (
+  initialMap: TabletopMap = baseMap(),
+  hasEarlyBird = false,
+  hasEnduringRage = false,
+) => {
   let storedMap = initialMap
   const published: unknown[] = []
   const executor = createAuthoritativeLivePlayCommandExecutor({
@@ -96,7 +112,7 @@ const createHarness = (initialMap: TabletopMap = baseMap(), hasEarlyBird = false
     getByRef: vi.fn((kind: string, slug: string) => kind === 'pokemon' && slug === 'pikachu'
       ? {
           kind: 'pokemon' as const, slug: 'pikachu',
-          sheet: earlyBirdSheet(hasEarlyBird) as unknown as Record<string, unknown>,
+          sheet: conditionAbilitySheet(hasEarlyBird, hasEnduringRage) as unknown as Record<string, unknown>,
           revision: sheetRevision, updatedAt: 100,
         }
       : null),
@@ -242,6 +258,22 @@ describe('live-play start-of-turn modal commands', () => {
     expect(harness.deps.sheetRepository.assertRevisions).toHaveBeenCalledWith([{
       kind: 'pokemon', slug: 'pikachu', revision: 3,
     }])
+  })
+
+  it('rejects Enraged Save rolls while effective Enduring Rage is active', async () => {
+    const harness = createHarness(baseMap(), false, true)
+
+    const response = await execute(harness, dismissCommand({
+      opId: 'op_turnmodal_enduring_rage',
+      payload: {
+        action: 'resolveCondition', activeId: 'token-pikachu', round: 2,
+        condition: 'Enraged', occurrence: 0, resolution: 'roll',
+      },
+    }))
+
+    expect(response.result).toMatchObject({ ok: false, reason: 'conflict' })
+    expect(harness.deps.rollD20).not.toHaveBeenCalled()
+    expect(readStartTurnModalState(harness.storedMap.metadata).conditionResolutions).toHaveLength(0)
   })
 
   it('rejects player dismissals', async () => {

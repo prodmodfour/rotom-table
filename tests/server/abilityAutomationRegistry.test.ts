@@ -230,7 +230,7 @@ describe('ability automation production runtime registry', () => {
   })
 
   it('ships only exact evidence-backed production selections', () => {
-    expect(ABILITY_AUTOMATION_RUNTIME_REGISTRY.size).toBe(108)
+    expect(ABILITY_AUTOMATION_RUNTIME_REGISTRY.size).toBe(120)
     expect(ABILITY_AUTOMATION_RUNTIME_REGISTRY.entries().map(runtime => runtime.canonicalId))
       .toEqual([
         'Abominable', 'Absorb Force', 'Accelerate', 'Adaptability', 'Aerilate', 'Aftermath',
@@ -251,7 +251,9 @@ describe('ability automation production runtime registry', () => {
         'Diamond Defense', 'Dig Away', 'Dire Spore', 'Discipline', 'Disguise', 'Dodge',
         'Download', 'Dragon’s Maw', 'Dream Smoke', 'Dreamspinner', 'Drizzle', 'Drought',
         'Drown Out', 'Dry Skin', 'Dust Cloud', 'Early Bird', 'Effect Spore', 'Eggscellence',
-        'Electric Surge',
+        'Electric Surge', 'Electrodash', 'Emergency Exit', 'Empower', 'Enduring Rage',
+        'Enfeebling Lips', 'Exploit', 'Fabulous Trim', 'Fade Away', 'Fairy Aura',
+        'Fashion Designer', 'Fiery Crash', 'Filter',
       ])
     expect(registeredAbilityAutomationRuntimeFor('Adaptability')).toMatchObject({
       kind: 'abilityspec-v1', version: 1,

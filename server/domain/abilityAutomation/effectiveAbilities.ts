@@ -14,10 +14,12 @@ import {
   type EncounterTransformationEffect,
 } from '#shared/moveAutomation/encounterEffects'
 import type { EncounterCreatureAbilityOverlayPayload } from '#shared/moveAutomation/creatureRuleOverlayPayloads'
-import type {
-  AbilityInstanceData,
-  AbilityInstanceParameterStatus,
+import {
+  abilityInstanceParameterValues,
+  type AbilityInstanceData,
+  type AbilityInstanceParameterStatus,
 } from '#shared/abilityAutomation/parameters'
+import { fabulousTrimGrantedAbility } from '#shared/abilityAutomation/fabulousTrim'
 import {
   createEmptyAbilityTransformationState,
   parseAbilityTransformationState,
@@ -213,6 +215,25 @@ export const projectAuthoritativeEffectiveAbilities = (
       sourcePlacementId: input.target.placementId,
     })]
   })
+  for (const ability of base) {
+    if (ability.canonicalId !== 'Fabulous Trim' || ability.parameterStatus !== 'ready'
+      || !ability.parameterData) continue
+    const trimId = abilityInstanceParameterValues(ability.parameterData, 'trim')[0]
+    const grantedCanonicalId = trimId ? fabulousTrimGrantedAbility(trimId) : null
+    if (!grantedCanonicalId) continue
+    projected.push(instance({
+      instanceId: `${ability.instanceId}:trim:${trimId}`,
+      canonicalId: grantedCanonicalId,
+      sourceKind: 'granted',
+      sourcePlacementId: input.target.placementId,
+      parameterStatus: abilityRequiresInstanceParameters(grantedCanonicalId)
+        ? 'missing-required-data'
+        : 'not-parameterized',
+      parameterData: null,
+    }))
+  }
+  assertProjectionBound(projected)
+
   const transformation = activeTransformation(effects, input.target.placementId)
   if (transformation) {
     const names = canonicalNames(transformation.payload.abilityNames)

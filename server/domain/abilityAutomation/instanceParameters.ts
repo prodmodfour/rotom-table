@@ -2,6 +2,7 @@ import canonicalAbilitiesJson from '../../../data/reference/abilities.json'
 import parameterDefinitionsJson from '../../../data/ability-automation/parameter-definitions.json'
 import {
   abilityParameterDefinitionFor,
+  parseAbilityInstanceData,
   parseAbilityParameterDefinitionCatalog,
   resolveAbilityInstanceData,
   type AbilityInstanceData,
@@ -78,11 +79,31 @@ export const resolveSheetAbilityInstances = (
   const result: ResolvedSheetAbilityInstance[] = []
   for (const [index, value] of (values ?? []).entries()) {
     if (!Object.prototype.hasOwnProperty.call(canonicalAbilitiesJson, value.name)) continue
-    const resolved = resolveAbilityInstanceData(
-      value.automation,
-      value.name,
+    const definition = abilityParameterDefinitionFor(
       RUNTIME_ABILITY_PARAMETER_DEFINITIONS,
+      value.name,
     )
+    const optionalDefault = value.automation === undefined
+      && definition
+      && definition.parameters.every(parameter => parameter.minSelections === 0)
+      ? parseAbilityInstanceData({
+          schemaVersion: 1,
+          instanceId: `legacy:${index}`,
+          canonicalId: value.name,
+          definitionVersion: definition.definitionVersion,
+          selections: definition.parameters.map(parameter => ({
+            parameterId: parameter.id,
+            optionIds: [],
+          })),
+        }, value.name, RUNTIME_ABILITY_PARAMETER_DEFINITIONS)
+      : null
+    const resolved = optionalDefault
+      ? { status: 'ready' as const, data: optionalDefault }
+      : resolveAbilityInstanceData(
+          value.automation,
+          value.name,
+          RUNTIME_ABILITY_PARAMETER_DEFINITIONS,
+        )
     result.push(Object.freeze({
       canonicalId: value.name,
       instanceId: resolved.data?.instanceId ?? `legacy:${index}`,

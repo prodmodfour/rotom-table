@@ -8,6 +8,7 @@ import {
   type AbilityDeclarationOption,
 } from '#shared/abilityAutomation/declarationIntent'
 import { POKEMON_TYPE_IDS } from '#shared/pokemonTypes'
+import { reviewedAbilityConnectionMoveNames } from '#shared/abilityAutomation/connections'
 import {
   createEmptyAbilityDailyUsageLedger,
   parseAbilityDailyUsageLedger,
@@ -26,11 +27,13 @@ import type { CharacterSheet } from '~/types/characterSheet'
 import type { TrainerSheet } from '~/types/trainerSheet'
 import type { AbilitySpecTargetingKind } from '#shared/abilityAutomation/spec'
 import type { MoveSelector } from '#shared/moveAutomation/selectors'
+import { findMove } from '~~/data/ptuReference'
 import {
   actorCanControlMapPlacement,
   playerProfileLinkedTrainerSheetsForTokenControl,
 } from '../policies/playerProfileTokenControlPolicy'
 import { buildAuthoritativeAbilityContext } from '../domain/abilityAutomation/context'
+import { MOVE_AUTOMATION_RUNTIME_REGISTRY } from '../domain/moveAutomation/registry'
 import {
   createAbilityDeclarationOffer,
   projectAbilityDeclarationOfferForClient,
@@ -180,6 +183,19 @@ const declarationsFor = (
           const eligible = new Set(['Bone Club', 'Bone Rush', 'Bonemerang'])
           moveNames.splice(0, moveNames.length, ...moveNames.filter(moveName => eligible.has(moveName)))
         }
+        if (context.runtime.canonicalId === 'Empower' && modeId === 'activate') {
+          moveNames.push(...reviewedAbilityConnectionMoveNames(
+            context.actor.effectiveAbilities.filter(ability => ability.effective)
+              .map(ability => ability.canonicalId),
+            moveNames,
+          ))
+          moveNames.splice(0, moveNames.length, ...moveNames.filter(moveName => {
+            const runtime = MOVE_AUTOMATION_RUNTIME_REGISTRY.resolve(moveName)
+            return findMove(moveName)?.damage_class === 'Status'
+              && runtime?.kind === 'movespec-v2'
+              && runtime.definition.spec.targeting.kind === 'self'
+          }))
+        }
         options = moveNames.map((canonicalMoveId, index) => option(
           declaration.id, index, declaration.kind, { kind: 'move', canonicalMoveId },
         ))
@@ -230,28 +246,36 @@ const declarationsFor = (
                 : `${reference.owner.kind}:${reference.owner.slug}`,
             }))
       else if (declaration.kind === 'branch') {
-        if (context.runtime.canonicalId !== 'Defy Death' || modeId !== 'activate') {
-          fail(422, `Ability branch declaration ${declaration.id} requires a reviewed declaration adapter.`)
+        if (context.runtime.canonicalId === 'Fabulous Trim' && modeId === 'style') {
+          options = ['star', 'diamond', 'heart', 'pharaoh', 'kabuki', 'la-reine', 'matron', 'dandy', 'debutante']
+            .map((branchId, index) => option(declaration.id, index, declaration.kind, { kind: 'branch', branchId }))
         }
-        const ability = context.actor.effectiveAbilities.find(candidate => (
-          candidate.effective
-          && candidate.canonicalId === 'Defy Death'
-          && candidate.instanceId === abilityInstanceId
-        )) ?? fail(409, 'Defy Death is no longer effective.')
-        const ledger = parseAbilityDailyUsageLedger(
-          context.actor.sheet.sheet.abilityUsage ?? createEmptyAbilityDailyUsageLedger(),
-        )
-        const lastingAbilityId = ability.sourceKind === 'base' ? 'base:Defy Death' : ability.instanceId
-        const usage = ledger.entries.find(entry => (
-          entry.ownerId === `sheet:${context.actor.sheet.kind}:${context.actor.sheet.slug}`
-          && entry.abilityInstanceId === lastingAbilityId
-          && entry.canonicalId === 'Defy Death'
-          && entry.clauseId === 'injuries'
-        ))
-        const maximum = Math.min(3, context.actor.token.injuries ?? 0, Math.max(0, 3 - (usage?.spent ?? 0)))
-        options = Array.from({ length: maximum }, (_, index) => option(
-          declaration.id, index, declaration.kind, { kind: 'branch', branchId: `remove-${index + 1}` },
-        ))
+        else if (context.runtime.canonicalId === 'Fashion Designer' && modeId === 'activate') {
+          options = ['lucky-leaf', 'tasty-reeds', 'dew-cup', 'thorn-mantle', 'chewy-cluster', 'decorative-twine']
+            .map((branchId, index) => option(declaration.id, index, declaration.kind, { kind: 'branch', branchId }))
+        }
+        else if (context.runtime.canonicalId === 'Defy Death' && modeId === 'activate') {
+          const ability = context.actor.effectiveAbilities.find(candidate => (
+            candidate.effective
+            && candidate.canonicalId === 'Defy Death'
+            && candidate.instanceId === abilityInstanceId
+          )) ?? fail(409, 'Defy Death is no longer effective.')
+          const ledger = parseAbilityDailyUsageLedger(
+            context.actor.sheet.sheet.abilityUsage ?? createEmptyAbilityDailyUsageLedger(),
+          )
+          const lastingAbilityId = ability.sourceKind === 'base' ? 'base:Defy Death' : ability.instanceId
+          const usage = ledger.entries.find(entry => (
+            entry.ownerId === `sheet:${context.actor.sheet.kind}:${context.actor.sheet.slug}`
+            && entry.abilityInstanceId === lastingAbilityId
+            && entry.canonicalId === 'Defy Death'
+            && entry.clauseId === 'injuries'
+          ))
+          const maximum = Math.min(3, context.actor.token.injuries ?? 0, Math.max(0, 3 - (usage?.spent ?? 0)))
+          options = Array.from({ length: maximum }, (_, index) => option(
+            declaration.id, index, declaration.kind, { kind: 'branch', branchId: `remove-${index + 1}` },
+          ))
+        }
+        else fail(422, `Ability branch declaration ${declaration.id} requires a reviewed declaration adapter.`)
       }
       else if (declaration.kind === 'cell') {
         const cells = []

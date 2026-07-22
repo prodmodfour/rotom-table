@@ -94,6 +94,7 @@ import { aa065MoveOverlayOperations } from '../abilityAutomation/mechanics/aa065
 import { aa066MoveOverlayOperations } from '../abilityAutomation/mechanics/aa066MoveIntegration'
 import { aa067MoveOverlayOperations } from '../abilityAutomation/mechanics/aa067MoveIntegration'
 import { aa068MoveOverlayOperations } from '../abilityAutomation/mechanics/aa068MoveIntegration'
+import { aa069MoveOverlayOperations } from '../abilityAutomation/mechanics/aa069MoveIntegration'
 import {
   AA068_DUST_CLOUD_TARGETING_OVERRIDE,
   aa068DrySkinCancelsRecipientEffect,
@@ -952,6 +953,7 @@ const executeReviewedMoveSpec = (
     ...aa066MoveOverlayOperations(overlayInput),
     ...aa067MoveOverlayOperations(overlayInput),
     ...aa068MoveOverlayOperations(overlayInput),
+    ...aa069MoveOverlayOperations(overlayInput),
   ]
   const boneLordLine = script.moveName === 'Bonemerang'
     && aa062BoneLordEmpowersMove(options.context, 'Bonemerang')

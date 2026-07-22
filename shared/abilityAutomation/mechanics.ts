@@ -53,6 +53,12 @@ export const AA068_ABILITY_MECHANIC_IDS = [
   'aa068.early-bird', 'aa068.effect-spore', 'aa068.eggscellence',
   'aa068.electric-surge',
 ] as const
+export const AA069_ABILITY_MECHANIC_IDS = [
+  'aa069.electrodash', 'aa069.emergency-exit', 'aa069.empower',
+  'aa069.enduring-rage', 'aa069.enfeebling-lips', 'aa069.exploit',
+  'aa069.fabulous-trim', 'aa069.fade-away', 'aa069.fairy-aura',
+  'aa069.fashion-designer', 'aa069.fiery-crash', 'aa069.filter',
+] as const
 export type Aa060AbilityMechanicId = (typeof AA060_ABILITY_MECHANIC_IDS)[number]
 export type AbilityMechanicId = Aa060AbilityMechanicId
   | (typeof AA061_ABILITY_MECHANIC_IDS)[number]
@@ -63,6 +69,7 @@ export type AbilityMechanicId = Aa060AbilityMechanicId
   | (typeof AA066_ABILITY_MECHANIC_IDS)[number]
   | (typeof AA067_ABILITY_MECHANIC_IDS)[number]
   | (typeof AA068_ABILITY_MECHANIC_IDS)[number]
+  | (typeof AA069_ABILITY_MECHANIC_IDS)[number]
 export interface AbilityMechanicOperation extends AbilitySpecJsonObject {
   readonly kind: typeof ABILITY_MECHANIC_OPERATION_KIND
   readonly id: string
@@ -189,13 +196,25 @@ const CONFIG_FIELDS: Readonly<Record<AbilityMechanicId, readonly string[]>> = {
   'aa068.effect-spore': ['action', 'frequency', 'trigger', 'requiredRange', 'rollSides', 'conditions'],
   'aa068.eggscellence': ['connectionMoveId', 'affectedMoveIds', 'grantStab', 'requiredUserType', 'accuracyThreshold', 'effectivenessSteps'],
   'aa068.electric-surge': ['action', 'frequency', 'terrain', 'durationRounds'],
+  'aa069.electrodash': ['action', 'frequency', 'sprintAction', 'movementMultiplier', 'duration'],
+  'aa069.emergency-exit': ['action', 'frequency', 'trigger', 'recall', 'replacement', 'initiativePolicy'],
+  'aa069.empower': ['action', 'frequency', 'grantedMoveAction', 'moveFilter', 'duration'],
+  'aa069.enduring-rage': ['condition', 'preventCureRolls', 'damageReduction'],
+  'aa069.enfeebling-lips': ['connectionMoveId', 'affectedMoveId', 'statChoice', 'stageDelta', 'trigger'],
+  'aa069.exploit': ['trigger', 'damageRollBonus'],
+  'aa069.fabulous-trim': ['action', 'persistence', 'parameterId', 'trimIds', 'grantedAbilityIds'],
+  'aa069.fade-away': ['branch', 'action', 'frequency', 'invisibleUntil', 'immediateShift', 'trigger', 'avoidDamageAndEffects'],
+  'aa069.fairy-aura': ['affectedRelationships', 'moveType', 'damageBaseBonus'],
+  'aa069.fashion-designer': ['action', 'frequency', 'craftQuantity', 'itemIds'],
+  'aa069.fiery-crash': ['keyword', 'choices', 'fireBurnThreshold', 'existingBurnRangeBonus'],
+  'aa069.filter': ['trigger', 'damageReduction'],
 }
 const MECHANIC_SET = new Set<string>([
   ...AA060_ABILITY_MECHANIC_IDS, ...AA061_ABILITY_MECHANIC_IDS,
   ...AA062_ABILITY_MECHANIC_IDS, ...AA063_ABILITY_MECHANIC_IDS,
   ...AA064_ABILITY_MECHANIC_IDS, ...AA065_ABILITY_MECHANIC_IDS,
   ...AA066_ABILITY_MECHANIC_IDS, ...AA067_ABILITY_MECHANIC_IDS,
-  ...AA068_ABILITY_MECHANIC_IDS,
+  ...AA068_ABILITY_MECHANIC_IDS, ...AA069_ABILITY_MECHANIC_IDS,
 ])
 const ID = /^[a-z0-9]+(?:[._:/-][a-z0-9]+)*$/
 const fail = (code: AbilityMechanicValidationError['code'], path: string, detail: string): never => { throw new AbilityMechanicValidationError(code, path, detail) }
@@ -819,6 +838,59 @@ const parseConfig = (mechanicId: AbilityMechanicId, value: unknown, path: string
     case 'aa068.electric-surge': return {
       action: oneOf(config.action, ['swift'], `${path}.action`), frequency: oneOf(config.frequency, ['scene-x3'], `${path}.frequency`),
       terrain: oneOf(config.terrain, ['electric'], `${path}.terrain`), durationRounds: integer(config.durationRounds, `${path}.durationRounds`, 1, 1),
+    }
+    case 'aa069.electrodash': return {
+      action: oneOf(config.action, ['swift'], `${path}.action`), frequency: oneOf(config.frequency, ['scene-x2'], `${path}.frequency`),
+      sprintAction: oneOf(config.sprintAction, ['free'], `${path}.sprintAction`), movementMultiplier: exactNumber(config.movementMultiplier, 1.5, `${path}.movementMultiplier`),
+      duration: oneOf(config.duration, ['turn'], `${path}.duration`),
+    }
+    case 'aa069.emergency-exit': return {
+      action: oneOf(config.action, ['free'], `${path}.action`), frequency: oneOf(config.frequency, ['scene'], `${path}.frequency`),
+      trigger: oneOf(config.trigger, ['drops-below-half-hp'], `${path}.trigger`), recall: bool(config.recall, `${path}.recall`),
+      replacement: oneOf(config.replacement, ['trainer-choice'], `${path}.replacement`), initiativePolicy: oneOf(config.initiativePolicy, ['inherit-if-unacted'], `${path}.initiativePolicy`),
+    }
+    case 'aa069.empower': return {
+      action: oneOf(config.action, ['swift'], `${path}.action`), frequency: oneOf(config.frequency, ['scene'], `${path}.frequency`),
+      grantedMoveAction: oneOf(config.grantedMoveAction, ['free'], `${path}.grantedMoveAction`), moveFilter: oneOf(config.moveFilter, ['self-targeting-status'], `${path}.moveFilter`),
+      duration: oneOf(config.duration, ['turn-or-use'], `${path}.duration`),
+    }
+    case 'aa069.enduring-rage': return {
+      condition: oneOf(config.condition, ['enraged'], `${path}.condition`), preventCureRolls: bool(config.preventCureRolls, `${path}.preventCureRolls`),
+      damageReduction: integer(config.damageReduction, `${path}.damageReduction`, 5, 5),
+    }
+    case 'aa069.enfeebling-lips': return {
+      connectionMoveId: oneOf(config.connectionMoveId, ['Lovely Kiss'], `${path}.connectionMoveId`), affectedMoveId: oneOf(config.affectedMoveId, ['Lovely Kiss'], `${path}.affectedMoveId`),
+      statChoice: oneOf(config.statChoice, ['combat-stat'], `${path}.statChoice`), stageDelta: integer(config.stageDelta, `${path}.stageDelta`, -2, -2),
+      trigger: oneOf(config.trigger, ['successful-hit'], `${path}.trigger`),
+    }
+    case 'aa069.exploit': return {
+      trigger: oneOf(config.trigger, ['super-effective-damage'], `${path}.trigger`), damageRollBonus: integer(config.damageRollBonus, `${path}.damageRollBonus`, 5, 5),
+    }
+    case 'aa069.fabulous-trim': return {
+      action: oneOf(config.action, ['extended'], `${path}.action`), persistence: oneOf(config.persistence, ['sheet'], `${path}.persistence`), parameterId: oneOf(config.parameterId, ['trim'], `${path}.parameterId`),
+      trimIds: stringArray(config.trimIds, ['star', 'diamond', 'heart', 'pharaoh', 'kabuki', 'la-reine', 'matron', 'dandy', 'debutante'], `${path}.trimIds`),
+      grantedAbilityIds: stringArray(config.grantedAbilityIds, ['Celebrate', 'Defiant', 'Cute Tears', 'Sand Veil', 'Inner Focus', 'Intimidate', 'Friend Guard', 'Moxie', 'Confidence'], `${path}.grantedAbilityIds`),
+    }
+    case 'aa069.fade-away': return {
+      branch: oneOf(config.branch, ['activate', 'interrupt'], `${path}.branch`), action: oneOf(config.action, ['standard'], `${path}.action`),
+      frequency: oneOf(config.frequency, ['scene'], `${path}.frequency`), invisibleUntil: oneOf(config.invisibleUntil, ['next-turn-start'], `${path}.invisibleUntil`),
+      immediateShift: bool(config.immediateShift, `${path}.immediateShift`), trigger: oneOf(config.trigger, ['manual', 'hit-by-physical-attack'], `${path}.trigger`),
+      avoidDamageAndEffects: bool(config.avoidDamageAndEffects, `${path}.avoidDamageAndEffects`),
+    }
+    case 'aa069.fairy-aura': return {
+      affectedRelationships: stringArray(config.affectedRelationships, ['self', 'ally'], `${path}.affectedRelationships`), moveType: oneOf(config.moveType, ['fairy'], `${path}.moveType`),
+      damageBaseBonus: integer(config.damageBaseBonus, `${path}.damageBaseBonus`, 1, 1),
+    }
+    case 'aa069.fashion-designer': return {
+      action: oneOf(config.action, ['extended'], `${path}.action`), frequency: oneOf(config.frequency, ['daily'], `${path}.frequency`),
+      craftQuantity: integer(config.craftQuantity, `${path}.craftQuantity`, 1, 1), itemIds: stringArray(config.itemIds, ['lucky-leaf', 'tasty-reeds', 'dew-cup', 'thorn-mantle', 'chewy-cluster', 'decorative-twine'], `${path}.itemIds`),
+    }
+    case 'aa069.fiery-crash': return {
+      keyword: oneOf(config.keyword, ['dash'], `${path}.keyword`), choices: stringArray(config.choices, ['damage-base-plus-2', 'fire-type'], `${path}.choices`),
+      fireBurnThreshold: integer(config.fireBurnThreshold, `${path}.fireBurnThreshold`, 19, 19), existingBurnRangeBonus: integer(config.existingBurnRangeBonus, `${path}.existingBurnRangeBonus`, 2, 2),
+    }
+    case 'aa069.filter': return {
+      trigger: oneOf(config.trigger, ['super-effective-damage'], `${path}.trigger`), damageReduction: integer(config.damageReduction, `${path}.damageReduction`, 5, 5),
     }
   }
 }

@@ -62,6 +62,7 @@ describe('ability instance parameters', () => {
       entry.parameters[0]?.optionIds.length,
     ])).toEqual([
       ['Color Theory', 'color', 'server-roll', 12],
+      ['Fabulous Trim', 'trim', 'sheet-choice', 9],
       ['Serpent’s Mark', 'pattern', 'inherited-or-server-roll', 6],
       ['Type Strategist', 'type', 'sheet-choice', 18],
     ])
@@ -96,6 +97,7 @@ describe('ability instance parameters', () => {
     expect(resolveSheetAbilityInstances([
       { name: 'Type Strategist' },
       { name: 'Blaze' },
+      { name: 'Fabulous Trim' },
       { name: 'Type Strategist (Fire)' },
     ])).toEqual([
       expect.objectContaining({
@@ -107,6 +109,14 @@ describe('ability instance parameters', () => {
         canonicalId: 'Blaze',
         instanceId: 'legacy:1',
         parameterStatus: 'not-parameterized',
+      }),
+      expect.objectContaining({
+        canonicalId: 'Fabulous Trim',
+        instanceId: 'legacy:2',
+        parameterStatus: 'ready',
+        parameterData: expect.objectContaining({
+          selections: [{ parameterId: 'trim', optionIds: [] }],
+        }),
       }),
     ])
   })

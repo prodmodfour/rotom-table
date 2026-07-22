@@ -251,6 +251,24 @@ describe('authoritative item-dependent move rules', () => {
       family: 'memory',
       moveType: 'fairy',
     })
+    expect(resolveMoveAutomationItemRuleIdentity('Lucky Leaf')).toMatchObject({
+      canonicalItemId: 'grass-type-booster',
+      canonicalItemName: 'Grass Type Booster',
+      moveType: 'grass',
+    })
+    expect(resolveMoveAutomationItemRuleIdentity('Dew Cup')).toMatchObject({
+      canonicalItemId: 'occa-berry', canonicalItemName: 'Occa Berry', family: 'berry',
+    })
+    expect(resolveMoveAutomationItemRuleIdentity('Thorn Mantle')).toMatchObject({
+      canonicalItemId: 'coba-berry', canonicalItemName: 'Coba Berry', family: 'berry',
+    })
+    expect(resolveMoveAutomationItemRuleIdentity('Chewy Cluster')).toMatchObject({
+      canonicalItemId: 'leftovers', canonicalItemName: 'Leftovers',
+    })
+    expect(resolveMoveAutomationItemRuleIdentity('Decorative Twine')).toMatchObject({
+      canonicalItemId: 'decorative-twine', canonicalItemName: 'Decorative Twine',
+      referenceCategories: ['Held Item'],
+    })
     expect(resolveMoveAutomationItemRuleProfile('Iron Ball')).toMatchObject({
       flingCategory: 'lagging-item',
       flingPower: 12,
