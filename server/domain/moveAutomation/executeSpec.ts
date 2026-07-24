@@ -143,9 +143,20 @@ import {
   aa070MoveOverlayOperations,
 } from '../abilityAutomation/mechanics/aa070MoveIntegration'
 import {
+  aa071MoveOverlayOperations,
+  AA071_FOX_FIRE_REASON,
+  AA071_FRIEND_GUARD_REASON,
+  AA071_FULL_GUARD_REASON,
+} from '../abilityAutomation/mechanics/aa071MoveIntegration'
+import {
   aa070FlowerPowerDamageOperation,
   aa070FluffyDamageTypeOverlay,
 } from '../abilityAutomation/mechanics/aa070StaticIntegration'
+import {
+  aa071ForecastTypeResolution,
+  aa071FrostbiteOperations,
+  aa071ResistDamageType,
+} from '../abilityAutomation/mechanics/aa071StaticIntegration'
 import {
   AA068_DRAGONS_MAW_REASON,
   AA068_DREAM_SMOKE_REASON,
@@ -711,10 +722,11 @@ const executableDefinition = (
         'ability.dancer.copy.',
         'ability.danger-syrup.sweet-scent.',
         'ability.dig-away.dig.',
+        'ability.fox-fire.ember.',
       ].some(prefix => parent.parentOperationId?.startsWith(prefix) === true)) {
       fail(
         'definition-integrity-mismatch',
-        'Repeated MoveSpec identity namespacing is authorized only for exact Dancer or Danger Syrup child ancestry.',
+        'Repeated MoveSpec identity namespacing is authorized only for an exact reviewed Ability child ancestry.',
       )
     }
     return namespaceRepeatedNestedDefinition(validated, input.reviewedIdentityNamespace)
@@ -1764,7 +1776,7 @@ const executableProgram = (
     operation: parseMoveEffectOperation(operation, `serverAbilityOverlayOperations[${index}]`),
     path: `serverAbilityOverlayOperations[${index}]`,
   }))
-  const reviewedEntries = applyAa067DeliveryBirdItemChoiceEntries(
+  const baseReviewedEntries = applyAa067DeliveryBirdItemChoiceEntries(
     context,
     applyBoneLordOperationEntries(
       context,
@@ -1775,6 +1787,17 @@ const executableProgram = (
       ]),
     ),
   )
+  const frostbiteOperations = aa071FrostbiteOperations({
+    context,
+    script: context.queries.rules.reviewedScriptFor(definition.spec.canonicalId)
+      ?? context.queries.rules.reviewedScriptFor(context.intent.moveName)
+      ?? fail('definition-integrity-mismatch', 'Frostbite could not resolve the reviewed Move script.'),
+    operations: baseReviewedEntries.map(entry => entry.operation),
+  })
+  const reviewedEntries = frostbiteOperations.map((operation, index): ExecutableMoveSpecOperationEntry => ({
+    operation,
+    path: baseReviewedEntries[index]?.path ?? `abilityFrostbite.operations[${index}]`,
+  }))
   const entriesByPhase = new Map<MoveSpecPhase, ExecutableMoveSpecOperationEntry[]>()
   for (const phase of MOVE_SPEC_PHASES) {
     const entries = orderMoveReactionOperationEntries(
@@ -2083,17 +2106,21 @@ const nestedActorPlacementId = (
   context: AuthoritativeMoveRulesContext,
   operation: ResolvedNestedMoveOperation,
   recipientIds: readonly string[],
+  responseOwnerIds: readonly string[],
 ): string => {
   if (operation.payload.actor.kind === 'parent-actor') {
     return context.actor.placement.id
   }
-  if (recipientIds.length !== 1) {
+  const actorIds = operation.payload.actor.kind === 'response-owner'
+    ? responseOwnerIds
+    : recipientIds
+  if (actorIds.length !== 1) {
     return fail(
       'nested-actor-invalid',
-      `Nested operation ${operation.id} requires exactly one recipient to own the child actor.`,
+      `Nested operation ${operation.id} requires exactly one authoritative ${operation.payload.actor.kind}.`,
     )
   }
-  return recipientIds[0]!
+  return actorIds[0]!
 }
 
 const nestedIntentSelection = (
@@ -2559,6 +2586,33 @@ const executeMoveSpecInternal = (
   const selectedDelayedReactionOwnerIds = new Set<string>()
   const selectedDragonsMawTargetIds = new Set<string>()
   const selectedAa068PostHitOwnerIds = new Set<string>()
+  const selectedFriendGuardTargetIds = new Set<string>()
+  const selectedFullGuardTargetIds = new Set<string>()
+  const selectedAa071ResistanceRequestOperationIds = new Set<string>()
+  const aa071ProtectedTargetId = (
+    operation: MoveReactionRequestEffectOperation,
+    prefix: string,
+  ): string | null => operation.source.kind === 'lifecycle-event'
+    && operation.source.id.startsWith(prefix)
+    ? operation.source.id.slice(prefix.length)
+    : null
+  for (const operation of reactionRequestsByOperationId.values()) {
+    const target = operation.reasonCode === AA071_FRIEND_GUARD_REASON
+      ? { id: aa071ProtectedTargetId(operation, 'ability.friend-guard.target:'), set: selectedFriendGuardTargetIds }
+      : operation.reasonCode === AA071_FULL_GUARD_REASON
+        ? { id: aa071ProtectedTargetId(operation, 'ability.full-guard.target:'), set: selectedFullGuardTargetIds }
+        : null
+    if (!target?.id) continue
+    const retained = responseResolver.resolve({
+      requestId: operation.payload.requestId,
+      options: operation.payload.options,
+      allowPass: operation.payload.allowPass,
+    })
+    if (retained?.optionId !== null && retained?.optionId !== undefined) {
+      target.set.add(target.id)
+      selectedAa071ResistanceRequestOperationIds.add(operation.id)
+    }
+  }
   const cancelledEffectTargetIds = new Set<string>()
   let bodyguardSelected = false
   let aquaBoostSelected = false
@@ -2707,6 +2761,19 @@ const executeMoveSpecInternal = (
       targetIds = resolvedTargetIds.length <= MOVE_SPEC_LIMITS.targetCount
         ? resolvedTargetIds
         : []
+      for (const placementId of [input.context.actor.placement.id, ...targetIds]) {
+        const forecast = aa071ForecastTypeResolution({
+          contextMap: input.context.map,
+          placementId,
+          hasForecast: input.context.queries.abilities.has(placementId, 'Forecast'),
+        })
+        if (forecast.ambiguous) {
+          fail(
+            'move-mechanics-unavailable',
+            `Forecast owner ${placementId} must choose one active weather Type before Move resolution.`,
+          )
+        }
+      }
       for (const targetPlacementId of targetIds) {
         if (targetPlacementId === input.context.actor.placement.id) continue
         const sight = input.context.queries.lineOfSight.resolve(
@@ -2944,6 +3011,24 @@ const executeMoveSpecInternal = (
             return !bodyguardSelected && protectedTargetId && hitTargetIds.includes(protectedTargetId)
               ? owners
               : []
+          }
+          if (operation.reasonCode === AA071_FRIEND_GUARD_REASON) {
+            const protectedTargetId = operation.source.kind === 'lifecycle-event'
+              && operation.source.id.startsWith('ability.friend-guard.target:')
+              ? operation.source.id.slice('ability.friend-guard.target:'.length)
+              : null
+            return protectedTargetId && damagedTargetIds.includes(protectedTargetId)
+              && (!selectedFriendGuardTargetIds.has(protectedTargetId)
+                || selectedAa071ResistanceRequestOperationIds.has(operation.id)) ? owners : []
+          }
+          if (operation.reasonCode === AA071_FULL_GUARD_REASON) {
+            const protectedTargetId = operation.source.kind === 'lifecycle-event'
+              && operation.source.id.startsWith('ability.full-guard.target:')
+              ? operation.source.id.slice('ability.full-guard.target:'.length)
+              : null
+            return protectedTargetId && damagedTargetIds.includes(protectedTargetId)
+              && (!selectedFullGuardTargetIds.has(protectedTargetId)
+                || selectedAa071ResistanceRequestOperationIds.has(operation.id)) ? owners : []
           }
           if (operation.reasonCode === 'ability.aqua-boost.optional-damage') {
             return !aquaBoostSelected && hitTargetIds.length > 0 ? owners : []
@@ -4161,11 +4246,20 @@ const executeMoveSpecInternal = (
             recipientId,
             resolved: preAa068Type,
           })
+          const aa071ResistanceSources = [
+            ...(selectedFriendGuardTargetIds.has(recipientId) ? ['Friend Guard'] : []),
+            ...(selectedFullGuardTargetIds.has(recipientId) ? ['Full Guard'] : []),
+          ]
+          const aa071ResolvedType = aa071ResistDamageType({
+            resolved: aa070ResolvedType,
+            steps: aa071ResistanceSources.length,
+            sources: aa071ResistanceSources,
+          })
           const resolvedType = aa068DamageTypeOverlay({
             context: input.context,
             script: getMechanics().script,
             recipientId,
-            resolved: aa070ResolvedType,
+            resolved: aa071ResolvedType,
             naturalAccuracyRoll: naturalCriticalRoll,
             dragonsMawSelected: selectedDragonsMawTargetIds.has(recipientId),
           })
@@ -4178,10 +4272,6 @@ const executeMoveSpecInternal = (
             recipientId,
             naturalRoll: naturalCriticalRoll,
           }).critical) criticalHitTargetIds.add(recipientId)
-          // PTU damage that reaches a non-immune hit recipient has a minimum
-          // effective loss. Project that server-owned fact so reviewed
-          // after-damage branches can suspend before reducers commit state.
-          if (resolvedType.finalMultiplier > 0) projectedDamagedTargetIds.add(recipientId)
           const formula = resolveMoveSpecDamageRollFormula({
             context: input.context,
             operation: reviewedDamageOperation,
@@ -4263,6 +4353,7 @@ const executeMoveSpecInternal = (
             naturalCriticalRoll,
             ...(formula.contextualDamageBase ? { contextualDamageBase: formula.contextualDamageBase } : {}),
           })
+          if (calculation.breakdown.hpLoss > 0) projectedDamagedTargetIds.add(recipientId)
           projectedHp.applyLossWithInjuryAutomation(recipient, calculation.breakdown.hpLoss, 'damage')
           projectedInjuriesByTarget.set(recipientId, projectedHp.getInjuries(recipient))
           const previousRemaining = projectedRemainingHpByTarget.get(recipientId)
@@ -4323,6 +4414,11 @@ const executeMoveSpecInternal = (
           script: getMechanics().script,
           canonicalMoveId: spec.canonicalId,
           recipientIds,
+          firstStrikeResistanceStepsByRecipient: new Map(recipientIds.map(recipientId => [
+            recipientId,
+            Number(selectedFriendGuardTargetIds.has(recipientId))
+              + Number(selectedFullGuardTargetIds.has(recipientId)),
+          ])),
         })
         multiHitExecutions.push(execution)
         resolvedRolls.push(...execution.resolvedRolls.map(roll => ({ ...roll })))
@@ -4924,6 +5020,9 @@ const executeMoveSpecInternal = (
           input.context,
           nestedOperation,
           recipientIds,
+          nestedOperation.source.kind === 'operation'
+            ? responseOwnerIdsByRequestOperation.get(nestedOperation.source.id) ?? []
+            : [],
         )
         const childResolutionId = nestedChildResolutionId({
           parentResolutionId,
@@ -5100,6 +5199,8 @@ const executeMoveSpecInternal = (
               && operation.reasonCode === 'danger-syrup')
             || (operation.id.startsWith('ability.dig-away.dig.')
               && operation.reasonCode === 'dig-away')
+            || (operation.id.startsWith('ability.fox-fire.ember.')
+              && operation.reasonCode === 'fox-fire')
           )
         const childMoveSourceId = runtime.definition.spec.phases
           .flatMap(block => block.operations)
@@ -5149,6 +5250,12 @@ const executeMoveSpecInternal = (
               authoritativeTargetIds: childTargetIds,
             }),
             ...aa070MoveOverlayOperations({
+              context: childContext,
+              script: childMechanics,
+              moveSourceId: childMoveSourceId,
+              authoritativeTargetIds: childTargetIds,
+            }),
+            ...aa071MoveOverlayOperations({
               context: childContext,
               script: childMechanics,
               moveSourceId: childMoveSourceId,
@@ -5402,6 +5509,29 @@ const executeMoveSpecInternal = (
             }
             if (operation.reasonCode === 'ability.absorb-force.optional-resistance') {
               selectedAbsorbForceOwnerIds.add(recipientIds[0]!)
+            }
+            if (operation.reasonCode === AA071_FRIEND_GUARD_REASON) {
+              const protectedTargetId = operation.source.kind === 'lifecycle-event'
+                && operation.source.id.startsWith('ability.friend-guard.target:')
+                ? operation.source.id.slice('ability.friend-guard.target:'.length)
+                : null
+              if (!protectedTargetId || !damagedTargetIds.includes(protectedTargetId)) {
+                return fail('definition-integrity-mismatch', `Friend Guard reaction ${operation.id} lost its protected target.`)
+              }
+              selectedFriendGuardTargetIds.add(protectedTargetId)
+              selectedAa071ResistanceRequestOperationIds.add(operation.id)
+            }
+            if (operation.reasonCode === AA071_FULL_GUARD_REASON) {
+              const protectedTargetId = operation.source.kind === 'lifecycle-event'
+                && operation.source.id.startsWith('ability.full-guard.target:')
+                ? operation.source.id.slice('ability.full-guard.target:'.length)
+                : null
+              if (!protectedTargetId || !damagedTargetIds.includes(protectedTargetId)
+                || recipientIds[0] !== protectedTargetId) {
+                return fail('definition-integrity-mismatch', `Full Guard reaction ${operation.id} lost its protected target.`)
+              }
+              selectedFullGuardTargetIds.add(protectedTargetId)
+              selectedAa071ResistanceRequestOperationIds.add(operation.id)
             }
             if (operation.reasonCode === AA067_DELAYED_REACTION_REASON) {
               selectedDelayedReactionOwnerIds.add(recipientIds[0]!)

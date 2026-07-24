@@ -411,6 +411,8 @@ export const MOVE_EFFECT_SWITCH_STATE_TRANSFER_POLICIES = ['none', 'baton-pass']
 export const MOVE_EFFECT_NESTED_MOVE_ACTOR_KINDS = [
   'parent-actor',
   'sole-recipient',
+  /** The server-authorized owner of an answered durable reaction request. */
+  'response-owner',
 ] as const
 /** Child mechanics always come from the server-selected reviewed runtime. */
 export const MOVE_EFFECT_NESTED_MOVE_SOURCE_KINDS = [
@@ -1635,9 +1637,14 @@ export interface MoveNestedMoveSoleRecipientActor {
   readonly kind: 'sole-recipient'
 }
 
+export interface MoveNestedMoveResponseOwnerActor {
+  readonly kind: 'response-owner'
+}
+
 export type MoveNestedMoveActor =
   | MoveNestedMoveParentActor
   | MoveNestedMoveSoleRecipientActor
+  | MoveNestedMoveResponseOwnerActor
 
 export interface MoveNestedMoveRegisteredSpecSource {
   readonly kind: 'registered-spec'
@@ -5593,7 +5600,7 @@ const parseNestedMovePayload = (
       ownValue(actorInput, 'kind', `${path}.actor`),
       NESTED_MOVE_ACTOR_KIND_SET,
       `${path}.actor.kind`,
-      'parent-actor or sole-recipient',
+      'parent-actor, sole-recipient, or response-owner',
     ),
   }
   const rawCanonicalId = ownValue(input, 'canonicalId', path)

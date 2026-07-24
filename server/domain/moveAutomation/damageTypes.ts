@@ -27,6 +27,7 @@ import { hasAa060MoveMark } from '../abilityAutomation/mechanics/aa060MoveIntegr
 import { aa062HasBoneWielderImmunityOverride } from '../abilityAutomation/mechanics/aa062MoveIntegration'
 import { aa063MoveResistance } from '../abilityAutomation/mechanics/aa063MoveIntegration'
 import { aa064CorrosionMultiplier } from '../abilityAutomation/mechanics/aa064MoveIntegration'
+import { aa071ForecastTypeResolution } from '../abilityAutomation/mechanics/aa071StaticIntegration'
 import { aa067MoveResistance } from '../abilityAutomation/mechanics/aa067StaticIntegration'
 
 export type MoveDamageTypeResolutionErrorCode =
@@ -240,6 +241,20 @@ export const resolveMoveDamageType = (options: {
   }
   options.context.reads.recordPlacement(options.context.actor.placement)
   options.context.reads.recordPlacement(placement)
+  const ambiguousForecastPlacementId = [options.context.actor.placement.id, options.recipientId]
+    .find(placementId => aa071ForecastTypeResolution({
+      contextMap: options.context.map,
+      placementId,
+      hasForecast: options.context.queries.abilities.has(placementId, 'Forecast'),
+    }).ambiguous)
+  if (ambiguousForecastPlacementId) {
+    return fail(
+      'move-type-unavailable',
+      options.operation,
+      options.recipientId,
+      `Forecast owner ${ambiguousForecastPlacementId} must choose one active weather Type.`,
+    )
+  }
 
   const resolvedType = resolvedMoveType({
     ...options,

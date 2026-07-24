@@ -122,8 +122,9 @@ const parseMode = (value: unknown, path: string): AbilityClientModeCapability =>
   const targeting = (input.targeting as unknown[]).map((entry, index) => parseTargeting(entry, `${path}.targeting[${index}]`))
   if (new Set(targeting.map(entry => entry.id)).size !== targeting.length) fail('duplicate-id', `${path}.targeting`, 'must not repeat IDs.')
   const kind = enumValue<AbilitySpecModeKind>(input.kind, `${path}.kind`, MODE_SET)
-  if (typeof input.invocable !== 'boolean' || (input.invocable && kind !== 'activated')) {
-    fail('invalid-capabilities', `${path}.invocable`, 'may be true only for a currently available activated mode.')
+  if (typeof input.invocable !== 'boolean'
+    || (input.invocable && kind !== 'activated' && kind !== 'configuration')) {
+    fail('invalid-capabilities', `${path}.invocable`, 'may be true only for a currently available activated or configuration mode.')
   }
   return Object.freeze({ modeId: stableId(input.modeId, `${path}.modeId`), kind, invocable: input.invocable as boolean, targeting: Object.freeze(targeting) })
 }

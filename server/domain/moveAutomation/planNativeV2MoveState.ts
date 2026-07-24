@@ -695,10 +695,13 @@ const applyTriggeredAbilityPayments = (input: {
     ['ability.flame-body.optional-burn', 'Flame Body'],
     ['ability.flame-tongue.optional-injury-burn', 'Flame Tongue'],
     ['ability.flavorful-aroma.optional-buff', 'Flavorful Aroma'],
+    ['ability.fox-fire.optional-ember', 'Fox Fire'],
+    ['ability.friend-guard.optional-resistance', 'Friend Guard'],
+    ['ability.full-guard.optional-resistance', 'Full Guard'],
   ])
   const noFrequency = new Set([
     'Anger Point', 'Aqua Boost', 'Beast Boost', 'Celebrate', 'Chilling Neigh',
-    'Color Change', 'Combo Striker', 'Flavorful Aroma',
+    'Color Change', 'Combo Striker', 'Flavorful Aroma', 'Fox Fire',
   ])
   const daily = new Set(['Dig Away', 'Disguise', 'Dodge'])
   const triggeringMoveByOperationId = new Map(input.traces.flatMap(trace => (
@@ -735,7 +738,9 @@ const applyTriggeredAbilityPayments = (input: {
           ? (['free', 'standard'] as const)
           : canonicalId === 'Fade Away'
             ? (['standard'] as const)
-            : (['free'] as const)
+            : canonicalId === 'Full Guard'
+              ? (['swift'] as const)
+              : (['free'] as const)
     const action = planEncounterMoveResourceCosts({
       map,
       placementId: ownerId,
@@ -745,7 +750,9 @@ const applyTriggeredAbilityPayments = (input: {
         ? 'Swift Action'
         : canonicalId === 'Fade Away'
           ? 'Standard Action'
-          : 'Free Action',
+          : canonicalId === 'Full Guard'
+            ? 'Swift Action'
+            : 'Free Action',
       resolutionId: input.resolutionId,
       sourceOperationId: `${selection.operationId}:action`,
       movement: null,
@@ -1133,6 +1140,7 @@ export const planNativeV2MoveState = (options: {
     const abilityGrantedUse = parentOperation?.id.startsWith('ability.dancer.copy.') === true
       || parentOperation?.id.startsWith('ability.danger-syrup.sweet-scent.') === true
       || parentOperation?.id.startsWith('ability.combo-striker.struggle.') === true
+      || parentOperation?.id.startsWith('ability.fox-fire.ember.') === true
     const childMoveKey = moveUsageKey(child.canonicalId)
     if (!move || !childMoveKey) {
       return fail(

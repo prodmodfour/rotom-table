@@ -15,6 +15,7 @@ const REVIEWED_CONNECTIONS = [
   ['Flame Tongue', 'Lick'],
   ['Flavorful Aroma', 'Aromatic Mist'],
   ['Fluffy Charge', 'Charge'],
+  ['Fox Fire', 'Ember'],
 ] as const
 
 export const REVIEWED_ABILITY_CONNECTION_MOVES = Object.freeze(

@@ -11,6 +11,7 @@ import {
 import type { MoveAutomationScript } from '~/types/moveAutomation'
 import { aa060MoveAccuracyBonus } from '../abilityAutomation/mechanics/aa060MoveIntegration'
 import { applyEncounterNumericModifiers } from './encounterNumericModifiers'
+import { aa071MoveAccuracyModifiers } from '../abilityAutomation/mechanics/aa071StaticIntegration'
 
 export interface AuthoritativeMoveSightAccuracyResolution {
   readonly sourcePlacementId: string
@@ -150,11 +151,18 @@ export const resolveAuthoritativeMoveUserAccuracy = (
       value: gravity.bonus,
     })
   }
+  const aa071Modifiers = options.script ? aa071MoveAccuracyModifiers({
+    context,
+    script: options.script,
+    ...(options.targetPlacementId ? { targetPlacementId: options.targetPlacementId } : {}),
+  }) : []
+  modifiers.push(...aa071Modifiers)
   const preEncounterValue = actorAccuracy
     + compoundEyesBonus
     + (helpingHand.length > 0 ? HELPING_HAND_ACCURACY_BONUS : 0)
     + aa060Bonus
     + gravity.bonus
+    + aa071Modifiers.reduce((total, modifier) => total + modifier.value, 0)
   const encounterAccuracy = applyEncounterNumericModifiers({
     map: context.map,
     placementId: context.actor.placement.id,

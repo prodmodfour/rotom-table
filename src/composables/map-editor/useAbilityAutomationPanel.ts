@@ -48,8 +48,8 @@ export type AbilityInvocationStatus =
   | { readonly kind: 'loading-offer'; readonly requestId: string }
   | { readonly kind: 'selecting' }
   | { readonly kind: 'submitting'; readonly intentId: string }
-  | { readonly kind: 'pending'; readonly result: AbilityResolutionPublicResult; readonly controllerPresentationKey?: string | null }
-  | { readonly kind: 'accepted'; readonly result: AbilityResolutionPublicResult; readonly controllerPresentationKey?: string | null }
+  | { readonly kind: 'pending'; readonly result: AbilityResolutionPublicResult; readonly controllerPresentationKey?: string | null; readonly controllerPresentationValues?: readonly string[] }
+  | { readonly kind: 'accepted'; readonly result: AbilityResolutionPublicResult; readonly controllerPresentationKey?: string | null; readonly controllerPresentationValues?: readonly string[] }
   | { readonly kind: 'uncertain'; readonly message: string; readonly intentId: string }
   | { readonly kind: 'error'; readonly message: string }
 
@@ -72,13 +72,28 @@ const errorMessage = (error: unknown): string => error instanceof Error && error
 const parseResolutionResponse = (value: unknown): {
   readonly result: AbilityResolutionPublicResult
   readonly controllerPresentationKey: string | null
+  readonly controllerPresentationValues: readonly string[]
 } => {
   if (isPlainJsonObject(value) && value.schemaVersion === 1 && Object.prototype.hasOwnProperty.call(value, 'result')) {
     const key = value.controllerPresentationKey
     if (key !== null && typeof key !== 'string') throw new Error('Ability controller presentation is invalid.')
-    return { result: parseAbilityResolutionPublicResult(value.result), controllerPresentationKey: key as string | null }
+    const rawValues = value.controllerPresentationValues ?? []
+    if (!Array.isArray(rawValues) || rawValues.length > 64
+      || rawValues.some(entry => typeof entry !== 'string' || entry.length === 0
+        || entry.length > 160 || entry.trim() !== entry || /[\u0000-\u001f\u007f]/.test(entry))) {
+      throw new Error('Ability controller presentation values are invalid.')
+    }
+    return {
+      result: parseAbilityResolutionPublicResult(value.result),
+      controllerPresentationKey: key as string | null,
+      controllerPresentationValues: Object.freeze([...(rawValues as string[])]),
+    }
   }
-  return { result: parseAbilityResolutionPublicResult(value), controllerPresentationKey: null }
+  return {
+    result: parseAbilityResolutionPublicResult(value),
+    controllerPresentationKey: null,
+    controllerPresentationValues: Object.freeze([]),
+  }
 }
 
 /**
@@ -190,8 +205,16 @@ export const useAbilityAutomationPanel = (options: UseAbilityAutomationPanelOpti
     try {
       const response = parseResolutionResponse(await options.resolveDeclaration(intent))
       invocationStatus.value = response.result.kind === 'pending'
-        ? { kind: 'pending', result: response.result, controllerPresentationKey: response.controllerPresentationKey }
-        : { kind: 'accepted', result: response.result, controllerPresentationKey: response.controllerPresentationKey }
+        ? {
+            kind: 'pending', result: response.result,
+            controllerPresentationKey: response.controllerPresentationKey,
+            controllerPresentationValues: response.controllerPresentationValues,
+          }
+        : {
+            kind: 'accepted', result: response.result,
+            controllerPresentationKey: response.controllerPresentationKey,
+            controllerPresentationValues: response.controllerPresentationValues,
+          }
       clearSelection()
       return true
     }

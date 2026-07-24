@@ -8,7 +8,7 @@ import {
 
 export const ABILITY_SPEC_SCHEMA_VERSION = 1 as const
 
-export const ABILITY_SPEC_MODE_KINDS = ['static', 'activated', 'triggered'] as const
+export const ABILITY_SPEC_MODE_KINDS = ['static', 'activated', 'triggered', 'configuration'] as const
 export const ABILITY_SPEC_TRIGGER_RESPONSES = ['mandatory', 'optional'] as const
 export const ABILITY_SPEC_PHASES = [
   'eligibility',

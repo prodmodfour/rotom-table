@@ -394,8 +394,9 @@ const validateModes = (
     if (!hasHandler && !phases.some(phase => phase.modeId === mode.id && phase.operations.length > 0)) {
       fail('invalid-mode', `abilitySpec.modes.${mode.id}`, 'must contain an operation or use a handler.')
     }
-    if (mode.kind === 'static' && costs.some(cost => cost.modeId === mode.id)) {
-      fail('invalid-mode', `abilitySpec.modes.${mode.id}`, 'a static mode cannot spend resources.')
+    if ((mode.kind === 'static' || mode.kind === 'configuration')
+      && costs.some(cost => cost.modeId === mode.id)) {
+      fail('invalid-mode', `abilitySpec.modes.${mode.id}`, 'a static or configuration mode cannot spend resources.')
     }
   }
   for (const cost of costs) {

@@ -416,6 +416,8 @@ For a cohort ability:
 
 A typed durable human choice can be complete. A browser prompt, GM reminder, log sentence, or manual sheet edit cannot.
 
+A `configuration` mode is reserved for an explicit choice inside an otherwise automatic Static ability (for example, Forecast under concurrent weather). It may issue a durable typed offer but cannot spend an action or frequency resource, and it must be exposed only while the choice is actually ambiguous. Ordinary Static providers remain passive and never gain a use button. Forest Lord tree origins require a map voxel tagged `fully-grown-tree` (or both `tree` and `fully-grown`); the server revalidates that authored cell on activation and Move use.
+
 ## Evidence
 
 Requirement tags and evidence classes are closed by `scenario-requirements.json`. The manifest parser rejects unknown tags/classes and requires each selected requirement's classes to be covered by executable scenarios or a reviewed not-applicable reason.
@@ -480,7 +482,7 @@ The quality gate runs non-strict ability metadata, budgets, and plan consistency
 - **Runtime source missing:** the manifest points outside `server/domain/abilityAutomation/` or to a nonexistent module.
 - **Trigger replay:** the same accepted event opens or applies an ability twice.
 - **Client trigger authority:** a component or browser transaction decides eligibility or effects.
-- **Static ability button:** an automatic provider is incorrectly offered as an active command.
+- **Static ability button:** an automatic provider is incorrectly offered as an active command; only a no-cost, ambiguity-gated `configuration` mode may collect explicit Static rules text choices.
 - **Stale partial write:** a consulted resource is absent from the read set or writes are not in one transaction.
 - **Private prompt leak:** public state exposes hidden ability identity, ownership, options, rolls, or sheet details.
 - **State duplication:** the same use, mark, mode, or copied ability is independently owned by sheet and encounter state.

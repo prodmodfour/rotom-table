@@ -307,6 +307,16 @@ export const createStandardMoveCoreTokenEffectImmunityQueries = (
             : null
         )
         ?? (
+          delta < 0
+          && options.context?.queries.abilities.has(recipient.placement.id, 'Full Metal Body')
+          && options.context.queries.relationships.resolve(
+            options.context.actor.placement.id,
+            recipient.placement.id,
+          ).relationship === 'enemy'
+            ? 'Full Metal Body'
+            : null
+        )
+        ?? (
           stage === 'def'
           && delta < 0
           && options.context?.queries.abilities.has(recipient.placement.id, 'Big Pecks')

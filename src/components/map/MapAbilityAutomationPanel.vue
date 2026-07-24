@@ -34,12 +34,18 @@ const canSubmit = (): boolean => props.declaration?.offer.declarations.every((de
 const visible = (): boolean => props.modeSelection !== null
   || props.declaration !== null
   || props.status.kind !== 'idle'
-const controllerPresentation = (key: string | null | undefined): string | null => {
+const controllerPresentation = (
+  key: string | null | undefined,
+  values: readonly string[] | undefined,
+): string | null => {
   if (key === 'ability.anticipation.super-effective-present') {
     return 'The target has at least one super-effective damaging move.'
   }
   if (key === 'ability.anticipation.super-effective-absent') {
     return 'The target has no super-effective damaging move.'
+  }
+  if (key === 'ability.forewarn.moves-revealed' && values && values.length > 0) {
+    return `Highest Damage Dice Move${values.length === 1 ? '' : 's'}: ${values.join(', ')}.`
   }
   return null
 }
@@ -93,8 +99,8 @@ const controllerPresentation = (key: string | null | undefined): string | null =
     <p v-else-if="status.kind === 'pending'">Waiting for an authoritative response.</p>
     <p v-else-if="status.kind === 'accepted'">
       Ability result accepted: {{ status.result.presentation.outcome }}.
-      <span v-if="controllerPresentation(status.controllerPresentationKey)">
-        {{ controllerPresentation(status.controllerPresentationKey) }}
+      <span v-if="controllerPresentation(status.controllerPresentationKey, status.controllerPresentationValues)">
+        {{ controllerPresentation(status.controllerPresentationKey, status.controllerPresentationValues) }}
       </span>
     </p>
     <div v-else-if="status.kind === 'uncertain'" role="alert">

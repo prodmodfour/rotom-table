@@ -65,6 +65,12 @@ export const AA070_ABILITY_MECHANIC_IDS = [
   'aa070.flower-power', 'aa070.flower-veil', 'aa070.fluffy',
   'aa070.fluffy-charge', 'aa070.flutter', 'aa070.flying-fly-trap',
 ] as const
+export const AA071_ABILITY_MECHANIC_IDS = [
+  'aa071.focus', 'aa071.forecast', 'aa071.forest-lord', 'aa071.forewarn',
+  'aa071.fox-fire', 'aa071.freezing-point', 'aa071.friend-guard',
+  'aa071.frighten', 'aa071.frisk', 'aa071.frostbite', 'aa071.full-guard',
+  'aa071.full-metal-body',
+] as const
 export type Aa060AbilityMechanicId = (typeof AA060_ABILITY_MECHANIC_IDS)[number]
 export type AbilityMechanicId = Aa060AbilityMechanicId
   | (typeof AA061_ABILITY_MECHANIC_IDS)[number]
@@ -77,6 +83,7 @@ export type AbilityMechanicId = Aa060AbilityMechanicId
   | (typeof AA068_ABILITY_MECHANIC_IDS)[number]
   | (typeof AA069_ABILITY_MECHANIC_IDS)[number]
   | (typeof AA070_ABILITY_MECHANIC_IDS)[number]
+  | (typeof AA071_ABILITY_MECHANIC_IDS)[number]
 export interface AbilityMechanicOperation extends AbilitySpecJsonObject {
   readonly kind: typeof ABILITY_MECHANIC_OPERATION_KIND
   readonly id: string
@@ -227,6 +234,18 @@ const CONFIG_FIELDS: Readonly<Record<AbilityMechanicId, readonly string[]>> = {
   'aa070.fluffy-charge': ['connectionMoveId', 'trigger', 'defenseStages'],
   'aa070.flutter': ['action', 'frequency', 'evasionBonus', 'duration', 'cannotBeFlanked'],
   'aa070.flying-fly-trap': ['damageImmuneMoveTypes', 'effectsRemain'],
+  'aa071.focus': ['lastChanceType', 'hpThresholdNumerator', 'hpThresholdDenominator', 'damageBonus'],
+  'aa071.forecast': ['weatherKinds', 'weatherTypes', 'normalType', 'multipleWeatherChoice'],
+  'aa071.forest-lord': ['action', 'frequency', 'moveTypes', 'maximumTreeDistance', 'accuracyBonus', 'duration'],
+  'aa071.forewarn': ['action', 'frequency', 'targetRelationship', 'revealHighestDamageDice', 'revealAllTies', 'accuracyPenalty', 'duration'],
+  'aa071.fox-fire': ['action', 'frequency', 'connectionMoveId', 'wispCount', 'trigger', 'triggerRelationship', 'triggerRadius', 'responseAction', 'responseTiming'],
+  'aa071.freezing-point': ['lastChanceType', 'hpThresholdNumerator', 'hpThresholdDenominator', 'damageBonus'],
+  'aa071.friend-guard': ['action', 'frequency', 'trigger', 'adjacency', 'resistanceSteps'],
+  'aa071.frighten': ['action', 'frequency', 'speedStageDelta'],
+  'aa071.frisk': ['adjacency', 'accuracyBonus'],
+  'aa071.frostbite': ['moveType', 'damagingOnly', 'slowedMinimum', 'freezeRangeIncrease', 'defaultFreezeMinimum'],
+  'aa071.full-guard': ['action', 'frequency', 'trigger', 'resistanceSteps'],
+  'aa071.full-metal-body': ['preventCombatStageLoweringFrom', 'statusAfflictionStageChangesAllowed'],
 }
 const MECHANIC_SET = new Set<string>([
   ...AA060_ABILITY_MECHANIC_IDS, ...AA061_ABILITY_MECHANIC_IDS,
@@ -234,7 +253,7 @@ const MECHANIC_SET = new Set<string>([
   ...AA064_ABILITY_MECHANIC_IDS, ...AA065_ABILITY_MECHANIC_IDS,
   ...AA066_ABILITY_MECHANIC_IDS, ...AA067_ABILITY_MECHANIC_IDS,
   ...AA068_ABILITY_MECHANIC_IDS, ...AA069_ABILITY_MECHANIC_IDS,
-  ...AA070_ABILITY_MECHANIC_IDS,
+  ...AA070_ABILITY_MECHANIC_IDS, ...AA071_ABILITY_MECHANIC_IDS,
 ])
 const ID = /^[a-z0-9]+(?:[._:/-][a-z0-9]+)*$/
 const fail = (code: AbilityMechanicValidationError['code'], path: string, detail: string): never => { throw new AbilityMechanicValidationError(code, path, detail) }
@@ -968,6 +987,62 @@ const parseConfig = (mechanicId: AbilityMechanicId, value: unknown, path: string
     }
     case 'aa070.flying-fly-trap': return {
       damageImmuneMoveTypes: stringArray(config.damageImmuneMoveTypes, ['ground', 'bug'], `${path}.damageImmuneMoveTypes`), effectsRemain: bool(config.effectsRemain, `${path}.effectsRemain`),
+    }
+    case 'aa071.focus': return {
+      lastChanceType: oneOf(config.lastChanceType, ['fighting'], `${path}.lastChanceType`), hpThresholdNumerator: integer(config.hpThresholdNumerator, `${path}.hpThresholdNumerator`, 1, 1),
+      hpThresholdDenominator: integer(config.hpThresholdDenominator, `${path}.hpThresholdDenominator`, 3, 3), damageBonus: integer(config.damageBonus, `${path}.damageBonus`, 5, 5),
+    }
+    case 'aa071.forecast': return {
+      weatherKinds: stringArray(config.weatherKinds, ['sunny', 'hail', 'rainy', 'sandstorm'], `${path}.weatherKinds`),
+      weatherTypes: stringArray(config.weatherTypes, ['fire', 'ice', 'water', 'rock'], `${path}.weatherTypes`), normalType: oneOf(config.normalType, ['normal'], `${path}.normalType`),
+      multipleWeatherChoice: bool(config.multipleWeatherChoice, `${path}.multipleWeatherChoice`),
+    }
+    case 'aa071.forest-lord': return {
+      action: oneOf(config.action, ['shift'], `${path}.action`), frequency: oneOf(config.frequency, ['scene-x2'], `${path}.frequency`),
+      moveTypes: stringArray(config.moveTypes, ['grass', 'ghost'], `${path}.moveTypes`), maximumTreeDistance: integer(config.maximumTreeDistance, `${path}.maximumTreeDistance`, 10, 10),
+      accuracyBonus: integer(config.accuracyBonus, `${path}.accuracyBonus`, 2, 2), duration: oneOf(config.duration, ['turn'], `${path}.duration`),
+    }
+    case 'aa071.forewarn': return {
+      action: oneOf(config.action, ['free'], `${path}.action`), frequency: oneOf(config.frequency, ['scene'], `${path}.frequency`),
+      targetRelationship: oneOf(config.targetRelationship, ['enemy'], `${path}.targetRelationship`), revealHighestDamageDice: bool(config.revealHighestDamageDice, `${path}.revealHighestDamageDice`),
+      revealAllTies: bool(config.revealAllTies, `${path}.revealAllTies`), accuracyPenalty: integer(config.accuracyPenalty, `${path}.accuracyPenalty`, -2, -2),
+      duration: oneOf(config.duration, ['encounter'], `${path}.duration`),
+    }
+    case 'aa071.fox-fire': return {
+      action: oneOf(config.action, ['standard'], `${path}.action`), frequency: oneOf(config.frequency, ['scene'], `${path}.frequency`),
+      connectionMoveId: oneOf(config.connectionMoveId, ['Ember'], `${path}.connectionMoveId`), wispCount: integer(config.wispCount, `${path}.wispCount`, 3, 3),
+      trigger: oneOf(config.trigger, ['targeted'], `${path}.trigger`), triggerRelationship: oneOf(config.triggerRelationship, ['enemy'], `${path}.triggerRelationship`),
+      triggerRadius: integer(config.triggerRadius, `${path}.triggerRadius`, 6, 6), responseAction: oneOf(config.responseAction, ['free'], `${path}.responseAction`),
+      responseTiming: oneOf(config.responseTiming, ['after-triggering-move'], `${path}.responseTiming`),
+    }
+    case 'aa071.freezing-point': return {
+      lastChanceType: oneOf(config.lastChanceType, ['ice'], `${path}.lastChanceType`), hpThresholdNumerator: integer(config.hpThresholdNumerator, `${path}.hpThresholdNumerator`, 1, 1),
+      hpThresholdDenominator: integer(config.hpThresholdDenominator, `${path}.hpThresholdDenominator`, 3, 3), damageBonus: integer(config.damageBonus, `${path}.damageBonus`, 5, 5),
+    }
+    case 'aa071.friend-guard': return {
+      action: oneOf(config.action, ['free'], `${path}.action`), frequency: oneOf(config.frequency, ['scene'], `${path}.frequency`),
+      trigger: oneOf(config.trigger, ['adjacent-ally-damaged'], `${path}.trigger`), adjacency: integer(config.adjacency, `${path}.adjacency`, 1, 1),
+      resistanceSteps: integer(config.resistanceSteps, `${path}.resistanceSteps`, 1, 1),
+    }
+    case 'aa071.frighten': return {
+      action: oneOf(config.action, ['swift'], `${path}.action`), frequency: oneOf(config.frequency, ['scene'], `${path}.frequency`),
+      speedStageDelta: integer(config.speedStageDelta, `${path}.speedStageDelta`, -2, -2),
+    }
+    case 'aa071.frisk': return {
+      adjacency: integer(config.adjacency, `${path}.adjacency`, 1, 1), accuracyBonus: integer(config.accuracyBonus, `${path}.accuracyBonus`, 2, 2),
+    }
+    case 'aa071.frostbite': return {
+      moveType: oneOf(config.moveType, ['ice'], `${path}.moveType`), damagingOnly: bool(config.damagingOnly, `${path}.damagingOnly`),
+      slowedMinimum: integer(config.slowedMinimum, `${path}.slowedMinimum`, 18, 18), freezeRangeIncrease: integer(config.freezeRangeIncrease, `${path}.freezeRangeIncrease`, 1, 1),
+      defaultFreezeMinimum: integer(config.defaultFreezeMinimum, `${path}.defaultFreezeMinimum`, 20, 20),
+    }
+    case 'aa071.full-guard': return {
+      action: oneOf(config.action, ['swift'], `${path}.action`), frequency: oneOf(config.frequency, ['scene'], `${path}.frequency`),
+      trigger: oneOf(config.trigger, ['damaged-with-temporary-hp'], `${path}.trigger`), resistanceSteps: integer(config.resistanceSteps, `${path}.resistanceSteps`, 1, 1),
+    }
+    case 'aa071.full-metal-body': return {
+      preventCombatStageLoweringFrom: stringArray(config.preventCombatStageLoweringFrom, ['features', 'abilities', 'moves'], `${path}.preventCombatStageLoweringFrom`),
+      statusAfflictionStageChangesAllowed: bool(config.statusAfflictionStageChangesAllowed, `${path}.statusAfflictionStageChangesAllowed`),
     }
   }
 }

@@ -10,6 +10,10 @@ import {
 import { POKEMON_TYPE_IDS } from '#shared/pokemonTypes'
 import { reviewedAbilityConnectionMoveNames } from '#shared/abilityAutomation/connections'
 import {
+  AA071_WEATHER_TYPE_BY_KIND,
+  isAa071FullyGrownTreeCell,
+} from '#shared/abilityAutomation/aa071'
+import {
   createEmptyAbilityDailyUsageLedger,
   parseAbilityDailyUsageLedger,
 } from '#shared/abilityAutomation/resources'
@@ -28,6 +32,7 @@ import type { TrainerSheet } from '~/types/trainerSheet'
 import type { AbilitySpecTargetingKind } from '#shared/abilityAutomation/spec'
 import type { MoveSelector } from '#shared/moveAutomation/selectors'
 import { findMove } from '~~/data/ptuReference'
+import { ptuGridDistanceBetweenFootprints } from '~/utils/ptuGridDistance'
 import {
   actorCanControlMapPlacement,
   playerProfileLinkedTrainerSheetsForTokenControl,
@@ -44,6 +49,8 @@ import {
   type AbilityAutomationRuntimeRegistry,
 } from '../domain/abilityAutomation/registry'
 import { resolveAuthoritativeAbilityTargets } from '../domain/abilityAutomation/targeting'
+import { createMoveAutomationWeatherResolver } from '../domain/moveAutomation/weather'
+import { aa071ForecastTypeResolution } from '../domain/abilityAutomation/mechanics/aa071StaticIntegration'
 import {
   createSqliteAbilityDeclarationOfferRepository,
   type AbilityDeclarationOfferRepository,
@@ -162,8 +169,18 @@ const declarationsFor = (
         .map((fieldId, index) => option(declaration.id, index, declaration.kind, { kind: 'field', fieldId }))
       else if (declaration.kind === 'direction') options = ABILITY_DECLARATION_DIRECTIONS
         .map((directionId, index) => option(declaration.id, index, declaration.kind, { kind: 'direction', directionId }))
-      else if (declaration.kind === 'type') options = POKEMON_TYPE_IDS
-        .map((typeId, index) => option(declaration.id, index, declaration.kind, { kind: 'type', typeId }))
+      else if (declaration.kind === 'type') {
+        const typeIds = context.runtime.canonicalId === 'Forecast' && modeId === 'choose-weather'
+          ? (() => {
+              const active = [...new Set(createMoveAutomationWeatherResolver(context.map).active()
+                .map(weather => AA071_WEATHER_TYPE_BY_KIND[weather.kind]))]
+              return active.length > 0 ? active : ['normal' as const]
+            })()
+          : POKEMON_TYPE_IDS
+        options = typeIds.map((typeId, index) => option(
+          declaration.id, index, declaration.kind, { kind: 'type', typeId },
+        ))
+      }
       else if (declaration.kind === 'stat') {
         const statIds = declaration.predicate?.kind === ABILITY_STAT_OPTIONS_PREDICATE_KIND
           ? parseAbilityStatOptionsPredicate(declaration.predicate).statIds
@@ -279,9 +296,26 @@ const declarationsFor = (
       }
       else if (declaration.kind === 'cell') {
         const cells = []
-        for (let y = 0; y < context.map.dimensions.y; y += 1) for (let z = 0; z < context.map.dimensions.z; z += 1) for (let x = 0; x < context.map.dimensions.x; x += 1) {
-          cells.push({ x, y, z })
-          if (cells.length > 512) fail(422, `Ability cell declaration ${declaration.id} exceeds the bounded offer size.`)
+        if (context.runtime.canonicalId === 'Forest Lord' && modeId === 'activate') {
+          const seen = new Set<string>()
+          for (const voxel of context.map.voxels) {
+            const cell = { x: voxel.x, y: voxel.y, z: voxel.z }
+            const key = `${cell.x}:${cell.y}:${cell.z}`
+            if (seen.has(key)
+              || !isAa071FullyGrownTreeCell(context.map, cell)
+              || ptuGridDistanceBetweenFootprints(context.actor.token, {
+                position: cell, base: 1, clearance: 1,
+              }) > 10) continue
+            seen.add(key)
+            cells.push(cell)
+            if (cells.length > 512) fail(422, `Ability cell declaration ${declaration.id} exceeds the bounded offer size.`)
+          }
+        }
+        else {
+          for (let y = 0; y < context.map.dimensions.y; y += 1) for (let z = 0; z < context.map.dimensions.z; z += 1) for (let x = 0; x < context.map.dimensions.x; x += 1) {
+            cells.push({ x, y, z })
+            if (cells.length > 512) fail(422, `Ability cell declaration ${declaration.id} exceeds the bounded offer size.`)
+          }
         }
         options = cells.map((cell, index) => option(declaration.id, index, declaration.kind, { kind: 'cell', cellId: `${declaration.id}:cell:${index}`, cell }))
       }
@@ -327,7 +361,10 @@ export const beginAbilityDeclarationUseCase = (
   }
   const runtime = registry.resolve(command.canonicalId) ?? fail(409, 'Ability has no manifest-selected native runtime.')
   const mode = runtime.definition.spec.modes.find(entry => entry.id === command.modeId)
-  if (!mode || mode.kind !== 'activated') fail(409, 'Ability mode cannot be actively invoked.')
+    ?? fail(409, 'Ability mode cannot be invoked by a declaration.')
+  if (mode.kind !== 'activated' && mode.kind !== 'configuration') {
+    fail(409, 'Ability mode cannot be invoked by a declaration.')
+  }
   const pokemonSheets = listRepositorySheets<CharacterSheet>(sheetRepository, 'pokemon')
   const context = buildAuthoritativeAbilityContext({
     map,
@@ -352,6 +389,16 @@ export const beginAbilityDeclarationUseCase = (
     && (ability.definitionHash === null || ability.definitionHash === runtime.definitionHash)
   ))
   if (!activeAbility) fail(409, 'Ability instance is not currently effective.')
+  if (mode.kind === 'configuration'
+    && command.canonicalId === 'Forecast'
+    && command.modeId === 'choose-weather'
+    && !aa071ForecastTypeResolution({
+      contextMap: context.map,
+      placementId: context.actor.placement.id,
+      hasForecast: true,
+    }).ambiguous) {
+    fail(409, 'Forecast configuration is available only while its Weather choice is unresolved.')
+  }
   const createdAt = dependencies.now?.() ?? Date.now()
   const offer = createAbilityDeclarationOffer({
     runtime,

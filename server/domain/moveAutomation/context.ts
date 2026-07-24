@@ -10,6 +10,11 @@ import {
 import { findMove } from '~~/data/ptuReference'
 import type { CharacterSheet } from '~/types/characterSheet'
 import { AA070_FLUTTER_NO_FLANK_CAPABILITY } from '#shared/abilityAutomation/aa070'
+import {
+  AA071_FOREST_LORD_ORIGIN_CAPABILITY,
+  isAa071FullyGrownTreeCell,
+} from '#shared/abilityAutomation/aa071'
+import { aa071ForecastTypeResolution } from '../abilityAutomation/mechanics/aa071StaticIntegration'
 import type { GridAnchor, SheetKind, SheetPlacement, TabletopMap } from '~/types/map'
 import type { MoveAutomationScript } from '~/types/moveAutomation'
 import type { SpawnedPokemon } from '~/types/pokemon'
@@ -635,14 +640,19 @@ export const buildAuthoritativeMoveRulesContext = (
     : null
   if (anchoredEntity) effectivePositionOverrides.set(intent.placementId, anchoredEntity.position)
   if (intent.originCell) {
+    const activeEffects = map.encounterState?.effects ?? []
+    const effectIsActive = (effect: (typeof activeEffects)[number]): boolean => (
+      effect.suppression.sources.length === 0
+      && (effect.duration.remaining === null || effect.duration.remaining > 0)
+    )
     const clayCannonsActive = effectiveAbilitiesByPlacement.get(intent.placementId)
       ?.some(ability => ability.canonicalId === 'Clay Cannons') === true
-      && (map.encounterState?.effects ?? []).some(effect => (
+      && activeEffects.some(effect => (
         effect.kind === 'capability'
+        && effectIsActive(effect)
         && effect.payload.action === 'grant'
         && effect.payload.capabilityId === AA063_CLAY_CANNONS_CAPABILITY_ID
         && effect.affected.placementIds.includes(intent.placementId)
-        && effect.suppression.sources.length === 0
       ))
     const origin = intent.originCell
     const source = tokenSnapshots(map, placements, sheetLookup, new Map()).tokens
@@ -650,11 +660,30 @@ export const buildAuthoritativeMoveRulesContext = (
     const inBounds = origin.x >= 0 && origin.x < map.dimensions.x
       && origin.y >= 0 && origin.y < map.dimensions.y
       && origin.z >= 0 && origin.z < map.dimensions.z
-    const inRange = source
+    const clayCannonsInRange = source
       ? ptuGridDistanceBetweenFootprints(source, { position: origin, base: 1, clearance: 1 }) <= 2
       : false
-    if (!clayCannonsActive || !inBounds || !inRange) {
-      fail('invalid-virtual-origin', 'The requested move origin is not authorized by active Clay Cannons geometry.')
+    const forestLordEffect = activeEffects.find(effect => (
+      effect.kind === 'capability'
+      && effectIsActive(effect)
+      && effect.payload.action === 'grant'
+      && effect.payload.capabilityId === AA071_FOREST_LORD_ORIGIN_CAPABILITY
+      && effect.affected.placementIds.includes(intent.placementId)
+      && effect.affected.cells.some(cell => (
+        cell.x === origin.x && cell.y === origin.y && cell.z === origin.z
+      ))
+    ))
+    const canonicalMoveType = findMove(intent.moveName)?.type.trim().toLowerCase()
+    const forestLordActive = effectiveAbilitiesByPlacement.get(intent.placementId)
+      ?.some(ability => ability.canonicalId === 'Forest Lord') === true
+      && forestLordEffect !== undefined
+      && ['grass', 'ghost'].includes(canonicalMoveType ?? '')
+      && isAa071FullyGrownTreeCell(map, origin)
+      && Boolean(source && ptuGridDistanceBetweenFootprints(
+        source, { position: origin, base: 1, clearance: 1 },
+      ) <= 10)
+    if (!inBounds || (!forestLordActive && (!clayCannonsActive || !clayCannonsInRange))) {
+      fail('invalid-virtual-origin', 'The requested Move origin is not authorized by an active reviewed ability.')
     }
     effectivePositionOverrides.set(intent.placementId, origin)
   }
@@ -673,21 +702,30 @@ export const buildAuthoritativeMoveRulesContext = (
     ))
   ))
   const tokens = deepFreeze(baseTokens.map((token) => {
+    const forecast = aa071ForecastTypeResolution({
+      contextMap: map,
+      placementId: token.id,
+      hasForecast: effectiveAbilitiesByPlacement.get(token.id)
+        ?.some(ability => ability.canonicalId === 'Forecast') === true,
+    })
+    const effectiveToken = forecast.typeId
+      ? detachedFrozenJson({ ...token, defenderTypes: [forecast.typeId] })
+      : token
     const trapped = arenaTrapMarks.some((mark) => {
       const source = baseTokens.find(candidate => candidate.id === mark.ownerPlacementId)
       if (!source
-        || relationships.resolve(source.id, token.id).relationship !== 'enemy'
-        || ptuGridDistanceBetweenFootprints(source, token) > 5) return false
-      const flying = token.defenderTypes.some(type => type.trim().toLowerCase() === 'flying')
-      const speeds = token.movementCapabilities ?? {}
+        || relationships.resolve(source.id, effectiveToken.id).relationship !== 'enemy'
+        || ptuGridDistanceBetweenFootprints(source, effectiveToken) > 5) return false
+      const flying = effectiveToken.defenderTypes.some(type => type.trim().toLowerCase() === 'flying')
+      const speeds = effectiveToken.movementCapabilities ?? {}
       return !flying
         && (speeds.levitate ?? 0) < 4
         && (speeds.sky ?? 0) < 4
         && (speeds.burrow ?? 0) < 4
     })
     return trapped
-      ? detachedFrozenJson({ ...token, conditions: [...new Set([...token.conditions, 'Slowed', 'Trapped'])] })
-      : token
+      ? detachedFrozenJson({ ...effectiveToken, conditions: [...new Set([...effectiveToken.conditions, 'Slowed', 'Trapped'])] })
+      : effectiveToken
   }))
   const tokenById = new Map(tokens.map(token => [token.id, token]))
 

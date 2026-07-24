@@ -76,6 +76,19 @@ describe('MapAbilityAutomationPanel', () => {
       },
     })
     expect(wrapper.text()).toContain('target has at least one super-effective damaging move')
+    await wrapper.setProps({
+      status: {
+        kind: 'accepted',
+        result: {
+          schemaVersion: 1, kind: 'accepted', operationId: 'intent:2', resolutionId: 'resolution:2',
+          mapSlug: 'arena-map', previousRevision: 5, revision: 6, status: 'committed',
+          presentation: { key: 'ability.resolution.completed', outcome: 'applied' },
+        },
+        controllerPresentationKey: 'ability.forewarn.moves-revealed',
+        controllerPresentationValues: ['Giga Impact', 'Hyper Beam'],
+      },
+    })
+    expect(wrapper.text()).toContain('Highest Damage Dice Moves: Giga Impact, Hyper Beam.')
     await wrapper.setProps({ status: { kind: 'uncertain', message: 'Connection lost', intentId: 'intent:1' } })
     expect(wrapper.get('[role="alert"]').text()).toContain('Connection lost')
     await wrapper.get('[role="alert"] button').trigger('click')

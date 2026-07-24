@@ -37,6 +37,7 @@ import { executeAa067ActivatedMechanic } from '../domain/abilityAutomation/mecha
 import { executeAa068ActivatedMechanic } from '../domain/abilityAutomation/mechanics/aa068Activated'
 import { executeAa069ActivatedMechanic } from '../domain/abilityAutomation/mechanics/aa069Activated'
 import { executeAa070ActivatedMechanic } from '../domain/abilityAutomation/mechanics/aa070Activated'
+import { executeAa071ActivatedMechanic } from '../domain/abilityAutomation/mechanics/aa071Activated'
 import { createAa063AbilityCombatStageImmunities } from '../domain/abilityAutomation/mechanics/aa063DefenseIntegration'
 import { applyNativeCoreMapChanges } from '../domain/moveAutomation/planNativeV2MoveState'
 import { createMoveStateChangePlan, type MoveStateChangePlan } from '../domain/moveAutomation/plan'
@@ -245,12 +246,19 @@ export const resolveAbilityDeclarationUseCase = (
                             abilityInstanceId: intent.abilityInstanceId,
                             choices: resolved.choices,
                           })
-                        : executeAa070ActivatedMechanic({
-                            context,
-                            operation: mechanicOperation,
-                            operationId: intent.intentId,
-                            choices: resolved.choices,
-                          })
+                        : mechanicOperation.mechanicId.startsWith('aa070.')
+                          ? executeAa070ActivatedMechanic({
+                              context,
+                              operation: mechanicOperation,
+                              operationId: intent.intentId,
+                              choices: resolved.choices,
+                            })
+                          : executeAa071ActivatedMechanic({
+                              context,
+                              operation: mechanicOperation,
+                              operationId: intent.intentId,
+                              choices: resolved.choices,
+                            })
     const resolvedExecution = execution
       ?? fail(422, 'Ability runtime requires an execution adapter that is not registered for direct declaration resolution.')
     resolutionPlan = resolvedExecution.plan
@@ -265,7 +273,14 @@ export const resolveAbilityDeclarationUseCase = (
         kind: 'operation', phase: selected.phase, reasonCode: `ability.${mechanicOperation.mechanicId}`,
         operationId: mechanicOperation.id, operationKind: mechanicOperation.kind,
         recipientIds: targetIds(resolved.choices), outcome: acceptedOutcome,
-        input: null, result: { presentationKey: resolvedExecution.presentationKey },
+        input: null,
+        result: {
+          presentationKey: resolvedExecution.presentationKey,
+          ...('controllerPresentationValues' in resolvedExecution
+            && Array.isArray(resolvedExecution.controllerPresentationValues)
+            ? { controllerPresentationValues: [...resolvedExecution.controllerPresentationValues] }
+            : {}),
+        },
       },
     ], context.budget)
   }
@@ -346,23 +361,39 @@ export interface AbilityResolutionControllerEnvelope {
   readonly schemaVersion: 1
   readonly result: AbilityResolutionPublicResult
   readonly controllerPresentationKey: string | null
+  readonly controllerPresentationValues?: readonly string[]
 }
 
-const controllerPresentationFromAudit = (audit: unknown): string | null => {
-  if (!audit || typeof audit !== 'object' || Array.isArray(audit)) return null
+interface AbilityControllerPresentation {
+  readonly key: string | null
+  readonly values: readonly string[]
+}
+
+const controllerPresentationFromAudit = (audit: unknown): AbilityControllerPresentation => {
+  const none = Object.freeze({ key: null, values: Object.freeze([]) })
+  if (!audit || typeof audit !== 'object' || Array.isArray(audit)) return none
   const trace = (audit as { trace?: unknown }).trace
-  if (!trace || typeof trace !== 'object' || Array.isArray(trace)) return null
+  if (!trace || typeof trace !== 'object' || Array.isArray(trace)) return none
   const events = (trace as { events?: unknown }).events
-  if (!Array.isArray(events)) return null
+  if (!Array.isArray(events)) return none
   for (const event of events) {
     if (!event || typeof event !== 'object' || Array.isArray(event)) continue
     const result = (event as { result?: unknown }).result
     if (!result || typeof result !== 'object' || Array.isArray(result)) continue
     const key = (result as { presentationKey?: unknown }).presentationKey
     if (key === 'ability.anticipation.super-effective-present'
-      || key === 'ability.anticipation.super-effective-absent') return key
+      || key === 'ability.anticipation.super-effective-absent') {
+      return Object.freeze({ key, values: Object.freeze([]) })
+    }
+    if (key === 'ability.forewarn.moves-revealed') {
+      const values = (result as { controllerPresentationValues?: unknown }).controllerPresentationValues
+      if (!Array.isArray(values) || values.length === 0 || values.length > 64
+        || values.some(value => typeof value !== 'string' || value.length === 0
+          || value.length > 160 || value.trim() !== value || /[\u0000-\u001f\u007f]/.test(value))) continue
+      return Object.freeze({ key, values: Object.freeze([...new Set(values as string[])]) })
+    }
   }
-  return null
+  return none
 }
 
 /** Authorized response envelope; hidden controller presentation never enters the public accepted result. */
@@ -376,9 +407,13 @@ export const resolveAbilityDeclarationForControllerUseCase = (
   const repository = dependencies.operationRepository
     ?? createSqliteAbilityResolutionOperationRepository(database)
   const operation = repository.find(intent.intentId)
+  const presentation = controllerPresentationFromAudit(operation?.audit ?? null)
   return Object.freeze({
     schemaVersion: 1,
     result,
-    controllerPresentationKey: controllerPresentationFromAudit(operation?.audit ?? null),
+    controllerPresentationKey: presentation.key,
+    ...(presentation.values.length > 0
+      ? { controllerPresentationValues: presentation.values }
+      : {}),
   })
 }

@@ -335,6 +335,7 @@ interface ActiveVirtualOriginRequest {
   frequency: string | null
   targetBranchId?: string
   originCell: GridAnchor
+  originPolicy: 'clay-cannons' | 'forest-lord'
 }
 
 type ActiveMoveTargetingRequest = ActiveSingleTargetingRequest | ActiveTargetCountRequest | ActiveAreaConfirmationRequest | ActiveVirtualOriginRequest
@@ -730,16 +731,19 @@ export const useMoveAutomationPanel = ({
     if (!request || !user || !canControlPlacement(request.userId)) return null
 
     if (request.kind === 'virtual-origin') {
+      const forestLord = request.originPolicy === 'forest-lord'
       return {
         userId: request.userId,
         moveName: request.moveName,
         mode: 'area-confirmation',
-        rangeLabel: 'Clay Cannons origin (2m)',
-        rangeMeters: 2,
-        targetPrompt: 'Choose the virtual origin for this Ranged Move.',
+        rangeLabel: forestLord ? 'Forest Lord tree origin' : 'Clay Cannons origin (2m)',
+        rangeMeters: forestLord ? 0 : 2,
+        targetPrompt: forestLord
+          ? 'Confirm the prepared fully-grown tree as this Move’s origin.'
+          : 'Choose the virtual origin for this Ranged Move.',
         candidateIds: [], hitChances: {}, areaCells: [request.originCell], affectedIds: [],
         canToggleTargets: false, areaAimMode: 'free', areaAimCenter: request.originCell,
-        areaAimRangeMeters: 2,
+        areaAimRangeMeters: forestLord ? 0 : 2,
       }
     }
 
@@ -1427,6 +1431,20 @@ export const useMoveAutomationPanel = ({
     ))
   }
 
+  const forestLordOriginCell = (userId: string, script: MoveAutomationScript): GridAnchor | null => {
+    if (!['grass', 'ghost'].includes(script.type.trim().toLowerCase())) return null
+    const effect = (map.value?.encounterState?.effects ?? []).find(effect => (
+      effect.kind === 'capability'
+      && effect.payload.action === 'grant'
+      && effect.payload.capabilityId === 'aa071.forest-lord.virtual-origin'
+      && effect.affected.placementIds.includes(userId)
+      && effect.affected.cells.length === 1
+      && effect.suppression.sources.length === 0
+      && (effect.duration.remaining === null || effect.duration.remaining > 0)
+    ))
+    return effect?.affected.cells[0] ? { ...effect.affected.cells[0] } : null
+  }
+
   const beginClayCannonsOriginSelection = (
     user: SpawnedPokemon,
     script: MoveAutomationScript,
@@ -1434,12 +1452,16 @@ export const useMoveAutomationPanel = ({
     frequency: string | null,
     targetBranchId?: string,
   ): boolean => {
-    if (!clayCannonsOriginAvailable(user.id, script)) return false
+    const forestOrigin = forestLordOriginCell(user.id, script)
+    const clayCannons = clayCannonsOriginAvailable(user.id, script)
+    if (!forestOrigin && !clayCannons) return false
     clearMoveAutomationFeedback()
     activeMoveTargetBranchSelection.value = null
     activeMoveTargeting.value = {
       kind: 'virtual-origin', userId: user.id, moveName: script.moveName,
-      script, damageFormula, frequency, originCell: { ...user.position },
+      script, damageFormula, frequency,
+      originCell: forestOrigin ?? { ...user.position },
+      originPolicy: forestOrigin ? 'forest-lord' : 'clay-cannons',
       ...(targetBranchId ? { targetBranchId } : {}),
     }
     return true
@@ -2498,6 +2520,7 @@ export const useMoveAutomationPanel = ({
     if (moveDispatchPending.value) return
     const request = activeMoveTargeting.value
     if (request?.kind === 'virtual-origin') {
+      if (request.originPolicy === 'forest-lord') return
       activeMoveTargeting.value = { ...request, originCell: { ...aimCell } }
       return
     }

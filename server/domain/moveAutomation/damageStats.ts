@@ -64,6 +64,7 @@ import { aa067MoveDamageModifiers } from '../abilityAutomation/mechanics/aa067St
 import { encounterNumericModifierEffects } from './encounterNumericModifiers'
 import { aa070DamageModifiers } from '../abilityAutomation/mechanics/aa070StaticIntegration'
 import { aa069DamageModifiers } from '../abilityAutomation/mechanics/aa069StaticIntegration'
+import { aa071MoveDamageModifiers } from '../abilityAutomation/mechanics/aa071StaticIntegration'
 
 export type MoveDamageStatSelectionErrorCode = 'non-numeric-stat-selection'
 
@@ -396,6 +397,13 @@ export const resolveMoveSpecDamageCalculation = (
     recipient: options.recipient,
     effectivenessMultiplier: moveType.finalMultiplier,
   })
+  const aa071Modifiers = aa071MoveDamageModifiers({
+    context: options.context,
+    operation: options.operation,
+    actor,
+    recipient: options.recipient,
+    moveType: moveType.moveType,
+  })
   const sideDamageResistance = options.context.queries.sideDamageResistance.resolve({
     damageOperationId: options.operation.id,
     targetPlacementId: options.recipient.id,
@@ -536,6 +544,7 @@ export const resolveMoveSpecDamageCalculation = (
         ...aa067Modifiers,
         ...aa069Modifiers,
         ...aa070Modifiers,
+        ...aa071Modifiers,
         ...encounterDamageModifiers,
         ...helpingHandModifiers,
         ...weather.modifiers,

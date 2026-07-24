@@ -20,6 +20,7 @@ import {
 import { ABILITY_AUTOMATION_RUNTIME_REGISTRY, type AbilityAutomationRuntimeRegistry } from './registry'
 import { projectAuthoritativeEffectiveAbilities } from './effectiveAbilities'
 import { resolveSheetAbilityInstances } from './instanceParameters'
+import { aa071ForecastTypeResolution } from './mechanics/aa071StaticIntegration'
 
 export interface BuildAbilityClientCapabilitiesInput {
   readonly role: AuthRole
@@ -91,17 +92,26 @@ export const buildAbilityClientCapabilityBundle = (
       const row = manifestById.get(ability.canonicalId)
       if (!row) return []
       const runtime = registry.resolve(ability.canonicalId)
-      const modeAvailable = (modeId: string): boolean => (
-        ability.canonicalId !== 'Ball Fetch'
-        || modeId !== 'fetch'
-        || hasAa061BallFetchResponse({
-          map: input.map,
-          ownerPlacementId: placement.id,
-          abilityInstanceId: ability.instanceId,
-        })
-      )
+      const modeAvailable = (modeId: string): boolean => {
+        if (ability.canonicalId === 'Ball Fetch' && modeId === 'fetch') {
+          return hasAa061BallFetchResponse({
+            map: input.map,
+            ownerPlacementId: placement.id,
+            abilityInstanceId: ability.instanceId,
+          })
+        }
+        if (ability.canonicalId === 'Forecast' && modeId === 'choose-weather') {
+          return aa071ForecastTypeResolution({
+            contextMap: input.map,
+            placementId: placement.id,
+            hasForecast: true,
+          }).ambiguous
+        }
+        return true
+      }
+      const modeInvocable = (kind: string): boolean => kind === 'activated' || kind === 'configuration'
       const hasInvocableMode = runtime?.definition.spec.modes.some(mode => (
-        mode.kind === 'activated' && modeAvailable(mode.id)
+        modeInvocable(mode.kind) && modeAvailable(mode.id)
       )) ?? false
       let status: AbilityClientCapabilityStatus
       if (!ability.effective) status = 'suppressed'
@@ -119,7 +129,7 @@ export const buildAbilityClientCapabilityBundle = (
       const modes = runtime?.definition.spec.modes.map(mode => ({
         modeId: mode.id,
         kind: mode.kind,
-        invocable: status === 'ready' && mode.kind === 'activated' && modeAvailable(mode.id),
+        invocable: status === 'ready' && modeInvocable(mode.kind) && modeAvailable(mode.id),
         targeting: runtime.definition.spec.targeting
           .filter(targeting => targeting.modeId === mode.id)
           .map(targeting => ({

@@ -69,6 +69,7 @@ import {
   primeAa066MoveRandomness,
 } from '../abilityAutomation/mechanics/aa066StaticIntegration'
 import { aa070FluffyDamageTypeOverlay } from '../abilityAutomation/mechanics/aa070StaticIntegration'
+import { aa071ResistDamageType } from '../abilityAutomation/mechanics/aa071StaticIntegration'
 import { applyEncounterNumericModifiers } from './encounterNumericModifiers'
 import type {
   MoveCoreTokenEffectRecipient,
@@ -790,6 +791,8 @@ export const executeMoveMultiHitOperation = (options: {
   readonly script: MoveAutomationScript
   readonly canonicalMoveId: string
   readonly recipientIds: readonly string[]
+  /** Triggered one-damage resistance steps apply to the first successful strike only. */
+  readonly firstStrikeResistanceStepsByRecipient?: ReadonlyMap<string, number>
 }): MoveMultiHitExecution => {
   const { context, operation } = options
   assertRollBudget({ context, operation, recipientCount: options.recipientIds.length })
@@ -806,6 +809,7 @@ export const executeMoveMultiHitOperation = (options: {
   const hitTargetIds = new Set<string>()
   const damagedTargetIds = new Set<string>()
   const faintedTargetIds = new Set<string>()
+  const resistanceAppliedTargetIds = new Set<string>()
   let operationOrder = 0
   const nextOperationOrder = (): number => operationOrder++
   let sequenceCount: CountResolution | null = operation.payload.count.kind === 'fixed'
@@ -930,12 +934,21 @@ export const executeMoveMultiHitOperation = (options: {
             recipientId,
             canonicalMoveId: options.canonicalMoveId,
           })
-          const resolvedType = aa070FluffyDamageTypeOverlay({
+          const fluffyType = aa070FluffyDamageTypeOverlay({
             context,
             script: options.script,
             recipientId,
             resolved: baseResolvedType,
           })
+          const resistanceSteps = resistanceAppliedTargetIds.has(recipientId)
+            ? 0
+            : options.firstStrikeResistanceStepsByRecipient?.get(recipientId) ?? 0
+          const resolvedType = aa071ResistDamageType({
+            resolved: fluffyType,
+            steps: resistanceSteps,
+            sources: Array.from({ length: resistanceSteps }, () => 'AA-071 triggered resistance'),
+          })
+          if (resistanceSteps > 0) resistanceAppliedTargetIds.add(recipientId)
           const formula = resolveMoveSpecDamageRollFormula({
             context,
             operation: damageOperation,

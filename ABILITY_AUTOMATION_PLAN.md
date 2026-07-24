@@ -2,7 +2,7 @@
 
 `PLAN_STATUS: IN_PROGRESS`
 
-`CURRENT_TICKET: AA-071`
+`CURRENT_TICKET: AA-072`
 
 ## Goal
 
@@ -96,14 +96,14 @@ Ability automation should reuse MoveSpec v2 selectors, expressions, operations, 
 
 ## Progress snapshot
 
-- Plan tickets: **70 DONE / 110 total**
+- Plan tickets: **71 DONE / 110 total**
 - Canonical inventory: **483**
-- Semantically complete: **132**
+- Semantically complete: **144**
 - Assisted: **0**
-- Blocked/unimplemented: **351**
+- Blocked/unimplemented: **339**
 - Interaction status: **483 unassessed**
 - Legacy baseline: **45 abilities with 55 partial fragments; 438 with no reviewed legacy fragment**
-- Production runtime: **132 exact manifest-selected AbilitySpec v1 runtimes**; retained legacy paths remain explicit compatibility only
+- Production runtime: **144 exact manifest-selected AbilitySpec v1 runtimes**; retained legacy paths remain explicit compatibility only
 
 ## Tickets
 
@@ -261,7 +261,7 @@ Each cohort must review every named ability against canonical text, implement al
   - Electrodash; Emergency Exit; Empower; Enduring Rage; Enfeebling Lips; Exploit; Fabulous Trim; Fade Away; Fairy Aura; Fashion Designer; Fiery Crash; Filter
 - [x] **AA-070 — Flame Body through Flying Fly Trap** — `DONE`
   - Flame Body; Flame Tongue; Flare Boost; Flash Fire; Flavorful Aroma; Flower Gift; Flower Power; Flower Veil; Fluffy; Fluffy Charge; Flutter; Flying Fly Trap
-- [ ] **AA-071 — Focus through Full Metal Body** — `TODO`
+- [x] **AA-071 — Focus through Full Metal Body** — `DONE`
   - Focus; Forecast; Forest Lord; Forewarn; Fox Fire; Freezing Point; Friend Guard; Frighten; Frisk; Frostbite; Full Guard; Full Metal Body
 - [ ] **AA-072 — Fur Coat through Grass Pelt** — `TODO`
   - Fur Coat; Gale Wings; Galvanize; Gardener; Gentle Vibe; Giver; Glisten; Gluttony; Gooey; Gore; Gorilla Tactics; Grass Pelt
