@@ -9,6 +9,11 @@ import type {
 } from '#shared/moveAutomation/encounterEffects'
 import type { SheetPlacement, TabletopMap } from '~/types/map'
 import { applyEncounterEffectLifecycleEvent } from './effectLifecycle'
+import {
+  AA073_HARVEST_TAILS_CAPABILITY,
+  AA073_HARVEST_TRADE_CAPABILITY,
+  aa073ActiveEncounterEffect,
+} from '#shared/abilityAutomation/aa073'
 
 export const DIGESTION_BUFF_TRADED_CAPABILITY_ID =
   'digestion-buff-traded-this-scene' as const
@@ -132,6 +137,85 @@ export const digestionBuffTradeCount = (input: {
       : total
   ), 0)
 }
+
+const harvestMarkerTag = (
+  placement: Pick<SheetPlacement, 'sheetKind' | 'sheetSlug'>,
+  capabilityId: string,
+): string => `harvest.${capabilityId}.${sheetIdentityDigest(placement)}`
+
+const harvestMarkerEffect = (input: {
+  readonly map: TabletopMap
+  readonly placement: SheetPlacement
+  readonly operationId: string
+  readonly moveId: string
+  readonly capabilityId: typeof AA073_HARVEST_TRADE_CAPABILITY | typeof AA073_HARVEST_TAILS_CAPABILITY
+}): EncounterCapabilityEffect => ({
+  id: `effect.${input.capabilityId}.${sheetIdentityDigest(input.placement)}`,
+  kind: 'capability',
+  source: {
+    operationId: input.operationId,
+    moveId: input.moveId,
+    placementId: input.placement.id,
+  },
+  affected: { placementIds: [input.placement.id], sideIds: [], cells: [] },
+  createdRound: Math.max(1, input.map.initiative?.round ?? 1),
+  createdTurn: Math.max(0, input.map.encounterState?.history.currentTurn?.turn ?? 0),
+  duration: { kind: 'scene', remaining: null },
+  stacks: 1,
+  charges: null,
+  stackPolicy: { kind: 'replace', maxStacks: null },
+  chargePolicy: { kind: 'none', amount: null },
+  tags: ['ability', 'aa073', 'harvest', harvestMarkerTag(input.placement, input.capabilityId)],
+  payload: { capabilityId: input.capabilityId, action: 'grant' },
+  dispel: { policy: 'none', tags: [] },
+  transferPolicy: 'retain',
+  suppression: { sources: [] },
+})
+
+/** Commit Harvest's per-turn gate and, after tails, its scene stop marker. */
+export const recordHarvestDigestionTrade = (input: {
+  readonly map: TabletopMap
+  readonly placement: SheetPlacement
+  readonly operationId: string
+  readonly moveId: string
+  readonly result: 'heads' | 'tails' | 'sunny'
+}): TabletopMap => {
+  const encounter = parseEncounterState(input.map.encounterState ?? createEmptyEncounterState())
+  const markers = [
+    harvestMarkerEffect({ ...input, capabilityId: AA073_HARVEST_TRADE_CAPABILITY }),
+    ...(input.result === 'tails'
+      ? [harvestMarkerEffect({ ...input, capabilityId: AA073_HARVEST_TAILS_CAPABILITY })]
+      : []),
+  ]
+  const effects = markers.reduce((current, effect) => applyEncounterEffectLifecycleEvent(
+    { effects: current }, { kind: 'effect-applied', effect },
+  ).effects, encounter.effects)
+  return { ...input.map, encounterState: parseEncounterState({ ...encounter, effects }) }
+}
+
+export const harvestStoppedForSheet = (input: {
+  readonly effects: readonly EncounterEffect[]
+  readonly placement: Pick<SheetPlacement, 'id' | 'sheetKind' | 'sheetSlug'>
+}): boolean => input.effects.some(effect => effect.kind === 'capability'
+  && aa073ActiveEncounterEffect(effect)
+  && effect.payload.action === 'grant'
+  && effect.payload.capabilityId === AA073_HARVEST_TAILS_CAPABILITY
+  && (effect.affected.placementIds.includes(input.placement.id)
+    || effect.tags.includes(harvestMarkerTag(input.placement, AA073_HARVEST_TAILS_CAPABILITY))))
+
+export const harvestTradedForSheetThisTurn = (input: {
+  readonly effects: readonly EncounterEffect[]
+  readonly placement: Pick<SheetPlacement, 'id' | 'sheetKind' | 'sheetSlug'>
+  readonly round: number
+  readonly turn: number
+}): boolean => input.effects.some(effect => effect.kind === 'capability'
+  && aa073ActiveEncounterEffect(effect)
+  && effect.payload.action === 'grant'
+  && effect.payload.capabilityId === AA073_HARVEST_TRADE_CAPABILITY
+  && effect.createdRound === input.round
+  && effect.createdTurn === input.turn
+  && (effect.affected.placementIds.includes(input.placement.id)
+    || effect.tags.includes(harvestMarkerTag(input.placement, AA073_HARVEST_TRADE_CAPABILITY))))
 
 /** Match direct placement effects and opaque sheet-bound markers from an immutable snapshot. */
 export const hasSheetBoundCapabilityEffect = (input: {

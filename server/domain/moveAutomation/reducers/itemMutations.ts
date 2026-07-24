@@ -61,7 +61,14 @@ import {
   MOVE_ITEM_MUTATION_LIMITS,
   MoveItemMutationError,
 } from '../itemMutationTypes'
-import { digestionBuffTradeCount, recordDigestionBuffTrade } from '../digestionBuffTrade'
+import {
+  digestionBuffTradeCount,
+  harvestStoppedForSheet,
+  harvestTradedForSheetThisTurn,
+  recordDigestionBuffTrade,
+  recordHarvestDigestionTrade,
+} from '../digestionBuffTrade'
+import { createMoveAutomationWeatherResolver } from '../weather'
 import { aa067PokemonHeldItemCapacity } from '../../abilityAutomation/mechanics/aa067ItemIntegration'
 
 export interface ReduceMoveItemMutationsInput {
@@ -1336,9 +1343,10 @@ const digestionBuffNames = (
   return names
 }
 
-const hasEffectiveGluttony = (
+const hasEffectiveAbility = (
   state: WorkingState,
   owner: MoveItemOwnerReference,
+  canonicalId: 'Gluttony' | 'Harvest',
   placementId?: string,
 ): boolean => {
   if (owner.kind !== 'sheet') return false
@@ -1351,7 +1359,7 @@ const hasEffectiveGluttony = (
   const placement = placementId === undefined
     ? ownerPlacements.length === 1 ? ownerPlacements[0] : undefined
     : ownerPlacements.find(candidate => candidate.id === placementId)
-  const runtime = ABILITY_AUTOMATION_RUNTIME_REGISTRY.resolve('Gluttony')
+  const runtime = ABILITY_AUTOMATION_RUNTIME_REGISTRY.resolve(canonicalId)
   return Boolean(sheet && placement && runtime && projectAuthoritativeEffectiveAbilities({
     baseAbilities: resolveSheetAbilityInstances(sheet.abilities),
     target: {
@@ -1361,9 +1369,15 @@ const hasEffectiveGluttony = (
     },
     effects: state.map.encounterState?.effects ?? [],
     transformationSnapshots: state.map.encounterState?.abilityTransformations,
-  }).some(candidate => candidate.effective && candidate.canonicalId === 'Gluttony'
+  }).some(candidate => candidate.effective && candidate.canonicalId === canonicalId
     && (candidate.definitionHash === null || candidate.definitionHash === runtime.definitionHash)))
 }
+
+const hasEffectiveGluttony = (
+  state: WorkingState,
+  owner: MoveItemOwnerReference,
+  placementId?: string,
+): boolean => hasEffectiveAbility(state, owner, 'Gluttony', placementId)
 
 const storeDigestionBuff = (input: {
   readonly state: WorkingState
@@ -1425,9 +1439,10 @@ const digestStoredBuff = (input: {
   readonly owner: MoveItemOwnerReference
   readonly canonicalItemIds: readonly string[] | null
   readonly storageSlot?: number
+  readonly retain: boolean
   readonly operation: MoveItemMutation
   readonly operationOrder: number
-}): { readonly canonicalItemId: string; readonly resourceKey: string } => {
+}): { readonly canonicalItemId: string; readonly resourceKey: string | null } => {
   const owner = input.owner
   if (owner.kind !== 'sheet') {
     return fail('invalid-destination', `Operation ${input.operation.id} digestion owner must be a sheet.`)
@@ -1451,6 +1466,7 @@ const digestStoredBuff = (input: {
   )) ?? null
   const canonical = selectedBuff?.canonical ?? canonicalBuffs[0]?.canonical ?? null
   if (selectedBuff) {
+    if (input.retain) return { canonicalItemId: selectedBuff.canonical.id, resourceKey: null }
     const retainedNames = names.filter((_name, index) => index !== selectedBuff.index)
     if (owner.sheetKind === 'pokemon') {
       const sheet = input.state.pokemonSheets.get(owner.slug)
@@ -1492,6 +1508,7 @@ const digestStoredBuff = (input: {
       && entry.lastTradedSceneId !== sceneId
       && (input.canonicalItemIds === null || input.canonicalItemIds.includes(entry.canonicalItemId)))
     if (stored) {
+      if (input.retain) return { canonicalItemId: stored.canonicalItemId, resourceKey: null }
       const nextEntry = { ...stored, quantity: stored.quantity - 1, lastTradedSceneId: sceneId }
       setPokemonSheet(input.state, owner.slug, {
         ...sheet,
@@ -1825,11 +1842,46 @@ const reduceOperation = (input: {
         `Digest-buff source placement ${sourcePlacementId} does not own ${owner.kind === 'sheet' ? `${owner.sheetKind}/${owner.slug}` : 'the selected sheet'}.`,
       )
     }
-    const foodBuffUseLimit = hasEffectiveGluttony(state, owner, sourcePlacement.id)
-      ? AA072_GLUTTONY_FOOD_BUFF_USES_PER_SCENE
-      : 1
+    const harvest = operation.harvest
+    if (harvest !== undefined && (
+      !['heads', 'tails', 'sunny'].includes(harvest.result)
+      || typeof harvest.retainBuff !== 'boolean'
+      || (harvest.rollId !== null && (typeof harvest.rollId !== 'string' || !harvest.rollId.trim()))
+      || harvest.retainBuff !== (harvest.result === 'heads' || harvest.result === 'sunny')
+      || (harvest.result === 'sunny') !== (harvest.rollId === null)
+    )) {
+      fail('invalid-operation', `Digest-buff operation ${operation.id} has invalid Harvest evidence.`)
+    }
+    const harvestEffective = hasEffectiveAbility(state, owner, 'Harvest', sourcePlacement.id)
+    const encounterEffects = state.map.encounterState?.effects ?? []
+    const harvestStopped = harvestEffective && harvestStoppedForSheet({
+      effects: encounterEffects,
+      placement: sourcePlacement,
+    })
+    const round = Math.max(1, state.map.initiative?.round ?? 1)
+    const turn = Math.max(0, state.map.encounterState?.history.currentTurn?.turn ?? 0)
+    if (harvest && (!harvestEffective || harvestStopped)) {
+      fail('invalid-operation', `Digest-buff operation ${operation.id} has stale Harvest authority.`)
+    }
+    if (harvest && harvestTradedForSheetThisTurn({
+      effects: encounterEffects,
+      placement: sourcePlacement,
+      round,
+      turn,
+    })) {
+      fail('destination-occupied', `Harvest owner ${owner.slug} already traded a Digestion Buff this turn.`)
+    }
+    if (harvest?.result === 'sunny'
+      && !createMoveAutomationWeatherResolver(state.map).active().some(weather => weather.kind === 'sunny')) {
+      fail('invalid-operation', `Digest-buff operation ${operation.id} lost Sunny Weather Harvest authority.`)
+    }
+    const foodBuffUseLimit = harvest
+      ? 64
+      : hasEffectiveGluttony(state, owner, sourcePlacement.id)
+        ? AA072_GLUTTONY_FOOD_BUFF_USES_PER_SCENE
+        : 1
     const foodBuffUses = digestionBuffTradeCount({
-      effects: state.map.encounterState?.effects ?? [],
+      effects: encounterEffects,
       placement: sourcePlacement,
     })
     if (foodBuffUses >= foodBuffUseLimit) {
@@ -1843,15 +1895,27 @@ const reduceOperation = (input: {
       owner,
       canonicalItemIds,
       ...(storageSlot === undefined ? {} : { storageSlot }),
+      retain: harvest?.retainBuff ?? false,
       operation,
       operationOrder,
     })
-    touchedKeys.add(digested.resourceKey)
+    const digestedIdentity = resolveMoveAutomationItemRuleIdentity(digested.canonicalItemId)
+    if (harvest && digestedIdentity?.family !== 'berry') {
+      fail('item-mismatch', `Harvest cannot retain non-Berry Digestion Buff ${digested.canonicalItemId}.`)
+    }
+    if (digested.resourceKey) touchedKeys.add(digested.resourceKey)
     state.map = recordDigestionBuffTrade({
       map: state.map,
       placement: sourcePlacement,
       operationId: operation.id,
       moveId: sourceMoveId,
+    })
+    if (harvest) state.map = recordHarvestDigestionTrade({
+      map: state.map,
+      placement: sourcePlacement,
+      operationId: operation.id,
+      moveId: sourceMoveId,
+      result: harvest.result,
     })
     const mapOwner = {
       kind: 'map' as const,

@@ -102,6 +102,7 @@ import { aa069MoveOverlayOperations } from '../abilityAutomation/mechanics/aa069
 import { aa070MoveOverlayOperations } from '../abilityAutomation/mechanics/aa070MoveIntegration'
 import { aa071MoveOverlayOperations } from '../abilityAutomation/mechanics/aa071MoveIntegration'
 import { aa072MoveOverlayOperations } from '../abilityAutomation/mechanics/aa072MoveIntegration'
+import { aa073MoveOverlayOperations } from '../abilityAutomation/mechanics/aa073MoveIntegration'
 import {
   AA068_DUST_CLOUD_TARGETING_OVERRIDE,
   aa068DrySkinCancelsRecipientEffect,
@@ -973,6 +974,7 @@ const executeReviewedMoveSpec = (
     ...aa070MoveOverlayOperations(overlayInput),
     ...aa071MoveOverlayOperations(overlayInput),
     ...aa072MoveOverlayOperations(overlayInput),
+    ...aa073MoveOverlayOperations(overlayInput),
   ]
   const boneLordLine = script.moveName === 'Bonemerang'
     && aa062BoneLordEmpowersMove(options.context, 'Bonemerang')
@@ -1195,7 +1197,8 @@ export const reduceCompletedMoveSpec = (
     branchControlledOperationIds(uncommittedOperations),
   )
   for (const { operation } of uncommittedOperations) {
-    if (operation.reasonCode === 'ability.flame-body.burn-attacker') {
+    if (operation.reasonCode === 'ability.flame-body.burn-attacker'
+      || operation.reasonCode.startsWith('ability.gulp-missile.retaliation-')) {
       recipientControlledOperationIds.add(operation.id)
     }
     const operationContext = contextForOperation(operation)

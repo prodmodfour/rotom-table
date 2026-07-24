@@ -174,6 +174,20 @@ import {
   aa072FurCoatDamageTypeOverlay,
   aa072GorillaTacticsMoveAllowed,
 } from '../abilityAutomation/mechanics/aa072StaticIntegration'
+import { aa073HeatproofDamageTypeOverlay } from '../abilityAutomation/mechanics/aa073StaticIntegration'
+import {
+  AA073_GRIM_NEIGH_REASON,
+  AA073_GULP_MISSILE_ARM_REASON,
+  AA073_GULP_MISSILE_CONSUME_REASON,
+  AA073_GULP_MISSILE_DEFENSE_REASON,
+  AA073_GULP_MISSILE_HP_REASON,
+  AA073_GULP_MISSILE_PARALYZE_REASON,
+  AA073_GULP_MISSILE_ROLL_REASON,
+  AA073_HEAT_MIRAGE_REASON,
+  aa073GulpMissileOwnerId,
+  aa073HarvestOwnerId,
+  aa073MoveOverlayOperations,
+} from '../abilityAutomation/mechanics/aa073MoveIntegration'
 import {
   AA068_DRAGONS_MAW_REASON,
   AA068_DREAM_SMOKE_REASON,
@@ -3048,6 +3062,7 @@ const executeMoveSpecInternal = (
             return hitEnemy ? owners : []
           }
           if (operation.reasonCode === 'ability.chilling-neigh.optional-boost'
+            || operation.reasonCode === AA073_GRIM_NEIGH_REASON
             || operation.reasonCode === 'ability.conqueror.optional-stages') {
             const alreadyHandledByChild = operation.reasonCode === 'ability.conqueror.optional-stages'
               && childExecutions.some(child => child.trace.events.some(event => (
@@ -3094,7 +3109,9 @@ const executeMoveSpecInternal = (
             return targetId && hitTargetIds.includes(targetId) ? owners : []
           }
           if (operation.reasonCode === AA072_GALE_WINGS_REASON
-            || operation.reasonCode === AA072_GORE_REASON) return owners
+            || operation.reasonCode === AA072_GORE_REASON
+            || operation.reasonCode === AA073_GULP_MISSILE_ARM_REASON
+            || operation.reasonCode === AA073_HEAT_MIRAGE_REASON) return owners
           if (operation.reasonCode === AA072_GORILLA_TACTICS_REASON) {
             return aa072GoreSelected ? [] : owners
           }
@@ -3235,7 +3252,8 @@ const executeMoveSpecInternal = (
             const targetId = request.source.id.slice('ability.bully.target:'.length)
             return input.context.queries.placements.get(targetId) ? [targetId] : []
           }
-          if (operation.reasonCode === 'ability.chilling-neigh.foe-evasion' && owners.length === 1) {
+          if ((operation.reasonCode === 'ability.chilling-neigh.foe-evasion'
+            || operation.reasonCode === 'ability.grim-neigh.foe-accuracy') && owners.length === 1) {
             const owner = input.context.queries.tokens.get(owners[0]!)
             if (!owner) return []
             return canonicalPlacementIds(input.context, input.context.queries.placements.all().flatMap((placement) => {
@@ -3291,6 +3309,29 @@ const executeMoveSpecInternal = (
         if (operation.kind === 'choice-request'
           && operation.reasonCode === AA069_ENFEEBLING_LIPS_REASON
           && hitTargetIds.length === 0) return []
+        const harvestOwnerId = aa073HarvestOwnerId(operation)
+        if (harvestOwnerId) {
+          return (targetIds.includes(harvestOwnerId)
+              || harvestOwnerId === input.context.actor.placement.id)
+            && input.context.queries.abilities.has(harvestOwnerId, 'Harvest')
+            ? [harvestOwnerId]
+            : []
+        }
+        const gulpMissileOwnerId = aa073GulpMissileOwnerId(operation)
+        if (gulpMissileOwnerId) {
+          if (!damagedTargetIds.includes(gulpMissileOwnerId)) return []
+          if (operation.reasonCode === AA073_GULP_MISSILE_CONSUME_REASON) {
+            return input.context.queries.placements.get(gulpMissileOwnerId)
+              ? [gulpMissileOwnerId]
+              : []
+          }
+          if (operation.reasonCode === AA073_GULP_MISSILE_ROLL_REASON
+            || operation.reasonCode === AA073_GULP_MISSILE_HP_REASON
+            || operation.reasonCode === AA073_GULP_MISSILE_PARALYZE_REASON
+            || operation.reasonCode === AA073_GULP_MISSILE_DEFENSE_REASON) {
+            return [input.context.actor.placement.id]
+          }
+        }
         const targetBoundId = aa068TargetBoundOperationTargetId(operation)
         const resolved = effectRecipientIds(input.context, selectorState, operation.recipients.kind)
           .filter(recipientId => targetBoundId === null || recipientId === targetBoundId)
@@ -4362,11 +4403,16 @@ const executeMoveSpecInternal = (
             steps: aa071ResistanceSources.length,
             sources: aa071ResistanceSources,
           })
+          const aa073ResolvedType = aa073HeatproofDamageTypeOverlay({
+            context: input.context,
+            recipientId,
+            resolved: aa071ResolvedType,
+          })
           const resolvedType = aa068DamageTypeOverlay({
             context: input.context,
             script: getMechanics().script,
             recipientId,
-            resolved: aa071ResolvedType,
+            resolved: aa073ResolvedType,
             naturalAccuracyRoll: naturalCriticalRoll,
             dragonsMawSelected: selectedDragonsMawTargetIds.has(recipientId),
           })
@@ -5378,6 +5424,12 @@ const executeMoveSpecInternal = (
               authoritativeTargetIds: childTargetIds,
             }),
             ...aa072MoveOverlayOperations({
+              context: childContext,
+              script: childMechanics,
+              moveSourceId: childMoveSourceId,
+              authoritativeTargetIds: childTargetIds,
+            }),
+            ...aa073MoveOverlayOperations({
               context: childContext,
               script: childMechanics,
               moveSourceId: childMoveSourceId,

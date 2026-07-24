@@ -76,6 +76,11 @@ export const AA072_ABILITY_MECHANIC_IDS = [
   'aa072.gentle-vibe', 'aa072.giver', 'aa072.glisten', 'aa072.gluttony',
   'aa072.gooey', 'aa072.gore', 'aa072.gorilla-tactics', 'aa072.grass-pelt',
 ] as const
+export const AA073_ABILITY_MECHANIC_IDS = [
+  'aa073.grassy-surge', 'aa073.grim-neigh', 'aa073.gulp', 'aa073.gulp-missile',
+  'aa073.guts', 'aa073.handyman', 'aa073.harvest', 'aa073.haunt',
+  'aa073.hay-fever', 'aa073.healer', 'aa073.heat-mirage', 'aa073.heatproof',
+] as const
 export type Aa060AbilityMechanicId = (typeof AA060_ABILITY_MECHANIC_IDS)[number]
 export type AbilityMechanicId = Aa060AbilityMechanicId
   | (typeof AA061_ABILITY_MECHANIC_IDS)[number]
@@ -90,6 +95,7 @@ export type AbilityMechanicId = Aa060AbilityMechanicId
   | (typeof AA070_ABILITY_MECHANIC_IDS)[number]
   | (typeof AA071_ABILITY_MECHANIC_IDS)[number]
   | (typeof AA072_ABILITY_MECHANIC_IDS)[number]
+  | (typeof AA073_ABILITY_MECHANIC_IDS)[number]
 export interface AbilityMechanicOperation extends AbilitySpecJsonObject {
   readonly kind: typeof ABILITY_MECHANIC_OPERATION_KIND
   readonly id: string
@@ -264,6 +270,18 @@ const CONFIG_FIELDS: Readonly<Record<AbilityMechanicId, readonly string[]>> = {
   'aa072.gore': ['action', 'frequency', 'uses', 'connectionMoveId', 'grantKeyword', 'pushDistance'],
   'aa072.gorilla-tactics': ['action', 'frequency', 'damageBonus', 'duration', 'restrictToPreviouslyUsedMoves'],
   'aa072.grass-pelt': ['action', 'frequency', 'temporaryHpTicks'],
+  'aa073.grassy-surge': ['action', 'frequency', 'uses', 'terrain', 'durationRounds'],
+  'aa073.grim-neigh': ['action', 'frequency', 'damagingOnly', 'faintedRelationship', 'specialAttackStages', 'foeRadius', 'accuracyPenalty', 'durationRounds'],
+  'aa073.gulp': ['action', 'frequency', 'submergedMinutes', 'healingNumerator', 'healingDenominator', 'injuriesRemoved'],
+  'aa073.gulp-missile': ['action', 'frequency', 'uses', 'connectionMoveId', 'triggerMoveIds', 'attackAc', 'attackClass', 'hpLossTicks', 'evenCondition', 'oddDefenseStageDelta'],
+  'aa073.guts': ['conditions', 'attackStages'],
+  'aa073.handyman': ['heldItemCapacity', 'chooseAffectedItem'],
+  'aa073.harvest': ['action', 'frequency', 'itemFamily', 'coinSides', 'retainOnResult', 'sunnyAlwaysRetains', 'tradesPerTurn', 'stopAfterResult'],
+  'aa073.haunt': ['lastChanceType', 'hpThresholdNumerator', 'hpThresholdDenominator', 'damageBonus'],
+  'aa073.hay-fever': ['action', 'frequency', 'branch', 'triggers', 'excludedWeather', 'immuneTypes', 'hpLossTicks'],
+  'aa073.healer': ['action', 'frequency', 'adjacency', 'cureConditionGroup'],
+  'aa073.heat-mirage': ['action', 'frequency', 'triggerType', 'evasionBonus', 'duration'],
+  'aa073.heatproof': ['moveType', 'resistanceSteps', 'preventBurnHpLoss'],
 }
 const MECHANIC_SET = new Set<string>([
   ...AA060_ABILITY_MECHANIC_IDS, ...AA061_ABILITY_MECHANIC_IDS,
@@ -272,7 +290,7 @@ const MECHANIC_SET = new Set<string>([
   ...AA066_ABILITY_MECHANIC_IDS, ...AA067_ABILITY_MECHANIC_IDS,
   ...AA068_ABILITY_MECHANIC_IDS, ...AA069_ABILITY_MECHANIC_IDS,
   ...AA070_ABILITY_MECHANIC_IDS, ...AA071_ABILITY_MECHANIC_IDS,
-  ...AA072_ABILITY_MECHANIC_IDS,
+  ...AA072_ABILITY_MECHANIC_IDS, ...AA073_ABILITY_MECHANIC_IDS,
 ])
 const ID = /^[a-z0-9]+(?:[._:/-][a-z0-9]+)*$/
 const fail = (code: AbilityMechanicValidationError['code'], path: string, detail: string): never => { throw new AbilityMechanicValidationError(code, path, detail) }
@@ -1115,6 +1133,61 @@ const parseConfig = (mechanicId: AbilityMechanicId, value: unknown, path: string
     case 'aa072.grass-pelt': return {
       action: oneOf(config.action, ['swift'], `${path}.action`), frequency: oneOf(config.frequency, ['scene'], `${path}.frequency`),
       temporaryHpTicks: integer(config.temporaryHpTicks, `${path}.temporaryHpTicks`, 2, 2),
+    }
+    case 'aa073.grassy-surge': return {
+      action: oneOf(config.action, ['swift'], `${path}.action`), frequency: oneOf(config.frequency, ['scene'], `${path}.frequency`),
+      uses: integer(config.uses, `${path}.uses`, 3, 3), terrain: oneOf(config.terrain, ['grassy'], `${path}.terrain`),
+      durationRounds: integer(config.durationRounds, `${path}.durationRounds`, 1, 1),
+    }
+    case 'aa073.grim-neigh': return {
+      action: oneOf(config.action, ['free'], `${path}.action`), frequency: oneOf(config.frequency, ['at-will'], `${path}.frequency`),
+      damagingOnly: bool(config.damagingOnly, `${path}.damagingOnly`), faintedRelationship: oneOf(config.faintedRelationship, ['enemy'], `${path}.faintedRelationship`),
+      specialAttackStages: integer(config.specialAttackStages, `${path}.specialAttackStages`, 1, 1), foeRadius: integer(config.foeRadius, `${path}.foeRadius`, 3, 3),
+      accuracyPenalty: integer(config.accuracyPenalty, `${path}.accuracyPenalty`, -2, -2), durationRounds: integer(config.durationRounds, `${path}.durationRounds`, 1, 1),
+    }
+    case 'aa073.gulp': return {
+      action: oneOf(config.action, ['extended'], `${path}.action`), frequency: oneOf(config.frequency, ['daily'], `${path}.frequency`),
+      submergedMinutes: integer(config.submergedMinutes, `${path}.submergedMinutes`, 10, 10), healingNumerator: integer(config.healingNumerator, `${path}.healingNumerator`, 1, 1),
+      healingDenominator: integer(config.healingDenominator, `${path}.healingDenominator`, 4, 4), injuriesRemoved: integer(config.injuriesRemoved, `${path}.injuriesRemoved`, 1, 1),
+    }
+    case 'aa073.gulp-missile': return {
+      action: oneOf(config.action, ['free'], `${path}.action`), frequency: oneOf(config.frequency, ['scene'], `${path}.frequency`), uses: integer(config.uses, `${path}.uses`, 2, 2),
+      connectionMoveId: oneOf(config.connectionMoveId, ['Stockpile'], `${path}.connectionMoveId`), triggerMoveIds: stringArray(config.triggerMoveIds, ['Stockpile', 'Surf', 'Dive'], `${path}.triggerMoveIds`),
+      attackAc: integer(config.attackAc, `${path}.attackAc`, 4, 4), attackClass: oneOf(config.attackClass, ['physical'], `${path}.attackClass`), hpLossTicks: integer(config.hpLossTicks, `${path}.hpLossTicks`, 2, 2),
+      evenCondition: oneOf(config.evenCondition, ['paralyzed'], `${path}.evenCondition`), oddDefenseStageDelta: integer(config.oddDefenseStageDelta, `${path}.oddDefenseStageDelta`, -1, -1),
+    }
+    case 'aa073.guts': return {
+      conditions: stringArray(config.conditions, ['burned', 'poisoned', 'paralysis', 'frozen', 'sleep'], `${path}.conditions`),
+      attackStages: integer(config.attackStages, `${path}.attackStages`, 2, 2),
+    }
+    case 'aa073.handyman': return {
+      heldItemCapacity: integer(config.heldItemCapacity, `${path}.heldItemCapacity`, 2, 2), chooseAffectedItem: bool(config.chooseAffectedItem, `${path}.chooseAffectedItem`),
+    }
+    case 'aa073.harvest': return {
+      action: oneOf(config.action, ['free'], `${path}.action`), frequency: oneOf(config.frequency, ['at-will'], `${path}.frequency`), itemFamily: oneOf(config.itemFamily, ['berry'], `${path}.itemFamily`),
+      coinSides: integer(config.coinSides, `${path}.coinSides`, 2, 2), retainOnResult: oneOf(config.retainOnResult, ['heads'], `${path}.retainOnResult`), sunnyAlwaysRetains: bool(config.sunnyAlwaysRetains, `${path}.sunnyAlwaysRetains`),
+      tradesPerTurn: integer(config.tradesPerTurn, `${path}.tradesPerTurn`, 1, 1), stopAfterResult: oneOf(config.stopAfterResult, ['tails'], `${path}.stopAfterResult`),
+    }
+    case 'aa073.haunt': return {
+      lastChanceType: oneOf(config.lastChanceType, ['ghost'], `${path}.lastChanceType`), hpThresholdNumerator: integer(config.hpThresholdNumerator, `${path}.hpThresholdNumerator`, 1, 1),
+      hpThresholdDenominator: integer(config.hpThresholdDenominator, `${path}.hpThresholdDenominator`, 3, 3), damageBonus: integer(config.damageBonus, `${path}.damageBonus`, 5, 5),
+    }
+    case 'aa073.hay-fever': return {
+      action: oneOf(config.action, ['swift'], `${path}.action`), frequency: oneOf(config.frequency, ['at-will'], `${path}.frequency`), branch: oneOf(config.branch, ['burst-2', 'close-blast-3'], `${path}.branch`),
+      triggers: stringArray(config.triggers, ['status-move-used', 'asleep-turn-end'], `${path}.triggers`), excludedWeather: stringArray(config.excludedWeather, ['rainy', 'sandstorm', 'hail'], `${path}.excludedWeather`),
+      immuneTypes: stringArray(config.immuneTypes, ['bug', 'grass', 'poison'], `${path}.immuneTypes`), hpLossTicks: integer(config.hpLossTicks, `${path}.hpLossTicks`, 1, 1),
+    }
+    case 'aa073.healer': return {
+      action: oneOf(config.action, ['free'], `${path}.action`), frequency: oneOf(config.frequency, ['scene'], `${path}.frequency`), adjacency: integer(config.adjacency, `${path}.adjacency`, 1, 1),
+      cureConditionGroup: oneOf(config.cureConditionGroup, ['all-status'], `${path}.cureConditionGroup`),
+    }
+    case 'aa073.heat-mirage': return {
+      action: oneOf(config.action, ['free'], `${path}.action`), frequency: oneOf(config.frequency, ['at-will'], `${path}.frequency`), triggerType: oneOf(config.triggerType, ['fire'], `${path}.triggerType`),
+      evasionBonus: integer(config.evasionBonus, `${path}.evasionBonus`, 3, 3), duration: oneOf(config.duration, ['until-next-turn-start'], `${path}.duration`),
+    }
+    case 'aa073.heatproof': return {
+      moveType: oneOf(config.moveType, ['fire'], `${path}.moveType`), resistanceSteps: integer(config.resistanceSteps, `${path}.resistanceSteps`, 1, 1),
+      preventBurnHpLoss: bool(config.preventBurnHpLoss, `${path}.preventBurnHpLoss`),
     }
   }
 }

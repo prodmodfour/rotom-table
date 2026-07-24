@@ -12,13 +12,18 @@ import { projectAuthoritativeEffectiveAbilities } from '../effectiveAbilities'
 import { resolveSheetAbilityInstances } from '../instanceParameters'
 import { ABILITY_AUTOMATION_RUNTIME_REGISTRY } from '../registry'
 
-/** Delivery Bird expands the physical held-item destination only while effective. */
+const EXTRA_HELD_ITEM_ABILITIES = Object.freeze(['Delivery Bird', 'Handyman'] as const)
+
+/** Delivery Bird and Handyman expand the physical held-item destination only while effective. */
 export const aa067PokemonHeldItemCapacity = (input: {
   readonly map: TabletopMap
   readonly sheet: CharacterSheet
 }): 1 | 2 => {
-  const runtime = ABILITY_AUTOMATION_RUNTIME_REGISTRY.resolve('Delivery Bird')
-  if (!runtime) return 1
+  const runtimes = new Map(EXTRA_HELD_ITEM_ABILITIES.flatMap((canonicalId) => {
+    const runtime = ABILITY_AUTOMATION_RUNTIME_REGISTRY.resolve(canonicalId)
+    return runtime ? [[canonicalId, runtime] as const] : []
+  }))
+  if (runtimes.size === 0) return 1
   const effective = input.map.placements.some(placement => {
     if (placement.sheetKind !== 'pokemon' || placement.sheetSlug !== input.sheet.slug) return false
     return projectAuthoritativeEffectiveAbilities({
@@ -30,8 +35,11 @@ export const aa067PokemonHeldItemCapacity = (input: {
       },
       effects: input.map.encounterState?.effects ?? [],
       transformationSnapshots: input.map.encounterState?.abilityTransformations,
-    }).some(ability => ability.effective && ability.canonicalId === 'Delivery Bird'
-      && (ability.definitionHash === null || ability.definitionHash === runtime.definitionHash))
+    }).some((ability) => {
+      const runtime = runtimes.get(ability.canonicalId as typeof EXTRA_HELD_ITEM_ABILITIES[number])
+      return Boolean(runtime && ability.effective
+        && (ability.definitionHash === null || ability.definitionHash === runtime.definitionHash))
+    })
   })
   return effective ? 2 : 1
 }
@@ -52,7 +60,7 @@ const destinationKind = (
 
 /**
  * Turn an otherwise ambiguous single-item Move operation into a durable,
- * owner-authorized Delivery Bird choice. One-item operations remain unchanged.
+ * owner-authorized Delivery Bird or Handyman choice. One-item operations remain unchanged.
  */
 export const applyAa067DeliveryBirdItemChoiceEntries = (
   context: AuthoritativeMoveRulesContext,
@@ -77,7 +85,11 @@ export const applyAa067DeliveryBirdItemChoiceEntries = (
   const ownerPlacement = context.queries.placements.all().find(placement => (
     placement.sheetKind === 'pokemon' && placement.sheetSlug === owner.slug
   ))
-  if (!ownerPlacement || !context.queries.abilities.has(ownerPlacement.id, 'Delivery Bird')) return [entry]
+  const capacityAbility = ownerPlacement
+    ? EXTRA_HELD_ITEM_ABILITIES.find(canonicalId => context.queries.abilities.has(ownerPlacement.id, canonicalId))
+    : null
+  if (!ownerPlacement || !capacityAbility) return [entry]
+  const abilitySlug = capacityAbility.toLowerCase().replaceAll(' ', '-')
 
   const suffix = createHash('sha256')
     .update(`${context.resolutionId ?? context.intent.moveName}\u0000${operation.id}\u0000${requirementId}\u0000${ownerPlacement.id}`)
@@ -93,10 +105,10 @@ export const applyAa067DeliveryBirdItemChoiceEntries = (
       ? { kind: 'actor' }
       : operation.recipients,
     phase: operation.phase,
-    reasonCode: 'ability.delivery-bird.choose-affected-item',
+    reasonCode: `ability.${abilitySlug}.choose-affected-item`,
     payload: {
       requestId,
-      promptKey: 'ability.delivery-bird.choose-affected-item',
+      promptKey: `ability.${abilitySlug}.choose-affected-item`,
       options: [],
       allowPass: false,
       itemChoice: {
@@ -111,7 +123,7 @@ export const applyAa067DeliveryBirdItemChoiceEntries = (
         destinations: [{
           id: destinationId,
           kind: destinationKind(operation.payload.action),
-          labelKey: 'ability.delivery-bird.item-affected',
+          labelKey: `ability.${abilitySlug}.item-affected`,
         }],
         noneOption: null,
       },

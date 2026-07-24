@@ -2,7 +2,7 @@
 
 `PLAN_STATUS: IN_PROGRESS`
 
-`CURRENT_TICKET: AA-073`
+`CURRENT_TICKET: AA-074`
 
 ## Goal
 
@@ -96,14 +96,14 @@ Ability automation should reuse MoveSpec v2 selectors, expressions, operations, 
 
 ## Progress snapshot
 
-- Plan tickets: **72 DONE / 110 total**
+- Plan tickets: **73 DONE / 110 total**
 - Canonical inventory: **483**
-- Semantically complete: **156**
+- Semantically complete: **168**
 - Assisted: **0**
-- Blocked/unimplemented: **327**
+- Blocked/unimplemented: **315**
 - Interaction status: **483 unassessed**
 - Legacy baseline: **45 abilities with 55 partial fragments; 438 with no reviewed legacy fragment**
-- Production runtime: **156 exact manifest-selected AbilitySpec v1 runtimes**; retained legacy paths remain explicit compatibility only
+- Production runtime: **168 exact manifest-selected AbilitySpec v1 runtimes**; retained legacy paths remain explicit compatibility only
 
 ## Tickets
 
@@ -265,9 +265,9 @@ Each cohort must review every named ability against canonical text, implement al
   - Focus; Forecast; Forest Lord; Forewarn; Fox Fire; Freezing Point; Friend Guard; Frighten; Frisk; Frostbite; Full Guard; Full Metal Body
 - [x] **AA-072 — Fur Coat through Grass Pelt** — `DONE`
   - Fur Coat; Gale Wings; Galvanize; Gardener; Gentle Vibe; Giver; Glisten; Gluttony; Gooey; Gore; Gorilla Tactics; Grass Pelt
-- [ ] **AA-073 — Grassy Surge through Heatproof** — `TODO`
+- [x] **AA-073 — Grassy Surge through Heatproof** — `DONE`
   - Grassy Surge; Grim Neigh; Gulp; Gulp Missile; Guts; Handyman; Harvest; Haunt; Hay Fever; Healer; Heat Mirage; Heatproof
-- [ ] **AA-074 — Heavy Metal through Hyper Cutter** — `TODO`
+- [ ] **AA-074 — Heavy Metal through Hyper Cutter** — `IN_PROGRESS`
   - Heavy Metal; Heliovolt; Helper; Honey Paws; Honey Thief; Horde Break; Huge Power; Huge Power / Pure Power; Hunger Switch; Hustle; Hydration; Hyper Cutter
 - [ ] **AA-075 — Hypnotic through Innards Out** — `TODO`
   - Hypnotic; Ice Body; Ice Face; Ice Scales; Ice Shield; Ignition Boost; Illuminate; Illusion; Immunity; Imposter; Infiltrator; Innards Out

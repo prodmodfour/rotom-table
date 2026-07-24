@@ -19,6 +19,7 @@ const REVIEWED_CONNECTIONS = [
   ['Gale Wings', 'Quick Attack'],
   ['Giver', 'Present'],
   ['Gore', 'Horn Attack'],
+  ['Gulp Missile', 'Stockpile'],
 ] as const
 
 export const REVIEWED_ABILITY_CONNECTION_MOVES = Object.freeze(

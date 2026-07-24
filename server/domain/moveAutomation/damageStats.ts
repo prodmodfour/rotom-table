@@ -65,6 +65,7 @@ import { encounterNumericModifierEffects } from './encounterNumericModifiers'
 import { aa070DamageModifiers } from '../abilityAutomation/mechanics/aa070StaticIntegration'
 import { aa069DamageModifiers } from '../abilityAutomation/mechanics/aa069StaticIntegration'
 import { aa071MoveDamageModifiers } from '../abilityAutomation/mechanics/aa071StaticIntegration'
+import { aa073MoveDamageModifiers } from '../abilityAutomation/mechanics/aa073StaticIntegration'
 
 export type MoveDamageStatSelectionErrorCode = 'non-numeric-stat-selection'
 
@@ -517,6 +518,13 @@ export const resolveMoveSpecDamageCalculation = (
     ...options.script,
     damageClass: damageClass.damageClass === 'physical' ? 'Physical' : 'Special',
   }
+  const aa073Modifiers = aa073MoveDamageModifiers({
+    context: options.context,
+    operation: options.operation,
+    actor,
+    recipient: options.recipient,
+    moveType: moveType.moveType,
+  })
   const breakdown = resolveMoveAutomationTargetDamageBreakdown(
     resolvedScript,
     helpingHand.length > 0 ? withoutHelpingHandCondition(actor) : actor,
@@ -535,6 +543,7 @@ export const resolveMoveSpecDamageCalculation = (
         options.recipient.id,
         'Dauntless Shield',
       ),
+      gutsActive: options.context.queries.abilities.has(actor.id, 'Guts'),
       additionalModifiers: [
         ...reviewedPreTypeDamageModifiers(options.operation),
         ...aa060.modifiers,
@@ -547,6 +556,7 @@ export const resolveMoveSpecDamageCalculation = (
         ...aa069Modifiers,
         ...aa070Modifiers,
         ...aa071Modifiers,
+        ...aa073Modifiers,
         ...(options.responseDamageModifiers ?? []),
         ...encounterDamageModifiers,
         ...helpingHandModifiers,

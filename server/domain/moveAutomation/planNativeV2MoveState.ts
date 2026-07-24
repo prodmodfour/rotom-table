@@ -703,11 +703,14 @@ const applyTriggeredAbilityPayments = (input: {
     ['ability.gooey.optional-speed-stage', 'Gooey'],
     ['ability.gore.optional-double-strike', 'Gore'],
     ['ability.gorilla-tactics.optional-lock', 'Gorilla Tactics'],
+    ['ability.grim-neigh.optional-boost', 'Grim Neigh'],
+    ['ability.gulp-missile.optional-arm', 'Gulp Missile'],
+    ['ability.heat-mirage.optional-evasion', 'Heat Mirage'],
   ])
   const noFrequency = new Set([
     'Anger Point', 'Aqua Boost', 'Beast Boost', 'Celebrate', 'Chilling Neigh',
     'Color Change', 'Combo Striker', 'Flavorful Aroma', 'Fox Fire',
-    'Galvanize', 'Gooey',
+    'Galvanize', 'Gooey', 'Grim Neigh', 'Heat Mirage',
   ])
   const daily = new Set(['Dig Away', 'Disguise', 'Dodge'])
   const triggeringMoveByOperationId = new Map(input.traces.flatMap(trace => (
@@ -875,7 +878,7 @@ const applyTriggeredAbilityPayments = (input: {
     if (existingByOperation && existingByOperation !== existing) {
       fail('state-change-conflict', `${canonicalId} response operation already paid another resource.`)
     }
-    const limit = ['Bodyguard', 'Dancer', 'Dragon’s Maw', 'Drown Out', 'Giver', 'Gore'].includes(canonicalId)
+    const limit = ['Bodyguard', 'Dancer', 'Dragon’s Maw', 'Drown Out', 'Giver', 'Gore', 'Gulp Missile'].includes(canonicalId)
       ? 2
       : 1
     if (!existingByOperation && (existing?.spent ?? 0) >= limit) {

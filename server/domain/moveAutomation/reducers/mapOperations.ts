@@ -19,6 +19,7 @@ import {
 } from '~/utils/moveLog'
 import { deepCloneJson } from '~/utils/serialization'
 import type { MoveSpecEmittedOperation } from '../executeSpec'
+import { AA073_GULP_MISSILE_CONSUME_REASON } from '../../abilityAutomation/mechanics/aa073MoveIntegration'
 import {
   canonicalMoveEffectPlacementIds,
   expectedMoveEffectRecipientIds,
@@ -201,9 +202,11 @@ export const reduceMoveMapOperations = (
           dynamic,
           failMoveMapOperationReduction,
         )
+    const dynamicGulpMissileConsume = operation.reasonCode === AA073_GULP_MISSILE_CONSUME_REASON
+      && emittedIds.every((id, index) => id === expectedIds[index])
     if (
       !moveEffectRecipientIdsEqual(emission.recipientIds, emittedIds)
-      || !moveEffectRecipientIdsEqual(emittedIds, expectedIds)
+      || (!dynamicGulpMissileConsume && !moveEffectRecipientIdsEqual(emittedIds, expectedIds))
     ) {
       failMoveMapOperationReduction(
         'recipient-set-mismatch',
@@ -261,11 +264,21 @@ export const reduceMoveMapOperations = (
     }
 
     if (operation.kind === 'temporary-effect') {
+      const recipientIds = dynamicGulpMissileConsume ? emittedIds : expectedIds
+      if (dynamicGulpMissileConsume && recipientIds.length === 0) {
+        operationResults.push(resultFor({
+          operation,
+          recipientIds,
+          changed: false,
+          details: { status: 'trigger-not-reached' },
+        }))
+        return
+      }
       const reduced = reduceMoveTemporaryEffect({
         context: operationContext,
         previous: workingMap.encounterState,
         operation,
-        recipientIds: expectedIds,
+        recipientIds,
         faintedRecipientIds: dynamic['fainted-targets'],
       })
       if (reduced.changed) {
@@ -274,7 +287,7 @@ export const reduceMoveMapOperations = (
       }
       operationResults.push(resultFor({
         operation,
-        recipientIds: expectedIds,
+        recipientIds,
         changed: reduced.changed,
         details: reduced.details,
       }))

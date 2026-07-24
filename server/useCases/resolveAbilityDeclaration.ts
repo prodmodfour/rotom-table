@@ -39,6 +39,7 @@ import { executeAa069ActivatedMechanic } from '../domain/abilityAutomation/mecha
 import { executeAa070ActivatedMechanic } from '../domain/abilityAutomation/mechanics/aa070Activated'
 import { executeAa071ActivatedMechanic } from '../domain/abilityAutomation/mechanics/aa071Activated'
 import { executeAa072ActivatedMechanic } from '../domain/abilityAutomation/mechanics/aa072Activated'
+import { executeAa073ActivatedMechanic } from '../domain/abilityAutomation/mechanics/aa073Activated'
 import { createAa063AbilityCombatStageImmunities } from '../domain/abilityAutomation/mechanics/aa063DefenseIntegration'
 import { applyNativeCoreMapChanges } from '../domain/moveAutomation/planNativeV2MoveState'
 import { createMoveStateChangePlan, type MoveStateChangePlan } from '../domain/moveAutomation/plan'
@@ -268,7 +269,14 @@ export const resolveAbilityDeclarationUseCase = (
                                   operationId: intent.intentId,
                                   choices: resolved.choices,
                                 })
-                              : null
+                              : mechanicOperation.mechanicId.startsWith('aa073.')
+                                ? executeAa073ActivatedMechanic({
+                                    context,
+                                    operation: mechanicOperation,
+                                    operationId: intent.intentId,
+                                    choices: resolved.choices,
+                                  })
+                                : null
     const resolvedExecution = execution
       ?? fail(422, 'Ability runtime requires an execution adapter that is not registered for direct declaration resolution.')
     resolutionPlan = resolvedExecution.plan

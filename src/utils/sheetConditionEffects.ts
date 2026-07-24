@@ -39,6 +39,8 @@ const SPEED_EVASION_SUPPRESSING_CONDITIONS = ['Stuck'] as const
 const SHIFT_MOVEMENT_BLOCKING_CONDITIONS = ['Stuck', 'Tripped'] as const
 
 export const QUICK_FEET_ABILITY_NAME = 'Quick Feet'
+export const GUTS_ABILITY_NAME = 'Guts'
+export const HEATPROOF_ABILITY_NAME = 'Heatproof'
 
 const QUICK_FEET_TRIGGERING_CONDITIONS = [
   'Burned',
@@ -47,6 +49,9 @@ const QUICK_FEET_TRIGGERING_CONDITIONS = [
   'Poisoned',
   'Badly Poisoned',
   'Sleep',
+] as const
+const GUTS_TRIGGERING_CONDITIONS = [
+  'Burned', 'Poisoned', 'Badly Poisoned', 'Paralysis', 'Frozen', 'Sleep', 'Bad Sleep',
 ] as const
 
 const MOVEMENT_CAPABILITY_LABELS = [
@@ -131,6 +136,14 @@ const hasAnyCondition = (conditions: Set<string>, names: readonly string[]): boo
 export const hasQuickFeetAbility = (
   abilities: readonly SheetAbilityNameSource[] | null | undefined,
 ): boolean => sheetHasCanonicalAbility(abilities, QUICK_FEET_ABILITY_NAME)
+
+export const hasGutsAbility = (
+  abilities: readonly SheetAbilityNameSource[] | null | undefined,
+): boolean => sheetHasCanonicalAbility(abilities, GUTS_ABILITY_NAME)
+
+export const hasHeatproofAbility = (
+  abilities: readonly SheetAbilityNameSource[] | null | undefined,
+): boolean => sheetHasCanonicalAbility(abilities, HEATPROOF_ABILITY_NAME)
 
 export const hasQuickFeetTriggeringStatus = (
   conditions: readonly string[] | null | undefined,
@@ -251,6 +264,8 @@ export const conditionCombatStageModifier = (
   let modifier = 0
   if (key === 'def' && set.has('Burned')) modifier -= 2
   if (key === 'sdef' && (set.has('Poisoned') || set.has('Badly Poisoned'))) modifier -= 2
+  if (key === 'atk' && hasGutsAbility(options.abilities)
+    && hasAnyCondition(set, GUTS_TRIGGERING_CONDITIONS)) modifier += 2
   if (key === 'spd' && quickFeetActiveForSet(set, options.abilities)) modifier += 2
   return modifier
 }
@@ -385,7 +400,9 @@ export const describeSheetConditionEffects = (
     effects.push({
       id: 'burned-defense',
       label: 'Burned',
-      description: `Defense Combat Stage -2; after taking or being denied a Standard Action, lose ${tickText(options.tickValue)}.`,
+      description: hasHeatproofAbility(options.abilities)
+        ? 'Defense Combat Stage -2; Heatproof prevents the Burn Hit Point loss.'
+        : `Defense Combat Stage -2; after taking or being denied a Standard Action, lose ${tickText(options.tickValue)}.`,
     })
   }
 

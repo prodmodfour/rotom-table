@@ -190,6 +190,8 @@ export interface MoveAutomationResolvedDamageInputs {
   }
   /** Exact effective passive projection for defensive stage providers. */
   readonly dauntlessShieldActive?: boolean
+  /** Exact effective passive projection for condition-gated Attack stages. */
+  readonly gutsActive?: boolean
   /** Future server-owned queries may contribute only fully attributed modifiers. */
   readonly additionalModifiers?: readonly MoveDamageModifier[]
 }
@@ -235,12 +237,16 @@ export const resolveMoveAutomationTargetDamageBreakdown = (
   const infatuation = resolveInfatuationDamageEffect(user.conditions, selectedTargets)
   const conditionRollModifier = conditionDamageRollModifier(user.conditions)
   const physical = script.damageClass === 'Physical'
+  const effectiveOffenseAbilities = [
+    ...(user.abilityNames ?? []).filter(name => name !== 'Guts'),
+    ...((resolvedDamage.gutsActive ?? user.abilityNames?.includes('Guts')) ? ['Guts'] : []),
+  ]
   const defaultOffense = physical
     ? applyCombatStageToStat(user.atk, conditionAdjustedCombatStage(
       user.combatStages.atk,
       user.conditions,
       'atk',
-      { abilities: user.abilityNames },
+      { abilities: effectiveOffenseAbilities },
     ))
     : applyCombatStageToStat(user.satk, conditionAdjustedCombatStage(
       user.combatStages.satk,

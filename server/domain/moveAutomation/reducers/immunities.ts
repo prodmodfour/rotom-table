@@ -18,9 +18,16 @@ import {
 import { projectEffectiveConditions } from '~/utils/encounterConditions'
 import { conditionBaseName, normalizeConditionName } from '~/utils/statusConditions'
 import type { AuthoritativeMoveRulesContext } from '../context'
+import type { MoveEffectOperation } from '#shared/moveAutomation/effects'
 import { computeMultiplier } from '~/utils/typeChart'
 import type { MoveAutomationScript } from '~/types/moveAutomation'
 import { aa064CorrosionCanPoison } from '../../abilityAutomation/mechanics/aa064MoveIntegration'
+import {
+  AA073_GULP_MISSILE_DEFENSE_REASON,
+  AA073_GULP_MISSILE_HP_REASON,
+  AA073_GULP_MISSILE_PARALYZE_REASON,
+  aa073GulpMissileAccuracyOutcome,
+} from '../../abilityAutomation/mechanics/aa073MoveIntegration'
 import type {
   MoveConditionImmunityDecision,
   MoveCoreTokenEffectImmunityDecision,
@@ -32,7 +39,7 @@ export interface StandardMoveCoreTokenEffectImmunityOptions {
   /** Null is allowed for typeless effects; type-immunity-enabled HP loss then fails closed. */
   readonly moveType: string | null
   /** Reviewed move keywords used for whole-move immunity such as Powder and Sonic. */
-  readonly moveScript?: Pick<MoveAutomationScript, 'keywords'>
+  readonly moveScript?: MoveAutomationScript
   readonly conditionContext?: MoveAutomationConditionImmunityContext
   /** Enables side-relationship and typed placement/side/cell prevention queries. */
   readonly context?: AuthoritativeMoveRulesContext
@@ -164,6 +171,22 @@ export const createStandardMoveCoreTokenEffectImmunityQueries = (
 ): MoveCoreTokenEffectImmunityQueries => {
   const conditionContext = options.conditionContext
     ?? authoritativeConditionContext(options.context)
+  const gulpMissileAccuracyBlocker = (operation: MoveEffectOperation): string | null => {
+    if (![AA073_GULP_MISSILE_HP_REASON, AA073_GULP_MISSILE_PARALYZE_REASON, AA073_GULP_MISSILE_DEFENSE_REASON]
+      .includes(operation.reasonCode as typeof AA073_GULP_MISSILE_HP_REASON)) return null
+    if (!options.context || !options.moveScript) return 'Gulp Missile unresolved accuracy'
+    const outcome = aa073GulpMissileAccuracyOutcome({
+      context: options.context,
+      operation,
+      parentScript: options.moveScript,
+    })
+    if (!outcome?.hit) return 'Gulp Missile missed'
+    if (operation.reasonCode === AA073_GULP_MISSILE_PARALYZE_REASON
+      && outcome.naturalResult % 2 !== 0) return 'Gulp Missile odd-roll branch'
+    if (operation.reasonCode === AA073_GULP_MISSILE_DEFENSE_REASON
+      && outcome.naturalResult % 2 === 0) return 'Gulp Missile even-roll branch'
+    return null
+  }
   const moveImmunity = (recipient: MoveCoreTokenEffectRecipient): string | null => {
     const ordinary = options.moveScript
       ? moveAutomationMoveImmunitySource(options.moveScript, recipient.token)
@@ -206,12 +229,17 @@ export const createStandardMoveCoreTokenEffectImmunityQueries = (
     ) ?? `${options.moveType} immunity`
   }
   return {
-    directHp: ({ recipient }) => {
+    directHp: ({ operation, recipient }) => {
+      if (operation.reasonCode === AA073_GULP_MISSILE_HP_REASON) {
+        return decision(gulpMissileAccuracyBlocker(operation))
+      }
       const wholeMoveBlocker = moveImmunity(recipient)
       if (wholeMoveBlocker) return decision(wholeMoveBlocker)
       return decision(typedAttackImmunity(recipient, 'attacking'))
     },
     condition: ({ operation, condition, recipient }) => {
+      const gulpMissileBlocker = gulpMissileAccuracyBlocker(operation)
+      if (gulpMissileBlocker) return conditionDecision(gulpMissileBlocker)
       const corrosiveToxinsBypass = operation.reasonCode === 'ability.corrosive-toxins.apply-badly-poisoned'
         && normalizeConditionName(condition) === 'Badly Poisoned'
         && options.context?.queries.abilities.has(options.context.actor.placement.id, 'Corrosive Toxins')
@@ -289,6 +317,8 @@ export const createStandardMoveCoreTokenEffectImmunityQueries = (
           )
     },
     combatStage: ({ operation, stage, delta, recipient, sourceOwnerId }) => {
+      const gulpMissileBlocker = gulpMissileAccuracyBlocker(operation)
+      if (gulpMissileBlocker) return decision(gulpMissileBlocker)
       const stageSourceOwnerId = sourceOwnerId ?? options.context?.actor.placement.id ?? null
       const sourceIsEnemy = stageSourceOwnerId !== null && options.context
         ? options.context.queries.relationships.resolve(

@@ -72,6 +72,7 @@ import {
 import { aa070FluffyDamageTypeOverlay } from '../abilityAutomation/mechanics/aa070StaticIntegration'
 import { aa071ResistDamageType } from '../abilityAutomation/mechanics/aa071StaticIntegration'
 import { aa072FurCoatDamageTypeOverlay } from '../abilityAutomation/mechanics/aa072StaticIntegration'
+import { aa073HeatproofDamageTypeOverlay } from '../abilityAutomation/mechanics/aa073StaticIntegration'
 import { applyEncounterNumericModifiers } from './encounterNumericModifiers'
 import type {
   MoveCoreTokenEffectRecipient,
@@ -955,10 +956,15 @@ export const executeMoveMultiHitOperation = (options: {
           const resistanceSteps = resistanceAppliedTargetIds.has(recipientId)
             ? 0
             : options.firstStrikeResistanceStepsByRecipient?.get(recipientId) ?? 0
-          const resolvedType = aa071ResistDamageType({
+          const aa071Type = aa071ResistDamageType({
             resolved: furCoatType,
             steps: resistanceSteps,
             sources: Array.from({ length: resistanceSteps }, () => 'AA-071 triggered resistance'),
+          })
+          const resolvedType = aa073HeatproofDamageTypeOverlay({
+            context,
+            recipientId,
+            resolved: aa071Type,
           })
           if (resistanceSteps > 0) resistanceAppliedTargetIds.add(recipientId)
           const formula = resolveMoveSpecDamageRollFormula({

@@ -178,6 +178,7 @@ interface MoveAutomationStatTokenSnapshot {
   readonly conditions: readonly string[]
   readonly abilityNames: readonly string[]
   readonly dauntlessShieldActive: boolean
+  readonly gutsActive: boolean
 }
 
 const fail = (
@@ -217,6 +218,7 @@ const finiteOrNull = (value: unknown): number | null => (
 const statTokenSnapshot = (
   token: SpawnedPokemon,
   dauntlessShieldActive: boolean,
+  gutsActive: boolean,
 ): MoveAutomationStatTokenSnapshot => deepFreeze({
   id: token.id,
   attack: token.atk,
@@ -229,8 +231,12 @@ const statTokenSnapshot = (
   maximumHp: token.maxHp,
   combatStages: normalizeCombatStages(token.combatStages),
   conditions: [...token.conditions],
-  abilityNames: [...(token.abilityNames ?? [])],
+  abilityNames: [
+    ...(token.abilityNames ?? []).filter(name => name !== 'Guts'),
+    ...(gutsActive ? ['Guts'] : []),
+  ],
   dauntlessShieldActive,
+  gutsActive,
 })
 
 const finiteStatValue = (
@@ -387,6 +393,9 @@ export const createMoveAutomationStatResolver = (
       token,
       input.hasEffectiveAbility?.(token.id, 'Dauntless Shield')
         ?? token.abilityNames?.includes('Dauntless Shield')
+        ?? false,
+      input.hasEffectiveAbility?.(token.id, 'Guts')
+        ?? token.abilityNames?.includes('Guts')
         ?? false,
     )),
     token => token.id,

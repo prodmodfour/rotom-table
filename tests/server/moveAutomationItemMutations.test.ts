@@ -21,6 +21,7 @@ import {
 } from '~~/server/domain/moveAutomation/groupInventoryChanges'
 import { MoveItemMutationError } from '~~/server/domain/moveAutomation/itemMutationTypes'
 import { planMoveItemMutations } from '~~/server/domain/moveAutomation/planItemMutations'
+import { creatureRuleOverlayEncounterEffectFixture } from '../fixtures/moveAutomation/encounterEffects'
 
 const emptyInventory = (): GroupInventory => Object.fromEntries(
   GROUP_INVENTORY_SECTION_KEYS.map(section => [section, []]),
@@ -669,6 +670,61 @@ describe('typed move item mutation plans', () => {
     expectItemError(() => planMoveItemMutations({
       ...basePlanInput(), map,
       pokemonSheets: new Map([[pokemon.slug, { ...pokemon, abilities: [] }]]),
+      groupInventories: new Map([[group.slug, group]]),
+      operations: [operation],
+    }), 'destination-occupied')
+  })
+
+  it('allows exactly a second held item for an effective Handyman owner', () => {
+    const map = {
+      ...mapFixture(),
+      placements: [{
+        id: 'handyman', sheetKind: 'pokemon' as const, sheetSlug: 'handyman',
+        sideId: 'heroes', position: { x: 1, y: 0, z: 1 },
+      }],
+    }
+    const pokemon: CharacterSheet = {
+      ...pokemonSheet('handyman', 3, 'Leftovers'),
+      abilities: [{
+        name: 'Handyman',
+        automation: {
+          schemaVersion: 1, instanceId: 'base:handyman', canonicalId: 'Handyman',
+          definitionVersion: null, selections: [],
+        },
+      }],
+    }
+    const group = groupInventory({
+      ...emptyInventory(),
+      equipment: [{ id: 'group-iron-ball', name: 'Iron Ball' }],
+    })
+    const operation = {
+      id: 'item.handyman.second', kind: 'equip' as const, reasonCode: 'item.equip',
+      source: groupRowReference({
+        itemId: 'group-iron-ball', canonicalItemId: 'iron-ball', section: 'equipment', quantity: 1,
+      }),
+      destination: { kind: 'pokemon-held' as const, owner: pokemonOwner('handyman', 3) },
+      quantity: 1 as const,
+    }
+    const planned = planMoveItemMutations({
+      ...basePlanInput(), map,
+      pokemonSheets: new Map([[pokemon.slug, pokemon]]),
+      groupInventories: new Map([[group.slug, group]]),
+      operations: [operation],
+    })
+    expect((planned.sheetWrites.find(write => write.slug === pokemon.slug)?.nextSheet as CharacterSheet)
+      .items?.held).toBe('Leftovers, Iron Ball')
+
+    expectItemError(() => planMoveItemMutations({
+      ...basePlanInput(),
+      map: { ...map, encounterState: { ...map.encounterState!, effects: [{
+        ...creatureRuleOverlayEncounterEffectFixture({
+          domain: 'ability', action: 'suppress', values: [],
+          referencePlacementId: null, suppressionScope: 'all',
+        }),
+        id: 'effect.suppress-handyman',
+        affected: { placementIds: ['handyman'], sideIds: [], cells: [] },
+      }] } },
+      pokemonSheets: new Map([[pokemon.slug, pokemon]]),
       groupInventories: new Map([[group.slug, group]]),
       operations: [operation],
     }), 'destination-occupied')

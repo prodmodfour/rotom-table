@@ -16,6 +16,7 @@ import { moveAutomationRecoilImmunitySource } from '~/utils/moveAutomationRecoil
 import type { AuthoritativeMoveRulesContext } from '../context'
 import { authoritativeAbilityHealingBlocked } from '../../abilityAutomation/healingPrevention'
 import { aa070FlyingFlyTrapPreventsDirectHp } from '../../abilityAutomation/mechanics/aa070StaticIntegration'
+import { AA073_GULP_MISSILE_HP_REASON } from '../../abilityAutomation/mechanics/aa073MoveIntegration'
 import {
   evaluateMoveExpression,
   evaluateMoveSelector,
@@ -499,7 +500,8 @@ const directHpImmunity = (options: {
     operation: options.operation,
     recipientId: options.recipient.placement.id,
   })) return { blockedBy: 'Flying Fly Trap', consultedPlacementIds: [] }
-  return options.operation.payload.applyTypeImmunity
+  return (options.operation.payload.applyTypeImmunity
+    || options.operation.reasonCode === AA073_GULP_MISSILE_HP_REASON)
     ? options.immunities.directHp({
         operation: options.operation,
         recipient: options.recipient,

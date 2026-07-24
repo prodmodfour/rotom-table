@@ -201,6 +201,12 @@ export interface MoveItemDigestBuffMutation
   readonly canonicalItemIds: readonly string[] | null
   /** Optional one-based occurrence selected from the bounded authoritative storage list. */
   readonly storageSlot?: number
+  /** Reviewed Harvest result bound to this exact authoritative trade. */
+  readonly harvest?: {
+    readonly result: 'heads' | 'tails' | 'sunny'
+    readonly retainBuff: boolean
+    readonly rollId: string | null
+  }
   /** Reviewed provenance for the scene-local trade marker committed with the item use. */
   readonly sourceMoveId: string
   readonly sourcePlacementId: string

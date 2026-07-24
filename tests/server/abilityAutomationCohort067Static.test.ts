@@ -180,6 +180,34 @@ describe('AA-067 static abilities', () => {
     }))
   }, 30_000)
 
+  it('aa073.handyman.reviewed opens the same durable affected-item choice for either held item', () => {
+    const fixture = mapFixture({ slug: 'aa073-handyman-choice', actorAbility: 'Handyman' })
+    fixture.sheets.set('actor', sheet({
+      slug: 'actor', ability: 'Handyman', move: 'Fling', held: 'Leftovers, Iron Ball',
+    }))
+    const itemResources = resolveAuthoritativeMoveItemResources({
+      map: fixture.map, actorPlacementId: 'actor', selectedTargetPlacementIds: ['target'],
+      pokemonSheets: fixture.sheets, trainerSheets: new Map(), groupInventories: new Map(),
+      consumedItems: [],
+      requirements: [{ id: 'fling.actor-held', source: { kind: 'actor-equipped' } }],
+    })
+    const declaration = planAuthoritativeMoveStateExecution({
+      map: fixture.map, pokemonSheets: fixture.sheets, trainerSheets: new Map(), itemResources,
+      intent: {
+        schemaVersion: 1, placementId: 'actor', moveName: 'Fling',
+        selection: { kind: 'single-target', targetPlacementId: 'target' },
+      },
+      random: () => 0.5, now: () => 1_000,
+      operationId: 'op_aa073_handyman_fling', pendingResolutionId: 'resolution:aa073-handyman-fling',
+    })
+    expect(isAuthoritativePendingMoveStatePlan(declaration)).toBe(true)
+    if (!isAuthoritativePendingMoveStatePlan(declaration)) throw new Error('Expected Handyman item choice.')
+    const window = declaration.suspension.pendingResolution.outstandingWindows[0]!
+    expect(window.kind).toBe('choice')
+    expect(window.promptKey).toBe('ability.handyman.choose-affected-item')
+    expect(window.options).toHaveLength(2)
+  }, 30_000)
+
   it('aa067.desert-weather.reviewed grants Sunny Fire resistance, Sandstorm immunity, and Rainy turn-end Temp HP', () => {
     const sunny = mapFixture({ slug: 'aa067-desert-sunny', targetAbility: 'Desert Weather', weather: 'sunny' })
     sunny.sheets.set('actor', sheet({ slug: 'actor', move: 'Ember' }))

@@ -21,8 +21,17 @@ import type { SheetPlacement } from '~/types/map'
 import type { TrainerSheet } from '~/types/trainerSheet'
 import { splitSheetItemNames } from '~/utils/sheetItemNames'
 import type { AuthoritativeMoveRulesContext } from './context'
-import { digestionBuffTradeCount } from './digestionBuffTrade'
+import {
+  digestionBuffTradeCount,
+  harvestStoppedForSheet,
+  harvestTradedForSheetThisTurn,
+} from './digestionBuffTrade'
 import { aa072GluttonyLimits } from '../abilityAutomation/mechanics/aa072StaticIntegration'
+import {
+  AA073_HARVEST_ROLL_REASON,
+  aa073HarvestRollOperationId,
+} from '../abilityAutomation/mechanics/aa073MoveIntegration'
+import { createMoveAutomationWeatherResolver } from './weather'
 import type {
   MoveSpecEmittedOperation,
   MoveSpecResolvedItemChoice,
@@ -928,24 +937,71 @@ const interpretDigestBuff = (input: InterpretOperationInput): OperationInterpret
   for (const recipientId of recipientIds) {
     const recipient = input.context.queries.placements.get(recipientId)
     if (!recipient) continue
-    const useLimit = aa072GluttonyLimits({
-      context: input.context,
-      placementId: recipient.id,
-    }).foodBuffUsesPerScene
-    const useCount = digestionBuffTradeCount({
-      effects: input.context.map.encounterState?.effects ?? [],
-      placement: recipient,
-    })
-    if (useCount >= useLimit) continue
     const storedItemIds = storedDigestionBuffIds(input.context, recipient)
     const candidateItemIds = payload.storageSlot === undefined
       ? storedItemIds
       : storedItemIds[payload.storageSlot - 1]
         ? [storedItemIds[payload.storageSlot - 1]!]
         : []
-    if (candidateItemIds.length === 0
-      || (payload.canonicalItemIds !== null
-        && !candidateItemIds.some(itemId => payload.canonicalItemIds!.includes(itemId)))) continue
+    const eligibleItemId = candidateItemIds.find(itemId => (
+      payload.canonicalItemIds === null || payload.canonicalItemIds.includes(itemId)
+    ))
+    if (!eligibleItemId) continue
+    const isBerry = resolveMoveAutomationItemRuleIdentity(eligibleItemId)?.family === 'berry'
+    const encounterEffects = input.context.map.encounterState?.effects ?? []
+    const harvestEffective = isBerry
+      && input.context.queries.abilities.has(recipient.id, 'Harvest')
+    const harvestStopped = harvestEffective && harvestStoppedForSheet({
+      effects: encounterEffects,
+      placement: recipient,
+    })
+    const round = Math.max(1, input.context.map.initiative?.round ?? 1)
+    const turn = Math.max(0, input.context.map.encounterState?.history.currentTurn?.turn ?? 0)
+    const harvestTradedThisTurn = harvestEffective && harvestTradedForSheetThisTurn({
+      effects: encounterEffects,
+      placement: recipient,
+      round,
+      turn,
+    })
+    if (harvestEffective && !harvestStopped && harvestTradedThisTurn) continue
+    const harvestActive = harvestEffective && !harvestStopped
+    const useLimit = harvestActive
+      ? 64
+      : aa072GluttonyLimits({
+          context: input.context,
+          placementId: recipient.id,
+        }).foodBuffUsesPerScene
+    const useCount = digestionBuffTradeCount({
+      effects: encounterEffects,
+      placement: recipient,
+    })
+    if (useCount >= useLimit) continue
+    const sunny = harvestActive && createMoveAutomationWeatherResolver(input.context.map)
+      .active().some(weather => weather.kind === 'sunny')
+    let harvest: Extract<MoveItemMutation, { kind: 'digest-buff' }>['harvest']
+    if (sunny) {
+      harvest = { result: 'sunny', retainBuff: true, rollId: null }
+    }
+    else if (harvestActive) {
+      const expectedOperationId = input.context.resolutionId
+        ? aa073HarvestRollOperationId(input.context.resolutionId, recipient.id)
+        : null
+      const rolls = input.context.random.snapshot().filter(entry => (
+        (expectedOperationId === null
+          ? entry.parentEffectId.startsWith('ability.harvest.roll.')
+          : entry.parentEffectId === expectedOperationId)
+        && entry.reason === `${AA073_HARVEST_ROLL_REASON} for ${recipient.id}`
+      ))
+      if (rolls.length !== 1) {
+        fail('selection-unavailable', `Harvest roll for ${recipient.id} is missing or ambiguous.`)
+      }
+      const roll = rolls[0]!
+      harvest = {
+        result: roll.naturalResult === 1 ? 'heads' : 'tails',
+        retainBuff: roll.naturalResult === 1,
+        rollId: roll.rollId,
+      }
+    }
     const destination = digestionDestination(input.context, recipient)
     mutations.push({
       id: mutationId(input.operation.id, mutations.length),
@@ -954,8 +1010,9 @@ const interpretDigestBuff = (input: InterpretOperationInput): OperationInterpret
       owner: destination.owner,
       canonicalItemIds: payload.canonicalItemIds,
       ...(payload.storageSlot === undefined ? {} : { storageSlot: payload.storageSlot }),
+      ...(harvest ? { harvest } : {}),
       sourceMoveId: input.operation.source.id,
-      sourcePlacementId: source.id,
+      sourcePlacementId: recipient.id,
     })
   }
   if (mutations.length === 0) {
