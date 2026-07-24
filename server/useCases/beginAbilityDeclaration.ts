@@ -39,6 +39,13 @@ import type { AbilitySpecTargetingKind } from '#shared/abilityAutomation/spec'
 import type { MoveSelector } from '#shared/moveAutomation/selectors'
 import { findMove } from '~~/data/ptuReference'
 import { ptuGridDistanceBetweenFootprints } from '~/utils/ptuGridDistance'
+import { normalizeConditionNames } from '~/utils/statusConditions'
+import { splitSheetItemNames } from '~/utils/sheetItemNames'
+import {
+  AA074_HUNGER_MODES,
+  aa074HoneyPawsPreparationForPlacement,
+  aa074HungerModeForPlacement,
+} from '#shared/abilityAutomation/aa074'
 import {
   actorCanControlMapPlacement,
   playerProfileLinkedTrainerSheetsForTokenControl,
@@ -57,6 +64,7 @@ import {
 import { resolveAuthoritativeAbilityTargets } from '../domain/abilityAutomation/targeting'
 import { createMoveAutomationWeatherResolver } from '../domain/moveAutomation/weather'
 import { aa071ForecastTypeResolution } from '../domain/abilityAutomation/mechanics/aa071StaticIntegration'
+import { resolveMoveAutomationItemRuleIdentity } from '../domain/moveAutomation/itemRuleData'
 import {
   createSqliteAbilityDeclarationOfferRepository,
   type AbilityDeclarationOfferRepository,
@@ -178,7 +186,9 @@ const declarationsFor = (
       else if (declaration.kind === 'type') {
         const typeIds = context.runtime.canonicalId === 'Forecast' && modeId === 'choose-weather'
           ? (() => {
-              const active = [...new Set(createMoveAutomationWeatherResolver(context.map).active()
+              const active = [...new Set(createMoveAutomationWeatherResolver(context.map, {
+                subjectPlacementId: context.actor.placement.id,
+              }).active()
                 .map(weather => AA071_WEATHER_TYPE_BY_KIND[weather.kind]))]
               return active.length > 0 ? active : ['normal' as const]
             })()
@@ -298,6 +308,27 @@ const declarationsFor = (
             declaration.id, index, declaration.kind, { kind: 'branch', branchId: `remove-${index + 1}` },
           ))
         }
+        else if (context.runtime.canonicalId === 'Hunger Switch' && modeId === 'choose-mode') {
+          const actorId = context.actor.placement.id
+          const alreadyConfigured = aa074HungerModeForPlacement(
+            context.map.encounterState?.effects,
+            actorId,
+          ) !== null
+          options = context.map.initiative?.activeId === actorId && !alreadyConfigured
+            ? AA074_HUNGER_MODES.map((branchId, index) => option(
+                declaration.id, index, declaration.kind, { kind: 'branch', branchId },
+              ))
+            : []
+        }
+        else if (context.runtime.canonicalId === 'Hydration' && modeId === 'activate') {
+          options = normalizeConditionNames(context.actor.sheet.kind === 'pokemon'
+            ? (context.actor.sheet.sheet as CharacterSheet).combat?.conditions ?? []
+            : (context.actor.sheet.sheet as TrainerSheet).conditions ?? [])
+            .map((condition, index) => option(declaration.id, index, declaration.kind, {
+              kind: 'branch',
+              branchId: `condition.${condition.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`,
+            }))
+        }
         else fail(422, `Ability branch declaration ${declaration.id} requires a reviewed declaration adapter.`)
       }
       else if (declaration.kind === 'cell') {
@@ -415,6 +446,20 @@ export const beginAbilityDeclarationUseCase = (
     && (ability.definitionHash === null || ability.definitionHash === runtime.definitionHash)
   ))
   if (!activeAbility) fail(409, 'Ability instance is not currently effective.')
+  if (mode.kind === 'configuration'
+    && command.canonicalId === 'Honey Paws'
+    && command.modeId === 'prepare-leftovers'
+    && (
+      context.actor.sheet.kind !== 'pokemon'
+      || !splitSheetItemNames((context.actor.sheet.sheet as CharacterSheet).items?.held)
+        .some(name => resolveMoveAutomationItemRuleIdentity(name)?.canonicalItemId === 'honey')
+      || aa074HoneyPawsPreparationForPlacement(
+        context.map.encounterState?.effects,
+        context.actor.placement.id,
+      ) !== null
+    )) {
+    fail(409, 'Honey Paws preparation requires held Honey and no existing preparation.')
+  }
   if (mode.kind === 'configuration'
     && command.canonicalId === 'Forecast'
     && command.modeId === 'choose-weather'

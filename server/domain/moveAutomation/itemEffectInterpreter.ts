@@ -348,6 +348,9 @@ const storedDigestionBuffIds = (
   const extras: unknown = placement.sheetKind === 'pokemon'
     ? (resolved.sheet as CharacterSheet).items?.digestionFoods
     : (resolved.sheet as TrainerSheet).digestionFoods
+  const honeyPaws: unknown = placement.sheetKind === 'pokemon'
+    ? (resolved.sheet as CharacterSheet).items?.honeyPawsFood
+    : (resolved.sheet as TrainerSheet).honeyPawsFood
   if (extras !== undefined && (!Array.isArray(extras) || extras.length > 3)) {
     return fail('selection-unavailable', `Digestion buff storage for ${placement.id} is malformed.`)
   }
@@ -360,8 +363,17 @@ const storedDigestionBuffIds = (
   else if (legacy !== undefined && legacy !== null && legacy !== '') {
     return fail('selection-unavailable', `Digestion buff storage for ${placement.id} is malformed.`)
   }
-  const values = [...legacyValues, ...extraValues.map(value => (value as string).trim())]
-  if (values.length > 3) {
+  const honeyPawsValues: string[] = []
+  if (typeof honeyPaws === 'string' && honeyPaws.trim()) honeyPawsValues.push(honeyPaws.trim())
+  else if (honeyPaws !== undefined && honeyPaws !== null && honeyPaws !== '') {
+    return fail('selection-unavailable', `Honey Paws digestion storage for ${placement.id} is malformed.`)
+  }
+  const values = [
+    ...legacyValues,
+    ...extraValues.map(value => (value as string).trim()),
+    ...honeyPawsValues,
+  ]
+  if (legacyValues.length + extraValues.length > 3 || values.length > 4) {
     return fail('selection-unavailable', `Digestion buff storage for ${placement.id} exceeds its bounded capacity.`)
   }
   const canonical = values.map((value) => {
@@ -976,8 +988,9 @@ const interpretDigestBuff = (input: InterpretOperationInput): OperationInterpret
       placement: recipient,
     })
     if (useCount >= useLimit) continue
-    const sunny = harvestActive && createMoveAutomationWeatherResolver(input.context.map)
-      .active().some(weather => weather.kind === 'sunny')
+    const sunny = harvestActive && createMoveAutomationWeatherResolver(input.context.map, {
+      subjectPlacementId: recipient.id,
+    }).active().some(weather => weather.kind === 'sunny')
     let harvest: Extract<MoveItemMutation, { kind: 'digest-buff' }>['harvest']
     if (sunny) {
       harvest = { result: 'sunny', retainBuff: true, rollId: null }

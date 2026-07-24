@@ -96,6 +96,8 @@ export interface InitiativeOrderEntryOptions {
   readonly initiativeOffset?: number
   /** Effective Early Bird adds one half of the same staged Speed used by Initiative. */
   readonly earlyBirdSpeedBonus?: boolean
+  /** Effective Base Speed adjustment applied before Combat Stages. */
+  readonly baseSpeedOffset?: number
 }
 
 export const pokemonInitiativeOrderEntry = (
@@ -105,7 +107,7 @@ export const pokemonInitiativeOrderEntry = (
 ): InitiativeOrderEntry => {
   const conditions = pokemonConditions(sheet)
   const abilities = pokemonAbilityNames(sheet)
-  const baseSpeed = speedTotal(resolveStats(sheet))
+  const baseSpeed = Math.max(1, speedTotal(resolveStats(sheet)) + (options.baseSpeedOffset ?? 0))
   const speedCombatStage = conditionAdjustedCombatStage(
     sheet.stats?.spd?.stage,
     conditions,

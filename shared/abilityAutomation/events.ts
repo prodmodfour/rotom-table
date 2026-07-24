@@ -91,9 +91,9 @@ export const ABILITY_ITEM_OUTCOMES = ['applied', 'partial', 'prevented', 'no-op'
 export const ABILITY_FIELD_KINDS = ['weather', 'terrain', 'room', 'hazard'] as const
 export const ABILITY_FIELD_CHANGES = ['applied', 'refreshed', 'removed', 'expired'] as const
 export const ABILITY_FIELD_OUTCOMES = ['applied', 'prevented', 'no-op'] as const
-export const ABILITY_LIFECYCLE_BOUNDARIES = ['scene', 'round', 'turn', 'presence', 'effective-ability'] as const
+export const ABILITY_LIFECYCLE_BOUNDARIES = ['scene', 'round', 'turn', 'presence', 'effective-ability', 'form'] as const
 export const ABILITY_LIFECYCLE_TRANSITIONS = [
-  'started', 'ended', 'entered', 'left', 'became-effective', 'became-ineffective',
+  'started', 'ended', 'entered', 'left', 'became-effective', 'became-ineffective', 'changed',
 ] as const
 
 export type AbilityActionEventKind = (typeof ABILITY_ACTION_EVENT_KINDS)[number]
@@ -1701,8 +1701,11 @@ const parsePayload = (
         : boundary === 'presence'
           ? (transition === 'entered' || transition === 'left')
             && subjectPlacementId !== null && abilityInstanceId === null && ordinal === null
-          : (transition === 'became-effective' || transition === 'became-ineffective')
-            && subjectPlacementId !== null && abilityInstanceId !== null && ordinal === null
+          : boundary === 'effective-ability'
+            ? (transition === 'became-effective' || transition === 'became-ineffective')
+              && subjectPlacementId !== null && abilityInstanceId !== null && ordinal === null
+            : transition === 'changed'
+              && subjectPlacementId !== null && abilityInstanceId === null && ordinal === null
   if (!validShape) fail('invalid-event', path, 'lifecycle facts do not match their boundary.')
   return Object.freeze({
     boundary,

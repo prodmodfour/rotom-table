@@ -45,6 +45,7 @@ const sheet = (input: {
   readonly species: string
   readonly held?: string
   readonly digestionFood?: string
+  readonly honeyPawsFood?: string
   readonly revision?: number
 }): CharacterSheet => ({
   slug: input.slug,
@@ -54,11 +55,12 @@ const sheet = (input: {
   revision: input.revision ?? 3,
   combat: { currentHp: 60 },
   movelist: [{ name: 'Scratch' }],
-  ...(input.held || input.digestionFood
+  ...(input.held || input.digestionFood || input.honeyPawsFood
     ? {
         items: {
           ...(input.held ? { held: input.held } : {}),
           ...(input.digestionFood ? { digestionFood: input.digestionFood } : {}),
+          ...(input.honeyPawsFood ? { honeyPawsFood: input.honeyPawsFood } : {}),
         },
       }
     : {}),
@@ -294,6 +296,23 @@ describe('authoritative item-dependent move rules', () => {
       flingCategory: 'rare-item',
       flingPower: 10,
     })
+  })
+
+  it('treats the separate Honey Paws slot as an authoritative Digestion Buff resource', () => {
+    const sheets = new Map<string, CharacterSheet>([
+      ['item-rule-actor-sheet', sheet({
+        slug: 'item-rule-actor-sheet', species: 'Pikachu',
+        held: 'Fire Type Plate', honeyPawsFood: 'Leftovers', revision: 3,
+      })],
+      ['item-rule-target-sheet', sheet({
+        slug: 'item-rule-target-sheet', species: 'Rotom', held: 'Iron Ball', revision: 5,
+      })],
+    ])
+    const context = contextFixture({ sheets })
+    expect(evaluate(context, itemExpression({
+      query: 'eligible', source: 'digestion-buff', families: ['other'],
+      requirementId: null, timing: 'consumable',
+    }))).toBe(true)
   })
 
   it('evaluates primitives for all item-dependent move families from authoritative state', () => {

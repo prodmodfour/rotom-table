@@ -314,6 +314,8 @@ export interface TrainerSheet {
   /** Legacy single-slot digestion buff. New Gluttony-aware writes use digestionFoods. */
   digestion?: string
   digestionFoods?: string[]
+  /** Honey Paws' separate Leftovers-equivalent buff; does not consume a normal slot. */
+  honeyPawsFood?: string
 
   /** Trainer's natural / weapon-attack moves. */
   movelist?: TrainerMove[]

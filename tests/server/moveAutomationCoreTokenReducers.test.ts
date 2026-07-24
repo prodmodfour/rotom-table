@@ -1346,7 +1346,7 @@ describe('MoveSpec core token effect reducers', () => {
     expect(result.operationResults[1]).toMatchObject({
       recipientIds: ['target-token', 'bystander-token'],
       recipients: [
-        { current: { kind: 'hp', temporaryHp: 8 } },
+        { current: { kind: 'hp', temporaryHp: 5 } },
         { current: { kind: 'hp', temporaryHp: 3 } },
       ],
     })
@@ -1354,7 +1354,7 @@ describe('MoveSpec core token effect reducers', () => {
       kind: 'map-temporary-hit-points',
       current: {
         byPlacementId: {
-          'target-token': 8,
+          'target-token': 5,
           'bystander-token': 3,
         },
       },

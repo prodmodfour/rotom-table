@@ -30,7 +30,9 @@ export const aa063ChlorophyllInitiativeMultiplier = (input: {
   const hpTotal = resolveStats(input.sheet).find(stat => stat.key === 'hp')?.total ?? 0
   const maximumHp = Math.max(1, computeFullMaxHp(input.sheet, hpTotal))
   const currentHp = Math.max(0, Math.floor(input.sheet.combat?.currentHp ?? maximumHp))
-  const sunny = createMoveAutomationWeatherResolver(input.map).active()
+  const sunny = createMoveAutomationWeatherResolver(input.map, {
+    subjectPlacementId: input.placement.id,
+  }).active()
     .some(weather => weather.kind === 'sunny')
   return sunny || currentHp * 2 < maximumHp ? 2 : 1
 }

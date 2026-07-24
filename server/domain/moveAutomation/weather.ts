@@ -21,6 +21,10 @@ import { isMapWeatherKind } from '~/utils/mapFieldEffectDefinitions'
 import { sheetHasCanonicalAbility } from '~/utils/sheetAbilities'
 import { queryBattlefieldZones } from './battlefieldZones'
 import { registeredAbilityAutomationRuntimeFor } from '../abilityAutomation/registry'
+import {
+  AA074_HELIOVOLT_SUNNY_CAPABILITY,
+  aa074ActiveEncounterEffect,
+} from '#shared/abilityAutomation/aa074'
 
 export type WeatherChargeMove = 'Solar Beam' | 'Solar Blade'
 /** @deprecated Use WeatherChargeMove. */
@@ -545,8 +549,32 @@ const airLockMarkerIsActive = (
  */
 export const createMoveAutomationWeatherResolver = (
   map: Pick<TabletopMap, 'placements' | 'initiative' | 'dimensions' | 'hazards' | 'fieldEffects' | 'encounterState'>,
+  options: { readonly subjectPlacementId?: string } = {},
 ): MoveAutomationWeatherResolver => {
-  const active = activeWeatherInstances(map)
+  const global = activeWeatherInstances(map)
+  const heliovolt = options.subjectPlacementId
+    ? (map.encounterState?.effects ?? []).find(effect => (
+        effect.kind === 'capability'
+        && aa074ActiveEncounterEffect(effect)
+        && effect.suppression.sources.length === 0
+        && effect.payload.action === 'grant'
+        && effect.payload.capabilityId === AA074_HELIOVOLT_SUNNY_CAPABILITY
+        && effect.affected.placementIds.includes(options.subjectPlacementId!)
+      ))
+    : null
+  const active: readonly AuthoritativeWeatherInstance[] = heliovolt
+    && !global.some(weather => weather.kind === 'sunny')
+    ? deepFreeze([...global, {
+        kind: 'sunny' as const,
+        zoneId: heliovolt.id,
+        source: {
+          kind: 'operation' as const,
+          operationId: heliovolt.source.operationId,
+          moveId: heliovolt.source.moveId,
+          placementId: heliovolt.source.placementId,
+        },
+      }])
+    : global
   const base = Object.freeze({
     active: () => active,
     projectFieldEffects: (base: MapFieldEffects | null = map.fieldEffects ?? null) => {

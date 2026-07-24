@@ -25,6 +25,7 @@ import {
   type MoveRuleEvaluationTraceEntry,
   type MoveRuleSelectorState,
 } from './evaluateExpression'
+import { applyEncounterNumericModifiers } from './encounterNumericModifiers'
 
 export type MoveCheckExecutionErrorCode =
   | 'check-recipient-required'
@@ -341,6 +342,23 @@ const prepareRoll = (options: {
       evaluationTrace: [...evaluation.trace],
     })
   })
+  const skillCheck = source.kind === 'skill'
+    ? applyEncounterNumericModifiers({
+        map: options.input.context.map,
+        placementId: options.placementId,
+        attribute: 'skill-check',
+        baseValue: 0,
+      })
+    : { value: 0, steps: [] as const }
+  const resolvedModifiers: readonly MoveCheckModifierResolution[] = [
+    ...modifiers,
+    ...skillCheck.steps.map(step => deepFreeze({
+      sourceId: step.effectId,
+      reasonCode: 'encounter.skill-check-modifier',
+      value: step.delta,
+      evaluationTrace: [] as const,
+    })),
+  ]
   const ledgerModifiers: MoveAutomationRollModifier[] = [
     ...(source.basisModifier === null
       ? []
@@ -351,7 +369,7 @@ const prepareRoll = (options: {
             : `check.stat.${source.stat}`,
           value: source.basisModifier,
         }]),
-    ...modifiers.map(modifier => ({
+    ...resolvedModifiers.map(modifier => ({
       sourceId: modifier.sourceId,
       reason: modifier.reasonCode,
       value: modifier.value,
@@ -362,7 +380,7 @@ const prepareRoll = (options: {
     placementId: options.placementId,
     definition: options.definition,
     source,
-    modifiers,
+    modifiers: resolvedModifiers,
     ledgerModifiers,
   })
 }

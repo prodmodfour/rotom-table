@@ -81,6 +81,12 @@ export const AA073_ABILITY_MECHANIC_IDS = [
   'aa073.guts', 'aa073.handyman', 'aa073.harvest', 'aa073.haunt',
   'aa073.hay-fever', 'aa073.healer', 'aa073.heat-mirage', 'aa073.heatproof',
 ] as const
+export const AA074_ABILITY_MECHANIC_IDS = [
+  'aa074.heavy-metal', 'aa074.heliovolt', 'aa074.helper', 'aa074.honey-paws',
+  'aa074.honey-thief', 'aa074.horde-break', 'aa074.huge-power',
+  'aa074.huge-power-pure-power', 'aa074.hunger-switch', 'aa074.hustle',
+  'aa074.hydration', 'aa074.hyper-cutter',
+] as const
 export type Aa060AbilityMechanicId = (typeof AA060_ABILITY_MECHANIC_IDS)[number]
 export type AbilityMechanicId = Aa060AbilityMechanicId
   | (typeof AA061_ABILITY_MECHANIC_IDS)[number]
@@ -96,6 +102,7 @@ export type AbilityMechanicId = Aa060AbilityMechanicId
   | (typeof AA071_ABILITY_MECHANIC_IDS)[number]
   | (typeof AA072_ABILITY_MECHANIC_IDS)[number]
   | (typeof AA073_ABILITY_MECHANIC_IDS)[number]
+  | (typeof AA074_ABILITY_MECHANIC_IDS)[number]
 export interface AbilityMechanicOperation extends AbilitySpecJsonObject {
   readonly kind: typeof ABILITY_MECHANIC_OPERATION_KIND
   readonly id: string
@@ -282,6 +289,18 @@ const CONFIG_FIELDS: Readonly<Record<AbilityMechanicId, readonly string[]>> = {
   'aa073.healer': ['action', 'frequency', 'adjacency', 'cureConditionGroup'],
   'aa073.heat-mirage': ['action', 'frequency', 'triggerType', 'evasionBonus', 'duration'],
   'aa073.heatproof': ['moveType', 'resistanceSteps', 'preventBurnHpLoss'],
+  'aa074.heavy-metal': ['weightClassBonus', 'defenseBaseStatBonus', 'speedBaseStatPenalty'],
+  'aa074.heliovolt': ['action', 'frequency', 'triggerType', 'evasionBonus', 'consideredWeather', 'durationRounds'],
+  'aa074.helper': ['connectionMoveId', 'targetRelationship', 'targetCount', 'accuracyBonus', 'skillCheckBonus', 'duration'],
+  'aa074.honey-paws': ['consumedItemId', 'equivalentBuffItemId', 'ignoresNormalDigestionCapacity', 'explicitPreparationRequired', 'preparationDuration'],
+  'aa074.honey-thief': ['connectionMoveId', 'trigger', 'temporaryHpTicks'],
+  'aa074.horde-break': ['action', 'frequency', 'fromForm', 'toForm', 'cureConditionGroup'],
+  'aa074.huge-power': ['stat', 'operation', 'includeNature', 'includeVitamins', 'includeTrainerFeatures'],
+  'aa074.huge-power-pure-power': ['stat', 'baseBonus', 'bonusPerLevels', 'cannotBeDisabled'],
+  'aa074.hunger-switch': ['timing', 'fullBellyMode', 'hangryMode', 'fullBellyAccuracyBonus', 'hangryDamageBonus', 'duration', 'choiceRequired'],
+  'aa074.hustle': ['accuracyPenalty', 'damageRollBonus', 'appliesToAllMoves'],
+  'aa074.hydration': ['action', 'frequency', 'cureCount', 'rainyWeatherIgnoresFrequency'],
+  'aa074.hyper-cutter': ['protectedStat', 'preventStatLowering', 'preventCombatStageLowering'],
 }
 const MECHANIC_SET = new Set<string>([
   ...AA060_ABILITY_MECHANIC_IDS, ...AA061_ABILITY_MECHANIC_IDS,
@@ -291,6 +310,7 @@ const MECHANIC_SET = new Set<string>([
   ...AA068_ABILITY_MECHANIC_IDS, ...AA069_ABILITY_MECHANIC_IDS,
   ...AA070_ABILITY_MECHANIC_IDS, ...AA071_ABILITY_MECHANIC_IDS,
   ...AA072_ABILITY_MECHANIC_IDS, ...AA073_ABILITY_MECHANIC_IDS,
+  ...AA074_ABILITY_MECHANIC_IDS,
 ])
 const ID = /^[a-z0-9]+(?:[._:/-][a-z0-9]+)*$/
 const fail = (code: AbilityMechanicValidationError['code'], path: string, detail: string): never => { throw new AbilityMechanicValidationError(code, path, detail) }
@@ -1188,6 +1208,63 @@ const parseConfig = (mechanicId: AbilityMechanicId, value: unknown, path: string
     case 'aa073.heatproof': return {
       moveType: oneOf(config.moveType, ['fire'], `${path}.moveType`), resistanceSteps: integer(config.resistanceSteps, `${path}.resistanceSteps`, 1, 1),
       preventBurnHpLoss: bool(config.preventBurnHpLoss, `${path}.preventBurnHpLoss`),
+    }
+    case 'aa074.heavy-metal': return {
+      weightClassBonus: integer(config.weightClassBonus, `${path}.weightClassBonus`, 2, 2),
+      defenseBaseStatBonus: integer(config.defenseBaseStatBonus, `${path}.defenseBaseStatBonus`, 2, 2),
+      speedBaseStatPenalty: integer(config.speedBaseStatPenalty, `${path}.speedBaseStatPenalty`, -2, -2),
+    }
+    case 'aa074.heliovolt': return {
+      action: oneOf(config.action, ['swift'], `${path}.action`), frequency: oneOf(config.frequency, ['at-will'], `${path}.frequency`),
+      triggerType: oneOf(config.triggerType, ['electric'], `${path}.triggerType`), evasionBonus: integer(config.evasionBonus, `${path}.evasionBonus`, 1, 1),
+      consideredWeather: oneOf(config.consideredWeather, ['sunny'], `${path}.consideredWeather`), durationRounds: integer(config.durationRounds, `${path}.durationRounds`, 1, 1),
+    }
+    case 'aa074.helper': return {
+      connectionMoveId: oneOf(config.connectionMoveId, ['Helping Hand'], `${path}.connectionMoveId`), targetRelationship: oneOf(config.targetRelationship, ['ally'], `${path}.targetRelationship`),
+      targetCount: integer(config.targetCount, `${path}.targetCount`, 1, 1), accuracyBonus: integer(config.accuracyBonus, `${path}.accuracyBonus`, 1, 1),
+      skillCheckBonus: integer(config.skillCheckBonus, `${path}.skillCheckBonus`, 1, 1), duration: oneOf(config.duration, ['until-user-next-turn-end'], `${path}.duration`),
+    }
+    case 'aa074.honey-paws': return {
+      consumedItemId: oneOf(config.consumedItemId, ['honey'], `${path}.consumedItemId`), equivalentBuffItemId: oneOf(config.equivalentBuffItemId, ['leftovers'], `${path}.equivalentBuffItemId`),
+      ignoresNormalDigestionCapacity: bool(config.ignoresNormalDigestionCapacity, `${path}.ignoresNormalDigestionCapacity`),
+      explicitPreparationRequired: bool(config.explicitPreparationRequired, `${path}.explicitPreparationRequired`),
+      preparationDuration: oneOf(config.preparationDuration, ['scene-or-consumed'], `${path}.preparationDuration`),
+    }
+    case 'aa074.honey-thief': return {
+      connectionMoveId: oneOf(config.connectionMoveId, ['Bug Bite'], `${path}.connectionMoveId`), trigger: oneOf(config.trigger, ['digestion-buff-stolen'], `${path}.trigger`),
+      temporaryHpTicks: integer(config.temporaryHpTicks, `${path}.temporaryHpTicks`, 1, 1),
+    }
+    case 'aa074.horde-break': return {
+      action: oneOf(config.action, ['free'], `${path}.action`), frequency: oneOf(config.frequency, ['at-will'], `${path}.frequency`),
+      fromForm: oneOf(config.fromForm, ['school-form'], `${path}.fromForm`), toForm: oneOf(config.toForm, ['solo-form'], `${path}.toForm`),
+      cureConditionGroup: oneOf(config.cureConditionGroup, ['all-status'], `${path}.cureConditionGroup`),
+    }
+    case 'aa074.huge-power': return {
+      stat: oneOf(config.stat, ['attack'], `${path}.stat`), operation: oneOf(config.operation, ['double-base'], `${path}.operation`),
+      includeNature: bool(config.includeNature, `${path}.includeNature`), includeVitamins: bool(config.includeVitamins, `${path}.includeVitamins`),
+      includeTrainerFeatures: bool(config.includeTrainerFeatures, `${path}.includeTrainerFeatures`),
+    }
+    case 'aa074.huge-power-pure-power': return {
+      stat: oneOf(config.stat, ['attack'], `${path}.stat`), baseBonus: integer(config.baseBonus, `${path}.baseBonus`, 5, 5),
+      bonusPerLevels: integer(config.bonusPerLevels, `${path}.bonusPerLevels`, 10, 10), cannotBeDisabled: bool(config.cannotBeDisabled, `${path}.cannotBeDisabled`),
+    }
+    case 'aa074.hunger-switch': return {
+      timing: oneOf(config.timing, ['turn-start'], `${path}.timing`), fullBellyMode: oneOf(config.fullBellyMode, ['full-belly'], `${path}.fullBellyMode`),
+      hangryMode: oneOf(config.hangryMode, ['hangry'], `${path}.hangryMode`), fullBellyAccuracyBonus: integer(config.fullBellyAccuracyBonus, `${path}.fullBellyAccuracyBonus`, 2, 2),
+      hangryDamageBonus: integer(config.hangryDamageBonus, `${path}.hangryDamageBonus`, 5, 5), duration: oneOf(config.duration, ['until-next-turn-start'], `${path}.duration`),
+      choiceRequired: bool(config.choiceRequired, `${path}.choiceRequired`),
+    }
+    case 'aa074.hustle': return {
+      accuracyPenalty: integer(config.accuracyPenalty, `${path}.accuracyPenalty`, -2, -2), damageRollBonus: integer(config.damageRollBonus, `${path}.damageRollBonus`, 10, 10),
+      appliesToAllMoves: bool(config.appliesToAllMoves, `${path}.appliesToAllMoves`),
+    }
+    case 'aa074.hydration': return {
+      action: oneOf(config.action, ['swift'], `${path}.action`), frequency: oneOf(config.frequency, ['scene'], `${path}.frequency`),
+      cureCount: integer(config.cureCount, `${path}.cureCount`, 1, 1), rainyWeatherIgnoresFrequency: bool(config.rainyWeatherIgnoresFrequency, `${path}.rainyWeatherIgnoresFrequency`),
+    }
+    case 'aa074.hyper-cutter': return {
+      protectedStat: oneOf(config.protectedStat, ['attack'], `${path}.protectedStat`), preventStatLowering: bool(config.preventStatLowering, `${path}.preventStatLowering`),
+      preventCombatStageLowering: bool(config.preventCombatStageLowering, `${path}.preventCombatStageLowering`),
     }
   }
 }

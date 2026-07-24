@@ -232,6 +232,17 @@ describe('closed ability encounter-event vocabulary', () => {
       reasonCode: 'ability.suppressed',
     }))
     expect(valid).toMatchObject({ kind: 'lifecycle' })
+    expect(parseAbilityEncounterEvent(event('lifecycle', {
+      boundary: 'form',
+      transition: 'changed',
+      subjectPlacementId: 'actor-token',
+      abilityInstanceId: null,
+      ordinal: null,
+      reasonCode: 'form.school-to-solo',
+    }))).toMatchObject({
+      kind: 'lifecycle',
+      payload: { boundary: 'form', transition: 'changed', subjectPlacementId: 'actor-token' },
+    })
 
     expectEventError(() => parseAbilityEncounterEvent(event('lifecycle', {
       boundary: 'presence',

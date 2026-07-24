@@ -12,6 +12,10 @@ import type { MoveAutomationScript } from '~/types/moveAutomation'
 import { aa060MoveAccuracyBonus } from '../abilityAutomation/mechanics/aa060MoveIntegration'
 import { applyEncounterNumericModifiers } from './encounterNumericModifiers'
 import { aa071MoveAccuracyModifiers } from '../abilityAutomation/mechanics/aa071StaticIntegration'
+import {
+  aa074HungerSwitchAccuracyModifier,
+  aa074HustleAccuracyModifier,
+} from '../abilityAutomation/mechanics/aa074StaticIntegration'
 
 export interface AuthoritativeMoveSightAccuracyResolution {
   readonly sourcePlacementId: string
@@ -157,12 +161,36 @@ export const resolveAuthoritativeMoveUserAccuracy = (
     ...(options.targetPlacementId ? { targetPlacementId: options.targetPlacementId } : {}),
   }) : []
   modifiers.push(...aa071Modifiers)
+  const hustleModifier = aa074HustleAccuracyModifier({
+    context,
+    placementId: context.actor.placement.id,
+  })
+  if (hustleModifier !== 0) {
+    modifiers.push({
+      sourceId: 'ability.hustle',
+      reason: 'Hustle Accuracy',
+      value: hustleModifier,
+    })
+  }
+  const hungerSwitchModifier = aa074HungerSwitchAccuracyModifier({
+    context,
+    placementId: context.actor.placement.id,
+  })
+  if (hungerSwitchModifier !== 0) {
+    modifiers.push({
+      sourceId: 'ability.hunger-switch',
+      reason: 'Hunger Switch Accuracy',
+      value: hungerSwitchModifier,
+    })
+  }
   const preEncounterValue = actorAccuracy
     + compoundEyesBonus
     + (helpingHand.length > 0 ? HELPING_HAND_ACCURACY_BONUS : 0)
     + aa060Bonus
     + gravity.bonus
     + aa071Modifiers.reduce((total, modifier) => total + modifier.value, 0)
+    + hustleModifier
+    + hungerSwitchModifier
   const encounterAccuracy = applyEncounterNumericModifiers({
     map: context.map,
     placementId: context.actor.placement.id,

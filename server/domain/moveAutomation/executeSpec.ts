@@ -189,6 +189,16 @@ import {
   aa073MoveOverlayOperations,
 } from '../abilityAutomation/mechanics/aa073MoveIntegration'
 import {
+  AA074_HELIOVOLT_REASON,
+  AA074_HORDE_BREAK_REASON,
+  AA074_HONEY_THIEF_TEMP_HP_REASON,
+  aa074MoveOverlayOperations,
+  applyAa074HoneyThiefOperations,
+  applyAa074HordeBreakOperations,
+  aa074TargetHasDigestionBuff,
+} from '../abilityAutomation/mechanics/aa074MoveIntegration'
+import { aa074HungerModeForPlacement } from '#shared/abilityAutomation/aa074'
+import {
   AA068_DRAGONS_MAW_REASON,
   AA068_DREAM_SMOKE_REASON,
   AA068_EFFECT_SPORE_REASON,
@@ -1834,7 +1844,10 @@ const executableProgram = (
   const frostbiteOperations = aa071FrostbiteOperations({
     context,
     script: reviewedScript,
-    operations: selectedAa072Operations,
+    operations: applyAa074HoneyThiefOperations(applyAa074HordeBreakOperations({
+      context,
+      operations: selectedAa072Operations,
+    })),
   })
   const reviewedEntries = frostbiteOperations.map((operation, index): ExecutableMoveSpecOperationEntry => ({
     operation,
@@ -2839,6 +2852,16 @@ const executeMoveSpecInternal = (
       targetIds = resolvedTargetIds.length <= MOVE_SPEC_LIMITS.targetCount
         ? resolvedTargetIds
         : []
+      if (input.context.queries.abilities.has(input.context.actor.placement.id, 'Hunger Switch')
+        && aa074HungerModeForPlacement(
+          input.context.map.encounterState?.effects,
+          input.context.actor.placement.id,
+        ) === null) {
+        fail(
+          'move-mechanics-unavailable',
+          'Hunger Switch requires a Full Belly or Hangry choice for the active turn.',
+        )
+      }
       if (!aa072GorillaTacticsMoveAllowed({
         context: input.context,
         placementId: input.context.actor.placement.id,
@@ -3111,7 +3134,9 @@ const executeMoveSpecInternal = (
           if (operation.reasonCode === AA072_GALE_WINGS_REASON
             || operation.reasonCode === AA072_GORE_REASON
             || operation.reasonCode === AA073_GULP_MISSILE_ARM_REASON
-            || operation.reasonCode === AA073_HEAT_MIRAGE_REASON) return owners
+            || operation.reasonCode === AA073_HEAT_MIRAGE_REASON
+            || operation.reasonCode === AA074_HELIOVOLT_REASON
+            || operation.reasonCode === AA074_HORDE_BREAK_REASON) return owners
           if (operation.reasonCode === AA072_GORILLA_TACTICS_REASON) {
             return aa072GoreSelected ? [] : owners
           }
@@ -3309,6 +3334,13 @@ const executeMoveSpecInternal = (
         if (operation.kind === 'choice-request'
           && operation.reasonCode === AA069_ENFEEBLING_LIPS_REASON
           && hitTargetIds.length === 0) return []
+        if (operation.reasonCode === AA074_HONEY_THIEF_TEMP_HP_REASON) {
+          const targetId = targetIds.length === 1 ? targetIds[0]! : null
+          return targetId && hitTargetIds.includes(targetId)
+            && aa074TargetHasDigestionBuff(input.context, targetId)
+            ? [input.context.actor.placement.id]
+            : []
+        }
         const harvestOwnerId = aa073HarvestOwnerId(operation)
         if (harvestOwnerId) {
           return (targetIds.includes(harvestOwnerId)
@@ -5430,6 +5462,12 @@ const executeMoveSpecInternal = (
               authoritativeTargetIds: childTargetIds,
             }),
             ...aa073MoveOverlayOperations({
+              context: childContext,
+              script: childMechanics,
+              moveSourceId: childMoveSourceId,
+              authoritativeTargetIds: childTargetIds,
+            }),
+            ...aa074MoveOverlayOperations({
               context: childContext,
               script: childMechanics,
               moveSourceId: childMoveSourceId,

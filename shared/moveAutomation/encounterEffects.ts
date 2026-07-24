@@ -62,6 +62,7 @@ export const ENCOUNTER_EFFECT_NUMERIC_ATTRIBUTES = [
   'damage',
   'damage-reduction',
   'save-check',
+  'skill-check',
   'initiative',
   'movement',
   'weight-class',

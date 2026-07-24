@@ -58,6 +58,7 @@ import {
 import { expireActiveOrderEffectsForInitiativeAdvanceWithResult } from '~/utils/activeOrderEffects'
 import { deepCloneJson, sameJsonValue } from '~/utils/serialization'
 import { aa063ChlorophyllInitiativeMultiplier } from '../domain/abilityAutomation/mechanics/aa063InitiativeIntegration'
+import { aa074HeavyMetalInitiativeSpeedOffset } from '../domain/abilityAutomation/mechanics/aa074StaticIntegration'
 import {
   aa066DazzlingInitiativePenalty,
   aa066DefeatistInitiativeBonus,
@@ -666,6 +667,9 @@ const initiativeOrder = (
         }).suppressed,
         ...(resolved && placement.sheetKind === 'pokemon' ? {
           initiativeMultiplier: aa063ChlorophyllInitiativeMultiplier({
+            map, placement, sheet: resolved.sheet as unknown as CharacterSheet,
+          }),
+          baseSpeedOffset: aa074HeavyMetalInitiativeSpeedOffset({
             map, placement, sheet: resolved.sheet as unknown as CharacterSheet,
           }),
         } : {}),

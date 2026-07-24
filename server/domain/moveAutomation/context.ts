@@ -15,6 +15,7 @@ import {
   isAa071FullyGrownTreeCell,
 } from '#shared/abilityAutomation/aa071'
 import { aa071ForecastTypeResolution } from '../abilityAutomation/mechanics/aa071StaticIntegration'
+import { aa074AdjustedToken } from '../abilityAutomation/mechanics/aa074StaticIntegration'
 import type { GridAnchor, SheetKind, SheetPlacement, TabletopMap } from '~/types/map'
 import type { MoveAutomationScript } from '~/types/moveAutomation'
 import type { SpawnedPokemon } from '~/types/pokemon'
@@ -592,7 +593,9 @@ export const buildAuthoritativeMoveRulesContext = (
   const rooms = createMoveAutomationRoomResolver(map)
   const globalFields = createMoveAutomationRemainingGlobalFieldResolver(map, rooms)
   const gravity = createMoveAutomationGravityResolver({ placements, globalFields })
-  const baseWeather = createMoveAutomationWeatherResolver(map)
+  const baseWeather = createMoveAutomationWeatherResolver(map, {
+    subjectPlacementId: intent.placementId,
+  })
   const effectiveAbilitiesByPlacement = new Map<string, readonly AuthoritativeMoveEffectiveAbility[]>()
   for (const placement of placements) {
     const sheet = sheetByRef.get(sheetReadKey({ kind: placement.sheetKind, slug: placement.sheetSlug }))
@@ -702,6 +705,18 @@ export const buildAuthoritativeMoveRulesContext = (
     ))
   ))
   const tokens = deepFreeze(baseTokens.map((token) => {
+    const placement = placementById.get(token.id)
+    const resolvedSheet = placement
+      ? sheetByRef.get(sheetReadKey({ kind: placement.sheetKind, slug: placement.sheetSlug }))
+      : null
+    const adjustedToken = aa074AdjustedToken({
+      token,
+      sheet: placement?.sheetKind === 'pokemon'
+        ? resolvedSheet?.sheet as CharacterSheet ?? null
+        : null,
+      effectiveAbilityIds: (effectiveAbilitiesByPlacement.get(token.id) ?? [])
+        .map(ability => ability.canonicalId),
+    })
     const forecast = aa071ForecastTypeResolution({
       contextMap: map,
       placementId: token.id,
@@ -709,8 +724,8 @@ export const buildAuthoritativeMoveRulesContext = (
         ?.some(ability => ability.canonicalId === 'Forecast') === true,
     })
     const effectiveToken = forecast.typeId
-      ? detachedFrozenJson({ ...token, defenderTypes: [forecast.typeId] })
-      : token
+      ? detachedFrozenJson({ ...adjustedToken, defenderTypes: [forecast.typeId] })
+      : adjustedToken
     const trapped = arenaTrapMarks.some((mark) => {
       const source = baseTokens.find(candidate => candidate.id === mark.ownerPlacementId)
       if (!source

@@ -41,6 +41,10 @@ import {
 import { projectAuthoritativeEffectiveAbilities } from '../../abilityAutomation/effectiveAbilities'
 import { resolveSheetAbilityInstances } from '../../abilityAutomation/instanceParameters'
 import { ABILITY_AUTOMATION_RUNTIME_REGISTRY } from '../../abilityAutomation/registry'
+import {
+  AA074_HONEY_PAWS_PREPARED_CAPABILITY_PREFIX,
+  aa074HoneyPawsPreparationForPlacement,
+} from '#shared/abilityAutomation/aa074'
 import type {
   MoveConsumedItemRecord,
   MoveItemDestination,
@@ -1343,13 +1347,13 @@ const digestionBuffNames = (
   return names
 }
 
-const hasEffectiveAbility = (
+const effectiveAbilityInstanceId = (
   state: WorkingState,
   owner: MoveItemOwnerReference,
-  canonicalId: 'Gluttony' | 'Harvest',
+  canonicalId: 'Gluttony' | 'Harvest' | 'Honey Paws',
   placementId?: string,
-): boolean => {
-  if (owner.kind !== 'sheet') return false
+): string | null => {
+  if (owner.kind !== 'sheet') return null
   const sheet = owner.sheetKind === 'pokemon'
     ? state.pokemonSheets.get(owner.slug)
     : state.trainerSheets.get(owner.slug)
@@ -1360,7 +1364,7 @@ const hasEffectiveAbility = (
     ? ownerPlacements.length === 1 ? ownerPlacements[0] : undefined
     : ownerPlacements.find(candidate => candidate.id === placementId)
   const runtime = ABILITY_AUTOMATION_RUNTIME_REGISTRY.resolve(canonicalId)
-  return Boolean(sheet && placement && runtime && projectAuthoritativeEffectiveAbilities({
+  const effective = sheet && placement && runtime ? projectAuthoritativeEffectiveAbilities({
     baseAbilities: resolveSheetAbilityInstances(sheet.abilities),
     target: {
       placementId: placement.id,
@@ -1369,15 +1373,112 @@ const hasEffectiveAbility = (
     },
     effects: state.map.encounterState?.effects ?? [],
     transformationSnapshots: state.map.encounterState?.abilityTransformations,
-  }).some(candidate => candidate.effective && candidate.canonicalId === canonicalId
-    && (candidate.definitionHash === null || candidate.definitionHash === runtime.definitionHash)))
+  }).find(candidate => candidate.effective && candidate.canonicalId === canonicalId
+    && (candidate.definitionHash === null || candidate.definitionHash === runtime.definitionHash)) : null
+  return effective?.instanceId ?? null
 }
+
+const hasEffectiveAbility = (
+  state: WorkingState,
+  owner: MoveItemOwnerReference,
+  canonicalId: 'Gluttony' | 'Harvest' | 'Honey Paws',
+  placementId?: string,
+): boolean => effectiveAbilityInstanceId(state, owner, canonicalId, placementId) !== null
 
 const hasEffectiveGluttony = (
   state: WorkingState,
   owner: MoveItemOwnerReference,
   placementId?: string,
 ): boolean => hasEffectiveAbility(state, owner, 'Gluttony', placementId)
+
+const honeyPawsBuffName = (
+  state: WorkingState,
+  owner: MoveItemOwnerReference,
+  operation: MoveItemMutation,
+): string | null => {
+  if (owner.kind !== 'sheet') {
+    return fail('invalid-destination', `Operation ${operation.id} digestion owner must be a sheet.`)
+  }
+  const value: unknown = owner.sheetKind === 'pokemon'
+    ? state.pokemonSheets.get(owner.slug)?.items?.honeyPawsFood
+    : state.trainerSheets.get(owner.slug)?.honeyPawsFood
+  if (value === undefined || value === null || value === '') return null
+  if (typeof value !== 'string' || !value.trim()) {
+    return fail('item-mismatch', `Honey Paws digestion destination ${owner.slug} contains an invalid item name.`)
+  }
+  const name = value.trim()
+  const canonical = canonicalItem(name, `${operation.id}.honeyPawsFood`)
+  if (canonical.id !== 'leftovers') {
+    return fail('item-mismatch', `Honey Paws digestion destination ${owner.slug} must contain Leftovers.`)
+  }
+  return canonical.name
+}
+
+const storeHoneyPawsBuff = (input: {
+  readonly state: WorkingState
+  readonly owner: MoveItemOwnerReference
+  readonly operation: MoveItemMutation
+  readonly operationOrder: number
+}): string => {
+  const { state, owner, operation, operationOrder } = input
+  if (owner.kind !== 'sheet') {
+    return fail('invalid-destination', `Operation ${operation.id} digestion owner must be a sheet.`)
+  }
+  if (honeyPawsBuffName(state, owner, operation)) {
+    return fail('destination-occupied', `Honey Paws digestion destination ${owner.slug} is occupied.`)
+  }
+  if (owner.sheetKind === 'pokemon') {
+    const sheet = state.pokemonSheets.get(owner.slug)
+      ?? fail('resource-missing', `Pokémon item sheet ${owner.slug} is unavailable.`)
+    setPokemonSheet(state, owner.slug, {
+      ...sheet,
+      items: { ...(sheet.items ?? {}), honeyPawsFood: 'Leftovers' },
+    })
+    return touchResource({
+      state, owner, operation, operationOrder, changedField: 'items',
+    })
+  }
+  const sheet = state.trainerSheets.get(owner.slug)
+    ?? fail('resource-missing', `Trainer item sheet ${owner.slug} is unavailable.`)
+  setTrainerSheet(state, owner.slug, { ...sheet, honeyPawsFood: 'Leftovers' })
+  return touchResource({
+    state, owner, operation, operationOrder, changedField: 'digestion',
+  })
+}
+
+const consumeHoneyPawsPreparation = (input: {
+  readonly state: WorkingState
+  readonly placementId: string
+  readonly abilityInstanceId: string
+  readonly operation: MoveItemMutation
+  readonly operationOrder: number
+}): string => {
+  const encounter = parseEncounterState(
+    input.state.map.encounterState ?? createEmptyEncounterState(),
+  )
+  const prepared = aa074HoneyPawsPreparationForPlacement(encounter.effects, input.placementId)
+  if (!prepared || prepared.payload.capabilityId !== (
+    `${AA074_HONEY_PAWS_PREPARED_CAPABILITY_PREFIX}${input.abilityInstanceId}`
+  )) {
+    return fail('invalid-operation', `Honey Paws preparation for ${input.placementId} is stale.`)
+  }
+  input.state.map = {
+    ...input.state.map,
+    encounterState: parseEncounterState({
+      ...encounter,
+      effects: encounter.effects.filter(effect => effect.id !== prepared.id),
+    }),
+  }
+  return touchResource({
+    state: input.state,
+    owner: {
+      kind: 'map', slug: input.state.map.slug,
+      revision: normalizeRevision(input.state.previousMap.revision),
+    },
+    operation: input.operation,
+    operationOrder: input.operationOrder,
+  })
+}
 
 const storeDigestionBuff = (input: {
   readonly state: WorkingState
@@ -1448,11 +1549,21 @@ const digestStoredBuff = (input: {
     return fail('invalid-destination', `Operation ${input.operation.id} digestion owner must be a sheet.`)
   }
   const names = digestionBuffNames(input.state, owner, input.operation)
-  const canonicalBuffs = names.map((name, index) => ({
-    name,
-    index,
-    canonical: canonicalItem(name, `${input.operation.id}.digestionBuff[${index}]`),
-  }))
+  const honeyPawsName = honeyPawsBuffName(input.state, owner, input.operation)
+  const canonicalBuffs = [
+    ...names.map((name, index) => ({
+      name,
+      index,
+      storage: 'normal' as const,
+      canonical: canonicalItem(name, `${input.operation.id}.digestionBuff[${index}]`),
+    })),
+    ...(honeyPawsName === null ? [] : [{
+      name: honeyPawsName,
+      index: names.length,
+      storage: 'honey-paws' as const,
+      canonical: canonicalItem(honeyPawsName, `${input.operation.id}.honeyPawsBuff`),
+    }]),
+  ]
   const selectedBySlot = input.storageSlot === undefined
     ? null
     : canonicalBuffs[input.storageSlot - 1]
@@ -1467,6 +1578,34 @@ const digestStoredBuff = (input: {
   const canonical = selectedBuff?.canonical ?? canonicalBuffs[0]?.canonical ?? null
   if (selectedBuff) {
     if (input.retain) return { canonicalItemId: selectedBuff.canonical.id, resourceKey: null }
+    if (selectedBuff.storage === 'honey-paws') {
+      if (owner.sheetKind === 'pokemon') {
+        const sheet = input.state.pokemonSheets.get(owner.slug)
+          ?? fail('resource-missing', `Pokémon item sheet ${owner.slug} is unavailable.`)
+        const items = { ...(sheet.items ?? {}) }
+        delete items.honeyPawsFood
+        setPokemonSheet(input.state, owner.slug, { ...sheet, items })
+        return {
+          canonicalItemId: selectedBuff.canonical.id,
+          resourceKey: touchResource({
+            state: input.state, owner, operation: input.operation,
+            operationOrder: input.operationOrder, changedField: 'items',
+          }),
+        }
+      }
+      const sheet = input.state.trainerSheets.get(owner.slug)
+        ?? fail('resource-missing', `Trainer item sheet ${owner.slug} is unavailable.`)
+      const next = { ...sheet }
+      delete next.honeyPawsFood
+      setTrainerSheet(input.state, owner.slug, next)
+      return {
+        canonicalItemId: selectedBuff.canonical.id,
+        resourceKey: touchResource({
+          state: input.state, owner, operation: input.operation,
+          operationOrder: input.operationOrder, changedField: 'digestion',
+        }),
+      }
+    }
     const retainedNames = names.filter((_name, index) => index !== selectedBuff.index)
     if (owner.sheetKind === 'pokemon') {
       const sheet = input.state.pokemonSheets.get(owner.slug)
@@ -1769,15 +1908,42 @@ const reduceOperation = (input: {
     if (owner.kind !== 'sheet') {
       fail('invalid-destination', `Store-buff operation ${operation.id} requires a sheet owner.`)
     }
+    const sheetOwner = owner as Extract<MoveItemOwnerReference, { readonly kind: 'sheet' }>
     const removed = removeItem({ state, source, quantity, operation, operationOrder })
     touchedKeys.add(removed.resourceKey)
-    const berryStorageKey = storeBerryStorageBuffs({
+    const ownerPlacements = state.map.placements.filter(placement => (
+      placement.sheetKind === sheetOwner.sheetKind && placement.sheetSlug === sheetOwner.slug
+    ))
+    const honeyPawsPlacement = ownerPlacements.length === 1 ? ownerPlacements[0] : null
+    const honeyPawsInstanceId = removed.stack.canonicalItemId === 'honey'
+      ? effectiveAbilityInstanceId(state, owner, 'Honey Paws', honeyPawsPlacement?.id)
+      : null
+    const honeyPawsPreparation = honeyPawsPlacement
+      ? aa074HoneyPawsPreparationForPlacement(
+          state.map.encounterState?.effects,
+          honeyPawsPlacement.id,
+        )
+      : null
+    const honeyPawsPrepared = honeyPawsInstanceId !== null
+      && honeyPawsPreparation?.payload.capabilityId === (
+        `${AA074_HONEY_PAWS_PREPARED_CAPABILITY_PREFIX}${honeyPawsInstanceId}`
+      )
+    const berryStorageKey = honeyPawsPrepared ? null : storeBerryStorageBuffs({
       state, owner,
       canonicalItemId: removed.stack.canonicalItemId,
       canonicalItemName: removed.stack.canonicalItemName,
       operation, operationOrder,
     })
     if (berryStorageKey) touchedKeys.add(berryStorageKey)
+    else if (honeyPawsPrepared && honeyPawsPlacement && honeyPawsInstanceId) {
+      touchedKeys.add(storeHoneyPawsBuff({ state, owner, operation, operationOrder }))
+      touchedKeys.add(consumeHoneyPawsPreparation({
+        state,
+        placementId: honeyPawsPlacement.id,
+        abilityInstanceId: honeyPawsInstanceId,
+        operation, operationOrder,
+      }))
+    }
     else touchedKeys.add(storeDigestionBuff({
       state,
       owner,
@@ -1815,7 +1981,7 @@ const reduceOperation = (input: {
     }
     const storageSlot = operation.storageSlot
     if (storageSlot !== undefined
-      && (!Number.isSafeInteger(storageSlot) || storageSlot < 1 || storageSlot > 3)) {
+      && (!Number.isSafeInteger(storageSlot) || storageSlot < 1 || storageSlot > 4)) {
       fail('invalid-operation', `Digest-buff operation ${operation.id} has an invalid storage slot.`)
     }
     const sourceMoveId = boundedIdentifier(
@@ -1872,7 +2038,9 @@ const reduceOperation = (input: {
       fail('destination-occupied', `Harvest owner ${owner.slug} already traded a Digestion Buff this turn.`)
     }
     if (harvest?.result === 'sunny'
-      && !createMoveAutomationWeatherResolver(state.map).active().some(weather => weather.kind === 'sunny')) {
+      && !createMoveAutomationWeatherResolver(state.map, {
+        subjectPlacementId: sourcePlacement.id,
+      }).active().some(weather => weather.kind === 'sunny')) {
       fail('invalid-operation', `Digest-buff operation ${operation.id} lost Sunny Weather Harvest authority.`)
     }
     const foodBuffUseLimit = harvest

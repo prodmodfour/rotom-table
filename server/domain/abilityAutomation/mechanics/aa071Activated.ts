@@ -168,7 +168,9 @@ const forecast = (input: {
   const typeId = selected?.kind === 'type'
     ? selected.typeId
     : fail('Forecast requires one issued weather Type choice.')
-  const activeTypes = [...new Set(createMoveAutomationWeatherResolver(input.context.map).active()
+  const activeTypes = [...new Set(createMoveAutomationWeatherResolver(input.context.map, {
+    subjectPlacementId: input.context.actor.placement.id,
+  }).active()
     .map(weather => AA071_WEATHER_TYPE_BY_KIND[weather.kind]))]
   const legalTypes: readonly PokemonTypeId[] = activeTypes.length === 0 ? ['normal'] : activeTypes
   if (!legalTypes.includes(typeId)) fail('Forecast choice no longer corresponds to active weather.')

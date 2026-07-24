@@ -1150,7 +1150,10 @@ export const reduceHealEffectForRecipient = (options: {
       requireNonNegative: true,
       priorOperationResults: options.priorOperationResults,
     })
-    requestedPoolValue = previousPoolValue + calculation.roundedValue
+    // PTU Temporary Hit Points never stack; retain whichever pool is larger.
+    requestedPoolValue = operation.payload.pool === 'temporary-hit-points'
+      ? Math.max(previousPoolValue, calculation.roundedValue)
+      : previousPoolValue + calculation.roundedValue
   }
 
   const boundedPoolValue = assertBoundedHpValue(

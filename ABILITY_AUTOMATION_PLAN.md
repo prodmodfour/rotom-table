@@ -2,7 +2,7 @@
 
 `PLAN_STATUS: IN_PROGRESS`
 
-`CURRENT_TICKET: AA-074`
+`CURRENT_TICKET: AA-075`
 
 ## Goal
 
@@ -96,14 +96,14 @@ Ability automation should reuse MoveSpec v2 selectors, expressions, operations, 
 
 ## Progress snapshot
 
-- Plan tickets: **73 DONE / 110 total**
+- Plan tickets: **74 DONE / 110 total**
 - Canonical inventory: **483**
-- Semantically complete: **168**
+- Semantically complete: **180**
 - Assisted: **0**
-- Blocked/unimplemented: **315**
+- Blocked/unimplemented: **303**
 - Interaction status: **483 unassessed**
 - Legacy baseline: **45 abilities with 55 partial fragments; 438 with no reviewed legacy fragment**
-- Production runtime: **168 exact manifest-selected AbilitySpec v1 runtimes**; retained legacy paths remain explicit compatibility only
+- Production runtime: **180 exact manifest-selected AbilitySpec v1 runtimes**; retained legacy paths remain explicit compatibility only
 
 ## Tickets
 
@@ -267,9 +267,9 @@ Each cohort must review every named ability against canonical text, implement al
   - Fur Coat; Gale Wings; Galvanize; Gardener; Gentle Vibe; Giver; Glisten; Gluttony; Gooey; Gore; Gorilla Tactics; Grass Pelt
 - [x] **AA-073 — Grassy Surge through Heatproof** — `DONE`
   - Grassy Surge; Grim Neigh; Gulp; Gulp Missile; Guts; Handyman; Harvest; Haunt; Hay Fever; Healer; Heat Mirage; Heatproof
-- [ ] **AA-074 — Heavy Metal through Hyper Cutter** — `IN_PROGRESS`
+- [x] **AA-074 — Heavy Metal through Hyper Cutter** — `DONE`
   - Heavy Metal; Heliovolt; Helper; Honey Paws; Honey Thief; Horde Break; Huge Power; Huge Power / Pure Power; Hunger Switch; Hustle; Hydration; Hyper Cutter
-- [ ] **AA-075 — Hypnotic through Innards Out** — `TODO`
+- [ ] **AA-075 — Hypnotic through Innards Out** — `IN_PROGRESS`
   - Hypnotic; Ice Body; Ice Face; Ice Scales; Ice Shield; Ignition Boost; Illuminate; Illusion; Immunity; Imposter; Infiltrator; Innards Out
 - [ ] **AA-076 — Inner Focus through Keen Eye** — `TODO`
   - Inner Focus; Insomnia; Instinct; Interference; Intimidate; Intrepid Sword; Iron Barbs; Iron Fist; Juicy Energy; Justified; Kampfgeist; Keen Eye

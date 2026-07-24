@@ -255,7 +255,7 @@ export const applyAa072SelectedMoveOperations = (input: {
   if (selectedFoodBuff) {
     const storageSlot = Number(selectedFoodBuff[1])
     const canonicalItemId = selectedFoodBuff[2]!
-    if (Number.isSafeInteger(storageSlot) && storageSlot >= 1 && storageSlot <= 3) {
+    if (Number.isSafeInteger(storageSlot) && storageSlot >= 1 && storageSlot <= 4) {
       operations = operations.map((operation): MoveEffectOperation => (
         operation.kind === 'item' && operation.payload.action === 'digest-buff'
           ? {
@@ -355,6 +355,9 @@ const storedDigestionBuffIds = (
   const extras: unknown = placement.sheetKind === 'pokemon'
     ? (resolved.sheet as CharacterSheet).items?.digestionFoods
     : (resolved.sheet as TrainerSheet).digestionFoods
+  const honeyPaws: unknown = placement.sheetKind === 'pokemon'
+    ? (resolved.sheet as CharacterSheet).items?.honeyPawsFood
+    : (resolved.sheet as TrainerSheet).honeyPawsFood
   if (extras !== undefined && (!Array.isArray(extras) || extras.length > 3)) {
     throw new Error('Gluttony digestion storage is malformed.')
   }
@@ -367,8 +370,19 @@ const storedDigestionBuffIds = (
   else if (legacy !== undefined && legacy !== null && legacy !== '') {
     throw new Error('Gluttony digestion storage is malformed.')
   }
-  const names = [...legacyNames, ...extraValues.map(value => (value as string).trim())]
-  if (names.length > 3) throw new Error('Gluttony digestion storage exceeds its bounded capacity.')
+  const honeyPawsNames: string[] = []
+  if (typeof honeyPaws === 'string' && honeyPaws.trim()) honeyPawsNames.push(honeyPaws.trim())
+  else if (honeyPaws !== undefined && honeyPaws !== null && honeyPaws !== '') {
+    throw new Error('Gluttony Honey Paws digestion storage is malformed.')
+  }
+  const names = [
+    ...legacyNames,
+    ...extraValues.map(value => (value as string).trim()),
+    ...honeyPawsNames,
+  ]
+  if (legacyNames.length + extraValues.length > 3 || names.length > 4) {
+    throw new Error('Gluttony digestion storage exceeds its bounded capacity.')
+  }
   const canonical = names.map((name) => {
     const id = resolveMoveAutomationItemRuleIdentity(name)?.canonicalItemId
     if (!id) throw new Error(`Gluttony digestion buff ${name} is not canonical.`)

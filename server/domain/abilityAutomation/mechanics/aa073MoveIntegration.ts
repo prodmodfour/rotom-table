@@ -418,8 +418,7 @@ export const aa073MoveOverlayOperations = (input: {
     if (effect) operations.push(...retaliationOperations({ moveIdentity, ownerId: targetId, effect }))
   }
 
-  if (['Teatime', 'Bug Bite'].includes(input.script.moveName)
-    && !createMoveAutomationWeatherResolver(input.context.map).active().some(weather => weather.kind === 'sunny')) {
+  if (['Teatime', 'Bug Bite'].includes(input.script.moveName)) {
     const round = Math.max(1, input.context.map.initiative?.round ?? 1)
     const turn = Math.max(0, input.context.map.encounterState?.history.currentTurn?.turn ?? 0)
     const harvestCandidateIds = input.script.moveName === 'Bug Bite'
@@ -427,6 +426,9 @@ export const aa073MoveOverlayOperations = (input: {
       : input.authoritativeTargetIds
     for (const ownerId of [...new Set(harvestCandidateIds)].sort()) {
       if (!input.context.queries.abilities.has(ownerId, 'Harvest')) continue
+      if (createMoveAutomationWeatherResolver(input.context.map, {
+        subjectPlacementId: ownerId,
+      }).active().some(weather => weather.kind === 'sunny')) continue
       const effects = input.context.map.encounterState?.effects ?? []
       const placement = input.context.queries.placements.get(ownerId)
       if (!placement) continue

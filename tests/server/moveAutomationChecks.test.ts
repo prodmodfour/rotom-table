@@ -13,6 +13,7 @@ import { validateMoveSpec } from '~~/server/domain/moveAutomation/validateSpec'
 import type { CharacterSheet } from '~/types/characterSheet'
 import type { SheetPlacement, TabletopMap } from '~/types/map'
 import type { TrainerSheet } from '~/types/trainerSheet'
+import { createEmptyEncounterState } from '#shared/moveAutomation/encounterState'
 
 const placement = (id: string, sheetSlug: string, x: number): SheetPlacement => ({
   id,
@@ -58,9 +59,11 @@ const intent = (): ResolveMoveIntent => ({
   selection: { kind: 'single-target', targetPlacementId: 'target-token' },
 })
 
-const buildContext = (random: AuthoritativeMoveRandomDrawStream) =>
-  buildAuthoritativeMoveRulesContext({
-    map: mapFixture(),
+const buildContext = (
+  random: AuthoritativeMoveRandomDrawStream,
+  map: TabletopMap = mapFixture(),
+) => buildAuthoritativeMoveRulesContext({
+    map,
     pokemonSheets: new Map([
       ['actor', pokemonSheet('actor', { skills: { athletics: '3d6+1' } })],
       ['target', pokemonSheet('target', { skills: { combat: '2d6' } })],
@@ -245,6 +248,60 @@ describe('authoritative opposed checks and saving throws', () => {
     })
     expect(Object.isFrozen(result.resolvedChecks)).toBe(true)
     expect(Object.isFrozen(result.resolvedChecks[0]?.actor?.attempts)).toBe(true)
+  })
+
+  it('applies ordered encounter skill-check modifiers to the authoritative check ledger', () => {
+    const encounter = createEmptyEncounterState()
+    const map: TabletopMap = {
+      ...mapFixture(),
+      encounterState: {
+        ...encounter,
+        effects: [{
+          id: 'effect.helper.skill-check',
+          kind: 'numeric-modifier',
+          source: {
+            operationId: 'op_helper_skill_check',
+            moveId: 'ability.helper',
+            placementId: 'actor-token',
+          },
+          affected: { placementIds: ['target-token'], sideIds: [], cells: [] },
+          createdRound: 2, createdTurn: 1,
+          duration: { kind: 'turns', subject: 'source', boundary: 'end', remaining: 2 },
+          stacks: 1, charges: null,
+          stackPolicy: { kind: 'refresh', maxStacks: null },
+          chargePolicy: { kind: 'none', amount: null },
+          tags: ['ability', 'helper', 'skill-check'],
+          payload: { attribute: 'skill-check', operation: 'add', value: 1, rounding: 'none' },
+          dispel: { policy: 'matching-tags', tags: ['helper', 'skill-check'] },
+          transferPolicy: 'expire',
+          suppression: { sources: [] },
+        }],
+      },
+    }
+    const result = executeMoveSpec({
+      definition: definitionFor({
+        kind: 'save',
+        checkId: 'check.helper-skill',
+        roll: fixedRoll('roll.helper-skill', {
+          source: { kind: 'skill', skill: 'combat' },
+        }),
+        dc: { kind: 'constant', value: 1 },
+        tie: { kind: 'success' },
+        branches: { success: 'branch.saved', failure: 'branch.failed' },
+      }),
+      context: buildContext(createFiniteAuthoritativeMoveRandomStream([0, 0]), map),
+    })
+    expect(result.kind).toBe('complete')
+    expect(result.resolvedChecks[0]?.target.modifiers).toContainEqual(expect.objectContaining({
+      sourceId: 'effect.helper.skill-check',
+      reasonCode: 'encounter.skill-check-modifier',
+      value: 1,
+    }))
+    expect(result.rollLedger[0]?.modifiers).toContainEqual({
+      sourceId: 'effect.helper.skill-check',
+      reason: 'encounter.skill-check-modifier',
+      value: 1,
+    })
   })
 
   it('records automatic rerolls and bounded tie rerolls before choosing a branch', () => {

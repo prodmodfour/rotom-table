@@ -294,7 +294,7 @@ describe('HP reducer properties', () => {
       }))
       expect(temporary.currentHp).toBe(currentHp)
       expect(temporary.temporaryHp, `temporary HP case ${caseIndex}`).toBe(
-        temporaryHp + amount,
+        Math.max(temporaryHp, amount),
       )
       expect(Number.isSafeInteger(temporary.temporaryHp)).toBe(true)
       expect(temporary.temporaryHp).toBeGreaterThanOrEqual(0)

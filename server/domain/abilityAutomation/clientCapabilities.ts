@@ -21,6 +21,9 @@ import { ABILITY_AUTOMATION_RUNTIME_REGISTRY, type AbilityAutomationRuntimeRegis
 import { projectAuthoritativeEffectiveAbilities } from './effectiveAbilities'
 import { resolveSheetAbilityInstances } from './instanceParameters'
 import { aa071ForecastTypeResolution } from './mechanics/aa071StaticIntegration'
+import { aa074HoneyPawsPreparationForPlacement } from '#shared/abilityAutomation/aa074'
+import { splitSheetItemNames } from '~/utils/sheetItemNames'
+import { resolveMoveAutomationItemRuleIdentity } from '../moveAutomation/itemRuleData'
 
 export interface BuildAbilityClientCapabilitiesInput {
   readonly role: AuthRole
@@ -106,6 +109,15 @@ export const buildAbilityClientCapabilityBundle = (
             placementId: placement.id,
             hasForecast: true,
           }).ambiguous
+        }
+        if (ability.canonicalId === 'Honey Paws' && modeId === 'prepare-leftovers') {
+          return placement.sheetKind === 'pokemon'
+            && splitSheetItemNames((sheet as CharacterSheet).items?.held)
+              .some(name => resolveMoveAutomationItemRuleIdentity(name)?.canonicalItemId === 'honey')
+            && aa074HoneyPawsPreparationForPlacement(
+              encounterState?.effects,
+              placement.id,
+            ) === null
         }
         return true
       }

@@ -81,6 +81,7 @@ import type {
   MoveCoreTokenEffectImmunityQueries,
   MoveCoreTokenEffectOperationResult,
   MoveDamageResolutionQueryInput,
+  MoveResolvedCoreTokenEffectOperation,
 } from './reducers/coreTokenEffectTypes'
 import { createStandardMoveCoreTokenEffectImmunityQueries } from './reducers/immunities'
 import {
@@ -103,6 +104,10 @@ import { aa070MoveOverlayOperations } from '../abilityAutomation/mechanics/aa070
 import { aa071MoveOverlayOperations } from '../abilityAutomation/mechanics/aa071MoveIntegration'
 import { aa072MoveOverlayOperations } from '../abilityAutomation/mechanics/aa072MoveIntegration'
 import { aa073MoveOverlayOperations } from '../abilityAutomation/mechanics/aa073MoveIntegration'
+import {
+  AA074_HONEY_THIEF_TEMP_HP_REASON,
+  aa074MoveOverlayOperations,
+} from '../abilityAutomation/mechanics/aa074MoveIntegration'
 import {
   AA068_DUST_CLOUD_TARGETING_OVERRIDE,
   aa068DrySkinCancelsRecipientEffect,
@@ -975,6 +980,7 @@ const executeReviewedMoveSpec = (
     ...aa071MoveOverlayOperations(overlayInput),
     ...aa072MoveOverlayOperations(overlayInput),
     ...aa073MoveOverlayOperations(overlayInput),
+    ...aa074MoveOverlayOperations(overlayInput),
   ]
   const boneLordLine = script.moveName === 'Bonemerang'
     && aa062BoneLordEmpowersMove(options.context, 'Bonemerang')
@@ -1188,7 +1194,17 @@ export const reduceCompletedMoveSpec = (
     faintedTargetIds: exposesAttackedTargets ? [...execution.rootFaintedTargetIds] : [],
   }
 
+  const appliedItemOperationIds = new Set(interpretedItemEffects.results
+    .filter(result => result.outcome === 'applied')
+    .map(result => result.operationId))
   const coreOperations = uncommittedOperations.filter(isMoveCoreTokenEffectEmission)
+    .map((emission): MoveResolvedCoreTokenEffectOperation => (
+      emission.operation.reasonCode === AA074_HONEY_THIEF_TEMP_HP_REASON
+      && emission.operation.source.kind === 'operation'
+      && !appliedItemOperationIds.has(emission.operation.source.id)
+        ? { ...emission, recipientIds: Object.freeze([]) }
+        : emission
+    ))
   const scriptForOperation = operationMechanicsResolver({
     root: script,
     children: execution.childExecutions,
@@ -1198,7 +1214,8 @@ export const reduceCompletedMoveSpec = (
   )
   for (const { operation } of uncommittedOperations) {
     if (operation.reasonCode === 'ability.flame-body.burn-attacker'
-      || operation.reasonCode.startsWith('ability.gulp-missile.retaliation-')) {
+      || operation.reasonCode.startsWith('ability.gulp-missile.retaliation-')
+      || operation.reasonCode === AA074_HONEY_THIEF_TEMP_HP_REASON) {
       recipientControlledOperationIds.add(operation.id)
     }
     const operationContext = contextForOperation(operation)

@@ -45,7 +45,9 @@ export const aa071ForecastTypeResolution = (input: {
 }): Aa071ForecastTypeResolution => {
   if (!input.hasForecast) return Object.freeze({ typeId: null, activeWeatherTypes: [], ambiguous: false })
   const activeWeatherTypes: readonly PokemonTypeId[] = Object.freeze([...new Set<PokemonTypeId>(
-    createMoveAutomationWeatherResolver(input.contextMap).active()
+    createMoveAutomationWeatherResolver(input.contextMap, {
+      subjectPlacementId: input.placementId,
+    }).active()
       .map(weather => AA071_WEATHER_TYPE_BY_KIND[weather.kind]),
   )])
   if (activeWeatherTypes.length === 0) {

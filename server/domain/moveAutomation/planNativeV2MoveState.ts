@@ -706,11 +706,13 @@ const applyTriggeredAbilityPayments = (input: {
     ['ability.grim-neigh.optional-boost', 'Grim Neigh'],
     ['ability.gulp-missile.optional-arm', 'Gulp Missile'],
     ['ability.heat-mirage.optional-evasion', 'Heat Mirage'],
+    ['ability.heliovolt.optional-weather', 'Heliovolt'],
+    ['ability.horde-break.optional-cleanse', 'Horde Break'],
   ])
   const noFrequency = new Set([
     'Anger Point', 'Aqua Boost', 'Beast Boost', 'Celebrate', 'Chilling Neigh',
     'Color Change', 'Combo Striker', 'Flavorful Aroma', 'Fox Fire',
-    'Galvanize', 'Gooey', 'Grim Neigh', 'Heat Mirage',
+    'Galvanize', 'Gooey', 'Grim Neigh', 'Heat Mirage', 'Heliovolt', 'Horde Break',
   ])
   const daily = new Set(['Dig Away', 'Disguise', 'Dodge'])
   const triggeringMoveByOperationId = new Map(input.traces.flatMap(trace => (
@@ -751,6 +753,7 @@ const applyTriggeredAbilityPayments = (input: {
               || canonicalId === 'Giver'
               || canonicalId === 'Gore'
               || canonicalId === 'Gorilla Tactics'
+              || canonicalId === 'Heliovolt'
               ? (['swift'] as const)
               : (['free'] as const)
     const action = planEncounterMoveResourceCosts({
@@ -766,6 +769,7 @@ const applyTriggeredAbilityPayments = (input: {
             || canonicalId === 'Giver'
             || canonicalId === 'Gore'
             || canonicalId === 'Gorilla Tactics'
+            || canonicalId === 'Heliovolt'
             ? 'Swift Action'
             : 'Free Action',
       resolutionId: input.resolutionId,

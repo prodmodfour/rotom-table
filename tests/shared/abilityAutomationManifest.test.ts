@@ -138,9 +138,12 @@ describe('ability automation semantic manifest', () => {
         'Glisten', 'Gluttony', 'Gooey', 'Gore', 'Gorilla Tactics', 'Grass Pelt',
         'Grassy Surge', 'Grim Neigh', 'Gulp', 'Gulp Missile', 'Guts', 'Handyman',
         'Harvest', 'Haunt', 'Hay Fever', 'Healer', 'Heat Mirage', 'Heatproof',
+        'Heavy Metal', 'Heliovolt', 'Helper', 'Honey Paws', 'Honey Thief',
+        'Horde Break', 'Huge Power', 'Huge Power / Pure Power', 'Hunger Switch',
+        'Hustle', 'Hydration', 'Hyper Cutter',
       ])
-    expect(manifest.abilities.filter(ability => ability.baseStatus === 'blocked')).toHaveLength(315)
-    expect(manifest.abilities.filter(ability => ability.runtime.kind === 'unimplemented')).toHaveLength(315)
+    expect(manifest.abilities.filter(ability => ability.baseStatus === 'blocked')).toHaveLength(303)
+    expect(manifest.abilities.filter(ability => ability.runtime.kind === 'unimplemented')).toHaveLength(303)
   })
 
   it('keeps bootstrap mode hints non-authoritative and maps every row to its plan cohort', () => {

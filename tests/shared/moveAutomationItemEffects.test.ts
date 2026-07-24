@@ -134,9 +134,9 @@ describe('shared MoveSpec item effects', () => {
     })).toThrowError(expect.objectContaining({ code: 'invalid-item-effect' }))
     expect(parseMoveItemEffectPayload({
       ...payloads['digest-buff'] as object,
-      storageSlot: 3,
-    })).toMatchObject({ action: 'digest-buff', storageSlot: 3 })
-    for (const storageSlot of [0, 4, 1.5]) {
+      storageSlot: 4,
+    })).toMatchObject({ action: 'digest-buff', storageSlot: 4 })
+    for (const storageSlot of [0, 5, 1.5]) {
       expect(() => parseMoveItemEffectPayload({
         ...payloads['digest-buff'] as object,
         storageSlot,

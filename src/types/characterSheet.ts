@@ -132,6 +132,8 @@ export interface CharacterSheetItems {
   /** Legacy single-slot digestion buff. New Gluttony-aware writes use digestionFoods. */
   digestionFood?: string
   digestionFoods?: string[]
+  /** Honey Paws' separate Leftovers-equivalent buff; does not consume a normal slot. */
+  honeyPawsFood?: string
   extraItems?: string[]
   pointsLeft?: number
 }

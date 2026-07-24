@@ -578,8 +578,8 @@ export const parseMoveItemEffectPayload = (
   const storageSlot = hasStorageSlot
     ? quantity(input.storageSlot, `${path}.storageSlot`)
     : undefined
-  if (storageSlot !== undefined && storageSlot > 3) {
-    fail('limit-exceeded', `${path}.storageSlot`, 'must identify one of the three bounded digestion slots.')
+  if (storageSlot !== undefined && storageSlot > 4) {
+    fail('limit-exceeded', `${path}.storageSlot`, 'must identify one of three normal slots or the separate Honey Paws slot.')
   }
   return deepFreeze({
     action: 'digest-buff' as const,

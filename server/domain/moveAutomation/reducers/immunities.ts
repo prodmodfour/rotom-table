@@ -28,6 +28,7 @@ import {
   AA073_GULP_MISSILE_PARALYZE_REASON,
   aa073GulpMissileAccuracyOutcome,
 } from '../../abilityAutomation/mechanics/aa073MoveIntegration'
+import { aa074HyperCutterBlocksStage } from '../../abilityAutomation/mechanics/aa074StaticIntegration'
 import type {
   MoveConditionImmunityDecision,
   MoveCoreTokenEffectImmunityDecision,
@@ -353,6 +354,14 @@ export const createStandardMoveCoreTokenEffectImmunityQueries = (
           && sourceIsEnemy
             ? 'Full Metal Body'
             : null
+        )
+        ?? (
+          options.context && aa074HyperCutterBlocksStage({
+            context: options.context,
+            placementId: recipient.placement.id,
+            stage,
+            delta,
+          }) ? 'Hyper Cutter' : null
         )
         ?? (
           stage === 'def'

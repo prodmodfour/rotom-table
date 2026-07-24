@@ -168,7 +168,9 @@ const flareBoost = (input: {
 }
 
 const sunny = (context: AuthoritativeAbilityContext): boolean => (
-  createMoveAutomationWeatherResolver(context.map).active().some(weather => weather.kind === 'sunny')
+  createMoveAutomationWeatherResolver(context.map, {
+    subjectPlacementId: context.actor.placement.id,
+  }).active().some(weather => weather.kind === 'sunny')
 )
 
 const STAT_KEYS: Readonly<Record<string, CombatStageKey>> = Object.freeze({

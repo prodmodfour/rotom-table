@@ -77,13 +77,15 @@ export const createAa068DrySkinLifecycleHandler = (input: {
   readonly drySkinPlacementIds: readonly string[]
 }): EncounterLifecycleTriggerHandler => {
   const owners = new Set(input.drySkinPlacementIds)
-  const weather = createMoveAutomationWeatherResolver(input.map).active()
-  const sunny = weather.some(candidate => candidate.kind === 'sunny')
-  const rainy = weather.some(candidate => candidate.kind === 'rainy')
   return Object.freeze({
     id: 'handler.ability.aa068.dry-skin',
     resolve: ({ event }: Parameters<EncounterLifecycleTriggerHandler['resolve']>[0]) => {
       if (event.kind !== 'turn-end' || !owners.has(event.placementId)) return []
+      const weather = createMoveAutomationWeatherResolver(input.map, {
+        subjectPlacementId: event.placementId,
+      }).active()
+      const sunny = weather.some(candidate => candidate.kind === 'sunny')
+      const rainy = weather.some(candidate => candidate.kind === 'rainy')
       const triggers: EncounterLifecycleTrigger[] = []
       if (sunny) triggers.push({
         effectId: null,

@@ -179,6 +179,9 @@ const digestionBuffNames = (
   const extras: unknown = placement.sheetKind === 'pokemon'
     ? (sheet as CharacterSheet).items?.digestionFoods
     : (sheet as TrainerSheet).digestionFoods
+  const honeyPaws: unknown = placement.sheetKind === 'pokemon'
+    ? (sheet as CharacterSheet).items?.honeyPawsFood
+    : (sheet as TrainerSheet).honeyPawsFood
   if (extras !== undefined && (!Array.isArray(extras) || extras.length > 3)) {
     return fail('sheet-unavailable', `Digestion buff storage for ${placement.id} is malformed.`)
   }
@@ -191,8 +194,17 @@ const digestionBuffNames = (
   else if (legacy !== undefined && legacy !== null && legacy !== '') {
     return fail('sheet-unavailable', `Digestion buff storage for ${placement.id} is malformed.`)
   }
-  const names = [...legacyNames, ...extraValues.map(value => (value as string).trim())]
-  if (names.length > 3) {
+  const honeyPawsNames: string[] = []
+  if (typeof honeyPaws === 'string' && honeyPaws.trim()) honeyPawsNames.push(honeyPaws.trim())
+  else if (honeyPaws !== undefined && honeyPaws !== null && honeyPaws !== '') {
+    return fail('sheet-unavailable', `Honey Paws digestion storage for ${placement.id} is malformed.`)
+  }
+  const names = [
+    ...legacyNames,
+    ...extraValues.map(value => (value as string).trim()),
+    ...honeyPawsNames,
+  ]
+  if (legacyNames.length + extraValues.length > 3 || names.length > 4) {
     return fail('sheet-unavailable', `Digestion buff storage for ${placement.id} exceeds its bounded capacity.`)
   }
   return names

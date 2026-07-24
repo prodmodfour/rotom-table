@@ -66,6 +66,7 @@ import { aa070DamageModifiers } from '../abilityAutomation/mechanics/aa070Static
 import { aa069DamageModifiers } from '../abilityAutomation/mechanics/aa069StaticIntegration'
 import { aa071MoveDamageModifiers } from '../abilityAutomation/mechanics/aa071StaticIntegration'
 import { aa073MoveDamageModifiers } from '../abilityAutomation/mechanics/aa073StaticIntegration'
+import { aa074MoveDamageModifiers } from '../abilityAutomation/mechanics/aa074StaticIntegration'
 
 export type MoveDamageStatSelectionErrorCode = 'non-numeric-stat-selection'
 
@@ -525,6 +526,11 @@ export const resolveMoveSpecDamageCalculation = (
     recipient: options.recipient,
     moveType: moveType.moveType,
   })
+  const aa074Modifiers = aa074MoveDamageModifiers({
+    context: options.context,
+    operation: options.operation,
+    actorId: actor.id,
+  })
   const breakdown = resolveMoveAutomationTargetDamageBreakdown(
     resolvedScript,
     helpingHand.length > 0 ? withoutHelpingHandCondition(actor) : actor,
@@ -557,6 +563,7 @@ export const resolveMoveSpecDamageCalculation = (
         ...aa070Modifiers,
         ...aa071Modifiers,
         ...aa073Modifiers,
+        ...aa074Modifiers,
         ...(options.responseDamageModifiers ?? []),
         ...encounterDamageModifiers,
         ...helpingHandModifiers,
