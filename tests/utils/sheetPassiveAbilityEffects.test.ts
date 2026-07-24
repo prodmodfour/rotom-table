@@ -9,6 +9,7 @@ import {
   getSonicMoveImmunitySource,
   hasFlashFireAbility,
   hasGroundsourceImmunityCapability,
+  hasGlistenAbility,
   hasLevitateAbility,
   hasMudDwellerAbility,
   hasSapSipperAbility,
@@ -30,6 +31,8 @@ describe('sheet passive ability effects', () => {
     expect(hasSapSipperAbility([{ name: 'sap sipper' }])).toBe(true)
     expect(hasSapSipperAbility(['Sap Sipper'])).toBe(true)
     expect(hasSapSipperAbility([{ name: 'Run Away' }])).toBe(false)
+    expect(hasGlistenAbility([{ name: 'glisten' }])).toBe(true)
+    expect(hasGlistenAbility([{ name: 'Run Away' }])).toBe(false)
     expect(hasToleranceAbility([{ name: 'tolerance' }])).toBe(true)
     expect(hasToleranceAbility(['Tolerance'])).toBe(true)
     expect(hasToleranceAbility([{ name: 'Run Away' }])).toBe(false)
@@ -69,7 +72,7 @@ describe('sheet passive ability effects', () => {
     expect(getPassiveTypeEffectivenessSource('Water', [{ name: 'Mud Dweller' }], undefined, { baseMultiplier: 1 })).toBe('Mud Dweller')
   })
 
-  it('makes Fire and Grass attacks immune with their defensive abilities', () => {
+  it('makes Fire, Grass, and Fairy attacks immune with their defensive abilities', () => {
     expect(applySheetPassiveAbilityTypeEffectiveness('Fire', 2, [{ name: 'Flash Fire' }])).toBe(0)
     expect(applySheetPassiveAbilityTypeEffectiveness('Water', 1.5, [{ name: 'Flash Fire' }])).toBe(1.5)
     expect(computeSheetAbilityAwareMultiplier('Fire', ['Grass'], [{ name: 'flash fire' }])).toBe(0)
@@ -79,6 +82,10 @@ describe('sheet passive ability effects', () => {
     expect(applySheetPassiveAbilityTypeEffectiveness('Water', 1.5, [{ name: 'Sap Sipper' }])).toBe(1.5)
     expect(computeSheetAbilityAwareMultiplier('Grass', ['Water'], [{ name: 'sap sipper' }])).toBe(0)
     expect(getPassiveTypeEffectivenessSource('Grass', [{ name: 'Sap Sipper' }])).toBe('Sap Sipper')
+
+    expect(applySheetPassiveAbilityTypeEffectiveness('Fairy', 1, [{ name: 'Glisten' }])).toBe(0)
+    expect(computeSheetAbilityAwareMultiplier('Fairy', ['Normal'], [{ name: 'glisten' }])).toBe(0)
+    expect(getPassiveTypeEffectivenessSource('Fairy', [{ name: 'Glisten' }])).toBe('Glisten')
   })
 
   it('makes Sonic moves immune with Soundproof', () => {

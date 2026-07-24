@@ -173,6 +173,8 @@ export interface MoveCombatStageImmunityQueryInput {
   readonly stage: CombatStageKey
   readonly delta: number
   readonly recipient: MoveCoreTokenEffectRecipient
+  /** Effective source owner after a durable response changes the acting placement. */
+  readonly sourceOwnerId?: string | null
 }
 
 export interface MoveCoreTokenEffectImmunityDecision {

@@ -32,7 +32,6 @@ export function usePokemonSheetRowActions(sheet: Readonly<Ref<CharacterSheet | n
   const clearLookupBackedItemFields = () => {
     if (!sheet.value?.items) return
     delete sheet.value.items.itemDescription
-    delete sheet.value.items.digestionFood
     delete sheet.value.items.extraItems
     delete sheet.value.items.pointsLeft
   }

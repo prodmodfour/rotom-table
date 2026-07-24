@@ -14,6 +14,12 @@ import {
   isAa071FullyGrownTreeCell,
 } from '#shared/abilityAutomation/aa071'
 import {
+  AA072_GARDENER_METADATA_KEY,
+  aa072IsYieldingPlantCell,
+  aa072PlantCellId,
+  parseAa072GardenerMetadata,
+} from '#shared/abilityAutomation/aa072'
+import {
   createEmptyAbilityDailyUsageLedger,
   parseAbilityDailyUsageLedger,
 } from '#shared/abilityAutomation/resources'
@@ -306,6 +312,26 @@ const declarationsFor = (
               || ptuGridDistanceBetweenFootprints(context.actor.token, {
                 position: cell, base: 1, clearance: 1,
               }) > 10) continue
+            seen.add(key)
+            cells.push(cell)
+            if (cells.length > 512) fail(422, `Ability cell declaration ${declaration.id} exceeds the bounded offer size.`)
+          }
+        }
+        else if (context.runtime.canonicalId === 'Gardener' && modeId === 'cultivate') {
+          const ledger = parseAbilityDailyUsageLedger(
+            context.actor.sheet.sheet.abilityUsage ?? createEmptyAbilityDailyUsageLedger(),
+          )
+          const dayKey = ledger.dayKey ?? 'campaign-day:initial'
+          const gardener = parseAa072GardenerMetadata(
+            context.map.metadata?.[AA072_GARDENER_METADATA_KEY],
+          )
+          const seen = new Set<string>()
+          for (const voxel of context.map.voxels) {
+            const cell = { x: voxel.x, y: voxel.y, z: voxel.z }
+            const key = aa072PlantCellId(cell)
+            if (seen.has(key)
+              || !aa072IsYieldingPlantCell(context.map, cell)
+              || gardener.plants[key]?.lastAppliedDayKey === dayKey) continue
             seen.add(key)
             cells.push(cell)
             if (cells.length > 512) fail(422, `Ability cell declaration ${declaration.id} exceeds the bounded offer size.`)

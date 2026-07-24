@@ -132,6 +132,16 @@ describe('shared MoveSpec item effects', () => {
       ...payloads.consume as object,
       consumptionId: 'Client Authored Consumption',
     })).toThrowError(expect.objectContaining({ code: 'invalid-item-effect' }))
+    expect(parseMoveItemEffectPayload({
+      ...payloads['digest-buff'] as object,
+      storageSlot: 3,
+    })).toMatchObject({ action: 'digest-buff', storageSlot: 3 })
+    for (const storageSlot of [0, 4, 1.5]) {
+      expect(() => parseMoveItemEffectPayload({
+        ...payloads['digest-buff'] as object,
+        storageSlot,
+      })).toThrowError(expect.objectContaining({ code: 'limit-exceeded' }))
+    }
     expect(() => parseMoveItemEffectPayload({
       ...payloads.restore as object,
       mode: 'effect',

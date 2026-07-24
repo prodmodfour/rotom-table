@@ -14,6 +14,7 @@ const makeSheet = (): CharacterSheet => ({
     held: 'Potion',
     itemDescription: 'old lookup text',
     digestionFood: 'Snack',
+    digestionFoods: ['Berry Snack'],
     extraItems: ['Berry'],
     pointsLeft: 2,
   },
@@ -115,7 +116,9 @@ describe('usePokemonSheetRowActions', () => {
 
     actions.setHeldItemName(123)
 
-    expect(sheet.value?.items).toEqual({ held: '123' })
+    expect(sheet.value?.items).toEqual({
+      held: '123', digestionFood: 'Snack', digestionFoods: ['Berry Snack'],
+    })
 
     actions.setHeldItemName(null)
     expect(sheet.value?.items?.held).toBe('')

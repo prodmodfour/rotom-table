@@ -201,6 +201,7 @@ const immunityFor = (
     stage: item.stage,
     delta: item.delta,
     recipient: item.work.recipient,
+    sourceOwnerId: item.work.sourceOwnerId,
   })
   recordConsultedPlacements(item.work, decision.consultedPlacementIds)
   return decision

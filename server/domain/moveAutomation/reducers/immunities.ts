@@ -164,11 +164,18 @@ export const createStandardMoveCoreTokenEffectImmunityQueries = (
 ): MoveCoreTokenEffectImmunityQueries => {
   const conditionContext = options.conditionContext
     ?? authoritativeConditionContext(options.context)
-  const moveImmunity = (recipient: MoveCoreTokenEffectRecipient): string | null => (
-    options.moveScript
+  const moveImmunity = (recipient: MoveCoreTokenEffectRecipient): string | null => {
+    const ordinary = options.moveScript
       ? moveAutomationMoveImmunitySource(options.moveScript, recipient.token)
       : null
-  )
+    if (ordinary) return ordinary
+    const sourceId = options.context?.actor.placement.id
+    const glisten = options.moveType?.trim().toLowerCase() === 'fairy'
+      && sourceId !== undefined
+      && sourceId !== recipient.placement.id
+      && options.context?.queries.abilities.has(recipient.placement.id, 'Glisten')
+    return glisten ? 'Glisten' : null
+  }
   const typedAttackImmunity = (
     recipient: MoveCoreTokenEffectRecipient,
     typeSource: 'attacking' | 'defending',
@@ -281,7 +288,14 @@ export const createStandardMoveCoreTokenEffectImmunityQueries = (
             terrain?.trace ?? [],
           )
     },
-    combatStage: ({ operation, stage, delta, recipient }) => {
+    combatStage: ({ operation, stage, delta, recipient, sourceOwnerId }) => {
+      const stageSourceOwnerId = sourceOwnerId ?? options.context?.actor.placement.id ?? null
+      const sourceIsEnemy = stageSourceOwnerId !== null && options.context
+        ? options.context.queries.relationships.resolve(
+            stageSourceOwnerId,
+            recipient.placement.id,
+          ).relationship === 'enemy'
+        : false
       const ordinaryBlocker = moveImmunity(recipient)
         ?? (
           operation.payload.applyTypeImmunity
@@ -299,20 +313,14 @@ export const createStandardMoveCoreTokenEffectImmunityQueries = (
         ?? (
           delta < 0
           && options.context?.queries.abilities.has(recipient.placement.id, 'Clear Body')
-          && options.context.queries.relationships.resolve(
-            options.context.actor.placement.id,
-            recipient.placement.id,
-          ).relationship === 'enemy'
+          && sourceIsEnemy
             ? 'Clear Body'
             : null
         )
         ?? (
           delta < 0
           && options.context?.queries.abilities.has(recipient.placement.id, 'Full Metal Body')
-          && options.context.queries.relationships.resolve(
-            options.context.actor.placement.id,
-            recipient.placement.id,
-          ).relationship === 'enemy'
+          && sourceIsEnemy
             ? 'Full Metal Body'
             : null
         )

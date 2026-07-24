@@ -148,6 +148,8 @@ export interface MoveItemDigestBuffEffectPayload {
   readonly action: 'digest-buff'
   /** Null accepts any authoritative stored buff; a list narrows canonical legality. */
   readonly canonicalItemIds: readonly string[] | null
+  /** Optional one-based occurrence selected from the bounded authoritative storage list. */
+  readonly storageSlot?: number
   readonly onUnavailable: MoveItemEffectUnavailablePolicy
 }
 
@@ -214,6 +216,7 @@ const SUPPRESS_FIELDS = [
   'onUnavailable',
 ] as const
 const DIGEST_FIELDS = ['action', 'canonicalItemIds', 'onUnavailable'] as const
+const DIGEST_SLOT_FIELDS = [...DIGEST_FIELDS, 'storageSlot'] as const
 const CHOICE_SELECTION_FIELDS = ['kind', 'requestId', 'destinationId'] as const
 const REQUIREMENT_SELECTION_FIELDS = ['kind', 'requirementId', 'cardinality'] as const
 
@@ -569,10 +572,19 @@ export const parseMoveItemEffectPayload = (
     })
   }
 
-  const input = exactRecord(value, DIGEST_FIELDS, path)
+  const digestCandidate = record(value, path)
+  const hasStorageSlot = Object.prototype.hasOwnProperty.call(digestCandidate, 'storageSlot')
+  const input = exactRecord(digestCandidate, hasStorageSlot ? DIGEST_SLOT_FIELDS : DIGEST_FIELDS, path)
+  const storageSlot = hasStorageSlot
+    ? quantity(input.storageSlot, `${path}.storageSlot`)
+    : undefined
+  if (storageSlot !== undefined && storageSlot > 3) {
+    fail('limit-exceeded', `${path}.storageSlot`, 'must identify one of the three bounded digestion slots.')
+  }
   return deepFreeze({
     action: 'digest-buff' as const,
     canonicalItemIds: canonicalItemIds(input.canonicalItemIds, `${path}.canonicalItemIds`),
+    ...(storageSlot === undefined ? {} : { storageSlot }),
     onUnavailable: unavailablePolicy(input.onUnavailable, `${path}.onUnavailable`),
   })
 }

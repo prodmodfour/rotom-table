@@ -169,14 +169,33 @@ const equippedNames = (
       splitSheetItemNames((sheet as TrainerSheet).equipmentSlots?.[key])
     ))
 
-const digestionBuffName = (
+const digestionBuffNames = (
   placement: SheetPlacement,
   sheet: CharacterSheet | TrainerSheet,
-): string | null => {
-  const raw = placement.sheetKind === 'pokemon'
+): readonly string[] => {
+  const legacy: unknown = placement.sheetKind === 'pokemon'
     ? (sheet as CharacterSheet).items?.digestionFood
     : (sheet as TrainerSheet).digestion
-  return typeof raw === 'string' && raw.trim() ? raw.trim() : null
+  const extras: unknown = placement.sheetKind === 'pokemon'
+    ? (sheet as CharacterSheet).items?.digestionFoods
+    : (sheet as TrainerSheet).digestionFoods
+  if (extras !== undefined && (!Array.isArray(extras) || extras.length > 3)) {
+    return fail('sheet-unavailable', `Digestion buff storage for ${placement.id} is malformed.`)
+  }
+  const extraValues = (extras ?? []) as unknown[]
+  if (extraValues.some(value => typeof value !== 'string' || !value.trim())) {
+    return fail('sheet-unavailable', `Digestion buff storage for ${placement.id} is malformed.`)
+  }
+  const legacyNames: string[] = []
+  if (typeof legacy === 'string' && legacy.trim()) legacyNames.push(legacy.trim())
+  else if (legacy !== undefined && legacy !== null && legacy !== '') {
+    return fail('sheet-unavailable', `Digestion buff storage for ${placement.id} is malformed.`)
+  }
+  const names = [...legacyNames, ...extraValues.map(value => (value as string).trim())]
+  if (names.length > 3) {
+    return fail('sheet-unavailable', `Digestion buff storage for ${placement.id} exceeds its bounded capacity.`)
+  }
+  return names
 }
 
 const referenceMatchesPlacement = (
@@ -328,14 +347,12 @@ export const createMoveAutomationItemRuleResolver = (input: {
             requirementId: query.requirementId!,
             items: input.items,
           })
-        : (() => {
-            const name = digestionBuffName(placement, sheet)
-            if (!name) return []
+        : digestionBuffNames(placement, sheet).flatMap((name) => {
             const profile = resolveMoveAutomationItemRuleProfile(name, {
               rareBenefitEligible: rareBenefitEligible(name, placement, sheet),
             })
             return profile ? [{ reference: null, profile }] : []
-          })()
+          })
 
       const familySet = new Set(query.families)
       const matching = rawCandidates.filter(candidate => familySet.has(candidate.profile.family))

@@ -44,6 +44,7 @@ import {
   type MoveDamageTypeResolution,
 } from './damageTypes'
 import {
+  resolveMoveDamageClass,
   resolveMoveSpecDamageCalculation,
   type MoveSpecDamageCalculation,
 } from './damageStats'
@@ -70,6 +71,7 @@ import {
 } from '../abilityAutomation/mechanics/aa066StaticIntegration'
 import { aa070FluffyDamageTypeOverlay } from '../abilityAutomation/mechanics/aa070StaticIntegration'
 import { aa071ResistDamageType } from '../abilityAutomation/mechanics/aa071StaticIntegration'
+import { aa072FurCoatDamageTypeOverlay } from '../abilityAutomation/mechanics/aa072StaticIntegration'
 import { applyEncounterNumericModifiers } from './encounterNumericModifiers'
 import type {
   MoveCoreTokenEffectRecipient,
@@ -793,6 +795,8 @@ export const executeMoveMultiHitOperation = (options: {
   readonly recipientIds: readonly string[]
   /** Triggered one-damage resistance steps apply to the first successful strike only. */
   readonly firstStrikeResistanceStepsByRecipient?: ReadonlyMap<string, number>
+  /** Gorilla Tactics was accepted on this still-uncommitted triggering Move. */
+  readonly gorillaTacticsTriggeringDamage?: boolean
 }): MoveMultiHitExecution => {
   const { context, operation } = options
   assertRollBudget({ context, operation, recipientCount: options.recipientIds.length })
@@ -940,11 +944,19 @@ export const executeMoveMultiHitOperation = (options: {
             recipientId,
             resolved: baseResolvedType,
           })
+          const furCoatType = aa072FurCoatDamageTypeOverlay({
+            context,
+            damageClass: resolveMoveDamageClass({
+              context, operation: damageOperation, recipientId,
+            }).damageClass,
+            recipientId,
+            resolved: fluffyType,
+          })
           const resistanceSteps = resistanceAppliedTargetIds.has(recipientId)
             ? 0
             : options.firstStrikeResistanceStepsByRecipient?.get(recipientId) ?? 0
           const resolvedType = aa071ResistDamageType({
-            resolved: fluffyType,
+            resolved: furCoatType,
             steps: resistanceSteps,
             sources: Array.from({ length: resistanceSteps }, () => 'AA-071 triggered resistance'),
           })
@@ -1035,6 +1047,14 @@ export const executeMoveMultiHitOperation = (options: {
             }),
             resolvedMoveType: resolvedType,
             naturalCriticalRoll: critical.naturalResult,
+            ...(options.gorillaTacticsTriggeringDamage ? { responseDamageModifiers: [{
+              id: 'ability.gorilla-tactics.triggering-damage',
+              stage: 'pre-type-modifiers', priority: 40,
+              source: { kind: 'ability', id: 'Gorilla Tactics' },
+              stackingGroup: 'aa072-gorilla-tactics-triggering',
+              reasonCode: 'ability.gorilla-tactics.triggering-damage',
+              operation: 'add', value: 10,
+            }] as const } : {}),
             ...(formula.contextualDamageBase
               ? { contextualDamageBase: formula.contextualDamageBase }
               : {}),

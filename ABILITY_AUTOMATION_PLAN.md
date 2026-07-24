@@ -2,7 +2,7 @@
 
 `PLAN_STATUS: IN_PROGRESS`
 
-`CURRENT_TICKET: AA-072`
+`CURRENT_TICKET: AA-073`
 
 ## Goal
 
@@ -96,14 +96,14 @@ Ability automation should reuse MoveSpec v2 selectors, expressions, operations, 
 
 ## Progress snapshot
 
-- Plan tickets: **71 DONE / 110 total**
+- Plan tickets: **72 DONE / 110 total**
 - Canonical inventory: **483**
-- Semantically complete: **144**
+- Semantically complete: **156**
 - Assisted: **0**
-- Blocked/unimplemented: **339**
+- Blocked/unimplemented: **327**
 - Interaction status: **483 unassessed**
 - Legacy baseline: **45 abilities with 55 partial fragments; 438 with no reviewed legacy fragment**
-- Production runtime: **144 exact manifest-selected AbilitySpec v1 runtimes**; retained legacy paths remain explicit compatibility only
+- Production runtime: **156 exact manifest-selected AbilitySpec v1 runtimes**; retained legacy paths remain explicit compatibility only
 
 ## Tickets
 
@@ -263,7 +263,7 @@ Each cohort must review every named ability against canonical text, implement al
   - Flame Body; Flame Tongue; Flare Boost; Flash Fire; Flavorful Aroma; Flower Gift; Flower Power; Flower Veil; Fluffy; Fluffy Charge; Flutter; Flying Fly Trap
 - [x] **AA-071 — Focus through Full Metal Body** — `DONE`
   - Focus; Forecast; Forest Lord; Forewarn; Fox Fire; Freezing Point; Friend Guard; Frighten; Frisk; Frostbite; Full Guard; Full Metal Body
-- [ ] **AA-072 — Fur Coat through Grass Pelt** — `TODO`
+- [x] **AA-072 — Fur Coat through Grass Pelt** — `DONE`
   - Fur Coat; Gale Wings; Galvanize; Gardener; Gentle Vibe; Giver; Glisten; Gluttony; Gooey; Gore; Gorilla Tactics; Grass Pelt
 - [ ] **AA-073 — Grassy Surge through Heatproof** — `TODO`
   - Grassy Surge; Grim Neigh; Gulp; Gulp Missile; Guts; Handyman; Harvest; Haunt; Hay Fever; Healer; Heat Mirage; Heatproof

@@ -698,10 +698,16 @@ const applyTriggeredAbilityPayments = (input: {
     ['ability.fox-fire.optional-ember', 'Fox Fire'],
     ['ability.friend-guard.optional-resistance', 'Friend Guard'],
     ['ability.full-guard.optional-resistance', 'Full Guard'],
+    ['ability.galvanize.optional-electric-type', 'Galvanize'],
+    ['ability.giver.optional-present-roll', 'Giver'],
+    ['ability.gooey.optional-speed-stage', 'Gooey'],
+    ['ability.gore.optional-double-strike', 'Gore'],
+    ['ability.gorilla-tactics.optional-lock', 'Gorilla Tactics'],
   ])
   const noFrequency = new Set([
     'Anger Point', 'Aqua Boost', 'Beast Boost', 'Celebrate', 'Chilling Neigh',
     'Color Change', 'Combo Striker', 'Flavorful Aroma', 'Fox Fire',
+    'Galvanize', 'Gooey',
   ])
   const daily = new Set(['Dig Away', 'Disguise', 'Dodge'])
   const triggeringMoveByOperationId = new Map(input.traces.flatMap(trace => (
@@ -739,6 +745,9 @@ const applyTriggeredAbilityPayments = (input: {
           : canonicalId === 'Fade Away'
             ? (['standard'] as const)
             : canonicalId === 'Full Guard'
+              || canonicalId === 'Giver'
+              || canonicalId === 'Gore'
+              || canonicalId === 'Gorilla Tactics'
               ? (['swift'] as const)
               : (['free'] as const)
     const action = planEncounterMoveResourceCosts({
@@ -751,6 +760,9 @@ const applyTriggeredAbilityPayments = (input: {
         : canonicalId === 'Fade Away'
           ? 'Standard Action'
           : canonicalId === 'Full Guard'
+            || canonicalId === 'Giver'
+            || canonicalId === 'Gore'
+            || canonicalId === 'Gorilla Tactics'
             ? 'Swift Action'
             : 'Free Action',
       resolutionId: input.resolutionId,
@@ -863,7 +875,7 @@ const applyTriggeredAbilityPayments = (input: {
     if (existingByOperation && existingByOperation !== existing) {
       fail('state-change-conflict', `${canonicalId} response operation already paid another resource.`)
     }
-    const limit = ['Bodyguard', 'Dancer', 'Dragon’s Maw', 'Drown Out'].includes(canonicalId)
+    const limit = ['Bodyguard', 'Dancer', 'Dragon’s Maw', 'Drown Out', 'Giver', 'Gore'].includes(canonicalId)
       ? 2
       : 1
     if (!existingByOperation && (existing?.spent ?? 0) >= limit) {

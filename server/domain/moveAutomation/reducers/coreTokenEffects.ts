@@ -514,6 +514,9 @@ export const reduceMoveCoreTokenEffects = (
     ...(input.dynamicRecipientsForOperation === undefined
       ? {}
       : { dynamicRecipientsForOperation: input.dynamicRecipientsForOperation }),
+    ...(input.sourceOwnerIdForOperation === undefined
+      ? {}
+      : { sourceOwnerIdForOperation: input.sourceOwnerIdForOperation }),
     ...(input.recipientIdsForOperation === undefined
       ? {}
       : { recipientIdsForOperation: input.recipientIdsForOperation }),

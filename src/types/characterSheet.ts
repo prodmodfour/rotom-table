@@ -129,7 +129,9 @@ export interface CharacterSheetVitaminTracking {
 export interface CharacterSheetItems {
   held?: string
   itemDescription?: string
+  /** Legacy single-slot digestion buff. New Gluttony-aware writes use digestionFoods. */
   digestionFood?: string
+  digestionFoods?: string[]
   extraItems?: string[]
   pointsLeft?: number
 }

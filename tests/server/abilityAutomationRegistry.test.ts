@@ -230,7 +230,7 @@ describe('ability automation production runtime registry', () => {
   })
 
   it('ships only exact evidence-backed production selections', () => {
-    expect(ABILITY_AUTOMATION_RUNTIME_REGISTRY.size).toBe(144)
+    expect(ABILITY_AUTOMATION_RUNTIME_REGISTRY.size).toBe(156)
     expect(ABILITY_AUTOMATION_RUNTIME_REGISTRY.entries().map(runtime => runtime.canonicalId))
       .toEqual([
         'Abominable', 'Absorb Force', 'Accelerate', 'Adaptability', 'Aerilate', 'Aftermath',
@@ -258,6 +258,8 @@ describe('ability automation production runtime registry', () => {
         'Flower Veil', 'Fluffy', 'Fluffy Charge', 'Flutter', 'Flying Fly Trap',
         'Focus', 'Forecast', 'Forest Lord', 'Forewarn', 'Fox Fire', 'Freezing Point',
         'Friend Guard', 'Frighten', 'Frisk', 'Frostbite', 'Full Guard', 'Full Metal Body',
+        'Fur Coat', 'Gale Wings', 'Galvanize', 'Gardener', 'Gentle Vibe', 'Giver',
+        'Glisten', 'Gluttony', 'Gooey', 'Gore', 'Gorilla Tactics', 'Grass Pelt',
       ])
     expect(registeredAbilityAutomationRuntimeFor('Adaptability')).toMatchObject({
       kind: 'abilityspec-v1', version: 1,

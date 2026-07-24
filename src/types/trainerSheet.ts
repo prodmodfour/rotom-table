@@ -311,7 +311,9 @@ export interface TrainerSheet {
   conditions?: string[]
   /** Legacy/free-form status notes that do not map to a canonical condition. */
   statusAfflictions?: string
+  /** Legacy single-slot digestion buff. New Gluttony-aware writes use digestionFoods. */
   digestion?: string
+  digestionFoods?: string[]
 
   /** Trainer's natural / weapon-attack moves. */
   movelist?: TrainerMove[]

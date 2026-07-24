@@ -149,6 +149,19 @@ import {
   AA071_FULL_GUARD_REASON,
 } from '../abilityAutomation/mechanics/aa071MoveIntegration'
 import {
+  AA072_GALE_WINGS_REASON,
+  AA072_GALVANIZE_REASON,
+  AA072_GIVER_REASON,
+  AA072_GOOEY_REASON,
+  AA072_GORE_REASON,
+  AA072_GORILLA_TACTICS_REASON,
+  aa072GiverForcedValue,
+  aa072GorillaTacticsSelected,
+  aa072MoveOverlayOperations,
+  aa072SelectedMoveType,
+  applyAa072SelectedMoveOperations,
+} from '../abilityAutomation/mechanics/aa072MoveIntegration'
+import {
   aa070FlowerPowerDamageOperation,
   aa070FluffyDamageTypeOverlay,
 } from '../abilityAutomation/mechanics/aa070StaticIntegration'
@@ -157,6 +170,10 @@ import {
   aa071FrostbiteOperations,
   aa071ResistDamageType,
 } from '../abilityAutomation/mechanics/aa071StaticIntegration'
+import {
+  aa072FurCoatDamageTypeOverlay,
+  aa072GorillaTacticsMoveAllowed,
+} from '../abilityAutomation/mechanics/aa072StaticIntegration'
 import {
   AA068_DRAGONS_MAW_REASON,
   AA068_DREAM_SMOKE_REASON,
@@ -1759,6 +1776,7 @@ const executableProgram = (
   definition: ValidatedMoveSpecDefinition,
   context: AuthoritativeMoveRulesContext,
   handlerRegistry: RegisteredMoveHandlerRegistry,
+  responseResolver: MoveSpecResponseResolver,
   serverAbilityOverlayOperations: readonly MoveEffectOperation[] = [],
 ): ExecutableMoveSpecProgram => {
   const staticEntries = staticOperationEntries(definition.spec)
@@ -1787,12 +1805,22 @@ const executableProgram = (
       ]),
     ),
   )
+  const reviewedScript = context.queries.rules.reviewedScriptFor(definition.spec.canonicalId)
+    ?? context.queries.rules.reviewedScriptFor(context.intent.moveName)
+    ?? fail('definition-integrity-mismatch', 'Ability overlays could not resolve the reviewed Move script.')
+  const selectedAa072Operations = applyAa072SelectedMoveOperations({
+    script: reviewedScript,
+    operations: baseReviewedEntries.map(entry => entry.operation),
+    moveOwnedOperationIds: new Set([
+      ...staticEntries.map(entry => entry.operation.id),
+      ...handlerEntries.map(entry => entry.operation.id),
+    ]),
+    responses: responseResolver,
+  })
   const frostbiteOperations = aa071FrostbiteOperations({
     context,
-    script: context.queries.rules.reviewedScriptFor(definition.spec.canonicalId)
-      ?? context.queries.rules.reviewedScriptFor(context.intent.moveName)
-      ?? fail('definition-integrity-mismatch', 'Frostbite could not resolve the reviewed Move script.'),
-    operations: baseReviewedEntries.map(entry => entry.operation),
+    script: reviewedScript,
+    operations: selectedAa072Operations,
   })
   const reviewedEntries = frostbiteOperations.map((operation, index): ExecutableMoveSpecOperationEntry => ({
     operation,
@@ -2476,6 +2504,7 @@ const executeMoveSpecInternal = (
     definition,
     input.context,
     handlerRegistry,
+    executionState.responseResolver,
     input.serverAbilityOverlayOperations,
   )
   enforceNestedExecutionBudget(() => executionState.nestedBudget.reserveOperations(
@@ -2589,6 +2618,36 @@ const executeMoveSpecInternal = (
   const selectedFriendGuardTargetIds = new Set<string>()
   const selectedFullGuardTargetIds = new Set<string>()
   const selectedAa071ResistanceRequestOperationIds = new Set<string>()
+  const aa072MoveTypeOverride = aa072SelectedMoveType({
+    operations: program.operations,
+    responses: responseResolver,
+  })
+  const aa072GoreSelected = [...reactionRequestsByOperationId.values()].some(operation => (
+    operation.reasonCode === AA072_GORE_REASON
+    && responseResolver.resolve({
+      requestId: operation.payload.requestId,
+      options: operation.payload.options,
+      allowPass: operation.payload.allowPass,
+    })?.optionId === 'ability.gore.use'
+  ))
+  const aa072GaleWingsSelected = [...reactionRequestsByOperationId.values()].some(operation => (
+    operation.reasonCode === AA072_GALE_WINGS_REASON
+    && responseResolver.resolve({
+      requestId: operation.payload.requestId,
+      options: operation.payload.options,
+      allowPass: operation.payload.allowPass,
+    })?.optionId === 'ability.gale-wings.flying'
+  ))
+  const aa072GorillaSelected = !aa072GoreSelected && aa072GorillaTacticsSelected({
+    operations: program.operations,
+    responses: responseResolver,
+  })
+  const aa072ForcedPresentValue = aa072GorillaSelected
+    ? null
+    : aa072GiverForcedValue({
+        operations: program.operations,
+        responses: responseResolver,
+      })
   const aa071ProtectedTargetId = (
     operation: MoveReactionRequestEffectOperation,
     prefix: string,
@@ -2633,13 +2692,18 @@ const executeMoveSpecInternal = (
   })
   const referencedAccuracyRollIds = accuracyReferenceIds(program.operations)
   let mechanics: MoveSpecAuthoritativeMoveMechanics | null = null
-  const getMechanics = (): MoveSpecAuthoritativeMoveMechanics => (
-    mechanics ??= authoritativeMoveMechanics(
+  const getMechanics = (): MoveSpecAuthoritativeMoveMechanics => {
+    if (mechanics) return mechanics
+    const base = authoritativeMoveMechanics(
       input.context,
       spec.canonicalId,
       executionState.mechanicsSource,
     )
-  )
+    mechanics = aa072MoveTypeOverride
+      ? { script: { ...base.script, type: aa072MoveTypeOverride } }
+      : base
+    return mechanics
+  }
   const dampCancelled = ['Self-Destruct', 'Explosion'].includes(spec.canonicalId)
     && aa065DampCancelsMove({
       context: input.context,
@@ -2761,6 +2825,16 @@ const executeMoveSpecInternal = (
       targetIds = resolvedTargetIds.length <= MOVE_SPEC_LIMITS.targetCount
         ? resolvedTargetIds
         : []
+      if (!aa072GorillaTacticsMoveAllowed({
+        context: input.context,
+        placementId: input.context.actor.placement.id,
+        canonicalMoveId: spec.canonicalId,
+      })) {
+        fail(
+          'move-mechanics-unavailable',
+          `Gorilla Tactics does not permit ${spec.canonicalId} in this Scene.`,
+        )
+      }
       for (const placementId of [input.context.actor.placement.id, ...targetIds]) {
         const forecast = aa071ForecastTypeResolution({
           contextMap: input.context.map,
@@ -3011,6 +3085,24 @@ const executeMoveSpecInternal = (
             return !bodyguardSelected && protectedTargetId && hitTargetIds.includes(protectedTargetId)
               ? owners
               : []
+          }
+          if (operation.reasonCode === AA072_GOOEY_REASON) {
+            const targetId = operation.source.kind === 'lifecycle-event'
+              && operation.source.id.startsWith('ability.gooey.target:')
+              ? operation.source.id.slice('ability.gooey.target:'.length)
+              : null
+            return targetId && hitTargetIds.includes(targetId) ? owners : []
+          }
+          if (operation.reasonCode === AA072_GALE_WINGS_REASON
+            || operation.reasonCode === AA072_GORE_REASON) return owners
+          if (operation.reasonCode === AA072_GORILLA_TACTICS_REASON) {
+            return aa072GoreSelected ? [] : owners
+          }
+          if (operation.reasonCode === AA072_GALVANIZE_REASON) {
+            return aa072GaleWingsSelected ? [] : owners
+          }
+          if (operation.reasonCode === AA072_GIVER_REASON) {
+            return !aa072GorillaSelected && randomTableExecutions.size > 0 ? owners : []
           }
           if (operation.reasonCode === AA071_FRIEND_GUARD_REASON) {
             const protectedTargetId = operation.source.kind === 'lifecycle-event'
@@ -3874,7 +3966,7 @@ const executeMoveSpecInternal = (
       if (operation.kind === 'roll') {
         if (operation.payload.formula.kind === 'table') {
           const tableOperation = operation as MoveRandomTableOperation
-          const selection = enforceRandomSelection(() => resolveMoveRandomTable({
+          const naturalSelection = enforceRandomSelection(() => resolveMoveRandomTable({
             definition: tableOperation.payload.table,
             rollId: tableOperation.payload.rollId,
             parentEffectId: tableOperation.id,
@@ -3892,6 +3984,13 @@ const executeMoveSpecInternal = (
               `Random operation table ${tableOperation.payload.table.tableId}`,
             ),
           }))
+          const forcedEntry = spec.canonicalId === 'Present' && aa072ForcedPresentValue !== null
+            ? tableOperation.payload.table.entries.find(entry => entry.id === `outcome-${aa072ForcedPresentValue}`)
+              ?? fail('definition-integrity-mismatch', 'Giver could not resolve the reviewed Present outcome.')
+            : null
+          const selection: ExecutedMoveRandomTable = forcedEntry
+            ? { ...naturalSelection, selectedId: forcedEntry.id, selected: forcedEntry }
+            : naturalSelection
           randomTableExecutions.set(tableOperation.id, selection)
           for (const rollId of selection.rollIds) {
             resolvedRolls.push({
@@ -3914,6 +4013,8 @@ const executeMoveSpecInternal = (
             result: traceJson({
               candidateCount: selection.candidateCount,
               selectedId: selection.selectedId,
+              naturalSelectedId: naturalSelection.selectedId,
+              forcedByGiver: forcedEntry !== null,
               attemptCount: selection.attemptCount,
             }),
           })
@@ -4246,12 +4347,18 @@ const executeMoveSpecInternal = (
             recipientId,
             resolved: preAa068Type,
           })
+          const aa072ResolvedType = aa072FurCoatDamageTypeOverlay({
+            context: input.context,
+            damageClass: resolvedClass.damageClass,
+            recipientId,
+            resolved: aa070ResolvedType,
+          })
           const aa071ResistanceSources = [
             ...(selectedFriendGuardTargetIds.has(recipientId) ? ['Friend Guard'] : []),
             ...(selectedFullGuardTargetIds.has(recipientId) ? ['Full Guard'] : []),
           ]
           const aa071ResolvedType = aa071ResistDamageType({
-            resolved: aa070ResolvedType,
+            resolved: aa072ResolvedType,
             steps: aa071ResistanceSources.length,
             sources: aa071ResistanceSources,
           })
@@ -4351,6 +4458,14 @@ const executeMoveSpecInternal = (
             }),
             resolvedMoveType: resolvedType,
             naturalCriticalRoll,
+            ...(aa072GorillaSelected ? { responseDamageModifiers: [{
+              id: 'ability.gorilla-tactics.triggering-damage',
+              stage: 'pre-type-modifiers', priority: 40,
+              source: { kind: 'ability', id: 'Gorilla Tactics' },
+              stackingGroup: 'aa072-gorilla-tactics-triggering',
+              reasonCode: 'ability.gorilla-tactics.triggering-damage',
+              operation: 'add', value: 10,
+            }] as const } : {}),
             ...(formula.contextualDamageBase ? { contextualDamageBase: formula.contextualDamageBase } : {}),
           })
           if (calculation.breakdown.hpLoss > 0) projectedDamagedTargetIds.add(recipientId)
@@ -4414,6 +4529,7 @@ const executeMoveSpecInternal = (
           script: getMechanics().script,
           canonicalMoveId: spec.canonicalId,
           recipientIds,
+          gorillaTacticsTriggeringDamage: aa072GorillaSelected,
           firstStrikeResistanceStepsByRecipient: new Map(recipientIds.map(recipientId => [
             recipientId,
             Number(selectedFriendGuardTargetIds.has(recipientId))
@@ -5256,6 +5372,12 @@ const executeMoveSpecInternal = (
               authoritativeTargetIds: childTargetIds,
             }),
             ...aa071MoveOverlayOperations({
+              context: childContext,
+              script: childMechanics,
+              moveSourceId: childMoveSourceId,
+              authoritativeTargetIds: childTargetIds,
+            }),
+            ...aa072MoveOverlayOperations({
               context: childContext,
               script: childMechanics,
               moveSourceId: childMoveSourceId,

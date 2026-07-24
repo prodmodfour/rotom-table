@@ -21,6 +21,8 @@ import type { SheetPlacement } from '~/types/map'
 import type { TrainerSheet } from '~/types/trainerSheet'
 import { splitSheetItemNames } from '~/utils/sheetItemNames'
 import type { AuthoritativeMoveRulesContext } from './context'
+import { digestionBuffTradeCount } from './digestionBuffTrade'
+import { aa072GluttonyLimits } from '../abilityAutomation/mechanics/aa072StaticIntegration'
 import type {
   MoveSpecEmittedOperation,
   MoveSpecResolvedItemChoice,
@@ -326,25 +328,46 @@ const heldItemCount = (
       ).length
 }
 
-const storedDigestionBuffId = (
+const storedDigestionBuffIds = (
   context: AuthoritativeMoveRulesContext,
   placement: SheetPlacement,
-): string | null => {
+): readonly string[] => {
   const resolved = sheetForPlacement(context, placement)
-  const value = placement.sheetKind === 'pokemon'
+  const legacy: unknown = placement.sheetKind === 'pokemon'
     ? (resolved.sheet as CharacterSheet).items?.digestionFood
     : (resolved.sheet as TrainerSheet).digestion
-  if (typeof value === 'string' && value.trim()) {
-    return resolveMoveAutomationItemRuleIdentity(value.trim())?.canonicalItemId ?? null
+  const extras: unknown = placement.sheetKind === 'pokemon'
+    ? (resolved.sheet as CharacterSheet).items?.digestionFoods
+    : (resolved.sheet as TrainerSheet).digestionFoods
+  if (extras !== undefined && (!Array.isArray(extras) || extras.length > 3)) {
+    return fail('selection-unavailable', `Digestion buff storage for ${placement.id} is malformed.`)
   }
+  const extraValues = (extras ?? []) as unknown[]
+  if (extraValues.some(value => typeof value !== 'string' || !value.trim())) {
+    return fail('selection-unavailable', `Digestion buff storage for ${placement.id} is malformed.`)
+  }
+  const legacyValues: string[] = []
+  if (typeof legacy === 'string' && legacy.trim()) legacyValues.push(legacy.trim())
+  else if (legacy !== undefined && legacy !== null && legacy !== '') {
+    return fail('selection-unavailable', `Digestion buff storage for ${placement.id} is malformed.`)
+  }
+  const values = [...legacyValues, ...extraValues.map(value => (value as string).trim())]
+  if (values.length > 3) {
+    return fail('selection-unavailable', `Digestion buff storage for ${placement.id} exceeds its bounded capacity.`)
+  }
+  const canonical = values.map((value) => {
+    const id = resolveMoveAutomationItemRuleIdentity(value)?.canonicalItemId
+    return id ?? fail('selection-unavailable', `Stored digestion buff ${value} is not canonical.`)
+  })
+  if (canonical.length > 0) return canonical
   if (placement.sheetKind === 'pokemon') {
     const sceneId = context.map.encounterState?.history.sceneId ?? null
     const stored = (resolved.sheet as CharacterSheet).berryStorage?.entries.find(entry => (
       entry.quantity > 0 && sceneId !== null && entry.lastTradedSceneId !== sceneId
     ))
-    return stored?.canonicalItemId ?? null
+    return stored?.canonicalItemId ? [stored.canonicalItemId] : []
   }
-  return null
+  return []
 }
 
 const sourceOwnerPlacement = (input: {
@@ -699,7 +722,12 @@ const interpretConsumeDestroyOrStore = (
       operation: input.operation,
       label: 'buff source',
     })
-    if (storedDigestionBuffId(input.context, input.context.actor.placement) !== null) {
+    const storedBuffs = storedDigestionBuffIds(input.context, input.context.actor.placement)
+    const capacity = aa072GluttonyLimits({
+      context: input.context,
+      placementId: input.context.actor.placement.id,
+    }).foodBuffCapacity
+    if (storedBuffs.length >= capacity) {
       return { result: unavailable({
         operation: input.operation,
         policy: payload.onUnavailable,
@@ -900,14 +928,24 @@ const interpretDigestBuff = (input: InterpretOperationInput): OperationInterpret
   for (const recipientId of recipientIds) {
     const recipient = input.context.queries.placements.get(recipientId)
     if (!recipient) continue
-    const storedItemId = storedDigestionBuffId(input.context, recipient)
-    if (
-      storedItemId === null
-      || (
-        payload.canonicalItemIds !== null
-        && !payload.canonicalItemIds.includes(storedItemId)
-      )
-    ) continue
+    const useLimit = aa072GluttonyLimits({
+      context: input.context,
+      placementId: recipient.id,
+    }).foodBuffUsesPerScene
+    const useCount = digestionBuffTradeCount({
+      effects: input.context.map.encounterState?.effects ?? [],
+      placement: recipient,
+    })
+    if (useCount >= useLimit) continue
+    const storedItemIds = storedDigestionBuffIds(input.context, recipient)
+    const candidateItemIds = payload.storageSlot === undefined
+      ? storedItemIds
+      : storedItemIds[payload.storageSlot - 1]
+        ? [storedItemIds[payload.storageSlot - 1]!]
+        : []
+    if (candidateItemIds.length === 0
+      || (payload.canonicalItemIds !== null
+        && !candidateItemIds.some(itemId => payload.canonicalItemIds!.includes(itemId)))) continue
     const destination = digestionDestination(input.context, recipient)
     mutations.push({
       id: mutationId(input.operation.id, mutations.length),
@@ -915,6 +953,7 @@ const interpretDigestBuff = (input: InterpretOperationInput): OperationInterpret
       reasonCode: input.operation.reasonCode,
       owner: destination.owner,
       canonicalItemIds: payload.canonicalItemIds,
+      ...(payload.storageSlot === undefined ? {} : { storageSlot: payload.storageSlot }),
       sourceMoveId: input.operation.source.id,
       sourcePlacementId: source.id,
     })

@@ -320,6 +320,8 @@ export interface ResolveMoveSpecDamageCalculationInput {
   readonly naturalCriticalRoll?: number | null
   /** Interpreter-owned per-recipient result; fixed DB operations omit it. */
   readonly contextualDamageBase?: MoveContextualDamageBaseResolution
+  /** Reviewed response-selected modifiers that are not committed until this atomic Move plan succeeds. */
+  readonly responseDamageModifiers?: readonly MoveDamageModifier[]
 }
 
 /** Resolve reviewed DB/stat inputs through the single ordered damage pipeline. */
@@ -545,6 +547,7 @@ export const resolveMoveSpecDamageCalculation = (
         ...aa069Modifiers,
         ...aa070Modifiers,
         ...aa071Modifiers,
+        ...(options.responseDamageModifiers ?? []),
         ...encounterDamageModifiers,
         ...helpingHandModifiers,
         ...weather.modifiers,

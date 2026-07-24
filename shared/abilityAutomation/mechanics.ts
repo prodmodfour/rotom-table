@@ -71,6 +71,11 @@ export const AA071_ABILITY_MECHANIC_IDS = [
   'aa071.frighten', 'aa071.frisk', 'aa071.frostbite', 'aa071.full-guard',
   'aa071.full-metal-body',
 ] as const
+export const AA072_ABILITY_MECHANIC_IDS = [
+  'aa072.fur-coat', 'aa072.gale-wings', 'aa072.galvanize', 'aa072.gardener',
+  'aa072.gentle-vibe', 'aa072.giver', 'aa072.glisten', 'aa072.gluttony',
+  'aa072.gooey', 'aa072.gore', 'aa072.gorilla-tactics', 'aa072.grass-pelt',
+] as const
 export type Aa060AbilityMechanicId = (typeof AA060_ABILITY_MECHANIC_IDS)[number]
 export type AbilityMechanicId = Aa060AbilityMechanicId
   | (typeof AA061_ABILITY_MECHANIC_IDS)[number]
@@ -84,6 +89,7 @@ export type AbilityMechanicId = Aa060AbilityMechanicId
   | (typeof AA069_ABILITY_MECHANIC_IDS)[number]
   | (typeof AA070_ABILITY_MECHANIC_IDS)[number]
   | (typeof AA071_ABILITY_MECHANIC_IDS)[number]
+  | (typeof AA072_ABILITY_MECHANIC_IDS)[number]
 export interface AbilityMechanicOperation extends AbilitySpecJsonObject {
   readonly kind: typeof ABILITY_MECHANIC_OPERATION_KIND
   readonly id: string
@@ -246,6 +252,18 @@ const CONFIG_FIELDS: Readonly<Record<AbilityMechanicId, readonly string[]>> = {
   'aa071.frostbite': ['moveType', 'damagingOnly', 'slowedMinimum', 'freezeRangeIncrease', 'defaultFreezeMinimum'],
   'aa071.full-guard': ['action', 'frequency', 'trigger', 'resistanceSteps'],
   'aa071.full-metal-body': ['preventCombatStageLoweringFrom', 'statusAfflictionStageChangesAllowed'],
+  'aa072.fur-coat': ['damageClass', 'resistanceSteps'],
+  'aa072.gale-wings': ['connectionMoveId', 'fromType', 'optionalType'],
+  'aa072.galvanize': ['action', 'frequency', 'triggerType', 'requiresDamaging', 'toType'],
+  'aa072.gardener': ['action', 'frequency', 'uses', 'targetTag', 'soilQualityDelta', 'oncePerTargetPerDay'],
+  'aa072.gentle-vibe': ['action', 'frequency', 'burstSize', 'resetCombatStages', 'cureConditionGroup'],
+  'aa072.giver': ['action', 'frequency', 'uses', 'connectionMoveId', 'forcedRollValues'],
+  'aa072.glisten': ['immuneMoveType'],
+  'aa072.gluttony': ['foodBuffCapacity', 'foodBuffUsesPerScene', 'refreshmentsPerHalfHour'],
+  'aa072.gooey': ['action', 'frequency', 'triggerRange', 'speedStageDelta'],
+  'aa072.gore': ['action', 'frequency', 'uses', 'connectionMoveId', 'grantKeyword', 'pushDistance'],
+  'aa072.gorilla-tactics': ['action', 'frequency', 'damageBonus', 'duration', 'restrictToPreviouslyUsedMoves'],
+  'aa072.grass-pelt': ['action', 'frequency', 'temporaryHpTicks'],
 }
 const MECHANIC_SET = new Set<string>([
   ...AA060_ABILITY_MECHANIC_IDS, ...AA061_ABILITY_MECHANIC_IDS,
@@ -254,6 +272,7 @@ const MECHANIC_SET = new Set<string>([
   ...AA066_ABILITY_MECHANIC_IDS, ...AA067_ABILITY_MECHANIC_IDS,
   ...AA068_ABILITY_MECHANIC_IDS, ...AA069_ABILITY_MECHANIC_IDS,
   ...AA070_ABILITY_MECHANIC_IDS, ...AA071_ABILITY_MECHANIC_IDS,
+  ...AA072_ABILITY_MECHANIC_IDS,
 ])
 const ID = /^[a-z0-9]+(?:[._:/-][a-z0-9]+)*$/
 const fail = (code: AbilityMechanicValidationError['code'], path: string, detail: string): never => { throw new AbilityMechanicValidationError(code, path, detail) }
@@ -1043,6 +1062,59 @@ const parseConfig = (mechanicId: AbilityMechanicId, value: unknown, path: string
     case 'aa071.full-metal-body': return {
       preventCombatStageLoweringFrom: stringArray(config.preventCombatStageLoweringFrom, ['features', 'abilities', 'moves'], `${path}.preventCombatStageLoweringFrom`),
       statusAfflictionStageChangesAllowed: bool(config.statusAfflictionStageChangesAllowed, `${path}.statusAfflictionStageChangesAllowed`),
+    }
+    case 'aa072.fur-coat': return {
+      damageClass: oneOf(config.damageClass, ['physical'], `${path}.damageClass`),
+      resistanceSteps: integer(config.resistanceSteps, `${path}.resistanceSteps`, 1, 1),
+    }
+    case 'aa072.gale-wings': return {
+      connectionMoveId: oneOf(config.connectionMoveId, ['Quick Attack'], `${path}.connectionMoveId`),
+      fromType: oneOf(config.fromType, ['normal'], `${path}.fromType`),
+      optionalType: oneOf(config.optionalType, ['flying'], `${path}.optionalType`),
+    }
+    case 'aa072.galvanize': return {
+      action: oneOf(config.action, ['free'], `${path}.action`), frequency: oneOf(config.frequency, ['at-will'], `${path}.frequency`),
+      triggerType: oneOf(config.triggerType, ['normal'], `${path}.triggerType`), requiresDamaging: bool(config.requiresDamaging, `${path}.requiresDamaging`),
+      toType: oneOf(config.toType, ['electric'], `${path}.toType`),
+    }
+    case 'aa072.gardener': return {
+      action: oneOf(config.action, ['extended'], `${path}.action`), frequency: oneOf(config.frequency, ['daily'], `${path}.frequency`),
+      uses: integer(config.uses, `${path}.uses`, 3, 3), targetTag: oneOf(config.targetTag, ['yielding-plant'], `${path}.targetTag`),
+      soilQualityDelta: integer(config.soilQualityDelta, `${path}.soilQualityDelta`, 1, 1), oncePerTargetPerDay: bool(config.oncePerTargetPerDay, `${path}.oncePerTargetPerDay`),
+    }
+    case 'aa072.gentle-vibe': return {
+      action: oneOf(config.action, ['standard'], `${path}.action`), frequency: oneOf(config.frequency, ['scene'], `${path}.frequency`),
+      burstSize: integer(config.burstSize, `${path}.burstSize`, 2, 2), resetCombatStages: bool(config.resetCombatStages, `${path}.resetCombatStages`),
+      cureConditionGroup: oneOf(config.cureConditionGroup, ['volatile'], `${path}.cureConditionGroup`),
+    }
+    case 'aa072.giver': return {
+      action: oneOf(config.action, ['swift'], `${path}.action`), frequency: oneOf(config.frequency, ['scene'], `${path}.frequency`),
+      uses: integer(config.uses, `${path}.uses`, 2, 2), connectionMoveId: oneOf(config.connectionMoveId, ['Present'], `${path}.connectionMoveId`),
+      forcedRollValues: integerArray(config.forcedRollValues, [1, 5], `${path}.forcedRollValues`),
+    }
+    case 'aa072.glisten': return { immuneMoveType: oneOf(config.immuneMoveType, ['fairy'], `${path}.immuneMoveType`) }
+    case 'aa072.gluttony': return {
+      foodBuffCapacity: integer(config.foodBuffCapacity, `${path}.foodBuffCapacity`, 3, 3),
+      foodBuffUsesPerScene: integer(config.foodBuffUsesPerScene, `${path}.foodBuffUsesPerScene`, 3, 3),
+      refreshmentsPerHalfHour: integer(config.refreshmentsPerHalfHour, `${path}.refreshmentsPerHalfHour`, 2, 2),
+    }
+    case 'aa072.gooey': return {
+      action: oneOf(config.action, ['free'], `${path}.action`), frequency: oneOf(config.frequency, ['at-will'], `${path}.frequency`),
+      triggerRange: oneOf(config.triggerRange, ['melee'], `${path}.triggerRange`), speedStageDelta: integer(config.speedStageDelta, `${path}.speedStageDelta`, -1, -1),
+    }
+    case 'aa072.gore': return {
+      action: oneOf(config.action, ['swift'], `${path}.action`), frequency: oneOf(config.frequency, ['scene'], `${path}.frequency`),
+      uses: integer(config.uses, `${path}.uses`, 2, 2), connectionMoveId: oneOf(config.connectionMoveId, ['Horn Attack'], `${path}.connectionMoveId`),
+      grantKeyword: oneOf(config.grantKeyword, ['double-strike'], `${path}.grantKeyword`), pushDistance: integer(config.pushDistance, `${path}.pushDistance`, 2, 2),
+    }
+    case 'aa072.gorilla-tactics': return {
+      action: oneOf(config.action, ['swift'], `${path}.action`), frequency: oneOf(config.frequency, ['scene'], `${path}.frequency`),
+      damageBonus: integer(config.damageBonus, `${path}.damageBonus`, 10, 10), duration: oneOf(config.duration, ['scene'], `${path}.duration`),
+      restrictToPreviouslyUsedMoves: bool(config.restrictToPreviouslyUsedMoves, `${path}.restrictToPreviouslyUsedMoves`),
+    }
+    case 'aa072.grass-pelt': return {
+      action: oneOf(config.action, ['swift'], `${path}.action`), frequency: oneOf(config.frequency, ['scene'], `${path}.frequency`),
+      temporaryHpTicks: integer(config.temporaryHpTicks, `${path}.temporaryHpTicks`, 2, 2),
     }
   }
 }

@@ -33,6 +33,8 @@ import {
   reduceMoveResolutionTrace,
 } from '~~/server/domain/moveAutomation/trace'
 import type { MoveSpecResolvedItemChoice } from '~~/server/domain/moveAutomation/executeSpec'
+import { creatureRuleOverlayEncounterEffectFixture } from '../fixtures/moveAutomation/encounterEffects'
+import { createDigestionBuffTradeEffect } from '../../server/domain/moveAutomation/digestionBuffTrade'
 
 const actorId = 'item-actor'
 const firstTargetId = 'item-target-one'
@@ -1129,6 +1131,231 @@ describe('shared authoritative item effect interpreter', () => {
     expect(() => interpretMoveItemEffects({
       context: contextFor({ map: digested.nextMap, sheets: currentSheets }),
       operations: [emission(digestOperation, [actorId])], resolvedItemChoices: [],
+    })).toThrow(/no eligible stored digestion buff/i)
+  })
+
+  it('stores at most three simultaneous Food Buffs for effective Gluttony', () => {
+    const map = mapFixture()
+    const initialSheets = sheetsFixture({ actorHeld: 'Candy Bar' })
+    const actor = initialSheets.get('item-actor-sheet')!
+    actor.abilities = [{
+      name: 'Gluttony', automation: {
+        schemaVersion: 1, instanceId: 'base:gluttony', canonicalId: 'Gluttony',
+        definitionVersion: null, selections: [],
+      },
+    }]
+    actor.items = {
+      ...actor.items,
+      digestionFoods: ['Oran Berry', 'Cheri Berry'],
+    }
+    const resources = resourcesFor({
+      map, sheets: initialSheets, selectedTargetIds: [], requirements: [requirements.actor],
+    })
+    const stored = interpretAndPlan({
+      map,
+      sheets: initialSheets,
+      resources,
+      operations: [emission(operation({
+        id: 'item.gluttony-store-third', recipients: 'actor', payload: {
+          action: 'store-buff', item: requirementSelection(requirements.actor.id), quantity: 1,
+          consumptionId: 'consumption.gluttony-third', onUnavailable: 'reject',
+        },
+      }), [actorId])],
+    })
+    const nextActor = stored.plan.sheetWrites.find(write => write.slug === 'item-actor-sheet')?.nextSheet as CharacterSheet
+    expect(nextActor.items?.digestionFoods).toEqual(['Oran Berry', 'Cheri Berry', 'Candy Bar'])
+    expect(nextActor.items?.digestionFood).toBeUndefined()
+  })
+
+  it('falls back to one Food Buff slot when Gluttony is authoritatively suppressed', () => {
+    const baseMap = mapFixture()
+    const map: TabletopMap = {
+      ...baseMap,
+      encounterState: {
+        ...baseMap.encounterState!,
+        effects: [{
+          ...creatureRuleOverlayEncounterEffectFixture({
+            domain: 'ability', action: 'suppress', values: [],
+            referencePlacementId: null, suppressionScope: 'all',
+          }),
+          id: 'effect.aa072.suppress-gluttony',
+          affected: { placementIds: [actorId], sideIds: [], cells: [] },
+        }],
+      },
+    }
+    const initialSheets = sheetsFixture({ actorHeld: 'Candy Bar' })
+    const actor = initialSheets.get('item-actor-sheet')!
+    actor.abilities = [{
+      name: 'Gluttony', automation: {
+        schemaVersion: 1, instanceId: 'base:gluttony', canonicalId: 'Gluttony',
+        definitionVersion: null, selections: [],
+      },
+    }]
+    actor.items = { ...actor.items, digestionFoods: ['Oran Berry'] }
+    const resources = resourcesFor({
+      map, sheets: initialSheets, selectedTargetIds: [], requirements: [requirements.actor],
+    })
+    const storeOperation = emission(operation({
+      id: 'item.suppressed-gluttony-store', recipients: 'actor', payload: {
+        action: 'store-buff', item: requirementSelection(requirements.actor.id), quantity: 1,
+        consumptionId: 'consumption.suppressed-gluttony', onUnavailable: 'reject',
+      },
+    }), [actorId])
+    expect(() => interpretAndPlan({
+      map, sheets: initialSheets, resources, operations: [storeOperation],
+    })).toThrow(/unavailable|eligible|capacity|already stores/i)
+
+    const unsuppressedMap = mapFixture()
+    const unsuppressedResources = resourcesFor({
+      map: unsuppressedMap, sheets: initialSheets, selectedTargetIds: [],
+      requirements: [requirements.actor],
+    })
+    const interpretation = interpretMoveItemEffects({
+      context: contextFor({
+        map: unsuppressedMap, sheets: initialSheets, resources: unsuppressedResources,
+      }),
+      operations: [storeOperation],
+      resolvedItemChoices: [],
+    })
+    expect(() => planMoveItemMutations({
+      map,
+      pokemonSheets: initialSheets,
+      trainerSheets: new Map(),
+      groupInventories: new Map(),
+      operations: interpretation.mutations,
+      originOperationId: 'op_suppressed_gluttony_boundary',
+      plannedAt: 2_000,
+    })).toThrow(/capacity 1/i)
+  })
+
+  it('rejects malformed or oversized digestion arrays before expanding their entries', () => {
+    const map = mapFixture()
+    for (const [index, digestionFoods] of [
+      ['Oran Berry', null],
+      ['Oran Berry', 'Cheri Berry', 'Candy Bar', 'Sitrus Berry'],
+    ].entries()) {
+      const sheets = sheetsFixture()
+      const actor = sheets.get('item-actor-sheet')!
+      actor.items = { digestionFoods: digestionFoods as unknown as string[] }
+      const digest = operation({
+        id: `item.malformed-digestion-${index}`,
+        recipients: 'actor',
+        payload: { action: 'digest-buff', canonicalItemIds: null, onUnavailable: 'reject' },
+      })
+      expect(() => interpretMoveItemEffects({
+        context: contextFor({ map, sheets }),
+        operations: [emission(digest, [actorId])],
+        resolvedItemChoices: [],
+      })).toThrow(/malformed|bounded capacity/i)
+    }
+  })
+
+  it('migrates the legacy one-use Scene marker when Gluttony trades another buff', () => {
+    let map = mapFixture()
+    const placement = map.placements.find(candidate => candidate.id === actorId)!
+    const legacyMarker = {
+      ...createDigestionBuffTradeEffect({
+        map, placement, operationId: 'legacy.digest', moveId: 'bug-bite',
+      }),
+      stackPolicy: { kind: 'replace' as const, maxStacks: null },
+    }
+    map = { ...map, encounterState: { ...map.encounterState!, effects: [legacyMarker] } }
+    let currentSheets = sheetsFixture()
+    const actor = currentSheets.get('item-actor-sheet')!
+    actor.abilities = [{
+      name: 'Gluttony', automation: {
+        schemaVersion: 1, instanceId: 'base:gluttony', canonicalId: 'Gluttony',
+        definitionVersion: null, selections: [],
+      },
+    }]
+    actor.items = { digestionFoods: ['Candy Bar', 'Oran Berry'] }
+    const digestOperation = operation({
+      id: 'item.gluttony-migrate-marker', recipients: 'actor', payload: {
+        action: 'digest-buff', canonicalItemIds: ['candy-bar'], onUnavailable: 'reject',
+      },
+    })
+    const interpretation = interpretMoveItemEffects({
+      context: contextFor({ map, sheets: currentSheets }),
+      operations: [emission(digestOperation, [actorId])],
+      resolvedItemChoices: [],
+    })
+    const planned = planMoveItemMutations({
+      map,
+      pokemonSheets: currentSheets,
+      trainerSheets: new Map(),
+      groupInventories: new Map(),
+      operations: interpretation.mutations,
+      originOperationId: 'op_gluttony_migrate_marker',
+      plannedAt: 3_000,
+    })
+    const marker = planned.nextMap.encounterState?.effects.find(effect => (
+      effect.id === legacyMarker.id
+    ))
+    expect(marker?.stacks).toBe(2)
+    expect(marker?.stackPolicy).toEqual({ kind: 'add-stack', maxStacks: 64 })
+    const nextActor = planned.sheetWrites[0]!.nextSheet as CharacterSheet
+    expect(nextActor.items?.digestionFoods).toEqual(['Oran Berry'])
+  })
+
+  it('lets effective Gluttony trade three stored Food Buffs per Scene and rejects a fourth', () => {
+    let map = mapFixture()
+    let currentSheets = sheetsFixture()
+    const actor = currentSheets.get('item-actor-sheet')!
+    actor.abilities = [{
+      name: 'Gluttony', automation: {
+        schemaVersion: 1, instanceId: 'base:gluttony', canonicalId: 'Gluttony',
+        definitionVersion: null, selections: [],
+      },
+    }]
+    actor.items = {
+      digestionFoods: ['Candy Bar', 'Oran Berry', 'Cheri Berry'],
+    }
+    const ids = ['candy-bar', 'oran-berry', 'cheri-berry']
+    for (const [index, canonicalItemId] of ids.entries()) {
+      const digestOperation = operation({
+        id: `item.gluttony-digest-${index + 1}`,
+        recipients: 'actor',
+        payload: { action: 'digest-buff', canonicalItemIds: [canonicalItemId], onUnavailable: 'reject' },
+      })
+      const interpretation = interpretMoveItemEffects({
+        context: contextFor({ map, sheets: currentSheets }),
+        operations: [emission(digestOperation, [actorId])],
+        resolvedItemChoices: [],
+      })
+      const planned = planMoveItemMutations({
+        map,
+        pokemonSheets: currentSheets,
+        trainerSheets: new Map(),
+        groupInventories: new Map(),
+        operations: interpretation.mutations,
+        originOperationId: `op_gluttony_digest_${index + 1}`,
+        plannedAt: 3_000 + index,
+      })
+      map = planned.nextMap
+      currentSheets = new Map(currentSheets).set(
+        'item-actor-sheet',
+        planned.sheetWrites[0]!.nextSheet as CharacterSheet,
+      )
+    }
+    const usage = map.encounterState?.effects.find(effect => (
+      effect.kind === 'capability'
+      && effect.payload.capabilityId === 'digestion-buff-traded-this-scene'
+    ))
+    expect(usage?.stacks).toBe(3)
+    expect(currentSheets.get('item-actor-sheet')?.items?.digestionFoods).toBeUndefined()
+    const afterThree = structuredClone(currentSheets.get('item-actor-sheet')!)
+    afterThree.items = { ...(afterThree.items ?? {}), digestionFoods: ['Sitrus Berry'] }
+    currentSheets = new Map(currentSheets).set('item-actor-sheet', afterThree)
+
+    const fourth = operation({
+      id: 'item.gluttony-digest-4', recipients: 'actor', payload: {
+        action: 'digest-buff', canonicalItemIds: ['sitrus-berry'], onUnavailable: 'reject',
+      },
+    })
+    expect(() => interpretMoveItemEffects({
+      context: contextFor({ map, sheets: currentSheets }),
+      operations: [emission(fourth, [actorId])],
+      resolvedItemChoices: [],
     })).toThrow(/no eligible stored digestion buff/i)
   })
 

@@ -134,9 +134,11 @@ describe('ability automation semantic manifest', () => {
         'Flower Veil', 'Fluffy', 'Fluffy Charge', 'Flutter', 'Flying Fly Trap',
         'Focus', 'Forecast', 'Forest Lord', 'Forewarn', 'Fox Fire', 'Freezing Point',
         'Friend Guard', 'Frighten', 'Frisk', 'Frostbite', 'Full Guard', 'Full Metal Body',
+        'Fur Coat', 'Gale Wings', 'Galvanize', 'Gardener', 'Gentle Vibe', 'Giver',
+        'Glisten', 'Gluttony', 'Gooey', 'Gore', 'Gorilla Tactics', 'Grass Pelt',
       ])
-    expect(manifest.abilities.filter(ability => ability.baseStatus === 'blocked')).toHaveLength(339)
-    expect(manifest.abilities.filter(ability => ability.runtime.kind === 'unimplemented')).toHaveLength(339)
+    expect(manifest.abilities.filter(ability => ability.baseStatus === 'blocked')).toHaveLength(327)
+    expect(manifest.abilities.filter(ability => ability.runtime.kind === 'unimplemented')).toHaveLength(327)
   })
 
   it('keeps bootstrap mode hints non-authoritative and maps every row to its plan cohort', () => {

@@ -55,7 +55,7 @@ export const createDigestionBuffTradeEffect = (input: {
   duration: { kind: 'scene', remaining: null },
   stacks: 1,
   charges: null,
-  stackPolicy: { kind: 'replace', maxStacks: null },
+  stackPolicy: { kind: 'add-stack', maxStacks: 64 },
   chargePolicy: { kind: 'none', amount: null },
   tags: [
     'digestion-buff-trade',
@@ -70,7 +70,7 @@ export const createDigestionBuffTradeEffect = (input: {
   suppression: { sources: [] },
 })
 
-/** Apply or refresh the one scene marker for this authoritative sheet identity. */
+/** Add one bounded Scene usage stack for this authoritative sheet identity. */
 export const recordDigestionBuffTrade = (input: {
   readonly map: TabletopMap
   readonly placement: SheetPlacement
@@ -81,17 +81,56 @@ export const recordDigestionBuffTrade = (input: {
   const encounter = parseEncounterState(
     input.map.encounterState ?? createEmptyEncounterState(),
   )
-  const lifecycle = applyEncounterEffectLifecycleEvent(
-    { effects: encounter.effects },
-    { kind: 'effect-applied', effect },
-  )
+  const existingIndex = encounter.effects.findIndex(existing => existing.id === effect.id)
+  const effects = existingIndex < 0
+    ? applyEncounterEffectLifecycleEvent(
+        { effects: encounter.effects },
+        { kind: 'effect-applied', effect },
+      ).effects
+    : (() => {
+        const existing = encounter.effects[existingIndex]!
+        if (existing.kind !== 'capability'
+          || existing.payload.action !== 'grant'
+          || existing.payload.capabilityId !== DIGESTION_BUFF_TRADED_CAPABILITY_ID
+          || !existing.tags.includes(digestionBuffTradeSheetTag(input.placement))
+          || (existing.stackPolicy.kind !== 'replace' && existing.stackPolicy.kind !== 'add-stack')) {
+          // Preserve the shared lifecycle kernel's fail-closed incompatible-ID behavior.
+          return applyEncounterEffectLifecycleEvent(
+            { effects: encounter.effects },
+            { kind: 'effect-applied', effect },
+          ).effects
+        }
+        const next = [...encounter.effects]
+        next[existingIndex] = {
+          ...existing,
+          source: effect.source,
+          affected: effect.affected,
+          stacks: Math.min(64, existing.stacks + 1),
+          stackPolicy: { kind: 'add-stack', maxStacks: 64 },
+        }
+        return next
+      })()
   return {
     ...input.map,
-    encounterState: {
-      ...encounter,
-      effects: lifecycle.effects,
-    },
+    encounterState: parseEncounterState({ ...encounter, effects }),
   }
+}
+
+/** Count bounded Scene usage stacks across recall/send-out placement replacement. */
+export const digestionBuffTradeCount = (input: {
+  readonly effects: readonly EncounterEffect[]
+  readonly placement: Pick<SheetPlacement, 'id' | 'sheetKind' | 'sheetSlug'>
+}): number => {
+  const sheetTag = digestionBuffTradeSheetTag(input.placement)
+  return input.effects.reduce((total, effect) => (
+    effect.kind === 'capability'
+    && effect.payload.action === 'grant'
+    && effect.payload.capabilityId === DIGESTION_BUFF_TRADED_CAPABILITY_ID
+    && (effect.duration.remaining === null || effect.duration.remaining > 0)
+    && (effect.affected.placementIds.includes(input.placement.id) || effect.tags.includes(sheetTag))
+      ? total + effect.stacks
+      : total
+  ), 0)
 }
 
 /** Match direct placement effects and opaque sheet-bound markers from an immutable snapshot. */

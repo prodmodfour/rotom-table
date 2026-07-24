@@ -10,6 +10,7 @@ export const FLASH_FIRE_ABILITY_NAME = 'Flash Fire'
 export const SAP_SIPPER_ABILITY_NAME = 'Sap Sipper'
 export const VOLT_ABSORB_ABILITY_NAME = 'Volt Absorb'
 export const MOTOR_DRIVE_ABILITY_NAME = 'Motor Drive'
+export const GLISTEN_ABILITY_NAME = 'Glisten'
 export const TOLERANCE_ABILITY_NAME = 'Tolerance'
 export const SOUNDPROOF_ABILITY_NAME = 'Soundproof'
 export const MUD_DWELLER_ABILITY_NAME = 'Mud Dweller'
@@ -61,6 +62,10 @@ export const hasVoltAbsorbAbility = (
 export const hasMotorDriveAbility = (
   abilities: readonly SheetAbilityNameSource[] | null | undefined,
 ): boolean => sheetHasCanonicalAbility(abilities, MOTOR_DRIVE_ABILITY_NAME)
+
+export const hasGlistenAbility = (
+  abilities: readonly SheetAbilityNameSource[] | null | undefined,
+): boolean => sheetHasCanonicalAbility(abilities, GLISTEN_ABILITY_NAME)
 
 export const hasToleranceAbility = (
   abilities: readonly SheetAbilityNameSource[] | null | undefined,
@@ -176,6 +181,7 @@ export const getPassiveTypedAttackImmunitySource = (
     if (hasVoltAbsorbAbility(abilities)) return VOLT_ABSORB_ABILITY_NAME
     if (hasMotorDriveAbility(abilities)) return MOTOR_DRIVE_ABILITY_NAME
   }
+  if (attackingType === 'Fairy' && hasGlistenAbility(abilities)) return GLISTEN_ABILITY_NAME
   return null
 }
 

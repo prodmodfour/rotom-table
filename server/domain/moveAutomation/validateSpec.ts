@@ -1024,12 +1024,19 @@ export const validateMoveSpecOperationSequence = (
     )
   }
   if (multiHitEntries.length >= 1) {
+    const reactionRequestIds = new Set(indexed.flatMap(({ operation }) => (
+      operation.kind === 'reaction-request' ? [operation.id] : []
+    )))
     const overlapping = indexed.find(({ operation }) => (
       operation.kind === 'damage'
       || operation.kind === 'direct-hp'
       || operation.kind === 'heal'
       || operation.kind === 'condition'
-      || operation.kind === 'combat-stage'
+      || (operation.kind === 'combat-stage' && !(
+        operation.phase === 'after-damage'
+        && operation.source.kind === 'operation'
+        && reactionRequestIds.has(operation.source.id)
+      ))
     ))
     if (overlapping) {
       fail(

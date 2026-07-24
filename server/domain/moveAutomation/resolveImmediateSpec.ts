@@ -20,7 +20,11 @@ import type {
 } from '~/utils/moveAutomationTargetResolution'
 import type { ResolvedCanonicalMoveEntry } from '~/utils/authoritativeMoveEntries'
 import { deepCloneJson, sameJsonValue } from '~/utils/serialization'
-import { createMoveStateChangePlan, type MoveStateChangePlan } from './plan'
+import {
+  createMoveStateChangePlan,
+  type MoveStateChangeInput,
+  type MoveStateChangePlan,
+} from './plan'
 import type {
   AuthoritativeMoveRulesContext,
   AuthoritativeMoveSheetRead,
@@ -97,6 +101,7 @@ import { aa068MoveOverlayOperations } from '../abilityAutomation/mechanics/aa068
 import { aa069MoveOverlayOperations } from '../abilityAutomation/mechanics/aa069MoveIntegration'
 import { aa070MoveOverlayOperations } from '../abilityAutomation/mechanics/aa070MoveIntegration'
 import { aa071MoveOverlayOperations } from '../abilityAutomation/mechanics/aa071MoveIntegration'
+import { aa072MoveOverlayOperations } from '../abilityAutomation/mechanics/aa072MoveIntegration'
 import {
   AA068_DUST_CLOUD_TARGETING_OVERRIDE,
   aa068DrySkinCancelsRecipientEffect,
@@ -322,6 +327,7 @@ const createDamageQuery = (options: {
   readonly dynamicRecipientsForOperation: (
     operation: string | { readonly id: string },
   ) => MoveCoreTokenDynamicRecipientSets
+  readonly gorillaTacticsTriggeringDamage: boolean
 }): MoveCoreTokenDamageQuery => {
   return {
     resolve: ({ operation, recipient }: MoveDamageResolutionQueryInput) => {
@@ -399,6 +405,14 @@ const createDamageQuery = (options: {
         selectedTargets,
         resolvedMoveType,
         naturalCriticalRoll: criticalEntry?.naturalResult ?? null,
+        ...(options.gorillaTacticsTriggeringDamage ? { responseDamageModifiers: [{
+          id: 'ability.gorilla-tactics.triggering-damage',
+          stage: 'pre-type-modifiers', priority: 40,
+          source: { kind: 'ability', id: 'Gorilla Tactics' },
+          stackingGroup: 'aa072-gorilla-tactics-triggering',
+          reasonCode: 'ability.gorilla-tactics.triggering-damage',
+          operation: 'add', value: 10,
+        }] as const } : {}),
         ...(contextualDamageBase ? { contextualDamageBase } : {}),
       })
       return {
@@ -958,6 +972,7 @@ const executeReviewedMoveSpec = (
     ...aa069MoveOverlayOperations(overlayInput),
     ...aa070MoveOverlayOperations(overlayInput),
     ...aa071MoveOverlayOperations(overlayInput),
+    ...aa072MoveOverlayOperations(overlayInput),
   ]
   const boneLordLine = script.moveName === 'Bonemerang'
     && aa062BoneLordEmpowersMove(options.context, 'Bonemerang')
@@ -1081,12 +1096,31 @@ export const reduceCompletedMoveSpec = (
   })
   const uncommittedOperations = [...authoredOperations, ...abilityOperations]
   assertSupportedImmediateOperations(uncommittedOperations)
-  const responseOwnerByOperationId = new Map(uncommittedOperations.flatMap(emission => (
-    (emission.operation.kind === 'reaction-request' || emission.operation.kind === 'choice-request')
-    && emission.recipientIds.length === 1
-      ? [[emission.operation.id, emission.recipientIds[0]!] as const]
-      : []
-  )))
+  const responseOwnerByOperationId = new Map<string, string>()
+  const retainResponseOwner = (operationId: string, ownerIds: readonly string[]): void => {
+    if (ownerIds.length !== 1) return
+    const existing = responseOwnerByOperationId.get(operationId)
+    if (existing && existing !== ownerIds[0]) {
+      fail('execution-rejected', `Response operation ${operationId} changed its authoritative owner.`)
+    }
+    responseOwnerByOperationId.set(operationId, ownerIds[0]!)
+  }
+  for (const emission of uncommittedOperations) {
+    if (emission.operation.kind !== 'reaction-request'
+      && emission.operation.kind !== 'choice-request') continue
+    retainResponseOwner(
+      emission.operation.id,
+      emission.operation.kind === 'reaction-request'
+        ? emission.operation.payload.ownerPlacementIds ?? emission.recipientIds
+        : emission.recipientIds,
+    )
+  }
+  for (const event of execution.trace.events) {
+    if (event.kind === 'operation'
+      && (event.operationKind === 'reaction-request' || event.operationKind === 'choice-request')) {
+      retainResponseOwner(event.operationId, event.recipientIds)
+    }
+  }
   let reductionTrace = execution.trace
   for (const emission of abilityOperations) {
     reductionTrace = reduceMoveResolutionTrace(reductionTrace, {
@@ -1104,6 +1138,11 @@ export const reduceCompletedMoveSpec = (
   })
   const contextForOperation: typeof baseContextForOperation = (operation) => {
     const context = baseContextForOperation(operation)
+    if (typeof operation !== 'string'
+      && (operation as { readonly reasonCode?: unknown }).reasonCode === 'ability.gooey.lower-speed') {
+      // Gooey is paid by the struck responder but its effect targets the triggering Move's actor.
+      return context
+    }
     const sourced = typeof operation === 'string'
       ? null
       : operation as { readonly source?: { readonly kind?: unknown; readonly id?: unknown } }
@@ -1172,10 +1211,17 @@ export const reduceCompletedMoveSpec = (
     ))) recipientControlledOperationIds.add(operation.id)
   }
   const multiHit = execution.multiHitExecutions[0] ?? null
-  if (execution.multiHitExecutions.length > 1 || (multiHit && coreOperations.length > 0)) {
+  const postMultiReactionStages = coreOperations.every(({ operation }) => (
+    operation.kind === 'combat-stage'
+    && operation.phase === 'after-damage'
+    && operation.source.kind === 'operation'
+    && responseOwnerByOperationId.has(operation.source.id)
+  ))
+  if (execution.multiHitExecutions.length > 1
+    || (multiHit && coreOperations.length > 0 && !postMultiReactionStages)) {
     return fail(
       'multi-hit-operation-conflict',
-      'An immediate MoveSpec may contain one pre-reduced multi-hit operation or ordinary core effects, not overlapping state reducers.',
+      'An immediate MoveSpec may contain one pre-reduced multi-hit operation plus only disjoint reviewed post-damage reaction stages.',
     )
   }
   const nestedRecipients = nestedRecipientResolver({
@@ -1194,9 +1240,12 @@ export const reduceCompletedMoveSpec = (
     ...(nestedRecipients ? { recipientIdsForOperation: nestedRecipients } : {}),
     contextForOperation,
     dynamicRecipientsForOperation,
-    sourceOwnerIdForOperation: operation => operation.source.kind === 'operation'
-      ? responseOwnerByOperationId.get(operation.source.id) ?? null
-      : null,
+    sourceOwnerIdForOperation: (operation) => {
+      const owner = operation.source.kind === 'operation'
+        ? responseOwnerByOperationId.get(operation.source.id) ?? null
+        : null
+      return owner
+    },
     branchControlledOperationIds: recipientControlledOperationIds,
     damage: coreOperations.some(({ operation }) => operation.kind === 'damage')
       ? createDamageQuery({
@@ -1207,6 +1256,11 @@ export const reduceCompletedMoveSpec = (
           resolvedDamageTypes: execution.resolvedDamageTypes,
           resolvedDamageBases: execution.resolvedDamageBases,
           dynamicRecipientsForOperation,
+          gorillaTacticsTriggeringDamage: execution.trace.events.some(event => (
+            event.kind === 'choice'
+            && event.reasonCode === 'ability.gorilla-tactics.optional-lock'
+            && event.optionId === 'ability.gorilla-tactics.use'
+          )),
         })
       : undefined,
     conditionAccuracyRolls: createConditionAccuracyRollQueries({
@@ -1271,6 +1325,15 @@ export const reduceCompletedMoveSpec = (
   })
   const transactionTargetIds = dynamicRecipients.attackedTargetIds
   const transactionHitTargetIds = dynamicRecipients.hitTargetIds
+  const combinedCoreStateChanges = multiHit
+    ? createMoveStateChangePlan([
+        ...multiHit.stateChanges.changes,
+        ...core.stateChanges.changes,
+      ].map((change): MoveStateChangeInput => {
+        const { id: _id, order: _order, ...input } = change
+        return structuredClone(input) as MoveStateChangeInput
+      }))
+    : core.stateChanges
   const transaction: MoveAutomationTransaction = {
     userId: options.context.actor.placement.id,
     userName: options.context.actor.token.species,
@@ -1279,15 +1342,18 @@ export const reduceCompletedMoveSpec = (
     scriptVersion: options.runtime.version,
     attackedTargetIds: [...transactionTargetIds],
     hitTargetIds: [...transactionHitTargetIds],
-    hpUpdates: multiHit
-      ? [...multiHit.hpUpdates]
-      : hpUpdatesFromResults(core.operationResults),
-    conditionUpdates: multiHit
-      ? [...multiHit.conditionUpdates]
-      : conditionUpdatesFromResults(core.operationResults),
-    combatStageUpdates: multiHit
-      ? [...multiHit.combatStageUpdates]
-      : combatStageUpdatesFromResults(core.operationResults),
+    hpUpdates: [
+      ...(multiHit?.hpUpdates ?? []),
+      ...hpUpdatesFromResults(core.operationResults),
+    ],
+    conditionUpdates: [
+      ...(multiHit?.conditionUpdates ?? []),
+      ...conditionUpdatesFromResults(core.operationResults),
+    ],
+    combatStageUpdates: [
+      ...(multiHit?.combatStageUpdates ?? []),
+      ...combatStageUpdatesFromResults(core.operationResults),
+    ],
     // Native hazard mechanics persist as typed encounter zones, never as the
     // legacy free-form `hazards[]` compatibility lane.
     hazardsToAdd: [],
@@ -1322,7 +1388,7 @@ export const reduceCompletedMoveSpec = (
       childExecutions: execution.childExecutions,
       dynamicRecipients: Object.freeze(dynamicRecipients),
       faintedPlacementIds: Object.freeze([...faintedSet]),
-      coreStateChanges: multiHit?.stateChanges ?? core.stateChanges,
+      coreStateChanges: combinedCoreStateChanges,
       permanentMoveListStateChanges: permanentMoveLists.stateChanges,
       itemEffects: knockOffItems.itemEffects,
       spatialMovements: spatial.movements,

@@ -34,6 +34,10 @@ import type {
 import { splitSheetItemNames } from '~/utils/sheetItemNames'
 import { deepCloneJson, sameJsonValue } from '~/utils/serialization'
 import { createEmptyAbilityDailyUsageLedger, parseAbilityDailyUsageLedger } from '#shared/abilityAutomation/resources'
+import {
+  AA072_GLUTTONY_FOOD_BUFF_CAPACITY,
+  AA072_GLUTTONY_FOOD_BUFF_USES_PER_SCENE,
+} from '#shared/abilityAutomation/aa072'
 import { projectAuthoritativeEffectiveAbilities } from '../../abilityAutomation/effectiveAbilities'
 import { resolveSheetAbilityInstances } from '../../abilityAutomation/instanceParameters'
 import { ABILITY_AUTOMATION_RUNTIME_REGISTRY } from '../../abilityAutomation/registry'
@@ -57,7 +61,7 @@ import {
   MOVE_ITEM_MUTATION_LIMITS,
   MoveItemMutationError,
 } from '../itemMutationTypes'
-import { recordDigestionBuffTrade } from '../digestionBuffTrade'
+import { digestionBuffTradeCount, recordDigestionBuffTrade } from '../digestionBuffTrade'
 import { aa067PokemonHeldItemCapacity } from '../../abilityAutomation/mechanics/aa067ItemIntegration'
 
 export interface ReduceMoveItemMutationsInput {
@@ -1286,26 +1290,79 @@ const recordConsumption = (input: {
   return record
 }
 
-const digestionBuffName = (
+const digestionBuffNames = (
   state: WorkingState,
   owner: MoveItemOwnerReference,
   operation: MoveItemMutation,
-): string | null => {
+): readonly string[] => {
   assertOwnerRevision(state, owner)
   if (owner.kind !== 'sheet') {
     return fail('invalid-destination', `Operation ${operation.id} digestion owner must be a sheet.`)
   }
-  if (owner.sheetKind === 'pokemon') {
-    const sheet = state.pokemonSheets.get(owner.slug)
-      ?? fail('resource-missing', `Pokémon item sheet ${owner.slug} is unavailable.`)
-    const value = sheet.items?.digestionFood
-    return typeof value === 'string' && value.trim() ? value.trim() : null
+  const stored: { readonly legacy: unknown; readonly extras: unknown } = owner.sheetKind === 'pokemon'
+    ? (() => {
+        const sheet = state.pokemonSheets.get(owner.slug)
+          ?? fail('resource-missing', `Pokémon item sheet ${owner.slug} is unavailable.`)
+        return { legacy: sheet.items?.digestionFood, extras: sheet.items?.digestionFoods }
+      })()
+    : (() => {
+        const sheet = state.trainerSheets.get(owner.slug)
+          ?? fail('resource-missing', `Trainer item sheet ${owner.slug} is unavailable.`)
+        return { legacy: sheet.digestion, extras: sheet.digestionFoods }
+      })()
+  if (stored.extras !== undefined
+    && (!Array.isArray(stored.extras) || stored.extras.length > 3)) {
+    return fail('invalid-operation', `Digestion buff destination ${owner.slug} has invalid bounded contents.`)
   }
-  const sheet = state.trainerSheets.get(owner.slug)
-    ?? fail('resource-missing', `Trainer item sheet ${owner.slug} is unavailable.`)
-  return typeof sheet.digestion === 'string' && sheet.digestion.trim()
-    ? sheet.digestion.trim()
-    : null
+  const extras = (stored.extras ?? []) as unknown[]
+  if (extras.some(name => typeof name !== 'string' || !name.trim())) {
+    return fail('item-mismatch', `Digestion buff destination ${owner.slug} contains an invalid item name.`)
+  }
+  const legacyNames: string[] = []
+  if (typeof stored.legacy === 'string' && stored.legacy.trim()) {
+    legacyNames.push(stored.legacy.trim())
+  }
+  else if (stored.legacy !== undefined && stored.legacy !== null && stored.legacy !== '') {
+    return fail('item-mismatch', `Digestion buff destination ${owner.slug} contains an invalid item name.`)
+  }
+  const names = [...legacyNames, ...extras.map(name => (name as string).trim())]
+  if (names.length > 3) {
+    return fail('invalid-operation', `Digestion buff destination ${owner.slug} has invalid bounded contents.`)
+  }
+  names.forEach((name, index) => canonicalItem(
+    name,
+    `${operation.id}.digestionBuffs[${index}]`,
+  ))
+  return names
+}
+
+const hasEffectiveGluttony = (
+  state: WorkingState,
+  owner: MoveItemOwnerReference,
+  placementId?: string,
+): boolean => {
+  if (owner.kind !== 'sheet') return false
+  const sheet = owner.sheetKind === 'pokemon'
+    ? state.pokemonSheets.get(owner.slug)
+    : state.trainerSheets.get(owner.slug)
+  const ownerPlacements = state.map.placements.filter(candidate => (
+    candidate.sheetKind === owner.sheetKind && candidate.sheetSlug === owner.slug
+  ))
+  const placement = placementId === undefined
+    ? ownerPlacements.length === 1 ? ownerPlacements[0] : undefined
+    : ownerPlacements.find(candidate => candidate.id === placementId)
+  const runtime = ABILITY_AUTOMATION_RUNTIME_REGISTRY.resolve('Gluttony')
+  return Boolean(sheet && placement && runtime && projectAuthoritativeEffectiveAbilities({
+    baseAbilities: resolveSheetAbilityInstances(sheet.abilities),
+    target: {
+      placementId: placement.id,
+      ...(placement.sideId ? { sideId: placement.sideId } : {}),
+      position: placement.position,
+    },
+    effects: state.map.encounterState?.effects ?? [],
+    transformationSnapshots: state.map.encounterState?.abilityTransformations,
+  }).some(candidate => candidate.effective && candidate.canonicalId === 'Gluttony'
+    && (candidate.definitionHash === null || candidate.definitionHash === runtime.definitionHash)))
 }
 
 const storeDigestionBuff = (input: {
@@ -1316,8 +1373,10 @@ const storeDigestionBuff = (input: {
   readonly operationOrder: number
 }): string => {
   const { state, owner, operation, operationOrder } = input
-  if (digestionBuffName(state, owner, operation) !== null) {
-    return fail('destination-occupied', `Digestion buff destination ${owner.slug} is occupied.`)
+  const existingBuffs = digestionBuffNames(state, owner, operation)
+  const capacity = hasEffectiveGluttony(state, owner) ? AA072_GLUTTONY_FOOD_BUFF_CAPACITY : 1
+  if (existingBuffs.length >= capacity) {
+    return fail('destination-occupied', `Digestion buff destination ${owner.slug} reached capacity ${capacity}.`)
   }
   if (owner.kind !== 'sheet') {
     return fail('invalid-destination', `Operation ${operation.id} digestion owner must be a sheet.`)
@@ -1325,10 +1384,17 @@ const storeDigestionBuff = (input: {
   if (owner.sheetKind === 'pokemon') {
     const sheet = state.pokemonSheets.get(owner.slug)
       ?? fail('resource-missing', `Pokémon item sheet ${owner.slug} is unavailable.`)
-    setPokemonSheet(state, owner.slug, {
-      ...sheet,
-      items: { ...(sheet.items ?? {}), digestionFood: input.canonicalItemName },
-    })
+    if (capacity === 1) {
+      setPokemonSheet(state, owner.slug, {
+        ...sheet,
+        items: { ...(sheet.items ?? {}), digestionFood: input.canonicalItemName },
+      })
+    }
+    else {
+      const items = { ...(sheet.items ?? {}), digestionFoods: [...existingBuffs, input.canonicalItemName] }
+      delete items.digestionFood
+      setPokemonSheet(state, owner.slug, { ...sheet, items })
+    }
     return touchResource({
       state,
       owner,
@@ -1339,7 +1405,12 @@ const storeDigestionBuff = (input: {
   }
   const sheet = state.trainerSheets.get(owner.slug)
     ?? fail('resource-missing', `Trainer item sheet ${owner.slug} is unavailable.`)
-  setTrainerSheet(state, owner.slug, { ...sheet, digestion: input.canonicalItemName })
+  if (capacity === 1) setTrainerSheet(state, owner.slug, { ...sheet, digestion: input.canonicalItemName })
+  else {
+    const next = { ...sheet, digestionFoods: [...existingBuffs, input.canonicalItemName] }
+    delete next.digestion
+    setTrainerSheet(state, owner.slug, next)
+  }
   return touchResource({
     state,
     owner,
@@ -1353,6 +1424,7 @@ const digestStoredBuff = (input: {
   readonly state: WorkingState
   readonly owner: MoveItemOwnerReference
   readonly canonicalItemIds: readonly string[] | null
+  readonly storageSlot?: number
   readonly operation: MoveItemMutation
   readonly operationOrder: number
 }): { readonly canonicalItemId: string; readonly resourceKey: string } => {
@@ -1360,19 +1432,36 @@ const digestStoredBuff = (input: {
   if (owner.kind !== 'sheet') {
     return fail('invalid-destination', `Operation ${input.operation.id} digestion owner must be a sheet.`)
   }
-  const name = digestionBuffName(input.state, owner, input.operation)
-  const canonical = name ? canonicalItem(name, `${input.operation.id}.digestionBuff`) : null
-  const normalAllowed = canonical !== null
-    && (input.canonicalItemIds === null || input.canonicalItemIds.includes(canonical.id))
-  if (normalAllowed && canonical) {
+  const names = digestionBuffNames(input.state, owner, input.operation)
+  const canonicalBuffs = names.map((name, index) => ({
+    name,
+    index,
+    canonical: canonicalItem(name, `${input.operation.id}.digestionBuff[${index}]`),
+  }))
+  const selectedBySlot = input.storageSlot === undefined
+    ? null
+    : canonicalBuffs[input.storageSlot - 1]
+      ?? fail('item-missing', `Operation ${input.operation.id} selected an unavailable digestion slot.`)
+  if (selectedBySlot && input.canonicalItemIds !== null
+    && !input.canonicalItemIds.includes(selectedBySlot.canonical.id)) {
+    fail('item-mismatch', `Digestion slot ${input.storageSlot} no longer contains an eligible item.`)
+  }
+  const selectedBuff = selectedBySlot ?? canonicalBuffs.find(entry => (
+    input.canonicalItemIds === null || input.canonicalItemIds.includes(entry.canonical.id)
+  )) ?? null
+  const canonical = selectedBuff?.canonical ?? canonicalBuffs[0]?.canonical ?? null
+  if (selectedBuff) {
+    const retainedNames = names.filter((_name, index) => index !== selectedBuff.index)
     if (owner.sheetKind === 'pokemon') {
       const sheet = input.state.pokemonSheets.get(owner.slug)
         ?? fail('resource-missing', `Pokémon item sheet ${owner.slug} is unavailable.`)
       const items = { ...(sheet.items ?? {}) }
       delete items.digestionFood
+      if (retainedNames.length > 0) items.digestionFoods = retainedNames
+      else delete items.digestionFoods
       setPokemonSheet(input.state, owner.slug, { ...sheet, items })
       return {
-        canonicalItemId: canonical.id,
+        canonicalItemId: selectedBuff.canonical.id,
         resourceKey: touchResource({
           state: input.state, owner, operation: input.operation,
           operationOrder: input.operationOrder, changedField: 'items',
@@ -1383,9 +1472,11 @@ const digestStoredBuff = (input: {
       ?? fail('resource-missing', `Trainer item sheet ${owner.slug} is unavailable.`)
     const next = { ...sheet }
     delete next.digestion
+    if (retainedNames.length > 0) next.digestionFoods = retainedNames
+    else delete next.digestionFoods
     setTrainerSheet(input.state, owner.slug, next)
     return {
-      canonicalItemId: canonical.id,
+      canonicalItemId: selectedBuff.canonical.id,
       resourceKey: touchResource({
         state: input.state, owner, operation: input.operation,
         operationOrder: input.operationOrder, changedField: 'digestion',
@@ -1705,6 +1796,11 @@ const reduceOperation = (input: {
     if (canonicalItemIds && new Set(canonicalItemIds).size !== canonicalItemIds.length) {
       fail('invalid-operation', `Digest-buff operation ${operation.id} duplicates an item ID.`)
     }
+    const storageSlot = operation.storageSlot
+    if (storageSlot !== undefined
+      && (!Number.isSafeInteger(storageSlot) || storageSlot < 1 || storageSlot > 3)) {
+      fail('invalid-operation', `Digest-buff operation ${operation.id} has an invalid storage slot.`)
+    }
     const sourceMoveId = boundedIdentifier(
       operation.sourceMoveId,
       `${operation.id}.sourceMoveId`,
@@ -1729,10 +1825,24 @@ const reduceOperation = (input: {
         `Digest-buff source placement ${sourcePlacementId} does not own ${owner.kind === 'sheet' ? `${owner.sheetKind}/${owner.slug}` : 'the selected sheet'}.`,
       )
     }
+    const foodBuffUseLimit = hasEffectiveGluttony(state, owner, sourcePlacement.id)
+      ? AA072_GLUTTONY_FOOD_BUFF_USES_PER_SCENE
+      : 1
+    const foodBuffUses = digestionBuffTradeCount({
+      effects: state.map.encounterState?.effects ?? [],
+      placement: sourcePlacement,
+    })
+    if (foodBuffUses >= foodBuffUseLimit) {
+      fail(
+        'destination-occupied',
+        `Digestion buff owner ${owner.slug} reached its Scene use limit ${foodBuffUseLimit}.`,
+      )
+    }
     const digested = digestStoredBuff({
       state,
       owner,
       canonicalItemIds,
+      ...(storageSlot === undefined ? {} : { storageSlot }),
       operation,
       operationOrder,
     })
