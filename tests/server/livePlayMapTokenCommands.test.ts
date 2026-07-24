@@ -3,9 +3,11 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { describe, expect, it, vi } from 'vitest'
 import { createEmptyEncounterHistory } from '#shared/moveAutomation/encounterHistory'
+import { parseEncounterZone } from '#shared/moveAutomation/encounterZones'
 import {
   LIVE_PLAY_COMMAND_SCHEMA_VERSION,
   LIVE_PLAY_COMMAND_TYPES,
+  LIVE_PLAY_PATCH_TYPES,
   type DeleteTokenLivePlayCommand,
   type MoveTokenLivePlayCommand,
   type SendOutPokemonLivePlayCommand,
@@ -25,6 +27,8 @@ import { executeMapTokenLivePlayCommandUseCase } from '~~/server/useCases/applyM
 import { spendEncounterMoveResourceCosts } from '~~/server/domain/moveAutomation/reduceEncounterResources'
 import { openRotomDatabase } from '~~/server/storage/database'
 import { createSqliteMapRepository } from '~~/server/storage/mapRepository'
+import { createSqliteSheetRepository } from '~~/server/storage/sheetRepository'
+import { canonicalBattlefieldZoneComponents } from '~~/server/domain/moveAutomation/battlefieldZoneDefinitions'
 import { createSqliteLivePlayOpRepository } from '~~/server/storage/opRepository'
 import { MAPS_ROOT } from '~~/server/utils/mapPaths'
 import type { TabletopMap } from '~/types/map'
@@ -994,6 +998,111 @@ describe('live-play map token commands', () => {
     expect(harness.storedMap.revision).toBe(4)
   })
 
+  it('commits Hazard entry effects atomically while effective Infiltrator bypasses them', async () => {
+    const root = mkdtempSync(join(tmpdir(), 'rotom-live-zone-movement-'))
+    const database = openRotomDatabase({ path: join(root, 'campaign.sqlite') })
+
+    try {
+      const mapRepository = createSqliteMapRepository<TabletopMap>(database)
+      const sheetRepository = createSqliteSheetRepository<Record<string, unknown>>(database)
+      const components = canonicalBattlefieldZoneComponents({ kind: 'hazard', effectId: 'spikes' })
+      const map: TabletopMap = {
+        ...baseMap(),
+        dimensions: { x: 6, y: 3, z: 4 },
+        voxels: [1, 3].flatMap(z => Array.from({ length: 5 }, (_value, x) => ({
+          x, y: 0, z, materialId: 'cave_stone', tags: ['wall'],
+          blocksMovement: true, blocksSight: true,
+        }))),
+        placements: [
+          { id: 'plain', sheetKind: 'pokemon', sheetSlug: 'plain', sideId: 'heroes', position: { x: 0, y: 0, z: 0 } },
+          { id: 'infiltrator', sheetKind: 'pokemon', sheetSlug: 'infiltrator', sideId: 'heroes', position: { x: 0, y: 0, z: 2 } },
+          { id: 'source', sheetKind: 'pokemon', sheetSlug: 'source', sideId: 'rivals', position: { x: 5, y: 0, z: 2 } },
+        ],
+        activeScene: { name: 'Hazard Scene', startedAt: 1 },
+        initiative: { activeId: 'plain', round: 1 },
+        encounterState: {
+          ...baseMap().encounterState!,
+          zones: [parseEncounterZone({
+            id: 'zone.production.spikes', kind: 'hazard',
+            source: {
+              kind: 'operation', operationId: 'operation.production.spikes',
+              moveId: 'move.spikes', placementId: 'source',
+            },
+            sideId: 'rivals',
+            geometry: { kind: 'cells', cells: [{ x: 1, y: 0, z: 0 }, { x: 1, y: 0, z: 2 }] },
+            layer: 1, duration: { kind: 'scene', remaining: null },
+            stacking: { kind: 'refresh', maxLayers: null },
+            hooks: components.hooks, modifiers: components.modifiers,
+            tags: ['hazard', 'spikes'],
+            payload: {
+              hazardId: 'spikes', familyId: 'hazard.spikes', charges: null, maxCharges: null,
+            },
+          })],
+        },
+      }
+      mapRepository.saveSetupMap(map)
+      const makeSheet = (slug: string, infiltrator: boolean) => ({
+        slug, nickname: slug, species: 'Pikachu', level: 20, revision: 3,
+        types: ['Normal'], capabilities: { overland: 6 },
+        combat: { currentHp: 60, injuries: 0, conditions: [] },
+        ...(infiltrator ? {
+          abilities: [{
+            name: 'Infiltrator', automation: {
+              schemaVersion: 1, instanceId: 'base:infiltrator', canonicalId: 'Infiltrator',
+              definitionVersion: null, selections: [],
+            },
+          }],
+        } : {}),
+      })
+      sheetRepository.saveSetupSheet('pokemon', 'plain', makeSheet('plain', false))
+      sheetRepository.saveSetupSheet('pokemon', 'infiltrator', makeSheet('infiltrator', true))
+      sheetRepository.saveSetupSheet('pokemon', 'source', makeSheet('source', false))
+      const executor = createAuthoritativeLivePlayCommandExecutor({
+        opStore: createInMemoryLivePlayOpStore(), queue: createInProcessMapWriteQueue(),
+      })
+      const dependencies = {
+        mapRepository, sheetRepository, database, commandExecutor: executor,
+        readSheet: (kind: 'pokemon' | 'trainer', slug: string) => {
+          const stored = sheetRepository.getByRef(kind, slug)
+          return stored ? { sheet: stored.sheet } : null
+        },
+        now: () => 2_000,
+      }
+      const plain = await executeMapTokenLivePlayCommandUseCase({
+        role: 'gm', playerProfile: null, expectedType: LIVE_PLAY_COMMAND_TYPES.MOVE_TOKEN,
+        command: moveCommand({
+          opId: 'op_zone_plain_01',
+          scopes: [{ kind: 'token', placementId: 'plain', field: 'position' }],
+          payload: { placementId: 'plain', position: { x: 3, y: 0, z: 0 } },
+        }),
+      }, dependencies)
+      expect(plain.result).toMatchObject({ ok: true, previousRevision: 4, revision: 5 })
+      if (!plain.result.ok || 'duplicate' in plain.result) throw new Error('Expected accepted movement.')
+      expect(plain.result.patches).toContainEqual(expect.objectContaining({
+        type: LIVE_PLAY_PATCH_TYPES.TOKEN_HP,
+        payload: expect.objectContaining({ placementId: 'plain', currentTemporaryHp: 0 }),
+      }))
+
+      const infiltrator = await executeMapTokenLivePlayCommandUseCase({
+        role: 'gm', playerProfile: null, expectedType: LIVE_PLAY_COMMAND_TYPES.MOVE_TOKEN,
+        command: moveCommand({
+          opId: 'op_zone_infiltrator_01', baseRevision: 5,
+          scopes: [{ kind: 'token', placementId: 'infiltrator', field: 'position' }],
+          payload: { placementId: 'infiltrator', position: { x: 3, y: 0, z: 2 } },
+        }),
+      }, dependencies)
+      expect(infiltrator.result).toMatchObject({ ok: true, previousRevision: 5, revision: 6 })
+      expect((sheetRepository.getByRef('pokemon', 'plain')!.sheet.combat as { currentHp: number }).currentHp)
+        .toBeLessThan(60)
+      expect((sheetRepository.getByRef('pokemon', 'infiltrator')!.sheet.combat as { currentHp: number }).currentHp)
+        .toBe(60)
+      expect(mapRepository.getBySlug('arena')?.encounterState?.zones).toHaveLength(1)
+    } finally {
+      database.close()
+      rmSync(root, { recursive: true, force: true })
+    }
+  }, 30_000)
+
   it('persists live-play moves through the SQLite map repository', async () => {
     const root = mkdtempSync(join(tmpdir(), 'rotom-live-map-'))
     const database = openRotomDatabase({ path: join(root, 'campaign.sqlite') })
@@ -1006,7 +1115,7 @@ describe('live-play map token commands', () => {
         ...baseMap(),
         placements: baseMap().placements.map((placement) => (
           placement.id === 'unlinked-token'
-            ? { ...placement, position: { x: 7, y: 0, z: 7 } }
+            ? { ...placement, position: { x: 5, y: 0, z: 5 } }
             : placement
         )),
       }

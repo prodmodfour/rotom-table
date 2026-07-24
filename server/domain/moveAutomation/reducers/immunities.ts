@@ -270,16 +270,28 @@ export const createStandardMoveCoreTokenEffectImmunityQueries = (
         recipient,
         conditionContext,
       )
+      const canonicalCondition = normalizeConditionName(condition) ?? condition
+      const poisonCondition = canonicalCondition === 'Poisoned' || canonicalCondition === 'Badly Poisoned'
+      const effectiveImmunity = poisonCondition
+        && options.context?.queries.abilities.has(recipient.placement.id, 'Immunity') === true
+      if (effectiveImmunity) return conditionDecision('Immunity', providerIds)
+      const typedRecipient = corrosionBypass
+        ? {
+            ...recipient.token,
+            defenderTypes: recipient.token.defenderTypes.filter(type => (
+              !['poison', 'steel'].includes(type.trim().toLowerCase())
+            )),
+          }
+        : recipient.token
+      const passiveRecipient = poisonCondition
+        ? {
+            ...typedRecipient,
+            abilityNames: typedRecipient.abilityNames?.filter(name => name.trim().toLowerCase() !== 'immunity'),
+          }
+        : typedRecipient
       const passiveBlocker = moveAutomationConditionImmunitySource(
         condition,
-        corrosionBypass
-          ? {
-              ...recipient.token,
-              defenderTypes: recipient.token.defenderTypes.filter(type => (
-                !['poison', 'steel'].includes(type.trim().toLowerCase())
-              )),
-            }
-          : recipient.token,
+        passiveRecipient,
         options.moveType,
         conditionContext,
       )

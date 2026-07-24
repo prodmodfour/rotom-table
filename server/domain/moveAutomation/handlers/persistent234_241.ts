@@ -1,5 +1,6 @@
 import type { EncounterEffectDuration } from '#shared/moveAutomation/encounterEffects'
 import { MOVE_SPEC_PHASES } from '#shared/moveAutomation/spec'
+import { SUBSTITUTE_COAT_CAPABILITY_ID } from '#shared/moveAutomation/substitute'
 import { POKEMON_TYPE_IDS, pokemonTypeId, type PokemonTypeId } from '#shared/pokemonTypes'
 import type {
   MoveBranchEffectOperation,
@@ -435,7 +436,31 @@ const substitute = (): readonly MoveEffectOperation[] => [
       },
     },
   }),
-  markerEffect({ slug: 'substitute', id: 'coat', recipients: 'actor', duration: { kind: 'scene', remaining: null } }),
+  {
+    id: 'substitute.coat',
+    kind: 'temporary-effect',
+    source: { kind: 'move', id: 'move.substitute' },
+    recipients: { kind: 'actor' },
+    phase: 'schedule',
+    reasonCode: 'substitute.coat',
+    payload: {
+      action: 'add',
+      effectId: 'substitute.coat',
+      recipientScope: 'placements',
+      definition: {
+        kind: 'capability',
+        duration: { kind: 'scene', remaining: null },
+        stacks: 1,
+        charges: null,
+        stackPolicy: { kind: 'refresh', maxStacks: null },
+        chargePolicy: { kind: 'none', amount: null },
+        tags: ['substitute', 'coat'],
+        payload: { capabilityId: SUBSTITUTE_COAT_CAPABILITY_ID, action: 'grant' },
+        dispel: { policy: 'matching-tags', tags: ['substitute', 'coat'] },
+        transferPolicy: 'expire',
+      },
+    },
+  },
   ...standardTerminalOperations('substitute'),
 ]
 

@@ -197,7 +197,21 @@ import {
   applyAa074HordeBreakOperations,
   aa074TargetHasDigestionBuff,
 } from '../abilityAutomation/mechanics/aa074MoveIntegration'
+import {
+  AA075_IGNITION_BOOST_REASON,
+  AA075_ILLUSION_BREAK_REASON,
+  AA075_INNARDS_OUT_HP_REASON,
+  AA075_INNARDS_OUT_OPTION_PREFIX,
+  AA075_INNARDS_OUT_REASON,
+  aa075MoveOverlayOperations,
+} from '../abilityAutomation/mechanics/aa075MoveIntegration'
 import { aa074HungerModeForPlacement } from '#shared/abilityAutomation/aa074'
+import {
+  aa075HypnoticAutomaticHit,
+  aa075IceScalesDamageTypeOverlay,
+  aa075InfiltratorBlocksResponsiveBlessings,
+  aa075InfiltratorBypassesTemporaryHp,
+} from '../abilityAutomation/mechanics/aa075StaticIntegration'
 import {
   AA068_DRAGONS_MAW_REASON,
   AA068_DREAM_SMOKE_REASON,
@@ -2669,6 +2683,32 @@ const executeMoveSpecInternal = (
     operations: program.operations,
     responses: responseResolver,
   })
+  const selectedIgnitionBoostRequestId = [...reactionRequestsByOperationId.entries()]
+    .find(([_operationId, request]) => request.reasonCode === AA075_IGNITION_BOOST_REASON
+      && responseResolver.resolve({
+        requestId: request.payload.requestId,
+        options: request.payload.options,
+        allowPass: request.payload.allowPass,
+      })?.optionId === 'ability.ignition-boost.use')?.[0] ?? null
+  const selectedInnardsOutByOwner = new Map<string, { readonly requestId: string; readonly targetId: string }>()
+  for (const [requestId, request] of reactionRequestsByOperationId) {
+    if (request.reasonCode !== AA075_INNARDS_OUT_REASON) continue
+    const ownerId = request.source.kind === 'lifecycle-event'
+      && request.source.id.startsWith('ability.innards-out.target:')
+      ? request.source.id.slice('ability.innards-out.target:'.length)
+      : null
+    const response = responseResolver.resolve({
+      requestId: request.payload.requestId,
+      options: request.payload.options,
+      allowPass: request.payload.allowPass,
+    })
+    const targetId = response?.optionId?.startsWith(AA075_INNARDS_OUT_OPTION_PREFIX)
+      ? response.optionId.slice(AA075_INNARDS_OUT_OPTION_PREFIX.length)
+      : null
+    if (ownerId && targetId && !selectedInnardsOutByOwner.has(ownerId)) {
+      selectedInnardsOutByOwner.set(ownerId, { requestId, targetId })
+    }
+  }
   const aa072ForcedPresentValue = aa072GorillaSelected
     ? null
     : aa072GiverForcedValue({
@@ -3006,6 +3046,13 @@ const executeMoveSpecInternal = (
       }
       const resolveOperationRecipientIds = (): readonly string[] => {
         if (operation.kind === 'reaction-request' && operation.payload.ownerPlacementIds) {
+          if (aa075InfiltratorBlocksResponsiveBlessings({
+            context: input.context,
+            actingPlacementId: input.context.actor.placement.id,
+          }) && operation.source.kind === 'encounter-effect'
+            && input.context.map.encounterState?.effects.some(effect => (
+              effect.id === operation.source.id && effect.tags.includes('blessing')
+            ))) return []
           const interruptChild = operation.reasonCode === 'ability.dig-away.optional-avoid'
             || program.operations.some(candidate => (
               candidate.kind === 'nested-move'
@@ -3130,6 +3177,21 @@ const executeMoveSpecInternal = (
               ? operation.source.id.slice('ability.gooey.target:'.length)
               : null
             return targetId && hitTargetIds.includes(targetId) ? owners : []
+          }
+          if (operation.reasonCode === AA075_IGNITION_BOOST_REASON) {
+            if (selectedIgnitionBoostRequestId === null) return owners
+            const requests = [...reactionRequestsByOperationId.keys()]
+              .filter(id => reactionRequestsByOperationId.get(id)?.reasonCode === AA075_IGNITION_BOOST_REASON)
+            return requests.indexOf(operation.id) <= requests.indexOf(selectedIgnitionBoostRequestId)
+              ? owners
+              : []
+          }
+          if (operation.reasonCode === AA075_INNARDS_OUT_REASON) {
+            const ownerId = operation.source.kind === 'lifecycle-event'
+              && operation.source.id.startsWith('ability.innards-out.target:')
+              ? operation.source.id.slice('ability.innards-out.target:'.length)
+              : null
+            return ownerId && hitTargetIds.includes(ownerId) ? owners : []
           }
           if (operation.reasonCode === AA072_GALE_WINGS_REASON
             || operation.reasonCode === AA072_GORE_REASON
@@ -3339,6 +3401,21 @@ const executeMoveSpecInternal = (
           return targetId && hitTargetIds.includes(targetId)
             && aa074TargetHasDigestionBuff(input.context, targetId)
             ? [input.context.actor.placement.id]
+            : []
+        }
+        if (operation.reasonCode === AA075_ILLUSION_BREAK_REASON
+          && operation.source.kind === 'lifecycle-event'
+          && operation.source.id.startsWith('ability.illusion.target:')) {
+          const illusionTargetId = operation.source.id.slice('ability.illusion.target:'.length)
+          return hitTargetIds.includes(illusionTargetId) ? [illusionTargetId] : []
+        }
+        if (operation.reasonCode === AA075_INNARDS_OUT_HP_REASON
+          && operation.source.kind === 'operation') {
+          const selected = [...selectedInnardsOutByOwner.entries()]
+            .find(([_ownerId, value]) => value.requestId === operation.source.id)
+          return selected && selected[1].targetId
+            && input.context.queries.placements.get(selected[1].targetId)
+            ? [selected[1].targetId]
             : []
         }
         const harvestOwnerId = aa073HarvestOwnerId(operation)
@@ -3585,7 +3662,7 @@ const executeMoveSpecInternal = (
           || (fairyDamageCandidate && input.context.queries.placements.all().some(
             placement => input.context.queries.abilities.has(placement.id, 'Fairy Aura'),
           )))
-      const emittedOperation = operation.kind === 'damage'
+      const baseEmittedOperation = operation.kind === 'damage'
         && recipientIds[0]
         && aa069DamageBaseRelevant
         ? (() => {
@@ -3611,6 +3688,36 @@ const executeMoveSpecInternal = (
               : typed
           })()
         : aa070Operation
+      const emittedOperation = baseEmittedOperation.kind === 'direct-hp'
+        && baseEmittedOperation.reasonCode === AA075_INNARDS_OUT_HP_REASON
+        && baseEmittedOperation.source.kind === 'operation'
+        ? (() => {
+            const selected = [...selectedInnardsOutByOwner.entries()]
+              .find(([_ownerId, value]) => value.requestId === baseEmittedOperation.source.id)
+            if (!selected) return baseEmittedOperation
+            const [ownerId] = selected
+            const owner = input.context.queries.tokens.get(ownerId)
+              ?? fail('definition-integrity-mismatch', `Innards Out owner ${ownerId} disappeared.`)
+            const ordinaryRealHpLost = Math.max(0, owner.currentHp - projectedHp.get(owner))
+            const multiHitRealHpLost = multiHitExecutions.reduce((total, execution) => (
+              total + execution.resolution.targets
+                .filter(target => target.targetId === ownerId)
+                .flatMap(target => target.strikes)
+                .reduce((sum, strike) => sum + (strike.damage?.realHpLost ?? 0), 0)
+            ), 0)
+            const amount = Math.min(
+              MOVE_EFFECT_OPERATION_LIMITS.numericMagnitude,
+              (ordinaryRealHpLost + multiHitRealHpLost) * 2,
+            )
+            return {
+              ...baseEmittedOperation,
+              payload: {
+                ...baseEmittedOperation.payload,
+                calculation: { kind: 'fixed' as const, value: amount },
+              },
+            }
+          })()
+        : baseEmittedOperation
       operations.push(Object.freeze({
         operation: emittedOperation,
         recipientIds: frozenIds(recipientIds),
@@ -4273,7 +4380,13 @@ const executeMoveSpecInternal = (
                   sourceId: conditionalRule.sourceId,
                   reasonCode: conditionalRule.reasonCode,
                 }
-              : weatherAccuracy?.rule ?? null
+              : aa075HypnoticAutomaticHit({ context: input.context, script: getMechanics().script })
+                ? {
+                    kind: 'automatic-hit',
+                    sourceId: 'ability.hypnotic',
+                    reasonCode: 'ability.hypnotic.automatic-hit',
+                  }
+                : weatherAccuracy?.rule ?? null
             const accuracy = resolveMoveAutomationAccuracyRoll(
               accuracyScript ?? getMechanics().script,
               result.naturalResult,
@@ -4429,6 +4542,7 @@ const executeMoveSpecInternal = (
           const aa071ResistanceSources = [
             ...(selectedFriendGuardTargetIds.has(recipientId) ? ['Friend Guard'] : []),
             ...(selectedFullGuardTargetIds.has(recipientId) ? ['Full Guard'] : []),
+            ...(selectedInnardsOutByOwner.has(recipientId) ? ['Innards Out'] : []),
           ]
           const aa071ResolvedType = aa071ResistDamageType({
             resolved: aa072ResolvedType,
@@ -4440,11 +4554,17 @@ const executeMoveSpecInternal = (
             recipientId,
             resolved: aa071ResolvedType,
           })
+          const aa075ResolvedType = aa075IceScalesDamageTypeOverlay({
+            context: input.context,
+            damageClass: resolvedClass.damageClass,
+            recipientId,
+            resolved: aa073ResolvedType,
+          })
           const resolvedType = aa068DamageTypeOverlay({
             context: input.context,
             script: getMechanics().script,
             recipientId,
-            resolved: aa073ResolvedType,
+            resolved: aa075ResolvedType,
             naturalAccuracyRoll: naturalCriticalRoll,
             dragonsMawSelected: selectedDragonsMawTargetIds.has(recipientId),
           })
@@ -4536,22 +4656,44 @@ const executeMoveSpecInternal = (
             }),
             resolvedMoveType: resolvedType,
             naturalCriticalRoll,
-            ...(aa072GorillaSelected ? { responseDamageModifiers: [{
-              id: 'ability.gorilla-tactics.triggering-damage',
-              stage: 'pre-type-modifiers', priority: 40,
-              source: { kind: 'ability', id: 'Gorilla Tactics' },
-              stackingGroup: 'aa072-gorilla-tactics-triggering',
-              reasonCode: 'ability.gorilla-tactics.triggering-damage',
-              operation: 'add', value: 10,
-            }] as const } : {}),
+            ...(aa072GorillaSelected || selectedIgnitionBoostRequestId !== null
+              ? { responseDamageModifiers: [
+                  ...(aa072GorillaSelected ? [{
+                    id: 'ability.gorilla-tactics.triggering-damage',
+                    stage: 'pre-type-modifiers' as const, priority: 40,
+                    source: { kind: 'ability' as const, id: 'Gorilla Tactics' },
+                    stackingGroup: 'aa072-gorilla-tactics-triggering',
+                    reasonCode: 'ability.gorilla-tactics.triggering-damage',
+                    operation: 'add' as const, value: 10,
+                  }] : []),
+                  ...(selectedIgnitionBoostRequestId !== null ? [{
+                    id: 'ability.ignition-boost.triggering-damage',
+                    stage: 'pre-type-modifiers' as const, priority: 41,
+                    source: { kind: 'ability' as const, id: 'Ignition Boost' },
+                    stackingGroup: 'aa075-ignition-boost-triggering',
+                    reasonCode: 'ability.ignition-boost.triggering-damage',
+                    operation: 'add' as const, value: 5,
+                  }] : []),
+                ] } : {}),
             ...(formula.contextualDamageBase ? { contextualDamageBase: formula.contextualDamageBase } : {}),
           })
           if (calculation.breakdown.hpLoss > 0) projectedDamagedTargetIds.add(recipientId)
-          projectedHp.applyLossWithInjuryAutomation(recipient, calculation.breakdown.hpLoss, 'damage')
+          const bypassTemporaryHp = aa075InfiltratorBypassesTemporaryHp({
+            context: input.context,
+            recipientId,
+          })
+          projectedHp.applyLossWithInjuryAutomation(
+            recipient,
+            calculation.breakdown.hpLoss,
+            'damage',
+            { bypassTemporaryHp },
+          )
           projectedInjuriesByTarget.set(recipientId, projectedHp.getInjuries(recipient))
           const previousRemaining = projectedRemainingHpByTarget.get(recipientId)
             ?? recipient.currentHp + (recipient.temporaryHp ?? 0)
-          const remaining = Math.max(0, previousRemaining - calculation.breakdown.hpLoss)
+          const remaining = bypassTemporaryHp
+            ? projectedHp.get(recipient)
+            : Math.max(0, previousRemaining - calculation.breakdown.hpLoss)
           projectedRemainingHpByTarget.set(recipientId, remaining)
           if (remaining === 0 && calculation.breakdown.hpLoss > 0) {
             faintedTargetIds = canonicalPlacementIds(input.context, [...faintedTargetIds, recipientId])
@@ -4608,10 +4750,15 @@ const executeMoveSpecInternal = (
           canonicalMoveId: spec.canonicalId,
           recipientIds,
           gorillaTacticsTriggeringDamage: aa072GorillaSelected,
+          ignitionBoostTriggeringDamage: selectedIgnitionBoostRequestId !== null,
           firstStrikeResistanceStepsByRecipient: new Map(recipientIds.map(recipientId => [
             recipientId,
             Number(selectedFriendGuardTargetIds.has(recipientId))
               + Number(selectedFullGuardTargetIds.has(recipientId)),
+          ])),
+          allStrikeResistanceStepsByRecipient: new Map(recipientIds.map(recipientId => [
+            recipientId,
+            Number(selectedInnardsOutByOwner.has(recipientId)),
           ])),
         })
         multiHitExecutions.push(execution)
@@ -5468,6 +5615,12 @@ const executeMoveSpecInternal = (
               authoritativeTargetIds: childTargetIds,
             }),
             ...aa074MoveOverlayOperations({
+              context: childContext,
+              script: childMechanics,
+              moveSourceId: childMoveSourceId,
+              authoritativeTargetIds: childTargetIds,
+            }),
+            ...aa075MoveOverlayOperations({
               context: childContext,
               script: childMechanics,
               moveSourceId: childMoveSourceId,

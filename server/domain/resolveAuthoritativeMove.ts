@@ -119,6 +119,7 @@ import {
   type SideDamageResistanceResolution,
 } from './moveAutomation/sideDamageResistance'
 import { aa060MovePriorityOverride, hasAa060MoveMark, hasPendingAa060AnchoredAttack } from './abilityAutomation/mechanics/aa060MoveIntegration'
+import { aa075ImposterTransformOverride } from './abilityAutomation/mechanics/aa075StaticIntegration'
 import { aa066DazzlingBlocksPriorityMove } from './abilityAutomation/mechanics/aa066StaticIntegration'
 import { hasAa061AquaBulletMark, hasPendingAa061AquaBulletAttack } from './abilityAutomation/mechanics/aa061MoveIntegration'
 import { aa062BoneLordEmpowersMove, hasPendingAa062BoneLordMove } from './abilityAutomation/mechanics/aa062MoveIntegration'
@@ -320,6 +321,8 @@ export interface AuthoritativeMoveResolution {
   readonly sideDamageResistance?: SideDamageResistanceResolution
   /** Server-owned ability timing overlay consumed by the resource planner. */
   readonly abilityPriorityOverride?: boolean
+  /** Imposter's reviewed Transform-only Free-Action Interrupt overlay. */
+  readonly abilityFreeInterruptOverride?: boolean
   /** Server-only native planning projection; omitted from accepted wire results. */
   readonly nativeV2?: NativeMoveSpecResolutionProjection
 }
@@ -342,6 +345,7 @@ export interface AuthoritativePendingMoveResolution {
   readonly execution: PendingMoveSpecResolution['execution']
   readonly preWindowPlan: PendingMoveSpecResolution['preWindowPlan']
   readonly abilityPriorityOverride?: boolean
+  readonly abilityFreeInterruptOverride?: boolean
 }
 
 export type AuthoritativeMoveExecution =
@@ -2117,9 +2121,12 @@ export const resolveAuthoritativeMoveExecutionFromContext = (
       ? selectedRuntime.definition.spec.costs
       : undefined)
   const abilityPriorityOverride = aa060MovePriorityOverride(context, entry.script)
+  const abilityFreeInterruptOverride = aa075ImposterTransformOverride({ context, script: entry.script })
   const actionTiming = abilityPriorityOverride
     ? 'priority'
-    : resolveAuthoritativeMoveActionTiming({
+    : abilityFreeInterruptOverride
+      ? 'interrupt'
+      : resolveAuthoritativeMoveActionTiming({
         range: legacySelection?.script.range ?? entry.script.range,
         ...(reviewedCosts && reviewedCosts.length > 0 ? { reviewedCosts } : {}),
       })
@@ -2158,11 +2165,20 @@ export const resolveAuthoritativeMoveExecutionFromContext = (
     const nativeSelectionKind = intent.selection.kind
     const finalizeNativeExecution = (
       execution: AuthoritativeMoveExecution,
-    ): AuthoritativeMoveExecution => isAuthoritativePendingMoveResolution(execution)
-      ? abilityPriorityOverride ? Object.freeze({ ...execution, abilityPriorityOverride: true }) : execution
-      : attachResolutionDamageEffects(context, abilityPriorityOverride
-          ? { ...execution, abilityPriorityOverride: true }
-          : execution)
+    ): AuthoritativeMoveExecution => {
+      if (isAuthoritativePendingMoveResolution(execution)) {
+        return Object.freeze({
+          ...execution,
+          ...(abilityPriorityOverride ? { abilityPriorityOverride: true } : {}),
+          ...(abilityFreeInterruptOverride ? { abilityFreeInterruptOverride: true } : {}),
+        })
+      }
+      return attachResolutionDamageEffects(context, {
+        ...execution,
+        ...(abilityPriorityOverride ? { abilityPriorityOverride: true } : {}),
+        ...(abilityFreeInterruptOverride ? { abilityFreeInterruptOverride: true } : {}),
+      })
+    }
 
     if (intent.selection.kind === 'self') {
       return finalizeNativeExecution(resolveNativeSelfMove({

@@ -335,6 +335,9 @@ const cloneResolution = (resolution: AuthoritativeMoveResolution): Authoritative
   ...(resolution.abilityPriorityOverride === undefined
     ? {}
     : { abilityPriorityOverride: resolution.abilityPriorityOverride }),
+  ...(resolution.abilityFreeInterruptOverride === undefined
+    ? {}
+    : { abilityFreeInterruptOverride: resolution.abilityFreeInterruptOverride }),
 })
 
 const cloneUsageSummary = (usage: UseMoveUsageSummary): UseMoveUsageSummary => cloneJson(usage)
@@ -696,13 +699,25 @@ const withoutPlanIdentity = (
   return input as MoveStateChangeInput
 }
 
-const withAbilityPriorityCost = (
+const withAbilityCostOverrides = (
   costs: readonly MoveSpecCostDeclaration[] | undefined,
   abilityPriorityOverride: boolean | undefined,
+  abilityFreeInterruptOverride: boolean | undefined,
 ): readonly MoveSpecCostDeclaration[] | undefined => {
-  if (!abilityPriorityOverride || costs?.some(declaration => declaration.cost.kind === 'priority')) return costs
+  const actionAdjusted = abilityFreeInterruptOverride
+    ? (costs ?? []).map(declaration => declaration.cost.kind === 'action-resource'
+      && declaration.cost.resource === 'standard'
+      ? {
+          ...declaration,
+          id: 'ability.imposter.free-action',
+          cost: { kind: 'action-resource' as const, resource: 'free' as const, amount: 1 },
+        }
+      : declaration)
+    : costs
+  if (!abilityPriorityOverride
+    || actionAdjusted?.some(declaration => declaration.cost.kind === 'priority')) return actionAdjusted
   return Object.freeze([
-    ...(costs ?? []),
+    ...(actionAdjusted ?? []),
     { id: 'ability.accelerate.priority', phase: 'declare', cost: { kind: 'priority', mode: 'standard' } } as const,
   ])
 }
@@ -714,15 +729,21 @@ const reviewedMoveResourceCosts = (
   >,
   canonicalMoveId: string,
   abilityPriorityOverride?: boolean,
+  abilityFreeInterruptOverride?: boolean,
 ): readonly MoveSpecCostDeclaration[] | undefined => {
   if (input.resourceCostDeclarations !== undefined) {
-    return withAbilityPriorityCost(input.resourceCostDeclarations, abilityPriorityOverride)
+    return withAbilityCostOverrides(
+      input.resourceCostDeclarations,
+      abilityPriorityOverride,
+      abilityFreeInterruptOverride,
+    )
   }
   const runtime = (input.runtimeRegistry ?? MOVE_AUTOMATION_RUNTIME_REGISTRY)
     .resolve(canonicalMoveId)
-  return withAbilityPriorityCost(
+  return withAbilityCostOverrides(
     runtime?.kind === 'movespec-v2' ? runtime.definition.spec.costs : undefined,
     abilityPriorityOverride,
+    abilityFreeInterruptOverride,
   )
 }
 
@@ -775,6 +796,7 @@ export const observeMovePlanResources = (input: {
         input.planningInput,
         input.resolution.canonicalMoveName,
         input.resolution.abilityPriorityOverride,
+        input.resolution.abilityFreeInterruptOverride,
       ),
       minimumPhaseExclusive: input.minimumCostPhaseExclusive,
       maximumPhaseInclusive: input.maximumCostPhaseInclusive,
@@ -858,9 +880,10 @@ export const planPendingMoveResourceCosts = (options: {
     actorPlacementId: options.execution.actorPlacementId,
     moveName: options.execution.canonicalMoveName,
   })) return options.existingPlan
-  const reviewedCosts = withAbilityPriorityCost(
+  const reviewedCosts = withAbilityCostOverrides(
     options.execution.runtime.definition.spec.costs,
     options.execution.abilityPriorityOverride,
+    options.execution.abilityFreeInterruptOverride,
   ) ?? []
   if (reviewedCosts.length === 0) return options.existingPlan
 

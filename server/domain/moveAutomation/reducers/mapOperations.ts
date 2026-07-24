@@ -20,6 +20,7 @@ import {
 import { deepCloneJson } from '~/utils/serialization'
 import type { MoveSpecEmittedOperation } from '../executeSpec'
 import { AA073_GULP_MISSILE_CONSUME_REASON } from '../../abilityAutomation/mechanics/aa073MoveIntegration'
+import { AA075_ILLUSION_BREAK_REASON } from '../../abilityAutomation/mechanics/aa075MoveIntegration'
 import {
   canonicalMoveEffectPlacementIds,
   expectedMoveEffectRecipientIds,
@@ -193,7 +194,7 @@ export const reduceMoveMapOperations = (
       `operation ${operation.id} recipients`,
       failMoveMapOperationReduction,
     )
-    const expectedIds = emission.childResolutionId
+    const selectorExpectedIds = emission.childResolutionId
       || operation.recipients.kind === 'response-owner'
       ? emittedIds
       : expectedMoveEffectRecipientIds(
@@ -202,6 +203,20 @@ export const reduceMoveMapOperations = (
           dynamic,
           failMoveMapOperationReduction,
         )
+    const illusionTargetId = operation.reasonCode === AA075_ILLUSION_BREAK_REASON
+      && operation.source.kind === 'lifecycle-event'
+      && operation.source.id.startsWith('ability.illusion.target:')
+      ? operation.source.id.slice('ability.illusion.target:'.length)
+      : null
+    const reviewedIllusionNarrowing = illusionTargetId !== null
+      && (
+        (emittedIds.length === 1
+          && emittedIds[0] === illusionTargetId
+          && dynamic['hit-targets'].includes(illusionTargetId))
+        || (emittedIds.length === 0
+          && !dynamic['hit-targets'].includes(illusionTargetId))
+      )
+    const expectedIds = reviewedIllusionNarrowing ? emittedIds : selectorExpectedIds
     const dynamicGulpMissileConsume = operation.reasonCode === AA073_GULP_MISSILE_CONSUME_REASON
       && emittedIds.every((id, index) => id === expectedIds[index])
     if (

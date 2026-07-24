@@ -528,7 +528,7 @@ describe('MoveSpec map, usage, and log reducers', () => {
     const remove = emission(operation('operation.remove-copy', 'temporary-effect', {
       action: 'remove',
       effectId: 'effect.move-list.target-token',
-    }, 'cleanup'))
+    }, 'cleanup', 'hit-targets'), ['target-token'])
     const removed = reduce({ context: buildContext({ map: seededMap }), operations: [remove] })
 
     expect(removed.nextMap.encounterState?.effects).toEqual([])

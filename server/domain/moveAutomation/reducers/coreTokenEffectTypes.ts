@@ -114,6 +114,8 @@ export interface MoveCoreTokenDamageResolution {
   /** Incoming loss before this reducer applies scene-local temporary HP. */
   readonly hpLoss: number
   readonly preventedBy: string | null
+  /** Reviewed attacks such as Infiltrator versus Substitute damage real HP first. */
+  readonly bypassTemporaryHp?: boolean
   /** Resolved operation type when damage used a contextual type expression. */
   readonly moveType?: string
   readonly consultedPlacementIds: readonly string[]

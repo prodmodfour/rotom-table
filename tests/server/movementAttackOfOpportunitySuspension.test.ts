@@ -3,6 +3,7 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { createEmptyEncounterState } from '#shared/moveAutomation/encounterState'
+import { parseEncounterZone } from '#shared/moveAutomation/encounterZones'
 import {
   MOVE_RESPONSE_COMMAND_SCHEMA_VERSION,
   MOVE_RESPONSE_COMMAND_TYPES,
@@ -25,6 +26,7 @@ import { createSqliteSheetRepository } from '~~/server/storage/sheetRepository'
 import { createSqlitePendingMoveResolutionRepository } from '~~/server/storage/pendingMoveResolutionRepository'
 import { createSqliteLivePlayOpRepository } from '~~/server/storage/opRepository'
 import { createSqliteRealtimeEventRepository } from '~~/server/storage/realtimeEventRepository'
+import { canonicalBattlefieldZoneComponents } from '~~/server/domain/moveAutomation/battlefieldZoneDefinitions'
 import type { CharacterSheet } from '~/types/characterSheet'
 import type { GridAnchor, TabletopMap } from '~/types/map'
 
@@ -36,13 +38,14 @@ const sheet = (
   species: string,
   nickname: string,
   currentHp = 60,
+  abilities: CharacterSheet['abilities'] = [],
 ): CharacterSheet => ({
   slug,
   species,
   nickname,
   level: 20,
   movelist: [],
-  abilities: [],
+  abilities,
   combat: { currentHp },
   revision: 2,
 })
@@ -89,6 +92,7 @@ interface Harness {
 const createHarness = (options: {
   readonly map?: TabletopMap
   readonly provokerHp?: number
+  readonly provokerAbilities?: CharacterSheet['abilities']
 } = {}): Harness => {
   const root = mkdtempSync(join(tmpdir(), 'rotom-movement-aoo-'))
   tempRoots.push(root)
@@ -108,7 +112,10 @@ const createHarness = (options: {
   const map = options.map ?? arenaMap()
   maps.save({ slug: map.slug, document: map, revision: map.revision ?? 0, updatedAt: map.updatedAt ?? 20 })
   for (const document of [
-    sheet('provoker-mon', 'Pikachu', 'Provoker', options.provokerHp ?? 60),
+    sheet(
+      'provoker-mon', 'Pikachu', 'Provoker', options.provokerHp ?? 60,
+      options.provokerAbilities ?? [],
+    ),
     sheet('defender-mon', 'Machop', 'Defender'),
   ]) {
     sheets.save({
@@ -146,6 +153,7 @@ const moveToken = async (harness: Harness, opId: string, destination: GridAnchor
     database: harness.database,
     commandExecutor: harness.executor,
     pendingResolutionRepository: harness.pending,
+    sheetRepository: harness.sheets,
     readSheet: harness.readSheet,
     listProfiles: () => [],
     now: () => 1_000,
@@ -253,6 +261,68 @@ describe('movement Attack of Opportunity interruption', () => {
     const summaries = harness.maps.getBySlug('arena')?.encounterState?.pendingResolutionSummaries ?? []
     expect(summaries).toEqual([])
   })
+
+  it('applies post-interrupt Hazards on resume while effective Infiltrator remains immune', async () => {
+    const components = canonicalBattlefieldZoneComponents({ kind: 'hazard', effectId: 'spikes' })
+    const withHazard = (): TabletopMap => {
+      const map = arenaMap()
+      return {
+        ...map,
+        voxels: [0, 2].flatMap(z => Array.from({ length: 6 }, (_value, offset) => ({
+          x: offset + 2, y: 0, z, materialId: 'cave_stone', tags: ['wall'],
+          blocksMovement: true, blocksSight: true,
+        }))),
+        placements: map.placements.map(placement => ({
+          ...placement,
+          sideId: placement.id === 'provoker' ? 'heroes' : 'rivals',
+        })),
+        encounterState: {
+          ...createEmptyEncounterState(),
+          sides: {
+            heroes: { id: 'heroes', label: 'Heroes', status: 'active' },
+            rivals: { id: 'rivals', label: 'Rivals', status: 'active' },
+          },
+          zones: [parseEncounterZone({
+            id: 'zone.resumed.spikes', kind: 'hazard',
+            source: {
+              kind: 'operation', operationId: 'operation.resumed.spikes',
+              moveId: 'move.spikes', placementId: 'defender',
+            },
+            sideId: 'rivals',
+            geometry: { kind: 'cells', cells: [{ x: 4, y: 0, z: 1 }] },
+            layer: 1, duration: { kind: 'scene', remaining: null },
+            stacking: { kind: 'refresh', maxLayers: null },
+            hooks: components.hooks, modifiers: components.modifiers,
+            tags: ['hazard', 'spikes'],
+            payload: {
+              hazardId: 'spikes', familyId: 'hazard.spikes', charges: null, maxCharges: null,
+            },
+          })],
+        },
+      }
+    }
+    const plain = createHarness({ map: withHazard() })
+    await moveToken(plain, 'op_movementhazard_plain', { x: 5, y: 0, z: 1 })
+    expect((plain.sheets.getByRef('pokemon', 'provoker-mon')!.sheet.combat as { currentHp: number }).currentHp)
+      .toBe(60)
+    passResponse(plain, 'op_movementhazard_pass_plain', 8)
+    expect((plain.sheets.getByRef('pokemon', 'provoker-mon')!.sheet.combat as { currentHp: number }).currentHp)
+      .toBeLessThan(60)
+
+    const infiltrator = createHarness({
+      map: withHazard(),
+      provokerAbilities: [{
+        name: 'Infiltrator', automation: {
+          schemaVersion: 1, instanceId: 'base:infiltrator', canonicalId: 'Infiltrator',
+          definitionVersion: null, selections: [],
+        },
+      }],
+    })
+    await moveToken(infiltrator, 'op_movementhazard_infiltrator', { x: 5, y: 0, z: 1 })
+    passResponse(infiltrator, 'op_movementhazard_pass_infiltrator', 8)
+    expect((infiltrator.sheets.getByRef('pokemon', 'provoker-mon')!.sheet.combat as { currentHp: number }).currentHp)
+      .toBe(60)
+  }, 30_000)
 
   it('completes the full movement without suspending when no eligible defender is adjacent', async () => {
     // Place the defender far from the provoker's path so no adjacency is lost.

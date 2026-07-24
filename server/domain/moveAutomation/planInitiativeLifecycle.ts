@@ -21,6 +21,8 @@ import { normalizeRevision } from '#shared/sessionRevisions'
 import type { CharacterSheet } from '~/types/characterSheet'
 import type { SheetKind, SheetPlacement, TabletopMap } from '~/types/map'
 import type { TrainerSheet } from '~/types/trainerSheet'
+import { placementToSpawned } from '~/utils/placement'
+import { computeTickValue } from '~/utils/ptuHp'
 import { cloneMapFieldEffects } from '~/utils/mapFieldEffects'
 import { deepCloneJson } from '~/utils/serialization'
 import {
@@ -92,6 +94,12 @@ import {
   aa068DrySkinLifecycleRecipientIds,
   createAa068DrySkinLifecycleHandler,
 } from '../abilityAutomation/mechanics/aa068LifecycleIntegration'
+import {
+  aa075IceFaceLifecycleRecipientIds,
+  applyAa075IceFaceLifecycleTemporaryHpOwnership,
+  createAa075IceFaceLifecycleHandler,
+} from '../abilityAutomation/mechanics/aa075LifecycleIntegration'
+import { reconcileAa075IceFaceTemporaryHpOwnershipAfterMove } from '../abilityAutomation/mechanics/aa075TemporaryHpIntegration'
 
 export type InitiativeLifecyclePlanningErrorCode =
   | 'active-placement-missing'
@@ -638,6 +646,24 @@ export const planEncounterLifecycle = (
         canonicalId: 'Dry Skin',
       })
     : Object.freeze([])
+  const iceFacePlacementIds = events.some(event => event.kind === 'round-start' && event.round === 1)
+    ? effectiveAbilityPlacementIds({
+        map: lifecycleMap,
+        state: previousEncounterState,
+        snapshots: loadSheets(),
+        canonicalId: 'Ice Face',
+      })
+    : Object.freeze([])
+  const iceFaceTemporaryHp = new Map(iceFacePlacementIds.flatMap((placementId) => {
+    const placement = lifecycleMap.placements.find(candidate => candidate.id === placementId)
+    if (!placement) return []
+    const snapshots = loadSheets()
+    const token = placementToSpawned(placement, {
+      pokemon: new Map(snapshots.pokemonSheets),
+      trainer: new Map(snapshots.trainerSheets),
+    }, lifecycleMap)
+    return token ? [[placementId, computeTickValue(token.fullMaxHp ?? token.maxHp) * 2] as const] : []
+  }))
   const hasDelayedReactionDebt = previousEncounterState.effects.some(effect => (
     effect.kind === 'capability' && effect.payload.capabilityId === 'aa067.delayed-reaction.hp-loss'
   ))
@@ -663,6 +689,9 @@ export const planEncounterLifecycle = (
     ...(aa067Handler ? [aa067Handler] : []),
     ...(drySkinPlacementIds.length > 0
       ? [createAa068DrySkinLifecycleHandler({ map: lifecycleMap, drySkinPlacementIds })]
+      : []),
+    ...(iceFaceTemporaryHp.size > 0
+      ? [createAa075IceFaceLifecycleHandler({ temporaryHpByPlacementId: iceFaceTemporaryHp })]
       : []),
     ...(corrosiveToxinsHandler ? [corrosiveToxinsHandler] : []),
     ...(weatherHandler ? [weatherHandler] : []),
@@ -757,10 +786,15 @@ export const planEncounterLifecycle = (
         operation,
         candidateRecipientIds: aa067Recipients,
       })
-      recipientsByOperationId.set(operation.id, terrainLifecycleRecipientIds({
+      const aa075Recipients = aa075IceFaceLifecycleRecipientIds({
         context,
         operation,
         candidateRecipientIds: aa068Recipients,
+      })
+      recipientsByOperationId.set(operation.id, terrainLifecycleRecipientIds({
+        context,
+        operation,
+        candidateRecipientIds: aa075Recipients,
       }))
     }
     const emissions: MoveResolvedCoreTokenEffectOperation[] = reduction.operations.map(
@@ -842,6 +876,12 @@ export const planEncounterLifecycle = (
       abilityEntities: entities,
     }, abilityEvent).encounter
   }
+  currentEncounterState = applyAa075IceFaceLifecycleTemporaryHpOwnership({
+    map: nextMap,
+    state: currentEncounterState,
+    operations: reduction.operations,
+    results: operationResults,
+  })
   currentEncounterState = advanceAa065CorrosiveToxinsResidualCounters({
     state: currentEncounterState,
     operations: reduction.operations,
@@ -854,6 +894,16 @@ export const planEncounterLifecycle = (
     loadSheets,
   })
   nextMap.encounterState = deepCloneJson(currentEncounterState)
+  nextMap = reconcileAa075IceFaceTemporaryHpOwnershipAfterMove({
+    previousMap: input.map,
+    nextMap,
+    operations: reduction.operations.map(operation => ({
+      operation,
+      recipientIds: operationResults.find(result => result.operationId === operation.id)
+        ?.recipients.map(recipient => recipient.recipientId) ?? [],
+    })),
+  })
+  currentEncounterState = parseEncounterState(nextMap.encounterState)
   const rollLedger = random.complete()
 
   return Object.freeze({

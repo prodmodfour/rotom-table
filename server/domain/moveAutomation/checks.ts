@@ -26,6 +26,7 @@ import {
   type MoveRuleSelectorState,
 } from './evaluateExpression'
 import { applyEncounterNumericModifiers } from './encounterNumericModifiers'
+import { aa075InfiltratorStealthBonus } from '../abilityAutomation/mechanics/aa075StaticIntegration'
 
 export type MoveCheckExecutionErrorCode =
   | 'check-recipient-required'
@@ -350,6 +351,13 @@ const prepareRoll = (options: {
         baseValue: 0,
       })
     : { value: 0, steps: [] as const }
+  const infiltratorBonus = source.kind === 'skill'
+    ? aa075InfiltratorStealthBonus({
+        context: options.input.context,
+        placementId: options.placementId,
+        skill: source.skill ?? '',
+      })
+    : 0
   const resolvedModifiers: readonly MoveCheckModifierResolution[] = [
     ...modifiers,
     ...skillCheck.steps.map(step => deepFreeze({
@@ -358,6 +366,12 @@ const prepareRoll = (options: {
       value: step.delta,
       evaluationTrace: [] as const,
     })),
+    ...(infiltratorBonus === 0 ? [] : [deepFreeze({
+      sourceId: 'ability.infiltrator',
+      reasonCode: 'ability.infiltrator.stealth-bonus',
+      value: infiltratorBonus,
+      evaluationTrace: [] as const,
+    })]),
   ]
   const ledgerModifiers: MoveAutomationRollModifier[] = [
     ...(source.basisModifier === null

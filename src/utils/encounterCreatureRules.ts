@@ -80,6 +80,8 @@ export const projectEncounterCreatureRuleToken = (input: {
   readonly placement: Pick<SheetPlacement, 'id' | 'sideId' | 'position'>
   readonly token: SpawnedPokemon
   readonly effects?: readonly EncounterEffect[] | null
+  /** Materialize the complete unchanged profile when a static form needs it. */
+  readonly forceProfile?: boolean
 }): SpawnedPokemon => {
   const profile = projectEncounterCreatureRules({
     base: {
@@ -93,7 +95,7 @@ export const projectEncounterCreatureRuleToken = (input: {
     effects: input.effects,
     target: targetFor(input.placement, input.token),
   })
-  if (profile.sources.length === 0) return input.token
+  if (profile.sources.length === 0 && input.forceProfile !== true) return input.token
 
   const { abilityNames: _abilityNames, ...retained } = input.token
   const size = displaySize(profile.size)

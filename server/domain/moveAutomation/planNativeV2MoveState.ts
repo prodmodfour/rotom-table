@@ -76,6 +76,7 @@ import { recordAa066DeadlyPoisonTriggers } from '../abilityAutomation/mechanics/
 import { resolveSheetAbilityInstances } from '../abilityAutomation/instanceParameters'
 import { applyAa067DelayedReactionDebts } from '../abilityAutomation/mechanics/aa067LifecycleIntegration'
 import { aa067DiamondDefenseMoveFrequency } from '../abilityAutomation/mechanics/aa067StaticIntegration'
+import { reconcileAa075IceFaceTemporaryHpOwnershipAfterMove } from '../abilityAutomation/mechanics/aa075TemporaryHpIntegration'
 import { planEncounterMoveResourceCosts } from './planMoveResources'
 
 export type NativeMoveSpecPlanErrorCode =
@@ -708,11 +709,14 @@ const applyTriggeredAbilityPayments = (input: {
     ['ability.heat-mirage.optional-evasion', 'Heat Mirage'],
     ['ability.heliovolt.optional-weather', 'Heliovolt'],
     ['ability.horde-break.optional-cleanse', 'Horde Break'],
+    ['ability.ignition-boost.optional-damage', 'Ignition Boost'],
+    ['ability.innards-out.optional-retaliation', 'Innards Out'],
   ])
   const noFrequency = new Set([
     'Anger Point', 'Aqua Boost', 'Beast Boost', 'Celebrate', 'Chilling Neigh',
     'Color Change', 'Combo Striker', 'Flavorful Aroma', 'Fox Fire',
     'Galvanize', 'Gooey', 'Grim Neigh', 'Heat Mirage', 'Heliovolt', 'Horde Break',
+    'Ignition Boost',
   ])
   const daily = new Set(['Dig Away', 'Disguise', 'Dodge'])
   const triggeringMoveByOperationId = new Map(input.traces.flatMap(trace => (
@@ -882,7 +886,7 @@ const applyTriggeredAbilityPayments = (input: {
     if (existingByOperation && existingByOperation !== existing) {
       fail('state-change-conflict', `${canonicalId} response operation already paid another resource.`)
     }
-    const limit = ['Bodyguard', 'Dancer', 'Dragon’s Maw', 'Drown Out', 'Giver', 'Gore', 'Gulp Missile'].includes(canonicalId)
+    const limit = ['Bodyguard', 'Dancer', 'Dragon’s Maw', 'Drown Out', 'Giver', 'Gore', 'Gulp Missile', 'Innards Out'].includes(canonicalId)
       ? 2
       : 1
     if (!existingByOperation && (existing?.spent ?? 0) >= limit) {
@@ -1015,10 +1019,15 @@ export const planNativeV2MoveState = (options: {
   context.reads.recordPlacement(context.actor.placement)
 
   const originOperationId = options.operationId ?? 'op_nativeplan0001'
-  const mapWithCoreEffects = applyNativeCoreMapChanges(
+  const mapWithCoreChanges = applyNativeCoreMapChanges(
     options.map,
     native.coreStateChanges,
   )
+  const mapWithCoreEffects = reconcileAa075IceFaceTemporaryHpOwnershipAfterMove({
+    previousMap: options.map,
+    nextMap: mapWithCoreChanges,
+    operations: native.operations,
+  })
   const mapAfterHelpingHand = consumeHelpingHandBonus({
     map: mapWithCoreEffects,
     resolution: options.resolution.helpingHandBonus,

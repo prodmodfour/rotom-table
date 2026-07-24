@@ -87,6 +87,12 @@ export const AA074_ABILITY_MECHANIC_IDS = [
   'aa074.huge-power-pure-power', 'aa074.hunger-switch', 'aa074.hustle',
   'aa074.hydration', 'aa074.hyper-cutter',
 ] as const
+export const AA075_ABILITY_MECHANIC_IDS = [
+  'aa075.hypnotic', 'aa075.ice-body', 'aa075.ice-face', 'aa075.ice-scales',
+  'aa075.ice-shield', 'aa075.ignition-boost', 'aa075.illuminate',
+  'aa075.illusion', 'aa075.immunity', 'aa075.imposter', 'aa075.infiltrator',
+  'aa075.innards-out',
+] as const
 export type Aa060AbilityMechanicId = (typeof AA060_ABILITY_MECHANIC_IDS)[number]
 export type AbilityMechanicId = Aa060AbilityMechanicId
   | (typeof AA061_ABILITY_MECHANIC_IDS)[number]
@@ -103,6 +109,7 @@ export type AbilityMechanicId = Aa060AbilityMechanicId
   | (typeof AA072_ABILITY_MECHANIC_IDS)[number]
   | (typeof AA073_ABILITY_MECHANIC_IDS)[number]
   | (typeof AA074_ABILITY_MECHANIC_IDS)[number]
+  | (typeof AA075_ABILITY_MECHANIC_IDS)[number]
 export interface AbilityMechanicOperation extends AbilitySpecJsonObject {
   readonly kind: typeof ABILITY_MECHANIC_OPERATION_KIND
   readonly id: string
@@ -301,6 +308,18 @@ const CONFIG_FIELDS: Readonly<Record<AbilityMechanicId, readonly string[]>> = {
   'aa074.hustle': ['accuracyPenalty', 'damageRollBonus', 'appliesToAllMoves'],
   'aa074.hydration': ['action', 'frequency', 'cureCount', 'rainyWeatherIgnoresFrequency'],
   'aa074.hyper-cutter': ['protectedStat', 'preventStatLowering', 'preventCombatStageLowering'],
+  'aa075.hypnotic': ['connectionMoveId', 'automaticHit'],
+  'aa075.ice-body': ['action', 'frequency', 'healingTicks', 'hpThresholdNumerator', 'hpThresholdDenominator', 'weatherAlternative'],
+  'aa075.ice-face': ['action', 'requiredWeather', 'temporaryHpTicks', 'battleStartTemporaryHpTicks', 'hailDamageImmunity', 'iceForm', 'noiceForm'],
+  'aa075.ice-scales': ['damageClass', 'resistanceSteps'],
+  'aa075.ice-shield': ['action', 'frequency', 'maximumSegments', 'requiredAdjacentSegments', 'contiguous', 'segmentHeight', 'segmentHitPoints', 'segmentDamageReduction', 'segmentType', 'duration', 'blockingTerrain'],
+  'aa075.ignition-boost': ['action', 'frequency', 'triggerRelationship', 'triggerType', 'damagingOnly', 'damageBonus', 'maximumBenefits'],
+  'aa075.illuminate': ['incomingAccuracyPenalty', 'bypassCapability'],
+  'aa075.illusion': ['operation', 'markAction', 'assumeAction', 'dismissAction', 'markCapacitySource', 'assumeFrequency', 'appearanceOnly', 'breakTrigger'],
+  'aa075.immunity': ['blockedConditions'],
+  'aa075.imposter': ['connectionMoveId', 'actionOverride', 'requiresUntransformed'],
+  'aa075.infiltrator': ['stealthBonus', 'ignoreHazards', 'blockResponsiveBlessings', 'bypassSubstitute'],
+  'aa075.innards-out': ['action', 'frequency', 'damagingOnly', 'resistanceSteps', 'foeRange', 'reflectedRealHpMultiplier', 'resolvesAfterAttack', 'resolvesAfterFainting'],
 }
 const MECHANIC_SET = new Set<string>([
   ...AA060_ABILITY_MECHANIC_IDS, ...AA061_ABILITY_MECHANIC_IDS,
@@ -310,7 +329,7 @@ const MECHANIC_SET = new Set<string>([
   ...AA068_ABILITY_MECHANIC_IDS, ...AA069_ABILITY_MECHANIC_IDS,
   ...AA070_ABILITY_MECHANIC_IDS, ...AA071_ABILITY_MECHANIC_IDS,
   ...AA072_ABILITY_MECHANIC_IDS, ...AA073_ABILITY_MECHANIC_IDS,
-  ...AA074_ABILITY_MECHANIC_IDS,
+  ...AA074_ABILITY_MECHANIC_IDS, ...AA075_ABILITY_MECHANIC_IDS,
 ])
 const ID = /^[a-z0-9]+(?:[._:/-][a-z0-9]+)*$/
 const fail = (code: AbilityMechanicValidationError['code'], path: string, detail: string): never => { throw new AbilityMechanicValidationError(code, path, detail) }
@@ -1265,6 +1284,59 @@ const parseConfig = (mechanicId: AbilityMechanicId, value: unknown, path: string
     case 'aa074.hyper-cutter': return {
       protectedStat: oneOf(config.protectedStat, ['attack'], `${path}.protectedStat`), preventStatLowering: bool(config.preventStatLowering, `${path}.preventStatLowering`),
       preventCombatStageLowering: bool(config.preventCombatStageLowering, `${path}.preventCombatStageLowering`),
+    }
+    case 'aa075.hypnotic': return {
+      connectionMoveId: oneOf(config.connectionMoveId, ['Hypnosis'], `${path}.connectionMoveId`), automaticHit: bool(config.automaticHit, `${path}.automaticHit`),
+    }
+    case 'aa075.ice-body': return {
+      action: oneOf(config.action, ['swift'], `${path}.action`), frequency: oneOf(config.frequency, ['daily-x5'], `${path}.frequency`),
+      healingTicks: integer(config.healingTicks, `${path}.healingTicks`, 1, 1), hpThresholdNumerator: integer(config.hpThresholdNumerator, `${path}.hpThresholdNumerator`, 1, 1),
+      hpThresholdDenominator: integer(config.hpThresholdDenominator, `${path}.hpThresholdDenominator`, 2, 2), weatherAlternative: oneOf(config.weatherAlternative, ['hail'], `${path}.weatherAlternative`),
+    }
+    case 'aa075.ice-face': return {
+      action: oneOf(config.action, ['standard'], `${path}.action`), requiredWeather: oneOf(config.requiredWeather, ['hail'], `${path}.requiredWeather`),
+      temporaryHpTicks: integer(config.temporaryHpTicks, `${path}.temporaryHpTicks`, 2, 2), battleStartTemporaryHpTicks: integer(config.battleStartTemporaryHpTicks, `${path}.battleStartTemporaryHpTicks`, 2, 2),
+      hailDamageImmunity: bool(config.hailDamageImmunity, `${path}.hailDamageImmunity`), iceForm: oneOf(config.iceForm, ['ice-face'], `${path}.iceForm`), noiceForm: oneOf(config.noiceForm, ['noice-face'], `${path}.noiceForm`),
+    }
+    case 'aa075.ice-scales': return {
+      damageClass: oneOf(config.damageClass, ['special'], `${path}.damageClass`), resistanceSteps: integer(config.resistanceSteps, `${path}.resistanceSteps`, 1, 1),
+    }
+    case 'aa075.ice-shield': return {
+      action: oneOf(config.action, ['standard-interrupt'], `${path}.action`), frequency: oneOf(config.frequency, ['scene'], `${path}.frequency`),
+      maximumSegments: integer(config.maximumSegments, `${path}.maximumSegments`, 3, 3), requiredAdjacentSegments: integer(config.requiredAdjacentSegments, `${path}.requiredAdjacentSegments`, 1, 1),
+      contiguous: bool(config.contiguous, `${path}.contiguous`), segmentHeight: integer(config.segmentHeight, `${path}.segmentHeight`, 2, 2),
+      segmentHitPoints: integer(config.segmentHitPoints, `${path}.segmentHitPoints`, 10, 10), segmentDamageReduction: integer(config.segmentDamageReduction, `${path}.segmentDamageReduction`, 5, 5),
+      segmentType: oneOf(config.segmentType, ['ice'], `${path}.segmentType`), duration: oneOf(config.duration, ['encounter'], `${path}.duration`), blockingTerrain: bool(config.blockingTerrain, `${path}.blockingTerrain`),
+    }
+    case 'aa075.ignition-boost': return {
+      action: oneOf(config.action, ['free'], `${path}.action`), frequency: oneOf(config.frequency, ['at-will'], `${path}.frequency`),
+      triggerRelationship: oneOf(config.triggerRelationship, ['adjacent-ally'], `${path}.triggerRelationship`), triggerType: oneOf(config.triggerType, ['fire'], `${path}.triggerType`),
+      damagingOnly: bool(config.damagingOnly, `${path}.damagingOnly`), damageBonus: integer(config.damageBonus, `${path}.damageBonus`, 5, 5), maximumBenefits: integer(config.maximumBenefits, `${path}.maximumBenefits`, 1, 1),
+    }
+    case 'aa075.illuminate': return {
+      incomingAccuracyPenalty: integer(config.incomingAccuracyPenalty, `${path}.incomingAccuracyPenalty`, -2, -2), bypassCapability: oneOf(config.bypassCapability, ['blindsense'], `${path}.bypassCapability`),
+    }
+    case 'aa075.illusion': return {
+      operation: oneOf(config.operation, ['mark-creature', 'mark-object', 'replace-creature', 'replace-object', 'assume', 'dismiss'], `${path}.operation`),
+      markAction: oneOf(config.markAction, ['standard'], `${path}.markAction`), assumeAction: oneOf(config.assumeAction, ['free'], `${path}.assumeAction`), dismissAction: oneOf(config.dismissAction, ['free'], `${path}.dismissAction`),
+      markCapacitySource: oneOf(config.markCapacitySource, ['focus-rank'], `${path}.markCapacitySource`), assumeFrequency: oneOf(config.assumeFrequency, ['once-per-round'], `${path}.assumeFrequency`),
+      appearanceOnly: bool(config.appearanceOnly, `${path}.appearanceOnly`), breakTrigger: oneOf(config.breakTrigger, ['damaging-move-hit'], `${path}.breakTrigger`),
+    }
+    case 'aa075.immunity': return {
+      blockedConditions: stringArray(config.blockedConditions, ['poisoned', 'badly-poisoned'], `${path}.blockedConditions`),
+    }
+    case 'aa075.imposter': return {
+      connectionMoveId: oneOf(config.connectionMoveId, ['Transform'], `${path}.connectionMoveId`), actionOverride: oneOf(config.actionOverride, ['free-interrupt'], `${path}.actionOverride`),
+      requiresUntransformed: bool(config.requiresUntransformed, `${path}.requiresUntransformed`),
+    }
+    case 'aa075.infiltrator': return {
+      stealthBonus: integer(config.stealthBonus, `${path}.stealthBonus`, 2, 2), ignoreHazards: bool(config.ignoreHazards, `${path}.ignoreHazards`),
+      blockResponsiveBlessings: bool(config.blockResponsiveBlessings, `${path}.blockResponsiveBlessings`), bypassSubstitute: bool(config.bypassSubstitute, `${path}.bypassSubstitute`),
+    }
+    case 'aa075.innards-out': return {
+      action: oneOf(config.action, ['free'], `${path}.action`), frequency: oneOf(config.frequency, ['scene-x2'], `${path}.frequency`), damagingOnly: bool(config.damagingOnly, `${path}.damagingOnly`),
+      resistanceSteps: integer(config.resistanceSteps, `${path}.resistanceSteps`, 1, 1), foeRange: integer(config.foeRange, `${path}.foeRange`, 2, 2), reflectedRealHpMultiplier: integer(config.reflectedRealHpMultiplier, `${path}.reflectedRealHpMultiplier`, 2, 2),
+      resolvesAfterAttack: bool(config.resolvesAfterAttack, `${path}.resolvesAfterAttack`), resolvesAfterFainting: bool(config.resolvesAfterFainting, `${path}.resolvesAfterFainting`),
     }
   }
 }

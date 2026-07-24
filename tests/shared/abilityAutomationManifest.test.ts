@@ -140,10 +140,12 @@ describe('ability automation semantic manifest', () => {
         'Harvest', 'Haunt', 'Hay Fever', 'Healer', 'Heat Mirage', 'Heatproof',
         'Heavy Metal', 'Heliovolt', 'Helper', 'Honey Paws', 'Honey Thief',
         'Horde Break', 'Huge Power', 'Huge Power / Pure Power', 'Hunger Switch',
-        'Hustle', 'Hydration', 'Hyper Cutter',
+        'Hustle', 'Hydration', 'Hyper Cutter', 'Hypnotic', 'Ice Body', 'Ice Face',
+        'Ice Scales', 'Ice Shield', 'Ignition Boost', 'Illuminate', 'Illusion', 'Immunity',
+        'Imposter', 'Infiltrator', 'Innards Out',
       ])
-    expect(manifest.abilities.filter(ability => ability.baseStatus === 'blocked')).toHaveLength(303)
-    expect(manifest.abilities.filter(ability => ability.runtime.kind === 'unimplemented')).toHaveLength(303)
+    expect(manifest.abilities.filter(ability => ability.baseStatus === 'blocked')).toHaveLength(291)
+    expect(manifest.abilities.filter(ability => ability.runtime.kind === 'unimplemented')).toHaveLength(291)
   })
 
   it('keeps bootstrap mode hints non-authoritative and maps every row to its plan cohort', () => {

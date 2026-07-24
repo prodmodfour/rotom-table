@@ -453,6 +453,7 @@ export const materializeBattlefieldZoneEntryLifecycle = (input: {
     input.subject.placementId !== input.movement.movement.placementId
     || (input.subject.sideId !== null && !isEncounterSideId(input.subject.sideId))
     || (input.subject.grounding !== 'grounded' && input.subject.grounding !== 'airborne')
+    || (input.subject.ignoreHazards !== undefined && typeof input.subject.ignoreHazards !== 'boolean')
     || !Array.isArray(input.subject.typeIds)
     || input.subject.typeIds.some(typeId => (
       typeof typeId !== 'string'

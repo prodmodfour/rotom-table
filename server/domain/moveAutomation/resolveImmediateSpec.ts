@@ -109,10 +109,16 @@ import {
   aa074MoveOverlayOperations,
 } from '../abilityAutomation/mechanics/aa074MoveIntegration'
 import {
+  AA075_ILLUSION_BREAK_REASON,
+  AA075_INNARDS_OUT_HP_REASON,
+  aa075MoveOverlayOperations,
+} from '../abilityAutomation/mechanics/aa075MoveIntegration'
+import {
   AA068_DUST_CLOUD_TARGETING_OVERRIDE,
   aa068DrySkinCancelsRecipientEffect,
   aa068DustCloudBurstEnabled,
 } from '../abilityAutomation/mechanics/aa068StaticIntegration'
+import { aa075InfiltratorBypassesTemporaryHp } from '../abilityAutomation/mechanics/aa075StaticIntegration'
 
 export type ImmediateMoveSpecResolutionErrorCode =
   | 'execution-rejected'
@@ -334,6 +340,7 @@ const createDamageQuery = (options: {
     operation: string | { readonly id: string },
   ) => MoveCoreTokenDynamicRecipientSets
   readonly gorillaTacticsTriggeringDamage: boolean
+  readonly ignitionBoostTriggeringDamage: boolean
 }): MoveCoreTokenDamageQuery => {
   return {
     resolve: ({ operation, recipient }: MoveDamageResolutionQueryInput) => {
@@ -411,20 +418,35 @@ const createDamageQuery = (options: {
         selectedTargets,
         resolvedMoveType,
         naturalCriticalRoll: criticalEntry?.naturalResult ?? null,
-        ...(options.gorillaTacticsTriggeringDamage ? { responseDamageModifiers: [{
-          id: 'ability.gorilla-tactics.triggering-damage',
-          stage: 'pre-type-modifiers', priority: 40,
-          source: { kind: 'ability', id: 'Gorilla Tactics' },
-          stackingGroup: 'aa072-gorilla-tactics-triggering',
-          reasonCode: 'ability.gorilla-tactics.triggering-damage',
-          operation: 'add', value: 10,
-        }] as const } : {}),
+        ...(options.gorillaTacticsTriggeringDamage || options.ignitionBoostTriggeringDamage
+          ? { responseDamageModifiers: [
+              ...(options.gorillaTacticsTriggeringDamage ? [{
+                id: 'ability.gorilla-tactics.triggering-damage',
+                stage: 'pre-type-modifiers' as const, priority: 40,
+                source: { kind: 'ability' as const, id: 'Gorilla Tactics' },
+                stackingGroup: 'aa072-gorilla-tactics-triggering',
+                reasonCode: 'ability.gorilla-tactics.triggering-damage',
+                operation: 'add' as const, value: 10,
+              }] : []),
+              ...(options.ignitionBoostTriggeringDamage ? [{
+                id: 'ability.ignition-boost.triggering-damage',
+                stage: 'pre-type-modifiers' as const, priority: 41,
+                source: { kind: 'ability' as const, id: 'Ignition Boost' },
+                stackingGroup: 'aa075-ignition-boost-triggering',
+                reasonCode: 'ability.ignition-boost.triggering-damage',
+                operation: 'add' as const, value: 5,
+              }] : []),
+            ] } : {}),
         ...(contextualDamageBase ? { contextualDamageBase } : {}),
       })
       return {
         hpLoss: calculation.breakdown.hpLoss,
         preventedBy: calculation.moveType.immunitySource,
         moveType: calculation.moveType.moveType,
+        ...(aa075InfiltratorBypassesTemporaryHp({
+          context,
+          recipientId: recipient.placement.id,
+        }) ? { bypassTemporaryHp: true } : {}),
         consultedPlacementIds: [],
         details: {
           moveType: calculation.moveType,
@@ -981,6 +1003,7 @@ const executeReviewedMoveSpec = (
     ...aa072MoveOverlayOperations(overlayInput),
     ...aa073MoveOverlayOperations(overlayInput),
     ...aa074MoveOverlayOperations(overlayInput),
+    ...aa075MoveOverlayOperations(overlayInput),
   ]
   const boneLordLine = script.moveName === 'Bonemerang'
     && aa062BoneLordEmpowersMove(options.context, 'Bonemerang')
@@ -1215,7 +1238,9 @@ export const reduceCompletedMoveSpec = (
   for (const { operation } of uncommittedOperations) {
     if (operation.reasonCode === 'ability.flame-body.burn-attacker'
       || operation.reasonCode.startsWith('ability.gulp-missile.retaliation-')
-      || operation.reasonCode === AA074_HONEY_THIEF_TEMP_HP_REASON) {
+      || operation.reasonCode === AA074_HONEY_THIEF_TEMP_HP_REASON
+      || operation.reasonCode === AA075_ILLUSION_BREAK_REASON
+      || operation.reasonCode === AA075_INNARDS_OUT_HP_REASON) {
       recipientControlledOperationIds.add(operation.id)
     }
     const operationContext = contextForOperation(operation)
@@ -1232,10 +1257,14 @@ export const reduceCompletedMoveSpec = (
   }
   const multiHit = execution.multiHitExecutions[0] ?? null
   const postMultiReactionStages = coreOperations.every(({ operation }) => (
-    operation.kind === 'combat-stage'
-    && operation.phase === 'after-damage'
-    && operation.source.kind === 'operation'
-    && responseOwnerByOperationId.has(operation.source.id)
+    (operation.kind === 'combat-stage'
+      && operation.phase === 'after-damage'
+      && operation.source.kind === 'operation'
+      && responseOwnerByOperationId.has(operation.source.id))
+    || (operation.kind === 'direct-hp'
+      && operation.reasonCode === AA075_INNARDS_OUT_HP_REASON
+      && operation.source.kind === 'operation'
+      && responseOwnerByOperationId.has(operation.source.id))
   ))
   if (execution.multiHitExecutions.length > 1
     || (multiHit && coreOperations.length > 0 && !postMultiReactionStages)) {
@@ -1280,6 +1309,11 @@ export const reduceCompletedMoveSpec = (
             event.kind === 'choice'
             && event.reasonCode === 'ability.gorilla-tactics.optional-lock'
             && event.optionId === 'ability.gorilla-tactics.use'
+          )),
+          ignitionBoostTriggeringDamage: execution.trace.events.some(event => (
+            event.kind === 'choice'
+            && event.reasonCode === 'ability.ignition-boost.optional-damage'
+            && event.optionId === 'ability.ignition-boost.use'
           )),
         })
       : undefined,

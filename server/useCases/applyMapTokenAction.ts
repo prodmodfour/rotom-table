@@ -90,6 +90,11 @@ import { EncounterResourceReductionError } from '../domain/moveAutomation/reduce
 import { planAuthoritativeMovementResources } from '../domain/movement/planMovementResources'
 import { applyAuthoritativeMovementMapTransition } from '../domain/movement/applyMovementTransition'
 import {
+  planBattlefieldZoneMovement,
+  type PlannedBattlefieldZoneMovement,
+} from '../domain/moveAutomation/planBattlefieldZoneMovement'
+import type { AuthoritativeMoveSheetWritePlan } from '../domain/planAuthoritativeMoveState'
+import {
   isPreStepMovementAttackOfOpportunity,
   materializeMovementAttackOfOpportunity,
   movementAttackOfOpportunityPersistenceIdentity,
@@ -170,6 +175,7 @@ export interface MapTokenActionDependencies {
   commandExecutor?: Pick<AuthoritativeLivePlayCommandExecutor, 'execute'>
   mapRepository?: Pick<MapRepository, 'getBySlug' | 'applyLivePlayUpdate'>
   sheetRepository?: Pick<SheetRepository<Record<string, unknown>>, 'getByRef'>
+    & Partial<Pick<SheetRepository<Record<string, unknown>>, 'applyLivePlayUpdate' | 'assertRevisions'>>
   pendingResolutionRepository?: Pick<
     PendingMoveResolutionRepository,
     'getByOrigin' | 'create'
@@ -242,6 +248,7 @@ const actionDependencies = (dependencies: MapTokenActionDependencies) => {
     maxMovementLogEntries: dependencies.maxMovementLogEntries,
     commandExecutor: dependencies.commandExecutor ?? livePlayMapTokenCommandExecutor,
     mapRepository: dependencies.mapRepository ?? sqliteMapRepository,
+    sheetRepository,
     pendingResolutionRepository,
     listProfiles: dependencies.listProfiles ?? listPlayerProfiles,
     database,
@@ -327,6 +334,9 @@ const authoritativeMovementSheetsForMap = (
 interface ResolvedNormalTokenMovement {
   readonly movement: AuthoritativeMovementSuccess
   readonly encounterState: EncounterState
+  /** Resource and zone state before the placement endpoint is committed. */
+  readonly mapBeforeTransition: TabletopMap
+  readonly zonePlan: PlannedBattlefieldZoneMovement | null
   readonly sheets: AuthoritativeMovementSheets
 }
 
@@ -363,9 +373,29 @@ const resolveNormalTokenMovement = (
         movement,
         sourceOperationId,
       })
+      const resourceMap: TabletopMap = {
+        ...resourcePlan.nextMap,
+        encounterState: resourcePlan.currentEncounterState,
+      }
+      const zonePlan = movement.policy.kind === 'standard'
+        ? planBattlefieldZoneMovement({
+            map: resourceMap,
+            pokemonSheets: sheets.pokemon,
+            trainerSheets: sheets.trainer,
+            movement: {
+              movement,
+              movementId: `movement:${sourceOperationId}`,
+              sourceOperationId,
+              mode: 'voluntary',
+            },
+            time: context.map.updatedAt ?? 0,
+          })
+        : null
       return {
         movement,
-        encounterState: resourcePlan.currentEncounterState,
+        encounterState: zonePlan?.currentEncounterState ?? resourcePlan.currentEncounterState,
+        mapBeforeTransition: zonePlan?.nextMap ?? resourceMap,
+        zonePlan,
         sheets,
       }
     }
@@ -411,6 +441,40 @@ const assertMovementSheetReads = (
   }
 }
 
+const persistMovementSheetWrites = (
+  writes: readonly AuthoritativeMoveSheetWritePlan[],
+  repository: MapTokenActionDependencySet['sheetRepository'],
+): void => {
+  if (writes.length === 0) return
+  if (!repository.applyLivePlayUpdate) {
+    throw new MapTokenActionUseCaseError(
+      409,
+      'Authoritative movement produced sheet state without an atomic sheet repository.',
+    )
+  }
+  for (const write of writes) {
+    const result = repository.applyLivePlayUpdate({
+      kind: write.kind,
+      slug: write.slug,
+      expectedRevision: write.expectedRevision,
+      nextSheet: write.nextSheet as unknown as Record<string, unknown>,
+    })
+    if (result === 'stale') {
+      throw new MapTokenActionUseCaseError(
+        409,
+        `${write.kind} sheet ${write.slug} changed before movement zone effects could persist.`,
+      )
+    }
+    const stored = repository.getByRef(write.kind, write.slug)
+    if (!stored || normalizeRevision(stored.revision) !== normalizeRevision(write.revision)) {
+      throw new MapTokenActionUseCaseError(
+        409,
+        `${write.kind} sheet ${write.slug} did not commit its planned movement-zone revision.`,
+      )
+    }
+  }
+}
+
 interface AppliedMapTokenChange {
   readonly nextMap: TabletopMap
   readonly placement: SheetPlacement
@@ -427,7 +491,7 @@ const applyResolvedMoveTokenToMap = (
   dependencies: Required<Pick<MapTokenActionDependencies, 'readSheet' | 'now'>> & Pick<MapTokenActionDependencies, 'maxMovementLogEntries'>,
 ): AppliedMapTokenChange => {
   const transition = applyAuthoritativeMovementMapTransition({
-    map: context.map,
+    map: resolved.mapBeforeTransition,
     placementId: context.placement.id,
     destination: resolved.movement.destination,
     distance: resolved.movement.cost,
@@ -440,7 +504,12 @@ const applyResolvedMoveTokenToMap = (
     nextMap: transition.nextMap,
     placement: transition.placement,
     timestamp: transition.nextMap.updatedAt,
-    turnResources: transition.turnResources,
+    turnResources: {
+      previous: parseEncounterState(
+        context.map.encounterState ?? createEmptyEncounterState(),
+      ).turnResources,
+      current: resolved.encounterState.turnResources,
+    },
   }
 }
 
@@ -1088,6 +1157,67 @@ const commandPatch = (
   }
 }
 
+const movementZoneHpPatches = (
+  command: MoveTokenLivePlayCommand,
+  revision: number,
+  zonePlan: PlannedBattlefieldZoneMovement | null,
+): readonly LivePlayPatch[] => {
+  if (!zonePlan) return []
+  const byRecipient = new Map<string, {
+    readonly previous: Record<string, unknown>
+    readonly current: Record<string, unknown>
+  }>()
+  for (const result of zonePlan.coreOperationResults) {
+    for (const recipient of result.recipients) {
+      if (recipient.previous.kind !== 'hp' || recipient.current.kind !== 'hp') continue
+      if (
+        recipient.previous.currentHp === recipient.current.currentHp
+        && recipient.previous.temporaryHp === recipient.current.temporaryHp
+        && recipient.previous.injuries === recipient.current.injuries
+      ) continue
+      const existing = byRecipient.get(recipient.recipientId)
+      byRecipient.set(recipient.recipientId, {
+        previous: existing?.previous ?? { ...recipient.previous },
+        current: { ...recipient.current },
+      })
+    }
+  }
+  return [...byRecipient.entries()].flatMap(([placementId, hp]) => {
+    const placement = zonePlan.nextMap.placements.find(candidate => candidate.id === placementId)
+    if (!placement) return []
+    const write = zonePlan.sheetWrites.find(candidate => (
+      candidate.kind === placement.sheetKind && candidate.slug === placement.sheetSlug
+    ))
+    return [{
+      schemaVersion: command.schemaVersion,
+      type: LIVE_PLAY_PATCH_TYPES.TOKEN_HP,
+      mapSlug: command.mapSlug,
+      revision,
+      scopes: [
+        { kind: 'token', placementId, field: 'hp' },
+        {
+          kind: 'sheet', sheetKind: placement.sheetKind,
+          sheetSlug: placement.sheetSlug, field: 'hp',
+        },
+      ],
+      payload: {
+        placementId,
+        sheetKind: placement.sheetKind,
+        sheetSlug: placement.sheetSlug,
+        previous: hp.previous,
+        current: hp.current,
+        previousTemporaryHp: hp.previous.temporaryHp,
+        currentTemporaryHp: hp.current.temporaryHp,
+        sheetRevision: write?.revision ?? normalizeRevision(
+          zonePlan.sheetReads.find(read => (
+            read.kind === placement.sheetKind && read.slug === placement.sheetSlug
+          ))?.revision,
+        ),
+      },
+    } satisfies LivePlayPatch]
+  })
+}
+
 const persistedCommandResponse = (
   result: LivePlayCommandResult,
   context: ResolvedMapTokenCommandResponseContext | null,
@@ -1158,6 +1288,28 @@ interface SuspendedMovementApplication {
   readonly pendingResolution: PendingMoveResolution
   readonly change: AppliedMapTokenChange
   readonly result: PendingMoveDeclarationResult
+  readonly sheetReads: readonly AuthoritativeMovementSheetRead[]
+  readonly sheetWrites: readonly AuthoritativeMoveSheetWritePlan[]
+}
+
+const movementPrefixThroughStep = (
+  movement: AuthoritativeMovementSuccess,
+  completedStepCount: number,
+): AuthoritativeMovementSuccess | null => {
+  const count = Math.max(0, Math.min(completedStepCount, movement.triggeringSteps.length))
+  if (count === 0) return null
+  const triggeringSteps = movement.triggeringSteps.slice(0, count).map((step, index) => ({
+    ...step,
+    finalDestination: index === count - 1,
+  }))
+  const destination = triggeringSteps.at(-1)!.to
+  return {
+    ...movement,
+    destination: { ...destination },
+    path: movement.path.slice(0, count + 1).map(cell => ({ ...cell })),
+    cost: triggeringSteps.at(-1)!.cumulativeCost,
+    triggeringSteps,
+  }
 }
 
 const suspendMovementForOpportunityAttack = (input: {
@@ -1199,12 +1351,36 @@ const suspendMovementForOpportunityAttack = (input: {
     distance: materialized.committedCost,
     spendAction: true,
   })
+  const resourceMap: TabletopMap = {
+    ...resources.nextMap,
+    encounterState: resources.currentEncounterState,
+  }
+  const committedMovement = input.resolved.movement.policy.kind === 'standard'
+    ? movementPrefixThroughStep(
+        input.resolved.movement,
+        materialized.lifecycle.completedStepCount,
+      )
+    : null
+  const zonePlan = committedMovement
+    ? planBattlefieldZoneMovement({
+        map: resourceMap,
+        pokemonSheets: input.resolved.sheets.pokemon,
+        trainerSheets: input.resolved.sheets.trainer,
+        movement: {
+          movement: committedMovement,
+          movementId: `movement:${input.command.opId}`,
+          sourceOperationId: input.command.opId,
+          mode: 'voluntary',
+        },
+        time: timestamp,
+      })
+    : null
   const transition = applyAuthoritativeMovementMapTransition({
-    map: input.context.map,
+    map: zonePlan?.nextMap ?? resourceMap,
     placementId: input.context.placement.id,
     destination: materialized.lifecycle.currentPosition,
     distance: materialized.committedCost,
-    encounterState: resources.currentEncounterState,
+    encounterState: zonePlan?.currentEncounterState ?? resources.currentEncounterState,
     timestamp,
     userName: sheetDisplayName(input.context.placement, input.dependencies.readSheet),
     maxLogEntries: input.dependencies.maxMovementLogEntries,
@@ -1229,7 +1405,12 @@ const suspendMovementForOpportunityAttack = (input: {
       nextMap,
       placement: transition.placement,
       timestamp,
-      turnResources: transition.turnResources,
+      turnResources: {
+        previous: parseEncounterState(
+          input.context.map.encounterState ?? createEmptyEncounterState(),
+        ).turnResources,
+        current: (zonePlan?.currentEncounterState ?? resources.currentEncounterState).turnResources,
+      },
     },
     result: createPendingMoveDeclarationResult({
       opId: input.command.opId,
@@ -1238,6 +1419,10 @@ const suspendMovementForOpportunityAttack = (input: {
       revision,
       pendingResolution: materialized.pendingResolution.publicSummary,
     }),
+    sheetReads: zonePlan
+      ? [...input.resolved.movement.sheetReads, ...zonePlan.sheetReads]
+      : input.resolved.movement.sheetReads,
+    sheetWrites: zonePlan?.sheetWrites ?? [],
   }
 }
 
@@ -1289,6 +1474,8 @@ export const executeMapTokenLivePlayCommandUseCase = async (
   const deps = actionDependencies(dependencies)
   let persistedContext: ResolvedMapTokenCommandResponseContext | null = null
   let movementSheetReads: readonly AuthoritativeMovementSheetRead[] = []
+  let movementSheetWrites: readonly AuthoritativeMoveSheetWritePlan[] = []
+  let appliedMovementZonePlan: PlannedBattlefieldZoneMovement | null = null
   let suspendedMovement: SuspendedMovementApplication | null = null
 
   const result = await deps.commandExecutor.execute<MapTokenLivePlayCommand, ResolvedMapWriteContext, MapTokenLivePlayActor>({
@@ -1421,7 +1608,11 @@ export const executeMapTokenLivePlayCommandUseCase = async (
               deps.readSheet,
             )
           : null
-        movementSheetReads = movement?.movement.sheetReads ?? []
+        movementSheetReads = movement
+          ? [...movement.movement.sheetReads, ...(movement.zonePlan?.sheetReads ?? [])]
+          : []
+        movementSheetWrites = movement?.zonePlan?.sheetWrites ?? []
+        appliedMovementZonePlan = movement?.zonePlan ?? null
         if (movement && context) {
           const suspended = suspendMovementForOpportunityAttack({
             command,
@@ -1432,6 +1623,8 @@ export const executeMapTokenLivePlayCommandUseCase = async (
           })
           if (suspended) {
             suspendedMovement = suspended
+            movementSheetReads = suspended.sheetReads
+            movementSheetWrites = suspended.sheetWrites
             return {
               status: 'suspended',
               nextMap: {
@@ -1483,7 +1676,12 @@ export const executeMapTokenLivePlayCommandUseCase = async (
         nextMap: nextContext,
         previousRevision: currentRevision,
         revision,
-        patches: [commandPatch(command, revision, change)],
+        patches: [
+          commandPatch(command, revision, change),
+          ...(command.type === LIVE_PLAY_COMMAND_TYPES.MOVE_TOKEN
+            ? movementZoneHpPatches(command, revision, appliedMovementZonePlan)
+            : []),
+        ],
       }
     },
     persist: () => {
@@ -1523,6 +1721,7 @@ export const executeMapTokenLivePlayCommandUseCase = async (
           `Map ${result.mapSlug}.json not found after suspended movement`,
         ),
         saveOpResult: () => {
+          persistMovementSheetWrites(movementSheetWrites, deps.sheetRepository)
           const stored = deps.pendingResolutionRepository!.create({
             resolution: suspended.pendingResolution,
             declarationPlan: createMoveStateChangePlan([]),
@@ -1566,7 +1765,10 @@ export const executeMapTokenLivePlayCommandUseCase = async (
           : {}),
         staleError: () => new MapTokenActionUseCaseError(409, `Map ${result.mapSlug} changed before the live-play command could be persisted`),
         missingMapError: () => new MapTokenActionUseCaseError(404, `Map ${result.mapSlug}.json not found after live-play command`),
-        saveOpResult,
+        saveOpResult: () => {
+          persistMovementSheetWrites(movementSheetWrites, deps.sheetRepository)
+          return saveOpResult()
+        },
         verify: (authoritativeMap) => {
           placement = placementId
             ? authoritativeMap.placements.find((candidate) => candidate.id === placementId) ?? placementFromPlacementPatch(result)

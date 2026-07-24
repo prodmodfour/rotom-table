@@ -198,10 +198,14 @@ export const resolveWeatherResidualImmunity = (input: {
     && input.context.queries.abilities.has(input.recipient.placement.id, 'Desert Weather')) {
     return { blockedBy: 'Desert Weather', consultedPlacementIds: [] }
   }
+  if (input.weatherKind === 'hail'
+    && input.context.queries.abilities.has(input.recipient.placement.id, 'Ice Face')) {
+    return { blockedBy: 'Ice Face', consultedPlacementIds: [] }
+  }
 
   const directAbility = firstAbility(input.recipient.token.abilityNames, [
     ...UNIVERSAL_WEATHER_IMMUNITY_ABILITIES,
-    ...WEATHER_SELF_IMMUNITY_ABILITIES[input.weatherKind],
+    ...WEATHER_SELF_IMMUNITY_ABILITIES[input.weatherKind].filter(ability => ability !== 'Ice Face'),
   ])
   if (directAbility) return { blockedBy: directAbility, consultedPlacementIds: [] }
 

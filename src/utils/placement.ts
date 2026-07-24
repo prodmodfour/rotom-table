@@ -27,6 +27,7 @@ import { projectEffectiveConditions } from '~/utils/encounterConditions'
 import { projectEncounterCreatureRuleToken } from '~/utils/encounterCreatureRules'
 import { projectEffectiveMovement } from '~/utils/encounterMovement'
 import { projectEncounterTransformationToken } from '~/utils/encounterTransformations'
+import { projectEncounterIllusionAppearances } from '~/utils/encounterIllusions'
 import { resolvePokemonRuleCapabilityProjection } from '~/utils/pokemonRuleCapabilities'
 import { projectNativeAbilityTokenStats } from '~/utils/nativeAbilityTokenStats'
 import {
@@ -344,7 +345,7 @@ export const placementsToSpawned = (
     const spawned = placementToSpawned(placement, sheets, map)
     if (spawned) out.push(spawned)
   }
-  return out
+  return projectEncounterIllusionAppearances({ tokens: out, map })
 }
 
 export const createPlacementId = (): string =>

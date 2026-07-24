@@ -40,6 +40,7 @@ export interface MoveAutomationHpUpdateAccumulator {
     token: SpawnedPokemon,
     hpLoss: number,
     source: PtuInjuryHpReductionSource,
+    options?: { readonly bypassTemporaryHp?: boolean },
   ): MoveAutomationHpLossResult
   toUpdates(): MoveAutomationHpUpdate[]
 }
@@ -110,14 +111,21 @@ export const createMoveAutomationHpUpdateAccumulator = (): MoveAutomationHpUpdat
       setEntryHp(entry, currentHp)
       return result
     },
-    applyLossWithInjuryAutomation: (token, hpLoss, source) => {
+    applyLossWithInjuryAutomation: (token, hpLoss, source, options = {}) => {
       const entry = ensureEntry(token)
       const beforeEffectiveHp = entry.currentHp + entry.temporaryHp
-      const damage = applyDamageToTemporaryHp({
-        currentHp: entry.currentHp,
-        temporaryHp: entry.temporaryHp,
-        hpLoss,
-      })
+      const damage = options.bypassTemporaryHp
+        ? {
+            currentHp: Math.max(0, entry.currentHp - Math.max(0, Math.floor(hpLoss))),
+            temporaryHp: entry.temporaryHp,
+            realHpLoss: Math.min(entry.currentHp, Math.max(0, Math.floor(hpLoss))),
+            absorbedByTemporaryHp: 0,
+          }
+        : applyDamageToTemporaryHp({
+            currentHp: entry.currentHp,
+            temporaryHp: entry.temporaryHp,
+            hpLoss,
+          })
       const result = computePtuInjuryAutomation({
         beforeHp: entry.currentHp,
         afterHp: damage.currentHp,

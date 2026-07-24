@@ -47,6 +47,10 @@ import {
   aa074HungerModeForPlacement,
 } from '#shared/abilityAutomation/aa074'
 import {
+  aa075IllusionMarks,
+  aa075IllusionUsedThisRound,
+} from '#shared/abilityAutomation/aa075'
+import {
   actorCanControlMapPlacement,
   playerProfileLinkedTrainerSheetsForTokenControl,
 } from '../policies/playerProfileTokenControlPolicy'
@@ -329,6 +333,21 @@ const declarationsFor = (
               branchId: `condition.${condition.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`,
             }))
         }
+        else if (context.runtime.canonicalId === 'Illusion'
+          && (modeId === 'replace-creature' || modeId === 'replace-object' || modeId === 'assume')) {
+          const marks = aa075IllusionMarks({
+            entries: context.map.encounterState?.abilityOwnedState?.entries,
+            ownerPlacementId: context.actor.placement.id,
+            sourceAbilityInstanceId: abilityInstanceId,
+          })
+          options = modeId === 'assume'
+            && aa075IllusionUsedThisRound(context.map.encounterState?.effects, context.actor.placement.id)
+            ? []
+            : marks.map((mark, index) => option(
+                declaration.id, index, declaration.kind,
+                { kind: 'branch', branchId: mark.stateId },
+              ))
+        }
         else fail(422, `Ability branch declaration ${declaration.id} requires a reviewed declaration adapter.`)
       }
       else if (declaration.kind === 'cell') {
@@ -363,6 +382,39 @@ const declarationsFor = (
             if (seen.has(key)
               || !aa072IsYieldingPlantCell(context.map, cell)
               || gardener.plants[key]?.lastAppliedDayKey === dayKey) continue
+            seen.add(key)
+            cells.push(cell)
+            if (cells.length > 512) fail(422, `Ability cell declaration ${declaration.id} exceeds the bounded offer size.`)
+          }
+        }
+        else if (context.runtime.canonicalId === 'Ice Shield' && modeId === 'activate') {
+          const actor = context.actor.token
+          for (let z = Math.max(0, actor.position.z - 3); z <= Math.min(context.map.dimensions.z - 1, actor.position.z + actor.base + 2); z += 1) {
+            for (let x = Math.max(0, actor.position.x - 3); x <= Math.min(context.map.dimensions.x - 1, actor.position.x + actor.base + 2); x += 1) {
+              const y = actor.position.y
+              if (y + 1 >= context.map.dimensions.y) continue
+              const dx = x < actor.position.x
+                ? actor.position.x - x
+                : x >= actor.position.x + actor.base
+                  ? x - (actor.position.x + actor.base - 1)
+                  : 0
+              const dz = z < actor.position.z
+                ? actor.position.z - z
+                : z >= actor.position.z + actor.base
+                  ? z - (actor.position.z + actor.base - 1)
+                  : 0
+              if (dx === 0 && dz === 0 || dx + dz > 3) continue
+              cells.push({ x, y, z })
+            }
+          }
+        }
+        else if (context.runtime.canonicalId === 'Illusion'
+          && (modeId === 'mark-object' || modeId === 'replace-object')) {
+          const seen = new Set<string>()
+          for (const voxel of context.map.voxels) {
+            const cell = { x: voxel.x, y: voxel.y, z: voxel.z }
+            const key = `${cell.x}:${cell.y}:${cell.z}`
+            if (seen.has(key)) continue
             seen.add(key)
             cells.push(cell)
             if (cells.length > 512) fail(422, `Ability cell declaration ${declaration.id} exceeds the bounded offer size.`)

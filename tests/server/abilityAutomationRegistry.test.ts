@@ -230,7 +230,7 @@ describe('ability automation production runtime registry', () => {
   })
 
   it('ships only exact evidence-backed production selections', () => {
-    expect(ABILITY_AUTOMATION_RUNTIME_REGISTRY.size).toBe(180)
+    expect(ABILITY_AUTOMATION_RUNTIME_REGISTRY.size).toBe(192)
     expect(ABILITY_AUTOMATION_RUNTIME_REGISTRY.entries().map(runtime => runtime.canonicalId))
       .toEqual([
         'Abominable', 'Absorb Force', 'Accelerate', 'Adaptability', 'Aerilate', 'Aftermath',
@@ -264,7 +264,9 @@ describe('ability automation production runtime registry', () => {
         'Harvest', 'Haunt', 'Hay Fever', 'Healer', 'Heat Mirage', 'Heatproof',
         'Heavy Metal', 'Heliovolt', 'Helper', 'Honey Paws', 'Honey Thief',
         'Horde Break', 'Huge Power', 'Huge Power / Pure Power', 'Hunger Switch',
-        'Hustle', 'Hydration', 'Hyper Cutter',
+        'Hustle', 'Hydration', 'Hyper Cutter', 'Hypnotic', 'Ice Body', 'Ice Face',
+        'Ice Scales', 'Ice Shield', 'Ignition Boost', 'Illuminate', 'Illusion', 'Immunity',
+        'Imposter', 'Infiltrator', 'Innards Out',
       ])
     expect(registeredAbilityAutomationRuntimeFor('Adaptability')).toMatchObject({
       kind: 'abilityspec-v1', version: 1,

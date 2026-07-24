@@ -16,6 +16,7 @@ import {
   resolveMovement,
   type AuthoritativeMovementSuccess,
 } from '~~/server/domain/movement/resolveMovement'
+import { creatureRuleOverlayEncounterEffectFixture } from '../fixtures/moveAutomation/encounterEffects'
 
 const placement = (
   sideId: 'red' | 'blue' | undefined = 'blue',
@@ -294,6 +295,47 @@ describe('battlefield zone movement entry effects', () => {
       }),
     }))
     expect(planned.decisions.filter(decision => decision.outcome === 'triggered')).toHaveLength(1)
+  })
+
+  it('lets an effective Infiltrator cross Hazards without triggering or consuming them', () => {
+    const infiltrator = sheet(['Normal'], {
+      abilities: [{
+        name: 'Infiltrator',
+        automation: {
+          schemaVersion: 1,
+          instanceId: 'base:infiltrator',
+          canonicalId: 'Infiltrator',
+          definitionVersion: null,
+          selections: [],
+        },
+      }],
+    })
+    const result = plan({ sheet: infiltrator })
+    expect(result.decisions.map(decision => decision.outcome)).toEqual([
+      'ability-immune', 'ability-immune',
+    ])
+    expect(result.operations).toEqual([])
+    expect(result.stateChanges.changes).toEqual([])
+    expect(result.currentEncounterState.zones).toHaveLength(1)
+
+    const suppression = creatureRuleOverlayEncounterEffectFixture({
+      domain: 'ability', action: 'suppress', values: [],
+      referencePlacementId: null, suppressionScope: 'all',
+    })
+    const suppressedMap = mapFixture()
+    suppressedMap.encounterState = {
+      ...suppressedMap.encounterState!,
+      effects: [{
+        ...suppression,
+        id: 'effect.infiltrator.suppressed',
+        affected: { placementIds: ['mover'], sideIds: [], cells: [] },
+      }],
+    }
+    const suppressed = plan({ map: suppressedMap, sheet: infiltrator })
+    expect(suppressed.decisions.map(decision => decision.outcome)).toEqual([
+      'triggered', 'guarded-once-per-movement',
+    ])
+    expect(suppressed.operations.length).toBeGreaterThan(0)
   })
 
   it('fails enemy mechanics closed for source-side, unknown-side, and airborne movers', () => {

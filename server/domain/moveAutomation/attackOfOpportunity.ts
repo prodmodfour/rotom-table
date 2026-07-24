@@ -73,6 +73,10 @@ import {
   applyAuthoritativeMovementMapTransition,
   type AuthoritativeMovementMapTransition,
 } from '../movement/applyMovementTransition'
+import {
+  planBattlefieldZoneMovement,
+  type PlannedBattlefieldZoneMovement,
+} from './planBattlefieldZoneMovement'
 
 export const ATTACK_OF_OPPORTUNITY_PROGRAM_VERSION = 2 as const
 export { ATTACK_OF_OPPORTUNITY_CANONICAL_ID } from '#shared/moveAutomation/attackOfOpportunity'
@@ -1010,10 +1014,30 @@ interface ContinuedOpportunityMovement {
   readonly map: TabletopMap
   readonly transition: AuthoritativeMovementMapTransition | null
   readonly movement: AuthoritativeMovementSuccess | null
+  readonly zonePlan: PlannedBattlefieldZoneMovement | null
   readonly lifecycle: ReturnType<typeof runAuthoritativeMovementLifecycle> | null
   readonly windows: readonly PendingMoveReactionResponseWindow[]
   readonly context: PendingMovePreStepAttackOfOpportunityContext
   readonly outcome: AttackOfOpportunityMovementOutcome
+}
+
+const movementPrefixThroughStep = (
+  movement: AuthoritativeMovementSuccess,
+  completedStepCount: number,
+): AuthoritativeMovementSuccess | null => {
+  const count = Math.max(0, Math.min(completedStepCount, movement.triggeringSteps.length))
+  if (count === 0) return null
+  const triggeringSteps = movement.triggeringSteps.slice(0, count).map((step, index) => ({
+    ...step,
+    finalDestination: index === count - 1,
+  }))
+  return {
+    ...movement,
+    destination: { ...triggeringSteps.at(-1)!.to },
+    path: movement.path.slice(0, count + 1).map(cell => ({ ...cell })),
+    cost: triggeringSteps.at(-1)!.cumulativeCost,
+    triggeringSteps,
+  }
 }
 
 const continueOpportunityMovement = (input: {
@@ -1035,6 +1059,7 @@ const continueOpportunityMovement = (input: {
       map: input.map,
       transition: null,
       movement: null,
+      zonePlan: null,
       lifecycle: null,
       windows: [],
       context,
@@ -1054,6 +1079,7 @@ const continueOpportunityMovement = (input: {
       map: input.map,
       transition: null,
       movement: null,
+      zonePlan: null,
       lifecycle: null,
       windows: [],
       context,
@@ -1074,6 +1100,7 @@ const continueOpportunityMovement = (input: {
       map: input.map,
       transition: null,
       movement: null,
+      zonePlan: null,
       lifecycle: null,
       windows: [],
       context,
@@ -1121,12 +1148,38 @@ const continueOpportunityMovement = (input: {
     distance: segmentDistance,
     spendAction: false,
   })
+  const resourceMap: TabletopMap = {
+    ...resources.nextMap,
+    encounterState: resources.currentEncounterState,
+  }
+  const completedMovement = movement.policy.kind === 'standard'
+    ? movementPrefixThroughStep(movement, lifecycle.completedStepCount)
+    : null
+  const completedLifecycleInput = completedMovement ? {
+    movement: completedMovement,
+    movementId: context.movementPath.movementId,
+    sourceOperationId: context.movementPath.sourceOperationId,
+    mode: 'voluntary' as const,
+  } : null
+  const zonePlan = completedLifecycleInput
+    ? planBattlefieldZoneMovement({
+        map: resourceMap,
+        pokemonSheets: input.documents.pokemonSheets,
+        trainerSheets: input.documents.trainerSheets,
+        movement: completedLifecycleInput,
+        time: input.plannedAt,
+        cursor: {
+          ...cursor,
+          pathHash: authoritativeMovementLifecyclePathHash(completedLifecycleInput),
+        },
+      })
+    : null
   const transition = applyAuthoritativeMovementMapTransition({
-    map: input.map,
+    map: zonePlan?.nextMap ?? resourceMap,
     placementId: input.pending.actorPlacementId,
     destination: lifecycle.currentPosition,
     distance: segmentDistance,
-    encounterState: resources.currentEncounterState,
+    encounterState: zonePlan?.currentEncounterState ?? resources.currentEncounterState,
     timestamp: input.plannedAt,
     userName: placementDisplayName(currentPlacement, input.documents),
     maxLogEntries: input.maxMovementLogEntries,
@@ -1136,6 +1189,7 @@ const continueOpportunityMovement = (input: {
       map: transition.nextMap,
       transition,
       movement,
+      zonePlan,
       lifecycle,
       windows: [],
       context,
@@ -1182,6 +1236,7 @@ const continueOpportunityMovement = (input: {
     map: transition.nextMap,
     transition,
     movement,
+    zonePlan,
     lifecycle,
     windows,
     context: nextContext,
@@ -1197,6 +1252,34 @@ const withoutPlanIdentity = (
 ): MoveStateChangeInput => {
   const { id: _id, order: _order, ...input } = change
   return deepCloneJson(input) as MoveStateChangeInput
+}
+
+const coalesceSheetWrites = (
+  writes: readonly AuthoritativeMoveSheetWritePlan[],
+): readonly AuthoritativeMoveSheetWritePlan[] => {
+  const order: string[] = []
+  const grouped = new Map<string, AuthoritativeMoveSheetWritePlan[]>()
+  for (const write of writes) {
+    const key = `${write.kind}:${write.slug}`
+    if (!grouped.has(key)) order.push(key)
+    grouped.set(key, [...(grouped.get(key) ?? []), write])
+  }
+  return order.map((key) => {
+    const group = grouped.get(key)!
+    const first = group[0]!
+    const last = group.at(-1)!
+    if (group.length === 1) return first
+    const revision = nextRevision(first.expectedRevision)
+    return {
+      ...last,
+      expectedRevision: first.expectedRevision,
+      revision,
+      previousSheet: deepCloneJson(first.previousSheet),
+      nextSheet: { ...deepCloneJson(last.nextSheet), revision },
+      placementIds: [...new Set(group.flatMap(write => write.placementIds))],
+      changedFields: [...new Set(group.flatMap(write => write.changedFields))],
+    }
+  })
 }
 
 const finalizedChildPlan = (input: {
@@ -1367,6 +1450,7 @@ export const planAttackOfOpportunityResponse = (input: {
   let movementTransition: AuthoritativeMovementMapTransition | null = null
   let movementOutcome: AttackOfOpportunityMovementOutcome = { kind: 'not-applicable' }
   let movementReads: AuthoritativeMovementSuccess['sheetReads'] = []
+  let movementZoneWrites: readonly AuthoritativeMoveSheetWritePlan[] = []
 
   if (isPreStepMovementAttackOfOpportunity(pending)) {
     movementOutcome = {
@@ -1388,7 +1472,11 @@ export const planAttackOfOpportunityResponse = (input: {
       workingMap = continued.map
       movementTransition = continued.transition
       movementOutcome = continued.outcome
-      movementReads = continued.movement?.sheetReads ?? []
+      movementReads = [
+        ...(continued.movement?.sheetReads ?? []),
+        ...(continued.zonePlan?.sheetReads ?? []),
+      ]
+      movementZoneWrites = continued.zonePlan?.sheetWrites ?? []
       continuationContext = continued.context
       outstandingWindows = [...continued.windows]
       if (continued.windows.length > 0) {
@@ -1463,7 +1551,10 @@ export const planAttackOfOpportunityResponse = (input: {
     previousRevision,
     revision,
     sheetReads: deepCloneJson(sheetReads),
-    sheetWrites: deepCloneJson(childPlan?.sheetWrites ?? []),
+    sheetWrites: deepCloneJson(coalesceSheetWrites([
+      ...(childPlan?.sheetWrites ?? []),
+      ...movementZoneWrites,
+    ])),
     pendingResolution: nextPending,
     childMovePlan: finalChild,
     movementTransition,

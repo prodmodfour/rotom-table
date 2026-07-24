@@ -29,6 +29,7 @@ export const SIDE_DAMAGE_RESISTANCE_REASON_CODES = Object.freeze({
   depleted: 'side-damage-resistance.charges-depleted',
   immune: 'side-damage-resistance.target-immune',
   suppressed: 'side-damage-resistance.effect-suppressed',
+  responsiveActivationBlocked: 'side-damage-resistance.responsive-activation-blocked',
   unavailable: 'side-damage-resistance.unavailable',
   unknownSide: 'side-damage-resistance.target-side-unknown',
 } as const)
@@ -149,6 +150,8 @@ export const createSideDamageResistanceResolver = (input: {
   readonly placements: readonly Pick<SheetPlacement, 'id' | 'sideId'>[]
   readonly sides: EncounterSideDirectory
   readonly effects: readonly EncounterEffect[]
+  /** Exact Blessing effect IDs barred from responding to this acting creature. */
+  readonly responsiveActivationBlockedEffectIds?: ReadonlySet<string>
 }): SideDamageResistanceResolver => {
   const placementSides = placementSideDirectory(input)
   const effects = input.effects.filter(isSideDamageResistanceEffect)
@@ -214,7 +217,10 @@ export const createSideDamageResistanceResolver = (input: {
     const activeClassEffects = classEffects.filter(
       effect => effect.suppression.sources.length === 0,
     )
-    const available = activeClassEffects.find((effect) => {
+    const responsiveClassEffects = activeClassEffects.filter(effect => (
+      !input.responsiveActivationBlockedEffectIds?.has(effect.id)
+    ))
+    const available = responsiveClassEffects.find((effect) => {
       const charges = remaining.get(effect.id)
       return charges === null || (charges ?? 0) > 0
     })
@@ -250,12 +256,20 @@ export const createSideDamageResistanceResolver = (input: {
         effect: classEffects[0],
       })
     }
+    else if (responsiveClassEffects.length === 0) {
+      evaluation = notApplicable({
+        request,
+        targetSideId,
+        reasonCode: SIDE_DAMAGE_RESISTANCE_REASON_CODES.responsiveActivationBlocked,
+        effect: activeClassEffects[0],
+      })
+    }
     else if (request.effectivenessMultiplier === 0) {
       evaluation = notApplicable({
         request,
         targetSideId,
         reasonCode: SIDE_DAMAGE_RESISTANCE_REASON_CODES.immune,
-        effect: activeClassEffects[0],
+        effect: responsiveClassEffects[0],
       })
     }
     else if (!available) {

@@ -706,6 +706,7 @@ export const reduceDamageEffectForRecipient = (options: {
     recipient.token,
     requestedHpLoss,
     'damage',
+    { bypassTemporaryHp: resolution.bypassTemporaryHp === true },
   )
   const current = hpSnapshot(accumulator, recipient)
   if (snapshotsEqual(previous, current)) {

@@ -58,6 +58,7 @@ import { createSqliteAuthoritativeLivePlayCommandExecutor } from '../livePlay/sq
 import { livePlaySheetUpdateRealtimeAppendInputs } from '../livePlay/sheetUpdateRealtime'
 import { getRotomDatabase, type RotomDatabase } from '../storage/database'
 import { sqliteMapRepository, type MapRepository } from '../storage/mapRepository'
+import { reconcileAa075IceFaceTemporaryHpOwnershipAfterMove } from '../domain/abilityAutomation/mechanics/aa075TemporaryHpIntegration'
 import {
   sqliteSheetRepository,
   type PersistedSheet,
@@ -555,9 +556,16 @@ const applyModifyHp = (
     updated = applyCombatStagesToSheet(context.placement.sheetKind, updated, stages)
   }
   const nextSheet = sheetChanged ? sheetPayloadForPersistence(updated, context.sheet.slug, updatedAt) : undefined
+  const reconciledMap = requestedTemporaryHp === undefined
+    ? berserk.map
+    : reconcileAa075IceFaceTemporaryHpOwnershipAfterMove({
+        previousMap: context.map,
+        nextMap: berserk.map,
+        operations: [],
+      })
   return {
     ...context,
-    map: { ...berserk.map, revision, updatedAt },
+    map: { ...reconciledMap, revision, updatedAt },
     ...(nextSheet ? { nextSheet } : {}),
     ...(sheetChanged ? {
       sheetUpdate: {

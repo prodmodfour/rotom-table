@@ -16,6 +16,7 @@ import {
   aa074HungerSwitchAccuracyModifier,
   aa074HustleAccuracyModifier,
 } from '../abilityAutomation/mechanics/aa074StaticIntegration'
+import { aa075IlluminateAccuracyModifier } from '../abilityAutomation/mechanics/aa075StaticIntegration'
 
 export interface AuthoritativeMoveSightAccuracyResolution {
   readonly sourcePlacementId: string
@@ -183,6 +184,17 @@ export const resolveAuthoritativeMoveUserAccuracy = (
       value: hungerSwitchModifier,
     })
   }
+  const illuminateModifier = aa075IlluminateAccuracyModifier({
+    context,
+    ...(options.targetPlacementId ? { targetPlacementId: options.targetPlacementId } : {}),
+  })
+  if (illuminateModifier !== 0) {
+    modifiers.push({
+      sourceId: 'ability.illuminate',
+      reason: 'Illuminate Accuracy',
+      value: illuminateModifier,
+    })
+  }
   const preEncounterValue = actorAccuracy
     + compoundEyesBonus
     + (helpingHand.length > 0 ? HELPING_HAND_ACCURACY_BONUS : 0)
@@ -191,6 +203,7 @@ export const resolveAuthoritativeMoveUserAccuracy = (
     + aa071Modifiers.reduce((total, modifier) => total + modifier.value, 0)
     + hustleModifier
     + hungerSwitchModifier
+    + illuminateModifier
   const encounterAccuracy = applyEncounterNumericModifiers({
     map: context.map,
     placementId: context.actor.placement.id,

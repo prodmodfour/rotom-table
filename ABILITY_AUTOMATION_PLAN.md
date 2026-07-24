@@ -2,7 +2,7 @@
 
 `PLAN_STATUS: IN_PROGRESS`
 
-`CURRENT_TICKET: AA-075`
+`CURRENT_TICKET: AA-076`
 
 ## Goal
 
@@ -96,14 +96,14 @@ Ability automation should reuse MoveSpec v2 selectors, expressions, operations, 
 
 ## Progress snapshot
 
-- Plan tickets: **74 DONE / 110 total**
+- Plan tickets: **75 DONE / 110 total**
 - Canonical inventory: **483**
-- Semantically complete: **180**
+- Semantically complete: **192**
 - Assisted: **0**
-- Blocked/unimplemented: **303**
+- Blocked/unimplemented: **291**
 - Interaction status: **483 unassessed**
 - Legacy baseline: **45 abilities with 55 partial fragments; 438 with no reviewed legacy fragment**
-- Production runtime: **180 exact manifest-selected AbilitySpec v1 runtimes**; retained legacy paths remain explicit compatibility only
+- Production runtime: **192 exact manifest-selected AbilitySpec v1 runtimes**; retained legacy paths remain explicit compatibility only
 
 ## Tickets
 
@@ -269,9 +269,9 @@ Each cohort must review every named ability against canonical text, implement al
   - Grassy Surge; Grim Neigh; Gulp; Gulp Missile; Guts; Handyman; Harvest; Haunt; Hay Fever; Healer; Heat Mirage; Heatproof
 - [x] **AA-074 — Heavy Metal through Hyper Cutter** — `DONE`
   - Heavy Metal; Heliovolt; Helper; Honey Paws; Honey Thief; Horde Break; Huge Power; Huge Power / Pure Power; Hunger Switch; Hustle; Hydration; Hyper Cutter
-- [ ] **AA-075 — Hypnotic through Innards Out** — `IN_PROGRESS`
+- [x] **AA-075 — Hypnotic through Innards Out** — `DONE`
   - Hypnotic; Ice Body; Ice Face; Ice Scales; Ice Shield; Ignition Boost; Illuminate; Illusion; Immunity; Imposter; Infiltrator; Innards Out
-- [ ] **AA-076 — Inner Focus through Keen Eye** — `TODO`
+- [ ] **AA-076 — Inner Focus through Keen Eye** — `IN_PROGRESS`
   - Inner Focus; Insomnia; Instinct; Interference; Intimidate; Intrepid Sword; Iron Barbs; Iron Fist; Juicy Energy; Justified; Kampfgeist; Keen Eye
 - [ ] **AA-077 — Klutz through Light Metal** — `TODO`
   - Klutz; Lancer; Landslide; Last Chance; Leaf Gift; Leaf Guard; Leaf Rush; Leafy Cloak; Leek Mastery; Levitate; Life Force; Light Metal
@@ -361,3 +361,6 @@ Each cohort must review every named ability against canonical text, implement al
 - **2026-07-22 — Keep AA-068 type and condition effects semantically ordered.** Dragon’s Maw applies its final effectiveness step after ordinary modifiers, Dry Skin separates Water immunity from hit-triggered healing, and Dream Smoke/Effect Spore conditions resolve independently of the triggering Move’s type immunity.
 - **2026-07-22 — Revalidate and persist Dust Cloud targeting authority.** Burst 1 is a presentation choice only until the server confirms an effective Dust Cloud and Powder Move; the reviewed branch ID is retained in bounded pending state for deterministic continuation replay.
 - **2026-07-22 — Encode Effect Spore as authoritative weighted die faces.** Repeated canonical condition IDs are accepted only for bounded random-choice face tables, preserving exact d6 bands without client-authored outcomes.
+- **2026-07-24 — Keep AA-075 visual identity outside authoritative mechanics.** Illusion marks and active appearance survive reconnect as bounded ability-owned state and typed effects, but renderer projection never replaces the user's types, statistics, footprint, capabilities, movement, abilities, or Move rules token.
+- **2026-07-24 — Track Ice Face through feature-owned Temporary HP evidence.** Ice Face form requires its non-dispellable ownership marker and a remaining pool; depletion or an unrelated replacement clears ownership, while battle start and Hail restoration explicitly establish it.
+- **2026-07-24 — Run Infiltrator at exact authoritative boundaries.** Its Substitute bypass recognizes only the typed Substitute capability, responsive Blessing blocking names exact effect IDs without consuming charges, and normal/resumed movement executes zone entry so hazard immunity is observable as `ability-immune`.

@@ -41,6 +41,8 @@ import { executeAa071ActivatedMechanic } from '../domain/abilityAutomation/mecha
 import { executeAa072ActivatedMechanic } from '../domain/abilityAutomation/mechanics/aa072Activated'
 import { executeAa073ActivatedMechanic } from '../domain/abilityAutomation/mechanics/aa073Activated'
 import { executeAa074ActivatedMechanic } from '../domain/abilityAutomation/mechanics/aa074Activated'
+import { executeAa075ActivatedMechanic } from '../domain/abilityAutomation/mechanics/aa075Activated'
+import { reconcileAa075IceFaceTemporaryHpOwnershipAfterMove } from '../domain/abilityAutomation/mechanics/aa075TemporaryHpIntegration'
 import { createAa063AbilityCombatStageImmunities } from '../domain/abilityAutomation/mechanics/aa063DefenseIntegration'
 import { applyNativeCoreMapChanges } from '../domain/moveAutomation/planNativeV2MoveState'
 import { createMoveStateChangePlan, type MoveStateChangePlan } from '../domain/moveAutomation/plan'
@@ -284,7 +286,14 @@ export const resolveAbilityDeclarationUseCase = (
                                       operationId: intent.intentId,
                                       choices: resolved.choices,
                                     })
-                                  : null
+                                  : mechanicOperation.mechanicId.startsWith('aa075.')
+                                    ? executeAa075ActivatedMechanic({
+                                        context,
+                                        operation: mechanicOperation,
+                                        operationId: intent.intentId,
+                                        choices: resolved.choices,
+                                      })
+                                    : null
     const resolvedExecution = execution
       ?? fail(422, 'Ability runtime requires an execution adapter that is not registered for direct declaration resolution.')
     resolutionPlan = resolvedExecution.plan
@@ -326,7 +335,14 @@ export const resolveAbilityDeclarationUseCase = (
     trace = traceAbilityCombatStageReduction(trace, reduction, context.budget)
   }
   const statePlan = createAbilityStatePlan({ context, stateChanges: resolutionPlan, trace })
-  const nextMap = materializeMap(map, resolutionPlan, now)
+  const nextMap = reconcileAa075IceFaceTemporaryHpOwnershipAfterMove({
+    previousMap: map,
+    nextMap: materializeMap(map, resolutionPlan, now),
+    operations: [],
+    ...(context.runtime.canonicalId === 'Ice Face'
+      ? { featureOwnedIncreasePlacementIds: new Set([context.actor.placement.id]) }
+      : {}),
+  })
   const result = parseAbilityResolutionPublicResult({
     schemaVersion: 1,
     kind: 'accepted',

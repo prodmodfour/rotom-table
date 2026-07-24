@@ -1027,17 +1027,22 @@ export const validateMoveSpecOperationSequence = (
     const reactionRequestIds = new Set(indexed.flatMap(({ operation }) => (
       operation.kind === 'reaction-request' ? [operation.id] : []
     )))
-    const overlapping = indexed.find(({ operation }) => (
-      operation.kind === 'damage'
-      || operation.kind === 'direct-hp'
-      || operation.kind === 'heal'
-      || operation.kind === 'condition'
-      || (operation.kind === 'combat-stage' && !(
-        operation.phase === 'after-damage'
+    const overlapping = indexed.find(({ operation }) => {
+      const reviewedPostMultiReaction = operation.phase === 'cleanup'
         && operation.source.kind === 'operation'
         && reactionRequestIds.has(operation.source.id)
-      ))
-    ))
+        && operation.kind === 'direct-hp'
+        && operation.reasonCode === 'ability.innards-out.hp-loss'
+      return operation.kind === 'damage'
+        || (operation.kind === 'direct-hp' && !reviewedPostMultiReaction)
+        || operation.kind === 'heal'
+        || operation.kind === 'condition'
+        || (operation.kind === 'combat-stage' && !(
+          operation.phase === 'after-damage'
+          && operation.source.kind === 'operation'
+          && reactionRequestIds.has(operation.source.id)
+        ))
+    })
     if (overlapping) {
       fail(
         'invalid-definition',

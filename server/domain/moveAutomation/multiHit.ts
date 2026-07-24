@@ -73,6 +73,10 @@ import { aa070FluffyDamageTypeOverlay } from '../abilityAutomation/mechanics/aa0
 import { aa071ResistDamageType } from '../abilityAutomation/mechanics/aa071StaticIntegration'
 import { aa072FurCoatDamageTypeOverlay } from '../abilityAutomation/mechanics/aa072StaticIntegration'
 import { aa073HeatproofDamageTypeOverlay } from '../abilityAutomation/mechanics/aa073StaticIntegration'
+import {
+  aa075IceScalesDamageTypeOverlay,
+  aa075InfiltratorBypassesTemporaryHp,
+} from '../abilityAutomation/mechanics/aa075StaticIntegration'
 import { applyEncounterNumericModifiers } from './encounterNumericModifiers'
 import type {
   MoveCoreTokenEffectRecipient,
@@ -796,8 +800,12 @@ export const executeMoveMultiHitOperation = (options: {
   readonly recipientIds: readonly string[]
   /** Triggered one-damage resistance steps apply to the first successful strike only. */
   readonly firstStrikeResistanceStepsByRecipient?: ReadonlyMap<string, number>
+  /** Whole-attack resistance steps apply independently to every successful strike. */
+  readonly allStrikeResistanceStepsByRecipient?: ReadonlyMap<string, number>
   /** Gorilla Tactics was accepted on this still-uncommitted triggering Move. */
   readonly gorillaTacticsTriggeringDamage?: boolean
+  /** At most one adjacent Ignition Boost provider accepted this triggering Move. */
+  readonly ignitionBoostTriggeringDamage?: boolean
 }): MoveMultiHitExecution => {
   const { context, operation } = options
   assertRollBudget({ context, operation, recipientCount: options.recipientIds.length })
@@ -945,28 +953,40 @@ export const executeMoveMultiHitOperation = (options: {
             recipientId,
             resolved: baseResolvedType,
           })
+          const damageClass = resolveMoveDamageClass({
+            context, operation: damageOperation, recipientId,
+          }).damageClass
           const furCoatType = aa072FurCoatDamageTypeOverlay({
             context,
-            damageClass: resolveMoveDamageClass({
-              context, operation: damageOperation, recipientId,
-            }).damageClass,
+            damageClass,
             recipientId,
             resolved: fluffyType,
           })
-          const resistanceSteps = resistanceAppliedTargetIds.has(recipientId)
+          const firstStrikeResistanceSteps = resistanceAppliedTargetIds.has(recipientId)
             ? 0
             : options.firstStrikeResistanceStepsByRecipient?.get(recipientId) ?? 0
+          const allStrikeResistanceSteps = options.allStrikeResistanceStepsByRecipient?.get(recipientId) ?? 0
+          const resistanceSteps = firstStrikeResistanceSteps + allStrikeResistanceSteps
           const aa071Type = aa071ResistDamageType({
             resolved: furCoatType,
             steps: resistanceSteps,
-            sources: Array.from({ length: resistanceSteps }, () => 'AA-071 triggered resistance'),
+            sources: [
+              ...Array.from({ length: firstStrikeResistanceSteps }, () => 'AA-071 triggered resistance'),
+              ...Array.from({ length: allStrikeResistanceSteps }, () => 'Innards Out'),
+            ],
           })
-          const resolvedType = aa073HeatproofDamageTypeOverlay({
+          const heatproofType = aa073HeatproofDamageTypeOverlay({
             context,
             recipientId,
             resolved: aa071Type,
           })
-          if (resistanceSteps > 0) resistanceAppliedTargetIds.add(recipientId)
+          const resolvedType = aa075IceScalesDamageTypeOverlay({
+            context,
+            damageClass,
+            recipientId,
+            resolved: heatproofType,
+          })
+          if (firstStrikeResistanceSteps > 0) resistanceAppliedTargetIds.add(recipientId)
           const formula = resolveMoveSpecDamageRollFormula({
             context,
             operation: damageOperation,
@@ -1053,14 +1073,25 @@ export const executeMoveMultiHitOperation = (options: {
             }),
             resolvedMoveType: resolvedType,
             naturalCriticalRoll: critical.naturalResult,
-            ...(options.gorillaTacticsTriggeringDamage ? { responseDamageModifiers: [{
-              id: 'ability.gorilla-tactics.triggering-damage',
-              stage: 'pre-type-modifiers', priority: 40,
-              source: { kind: 'ability', id: 'Gorilla Tactics' },
-              stackingGroup: 'aa072-gorilla-tactics-triggering',
-              reasonCode: 'ability.gorilla-tactics.triggering-damage',
-              operation: 'add', value: 10,
-            }] as const } : {}),
+            ...(options.gorillaTacticsTriggeringDamage || options.ignitionBoostTriggeringDamage
+              ? { responseDamageModifiers: [
+                  ...(options.gorillaTacticsTriggeringDamage ? [{
+                    id: 'ability.gorilla-tactics.triggering-damage',
+                    stage: 'pre-type-modifiers' as const, priority: 40,
+                    source: { kind: 'ability' as const, id: 'Gorilla Tactics' },
+                    stackingGroup: 'aa072-gorilla-tactics-triggering',
+                    reasonCode: 'ability.gorilla-tactics.triggering-damage',
+                    operation: 'add' as const, value: 10,
+                  }] : []),
+                  ...(options.ignitionBoostTriggeringDamage ? [{
+                    id: 'ability.ignition-boost.triggering-damage',
+                    stage: 'pre-type-modifiers' as const, priority: 41,
+                    source: { kind: 'ability' as const, id: 'Ignition Boost' },
+                    stackingGroup: 'aa075-ignition-boost-triggering',
+                    reasonCode: 'ability.ignition-boost.triggering-damage',
+                    operation: 'add' as const, value: 5,
+                  }] : []),
+                ] } : {}),
             ...(formula.contextualDamageBase
               ? { contextualDamageBase: formula.contextualDamageBase }
               : {}),
@@ -1074,6 +1105,10 @@ export const executeMoveMultiHitOperation = (options: {
                 hpLoss: calculation.breakdown.hpLoss,
                 preventedBy: calculation.moveType.immunitySource,
                 moveType: calculation.moveType.moveType,
+                ...(aa075InfiltratorBypassesTemporaryHp({
+                  context,
+                  recipientId,
+                }) ? { bypassTemporaryHp: true } : {}),
                 consultedPlacementIds: [],
                 details: {
                   moveType: calculation.moveType,

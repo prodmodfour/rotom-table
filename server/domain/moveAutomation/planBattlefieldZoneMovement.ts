@@ -32,6 +32,7 @@ import {
 import type {
   CreateAuthoritativeMovementLifecycleEventsInput,
   AuthoritativeMovementLifecycleRun,
+  MovementLifecycleCursor,
 } from './movementLifecycle'
 import { runAuthoritativeMovementLifecycle } from './movementLifecycle'
 import {
@@ -52,6 +53,9 @@ import { createStandardMoveCoreTokenEffectImmunityQueries } from './reducers/imm
 import { reduceMoveHazardZones } from './reducers/mapHazardEffects'
 import { queryBattlefieldZones } from './battlefieldZones'
 import { aa067StealthRockDamageProfile } from '../abilityAutomation/mechanics/aa067StaticIntegration'
+import { reconcileAa075IceFaceTemporaryHpOwnershipAfterMove } from '../abilityAutomation/mechanics/aa075TemporaryHpIntegration'
+import { nativeSheetWritesFromStateChanges } from './planNativeV2MoveState'
+import type { AuthoritativeMoveSheetWritePlan } from '../planAuthoritativeMoveState'
 
 export type BattlefieldZoneMovementPlanningErrorCode =
   | 'subject-state-unavailable'
@@ -96,6 +100,7 @@ export interface PlannedBattlefieldZoneMovement {
   readonly nextMap: TabletopMap
   readonly stateChanges: MoveStateChangePlan
   readonly sheetReads: readonly AuthoritativeMoveSheetRead[]
+  readonly sheetWrites: readonly AuthoritativeMoveSheetWritePlan[]
 }
 
 export interface PlanBattlefieldZoneMovementInput {
@@ -105,6 +110,8 @@ export interface PlanBattlefieldZoneMovementInput {
   readonly movement: CreateAuthoritativeMovementLifecycleEventsInput
   readonly time: number
   readonly registry?: BattlefieldZoneEntryDefinitionRegistry
+  /** Resume cursor for a prefix already committed before a durable interrupt. */
+  readonly cursor?: MovementLifecycleCursor
 }
 
 const fail = (
@@ -242,6 +249,10 @@ export const planBattlefieldZoneMovement = (
       sideId: initialContext.actor.placement.sideId ?? null,
       grounding: targetState.grounding,
       typeIds: targetState.typeIds,
+      ignoreHazards: initialContext.queries.abilities.has(
+        initialContext.actor.placement.id,
+        'Infiltrator',
+      ),
     },
     ...(input.registry ? { registry: input.registry } : {}),
   })
@@ -252,6 +263,7 @@ export const planBattlefieldZoneMovement = (
     ...input.movement,
     state: previousEncounterState,
     handlers: [materialized.handler],
+    ...(input.cursor ? { cursor: input.cursor } : {}),
   })
   if (lifecycle.status !== 'completed') {
     return fail(
@@ -371,10 +383,21 @@ export const planBattlefieldZoneMovement = (
     })
   }
 
-  const nextMap: TabletopMap = {
-    ...coreApplied.map,
-    encounterState: deepCloneJson(currentEncounterState),
-  }
+  const nextMap = reconcileAa075IceFaceTemporaryHpOwnershipAfterMove({
+    previousMap: input.map,
+    nextMap: {
+      ...coreApplied.map,
+      encounterState: deepCloneJson(currentEncounterState),
+    },
+    operations: operations.map(operation => ({
+      operation,
+      recipientIds: core.operationResults.find(result => result.operationId === operation.id)
+        ?.recipients.map(recipient => recipient.recipientId) ?? [],
+    })),
+  })
+  currentEncounterState = parseEncounterState(
+    nextMap.encounterState ?? createEmptyEncounterState(),
+  )
   const stateChanges = combinedStatePlan({
     map: input.map,
     previousEncounterState,
@@ -386,6 +409,10 @@ export const planBattlefieldZoneMovement = (
     ...initialContext.reads.snapshot(),
     ...core.sheetReads,
   ])
+  const sheetWrites = nativeSheetWritesFromStateChanges(input.map, {
+    actorPlacementId: input.movement.movement.placementId,
+    selectedTargetIds: [input.movement.movement.placementId],
+  }, stateChanges)
 
   return deepFreeze({
     lifecycle,
@@ -398,5 +425,6 @@ export const planBattlefieldZoneMovement = (
     nextMap,
     stateChanges,
     sheetReads,
+    sheetWrites,
   })
 }

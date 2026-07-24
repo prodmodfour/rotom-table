@@ -8,11 +8,14 @@ export interface BattlefieldZoneMovementSubject {
   readonly sideId: EncounterSideId | null
   readonly grounding: MoveAutomationTargetGrounding
   readonly typeIds: readonly string[]
+  /** Effective Infiltrator and equivalent reviewed rules suppress hazard triggers. */
+  readonly ignoreHazards?: boolean
 }
 
 export type BattlefieldZoneEntryEligibilityOutcome =
   | 'eligible'
   | 'source-immune'
+  | 'ability-immune'
   | 'relationship-unknown'
   | 'not-grounded'
   | 'type-immune'
@@ -42,6 +45,10 @@ export const evaluateBattlefieldZoneEntryEligibility = (input: {
   readonly subject: BattlefieldZoneMovementSubject
 }): BattlefieldZoneEntryEligibility => {
   const { zone, definition, subject } = input
+
+  if (zone.kind === 'hazard' && subject.ignoreHazards === true) {
+    return { outcome: 'ability-immune', matchedTypeId: null }
+  }
 
   if (definition.targetPolicy === 'enemy') {
     if (sourcePlacementId(zone) === subject.placementId) {

@@ -16,6 +16,7 @@ import {
 } from '#shared/abilityAutomation/aa071'
 import { aa071ForecastTypeResolution } from '../abilityAutomation/mechanics/aa071StaticIntegration'
 import { aa074AdjustedToken } from '../abilityAutomation/mechanics/aa074StaticIntegration'
+import { aa075IceFaceFormToken } from '../abilityAutomation/mechanics/aa075StaticIntegration'
 import type { GridAnchor, SheetKind, SheetPlacement, TabletopMap } from '~/types/map'
 import type { MoveAutomationScript } from '~/types/moveAutomation'
 import type { SpawnedPokemon } from '~/types/pokemon'
@@ -579,11 +580,6 @@ export const buildAuthoritativeMoveRulesContext = (
   const targetability = createMoveSemiInvulnerableTargetabilityResolver({
     effects: map.encounterState?.effects ?? [],
   })
-  const sideDamageResistance = createSideDamageResistanceResolver({
-    placements,
-    sides: map.encounterState?.sides ?? {},
-    effects: map.encounterState?.effects ?? [],
-  })
   const history = createMoveAutomationHistoryResolver(
     map.encounterState?.history ?? createEmptyEncounterHistory(),
   )
@@ -620,6 +616,19 @@ export const buildAuthoritativeMoveRulesContext = (
     activeForPlacement: (placementId: string) => effectiveAbilitiesByPlacement.get(placementId) ?? Object.freeze([]),
     has: (placementId: string, canonicalId: string) => (effectiveAbilitiesByPlacement.get(placementId) ?? [])
       .some(ability => ability.canonicalId === canonicalId),
+  })
+  const infiltratorBlocksBlessings = abilityQueries.has(intent.placementId, 'Infiltrator')
+  const sideDamageResistance = createSideDamageResistanceResolver({
+    placements,
+    sides: map.encounterState?.sides ?? {},
+    effects: map.encounterState?.effects ?? [],
+    ...(infiltratorBlocksBlessings ? {
+      responsiveActivationBlockedEffectIds: new Set(
+        (map.encounterState?.effects ?? [])
+          .filter(effect => effect.tags.includes('blessing'))
+          .map(effect => effect.id),
+      ),
+    } : {}),
   })
   const effectivePositionOverrides = new Map(input.tokenPositionOverrides ?? [])
   const anchoredAbility = effectiveAbilitiesByPlacement.get(intent.placementId)
@@ -723,9 +732,18 @@ export const buildAuthoritativeMoveRulesContext = (
       hasForecast: effectiveAbilitiesByPlacement.get(token.id)
         ?.some(ability => ability.canonicalId === 'Forecast') === true,
     })
-    const effectiveToken = forecast.typeId
+    const forecastToken = forecast.typeId
       ? detachedFrozenJson({ ...adjustedToken, defenderTypes: [forecast.typeId] })
       : adjustedToken
+    const iceFaceToken = aa075IceFaceFormToken({
+      token: forecastToken,
+      hasIceFace: effectiveAbilitiesByPlacement.get(token.id)
+        ?.some(ability => ability.canonicalId === 'Ice Face') === true,
+      effects: map.encounterState?.effects,
+    })
+    // Illusion is renderer-only. Server mechanics retain the user's own token
+    // identity, species, statistics, footprint, capabilities, and abilities.
+    const effectiveToken = iceFaceToken
     const trapped = arenaTrapMarks.some((mark) => {
       const source = baseTokens.find(candidate => candidate.id === mark.ownerPlacementId)
       if (!source

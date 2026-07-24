@@ -174,6 +174,21 @@ export const reduceMoveTemporaryEffect = (input: {
   readonly faintedRecipientIds?: readonly string[]
 }): MoveTemporaryEffectReduction => {
   const previous = parseEncounterState(input.previous ?? createEmptyEncounterState())
+  // A reviewed conditional branch that resolves no recipients is a no-op for
+  // both add and remove. In particular, a missed attack cannot remove a
+  // target-bound effect merely because its stable effect ID is known.
+  if (input.recipientIds.length === 0) {
+    return {
+      current: previous,
+      changed: false,
+      details: {
+        action: input.operation.payload.action,
+        effectId: input.operation.payload.effectId,
+        transitionKinds: [],
+        reasonCode: 'temporary-effect.no-recipients',
+      },
+    }
+  }
   try {
     const materialized = input.operation.payload.action === 'add'
       ? materializeEffect({
