@@ -61,12 +61,17 @@ export const applyEncounterNumericModifiers = (input: {
   readonly placementId: string
   readonly attribute: EncounterEffectNumericAttribute
   readonly baseValue: number
+  /** Ability-owned policy for ignoring only increases or only decreases. */
+  readonly changePolicy?: 'all' | 'non-decreasing' | 'non-increasing'
 }): { readonly value: number; readonly steps: readonly EncounterNumericModifierStep[] } => {
   let value = input.baseValue
   const steps: EncounterNumericModifierStep[] = []
   for (const effect of activeEffects(input)) {
     const previous = value
-    value = apply(value, effect)
+    const candidate = apply(value, effect)
+    if (input.changePolicy === 'non-decreasing' && candidate < previous) continue
+    if (input.changePolicy === 'non-increasing' && candidate > previous) continue
+    value = candidate
     steps.push(Object.freeze({
       effectId: effect.id,
       reason: effect.tags.includes('flavorful-aroma')

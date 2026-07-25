@@ -25,6 +25,7 @@ import {
   type MoveStateChangeInput,
   type MoveStateChangePlan,
 } from './plan'
+import { mergeDisjointMoveSheetStateChanges } from './mergeSheetStateChanges'
 import type {
   AuthoritativeMoveRulesContext,
   AuthoritativeMoveSheetRead,
@@ -113,6 +114,10 @@ import {
   AA075_INNARDS_OUT_HP_REASON,
   aa075MoveOverlayOperations,
 } from '../abilityAutomation/mechanics/aa075MoveIntegration'
+import {
+  AA076_IRON_BARBS_HP_REASON,
+  aa076MoveOverlayOperations,
+} from '../abilityAutomation/mechanics/aa076MoveIntegration'
 import {
   AA068_DUST_CLOUD_TARGETING_OVERRIDE,
   aa068DrySkinCancelsRecipientEffect,
@@ -1004,6 +1009,7 @@ const executeReviewedMoveSpec = (
     ...aa073MoveOverlayOperations(overlayInput),
     ...aa074MoveOverlayOperations(overlayInput),
     ...aa075MoveOverlayOperations(overlayInput),
+    ...aa076MoveOverlayOperations(overlayInput),
   ]
   const boneLordLine = script.moveName === 'Bonemerang'
     && aa062BoneLordEmpowersMove(options.context, 'Bonemerang')
@@ -1240,7 +1246,8 @@ export const reduceCompletedMoveSpec = (
       || operation.reasonCode.startsWith('ability.gulp-missile.retaliation-')
       || operation.reasonCode === AA074_HONEY_THIEF_TEMP_HP_REASON
       || operation.reasonCode === AA075_ILLUSION_BREAK_REASON
-      || operation.reasonCode === AA075_INNARDS_OUT_HP_REASON) {
+      || operation.reasonCode === AA075_INNARDS_OUT_HP_REASON
+      || operation.reasonCode === AA076_IRON_BARBS_HP_REASON) {
       recipientControlledOperationIds.add(operation.id)
     }
     const operationContext = contextForOperation(operation)
@@ -1258,11 +1265,13 @@ export const reduceCompletedMoveSpec = (
   const multiHit = execution.multiHitExecutions[0] ?? null
   const postMultiReactionStages = coreOperations.every(({ operation }) => (
     (operation.kind === 'combat-stage'
-      && operation.phase === 'after-damage'
+      && (operation.phase === 'after-damage'
+        || operation.reasonCode === 'ability.justified.raise-attack')
       && operation.source.kind === 'operation'
       && responseOwnerByOperationId.has(operation.source.id))
     || (operation.kind === 'direct-hp'
-      && operation.reasonCode === AA075_INNARDS_OUT_HP_REASON
+      && (operation.reasonCode === AA075_INNARDS_OUT_HP_REASON
+        || operation.reasonCode === AA076_IRON_BARBS_HP_REASON)
       && operation.source.kind === 'operation'
       && responseOwnerByOperationId.has(operation.source.id))
   ))
@@ -1380,13 +1389,13 @@ export const reduceCompletedMoveSpec = (
   const transactionTargetIds = dynamicRecipients.attackedTargetIds
   const transactionHitTargetIds = dynamicRecipients.hitTargetIds
   const combinedCoreStateChanges = multiHit
-    ? createMoveStateChangePlan([
+    ? createMoveStateChangePlan(mergeDisjointMoveSheetStateChanges([
         ...multiHit.stateChanges.changes,
         ...core.stateChanges.changes,
       ].map((change): MoveStateChangeInput => {
         const { id: _id, order: _order, ...input } = change
         return structuredClone(input) as MoveStateChangeInput
-      }))
+      })))
     : core.stateChanges
   const transaction: MoveAutomationTransaction = {
     userId: options.context.actor.placement.id,

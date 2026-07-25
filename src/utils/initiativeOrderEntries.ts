@@ -98,6 +98,8 @@ export interface InitiativeOrderEntryOptions {
   readonly earlyBirdSpeedBonus?: boolean
   /** Effective Base Speed adjustment applied before Combat Stages. */
   readonly baseSpeedOffset?: number
+  /** Exact effective ability names used only for condition-derived initiative rules. */
+  readonly conditionAbilityNames?: readonly string[]
 }
 
 export const pokemonInitiativeOrderEntry = (
@@ -106,7 +108,7 @@ export const pokemonInitiativeOrderEntry = (
   options: InitiativeOrderEntryOptions = {},
 ): InitiativeOrderEntry => {
   const conditions = pokemonConditions(sheet)
-  const abilities = pokemonAbilityNames(sheet)
+  const abilities = options.conditionAbilityNames ?? pokemonAbilityNames(sheet)
   const baseSpeed = Math.max(1, speedTotal(resolveStats(sheet)) + (options.baseSpeedOffset ?? 0))
   const speedCombatStage = conditionAdjustedCombatStage(
     sheet.stats?.spd?.stage,
@@ -142,7 +144,7 @@ export const trainerInitiativeOrderEntry = (
   options: InitiativeOrderEntryOptions = {},
 ): InitiativeOrderEntry => {
   const conditions = trainerConditions(sheet)
-  const abilities = trainerAbilityNames(sheet)
+  const abilities = options.conditionAbilityNames ?? trainerAbilityNames(sheet)
   const baseSpeed = speedTotal(resolveTrainerStats(sheet))
   const speedCombatStage = conditionAdjustedCombatStage(
     sheet.stats?.spd?.stage ?? sheet.combatStages?.spd,

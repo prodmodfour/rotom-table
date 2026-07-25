@@ -29,6 +29,7 @@ import {
   aa073GulpMissileAccuracyOutcome,
 } from '../../abilityAutomation/mechanics/aa073MoveIntegration'
 import { aa074HyperCutterBlocksStage } from '../../abilityAutomation/mechanics/aa074StaticIntegration'
+import { AA076_IRON_BARBS_HP_REASON } from '../../abilityAutomation/mechanics/aa076MoveIntegration'
 import type {
   MoveConditionImmunityDecision,
   MoveCoreTokenEffectImmunityDecision,
@@ -234,6 +235,12 @@ export const createStandardMoveCoreTokenEffectImmunityQueries = (
       if (operation.reasonCode === AA073_GULP_MISSILE_HP_REASON) {
         return decision(gulpMissileAccuracyBlocker(operation))
       }
+      if (operation.reasonCode === AA076_IRON_BARBS_HP_REASON) {
+        const blockedBy = ['Permafrost', 'Magic Guard'].find(canonicalId => (
+          options.context?.queries.abilities.has(recipient.placement.id, canonicalId)
+        )) ?? null
+        return decision(blockedBy)
+      }
       const wholeMoveBlocker = moveImmunity(recipient)
       if (wholeMoveBlocker) return decision(wholeMoveBlocker)
       return decision(typedAttackImmunity(recipient, 'attacking'))
@@ -272,9 +279,20 @@ export const createStandardMoveCoreTokenEffectImmunityQueries = (
       )
       const canonicalCondition = normalizeConditionName(condition) ?? condition
       const poisonCondition = canonicalCondition === 'Poisoned' || canonicalCondition === 'Badly Poisoned'
-      const effectiveImmunity = poisonCondition
-        && options.context?.queries.abilities.has(recipient.placement.id, 'Immunity') === true
-      if (effectiveImmunity) return conditionDecision('Immunity', providerIds)
+      const effectiveConditionImmunity = poisonCondition
+        && options.context?.queries.abilities.has(recipient.placement.id, 'Immunity')
+        ? 'Immunity'
+        : canonicalCondition === 'Sleep'
+          && options.context?.queries.abilities.has(recipient.placement.id, 'Insomnia')
+          ? 'Insomnia'
+          : canonicalCondition === 'Flinch'
+            && options.context?.queries.abilities.has(recipient.placement.id, 'Inner Focus')
+            ? 'Inner Focus'
+            : canonicalCondition === 'Blindness'
+              && options.context?.queries.abilities.has(recipient.placement.id, 'Keen Eye')
+              ? 'Keen Eye'
+              : null
+      if (effectiveConditionImmunity) return conditionDecision(effectiveConditionImmunity, providerIds)
       const typedRecipient = corrosionBypass
         ? {
             ...recipient.token,
@@ -283,10 +301,13 @@ export const createStandardMoveCoreTokenEffectImmunityQueries = (
             )),
           }
         : recipient.token
-      const passiveRecipient = poisonCondition
+      const managedConditionAbilities = new Set(['immunity', 'insomnia', 'inner focus', 'keen eye'])
+      const passiveRecipient = options.context
         ? {
             ...typedRecipient,
-            abilityNames: typedRecipient.abilityNames?.filter(name => name.trim().toLowerCase() !== 'immunity'),
+            abilityNames: typedRecipient.abilityNames?.filter(name => (
+              !managedConditionAbilities.has(name.trim().toLowerCase())
+            )),
           }
         : typedRecipient
       const passiveBlocker = moveAutomationConditionImmunitySource(
@@ -376,6 +397,13 @@ export const createStandardMoveCoreTokenEffectImmunityQueries = (
           }) ? 'Hyper Cutter' : null
         )
         ?? (
+          stage === 'acc'
+          && delta < 0
+          && options.context?.queries.abilities.has(recipient.placement.id, 'Keen Eye')
+            ? 'Keen Eye'
+            : null
+        )
+        ?? (
           stage === 'def'
           && delta < 0
           && options.context?.queries.abilities.has(recipient.placement.id, 'Big Pecks')
@@ -383,7 +411,14 @@ export const createStandardMoveCoreTokenEffectImmunityQueries = (
             : null
         )
         ?? moveAutomationCombatStageBlockSource({
-          target: recipient.token,
+          target: options.context
+            ? {
+                ...recipient.token,
+                abilityNames: recipient.token.abilityNames?.filter(name => (
+                  name.trim().toLowerCase() !== 'keen eye'
+                )),
+              }
+            : recipient.token,
           key: stage,
           delta,
         })

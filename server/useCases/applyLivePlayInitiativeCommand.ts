@@ -57,8 +57,10 @@ import {
 } from '~/utils/initiativeOrderEntries'
 import { expireActiveOrderEffectsForInitiativeAdvanceWithResult } from '~/utils/activeOrderEffects'
 import { deepCloneJson, sameJsonValue } from '~/utils/serialization'
+import { resolveCanonicalSheetAbilityName, sheetAbilityNames } from '~/utils/sheetAbilities'
 import { aa063ChlorophyllInitiativeMultiplier } from '../domain/abilityAutomation/mechanics/aa063InitiativeIntegration'
 import { aa074HeavyMetalInitiativeSpeedOffset } from '../domain/abilityAutomation/mechanics/aa074StaticIntegration'
+import { aa076InnerFocusProtectsInitiative } from '../domain/abilityAutomation/mechanics/aa076StaticIntegration'
 import {
   aa066DazzlingInitiativePenalty,
   aa066DefeatistInitiativeBonus,
@@ -652,11 +654,23 @@ const initiativeOrder = (
     placements: map.placements,
     globalFields,
   })
+  const innerFocusPlacementIds = new Set<string>()
   const calculatedEntries = initiativeOrderEntriesForPlacements(
     map.placements,
     trackedReader,
     placement => {
       const resolved = trackedReader(placement.sheetKind, placement.sheetSlug)
+      const innerFocus = resolved ? aa076InnerFocusProtectsInitiative({
+        map,
+        placement,
+        sheet: resolved.sheet as unknown as CharacterSheet | TrainerSheet,
+      }) : false
+      if (innerFocus) innerFocusPlacementIds.add(placement.id)
+      const conditionAbilityNames = resolved
+        ? sheetAbilityNames((resolved.sheet as unknown as CharacterSheet | TrainerSheet).abilities)
+            .filter(name => resolveCanonicalSheetAbilityName(name) !== 'Inner Focus')
+        : []
+      if (innerFocus) conditionAbilityNames.push('Inner Focus')
       return {
         itemEffectsSuppressed: itemEffects.resolve({
           placementId: placement.id,
@@ -678,7 +692,8 @@ const initiativeOrder = (
           placement,
           sheet: resolved.sheet as unknown as CharacterSheet | TrainerSheet,
         }) : false,
-        initiativeOffset: aa066DazzlingInitiativePenalty({ map, placementId: placement.id })
+        conditionAbilityNames,
+        initiativeOffset: (innerFocus ? 0 : aa066DazzlingInitiativePenalty({ map, placementId: placement.id }))
           + (resolved && placement.sheetKind === 'pokemon' ? aa066DefeatistInitiativeBonus({
               map, placement, sheet: resolved.sheet as unknown as CharacterSheet,
             }) : 0),
@@ -702,6 +717,7 @@ const initiativeOrder = (
               initiativeBonus: tailwind.initiativeBonus,
             }
           : null,
+        preventLowering: innerFocusPlacementIds.has(placement.id),
       }),
     }
   })

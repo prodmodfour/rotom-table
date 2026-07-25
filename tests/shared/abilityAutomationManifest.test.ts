@@ -142,10 +142,12 @@ describe('ability automation semantic manifest', () => {
         'Horde Break', 'Huge Power', 'Huge Power / Pure Power', 'Hunger Switch',
         'Hustle', 'Hydration', 'Hyper Cutter', 'Hypnotic', 'Ice Body', 'Ice Face',
         'Ice Scales', 'Ice Shield', 'Ignition Boost', 'Illuminate', 'Illusion', 'Immunity',
-        'Imposter', 'Infiltrator', 'Innards Out',
+        'Imposter', 'Infiltrator', 'Innards Out', 'Inner Focus', 'Insomnia', 'Instinct',
+        'Interference', 'Intimidate', 'Intrepid Sword', 'Iron Barbs', 'Iron Fist',
+        'Juicy Energy', 'Justified', 'Kampfgeist', 'Keen Eye',
       ])
-    expect(manifest.abilities.filter(ability => ability.baseStatus === 'blocked')).toHaveLength(291)
-    expect(manifest.abilities.filter(ability => ability.runtime.kind === 'unimplemented')).toHaveLength(291)
+    expect(manifest.abilities.filter(ability => ability.baseStatus === 'blocked')).toHaveLength(279)
+    expect(manifest.abilities.filter(ability => ability.runtime.kind === 'unimplemented')).toHaveLength(279)
   })
 
   it('keeps bootstrap mode hints non-authoritative and maps every row to its plan cohort', () => {
@@ -160,8 +162,8 @@ describe('ability automation semantic manifest', () => {
 
     expect(counts).toEqual({
       'mode.static': 244,
-      'mode.triggered': 120,
-      'mode.activated': 119,
+      'mode.triggered': 119,
+      'mode.activated': 120,
     })
     expect(manifest.abilities[0]).toMatchObject({ canonicalId: 'Abominable', rolloutCohortId: 'aa-060' })
     expect(manifest.abilities[11]).toMatchObject({ canonicalId: 'Anticipation', rolloutCohortId: 'aa-060' })

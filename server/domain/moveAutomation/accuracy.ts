@@ -17,6 +17,10 @@ import {
   aa074HustleAccuracyModifier,
 } from '../abilityAutomation/mechanics/aa074StaticIntegration'
 import { aa075IlluminateAccuracyModifier } from '../abilityAutomation/mechanics/aa075StaticIntegration'
+import {
+  aa076KeenEyeActive,
+  aa076TokenWithEffectiveKeenEye,
+} from '../abilityAutomation/mechanics/aa076StaticIntegration'
 
 export interface AuthoritativeMoveSightAccuracyResolution {
   readonly sourcePlacementId: string
@@ -50,13 +54,17 @@ export const resolveAuthoritativeMoveSightAccuracy = (
   context: AuthoritativeMoveRulesContext,
   targetPlacementId: string,
   baseValue: number,
+  options: { readonly ignoreAccuracyPenalties?: boolean } = {},
 ): AuthoritativeMoveSightAccuracyResolution => {
   const sourcePlacementId = context.actor.placement.id
   const lineOfSight = context.queries.lineOfSight.resolve(
     sourcePlacementId,
     targetPlacementId,
   )
-  const coverModifier: MoveAutomationRollModifier[] = lineOfSight.accuracyModifier === 0
+  const effectiveCoverModifier = options.ignoreAccuracyPenalties
+    ? Math.max(0, lineOfSight.accuracyModifier)
+    : lineOfSight.accuracyModifier
+  const coverModifier: MoveAutomationRollModifier[] = effectiveCoverModifier === 0
     ? []
     : [{
         sourceId: lineOfSight.coverZoneIds[0]
@@ -65,15 +73,40 @@ export const resolveAuthoritativeMoveSightAccuracy = (
         reason: lineOfSight.coverZoneIds.length > 0
           ? 'Barrier cover'
           : 'Rough Terrain cover',
-        value: lineOfSight.accuracyModifier,
+        value: effectiveCoverModifier,
       }]
-  const afterCover = baseValue + lineOfSight.accuracyModifier
-  const smoke = context.queries.barriersAndSmoke.accuracy({
+  const afterCover = baseValue + effectiveCoverModifier
+  const rawSmoke = context.queries.barriersAndSmoke.accuracy({
     sourcePlacementId,
     target: { kind: 'placement', placementId: targetPlacementId },
     baseValue: afterCover,
   })
-  const modifiers = [...coverModifier, ...smoke.modifiers]
+  const smokeModifiers = options.ignoreAccuracyPenalties
+    ? rawSmoke.modifiers.filter(modifier => modifier.value >= 0)
+    : rawSmoke.modifiers
+  const appliedSmokeSourceIds = new Set(smokeModifiers.map(modifier => modifier.sourceId))
+  const ignoredSmokeZoneIds = options.ignoreAccuracyPenalties
+    ? new Set(rawSmoke.affectingZoneIds.filter(zoneId => !appliedSmokeSourceIds.has(zoneId)))
+    : new Set<string>()
+  const smokeValue = afterCover + smokeModifiers.reduce((total, modifier) => total + modifier.value, 0)
+  const smoke: BattlefieldSmokeAccuracyResolution = {
+    ...rawSmoke,
+    baseValue: afterCover,
+    value: smokeValue,
+    modifierTotal: smokeValue - afterCover,
+    affectingZoneIds: rawSmoke.affectingZoneIds.filter(zoneId => !ignoredSmokeZoneIds.has(zoneId)),
+    modifiers: smokeModifiers,
+    trace: rawSmoke.trace.map(entry => ignoredSmokeZoneIds.has(entry.zoneId)
+      && entry.outcome !== 'outside-zone'
+      ? {
+          ...entry,
+          outcome: 'superseded' as const,
+          reasonCode: 'ability.keen-eye.accuracy-penalty-ignored',
+          value: null,
+        }
+      : entry),
+  }
+  const modifiers = [...coverModifier, ...smokeModifiers]
   return deepFreeze({
     sourcePlacementId,
     targetPlacementId,
@@ -105,9 +138,13 @@ export const resolveAuthoritativeMoveUserAccuracy = (
     placementId: context.actor.placement.id,
   })
   const compoundEyesActive = context.queries.abilities.has(context.actor.placement.id, 'Compound Eyes')
-  const actorToken = helpingHand.length > 0
-    ? withoutHelpingHandCondition(context.actor.token)
-    : context.actor.token
+  const actorToken = aa076TokenWithEffectiveKeenEye({
+    context,
+    token: helpingHand.length > 0
+      ? withoutHelpingHandCondition(context.actor.token)
+      : context.actor.token,
+  })
+  const keenEye = aa076KeenEyeActive(context)
   const actorAccuracy = moveAutomationUserAccuracy(
     {
       ...actorToken,
@@ -156,13 +193,13 @@ export const resolveAuthoritativeMoveUserAccuracy = (
       value: gravity.bonus,
     })
   }
-  const aa071Modifiers = options.script ? aa071MoveAccuracyModifiers({
+  const aa071Modifiers = (options.script ? aa071MoveAccuracyModifiers({
     context,
     script: options.script,
     ...(options.targetPlacementId ? { targetPlacementId: options.targetPlacementId } : {}),
-  }) : []
+  }) : []).filter(modifier => !keenEye || modifier.value >= 0)
   modifiers.push(...aa071Modifiers)
-  const hustleModifier = aa074HustleAccuracyModifier({
+  const hustleModifier = keenEye ? 0 : aa074HustleAccuracyModifier({
     context,
     placementId: context.actor.placement.id,
   })
@@ -184,7 +221,7 @@ export const resolveAuthoritativeMoveUserAccuracy = (
       value: hungerSwitchModifier,
     })
   }
-  const illuminateModifier = aa075IlluminateAccuracyModifier({
+  const illuminateModifier = keenEye ? 0 : aa075IlluminateAccuracyModifier({
     context,
     ...(options.targetPlacementId ? { targetPlacementId: options.targetPlacementId } : {}),
   })
@@ -209,6 +246,7 @@ export const resolveAuthoritativeMoveUserAccuracy = (
     placementId: context.actor.placement.id,
     attribute: 'accuracy',
     baseValue: preEncounterValue,
+    changePolicy: keenEye ? 'non-decreasing' : 'all',
   })
   modifiers.push(...encounterAccuracy.steps.map(step => ({
     sourceId: step.effectId,
@@ -217,7 +255,12 @@ export const resolveAuthoritativeMoveUserAccuracy = (
   })))
   const baseValue = encounterAccuracy.value
   const sight = options.targetPlacementId
-    ? resolveAuthoritativeMoveSightAccuracy(context, options.targetPlacementId, baseValue)
+    ? resolveAuthoritativeMoveSightAccuracy(
+        context,
+        options.targetPlacementId,
+        baseValue,
+        { ignoreAccuracyPenalties: keenEye },
+      )
     : null
   modifiers.push(...(sight?.modifiers ?? []))
   return deepFreeze({

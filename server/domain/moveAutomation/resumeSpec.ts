@@ -68,6 +68,7 @@ import { aa072MoveOverlayOperations } from '../abilityAutomation/mechanics/aa072
 import { aa073MoveOverlayOperations } from '../abilityAutomation/mechanics/aa073MoveIntegration'
 import { aa074MoveOverlayOperations } from '../abilityAutomation/mechanics/aa074MoveIntegration'
 import { aa075MoveOverlayOperations } from '../abilityAutomation/mechanics/aa075MoveIntegration'
+import { aa076MoveOverlayOperations } from '../abilityAutomation/mechanics/aa076MoveIntegration'
 import {
   AA068_DUST_CLOUD_TARGETING_OVERRIDE,
   aa068DustCloudBurstEnabled,
@@ -480,6 +481,10 @@ export const resumeMoveSpec = (
           authoritativeTargetIds,
         }),
         ...aa075MoveOverlayOperations({
+          context, script: entry.script, moveSourceId,
+          authoritativeTargetIds,
+        }),
+        ...aa076MoveOverlayOperations({
           context, script: entry.script, moveSourceId,
           authoritativeTargetIds,
         }),

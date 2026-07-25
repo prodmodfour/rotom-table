@@ -40,6 +40,7 @@ export const aa075IlluminateAccuracyModifier = (input: {
 }): number => {
   if (!input.targetPlacementId
     || !input.context.queries.abilities.has(input.targetPlacementId, 'Illuminate')
+    || input.context.queries.abilities.has(input.context.actor.placement.id, 'Keen Eye')
     || hasBlindsense(input.context.actor.token)) return 0
   return -2
 }

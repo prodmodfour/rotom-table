@@ -27,6 +27,7 @@ import {
 } from './evaluateExpression'
 import { applyEncounterNumericModifiers } from './encounterNumericModifiers'
 import { aa075InfiltratorStealthBonus } from '../abilityAutomation/mechanics/aa075StaticIntegration'
+import { aa076JustifiedInterceptCheckBonus } from '../abilityAutomation/mechanics/aa076StaticIntegration'
 
 export type MoveCheckExecutionErrorCode =
   | 'check-recipient-required'
@@ -358,6 +359,12 @@ const prepareRoll = (options: {
         skill: source.skill ?? '',
       })
     : 0
+  const justifiedBonus = aa076JustifiedInterceptCheckBonus({
+    context: options.input.context,
+    placementId: options.placementId,
+    canonicalMoveId: options.input.canonicalMoveId,
+    participantRole: options.role,
+  })
   const resolvedModifiers: readonly MoveCheckModifierResolution[] = [
     ...modifiers,
     ...skillCheck.steps.map(step => deepFreeze({
@@ -370,6 +377,12 @@ const prepareRoll = (options: {
       sourceId: 'ability.infiltrator',
       reasonCode: 'ability.infiltrator.stealth-bonus',
       value: infiltratorBonus,
+      evaluationTrace: [] as const,
+    })]),
+    ...(justifiedBonus === 0 ? [] : [deepFreeze({
+      sourceId: 'ability.justified',
+      reasonCode: 'ability.justified.intercept-check-bonus',
+      value: justifiedBonus,
       evaluationTrace: [] as const,
     })]),
   ]

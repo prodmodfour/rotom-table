@@ -711,12 +711,15 @@ const applyTriggeredAbilityPayments = (input: {
     ['ability.horde-break.optional-cleanse', 'Horde Break'],
     ['ability.ignition-boost.optional-damage', 'Ignition Boost'],
     ['ability.innards-out.optional-retaliation', 'Innards Out'],
+    ['ability.iron-barbs.optional-hp-loss', 'Iron Barbs'],
+    ['ability.justified.optional-attack-stage', 'Justified'],
+    ['ability.kampfgeist.optional-resistance', 'Kampfgeist'],
   ])
   const noFrequency = new Set([
     'Anger Point', 'Aqua Boost', 'Beast Boost', 'Celebrate', 'Chilling Neigh',
     'Color Change', 'Combo Striker', 'Flavorful Aroma', 'Fox Fire',
     'Galvanize', 'Gooey', 'Grim Neigh', 'Heat Mirage', 'Heliovolt', 'Horde Break',
-    'Ignition Boost',
+    'Ignition Boost', 'Iron Barbs', 'Justified',
   ])
   const daily = new Set(['Dig Away', 'Disguise', 'Dodge'])
   const triggeringMoveByOperationId = new Map(input.traces.flatMap(trace => (

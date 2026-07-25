@@ -205,6 +205,13 @@ import {
   AA075_INNARDS_OUT_REASON,
   aa075MoveOverlayOperations,
 } from '../abilityAutomation/mechanics/aa075MoveIntegration'
+import {
+  AA076_IRON_BARBS_HP_REASON,
+  AA076_IRON_BARBS_REASON,
+  AA076_JUSTIFIED_REASON,
+  AA076_KAMPFGEIST_REASON,
+  aa076MoveOverlayOperations,
+} from '../abilityAutomation/mechanics/aa076MoveIntegration'
 import { aa074HungerModeForPlacement } from '#shared/abilityAutomation/aa074'
 import {
   aa075HypnoticAutomaticHit,
@@ -212,6 +219,14 @@ import {
   aa075InfiltratorBlocksResponsiveBlessings,
   aa075InfiltratorBypassesTemporaryHp,
 } from '../abilityAutomation/mechanics/aa075StaticIntegration'
+import {
+  aa076InstinctEvasionBonus,
+  aa076IronFistDamageBaseBonus,
+  aa076KampfgeistDamageTypeOverlay,
+  aa076KeenEyeActive,
+  aa076TargetWithoutLegacyIlluminate,
+  aa076TokenWithEffectiveKeenEye,
+} from '../abilityAutomation/mechanics/aa076StaticIntegration'
 import {
   AA068_DRAGONS_MAW_REASON,
   AA068_DREAM_SMOKE_REASON,
@@ -2442,22 +2457,13 @@ const projectNestedRequest = (
   request: MoveSpecPendingRequest,
   invocationPhase: MoveSpecPhase,
   parentAncestryDepth: number,
-): MoveSpecPendingRequest => {
-  if (
-    request.kind === 'reaction'
-    && moveReactionTimingDefinition(request.timing).phase !== invocationPhase
-  ) {
-    return fail(
-      'nested-targeting-invalid',
-      `Nested reaction ${request.requestId} must be invoked from its reviewed ${moveReactionTimingDefinition(request.timing).phase} phase.`,
-    )
-  }
-  return Object.freeze({
-    ...request,
-    phase: invocationPhase,
-    ...(request.kind === 'reaction' ? { depth: parentAncestryDepth } : {}),
-  })
-}
+): MoveSpecPendingRequest => Object.freeze({
+  ...request,
+  // A nested reaction retains its reviewed child timing. Choice windows remain
+  // projected at the parent invocation point because they precede child work.
+  phase: request.kind === 'reaction' ? request.phase : invocationPhase,
+  ...(request.kind === 'reaction' ? { depth: parentAncestryDepth } : {}),
+})
 
 const appendNestedTrace = (
   parent: MoveResolutionAuditTrace,
@@ -2466,6 +2472,7 @@ const appendNestedTrace = (
   budget: NestedMoveExecutionBudget,
 ): MoveResolutionAuditTrace => {
   let trace = parent
+  let projectedPhase = invocationPhase
   for (const event of child.events) {
     if (event.kind === 'phase-transition') continue
     const { sequence: _sequence, ...withoutSequence } = event
@@ -2481,13 +2488,31 @@ const appendNestedTrace = (
       })
       continue
     }
+    const pendingReaction = event.kind === 'operation'
+      && event.operationKind === 'reaction-request'
+      && event.outcome === 'pending'
+    if (pendingReaction && event.phase !== projectedPhase) {
+      enforceNestedExecutionBudget(() => budget.reserveEmittedEvents(
+        1,
+        `Nested reaction phase projection for ${child.program.canonicalId}`,
+      ))
+      trace = appendMoveResolutionTrace(trace, {
+        kind: 'phase-transition',
+        from: projectedPhase,
+        to: event.phase,
+        reasonCode: 'nested-child-reaction-phase',
+      })
+      projectedPhase = event.phase
+    }
     enforceNestedExecutionBudget(() => budget.reserveEmittedEvents(
       1,
       `Nested trace projection for ${child.program.canonicalId}`,
     ))
     trace = appendMoveResolutionTrace(trace, {
       ...withoutSequence,
-      phase: invocationPhase,
+      // Pending reaction windows must link to their reviewed child phase so
+      // durable timing validation and resume reconstruction remain exact.
+      phase: projectedPhase,
     })
   }
   return trace
@@ -2529,6 +2554,13 @@ const executeMoveSpecInternal = (
   const handlerRegistry = input.handlerRegistry ?? REGISTERED_MOVE_HANDLER_REGISTRY
   const definition = executableDefinition(input, handlerRegistry)
   const { spec } = definition
+  if (spec.canonicalId === 'Rest'
+    && input.context.queries.abilities.has(input.context.actor.placement.id, 'Insomnia')) {
+    fail(
+      'move-mechanics-unavailable',
+      'Rest cannot be executed while the user has effective Insomnia.',
+    )
+  }
   const targeting = input.serverAbilityTargetingOverride
     ?? resolveMoveSpecTargetingRule(spec, input.targetBranchId)
     ?? fail(
@@ -2659,6 +2691,21 @@ const executeMoveSpecInternal = (
   const selectedFriendGuardTargetIds = new Set<string>()
   const selectedFullGuardTargetIds = new Set<string>()
   const selectedAa071ResistanceRequestOperationIds = new Set<string>()
+  const selectedKampfgeistOwnerIds = new Set<string>()
+  const ordinaryKampfgeistDamageTargetIds = new Set<string>()
+  for (const request of reactionRequestsByOperationId.values()) {
+    if (request.reasonCode !== AA076_KAMPFGEIST_REASON) continue
+    const selected = responseResolver.resolve({
+      requestId: request.payload.requestId,
+      options: request.payload.options,
+      allowPass: request.payload.allowPass,
+    })
+    const ownerPlacementIds = request.payload.ownerPlacementIds ?? []
+    if (selected?.optionId === 'ability.kampfgeist.use'
+      && ownerPlacementIds.length === 1) {
+      selectedKampfgeistOwnerIds.add(ownerPlacementIds[0]!)
+    }
+  }
   const aa072MoveTypeOverride = aa072SelectedMoveType({
     operations: program.operations,
     responses: responseResolver,
@@ -3193,6 +3240,67 @@ const executeMoveSpecInternal = (
               : null
             return ownerId && hitTargetIds.includes(ownerId) ? owners : []
           }
+          if (operation.reasonCode === AA076_IRON_BARBS_REASON) {
+            const ownerId = operation.source.kind === 'lifecycle-event'
+              && operation.source.id.startsWith('ability.iron-barbs.target:')
+              ? operation.source.id.slice('ability.iron-barbs.target:'.length)
+              : null
+            const ownerWasHit = ownerId !== null && (
+              hitTargetIds.includes(ownerId)
+              || multiHitExecutions.some(execution => execution.hitTargetIds.includes(ownerId))
+            )
+            return ownerWasHit ? owners : []
+          }
+          if (operation.reasonCode === AA076_JUSTIFIED_REASON) {
+            const ownerId = operation.source.kind === 'lifecycle-event'
+              && operation.source.id.startsWith('ability.justified.target:')
+              ? operation.source.id.slice('ability.justified.target:'.length)
+              : null
+            const attackOfOpportunity = input.ancestry?.some(entry => (
+              entry.canonicalId === 'Attack of Opportunity'
+            )) ?? false
+            const darkAttack = ownerId !== null && (
+              resolvedDamageTypes.some(resolution => (
+                resolution.recipientId === ownerId && resolution.moveType === 'Dark'
+              ))
+              || multiHitExecutions.some(execution => (
+                execution.resolution.targets.some(target => target.targetId === ownerId
+                  && target.strikes.some(strike => strike.damage?.moveType.moveType === 'Dark'))
+              ))
+            )
+            const ownerWasHit = ownerId !== null && (
+              hitTargetIds.includes(ownerId)
+              || multiHitExecutions.some(execution => execution.hitTargetIds.includes(ownerId))
+            )
+            return ownerWasHit && (attackOfOpportunity || darkAttack) ? owners : []
+          }
+          if (operation.reasonCode === AA076_KAMPFGEIST_REASON) {
+            const ownerId = operation.source.kind === 'lifecycle-event'
+              && operation.source.id.startsWith('ability.kampfgeist.target:')
+              ? operation.source.id.slice('ability.kampfgeist.target:'.length)
+              : null
+            const ordinaryMatchingHit = ownerId !== null && resolvedDamageTypes.some(resolution => (
+              resolution.recipientId === ownerId
+              && ['Bug', 'Dark', 'Rock'].includes(resolution.moveType)
+            ))
+            const multiMatchingHit = ownerId !== null && multiHitExecutions.some(execution => (
+              execution.resolution.targets.some(target => target.targetId === ownerId
+                && target.strikes.some(strike => strike.damage !== null
+                  && ['Bug', 'Dark', 'Rock'].includes(strike.damage.moveType.moveType)))
+            ))
+            const multiHitDamage = ownerId !== null && multiHitExecutions.some(execution => (
+              execution.resolution.targets.some(target => target.targetId === ownerId
+                && target.strikes.some(strike => strike.damage !== null
+                  && strike.damage.effectiveHpLost > 0
+                  && ['Bug', 'Dark', 'Rock'].includes(strike.damage.moveType.moveType)))
+            ))
+            const triggeringDamage = ownerId !== null
+              && (ordinaryKampfgeistDamageTargetIds.has(ownerId) || multiHitDamage)
+            const retainedSelectedTrigger = ownerId !== null
+              && selectedKampfgeistOwnerIds.has(ownerId)
+              && (ordinaryMatchingHit || multiMatchingHit)
+            return triggeringDamage || retainedSelectedTrigger ? owners : []
+          }
           if (operation.reasonCode === AA072_GALE_WINGS_REASON
             || operation.reasonCode === AA072_GORE_REASON
             || operation.reasonCode === AA073_GULP_MISSILE_ARM_REASON
@@ -3416,6 +3524,15 @@ const executeMoveSpecInternal = (
           return selected && selected[1].targetId
             && input.context.queries.placements.get(selected[1].targetId)
             ? [selected[1].targetId]
+            : []
+        }
+        if (operation.reasonCode === AA076_IRON_BARBS_HP_REASON
+          && operation.source.kind === 'operation') {
+          const request = reactionRequestsByOperationId.get(operation.source.id)
+          const selected = selectedResponseOptionByRequestOperation.get(operation.source.id)
+          return request?.reasonCode === AA076_IRON_BARBS_REASON
+            && selected === 'ability.iron-barbs.use'
+            ? [input.context.actor.placement.id]
             : []
         }
         const harvestOwnerId = aa073HarvestOwnerId(operation)
@@ -4303,27 +4420,38 @@ const executeMoveSpecInternal = (
                 }),
               })
             }
+            const keenEye = aa076KeenEyeActive(input.context)
+            const nonStatEvasion = keenEye
+              ? 0
+              : aa076InstinctEvasionBonus({ context: input.context, recipientId })
+                + aa065CovertEvasionBonus({ context: input.context, placementId: recipientId })
+                + aa066DecoyEvasionBonus({ map: input.context.map, placementId: recipientId })
             targetEvasion = ignoreEvasionAlways || flanking?.flanked
               ? 0
               : resolveMoveAutomationTargetEvasion(
                   accuracyScript,
-                  target,
+                  aa076TargetWithoutLegacyIlluminate(aa076TokenWithEffectiveKeenEye({
+                    context: input.context,
+                    token: target,
+                  })),
                   {
-                    attacker: input.context.actor.token,
+                    attacker: aa076TokenWithEffectiveKeenEye({
+                      context: input.context,
+                      token: input.context.actor.token,
+                    }),
                     fieldEffects: input.context.queries.rooms.projectFieldEffects(),
                     dauntlessShieldActive: input.context.queries.abilities.has(
                       recipientId,
                       'Dauntless Shield',
                     ),
                   },
-                ).value
-                  + aa065CovertEvasionBonus({ context: input.context, placementId: recipientId })
-                  + aa066DecoyEvasionBonus({ map: input.context.map, placementId: recipientId })
+                ).value + nonStatEvasion
             targetEvasion = applyEncounterNumericModifiers({
               map: input.context.map,
               placementId: recipientId,
               attribute: 'evasion',
               baseValue: targetEvasion,
+              changePolicy: keenEye ? 'non-increasing' : 'all',
             }).value
             if (blurApplies) targetEvasion = Math.floor(targetEvasion / 2)
             modifiers = userAccuracy.modifiers
@@ -4560,11 +4688,23 @@ const executeMoveSpecInternal = (
             recipientId,
             resolved: aa073ResolvedType,
           })
+          const aa076StabType = aa076KampfgeistDamageTypeOverlay({
+            context: input.context,
+            resolved: aa075ResolvedType,
+          })
+          const aa076ResolvedType = selectedKampfgeistOwnerIds.has(recipientId)
+            && ['Bug', 'Dark', 'Rock'].includes(aa076StabType.moveType)
+            ? aa071ResistDamageType({
+                resolved: aa076StabType,
+                steps: 1,
+                sources: ['Kampfgeist'],
+              })
+            : aa076StabType
           const resolvedType = aa068DamageTypeOverlay({
             context: input.context,
             script: getMechanics().script,
             recipientId,
-            resolved: aa075ResolvedType,
+            resolved: aa076ResolvedType,
             naturalAccuracyRoll: naturalCriticalRoll,
             dragonsMawSelected: selectedDragonsMawTargetIds.has(recipientId),
           })
@@ -4583,7 +4723,10 @@ const executeMoveSpecInternal = (
             recipientId,
             canonicalMoveId: spec.canonicalId,
             resolvedType,
-            postBoundsDamageBaseBonus: typeof operation.payload.damageBase === 'number'
+            postBoundsDamageBaseBonus: aa076IronFistDamageBaseBonus({
+              context: input.context,
+              script: getMechanics().script,
+            }) + (typeof operation.payload.damageBase === 'number'
               || !aa069DamageBaseRelevant
               ? 0
               : aa069DamageBaseBonus({
@@ -4591,7 +4734,7 @@ const executeMoveSpecInternal = (
                   actor: input.context.actor.token,
                   moveType: resolvedType.moveType,
                   responseOptionForReason: reviewedResponseOptionForReason,
-                }),
+                })),
             failUnsupported: message => fail('damage-formula-unsupported', message),
           })
           if (formula.contextualDamageBase) {
@@ -4682,12 +4825,16 @@ const executeMoveSpecInternal = (
             context: input.context,
             recipientId,
           })
-          projectedHp.applyLossWithInjuryAutomation(
+          const hpLoss = projectedHp.applyLossWithInjuryAutomation(
             recipient,
             calculation.breakdown.hpLoss,
             'damage',
             { bypassTemporaryHp },
           )
+          if (hpLoss.effectiveHpLost > 0
+            && ['Bug', 'Dark', 'Rock'].includes(resolvedType.moveType)) {
+            ordinaryKampfgeistDamageTargetIds.add(recipientId)
+          }
           projectedInjuriesByTarget.set(recipientId, projectedHp.getInjuries(recipient))
           const previousRemaining = projectedRemainingHpByTarget.get(recipientId)
             ?? recipient.currentHp + (recipient.temporaryHp ?? 0)
@@ -4760,6 +4907,7 @@ const executeMoveSpecInternal = (
             recipientId,
             Number(selectedInnardsOutByOwner.has(recipientId)),
           ])),
+          kampfgeistResistanceRecipientIds: selectedKampfgeistOwnerIds,
         })
         multiHitExecutions.push(execution)
         resolvedRolls.push(...execution.resolvedRolls.map(roll => ({ ...roll })))
@@ -5621,6 +5769,12 @@ const executeMoveSpecInternal = (
               authoritativeTargetIds: childTargetIds,
             }),
             ...aa075MoveOverlayOperations({
+              context: childContext,
+              script: childMechanics,
+              moveSourceId: childMoveSourceId,
+              authoritativeTargetIds: childTargetIds,
+            }),
+            ...aa076MoveOverlayOperations({
               context: childContext,
               script: childMechanics,
               moveSourceId: childMoveSourceId,

@@ -19,7 +19,9 @@ import {
   normalizeCombatStages,
 } from '~/utils/combatStages'
 import { conditionAdjustedCombatStages } from '~/utils/sheetConditionEffects'
+import { resolveCanonicalSheetAbilityName } from '~/utils/sheetAbilities'
 import { aa066EffectiveCombatStages } from '../abilityAutomation/mechanics/aa066StageIntegration'
+import { aa076EffectiveCombatStages } from '../abilityAutomation/mechanics/aa076StaticIntegration'
 
 export const MOVE_AUTOMATION_STAT_LABELS = Object.freeze({
   attack: 'Attack',
@@ -178,6 +180,8 @@ interface MoveAutomationStatTokenSnapshot {
   readonly conditions: readonly string[]
   readonly abilityNames: readonly string[]
   readonly dauntlessShieldActive: boolean
+  readonly intrepidSwordActive: boolean
+  readonly keenEyeActive: boolean
   readonly gutsActive: boolean
 }
 
@@ -218,6 +222,8 @@ const finiteOrNull = (value: unknown): number | null => (
 const statTokenSnapshot = (
   token: SpawnedPokemon,
   dauntlessShieldActive: boolean,
+  intrepidSwordActive: boolean,
+  keenEyeActive: boolean,
   gutsActive: boolean,
 ): MoveAutomationStatTokenSnapshot => deepFreeze({
   id: token.id,
@@ -232,10 +238,14 @@ const statTokenSnapshot = (
   combatStages: normalizeCombatStages(token.combatStages),
   conditions: [...token.conditions],
   abilityNames: [
-    ...(token.abilityNames ?? []).filter(name => name !== 'Guts'),
+    ...(token.abilityNames ?? []).filter(name => name !== 'Guts'
+      && resolveCanonicalSheetAbilityName(name) !== 'Keen Eye'),
     ...(gutsActive ? ['Guts'] : []),
+    ...(keenEyeActive ? ['Keen Eye'] : []),
   ],
   dauntlessShieldActive,
+  intrepidSwordActive,
+  keenEyeActive,
   gutsActive,
 })
 
@@ -265,9 +275,12 @@ interface MoveAutomationStageSnapshots {
 const stageSnapshots = (
   token: MoveAutomationStatTokenSnapshot,
 ): MoveAutomationStageSnapshots => {
-  const authored = aa066EffectiveCombatStages({
-    stages: normalizeCombatStages(token.combatStages),
-    abilityNames: token.dauntlessShieldActive ? ['Dauntless Shield'] : [],
+  const authored = aa076EffectiveCombatStages({
+    stages: aa066EffectiveCombatStages({
+      stages: normalizeCombatStages(token.combatStages),
+      abilityNames: token.dauntlessShieldActive ? ['Dauntless Shield'] : [],
+    }),
+    intrepidSwordActive: token.intrepidSwordActive,
   })
   return {
     authored,
@@ -393,6 +406,12 @@ export const createMoveAutomationStatResolver = (
       token,
       input.hasEffectiveAbility?.(token.id, 'Dauntless Shield')
         ?? token.abilityNames?.includes('Dauntless Shield')
+        ?? false,
+      input.hasEffectiveAbility?.(token.id, 'Intrepid Sword')
+        ?? token.abilityNames?.includes('Intrepid Sword')
+        ?? false,
+      input.hasEffectiveAbility?.(token.id, 'Keen Eye')
+        ?? token.abilityNames?.some(name => resolveCanonicalSheetAbilityName(name) === 'Keen Eye')
         ?? false,
       input.hasEffectiveAbility?.(token.id, 'Guts')
         ?? token.abilityNames?.includes('Guts')

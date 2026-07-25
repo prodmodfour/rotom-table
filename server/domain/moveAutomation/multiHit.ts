@@ -77,6 +77,14 @@ import {
   aa075IceScalesDamageTypeOverlay,
   aa075InfiltratorBypassesTemporaryHp,
 } from '../abilityAutomation/mechanics/aa075StaticIntegration'
+import {
+  aa076InstinctEvasionBonus,
+  aa076IronFistDamageBaseBonus,
+  aa076KampfgeistDamageTypeOverlay,
+  aa076KeenEyeActive,
+  aa076TargetWithoutLegacyIlluminate,
+  aa076TokenWithEffectiveKeenEye,
+} from '../abilityAutomation/mechanics/aa076StaticIntegration'
 import { applyEncounterNumericModifiers } from './encounterNumericModifiers'
 import type {
   MoveCoreTokenEffectRecipient,
@@ -492,25 +500,35 @@ const rollAccuracy = (options: {
     targetPlacementId: options.target.id,
     script: options.script,
   })
+  const keenEye = aa076KeenEyeActive(options.context)
   const baseTargetEvasion = resolveMoveAutomationTargetEvasion(
     options.script,
-    options.target,
+    aa076TargetWithoutLegacyIlluminate(aa076TokenWithEffectiveKeenEye({
+      context: options.context,
+      token: options.target,
+    })),
     {
-      attacker: options.actor,
+      attacker: aa076TokenWithEffectiveKeenEye({
+        context: options.context,
+        token: options.actor,
+      }),
       fieldEffects: options.context.queries.rooms.projectFieldEffects(),
       dauntlessShieldActive: options.context.queries.abilities.has(
         options.target.id,
         'Dauntless Shield',
       ),
     },
-  ).value
-    + aa065CovertEvasionBonus({ context: options.context, placementId: options.target.id })
-    + aa066DecoyEvasionBonus({ map: options.context.map, placementId: options.target.id })
+  ).value + (keenEye
+    ? 0
+    : aa076InstinctEvasionBonus({ context: options.context, recipientId: options.target.id })
+      + aa065CovertEvasionBonus({ context: options.context, placementId: options.target.id })
+      + aa066DecoyEvasionBonus({ map: options.context.map, placementId: options.target.id }))
   const targetEvasion = applyEncounterNumericModifiers({
     map: options.context.map,
     placementId: options.target.id,
     attribute: 'evasion',
     baseValue: baseTargetEvasion,
+    changePolicy: keenEye ? 'non-increasing' : 'all',
   }).value
   const rolled = options.context.random.roll({
     rollId,
@@ -802,6 +820,8 @@ export const executeMoveMultiHitOperation = (options: {
   readonly firstStrikeResistanceStepsByRecipient?: ReadonlyMap<string, number>
   /** Whole-attack resistance steps apply independently to every successful strike. */
   readonly allStrikeResistanceStepsByRecipient?: ReadonlyMap<string, number>
+  /** Selected Kampfgeist owners resist matching Bug, Dark, or Rock strikes. */
+  readonly kampfgeistResistanceRecipientIds?: ReadonlySet<string>
   /** Gorilla Tactics was accepted on this still-uncommitted triggering Move. */
   readonly gorillaTacticsTriggeringDamage?: boolean
   /** At most one adjacent Ignition Boost provider accepted this triggering Move. */
@@ -966,13 +986,16 @@ export const executeMoveMultiHitOperation = (options: {
             ? 0
             : options.firstStrikeResistanceStepsByRecipient?.get(recipientId) ?? 0
           const allStrikeResistanceSteps = options.allStrikeResistanceStepsByRecipient?.get(recipientId) ?? 0
-          const resistanceSteps = firstStrikeResistanceSteps + allStrikeResistanceSteps
+          const kampfgeistResistance = options.kampfgeistResistanceRecipientIds?.has(recipientId)
+            && ['Bug', 'Dark', 'Rock'].includes(furCoatType.moveType) ? 1 : 0
+          const resistanceSteps = firstStrikeResistanceSteps + allStrikeResistanceSteps + kampfgeistResistance
           const aa071Type = aa071ResistDamageType({
             resolved: furCoatType,
             steps: resistanceSteps,
             sources: [
               ...Array.from({ length: firstStrikeResistanceSteps }, () => 'AA-071 triggered resistance'),
               ...Array.from({ length: allStrikeResistanceSteps }, () => 'Innards Out'),
+              ...Array.from({ length: kampfgeistResistance }, () => 'Kampfgeist'),
             ],
           })
           const heatproofType = aa073HeatproofDamageTypeOverlay({
@@ -980,11 +1003,14 @@ export const executeMoveMultiHitOperation = (options: {
             recipientId,
             resolved: aa071Type,
           })
-          const resolvedType = aa075IceScalesDamageTypeOverlay({
+          const resolvedType = aa076KampfgeistDamageTypeOverlay({
             context,
-            damageClass,
-            recipientId,
-            resolved: heatproofType,
+            resolved: aa075IceScalesDamageTypeOverlay({
+              context,
+              damageClass,
+              recipientId,
+              resolved: heatproofType,
+            }),
           })
           if (firstStrikeResistanceSteps > 0) resistanceAppliedTargetIds.add(recipientId)
           const formula = resolveMoveSpecDamageRollFormula({
@@ -993,6 +1019,10 @@ export const executeMoveMultiHitOperation = (options: {
             recipientId,
             canonicalMoveId: options.canonicalMoveId,
             resolvedType,
+            postBoundsDamageBaseBonus: aa076IronFistDamageBaseBonus({
+              context,
+              script: options.script,
+            }),
             failUnsupported: message => fail(
               'damage-formula-unsupported',
               operation,

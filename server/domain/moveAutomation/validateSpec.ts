@@ -1032,12 +1032,18 @@ export const validateMoveSpecOperationSequence = (
         && operation.source.kind === 'operation'
         && reactionRequestIds.has(operation.source.id)
         && operation.kind === 'direct-hp'
-        && operation.reasonCode === 'ability.innards-out.hp-loss'
+        && ['ability.innards-out.hp-loss', 'ability.iron-barbs.attacker-hp-loss']
+          .includes(operation.reasonCode)
+      const reviewedPostMultiStage = operation.phase === 'cleanup'
+        && operation.source.kind === 'operation'
+        && reactionRequestIds.has(operation.source.id)
+        && operation.kind === 'combat-stage'
+        && operation.reasonCode === 'ability.justified.raise-attack'
       return operation.kind === 'damage'
         || (operation.kind === 'direct-hp' && !reviewedPostMultiReaction)
         || operation.kind === 'heal'
         || operation.kind === 'condition'
-        || (operation.kind === 'combat-stage' && !(
+        || (operation.kind === 'combat-stage' && !reviewedPostMultiStage && !(
           operation.phase === 'after-damage'
           && operation.source.kind === 'operation'
           && reactionRequestIds.has(operation.source.id)

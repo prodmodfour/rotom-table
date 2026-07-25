@@ -2,7 +2,7 @@
 
 `PLAN_STATUS: IN_PROGRESS`
 
-`CURRENT_TICKET: AA-076`
+`CURRENT_TICKET: AA-077`
 
 ## Goal
 
@@ -96,14 +96,14 @@ Ability automation should reuse MoveSpec v2 selectors, expressions, operations, 
 
 ## Progress snapshot
 
-- Plan tickets: **75 DONE / 110 total**
+- Plan tickets: **76 DONE / 110 total**
 - Canonical inventory: **483**
-- Semantically complete: **192**
+- Semantically complete: **204**
 - Assisted: **0**
-- Blocked/unimplemented: **291**
+- Blocked/unimplemented: **279**
 - Interaction status: **483 unassessed**
 - Legacy baseline: **45 abilities with 55 partial fragments; 438 with no reviewed legacy fragment**
-- Production runtime: **192 exact manifest-selected AbilitySpec v1 runtimes**; retained legacy paths remain explicit compatibility only
+- Production runtime: **204 exact manifest-selected AbilitySpec v1 runtimes**; retained legacy paths remain explicit compatibility only
 
 ## Tickets
 
@@ -271,7 +271,7 @@ Each cohort must review every named ability against canonical text, implement al
   - Heavy Metal; Heliovolt; Helper; Honey Paws; Honey Thief; Horde Break; Huge Power; Huge Power / Pure Power; Hunger Switch; Hustle; Hydration; Hyper Cutter
 - [x] **AA-075 — Hypnotic through Innards Out** — `DONE`
   - Hypnotic; Ice Body; Ice Face; Ice Scales; Ice Shield; Ignition Boost; Illuminate; Illusion; Immunity; Imposter; Infiltrator; Innards Out
-- [ ] **AA-076 — Inner Focus through Keen Eye** — `IN_PROGRESS`
+- [x] **AA-076 — Inner Focus through Keen Eye** — `DONE`
   - Inner Focus; Insomnia; Instinct; Interference; Intimidate; Intrepid Sword; Iron Barbs; Iron Fist; Juicy Energy; Justified; Kampfgeist; Keen Eye
 - [ ] **AA-077 — Klutz through Light Metal** — `TODO`
   - Klutz; Lancer; Landslide; Last Chance; Leaf Gift; Leaf Guard; Leaf Rush; Leafy Cloak; Leek Mastery; Levitate; Life Force; Light Metal
@@ -364,3 +364,5 @@ Each cohort must review every named ability against canonical text, implement al
 - **2026-07-24 — Keep AA-075 visual identity outside authoritative mechanics.** Illusion marks and active appearance survive reconnect as bounded ability-owned state and typed effects, but renderer projection never replaces the user's types, statistics, footprint, capabilities, movement, abilities, or Move rules token.
 - **2026-07-24 — Track Ice Face through feature-owned Temporary HP evidence.** Ice Face form requires its non-dispellable ownership marker and a remaining pool; depletion or an unrelated replacement clears ownership, while battle start and Hail restoration explicitly establish it.
 - **2026-07-24 — Run Infiltrator at exact authoritative boundaries.** Its Substitute bypass recognizes only the typed Substitute capability, responsive Blessing blocking names exact effect IDs without consuming charges, and normal/resumed movement executes zone entry so hazard immunity is observable as `ability-immune`.
+- **2026-07-25 — Preserve AA-076 reaction semantics across multi-hit and nested execution.** Iron Barbs and Justified wait for authoritative hit evidence, Kampfgeist waits for actual typed damage, disjoint HP/stage writes merge into one sheet CAS, and a nested reaction retains its reviewed child phase through durable suspension and resume.
+- **2026-07-25 — Apply AA-076 capacity and modifier rules from effective abilities.** Juicy Energy exposes and revalidates only regular or effective Honey Paws Berry Juice storage, while Inner Focus and Keen Eye filter only unwilling Initiative lowering, Accuracy penalties, and non-stat Evasion without erasing unrelated bonuses or Total Blindness.

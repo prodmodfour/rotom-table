@@ -68,6 +68,7 @@ import {
 import { resolveAuthoritativeAbilityTargets } from '../domain/abilityAutomation/targeting'
 import { createMoveAutomationWeatherResolver } from '../domain/moveAutomation/weather'
 import { aa071ForecastTypeResolution } from '../domain/abilityAutomation/mechanics/aa071StaticIntegration'
+import { aa076BerryJuiceBuffSlots } from '../domain/abilityAutomation/mechanics/aa076Activated'
 import { resolveMoveAutomationItemRuleIdentity } from '../domain/moveAutomation/itemRuleData'
 import {
   createSqliteAbilityDeclarationOfferRepository,
@@ -347,6 +348,21 @@ const declarationsFor = (
                 declaration.id, index, declaration.kind,
                 { kind: 'branch', branchId: mark.stateId },
               ))
+        }
+        else if (context.runtime.canonicalId === 'Juicy Energy' && modeId === 'activate') {
+          options = aa076BerryJuiceBuffSlots(
+            context.actor.sheet.kind,
+            context.actor.sheet.sheet,
+            {
+              honeyPawsAvailable: context.queries.effectiveAbilities.has(
+                context.actor.placement.id,
+                'Honey Paws',
+              ),
+            },
+          ).map((slot, index) => option(
+            declaration.id, index, declaration.kind,
+            { kind: 'branch', branchId: slot.branchId },
+          ))
         }
         else fail(422, `Ability branch declaration ${declaration.id} requires a reviewed declaration adapter.`)
       }

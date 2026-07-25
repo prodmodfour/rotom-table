@@ -2032,6 +2032,14 @@ export const resolveAuthoritativeMoveExecutionFromContext = (
   const entry = moveEntryResult.ok
     ? moveEntryResult.entry
     : fail('not-found', 'move-absent', 'Move entry resolution failed.')
+  if (entry.canonicalMoveName === 'Rest'
+    && context.queries.abilities.has(actorPlacement.id, 'Insomnia')) {
+    fail(
+      'unauthorized-state',
+      'move-creature-rule-blocked',
+      'Rest cannot be declared while the user has effective Insomnia.',
+    )
+  }
   if (intent.originCell && !aa063RangedMove(entry.script)) {
     fail('invalid', 'virtual-origin-invalid', 'Clay Cannons can originate only Ranged Moves from a virtual square.')
   }

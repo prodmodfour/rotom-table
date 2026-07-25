@@ -93,6 +93,12 @@ export const AA075_ABILITY_MECHANIC_IDS = [
   'aa075.illusion', 'aa075.immunity', 'aa075.imposter', 'aa075.infiltrator',
   'aa075.innards-out',
 ] as const
+export const AA076_ABILITY_MECHANIC_IDS = [
+  'aa076.inner-focus', 'aa076.insomnia', 'aa076.instinct', 'aa076.interference',
+  'aa076.intimidate', 'aa076.intrepid-sword', 'aa076.iron-barbs',
+  'aa076.iron-fist', 'aa076.juicy-energy', 'aa076.justified',
+  'aa076.kampfgeist', 'aa076.keen-eye',
+] as const
 export type Aa060AbilityMechanicId = (typeof AA060_ABILITY_MECHANIC_IDS)[number]
 export type AbilityMechanicId = Aa060AbilityMechanicId
   | (typeof AA061_ABILITY_MECHANIC_IDS)[number]
@@ -110,6 +116,7 @@ export type AbilityMechanicId = Aa060AbilityMechanicId
   | (typeof AA073_ABILITY_MECHANIC_IDS)[number]
   | (typeof AA074_ABILITY_MECHANIC_IDS)[number]
   | (typeof AA075_ABILITY_MECHANIC_IDS)[number]
+  | (typeof AA076_ABILITY_MECHANIC_IDS)[number]
 export interface AbilityMechanicOperation extends AbilitySpecJsonObject {
   readonly kind: typeof ABILITY_MECHANIC_OPERATION_KIND
   readonly id: string
@@ -320,6 +327,18 @@ const CONFIG_FIELDS: Readonly<Record<AbilityMechanicId, readonly string[]>> = {
   'aa075.imposter': ['connectionMoveId', 'actionOverride', 'requiresUntransformed'],
   'aa075.infiltrator': ['stealthBonus', 'ignoreHazards', 'blockResponsiveBlessings', 'bypassSubstitute'],
   'aa075.innards-out': ['action', 'frequency', 'damagingOnly', 'resistanceSteps', 'foeRange', 'reflectedRealHpMultiplier', 'resolvesAfterAttack', 'resolvesAfterFainting'],
+  'aa076.inner-focus': ['blockedConditions', 'preventUnwillingInitiativeLowering'],
+  'aa076.insomnia': ['blockedConditions', 'blockedMoveIds'],
+  'aa076.instinct': ['defaultEvasionBonus'],
+  'aa076.interference': ['action', 'frequency', 'targetRelationship', 'radius', 'accuracyPenalty', 'duration'],
+  'aa076.intimidate': ['action', 'frequency', 'targetRelationship', 'range', 'attackStageDelta', 'perTargetFrequency'],
+  'aa076.intrepid-sword': ['stat', 'defaultStageBonus'],
+  'aa076.iron-barbs': ['action', 'frequency', 'trigger', 'hitPointLossTicks', 'reaction'],
+  'aa076.iron-fist': ['moveIds', 'damageBaseBonus'],
+  'aa076.juicy-energy': ['action', 'frequency', 'consumedBuffItemId', 'ordinaryHealing', 'replacementHealing'],
+  'aa076.justified': ['action', 'frequency', 'triggerMoveType', 'triggerAttackOfOpportunity', 'attackStageDelta', 'interceptCheckBonus'],
+  'aa076.kampfgeist': ['action', 'frequency', 'triggerTypes', 'resistanceSteps', 'bonusStabType'],
+  'aa076.keen-eye': ['protectAccuracyStage', 'ignoreAccuracyPenalties', 'blockedCondition', 'excludedCondition', 'ignoreNonStatEvasion'],
 }
 const MECHANIC_SET = new Set<string>([
   ...AA060_ABILITY_MECHANIC_IDS, ...AA061_ABILITY_MECHANIC_IDS,
@@ -330,6 +349,7 @@ const MECHANIC_SET = new Set<string>([
   ...AA070_ABILITY_MECHANIC_IDS, ...AA071_ABILITY_MECHANIC_IDS,
   ...AA072_ABILITY_MECHANIC_IDS, ...AA073_ABILITY_MECHANIC_IDS,
   ...AA074_ABILITY_MECHANIC_IDS, ...AA075_ABILITY_MECHANIC_IDS,
+  ...AA076_ABILITY_MECHANIC_IDS,
 ])
 const ID = /^[a-z0-9]+(?:[._:/-][a-z0-9]+)*$/
 const fail = (code: AbilityMechanicValidationError['code'], path: string, detail: string): never => { throw new AbilityMechanicValidationError(code, path, detail) }
@@ -1338,11 +1358,64 @@ const parseConfig = (mechanicId: AbilityMechanicId, value: unknown, path: string
       resistanceSteps: integer(config.resistanceSteps, `${path}.resistanceSteps`, 1, 1), foeRange: integer(config.foeRange, `${path}.foeRange`, 2, 2), reflectedRealHpMultiplier: integer(config.reflectedRealHpMultiplier, `${path}.reflectedRealHpMultiplier`, 2, 2),
       resolvesAfterAttack: bool(config.resolvesAfterAttack, `${path}.resolvesAfterAttack`), resolvesAfterFainting: bool(config.resolvesAfterFainting, `${path}.resolvesAfterFainting`),
     }
+    case 'aa076.inner-focus': return {
+      blockedConditions: stringArray(config.blockedConditions, ['flinch'], `${path}.blockedConditions`),
+      preventUnwillingInitiativeLowering: bool(config.preventUnwillingInitiativeLowering, `${path}.preventUnwillingInitiativeLowering`),
+    }
+    case 'aa076.insomnia': return {
+      blockedConditions: stringArray(config.blockedConditions, ['sleep'], `${path}.blockedConditions`),
+      blockedMoveIds: stringArray(config.blockedMoveIds, ['Rest'], `${path}.blockedMoveIds`),
+    }
+    case 'aa076.instinct': return {
+      defaultEvasionBonus: integer(config.defaultEvasionBonus, `${path}.defaultEvasionBonus`, 2, 2),
+    }
+    case 'aa076.interference': return {
+      action: oneOf(config.action, ['swift'], `${path}.action`), frequency: oneOf(config.frequency, ['scene'], `${path}.frequency`),
+      targetRelationship: oneOf(config.targetRelationship, ['foes'], `${path}.targetRelationship`), radius: integer(config.radius, `${path}.radius`, 3, 3),
+      accuracyPenalty: integer(config.accuracyPenalty, `${path}.accuracyPenalty`, -2, -2), duration: oneOf(config.duration, ['one-full-round'], `${path}.duration`),
+    }
+    case 'aa076.intimidate': return {
+      action: oneOf(config.action, ['swift'], `${path}.action`), frequency: oneOf(config.frequency, ['at-will'], `${path}.frequency`),
+      targetRelationship: oneOf(config.targetRelationship, ['foe'], `${path}.targetRelationship`), range: integer(config.range, `${path}.range`, 5, 5),
+      attackStageDelta: integer(config.attackStageDelta, `${path}.attackStageDelta`, -1, -1), perTargetFrequency: oneOf(config.perTargetFrequency, ['scene'], `${path}.perTargetFrequency`),
+    }
+    case 'aa076.intrepid-sword': return {
+      stat: oneOf(config.stat, ['attack'], `${path}.stat`), defaultStageBonus: integer(config.defaultStageBonus, `${path}.defaultStageBonus`, 1, 1),
+    }
+    case 'aa076.iron-barbs': return {
+      action: oneOf(config.action, ['free'], `${path}.action`), frequency: oneOf(config.frequency, ['at-will'], `${path}.frequency`),
+      trigger: oneOf(config.trigger, ['damaging-melee-hit'], `${path}.trigger`), hitPointLossTicks: integer(config.hitPointLossTicks, `${path}.hitPointLossTicks`, 1, 1),
+      reaction: bool(config.reaction, `${path}.reaction`),
+    }
+    case 'aa076.iron-fist': return {
+      moveIds: stringArray(config.moveIds, ['Bullet Punch', 'Comet Punch', 'Dizzy Punch', 'Double Iron Bash', 'Drain Punch', 'Dynamic Punch', 'Fire Punch', 'Focus Punch', 'Hammer Arm', 'Ice Punch', 'Mach Punch', 'Mega Punch', 'Meteor Mash', 'Power-Up Punch', 'Shadow Punch', 'Sky Uppercut', 'Thunder Punch'], `${path}.moveIds`),
+      damageBaseBonus: integer(config.damageBaseBonus, `${path}.damageBaseBonus`, 2, 2),
+    }
+    case 'aa076.juicy-energy': return {
+      action: oneOf(config.action, ['free'], `${path}.action`), frequency: oneOf(config.frequency, ['daily'], `${path}.frequency`),
+      consumedBuffItemId: oneOf(config.consumedBuffItemId, ['shuckles-berry-juice'], `${path}.consumedBuffItemId`), ordinaryHealing: integer(config.ordinaryHealing, `${path}.ordinaryHealing`, 30, 30),
+      replacementHealing: oneOf(config.replacementHealing, ['user-level'], `${path}.replacementHealing`),
+    }
+    case 'aa076.justified': return {
+      action: oneOf(config.action, ['free'], `${path}.action`), frequency: oneOf(config.frequency, ['at-will'], `${path}.frequency`),
+      triggerMoveType: oneOf(config.triggerMoveType, ['dark'], `${path}.triggerMoveType`), triggerAttackOfOpportunity: bool(config.triggerAttackOfOpportunity, `${path}.triggerAttackOfOpportunity`),
+      attackStageDelta: integer(config.attackStageDelta, `${path}.attackStageDelta`, 1, 1), interceptCheckBonus: integer(config.interceptCheckBonus, `${path}.interceptCheckBonus`, 4, 4),
+    }
+    case 'aa076.kampfgeist': return {
+      action: oneOf(config.action, ['free'], `${path}.action`), frequency: oneOf(config.frequency, ['scene'], `${path}.frequency`),
+      triggerTypes: stringArray(config.triggerTypes, ['bug', 'dark', 'rock'], `${path}.triggerTypes`), resistanceSteps: integer(config.resistanceSteps, `${path}.resistanceSteps`, 1, 1),
+      bonusStabType: oneOf(config.bonusStabType, ['fighting'], `${path}.bonusStabType`),
+    }
+    case 'aa076.keen-eye': return {
+      protectAccuracyStage: bool(config.protectAccuracyStage, `${path}.protectAccuracyStage`), ignoreAccuracyPenalties: bool(config.ignoreAccuracyPenalties, `${path}.ignoreAccuracyPenalties`),
+      blockedCondition: oneOf(config.blockedCondition, ['blindness'], `${path}.blockedCondition`), excludedCondition: oneOf(config.excludedCondition, ['total-blindness'], `${path}.excludedCondition`),
+      ignoreNonStatEvasion: bool(config.ignoreNonStatEvasion, `${path}.ignoreNonStatEvasion`),
+    }
   }
 }
 export const parseAbilityMechanicOperation = (value: unknown, path = 'abilityMechanic'): AbilityMechanicOperation => {
   const cloned = cloneStrictJson(value, path, {
-    limits: { depth: 5, nodes: 128, objectFields: 16, arrayEntries: 16, stringLength: 200, objectKeyLength: 200 },
+    limits: { depth: 5, nodes: 160, objectFields: 16, arrayEntries: 32, stringLength: 200, objectKeyLength: 200 },
     rootLabel: 'ability mechanic operation', valueLabel: 'ability mechanic values',
     failNotJson: (failurePath, detail) => fail('not-json', failurePath, detail),
     failLimit: (failurePath, detail) => fail('limit-exceeded', failurePath, detail),

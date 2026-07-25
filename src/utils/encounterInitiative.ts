@@ -144,6 +144,8 @@ export const resolveEncounterInitiative = (input: {
   readonly calculatedScore: number
   /** Server-selected Tailwind overlay; null explicitly selects no Tailwind. */
   readonly authoritativeTailwind?: AuthoritativeTailwindInitiativeOverlay | null
+  /** Effective Inner Focus rejects every encounter effect that would lower the score. */
+  readonly preventLowering?: boolean
 }): EncounterInitiativeResolution => {
   let score = input.calculatedScore
   const contributions: EncounterInitiativeContribution[] = []
@@ -155,11 +157,15 @@ export const resolveEncounterInitiative = (input: {
     const previousScore = score
     const tailwind = effect.tags.includes(TAILWIND_EFFECT_TAG)
       && isTailwindInitiativeEffect(effect)
-    score = applyModifier(
+    const candidate = applyModifier(
       score,
       effect,
       tailwind ? input.authoritativeTailwind?.initiativeBonus : undefined,
     )
+    if (input.preventLowering
+      && candidate < previousScore
+      && effect.source.placementId !== input.placement.id) continue
+    score = candidate
     contributions.push({
       effectId: effect.id,
       source: effect.source,

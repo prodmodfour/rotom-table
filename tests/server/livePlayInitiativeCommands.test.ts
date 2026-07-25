@@ -1422,6 +1422,61 @@ describe('live-play initiative commands', () => {
     })
   })
 
+  it('uses effective Inner Focus to prevent unwilling condition-derived Initiative lowering', async () => {
+    const harness = createHarness(baseMap({
+      placements: [
+        {
+          id: 'token-alpha',
+          sheetKind: 'pokemon',
+          sheetSlug: 'alpha',
+          position: { x: 1, y: 0, z: 1 },
+        },
+        {
+          id: 'token-bravo',
+          sheetKind: 'pokemon',
+          sheetSlug: 'bravo',
+          position: { x: 2, y: 0, z: 1 },
+        },
+        {
+          id: 'token-zulu',
+          sheetKind: 'pokemon',
+          sheetSlug: 'zulu',
+          position: { x: 3, y: 0, z: 1 },
+        },
+      ],
+      initiative: { activeId: 'token-alpha', round: 1 },
+    }))
+    harness.deps.readSheet.mockImplementation((_kind, slug) => ({
+      path: `/tmp/${slug}.json`,
+      sheet: slug === 'alpha'
+        ? pokemonInitiativeSheet(slug, 30, {
+            combat: { conditions: ['Paralysis', 'Flinch'] },
+            abilities: [{
+              name: 'Inner Focus',
+              automation: {
+                schemaVersion: 1,
+                instanceId: 'base:inner-focus',
+                canonicalId: 'Inner Focus',
+                definitionVersion: null,
+                selections: [],
+              },
+            }],
+          })
+        : pokemonInitiativeSheet(slug, slug === 'bravo' ? 20 : 10),
+    }))
+
+    const response = await execute(harness, nextInitiativeCommand({
+      payload: {
+        orderIds: ['token-alpha', 'token-bravo', 'token-zulu'],
+        activeId: 'token-alpha',
+        round: 1,
+      },
+    }))
+
+    expect(response.result).toMatchObject({ ok: true })
+    expect(harness.storedMap.initiative).toEqual({ activeId: 'token-bravo', round: 1 })
+  })
+
   it('uses the same effective order for live-play PREVIOUS_INITIATIVE', async () => {
     const harness = createHarness(baseMap({
       placements: [

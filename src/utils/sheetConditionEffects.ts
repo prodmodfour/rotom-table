@@ -41,6 +41,7 @@ const SHIFT_MOVEMENT_BLOCKING_CONDITIONS = ['Stuck', 'Tripped'] as const
 export const QUICK_FEET_ABILITY_NAME = 'Quick Feet'
 export const GUTS_ABILITY_NAME = 'Guts'
 export const HEATPROOF_ABILITY_NAME = 'Heatproof'
+export const INNER_FOCUS_ABILITY_NAME = 'Inner Focus'
 
 const QUICK_FEET_TRIGGERING_CONDITIONS = [
   'Burned',
@@ -375,8 +376,9 @@ export const conditionAdjustedInitiative = (
 ): number => {
   const set = conditionSet(conditions)
   let initiative = Math.trunc(finiteNumber(baseSpeed))
-  if (set.has('Paralysis') && !hasQuickFeetAbility(options.abilities)) initiative = Math.floor(initiative / 2)
-  const flinchStacks = conditionStackCount(conditions, 'Flinch')
+  const innerFocus = sheetHasCanonicalAbility(options.abilities, INNER_FOCUS_ABILITY_NAME)
+  if (set.has('Paralysis') && !innerFocus && !hasQuickFeetAbility(options.abilities)) initiative = Math.floor(initiative / 2)
+  const flinchStacks = innerFocus ? 0 : conditionStackCount(conditions, 'Flinch')
   if (flinchStacks > 0) initiative -= 5 * flinchStacks
   return initiative
 }
