@@ -18,6 +18,7 @@ import { aa071ForecastTypeResolution } from '../abilityAutomation/mechanics/aa07
 import { aa074AdjustedToken } from '../abilityAutomation/mechanics/aa074StaticIntegration'
 import { aa075IceFaceFormToken } from '../abilityAutomation/mechanics/aa075StaticIntegration'
 import { aa077AdjustedToken } from '../abilityAutomation/mechanics/aa077StaticIntegration'
+import { aa078MovePresentationScript } from '../abilityAutomation/mechanics/aa078StaticIntegration'
 import type { GridAnchor, SheetKind, SheetPlacement, TabletopMap } from '~/types/map'
 import type { MoveAutomationScript } from '~/types/moveAutomation'
 import type { SpawnedPokemon } from '~/types/pokemon'
@@ -980,9 +981,12 @@ export const buildAuthoritativeMoveRulesContext = (
         ?? nativeMoveAutomationPresentationScriptForMove(canonicalMove.name)
       const baseScript = presentation ?? createMoveAutomationScriptFromMoveData(canonicalMove)
       const dustCloudActive = abilityQueries.has(actorPlacement.id, 'Dust Cloud')
-      const script = aa068DustCloudPresentationScript({
-        script: baseScript,
-        active: dustCloudActive,
+      const script = aa078MovePresentationScript({
+        context: { actor: { placement: actorPlacement }, queries: { abilities: abilityQueries }, map },
+        script: aa068DustCloudPresentationScript({
+          script: baseScript,
+          active: dustCloudActive,
+        }),
       })
       const selectedBranch = intent.targetBranchId === AA068_DUST_CLOUD_BURST_BRANCH_ID
         ? aa068DustCloudSelectedScript({
@@ -993,12 +997,17 @@ export const buildAuthoritativeMoveRulesContext = (
         : intent.targetBranchId
           ? moveAutomationScriptForTargetBranch(script, intent.targetBranchId)
           : null
+      const selectedScript = aa078MovePresentationScript({
+        context: { actor: { placement: actorPlacement }, queries: { abilities: abilityQueries }, map },
+        script: selectedBranch ?? script,
+        qualificationScript: baseScript,
+      })
       // The reviewed spec is authoritative for intent shape. Canonical range
       // prose such as Blessing does not itself imply the self declaration that
       // a native runtime has explicitly reviewed.
       return detachedFrozenJson(selectedRuntime.definition.spec.targeting.kind === 'self'
-        ? { ...script, targetMode: 'self', targetCount: 1 }
-        : selectedBranch ?? script)
+        ? { ...selectedScript, targetMode: 'self', targetCount: 1 }
+        : selectedScript)
     }
     return legacyScriptFor(moveName)
   }

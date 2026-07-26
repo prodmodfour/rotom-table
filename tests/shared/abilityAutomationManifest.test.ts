@@ -146,10 +146,12 @@ describe('ability automation semantic manifest', () => {
         'Interference', 'Intimidate', 'Intrepid Sword', 'Iron Barbs', 'Iron Fist',
         'Juicy Energy', 'Justified', 'Kampfgeist', 'Keen Eye', 'Klutz', 'Lancer',
         'Landslide', 'Last Chance', 'Leaf Gift', 'Leaf Guard', 'Leaf Rush', 'Leafy Cloak',
-        'Leek Mastery', 'Levitate', 'Life Force', 'Light Metal',
+        'Leek Mastery', 'Levitate', 'Life Force', 'Light Metal', 'Lightning Kicks',
+        'Lightning Rod', 'Limber', 'Line Charge', 'Liquid Ooze', 'Liquid Voice',
+        'Long Reach', 'Lullaby', 'Lunchbox', 'Mach Speed', 'Maelstrom Pulse', 'Magic Bounce',
       ])
-    expect(manifest.abilities.filter(ability => ability.baseStatus === 'blocked')).toHaveLength(267)
-    expect(manifest.abilities.filter(ability => ability.runtime.kind === 'unimplemented')).toHaveLength(267)
+    expect(manifest.abilities.filter(ability => ability.baseStatus === 'blocked')).toHaveLength(255)
+    expect(manifest.abilities.filter(ability => ability.runtime.kind === 'unimplemented')).toHaveLength(255)
   })
 
   it('keeps bootstrap mode hints non-authoritative and maps every row to its plan cohort', () => {

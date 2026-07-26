@@ -70,6 +70,7 @@ import { aa060MoveMarkId } from '../abilityAutomation/mechanics/aa060MoveIntegra
 import { Aa060AnchoredMovementError, assertAa060AnchoredDestination } from '../abilityAutomation/mechanics/aa060'
 import { aa061AquaBulletStateIdsForMove, aa061BatteryStateIdsForMove } from '../abilityAutomation/mechanics/aa061MoveIntegration'
 import { aa077LeafRushStateIdsForMove } from '../abilityAutomation/mechanics/aa077StaticIntegration'
+import { aa078StateIdsForMove } from '../abilityAutomation/mechanics/aa078StaticIntegration'
 import { aa062BoneLordReadyStateIds } from '../abilityAutomation/mechanics/aa062MoveIntegration'
 import { recordAa065CudChewConsumptions } from '../abilityAutomation/mechanics/aa065ItemIntegration'
 import { applyAa061BallFetchSendOutTriggers } from '../abilityAutomation/mechanics/aa061PresenceIntegration'
@@ -718,6 +719,11 @@ const applyTriggeredAbilityPayments = (input: {
     ['ability.justified.optional-attack-stage', 'Justified'],
     ['ability.kampfgeist.optional-resistance', 'Kampfgeist'],
     ['ability.klutz.optional-knock-to-ground', 'Klutz'],
+    ['ability.lightning-rod.optional-redirection', 'Lightning Rod'],
+    ['ability.lullaby.optional-automatic-hit', 'Lullaby'],
+    ['ability.lunchbox.optional-temporary-hp', 'Lunchbox'],
+    ['ability.magic-bounce.optional-reflection', 'Magic Bounce'],
+    ['ability.magic-bounce.optional-hazard-control', 'Magic Bounce'],
   ])
   const noFrequency = new Set([
     'Anger Point', 'Aqua Boost', 'Beast Boost', 'Celebrate', 'Chilling Neigh',
@@ -1062,6 +1068,7 @@ export const planNativeV2MoveState = (options: {
       ...aa061AquaBulletStateIdsForMove(context, options.resolution.canonicalMoveName),
       ...aa062BoneLordReadyStateIds(context, options.resolution.canonicalMoveName),
       ...aa077LeafRushStateIdsForMove(context, options.resolution.script),
+      ...aa078StateIdsForMove(context, options.resolution.script),
     ],
   })
   const triggeredAbilityPayments = applyTriggeredAbilityPayments({

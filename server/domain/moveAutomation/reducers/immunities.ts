@@ -31,6 +31,7 @@ import {
 } from '../../abilityAutomation/mechanics/aa073MoveIntegration'
 import { aa074HyperCutterBlocksStage } from '../../abilityAutomation/mechanics/aa074StaticIntegration'
 import { AA076_IRON_BARBS_HP_REASON } from '../../abilityAutomation/mechanics/aa076MoveIntegration'
+import { aa078LightningRodBlocksElectric } from '../../abilityAutomation/mechanics/aa078StaticIntegration'
 import type {
   MoveConditionImmunityDecision,
   MoveCoreTokenEffectImmunityDecision,
@@ -208,6 +209,11 @@ export const createStandardMoveCoreTokenEffectImmunityQueries = (
   ): string | null => {
     if (!options.moveType) return 'unresolved move type'
     const target = recipient.token
+    if (typeSource === 'attacking' && aa078LightningRodBlocksElectric({
+      context: options.context,
+      recipientId: recipient.placement.id,
+      moveType: options.moveType,
+    })) return 'Lightning Rod'
     const effectiveLevitate = typeSource === 'attacking'
       && options.moveType.trim().toLowerCase() === 'ground'
       && options.context?.queries.abilities.has(recipient.placement.id, 'Levitate') === true
@@ -301,6 +307,9 @@ export const createStandardMoveCoreTokenEffectImmunityQueries = (
           : canonicalCondition === 'Flinch'
             && options.context?.queries.abilities.has(recipient.placement.id, 'Inner Focus')
             ? 'Inner Focus'
+            : canonicalCondition === 'Paralysis'
+              && options.context?.queries.abilities.has(recipient.placement.id, 'Limber')
+              ? 'Limber'
             : canonicalCondition === 'Blindness'
               && options.context?.queries.abilities.has(recipient.placement.id, 'Keen Eye')
               ? 'Keen Eye'
@@ -314,7 +323,7 @@ export const createStandardMoveCoreTokenEffectImmunityQueries = (
             )),
           }
         : recipient.token
-      const managedConditionAbilities = new Set(['immunity', 'insomnia', 'inner focus', 'keen eye'])
+      const managedConditionAbilities = new Set(['immunity', 'insomnia', 'inner focus', 'keen eye', 'limber'])
       const passiveRecipient = options.context
         ? {
             ...typedRecipient,

@@ -7,42 +7,19 @@ import type { MoveDamageEffectOperation } from '#shared/moveAutomation/effects'
 import type { CharacterSheet } from '~/types/characterSheet'
 import type { SheetPlacement, TabletopMap } from '~/types/map'
 import type { SpawnedPokemon } from '~/types/pokemon'
-import type { TrainerSheet } from '~/types/trainerSheet'
 import type { MoveAutomationScript } from '~/types/moveAutomation'
 import type { MoveDamageModifier } from '~/utils/moveAutomationDamagePipeline'
 import { applyCombatStageToStat } from '~/utils/combatStageStats'
 import { projectAa077AbilityTokenStats } from '~/utils/nativeAbilityTokenStats'
 import type { AuthoritativeMoveRulesContext } from '../../moveAutomation/context'
 import { planEncounterMoveResourceCosts } from '../../moveAutomation/planMoveResources'
-import { projectAuthoritativeEffectiveAbilities } from '../effectiveAbilities'
-import { resolveSheetAbilityInstances } from '../instanceParameters'
-import { ABILITY_AUTOMATION_RUNTIME_REGISTRY } from '../registry'
+import { effectiveRuntimeAbilityIds } from '../effectiveRuntimeAbilities'
 
 export const AA077_LIGHT_METAL_ABILITY = 'Light Metal' as const
 export const AA077_LEVITATE_ABILITY = 'Levitate' as const
 
-const activeRuntimeIds = (input: {
-  readonly map: Pick<TabletopMap, 'encounterState'>
-  readonly placement: Pick<SheetPlacement, 'id' | 'sideId' | 'position'>
-  readonly sheet: Pick<CharacterSheet | TrainerSheet, 'abilities'>
-}): readonly string[] => projectAuthoritativeEffectiveAbilities({
-  baseAbilities: resolveSheetAbilityInstances(input.sheet.abilities),
-  target: {
-    placementId: input.placement.id,
-    ...(input.placement.sideId ? { sideId: input.placement.sideId } : {}),
-    position: input.placement.position,
-  },
-  effects: input.map.encounterState?.effects ?? [],
-  transformationSnapshots: input.map.encounterState?.abilityTransformations,
-}).flatMap(ability => {
-  if (!ability.effective) return []
-  const runtime = ABILITY_AUTOMATION_RUNTIME_REGISTRY.resolve(ability.canonicalId)
-  if (!runtime || (ability.definitionHash !== null && ability.definitionHash !== runtime.definitionHash)) return []
-  return [ability.canonicalId]
-})
-
-/** Exact manifest-selected effective ability projection for non-Move server paths. */
-export const aa077EffectiveAbilityIds = activeRuntimeIds
+/** @deprecated Use the cohort-neutral exact runtime projection. */
+export const aa077EffectiveAbilityIds = effectiveRuntimeAbilityIds
 
 /**
  * Project Light Metal Base Stat/Weight adjustments and the Levitate ability's
@@ -64,7 +41,7 @@ export const aa077LightMetalInitiativeSpeedOffset = (input: {
   readonly map: TabletopMap
   readonly placement: SheetPlacement
   readonly sheet: CharacterSheet
-}): 0 | 2 => activeRuntimeIds(input).includes(AA077_LIGHT_METAL_ABILITY) ? 2 : 0
+}): 0 | 2 => effectiveRuntimeAbilityIds(input).includes(AA077_LIGHT_METAL_ABILITY) ? 2 : 0
 
 const lancerLedger = (
   context: AuthoritativeMoveRulesContext,

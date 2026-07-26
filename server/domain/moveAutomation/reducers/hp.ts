@@ -8,6 +8,7 @@ import {
   type MoveHpFinalBounds,
 } from '#shared/moveAutomation/effects'
 import type { MoveResolutionTraceJsonValue } from '#shared/moveAutomation/trace'
+import { AA078_LUNCHBOX_TEMP_HP_REASON } from '#shared/abilityAutomation/aa078'
 import {
   normalizeTemporaryHpAmount,
 } from '~/utils/mapTemporaryHitPoints'
@@ -1155,7 +1156,9 @@ export const reduceHealEffectForRecipient = (options: {
     })
     // PTU Temporary Hit Points never stack; retain whichever pool is larger.
     requestedPoolValue = operation.payload.pool === 'temporary-hit-points'
-      ? Math.max(previousPoolValue, calculation.roundedValue)
+      ? operation.reasonCode === AA078_LUNCHBOX_TEMP_HP_REASON
+        ? previousPoolValue + calculation.roundedValue
+        : Math.max(previousPoolValue, calculation.roundedValue)
       : previousPoolValue + calculation.roundedValue
   }
 

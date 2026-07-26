@@ -83,11 +83,12 @@ const recipientSideId = (
 const operationSource = (
   operation: MoveHazardEffectOperation,
   context: AuthoritativeMoveRulesContext,
+  sourcePlacementId = context.actor.placement.id,
 ): EncounterZoneOperationSource => ({
   kind: 'operation',
   operationId: operation.id,
   moveId: operation.source.kind === 'move' ? operation.source.id : null,
-  placementId: context.actor.placement.id,
+  placementId: sourcePlacementId,
 })
 
 const zonePayload = (
@@ -147,9 +148,10 @@ const newZone = (input: {
   readonly payload: MoveAddHazardEffectPayload
   readonly context: AuthoritativeMoveRulesContext
   readonly sideId: EncounterSideId | null
+  readonly sourcePlacementId: string
   readonly cell: EncounterZoneCell
 }): LayeredEncounterZone => {
-  const { operation, payload, context, sideId, cell } = input
+  const { operation, payload, context, sideId, sourcePlacementId, cell } = input
   const components = canonicalBattlefieldZoneComponents({
     kind: payload.zoneKind,
     effectId: payload.effectId,
@@ -161,7 +163,7 @@ const newZone = (input: {
       sideId,
       cells: [cell],
     }),
-    source: operationSource(operation, context),
+    source: operationSource(operation, context, sourcePlacementId),
     sideId,
     geometry: { kind: 'cells' as const, cells: [cell] },
     layer: payload.layers,
@@ -215,7 +217,12 @@ const reduceAdd = (input: {
   }
   const sideId = payload.ownership === 'neutral'
     ? null
-    : actorSideId(input.context, input.operation.id)
+    : payload.ownership === 'recipient-side'
+      ? recipientSideId(input.context, input.recipientIds, input.operation.id)
+      : actorSideId(input.context, input.operation.id)
+  const sourcePlacementId = payload.ownership === 'recipient-side'
+    ? input.recipientIds[0]!
+    : input.context.actor.placement.id
   const cells = resolveMoveHazardGeometryCells({
     context: input.context,
     geometry: payload.geometry,
@@ -251,6 +258,7 @@ const reduceAdd = (input: {
         payload,
         context: input.context,
         sideId,
+        sourcePlacementId,
         cell,
       }))
       createdCount += 1

@@ -1,4 +1,5 @@
 import type { PendingMoveResolution } from '#shared/moveAutomation/pendingResolution'
+import { AA078_LONG_REACH_BRANCH_ID } from '#shared/abilityAutomation/aa078'
 import type { MoveHazardCellSelectionWindow } from '#shared/moveAutomation/hazardCellSelection'
 import type { CharacterSheet } from '~/types/characterSheet'
 import type { TabletopMap } from '~/types/map'
@@ -70,12 +71,17 @@ import { aa074MoveOverlayOperations } from '../abilityAutomation/mechanics/aa074
 import { aa075MoveOverlayOperations } from '../abilityAutomation/mechanics/aa075MoveIntegration'
 import { aa076MoveOverlayOperations } from '../abilityAutomation/mechanics/aa076MoveIntegration'
 import { aa077MoveOverlayOperations } from '../abilityAutomation/mechanics/aa077MoveIntegration'
+import { aa078MoveOverlayOperations } from '../abilityAutomation/mechanics/aa078MoveIntegration'
 import {
   AA068_DUST_CLOUD_TARGETING_OVERRIDE,
   aa068DustCloudBurstEnabled,
 } from '../abilityAutomation/mechanics/aa068StaticIntegration'
 import { AA068_DUST_CLOUD_BURST_BRANCH_ID } from '#shared/abilityAutomation/mechanics'
 import { resolveMoveSpecTargetingRule } from './targetingBranches'
+import {
+  AA078_LONG_REACH_TARGETING_OVERRIDE,
+  aa078LongReachSelected,
+} from '../abilityAutomation/mechanics/aa078StaticIntegration'
 
 export type ResumeMoveSpecErrorCode =
   | 'runtime-unavailable'
@@ -335,13 +341,14 @@ export const resumeMoveSpec = (
   const runtime = runtimeForPending(pending, registry)
   const evidence = targetEvidence(pending)
   const dustCloudBranch = pending.targetBranchId === AA068_DUST_CLOUD_BURST_BRANCH_ID
-  const reviewedTargeting = pending.targetBranchId && !dustCloudBranch
+  const longReachBranch = pending.targetBranchId === AA078_LONG_REACH_BRANCH_ID
+  const reviewedTargeting = pending.targetBranchId && !dustCloudBranch && !longReachBranch
     ? resolveMoveSpecTargetingRule(runtime.definition.spec, pending.targetBranchId)
-    : runtime.definition.spec.targeting
+    : longReachBranch ? AA078_LONG_REACH_TARGETING_OVERRIDE : runtime.definition.spec.targeting
   if (!reviewedTargeting) {
     return fail('execution-rejected', 'The suspended targeting branch is no longer reviewed.')
   }
-  const targetingKind = dustCloudBranch ? 'area' : reviewedTargeting.kind
+  const targetingKind = dustCloudBranch ? 'area' : longReachBranch ? 'single-target' : reviewedTargeting.kind
   const authoritativeTargetIds = targetingKind === 'self'
     ? []
     : evidence.includedIds
@@ -379,9 +386,18 @@ export const resumeMoveSpec = (
     targetBranchId: pending.targetBranchId,
   })
     ? AA068_DUST_CLOUD_TARGETING_OVERRIDE
-    : null
+    : aa078LongReachSelected({
+        context,
+        script: entry.script,
+        targetBranchId: pending.targetBranchId,
+      })
+      ? AA078_LONG_REACH_TARGETING_OVERRIDE
+      : null
   if (dustCloudBranch && !serverAbilityTargetingOverride) {
     return fail('execution-rejected', 'Dust Cloud targeting is no longer effective or Powder-eligible.')
+  }
+  if (longReachBranch && !serverAbilityTargetingOverride) {
+    return fail('execution-rejected', 'Long Reach targeting is no longer effective or damaging.')
   }
   let execution: ReturnType<typeof executeMoveSpec>
   try {
@@ -490,6 +506,10 @@ export const resumeMoveSpec = (
           authoritativeTargetIds,
         }),
         ...aa077MoveOverlayOperations({
+          context, script: entry.script, moveSourceId,
+          authoritativeTargetIds,
+        }),
+        ...aa078MoveOverlayOperations({
           context, script: entry.script, moveSourceId,
           authoritativeTargetIds,
         }),

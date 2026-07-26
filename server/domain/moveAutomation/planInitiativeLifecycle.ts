@@ -100,6 +100,7 @@ import {
   createAa075IceFaceLifecycleHandler,
 } from '../abilityAutomation/mechanics/aa075LifecycleIntegration'
 import { reconcileAa075IceFaceTemporaryHpOwnershipAfterMove } from '../abilityAutomation/mechanics/aa075TemporaryHpIntegration'
+import { createAa078LeechSeedLifecycleHandler } from '../abilityAutomation/mechanics/aa078LifecycleIntegration'
 
 export type InitiativeLifecyclePlanningErrorCode =
   | 'active-placement-missing'
@@ -664,6 +665,26 @@ export const planEncounterLifecycle = (
     }, lifecycleMap)
     return token ? [[placementId, computeTickValue(token.fullMaxHp ?? token.maxHp) * 2] as const] : []
   }))
+  const leechSeedTurnStart = events.some(event => event.kind === 'turn-start')
+    && previousEncounterState.effects.some(effect => effect.tags.includes('leech-seed'))
+  const liquidOozePlacementIds = leechSeedTurnStart
+    ? effectiveAbilityPlacementIds({
+        map: lifecycleMap,
+        state: previousEncounterState,
+        snapshots: loadSheets(),
+        canonicalId: 'Liquid Ooze',
+      })
+    : Object.freeze([])
+  const liquidOozeTickByPlacementId = new Map(liquidOozePlacementIds.flatMap((placementId) => {
+    const placement = lifecycleMap.placements.find(candidate => candidate.id === placementId)
+    if (!placement) return []
+    const snapshots = loadSheets()
+    const token = placementToSpawned(placement, {
+      pokemon: new Map(snapshots.pokemonSheets),
+      trainer: new Map(snapshots.trainerSheets),
+    }, lifecycleMap)
+    return token ? [[placementId, computeTickValue(token.fullMaxHp ?? token.maxHp)] as const] : []
+  }))
   const hasDelayedReactionDebt = previousEncounterState.effects.some(effect => (
     effect.kind === 'capability' && effect.payload.capabilityId === 'aa067.delayed-reaction.hp-loss'
   ))
@@ -681,6 +702,9 @@ export const planEncounterLifecycle = (
   // and last.
   const handlers = [
     ...(input.handlers ?? []),
+    ...(leechSeedTurnStart
+      ? [createAa078LeechSeedLifecycleHandler({ liquidOozeTickByPlacementId })]
+      : []),
     createVortexLifecycleHandler(),
     createYawnLifecycleHandler(),
     ...(deepSleepPlacementIds.length > 0

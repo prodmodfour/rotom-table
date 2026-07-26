@@ -30,6 +30,7 @@ import { aa063MoveResistance } from '../abilityAutomation/mechanics/aa063MoveInt
 import { aa064CorrosionMultiplier } from '../abilityAutomation/mechanics/aa064MoveIntegration'
 import { aa071ForecastTypeResolution } from '../abilityAutomation/mechanics/aa071StaticIntegration'
 import { aa067MoveResistance } from '../abilityAutomation/mechanics/aa067StaticIntegration'
+import { aa078LightningRodBlocksElectric } from '../abilityAutomation/mechanics/aa078StaticIntegration'
 
 export type MoveDamageTypeResolutionErrorCode =
   | 'move-type-unavailable'
@@ -326,7 +327,15 @@ export const resolveMoveDamageType = (options: {
   // Levitate is an immunity, never a fallback resistance when a Move ignores
   // immunity. Keep the legacy sheet-passive resistance lane out of this path.
   const passiveAbilityNames = (target.abilityNames ?? [])
-    .filter(name => name.trim() !== 'Levitate')
+    .filter(name => !['Levitate', 'Lightning Rod'].includes(name.trim()))
+  const lightningRodImmunity = moveType.type === 'Electric'
+    && policy.immunity === 'honor'
+    && policy.passiveImmunity !== 'ignore'
+    && aa078LightningRodBlocksElectric({
+      context: options.context,
+      recipientId: options.recipientId,
+      moveType: moveType.type,
+    })
   const levitateImmunity = effectiveLevitate
     && moveType.type === 'Ground'
     && policy.immunity === 'honor'
@@ -335,7 +344,9 @@ export const resolveMoveDamageType = (options: {
     && !moveAutomationTargetSuppressesGroundsourceImmunity(target)
   const passive = chartImmunity || powderImmunity
     ? { multiplier: 0, sources: [] as string[] }
-    : levitateImmunity
+    : lightningRodImmunity
+      ? { multiplier: 0, sources: ['Lightning Rod'] }
+      : levitateImmunity
       ? { multiplier: 0, sources: ['Levitate'] }
       : resolveSheetPassiveTypeEffectiveness(
         moveType.type,

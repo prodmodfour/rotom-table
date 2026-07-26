@@ -338,7 +338,7 @@ const heldItemCount = (
       ).length
 }
 
-const storedDigestionBuffIds = (
+export const storedDigestionBuffIds = (
   context: AuthoritativeMoveRulesContext,
   placement: SheetPlacement,
 ): readonly string[] => {

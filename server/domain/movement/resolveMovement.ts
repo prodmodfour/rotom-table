@@ -56,10 +56,8 @@ import { placementToSpawned, type SheetLookup } from '~/utils/placement'
 import { withBattlefieldZoneMovementTerrain } from '../moveAutomation/battlefieldZoneMovementTerrain'
 import { createMoveAutomationGravityResolver } from '../moveAutomation/gravity'
 import { createMoveAutomationRemainingGlobalFieldResolver } from '../moveAutomation/remainingGlobalFields'
-import {
-  aa077AdjustedToken,
-  aa077EffectiveAbilityIds,
-} from '../abilityAutomation/mechanics/aa077StaticIntegration'
+import { aa077AdjustedToken } from '../abilityAutomation/mechanics/aa077StaticIntegration'
+import { effectiveRuntimeAbilityIds } from '../abilityAutomation/effectiveRuntimeAbilities'
 
 export const AUTHORITATIVE_MOVEMENT_MODES = ['shift', 'pass'] as const
 export type AuthoritativeMovementMode = (typeof AUTHORITATIVE_MOVEMENT_MODES)[number]
@@ -810,7 +808,7 @@ const buildMovementSnapshots = (
       )
       token = nativeToken ? aa077AdjustedToken({
         token: nativeToken,
-        effectiveAbilityIds: aa077EffectiveAbilityIds({ map, placement, sheet }),
+        effectiveAbilityIds: effectiveRuntimeAbilityIds({ map, placement, sheet }),
       }) : null
     } catch {
       token = null
@@ -1623,6 +1621,19 @@ export const resolveMovement = (input: ResolveMovementInput): AuthoritativeMovem
     })
   }
 
+  const sourcePlacement = input.map.placements.find(placement => placement.id === placementId)
+  const sourceSheet = sourcePlacement
+    ? sourcePlacement.sheetKind === 'pokemon'
+      ? input.sheets.pokemon.get(sourcePlacement.sheetSlug)
+      : input.sheets.trainer.get(sourcePlacement.sheetSlug)
+    : null
+  const cardinalOnly = policy.kind === 'standard' && sourcePlacement && sourceSheet
+    ? effectiveRuntimeAbilityIds({
+        map: input.map,
+        placement: sourcePlacement,
+        sheet: sourceSheet,
+      }).includes('Line Charge')
+    : false
   const pathResult = findMovementPathForPokemon({
     pokemon: mover,
     start: origin,
@@ -1632,6 +1643,12 @@ export const resolveMovement = (input: ResolveMovementInput): AuthoritativeMovem
     exceptId: mover.id,
     terrainIndex,
     groundLevelY,
+    ...(cardinalOnly ? {
+      allowedDirections: [
+        { x: 1, y: 0, z: 0 }, { x: -1, y: 0, z: 0 },
+        { x: 0, y: 0, z: 1 }, { x: 0, y: 0, z: -1 },
+      ],
+    } : {}),
     ...(policy.kind === 'gm-override' ? { costLimit: policy.maximumCost } : {}),
   })
   const pathCapabilities = resolvedCapabilities(mover, pathResult.capabilityKeys)

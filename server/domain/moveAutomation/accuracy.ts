@@ -21,6 +21,7 @@ import {
   aa076KeenEyeActive,
   aa076TokenWithEffectiveKeenEye,
 } from '../abilityAutomation/mechanics/aa076StaticIntegration'
+import { aa078MoveAccuracyBonus } from '../abilityAutomation/mechanics/aa078StaticIntegration'
 
 export interface AuthoritativeMoveSightAccuracyResolution {
   readonly sourcePlacementId: string
@@ -186,6 +187,14 @@ export const resolveAuthoritativeMoveUserAccuracy = (
       value: aa060Bonus,
     })
   }
+  const aa078Bonus = options.script ? aa078MoveAccuracyBonus({ context, script: options.script }) : 0
+  if (aa078Bonus !== 0) {
+    modifiers.push({
+      sourceId: 'ability.lightning-kicks',
+      reason: 'Lightning Kicks Accuracy',
+      value: aa078Bonus,
+    })
+  }
   if (gravity.bonus !== 0 && gravity.source) {
     modifiers.push({
       sourceId: gravity.source.zoneId,
@@ -236,6 +245,7 @@ export const resolveAuthoritativeMoveUserAccuracy = (
     + compoundEyesBonus
     + (helpingHand.length > 0 ? HELPING_HAND_ACCURACY_BONUS : 0)
     + aa060Bonus
+    + aa078Bonus
     + gravity.bonus
     + aa071Modifiers.reduce((total, modifier) => total + modifier.value, 0)
     + hustleModifier

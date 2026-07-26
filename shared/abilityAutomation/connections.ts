@@ -25,6 +25,7 @@ const REVIEWED_CONNECTIONS = [
   ['Hypnotic', 'Hypnosis'],
   ['Imposter', 'Transform'],
   ['Leek Mastery', 'Acrobatics'],
+  ['Lullaby', 'Sing'],
 ] as const
 
 export const REVIEWED_ABILITY_CONNECTION_MOVES = Object.freeze(

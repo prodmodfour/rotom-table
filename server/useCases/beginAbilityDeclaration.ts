@@ -54,6 +54,7 @@ import {
   AA077_LEAF_GIFT_SUITS,
   AA077_LEAFY_CLOAK_OPTION_BY_ID,
 } from '#shared/abilityAutomation/aa077'
+import { AA078_LIQUID_VOICE_OPTION_BY_ID } from '#shared/abilityAutomation/aa078'
 import {
   actorCanControlMapPlacement,
   playerProfileLinkedTrainerSheetsForTokenControl,
@@ -402,6 +403,11 @@ const declarationsFor = (
         }
         else if (context.runtime.canonicalId === 'Leafy Cloak' && modeId === 'activate') {
           options = Object.keys(AA077_LEAFY_CLOAK_OPTION_BY_ID).map((branchId, index) => option(
+            declaration.id, index, declaration.kind, { kind: 'branch', branchId },
+          ))
+        }
+        else if (context.runtime.canonicalId === 'Liquid Voice' && modeId === 'activate') {
+          options = Object.keys(AA078_LIQUID_VOICE_OPTION_BY_ID).map((branchId, index) => option(
             declaration.id, index, declaration.kind, { kind: 'branch', branchId },
           ))
         }

@@ -120,6 +120,10 @@ import {
 } from './moveAutomation/sideDamageResistance'
 import { aa060MovePriorityOverride, hasAa060MoveMark, hasPendingAa060AnchoredAttack } from './abilityAutomation/mechanics/aa060MoveIntegration'
 import { aa077LeafRushActiveForMove } from './abilityAutomation/mechanics/aa077StaticIntegration'
+import {
+  aa078LongReachSelected,
+  aa078MovePriorityActive,
+} from './abilityAutomation/mechanics/aa078StaticIntegration'
 import { aa075ImposterTransformOverride } from './abilityAutomation/mechanics/aa075StaticIntegration'
 import { aa066DazzlingBlocksPriorityMove } from './abilityAutomation/mechanics/aa066StaticIntegration'
 import { hasAa061AquaBulletMark, hasPendingAa061AquaBulletAttack } from './abilityAutomation/mechanics/aa061MoveIntegration'
@@ -1110,11 +1114,11 @@ const resolveNativeSelfMove = (options: {
     options.runtime.definition.spec,
     options.context.intent.targetBranchId,
   )
-  if (targeting?.kind !== 'self') {
+  if (targeting?.kind !== 'self' && targeting?.kind !== 'field' && targeting?.kind !== 'hazard') {
     return fail(
       'invalid',
       'selection-kind-mismatch',
-      `${options.runtime.canonicalId} does not accept a self selection.`,
+      `${options.runtime.canonicalId} does not accept a self/field/hazard selection.`,
     )
   }
   const hazardPlacementMove = options.entry.script.targetMode === 'hazard'
@@ -1355,11 +1359,16 @@ const resolveNativeSingleTargetMove = (options: {
   )
   const boneLordLine = options.entry.canonicalMoveName === 'Bonemerang'
     && aa062BoneLordEmpowersMove(options.context, 'Bonemerang')
+  const longReach = aa078LongReachSelected({
+    context: options.context,
+    script: options.entry.script,
+    targetBranchId: options.context.intent.targetBranchId,
+  })
   const targeting = resolveMoveSpecTargetingRule(
     options.runtime.definition.spec,
     options.context.intent.targetBranchId,
   )
-  if (boneLordLine || (!anchoredAttack && targeting?.kind !== 'single-target')) {
+  if (boneLordLine || (!anchoredAttack && !longReach && targeting?.kind !== 'single-target')) {
     return fail(
       'invalid',
       'selection-kind-mismatch',
@@ -2131,6 +2140,7 @@ export const resolveAuthoritativeMoveExecutionFromContext = (
       : undefined)
   const abilityPriorityOverride = aa060MovePriorityOverride(context, entry.script)
     || aa077LeafRushActiveForMove({ context, script: entry.script })
+    || aa078MovePriorityActive({ context, script: entry.script })
   const abilityFreeInterruptOverride = aa075ImposterTransformOverride({ context, script: entry.script })
   const actionTiming = abilityPriorityOverride
     ? 'priority'

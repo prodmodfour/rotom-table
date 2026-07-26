@@ -2,7 +2,7 @@
 
 `PLAN_STATUS: IN_PROGRESS`
 
-`CURRENT_TICKET: AA-078`
+`CURRENT_TICKET: AA-079`
 
 ## Goal
 
@@ -96,14 +96,14 @@ Ability automation should reuse MoveSpec v2 selectors, expressions, operations, 
 
 ## Progress snapshot
 
-- Plan tickets: **77 DONE / 110 total**
+- Plan tickets: **78 DONE / 110 total**
 - Canonical inventory: **483**
-- Semantically complete: **216**
+- Semantically complete: **228**
 - Assisted: **0**
-- Blocked/unimplemented: **267**
+- Blocked/unimplemented: **255**
 - Interaction status: **483 unassessed**
 - Legacy baseline: **45 abilities with 55 partial fragments; 438 with no reviewed legacy fragment**
-- Production runtime: **216 exact manifest-selected AbilitySpec v1 runtimes**; retained legacy paths remain explicit compatibility only
+- Production runtime: **228 exact manifest-selected AbilitySpec v1 runtimes**; retained legacy paths remain explicit compatibility only
 
 ## Tickets
 
@@ -275,7 +275,7 @@ Each cohort must review every named ability against canonical text, implement al
   - Inner Focus; Insomnia; Instinct; Interference; Intimidate; Intrepid Sword; Iron Barbs; Iron Fist; Juicy Energy; Justified; Kampfgeist; Keen Eye
 - [x] **AA-077 — Klutz through Light Metal** — `DONE`
   - Klutz; Lancer; Landslide; Last Chance; Leaf Gift; Leaf Guard; Leaf Rush; Leafy Cloak; Leek Mastery; Levitate; Life Force; Light Metal
-- [ ] **AA-078 — Lightning Kicks through Magic Bounce** — `TODO`
+- [x] **AA-078 — Lightning Kicks through Magic Bounce** — `DONE`
   - Lightning Kicks; Lightning Rod; Limber; Line Charge; Liquid Ooze; Liquid Voice; Long Reach; Lullaby; Lunchbox; Mach Speed; Maelstrom Pulse; Magic Bounce
 - [ ] **AA-079 — Magic Guard through Mind Mold** — `TODO`
   - Magic Guard; Magician; Magma Armor; Magnet Pull; Marvel Scale; Mega Launcher; Memory Wipe; Merciless; Migraine; Mimicry; Mimitree; Mind Mold

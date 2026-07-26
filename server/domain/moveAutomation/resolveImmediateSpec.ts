@@ -1,4 +1,5 @@
 import { createHash } from 'node:crypto'
+import { AA078_LUNCHBOX_TEMP_HP_REASON } from '#shared/abilityAutomation/aa078'
 import { moveEffectBranchPaths, type MoveConditionEffectOperation, type MoveTemporaryEffectOperation } from '#shared/moveAutomation/effects'
 import {
   parseMoveResolutionAuditTrace,
@@ -120,11 +121,20 @@ import {
 } from '../abilityAutomation/mechanics/aa076MoveIntegration'
 import { aa077MoveOverlayOperations } from '../abilityAutomation/mechanics/aa077MoveIntegration'
 import {
+  AA078_LIQUID_OOZE_RECOIL_REASON,
+  aa078IsDrainMove,
+  aa078MoveOverlayOperations,
+} from '../abilityAutomation/mechanics/aa078MoveIntegration'
+import {
   AA068_DUST_CLOUD_TARGETING_OVERRIDE,
   aa068DrySkinCancelsRecipientEffect,
   aa068DustCloudBurstEnabled,
 } from '../abilityAutomation/mechanics/aa068StaticIntegration'
 import { aa075InfiltratorBypassesTemporaryHp } from '../abilityAutomation/mechanics/aa075StaticIntegration'
+import {
+  AA078_LONG_REACH_TARGETING_OVERRIDE,
+  aa078LongReachSelected,
+} from '../abilityAutomation/mechanics/aa078StaticIntegration'
 
 export type ImmediateMoveSpecResolutionErrorCode =
   | 'execution-rejected'
@@ -1012,6 +1022,7 @@ const executeReviewedMoveSpec = (
     ...aa075MoveOverlayOperations(overlayInput),
     ...aa076MoveOverlayOperations(overlayInput),
     ...aa077MoveOverlayOperations(overlayInput),
+    ...aa078MoveOverlayOperations(overlayInput),
   ]
   const boneLordLine = script.moveName === 'Bonemerang'
     && aa062BoneLordEmpowersMove(options.context, 'Bonemerang')
@@ -1020,16 +1031,23 @@ const executeReviewedMoveSpec = (
     script,
     targetBranchId: options.targetBranchId,
   })
+  const longReach = aa078LongReachSelected({
+    context: options.context,
+    script,
+    targetBranchId: options.targetBranchId ?? undefined,
+  })
   const execution = executeMoveSpec({
     serverAbilityOverlayOperations: abilityOverlays,
-    ...(boneLordLine || dustCloudBurst ? {
+    ...(boneLordLine || dustCloudBurst || longReach ? {
       serverAbilityTargetingOverride: dustCloudBurst
         ? AA068_DUST_CLOUD_TARGETING_OVERRIDE
-        : {
-            kind: 'area' as const, minTargets: 0, maxTargets: 32,
-            selector: { kind: 'area-targets' as const },
-            predicate: { relationship: 'any' as const, willingness: 'any' as const, excludeActor: true },
-          },
+        : longReach
+          ? AA078_LONG_REACH_TARGETING_OVERRIDE
+          : {
+              kind: 'area' as const, minTargets: 0, maxTargets: 32,
+              selector: { kind: 'area-targets' as const },
+              predicate: { relationship: 'any' as const, willingness: 'any' as const, excludeActor: true },
+            },
     } : {}),
     definition: options.runtime.definition,
     context: options.context,
@@ -1209,9 +1227,16 @@ export const reduceCompletedMoveSpec = (
     script,
     targetBranchId: options.targetBranchId,
   })
+  const longReach = aa078LongReachSelected({
+    context: options.context,
+    script,
+    targetBranchId: options.targetBranchId ?? undefined,
+  })
   const targeting = dustCloudBurst
     ? AA068_DUST_CLOUD_TARGETING_OVERRIDE
-    : resolveMoveSpecTargetingRule(
+    : longReach
+      ? AA078_LONG_REACH_TARGETING_OVERRIDE
+      : resolveMoveSpecTargetingRule(
         options.runtime.definition.spec,
         options.targetBranchId,
       ) ?? fail('execution-rejected', 'The selected MoveSpec targeting branch is unavailable.')
@@ -1228,11 +1253,18 @@ export const reduceCompletedMoveSpec = (
   const appliedItemOperationIds = new Set(interpretedItemEffects.results
     .filter(result => result.outcome === 'applied')
     .map(result => result.operationId))
+  const appliedDigestionBuff = uncommittedOperations.some(({ operation }) => (
+    operation.kind === 'item'
+    && operation.payload.action === 'digest-buff'
+    && appliedItemOperationIds.has(operation.id)
+  ))
   const coreOperations = uncommittedOperations.filter(isMoveCoreTokenEffectEmission)
     .map((emission): MoveResolvedCoreTokenEffectOperation => (
-      emission.operation.reasonCode === AA074_HONEY_THIEF_TEMP_HP_REASON
-      && emission.operation.source.kind === 'operation'
-      && !appliedItemOperationIds.has(emission.operation.source.id)
+      (emission.operation.reasonCode === AA074_HONEY_THIEF_TEMP_HP_REASON
+        && emission.operation.source.kind === 'operation'
+        && !appliedItemOperationIds.has(emission.operation.source.id))
+      || (emission.operation.reasonCode === AA078_LUNCHBOX_TEMP_HP_REASON
+        && !appliedDigestionBuff)
         ? { ...emission, recipientIds: Object.freeze([]) }
         : emission
     ))
@@ -1249,11 +1281,18 @@ export const reduceCompletedMoveSpec = (
       || operation.reasonCode === AA074_HONEY_THIEF_TEMP_HP_REASON
       || operation.reasonCode === AA075_ILLUSION_BREAK_REASON
       || operation.reasonCode === AA075_INNARDS_OUT_HP_REASON
-      || operation.reasonCode === AA076_IRON_BARBS_HP_REASON) {
+      || operation.reasonCode === AA076_IRON_BARBS_HP_REASON
+      || operation.reasonCode === AA078_LIQUID_OOZE_RECOIL_REASON
+      || operation.reasonCode === AA078_LUNCHBOX_TEMP_HP_REASON) {
       recipientControlledOperationIds.add(operation.id)
     }
     const operationContext = contextForOperation(operation)
     const operationScript = scriptForOperation(operation.id)
+    if (operation.kind === 'heal'
+      && operation.recipients.kind === 'actor'
+      && aa078IsDrainMove(operationScript.moveName)) {
+      recipientControlledOperationIds.add(operation.id)
+    }
     if (operationContext.queries.placements.all().some(placement => (
       aa068DrySkinCancelsRecipientEffect({
         context: operationContext,

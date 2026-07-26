@@ -73,6 +73,7 @@ import { aa070FluffyDamageTypeOverlay } from '../abilityAutomation/mechanics/aa0
 import { aa071ResistDamageType } from '../abilityAutomation/mechanics/aa071StaticIntegration'
 import { aa072FurCoatDamageTypeOverlay } from '../abilityAutomation/mechanics/aa072StaticIntegration'
 import { aa073HeatproofDamageTypeOverlay } from '../abilityAutomation/mechanics/aa073StaticIntegration'
+import { aa078LiquidOozeDamageTypeOverlay } from '../abilityAutomation/mechanics/aa078StaticIntegration'
 import {
   aa075IceScalesDamageTypeOverlay,
   aa075InfiltratorBypassesTemporaryHp,
@@ -1003,13 +1004,18 @@ export const executeMoveMultiHitOperation = (options: {
             recipientId,
             resolved: aa071Type,
           })
+          const liquidOozeType = aa078LiquidOozeDamageTypeOverlay({
+            context,
+            recipientId,
+            resolved: heatproofType,
+          })
           const resolvedType = aa076KampfgeistDamageTypeOverlay({
             context,
             resolved: aa075IceScalesDamageTypeOverlay({
               context,
               damageClass,
               recipientId,
-              resolved: heatproofType,
+              resolved: liquidOozeType,
             }),
           })
           if (firstStrikeResistanceSteps > 0) resistanceAppliedTargetIds.add(recipientId)

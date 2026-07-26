@@ -326,7 +326,7 @@ export const MOVE_EFFECT_FIELD_CATEGORIES = [
 
 /** Native map-owned zone families emitted by reviewed hazard operations. */
 export const MOVE_EFFECT_HAZARD_ZONE_KINDS = ['hazard', 'pledge'] as const
-export const MOVE_EFFECT_HAZARD_OWNERSHIP_KINDS = ['source-side', 'neutral'] as const
+export const MOVE_EFFECT_HAZARD_OWNERSHIP_KINDS = ['source-side', 'recipient-side', 'neutral'] as const
 export const MOVE_EFFECT_HAZARD_OWNERSHIP_FILTER_KINDS = [
   'any',
   'source-side',

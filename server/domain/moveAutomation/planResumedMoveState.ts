@@ -214,6 +214,7 @@ const planNextWindow = (
     authoritativeGroupInventoryReads: pendingGroupInventoryReads(input.pendingResolution),
     execution: input.execution.execution,
     continuationMapRevision: revision,
+    authoritativeMap: input.map,
     preWindowPlan,
   })
   const pendingResolution = parsePendingMoveResolution({

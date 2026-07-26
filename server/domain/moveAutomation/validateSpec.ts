@@ -564,7 +564,11 @@ const itemEffectSelections = (
 export const validateMoveSpecOperationSequence = (
   entries: readonly MoveSpecOperationSequenceEntry[],
   aggregatePath = 'spec.phases',
-  options: { readonly allowAttackedTargetAccuracyEffects?: boolean } = {},
+  options: {
+    readonly allowAttackedTargetAccuracyEffects?: boolean
+    /** Reviewed server overlays may insert one response before the bounded hazard-cell choice. */
+    readonly allowSequentialHazardResponseRequests?: boolean
+  } = {},
 ): void => {
   if (entries.length > MOVE_SPEC_DEFINITION_LIMITS.operations) {
     fail(
@@ -822,11 +826,14 @@ export const validateMoveSpecOperationSequence = (
       )
     }
   }
-  if (hazardCellChoiceEntries.length > 0 && requestIndexById.size > 1) {
+  const maximumHazardRequestCount = options.allowSequentialHazardResponseRequests ? 2 : 1
+  if (hazardCellChoiceEntries.length > 0 && requestIndexById.size > maximumHazardRequestCount) {
     fail(
       'invalid-definition',
       hazardCellChoiceEntries[0]!.path,
-      'a durable hazard-cell selection cannot coexist with another response request.',
+      options.allowSequentialHazardResponseRequests
+        ? 'a reviewed sequential hazard response may coexist with only one durable hazard-cell selection.'
+        : 'a durable hazard-cell selection cannot coexist with another response request.',
     )
   }
 

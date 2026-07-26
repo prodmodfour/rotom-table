@@ -68,6 +68,7 @@ import {
   resolveAuthoritativeMovement,
   type AuthoritativeMovementSuccess,
 } from '../movement/resolveMovement'
+import { effectiveRuntimeAbilityIds } from '../abilityAutomation/effectiveRuntimeAbilities'
 import { planAuthoritativeMovementResources } from '../movement/planMovementResources'
 import {
   applyAuthoritativeMovementMapTransition,
@@ -612,6 +613,12 @@ export const materializeMovementAttackOfOpportunity = (
   const movementId = `movement.attack-of-opportunity.${createHash('sha256')
     .update(`${input.originMapSlug}:${input.originOpId}`)
     .digest('hex')}`
+  const provoker = placementFor(input.map, input.movement.placementId)
+  if (effectiveRuntimeAbilityIds({
+    map: input.map,
+    placement: provoker,
+    sheet: sheetForPlacement(provoker, input),
+  }).includes('Line Charge')) return null
 
   for (const step of input.movement.triggeringSteps) {
     if (step.leftAdjacentPlacementIds.length === 0) continue

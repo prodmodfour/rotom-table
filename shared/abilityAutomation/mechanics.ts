@@ -105,6 +105,12 @@ export const AA077_ABILITY_MECHANIC_IDS = [
   'aa077.leafy-cloak', 'aa077.leek-mastery', 'aa077.levitate',
   'aa077.life-force', 'aa077.light-metal',
 ] as const
+export const AA078_ABILITY_MECHANIC_IDS = [
+  'aa078.lightning-kicks', 'aa078.lightning-rod', 'aa078.limber',
+  'aa078.line-charge', 'aa078.liquid-ooze', 'aa078.liquid-voice',
+  'aa078.long-reach', 'aa078.lullaby', 'aa078.lunchbox',
+  'aa078.mach-speed', 'aa078.maelstrom-pulse', 'aa078.magic-bounce',
+] as const
 export type Aa060AbilityMechanicId = (typeof AA060_ABILITY_MECHANIC_IDS)[number]
 export type AbilityMechanicId = Aa060AbilityMechanicId
   | (typeof AA061_ABILITY_MECHANIC_IDS)[number]
@@ -124,6 +130,7 @@ export type AbilityMechanicId = Aa060AbilityMechanicId
   | (typeof AA075_ABILITY_MECHANIC_IDS)[number]
   | (typeof AA076_ABILITY_MECHANIC_IDS)[number]
   | (typeof AA077_ABILITY_MECHANIC_IDS)[number]
+  | (typeof AA078_ABILITY_MECHANIC_IDS)[number]
 export interface AbilityMechanicOperation extends AbilitySpecJsonObject {
   readonly kind: typeof ABILITY_MECHANIC_OPERATION_KIND
   readonly id: string
@@ -358,6 +365,18 @@ const CONFIG_FIELDS: Readonly<Record<AbilityMechanicId, readonly string[]>> = {
   'aa077.levitate': ['immuneMoveType', 'grantedSpeed', 'existingSpeedBonus', 'preserveNativeSpeed'],
   'aa077.life-force': ['action', 'frequency', 'healingTicks'],
   'aa077.light-metal': ['weightClassDelta', 'speedBaseStatDelta', 'defenseBaseStatDelta'],
+  'aa078.lightning-kicks': ['action', 'frequency', 'moveNameIncludes', 'priority', 'accuracyBonus'],
+  'aa078.lightning-rod': ['action', 'frequency', 'triggerType', 'triggerRange', 'rangedOnly', 'redirectToOneTarget', 'automaticHit', 'damageAndEffectImmunity', 'specialAttackStageDelta'],
+  'aa078.limber': ['blockedConditions'],
+  'aa078.line-charge': ['cardinalDirectionsOnly', 'provokeAttacksOfOpportunity'],
+  'aa078.liquid-ooze': ['poisonResistanceSteps', 'drainMoveIds', 'recoilPercent', 'suppressDrainHealing', 'reverseLeechSeed'],
+  'aa078.liquid-voice': ['action', 'frequency', 'requiredKeyword', 'removedKeyword', 'addedKeyword', 'moveType', 'statusDamageClass', 'statusDamageBase'],
+  'aa078.long-reach': ['damagingOnly', 'replacementRange', 'optionalReplacement'],
+  'aa078.lullaby': ['connectionMoveId', 'action', 'frequency', 'automaticHitTargets'],
+  'aa078.lunchbox': ['action', 'frequency', 'trigger', 'temporaryHpTicks', 'stacksWithTriggeringBuff'],
+  'aa078.mach-speed': ['lastChanceType', 'hpThresholdNumerator', 'hpThresholdDenominator', 'damageBonus'],
+  'aa078.maelstrom-pulse': ['action', 'frequency', 'moveType', 'priority', 'damagingSpeedFractionNumerator', 'damagingSpeedFractionDenominator'],
+  'aa078.magic-bounce': ['action', 'frequency', 'statusMovesOnly', 'hazardRange', 'reflectToAttacker', 'hazardPlacementAndAffiliation', 'recursionPolicy'],
 }
 const MECHANIC_SET = new Set<string>([
   ...AA060_ABILITY_MECHANIC_IDS, ...AA061_ABILITY_MECHANIC_IDS,
@@ -369,6 +388,7 @@ const MECHANIC_SET = new Set<string>([
   ...AA072_ABILITY_MECHANIC_IDS, ...AA073_ABILITY_MECHANIC_IDS,
   ...AA074_ABILITY_MECHANIC_IDS, ...AA075_ABILITY_MECHANIC_IDS,
   ...AA076_ABILITY_MECHANIC_IDS, ...AA077_ABILITY_MECHANIC_IDS,
+  ...AA078_ABILITY_MECHANIC_IDS,
 ])
 const ID = /^[a-z0-9]+(?:[._:/-][a-z0-9]+)*$/
 const fail = (code: AbilityMechanicValidationError['code'], path: string, detail: string): never => { throw new AbilityMechanicValidationError(code, path, detail) }
@@ -1486,6 +1506,65 @@ const parseConfig = (mechanicId: AbilityMechanicId, value: unknown, path: string
     case 'aa077.light-metal': return {
       weightClassDelta: integer(config.weightClassDelta, `${path}.weightClassDelta`, -2, -2), speedBaseStatDelta: integer(config.speedBaseStatDelta, `${path}.speedBaseStatDelta`, 2, 2),
       defenseBaseStatDelta: integer(config.defenseBaseStatDelta, `${path}.defenseBaseStatDelta`, -2, -2),
+    }
+    case 'aa078.lightning-kicks': return {
+      action: oneOf(config.action, ['free'], `${path}.action`), frequency: oneOf(config.frequency, ['scene'], `${path}.frequency`),
+      moveNameIncludes: oneOf(config.moveNameIncludes, ['Kick'], `${path}.moveNameIncludes`), priority: bool(config.priority, `${path}.priority`),
+      accuracyBonus: integer(config.accuracyBonus, `${path}.accuracyBonus`, 4, 4),
+    }
+    case 'aa078.lightning-rod': return {
+      action: oneOf(config.action, ['free'], `${path}.action`), frequency: oneOf(config.frequency, ['scene'], `${path}.frequency`),
+      triggerType: oneOf(config.triggerType, ['electric'], `${path}.triggerType`), triggerRange: integer(config.triggerRange, `${path}.triggerRange`, 10, 10),
+      rangedOnly: bool(config.rangedOnly, `${path}.rangedOnly`), redirectToOneTarget: bool(config.redirectToOneTarget, `${path}.redirectToOneTarget`),
+      automaticHit: bool(config.automaticHit, `${path}.automaticHit`), damageAndEffectImmunity: bool(config.damageAndEffectImmunity, `${path}.damageAndEffectImmunity`),
+      specialAttackStageDelta: integer(config.specialAttackStageDelta, `${path}.specialAttackStageDelta`, 1, 1),
+    }
+    case 'aa078.limber': return {
+      blockedConditions: stringArray(config.blockedConditions, ['Paralysis'], `${path}.blockedConditions`),
+    }
+    case 'aa078.line-charge': return {
+      cardinalDirectionsOnly: bool(config.cardinalDirectionsOnly, `${path}.cardinalDirectionsOnly`),
+      provokeAttacksOfOpportunity: bool(config.provokeAttacksOfOpportunity, `${path}.provokeAttacksOfOpportunity`),
+    }
+    case 'aa078.liquid-ooze': return {
+      poisonResistanceSteps: integer(config.poisonResistanceSteps, `${path}.poisonResistanceSteps`, 1, 1),
+      drainMoveIds: stringArray(config.drainMoveIds, ['Absorb', 'Drain Punch', 'Giga Drain', 'Horn Leech', 'Leech Life', 'Mega Drain'], `${path}.drainMoveIds`),
+      recoilPercent: integer(config.recoilPercent, `${path}.recoilPercent`, 50, 50), suppressDrainHealing: bool(config.suppressDrainHealing, `${path}.suppressDrainHealing`),
+      reverseLeechSeed: bool(config.reverseLeechSeed, `${path}.reverseLeechSeed`),
+    }
+    case 'aa078.liquid-voice': return {
+      action: oneOf(config.action, ['free'], `${path}.action`), frequency: oneOf(config.frequency, ['at-will'], `${path}.frequency`),
+      requiredKeyword: oneOf(config.requiredKeyword, ['sonic'], `${path}.requiredKeyword`), removedKeyword: oneOf(config.removedKeyword, ['sonic'], `${path}.removedKeyword`),
+      addedKeyword: oneOf(config.addedKeyword, ['friendly'], `${path}.addedKeyword`), moveType: oneOf(config.moveType, ['water'], `${path}.moveType`),
+      statusDamageClass: oneOf(config.statusDamageClass, ['special'], `${path}.statusDamageClass`), statusDamageBase: integer(config.statusDamageBase, `${path}.statusDamageBase`, 1, 1),
+    }
+    case 'aa078.long-reach': return {
+      damagingOnly: bool(config.damagingOnly, `${path}.damagingOnly`), replacementRange: oneOf(config.replacementRange, ['8, 1 Target'], `${path}.replacementRange`),
+      optionalReplacement: bool(config.optionalReplacement, `${path}.optionalReplacement`),
+    }
+    case 'aa078.lullaby': return {
+      connectionMoveId: oneOf(config.connectionMoveId, ['Sing'], `${path}.connectionMoveId`), action: oneOf(config.action, ['free'], `${path}.action`),
+      frequency: oneOf(config.frequency, ['scene'], `${path}.frequency`), automaticHitTargets: integer(config.automaticHitTargets, `${path}.automaticHitTargets`, 1, 1),
+    }
+    case 'aa078.lunchbox': return {
+      action: oneOf(config.action, ['free'], `${path}.action`), frequency: oneOf(config.frequency, ['scene'], `${path}.frequency`),
+      trigger: oneOf(config.trigger, ['trade-food-buff'], `${path}.trigger`), temporaryHpTicks: integer(config.temporaryHpTicks, `${path}.temporaryHpTicks`, 1, 1),
+      stacksWithTriggeringBuff: bool(config.stacksWithTriggeringBuff, `${path}.stacksWithTriggeringBuff`),
+    }
+    case 'aa078.mach-speed': return {
+      lastChanceType: oneOf(config.lastChanceType, ['flying'], `${path}.lastChanceType`), hpThresholdNumerator: integer(config.hpThresholdNumerator, `${path}.hpThresholdNumerator`, 1, 1),
+      hpThresholdDenominator: integer(config.hpThresholdDenominator, `${path}.hpThresholdDenominator`, 3, 3), damageBonus: integer(config.damageBonus, `${path}.damageBonus`, 5, 5),
+    }
+    case 'aa078.maelstrom-pulse': return {
+      action: oneOf(config.action, ['free'], `${path}.action`), frequency: oneOf(config.frequency, ['scene-x2'], `${path}.frequency`), moveType: oneOf(config.moveType, ['water'], `${path}.moveType`),
+      priority: bool(config.priority, `${path}.priority`), damagingSpeedFractionNumerator: integer(config.damagingSpeedFractionNumerator, `${path}.damagingSpeedFractionNumerator`, 1, 1),
+      damagingSpeedFractionDenominator: integer(config.damagingSpeedFractionDenominator, `${path}.damagingSpeedFractionDenominator`, 2, 2),
+    }
+    case 'aa078.magic-bounce': return {
+      action: oneOf(config.action, ['free'], `${path}.action`), frequency: oneOf(config.frequency, ['scene'], `${path}.frequency`),
+      statusMovesOnly: bool(config.statusMovesOnly, `${path}.statusMovesOnly`), hazardRange: integer(config.hazardRange, `${path}.hazardRange`, 10, 10),
+      reflectToAttacker: bool(config.reflectToAttacker, `${path}.reflectToAttacker`), hazardPlacementAndAffiliation: bool(config.hazardPlacementAndAffiliation, `${path}.hazardPlacementAndAffiliation`),
+      recursionPolicy: oneOf(config.recursionPolicy, ['do-not-retrigger'], `${path}.recursionPolicy`),
     }
   }
 }

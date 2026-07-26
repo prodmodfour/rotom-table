@@ -296,10 +296,16 @@ const hazardCellSelectionWindow = (
       'Hazard-cell suspension map identity must match the originating authoritative snapshot.',
     )
   }
-  const actor = map.placements.find(placement => placement.id === input.actorPlacementId)
+  const hazardOwnerId = request.recipientIds.length === 1
+    ? request.recipientIds[0]!
+    : fail(
+        'response-owner-missing',
+        `Hazard selection ${request.requestId} must have exactly one authoritative owner.`,
+      )
+  const actor = map.placements.find(placement => placement.id === hazardOwnerId)
     ?? fail(
       'response-owner-missing',
-      `Hazard selection actor ${input.actorPlacementId} is missing from the authoritative map.`,
+      `Hazard selection actor ${hazardOwnerId} is missing from the authoritative map.`,
     )
 
   return materializeAuthoritativeHazardCellSelection({

@@ -214,6 +214,24 @@ import {
   aa076MoveOverlayOperations,
 } from '../abilityAutomation/mechanics/aa076MoveIntegration'
 import { aa077MoveOverlayOperations } from '../abilityAutomation/mechanics/aa077MoveIntegration'
+import {
+  AA078_LIGHTNING_ROD_OPTION_ID,
+  AA078_LIGHTNING_ROD_REASON,
+  AA078_LIQUID_OOZE_RECOIL_REASON,
+  AA078_LULLABY_OPTION_PREFIX,
+  AA078_LULLABY_REASON,
+  AA078_LUNCHBOX_REASON,
+  AA078_MAGIC_BOUNCE_HAZARD_OPTION_ID,
+  AA078_MAGIC_BOUNCE_HAZARD_OPERATION_REASON,
+  AA078_MAGIC_BOUNCE_HAZARD_REASON,
+  AA078_MAGIC_BOUNCE_OPTION_ID,
+  AA078_MAGIC_BOUNCE_REASON,
+  aa078HasLiquidOozeHitTarget,
+  aa078IsDrainMove,
+  aa078LullabyTargetOptionId,
+  aa078MoveOverlayOperations,
+  applyAa078ReviewedOperations,
+} from '../abilityAutomation/mechanics/aa078MoveIntegration'
 import { aa074HungerModeForPlacement } from '#shared/abilityAutomation/aa074'
 import {
   aa075HypnoticAutomaticHit,
@@ -229,6 +247,7 @@ import {
   aa076TargetWithoutLegacyIlluminate,
   aa076TokenWithEffectiveKeenEye,
 } from '../abilityAutomation/mechanics/aa076StaticIntegration'
+import { aa078LiquidOozeDamageTypeOverlay } from '../abilityAutomation/mechanics/aa078StaticIntegration'
 import {
   AA068_DRAGONS_MAW_REASON,
   AA068_DREAM_SMOKE_REASON,
@@ -1910,10 +1929,14 @@ const executableProgram = (
   const frostbiteOperations = aa071FrostbiteOperations({
     context,
     script: reviewedScript,
-    operations: applyAa074HoneyThiefOperations(applyAa074HordeBreakOperations({
+    operations: applyAa078ReviewedOperations({
       context,
-      operations: selectedAa072Operations,
-    })),
+      script: reviewedScript,
+      operations: applyAa074HoneyThiefOperations(applyAa074HordeBreakOperations({
+        context,
+        operations: selectedAa072Operations,
+      })),
+    }),
   })
   const reviewedEntries = frostbiteOperations.map((operation, index): ExecutableMoveSpecOperationEntry => ({
     operation,
@@ -1933,6 +1956,9 @@ const executableProgram = (
     {
       allowAttackedTargetAccuracyEffects:
         definition.spec.presentation.tags.includes('natural-effect-range'),
+      allowSequentialHazardResponseRequests: serverAbilityOverlayOperations.some(operation => (
+        operation.reasonCode === AA078_MAGIC_BOUNCE_HAZARD_REASON
+      )),
     },
   )
   const operations = Object.freeze(orderedEntries.map(({ operation }) => operation))
@@ -2824,8 +2850,13 @@ const executeMoveSpecInternal = (
     }
   }
   const cancelledEffectTargetIds = new Set<string>()
+  const automaticHitTargetIds = new Set<string>()
   let bodyguardSelected = false
   let aquaBoostSelected = false
+  let lightningRodSelected = false
+  let magicBounceSelected = false
+  let magicBounceHazardSelected = false
+  let selectedMagicBounceHazardOwnerId: string | null = null
   const criticalHitTargetIds = new Set<string>()
   const projectedRemainingHpByTarget = new Map<string, number>()
   const projectedHp = createMoveAutomationHpUpdateAccumulator()
@@ -3152,6 +3183,23 @@ const executeMoveSpecInternal = (
             actionSourcePlacementId: input.context.actor.placement.id,
           })) return []
           const owners = canonicalPlacementIds(input.context, operation.payload.ownerPlacementIds)
+          if (operation.reasonCode === AA078_LIGHTNING_ROD_REASON) {
+            return lightningRodSelected ? [] : owners
+          }
+          if (operation.reasonCode === AA078_LULLABY_REASON) return owners
+          if (operation.reasonCode === AA078_MAGIC_BOUNCE_REASON) {
+            return magicBounceSelected ? [] : owners.filter(ownerId => hitTargetIds.includes(ownerId))
+          }
+          if (operation.reasonCode === AA078_MAGIC_BOUNCE_HAZARD_REASON) {
+            return magicBounceHazardSelected ? [] : owners
+          }
+          if (operation.reasonCode === AA078_LUNCHBOX_REASON) {
+            return owners.filter(ownerId => operations.some(emission => (
+              emission.operation.kind === 'item'
+              && emission.operation.payload.action === 'digest-buff'
+              && emission.recipientIds.includes(ownerId)
+            )))
+          }
           if (operation.reasonCode === 'ability.danger-syrup.optional-sweet-scent') {
             return owners.filter(ownerId => hitTargetIds.includes(ownerId))
           }
@@ -3595,6 +3643,19 @@ const executeMoveSpecInternal = (
             return [input.context.actor.placement.id]
           }
         }
+        if (selectedMagicBounceHazardOwnerId !== null
+          && operation.kind === 'hazard'
+          && operation.payload.action === 'add') {
+          return [selectedMagicBounceHazardOwnerId]
+        }
+        if (operation.reasonCode === AA078_LIQUID_OOZE_RECOIL_REASON) {
+          return aa078HasLiquidOozeHitTarget({ context: input.context, hitTargetIds: damagedTargetIds })
+            ? [input.context.actor.placement.id] : []
+        }
+        if (operation.kind === 'heal'
+          && operation.recipients.kind === 'actor'
+          && aa078IsDrainMove(spec.canonicalId)
+          && aa078HasLiquidOozeHitTarget({ context: input.context, hitTargetIds: damagedTargetIds })) return []
         const targetBoundId = aa068TargetBoundOperationTargetId(operation)
         const resolved = effectRecipientIds(input.context, selectorState, operation.recipients.kind)
           .filter(recipientId => targetBoundId === null || recipientId === targetBoundId)
@@ -3842,10 +3903,20 @@ const executeMoveSpecInternal = (
               : typed
           })()
         : aa070Operation
-      const emittedOperation = baseEmittedOperation.kind === 'direct-hp'
-        && baseEmittedOperation.reasonCode === AA075_INNARDS_OUT_HP_REASON
-        && baseEmittedOperation.source.kind === 'operation'
+      const aa078BaseEmittedOperation = baseEmittedOperation.kind === 'hazard'
+        && baseEmittedOperation.payload.action === 'add'
+        && selectedMagicBounceHazardOwnerId !== null
+        ? {
+            ...baseEmittedOperation,
+            reasonCode: AA078_MAGIC_BOUNCE_HAZARD_OPERATION_REASON,
+            payload: { ...baseEmittedOperation.payload, ownership: 'recipient-side' as const },
+          }
+        : baseEmittedOperation
+      const emittedOperation = aa078BaseEmittedOperation.kind === 'direct-hp'
+        && aa078BaseEmittedOperation.reasonCode === AA075_INNARDS_OUT_HP_REASON
+        && aa078BaseEmittedOperation.source.kind === 'operation'
         ? (() => {
+            const baseEmittedOperation = aa078BaseEmittedOperation
             const selected = [...selectedInnardsOutByOwner.entries()]
               .find(([_ownerId, value]) => value.requestId === baseEmittedOperation.source.id)
             if (!selected) return baseEmittedOperation
@@ -3871,7 +3942,7 @@ const executeMoveSpecInternal = (
               },
             }
           })()
-        : baseEmittedOperation
+        : aa078BaseEmittedOperation
       operations.push(Object.freeze({
         operation: emittedOperation,
         recipientIds: frozenIds(recipientIds),
@@ -4538,13 +4609,18 @@ const executeMoveSpecInternal = (
                 input: traceJson({ evaluationTrace: conditionalEvaluation.trace }),
               })
             }
-            const reviewedAccuracyRule: MoveAutomationAccuracyRule | null = conditionalRule
-              && conditionalEvaluation?.value
+            const reviewedAccuracyRule: MoveAutomationAccuracyRule | null = automaticHitTargetIds.has(recipientId)
               ? {
                   kind: 'automatic-hit',
-                  sourceId: conditionalRule.sourceId,
-                  reasonCode: conditionalRule.reasonCode,
+                  sourceId: 'ability.aa078',
+                  reasonCode: 'ability.aa078.automatic-hit',
                 }
+              : conditionalRule && conditionalEvaluation?.value
+                ? {
+                    kind: 'automatic-hit',
+                    sourceId: conditionalRule.sourceId,
+                    reasonCode: conditionalRule.reasonCode,
+                  }
               : aa075HypnoticAutomaticHit({ context: input.context, script: getMechanics().script })
                 ? {
                     kind: 'automatic-hit',
@@ -4719,11 +4795,16 @@ const executeMoveSpecInternal = (
             recipientId,
             resolved: aa071ResolvedType,
           })
+          const aa078ResolvedType = aa078LiquidOozeDamageTypeOverlay({
+            context: input.context,
+            recipientId,
+            resolved: aa073ResolvedType,
+          })
           const aa075ResolvedType = aa075IceScalesDamageTypeOverlay({
             context: input.context,
             damageClass: resolvedClass.damageClass,
             recipientId,
-            resolved: aa073ResolvedType,
+            resolved: aa078ResolvedType,
           })
           const aa076StabType = aa076KampfgeistDamageTypeOverlay({
             context: input.context,
@@ -4994,9 +5075,12 @@ const executeMoveSpecInternal = (
         && operation.payload.action === 'add'
         && operation.payload.cellSelection
       ) {
+        const reviewedHazardOperation = emittedOperation.kind === 'hazard'
+          ? emittedOperation
+          : operation
         const request = pendingHazardCellRequest(
-          operation,
-          input.context.actor.placement.id,
+          reviewedHazardOperation,
+          selectedMagicBounceHazardOwnerId ?? input.context.actor.placement.id,
         )
         const selected = hazardSelections.get(operation.id) ?? null
         if (selected) {
@@ -5023,11 +5107,11 @@ const executeMoveSpecInternal = (
             kind: 'operation',
             phase,
             operationId: operation.id,
-            operationKind: operation.kind,
+            operationKind: reviewedHazardOperation.kind,
             recipientIds,
             outcome: 'applied',
-            reasonCode: operation.reasonCode,
-            input: traceJson(operation.payload),
+            reasonCode: reviewedHazardOperation.reasonCode,
+            input: traceJson(reviewedHazardOperation.payload),
             result: traceJson({
               status: 'selected',
               cellSetId: request.cellSetId,
@@ -5043,19 +5127,19 @@ const executeMoveSpecInternal = (
             requestKind: 'choice',
             outcome: 'selected',
             optionId: selected.selectionId,
-            reasonCode: operation.reasonCode,
+            reasonCode: reviewedHazardOperation.reasonCode,
           })
           continue
         }
         trace = reduceMoveResolutionTrace(trace, {
           kind: 'operation',
           phase,
-          operationId: operation.id,
-          operationKind: operation.kind,
+          operationId: reviewedHazardOperation.id,
+          operationKind: reviewedHazardOperation.kind,
           recipientIds,
           outcome: 'pending',
-          reasonCode: operation.reasonCode,
-          input: traceJson(operation.payload),
+          reasonCode: reviewedHazardOperation.reasonCode,
+          input: traceJson(reviewedHazardOperation.payload),
           result: traceJson({
             requestId: request.requestId,
             requestKind: request.kind,
@@ -5069,7 +5153,7 @@ const executeMoveSpecInternal = (
           requestKind: 'choice',
           outcome: 'requested',
           optionId: null,
-          reasonCode: operation.reasonCode,
+          reasonCode: reviewedHazardOperation.reasonCode,
         })
         responseResolver.assertAllConsumed()
         return materializePendingExecutionResult(
@@ -5823,6 +5907,12 @@ const executeMoveSpecInternal = (
               moveSourceId: childMoveSourceId,
               authoritativeTargetIds: childTargetIds,
             }),
+            ...aa078MoveOverlayOperations({
+              context: childContext,
+              script: childMechanics,
+              moveSourceId: childMoveSourceId,
+              authoritativeTargetIds: childTargetIds,
+            }),
           ],
           ancestry,
           resolutionId: childResolutionId,
@@ -6046,6 +6136,60 @@ const executeMoveSpecInternal = (
               operation.id,
               Object.freeze([recipientIds[0]!]),
             )
+            if (operation.reasonCode === AA078_LIGHTNING_ROD_REASON) {
+              if (response.optionId !== AA078_LIGHTNING_ROD_OPTION_ID || lightningRodSelected) {
+                return fail('definition-integrity-mismatch', `Lightning Rod reaction ${operation.id} received an invalid selection.`)
+              }
+              const ownerId = recipientIds[0]!
+              lightningRodSelected = true
+              targetIds = canonicalPlacementIds(input.context, [ownerId])
+              hitTargetIds = canonicalPlacementIds(input.context, [ownerId])
+              missedTargetIds = []
+              automaticHitTargetIds.add(ownerId)
+            }
+            if (operation.reasonCode === AA078_LULLABY_REASON) {
+              const targetId = targetIds.find(id => aa078LullabyTargetOptionId(id) === response.optionId)
+              if (!targetId || !response.optionId.startsWith(AA078_LULLABY_OPTION_PREFIX)) {
+                return fail('definition-integrity-mismatch', `Lullaby reaction ${operation.id} lost its selected target.`)
+              }
+              automaticHitTargetIds.add(targetId)
+            }
+            if (operation.reasonCode === AA078_MAGIC_BOUNCE_HAZARD_REASON) {
+              if (response.optionId !== AA078_MAGIC_BOUNCE_HAZARD_OPTION_ID || magicBounceHazardSelected) {
+                return fail('definition-integrity-mismatch', `Magic Bounce hazard reaction ${operation.id} received an invalid selection.`)
+              }
+              magicBounceHazardSelected = true
+              selectedMagicBounceHazardOwnerId = recipientIds[0]!
+            }
+            if (operation.reasonCode === AA078_MAGIC_BOUNCE_REASON) {
+              if (response.optionId !== AA078_MAGIC_BOUNCE_OPTION_ID || magicBounceSelected) {
+                return fail('definition-integrity-mismatch', `Magic Bounce reaction ${operation.id} received an invalid selection.`)
+              }
+              const ownerId = recipientIds[0]!
+              if (!hitTargetIds.includes(ownerId)) {
+                return fail('definition-integrity-mismatch', `Magic Bounce reaction ${operation.id} lost its hit owner.`)
+              }
+              const reflectedId = input.context.actor.placement.id
+              magicBounceSelected = true
+              targetIds = canonicalPlacementIds(input.context, [
+                ...targetIds.filter(id => id !== ownerId), reflectedId,
+              ])
+              hitTargetIds = canonicalPlacementIds(input.context, [
+                ...hitTargetIds.filter(id => id !== ownerId), reflectedId,
+              ])
+              missedTargetIds = missedTargetIds.filter(id => id !== reflectedId)
+              for (const reflected of resolvedRolls.filter(roll => (
+                roll.recipientId === ownerId
+                && (roll.purpose === 'accuracy' || roll.purpose === 'critical')
+              ))) {
+                if (!resolvedRolls.some(roll => (
+                  roll.operationId === reflected.operationId
+                  && roll.referenceId === reflected.referenceId
+                  && roll.purpose === reflected.purpose
+                  && roll.recipientId === reflectedId
+                ))) resolvedRolls.push({ ...reflected, recipientId: reflectedId })
+              }
+            }
             if (operation.reasonCode === AA069_FIERY_CRASH_REASON
               && response.optionId === 'ability.fiery-crash.fire-type') {
               const currentMechanics = getMechanics()
