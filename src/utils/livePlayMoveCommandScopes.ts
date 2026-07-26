@@ -7,6 +7,11 @@ import type {
   LivePlaySheetScope,
   LivePlayTokenScope,
 } from '#shared/livePlayCommands'
+import {
+  aa080EntityIsActive,
+  aa080IsDreepyEntity,
+  aa080IsMiniNoseEntity,
+} from '#shared/abilityAutomation/aa080'
 import type { SheetPlacement, TabletopMap } from '~/types/map'
 
 export { LIVE_PLAY_RESOLVE_MOVE_SCOPE_LIMIT }
@@ -74,6 +79,21 @@ const placementById = (map: TabletopMap): Map<string, SheetPlacement> => {
     if (!byId.has(placement.id)) byId.set(placement.id, placement)
   }
   return byId
+}
+
+const scopedPlacementId = (
+  map: TabletopMap,
+  placementsById: ReadonlyMap<string, SheetPlacement>,
+  id: string,
+): string | null => {
+  if (placementsById.has(id)) return id
+  const entity = map.encounterState?.abilityEntities?.entries.find(candidate => (
+    candidate.entityId === id
+    && candidate.targetability === 'targetable'
+    && aa080EntityIsActive(candidate)
+    && (aa080IsMiniNoseEntity(candidate) || aa080IsDreepyEntity(candidate))
+  ))
+  return entity && placementsById.has(entity.ownerPlacementId) ? entity.ownerPlacementId : null
 }
 
 const explicitTargetIdsForIntent = (intent: ResolveMoveIntent): readonly string[] => {
@@ -197,10 +217,13 @@ export const buildResolveMoveScopes = ({
   }
 
   const explicitTargetIds = explicitTargetIdsForIntent(intent)
+  const explicitScopePlacementIds: string[] = []
   for (const targetId of explicitTargetIds) {
-    if (!placementsById.has(targetId)) {
+    const placementId = scopedPlacementId(map, placementsById, targetId)
+    if (!placementId) {
       return { ok: false, message: `Target placement ${targetId} was not found on the current map.` }
     }
+    explicitScopePlacementIds.push(placementId)
   }
 
   const candidateResult = parseCandidateScopeIds(candidateScopePlacementIds)
@@ -208,10 +231,13 @@ export const buildResolveMoveScopes = ({
   const groupInventoryResult = parseGroupInventorySlugs(groupInventorySlugs)
   if (!groupInventoryResult.ok) return groupInventoryResult
 
+  const candidateScopeIds: string[] = []
   for (const candidateId of candidateResult.ids) {
-    if (!placementsById.has(candidateId)) {
+    const placementId = scopedPlacementId(map, placementsById, candidateId)
+    if (!placementId) {
       return { ok: false, message: `Candidate scope placement ${candidateId} was not found on the current map.` }
     }
+    candidateScopeIds.push(placementId)
   }
 
   if (
@@ -219,8 +245,11 @@ export const buildResolveMoveScopes = ({
     && intent.selection.kind !== 'self'
     && candidateResult.ids.length > 0
   ) {
-    const allowed = new Set<string>([intent.placementId, ...explicitTargetIds])
-    const unrelated = candidateResult.ids.find((candidateId) => !allowed.has(candidateId))
+    const allowed = new Set<string>([intent.placementId, ...explicitScopePlacementIds])
+    const unrelated = candidateResult.ids.find((candidateId) => {
+      const placementId = scopedPlacementId(map, placementsById, candidateId)
+      return placementId === null || !allowed.has(placementId)
+    })
     if (unrelated) {
       return {
         ok: false,
@@ -231,8 +260,8 @@ export const buildResolveMoveScopes = ({
 
   const scopedPlacementSet = new Set<string>([
     intent.placementId,
-    ...explicitTargetIds,
-    ...candidateResult.ids,
+    ...explicitScopePlacementIds,
+    ...candidateScopeIds,
   ])
   const scopePlacementIds = deterministicScopePlacementIds(map, intent.placementId, scopedPlacementSet)
   const targetPlacementIds = scopePlacementIds.filter((placementId) => placementId !== intent.placementId)

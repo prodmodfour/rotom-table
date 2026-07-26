@@ -117,6 +117,12 @@ export const AA079_ABILITY_MECHANIC_IDS = [
   'aa079.memory-wipe', 'aa079.merciless', 'aa079.migraine',
   'aa079.mimicry', 'aa079.mimitree', 'aa079.mind-mold',
 ] as const
+export const AA080_ABILITY_MECHANIC_IDS = [
+  'aa080.mini-noses', 'aa080.minus', 'aa080.miracle-mile',
+  'aa080.mirror-armor', 'aa080.missile-launch', 'aa080.misty-surge',
+  'aa080.mojo', 'aa080.mold-breaker', 'aa080.moody',
+  'aa080.motor-drive', 'aa080.mountain-peak', 'aa080.moxie',
+] as const
 export type Aa060AbilityMechanicId = (typeof AA060_ABILITY_MECHANIC_IDS)[number]
 export type AbilityMechanicId = Aa060AbilityMechanicId
   | (typeof AA061_ABILITY_MECHANIC_IDS)[number]
@@ -138,6 +144,7 @@ export type AbilityMechanicId = Aa060AbilityMechanicId
   | (typeof AA077_ABILITY_MECHANIC_IDS)[number]
   | (typeof AA078_ABILITY_MECHANIC_IDS)[number]
   | (typeof AA079_ABILITY_MECHANIC_IDS)[number]
+  | (typeof AA080_ABILITY_MECHANIC_IDS)[number]
 export interface AbilityMechanicOperation extends AbilitySpecJsonObject {
   readonly kind: typeof ABILITY_MECHANIC_OPERATION_KIND
   readonly id: string
@@ -396,6 +403,18 @@ const CONFIG_FIELDS: Readonly<Record<AbilityMechanicId, readonly string[]>> = {
   'aa079.mimicry': ['action', 'frequency', 'fieldTypePairs', 'weatherTypePairs', 'duration'],
   'aa079.mimitree': ['connectionMoveId', 'trigger', 'replacementMoveId', 'ignoreReplacementFrequency'],
   'aa079.mind-mold': ['lastChanceType', 'hpThresholdNumerator', 'hpThresholdDenominator', 'damageBonus'],
+  'aa080.mini-noses': ['activationAction', 'activationFrequency', 'maximumEntities', 'hitPointsPerLevel', 'levitateSpeed', 'rangedOrigin', 'maximumOwnerRange', 'regrowHours', 'regrowCount'],
+  'aa080.minus': ['action', 'frequency', 'triggerRelationship', 'triggerRange', 'additionalStageLoss'],
+  'aa080.miracle-mile': ['lastChanceType', 'hpThresholdNumerator', 'hpThresholdDenominator', 'damageBonus'],
+  'aa080.mirror-armor': ['action', 'frequency', 'directSources', 'preventLoss', 'reflectEqualLoss', 'excludeStatus'],
+  'aa080.missile-launch': ['connectionMoveId', 'activationAction', 'activationFrequency', 'placementCount', 'placementRange', 'shiftAction', 'shiftDistance', 'accuracyCheck', 'damageBase', 'damageClass', 'moveType', 'anyDamageDestroys'],
+  'aa080.misty-surge': ['action', 'frequency', 'terrainId', 'durationRounds'],
+  'aa080.mojo': ['moveType', 'ignoredDefenderTypeImmunity'],
+  'aa080.mold-breaker': ['ignoredAbilityClassification', 'targetRelationship'],
+  'aa080.moody': ['trigger', 'dieSides', 'raisedStageDelta', 'loweredStageDelta', 'differentStats'],
+  'aa080.motor-drive': ['immuneMoveType', 'damageAndEffectImmunity', 'hitStage', 'hitStageDelta', 'classification'],
+  'aa080.mountain-peak': ['lastChanceType', 'hpThresholdNumerator', 'hpThresholdDenominator', 'damageBonus'],
+  'aa080.moxie': ['trigger', 'targetRelationship', 'stage', 'stageDelta', 'oncePerMove', 'optional'],
 }
 const MECHANIC_SET = new Set<string>([
   ...AA060_ABILITY_MECHANIC_IDS, ...AA061_ABILITY_MECHANIC_IDS,
@@ -408,6 +427,7 @@ const MECHANIC_SET = new Set<string>([
   ...AA074_ABILITY_MECHANIC_IDS, ...AA075_ABILITY_MECHANIC_IDS,
   ...AA076_ABILITY_MECHANIC_IDS, ...AA077_ABILITY_MECHANIC_IDS,
   ...AA078_ABILITY_MECHANIC_IDS, ...AA079_ABILITY_MECHANIC_IDS,
+  ...AA080_ABILITY_MECHANIC_IDS,
 ])
 const ID = /^[a-z0-9]+(?:[._:/-][a-z0-9]+)*$/
 const fail = (code: AbilityMechanicValidationError['code'], path: string, detail: string): never => { throw new AbilityMechanicValidationError(code, path, detail) }
@@ -1643,6 +1663,65 @@ const parseConfig = (mechanicId: AbilityMechanicId, value: unknown, path: string
     case 'aa079.mind-mold': return {
       lastChanceType: oneOf(config.lastChanceType, ['psychic'], `${path}.lastChanceType`), hpThresholdNumerator: integer(config.hpThresholdNumerator, `${path}.hpThresholdNumerator`, 1, 1),
       hpThresholdDenominator: integer(config.hpThresholdDenominator, `${path}.hpThresholdDenominator`, 3, 3), damageBonus: integer(config.damageBonus, `${path}.damageBonus`, 5, 5),
+    }
+    case 'aa080.mini-noses': return {
+      activationAction: oneOf(config.activationAction, ['standard'], `${path}.activationAction`), activationFrequency: oneOf(config.activationFrequency, ['daily'], `${path}.activationFrequency`),
+      maximumEntities: integer(config.maximumEntities, `${path}.maximumEntities`, 3, 3), hitPointsPerLevel: integer(config.hitPointsPerLevel, `${path}.hitPointsPerLevel`, 1, 1),
+      levitateSpeed: integer(config.levitateSpeed, `${path}.levitateSpeed`, 4, 4), rangedOrigin: bool(config.rangedOrigin, `${path}.rangedOrigin`),
+      maximumOwnerRange: integer(config.maximumOwnerRange, `${path}.maximumOwnerRange`, 5, 5), regrowHours: integer(config.regrowHours, `${path}.regrowHours`, 24, 24),
+      regrowCount: integer(config.regrowCount, `${path}.regrowCount`, 1, 1),
+    }
+    case 'aa080.minus': return {
+      action: oneOf(config.action, ['free-reaction'], `${path}.action`), frequency: oneOf(config.frequency, ['scene-x2'], `${path}.frequency`),
+      triggerRelationship: oneOf(config.triggerRelationship, ['foe'], `${path}.triggerRelationship`), triggerRange: integer(config.triggerRange, `${path}.triggerRange`, 10, 10),
+      additionalStageLoss: integer(config.additionalStageLoss, `${path}.additionalStageLoss`, 1, 1),
+    }
+    case 'aa080.miracle-mile': return {
+      lastChanceType: oneOf(config.lastChanceType, ['fairy'], `${path}.lastChanceType`), hpThresholdNumerator: integer(config.hpThresholdNumerator, `${path}.hpThresholdNumerator`, 1, 1),
+      hpThresholdDenominator: integer(config.hpThresholdDenominator, `${path}.hpThresholdDenominator`, 3, 3), damageBonus: integer(config.damageBonus, `${path}.damageBonus`, 5, 5),
+    }
+    case 'aa080.mirror-armor': return {
+      action: oneOf(config.action, ['free-reaction'], `${path}.action`), frequency: oneOf(config.frequency, ['at-will'], `${path}.frequency`),
+      directSources: stringArray(config.directSources, ['foe-move', 'foe-ability'], `${path}.directSources`), preventLoss: bool(config.preventLoss, `${path}.preventLoss`),
+      reflectEqualLoss: bool(config.reflectEqualLoss, `${path}.reflectEqualLoss`), excludeStatus: bool(config.excludeStatus, `${path}.excludeStatus`),
+    }
+    case 'aa080.missile-launch': return {
+      connectionMoveId: oneOf(config.connectionMoveId, ['Dragon Darts'], `${path}.connectionMoveId`), activationAction: oneOf(config.activationAction, ['standard'], `${path}.activationAction`),
+      activationFrequency: oneOf(config.activationFrequency, ['scene-x2'], `${path}.activationFrequency`), placementCount: integer(config.placementCount, `${path}.placementCount`, 2, 2),
+      placementRange: integer(config.placementRange, `${path}.placementRange`, 6, 6), shiftAction: oneOf(config.shiftAction, ['swift'], `${path}.shiftAction`),
+      shiftDistance: integer(config.shiftDistance, `${path}.shiftDistance`, 4, 4), accuracyCheck: integer(config.accuracyCheck, `${path}.accuracyCheck`, 2, 2),
+      damageBase: integer(config.damageBase, `${path}.damageBase`, 5, 5), damageClass: oneOf(config.damageClass, ['physical'], `${path}.damageClass`),
+      moveType: oneOf(config.moveType, ['dragon'], `${path}.moveType`), anyDamageDestroys: bool(config.anyDamageDestroys, `${path}.anyDamageDestroys`),
+    }
+    case 'aa080.misty-surge': return {
+      action: oneOf(config.action, ['swift'], `${path}.action`), frequency: oneOf(config.frequency, ['scene-x3'], `${path}.frequency`),
+      terrainId: oneOf(config.terrainId, ['misty'], `${path}.terrainId`), durationRounds: integer(config.durationRounds, `${path}.durationRounds`, 1, 1),
+    }
+    case 'aa080.mojo': return {
+      moveType: oneOf(config.moveType, ['ghost'], `${path}.moveType`), ignoredDefenderTypeImmunity: oneOf(config.ignoredDefenderTypeImmunity, ['normal'], `${path}.ignoredDefenderTypeImmunity`),
+    }
+    case 'aa080.mold-breaker': return {
+      ignoredAbilityClassification: oneOf(config.ignoredAbilityClassification, ['defensive'], `${path}.ignoredAbilityClassification`),
+      targetRelationship: oneOf(config.targetRelationship, ['enemy'], `${path}.targetRelationship`),
+    }
+    case 'aa080.moody': return {
+      trigger: oneOf(config.trigger, ['turn-end'], `${path}.trigger`), dieSides: integer(config.dieSides, `${path}.dieSides`, 6, 6),
+      raisedStageDelta: integer(config.raisedStageDelta, `${path}.raisedStageDelta`, 2, 2), loweredStageDelta: integer(config.loweredStageDelta, `${path}.loweredStageDelta`, -1, -1),
+      differentStats: bool(config.differentStats, `${path}.differentStats`),
+    }
+    case 'aa080.motor-drive': return {
+      immuneMoveType: oneOf(config.immuneMoveType, ['electric'], `${path}.immuneMoveType`), damageAndEffectImmunity: bool(config.damageAndEffectImmunity, `${path}.damageAndEffectImmunity`),
+      hitStage: oneOf(config.hitStage, ['speed'], `${path}.hitStage`), hitStageDelta: integer(config.hitStageDelta, `${path}.hitStageDelta`, 1, 1),
+      classification: oneOf(config.classification, ['defensive'], `${path}.classification`),
+    }
+    case 'aa080.mountain-peak': return {
+      lastChanceType: oneOf(config.lastChanceType, ['rock'], `${path}.lastChanceType`), hpThresholdNumerator: integer(config.hpThresholdNumerator, `${path}.hpThresholdNumerator`, 1, 1),
+      hpThresholdDenominator: integer(config.hpThresholdDenominator, `${path}.hpThresholdDenominator`, 3, 3), damageBonus: integer(config.damageBonus, `${path}.damageBonus`, 5, 5),
+    }
+    case 'aa080.moxie': return {
+      trigger: oneOf(config.trigger, ['user-move-faints-target'], `${path}.trigger`), targetRelationship: oneOf(config.targetRelationship, ['foe'], `${path}.targetRelationship`),
+      stage: oneOf(config.stage, ['attack'], `${path}.stage`), stageDelta: integer(config.stageDelta, `${path}.stageDelta`, 1, 1),
+      oncePerMove: bool(config.oncePerMove, `${path}.oncePerMove`), optional: bool(config.optional, `${path}.optional`),
     }
   }
 }

@@ -156,8 +156,11 @@ describe('MA-218 through MA-225 dynamic damage cohorts', () => {
         },
       },
     }
-    const run = (moveName: string) => DYNAMIC_DAMAGE_218_225_HANDLER_REGISTRATION.run({
-      ...baseContext, intent: { moveName },
+    const run = (
+      moveName: string,
+      selectedPlacements = baseContext.selectedPlacements,
+    ) => DYNAMIC_DAMAGE_218_225_HANDLER_REGISTRATION.run({
+      ...baseContext, selectedPlacements, intent: { moveName },
     } as never) as { readonly operations: readonly ReturnType<typeof parseMoveEffectOperation>[] }
 
     expect(run('Behemoth Bash').operations[0]).toMatchObject({
@@ -184,5 +187,9 @@ describe('MA-218 through MA-225 dynamic damage cohorts', () => {
     expect(run('Dragon Darts').operations[0]).toMatchObject({
       kind: 'multi-hit', payload: { count: { kind: 'fixed', hits: 2 } },
     })
+    expect(run('Dragon Darts', [{ id: 'target-a', initiative: 5 }, { id: 'target-b', initiative: 4 }]).operations).toMatchObject([
+      { id: 'dragon-darts.accuracy', kind: 'roll' },
+      { id: 'dragon-darts.damage', kind: 'damage' },
+    ])
   })
 })

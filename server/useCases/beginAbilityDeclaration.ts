@@ -57,6 +57,15 @@ import {
 import { AA078_LIQUID_VOICE_OPTION_BY_ID } from '#shared/abilityAutomation/aa078'
 import { aa079MimicryTypeOptions } from '../domain/abilityAutomation/mechanics/aa079Activated'
 import {
+  AA080_DREEPY_MOVEMENT_SPEED,
+  AA080_MINI_NOSE_MOVEMENT_SPEED,
+  AA080_MINI_NOSE_TETHER_METERS,
+  aa080EntityIsActive,
+  aa080IsDreepyEntity,
+  aa080IsMiniNoseEntity,
+} from '#shared/abilityAutomation/aa080'
+import { footprintsOverlap } from '~/utils/gridGeometry'
+import {
   actorCanControlMapPlacement,
   playerProfileLinkedTrainerSheetsForTokenControl,
 } from '../policies/playerProfileTokenControlPolicy'
@@ -510,6 +519,42 @@ const declarationsFor = (
                   : 0
               if (dx === 0 && dz === 0 || dx + dz > 3) continue
               cells.push({ x, y, z })
+            }
+          }
+        }
+        else if ((context.runtime.canonicalId === 'Mini-Noses'
+          || context.runtime.canonicalId === 'Missile Launch')
+          && (modeId === 'deploy' || modeId === 'shift' || modeId === 'collision')) {
+          const miniNoses = context.runtime.canonicalId === 'Mini-Noses'
+          const shift = modeId !== 'deploy'
+          const collisionMode = modeId === 'collision'
+          const entities = context.abilityEntities.entries.filter(entity => (
+            entity.ownerPlacementId === context.actor.placement.id
+            && aa080EntityIsActive(entity)
+            && (miniNoses ? aa080IsMiniNoseEntity(entity) : aa080IsDreepyEntity(entity))
+          ))
+          const origins = shift ? entities : [context.actor.token]
+          const movementLimit = miniNoses ? AA080_MINI_NOSE_MOVEMENT_SPEED : AA080_DREEPY_MOVEMENT_SPEED
+          for (let z = 0; z < context.map.dimensions.z; z += 1) {
+            for (let x = 0; x < context.map.dimensions.x; x += 1) {
+              const cell = { x, y: context.actor.token.position.y, z }
+              const candidate = { position: cell, base: 1, clearance: 1 }
+              const ownerDistance = ptuGridDistanceBetweenFootprints(context.actor.token, candidate)
+              const inModeRange = shift
+                ? origins.some(origin => ptuGridDistanceBetweenFootprints(origin, candidate) <= movementLimit)
+                : miniNoses ? ownerDistance === 1 : ownerDistance <= 6
+              if (!inModeRange || (miniNoses && ownerDistance > AA080_MINI_NOSE_TETHER_METERS)) continue
+              const placementCollision = context.tokens.some(token => footprintsOverlap(
+                cell, 1, 1, token.position, token.base, token.clearance,
+              ))
+              const entityCollision = context.abilityEntities.entries.some(entity => (
+                aa080EntityIsActive(entity)
+                && !(shift && entities.some(moving => moving.entityId === entity.entityId))
+                && footprintsOverlap(cell, 1, 1, entity.position, entity.base, entity.clearance)
+              ))
+              if (entityCollision || (placementCollision && (miniNoses || !collisionMode))) continue
+              cells.push(cell)
+              if (cells.length > 512) fail(422, `Ability cell declaration ${declaration.id} exceeds the bounded offer size.`)
             }
           }
         }

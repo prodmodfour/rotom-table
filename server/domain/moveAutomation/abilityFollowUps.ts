@@ -78,6 +78,8 @@ import {
 } from './reducers/mapOperations'
 import { createMoveResolutionTrace, reduceMoveResolutionTrace } from './trace'
 import { ABILITY_AUTOMATION_RUNTIME_REGISTRY } from '../abilityAutomation/registry'
+import { effectiveRuntimeAbilityIds } from '../abilityAutomation/effectiveRuntimeAbilities'
+import { createMoveAutomationRelationshipResolver } from './relationships'
 
 export interface AbilityFollowUpCandidate {
   readonly kind: AbilityFollowUpKind
@@ -158,14 +160,36 @@ export const detectAbilityFollowUps = (input: {
   const attackedTargets = transaction.attackedTargetIds.flatMap(id => tokenById.get(id) ?? [])
   const candidates: AbilityFollowUpCandidate[] = []
 
-  const moxie = buildMoxieTriggerPrompts({
-    attacker,
+  const attackerPlacement = input.map.placements.find(placement => placement.id === attacker.id)
+  const attackerSheet = attackerPlacement?.sheetKind === 'pokemon'
+    ? input.pokemonSheets.get(attackerPlacement.sheetSlug)
+    : attackerPlacement?.sheetKind === 'trainer'
+      ? input.trainerSheets.get(attackerPlacement.sheetSlug)
+      : null
+  const hasEffectiveMoxie = Boolean(attackerPlacement && attackerSheet
+    && effectiveRuntimeAbilityIds({
+      map: input.map,
+      placement: attackerPlacement,
+      sheet: attackerSheet,
+    }).includes('Moxie'))
+  const relationships = createMoveAutomationRelationshipResolver({
+    placements: input.map.placements,
+    sides: input.map.encounterState?.sides ?? {},
+  })
+  const foeHpUpdates = transaction.hpUpdates.filter(update => (
+    relationships.resolve(attacker.id, update.id).relationship === 'enemy'
+  ))
+  const moxie = hasEffectiveMoxie ? buildMoxieTriggerPrompts({
+    attacker: {
+      ...attacker,
+      abilityNames: [...(attacker.abilityNames ?? []).filter(name => name !== 'Moxie'), 'Moxie'],
+    },
     moveName: transaction.moveName,
-    hpUpdates: transaction.hpUpdates,
+    hpUpdates: foeHpUpdates,
     hitTargetIds: transaction.hitTargetIds,
     tokens,
     idFactory: stablePromptId('moxie'),
-  })
+  }) : []
   if (moxie.length > 0) candidates.push({ kind: 'moxie', ownerPlacementId: attacker.id })
 
   const celebrate = buildCelebrateTriggerPrompts({
@@ -549,6 +573,11 @@ export const planAbilityFollowUpResponse = (input: {
     time: input.plannedAt,
   })
   context.reads.recordPlacement(context.actor.placement)
+  if (input.responseOptionId !== null
+    && window.reasonCode === 'ability.moxie.follow-up'
+    && !context.queries.abilities.has(pending.actorPlacementId, 'Moxie')) {
+    throw new Error('Selected Moxie response lost its exact effective ability runtime.')
+  }
   const operations = input.responseOptionId === null
     ? []
     : buildAbilityFollowUpEffectOperations({

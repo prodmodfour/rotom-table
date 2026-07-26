@@ -46,6 +46,7 @@ import { executeAa076ActivatedMechanic } from '../domain/abilityAutomation/mecha
 import { executeAa077ActivatedMechanic } from '../domain/abilityAutomation/mechanics/aa077Activated'
 import { executeAa078ActivatedMechanic } from '../domain/abilityAutomation/mechanics/aa078Activated'
 import { executeAa079ActivatedMechanic } from '../domain/abilityAutomation/mechanics/aa079Activated'
+import { executeAa080ActivatedMechanic } from '../domain/abilityAutomation/mechanics/aa080Activated'
 import { reconcileAa075IceFaceTemporaryHpOwnershipAfterMove } from '../domain/abilityAutomation/mechanics/aa075TemporaryHpIntegration'
 import { createAa063AbilityCombatStageImmunities } from '../domain/abilityAutomation/mechanics/aa063DefenseIntegration'
 import { applyNativeCoreMapChanges } from '../domain/moveAutomation/planNativeV2MoveState'
@@ -325,7 +326,15 @@ export const resolveAbilityDeclarationUseCase = (
                                                 operationId: intent.intentId,
                                                 choices: resolved.choices,
                                               })
-                                            : null
+                                            : mechanicOperation.mechanicId.startsWith('aa080.')
+                                              ? executeAa080ActivatedMechanic({
+                                                  context,
+                                                  operation: mechanicOperation,
+                                                  operationId: intent.intentId,
+                                                  abilityInstanceId: intent.abilityInstanceId,
+                                                  choices: resolved.choices,
+                                                })
+                                              : null
     const resolvedExecution = execution
       ?? fail(422, 'Ability runtime requires an execution adapter that is not registered for direct declaration resolution.')
     resolutionPlan = resolvedExecution.plan

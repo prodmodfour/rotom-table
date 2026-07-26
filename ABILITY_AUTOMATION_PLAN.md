@@ -2,7 +2,7 @@
 
 `PLAN_STATUS: IN_PROGRESS`
 
-`CURRENT_TICKET: AA-080`
+`CURRENT_TICKET: AA-081`
 
 ## Goal
 
@@ -96,14 +96,14 @@ Ability automation should reuse MoveSpec v2 selectors, expressions, operations, 
 
 ## Progress snapshot
 
-- Plan tickets: **79 DONE / 110 total**
+- Plan tickets: **80 DONE / 110 total**
 - Canonical inventory: **483**
-- Semantically complete: **240**
+- Semantically complete: **252**
 - Assisted: **0**
-- Blocked/unimplemented: **243**
+- Blocked/unimplemented: **231**
 - Interaction status: **483 unassessed**
 - Legacy baseline: **45 abilities with 55 partial fragments; 438 with no reviewed legacy fragment**
-- Production runtime: **240 exact manifest-selected AbilitySpec v1 runtimes**; retained legacy paths remain explicit compatibility only
+- Production runtime: **252 exact manifest-selected AbilitySpec v1 runtimes**; retained legacy paths remain explicit compatibility only
 
 ## Tickets
 
@@ -279,7 +279,7 @@ Each cohort must review every named ability against canonical text, implement al
   - Lightning Kicks; Lightning Rod; Limber; Line Charge; Liquid Ooze; Liquid Voice; Long Reach; Lullaby; Lunchbox; Mach Speed; Maelstrom Pulse; Magic Bounce
 - [x] **AA-079 — Magic Guard through Mind Mold** — `DONE`
   - Magic Guard; Magician; Magma Armor; Magnet Pull; Marvel Scale; Mega Launcher; Memory Wipe; Merciless; Migraine; Mimicry; Mimitree; Mind Mold
-- [ ] **AA-080 — Mini-Noses through Moxie** — `TODO`
+- [x] **AA-080 — Mini-Noses through Moxie** — `DONE`
   - Mini-Noses; Minus; Miracle Mile; Mirror Armor; Missile Launch; Misty Surge; Mojo; Mold Breaker; Moody; Motor Drive; Mountain Peak; Moxie
 - [ ] **AA-081 — Mud Dweller through Normalize** — `TODO`
   - Mud Dweller; Mud Shield; Multiscale; Multitype; Mummy; Natural Cure; Needles; Neuroforce; Neutralizing Gas; Nimble Strikes; No Guard; Normalize
@@ -368,3 +368,5 @@ Each cohort must review every named ability against canonical text, implement al
 - **2026-07-25 — Apply AA-076 capacity and modifier rules from effective abilities.** Juicy Energy exposes and revalidates only regular or effective Honey Paws Berry Juice storage, while Inner Focus and Keen Eye filter only unwilling Initiative lowering, Accuracy penalties, and non-stat Evasion without erasing unrelated bonuses or Total Blindness.
 - **2026-07-27 — Derive every AA-079 declaration and trigger from current authority.** Magnet Pull plans are weight-qualified and enforce durable movement boundaries, Memory Wipe and Mimic/Mimitree consult structured history, Mimicry exposes field-derived types, and Magician/Migraine resume only through revalidated server-owned response state.
 - **2026-07-27 — Keep AA-079 passive projections narrow and effective-ability gated.** Magic Guard blocks only enumerated non-attack loss, Marvel Scale remains a virtual conditional Defense projection, and Mega Launcher, Merciless, Mind Mold, Magma Armor, and Mimitree preserve canonical damage, immunity, lifecycle, and frequency ordering.
+- **2026-07-28 — Treat Mini-Noses and Dreepy as durable server-owned entities.** Stable identities, exact source-runtime checks, HP, target scopes, movement, tethering, collisions, rendering, regrowth, and ranged origins remain authoritative across retry and reconnect; Dreepy collision attacks use the Missile Launch user as their mechanical source.
+- **2026-07-28 — Bind AA-080 reactions and passives to exact recipients and effective runtimes.** Minus and Mirror Armor use durable grouped stage windows, Moody records deterministic distinct-stat rolls, Motor Drive blocks only Electric attack effects while retaining unrelated self-effects, and Moxie requires a Move-fainted foe before its optional response materializes.

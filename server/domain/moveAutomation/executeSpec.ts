@@ -258,6 +258,16 @@ import {
   applyAa079ReviewedOperations,
 } from '../abilityAutomation/mechanics/aa079MoveIntegration'
 import {
+  AA080_MINUS_REQUEST_REASON,
+  AA080_MINUS_STAGE_REASON,
+  AA080_MIRROR_ARMOR_REQUEST_REASON,
+  AA080_MIRROR_ARMOR_REFLECT_REASON,
+  AA080_MOTOR_DRIVE_STAGE_REASON,
+  aa080MotorDriveOwnerForOperation,
+  aa080MoveOverlayOperations,
+  applyAa080ReviewedOperations,
+} from '../abilityAutomation/mechanics/aa080MoveIntegration'
+import {
   AA068_DRAGONS_MAW_REASON,
   AA068_DREAM_SMOKE_REASON,
   AA068_EFFECT_SPORE_REASON,
@@ -335,6 +345,14 @@ import {
   type ValidatedMoveSpecTargetingRule,
 } from './validateSpec'
 import { resolveMoveSpecTargetingRule } from './targetingBranches'
+
+const AA080_COMBAT_STAGE_KEYS = new Set(['atk', 'def', 'satk', 'sdef', 'spd', 'acc'] as const)
+type Aa080CombatStageKey = 'atk' | 'def' | 'satk' | 'sdef' | 'spd' | 'acc'
+const aa080CombatStageKey = (value: unknown): Aa080CombatStageKey | null => (
+  typeof value === 'string' && AA080_COMBAT_STAGE_KEYS.has(value as Aa080CombatStageKey)
+    ? value as Aa080CombatStageKey
+    : null
+)
 
 export type MoveSpecExecutionErrorCode =
   | 'definition-integrity-mismatch'
@@ -1943,7 +1961,7 @@ const executableProgram = (
   const frostbiteOperations = aa071FrostbiteOperations({
     context,
     script: reviewedScript,
-    operations: applyAa079ReviewedOperations({
+    operations: applyAa080ReviewedOperations(applyAa079ReviewedOperations({
       context,
       script: reviewedScript,
       operations: applyAa078ReviewedOperations({
@@ -1954,7 +1972,7 @@ const executableProgram = (
           operations: selectedAa072Operations,
         })),
       }),
-    }),
+    })),
   })
   const reviewedEntries = frostbiteOperations.map((operation, index): ExecutableMoveSpecOperationEntry => ({
     operation,
@@ -3178,6 +3196,33 @@ const executeMoveSpecInternal = (
         continue
       }
       const resolveOperationRecipientIds = (): readonly string[] => {
+        if (operation.reasonCode === AA080_MOTOR_DRIVE_STAGE_REASON) {
+          const ownerId = aa080MotorDriveOwnerForOperation(operation)
+          if (!ownerId
+            || !input.context.queries.abilities.has(ownerId, 'Motor Drive')) return []
+          const ordinaryElectricHit = hitTargetIds.includes(ownerId)
+            && resolvedDamageTypes.some(resolution => (
+              resolution.recipientId === ownerId
+              && resolution.moveType.trim().toLowerCase() === 'electric'
+            ))
+          const multiElectricHit = multiHitExecutions.some(execution => (
+            execution.hitTargetIds.includes(ownerId)
+            && execution.resolution.targets.some(target => (
+              target.targetId === ownerId
+              && target.strikes.some(strike => (
+                strike.damage?.moveType.moveType.trim().toLowerCase() === 'electric'
+              ))
+            ))
+          ))
+          const hasResolvedDamageType = resolvedDamageTypes.some(resolution => resolution.recipientId === ownerId)
+            || multiHitExecutions.some(execution => execution.resolution.targets.some(target => (
+              target.targetId === ownerId && target.strikes.some(strike => Boolean(strike.damage))
+            )))
+          const reviewedElectricDirectOrStatusHit = !hasResolvedDamageType
+            && getMechanics().script.type.trim().toLowerCase() === 'electric'
+            && hitTargetIds.includes(ownerId)
+          return ordinaryElectricHit || multiElectricHit || reviewedElectricDirectOrStatusHit ? [ownerId] : []
+        }
         if (operation.kind === 'reaction-request' && operation.payload.ownerPlacementIds) {
           if (aa075InfiltratorBlocksResponsiveBlessings({
             context: input.context,
@@ -3201,6 +3246,49 @@ const executeMoveSpecInternal = (
             actionSourcePlacementId: input.context.actor.placement.id,
           })) return []
           const owners = canonicalPlacementIds(input.context, operation.payload.ownerPlacementIds)
+          if (operation.reasonCode === AA080_MIRROR_ARMOR_REQUEST_REASON) {
+            const ownerId = owners[0] ?? null
+            const token = ownerId ? input.context.queries.tokens.get(ownerId) : null
+            const sources = program.operations.flatMap(candidate => {
+              if (candidate.reasonCode !== AA080_MIRROR_ARMOR_REFLECT_REASON
+                || candidate.source.kind !== 'lifecycle-event'
+                || !candidate.source.id.startsWith(`ability.mirror-armor.response:${operation.id}:source:`)) return []
+              const sourceId = candidate.source.id.slice(
+                `ability.mirror-armor.response:${operation.id}:source:`.length,
+              )
+              const source = program.operations.find(sourceOperation => sourceOperation.id === sourceId)
+              return source?.kind === 'combat-stage' ? [source] : []
+            })
+            const canLoseStage = Boolean(token && sources.some(source => {
+              const stage = aa080CombatStageKey(source.payload.stage)
+              return stage && typeof source.payload.value === 'number'
+                && (token.combatStages[stage] ?? 0) > -6
+            }))
+            return ownerId && canLoseStage
+              && input.context.queries.abilities.has(ownerId, 'Mirror Armor')
+              && hitTargetIds.includes(ownerId) ? owners : []
+          }
+          if (operation.reasonCode === AA080_MINUS_REQUEST_REASON) {
+            const targetId = operation.source.kind === 'lifecycle-event'
+              && operation.source.id.startsWith('ability.minus.target:')
+              ? operation.source.id.slice('ability.minus.target:'.length)
+              : null
+            const target = targetId ? input.context.queries.tokens.get(targetId) : null
+            const stages = program.operations.flatMap(candidate => (
+              candidate.kind === 'combat-stage'
+              && candidate.reasonCode === AA080_MINUS_STAGE_REASON
+              && candidate.source.kind === 'lifecycle-event'
+              && candidate.source.id.startsWith(`ability.minus.response:${operation.id}:option:`)
+                ? [aa080CombatStageKey(candidate.payload.stage)] : []
+            ))
+            const canLoseStage = Boolean(target && stages.some(stage => (
+              stage !== null && (target.combatStages[stage] ?? 0) > -6
+            )))
+            const ownerId = owners[0] ?? null
+            return ownerId && targetId && canLoseStage
+              && input.context.queries.abilities.has(ownerId, 'Minus')
+              && hitTargetIds.includes(targetId) ? owners : []
+          }
           if (operation.reasonCode === AA078_LIGHTNING_ROD_REASON) {
             return lightningRodSelected ? [] : owners
           }
@@ -3722,6 +3810,70 @@ const executeMoveSpecInternal = (
             ).relationship === 'enemy'
           ))
         }
+        if (operation.kind === 'combat-stage'
+          && operation.reasonCode === AA080_MIRROR_ARMOR_REFLECT_REASON) {
+          const encoded = operation.source.kind === 'lifecycle-event'
+            && operation.source.id.startsWith('ability.mirror-armor.response:')
+            ? operation.source.id.slice('ability.mirror-armor.response:'.length)
+            : null
+          const requestId = encoded?.includes(':source:')
+            ? encoded.slice(0, encoded.indexOf(':source:'))
+            : null
+          const request = requestId
+            ? program.operations.find(candidate => candidate.id === requestId)
+            : null
+          const ownerId = request?.kind === 'reaction-request'
+            ? request.payload.ownerPlacementIds?.[0] ?? null
+            : null
+          return ownerId && hitTargetIds.includes(ownerId)
+            && input.context.queries.abilities.has(ownerId, 'Mirror Armor')
+            && requestId !== null
+            && selectedResponseOptionByRequestOperation.get(requestId) === 'ability.mirror-armor.use'
+            ? [input.context.actor.placement.id] : []
+        }
+        if (operation.kind === 'combat-stage'
+          && operation.reasonCode === AA080_MINUS_STAGE_REASON) {
+          const encoded = operation.source.kind === 'lifecycle-event'
+            && operation.source.id.startsWith('ability.minus.response:')
+            ? operation.source.id.slice('ability.minus.response:'.length)
+            : null
+          const optionMarker = encoded?.indexOf(':option:') ?? -1
+          const targetMarker = encoded?.indexOf(':target:') ?? -1
+          const requestId = optionMarker > 0 ? encoded!.slice(0, optionMarker) : null
+          const selectedOptionId = optionMarker > 0 && targetMarker > optionMarker
+            ? encoded!.slice(optionMarker + ':option:'.length, targetMarker) : null
+          const targetId = targetMarker > 0 ? encoded!.slice(targetMarker + ':target:'.length) : null
+          const request = requestId
+            ? program.operations.find(candidate => candidate.id === requestId)
+            : null
+          const ownerId = request?.kind === 'reaction-request'
+            ? request.payload.ownerPlacementIds?.[0] ?? null
+            : null
+          return ownerId && targetId && selectedOptionId
+            && hitTargetIds.includes(targetId)
+            && input.context.queries.abilities.has(ownerId, 'Minus')
+            && selectedResponseOptionByRequestOperation.get(requestId!) === selectedOptionId
+            ? uncancelled.filter(recipientId => recipientId === targetId) : []
+        }
+        if (operation.kind === 'combat-stage'
+          && operation.payload.action === 'modify'
+          && typeof operation.payload.value === 'number'
+          && operation.payload.value < 0) {
+          return uncancelled.filter(recipientId => {
+            const request = program.operations.find(candidate => (
+              candidate.kind === 'reaction-request'
+              && candidate.reasonCode === AA080_MIRROR_ARMOR_REQUEST_REASON
+              && candidate.payload.ownerPlacementIds?.includes(recipientId)
+              && program.operations.some(reflected => (
+                reflected.reasonCode === AA080_MIRROR_ARMOR_REFLECT_REASON
+                && reflected.source.kind === 'lifecycle-event'
+                && reflected.source.id === `ability.mirror-armor.response:${candidate.id}:source:${operation.id}`
+              ))
+            ))
+            return !request
+              || selectedResponseOptionByRequestOperation.get(request.id) !== 'ability.mirror-armor.use'
+          })
+        }
         return uncancelled
       }
       const randomTableGate = gateRandomTableControlledOperation({
@@ -3985,8 +4137,34 @@ const executeMoveSpecInternal = (
             }
           })()
         : aa078BaseEmittedOperation
+      const aa080EmittedOperation = emittedOperation.kind === 'combat-stage'
+        && emittedOperation.reasonCode === AA080_MIRROR_ARMOR_REFLECT_REASON
+        && emittedOperation.source.kind === 'lifecycle-event'
+        && emittedOperation.source.id.startsWith('ability.mirror-armor.response:')
+        ? (() => {
+            const encoded = emittedOperation.source.id.slice('ability.mirror-armor.response:'.length)
+            const requestId = encoded.includes(':source:')
+              ? encoded.slice(0, encoded.indexOf(':source:')) : ''
+            const request = program.operations.find(candidate => (
+              candidate.id === requestId && candidate.kind === 'reaction-request'
+            ))
+            const ownerId = request?.kind === 'reaction-request'
+              ? request.payload.ownerPlacementIds?.[0] ?? null
+              : null
+            const owner = ownerId ? input.context.queries.tokens.get(ownerId) : null
+            const stage = aa080CombatStageKey(emittedOperation.payload.stage)
+            const value = emittedOperation.payload.value
+            if (!owner || !stage || typeof value !== 'number') return emittedOperation
+            const current = owner.combatStages[stage] ?? 0
+            const reflected = Math.max(-6, current + value) - current
+            return {
+              ...emittedOperation,
+              payload: { ...emittedOperation.payload, value: reflected },
+            }
+          })()
+        : emittedOperation
       operations.push(Object.freeze({
-        operation: emittedOperation,
+        operation: aa080EmittedOperation,
         recipientIds: frozenIds(recipientIds),
       }))
 
@@ -5960,6 +6138,13 @@ const executeMoveSpecInternal = (
               script: childMechanics,
               moveSourceId: childMoveSourceId,
               authoritativeTargetIds: childTargetIds,
+            }),
+            ...aa080MoveOverlayOperations({
+              context: childContext,
+              script: childMechanics,
+              moveSourceId: childMoveSourceId,
+              authoritativeTargetIds: childTargetIds,
+              reviewedOperations: runtime.definition.spec.phases.flatMap(block => block.operations),
             }),
           ],
           ancestry,

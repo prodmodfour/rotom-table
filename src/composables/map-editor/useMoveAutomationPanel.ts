@@ -1,5 +1,9 @@
 import { computed, onBeforeUnmount, ref, type ComputedRef, type Ref } from 'vue'
 import type { LivePlayResolvedMoveResult, ResolveMoveIntent } from '#shared/livePlayMoveResolution'
+import {
+  aa080EntityIsActive,
+  aa080IsMiniNoseEntity,
+} from '#shared/abilityAutomation/aa080'
 import { findMove } from '~~/data/ptuReference'
 import {
   buildTokenMoveMenuOptions,
@@ -335,7 +339,8 @@ interface ActiveVirtualOriginRequest {
   frequency: string | null
   targetBranchId?: string
   originCell: GridAnchor
-  originPolicy: 'clay-cannons' | 'forest-lord'
+  originPolicy: 'clay-cannons' | 'forest-lord' | 'mini-noses'
+  originCells?: readonly GridAnchor[]
 }
 
 type ActiveMoveTargetingRequest = ActiveSingleTargetingRequest | ActiveTargetCountRequest | ActiveAreaConfirmationRequest | ActiveVirtualOriginRequest
@@ -732,18 +737,25 @@ export const useMoveAutomationPanel = ({
 
     if (request.kind === 'virtual-origin') {
       const forestLord = request.originPolicy === 'forest-lord'
+      const miniNoses = request.originPolicy === 'mini-noses'
       return {
         userId: request.userId,
         moveName: request.moveName,
         mode: 'area-confirmation',
-        rangeLabel: forestLord ? 'Forest Lord tree origin' : 'Clay Cannons origin (2m)',
-        rangeMeters: forestLord ? 0 : 2,
+        rangeLabel: forestLord
+          ? 'Forest Lord tree origin'
+          : miniNoses ? 'Mini-Nose ranged origin' : 'Clay Cannons origin (2m)',
+        rangeMeters: forestLord || miniNoses ? 0 : 2,
         targetPrompt: forestLord
           ? 'Confirm the prepared fully-grown tree as this Move’s origin.'
-          : 'Choose the virtual origin for this Ranged Move.',
-        candidateIds: [], hitChances: {}, areaCells: [request.originCell], affectedIds: [],
+          : miniNoses
+            ? 'Choose the user or one active Mini-Nose as this Ranged Move’s origin.'
+            : 'Choose the virtual origin for this Ranged Move.',
+        candidateIds: [], hitChances: {},
+        areaCells: request.originCells ? request.originCells.map(cell => ({ ...cell })) : [request.originCell],
+        affectedIds: [],
         canToggleTargets: false, areaAimMode: 'free', areaAimCenter: request.originCell,
-        areaAimRangeMeters: forestLord ? 0 : 2,
+        areaAimRangeMeters: forestLord || miniNoses ? 0 : 2,
       }
     }
 
@@ -1431,6 +1443,21 @@ export const useMoveAutomationPanel = ({
     ))
   }
 
+  const miniNoseOriginCells = (user: SpawnedPokemon, script: MoveAutomationScript): readonly GridAnchor[] => {
+    const ranged = script.targetMode !== 'self'
+      && !script.range.toLowerCase().includes('melee')
+      && !['self', 'field'].includes(script.range.trim().toLowerCase())
+    if (!ranged || user.currentHp <= 0) return []
+    const noses = (map.value?.encounterState?.abilityEntities?.entries ?? []).filter(entity => (
+      entity.ownerPlacementId === user.id
+      && aa080IsMiniNoseEntity(entity)
+      && aa080EntityIsActive(entity)
+    )).sort((left, right) => left.entityId.localeCompare(right.entityId))
+    return noses.length > 0
+      ? [{ ...user.position }, ...noses.map(entity => ({ ...entity.position }))]
+      : []
+  }
+
   const forestLordOriginCell = (userId: string, script: MoveAutomationScript): GridAnchor | null => {
     if (!['grass', 'ghost'].includes(script.type.trim().toLowerCase())) return null
     const effect = (map.value?.encounterState?.effects ?? []).find(effect => (
@@ -1453,15 +1480,25 @@ export const useMoveAutomationPanel = ({
     targetBranchId?: string,
   ): boolean => {
     const forestOrigin = forestLordOriginCell(user.id, script)
+    const miniNoseOrigins = miniNoseOriginCells(user, script)
     const clayCannons = clayCannonsOriginAvailable(user.id, script)
-    if (!forestOrigin && !clayCannons) return false
+    if (!forestOrigin && miniNoseOrigins.length === 0 && !clayCannons) return false
+    const exactOriginCells = [...(forestOrigin ? [forestOrigin] : []), ...miniNoseOrigins]
+      .filter((cell, index, cells) => cells.findIndex(candidate => (
+        candidate.x === cell.x && candidate.y === cell.y && candidate.z === cell.z
+      )) === index)
     clearMoveAutomationFeedback()
     activeMoveTargetBranchSelection.value = null
     activeMoveTargeting.value = {
       kind: 'virtual-origin', userId: user.id, moveName: script.moveName,
       script, damageFormula, frequency,
-      originCell: forestOrigin ?? { ...user.position },
-      originPolicy: forestOrigin ? 'forest-lord' : 'clay-cannons',
+      originCell: exactOriginCells[0] ?? { ...user.position },
+      originPolicy: miniNoseOrigins.length > 0
+        ? 'mini-noses'
+        : forestOrigin ? 'forest-lord' : 'clay-cannons',
+      ...(miniNoseOrigins.length > 0
+        ? { originCells: exactOriginCells.map(cell => ({ ...cell })) }
+        : {}),
       ...(targetBranchId ? { targetBranchId } : {}),
     }
     return true
@@ -2521,6 +2558,9 @@ export const useMoveAutomationPanel = ({
     const request = activeMoveTargeting.value
     if (request?.kind === 'virtual-origin') {
       if (request.originPolicy === 'forest-lord') return
+      if (request.originPolicy === 'mini-noses' && !request.originCells?.some(cell => (
+        cell.x === aimCell.x && cell.y === aimCell.y && cell.z === aimCell.z
+      ))) return
       activeMoveTargeting.value = { ...request, originCell: { ...aimCell } }
       return
     }

@@ -1046,11 +1046,17 @@ export const validateMoveSpecOperationSequence = (
         && reactionRequestIds.has(operation.source.id)
         && operation.kind === 'combat-stage'
         && operation.reasonCode === 'ability.justified.raise-attack'
+      const reviewedPostMultiMotorDrive = operation.phase === 'after-damage'
+        && operation.source.kind === 'lifecycle-event'
+        && operation.source.id.startsWith('ability.motor-drive.target:')
+        && operation.kind === 'combat-stage'
+        && operation.reasonCode === 'ability.motor-drive.raise-speed-on-electric-hit'
       return operation.kind === 'damage'
         || (operation.kind === 'direct-hp' && !reviewedPostMultiReaction)
         || operation.kind === 'heal'
         || operation.kind === 'condition'
-        || (operation.kind === 'combat-stage' && !reviewedPostMultiStage && !(
+        || (operation.kind === 'combat-stage' && !reviewedPostMultiStage
+          && !reviewedPostMultiMotorDrive && !(
           operation.phase === 'after-damage'
           && operation.source.kind === 'operation'
           && reactionRequestIds.has(operation.source.id)

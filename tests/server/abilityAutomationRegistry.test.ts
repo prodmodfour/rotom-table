@@ -230,7 +230,7 @@ describe('ability automation production runtime registry', () => {
   })
 
   it('ships only exact evidence-backed production selections', () => {
-    expect(ABILITY_AUTOMATION_RUNTIME_REGISTRY.size).toBe(240)
+    expect(ABILITY_AUTOMATION_RUNTIME_REGISTRY.size).toBe(252)
     expect(ABILITY_AUTOMATION_RUNTIME_REGISTRY.entries().map(runtime => runtime.canonicalId))
       .toEqual([
         'Abominable', 'Absorb Force', 'Accelerate', 'Adaptability', 'Aerilate', 'Aftermath',
@@ -275,6 +275,8 @@ describe('ability automation production runtime registry', () => {
         'Long Reach', 'Lullaby', 'Lunchbox', 'Mach Speed', 'Maelstrom Pulse', 'Magic Bounce',
         'Magic Guard', 'Magician', 'Magma Armor', 'Magnet Pull', 'Marvel Scale',
         'Mega Launcher', 'Memory Wipe', 'Merciless', 'Migraine', 'Mimicry', 'Mimitree', 'Mind Mold',
+        'Mini-Noses', 'Minus', 'Miracle Mile', 'Mirror Armor', 'Missile Launch', 'Misty Surge',
+        'Mojo', 'Mold Breaker', 'Moody', 'Motor Drive', 'Mountain Peak', 'Moxie',
       ])
     expect(registeredAbilityAutomationRuntimeFor('Adaptability')).toMatchObject({
       kind: 'abilityspec-v1', version: 1,

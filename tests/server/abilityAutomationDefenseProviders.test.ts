@@ -57,7 +57,11 @@ const relation = (left: string, right: string): 'self' | 'ally' | 'enemy' | 'unk
 const fireImmunity = () => provider('fire-immunity', {
   kind: 'immunity', category: 'move-type', value: 'fire', protectionTag: 'typed-fire-immunity',
 })
-const context = (active = true, defenderTypes = ['Grass']): AuthoritativeAbilityContext => {
+const context = (
+  active = true,
+  defenderTypes = ['Grass'],
+  actorHasMoldBreaker = false,
+): AuthoritativeAbilityContext => {
   const actor = { id: 'actor', sideId: 'red' }
   const target = { id: 'target', sideId: 'blue' }
   return {
@@ -67,7 +71,9 @@ const context = (active = true, defenderTypes = ['Grass']): AuthoritativeAbility
       tokens: { get: (id: string) => id === 'target' ? { id, defenderTypes } : { id, defenderTypes: ['Fire'] } },
       effectiveAbilities: {
         activeForPlacement: (id: string) => !active ? [] : id === 'actor'
-          ? [{ instanceId: 'base:actor:0', canonicalId: 'Mold Breaker', effective: true }]
+          ? actorHasMoldBreaker
+            ? [{ instanceId: 'base:actor:0', canonicalId: 'Mold Breaker', effective: true }]
+            : []
           : id === 'target'
             ? [{ instanceId: 'base:target:0', canonicalId: 'Flash Fire', effective: true }]
             : [],
@@ -197,12 +203,20 @@ describe('ability immunity, resistance, vulnerability, protection, and bypass pr
     })).toThrowError(AuthoritativeAbilityDefenseProviderError)
   })
 
+  it('lets exact Mold Breaker authority omit an enemy Defensive provider', () => {
+    const result = resolveAuthoritativeAbilityDefenseProviders({
+      context: context(true, ['Grass'], true), providers: [fireImmunity()], fact,
+    })
+    expect(result.immune).toBe(false)
+    expect(result.immunityProviderIds).toEqual([])
+  })
+
   it('does not let ability bypass erase an unrelated type-chart immunity', () => {
     const electricFact: AbilityDefenseFact = {
       ...fact, moveType: 'electric', baseTypeMultiplier: 0,
     }
     const result = resolveAuthoritativeAbilityDefenseProviders({
-      context: context(true, ['Ground']),
+      context: context(true, ['Ground'], true),
       providers: [bypass('immunity-bypass', ['immunity'], ['typed-fire-immunity'])],
       fact: electricFact,
     })

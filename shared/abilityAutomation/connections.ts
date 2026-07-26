@@ -28,6 +28,7 @@ const REVIEWED_CONNECTIONS = [
   ['Lullaby', 'Sing'],
   ['Migraine', 'Confusion'],
   ['Mimitree', 'Mimic'],
+  ['Missile Launch', 'Dragon Darts'],
 ] as const
 
 export const REVIEWED_ABILITY_CONNECTION_MOVES = Object.freeze(

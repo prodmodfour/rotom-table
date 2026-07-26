@@ -106,6 +106,11 @@ import {
   createAa079MagmaArmorGrappleLifecycleHandler,
 } from '../abilityAutomation/mechanics/aa079LifecycleIntegration'
 import { effectiveRuntimeAbilityIds } from '../abilityAutomation/effectiveRuntimeAbilities'
+import {
+  aa080MoodyLifecycleRecipientIds,
+  createAa080MoodyLifecycleHandler,
+  reconcileAa080MiniNoseTether,
+} from '../abilityAutomation/mechanics/aa080LifecycleIntegration'
 
 export type InitiativeLifecyclePlanningErrorCode =
   | 'active-placement-missing'
@@ -690,6 +695,14 @@ export const planEncounterLifecycle = (
     }, lifecycleMap)
     return token ? [[placementId, computeTickValue(token.fullMaxHp ?? token.maxHp)] as const] : []
   }))
+  const moodyPlacementIds = events.some(event => event.kind === 'turn-end')
+    ? effectiveAbilityPlacementIds({
+        map: lifecycleMap,
+        state: previousEncounterState,
+        snapshots: loadSheets(),
+        canonicalId: 'Moody',
+      })
+    : Object.freeze([])
   const magmaArmorGrappleTurnEnd = events.some(event => event.kind === 'turn-end')
     && previousEncounterState.effects.some(effect => effect.tags.includes('aa079.magma-armor-grapple'))
   const magmaArmorGrappleEntries = magmaArmorGrappleTurnEnd
@@ -754,6 +767,9 @@ export const planEncounterLifecycle = (
       : []),
     ...(magmaArmorGrappleEntries.length > 0
       ? [createAa079MagmaArmorGrappleLifecycleHandler({ entries: magmaArmorGrappleEntries })]
+      : []),
+    ...(moodyPlacementIds.length > 0
+      ? [createAa080MoodyLifecycleHandler(moodyPlacementIds)]
       : []),
     ...(corrosiveToxinsHandler ? [corrosiveToxinsHandler] : []),
     ...(weatherHandler ? [weatherHandler] : []),
@@ -853,10 +869,15 @@ export const planEncounterLifecycle = (
         operation,
         candidateRecipientIds: aa068Recipients,
       })
-      recipientsByOperationId.set(operation.id, terrainLifecycleRecipientIds({
+      const aa080Recipients = aa080MoodyLifecycleRecipientIds({
         context,
         operation,
         candidateRecipientIds: aa075Recipients,
+      })
+      recipientsByOperationId.set(operation.id, terrainLifecycleRecipientIds({
+        context,
+        operation,
+        candidateRecipientIds: aa080Recipients,
       }))
     }
     const emissions: MoveResolvedCoreTokenEffectOperation[] = reduction.operations.map(
@@ -959,6 +980,33 @@ export const planEncounterLifecycle = (
     events: plannedEvents,
     loadSheets,
   })
+  const miniNoseTurnStarts = new Map(plannedEvents.flatMap(event => (
+    event.kind === 'turn-start' ? [[event.placementId, event.eventId] as const] : []
+  )))
+  if (miniNoseTurnStarts.size > 0) {
+    const snapshots = loadSheets()
+    const activeMiniNoseOwners = new Set(effectiveAbilityPlacementIds({
+      map: nextMap,
+      state: currentEncounterState,
+      snapshots,
+      canonicalId: 'Mini-Noses',
+    }))
+    const lookup = {
+      pokemon: new Map(snapshots.pokemonSheets),
+      trainer: new Map(snapshots.trainerSheets),
+    }
+    const lifecycleTokens = nextMap.placements.flatMap(placement => {
+      const token = placementToSpawned(placement, lookup, nextMap)
+      return token ? [token] : []
+    })
+    currentEncounterState = reconcileAa080MiniNoseTether({
+      state: currentEncounterState,
+      eventIdsByOwner: new Map([...miniNoseTurnStarts].filter(([ownerId]) => activeMiniNoseOwners.has(ownerId))),
+      owners: new Map(lifecycleTokens.map(token => [token.id, token])),
+      dimensions: nextMap.dimensions,
+      tokens: lifecycleTokens,
+    })
+  }
   nextMap.encounterState = deepCloneJson(currentEncounterState)
   nextMap = reconcileAa075IceFaceTemporaryHpOwnershipAfterMove({
     previousMap: input.map,

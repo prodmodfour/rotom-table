@@ -14,6 +14,7 @@ import {
   reviewedDamage,
   reviewedMultiHit,
   reviewedStage,
+  standardAccuracy,
 } from '../specs/reviewedSpecBuilder'
 
 export const DYNAMIC_DAMAGE_218_225_HANDLER_ID = 'ma218-225.dynamic-damage' as const
@@ -389,7 +390,7 @@ const dragonDarts = (context: RegisteredMoveHandlerContext): readonly MoveEffect
           formula: { kind: 'dice', count: 1, sides: 20, modifier: 0 }, stopOnMiss: false,
         },
       })]
-    : [damageOperation(context)]
+    : [standardAccuracy('dragon-darts'), damageOperation(context)]
 )
 
 const run = (context: RegisteredMoveHandlerContext) => {

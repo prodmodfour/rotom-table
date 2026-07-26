@@ -32,6 +32,11 @@ import {
 import { aa074HyperCutterBlocksStage } from '../../abilityAutomation/mechanics/aa074StaticIntegration'
 import { AA076_IRON_BARBS_HP_REASON } from '../../abilityAutomation/mechanics/aa076MoveIntegration'
 import { aa078LightningRodBlocksElectric } from '../../abilityAutomation/mechanics/aa078StaticIntegration'
+import {
+  aa080MojoIgnoresNormalImmunity,
+  aa080MotorDriveBlocksElectric,
+} from '../../abilityAutomation/mechanics/aa080StaticIntegration'
+import { AA080_MOTOR_DRIVE_STAGE_REASON } from '../../abilityAutomation/mechanics/aa080MoveIntegration'
 import type {
   MoveConditionImmunityDecision,
   MoveCoreTokenEffectImmunityDecision,
@@ -191,7 +196,21 @@ export const createStandardMoveCoreTokenEffectImmunityQueries = (
       && outcome.naturalResult % 2 === 0) return 'Gulp Missile even-roll branch'
     return null
   }
-  const moveImmunity = (recipient: MoveCoreTokenEffectRecipient): string | null => {
+  const motorDriveBlocksOperation = (
+    recipient: MoveCoreTokenEffectRecipient,
+    operation: MoveEffectOperation | undefined,
+  ): boolean => operation?.recipients.kind !== 'actor'
+    && operation?.reasonCode !== AA080_MOTOR_DRIVE_STAGE_REASON
+    && aa080MotorDriveBlocksElectric({
+      context: options.context,
+      recipientId: recipient.placement.id,
+      moveType: options.moveType,
+    })
+  const moveImmunity = (
+    recipient: MoveCoreTokenEffectRecipient,
+    operation?: MoveEffectOperation,
+  ): string | null => {
+    if (motorDriveBlocksOperation(recipient, operation)) return 'Motor Drive'
     const ordinary = options.moveScript
       ? moveAutomationMoveImmunitySource(options.moveScript, recipient.token)
       : null
@@ -206,6 +225,7 @@ export const createStandardMoveCoreTokenEffectImmunityQueries = (
   const typedAttackImmunity = (
     recipient: MoveCoreTokenEffectRecipient,
     typeSource: 'attacking' | 'defending',
+    operation?: MoveEffectOperation,
   ): string | null => {
     if (!options.moveType) return 'unresolved move type'
     const target = recipient.token
@@ -214,6 +234,7 @@ export const createStandardMoveCoreTokenEffectImmunityQueries = (
       recipientId: recipient.placement.id,
       moveType: options.moveType,
     })) return 'Lightning Rod'
+    if (typeSource === 'attacking' && motorDriveBlocksOperation(recipient, operation)) return 'Motor Drive'
     const effectiveLevitate = typeSource === 'attacking'
       && options.moveType.trim().toLowerCase() === 'ground'
       && options.context?.queries.abilities.has(recipient.placement.id, 'Levitate') === true
@@ -225,11 +246,20 @@ export const createStandardMoveCoreTokenEffectImmunityQueries = (
     if (effectiveLevitate) return 'Levitate'
     // Levitate is managed by exact effective-ability authority. Excluding the
     // raw sheet name prevents suppressed/stale instances from contributing.
-    const passiveAbilityNames = target.abilityNames?.filter(name => name.trim() !== 'Levitate')
-    const baseMultiplier = computeMultiplier(options.moveType, target.defenderTypes)
+    const passiveAbilityNames = target.abilityNames?.filter(name => (
+      !['Levitate', 'Motor Drive'].includes(name.trim())
+    ))
+    const defenderTypes = options.context
+      ? target.defenderTypes.filter(defenderType => !aa080MojoIgnoresNormalImmunity({
+          context: options.context!,
+          moveType: options.moveType!,
+          defenderType,
+        }))
+      : target.defenderTypes
+    const baseMultiplier = computeMultiplier(options.moveType, defenderTypes)
     const multiplier = computeSheetAbilityAwareMultiplier(
       options.moveType,
-      target.defenderTypes,
+      defenderTypes,
       passiveAbilityNames,
       target.defenderCapabilities,
       { baseMultiplier },
@@ -260,9 +290,9 @@ export const createStandardMoveCoreTokenEffectImmunityQueries = (
         )) ?? null
         return decision(blockedBy)
       }
-      const wholeMoveBlocker = moveImmunity(recipient)
+      const wholeMoveBlocker = moveImmunity(recipient, operation)
       if (wholeMoveBlocker) return decision(wholeMoveBlocker)
-      return decision(typedAttackImmunity(recipient, 'attacking'))
+      return decision(typedAttackImmunity(recipient, 'attacking', operation))
     },
     condition: ({ operation, condition, recipient }) => {
       const gulpMissileBlocker = gulpMissileAccuracyBlocker(operation)
@@ -271,9 +301,11 @@ export const createStandardMoveCoreTokenEffectImmunityQueries = (
         && normalizeConditionName(condition) === 'Badly Poisoned'
         && options.context?.queries.abilities.has(options.context.actor.placement.id, 'Corrosive Toxins')
       if (corrosiveToxinsBypass) return conditionDecision(null)
-      const wholeMoveBlocker = operation.payload.applyMoveImmunity === false
-        ? null
-        : moveImmunity(recipient)
+      const candidateMoveBlocker = moveImmunity(recipient, operation)
+      const wholeMoveBlocker = candidateMoveBlocker === 'Motor Drive'
+        || operation.payload.applyMoveImmunity !== false
+        ? candidateMoveBlocker
+        : null
       if (wholeMoveBlocker) return conditionDecision(wholeMoveBlocker)
       // Cleanses are still blocked by whole-move immunities such as Soundproof,
       // but a target's immunity to the ailment itself must never block removal.
@@ -284,7 +316,7 @@ export const createStandardMoveCoreTokenEffectImmunityQueries = (
         context: options.context, condition, recipientTypes: recipient.token.defenderTypes,
       })
       if (operation.payload.applyTypeImmunity && !corrosionBypass) {
-        const typedBlocker = typedAttackImmunity(recipient, 'defending')
+        const typedBlocker = typedAttackImmunity(recipient, 'defending', operation)
         if (typedBlocker) return conditionDecision(typedBlocker)
       }
       const aromaVeil = aromaVeilPrevention({ condition, recipient, context: options.context })
@@ -382,11 +414,11 @@ export const createStandardMoveCoreTokenEffectImmunityQueries = (
             recipient.placement.id,
           ).relationship === 'enemy'
         : false
-      const ordinaryBlocker = moveImmunity(recipient)
+      const ordinaryBlocker = moveImmunity(recipient, operation)
         ?? (
           operation.payload.applyTypeImmunity
           && operation.recipients.kind !== 'actor'
-            ? typedAttackImmunity(recipient, 'defending')
+            ? typedAttackImmunity(recipient, 'defending', operation)
             : null
         )
         ?? (

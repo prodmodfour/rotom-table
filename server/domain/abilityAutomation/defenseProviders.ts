@@ -6,6 +6,7 @@ import {
 } from '#shared/abilityAutomation/defenseProviders'
 import { POKEMON_TYPES, computeMultiplier } from '~/utils/typeChart'
 import type { AuthoritativeAbilityContext } from './context'
+import { aa080MoldBreakerSuppressesAbility } from './mechanics/aa080StaticIntegration'
 
 export class AuthoritativeAbilityDefenseProviderError extends Error {
   constructor(readonly code:
@@ -25,7 +26,20 @@ export const resolveAuthoritativeAbilityDefenseProviders = (input: {
   readonly providers: unknown
   readonly fact: AbilityDefenseFact
 }): AbilityDefenseResolution => {
-  const providers = parseAbilityDefenseProviders(input.providers)
+  const parsedProviders = parseAbilityDefenseProviders(input.providers)
+  const actorHasMoldBreaker = input.context.queries.effectiveAbilities
+    .activeForPlacement(input.fact.actorPlacementId)
+    .some(ability => ability.effective && ability.canonicalId === 'Mold Breaker')
+  const providers = parsedProviders.filter(provider => !aa080MoldBreakerSuppressesAbility({
+    actorPlacementId: input.fact.actorPlacementId,
+    targetPlacementId: provider.sourcePlacementId,
+    canonicalId: provider.canonicalId,
+    actorHasMoldBreaker,
+    relationship: input.context.queries.relationships.relation(
+      input.fact.actorPlacementId,
+      provider.sourcePlacementId,
+    ),
+  }))
   const actor = input.context.queries.placements.get(input.fact.actorPlacementId)
     ?? fail('actor-missing', 'Defense provider actor placement is missing.')
   const target = input.context.queries.placements.get(input.fact.targetPlacementId)

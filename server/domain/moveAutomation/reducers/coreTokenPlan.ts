@@ -1,5 +1,15 @@
+import { createHash } from 'node:crypto'
 import { nextRevision, normalizeRevision } from '#shared/sessionRevisions'
-import type { EncounterState } from '#shared/moveAutomation/encounterState'
+import {
+  createEmptyEncounterState,
+  parseEncounterState,
+  type EncounterState,
+} from '#shared/moveAutomation/encounterState'
+import { createEmptyAbilityEntityState } from '#shared/abilityAutomation/entities'
+import {
+  aa080IsDreepyEntity,
+  aa080IsMiniNoseEntity,
+} from '#shared/abilityAutomation/aa080'
 import type { CombatStageMap } from '~/types/combatStages'
 import type { SheetPlacement, TabletopMap } from '~/types/map'
 import type {
@@ -31,6 +41,7 @@ import {
   type MoveStateChangePlan,
 } from '../plan'
 import type { AuthoritativeMoveRulesContext } from '../context'
+import { reduceAbilityEntityCommand } from '../../abilityAutomation/entities'
 import { failMoveCoreTokenEffectReduction } from './coreTokenEffectError'
 import type {
   MoveCoreTokenChangedField,
@@ -251,8 +262,50 @@ export const buildCoreTokenStateChanges = (
       - (placementOrder.get(right) ?? Number.MAX_SAFE_INTEGER)
   })
 
+  const previousEncounter = parseEncounterState(map.encounterState ?? createEmptyEncounterState())
+  const abilityEntityPlacementIds = new Set(previousEncounter.abilityEntities?.entries
+    .filter(entity => aa080IsMiniNoseEntity(entity) || aa080IsDreepyEntity(entity))
+    .map(entity => entity.entityId) ?? [])
+  let currentEncounter = parseEncounterState(options.encounterStateUpdate?.current ?? previousEncounter)
+  const entityHpTouches: MoveCoreTokenEffectTouch[] = []
+  let firstEntityHpOrder = Number.MAX_SAFE_INTEGER
+  let entityStateChanged = false
+  for (const placementId of touchedPlacementIds) {
+    const entity = currentEncounter.abilityEntities?.entries.find(entry => entry.entityId === placementId)
+    if (!entity || (!aa080IsMiniNoseEntity(entity) && !aa080IsDreepyEntity(entity))) continue
+    const update = hpById.get(placementId)
+    if (!update || entity.currentHp === null || update.currentHp >= entity.currentHp) continue
+    const relevantTouches = touchesForField(touches, placementId, 'hp')
+    entityHpTouches.push(...relevantTouches)
+    firstEntityHpOrder = Math.min(firstEntityHpOrder, firstTouchOrder(relevantTouches))
+    const operationId = `ability.entity.move-damage.${createHash('sha256')
+      .update(`${map.slug}\u0000${placementId}\u0000${entity.version}\u0000${relevantTouches.map(touch => touch.operationId).join('\u0000')}`)
+      .digest('hex').slice(0, 24)}`
+    const reduced = reduceAbilityEntityCommand(
+      currentEncounter.abilityEntities ?? createEmptyAbilityEntityState(),
+      aa080IsDreepyEntity(entity)
+        ? { operationId, kind: 'remove', entityId: entity.entityId, expectedVersion: entity.version }
+        : {
+            operationId,
+            kind: 'damage',
+            entityId: entity.entityId,
+            expectedVersion: entity.version,
+            amount: entity.currentHp - update.currentHp,
+          },
+    )
+    currentEncounter = parseEncounterState({ ...currentEncounter, abilityEntities: reduced.state })
+    entityStateChanged = true
+  }
+  const combinedEncounterStateUpdate = options.encounterStateUpdate || entityStateChanged
+    ? {
+        previous: options.encounterStateUpdate?.previous ?? previousEncounter,
+        current: currentEncounter,
+      }
+    : null
+
   const sheetProjections = new Map<string, SheetProjection>()
   for (const placementId of touchedPlacementIds) {
+    if (abilityEntityPlacementIds.has(placementId)) continue
     const recipient = options.recipientsById.get(placementId)
       ?? failMoveCoreTokenEffectReduction(
         'recipient-not-found',
@@ -340,13 +393,16 @@ export const buildCoreTokenStateChanges = (
     })
   }
 
-  if (options.encounterStateUpdate) {
-    const encounterTouches = touchedPlacementIds.flatMap(placementId => (
-      touchesForField(touches, placementId, 'encounterEffects')
-    ))
+  if (combinedEncounterStateUpdate) {
+    const encounterTouches = [
+      ...touchedPlacementIds.flatMap(placementId => (
+        touchesForField(touches, placementId, 'encounterEffects')
+      )),
+      ...entityHpTouches,
+    ]
     const source = provenance(encounterTouches)
     ordered.push({
-      firstOperationOrder: firstTouchOrder(encounterTouches),
+      firstOperationOrder: Math.min(firstTouchOrder(encounterTouches), firstEntityHpOrder),
       scopeOrder: 0,
       tieKey: map.slug,
       input: {
@@ -355,8 +411,8 @@ export const buildCoreTokenStateChanges = (
         expectedRevision: normalizeRevision(map.revision),
         sourceOperationId: source.sourceOperationId,
         reasonCode: source.reasonCode,
-        previous: deepCloneJson(options.encounterStateUpdate.previous),
-        current: deepCloneJson(options.encounterStateUpdate.current),
+        previous: deepCloneJson(combinedEncounterStateUpdate.previous),
+        current: deepCloneJson(combinedEncounterStateUpdate.current),
         compensation: RESTORE_PREVIOUS_MOVE_STATE_VALUE,
       },
     })
@@ -366,6 +422,7 @@ export const buildCoreTokenStateChanges = (
   const temporaryHpTouches: MoveCoreTokenEffectTouch[] = []
   let firstTemporaryHpOrder = Number.MAX_SAFE_INTEGER
   for (const placementId of touchedPlacementIds) {
+    if (abilityEntityPlacementIds.has(placementId)) continue
     const update = hpById.get(placementId)
     if (update?.temporaryHp === undefined) continue
     const recipient = options.recipientsById.get(placementId)

@@ -151,9 +151,11 @@ describe('ability automation semantic manifest', () => {
         'Long Reach', 'Lullaby', 'Lunchbox', 'Mach Speed', 'Maelstrom Pulse', 'Magic Bounce',
         'Magic Guard', 'Magician', 'Magma Armor', 'Magnet Pull', 'Marvel Scale',
         'Mega Launcher', 'Memory Wipe', 'Merciless', 'Migraine', 'Mimicry', 'Mimitree', 'Mind Mold',
+        'Mini-Noses', 'Minus', 'Miracle Mile', 'Mirror Armor', 'Missile Launch', 'Misty Surge',
+        'Mojo', 'Mold Breaker', 'Moody', 'Motor Drive', 'Mountain Peak', 'Moxie',
       ])
-    expect(manifest.abilities.filter(ability => ability.baseStatus === 'blocked')).toHaveLength(243)
-    expect(manifest.abilities.filter(ability => ability.runtime.kind === 'unimplemented')).toHaveLength(243)
+    expect(manifest.abilities.filter(ability => ability.baseStatus === 'blocked')).toHaveLength(231)
+    expect(manifest.abilities.filter(ability => ability.runtime.kind === 'unimplemented')).toHaveLength(231)
   })
 
   it('keeps bootstrap mode hints non-authoritative and maps every row to its plan cohort', () => {

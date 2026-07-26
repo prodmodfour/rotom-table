@@ -31,6 +31,10 @@ import { aa064CorrosionMultiplier } from '../abilityAutomation/mechanics/aa064Mo
 import { aa071ForecastTypeResolution } from '../abilityAutomation/mechanics/aa071StaticIntegration'
 import { aa067MoveResistance } from '../abilityAutomation/mechanics/aa067StaticIntegration'
 import { aa078LightningRodBlocksElectric } from '../abilityAutomation/mechanics/aa078StaticIntegration'
+import {
+  aa080MojoIgnoresNormalImmunity,
+  aa080MotorDriveBlocksElectric,
+} from '../abilityAutomation/mechanics/aa080StaticIntegration'
 
 export type MoveDamageTypeResolutionErrorCode =
   | 'move-type-unavailable'
@@ -294,6 +298,11 @@ export const resolveMoveDamageType = (options: {
       singleTypeMultiplier(moveType.type, defenderType),
     )
     const ignored = (relation === 'immune' && policy.immunity === 'ignore')
+      || (relation === 'immune' && aa080MojoIgnoresNormalImmunity({
+        context: options.context,
+        moveType: moveType.type,
+        defenderType,
+      }))
       || (relation === 'resistant' && policy.resistance === 'ignore')
       || (relation === 'weak' && policy.weakness === 'ignore')
     return {
@@ -327,11 +336,18 @@ export const resolveMoveDamageType = (options: {
   // Levitate is an immunity, never a fallback resistance when a Move ignores
   // immunity. Keep the legacy sheet-passive resistance lane out of this path.
   const passiveAbilityNames = (target.abilityNames ?? [])
-    .filter(name => !['Levitate', 'Lightning Rod'].includes(name.trim()))
+    .filter(name => !['Levitate', 'Lightning Rod', 'Motor Drive'].includes(name.trim()))
   const lightningRodImmunity = moveType.type === 'Electric'
     && policy.immunity === 'honor'
     && policy.passiveImmunity !== 'ignore'
     && aa078LightningRodBlocksElectric({
+      context: options.context,
+      recipientId: options.recipientId,
+      moveType: moveType.type,
+    })
+  const motorDriveImmunity = policy.immunity === 'honor'
+    && policy.passiveImmunity !== 'ignore'
+    && aa080MotorDriveBlocksElectric({
       context: options.context,
       recipientId: options.recipientId,
       moveType: moveType.type,
@@ -346,8 +362,10 @@ export const resolveMoveDamageType = (options: {
     ? { multiplier: 0, sources: [] as string[] }
     : lightningRodImmunity
       ? { multiplier: 0, sources: ['Lightning Rod'] }
-      : levitateImmunity
-      ? { multiplier: 0, sources: ['Levitate'] }
+      : motorDriveImmunity
+        ? { multiplier: 0, sources: ['Motor Drive'] }
+        : levitateImmunity
+          ? { multiplier: 0, sources: ['Levitate'] }
       : resolveSheetPassiveTypeEffectiveness(
         moveType.type,
         baseMultiplier,

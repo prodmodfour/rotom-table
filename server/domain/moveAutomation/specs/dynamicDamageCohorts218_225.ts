@@ -258,8 +258,11 @@ export const TRUMP_CARD_MOVE_SPEC = DYNAMIC_SPECS['Trump Card']
 export const VENOSHOCK_MOVE_SPEC = DYNAMIC_SPECS.Venoshock
 export const WAKE_UP_SLAP_MOVE_SPEC = DYNAMIC_SPECS['Wake-Up Slap']
 
-export const DRAGON_DARTS_MOVE_SPEC = dynamicSpec({
-  canonicalId: 'Dragon Darts', slug: 'dragon-darts', targeting: multiTargeting(1, 2), tags: ['double-strike'],
+export const DRAGON_DARTS_MOVE_SPEC = createReviewedMoveSpec({
+  canonicalId: 'Dragon Darts', targeting: multiTargeting(1, 2),
+  registeredHandlerId: DYNAMIC_DAMAGE_218_225_HANDLER_ID,
+  operations: standardTerminalOperations('dragon-darts'),
+  tags: ['damage', 'dynamic', 'double-strike'],
 })
 export const TRIPLE_AXEL_MOVE_SPEC = dynamicSpec({
   canonicalId: 'Triple Axel', slug: 'triple-axel', targeting: multiTargeting(1, 3), tags: ['choice', 'multi-hit', 'movement'],

@@ -727,12 +727,14 @@ const applyTriggeredAbilityPayments = (input: {
     ['ability.magic-bounce.optional-hazard-control', 'Magic Bounce'],
     ['ability.magician.optional-held-item-theft', 'Magician'],
     ['ability.migraine.optional-confusion-critical', 'Migraine'],
+    ['ability.minus.optional-additional-stage-loss', 'Minus'],
+    ['ability.mirror-armor.optional-reflection', 'Mirror Armor'],
   ])
   const noFrequency = new Set([
     'Anger Point', 'Aqua Boost', 'Beast Boost', 'Celebrate', 'Chilling Neigh',
     'Color Change', 'Combo Striker', 'Flavorful Aroma', 'Fox Fire',
     'Galvanize', 'Gooey', 'Grim Neigh', 'Heat Mirage', 'Heliovolt', 'Horde Break',
-    'Ignition Boost', 'Iron Barbs', 'Justified',
+    'Ignition Boost', 'Iron Barbs', 'Justified', 'Mirror Armor',
   ])
   const daily = new Set(['Dig Away', 'Disguise', 'Dodge'])
   const actorByChildOperationId = new Map(input.childExecutions.flatMap(child => (
@@ -911,7 +913,7 @@ const applyTriggeredAbilityPayments = (input: {
     if (existingByOperation && existingByOperation !== existing) {
       fail('state-change-conflict', `${canonicalId} response operation already paid another resource.`)
     }
-    const limit = ['Bodyguard', 'Dancer', 'Dragon’s Maw', 'Drown Out', 'Giver', 'Gore', 'Gulp Missile', 'Innards Out', 'Migraine'].includes(canonicalId)
+    const limit = ['Bodyguard', 'Dancer', 'Dragon’s Maw', 'Drown Out', 'Giver', 'Gore', 'Gulp Missile', 'Innards Out', 'Migraine', 'Minus'].includes(canonicalId)
       ? 2
       : 1
     if (!existingByOperation && (existing?.spent ?? 0) >= limit) {

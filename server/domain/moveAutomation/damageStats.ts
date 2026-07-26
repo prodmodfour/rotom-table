@@ -73,6 +73,7 @@ import {
   aa079MarvelScaleRecipient,
   aa079MoveDamageModifiers,
 } from '../abilityAutomation/mechanics/aa079StaticIntegration'
+import { aa080MoveDamageModifiers } from '../abilityAutomation/mechanics/aa080StaticIntegration'
 
 export type MoveDamageStatSelectionErrorCode = 'non-numeric-stat-selection'
 
@@ -558,6 +559,13 @@ export const resolveMoveSpecDamageCalculation = (
     recipient: options.recipient,
     moveType: moveType.moveType,
   })
+  const aa080Modifiers = aa080MoveDamageModifiers({
+    context: options.context,
+    operation: options.operation,
+    actor,
+    recipient: options.recipient,
+    moveType: moveType.moveType,
+  })
   const aa079Recipient = aa079MarvelScaleRecipient({
     context: options.context,
     recipient: options.recipient,
@@ -598,6 +606,7 @@ export const resolveMoveSpecDamageCalculation = (
         ...aa077Modifiers,
         ...aa078Modifiers,
         ...aa079Modifiers,
+        ...aa080Modifiers,
         ...(options.responseDamageModifiers ?? []),
         ...encounterDamageModifiers,
         ...helpingHandModifiers,

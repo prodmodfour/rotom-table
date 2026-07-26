@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { LIVE_PLAY_MOVE_RESOLUTION_SCHEMA_VERSION, type ResolveMoveIntent } from '#shared/livePlayMoveResolution'
+import { createEmptyEncounterState } from '#shared/moveAutomation/encounterState'
+import { parseAbilityEntityState } from '#shared/abilityAutomation/entities'
 import { buildResolveMoveScopes, LIVE_PLAY_RESOLVE_MOVE_SCOPE_LIMIT } from '~/utils/livePlayMoveCommandScopes'
 import type { LivePlayScope } from '#shared/livePlayCommands'
 import type { SheetPlacement, TabletopMap } from '~/types/map'
@@ -147,6 +149,38 @@ describe('buildResolveMoveScopes', () => {
       'sheet:pokemon:bulbasaur:conditions',
     ])
     expect(keys(result.scopes)).not.toContain('token:target-a:moveUsage')
+  })
+
+  it('maps reviewed targetable ability entities to their owner scope without trusting a synthetic sheet or token scope', () => {
+    const map = mapFixture()
+    map.encounterState = {
+      ...createEmptyEncounterState(),
+      abilityEntities: parseAbilityEntityState({
+        schemaVersion: 1,
+        entries: [{
+          entityId: 'ability.mini-nose.target-a.1', kind: 'subordinate',
+          labelKey: 'ability.mini-noses.entity', ownerPlacementId: 'target-a',
+          sourceAbilityInstanceId: 'base:mini-noses', canonicalId: 'Mini-Noses',
+          sourceOperationId: 'op.mini-noses', controller: { kind: 'source-controller', id: 'target-a' },
+          sideId: null, position: { x: 2, y: 0, z: 1 }, base: 1, clearance: 1,
+          occupancy: 'non-blocking', targetability: 'targetable', movementMode: 'controlled',
+          movementSpeed: 4, maximumHp: 20, currentHp: 20, damageReduction: 0,
+          duration: { kind: 'source-presence' }, tags: ['aa080', 'aa080.mini-nose'],
+          payload: { kind: 'subordinate', templateId: 'template.mini-nose', initiativePolicy: 'none' },
+          version: 1, createdOperationId: 'op.mini-noses', lastOperationId: 'op.mini-noses',
+        }],
+        receipts: [],
+      }),
+    }
+    const result = buildResolveMoveScopes({
+      map,
+      intent: intent({ kind: 'single-target', targetPlacementId: 'ability.mini-nose.target-a.1' }),
+    })
+    expect(result.ok).toBe(true)
+    if (!result.ok) return
+    expect(result.scopePlacementIds).toEqual(['actor', 'target-a'])
+    expectScopes(result.scopes, ['sheet:pokemon:bulbasaur:hp', 'map:metadata'])
+    expect(keys(result.scopes).some(key => key.startsWith('token:ability.mini-nose.'))).toBe(false)
   })
 
   it('includes every selected target-count placement in map order', () => {

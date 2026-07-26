@@ -10892,7 +10892,7 @@
       "runtime": {
         "kind": "movespec-v2",
         "version": 2,
-        "definitionHash": "20192ba7b25184787c9056be69d201e7a01d9a2820dc31c9665a819bc5cec366",
+        "definitionHash": "4c126023cb06b520bc5d2594b8e71db9fe75b23a4544db4adcd3ca2f99d8f260",
         "sourceModule": "server/domain/moveAutomation/specs/dynamicDamageCohorts218_225.ts"
       },
       "rulesProvenance": {
@@ -10935,7 +10935,7 @@
         ],
         "notApplicable": []
       },
-      "reviewedAt": "2026-07-19",
+      "reviewedAt": "2026-07-28",
       "unsupportedInteractionIds": [],
       "rolloutCohortId": "ma-219"
     },

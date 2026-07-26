@@ -12,6 +12,12 @@ import type { CharacterSheet } from '~/types/characterSheet'
 import { AA070_FLUTTER_NO_FLANK_CAPABILITY } from '#shared/abilityAutomation/aa070'
 import { aa079HasMimitreeRearm } from '#shared/abilityAutomation/aa079'
 import {
+  aa080EntityIsActive,
+  aa080IsDefensiveAbility,
+  aa080IsDreepyEntity,
+  aa080IsMiniNoseEntity,
+} from '#shared/abilityAutomation/aa080'
+import {
   AA071_FOREST_LORD_ORIGIN_CAPABILITY,
   isAa071FullyGrownTreeCell,
 } from '#shared/abilityAutomation/aa071'
@@ -147,6 +153,7 @@ import {
 } from '../abilityAutomation/mechanics/aa068StaticIntegration'
 import { AA063_CLAY_CANNONS_CAPABILITY_ID } from '../abilityAutomation/mechanics/aa063MoveIntegration'
 import { resolveSheetAbilityInstances } from '../abilityAutomation/instanceParameters'
+import { aa080MoldBreakerSuppressesAbility } from '../abilityAutomation/mechanics/aa080StaticIntegration'
 
 export interface AuthoritativeMoveSheetRead {
   readonly kind: SheetKind
@@ -576,7 +583,64 @@ export const buildAuthoritativeMoveRulesContext = (
     input.pokemonSheets,
     input.trainerSheets,
   )
-  const { placements, byId: placementById } = placementSnapshots(map)
+  const basePlacementSnapshot = placementSnapshots(map)
+  const effectiveAbilitiesByPlacement = new Map<string, readonly AuthoritativeMoveEffectiveAbility[]>()
+  for (const placement of basePlacementSnapshot.placements) {
+    const sheet = sheetByRef.get(sheetReadKey({ kind: placement.sheetKind, slug: placement.sheetSlug }))
+    const projected = projectAuthoritativeEffectiveAbilities({
+      baseAbilities: resolveSheetAbilityInstances(sheet?.sheet.abilities),
+      target: {
+        placementId: placement.id,
+        ...(placement.sideId ? { sideId: placement.sideId } : {}),
+        position: placement.position,
+      },
+      effects: map.encounterState?.effects ?? [],
+      transformationSnapshots: map.encounterState?.abilityTransformations,
+    })
+    effectiveAbilitiesByPlacement.set(placement.id, Object.freeze(projected.flatMap((ability) => {
+      if (!ability.effective) return []
+      const runtime = abilityRuntimeRegistry.resolve(ability.canonicalId)
+      if (!runtime || (ability.definitionHash !== null && ability.definitionHash !== runtime.definitionHash)) return []
+      return [Object.freeze({ instanceId: ability.instanceId, canonicalId: ability.canonicalId, runtime })]
+    })))
+  }
+  const baseTokenById = tokenSnapshots(
+    map,
+    basePlacementSnapshot.placements,
+    sheetLookup,
+  ).byId
+  const abilityEntityById = new Map((map.encounterState?.abilityEntities?.entries ?? []).flatMap((entity) => {
+    const ownerPlacement = basePlacementSnapshot.byId.get(entity.ownerPlacementId)
+    const ownerToken = baseTokenById.get(entity.ownerPlacementId)
+    const sourceEffective = effectiveAbilitiesByPlacement.get(entity.ownerPlacementId)?.some(ability => (
+      ability.instanceId === entity.sourceAbilityInstanceId
+      && ability.canonicalId === entity.canonicalId
+    )) === true
+    const reviewedEntity = aa080IsMiniNoseEntity(entity) || aa080IsDreepyEntity(entity)
+    const miniNoseActive = !aa080IsMiniNoseEntity(entity) || Boolean(ownerToken && ownerToken.currentHp > 0)
+    return ownerPlacement && sourceEffective && reviewedEntity && miniNoseActive
+      && entity.targetability === 'targetable' && aa080EntityIsActive(entity)
+      ? [[entity.entityId, entity] as const]
+      : []
+  }))
+  const entityPlacements = [...abilityEntityById.values()]
+    .sort((left, right) => left.entityId.localeCompare(right.entityId))
+    .map((entity): SheetPlacement => {
+      if (basePlacementSnapshot.byId.has(entity.entityId)) {
+        fail('duplicate-placement-id', `Ability entity ${entity.entityId} collides with an authoritative placement ID.`)
+      }
+      const owner = basePlacementSnapshot.byId.get(entity.ownerPlacementId)!
+      return detachedFrozenJson({
+        id: entity.entityId,
+        sheetKind: owner.sheetKind,
+        sheetSlug: owner.sheetSlug,
+        position: entity.position,
+        ...(owner.sideId ? { sideId: owner.sideId } : {}),
+      })
+    })
+  const placements = deepFreeze([...basePlacementSnapshot.placements, ...entityPlacements])
+  const placementById = new Map(placements.map(placement => [placement.id, placement]))
+  for (const entityId of abilityEntityById.keys()) effectiveAbilitiesByPlacement.set(entityId, Object.freeze([]))
   const relationships = createMoveAutomationRelationshipResolver({
     placements,
     sides: map.encounterState?.sides ?? {},
@@ -596,29 +660,20 @@ export const buildAuthoritativeMoveRulesContext = (
   const baseWeather = createMoveAutomationWeatherResolver(map, {
     subjectPlacementId: intent.placementId,
   })
-  const effectiveAbilitiesByPlacement = new Map<string, readonly AuthoritativeMoveEffectiveAbility[]>()
-  for (const placement of placements) {
-    const sheet = sheetByRef.get(sheetReadKey({ kind: placement.sheetKind, slug: placement.sheetSlug }))
-    const projected = projectAuthoritativeEffectiveAbilities({
-      baseAbilities: resolveSheetAbilityInstances(sheet?.sheet.abilities),
-      target: {
-        placementId: placement.id,
-        ...(placement.sideId ? { sideId: placement.sideId } : {}),
-        position: placement.position,
-      },
-      effects: map.encounterState?.effects ?? [],
-      transformationSnapshots: map.encounterState?.abilityTransformations,
-    })
-    effectiveAbilitiesByPlacement.set(placement.id, Object.freeze(projected.flatMap((ability) => {
-      if (!ability.effective) return []
-      const runtime = abilityRuntimeRegistry.resolve(ability.canonicalId)
-      if (!runtime || (ability.definitionHash !== null && ability.definitionHash !== runtime.definitionHash)) return []
-      return [Object.freeze({ instanceId: ability.instanceId, canonicalId: ability.canonicalId, runtime })]
-    })))
-  }
+  const actorHasMoldBreaker = (effectiveAbilitiesByPlacement.get(intent.placementId) ?? [])
+    .some(ability => ability.canonicalId === 'Mold Breaker')
+  const abilitiesVisibleToMove = (placementId: string): readonly AuthoritativeMoveEffectiveAbility[] => (
+    effectiveAbilitiesByPlacement.get(placementId) ?? Object.freeze([])
+  ).filter(ability => !aa080MoldBreakerSuppressesAbility({
+    actorPlacementId: intent.placementId,
+    targetPlacementId: placementId,
+    canonicalId: ability.canonicalId,
+    actorHasMoldBreaker,
+    relationship: relationships.resolve(intent.placementId, placementId).relationship,
+  }))
   const abilityQueries: AuthoritativeMoveAbilityQueries = Object.freeze({
-    activeForPlacement: (placementId: string) => effectiveAbilitiesByPlacement.get(placementId) ?? Object.freeze([]),
-    has: (placementId: string, canonicalId: string) => (effectiveAbilitiesByPlacement.get(placementId) ?? [])
+    activeForPlacement: abilitiesVisibleToMove,
+    has: (placementId: string, canonicalId: string) => abilitiesVisibleToMove(placementId)
       .some(ability => ability.canonicalId === canonicalId),
   })
   const infiltratorBlocksBlessings = abilityQueries.has(intent.placementId, 'Infiltrator')
@@ -689,7 +744,28 @@ export const buildAuthoritativeMoveRulesContext = (
         cell.x === origin.x && cell.y === origin.y && cell.z === origin.z
       ))
     ))
-    const canonicalMoveType = findMove(intent.moveName)?.type.trim().toLowerCase()
+    const canonicalMove = findMove(intent.moveName)
+    const canonicalMoveType = canonicalMove?.type.trim().toLowerCase()
+    const sourceOrigin = source !== undefined
+      && source.position.x === origin.x
+      && source.position.y === origin.y
+      && source.position.z === origin.z
+    const miniNoseOrigin = [...abilityEntityById.values()].find(entity => (
+      entity.ownerPlacementId === intent.placementId
+      && aa080IsMiniNoseEntity(entity)
+      && entity.position.x === origin.x
+      && entity.position.y === origin.y
+      && entity.position.z === origin.z
+    ))
+    const canonicalMoveRange = canonicalMove?.range?.trim().toLowerCase() ?? ''
+    const miniNosesActive = source !== undefined
+      && source.currentHp > 0
+      && effectiveAbilitiesByPlacement.get(intent.placementId)
+        ?.some(ability => ability.canonicalId === 'Mini-Noses') === true
+      && miniNoseOrigin !== undefined
+      && canonicalMoveRange.length > 0
+      && !canonicalMoveRange.includes('melee')
+      && !['self', 'field'].includes(canonicalMoveRange)
     const forestLordActive = effectiveAbilitiesByPlacement.get(intent.placementId)
       ?.some(ability => ability.canonicalId === 'Forest Lord') === true
       && forestLordEffect !== undefined
@@ -698,7 +774,8 @@ export const buildAuthoritativeMoveRulesContext = (
       && Boolean(source && ptuGridDistanceBetweenFootprints(
         source, { position: origin, base: 1, clearance: 1 },
       ) <= 10)
-    if (!inBounds || (!forestLordActive && (!clayCannonsActive || !clayCannonsInRange))) {
+    if (!inBounds || (!sourceOrigin && !forestLordActive && !miniNosesActive
+      && (!clayCannonsActive || !clayCannonsInRange))) {
       fail('invalid-virtual-origin', 'The requested Move origin is not authorized by an active reviewed ability.')
     }
     effectivePositionOverrides.set(intent.placementId, origin)
@@ -708,7 +785,29 @@ export const buildAuthoritativeMoveRulesContext = (
     placements,
     sheetLookup,
     effectivePositionOverrides,
-  ).tokens
+  ).tokens.map((token): SpawnedPokemon => {
+    const entity = abilityEntityById.get(token.id)
+    if (!entity) return token
+    const maximumHp = entity.maximumHp ?? token.maxHp
+    return detachedFrozenJson({
+      ...token,
+      species: aa080IsMiniNoseEntity(entity) ? 'Mini-Nose' : 'Dreepy',
+      currentHp: entity.currentHp ?? maximumHp,
+      maxHp: maximumHp,
+      fullMaxHp: maximumHp,
+      temporaryHp: 0,
+      injuries: 0,
+      abilityNames: [],
+      conditions: [],
+      sheetConditions: [],
+      tokenItems: [],
+      base: entity.base,
+      clearance: entity.clearance,
+      movementCapabilities: aa080IsMiniNoseEntity(entity)
+        ? { ...token.movementCapabilities, levitate: entity.movementSpeed }
+        : token.movementCapabilities,
+    })
+  })
   const arenaTrapMarks = (map.encounterState?.abilityOwnedState?.entries ?? []).filter(entry => (
     entry.canonicalId === 'Arena Trap'
     && entry.payload.kind === 'mark'
@@ -752,7 +851,17 @@ export const buildAuthoritativeMoveRulesContext = (
     })
     // Illusion is renderer-only. Server mechanics retain the user's own token
     // identity, species, statistics, footprint, capabilities, and abilities.
-    const effectiveToken = iceFaceToken
+    // Mold Breaker additionally strips only reviewed enemy Defensive ability
+    // names from compatibility helpers so raw sheet text cannot reintroduce a
+    // bypassed mechanic after the exact runtime query has rejected it.
+    const suppressDefensiveNames = actorHasMoldBreaker
+      && relationships.resolve(intent.placementId, token.id).relationship === 'enemy'
+    const effectiveToken = suppressDefensiveNames
+      ? detachedFrozenJson({
+          ...iceFaceToken,
+          abilityNames: iceFaceToken.abilityNames?.filter(name => !aa080IsDefensiveAbility(name.trim())),
+        })
+      : iceFaceToken
     const trapped = arenaTrapMarks.some((mark) => {
       const source = baseTokens.find(candidate => candidate.id === mark.ownerPlacementId)
       if (!source

@@ -81,6 +81,11 @@ import {
   type AbilityClientCapabilityBundle,
 } from '#shared/abilityAutomation/clientCapabilities'
 import { isPendingMoveDeclarationResult } from '#shared/moveAutomation/pendingResolution'
+import {
+  aa080EntityIsActive,
+  aa080IsDreepyEntity,
+  aa080IsMiniNoseEntity,
+} from '#shared/abilityAutomation/aa080'
 import { MAP_INTERACTION_MODES, type MapInteractionMode } from '#shared/mapInteractionMode'
 import {
   LIVE_PLAY_PRESENCE_MAX_INTENT_AREA_CELLS,
@@ -967,6 +972,37 @@ const {
     enabled: computed(() => true),
     controllablePlacementIds: computed(() => playerProfileTokenControlModel.value.controllablePlacementIds),
   },
+})
+
+const renderedSpawnedPokemon = computed(() => {
+  const ownerById = new Map(spawnedPokemon.value.map(token => [token.id, token]))
+  const entities = map.value?.encounterState?.abilityEntities?.entries ?? []
+  return [
+    ...spawnedPokemon.value,
+    ...entities.flatMap(entity => {
+      if (!aa080EntityIsActive(entity)
+        || (!aa080IsMiniNoseEntity(entity) && !aa080IsDreepyEntity(entity))) return []
+      const owner = ownerById.get(entity.ownerPlacementId)
+      if (!owner || (aa080IsMiniNoseEntity(entity) && owner.currentHp <= 0)) return []
+      return [{
+        ...owner,
+        id: entity.entityId,
+        species: aa080IsMiniNoseEntity(entity) ? 'Mini-Nose' : 'Dreepy',
+        position: { ...entity.position },
+        level: aa080IsMiniNoseEntity(entity) ? owner.level : 1,
+        currentHp: entity.currentHp ?? owner.currentHp,
+        maxHp: entity.maximumHp ?? owner.maxHp,
+        fullMaxHp: entity.maximumHp ?? owner.fullMaxHp,
+        temporaryHp: 0,
+        abilityNames: [],
+        conditions: [],
+        sheetConditions: [],
+        tokenItems: [],
+        base: entity.base,
+        clearance: entity.clearance,
+      }]
+    }),
+  ]
 })
 
 const pendingMoveResponses = usePendingMoveResponses({
@@ -2139,7 +2175,7 @@ const {
   aimMoveAutomationArea: aimMoveAutomationAreaPanel,
 } = useMoveAutomationPanel({
   map,
-  spawnedPokemon,
+  spawnedPokemon: renderedSpawnedPokemon,
   pokemonBySlug,
   trainerBySlug,
   canEditMap,
@@ -2690,7 +2726,7 @@ useMapDimensionReconciliation({
         :error="sceneError"
         :slug="slug"
         :map-data-revision="mapDataRevision"
-        :spawned-pokemon="spawnedPokemon"
+        :spawned-pokemon="renderedSpawnedPokemon"
         :selected-id="selectedId"
         :controllable-placement-ids="livePlayActionablePlacementIds"
         :active-initiative-id="activeInitiativeId"

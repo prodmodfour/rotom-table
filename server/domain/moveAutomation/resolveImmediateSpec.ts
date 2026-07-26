@@ -130,6 +130,12 @@ import {
   aa079MoveOverlayOperations,
 } from '../abilityAutomation/mechanics/aa079MoveIntegration'
 import {
+  AA080_MINUS_STAGE_REASON,
+  AA080_MIRROR_ARMOR_REFLECT_REASON,
+  AA080_MOTOR_DRIVE_STAGE_REASON,
+  aa080MoveOverlayOperations,
+} from '../abilityAutomation/mechanics/aa080MoveIntegration'
+import {
   AA068_DUST_CLOUD_TARGETING_OVERRIDE,
   aa068DrySkinCancelsRecipientEffect,
   aa068DustCloudBurstEnabled,
@@ -1028,6 +1034,10 @@ const executeReviewedMoveSpec = (
     ...aa077MoveOverlayOperations(overlayInput),
     ...aa078MoveOverlayOperations(overlayInput),
     ...aa079MoveOverlayOperations(overlayInput),
+    ...aa080MoveOverlayOperations({
+      ...overlayInput,
+      reviewedOperations: options.runtime.definition.spec.phases.flatMap(phase => phase.operations),
+    }),
   ]
   const boneLordLine = script.moveName === 'Bonemerang'
     && aa062BoneLordEmpowersMove(options.context, 'Bonemerang')
@@ -1287,6 +1297,13 @@ export const reduceCompletedMoveSpec = (
     branchControlledOperationIds(uncommittedOperations),
   )
   for (const { operation } of uncommittedOperations) {
+    if (operation.reasonCode === AA080_MIRROR_ARMOR_REFLECT_REASON
+      && operation.source.kind === 'lifecycle-event'
+      && operation.source.id.includes(':source:')) {
+      recipientControlledOperationIds.add(
+        operation.source.id.slice(operation.source.id.indexOf(':source:') + ':source:'.length),
+      )
+    }
     if (operation.reasonCode === 'ability.flame-body.burn-attacker'
       || operation.reasonCode.startsWith('ability.gulp-missile.retaliation-')
       || operation.reasonCode === AA074_HONEY_THIEF_TEMP_HP_REASON
@@ -1294,7 +1311,10 @@ export const reduceCompletedMoveSpec = (
       || operation.reasonCode === AA075_INNARDS_OUT_HP_REASON
       || operation.reasonCode === AA076_IRON_BARBS_HP_REASON
       || operation.reasonCode === AA078_LIQUID_OOZE_RECOIL_REASON
-      || operation.reasonCode === AA078_LUNCHBOX_TEMP_HP_REASON) {
+      || operation.reasonCode === AA078_LUNCHBOX_TEMP_HP_REASON
+      || operation.reasonCode === AA080_MINUS_STAGE_REASON
+      || operation.reasonCode === AA080_MIRROR_ARMOR_REFLECT_REASON
+      || operation.reasonCode === AA080_MOTOR_DRIVE_STAGE_REASON) {
       recipientControlledOperationIds.add(operation.id)
     }
     const operationContext = contextForOperation(operation)
@@ -1321,6 +1341,12 @@ export const reduceCompletedMoveSpec = (
         || operation.reasonCode === 'ability.justified.raise-attack')
       && operation.source.kind === 'operation'
       && responseOwnerByOperationId.has(operation.source.id))
+    || (operation.kind === 'combat-stage'
+      && operation.phase === 'after-damage'
+      && operation.reasonCode === AA080_MOTOR_DRIVE_STAGE_REASON
+      && operation.source.kind === 'lifecycle-event'
+      && operation.source.id.startsWith('ability.motor-drive.target:')
+      && recipientControlledOperationIds.has(operation.id))
     || (operation.kind === 'direct-hp'
       && (operation.reasonCode === AA075_INNARDS_OUT_HP_REASON
         || operation.reasonCode === AA076_IRON_BARBS_HP_REASON)
