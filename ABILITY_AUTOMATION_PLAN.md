@@ -281,7 +281,7 @@ Each cohort must review every named ability against canonical text, implement al
   - Magic Guard; Magician; Magma Armor; Magnet Pull; Marvel Scale; Mega Launcher; Memory Wipe; Merciless; Migraine; Mimicry; Mimitree; Mind Mold
 - [x] **AA-080 — Mini-Noses through Moxie** — `DONE`
   - Mini-Noses; Minus; Miracle Mile; Mirror Armor; Missile Launch; Misty Surge; Mojo; Mold Breaker; Moody; Motor Drive; Mountain Peak; Moxie
-- [ ] **AA-081 — Mud Dweller through Normalize** — `TODO`
+- [ ] **AA-081 — Mud Dweller through Normalize** — `IN_PROGRESS`
   - Mud Dweller; Mud Shield; Multiscale; Multitype; Mummy; Natural Cure; Needles; Neuroforce; Neutralizing Gas; Nimble Strikes; No Guard; Normalize
 - [ ] **AA-082 — Oblivious through Perception** — `TODO`
   - Oblivious; Odious Spray; Omen; Overcharge; Overcoat; Overgrow; Own Tempo; Pack Hunt; Parental Bond; Parry; Pastel Veil; Perception
