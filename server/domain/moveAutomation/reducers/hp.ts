@@ -18,6 +18,9 @@ import type { AuthoritativeMoveRulesContext } from '../context'
 import { authoritativeAbilityHealingBlocked } from '../../abilityAutomation/healingPrevention'
 import { aa070FlyingFlyTrapPreventsDirectHp } from '../../abilityAutomation/mechanics/aa070StaticIntegration'
 import { aa079MagicGuardBlocksDirectHp } from '../../abilityAutomation/mechanics/aa079StaticIntegration'
+import { aa079MagicGuardBlocksReason } from '#shared/abilityAutomation/aa079'
+import { aa083PoisonHealActive } from '../../abilityAutomation/mechanics/aa083LifecycleIntegration'
+import { aa084PowerConstructBlocksTemporaryHp } from '../../abilityAutomation/mechanics/aa084StaticIntegration'
 import { AA073_GULP_MISSILE_HP_REASON } from '../../abilityAutomation/mechanics/aa073MoveIntegration'
 import { AA076_IRON_BARBS_HP_REASON } from '../../abilityAutomation/mechanics/aa076MoveIntegration'
 import {
@@ -504,6 +507,19 @@ const directHpImmunity = (options: {
       recipientId: options.recipient.placement.id,
       operation: options.operation,
     })) return { blockedBy: 'Magic Guard', consultedPlacementIds: [] }
+  if (options.context
+    && options.context.queries.abilities.has(options.recipient.placement.id, 'Poison Heal')
+    && aa083PoisonHealActive(options.context.map, options.recipient.placement.id)
+    && /poison/i.test(options.operation.reasonCode)
+    && (options.operation.reasonCode.startsWith('status-affliction.')
+      || options.operation.reasonCode.startsWith('condition.residual.'))) {
+    return { blockedBy: 'Poison Heal', consultedPlacementIds: [] }
+  }
+  if (!options.operation.reasonCode.includes('.recoil')
+    && options.context?.queries.abilities.has(options.recipient.placement.id, 'Permafrost')
+    && aa079MagicGuardBlocksReason(options.operation.reasonCode)) {
+    return { blockedBy: 'Permafrost', consultedPlacementIds: [] }
+  }
   if (options.operation.reasonCode !== AA076_IRON_BARBS_HP_REASON
     && options.context && aa070FlyingFlyTrapPreventsDirectHp({
       context: options.context,
@@ -902,7 +918,9 @@ export const reduceDirectHpEffectForRecipient = (options: {
       ? 'Abominable'
       : options.context.queries.abilities.has(recipient.placement.id, 'Magic Guard')
         ? 'Magic Guard'
-        : legacyRecoilImmunity === 'Magic Guard' ? null : legacyRecoilImmunity
+        : options.context.queries.abilities.has(recipient.placement.id, 'Permafrost')
+          ? 'Permafrost'
+          : legacyRecoilImmunity === 'Magic Guard' ? null : legacyRecoilImmunity
     : null
   if (recoilImmunity) {
     return preventedRecoilResult({
@@ -1129,6 +1147,13 @@ export const reduceHealEffectForRecipient = (options: {
   }
   if (operation.payload.pool === 'temporary-hit-points' && !options.temporaryHpAvailable) {
     return noOpHpResult(recipient, previous, 'temporary-hp-scene-unavailable')
+  }
+  if (operation.payload.pool === 'temporary-hit-points'
+    && aa084PowerConstructBlocksTemporaryHp({
+      context: options.context,
+      placementId: recipient.placement.id,
+    })) {
+    return noOpHpResult(recipient, previous, 'ability-power-construct-temporary-hp-blocked')
   }
 
   let calculation: MoveHpCalculationResolution

@@ -9,9 +9,10 @@ import { ABILITY_AUTOMATION_RUNTIME_REGISTRY } from './registry'
 export const effectiveRuntimeAbilityIds = (input: {
   readonly map: Pick<TabletopMap, 'encounterState'>
   readonly placement: Pick<SheetPlacement, 'id' | 'sideId' | 'position'>
-  readonly sheet: Pick<CharacterSheet | TrainerSheet, 'abilities'>
+  readonly sheet: CharacterSheet | TrainerSheet
 }): readonly string[] => projectAuthoritativeEffectiveAbilities({
   baseAbilities: resolveSheetAbilityInstances(input.sheet.abilities),
+  species: 'species' in input.sheet ? input.sheet.species : null,
   target: {
     placementId: input.placement.id,
     ...(input.placement.sideId ? { sideId: input.placement.sideId } : {}),

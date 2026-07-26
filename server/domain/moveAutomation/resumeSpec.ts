@@ -74,6 +74,10 @@ import { aa077MoveOverlayOperations } from '../abilityAutomation/mechanics/aa077
 import { aa078MoveOverlayOperations } from '../abilityAutomation/mechanics/aa078MoveIntegration'
 import { aa079MoveOverlayOperations } from '../abilityAutomation/mechanics/aa079MoveIntegration'
 import { aa080MoveOverlayOperations } from '../abilityAutomation/mechanics/aa080MoveIntegration'
+import { aa081MoveOverlayOperations } from '../abilityAutomation/mechanics/aa081MoveIntegration'
+import { aa082MoveOverlayOperations } from '../abilityAutomation/mechanics/aa082MoveIntegration'
+import { aa083MoveOverlayOperations } from '../abilityAutomation/mechanics/aa083MoveIntegration'
+import { aa084MoveOverlayOperations } from '../abilityAutomation/mechanics/aa084MoveIntegration'
 import {
   AA068_DUST_CLOUD_TARGETING_OVERRIDE,
   aa068DustCloudBurstEnabled,
@@ -307,6 +311,9 @@ const resolvedMovementProjection = (
   }
   const movement: AuthoritativeMoveShiftMovement = {
     kind: 'shift',
+    ...(authoritative.placementId === context.actor.placement.id
+      ? {}
+      : { placementId: authoritative.placementId }),
     from: { ...authoritative.origin },
     destination: { ...authoritative.destination },
     pathCells: authoritative.path.map(cell => ({ ...cell })),
@@ -314,7 +321,9 @@ const resolvedMovementProjection = (
       ? { direction: selection.direction }
       : {}),
   }
-  const currentFacing = tokenFacingForPlacement(context.actor.placement)
+  const movedPlacement = context.queries.placements.get(authoritative.placementId)
+    ?? fail('execution-rejected', 'A resolved movement owner disappeared during resume.')
+  const currentFacing = tokenFacingForPlacement(movedPlacement)
   const desiredFacing = tokenFacingTowardPoint(
     authoritative.origin,
     authoritative.destination,
@@ -322,10 +331,12 @@ const resolvedMovementProjection = (
   ) ?? undefined
   return {
     movement,
-    resourceMovement: {
-      distance: authoritative.cost,
-      budget: authoritative.effectiveLimit,
-    },
+    ...(authoritative.placementId === context.actor.placement.id ? {
+      resourceMovement: {
+        distance: authoritative.cost,
+        budget: authoritative.effectiveLimit,
+      },
+    } : {}),
     ...(desiredFacing ? { desiredFacing } : {}),
   }
 }
@@ -520,6 +531,24 @@ export const resumeMoveSpec = (
           authoritativeTargetIds,
         }),
         ...aa080MoveOverlayOperations({
+          context, script: entry.script, moveSourceId,
+          authoritativeTargetIds,
+          reviewedOperations: runtime.definition.spec.phases.flatMap(phase => phase.operations),
+        }),
+        ...aa081MoveOverlayOperations({
+          context, script: entry.script, moveSourceId,
+          authoritativeTargetIds,
+        }),
+        ...aa082MoveOverlayOperations({
+          context, script: entry.script, moveSourceId,
+          authoritativeTargetIds,
+        }),
+        ...aa083MoveOverlayOperations({
+          context, script: entry.script, moveSourceId,
+          authoritativeTargetIds,
+          reviewedOperations: runtime.definition.spec.phases.flatMap(phase => phase.operations),
+        }),
+        ...aa084MoveOverlayOperations({
           context, script: entry.script, moveSourceId,
           authoritativeTargetIds,
           reviewedOperations: runtime.definition.spec.phases.flatMap(phase => phase.operations),

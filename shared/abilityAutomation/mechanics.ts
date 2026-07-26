@@ -123,6 +123,29 @@ export const AA080_ABILITY_MECHANIC_IDS = [
   'aa080.mojo', 'aa080.mold-breaker', 'aa080.moody',
   'aa080.motor-drive', 'aa080.mountain-peak', 'aa080.moxie',
 ] as const
+export const AA081_ABILITY_MECHANIC_IDS = [
+  'aa081.mud-dweller', 'aa081.mud-shield', 'aa081.multiscale',
+  'aa081.multitype', 'aa081.mummy', 'aa081.natural-cure',
+  'aa081.needles', 'aa081.neuroforce', 'aa081.neutralizing-gas',
+  'aa081.nimble-strikes', 'aa081.no-guard', 'aa081.normalize',
+] as const
+export const AA082_ABILITY_MECHANIC_IDS = [
+  'aa082.oblivious', 'aa082.odious-spray', 'aa082.omen', 'aa082.overcharge',
+  'aa082.overcoat', 'aa082.overgrow', 'aa082.own-tempo', 'aa082.pack-hunt',
+  'aa082.parental-bond', 'aa082.parry', 'aa082.pastel-veil', 'aa082.perception',
+] as const
+export const AA083_ABILITY_MECHANIC_IDS = [
+  'aa083.perish-body', 'aa083.permafrost', 'aa083.photosynthesis',
+  'aa083.pickpocket', 'aa083.pickup', 'aa083.pixilate', 'aa083.plus',
+  'aa083.poison-heal', 'aa083.poison-point', 'aa083.poison-touch',
+  'aa083.poltergeist', 'aa083.polycephaly',
+] as const
+export const AA084_ABILITY_MECHANIC_IDS = [
+  'aa084.power-construct', 'aa084.power-spot', 'aa084.power-of-alchemy',
+  'aa084.prankster', 'aa084.pressure', 'aa084.pride', 'aa084.prime-fury',
+  'aa084.prism-armor', 'aa084.probability-control', 'aa084.propeller-tail',
+  'aa084.protean', 'aa084.psionic-screech',
+] as const
 export type Aa060AbilityMechanicId = (typeof AA060_ABILITY_MECHANIC_IDS)[number]
 export type AbilityMechanicId = Aa060AbilityMechanicId
   | (typeof AA061_ABILITY_MECHANIC_IDS)[number]
@@ -145,6 +168,10 @@ export type AbilityMechanicId = Aa060AbilityMechanicId
   | (typeof AA078_ABILITY_MECHANIC_IDS)[number]
   | (typeof AA079_ABILITY_MECHANIC_IDS)[number]
   | (typeof AA080_ABILITY_MECHANIC_IDS)[number]
+  | (typeof AA081_ABILITY_MECHANIC_IDS)[number]
+  | (typeof AA082_ABILITY_MECHANIC_IDS)[number]
+  | (typeof AA083_ABILITY_MECHANIC_IDS)[number]
+  | (typeof AA084_ABILITY_MECHANIC_IDS)[number]
 export interface AbilityMechanicOperation extends AbilitySpecJsonObject {
   readonly kind: typeof ABILITY_MECHANIC_OPERATION_KIND
   readonly id: string
@@ -415,6 +442,54 @@ const CONFIG_FIELDS: Readonly<Record<AbilityMechanicId, readonly string[]>> = {
   'aa080.motor-drive': ['immuneMoveType', 'damageAndEffectImmunity', 'hitStage', 'hitStageDelta', 'classification'],
   'aa080.mountain-peak': ['lastChanceType', 'hpThresholdNumerator', 'hpThresholdDenominator', 'damageBonus'],
   'aa080.moxie': ['trigger', 'targetRelationship', 'stage', 'stageDelta', 'oncePerMove', 'optional'],
+  'aa081.mud-dweller': ['moveTypes', 'resistanceSteps'],
+  'aa081.mud-shield': ['action', 'frequency', 'temporaryHpTicks', 'terrainTags', 'damageReduction', 'classification'],
+  'aa081.multiscale': ['hpRequirement', 'resistanceSteps', 'classification'],
+  'aa081.multitype': ['action', 'frequency', 'typeOptions', 'copyable', 'disableable'],
+  'aa081.mummy': ['action', 'frequency', 'trigger', 'duration', 'endsOnSwitch'],
+  'aa081.natural-cure': ['action', 'frequency', 'triggers', 'curedConditionGroup'],
+  'aa081.needles': ['connectionMoveId', 'trigger', 'hitPointLossTicks'],
+  'aa081.neuroforce': ['triggerEffectiveness', 'damageBonus', 'modifierOrder'],
+  'aa081.neutralizing-gas': ['radius', 'blockedModes', 'blockedClassification', 'extendedMoveIds', 'extendedDurationRounds', 'excludeSelf'],
+  'aa081.nimble-strikes': ['damageClass', 'moveType', 'stat', 'fractionNumerator', 'fractionDenominator'],
+  'aa081.no-guard': ['outgoingAccuracyBonus', 'incomingAccuracyBonus'],
+  'aa081.normalize': ['outgoingRelations', 'incomingRelations', 'preserveImmunity'],
+  'aa082.oblivious': ['conditionImmunities', 'classification'],
+  'aa082.odious-spray': ['connectionMoveId', 'range', 'accuracyClass', 'hitConditionId'],
+  'aa082.omen': ['action', 'frequency', 'range', 'stage', 'stageDelta'],
+  'aa082.overcharge': ['lastChanceType', 'hpThresholdNumerator', 'hpThresholdDenominator', 'damageBonus'],
+  'aa082.overcoat': ['powderImmunity', 'weatherDamageImmunity', 'classification'],
+  'aa082.overgrow': ['lastChanceType', 'hpThresholdNumerator', 'hpThresholdDenominator', 'damageBonus'],
+  'aa082.own-tempo': ['conditionImmunities', 'classification'],
+  'aa082.pack-hunt': ['action', 'frequency', 'trigger', 'range', 'accuracyClass', 'hitPointLossTicks'],
+  'aa082.parental-bond': ['babyDamageReduction', 'tetherRange', 'motherDamageReduction', 'motherDamageBonus', 'motherConditionId', 'duration', 'classification'],
+  'aa082.parry': ['action', 'frequency', 'trigger', 'outcome', 'classification'],
+  'aa082.pastel-veil': ['radius', 'conditionImmunities', 'relationships', 'classification'],
+  'aa082.perception': ['evasionBonus', 'trigger', 'action', 'disengageDistance'],
+  'aa083.perish-body': ['action', 'frequency', 'trigger', 'initialCount', 'decrementBoundary', 'faintAt', 'clearsOn', 'massiveDamage', 'classification'],
+  'aa083.permafrost': ['immuneSources', 'classification'],
+  'aa083.photosynthesis': ['action', 'frequency', 'minimumMinutes', 'healingPercent', 'injuryRemoval', 'requiresNormalSunlight'],
+  'aa083.pickpocket': ['action', 'frequency', 'trigger', 'requiresUserEmptyHeldSlot', 'requiresAttackerHeldItem', 'transferQuantity'],
+  'aa083.pickup': ['action', 'frequency', 'minimumMinutes', 'dieSides', 'bands', 'exactItemPolicy', 'destination'],
+  'aa083.pixilate': ['action', 'frequency', 'sourceType', 'targetType', 'requiresDamaging'],
+  'aa083.plus': ['action', 'frequency', 'trigger', 'range', 'additionalStages', 'chooseRaisedStat'],
+  'aa083.poison-heal': ['action', 'frequency', 'trigger', 'duration', 'conditions', 'turnStartHealingTicks', 'preventsPoisonHpLoss', 'preventsPoisonStageLoss', 'cureAtEncounterEnd'],
+  'aa083.poison-point': ['action', 'frequency', 'trigger', 'conditionId'],
+  'aa083.poison-touch': ['requiresDamaging', 'conditionId', 'defaultMinimumRoll', 'existingRangeExpansion', 'legalTargetsOnly'],
+  'aa083.poltergeist': ['species', 'moveLevelThreshold', 'forms'],
+  'aa083.polycephaly': ['moveId', 'optionalAction', 'normalAction', 'resistanceSteps'],
+  'aa084.power-construct': ['action', 'frequency', 'maximumHpPercent', 'requiredSpecies', 'targetForm', 'temporaryHpNumerator', 'temporaryHpDenominator', 'preserveOriginalHpMaximum', 'blocksOtherTemporaryHp', 'duration'],
+  'aa084.power-spot': ['range', 'relationship', 'damageBonus', 'excludesSelf'],
+  'aa084.power-of-alchemy': ['action', 'frequency', 'range', 'duration', 'clearOn', 'copyPolicy'],
+  'aa084.prankster': ['damageClass', 'priority', 'optional'],
+  'aa084.pressure': ['action', 'frequency', 'radius', 'relationship', 'conditionId', 'durationRounds'],
+  'aa084.pride': ['conditions', 'stat', 'stages', 'dynamic'],
+  'aa084.prime-fury': ['action', 'frequency', 'conditionId', 'stages'],
+  'aa084.prism-armor': ['effectiveness', 'damageReduction', 'classification'],
+  'aa084.probability-control': ['action', 'frequency', 'rollScope', 'rerollPolicy', 'residue'],
+  'aa084.propeller-tail': ['action', 'frequency', 'maneuverId', 'maneuverAction'],
+  'aa084.protean': ['action', 'frequency', 'trigger', 'typePolicy', 'timing', 'duration'],
+  'aa084.psionic-screech': ['action', 'frequency', 'triggerType', 'targetType', 'hitConditionId'],
 }
 const MECHANIC_SET = new Set<string>([
   ...AA060_ABILITY_MECHANIC_IDS, ...AA061_ABILITY_MECHANIC_IDS,
@@ -427,7 +502,9 @@ const MECHANIC_SET = new Set<string>([
   ...AA074_ABILITY_MECHANIC_IDS, ...AA075_ABILITY_MECHANIC_IDS,
   ...AA076_ABILITY_MECHANIC_IDS, ...AA077_ABILITY_MECHANIC_IDS,
   ...AA078_ABILITY_MECHANIC_IDS, ...AA079_ABILITY_MECHANIC_IDS,
-  ...AA080_ABILITY_MECHANIC_IDS,
+  ...AA080_ABILITY_MECHANIC_IDS, ...AA081_ABILITY_MECHANIC_IDS,
+  ...AA082_ABILITY_MECHANIC_IDS, ...AA083_ABILITY_MECHANIC_IDS,
+  ...AA084_ABILITY_MECHANIC_IDS,
 ])
 const ID = /^[a-z0-9]+(?:[._:/-][a-z0-9]+)*$/
 const fail = (code: AbilityMechanicValidationError['code'], path: string, detail: string): never => { throw new AbilityMechanicValidationError(code, path, detail) }
@@ -1722,6 +1799,186 @@ const parseConfig = (mechanicId: AbilityMechanicId, value: unknown, path: string
       trigger: oneOf(config.trigger, ['user-move-faints-target'], `${path}.trigger`), targetRelationship: oneOf(config.targetRelationship, ['foe'], `${path}.targetRelationship`),
       stage: oneOf(config.stage, ['attack'], `${path}.stage`), stageDelta: integer(config.stageDelta, `${path}.stageDelta`, 1, 1),
       oncePerMove: bool(config.oncePerMove, `${path}.oncePerMove`), optional: bool(config.optional, `${path}.optional`),
+    }
+    case 'aa081.mud-dweller': return {
+      moveTypes: stringArray(config.moveTypes, ['ground', 'water'], `${path}.moveTypes`),
+      resistanceSteps: integer(config.resistanceSteps, `${path}.resistanceSteps`, 1, 1),
+    }
+    case 'aa081.mud-shield': return {
+      action: oneOf(config.action, ['swift'], `${path}.action`), frequency: oneOf(config.frequency, ['scene'], `${path}.frequency`),
+      temporaryHpTicks: integer(config.temporaryHpTicks, `${path}.temporaryHpTicks`, 2, 2),
+      terrainTags: stringArray(config.terrainTags, ['dirty', 'muddy', 'rough', 'slow'], `${path}.terrainTags`),
+      damageReduction: integer(config.damageReduction, `${path}.damageReduction`, 5, 5), classification: oneOf(config.classification, ['defensive'], `${path}.classification`),
+    }
+    case 'aa081.multiscale': return {
+      hpRequirement: oneOf(config.hpRequirement, ['full'], `${path}.hpRequirement`), resistanceSteps: integer(config.resistanceSteps, `${path}.resistanceSteps`, 1, 1),
+      classification: oneOf(config.classification, ['defensive'], `${path}.classification`),
+    }
+    case 'aa081.multitype': return {
+      action: oneOf(config.action, ['free'], `${path}.action`), frequency: oneOf(config.frequency, ['at-will'], `${path}.frequency`),
+      typeOptions: stringArray(config.typeOptions, ['normal', 'fighting', 'flying', 'poison', 'ground', 'rock', 'bug', 'ghost', 'steel', 'fire', 'water', 'grass', 'electric', 'psychic', 'ice', 'dragon', 'dark', 'fairy'], `${path}.typeOptions`),
+      copyable: bool(config.copyable, `${path}.copyable`), disableable: bool(config.disableable, `${path}.disableable`),
+    }
+    case 'aa081.mummy': return {
+      action: oneOf(config.action, ['free'], `${path}.action`), frequency: oneOf(config.frequency, ['at-will'], `${path}.frequency`),
+      trigger: oneOf(config.trigger, ['melee-hit'], `${path}.trigger`), duration: oneOf(config.duration, ['scene'], `${path}.duration`),
+      endsOnSwitch: bool(config.endsOnSwitch, `${path}.endsOnSwitch`),
+    }
+    case 'aa081.natural-cure': return {
+      action: oneOf(config.action, ['free'], `${path}.action`), frequency: oneOf(config.frequency, ['scene'], `${path}.frequency`),
+      triggers: stringArray(config.triggers, ['recall', 'take-a-breather'], `${path}.triggers`), curedConditionGroup: oneOf(config.curedConditionGroup, ['persistent-status'], `${path}.curedConditionGroup`),
+    }
+    case 'aa081.needles': return {
+      connectionMoveId: oneOf(config.connectionMoveId, ['Needle Arm'], `${path}.connectionMoveId`), trigger: oneOf(config.trigger, ['physical-melee-hit'], `${path}.trigger`),
+      hitPointLossTicks: integer(config.hitPointLossTicks, `${path}.hitPointLossTicks`, 1, 1),
+    }
+    case 'aa081.neuroforce': return {
+      triggerEffectiveness: oneOf(config.triggerEffectiveness, ['super-effective'], `${path}.triggerEffectiveness`), damageBonus: integer(config.damageBonus, `${path}.damageBonus`, 10, 10),
+      modifierOrder: oneOf(config.modifierOrder, ['pre-type'], `${path}.modifierOrder`),
+    }
+    case 'aa081.neutralizing-gas': return {
+      radius: integer(config.radius, `${path}.radius`, 1, 1), blockedModes: stringArray(config.blockedModes, ['triggered'], `${path}.blockedModes`),
+      blockedClassification: oneOf(config.blockedClassification, ['defensive'], `${path}.blockedClassification`),
+      extendedMoveIds: stringArray(config.extendedMoveIds, ['Clear Smog', 'Poison Gas', 'Smog', 'Strange Steam'], `${path}.extendedMoveIds`),
+      extendedDurationRounds: integer(config.extendedDurationRounds, `${path}.extendedDurationRounds`, 1, 1), excludeSelf: bool(config.excludeSelf, `${path}.excludeSelf`),
+    }
+    case 'aa081.nimble-strikes': return {
+      damageClass: oneOf(config.damageClass, ['physical'], `${path}.damageClass`), moveType: oneOf(config.moveType, ['normal'], `${path}.moveType`),
+      stat: oneOf(config.stat, ['speed'], `${path}.stat`), fractionNumerator: integer(config.fractionNumerator, `${path}.fractionNumerator`, 1, 1),
+      fractionDenominator: integer(config.fractionDenominator, `${path}.fractionDenominator`, 2, 2),
+    }
+    case 'aa081.no-guard': return {
+      outgoingAccuracyBonus: integer(config.outgoingAccuracyBonus, `${path}.outgoingAccuracyBonus`, 3, 3), incomingAccuracyBonus: integer(config.incomingAccuracyBonus, `${path}.incomingAccuracyBonus`, 3, 3),
+    }
+    case 'aa081.normalize': return {
+      outgoingRelations: stringArray(config.outgoingRelations, ['resisted', 'super-effective'], `${path}.outgoingRelations`),
+      incomingRelations: stringArray(config.incomingRelations, ['resisted', 'super-effective'], `${path}.incomingRelations`), preserveImmunity: bool(config.preserveImmunity, `${path}.preserveImmunity`),
+    }
+    case 'aa082.oblivious': return {
+      conditionImmunities: stringArray(config.conditionImmunities, ['enraged', 'infatuated'], `${path}.conditionImmunities`), classification: oneOf(config.classification, ['defensive'], `${path}.classification`),
+    }
+    case 'aa082.odious-spray': return {
+      connectionMoveId: oneOf(config.connectionMoveId, ['Poison Gas'], `${path}.connectionMoveId`), range: oneOf(config.range, ['8, 1 Target'], `${path}.range`),
+      accuracyClass: integer(config.accuracyClass, `${path}.accuracyClass`, 2, 2), hitConditionId: oneOf(config.hitConditionId, ['flinched'], `${path}.hitConditionId`),
+    }
+    case 'aa082.omen': return {
+      action: oneOf(config.action, ['swift'], `${path}.action`), frequency: oneOf(config.frequency, ['scene'], `${path}.frequency`), range: integer(config.range, `${path}.range`, 5, 5),
+      stage: oneOf(config.stage, ['accuracy'], `${path}.stage`), stageDelta: integer(config.stageDelta, `${path}.stageDelta`, -2, -2),
+    }
+    case 'aa082.overcharge': return {
+      lastChanceType: oneOf(config.lastChanceType, ['electric'], `${path}.lastChanceType`), hpThresholdNumerator: integer(config.hpThresholdNumerator, `${path}.hpThresholdNumerator`, 1, 1),
+      hpThresholdDenominator: integer(config.hpThresholdDenominator, `${path}.hpThresholdDenominator`, 3, 3), damageBonus: integer(config.damageBonus, `${path}.damageBonus`, 5, 5),
+    }
+    case 'aa082.overcoat': return {
+      powderImmunity: bool(config.powderImmunity, `${path}.powderImmunity`), weatherDamageImmunity: bool(config.weatherDamageImmunity, `${path}.weatherDamageImmunity`), classification: oneOf(config.classification, ['defensive'], `${path}.classification`),
+    }
+    case 'aa082.overgrow': return {
+      lastChanceType: oneOf(config.lastChanceType, ['grass'], `${path}.lastChanceType`), hpThresholdNumerator: integer(config.hpThresholdNumerator, `${path}.hpThresholdNumerator`, 1, 1),
+      hpThresholdDenominator: integer(config.hpThresholdDenominator, `${path}.hpThresholdDenominator`, 3, 3), damageBonus: integer(config.damageBonus, `${path}.damageBonus`, 5, 5),
+    }
+    case 'aa082.own-tempo': return {
+      conditionImmunities: stringArray(config.conditionImmunities, ['confused'], `${path}.conditionImmunities`), classification: oneOf(config.classification, ['defensive'], `${path}.classification`),
+    }
+    case 'aa082.pack-hunt': return {
+      action: oneOf(config.action, ['free'], `${path}.action`), frequency: oneOf(config.frequency, ['at-will'], `${path}.frequency`), trigger: oneOf(config.trigger, ['adjacent-foe-damaged-by-ally-melee'], `${path}.trigger`),
+      range: integer(config.range, `${path}.range`, 1, 1), accuracyClass: integer(config.accuracyClass, `${path}.accuracyClass`, 5, 5), hitPointLossTicks: integer(config.hitPointLossTicks, `${path}.hitPointLossTicks`, 1, 1),
+    }
+    case 'aa082.parental-bond': return {
+      babyDamageReduction: integer(config.babyDamageReduction, `${path}.babyDamageReduction`, 10, 10), tetherRange: integer(config.tetherRange, `${path}.tetherRange`, 10, 10),
+      motherDamageReduction: integer(config.motherDamageReduction, `${path}.motherDamageReduction`, 5, 5), motherDamageBonus: integer(config.motherDamageBonus, `${path}.motherDamageBonus`, 5, 5),
+      motherConditionId: oneOf(config.motherConditionId, ['enraged'], `${path}.motherConditionId`), duration: oneOf(config.duration, ['scene'], `${path}.duration`), classification: oneOf(config.classification, ['defensive'], `${path}.classification`),
+    }
+    case 'aa082.parry': return {
+      action: oneOf(config.action, ['free'], `${path}.action`), frequency: oneOf(config.frequency, ['scene'], `${path}.frequency`), trigger: oneOf(config.trigger, ['melee-hit'], `${path}.trigger`),
+      outcome: oneOf(config.outcome, ['miss'], `${path}.outcome`), classification: oneOf(config.classification, ['defensive'], `${path}.classification`),
+    }
+    case 'aa082.pastel-veil': return {
+      radius: integer(config.radius, `${path}.radius`, 3, 3), conditionImmunities: stringArray(config.conditionImmunities, ['poisoned', 'badly-poisoned'], `${path}.conditionImmunities`),
+      relationships: stringArray(config.relationships, ['self', 'ally'], `${path}.relationships`), classification: oneOf(config.classification, ['defensive'], `${path}.classification`),
+    }
+    case 'aa082.perception': return {
+      evasionBonus: integer(config.evasionBonus, `${path}.evasionBonus`, 1, 1), trigger: oneOf(config.trigger, ['ally-damaging-area-would-hit'], `${path}.trigger`),
+      action: oneOf(config.action, ['free'], `${path}.action`), disengageDistance: integer(config.disengageDistance, `${path}.disengageDistance`, 1, 1),
+    }
+    case 'aa083.perish-body': return {
+      action: oneOf(config.action, ['standard'], `${path}.action`), frequency: oneOf(config.frequency, ['daily'], `${path}.frequency`), trigger: oneOf(config.trigger, ['melee-hit'], `${path}.trigger`),
+      initialCount: integer(config.initialCount, `${path}.initialCount`, 3, 3), decrementBoundary: oneOf(config.decrementBoundary, ['target-turn-start'], `${path}.decrementBoundary`), faintAt: integer(config.faintAt, `${path}.faintAt`, 0, 0),
+      clearsOn: stringArray(config.clearsOn, ['recall', 'take-a-breather', 'knockout'], `${path}.clearsOn`), massiveDamage: bool(config.massiveDamage, `${path}.massiveDamage`), classification: oneOf(config.classification, ['defensive'], `${path}.classification`),
+    }
+    case 'aa083.permafrost': return {
+      immuneSources: stringArray(config.immuneSources, ['hazard', 'weather', 'status-affliction', 'vortex', 'recoil', 'hay-fever', 'iron-barbs', 'rough-skin', 'leech-seed'], `${path}.immuneSources`), classification: oneOf(config.classification, ['defensive'], `${path}.classification`),
+    }
+    case 'aa083.photosynthesis': return {
+      action: oneOf(config.action, ['extended'], `${path}.action`), frequency: oneOf(config.frequency, ['daily'], `${path}.frequency`), minimumMinutes: integer(config.minimumMinutes, `${path}.minimumMinutes`, 10, 10),
+      healingPercent: integer(config.healingPercent, `${path}.healingPercent`, 25, 25), injuryRemoval: integer(config.injuryRemoval, `${path}.injuryRemoval`, 1, 1), requiresNormalSunlight: bool(config.requiresNormalSunlight, `${path}.requiresNormalSunlight`),
+    }
+    case 'aa083.pickpocket': return {
+      action: oneOf(config.action, ['free'], `${path}.action`), frequency: oneOf(config.frequency, ['scene'], `${path}.frequency`), trigger: oneOf(config.trigger, ['opponent-melee-hit'], `${path}.trigger`),
+      requiresUserEmptyHeldSlot: bool(config.requiresUserEmptyHeldSlot, `${path}.requiresUserEmptyHeldSlot`), requiresAttackerHeldItem: bool(config.requiresAttackerHeldItem, `${path}.requiresAttackerHeldItem`), transferQuantity: integer(config.transferQuantity, `${path}.transferQuantity`, 1, 1),
+    }
+    case 'aa083.pickup': return {
+      action: oneOf(config.action, ['extended'], `${path}.action`), frequency: oneOf(config.frequency, ['daily'], `${path}.frequency`), minimumMinutes: integer(config.minimumMinutes, `${path}.minimumMinutes`, 5, 5), dieSides: integer(config.dieSides, `${path}.dieSides`, 20, 20),
+      bands: stringArray(config.bands, ['none:1-5', 'x-item:6-7', 'berry:8-10', 'poke-ball:11-13', 'healing:14-16', 'evolution-stone:17', 'vitamin:18', 'held-item:19', 'tm:20'], `${path}.bands`), exactItemPolicy: oneOf(config.exactItemPolicy, ['server-random-canonical-category'], `${path}.exactItemPolicy`), destination: oneOf(config.destination, ['ground-at-user'], `${path}.destination`),
+    }
+    case 'aa083.pixilate': return {
+      action: oneOf(config.action, ['free'], `${path}.action`), frequency: oneOf(config.frequency, ['at-will'], `${path}.frequency`), sourceType: oneOf(config.sourceType, ['normal'], `${path}.sourceType`), targetType: oneOf(config.targetType, ['fairy'], `${path}.targetType`), requiresDamaging: bool(config.requiresDamaging, `${path}.requiresDamaging`),
+    }
+    case 'aa083.plus': return {
+      action: oneOf(config.action, ['free'], `${path}.action`), frequency: oneOf(config.frequency, ['scene-x2'], `${path}.frequency`), trigger: oneOf(config.trigger, ['ally-stage-raised'], `${path}.trigger`), range: integer(config.range, `${path}.range`, 10, 10),
+      additionalStages: integer(config.additionalStages, `${path}.additionalStages`, 1, 1), chooseRaisedStat: bool(config.chooseRaisedStat, `${path}.chooseRaisedStat`),
+    }
+    case 'aa083.poison-heal': return {
+      action: oneOf(config.action, ['free'], `${path}.action`), frequency: oneOf(config.frequency, ['daily'], `${path}.frequency`), trigger: oneOf(config.trigger, ['becomes-poisoned'], `${path}.trigger`), duration: oneOf(config.duration, ['encounter'], `${path}.duration`),
+      conditions: stringArray(config.conditions, ['poisoned', 'badly-poisoned'], `${path}.conditions`), turnStartHealingTicks: integer(config.turnStartHealingTicks, `${path}.turnStartHealingTicks`, 1, 1), preventsPoisonHpLoss: bool(config.preventsPoisonHpLoss, `${path}.preventsPoisonHpLoss`), preventsPoisonStageLoss: bool(config.preventsPoisonStageLoss, `${path}.preventsPoisonStageLoss`), cureAtEncounterEnd: bool(config.cureAtEncounterEnd, `${path}.cureAtEncounterEnd`),
+    }
+    case 'aa083.poison-point': return {
+      action: oneOf(config.action, ['free'], `${path}.action`), frequency: oneOf(config.frequency, ['scene'], `${path}.frequency`), trigger: oneOf(config.trigger, ['melee-hit'], `${path}.trigger`), conditionId: oneOf(config.conditionId, ['poisoned'], `${path}.conditionId`),
+    }
+    case 'aa083.poison-touch': return {
+      requiresDamaging: bool(config.requiresDamaging, `${path}.requiresDamaging`), conditionId: oneOf(config.conditionId, ['poisoned'], `${path}.conditionId`), defaultMinimumRoll: integer(config.defaultMinimumRoll, `${path}.defaultMinimumRoll`, 19, 19), existingRangeExpansion: integer(config.existingRangeExpansion, `${path}.existingRangeExpansion`, 2, 2), legalTargetsOnly: bool(config.legalTargetsOnly, `${path}.legalTargetsOnly`),
+    }
+    case 'aa083.poltergeist': return {
+      species: oneOf(config.species, ['rotom'], `${path}.species`), moveLevelThreshold: integer(config.moveLevelThreshold, `${path}.moveLevelThreshold`, 40, 40),
+      forms: stringArray(config.forms, ['standard:Levitate:none', 'heat:Flash Fire:Overheat', 'wash:Water Absorb:Hydro Pump', 'frost:Winter’s Kiss:Blizzard', 'fan:Windveiled:Hurricane', 'mow:Sap Sipper:Leaf Storm'], `${path}.forms`),
+    }
+    case 'aa083.polycephaly': return {
+      moveId: oneOf(config.moveId, ['Struggle'], `${path}.moveId`), optionalAction: oneOf(config.optionalAction, ['swift'], `${path}.optionalAction`), normalAction: oneOf(config.normalAction, ['standard'], `${path}.normalAction`), resistanceSteps: integer(config.resistanceSteps, `${path}.resistanceSteps`, 1, 1),
+    }
+    case 'aa084.power-construct': return {
+      action: oneOf(config.action, ['swift'], `${path}.action`), frequency: oneOf(config.frequency, ['daily'], `${path}.frequency`), maximumHpPercent: integer(config.maximumHpPercent, `${path}.maximumHpPercent`, 50, 50), requiredSpecies: oneOf(config.requiredSpecies, ['zygarde'], `${path}.requiredSpecies`), targetForm: oneOf(config.targetForm, ['zygarde-complete-forme'], `${path}.targetForm`), temporaryHpNumerator: integer(config.temporaryHpNumerator, `${path}.temporaryHpNumerator`, 1, 1), temporaryHpDenominator: integer(config.temporaryHpDenominator, `${path}.temporaryHpDenominator`, 2, 2), preserveOriginalHpMaximum: bool(config.preserveOriginalHpMaximum, `${path}.preserveOriginalHpMaximum`), blocksOtherTemporaryHp: bool(config.blocksOtherTemporaryHp, `${path}.blocksOtherTemporaryHp`), duration: oneOf(config.duration, ['scene'], `${path}.duration`),
+    }
+    case 'aa084.power-spot': return {
+      range: integer(config.range, `${path}.range`, 2, 2), relationship: oneOf(config.relationship, ['ally'], `${path}.relationship`), damageBonus: integer(config.damageBonus, `${path}.damageBonus`, 5, 5), excludesSelf: bool(config.excludesSelf, `${path}.excludesSelf`),
+    }
+    case 'aa084.power-of-alchemy': return {
+      action: oneOf(config.action, ['free'], `${path}.action`), frequency: oneOf(config.frequency, ['scene'], `${path}.frequency`), range: integer(config.range, `${path}.range`, 10, 10), duration: oneOf(config.duration, ['encounter'], `${path}.duration`), clearOn: stringArray(config.clearOn, ['knockout'], `${path}.clearOn`), copyPolicy: oneOf(config.copyPolicy, ['target-effective-copyable-ability'], `${path}.copyPolicy`),
+    }
+    case 'aa084.prankster': return {
+      damageClass: oneOf(config.damageClass, ['status'], `${path}.damageClass`), priority: oneOf(config.priority, ['advanced'], `${path}.priority`), optional: bool(config.optional, `${path}.optional`),
+    }
+    case 'aa084.pressure': return {
+      action: oneOf(config.action, ['swift'], `${path}.action`), frequency: oneOf(config.frequency, ['scene'], `${path}.frequency`), radius: integer(config.radius, `${path}.radius`, 3, 3), relationship: oneOf(config.relationship, ['foe'], `${path}.relationship`), conditionId: oneOf(config.conditionId, ['suppressed'], `${path}.conditionId`), durationRounds: integer(config.durationRounds, `${path}.durationRounds`, 1, 1),
+    }
+    case 'aa084.pride': return {
+      conditions: stringArray(config.conditions, ['burned', 'poisoned', 'badly-poisoned', 'paralysis', 'frozen', 'sleep', 'bad-sleep'], `${path}.conditions`), stat: oneOf(config.stat, ['satk'], `${path}.stat`), stages: integer(config.stages, `${path}.stages`, 2, 2), dynamic: bool(config.dynamic, `${path}.dynamic`),
+    }
+    case 'aa084.prime-fury': return {
+      action: oneOf(config.action, ['swift'], `${path}.action`), frequency: oneOf(config.frequency, ['scene'], `${path}.frequency`), conditionId: oneOf(config.conditionId, ['rage'], `${path}.conditionId`), stages: stringArray(config.stages, ['atk:1', 'satk:1'], `${path}.stages`),
+    }
+    case 'aa084.prism-armor': return {
+      effectiveness: oneOf(config.effectiveness, ['super-effective'], `${path}.effectiveness`), damageReduction: integer(config.damageReduction, `${path}.damageReduction`, 5, 5), classification: oneOf(config.classification, ['defensive'], `${path}.classification`),
+    }
+    case 'aa084.probability-control': return {
+      action: oneOf(config.action, ['free'], `${path}.action`), frequency: oneOf(config.frequency, ['scene'], `${path}.frequency`), rollScope: oneOf(config.rollScope, ['self-or-ally'], `${path}.rollScope`), rerollPolicy: oneOf(config.rerollPolicy, ['server-random-replace-result'], `${path}.rerollPolicy`), residue: oneOf(config.residue, ['psychic'], `${path}.residue`),
+    }
+    case 'aa084.propeller-tail': return {
+      action: oneOf(config.action, ['swift'], `${path}.action`), frequency: oneOf(config.frequency, ['scene'], `${path}.frequency`), maneuverId: oneOf(config.maneuverId, ['sprint'], `${path}.maneuverId`), maneuverAction: oneOf(config.maneuverAction, ['free'], `${path}.maneuverAction`),
+    }
+    case 'aa084.protean': return {
+      action: oneOf(config.action, ['swift'], `${path}.action`), frequency: oneOf(config.frequency, ['at-will'], `${path}.frequency`), trigger: oneOf(config.trigger, ['uses-move'], `${path}.trigger`), typePolicy: oneOf(config.typePolicy, ['triggering-move-type'], `${path}.typePolicy`), timing: oneOf(config.timing, ['before-move'], `${path}.timing`), duration: oneOf(config.duration, ['until-replaced'], `${path}.duration`),
+    }
+    case 'aa084.psionic-screech': return {
+      action: oneOf(config.action, ['free'], `${path}.action`), frequency: oneOf(config.frequency, ['scene-x2'], `${path}.frequency`), triggerType: oneOf(config.triggerType, ['flying'], `${path}.triggerType`), targetType: oneOf(config.targetType, ['psychic'], `${path}.targetType`), hitConditionId: oneOf(config.hitConditionId, ['flinch'], `${path}.hitConditionId`),
     }
   }
 }

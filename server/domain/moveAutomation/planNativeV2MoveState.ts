@@ -38,6 +38,7 @@ import {
   RESTORE_PREVIOUS_MOVE_STATE_VALUE,
   createMoveStateChangePlan,
   unavailableMoveStateCompensation,
+  type MoveSheetStateField,
   type MoveStateChange,
   type MoveStateChangeInput,
   type MoveStateChangePlan,
@@ -76,6 +77,10 @@ import { aa062BoneLordReadyStateIds } from '../abilityAutomation/mechanics/aa062
 import { recordAa065CudChewConsumptions } from '../abilityAutomation/mechanics/aa065ItemIntegration'
 import { applyAa061BallFetchSendOutTriggers } from '../abilityAutomation/mechanics/aa061PresenceIntegration'
 import { applyAa065CuriousMedicineSendOutTrigger } from '../abilityAutomation/mechanics/aa065PresenceIntegration'
+import { applyAa081NaturalCureTrigger } from '../abilityAutomation/mechanics/aa081LifecycleIntegration'
+import { applyAa082ParentalBondFaintTrigger } from '../abilityAutomation/mechanics/aa082LifecycleIntegration'
+import { clearAa083PerishCount } from '../abilityAutomation/mechanics/aa083LifecycleIntegration'
+import { clearAa084PowerOfAlchemyForKnockouts } from '../abilityAutomation/mechanics/aa084LifecycleIntegration'
 import { recordAa066DeadlyPoisonTriggers } from '../abilityAutomation/mechanics/aa066ConditionIntegration'
 import { resolveSheetAbilityInstances } from '../abilityAutomation/instanceParameters'
 import { applyAa067DelayedReactionDebts } from '../abilityAutomation/mechanics/aa067LifecycleIntegration'
@@ -315,6 +320,9 @@ const placementStateChanges = (options: {
     entries.push(movement)
     spatialByPlacement.set(movement.recipientPlacementId, entries)
   }
+  const movementOwnerId = options.resolution.movement?.kind === 'shift'
+    ? options.resolution.movement.placementId ?? actorId
+    : actorId
   const actorMovementOperation = options.resolution.movement
     ? native.operations.find(({ operation }) => operation.kind === 'movement-request')?.operation
     : null
@@ -342,11 +350,11 @@ const placementStateChanges = (options: {
           ?? 'move-spatial-displacement'
         : 'move-spatial-sequence'
     }
-    else if (previous.id === actorId && moved) {
+    else if (previous.id === movementOwnerId && moved) {
       if (!actorMovementOperation || actorMovementOperation.kind !== 'movement-request') {
         return fail(
           'movement-operation-missing',
-          `${options.resolution.canonicalMoveName} changed actor position without a movement operation.`,
+          `${options.resolution.canonicalMoveName} changed movement owner ${movementOwnerId} without a movement operation.`,
         )
       }
       sourceOperationId = actorMovementOperation.id
@@ -729,14 +737,29 @@ const applyTriggeredAbilityPayments = (input: {
     ['ability.migraine.optional-confusion-critical', 'Migraine'],
     ['ability.minus.optional-additional-stage-loss', 'Minus'],
     ['ability.mirror-armor.optional-reflection', 'Mirror Armor'],
+    ['ability.mummy.optional-disable', 'Mummy'],
+    ['ability.pack-hunt.optional-attack', 'Pack Hunt'],
+    ['ability.parry.optional-miss', 'Parry'],
+    ['ability.perception.optional-disengage', 'Perception'],
+    ['ability.perish-body.optional-count', 'Perish Body'],
+    ['ability.pickpocket.optional-held-item-theft', 'Pickpocket'],
+    ['ability.pixilate.optional-fairy-type', 'Pixilate'],
+    ['ability.plus.optional-additional-stage', 'Plus'],
+    ['ability.poison-heal.optional-activate', 'Poison Heal'],
+    ['ability.poison-point.optional-poison', 'Poison Point'],
+    ['ability.polycephaly.optional-swift-struggle', 'Polycephaly'],
+    ['ability.probability-control.optional-reroll', 'Probability Control'],
+    ['ability.protean.optional-type-change', 'Protean'],
+    ['ability.psionic-screech.optional-psychic-type', 'Psionic Screech'],
   ])
   const noFrequency = new Set([
     'Anger Point', 'Aqua Boost', 'Beast Boost', 'Celebrate', 'Chilling Neigh',
     'Color Change', 'Combo Striker', 'Flavorful Aroma', 'Fox Fire',
     'Galvanize', 'Gooey', 'Grim Neigh', 'Heat Mirage', 'Heliovolt', 'Horde Break',
-    'Ignition Boost', 'Iron Barbs', 'Justified', 'Mirror Armor',
+    'Ignition Boost', 'Iron Barbs', 'Justified', 'Mirror Armor', 'Mummy',
+    'Pack Hunt', 'Perception', 'Pixilate', 'Polycephaly', 'Protean',
   ])
-  const daily = new Set(['Dig Away', 'Disguise', 'Dodge'])
+  const daily = new Set(['Dig Away', 'Disguise', 'Dodge', 'Perish Body', 'Poison Heal'])
   const actorByChildOperationId = new Map(input.childExecutions.flatMap(child => (
     child.operationIds.map(operationId => [operationId, child.actorPlacementId] as const)
   )))
@@ -760,6 +783,7 @@ const applyTriggeredAbilityPayments = (input: {
     readonly previous: CharacterSheet | TrainerSheet
     current: CharacterSheet | TrainerSheet
     readonly sourceOperationId: string
+    readonly changedFields: Set<MoveSheetStateField>
   }
   const dailySheets = new Map<string, DailySheetWork>()
   let map = input.map
@@ -780,6 +804,12 @@ const applyTriggeredAbilityPayments = (input: {
           ? (['free', 'standard'] as const)
           : canonicalId === 'Fade Away'
             ? (['standard'] as const)
+            : canonicalId === 'Perish Body'
+              ? (['standard'] as const)
+              : canonicalId === 'Polycephaly'
+                ? ([] as const)
+              : canonicalId === 'Protean'
+                ? (['swift'] as const)
             : canonicalId === 'Full Guard'
               || canonicalId === 'Giver'
               || canonicalId === 'Gore'
@@ -794,8 +824,10 @@ const applyTriggeredAbilityPayments = (input: {
       moveKey: `ability:${canonicalId.toLowerCase().replaceAll(' ', '-')}`,
       range: canonicalId === 'Celebrate' || canonicalId === 'Cruelty'
         ? 'Swift Action'
-        : canonicalId === 'Fade Away'
+        : canonicalId === 'Fade Away' || canonicalId === 'Perish Body'
           ? 'Standard Action'
+          : canonicalId === 'Polycephaly' || canonicalId === 'Protean'
+            ? 'Swift Action'
           : canonicalId === 'Full Guard'
             || canonicalId === 'Giver'
             || canonicalId === 'Gore'
@@ -859,6 +891,7 @@ const applyTriggeredAbilityPayments = (input: {
         previous: deepCloneJson(resolved.sheet),
         current: deepCloneJson(resolved.sheet),
         sourceOperationId: selection.operationId,
+        changedFields: new Set<MoveSheetStateField>(),
       }
       const baseInstance = resolveSheetAbilityInstances(work.current.abilities).find(candidate => (
         candidate.instanceId === ability.instanceId && candidate.canonicalId === canonicalId
@@ -896,6 +929,7 @@ const applyTriggeredAbilityPayments = (input: {
             : [...previous.entries, nextEntry],
         }),
       }
+      work.changedFields.add('abilityUsage')
       dailySheets.set(key, work)
       continue
     }
@@ -913,7 +947,7 @@ const applyTriggeredAbilityPayments = (input: {
     if (existingByOperation && existingByOperation !== existing) {
       fail('state-change-conflict', `${canonicalId} response operation already paid another resource.`)
     }
-    const limit = ['Bodyguard', 'Dancer', 'Dragon’s Maw', 'Drown Out', 'Giver', 'Gore', 'Gulp Missile', 'Innards Out', 'Migraine', 'Minus'].includes(canonicalId)
+    const limit = ['Bodyguard', 'Dancer', 'Dragon’s Maw', 'Drown Out', 'Giver', 'Gore', 'Gulp Missile', 'Innards Out', 'Migraine', 'Minus', 'Plus', 'Psionic Screech'].includes(canonicalId)
       ? 2
       : 1
     if (!existingByOperation && (existing?.spent ?? 0) >= limit) {
@@ -938,6 +972,59 @@ const applyTriggeredAbilityPayments = (input: {
       }),
     }
   }
+  for (const selection of selections) {
+    if (selection.kind !== 'operation' || selection.reasonCode !== 'ability.pickpocket.optional-held-item-theft') continue
+    const ownerId = selection.recipientIds[0]!
+    const attackerId = input.context.actor.placement.id
+    if (ownerId === attackerId) fail('state-change-conflict', 'Pickpocket cannot transfer an item to its source owner.')
+    const ownerPlacement = input.context.queries.placements.get(ownerId)
+      ?? fail('state-change-conflict', 'Pickpocket owner disappeared.')
+    const attackerPlacement = input.context.queries.placements.get(attackerId)
+      ?? fail('state-change-conflict', 'Pickpocket attacker disappeared.')
+    const ownerResolved = input.context.queries.sheets.forPlacement(ownerPlacement)
+      ?? fail('state-change-conflict', 'Pickpocket owner sheet disappeared.')
+    const attackerResolved = input.context.queries.sheets.forPlacement(attackerPlacement)
+      ?? fail('state-change-conflict', 'Pickpocket attacker sheet disappeared.')
+    if (ownerResolved.kind !== 'pokemon' || attackerResolved.kind !== 'pokemon') {
+      fail('state-change-conflict', 'Pickpocket requires Pokémon Held Item slots.')
+    }
+    const workFor = (
+      placement: SheetPlacement,
+      resolved: typeof ownerResolved,
+    ): DailySheetWork => {
+      const key = `${placement.sheetKind}:${placement.sheetSlug}`
+      const existing = dailySheets.get(key)
+      if (existing) return existing
+      const work: DailySheetWork = {
+        placement,
+        previous: deepCloneJson(resolved.sheet),
+        current: deepCloneJson(resolved.sheet),
+        sourceOperationId: selection.operationId,
+        changedFields: new Set<MoveSheetStateField>(),
+      }
+      dailySheets.set(key, work)
+      return work
+    }
+    const ownerWork = workFor(ownerPlacement, ownerResolved)
+    const attackerWork = workFor(attackerPlacement, attackerResolved)
+    const ownerSheet = ownerWork.current as CharacterSheet
+    const attackerSheet = attackerWork.current as CharacterSheet
+    const held = attackerSheet.items?.held?.trim() ?? ''
+    if (!held || ownerSheet.items?.held?.trim()) {
+      fail('state-change-conflict', 'Pickpocket Held Item eligibility changed before commit.')
+    }
+    const { held: _removedHeld, ...remainingAttackerItems } = attackerSheet.items ?? {}
+    ownerWork.current = {
+      ...ownerSheet,
+      items: { ...(ownerSheet.items ?? {}), held },
+    }
+    attackerWork.current = {
+      ...attackerSheet,
+      items: remainingAttackerItems,
+    }
+    ownerWork.changedFields.add('items')
+    attackerWork.changedFields.add('items')
+  }
   const sheetStateChanges = createMoveStateChangePlan([...dailySheets.values()].map(work => {
     const current = {
       ...deepCloneJson(work.current),
@@ -952,10 +1039,12 @@ const applyTriggeredAbilityPayments = (input: {
       },
       expectedRevision: normalizeRevision(work.previous.revision),
       sourceOperationId: work.sourceOperationId,
-      reasonCode: 'ability-triggered-daily-frequency-spent',
+      reasonCode: work.changedFields.has('items')
+        ? 'ability.pickpocket.held-item-transfer'
+        : 'ability-triggered-daily-frequency-spent',
       previous: deepCloneJson(work.previous),
       current,
-      changedFields: ['abilityUsage'] as const,
+      changedFields: [...work.changedFields],
       compensation: RESTORE_PREVIOUS_MOVE_STATE_VALUE,
     }
   }))
@@ -1076,8 +1165,45 @@ export const planNativeV2MoveState = (options: {
       ...aa078StateIdsForMove(context, options.resolution.script),
     ],
   })
+  const recalledForNaturalCure = options.resolution.switchTransition
+    ? context.queries.placements.get(options.resolution.switchTransition.recalledPlacementId)
+    : null
+  const recalledNaturalCureSheet = recalledForNaturalCure?.sheetKind === 'pokemon'
+    ? options.pokemonSheets.get(recalledForNaturalCure.sheetSlug) ?? null
+    : null
+  const naturalCureRecall = recalledForNaturalCure && recalledNaturalCureSheet
+    ? applyAa081NaturalCureTrigger({
+        map: mapAfterAbilityMarkConsumption,
+        placement: recalledForNaturalCure,
+        sheet: recalledNaturalCureSheet,
+        operationId: originOperationId,
+        trigger: 'recall',
+      })
+    : { map: mapAfterAbilityMarkConsumption, sheet: recalledNaturalCureSheet, applied: false }
+  const naturalCureRecallPlan = createMoveStateChangePlan(
+    naturalCureRecall.applied && recalledForNaturalCure && recalledNaturalCureSheet
+      ? [{
+          kind: 'sheet-state' as const,
+          scope: {
+            kind: 'sheet' as const,
+            sheetKind: recalledForNaturalCure.sheetKind,
+            sheetSlug: recalledForNaturalCure.sheetSlug,
+          },
+          expectedRevision: normalizeRevision(recalledNaturalCureSheet.revision),
+          sourceOperationId: `${originOperationId}:natural-cure:recall`,
+          reasonCode: 'ability-natural-cure-recall',
+          previous: deepCloneJson(recalledNaturalCureSheet),
+          current: {
+            ...deepCloneJson(naturalCureRecall.sheet!),
+            revision: nextRevision(normalizeRevision(recalledNaturalCureSheet.revision)),
+          },
+          changedFields: ['conditions'] as const,
+          compensation: RESTORE_PREVIOUS_MOVE_STATE_VALUE,
+        }]
+      : [],
+  )
   const triggeredAbilityPayments = applyTriggeredAbilityPayments({
-    map: mapAfterAbilityMarkConsumption,
+    map: naturalCureRecall.map,
     context,
     // Nested child events are ancestry-projected into the root trace exactly once.
     traces: [native.trace],
@@ -1098,12 +1224,26 @@ export const planNativeV2MoveState = (options: {
     childExecutions: native.childExecutions,
     operationId: originOperationId,
   })
-  const mapAfterTransformationCleanup = cleanupEncounterTransformationsForKnockouts({
+  const mapAfterParentalBond = applyAa082ParentalBondFaintTrigger({
     map: mapAfterDeadlyPoisonTriggers,
+    context,
+    faintedPlacementIds: native.faintedPlacementIds,
+    operationId: originOperationId,
+  })
+  const mapAfterPerishCountCleanup = native.faintedPlacementIds.reduce(
+    (current, placementId) => clearAa083PerishCount(current, placementId),
+    mapAfterParentalBond,
+  )
+  const mapAfterTransformationCleanup = cleanupEncounterTransformationsForKnockouts({
+    map: mapAfterPerishCountCleanup,
     placementIds: native.faintedPlacementIds,
   }).map
-  const mapAfterYawnCleanup = cleanupYawnEffectsForKnockouts({
+  const mapAfterAlchemyCleanup = clearAa084PowerOfAlchemyForKnockouts({
     map: mapAfterTransformationCleanup,
+    placementIds: native.faintedPlacementIds,
+  })
+  const mapAfterYawnCleanup = cleanupYawnEffectsForKnockouts({
+    map: mapAfterAlchemyCleanup,
     placementIds: native.faintedPlacementIds,
   }).map
   const mapAfterKnockoutCleanup = cleanupVortexEffectsForKnockouts({
@@ -1287,9 +1427,12 @@ export const planNativeV2MoveState = (options: {
     `${options.resolution.canonicalMoveName} did not emit its reviewed usage operation.`,
   )
 
+  const movementPlacementId = options.resolution.movement?.kind === 'shift'
+    ? options.resolution.movement.placementId ?? options.resolution.actorPlacementId
+    : options.resolution.actorPlacementId
   const placementTransitionMap = applyAuthoritativeMovePlacementTransition({
     map: mapReduction.nextMap,
-    actorPlacement: actorPlacement(options.map, options.resolution.actorPlacementId),
+    actorPlacement: actorPlacement(options.map, movementPlacementId),
     movement: options.resolution.movement,
     desiredFacing: options.resolution.desiredFacing,
     fail: (code, message) => fail(
@@ -1338,6 +1481,7 @@ export const planNativeV2MoveState = (options: {
     ...native.coreStateChanges.changes,
     ...native.permanentMoveListStateChanges.changes,
     ...triggeredAbilityPayments.sheetStateChanges.changes,
+    ...naturalCureRecallPlan.changes,
     ...itemPlan.stateChanges.changes,
     ...mapReduction.stateChanges.changes,
   ]
@@ -1354,7 +1498,10 @@ export const planNativeV2MoveState = (options: {
     resolution: options.resolution,
     mapPlan: mapReduction.stateChanges,
     itemPlan,
-    triggeredAbilityPlan: triggeredAbilityPayments.sheetStateChanges,
+    triggeredAbilityPlan: createMoveStateChangePlan([
+      ...triggeredAbilityPayments.sheetStateChanges.changes.map(stripPlanIdentity),
+      ...naturalCureRecallPlan.changes.map(stripPlanIdentity),
+    ]),
     placements,
     switchMapChanges,
   })

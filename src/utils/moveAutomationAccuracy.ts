@@ -68,10 +68,16 @@ const evasionLabelWithAbilityModifiers = (
 const moveAutomationTargetAbilityEvasionModifiers = (
   target: SpawnedPokemon,
   context: MoveAutomationEvasionContext,
-): SheetAbilityIncomingAttackEvasionModifier[] => sheetAbilityIncomingAttackEvasionModifiers(
-  target.abilityNames,
-  { attackerAbilities: context.attacker?.abilityNames },
-)
+): SheetAbilityIncomingAttackEvasionModifier[] => {
+  const modifiers = sheetAbilityIncomingAttackEvasionModifiers(
+    target.abilityNames,
+    { attackerAbilities: context.attacker?.abilityNames },
+  )
+  if ((target.abilityNames ?? []).some(name => name.trim() === 'Perception')) {
+    modifiers.push({ source: 'Perception', modifier: 1 })
+  }
+  return modifiers
+}
 
 const sumAbilityEvasionModifiers = (
   modifiers: readonly SheetAbilityIncomingAttackEvasionModifier[],

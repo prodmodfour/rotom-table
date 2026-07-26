@@ -29,6 +29,7 @@ import { planEncounterMoveResourceCosts } from '../../moveAutomation/planMoveRes
 import type { AuthoritativeAbilityContext } from '../context'
 import { authoritativeAbilityHealingBlocked } from '../healingPrevention'
 import { planAbilityFrequencyPayment } from '../usage'
+import { aa084PowerConstructBlocksTemporaryHp } from './aa084StaticIntegration'
 
 const SCENE_FREQUENCY = Object.freeze({
   raw: 'Scene', actionText: '', kind: 'scene', uses: 1, exceptionId: null,
@@ -248,6 +249,9 @@ const grassPelt = (input: {
   const currentTemporaryHp = base.byPlacementId[ownerId] ?? 0
   const nextTemporaryHp = authoritativeAbilityHealingBlocked({
     map: input.context.map,
+    placementId: ownerId,
+  }) || aa084PowerConstructBlocksTemporaryHp({
+    context: input.context,
     placementId: ownerId,
   })
     ? currentTemporaryHp

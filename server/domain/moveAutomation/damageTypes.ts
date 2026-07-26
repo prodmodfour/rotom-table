@@ -35,6 +35,8 @@ import {
   aa080MojoIgnoresNormalImmunity,
   aa080MotorDriveBlocksElectric,
 } from '../abilityAutomation/mechanics/aa080StaticIntegration'
+import { aa081DamageTypeOverlay } from '../abilityAutomation/mechanics/aa081StaticIntegration'
+import { AA083_POLYCEPHALY_DAMAGE_REASON } from '../abilityAutomation/mechanics/aa083MoveIntegration'
 
 export type MoveDamageTypeResolutionErrorCode =
   | 'move-type-unavailable'
@@ -234,6 +236,8 @@ export const resolveMoveDamageType = (options: {
   readonly script: Pick<MoveAutomationScript, 'moveName' | 'keywords'>
   readonly recipientId: string
   readonly canonicalMoveId?: string
+  /** A same-resolution Protean choice changes the actor before STAB is evaluated. */
+  readonly forceActorStab?: boolean
 }): MoveDamageTypeResolution => {
   const placement = options.context.queries.placements.get(options.recipientId)
   const target = options.context.queries.tokens.get(options.recipientId)
@@ -411,6 +415,11 @@ export const resolveMoveDamageType = (options: {
     })
     passiveMultiplier = aa067.multiplier
     passiveSources.push(...aa067.sources)
+    if (options.operation.reasonCode === AA083_POLYCEPHALY_DAMAGE_REASON
+      && passiveMultiplier > 0) {
+      passiveMultiplier = resistMultiplierOneStepFurther(passiveMultiplier)
+      passiveSources.push('Polycephaly')
+    }
   }
 
   const passiveImmunity = passiveMultiplier === 0 && baseMultiplier !== 0
@@ -435,9 +444,10 @@ export const resolveMoveDamageType = (options: {
         ? 'effectiveness override'
         : null)
   const hasStab = options.context.actor.token.sheetKind === 'pokemon'
-    && options.context.actor.token.defenderTypes.some(type => canonicalType(type) === moveType.type)
+    && (options.forceActorStab === true
+      || options.context.actor.token.defenderTypes.some(type => canonicalType(type) === moveType.type))
 
-  return deepFreeze({
+  const resolved: MoveDamageTypeResolution = {
     operationId: options.operation.id,
     recipientId: options.recipientId,
     moveType: moveType.type,
@@ -456,5 +466,10 @@ export const resolveMoveDamageType = (options: {
     immunitySource,
     hasStab,
     evaluationTrace: [...moveType.trace],
-  })
+  }
+  return deepFreeze(aa081DamageTypeOverlay({
+    context: options.context,
+    recipientId: options.recipientId,
+    resolved,
+  }))
 }

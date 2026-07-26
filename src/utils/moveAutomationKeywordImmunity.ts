@@ -7,6 +7,7 @@ import type { SpawnedPokemon } from '~/types/pokemon'
 
 export const POWDER_KEYWORD = 'Powder'
 export const POWDER_IMMUNITY_SOURCE = 'Grass type (Powder)'
+export const OVERCOAT_POWDER_IMMUNITY_SOURCE = 'Overcoat'
 
 const GROUNDSOURCE_KEYWORD = 'Groundsource'
 
@@ -34,15 +35,20 @@ const targetHasDefenderType = (
 ): boolean => target.defenderTypes.some((entry) => entry.trim().toLowerCase() === type.toLowerCase())
 
 export const moveAutomationTargetHasPowderImmunity = (
-  target: Pick<SpawnedPokemon, 'defenderTypes'>,
+  target: Pick<SpawnedPokemon, 'defenderTypes' | 'abilityNames'>,
 ): boolean => targetHasDefenderType(target, 'Grass')
+  || (target.abilityNames ?? []).some(name => name.trim() === 'Overcoat')
 
 export const moveAutomationPowderImmunitySource = (
   script: Pick<MoveAutomationScript, 'keywords'> | null | undefined,
-  target: Pick<SpawnedPokemon, 'defenderTypes'>,
-): string | null => moveAutomationScriptHasPowderKeyword(script) && moveAutomationTargetHasPowderImmunity(target)
-  ? POWDER_IMMUNITY_SOURCE
-  : null
+  target: Pick<SpawnedPokemon, 'defenderTypes' | 'abilityNames'>,
+): string | null => {
+  if (!moveAutomationScriptHasPowderKeyword(script)) return null
+  if ((target.abilityNames ?? []).some(name => name.trim() === 'Overcoat')) {
+    return OVERCOAT_POWDER_IMMUNITY_SOURCE
+  }
+  return targetHasDefenderType(target, 'Grass') ? POWDER_IMMUNITY_SOURCE : null
+}
 
 export const moveAutomationGroundsourceImmunitySuppressionSource = (
   target: Pick<SpawnedPokemon, 'conditions'>,

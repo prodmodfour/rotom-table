@@ -19,6 +19,7 @@ import { aa061AquaBulletMarkId, aa061AuraBreakMarkId } from './aa061MoveIntegrat
 import { findMove } from '~~/data/ptuReference'
 import { aa061BallFetchReleaseMarkId } from './aa061PresenceIntegration'
 import { authoritativeAbilityHealingBlocked } from '../healingPrevention'
+import { aa084PowerConstructBlocksTemporaryHp } from './aa084StaticIntegration'
 
 const ARENA_TRAP_FREQUENCY: AbilityFrequencyDeclaration = Object.freeze({
   raw: 'Scene – Free Action', actionText: 'Free Action', kind: 'scene', uses: 1, exceptionId: null,
@@ -391,6 +392,9 @@ const badDreamsExecution = (input: {
   }
   if (anyLoss && !authoritativeAbilityHealingBlocked({
     map: input.context.map,
+    placementId: input.context.actor.placement.id,
+  }) && !aa084PowerConstructBlocksTemporaryHp({
+    context: input.context,
     placementId: input.context.actor.placement.id,
   })) {
     const activeScene = input.context.map.activeScene

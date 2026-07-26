@@ -40,6 +40,8 @@ import {
 } from '../domain/abilityAutomation/legacyCompatibility'
 import { applyAa065CrushTrapGrappleTrigger } from '../domain/abilityAutomation/mechanics/aa065ManeuverIntegration'
 import { cleanupAa065CrueltyHealingBlockForBreather } from '../domain/abilityAutomation/mechanics/aa065StaticIntegration'
+import { applyAa081NaturalCureForBreather } from '../domain/abilityAutomation/mechanics/aa081LifecycleIntegration'
+import { clearAa083PerishCountForBreather } from '../domain/abilityAutomation/mechanics/aa083LifecycleIntegration'
 import {
   aa077HasAuthoritativeDisengageWindow,
   applyAa077DisengageResourceEvidence,
@@ -585,16 +587,27 @@ const applyManeuverCommand = (
         placementId: context.actorPlacement.id,
       })
     : withMetadata
+  const afterPerishCount = maneuver.name === 'Take a Breather'
+    ? clearAa083PerishCountForBreather(afterBreather, context.actorPlacement.id)
+    : afterBreather
+  const naturalCure = maneuver.name === 'Take a Breather'
+    ? applyAa081NaturalCureForBreather({
+        map: afterPerishCount,
+        placement: context.actorPlacement,
+        sheet: context.actorSheet.sheet as unknown as AnyLiveSheet,
+        operationId: command.opId,
+      })
+    : { map: afterPerishCount, sheet: context.actorSheet.sheet as unknown as AnyLiveSheet, applied: false }
   const withAbilityTrigger = maneuver.name === 'Grapple' && target
     ? applyAa065CrushTrapGrappleTrigger({
-        map: afterBreather,
+        map: naturalCure.map,
         actorPlacement: context.actorPlacement,
         actorToken: actor as SpawnedPokemon,
         actorSheet: context.actorSheet.sheet as unknown as CharacterSheet,
         targetToken: target as SpawnedPokemon,
         operationId: command.opId,
       })
-    : afterBreather
+    : naturalCure.map
   const withDisengageEvidence = maneuver.name === 'Disengage'
     ? applyAa077DisengageResourceEvidence({
         map: withAbilityTrigger,
@@ -605,9 +618,18 @@ const applyManeuverCommand = (
   const revision = nextRevision(currentRevision)
   const updatedAt = dependencies.now()
 
+  const writePlans = new Map<string, SheetWritePlan>()
+  if (naturalCure.applied) {
+    addOrUpdateWritePlan(writePlans, context.actorSheet, 'conditions', () => naturalCure.sheet)
+  }
+  const nextSheets = [...writePlans.values()]
   return {
     ...context,
     map: { ...withDisengageEvidence, revision, updatedAt },
+    ...(nextSheets.length > 0 ? {
+      nextSheets,
+      sheetUpdates: nextSheets.map(sheetUpdateFromPlan),
+    } : {}),
     action: {
       type: 'maneuver',
       placementId: context.actorPlacement.id,

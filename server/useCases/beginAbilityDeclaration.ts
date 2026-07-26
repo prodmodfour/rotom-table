@@ -85,6 +85,7 @@ import { createMoveAutomationWeatherResolver } from '../domain/moveAutomation/we
 import { aa071ForecastTypeResolution } from '../domain/abilityAutomation/mechanics/aa071StaticIntegration'
 import { aa076BerryJuiceBuffSlots } from '../domain/abilityAutomation/mechanics/aa076Activated'
 import { aa077VoluntaryDropSlots } from '../domain/abilityAutomation/mechanics/aa077ItemIntegration'
+import { abilityIsCopyable } from '../domain/abilityAutomation/effectiveAbilities'
 import { resolveMoveAutomationItemRuleIdentity } from '../domain/moveAutomation/itemRuleData'
 import {
   createSqliteAbilityDeclarationOfferRepository,
@@ -278,7 +279,25 @@ const declarationsFor = (
                   .filter(ability => ability.effective && ability.canonicalId.toLowerCase().includes('aura'))
               ))
             })()
-          : context.actor.effectiveAbilities
+          : context.runtime.canonicalId === 'Power of Alchemy' && modeId === 'activate'
+            ? (() => {
+                const targetDeclaration = context.runtime.definition.spec.targeting.find(target => (
+                  target.modeId === modeId && target.kind === 'token'
+                ))
+                const targetPredicate = targetDeclaration?.predicate
+                  ?? fail(500, 'Power of Alchemy has no reviewed targeting policy.')
+                const legalTargets = resolveAuthoritativeAbilityTargets({
+                  context,
+                  predicate: targetPredicate,
+                  requestedPlacementIds: context.tokens.map(token => token.id),
+                  visiblePlacementIds: context.tokens.map(token => token.id),
+                }).legalTargetPlacementIds
+                return legalTargets.flatMap(placementId => (
+                  context.queries.effectiveAbilities.allForPlacement(placementId)
+                    .filter(ability => ability.effective && abilityIsCopyable(ability.canonicalId))
+                ))
+              })()
+            : context.actor.effectiveAbilities
         options = abilities.map((ability, index) => option(declaration.id, index, declaration.kind, {
           kind: 'ability', canonicalAbilityId: ability.canonicalId, abilityInstanceId: ability.instanceId,
         }))

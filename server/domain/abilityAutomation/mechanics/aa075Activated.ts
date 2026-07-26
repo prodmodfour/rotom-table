@@ -42,6 +42,7 @@ import { createAa075IceFaceTemporaryHpMarker } from './aa075TemporaryHpIntegrati
 import type { AuthoritativeAbilityContext } from '../context'
 import { reduceAbilityOwnedStateCommand } from '../ownedState'
 import { planAbilityFrequencyPayment } from '../usage'
+import { aa084PowerConstructBlocksTemporaryHp } from './aa084StaticIntegration'
 
 const DAILY_X5_FREQUENCY = Object.freeze({
   raw: 'Daily x5', actionText: '', kind: 'daily', uses: 5, exceptionId: null,
@@ -226,6 +227,7 @@ const iceFace = (input: {
   const currentTemporaryHp = base.byPlacementId[actorId] ?? 0
   const granted = computeTickValue(input.context.actor.token.fullMaxHp ?? input.context.actor.token.maxHp) * 2
   const nextTemporaryHp = authoritativeAbilityHealingBlocked({ map: input.context.map, placementId: actorId })
+    || aa084PowerConstructBlocksTemporaryHp({ context: input.context, placementId: actorId })
     ? currentTemporaryHp
     : Math.max(currentTemporaryHp, granted)
   const paid = parseEncounterState(action.currentEncounterState)

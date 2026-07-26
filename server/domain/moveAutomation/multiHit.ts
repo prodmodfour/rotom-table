@@ -827,6 +827,8 @@ export const executeMoveMultiHitOperation = (options: {
   readonly gorillaTacticsTriggeringDamage?: boolean
   /** At most one adjacent Ignition Boost provider accepted this triggering Move. */
   readonly ignitionBoostTriggeringDamage?: boolean
+  /** Same-resolution Protean changes the user's Type before STAB. */
+  readonly forceActorStab?: boolean
 }): MoveMultiHitExecution => {
   const { context, operation } = options
   assertRollBudget({ context, operation, recipientCount: options.recipientIds.length })
@@ -967,6 +969,7 @@ export const executeMoveMultiHitOperation = (options: {
             script: options.script,
             recipientId,
             canonicalMoveId: options.canonicalMoveId,
+            forceActorStab: options.forceActorStab,
           })
           const fluffyType = aa070FluffyDamageTypeOverlay({
             context,

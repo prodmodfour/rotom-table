@@ -23,6 +23,7 @@ import {
 import { planEncounterMoveResourceCosts } from '../../moveAutomation/planMoveResources'
 import type { AuthoritativeAbilityContext } from '../context'
 import { planAbilityFrequencyPayment } from '../usage'
+import { aa084PowerConstructBlocksTemporaryHp } from './aa084StaticIntegration'
 
 const SCENE_X3_FREQUENCY: AbilityFrequencyDeclaration = Object.freeze({
   raw: 'Scene x3', actionText: '', kind: 'scene', uses: 3, exceptionId: null,
@@ -148,7 +149,11 @@ const dreamspinnerExecution = (input: {
     })
   }
 
-  if (!authoritativeAbilityHealingBlocked({ map: input.context.map, placementId: actorId })) {
+  if (!authoritativeAbilityHealingBlocked({ map: input.context.map, placementId: actorId })
+    && !aa084PowerConstructBlocksTemporaryHp({
+      context: input.context,
+      placementId: actorId,
+    })) {
     const activeScene = input.context.map.activeScene
       ?? fail('Dreamspinner requires an active Scene for Temporary Hit Points.')
     const previous = input.context.map.temporaryHitPoints

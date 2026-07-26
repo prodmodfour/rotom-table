@@ -856,14 +856,17 @@ export const validateMoveSpecOperationSequence = (
         'a durable movement choice must execute in the movement phase.',
       )
     }
-    const isCelebrateResponseMovement = operation.reasonCode === 'ability.celebrate.disengage'
-      && operation.recipients.kind === 'response-owner'
-      && operation.source.kind === 'operation'
-    if (operation.recipients.kind !== 'actor' && !isCelebrateResponseMovement) {
+    const responseSource = operation.source.kind === 'operation'
+      ? indexed[operationIndexById.get(operation.source.id) ?? -1]?.operation
+      : null
+    const isReviewedResponseOwnerMovement = operation.recipients.kind === 'response-owner'
+      && responseSource !== null
+      && (responseSource?.kind === 'reaction-request' || responseSource?.kind === 'choice-request')
+    if (operation.recipients.kind !== 'actor' && !isReviewedResponseOwnerMovement) {
       fail(
         'invalid-definition',
         `${path}.recipients`,
-        'a durable movement choice must belong to the authoritative actor.',
+        'a durable movement choice must belong to the authoritative actor or the accepted owner of its reviewed response request.',
       )
     }
     if (operation.payload.mode !== 'voluntary') {

@@ -56,6 +56,8 @@ import {
 import { applyAa065CrushTrapGrappleTrigger } from '../domain/abilityAutomation/mechanics/aa065ManeuverIntegration'
 import { applyAa079MagmaArmorGrappleTrigger } from '../domain/abilityAutomation/mechanics/aa079LifecycleIntegration'
 import { cleanupAa065CrueltyHealingBlockForBreather } from '../domain/abilityAutomation/mechanics/aa065StaticIntegration'
+import { applyAa081NaturalCureForBreather } from '../domain/abilityAutomation/mechanics/aa081LifecycleIntegration'
+import { clearAa083PerishCountForBreather } from '../domain/abilityAutomation/mechanics/aa083LifecycleIntegration'
 import {
   aa077HasAuthoritativeDisengageWindow,
   applyAa077DisengageResourceEvidence,
@@ -1147,16 +1149,27 @@ const useManeuverPlan = (
         placementId: target.placement.id,
       })
     : mapWithMetadata
+  const mapAfterPerishCount = maneuver.name === 'Take a Breather'
+    ? clearAa083PerishCountForBreather(mapAfterBreather, target.placement.id)
+    : mapAfterBreather
+  const naturalCure = maneuver.name === 'Take a Breather'
+    ? applyAa081NaturalCureForBreather({
+        map: mapAfterPerishCount,
+        placement: target.placement,
+        sheet: userSheet.sheet,
+        operationId: command.opId,
+      })
+    : { map: mapAfterPerishCount, sheet: userSheet.sheet, applied: false }
   const mapWithCrushTrapTrigger = maneuver.name === 'Grapple' && targetToken
     ? applyAa065CrushTrapGrappleTrigger({
-        map: mapAfterBreather,
+        map: naturalCure.map,
         actorPlacement: target.placement,
         actorToken: user,
         actorSheet: userSheet.sheet as CharacterSheet,
         targetToken,
         operationId: command.opId,
       })
-    : mapAfterBreather
+    : naturalCure.map
   const grappleTargetPlacement = targetToken
     ? mapWithCrushTrapTrigger.placements.find(placement => placement.id === targetToken.id)
     : undefined
@@ -1179,6 +1192,10 @@ const useManeuverPlan = (
         operationId: command.opId,
       })
     : mapWithAbilityTrigger
+  const writePlans = new Map<string, SheetWritePlan>()
+  if (naturalCure.applied) {
+    addOrUpdateWritePlan(writePlans, userSheet, () => naturalCure.sheet)
+  }
   return {
     ok: true,
     plan: {
@@ -1193,7 +1210,7 @@ const useManeuverPlan = (
         ...(targetToken === undefined ? {} : { targetTokenId: targetToken.id, targetName: targetToken.species }),
         logLines,
       },
-      writePlans: [],
+      writePlans: [...writePlans.values()],
     },
   }
 }

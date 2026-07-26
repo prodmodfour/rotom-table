@@ -513,6 +513,7 @@ const storeBerryStorageBuffs = (input: {
   if (!runtime || !sheet || !placement) return null
   const ability = projectAuthoritativeEffectiveAbilities({
     baseAbilities: resolveSheetAbilityInstances(sheet.abilities),
+    species: sheet.species,
     target: {
       placementId: placement.id,
       ...(placement.sideId ? { sideId: placement.sideId } : {}),
@@ -1366,6 +1367,7 @@ const effectiveAbilityInstanceId = (
   const runtime = ABILITY_AUTOMATION_RUNTIME_REGISTRY.resolve(canonicalId)
   const effective = sheet && placement && runtime ? projectAuthoritativeEffectiveAbilities({
     baseAbilities: resolveSheetAbilityInstances(sheet.abilities),
+    species: owner.sheetKind === 'pokemon' ? (sheet as CharacterSheet).species : null,
     target: {
       placementId: placement.id,
       ...(placement.sideId ? { sideId: placement.sideId } : {}),

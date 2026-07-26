@@ -9,6 +9,7 @@ import type { SpawnedPokemon } from '~/types/pokemon'
 const IMMUNITY_ABILITY_NAME = 'Immunity'
 const INNER_FOCUS_ABILITY_NAME = 'Inner Focus'
 const OWN_TEMPO_ABILITY_NAME = 'Own Tempo'
+const OBLIVIOUS_ABILITY_NAME = 'Oblivious'
 export const PASTEL_VEIL_ABILITY_NAME = 'Pastel Veil'
 const WATER_VEIL_ABILITY_NAME = 'Water Veil'
 export const SWEET_VEIL_RANGE_METERS = 3
@@ -139,6 +140,8 @@ export const moveAutomationConditionImmunitySource = (
   }
   if (canonical === 'Blindness' && hasAbility(target, KEEN_EYE_ABILITY_NAME)) return KEEN_EYE_ABILITY_NAME
 
+  if ((canonical === 'Rage' || canonical === 'Infatuation')
+    && hasAbility(target, OBLIVIOUS_ABILITY_NAME)) return OBLIVIOUS_ABILITY_NAME
   if (canonical === 'Confused' && hasAbility(target, OWN_TEMPO_ABILITY_NAME)) {
     return OWN_TEMPO_ABILITY_NAME
   }

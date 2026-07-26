@@ -230,7 +230,7 @@ describe('ability automation production runtime registry', () => {
   })
 
   it('ships only exact evidence-backed production selections', () => {
-    expect(ABILITY_AUTOMATION_RUNTIME_REGISTRY.size).toBe(252)
+    expect(ABILITY_AUTOMATION_RUNTIME_REGISTRY.size).toBe(300)
     expect(ABILITY_AUTOMATION_RUNTIME_REGISTRY.entries().map(runtime => runtime.canonicalId))
       .toEqual([
         'Abominable', 'Absorb Force', 'Accelerate', 'Adaptability', 'Aerilate', 'Aftermath',
@@ -277,6 +277,14 @@ describe('ability automation production runtime registry', () => {
         'Mega Launcher', 'Memory Wipe', 'Merciless', 'Migraine', 'Mimicry', 'Mimitree', 'Mind Mold',
         'Mini-Noses', 'Minus', 'Miracle Mile', 'Mirror Armor', 'Missile Launch', 'Misty Surge',
         'Mojo', 'Mold Breaker', 'Moody', 'Motor Drive', 'Mountain Peak', 'Moxie',
+        'Mud Dweller', 'Mud Shield', 'Multiscale', 'Multitype', 'Mummy', 'Natural Cure',
+        'Needles', 'Neuroforce', 'Neutralizing Gas', 'Nimble Strikes', 'No Guard', 'Normalize',
+        'Oblivious', 'Odious Spray', 'Omen', 'Overcharge', 'Overcoat', 'Overgrow',
+        'Own Tempo', 'Pack Hunt', 'Parental Bond', 'Parry', 'Pastel Veil', 'Perception',
+        'Perish Body', 'Permafrost', 'Photosynthesis', 'Pickpocket', 'Pickup', 'Pixilate',
+        'Plus', 'Poison Heal', 'Poison Point', 'Poison Touch', 'Poltergeist', 'Polycephaly',
+        'Power Construct', 'Power Spot', 'Power of Alchemy', 'Prankster', 'Pressure', 'Pride',
+        'Prime Fury', 'Prism Armor', 'Probability Control', 'Propeller Tail', 'Protean', 'Psionic Screech',
       ])
     expect(registeredAbilityAutomationRuntimeFor('Adaptability')).toMatchObject({
       kind: 'abilityspec-v1', version: 1,

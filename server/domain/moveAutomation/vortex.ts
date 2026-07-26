@@ -411,10 +411,10 @@ export const resolveVortexTickImmunity = (
   recipient: MoveCoreTokenEffectRecipient,
   hasEffectiveAbility?: (placementId: string, canonicalId: string) => boolean,
 ): MoveCoreTokenEffectImmunityDecision => {
-  const ability = VORTEX_HP_IMMUNITY_ABILITIES.find(candidate => candidate === 'Magic Guard'
-    ? hasEffectiveAbility?.(recipient.placement.id, candidate)
+  const ability = VORTEX_HP_IMMUNITY_ABILITIES.find(candidate => (
+    hasEffectiveAbility?.(recipient.placement.id, candidate)
       ?? sheetHasCanonicalAbility(recipient.token.abilityNames, candidate)
-    : sheetHasCanonicalAbility(recipient.token.abilityNames, candidate)) ?? null
+  )) ?? null
   return { blockedBy: ability, consultedPlacementIds: [] }
 }
 

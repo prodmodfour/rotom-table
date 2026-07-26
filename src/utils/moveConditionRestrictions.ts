@@ -1,5 +1,6 @@
 import { isStruggleAttackMoveName } from '~/utils/struggleMoves'
 import { splitMoveRangeKeywords } from '~/utils/moveAutomationText'
+import { parseMoveFrequency } from '~/utils/moveUsage'
 import {
   conditionBaseName,
   conditionDisplayName,
@@ -12,6 +13,7 @@ export interface ConditionRestrictedMove {
   aliases?: readonly string[] | null
   damageClass?: string | null
   range?: string | null
+  frequency?: string | null
 }
 
 export interface MoveConditionUseBlock {
@@ -23,6 +25,7 @@ export interface MoveConditionUseBlock {
 const ENRAGED_CONDITION_NAME = 'Rage'
 const DISABLED_CONDITION_NAME = 'Disabled'
 const STUCK_CONDITION_NAME = 'Stuck'
+const SUPPRESSED_CONDITION_NAME = 'Suppressed'
 
 const normalizedDamageClass = (value: string | null | undefined): string =>
   String(value ?? '').trim().toLowerCase()
@@ -77,6 +80,16 @@ export const moveConditionUseBlock = (
 
   const dashBlock = moveDashConditionUseBlock(move.range, conditions)
   if (dashBlock) return dashBlock
+
+  if (normalizeConditionNames(conditions).some(condition => (
+    conditionBaseName(condition) === SUPPRESSED_CONDITION_NAME
+  )) && parseMoveFrequency(move.frequency).kind !== 'at-will') {
+    return {
+      condition: SUPPRESSED_CONDITION_NAME,
+      label: SUPPRESSED_CONDITION_NAME,
+      reason: `${move.name} is not At-Will and cannot be used while Suppressed.`,
+    }
+  }
 
   if (conditionsIncludeEnraged(conditions) && !moveAllowedWhileEnraged(move)) {
     const label = conditionDisplayName(ENRAGED_CONDITION_NAME)

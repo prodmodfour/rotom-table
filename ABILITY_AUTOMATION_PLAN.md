@@ -2,7 +2,7 @@
 
 `PLAN_STATUS: IN_PROGRESS`
 
-`CURRENT_TICKET: AA-081`
+`CURRENT_TICKET: AA-085`
 
 ## Goal
 
@@ -96,14 +96,14 @@ Ability automation should reuse MoveSpec v2 selectors, expressions, operations, 
 
 ## Progress snapshot
 
-- Plan tickets: **80 DONE / 110 total**
+- Plan tickets: **84 DONE / 110 total**
 - Canonical inventory: **483**
-- Semantically complete: **252**
+- Semantically complete: **300**
 - Assisted: **0**
-- Blocked/unimplemented: **231**
+- Blocked/unimplemented: **183**
 - Interaction status: **483 unassessed**
 - Legacy baseline: **45 abilities with 55 partial fragments; 438 with no reviewed legacy fragment**
-- Production runtime: **252 exact manifest-selected AbilitySpec v1 runtimes**; retained legacy paths remain explicit compatibility only
+- Production runtime: **300 exact manifest-selected AbilitySpec v1 runtimes**; retained legacy paths remain explicit compatibility only
 
 ## Tickets
 
@@ -281,15 +281,15 @@ Each cohort must review every named ability against canonical text, implement al
   - Magic Guard; Magician; Magma Armor; Magnet Pull; Marvel Scale; Mega Launcher; Memory Wipe; Merciless; Migraine; Mimicry; Mimitree; Mind Mold
 - [x] **AA-080 — Mini-Noses through Moxie** — `DONE`
   - Mini-Noses; Minus; Miracle Mile; Mirror Armor; Missile Launch; Misty Surge; Mojo; Mold Breaker; Moody; Motor Drive; Mountain Peak; Moxie
-- [ ] **AA-081 — Mud Dweller through Normalize** — `IN_PROGRESS`
+- [x] **AA-081 — Mud Dweller through Normalize** — `DONE`
   - Mud Dweller; Mud Shield; Multiscale; Multitype; Mummy; Natural Cure; Needles; Neuroforce; Neutralizing Gas; Nimble Strikes; No Guard; Normalize
-- [ ] **AA-082 — Oblivious through Perception** — `TODO`
+- [x] **AA-082 — Oblivious through Perception** — `DONE`
   - Oblivious; Odious Spray; Omen; Overcharge; Overcoat; Overgrow; Own Tempo; Pack Hunt; Parental Bond; Parry; Pastel Veil; Perception
-- [ ] **AA-083 — Perish Body through Polycephaly** — `TODO`
+- [x] **AA-083 — Perish Body through Polycephaly** — `DONE`
   - Perish Body; Permafrost; Photosynthesis; Pickpocket; Pickup; Pixilate; Plus; Poison Heal; Poison Point; Poison Touch; Poltergeist; Polycephaly
-- [ ] **AA-084 — Power Construct through Psionic Screech** — `TODO`
+- [x] **AA-084 — Power Construct through Psionic Screech** — `DONE`
   - Power Construct; Power Spot; Power of Alchemy; Prankster; Pressure; Pride; Prime Fury; Prism Armor; Probability Control; Propeller Tail; Protean; Psionic Screech
-- [ ] **AA-085 — Psychic Surge through Radiant Beam** — `TODO`
+- [ ] **AA-085 — Psychic Surge through Radiant Beam** — `IN_PROGRESS`
   - Psychic Surge; Pumpkingrab; Punk Rock; Pure Blooded; Pure Power; Queenly Majesty; Quick Cloak; Quick Curl; Quick Draw; Quick Feet; RKS System; Radiant Beam
 - [ ] **AA-086 — Ragelope through Revelation** — `TODO`
   - Ragelope; Rain Dish; Rally; Rattled; Razor Edge; Receiver; Reckless; Refreshing Veil; Refrigerate; Regal Challenge; Regenerator; Revelation
@@ -370,3 +370,6 @@ Each cohort must review every named ability against canonical text, implement al
 - **2026-07-27 — Keep AA-079 passive projections narrow and effective-ability gated.** Magic Guard blocks only enumerated non-attack loss, Marvel Scale remains a virtual conditional Defense projection, and Mega Launcher, Merciless, Mind Mold, Magma Armor, and Mimitree preserve canonical damage, immunity, lifecycle, and frequency ordering.
 - **2026-07-28 — Treat Mini-Noses and Dreepy as durable server-owned entities.** Stable identities, exact source-runtime checks, HP, target scopes, movement, tethering, collisions, rendering, regrowth, and ranged origins remain authoritative across retry and reconnect; Dreepy collision attacks use the Missile Launch user as their mechanical source.
 - **2026-07-28 — Bind AA-080 reactions and passives to exact recipients and effective runtimes.** Minus and Mirror Armor use durable grouped stage windows, Moody records deterministic distinct-stat rolls, Motor Drive blocks only Electric attack effects while retaining unrelated self-effects, and Moxie requires a Move-fainted foe before its optional response materializes.
+- **2026-07-29 — Project AA-081 transformations and suppression before all mechanics.** Multitype owns a source-ability type snapshot, Mummy persists only the selected disableable ability suppression, and Neutralizing Gas removes Defensive providers while centrally withholding nearby or round-marked Triggered response windows; Natural Cure treats an accepted recall or Take a Breather as its affirmative optional trigger.
+- **2026-07-30 — Keep AA-082 avoidance and family state server-owned.** Perception moves its exact response owner through a durable authoritative destination choice before canceling that recipient’s attack effects, Pack Hunt retains its independent d20 before applying one Tick, and Parental Bond links the nearest allied Kangaskhan deterministically for the voluntary tether and scene-long mother rage effects.
+- **2026-07-31 — Preserve AA-084 form, copy, and reroll authority through lifecycle and replay.** Power Construct projects Complete Forme without replacing the original HP maximum and blocks later Temporary HP grants, Power of Alchemy stores an immutable copy snapshot that expires on knockout or scene end, and Probability Control retains the original roll plus a server-drawn replacement while durable resume reproduces the pre-response audit prefix; Prankster, Protean, and Psionic Screech derive costs only from selected authoritative traces, while Propeller Tail atomically pays its activation and immediate Free-Action Sprint.

@@ -82,6 +82,7 @@ import {
   createAbilityExecutionBudget,
   type AbilityExecutionBudget,
 } from './executionBudget'
+import { projectAa081NeutralizingGasAbilities } from './mechanics/aa081NeutralizingGasIntegration'
 
 export const AUTHORITATIVE_ABILITY_CONTEXT_LIMITS = Object.freeze({
   targets: 64,
@@ -444,6 +445,7 @@ const defaultEffectiveAbilities = (
     const sheet = sheetsByKey.get(sheetKey({ kind: placement.sheetKind, slug: placement.sheetSlug }))
     result.set(placement.id, projectAuthoritativeEffectiveAbilities({
       baseAbilities: resolveSheetAbilityInstances(sheet?.sheet.abilities),
+      species: sheet?.kind === 'pokemon' ? (sheet.sheet as CharacterSheet).species : null,
       effects,
       transformationSnapshots,
       target: {
@@ -603,12 +605,8 @@ export const buildAuthoritativeAbilityContext = (
     input.trainerSheets,
   )
   const { placements, byId: placementsById } = resolvePlacements(map)
-  const tokensById = resolveTokens(map, placements, lookup)
-  const tokens = deepFreeze(placements.flatMap(placement => {
-    const token = tokensById.get(placement.id)
-    return token ? [token] : []
-  }))
-  const effectiveByPlacement = snapshotEffectiveAbilities(
+  const rawTokensById = resolveTokens(map, placements, lookup)
+  let effectiveByPlacement = snapshotEffectiveAbilities(
     input.effectiveAbilities ?? defaultEffectiveAbilities(
       placements,
       sheetsByKey,
@@ -617,6 +615,36 @@ export const buildAuthoritativeAbilityContext = (
     ),
     new Set(placements.map(placement => placement.id)),
   )
+  effectiveByPlacement = projectAa081NeutralizingGasAbilities({
+    abilitiesByPlacement: effectiveByPlacement,
+    tokensById: rawTokensById,
+    effects: map.encounterState?.effects ?? [],
+    preserveSuppressedEntries: true,
+  }) as ReadonlyMap<string, readonly AuthoritativeEffectiveAbility[]>
+  const tokensById = new Map<string, SpawnedPokemon>()
+  for (const [placementId, token] of rawTokensById) {
+    const effectiveAbilityNames = (effectiveByPlacement.get(placementId) ?? [])
+      .filter(ability => ability.effective)
+      .map(ability => ability.canonicalId)
+    const typeSnapshot = [...(map.encounterState?.abilityTransformations?.entries ?? [])]
+      .reverse()
+      .find(snapshot => snapshot.placementId === placementId
+        && snapshot.mechanics.typeIds.length > 0
+        && (effectiveByPlacement.get(snapshot.ownerPlacementId) ?? []).some(ability => (
+          ability.effective
+          && ability.instanceId === snapshot.sourceAbilityInstanceId
+          && ability.canonicalId === snapshot.canonicalId
+        )))
+    tokensById.set(placementId, detachedFrozen({
+      ...token,
+      abilityNames: effectiveAbilityNames,
+      ...(typeSnapshot ? { defenderTypes: [...typeSnapshot.mechanics.typeIds] } : {}),
+    }))
+  }
+  const tokens = deepFreeze(placements.flatMap(placement => {
+    const token = tokensById.get(placement.id)
+    return token ? [token] : []
+  }))
   const sourcePlacementId = request.sourcePlacementId ?? request.actorPlacementId
   const actorPlacement = placementsById.get(request.actorPlacementId)
     ?? fail('actor-placement-missing', `Actor ${request.actorPlacementId} does not exist.`)

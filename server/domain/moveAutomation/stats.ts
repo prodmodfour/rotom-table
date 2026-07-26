@@ -18,7 +18,10 @@ import {
   clampCombatStage,
   normalizeCombatStages,
 } from '~/utils/combatStages'
-import { conditionAdjustedCombatStages } from '~/utils/sheetConditionEffects'
+import {
+  conditionAdjustedCombatStages,
+  POISON_HEAL_ACTIVE_ABILITY_MARKER,
+} from '~/utils/sheetConditionEffects'
 import { resolveCanonicalSheetAbilityName } from '~/utils/sheetAbilities'
 import { normalizeConditionName } from '~/utils/statusConditions'
 import { AA079_MARVEL_SCALE_CONDITIONS } from '#shared/abilityAutomation/aa079'
@@ -135,6 +138,8 @@ export interface CreateMoveAutomationStatResolverInput {
   ) => MoveAutomationStatOverlay | null
   /** Effective-ability seam; production contexts exclude suppressed or stale runtimes. */
   readonly hasEffectiveAbility?: (placementId: string, canonicalId: string) => boolean
+  /** Activated encounter state for Poison Heal's conditional stage protection. */
+  readonly hasActivePoisonHeal?: (placementId: string) => boolean
   /** Authoritative context read-set seam. Standalone pure queries may omit it. */
   readonly recordSheetRead?: (
     placement: Pick<SheetPlacement, 'sheetKind' | 'sheetSlug'>,
@@ -229,6 +234,7 @@ const statTokenSnapshot = (
   keenEyeActive: boolean,
   gutsActive: boolean,
   marvelScaleActive: boolean,
+  poisonHealActive: boolean,
 ): MoveAutomationStatTokenSnapshot => deepFreeze({
   id: token.id,
   attack: token.atk,
@@ -246,6 +252,7 @@ const statTokenSnapshot = (
       && resolveCanonicalSheetAbilityName(name) !== 'Keen Eye'),
     ...(gutsActive ? ['Guts'] : []),
     ...(keenEyeActive ? ['Keen Eye'] : []),
+    ...(poisonHealActive ? [POISON_HEAL_ACTIVE_ABILITY_MARKER] : []),
   ],
   dauntlessShieldActive,
   intrepidSwordActive,
@@ -432,6 +439,7 @@ export const createMoveAutomationStatResolver = (
           return canonical !== null
             && (AA079_MARVEL_SCALE_CONDITIONS as readonly string[]).includes(canonical)
         }),
+      input.hasActivePoisonHeal?.(token.id) ?? false,
     )),
     token => token.id,
     'duplicate-token-id',

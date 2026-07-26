@@ -47,6 +47,10 @@ import { executeAa077ActivatedMechanic } from '../domain/abilityAutomation/mecha
 import { executeAa078ActivatedMechanic } from '../domain/abilityAutomation/mechanics/aa078Activated'
 import { executeAa079ActivatedMechanic } from '../domain/abilityAutomation/mechanics/aa079Activated'
 import { executeAa080ActivatedMechanic } from '../domain/abilityAutomation/mechanics/aa080Activated'
+import { executeAa081ActivatedMechanic } from '../domain/abilityAutomation/mechanics/aa081Activated'
+import { executeAa082ActivatedMechanic } from '../domain/abilityAutomation/mechanics/aa082Activated'
+import { executeAa083ActivatedMechanic } from '../domain/abilityAutomation/mechanics/aa083Activated'
+import { executeAa084ActivatedMechanic } from '../domain/abilityAutomation/mechanics/aa084Activated'
 import { reconcileAa075IceFaceTemporaryHpOwnershipAfterMove } from '../domain/abilityAutomation/mechanics/aa075TemporaryHpIntegration'
 import { createAa063AbilityCombatStageImmunities } from '../domain/abilityAutomation/mechanics/aa063DefenseIntegration'
 import { applyNativeCoreMapChanges } from '../domain/moveAutomation/planNativeV2MoveState'
@@ -334,7 +338,37 @@ export const resolveAbilityDeclarationUseCase = (
                                                   abilityInstanceId: intent.abilityInstanceId,
                                                   choices: resolved.choices,
                                                 })
-                                              : null
+                                              : mechanicOperation.mechanicId.startsWith('aa081.')
+                                                ? executeAa081ActivatedMechanic({
+                                                    context,
+                                                    operation: mechanicOperation,
+                                                    operationId: intent.intentId,
+                                                    abilityInstanceId: intent.abilityInstanceId,
+                                                    choices: resolved.choices,
+                                                  })
+                                                : mechanicOperation.mechanicId.startsWith('aa082.')
+                                                  ? executeAa082ActivatedMechanic({
+                                                      context,
+                                                      operation: mechanicOperation,
+                                                      operationId: intent.intentId,
+                                                      abilityInstanceId: intent.abilityInstanceId,
+                                                    })
+                                                  : mechanicOperation.mechanicId.startsWith('aa083.')
+                                                    ? executeAa083ActivatedMechanic({
+                                                        context,
+                                                        operation: mechanicOperation,
+                                                        operationId: intent.intentId,
+                                                        abilityInstanceId: intent.abilityInstanceId,
+                                                      })
+                                                    : mechanicOperation.mechanicId.startsWith('aa084.')
+                                                      ? executeAa084ActivatedMechanic({
+                                                          context,
+                                                          operation: mechanicOperation,
+                                                          operationId: intent.intentId,
+                                                          abilityInstanceId: intent.abilityInstanceId,
+                                                          choices: resolved.choices,
+                                                        })
+                                                      : null
     const resolvedExecution = execution
       ?? fail(422, 'Ability runtime requires an execution adapter that is not registered for direct declaration resolution.')
     resolutionPlan = resolvedExecution.plan

@@ -42,6 +42,8 @@ export const QUICK_FEET_ABILITY_NAME = 'Quick Feet'
 export const GUTS_ABILITY_NAME = 'Guts'
 export const HEATPROOF_ABILITY_NAME = 'Heatproof'
 export const INNER_FOCUS_ABILITY_NAME = 'Inner Focus'
+/** Server-only encounter marker; raw Poison Heal ownership does not activate this benefit. */
+export const POISON_HEAL_ACTIVE_ABILITY_MARKER = 'Poison Heal (Active)'
 
 const QUICK_FEET_TRIGGERING_CONDITIONS = [
   'Burned',
@@ -264,7 +266,10 @@ export const conditionCombatStageModifier = (
   const set = conditionSet(conditions)
   let modifier = 0
   if (key === 'def' && set.has('Burned')) modifier -= 2
-  if (key === 'sdef' && (set.has('Poisoned') || set.has('Badly Poisoned'))) modifier -= 2
+  if (key === 'sdef'
+    && !options.abilities?.some(ability => typeof ability === 'string'
+      && ability === POISON_HEAL_ACTIVE_ABILITY_MARKER)
+    && (set.has('Poisoned') || set.has('Badly Poisoned'))) modifier -= 2
   if (key === 'atk' && hasGutsAbility(options.abilities)
     && hasAnyCondition(set, GUTS_TRIGGERING_CONDITIONS)) modifier += 2
   if (key === 'spd' && quickFeetActiveForSet(set, options.abilities)) modifier += 2

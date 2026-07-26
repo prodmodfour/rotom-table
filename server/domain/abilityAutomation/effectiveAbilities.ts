@@ -21,6 +21,10 @@ import {
 } from '#shared/abilityAutomation/parameters'
 import { fabulousTrimGrantedAbility } from '#shared/abilityAutomation/fabulousTrim'
 import {
+  AA083_POLTERGEIST_FORMS,
+  aa083PoltergeistFormForSpecies,
+} from '#shared/abilityAutomation/aa083'
+import {
   createEmptyAbilityTransformationState,
   parseAbilityTransformationState,
   type AbilityTransformationState,
@@ -58,6 +62,8 @@ export interface ProjectAuthoritativeEffectiveAbilitiesInput {
   readonly baseAbilityNames?: readonly string[]
   readonly baseAbilities?: readonly ProjectedBaseAbilityInput[]
   readonly target: EncounterCreatureRuleTarget
+  /** Canonical species/form label used by species-owned ability projections. */
+  readonly species?: string | null
   readonly effects?: readonly EncounterEffect[] | null
   readonly transformationSnapshots?: AbilityTransformationState | null
 }
@@ -107,6 +113,12 @@ const protectionFor = (
   protections: ReadonlyMap<string, Protection>,
   canonicalId: string,
 ): Protection => protections.get(canonicalId) ?? DEFAULT_ABILITY_PROTECTION
+
+/** Server-owned protection lookup used before issuing or accepting copy choices. */
+export const abilityIsCopyable = (canonicalId: string): boolean => (
+  CANONICAL_IDS.has(canonicalId)
+  && protectionFor(protectionByCanonicalId(), canonicalId).copyable
+)
 
 const canonicalNames = (values: readonly string[]): readonly string[] => {
   const seen = new Set<string>()
@@ -323,6 +335,23 @@ export const projectAuthoritativeEffectiveAbilities = (
         : 'not-parameterized',
       parameterData: null,
     })))
+    assertProjectionBound(projected)
+  }
+
+  const poltergeist = projected.find(ability => ability.effective && ability.canonicalId === 'Poltergeist')
+  const rotomForm = aa083PoltergeistFormForSpecies(input.species)
+  if (poltergeist && rotomForm) {
+    const grantedCanonicalId = AA083_POLTERGEIST_FORMS[rotomForm].abilityId
+    projected.push(instance({
+      instanceId: `${poltergeist.instanceId}:poltergeist:${rotomForm}`,
+      canonicalId: grantedCanonicalId,
+      sourceKind: 'granted',
+      sourcePlacementId: input.target.placementId,
+      parameterStatus: abilityRequiresInstanceParameters(grantedCanonicalId)
+        ? 'missing-required-data'
+        : 'not-parameterized',
+      parameterData: null,
+    }))
     assertProjectionBound(projected)
   }
 

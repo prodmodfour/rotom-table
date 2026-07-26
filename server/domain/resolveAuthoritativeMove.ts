@@ -133,6 +133,10 @@ import {
   AA068_DUST_CLOUD_TARGETING_OVERRIDE,
   aa068DustCloudBurstEnabled,
 } from './abilityAutomation/mechanics/aa068StaticIntegration'
+import {
+  aa082OdiousSprayActive,
+  aa082OdiousSprayScript,
+} from './abilityAutomation/mechanics/aa082StaticIntegration'
 
 export type { AuthoritativeMoveSheetRead } from './moveAutomation/context'
 
@@ -250,6 +254,8 @@ export interface AuthoritativeMovePassMovement {
 
 export interface AuthoritativeMoveShiftMovement {
   readonly kind: 'shift'
+  /** Defaults to the move actor for legacy/root movement; response movement names its exact owner. */
+  readonly placementId?: string
   readonly from: GridAnchor
   readonly destination: GridAnchor
   readonly pathCells: readonly GridAnchor[]
@@ -326,6 +332,8 @@ export interface AuthoritativeMoveResolution {
   readonly sideDamageResistance?: SideDamageResistanceResolution
   /** Server-owned ability timing overlay consumed by the resource planner. */
   readonly abilityPriorityOverride?: boolean
+  /** Prankster's Status-only Priority (Advanced) resource prerequisite. */
+  readonly abilityAdvancedPriorityOverride?: boolean
   /** Imposter's reviewed Transform-only Free-Action Interrupt overlay. */
   readonly abilityFreeInterruptOverride?: boolean
   /** Server-only native planning projection; omitted from accepted wire results. */
@@ -350,6 +358,7 @@ export interface AuthoritativePendingMoveResolution {
   readonly execution: PendingMoveSpecResolution['execution']
   readonly preWindowPlan: PendingMoveSpecResolution['preWindowPlan']
   readonly abilityPriorityOverride?: boolean
+  readonly abilityAdvancedPriorityOverride?: boolean
   readonly abilityFreeInterruptOverride?: boolean
 }
 
@@ -1368,14 +1377,18 @@ const resolveNativeSingleTargetMove = (options: {
     options.runtime.definition.spec,
     options.context.intent.targetBranchId,
   )
-  if (boneLordLine || (!anchoredAttack && !longReach && targeting?.kind !== 'single-target')) {
+  const odiousSpray = aa082OdiousSprayActive({
+    context: options.context,
+    script: options.entry.script,
+  })
+  if (boneLordLine || (!anchoredAttack && !longReach && !odiousSpray && targeting?.kind !== 'single-target')) {
     return fail(
       'invalid',
       'selection-kind-mismatch',
       `${options.runtime.canonicalId} does not accept a single-target selection.`,
     )
   }
-  if (!anchoredAttack && (
+  if (!anchoredAttack && !odiousSpray && (
     options.entry.script.targetMode !== 'one-target'
     || options.entry.script.targetCount !== 1
   )) {
@@ -1396,7 +1409,9 @@ const resolveNativeSingleTargetMove = (options: {
           areaTemplates: [],
         },
       }
-    : options.entry
+    : odiousSpray
+      ? { ...options.entry, script: aa082OdiousSprayScript({ context: options.context, script: options.entry.script }) }
+      : options.entry
   const { actorPlacement, target, desiredFacing } = resolveLegalSingleTarget({
     context: options.context,
     script: effectiveEntry.script,
@@ -2138,6 +2153,7 @@ export const resolveAuthoritativeMoveExecutionFromContext = (
     ?? (selectedRuntime?.kind === 'movespec-v2'
       ? selectedRuntime.definition.spec.costs
       : undefined)
+  const abilityAdvancedPriorityOverride = false
   const abilityPriorityOverride = aa060MovePriorityOverride(context, entry.script)
     || aa077LeafRushActiveForMove({ context, script: entry.script })
     || aa078MovePriorityActive({ context, script: entry.script })
@@ -2190,12 +2206,14 @@ export const resolveAuthoritativeMoveExecutionFromContext = (
         return Object.freeze({
           ...execution,
           ...(abilityPriorityOverride ? { abilityPriorityOverride: true } : {}),
+          ...(abilityAdvancedPriorityOverride ? { abilityAdvancedPriorityOverride: true } : {}),
           ...(abilityFreeInterruptOverride ? { abilityFreeInterruptOverride: true } : {}),
         })
       }
       return attachResolutionDamageEffects(context, {
         ...execution,
         ...(abilityPriorityOverride ? { abilityPriorityOverride: true } : {}),
+        ...(abilityAdvancedPriorityOverride ? { abilityAdvancedPriorityOverride: true } : {}),
         ...(abilityFreeInterruptOverride ? { abilityFreeInterruptOverride: true } : {}),
       })
     }

@@ -20,6 +20,7 @@ import type { AuthoritativeAbilityContext } from '../context'
 import { planAbilityFrequencyPayment } from '../usage'
 import { AA063_CLAY_CANNONS_CAPABILITY_ID } from './aa063MoveIntegration'
 import { authoritativeAbilityHealingBlocked } from '../healingPrevention'
+import { aa084PowerConstructBlocksTemporaryHp } from './aa084StaticIntegration'
 
 const CHERRY_POWER_FREQUENCY: AbilityFrequencyDeclaration = Object.freeze({
   raw: 'Daily – Swift Action', actionText: 'Swift Action', kind: 'daily', uses: 1, exceptionId: null,
@@ -115,6 +116,9 @@ const cherryPowerExecution = (input: {
           ...currentBase.byPlacementId,
           [input.context.actor.placement.id]: authoritativeAbilityHealingBlocked({
             map: input.context.map,
+            placementId: input.context.actor.placement.id,
+          }) || aa084PowerConstructBlocksTemporaryHp({
+            context: input.context,
             placementId: input.context.actor.placement.id,
           })
             ? currentBase.byPlacementId[input.context.actor.placement.id] ?? 0

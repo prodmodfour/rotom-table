@@ -144,12 +144,18 @@ const normalizedTypes = (
   recipient.token.defenderTypes.map(type => type.trim().toLowerCase()).filter(Boolean),
 )
 
-const firstAbility = (
-  abilityNames: readonly string[] | undefined,
-  candidates: readonly string[],
-): string | null => candidates.find(candidate => (
-  sheetHasCanonicalAbility(abilityNames, candidate)
-)) ?? null
+const hasEffectiveOrRetainedLegacyWeatherAbility = (input: {
+  readonly context: AuthoritativeMoveRulesContext
+  readonly placementId: string
+  readonly ability: string
+}): boolean => {
+  if (input.context.queries.abilities.has(input.placementId, input.ability)) return true
+  // AA-082 Overcoat is registry-owned and must never fall back to raw sheet text.
+  if (input.ability === 'Overcoat') return false
+  const placement = input.context.queries.placements.get(input.placementId)
+  const resolved = placement ? input.context.queries.sheets.forPlacement(placement) : null
+  return resolved ? sheetHasCanonicalAbility(resolved.sheet.abilities, input.ability) : false
+}
 
 const adjacentAllyAbilityImmunity = (input: {
   readonly weatherKind: WeatherResidualKind
@@ -169,7 +175,11 @@ const adjacentAllyAbilityImmunity = (input: {
     // Ability names and footprint dimensions are sheet-derived. Every ally
     // inspected before the deterministic answer belongs in the read set.
     consultedPlacementIds.push(provider.id)
-    if (!sheetHasCanonicalAbility(provider.abilityNames, ability)) continue
+    if (!hasEffectiveOrRetainedLegacyWeatherAbility({
+      context: input.context,
+      placementId: provider.id,
+      ability,
+    })) continue
     if (ptuGridDistanceBetweenFootprints(provider, input.recipient.token) !== 1) continue
     return {
       blockedBy: `${ability} (${provider.id})`,
@@ -206,10 +216,14 @@ export const resolveWeatherResidualImmunity = (input: {
   if (input.context.queries.abilities.has(input.recipient.placement.id, 'Magic Guard')) {
     return { blockedBy: 'Magic Guard', consultedPlacementIds: [] }
   }
-  const directAbility = firstAbility(input.recipient.token.abilityNames, [
+  const directAbility = [
     ...UNIVERSAL_WEATHER_IMMUNITY_ABILITIES.filter(ability => ability !== 'Magic Guard'),
     ...WEATHER_SELF_IMMUNITY_ABILITIES[input.weatherKind].filter(ability => ability !== 'Ice Face'),
-  ])
+  ].find(ability => hasEffectiveOrRetainedLegacyWeatherAbility({
+    context: input.context,
+    placementId: input.recipient.placement.id,
+    ability,
+  })) ?? null
   if (directAbility) return { blockedBy: directAbility, consultedPlacementIds: [] }
 
   return adjacentAllyAbilityImmunity(input)

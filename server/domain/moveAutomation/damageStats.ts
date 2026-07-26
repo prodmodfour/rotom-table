@@ -74,6 +74,12 @@ import {
   aa079MoveDamageModifiers,
 } from '../abilityAutomation/mechanics/aa079StaticIntegration'
 import { aa080MoveDamageModifiers } from '../abilityAutomation/mechanics/aa080StaticIntegration'
+import { aa081MoveDamageModifiers } from '../abilityAutomation/mechanics/aa081StaticIntegration'
+import { aa082MoveDamageModifiers } from '../abilityAutomation/mechanics/aa082StaticIntegration'
+import {
+  aa084MoveDamageModifiers,
+  aa084PrideActor,
+} from '../abilityAutomation/mechanics/aa084StaticIntegration'
 
 export type MoveDamageStatSelectionErrorCode = 'non-numeric-stat-selection'
 
@@ -331,6 +337,8 @@ export interface ResolveMoveSpecDamageCalculationInput {
   readonly contextualDamageBase?: MoveContextualDamageBaseResolution
   /** Reviewed response-selected modifiers that are not committed until this atomic Move plan succeeds. */
   readonly responseDamageModifiers?: readonly MoveDamageModifier[]
+  /** Same-resolution Protean changes the user's Type before STAB. */
+  readonly forceActorStab?: boolean
 }
 
 /** Resolve reviewed DB/stat inputs through the single ordered damage pipeline. */
@@ -343,13 +351,17 @@ export const resolveMoveSpecDamageCalculation = (
     script: options.script,
     recipientId: options.recipient.id,
     canonicalMoveId: options.script.moveName,
+    forceActorStab: options.forceActorStab,
   })
   const damageClass = resolveMoveDamageClass({
     context: options.context,
     operation: options.operation,
     recipientId: options.recipient.id,
   })
-  const actor = options.actor ?? options.context.actor.token
+  const actor = aa084PrideActor({
+    context: options.context,
+    actor: options.actor ?? options.context.actor.token,
+  })
   const aa060 = resolveAa060MoveDamageIntegration({
     context: options.context,
     operation: options.operation,
@@ -566,6 +578,29 @@ export const resolveMoveSpecDamageCalculation = (
     recipient: options.recipient,
     moveType: moveType.moveType,
   })
+  const aa081Modifiers = aa081MoveDamageModifiers({
+    context: options.context,
+    operation: options.operation,
+    script: resolvedScript,
+    actor,
+    recipient: options.recipient,
+    moveType,
+    damageClass: damageClass.damageClass,
+  })
+  const aa082Modifiers = aa082MoveDamageModifiers({
+    context: options.context,
+    operation: options.operation,
+    actor,
+    recipient: options.recipient,
+    moveType: moveType.moveType,
+  })
+  const aa084Modifiers = aa084MoveDamageModifiers({
+    context: options.context,
+    operation: options.operation,
+    actor,
+    recipient: options.recipient,
+    effectivenessMultiplier: moveType.finalMultiplier,
+  })
   const aa079Recipient = aa079MarvelScaleRecipient({
     context: options.context,
     recipient: options.recipient,
@@ -607,6 +642,9 @@ export const resolveMoveSpecDamageCalculation = (
         ...aa078Modifiers,
         ...aa079Modifiers,
         ...aa080Modifiers,
+        ...aa081Modifiers,
+        ...aa082Modifiers,
+        ...aa084Modifiers,
         ...(options.responseDamageModifiers ?? []),
         ...encounterDamageModifiers,
         ...helpingHandModifiers,

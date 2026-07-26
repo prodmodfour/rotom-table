@@ -135,6 +135,14 @@ import {
   AA080_MOTOR_DRIVE_STAGE_REASON,
   aa080MoveOverlayOperations,
 } from '../abilityAutomation/mechanics/aa080MoveIntegration'
+import { aa081MoveOverlayOperations } from '../abilityAutomation/mechanics/aa081MoveIntegration'
+import { aa082MoveOverlayOperations } from '../abilityAutomation/mechanics/aa082MoveIntegration'
+import { aa083MoveOverlayOperations } from '../abilityAutomation/mechanics/aa083MoveIntegration'
+import { aa084MoveOverlayOperations } from '../abilityAutomation/mechanics/aa084MoveIntegration'
+import {
+  AA082_ODIOUS_SPRAY_TARGETING_OVERRIDE,
+  aa082OdiousSprayActive,
+} from '../abilityAutomation/mechanics/aa082StaticIntegration'
 import {
   AA068_DUST_CLOUD_TARGETING_OVERRIDE,
   aa068DrySkinCancelsRecipientEffect,
@@ -1038,6 +1046,16 @@ const executeReviewedMoveSpec = (
       ...overlayInput,
       reviewedOperations: options.runtime.definition.spec.phases.flatMap(phase => phase.operations),
     }),
+    ...aa081MoveOverlayOperations(overlayInput),
+    ...aa082MoveOverlayOperations(overlayInput),
+    ...aa083MoveOverlayOperations({
+      ...overlayInput,
+      reviewedOperations: options.runtime.definition.spec.phases.flatMap(phase => phase.operations),
+    }),
+    ...aa084MoveOverlayOperations({
+      ...overlayInput,
+      reviewedOperations: options.runtime.definition.spec.phases.flatMap(phase => phase.operations),
+    }),
   ]
   const boneLordLine = script.moveName === 'Bonemerang'
     && aa062BoneLordEmpowersMove(options.context, 'Bonemerang')
@@ -1051,14 +1069,17 @@ const executeReviewedMoveSpec = (
     script,
     targetBranchId: options.targetBranchId ?? undefined,
   })
+  const odiousSpray = aa082OdiousSprayActive({ context: options.context, script })
   const execution = executeMoveSpec({
     serverAbilityOverlayOperations: abilityOverlays,
-    ...(boneLordLine || dustCloudBurst || longReach ? {
+    ...(boneLordLine || dustCloudBurst || longReach || odiousSpray ? {
       serverAbilityTargetingOverride: dustCloudBurst
         ? AA068_DUST_CLOUD_TARGETING_OVERRIDE
         : longReach
           ? AA078_LONG_REACH_TARGETING_OVERRIDE
-          : {
+          : odiousSpray
+            ? AA082_ODIOUS_SPRAY_TARGETING_OVERRIDE
+            : {
               kind: 'area' as const, minTargets: 0, maxTargets: 32,
               selector: { kind: 'area-targets' as const },
               predicate: { relationship: 'any' as const, willingness: 'any' as const, excludeActor: true },
@@ -1253,11 +1274,14 @@ export const reduceCompletedMoveSpec = (
     script,
     targetBranchId: options.targetBranchId ?? undefined,
   })
+  const odiousSpray = aa082OdiousSprayActive({ context: options.context, script })
   const targeting = dustCloudBurst
     ? AA068_DUST_CLOUD_TARGETING_OVERRIDE
     : longReach
       ? AA078_LONG_REACH_TARGETING_OVERRIDE
-      : resolveMoveSpecTargetingRule(
+      : odiousSpray
+        ? AA082_ODIOUS_SPRAY_TARGETING_OVERRIDE
+        : resolveMoveSpecTargetingRule(
         options.runtime.definition.spec,
         options.targetBranchId,
       ) ?? fail('execution-rejected', 'The selected MoveSpec targeting branch is unavailable.')
@@ -1296,6 +1320,14 @@ export const reduceCompletedMoveSpec = (
   const recipientControlledOperationIds = new Set(
     branchControlledOperationIds(uncommittedOperations),
   )
+  const selectedPerceptionAvoidance = execution.trace.events.some(event => (
+    event.kind === 'choice'
+    && event.reasonCode === 'ability.perception.optional-disengage'
+    && event.optionId === 'ability.perception.use'
+  ))
+  if (selectedPerceptionAvoidance) {
+    for (const { operation } of uncommittedOperations) recipientControlledOperationIds.add(operation.id)
+  }
   for (const { operation } of uncommittedOperations) {
     if (operation.reasonCode === AA080_MIRROR_ARMOR_REFLECT_REASON
       && operation.source.kind === 'lifecycle-event'

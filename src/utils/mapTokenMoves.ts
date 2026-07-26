@@ -3,6 +3,10 @@ import { findMove } from '~~/data/ptuReference'
 import type { EncounterEffect } from '#shared/moveAutomation/encounterEffects'
 import { reviewedAbilityConnectionMoveNames } from '#shared/abilityAutomation/connections'
 import {
+  AA083_POLTERGEIST_FORMS,
+  aa083PoltergeistFormForSpecies,
+} from '#shared/abilityAutomation/aa083'
+import {
   projectEncounterMoveList,
   type EncounterMoveListBlockReason,
   type EncounterMoveListProjectionEntry,
@@ -146,6 +150,7 @@ const struggleEligibleMoves = <Move extends Pick<TokenSheetMove, 'name'>>(
 export const pokemonMoveEntriesForSheet = (
   sheet: CharacterSheet,
   abilityConnectionNames: readonly string[] = sheetAbilityNames(sheet.abilities),
+  additionalMoveNames: readonly string[] = [],
 ): TokenSheetMoveEntry[] => {
   const capabilities = pokemonStruggleCapabilities(sheet)
   const movelist = struggleEligibleMoves(sheet.movelist, capabilities)
@@ -153,10 +158,22 @@ export const pokemonMoveEntriesForSheet = (
     abilityConnectionNames,
     movelist.map(move => move.name),
   )
+  const poltergeistForm = abilityConnectionNames.includes('Poltergeist')
+    ? aa083PoltergeistFormForSpecies(sheet.species)
+    : null
+  const poltergeistMove = poltergeistForm && (sheet.level ?? 0) >= 40
+    ? AA083_POLTERGEIST_FORMS[poltergeistForm].moveId
+    : null
   return [
     ...makeAutomaticStruggleMoves(capabilities, movelist)
       .map((move) => ({ move, automatic: true })),
-    ...connectionMoves.map(name => ({ move: { name }, automatic: true })),
+    ...[...new Set([
+      ...connectionMoves,
+      ...additionalMoveNames,
+      ...(poltergeistMove ? [poltergeistMove] : []),
+    ])]
+      .filter(name => !movelist.some(move => move.name.trim().toLowerCase() === name.trim().toLowerCase()))
+      .map(name => ({ move: { name }, automatic: true })),
     ...movelist.map((move) => ({ move, automatic: false })),
   ]
 }
@@ -180,6 +197,8 @@ export interface MoveEntriesForPlacementOptions {
   readonly encounterEffects?: readonly EncounterEffect[]
   /** Exact effective Ability names when a server authority has already projected suppression. */
   readonly abilityConnectionNames?: readonly string[]
+  /** Additional server-reviewed temporary or form-owned move names. */
+  readonly additionalMoveNames?: readonly string[]
 }
 
 const canonicalMoveIdForEntry = (entry: TokenSheetMoveEntry): string => {
@@ -214,7 +233,11 @@ export const moveEntriesForPlacement = (
   const entries = placement.sheetKind === 'pokemon'
     ? (() => {
         const sheet = sheets.pokemon?.get(placement.sheetSlug)
-        return sheet ? pokemonMoveEntriesForSheet(sheet, options.abilityConnectionNames) : []
+        return sheet ? pokemonMoveEntriesForSheet(
+          sheet,
+          options.abilityConnectionNames,
+          options.additionalMoveNames,
+        ) : []
       })()
     : (() => {
         const sheet = sheets.trainer?.get(placement.sheetSlug)
@@ -386,6 +409,7 @@ const optionForMoveRow = (
     aliases: [row.move.name],
     damageClass,
     range,
+    frequency,
   }, token.conditions)
 
   return {

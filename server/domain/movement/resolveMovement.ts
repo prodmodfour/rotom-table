@@ -59,6 +59,7 @@ import { createMoveAutomationRemainingGlobalFieldResolver } from '../moveAutomat
 import { aa077AdjustedToken } from '../abilityAutomation/mechanics/aa077StaticIntegration'
 import { effectiveRuntimeAbilityIds } from '../abilityAutomation/effectiveRuntimeAbilities'
 import { aa079MagnetPullConstraintViolation } from '../abilityAutomation/mechanics/aa079MovementIntegration'
+import { aa082ParentalBondTetherViolation } from '../abilityAutomation/mechanics/aa082MovementIntegration'
 
 export const AUTHORITATIVE_MOVEMENT_MODES = ['shift', 'pass'] as const
 export type AuthoritativeMovementMode = (typeof AUTHORITATIVE_MOVEMENT_MODES)[number]
@@ -97,6 +98,7 @@ export const AUTHORITATIVE_MOVEMENT_REASON_CODES = [
   'movement-gravity-altitude-limit',
   'movement-magnet-pull-maximum-range',
   'movement-magnet-pull-minimum-range',
+  'movement-parental-bond-maximum-range',
 ] as const
 
 export type AuthoritativeMovementReasonCode = (
@@ -236,6 +238,7 @@ export const AUTHORITATIVE_DISPLACEMENT_FAILURE_REASON_CODES = [
   'displacement-full-distance-unavailable',
   'displacement-magnet-pull-maximum-range',
   'displacement-magnet-pull-minimum-range',
+  'displacement-parental-bond-maximum-range',
 ] as const
 
 export type AuthoritativeDisplacementMovementMode =
@@ -487,6 +490,9 @@ interface MovementPlacementSnapshot extends PositionedGridFootprint {
   readonly sheetSlug: string
   readonly sideId: string | null
   readonly typeIds: readonly string[]
+  readonly speciesId: string
+  readonly currentHp: number
+  readonly effectiveAbilityIds: readonly string[]
   readonly movementCapabilities: MovementCapabilitySpeeds
   readonly movementTraits: MovementCapabilityTraits
   readonly movementProfile: EffectiveMovementProfile
@@ -622,12 +628,22 @@ const enforceMagnetPullMovementConstraints = (input: {
     path: input.result.path,
     footprints: input.placements,
   })
-  if (!violation) return input.result
+  const parentalBondViolation = aa082ParentalBondTetherViolation({
+    placementId: input.mover.id,
+    origin: input.result.origin,
+    path: input.result.path,
+    footprints: input.placements,
+  })
+  if (!violation && !parentalBondViolation) return input.result
   return failure({
-    reasonCode: `movement-magnet-pull-${violation}-range`,
-    message: violation === 'maximum'
-      ? 'Magnet Pull prevents this voluntary path from moving farther than 6 metres from its source.'
-      : 'Magnet Pull prevents this voluntary path from moving closer than 3 metres to its source.',
+    reasonCode: parentalBondViolation
+      ? 'movement-parental-bond-maximum-range'
+      : `movement-magnet-pull-${violation!}-range`,
+    message: parentalBondViolation
+      ? 'Parental Bond prevents the Baby from willingly moving farther than 10 metres from its mother.'
+      : violation === 'maximum'
+        ? 'Magnet Pull prevents this voluntary path from moving farther than 6 metres from its source.'
+        : 'Magnet Pull prevents this voluntary path from moving closer than 3 metres to its source.',
     placementId: input.result.placementId,
     mode: input.result.mode,
     policy: input.result.policy,
@@ -843,6 +859,7 @@ const buildMovementSnapshots = (
     }
 
     let token: ReturnType<typeof placementToSpawned>
+    const effectiveAbilityIds = effectiveRuntimeAbilityIds({ map, placement, sheet })
     try {
       const nativeToken = placementToSpawned(
         placement,
@@ -852,7 +869,7 @@ const buildMovementSnapshots = (
       )
       token = nativeToken ? aa077AdjustedToken({
         token: nativeToken,
-        effectiveAbilityIds: effectiveRuntimeAbilityIds({ map, placement, sheet }),
+        effectiveAbilityIds,
       }) : null
     } catch {
       token = null
@@ -887,6 +904,9 @@ const buildMovementSnapshots = (
       sheetSlug: placement.sheetSlug,
       sideId: placement.sideId ?? null,
       typeIds: [...new Set(token.defenderTypes.map(type => type.trim().toLowerCase()).filter(Boolean))],
+      speciesId: token.species.trim().toLowerCase(),
+      currentHp: token.currentHp,
+      effectiveAbilityIds,
       position: cloneAnchor(placement.position),
       base: token.base,
       clearance: getClearanceValue(token),
@@ -2263,6 +2283,21 @@ export const resolveAuthoritativeDisplacement = (
       message: violation === 'maximum'
         ? 'Magnet Pull prevents this voluntary displacement from moving farther than 6 metres from its source.'
         : 'Magnet Pull prevents this voluntary displacement from moving closer than 3 metres to its source.',
+      placementId,
+      movementMode,
+      distancePolicy,
+      partial,
+      consultedPlacementIds,
+      sheetReads,
+    })
+    if (aa082ParentalBondTetherViolation({
+      placementId: mover.id,
+      origin,
+      path,
+      footprints: placements,
+    })) return displacementFailure({
+      reasonCode: 'displacement-parental-bond-maximum-range',
+      message: 'Parental Bond prevents the Baby from willingly moving farther than 10 metres from its mother.',
       placementId,
       movementMode,
       distancePolicy,

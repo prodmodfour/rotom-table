@@ -25,6 +25,7 @@ import { placementToSpawned } from '~/utils/placement'
 import { computeTickValue } from '~/utils/ptuHp'
 import { cloneMapFieldEffects } from '~/utils/mapFieldEffects'
 import { deepCloneJson } from '~/utils/serialization'
+import { normalizeConditionName } from '~/utils/statusConditions'
 import {
   buildAuthoritativeMoveRulesContext,
   type AuthoritativeMoveSheetRead,
@@ -68,6 +69,7 @@ import {
   type AuthoritativeMoveRandomSource,
 } from './random'
 import { createEmptyAbilityOwnedState } from '#shared/abilityAutomation/ownedState'
+import { createEmptyAbilityTransformationState } from '#shared/abilityAutomation/transformations'
 import { reduceAbilityOwnedStateLifecycle } from '../abilityAutomation/ownedState'
 import { reduceAbilityEffectLifecycleEncounter, type AbilityEffectLifecycleEvent } from '../abilityAutomation/effectLifecycle'
 import { createEmptyAbilityEntityState } from '#shared/abilityAutomation/entities'
@@ -111,6 +113,9 @@ import {
   createAa080MoodyLifecycleHandler,
   reconcileAa080MiniNoseTether,
 } from '../abilityAutomation/mechanics/aa080LifecycleIntegration'
+import { createAa083LifecycleHandler } from '../abilityAutomation/mechanics/aa083LifecycleIntegration'
+import { clearAa084PowerOfAlchemyForKnockouts } from '../abilityAutomation/mechanics/aa084LifecycleIntegration'
+import { reduceAbilityTransformationLifecycle } from '../abilityAutomation/transformations'
 
 export type InitiativeLifecyclePlanningErrorCode =
   | 'active-placement-missing'
@@ -506,6 +511,19 @@ const vortexKnockoutCleanupEvents = (input: {
   return parseEncounterEvents(cleanupEvents, 'vortexKnockoutCleanupEvents')
 }
 
+const lifecycleKnockoutPlacementIds = (
+  operationResults: readonly MoveCoreTokenEffectOperationResult[],
+): readonly string[] => Object.freeze([...new Set(operationResults.flatMap(result => (
+  result.recipients.flatMap(recipient => (
+    recipient.previous.kind === 'hp'
+    && recipient.current.kind === 'hp'
+    && recipient.previous.currentHp > 0
+    && recipient.current.currentHp <= 0
+      ? [recipient.recipientId]
+      : []
+  ))
+)))].sort())
+
 const sheetWriteFromChange = (input: {
   readonly map: TabletopMap
   readonly change: Extract<MoveStateChange, { readonly kind: 'sheet-state' }>
@@ -544,6 +562,9 @@ const reconcileAnchoredEntities = (input: {
       : snapshots.trainerSheets.get(placement.sheetSlug)
     const projected = projectAuthoritativeEffectiveAbilities({
       baseAbilities: resolveSheetAbilityInstances(sheet?.abilities),
+      species: placement.sheetKind === 'pokemon'
+        ? (sheet as CharacterSheet | undefined)?.species ?? null
+        : null,
       target: {
         placementId: placement.id,
         ...(placement.sideId ? { sideId: placement.sideId } : {}),
@@ -600,6 +621,7 @@ const effectiveAbilityPlacementIds = (input: {
     if (!sheet) return []
     const effective = projectAuthoritativeEffectiveAbilities({
       baseAbilities: resolveSheetAbilityInstances(sheet.abilities),
+      species: placement.sheetKind === 'pokemon' ? (sheet as CharacterSheet).species : null,
       target: {
         placementId: placement.id,
         ...(placement.sideId ? { sideId: placement.sideId } : {}),
@@ -629,6 +651,31 @@ export const planEncounterLifecycle = (
   const loadSheets = (): EncounterLifecycleSheetSnapshots => (
     loadedSheets ??= input.loadSheets()
   )
+  const hasAa083LifecycleEffects = previousEncounterState.effects.some(effect => (
+    effect.tags.includes('aa083-perish-count') || effect.tags.includes('aa083-poison-heal-active')
+  ))
+  const aa083PoisonedPlacementIds = new Set<string>()
+  const aa083EffectivePoisonHealPlacementIds = new Set<string>()
+  if (hasAa083LifecycleEffects) {
+    const snapshots = loadSheets()
+    const lookup = {
+      pokemon: new Map(snapshots.pokemonSheets),
+      trainer: new Map(snapshots.trainerSheets),
+    }
+    for (const placement of lifecycleMap.placements) {
+      const token = placementToSpawned(placement, lookup, lifecycleMap)
+      if (token?.conditions.some(condition => {
+        const canonical = normalizeConditionName(condition)
+        return canonical === 'Poisoned' || canonical === 'Badly Poisoned'
+      })) aa083PoisonedPlacementIds.add(placement.id)
+    }
+    for (const placementId of effectiveAbilityPlacementIds({
+      map: lifecycleMap,
+      state: previousEncounterState,
+      snapshots,
+      canonicalId: 'Poison Heal',
+    })) aa083EffectivePoisonHealPlacementIds.add(placementId)
+  }
   const deepSleepPlacementIds = events.some(event => event.kind === 'turn-end')
     ? effectiveAbilityPlacementIds({
         map: lifecycleMap,
@@ -767,6 +814,12 @@ export const planEncounterLifecycle = (
       : []),
     ...(magmaArmorGrappleEntries.length > 0
       ? [createAa079MagmaArmorGrappleLifecycleHandler({ entries: magmaArmorGrappleEntries })]
+      : []),
+    ...(hasAa083LifecycleEffects
+      ? [createAa083LifecycleHandler({
+          poisonedPlacementIds: aa083PoisonedPlacementIds,
+          effectivePoisonHealPlacementIds: aa083EffectivePoisonHealPlacementIds,
+        })]
       : []),
     ...(moodyPlacementIds.length > 0
       ? [createAa080MoodyLifecycleHandler(moodyPlacementIds)]
@@ -961,6 +1014,10 @@ export const planEncounterLifecycle = (
       ...currentEncounterState,
       abilityOwnedState: owned,
       abilityEntities: entities,
+      abilityTransformations: reduceAbilityTransformationLifecycle(
+        currentEncounterState.abilityTransformations ?? createEmptyAbilityTransformationState(),
+        abilityEvent,
+      ),
     }, abilityEvent).encounter
   }
   currentEncounterState = applyAa075IceFaceLifecycleTemporaryHpOwnership({
@@ -980,6 +1037,11 @@ export const planEncounterLifecycle = (
     events: plannedEvents,
     loadSheets,
   })
+  const alchemyCleanup = clearAa084PowerOfAlchemyForKnockouts({
+    map: { ...nextMap, encounterState: currentEncounterState },
+    placementIds: lifecycleKnockoutPlacementIds(operationResults),
+  })
+  currentEncounterState = parseEncounterState(alchemyCleanup.encounterState)
   const miniNoseTurnStarts = new Map(plannedEvents.flatMap(event => (
     event.kind === 'turn-start' ? [[event.placementId, event.eventId] as const] : []
   )))

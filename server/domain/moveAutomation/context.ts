@@ -142,6 +142,7 @@ import {
   type AbilitySpecV1Runtime,
 } from '../abilityAutomation/registry'
 import { projectAuthoritativeEffectiveAbilities } from '../abilityAutomation/effectiveAbilities'
+import type { AuthoritativeEffectiveAbility } from '../abilityAutomation/context'
 import { ptuGridDistanceBetweenFootprints } from '~/utils/ptuGridDistance'
 import { aa060MoveMarkId } from '../abilityAutomation/mechanics/aa060MoveIntegration'
 import { aa062BoneLordEmpowersMoveState } from '../abilityAutomation/mechanics/aa062MoveIntegration'
@@ -154,6 +155,12 @@ import {
 import { AA063_CLAY_CANNONS_CAPABILITY_ID } from '../abilityAutomation/mechanics/aa063MoveIntegration'
 import { resolveSheetAbilityInstances } from '../abilityAutomation/instanceParameters'
 import { aa080MoldBreakerSuppressesAbility } from '../abilityAutomation/mechanics/aa080StaticIntegration'
+import { projectAa081NeutralizingGasAbilities } from '../abilityAutomation/mechanics/aa081NeutralizingGasIntegration'
+import {
+  AA083_POLTERGEIST_FORMS,
+  aa083PoltergeistFormForSpecies,
+} from '#shared/abilityAutomation/aa083'
+import { aa083PoisonHealActive } from '../abilityAutomation/mechanics/aa083LifecycleIntegration'
 
 export interface AuthoritativeMoveSheetRead {
   readonly kind: SheetKind
@@ -584,11 +591,12 @@ export const buildAuthoritativeMoveRulesContext = (
     input.trainerSheets,
   )
   const basePlacementSnapshot = placementSnapshots(map)
-  const effectiveAbilitiesByPlacement = new Map<string, readonly AuthoritativeMoveEffectiveAbility[]>()
+  const projectedAbilitiesByPlacement = new Map<string, readonly AuthoritativeEffectiveAbility[]>()
   for (const placement of basePlacementSnapshot.placements) {
     const sheet = sheetByRef.get(sheetReadKey({ kind: placement.sheetKind, slug: placement.sheetSlug }))
     const projected = projectAuthoritativeEffectiveAbilities({
       baseAbilities: resolveSheetAbilityInstances(sheet?.sheet.abilities),
+      species: sheet?.kind === 'pokemon' ? (sheet.sheet as CharacterSheet).species : null,
       target: {
         placementId: placement.id,
         ...(placement.sideId ? { sideId: placement.sideId } : {}),
@@ -597,18 +605,28 @@ export const buildAuthoritativeMoveRulesContext = (
       effects: map.encounterState?.effects ?? [],
       transformationSnapshots: map.encounterState?.abilityTransformations,
     })
-    effectiveAbilitiesByPlacement.set(placement.id, Object.freeze(projected.flatMap((ability) => {
-      if (!ability.effective) return []
-      const runtime = abilityRuntimeRegistry.resolve(ability.canonicalId)
-      if (!runtime || (ability.definitionHash !== null && ability.definitionHash !== runtime.definitionHash)) return []
-      return [Object.freeze({ instanceId: ability.instanceId, canonicalId: ability.canonicalId, runtime })]
-    })))
+    projectedAbilitiesByPlacement.set(placement.id, projected)
   }
   const baseTokenById = tokenSnapshots(
     map,
     basePlacementSnapshot.placements,
     sheetLookup,
   ).byId
+  const activeProjectedAbilities = projectAa081NeutralizingGasAbilities({
+    abilitiesByPlacement: projectedAbilitiesByPlacement,
+    tokensById: baseTokenById,
+    effects: map.encounterState?.effects ?? [],
+    preserveSuppressedEntries: false,
+  })
+  const effectiveAbilitiesByPlacement = new Map<string, readonly AuthoritativeMoveEffectiveAbility[]>()
+  for (const [placementId, abilities] of activeProjectedAbilities) {
+    effectiveAbilitiesByPlacement.set(placementId, Object.freeze(abilities.flatMap((ability) => {
+      if (!ability.effective) return []
+      const runtime = abilityRuntimeRegistry.resolve(ability.canonicalId)
+      if (!runtime || (ability.definitionHash !== null && ability.definitionHash !== runtime.definitionHash)) return []
+      return [Object.freeze({ instanceId: ability.instanceId, canonicalId: ability.canonicalId, runtime })]
+    })))
+  }
   const abilityEntityById = new Map((map.encounterState?.abilityEntities?.entries ?? []).flatMap((entity) => {
     const ownerPlacement = basePlacementSnapshot.byId.get(entity.ownerPlacementId)
     const ownerToken = baseTokenById.get(entity.ownerPlacementId)
@@ -849,6 +867,36 @@ export const buildAuthoritativeMoveRulesContext = (
         ?.some(ability => ability.canonicalId === 'Ice Face') === true,
       effects: map.encounterState?.effects,
     })
+    const activeProjection = activeProjectedAbilities.get(token.id) ?? []
+    const legacyIncompleteBaseNames = resolveSheetAbilityInstances(
+      resolvedSheet?.sheet.abilities,
+    ).flatMap((entry) => {
+      if (abilityRuntimeRegistry.resolve(entry.canonicalId)) return []
+      const projected = activeProjection.find(ability => (
+        ability.instanceId === entry.instanceId && ability.canonicalId === entry.canonicalId
+      ))
+      return projected && (projected.effective
+        || projected.suppressionReasonCode === 'ability.parameters.missing')
+        ? [entry.canonicalId]
+        : []
+    })
+    const effectiveAbilityNames = [...new Set([
+      ...activeProjection.filter(ability => ability.effective).map(ability => ability.canonicalId),
+      ...legacyIncompleteBaseNames,
+    ])]
+    const typeSnapshot = [...(map.encounterState?.abilityTransformations?.entries ?? [])]
+      .reverse()
+      .find(snapshot => snapshot.placementId === token.id
+        && snapshot.mechanics.typeIds.length > 0
+        && (effectiveAbilitiesByPlacement.get(snapshot.ownerPlacementId) ?? []).some(ability => (
+          ability.instanceId === snapshot.sourceAbilityInstanceId
+          && ability.canonicalId === snapshot.canonicalId
+        )))
+    const runtimeToken = detachedFrozenJson({
+      ...iceFaceToken,
+      abilityNames: effectiveAbilityNames,
+      ...(typeSnapshot ? { defenderTypes: [...typeSnapshot.mechanics.typeIds] } : {}),
+    })
     // Illusion is renderer-only. Server mechanics retain the user's own token
     // identity, species, statistics, footprint, capabilities, and abilities.
     // Mold Breaker additionally strips only reviewed enemy Defensive ability
@@ -858,10 +906,10 @@ export const buildAuthoritativeMoveRulesContext = (
       && relationships.resolve(intent.placementId, token.id).relationship === 'enemy'
     const effectiveToken = suppressDefensiveNames
       ? detachedFrozenJson({
-          ...iceFaceToken,
-          abilityNames: iceFaceToken.abilityNames?.filter(name => !aa080IsDefensiveAbility(name.trim())),
+          ...runtimeToken,
+          abilityNames: runtimeToken.abilityNames?.filter(name => !aa080IsDefensiveAbility(name.trim())),
         })
-      : iceFaceToken
+      : runtimeToken
     const trapped = arenaTrapMarks.some((mark) => {
       const source = baseTokens.find(candidate => candidate.id === mark.ownerPlacementId)
       if (!source
@@ -992,6 +1040,8 @@ export const buildAuthoritativeMoveRulesContext = (
     placements,
     tokens,
     hasEffectiveAbility: abilityQueries.has,
+    hasActivePoisonHeal: placementId => abilityQueries.has(placementId, 'Poison Heal')
+      && aa083PoisonHealActive(map, placementId),
     resolveStatOverlay: (placement, stat) => rooms.statOverlay({ placement, stat }),
     recordSheetRead: readSet.recordPlacement,
   })
@@ -1186,6 +1236,14 @@ export const buildAuthoritativeMoveRulesContext = (
         encounterEffects: map.encounterState?.effects ?? [],
         abilityConnectionNames: abilityQueries.activeForPlacement(actorPlacement.id)
           .map(ability => ability.canonicalId),
+        additionalMoveNames: (() => {
+          if (!abilityQueries.has(actorPlacement.id, 'Poltergeist')
+            || actorSheet.kind !== 'pokemon') return []
+          const sheet = actorSheet.sheet as CharacterSheet
+          const form = aa083PoltergeistFormForSpecies(sheet.species)
+          const moveId = form ? AA083_POLTERGEIST_FORMS[form].moveId : null
+          return moveId && (sheet.level ?? 0) >= 40 ? [moveId] : []
+        })(),
         definitionHashForMove: (moveName: string): string | null => {
           const canonicalMove = findMove(moveName)
           return canonicalMove ? runtimes.get(canonicalMove.name)?.definitionHash ?? null : null

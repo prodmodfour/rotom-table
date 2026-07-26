@@ -313,6 +313,25 @@ describe('map token move menu options', () => {
     })
   })
 
+  it('allows only At-Will Moves while Suppressed', () => {
+    const moves = buildTokenMoveMenuOptions(token({ conditions: ['Suppressed'] }), [
+      { move: { name: 'Tackle' }, automatic: false },
+      { move: { name: 'Swords Dance' }, automatic: false },
+      { move: { name: 'Hyper Beam' }, automatic: false },
+    ])
+
+    expect(moves.find(move => move.name === 'Tackle')?.conditionUseBlock).toBeNull()
+    for (const moveName of ['Swords Dance', 'Hyper Beam']) {
+      expect(moves.find(move => move.name === moveName)).toMatchObject({
+        disabledByCondition: true,
+        conditionUseBlock: {
+          condition: 'Suppressed',
+          reason: expect.stringContaining('not At-Will'),
+        },
+      })
+    }
+  })
+
   it('marks Dash moves unavailable while the actor is Stuck', () => {
     const moves = buildTokenMoveMenuOptions(token({ conditions: ['Stuck'] }), [
       { move: { name: 'Crush Claw' }, automatic: false },

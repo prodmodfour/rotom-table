@@ -6,6 +6,7 @@ import type { TrainerSheet } from '~/types/trainerSheet'
 import { computeInjuryAdjustedMaxHp } from '~/utils/ptuHp'
 import { MOVEMENT_MODES, type EffectiveMovementMode } from '~/types/movement'
 import { moveAutomationTargetSuppressesGroundsourceImmunity } from '~/utils/moveAutomationKeywordImmunity'
+import { resolveStats } from '~/utils/sheets/pokemonDerived'
 
 const ABOMINABLE_RUNTIME = Object.freeze({
   kind: 'abilityspec-v1',
@@ -173,10 +174,29 @@ export interface NativeAbilityTokenStatProjectionOptions {
 
 export const projectNativeAbilityTokenStats = (
   token: SpawnedPokemon,
-  sheet?: Pick<CharacterSheet | TrainerSheet, 'abilities'>,
+  sheet?: CharacterSheet | TrainerSheet,
   options: NativeAbilityTokenStatProjectionOptions = {},
 ): SpawnedPokemon => {
   let projected = token
+  if (sheet && 'species' in sheet
+    && projected.creatureRules?.formId === 'zygarde-complete-forme') {
+    const original = new Map(resolveStats(sheet).map(stat => [stat.key, stat.baseTotal]))
+    const complete = new Map(resolveStats({
+      ...sheet,
+      species: 'Zygarde Complete Forme',
+    }).map(stat => [stat.key, stat.baseTotal]))
+    const formStat = (key: 'atk' | 'def' | 'satk' | 'sdef' | 'spd', value: number): number => (
+      Math.max(1, value - (original.get(key) ?? 0) + (complete.get(key) ?? 0))
+    )
+    projected = {
+      ...projected,
+      atk: formStat('atk', projected.atk),
+      def: formStat('def', projected.def),
+      satk: formStat('satk', projected.satk),
+      sdef: formStat('sdef', projected.sdef),
+      spd: formStat('spd', projected.spd ?? 0),
+    }
+  }
   if (ABOMINABLE_SELECTED && projected.abilityNames?.includes('Abominable')) {
     const fullMaxHp = (projected.fullMaxHp ?? projected.maxHp) + 15
     projected = {

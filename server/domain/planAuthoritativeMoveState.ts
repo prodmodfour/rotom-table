@@ -1,6 +1,9 @@
 import { nextRevision, normalizeRevision } from '#shared/sessionRevisions'
 import type { ResolveMoveIntent } from '#shared/livePlayMoveResolution'
-import type { MoveResolutionTraceAncestryEntry } from '#shared/moveAutomation/trace'
+import type {
+  MoveResolutionAuditTrace,
+  MoveResolutionTraceAncestryEntry,
+} from '#shared/moveAutomation/trace'
 import type { MoveSpecCostDeclaration } from '#shared/moveAutomation/spec'
 import type { EncounterTurnResourceDirectory } from '#shared/moveAutomation/encounterResources'
 import {
@@ -87,6 +90,7 @@ import {
 } from './moveAutomation/registry'
 import { cleanupEncounterTransformationsForKnockouts } from './moveAutomation/transformationLifecycle'
 import { cleanupYawnEffectsForKnockouts } from './moveAutomation/yawn'
+import { clearAa084PowerOfAlchemyForKnockouts } from './abilityAutomation/mechanics/aa084LifecycleIntegration'
 import { consumeHelpingHandBonus } from './moveAutomation/helpingHand'
 import { consumeSideDamageResistance } from './moveAutomation/sideDamageResistance'
 import { MoveMapOperationReductionError } from './moveAutomation/reducers/mapOperations'
@@ -335,6 +339,9 @@ const cloneResolution = (resolution: AuthoritativeMoveResolution): Authoritative
   ...(resolution.abilityPriorityOverride === undefined
     ? {}
     : { abilityPriorityOverride: resolution.abilityPriorityOverride }),
+  ...(resolution.abilityAdvancedPriorityOverride === undefined
+    ? {}
+    : { abilityAdvancedPriorityOverride: resolution.abilityAdvancedPriorityOverride }),
   ...(resolution.abilityFreeInterruptOverride === undefined
     ? {}
     : { abilityFreeInterruptOverride: resolution.abilityFreeInterruptOverride }),
@@ -702,25 +709,63 @@ const withoutPlanIdentity = (
 const withAbilityCostOverrides = (
   costs: readonly MoveSpecCostDeclaration[] | undefined,
   abilityPriorityOverride: boolean | undefined,
+  abilityAdvancedPriorityOverride: boolean | undefined,
   abilityFreeInterruptOverride: boolean | undefined,
+  abilitySwiftActionOverride: boolean | undefined,
 ): readonly MoveSpecCostDeclaration[] | undefined => {
-  const actionAdjusted = abilityFreeInterruptOverride
+  const actionAdjusted = abilitySwiftActionOverride
     ? (costs ?? []).map(declaration => declaration.cost.kind === 'action-resource'
       && declaration.cost.resource === 'standard'
       ? {
           ...declaration,
-          id: 'ability.imposter.free-action',
-          cost: { kind: 'action-resource' as const, resource: 'free' as const, amount: 1 },
+          id: 'ability.polycephaly.swift-action',
+          cost: { kind: 'action-resource' as const, resource: 'swift' as const, amount: 1 },
         }
       : declaration)
-    : costs
+    : abilityFreeInterruptOverride
+      ? (costs ?? []).map(declaration => declaration.cost.kind === 'action-resource'
+        && declaration.cost.resource === 'standard'
+        ? {
+            ...declaration,
+            id: 'ability.imposter.free-action',
+            cost: { kind: 'action-resource' as const, resource: 'free' as const, amount: 1 },
+          }
+        : declaration)
+      : costs
   if (!abilityPriorityOverride
     || actionAdjusted?.some(declaration => declaration.cost.kind === 'priority')) return actionAdjusted
   return Object.freeze([
     ...(actionAdjusted ?? []),
-    { id: 'ability.accelerate.priority', phase: 'declare', cost: { kind: 'priority', mode: 'standard' } } as const,
+    {
+      id: abilityAdvancedPriorityOverride
+        ? 'ability.prankster.priority-advanced'
+        : 'ability.accelerate.priority',
+      phase: abilityAdvancedPriorityOverride ? 'pay' : 'declare',
+      cost: {
+        kind: 'priority',
+        mode: abilityAdvancedPriorityOverride ? 'advanced' : 'standard',
+      },
+    } as const,
   ])
 }
+
+const aa083PolycephalySwiftSelected = (
+  trace: MoveResolutionAuditTrace,
+): boolean => trace.events.some(event => (
+  event.kind === 'choice'
+  && event.reasonCode === 'ability.polycephaly.optional-swift-struggle'
+  && event.outcome === 'selected'
+  && event.optionId === 'ability.polycephaly.swift'
+))
+
+const aa084PranksterAdvancedSelected = (
+  trace: MoveResolutionAuditTrace,
+): boolean => trace.events.some(event => (
+  event.kind === 'choice'
+  && event.reasonCode === 'ability.prankster.optional-priority-advanced'
+  && event.outcome === 'selected'
+  && event.optionId === 'ability.prankster.priority-advanced'
+))
 
 const reviewedMoveResourceCosts = (
   input: Pick<
@@ -729,13 +774,17 @@ const reviewedMoveResourceCosts = (
   >,
   canonicalMoveId: string,
   abilityPriorityOverride?: boolean,
+  abilityAdvancedPriorityOverride?: boolean,
   abilityFreeInterruptOverride?: boolean,
+  abilitySwiftActionOverride?: boolean,
 ): readonly MoveSpecCostDeclaration[] | undefined => {
   if (input.resourceCostDeclarations !== undefined) {
     return withAbilityCostOverrides(
       input.resourceCostDeclarations,
       abilityPriorityOverride,
+      abilityAdvancedPriorityOverride,
       abilityFreeInterruptOverride,
+      abilitySwiftActionOverride,
     )
   }
   const runtime = (input.runtimeRegistry ?? MOVE_AUTOMATION_RUNTIME_REGISTRY)
@@ -743,7 +792,9 @@ const reviewedMoveResourceCosts = (
   return withAbilityCostOverrides(
     runtime?.kind === 'movespec-v2' ? runtime.definition.spec.costs : undefined,
     abilityPriorityOverride,
+    abilityAdvancedPriorityOverride,
     abilityFreeInterruptOverride,
+    abilitySwiftActionOverride,
   )
 }
 
@@ -795,8 +846,12 @@ export const observeMovePlanResources = (input: {
       reviewedCosts: reviewedMoveResourceCosts(
         input.planningInput,
         input.resolution.canonicalMoveName,
-        input.resolution.abilityPriorityOverride,
+        input.resolution.abilityPriorityOverride
+          || aa084PranksterAdvancedSelected(input.resolution.auditTrace),
+        input.resolution.abilityAdvancedPriorityOverride
+          || aa084PranksterAdvancedSelected(input.resolution.auditTrace),
         input.resolution.abilityFreeInterruptOverride,
+        aa083PolycephalySwiftSelected(input.resolution.auditTrace),
       ),
       minimumPhaseExclusive: input.minimumCostPhaseExclusive,
       maximumPhaseInclusive: input.maximumCostPhaseInclusive,
@@ -882,8 +937,12 @@ export const planPendingMoveResourceCosts = (options: {
   })) return options.existingPlan
   const reviewedCosts = withAbilityCostOverrides(
     options.execution.runtime.definition.spec.costs,
-    options.execution.abilityPriorityOverride,
+    options.execution.abilityPriorityOverride
+      || aa084PranksterAdvancedSelected(options.execution.execution.trace),
+    options.execution.abilityAdvancedPriorityOverride
+      || aa084PranksterAdvancedSelected(options.execution.execution.trace),
     options.execution.abilityFreeInterruptOverride,
+    aa083PolycephalySwiftSelected(options.execution.execution.trace),
   ) ?? []
   if (reviewedCosts.length === 0) return options.existingPlan
 
@@ -1358,6 +1417,10 @@ export const planAuthoritativeMoveStateExecution = (
     map: workingMap,
     placementIds: knockedOutPlacementIds,
   }).map
+  workingMap = clearAa084PowerOfAlchemyForKnockouts({
+    map: workingMap,
+    placementIds: knockedOutPlacementIds,
+  })
   workingMap = cleanupYawnEffectsForKnockouts({
     map: workingMap,
     placementIds: knockedOutPlacementIds,

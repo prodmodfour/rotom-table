@@ -153,9 +153,17 @@ describe('ability automation semantic manifest', () => {
         'Mega Launcher', 'Memory Wipe', 'Merciless', 'Migraine', 'Mimicry', 'Mimitree', 'Mind Mold',
         'Mini-Noses', 'Minus', 'Miracle Mile', 'Mirror Armor', 'Missile Launch', 'Misty Surge',
         'Mojo', 'Mold Breaker', 'Moody', 'Motor Drive', 'Mountain Peak', 'Moxie',
+        'Mud Dweller', 'Mud Shield', 'Multiscale', 'Multitype', 'Mummy', 'Natural Cure',
+        'Needles', 'Neuroforce', 'Neutralizing Gas', 'Nimble Strikes', 'No Guard', 'Normalize',
+        'Oblivious', 'Odious Spray', 'Omen', 'Overcharge', 'Overcoat', 'Overgrow',
+        'Own Tempo', 'Pack Hunt', 'Parental Bond', 'Parry', 'Pastel Veil', 'Perception',
+        'Perish Body', 'Permafrost', 'Photosynthesis', 'Pickpocket', 'Pickup', 'Pixilate',
+        'Plus', 'Poison Heal', 'Poison Point', 'Poison Touch', 'Poltergeist', 'Polycephaly',
+        'Power Construct', 'Power Spot', 'Power of Alchemy', 'Prankster', 'Pressure', 'Pride',
+        'Prime Fury', 'Prism Armor', 'Probability Control', 'Propeller Tail', 'Protean', 'Psionic Screech',
       ])
-    expect(manifest.abilities.filter(ability => ability.baseStatus === 'blocked')).toHaveLength(231)
-    expect(manifest.abilities.filter(ability => ability.runtime.kind === 'unimplemented')).toHaveLength(231)
+    expect(manifest.abilities.filter(ability => ability.baseStatus === 'blocked')).toHaveLength(183)
+    expect(manifest.abilities.filter(ability => ability.runtime.kind === 'unimplemented')).toHaveLength(183)
   })
 
   it('keeps bootstrap mode hints non-authoritative and maps every row to its plan cohort', () => {
@@ -170,8 +178,8 @@ describe('ability automation semantic manifest', () => {
 
     expect(counts).toEqual({
       'mode.static': 246,
-      'mode.triggered': 118,
-      'mode.activated': 119,
+      'mode.triggered': 120,
+      'mode.activated': 117,
     })
     expect(manifest.abilities[0]).toMatchObject({ canonicalId: 'Abominable', rolloutCohortId: 'aa-060' })
     expect(manifest.abilities[11]).toMatchObject({ canonicalId: 'Anticipation', rolloutCohortId: 'aa-060' })
