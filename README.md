@@ -45,18 +45,6 @@ npm test
 npm run build
 ```
 
-## Autonomous build loop
-
-This checkout includes a ticket-driven autonomous build loop for the group inventory wave, mapping GitHub issues #27-#44 to `BUILD_TICKETS.md`. See [docs/autonomous-build.md](docs/autonomous-build.md) for setup and usage.
-
-Run one local cycle from a clean working tree:
-
-```bash
-scripts/build-loop.sh --max-cycles 1 --no-push
-```
-
-Long runs keep the launcher focused on cycle-level status while writing concise live Pi progress to the follow log and the complete raw Pi event stream to private external sidecars. From another terminal, use `just follow` for the concise stream, `just monitor 10` to interpret a normalized, semantically complete event view immediately and then every 10 minutes, and `just stop` to request a graceful stop after the current attempt/cycle reaches a safe boundary. If an unclean exit leaves a stale loop lock, use `just unlock`; it refuses to unlock a recorded process that is still active. See [Autonomous build loop](docs/autonomous-build.md#follow-monitor-and-gracefully-stop-a-long-run) for output modes, monitoring, logging, and exact control semantics.
-
 ## npm scripts
 
 | Command | Description |

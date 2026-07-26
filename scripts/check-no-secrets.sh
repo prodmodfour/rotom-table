@@ -47,7 +47,7 @@ while IFS= read -r file; do
 
   if grep -nEi -- "$secret_assignment_regex" "$file" >"$match_file" 2>/dev/null; then
     case "$file" in
-      PROJECT_BRIEF.md|AGENTS.md|BUILD_TICKETS.md|README.md|docs/*|scripts/check-no-secrets.sh)
+      AGENTS.md|README.md|docs/*|scripts/check-no-secrets.sh)
         # These files contain instructional examples. Do not fail on generic documentation.
         ;;
       *)

@@ -16,7 +16,6 @@ This directory collects presentation and reviewer documentation for Rotom Table.
 - [Move automation release acceptance](move-automation-release-acceptance.md) — recorded 776-move automated, production-like browser, privacy, recovery, and runtime-retirement acceptance.
 - [Move automation operator recovery and manual QA](move-automation-manual-qa.md) — private live-play canary, uncertainty, restart, backup, and privacy runbook.
 - [Local development](local-development.md) — setup commands, checks, optional `just` recipes, and local filesystem behaviour.
-- [Autonomous build loop](autonomous-build.md) — ticket-driven Pi build loop for issues #27-#44 and its quality gate.
 - [Private VPS hosting scope](private-vps-hosting.md) — initial private trusted-table VPS boundary, non-goals, and links to filesystem/security docs.
 - [Private VPS deployment smoke checklist](private-vps-deployment-smoke-checklist.md) — after-deploy private VPS checks for install, validation, built-server start, health, outer-gated profile play, write persistence after restart, Git hygiene, and legacy `/sessions` boundaries.
 - [Private VPS live-play smoke checklist](private-vps-live-play-smoke.md) — multi-browser command/revision, SSE reconnect, conflict, refresh, and restart checks for private hosted profile play.

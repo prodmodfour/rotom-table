@@ -8,7 +8,7 @@
 
 Implement complete, server-authoritative live-play automation for every canonical ability in `data/reference/abilities.json`, including all reusable machinery required by Static, activated, triggered, Interrupt, Reaction, field, movement, item, form, and persistent-state abilities.
 
-This file is the durable implementation ledger for the ability initiative. It must be read before ability-automation work and updated whenever a ticket changes state. `BUILD_TICKETS.md` remains the completed historical Move automation queue and is not reused for this initiative.
+This file is the durable implementation ledger for the ability initiative. It must be read before ability-automation work and updated whenever a ticket changes state.
 
 ## Frozen scope and baseline
 

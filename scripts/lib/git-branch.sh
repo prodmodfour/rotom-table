@@ -46,7 +46,7 @@ git_branch_validate_name() {
 
   if ! git check-ref-format --branch "$branch" >/dev/null 2>&1; then
     pp_error "Invalid $label: $branch"
-    pp_hint "Use a valid git branch name, for example: feature/autonomous-build."
+    pp_hint "Use a valid git branch name, for example: feature/my-change."
     return 2
   fi
 }

@@ -44,11 +44,11 @@ done < <(find scripts -type f -name '*.sh' -print0 | sort -z)
 pp_success "Shell syntax checks passed."
 
 mapfile -d '' script_regression_tests < <(
-  find scripts -maxdepth 1 -type f -name 'test-build-loop-*.sh' -print0 | sort -z
+  find scripts -maxdepth 1 -type f -name 'test-*.sh' -print0 | sort -z
 )
 
 if (( ${#script_regression_tests[@]} > 0 )); then
-  pp_section "Autonomous build-loop script regressions"
+  pp_section "Shell script regressions"
   for test_script in "${script_regression_tests[@]}"; do
     run_cmd bash "$test_script"
   done

@@ -53,83 +53,21 @@ default:
       '      Rebuild documentary ptu-data parser output (not app runtime reference).' \
       '' \
       '  just quality' \
-      '      Run the autonomous build quality gate.' \
-      '' \
-      '  just autobuild' \
-      '      Run one no-push autonomous ticket cycle from a clean tree.' \
-      '' \
-      '  just autobuild <cycles>' \
-      '      Run multiple no-push autonomous ticket cycles.' \
-      '' \
-      '  just refresh <ticket-file-name>' \
-      '      Refresh BUILD_TICKETS.md and PROJECT_BRIEF.md from a ticket planning file,' \
-      '      delete the planning file, commit the refresh, and push the current branch.' \
-      '' \
-      '  just run' \
-      '      Run the default 180-cycle loop with pi-dan-rinse; use just follow for agent details.' \
-      '' \
-      '  just run-ashraf' \
-      '      Run the default 180-cycle loop with pi; use just follow for agent details.' \
-      '' \
-      '  just follow' \
-      '  just follow <lines>' \
-      '      Follow the active build loop, showing 40 recent lines by default.' \
-      '' \
-      '  just monitor' \
-      '  just monitor <minutes>' \
-      '      Interpret a normalized Pi event view immediately, then repeat every 10 minutes by default.' \
+      '      Run the project quality gate.' \
       '' \
       '  just dan-usage' \
-      '      Send one minimal request and report Dan Codex five-hour/weekly usage.' \
-      '' \
-      '  just stop' \
-      '      Gracefully stop the active build loop after its current attempt/cycle.' \
-      '' \
-      '  just unlock' \
-      '      Remove a stale build-loop lock; refuses while its recorded process is active.'
+      '      Send one minimal request and report Dan Codex five-hour/weekly usage.'
 
 help:
     @just default
 
-# Run the project-specific autonomous build quality gate.
+# Run the project-specific quality gate.
 quality:
     bash scripts/quality-gate.sh
-
-# Run the autonomous ticket loop locally without pushing.
-autobuild cycles="1":
-    bash scripts/build-loop.sh --max-cycles {{cycles}} --no-push
-
-# Compatibility recipe from the autonomous build template.
-run cycles="180":
-    bash scripts/build-loop.sh --max-cycles {{cycles}}
-
-# Run the autonomous ticket loop with the standard Ashraf Pi profile.
-run-ashraf cycles="180":
-    PI_AGENT_COMMAND=pi bash scripts/build-loop.sh --max-cycles {{cycles}}
-
-# Follow the active autonomous build loop without interrupting it.
-follow lines="40":
-    bash scripts/build-loop-follow.sh --lines {{quote(lines)}}
-
-# Periodically summarize and interpret active autonomous build progress.
-monitor minutes="10":
-    bash scripts/build-loop-monitor.sh --interval-minutes {{quote(minutes)}}
 
 # Report Dan Codex five-hour and weekly usage with one minimal request.
 dan-usage:
     bash scripts/dan-usage.sh
-
-# Request a graceful stop after the active attempt/cycle reaches a safe boundary.
-stop:
-    bash scripts/build-loop-stop.sh
-
-# Remove a stale autonomous build-loop lock without interrupting an active loop.
-unlock:
-    bash scripts/build-loop-unlock.sh
-
-# Refresh the autonomous queue and project brief from a ticket planning file.
-refresh ticket_file:
-    python3 scripts/refresh_build_queue.py {{quote(ticket_file)}}
 
 # Start Nuxt dev mode against the local production-like Ranger workspace data.
 prod-dev:

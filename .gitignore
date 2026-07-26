@@ -7,7 +7,6 @@ node_modules
 .cache
 .npm/
 .playwright-cli
-.agent/
 .pi/logs/
 .pi/refactor-loop.lock/
 __pycache__/
