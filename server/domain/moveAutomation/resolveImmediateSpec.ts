@@ -126,6 +126,10 @@ import {
   aa078MoveOverlayOperations,
 } from '../abilityAutomation/mechanics/aa078MoveIntegration'
 import {
+  AA079_MAGICIAN_ITEM_REASON,
+  aa079MoveOverlayOperations,
+} from '../abilityAutomation/mechanics/aa079MoveIntegration'
+import {
   AA068_DUST_CLOUD_TARGETING_OVERRIDE,
   aa068DrySkinCancelsRecipientEffect,
   aa068DustCloudBurstEnabled,
@@ -1023,6 +1027,7 @@ const executeReviewedMoveSpec = (
     ...aa076MoveOverlayOperations(overlayInput),
     ...aa077MoveOverlayOperations(overlayInput),
     ...aa078MoveOverlayOperations(overlayInput),
+    ...aa079MoveOverlayOperations(overlayInput),
   ]
   const boneLordLine = script.moveName === 'Bonemerang'
     && aa062BoneLordEmpowersMove(options.context, 'Bonemerang')
@@ -1195,10 +1200,16 @@ export const reduceCompletedMoveSpec = (
   })
   const contextForOperation: typeof baseContextForOperation = (operation) => {
     const context = baseContextForOperation(operation)
-    if (typeof operation !== 'string'
-      && (operation as { readonly reasonCode?: unknown }).reasonCode === 'ability.gooey.lower-speed') {
-      // Gooey is paid by the struck responder but its effect targets the triggering Move's actor.
-      return context
+    if (typeof operation !== 'string') {
+      const reasonCode = (operation as { readonly reasonCode?: unknown }).reasonCode
+      if (reasonCode === 'ability.gooey.lower-speed') {
+        // Gooey is paid by the struck responder but its effect targets the triggering Move's actor.
+        return context
+      }
+      if (reasonCode === AA079_MAGICIAN_ITEM_REASON) {
+        // The hit target owns the item choice, but Magician's transfer destination remains the Move actor.
+        return options.context
+      }
     }
     const sourced = typeof operation === 'string'
       ? null

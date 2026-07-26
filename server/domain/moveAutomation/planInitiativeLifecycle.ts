@@ -101,6 +101,11 @@ import {
 } from '../abilityAutomation/mechanics/aa075LifecycleIntegration'
 import { reconcileAa075IceFaceTemporaryHpOwnershipAfterMove } from '../abilityAutomation/mechanics/aa075TemporaryHpIntegration'
 import { createAa078LeechSeedLifecycleHandler } from '../abilityAutomation/mechanics/aa078LifecycleIntegration'
+import {
+  aa079MagmaArmorGrappleLifecycleEntries,
+  createAa079MagmaArmorGrappleLifecycleHandler,
+} from '../abilityAutomation/mechanics/aa079LifecycleIntegration'
+import { effectiveRuntimeAbilityIds } from '../abilityAutomation/effectiveRuntimeAbilities'
 
 export type InitiativeLifecyclePlanningErrorCode =
   | 'active-placement-missing'
@@ -685,6 +690,36 @@ export const planEncounterLifecycle = (
     }, lifecycleMap)
     return token ? [[placementId, computeTickValue(token.fullMaxHp ?? token.maxHp)] as const] : []
   }))
+  const magmaArmorGrappleTurnEnd = events.some(event => event.kind === 'turn-end')
+    && previousEncounterState.effects.some(effect => effect.tags.includes('aa079.magma-armor-grapple'))
+  const magmaArmorGrappleEntries = magmaArmorGrappleTurnEnd
+    ? (() => {
+        const snapshots = loadSheets()
+        const sheetLookup = {
+          pokemon: new Map(snapshots.pokemonSheets),
+          trainer: new Map(snapshots.trainerSheets),
+        }
+        const tokens = lifecycleMap.placements.flatMap(placement => {
+          const token = placementToSpawned(placement, sheetLookup, lifecycleMap)
+          return token ? [token] : []
+        })
+        const effectiveIds = new Map(lifecycleMap.placements.map(placement => {
+          const sheet = placement.sheetKind === 'pokemon'
+            ? snapshots.pokemonSheets.get(placement.sheetSlug)
+            : snapshots.trainerSheets.get(placement.sheetSlug)
+          return [placement.id, sheet ? effectiveRuntimeAbilityIds({
+            map: lifecycleMap,
+            placement,
+            sheet,
+          }) : []] as const
+        }))
+        return aa079MagmaArmorGrappleLifecycleEntries({
+          map: lifecycleMap,
+          tokens,
+          effectiveAbilityIds: placementId => effectiveIds.get(placementId) ?? [],
+        })
+      })()
+    : Object.freeze([])
   const hasDelayedReactionDebt = previousEncounterState.effects.some(effect => (
     effect.kind === 'capability' && effect.payload.capabilityId === 'aa067.delayed-reaction.hp-loss'
   ))
@@ -716,6 +751,9 @@ export const planEncounterLifecycle = (
       : []),
     ...(iceFaceTemporaryHp.size > 0
       ? [createAa075IceFaceLifecycleHandler({ temporaryHpByPlacementId: iceFaceTemporaryHp })]
+      : []),
+    ...(magmaArmorGrappleEntries.length > 0
+      ? [createAa079MagmaArmorGrappleLifecycleHandler({ entries: magmaArmorGrappleEntries })]
       : []),
     ...(corrosiveToxinsHandler ? [corrosiveToxinsHandler] : []),
     ...(weatherHandler ? [weatherHandler] : []),
@@ -837,6 +875,10 @@ export const planEncounterLifecycle = (
       dynamicRecipients: EMPTY_DYNAMIC_RECIPIENTS,
       immunities: createVortexLifecycleImmunityQueries({
         effects: [...effects.values()],
+        hasEffectiveAbility: (placementId, canonicalId) => context.queries.abilities.has(
+          placementId,
+          canonicalId,
+        ),
         fallback: createWeatherLifecycleImmunityQueries({
           context,
           fallback: standardImmunities,

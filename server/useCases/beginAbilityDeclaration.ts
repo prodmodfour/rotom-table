@@ -55,6 +55,7 @@ import {
   AA077_LEAFY_CLOAK_OPTION_BY_ID,
 } from '#shared/abilityAutomation/aa077'
 import { AA078_LIQUID_VOICE_OPTION_BY_ID } from '#shared/abilityAutomation/aa078'
+import { aa079MimicryTypeOptions } from '../domain/abilityAutomation/mechanics/aa079Activated'
 import {
   actorCanControlMapPlacement,
   playerProfileLinkedTrainerSheetsForTokenControl,
@@ -185,6 +186,9 @@ const declarationsFor = (
           .filter(id => ballFetchTargets === null || ballFetchTargets.has(id))
           .filter(id => crushTrapTargets === null || crushTrapTargets.has(id))
           .filter(id => deadlyPoisonTargets === null || deadlyPoisonTargets.has(id))
+          .filter(id => context.runtime.canonicalId !== 'Memory Wipe'
+            || modeId !== 'swift'
+            || context.queries.history.lastCompletedMove(id) !== null)
           .map((placementId, index) => option(declaration.id, index, declaration.kind, { kind: 'token', placementId }))
       }
       else if (declaration.kind === 'side') options = Object.values(context.sides)
@@ -203,7 +207,9 @@ const declarationsFor = (
                 .map(weather => AA071_WEATHER_TYPE_BY_KIND[weather.kind]))]
               return active.length > 0 ? active : ['normal' as const]
             })()
-          : POKEMON_TYPE_IDS
+          : context.runtime.canonicalId === 'Mimicry' && modeId === 'activate'
+            ? aa079MimicryTypeOptions(context)
+            : POKEMON_TYPE_IDS
         options = typeIds.map((typeId, index) => option(
           declaration.id, index, declaration.kind, { kind: 'type', typeId },
         ))
@@ -409,6 +415,42 @@ const declarationsFor = (
         else if (context.runtime.canonicalId === 'Liquid Voice' && modeId === 'activate') {
           options = Object.keys(AA078_LIQUID_VOICE_OPTION_BY_ID).map((branchId, index) => option(
             declaration.id, index, declaration.kind, { kind: 'branch', branchId },
+          ))
+        }
+        else if (context.runtime.canonicalId === 'Magnet Pull' && modeId === 'activate') {
+          const targetDeclaration = context.runtime.definition.spec.targeting.find(target => (
+            target.modeId === modeId && target.kind === 'token'
+          ))
+          const targetPredicate = targetDeclaration?.predicate
+            ?? fail(500, 'Magnet Pull has no reviewed target policy.')
+          const maximumDisplacements = [...new Set(resolveAuthoritativeAbilityTargets({
+            context,
+            predicate: targetPredicate,
+            requestedPlacementIds: context.tokens.map(token => token.id),
+            visiblePlacementIds: context.tokens.map(token => token.id),
+          }).legalTargetPlacementIds.map(placementId => {
+            const target = context.queries.tokens.get(placementId)
+              ?? fail(409, 'Magnet Pull target disappeared while issuing plans.')
+            return Math.max(0, 6 - Math.max(1, Math.floor(target.weightClass ?? 1)))
+          }))].sort((left, right) => left - right)
+          const plans = maximumDisplacements.flatMap(maximum => (
+            (['push', 'pull'] as const).flatMap(direction => Array.from(
+              { length: maximum + 1 },
+              (_, distance) => ([
+                `${direction}-${distance}-and-maximum-range:max-${maximum}`,
+                `${direction}-${distance}-and-minimum-range:max-${maximum}`,
+              ]),
+            ).flat())
+          ))
+          if (maximumDisplacements.length > 0) plans.push('maximum-and-minimum-range')
+          options = plans.map((branchId, index) => option(
+            declaration.id, index, declaration.kind, { kind: 'branch', branchId },
+          ))
+        }
+        else if (context.runtime.canonicalId === 'Memory Wipe' && modeId === 'extended') {
+          options = Array.from({ length: 10 }, (_, index) => option(
+            declaration.id, index, declaration.kind,
+            { kind: 'branch', branchId: `minutes-${index + 1}` },
           ))
         }
         else fail(422, `Ability branch declaration ${declaration.id} requires a reviewed declaration adapter.`)

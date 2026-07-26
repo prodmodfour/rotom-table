@@ -69,6 +69,10 @@ import { aa073MoveDamageModifiers } from '../abilityAutomation/mechanics/aa073St
 import { aa074MoveDamageModifiers } from '../abilityAutomation/mechanics/aa074StaticIntegration'
 import { aa077MoveDamageModifiers } from '../abilityAutomation/mechanics/aa077StaticIntegration'
 import { aa078MoveDamageModifiers } from '../abilityAutomation/mechanics/aa078StaticIntegration'
+import {
+  aa079MarvelScaleRecipient,
+  aa079MoveDamageModifiers,
+} from '../abilityAutomation/mechanics/aa079StaticIntegration'
 
 export type MoveDamageStatSelectionErrorCode = 'non-numeric-stat-selection'
 
@@ -547,10 +551,21 @@ export const resolveMoveSpecDamageCalculation = (
     recipient: options.recipient,
     moveType: moveType.moveType,
   })
+  const aa079Modifiers = aa079MoveDamageModifiers({
+    context: options.context,
+    operation: options.operation,
+    actor,
+    recipient: options.recipient,
+    moveType: moveType.moveType,
+  })
+  const aa079Recipient = aa079MarvelScaleRecipient({
+    context: options.context,
+    recipient: options.recipient,
+  })
   const breakdown = resolveMoveAutomationTargetDamageBreakdown(
     resolvedScript,
     helpingHand.length > 0 ? withoutHelpingHandCondition(actor) : actor,
-    options.recipient,
+    aa079Recipient,
     { ...options.resolution, crit: criticalHit.critical },
     nonAuthoritativeFieldEffects,
     options.selectedTargets,
@@ -582,6 +597,7 @@ export const resolveMoveSpecDamageCalculation = (
         ...aa074Modifiers,
         ...aa077Modifiers,
         ...aa078Modifiers,
+        ...aa079Modifiers,
         ...(options.responseDamageModifiers ?? []),
         ...encounterDamageModifiers,
         ...helpingHandModifiers,

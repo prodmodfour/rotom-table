@@ -17,6 +17,7 @@ import { moveAutomationRecoilImmunitySource } from '~/utils/moveAutomationRecoil
 import type { AuthoritativeMoveRulesContext } from '../context'
 import { authoritativeAbilityHealingBlocked } from '../../abilityAutomation/healingPrevention'
 import { aa070FlyingFlyTrapPreventsDirectHp } from '../../abilityAutomation/mechanics/aa070StaticIntegration'
+import { aa079MagicGuardBlocksDirectHp } from '../../abilityAutomation/mechanics/aa079StaticIntegration'
 import { AA073_GULP_MISSILE_HP_REASON } from '../../abilityAutomation/mechanics/aa073MoveIntegration'
 import { AA076_IRON_BARBS_HP_REASON } from '../../abilityAutomation/mechanics/aa076MoveIntegration'
 import {
@@ -497,6 +498,12 @@ const directHpImmunity = (options: {
   readonly immunities: MoveCoreTokenEffectImmunityQueries
   readonly context?: AuthoritativeMoveRulesContext
 }): MoveCoreTokenEffectImmunityDecision => {
+  if (!options.operation.reasonCode.includes('.recoil')
+    && aa079MagicGuardBlocksDirectHp({
+      context: options.context,
+      recipientId: options.recipient.placement.id,
+      operation: options.operation,
+    })) return { blockedBy: 'Magic Guard', consultedPlacementIds: [] }
   if (options.operation.reasonCode !== AA076_IRON_BARBS_HP_REASON
     && options.context && aa070FlyingFlyTrapPreventsDirectHp({
       context: options.context,
@@ -888,11 +895,14 @@ export const reduceDirectHpEffectForRecipient = (options: {
     })
   }
 
+  const legacyRecoilImmunity = moveAutomationRecoilImmunitySource(recipient.token.abilityNames)
   const recoilImmunity = calculation.kind === 'damage-dealt'
     && calculation.roundedValue > 0
     ? options.context.queries.abilities.has(recipient.placement.id, 'Abominable')
       ? 'Abominable'
-      : moveAutomationRecoilImmunitySource(recipient.token.abilityNames)
+      : options.context.queries.abilities.has(recipient.placement.id, 'Magic Guard')
+        ? 'Magic Guard'
+        : legacyRecoilImmunity === 'Magic Guard' ? null : legacyRecoilImmunity
     : null
   if (recoilImmunity) {
     return preventedRecoilResult({

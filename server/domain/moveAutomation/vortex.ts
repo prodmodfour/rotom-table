@@ -409,10 +409,12 @@ export const vortexEffectForTickOperation = (input: {
 
 export const resolveVortexTickImmunity = (
   recipient: MoveCoreTokenEffectRecipient,
+  hasEffectiveAbility?: (placementId: string, canonicalId: string) => boolean,
 ): MoveCoreTokenEffectImmunityDecision => {
-  const ability = VORTEX_HP_IMMUNITY_ABILITIES.find(candidate => (
-    sheetHasCanonicalAbility(recipient.token.abilityNames, candidate)
-  )) ?? null
+  const ability = VORTEX_HP_IMMUNITY_ABILITIES.find(candidate => candidate === 'Magic Guard'
+    ? hasEffectiveAbility?.(recipient.placement.id, candidate)
+      ?? sheetHasCanonicalAbility(recipient.token.abilityNames, candidate)
+    : sheetHasCanonicalAbility(recipient.token.abilityNames, candidate)) ?? null
   return { blockedBy: ability, consultedPlacementIds: [] }
 }
 
@@ -420,12 +422,13 @@ export const resolveVortexTickImmunity = (
 export const createVortexLifecycleImmunityQueries = (input: {
   readonly effects: readonly EncounterEffect[]
   readonly fallback: MoveCoreTokenEffectImmunityQueries
+  readonly hasEffectiveAbility?: (placementId: string, canonicalId: string) => boolean
 }): MoveCoreTokenEffectImmunityQueries => Object.freeze({
   directHp: (query: MoveDirectHpImmunityQueryInput) => vortexEffectForTickOperation({
     operation: query.operation,
     effects: input.effects,
   })
-    ? resolveVortexTickImmunity(query.recipient)
+    ? resolveVortexTickImmunity(query.recipient, input.hasEffectiveAbility)
     : input.fallback.directHp(query),
   condition: input.fallback.condition,
   combatStage: input.fallback.combatStage,

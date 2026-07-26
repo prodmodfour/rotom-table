@@ -1,5 +1,9 @@
 import type { ResolveMoveIntent } from '#shared/livePlayMoveResolution'
 import { AA077_KLUTZ_ITEM_REQUIREMENT_ID } from '#shared/abilityAutomation/aa077'
+import {
+  AA079_MAGICIAN_ACTOR_REQUIREMENT_ID,
+  AA079_MAGICIAN_TARGET_REQUIREMENT_ID,
+} from '#shared/abilityAutomation/aa079'
 import { findMove } from '~~/data/ptuReference'
 import { explicitScriptForMove, moveAutomationScriptForTargetBranch } from '~/utils/moveAutomation'
 import type { CharacterSheet } from '~/types/characterSheet'
@@ -118,9 +122,30 @@ export const loadMoveItemResources = (
         source: { kind: 'selected-target-equipped' as const },
       }]
     : []
+  const directSingleTargetAttack = selectedScript?.damaging === true
+    && /(?:^|,)\s*1 Target(?:,|$)/i.test(selectedScript.range)
+    && !/(?:burst|blast|cone|line|field|self)/i.test(selectedScript.range)
+  const magicianRequirements = actorSheet
+    && move
+    && directSingleTargetAttack
+    && selectedTargetPlacementIds(input.intent).length === 1
+    && aa077EffectiveAbilityIds({
+      map: input.map,
+      placement: actorPlacement,
+      sheet: actorSheet,
+    }).includes('Magician')
+    ? [{
+        id: AA079_MAGICIAN_TARGET_REQUIREMENT_ID,
+        source: { kind: 'selected-target-equipped' as const },
+      }, {
+        id: AA079_MAGICIAN_ACTOR_REQUIREMENT_ID,
+        source: { kind: 'actor-equipped' as const },
+      }]
+    : []
   const requirements = parseAuthoritativeMoveItemResourceRequirements([
     ...reviewedRequirements,
     ...klutzRequirement,
+    ...magicianRequirements,
   ])
   const groupInventories = loadGroupInventories(
     requirements,

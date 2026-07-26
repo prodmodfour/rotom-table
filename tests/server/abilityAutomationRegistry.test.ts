@@ -230,7 +230,7 @@ describe('ability automation production runtime registry', () => {
   })
 
   it('ships only exact evidence-backed production selections', () => {
-    expect(ABILITY_AUTOMATION_RUNTIME_REGISTRY.size).toBe(228)
+    expect(ABILITY_AUTOMATION_RUNTIME_REGISTRY.size).toBe(240)
     expect(ABILITY_AUTOMATION_RUNTIME_REGISTRY.entries().map(runtime => runtime.canonicalId))
       .toEqual([
         'Abominable', 'Absorb Force', 'Accelerate', 'Adaptability', 'Aerilate', 'Aftermath',
@@ -273,6 +273,8 @@ describe('ability automation production runtime registry', () => {
         'Leek Mastery', 'Levitate', 'Life Force', 'Light Metal', 'Lightning Kicks',
         'Lightning Rod', 'Limber', 'Line Charge', 'Liquid Ooze', 'Liquid Voice',
         'Long Reach', 'Lullaby', 'Lunchbox', 'Mach Speed', 'Maelstrom Pulse', 'Magic Bounce',
+        'Magic Guard', 'Magician', 'Magma Armor', 'Magnet Pull', 'Marvel Scale',
+        'Mega Launcher', 'Memory Wipe', 'Merciless', 'Migraine', 'Mimicry', 'Mimitree', 'Mind Mold',
       ])
     expect(registeredAbilityAutomationRuntimeFor('Adaptability')).toMatchObject({
       kind: 'abilityspec-v1', version: 1,

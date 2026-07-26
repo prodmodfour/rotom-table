@@ -54,6 +54,7 @@ import {
   type LegacyTokenAbilityMenuOption,
 } from '../domain/abilityAutomation/legacyCompatibility'
 import { applyAa065CrushTrapGrappleTrigger } from '../domain/abilityAutomation/mechanics/aa065ManeuverIntegration'
+import { applyAa079MagmaArmorGrappleTrigger } from '../domain/abilityAutomation/mechanics/aa079LifecycleIntegration'
 import { cleanupAa065CrueltyHealingBlockForBreather } from '../domain/abilityAutomation/mechanics/aa065StaticIntegration'
 import {
   aa077HasAuthoritativeDisengageWindow,
@@ -1095,6 +1096,7 @@ const useManeuverPlan = (
   user: ResolvedActionToken,
   userSheet: SheetCacheEntry,
   targetToken: ResolvedActionToken | undefined,
+  targetSheet: SheetCacheEntry | undefined,
   processedAt: string,
 ):
   | { readonly ok: true; readonly plan: UseTableActionApplicationPlan }
@@ -1145,7 +1147,7 @@ const useManeuverPlan = (
         placementId: target.placement.id,
       })
     : mapWithMetadata
-  const mapWithAbilityTrigger = maneuver.name === 'Grapple' && targetToken
+  const mapWithCrushTrapTrigger = maneuver.name === 'Grapple' && targetToken
     ? applyAa065CrushTrapGrappleTrigger({
         map: mapAfterBreather,
         actorPlacement: target.placement,
@@ -1155,6 +1157,21 @@ const useManeuverPlan = (
         operationId: command.opId,
       })
     : mapAfterBreather
+  const grappleTargetPlacement = targetToken
+    ? mapWithCrushTrapTrigger.placements.find(placement => placement.id === targetToken.id)
+    : undefined
+  const mapWithAbilityTrigger = maneuver.name === 'Grapple'
+    && targetToken && targetSheet && grappleTargetPlacement
+    ? applyAa079MagmaArmorGrappleTrigger({
+        map: mapWithCrushTrapTrigger,
+        actorPlacement: target.placement,
+        actorToken: user,
+        targetPlacement: grappleTargetPlacement,
+        targetToken,
+        targetSheet: targetSheet.sheet,
+        operationId: command.opId,
+      })
+    : mapWithCrushTrapTrigger
   const mapWithDisengageEvidence = maneuver.name === 'Disengage'
     ? applyAa077DisengageResourceEvidence({
         map: mapWithAbilityTrigger,
@@ -1501,6 +1518,7 @@ const planUseTableActionApplication = (
       userResult.token,
       userResult.sheet,
       targetResult.token,
+      targetResult.sheet,
       processedAt,
     )
   }

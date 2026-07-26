@@ -2,7 +2,7 @@
 
 `PLAN_STATUS: IN_PROGRESS`
 
-`CURRENT_TICKET: AA-079`
+`CURRENT_TICKET: AA-080`
 
 ## Goal
 
@@ -96,14 +96,14 @@ Ability automation should reuse MoveSpec v2 selectors, expressions, operations, 
 
 ## Progress snapshot
 
-- Plan tickets: **78 DONE / 110 total**
+- Plan tickets: **79 DONE / 110 total**
 - Canonical inventory: **483**
-- Semantically complete: **228**
+- Semantically complete: **240**
 - Assisted: **0**
-- Blocked/unimplemented: **255**
+- Blocked/unimplemented: **243**
 - Interaction status: **483 unassessed**
 - Legacy baseline: **45 abilities with 55 partial fragments; 438 with no reviewed legacy fragment**
-- Production runtime: **228 exact manifest-selected AbilitySpec v1 runtimes**; retained legacy paths remain explicit compatibility only
+- Production runtime: **240 exact manifest-selected AbilitySpec v1 runtimes**; retained legacy paths remain explicit compatibility only
 
 ## Tickets
 
@@ -277,7 +277,7 @@ Each cohort must review every named ability against canonical text, implement al
   - Klutz; Lancer; Landslide; Last Chance; Leaf Gift; Leaf Guard; Leaf Rush; Leafy Cloak; Leek Mastery; Levitate; Life Force; Light Metal
 - [x] **AA-078 — Lightning Kicks through Magic Bounce** — `DONE`
   - Lightning Kicks; Lightning Rod; Limber; Line Charge; Liquid Ooze; Liquid Voice; Long Reach; Lullaby; Lunchbox; Mach Speed; Maelstrom Pulse; Magic Bounce
-- [ ] **AA-079 — Magic Guard through Mind Mold** — `TODO`
+- [x] **AA-079 — Magic Guard through Mind Mold** — `DONE`
   - Magic Guard; Magician; Magma Armor; Magnet Pull; Marvel Scale; Mega Launcher; Memory Wipe; Merciless; Migraine; Mimicry; Mimitree; Mind Mold
 - [ ] **AA-080 — Mini-Noses through Moxie** — `TODO`
   - Mini-Noses; Minus; Miracle Mile; Mirror Armor; Missile Launch; Misty Surge; Mojo; Mold Breaker; Moody; Motor Drive; Mountain Peak; Moxie
@@ -366,3 +366,5 @@ Each cohort must review every named ability against canonical text, implement al
 - **2026-07-24 — Run Infiltrator at exact authoritative boundaries.** Its Substitute bypass recognizes only the typed Substitute capability, responsive Blessing blocking names exact effect IDs without consuming charges, and normal/resumed movement executes zone entry so hazard immunity is observable as `ability-immune`.
 - **2026-07-25 — Preserve AA-076 reaction semantics across multi-hit and nested execution.** Iron Barbs and Justified wait for authoritative hit evidence, Kampfgeist waits for actual typed damage, disjoint HP/stage writes merge into one sheet CAS, and a nested reaction retains its reviewed child phase through durable suspension and resume.
 - **2026-07-25 — Apply AA-076 capacity and modifier rules from effective abilities.** Juicy Energy exposes and revalidates only regular or effective Honey Paws Berry Juice storage, while Inner Focus and Keen Eye filter only unwilling Initiative lowering, Accuracy penalties, and non-stat Evasion without erasing unrelated bonuses or Total Blindness.
+- **2026-07-27 — Derive every AA-079 declaration and trigger from current authority.** Magnet Pull plans are weight-qualified and enforce durable movement boundaries, Memory Wipe and Mimic/Mimitree consult structured history, Mimicry exposes field-derived types, and Magician/Migraine resume only through revalidated server-owned response state.
+- **2026-07-27 — Keep AA-079 passive projections narrow and effective-ability gated.** Magic Guard blocks only enumerated non-attack loss, Marvel Scale remains a virtual conditional Defense projection, and Mega Launcher, Merciless, Mind Mold, Magma Armor, and Mimitree preserve canonical damage, immunity, lifecycle, and frequency ordering.

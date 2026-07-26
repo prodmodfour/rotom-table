@@ -21,6 +21,7 @@ import {
 import type { MoveAutomationRollLedgerEntry } from '#shared/moveAutomation/random'
 import type { ResolveMoveIntent } from '#shared/livePlayMoveResolution'
 import { AA077_KLUTZ_ITEM_REQUIREMENT_ID } from '#shared/abilityAutomation/aa077'
+import { AA079_MAGICIAN_TARGET_REQUIREMENT_ID } from '#shared/abilityAutomation/aa079'
 import type { PendingMoveResponseOption } from '#shared/moveAutomation/responseOptions'
 import {
   MOVE_REACTION_LIMITS,
@@ -248,6 +249,14 @@ import {
   aa076TokenWithEffectiveKeenEye,
 } from '../abilityAutomation/mechanics/aa076StaticIntegration'
 import { aa078LiquidOozeDamageTypeOverlay } from '../abilityAutomation/mechanics/aa078StaticIntegration'
+import {
+  AA079_MAGMA_ARMOR_REASON,
+  AA079_MIGRAINE_REASON,
+  aa079MagmaArmorOwnerForOperation,
+  aa079MigraineDamageOperation,
+  aa079MoveOverlayOperations,
+  applyAa079ReviewedOperations,
+} from '../abilityAutomation/mechanics/aa079MoveIntegration'
 import {
   AA068_DRAGONS_MAW_REASON,
   AA068_DREAM_SMOKE_REASON,
@@ -1294,7 +1303,9 @@ const itemChoiceQueries = (
   context: AuthoritativeMoveRulesContext,
   recipientIds: readonly string[],
 ) => {
-  if (operation.payload.itemChoice?.requirementId !== AA077_KLUTZ_ITEM_REQUIREMENT_ID) {
+  const requirementId = operation.payload.itemChoice?.requirementId
+  if (requirementId !== AA077_KLUTZ_ITEM_REQUIREMENT_ID
+    && requirementId !== AA079_MAGICIAN_TARGET_REQUIREMENT_ID) {
     return context.queries.items
   }
   const ownerKeys = new Set(recipientIds.flatMap(recipientId => {
@@ -1310,6 +1321,9 @@ const itemChoiceQueries = (
     ))
     if (!ownerPlacement || !ownerKeys.has(`${owner.sheetKind}:${owner.slug}`)) {
       return false
+    }
+    if (requirementId === AA079_MAGICIAN_TARGET_REQUIREMENT_ID) {
+      return reference.kind === 'pokemon-held'
     }
     return reference.canonicalItemId !== 'rare-leek'
       || !context.queries.abilities.has(ownerPlacement.id, 'Leek Mastery')
@@ -1929,13 +1943,17 @@ const executableProgram = (
   const frostbiteOperations = aa071FrostbiteOperations({
     context,
     script: reviewedScript,
-    operations: applyAa078ReviewedOperations({
+    operations: applyAa079ReviewedOperations({
       context,
       script: reviewedScript,
-      operations: applyAa074HoneyThiefOperations(applyAa074HordeBreakOperations({
+      operations: applyAa078ReviewedOperations({
         context,
-        operations: selectedAa072Operations,
-      })),
+        script: reviewedScript,
+        operations: applyAa074HoneyThiefOperations(applyAa074HordeBreakOperations({
+          context,
+          operations: selectedAa072Operations,
+        })),
+      }),
     }),
   })
   const reviewedEntries = frostbiteOperations.map((operation, index): ExecutableMoveSpecOperationEntry => ({
@@ -3424,7 +3442,8 @@ const executeMoveSpecInternal = (
           }
           if (operation.reasonCode === AA069_ENFEEBLING_LIPS_REASON
             || operation.reasonCode === AA070_FLAME_TONGUE_REASON
-            || operation.reasonCode === AA070_FLAVORFUL_AROMA_REASON) {
+            || operation.reasonCode === AA070_FLAVORFUL_AROMA_REASON
+            || operation.reasonCode === AA079_MIGRAINE_REASON) {
             return hitTargetIds.length > 0 ? owners : []
           }
           if (operation.reasonCode === 'ability.beast-boost.optional-stage') {
@@ -3786,6 +3805,25 @@ const executeMoveSpecInternal = (
         })
         continue
       }
+      if (operation.kind === 'direct-hp' && operation.reasonCode === AA079_MAGMA_ARMOR_REASON) {
+        const moveIdentity = input.context.resolutionId
+          ?? `${operation.source.kind === 'move' ? operation.source.id : 'move'}:${getMechanics().script.moveName}`
+        const ownerId = aa079MagmaArmorOwnerForOperation({
+          context: input.context,
+          operation,
+          moveIdentity,
+          candidateTargetIds: targetIds,
+        })
+        if (ownerId === null || !hitTargetIds.includes(ownerId)) {
+          trace = reduceMoveResolutionTrace(trace, {
+            kind: 'operation', phase, operationId: operation.id,
+            operationKind: operation.kind, recipientIds: [], outcome: 'no-op',
+            reasonCode: operation.reasonCode, input: traceJson(operation.payload),
+            result: { status: 'magma-armor-owner-not-hit' },
+          })
+          continue
+        }
+      }
       if (
         operation.kind === 'roll'
         && operation.payload.formula.kind === 'table'
@@ -3857,12 +3895,16 @@ const executeMoveSpecInternal = (
         reasonCode,
         operation.source.kind === 'move' ? operation.source.id : null,
       )
-      const aa070Operation = operation.kind === 'damage' || operation.kind === 'multi-hit'
+      const aa079Operation = aa079MigraineDamageOperation({
+        operation,
+        responseOptionForReason: reviewedResponseOptionForReason,
+      })
+      const aa070Operation = aa079Operation.kind === 'damage' || aa079Operation.kind === 'multi-hit'
         ? aa070FlowerPowerDamageOperation({
-            operation,
+            operation: aa079Operation,
             responseOptionForReason: reviewedResponseOptionForReason,
           })
-        : operation
+        : aa079Operation
       const fieryCrashOption = operation.kind === 'damage'
         && input.context.queries.abilities.has(input.context.actor.placement.id, 'Fiery Crash')
         ? reviewedResponseOptionForReason(AA069_FIERY_CRASH_REASON)
@@ -5908,6 +5950,12 @@ const executeMoveSpecInternal = (
               authoritativeTargetIds: childTargetIds,
             }),
             ...aa078MoveOverlayOperations({
+              context: childContext,
+              script: childMechanics,
+              moveSourceId: childMoveSourceId,
+              authoritativeTargetIds: childTargetIds,
+            }),
+            ...aa079MoveOverlayOperations({
               context: childContext,
               script: childMechanics,
               moveSourceId: childMoveSourceId,

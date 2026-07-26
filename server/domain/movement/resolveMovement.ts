@@ -58,6 +58,7 @@ import { createMoveAutomationGravityResolver } from '../moveAutomation/gravity'
 import { createMoveAutomationRemainingGlobalFieldResolver } from '../moveAutomation/remainingGlobalFields'
 import { aa077AdjustedToken } from '../abilityAutomation/mechanics/aa077StaticIntegration'
 import { effectiveRuntimeAbilityIds } from '../abilityAutomation/effectiveRuntimeAbilities'
+import { aa079MagnetPullConstraintViolation } from '../abilityAutomation/mechanics/aa079MovementIntegration'
 
 export const AUTHORITATIVE_MOVEMENT_MODES = ['shift', 'pass'] as const
 export type AuthoritativeMovementMode = (typeof AUTHORITATIVE_MOVEMENT_MODES)[number]
@@ -94,6 +95,8 @@ export const AUTHORITATIVE_MOVEMENT_REASON_CODES = [
   'movement-route-blocked',
   'movement-cost-exceeds-limit',
   'movement-gravity-altitude-limit',
+  'movement-magnet-pull-maximum-range',
+  'movement-magnet-pull-minimum-range',
 ] as const
 
 export type AuthoritativeMovementReasonCode = (
@@ -231,6 +234,8 @@ export const AUTHORITATIVE_DISPLACEMENT_FAILURE_REASON_CODES = [
   'displacement-origin-out-of-bounds',
   'displacement-origin-collision',
   'displacement-full-distance-unavailable',
+  'displacement-magnet-pull-maximum-range',
+  'displacement-magnet-pull-minimum-range',
 ] as const
 
 export type AuthoritativeDisplacementMovementMode =
@@ -602,6 +607,45 @@ const failure = (input: {
   consultedPlacementIds: [...(input.consultedPlacementIds ?? [])],
   sheetReads: (input.sheetReads ?? []).map(read => ({ ...read })),
 })
+
+const enforceMagnetPullMovementConstraints = (input: {
+  readonly map: TabletopMap
+  readonly result: AuthoritativeMovementResult
+  readonly mover: MovementPlacementSnapshot
+  readonly placements: readonly MovementPlacementSnapshot[]
+}): AuthoritativeMovementResult => {
+  if (!input.result.ok || input.result.policy.kind === 'gm-override') return input.result
+  const violation = aa079MagnetPullConstraintViolation({
+    map: input.map,
+    placementId: input.mover.id,
+    origin: input.result.origin,
+    path: input.result.path,
+    footprints: input.placements,
+  })
+  if (!violation) return input.result
+  return failure({
+    reasonCode: `movement-magnet-pull-${violation}-range`,
+    message: violation === 'maximum'
+      ? 'Magnet Pull prevents this voluntary path from moving farther than 6 metres from its source.'
+      : 'Magnet Pull prevents this voluntary path from moving closer than 3 metres to its source.',
+    placementId: input.result.placementId,
+    mode: input.result.mode,
+    policy: input.result.policy,
+    origin: input.result.origin,
+    destination: input.result.destination,
+    path: input.result.path,
+    cost: input.result.cost,
+    capabilityLimit: input.result.capabilityLimit,
+    effectiveLimit: input.result.effectiveLimit,
+    capabilities: input.result.capabilities,
+    movementProfile: input.result.movementProfile,
+    footprint: input.result.footprint,
+    occupancy: input.result.occupancy,
+    collision: input.result.collision,
+    consultedPlacementIds: input.result.consultedPlacementIds,
+    sheetReads: input.result.sheetReads,
+  })
+}
 
 const resolvedPolicy = (
   policy: AuthoritativeMovementPolicy | undefined,
@@ -1523,7 +1567,7 @@ export const resolveMovement = (input: ResolveMovementInput): AuthoritativeMovem
   }
 
   if (policy.kind === 'pass') {
-    return resolvePreparedPassMovement({
+    const result = resolvePreparedPassMovement({
       map: input.map,
       gravity,
       placementId,
@@ -1537,6 +1581,7 @@ export const resolveMovement = (input: ResolveMovementInput): AuthoritativeMovem
       consultedPlacementIds,
       sheetReads,
     })
+    return enforceMagnetPullMovementConstraints({ map: input.map, result, mover, placements })
   }
 
   // The mode-specific validation above already rejected this case. Keep the
@@ -1752,7 +1797,7 @@ export const resolveMovement = (input: ResolveMovementInput): AuthoritativeMovem
     triggeringStep(step, mover, placements, pathResult.steps.length)
   ))
 
-  return deepFreeze({
+  const result: AuthoritativeMovementSuccess = deepFreeze({
     ok: true,
     reasonCode: 'movement-legal',
     placementId,
@@ -1773,6 +1818,7 @@ export const resolveMovement = (input: ResolveMovementInput): AuthoritativeMovem
     consultedPlacementIds,
     sheetReads: sheetReads.map(read => ({ ...read })),
   })
+  return enforceMagnetPullMovementConstraints({ map: input.map, result, mover, placements })
 }
 
 const DISPLACEMENT_MOVEMENT_MODE_SET = new Set<string>(
@@ -2204,6 +2250,27 @@ export const resolveAuthoritativeDisplacement = (
     })
   }
 
+  if (movementMode === 'voluntary') {
+    const violation = aa079MagnetPullConstraintViolation({
+      map: input.map,
+      placementId: mover.id,
+      origin,
+      path,
+      footprints: placements,
+    })
+    if (violation) return displacementFailure({
+      reasonCode: `displacement-magnet-pull-${violation}-range`,
+      message: violation === 'maximum'
+        ? 'Magnet Pull prevents this voluntary displacement from moving farther than 6 metres from its source.'
+        : 'Magnet Pull prevents this voluntary displacement from moving closer than 3 metres to its source.',
+      placementId,
+      movementMode,
+      distancePolicy,
+      partial,
+      consultedPlacementIds,
+      sheetReads,
+    })
+  }
   const triggeringSteps = pathSteps.map(step => (
     triggeringStep(step, mover, placements, pathSteps.length)
   ))

@@ -111,6 +111,12 @@ export const AA078_ABILITY_MECHANIC_IDS = [
   'aa078.long-reach', 'aa078.lullaby', 'aa078.lunchbox',
   'aa078.mach-speed', 'aa078.maelstrom-pulse', 'aa078.magic-bounce',
 ] as const
+export const AA079_ABILITY_MECHANIC_IDS = [
+  'aa079.magic-guard', 'aa079.magician', 'aa079.magma-armor',
+  'aa079.magnet-pull', 'aa079.marvel-scale', 'aa079.mega-launcher',
+  'aa079.memory-wipe', 'aa079.merciless', 'aa079.migraine',
+  'aa079.mimicry', 'aa079.mimitree', 'aa079.mind-mold',
+] as const
 export type Aa060AbilityMechanicId = (typeof AA060_ABILITY_MECHANIC_IDS)[number]
 export type AbilityMechanicId = Aa060AbilityMechanicId
   | (typeof AA061_ABILITY_MECHANIC_IDS)[number]
@@ -131,6 +137,7 @@ export type AbilityMechanicId = Aa060AbilityMechanicId
   | (typeof AA076_ABILITY_MECHANIC_IDS)[number]
   | (typeof AA077_ABILITY_MECHANIC_IDS)[number]
   | (typeof AA078_ABILITY_MECHANIC_IDS)[number]
+  | (typeof AA079_ABILITY_MECHANIC_IDS)[number]
 export interface AbilityMechanicOperation extends AbilitySpecJsonObject {
   readonly kind: typeof ABILITY_MECHANIC_OPERATION_KIND
   readonly id: string
@@ -377,6 +384,18 @@ const CONFIG_FIELDS: Readonly<Record<AbilityMechanicId, readonly string[]>> = {
   'aa078.mach-speed': ['lastChanceType', 'hpThresholdNumerator', 'hpThresholdDenominator', 'damageBonus'],
   'aa078.maelstrom-pulse': ['action', 'frequency', 'moveType', 'priority', 'damagingSpeedFractionNumerator', 'damagingSpeedFractionDenominator'],
   'aa078.magic-bounce': ['action', 'frequency', 'statusMovesOnly', 'hazardRange', 'reflectToAttacker', 'hazardPlacementAndAffiliation', 'recursionPolicy'],
+  'aa079.magic-guard': ['preventedSources'],
+  'aa079.magician': ['action', 'frequency', 'trigger', 'targetRelationship', 'requiresEmptyHeldItem', 'itemAction'],
+  'aa079.magma-armor': ['triggers', 'hitPointLossTicks', 'burnImmunityPrevents'],
+  'aa079.magnet-pull': ['action', 'frequency', 'effectsSelected', 'maximumDisplacementBase', 'subtractWeightClass', 'maximumRange', 'minimumRange', 'duration'],
+  'aa079.marvel-scale': ['conditions', 'defenseStageDelta'],
+  'aa079.mega-launcher': ['moveIds', 'damageBaseBonus'],
+  'aa079.memory-wipe': ['frequency', 'swiftEffect', 'standardConditions', 'extendedMaximumMinutes', 'lookbackMinutes'],
+  'aa079.merciless': ['requiredConditions', 'damagingOnly', 'automaticCritical', 'honorCriticalPrevention'],
+  'aa079.migraine': ['connectionMoveId', 'action', 'frequency', 'hpThresholdNumerator', 'hpThresholdDenominator', 'condition', 'automaticCritical'],
+  'aa079.mimicry': ['action', 'frequency', 'fieldTypePairs', 'weatherTypePairs', 'duration'],
+  'aa079.mimitree': ['connectionMoveId', 'trigger', 'replacementMoveId', 'ignoreReplacementFrequency'],
+  'aa079.mind-mold': ['lastChanceType', 'hpThresholdNumerator', 'hpThresholdDenominator', 'damageBonus'],
 }
 const MECHANIC_SET = new Set<string>([
   ...AA060_ABILITY_MECHANIC_IDS, ...AA061_ABILITY_MECHANIC_IDS,
@@ -388,7 +407,7 @@ const MECHANIC_SET = new Set<string>([
   ...AA072_ABILITY_MECHANIC_IDS, ...AA073_ABILITY_MECHANIC_IDS,
   ...AA074_ABILITY_MECHANIC_IDS, ...AA075_ABILITY_MECHANIC_IDS,
   ...AA076_ABILITY_MECHANIC_IDS, ...AA077_ABILITY_MECHANIC_IDS,
-  ...AA078_ABILITY_MECHANIC_IDS,
+  ...AA078_ABILITY_MECHANIC_IDS, ...AA079_ABILITY_MECHANIC_IDS,
 ])
 const ID = /^[a-z0-9]+(?:[._:/-][a-z0-9]+)*$/
 const fail = (code: AbilityMechanicValidationError['code'], path: string, detail: string): never => { throw new AbilityMechanicValidationError(code, path, detail) }
@@ -1565,6 +1584,65 @@ const parseConfig = (mechanicId: AbilityMechanicId, value: unknown, path: string
       statusMovesOnly: bool(config.statusMovesOnly, `${path}.statusMovesOnly`), hazardRange: integer(config.hazardRange, `${path}.hazardRange`, 10, 10),
       reflectToAttacker: bool(config.reflectToAttacker, `${path}.reflectToAttacker`), hazardPlacementAndAffiliation: bool(config.hazardPlacementAndAffiliation, `${path}.hazardPlacementAndAffiliation`),
       recursionPolicy: oneOf(config.recursionPolicy, ['do-not-retrigger'], `${path}.recursionPolicy`),
+    }
+    case 'aa079.magic-guard': return {
+      preventedSources: stringArray(config.preventedSources, ['hazard', 'weather', 'status-affliction', 'vortex', 'recoil', 'hay-fever', 'iron-barbs', 'rough-skin', 'leech-seed'], `${path}.preventedSources`),
+    }
+    case 'aa079.magician': return {
+      action: oneOf(config.action, ['free'], `${path}.action`), frequency: oneOf(config.frequency, ['scene'], `${path}.frequency`),
+      trigger: oneOf(config.trigger, ['damaging-single-target-hit'], `${path}.trigger`), targetRelationship: oneOf(config.targetRelationship, ['foe'], `${path}.targetRelationship`),
+      requiresEmptyHeldItem: bool(config.requiresEmptyHeldItem, `${path}.requiresEmptyHeldItem`), itemAction: oneOf(config.itemAction, ['steal-held'], `${path}.itemAction`),
+    }
+    case 'aa079.magma-armor': return {
+      triggers: stringArray(config.triggers, ['melee-hit', 'grapple-turn-end'], `${path}.triggers`), hitPointLossTicks: integer(config.hitPointLossTicks, `${path}.hitPointLossTicks`, 1, 1),
+      burnImmunityPrevents: bool(config.burnImmunityPrevents, `${path}.burnImmunityPrevents`),
+    }
+    case 'aa079.magnet-pull': return {
+      action: oneOf(config.action, ['swift'], `${path}.action`), frequency: oneOf(config.frequency, ['scene-x3'], `${path}.frequency`), effectsSelected: integer(config.effectsSelected, `${path}.effectsSelected`, 2, 2),
+      maximumDisplacementBase: integer(config.maximumDisplacementBase, `${path}.maximumDisplacementBase`, 6, 6), subtractWeightClass: bool(config.subtractWeightClass, `${path}.subtractWeightClass`),
+      maximumRange: integer(config.maximumRange, `${path}.maximumRange`, 6, 6), minimumRange: integer(config.minimumRange, `${path}.minimumRange`, 3, 3),
+      duration: oneOf(config.duration, ['until-end-next-turn'], `${path}.duration`),
+    }
+    case 'aa079.marvel-scale': return {
+      conditions: stringArray(config.conditions, ['Sleep', 'Paralysis', 'Burned', 'Frozen', 'Poisoned', 'Badly Poisoned'], `${path}.conditions`),
+      defenseStageDelta: integer(config.defenseStageDelta, `${path}.defenseStageDelta`, 2, 2),
+    }
+    case 'aa079.mega-launcher': return {
+      moveIds: stringArray(config.moveIds, ['Aura Sphere', 'Dark Pulse', 'Dragon Pulse', 'Water Pulse'], `${path}.moveIds`),
+      damageBaseBonus: integer(config.damageBaseBonus, `${path}.damageBaseBonus`, 3, 3),
+    }
+    case 'aa079.memory-wipe': return {
+      frequency: oneOf(config.frequency, ['scene'], `${path}.frequency`), swiftEffect: oneOf(config.swiftEffect, ['disable-last-move'], `${path}.swiftEffect`),
+      standardConditions: stringArray(config.standardConditions, ['Flinch', 'Paralysis'], `${path}.standardConditions`),
+      extendedMaximumMinutes: integer(config.extendedMaximumMinutes, `${path}.extendedMaximumMinutes`, 10, 10), lookbackMinutes: integer(config.lookbackMinutes, `${path}.lookbackMinutes`, 30, 30),
+    }
+    case 'aa079.merciless': return {
+      requiredConditions: stringArray(config.requiredConditions, ['Poisoned', 'Badly Poisoned'], `${path}.requiredConditions`), damagingOnly: bool(config.damagingOnly, `${path}.damagingOnly`),
+      automaticCritical: bool(config.automaticCritical, `${path}.automaticCritical`), honorCriticalPrevention: bool(config.honorCriticalPrevention, `${path}.honorCriticalPrevention`),
+    }
+    case 'aa079.migraine': return {
+      connectionMoveId: oneOf(config.connectionMoveId, ['Confusion'], `${path}.connectionMoveId`), action: oneOf(config.action, ['free'], `${path}.action`), frequency: oneOf(config.frequency, ['scene-x2'], `${path}.frequency`),
+      hpThresholdNumerator: integer(config.hpThresholdNumerator, `${path}.hpThresholdNumerator`, 1, 1), hpThresholdDenominator: integer(config.hpThresholdDenominator, `${path}.hpThresholdDenominator`, 2, 2),
+      condition: oneOf(config.condition, ['Confused'], `${path}.condition`), automaticCritical: bool(config.automaticCritical, `${path}.automaticCritical`),
+    }
+    case 'aa079.mimicry': return {
+      action: oneOf(config.action, ['free'], `${path}.action`), frequency: oneOf(config.frequency, ['scene'], `${path}.frequency`),
+      fieldTypePairs: stringArray(config.fieldTypePairs, [
+        'beach:ground,water', 'cave:rock,dark', 'desert:ground,rock', 'forest:grass',
+        'freshwater:water', 'ocean:water', 'grassland:normal,grass', 'marsh:water,poison',
+        'mountain:rock,ground', 'rainforest:grass,poison', 'taiga:ice,grass', 'tundra:ice',
+        'urban:normal,steel',
+      ], `${path}.fieldTypePairs`),
+      weatherTypePairs: stringArray(config.weatherTypePairs, ['sunny:fire', 'rainy:water', 'hail:ice', 'sandstorm:rock'], `${path}.weatherTypePairs`),
+      duration: oneOf(config.duration, ['scene'], `${path}.duration`),
+    }
+    case 'aa079.mimitree': return {
+      connectionMoveId: oneOf(config.connectionMoveId, ['Mimic'], `${path}.connectionMoveId`), trigger: oneOf(config.trigger, ['use-mimic-copied-move'], `${path}.trigger`),
+      replacementMoveId: oneOf(config.replacementMoveId, ['Mimic'], `${path}.replacementMoveId`), ignoreReplacementFrequency: bool(config.ignoreReplacementFrequency, `${path}.ignoreReplacementFrequency`),
+    }
+    case 'aa079.mind-mold': return {
+      lastChanceType: oneOf(config.lastChanceType, ['psychic'], `${path}.lastChanceType`), hpThresholdNumerator: integer(config.hpThresholdNumerator, `${path}.hpThresholdNumerator`, 1, 1),
+      hpThresholdDenominator: integer(config.hpThresholdDenominator, `${path}.hpThresholdDenominator`, 3, 3), damageBonus: integer(config.damageBonus, `${path}.damageBonus`, 5, 5),
     }
   }
 }

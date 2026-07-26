@@ -71,6 +71,7 @@ import { Aa060AnchoredMovementError, assertAa060AnchoredDestination } from '../a
 import { aa061AquaBulletStateIdsForMove, aa061BatteryStateIdsForMove } from '../abilityAutomation/mechanics/aa061MoveIntegration'
 import { aa077LeafRushStateIdsForMove } from '../abilityAutomation/mechanics/aa077StaticIntegration'
 import { aa078StateIdsForMove } from '../abilityAutomation/mechanics/aa078StaticIntegration'
+import { aa079MimitreeMimicFrequencyBypass } from '../abilityAutomation/mechanics/aa079StaticIntegration'
 import { aa062BoneLordReadyStateIds } from '../abilityAutomation/mechanics/aa062MoveIntegration'
 import { recordAa065CudChewConsumptions } from '../abilityAutomation/mechanics/aa065ItemIntegration'
 import { applyAa061BallFetchSendOutTriggers } from '../abilityAutomation/mechanics/aa061PresenceIntegration'
@@ -724,6 +725,8 @@ const applyTriggeredAbilityPayments = (input: {
     ['ability.lunchbox.optional-temporary-hp', 'Lunchbox'],
     ['ability.magic-bounce.optional-reflection', 'Magic Bounce'],
     ['ability.magic-bounce.optional-hazard-control', 'Magic Bounce'],
+    ['ability.magician.optional-held-item-theft', 'Magician'],
+    ['ability.migraine.optional-confusion-critical', 'Migraine'],
   ])
   const noFrequency = new Set([
     'Anger Point', 'Aqua Boost', 'Beast Boost', 'Celebrate', 'Chilling Neigh',
@@ -761,7 +764,7 @@ const applyTriggeredAbilityPayments = (input: {
   for (const selection of selections) {
     if (selection.kind !== 'operation') continue
     const canonicalId = canonicalIdByReason.get(selection.reasonCode)!
-    const ownerId = canonicalId === 'Klutz'
+    const ownerId = canonicalId === 'Klutz' || canonicalId === 'Magician' || canonicalId === 'Migraine'
       ? actorByChildOperationId.get(selection.operationId) ?? input.context.actor.placement.id
       : selection.recipientIds[0]!
     const ability = input.context.queries.abilities.activeForPlacement(ownerId)
@@ -908,7 +911,7 @@ const applyTriggeredAbilityPayments = (input: {
     if (existingByOperation && existingByOperation !== existing) {
       fail('state-change-conflict', `${canonicalId} response operation already paid another resource.`)
     }
-    const limit = ['Bodyguard', 'Dancer', 'Dragon’s Maw', 'Drown Out', 'Giver', 'Gore', 'Gulp Missile', 'Innards Out'].includes(canonicalId)
+    const limit = ['Bodyguard', 'Dancer', 'Dragon’s Maw', 'Drown Out', 'Giver', 'Gore', 'Gulp Missile', 'Innards Out', 'Migraine'].includes(canonicalId)
       ? 2
       : 1
     if (!existingByOperation && (existing?.spent ?? 0) >= limit) {
@@ -1141,11 +1144,16 @@ export const planNativeV2MoveState = (options: {
     root: context,
     children: native.childExecutions,
   })
-  const effectiveRootFrequency = aa067DiamondDefenseMoveFrequency({
+  const effectiveRootFrequency = aa079MimitreeMimicFrequencyBypass({
     context,
-    script: { moveName: options.resolution.canonicalMoveName },
-    frequency: options.resolution.frequency,
+    canonicalMoveId: options.resolution.canonicalMoveName,
   })
+    ? 'At-Will'
+    : aa067DiamondDefenseMoveFrequency({
+        context,
+        script: { moveName: options.resolution.canonicalMoveName },
+        frequency: options.resolution.frequency,
+      })
   const usageResources = mapOperations.flatMap((emission) => {
     const { operation } = emission
     if (operation.kind !== 'usage') return []
@@ -1208,6 +1216,10 @@ export const planNativeV2MoveState = (options: {
         moveName: child.canonicalId,
         moveKey: childMoveKey,
         frequency: abilityGrantedUse
+          || aa079MimitreeMimicFrequencyBypass({
+            context: contextForOperation(operation),
+            canonicalMoveId: child.canonicalId,
+          })
           ? 'At-Will'
           : aa067DiamondDefenseMoveFrequency({
               context: contextForOperation(operation),

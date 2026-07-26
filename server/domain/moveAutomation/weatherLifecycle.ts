@@ -203,8 +203,11 @@ export const resolveWeatherResidualImmunity = (input: {
     return { blockedBy: 'Ice Face', consultedPlacementIds: [] }
   }
 
+  if (input.context.queries.abilities.has(input.recipient.placement.id, 'Magic Guard')) {
+    return { blockedBy: 'Magic Guard', consultedPlacementIds: [] }
+  }
   const directAbility = firstAbility(input.recipient.token.abilityNames, [
-    ...UNIVERSAL_WEATHER_IMMUNITY_ABILITIES,
+    ...UNIVERSAL_WEATHER_IMMUNITY_ABILITIES.filter(ability => ability !== 'Magic Guard'),
     ...WEATHER_SELF_IMMUNITY_ABILITIES[input.weatherKind].filter(ability => ability !== 'Ice Face'),
   ])
   if (directAbility) return { blockedBy: directAbility, consultedPlacementIds: [] }

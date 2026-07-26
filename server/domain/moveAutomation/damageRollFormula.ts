@@ -8,6 +8,7 @@ import {
 } from './damageBase'
 import type { MoveDamageTypeResolution } from './damageTypes'
 import { aa066DarkAuraDamageBaseBonus } from '../abilityAutomation/mechanics/aa066StaticIntegration'
+import { aa079MegaLauncherDamageBaseBonus } from '../abilityAutomation/mechanics/aa079StaticIntegration'
 
 export interface MoveSpecDamageRollFormula {
   readonly count: number
@@ -31,7 +32,12 @@ export const resolveMoveSpecDamageRollFormula = (options: {
     context: options.context,
     moveType: options.resolvedType.moveType,
   })
-  const postBoundsBonus = darkAuraBonus + (options.postBoundsDamageBaseBonus ?? 0)
+  const megaLauncherBonus = aa079MegaLauncherDamageBaseBonus({
+    context: options.context,
+    script: { moveName: options.canonicalMoveId },
+  })
+  const postBoundsBonus = darkAuraBonus + megaLauncherBonus
+    + (options.postBoundsDamageBaseBonus ?? 0)
   if (typeof options.operation.payload.damageBase !== 'number') {
     const contextualDamageBase = resolveContextualMoveDamageBase({
       context: options.context,

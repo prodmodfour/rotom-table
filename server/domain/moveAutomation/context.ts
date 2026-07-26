@@ -10,6 +10,7 @@ import {
 import { findMove } from '~~/data/ptuReference'
 import type { CharacterSheet } from '~/types/characterSheet'
 import { AA070_FLUTTER_NO_FLANK_CAPABILITY } from '#shared/abilityAutomation/aa070'
+import { aa079HasMimitreeRearm } from '#shared/abilityAutomation/aa079'
 import {
   AA071_FOREST_LORD_ORIGIN_CAPABILITY,
   isAa071FullyGrownTreeCell,
@@ -1080,14 +1081,21 @@ export const buildAuthoritativeMoveRulesContext = (
           const canonicalMove = findMove(moveName)
           return canonicalMove ? runtimes.get(canonicalMove.name)?.definitionHash ?? null : null
         },
-        frequencyForMove: (canonicalMoveName, frequency) => aa067DiamondDefenseMoveFrequency({
-          context: {
-            actor: { placement: { id: actorPlacement.id } },
-            queries: { abilities: abilityQueries },
-          },
-          script: { moveName: canonicalMoveName },
-          frequency,
-        }),
+        frequencyForMove: (canonicalMoveName, frequency) => canonicalMoveName === 'Mimic'
+          && abilityQueries.has(actorPlacement.id, 'Mimitree')
+          && aa079HasMimitreeRearm({
+            effects: map.encounterState?.effects,
+            placementId: actorPlacement.id,
+          })
+          ? 'At-Will'
+          : aa067DiamondDefenseMoveFrequency({
+              context: {
+                actor: { placement: { id: actorPlacement.id } },
+                queries: { abilities: abilityQueries },
+              },
+              script: { moveName: canonicalMoveName },
+              frequency,
+            }),
       })
       if (!resolved.ok || resolved.entry.canonicalMoveName !== 'Bonemerang'
         || !aa062BoneLordEmpowersMoveState({

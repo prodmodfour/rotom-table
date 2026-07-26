@@ -6,6 +6,7 @@ import type {
 import type { AuthoritativeMoveRulesContext } from './context'
 import type { MoveAutomationScript } from '~/types/moveAutomation'
 import { aa077LancerCriticalRangeBonus } from '../abilityAutomation/mechanics/aa077StaticIntegration'
+import { aa079MercilessForcesCritical } from '../abilityAutomation/mechanics/aa079StaticIntegration'
 
 export const CRITICAL_HIT_PREVENTING_ABILITIES = Object.freeze([
   'Battle Armor',
@@ -39,7 +40,7 @@ export interface MoveCriticalHitResolution {
   readonly operationId: string
   readonly recipientId: string
   readonly trigger: MoveCriticalHitTrigger
-  readonly triggerSource: 'canonical' | 'operation'
+  readonly triggerSource: 'canonical' | 'operation' | 'ability'
   readonly naturalRoll: number | null
   readonly candidate: boolean
   readonly preventionPolicy: MoveCriticalHitPolicy['prevention']
@@ -137,9 +138,16 @@ export const resolveMoveCriticalHit = (options: {
   options.context.reads.recordPlacement(placement)
 
   const authoredPolicy = options.operation.payload.criticalHit
-  const baseTrigger = authoredPolicy?.trigger.kind === 'standard'
-    ? canonicalTrigger(options.script)
-    : authoredPolicy?.trigger ?? canonicalTrigger(options.script)
+  const merciless = aa079MercilessForcesCritical({
+    context: options.context,
+    recipientId: options.recipientId,
+    damaging: options.script.damaging && !options.script.directHpLoss,
+  })
+  const baseTrigger = merciless
+    ? { kind: 'always' as const }
+    : authoredPolicy?.trigger.kind === 'standard'
+      ? canonicalTrigger(options.script)
+      : authoredPolicy?.trigger ?? canonicalTrigger(options.script)
   const beamCannon = options.context.queries.abilities.has(options.context.actor.placement.id, 'Beam Cannon')
     && options.script.targetMode === 'one-target'
     && !options.script.range.toLowerCase().includes('melee')
@@ -176,7 +184,7 @@ export const resolveMoveCriticalHit = (options: {
     options.naturalRoll,
     options.legacyCritical ?? false,
   )
-  const preventionPolicy = authoredPolicy?.prevention ?? 'honor'
+  const preventionPolicy = merciless ? 'honor' : authoredPolicy?.prevention ?? 'honor'
   const preventedBy = candidate && preventionPolicy === 'honor'
     ? preventingAbility(options.context, options.recipientId)
     : null
@@ -186,7 +194,7 @@ export const resolveMoveCriticalHit = (options: {
     operationId: options.operation.id,
     recipientId: options.recipientId,
     trigger,
-    triggerSource: authoredPolicy ? 'operation' : 'canonical',
+    triggerSource: merciless ? 'ability' : authoredPolicy ? 'operation' : 'canonical',
     naturalRoll: options.naturalRoll,
     candidate,
     preventionPolicy,

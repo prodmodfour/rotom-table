@@ -20,6 +20,8 @@ import {
 } from '~/utils/combatStages'
 import { conditionAdjustedCombatStages } from '~/utils/sheetConditionEffects'
 import { resolveCanonicalSheetAbilityName } from '~/utils/sheetAbilities'
+import { normalizeConditionName } from '~/utils/statusConditions'
+import { AA079_MARVEL_SCALE_CONDITIONS } from '#shared/abilityAutomation/aa079'
 import { aa066EffectiveCombatStages } from '../abilityAutomation/mechanics/aa066StageIntegration'
 import { aa076EffectiveCombatStages } from '../abilityAutomation/mechanics/aa076StaticIntegration'
 
@@ -183,6 +185,7 @@ interface MoveAutomationStatTokenSnapshot {
   readonly intrepidSwordActive: boolean
   readonly keenEyeActive: boolean
   readonly gutsActive: boolean
+  readonly marvelScaleActive: boolean
 }
 
 const fail = (
@@ -225,6 +228,7 @@ const statTokenSnapshot = (
   intrepidSwordActive: boolean,
   keenEyeActive: boolean,
   gutsActive: boolean,
+  marvelScaleActive: boolean,
 ): MoveAutomationStatTokenSnapshot => deepFreeze({
   id: token.id,
   attack: token.atk,
@@ -247,6 +251,7 @@ const statTokenSnapshot = (
   intrepidSwordActive,
   keenEyeActive,
   gutsActive,
+  marvelScaleActive,
 })
 
 const finiteStatValue = (
@@ -275,13 +280,16 @@ interface MoveAutomationStageSnapshots {
 const stageSnapshots = (
   token: MoveAutomationStatTokenSnapshot,
 ): MoveAutomationStageSnapshots => {
-  const authored = aa076EffectiveCombatStages({
+  const abilityStages = aa076EffectiveCombatStages({
     stages: aa066EffectiveCombatStages({
       stages: normalizeCombatStages(token.combatStages),
       abilityNames: token.dauntlessShieldActive ? ['Dauntless Shield'] : [],
     }),
     intrepidSwordActive: token.intrepidSwordActive,
   })
+  const authored = token.marvelScaleActive
+    ? { ...abilityStages, def: clampCombatStage(abilityStages.def + 2) }
+    : abilityStages
   return {
     authored,
     modified: conditionAdjustedCombatStages(
@@ -416,6 +424,14 @@ export const createMoveAutomationStatResolver = (
       input.hasEffectiveAbility?.(token.id, 'Guts')
         ?? token.abilityNames?.includes('Guts')
         ?? false,
+      (input.hasEffectiveAbility?.(token.id, 'Marvel Scale')
+        ?? token.abilityNames?.includes('Marvel Scale')
+        ?? false)
+        && token.conditions.some(condition => {
+          const canonical = normalizeConditionName(condition)
+          return canonical !== null
+            && (AA079_MARVEL_SCALE_CONDITIONS as readonly string[]).includes(canonical)
+        }),
     )),
     token => token.id,
     'duplicate-token-id',

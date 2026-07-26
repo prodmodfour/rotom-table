@@ -17101,420 +17101,900 @@
     {
       "canonicalId": "Magic Guard",
       "displayName": "Magic Guard",
-      "baseStatus": "blocked",
+      "baseStatus": "complete",
       "interactionStatus": "unassessed",
       "runtime": {
-        "kind": "unimplemented",
-        "version": null,
-        "definitionHash": null,
-        "sourceModule": null
+        "kind": "abilityspec-v1",
+        "version": 1,
+        "definitionHash": "f1dfde53a87c5c894017c161c9fa67cd6eb908a9796c1edbb67bb1ffa76989ea",
+        "sourceModule": "server/domain/abilityAutomation/specs/aa079.ts"
       },
       "rulesProvenance": {
         "rulesetId": "rotom-table-reference-abilities-v1",
         "canonicalizationVersion": 1,
         "sourceDataSha256": "767c3e2ae45471c26ad97a07552c4b0417ed0e207827af8a59da3a73e81f4362"
       },
-      "capabilityTags": [],
-      "suggestedCapabilityTags": [
-        "mode.static"
+      "capabilityTags": [
+        "abilities.effective-projection",
+        "context.authoritative",
+        "effects.typed",
+        "events.typed",
+        "expressions.bounded",
+        "hp.typed",
+        "immunity.providers",
+        "lifecycle.effects",
+        "mode.static",
+        "passives.aggregation",
+        "runtime.abilityspec-v1",
+        "trace.structured"
       ],
-      "blockerCodes": [
-        "runtime.unimplemented"
-      ],
+      "suggestedCapabilityTags": [],
+      "blockerCodes": [],
       "limitations": [],
       "manualSteps": [],
-      "scenarioIds": [],
+      "scenarioIds": [
+        "aa079.magic-guard.reviewed"
+      ],
       "conformanceEvidence": {
-        "requirementTags": [],
-        "scenarios": [],
+        "requirementTags": [
+          "branch.immunity",
+          "mechanic.hp",
+          "mechanic.lifecycle",
+          "mode.static",
+          "recovery.retry",
+          "target.self"
+        ],
+        "scenarios": [
+          {
+            "scenarioId": "aa079.magic-guard.reviewed",
+            "evidenceClasses": [
+              "hp-applied",
+              "hp-prevented",
+              "immunity",
+              "lifecycle-cleanup",
+              "lifecycle-trigger",
+              "passive-applied",
+              "passive-suppressed",
+              "retry",
+              "self"
+            ]
+          }
+        ],
         "notApplicable": []
       },
-      "reviewedAt": null,
+      "reviewedAt": "2026-07-27",
       "unsupportedInteractionIds": [],
       "rolloutCohortId": "aa-079"
     },
     {
       "canonicalId": "Magician",
       "displayName": "Magician",
-      "baseStatus": "blocked",
+      "baseStatus": "complete",
       "interactionStatus": "unassessed",
       "runtime": {
-        "kind": "unimplemented",
-        "version": null,
-        "definitionHash": null,
-        "sourceModule": null
+        "kind": "abilityspec-v1",
+        "version": 1,
+        "definitionHash": "de66a07720cdba5e632bf7433a315a762a5d5bc744f2fa19533f2deace8ced6a",
+        "sourceModule": "server/domain/abilityAutomation/specs/aa079.ts"
       },
       "rulesProvenance": {
         "rulesetId": "rotom-table-reference-abilities-v1",
         "canonicalizationVersion": 1,
         "sourceDataSha256": "767c3e2ae45471c26ad97a07552c4b0417ed0e207827af8a59da3a73e81f4362"
       },
-      "capabilityTags": [],
-      "suggestedCapabilityTags": [
-        "mode.triggered"
+      "capabilityTags": [
+        "abilities.effective-projection",
+        "actions.authoritative",
+        "choices.durable",
+        "context.authoritative",
+        "effects.typed",
+        "events.routing",
+        "events.typed",
+        "frequency.scene",
+        "intent.typed",
+        "items.authoritative",
+        "mode.triggered",
+        "planning.atomic",
+        "reactions.durable",
+        "recovery.durable",
+        "relationships.providers",
+        "runtime.abilityspec-v1",
+        "targeting.authoritative",
+        "trace.structured"
       ],
-      "blockerCodes": [
-        "runtime.unimplemented"
-      ],
+      "suggestedCapabilityTags": [],
+      "blockerCodes": [],
       "limitations": [],
       "manualSteps": [],
-      "scenarioIds": [],
+      "scenarioIds": [
+        "aa079.magician.reviewed"
+      ],
       "conformanceEvidence": {
-        "requirementTags": [],
-        "scenarios": [],
+        "requirementTags": [
+          "branch.choice",
+          "mechanic.interrupt",
+          "mechanic.item",
+          "mechanic.usage",
+          "mode.triggered",
+          "recovery.reconnect",
+          "recovery.retry",
+          "resource.multi",
+          "target.enemy",
+          "target.self"
+        ],
+        "scenarios": [
+          {
+            "scenarioId": "aa079.magician.reviewed",
+            "evidenceClasses": [
+              "choice",
+              "enemy",
+              "interrupt-priority",
+              "item-applied",
+              "item-unavailable",
+              "multi-resource-conflict",
+              "pass",
+              "reconnect",
+              "retry",
+              "self",
+              "trigger-eligible",
+              "trigger-ineligible",
+              "usage-exhausted",
+              "usage-reset",
+              "usage-spent"
+            ]
+          }
+        ],
         "notApplicable": []
       },
-      "reviewedAt": null,
+      "reviewedAt": "2026-07-27",
       "unsupportedInteractionIds": [],
       "rolloutCohortId": "aa-079"
     },
     {
       "canonicalId": "Magma Armor",
       "displayName": "Magma Armor",
-      "baseStatus": "blocked",
+      "baseStatus": "complete",
       "interactionStatus": "unassessed",
       "runtime": {
-        "kind": "unimplemented",
-        "version": null,
-        "definitionHash": null,
-        "sourceModule": null
+        "kind": "abilityspec-v1",
+        "version": 1,
+        "definitionHash": "7c83394ec35e6f3b756d1e284eb573b05a3d18a48f1cfd7b4fff5ab255711bc6",
+        "sourceModule": "server/domain/abilityAutomation/specs/aa079.ts"
       },
       "rulesProvenance": {
         "rulesetId": "rotom-table-reference-abilities-v1",
         "canonicalizationVersion": 1,
         "sourceDataSha256": "767c3e2ae45471c26ad97a07552c4b0417ed0e207827af8a59da3a73e81f4362"
       },
-      "capabilityTags": [],
-      "suggestedCapabilityTags": [
-        "mode.static"
+      "capabilityTags": [
+        "abilities.effective-projection",
+        "context.authoritative",
+        "effects.typed",
+        "events.routing",
+        "events.typed",
+        "expressions.bounded",
+        "hp.typed",
+        "lifecycle.effects",
+        "mode.static",
+        "mode.triggered",
+        "passives.aggregation",
+        "relationships.providers",
+        "runtime.abilityspec-v1",
+        "targeting.authoritative",
+        "trace.structured"
       ],
-      "blockerCodes": [
-        "runtime.unimplemented"
-      ],
+      "suggestedCapabilityTags": [],
+      "blockerCodes": [],
       "limitations": [],
       "manualSteps": [],
-      "scenarioIds": [],
+      "scenarioIds": [
+        "aa079.magma-armor.reviewed"
+      ],
       "conformanceEvidence": {
-        "requirementTags": [],
-        "scenarios": [],
+        "requirementTags": [
+          "branch.immunity",
+          "mechanic.hp",
+          "mechanic.lifecycle",
+          "mode.static",
+          "mode.triggered",
+          "recovery.retry",
+          "target.enemy",
+          "target.self"
+        ],
+        "scenarios": [
+          {
+            "scenarioId": "aa079.magma-armor.reviewed",
+            "evidenceClasses": [
+              "enemy",
+              "hp-applied",
+              "hp-prevented",
+              "immunity",
+              "lifecycle-cleanup",
+              "lifecycle-trigger",
+              "passive-applied",
+              "passive-suppressed",
+              "retry",
+              "self",
+              "trigger-eligible",
+              "trigger-ineligible"
+            ]
+          }
+        ],
         "notApplicable": []
       },
-      "reviewedAt": null,
+      "reviewedAt": "2026-07-27",
       "unsupportedInteractionIds": [],
       "rolloutCohortId": "aa-079"
     },
     {
       "canonicalId": "Magnet Pull",
       "displayName": "Magnet Pull",
-      "baseStatus": "blocked",
+      "baseStatus": "complete",
       "interactionStatus": "unassessed",
       "runtime": {
-        "kind": "unimplemented",
-        "version": null,
-        "definitionHash": null,
-        "sourceModule": null
+        "kind": "abilityspec-v1",
+        "version": 1,
+        "definitionHash": "49486e5df4ddd80ae89abdc69d5fa63fade7f7ca4ac753697eb82e1676ff79ba",
+        "sourceModule": "server/domain/abilityAutomation/specs/aa079.ts"
       },
       "rulesProvenance": {
         "rulesetId": "rotom-table-reference-abilities-v1",
         "canonicalizationVersion": 1,
         "sourceDataSha256": "767c3e2ae45471c26ad97a07552c4b0417ed0e207827af8a59da3a73e81f4362"
       },
-      "capabilityTags": [],
-      "suggestedCapabilityTags": [
-        "mode.activated"
+      "capabilityTags": [
+        "actions.authoritative",
+        "choices.durable",
+        "context.authoritative",
+        "effects.typed",
+        "events.typed",
+        "frequency.scene",
+        "geometry.authoritative",
+        "intent.typed",
+        "lifecycle.effects",
+        "mode.activated",
+        "movement.authoritative",
+        "planning.atomic",
+        "recovery.durable",
+        "runtime.abilityspec-v1",
+        "targeting.authoritative",
+        "trace.structured"
       ],
-      "blockerCodes": [
-        "runtime.unimplemented"
-      ],
+      "suggestedCapabilityTags": [],
+      "blockerCodes": [],
       "limitations": [],
       "manualSteps": [],
-      "scenarioIds": [],
+      "scenarioIds": [
+        "aa079.magnet-pull.reviewed"
+      ],
       "conformanceEvidence": {
-        "requirementTags": [],
-        "scenarios": [],
+        "requirementTags": [
+          "branch.choice",
+          "mechanic.lifecycle",
+          "mechanic.movement",
+          "mechanic.usage",
+          "mode.activated",
+          "recovery.retry",
+          "resource.multi"
+        ],
+        "scenarios": [
+          {
+            "scenarioId": "aa079.magnet-pull.reviewed",
+            "evidenceClasses": [
+              "active-accepted",
+              "active-rejected",
+              "choice",
+              "lifecycle-cleanup",
+              "lifecycle-trigger",
+              "movement-accepted",
+              "movement-rejected",
+              "multi-resource-conflict",
+              "pass",
+              "retry",
+              "usage-exhausted",
+              "usage-reset",
+              "usage-spent"
+            ]
+          }
+        ],
         "notApplicable": []
       },
-      "reviewedAt": null,
+      "reviewedAt": "2026-07-27",
       "unsupportedInteractionIds": [],
       "rolloutCohortId": "aa-079"
     },
     {
       "canonicalId": "Marvel Scale",
       "displayName": "Marvel Scale",
-      "baseStatus": "blocked",
+      "baseStatus": "complete",
       "interactionStatus": "unassessed",
       "runtime": {
-        "kind": "unimplemented",
-        "version": null,
-        "definitionHash": null,
-        "sourceModule": null
+        "kind": "abilityspec-v1",
+        "version": 1,
+        "definitionHash": "0e97250f5d97b8ffbb32a80a3afe615a98d836d39f7cb6595f26c604eb11193d",
+        "sourceModule": "server/domain/abilityAutomation/specs/aa079.ts"
       },
       "rulesProvenance": {
         "rulesetId": "rotom-table-reference-abilities-v1",
         "canonicalizationVersion": 1,
         "sourceDataSha256": "767c3e2ae45471c26ad97a07552c4b0417ed0e207827af8a59da3a73e81f4362"
       },
-      "capabilityTags": [],
-      "suggestedCapabilityTags": [
-        "mode.static"
+      "capabilityTags": [
+        "abilities.effective-projection",
+        "conditions.typed",
+        "context.authoritative",
+        "effects.typed",
+        "events.typed",
+        "expressions.bounded",
+        "lifecycle.effects",
+        "mode.static",
+        "passives.aggregation",
+        "runtime.abilityspec-v1",
+        "stages.typed",
+        "targeting.authoritative",
+        "trace.structured"
       ],
-      "blockerCodes": [
-        "runtime.unimplemented"
-      ],
+      "suggestedCapabilityTags": [],
+      "blockerCodes": [],
       "limitations": [],
       "manualSteps": [],
-      "scenarioIds": [],
+      "scenarioIds": [
+        "aa079.marvel-scale.reviewed"
+      ],
       "conformanceEvidence": {
-        "requirementTags": [],
-        "scenarios": [],
+        "requirementTags": [
+          "branch.threshold",
+          "mechanic.stage",
+          "mode.static",
+          "recovery.retry",
+          "target.self"
+        ],
+        "scenarios": [
+          {
+            "scenarioId": "aa079.marvel-scale.reviewed",
+            "evidenceClasses": [
+              "passive-applied",
+              "passive-suppressed",
+              "retry",
+              "self",
+              "stage-applied",
+              "stage-prevented",
+              "threshold-fail",
+              "threshold-pass"
+            ]
+          }
+        ],
         "notApplicable": []
       },
-      "reviewedAt": null,
+      "reviewedAt": "2026-07-27",
       "unsupportedInteractionIds": [],
       "rolloutCohortId": "aa-079"
     },
     {
       "canonicalId": "Mega Launcher",
       "displayName": "Mega Launcher",
-      "baseStatus": "blocked",
+      "baseStatus": "complete",
       "interactionStatus": "unassessed",
       "runtime": {
-        "kind": "unimplemented",
-        "version": null,
-        "definitionHash": null,
-        "sourceModule": null
+        "kind": "abilityspec-v1",
+        "version": 1,
+        "definitionHash": "dae077a8bd34f9565e7f23ee0072cb55b7bb8634b2ae059ff594d6361eb3812e",
+        "sourceModule": "server/domain/abilityAutomation/specs/aa079.ts"
       },
       "rulesProvenance": {
         "rulesetId": "rotom-table-reference-abilities-v1",
         "canonicalizationVersion": 1,
         "sourceDataSha256": "767c3e2ae45471c26ad97a07552c4b0417ed0e207827af8a59da3a73e81f4362"
       },
-      "capabilityTags": [],
-      "suggestedCapabilityTags": [
-        "mode.static"
+      "capabilityTags": [
+        "abilities.effective-projection",
+        "context.authoritative",
+        "damage.modifiers",
+        "effects.typed",
+        "expressions.bounded",
+        "mode.static",
+        "passives.aggregation",
+        "runtime.abilityspec-v1",
+        "trace.structured"
       ],
-      "blockerCodes": [
-        "runtime.unimplemented"
-      ],
+      "suggestedCapabilityTags": [],
+      "blockerCodes": [],
       "limitations": [],
       "manualSteps": [],
-      "scenarioIds": [],
+      "scenarioIds": [
+        "aa079.mega-launcher.reviewed"
+      ],
       "conformanceEvidence": {
-        "requirementTags": [],
-        "scenarios": [],
+        "requirementTags": [
+          "mechanic.damage",
+          "mode.static",
+          "recovery.retry",
+          "target.self"
+        ],
+        "scenarios": [
+          {
+            "scenarioId": "aa079.mega-launcher.reviewed",
+            "evidenceClasses": [
+              "crit",
+              "hit",
+              "immunity",
+              "miss",
+              "passive-applied",
+              "passive-suppressed",
+              "retry",
+              "self"
+            ]
+          }
+        ],
         "notApplicable": []
       },
-      "reviewedAt": null,
+      "reviewedAt": "2026-07-27",
       "unsupportedInteractionIds": [],
       "rolloutCohortId": "aa-079"
     },
     {
       "canonicalId": "Memory Wipe",
       "displayName": "Memory Wipe",
-      "baseStatus": "blocked",
+      "baseStatus": "complete",
       "interactionStatus": "unassessed",
       "runtime": {
-        "kind": "unimplemented",
-        "version": null,
-        "definitionHash": null,
-        "sourceModule": null
+        "kind": "abilityspec-v1",
+        "version": 1,
+        "definitionHash": "9a652704d568b6a4771d3dffa4d7a4bc41c2ad5dd719dc20eb8265bd4a6cb0fa",
+        "sourceModule": "server/domain/abilityAutomation/specs/aa079.ts"
       },
       "rulesProvenance": {
         "rulesetId": "rotom-table-reference-abilities-v1",
         "canonicalizationVersion": 1,
         "sourceDataSha256": "767c3e2ae45471c26ad97a07552c4b0417ed0e207827af8a59da3a73e81f4362"
       },
-      "capabilityTags": [],
-      "suggestedCapabilityTags": [
-        "mode.activated"
+      "capabilityTags": [
+        "actions.authoritative",
+        "choices.durable",
+        "conditions.typed",
+        "context.authoritative",
+        "effects.typed",
+        "events.typed",
+        "frequency.scene",
+        "history.structured",
+        "intent.typed",
+        "lifecycle.effects",
+        "mode.activated",
+        "planning.atomic",
+        "recovery.durable",
+        "runtime.abilityspec-v1",
+        "state.marks-counters",
+        "targeting.authoritative",
+        "trace.structured"
       ],
-      "blockerCodes": [
-        "runtime.unimplemented"
-      ],
+      "suggestedCapabilityTags": [],
+      "blockerCodes": [],
       "limitations": [],
       "manualSteps": [],
-      "scenarioIds": [],
+      "scenarioIds": [
+        "aa079.memory-wipe.reviewed"
+      ],
       "conformanceEvidence": {
-        "requirementTags": [],
-        "scenarios": [],
+        "requirementTags": [
+          "branch.choice",
+          "mechanic.condition",
+          "mechanic.lifecycle",
+          "mechanic.usage",
+          "mode.activated",
+          "recovery.retry",
+          "resource.multi"
+        ],
+        "scenarios": [
+          {
+            "scenarioId": "aa079.memory-wipe.reviewed",
+            "evidenceClasses": [
+              "active-accepted",
+              "active-rejected",
+              "choice",
+              "condition-applied",
+              "condition-prevented",
+              "lifecycle-cleanup",
+              "lifecycle-trigger",
+              "multi-resource-conflict",
+              "pass",
+              "retry",
+              "usage-exhausted",
+              "usage-reset",
+              "usage-spent"
+            ]
+          }
+        ],
         "notApplicable": []
       },
-      "reviewedAt": null,
+      "reviewedAt": "2026-07-27",
       "unsupportedInteractionIds": [],
       "rolloutCohortId": "aa-079"
     },
     {
       "canonicalId": "Merciless",
       "displayName": "Merciless",
-      "baseStatus": "blocked",
+      "baseStatus": "complete",
       "interactionStatus": "unassessed",
       "runtime": {
-        "kind": "unimplemented",
-        "version": null,
-        "definitionHash": null,
-        "sourceModule": null
+        "kind": "abilityspec-v1",
+        "version": 1,
+        "definitionHash": "a1019c4095dc5514aaa508e71e78850684894c44daa5d4c5197feaef1a88895f",
+        "sourceModule": "server/domain/abilityAutomation/specs/aa079.ts"
       },
       "rulesProvenance": {
         "rulesetId": "rotom-table-reference-abilities-v1",
         "canonicalizationVersion": 1,
         "sourceDataSha256": "767c3e2ae45471c26ad97a07552c4b0417ed0e207827af8a59da3a73e81f4362"
       },
-      "capabilityTags": [],
-      "suggestedCapabilityTags": [
-        "mode.static"
+      "capabilityTags": [
+        "abilities.effective-projection",
+        "conditions.typed",
+        "context.authoritative",
+        "damage.modifiers",
+        "effects.typed",
+        "events.typed",
+        "expressions.bounded",
+        "lifecycle.effects",
+        "mode.static",
+        "passives.aggregation",
+        "runtime.abilityspec-v1",
+        "targeting.authoritative",
+        "trace.structured"
       ],
-      "blockerCodes": [
-        "runtime.unimplemented"
-      ],
+      "suggestedCapabilityTags": [],
+      "blockerCodes": [],
       "limitations": [],
       "manualSteps": [],
-      "scenarioIds": [],
+      "scenarioIds": [
+        "aa079.merciless.reviewed"
+      ],
       "conformanceEvidence": {
-        "requirementTags": [],
-        "scenarios": [],
+        "requirementTags": [
+          "branch.threshold",
+          "mechanic.damage",
+          "mode.static",
+          "recovery.retry",
+          "target.self"
+        ],
+        "scenarios": [
+          {
+            "scenarioId": "aa079.merciless.reviewed",
+            "evidenceClasses": [
+              "crit",
+              "hit",
+              "immunity",
+              "miss",
+              "passive-applied",
+              "passive-suppressed",
+              "retry",
+              "self",
+              "threshold-fail",
+              "threshold-pass"
+            ]
+          }
+        ],
         "notApplicable": []
       },
-      "reviewedAt": null,
+      "reviewedAt": "2026-07-27",
       "unsupportedInteractionIds": [],
       "rolloutCohortId": "aa-079"
     },
     {
       "canonicalId": "Migraine",
       "displayName": "Migraine",
-      "baseStatus": "blocked",
+      "baseStatus": "complete",
       "interactionStatus": "unassessed",
       "runtime": {
-        "kind": "unimplemented",
-        "version": null,
-        "definitionHash": null,
-        "sourceModule": null
+        "kind": "abilityspec-v1",
+        "version": 1,
+        "definitionHash": "d74d00f74c00acfadaa55d7ffeacfdb271e32bc9e7482affec4a322d71332a90",
+        "sourceModule": "server/domain/abilityAutomation/specs/aa079.ts"
       },
       "rulesProvenance": {
         "rulesetId": "rotom-table-reference-abilities-v1",
         "canonicalizationVersion": 1,
         "sourceDataSha256": "767c3e2ae45471c26ad97a07552c4b0417ed0e207827af8a59da3a73e81f4362"
       },
-      "capabilityTags": [],
-      "suggestedCapabilityTags": [
-        "mode.triggered"
+      "capabilityTags": [
+        "abilities.effective-projection",
+        "actions.authoritative",
+        "choices.durable",
+        "conditions.typed",
+        "context.authoritative",
+        "damage.modifiers",
+        "effects.typed",
+        "events.move",
+        "events.routing",
+        "events.typed",
+        "expressions.bounded",
+        "frequency.scene",
+        "intent.typed",
+        "lifecycle.effects",
+        "mode.triggered",
+        "planning.atomic",
+        "reactions.durable",
+        "recovery.durable",
+        "runtime.abilityspec-v1",
+        "targeting.authoritative",
+        "trace.structured"
       ],
-      "blockerCodes": [
-        "runtime.unimplemented"
-      ],
+      "suggestedCapabilityTags": [],
+      "blockerCodes": [],
       "limitations": [],
       "manualSteps": [],
-      "scenarioIds": [],
+      "scenarioIds": [
+        "aa079.migraine.reviewed"
+      ],
       "conformanceEvidence": {
-        "requirementTags": [],
-        "scenarios": [],
+        "requirementTags": [
+          "branch.choice",
+          "mechanic.condition",
+          "mechanic.damage",
+          "mechanic.interrupt",
+          "mechanic.usage",
+          "mode.triggered",
+          "recovery.reconnect",
+          "recovery.retry",
+          "resource.multi",
+          "target.self"
+        ],
+        "scenarios": [
+          {
+            "scenarioId": "aa079.migraine.reviewed",
+            "evidenceClasses": [
+              "choice",
+              "condition-applied",
+              "condition-prevented",
+              "crit",
+              "hit",
+              "immunity",
+              "interrupt-priority",
+              "miss",
+              "multi-resource-conflict",
+              "pass",
+              "reconnect",
+              "retry",
+              "self",
+              "trigger-eligible",
+              "trigger-ineligible",
+              "usage-exhausted",
+              "usage-reset",
+              "usage-spent"
+            ]
+          }
+        ],
         "notApplicable": []
       },
-      "reviewedAt": null,
+      "reviewedAt": "2026-07-27",
       "unsupportedInteractionIds": [],
       "rolloutCohortId": "aa-079"
     },
     {
       "canonicalId": "Mimicry",
       "displayName": "Mimicry",
-      "baseStatus": "blocked",
+      "baseStatus": "complete",
       "interactionStatus": "unassessed",
       "runtime": {
-        "kind": "unimplemented",
-        "version": null,
-        "definitionHash": null,
-        "sourceModule": null
+        "kind": "abilityspec-v1",
+        "version": 1,
+        "definitionHash": "68198be9e21eaa4abab4a3fdf99de575659aeb30952bcd3f821c092455c77620",
+        "sourceModule": "server/domain/abilityAutomation/specs/aa079.ts"
       },
       "rulesProvenance": {
         "rulesetId": "rotom-table-reference-abilities-v1",
         "canonicalizationVersion": 1,
         "sourceDataSha256": "767c3e2ae45471c26ad97a07552c4b0417ed0e207827af8a59da3a73e81f4362"
       },
-      "capabilityTags": [],
-      "suggestedCapabilityTags": [
-        "mode.activated"
+      "capabilityTags": [
+        "actions.authoritative",
+        "choices.durable",
+        "context.authoritative",
+        "effects.typed",
+        "events.typed",
+        "fields.typed",
+        "frequency.scene",
+        "intent.typed",
+        "lifecycle.effects",
+        "mode.activated",
+        "planning.atomic",
+        "recovery.durable",
+        "runtime.abilityspec-v1",
+        "targeting.authoritative",
+        "trace.structured"
       ],
-      "blockerCodes": [
-        "runtime.unimplemented"
-      ],
+      "suggestedCapabilityTags": [],
+      "blockerCodes": [],
       "limitations": [],
       "manualSteps": [],
-      "scenarioIds": [],
+      "scenarioIds": [
+        "aa079.mimicry.reviewed"
+      ],
       "conformanceEvidence": {
-        "requirementTags": [],
-        "scenarios": [],
+        "requirementTags": [
+          "branch.choice",
+          "mechanic.form",
+          "mechanic.lifecycle",
+          "mechanic.usage",
+          "mode.activated",
+          "recovery.retry",
+          "resource.multi",
+          "target.self"
+        ],
+        "scenarios": [
+          {
+            "scenarioId": "aa079.mimicry.reviewed",
+            "evidenceClasses": [
+              "active-accepted",
+              "active-rejected",
+              "choice",
+              "form-applied",
+              "form-restored",
+              "lifecycle-cleanup",
+              "lifecycle-trigger",
+              "multi-resource-conflict",
+              "pass",
+              "retry",
+              "self",
+              "usage-exhausted",
+              "usage-reset",
+              "usage-spent"
+            ]
+          }
+        ],
         "notApplicable": []
       },
-      "reviewedAt": null,
+      "reviewedAt": "2026-07-27",
       "unsupportedInteractionIds": [],
       "rolloutCohortId": "aa-079"
     },
     {
       "canonicalId": "Mimitree",
       "displayName": "Mimitree",
-      "baseStatus": "blocked",
+      "baseStatus": "complete",
       "interactionStatus": "unassessed",
       "runtime": {
-        "kind": "unimplemented",
-        "version": null,
-        "definitionHash": null,
-        "sourceModule": null
+        "kind": "abilityspec-v1",
+        "version": 1,
+        "definitionHash": "9414e9888c8d03d94131e2940035955fb9a93c4bd287ab9f4a90a8dd6174f8a2",
+        "sourceModule": "server/domain/abilityAutomation/specs/aa079.ts"
       },
       "rulesProvenance": {
         "rulesetId": "rotom-table-reference-abilities-v1",
         "canonicalizationVersion": 1,
         "sourceDataSha256": "767c3e2ae45471c26ad97a07552c4b0417ed0e207827af8a59da3a73e81f4362"
       },
-      "capabilityTags": [],
-      "suggestedCapabilityTags": [
-        "mode.static"
+      "capabilityTags": [
+        "abilities.effective-projection",
+        "actions.authoritative",
+        "choices.durable",
+        "context.authoritative",
+        "effects.typed",
+        "events.move",
+        "events.routing",
+        "events.typed",
+        "expressions.bounded",
+        "history.structured",
+        "intent.typed",
+        "lifecycle.effects",
+        "mode.static",
+        "mode.triggered",
+        "passives.aggregation",
+        "planning.atomic",
+        "reactions.durable",
+        "recovery.durable",
+        "runtime.abilityspec-v1",
+        "state.marks-counters",
+        "targeting.authoritative",
+        "trace.structured"
       ],
-      "blockerCodes": [
-        "runtime.unimplemented"
-      ],
+      "suggestedCapabilityTags": [],
+      "blockerCodes": [],
       "limitations": [],
       "manualSteps": [],
-      "scenarioIds": [],
+      "scenarioIds": [
+        "aa079.mimitree.reviewed"
+      ],
       "conformanceEvidence": {
-        "requirementTags": [],
-        "scenarios": [],
+        "requirementTags": [
+          "branch.choice",
+          "mechanic.form",
+          "mechanic.interrupt",
+          "mechanic.lifecycle",
+          "mode.static",
+          "mode.triggered",
+          "recovery.reconnect",
+          "recovery.retry",
+          "target.self"
+        ],
+        "scenarios": [
+          {
+            "scenarioId": "aa079.mimitree.reviewed",
+            "evidenceClasses": [
+              "choice",
+              "form-applied",
+              "form-restored",
+              "interrupt-priority",
+              "lifecycle-cleanup",
+              "lifecycle-trigger",
+              "pass",
+              "passive-applied",
+              "passive-suppressed",
+              "reconnect",
+              "retry",
+              "self",
+              "trigger-eligible",
+              "trigger-ineligible"
+            ]
+          }
+        ],
         "notApplicable": []
       },
-      "reviewedAt": null,
+      "reviewedAt": "2026-07-27",
       "unsupportedInteractionIds": [],
       "rolloutCohortId": "aa-079"
     },
     {
       "canonicalId": "Mind Mold",
       "displayName": "Mind Mold",
-      "baseStatus": "blocked",
+      "baseStatus": "complete",
       "interactionStatus": "unassessed",
       "runtime": {
-        "kind": "unimplemented",
-        "version": null,
-        "definitionHash": null,
-        "sourceModule": null
+        "kind": "abilityspec-v1",
+        "version": 1,
+        "definitionHash": "2b58bbcba9019bf80bca38edd50f6b62000735dcef7e2ba93747327ab7920793",
+        "sourceModule": "server/domain/abilityAutomation/specs/aa079.ts"
       },
       "rulesProvenance": {
         "rulesetId": "rotom-table-reference-abilities-v1",
         "canonicalizationVersion": 1,
         "sourceDataSha256": "767c3e2ae45471c26ad97a07552c4b0417ed0e207827af8a59da3a73e81f4362"
       },
-      "capabilityTags": [],
-      "suggestedCapabilityTags": [
-        "mode.static"
+      "capabilityTags": [
+        "abilities.effective-projection",
+        "context.authoritative",
+        "damage.modifiers",
+        "effects.typed",
+        "expressions.bounded",
+        "mode.static",
+        "passives.aggregation",
+        "runtime.abilityspec-v1",
+        "trace.structured"
       ],
-      "blockerCodes": [
-        "runtime.unimplemented"
-      ],
+      "suggestedCapabilityTags": [],
+      "blockerCodes": [],
       "limitations": [],
       "manualSteps": [],
-      "scenarioIds": [],
+      "scenarioIds": [
+        "aa079.mind-mold.reviewed"
+      ],
       "conformanceEvidence": {
-        "requirementTags": [],
-        "scenarios": [],
+        "requirementTags": [
+          "branch.threshold",
+          "mechanic.damage",
+          "mode.static",
+          "recovery.retry",
+          "target.self"
+        ],
+        "scenarios": [
+          {
+            "scenarioId": "aa079.mind-mold.reviewed",
+            "evidenceClasses": [
+              "crit",
+              "hit",
+              "immunity",
+              "miss",
+              "passive-applied",
+              "passive-suppressed",
+              "retry",
+              "self",
+              "threshold-fail",
+              "threshold-pass"
+            ]
+          }
+        ],
         "notApplicable": []
       },
-      "reviewedAt": null,
+      "reviewedAt": "2026-07-27",
       "unsupportedInteractionIds": [],
       "rolloutCohortId": "aa-079"
     },
