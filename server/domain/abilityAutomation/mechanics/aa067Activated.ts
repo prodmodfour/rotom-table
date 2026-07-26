@@ -14,6 +14,7 @@ import {
 } from '#shared/moveAutomation/encounterState'
 import { parseEncounterEffect, type EncounterEffect } from '#shared/moveAutomation/encounterEffects'
 import type { PokemonTypeId } from '#shared/pokemonTypes'
+import { AA077_LEAFY_CLOAK_EFFECT_TAG } from '#shared/abilityAutomation/aa077'
 import type { CharacterSheet } from '~/types/characterSheet'
 import type { CombatStageKey, CombatStageMap } from '~/types/combatStages'
 import type { TrainerSheet } from '~/types/trainerSheet'
@@ -260,10 +261,15 @@ const designerExecution = (input: {
   if (types.length !== 2 || new Set(types).size !== 2) fail('Designer requires exactly two distinct Types.')
   const previous = parseEncounterState(input.context.map.encounterState ?? createEmptyEncounterState())
   const retained = previous.effects.filter(effect => !(
-    effect.kind === 'capability'
-    && effect.tags.includes('aa067')
-    && effect.tags.includes('designer')
-    && effect.affected.placementIds.includes(input.context.actor.placement.id)
+    effect.affected.placementIds.includes(input.context.actor.placement.id)
+    && (
+      (
+        effect.kind === 'capability'
+        && effect.tags.includes('aa067')
+        && effect.tags.includes('designer')
+      )
+      || effect.tags.includes(AA077_LEAFY_CLOAK_EFFECT_TAG)
+    )
   ))
   const suffix = createHash('sha256').update(`${input.operationId}:${types.join(':')}`).digest('hex').slice(0, 20)
   const effects: EncounterEffect[] = types.map((typeId: PokemonTypeId, index) => parseEncounterEffect({

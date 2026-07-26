@@ -176,10 +176,16 @@ export const unresolvedPlacementReferences = (
   return out
 }
 
+export interface PlacementSpawnOptions {
+  /** AA-077 is projected from exact effective abilities by authoritative callers. */
+  readonly skipAa077NativeProjection?: boolean
+}
+
 export const placementToSpawned = (
   placement: SheetPlacement,
   sheets: SheetLookup,
   map?: PlacementConditionMap | null,
+  options: PlacementSpawnOptions = {},
 ): SpawnedPokemon | null => {
   const temporaryHp = temporaryHpForPlacement(map, placement.id)
   const facing = tokenFacingForPlacement(placement)
@@ -267,7 +273,7 @@ export const placementToSpawned = (
       placement,
       token: transformedToken,
       effects: map?.encounterState?.effects,
-    }), sheet)
+    }), sheet, options)
   }
   const sheet = sheets.trainer.get(placement.sheetSlug)
   if (!sheet) return null
@@ -332,7 +338,7 @@ export const placementToSpawned = (
     placement,
     token: baseToken,
     effects: map?.encounterState?.effects,
-  }), sheet)
+  }), sheet, options)
 }
 
 export const placementsToSpawned = (

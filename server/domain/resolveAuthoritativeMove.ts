@@ -119,6 +119,7 @@ import {
   type SideDamageResistanceResolution,
 } from './moveAutomation/sideDamageResistance'
 import { aa060MovePriorityOverride, hasAa060MoveMark, hasPendingAa060AnchoredAttack } from './abilityAutomation/mechanics/aa060MoveIntegration'
+import { aa077LeafRushActiveForMove } from './abilityAutomation/mechanics/aa077StaticIntegration'
 import { aa075ImposterTransformOverride } from './abilityAutomation/mechanics/aa075StaticIntegration'
 import { aa066DazzlingBlocksPriorityMove } from './abilityAutomation/mechanics/aa066StaticIntegration'
 import { hasAa061AquaBulletMark, hasPendingAa061AquaBulletAttack } from './abilityAutomation/mechanics/aa061MoveIntegration'
@@ -2129,6 +2130,7 @@ export const resolveAuthoritativeMoveExecutionFromContext = (
       ? selectedRuntime.definition.spec.costs
       : undefined)
   const abilityPriorityOverride = aa060MovePriorityOverride(context, entry.script)
+    || aa077LeafRushActiveForMove({ context, script: entry.script })
   const abilityFreeInterruptOverride = aa075ImposterTransformOverride({ context, script: entry.script })
   const actionTiming = abilityPriorityOverride
     ? 'priority'

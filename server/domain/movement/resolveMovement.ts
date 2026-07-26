@@ -56,6 +56,10 @@ import { placementToSpawned, type SheetLookup } from '~/utils/placement'
 import { withBattlefieldZoneMovementTerrain } from '../moveAutomation/battlefieldZoneMovementTerrain'
 import { createMoveAutomationGravityResolver } from '../moveAutomation/gravity'
 import { createMoveAutomationRemainingGlobalFieldResolver } from '../moveAutomation/remainingGlobalFields'
+import {
+  aa077AdjustedToken,
+  aa077EffectiveAbilityIds,
+} from '../abilityAutomation/mechanics/aa077StaticIntegration'
 
 export const AUTHORITATIVE_MOVEMENT_MODES = ['shift', 'pass'] as const
 export type AuthoritativeMovementMode = (typeof AUTHORITATIVE_MOVEMENT_MODES)[number]
@@ -798,7 +802,16 @@ const buildMovementSnapshots = (
 
     let token: ReturnType<typeof placementToSpawned>
     try {
-      token = placementToSpawned(placement, sheetLookup, map)
+      const nativeToken = placementToSpawned(
+        placement,
+        sheetLookup,
+        map,
+        { skipAa077NativeProjection: true },
+      )
+      token = nativeToken ? aa077AdjustedToken({
+        token: nativeToken,
+        effectiveAbilityIds: aa077EffectiveAbilityIds({ map, placement, sheet }),
+      }) : null
     } catch {
       token = null
     }

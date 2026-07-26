@@ -2,7 +2,7 @@
 
 `PLAN_STATUS: IN_PROGRESS`
 
-`CURRENT_TICKET: AA-077`
+`CURRENT_TICKET: AA-078`
 
 ## Goal
 
@@ -96,14 +96,14 @@ Ability automation should reuse MoveSpec v2 selectors, expressions, operations, 
 
 ## Progress snapshot
 
-- Plan tickets: **76 DONE / 110 total**
+- Plan tickets: **77 DONE / 110 total**
 - Canonical inventory: **483**
-- Semantically complete: **204**
+- Semantically complete: **216**
 - Assisted: **0**
-- Blocked/unimplemented: **279**
+- Blocked/unimplemented: **267**
 - Interaction status: **483 unassessed**
 - Legacy baseline: **45 abilities with 55 partial fragments; 438 with no reviewed legacy fragment**
-- Production runtime: **204 exact manifest-selected AbilitySpec v1 runtimes**; retained legacy paths remain explicit compatibility only
+- Production runtime: **216 exact manifest-selected AbilitySpec v1 runtimes**; retained legacy paths remain explicit compatibility only
 
 ## Tickets
 
@@ -273,7 +273,7 @@ Each cohort must review every named ability against canonical text, implement al
   - Hypnotic; Ice Body; Ice Face; Ice Scales; Ice Shield; Ignition Boost; Illuminate; Illusion; Immunity; Imposter; Infiltrator; Innards Out
 - [x] **AA-076 — Inner Focus through Keen Eye** — `DONE`
   - Inner Focus; Insomnia; Instinct; Interference; Intimidate; Intrepid Sword; Iron Barbs; Iron Fist; Juicy Energy; Justified; Kampfgeist; Keen Eye
-- [ ] **AA-077 — Klutz through Light Metal** — `TODO`
+- [x] **AA-077 — Klutz through Light Metal** — `DONE`
   - Klutz; Lancer; Landslide; Last Chance; Leaf Gift; Leaf Guard; Leaf Rush; Leafy Cloak; Leek Mastery; Levitate; Life Force; Light Metal
 - [ ] **AA-078 — Lightning Kicks through Magic Bounce** — `TODO`
   - Lightning Kicks; Lightning Rod; Limber; Line Charge; Liquid Ooze; Liquid Voice; Long Reach; Lullaby; Lunchbox; Mach Speed; Maelstrom Pulse; Magic Bounce

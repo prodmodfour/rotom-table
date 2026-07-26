@@ -255,6 +255,10 @@ const equippedCandidates = (input: {
   readonly sheet: CharacterSheet | TrainerSheet
   readonly requirementId: string
   readonly items: AuthoritativeMoveItemResourceQueries
+  readonly rareBenefitEligibleForPlacement?: (
+    placementId: string,
+    canonicalItemId: string,
+  ) => boolean
 }): readonly ProfileCandidate[] => {
   const seen = new Set<string>()
   const candidates: ProfileCandidate[] = []
@@ -268,7 +272,10 @@ const equippedCandidates = (input: {
         reference.canonicalItemId,
         input.placement,
         input.sheet,
-      ),
+      ) || input.rareBenefitEligibleForPlacement?.(
+        input.placement.id,
+        reference.canonicalItemId,
+      ) === true,
     })
     if (profile) candidates.push({ reference, profile })
   }
@@ -320,6 +327,10 @@ export const createMoveAutomationItemRuleResolver = (input: {
   readonly recordSheetRead?: (
     placement: Pick<SheetPlacement, 'sheetKind' | 'sheetSlug'>,
   ) => void
+  readonly rareBenefitEligibleForPlacement?: (
+    placementId: string,
+    canonicalItemId: string,
+  ) => boolean
 }): MoveAutomationItemRuleResolver => {
   const placements = new Map(input.placements.map(placement => [placement.id, placement]))
   const sheets = new Map(input.sheets.map(sheet => [`${sheet.kind}:${sheet.slug}`, sheet.sheet]))
@@ -358,10 +369,12 @@ export const createMoveAutomationItemRuleResolver = (input: {
             sheet,
             requirementId: query.requirementId!,
             items: input.items,
+            rareBenefitEligibleForPlacement: input.rareBenefitEligibleForPlacement,
           })
         : digestionBuffNames(placement, sheet).flatMap((name) => {
             const profile = resolveMoveAutomationItemRuleProfile(name, {
-              rareBenefitEligible: rareBenefitEligible(name, placement, sheet),
+              rareBenefitEligible: rareBenefitEligible(name, placement, sheet)
+                || input.rareBenefitEligibleForPlacement?.(placement.id, toSlug(name)) === true,
             })
             return profile ? [{ reference: null, profile }] : []
           })

@@ -5,6 +5,7 @@ import type {
 } from '#shared/moveAutomation/effects'
 import type { AuthoritativeMoveRulesContext } from './context'
 import type { MoveAutomationScript } from '~/types/moveAutomation'
+import { aa077LancerCriticalRangeBonus } from '../abilityAutomation/mechanics/aa077StaticIntegration'
 
 export const CRITICAL_HIT_PREVENTING_ABILITIES = Object.freeze([
   'Battle Armor',
@@ -142,8 +143,33 @@ export const resolveMoveCriticalHit = (options: {
   const beamCannon = options.context.queries.abilities.has(options.context.actor.placement.id, 'Beam Cannon')
     && options.script.targetMode === 'one-target'
     && !options.script.range.toLowerCase().includes('melee')
-  const trigger: MoveCriticalHitTrigger = beamCannon && baseTrigger.kind === 'range'
-    ? { ...baseTrigger, minimum: Math.max(1, baseTrigger.minimum - 3) }
+  const lancerBonus = aa077LancerCriticalRangeBonus({
+    context: options.context,
+    placementId: options.context.actor.placement.id,
+  })
+  const actorId = options.context.actor.placement.id
+  const actorItems = options.context.queries.targetStates.resolve(actorId)?.itemIds ?? []
+  const rareLeekEligible = actorItems.includes('rare-leek')
+    && (
+      options.context.actor.token.species.toLowerCase().replace(/[^a-z0-9]+/g, '') === 'farfetchd'
+      || options.context.queries.abilities.has(actorId, 'Leek Mastery')
+    )
+    && !options.context.queries.itemEffects.resolve({
+      placementId: actorId,
+      scope: options.context.actor.placement.sheetKind === 'pokemon'
+        ? 'pokemon-held'
+        : 'trainer-accessory',
+      timing: 'static',
+    }).suppressed
+  const rareLeekBonus = rareLeekEligible ? 2 : 0
+  const trigger: MoveCriticalHitTrigger = baseTrigger.kind === 'range'
+    ? {
+        ...baseTrigger,
+        minimum: Math.max(
+          1,
+          baseTrigger.minimum - (beamCannon ? 3 : 0) - lancerBonus - rareLeekBonus,
+        ),
+      }
     : baseTrigger
   const candidate = criticalCandidate(
     trigger,

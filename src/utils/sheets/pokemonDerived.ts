@@ -3,7 +3,6 @@ import type { CharacterSheet, StatKey } from '~/types/characterSheet'
 import type { PokedexRecord } from '~/types/pokemon'
 import { adjustedNatureModForStat, resolveNatureMod } from '~/utils/ptuNatures'
 import { computeInjuryAdjustedMaxHp, computePokemonFormulaMaxHp } from '~/utils/ptuHp'
-import { resolveLevitateAbilitySpeed } from '~/utils/sheetPassiveAbilityEffects'
 import {
   resolvePokemonNaturewalk,
   resolvePokemonOtherCapabilities,
@@ -253,7 +252,9 @@ export const resolveCapabilities = (sheet: CharacterSheet) => {
     sheetCaps.levitate ?? speciesCaps.levitate,
     moveGrantedCapabilities.numberedBonuses.levitate,
   )
-  const effectiveLevitate = resolveLevitateAbilitySpeed(baseLevitate, sheet.abilities)
+  // Ability-granted Levitate is projected from exact effective abilities at
+  // the authoritative token boundary; this value remains native/species/sheet/Move-only.
+  const nativeLevitate = baseLevitate
 
   const numbered: Array<[string, number | string | undefined]> = [
     ['Overland', applyNumberedCapabilityBonus(
@@ -268,7 +269,7 @@ export const resolveCapabilities = (sheet: CharacterSheet) => {
       sheetCaps.swim     ?? speciesCaps.swim,
       moveGrantedCapabilities.numberedBonuses.swim,
     )],
-    ['Levitate', effectiveLevitate],
+    ['Levitate', nativeLevitate],
     ['Burrow',   applyNumberedCapabilityBonus(
       sheetCaps.burrow   ?? speciesCaps.burrow,
       moveGrantedCapabilities.numberedBonuses.burrow,

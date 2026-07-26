@@ -17,6 +17,7 @@ import {
 import { aa071ForecastTypeResolution } from '../abilityAutomation/mechanics/aa071StaticIntegration'
 import { aa074AdjustedToken } from '../abilityAutomation/mechanics/aa074StaticIntegration'
 import { aa075IceFaceFormToken } from '../abilityAutomation/mechanics/aa075StaticIntegration'
+import { aa077AdjustedToken } from '../abilityAutomation/mechanics/aa077StaticIntegration'
 import type { GridAnchor, SheetKind, SheetPlacement, TabletopMap } from '~/types/map'
 import type { MoveAutomationScript } from '~/types/moveAutomation'
 import type { SpawnedPokemon } from '~/types/pokemon'
@@ -485,6 +486,7 @@ const tokenSnapshots = (
       position ? { ...placement, position: { ...position } } : placement,
       sheets,
       map,
+      { skipAa077NativeProjection: true },
     )
     if (!token) continue
     const snapshot = detachedFrozenJson(token)
@@ -726,6 +728,11 @@ export const buildAuthoritativeMoveRulesContext = (
       effectiveAbilityIds: (effectiveAbilitiesByPlacement.get(token.id) ?? [])
         .map(ability => ability.canonicalId),
     })
+    const aa077Token = aa077AdjustedToken({
+      token: adjustedToken,
+      effectiveAbilityIds: (effectiveAbilitiesByPlacement.get(token.id) ?? [])
+        .map(ability => ability.canonicalId),
+    })
     const forecast = aa071ForecastTypeResolution({
       contextMap: map,
       placementId: token.id,
@@ -733,8 +740,8 @@ export const buildAuthoritativeMoveRulesContext = (
         ?.some(ability => ability.canonicalId === 'Forecast') === true,
     })
     const forecastToken = forecast.typeId
-      ? detachedFrozenJson({ ...adjustedToken, defenderTypes: [forecast.typeId] })
-      : adjustedToken
+      ? detachedFrozenJson({ ...aa077Token, defenderTypes: [forecast.typeId] })
+      : aa077Token
     const iceFaceToken = aa075IceFaceFormToken({
       token: forecastToken,
       hasIceFace: effectiveAbilitiesByPlacement.get(token.id)
@@ -842,6 +849,10 @@ export const buildAuthoritativeMoveRulesContext = (
     globalFields,
     effects: map.encounterState?.effects ?? [],
     recordSheetRead: readSet.recordPlacement,
+    suppressAllForPlacement: placementId => (
+      effectiveAbilitiesByPlacement.get(placementId)
+        ?.some(ability => ability.canonicalId === 'Klutz') === true
+    ),
   })
   const itemResourceQueries = createAuthoritativeMoveItemResourceQueries(itemResources)
   const itemRules = createMoveAutomationItemRuleResolver({
@@ -850,6 +861,11 @@ export const buildAuthoritativeMoveRulesContext = (
     items: itemResourceQueries,
     itemEffects,
     recordSheetRead: readSet.recordPlacement,
+    rareBenefitEligibleForPlacement: (placementId, canonicalItemId) => (
+      canonicalItemId === 'rare-leek'
+      && effectiveAbilitiesByPlacement.get(placementId)
+        ?.some(ability => ability.canonicalId === 'Leek Mastery') === true
+    ),
   })
   const creatureRules = createMoveAutomationCreatureRuleResolver({
     placements,

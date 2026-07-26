@@ -60,6 +60,10 @@ import { deepCloneJson, sameJsonValue } from '~/utils/serialization'
 import { resolveCanonicalSheetAbilityName, sheetAbilityNames } from '~/utils/sheetAbilities'
 import { aa063ChlorophyllInitiativeMultiplier } from '../domain/abilityAutomation/mechanics/aa063InitiativeIntegration'
 import { aa074HeavyMetalInitiativeSpeedOffset } from '../domain/abilityAutomation/mechanics/aa074StaticIntegration'
+import {
+  aa077EffectiveAbilityIds,
+  aa077LightMetalInitiativeSpeedOffset,
+} from '../domain/abilityAutomation/mechanics/aa077StaticIntegration'
 import { aa076InnerFocusProtectsInitiative } from '../domain/abilityAutomation/mechanics/aa076StaticIntegration'
 import {
   aa066DazzlingInitiativePenalty,
@@ -653,6 +657,16 @@ const initiativeOrder = (
   const itemEffects = createMoveAutomationItemEffectResolver({
     placements: map.placements,
     globalFields,
+    suppressAllForPlacement: placementId => {
+      const placement = placementById.get(placementId)
+      if (!placement) return false
+      const resolved = trackedReader(placement.sheetKind, placement.sheetSlug)
+      return resolved ? aa077EffectiveAbilityIds({
+        map,
+        placement,
+        sheet: resolved.sheet as unknown as CharacterSheet | TrainerSheet,
+      }).includes('Klutz') : false
+    },
   })
   const innerFocusPlacementIds = new Set<string>()
   const calculatedEntries = initiativeOrderEntriesForPlacements(
@@ -684,6 +698,8 @@ const initiativeOrder = (
             map, placement, sheet: resolved.sheet as unknown as CharacterSheet,
           }),
           baseSpeedOffset: aa074HeavyMetalInitiativeSpeedOffset({
+            map, placement, sheet: resolved.sheet as unknown as CharacterSheet,
+          }) + aa077LightMetalInitiativeSpeedOffset({
             map, placement, sheet: resolved.sheet as unknown as CharacterSheet,
           }),
         } : {}),

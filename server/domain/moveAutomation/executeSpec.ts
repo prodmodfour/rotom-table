@@ -20,6 +20,7 @@ import {
 } from '#shared/moveAutomation/effects'
 import type { MoveAutomationRollLedgerEntry } from '#shared/moveAutomation/random'
 import type { ResolveMoveIntent } from '#shared/livePlayMoveResolution'
+import { AA077_KLUTZ_ITEM_REQUIREMENT_ID } from '#shared/abilityAutomation/aa077'
 import type { PendingMoveResponseOption } from '#shared/moveAutomation/responseOptions'
 import {
   MOVE_REACTION_LIMITS,
@@ -212,6 +213,7 @@ import {
   AA076_KAMPFGEIST_REASON,
   aa076MoveOverlayOperations,
 } from '../abilityAutomation/mechanics/aa076MoveIntegration'
+import { aa077MoveOverlayOperations } from '../abilityAutomation/mechanics/aa077MoveIntegration'
 import { aa074HungerModeForPlacement } from '#shared/abilityAutomation/aa074'
 import {
   aa075HypnoticAutomaticHit,
@@ -1268,9 +1270,43 @@ const pendingSwitchRequest = (
   allowPass: !operation.payload.required,
 })
 
+const itemChoiceQueries = (
+  operation: MoveChoiceRequestEffectOperation,
+  context: AuthoritativeMoveRulesContext,
+  recipientIds: readonly string[],
+) => {
+  if (operation.payload.itemChoice?.requirementId !== AA077_KLUTZ_ITEM_REQUIREMENT_ID) {
+    return context.queries.items
+  }
+  const ownerKeys = new Set(recipientIds.flatMap(recipientId => {
+    const placement = context.queries.placements.get(recipientId)
+    return placement ? [`${placement.sheetKind}:${placement.sheetSlug}`] : []
+  }))
+  const eligible = (reference: ReturnType<typeof context.queries.items.all>[number]): boolean => {
+    const owner = reference.owner
+    if (owner.kind !== 'sheet') return false
+    const ownerPlacement = context.map.placements.find(placement => (
+      placement.sheetKind === owner.sheetKind
+      && placement.sheetSlug === owner.slug
+    ))
+    if (!ownerPlacement || !ownerKeys.has(`${owner.sheetKind}:${owner.slug}`)) {
+      return false
+    }
+    return reference.canonicalItemId !== 'rare-leek'
+      || !context.queries.abilities.has(ownerPlacement.id, 'Leek Mastery')
+  }
+  return Object.freeze({
+    all: () => context.queries.items.all().filter(eligible),
+    forRequirement: (requirementId: string) => context.queries.items
+      .forRequirement(requirementId).filter(eligible),
+    consumedById: (consumptionId: string) => context.queries.items.consumedById(consumptionId),
+  })
+}
+
 const itemChoiceSet = (
   operation: MoveChoiceRequestEffectOperation,
   context: AuthoritativeMoveRulesContext,
+  recipientIds: readonly string[],
 ): AuthoritativeMoveItemChoiceSet => {
   const declaration = operation.payload.itemChoice
     ?? fail(
@@ -1280,7 +1316,7 @@ const itemChoiceSet = (
   try {
     return enumerateAuthoritativeMoveItemChoices({
       declaration,
-      items: context.queries.items,
+      items: itemChoiceQueries(operation, context, recipientIds),
     })
   }
   catch (error) {
@@ -1294,6 +1330,7 @@ const itemChoiceSet = (
 const revalidateItemChoice = (
   operation: MoveChoiceRequestEffectOperation,
   context: AuthoritativeMoveRulesContext,
+  recipientIds: readonly string[],
   optionId: string,
 ): AuthoritativeMoveItemChoice => {
   const declaration = operation.payload.itemChoice
@@ -1301,7 +1338,7 @@ const revalidateItemChoice = (
   try {
     return revalidateAuthoritativeMoveItemChoice({
       declaration,
-      items: context.queries.items,
+      items: itemChoiceQueries(operation, context, recipientIds),
       optionId,
     })
   }
@@ -5307,7 +5344,7 @@ const executeMoveSpecInternal = (
           })
           continue
         }
-        const set = itemChoiceSet(operation, input.context)
+        const set = itemChoiceSet(operation, input.context, recipientIds)
         const knockOffOutcome = isKnockOffItemChoiceOperation(spec.canonicalId, operation)
           ? projectedKnockOffItemOutcome({
               context: input.context,
@@ -5395,7 +5432,7 @@ const executeMoveSpecInternal = (
           ? resolvedKnockOffOutcome.choice
           : selectedOptionId === null
             ? null
-            : revalidateItemChoice(operation, input.context, selectedOptionId)
+            : revalidateItemChoice(operation, input.context, recipientIds, selectedOptionId)
         if (selectedChoice && selectedOptionId) {
           resolvedItemChoices.push(Object.freeze({
             operationId: operation.id,
@@ -5775,6 +5812,12 @@ const executeMoveSpecInternal = (
               authoritativeTargetIds: childTargetIds,
             }),
             ...aa076MoveOverlayOperations({
+              context: childContext,
+              script: childMechanics,
+              moveSourceId: childMoveSourceId,
+              authoritativeTargetIds: childTargetIds,
+            }),
+            ...aa077MoveOverlayOperations({
               context: childContext,
               script: childMechanics,
               moveSourceId: childMoveSourceId,

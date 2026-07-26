@@ -27,6 +27,7 @@ import {
   harvestTradedForSheetThisTurn,
 } from './digestionBuffTrade'
 import { aa072GluttonyLimits } from '../abilityAutomation/mechanics/aa072StaticIntegration'
+import { aa077IsProtectedRareLeek } from '../abilityAutomation/mechanics/aa077StaticIntegration'
 import {
   AA073_HARVEST_ROLL_REASON,
   aa073HarvestRollOperationId,
@@ -1054,19 +1055,56 @@ interface OperationInterpretation {
   readonly mutations: readonly MoveItemMutation[]
 }
 
+const protectedRareLeekSource = (input: {
+  readonly interpretation: OperationInterpretation
+  readonly context: AuthoritativeMoveRulesContext
+}): boolean => input.interpretation.mutations.some((mutation) => {
+  if (!('source' in mutation)) return false
+  const source = mutation.source
+  if (source.canonicalItemId !== 'rare-leek' || source.owner.kind !== 'sheet') return false
+  const owner = source.owner
+  const ownerPlacement = input.context.map.placements.find(placement => (
+    placement.sheetKind === owner.sheetKind
+    && placement.sheetSlug === owner.slug
+  ))
+  return ownerPlacement !== undefined && aa077IsProtectedRareLeek({
+    context: input.context,
+    ownerPlacementId: ownerPlacement.id,
+    canonicalItemId: source.canonicalItemId,
+    voluntaryActorPlacementId: input.context.intent.placementId,
+  })
+})
+
 const interpretOperation = (input: InterpretOperationInput): OperationInterpretation => {
   const action = input.operation.payload.action
-  if (action === 'give' || action === 'steal') return interpretGiveOrSteal(input)
-  if (action === 'pickup') return interpretPickup(input)
-  if (action === 'swap') return interpretSwap(input)
-  if (action === 'knock-to-ground' || action === 'throw') return interpretGrounding(input)
-  if (action === 'consume' || action === 'destroy' || action === 'store-buff') {
-    return interpretConsumeDestroyOrStore(input)
-  }
-  if (action === 'restore') return interpretRestore(input)
-  if (action === 'suppress') return interpretSuppression(input)
-  if (action === 'digest-buff') return interpretDigestBuff(input)
-  return fail('unsupported-operation', `Item operation ${input.operation.id} is unsupported.`)
+  const interpreted = action === 'give' || action === 'steal'
+    ? interpretGiveOrSteal(input)
+    : action === 'pickup'
+      ? interpretPickup(input)
+      : action === 'swap'
+        ? interpretSwap(input)
+        : action === 'knock-to-ground' || action === 'throw'
+          ? interpretGrounding(input)
+          : action === 'consume' || action === 'destroy' || action === 'store-buff'
+            ? interpretConsumeDestroyOrStore(input)
+            : action === 'restore'
+              ? interpretRestore(input)
+              : action === 'suppress'
+                ? interpretSuppression(input)
+                : action === 'digest-buff'
+                  ? interpretDigestBuff(input)
+                  : fail('unsupported-operation', `Item operation ${input.operation.id} is unsupported.`)
+  return protectedRareLeekSource({ interpretation: interpreted, context: input.context })
+    ? {
+        result: unavailable({
+          operation: input.operation,
+          policy: input.operation.payload.onUnavailable,
+          code: 'selection-unavailable',
+          message: `Item operation ${input.operation.id} cannot remove a protected Rare Leek without its owner's willing action.`,
+        }),
+        mutations: [],
+      }
+    : interpreted
 }
 
 /**
@@ -1123,7 +1161,10 @@ export const applyMoveItemEffectResultsToTrace = (input: {
   const events = input.trace.events.map((event) => {
     if (event.kind !== 'operation' || event.operationKind !== 'item') return event
     const result = itemResults.get(event.operationId)
-      ?? fail('trace-result-missing', `Item trace operation ${event.operationId} has no interpretation.`)
+    if (!result && event.recipientIds.length === 0) return event
+    if (!result) {
+      return fail('trace-result-missing', `Item trace operation ${event.operationId} has no interpretation.`)
+    }
     const reduced = result.mutationIds.map(id => mutationResults.get(id)
       ?? fail('trace-result-missing', `Item mutation ${id} has no reducer result.`))
     return {

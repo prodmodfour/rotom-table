@@ -13,6 +13,7 @@ import {
 import {
   moveAutomationPassiveImmunityKeywordsForTarget,
   moveAutomationPowderImmunitySource,
+  moveAutomationTargetSuppressesGroundsourceImmunity,
 } from '~/utils/moveAutomationKeywordImmunity'
 import { ELECTRIC_RESISTANT_COAT_CONDITION } from '~/utils/moveAutomationSpecialConditions'
 import { conditionBaseName, normalizeConditionNames } from '~/utils/statusConditions'
@@ -317,18 +318,36 @@ export const resolveMoveDamageType = (options: {
   const powderImmunity = policy.immunity === 'honor'
     ? moveAutomationPowderImmunitySource(options.script, target)
     : null
+  const effectiveLevitate = options.context.queries.abilities.has(options.recipientId, 'Levitate')
+  const gravityGroundInteraction = options.context.queries.gravity.groundInteraction({
+    placementId: options.recipientId,
+    moveType: moveType.type,
+  })
+  // Levitate is an immunity, never a fallback resistance when a Move ignores
+  // immunity. Keep the legacy sheet-passive resistance lane out of this path.
+  const passiveAbilityNames = (target.abilityNames ?? [])
+    .filter(name => name.trim() !== 'Levitate')
+  const levitateImmunity = effectiveLevitate
+    && moveType.type === 'Ground'
+    && policy.immunity === 'honor'
+    && policy.passiveImmunity !== 'ignore'
+    && !gravityGroundInteraction.suppressesLevitateResistance
+    && !moveAutomationTargetSuppressesGroundsourceImmunity(target)
   const passive = chartImmunity || powderImmunity
     ? { multiplier: 0, sources: [] as string[] }
-    : resolveSheetPassiveTypeEffectiveness(
+    : levitateImmunity
+      ? { multiplier: 0, sources: ['Levitate'] }
+      : resolveSheetPassiveTypeEffectiveness(
         moveType.type,
         baseMultiplier,
-        target.abilityNames,
+        passiveAbilityNames,
         target.defenderCapabilities,
         {
           baseMultiplier,
           moveKeywords: moveAutomationPassiveImmunityKeywordsForTarget(
             options.script.keywords,
             target,
+            { suppressGroundsourceImmunity: gravityGroundInteraction.suppressesGroundsourceImmunity },
           ),
           ignoreImmunity: policy.immunity === 'ignore'
             || policy.passiveImmunity === 'ignore',

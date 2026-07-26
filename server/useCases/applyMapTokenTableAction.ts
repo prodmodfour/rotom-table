@@ -40,6 +40,10 @@ import {
 } from '../domain/abilityAutomation/legacyCompatibility'
 import { applyAa065CrushTrapGrappleTrigger } from '../domain/abilityAutomation/mechanics/aa065ManeuverIntegration'
 import { cleanupAa065CrueltyHealingBlockForBreather } from '../domain/abilityAutomation/mechanics/aa065StaticIntegration'
+import {
+  aa077HasAuthoritativeDisengageWindow,
+  applyAa077DisengageResourceEvidence,
+} from '../domain/abilityAutomation/mechanics/aa077StaticIntegration'
 import { appendAbilityAutomationLogEntry } from '~/utils/abilityAutomationLog'
 import { appendActiveOrderEffect, createActiveOrderEffect } from '~/utils/activeOrderEffects'
 import { appendManeuverLogEntry, buildManeuverUseLogLines } from '~/utils/maneuverLog'
@@ -561,6 +565,12 @@ const applyManeuverCommand = (
       `Maneuver ${payload.maneuverName} is not available to token ${payload.placementId}`,
     )
   }
+  if (maneuver.name === 'Disengage' && !aa077HasAuthoritativeDisengageWindow({
+    map: context.map,
+    placementId: context.actorPlacement.id,
+  })) {
+    rejectLivePlayCommand('invalid', 'Disengage requires the actor’s authoritative current-turn resource ledger.')
+  }
 
   const metadata = appendManeuverLogEntry(context.map.metadata, {
     userId: actor.id,
@@ -585,12 +595,19 @@ const applyManeuverCommand = (
         operationId: command.opId,
       })
     : afterBreather
+  const withDisengageEvidence = maneuver.name === 'Disengage'
+    ? applyAa077DisengageResourceEvidence({
+        map: withAbilityTrigger,
+        placementId: context.actorPlacement.id,
+        operationId: command.opId,
+      })
+    : withAbilityTrigger
   const revision = nextRevision(currentRevision)
   const updatedAt = dependencies.now()
 
   return {
     ...context,
-    map: { ...withAbilityTrigger, revision, updatedAt },
+    map: { ...withDisengageEvidence, revision, updatedAt },
     action: {
       type: 'maneuver',
       placementId: context.actorPlacement.id,

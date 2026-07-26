@@ -96,15 +96,15 @@ describe('pokemon sheet derived helpers', () => {
     expect(resolved.other).toEqual(['Teleporter 2', 'Telekinetic', 'Telepath', 'Underdog'])
   })
 
-  it('applies the Levitate ability passive speed bonus to capabilities', () => {
+  it('keeps derived capabilities native before effective Levitate projection', () => {
     expect(resolveCapabilities(makeAbraSheet({
       abilities: [{ name: 'levitate' }],
-    })).rows).toContainEqual({ label: 'Levitate', value: 4 })
+    })).rows).not.toContainEqual(expect.objectContaining({ label: 'Levitate' }))
 
     expect(resolveCapabilities(makeAbraSheet({
       abilities: [{ name: 'Levitate' }],
       capabilities: { levitate: 5 },
-    })).rows).toContainEqual({ label: 'Levitate', value: 7 })
+    })).rows).toContainEqual({ label: 'Levitate', value: 5 })
   })
 
   it('adds capabilities granted by known moves', () => {

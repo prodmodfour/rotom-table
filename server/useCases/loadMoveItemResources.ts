@@ -1,5 +1,7 @@
 import type { ResolveMoveIntent } from '#shared/livePlayMoveResolution'
+import { AA077_KLUTZ_ITEM_REQUIREMENT_ID } from '#shared/abilityAutomation/aa077'
 import { findMove } from '~~/data/ptuReference'
+import { explicitScriptForMove, moveAutomationScriptForTargetBranch } from '~/utils/moveAutomation'
 import type { CharacterSheet } from '~/types/characterSheet'
 import type { SheetPlacement, TabletopMap } from '~/types/map'
 import type { TrainerSheet } from '~/types/trainerSheet'
@@ -15,6 +17,7 @@ import type {
   GroupInventoryRepository,
   StoredGroupInventoryDocument,
 } from '../storage/groupInventoryRepository'
+import { aa077EffectiveAbilityIds } from '../domain/abilityAutomation/mechanics/aa077StaticIntegration'
 
 export interface ResolveMoveItemResourceRequirementInput {
   readonly canonicalMoveId: string
@@ -86,13 +89,39 @@ export const loadMoveItemResources = (
   }
 
   const canonicalMoveId = canonicalMoveIdForIntent(input.intent)
-  const requirements = parseAuthoritativeMoveItemResourceRequirements(
+  const reviewedRequirements = parseAuthoritativeMoveItemResourceRequirements(
     (input.requirementProvider ?? defaultResolveMoveItemResourceRequirementProvider)({
       canonicalMoveId,
       actorPlacement,
       intent: input.intent,
     }),
   )
+  const actorSheet = actorPlacement.sheetKind === 'pokemon'
+    ? input.pokemonSheets.get(actorPlacement.sheetSlug)
+    : input.trainerSheets.get(actorPlacement.sheetSlug)
+  const move = findMove(canonicalMoveId)
+  const baseScript = explicitScriptForMove(canonicalMoveId)
+  const selectedScript = input.intent.targetBranchId && baseScript
+    ? moveAutomationScriptForTargetBranch(baseScript, input.intent.targetBranchId)
+    : baseScript
+  const klutzRequirement = actorSheet
+    && move
+    && selectedScript?.damaging === true
+    && selectedScript.keywords.some(keyword => keyword.trim().toLowerCase() === 'melee')
+    && aa077EffectiveAbilityIds({
+      map: input.map,
+      placement: actorPlacement,
+      sheet: actorSheet,
+    }).includes('Klutz')
+    ? [{
+        id: AA077_KLUTZ_ITEM_REQUIREMENT_ID,
+        source: { kind: 'selected-target-equipped' as const },
+      }]
+    : []
+  const requirements = parseAuthoritativeMoveItemResourceRequirements([
+    ...reviewedRequirements,
+    ...klutzRequirement,
+  ])
   const groupInventories = loadGroupInventories(
     requirements,
     input.groupInventoryRepository,

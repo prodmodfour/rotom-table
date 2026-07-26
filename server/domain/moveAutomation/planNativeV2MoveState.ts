@@ -52,6 +52,7 @@ import { consumeSideDamageResistance } from './sideDamageResistance'
 import { planMoveSwitchCombatStageTransfer } from './planSwitchCombatStages'
 import type { MoveAutomationRuntimeRegistry } from './registry'
 import { createMoveSpecOperationContextResolver } from './resolveImmediateSpec'
+import type { MoveSpecChildExecution } from './executeSpec'
 import {
   isMoveMapOperationEmission,
   reduceMoveMapOperations,
@@ -68,6 +69,7 @@ import { reduceAbilityOwnedStateCommand } from '../abilityAutomation/ownedState'
 import { aa060MoveMarkId } from '../abilityAutomation/mechanics/aa060MoveIntegration'
 import { Aa060AnchoredMovementError, assertAa060AnchoredDestination } from '../abilityAutomation/mechanics/aa060'
 import { aa061AquaBulletStateIdsForMove, aa061BatteryStateIdsForMove } from '../abilityAutomation/mechanics/aa061MoveIntegration'
+import { aa077LeafRushStateIdsForMove } from '../abilityAutomation/mechanics/aa077StaticIntegration'
 import { aa062BoneLordReadyStateIds } from '../abilityAutomation/mechanics/aa062MoveIntegration'
 import { recordAa065CudChewConsumptions } from '../abilityAutomation/mechanics/aa065ItemIntegration'
 import { applyAa061BallFetchSendOutTriggers } from '../abilityAutomation/mechanics/aa061PresenceIntegration'
@@ -659,6 +661,7 @@ const applyTriggeredAbilityPayments = (input: {
   readonly map: TabletopMap
   readonly context: ReturnType<typeof buildAuthoritativeMoveRulesContext>
   readonly traces: readonly MoveResolutionAuditTrace[]
+  readonly childExecutions: readonly MoveSpecChildExecution[]
   readonly resolutionId: string
 }): TriggeredAbilityPaymentResult => {
   const canonicalIdByReason = new Map<string, string>([
@@ -714,6 +717,7 @@ const applyTriggeredAbilityPayments = (input: {
     ['ability.iron-barbs.optional-hp-loss', 'Iron Barbs'],
     ['ability.justified.optional-attack-stage', 'Justified'],
     ['ability.kampfgeist.optional-resistance', 'Kampfgeist'],
+    ['ability.klutz.optional-knock-to-ground', 'Klutz'],
   ])
   const noFrequency = new Set([
     'Anger Point', 'Aqua Boost', 'Beast Boost', 'Celebrate', 'Chilling Neigh',
@@ -722,6 +726,9 @@ const applyTriggeredAbilityPayments = (input: {
     'Ignition Boost', 'Iron Barbs', 'Justified',
   ])
   const daily = new Set(['Dig Away', 'Disguise', 'Dodge'])
+  const actorByChildOperationId = new Map(input.childExecutions.flatMap(child => (
+    child.operationIds.map(operationId => [operationId, child.actorPlacementId] as const)
+  )))
   const triggeringMoveByOperationId = new Map(input.traces.flatMap(trace => (
     trace.events.flatMap(event => event.kind === 'operation'
       ? [[event.operationId, trace.program.canonicalId] as const]
@@ -731,7 +738,11 @@ const applyTriggeredAbilityPayments = (input: {
     event.kind === 'operation'
     && canonicalIdByReason.has(event.reasonCode)
     && event.outcome === 'applied'
-    && event.recipientIds.length === 1
+    && (
+      event.recipientIds.length === 1
+      || (event.reasonCode === 'ability.klutz.optional-knock-to-ground'
+        && event.recipientIds.length > 0)
+    )
   ))
   interface DailySheetWork {
     readonly placement: SheetPlacement
@@ -743,8 +754,10 @@ const applyTriggeredAbilityPayments = (input: {
   let map = input.map
   for (const selection of selections) {
     if (selection.kind !== 'operation') continue
-    const ownerId = selection.recipientIds[0]!
     const canonicalId = canonicalIdByReason.get(selection.reasonCode)!
+    const ownerId = canonicalId === 'Klutz'
+      ? actorByChildOperationId.get(selection.operationId) ?? input.context.actor.placement.id
+      : selection.recipientIds[0]!
     const ability = input.context.queries.abilities.activeForPlacement(ownerId)
       .find(candidate => candidate.canonicalId === canonicalId)
       ?? fail('state-change-conflict', `Selected ${canonicalId} response lost its effective runtime.`)
@@ -1048,6 +1061,7 @@ export const planNativeV2MoveState = (options: {
       ...aa061BatteryStateIdsForMove(context, options.resolution.script),
       ...aa061AquaBulletStateIdsForMove(context, options.resolution.canonicalMoveName),
       ...aa062BoneLordReadyStateIds(context, options.resolution.canonicalMoveName),
+      ...aa077LeafRushStateIdsForMove(context, options.resolution.script),
     ],
   })
   const triggeredAbilityPayments = applyTriggeredAbilityPayments({
@@ -1055,6 +1069,7 @@ export const planNativeV2MoveState = (options: {
     context,
     // Nested child events are ancestry-projected into the root trace exactly once.
     traces: [native.trace],
+    childExecutions: native.childExecutions,
     resolutionId: context.resolutionId ?? originOperationId,
   })
   const mapAfterDelayedReactionDebts = applyAa067DelayedReactionDebts({

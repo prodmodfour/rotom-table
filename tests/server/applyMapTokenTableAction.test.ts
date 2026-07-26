@@ -10,6 +10,7 @@ import { createSqliteLivePlayOpRepository } from '../../server/storage/opReposit
 import { createSqliteMapRepository } from '../../server/storage/mapRepository'
 import { createSqliteSheetRepository } from '../../server/storage/sheetRepository'
 import { createEmptyEncounterState } from '../../shared/moveAutomation/encounterState'
+import { createEncounterTurnResourceLedger } from '../../shared/moveAutomation/encounterResources'
 import { capabilityEncounterEffectFixture } from '../fixtures/moveAutomation/encounterEffects'
 import { executeLivePlayTableActionCommandUseCase } from '../../server/useCases/applyMapTokenTableAction'
 import {
@@ -197,6 +198,54 @@ describe('live-play map token table action commands', () => {
     }, deps)
     expect(response.result).toMatchObject({ ok: true, opId: 'op_takebreather1' })
     expect(mapRepository.getBySlug('arena')?.encounterState?.effects).toEqual([])
+  })
+
+  it('records exact Disengage Shift and Lancer evidence through the production maneuver path', async () => {
+    const encounter = createEmptyEncounterState()
+    const map = baseMap({
+      initiative: { activeId: 'actor', round: 2 },
+      encounterState: {
+        ...encounter,
+        history: {
+          ...encounter.history,
+          sceneId: 'scene:aa077-lancer',
+          currentRound: 2,
+          currentTurn: { round: 2, turn: 1, placementId: 'actor' },
+        },
+        turnResources: {
+          actor: createEncounterTurnResourceLedger({ placementId: 'actor', round: 2, turn: 1 }),
+        },
+      },
+    })
+    const { deps, mapRepository } = createDeps({ map, now: 1111 })
+    await executeLivePlayTableActionCommandUseCase({
+      role: 'player',
+      command: command(
+        LIVE_PLAY_COMMAND_TYPES.USE_MANEUVER,
+        'op_aa077_disengage',
+        { placementId: 'actor', maneuverName: 'Disengage' },
+        [tokenActionScope('actor'), metadataScope],
+      ),
+      playerProfile: playerProfile([{ sheetKind: 'pokemon', sheetSlug: 'sandile' }]),
+    }, deps)
+    const ledger = mapRepository.getBySlug('arena')?.encounterState?.turnResources.actor
+    expect(ledger?.actions.shift.spent).toBe(1)
+    expect(ledger?.oncePerTurnFlags).toContainEqual(expect.objectContaining({
+      id: 'aa077.lancer.disengaged-this-turn',
+    }))
+
+    const outsideTurn = createDeps({ now: 1112 })
+    const rejected = await executeLivePlayTableActionCommandUseCase({
+      role: 'player',
+      command: command(
+        LIVE_PLAY_COMMAND_TYPES.USE_MANEUVER,
+        'op_aa077_disengage_outside_turn',
+        { placementId: 'actor', maneuverName: 'Disengage' },
+        [tokenActionScope('actor'), metadataScope],
+      ),
+      playerProfile: playerProfile([{ sheetKind: 'pokemon', sheetSlug: 'sandile' }]),
+    }, outsideTurn.deps)
+    expect(rejected.result).toMatchObject({ ok: false, reason: 'invalid', currentRevision: 7 })
   })
 
   it('persists linked player maneuver usage through SQLite and publishes an accepted patch', async () => {

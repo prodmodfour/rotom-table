@@ -55,6 +55,10 @@ import {
 } from '../domain/abilityAutomation/legacyCompatibility'
 import { applyAa065CrushTrapGrappleTrigger } from '../domain/abilityAutomation/mechanics/aa065ManeuverIntegration'
 import { cleanupAa065CrueltyHealingBlockForBreather } from '../domain/abilityAutomation/mechanics/aa065StaticIntegration'
+import {
+  aa077HasAuthoritativeDisengageWindow,
+  applyAa077DisengageResourceEvidence,
+} from '../domain/abilityAutomation/mechanics/aa077StaticIntegration'
 import { appendAbilityAutomationLogEntry } from '~/utils/abilityAutomationLog'
 import {
   appendActiveOrderEffect,
@@ -1108,6 +1112,21 @@ const useManeuverPlan = (
       ),
     }
   }
+  if (maneuver.name === 'Disengage' && !aa077HasAuthoritativeDisengageWindow({
+    map: target.mapState.document,
+    placementId: target.placement.id,
+  })) {
+    return {
+      ok: false,
+      result: createConflictRejection(
+        command,
+        record,
+        'Disengage requires the actor’s authoritative current-turn resource ledger.',
+        processedAt,
+        { retryable: false, currentState: useTableActionStateFromTarget(command, target, record.revision) },
+      ),
+    }
+  }
 
   const logLines = buildManeuverUseLogLines(user, maneuver, { target: targetToken ?? null })
   const metadata = appendManeuverLogEntry(target.mapState.document.metadata, {
@@ -1136,10 +1155,17 @@ const useManeuverPlan = (
         operationId: command.opId,
       })
     : mapAfterBreather
+  const mapWithDisengageEvidence = maneuver.name === 'Disengage'
+    ? applyAa077DisengageResourceEvidence({
+        map: mapWithAbilityTrigger,
+        placementId: target.placement.id,
+        operationId: command.opId,
+      })
+    : mapWithAbilityTrigger
   return {
     ok: true,
     plan: {
-      mapDocument: touchedMapDocument(mapWithAbilityTrigger, processedAt),
+      mapDocument: touchedMapDocument(mapWithDisengageEvidence, processedAt),
       eventType: USE_MANEUVER_PATCH_EVENT_TYPE,
       eventPayload: {
         tokenId: target.placement.id,

@@ -99,6 +99,12 @@ export const AA076_ABILITY_MECHANIC_IDS = [
   'aa076.iron-fist', 'aa076.juicy-energy', 'aa076.justified',
   'aa076.kampfgeist', 'aa076.keen-eye',
 ] as const
+export const AA077_ABILITY_MECHANIC_IDS = [
+  'aa077.klutz', 'aa077.lancer', 'aa077.landslide', 'aa077.last-chance',
+  'aa077.leaf-gift', 'aa077.leaf-guard', 'aa077.leaf-rush',
+  'aa077.leafy-cloak', 'aa077.leek-mastery', 'aa077.levitate',
+  'aa077.life-force', 'aa077.light-metal',
+] as const
 export type Aa060AbilityMechanicId = (typeof AA060_ABILITY_MECHANIC_IDS)[number]
 export type AbilityMechanicId = Aa060AbilityMechanicId
   | (typeof AA061_ABILITY_MECHANIC_IDS)[number]
@@ -117,6 +123,7 @@ export type AbilityMechanicId = Aa060AbilityMechanicId
   | (typeof AA074_ABILITY_MECHANIC_IDS)[number]
   | (typeof AA075_ABILITY_MECHANIC_IDS)[number]
   | (typeof AA076_ABILITY_MECHANIC_IDS)[number]
+  | (typeof AA077_ABILITY_MECHANIC_IDS)[number]
 export interface AbilityMechanicOperation extends AbilitySpecJsonObject {
   readonly kind: typeof ABILITY_MECHANIC_OPERATION_KIND
   readonly id: string
@@ -339,6 +346,18 @@ const CONFIG_FIELDS: Readonly<Record<AbilityMechanicId, readonly string[]>> = {
   'aa076.justified': ['action', 'frequency', 'triggerMoveType', 'triggerAttackOfOpportunity', 'attackStageDelta', 'interceptCheckBonus'],
   'aa076.kampfgeist': ['action', 'frequency', 'triggerTypes', 'resistanceSteps', 'bonusStabType'],
   'aa076.keen-eye': ['protectAccuracyStage', 'ignoreAccuracyPenalties', 'blockedCondition', 'excludedCondition', 'ignoreNonStatEvasion'],
+  'aa077.klutz': ['ignoreHeldItemEffects', 'voluntaryDropAction', 'voluntaryDropIgnoresActionBlockingConditions', 'trigger', 'action', 'frequency'],
+  'aa077.lancer': ['shiftedDistance', 'criticalRangeBonus', 'noShiftOrDisengageDamageReduction', 'duration'],
+  'aa077.landslide': ['lastChanceType', 'hpThresholdNumerator', 'hpThresholdDenominator', 'damageBonus'],
+  'aa077.last-chance': ['lastChanceType', 'hpThresholdNumerator', 'hpThresholdDenominator', 'damageBonus'],
+  'aa077.leaf-gift': ['action', 'frequency', 'replacementPolicy', 'suits'],
+  'aa077.leaf-guard': ['action', 'frequency', 'cureCount', 'sunnyWeatherIgnoresFrequency'],
+  'aa077.leaf-rush': ['action', 'frequency', 'moveType', 'priority', 'damagingSpeedFractionNumerator', 'damagingSpeedFractionDenominator'],
+  'aa077.leafy-cloak': ['triggerAbilityId', 'selections', 'abilityIds', 'duration'],
+  'aa077.leek-mastery': ['connectionMoveId', 'protectedItemId', 'acrobaticsTreatAsNoItem', 'forcedRemovalRequiresWilling'],
+  'aa077.levitate': ['immuneMoveType', 'grantedSpeed', 'existingSpeedBonus', 'preserveNativeSpeed'],
+  'aa077.life-force': ['action', 'frequency', 'healingTicks'],
+  'aa077.light-metal': ['weightClassDelta', 'speedBaseStatDelta', 'defenseBaseStatDelta'],
 }
 const MECHANIC_SET = new Set<string>([
   ...AA060_ABILITY_MECHANIC_IDS, ...AA061_ABILITY_MECHANIC_IDS,
@@ -349,7 +368,7 @@ const MECHANIC_SET = new Set<string>([
   ...AA070_ABILITY_MECHANIC_IDS, ...AA071_ABILITY_MECHANIC_IDS,
   ...AA072_ABILITY_MECHANIC_IDS, ...AA073_ABILITY_MECHANIC_IDS,
   ...AA074_ABILITY_MECHANIC_IDS, ...AA075_ABILITY_MECHANIC_IDS,
-  ...AA076_ABILITY_MECHANIC_IDS,
+  ...AA076_ABILITY_MECHANIC_IDS, ...AA077_ABILITY_MECHANIC_IDS,
 ])
 const ID = /^[a-z0-9]+(?:[._:/-][a-z0-9]+)*$/
 const fail = (code: AbilityMechanicValidationError['code'], path: string, detail: string): never => { throw new AbilityMechanicValidationError(code, path, detail) }
@@ -1410,6 +1429,63 @@ const parseConfig = (mechanicId: AbilityMechanicId, value: unknown, path: string
       protectAccuracyStage: bool(config.protectAccuracyStage, `${path}.protectAccuracyStage`), ignoreAccuracyPenalties: bool(config.ignoreAccuracyPenalties, `${path}.ignoreAccuracyPenalties`),
       blockedCondition: oneOf(config.blockedCondition, ['blindness'], `${path}.blockedCondition`), excludedCondition: oneOf(config.excludedCondition, ['total-blindness'], `${path}.excludedCondition`),
       ignoreNonStatEvasion: bool(config.ignoreNonStatEvasion, `${path}.ignoreNonStatEvasion`),
+    }
+    case 'aa077.klutz': return {
+      ignoreHeldItemEffects: bool(config.ignoreHeldItemEffects, `${path}.ignoreHeldItemEffects`), voluntaryDropAction: oneOf(config.voluntaryDropAction, ['free'], `${path}.voluntaryDropAction`),
+      voluntaryDropIgnoresActionBlockingConditions: bool(config.voluntaryDropIgnoresActionBlockingConditions, `${path}.voluntaryDropIgnoresActionBlockingConditions`), trigger: oneOf(config.trigger, ['damaging-melee-hit'], `${path}.trigger`),
+      action: oneOf(config.action, ['free'], `${path}.action`), frequency: oneOf(config.frequency, ['scene'], `${path}.frequency`),
+    }
+    case 'aa077.lancer': return {
+      shiftedDistance: integer(config.shiftedDistance, `${path}.shiftedDistance`, 3, 3), criticalRangeBonus: integer(config.criticalRangeBonus, `${path}.criticalRangeBonus`, 3, 3),
+      noShiftOrDisengageDamageReduction: integer(config.noShiftOrDisengageDamageReduction, `${path}.noShiftOrDisengageDamageReduction`, 5, 5), duration: oneOf(config.duration, ['until-next-turn-start'], `${path}.duration`),
+    }
+    case 'aa077.landslide': return {
+      lastChanceType: oneOf(config.lastChanceType, ['ground'], `${path}.lastChanceType`), hpThresholdNumerator: integer(config.hpThresholdNumerator, `${path}.hpThresholdNumerator`, 1, 1),
+      hpThresholdDenominator: integer(config.hpThresholdDenominator, `${path}.hpThresholdDenominator`, 3, 3), damageBonus: integer(config.damageBonus, `${path}.damageBonus`, 5, 5),
+    }
+    case 'aa077.last-chance': return {
+      lastChanceType: oneOf(config.lastChanceType, ['normal'], `${path}.lastChanceType`), hpThresholdNumerator: integer(config.hpThresholdNumerator, `${path}.hpThresholdNumerator`, 1, 1),
+      hpThresholdDenominator: integer(config.hpThresholdDenominator, `${path}.hpThresholdDenominator`, 3, 3), damageBonus: integer(config.damageBonus, `${path}.damageBonus`, 5, 5),
+    }
+    case 'aa077.leaf-gift': {
+      const suits = record(config.suits, `${path}.suits`)
+      exact(suits, ['nourishing', 'heavy', 'vibrant'], `${path}.suits`)
+      return {
+        action: oneOf(config.action, ['extended'], `${path}.action`), frequency: oneOf(config.frequency, ['daily'], `${path}.frequency`), replacementPolicy: oneOf(config.replacementPolicy, ['destroy-previous'], `${path}.replacementPolicy`),
+        suits: {
+          nourishing: stringArray(suits.nourishing, ['Sun Blanket', 'Leaf Guard'], `${path}.suits.nourishing`),
+          heavy: stringArray(suits.heavy, ['Sturdy', 'Overcoat'], `${path}.suits.heavy`),
+          vibrant: stringArray(suits.vibrant, ['Chlorophyll', 'Photosynthesis'], `${path}.suits.vibrant`),
+        },
+      }
+    }
+    case 'aa077.leaf-guard': return {
+      action: oneOf(config.action, ['swift'], `${path}.action`), frequency: oneOf(config.frequency, ['scene'], `${path}.frequency`), cureCount: integer(config.cureCount, `${path}.cureCount`, 1, 1),
+      sunnyWeatherIgnoresFrequency: bool(config.sunnyWeatherIgnoresFrequency, `${path}.sunnyWeatherIgnoresFrequency`),
+    }
+    case 'aa077.leaf-rush': return {
+      action: oneOf(config.action, ['free'], `${path}.action`), frequency: oneOf(config.frequency, ['scene-x2'], `${path}.frequency`), moveType: oneOf(config.moveType, ['grass'], `${path}.moveType`),
+      priority: bool(config.priority, `${path}.priority`), damagingSpeedFractionNumerator: integer(config.damagingSpeedFractionNumerator, `${path}.damagingSpeedFractionNumerator`, 1, 1),
+      damagingSpeedFractionDenominator: integer(config.damagingSpeedFractionDenominator, `${path}.damagingSpeedFractionDenominator`, 2, 2),
+    }
+    case 'aa077.leafy-cloak': return {
+      triggerAbilityId: oneOf(config.triggerAbilityId, ['Designer'], `${path}.triggerAbilityId`), selections: integer(config.selections, `${path}.selections`, 2, 2),
+      abilityIds: stringArray(config.abilityIds, ['Chlorophyll', 'Leaf Guard', 'Overcoat'], `${path}.abilityIds`), duration: oneOf(config.duration, ['until-designer-reactivates'], `${path}.duration`),
+    }
+    case 'aa077.leek-mastery': return {
+      connectionMoveId: oneOf(config.connectionMoveId, ['Acrobatics'], `${path}.connectionMoveId`), protectedItemId: oneOf(config.protectedItemId, ['rare-leek'], `${path}.protectedItemId`),
+      acrobaticsTreatAsNoItem: bool(config.acrobaticsTreatAsNoItem, `${path}.acrobaticsTreatAsNoItem`), forcedRemovalRequiresWilling: bool(config.forcedRemovalRequiresWilling, `${path}.forcedRemovalRequiresWilling`),
+    }
+    case 'aa077.levitate': return {
+      immuneMoveType: oneOf(config.immuneMoveType, ['ground'], `${path}.immuneMoveType`), grantedSpeed: integer(config.grantedSpeed, `${path}.grantedSpeed`, 4, 4),
+      existingSpeedBonus: integer(config.existingSpeedBonus, `${path}.existingSpeedBonus`, 2, 2), preserveNativeSpeed: bool(config.preserveNativeSpeed, `${path}.preserveNativeSpeed`),
+    }
+    case 'aa077.life-force': return {
+      action: oneOf(config.action, ['swift'], `${path}.action`), frequency: oneOf(config.frequency, ['daily-x5'], `${path}.frequency`), healingTicks: integer(config.healingTicks, `${path}.healingTicks`, 1, 1),
+    }
+    case 'aa077.light-metal': return {
+      weightClassDelta: integer(config.weightClassDelta, `${path}.weightClassDelta`, -2, -2), speedBaseStatDelta: integer(config.speedBaseStatDelta, `${path}.speedBaseStatDelta`, 2, 2),
+      defenseBaseStatDelta: integer(config.defenseBaseStatDelta, `${path}.defenseBaseStatDelta`, -2, -2),
     }
   }
 }

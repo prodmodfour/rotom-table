@@ -230,7 +230,7 @@ describe('ability automation production runtime registry', () => {
   })
 
   it('ships only exact evidence-backed production selections', () => {
-    expect(ABILITY_AUTOMATION_RUNTIME_REGISTRY.size).toBe(204)
+    expect(ABILITY_AUTOMATION_RUNTIME_REGISTRY.size).toBe(216)
     expect(ABILITY_AUTOMATION_RUNTIME_REGISTRY.entries().map(runtime => runtime.canonicalId))
       .toEqual([
         'Abominable', 'Absorb Force', 'Accelerate', 'Adaptability', 'Aerilate', 'Aftermath',
@@ -268,7 +268,9 @@ describe('ability automation production runtime registry', () => {
         'Ice Scales', 'Ice Shield', 'Ignition Boost', 'Illuminate', 'Illusion', 'Immunity',
         'Imposter', 'Infiltrator', 'Innards Out', 'Inner Focus', 'Insomnia', 'Instinct',
         'Interference', 'Intimidate', 'Intrepid Sword', 'Iron Barbs', 'Iron Fist',
-        'Juicy Energy', 'Justified', 'Kampfgeist', 'Keen Eye',
+        'Juicy Energy', 'Justified', 'Kampfgeist', 'Keen Eye', 'Klutz', 'Lancer',
+        'Landslide', 'Last Chance', 'Leaf Gift', 'Leaf Guard', 'Leaf Rush', 'Leafy Cloak',
+        'Leek Mastery', 'Levitate', 'Life Force', 'Light Metal',
       ])
     expect(registeredAbilityAutomationRuntimeFor('Adaptability')).toMatchObject({
       kind: 'abilityspec-v1', version: 1,

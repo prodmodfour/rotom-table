@@ -28,6 +28,7 @@ export interface MoveAutomationItemEffectResolution {
     | 'item-effect.allowed'
     | 'item-effect.magic-room-suppressed'
     | 'item-effect.encounter-suppressed'
+    | 'item-effect.ability-suppressed'
     | 'item-effect.magic-room-exempt'
     | 'item-effect.scope-not-applicable'
     | 'item-effect.placement-unavailable'
@@ -81,6 +82,8 @@ export const createMoveAutomationItemEffectResolver = (input: {
   readonly recordSheetRead?: (
     placement: Pick<SheetPlacement, 'sheetKind' | 'sheetSlug'>,
   ) => void
+  /** Exact effective-ability policy; physical equipment remains present. */
+  readonly suppressAllForPlacement?: (placementId: string) => boolean
 }): MoveAutomationItemEffectResolver => {
   const placements = new Map(input.placements.map(placement => [placement.id, placement]))
   const effects = input.effects ?? []
@@ -142,6 +145,19 @@ export const createMoveAutomationItemEffectResolver = (input: {
       }
 
       input.recordSheetRead?.(placement)
+      if (input.suppressAllForPlacement?.(placement.id) === true) {
+        return deepFreeze({
+          placementId: placement.id,
+          scope: query.scope,
+          timing: query.timing,
+          outcome: 'suppressed',
+          suppressed: true,
+          sourceZoneId: null,
+          sourceSideId: null,
+          sourceEffectIds: [],
+          reasonCode: 'item-effect.ability-suppressed',
+        })
+      }
       const sourceEffectIds = encounterSuppressionIds(query)
       if (sourceEffectIds.length > 0) {
         return deepFreeze({

@@ -11,6 +11,7 @@ import {
 } from '~/utils/moveAutomationConditionImmunity'
 import { tokenGridDistance } from '~/utils/moveAutomationRange'
 import { moveAutomationMoveImmunitySource } from '~/utils/moveAutomationMoveImmunity'
+import { moveAutomationTargetSuppressesGroundsourceImmunity } from '~/utils/moveAutomationKeywordImmunity'
 import {
   computeSheetAbilityAwareMultiplier,
   getPassiveTypeEffectivenessSource,
@@ -207,11 +208,23 @@ export const createStandardMoveCoreTokenEffectImmunityQueries = (
   ): string | null => {
     if (!options.moveType) return 'unresolved move type'
     const target = recipient.token
+    const effectiveLevitate = typeSource === 'attacking'
+      && options.moveType.trim().toLowerCase() === 'ground'
+      && options.context?.queries.abilities.has(recipient.placement.id, 'Levitate') === true
+      && options.context.queries.gravity.groundInteraction({
+        placementId: recipient.placement.id,
+        moveType: options.moveType,
+      }).suppressesLevitateResistance === false
+      && !moveAutomationTargetSuppressesGroundsourceImmunity(target)
+    if (effectiveLevitate) return 'Levitate'
+    // Levitate is managed by exact effective-ability authority. Excluding the
+    // raw sheet name prevents suppressed/stale instances from contributing.
+    const passiveAbilityNames = target.abilityNames?.filter(name => name.trim() !== 'Levitate')
     const baseMultiplier = computeMultiplier(options.moveType, target.defenderTypes)
     const multiplier = computeSheetAbilityAwareMultiplier(
       options.moveType,
       target.defenderTypes,
-      target.abilityNames,
+      passiveAbilityNames,
       target.defenderCapabilities,
       { baseMultiplier },
     )
@@ -225,7 +238,7 @@ export const createStandardMoveCoreTokenEffectImmunityQueries = (
     }
     return getPassiveTypeEffectivenessSource(
       options.moveType,
-      target.abilityNames,
+      passiveAbilityNames,
       target.defenderCapabilities,
       { baseMultiplier },
     ) ?? `${options.moveType} immunity`

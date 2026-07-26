@@ -51,6 +51,10 @@ import {
   aa075IllusionUsedThisRound,
 } from '#shared/abilityAutomation/aa075'
 import {
+  AA077_LEAF_GIFT_SUITS,
+  AA077_LEAFY_CLOAK_OPTION_BY_ID,
+} from '#shared/abilityAutomation/aa077'
+import {
   actorCanControlMapPlacement,
   playerProfileLinkedTrainerSheetsForTokenControl,
 } from '../policies/playerProfileTokenControlPolicy'
@@ -69,6 +73,7 @@ import { resolveAuthoritativeAbilityTargets } from '../domain/abilityAutomation/
 import { createMoveAutomationWeatherResolver } from '../domain/moveAutomation/weather'
 import { aa071ForecastTypeResolution } from '../domain/abilityAutomation/mechanics/aa071StaticIntegration'
 import { aa076BerryJuiceBuffSlots } from '../domain/abilityAutomation/mechanics/aa076Activated'
+import { aa077VoluntaryDropSlots } from '../domain/abilityAutomation/mechanics/aa077ItemIntegration'
 import { resolveMoveAutomationItemRuleIdentity } from '../domain/moveAutomation/itemRuleData'
 import {
   createSqliteAbilityDeclarationOfferRepository,
@@ -362,6 +367,42 @@ const declarationsFor = (
           ).map((slot, index) => option(
             declaration.id, index, declaration.kind,
             { kind: 'branch', branchId: slot.branchId },
+          ))
+        }
+        else if (context.runtime.canonicalId === 'Klutz' && modeId === 'drop') {
+          options = aa077VoluntaryDropSlots({
+            sheetKind: context.actor.sheet.kind,
+            sheet: context.actor.sheet.sheet,
+          }).map((slot, index) => option(
+            declaration.id, index, declaration.kind,
+            { kind: 'branch', branchId: slot.branchId },
+          ))
+        }
+        else if (context.runtime.canonicalId === 'Leek Mastery' && modeId === 'drop') {
+          options = aa077VoluntaryDropSlots({
+            sheetKind: context.actor.sheet.kind,
+            sheet: context.actor.sheet.sheet,
+            onlyCanonicalItemId: 'rare-leek',
+          }).map((slot, index) => option(
+            declaration.id, index, declaration.kind,
+            { kind: 'branch', branchId: slot.branchId },
+          ))
+        }
+        else if (context.runtime.canonicalId === 'Leaf Gift' && modeId === 'activate') {
+          options = Object.keys(AA077_LEAF_GIFT_SUITS).map((branchId, index) => option(
+            declaration.id, index, declaration.kind, { kind: 'branch', branchId },
+          ))
+        }
+        else if (context.runtime.canonicalId === 'Leaf Guard' && modeId === 'activate') {
+          options = normalizeConditionNames(context.actor.token.conditions)
+            .map((condition, index) => option(declaration.id, index, declaration.kind, {
+              kind: 'branch',
+              branchId: `condition.${condition.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`,
+            }))
+        }
+        else if (context.runtime.canonicalId === 'Leafy Cloak' && modeId === 'activate') {
+          options = Object.keys(AA077_LEAFY_CLOAK_OPTION_BY_ID).map((branchId, index) => option(
+            declaration.id, index, declaration.kind, { kind: 'branch', branchId },
           ))
         }
         else fail(422, `Ability branch declaration ${declaration.id} requires a reviewed declaration adapter.`)
