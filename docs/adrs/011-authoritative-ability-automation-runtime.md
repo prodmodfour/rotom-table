@@ -25,7 +25,7 @@ The canonical catalog and initiative ledger are frozen in:
 - `data/ability-automation/manifest.json`
 - `data/ability-automation/capabilities.json`
 - `data/ability-automation/scenario-requirements.json`
-- `ABILITY_AUTOMATION_PLAN.md`
+- `implementation-plans/ABILITY_AUTOMATION_PLAN.md`
 
 Exactly one manifest row tracks each canonical ability. A source-data or count change requires an intentional provenance revision rather than silently changing the denominator.
 

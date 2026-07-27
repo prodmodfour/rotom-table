@@ -54,7 +54,7 @@ describe('ability automation metadata budgets', () => {
     expect(statSync(path('data/ability-automation/protections.json')).size).toBeLessThan(32 * 1024)
     expect(statSync(path('data/ability-automation/scenario-requirements.json')).size).toBeLessThan(128 * 1024)
     expect(statSync(path('data/ability-automation/timing-constraints.json')).size).toBeLessThan(32 * 1024)
-    expect(statSync(path('ABILITY_AUTOMATION_PLAN.md')).size).toBeLessThan(128 * 1024)
+    expect(statSync(path('implementation-plans/ABILITY_AUTOMATION_PLAN.md')).size).toBeLessThan(128 * 1024)
     expect(manifestJson.abilities.length).toBeLessThanOrEqual(ABILITY_AUTOMATION_MANIFEST_LIMITS.records)
     expect(capabilitiesJson.capabilities.length).toBeLessThanOrEqual(
       ABILITY_AUTOMATION_CAPABILITY_LIMITS.capabilities,

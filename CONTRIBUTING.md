@@ -36,7 +36,7 @@ bash scripts/quality-gate.sh
 
 Move authors must follow [`docs/move-automation.md`](docs/move-automation.md). It covers the spec/handler boundary, capability contracts, branch evidence, hashes, status promotion, recovery invariants, and common validation failures.
 
-Ability authors must follow [`docs/ability-automation.md`](docs/ability-automation.md), [ADR 011](docs/adrs/011-authoritative-ability-automation-runtime.md), and the ordered [`ABILITY_AUTOMATION_PLAN.md`](ABILITY_AUTOMATION_PLAN.md). During the migration, run:
+Ability authors must follow [`docs/ability-automation.md`](docs/ability-automation.md), [ADR 011](docs/adrs/011-authoritative-ability-automation-runtime.md), and the ordered [`ABILITY_AUTOMATION_PLAN.md`](implementation-plans/ABILITY_AUTOMATION_PLAN.md). During the migration, run:
 
 ```bash
 npm run check:ability-automation

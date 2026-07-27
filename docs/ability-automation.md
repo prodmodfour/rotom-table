@@ -1,6 +1,6 @@
 # Ability automation contributor guide
 
-Ability automation is an in-progress server-authoritative live-play initiative. The canonical denominator is 483 abilities; current progress and the only ordered implementation queue live in [`ABILITY_AUTOMATION_PLAN.md`](../ABILITY_AUTOMATION_PLAN.md). A menu badge, helper function, name-based move hook, or existing browser transaction is not completion evidence.
+Ability automation is an in-progress server-authoritative live-play initiative. The canonical denominator is 483 abilities; current progress and the only ordered implementation queue live in [`ABILITY_AUTOMATION_PLAN.md`](../implementation-plans/ABILITY_AUTOMATION_PLAN.md). A menu badge, helper function, name-based move hook, or existing browser transaction is not completion evidence.
 
 Read [ADR 011](adrs/011-authoritative-ability-automation-runtime.md) before changing runtime behavior. The MoveSpec guide remains relevant for shared mechanical operations, but AbilitySpec owns different declaration, frequency, passive, and event-subscription semantics.
 
@@ -27,7 +27,7 @@ The closed policy and reciprocal threat/asset links are enforced by `shared/abil
 
 Important locations:
 
-- `ABILITY_AUTOMATION_PLAN.md`: ordered tickets, progress snapshot, decisions, and 483-name cohort assignment.
+- `implementation-plans/ABILITY_AUTOMATION_PLAN.md`: ordered tickets, progress snapshot, decisions, and 483-name cohort assignment.
 - `data/reference/abilities.json`: immediate canonical prose authority.
 - `data/ability-automation/ruleset.json`: frozen count, source hash, canonicalization, source hierarchy, and homebrew boundary.
 - `data/ability-automation/source-adjudications.json`: source-hash-bound repairs for known PDF/parser losses.
@@ -51,7 +51,7 @@ Important locations:
 
 ## Work from the plan
 
-1. Read this guide, ADR 011, and `ABILITY_AUTOMATION_PLAN.md`.
+1. Read this guide, ADR 011, and `implementation-plans/ABILITY_AUTOMATION_PLAN.md`.
 2. Work on the lowest unfinished ticket unless the user explicitly changes priority.
 3. Set that ticket to `IN_PROGRESS` and keep `CURRENT_TICKET` synchronized.
 4. Implement only the ticket's contract. Add reusable machinery when the ticket calls for it; do not pre-implement later cohorts speculatively.
