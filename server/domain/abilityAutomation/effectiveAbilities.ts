@@ -228,13 +228,30 @@ export const projectAuthoritativeEffectiveAbilities = (
     })]
   })
   for (const ability of base) {
-    if (ability.canonicalId !== 'Fabulous Trim' || ability.parameterStatus !== 'ready'
-      || !ability.parameterData) continue
-    const trimId = abilityInstanceParameterValues(ability.parameterData, 'trim')[0]
-    const grantedCanonicalId = trimId ? fabulousTrimGrantedAbility(trimId) : null
-    if (!grantedCanonicalId) continue
-    projected.push(instance({
-      instanceId: `${ability.instanceId}:trim:${trimId}`,
+    if (ability.parameterStatus !== 'ready' || !ability.parameterData) continue
+    let grantKey: string | null = null
+    let grantedCanonicalIds: readonly string[] = []
+    if (ability.canonicalId === 'Fabulous Trim') {
+      grantKey = abilityInstanceParameterValues(ability.parameterData, 'trim')[0] ?? null
+      const granted = grantKey ? fabulousTrimGrantedAbility(grantKey) : null
+      grantedCanonicalIds = granted ? [granted] : []
+    }
+    else if (ability.canonicalId === 'Seasonal') {
+      grantKey = abilityInstanceParameterValues(ability.parameterData, 'season')[0] ?? null
+      grantedCanonicalIds = grantKey ? ({
+        spring: ['Run Away'], summer: ['Grass Pelt'], autumn: ['Rivalry'], winter: ['Thick Fat'],
+      } as Readonly<Record<string, readonly string[]>>)[grantKey] ?? [] : []
+    }
+    else if (ability.canonicalId === 'Serpent’s Mark') {
+      grantKey = abilityInstanceParameterValues(ability.parameterData, 'pattern')[0] ?? null
+      grantedCanonicalIds = grantKey ? ({
+        attack: ['Strong Jaw', 'Guts'], crush: ['Crush Trap', 'Frisk'],
+        fear: ['Unnerve', 'Regal Challenge'], life: ['Regenerator', 'Defy Death'],
+        speed: ['Run Away', 'Speed Boost'], stealth: ['Infiltrator', 'Ambush'],
+      } as Readonly<Record<string, readonly string[]>>)[grantKey] ?? [] : []
+    }
+    grantedCanonicalIds.forEach((grantedCanonicalId, index) => projected.push(instance({
+      instanceId: `${ability.instanceId}:grant:${grantKey}:${index}`,
       canonicalId: grantedCanonicalId,
       sourceKind: 'granted',
       sourcePlacementId: input.target.placementId,
@@ -242,7 +259,7 @@ export const projectAuthoritativeEffectiveAbilities = (
         ? 'missing-required-data'
         : 'not-parameterized',
       parameterData: null,
-    }))
+    })))
   }
   assertProjectionBound(projected)
 

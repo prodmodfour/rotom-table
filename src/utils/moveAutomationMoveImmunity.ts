@@ -9,7 +9,12 @@ import type { SpawnedPokemon } from '~/types/pokemon'
 export const moveAutomationMoveImmunitySource = (
   script: Pick<MoveAutomationScript, 'keywords'>,
   target: SpawnedPokemon,
-): string | null => moveAutomationPowderImmunitySource(script, target)
+): string | null => (
+  script.keywords.some(keyword => keyword.trim().toLowerCase() === 'execute')
+  && target.abilityNames?.some(ability => ability.trim() === 'Sturdy')
+    ? 'Sturdy'
+    : null
+) ?? moveAutomationPowderImmunitySource(script, target)
   ?? getPassiveMoveImmunitySource(
     target.abilityNames,
     target.defenderCapabilities,

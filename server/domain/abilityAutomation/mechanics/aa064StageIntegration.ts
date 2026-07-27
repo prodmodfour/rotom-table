@@ -2,18 +2,26 @@ import type { CombatStageKey, CombatStageMap } from '~/types/combatStages'
 import { clampCombatStage } from '~/utils/combatStages'
 
 export interface Aa064StageAbilityQueries {
-  readonly has: (placementId: string, canonicalId: 'Competitive' | 'Contrary' | 'Defiant') => boolean
+  readonly has: (
+    placementId: string,
+    canonicalId: 'Competitive' | 'Contrary' | 'Defiant' | 'Simple',
+  ) => boolean
 }
 
-/** Contrary transforms the uncapped requested delta before normal stage bounds apply. */
+/** Contrary reverses and Simple doubles the uncapped requested delta before bounds. */
 export const aa064ContraryRequestedValue = (input: {
   readonly recipientId: string
   readonly current: number
   readonly unboundedRequested: number
   readonly abilities?: Aa064StageAbilityQueries
-}): number => input.abilities?.has(input.recipientId, 'Contrary')
-  ? input.current - (input.unboundedRequested - input.current)
-  : input.unboundedRequested
+}): number => {
+  const contraryValue = input.abilities?.has(input.recipientId, 'Contrary')
+    ? input.current - (input.unboundedRequested - input.current)
+    : input.unboundedRequested
+  return input.abilities?.has(input.recipientId, 'Simple')
+    ? input.current + ((contraryValue - input.current) * 2)
+    : contraryValue
+}
 
 /**
  * Apply Competitive exactly once after one operation actually lowers at least

@@ -57,6 +57,7 @@ import { applyAa065CrushTrapGrappleTrigger } from '../domain/abilityAutomation/m
 import { applyAa079MagmaArmorGrappleTrigger } from '../domain/abilityAutomation/mechanics/aa079LifecycleIntegration'
 import { cleanupAa065CrueltyHealingBlockForBreather } from '../domain/abilityAutomation/mechanics/aa065StaticIntegration'
 import { applyAa081NaturalCureForBreather } from '../domain/abilityAutomation/mechanics/aa081LifecycleIntegration'
+import { applyAa085to100RegeneratorTrigger } from '../domain/abilityAutomation/mechanics/aa085to100LifecycleIntegration'
 import { clearAa083PerishCountForBreather } from '../domain/abilityAutomation/mechanics/aa083LifecycleIntegration'
 import {
   aa077HasAuthoritativeDisengageWindow,
@@ -1160,16 +1161,26 @@ const useManeuverPlan = (
         operationId: command.opId,
       })
     : { map: mapAfterPerishCount, sheet: userSheet.sheet, applied: false }
+  const regenerator = maneuver.name === 'Take a Breather'
+    ? applyAa085to100RegeneratorTrigger({
+        map: naturalCure.map,
+        placement: target.placement,
+        sheet: naturalCure.sheet,
+        operationId: command.opId,
+        trigger: 'take-a-breather',
+        maximumHp: user.fullMaxHp ?? user.maxHp,
+      })
+    : { map: naturalCure.map, sheet: naturalCure.sheet, applied: false }
   const mapWithCrushTrapTrigger = maneuver.name === 'Grapple' && targetToken
     ? applyAa065CrushTrapGrappleTrigger({
-        map: naturalCure.map,
+        map: regenerator.map,
         actorPlacement: target.placement,
         actorToken: user,
         actorSheet: userSheet.sheet as CharacterSheet,
         targetToken,
         operationId: command.opId,
       })
-    : naturalCure.map
+    : regenerator.map
   const grappleTargetPlacement = targetToken
     ? mapWithCrushTrapTrigger.placements.find(placement => placement.id === targetToken.id)
     : undefined
@@ -1193,8 +1204,8 @@ const useManeuverPlan = (
       })
     : mapWithAbilityTrigger
   const writePlans = new Map<string, SheetWritePlan>()
-  if (naturalCure.applied) {
-    addOrUpdateWritePlan(writePlans, userSheet, () => naturalCure.sheet)
+  if (naturalCure.applied || regenerator.applied) {
+    addOrUpdateWritePlan(writePlans, userSheet, () => regenerator.sheet)
   }
   return {
     ok: true,

@@ -41,6 +41,7 @@ import {
 import { applyAa065CrushTrapGrappleTrigger } from '../domain/abilityAutomation/mechanics/aa065ManeuverIntegration'
 import { cleanupAa065CrueltyHealingBlockForBreather } from '../domain/abilityAutomation/mechanics/aa065StaticIntegration'
 import { applyAa081NaturalCureForBreather } from '../domain/abilityAutomation/mechanics/aa081LifecycleIntegration'
+import { applyAa085to100RegeneratorTrigger } from '../domain/abilityAutomation/mechanics/aa085to100LifecycleIntegration'
 import { clearAa083PerishCountForBreather } from '../domain/abilityAutomation/mechanics/aa083LifecycleIntegration'
 import {
   aa077HasAuthoritativeDisengageWindow,
@@ -598,16 +599,26 @@ const applyManeuverCommand = (
         operationId: command.opId,
       })
     : { map: afterPerishCount, sheet: context.actorSheet.sheet as unknown as AnyLiveSheet, applied: false }
+  const regenerator = maneuver.name === 'Take a Breather'
+    ? applyAa085to100RegeneratorTrigger({
+        map: naturalCure.map,
+        placement: context.actorPlacement,
+        sheet: naturalCure.sheet,
+        operationId: command.opId,
+        trigger: 'take-a-breather',
+        maximumHp: (actor as SpawnedPokemon).fullMaxHp ?? (actor as SpawnedPokemon).maxHp,
+      })
+    : { map: naturalCure.map, sheet: naturalCure.sheet, applied: false }
   const withAbilityTrigger = maneuver.name === 'Grapple' && target
     ? applyAa065CrushTrapGrappleTrigger({
-        map: naturalCure.map,
+        map: regenerator.map,
         actorPlacement: context.actorPlacement,
         actorToken: actor as SpawnedPokemon,
         actorSheet: context.actorSheet.sheet as unknown as CharacterSheet,
         targetToken: target as SpawnedPokemon,
         operationId: command.opId,
       })
-    : naturalCure.map
+    : regenerator.map
   const withDisengageEvidence = maneuver.name === 'Disengage'
     ? applyAa077DisengageResourceEvidence({
         map: withAbilityTrigger,
@@ -619,8 +630,8 @@ const applyManeuverCommand = (
   const updatedAt = dependencies.now()
 
   const writePlans = new Map<string, SheetWritePlan>()
-  if (naturalCure.applied) {
-    addOrUpdateWritePlan(writePlans, context.actorSheet, 'conditions', () => naturalCure.sheet)
+  if (naturalCure.applied || regenerator.applied) {
+    addOrUpdateWritePlan(writePlans, context.actorSheet, 'ability-lifecycle', () => regenerator.sheet)
   }
   const nextSheets = [...writePlans.values()]
   return {

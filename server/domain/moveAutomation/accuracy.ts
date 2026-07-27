@@ -22,6 +22,7 @@ import {
   aa076TokenWithEffectiveKeenEye,
 } from '../abilityAutomation/mechanics/aa076StaticIntegration'
 import { aa078MoveAccuracyBonus } from '../abilityAutomation/mechanics/aa078StaticIntegration'
+import { aa085to100AccuracyModifiers } from '../abilityAutomation/mechanics/aa085to100StaticIntegration'
 
 export interface AuthoritativeMoveSightAccuracyResolution {
   readonly sourcePlacementId: string
@@ -241,6 +242,13 @@ export const resolveAuthoritativeMoveUserAccuracy = (
       value: illuminateModifier,
     })
   }
+  const remainingModifiers = aa085to100AccuracyModifiers({
+    context,
+    ...(options.targetPlacementId ? { targetPlacementId: options.targetPlacementId } : {}),
+    ...(options.script ? { script: options.script } : {}),
+  })
+  modifiers.push(...remainingModifiers)
+  const remainingBonus = remainingModifiers.reduce((total, modifier) => total + modifier.value, 0)
   const preEncounterValue = actorAccuracy
     + compoundEyesBonus
     + (helpingHand.length > 0 ? HELPING_HAND_ACCURACY_BONUS : 0)
@@ -251,6 +259,7 @@ export const resolveAuthoritativeMoveUserAccuracy = (
     + hustleModifier
     + hungerSwitchModifier
     + illuminateModifier
+    + remainingBonus
   const encounterAccuracy = applyEncounterNumericModifiers({
     map: context.map,
     placementId: context.actor.placement.id,

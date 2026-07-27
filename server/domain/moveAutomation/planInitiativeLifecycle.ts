@@ -115,6 +115,11 @@ import {
 } from '../abilityAutomation/mechanics/aa080LifecycleIntegration'
 import { createAa083LifecycleHandler } from '../abilityAutomation/mechanics/aa083LifecycleIntegration'
 import { clearAa084PowerOfAlchemyForKnockouts } from '../abilityAutomation/mechanics/aa084LifecycleIntegration'
+import {
+  AA096_TRUANT_HEAL_REASON,
+  aa085to100LifecycleRecipientIds,
+  createAa085To100LifecycleHandler,
+} from '../abilityAutomation/mechanics/aa085to100LifecycleIntegration'
 import { reduceAbilityTransformationLifecycle } from '../abilityAutomation/transformations'
 
 export type InitiativeLifecyclePlanningErrorCode =
@@ -750,6 +755,21 @@ export const planEncounterLifecycle = (
         canonicalId: 'Moody',
       })
     : Object.freeze([])
+  const remainingLifecycleSnapshots = events.some(event => (
+    event.kind === 'turn-start' || event.kind === 'turn-end'
+  )) ? loadSheets() : null
+  const speedBoostPlacementIds = events.some(event => event.kind === 'turn-end') && remainingLifecycleSnapshots
+    ? effectiveAbilityPlacementIds({
+        map: lifecycleMap, state: previousEncounterState,
+        snapshots: remainingLifecycleSnapshots, canonicalId: 'Speed Boost',
+      })
+    : Object.freeze([])
+  const truantPlacementIds = events.some(event => event.kind === 'turn-start') && remainingLifecycleSnapshots
+    ? effectiveAbilityPlacementIds({
+        map: lifecycleMap, state: previousEncounterState,
+        snapshots: remainingLifecycleSnapshots, canonicalId: 'Truant',
+      })
+    : Object.freeze([])
   const magmaArmorGrappleTurnEnd = events.some(event => event.kind === 'turn-end')
     && previousEncounterState.effects.some(effect => effect.tags.includes('aa079.magma-armor-grapple'))
   const magmaArmorGrappleEntries = magmaArmorGrappleTurnEnd
@@ -823,6 +843,9 @@ export const planEncounterLifecycle = (
       : []),
     ...(moodyPlacementIds.length > 0
       ? [createAa080MoodyLifecycleHandler(moodyPlacementIds)]
+      : []),
+    ...(speedBoostPlacementIds.length > 0 || truantPlacementIds.length > 0
+      ? [createAa085To100LifecycleHandler({ speedBoostPlacementIds, truantPlacementIds })]
       : []),
     ...(corrosiveToxinsHandler ? [corrosiveToxinsHandler] : []),
     ...(weatherHandler ? [weatherHandler] : []),
@@ -927,10 +950,15 @@ export const planEncounterLifecycle = (
         operation,
         candidateRecipientIds: aa075Recipients,
       })
-      recipientsByOperationId.set(operation.id, terrainLifecycleRecipientIds({
+      const remainingRecipients = aa085to100LifecycleRecipientIds({
         context,
         operation,
         candidateRecipientIds: aa080Recipients,
+      })
+      recipientsByOperationId.set(operation.id, terrainLifecycleRecipientIds({
+        context,
+        operation,
+        candidateRecipientIds: remainingRecipients,
       }))
     }
     const emissions: MoveResolvedCoreTokenEffectOperation[] = reduction.operations.map(
@@ -1068,6 +1096,32 @@ export const planEncounterLifecycle = (
       dimensions: nextMap.dimensions,
       tokens: lifecycleTokens,
     })
+  }
+  const truantRefusalPlacementIds = new Set(reduction.operations.flatMap(operation => (
+    operation.reasonCode === AA096_TRUANT_HEAL_REASON
+      && operation.source.kind === 'lifecycle-event'
+      ? plannedEvents.flatMap(event => event.eventId === operation.source.id && event.kind === 'turn-start'
+          ? [event.placementId] : [])
+      : []
+  )))
+  if (truantRefusalPlacementIds.size > 0) {
+    const turnResources = { ...currentEncounterState.turnResources }
+    for (const placementId of truantRefusalPlacementIds) {
+      const ledger = turnResources[placementId]
+      if (!ledger) continue
+      const standard = ledger.actions.standard
+      turnResources[placementId] = {
+        ...ledger,
+        actions: {
+          ...ledger.actions,
+          standard: {
+            ...standard,
+            spent: Math.max(standard.spent, standard.budget ?? 1),
+          },
+        },
+      }
+    }
+    currentEncounterState = parseEncounterState({ ...currentEncounterState, turnResources })
   }
   nextMap.encounterState = deepCloneJson(currentEncounterState)
   nextMap = reconcileAa075IceFaceTemporaryHpOwnershipAfterMove({

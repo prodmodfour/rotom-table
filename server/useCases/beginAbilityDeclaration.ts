@@ -219,7 +219,9 @@ const declarationsFor = (
             })()
           : context.runtime.canonicalId === 'Mimicry' && modeId === 'activate'
             ? aa079MimicryTypeOptions(context)
-            : POKEMON_TYPE_IDS
+            : context.runtime.canonicalId === 'Quick Cloak' && modeId === 'activate'
+              ? (['grass', 'ground', 'steel'] as const)
+              : POKEMON_TYPE_IDS
         options = typeIds.map((typeId, index) => option(
           declaration.id, index, declaration.kind, { kind: 'type', typeId },
         ))
@@ -279,13 +281,14 @@ const declarationsFor = (
                   .filter(ability => ability.effective && ability.canonicalId.toLowerCase().includes('aura'))
               ))
             })()
-          : context.runtime.canonicalId === 'Power of Alchemy' && modeId === 'activate'
+          : (context.runtime.canonicalId === 'Power of Alchemy'
+            || context.runtime.canonicalId === 'Trace') && modeId === 'activate'
             ? (() => {
                 const targetDeclaration = context.runtime.definition.spec.targeting.find(target => (
                   target.modeId === modeId && target.kind === 'token'
                 ))
                 const targetPredicate = targetDeclaration?.predicate
-                  ?? fail(500, 'Power of Alchemy has no reviewed targeting policy.')
+                  ?? fail(500, `${context.runtime.canonicalId} has no reviewed targeting policy.`)
                 const legalTargets = resolveAuthoritativeAbilityTargets({
                   context,
                   predicate: targetPredicate,
@@ -427,6 +430,19 @@ const declarationsFor = (
           options = Object.keys(AA077_LEAF_GIFT_SUITS).map((branchId, index) => option(
             declaration.id, index, declaration.kind, { kind: 'branch', branchId },
           ))
+        }
+        else if (context.runtime.canonicalId === 'Regal Challenge' && modeId === 'activate') {
+          options = ['deference', 'defiance'].map((branchId, index) => option(
+            declaration.id, index, declaration.kind, { kind: 'branch', branchId },
+          ))
+        }
+        else if (context.runtime.canonicalId === 'Shed Skin' && modeId === 'activate') {
+          options = normalizeConditionNames(context.actor.token.conditions)
+            .filter(condition => ['Paralysis', 'Frozen', 'Burned', 'Poisoned', 'Badly Poisoned', 'Sleep'].includes(condition))
+            .map((condition, index) => option(declaration.id, index, declaration.kind, {
+              kind: 'branch',
+              branchId: `condition.${condition.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`,
+            }))
         }
         else if (context.runtime.canonicalId === 'Leaf Guard' && modeId === 'activate') {
           options = normalizeConditionNames(context.actor.token.conditions)

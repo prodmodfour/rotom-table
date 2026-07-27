@@ -14,6 +14,13 @@ export const GLISTEN_ABILITY_NAME = 'Glisten'
 export const TOLERANCE_ABILITY_NAME = 'Tolerance'
 export const SOUNDPROOF_ABILITY_NAME = 'Soundproof'
 export const MUD_DWELLER_ABILITY_NAME = 'Mud Dweller'
+export const WATER_ABSORB_ABILITY_NAME = 'Water Absorb'
+export const WINDVEILED_ABILITY_NAME = 'Windveiled'
+export const WINTERS_KISS_ABILITY_NAME = 'Winter’s Kiss'
+export const SACRED_BELL_ABILITY_NAME = 'Sacred Bell'
+export const THICK_FAT_ABILITY_NAME = 'Thick Fat'
+export const TOCHUKASO_ABILITY_NAME = 'Tochukaso'
+export const WATER_BUBBLE_ABILITY_NAME = 'Water Bubble'
 export const GROUNDSOURCE_KEYWORD = 'Groundsource'
 export const SONIC_KEYWORD = 'Sonic'
 export const LEVITATE_GRANTED_SPEED = 4
@@ -79,6 +86,11 @@ export const hasMudDwellerAbility = (
   abilities: readonly SheetAbilityNameSource[] | null | undefined,
 ): boolean => sheetHasCanonicalAbility(abilities, MUD_DWELLER_ABILITY_NAME)
 
+const hasAbility = (
+  abilities: readonly SheetAbilityNameSource[] | null | undefined,
+  canonicalId: string,
+): boolean => sheetHasCanonicalAbility(abilities, canonicalId)
+
 const positiveCapabilitySpeed = (value: number | string | null | undefined): boolean => {
   if (typeof value === 'number') return Number.isFinite(value) && value > 0
   if (typeof value !== 'string') return false
@@ -113,6 +125,14 @@ const passiveTypeResistanceSources = (
   if ((attackingType === 'Ground' || attackingType === 'Water') && hasMudDwellerAbility(abilities)) {
     sources.push(MUD_DWELLER_ABILITY_NAME)
   }
+  if ((attackingType === 'Dark' || attackingType === 'Ghost')
+    && hasAbility(abilities, SACRED_BELL_ABILITY_NAME)) sources.push(SACRED_BELL_ABILITY_NAME)
+  if ((attackingType === 'Fire' || attackingType === 'Ice')
+    && hasAbility(abilities, THICK_FAT_ABILITY_NAME)) sources.push(THICK_FAT_ABILITY_NAME)
+  if ((attackingType === 'Bug' || attackingType === 'Poison')
+    && hasAbility(abilities, TOCHUKASO_ABILITY_NAME)) sources.push(TOCHUKASO_ABILITY_NAME)
+  if (attackingType === 'Fire'
+    && hasAbility(abilities, WATER_BUBBLE_ABILITY_NAME)) sources.push(WATER_BUBBLE_ABILITY_NAME)
   return sources
 }
 
@@ -176,6 +196,15 @@ export const getPassiveTypedAttackImmunitySource = (
   }
   if (attackingType === 'Grass' && hasSapSipperAbility(abilities)) {
     return SAP_SIPPER_ABILITY_NAME
+  }
+  if (attackingType === 'Water' && hasAbility(abilities, WATER_ABSORB_ABILITY_NAME)) {
+    return WATER_ABSORB_ABILITY_NAME
+  }
+  if (attackingType === 'Flying' && hasAbility(abilities, WINDVEILED_ABILITY_NAME)) {
+    return WINDVEILED_ABILITY_NAME
+  }
+  if (attackingType === 'Ice' && hasAbility(abilities, WINTERS_KISS_ABILITY_NAME)) {
+    return WINTERS_KISS_ABILITY_NAME
   }
   if (attackingType === 'Electric') {
     if (hasVoltAbsorbAbility(abilities)) return VOLT_ABSORB_ABILITY_NAME

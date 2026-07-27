@@ -51,6 +51,7 @@ import { executeAa081ActivatedMechanic } from '../domain/abilityAutomation/mecha
 import { executeAa082ActivatedMechanic } from '../domain/abilityAutomation/mechanics/aa082Activated'
 import { executeAa083ActivatedMechanic } from '../domain/abilityAutomation/mechanics/aa083Activated'
 import { executeAa084ActivatedMechanic } from '../domain/abilityAutomation/mechanics/aa084Activated'
+import { executeAa085To100ActivatedMechanic } from '../domain/abilityAutomation/mechanics/aa085to100Activated'
 import { reconcileAa075IceFaceTemporaryHpOwnershipAfterMove } from '../domain/abilityAutomation/mechanics/aa075TemporaryHpIntegration'
 import { createAa063AbilityCombatStageImmunities } from '../domain/abilityAutomation/mechanics/aa063DefenseIntegration'
 import { applyNativeCoreMapChanges } from '../domain/moveAutomation/planNativeV2MoveState'
@@ -368,7 +369,15 @@ export const resolveAbilityDeclarationUseCase = (
                                                           abilityInstanceId: intent.abilityInstanceId,
                                                           choices: resolved.choices,
                                                         })
-                                                      : null
+                                                      : /^aa(?:08[5-9]|09[0-9]|100)\./.test(mechanicOperation.mechanicId)
+                                                        ? executeAa085To100ActivatedMechanic({
+                                                            context,
+                                                            operation: mechanicOperation,
+                                                            operationId: intent.intentId,
+                                                            abilityInstanceId: intent.abilityInstanceId,
+                                                            choices: resolved.choices,
+                                                          })
+                                                        : null
     const resolvedExecution = execution
       ?? fail(422, 'Ability runtime requires an execution adapter that is not registered for direct declaration resolution.')
     resolutionPlan = resolvedExecution.plan

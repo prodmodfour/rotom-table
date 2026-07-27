@@ -59,6 +59,7 @@ import { expireActiveOrderEffectsForInitiativeAdvanceWithResult } from '~/utils/
 import { deepCloneJson, sameJsonValue } from '~/utils/serialization'
 import { resolveCanonicalSheetAbilityName, sheetAbilityNames } from '~/utils/sheetAbilities'
 import { aa063ChlorophyllInitiativeMultiplier } from '../domain/abilityAutomation/mechanics/aa063InitiativeIntegration'
+import { aa085to100InitiativeMultiplier } from '../domain/abilityAutomation/mechanics/aa085to100InitiativeIntegration'
 import { aa074HeavyMetalInitiativeSpeedOffset } from '../domain/abilityAutomation/mechanics/aa074StaticIntegration'
 import {
   aa077EffectiveAbilityIds,
@@ -694,9 +695,14 @@ const initiativeOrder = (
           timing: 'static',
         }).suppressed,
         ...(resolved && placement.sheetKind === 'pokemon' ? {
-          initiativeMultiplier: aa063ChlorophyllInitiativeMultiplier({
-            map, placement, sheet: resolved.sheet as unknown as CharacterSheet,
-          }),
+          initiativeMultiplier: Math.max(
+            aa063ChlorophyllInitiativeMultiplier({
+              map, placement, sheet: resolved.sheet as unknown as CharacterSheet,
+            }),
+            aa085to100InitiativeMultiplier({
+              map, placement, sheet: resolved.sheet as unknown as CharacterSheet,
+            }),
+          ) as 1 | 2,
           baseSpeedOffset: aa074HeavyMetalInitiativeSpeedOffset({
             map, placement, sheet: resolved.sheet as unknown as CharacterSheet,
           }) + aa077LightMetalInitiativeSpeedOffset({

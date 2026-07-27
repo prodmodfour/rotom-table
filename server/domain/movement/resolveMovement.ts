@@ -57,9 +57,11 @@ import { withBattlefieldZoneMovementTerrain } from '../moveAutomation/battlefiel
 import { createMoveAutomationGravityResolver } from '../moveAutomation/gravity'
 import { createMoveAutomationRemainingGlobalFieldResolver } from '../moveAutomation/remainingGlobalFields'
 import { aa077AdjustedToken } from '../abilityAutomation/mechanics/aa077StaticIntegration'
+import { aa085to100AdjustedToken } from '../abilityAutomation/mechanics/aa085to100StaticIntegration'
 import { effectiveRuntimeAbilityIds } from '../abilityAutomation/effectiveRuntimeAbilities'
 import { aa079MagnetPullConstraintViolation } from '../abilityAutomation/mechanics/aa079MovementIntegration'
 import { aa082ParentalBondTetherViolation } from '../abilityAutomation/mechanics/aa082MovementIntegration'
+import { aa085to100ShadowTagPathViolation } from '../abilityAutomation/mechanics/aa085to100MovementIntegration'
 
 export const AUTHORITATIVE_MOVEMENT_MODES = ['shift', 'pass'] as const
 export type AuthoritativeMovementMode = (typeof AUTHORITATIVE_MOVEMENT_MODES)[number]
@@ -99,6 +101,7 @@ export const AUTHORITATIVE_MOVEMENT_REASON_CODES = [
   'movement-magnet-pull-maximum-range',
   'movement-magnet-pull-minimum-range',
   'movement-parental-bond-maximum-range',
+  'movement-shadow-tag-maximum-range',
 ] as const
 
 export type AuthoritativeMovementReasonCode = (
@@ -239,6 +242,7 @@ export const AUTHORITATIVE_DISPLACEMENT_FAILURE_REASON_CODES = [
   'displacement-magnet-pull-maximum-range',
   'displacement-magnet-pull-minimum-range',
   'displacement-parental-bond-maximum-range',
+  'displacement-shadow-tag-maximum-range',
 ] as const
 
 export type AuthoritativeDisplacementMovementMode =
@@ -345,6 +349,7 @@ export interface AuthoritativeRelocationFailure {
     | 'relocation-origin-collision'
     | 'relocation-destination-out-of-bounds'
     | 'relocation-destination-occupied'
+    | 'relocation-shadow-tag-maximum-range'
   readonly message: string
   readonly placementId: string
   readonly mode: string
@@ -634,13 +639,22 @@ const enforceMagnetPullMovementConstraints = (input: {
     path: input.result.path,
     footprints: input.placements,
   })
-  if (!violation && !parentalBondViolation) return input.result
+  const shadowTagViolation = aa085to100ShadowTagPathViolation({
+    map: input.map,
+    placementId: input.mover.id,
+    path: input.result.path,
+  })
+  if (!violation && !parentalBondViolation && !shadowTagViolation) return input.result
   return failure({
-    reasonCode: parentalBondViolation
-      ? 'movement-parental-bond-maximum-range'
-      : `movement-magnet-pull-${violation!}-range`,
-    message: parentalBondViolation
-      ? 'Parental Bond prevents the Baby from willingly moving farther than 10 metres from its mother.'
+    reasonCode: shadowTagViolation
+      ? 'movement-shadow-tag-maximum-range'
+      : parentalBondViolation
+        ? 'movement-parental-bond-maximum-range'
+        : `movement-magnet-pull-${violation!}-range`,
+    message: shadowTagViolation
+      ? 'Shadow Tag prevents movement more than 5 metres from the pinned shadow.'
+      : parentalBondViolation
+        ? 'Parental Bond prevents the Baby from willingly moving farther than 10 metres from its mother.'
       : violation === 'maximum'
         ? 'Magnet Pull prevents this voluntary path from moving farther than 6 metres from its source.'
         : 'Magnet Pull prevents this voluntary path from moving closer than 3 metres to its source.',
@@ -867,9 +881,15 @@ const buildMovementSnapshots = (
         map,
         { skipAa077NativeProjection: true },
       )
-      token = nativeToken ? aa077AdjustedToken({
+      const aa077Token = nativeToken ? aa077AdjustedToken({
         token: nativeToken,
         effectiveAbilityIds,
+      }) : null
+      token = aa077Token ? aa085to100AdjustedToken({
+        token: aa077Token,
+        sheet: placement.sheetKind === 'pokemon' ? sheet as CharacterSheet : null,
+        effectiveAbilityIds,
+        contextMap: map,
       }) : null
     } catch {
       token = null
@@ -2270,6 +2290,21 @@ export const resolveAuthoritativeDisplacement = (
     })
   }
 
+  if (aa085to100ShadowTagPathViolation({
+    map: input.map,
+    placementId: mover.id,
+    path,
+  })) return displacementFailure({
+    reasonCode: 'displacement-shadow-tag-maximum-range',
+    message: 'Shadow Tag prevents displacement more than 5 metres from the pinned shadow.',
+    placementId,
+    movementMode,
+    distancePolicy,
+    partial,
+    consultedPlacementIds,
+    sheetReads,
+  })
+
   if (movementMode === 'voluntary') {
     const violation = aa079MagnetPullConstraintViolation({
       map: input.map,
@@ -2434,6 +2469,17 @@ export const resolveAuthoritativeRelocation = (
     return relocationFailure({
       reasonCode: 'relocation-destination-out-of-bounds', message: 'Relocation destination is outside map bounds.',
       placementId, mode, origin, destination, collision: boundsCollision(destination), consultedPlacementIds, sheetReads,
+    })
+  }
+  if (aa085to100ShadowTagPathViolation({
+    map: input.map,
+    placementId: mover.id,
+    path: [destination],
+  })) {
+    return relocationFailure({
+      reasonCode: 'relocation-shadow-tag-maximum-range',
+      message: 'Shadow Tag prevents relocation more than 5 metres from the pinned shadow.',
+      placementId, mode, origin, destination, consultedPlacementIds, sheetReads,
     })
   }
   const collision = collisionAt(

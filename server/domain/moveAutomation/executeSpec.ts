@@ -306,6 +306,17 @@ import {
   applyAa084ReviewedOperations,
 } from '../abilityAutomation/mechanics/aa084MoveIntegration'
 import {
+  AA093_STORM_DRAIN_OPTION_ID,
+  AA093_STORM_DRAIN_REASON,
+  AA095_THUNDER_BOOST_OPTION_ID,
+  AA095_THUNDER_BOOST_REASON,
+  aa085to100BoundRecipientId,
+  aa085to100ExpectedOptionForOperation,
+  aa085to100MoveOverlayOperations,
+  aa085to100TriggerRequirement,
+  applyAa085to100ReviewedOperations,
+} from '../abilityAutomation/mechanics/aa085to100MoveIntegration'
+import {
   AA068_DRAGONS_MAW_REASON,
   AA068_DREAM_SMOKE_REASON,
   AA068_EFFECT_SPORE_REASON,
@@ -2012,7 +2023,10 @@ const executableProgram = (
   const frostbiteOperations = aa071FrostbiteOperations({
     context,
     script: reviewedScript,
-    operations: applyAa084ReviewedOperations({
+    operations: applyAa085to100ReviewedOperations({
+      context,
+      script: reviewedScript,
+      operations: applyAa084ReviewedOperations({
       operations: applyAa083ReviewedOperations({
         context,
         script: reviewedScript,
@@ -2031,6 +2045,9 @@ const executableProgram = (
         moveOwnedOperationIds,
         responses: responseResolver,
       }),
+      moveOwnedOperationIds,
+      responses: responseResolver,
+    }),
       moveOwnedOperationIds,
       responses: responseResolver,
     }),
@@ -2715,10 +2732,11 @@ const executeMoveSpecInternal = (
   const definition = executableDefinition(input, handlerRegistry)
   const { spec } = definition
   if (spec.canonicalId === 'Rest'
-    && input.context.queries.abilities.has(input.context.actor.placement.id, 'Insomnia')) {
+    && (input.context.queries.abilities.has(input.context.actor.placement.id, 'Insomnia')
+      || input.context.queries.abilities.has(input.context.actor.placement.id, 'Vital Spirit'))) {
     fail(
       'move-mechanics-unavailable',
-      'Rest cannot be executed while the user has effective Insomnia.',
+      'Rest cannot be executed while the user has effective Insomnia or Vital Spirit.',
     )
   }
   const targeting = input.serverAbilityTargetingOverride
@@ -2963,14 +2981,26 @@ const executeMoveSpecInternal = (
     }
   }
   const cancelledEffectTargetIds = new Set<string>()
-  const automaticHitTargetIds = new Set<string>()
+  const automaticHitTargetIds = new Set<string>(targetIds.filter(targetId => (
+    input.context.map.encounterState?.effects.some(effect => (
+      effect.tags.includes('aa094-targeting-system-lock-on')
+      && effect.source.placementId === input.context.actor.placement.id
+      && effect.affected.placementIds.includes(input.context.actor.placement.id)
+      && effect.affected.placementIds.includes(targetId)
+      && effect.suppression.sources.length === 0
+      && (effect.duration.remaining === null || effect.duration.remaining > 0)
+    )) === true
+  )))
   let bodyguardSelected = false
   let aquaBoostSelected = false
   let lightningRodSelected = false
+  let stormDrainSelected = false
+  let thunderBoostSelected = false
   let magicBounceSelected = false
   let magicBounceHazardSelected = false
   let selectedMagicBounceHazardOwnerId: string | null = null
   const criticalHitTargetIds = new Set<string>()
+  const massiveDamageTargetIds = new Set<string>()
   const projectedRemainingHpByTarget = new Map<string, number>()
   const projectedHp = createMoveAutomationHpUpdateAccumulator()
   const projectedInjuriesByTarget = new Map<string, number>()
@@ -3274,6 +3304,29 @@ const executeMoveSpecInternal = (
         continue
       }
       const resolveOperationRecipientIds = (): readonly string[] => {
+        const remainingRequest = operation.kind === 'reaction-request'
+          ? operation
+          : operation.source.kind === 'operation'
+            ? reactionRequestsByOperationId.get(operation.source.id) ?? null
+            : null
+        const remainingTrigger = aa085to100TriggerRequirement({
+          operation,
+          request: remainingRequest,
+        })
+        if (remainingTrigger) {
+          const eligible = remainingTrigger.requirement === 'attacked'
+            ? targetIds.includes(remainingTrigger.targetId)
+            : remainingTrigger.requirement === 'hit'
+              ? hitTargetIds.includes(remainingTrigger.targetId)
+              : remainingTrigger.requirement === 'missed'
+                ? missedTargetIds.includes(remainingTrigger.targetId)
+                : remainingTrigger.requirement === 'damaged'
+                  ? damagedTargetIds.includes(remainingTrigger.targetId)
+                  : remainingTrigger.requirement === 'massive'
+                    ? massiveDamageTargetIds.has(remainingTrigger.targetId)
+                    : faintedTargetIds.includes(remainingTrigger.targetId)
+          if (!eligible) return []
+        }
         if (operation.reasonCode === AA080_MOTOR_DRIVE_STAGE_REASON) {
           const ownerId = aa080MotorDriveOwnerForOperation(operation)
           if (!ownerId
@@ -3336,6 +3389,11 @@ const executeMoveSpecInternal = (
               effects: input.context.map.encounterState?.effects ?? [],
               ownerPlacementId,
             }))
+            if (owners.length === 0) return []
+          }
+          if (/\bmelee\b/i.test(getMechanics().script.range)
+            && input.context.queries.abilities.has(input.context.actor.placement.id, 'Unseen Fist')) {
+            owners = owners.filter(ownerId => ownerId === input.context.actor.placement.id)
             if (owners.length === 0) return []
           }
           if (operation.reasonCode === AA080_MIRROR_ARMOR_REQUEST_REASON) {
@@ -3477,8 +3535,25 @@ const executeMoveSpecInternal = (
               && input.context.queries.abilities.has(ownerId, 'Minus')
               && hitTargetIds.includes(targetId) ? owners : []
           }
+          if ([
+            'ability.skill-link.optional-five-hits',
+            'ability.spray-down.optional-ground',
+            'ability.spiteful-intervention.optional-spite',
+            'ability.sumo-stance.optional-push',
+            'ability.tingle.optional-debuff',
+            'ability.tingly-tongue.optional-lick',
+            'ability.tonguelash.optional-lick',
+            'ability.transistor.optional-vulnerability',
+            'ability.wash-away.optional-reset',
+          ].includes(operation.reasonCode)) return owners
           if (operation.reasonCode === AA078_LIGHTNING_ROD_REASON) {
             return lightningRodSelected ? [] : owners
+          }
+          if (operation.reasonCode === AA093_STORM_DRAIN_REASON) {
+            return stormDrainSelected ? [] : owners
+          }
+          if (operation.reasonCode === AA095_THUNDER_BOOST_REASON) {
+            return thunderBoostSelected ? [] : owners
           }
           if (operation.reasonCode === AA078_LULLABY_REASON) return owners
           if (operation.reasonCode === AA078_MAGIC_BOUNCE_REASON) {
@@ -3775,6 +3850,8 @@ const executeMoveSpecInternal = (
                 : null
             if (!expected || selectedOption !== expected) return []
           }
+          const remainingExpectedOption = aa085to100ExpectedOptionForOperation(operation)
+          if (remainingExpectedOption !== null && selectedOption !== remainingExpectedOption) return []
         }
         if (operation.recipients.kind === 'response-owner') {
           if (operation.source.kind !== 'operation') return []
@@ -3967,10 +4044,26 @@ const executeMoveSpecInternal = (
           && aa078IsDrainMove(spec.canonicalId)
           && aa078HasLiquidOozeHitTarget({ context: input.context, hitTargetIds: damagedTargetIds })) return []
         const targetBoundId = aa068TargetBoundOperationTargetId(operation)
+          ?? aa085to100BoundRecipientId({ operation, request: remainingRequest })
         const resolved = effectRecipientIds(input.context, selectorState, operation.recipients.kind)
           .filter(recipientId => targetBoundId === null || recipientId === targetBoundId)
+          .filter(recipientId => !(operation.kind === 'movement-request'
+            && operation.payload.mode === 'forced'
+            && operation.payload.displacement?.vector.kind === 'away'
+            && input.context.map.encounterState?.effects.some(effect => (
+              effect.tags.includes('aa093-sumo-push-immunity')
+              && effect.affected.placementIds.includes(recipientId)
+              && effect.suppression.sources.length === 0
+              && (effect.duration.remaining === null || effect.duration.remaining > 0)
+            ))))
         const uncancelled = resolved.filter(recipientId => {
           if (cancelledEffectTargetIds.has(recipientId)) return false
+          const shieldDustSecondary = getMechanics().script.damaging
+            && input.context.queries.abilities.has(recipientId, 'Shield Dust')
+            && (operation.kind === 'condition' && Boolean(operation.payload.accuracyRollTrigger)
+              || operation.kind === 'combat-stage'
+                && operation.payload.trigger?.kind === 'accuracy-roll')
+          if (shieldDustSecondary) return false
           if (!input.context.queries.abilities.has(recipientId, 'Dry Skin')) return true
           return !aa068DrySkinCancelsRecipientEffect({
             context: input.context,
@@ -5481,6 +5574,9 @@ const executeMoveSpecInternal = (
             ...(formula.contextualDamageBase ? { contextualDamageBase: formula.contextualDamageBase } : {}),
           })
           if (calculation.breakdown.hpLoss > 0) projectedDamagedTargetIds.add(recipientId)
+          if (calculation.breakdown.hpLoss * 2 >= Math.max(
+            1, recipient.fullMaxHp ?? recipient.maxHp,
+          )) massiveDamageTargetIds.add(recipientId)
           const bypassTemporaryHp = aa075InfiltratorBypassesTemporaryHp({
             context: input.context,
             recipientId,
@@ -6498,6 +6594,13 @@ const executeMoveSpecInternal = (
               authoritativeTargetIds: childTargetIds,
               reviewedOperations: runtime.definition.spec.phases.flatMap(block => block.operations),
             }),
+            ...aa085to100MoveOverlayOperations({
+              context: childContext,
+              script: childMechanics,
+              moveSourceId: childMoveSourceId,
+              authoritativeTargetIds: childTargetIds,
+              reviewedOperations: runtime.definition.spec.phases.flatMap(block => block.operations),
+            }),
           ],
           ancestry,
           resolutionId: childResolutionId,
@@ -6732,6 +6835,23 @@ const executeMoveSpecInternal = (
               missedTargetIds = []
               automaticHitTargetIds.add(ownerId)
             }
+            if (operation.reasonCode === AA095_THUNDER_BOOST_REASON) {
+              if (response.optionId !== AA095_THUNDER_BOOST_OPTION_ID || thunderBoostSelected) {
+                return fail('definition-integrity-mismatch', `Thunder Boost reaction ${operation.id} received an invalid selection.`)
+              }
+              thunderBoostSelected = true
+            }
+            if (operation.reasonCode === AA093_STORM_DRAIN_REASON) {
+              if (response.optionId !== AA093_STORM_DRAIN_OPTION_ID || stormDrainSelected) {
+                return fail('definition-integrity-mismatch', `Storm Drain reaction ${operation.id} received an invalid selection.`)
+              }
+              const ownerId = recipientIds[0]!
+              stormDrainSelected = true
+              targetIds = canonicalPlacementIds(input.context, [ownerId])
+              hitTargetIds = canonicalPlacementIds(input.context, [ownerId])
+              missedTargetIds = []
+              automaticHitTargetIds.add(ownerId)
+            }
             if (operation.reasonCode === AA078_LULLABY_REASON) {
               const targetId = targetIds.find(id => aa078LullabyTargetOptionId(id) === response.optionId)
               if (!targetId || !response.optionId.startsWith(AA078_LULLABY_OPTION_PREFIX)) {
@@ -6827,6 +6947,15 @@ const executeMoveSpecInternal = (
             if (operation.reasonCode === AA067_DELAYED_REACTION_REASON) {
               selectedDelayedReactionOwnerIds.add(recipientIds[0]!)
             }
+            if (operation.reasonCode === 'ability.wind-power.optional-charge') {
+              const ownerId = recipientIds[0]!
+              if (!hitTargetIds.includes(ownerId)) {
+                return fail('definition-integrity-mismatch', `Wind Power reaction ${operation.id} lost its hit target.`)
+              }
+              cancelledEffectTargetIds.add(ownerId)
+              damagedTargetIds = damagedTargetIds.filter(id => id !== ownerId)
+              faintedTargetIds = faintedTargetIds.filter(id => id !== ownerId)
+            }
             if (operation.reasonCode === AA068_DRAGONS_MAW_REASON) {
               const targetId = aa068TargetBoundOperationTargetId(operation)
               if (!targetId || !hitTargetIds.includes(targetId)
@@ -6847,7 +6976,8 @@ const executeMoveSpecInternal = (
             if (AA067_AVOIDANCE_REASONS.has(operation.reasonCode)
               || operation.reasonCode === AA069_FADE_AWAY_REASON
               || operation.reasonCode === AA082_PARRY_REASON
-              || operation.reasonCode === AA082_PERCEPTION_REASON) {
+              || operation.reasonCode === AA082_PERCEPTION_REASON
+              || operation.reasonCode === 'ability.telepathy.optional-disengage') {
               const ownerId = recipientIds[0]!
               if (!hitTargetIds.includes(ownerId)) {
                 return fail('definition-integrity-mismatch', `Avoidance reaction ${operation.id} lost its hit target.`)
@@ -6860,7 +6990,8 @@ const executeMoveSpecInternal = (
                 || operation.reasonCode === 'ability.dig-away.optional-avoid'
                 || operation.reasonCode === AA069_FADE_AWAY_REASON
                 || operation.reasonCode === AA082_PARRY_REASON
-                || operation.reasonCode === AA082_PERCEPTION_REASON) {
+                || operation.reasonCode === AA082_PERCEPTION_REASON
+                || operation.reasonCode === 'ability.telepathy.optional-disengage') {
                 cancelledEffectTargetIds.add(ownerId)
               }
             }

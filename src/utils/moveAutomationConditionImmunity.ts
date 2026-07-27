@@ -12,6 +12,9 @@ const OWN_TEMPO_ABILITY_NAME = 'Own Tempo'
 const OBLIVIOUS_ABILITY_NAME = 'Oblivious'
 export const PASTEL_VEIL_ABILITY_NAME = 'Pastel Veil'
 const WATER_VEIL_ABILITY_NAME = 'Water Veil'
+const WATER_BUBBLE_ABILITY_NAME = 'Water Bubble'
+const VITAL_SPIRIT_ABILITY_NAME = 'Vital Spirit'
+const TANGLED_FEET_ABILITY_NAME = 'Tangled Feet'
 export const SWEET_VEIL_RANGE_METERS = 3
 export const PASTEL_VEIL_RANGE_METERS = 3
 
@@ -130,13 +133,18 @@ export const moveAutomationConditionImmunitySource = (
 
   if (canonical === 'Burned') {
     if (hasType(target, 'Fire')) return 'Fire type'
+    if (hasAbility(target, WATER_BUBBLE_ABILITY_NAME)) return WATER_BUBBLE_ABILITY_NAME
     if (hasAbility(target, WATER_VEIL_ABILITY_NAME)) return WATER_VEIL_ABILITY_NAME
     if (sourceType === 'Fire' && hasAbility(target, FLASH_FIRE_ABILITY_NAME)) return FLASH_FIRE_ABILITY_NAME
   }
 
   if (canonical === 'Sleep') {
+    if (hasAbility(target, VITAL_SPIRIT_ABILITY_NAME)) return VITAL_SPIRIT_ABILITY_NAME
     const sweetVeil = sweetVeilSource(target, context)
     if (sweetVeil) return sweetVeil
+  }
+  if (canonical === 'Vulnerable' && hasAbility(target, TANGLED_FEET_ABILITY_NAME)) {
+    return TANGLED_FEET_ABILITY_NAME
   }
   if (canonical === 'Blindness' && hasAbility(target, KEEN_EYE_ABILITY_NAME)) return KEEN_EYE_ABILITY_NAME
 

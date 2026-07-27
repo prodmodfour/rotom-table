@@ -56,6 +56,21 @@
       ]
     },
     {
+      "canonicalId": "Seasonal",
+      "definitionVersion": 1,
+      "sourceField": "effect",
+      "sourcePhrase": "The user gains an Ability based on the season.",
+      "parameters": [
+        {
+          "id": "season",
+          "acquisition": "sheet-choice",
+          "minSelections": 1,
+          "maxSelections": 1,
+          "optionIds": ["spring", "summer", "autumn", "winter"]
+        }
+      ]
+    },
+    {
       "canonicalId": "Serpent’s Mark",
       "definitionVersion": 1,
       "sourceField": "effect",

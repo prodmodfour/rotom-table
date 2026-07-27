@@ -37,6 +37,7 @@ import {
 } from '../abilityAutomation/mechanics/aa080StaticIntegration'
 import { aa081DamageTypeOverlay } from '../abilityAutomation/mechanics/aa081StaticIntegration'
 import { AA083_POLYCEPHALY_DAMAGE_REASON } from '../abilityAutomation/mechanics/aa083MoveIntegration'
+import { aa085to100DamageTypeOverlay } from '../abilityAutomation/mechanics/aa085to100StaticIntegration'
 
 export type MoveDamageTypeResolutionErrorCode =
   | 'move-type-unavailable'
@@ -467,9 +468,14 @@ export const resolveMoveDamageType = (options: {
     hasStab,
     evaluationTrace: [...moveType.trace],
   }
-  return deepFreeze(aa081DamageTypeOverlay({
+  const aa081Resolved = aa081DamageTypeOverlay({
     context: options.context,
     recipientId: options.recipientId,
     resolved,
+  })
+  return deepFreeze(aa085to100DamageTypeOverlay({
+    context: options.context,
+    recipientId: options.recipientId,
+    resolved: aa081Resolved,
   }))
 }

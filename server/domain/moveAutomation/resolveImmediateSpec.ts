@@ -139,6 +139,7 @@ import { aa081MoveOverlayOperations } from '../abilityAutomation/mechanics/aa081
 import { aa082MoveOverlayOperations } from '../abilityAutomation/mechanics/aa082MoveIntegration'
 import { aa083MoveOverlayOperations } from '../abilityAutomation/mechanics/aa083MoveIntegration'
 import { aa084MoveOverlayOperations } from '../abilityAutomation/mechanics/aa084MoveIntegration'
+import { aa085to100MoveOverlayOperations } from '../abilityAutomation/mechanics/aa085to100MoveIntegration'
 import {
   AA082_ODIOUS_SPRAY_TARGETING_OVERRIDE,
   aa082OdiousSprayActive,
@@ -1053,6 +1054,10 @@ const executeReviewedMoveSpec = (
       reviewedOperations: options.runtime.definition.spec.phases.flatMap(phase => phase.operations),
     }),
     ...aa084MoveOverlayOperations({
+      ...overlayInput,
+      reviewedOperations: options.runtime.definition.spec.phases.flatMap(phase => phase.operations),
+    }),
+    ...aa085to100MoveOverlayOperations({
       ...overlayInput,
       reviewedOperations: options.runtime.definition.spec.phases.flatMap(phase => phase.operations),
     }),

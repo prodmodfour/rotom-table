@@ -1,6 +1,7 @@
 This is a Nuxt 3 and three.js project.
 
-
+Current plan: ABILITY_AUTOMATION_PLAN.md
+Don't stop until you've finished this.
 
 ## Liveplay
 This is a lvieplay only app. Local hosting is deprecated. All features implemented should work for liveplay.

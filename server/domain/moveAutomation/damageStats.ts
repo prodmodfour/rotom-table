@@ -80,6 +80,7 @@ import {
   aa084MoveDamageModifiers,
   aa084PrideActor,
 } from '../abilityAutomation/mechanics/aa084StaticIntegration'
+import { aa085to100MoveDamageModifiers } from '../abilityAutomation/mechanics/aa085to100StaticIntegration'
 
 export type MoveDamageStatSelectionErrorCode = 'non-numeric-stat-selection'
 
@@ -601,14 +602,36 @@ export const resolveMoveSpecDamageCalculation = (
     recipient: options.recipient,
     effectivenessMultiplier: moveType.finalMultiplier,
   })
+  const remainingModifiers = aa085to100MoveDamageModifiers({
+    context: options.context,
+    operation: options.operation,
+    script: resolvedScript,
+    actor,
+    recipient: options.recipient,
+    moveType: moveType.moveType,
+    damageClass: damageClass.damageClass,
+    effectivenessMultiplier: moveType.finalMultiplier,
+    critical: criticalHit.critical,
+  })
   const aa079Recipient = aa079MarvelScaleRecipient({
     context: options.context,
     recipient: options.recipient,
   })
-  const breakdown = resolveMoveAutomationTargetDamageBreakdown(
+  const effectiveRecipient = options.context.queries.abilities.has(actor.id, 'Unaware')
+    ? {
+        ...aa079Recipient,
+        combatStages: {
+          ...aa079Recipient.combatStages,
+          def: Math.min(0, aa079Recipient.combatStages.def),
+          sdef: Math.min(0, aa079Recipient.combatStages.sdef),
+          spd: Math.min(0, aa079Recipient.combatStages.spd),
+        },
+      }
+    : aa079Recipient
+  const baseBreakdown = resolveMoveAutomationTargetDamageBreakdown(
     resolvedScript,
     helpingHand.length > 0 ? withoutHelpingHandCondition(actor) : actor,
-    aa079Recipient,
+    effectiveRecipient,
     { ...options.resolution, crit: criticalHit.critical },
     nonAuthoritativeFieldEffects,
     options.selectedTargets,
@@ -645,6 +668,7 @@ export const resolveMoveSpecDamageCalculation = (
         ...aa081Modifiers,
         ...aa082Modifiers,
         ...aa084Modifiers,
+        ...remainingModifiers,
         ...(options.responseDamageModifiers ?? []),
         ...encounterDamageModifiers,
         ...helpingHandModifiers,
@@ -653,6 +677,14 @@ export const resolveMoveSpecDamageCalculation = (
       ],
     },
   )
+  const sturdyCap = options.context.queries.abilities.has(options.recipient.id, 'Sturdy')
+    ? Math.max(1, Math.floor((options.recipient.fullMaxHp ?? options.recipient.maxHp) / 2))
+    : null
+  const breakdown: MoveAutomationDamageBreakdown = sturdyCap !== null
+    && baseBreakdown.kind !== 'none'
+    && baseBreakdown.hpLoss > sturdyCap
+      ? { ...baseBreakdown, hpLoss: sturdyCap }
+      : baseBreakdown
   return deepFreeze({
     breakdown,
     damageClass,

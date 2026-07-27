@@ -89,15 +89,14 @@ export const aa084MoveDamageModifiers = (input: {
   return Object.freeze(modifiers)
 }
 
-/** Durable Complete Forme marker blocks every later Temporary HP grant source. */
+/** Durable form markers such as Complete/Schooling block later Temporary HP grants. */
 export const aa084PowerConstructBlocksTemporaryHp = (input: {
   readonly context: Pick<AuthoritativeMoveRulesContext, 'map'>
   readonly placementId: string
 }): boolean => input.context.map.encounterState?.effects.some(effect => (
   effect.kind === 'creature-rule-overlay'
   && effect.payload.domain === 'form'
-  && effect.payload.value === 'zygarde-complete-forme'
-  && effect.tags.includes('power-construct')
+  && effect.tags.includes('blocks-temporary-hp')
   && effect.suppression.sources.length === 0
   && effect.affected.placementIds.includes(input.placementId)
 )) === true

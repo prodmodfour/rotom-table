@@ -201,6 +201,20 @@ export interface MoveEntriesForPlacementOptions {
   readonly additionalMoveNames?: readonly string[]
 }
 
+const temporaryAbilityMoveNames = (
+  placementId: string,
+  effects: readonly EncounterEffect[] | undefined,
+): readonly string[] => [...new Set((effects ?? []).flatMap(effect => {
+  if (!effect.affected.placementIds.includes(placementId)
+    || effect.suppression.sources.length > 0
+    || (effect.duration.remaining !== null && effect.duration.remaining <= 0)) return []
+  if (effect.tags.includes('aa100-zen-mode')) return ['Flamethrower', 'Psychic']
+  if (effect.tags.includes('aa100-zen-snowed')) return ['Ice Punch', 'Fire Punch']
+  const riderTag = effect.tags.find(tag => tag.startsWith('aa091-splendorous-rider:'))
+  const move = riderTag ? findMove(riderTag.slice('aa091-splendorous-rider:'.length)) : null
+  return move ? [move.name] : []
+}))]
+
 const canonicalMoveIdForEntry = (entry: TokenSheetMoveEntry): string => {
   const name = entry.move.name.trim()
   return findMove(name)?.name ?? name
@@ -236,7 +250,10 @@ export const moveEntriesForPlacement = (
         return sheet ? pokemonMoveEntriesForSheet(
           sheet,
           options.abilityConnectionNames,
-          options.additionalMoveNames,
+          [
+            ...(options.additionalMoveNames ?? []),
+            ...temporaryAbilityMoveNames(placement.id, options.encounterEffects),
+          ],
         ) : []
       })()
     : (() => {

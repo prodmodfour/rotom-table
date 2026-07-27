@@ -1,5 +1,6 @@
 import type { MoveDamageEffectOperation } from '#shared/moveAutomation/effects'
 import { findMoveDamageBase } from '~/utils/moveDamageBase'
+import { findMove } from '~~/data/ptuReference'
 import type { AuthoritativeMoveRulesContext } from './context'
 import {
   MOVE_CONTEXTUAL_DAMAGE_BASE_STAB_BONUS,
@@ -9,6 +10,7 @@ import {
 import type { MoveDamageTypeResolution } from './damageTypes'
 import { aa066DarkAuraDamageBaseBonus } from '../abilityAutomation/mechanics/aa066StaticIntegration'
 import { aa079MegaLauncherDamageBaseBonus } from '../abilityAutomation/mechanics/aa079StaticIntegration'
+import { aa085to100DamageBaseBonus } from '../abilityAutomation/mechanics/aa085to100StaticIntegration'
 
 export interface MoveSpecDamageRollFormula {
   readonly count: number
@@ -36,7 +38,21 @@ export const resolveMoveSpecDamageRollFormula = (options: {
     context: options.context,
     script: { moveName: options.canonicalMoveId },
   })
-  const postBoundsBonus = darkAuraBonus + megaLauncherBonus
+  const canonicalMove = findMove(options.canonicalMoveId)
+  const reviewedScript = options.context.queries.rules.reviewedScriptFor(options.canonicalMoveId)
+  const remainingBonus = aa085to100DamageBaseBonus({
+    context: options.context,
+    script: {
+      moveName: options.canonicalMoveId,
+      damageBase: canonicalMove?.damage_base ?? null,
+      range: reviewedScript?.range ?? canonicalMove?.range ?? '',
+      keywords: reviewedScript?.keywords ?? [],
+    },
+    baseDamageBase: typeof options.operation.payload.damageBase === 'number'
+      ? options.operation.payload.damageBase
+      : canonicalMove?.damage_base ?? 0,
+  })
+  const postBoundsBonus = darkAuraBonus + megaLauncherBonus + remainingBonus
     + (options.postBoundsDamageBaseBonus ?? 0)
   if (typeof options.operation.payload.damageBase !== 'number') {
     const contextualDamageBase = resolveContextualMoveDamageBase({

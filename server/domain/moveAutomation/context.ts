@@ -1,5 +1,6 @@
 import { normalizeRevision } from '#shared/sessionRevisions'
 import type { ResolveMoveIntent } from '#shared/livePlayMoveResolution'
+import type { AbilityInstanceData } from '#shared/abilityAutomation/parameters'
 import type { MoveResolutionTraceAncestryEntry } from '#shared/moveAutomation/trace'
 import { createEmptyEncounterHistory } from '#shared/moveAutomation/encounterHistory'
 import { createEmptyEncounterTurnResources } from '#shared/moveAutomation/encounterResources'
@@ -25,6 +26,10 @@ import { aa071ForecastTypeResolution } from '../abilityAutomation/mechanics/aa07
 import { aa074AdjustedToken } from '../abilityAutomation/mechanics/aa074StaticIntegration'
 import { aa075IceFaceFormToken } from '../abilityAutomation/mechanics/aa075StaticIntegration'
 import { aa077AdjustedToken } from '../abilityAutomation/mechanics/aa077StaticIntegration'
+import {
+  aa085to100AdjustedToken,
+  aa085to100MovePresentationScript,
+} from '../abilityAutomation/mechanics/aa085to100StaticIntegration'
 import { aa078MovePresentationScript } from '../abilityAutomation/mechanics/aa078StaticIntegration'
 import type { GridAnchor, SheetKind, SheetPlacement, TabletopMap } from '~/types/map'
 import type { MoveAutomationScript } from '~/types/moveAutomation'
@@ -221,6 +226,7 @@ export interface AuthoritativeMoveEffectiveAbility {
   readonly instanceId: string
   readonly canonicalId: string
   readonly runtime: AbilitySpecV1Runtime
+  readonly parameterData: AbilityInstanceData | null
 }
 export interface AuthoritativeMoveAbilityQueries {
   activeForPlacement(placementId: string): readonly AuthoritativeMoveEffectiveAbility[]
@@ -624,7 +630,12 @@ export const buildAuthoritativeMoveRulesContext = (
       if (!ability.effective) return []
       const runtime = abilityRuntimeRegistry.resolve(ability.canonicalId)
       if (!runtime || (ability.definitionHash !== null && ability.definitionHash !== runtime.definitionHash)) return []
-      return [Object.freeze({ instanceId: ability.instanceId, canonicalId: ability.canonicalId, runtime })]
+      return [Object.freeze({
+        instanceId: ability.instanceId,
+        canonicalId: ability.canonicalId,
+        runtime,
+        parameterData: ability.parameterData,
+      })]
     })))
   }
   const abilityEntityById = new Map((map.encounterState?.abilityEntities?.entries ?? []).flatMap((entity) => {
@@ -852,6 +863,15 @@ export const buildAuthoritativeMoveRulesContext = (
       effectiveAbilityIds: (effectiveAbilitiesByPlacement.get(token.id) ?? [])
         .map(ability => ability.canonicalId),
     })
+    const remainingToken = aa085to100AdjustedToken({
+      token: aa077Token,
+      sheet: placement?.sheetKind === 'pokemon'
+        ? resolvedSheet?.sheet as CharacterSheet ?? null
+        : null,
+      effectiveAbilityIds: (effectiveAbilitiesByPlacement.get(token.id) ?? [])
+        .map(ability => ability.canonicalId),
+      contextMap: map,
+    })
     const forecast = aa071ForecastTypeResolution({
       contextMap: map,
       placementId: token.id,
@@ -859,8 +879,8 @@ export const buildAuthoritativeMoveRulesContext = (
         ?.some(ability => ability.canonicalId === 'Forecast') === true,
     })
     const forecastToken = forecast.typeId
-      ? detachedFrozenJson({ ...aa077Token, defenderTypes: [forecast.typeId] })
-      : aa077Token
+      ? detachedFrozenJson({ ...remainingToken, defenderTypes: [forecast.typeId] })
+      : remainingToken
     const iceFaceToken = aa075IceFaceFormToken({
       token: forecastToken,
       hasIceFace: effectiveAbilitiesByPlacement.get(token.id)
@@ -1157,10 +1177,13 @@ export const buildAuthoritativeMoveRulesContext = (
         : intent.targetBranchId
           ? moveAutomationScriptForTargetBranch(script, intent.targetBranchId)
           : null
-      const selectedScript = aa078MovePresentationScript({
-        context: { actor: { placement: actorPlacement }, queries: { abilities: abilityQueries }, map },
-        script: selectedBranch ?? script,
-        qualificationScript: baseScript,
+      const selectedScript = aa085to100MovePresentationScript({
+        context: { actor: { placement: actorPlacement }, queries: { abilities: abilityQueries } } as AuthoritativeMoveRulesContext,
+        script: aa078MovePresentationScript({
+          context: { actor: { placement: actorPlacement }, queries: { abilities: abilityQueries }, map },
+          script: selectedBranch ?? script,
+          qualificationScript: baseScript,
+        }),
       })
       // The reviewed spec is authoritative for intent shape. Canonical range
       // prose such as Blessing does not itself imply the self declaration that
@@ -1176,7 +1199,10 @@ export const buildAuthoritativeMoveRulesContext = (
     const runtime = runtimes.get(canonicalId)
     const canonicalMove = findMove(canonicalId)
     if (!canonicalMove || runtime?.kind !== 'movespec-v2') return null
-    return detachedFrozenJson(createMoveAutomationScriptFromMoveData(canonicalMove))
+    return detachedFrozenJson(aa085to100MovePresentationScript({
+      context: { actor: { placement: actorPlacement }, queries: { abilities: abilityQueries } } as AuthoritativeMoveRulesContext,
+      script: createMoveAutomationScriptFromMoveData(canonicalMove),
+    }))
   }
 
   const queries: AuthoritativeMoveContextQueries = Object.freeze({

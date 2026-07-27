@@ -146,6 +146,99 @@ export const AA084_ABILITY_MECHANIC_IDS = [
   'aa084.prism-armor', 'aa084.probability-control', 'aa084.propeller-tail',
   'aa084.protean', 'aa084.psionic-screech',
 ] as const
+export const AA085_ABILITY_MECHANIC_IDS = [
+  'aa085.psychic-surge', 'aa085.pumpkingrab', 'aa085.punk-rock',
+  'aa085.pure-blooded', 'aa085.pure-power', 'aa085.queenly-majesty',
+  'aa085.quick-cloak', 'aa085.quick-curl', 'aa085.quick-draw',
+  'aa085.quick-feet', 'aa085.rks-system', 'aa085.radiant-beam',
+] as const
+export const AA086_ABILITY_MECHANIC_IDS = [
+  'aa086.ragelope', 'aa086.rain-dish', 'aa086.rally',
+  'aa086.rattled', 'aa086.razor-edge', 'aa086.receiver',
+  'aa086.reckless', 'aa086.refreshing-veil', 'aa086.refrigerate',
+  'aa086.regal-challenge', 'aa086.regenerator', 'aa086.revelation',
+] as const
+export const AA087_ABILITY_MECHANIC_IDS = [
+  'aa087.ripen', 'aa087.rivalry', 'aa087.rock-head',
+  'aa087.rocket', 'aa087.root-down', 'aa087.rough-skin',
+  'aa087.run-away', 'aa087.run-up', 'aa087.sacred-bell',
+  'aa087.sand-force', 'aa087.sand-rush', 'aa087.sand-spit',
+] as const
+export const AA088_ABILITY_MECHANIC_IDS = [
+  'aa088.sand-stream', 'aa088.sand-veil', 'aa088.sap-sipper',
+  'aa088.schooling', 'aa088.scrappy', 'aa088.screen-cleaner',
+  'aa088.seasonal', 'aa088.sequence', 'aa088.serene-grace',
+  'aa088.serpents-mark', 'aa088.shackle', 'aa088.shadow-shield',
+] as const
+export const AA089_ABILITY_MECHANIC_IDS = [
+  'aa089.shadow-tag', 'aa089.shed-skin', 'aa089.sheer-force',
+  'aa089.shell-armor', 'aa089.shell-cannon', 'aa089.shell-shield',
+  'aa089.shield-dust', 'aa089.shields-down', 'aa089.silk-threads',
+  'aa089.simple', 'aa089.skill-link', 'aa089.slow-start',
+] as const
+export const AA090_ABILITY_MECHANIC_IDS = [
+  'aa090.slush-rush', 'aa090.sniper', 'aa090.snow-cloak',
+  'aa090.snow-warning', 'aa090.snuggle', 'aa090.sol-veil',
+  'aa090.solar-power', 'aa090.solid-rock', 'aa090.sonic-courtship',
+  'aa090.soothing-tone', 'aa090.sorcery', 'aa090.soul-heart',
+] as const
+export const AA091_ABILITY_MECHANIC_IDS = [
+  'aa091.soulstealer', 'aa091.sound-lance', 'aa091.soundproof',
+  'aa091.speed-boost', 'aa091.spike-shot', 'aa091.spinning-dance',
+  'aa091.spiteful-intervention', 'aa091.splendorous-rider', 'aa091.spray-down',
+  'aa091.sprint', 'aa091.stakeout', 'aa091.stall',
+] as const
+export const AA092_ABILITY_MECHANIC_IDS = [
+  'aa092.stalwart', 'aa092.stamina', 'aa092.stance-change',
+  'aa092.starlight', 'aa092.starswirl', 'aa092.static',
+  'aa092.steadfast', 'aa092.steam-engine', 'aa092.steelworker',
+  'aa092.stench', 'aa092.sticky-hold', 'aa092.sticky-smoke',
+] as const
+export const AA093_ABILITY_MECHANIC_IDS = [
+  'aa093.storm-drain', 'aa093.strange-tempo', 'aa093.strong-jaw',
+  'aa093.sturdy', 'aa093.suction-cups', 'aa093.sumo-stance',
+  'aa093.sun-blanket', 'aa093.sunglow', 'aa093.super-luck',
+  'aa093.surge-surfer', 'aa093.swarm', 'aa093.sway',
+] as const
+export const AA094_ABILITY_MECHANIC_IDS = [
+  'aa094.sweet-veil', 'aa094.swift-swim', 'aa094.symbiosis',
+  'aa094.synchronize', 'aa094.tangled-feet', 'aa094.tangling-hair',
+  'aa094.targeting-system', 'aa094.teamwork', 'aa094.technician',
+  'aa094.telepathy', 'aa094.teravolt', 'aa094.thermosensitive',
+] as const
+export const AA095_ABILITY_MECHANIC_IDS = [
+  'aa095.thick-fat', 'aa095.thrust', 'aa095.thunder-boost',
+  'aa095.tingle', 'aa095.tingly-tongue', 'aa095.tinted-lens',
+  'aa095.tochukaso', 'aa095.tolerance', 'aa095.tonguelash',
+  'aa095.torrent', 'aa095.tough-claws', 'aa095.toxic-boost',
+] as const
+export const AA096_ABILITY_MECHANIC_IDS = [
+  'aa096.toxic-nourishment', 'aa096.trace', 'aa096.transistor',
+  'aa096.transporter', 'aa096.triage', 'aa096.trinity',
+  'aa096.truant', 'aa096.turboblaze', 'aa096.twisted-power',
+  'aa096.type-aura', 'aa096.type-strategist', 'aa096.ugly',
+] as const
+export const AA097_ABILITY_MECHANIC_IDS = [
+  'aa097.unaware', 'aa097.unbreakable', 'aa097.unburden',
+  'aa097.unnerve', 'aa097.unseen-fist', 'aa097.vanguard',
+  'aa097.venom', 'aa097.vicious', 'aa097.victory-star',
+  'aa097.vigor', 'aa097.vital-spirit', 'aa097.volt-absorb',
+] as const
+export const AA098_ABILITY_MECHANIC_IDS = [
+  'aa098.voodoo-doll', 'aa098.wallmaster', 'aa098.wandering-spirit',
+  'aa098.wash-away', 'aa098.water-absorb', 'aa098.water-bubble',
+  'aa098.water-compaction', 'aa098.water-veil', 'aa098.wave-rider',
+  'aa098.weak-armor', 'aa098.weaponize', 'aa098.weeble',
+] as const
+export const AA099_ABILITY_MECHANIC_IDS = [
+  'aa099.weird-power', 'aa099.whirlwind-kicks', 'aa099.white-flame',
+  'aa099.white-smoke', 'aa099.wily', 'aa099.wind-power',
+  'aa099.windveiled', 'aa099.winters-kiss', 'aa099.wishmaster',
+  'aa099.wistful-melody', 'aa099.wobble', 'aa099.wonder-guard',
+] as const
+export const AA100_ABILITY_MECHANIC_IDS = [
+  'aa100.wonder-skin', 'aa100.zen-mode', 'aa100.zen-snowed',
+] as const
 export type Aa060AbilityMechanicId = (typeof AA060_ABILITY_MECHANIC_IDS)[number]
 export type AbilityMechanicId = Aa060AbilityMechanicId
   | (typeof AA061_ABILITY_MECHANIC_IDS)[number]
@@ -172,6 +265,22 @@ export type AbilityMechanicId = Aa060AbilityMechanicId
   | (typeof AA082_ABILITY_MECHANIC_IDS)[number]
   | (typeof AA083_ABILITY_MECHANIC_IDS)[number]
   | (typeof AA084_ABILITY_MECHANIC_IDS)[number]
+  | (typeof AA085_ABILITY_MECHANIC_IDS)[number]
+  | (typeof AA086_ABILITY_MECHANIC_IDS)[number]
+  | (typeof AA087_ABILITY_MECHANIC_IDS)[number]
+  | (typeof AA088_ABILITY_MECHANIC_IDS)[number]
+  | (typeof AA089_ABILITY_MECHANIC_IDS)[number]
+  | (typeof AA090_ABILITY_MECHANIC_IDS)[number]
+  | (typeof AA091_ABILITY_MECHANIC_IDS)[number]
+  | (typeof AA092_ABILITY_MECHANIC_IDS)[number]
+  | (typeof AA093_ABILITY_MECHANIC_IDS)[number]
+  | (typeof AA094_ABILITY_MECHANIC_IDS)[number]
+  | (typeof AA095_ABILITY_MECHANIC_IDS)[number]
+  | (typeof AA096_ABILITY_MECHANIC_IDS)[number]
+  | (typeof AA097_ABILITY_MECHANIC_IDS)[number]
+  | (typeof AA098_ABILITY_MECHANIC_IDS)[number]
+  | (typeof AA099_ABILITY_MECHANIC_IDS)[number]
+  | (typeof AA100_ABILITY_MECHANIC_IDS)[number]
 export interface AbilityMechanicOperation extends AbilitySpecJsonObject {
   readonly kind: typeof ABILITY_MECHANIC_OPERATION_KIND
   readonly id: string
@@ -186,7 +295,7 @@ export class AbilityMechanicValidationError extends Error {
 }
 type UnknownRecord = Record<string, unknown>
 const ROOT_FIELDS = ['kind', 'id', 'mechanicId', 'config'] as const
-const CONFIG_FIELDS: Readonly<Record<AbilityMechanicId, readonly string[]>> = {
+const CONFIG_FIELDS: Readonly<Partial<Record<AbilityMechanicId, readonly string[]>>> = {
   'aa060.abominable': ['baseHpBonus', 'ignoreRecoil'],
   'aa060.absorb-force': ['damageClass', 'resistanceSteps'],
   'aa060.accelerate': ['requiresDamaging', 'requiresStab', 'speedNumerator', 'speedDenominator', 'existingPriorityAccuracyBonus'],
@@ -504,7 +613,15 @@ const MECHANIC_SET = new Set<string>([
   ...AA078_ABILITY_MECHANIC_IDS, ...AA079_ABILITY_MECHANIC_IDS,
   ...AA080_ABILITY_MECHANIC_IDS, ...AA081_ABILITY_MECHANIC_IDS,
   ...AA082_ABILITY_MECHANIC_IDS, ...AA083_ABILITY_MECHANIC_IDS,
-  ...AA084_ABILITY_MECHANIC_IDS,
+  ...AA084_ABILITY_MECHANIC_IDS, ...AA085_ABILITY_MECHANIC_IDS,
+  ...AA086_ABILITY_MECHANIC_IDS, ...AA087_ABILITY_MECHANIC_IDS,
+  ...AA088_ABILITY_MECHANIC_IDS, ...AA089_ABILITY_MECHANIC_IDS,
+  ...AA090_ABILITY_MECHANIC_IDS, ...AA091_ABILITY_MECHANIC_IDS,
+  ...AA092_ABILITY_MECHANIC_IDS, ...AA093_ABILITY_MECHANIC_IDS,
+  ...AA094_ABILITY_MECHANIC_IDS, ...AA095_ABILITY_MECHANIC_IDS,
+  ...AA096_ABILITY_MECHANIC_IDS, ...AA097_ABILITY_MECHANIC_IDS,
+  ...AA098_ABILITY_MECHANIC_IDS, ...AA099_ABILITY_MECHANIC_IDS,
+  ...AA100_ABILITY_MECHANIC_IDS,
 ])
 const ID = /^[a-z0-9]+(?:[._:/-][a-z0-9]+)*$/
 const fail = (code: AbilityMechanicValidationError['code'], path: string, detail: string): never => { throw new AbilityMechanicValidationError(code, path, detail) }
@@ -552,9 +669,14 @@ const diceBonus = (value: unknown, expected: { diceCount: number; diceSides: num
     || integer(input.modifier, `${path}.modifier`, 0, 100) !== expected.modifier) fail('invalid-mechanic', path, 'does not match the reviewed bonus.')
   return { ...expected }
 }
+const REMAINING_COHORT_MECHANIC = /^aa(?:08[5-9]|09[0-9]|100)\./
 const parseConfig = (mechanicId: AbilityMechanicId, value: unknown, path: string): AbilitySpecJsonObject => {
   const config = record(value, path)
-  exact(config, CONFIG_FIELDS[mechanicId], path)
+  const remainingCohort = REMAINING_COHORT_MECHANIC.test(mechanicId)
+  exact(config, CONFIG_FIELDS[mechanicId] ?? (remainingCohort ? ['ruleVersion'] : []), path)
+  if (remainingCohort) return {
+    ruleVersion: integer(config.ruleVersion, `${path}.ruleVersion`, 1, 1),
+  }
   switch (mechanicId) {
     case 'aa060.abominable': return { baseHpBonus: integer(config.baseHpBonus, `${path}.baseHpBonus`, 1, 100), ignoreRecoil: bool(config.ignoreRecoil, `${path}.ignoreRecoil`) }
     case 'aa060.absorb-force': return { damageClass: oneOf(config.damageClass, ['physical'], `${path}.damageClass`), resistanceSteps: integer(config.resistanceSteps, `${path}.resistanceSteps`, 1, 8) }
@@ -1981,6 +2103,7 @@ const parseConfig = (mechanicId: AbilityMechanicId, value: unknown, path: string
       action: oneOf(config.action, ['free'], `${path}.action`), frequency: oneOf(config.frequency, ['scene-x2'], `${path}.frequency`), triggerType: oneOf(config.triggerType, ['flying'], `${path}.triggerType`), targetType: oneOf(config.targetType, ['psychic'], `${path}.targetType`), hitConditionId: oneOf(config.hitConditionId, ['flinch'], `${path}.hitConditionId`),
     }
   }
+  return fail('invalid-mechanic', path, `has no reviewed parser for ${mechanicId}.`)
 }
 export const parseAbilityMechanicOperation = (value: unknown, path = 'abilityMechanic'): AbilityMechanicOperation => {
   const cloned = cloneStrictJson(value, path, {

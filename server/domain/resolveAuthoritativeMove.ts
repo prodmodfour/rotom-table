@@ -126,6 +126,7 @@ import {
 } from './abilityAutomation/mechanics/aa078StaticIntegration'
 import { aa075ImposterTransformOverride } from './abilityAutomation/mechanics/aa075StaticIntegration'
 import { aa066DazzlingBlocksPriorityMove } from './abilityAutomation/mechanics/aa066StaticIntegration'
+import { aa085to100MovePriorityActive } from './abilityAutomation/mechanics/aa085to100StaticIntegration'
 import { hasAa061AquaBulletMark, hasPendingAa061AquaBulletAttack } from './abilityAutomation/mechanics/aa061MoveIntegration'
 import { aa062BoneLordEmpowersMove, hasPendingAa062BoneLordMove } from './abilityAutomation/mechanics/aa062MoveIntegration'
 import { aa063RangedMove } from './abilityAutomation/mechanics/aa063MoveIntegration'
@@ -2157,6 +2158,7 @@ export const resolveAuthoritativeMoveExecutionFromContext = (
   const abilityPriorityOverride = aa060MovePriorityOverride(context, entry.script)
     || aa077LeafRushActiveForMove({ context, script: entry.script })
     || aa078MovePriorityActive({ context, script: entry.script })
+    || aa085to100MovePriorityActive({ context, script: entry.script })
   const abilityFreeInterruptOverride = aa075ImposterTransformOverride({ context, script: entry.script })
   const actionTiming = abilityPriorityOverride
     ? 'priority'

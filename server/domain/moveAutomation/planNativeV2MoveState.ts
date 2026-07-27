@@ -78,6 +78,7 @@ import { recordAa065CudChewConsumptions } from '../abilityAutomation/mechanics/a
 import { applyAa061BallFetchSendOutTriggers } from '../abilityAutomation/mechanics/aa061PresenceIntegration'
 import { applyAa065CuriousMedicineSendOutTrigger } from '../abilityAutomation/mechanics/aa065PresenceIntegration'
 import { applyAa081NaturalCureTrigger } from '../abilityAutomation/mechanics/aa081LifecycleIntegration'
+import { applyAa085to100RegeneratorTrigger } from '../abilityAutomation/mechanics/aa085to100LifecycleIntegration'
 import { applyAa082ParentalBondFaintTrigger } from '../abilityAutomation/mechanics/aa082LifecycleIntegration'
 import { clearAa083PerishCount } from '../abilityAutomation/mechanics/aa083LifecycleIntegration'
 import { clearAa084PowerOfAlchemyForKnockouts } from '../abilityAutomation/mechanics/aa084LifecycleIntegration'
@@ -751,6 +752,49 @@ const applyTriggeredAbilityPayments = (input: {
     ['ability.probability-control.optional-reroll', 'Probability Control'],
     ['ability.protean.optional-type-change', 'Protean'],
     ['ability.psionic-screech.optional-psychic-type', 'Psionic Screech'],
+    ['ability.queenly-majesty.optional-stomp', 'Queenly Majesty'],
+    ['ability.quick-draw.optional-interrupt', 'Quick Draw'],
+    ['ability.rattled.optional-boost', 'Rattled'],
+    ['ability.receiver.optional-copy', 'Receiver'],
+    ['ability.refreshing-veil.optional-cure', 'Refreshing Veil'],
+    ['ability.refrigerate.optional-ice-type', 'Refrigerate'],
+    ['ability.revelation.optional-copy', 'Revelation'],
+    ['ability.rks-system.optional-normal-defense', 'RKS System'],
+    ['ability.sand-spit.optional-sand-attack', 'Sand Spit'],
+    ['ability.rough-skin.optional-hp-loss', 'Rough Skin'],
+    ['ability.shell-cannon.optional-boost', 'Shell Cannon'],
+    ['ability.skill-link.optional-five-hits', 'Skill Link'],
+    ['ability.solar-power.optional-damage', 'Solar Power'],
+    ['ability.soul-heart.optional-boost', 'Soul Heart'],
+    ['ability.soulstealer.optional-heal', 'Soulstealer'],
+    ['ability.sound-lance.optional-hp-loss', 'Sound Lance'],
+    ['ability.spray-down.optional-ground', 'Spray Down'],
+    ['ability.spinning-dance.optional-shift', 'Spinning Dance'],
+    ['ability.spiteful-intervention.optional-spite', 'Spiteful Intervention'],
+    ['ability.stamina.optional-defense', 'Stamina'],
+    ['ability.stalwart.optional-stages', 'Stalwart'],
+    ['ability.static.optional-paralysis', 'Static'],
+    ['ability.steam-engine.optional-smokescreen', 'Steam Engine'],
+    ['ability.steadfast.optional-speed', 'Steadfast'],
+    ['ability.storm-drain.optional-redirection', 'Storm Drain'],
+    ['ability.sumo-stance.optional-push', 'Sumo Stance'],
+    ['ability.synchronize.optional-copy-condition', 'Synchronize'],
+    ['ability.tangling-hair.optional-slow', 'Tangling Hair'],
+    ['ability.telepathy.optional-disengage', 'Telepathy'],
+    ['ability.thunder-boost.optional-damage', 'Thunder Boost'],
+    ['ability.tingle.optional-debuff', 'Tingle'],
+    ['ability.tingly-tongue.optional-lick', 'Tingly Tongue'],
+    ['ability.tonguelash.optional-lick', 'Tonguelash'],
+    ['ability.transistor.optional-vulnerability', 'Transistor'],
+    ['ability.vicious.optional-branch', 'Vicious'],
+    ['ability.vigor.optional-heal', 'Vigor'],
+    ['ability.wandering-spirit.optional-swap', 'Wandering Spirit'],
+    ['ability.wash-away.optional-reset', 'Wash Away'],
+    ['ability.water-compaction.optional-defense', 'Water Compaction'],
+    ['ability.weak-armor.optional-stages', 'Weak Armor'],
+    ['ability.wind-power.optional-charge', 'Wind Power'],
+    ['ability.wistful-melody.optional-stages', 'Wistful Melody'],
+    ['ability.wobble.optional-counter', 'Wobble'],
   ])
   const noFrequency = new Set([
     'Anger Point', 'Aqua Boost', 'Beast Boost', 'Celebrate', 'Chilling Neigh',
@@ -758,8 +802,12 @@ const applyTriggeredAbilityPayments = (input: {
     'Galvanize', 'Gooey', 'Grim Neigh', 'Heat Mirage', 'Heliovolt', 'Horde Break',
     'Ignition Boost', 'Iron Barbs', 'Justified', 'Mirror Armor', 'Mummy',
     'Pack Hunt', 'Perception', 'Pixilate', 'Polycephaly', 'Protean',
+    'Rattled', 'Refrigerate', 'Rough Skin', 'Spinning Dance', 'Stamina', 'Steadfast', 'Tangling Hair', 'Tingle',
+    'Spiteful Intervention', 'Sumo Stance', 'Telepathy', 'Thunder Boost', 'Water Compaction', 'Weak Armor',
   ])
-  const daily = new Set(['Dig Away', 'Disguise', 'Dodge', 'Perish Body', 'Poison Heal'])
+  const daily = new Set([
+    'Dig Away', 'Disguise', 'Dodge', 'Perish Body', 'Poison Heal', 'Vigor', 'Wash Away',
+  ])
   const actorByChildOperationId = new Map(input.childExecutions.flatMap(child => (
     child.operationIds.map(operationId => [operationId, child.actorPlacementId] as const)
   )))
@@ -798,6 +846,12 @@ const applyTriggeredAbilityPayments = (input: {
       ?? fail('state-change-conflict', `Selected ${canonicalId} response lost its effective runtime.`)
     const actionResources = canonicalId === 'Celebrate'
       ? (['swift', 'free'] as const)
+      : canonicalId === 'Quick Draw' || canonicalId === 'Revelation'
+        ? (['free', 'standard'] as const)
+      : canonicalId === 'Spiteful Intervention'
+        ? (['standard'] as const)
+      : canonicalId === 'Sumo Stance'
+        ? (['shift'] as const)
       : canonicalId === 'Cruelty'
         ? (['swift'] as const)
         : canonicalId === 'Dig Away'
@@ -815,8 +869,13 @@ const applyTriggeredAbilityPayments = (input: {
               || canonicalId === 'Gore'
               || canonicalId === 'Gorilla Tactics'
               || canonicalId === 'Heliovolt'
+              || canonicalId === 'Solar Power'
+              || canonicalId === 'Steam Engine'
+              || canonicalId === 'Sound Lance'
               ? (['swift'] as const)
-              : (['free'] as const)
+              : canonicalId === 'Vicious'
+                ? ([] as const)
+                : (['free'] as const)
     const action = planEncounterMoveResourceCosts({
       map,
       placementId: ownerId,
@@ -833,8 +892,13 @@ const applyTriggeredAbilityPayments = (input: {
             || canonicalId === 'Gore'
             || canonicalId === 'Gorilla Tactics'
             || canonicalId === 'Heliovolt'
+            || canonicalId === 'Solar Power'
+            || canonicalId === 'Steam Engine'
+            || canonicalId === 'Sound Lance'
             ? 'Swift Action'
-            : 'Free Action',
+            : canonicalId === 'Vicious'
+              ? 'Special'
+              : 'Free Action',
       resolutionId: input.resolutionId,
       sourceOperationId: `${selection.operationId}:action`,
       movement: null,
@@ -878,7 +942,9 @@ const applyTriggeredAbilityPayments = (input: {
         }).nextMap
       }
     }
-    if (noFrequency.has(canonicalId)) continue
+    if (noFrequency.has(canonicalId)
+      || (canonicalId === 'Solar Power'
+        && input.context.queries.weather.active().some(weather => weather.kind === 'sunny'))) continue
 
     if (daily.has(canonicalId)) {
       const placement = input.context.queries.placements.get(ownerId)
@@ -947,7 +1013,7 @@ const applyTriggeredAbilityPayments = (input: {
     if (existingByOperation && existingByOperation !== existing) {
       fail('state-change-conflict', `${canonicalId} response operation already paid another resource.`)
     }
-    const limit = ['Bodyguard', 'Dancer', 'Dragon’s Maw', 'Drown Out', 'Giver', 'Gore', 'Gulp Missile', 'Innards Out', 'Migraine', 'Minus', 'Plus', 'Psionic Screech'].includes(canonicalId)
+    const limit = ['Bodyguard', 'Dancer', 'Dragon’s Maw', 'Drown Out', 'Giver', 'Gore', 'Gulp Missile', 'Innards Out', 'Migraine', 'Minus', 'Plus', 'Psionic Screech', 'Queenly Majesty', 'Receiver', 'Revelation', 'Solar Power', 'Soul Heart', 'Sound Lance', 'Spray Down', 'Steam Engine', 'Tingly Tongue', 'Tonguelash', 'Transistor'].includes(canonicalId)
       ? 2
       : 1
     if (!existingByOperation && (existing?.spent ?? 0) >= limit) {
@@ -1049,6 +1115,43 @@ const applyTriggeredAbilityPayments = (input: {
     }
   }))
   return Object.freeze({ map, sheetStateChanges })
+}
+
+const applyRemainingCatalogResourceGrants = (input: {
+  readonly map: TabletopMap
+  readonly trace: MoveResolutionAuditTrace
+  readonly actorPlacementId: string
+}): TabletopMap => {
+  const viciousExtraStandard = input.trace.events.some(event => (
+    event.kind === 'choice'
+    && event.reasonCode === 'ability.vicious.optional-branch'
+    && event.outcome === 'selected'
+    && event.optionId === 'ability.vicious.extra-standard'
+  ))
+  if (!viciousExtraStandard) return input.map
+  const encounter = parseEncounterState(input.map.encounterState ?? createEmptyEncounterState())
+  const ledger = encounter.turnResources[input.actorPlacementId]
+  if (!ledger) return input.map
+  const standard = ledger.actions.standard
+  return {
+    ...input.map,
+    encounterState: parseEncounterState({
+      ...encounter,
+      turnResources: {
+        ...encounter.turnResources,
+        [input.actorPlacementId]: {
+          ...ledger,
+          actions: {
+            ...ledger.actions,
+            standard: {
+              ...standard,
+              budget: Math.max(standard.spent + 1, (standard.budget ?? 1) + 1),
+            },
+          },
+        },
+      },
+    }),
+  }
 }
 
 const consumeAa060MoveMarks = (input: {
@@ -1180,8 +1283,21 @@ export const planNativeV2MoveState = (options: {
         trigger: 'recall',
       })
     : { map: mapAfterAbilityMarkConsumption, sheet: recalledNaturalCureSheet, applied: false }
+  const recalledToken = recalledForNaturalCure
+    ? context.queries.tokens.get(recalledForNaturalCure.id) : null
+  const regeneratorRecall = recalledForNaturalCure && naturalCureRecall.sheet && recalledToken
+    ? applyAa085to100RegeneratorTrigger({
+        map: naturalCureRecall.map,
+        placement: recalledForNaturalCure,
+        sheet: naturalCureRecall.sheet,
+        operationId: originOperationId,
+        trigger: 'recall',
+        maximumHp: recalledToken.fullMaxHp ?? recalledToken.maxHp,
+      })
+    : { map: naturalCureRecall.map, sheet: naturalCureRecall.sheet, applied: false }
   const naturalCureRecallPlan = createMoveStateChangePlan(
-    naturalCureRecall.applied && recalledForNaturalCure && recalledNaturalCureSheet
+    (naturalCureRecall.applied || regeneratorRecall.applied)
+      && recalledForNaturalCure && recalledNaturalCureSheet && regeneratorRecall.sheet
       ? [{
           kind: 'sheet-state' as const,
           scope: {
@@ -1194,24 +1310,32 @@ export const planNativeV2MoveState = (options: {
           reasonCode: 'ability-natural-cure-recall',
           previous: deepCloneJson(recalledNaturalCureSheet),
           current: {
-            ...deepCloneJson(naturalCureRecall.sheet!),
+            ...deepCloneJson(regeneratorRecall.sheet),
             revision: nextRevision(normalizeRevision(recalledNaturalCureSheet.revision)),
           },
-          changedFields: ['conditions'] as const,
+          changedFields: [
+            ...(naturalCureRecall.applied ? ['conditions' as const] : []),
+            ...(regeneratorRecall.applied ? ['hp' as const, 'abilityUsage' as const] : []),
+          ],
           compensation: RESTORE_PREVIOUS_MOVE_STATE_VALUE,
         }]
       : [],
   )
   const triggeredAbilityPayments = applyTriggeredAbilityPayments({
-    map: naturalCureRecall.map,
+    map: regeneratorRecall.map,
     context,
     // Nested child events are ancestry-projected into the root trace exactly once.
     traces: [native.trace],
     childExecutions: native.childExecutions,
     resolutionId: context.resolutionId ?? originOperationId,
   })
-  const mapAfterDelayedReactionDebts = applyAa067DelayedReactionDebts({
+  const mapAfterRemainingResourceGrants = applyRemainingCatalogResourceGrants({
     map: triggeredAbilityPayments.map,
+    trace: native.trace,
+    actorPlacementId: options.resolution.actorPlacementId,
+  })
+  const mapAfterDelayedReactionDebts = applyAa067DelayedReactionDebts({
+    map: mapAfterRemainingResourceGrants,
     context,
     trace: native.trace,
     operationId: originOperationId,

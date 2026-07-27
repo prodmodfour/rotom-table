@@ -334,8 +334,20 @@ export const createStandardMoveCoreTokenEffectImmunityQueries = (
         && options.context?.queries.abilities.has(recipient.placement.id, 'Immunity')
         ? 'Immunity'
         : canonicalCondition === 'Sleep'
-          && options.context?.queries.abilities.has(recipient.placement.id, 'Insomnia')
-          ? 'Insomnia'
+          && (options.context?.queries.abilities.has(recipient.placement.id, 'Insomnia')
+            || options.context?.queries.abilities.has(recipient.placement.id, 'Vital Spirit'))
+          ? options.context?.queries.abilities.has(recipient.placement.id, 'Vital Spirit')
+            ? 'Vital Spirit'
+            : 'Insomnia'
+          : canonicalCondition === 'Burned'
+            && (options.context?.queries.abilities.has(recipient.placement.id, 'Water Veil')
+              || options.context?.queries.abilities.has(recipient.placement.id, 'Water Bubble'))
+            ? options.context?.queries.abilities.has(recipient.placement.id, 'Water Bubble')
+              ? 'Water Bubble'
+              : 'Water Veil'
+          : canonicalCondition === 'Vulnerable'
+            && options.context?.queries.abilities.has(recipient.placement.id, 'Tangled Feet')
+            ? 'Tangled Feet'
           : canonicalCondition === 'Flinch'
             && options.context?.queries.abilities.has(recipient.placement.id, 'Inner Focus')
             ? 'Inner Focus'
@@ -355,7 +367,10 @@ export const createStandardMoveCoreTokenEffectImmunityQueries = (
             )),
           }
         : recipient.token
-      const managedConditionAbilities = new Set(['immunity', 'insomnia', 'inner focus', 'keen eye', 'limber'])
+      const managedConditionAbilities = new Set([
+        'immunity', 'insomnia', 'inner focus', 'keen eye', 'limber', 'tangled feet',
+        'vital spirit', 'water bubble', 'water veil',
+      ])
       const passiveRecipient = options.context
         ? {
             ...typedRecipient,
@@ -440,6 +455,23 @@ export const createStandardMoveCoreTokenEffectImmunityQueries = (
           && options.context?.queries.abilities.has(recipient.placement.id, 'Full Metal Body')
           && sourceIsEnemy
             ? 'Full Metal Body'
+            : null
+        )
+        ?? (
+          delta < 0
+          && options.context?.queries.abilities.has(recipient.placement.id, 'White Smoke')
+          && stageSourceOwnerId !== recipient.placement.id
+            ? 'White Smoke'
+            : null
+        )
+        ?? (
+          delta > 0
+          && options.context?.map.encounterState?.effects.some(effect => (
+            effect.tags.includes('aa097-unnerve')
+            && effect.affected.placementIds.includes(recipient.placement.id)
+            && effect.suppression.sources.length === 0
+          ))
+            ? 'Unnerve'
             : null
         )
         ?? (

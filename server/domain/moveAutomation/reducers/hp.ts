@@ -944,8 +944,16 @@ export const reduceDirectHpEffectForRecipient = (options: {
   }
 
   const previousPoolValue = poolValue(previous, operation.payload.pool)
+  const sturdyLimit = operation.payload.mode === 'lose'
+    && operation.payload.pool === 'hit-points'
+    && options.context.queries.abilities.has(recipient.placement.id, 'Sturdy')
+    ? Math.max(1, Math.floor(previous.fullMaxHp / 2))
+    : null
+  const boundedLoss = sturdyLimit === null
+    ? calculation.roundedValue
+    : Math.min(calculation.roundedValue, sturdyLimit)
   const requestedPoolValue = operation.payload.mode === 'lose'
-    ? previousPoolValue - calculation.roundedValue
+    ? previousPoolValue - boundedLoss
     : calculation.roundedValue
   if (requestedPoolValue > previousPoolValue
     && authoritativeAbilityHealingBlocked({ map: options.context.map, placementId: recipient.placement.id })) {

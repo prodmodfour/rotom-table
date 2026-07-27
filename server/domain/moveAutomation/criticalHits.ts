@@ -106,7 +106,7 @@ const preventingAbility = (
 export const resolveMoveCriticalHit = (options: {
   readonly context: AuthoritativeMoveRulesContext
   readonly operation: MoveDamageEffectOperation
-  readonly script: Pick<MoveAutomationScript, 'damaging' | 'directHpLoss' | 'criticalRange' | 'targetMode' | 'range'>
+  readonly script: Pick<MoveAutomationScript, 'moveName' | 'damaging' | 'directHpLoss' | 'criticalRange' | 'targetMode' | 'range'>
   readonly recipientId: string
   readonly naturalRoll: number | null
   /** Compatibility fallback for direct kernel callers that do not expose the natural roll. */
@@ -170,12 +170,23 @@ export const resolveMoveCriticalHit = (options: {
       timing: 'static',
     }).suppressed
   const rareLeekBonus = rareLeekEligible ? 2 : 0
+  const razorEdgeBonus = options.context.queries.abilities.has(actorId, 'Razor Edge')
+    ? options.script.moveName.toLowerCase().includes('tail') ? 3 : 2
+    : 0
+  const superLuckBonus = options.context.queries.abilities.has(actorId, 'Super Luck') ? 2 : 0
+  const viciousBonus = options.context.map.encounterState?.effects.some(effect => (
+    effect.tags.includes('aa097-vicious-critical')
+    && effect.affected.placementIds.includes(actorId)
+    && effect.suppression.sources.length === 0
+    && (effect.duration.remaining === null || effect.duration.remaining > 0)
+  )) ? 2 : 0
   const trigger: MoveCriticalHitTrigger = baseTrigger.kind === 'range'
     ? {
         ...baseTrigger,
         minimum: Math.max(
           1,
-          baseTrigger.minimum - (beamCannon ? 3 : 0) - lancerBonus - rareLeekBonus,
+          baseTrigger.minimum - (beamCannon ? 3 : 0) - lancerBonus - rareLeekBonus
+            - razorEdgeBonus - superLuckBonus - viciousBonus,
         ),
       }
     : baseTrigger

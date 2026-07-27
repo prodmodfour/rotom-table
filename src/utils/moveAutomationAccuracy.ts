@@ -66,6 +66,7 @@ const evasionLabelWithAbilityModifiers = (
 }
 
 const moveAutomationTargetAbilityEvasionModifiers = (
+  script: MoveAutomationScript | null | undefined,
   target: SpawnedPokemon,
   context: MoveAutomationEvasionContext,
 ): SheetAbilityIncomingAttackEvasionModifier[] => {
@@ -73,8 +74,29 @@ const moveAutomationTargetAbilityEvasionModifiers = (
     target.abilityNames,
     { attackerAbilities: context.attacker?.abilityNames },
   )
-  if ((target.abilityNames ?? []).some(name => name.trim() === 'Perception')) {
-    modifiers.push({ source: 'Perception', modifier: 1 })
+  const abilities = new Set((target.abilityNames ?? []).map(name => name.trim()))
+  if (abilities.has('Perception')) modifiers.push({ source: 'Perception', modifier: 1 })
+  if (abilities.has('Wonder Skin')
+    && script?.damageClass?.trim().toLowerCase() === 'status') {
+    modifiers.push({ source: 'Wonder Skin', modifier: 6 })
+  }
+  if (abilities.has('Tangled Feet')
+    && target.conditions.some(condition => ['confused', 'slowed'].includes(condition.trim().toLowerCase()))) {
+    modifiers.push({ source: 'Tangled Feet', modifier: 3 })
+  }
+  const weather = new Set((context.fieldEffects?.weather ?? []).map(entry => entry.kind))
+  const terrain = new Set((context.fieldEffects?.terrains ?? []).map(entry => entry.kind))
+  if (abilities.has('Sand Veil')) {
+    modifiers.push({ source: 'Sand Veil', modifier: weather.has('sandstorm') ? 2 : 1 })
+  }
+  if (abilities.has('Snow Cloak')) {
+    modifiers.push({ source: 'Snow Cloak', modifier: weather.has('hail') ? 2 : 1 })
+  }
+  if (abilities.has('Sol Veil')) {
+    modifiers.push({
+      source: 'Sol Veil',
+      modifier: weather.has('sunny') || terrain.has('grassy') ? 2 : 1,
+    })
   }
   return modifiers
 }
@@ -194,7 +216,7 @@ export const resolveMoveAutomationTargetEvasion = (
   target: SpawnedPokemon,
   context: MoveAutomationEvasionContext = {},
 ): MoveAutomationEvasionResolution => {
-  const abilityModifiers = moveAutomationTargetAbilityEvasionModifiers(target, context)
+  const abilityModifiers = moveAutomationTargetAbilityEvasionModifiers(script, target, context)
   const abilityModifier = sumAbilityEvasionModifiers(abilityModifiers)
   const suppressedByCondition = evasionSuppressedByCondition(target.conditions, { abilities: target.abilityNames })
   if (suppressedByCondition) {
@@ -209,7 +231,18 @@ export const resolveMoveAutomationTargetEvasion = (
     }
   }
 
-  const candidates = moveAutomationEvasionCandidates(script, target, context)
+  const effectiveTarget = context.attacker?.abilityNames?.some(name => name.trim() === 'Unaware')
+    ? {
+        ...target,
+        combatStages: {
+          ...target.combatStages,
+          def: Math.min(0, target.combatStages.def),
+          sdef: Math.min(0, target.combatStages.sdef),
+          spd: Math.min(0, target.combatStages.spd),
+        },
+      }
+    : target
+  const candidates = moveAutomationEvasionCandidates(script, effectiveTarget, context)
   const best = candidates.reduce<MoveAutomationEvasionCandidate | null>((current, candidate) => {
     if (!current || candidate.value > current.value) return candidate
     return current
